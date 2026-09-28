@@ -113,6 +113,8 @@ All limits use a token bucket that refills evenly across the window.
 | Team: `GET /v1/admin/search` / bulk actions | 60 / min / 10 / min per team member |
 | `POST /v1/me/sanctions/{id}/appeal`, per account | 5 / h (one appeal per sanction) |
 | `GET /v1/me/sanctions`, per account | 30 / min |
+| `GET /v1/achievements`, per IP | 60 / min |
+| `POST /v1/me/achievements/report` / `GET /v1/players/{uuid}/achievements`, per account | 30 / min / 60 / min (§31) |
 
 ---
 
@@ -272,6 +274,7 @@ Auth required. Deletes everything immediately:
 - chat (§18.8): all DMs of the account for **both** sides, own messages, reactions and images in groups, pending uploads; owned groups go to the longest member, empty groups are deleted
 - world hosting (§21.9): hosted worlds are closed, memberships in other worlds and the account's own and foreign ban-list entries are removed
 - shared screenshots (§23): all links of the account and their images
+- achievements (§31): unlocks, counters, playtime and streak
 
 Only an existing **ban record** and an **active chat mute** survive (keyed by UUID) so they can't be escaped by re-registering. Chat reports **against** the account stay with their evidence until their retention ends (§20.3).
 
@@ -416,7 +419,8 @@ Auth required. Send it **at least every 60 s**. A report expires **180 s** after
 ```
 For `offline`, `expiresInSec` is `0`.
 
-Presence lives only in server memory. There is no history.
+Presence lives only in server memory. There is no history. For achievements (§31.7) the server keeps only the
+total in-game time, the current and longest session and the day streak per account.
 
 ---
 
@@ -1849,6 +1853,7 @@ data: {"type":"chat_message","conversationId":"c…","message":{…}}
 | `sanction_added`, `sanction_updated`, `appeal_decided` | moderation v2 – see §22.9 |
 | `application_updated` | `{application: MyApplicationView}` – your team application changed (§24.3) |
 | `hosting_*` | world hosting: `hosting_invite`, `hosting_invite_revoked`, `hosting_join_request`, `hosting_join_accepted`, `hosting_join_declined`, `hosting_kicked`, `hosting_room`, `hosting_room_updated`, `hosting_room_closed`, `hosting_signal` – see §21.5 |
+| `achievement_unlocked` | `{achievement: AchievementView, at, reward: {kind, id}\|null}` – you unlocked an achievement (§31.6) |
 
 **Rules**
 
@@ -3169,3 +3174,196 @@ Limits: 120 changes and 30 uploads per minute and team member.
 
 Migration 18: tables `blog_posts` (texts as JSON, status `draft`/`published` + `publish_at`, `rev`), `blog_media`
 (files in `<DATA_DIR>/blog/<xx>/<id>.<ext>`). Deleting an author's account keeps the post (author → “TRS Team”).
+
+---
+
+## 31. Achievements
+
+Launcher achievements in four categories: **playtime** (time played and starts), **launcher** (features), **community**
+and **secret**. The catalog is defined by the server (ids never change; new achievements are only added). Friends can
+see each other's unlocked achievements; a few achievements grant a cosmetic or cape.
+
+**Where progress comes from.** Most progress is counted by the server from things it already knows (`verified: true`):
+in-game heartbeats (§4.2), friends, chat, issues, votes, circuits, shared packs, hosted worlds, capes and cosmetics.
+A few facts only the launcher knows are **reported** by it (`verified: false`, §31.4) – those never grant a reward.
+Unlocking is idempotent: an achievement is unlocked once per account and stays unlocked (also when the condition later
+stops being true, e.g. a friend is removed).
+
+### 31.1 AchievementView
+
+```json
+{
+  "id": "play_10h",
+  "category": "playtime",
+  "secret": false,
+  "hidden": false,
+  "title": { "en": "Settling in", "de": "…", "es": "…" },
+  "description": { "en": "Play for 10 hours", "de": "…", "es": "…" },
+  "icon": "clock",
+  "points": 20,
+  "rarity": "uncommon",
+  "goal": 600,
+  "unit": "minutes",
+  "verified": true,
+  "reward": null,
+  "order": 5
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `id` | `^[a-z0-9_]{1,40}$`, stable. Secret achievements have neutral ids (`secret_01`, …). |
+| `category` | `playtime` \| `launcher` \| `community` \| `secret` |
+| `secret` | Secret achievement (always `category: "secret"`). |
+| `hidden` | `true` = secret **and not unlocked by the viewer**: `title`, `description`, `reward`, `goal` and `unit` are `null`, `icon` is `"secret"`. Show it as "???". |
+| `title`, `description` | `{ en, de, es }` (all three always present) or `null` when `hidden`. Pick the UI language, fall back to `en`. |
+| `icon` | Icon key; the client maps it to its own icon set: `rocket`, `repeat`, `clock`, `hourglass`, `trophy`, `flame`, `calendar`, `puzzle`, `boxes`, `package`, `share`, `download`, `film`, `clapperboard`, `globe`, `cape`, `hat`, `camera`, `wrench`, `truck`, `user-plus`, `users`, `message`, `messages`, `bug`, `thumbs-up`, `vote`, `lightbulb`, `bug-off`, `circuit`, `duck`, `moon`, `key`, `timer`, `secret`. Unknown keys → a generic trophy. |
+| `points` | Points for unlocking (5–100). |
+| `rarity` | `common` \| `uncommon` \| `rare` \| `epic` \| `legendary` (fixed by the server, not computed). |
+| `goal` | Target value for achievements with a counter, otherwise `null` (a single event unlocks it). |
+| `unit` | `count` \| `minutes` \| `days`, or `null` when `goal` is `null`. Playtime is counted in minutes (show hours). |
+| `verified` | `true` = counted by the server, `false` = reported by the launcher (§31.4). |
+| `reward` | `{ "kind": "cape" \| "cosmetic", "id": "<cape or cosmetic id>" }` or `null`. Only on verified achievements. |
+| `order` | Sort key (ascending). |
+
+### 31.2 Catalog: `GET /v1/achievements`
+
+Public (no auth, 60 / min per IP) → `200 { "achievements": [AchievementView] }`, sorted by `order`. Secret
+achievements are always `hidden` here.
+
+### 31.3 Own achievements: `GET /v1/me/achievements`
+
+Auth required (read bucket). Evaluates all server-side conditions first (so it is always current) and grants rewards
+whose item became available since the unlock (§31.6).
+
+```json
+{
+  "achievements": [AchievementView],
+  "unlocked": [ { "id": "first_launch", "at": "2026-09-28T10:00:00.000Z" } ],
+  "progress": { "play_10h": 134, "friends_10": 3 },
+  "points": 45,
+  "totalPoints": 875
+}
+```
+
+- `achievements`: the catalog **as the viewer sees it** – secret achievements the viewer unlocked have `hidden: false`
+  with their texts and reward.
+- `unlocked`: every unlocked achievement (known ids only), oldest first.
+- `progress`: current value for every achievement with a `goal` that is not `hidden`, capped at `goal` (unlocked
+  ones report `goal`). Achievements without a goal are not listed.
+- `points`: sum of the points of the unlocked achievements; `totalPoints`: sum over the whole catalog.
+
+### 31.4 Launcher reports: `POST /v1/me/achievements/report`
+
+Auth required. For facts only the launcher knows. Send one report per event (fire and forget; don't retry a `429`).
+
+```json
+{ "kind": "launch", "hour": 3 }
+{ "kind": "mod_installed", "count": 12 }
+```
+
+| Field | Rules |
+|---|---|
+| `kind` | `launch` (a game was started from the launcher), `mod_installed` (mods were added to an instance), `modpack_installed` (a modpack was installed or imported), `clip_recorded` (a clip was saved), `crash_fixed` (the crash helper applied a fix), `launcher_import` (instances were imported from another launcher) |
+| `hour` | Optional integer 0–23: the **local** hour of the start. Only with `launch` (otherwise `400 invalid_request`). |
+| `count` | Optional integer 1–100, default 1: how many at once (e.g. mods added together). Only with `mod_installed` and `clip_recorded` (otherwise `400 invalid_request`). |
+
+→ `200 { "newlyUnlocked": [ { "id": "first_mod", "at": "…" } ] }` (usually empty). Every newly unlocked
+achievement also arrives as `achievement_unlocked` on `/v1/events/me` – a client with an open stream shows the toast
+from the event only.
+
+- Counters only count up to the highest goal that uses them (more reports change nothing); `crash_fixed`,
+  `launcher_import` and the local hour are flags.
+- Limit: **30 / min per account** (`429`). Like every call, only with the TRS consent given.
+
+### 31.5 A player's achievements: `GET /v1/players/{uuid}/achievements`
+
+Auth required (60 / min per account). Only for **yourself** or an **accepted friend**. Everyone else – unknown, not a
+friend, banned, or blocked in either direction – gets `404 player_not_found`.
+
+```json
+{ "unlocked": [ { "id": "first_friend", "at": "…" } ], "points": 25 }
+```
+
+Titles come from the viewer's catalog (`GET /v1/me/achievements` → `achievements`): a friend's secret achievement stays
+"???" unless the viewer unlocked it too.
+
+### 31.6 Event and rewards
+
+`/v1/events/me` (§19), only to the account itself (all its devices):
+
+```json
+{ "type": "achievement_unlocked", "achievement": AchievementView, "at": "2026-09-28T10:00:00.000Z",
+  "reward": { "kind": "cosmetic", "id": "idea_bulb" } }
+```
+
+- `achievement` is never `hidden` (secret ones come with their texts).
+- `reward`: the item **granted with this unlock** (now owned: reload `GET /v1/me/cosmetics` or `GET /v1/capes`), or
+  `null` (no reward, or the item is not available yet).
+- Rewards are normal grants (they look like an admin grant). If the reward item does not exist yet, the unlock still
+  happens and the item is granted once it exists (on server start and on the next `GET /v1/me/achievements`).
+
+### 31.7 How the server counts
+
+| Metric | Source |
+|---|---|
+| Playtime | In-game heartbeats (§4.2, mod or launcher): each heartbeat adds the time since the previous heartbeat of the account – only while it is `in-game`, and only if that gap is at most the 180 s expiry (a longer gap starts a new session and adds nothing). Two sources never count twice (wall-clock time). Stored: the total, the current and the longest session. |
+| Day streak | Days (UTC) with at least one heartbeat (`online` or `in-game`); the best streak counts. |
+| Friends | Current number of friends. |
+| Chat | Own text messages (chat §18). |
+| Issues | Own issues (not deleted); "from inside the game" = created by the TRS Client; "done" = status `done` or "fixed in" set; up-votes received from other accounts; own votes. |
+| Circuits | Library circuits credited to you (accepted submissions, §25). |
+| Packs | Packs shared as a link (§27); installs = downloads of your packs by other accounts. |
+| Worlds, screenshots | Worlds opened for friends (§21), screenshots shared as a link (§23). |
+| Capes, cosmetics, codes | A cape put on, a cosmetic equipped, a hidden cosmetic owned, a code redeemed. |
+
+### 31.8 Catalog (v1)
+
+| id | category | goal | points | rarity | verified | reward |
+|---|---|---|---|---|---|---|
+| `first_launch` | playtime | – | 5 | common | no | |
+| `launches_50` | playtime | 50 | 15 | uncommon | no | |
+| `launches_500` | playtime | 500 | 40 | rare | no | |
+| `play_1h` | playtime | 60 min | 10 | common | yes | |
+| `play_10h` | playtime | 600 min | 20 | uncommon | yes | |
+| `play_50h` | playtime | 3000 min | 40 | rare | yes | |
+| `play_100h` | playtime | 6000 min | 60 | epic | yes | |
+| `play_500h` | playtime | 30000 min | 100 | legendary | yes | cape `veteran` |
+| `streak_7` | playtime | 7 days | 25 | uncommon | yes | |
+| `streak_30` | playtime | 30 days | 60 | epic | yes | cosmetic `streak_flame` |
+| `first_mod` | launcher | – | 5 | common | no | |
+| `mods_50` | launcher | 50 | 20 | uncommon | no | |
+| `first_modpack` | launcher | – | 10 | common | no | |
+| `first_pack_shared` | launcher | – | 15 | uncommon | yes | |
+| `pack_installs_10` | launcher | 10 | 40 | rare | yes | |
+| `first_clip` | launcher | – | 10 | common | no | |
+| `clips_25` | launcher | 25 | 20 | uncommon | no | |
+| `first_world_hosted` | launcher | – | 20 | uncommon | yes | |
+| `cape_worn` | launcher | – | 5 | common | yes | |
+| `cosmetic_equipped` | launcher | – | 5 | common | yes | |
+| `screenshot_shared` | launcher | – | 10 | common | yes | |
+| `crash_fixed` | launcher | – | 10 | common | no | |
+| `launcher_import` | launcher | – | 10 | common | no | |
+| `first_friend` | community | – | 10 | common | yes | |
+| `friends_10` | community | 10 | 30 | rare | yes | |
+| `first_message` | community | – | 5 | common | yes | |
+| `messages_500` | community | 500 | 30 | rare | yes | |
+| `first_issue` | community | – | 10 | common | yes | |
+| `votes_10` | community | 10 | 10 | common | yes | |
+| `upvotes_10` | community | 10 | 30 | rare | yes | |
+| `bug_squashed` | community | – | 25 | uncommon | yes | |
+| `idea_implemented` | community | – | 50 | epic | yes | cosmetic `idea_bulb` |
+| `circuit_approved` | community | – | 40 | rare | yes | |
+| `secret_01` … `secret_05` | secret | – | 10–30 | uncommon–epic | mixed | |
+
+The reward items `veteran`, `streak_flame` and `idea_bulb` are placeholders until their designs ship; until then the
+unlock happens without the item (§31.6). The texts live in `server/lib/achievement-catalog.ts`.
+
+### 31.9 Data, privacy, migration 19
+
+- Tables: `achievement_unlocks` (account, id, time, reward granted), `achievement_stats` (counters and flags per
+  account), `achievement_playtime` (total in-game time, time of the last in-game heartbeat, current and longest session,
+  last active day, current and best day streak). No history of sessions or heartbeats.
+- Account deletion (§3.3) removes all three (`ON DELETE CASCADE`); granted reward items go with the other grants.
+- Visible to the account itself and its accepted friends (§31.5) only. Nothing is public.
+- Limits: catalog 60 / min per IP, `GET /v1/players/{uuid}/achievements` 60 / min, reports 30 / min per account.
