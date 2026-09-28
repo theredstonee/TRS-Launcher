@@ -21,6 +21,24 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
+## Unreleased
+
+### English
+- New on the website: an issue tracker (trs-launcher.theredstonee.de/issues) and a roadmap. Report bugs, suggest
+  features for the launcher, the TRS Client or the website, vote them up or down, comment with screenshots and follow
+  issues. The roadmap shows what is planned, what is being built and what shipped recently.
+- Follow an issue and the launcher tells you when its status changes, the team answers, a fix ships ("fixed in") or it
+  is merged into another issue – “View” opens it in your browser. You can turn this off under Settings →
+  Notifications → “Issues you follow”.
+
+### Deutsch
+- Neu auf der Website: ein Issue-Tracker (trs-launcher.theredstonee.de/issues) und eine Roadmap. Melde Fehler, wünsch
+  dir Funktionen für den Launcher, den TRS Client oder die Website, stimme hoch oder runter, kommentiere mit
+  Screenshots und folge Issues. Die Roadmap zeigt, was geplant ist, woran gebaut wird und was zuletzt fertig wurde.
+- Folgst du einem Issue, sagt dir der Launcher Bescheid, wenn sich der Status ändert, das Team antwortet, eine Lösung
+  erscheint („Erledigt in“) oder es mit einem anderen Issue zusammengeführt wird – „Ansehen“ öffnet es im Browser.
+  Abschalten kannst du das unter Einstellungen → Benachrichtigungen → „Issues, denen du folgst“.
+
 ## 0.12.0 – 2026-09-27 – Pass It On | Weitergeben
 <!-- banner: accent=#27d3e6 motif=/news/0.12.0/banner.png -->
 <!-- shots:

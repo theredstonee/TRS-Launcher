@@ -226,6 +226,71 @@ pub enum LiveEvent {
     PackUpdated { pack: Box<super::packs::SharedPack> },
     /// Ein Pack in deiner Liste wurde gelöscht.
     PackRemoved { pack_id: String },
+    /// Ein Issue, dem du folgst, hat sich geändert (§28.6): Status, Team-Antwort, „Erledigt in“ oder zusammengeführt.
+    IssueUpdated(Box<IssueUpdate>),
+}
+
+/// Inhalt von `issue_updated` (Felder liegen im JSON neben `type`).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IssueUpdate {
+    /// `status` | `team_comment` | `fixed` | `merged`
+    pub change: String,
+    pub issue: IssueRef,
+    pub by: Option<UserRef>,
+    pub status: String,
+    pub fixed_in: Option<String>,
+    pub merged_into: Option<IssueRef>,
+    pub excerpt: Option<String>,
+    pub at: Option<String>,
+}
+
+/// Issue in `issue_updated` (§28.6) – gesäubert, Link immer auf die eigene Website.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IssueRef {
+    pub number: u64,
+    pub title: String,
+    /// `bug` | `feature` (fehlt bei `mergedInto`).
+    pub kind: Option<String>,
+    /// `launcher` | `client` | `website` (fehlt bei `mergedInto`).
+    pub area: Option<String>,
+    pub url: String,
+}
+
+#[derive(Deserialize)]
+struct ApiIssueRef {
+    number: u64,
+    #[serde(default)]
+    title: String,
+    #[serde(default, rename = "type")]
+    kind: Option<String>,
+    #[serde(default)]
+    area: Option<String>,
+    #[serde(default)]
+    url: Option<String>,
+}
+
+const ISSUE_STATUSES: [&str; 7] = ["open", "planned", "in_progress", "in_review", "done", "rejected", "duplicate"];
+
+/// Link nur, wenn er genau auf `…/issues/<nr>` einer bekannten TRS-Adresse zeigt – sonst selbst gebaut.
+fn clean_issue_ref(raw: ApiIssueRef, bases: &[&str], own: &str) -> Option<IssueRef> {
+    if raw.number == 0 || raw.number > 1_000_000_000 {
+        return None;
+    }
+    let path = format!("/issues/{}", raw.number);
+    let url = raw
+        .url
+        .filter(|u| bases.iter().any(|b| b.starts_with("https://") && *u == format!("{b}{path}")))
+        .unwrap_or_else(|| format!("{own}{path}"));
+    let title = validate::text(raw.title.trim(), 120);
+    Some(IssueRef {
+        number: raw.number,
+        title: if title.is_empty() { format!("#{}", raw.number) } else { title },
+        kind: raw.kind.filter(|k| matches!(k.as_str(), "bug" | "feature")),
+        area: raw.area.filter(|a| matches!(a.as_str(), "launcher" | "client" | "website")),
+        url,
+    })
 }
 
 #[derive(Deserialize)]
@@ -307,6 +372,18 @@ struct D {
     pack_id: Option<String>,
     #[serde(default)]
     sent_at: Option<String>,
+    #[serde(default)]
+    change: Option<String>,
+    #[serde(default)]
+    issue: Option<ApiIssueRef>,
+    #[serde(default)]
+    status: Option<String>,
+    #[serde(default)]
+    fixed_in: Option<String>,
+    #[serde(default)]
+    merged_into: Option<ApiIssueRef>,
+    #[serde(default)]
+    excerpt: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -489,6 +566,20 @@ pub fn decode(event: &str, data: &str) -> Option<LiveEvent> {
         "pack_shared" => LiveEvent::PackShared { pack: live_pack(d.pack?)?, from: clean_user(d.from?)?, sent_at: time(d.sent_at) },
         "pack_updated" => LiveEvent::PackUpdated { pack: live_pack(d.pack?)? },
         "pack_removed" => LiveEvent::PackRemoved { pack_id: d.pack_id.filter(|id| super::packs::pack_id(id))? },
+        "issue_updated" => {
+            let bases = &super::KNOWN_BASES;
+            let own = super::DEFAULT_BASE;
+            LiveEvent::IssueUpdated(Box::new(IssueUpdate {
+                change: d.change.filter(|c| matches!(c.as_str(), "status" | "team_comment" | "fixed" | "merged"))?,
+                issue: clean_issue_ref(d.issue?, bases, own)?,
+                by: d.by.and_then(clean_user),
+                status: d.status.filter(|s| ISSUE_STATUSES.contains(&s.as_str()))?,
+                fixed_in: d.fixed_in.map(|v| validate::text(&v, 40)).filter(|v| !v.is_empty()),
+                merged_into: d.merged_into.and_then(|m| clean_issue_ref(m, bases, own)),
+                excerpt: d.excerpt.map(|e| super::chat::chat_text(&e, 160)).filter(|e| !e.is_empty()),
+                at: time(d.at),
+            }))
+        }
         _ => return None,
     })
 }
@@ -957,5 +1048,48 @@ mod tests {
         assert!(decode("hosting_invite", "{\"room\":{\"id\":\"h0123456789abcdef0123\"}}").is_none(), "Raum ohne Host/Version");
         let signal = json!({ "roomId": "h0123456789abcdef0123", "from": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0", "kind": "offer", "data": "{\"ip\":\"203.0.113.9\"}" });
         assert!(decode("hosting_signal", &signal.to_string()).is_none(), "Signale (IP-Adressen) gehen nie ans Webview");
+    }
+
+    #[test]
+    fn issue_events_are_cleaned_and_only_link_to_the_own_site() {
+        let by = json!({ "uuid": "0123456789abcdef0123456789abcdef", "name": "Sup" });
+        let ev = json!({
+            "type": "issue_updated", "change": "fixed",
+            "issue": { "number": 57, "title": "Crash\u{202e} on start", "type": "bug", "area": "launcher", "status": "done", "url": "https://trs-launcher.theredstonee.de/issues/57" },
+            "by": by, "status": "done", "fixedIn": "0.13.0", "mergedInto": null, "excerpt": null, "at": "2026-09-28T10:00:00.000Z",
+        });
+        let LiveEvent::IssueUpdated(u) = decode("issue_updated", &ev.to_string()).unwrap() else { panic!("falsches Ereignis") };
+        let IssueUpdate { change, issue, by, status, fixed_in, merged_into, .. } = *u;
+        assert_eq!((change.as_str(), status.as_str(), fixed_in.as_deref()), ("fixed", "done", Some("0.13.0")));
+        assert_eq!(issue.url, "https://trs-launcher.theredstonee.de/issues/57");
+        assert_eq!(issue.title, "Crash on start", "Bidi-Zeichen raus");
+        assert_eq!((issue.kind.as_deref(), issue.area.as_deref()), (Some("bug"), Some("launcher")));
+        assert_eq!(by.unwrap().name, "Sup");
+        assert!(merged_into.is_none());
+
+        // Fremde Adresse → eigener Link; zusammengeführt mit Ziel.
+        let evil = json!({
+            "change": "merged", "status": "duplicate",
+            "issue": { "number": 3, "title": "x", "url": "https://evil.example/issues/3" },
+            "mergedInto": { "number": 1, "title": "Main", "url": "javascript:alert(1)" },
+        });
+        let LiveEvent::IssueUpdated(u) = decode("issue_updated", &evil.to_string()).unwrap() else { panic!() };
+        let IssueUpdate { issue, merged_into, .. } = *u;
+        assert_eq!(issue.url, "https://trs-launcher.theredstonee.de/issues/3");
+        assert_eq!(merged_into.unwrap().url, "https://trs-launcher.theredstonee.de/issues/1");
+
+        let out = serde_json::to_value(decode("issue_updated", &ev.to_string()).unwrap()).unwrap();
+        assert_eq!(out["type"], "issue_updated");
+        assert_eq!(out["issue"]["kind"], "bug");
+        assert_eq!(out["fixedIn"], "0.13.0");
+
+        for bad in [
+            json!({ "change": "hacked", "status": "done", "issue": { "number": 1 } }),
+            json!({ "change": "status", "status": "burning", "issue": { "number": 1 } }),
+            json!({ "change": "status", "status": "open", "issue": { "number": 0 } }),
+            json!({ "change": "status", "status": "open" }),
+        ] {
+            assert!(decode("issue_updated", &bad.to_string()).is_none(), "{bad}");
+        }
     }
 }

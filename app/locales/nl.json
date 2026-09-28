@@ -2216,7 +2216,8 @@
         "invites": "Serveruitnodigingen",
         "friendRequests": "Vriendschapsverzoeken",
         "capeOffers": "Cape-aanbiedingen",
-        "friendOnline": "Vrienden die online komen"
+        "friendOnline": "Vrienden die online komen",
+        "issues": "Issues die je volgt"
       },
       "preview": "Testmelding tonen",
       "previewTitle": "TRS Launcher",
@@ -5126,6 +5127,27 @@
     "linked": {
       "shared": "Gedeeld als modpack {code}",
       "newVersion": "Nieuwe versie delen"
+    }
+  },
+  "issues": {
+    "status": {
+      "open": "Open",
+      "planned": "Gepland",
+      "in_progress": "Bezig",
+      "in_review": "In review",
+      "done": "Klaar",
+      "rejected": "Afgewezen",
+      "duplicate": "Duplicaat"
+    },
+    "toast": {
+      "title": "#{number} {title}",
+      "status": "Status: {status}",
+      "fixed": "Opgelost in versie {version}",
+      "teamComment": "{name} van het team heeft gereageerd",
+      "teamCommentText": "{name} (team): {text}",
+      "team": "TRS-team",
+      "merged": "Samengevoegd met #{number} {title}",
+      "view": "Bekijken"
     }
   }
 }

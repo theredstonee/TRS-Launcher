@@ -2216,7 +2216,8 @@
         "invites": "Sunucu davetleri",
         "friendRequests": "Arkadaşlık istekleri",
         "capeOffers": "Pelerin teklifleri",
-        "friendOnline": "Çevrimiçi olan arkadaşlar"
+        "friendOnline": "Çevrimiçi olan arkadaşlar",
+        "issues": "Takip ettiğin kayıtlar"
       },
       "preview": "Test bildirimi göster",
       "previewTitle": "TRS Launcher",
@@ -5126,6 +5127,27 @@
     "linked": {
       "shared": "{code} modpack’i olarak paylaşıldı",
       "newVersion": "Yeni sürümü paylaş"
+    }
+  },
+  "issues": {
+    "status": {
+      "open": "Açık",
+      "planned": "Planlandı",
+      "in_progress": "Üzerinde çalışılıyor",
+      "in_review": "İncelemede",
+      "done": "Tamamlandı",
+      "rejected": "Reddedildi",
+      "duplicate": "Kopya"
+    },
+    "toast": {
+      "title": "#{number} {title}",
+      "status": "Durum: {status}",
+      "fixed": "{version} sürümünde düzeltildi",
+      "teamComment": "Ekipten {name} yanıt verdi",
+      "teamCommentText": "{name} (ekip): {text}",
+      "team": "TRS ekibi",
+      "merged": "#{number} {title} ile birleştirildi",
+      "view": "Görüntüle"
     }
   }
 }

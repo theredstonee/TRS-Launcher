@@ -165,6 +165,7 @@ export const socialSettingsSchema = z
     friendRequests: z.boolean().default(true),
     capeOffers: z.boolean().default(true),
     friendOnline: z.boolean().default(true),
+    issues: z.boolean().default(true),
   })
   .prefault({})
 

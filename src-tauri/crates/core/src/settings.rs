@@ -111,6 +111,8 @@ pub struct SocialSettings {
     pub friend_requests: bool,
     pub cape_offers: bool,
     pub friend_online: bool,
+    /// Issues auf der Website, denen man folgt (Status, Team-Antwort, „Erledigt in“, §28).
+    pub issues: bool,
 }
 
 impl Default for SocialSettings {
@@ -129,6 +131,7 @@ impl Default for SocialSettings {
             friend_requests: true,
             cape_offers: true,
             friend_online: true,
+            issues: true,
         }
     }
 }
