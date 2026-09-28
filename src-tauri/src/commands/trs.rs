@@ -5,6 +5,7 @@ use std::path::PathBuf;
 
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
+use trs_core::trs_api::achievements::{MyAchievements, PlayerAchievements, ReportKind};
 use trs_core::trs_api::cape_import::{self, CapeSource};
 use trs_core::trs_api::sync::SyncStatus;
 use trs_core::trs_api::types::{
@@ -32,6 +33,33 @@ pub async fn trs_sync_status(launcher: State<'_, LauncherState>) -> CommandResul
 #[tauri::command]
 pub async fn trs_set_consent(launcher: State<'_, LauncherState>, accepted: bool) -> CommandResult<TrsStatus> {
     Ok(launcher.trs_set_consent(accepted).await?)
+}
+
+/// Eigene Erfolge: Katalog, freigeschaltete, Fortschritt, Punkte.
+#[tauri::command]
+pub async fn trs_achievements(launcher: State<'_, LauncherState>) -> CommandResult<MyAchievements> {
+    Ok(launcher.trs_achievements().await?)
+}
+
+/// Meldung aus der Oberfläche (nur `crash_fixed`: Behebungen des Absturz-Helfers laufen dort).
+#[tauri::command]
+pub async fn trs_achievement_report(launcher: State<'_, LauncherState>, kind: String) -> CommandResult<()> {
+    if let Some(kind) = ReportKind::from_ui(&kind) {
+        launcher.trs_achievement_event(kind, None).await;
+    }
+    Ok(())
+}
+
+/// Erfolge für Freunde sichtbar oder privat.
+#[tauri::command]
+pub async fn trs_set_achievements_visible(launcher: State<'_, LauncherState>, visible: bool) -> CommandResult<bool> {
+    Ok(launcher.trs_set_achievements_visible(visible).await?)
+}
+
+/// Punkte und freigeschaltete Erfolge eines Freundes.
+#[tauri::command]
+pub async fn trs_player_achievements(launcher: State<'_, LauncherState>, uuid: String) -> CommandResult<PlayerAchievements> {
+    Ok(launcher.trs_player_achievements(&uuid).await?)
 }
 
 #[tauri::command]

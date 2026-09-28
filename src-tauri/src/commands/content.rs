@@ -4,6 +4,7 @@ use trs_core::content::{self, ContentItem, ContentKind, Platform};
 use trs_core::depcheck::{self, DependencyFix};
 use trs_core::modcompat::{self, CompatReport};
 use trs_core::modpack::{PackPreview, PackProgress};
+use trs_core::trs_api::achievements::ReportKind;
 use trs_core::modrinth::{
     self, CategoryTag, MigrationItem, MigrationStatus, ProjectCard, ProjectDetails, SearchParams, SearchResult,
     UpdateInfo, VersionSummary,
@@ -95,7 +96,13 @@ pub async fn modrinth_install(
 ) -> CommandResult<Vec<String>> {
     let instance = launcher.instances().get(&id).await?;
     let work = modrinth::install(launcher.http(), launcher.paths(), &instance, &project_id, kind, version_id.as_deref());
-    Ok(tracked(&app, task_id, work).await?)
+    let installed = tracked(&app, task_id, work).await?;
+    // Erfolge: neue Mods (samt Abhängigkeiten) – gesendet wird gesammelt im Hintergrund.
+    if kind == ContentKind::Mod && !installed.is_empty() {
+        let count = installed.len().min(100) as u8;
+        launcher.trs_achievement_event(ReportKind::ModInstalled { count }, None).await;
+    }
+    Ok(installed)
 }
 
 #[tauri::command]

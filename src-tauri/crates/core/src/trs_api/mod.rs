@@ -17,6 +17,7 @@
 //!   seinen Token nie an das Spiel weiter, der Mod meldet sich selbst an.
 
 pub mod access;
+pub mod achievements;
 pub mod applications;
 pub mod cape_import;
 pub mod chat;
@@ -419,6 +420,8 @@ pub struct TrsApi {
     stream_http: reqwest::Client,
     /// Einspruch-Tokens gesperrter Konten (§22.3, nur im Speicher).
     pub(crate) appeal_tokens: sanctions::AppealTokens,
+    /// Wartende Meldungen für die Erfolge (nur im Speicher).
+    pub(crate) achievements: achievements::ReportQueue,
 }
 
 impl TrsApi {
@@ -457,6 +460,7 @@ impl TrsApi {
             login_lock: tokio::sync::Mutex::new(()),
             presence: Arc::new(PresenceState::default()),
             appeal_tokens: sanctions::AppealTokens::default(),
+            achievements: achievements::ReportQueue::default(),
         })
     }
 
@@ -783,3 +787,5 @@ mod sanctions_tests;
 mod share_tests;
 #[cfg(test)]
 mod team_tests;
+#[cfg(test)]
+mod achievements_tests;

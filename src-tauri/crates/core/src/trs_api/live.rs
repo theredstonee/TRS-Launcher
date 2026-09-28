@@ -25,6 +25,7 @@ use futures::future::BoxFuture;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Notify;
 
+use super::achievements::{Achievement, Reward};
 use super::applications::MyApplication;
 use super::chat::{ApiConversation, ApiMessage, ChatConversation, ChatMessage, ChatReaction, clean_reactions, conversation_id, message_id};
 use super::hosting::{self, ApiRoom, HostingRoom as Room};
@@ -228,6 +229,8 @@ pub enum LiveEvent {
     PackRemoved { pack_id: String },
     /// Ein Issue, dem du folgst, hat sich geändert (§28.6): Status, Team-Antwort, „Erledigt in“ oder zusammengeführt.
     IssueUpdated(Box<IssueUpdate>),
+    /// Erfolg freigeschaltet: Katalog-Eintrag (auch geheime jetzt mit Titel), Zeitpunkt, ggf. Belohnung.
+    AchievementUnlocked { achievement: Box<Achievement>, at: Option<String>, reward: Option<Reward> },
 }
 
 /// Inhalt von `issue_updated` (Felder liegen im JSON neben `type`).
@@ -384,6 +387,10 @@ struct D {
     merged_into: Option<ApiIssueRef>,
     #[serde(default)]
     excerpt: Option<String>,
+    #[serde(default)]
+    achievement: Option<serde_json::Value>,
+    #[serde(default)]
+    reward: Option<serde_json::Value>,
 }
 
 #[derive(Deserialize)]
@@ -579,6 +586,12 @@ pub fn decode(event: &str, data: &str) -> Option<LiveEvent> {
                 excerpt: d.excerpt.map(|e| super::chat::chat_text(&e, 160)).filter(|e| !e.is_empty()),
                 at: time(d.at),
             }))
+        }
+        "achievement_unlocked" => {
+            let achievement = Achievement::from_value(&d.achievement?)?;
+            // Belohnung des Ereignisses, sonst die aus dem Katalog-Eintrag.
+            let reward = Reward::from_value(d.reward).or_else(|| achievement.reward.clone());
+            LiveEvent::AchievementUnlocked { achievement: Box::new(achievement), at: time(d.at), reward }
         }
         _ => return None,
     })
@@ -1090,6 +1103,60 @@ mod tests {
             json!({ "change": "status", "status": "open" }),
         ] {
             assert!(decode("issue_updated", &bad.to_string()).is_none(), "{bad}");
+        }
+    }
+
+    #[test]
+    fn achievement_events_are_cleaned() {
+        let ev = json!({
+            "type": "achievement_unlocked", "at": "2026-09-28T21:00:00.000Z",
+            "achievement": { "id": "night_owl", "category": "secret", "secret": true, "icon": "moon", "points": 25,
+                "rarity": "epic", "goal": null,
+                "title": { "en": "Night owl", "de": "Nacht\u{202e}eule" }, "description": { "en": "Start a game after midnight" },
+                "reward": { "kind": "cape", "id": "owl", "name": "Owl cape" } },
+            "reward": { "kind": "cape", "id": "owl", "name": "Eulen-Umhang" },
+        });
+        // So schickt es die API (§31.6): Belohnung nur mit Art und ID.
+        let plain = json!({ "achievement": { "id": "secret_02", "category": "secret", "secret": true, "hidden": false,
+            "title": { "en": "Owl", "de": "Eule", "es": "Búho" }, "icon": "moon", "points": 20, "order": 31 },
+            "at": "2026-09-28T03:00:00.000Z", "reward": { "kind": "cosmetic", "id": "secret-crown" } });
+        let LiveEvent::AchievementUnlocked { achievement, reward, .. } = decode("achievement_unlocked", &plain.to_string()).unwrap() else {
+            panic!()
+        };
+        assert!(!achievement.hidden && achievement.title.is_some());
+        assert_eq!(reward.map(|r| (r.id, r.name)), Some(("secret-crown".to_owned(), None)));
+        let LiveEvent::AchievementUnlocked { achievement, at, reward } = decode("achievement_unlocked", &ev.to_string()).unwrap()
+        else {
+            panic!("falsches Ereignis")
+        };
+        assert_eq!(achievement.id, "night_owl");
+        assert_eq!(achievement.title.as_ref().unwrap().de.as_deref(), Some("Nachteule"), "Bidi-Zeichen raus");
+        assert_eq!((achievement.points, achievement.rarity.as_str()), (25, "epic"));
+        assert_eq!(at.as_deref(), Some("2026-09-28T21:00:00.000Z"));
+        assert_eq!(reward.unwrap().name.as_deref(), Some("Eulen-Umhang"));
+
+        let out = serde_json::to_value(decode("achievement_unlocked", &ev.to_string()).unwrap()).unwrap();
+        assert_eq!(out["type"], "achievement_unlocked");
+        assert_eq!(out["achievement"]["title"]["en"], "Night owl");
+        assert_eq!(out["reward"]["kind"], "cape");
+
+        // Ohne eigene Belohnung → die aus dem Katalog; kaputte Belohnung fällt weg.
+        let mut no_reward = ev.clone();
+        no_reward["reward"] = json!(null);
+        let LiveEvent::AchievementUnlocked { reward, .. } = decode("achievement_unlocked", &no_reward.to_string()).unwrap() else {
+            panic!()
+        };
+        assert_eq!(reward.unwrap().id, "owl");
+        let mut evil = ev.clone();
+        evil["reward"] = json!({ "kind": "money", "id": "x", "name": "y" });
+        evil["achievement"]["reward"] = json!({ "kind": "cape", "id": "../x", "name": "y" });
+        let LiveEvent::AchievementUnlocked { reward, .. } = decode("achievement_unlocked", &evil.to_string()).unwrap() else {
+            panic!()
+        };
+        assert!(reward.is_none());
+
+        for bad in [json!({}), json!({ "achievement": { "id": "../x" } }), json!({ "achievement": "x" })] {
+            assert!(decode("achievement_unlocked", &bad.to_string()).is_none(), "{bad}");
         }
     }
 }

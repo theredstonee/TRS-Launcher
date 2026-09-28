@@ -1012,6 +1012,8 @@ impl Launcher {
             entry = entry.subject(label);
         }
         history::record(&self.paths, &instance.id, entry).await;
+        // Erfolge: Spielstart mit lokaler Stunde (gesendet wird gesammelt im Hintergrund).
+        self.trs.achievements.push(&session.uuid, trs_api::achievements::ReportKind::launch_now());
         Ok(pid)
     }
 }

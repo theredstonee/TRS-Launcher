@@ -113,6 +113,8 @@ pub struct SocialSettings {
     pub friend_online: bool,
     /// Issues auf der Website, denen man folgt (Status, Team-Antwort, „Erledigt in“, §28).
     pub issues: bool,
+    /// Freigeschaltete Launcher-Erfolge.
+    pub achievements: bool,
 }
 
 impl Default for SocialSettings {
@@ -132,6 +134,7 @@ impl Default for SocialSettings {
             cape_offers: true,
             friend_online: true,
             issues: true,
+            achievements: true,
         }
     }
 }

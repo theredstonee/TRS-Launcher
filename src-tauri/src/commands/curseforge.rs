@@ -8,6 +8,7 @@ use tauri::{AppHandle, State};
 use trs_core::content::ContentKind;
 use trs_core::curseforge::{self, AdoptResult, BlockedFile, CurseForgeStatus, InstallOutcome};
 use trs_core::modpack::{PackPreview, PackProgress};
+use trs_core::trs_api::achievements::ReportKind;
 use trs_core::modrinth::{CategoryTag, ProjectCard, ProjectDetails, SearchParams, SearchResult, VersionSummary};
 
 use crate::LauncherState;
@@ -87,7 +88,13 @@ pub async fn curseforge_install(
     let instance = launcher.instances().get(&id).await?;
     let cf = launcher.curseforge()?;
     let work = cf.install(launcher.paths(), &instance, &project_id, kind, file_id.as_deref());
-    Ok(tracked(&app, task_id, work).await?)
+    let outcome = tracked(&app, task_id, work).await?;
+    // Erfolge: neue Mods (samt Abhängigkeiten) – gesendet wird gesammelt im Hintergrund.
+    if kind == ContentKind::Mod && !outcome.files.is_empty() {
+        let count = outcome.files.len().min(100) as u8;
+        launcher.trs_achievement_event(ReportKind::ModInstalled { count }, None).await;
+    }
+    Ok(outcome)
 }
 
 #[derive(Serialize)]

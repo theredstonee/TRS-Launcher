@@ -942,7 +942,10 @@ impl Launcher {
                 candidate.loader = l;
             }
         }
-        self.import_candidate(candidate, trs_client, on_progress).await
+        let result = self.import_candidate(candidate, trs_client, on_progress).await?;
+        // Erfolge: Import aus einem anderen Launcher (gesendet wird gesammelt im Hintergrund).
+        self.trs_achievement_event(crate::trs_api::achievements::ReportKind::LauncherImport, None).await;
+        Ok(result)
     }
 
     /// Legt die Instanz für einen (fertig geprüften) Kandidaten an und kopiert.
