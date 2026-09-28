@@ -424,6 +424,7 @@ the TRS server.
 | Only with "Sync with TRS account" on: your own skins from "My skins" (the image, re-encoded without metadata, its name and model), your own mod presets (names and Modrinth project IDs, no files or folder paths) and your theme, accent colour and language, each with the time of the last change; deleted skins and presets are remembered for a short while | Keeping these the same on every PC where you use this Minecraft account |
 | Only with the TRS services on and "Sync with TRS account" on in the TRS Client (in game): your TRS Client settings – which modules are on and their settings, HUD layouts and profiles, the TRS keys of the modules, the config mode for performance mods, whether you finished the introduction (and the module pack you picked) and which "NEW" entries you have opened – each part with the time of its last change; no waypoints, no server addresses, no files, paths or tokens | Keeping the TRS Client the same on every PC and game folder where you use this Minecraft account, and showing the introduction only once |
 | Only with the TRS services on: the wardrobe entry of the TRS Client – your favourite skins, outfits (name, skin, cape) and emote wheel slots, with the time of the last change | The same wardrobe on every PC |
+| Only with the TRS services on, "Sync with TRS account" on in the TRS Client and the notes switch "Sync with TRS account" on: your world notes from the TRS Client – title, text (including checklists and coordinates you typed), creation and change time, and the world they belong to (server address, or for a singleplayer world a code made from the world folder plus the folder name); deleted notes are remembered as an empty marker | The same notes on every PC |
 | Chat: your messages (text, replies, edits, server invites), the pictures you send (re-encoded, encrypted), reactions, read positions, conversation mutes and group memberships, each with times | Chatting with friends and in groups (see above) |
 | Chat settings: read receipts and "is typing" on or off | So the chat respects your choices |
 | Shared screenshots (only the pictures you share): the re-encoded picture, size, format, share and expiry time, the sharing account (not shown publicly) | Sharing a screenshot as a link (see above) |
@@ -446,6 +447,14 @@ waypoints, the freelook server list and Minecraft's own options (options.txt) st
 your synced theme, accent colour and language and, when you change them in the introduction, writes them back so the
 launcher follows. Deleting all TRS data deletes this document too.
 
+**TRS Client notes:** notes per world are saved on your PC in `config/trsclient/notes` (one file per world or
+server). With the TRS services on and both switches on (*TRS Online Features* → "Sync with TRS account" and on the
+*World Notes* page "Sync with TRS account", both on by default) the TRS Client also keeps them in your TRS account,
+note by note, so they are the same on every PC – as soon as the TRS services support it; until then they stay on
+your PC. Which note is pinned to the HUD stays on your PC. Only you can read your notes – there is no admin view.
+A deleted note leaves an empty marker for 90 days so your other PCs delete it too. Turn off the notes switch to keep
+all notes on this PC; "Alle TRS-Daten löschen" deletes the synced notes.
+
 The online status is kept **only in the server's memory**, is never written to disk, has no history and expires
 **3 minutes** after the last update. It is visible only to your friends, and not at all if you set it to "nobody".
 Only whether you are in game right now can also show up as your TRS badge (see above).
@@ -467,6 +476,8 @@ The legal basis is the performance of the service you requested (Art. 6(1)(b) GD
 - Session tokens expire after 30 days; signing out or removing an account from the launcher revokes the token.
 - The online status disappears 3 minutes after the last update, or immediately when you close the launcher and leave
   the world.
+- Synced notes stay until you delete them in the TRS Client or delete all TRS data; markers of deleted notes are
+  removed after 90 days.
 - Synced skins, presets and settings stay until you delete them in the launcher (a skin deleted on one PC is deleted on
   the server, too). Notes about deleted skins are kept for 30 days so your other PCs can delete them as well.
 - Chat messages and pictures stay until they are deleted (by you for everyone, by the group owner or by the team) or

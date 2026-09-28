@@ -21,6 +21,40 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
+## Unreleased
+
+### English
+- **World notes in the TRS Client.** Every world and server now has its own notebook: open it with the new *Notes*
+  entry in the TRS menu or a key of your choice (unbound by default, set it in the controls or on the *World Notes*
+  page). Write as many notes as you like (up to 200 per world) with a title and text, search the notes of the world
+  you are in, and look at the notes of your other worlds and servers.
+- **Checklists:** start a line with `[ ]` (or press *Checklist*) and tick the boxes right in the note – Enter continues
+  the list. The list shows how many items are done.
+- **Clickable coordinates:** coordinates like `x: 100, y: 64, z: -20` become links – *My position* inserts where you
+  stand. Click one to show the spot on the world map, set a temporary waypoint (it disappears when you get there) or
+  save it as a normal waypoint.
+- **Pin a note to the HUD:** the pin button shows the note (with its checklist) on screen while you are in that world;
+  move and resize it in the HUD editor like every other HUD element.
+- Notes are saved in `config/trsclient/notes` and will be synced with your TRS account note by note (the newest change
+  of a note wins, deleted notes are deleted everywhere) as soon as the TRS services support it – until then they stay
+  on your PC. Sync can be switched off on the *World Notes* page.
+
+### Deutsch
+- **Welt-Notizen im TRS Client.** Jede Welt und jeder Server hat jetzt ein eigenes Notizbuch: öffne es über den neuen
+  Eintrag *Notizen* im TRS-Menü oder eine Taste deiner Wahl (ab Werk unbelegt, einstellbar in der Steuerung oder auf der
+  Seite *Welt-Notizen*). Schreib beliebig viele Notizen (bis zu 200 je Welt) mit Titel und Text, durchsuche die Notizen
+  der Welt, in der du bist, und schau dir die Notizen deiner anderen Welten und Server an.
+- **Checklisten:** Beginne eine Zeile mit `[ ]` (oder drück *Checkliste*) und hake die Kästchen direkt in der Notiz ab –
+  Enter setzt die Liste fort. Die Liste zeigt, wie viele Punkte erledigt sind.
+- **Anklickbare Koordinaten:** Koordinaten wie `x: 100, y: 64, z: -20` werden zu Links – *Meine Position* fügt ein, wo du
+  gerade stehst. Ein Klick zeigt die Stelle auf der Weltkarte, setzt einen vorübergehenden Wegpunkt (verschwindet, wenn
+  du dort bist) oder speichert sie als normalen Wegpunkt.
+- **Notiz ans HUD heften:** Der Pin-Knopf zeigt die Notiz (mit Checkliste) auf dem Bildschirm, solange du in dieser Welt
+  bist; verschieben und vergrößern wie jedes andere HUD-Element im HUD-Editor.
+- Notizen liegen in `config/trsclient/notes` und werden Notiz für Notiz mit deinem TRS-Konto synchronisiert (die neueste
+  Änderung einer Notiz gewinnt, gelöschte Notizen verschwinden überall), sobald die TRS-Dienste das unterstützen – bis
+  dahin bleiben sie auf deinem PC. Der Sync lässt sich auf der Seite *Welt-Notizen* ausschalten.
+
 ## 0.13.0 – 2026-09-28 – Your Say | Mitreden
 <!-- banner: accent=#a78bfa motif=/news/0.13.0/banner.png -->
 <!-- shots:

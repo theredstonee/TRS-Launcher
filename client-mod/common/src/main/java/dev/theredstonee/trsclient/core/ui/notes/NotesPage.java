@@ -82,6 +82,8 @@ public final class NotesPage {
 	private int editTextX;
 	private int editTextY;
 	private int editFirst;
+	/** Bildlauf im Editor folgt dem Cursor (aus, sobald mit dem Mausrad gerollt wird). */
+	private boolean followCursor = true;
 
 	public NotesPage(Host host) {
 		this.host = host;
@@ -606,6 +608,7 @@ public final class NotesPage {
 	private void setEditing(boolean on) {
 		if (!on) {
 			commit();
+			noteScroll = 0;
 			editing = false;
 			titleInput.setFocused(false);
 			body.setFocused(false);
@@ -616,6 +619,8 @@ public final class NotesPage {
 		titleInput.setText(note.title);
 		body.setText(note.text);
 		body.setCursor(note.text.length());
+		noteScroll = 0;
+		followCursor = true;
 		editing = true;
 		body.setFocused(true);
 		titleInput.setFocused(false);
@@ -697,7 +702,7 @@ public final class NotesPage {
 		int cursorRow = rowOf(rows, body.cursor());
 		// Bildlauf folgt dem Cursor.
 		int first = Math.max(0, Math.min(noteScroll, rows.size() - visible));
-		if (body.focused()) {
+		if (body.focused() && followCursor) {
 			if (cursorRow < first) first = cursorRow;
 			if (cursorRow >= first + visible) first = cursorRow - visible + 1;
 		}
@@ -767,6 +772,7 @@ public final class NotesPage {
 			pos = next;
 		}
 		body.setCursor(pos);
+		followCursor = true;
 	}
 
 	private static int rowOf(List<int[]> rows, int cursor) {
@@ -975,6 +981,7 @@ public final class NotesPage {
 			return false;
 		}
 		if (view != View.NOTE || !editing) return false;
+		followCursor = true;
 		if (titleInput.focused()) {
 			if (key == UiKey.ENTER || key == UiKey.TAB || key == UiKey.DOWN) {
 				titleInput.setFocused(false);
@@ -1050,6 +1057,7 @@ public final class NotesPage {
 
 	public boolean charTyped(char ch) {
 		if (view == View.NOTE && editing) {
+			followCursor = true;
 			if (titleInput.focused()) return titleInput.type(ch);
 			if (body.focused()) {
 				if (!body.type(ch) && body.room() <= 0) say(I18n.tr("notes.limit.text", Note.MAX_TEXT), true);
@@ -1074,9 +1082,12 @@ public final class NotesPage {
 		int dir = (int) Math.signum(amount);
 		switch (view) {
 			case NOTE:
-				if (editing) noteScroll = Math.max(0, Math.min(noteMax, noteScroll - dir * 3));
-				else noteScroll = Math.max(0, Math.min(noteMax, noteScroll - dir * LH * 3));
-				if (editing) body.setFocused(false);
+				if (editing) {
+					noteScroll = Math.max(0, Math.min(noteMax, noteScroll - dir * 3));
+					followCursor = false;
+				} else {
+					noteScroll = Math.max(0, Math.min(noteMax, noteScroll - dir * LH * 3));
+				}
 				return true;
 			case WORLDS:
 				worldsScroll = Math.max(0, Math.min(worldsMax, worldsScroll - dir * 20));

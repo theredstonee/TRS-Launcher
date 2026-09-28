@@ -455,6 +455,7 @@ den TRS-Server.
 | Nur mit eingeschaltetem „Mit TRS-Konto synchronisieren“: deine eigenen Skins aus „Meine Skins“ (das Bild, neu kodiert ohne Metadaten, Name und Modell), deine eigenen Mod-Presets (Namen und Modrinth-Projekt-IDs, keine Dateien oder Ordnerpfade) sowie Theme, Akzentfarbe und Sprache, jeweils mit dem Zeitpunkt der letzten Änderung; gelöschte Skins und Presets werden kurz vermerkt | Damit sie auf allen PCs gleich sind, auf denen du diesen Minecraft-Account nutzt |
 | Nur mit eingeschalteten TRS-Diensten und eingeschaltetem „Mit TRS-Konto synchronisieren“ im TRS Client (im Spiel): deine TRS-Client-Einstellungen – welche Module an sind und ihre Einstellungen, HUD-Layouts und -Profile, die TRS-Tasten der Module, der Config-Modus für Leistungs-Mods, ob du die Einführung abgeschlossen hast (und das gewählte Modul-Paket) und welche „NEU“-Einträge du geöffnet hast – je Teil mit dem Zeitpunkt der letzten Änderung; keine Wegpunkte, keine Server-Adressen, keine Dateien, Pfade oder Tokens | Damit der TRS Client auf allen PCs und Spielordnern mit diesem Minecraft-Account gleich ist und die Einführung nur einmal erscheint |
 | Nur mit eingeschalteten TRS-Diensten: der Garderoben-Eintrag des TRS Clients – deine Lieblings-Skins, Outfits (Name, Skin, Umhang) und die Plätze des Emote-Rads, mit der Zeit der letzten Änderung | Dieselbe Garderobe auf jedem PC |
+| Nur mit eingeschalteten TRS-Diensten, eingeschaltetem „Mit TRS-Konto synchronisieren“ im TRS Client und eingeschaltetem Notiz-Schalter „Mit TRS-Konto synchronisieren“: deine Welt-Notizen aus dem TRS Client – Titel, Text (samt Checklisten und eingetippten Koordinaten), Zeitpunkt von Anlage und Änderung und die Welt, zu der sie gehören (Server-Adresse bzw. bei Einzelspielerwelten eine aus dem Weltordner gebildete Kennung samt Ordnername); gelöschte Notizen bleiben als leerer Vermerk | Dieselben Notizen auf jedem PC |
 | Chat: deine Nachrichten (Text, Antworten, Bearbeitungen, Server-Einladungen), gesendete Bilder (neu kodiert, verschlüsselt), Reaktionen, Lesestände, Stummschaltungen von Unterhaltungen und Gruppenmitgliedschaften, jeweils mit Zeitpunkt | Chatten mit Freunden und in Gruppen (siehe oben) |
 | Chat-Einstellungen: Lesebestätigungen und „schreibt gerade“ an oder aus | Damit sich der Chat an deine Entscheidungen hält |
 | Geteilte Screenshots (nur die Bilder, die du teilst): das neu kodierte Bild, Größe, Format, Zeitpunkt des Teilens und Ablaufs, der teilende Account (nicht öffentlich sichtbar) | Einen Screenshot als Link teilen (siehe oben) |
@@ -479,6 +480,15 @@ ab Werk an) an ist; der Schalter selbst, Wegpunkte, die Freelook-Serverliste und
 schreibt sie zurück, wenn du sie in der Einführung änderst, damit der Launcher folgt. „Alle TRS-Daten löschen“ löscht
 auch dieses Dokument.
 
+**Notizen im TRS Client:** Notizen je Welt liegen auf deinem PC in `config/trsclient/notes` (eine Datei je Welt bzw.
+Server). Mit eingeschalteten TRS-Diensten und beiden Schaltern (*TRS-Online-Funktionen* → „Mit TRS-Konto
+synchronisieren“ und auf der Seite *Welt-Notizen* „Mit TRS-Konto synchronisieren“, beide ab Werk an) legt der TRS
+Client sie zusätzlich Notiz für Notiz in deinem TRS-Konto ab, damit sie auf jedem PC gleich sind – sobald die
+TRS-Dienste das unterstützen; bis dahin bleiben sie auf deinem PC. Welche Notiz im HUD angeheftet ist, bleibt auf
+deinem PC. Deine Notizen kannst nur du lesen – es gibt keine Admin-Ansicht. Eine gelöschte Notiz hinterlässt 90 Tage
+einen leeren Vermerk, damit deine anderen PCs sie auch löschen. Notiz-Schalter aus = alle Notizen bleiben auf diesem
+PC; „Alle TRS-Daten löschen“ löscht die synchronisierten Notizen.
+
 Der Online-Status liegt **nur im Arbeitsspeicher des Servers**, wird nie auf die Festplatte geschrieben, hat keinen
 Verlauf und verfällt **3 Minuten** nach der letzten Aktualisierung. Sehen können ihn nur deine Freunde – und gar
 niemand, wenn du „niemand“ einstellst. Nur ob du gerade im Spiel bist, kann zusätzlich als TRS-Symbol erscheinen (siehe
@@ -502,6 +512,8 @@ Profiling und keinen Verkauf von Daten.
 - Sitzungs-Tokens verfallen nach 30 Tagen; Abmelden oder Entfernen eines Accounts im Launcher widerruft das Token.
 - Der Online-Status verschwindet 3 Minuten nach der letzten Aktualisierung oder sofort, wenn du den Launcher schließt
   und die Welt verlässt.
+- Synchronisierte Notizen bleiben, bis du sie im TRS Client löschst oder alle TRS-Daten löschst; Vermerke gelöschter
+  Notizen werden nach 90 Tagen entfernt.
 - Synchronisierte Skins, Presets und Einstellungen bleiben, bis du sie im Launcher löschst (ein auf einem PC gelöschter
   Skin wird auch auf dem Server gelöscht). Vermerke über gelöschte Skins bleiben 30 Tage, damit deine anderen PCs sie
   ebenfalls löschen können.

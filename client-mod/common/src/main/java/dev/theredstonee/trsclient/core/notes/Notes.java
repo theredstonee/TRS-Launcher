@@ -102,11 +102,21 @@ public final class Notes {
 		return p != null && p.inWorld();
 	}
 
+	/** Letzter Wegpunkt-Weltschlüssel und die Welt dazu (das HUD fragt je Bild mehrmals). */
+	private String cachedKey;
+	private NoteWorld cachedWorld;
+
 	/** Welt/Server, in dem der Spieler gerade ist (null = keine Welt). */
 	public NoteWorld currentWorld() {
 		MapPlatform p = platform();
 		if (p == null || !p.inWorld()) return null;
-		return NoteWorld.fromWaypointKey(p.waypointWorldKey());
+		String key = p.waypointWorldKey();
+		if (key == null) return null;
+		if (!key.equals(cachedKey)) {
+			cachedWorld = NoteWorld.fromWaypointKey(key);
+			cachedKey = key;
+		}
+		return cachedWorld;
 	}
 
 	/** Notizbuch der aktuellen Welt (null = keine Welt). */
