@@ -23,6 +23,10 @@ interface PublicPack {
   expiresAt: string | null
 }
 
+interface ContentItem { name: string, file: string, source: 'modrinth' | 'pack', projectId: string | null }
+interface PackContents { mods: ContentItem[], resourcePacks: ContentItem[], shaderPacks: ContentItem[] }
+type ContentKey = keyof PackContents
+
 const LOADERS: Record<PublicPack['loader']['kind'], string> = {
   vanilla: 'Vanilla', forge: 'Forge', neoforge: 'NeoForge', fabric: 'Fabric', quilt: 'Quilt',
 }
@@ -43,6 +47,33 @@ if (!pack.value && import.meta.server) {
   const event = useRequestEvent()
   if (event) setResponseStatus(event, 404)
 }
+
+// --- Inhalt (Mods, Resource Packs, Shader) – nachgeladen, damit die Seite sofort steht -------------------------
+const { data: contentsData, status: contentsStatus } = valid
+  ? useApiFetch<{ contents: PackContents }>(() => `/v1/packs/code/${encodeURIComponent(code.value)}/contents`, { key: `pack-contents-${code.value}`, server: false, lazy: true })
+  : { data: ref<{ contents: PackContents } | null>(null), status: ref('idle') }
+const contents = computed(() => contentsData.value?.contents ?? null)
+const contentTab = ref<ContentKey>('mods')
+const contentQuery = ref('')
+const contentTabs = computed(() => {
+  const c = contents.value
+  if (!c) return []
+  const all: { key: ContentKey, label: string, icon: string }[] = [
+    { key: 'mods', label: m.value.pack.contentsMods, icon: 'blocks' },
+    { key: 'resourcePacks', label: m.value.pack.contentsResourcePacks, icon: 'image' },
+    { key: 'shaderPacks', label: m.value.pack.contentsShaders, icon: 'bolt' },
+  ]
+  return all.filter((t) => c[t.key].length > 0).map((t) => ({ ...t, count: c[t.key].length }))
+})
+watch(contentTabs, (tabs) => {
+  if (tabs.length && !tabs.some((t) => t.key === contentTab.value)) contentTab.value = tabs[0]!.key
+}, { immediate: true })
+const contentItems = computed(() => {
+  const list = contents.value?.[contentTab.value] ?? []
+  const q = contentQuery.value.trim().toLowerCase()
+  return q ? list.filter((i) => i.name.toLowerCase().includes(q) || i.file.toLowerCase().includes(q)) : list
+})
+const modrinthUrl = (i: ContentItem) => `https://modrinth.com/project/${i.projectId}`
 
 const loaderLine = computed(() => {
   const p = pack.value
@@ -145,6 +176,44 @@ async function sendReport() {
         </aside>
       </div>
 
+      <section class="mt-8" data-testid="pack-contents">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+          <h2 class="text-lg font-semibold text-base-50">{{ m.pack.contentsTitle }}</h2>
+          <label v-if="contents && contentTabs.length" class="search">
+            <SiteIcon name="search" class="size-4 shrink-0 text-base-400" />
+            <input v-model="contentQuery" type="search" maxlength="60" :placeholder="m.pack.contentsFilter" :aria-label="m.pack.contentsFilter" />
+          </label>
+        </div>
+        <p v-if="!contents && (contentsStatus === 'pending' || contentsStatus === 'idle')" class="mt-3 text-sm text-base-400">{{ m.pack.contentsLoading }}</p>
+        <p v-else-if="contents && !contentTabs.length" class="mt-3 text-sm text-base-400">{{ m.pack.contentsEmpty }}</p>
+        <template v-else-if="contents">
+          <div class="tabs mt-3" role="tablist">
+            <button
+              v-for="t in contentTabs"
+              :key="t.key"
+              type="button"
+              role="tab"
+              :aria-selected="contentTab === t.key"
+              @click="contentTab = t.key"
+            >
+              <SiteIcon :name="t.icon" class="size-4" />{{ t.label }}<span class="count">{{ t.count }}</span>
+            </button>
+          </div>
+          <ul v-if="contentItems.length" class="items mt-3">
+            <li v-for="i in contentItems" :key="i.file" class="item">
+              <span class="min-w-0 flex-1">
+                <span class="block truncate text-sm text-base-100" :title="i.file">{{ i.name }}</span>
+              </span>
+              <a v-if="i.source === 'modrinth' && i.projectId" :href="modrinthUrl(i)" target="_blank" rel="noopener noreferrer" class="tag modrinth">
+                {{ m.pack.contentsModrinth }}<SiteIcon name="external" class="size-3" />
+              </a>
+              <span v-else-if="i.source === 'pack'" class="tag own" :title="m.pack.contentsOwnHint"><SiteIcon name="warn" class="size-3" />{{ m.pack.contentsOwn }}</span>
+            </li>
+          </ul>
+          <p v-else class="mt-3 text-sm text-base-400">{{ m.pack.contentsNoMatch }}</p>
+        </template>
+      </section>
+
       <section class="mt-8">
         <h2 class="text-lg font-semibold text-base-50">{{ m.pack.howTitle }}</h2>
         <ol class="mt-3 list-decimal space-y-1.5 pl-5 text-sm text-base-300">
@@ -194,5 +263,97 @@ async function sendReport() {
 <style scoped>
 .code {
   letter-spacing: 0.06em;
+}
+.search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: min(100%, 18rem);
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-base-700);
+  background: var(--color-base-900);
+}
+.search:focus-within {
+  border-color: var(--color-redstone-500);
+}
+.search input {
+  min-width: 0;
+  flex: 1;
+  background: transparent;
+  font-size: 0.875rem;
+  color: var(--color-base-50);
+  outline: none;
+}
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--color-base-400);
+  box-shadow: inset 0 0 0 1px var(--color-base-800);
+  transition: color 0.12s, background-color 0.12s;
+}
+.tabs button:hover {
+  color: var(--color-base-100);
+}
+.tabs button[aria-selected='true'] {
+  color: var(--color-base-50);
+  background: var(--color-base-850);
+  box-shadow: inset 0 0 0 1px var(--color-base-700), inset 0 -2px 0 var(--color-redstone-500);
+}
+.count {
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  background: var(--color-base-800);
+  color: var(--color-base-200);
+}
+.items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+  gap: 0.4rem;
+  max-height: 28rem;
+  overflow-y: auto;
+  padding-right: 0.2rem;
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-base-800);
+  background: var(--color-base-900);
+}
+.tag {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 0.3rem;
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+.tag.modrinth {
+  color: #5fe39a;
+  background: color-mix(in srgb, #1bd96a 12%, transparent);
+}
+.tag.modrinth:hover {
+  background: color-mix(in srgb, #1bd96a 22%, transparent);
+}
+.tag.own {
+  color: var(--color-lamp-300);
+  background: color-mix(in srgb, var(--color-lamp-400) 12%, transparent);
 }
 </style>

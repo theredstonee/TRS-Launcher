@@ -7,7 +7,7 @@ import { migrate, one } from '../server/lib/db'
 import { block } from '../server/lib/friends'
 import { migrateSharedPacks } from '../server/lib/migrations'
 import { adminReportAction, createReport } from '../server/lib/moderation'
-import { inspectPack } from '../server/lib/packfile'
+import { inspectPack, listPackContents } from '../server/lib/packfile'
 import {
   deletePack,
   dismissInbox,
@@ -15,6 +15,7 @@ import {
   lookupPacks,
   normalizePackCode,
   packByCode,
+  packContents,
   packInbox,
   readPackFile,
   sendPack,
@@ -278,5 +279,46 @@ describe('shared modpacks (§27)', () => {
     migrateSharedPacks(db)
     migrateSharedPacks(db)
     expect(one(db, "SELECT 1 AS x FROM sqlite_master WHERE name = 'chat_reports_pack'")).toBeDefined()
+  })
+})
+
+describe('pack contents for the website (§27.6)', () => {
+  it('lists mods, resource packs and shaders from the index and overrides', () => {
+    const files = [
+      { path: 'mods/sodium-fabric-0.6.jar', hashes: { sha1: SHA1, sha512: SHA512 }, downloads: ['https://cdn.modrinth.com/data/AANobbMI/versions/x/sodium.jar'], fileSize: 1 },
+      { path: 'mods/server-only.jar', hashes: { sha1: SHA1, sha512: SHA512 }, env: { client: 'unsupported', server: 'required' }, downloads: ['https://cdn.modrinth.com/data/BBBBBBBB/versions/x/s.jar'], fileSize: 1 },
+      { path: 'resourcepacks/Faithful 32x.zip', hashes: { sha1: SHA1, sha512: SHA512 }, downloads: ['https://cdn.modrinth.com/data/FaithFul/versions/y/f.zip'], fileSize: 1 },
+      { path: 'shaderpacks/ComplementaryReimagined.zip', hashes: { sha1: SHA1, sha512: SHA512 }, downloads: ['https://cdn.modrinth.com/data/HVnmMxH1/versions/z/c.zip'], fileSize: 1 },
+      { path: 'config/x.json', hashes: { sha1: SHA1, sha512: SHA512 }, downloads: ['https://cdn.modrinth.com/data/CCCCCCCC/versions/z/x.json'], fileSize: 1 },
+    ]
+    const c = listPackContents(pack({ files }, {
+      'overrides/resourcepacks/My Pack/pack.mcmeta': '{}',
+      'overrides/resourcepacks/My Pack/pack.png': 'x',
+      'overrides/shaderpacks/Own Shader.zip': 'x',
+      'server-overrides/mods/server.jar': 'x',
+    }))
+    expect(c.mods).toEqual([
+      { name: 'own-mod', file: 'own-mod.jar', source: 'pack', projectId: null },
+      { name: 'sodium-fabric-0.6', file: 'sodium-fabric-0.6.jar', source: 'modrinth', projectId: 'AANobbMI' },
+    ])
+    expect(c.resourcePacks).toEqual([
+      { name: 'Faithful 32x', file: 'Faithful 32x.zip', source: 'modrinth', projectId: 'FaithFul' },
+      { name: 'My Pack', file: 'My Pack/', source: 'pack', projectId: null },
+    ])
+    expect(c.shaderPacks.map((s) => [s.name, s.source, s.projectId])).toEqual([
+      ['ComplementaryReimagined', 'modrinth', 'HVnmMxH1'],
+      ['Own Shader', 'pack', null],
+    ])
+  })
+
+  it('reads the stored pack without counting an install', async () => {
+    const env = makeEnv()
+    const [alex] = await players(env, 'Alex')
+    const shared = uploadPack(env.ctx, alex!.uuid, pack(), '7d')
+    const row = packByCode(env.ctx, shared.code)!
+    const c = packContents(env.ctx, row)
+    expect(c.mods.map((m) => m.name)).toEqual(['own-mod', 'sodium'])
+    expect(packContents(env.ctx, row)).toBe(c)
+    expect(packByCode(env.ctx, shared.code)!.installs).toBe(0)
   })
 })

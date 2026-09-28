@@ -9,7 +9,7 @@ import { ApiError, badRequest, conflict, notFound, unsupportedMedia } from './er
 import type { PlayerRef } from './events'
 import { areFriends, hasBlocked } from './friends'
 import { sha256Hex } from './ids'
-import { inspectPack, type PackLoader } from './packfile'
+import { inspectPack, listPackContents, type PackContents, type PackLoader } from './packfile'
 import { assertNotSanctioned } from './sanctions'
 import { ACTIVE_BANS, getUser } from './users'
 
@@ -393,6 +393,26 @@ export function readPackFile(ctx: AppContext, r: PackRow, count: boolean): Buffe
   const data = readFileSync(fileOf(ctx, r))
   if (count) run(ctx.db, 'UPDATE shared_packs SET installs = installs + 1 WHERE id = ?', r.id)
   return data
+}
+
+/** Letzte Inhaltslisten je Pack-Version (die Datei ändert sich nur mit einer neuen `revision`). */
+const contentsCache = new Map<string, PackContents>()
+
+/** Mods, Resource Packs und Shader eines Packs für die Website (§27.6) – ohne die Installation zu zählen. */
+export function packContents(ctx: AppContext, r: PackRow): PackContents {
+  const key = `${r.id}.${r.revision}`
+  const hit = contentsCache.get(key)
+  if (hit) return hit
+  let data: Buffer
+  try {
+    data = readFileSync(fileOf(ctx, r))
+  } catch {
+    throw notFound('pack_not_found', 'Modpack not found')
+  }
+  const list = listPackContents(data)
+  contentsCache.set(key, list)
+  if (contentsCache.size > 64) contentsCache.delete(contentsCache.keys().next().value!)
+  return list
 }
 
 /** Viele Codes auf einmal (Update-Prüfung im Launcher). Unbekannte/abgelaufene fehlen einfach. */

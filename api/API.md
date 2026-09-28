@@ -2803,6 +2803,7 @@ Modrinth – launchers show a trust warning before installing.
 | `DELETE /v1/packs/{id}` | owner | 204; code and link stop working, recipients get `pack_removed` |
 | `GET /v1/me/packs` | user | `{ packs, limits: { active, maxActive, uploadsToday, maxPerDay, maxBytes } }` |
 | `GET /v1/packs/code/{code}` | public | `{ pack }` – code case-insensitive, with or without `TRS-`/dashes, O→0, I/L→1. 60/min per IP without account |
+| `GET /v1/packs/code/{code}/contents` | public | `{ contents: { mods, resourcePacks, shaderPacks } }` – each `[{ name, file, source: "modrinth"\|"pack", projectId }]` (§27.6); same limits as the pack view, does not count an install |
 | `GET /v1/packs/code/{code}/file` | user | the `.mrpack` (headers `X-Pack-Revision`, `X-Pack-Sha256`); counts an install unless you are the owner |
 | `POST /v1/packs/lookup` | user | `{ codes: [≤ 100] }` → `{ packs }` (update check; unknown/expired codes are missing) |
 | `POST /v1/packs/{id}/send` | user | `{ to: [uuid ≤ 20] }` → `{ sent: [PlayerRef], skipped: [uuid] }`. Anyone who can see a pack may send it to **their own friends**; non-friends and blocks are skipped, `no_recipients` (400) if nobody was left |
@@ -2842,6 +2843,15 @@ Minecraft version, loader, own-jar count, checksum and owner (not the file). Tea
 Migration 16: tables `shared_packs` (file `<DATA_DIR>/packs/<xx>/<id>.<revision>.mrpack`, only the current version is
 kept), `shared_pack_recipients`, `shared_pack_uploads`; report kind `pack` + column `pack_id`. Expired packs are
 removed every 10 minutes, orphaned files every 6 hours; account deletion removes all own packs and files.
+
+### 27.6 Contents on the pack page
+
+`/p/<code>` lists what is inside, read from the stored file (only the zip directory and the index, nothing is
+unpacked): **mods** (`mods/*.jar`), **resource packs** (`resourcepacks/*.zip` or a folder) and **shaders**
+(`shaderpacks/*.zip` or a folder) – from the index (`source: "modrinth"`, `projectId` from the CDN address
+`/data/<id>/versions/…`, linked to `https://modrinth.com/project/<id>`) and from `overrides/`/`client-overrides/`
+(`source: "pack"`, marked as own file). Files for servers only (`env.client` `unsupported`, `server-overrides/`) are
+left out. Sorted by name, at most 1,000 per list; `name` is the file name without extension. Cached per pack revision.
 
 ## 28. Issues & roadmap
 
