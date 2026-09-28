@@ -8,7 +8,12 @@ const { account, load, api, loginUrl } = useAccount()
 const loaded = ref(false)
 const data = ref<{ created: IssueView[], following: IssueView[] } | null>(null)
 const error = ref('')
-const tab = ref<'following' | 'created'>('following')
+const route = useRoute()
+const router = useRouter()
+const tab = computed<'following' | 'created'>({
+  get: () => (route.query.tab === 'created' ? 'created' : 'following'),
+  set: (v) => void router.replace({ query: { ...route.query, tab: v } }),
+})
 
 onMounted(async () => {
   if (await load()) {
@@ -35,6 +40,7 @@ useHead({ title: () => it.value.seo.mine, meta: [{ name: 'robots', content: 'noi
 </script>
 
 <template>
+  <IssueWorkspace :active="tab === 'created' ? 'mine' : 'following'">
   <div class="mx-auto max-w-4xl px-4 pt-8 pb-6 sm:px-6">
     <NuxtLink :to="lp('/issues')" class="inline-flex items-center gap-1.5 text-sm text-base-400 hover:text-base-100">
       <SiteIcon name="back" class="size-4" />{{ it.detail.back }}
@@ -64,6 +70,7 @@ useHead({ title: () => it.value.seo.mine, meta: [{ name: 'robots', content: 'noi
       </ul>
     </template>
   </div>
+  </IssueWorkspace>
 </template>
 
 <style scoped>

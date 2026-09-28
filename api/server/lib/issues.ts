@@ -2,9 +2,11 @@ import { randomBytes } from 'node:crypto'
 import { isIPv6 } from 'node:net'
 import { readdirSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { emptyIssueQuery, parseIssueQuery, type IssueQuery } from '../../shared/issue-query'
 import {
   CLOSED_STATUSES,
   ISSUE_LIMITS,
+  ISSUE_STATUSES,
   ISSUE_TAG,
   UPLOAD_ID,
   isClosed,
@@ -20,6 +22,8 @@ import {
   type IssuePriority,
   type IssueSort,
   type IssueStatus,
+  type IssueSummary,
+  type RoadmapColumnView,
   type IssueType,
   type IssueUpdatedEvent,
   type IssueView,
@@ -433,11 +437,20 @@ export interface IssueListQuery {
   status?: IssueStatus[]
   closed?: boolean
   q?: string
+  /** Suchsyntax (`status:geplant author:alex …`, shared/issue-query.ts) – ergänzt die einzelnen Felder. */
+  filter?: string
   page: number
   per: number
   /** Nur Team-Liste. */
   view?: 'all' | 'unassigned' | 'mine' | 'deleted'
   priority?: IssuePriority
+}
+
+/** Zusammengeführter Filter (Felder + Suchsyntax). */
+interface Filter {
+  q: IssueQuery
+  deleted: boolean
+  view?: IssueListQuery['view']
 }
 
 const ORDER: Record<IssueSort, string> = {
@@ -450,36 +463,85 @@ function likeEscape(s: string): string {
   return s.replace(/[\\%_]/g, (c) => `\\${c}`)
 }
 
-export function listIssues(ctx: AppContext, q: IssueListQuery, viewer: Viewer | null): IssueListResult {
-  const where: string[] = []
+/** Felder der Anfrage + Suchsyntax → ein Filter. Felder gelten zusätzlich zu dem, was im Suchfeld steht. */
+export function mergeFilter(q: Omit<IssueListQuery, 'page' | 'per' | 'sort'> & { sort?: IssueSort }): IssueQuery {
+  const f = q.filter ? parseIssueQuery(q.filter) : emptyIssueQuery()
+  if (q.type && !f.type.includes(q.type)) f.type.push(q.type)
+  if (q.area && !f.area.includes(q.area)) f.area.push(q.area)
+  if (q.priority && !f.priority.includes(q.priority)) f.priority.push(q.priority)
+  for (const s of q.status ?? []) if (!f.status.includes(s)) f.status.push(s)
+  if (q.closed && !f.is) f.is = 'all'
+  const text = [f.text, q.q?.trim() ?? ''].filter(Boolean).join(' ')
+  f.text = [...text].slice(0, ISSUE_LIMITS.queryMax).join('')
+  if (!f.sort && q.sort) f.sort = q.sort
+  return f
+}
+
+/** WHERE-Teil für einen Filter. Spaltennamen/Operatoren nur aus festen Werten, alle Eingaben als Parameter. */
+function filterWhere(ctx: AppContext, filter: Filter, viewer: Viewer | null, opts: { statuses?: readonly IssueStatus[], defaultOpen?: boolean } = {}): { cond: string, params: Param[] } {
+  const f = filter.q
+  const where: string[] = [filter.deleted ? 'deleted_at IS NOT NULL' : 'deleted_at IS NULL']
   const params: Param[] = []
-  if (q.view === 'deleted') where.push('deleted_at IS NOT NULL')
-  else where.push('deleted_at IS NULL')
-  if (q.type) {
-    where.push('type = ?')
-    params.push(q.type)
+  const inList = (col: string, vals: readonly Param[]) => {
+    where.push(`${col} IN (${placeholders(vals.length)})`)
+    params.push(...vals)
   }
-  if (q.area) {
-    where.push('area = ?')
-    params.push(q.area)
+  if (f.type.length) inList('type', f.type)
+  if (f.area.length) inList('area', f.area)
+  if (f.priority.length) {
+    const named = f.priority.filter((p): p is IssuePriority => p !== 'none')
+    const parts: string[] = []
+    if (named.length) {
+      parts.push(`priority IN (${placeholders(named.length)})`)
+      params.push(...named)
+    }
+    if (f.priority.includes('none')) parts.push('priority IS NULL')
+    where.push(`(${parts.join(' OR ')})`)
   }
-  if (q.priority) {
-    where.push('priority = ?')
-    params.push(q.priority)
+  // Status: ausdrückliche Liste > is:… > Standard (offen) der Liste.
+  let statuses: readonly IssueStatus[] | null = f.status.length ? f.status : null
+  if (!statuses && f.is === 'open') statuses = ISSUE_STATUSES.filter((s) => !isClosed(s))
+  else if (!statuses && f.is === 'closed') statuses = CLOSED_STATUSES
+  else if (!statuses && !f.is && opts.defaultOpen && !filter.deleted) statuses = ISSUE_STATUSES.filter((s) => !isClosed(s))
+  if (opts.statuses) statuses = statuses ? statuses.filter((s) => opts.statuses!.includes(s)) : opts.statuses
+  if (statuses) {
+    if (!statuses.length) where.push('0 = 1')
+    else inList('status', statuses)
   }
-  if (q.status && q.status.length) {
-    where.push(`status IN (${placeholders(q.status.length)})`)
-    params.push(...q.status)
-  } else if (!q.closed && q.view !== 'deleted') {
-    where.push(`status NOT IN (${placeholders(CLOSED_STATUSES.length)})`)
-    params.push(...CLOSED_STATUSES)
+  if (f.author.length) {
+    const uuids = f.author.map((n) => one<{ uuid: string }>(ctx.db, 'SELECT uuid FROM users WHERE name = ? COLLATE NOCASE', n)?.uuid).filter((u): u is string => !!u)
+    if (!uuids.length) where.push('0 = 1')
+    else inList('author_uuid', uuids)
   }
-  if (q.view === 'unassigned') where.push('assignee_uuid IS NULL')
-  if (q.view === 'mine' && viewer) {
+  if (f.assignee.length) {
+    const parts: string[] = []
+    for (const a of f.assignee) {
+      if (a === 'none') parts.push('assignee_uuid IS NULL')
+      else if (a === 'me') {
+        if (viewer) {
+          parts.push('assignee_uuid = ?')
+          params.push(viewer.uuid)
+        }
+      } else {
+        const u = one<{ uuid: string }>(ctx.db, 'SELECT uuid FROM users WHERE name = ? COLLATE NOCASE', a)?.uuid
+        if (u) {
+          parts.push('assignee_uuid = ?')
+          params.push(u)
+        }
+      }
+    }
+    where.push(parts.length ? `(${parts.join(' OR ')})` : '0 = 1')
+  }
+  for (const tag of f.tag) {
+    where.push('id IN (SELECT issue_id FROM issue_tags WHERE tag = ?)')
+    params.push(tag)
+  }
+  if (filter.view === 'unassigned') where.push('assignee_uuid IS NULL')
+  if (filter.view === 'mine' && viewer) {
     where.push('assignee_uuid = ?')
     params.push(viewer.uuid)
   }
-  const needle = q.q?.trim()
+  const needle = f.text.trim()
   if (needle) {
     const num = /^#?(\d{1,9})$/.exec(needle)
     const like = `%${likeEscape(needle)}%`
@@ -491,35 +553,55 @@ export function listIssues(ctx: AppContext, q: IssueListQuery, viewer: Viewer | 
       params.push(like, like)
     }
   }
-  const cond = where.join(' AND ')
+  return { cond: where.join(' AND '), params }
+}
+
+export function listIssues(ctx: AppContext, q: IssueListQuery, viewer: Viewer | null): IssueListResult {
+  const f = mergeFilter(q)
+  const { cond, params } = filterWhere(ctx, { q: f, deleted: q.view === 'deleted', view: q.view }, viewer, { defaultOpen: true })
   const total = one<{ n: number }>(ctx.db, `SELECT COUNT(*) AS n FROM issues WHERE ${cond}`, ...params)!.n
   const per = q.per
   const pages = Math.max(1, Math.ceil(total / per))
   const page = Math.min(Math.max(1, q.page), pages)
   // ORDER stammt nur aus der festen Tabelle oben.
-  const rows = all<IssueRow>(ctx.db, `SELECT * FROM issues WHERE ${cond} ORDER BY ${ORDER[q.sort]} LIMIT ? OFFSET ?`, ...params, per, (page - 1) * per)
-  return { issues: issueViews(ctx, rows, viewer, { deleted: q.view === 'deleted' }), total, page, pages, per }
+  const rows = all<IssueRow>(ctx.db, `SELECT * FROM issues WHERE ${cond} ORDER BY ${ORDER[f.sort ?? q.sort]} LIMIT ? OFFSET ?`, ...params, per, (page - 1) * per)
+  return { issues: issueViews(ctx, rows, viewer, { deleted: q.view === 'deleted' }), total, page, pages, per, errors: f.errors }
 }
 
 const PRIORITY_ORDER = "CASE priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END"
 
-export function roadmap(ctx: AppContext, viewer: Viewer | null): RoadmapResult {
-  const max = ISSUE_LIMITS.roadmapMax
-  const days = ISSUE_LIMITS.roadmapDoneDays
-  const planned = all<IssueRow>(
-    ctx.db, `SELECT * FROM issues WHERE deleted_at IS NULL AND status = 'planned' ORDER BY ${PRIORITY_ORDER}, score DESC, id DESC LIMIT ?`, max,
-  )
-  const progress = all<IssueRow>(
-    ctx.db,
-    `SELECT * FROM issues WHERE deleted_at IS NULL AND status IN ('in_progress', 'in_review')
-     ORDER BY CASE status WHEN 'in_review' THEN 0 ELSE 1 END, ${PRIORITY_ORDER}, score DESC, id DESC LIMIT ?`,
-    max,
-  )
-  const done = all<IssueRow>(
-    ctx.db, "SELECT * FROM issues WHERE deleted_at IS NULL AND status = 'done' AND closed_at > ? ORDER BY closed_at DESC, id DESC LIMIT ?",
-    ctx.now() - days * DAY, max,
-  )
-  return { planned: issueViews(ctx, planned, viewer), inProgress: issueViews(ctx, progress, viewer), done: issueViews(ctx, done, viewer), doneDays: days }
+/** Spalten der Roadmap in Reihenfolge. Duplikate erscheinen nicht (sie verweisen aufs Original). */
+export const ROADMAP_COLUMNS = ['open', 'planned', 'in_progress', 'in_review', 'done', 'rejected'] as const satisfies readonly IssueStatus[]
+export type RoadmapColumn = (typeof ROADMAP_COLUMNS)[number]
+
+/** Sortierung je Spalte: Arbeit nach Priorität + Score, Offene nach Score, Fertiges nach Zeitpunkt. */
+function columnOrder(status: RoadmapColumn): string {
+  if (status === 'done' || status === 'rejected') return 'closed_at DESC, id DESC'
+  if (status === 'open') return 'score DESC, created_at DESC, id DESC'
+  return `${PRIORITY_ORDER}, score DESC, id DESC`
+}
+
+export function roadmapColumn(
+  ctx: AppContext,
+  status: RoadmapColumn,
+  filter: IssueQuery,
+  viewer: Viewer | null,
+  offset: number,
+  per: number,
+): RoadmapColumnView {
+  const { cond, params } = filterWhere(ctx, { q: filter, deleted: false }, viewer, { statuses: [status] })
+  const total = one<{ n: number }>(ctx.db, `SELECT COUNT(*) AS n FROM issues WHERE ${cond}`, ...params)!.n
+  const rows = all<IssueRow>(ctx.db, `SELECT * FROM issues WHERE ${cond} ORDER BY ${columnOrder(status)} LIMIT ? OFFSET ?`, ...params, per, offset)
+  return { status, total, issues: issueViews(ctx, rows, viewer), hasMore: offset + rows.length < total }
+}
+
+/** Board: sechs Spalten mit Zähler und den ersten Karten; weitere per `column` + `offset`. */
+export function roadmap(ctx: AppContext, filter: IssueQuery, viewer: Viewer | null, per: number = ISSUE_LIMITS.roadmapPer): RoadmapResult {
+  return {
+    columns: ROADMAP_COLUMNS.map((s) => roadmapColumn(ctx, s, filter, viewer, 0, per)),
+    per,
+    errors: filter.errors,
+  }
 }
 
 export function myIssues(ctx: AppContext, viewer: Viewer): { created: IssueView[], following: IssueView[] } {
@@ -531,6 +613,24 @@ export function myIssues(ctx: AppContext, viewer: Viewer): { created: IssueView[
     viewer.uuid,
   )
   return { created: issueViews(ctx, created, viewer), following: issueViews(ctx, following, viewer) }
+}
+
+/** Zähler für die Seitenleiste „Workspace“ (§28.3). */
+export function issueSummary(ctx: AppContext, viewer: Viewer | null): IssueSummary {
+  const byStatus = Object.fromEntries(ISSUE_STATUSES.map((s) => [s, 0])) as Record<IssueStatus, number>
+  for (const r of all<{ status: IssueStatus, n: number }>(ctx.db, 'SELECT status, COUNT(*) AS n FROM issues WHERE deleted_at IS NULL GROUP BY status')) {
+    byStatus[r.status] = r.n
+  }
+  const open = ISSUE_STATUSES.filter((s) => !isClosed(s)).reduce((sum, s) => sum + byStatus[s], 0)
+  const out: IssueSummary = { open, total: Object.values(byStatus).reduce((a, b) => a + b, 0), byStatus }
+  if (viewer) {
+    out.mine = one<{ n: number }>(ctx.db, 'SELECT COUNT(*) AS n FROM issues WHERE author_uuid = ? AND deleted_at IS NULL', viewer.uuid)!.n
+    out.following = one<{ n: number }>(
+      ctx.db, 'SELECT COUNT(*) AS n FROM issue_follows f JOIN issues i ON i.id = f.issue_id WHERE f.uuid = ? AND i.deleted_at IS NULL', viewer.uuid,
+    )!.n
+    if (canManage(viewer)) out.team = issueCounts(ctx, viewer.uuid)
+  }
+  return out
 }
 
 /** Zahlen für die Team-Übersicht: neue (offen, niemandem zugewiesen) und mir zugewiesene offene Issues. */

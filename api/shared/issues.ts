@@ -48,8 +48,10 @@ export const ISSUE_LIMITS = {
   perPage: 20,
   perPageMax: 50,
   queryMax: 80,
-  roadmapDoneDays: 30,
-  roadmapMax: 100,
+  /** Karten je Roadmap-Spalte beim ersten Laden bzw. je „Mehr laden“. */
+  roadmapPer: 20,
+  roadmapPerMax: 50,
+  filterMax: 300,
 } as const
 
 export interface PlayerRefView {
@@ -158,19 +160,45 @@ export interface IssueHistoryEntry {
   to: string | null
 }
 
+/** Antwort von GET /v1/issues/{number}. */
+export interface IssuePageView {
+  issue: IssueDetail
+  comments: IssueCommentView[]
+  history: IssueHistoryEntry[]
+}
+
 export interface IssueListResult {
   issues: IssueView[]
   total: number
   page: number
   pages: number
   per: number
+  /** Nicht verstandene Teile der Suchsyntax. */
+  errors?: string[]
+}
+
+export interface RoadmapColumnView {
+  status: IssueStatus
+  /** Alle Issues dieser Spalte (mit Filter). */
+  total: number
+  issues: IssueView[]
+  hasMore: boolean
 }
 
 export interface RoadmapResult {
-  planned: IssueView[]
-  inProgress: IssueView[]
-  done: IssueView[]
-  doneDays: number
+  columns: RoadmapColumnView[]
+  per: number
+  errors?: string[]
+}
+
+/** Zähler für die Seitenleiste. `mine`/`following` nur angemeldet, `team` nur mit issues.manage. */
+export interface IssueSummary {
+  open: number
+  total: number
+  byStatus: Record<IssueStatus, number>
+  mine?: number
+  following?: number
+  team?: { new: number, mine: number }
 }
 
 export type IssueChange = 'status' | 'team_comment' | 'fixed' | 'merged'

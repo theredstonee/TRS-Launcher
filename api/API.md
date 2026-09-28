@@ -2921,8 +2921,9 @@ Deleted comments stay as a placeholder (`body: null`, `attachments: []`, `delete
 
 | Route | Auth | Notes |
 |---|---|---|
-| `GET /v1/issues` | public (optional sign-in for `myVote`) | Query: `sort=top\|new\|activity` (default `top`), `type`, `area`, `status` (comma list), `closed=1` (include closed; a status filter naming closed statuses includes them anyway), `q` (≤ 80, title/description; `#57` also matches the number), `page` (1…), `per` (≤ 50, default 20) → `{ issues: [IssueView], total, page, pages, per }`. Deleted issues are never listed. |
-| `GET /v1/issues/roadmap` | public | `{ planned: [IssueView], inProgress: [IssueView], done: [IssueView], doneDays: 30 }` – `inProgress` = `in_progress` + `in_review`; `done` = closed as `done` within the last 30 days (newest first); ≤ 100 each. `planned` sorted by priority, then score. |
+| `GET /v1/issues` | public (optional sign-in for `myVote`) | Query: `sort=top\|new\|activity` (default `top`), `type`, `area`, `status` (comma list), `closed=1` (include closed; a status filter naming closed statuses includes them anyway), `q` (≤ 80, title/description; `#57` also matches the number), `filter` (search syntax, §28.3.1), `page` (1…), `per` (≤ 50, default 20) → `{ issues: [IssueView], total, page, pages, per, errors }` (`errors` = parts of `filter` that were not understood). Without a status/`is:` filter only open issues are listed. Deleted issues are never listed. |
+| `GET /v1/issues/roadmap` | public | Board with six columns: `?filter=` (§28.3.1), `per` (≤ 50, default 20) → `{ columns: [{ status, total, issues: [IssueView], hasMore }], per, errors }` in the order `open`, `planned`, `in_progress`, `in_review`, `done`, `rejected` (duplicates are not shown). Open issues by score, work columns by priority then score, done/rejected newest first. `?column=<status>&offset=<n>` → `{ column }` = the next cards of one column (“load more”). |
+| `GET /v1/issues/summary` | public (optional sign-in) | Counters for the website sidebar: `{ open, total, byStatus: { <status>: n }, mine?, following?, team?: { new, mine } }` (`mine`/`following` signed in, `team` with `issues.manage`). |
 | `GET /v1/issues/{number}` | public (optional sign-in) | `{ issue: IssueDetail, comments: [CommentView], history: [HistoryEntry] }` – `404 issue_not_found` for unknown/deleted issues (the team still sees deleted ones). |
 | `POST /v1/issues` | player (website session **or** Bearer token) | `{ type, area, title (5–120), description (≤ 8000, Markdown), attachments?: [uploadId ≤ 6], meta?: { modVersion? (≤ 32), mcVersion? (≤ 32), loader? (≤ 32), mods? ([≤ 300], ≤ 100 chars each), log? (≤ 20000) } }` → **201** `{ issue: IssueDetail }` (has `number` and `url`). The author follows automatically. The server removes tokens, session ids, e-mail addresses, IP addresses, UUIDs and the author's name from `log` again before storing it (defence in depth). `source` is `client` when `meta.modVersion` is set, else `web`. |
 | `PATCH /v1/issues/{number}` | author | `{ title?, description?, type? }` – only while the status is `open` (`409 issue_not_editable`). |
@@ -2939,6 +2940,28 @@ Errors: `invalid_request` (400 with `details.fields`), `issue_not_found` (404), 
 `upload_not_found` (404 when attaching an unknown, expired, foreign or already used upload), `issue_closed`, `issue_locked`, `issue_not_editable` (409), `issue_daily_limit` /
 `comment_daily_limit` / `upload_daily_limit` (429 with `Retry-After`), `sanctioned` (403: a **social ban** blocks new
 issues and comments, an **upload ban** blocks images; voting and following stay), `message_blocked` (422).
+
+### 28.3.1 Search syntax (`filter`)
+
+One text field for list and board, parsed the same way on the website and the server (`shared/issue-query.ts`, fixed
+patterns only – nothing from the input becomes a regex). Tokens are separated by spaces, `"…"` keeps spaces together,
+several values with commas (= or), unknown keys are free text. German, English and Spanish keys/values are accepted:
+
+| key | aliases | values |
+|---|---|---|
+| `status` | `estado` | `open`/`offen`, `planned`/`geplant`/`todo`, `in-progress`/`in-arbeit`, `in-review`/`in-pruefung`, `done`/`erledigt`, `rejected`/`abgelehnt`, `duplicate`/`duplikat` |
+| `type` | `typ`, `art`, `tipo` | `bug`/`fehler`, `feature`/`funktion`/`wunsch` |
+| `area` | `bereich`, `platform` | `launcher`, `client`, `website`/`web` |
+| `priority` | `prio`, `priorität` | `low`/`niedrig`, `medium`/`mittel`, `high`/`hoch`, `critical`/`kritisch`, `none`/`keine` |
+| `author` | `autor`, `von` | Minecraft name (optionally `@name`) |
+| `assignee` | `zuständig`, `zustaendig` | Minecraft name, `me`/`ich`, `none`/`niemand` |
+| `tag` | `label` | a tag |
+| `is` | `ist` | `open`/`offen`, `closed`/`geschlossen`, `all`/`alle` |
+| `sort` | – | `top`, `new`/`neu`, `activity`/`aktivitaet` (list only) |
+
+Example: `status:geplant,in-arbeit area:client author:Alex "world map"`. At most 300 characters and 30 tokens; free
+text ≤ 80 characters (title/description, `#57` = number). Values the parser does not know are ignored and returned in
+`errors`.
 
 ### 28.4 Team (`/v1/admin/issues…`)
 

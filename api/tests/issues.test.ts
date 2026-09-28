@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { describe, expect, it } from 'vitest'
 import { migrate, one } from '../server/lib/db'
+import { formatIssueQuery, parseIssueQuery } from '../shared/issue-query'
 import { createIssueBody } from '../server/lib/issue-http'
 import {
   addComment,
@@ -17,10 +18,12 @@ import {
   editIssue,
   issuePage,
   listIssues,
+  mergeFilter,
   mergeIssue,
   myIssues,
   readUpload,
   roadmap,
+  roadmapColumn,
   scrubLog,
   setFollow,
   sweepIssues,
@@ -186,26 +189,57 @@ describe('issues: votes and lists', () => {
     expect(listIssues(env.ctx, q({ per: 1, page: 99 }), null).page).toBe(2)
   })
 
-  it('builds the roadmap from planned, in-progress and recently done issues', async () => {
-    const { env, alex, sup } = await setup()
+  it('builds the six-column roadmap with counts, filters and "load more"', async () => {
+    const { env, alex, bea, sup } = await setup()
     const s = staffOf(env, sup)
+    const o = newIssue(env, bea, { title: 'Still open idea', type: 'feature', area: 'website' })
     const p1 = newIssue(env, alex, { title: 'Planned low priority' })
-    const p2 = newIssue(env, alex, { title: 'Planned critical one' })
+    const p2 = newIssue(env, alex, { title: 'Planned critical one', area: 'client' })
     const w = newIssue(env, alex, { title: 'Being worked on' })
     const r = newIssue(env, alex, { title: 'In review now' })
     const d = newIssue(env, alex, { title: 'Done long ago' })
-    adminUpdateIssue(env.ctx, s, p1.number, { status: 'planned', priority: 'low' })
-    adminUpdateIssue(env.ctx, s, p2.number, { status: 'planned', priority: 'critical' })
+    const x = newIssue(env, alex, { title: 'Rejected wish', type: 'feature' })
+    adminUpdateIssue(env.ctx, s, p1.number, { status: 'planned', priority: 'low', tags: ['ui'] })
+    adminUpdateIssue(env.ctx, s, p2.number, { status: 'planned', priority: 'critical', assignee: sup.uuid })
     adminUpdateIssue(env.ctx, s, w.number, { status: 'in_progress' })
     adminUpdateIssue(env.ctx, s, r.number, { status: 'in_review' })
     adminUpdateIssue(env.ctx, s, d.number, { status: 'done' })
-    let map = roadmap(env.ctx, null)
-    expect(map.planned.map((x) => x.number)).toEqual([p2.number, p1.number])
-    expect(map.inProgress.map((x) => x.number)).toEqual([r.number, w.number])
-    expect(map.done.map((x) => x.number)).toEqual([d.number])
-    env.clock.advance(31 * DAY)
-    map = roadmap(env.ctx, null)
-    expect(map.done).toEqual([])
+    adminUpdateIssue(env.ctx, s, x.number, { status: 'rejected' })
+    const cols = (f = '') => Object.fromEntries(roadmap(env.ctx, mergeFilter({ filter: f }), viewer(env, sup)).columns.map((c) => [c.status, c.issues.map((i) => i.number)]))
+    expect(cols()).toEqual({ open: [o.number], planned: [p2.number, p1.number], in_progress: [w.number], in_review: [r.number], done: [d.number], rejected: [x.number] })
+    expect(roadmap(env.ctx, mergeFilter({}), null).columns.map((c) => c.total)).toEqual([1, 2, 1, 1, 1, 1])
+    // Suchsyntax (deutsch + englisch gemischt).
+    expect(cols('typ:feature')).toMatchObject({ open: [o.number], planned: [], rejected: [x.number] })
+    expect(cols('bereich:client prio:kritisch')).toMatchObject({ planned: [p2.number], open: [] })
+    expect(cols('assignee:me')).toMatchObject({ planned: [p2.number], in_progress: [] })
+    expect(cols('zuständig:niemand status:geplant')).toMatchObject({ planned: [p1.number], open: [] })
+    expect(cols('tag:ui')).toMatchObject({ planned: [p1.number] })
+    expect(cols('author:BEA')).toMatchObject({ open: [o.number], planned: [] })
+    expect(cols('author:nobodyhere').open).toEqual([])
+    expect(cols('ist:offen').done).toEqual([])
+    expect(cols('is:closed').planned).toEqual([])
+    expect(cols('"worked on"').in_progress).toEqual([w.number])
+    // Mehr laden: eine Spalte weiterblättern.
+    const first = roadmapColumn(env.ctx, 'planned', mergeFilter({}), null, 0, 1)
+    const more = roadmapColumn(env.ctx, 'planned', mergeFilter({}), null, 1, 1)
+    expect([first.issues[0]!.number, first.hasMore, more.issues[0]!.number, more.hasMore]).toEqual([p2.number, true, p1.number, false])
+    // Liste mit Suchsyntax + Fehlern.
+    const list = listIssues(env.ctx, { sort: 'top', page: 1, per: 20, filter: 'status:erledigt,abgelehnt sort:new status:quatsch' }, null)
+    expect(list.issues.map((i) => i.number)).toEqual([x.number, d.number])
+    expect(list.errors).toEqual(['status:quatsch'])
+  })
+
+  it('parses the filter syntax without regexes from the input', () => {
+    const q = parseIssueQuery('Autor:@Alex status:"in arbeit",geplant typ:fehler bereich:webseite priorität:hoch,keine zuständig:ich tag:UI ist:alle sort:neu crash (x+ [ .* "zwei wörter"')
+    expect(q).toMatchObject({
+      author: ['Alex'], status: ['in_progress', 'planned'], type: ['bug'], area: ['website'], priority: ['high', 'none'],
+      assignee: ['me'], tag: ['ui'], is: 'all', sort: 'new', text: 'crash (x+ [ .* zwei wörter', errors: [],
+    })
+    expect(parseIssueQuery('status:foo author:a@b area:mars').errors).toEqual(['status:foo', 'author:a@b', 'area:mars'])
+    expect(formatIssueQuery(q, 'de')).toBe('status:in-arbeit,geplant typ:bug bereich:website prio:hoch,keine autor:Alex zustaendig:ich tag:ui ist:alle sort:neu "crash (x+ [ .* zwei wörter"')
+    expect(formatIssueQuery(parseIssueQuery(formatIssueQuery(q, 'en'))).length).toBeGreaterThan(10)
+    expect(parseIssueQuery(formatIssueQuery(q, 'en'))).toMatchObject({ status: q.status, author: q.author, is: 'all' })
+    expect(parseIssueQuery('x'.repeat(1000)).text.length).toBeLessThanOrEqual(80)
   })
 })
 

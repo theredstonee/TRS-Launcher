@@ -70,8 +70,19 @@ export const issueListQuery = z.strictObject({
   status: list(ISSUE_STATUSES).optional(),
   closed: z.enum(['0', '1', 'true', 'false']).optional().transform((v) => v === '1' || v === 'true'),
   q: z.string().max(ISSUE_LIMITS.queryMax).optional(),
+  /** Suchsyntax (shared/issue-query.ts). */
+  filter: z.string().max(ISSUE_LIMITS.filterMax).optional(),
   page: z.coerce.number().int().min(1).max(100_000).default(1),
   per: z.coerce.number().int().min(1).max(ISSUE_LIMITS.perPageMax).default(ISSUE_LIMITS.perPage),
+  lang: z.string().max(8).optional(),
+})
+
+export const roadmapQuery = z.strictObject({
+  filter: z.string().max(ISSUE_LIMITS.filterMax).optional(),
+  /** Nur eine Spalte weiterblättern („Mehr laden“). */
+  column: z.enum(['open', 'planned', 'in_progress', 'in_review', 'done', 'rejected']).optional(),
+  offset: z.coerce.number().int().min(0).max(100_000).default(0),
+  per: z.coerce.number().int().min(1).max(ISSUE_LIMITS.roadmapPerMax).default(ISSUE_LIMITS.roadmapPer),
   lang: z.string().max(8).optional(),
 })
 
