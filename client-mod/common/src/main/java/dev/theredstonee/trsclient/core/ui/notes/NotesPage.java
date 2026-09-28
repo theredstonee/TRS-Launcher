@@ -690,13 +690,21 @@ public final class NotesPage {
 		Theme t = Theme.get();
 		final String text = body.text();
 		final Canvas measure = c;
-		List<int[]> rows = ChatLayout.wrap(new ChatLayout.Measure() {
-			@Override
-			public int width(String s) {
-				return measure.textWidth(s);
-			}
-		}, text, w - 14);
-		if (rows.isEmpty()) rows.add(new int[] {0, 0});
+		List<int[]> rows;
+		if (text.equals(wrapText) && w - 14 == wrapWidth && wrapRows != null) {
+			rows = wrapRows;
+		} else {
+			rows = ChatLayout.wrap(new ChatLayout.Measure() {
+				@Override
+				public int width(String s) {
+					return measure.textWidth(s);
+				}
+			}, text, w - 14);
+			if (rows.isEmpty()) rows.add(new int[] {0, 0});
+			wrapText = text;
+			wrapWidth = w - 14;
+			wrapRows = rows;
+		}
 		editRows = rows;
 		int visible = Math.max(1, (h - 8) / LH);
 		int cursorRow = rowOf(rows, body.cursor());
@@ -747,6 +755,14 @@ public final class NotesPage {
 		lastMeasure = c;
 	}
 
+	/** Umbrüche des Editors und der Leseansicht – nur bei geändertem Text/Breite neu (lange Notizen). */
+	private String wrapText;
+	private int wrapWidth = -1;
+	private List<int[]> wrapRows;
+	private String layoutText;
+	private int layoutWidth = -1;
+	private List<NoteLayout.Row> layoutRows;
+
 	private final int[] pendingEditorRect = new int[4];
 	private Canvas lastMeasure;
 
@@ -794,12 +810,20 @@ public final class NotesPage {
 		Theme t = Theme.get();
 		final String text = note.text;
 		final Canvas measure = c;
-		List<NoteLayout.Row> rows = NoteLayout.layout(text, w - 14, new ChatLayout.Measure() {
-			@Override
-			public int width(String s) {
-				return measure.textWidth(s);
-			}
-		});
+		List<NoteLayout.Row> rows;
+		if (text.equals(layoutText) && w - 14 == layoutWidth && layoutRows != null) {
+			rows = layoutRows;
+		} else {
+			rows = NoteLayout.layout(text, w - 14, new ChatLayout.Measure() {
+				@Override
+				public int width(String s) {
+					return measure.textWidth(s);
+				}
+			});
+			layoutText = text;
+			layoutWidth = w - 14;
+			layoutRows = rows;
+		}
 		Redstone.well(c, x, y, w, h, t.border);
 		setScrollRect(x, y, w, h);
 		if (text.trim().isEmpty()) {
