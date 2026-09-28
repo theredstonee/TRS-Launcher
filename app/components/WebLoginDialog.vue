@@ -23,6 +23,10 @@ const now = ref(Date.now())
 let timer: ReturnType<typeof setInterval> | null = null
 
 const normalized = computed(() => normalizeWebLoginCode(codeInput.value))
+// Neue Eingabe → alter Fehler weg.
+watch(codeInput, () => {
+  if (step.value === 'code') error.value = null
+})
 const left = computed(() => (request.value ? secondsLeft(request.value.expiresAt, now.value) : 0))
 const leftText = computed(() => `${Math.floor(left.value / 60)}:${String(left.value % 60).padStart(2, '0')}`)
 const chosen = computed(() => accounts.value.find((a) => a.id === account.value) ?? null)

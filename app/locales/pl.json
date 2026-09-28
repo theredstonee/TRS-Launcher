@@ -4515,7 +4515,8 @@
       "applications": "Zgłoszenia",
       "jobs": "Stanowiska",
       "website": "Na stronie",
-      "websiteHint": "Otwiera stronę w przeglądarce (logowanie przez Microsoft)."
+      "websiteHint": "Otwiera stronę w przeglądarce (logowanie przez Microsoft).",
+      "blog": "Blog"
     },
     "search": {
       "placeholder": "Szukaj graczy, UUID, ID zgłoszeń, #kar, peleryn …",
@@ -4913,7 +4914,9 @@
       "applications_view": "Widzieć zgłoszenia do zespołu",
       "applications_review": "Oceniać zgłoszenia",
       "applications_manage": "Zarządzać stanowiskami",
-      "applications_decide": "Decydować o zgłoszeniach"
+      "applications_decide": "Decydować o zgłoszeniach",
+      "blog_write": "Pisanie wpisów na blogu (szkice, obrazy)",
+      "blog_publish": "Publikowanie, planowanie i wycofywanie wpisów na blogu"
     }
   },
   "trsChoice": {

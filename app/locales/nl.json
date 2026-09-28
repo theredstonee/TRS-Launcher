@@ -4515,7 +4515,8 @@
       "applications": "Sollicitaties",
       "jobs": "Functies",
       "website": "Op de website",
-      "websiteHint": "Opent de website in je browser (inloggen met Microsoft)."
+      "websiteHint": "Opent de website in je browser (inloggen met Microsoft).",
+      "blog": "Blog"
     },
     "search": {
       "placeholder": "Zoek spelers, UUID’s, meldings-ID’s, #straffen, capes …",
@@ -4913,7 +4914,9 @@
       "applications_view": "Sollicitaties zien",
       "applications_review": "Sollicitaties beoordelen",
       "applications_manage": "Functies beheren",
-      "applications_decide": "Over sollicitaties beslissen"
+      "applications_decide": "Over sollicitaties beslissen",
+      "blog_write": "Blogberichten schrijven (concepten, afbeeldingen)",
+      "blog_publish": "Blogberichten publiceren, inplannen en terugtrekken"
     }
   },
   "trsChoice": {

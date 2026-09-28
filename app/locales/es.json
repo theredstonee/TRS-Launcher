@@ -4515,7 +4515,8 @@
       "applications": "Solicitudes",
       "jobs": "Puestos",
       "website": "En la web",
-      "websiteHint": "Abre la web en tu navegador (inicio de sesión con Microsoft)."
+      "websiteHint": "Abre la web en tu navegador (inicio de sesión con Microsoft).",
+      "blog": "Blog"
     },
     "search": {
       "placeholder": "Buscar jugadores, UUID, ID de reportes, #sanciones, capas …",
@@ -4913,7 +4914,9 @@
       "applications_view": "Ver solicitudes",
       "applications_review": "Revisar solicitudes",
       "applications_manage": "Gestionar puestos",
-      "applications_decide": "Decidir solicitudes"
+      "applications_decide": "Decidir solicitudes",
+      "blog_write": "Escribir entradas del blog (borradores, imágenes)",
+      "blog_publish": "Publicar, programar y retirar entradas del blog"
     }
   },
   "trsChoice": {

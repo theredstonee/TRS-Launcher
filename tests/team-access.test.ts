@@ -80,7 +80,7 @@ describe('me.team aus dem Kern', () => {
 describe('Sichtbarkeit nach Rechten', () => {
   it('Admin sieht alles, Rollen/Bewerbungen/Stellen als Website-Links', () => {
     expect(paths(admin)).toEqual(['/admin', '/admin/reports', '/admin/appeals', '/admin/players', '/admin/sanctions', '/admin/uploads', '/admin/worlds', '/admin/codes', '/admin/word-filter', '/admin/audit'])
-    expect(site(admin)).toEqual(['applications', 'jobs', 'roles'])
+    expect(site(admin)).toEqual(['applications', 'jobs', 'roles', 'blog'])
     expect(websiteSections.every((s) => s.external && s.to.startsWith('https://trs-launcher.theredstonee.de/admin/'))).toBe(true)
   })
 
@@ -93,6 +93,14 @@ describe('Sichtbarkeit nach Rechten', () => {
     expect(teamCan(supporter, 'reports.content')).toBe(false)
     expect(teamCan(supporter, 'reports.handle')).toBe(false)
     expect(canSearch(supporter)).toBe(true)
+  })
+
+  it('Blog-Rechte werden erkannt und führen zum Editor auf der Website', () => {
+    const content = team(200, ['dashboard.view', 'uploads.review', 'codes', 'blog.write', 'circuits.manage'], {}, 'content')
+    expect(content.permissions).toEqual(['dashboard.view', 'uploads.review', 'codes', 'blog.write'])
+    expect(site(content)).toEqual(['blog'])
+    expect(teamCan(content, 'blog.publish')).toBe(false)
+    expect(permissions).toEqual(expect.arrayContaining(['blog.write', 'blog.publish']))
   })
 
   it('Bewerbungs-Team: nur Übersicht im Launcher, Bewerbungen und Stellen auf der Website', () => {

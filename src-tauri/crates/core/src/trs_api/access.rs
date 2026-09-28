@@ -16,7 +16,7 @@ use super::sanctions::SANCTION_KINDS;
 use super::validate;
 
 /// Alle Rechte der API (§24.2). Unbekannte Rechte einer neueren API fallen weg.
-pub const PERMISSIONS: [&str; 29] = [
+pub const PERMISSIONS: [&str; 31] = [
     "dashboard.view",
     "stats.view",
     "audit.view",
@@ -46,6 +46,9 @@ pub const PERMISSIONS: [&str; 29] = [
     "applications.review",
     "applications.manage",
     "applications.decide",
+    // Blog (§30): News schreiben bzw. veröffentlichen – der Editor liegt auf der Website.
+    "blog.write",
+    "blog.publish",
 ];
 
 pub const OWNER_RANK: u32 = 1000;
@@ -317,6 +320,13 @@ mod tests {
         assert!(!moderator.limits.kinds.iter().any(|k| k == "account_ban"));
         assert_eq!(moderator.limits.max_minutes, Some(10_080));
         assert!(MyTeam::legacy("owner").is_none());
+    }
+
+    #[test]
+    fn blog_permissions_are_kept() {
+        let t = MyTeam::from_value(&json!({ "rank": 200, "permissions": ["blog.write", "blog.publish", "nuke.all"], "limits": {} })).unwrap();
+        assert_eq!(t.permissions, ["blog.write", "blog.publish"]);
+        assert!(t.can("blog.write") && t.can("blog.publish"));
     }
 
     #[test]

@@ -4515,7 +4515,8 @@
       "applications": "Bewerbungen",
       "jobs": "Stellen",
       "website": "Auf der Website",
-      "websiteHint": "Öffnet die Website im Browser (Anmeldung mit Microsoft)."
+      "websiteHint": "Öffnet die Website im Browser (Anmeldung mit Microsoft).",
+      "blog": "Blog"
     },
     "search": {
       "placeholder": "Spieler, UUIDs, Meldungs-IDs, #Strafen, Umhänge suchen …",
@@ -4913,7 +4914,9 @@
       "applications_view": "Bewerbungen sehen",
       "applications_review": "Bewerbungen prüfen",
       "applications_manage": "Stellen verwalten",
-      "applications_decide": "Über Bewerbungen entscheiden"
+      "applications_decide": "Über Bewerbungen entscheiden",
+      "blog_write": "Blog-Beiträge schreiben (Entwürfe, Bilder)",
+      "blog_publish": "Blog-Beiträge veröffentlichen, planen und zurückziehen"
     }
   },
   "trsChoice": {

@@ -4515,7 +4515,8 @@
       "applications": "Applications",
       "jobs": "Positions",
       "website": "On the website",
-      "websiteHint": "Opens the website in your browser (sign in with Microsoft)."
+      "websiteHint": "Opens the website in your browser (sign in with Microsoft).",
+      "blog": "Blog"
     },
     "search": {
       "placeholder": "Search players, UUIDs, report IDs, #sanctions, capes …",
@@ -4913,7 +4914,9 @@
       "applications_view": "See applications",
       "applications_review": "Review applications",
       "applications_manage": "Manage positions",
-      "applications_decide": "Decide applications"
+      "applications_decide": "Decide applications",
+      "blog_write": "Write blog posts (drafts, images)",
+      "blog_publish": "Publish, schedule and unpublish blog posts"
     }
   },
   "trsChoice": {

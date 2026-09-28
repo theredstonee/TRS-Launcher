@@ -4515,7 +4515,8 @@
       "applications": "Candidaturas",
       "jobs": "Vagas",
       "website": "No site",
-      "websiteHint": "Abre o site no seu navegador (login com a Microsoft)."
+      "websiteHint": "Abre o site no seu navegador (login com a Microsoft).",
+      "blog": "Blog"
     },
     "search": {
       "placeholder": "Buscar jogadores, UUIDs, IDs de denúncia, #punições, capas …",
@@ -4913,7 +4914,9 @@
       "applications_view": "Ver candidaturas",
       "applications_review": "Analisar candidaturas",
       "applications_manage": "Gerenciar vagas",
-      "applications_decide": "Decidir candidaturas"
+      "applications_decide": "Decidir candidaturas",
+      "blog_write": "Escrever posts do blog (rascunhos, imagens)",
+      "blog_publish": "Publicar, agendar e despublicar posts do blog"
     }
   },
   "trsChoice": {
