@@ -212,6 +212,8 @@ export interface SocialSettings {
   friendRequests: boolean
   capeOffers: boolean
   friendOnline: boolean
+  /** Issues auf der Website, denen man folgt (§28). */
+  issues: boolean
 }
 
 // --- Clips & Aufnahme ------------------------------------------------------------------

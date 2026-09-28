@@ -2216,7 +2216,8 @@
         "invites": "Server-Einladungen",
         "friendRequests": "Freundschaftsanfragen",
         "capeOffers": "Umhang-Angebote",
-        "friendOnline": "Freunde kommen online"
+        "friendOnline": "Freunde kommen online",
+        "issues": "Issues, denen du folgst"
       },
       "preview": "Test-Benachrichtigung zeigen",
       "previewTitle": "TRS Launcher",
@@ -5126,6 +5127,27 @@
     "linked": {
       "shared": "Als Modpack {code} geteilt",
       "newVersion": "Neue Version teilen"
+    }
+  },
+  "issues": {
+    "status": {
+      "open": "Offen",
+      "planned": "Geplant",
+      "in_progress": "In Arbeit",
+      "in_review": "In Prüfung",
+      "done": "Erledigt",
+      "rejected": "Abgelehnt",
+      "duplicate": "Duplikat"
+    },
+    "toast": {
+      "title": "#{number} {title}",
+      "status": "Status: {status}",
+      "fixed": "Erledigt in Version {version}",
+      "teamComment": "{name} aus dem Team hat geantwortet",
+      "teamCommentText": "{name} (Team): {text}",
+      "team": "TRS-Team",
+      "merged": "Zusammengeführt mit #{number} {title}",
+      "view": "Ansehen"
     }
   }
 }

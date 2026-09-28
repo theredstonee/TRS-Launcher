@@ -54,6 +54,14 @@ How to write an entry:
   what goes out; the log is cleaned first (tokens, UUIDs, your player and account names, IP addresses, user names in
   folder paths, email addresses and chat messages are removed). After sending you get the issue number and can open it
   in the browser. Works in every Minecraft version the TRS Client supports.
+- New on the website: an issue tracker (trs-launcher.theredstonee.de/issues) and a roadmap. Report bugs, suggest
+  features for the launcher, the TRS Client or the website, vote them up or down, comment with screenshots and follow
+  issues. The roadmap board shows every issue in six columns – open, planned, in progress, in review, done and
+  rejected – or as a compact list; filter with a search field (e.g. status:planned area:client) or the filter menus
+  and open any issue in a window right on the board.
+- Follow an issue and the launcher tells you when its status changes, the team answers, a fix ships ("fixed in") or it
+  is merged into another issue – “View” opens it in your browser. You can turn this off under Settings →
+  Notifications → “Issues you follow”.
 
 ### Deutsch
 - Minimap im TRS Client: Wegpunkte außerhalb der Karte sitzen jetzt als kleine farbige Kästchen mit ihrem
@@ -91,6 +99,14 @@ How to write an entry:
   Kontonamen, IP-Adressen, Benutzernamen in Ordnerpfaden, E-Mail-Adressen und Chat-Nachrichten fliegen raus). Danach
   bekommst du die Issue-Nummer und kannst sie im Browser öffnen. Geht in jeder Minecraft-Version, die der TRS Client
   unterstützt.
+- Neu auf der Website: ein Issue-Tracker (trs-launcher.theredstonee.de/issues) und eine Roadmap. Melde Fehler, wünsch
+  dir Funktionen für den Launcher, den TRS Client oder die Website, stimme hoch oder runter, kommentiere mit
+  Screenshots und folge Issues. Das Roadmap-Board zeigt alle Issues in sechs Spalten – offen, geplant, in Arbeit, in
+  Prüfung, erledigt und abgelehnt – oder als kompakte Liste; filtern geht über ein Suchfeld (z. B. status:geplant
+  bereich:client) oder die Filter-Menüs, und jedes Issue öffnet sich als Fenster direkt über dem Board.
+- Folgst du einem Issue, sagt dir der Launcher Bescheid, wenn sich der Status ändert, das Team antwortet, eine Lösung
+  erscheint („Erledigt in“) oder es mit einem anderen Issue zusammengeführt wird – „Ansehen“ öffnet es im Browser.
+  Abschalten kannst du das unter Einstellungen → Benachrichtigungen → „Issues, denen du folgst“.
 
 ## 0.12.0 – 2026-09-27 – Pass It On | Weitergeben
 <!-- banner: accent=#27d3e6 motif=/news/0.12.0/banner.png -->

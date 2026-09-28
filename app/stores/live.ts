@@ -203,6 +203,21 @@ export const useLiveStore = defineStore('live', () => {
       case 'pack_removed':
         usePacksStore().onLiveEvent(e)
         return
+      case 'issue_updated': {
+        // Issue auf der Website (§28): nur Hinweis, „Ansehen“ öffnet es im Browser.
+        const { title, body } = issueToastText(e)
+        const url = issueToastUrl(e)
+        const open = () => void backend.openExternalUrl(url).catch((err) => useToasts().error(err))
+        void toasts.notify('issue', {
+          key: `issue:${e.issue.number}`,
+          title,
+          body,
+          face: e.change === 'team_comment' ? e.by : null,
+          open,
+          actions: [{ label: t('issues.toast.view'), primary: true, run: open }],
+        })
+        return
+      }
       case 'moderation': {
         const until = e.until ? dateTime(e.until) : null
         const body =

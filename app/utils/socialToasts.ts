@@ -2,7 +2,7 @@
 // tests/social-toasts.test.ts. Wann eine Benachrichtigung erscheint, ob das
 // Betriebssystem sie zeigt, ob es einen Ton gibt, und wie die Liste wächst.
 
-export type SocialToastKind = 'message' | 'invite' | 'friendRequest' | 'capeOffer' | 'online' | 'report' | 'moderation' | 'application' | 'pack'
+export type SocialToastKind = 'message' | 'invite' | 'friendRequest' | 'capeOffer' | 'online' | 'report' | 'moderation' | 'application' | 'pack' | 'issue'
 
 /** Einstellungen (Rust: `SocialSettings`, alles lokal). */
 export interface SocialPrefs {
@@ -19,6 +19,8 @@ export interface SocialPrefs {
   friendRequests: boolean
   capeOffers: boolean
   friendOnline: boolean
+  /** Issues auf der Website, denen man folgt (§28). */
+  issues: boolean
 }
 
 export const defaultSocialPrefs: SocialPrefs = {
@@ -35,6 +37,7 @@ export const defaultSocialPrefs: SocialPrefs = {
   friendRequests: true,
   capeOffers: true,
   friendOnline: true,
+  issues: true,
 }
 
 /** Was gerade los ist, wenn eine Benachrichtigung ansteht. */
@@ -83,6 +86,8 @@ function typeEnabled(kind: SocialToastKind, prefs: SocialPrefs): boolean {
       return prefs.capeOffers
     case 'online':
       return prefs.friendOnline
+    case 'issue':
+      return prefs.issues
     default:
       return true
   }

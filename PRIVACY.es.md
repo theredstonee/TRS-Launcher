@@ -262,6 +262,25 @@ permitidas. El servidor solo cuenta las peticiones por dirección IP en memoria 
 - **Límites y denuncias:** como máximo 5 envíos al día; un bloqueo de subida de la moderación también bloquea los
   envíos. Los circuitos se pueden denunciar como cualquier otro contenido (ver abajo).
 
+### Incidencias e informes de errores
+
+El gestor público de incidencias de la web (/issues, /roadmap) se describe en la parte de la web de esta política. El
+launcher y TRS Client lo usan así:
+
+- **Avisos:** si sigues una incidencia (automáticamente en las que abriste o comentaste), el launcher recibe un evento
+  por su conexión TRS existente cuando cambia el estado, responde el equipo, sale una corrección («corregido en») o se
+  fusiona la incidencia, y muestra un aviso social con el botón «Ver», que abre la incidencia en tu navegador. Para ello
+  no se guarda nada en tu PC; se aplican los ajustes de los avisos sociales.
+- **«Informar de un error» en TRS Client** envía un título, tu descripción y – solo lo que marques, mostrado antes de
+  enviarlo – la versión de TRS Client, la versión de Minecraft y el loader, tu lista de mods, un extracto del log del
+  juego y una captura, junto con tu cuenta TRS. El cliente quita antes del log tokens de acceso, IDs de sesión,
+  direcciones de correo, direcciones IP, UUIDs y tu nombre de jugador; el servidor lo vuelve a hacer. La incidencia, las
+  versiones, la lista de mods y la captura son públicas en la web con tu nombre de Minecraft; el extracto del log solo
+  lo ves tú y el equipo.
+- **Cuánto tiempo:** las incidencias y comentarios se conservan mientras exista el gestor; «Alle TRS-Daten löschen»
+  borra tus votos, lo que sigues, los extractos de log y las imágenes subidas; tus incidencias y comentarios quedan sin
+  tu nombre.
+
 ### Reportar errores en el TRS Client
 
 Menú del TRS Client → «Reportar» envía un reporte de error al gestor de incidencias de TRS, con tu cuenta TRS (los
@@ -423,6 +442,7 @@ servidor TRS.
 | Ajustes del chat: confirmaciones de lectura y «escribiendo» activados o no | Para que el chat respete tus decisiones |
 | Capturas compartidas (solo las imágenes que compartes): la imagen recodificada, tamaño, formato, fecha de publicación y de caducidad, la cuenta que la compartió (no visible públicamente) | Compartir una captura como enlace (ver arriba) |
 | Modpacks compartidos (solo los packs que compartes): archivo del pack, nombre, descripción, versión, versión de Minecraft, cargador, número de archivos, fecha de publicación/actualización/caducidad, instalaciones, la cuenta que lo compartió (nombre visible en la página del pack), amigos a los que se envió | Compartir un modpack por código, enlace o con amigos (ver arriba) |
+| Incidencias y comentarios que escribes, tus votos y lo que sigues; con «Informar de un error» en TRS Client lo que marques (versiones, lista de mods, extracto del log – limpio, solo visible para ti y el equipo – y una captura) | Informar de errores, sugerir funciones, votar y avisos (ver arriba) |
 | Circuitos enviados: el circuito (solo bloques y estados), nombre, descripción, categoría, idioma, fecha, estado y respuesta del equipo; en los circuitos aceptados, tu nombre como creador | Enviar un circuito a la biblioteca (ver arriba) |
 | Denuncias que haces y denuncias sobre ti, cada una con una copia cifrada del contenido denunciado y su contexto; sanciones (advertencia, silencio, bloqueos) con su historial y apelación, notas internas del equipo, nombres anteriores | Moderación (ver arriba) |
 | Alojar un mundo (solo mientras tu mundo está abierto): nombre del mundo, versión, cargador de mods y ajustes, código de acceso, jugadores invitados, solicitudes de acceso, jugadores admitidos y bloqueados con fecha, número de jugadores, lista de mods compartidos y datos del paquete de recursos (nombres, tamaños, orígenes, sumas de comprobación – sin archivos); tu lista de jugadores bloqueados en todos tus mundos | Alojar un mundo para amigos (ver arriba) |
