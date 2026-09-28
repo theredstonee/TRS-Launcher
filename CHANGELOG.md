@@ -26,7 +26,9 @@ How to write an entry:
 ### English
 - New on the website: an issue tracker (trs-launcher.theredstonee.de/issues) and a roadmap. Report bugs, suggest
   features for the launcher, the TRS Client or the website, vote them up or down, comment with screenshots and follow
-  issues. The roadmap shows what is planned, what is being built and what shipped recently.
+  issues. The roadmap board shows every issue in six columns – open, planned, in progress, in review, done and
+  rejected – or as a compact list; filter with a search field (e.g. status:planned area:client) or the filter menus
+  and open any issue in a window right on the board.
 - Follow an issue and the launcher tells you when its status changes, the team answers, a fix ships ("fixed in") or it
   is merged into another issue – “View” opens it in your browser. You can turn this off under Settings →
   Notifications → “Issues you follow”.
@@ -34,7 +36,9 @@ How to write an entry:
 ### Deutsch
 - Neu auf der Website: ein Issue-Tracker (trs-launcher.theredstonee.de/issues) und eine Roadmap. Melde Fehler, wünsch
   dir Funktionen für den Launcher, den TRS Client oder die Website, stimme hoch oder runter, kommentiere mit
-  Screenshots und folge Issues. Die Roadmap zeigt, was geplant ist, woran gebaut wird und was zuletzt fertig wurde.
+  Screenshots und folge Issues. Das Roadmap-Board zeigt alle Issues in sechs Spalten – offen, geplant, in Arbeit, in
+  Prüfung, erledigt und abgelehnt – oder als kompakte Liste; filtern geht über ein Suchfeld (z. B. status:geplant
+  bereich:client) oder die Filter-Menüs, und jedes Issue öffnet sich als Fenster direkt über dem Board.
 - Folgst du einem Issue, sagt dir der Launcher Bescheid, wenn sich der Status ändert, das Team antwortet, eine Lösung
   erscheint („Erledigt in“) oder es mit einem anderen Issue zusammengeführt wird – „Ansehen“ öffnet es im Browser.
   Abschalten kannst du das unter Einstellungen → Benachrichtigungen → „Issues, denen du folgst“.
