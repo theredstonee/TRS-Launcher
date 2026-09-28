@@ -508,7 +508,8 @@
       "tagSnapshot": "Snapshot",
       "tagPreview": "Preview",
       "tagUpdate": "Update",
-      "tagDownloads": "{count} downloads"
+      "tagDownloads": "{count} downloads",
+      "tagNews": "Nieuws"
     },
     "screenshots": {
       "tooLargeForClipboard": "De afbeelding is te groot voor het klembord.",
@@ -785,6 +786,11 @@
       "invalidPack": "De server heeft het modpack geweigerd – het is geen geldig Modrinth-pack.",
       "noRecipients": "Je kunt modpacks alleen naar je vrienden sturen.",
       "invalidDuration": "Ongeldige duur."
+    },
+    "trsWebLogin": {
+      "invalidCode": "Dat is geen geldige code (vorm: XXX-XXX).",
+      "expired": "Dit inlogverzoek bestaat niet (meer) – start het inloggen op de website opnieuw.",
+      "used": "Dit inlogverzoek is al beantwoord."
     }
   },
   "browse": {
@@ -2575,7 +2581,7 @@
       "clips": "clips opname opnemen video replay shadowplay",
       "social": "vrienden chat berichten groepen sociaal verzoeken",
       "admin": "team moderatie meldingen straffen bezwaren spelers admin",
-      "websiteLogin": "website inloggen login microsoft browser team",
+      "websiteLogin": "website inloggen login code bevestigen launcher microsoft browser team",
       "myApplications": "sollicitaties solliciteren team functie status"
     },
     "actions": {
@@ -2596,7 +2602,7 @@
         "subtitle": "Map met instanties en instellingen"
       },
       "websiteLogin": {
-        "subtitle": "Opent {host} – inloggen met Microsoft"
+        "subtitle": "Code van {host} bevestigen"
       },
       "myApplications": {
         "subtitle": "Status en antwoorden van je teamsollicitaties"
@@ -2775,7 +2781,10 @@
     "empty": "Hier is op dit moment niets nieuws.",
     "readPatchNotes": "Patchnotes lezen",
     "openInBrowser": "Openen in browser",
-    "launcherReleased": "{title} is uit"
+    "launcherReleased": "{title} is uit",
+    "sourceTrs": "TRS-nieuws",
+    "trsTeam": "TRS-team",
+    "onlyEnglish": "Dit bericht is alleen in het Engels beschikbaar."
   },
   "game": {
     "preparing": "Minecraft voorbereiden",
@@ -4507,7 +4516,8 @@
       "applications": "Sollicitaties",
       "jobs": "Functies",
       "website": "Op de website",
-      "websiteHint": "Opent de website in je browser (inloggen met Microsoft)."
+      "websiteHint": "Opent de website in je browser (inloggen met Microsoft).",
+      "blog": "Blog"
     },
     "search": {
       "placeholder": "Zoek spelers, UUID’s, meldings-ID’s, #straffen, capes …",
@@ -4905,7 +4915,9 @@
       "applications_view": "Sollicitaties zien",
       "applications_review": "Sollicitaties beoordelen",
       "applications_manage": "Functies beheren",
-      "applications_decide": "Over sollicitaties beslissen"
+      "applications_decide": "Over sollicitaties beslissen",
+      "blog_write": "Blogberichten schrijven (concepten, afbeeldingen)",
+      "blog_publish": "Blogberichten publiceren, inplannen en terugtrekken"
     }
   },
   "trsChoice": {
@@ -4975,9 +4987,10 @@
   },
   "websiteLogin": {
     "title": "Website",
-    "description": "Op {host} log je in met het Microsoft-account dat Minecraft bezit – voor sollicitaties bij het team en, als teamlid, voor het volledige teamgedeelte.",
-    "button": "Op de website inloggen met Microsoft",
-    "hint": "De website logt alleen nog in met Microsoft. Opent in je browser."
+    "description": "Op {host} log je in met je TRS Launcher (bevestig hier een code) of met Microsoft – voor sollicitaties en, als teamlid, het volledige teamgedeelte.",
+    "button": "Inloggen op de website",
+    "hint": "Kies op de website „TRS Launcher” en bevestig de code hier.",
+    "open": "Website openen"
   },
   "applications": {
     "status": {
@@ -5149,5 +5162,37 @@
       "merged": "Samengevoegd met #{number} {title}",
       "view": "Bekijken"
     }
+  },
+  "webLogin": {
+    "title": "Inloggen op de website",
+    "needsServices": "Inloggen op de website gebruikt de TRS-diensten. Zet ze eerst aan – zonder jouw toestemming stuurt de launcher niets naar de TRS-server.",
+    "enableServices": "TRS-diensten aanzetten",
+    "codeIntro": "Kies op {host} „TRS Launcher” – de website toont een code. Typ die hier in:",
+    "codeLabel": "Code van de website",
+    "invalidCode": "Voer de code van 6 tekens van de website in (bijv. K7Q-2MX).",
+    "openWebsite": "{host} openen in de browser",
+    "question": "Iemand wil op {site} inloggen met jouw TRS-account.",
+    "codeHeading": "Code",
+    "compare": "Toont je browser precies deze code?",
+    "site": "Website",
+    "browser": "Browser",
+    "unknownBrowser": "Onbekend",
+    "time": "Verzoek",
+    "expires": "verloopt over {time}",
+    "account": "Inloggen als",
+    "activeAccount": "actief",
+    "otherAccounts": "Alleen accounts die bij de TRS-diensten zijn ingelogd staan in de lijst.",
+    "warning": "Bevestig alleen als je zelf net op {site} „Inloggen met TRS Launcher” hebt gekozen en daar dezelfde code staat. Bevestig nooit een code die iemand je heeft gestuurd.",
+    "done": "Bevestigd – {name} is nu ingelogd op de website.",
+    "doneToast": "Ingelogd op {site}",
+    "doneHint": "Je kunt terug naar je browser.",
+    "denied": "Inloggen geweigerd.",
+    "deniedHint": "De website toont dat het verzoek is geweigerd.",
+    "errorHint": "Start het inloggen op de website opnieuw om een nieuwe code te krijgen.",
+    "next": "Verder",
+    "deny": "Weigeren",
+    "approve": "Bevestigen",
+    "sending": "Bevestigen…",
+    "enterCode": "Code invoeren"
   }
 }

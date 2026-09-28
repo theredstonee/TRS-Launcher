@@ -508,7 +508,8 @@
       "tagSnapshot": "Snapshot",
       "tagPreview": "Preview",
       "tagUpdate": "Update",
-      "tagDownloads": "{count} downloads"
+      "tagDownloads": "{count} downloads",
+      "tagNews": "News"
     },
     "screenshots": {
       "tooLargeForClipboard": "The image is too large for the clipboard.",
@@ -785,6 +786,11 @@
       "invalidPack": "The server rejected the modpack – it isn’t a valid Modrinth pack.",
       "noRecipients": "You can only send modpacks to your friends.",
       "invalidDuration": "Invalid duration."
+    },
+    "trsWebLogin": {
+      "invalidCode": "That is not a valid code (format: XXX-XXX).",
+      "expired": "This sign-in request doesn’t exist (anymore) – start the sign-in on the website again.",
+      "used": "This sign-in request was already answered."
     }
   },
   "browse": {
@@ -2575,7 +2581,7 @@
       "clips": "clips recording record video replay shadowplay",
       "social": "friends chat messages groups social requests",
       "admin": "team moderation reports sanctions appeals players admin",
-      "websiteLogin": "website sign in login microsoft browser team",
+      "websiteLogin": "website sign in login code confirm launcher microsoft browser team",
       "myApplications": "applications apply team job position status"
     },
     "actions": {
@@ -2596,7 +2602,7 @@
         "subtitle": "Folder with instances and settings"
       },
       "websiteLogin": {
-        "subtitle": "Opens {host} – sign in with Microsoft"
+        "subtitle": "Confirm the code from {host}"
       },
       "myApplications": {
         "subtitle": "Status and answers of your team applications"
@@ -2775,7 +2781,10 @@
     "empty": "Nothing new here right now.",
     "readPatchNotes": "Read patch notes",
     "openInBrowser": "Open in browser",
-    "launcherReleased": "{title} is out"
+    "launcherReleased": "{title} is out",
+    "sourceTrs": "TRS News",
+    "trsTeam": "TRS Team",
+    "onlyEnglish": "This post is only available in English."
   },
   "game": {
     "preparing": "Preparing Minecraft",
@@ -4507,7 +4516,8 @@
       "applications": "Applications",
       "jobs": "Positions",
       "website": "On the website",
-      "websiteHint": "Opens the website in your browser (sign in with Microsoft)."
+      "websiteHint": "Opens the website in your browser (sign in with Microsoft).",
+      "blog": "Blog"
     },
     "search": {
       "placeholder": "Search players, UUIDs, report IDs, #sanctions, capes …",
@@ -4905,7 +4915,9 @@
       "applications_view": "See applications",
       "applications_review": "Review applications",
       "applications_manage": "Manage positions",
-      "applications_decide": "Decide applications"
+      "applications_decide": "Decide applications",
+      "blog_write": "Write blog posts (drafts, images)",
+      "blog_publish": "Publish, schedule and unpublish blog posts"
     }
   },
   "trsChoice": {
@@ -4975,9 +4987,10 @@
   },
   "websiteLogin": {
     "title": "Website",
-    "description": "On {host} you sign in with the Microsoft account that owns Minecraft – for team applications and, for team members, the full team area.",
+    "description": "On {host} you sign in with your TRS Launcher (confirm a code here) or with Microsoft – for team applications and, for team members, the full team area.",
     "button": "Sign in on the website",
-    "hint": "The website only signs in with Microsoft. Opens in your browser."
+    "hint": "Choose “TRS Launcher” on the website and confirm the code here.",
+    "open": "Open website"
   },
   "applications": {
     "status": {
@@ -5149,5 +5162,37 @@
       "merged": "Merged into #{number} {title}",
       "view": "View"
     }
+  },
+  "webLogin": {
+    "title": "Sign in on the website",
+    "needsServices": "Signing in on the website uses the TRS services. Switch them on first – without your consent the launcher sends nothing to the TRS server.",
+    "enableServices": "Switch on TRS services",
+    "codeIntro": "On {host}, choose “TRS Launcher” – the website shows a code. Type it in here:",
+    "codeLabel": "Code from the website",
+    "invalidCode": "Enter the 6-character code from the website (e.g. K7Q-2MX).",
+    "openWebsite": "Open {host} in the browser",
+    "question": "Someone wants to sign in on {site} with your TRS account.",
+    "codeHeading": "Code",
+    "compare": "Does your browser show exactly this code?",
+    "site": "Website",
+    "browser": "Browser",
+    "unknownBrowser": "Unknown",
+    "time": "Request",
+    "expires": "expires in {time}",
+    "account": "Sign in as",
+    "activeAccount": "active",
+    "otherAccounts": "Only accounts that are signed in to the TRS services are listed.",
+    "warning": "Only confirm if you just chose “Sign in with TRS Launcher” on {site} yourself and it shows the same code. Never confirm a code someone sent you.",
+    "done": "Confirmed – {name} is now signed in on the website.",
+    "doneToast": "Signed in on {site}",
+    "doneHint": "You can go back to your browser.",
+    "denied": "Sign-in declined.",
+    "deniedHint": "The website shows that the request was declined.",
+    "errorHint": "Start the sign-in on the website again to get a new code.",
+    "next": "Continue",
+    "deny": "Decline",
+    "approve": "Confirm",
+    "sending": "Confirming…",
+    "enterCode": "Enter code"
   }
 }

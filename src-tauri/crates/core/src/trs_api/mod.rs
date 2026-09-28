@@ -36,6 +36,7 @@ pub mod team;
 mod texture;
 pub mod types;
 pub mod validate;
+pub mod web_login;
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -61,7 +62,7 @@ pub const DEFAULT_BASE: &str = "https://trs-launcher.theredstonee.de";
 /// Bisherige Adresse – bleibt parallel erreichbar. Umhang-URLs mit diesem Host
 /// (z. B. aus älteren Antworten oder Caches) gelten weiter als vertrauenswürdig.
 pub const LEGACY_BASE: &str = "https://api.theredstonee.de";
-/// Anmeldung auf der Website (nur noch mit Microsoft, §24.1).
+/// Anmeldeseite der Website (Microsoft §24.1 oder TRS Launcher §29, Bestätigung in `web_login`).
 pub const WEBSITE_LOGIN_URL: &str = "https://trs-launcher.theredstonee.de/login";
 /// Alle Adressen, unter denen die echte TRS API läuft.
 pub const KNOWN_BASES: [&str; 2] = [DEFAULT_BASE, LEGACY_BASE];

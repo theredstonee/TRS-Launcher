@@ -21,7 +21,8 @@ const myReports = ref(false)
 
 const settings = computed(() => trs.me?.settings ?? null)
 
-/** Die Website meldet nur noch mit Microsoft an (§24.1) – der Launcher öffnet sie nur. */
+/** Website-Anmeldung (§29): Code von der Website hier eingeben – oder die Website im Browser öffnen. */
+const webLogin = useWebLoginStore()
 function openWebsite() {
   backend.openExternalUrl(WEBSITE_LOGIN_URL).catch((e) => toasts.error(e))
 }
@@ -179,9 +180,14 @@ function openPrivacy() {
         <SocialMyReportsDialog v-if="myReports" @close="myReports = false" />
 
         <SettingRow :title="t('websiteLogin.title')" :description="t('websiteLogin.description', { host: TRS_HOST })">
-          <button class="btn btn-ghost" data-testid="settings-website-login" @click="openWebsite">
-            {{ t('websiteLogin.button') }} <SocialIcon name="external" class="size-3.5" />
-          </button>
+          <div class="flex flex-wrap justify-end gap-2">
+            <button class="btn btn-ghost" data-testid="settings-website-open" @click="openWebsite">
+              {{ t('websiteLogin.open') }} <SocialIcon name="external" class="size-3.5" />
+            </button>
+            <button class="btn btn-primary" data-testid="settings-website-login" @click="webLogin.open()">
+              {{ t('websiteLogin.button') }}
+            </button>
+          </div>
         </SettingRow>
 
         <SettingRow

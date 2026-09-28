@@ -508,7 +508,8 @@
       "tagSnapshot": "Snapshot",
       "tagPreview": "Önizleme",
       "tagUpdate": "Güncelleme",
-      "tagDownloads": "{count} indirme"
+      "tagDownloads": "{count} indirme",
+      "tagNews": "Haberler"
     },
     "screenshots": {
       "tooLargeForClipboard": "Görsel pano için çok büyük.",
@@ -785,6 +786,11 @@
       "invalidPack": "Sunucu modpack’i reddetti – geçerli bir Modrinth paketi değil.",
       "noRecipients": "Modpack’leri yalnızca arkadaşlarına gönderebilirsin.",
       "invalidDuration": "Geçersiz süre."
+    },
+    "trsWebLogin": {
+      "invalidCode": "Bu geçerli bir kod değil (biçim: XXX-XXX).",
+      "expired": "Bu oturum açma isteği yok (artık) – web sitesinde oturum açmayı yeniden başlat.",
+      "used": "Bu oturum açma isteği zaten yanıtlandı."
     }
   },
   "browse": {
@@ -2575,7 +2581,7 @@
       "clips": "klipler kayıt kaydet video tekrar shadowplay",
       "social": "arkadaşlar sohbet mesajlar gruplar sosyal istekler",
       "admin": "ekip moderasyon şikayetler cezalar itirazlar oyuncular admin",
-      "websiteLogin": "web sitesi giriş login microsoft tarayıcı ekip",
+      "websiteLogin": "web sitesi oturum aç giriş kod onayla launcher microsoft tarayıcı ekip",
       "myApplications": "başvurular başvur ekip pozisyon durum"
     },
     "actions": {
@@ -2596,7 +2602,7 @@
         "subtitle": "Kurulumları ve ayarları içeren klasör"
       },
       "websiteLogin": {
-        "subtitle": "{host} açılır – Microsoft ile giriş"
+        "subtitle": "{host} kodunu onayla"
       },
       "myApplications": {
         "subtitle": "Ekip başvurularının durumu ve yanıtları"
@@ -2775,7 +2781,10 @@
     "empty": "Şu an burada yeni bir şey yok.",
     "readPatchNotes": "Yama notlarını oku",
     "openInBrowser": "Tarayıcıda aç",
-    "launcherReleased": "{title} çıktı"
+    "launcherReleased": "{title} çıktı",
+    "sourceTrs": "TRS Haberleri",
+    "trsTeam": "TRS Ekibi",
+    "onlyEnglish": "Bu yazı yalnızca İngilizce olarak mevcut."
   },
   "game": {
     "preparing": "Minecraft hazırlanıyor",
@@ -4507,7 +4516,8 @@
       "applications": "Başvurular",
       "jobs": "Pozisyonlar",
       "website": "Web sitesinde",
-      "websiteHint": "Web sitesini tarayıcında açar (Microsoft ile giriş)."
+      "websiteHint": "Web sitesini tarayıcında açar (Microsoft ile giriş).",
+      "blog": "Blog"
     },
     "search": {
       "placeholder": "Oyuncu, UUID, şikayet kimliği, #ceza, pelerin ara …",
@@ -4905,7 +4915,9 @@
       "applications_view": "Başvuruları görme",
       "applications_review": "Başvuruları inceleme",
       "applications_manage": "Pozisyonları yönetme",
-      "applications_decide": "Başvurulara karar verme"
+      "applications_decide": "Başvurulara karar verme",
+      "blog_write": "Blog yazıları yazma (taslaklar, görseller)",
+      "blog_publish": "Blog yazılarını yayınlama, zamanlama ve yayından kaldırma"
     }
   },
   "trsChoice": {
@@ -4975,9 +4987,10 @@
   },
   "websiteLogin": {
     "title": "Web sitesi",
-    "description": "{host} üzerinde Minecraft’ın sahibi olan Microsoft hesabıyla giriş yaparsın – ekibe başvurmak ve ekip üyesi olarak tüm ekip alanı için.",
-    "button": "Web sitesinde Microsoft ile giriş yap",
-    "hint": "Web sitesi artık yalnızca Microsoft ile giriş yapar. Tarayıcında açılır."
+    "description": "{host} üzerinde TRS Launcher (kodu burada onaylayarak) veya Microsoft ile oturum açarsın – ekip başvuruları ve ekip üyeleri için tam ekip alanı için.",
+    "button": "Web sitesinde oturum aç",
+    "hint": "Web sitesinde “TRS Launcher”ı seç ve kodu burada onayla.",
+    "open": "Web sitesini aç"
   },
   "applications": {
     "status": {
@@ -5129,6 +5142,7 @@
       "newVersion": "Yeni sürümü paylaş"
     }
   },
+<<<<<<< HEAD
   "issues": {
     "status": {
       "open": "Açık",
@@ -5149,5 +5163,38 @@
       "merged": "#{number} {title} ile birleştirildi",
       "view": "Görüntüle"
     }
+=======
+  "webLogin": {
+    "title": "Web sitesinde oturum aç",
+    "needsServices": "Web sitesinde oturum açmak TRS hizmetlerini kullanır. Önce bunları aç – iznin olmadan launcher TRS sunucusuna hiçbir şey göndermez.",
+    "enableServices": "TRS hizmetlerini aç",
+    "codeIntro": "{host} üzerinde “TRS Launcher”ı seç – site bir kod gösterir. Kodu buraya yaz:",
+    "codeLabel": "Siteden gelen kod",
+    "invalidCode": "Sitedeki 6 karakterlik kodu gir (ör. K7Q-2MX).",
+    "openWebsite": "{host} adresini tarayıcıda aç",
+    "question": "Biri TRS hesabınla {site} üzerinde oturum açmak istiyor.",
+    "codeHeading": "Kod",
+    "compare": "Tarayıcın tam olarak bu kodu mu gösteriyor?",
+    "site": "Web sitesi",
+    "browser": "Tarayıcı",
+    "unknownBrowser": "Bilinmiyor",
+    "time": "İstek",
+    "expires": "{time} içinde sona erer",
+    "account": "Şu hesapla oturum aç",
+    "activeAccount": "etkin",
+    "otherAccounts": "Yalnızca TRS hizmetlerinde oturumu açık hesaplar listelenir.",
+    "warning": "Yalnızca az önce {site} üzerinde “TRS Launcher ile oturum aç”ı kendin seçtiysen ve orada aynı kod görünüyorsa onayla. Birinin sana gönderdiği bir kodu asla onaylama.",
+    "done": "Onaylandı – {name} artık web sitesinde oturum açtı.",
+    "doneToast": "{site} üzerinde oturum açıldı",
+    "doneHint": "Tarayıcına geri dönebilirsin.",
+    "denied": "Oturum açma reddedildi.",
+    "deniedHint": "Web sitesi isteğin reddedildiğini gösterir.",
+    "errorHint": "Yeni bir kod almak için web sitesinde oturum açmayı yeniden başlat.",
+    "next": "Devam",
+    "deny": "Reddet",
+    "approve": "Onayla",
+    "sending": "Onaylanıyor…",
+    "enterCode": "Kodu gir"
+>>>>>>> worktree-agent-a22492f1a72458e6b
   }
 }

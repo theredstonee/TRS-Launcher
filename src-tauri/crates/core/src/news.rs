@@ -1,5 +1,6 @@
 //! Neuigkeiten für die Startseite: Minecraft-Patchnotes und -News von Mojangs
-//! Launcher-Inhalten, gerade beliebte Modrinth-Projekte und TRS-Launcher-Releases.
+//! Launcher-Inhalten, gerade beliebte Modrinth-Projekte, TRS-Launcher-Releases und die
+//! News-Beiträge des TRS-Teams (Website-Blog, `api/API.md` §30 – nur mit eingeschalteten TRS-Diensten).
 //!
 //! Alles wird hier im Kern geholt, geprüft, gekürzt und mit kurzer Lebensdauer
 //! auf der Platte zwischengespeichert. Offline liefert der Cache weiter Inhalte
@@ -28,6 +29,8 @@ const MAX_ITEMS: usize = 8;
 /// „Gerade beliebt“ = Projekte aus den letzten 90 Tagen, nach Downloads.
 const TRENDING_DAYS: i64 = 90;
 const MAX_IMAGE_BYTES: u64 = 4 * 1024 * 1024;
+/// Größte Antwort des TRS-News-Feeds.
+const MAX_TRS_NEWS_BYTES: u64 = 2 * 1024 * 1024;
 
 // --- Datenmodell fürs Webview ---------------------------------------------------
 
@@ -40,6 +43,8 @@ pub enum NewsSource {
     Mojang,
     Modrinth,
     Launcher,
+    /// News-Beiträge des TRS-Teams (Website-Blog).
+    Trs,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,6 +74,21 @@ pub struct NewsItem {
     /// Pfad der Patchnotes bei Mojang – für den vollen Text im Launcher.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub content_path: Option<String>,
+    /// TRS-News: Texte je Sprache (`en` immer, `de`/`es` wenn übersetzt) – `title`/`summary` oben sind Englisch.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub texts: Option<BTreeMap<String, NewsTexts>>,
+    /// TRS-News: Autor (Spielername) oder `None` = TRS-Team.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub author: Option<String>,
+}
+
+/// Texte eines TRS-News-Beitrags in einer Sprache. `markdown` ist gesäubert: Bilder nur aus dem Blog der eigenen
+/// Website (absolute Adressen), alles andere wird im Webview nur über den DOMPurify-Weg gezeigt.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NewsTexts {
+    pub title: String,
+    pub summary: String,
+    pub markdown: String,
 }
 
 /// Übersetzbarer Text wie [`Msg`] (`{ code, params, message }`), aber auch
@@ -309,6 +329,8 @@ fn parse_patch_notes(json: &str) -> Result<Vec<NewsItem>> {
                 image_url: e.image.and_then(|i| launcher_content_url(&i.url)),
                 link: None,
                 content_path: is_content_path(&e.content_path).then(|| e.content_path.clone()),
+                texts: None,
+                author: None,
                 id: format!("patch-{}", plain_text(&e.id, 64)),
                 source: NewsSource::PatchNotes,
             }
@@ -375,6 +397,8 @@ fn parse_mojang_news(json: &str) -> Result<Vec<NewsItem>> {
                 .and_then(|i| launcher_content_url(&i.url)),
             link: Some(e.read_more_link).filter(|l| modrinth::is_safe_external_url(l)),
             content_path: None,
+            texts: None,
+            author: None,
         })
         .collect())
 }
@@ -401,6 +425,8 @@ async fn fetch_trending(http: &reqwest::Client) -> Result<Vec<NewsItem>> {
                 image_url: hit.icon_url.filter(|u| crate::icon::is_allowed_icon_url(u)),
                 link: Some(format!("https://modrinth.com/mod/{}", hit.slug)).filter(|l| modrinth::is_safe_external_url(l)),
                 content_path: None,
+                texts: None,
+                author: None,
             }
         })
         .collect())
@@ -465,7 +491,149 @@ fn parse_releases(json: &str) -> Result<Vec<NewsItem>> {
                 image_url: None,
                 link: Some(r.html_url).filter(|l| modrinth::is_safe_external_url(l)),
                 content_path: None,
+                texts: None,
+                author: None,
             }
+        })
+        .collect())
+}
+
+// --- TRS-News (Website-Blog) ---------------------------------------------------------
+
+const MAX_MARKDOWN_CHARS: usize = 40_000;
+const TRS_NEWS_LANGS: [&str; 3] = ["en", "de", "es"];
+
+#[derive(Debug, Deserialize)]
+struct TrsNewsFeed {
+    #[serde(default)]
+    posts: Vec<TrsNewsPost>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TrsNewsPost {
+    #[serde(default)]
+    slug: String,
+    #[serde(default)]
+    published_at: Option<DateTime<Utc>>,
+    #[serde(default)]
+    title: BTreeMap<String, String>,
+    #[serde(default)]
+    summary: BTreeMap<String, String>,
+    #[serde(default)]
+    markdown: BTreeMap<String, String>,
+    #[serde(default)]
+    cover: Option<TrsNewsCover>,
+    #[serde(default)]
+    author: Option<TrsNewsAuthor>,
+}
+
+#[derive(Debug, Deserialize)]
+struct TrsNewsCover {
+    #[serde(default)]
+    url: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct TrsNewsAuthor {
+    #[serde(default)]
+    name: String,
+}
+
+fn is_news_slug(slug: &str) -> bool {
+    (3..=80).contains(&slug.len())
+        && slug.bytes().any(|b| b.is_ascii_lowercase())
+        && slug.split('-').all(|part| !part.is_empty() && part.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit()))
+}
+
+/// `/v1/site/blog/media/<id>.<jpg|png>` (oder Vorschau `<id>.t.<ext>`) – die einzigen Bilder der TRS-News.
+fn is_blog_media_path(path: &str) -> bool {
+    let Some(file) = path.strip_prefix("/v1/site/blog/media/") else { return false };
+    let (stem, ext) = match file.rsplit_once('.') {
+        Some(x) => x,
+        None => return false,
+    };
+    let id = stem.strip_suffix(".t").unwrap_or(stem);
+    matches!(ext, "jpg" | "png") && id.len() == 22 && id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+}
+
+/// Markdown der TRS-News: Bilder nur aus dem eigenen Blog (werden absolut), fremde Bilder fallen weg (ihr Alt-Text
+/// bleibt), Steuerzeichen raus, Länge begrenzt. Den Rest säubert das Webview (DOMPurify) wie bei Modrinth.
+pub fn clean_trs_markdown(markdown: &str, base: &str) -> String {
+    let text: String = markdown
+        .chars()
+        .filter(|c| !c.is_control() || matches!(c, '\n' | '\t'))
+        .take(MAX_MARKDOWN_CHARS)
+        .collect();
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text.as_str();
+    while let Some(start) = rest.find("![") {
+        out.push_str(&rest[..start]);
+        let after = &rest[start + 2..];
+        let parsed = after.find("](").and_then(|close| {
+            let alt = &after[..close];
+            let tail = &after[close + 2..];
+            let end = tail.find(')')?;
+            (!alt.contains(['\n', '[', ']'])).then(|| (alt, tail[..end].trim(), close + 2 + end + 1))
+        });
+        match parsed {
+            Some((alt, target, used)) => {
+                // Optionaler Titel `"…"` wird verworfen.
+                let url = target.split_whitespace().next().unwrap_or_default();
+                if is_blog_media_path(url) {
+                    out.push_str(&format!("![{alt}]({}{url})", base.trim_end_matches('/')));
+                } else {
+                    out.push_str(alt);
+                }
+                rest = &after[used..];
+            }
+            None => {
+                out.push_str("![");
+                rest = after;
+            }
+        }
+    }
+    out.push_str(rest);
+    out
+}
+
+fn parse_trs_news(json: &str, base: &str) -> Result<Vec<NewsItem>> {
+    let feed: TrsNewsFeed = serde_json::from_str(json).map_err(|e| Error::json("TRS-News", e))?;
+    let base = base.trim_end_matches('/');
+    Ok(feed
+        .posts
+        .into_iter()
+        .filter(|p| is_news_slug(&p.slug))
+        .take(MAX_ITEMS)
+        .filter_map(|p| {
+            let mut texts = BTreeMap::new();
+            for lang in TRS_NEWS_LANGS {
+                let (Some(title), Some(markdown)) = (p.title.get(lang), p.markdown.get(lang)) else { continue };
+                let title = clip_title(title);
+                if title.is_empty() {
+                    continue;
+                }
+                let summary = plain_text(p.summary.get(lang).map_or("", String::as_str), MAX_SUMMARY_CHARS);
+                texts.insert(lang.to_owned(), NewsTexts { title, summary, markdown: clean_trs_markdown(markdown, base) });
+            }
+            // Englisch ist Pflicht (Rückfall für alle Sprachen).
+            let en = texts.get("en")?.clone();
+            let (tag, tag_info) = tag_of(crate::msg!("news.tagNews", "News"));
+            Some(NewsItem {
+                id: format!("trs-{}", p.slug),
+                source: NewsSource::Trs,
+                title: en.title,
+                summary: en.summary,
+                date: p.published_at,
+                tag,
+                tag_info,
+                downloads: None,
+                image_url: p.cover.map(|c| c.url).filter(|u| is_blog_media_path(u)).map(|u| format!("{base}{u}")),
+                link: Some(format!("{base}/blog/{}", p.slug)).filter(|l| modrinth::is_safe_external_url(l)),
+                content_path: None,
+                texts: Some(texts),
+                author: p.author.map(|a| crate::trs_api::validate::display_name(&a.name)),
+            })
         })
         .collect())
 }
@@ -496,17 +664,18 @@ fn image_cache_name(url: &str, format: crate::icon::ImageFormat) -> String {
 impl Launcher {
     /// Neuigkeiten für die Startseite. `force` umgeht den Cache.
     pub async fn news(&self, force: bool) -> Result<NewsFeed> {
-        let (patch, mojang, modrinth, releases) = futures::join!(
+        let (patch, mojang, modrinth, releases, trs) = futures::join!(
             self.patch_notes(force),
             self.mojang_news(force),
             self.trending_projects(force),
             self.launcher_releases(force),
+            self.trs_news(force),
         );
 
         let mut items = Vec::new();
         let mut stale = false;
         let mut fetched_at = Utc::now();
-        for feed in [patch, mojang, modrinth, releases] {
+        for feed in [patch, mojang, modrinth, releases, trs] {
             match feed {
                 Ok(feed) => {
                     stale |= feed.stale;
@@ -576,6 +745,33 @@ impl Launcher {
         .await
     }
 
+    /// News-Beiträge des TRS-Teams von der eigenen Website – nur mit eingeschalteten TRS-Diensten (ohne Einwilligung
+    /// geht keine Anfrage an den TRS-Server). Öffentliche Daten, ohne Token.
+    pub async fn trs_news(&self, force: bool) -> Result<NewsFeed> {
+        if !self.trs().enabled().await {
+            return Ok(NewsFeed { items: Vec::new(), fetched_at: Utc::now(), stale: false });
+        }
+        let base = self.trs().base().to_owned();
+        cached(self.paths(), "trs-news", force, async || {
+            let response = self
+                .http()
+                .get(format!("{base}/v1/site/news?limit={MAX_ITEMS}"))
+                .header("accept", "application/json")
+                .send()
+                .await?
+                .error_for_status()?;
+            if response.content_length().is_some_and(|len| len > MAX_TRS_NEWS_BYTES) {
+                return Err(Error::validation(crate::msg!("news.unavailable", "Neuigkeiten sind gerade nicht erreichbar.")));
+            }
+            let bytes = response.bytes().await?;
+            if bytes.len() as u64 > MAX_TRS_NEWS_BYTES {
+                return Err(Error::validation(crate::msg!("news.unavailable", "Neuigkeiten sind gerade nicht erreichbar.")));
+            }
+            parse_trs_news(&String::from_utf8_lossy(&bytes), &base)
+        })
+        .await
+    }
+
     /// Voller Text einer Patchnote (HTML von Mojang) – wird im Webview nur
     /// über den DOMPurify-Weg angezeigt.
     pub async fn patch_notes_body(&self, content_path: &str) -> Result<String> {
@@ -598,10 +794,15 @@ impl Launcher {
         Ok(body.body.chars().take(200_000).collect())
     }
 
+    /// Bild eines TRS-News-Beitrags: nur `/v1/site/blog/media/…` auf einer der eigenen TRS-Adressen.
+    fn is_trs_news_image(&self, url: &str) -> bool {
+        self.trs().trusted_bases().iter().any(|base| url.strip_prefix(*base).is_some_and(is_blog_media_path))
+    }
+
     /// Lädt ein Bild aus dem Feed in den Cache und liefert den lokalen Pfad.
     /// Die Tauri-Schicht gibt genau diese Datei fürs Webview frei.
     pub async fn news_image(&self, url: &str) -> Result<PathBuf> {
-        if !is_allowed_image_url(url) {
+        if !is_allowed_image_url(url) && !self.is_trs_news_image(url) {
             return Err(Error::validation(crate::msg!(
                 "news.imageSourceNotAllowed",
                 "Diese Bildquelle ist nicht erlaubt."
@@ -736,6 +937,42 @@ mod tests {
         assert_eq!(thousands(1_234_567), "1.234.567");
     }
 
+    #[test]
+    fn trs_news_are_cleaned() {
+        let base = "https://trs-launcher.theredstonee.de";
+        let json = r#"{"posts":[
+            {"kind":"news","slug":"hello-world","publishedAt":"2026-09-28T10:00:00.000Z",
+             "langs":["en","de"],
+             "title":{"en":"Hello <b>world</b>","de":"Hallo Welt"},
+             "summary":{"en":"Short","de":"Kurz"},
+             "markdown":{"en":"Text ![ok](/v1/site/blog/media/AAAAAAAAAAAAAAAAAAAAAA.jpg) and ![evil](https://evil.example/x.png) ![t](/v1/site/blog/media/AAAAAAAAAAAAAAAAAAAAAA.t.png \"title\")","de":"Text\u0007"},
+             "cover":{"url":"/v1/site/blog/media/BBBBBBBBBBBBBBBBBBBBBB.jpg"},
+             "author":{"uuid":"75c1a6f3112240abbdb57b9d21c64232","name":"Theredstonee"}},
+            {"slug":"0.6.5","title":{"en":"Version-like slug"},"markdown":{"en":"x"}},
+            {"slug":"no-english","title":{"de":"Nur Deutsch"},"markdown":{"de":"x"}},
+            {"slug":"evil-cover","title":{"en":"Cover"},"markdown":{"en":"x"},"cover":{"url":"https://evil.example/c.png"}}
+        ]}"#;
+        let items = parse_trs_news(json, base).unwrap();
+        assert_eq!(items.iter().map(|i| i.id.as_str()).collect::<Vec<_>>(), ["trs-hello-world", "trs-evil-cover"]);
+        let a = &items[0];
+        assert_eq!(a.source, NewsSource::Trs);
+        assert_eq!(a.title, "Hello world");
+        assert_eq!(a.author.as_deref(), Some("Theredstonee"));
+        assert_eq!(a.image_url.as_deref(), Some("https://trs-launcher.theredstonee.de/v1/site/blog/media/BBBBBBBBBBBBBBBBBBBBBB.jpg"));
+        assert_eq!(a.link.as_deref(), Some("https://trs-launcher.theredstonee.de/blog/hello-world"));
+        let texts = a.texts.as_ref().unwrap();
+        assert_eq!(texts.keys().collect::<Vec<_>>(), ["de", "en"]);
+        let en = &texts["en"].markdown;
+        assert!(en.contains("![ok](https://trs-launcher.theredstonee.de/v1/site/blog/media/AAAAAAAAAAAAAAAAAAAAAA.jpg)"), "{en}");
+        assert!(en.contains("![t](https://trs-launcher.theredstonee.de/v1/site/blog/media/AAAAAAAAAAAAAAAAAAAAAA.t.png)"), "{en}");
+        assert!(!en.contains("evil.example"), "{en}");
+        assert!(en.contains(" evil "), "Alt-Text bleibt: {en}");
+        assert_eq!(texts["de"].markdown, "Text");
+        assert!(items[1].image_url.is_none(), "fremde Titelbilder fallen weg");
+        // Unvollständige Bild-Syntax bleibt Text.
+        assert_eq!(clean_trs_markdown("a ![b](c", base), "a ![b](c");
+    }
+
     #[tokio::test]
     async fn cache_serves_stale_items_when_offline() {
         let dir = tempfile::tempdir().unwrap();
@@ -753,6 +990,8 @@ mod tests {
             image_url: None,
             link: None,
             content_path: None,
+            texts: None,
+            author: None,
         };
 
         // Erster Aufruf lädt und speichert.

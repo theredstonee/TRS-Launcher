@@ -508,7 +508,8 @@
       "tagSnapshot": "Snapshot",
       "tagPreview": "Preview",
       "tagUpdate": "Mise à jour",
-      "tagDownloads": "{count} téléchargements"
+      "tagDownloads": "{count} téléchargements",
+      "tagNews": "Actus"
     },
     "screenshots": {
       "tooLargeForClipboard": "L'image est trop volumineuse pour le presse-papiers.",
@@ -785,6 +786,11 @@
       "invalidPack": "Le serveur a refusé le modpack – ce n’est pas un pack Modrinth valide.",
       "noRecipients": "Tu ne peux envoyer des modpacks qu’à tes amis.",
       "invalidDuration": "Durée invalide."
+    },
+    "trsWebLogin": {
+      "invalidCode": "Ce n’est pas un code valide (format : XXX-XXX).",
+      "expired": "Cette demande de connexion n’existe pas (plus) – relance la connexion sur le site.",
+      "used": "Cette demande de connexion a déjà reçu une réponse."
     }
   },
   "browse": {
@@ -2575,7 +2581,7 @@
       "clips": "clips enregistrement enregistrer vidéo replay shadowplay",
       "social": "amis chat messages groupes social demandes",
       "admin": "équipe modération signalements sanctions appels joueurs admin",
-      "websiteLogin": "site connexion login microsoft navigateur équipe",
+      "websiteLogin": "site connexion login code confirmer launcher microsoft navigateur équipe",
       "myApplications": "candidatures postuler équipe poste statut"
     },
     "actions": {
@@ -2596,7 +2602,7 @@
         "subtitle": "Dossier des instances et paramètres"
       },
       "websiteLogin": {
-        "subtitle": "Ouvre {host} – connexion avec Microsoft"
+        "subtitle": "Confirmer le code de {host}"
       },
       "myApplications": {
         "subtitle": "Statut et réponses de tes candidatures"
@@ -2775,7 +2781,10 @@
     "empty": "Rien de nouveau pour le moment.",
     "readPatchNotes": "Lire les notes de mise à jour",
     "openInBrowser": "Ouvrir dans le navigateur",
-    "launcherReleased": "{title} est disponible"
+    "launcherReleased": "{title} est disponible",
+    "sourceTrs": "Actus TRS",
+    "trsTeam": "Équipe TRS",
+    "onlyEnglish": "Cet article n’existe qu’en anglais."
   },
   "game": {
     "preparing": "Préparation de Minecraft",
@@ -4507,7 +4516,8 @@
       "applications": "Candidatures",
       "jobs": "Postes",
       "website": "Sur le site",
-      "websiteHint": "Ouvre le site dans ton navigateur (connexion avec Microsoft)."
+      "websiteHint": "Ouvre le site dans ton navigateur (connexion avec Microsoft).",
+      "blog": "Blog"
     },
     "search": {
       "placeholder": "Chercher joueurs, UUID, ID de signalement, #sanctions, capes …",
@@ -4905,7 +4915,9 @@
       "applications_view": "Voir les candidatures",
       "applications_review": "Examiner les candidatures",
       "applications_manage": "Gérer les postes",
-      "applications_decide": "Décider des candidatures"
+      "applications_decide": "Décider des candidatures",
+      "blog_write": "Écrire des articles de blog (brouillons, images)",
+      "blog_publish": "Publier, planifier et retirer des articles de blog"
     }
   },
   "trsChoice": {
@@ -4975,9 +4987,10 @@
   },
   "websiteLogin": {
     "title": "Site web",
-    "description": "Sur {host}, tu te connectes avec le compte Microsoft qui possède Minecraft – pour postuler à l’équipe et, en tant que membre, pour tout l’espace équipe.",
-    "button": "Se connecter sur le site avec Microsoft",
-    "hint": "Le site ne se connecte plus qu’avec Microsoft. S’ouvre dans ton navigateur."
+    "description": "Sur {host}, tu te connectes avec ton TRS Launcher (en confirmant un code ici) ou avec Microsoft – pour postuler dans l’équipe et, pour les membres, l’espace équipe complet.",
+    "button": "Se connecter sur le site",
+    "hint": "Choisis « TRS Launcher » sur le site et confirme le code ici.",
+    "open": "Ouvrir le site"
   },
   "applications": {
     "status": {
@@ -5149,5 +5162,37 @@
       "merged": "Fusionné avec #{number} {title}",
       "view": "Voir"
     }
+  },
+  "webLogin": {
+    "title": "Se connecter sur le site",
+    "needsServices": "La connexion au site utilise les services TRS. Active-les d’abord – sans ton consentement, le launcher n’envoie rien au serveur TRS.",
+    "enableServices": "Activer les services TRS",
+    "codeIntro": "Sur {host}, choisis « TRS Launcher » – le site affiche un code. Saisis-le ici :",
+    "codeLabel": "Code du site",
+    "invalidCode": "Saisis le code à 6 caractères du site (p. ex. K7Q-2MX).",
+    "openWebsite": "Ouvrir {host} dans le navigateur",
+    "question": "Quelqu’un veut se connecter sur {site} avec ton compte TRS.",
+    "codeHeading": "Code",
+    "compare": "Ton navigateur affiche-t-il exactement ce code ?",
+    "site": "Site",
+    "browser": "Navigateur",
+    "unknownBrowser": "Inconnu",
+    "time": "Demande",
+    "expires": "expire dans {time}",
+    "account": "Se connecter en tant que",
+    "activeAccount": "actif",
+    "otherAccounts": "Seuls les comptes connectés aux services TRS sont proposés.",
+    "warning": "Ne confirme que si tu viens toi-même de choisir « Se connecter avec TRS Launcher » sur {site} et que le même code y est affiché. Ne confirme jamais un code que quelqu’un t’a envoyé.",
+    "done": "Confirmé – {name} est maintenant connecté sur le site.",
+    "doneToast": "Connecté sur {site}",
+    "doneHint": "Tu peux retourner dans ton navigateur.",
+    "denied": "Connexion refusée.",
+    "deniedHint": "Le site indique que la demande a été refusée.",
+    "errorHint": "Relance la connexion sur le site pour obtenir un nouveau code.",
+    "next": "Continuer",
+    "deny": "Refuser",
+    "approve": "Confirmer",
+    "sending": "Confirmation…",
+    "enterCode": "Saisir le code"
   }
 }

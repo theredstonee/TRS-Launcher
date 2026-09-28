@@ -351,6 +351,19 @@ anmelden, dem Minecraft: Java Edition gehört. Wir erhalten nur deine Minecraft-
 Microsoft, Xbox und Minecraft liegen nur Sekunden im Arbeitsspeicher und werden verworfen – gespeichert werden keine
 Tokens, keine E-Mail, kein Passwort, nur eine Website-Sitzung (8 Stunden).
 
+**Anmeldung mit dem TRS Launcher auf der Website.** Statt mit Microsoft kannst du eine Anmeldung auf der Website im
+Launcher bestätigen: Die Website zeigt einen kurzen Code und öffnet den Launcher (oder du gibst den Code unter
+Einstellungen → Datenschutz → „Auf der Website anmelden“ ein). Der Launcher fragt die Anfrage ab und bestätigt sie
+**erst nach deinem Klick auf „Bestätigen“** mit dem TRS-Token des Kontos, das du auswählst; „Ablehnen“ lehnt sie ab.
+Gesendet werden nur der Bezug der Anfrage und der Code; angezeigt werden Website, Code, eine grobe Browser-Angabe (etwa
+„Firefox · Windows“) und die Uhrzeit der Anfrage. Der Server hält die Anfrage höchstens zwei Minuten (Hashes von Link und
+Browser-Wert, Code, grobe Browser-Angabe, nach der Bestätigung deine UUID), danach nur noch die Website-Sitzung
+(8 Stunden).
+
+**News im Launcher.** Mit eingeschalteten TRS-Diensten lädt der Launcher auch die News-Beiträge des Teams von
+trs-launcher.theredstonee.de (Text und Bilder; ohne deinen Token – über dich wird nichts gesendet) und speichert sie
+lokal zwischen.
+
 **Bewerbungen für das Team:** Stelle, Minecraft-Name und UUID, Discord-Name, Altersgruppe (nie das Geburtsdatum), deine
 Antworten, Status und unsere Antwort. Sehen können sie nur Team-Mitglieder, deren Rolle Bewerbungen prüfen darf.
 Abgelehnte oder zurückgezogene Bewerbungen werden 6 Monate nach der Entscheidung gelöscht, angenommene 6 Monate nach

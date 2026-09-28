@@ -508,7 +508,8 @@
       "tagSnapshot": "Snapshot",
       "tagPreview": "Versión preliminar",
       "tagUpdate": "Actualización",
-      "tagDownloads": "{count} descargas"
+      "tagDownloads": "{count} descargas",
+      "tagNews": "Noticias"
     },
     "screenshots": {
       "tooLargeForClipboard": "La imagen es demasiado grande para el portapapeles.",
@@ -785,6 +786,11 @@
       "invalidPack": "El servidor rechazó el modpack: no es un pack válido de Modrinth.",
       "noRecipients": "Solo puedes enviar modpacks a tus amigos.",
       "invalidDuration": "Duración no válida."
+    },
+    "trsWebLogin": {
+      "invalidCode": "No es un código válido (formato: XXX-XXX).",
+      "expired": "Esta solicitud de inicio de sesión no existe (ya): vuelve a empezar en la web.",
+      "used": "Esta solicitud de inicio de sesión ya se respondió."
     }
   },
   "browse": {
@@ -2575,7 +2581,7 @@
       "clips": "clips grabación grabar vídeo repetición shadowplay",
       "social": "amigos chat mensajes grupos social solicitudes",
       "admin": "equipo moderación reportes sanciones apelaciones jugadores admin",
-      "websiteLogin": "web iniciar sesión login microsoft navegador equipo",
+      "websiteLogin": "web iniciar sesión login código confirmar launcher microsoft navegador equipo",
       "myApplications": "solicitudes solicitar equipo puesto estado"
     },
     "actions": {
@@ -2596,7 +2602,7 @@
         "subtitle": "Carpeta con instancias y ajustes"
       },
       "websiteLogin": {
-        "subtitle": "Abre {host} – inicio de sesión con Microsoft"
+        "subtitle": "Confirmar el código de {host}"
       },
       "myApplications": {
         "subtitle": "Estado y respuestas de tus solicitudes al equipo"
@@ -2775,7 +2781,10 @@
     "empty": "Ahora mismo no hay nada nuevo aquí.",
     "readPatchNotes": "Leer notas del parche",
     "openInBrowser": "Abrir en el navegador",
-    "launcherReleased": "Ya está aquí {title}"
+    "launcherReleased": "Ya está aquí {title}",
+    "sourceTrs": "Noticias TRS",
+    "trsTeam": "Equipo TRS",
+    "onlyEnglish": "Esta entrada solo está disponible en inglés."
   },
   "game": {
     "preparing": "Preparando Minecraft",
@@ -4507,7 +4516,8 @@
       "applications": "Solicitudes",
       "jobs": "Puestos",
       "website": "En la web",
-      "websiteHint": "Abre la web en tu navegador (inicio de sesión con Microsoft)."
+      "websiteHint": "Abre la web en tu navegador (inicio de sesión con Microsoft).",
+      "blog": "Blog"
     },
     "search": {
       "placeholder": "Buscar jugadores, UUID, ID de reportes, #sanciones, capas …",
@@ -4905,7 +4915,9 @@
       "applications_view": "Ver solicitudes",
       "applications_review": "Revisar solicitudes",
       "applications_manage": "Gestionar puestos",
-      "applications_decide": "Decidir solicitudes"
+      "applications_decide": "Decidir solicitudes",
+      "blog_write": "Escribir entradas del blog (borradores, imágenes)",
+      "blog_publish": "Publicar, programar y retirar entradas del blog"
     }
   },
   "trsChoice": {
@@ -4975,9 +4987,10 @@
   },
   "websiteLogin": {
     "title": "Sitio web",
-    "description": "En {host} inicias sesión con la cuenta de Microsoft a la que pertenece Minecraft – para solicitudes al equipo y, como miembro del equipo, para toda el área del equipo.",
-    "button": "Iniciar sesión en la web con Microsoft",
-    "hint": "La web solo inicia sesión con Microsoft. Se abre en tu navegador."
+    "description": "En {host} inicias sesión con tu TRS Launcher (confirmando un código aquí) o con Microsoft: para postularte al equipo y, como miembro del equipo, para el área completa del equipo.",
+    "button": "Iniciar sesión en la web",
+    "hint": "Elige «TRS Launcher» en la web y confirma el código aquí.",
+    "open": "Abrir la web"
   },
   "applications": {
     "status": {
@@ -5149,5 +5162,37 @@
       "merged": "Fusionada con #{number} {title}",
       "view": "Ver"
     }
+  },
+  "webLogin": {
+    "title": "Iniciar sesión en la web",
+    "needsServices": "Iniciar sesión en la web usa los servicios TRS. Actívalos primero: sin tu consentimiento el launcher no envía nada al servidor TRS.",
+    "enableServices": "Activar servicios TRS",
+    "codeIntro": "En {host}, elige «TRS Launcher»: la web muestra un código. Escríbelo aquí:",
+    "codeLabel": "Código de la web",
+    "invalidCode": "Introduce el código de 6 caracteres de la web (p. ej. K7Q-2MX).",
+    "openWebsite": "Abrir {host} en el navegador",
+    "question": "Alguien quiere iniciar sesión en {site} con tu cuenta TRS.",
+    "codeHeading": "Código",
+    "compare": "¿Tu navegador muestra exactamente este código?",
+    "site": "Web",
+    "browser": "Navegador",
+    "unknownBrowser": "Desconocido",
+    "time": "Solicitud",
+    "expires": "caduca en {time}",
+    "account": "Iniciar sesión como",
+    "activeAccount": "activa",
+    "otherAccounts": "Solo aparecen cuentas con sesión en los servicios TRS.",
+    "warning": "Confirma solo si acabas de elegir tú mismo «Iniciar sesión con TRS Launcher» en {site} y allí aparece el mismo código. Nunca confirmes un código que te haya enviado otra persona.",
+    "done": "Confirmado: {name} ha iniciado sesión en la web.",
+    "doneToast": "Sesión iniciada en {site}",
+    "doneHint": "Puedes volver al navegador.",
+    "denied": "Inicio de sesión rechazado.",
+    "deniedHint": "La web muestra que la solicitud se rechazó.",
+    "errorHint": "Vuelve a iniciar sesión en la web para obtener un código nuevo.",
+    "next": "Continuar",
+    "deny": "Rechazar",
+    "approve": "Confirmar",
+    "sending": "Confirmando…",
+    "enterCode": "Introducir código"
   }
 }

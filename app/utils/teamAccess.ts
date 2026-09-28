@@ -39,6 +39,9 @@ export const permissions = [
   'applications.review',
   'applications.manage',
   'applications.decide',
+  // Blog (API §30): News schreiben bzw. veröffentlichen – Editor nur auf der Website.
+  'blog.write',
+  'blog.publish',
 ] as const
 export type Permission = (typeof permissions)[number]
 const permissionSet: ReadonlySet<string> = new Set(permissions)
@@ -150,6 +153,7 @@ export const websiteSections: readonly TeamSection[] = [
   { to: `${TEAM_WEBSITE}/admin/applications`, label: 'team.nav.applications', icon: 'mailUnread', perms: ['applications.view'], external: true, count: 'applications' },
   { to: `${TEAM_WEBSITE}/admin/jobs`, label: 'team.nav.jobs', icon: 'list', perms: ['applications.view', 'applications.manage'], external: true },
   { to: `${TEAM_WEBSITE}/admin/roles`, label: 'team.nav.roles', icon: 'key', perms: ['roles.manage'], external: true },
+  { to: `${TEAM_WEBSITE}/admin/blog`, label: 'team.nav.blog', icon: 'edit', perms: ['blog.write', 'blog.publish'], external: true },
 ]
 
 export function visibleSections(team: MyTeam | null | undefined, list: readonly TeamSection[] = teamSections): TeamSection[] {

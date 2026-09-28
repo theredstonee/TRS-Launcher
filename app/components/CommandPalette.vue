@@ -2,7 +2,6 @@
 import type { ContentItem, Instance } from '~/types'
 import type { IconName } from '~/utils/icons'
 import type { MessageKey } from '~/utils/i18n'
-import { WEBSITE_LOGIN_URL } from '~/utils/teamAccess'
 
 // Globale Suche (Strg+K): Instanzen starten oder
 // öffnen, installierte Mods finden, in einen Einstellungs-Bereich springen,
@@ -188,7 +187,7 @@ const commands = computed<Command[]>(() => [
     icon: 'compass',
     run: () => go('/browse?kind=modpack'),
   },
-  // Website (Bewerbungen, Team-Verwaltung): Anmeldung dort nur noch mit Microsoft.
+  // Website (Bewerbungen, Team-Verwaltung): Anmeldung dort per TRS Launcher (Code, §29) oder Microsoft.
   ...(trs.enabled
     ? [
         {
@@ -197,9 +196,9 @@ const commands = computed<Command[]>(() => [
           title: t('websiteLogin.button'),
           subtitle: t('palette.actions.websiteLogin.subtitle', { host: TRS_HOST }),
           keywords: t('palette.keywords.websiteLogin'),
-          icon: 'external',
+          icon: 'shield',
           run: () => {
-            backend.openExternalUrl(WEBSITE_LOGIN_URL).catch((e) => toasts.error(e))
+            useWebLoginStore().open()
             close()
           },
         } satisfies Command,

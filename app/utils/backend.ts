@@ -74,6 +74,7 @@ import { mySanctionSchema, mySanctionsSchema, sanctionErrorText } from './sancti
 import { myApplicationSchema, myApplicationsSchema } from './applications'
 import { teamErrorText } from './teamAccess'
 import { sharedImageSchema, sharesPageSchema } from './share'
+import { webLoginAccountSchema, webLoginRequestSchema } from './webLogin'
 import {
   appealEnvelopeSchema,
   appealPageSchema,
@@ -748,6 +749,23 @@ export const backend = {
       checked(packUpdateResultSchema, 'update_pack_instance', { id, onProgress: channel(onProgress), taskId }),
     /** Code aus einem `trs-launcher://pack/…`-Link beim Start (einmalig abholen). */
     takePendingLink: () => call<string | null>('take_pending_pack_link'),
+  },
+
+  /** Anmeldung auf der Website per TRS Launcher (API §29) – bestätigt wird nur nach einem Klick im Dialog. */
+  webLogin: {
+    /** Konten, mit denen bestätigt werden kann (aktives zuerst). */
+    accounts: () => checked(z.array(webLoginAccountSchema), 'trs_web_login_accounts'),
+    /** Anfrage per Link-Token oder eingetipptem Code nachschlagen. */
+    lookup: (account: string | null, source: { token: string } | { code: string }) =>
+      checked(webLoginRequestSchema, 'trs_web_login_lookup', {
+        account,
+        token: 'token' in source ? source.token : null,
+        code: 'code' in source ? source.code : null,
+      }),
+    decide: (account: string | null, id: string, code: string, approve: boolean) =>
+      call<void>('trs_web_login_decide', { account, id, code, approve }),
+    /** Link-Token aus einem `trs-launcher://web-login/…`-Link beim Start (einmalig abholen). */
+    takePending: () => call<string | null>('take_pending_web_login'),
   },
 
   /** Sozial: Chat, Bilder, Meldungen, Moderation – alles über den Kern, ohne Token im Webview. */
