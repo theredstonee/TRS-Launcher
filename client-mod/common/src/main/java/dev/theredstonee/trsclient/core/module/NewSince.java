@@ -113,6 +113,12 @@ public final class NewSince {
 	public static final String SCREENSHOTS_FAVORITES = "clips:favorites";
 	/** Clips &amp; Bilder: „Bearbeiten“ in der großen Bildansicht (Bild-Editor). */
 	public static final String SCREENSHOTS_EDITOR = "clips:editor";
+	/** Notizen je Welt (TRS Client 0.14.0): Notizbuch je Welt/Server, Checklisten, Koordinaten-Links, Sync, HUD. */
+	public static final String NOTES = "0.14.0";
+	/** Leisten-Eintrag „Notizen“. */
+	public static final String MENU_NOTES = "menu:notes";
+	/** Taste „Notizen öffnen“ (standardmäßig unbelegt). */
+	public static final String KEY_NOTES = "key.trsclient.notes";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
@@ -175,6 +181,8 @@ public final class NewSince {
 		add(BUG_REPORT, MENU_BUG_REPORT);
 		// Screenshot-Werkzeuge (Vorschau, Editor, Favoriten, Essential ersetzen).
 		add(SCREENSHOTS, "screenshots", SCREENSHOTS_FAVORITES, SCREENSHOTS_EDITOR);
+		// Notizen je Welt.
+		add(NOTES, "notes", "pinnedNote", MENU_NOTES, KEY_NOTES);
 	}
 
 	private NewSince() {

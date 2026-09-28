@@ -469,6 +469,7 @@ servicios TRS y solo funcionan mientras estén activados.
 | Solo con «Sincronizar con la cuenta de TRS» activado: tus skins propias de «Mis skins» (la imagen, recodificada sin metadatos, su nombre y modelo), tus presets de mods propios (nombres e ID de proyectos de Modrinth, sin archivos ni rutas de carpetas) y tu tema, color de acento e idioma, cada uno con la fecha del último cambio; las skins y presets eliminados se anotan durante un tiempo | Mantenerlos iguales en todos los PC donde uses esta cuenta de Minecraft |
 | Solo con los servicios TRS activados y «Sincronizar con la cuenta de TRS» activado en el TRS Client (en el juego): los ajustes del TRS Client – qué módulos están activados y sus ajustes, los diseños y perfiles de HUD, las teclas TRS de los módulos, el modo de configuración de los mods de rendimiento, si terminaste la introducción (y el paquete de módulos elegido) y qué entradas «NUEVO» has abierto –, cada parte con la fecha de su último cambio; sin puntos de ruta, direcciones de servidor, archivos, rutas ni tokens | Mantener el TRS Client igual en todos los PC y carpetas de juego donde uses esta cuenta de Minecraft y mostrar la introducción solo una vez |
 | Solo con los servicios TRS activados: la entrada del vestuario del TRS Client – tus skins favoritas, atuendos (nombre, skin, capa) y las casillas de la rueda de emotes, con la hora del último cambio | El mismo vestuario en cada PC |
+| Solo con los servicios TRS activados, «Sincronizar con la cuenta de TRS» activado en el TRS Client y el interruptor de notas «Sincronizar con la cuenta TRS» activado: tus notas del mundo del TRS Client – título, texto (incluidas las listas de tareas y las coordenadas que escribiste), fecha de creación y de cambio y el mundo al que pertenecen (dirección del servidor o, en mundos de un jugador, un código formado a partir de la carpeta del mundo junto con el nombre de la carpeta); las notas borradas se quedan como una marca vacía | Las mismas notas en cada PC |
 | Chat: tus mensajes (texto, respuestas, ediciones, invitaciones a servidores), las imágenes enviadas (recodificadas, cifradas), reacciones, posiciones de lectura, conversaciones silenciadas y pertenencia a grupos, cada uno con su fecha | Chatear con amigos y en grupos (ver arriba) |
 | Ajustes del chat: confirmaciones de lectura y «escribiendo» activados o no | Para que el chat respete tus decisiones |
 | Capturas compartidas (solo las imágenes que compartes): la imagen recodificada, tamaño, formato, fecha de publicación y de caducidad, la cuenta que la compartió (no visible públicamente) | Compartir una captura como enlace (ver arriba) |
@@ -494,6 +495,15 @@ libre y las opciones de Minecraft (options.txt) se quedan en tu PC. El juego tam
 idioma sincronizados y los vuelve a escribir cuando los cambias en la introducción, para que el launcher los siga.
 «Alle TRS-Daten löschen» borra también este documento.
 
+**Notas del TRS Client:** las notas de cada mundo se guardan en tu PC en `config/trsclient/notes` (un archivo por
+mundo o servidor). Con los servicios TRS activados y ambos interruptores activados (*Funciones en línea de TRS* →
+«Sincronizar con la cuenta de TRS» y en la página *Notas del mundo* «Sincronizar con la cuenta TRS», ambos activados
+de fábrica), el TRS Client también las guarda nota por nota en tu cuenta TRS para que sean iguales en todos tus PC.
+Qué nota está fijada en el HUD se queda en
+tu PC. Solo tú puedes leer tus notas: no hay vista de administración. Una nota borrada deja una marca vacía durante
+90 días para que tus otros PC también la borren. Si desactivas el interruptor de notas, todas se quedan en este PC;
+«Alle TRS-Daten löschen» borra las notas sincronizadas.
+
 El estado en línea se guarda **solo en la memoria del servidor**, nunca se escribe en disco, no tiene historial y
 caduca **3 minutos** después de la última actualización. Solo lo ven tus amigos, y nadie si lo configuras en «nadie».
 Solo el hecho de que estés jugando en este momento puede aparecer además como tu insignia TRS (ver arriba).
@@ -515,6 +525,8 @@ seguro (art. 6.1.f del RGPD). No hay publicidad, ni elaboración de perfiles, ni
 - Los tokens de sesión caducan a los 30 días; cerrar sesión o quitar una cuenta del launcher revoca el token.
 - El estado en línea desaparece 3 minutos después de la última actualización, o en el momento en que cierras el
   launcher y sales del mundo.
+- Las notas sincronizadas se conservan hasta que las borres en el TRS Client o borres todos los datos TRS; las marcas
+  de notas borradas se eliminan a los 90 días.
 - Las skins, presets y ajustes sincronizados se conservan hasta que los borres en el launcher (una skin borrada en un PC
   también se borra en el servidor). Las notas sobre skins borradas se guardan 30 días para que tus otros PC también
   puedan borrarlas.

@@ -168,6 +168,8 @@ public final class TrsClient {
 		initWaypoints(event.getModConfigurationDirectory());
 		// Karten (Minimap + Weltkarte): Kartenspeicher unter config/trsclient/maps.
 		dev.theredstonee.trsclient.core.map.MapEngine.init(modules, event.getModConfigurationDirectory().toPath());
+		// Notizen je Welt (config/trsclient/notes): Seite im TRS-Menü, Taste, angeheftete Notiz im HUD.
+		dev.theredstonee.trsclient.core.notes.Notes.init(modules, event.getModConfigurationDirectory().toPath(), message -> LOGGER.info(message));
 		config = new ConfigStore(file.toPath());
 		ConfigStore.Status status = config.load(modules.registry);
 		// Menü-Stil für Vanilla-Menüs (Pause, Serverliste, Laden, Optionen, Welten).
@@ -197,6 +199,7 @@ public final class TrsClient {
 		modules.zoomKey.link(TrsKeys.link(TrsKeys.zoom));
 		modules.freelookKey.link(TrsKeys.link(TrsKeys.freelook));
 		modules.worldMapKey.link(TrsKeys.link(TrsKeys.worldMap));
+		modules.notes.openKey.link(TrsKeys.link(TrsKeys.notes));
 		installSocialOverlay();
 		// Komfort-/PvP-Paket (Erwähnungen, Filter, Auto-Reconnect, Warnungen, Zähler, Streamer-Modus …).
 		dev.theredstonee.trsclient.qol.LegacyQol.init(modules);
@@ -221,6 +224,7 @@ public final class TrsClient {
 		Runtime.getRuntime().addShutdownHook(new Thread(this::saveConfig, "TRS Client config save"));
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			if (dev.theredstonee.trsclient.core.map.MapEngine.get() != null) dev.theredstonee.trsclient.core.map.MapEngine.get().shutdown();
+			if (dev.theredstonee.trsclient.core.notes.Notes.get() != null) dev.theredstonee.trsclient.core.notes.Notes.get().save();
 		}, "TRS Client map save"));
 	}
 
@@ -377,6 +381,14 @@ public final class TrsClient {
 				mc.displayGuiScreen(dev.theredstonee.trsclient.screen.WardrobeScreen.create(null));
 			}
 		}
+		// Notizen (Taste standardmäßig unbelegt): TRS-Menü direkt auf der Notiz-Seite der aktuellen Welt.
+		while (TrsKeys.notes.isPressed()) {
+			if (mc.currentScreen == null && modules.notes.notes.isEnabled()) {
+				dev.theredstonee.trsclient.core.notes.Notes.requestOpen();
+				mc.displayGuiScreen(new TrsMenuScreen(null));
+			}
+		}
+		if (dev.theredstonee.trsclient.core.notes.Notes.get() != null) dev.theredstonee.trsclient.core.notes.Notes.get().tick(System.currentTimeMillis());
 		// Sozial-Bildschirm (Taste standardmäßig unbelegt) und Schnelltaste zum neuesten Toast (Y).
 		while (TrsKeys.social.isPressed()) {
 			if (mc.currentScreen == null && dev.theredstonee.trsclient.screen.MenuScreens.friendsAvailable()) {

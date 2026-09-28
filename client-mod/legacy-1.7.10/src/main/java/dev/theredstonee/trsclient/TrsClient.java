@@ -118,6 +118,8 @@ public final class TrsClient {
 		UNSUPPORTED.add(modules.social);
 		// Screenshot-Werkzeuge ohne eigene Chatzeile (kein Einfüge-Text in 1.7.10); Essential gibt es hier nicht.
 		UNSUPPORTED.addAll(Arrays.<Object>asList(modules.comfort.shotChatActions, modules.comfort.shotReplaceEssential));
+		// Notiz-Sync braucht die TRS-Online-Funktionen – Notizen bleiben hier lokal.
+		UNSUPPORTED.add(modules.notes.sync);
 		// Schilde gibt es erst ab 1.9.
 		UNSUPPORTED.add(modules.shieldPosition);
 		// Leistungs-Kategorie (FPS-Boost, Dynamische FPS, Culling, Partikel, Welt-Details) ist hier nicht umgesetzt.
@@ -160,8 +162,11 @@ public final class TrsClient {
 		// Die Zoom-Taste ist eine Vanilla-Belegung – im TRS-Menü ändert sie dieselbe Belegung.
 		modules.zoomKey.link(TrsKeys.link(TrsKeys.zoom));
 		modules.worldMapKey.link(TrsKeys.link(TrsKeys.worldMap));
+		modules.notes.openKey.link(TrsKeys.link(TrsKeys.notes));
 		// Karten (Minimap + Weltkarte): Kartenspeicher unter config/trsclient/maps.
 		dev.theredstonee.trsclient.core.map.MapEngine.init(modules, dev.theredstonee.trsclient.core.i18n.I18n.configDir());
+		// Notizen je Welt (config/trsclient/notes): Seite im TRS-Menü, Taste, angeheftete Notiz im HUD.
+		dev.theredstonee.trsclient.core.notes.Notes.init(modules, dev.theredstonee.trsclient.core.i18n.I18n.configDir(), message -> LOGGER.info(message));
 		hud = new HudManager(modules);
 		MinecraftForge.EVENT_BUS.register(this);
 		FMLCommonHandler.instance().bus().register(new TickHandler());
@@ -175,6 +180,7 @@ public final class TrsClient {
 		Runtime.getRuntime().addShutdownHook(new Thread(this::saveConfig, "TRS Client config save"));
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			if (dev.theredstonee.trsclient.core.map.MapEngine.get() != null) dev.theredstonee.trsclient.core.map.MapEngine.get().shutdown();
+			if (dev.theredstonee.trsclient.core.notes.Notes.get() != null) dev.theredstonee.trsclient.core.notes.Notes.get().save();
 		}, "TRS Client map save"));
 	}
 
@@ -246,6 +252,14 @@ public final class TrsClient {
 					mc.displayGuiScreen(dev.theredstonee.trsclient.screen.WardrobeScreen.create(null));
 				}
 			}
+			// Notizen (Taste standardmäßig unbelegt): TRS-Menü direkt auf der Notiz-Seite der aktuellen Welt.
+			while (TrsKeys.notes.isPressed()) {
+				if (mc.currentScreen == null && modules.notes.notes.isEnabled()) {
+					dev.theredstonee.trsclient.core.notes.Notes.requestOpen();
+					mc.displayGuiScreen(new TrsMenuScreen(null));
+				}
+			}
+			if (dev.theredstonee.trsclient.core.notes.Notes.get() != null) dev.theredstonee.trsclient.core.notes.Notes.get().tick(System.currentTimeMillis());
 			while (TrsKeys.redstoneOverlay.isPressed()) {
 				modules.redstoneOverlay.toggle();
 				if (mc.ingameGUI != null) {

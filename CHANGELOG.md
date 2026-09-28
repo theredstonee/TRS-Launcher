@@ -62,6 +62,20 @@ How to write an entry:
 - See what your friends achieved: click a friend in Social to see their points and latest achievements, or open all of
   them. Secret achievements stay "???" until you have them too. If you'd rather keep yours to yourself, turn off
   "Achievements visible to friends" on the achievements page or under Settings → Privacy.
+- **World notes in the TRS Client.** Every world and server now has its own notebook: open it with the new *Notes*
+  entry in the TRS menu or a key of your choice (unbound by default, set it in the controls or on the *World Notes*
+  page). Write as many notes as you like (up to 200 per world) with a title and text, search the notes of the world
+  you are in, and look at the notes of your other worlds and servers.
+- **Checklists:** start a line with `[ ]` (or press *Checklist*) and tick the boxes right in the note – Enter continues
+  the list. The list shows how many items are done.
+- **Clickable coordinates:** coordinates like `x: 100, y: 64, z: -20` become links – *My position* inserts where you
+  stand. Click one to show the spot on the world map, set a temporary waypoint (it disappears when you get there) or
+  save it as a normal waypoint.
+- **Pin a note to the HUD:** the pin button shows the note (with its checklist) on screen while you are in that world;
+  move and resize it in the HUD editor like every other HUD element.
+- Notes are saved in `config/trsclient/notes` and synced with your TRS account note by note: the newest change of a
+  note wins, deleted notes are deleted on all your PCs, and changes from another PC arrive within seconds. Sync can be
+  switched off on the *World Notes* page – then your notes stay on this PC.
 
 ### Deutsch
 - Ein Modpack (CurseForge oder Modrinth) sieht beim Installieren nicht mehr fertig aus, während es noch lädt: Die neue
@@ -109,6 +123,21 @@ How to write an entry:
 - Sieh dir an, was deine Freunde geschafft haben: Klick in „Sozial“ auf einen Freund, um seine Punkte und neuesten
   Erfolge zu sehen, oder öffne alle. Geheime Erfolge bleiben „???“, bis du sie selbst hast. Willst du deine lieber für
   dich behalten, schalte „Erfolge für Freunde sichtbar“ auf der Erfolge-Seite oder unter Einstellungen → Datenschutz aus.
+- **Welt-Notizen im TRS Client.** Jede Welt und jeder Server hat jetzt ein eigenes Notizbuch: öffne es über den neuen
+  Eintrag *Notizen* im TRS-Menü oder eine Taste deiner Wahl (ab Werk unbelegt, einstellbar in der Steuerung oder auf der
+  Seite *Welt-Notizen*). Schreib beliebig viele Notizen (bis zu 200 je Welt) mit Titel und Text, durchsuche die Notizen
+  der Welt, in der du bist, und schau dir die Notizen deiner anderen Welten und Server an.
+- **Checklisten:** Beginne eine Zeile mit `[ ]` (oder drück *Checkliste*) und hake die Kästchen direkt in der Notiz ab –
+  Enter setzt die Liste fort. Die Liste zeigt, wie viele Punkte erledigt sind.
+- **Anklickbare Koordinaten:** Koordinaten wie `x: 100, y: 64, z: -20` werden zu Links – *Meine Position* fügt ein, wo du
+  gerade stehst. Ein Klick zeigt die Stelle auf der Weltkarte, setzt einen vorübergehenden Wegpunkt (verschwindet, wenn
+  du dort bist) oder speichert sie als normalen Wegpunkt.
+- **Notiz ans HUD heften:** Der Pin-Knopf zeigt die Notiz (mit Checkliste) auf dem Bildschirm, solange du in dieser Welt
+  bist; verschieben und vergrößern wie jedes andere HUD-Element im HUD-Editor.
+- Notizen liegen in `config/trsclient/notes` und werden Notiz für Notiz mit deinem TRS-Konto synchronisiert: Die neueste
+  Änderung einer Notiz gewinnt, gelöschte Notizen verschwinden auf all deinen PCs, und Änderungen von einem anderen PC
+  kommen nach wenigen Sekunden an. Der Sync lässt sich auf der Seite *Welt-Notizen* ausschalten – dann bleiben deine
+  Notizen auf diesem PC.
 
 ## 0.13.0 – 2026-09-28 – Your Say | Mitreden
 <!-- banner: accent=#a78bfa motif=/news/0.13.0/banner.png -->

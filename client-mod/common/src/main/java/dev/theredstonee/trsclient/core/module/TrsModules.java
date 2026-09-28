@@ -96,6 +96,8 @@ public final class TrsModules {
 	public final ComfortModules comfort;
 	/** Schaltungs-Bibliothek (Redstone). */
 	public final CircuitModules circuits;
+	/** Notizen je Welt (Notizbuch, Checklisten, Koordinaten-Links, angeheftete Notiz im HUD). */
+	public final NotesModules notes;
 	/** Server-Profile (automatischer Wechsel je Server; nach den HUD-Profilen gelesen/geschrieben). */
 	public final dev.theredstonee.trsclient.core.profile.ServerProfiles serverProfiles;
 
@@ -906,6 +908,7 @@ public final class TrsModules {
 		qol = new QolModules(registry, this);
 		comfort = new ComfortModules(registry);
 		circuits = new CircuitModules(registry);
+		notes = new NotesModules(registry);
 
 		registry.addPart(keyDefaults);
 		registry.addPart(perfUndo);

@@ -33,6 +33,18 @@ public final class ChatInput {
 		return focused;
 	}
 
+	/** Cursor setzen (Klick in den Text, Notizen); wird auf Text und Zeichengrenzen begrenzt. */
+	public void setCursor(int pos) {
+		int p = Math.max(0, Math.min(pos, text.length()));
+		if (p > 0 && p < text.length() && Character.isLowSurrogate(text.charAt(p)) && Character.isHighSurrogate(text.charAt(p - 1))) p--;
+		cursor = p;
+	}
+
+	/** Noch so viele Zeichen frei (Codepunkte). */
+	public int room() {
+		return max - text.codePointCount(0, text.length());
+	}
+
 	public void setFocused(boolean f) {
 		focused = f;
 	}

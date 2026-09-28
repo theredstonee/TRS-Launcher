@@ -105,6 +105,11 @@ public final class AutoTest {
 			ScreenshotTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=notes: Notizen je Welt (HUD, Liste, Lesen, Bearbeiten, Suche, Koordinaten, Wegpunkt, Karte)
+		if ("notes".equals(System.getProperty("trsclient.autotest.only"))) {
+			NotesTest.install();
+			return;
+		}
 		// -PtrsAutotestOnly=keysearch: Suche in der Tastenbelegung (Steuerung)
 		if ("keysearch".equals(System.getProperty("trsclient.autotest.only"))) {
 			KeySearchTest.install();

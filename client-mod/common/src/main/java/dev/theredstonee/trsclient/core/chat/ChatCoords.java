@@ -83,6 +83,11 @@ public final class ChatCoords {
 		return out;
 	}
 
+	/** Treffer mit verschobenem Bereich (z. B. Koordinaten einer Zeile im ganzen Text einer Notiz). */
+	public static Hit hitAt(int start, int end, int x, int y, int z) {
+		return new Hit(start, end, x, y, z);
+	}
+
 	/** Marker „x y z“. */
 	public static String insertion(int x, int y, int z) {
 		return x + " " + y + " " + z;

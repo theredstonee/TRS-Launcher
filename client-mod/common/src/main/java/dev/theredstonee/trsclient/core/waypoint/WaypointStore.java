@@ -85,8 +85,17 @@ public final class WaypointStore {
 		Path dir = file.toAbsolutePath().getParent();
 		if (dir != null) Files.createDirectories(dir);
 		Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
+		// Vorübergehende Wegpunkte (Notiz-Koordinaten) bleiben nur im Speicher.
+		Map<String, List<Waypoint>> kept = new LinkedHashMap<>();
+		for (Map.Entry<String, List<Waypoint>> e : worlds.entrySet()) {
+			List<Waypoint> list = new ArrayList<>();
+			for (Waypoint w : e.getValue()) {
+				if (!w.temporary) list.add(w);
+			}
+			if (!list.isEmpty() || e.getValue().isEmpty()) kept.put(e.getKey(), list);
+		}
 		try (Writer writer = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8)) {
-			GSON.toJson(worlds, TYPE, writer);
+			GSON.toJson(kept, TYPE, writer);
 		}
 		try {
 			Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);

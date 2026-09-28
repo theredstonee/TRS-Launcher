@@ -35,7 +35,7 @@ import java.util.Map;
  */
 public final class ModMenu extends UiScreen {
 	private enum Page {
-		GRID, SETTINGS, PROFILES, PACKS, SERVERS, CIRCUITS, BUG_REPORT
+		GRID, SETTINGS, PROFILES, PACKS, SERVERS, CIRCUITS, BUG_REPORT, NOTES
 	}
 
 	private static final int HEADER_H = 30;
@@ -86,6 +86,10 @@ public final class ModMenu extends UiScreen {
 	private final dev.theredstonee.trsclient.core.ui.bugreport.BugReportPage bugPage;
 	/** Modul, dessen Seite gerade offen ist (für die „NEU“-Markierungen). */
 	private Module newsOpenFor;
+	/** Notizen je Welt. */
+	private final dev.theredstonee.trsclient.core.ui.notes.NotesPage notesPage;
+	/** Seite beim letzten Zeichnen (Notizen beim Verlassen sichern). */
+	private Page lastPage = Page.GRID;
 
 	public ModMenu(MenuHost host) {
 		this.host = host;
@@ -158,6 +162,26 @@ public final class ModMenu extends UiScreen {
 						}
 					}
 				});
+		notesPage = new dev.theredstonee.trsclient.core.ui.notes.NotesPage(new dev.theredstonee.trsclient.core.ui.notes.NotesPage.Host() {
+			@Override
+			public void click() {
+				ModMenu.this.host.playClick();
+			}
+
+			@Override
+			public String clipboard() {
+				try {
+					return ModMenu.this.host.clipboard();
+				} catch (RuntimeException e) {
+					return null;
+				}
+			}
+
+			@Override
+			public void save() {
+				ModMenu.this.host.save();
+			}
+		});
 		panel.setKeyLabel(new SettingsPanel.KeyLabel() {
 			@Override
 			public String label(String keyName) {
@@ -224,6 +248,26 @@ public final class ModMenu extends UiScreen {
 		return this;
 	}
 
+	/** Öffnet das Menü direkt bei den Notizen (Liste der aktuellen Welt). */
+	public ModMenu showNotes() {
+		if (notesAvailable()) {
+			page = Page.NOTES;
+			notesPage.opened();
+		}
+		return this;
+	}
+
+	/** Notiz-Seite (Selbsttest). */
+	public dev.theredstonee.trsclient.core.ui.notes.NotesPage notesPage() {
+		return notesPage;
+	}
+
+	/** Gibt es die Notizen hier (Modul an, von dieser Version unterstützt)? */
+	private boolean notesAvailable() {
+		Module m = host.modules().notes.notes;
+		return dev.theredstonee.trsclient.core.notes.Notes.get() != null && shown(m) && m.isEnabled();
+	}
+
 	/** Öffnet das Menü direkt bei den HUD-Profilen. */
 	public ModMenu showProfiles() {
 		page = Page.PROFILES;
@@ -233,6 +277,7 @@ public final class ModMenu extends UiScreen {
 	@Override
 	protected void onClosed() {
 		bugPage.closed();
+		notesPage.closed();
 		host.modules().clientState.news().closed();
 		host.save();
 		host.closeScreen();
@@ -286,6 +331,12 @@ public final class ModMenu extends UiScreen {
 			page = Page.BUG_REPORT;
 			bugPage.opened();
 		}
+		if (dev.theredstonee.trsclient.core.notes.Notes.takeOpenRequest() && notesAvailable()) {
+			page = Page.NOTES;
+			notesPage.opened();
+		}
+		if (lastPage == Page.NOTES && page != Page.NOTES) notesPage.closed();
+		lastPage = page;
 		if (newsOpenFor != null && (page != Page.SETTINGS || selected != newsOpenFor)) {
 			host.modules().clientState.news().closed();
 			newsOpenFor = null;
@@ -310,6 +361,9 @@ public final class ModMenu extends UiScreen {
 				break;
 			case BUG_REPORT:
 				bugPage.draw(c, hits, cx + 2, cy, cw - 4, ch, mouseX, mouseY, dt);
+				break;
+			case NOTES:
+				notesPage.draw(c, hits, cx + 2, cy, cw - 4, ch, mouseX, mouseY);
 				break;
 			default:
 				grid(c, cx, cy, cw, ch, mouseX, mouseY, dt);
@@ -380,7 +434,7 @@ public final class ModMenu extends UiScreen {
 		}
 		int items = 4 + shownCategories + (host.hasPacks() ? 1 : 0) + (host.hasAccounts() ? 1 : 0)
 				+ (host.hasWardrobe() ? 1 : 0) + (host.hasFriends() ? 1 : 0) + (host.hasClips() ? 1 : 0)
-				+ (dev.theredstonee.trsclient.core.bugreport.BugReports.get() != null ? 1 : 0);
+				+ (dev.theredstonee.trsclient.core.bugreport.BugReports.get() != null ? 1 : 0) + (notesAvailable() ? 1 : 0);
 		int rowH = 18;
 		int gap = 3;
 		int footer = 32;
@@ -466,6 +520,16 @@ public final class ModMenu extends UiScreen {
 			}
 		});
 		cy += rowH + gap;
+		if (notesAvailable()) {
+			railItem(c, x, cy, w, rowH, "note", I18n.tr("menu.notes"), page == Page.NOTES, mx, my, NewSince.MENU_NOTES, new Runnable() {
+				@Override
+				public void run() {
+					if (page != Page.NOTES) notesPage.opened();
+					page = Page.NOTES;
+				}
+			});
+			cy += rowH + gap;
+		}
 		if (host.hasPacks()) {
 			railItem(c, x, cy, w, rowH, "packs", I18n.tr("menu.packs"), false, mx, my, new Runnable() {
 				@Override
@@ -1137,6 +1201,7 @@ public final class ModMenu extends UiScreen {
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (page == Page.NOTES && button == 0) notesPage.mouseClicked(mouseX, mouseY);
 		boolean hit = super.mouseClicked(mouseX, mouseY, button);
 		if (!hit && button == 0) {
 			search.setFocused(false);
@@ -1161,6 +1226,7 @@ public final class ModMenu extends UiScreen {
 		if (!inside(mouseX, mouseY, contentRect[0], contentRect[1], contentRect[2], contentRect[3])) return false;
 		if (page == Page.CIRCUITS) return circuitsPage.mouseScrolled(mouseX, mouseY, amount);
 		if (page == Page.BUG_REPORT) return bugPage.mouseScrolled(mouseX, mouseY, amount);
+		if (page == Page.NOTES) return notesPage.mouseScrolled(mouseX, mouseY, amount);
 		int step = (int) Math.signum(amount) * (page == Page.SETTINGS ? 16 : TILE_H + TILE_GAP);
 		if (page == Page.SETTINGS) settingsScroll = Math.max(0, settingsScroll - step);
 		else if (page == Page.GRID) gridScroll = Math.max(0, gridScroll - step);
@@ -1179,6 +1245,10 @@ public final class ModMenu extends UiScreen {
 		if (page == Page.BUG_REPORT) {
 			if (key == UiKey.ESCAPE && bugPage.back()) return true;
 			if (bugPage.keyPressed(key)) return true;
+		}
+		if (page == Page.NOTES && !search.focused()) {
+			if (key == UiKey.ESCAPE && notesPage.back()) return true;
+			if (key != UiKey.ESCAPE && notesPage.keyPressed(key)) return true;
 		}
 		if (nameInput.focused() && editingProfile != -1) {
 			if (key == UiKey.ENTER) {
@@ -1223,6 +1293,7 @@ public final class ModMenu extends UiScreen {
 		if (page == Page.SERVERS && serversPage.charTyped(c)) return true;
 		if (page == Page.CIRCUITS) return circuitsPage.charTyped(c);
 		if (page == Page.BUG_REPORT && !search.focused()) return bugPage.charTyped(c);
+		if (page == Page.NOTES && !search.focused()) return notesPage.charTyped(c);
 		if (nameInput.focused() && editingProfile != -1) return nameInput.type(c);
 		if (search.focused()) {
 			boolean typed = search.type(c);
