@@ -133,6 +133,13 @@ const powered = ref(false)
       </NuxtLink>
     </section>
 
+    <!-- Was ist der TRS Launcher? Namensvarianten im Fließtext + Links zu den Themen-Seiten -->
+    <section id="about" class="mx-auto max-w-6xl px-4 pt-20 sm:px-6" aria-labelledby="about-title">
+      <h2 id="about-title" class="heading text-3xl">{{ m.home.about.title }}</h2>
+      <p class="mt-3 max-w-3xl leading-relaxed text-base-300">{{ m.home.about.text }}</p>
+      <LandingLinks title="" class="mt-2" />
+    </section>
+
     <!-- Vergleich -->
     <section class="mx-auto max-w-6xl px-4 pt-20 sm:px-6" aria-labelledby="compare-title">
       <h2 id="compare-title" class="heading text-3xl">{{ m.home.compare.title }}</h2>

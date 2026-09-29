@@ -85,7 +85,9 @@ usePageSeo(() => ({
       </section>
     </div>
 
-    <section class="cta card mt-20 flex flex-wrap items-center justify-between gap-6 p-6 sm:p-8" aria-labelledby="cta-title">
+    <LandingLinks class="mt-20" heading-id="related-title" />
+
+    <section class="cta card mt-16 flex flex-wrap items-center justify-between gap-6 p-6 sm:p-8" aria-labelledby="cta-title">
       <div>
         <h2 id="cta-title" class="heading text-2xl">{{ m.features.ctaTitle }}</h2>
         <p class="mt-2 text-base-400">{{ m.features.ctaText }}</p>

@@ -9,7 +9,7 @@ import { RULES } from '../lib/ratelimit'
 /** Gebaute Dateien der Website (Skripte, Stile, Schriften) – nicht aufs IP-Limit anrechnen. */
 const STATIC = /^\/(?:_nuxt|_fonts|news|img|shots|flags)\/|^\/(?:icon\.png|og\.png|favicon\.ico)$/
 /** Maschinenlesbare Dateien der Website – gleich in jeder Sprache. */
-const FEEDS = /^\/(?:sitemap\.xml|robots\.txt|feed\.xml)$/
+const FEEDS = /^\/(?:sitemap\.xml|robots\.txt|feed\.xml|llms\.txt|llms-full\.txt)$/
 
 /**
  * Läuft vor jeder Route. API (/v1/…): Sicherheits-Header, strenges CORS (nur Origins aus

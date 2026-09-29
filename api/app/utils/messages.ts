@@ -11,9 +11,9 @@ const en = {
   // Titel und Beschreibungen für Suchmaschinen (je Seite, höchstens ~60 bzw. ~160 Zeichen), siehe docs/seo.md.
   seo: {
     home: {
-      title: 'TRS Launcher – Free Minecraft Launcher & FPS Boost Client',
+      title: 'TRS Launcher – Free Redstone Minecraft Launcher & Client',
       description:
-        'Free Minecraft launcher for Windows and Linux: Fabric, Forge, NeoForge and Quilt, Modrinth and CurseForge modpacks, and a built-in client with FPS boost.',
+        'TRS Launcher by TheRedstonee: the free, open-source redstone Minecraft launcher for Windows and Linux – every version, Fabric, Forge, NeoForge and TRS Client.',
     },
     features: {
       title: 'TRS Client – Minecraft Client for FPS, PvP & Redstone',
@@ -87,7 +87,7 @@ const en = {
   nav: { home: 'Home', features: 'Features', download: 'Download', blog: 'Blog', capes: 'Capes', faq: 'FAQ', team: 'Team', admin: 'Admin', menu: 'Menu' },
   common: { loading: 'Loading …', error: 'Could not load this right now. Please try again later.', copy: 'Copy', copied: 'Copied', close: 'Close', version: 'Version {version}', new: 'New' },
   footer: {
-    tagline: 'A Minecraft launcher by Theredstonee – open source under GPL-3.0.',
+    tagline: 'TRS Launcher – The Redstone Launcher by TheRedstonee. A free Minecraft launcher, open source under GPL-3.0.',
     imprint: 'Imprint',
     privacy: 'Privacy',
     github: 'GitHub',
@@ -96,7 +96,7 @@ const en = {
     notAffiliated: 'Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.',
   },
   home: {
-    kicker: 'Free Minecraft launcher for Windows & Linux',
+    kicker: 'TRS Launcher · Free Minecraft launcher for Windows & Linux',
     title: 'Every version. Every loader. Your redstone.',
     lead: 'The TRS Launcher installs and starts every Minecraft version with Vanilla, Fabric, Quilt, Forge or NeoForge – with its own client mod, mods from Modrinth and CurseForge, FPS boost, clips, capes and friends.',
     download: 'Download for {os}',
@@ -151,6 +151,7 @@ const en = {
     blogTitle: 'Latest updates',
     blogCta: 'All updates',
     featuresCta: 'All features',
+    about: { title: 'What is TRS Launcher?', text: 'TRS Launcher – the Redstone Launcher by TheRedstonee – is a free, open-source Minecraft launcher for Windows and Linux. You may also know it as TRS or the TRS Minecraft Launcher; the client mod inside is the TRS Client. It installs every Minecraft: Java Edition version with the mod loader you want, brings mods and modpacks from Modrinth and CurseForge and adds performance, PvP and redstone tools to the game. Pick a topic to learn more:' },
   },
   features: {
     kicker: 'TRS Launcher & TRS Client',
@@ -185,7 +186,7 @@ const en = {
         ],
         img: '',
         alt: '',
-        link: null,
+        link: { to: '/fps-boost-pvp-client', label: 'FPS boost & PvP client in detail' },
       },
       {
         id: 'pvp',
@@ -214,7 +215,7 @@ const en = {
         ],
         img: 'redstone-overlay.png',
         alt: 'Redstone signal strength shown above every redstone dust in the TRS Client',
-        link: null,
+        link: { to: '/redstone-launcher', label: 'More about the Redstone Launcher' },
       },
       {
         id: 'maps',
@@ -263,7 +264,7 @@ const en = {
         ],
         img: 'library.png',
         alt: 'The instance library of the TRS Launcher',
-        link: null,
+        link: { to: '/modpacks', label: 'Mods & modpacks in detail' },
       },
       {
         id: 'clips',
@@ -428,6 +429,9 @@ const en = {
     lead: 'Quick answers. Still stuck? Ask on Discord or have a look at the wiki.',
     items: [
       { q: 'Is the TRS Launcher free?', a: 'Yes, completely. It is open source (GPL-3.0). You only need your own Minecraft: Java Edition account.' },
+      { q: 'Is TRS Launcher open source?', a: 'Yes. The launcher and the TRS Client are open source under GPL-3.0 – the whole code is on GitHub, where you can also report bugs and follow development.' },
+      { q: 'Is TRS Launcher safe to use?', a: 'The code is public, so anyone can check what it does. You sign in on Microsoft’s own page, game files and mods come from Mojang, Modrinth and CurseForge, and sign-in data of other launchers is never read. There is no telemetry and no advertising. Only download the launcher from this website or from GitHub.' },
+      { q: 'Why is it called TRS Launcher or the Redstone Launcher?', a: 'TRS Launcher is developed by TheRedstonee and designed around redstone: a live redstone circuit on the start page, redstone menus in the game and redstone tools in the TRS Client. That is why it is also known as the Redstone Launcher.' },
       { q: 'Do I have to install Java?', a: 'No. The launcher downloads the right Java for every Minecraft version by itself.' },
       { q: 'Which versions and mod loaders are supported?', a: 'Every release from 1.7.10 up to the newest version and snapshots, with Vanilla, Fabric, Quilt, Forge and NeoForge.' },
       { q: 'What is the TRS Client?', a: 'Our own client mod. The launcher can add it to any instance: HUD editor, zoom, freelook, emotes, redstone tools, cape physics, performance options and more. You can switch it off per instance.' },
@@ -443,6 +447,14 @@ const en = {
       { q: 'Can I install mods and modpacks with the TRS Launcher?', a: 'Yes. Pick Fabric, Quilt, Forge or NeoForge for an instance and install mods, modpacks, resource packs and shaders from Modrinth and CurseForge right in the launcher – dependencies included.' },
       { q: 'Can I record Minecraft clips?', a: 'Yes, on Windows. Press F9 in the game to save the last moments as a clip, or F10 to record. Clips stay on your PC and can be played, trimmed and shared in the launcher.' },
       { q: 'Can I chat with my friends?', a: 'Yes. With the TRS online features you get a friends list, direct messages and group chats – in the launcher and in the game with the TRS Client. Invite friends to your server with one click.' },
+      { q: 'Can I import instances from other launchers?', a: 'Yes. “Import from another launcher” finds the launchers on your PC and brings over worlds, mods, resource and shader packs, settings and server lists. Version and mod loader are detected for you; sign-in data is never copied.' },
+      { q: 'Can I use several Minecraft accounts?', a: 'Yes. Add several Microsoft accounts and switch between them in the title bar. With the TRS Client you can even switch accounts inside the game without restarting.' },
+      { q: 'How do I share a modpack?', a: 'Open the instance and choose Share → Share modpack. You get a code (TRS-XXXX-XXXX) and a link, or you send the pack straight to friends. Others install it with Library → “Modpack by code”; when you upload a new version, they get an update and keep their own changes.' },
+      { q: 'Can I play with friends without a server?', a: 'Yes. With the TRS Client you can host your singleplayer world for up to 10 friends – no port forwarding. Friends join from Social → Worlds in the launcher, with a join code or from an invite.' },
+      { q: 'Does TRS Launcher update itself?', a: 'Yes. New versions download in the background while you play and install with one click. The TRS Client has its own update channel and updates itself on the next game start.' },
+      { q: 'What happens when Minecraft crashes?', a: 'The crash helper reads the crash report and the log and explains the cause in plain words – for example clashing mods, a missing dependency, too little memory or the wrong Java version – and offers fixes such as “Disable mod” or “Install dependency”. The analysis runs only on your PC.' },
+      { q: 'Can I use shaders with the FPS boost?', a: 'Yes. The FPS boost preset comes in three levels: Max FPS, Light shaders and Pretty shaders. The shader levels add Iris and a shader on Fabric, Quilt and NeoForge; press K in the game to turn shaders on or off.' },
+      { q: 'Does TRS Launcher have achievements?', a: 'Yes. Achievements reward playtime, trying out launcher features and the community. Every achievement gives points and has a rarity, and some come with a reward such as a cape or an emote.' },
     ],
     wiki: 'Open the wiki',
     discord: 'Ask on Discord',
@@ -625,9 +637,9 @@ const de: Messages = {
   },
   seo: {
     home: {
-      title: 'TRS Launcher – Kostenloser Minecraft Launcher mit FPS-Boost',
+      title: 'TRS Launcher – Kostenloser Redstone Minecraft Launcher',
       description:
-        'Kostenloser Minecraft-Launcher für Windows und Linux: Fabric, Forge, NeoForge und Quilt, Modpacks von Modrinth und CurseForge und ein Client mit FPS-Boost.',
+        'TRS Launcher von TheRedstonee: kostenloser Open-Source-Redstone-Launcher für Minecraft, Windows und Linux – jede Version, Fabric, Forge, NeoForge, TRS Client.',
     },
     features: {
       title: 'TRS Client – Minecraft Client für FPS, PvP & Redstone',
@@ -702,7 +714,7 @@ const de: Messages = {
   nav: { home: 'Start', features: 'Funktionen', download: 'Download', blog: 'Blog', capes: 'Umhänge', faq: 'FAQ', team: 'Team', admin: 'Admin', menu: 'Menü' },
   common: { loading: 'Lädt …', error: 'Das lässt sich gerade nicht laden. Bitte später noch einmal versuchen.', copy: 'Kopieren', copied: 'Kopiert', close: 'Schließen', version: 'Version {version}', new: 'Neu' },
   footer: {
-    tagline: 'Ein Minecraft-Launcher von Theredstonee – Open Source unter GPL-3.0.',
+    tagline: 'TRS Launcher – der Redstone Launcher von TheRedstonee. Ein kostenloser Minecraft-Launcher, Open Source unter GPL-3.0.',
     imprint: 'Impressum',
     privacy: 'Datenschutz',
     github: 'GitHub',
@@ -711,7 +723,7 @@ const de: Messages = {
     notAffiliated: 'Kein offizielles Minecraft-Produkt. Nicht von Mojang oder Microsoft genehmigt oder mit ihnen verbunden.',
   },
   home: {
-    kicker: 'Kostenloser Minecraft-Launcher für Windows & Linux',
+    kicker: 'TRS Launcher · Kostenloser Minecraft-Launcher für Windows & Linux',
     title: 'Jede Version. Jeder Loader. Dein Redstone.',
     lead: 'Der TRS Launcher installiert und startet jede Minecraft-Version mit Vanilla, Fabric, Quilt, Forge oder NeoForge – mit eigener Client-Mod, Mods von Modrinth und CurseForge, FPS-Boost, Clips, Umhängen und Freunden.',
     download: 'Für {os} herunterladen',
@@ -766,6 +778,7 @@ const de: Messages = {
     blogTitle: 'Neueste Updates',
     blogCta: 'Alle Updates',
     featuresCta: 'Alle Funktionen',
+    about: { title: 'Was ist der TRS Launcher?', text: 'Der TRS Launcher – der Redstone Launcher von TheRedstonee – ist ein kostenloser Open-Source-Minecraft-Launcher für Windows und Linux. Vielleicht kennst du ihn auch als TRS oder TRS Minecraft Launcher; die Client-Mod darin heißt TRS Client. Er installiert jede Version von Minecraft: Java Edition mit dem Modloader deiner Wahl, bringt Mods und Modpacks von Modrinth und CurseForge und ergänzt das Spiel um Performance-, PvP- und Redstone-Werkzeuge. Wähle ein Thema, um mehr zu erfahren:' },
   },
   features: {
     kicker: 'TRS Launcher & TRS Client',
@@ -800,7 +813,7 @@ const de: Messages = {
         ],
         img: '',
         alt: '',
-        link: null,
+        link: { to: '/fps-boost-pvp-client', label: 'FPS-Boost & PvP Client im Detail' },
       },
       {
         id: 'pvp',
@@ -829,7 +842,7 @@ const de: Messages = {
         ],
         img: 'redstone-overlay.png',
         alt: 'Redstone-Signalstärke über jedem Redstone-Staub im TRS Client',
-        link: null,
+        link: { to: '/redstone-launcher', label: 'Mehr zum Redstone Launcher' },
       },
       {
         id: 'maps',
@@ -878,7 +891,7 @@ const de: Messages = {
         ],
         img: 'library.png',
         alt: 'Die Instanz-Bibliothek des TRS Launcher',
-        link: null,
+        link: { to: '/modpacks', label: 'Mods & Modpacks im Detail' },
       },
       {
         id: 'clips',
@@ -1043,6 +1056,9 @@ const de: Messages = {
     lead: 'Schnelle Antworten. Noch Fragen? Frag auf Discord oder schau ins Wiki.',
     items: [
       { q: 'Ist der TRS Launcher kostenlos?', a: 'Ja, komplett. Er ist Open Source (GPL-3.0). Du brauchst nur dein eigenes Konto für Minecraft: Java Edition.' },
+      { q: 'Ist der TRS Launcher Open Source?', a: 'Ja. Launcher und TRS Client sind Open Source unter GPL-3.0 – der komplette Code liegt auf GitHub, wo du auch Fehler melden und die Entwicklung verfolgen kannst.' },
+      { q: 'Ist der TRS Launcher sicher?', a: 'Der Code ist öffentlich, jeder kann also prüfen, was er tut. Du meldest dich auf der Seite von Microsoft selbst an, Spieldateien und Mods kommen von Mojang, Modrinth und CurseForge, und Anmeldedaten anderer Launcher werden nie gelesen. Es gibt keine Telemetrie und keine Werbung. Lade den Launcher nur von dieser Website oder von GitHub herunter.' },
+      { q: 'Warum heißt er TRS Launcher oder Redstone Launcher?', a: 'Der TRS Launcher wird von TheRedstonee entwickelt und dreht sich um Redstone: eine lebendige Redstone-Schaltung auf der Startseite, Redstone-Menüs im Spiel und Redstone-Werkzeuge im TRS Client. Deshalb kennt man ihn auch als Redstone Launcher.' },
       { q: 'Muss ich Java installieren?', a: 'Nein. Der Launcher lädt für jede Minecraft-Version selbst das passende Java.' },
       { q: 'Welche Versionen und Modloader gehen?', a: 'Jede Version von 1.7.10 bis zur neuesten inklusive Snapshots, mit Vanilla, Fabric, Quilt, Forge und NeoForge.' },
       { q: 'Was ist der TRS Client?', a: 'Unsere eigene Client-Mod. Der Launcher kann sie in jede Instanz legen: HUD-Editor, Zoom, Freelook, Emotes, Redstone-Werkzeuge, Umhang-Physik, Leistungs-Optionen und mehr. Pro Instanz abschaltbar.' },
@@ -1058,6 +1074,14 @@ const de: Messages = {
       { q: 'Kann ich mit dem TRS Launcher Mods und Modpacks installieren?', a: 'Ja. Wähle für eine Instanz Fabric, Quilt, Forge oder NeoForge und installiere Mods, Modpacks, Ressourcenpakete und Shader von Modrinth und CurseForge direkt im Launcher – samt Abhängigkeiten.' },
       { q: 'Kann ich Minecraft-Clips aufnehmen?', a: 'Ja, unter Windows. Drück im Spiel F9, um die letzten Momente als Clip zu speichern, oder F10 für eine Aufnahme. Clips bleiben auf deinem PC und lassen sich im Launcher abspielen, zuschneiden und teilen.' },
       { q: 'Kann ich mit meinen Freunden chatten?', a: 'Ja. Mit den TRS-Online-Funktionen bekommst du eine Freundesliste, Direktnachrichten und Gruppen-Chats – im Launcher und mit dem TRS Client im Spiel. Freunde lädst du mit einem Klick auf deinen Server ein.' },
+      { q: 'Kann ich Instanzen aus anderen Launchern importieren?', a: 'Ja. „Aus anderem Launcher importieren“ findet die Launcher auf deinem PC und übernimmt Welten, Mods, Ressourcen- und Shaderpakete, Einstellungen und Serverlisten. Version und Modloader werden erkannt; Anmeldedaten werden nie kopiert.' },
+      { q: 'Kann ich mehrere Minecraft-Konten nutzen?', a: 'Ja. Füge mehrere Microsoft-Konten hinzu und wechsle in der Titelleiste zwischen ihnen. Mit dem TRS Client wechselst du das Konto sogar im Spiel, ohne Neustart.' },
+      { q: 'Wie teile ich ein Modpack?', a: 'Öffne die Instanz und wähle Teilen → Modpack teilen. Du bekommst einen Code (TRS-XXXX-XXXX) und einen Link oder schickst das Pack direkt an Freunde. Andere installieren es über Bibliothek → „Modpack per Code“; lädst du eine neue Version hoch, bekommen sie ein Update und behalten ihre eigenen Änderungen.' },
+      { q: 'Kann ich ohne Server mit Freunden spielen?', a: 'Ja. Mit dem TRS Client hostest du deine Einzelspielerwelt für bis zu 10 Freunde – ohne Portfreigabe. Freunde treten im Launcher über Sozial → Welten, per Beitrittscode oder über eine Einladung bei.' },
+      { q: 'Aktualisiert sich der TRS Launcher selbst?', a: 'Ja. Neue Versionen laden im Hintergrund, während du spielst, und installieren sich mit einem Klick. Der TRS Client hat einen eigenen Update-Kanal und aktualisiert sich beim nächsten Spielstart.' },
+      { q: 'Was passiert, wenn Minecraft abstürzt?', a: 'Der Absturz-Helfer liest Absturzbericht und Log und erklärt die Ursache in klaren Worten – etwa Mods, die sich streiten, eine fehlende Abhängigkeit, zu wenig Arbeitsspeicher oder die falsche Java-Version – und bietet Lösungen wie „Mod deaktivieren“ oder „Abhängigkeit installieren“ an. Die Auswertung läuft nur auf deinem PC.' },
+      { q: 'Kann ich Shader mit dem FPS-Boost nutzen?', a: 'Ja. Das FPS-Boost-Preset gibt es in drei Stufen: Max FPS, Shader leicht und Shader schön. Die Shader-Stufen bringen Iris und einen Shader für Fabric, Quilt und NeoForge mit; mit K schaltest du Shader im Spiel an und aus.' },
+      { q: 'Hat der TRS Launcher Erfolge?', a: 'Ja. Erfolge belohnen Spielzeit, das Ausprobieren von Launcher-Funktionen und die Community. Jeder Erfolg bringt Punkte und hat eine Seltenheit, manche haben eine Belohnung wie einen Umhang oder ein Emote.' },
     ],
     wiki: 'Wiki öffnen',
     discord: 'Auf Discord fragen',
@@ -1239,9 +1263,9 @@ const es: Messages = {
   },
   seo: {
     home: {
-      title: 'TRS Launcher – Launcher de Minecraft gratis con FPS boost',
+      title: 'TRS Launcher – Launcher de Minecraft redstone gratis',
       description:
-        'Launcher de Minecraft gratis para Windows y Linux: Fabric, Forge, NeoForge y Quilt, modpacks de Modrinth y CurseForge y un cliente con FPS boost incluido.',
+        'TRS Launcher de TheRedstonee: launcher redstone de Minecraft gratis y de código abierto para Windows y Linux: cada versión, Fabric, Forge, NeoForge, TRS Client.',
     },
     features: {
       title: 'TRS Client – Cliente de Minecraft para FPS, PvP y redstone',
@@ -1315,7 +1339,7 @@ const es: Messages = {
   nav: { home: 'Inicio', features: 'Funciones', download: 'Descargar', blog: 'Blog', capes: 'Capas', faq: 'FAQ', team: 'Equipo', admin: 'Admin', menu: 'Menú' },
   common: { loading: 'Cargando …', error: 'Ahora no se puede cargar. Inténtalo más tarde.', copy: 'Copiar', copied: 'Copiado', close: 'Cerrar', version: 'Versión {version}', new: 'Nuevo' },
   footer: {
-    tagline: 'Un launcher de Minecraft de Theredstonee – código abierto bajo GPL-3.0.',
+    tagline: 'TRS Launcher – el Redstone Launcher de TheRedstonee. Un launcher de Minecraft gratis, de código abierto bajo GPL-3.0.',
     imprint: 'Aviso legal',
     privacy: 'Privacidad',
     github: 'GitHub',
@@ -1325,7 +1349,7 @@ const es: Messages = {
   },
   home: {
     ...en.home,
-    kicker: 'Launcher de Minecraft gratis para Windows y Linux',
+    kicker: 'TRS Launcher · Launcher de Minecraft gratis para Windows y Linux',
     title: 'Cada versión. Cada cargador. Tu redstone.',
     lead: 'El TRS Launcher instala y abre cada versión de Minecraft con Vanilla, Fabric, Quilt, Forge o NeoForge – con su propio client mod, mods de Modrinth y CurseForge, FPS boost, clips, capas y amigos.',
     download: 'Descargar para {os}',
@@ -1380,6 +1404,7 @@ const es: Messages = {
     blogTitle: 'Últimas actualizaciones',
     blogCta: 'Todas las actualizaciones',
     featuresCta: 'Todas las funciones',
+    about: { title: '¿Qué es TRS Launcher?', text: 'TRS Launcher – el Redstone Launcher de TheRedstonee – es un launcher de Minecraft gratis y de código abierto para Windows y Linux. Quizá lo conozcas también como TRS o TRS Minecraft Launcher; el client mod que incluye es el TRS Client. Instala cada versión de Minecraft: Java Edition con el cargador de mods que quieras, trae mods y modpacks de Modrinth y CurseForge y añade herramientas de rendimiento, PvP y redstone al juego. Elige un tema para saber más:' },
   },
   features: {
     kicker: 'TRS Launcher y TRS Client',
@@ -1414,7 +1439,7 @@ const es: Messages = {
         ],
         img: '',
         alt: '',
-        link: null,
+        link: { to: '/fps-boost-pvp-client', label: 'Cliente PvP y FPS boost en detalle' },
       },
       {
         id: 'pvp',
@@ -1443,7 +1468,7 @@ const es: Messages = {
         ],
         img: 'redstone-overlay.png',
         alt: 'La intensidad de señal sobre cada polvo de redstone en el TRS Client',
-        link: null,
+        link: { to: '/redstone-launcher', label: 'Más sobre el Redstone Launcher' },
       },
       {
         id: 'maps',
@@ -1492,7 +1517,7 @@ const es: Messages = {
         ],
         img: 'library.png',
         alt: 'La biblioteca de instancias del TRS Launcher',
-        link: null,
+        link: { to: '/modpacks', label: 'Mods y modpacks en detalle' },
       },
       {
         id: 'clips',
@@ -1800,6 +1825,9 @@ const es: Messages = {
     lead: 'Respuestas rápidas. ¿Más preguntas? Pregunta en Discord o mira la wiki.',
     items: [
       { q: '¿El TRS Launcher es gratis?', a: 'Sí, del todo. Es de código abierto (GPL-3.0). Solo necesitas tu propia cuenta de Minecraft: Java Edition.' },
+      { q: '¿TRS Launcher es de código abierto?', a: 'Sí. El launcher y el TRS Client son de código abierto bajo GPL-3.0: todo el código está en GitHub, donde también puedes informar de errores y seguir el desarrollo.' },
+      { q: '¿Es seguro TRS Launcher?', a: 'El código es público, así que cualquiera puede comprobar qué hace. Inicias sesión en la propia página de Microsoft, los archivos del juego y los mods vienen de Mojang, Modrinth y CurseForge, y los datos de inicio de sesión de otros launchers nunca se leen. No hay telemetría ni publicidad. Descarga el launcher solo desde esta web o desde GitHub.' },
+      { q: '¿Por qué se llama TRS Launcher o Redstone Launcher?', a: 'TRS Launcher lo desarrolla TheRedstonee y gira en torno a la redstone: un circuito de redstone vivo en la página de inicio, menús redstone en el juego y herramientas de redstone en el TRS Client. Por eso también se le conoce como el Redstone Launcher.' },
       { q: '¿Tengo que instalar Java?', a: 'No. El launcher descarga por sí mismo el Java adecuado para cada versión de Minecraft.' },
       { q: '¿Qué versiones y cargadores de mods funcionan?', a: 'Cada versión desde 1.7.10 hasta la más nueva, snapshots incluidas, con Vanilla, Fabric, Quilt, Forge y NeoForge.' },
       { q: '¿Qué es el TRS Client?', a: 'Nuestro propio client mod. El launcher puede añadirlo a cualquier instancia: editor de HUD, zoom, freelook, emotes, herramientas de redstone, física de capas, opciones de rendimiento y más. Se puede desactivar por instancia.' },
@@ -1815,6 +1843,14 @@ const es: Messages = {
       { q: '¿Puedo instalar mods y modpacks con el TRS Launcher?', a: 'Sí. Elige Fabric, Quilt, Forge o NeoForge para una instancia e instala mods, modpacks, paquetes de recursos y shaders de Modrinth y CurseForge directamente en el launcher, con sus dependencias.' },
       { q: '¿Puedo grabar clips de Minecraft?', a: 'Sí, en Windows. Pulsa F9 en el juego para guardar los últimos momentos como clip, o F10 para grabar. Los clips se quedan en tu PC y puedes verlos, recortarlos y compartirlos en el launcher.' },
       { q: '¿Puedo chatear con mis amigos?', a: 'Sí. Con las funciones en línea de TRS tienes lista de amigos, mensajes directos y chats de grupo, en el launcher y en el juego con el TRS Client. Invita a tus amigos a tu servidor con un clic.' },
+      { q: '¿Puedo importar instancias de otros launchers?', a: 'Sí. «Importar desde otro launcher» encuentra los launchers de tu PC y trae mundos, mods, paquetes de recursos y de shaders, ajustes y listas de servidores. La versión y el cargador de mods se detectan solos; los datos de inicio de sesión nunca se copian.' },
+      { q: '¿Puedo usar varias cuentas de Minecraft?', a: 'Sí. Añade varias cuentas de Microsoft y cambia entre ellas en la barra de título. Con el TRS Client puedes cambiar de cuenta incluso dentro del juego, sin reiniciar.' },
+      { q: '¿Cómo comparto un modpack?', a: 'Abre la instancia y elige Compartir → Compartir modpack. Recibes un código (TRS-XXXX-XXXX) y un enlace, o envías el pack directamente a tus amigos. Los demás lo instalan con Biblioteca → «Modpack por código»; cuando subes una versión nueva, reciben una actualización y conservan sus propios cambios.' },
+      { q: '¿Puedo jugar con amigos sin servidor?', a: 'Sí. Con el TRS Client alojas tu mundo de un jugador para hasta 10 amigos, sin abrir puertos. Tus amigos entran desde Social → Mundos en el launcher, con un código o desde una invitación.' },
+      { q: '¿TRS Launcher se actualiza solo?', a: 'Sí. Las versiones nuevas se descargan en segundo plano mientras juegas y se instalan con un clic. El TRS Client tiene su propio canal de actualizaciones y se actualiza en el siguiente inicio del juego.' },
+      { q: '¿Qué pasa si Minecraft se cierra por un error?', a: 'El asistente de cierres lee el informe y el registro y explica la causa con palabras claras – por ejemplo mods que chocan, una dependencia que falta, poca memoria o la versión de Java equivocada – y ofrece soluciones como «Desactivar mod» o «Instalar dependencia». El análisis se hace solo en tu PC.' },
+      { q: '¿Puedo usar shaders con el FPS boost?', a: 'Sí. El preset de FPS boost tiene tres niveles: Máx. FPS, Shaders ligeros y Shaders bonitos. Los niveles con shaders añaden Iris y un shader en Fabric, Quilt y NeoForge; pulsa K en el juego para activar o desactivar los shaders.' },
+      { q: '¿TRS Launcher tiene logros?', a: 'Sí. Los logros premian el tiempo de juego, probar funciones del launcher y la comunidad. Cada logro da puntos y tiene una rareza, y algunos traen una recompensa como una capa o un emote.' },
     ],
     wiki: 'Abrir la wiki',
     discord: 'Preguntar en Discord',

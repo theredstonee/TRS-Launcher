@@ -7,6 +7,7 @@ import {
   buildRobots,
   buildSitemap,
   clampText,
+  COMPETITOR_PATTERN,
   faqPageLd,
   localizedUrl,
   organizationLd,
@@ -18,6 +19,7 @@ import {
   type PageHead,
 } from '../shared/seo'
 import { messages, type Lang } from '../app/utils/messages'
+import { LANDING_IDS, landingPath, landingTexts, landingWords, SHOT_SIZES } from '../shared/landing'
 
 const SITE = 'https://trs-launcher.theredstonee.de'
 
@@ -354,8 +356,107 @@ describe('Texte für Suchmaschinen', () => {
   })
 
   it('keine anderen Launcher oder Clients mit Namen in den neuen Texten', () => {
-    const text = JSON.stringify(langs.map((l) => [messages[l].seo, messages[l].features]))
-    expect(text).not.toMatch(/Lunar|Badlion|Feather|Prism|MultiMC|Modrinth App|official launcher|offizielle[rn]? Launcher|launcher oficial/i)
+    const text = JSON.stringify(
+      langs.map((l) => [messages[l].seo, messages[l].features, messages[l].faq, messages[l].home.about, messages[l].footer, landingTexts[l]]),
+    )
+    expect(text).not.toMatch(COMPETITOR_PATTERN)
+  })
+
+  it('Startseite: Marke steht in der h1 und die Namensvarianten im Text', () => {
+    for (const lang of langs) {
+      const home = messages[lang].home
+      expect(home.kicker.startsWith('TRS Launcher')).toBe(true)
+      expect(home.about.text).toContain('Redstone Launcher')
+      expect(home.about.text).toContain('TheRedstonee')
+      expect(messages[lang].footer.tagline).toContain('Redstone Launcher')
+      expect(messages[lang].seo.home.title.startsWith('TRS Launcher')).toBe(true)
+    }
+  })
+})
+
+describe('Themen-Seiten (shared/landing.ts)', () => {
+  const langs: Lang[] = ['en', 'de', 'es']
+  const pages = ['home', 'features', 'download', 'blog', 'capes', 'faq', 'privacy'] as const
+
+  it('stehen in der Sitemap', () => {
+    for (const id of LANDING_IDS) expect(SITE_PAGES.map((p) => p.path)).toContain(landingPath(id))
+  })
+
+  it('Titel ≤ 65, Beschreibung 51–160, alles eindeutig (auch gegenüber den übrigen Seiten)', () => {
+    for (const lang of langs) {
+      const titles = [...pages.map((p) => messages[lang].seo[p].title), ...LANDING_IDS.map((id) => landingTexts[lang].pages[id].seo.title)]
+      const descriptions = [...pages.map((p) => messages[lang].seo[p].description), ...LANDING_IDS.map((id) => landingTexts[lang].pages[id].seo.description)]
+      expect(new Set(titles).size, `${lang} titles`).toBe(titles.length)
+      expect(new Set(descriptions).size, `${lang} descriptions`).toBe(descriptions.length)
+      for (const id of LANDING_IDS) {
+        const { title, description } = landingTexts[lang].pages[id].seo
+        expect(title.length, `${lang} ${id} title`).toBeLessThanOrEqual(65)
+        expect(description.length, `${lang} ${id} description`).toBeGreaterThan(50)
+        expect(description.length, `${lang} ${id} description`).toBeLessThanOrEqual(160)
+      }
+    }
+  })
+
+  it('das Hauptwort steht in Titel oder Beschreibung', () => {
+    const keyword: Record<string, RegExp> = {
+      'minecraft-launcher': /Minecraft/i,
+      'redstone-launcher': /Redstone/i,
+      modpacks: /Modpack/i,
+      'fps-boost-pvp-client': /FPS.*PvP|PvP.*FPS/i,
+    }
+    for (const lang of langs) {
+      for (const id of LANDING_IDS) {
+        const { title, description } = landingTexts[lang].pages[id].seo
+        expect(`${title} ${description}`, `${lang} ${id}`).toMatch(keyword[id]!)
+      }
+    }
+  })
+
+  it('600–1000 Wörter auf Englisch, Übersetzungen im selben Rahmen', () => {
+    for (const id of LANDING_IDS) {
+      const en = landingWords(landingTexts.en.pages[id])
+      expect(en, `en ${id}`).toBeGreaterThanOrEqual(600)
+      expect(en, `en ${id}`).toBeLessThanOrEqual(1000)
+      for (const lang of ['de', 'es'] as const) {
+        const n = landingWords(landingTexts[lang].pages[id])
+        expect(n, `${lang} ${id}`).toBeGreaterThanOrEqual(520)
+        expect(n, `${lang} ${id}`).toBeLessThanOrEqual(1150)
+      }
+    }
+  })
+
+  it('gleich aufgebaut in allen Sprachen, 4–6 FAQ, Bilder mit Maßen und Alt-Text', () => {
+    for (const id of LANDING_IDS) {
+      const en = landingTexts.en.pages[id]
+      expect(en.faq.length).toBeGreaterThanOrEqual(4)
+      expect(en.faq.length).toBeLessThanOrEqual(6)
+      expect(en.sections.filter((s) => s.shot).length, id).toBeGreaterThanOrEqual(3)
+      for (const lang of langs) {
+        const p = landingTexts[lang].pages[id]
+        expect(p.sections.map((s) => s.id), `${lang} ${id}`).toEqual(en.sections.map((s) => s.id))
+        expect(p.sections.map((s) => s.shot?.file ?? null)).toEqual(en.sections.map((s) => s.shot?.file ?? null))
+        expect(p.sections.map((s) => s.link?.to ?? null)).toEqual(en.sections.map((s) => s.link?.to ?? null))
+        expect(p.faq).toHaveLength(en.faq.length)
+        for (const s of p.sections) {
+          if (!s.shot) continue
+          expect(SHOT_SIZES[s.shot.file], s.shot.file).toBeDefined()
+          expect(s.shot.alt.length, `${lang} ${id} ${s.id} alt`).toBeGreaterThan(20)
+          expect(s.shot.caption.length).toBeGreaterThan(5)
+        }
+        const ld = faqPageLd(SITE, lang, p.faq, landingPath(id))
+        expect(validateNode(ld)).toEqual([])
+        expect(ld['@id']).toBe(`${localizedUrl(SITE, landingPath(id), lang)}#faq`)
+      }
+    }
+    expect(landingTexts.es.pages.modpacks.title).not.toBe(landingTexts.en.pages.modpacks.title)
+  })
+
+  it('SoftwareApplication, WebSite und Organization tragen die Namensvarianten', () => {
+    const app = softwareLd({ siteUrl: SITE, lang: 'en', description: 'd' })
+    expect(app.alternateName).toEqual(expect.arrayContaining(['TRS', 'Redstone Launcher', 'The Redstone Launcher', 'TheRedstonee Launcher']))
+    expect(app).toMatchObject({ creator: { '@type': 'Person', name: 'TheRedstonee' } })
+    expect(websiteLd(SITE, 'd').alternateName).toEqual(expect.arrayContaining(['TRS Client', 'Redstone Launcher']))
+    expect(organizationLd(SITE).alternateName).toContain('TRS')
   })
 })
 

@@ -13,6 +13,23 @@ export const SITE_NAME = 'TRS Launcher'
 export const DEFAULT_SITE_URL = 'https://trs-launcher.theredstonee.de'
 export const REPO_URL = 'https://github.com/theredstonee/TRS-Launcher'
 export const DISCORD_URL = 'https://dc.theredstonee.de'
+/** Entwickler (GitHub-Name theredstonee). */
+export const AUTHOR_NAME = 'TheRedstonee'
+export const AUTHOR_URL = 'https://github.com/theredstonee'
+
+/**
+ * Namensvarianten, unter denen Leute den Launcher suchen: „TRS Launcher by TheRedstonee – the redstone Minecraft
+ * launcher“. Nur für JSON-LD `alternateName`; im sichtbaren Text stehen sie natürlich formuliert (Start, Fußzeile).
+ */
+export const LAUNCHER_ALT_NAMES: readonly string[] = ['TRS', 'TRS Minecraft Launcher', 'Redstone Launcher', 'The Redstone Launcher', 'TheRedstonee Launcher']
+/**
+ * Namen anderer Launcher und Clients – kommen in SEO-Texten (Titel, Beschreibungen, Themen-Seiten, llms.txt) nicht
+ * vor; die Tests prüfen das, llms-full.txt lässt Changelog-Schlagzeilen mit solchen Namen weg.
+ */
+export const COMPETITOR_PATTERN =
+  /Lunar|Badlion|Feather|Prism|MultiMC|Modrinth App|ATLauncher|GDLauncher|TLauncher|OneClient|LabyMod|Essential\b|official launcher|offizielle[rn]? Launcher|launcher oficial/i
+
+export const WEBSITE_ALT_NAMES: readonly string[] = [...LAUNCHER_ALT_NAMES, 'TRS Client']
 
 /** Open-Graph-Gebietsschema je Sprache. */
 export const OG_LOCALE: Record<SeoLang, string> = { en: 'en_US', de: 'de_DE', es: 'es_ES' }
@@ -22,6 +39,11 @@ export const SITE_PAGES: readonly { path: string, priority: number }[] = [
   { path: '/', priority: 1 },
   { path: '/features', priority: 0.9 },
   { path: '/download', priority: 0.9 },
+  // Themen-Seiten (shared/landing.ts)
+  { path: '/minecraft-launcher', priority: 0.8 },
+  { path: '/redstone-launcher', priority: 0.8 },
+  { path: '/modpacks', priority: 0.8 },
+  { path: '/fps-boost-pvp-client', priority: 0.8 },
   { path: '/blog', priority: 0.7 },
   { path: '/capes', priority: 0.7 },
   { path: '/circuits', priority: 0.7 },
@@ -217,7 +239,9 @@ export function organizationLd(siteUrl: string): JsonLdNode {
     '@type': 'Organization',
     '@id': organizationId(siteUrl),
     name: SITE_NAME,
+    alternateName: ['TRS', 'Redstone Launcher'],
     url: `${trimBase(siteUrl)}/`,
+    founder: { '@type': 'Person', name: AUTHOR_NAME, url: AUTHOR_URL },
     logo: { '@type': 'ImageObject', url: absoluteUrl(siteUrl, '/icon.png'), width: 512, height: 512 },
     sameAs: [REPO_URL, DISCORD_URL],
   }
@@ -228,7 +252,7 @@ export function websiteLd(siteUrl: string, description: string): JsonLdNode {
     '@type': 'WebSite',
     '@id': websiteId(siteUrl),
     name: SITE_NAME,
-    alternateName: 'TRS',
+    alternateName: [...WEBSITE_ALT_NAMES],
     url: `${trimBase(siteUrl)}/`,
     description,
     inLanguage: [...SEO_LANGS],
@@ -253,6 +277,7 @@ export function softwareLd(s: SoftwareInput): JsonLdNode {
     '@type': 'SoftwareApplication',
     '@id': softwareId(s.siteUrl),
     name: SITE_NAME,
+    alternateName: [...LAUNCHER_ALT_NAMES],
     url: `${trimBase(s.siteUrl)}/`,
     description: s.description,
     applicationCategory: 'GameApplication',
@@ -271,6 +296,7 @@ export function softwareLd(s: SoftwareInput): JsonLdNode {
     ...(s.keywords?.length ? { keywords: s.keywords.join(', ') } : {}),
     inLanguage: s.lang,
     author: { '@id': organizationId(s.siteUrl) },
+    creator: { '@type': 'Person', name: AUTHOR_NAME, url: AUTHOR_URL },
     publisher: { '@id': organizationId(s.siteUrl) },
   }
 }
@@ -313,10 +339,11 @@ export function blogPostingLd(b: BlogPostingInput): JsonLdNode {
   }
 }
 
-export function faqPageLd(siteUrl: string, lang: SeoLang, items: { q: string, a: string }[]): JsonLdNode {
+/** FAQPage mit genau den sichtbaren Fragen; `path` = Seite, auf der sie stehen (FAQ oder Themen-Seite). */
+export function faqPageLd(siteUrl: string, lang: SeoLang, items: { q: string, a: string }[], path = '/faq'): JsonLdNode {
   return {
     '@type': 'FAQPage',
-    '@id': `${localizedUrl(siteUrl, '/faq', lang)}#faq`,
+    '@id': `${localizedUrl(siteUrl, path, lang)}#faq`,
     inLanguage: lang,
     mainEntity: items.map((i) => ({ '@type': 'Question', name: i.q, acceptedAnswer: { '@type': 'Answer', text: i.a } })),
   }
@@ -408,6 +435,9 @@ export function buildSitemap(siteUrl: string, posts: SitemapPost[], buildTime: s
 export function buildRobots(siteUrl: string): string {
   return [
     'User-agent: *',
+    // Kurzfassung und Volltext für Sprachmodelle (llmstxt.org), server/lib/llms.ts
+    'Allow: /llms.txt',
+    'Allow: /llms-full.txt',
     'Allow: /v1/site/',
     'Allow: /v1/capes/*.png',
     'Disallow: /v1/',

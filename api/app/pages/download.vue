@@ -133,6 +133,8 @@ async function copyAur() {
         <SiteIcon name="external" class="size-3.5 opacity-60" />
       </a>
     </div>
+
+    <LandingLinks class="mt-16" heading-id="related-title" />
   </div>
 </template>
 

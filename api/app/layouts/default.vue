@@ -1,5 +1,7 @@
 <script setup lang="ts">
-const { m } = useLang()
+import { LANDING_IDS, landingPath, landingTexts } from '#shared/landing'
+
+const { m, lang } = useLang()
 const { t } = useTeamText()
 const { c } = useCircuitText()
 const { it } = useIssueText()
@@ -22,6 +24,10 @@ const links = computed(() => [
   { to: lp('/team'), label: m.value.nav.team, icon: 'users' },
   { to: lp('/applications'), label: t.value.account.myApplications, icon: 'inbox' },
 ])
+
+// Themen-Seiten (shared/landing.ts): im Menü unter den Seiten, in der Fußzeile als eigene Spalte.
+const landing = computed(() => landingTexts[lang.value])
+const topics = computed(() => LANDING_IDS.map((id) => ({ to: lp(landingPath(id)), label: landing.value.pages[id].name })))
 
 /** Aktuelle Seite (auch Unterseiten wie /blog/0.9.0) – ohne Sprach-Parameter vergleichen. */
 function isCurrent(to: string): boolean {
@@ -110,6 +116,14 @@ const year = new Date().getFullYear()
                 </NuxtLink>
               </li>
             </ul>
+            <p class="mt-3 border-t border-base-800 px-3 pt-3 text-[11px] font-semibold tracking-[0.18em] text-base-400 uppercase">{{ landing.common.topics }}</p>
+            <ul class="mt-1 grid gap-1 sm:grid-cols-2">
+              <li v-for="l in topics" :key="l.to">
+                <NuxtLink :to="l.to" class="menu-link menu-link-sm" :aria-current="isCurrent(l.to) ? 'page' : undefined" @click="closeMenu()">
+                  <span>{{ l.label }}</span>
+                </NuxtLink>
+              </li>
+            </ul>
             <div class="mt-3 flex gap-2 border-t border-base-800 pt-3 sm:hidden">
               <NuxtLink :to="lp('/download')" class="btn btn-primary flex-1" @click="closeMenu()"><SiteIcon name="download" class="size-4" />{{ m.nav.download }}</NuxtLink>
               <a :href="REPO_URL" class="btn-icon" aria-label="GitHub" rel="noopener" target="_blank"><SiteIcon name="github" class="size-4.5" /></a>
@@ -125,7 +139,7 @@ const year = new Date().getFullYear()
 
     <footer class="site-footer mt-24">
       <div class="dust-line" aria-hidden="true" />
-      <div class="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
+      <div class="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 sm:grid-cols-2 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
           <div class="flex items-center gap-2.5 text-base-50">
             <img src="/icon.png" alt="" width="28" height="28" class="size-7 [image-rendering:pixelated]" />
@@ -144,6 +158,10 @@ const year = new Date().getFullYear()
           <NuxtLink :to="lp('/roadmap')" class="footer-link">{{ it.nav.roadmap }}</NuxtLink>
           <NuxtLink :to="lp('/faq')" class="footer-link">{{ m.nav.faq }}</NuxtLink>
           <NuxtLink :to="lp('/team')" class="footer-link">{{ m.nav.team }}</NuxtLink>
+        </nav>
+        <nav class="flex flex-col gap-2 text-sm" :aria-label="landing.common.topics">
+          <p class="text-xs font-semibold tracking-[0.18em] text-base-400 uppercase">{{ landing.common.topics }}</p>
+          <NuxtLink v-for="l in topics" :key="l.to" :to="l.to" class="footer-link">{{ l.label }}</NuxtLink>
         </nav>
         <nav class="flex flex-col gap-2 text-sm" aria-label="Links">
           <a :href="REPO_URL" class="footer-link" rel="noopener" target="_blank">{{ m.footer.github }}</a>
@@ -217,6 +235,11 @@ const year = new Date().getFullYear()
 .menu-link:focus-visible {
   color: var(--color-base-50);
   background: var(--color-base-800);
+}
+.menu-link-sm {
+  padding-block: 0.45rem;
+  font-size: 0.875rem;
+  color: var(--color-base-300);
 }
 .menu-link[aria-current="page"] {
   color: var(--color-base-50);
