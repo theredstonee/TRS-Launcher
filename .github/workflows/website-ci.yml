@@ -130,7 +130,9 @@ jobs:
           cache: npm
           cache-dependency-path: docs-site/package-lock.json
 
-      - run: npm ci --no-audit --no-fund
+      # npm install statt npm ci: npm lehnt unsere Lock-Datei bei `ci` fälschlich ab (meldet vorhandene
+      # Einträge wie cac/commander als fehlend); die Versionen kommen trotzdem aus package-lock.json.
+      - run: npm install --no-audit --no-fund
 
       # Warnungen (z. B. fehlende Bilder) sind ok, Fehler brechen ab.
       - name: Generate

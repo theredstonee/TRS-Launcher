@@ -116,6 +116,6 @@ function ensureDocsBuilt(docsDir: string, metaDir: string, logger: ReturnType<ty
     const r = spawnSync(command, { cwd: docsDir, stdio: 'inherit', shell: true, env: { ...process.env, NODE_ENV: 'production' } })
     if (r.status !== 0) throw new Error(`docs-site: npm ${args.join(' ')} fehlgeschlagen (Exit ${r.status}). Mit TRS_DOCS_BUILD=skip ohne neue Doku bauen.`)
   }
-  if (!existsSync(join(docsDir, 'node_modules'))) run(['ci', '--no-audit', '--no-fund'])
+  if (!existsSync(join(docsDir, 'node_modules'))) run(['install', '--no-audit', '--no-fund'])
   run(['run', 'generate'])
 }
