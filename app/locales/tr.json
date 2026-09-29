@@ -177,7 +177,8 @@
       "wrongAccount": "TRS girişi başka bir hesaba ait.",
       "mojangRejected": "Mojang girişi reddetti – lütfen “Hesaplar” bölümünden hesabına tekrar giriş yap.",
       "mojangRateLimited": "Mojang şu anda girişleri sınırlıyor – lütfen bir dakika sonra tekrar dene.",
-      "mojangFailed": "Mojang ile giriş başarısız – lütfen daha sonra tekrar dene."
+      "mojangFailed": "Mojang ile giriş başarısız – lütfen daha sonra tekrar dene.",
+      "cosmeticPreviewFailed": "Bu eşyanın önizlemesi yüklenemedi."
     },
     "trsApi": {
       "cape_not_found": "Bu pelerin mevcut değil (artık).",
@@ -2332,6 +2333,7 @@
     "previewHint": "Döndürmek için sürükle · Yakınlaştırmak için kaydır",
     "unapplied": "Uygulanmadı",
     "endTrsPreview": "TRS önizlemesini bitir",
+    "endHeadPreview": "Kozmetik önizlemesini bitir",
     "animation": {
       "walk": "Yürü",
       "idle": "Boşta",
@@ -2392,9 +2394,14 @@
     },
     "viewer": {
       "label": "3D skin önizlemesi",
-      "failed": "3D önizleme başlatılamadı. Ekran kartı sürücülerin muhtemelen WebGL'i desteklemiyor."
+      "failed": "3D önizleme başlatılamadı. Ekran kartı sürücülerin muhtemelen WebGL'i desteklemiyor.",
+      "day": "Gündüz",
+      "night": "Gece",
+      "showHead": "Kafaya yakınlaştır",
+      "showBody": "Tüm vücudu göster"
     },
     "trsCape": "TRS pelerini",
+    "headCosmetic": "Kafa kozmetiği",
     "import": {
       "fromFiles": "Dosya seç",
       "fromFilesHint": "Bir veya daha fazla PNG dosyası",
@@ -2850,7 +2857,8 @@
       "code": "Kod",
       "team": "Ekip",
       "locked": "Kilitli",
-      "shared": "Paylaşılan"
+      "shared": "Paylaşılan",
+      "achievement": "Başarım"
     },
     "status": {
       "pending": "Onay bekliyor",
@@ -2872,7 +2880,8 @@
       "capes": "TRS pelerinlerini göstermek için launcher TRS sunucusuna giriş yapar. Bu yalnızca sen onay verdikten sonra olur.",
       "button": "Daha fazla bilgi ve aç",
       "shares": "Ekran görüntülerini bağlantı olarak paylaşmak için başlatıcı TRS sunucusuna giriş yapar. Bu yalnızca onay verdiğinde olur.",
-      "achievements": "Başarımlarını göstermek için launcher TRS sunucusuna giriş yapar. Bu yalnızca onay verdiğinde olur."
+      "achievements": "Başarımlarını göstermek için launcher TRS sunucusuna giriş yapar. Bu yalnızca onay verdiğinde olur.",
+      "cosmetics": "TRS kafa kozmetiklerini göstermek için launcher TRS sunucusuna giriş yapar. Bu yalnızca sen onay verdikten sonra olur."
     },
     "account": {
       "title": "Giriş yapılmış hesap yok",
@@ -3083,18 +3092,45 @@
       "upload": "Yükle",
       "uploading": "Yükleniyor …"
     },
-    "hats": {
-      "title": "Kafa kozmetikleri",
-      "intro": "TRS Client’ta başında görünür – TRS Client kullanan herkes görür.",
-      "wear": "Tak",
-      "remove": "Çıkar",
-      "worn": "Takılı"
-    },
     "hatDialog": {
       "title": "“{name}” açıldı!",
       "text": "Şimdi takmak ister misin? TRS Client’ta başında görürsün (üçüncü şahıs), diğer TRS oyuncuları da görür.",
       "wear": "Tak",
       "later": "Sonra"
+    }
+  },
+  "headCosmetics": {
+    "title": "Kafa kozmetikleri",
+    "intro": "Başın için 3D eşyalar – TRS Client kullanan herkes görür. Yukarıdaki önizlemede denemek için birine tıkla.",
+    "wearing": "Takılı: {name}",
+    "worn": "Takılı",
+    "locked": "Kilitli",
+    "unlocked": "Açıldı",
+    "glows": "Parlar",
+    "tryOn": "Dene: {name}",
+    "tryOnLocked": "Dene: {name} (kilitli)",
+    "empty": "Henüz kafa kozmetiği yok.",
+    "offline": "TRS sunucusuna şu anda ulaşılamıyor.",
+    "previewFailed": "Bu eşyanın 3D önizlemesi yüklenemedi.",
+    "how": {
+      "title": "Nasıl alınır",
+      "code": "Bir kod kullan – örneğin etkinliklerde ve çekilişlerde dağıtılır.",
+      "achievement": "“{name}” başarımını aç.",
+      "achievementAny": "İlgili başarımı aç.",
+      "team": "Yalnızca TRS ekibi için.",
+      "other": "Şu anda mevcut değil."
+    },
+    "selected": {
+      "owned": "Açıldı – başkalarının oyunda görmesi için tak.",
+      "worn": "Başında – TRS Client kullanan herkes görür.",
+      "noPreview": "3D önizleme yalnızca oyunda var."
+    },
+    "actions": {
+      "wear": "Tak",
+      "remove": "Çıkar",
+      "wearing": "Takılıyor …",
+      "removing": "Çıkarılıyor …",
+      "achievements": "Başarımlara git"
     }
   },
   "capeShare": {

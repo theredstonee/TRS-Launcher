@@ -41,6 +41,9 @@ importers:
       skinview3d:
         specifier: 3.4.2
         version: 3.4.2
+      three:
+        specifier: 0.156.1
+        version: 0.156.1
       vue:
         specifier: ^3.5.43
         version: 3.5.43(typescript@5.9.3)
@@ -63,6 +66,9 @@ importers:
       '@types/node':
         specifier: ^26.6.1
         version: 26.6.1
+      '@types/three':
+        specifier: 0.156.0
+        version: 0.156.0
       jsdom:
         specifier: ^30.1.0
         version: 30.1.0

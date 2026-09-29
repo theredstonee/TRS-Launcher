@@ -177,7 +177,8 @@
       "wrongAccount": "De TRS-login hoort bij een ander account.",
       "mojangRejected": "Mojang heeft het inloggen geweigerd – log opnieuw in bij je account onder “Accounts”.",
       "mojangRateLimited": "Mojang beperkt het inloggen op dit moment – probeer het over een minuut opnieuw.",
-      "mojangFailed": "Inloggen bij Mojang is mislukt – probeer het later opnieuw."
+      "mojangFailed": "Inloggen bij Mojang is mislukt – probeer het later opnieuw.",
+      "cosmeticPreviewFailed": "De preview van dit item kon niet worden geladen."
     },
     "trsApi": {
       "cape_not_found": "Deze cape bestaat niet (meer).",
@@ -2332,6 +2333,7 @@
     "previewHint": "Sleep om te draaien · Scroll om te zoomen",
     "unapplied": "Niet toegepast",
     "endTrsPreview": "TRS-preview beëindigen",
+    "endHeadPreview": "Preview van hoofdcosmetica beëindigen",
     "animation": {
       "walk": "Lopen",
       "idle": "Rust",
@@ -2392,9 +2394,14 @@
     },
     "viewer": {
       "label": "3D-skinpreview",
-      "failed": "De 3D-preview kon niet worden gestart. Je grafische stuurprogramma’s ondersteunen waarschijnlijk geen WebGL."
+      "failed": "De 3D-preview kon niet worden gestart. Je grafische stuurprogramma’s ondersteunen waarschijnlijk geen WebGL.",
+      "day": "Dag",
+      "night": "Nacht",
+      "showHead": "Inzoomen op het hoofd",
+      "showBody": "Hele lichaam tonen"
     },
     "trsCape": "TRS-cape",
+    "headCosmetic": "Hoofdcosmetica",
     "import": {
       "fromFiles": "Bestanden kiezen",
       "fromFilesHint": "Eén of meer PNG-bestanden",
@@ -2850,7 +2857,8 @@
       "code": "Code",
       "team": "Team",
       "locked": "Vergrendeld",
-      "shared": "Gedeeld"
+      "shared": "Gedeeld",
+      "achievement": "Prestatie"
     },
     "status": {
       "pending": "Wacht op goedkeuring",
@@ -2872,7 +2880,8 @@
       "capes": "Om TRS-capes te tonen, logt de launcher in bij de TRS-server. Dat gebeurt pas als je akkoord gaat.",
       "button": "Meer info & inschakelen",
       "shares": "Om screenshots als link te delen, meldt de launcher zich aan bij de TRS-server. Dat gebeurt pas als je toestemming geeft.",
-      "achievements": "Om je prestaties te tonen, meldt de launcher zich aan bij de TRS-server. Dat gebeurt pas als je akkoord gaat."
+      "achievements": "Om je prestaties te tonen, meldt de launcher zich aan bij de TRS-server. Dat gebeurt pas als je akkoord gaat.",
+      "cosmetics": "Om TRS-hoofdcosmetica te tonen, logt de launcher in bij de TRS-server. Dat gebeurt pas als je akkoord gaat."
     },
     "account": {
       "title": "Geen account ingelogd",
@@ -3083,18 +3092,45 @@
       "upload": "Uploaden",
       "uploading": "Uploaden …"
     },
-    "hats": {
-      "title": "Hoofdcosmetica",
-      "intro": "Staat op je hoofd in de TRS Client – iedereen met de TRS Client ziet het.",
-      "wear": "Opzetten",
-      "remove": "Afzetten",
-      "worn": "Op"
-    },
     "hatDialog": {
       "title": "„{name}” vrijgespeeld!",
       "text": "Nu opzetten? Je ziet het op je hoofd in de TRS Client (derde persoon), net als andere TRS-spelers.",
       "wear": "Opzetten",
       "later": "Later"
+    }
+  },
+  "headCosmetics": {
+    "title": "Hoofdcosmetica",
+    "intro": "3D-items voor je hoofd – iedereen met de TRS Client ziet ze. Klik op een item om het bovenaan in de preview te passen.",
+    "wearing": "Op: {name}",
+    "worn": "Op",
+    "locked": "Vergrendeld",
+    "unlocked": "Ontgrendeld",
+    "glows": "Gloeit",
+    "tryOn": "{name} passen",
+    "tryOnLocked": "{name} passen (vergrendeld)",
+    "empty": "Nog geen hoofdcosmetica beschikbaar.",
+    "offline": "De TRS-server is op dit moment niet bereikbaar.",
+    "previewFailed": "De 3D-preview van dit item kon niet worden geladen.",
+    "how": {
+      "title": "Zo krijg je het",
+      "code": "Wissel een code in – die zijn er bijvoorbeeld bij events en winacties.",
+      "achievement": "Ontgrendel de prestatie „{name}”.",
+      "achievementAny": "Ontgrendel de bijbehorende prestatie.",
+      "team": "Alleen voor het TRS-team.",
+      "other": "Momenteel niet verkrijgbaar."
+    },
+    "selected": {
+      "owned": "Ontgrendeld – zet het op zodat anderen het in het spel zien.",
+      "worn": "Staat op je hoofd – iedereen met de TRS Client ziet het.",
+      "noPreview": "De 3D-preview is alleen in het spel beschikbaar."
+    },
+    "actions": {
+      "wear": "Opzetten",
+      "remove": "Afzetten",
+      "wearing": "Opzetten …",
+      "removing": "Afzetten …",
+      "achievements": "Naar prestaties"
     }
   },
   "capeShare": {

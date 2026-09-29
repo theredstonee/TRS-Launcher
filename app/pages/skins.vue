@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Cape, LibrarySkin, SkinProfile, SkinSyncStatus, SkinVariant } from '~/types'
-import type { TrsCape } from '~/utils/trs'
+import type { TrsCape, TrsHeadCosmetic } from '~/utils/trs'
+import type { ViewerCosmetic } from '~/utils/cosmetic-v2/format'
 import {
   baseDraft,
   draftChanges,
@@ -108,6 +109,57 @@ const shownTrs = computed(() => trsPreview.value ?? (mojangFocus.value ? null : 
 const previewCape = computed(
   () => shownTrs.value?.texture ?? profile.value?.capes.find((c) => c.id === draft.value.cape)?.texture ?? null,
 )
+
+// --- Kopf-Kosmetik (v2): in der großen Vorschau anprobieren -----------------------------
+
+/** Angeprobtes Teil (ändert nichts am Konto). */
+const headPreview = ref<TrsHeadCosmetic | null>(null)
+/** Aufgesetztes Teil – so sehen andere den Spieler im Spiel. */
+const headEquipped = ref<TrsHeadCosmetic | null>(null)
+const shownHead = computed(() => headPreview.value ?? headEquipped.value)
+/** Modell + Texturen für die Vorschau (null = nichts am Kopf bzw. noch am Laden). */
+const viewerCosmetic = shallowRef<ViewerCosmetic | null>(null)
+/** Tag/Nacht in der Vorschau (nachts leuchten Lampen und Kristalle). */
+const night = ref(false)
+/** Kamera: ganzer Spieler oder Kopf + Schultern. */
+const focus = ref<'body' | 'head'>('body')
+const cosmeticModels = new Map<string, ViewerCosmetic>()
+let cosmeticToken = 0
+
+watch(
+  () => (shownHead.value?.preview ? `${shownHead.value.id}:${shownHead.value.hash ?? ''}` : null),
+  async (key) => {
+    const token = ++cosmeticToken
+    const item = shownHead.value
+    if (!key || !item) {
+      viewerCosmetic.value = null
+      return
+    }
+    const cached = cosmeticModels.get(key)
+    if (cached) {
+      viewerCosmetic.value = cached
+      return
+    }
+    try {
+      const data = await backend.trs.headCosmeticModel(item.id)
+      const loaded: ViewerCosmetic = { model: data.model, texture: data.texture, glow: data.glow }
+      cosmeticModels.set(key, loaded)
+      if (token === cosmeticToken) viewerCosmetic.value = loaded
+    } catch (e) {
+      if (token !== cosmeticToken) return
+      viewerCosmetic.value = null
+      toasts.error(e)
+    }
+  },
+)
+
+function previewHead(item: TrsHeadCosmetic | null) {
+  headPreview.value = item
+  // Anprobieren: Kamera auf den Kopf, damit man das Teil auch sieht.
+  if (item) focus.value = 'head'
+}
+
+const capesSection = useTemplateRef<{ startRedeem: () => void }>('capesSection')
 
 const changes = computed(() => draftChanges(draft.value, profile.value))
 const working = computed(() => syncBusy(sync.value))
@@ -429,7 +481,12 @@ function capeStyle(texture: string, width = 30) {
     <div class="grid min-h-0 flex-1 grid-cols-1 gap-5 overflow-y-auto pr-1 lg:grid-cols-[320px_1fr]">
       <!-- 3D-Vorschau + Entwurf ----------------------------------------------- -->
       <section class="card flex h-fit flex-col p-4 lg:sticky lg:top-0" :aria-label="t('skins.previewLabel')">
-        <div class="relative rounded-lg bg-gradient-to-b from-base-850 to-base-950" :title="t('skins.previewHint')">
+        <div
+          class="relative rounded-lg bg-gradient-to-b transition-colors duration-500"
+          :class="night ? 'from-[#0b0d18] to-[#030409]' : 'from-base-850 to-base-950'"
+          :title="t('skins.previewHint')"
+          data-testid="skin-preview"
+        >
           <div v-if="loading" class="skeleton h-[280px] w-full rounded-lg" />
           <ClientOnly v-else>
             <SkinViewer
@@ -440,20 +497,35 @@ function capeStyle(texture: string, width = 30) {
               :height="280"
               :cape-frames="shownTrs?.frames ?? 1"
               :cape-frame-time="shownTrs?.frameTimeMs ?? null"
+              :cosmetic="viewerCosmetic"
+              :night="night"
+              :focus="focus"
+              @cosmetic-error="toasts.error(t('headCosmetics.previewFailed'))"
             />
           </ClientOnly>
           <span v-if="unapplied" class="badge absolute top-2 left-2 bg-warn/15 text-warn" data-testid="skin-unapplied">
             <span class="size-1.5 rounded-full bg-warn" />
             {{ t('skins.unapplied') }}
           </span>
-          <button
-            v-if="trsPreview"
-            class="badge absolute top-2 right-2 bg-redstone-900/70 text-redstone-300 hover:text-base-50"
-            :title="t('skins.endTrsPreview')"
-            @click="trsPreview = null"
-          >
-            TRS: {{ trsPreview.name }} ✕
-          </button>
+          <div class="absolute top-2 right-2 flex max-w-[60%] flex-col items-end gap-1">
+            <button
+              v-if="trsPreview"
+              class="badge max-w-full truncate bg-redstone-900/70 text-redstone-300 hover:text-base-50"
+              :title="t('skins.endTrsPreview')"
+              @click="trsPreview = null"
+            >
+              TRS: {{ trsPreview.name }} ✕
+            </button>
+            <button
+              v-if="headPreview"
+              class="badge max-w-full truncate bg-lamp-900/70 text-lamp-200 hover:text-base-50"
+              :title="t('skins.endHeadPreview')"
+              data-testid="head-preview-badge"
+              @click="previewHead(null)"
+            >
+              {{ headPreview.name }} ✕
+            </button>
+          </div>
           <div class="absolute inset-x-2 bottom-2 flex items-center gap-1 rounded-md bg-base-950/70 p-0.5 text-[11px] backdrop-blur-sm">
             <button
               v-for="key in (['walk', 'idle', 'none'] as const)"
@@ -463,6 +535,34 @@ function capeStyle(texture: string, width = 30) {
               @click="animation = key"
             >
               {{ t(`skins.animation.${key}`) }}
+            </button>
+            <span class="mx-0.5 h-4 w-px bg-base-700" aria-hidden="true" />
+            <button
+              class="seg grid size-6 shrink-0 place-items-center rounded"
+              :class="{ 'seg-on': focus === 'head' }"
+              :aria-pressed="focus === 'head'"
+              :title="focus === 'head' ? t('skins.viewer.showBody') : t('skins.viewer.showHead')"
+              :aria-label="t('skins.viewer.showHead')"
+              data-testid="skin-focus"
+              @click="focus = focus === 'head' ? 'body' : 'head'"
+            >
+              <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9 4H5a1 1 0 0 0-1 1v4M15 4h4a1 1 0 0 1 1 1v4M9 20H5a1 1 0 0 1-1-1v-4M15 20h4a1 1 0 0 0 1-1v-4M9 9h6v6H9z" />
+              </svg>
+            </button>
+            <button
+              class="seg grid size-6 shrink-0 place-items-center rounded"
+              :class="{ 'seg-on': night }"
+              :aria-pressed="night"
+              :title="night ? t('skins.viewer.day') : t('skins.viewer.night')"
+              :aria-label="t('skins.viewer.night')"
+              data-testid="skin-night"
+              @click="night = !night"
+            >
+              <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path v-if="night" d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z" />
+                <path v-else d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z" />
+              </svg>
             </button>
           </div>
         </div>
@@ -499,6 +599,10 @@ function capeStyle(texture: string, width = 30) {
             <div v-if="shownTrs" class="flex justify-between gap-3">
               <dt class="text-base-400">{{ t('skins.trsCape') }}</dt>
               <dd class="truncate text-right font-medium text-base-50">{{ shownTrs.name }}</dd>
+            </div>
+            <div v-if="shownHead" class="flex justify-between gap-3">
+              <dt class="text-base-400">{{ t('skins.headCosmetic') }}</dt>
+              <dd class="truncate text-right font-medium text-base-50">{{ shownHead.name }}</dd>
             </div>
           </dl>
 
@@ -680,9 +784,19 @@ function capeStyle(texture: string, width = 30) {
 
         <!-- TRS-Umhänge (eigener Dienst, getrennt von Mojang) ------------------------ -->
         <TrsCapes
+          ref="capesSection"
           :preview-id="trsPreview?.id ?? null"
           @preview="trsPreview = $event"
           @active="(cape) => ((trsActive = cape), (mojangFocus = false))"
+        />
+
+        <!-- Kopf-Kosmetik (3D, TRS Client) ------------------------------------------ -->
+        <TrsHeadCosmetics
+          :preview-id="headPreview?.id ?? null"
+          :night="night"
+          @preview="previewHead"
+          @equipped="headEquipped = $event"
+          @redeem="capesSection?.startRedeem()"
         />
       </div>
     </div>

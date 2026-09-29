@@ -177,7 +177,8 @@
       "wrongAccount": "Die TRS-Anmeldung gehört zu einem anderen Account.",
       "mojangRejected": "Mojang hat die Anmeldung abgelehnt – bitte melde deinen Account unter „Accounts“ neu an.",
       "mojangRateLimited": "Mojang begrenzt gerade die Anmeldungen – bitte in einer Minute erneut versuchen.",
-      "mojangFailed": "Die Mojang-Anmeldung ist fehlgeschlagen – bitte später erneut versuchen."
+      "mojangFailed": "Die Mojang-Anmeldung ist fehlgeschlagen – bitte später erneut versuchen.",
+      "cosmeticPreviewFailed": "Die Vorschau dieses Teils konnte nicht geladen werden."
     },
     "trsApi": {
       "cape_not_found": "Diesen Umhang gibt es nicht (mehr).",
@@ -2332,6 +2333,7 @@
     "previewHint": "Ziehen zum Drehen · Mausrad zum Zoomen",
     "unapplied": "Nicht angewendet",
     "endTrsPreview": "TRS-Vorschau beenden",
+    "endHeadPreview": "Kopf-Kosmetik-Vorschau beenden",
     "animation": {
       "walk": "Laufen",
       "idle": "Ruhig",
@@ -2392,9 +2394,14 @@
     },
     "viewer": {
       "label": "3D-Vorschau des Skins",
-      "failed": "Die 3D-Vorschau konnte nicht gestartet werden. Deine Grafiktreiber unterstützen vermutlich kein WebGL."
+      "failed": "Die 3D-Vorschau konnte nicht gestartet werden. Deine Grafiktreiber unterstützen vermutlich kein WebGL.",
+      "day": "Tag",
+      "night": "Nacht",
+      "showHead": "Auf den Kopf zoomen",
+      "showBody": "Ganzen Körper zeigen"
     },
     "trsCape": "TRS-Umhang",
+    "headCosmetic": "Kopf-Kosmetik",
     "import": {
       "fromFiles": "Dateien wählen",
       "fromFilesHint": "Eine oder mehrere PNG-Dateien",
@@ -2850,7 +2857,8 @@
       "code": "Code",
       "team": "Team",
       "locked": "Gesperrt",
-      "shared": "Geteilt"
+      "shared": "Geteilt",
+      "achievement": "Erfolg"
     },
     "status": {
       "pending": "Wartet auf Freigabe",
@@ -2872,7 +2880,8 @@
       "capes": "Für TRS-Umhänge meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
       "button": "Mehr erfahren & einschalten",
       "shares": "Um Screenshots als Link zu teilen, meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
-      "achievements": "Um deine Erfolge zu zeigen, meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst."
+      "achievements": "Um deine Erfolge zu zeigen, meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
+      "cosmetics": "Für TRS-Kopf-Kosmetik meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst."
     },
     "account": {
       "title": "Kein Account angemeldet",
@@ -3083,18 +3092,45 @@
       "upload": "Hochladen",
       "uploading": "Wird hochgeladen …"
     },
-    "hats": {
-      "title": "Kopf-Kosmetik",
-      "intro": "Sitzt im TRS Client auf deinem Kopf – alle mit TRS Client sehen sie.",
-      "wear": "Aufsetzen",
-      "remove": "Absetzen",
-      "worn": "Aufgesetzt"
-    },
     "hatDialog": {
       "title": "„{name}“ freigeschaltet!",
       "text": "Jetzt aufsetzen? Du siehst sie im TRS Client auf deinem Kopf (3. Person), andere TRS-Spieler auch.",
       "wear": "Aufsetzen",
       "later": "Später"
+    }
+  },
+  "headCosmetics": {
+    "title": "Kopf-Kosmetik",
+    "intro": "3D-Teile für deinen Kopf – alle mit TRS Client sehen sie. Klick auf ein Teil, um es oben in der Vorschau anzuprobieren.",
+    "wearing": "Aufgesetzt: {name}",
+    "worn": "Aufgesetzt",
+    "locked": "Gesperrt",
+    "unlocked": "Freigeschaltet",
+    "glows": "Leuchtet",
+    "tryOn": "{name} anprobieren",
+    "tryOnLocked": "{name} anprobieren (gesperrt)",
+    "empty": "Noch keine Kopf-Kosmetik verfügbar.",
+    "offline": "Der TRS-Server ist gerade nicht erreichbar.",
+    "previewFailed": "Die 3D-Vorschau dieses Teils konnte nicht geladen werden.",
+    "how": {
+      "title": "So bekommst du es",
+      "code": "Löse einen Code ein – die gibt es z. B. bei Events und Gewinnspielen.",
+      "achievement": "Schalte den Erfolg „{name}“ frei.",
+      "achievementAny": "Schalte den passenden Erfolg frei.",
+      "team": "Nur für das TRS-Team.",
+      "other": "Zurzeit nicht erhältlich."
+    },
+    "selected": {
+      "owned": "Freigeschaltet – setz es auf, damit andere es im Spiel sehen.",
+      "worn": "Sitzt auf deinem Kopf – alle mit TRS Client sehen es.",
+      "noPreview": "Die 3D-Vorschau gibt es nur im Spiel."
+    },
+    "actions": {
+      "wear": "Aufsetzen",
+      "remove": "Absetzen",
+      "wearing": "Setze auf …",
+      "removing": "Setze ab …",
+      "achievements": "Zu den Erfolgen"
     }
   },
   "capeShare": {

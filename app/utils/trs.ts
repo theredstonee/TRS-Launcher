@@ -101,13 +101,46 @@ export const trsRedeemSchema = z.object({
   cosmeticId: capeId.nullable(),
   name: text(48),
   alreadyOwned: z.boolean(),
-  /** Kopf-Kosmetik, die der TRS Client zeichnet (Quietscheente) – kann gleich aufgesetzt werden. */
+  /** Kopf-Kosmetik, die der TRS Client zeichnet (Quietscheente, v2-Modelle) – kann gleich aufgesetzt werden. */
   wearableHat: z.boolean(),
 })
 
 /** Eigene Kopf-Kosmetik (nur Teile, die der TRS Client zeichnen kann). */
 export const trsHatSchema = z.object({ id: capeId, name: text(48), template: text(32), equipped: z.boolean() })
 export type TrsHat = z.infer<typeof trsHatSchema>
+
+/** Wie man an ein Kosmetik-Teil kommt (unbekannte Arten → `other`). */
+export const trsCosmeticUnlockSchema = z.enum(['free', 'code', 'admin', 'achievement', 'owner', 'other']).catch('other')
+export type TrsCosmeticUnlock = z.infer<typeof trsCosmeticUnlockSchema>
+
+/** Kopf-Kosmetik für die Skins-Seite: besessen oder gesperrt, v2 = 3D-Modell mit Vorschau. */
+export const trsHeadCosmeticSchema = z.object({
+  id: capeId,
+  name: text(48),
+  format: z.union([z.literal(1), z.literal(2)]),
+  template: text(32).nullable(),
+  unlock: trsCosmeticUnlockSchema,
+  owned: z.boolean(),
+  equipped: z.boolean(),
+  /** Der Launcher kann das Modell in der 3D-Vorschau zeigen. */
+  preview: z.boolean(),
+  hash: z.string().regex(/^[A-Za-z0-9]{1,64}$/).nullable(),
+  card: pngDataUrl,
+  cardNight: pngDataUrl,
+  frames: z.number().int().min(1).max(16),
+  glowFrames: z.number().int().min(0).max(16),
+})
+export type TrsHeadCosmetic = z.infer<typeof trsHeadCosmeticSchema>
+
+/** v2-Modell (grob im Kern geprüft, vollständig vor dem Bauen) + Texturen als PNG-Data-URLs. */
+export const trsHeadCosmeticModelSchema = z.object({
+  id: capeId,
+  hash: z.string().regex(/^[A-Za-z0-9]{1,64}$/),
+  model: z.record(z.string(), z.unknown()),
+  texture: z.string().startsWith('data:image/png;base64,'),
+  glow: pngDataUrl,
+})
+export type TrsHeadCosmeticModel = z.infer<typeof trsHeadCosmeticModelSchema>
 
 export const trsPlayerCapeSchema = z.object({
   uuid,

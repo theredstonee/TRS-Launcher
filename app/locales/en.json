@@ -177,7 +177,8 @@
       "wrongAccount": "The TRS sign-in belongs to a different account.",
       "mojangRejected": "Mojang rejected the sign-in – please sign in to your account again under “Accounts”.",
       "mojangRateLimited": "Mojang is limiting sign-ins right now – please try again in a minute.",
-      "mojangFailed": "Signing in with Mojang failed – please try again later."
+      "mojangFailed": "Signing in with Mojang failed – please try again later.",
+      "cosmeticPreviewFailed": "The preview of this item couldn't be loaded."
     },
     "trsApi": {
       "cape_not_found": "This cape doesn't exist (anymore).",
@@ -2332,6 +2333,7 @@
     "previewHint": "Drag to rotate · Scroll to zoom",
     "unapplied": "Not applied",
     "endTrsPreview": "End TRS preview",
+    "endHeadPreview": "End head cosmetic preview",
     "animation": {
       "walk": "Walk",
       "idle": "Idle",
@@ -2392,9 +2394,14 @@
     },
     "viewer": {
       "label": "3D skin preview",
-      "failed": "The 3D preview couldn't be started. Your graphics drivers probably don't support WebGL."
+      "failed": "The 3D preview couldn't be started. Your graphics drivers probably don't support WebGL.",
+      "day": "Day",
+      "night": "Night",
+      "showHead": "Zoom to head",
+      "showBody": "Show whole body"
     },
     "trsCape": "TRS cape",
+    "headCosmetic": "Head cosmetic",
     "import": {
       "fromFiles": "Choose files",
       "fromFilesHint": "One or more PNG files",
@@ -2850,7 +2857,8 @@
       "code": "Code",
       "team": "Team",
       "locked": "Locked",
-      "shared": "Shared"
+      "shared": "Shared",
+      "achievement": "Achievement"
     },
     "status": {
       "pending": "Awaiting approval",
@@ -2872,7 +2880,8 @@
       "capes": "To show TRS capes, the launcher signs in to the TRS server. That only happens once you agree.",
       "button": "Learn more & turn on",
       "shares": "To share screenshots as links, the launcher signs in to the TRS server. That only happens once you agree.",
-      "achievements": "To show your achievements, the launcher signs in to the TRS server. That only happens once you agree."
+      "achievements": "To show your achievements, the launcher signs in to the TRS server. That only happens once you agree.",
+      "cosmetics": "To show TRS head cosmetics, the launcher signs in to the TRS server. That only happens once you agree."
     },
     "account": {
       "title": "No account signed in",
@@ -3083,18 +3092,45 @@
       "upload": "Upload",
       "uploading": "Uploading …"
     },
-    "hats": {
-      "title": "Head cosmetics",
-      "intro": "Shown on your head in the TRS Client – everyone with the TRS Client sees it.",
-      "wear": "Put on",
-      "remove": "Take off",
-      "worn": "Wearing"
-    },
     "hatDialog": {
       "title": "“{name}” unlocked!",
       "text": "Put it on now? You will see it on your head in the TRS Client (third person), and so will other TRS players.",
       "wear": "Put on",
       "later": "Later"
+    }
+  },
+  "headCosmetics": {
+    "title": "Head cosmetics",
+    "intro": "3D items for your head – everyone with the TRS Client sees them. Click one to try it on in the preview above.",
+    "wearing": "Wearing: {name}",
+    "worn": "Wearing",
+    "locked": "Locked",
+    "unlocked": "Unlocked",
+    "glows": "Glows",
+    "tryOn": "Try on {name}",
+    "tryOnLocked": "Try on {name} (locked)",
+    "empty": "No head cosmetics available yet.",
+    "offline": "The TRS server can't be reached right now.",
+    "previewFailed": "The 3D preview of this item couldn't be loaded.",
+    "how": {
+      "title": "How to get it",
+      "code": "Redeem a code – there are some at events and giveaways, for example.",
+      "achievement": "Unlock the achievement “{name}”.",
+      "achievementAny": "Unlock the matching achievement.",
+      "team": "Only for the TRS team.",
+      "other": "Not available right now."
+    },
+    "selected": {
+      "owned": "Unlocked – put it on so others see it in-game.",
+      "worn": "On your head – everyone with the TRS Client sees it.",
+      "noPreview": "The 3D preview is only available in-game."
+    },
+    "actions": {
+      "wear": "Put on",
+      "remove": "Take off",
+      "wearing": "Putting on …",
+      "removing": "Taking off …",
+      "achievements": "Go to achievements"
     }
   },
   "capeShare": {

@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import type { SkinVariant } from '~/types'
+import type { CosmeticInstance } from '~/utils/cosmetic-v2/view'
+import { modelTop, validateModel, type CosmeticModel, type ViewerCosmetic } from '~/utils/cosmetic-v2/format'
 
-// 3D-Vorschau des Skins (skinview3d, mitgeliefert – kein CDN, damit die CSP
+// 3D-Vorschau des Skins (skinview3d, mitgeliefert â€“ kein CDN, damit die CSP
 // eng bleibt). Texturen kommen als Data-URL aus dem Kern; dadurch darf WebGL
-// sie ohne CORS-Ausnahme lesen.
+// sie ohne CORS-Ausnahme lesen. Kopf-Kosmetik (v2) hÃ¤ngt in DERSELBEN Szene am
+// Kopf des Spielers â€“ eine WebGL-Szene fÃ¼r Skin, Umhang und Kosmetik.
 const props = withDefaults(
   defineProps<{
     skin: string | null
@@ -17,9 +20,26 @@ const props = withDefaults(
      */
     capeFrames?: number
     capeFrameTime?: number | null
+    /** Kopf-Kosmetik (v2) am Kopf; Animation und Leuchten laufen zur Wanduhr wie im Spiel. */
+    cosmetic?: ViewerCosmetic | null
+    /** Nacht: Licht gedimmt, Leuchten bleibt voll hell. */
+    night?: boolean
+    /** Kamera: ganzer Spieler oder Kopf + Schultern (fÃ¼r Kopf-Kosmetik). */
+    focus?: 'body' | 'head'
   }>(),
-  { cape: null, variant: 'classic', animation: 'walk', height: 340, capeFrames: 1, capeFrameTime: null },
+  {
+    cape: null,
+    variant: 'classic',
+    animation: 'walk',
+    height: 340,
+    capeFrames: 1,
+    capeFrameTime: null,
+    cosmetic: null,
+    night: false,
+    focus: 'body',
+  },
 )
+const emit = defineEmits<{ cosmeticError: [] }>()
 
 type Viewer = import('skinview3d').SkinViewer
 const canvas = ref<HTMLCanvasElement | null>(null)
@@ -29,6 +49,10 @@ let viewer: Viewer | null = null
 let observer: ResizeObserver | null = null
 let capeTimer: ReturnType<typeof setInterval> | null = null
 let capeToken = 0
+
+/** Grundlicht wie bisher; nachts wie in der Studio-Werkbank gedimmt (Faktoren 0,18 / 0,2). */
+const LIGHT = { global: 2.6, camera: 0.7 }
+const NIGHT = { global: 0.18, camera: 0.2, cosmetic: 0.2 }
 
 /** Armbreite: `slim` = Alex, `default` = Steve. */
 const model = computed<'slim' | 'default'>(() => (props.variant === 'slim' ? 'slim' : 'default'))
@@ -57,12 +81,19 @@ async function build() {
     })
     viewer.controls.enablePan = false
     viewer.controls.enableZoom = true
-    viewer.globalLight.intensity = 2.6
-    viewer.cameraLight.intensity = 0.7
+    // Vor jedem Bild: Kosmetik zur Wanduhr stellen (Pose, Streifen, HÃ¶fe) und Kamera nachfÃ¼hren.
+    const render = viewer.render.bind(viewer)
+    viewer.render = () => {
+      beforeRender()
+      render()
+    }
+    applyLight()
     await applySkin()
     await setAnimation(props.animation)
+    await applyCosmetic()
+    applyFocus(true)
   } catch (e) {
-    console.error('3D-Vorschau nicht verfügbar', e)
+    console.error('3D-Vorschau nicht verfÃ¼gbar', e)
     failed.value = true
   }
 }
@@ -76,7 +107,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.onload = () => resolve(img)
-    img.onerror = () => reject(new Error('Umhang-Textur konnte nicht geladen werden'))
+    img.onerror = () => reject(new Error('Textur konnte nicht geladen werden'))
     img.src = src
   })
 }
@@ -105,7 +136,7 @@ async function applyAnimatedCape(src: string, frames: number, frameTime: number)
     void viewer.loadCape(frame)
   }
   draw()
-  // Kürzer als die Frame-Dauer abtasten, damit der Wechsel zur Wanduhr passt.
+  // KÃ¼rzer als die Frame-Dauer abtasten, damit der Wechsel zur Wanduhr passt.
   capeTimer = setInterval(draw, Math.max(20, Math.min(frameTime / 2, 250)))
 }
 
@@ -126,6 +157,142 @@ async function applySkin() {
   else viewer.resetCape()
 }
 
+// --- Kopf-Kosmetik (v2) ------------------------------------------------------------------------
+
+let cosmetic: CosmeticInstance | null = null
+let cosmeticTop = 8
+let cosmeticToken = 0
+
+async function applyCosmetic() {
+  const token = ++cosmeticToken
+  const data = props.cosmetic
+  if (!viewer) return
+  if (!data) {
+    cosmetic?.dispose()
+    cosmetic = null
+    cosmeticTop = 8
+    applyFocus()
+    return
+  }
+  try {
+    const [{ createCosmetic }, texture, glow] = await Promise.all([
+      import('~/utils/cosmetic-v2/view'),
+      loadImage(data.texture),
+      data.glow ? loadImage(data.glow) : Promise.resolve(null),
+    ])
+    if (token !== cosmeticToken || !viewer) return
+    const hasGlow = !!glow && data.model.glow != null
+    const size = (img: HTMLImageElement) => ({ width: img.naturalWidth, height: img.naturalHeight })
+    const check = validateModel(data.model, { texture: size(texture), glow: hasGlow ? size(glow!) : null })
+    if (!check.ok) throw new Error(`Kosmetik-Modell ungÃ¼ltig: ${check.errors.slice(0, 3).join('; ')}`)
+    const next = createCosmetic(data.model as unknown as CosmeticModel, { texture, glow: hasGlow ? glow : null })
+    cosmetic?.dispose()
+    cosmetic = next
+    cosmeticTop = modelTop(data.model as unknown as CosmeticModel)
+    viewer.playerObject.skin.head.add(next.root)
+    applyLight()
+    next.update(Date.now(), { camera: viewer.camera })
+    applyFocus()
+  } catch (e) {
+    if (token !== cosmeticToken) return
+    console.warn(e)
+    cosmetic?.dispose()
+    cosmetic = null
+    emit('cosmeticError')
+  }
+}
+
+function applyLight() {
+  if (!viewer) return
+  viewer.globalLight.intensity = LIGHT.global * (props.night ? NIGHT.global : 1)
+  viewer.cameraLight.intensity = LIGHT.camera * (props.night ? NIGHT.camera : 1)
+  cosmetic?.setLight(props.night ? NIGHT.cosmetic : 1)
+}
+
+// --- Kamera ------------------------------------------------------------------------------------
+
+type Vec = { x: number; y: number; z: number }
+/** Laufender Kamera-Schwenk (Ziel + Position), weich Ã¼ber `CAMERA_MS`. */
+let tween: { from: [Vec, Vec]; to: [Vec, Vec]; start: number } | null = null
+const CAMERA_MS = 450
+/** SchrÃ¤g von vorne-oben wie die Karten der Studio-Werkbank (â€žthreeâ€œ). */
+const HEAD_DIR = normalize({ x: 0.78, y: 0.5, z: 0.95 })
+
+function normalize(v: Vec): Vec {
+  const l = Math.hypot(v.x, v.y, v.z) || 1
+  return { x: v.x / l, y: v.y / l, z: v.z / l }
+}
+
+/**
+ * Kamera-Ziel fÃ¼r den Fokus: Kopf + Schultern (mit Platz nach oben fÃ¼r hohe Teile) oder ganzer Spieler
+ * samt Kopf-Kosmetik. `dir` = Blickrichtung (vom Ziel zur Kamera), damit die Drehung des Nutzers bleibt.
+ */
+function focusGoal(dir: Vec): [Vec, Vec] | null {
+  if (!viewer) return null
+  const fov = (viewer.camera.fov * Math.PI) / 180
+  // skinview3d: Spieler-Mitte y = 0, FÃ¼ÃŸe âˆ’16, Nacken +8; Kosmetik-Koordinaten beginnen am Nacken.
+  const neck = 8
+  let target: Vec
+  let distance: number
+  if (props.focus === 'head') {
+    const bottom = neck - 9
+    const top = neck + cosmeticTop + 1.5
+    target = { x: 0, y: (bottom + top) / 2, z: 0 }
+    distance = ((top - bottom) / 2 / Math.tan(fov / 2)) * 1.4
+  } else {
+    // Standard von skinview3d (passt fÃ¼r 16 + 16 Einheiten), bei hohen Teilen entsprechend weiter weg.
+    const bottom = -16
+    const top = Math.max(16, neck + cosmeticTop + 1)
+    target = { x: 0, y: (bottom + top) / 2, z: 0 }
+    distance = (4.5 + 16.5 / Math.tan(fov / 2) / viewer.zoom) * ((top - bottom) / 32)
+  }
+  return [target, { x: target.x + dir.x * distance, y: target.y + dir.y * distance, z: target.z + dir.z * distance }]
+}
+
+let lastFocus: string | null = null
+/** Kamera zum Fokus schwenken â€“ nur wenn sich Fokus oder ModellhÃ¶he geÃ¤ndert haben (sonst bleibt alles, wie der Nutzer es gedreht hat). */
+function applyFocus(instant = false) {
+  if (!viewer) return
+  const key = `${props.focus}:${cosmeticTop}`
+  if (key === lastFocus) return
+  const enteringHead = props.focus === 'head' && !lastFocus?.startsWith('head')
+  lastFocus = key
+  const target = viewer.controls.target
+  const position = viewer.camera.position
+  // Beim Wechsel auf den Kopf schrÃ¤g von vorne-oben wie die Karten, sonst die aktuelle Blickrichtung
+  // (wÃ¤hrend eines Schwenks die, auf die er zulÃ¤uft).
+  const [aim, eye] = tween ? tween.to : [target, position]
+  const dir = enteringHead ? HEAD_DIR : normalize({ x: eye.x - aim.x, y: eye.y - aim.y, z: eye.z - aim.z })
+  const goal = focusGoal(dir)
+  if (!goal) return
+  if (instant) {
+    target.set(goal[0].x, goal[0].y, goal[0].z)
+    position.set(goal[1].x, goal[1].y, goal[1].z)
+    viewer.controls.update()
+    return
+  }
+  tween = { from: [{ ...target }, { ...position }], to: goal, start: performance.now() }
+}
+
+function stepCamera() {
+  if (!viewer || !tween) return
+  const u = Math.min(1, (performance.now() - tween.start) / CAMERA_MS)
+  const s = u * u * (3 - 2 * u)
+  const lerp = (a: Vec, b: Vec): [number, number, number] => [a.x + (b.x - a.x) * s, a.y + (b.y - a.y) * s, a.z + (b.z - a.z) * s]
+  viewer.controls.target.set(...lerp(tween.from[0], tween.to[0]))
+  viewer.camera.position.set(...lerp(tween.from[1], tween.to[1]))
+  viewer.camera.lookAt(viewer.controls.target)
+  if (u >= 1) {
+    tween = null
+    viewer.controls.update()
+  }
+}
+
+function beforeRender() {
+  stepCamera()
+  if (viewer && cosmetic) cosmetic.update(Date.now(), { camera: viewer.camera })
+}
+
 function resize() {
   if (!viewer || !box.value) return
   viewer.width = box.value.clientWidth
@@ -143,6 +310,9 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   stopCapeAnimation()
   capeToken++
+  cosmeticToken++
+  cosmetic?.dispose()
+  cosmetic = null
   observer?.disconnect()
   viewer?.dispose()
   viewer = null
@@ -151,6 +321,9 @@ onBeforeUnmount(() => {
 watch(() => [props.skin, props.cape, props.variant, props.capeFrames, props.capeFrameTime], () => void applySkin())
 watch(() => props.animation, (kind) => void setAnimation(kind))
 watch(() => props.height, resize)
+watch(() => props.cosmetic, () => void applyCosmetic())
+watch(() => props.night, applyLight)
+watch(() => props.focus, () => applyFocus())
 </script>
 
 <template>

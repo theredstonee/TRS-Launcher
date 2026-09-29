@@ -19,6 +19,8 @@ import {
   trsPlayerCapeSchema,
   trsRedeemSchema,
   trsHatSchema,
+  trsHeadCosmeticModelSchema,
+  trsHeadCosmeticSchema,
   trsStatusSchema,
   trsSyncStatusSchema,
   trsUserRefSchema,
@@ -686,8 +688,12 @@ export const backend = {
     reportCape: (id: string, reason: TrsReportReason, note: string | null) =>
       call<void>('trs_report_cape', { id, reason, note }),
     redeem: (code: string) => checked(trsRedeemSchema, 'trs_redeem', { code }),
-    /** Eigene Kopf-Kosmetik (Quietscheente) und Auf-/Absetzen (`null`). */
+    /** Eigene Kopf-Kosmetik (Quietscheente, v2-Modelle) und Auf-/Absetzen (`null`). */
     hats: () => checked(z.array(trsHatSchema), 'trs_hats'),
+    /** Alle Kopf-Kosmetik-Teile (besessen + gesperrt) mit Vorschaubildern. */
+    headCosmetics: () => checked(z.array(trsHeadCosmeticSchema), 'trs_head_cosmetics'),
+    /** v2-Modell + Texturen für die 3D-Vorschau (auch gesperrte Teile – zum Anprobieren). */
+    headCosmeticModel: (id: string) => checked(trsHeadCosmeticModelSchema, 'trs_head_cosmetic_model', { id }),
     setHat: (id: string | null) => call<void>('trs_set_hat', { id }),
     playerCapes: (uuids: string[]) => checked(z.array(trsPlayerCapeSchema), 'trs_player_capes', { uuids }),
     /** Umhänge teilen: offene Angebote an mich (mit Vorschau) und von mir. */

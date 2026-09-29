@@ -31,6 +31,11 @@ How to write an entry:
 ## Unreleased
 
 ### English
+- **3D head cosmetics.** Crowns, the TRS cap, the lamp helmet, the top hat and the halo are now real 3D models with
+  animations and glowing parts. On the Skins page, a new **Head cosmetics** section below the TRS capes shows every
+  item as a picture card – locked ones too, with how to get them (code, achievement or TRS team only). Click a card to
+  try it on in the big 3D preview together with your cape, turn it around, switch between **day and night** (at night
+  the lamps and crystals glow) and zoom to the head. **Put on** / **Take off** right there.
 - **Help & docs.** The new documentation on the website (in English, German and Spanish) replaces the old GitHub
   wiki, and the launcher now takes you straight to the right page in your language: the question mark in the title
   bar, “Help & docs” at the bottom of the settings or in the search (Ctrl+K), “More help” in the crash helper, the
@@ -42,6 +47,11 @@ How to write an entry:
   or translations.
 
 ### Deutsch
+- **Kopf-Kosmetik in 3D.** Kronen, TRS-Cap, Lampen-Helm, Zylinder und Heiligenschein sind jetzt echte 3D-Modelle mit
+  Animationen und leuchtenden Teilen. Auf der Skins-Seite zeigt der neue Abschnitt **Kopf-Kosmetik** unter den
+  TRS-Umhängen alle Teile als Bild-Karten – auch gesperrte, mit dem Weg dorthin (Code, Erfolg oder nur Team). Ein Klick
+  probiert das Teil in der großen 3D-Vorschau an, zusammen mit deinem Umhang: drehen, zwischen **Tag und Nacht**
+  wechseln (nachts leuchten Lampen und Kristalle) und auf den Kopf zoomen. **Aufsetzen** / **Absetzen** direkt dort.
 - **Hilfe & Docs.** Die neue Dokumentation auf der Website (auf Englisch, Deutsch und Spanisch) ersetzt das alte
   GitHub-Wiki, und der Launcher bringt dich direkt zur passenden Seite in deiner Sprache: das Fragezeichen in der
   Titelleiste, „Hilfe & Docs“ unten in den Einstellungen oder in der Suche (Strg+K), „Mehr Hilfe“ im Absturz-Helfer,

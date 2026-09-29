@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TrsCape, TrsHat } from '~/utils/trs'
+import type { TrsCape } from '~/utils/trs'
 
 // TRS-Umhänge auf der Skins-Seite: Katalog mit Sperr-Status, Vorschau in der
 // großen 3D-Ansicht der Seite (per `preview`), Anlegen/Ablegen, Code einlösen,
@@ -31,7 +31,6 @@ async function load() {
   try {
     capes.value = await backend.trs.capes()
     offline.value = false
-    void loadHats()
     // Die Vorschau zeigt die aktuellen Daten (z. B. nach einer Freigabe).
     if (props.previewId) emit('preview', capes.value.find((c) => c.id === props.previewId) ?? null)
   } catch (e) {
@@ -42,32 +41,19 @@ async function load() {
   }
 }
 
-// --- Kopf-Kosmetik (Quietscheente): nur sichtbar, wenn man etwas davon besitzt ---------
+// --- Kopf-Kosmetik per Code: gleich anbieten, sie aufzusetzen (Liste: TrsHeadCosmetics) ----
 
-const hats = ref<TrsHat[]>([])
 const hatOffer = ref<{ id: string; name: string } | null>(null)
-
-async function loadHats() {
-  try {
-    hats.value = await backend.trs.hats()
-  } catch {
-    // Still: ohne Liste bleibt der Bereich einfach weg.
-    hats.value = []
-  }
-}
-
-async function setHat(hat: TrsHat | null, name?: string) {
-  await run('hat', async () => {
-    await backend.trs.setHat(hat?.id ?? null)
-    toasts.ok(hat ? t('capes.toasts.hatOn', { name: name ?? hat.name }) : t('capes.toasts.hatOff'))
-    await loadHats()
-  })
-}
 
 async function wearOffered() {
   const offer = hatOffer.value
   hatOffer.value = null
-  if (offer) await setHat({ id: offer.id, name: offer.name, template: '', equipped: false })
+  if (!offer) return
+  await run('hat', async () => {
+    await backend.trs.setHat(offer.id)
+    toasts.ok(t('capes.toasts.hatOn', { name: offer.name }))
+    trs.capesRevision++
+  })
 }
 
 onMounted(load)
@@ -110,6 +96,8 @@ function startRedeem() {
   codeError.value = null
   redeeming.value = true
 }
+// Die Kopf-Kosmetik-Liste öffnet denselben Dialog („Code einlösen“ bei gesperrten Teilen).
+defineExpose({ startRedeem })
 
 async function redeem() {
   const parsed = trsRedeemCodeSchema.safeParse(code.value)
@@ -123,13 +111,13 @@ async function redeem() {
       const result = await backend.trs.redeem(parsed.data)
       redeeming.value = false
       await load()
-      if (result.kind === 'cosmetic' && result.wearableHat && result.cosmeticId) {
-        // Kopf-Kosmetik: gleich anbieten, sie aufzusetzen (sofern nicht schon auf dem Kopf).
-        await loadHats()
-        const hat = hats.value.find((h) => h.id === result.cosmeticId)
-        if (!hat?.equipped) hatOffer.value = { id: result.cosmeticId, name: result.name }
-        else toasts.ok(t('capes.toasts.alreadyOwned', { name: result.name }))
-        return
+      if (result.kind === 'cosmetic') {
+        // Kopf-Kosmetik-Liste neu laden; neue Kopf-Teile gleich zum Aufsetzen anbieten.
+        trs.capesRevision++
+        if (result.wearableHat && result.cosmeticId && !result.alreadyOwned) {
+          hatOffer.value = { id: result.cosmeticId, name: result.name }
+          return
+        }
       }
       toasts.ok(
         result.alreadyOwned
@@ -220,24 +208,6 @@ function lockClass(cape: TrsCape) {
 
     <TrsGate what="capes">
       <CapeOffersList v-if="!offline" compact class="mb-4" />
-      <div v-if="!offline && hats.length" class="card mb-4 px-4 py-3" data-testid="trs-hats">
-        <h3 class="text-sm font-semibold text-base-100">{{ t('capes.hats.title') }}</h3>
-        <p class="mb-2 text-xs text-base-400">{{ t('capes.hats.intro') }}</p>
-        <ul class="flex flex-col gap-2">
-          <li v-for="hat in hats" :key="hat.id" class="flex items-center gap-3">
-            <span class="flex-1 text-sm text-base-100">{{ hat.name }}</span>
-            <span v-if="hat.equipped" class="badge bg-ok/10 text-ok">{{ t('capes.hats.worn') }}</span>
-            <button
-              class="btn px-3 py-1 text-xs"
-              :class="hat.equipped ? 'btn-ghost' : 'btn-primary'"
-              :disabled="!!busy"
-              @click="setHat(hat.equipped ? null : hat)"
-            >
-              {{ hat.equipped ? t('capes.hats.remove') : t('capes.hats.wear') }}
-            </button>
-          </li>
-        </ul>
-      </div>
       <div v-if="offline" class="card flex items-center gap-3 px-4 py-3 text-sm text-base-400">
         <span class="size-2 rounded-full bg-base-600" />
         <span class="flex-1">{{ t('capes.offline') }}</span>

@@ -177,7 +177,8 @@
       "wrongAccount": "O login TRS pertence a outra conta.",
       "mojangRejected": "A Mojang recusou o login – entre novamente na sua conta em “Contas”.",
       "mojangRateLimited": "A Mojang está limitando logins no momento – tente novamente em um minuto.",
-      "mojangFailed": "Falha ao entrar com a Mojang – tente novamente mais tarde."
+      "mojangFailed": "Falha ao entrar com a Mojang – tente novamente mais tarde.",
+      "cosmeticPreviewFailed": "Não foi possível carregar a prévia deste item."
     },
     "trsApi": {
       "cape_not_found": "Esta capa não existe (mais).",
@@ -2332,6 +2333,7 @@
     "previewHint": "Arraste para girar · Role para dar zoom",
     "unapplied": "Não aplicado",
     "endTrsPreview": "Encerrar prévia TRS",
+    "endHeadPreview": "Encerrar prévia do cosmético",
     "animation": {
       "walk": "Andar",
       "idle": "Parado",
@@ -2392,9 +2394,14 @@
     },
     "viewer": {
       "label": "Prévia 3D da skin",
-      "failed": "Não foi possível iniciar a prévia 3D. Seus drivers de vídeo provavelmente não suportam WebGL."
+      "failed": "Não foi possível iniciar a prévia 3D. Seus drivers de vídeo provavelmente não suportam WebGL.",
+      "day": "Dia",
+      "night": "Noite",
+      "showHead": "Aproximar da cabeça",
+      "showBody": "Mostrar corpo inteiro"
     },
     "trsCape": "Capa TRS",
+    "headCosmetic": "Cosmético de cabeça",
     "import": {
       "fromFiles": "Escolher arquivos",
       "fromFilesHint": "Um ou mais arquivos PNG",
@@ -2850,7 +2857,8 @@
       "code": "Código",
       "team": "Equipe",
       "locked": "Bloqueada",
-      "shared": "Compartilhada"
+      "shared": "Compartilhada",
+      "achievement": "Conquista"
     },
     "status": {
       "pending": "Aguardando aprovação",
@@ -2872,7 +2880,8 @@
       "capes": "Para mostrar as capas TRS, o launcher entra no servidor TRS. Isso só acontece depois que você concordar.",
       "button": "Saiba mais e ative",
       "shares": "Para compartilhar capturas como link, o launcher entra no servidor TRS. Isso só acontece depois que você concordar.",
-      "achievements": "Para mostrar suas conquistas, o launcher entra no servidor TRS. Isso só acontece depois que você concordar."
+      "achievements": "Para mostrar suas conquistas, o launcher entra no servidor TRS. Isso só acontece depois que você concordar.",
+      "cosmetics": "Para mostrar os cosméticos de cabeça TRS, o launcher entra no servidor TRS. Isso só acontece depois que você concordar."
     },
     "account": {
       "title": "Nenhuma conta conectada",
@@ -3083,18 +3092,45 @@
       "upload": "Enviar",
       "uploading": "Enviando …"
     },
-    "hats": {
-      "title": "Cosméticos de cabeça",
-      "intro": "Aparece na sua cabeça no TRS Client – todos com TRS Client veem.",
-      "wear": "Colocar",
-      "remove": "Tirar",
-      "worn": "Usando"
-    },
     "hatDialog": {
       "title": "“{name}” desbloqueado!",
       "text": "Colocar agora? Você verá na sua cabeça no TRS Client (terceira pessoa), assim como outros jogadores TRS.",
       "wear": "Colocar",
       "later": "Depois"
+    }
+  },
+  "headCosmetics": {
+    "title": "Cosméticos de cabeça",
+    "intro": "Itens 3D para a sua cabeça – todos com TRS Client veem. Clique em um para experimentar na prévia acima.",
+    "wearing": "Usando: {name}",
+    "worn": "Usando",
+    "locked": "Bloqueado",
+    "unlocked": "Desbloqueado",
+    "glows": "Brilha",
+    "tryOn": "Experimentar {name}",
+    "tryOnLocked": "Experimentar {name} (bloqueado)",
+    "empty": "Ainda não há cosméticos de cabeça.",
+    "offline": "O servidor TRS não está acessível no momento.",
+    "previewFailed": "Não foi possível carregar a prévia 3D deste item.",
+    "how": {
+      "title": "Como conseguir",
+      "code": "Resgate um código – há alguns em eventos e sorteios, por exemplo.",
+      "achievement": "Desbloqueie a conquista “{name}”.",
+      "achievementAny": "Desbloqueie a conquista correspondente.",
+      "team": "Só para a equipe TRS.",
+      "other": "Indisponível no momento."
+    },
+    "selected": {
+      "owned": "Desbloqueado – coloque para que outros vejam no jogo.",
+      "worn": "Na sua cabeça – todos com TRS Client veem.",
+      "noPreview": "A prévia 3D só está disponível no jogo."
+    },
+    "actions": {
+      "wear": "Colocar",
+      "remove": "Tirar",
+      "wearing": "Colocando …",
+      "removing": "Tirando …",
+      "achievements": "Ir para as conquistas"
     }
   },
   "capeShare": {
