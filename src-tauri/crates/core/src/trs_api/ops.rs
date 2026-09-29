@@ -12,6 +12,7 @@ use super::types::{
     CapeOffers, CodeView, Friend, FriendRequestResult, FriendsView, IncomingCapeOffer, Me, NewCodes,
     OutgoingCapeOffer, PlayerCape, ReportReason, ReviewList, SettingsPatch, TrsStatus, UserRef,
 };
+use super::head_cosmetics::wearable_hat;
 use super::{Consent, PRESENCE_INTERVAL, Req, TrsApi, me_view, no_account, png, validate};
 use crate::{Error, Launcher, Result};
 
@@ -29,13 +30,6 @@ fn presence_retry(error: Option<Error>) -> Duration {
             PRESENCE_BACKOFF
         }
     }
-}
-
-/// Kopf-Vorlagen, die der TRS Client zeichnen kann (andere Kopf-Kosmetik der API bleibt im Spiel unsichtbar).
-pub const WEARABLE_HAT_TEMPLATES: &[&str] = &["duck"];
-
-fn wearable_hat(c: &super::types::ApiCosmeticRef) -> bool {
-    c.slot == "hat" && c.template.as_deref().is_some_and(|t| WEARABLE_HAT_TEMPLATES.contains(&t))
 }
 
 fn bad_response() -> Error {
@@ -359,7 +353,7 @@ impl Launcher {
         }
     }
 
-    /// Eigene Kopf-Kosmetik, die der TRS Client zeichnen kann (freigeschaltet), mit „aufgesetzt“.
+    /// Eigene Kopf-Kosmetik, die der TRS Client zeichnen kann (freigeschaltet, auch v2), mit „aufgesetzt“.
     pub async fn trs_hats(&self) -> Result<Vec<super::types::HatItem>> {
         let catalog: super::types::ApiCosmeticCatalog = self.trs_get(Req::get("/v1/cosmetics")).await?;
         Ok(catalog

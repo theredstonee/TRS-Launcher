@@ -438,6 +438,101 @@ pub(crate) struct ApiCosmeticRef {
     pub owned: bool,
     #[serde(default)]
     pub equipped: bool,
+    /// Freischaltart (`free`, `code`, `admin`, `achievement` …); fehlt bei älteren Antworten.
+    #[serde(default)]
+    pub unlock: Option<CosmeticUnlock>,
+    /// Versteckte Teile (per Code) zeigt der Launcher nur, wenn man sie besitzt.
+    #[serde(default)]
+    pub hidden: bool,
+    /// `2` = echtes 3D-Modell (Kosmetik-Format v2), sonst Vorlagen-Kosmetik (v1).
+    #[serde(default)]
+    pub format: Option<u32>,
+    /// Die folgenden Felder gibt es nur bei v2: URLs (absolut oder API-relativ) und Streifen-Angaben.
+    #[serde(default)]
+    pub model: Option<String>,
+    /// Objekt mit `url` (v1 und v2); eine reine URL-Zeichenkette wird ebenso akzeptiert.
+    #[serde(default)]
+    pub texture: Option<serde_json::Value>,
+    #[serde(default)]
+    pub glow: Option<String>,
+    #[serde(default)]
+    pub card: Option<String>,
+    #[serde(default)]
+    pub card_night: Option<String>,
+    /// Frames der Grundtextur bzw. der Leucht-Schicht (die Frame-Dauern stehen im Modell).
+    #[serde(default)]
+    pub frames: Option<u32>,
+    #[serde(default)]
+    pub glow_frames: Option<u32>,
+    /// Inhalts-Hash (12 Hex) von Modell + Textur + Glow – Cache-Schlüssel.
+    #[serde(default)]
+    pub hash: Option<String>,
+}
+
+impl ApiCosmeticRef {
+    /// Kosmetik-Format v2 (3D-Modell)?
+    pub(crate) fn is_v2(&self) -> bool {
+        self.format == Some(2)
+    }
+
+    /// URL der Textur: `texture.url` (oder `texture` selbst, falls eine Zeichenkette).
+    pub(crate) fn texture_url(&self) -> Option<&str> {
+        match self.texture.as_ref()? {
+            serde_json::Value::String(s) => Some(s),
+            serde_json::Value::Object(o) => o.get("url")?.as_str(),
+            _ => None,
+        }
+    }
+}
+
+/// Wie man an ein Kosmetik-Teil kommt.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum CosmeticUnlock {
+    Free,
+    Code,
+    Admin,
+    Achievement,
+    Owner,
+    #[serde(other)]
+    Other,
+}
+
+/// Eintrag der Kopf-Kosmetik-Liste auf der Skins-Seite (besessen oder gesperrt).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HeadCosmetic {
+    pub id: String,
+    pub name: String,
+    /// 1 = Vorlage (z. B. Quietscheente), 2 = 3D-Modell.
+    pub format: u8,
+    /// Nur v1: Vorlage (`duck`).
+    pub template: Option<String>,
+    pub unlock: CosmeticUnlock,
+    pub owned: bool,
+    pub equipped: bool,
+    /// Der Launcher kann das Modell in der 3D-Vorschau zeigen ([`HeadCosmeticModel`]).
+    pub preview: bool,
+    /// Inhalts-Hash (v2), ändert sich mit Modell/Textur/Glow.
+    pub hash: Option<String>,
+    /// Vorschaubild (Tag) als PNG-Data-URL.
+    pub card: Option<String>,
+    /// Vorschaubild (Nacht) als PNG-Data-URL.
+    pub card_night: Option<String>,
+    /// Streifen der Grundtextur / der Leucht-Schicht (nur zur Anzeige).
+    pub frames: u32,
+    pub glow_frames: u32,
+}
+
+/// v2-Modell für die 3D-Vorschau: `model.json` (geprüft) + Texturen als PNG-Data-URLs.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HeadCosmeticModel {
+    pub id: String,
+    pub hash: String,
+    pub model: serde_json::Value,
+    pub texture: String,
+    pub glow: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -446,7 +541,7 @@ pub(crate) struct ApiCosmeticCatalog {
     pub cosmetics: Vec<ApiCosmeticRef>,
 }
 
-/// Kopf-Kosmetik, die der TRS Client zeichnen kann (bisher nur die Quietscheente).
+/// Kopf-Kosmetik, die der TRS Client zeichnen kann (Quietscheente und alle v2-Modelle).
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HatItem {

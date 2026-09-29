@@ -21,6 +21,7 @@ pub mod achievements;
 pub mod applications;
 pub mod cape_import;
 pub mod chat;
+mod head_cosmetics;
 pub mod hosting;
 pub mod moderation;
 pub mod packs;
@@ -422,6 +423,8 @@ pub struct TrsApi {
     pub(crate) appeal_tokens: sanctions::AppealTokens,
     /// Wartende Meldungen für die Erfolge (nur im Speicher).
     pub(crate) achievements: achievements::ReportQueue,
+    /// Adressen der v2-Kopf-Kosmetik aus dem letzten Katalog (für die 3D-Vorschau).
+    head_sources: std::sync::Mutex<std::collections::HashMap<String, head_cosmetics::V2Source>>,
 }
 
 impl TrsApi {
@@ -461,6 +464,7 @@ impl TrsApi {
             presence: Arc::new(PresenceState::default()),
             appeal_tokens: sanctions::AppealTokens::default(),
             achievements: achievements::ReportQueue::default(),
+            head_sources: std::sync::Mutex::default(),
         })
     }
 

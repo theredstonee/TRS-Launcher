@@ -155,6 +155,23 @@ pub async fn trs_hats(launcher: State<'_, LauncherState>) -> CommandResult<Vec<t
     Ok(launcher.trs_hats().await?)
 }
 
+/// Alle Kopf-Kosmetik-Teile (besessen + gesperrt) mit Vorschaubildern.
+#[tauri::command]
+pub async fn trs_head_cosmetics(
+    launcher: State<'_, LauncherState>,
+) -> CommandResult<Vec<trs_core::trs_api::types::HeadCosmetic>> {
+    Ok(launcher.trs_head_cosmetics().await?)
+}
+
+/// v2-Modell + Texturen für die 3D-Vorschau.
+#[tauri::command]
+pub async fn trs_head_cosmetic_model(
+    launcher: State<'_, LauncherState>,
+    id: String,
+) -> CommandResult<trs_core::trs_api::types::HeadCosmeticModel> {
+    Ok(launcher.trs_head_cosmetic_model(&id).await?)
+}
+
 #[tauri::command]
 pub async fn trs_set_hat(launcher: State<'_, LauncherState>, id: Option<String>) -> CommandResult<()> {
     Ok(launcher.trs_set_hat(id).await?)

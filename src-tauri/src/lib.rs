@@ -462,6 +462,8 @@ pub fn run() {
             commands::trs::trs_report_cape,
             commands::trs::trs_redeem,
             commands::trs::trs_hats,
+            commands::trs::trs_head_cosmetics,
+            commands::trs::trs_head_cosmetic_model,
             commands::trs::trs_set_hat,
             commands::trs::trs_player_capes,
             commands::trs::trs_friends,
