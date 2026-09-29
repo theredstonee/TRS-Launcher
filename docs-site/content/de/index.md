@@ -1,5 +1,5 @@
 ---
-title: TRS Launcher Doku
+title: "TRS Launcher Doku"
 description: "Anleitungen für den TRS Launcher, den kostenlosen Redstone-Minecraft-Launcher von TheRedstonee, und die TRS-Client-Mod – installieren, spielen, Probleme lösen."
 navigation: false
 ---

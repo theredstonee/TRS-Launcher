@@ -1,5 +1,5 @@
 ---
-title: TRS Launcher Documentation
+title: "TRS Launcher Documentation"
 description: "Guides for TRS Launcher, the free redstone Minecraft launcher by TheRedstonee, and the TRS Client mod – install, play, fix problems."
 navigation: false
 ---
