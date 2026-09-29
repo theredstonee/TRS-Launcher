@@ -15,6 +15,8 @@ const kicker = computed(() => (post.value.date ? `v${post.value.version} · ${da
 /** Spanisch hat keinen eigenen Changelog-Text – dann Englisch. */
 const html = computed(() => renderMarkdown(lang.value === 'de' ? post.value.markdown.de : post.value.markdown.en))
 const shots = computed(() => postGallery(post.value, lang.value))
+/** Mitwirkende aus dem GitHub-Release (nur geprüfte Logins, als Text – kein v-html). */
+const contributors = computed(() => postContributors(post.value))
 
 const lp = useLocalePath()
 const siteUrl = useSiteUrl()
@@ -63,6 +65,23 @@ useHead({ link: [{ rel: 'preconnect', href: 'https://raw.githubusercontent.com' 
       <!-- eslint-disable-next-line vue/no-v-html -- eigener Changelog, ohne rohes HTML gerendert (utils/markdown.ts) -->
       <div class="prose-md post-text" v-html="html" />
 
+      <section v-if="contributors.length" class="mt-12 rounded-xl border border-base-800 p-6" aria-labelledby="post-thanks">
+        <h2 id="post-thanks" class="text-xl font-semibold text-base-50">{{ m.blog.thanks }}</h2>
+        <p class="mt-1 text-sm text-base-400">{{ m.blog.thanksLead }}</p>
+        <ul class="mt-4 flex flex-wrap gap-2">
+          <li v-for="c in contributors" :key="c.login">
+            <a
+              :href="c.url"
+              target="_blank"
+              rel="noopener nofollow ugc"
+              class="thanks-name"
+              :title="fill(m.blog.githubProfile, { name: c.login })"
+              :aria-label="fill(m.blog.githubProfile, { name: c.login })"
+            >@{{ c.login }}</a>
+          </li>
+        </ul>
+      </section>
+
       <div class="mt-14 flex flex-wrap items-center gap-3 border-t border-base-800 pt-8">
         <NuxtLink :to="lp('/download')" class="btn btn-primary"><SiteIcon name="download" class="size-4" />{{ m.nav.download }}</NuxtLink>
         <NuxtLink :to="lp('/blog')" class="btn btn-ghost">{{ m.blog.back }}</NuxtLink>
@@ -91,5 +110,21 @@ useHead({ link: [{ rel: 'preconnect', href: 'https://raw.githubusercontent.com' 
 .post-text {
   font-size: 1.0625rem;
   line-height: 1.75;
+}
+.thanks-name {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-base-700);
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.9375rem;
+  color: var(--color-base-100);
+  background: var(--color-base-900);
+  transition: border-color 0.15s, color 0.15s;
+}
+.thanks-name:hover,
+.thanks-name:focus-visible {
+  border-color: var(--color-redstone-500);
+  color: var(--color-base-50);
 }
 </style>

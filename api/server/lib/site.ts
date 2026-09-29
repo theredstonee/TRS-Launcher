@@ -2,6 +2,7 @@ import type { AppContext } from './context'
 import { ACHIEVEMENTS } from './achievement-catalog'
 import { all } from './db'
 import { changelogFor, parseChangelog, postContent, type ChangelogEntry, type PostShot, type UpdateBanner } from './changelog'
+import { extractContributors, mergeContributors } from './contributors'
 
 // Daten für die Website: neueste Launcher-Version (GitHub Releases), Blog (CHANGELOG.md aus dem
 // Repo) und die öffentlichen TRS-Umhänge. Externe Quellen werden zwischengespeichert; schlägt ein
@@ -75,6 +76,8 @@ interface GhRelease {
   html_url: string
   published_at: string | null
   draft: boolean
+  /** Release-Text (Markdown); darin ggf. der Danke-Abschnitt mit `<!-- contributors: … -->`. */
+  body?: string | null
   assets: { name: string, browser_download_url: string, size: number }[]
 }
 
@@ -101,11 +104,42 @@ export function pickLatest(releases: GhRelease[]): LatestRelease | null {
   return { version: r.tag_name.slice(1), tag: r.tag_name, publishedAt: r.published_at, pageUrl: r.html_url, assets }
 }
 
-export function latestRelease(): Promise<LatestRelease | null> {
-  return cached('release', async () => {
-    const text = await fetchText(`https://api.github.com/repos/${REPO}/releases?per_page=20`, 'application/vnd.github+json')
-    return pickLatest(JSON.parse(text) as GhRelease[])
+/** Die letzten GitHub-Releases (eine Anfrage für Downloads und Mitwirkende, zwischengespeichert). */
+function ghReleases(): Promise<GhRelease[]> {
+  return cached('releases', async () => {
+    const text = await fetchText(`https://api.github.com/repos/${REPO}/releases?per_page=30`, 'application/vnd.github+json')
+    const list: unknown = JSON.parse(text)
+    if (!Array.isArray(list)) throw new Error('GitHub releases: keine Liste')
+    return list as GhRelease[]
   })
+}
+
+export async function latestRelease(): Promise<LatestRelease | null> {
+  return pickLatest(await ghReleases())
+}
+
+/**
+ * Mitwirkende je Version aus den Release-Texten (Tags `v1.2.3`, keine Entwürfe): Kommentar `<!-- contributors: … -->`,
+ * sonst `@name` im Abschnitt „Thanks to / Danke an“. Versionen ohne Mitwirkende fehlen in der Tabelle.
+ */
+export function contributorsByVersion(releases: GhRelease[]): Map<string, string[]> {
+  const out = new Map<string, string[]>()
+  for (const r of releases) {
+    if (r.draft || typeof r.tag_name !== 'string' || !/^v\d+\.\d+\.\d+/.test(r.tag_name)) continue
+    if (typeof r.body !== 'string' || !r.body) continue
+    const { contributors } = extractContributors(r.body)
+    if (contributors.length) out.set(r.tag_name.slice(1), contributors)
+  }
+  return out
+}
+
+/** Mitwirkende einer Version laut GitHub-Release; ist GitHub nicht erreichbar, eine leere Liste (der Beitrag bleibt). */
+async function releaseContributors(version: string): Promise<string[]> {
+  try {
+    return contributorsByVersion(await ghReleases()).get(version) ?? []
+  } catch {
+    return []
+  }
 }
 
 // --- Blog ------------------------------------------------------------------------------
@@ -126,8 +160,10 @@ export interface BlogPostSummary {
 }
 
 export interface BlogPost extends BlogPostSummary {
-  /** Text des Beitrags ohne Bildzeilen (die stehen in `gallery`). */
+  /** Text des Beitrags ohne Bildzeilen (die stehen in `gallery`) und ohne Danke-Abschnitt (der steht in `contributors`). */
   markdown: { en: string, de: string }
+  /** GitHub-Logins der Mitwirkenden dieses Releases (ohne „@“, geprüft), sonst leer. */
+  contributors: string[]
 }
 
 /** Bilder aus public/news/ liegen im Repo – ausgeliefert werden sie von GitHub. */
@@ -157,9 +193,14 @@ export async function blogPosts(): Promise<BlogPostSummary[]> {
 export async function blogPost(version: string): Promise<BlogPost | null> {
   const e = changelogFor(await changelog(), version)
   if (!e || !e.version) return null
+  // Steht ein Danke-Abschnitt auch im Changelog, wird er aus dem Text genommen und zu den Mitwirkenden gezählt.
+  const en = extractContributors(postContent(e, 'en').markdown)
+  const de = extractContributors(postContent(e, 'de').markdown)
+  const fromRelease = await releaseContributors(e.version)
   return {
     ...summary(e as ChangelogEntry & { version: string }),
-    markdown: { en: postContent(e, 'en').markdown, de: postContent(e, 'de').markdown },
+    markdown: { en: en.markdown, de: de.markdown },
+    contributors: mergeContributors(fromRelease, [...en.contributors, ...de.contributors]),
   }
 }
 

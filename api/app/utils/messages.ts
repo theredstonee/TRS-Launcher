@@ -342,6 +342,9 @@ const en = {
     closeImage: 'Close image',
     imageOf: 'Image {n} of {total}',
     more: '{n} more images',
+    thanks: 'Thanks to',
+    thanksLead: 'Everyone who helped make this release happen on GitHub.',
+    githubProfile: '{name} on GitHub (opens in a new tab)',
   },
   share: {
     title: 'Shared screenshot',
@@ -969,6 +972,9 @@ const de: Messages = {
     closeImage: 'Bild schließen',
     imageOf: 'Bild {n} von {total}',
     more: '{n} weitere Bilder',
+    thanks: 'Danke an',
+    thanksLead: 'Alle, die auf GitHub an diesem Release mitgewirkt haben.',
+    githubProfile: '{name} auf GitHub (öffnet in neuem Tab)',
   },
   share: {
     title: 'Geteilter Screenshot',
@@ -1573,7 +1579,7 @@ const es: Messages = {
     checksums: 'Firmas y todos los archivos en GitHub',
     unavailable: 'La lista de descargas no está disponible ahora – encontrarás todas las versiones en GitHub.',
   },
-  blog: { title: 'Blog', lead: 'Noticias, actualizaciones y un vistazo entre bastidores del TRS Launcher.', read: 'Leer', empty: 'Aún no hay entradas.', back: 'Todas las entradas', notFound: 'Esta entrada no existe.', rss: 'Feed RSS', screenshots: 'Capturas de pantalla', previous: 'Imagen anterior', next: 'Imagen siguiente', enlarge: 'Ampliar imagen', closeImage: 'Cerrar imagen', imageOf: 'Imagen {n} de {total}', more: '{n} imágenes más' },
+  blog: { title: 'Blog', lead: 'Noticias, actualizaciones y un vistazo entre bastidores del TRS Launcher.', read: 'Leer', empty: 'Aún no hay entradas.', back: 'Todas las entradas', notFound: 'Esta entrada no existe.', rss: 'Feed RSS', screenshots: 'Capturas de pantalla', previous: 'Imagen anterior', next: 'Imagen siguiente', enlarge: 'Ampliar imagen', closeImage: 'Cerrar imagen', imageOf: 'Imagen {n} de {total}', more: '{n} imágenes más', thanks: 'Gracias a', thanksLead: 'Todas las personas que ayudaron en GitHub a hacer posible esta versión.', githubProfile: '{name} en GitHub (se abre en una pestaña nueva)' },
   share: {
     title: 'Captura compartida',
     description: 'Una captura de Minecraft compartida con TRS Launcher.',

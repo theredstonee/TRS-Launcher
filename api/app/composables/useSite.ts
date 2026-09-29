@@ -30,8 +30,21 @@ export interface BlogPostSummary {
 }
 
 export interface BlogPost extends BlogPostSummary {
-  /** Text ohne Bildzeilen – die Bilder stehen in `gallery`. */
+  /** Text ohne Bildzeilen und ohne Danke-Abschnitt – die Bilder stehen in `gallery`, die Namen in `contributors`. */
   markdown: { en: string, de: string }
+  /** GitHub-Logins der Mitwirkenden des Releases (ohne „@“); ältere API-Stände liefern das Feld nicht. */
+  contributors?: string[]
+}
+
+/** GitHub-Login (wie server/lib/contributors.ts) – nur solche Namen werden verlinkt. */
+export const GITHUB_LOGIN = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/
+
+/** Mitwirkende eines Beitrags als Links auf ihr GitHub-Profil; ungültige Einträge fallen weg. */
+export function postContributors(post: BlogPost): { login: string, url: string }[] {
+  const list = Array.isArray(post.contributors) ? post.contributors : []
+  return list
+    .filter((login): login is string => typeof login === 'string' && GITHUB_LOGIN.test(login))
+    .map((login) => ({ login, url: `https://github.com/${login}` }))
 }
 
 export const REPO_URL = 'https://github.com/theredstonee/TRS-Launcher'
