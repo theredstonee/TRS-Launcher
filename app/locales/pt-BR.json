@@ -2585,7 +2585,8 @@
       "admin": "equipe moderação denúncias punições recursos jogadores admin",
       "websiteLogin": "site entrar login código confirmar launcher microsoft navegador equipe",
       "myApplications": "candidaturas candidatar equipe vaga status",
-      "achievements": "conquistas troféus pontos recompensas emblemas desbloquear achievements"
+      "achievements": "conquistas troféus pontos recompensas emblemas desbloquear achievements",
+      "docs": "ajuda docs documentação guia wiki faq manual suporte perguntas help"
     },
     "actions": {
       "newInstance": {
@@ -5277,5 +5278,13 @@
       "title": "Conquistas visíveis para amigos",
       "description": "Seus amigos veem seus pontos e conquistas desbloqueadas. Desative para manter suas conquistas privadas."
     }
+  },
+  "docs": {
+    "open": "Ajuda e documentação",
+    "paletteSubtitle": "Guias do launcher e do TRS Client no site",
+    "moreHelp": "Mais ajuda",
+    "logs": "Ajuda com os logs",
+    "java": "Guia do Java",
+    "linux": "Guia para Linux"
   }
 }

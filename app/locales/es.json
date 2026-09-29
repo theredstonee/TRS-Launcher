@@ -2585,7 +2585,8 @@
       "admin": "equipo moderación reportes sanciones apelaciones jugadores admin",
       "websiteLogin": "web iniciar sesión login código confirmar launcher microsoft navegador equipo",
       "myApplications": "solicitudes solicitar equipo puesto estado",
-      "achievements": "logros trofeos puntos recompensas insignias desbloquear achievements"
+      "achievements": "logros trofeos puntos recompensas insignias desbloquear achievements",
+      "docs": "ayuda docs documentación guía wiki faq manual soporte preguntas help"
     },
     "actions": {
       "newInstance": {
@@ -5277,5 +5278,13 @@
       "title": "Logros visibles para amigos",
       "description": "Tus amigos ven tus puntos y logros desbloqueados. Desactívalo para que tus logros sean privados."
     }
+  },
+  "docs": {
+    "open": "Ayuda y documentación",
+    "paletteSubtitle": "Guías del launcher y del TRS Client en la web",
+    "moreHelp": "Más ayuda",
+    "logs": "Ayuda con los registros",
+    "java": "Guía de Java",
+    "linux": "Guía para Linux"
   }
 }

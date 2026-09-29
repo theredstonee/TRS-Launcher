@@ -9,6 +9,7 @@ const helper = useCrashHelperStore()
 const games = useGamesStore()
 const instances = useInstancesStore()
 const router = useRouter()
+const openDocs = useDocs()
 
 const crash = computed(() => helper.current)
 const primary = computed(() => crash.value?.findings[0] ?? null)
@@ -210,6 +211,11 @@ function openContent() {
         <svg viewBox="0 0 24 24" class="size-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6z" /></svg>
         {{ t('crashHelper.privacy') }}
       </p>
+      <!-- Mehr Hilfe: passende Seite der Dokumentation (Java, häufige Probleme oder der Absturz-Helfer selbst). -->
+      <button type="button" class="flex items-center gap-1.5 text-[11px] text-redstone-300 hover:underline" data-testid="crash-docs" @click="openDocs(crashDocsPage(primary.kind))">
+        <svg viewBox="0 0 24 24" class="size-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.help" /></svg>
+        {{ t('docs.moreHelp') }}
+      </button>
     </div>
 
     <template #actions>

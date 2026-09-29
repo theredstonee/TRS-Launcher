@@ -16,6 +16,7 @@ const settings = useSettingsStore()
 const toasts = useToasts()
 const ui = useUiStore()
 const trs = useTrsStore()
+const openDocs = useDocs()
 
 type Group = 'instances' | 'mods' | 'servers' | 'settings' | 'pages' | 'actions'
 
@@ -217,6 +218,18 @@ const commands = computed<Command[]>(() => [
         } satisfies Command,
       ]
     : []),
+  {
+    id: 'action:docs',
+    group: 'actions',
+    title: t('docs.open'),
+    subtitle: t('docs.paletteSubtitle'),
+    keywords: t('palette.keywords.docs'),
+    icon: 'help',
+    run: () => {
+      openDocs()
+      close()
+    },
+  },
   {
     id: 'action:data-dir',
     group: 'actions',

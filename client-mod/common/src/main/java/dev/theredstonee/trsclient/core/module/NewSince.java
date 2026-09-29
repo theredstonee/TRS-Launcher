@@ -119,6 +119,10 @@ public final class NewSince {
 	public static final String MENU_NOTES = "menu:notes";
 	/** Taste „Notizen öffnen“ (standardmäßig unbelegt). */
 	public static final String KEY_NOTES = "key.trsclient.notes";
+	/** Hilfe/Docs im TRS-Menü (nächste Version nach TRS Client 0.14.0): öffnet die Dokumentation auf der Website. */
+	public static final String DOCS = "0.15.0";
+	/** Leisten-Eintrag „Hilfe“. */
+	public static final String MENU_DOCS = "menu:docs";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
@@ -183,6 +187,8 @@ public final class NewSince {
 		add(SCREENSHOTS, "screenshots", SCREENSHOTS_FAVORITES, SCREENSHOTS_EDITOR);
 		// Notizen je Welt.
 		add(NOTES, "notes", "pinnedNote", MENU_NOTES, KEY_NOTES);
+		// Hilfe: Docs auf der Website.
+		add(DOCS, MENU_DOCS);
 	}
 
 	private NewSince() {

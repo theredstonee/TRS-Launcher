@@ -2585,7 +2585,8 @@
       "admin": "team moderatie meldingen straffen bezwaren spelers admin",
       "websiteLogin": "website inloggen login code bevestigen launcher microsoft browser team",
       "myApplications": "sollicitaties solliciteren team functie status",
-      "achievements": "prestaties trofeeën punten beloningen badges ontgrendelen achievements"
+      "achievements": "prestaties trofeeën punten beloningen badges ontgrendelen achievements",
+      "docs": "hulp docs documentatie handleiding wiki faq support vragen help"
     },
     "actions": {
       "newInstance": {
@@ -5277,5 +5278,13 @@
       "title": "Prestaties zichtbaar voor vrienden",
       "description": "Vrienden zien je punten en ontgrendelde prestaties. Zet dit uit om je prestaties privé te houden."
     }
+  },
+  "docs": {
+    "open": "Hulp & docs",
+    "paletteSubtitle": "Handleidingen voor de launcher en de TRS Client op de website",
+    "moreHelp": "Meer hulp",
+    "logs": "Hulp bij logs",
+    "java": "Java-handleiding",
+    "linux": "Linux-handleiding"
   }
 }

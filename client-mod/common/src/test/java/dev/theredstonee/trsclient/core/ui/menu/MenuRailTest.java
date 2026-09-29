@@ -284,5 +284,6 @@ class MenuRailTest {
 		render(menu, c, new int[]{960, 540});
 		assertNotNull(c.visible(I18n.tr("menu.bugReport")), "ohne Scrollen sichtbar");
 		assertNotNull(c.visible(I18n.tr("menu.all")));
+		assertNotNull(c.visible(I18n.tr("menu.docs")), "Hilfe ohne Scrollen sichtbar");
 	}
 }

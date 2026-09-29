@@ -2585,7 +2585,8 @@
       "admin": "team moderation meldungen strafen einsprüche spieler admin verwaltung",
       "websiteLogin": "website anmelden login code bestätigen launcher microsoft browser team",
       "myApplications": "bewerbungen bewerben team stelle status",
-      "achievements": "erfolge trophäen punkte belohnungen abzeichen freischalten achievements"
+      "achievements": "erfolge trophäen punkte belohnungen abzeichen freischalten achievements",
+      "docs": "hilfe docs dokumentation anleitung wiki faq handbuch support fragen help"
     },
     "actions": {
       "newInstance": {
@@ -5277,5 +5278,13 @@
       "title": "Erfolge für Freunde sichtbar",
       "description": "Freunde sehen deine Punkte und freigeschalteten Erfolge. Aus: deine Erfolge bleiben privat."
     }
+  },
+  "docs": {
+    "open": "Hilfe & Docs",
+    "paletteSubtitle": "Anleitungen zu Launcher und TRS Client auf der Website",
+    "moreHelp": "Mehr Hilfe",
+    "logs": "Hilfe zu Logs",
+    "java": "Anleitung zu Java",
+    "linux": "Anleitung für Linux"
   }
 }

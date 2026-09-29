@@ -65,6 +65,9 @@ public final class ModMenu extends UiScreen {
 	/** -1 = kein Umbenennen, -2 = neues Profil, sonst Profil-Index. */
 	private int editingProfile = -1;
 	private String profileError;
+	/** „Hilfe“: Browser ließ sich nicht öffnen – Adresse der Docs steht dann einige Sekunden in der Kopfzeile. */
+	private String docsFailed;
+	private long docsFailedUntil;
 	/** Seitenleiste: Bildlauf, wenn nicht alle Einträge ins Fenster passen (kleine Fenster, große GUI-Skalierung). */
 	private int railScroll;
 	private int railMaxScroll;
@@ -422,6 +425,30 @@ public final class ModMenu extends UiScreen {
 				search.setFocused(true);
 			}
 		});
+
+		// „Hilfe“ ohne Browser: Adresse zwischen Schriftzug und Suchfeld zeigen (zum Abtippen).
+		if (docsFailed != null && System.currentTimeMillis() < docsFailedUntil) {
+			int nx = lx + PixelFont.width("TRS") * 2 + 5 + c.textWidth(I18n.tr("menu.client")) + 10;
+			if (searchX - 8 - nx > 24) {
+				Paint.textClipped(c, I18n.tr("bugreport.done.openFailed", docsFailed), nx, py + (HEADER_H - 8) / 2,
+						searchX - 8 - nx, DOCS_WARN, false);
+			}
+		} else {
+			docsFailed = null;
+		}
+	}
+
+	private static final int DOCS_WARN = 0xFFF0C050;
+
+	/** Docs (Überblick über den TRS Client) in der Client-Sprache im Browser öffnen. */
+	private void openDocs() {
+		String url = dev.theredstonee.trsclient.core.util.Docs.url(dev.theredstonee.trsclient.core.util.Docs.CLIENT_OVERVIEW);
+		if (dev.theredstonee.trsclient.core.util.Links.open(url)) {
+			docsFailed = null;
+		} else {
+			docsFailed = url;
+			docsFailedUntil = System.currentTimeMillis() + 15000L;
+		}
 	}
 
 	private void rail(Canvas c, int x, int y, int w, int h, int mx, int my, float dt) {
@@ -434,7 +461,8 @@ public final class ModMenu extends UiScreen {
 		}
 		int items = 4 + shownCategories + (host.hasPacks() ? 1 : 0) + (host.hasAccounts() ? 1 : 0)
 				+ (host.hasWardrobe() ? 1 : 0) + (host.hasFriends() ? 1 : 0) + (host.hasClips() ? 1 : 0)
-				+ (dev.theredstonee.trsclient.core.bugreport.BugReports.get() != null ? 1 : 0) + (notesAvailable() ? 1 : 0);
+				+ (dev.theredstonee.trsclient.core.bugreport.BugReports.get() != null ? 1 : 0) + (notesAvailable() ? 1 : 0)
+				+ 1; // Hilfe (Docs)
 		int rowH = 18;
 		int gap = 3;
 		int footer = 32;
@@ -580,6 +608,14 @@ public final class ModMenu extends UiScreen {
 			});
 			cy += rowH + gap;
 		}
+		// Hilfe: Dokumentation auf der Website in der Client-Sprache (Browser; klappt das nicht, steht die Adresse oben).
+		railItem(c, x, cy, w, rowH, "help", I18n.tr("menu.docs"), false, mx, my, NewSince.MENU_DOCS, new Runnable() {
+			@Override
+			public void run() {
+				openDocs();
+			}
+		});
+		cy += rowH + gap;
 		if (dev.theredstonee.trsclient.core.bugreport.BugReports.get() != null) {
 			railItem(c, x, cy, w, rowH, "bug", I18n.tr("menu.bugReport"), page == Page.BUG_REPORT, mx, my, NewSince.MENU_BUG_REPORT,
 					new Runnable() {

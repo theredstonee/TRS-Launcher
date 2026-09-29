@@ -24,7 +24,7 @@
 
 [**Website**](https://trs-launcher.theredstonee.de) ·
 [Download](https://github.com/theredstonee/TRS-Launcher/releases) ·
-[Wiki](https://github.com/theredstonee/TRS-Launcher/wiki) ·
+[**Docs**](https://trs-launcher.theredstonee.de/docs/en/) ·
 [Features](#features) ·
 [Building](#building-from-source) ·
 [Architecture](#architecture)
@@ -92,7 +92,7 @@
 > [!TIP]
 > The installer isn't code-signed yet, so Windows SmartScreen may show "Windows protected your PC". Choose **More info → Run anyway**.
 
-Your data lives in `%APPDATA%\TRS-Launcher`. Step-by-step guides are in the [wiki](https://github.com/theredstonee/TRS-Launcher/wiki).
+Your data lives in `%APPDATA%\TRS-Launcher`. Step-by-step guides are in the [docs](https://trs-launcher.theredstonee.de/docs/en/) – for example [getting started](https://trs-launcher.theredstonee.de/docs/en/getting-started/installation) and [common problems](https://trs-launcher.theredstonee.de/docs/en/help/common-problems).
 
 ### Linux
 
@@ -113,6 +113,7 @@ Every release has an **AppImage**, a **.deb** and an **.rpm** for x86_64 (built 
 - Works on Wayland and X11 (the game itself runs through XWayland). With the proprietary NVIDIA driver the launcher turns off WebKit's DMA-BUF renderer to avoid a blank window.
 - The AppImage needs FUSE 2 (`libfuse2`/`fuse2`); without it, run it with `--appimage-extract-and-run`.
 - Not available on Linux yet: the Windows firewall helper (not needed) and clip recording. ARM64 has no Mojang Java runtime — set your own Java in the settings.
+- More tips and troubleshooting: [Linux guide](https://trs-launcher.theredstonee.de/docs/en/help/linux).
 
 ## Fair play
 
@@ -122,6 +123,8 @@ Every release has an **AppImage**, a **.deb** and an **.rpm** for x86_64 (built 
 - Your password never passes through the launcher. Tokens stay on your PC, encrypted, and are never sent to any third-party server.
 
 ## Building from source
+
+The full guide is in the docs: [Build from source](https://trs-launcher.theredstonee.de/docs/en/developers/build-from-source) · [Contributing](https://trs-launcher.theredstonee.de/docs/en/developers/contributing) · [Translating](https://trs-launcher.theredstonee.de/docs/en/developers/translating).
 
 **Requirements:** Node.js 22+ with pnpm, Rust (stable, MSVC toolchain), the Visual Studio Build Tools ("Desktop development with C++") and WebView2 (preinstalled on Windows 10/11).
 

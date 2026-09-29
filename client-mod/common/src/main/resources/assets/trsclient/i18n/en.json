@@ -2100,6 +2100,7 @@
   "disconnect.statusOnlineTip": "Server online: {0}/{1} players, ping {2} ms",
   "disconnect.statusOfflineTip": "The server did not answer the status request.",
   "menu.bugReport": "Report bug",
+  "menu.docs": "Help",
   "bugreport.title": "Report a bug",
   "bugreport.unavailable": "Bug reports aren't available in this version.",
   "bugreport.intro": "Something in TRS Client doesn't work? Tell us briefly what happened – the TRS team will take a look.",

@@ -21,6 +21,26 @@ How to write an entry:
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
 -->
 
+## Unreleased
+
+### English
+- **Help & docs.** The new documentation on the website (in English, German and Spanish) replaces the old GitHub
+  wiki, and the launcher now takes you straight to the right page in your language: the question mark in the title
+  bar, “Help & docs” at the bottom of the settings or in the search (Ctrl+K), “More help” in the crash helper, the
+  question mark in the log viewer, a Java guide in the Java settings and a Linux guide next to the sign-in storage
+  hint on Linux. Other launcher languages open the English docs.
+- **TRS Client:** the TRS menu has a new **Help** entry that opens the TRS Client guide in your browser, in the
+  language of the client.
+
+### Deutsch
+- **Hilfe & Docs.** Die neue Dokumentation auf der Website (auf Englisch, Deutsch und Spanisch) ersetzt das alte
+  GitHub-Wiki, und der Launcher bringt dich direkt zur passenden Seite in deiner Sprache: das Fragezeichen in der
+  Titelleiste, „Hilfe & Docs“ unten in den Einstellungen oder in der Suche (Strg+K), „Mehr Hilfe“ im Absturz-Helfer,
+  das Fragezeichen in der Log-Ansicht, eine Java-Anleitung in den Java-Einstellungen und unter Linux eine
+  Linux-Anleitung beim Hinweis zu den gespeicherten Anmeldedaten. Andere Launcher-Sprachen öffnen die englischen Docs.
+- **TRS Client:** Im TRS-Menü gibt es den neuen Eintrag **Hilfe** – er öffnet die Anleitung zum TRS Client im
+  Browser, in der Sprache des Clients.
+
 ## 0.14.0 – 2026-09-28 – Achievement Unlocked | Erfolg freigeschaltet
 <!-- banner: accent=#ffc53d motif=/news/0.14.0/banner.png -->
 <!-- shots:

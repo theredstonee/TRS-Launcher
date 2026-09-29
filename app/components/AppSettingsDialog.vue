@@ -9,6 +9,7 @@ const store = useSettingsStore()
 const accounts = useAccountsStore()
 const onboarding = useOnboardingStore()
 const toasts = useToasts()
+const openDocs = useDocs()
 
 // Namen und Gruppen sind Getter in sections.ts – sie folgen der eingestellten Sprache.
 const sections: ShellSection[] = appSettingsSections
@@ -311,6 +312,11 @@ async function allowFirewall() {
       <p v-if="info">{{ info.os }}</p>
       <p v-if="clientModLine">{{ clientModLine }}</p>
       <p v-if="updatesLine">{{ updatesLine }}</p>
+      <!-- Hilfe: Dokumentation auf der Website (Einstellungen-Seite in der Launcher-Sprache). -->
+      <button type="button" class="mt-1 inline-flex items-center gap-1 text-redstone-300 hover:underline" data-testid="settings-docs" @click="openDocs('launcher/settings')">
+        <svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.help" /></svg>
+        {{ t('docs.open') }}
+      </button>
     </template>
 
     <div v-if="!form" class="space-y-3">
@@ -561,7 +567,10 @@ async function allowFirewall() {
     <!-- Java-Installationen ------------------------------------------------------------ -->
     <div v-else-if="active === 'java'">
       <h3 class="section-heading">{{ t('settings.java.title') }}</h3>
-      <p class="mb-3 text-xs text-base-400">{{ t('settings.java.hint') }}</p>
+      <p class="mb-3 text-xs text-base-400">
+        {{ t('settings.java.hint') }}
+        <button type="button" class="text-redstone-300 hover:underline" @click="openDocs('help/java')">{{ t('docs.java') }}</button>
+      </p>
       <div class="space-y-3">
         <section v-for="slot in javaSlots" :key="slot.major" class="rounded-xl border border-base-800 bg-base-850 p-4">
           <div class="mb-2 flex items-center justify-between">
@@ -632,6 +641,9 @@ async function allowFirewall() {
         :title="t('settings.storage.credentialsTitle')"
         :description="info.tokenProtection === 'keyring' ? t('settings.storage.credentialsKeyring') : t('settings.storage.credentialsFile')"
       >
+        <template #description>
+          <button type="button" class="mt-1 text-xs text-redstone-300 hover:underline" @click="openDocs('help/linux')">{{ t('docs.linux') }}</button>
+        </template>
         <span class="text-xs" :class="info.tokenProtection === 'keyring' ? 'text-ok' : 'text-warn'">
           {{ info.tokenProtection === 'keyring' ? t('settings.storage.credentialsKeyringShort') : t('settings.storage.credentialsFileShort') }}
         </span>

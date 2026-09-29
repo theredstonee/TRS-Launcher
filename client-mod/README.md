@@ -4,6 +4,9 @@ The in-game client mod of the TRS Launcher (Lunar/Badlion style). Client-only, o
 Minecraft release: **Fabric 1.14.4–26.3**, **Forge 1.7.10–26.3**, **NeoForge 1.20.2–26.3** (see below).
 License: GPL-3.0-only, author: theredstonee.
 
+Player guide: [TRS Client docs](https://trs-launcher.theredstonee.de/docs/en/client/overview) (also reachable in game
+under TRS menu → Help).
+
 ## Projects
 
 Each loader family is its own Gradle build (own wrapper, own README with hooks and pitfalls); all of them put

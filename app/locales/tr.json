@@ -2585,7 +2585,8 @@
       "admin": "ekip moderasyon şikayetler cezalar itirazlar oyuncular admin",
       "websiteLogin": "web sitesi oturum aç giriş kod onayla launcher microsoft tarayıcı ekip",
       "myApplications": "başvurular başvur ekip pozisyon durum",
-      "achievements": "başarımlar kupalar puanlar ödüller rozetler kilit achievements"
+      "achievements": "başarımlar kupalar puanlar ödüller rozetler kilit achievements",
+      "docs": "yardım docs belgeler rehber wiki sss kılavuz destek sorular help"
     },
     "actions": {
       "newInstance": {
@@ -5277,5 +5278,13 @@
       "title": "Başarımlar arkadaşlara görünür",
       "description": "Arkadaşların puanlarını ve açtığın başarımları görür. Kapatırsan başarımların gizli kalır."
     }
+  },
+  "docs": {
+    "open": "Yardım ve belgeler",
+    "paletteSubtitle": "Web sitesinde başlatıcı ve TRS Client rehberleri",
+    "moreHelp": "Daha fazla yardım",
+    "logs": "Günlükler hakkında yardım",
+    "java": "Java rehberi",
+    "linux": "Linux rehberi"
   }
 }

@@ -8,6 +8,7 @@ import { LEVEL_KEYS, LogModel, LogTextParser, highlightMatches, isAllFilter, typ
 const props = defineProps<{ instanceId: string; running: boolean; lines: LogLine[]; logTotal: number }>()
 
 const toasts = useToasts()
+const openDocs = useDocs()
 const ROW = 20
 const OVERSCAN = 30
 
@@ -389,6 +390,9 @@ const shareLabel = computed(() => (isLive.value ? t('logViewer.latest') : (curre
         </button>
         <button v-else-if="crashHelper.latest[instanceId]" class="btn btn-ghost h-8 px-2.5 text-xs" @click="crashHelper.show(crashHelper.latest[instanceId]!)">
           {{ t('crashHelper.open') }}
+        </button>
+        <button class="btn-icon size-8" :title="t('docs.logs')" :aria-label="t('docs.logs')" data-testid="log-docs" @click="openDocs('help/logs')">
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.help" /></svg>
         </button>
         <button class="btn-icon size-8" :title="t('logViewer.share')" :aria-label="t('logViewer.share')" @click="sharing = true">
           <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3m0 0L8 7m4-4 4 4M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7" /></svg>

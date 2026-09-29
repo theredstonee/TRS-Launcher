@@ -56,6 +56,8 @@ export const icons = {
   invite: 'M4 5h16v5H4zM4 14h9v5H4zM7.5 7.5h.01M17 14v6M14 17h6',
   dots: 'M5 12h.01M12 12h.01M19 12h.01',
   external: 'M14 4h6v6M20 4l-9 9M18 14v6H4V6h6',
+  /** Hilfe/Docs: Fragezeichen im Kreis. */
+  help: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17v.01',
   /** Gehostete Welt: ein Block. */
   world: 'M12 3l8 4.5v9L12 21l-8-4.5v-9zM4 7.5 12 12l8-4.5M12 12v9',
   /** Team-Bereich: Strafe (Richterhammer). */

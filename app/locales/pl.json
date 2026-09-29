@@ -2585,7 +2585,8 @@
       "admin": "zespół moderacja zgłoszenia kary odwołania gracze admin",
       "websiteLogin": "strona logowanie login kod potwierdź launcher microsoft przeglądarka zespół",
       "myApplications": "zgłoszenia aplikuj zespół stanowisko status",
-      "achievements": "osiągnięcia trofea punkty nagrody odznaki odblokuj achievements"
+      "achievements": "osiągnięcia trofea punkty nagrody odznaki odblokuj achievements",
+      "docs": "pomoc docs dokumentacja poradnik wiki faq instrukcja wsparcie pytania help"
     },
     "actions": {
       "newInstance": {
@@ -5277,5 +5278,13 @@
       "title": "Osiągnięcia widoczne dla znajomych",
       "description": "Znajomi widzą twoje punkty i odblokowane osiągnięcia. Wyłącz, aby twoje osiągnięcia były prywatne."
     }
+  },
+  "docs": {
+    "open": "Pomoc i dokumentacja",
+    "paletteSubtitle": "Poradniki do launchera i TRS Client na stronie",
+    "moreHelp": "Więcej pomocy",
+    "logs": "Pomoc dotycząca logów",
+    "java": "Poradnik Java",
+    "linux": "Poradnik dla Linuksa"
   }
 }

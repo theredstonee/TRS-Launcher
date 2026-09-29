@@ -9,6 +9,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window'
 const win = isTauri() ? getCurrentWindow() : null
 const router = useRouter()
 const ui = useUiStore()
+const openDocs = useDocs()
 const maximized = ref(false)
 
 let stop: (() => void) | undefined
@@ -59,6 +60,11 @@ async function toggleMaximize() {
       <svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path :d="icons.search" /></svg>
       {{ t('common.actions.search') }}
       <kbd class="rounded border border-base-700 px-1 font-mono text-[10px]">{{ t('titleBar.ctrl') }} K</kbd>
+    </button>
+
+    <!-- Hilfe: Dokumentation auf der Website in der Launcher-Sprache. -->
+    <button class="nav-btn mr-1" :aria-label="t('docs.open')" :title="t('docs.open')" data-testid="titlebar-docs" @click="openDocs()">
+      <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.help" /></svg>
     </button>
 
     <AccountMenu />

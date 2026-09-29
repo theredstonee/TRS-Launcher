@@ -2585,7 +2585,8 @@
       "admin": "équipe modération signalements sanctions appels joueurs admin",
       "websiteLogin": "site connexion login code confirmer launcher microsoft navigateur équipe",
       "myApplications": "candidatures postuler équipe poste statut",
-      "achievements": "succès trophées points récompenses badges débloquer achievements"
+      "achievements": "succès trophées points récompenses badges débloquer achievements",
+      "docs": "aide docs documentation guide wiki faq manuel support questions help"
     },
     "actions": {
       "newInstance": {
@@ -5277,5 +5278,13 @@
       "title": "Succès visibles par les amis",
       "description": "Tes amis voient tes points et tes succès débloqués. Désactive-le pour garder tes succès privés."
     }
+  },
+  "docs": {
+    "open": "Aide et docs",
+    "paletteSubtitle": "Guides du launcher et du TRS Client sur le site",
+    "moreHelp": "Plus d’aide",
+    "logs": "Aide sur les journaux",
+    "java": "Guide Java",
+    "linux": "Guide Linux"
   }
 }

@@ -2585,7 +2585,8 @@
       "admin": "team moderation reports sanctions appeals players admin",
       "websiteLogin": "website sign in login code confirm launcher microsoft browser team",
       "myApplications": "applications apply team job position status",
-      "achievements": "achievements trophies points rewards badges unlock"
+      "achievements": "achievements trophies points rewards badges unlock",
+      "docs": "help docs documentation guide wiki faq manual support questions"
     },
     "actions": {
       "newInstance": {
@@ -5277,5 +5278,13 @@
       "title": "Achievements visible to friends",
       "description": "Friends can see your points and unlocked achievements. Turn it off to keep your achievements private."
     }
+  },
+  "docs": {
+    "open": "Help & docs",
+    "paletteSubtitle": "Guides for the launcher and the TRS Client on the website",
+    "moreHelp": "More help",
+    "logs": "Help with logs",
+    "java": "Java guide",
+    "linux": "Linux guide"
   }
 }

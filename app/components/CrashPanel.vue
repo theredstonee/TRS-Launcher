@@ -7,6 +7,7 @@ const props = defineProps<{ instanceId: string; exitCode: number | null; diagnos
 // Absturz-Helfer: Sobald die Analyse da ist, zeigt das Panel ihre Hauptursache
 // und öffnet auf Wunsch den Dialog mit allen Knöpfen.
 const helper = useCrashHelperStore()
+const openDocs = useDocs()
 const analysis = computed(() => {
   const a = helper.latest[props.instanceId]
   return a && props.crashId && a.id === props.crashId ? a : null
@@ -71,6 +72,7 @@ function repair() {
     <div class="mt-3 flex flex-wrap items-center gap-2">
       <button class="btn btn-primary px-3 py-1.5 text-xs" @click="helper.show(analysis)">{{ t('crashHelper.open') }}</button>
       <button class="btn btn-ghost px-3 py-1.5 text-xs" @click="sharing = true">{{ t('crash.shareLog') }}</button>
+      <button class="ml-auto text-xs text-redstone-300 hover:underline" @click="openDocs(crashDocsPage(analysis.findings[0]?.kind))">{{ t('docs.moreHelp') }}</button>
     </div>
     <LogShareDialog v-if="sharing" :instance-id="instanceId" source="live" :label="t('logViewer.latest')" @close="sharing = false" />
   </section>
@@ -109,6 +111,7 @@ function repair() {
       <button class="btn btn-ghost px-3 py-1.5 text-xs" @click="sharing = true">
         {{ t('crash.shareLog') }}
       </button>
+      <button class="ml-auto text-xs text-redstone-300 hover:underline" @click="openDocs('help/common-problems')">{{ t('docs.moreHelp') }}</button>
     </div>
 
     <LogShareDialog v-if="sharing" :instance-id="instanceId" source="live" :label="t('logViewer.latest')" @close="sharing = false" />

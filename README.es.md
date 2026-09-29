@@ -24,7 +24,7 @@
 
 [**Website**](https://trs-launcher.theredstonee.de/?lang=es) ·
 [Descarga](https://github.com/theredstonee/TRS-Launcher/releases) ·
-[Wiki](https://github.com/theredstonee/TRS-Launcher/wiki/es-Home) ·
+[**Docs**](https://trs-launcher.theredstonee.de/docs/es/) ·
 [Funciones](#funciones) ·
 [Compilar](#compilar-desde-el-código-fuente) ·
 [Arquitectura](#arquitectura)
@@ -91,7 +91,7 @@
 > [!TIP]
 > El instalador todavía no está firmado, así que Windows SmartScreen puede mostrar «Windows protegió su PC». Elige **Más información → Ejecutar de todas formas**.
 
-Tus datos se guardan en `%APPDATA%\TRS-Launcher`. Encontrarás guías paso a paso en la [wiki](https://github.com/theredstonee/TRS-Launcher/wiki/es-Home).
+Tus datos se guardan en `%APPDATA%\TRS-Launcher`. Encontrarás guías paso a paso en la [documentación](https://trs-launcher.theredstonee.de/docs/es/), por ejemplo [primeros pasos](https://trs-launcher.theredstonee.de/docs/es/getting-started/installation) y [problemas frecuentes](https://trs-launcher.theredstonee.de/docs/es/help/common-problems).
 
 ### Linux
 
@@ -112,6 +112,7 @@ Cada versión incluye un **AppImage**, un **.deb** y un **.rpm** para x86_64 (co
 - Funciona en Wayland y X11 (el juego se ejecuta mediante XWayland). Con el driver propietario de NVIDIA, el launcher desactiva el renderizador DMA-BUF de WebKit para evitar una ventana en blanco.
 - El AppImage necesita FUSE 2 (`libfuse2`/`fuse2`); sin él, ejecútalo con `--appimage-extract-and-run`.
 - Todavía no disponible en Linux: el asistente del firewall de Windows (no hace falta) y la grabación de clips. Para ARM64 no hay runtime de Java de Mojang: indica tu propio Java en los ajustes.
+- Más consejos y solución de problemas: [guía para Linux](https://trs-launcher.theredstonee.de/docs/es/help/linux).
 
 ## Juego limpio
 
@@ -121,6 +122,8 @@ Cada versión incluye un **AppImage**, un **.deb** y un **.rpm** para x86_64 (co
 - Tu contraseña nunca pasa por el launcher. Los tokens se quedan cifrados en tu PC y nunca se envían a servidores de terceros.
 
 ## Compilar desde el código fuente
+
+La guía completa está en la documentación: [Compilar desde el código fuente](https://trs-launcher.theredstonee.de/docs/es/developers/build-from-source) · [Contribuir](https://trs-launcher.theredstonee.de/docs/es/developers/contributing) · [Traducir](https://trs-launcher.theredstonee.de/docs/es/developers/translating).
 
 **Requisitos:** Node.js 22+ con pnpm, Rust (stable, toolchain MSVC), Visual Studio Build Tools («Desarrollo para el escritorio con C++») y WebView2 (preinstalado en Windows 10/11).
 

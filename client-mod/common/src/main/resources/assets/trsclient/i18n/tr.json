@@ -2100,6 +2100,7 @@
   "disconnect.statusOnlineTip": "Sunucu çevrimiçi: {0}/{1} oyuncu, ping {2} ms",
   "disconnect.statusOfflineTip": "Sunucu durum isteğine yanıt vermedi.",
   "menu.bugReport": "Hata bildir",
+  "menu.docs": "Yardım",
   "bugreport.title": "Hata bildir",
   "bugreport.unavailable": "Bu sürümde hata bildirilemiyor.",
   "bugreport.intro": "TRS Client'ta bir şey çalışmıyor mu? Ne olduğunu kısaca anlat – TRS ekibi inceleyecek.",
