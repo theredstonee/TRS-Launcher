@@ -284,6 +284,11 @@ public final class AutoTest {
 					step = 36;
 					break;
 				}
+				// -PtrsAutotestOnly=cosmetics2: Kopf-Kosmetik v2 (braucht -PtrsApi mit scratchpad/cos2mod/mock-api.mjs)
+				if ("cosmetics2".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 37;
+					break;
+				}
 				// -PtrsAutotestOnly=duck: nur die Quietscheente (braucht -PtrsApi mit Enten-Attrappe)
 				if ("duck".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 29;
@@ -658,6 +663,22 @@ public final class AutoTest {
 				step = 24;
 				wait = 5;
 				break;
+			case 37:
+				// Kopf-Kosmetik v2: Screenshots trsclient-<mc>-cos2-*.png (6 Teile × vorne/schräg/hinten × Tag/Nacht, Garderobe)
+				if (cosmetics2Test.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				step = 24;
+				wait = 5;
+				break;
 			case 33:
 				// Suche in der Tastenbelegung: Screenshots trsclient-<mc>-keysearch-*.png
 				if (keySearchTest.step(mc, new CapeTest.Actions() {
@@ -690,6 +711,7 @@ public final class AutoTest {
 	private final Benchmark benchmark = new Benchmark();
 	private final ShieldTest shieldTest = new ShieldTest();
 	private final DuckTest duckTest = new DuckTest();
+	private final Cosmetics2Test cosmetics2Test = new Cosmetics2Test();
 	private final KeySearchTest keySearchTest = new KeySearchTest();
 	private final DisconnectTest disconnectTest = new DisconnectTest();
 	private final QolTest qolTest = new QolTest();

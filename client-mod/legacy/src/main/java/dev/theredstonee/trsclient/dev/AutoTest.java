@@ -251,6 +251,11 @@ public final class AutoTest {
 					step = 19;
 					break;
 				}
+				// -PtrsAutotestOnly=cosmetics2: Kopf-Kosmetik v2 (braucht -PtrsApi mit scratchpad/cos2mod/mock-api.mjs)
+				if ("cosmetics2".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 24;
+					break;
+				}
 				shot(mc, "hud");
 				TrsClient.LOGGER.info("[Autotest] Toggle-Anzeige: {} {}", TrsClient.get().pvp().toggles().sprintStatus().text(),
 						TrsClient.get().pvp().toggles().sneakStatus().text());
@@ -435,6 +440,22 @@ public final class AutoTest {
 				})) return;
 				next(5);
 				break;
+			case 24:
+				// Kopf-Kosmetik v2: Screenshots trsclient-<mc>-cos2-*.png
+				if (cosmetics2Test.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.this.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				step = 20;
+				wait = 5;
+				break;
 			case 20:
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
 				TrsClient.LOGGER.info("[Autotest] Leistungs-Hooks: {}", dev.theredstonee.trsclient.perf.LegacyPerf.get().stats());
@@ -463,6 +484,8 @@ public final class AutoTest {
 		expected = screen == null ? null : screen.getClass();
 		Minecraft.getMinecraft().displayGuiScreen(screen);
 	}
+
+	private final Cosmetics2Test cosmetics2Test = new Cosmetics2Test();
 
 	private boolean isExpected(GuiScreen current) {
 		// Das Emote-Rad öffnet der Emote-Test selbst.
