@@ -535,6 +535,11 @@ pub mod secret {
     }
 }
 
+/// Vollbild-/Nicht-stören-Erkennung gibt es unter Linux nicht einheitlich.
+pub fn quiet_hours() -> bool {
+    false
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -598,9 +603,4 @@ mod tests {
         assert!(!handle.is_alive());
         assert!(!reopened.is_alive());
     }
-}
-
-/// Vollbild-/Nicht-stören-Erkennung gibt es unter Linux nicht einheitlich.
-pub fn quiet_hours() -> bool {
-    false
 }

@@ -253,12 +253,12 @@ impl Launcher {
     }
 }
 
-#[cfg(test)]
+// Nur unter Windows: der Test startet einen Windows-Prozess als „Spiel“.
+#[cfg(all(test, windows))]
 mod tests {
     use super::*;
 
     /// Anfragen aus dem Spiel und das `trsclip:`-Protokoll gegen einen echten Launcher (ohne FFmpeg).
-    #[cfg(windows)]
     #[tokio::test]
     async fn spiel_darf_nur_eigene_clips_oeffnen_und_protokoll_bleibt_im_ordner() {
         use std::os::windows::process::CommandExt;
