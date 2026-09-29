@@ -199,7 +199,7 @@ const powered = ref(false)
                 </button>
               </li>
             </ul>
-            <NuxtLink :to="lp('/capes')" class="btn btn-ghost mt-6">
+            <NuxtLink :to="lp('/cosmetics')" class="btn btn-ghost mt-6">
               {{ m.home.capesCta }} <SiteIcon name="arrow" class="size-4" />
             </NuxtLink>
           </div>

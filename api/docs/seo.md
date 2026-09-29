@@ -41,7 +41,7 @@ clients.
 | `/download` | SoftwareApplication, BreadcrumbList |
 | `/blog` | BreadcrumbList |
 | `/blog/<version>` | BlogPosting (headline = update name, date, screenshots + banner motif), BreadcrumbList |
-| `/capes` | BreadcrumbList |
+| `/cosmetics` (301 from `/capes`) | BreadcrumbList |
 | `/faq` | FAQPage (exactly the visible questions), BreadcrumbList |
 | `/privacy` | – |
 
@@ -49,7 +49,7 @@ SoftwareApplication takes the version and date from the latest GitHub release, s
 blog post (plus `public/shots/*`), `featureList` and `keywords` from `messages.<lang>.seo`. No ratings are
 added – there are none to show.
 
-Open Graph image: `/og.png` (1260×660) by default; blog posts use their first screenshot, `/capes` and
+Open Graph image: `/og.png` (1260×660) by default; blog posts use their first screenshot, `/cosmetics` and
 `/features` use a screenshot from `public/shots`.
 
 ## Brand and name variants

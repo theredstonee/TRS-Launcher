@@ -18,7 +18,7 @@ const links = computed<{ to: string, label: string, icon: string, external?: boo
   // Doku: eigene statische App unter /docs – normaler Seitenwechsel statt Router.
   { to: docsUrl(lang.value), label: m.value.nav.docs, icon: 'docs', external: true },
   { to: lp('/blog'), label: m.value.nav.blog, icon: 'book' },
-  { to: lp('/capes'), label: m.value.nav.capes, icon: 'cape' },
+  { to: lp('/cosmetics'), label: m.value.nav.cosmetics, icon: 'cape' },
   { to: lp('/circuits'), label: c.value.nav, icon: 'blocks' },
   { to: lp('/issues'), label: it.value.nav.issues, icon: 'bug' },
   { to: lp('/roadmap'), label: it.value.nav.roadmap, icon: 'roadmap' },
@@ -155,7 +155,7 @@ const year = new Date().getFullYear()
           <NuxtLink :to="lp('/download')" class="footer-link">{{ m.nav.download }}</NuxtLink>
           <a :href="docsUrl(lang)" class="footer-link">{{ m.footer.docs }}</a>
           <NuxtLink :to="lp('/blog')" class="footer-link">{{ m.nav.blog }}</NuxtLink>
-          <NuxtLink :to="lp('/capes')" class="footer-link">{{ m.nav.capes }}</NuxtLink>
+          <NuxtLink :to="lp('/cosmetics')" class="footer-link">{{ m.nav.cosmetics }}</NuxtLink>
           <NuxtLink :to="lp('/circuits')" class="footer-link">{{ c.nav }}</NuxtLink>
           <NuxtLink :to="lp('/issues')" class="footer-link">{{ it.nav.issues }}</NuxtLink>
           <NuxtLink :to="lp('/roadmap')" class="footer-link">{{ it.nav.roadmap }}</NuxtLink>

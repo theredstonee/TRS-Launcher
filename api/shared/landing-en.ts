@@ -327,7 +327,7 @@ export const landingEn: LandingTexts = {
             'Open the emote wheel and wave, dance or cheer – other TRS players see it. TRS capes swing like cloth with cape physics; many are free, some are animated or in HD. After F2 a small preview lets you edit, copy or send your screenshot, and the screenshot editor crops, draws arrows and text and pixelates names. Every world and server also gets its own notebook with checklists and clickable coordinates.',
           ],
           shot: { file: '0.5.0/emote-wheel.png', alt: 'The emote wheel of the TRS Client in Minecraft', caption: 'The emote wheel' },
-          link: { to: '/capes', label: 'See all TRS capes' },
+          link: { to: '/cosmetics', label: 'See all TRS capes' },
         },
       ],
       faq: [

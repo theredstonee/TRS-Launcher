@@ -10,6 +10,7 @@ import {
   COMPETITOR_PATTERN,
   faqPageLd,
   localizedUrl,
+  MOVED_PAGES,
   organizationLd,
   SITE_PAGES,
   softwareLd,
@@ -93,11 +94,11 @@ describe('Adressen und Sprachen', () => {
   })
 
   it('hreflang: jede Sprache plus x-default (= Englisch/ohne Zusatz)', () => {
-    expect(alternates(SITE, '/capes')).toEqual([
-      { hreflang: 'en', href: `${SITE}/capes` },
-      { hreflang: 'de', href: `${SITE}/capes?lang=de` },
-      { hreflang: 'es', href: `${SITE}/capes?lang=es` },
-      { hreflang: 'x-default', href: `${SITE}/capes` },
+    expect(alternates(SITE, '/cosmetics')).toEqual([
+      { hreflang: 'en', href: `${SITE}/cosmetics` },
+      { hreflang: 'de', href: `${SITE}/cosmetics?lang=de` },
+      { hreflang: 'es', href: `${SITE}/cosmetics?lang=es` },
+      { hreflang: 'x-default', href: `${SITE}/cosmetics` },
     ])
   })
 
@@ -324,13 +325,15 @@ describe('robots.txt', () => {
     expect(lines).toContain('Disallow: /admin')
     expect(lines).toContain('Allow: /v1/site/')
     expect(lines).toContain('Allow: /v1/capes/*.png')
+    expect(lines).toContain('Allow: /v1/cosmetics/*.png')
+    expect(lines).toContain('Allow: /v1/cosmetics/*/model.json')
     expect(lines).toContain(`Sitemap: ${SITE}/sitemap.xml`)
   })
 })
 
 describe('Texte für Suchmaschinen', () => {
   const langs: Lang[] = ['en', 'de', 'es']
-  const pages = ['home', 'features', 'download', 'blog', 'capes', 'faq', 'privacy'] as const
+  const pages = ['home', 'features', 'download', 'blog', 'cosmetics', 'faq', 'privacy'] as const
 
   it('jede Seite hat in jeder Sprache einen eigenen Titel (≤ 65) und eine Beschreibung (≤ 160)', () => {
     for (const lang of langs) {
@@ -376,10 +379,19 @@ describe('Texte für Suchmaschinen', () => {
 
 describe('Themen-Seiten (shared/landing.ts)', () => {
   const langs: Lang[] = ['en', 'de', 'es']
-  const pages = ['home', 'features', 'download', 'blog', 'capes', 'faq', 'privacy'] as const
+  const pages = ['home', 'features', 'download', 'blog', 'cosmetics', 'faq', 'privacy'] as const
 
   it('stehen in der Sitemap', () => {
     for (const id of LANDING_IDS) expect(SITE_PAGES.map((p) => p.path)).toContain(landingPath(id))
+  })
+
+  it('umgezogene Seiten: /capes → /cosmetics (nur das Ziel in der Sitemap)', () => {
+    expect(MOVED_PAGES['/capes']).toBe('/cosmetics')
+    const paths = SITE_PAGES.map((p) => p.path)
+    for (const [from, to] of Object.entries(MOVED_PAGES)) {
+      expect(paths).not.toContain(from)
+      expect(paths).toContain(to)
+    }
   })
 
   it('Titel ≤ 65, Beschreibung 51–160, alles eindeutig (auch gegenüber den übrigen Seiten)', () => {

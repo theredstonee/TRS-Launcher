@@ -29,10 +29,10 @@ const en = {
       title: 'Blog – News, Updates & Patch Notes | TRS Launcher',
       description: 'News, updates and behind-the-scenes posts from the TRS team: patch notes for every TRS Launcher and TRS Client release, with screenshots.',
     },
-    capes: {
-      title: 'Minecraft Capes – Free & Animated TRS Capes',
+    cosmetics: {
+      title: 'Minecraft Capes & Hats – Free TRS Cosmetics',
       description:
-        'All TRS capes for Minecraft: free, animated and HD capes that swing with cape physics. Pick one in the TRS Launcher and show it to your friends in game.',
+        'All TRS cosmetics for Minecraft: free, animated and HD capes with cape physics, plus glowing 3D hats and crowns. Pick them in the TRS Launcher.',
     },
     faq: {
       title: 'FAQ – TRS Launcher & TRS Client for Minecraft',
@@ -84,7 +84,7 @@ const en = {
       'Windows and Linux',
     ],
   },
-  nav: { home: 'Home', features: 'Features', download: 'Download', blog: 'Blog', capes: 'Capes', faq: 'FAQ', team: 'Team', admin: 'Admin', menu: 'Menu', docs: 'Docs' },
+  nav: { home: 'Home', features: 'Features', download: 'Download', blog: 'Blog', cosmetics: 'Cosmetics', faq: 'FAQ', team: 'Team', admin: 'Admin', menu: 'Menu', docs: 'Docs' },
   common: { loading: 'Loading …', error: 'Could not load this right now. Please try again later.', copy: 'Copy', copied: 'Copied', close: 'Close', version: 'Version {version}', new: 'New' },
   footer: {
     tagline: 'TRS Launcher – The Redstone Launcher by TheRedstonee. A free Minecraft launcher, open source under GPL-3.0.',
@@ -249,7 +249,7 @@ const en = {
         points: ['Free TRS capes for everyone who uses the TRS Launcher', 'Animated and HD capes', 'Upload your own cape – the team checks it before others see it'],
         img: 'cape-physics.png',
         alt: 'A TRS cape with cape physics in the TRS Client',
-        link: { to: '/capes', label: 'See all capes' },
+        link: { to: '/cosmetics', label: 'See all capes' },
       },
       {
         id: 'mods',
@@ -426,6 +426,22 @@ const en = {
     animated: 'Animated',
     dragHint: 'Drag to turn',
     empty: 'No capes to show right now.',
+  },
+  cosmetics: {
+    title: 'TRS cosmetics',
+    lead: 'Capes and head cosmetics you can wear with the TRS Launcher. Players with the TRS Client see them in game.',
+    capesTitle: 'Capes',
+    hatsTitle: 'Hats & head cosmetics',
+    hatsLead: 'Real 3D models with glowing details and gentle animation – on your head in game, seen by everyone with the TRS Client.',
+    hatsEmpty: 'No head cosmetics to show right now.',
+    howTitle: 'How do I put on a hat?',
+    howText: 'Open the TRS Launcher, go to Skins → Head cosmetics and pick one. Codes can be redeemed there too.',
+    day: 'Day',
+    night: 'Night',
+    animation: 'Animation',
+    glowing: 'Glows',
+    animated: 'Animated',
+    choose: 'Show {name} in 3D',
   },
   faq: {
     title: 'Frequently asked questions',
@@ -658,10 +674,10 @@ const de: Messages = {
       title: 'Blog – News, Updates & Patch Notes | TRS Launcher',
       description: 'News, Updates und Blicke hinter die Kulissen vom TRS-Team: Patch Notes zu jeder Version von TRS Launcher und TRS Client, mit Screenshots.',
     },
-    capes: {
-      title: 'Minecraft Umhänge – kostenlose & animierte TRS-Umhänge',
+    cosmetics: {
+      title: 'Minecraft Umhänge & Hüte – kostenlose TRS-Kosmetik',
       description:
-        'Alle TRS-Umhänge für Minecraft: kostenlose, animierte und HD-Umhänge (Capes) mit Umhang-Physik. Im TRS Launcher auswählen und im Spiel deinen Freunden zeigen.',
+        'Alle TRS-Kosmetik für Minecraft: kostenlose, animierte und HD-Umhänge (Capes) mit Umhang-Physik und leuchtende 3D-Hüte und Kronen. Im TRS Launcher wählen.',
     },
     faq: {
       title: 'FAQ – TRS Launcher & TRS Client für Minecraft',
@@ -714,7 +730,7 @@ const de: Messages = {
       'Windows und Linux',
     ],
   },
-  nav: { home: 'Start', features: 'Funktionen', download: 'Download', blog: 'Blog', capes: 'Umhänge', faq: 'FAQ', team: 'Team', admin: 'Admin', menu: 'Menü', docs: 'Doku' },
+  nav: { home: 'Start', features: 'Funktionen', download: 'Download', blog: 'Blog', cosmetics: 'Kosmetik', faq: 'FAQ', team: 'Team', admin: 'Admin', menu: 'Menü', docs: 'Doku' },
   common: { loading: 'Lädt …', error: 'Das lässt sich gerade nicht laden. Bitte später noch einmal versuchen.', copy: 'Kopieren', copied: 'Kopiert', close: 'Schließen', version: 'Version {version}', new: 'Neu' },
   footer: {
     tagline: 'TRS Launcher – der Redstone Launcher von TheRedstonee. Ein kostenloser Minecraft-Launcher, Open Source unter GPL-3.0.',
@@ -879,7 +895,7 @@ const de: Messages = {
         points: ['Kostenlose TRS-Umhänge für alle mit dem TRS Launcher', 'Animierte und HD-Umhänge', 'Eigenen Umhang hochladen – das Team prüft ihn, bevor andere ihn sehen'],
         img: 'cape-physics.png',
         alt: 'Ein TRS-Umhang mit Umhang-Physik im TRS Client',
-        link: { to: '/capes', label: 'Alle Umhänge ansehen' },
+        link: { to: '/cosmetics', label: 'Alle Umhänge ansehen' },
       },
       {
         id: 'mods',
@@ -1056,6 +1072,22 @@ const de: Messages = {
     animated: 'Animiert',
     dragHint: 'Zum Drehen ziehen',
     empty: 'Gerade keine Umhänge zum Anzeigen.',
+  },
+  cosmetics: {
+    title: 'TRS-Kosmetik',
+    lead: 'Umhänge und Kopf-Kosmetik, die du mit dem TRS Launcher tragen kannst. Spieler mit TRS Client sehen sie im Spiel.',
+    capesTitle: 'Umhänge',
+    hatsTitle: 'Hüte & Kopf-Kosmetik',
+    hatsLead: 'Echte 3D-Modelle mit leuchtenden Details und sanfter Animation – im Spiel auf deinem Kopf, für alle mit TRS Client sichtbar.',
+    hatsEmpty: 'Gerade keine Kopf-Kosmetik zum Anzeigen.',
+    howTitle: 'Wie setze ich einen Hut auf?',
+    howText: 'Öffne den TRS Launcher, geh auf Skins → Kopf-Kosmetik und wähle einen aus. Codes löst du dort auch ein.',
+    day: 'Tag',
+    night: 'Nacht',
+    animation: 'Animation',
+    glowing: 'Leuchtet',
+    animated: 'Animiert',
+    choose: '{name} in 3D ansehen',
   },
   faq: {
     title: 'Häufige Fragen',
@@ -1287,10 +1319,10 @@ const es: Messages = {
       title: 'Blog – Noticias y notas de versión | TRS Launcher',
       description: 'Noticias, actualizaciones y entre bastidores del equipo TRS: notas de cada versión del TRS Launcher y del TRS Client, con capturas.',
     },
-    capes: {
-      title: 'Capas de Minecraft – capas TRS gratis y animadas',
+    cosmetics: {
+      title: 'Capas y sombreros de Minecraft – cosméticos TRS gratis',
       description:
-        'Todas las capas TRS para Minecraft: gratis, animadas y en HD, con física de capas. Elige una en el TRS Launcher y enséñasela a tus amigos en el juego.',
+        'Todos los cosméticos TRS para Minecraft: capas gratis, animadas y en HD con física de capas, y sombreros y coronas 3D que brillan. Elígelos en el TRS Launcher.',
     },
     faq: {
       title: 'Preguntas frecuentes – TRS Launcher y TRS Client',
@@ -1342,7 +1374,7 @@ const es: Messages = {
       'Windows y Linux',
     ],
   },
-  nav: { home: 'Inicio', features: 'Funciones', download: 'Descargar', blog: 'Blog', capes: 'Capas', faq: 'FAQ', team: 'Equipo', admin: 'Admin', menu: 'Menú', docs: 'Documentación' },
+  nav: { home: 'Inicio', features: 'Funciones', download: 'Descargar', blog: 'Blog', cosmetics: 'Cosméticos', faq: 'FAQ', team: 'Equipo', admin: 'Admin', menu: 'Menú', docs: 'Documentación' },
   common: { loading: 'Cargando …', error: 'Ahora no se puede cargar. Inténtalo más tarde.', copy: 'Copiar', copied: 'Copiado', close: 'Cerrar', version: 'Versión {version}', new: 'Nuevo' },
   footer: {
     tagline: 'TRS Launcher – el Redstone Launcher de TheRedstonee. Un launcher de Minecraft gratis, de código abierto bajo GPL-3.0.',
@@ -1508,7 +1540,7 @@ const es: Messages = {
         points: ['Capas TRS gratis para todos los que usan el TRS Launcher', 'Capas animadas y en HD', 'Sube tu propia capa: el equipo la revisa antes de que otros la vean'],
         img: 'cape-physics.png',
         alt: 'Una capa TRS con física de capas en el TRS Client',
-        link: { to: '/capes', label: 'Ver todas las capas' },
+        link: { to: '/cosmetics', label: 'Ver todas las capas' },
       },
       {
         id: 'mods',
@@ -1660,6 +1692,22 @@ const es: Messages = {
     animated: 'Animada',
     dragHint: 'Arrastra para girar',
     empty: 'Ahora no hay capas para mostrar.',
+  },
+  cosmetics: {
+    title: 'Cosméticos TRS',
+    lead: 'Capas y cosméticos para la cabeza que puedes llevar con el TRS Launcher. Los jugadores con TRS Client los ven en el juego.',
+    capesTitle: 'Capas',
+    hatsTitle: 'Sombreros y cosméticos de cabeza',
+    hatsLead: 'Modelos 3D de verdad con detalles que brillan y una animación suave – en tu cabeza en el juego, visibles para todos con TRS Client.',
+    hatsEmpty: 'Ahora no hay cosméticos de cabeza para mostrar.',
+    howTitle: '¿Cómo me pongo un sombrero?',
+    howText: 'Abre el TRS Launcher, ve a Skins → Cosméticos de cabeza y elige uno. Allí también canjeas códigos.',
+    day: 'Día',
+    night: 'Noche',
+    animation: 'Animación',
+    glowing: 'Brilla',
+    animated: 'Animado',
+    choose: 'Ver {name} en 3D',
   },
   admin: {
     title: 'Admin',

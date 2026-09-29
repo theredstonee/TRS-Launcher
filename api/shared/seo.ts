@@ -47,7 +47,7 @@ export const SITE_PAGES: readonly { path: string, priority: number }[] = [
   { path: '/modpacks', priority: 0.8 },
   { path: '/fps-boost-pvp-client', priority: 0.8 },
   { path: '/blog', priority: 0.7 },
-  { path: '/capes', priority: 0.7 },
+  { path: '/cosmetics', priority: 0.7 },
   { path: '/circuits', priority: 0.7 },
   { path: '/issues', priority: 0.6 },
   { path: '/roadmap', priority: 0.6 },
@@ -55,6 +55,9 @@ export const SITE_PAGES: readonly { path: string, priority: number }[] = [
   { path: '/team', priority: 0.5 },
   { path: '/privacy', priority: 0.3 },
 ]
+
+/** Umgezogene Seiten (alte Adresse → neue), 301 mit unveränderter Abfrage. `/capes` heißt seit Kosmetik v2 `/cosmetics`. */
+export const MOVED_PAGES: Readonly<Record<string, string>> = { '/capes': '/cosmetics' }
 
 export function isSeoLang(v: unknown): v is SeoLang {
   return v === 'en' || v === 'de' || v === 'es'
@@ -476,6 +479,9 @@ export function buildRobots(siteUrl: string): string {
     'Allow: /docs/llms-full.txt',
     'Allow: /v1/site/',
     'Allow: /v1/capes/*.png',
+    // Kosmetik-Seite: Karten, Texturen und Modelle der 3D-Vorschau (öffentlich, zum Rendern der Seite)
+    'Allow: /v1/cosmetics/*.png',
+    'Allow: /v1/cosmetics/*/model.json',
     'Disallow: /v1/',
     'Disallow: /admin',
     'Disallow: /auth/',

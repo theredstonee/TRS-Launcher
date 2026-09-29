@@ -251,6 +251,8 @@ export interface PublicHat extends CosmeticV2Fields {
   unlock: 'free' | 'code' | 'admin'
   /** Grundtextur – relativ zur Website (gleiche Herkunft, CSP `img-src 'self'`). */
   texture: string
+  /** Hat das Modell Knochen-Animationen (Treiber idle)? */
+  animated: boolean
 }
 
 /**
@@ -276,6 +278,7 @@ export function publicHats(ctx: AppContext): PublicHat[] {
       unlock: r.unlock,
       achievement: byReward.get(r.id) ?? null,
       texture: `/v1/cosmetics/${r.id}.png?v=${f.hash}`,
+      animated: (a.model.animations ?? []).some((x) => (x.driver ?? 'idle') === 'idle'),
       ...f,
     })
   }

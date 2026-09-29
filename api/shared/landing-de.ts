@@ -327,7 +327,7 @@ export const landingDe: LandingTexts = {
             'Öffne das Emote-Rad und winke, tanze oder juble – andere TRS-Spieler sehen es. TRS-Umhänge schwingen mit Umhang-Physik wie Stoff; viele sind kostenlos, manche animiert oder in HD. Nach F2 kannst du deinen Screenshot in einer kleinen Vorschau bearbeiten, kopieren oder verschicken, und der Screenshot-Editor schneidet zu, zeichnet Pfeile und Text und verpixelt Namen. Jede Welt und jeder Server bekommt außerdem ein eigenes Notizbuch mit Checklisten und anklickbaren Koordinaten.',
           ],
           shot: { file: '0.5.0/emote-wheel.png', alt: 'Das Emote-Rad des TRS Client in Minecraft', caption: 'Das Emote-Rad' },
-          link: { to: '/capes', label: 'Alle TRS-Umhänge ansehen' },
+          link: { to: '/cosmetics', label: 'Alle TRS-Umhänge ansehen' },
         },
       ],
       faq: [

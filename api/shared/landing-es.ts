@@ -327,7 +327,7 @@ export const landingEs: LandingTexts = {
             'Abre la rueda de emotes y saluda, baila o celebra: los demás jugadores de TRS lo ven. Las capas TRS se mueven como tela con la física de capas; muchas son gratis y algunas están animadas o en HD. Tras F2, una pequeña vista previa te deja editar, copiar o enviar tu captura, y el editor de capturas recorta, dibuja flechas y texto y pixela nombres. Cada mundo y servidor tiene además su propio cuaderno con listas de tareas y coordenadas en las que puedes hacer clic.',
           ],
           shot: { file: '0.5.0/emote-wheel.png', alt: 'La rueda de emotes del TRS Client en Minecraft', caption: 'La rueda de emotes' },
-          link: { to: '/capes', label: 'Ver todas las capas TRS' },
+          link: { to: '/cosmetics', label: 'Ver todas las capas TRS' },
         },
       ],
       faq: [

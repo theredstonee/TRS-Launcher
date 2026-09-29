@@ -223,7 +223,8 @@ describe('format v2: HTTP routes', () => {
   async function serve(env: TestEnv) {
     const app = createApp({
       onError: async (error, event) => {
-        const api = isApiError(error) ? error : isApiError((error as { cause?: unknown }).cause) ? (error as { cause: never }).cause : null
+        const cause: unknown = (error as { cause?: unknown }).cause
+        const api = isApiError(error) ? error : isApiError(cause) ? cause : null
         setResponseStatus(event, (api as { status?: number } | null)?.status ?? 500)
         await send(event, JSON.stringify({ error: { code: (api as { code?: string } | null)?.code ?? 'internal_error' } }), 'application/json')
       },

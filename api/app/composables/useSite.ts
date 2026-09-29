@@ -72,6 +72,11 @@ export function useCapes() {
   return useApiFetch<{ capes: SiteCape[] }>('/v1/site/capes', { key: 'capes', default: () => ({ capes: [] }) })
 }
 
+/** Kopf-Kosmetik im Format v2 (Hüte, Kronen, Heiligenschein) – ohne versteckte Teile. */
+export function useHats() {
+  return useApiFetch<{ hats: SiteHat[] }>('/v1/site/cosmetics', { key: 'hats', default: () => ({ hats: [] }) })
+}
+
 export function assetFor(release: LatestRelease | null | undefined, platform: Platform): ReleaseAsset | null {
   return release?.assets.find((a) => a.platform === platform) ?? null
 }

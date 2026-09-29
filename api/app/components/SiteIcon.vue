@@ -4,6 +4,8 @@ defineProps<{ name: string }>()
 
 const PATHS: Record<string, string> = {
   blocks: 'M4 8l8-4 8 4-8 4-8-4zM4 8v8l8 4V12M20 8v8l-8 4',
+  sun: 'M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8zM12 2v2.5M12 19.5V22M4.2 4.2 6 6M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8 6 18M18 6l1.8-1.8',
+  moon: 'M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z',
   client: 'M4 5h16v11H4zM9 20h6M12 16v4M8 9h3M8 12h6',
   search: 'M11 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14zM16.5 16.5 20 20',
   bolt: 'M13 3 5 13h6l-1 8 8-10h-6l1-8z',

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { defineEventHandler, getCookie, getHeader, getRequestHost, sendRedirect, setResponseHeader, setResponseHeaders } from 'h3'
 import { docsHome, isDocsPath, isDocsRoot, pickDocsLang } from '../../shared/docs'
+import { MOVED_PAGES } from '../../shared/seo'
 import { useCtx, whenReady } from '../lib/context'
 import { forbidden } from '../lib/errors'
 import { CORS_ALLOWED_HEADERS, CORS_ALLOWED_METHODS, CORS_EXPOSED_HEADERS, SECURITY_HEADERS, isApiPath } from '../lib/headers'
@@ -33,6 +34,9 @@ export default defineEventHandler(async (event) => {
       return sendRedirect(event, `${ctx.config.siteUrl}${event.path}`, 301)
     }
     const pathname = event.path.split('?')[0]!
+    // Umgezogene Seiten: dauerhaft weiterleiten, Abfrage (z. B. `?lang=de`) bleibt erhalten.
+    const moved = MOVED_PAGES[pathname.replace(/(?<=.)\/$/, '')]
+    if (moved) return sendRedirect(event, `${moved}${event.path.slice(pathname.length)}`, 301)
     // Dokumentation (/docs): vorhandene Dateien liefert der Static-Handler schon vor dieser Middleware aus (Header dafür:
     // Route-Regeln aus modules/docs.ts). Hier landen nur /docs selbst (Sprachwahl) und fehlende Dateien (→ 404-Seite).
     if (isDocsPath(pathname)) {
