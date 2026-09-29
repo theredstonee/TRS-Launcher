@@ -380,7 +380,8 @@ public final class WardrobeUi extends UiScreen {
 			grid(c, s, gx, by, gw, bh, mx, my);
 			preview(c, s, gx + gw + GAP, by, prevW, bh, mx, my, dt);
 		}
-		drawToast(c, px, py + ph - 20, pw);
+		// Hinweise oben unter der Kopfleiste – unten lägen sie auf den Knöpfen (Aufsetzen/Absetzen, Speichern …).
+		drawToast(c, px, py + HEADER_H + 2, pw);
 		if (editing) editorView.drawOverlay(c);
 		if (addMenu) addMenu(c, mouseX, mouseY);
 		if (input != Input.NONE) inputDialog(c, width, height, mouseX, mouseY);
