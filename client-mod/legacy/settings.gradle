@@ -31,10 +31,20 @@ plugins {
 rootProject.name = 'trsclient-legacy'
 
 // Neue Version: hier eintragen + versions/<version>/gradle.properties anlegen.
+def legacyVersions = ['1.8.9', '1.9', '1.9.4', '1.10.2', '1.11.2', '1.12.2']
+// Version, in deren Zustand src/ eingecheckt ist.
+def legacyVcsVersion = '1.8.9'
+// Nur einzelne Versionen einrichten (CI: -PtrsVersions=1.12.2); die eingecheckte Version bleibt immer dabei.
+def onlyVersions = providers.gradleProperty('trsVersions').orNull
+if (onlyVersions) {
+	def wanted = onlyVersions.split(',')*.trim().findAll { it }
+	def unknown = wanted - legacyVersions
+	if (unknown) throw new GradleException("trsVersions: unknown version(s) ${unknown}, known: ${legacyVersions}")
+	legacyVersions = legacyVersions.findAll { it == legacyVcsVersion || it in wanted }
+}
 stonecutter {
 	create(rootProject) {
-		versions '1.8.9', '1.9', '1.9.4', '1.10.2', '1.11.2', '1.12.2'
-		// Version, in deren Zustand src/ eingecheckt ist.
-		vcsVersion = '1.8.9'
+		versions(*legacyVersions)
+		vcsVersion = legacyVcsVersion
 	}
 }

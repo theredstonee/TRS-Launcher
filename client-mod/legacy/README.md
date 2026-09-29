@@ -61,6 +61,7 @@ Standalone Gradle build (own wrapper, not part of `../settings.gradle`): Gradle 
 ```sh
 ./gradlew collectLauncherJars --parallel --build-cache   # all jars + unit tests → ../dist/*.jar + ../dist/builds-legacy.json
 ./gradlew :1.12.2:build                                  # one version
+./gradlew -PtrsVersions=1.12.2 :1.12.2:compileJava       # set up only this version (+ 1.8.9) – fast, used by the CI
 ./gradlew :1.12.2:runClient -PtrsAutotest                # self-test (game dir ../run/forge-<mc>), screenshots, quits
 ./gradlew "Set active project to 1.12.2"                 # edit another version in the IDE (switch back to 1.8.9 before committing)
 ```

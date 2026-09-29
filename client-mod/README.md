@@ -516,6 +516,7 @@ Requires a JDK 21+ to run Gradle (Gradle toolchains download JDK 17/21/25 for co
 ./gradlew build                      # builds every version + runs the unit tests of common/
 ./gradlew collectLauncherJars        # builds everything, writes dist/*.jar + dist/builds.json for the launcher
 ./gradlew :fabric:1.21.1:build       # a single version
+./gradlew -PtrsVersions=1.21.11 :fabric:1.21.11:compileJava   # set up only these versions (+ 1.21.1) – fast, used by the CI
 ./gradlew :fabric:1.21.1:runClient   # starts that Minecraft version with the mod (game dir: client-mod/run)
 ./gradlew :fabric:26.3:runClient -PtrsAutotest   # self-test: menu, test world, screenshots, quits
 ./gradlew :fabric:1.21.11:runProdClient -PtrsAutotest -PtrsAutotestOnly=comfort   # same, but like a player's instance
