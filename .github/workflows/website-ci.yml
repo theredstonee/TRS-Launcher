@@ -1,0 +1,156 @@
+name: Website CI
+
+# Prüfungen für den website-Branch (Website/API in api/, Doku in docs-site/).
+# Pflicht-Check fürs Ruleset: nur `website-ok` – der sammelt alle Jobs ein (übersprungen zählt als bestanden).
+#
+# Sicherheit: `pull_request` (nicht `_target`) – Code aus Forks läuft ohne Secrets und nur mit Lese-Token.
+# Nichts braucht echte Daten: DATA_DIR ist ein leeres Temp-Verzeichnis, SECRET_KEY wird je Lauf zufällig erzeugt.
+on:
+  pull_request:
+    branches: [website]
+  push:
+    branches: [website]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: website-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      docs: ${{ steps.filter.outputs.docs }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Beim Push immer; beim PR nur, wenn sich docs-site/ (oder dieser Workflow) geändert hat.
+      - id: filter
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "docs=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed=$(git diff --name-only "$BASE_SHA...$HEAD_SHA" -- docs-site .github/workflows/website-ci.yml)
+          if [ -n "$changed" ]; then
+            printf 'Doku betroffen:\n%s\n' "$changed"
+            echo "docs=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "docs-site/ unverändert – Doku-Build wird übersprungen."
+            echo "docs=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  api:
+    name: api
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: api
+    env:
+      # Doku baut der Job `docs` separat.
+      TRS_DOCS_BUILD: skip
+      NUXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: api/package.json
+
+      - uses: actions/setup-node@v7
+        with:
+          # api/package.json: engines.node >= 24.11
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: api/pnpm-lock.yaml
+
+      - name: Test environment (temp data, random secret)
+        run: |
+          data="$RUNNER_TEMP/trs-data"
+          mkdir -p "$data"
+          secret=$(openssl rand -hex 32)
+          echo "::add-mask::$secret"
+          {
+            echo "DATA_DIR=$data"
+            echo "SECRET_KEY=$secret"
+          } >> "$GITHUB_ENV"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Tests
+        run: npx vitest run
+
+      - name: Typecheck
+        run: npx nuxt typecheck
+
+      # Falle: Vite/oxc sucht beim Build auch die tsconfig der Repo-Wurzel, die auf ../.nuxt/tsconfig.*.json der
+      # Launcher-App zeigt. Ohne `nuxt prepare` in der Wurzel fehlen die – leere Platzhalter anlegen (wie docs-site).
+      - name: Placeholder tsconfigs of the launcher app
+        run: node ../docs-site/scripts/ensure-parent-tsconfig.mjs
+
+      - name: Build
+        run: npx nuxt build
+
+  docs:
+    name: docs
+    needs: changes
+    if: needs.changes.outputs.docs == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: docs-site
+    env:
+      NUXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Volle Historie: lastmod der Seiten kommt aus `git log` (scripts/finalize.mjs).
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          # docs-site/package.json: engines.node >= 24.11
+          node-version: 24
+          cache: npm
+          cache-dependency-path: docs-site/package-lock.json
+
+      - run: npm ci --no-audit --no-fund
+
+      # Warnungen (z. B. fehlende Bilder) sind ok, Fehler brechen ab.
+      - name: Generate
+        run: npm run generate
+
+  website-ok:
+    name: website-ok
+    if: always()
+    needs: [changes, api, docs]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: All jobs passed or were skipped
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Ergebnisse: $RESULTS"
+          for r in $RESULTS; do
+            case "$r" in
+              success|skipped) ;;
+              *) echo "::error::Mindestens ein Job ist nicht grün ($r)."; exit 1 ;;
+            esac
+          done

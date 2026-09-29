@@ -1456,10 +1456,19 @@ Public, cached for 5 minutes (`Cache-Control: public, max-age=300`). Used by the
 |---|---|
 | `GET /v1/site/releases` | `{ release: { version, tag, publishedAt, pageUrl, assets: [{ platform: "windows"|"appimage"|"deb"|"rpm", name, url, size }] } | null }`. The newest `v*` GitHub release (not drafts, not the `updater`/`client-mod` channels). Only GitHub download URLs of this repository. |
 | `GET /v1/site/blog` | `{ posts: [{ version, date, title: { en, de } | null, headlines: { en: [], de: [] }, banner: { accent, motif } | null, gallery: { en: PostShot[], de: PostShot[] } }] }` from `CHANGELOG.md` on `main`, newest first, released versions only. A PostShot is `{ src, caption }` (caption in that language or `""`); `src` points to `raw.githubusercontent.com`. The gallery comes from the `shots:` comment below the banner line, plus older `![…](/news/…)` lines in the text; at most 8. |
-| `GET /v1/site/blog/{version}` | `{ post: … + markdown: { en, de } }` (the text without image lines), or `404 not_found`. |
+| `GET /v1/site/blog/{version}` | `{ post: … + markdown: { en, de }, contributors: string[] }` (the text without image lines and without a thanks section), or `404 not_found`. `contributors` are GitHub logins (without `@`) of the people thanked in the release, see below; `[]` if there are none. |
 | `GET /v1/site/capes` | `{ capes: [{ id, name, unlock, url, scale, frames, frameTimeMs }] }`. Approved built-in capes only; `url` is relative (`/v1/capes/<id>.png?v=…`). |
 
 If GitHub is unreachable, the last good answer is kept. Without one, `release` is `null` and `posts` is empty.
+
+**Contributors (`contributors`).** Read from the text of the GitHub release `v{version}` (the same cached request as
+`/v1/site/releases`, last 30 releases, drafts ignored): preferably from the machine-readable comment
+`<!-- contributors: login1,login2 -->`, otherwise from the `@login` mentions in the section whose heading is
+`Thanks to`, `Danke an` or `Gracias a` (any level, e.g. `## Thanks to / Danke an`). A thanks section inside the
+changelog text of that version counts too (it is removed from `markdown`). Every login must match
+`^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$`; anything else is dropped. Duplicates (case-insensitive) are removed, the order is
+kept, at most 100 names. If GitHub is unreachable, the post is still returned with the contributors from the changelog
+only (usually `[]`). The website links each name to `https://github.com/{login}` (no avatars – the CSP stays as it is).
 
 ---
 

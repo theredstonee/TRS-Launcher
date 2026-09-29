@@ -2,10 +2,14 @@ name: CI
 
 # Tests und Lints laufen getrennt vom Release-Build – so muss der Release
 # nicht zweimal kompilieren (Debug für Tests + Release für den Installer).
+#
+# Auf dem website-Branch nur für PRs nach main: PRs nach website prüft website-ci.yml
+# (der Launcher-Build mit Rust wäre dort nur langsam und ohne Aussage).
 on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
 
 jobs:
   check:
