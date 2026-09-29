@@ -1,0 +1,57 @@
+{
+  "status": "ahead",
+  "total_commits": 9,
+  "commits": [
+    {
+      "sha": "a1",
+      "author": { "login": "theredstonee", "type": "User" },
+      "commit": { "author": { "name": "theredstonee", "email": "193012863+theredstonee@users.noreply.github.com" }, "message": "Release prep" }
+    },
+    {
+      "sha": "a2",
+      "author": { "login": "Zoe-Builds", "type": "User" },
+      "commit": {
+        "author": { "name": "Zoe", "email": "zoe@example.org" },
+        "message": "Add log search (#12)\n\nCo-authored-by: Max <4242+max-mustermann@users.noreply.github.com>\nCo-authored-by: Helper <helper@example.com>"
+      }
+    },
+    {
+      "sha": "a3",
+      "author": null,
+      "commit": { "author": { "name": "Alex", "email": "1234+alex-dev@users.noreply.github.com" }, "message": "Fix typo in the Spanish texts" }
+    },
+    {
+      "sha": "a4",
+      "author": null,
+      "commit": { "author": { "name": "Somebody", "email": "somebody@example.com" }, "message": "Unlinked address – no GitHub name" }
+    },
+    {
+      "sha": "a5",
+      "author": { "login": "dependabot[bot]", "type": "Bot" },
+      "commit": { "author": { "name": "dependabot[bot]", "email": "49699333+dependabot[bot]@users.noreply.github.com" }, "message": "Bump vitest (#13)" }
+    },
+    {
+      "sha": "a6",
+      "author": { "login": "github-actions[bot]", "type": "Bot" },
+      "commit": { "author": { "name": "github-actions[bot]", "email": "41898282+github-actions[bot]@users.noreply.github.com" }, "message": "Update channel" }
+    },
+    {
+      "sha": "a7",
+      "author": { "login": "theredstonee", "type": "User" },
+      "commit": {
+        "author": { "name": "theredstonee", "email": "193012863+theredstonee@users.noreply.github.com" },
+        "message": "Polish the news dialog\n\nCo-authored-by: Zoe <zoe@example.org>\nCo-authored-by: Robin <robin@example.net>"
+      }
+    },
+    {
+      "sha": "a8",
+      "author": { "login": "zoe-builds", "type": "User" },
+      "commit": { "author": { "name": "Zoe", "email": "zoe@example.org" }, "message": "Merge pull request #14 from zoe-builds/fix\n\nFix crash" }
+    },
+    {
+      "sha": "a9",
+      "author": { "login": "renovate[bot]", "type": "Bot" },
+      "commit": { "author": { "name": "renovate", "email": "bot@renovateapp.com" }, "message": "Refers to issue (#99)" }
+    }
+  ]
+}

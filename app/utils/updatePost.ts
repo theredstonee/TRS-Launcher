@@ -26,6 +26,20 @@ export function postTitle(entry: Pick<ChangelogEntry, 'title'>, locale: string):
   return entry.title ? entry.title[postLang(locale)] : null
 }
 
+/**
+ * Die Mitwirkenden eines Updates als Aufzählung in der Sprache des Lesers („alice, bob und carl“) – nur die Namen,
+ * ohne „@“ und ohne Link; ohne Mitwirkende `null` (dann zeigt der Beitrag keine Dank-Zeile).
+ */
+export function contributorNames(entry: Pick<ChangelogEntry, 'contributors'>, locale: string): string | null {
+  const names = entry.contributors ?? []
+  if (!names.length) return null
+  try {
+    return new Intl.ListFormat(locale, { style: 'long', type: 'conjunction' }).format(names)
+  } catch {
+    return names.join(', ')
+  }
+}
+
 /** Nächstes/vorheriges Bild einer Galerie mit `length` Bildern – am Ende geht es vorn weiter. */
 export function stepShot(index: number, delta: number, length: number): number {
   if (length <= 0) return 0

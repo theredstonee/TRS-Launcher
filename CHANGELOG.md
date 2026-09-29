@@ -19,6 +19,13 @@ How to write an entry:
   German one the English caption is used for both). PNG or WebP in public/news/<version>/, at most 8, each at most
   2 MB and 640×360 to 3840×2400 px. From 0.6.5 on every release needs at least one screenshot; the release check
   (scripts/changelog.mjs check) fails otherwise. How to take them: docs/release-screenshots.md.
+- Pull requests: the CI check "changelog" wants at least one new point under "## Unreleased" in English AND German.
+  Changes players don't notice (CI, refactoring, docs) get the label "no-changelog" instead.
+- Contributors: the release build adds an HTML comment starting with "contributors:" to the section of its version
+  (GitHub names of everyone who contributed since the previous release, see scripts/contributors.mjs). The launcher
+  thanks them in "What's new", the GitHub release in "Thanks to / Danke an". Don't write it by hand; to keep the
+  thanks in later launcher versions, commit it after the release with
+  "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
 ## Unreleased
@@ -31,6 +38,8 @@ How to write an entry:
   hint on Linux. Other launcher languages open the English docs.
 - **TRS Client:** the TRS menu has a new **Help** entry that opens the TRS Client guide in your browser, in the
   language of the client.
+- **Thank you, contributors.** "What's new" now names everyone who helped with an update on GitHub – with code, fixes
+  or translations.
 
 ### Deutsch
 - **Hilfe & Docs.** Die neue Dokumentation auf der Website (auf Englisch, Deutsch und Spanisch) ersetzt das alte
@@ -40,6 +49,8 @@ How to write an entry:
   Linux-Anleitung beim Hinweis zu den gespeicherten Anmeldedaten. Andere Launcher-Sprachen öffnen die englischen Docs.
 - **TRS Client:** Im TRS-Menü gibt es den neuen Eintrag **Hilfe** – er öffnet die Anleitung zum TRS Client im
   Browser, in der Sprache des Clients.
+- **Danke an alle, die mitmachen.** „Was ist neu“ nennt jetzt alle, die auf GitHub an einem Update mitgearbeitet
+  haben – mit Code, Fehlerbehebungen oder Übersetzungen.
 
 ## 0.14.0 – 2026-09-28 – Achievement Unlocked | Erfolg freigeschaltet
 <!-- banner: accent=#ffc53d motif=/news/0.14.0/banner.png -->

@@ -13,15 +13,54 @@ on:
         description: "Vorhandenes Tag, z. B. v0.1.0"
         required: true
 
+# Nur der Job „publish“ darf schreiben.
 permissions:
-  contents: write
+  contents: read
 
 env:
   TAG: ${{ inputs.tag || github.ref_name }}
 
 jobs:
+  # Mitwirkende seit dem vorherigen Release-Tag (GitHub-Namen, ohne Maintainer und Bots) – für den Dank im
+  # GitHub-Release und im „Was ist neu“-Dialog. Schlägt die GitHub-API fehl, geht der Release ohne Dank weiter.
+  contributors:
+    name: Contributors
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      list: ${{ steps.list.outputs.list }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+          # Alle Tags, um das vorherige Release zu finden.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Contributors since the previous release
+        id: list
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          # Ausgabe „a,b,c“ – nur gültige GitHub-Namen, daher sicher für GITHUB_OUTPUT.
+          if list=$(node scripts/contributors.mjs --tag "$TAG" --repo "$GITHUB_REPOSITORY"); then
+            echo "Contributors: ${list:-(none)}"
+          else
+            echo "::warning::Could not determine the contributors – this release has no thanks section."
+            list=""
+          fi
+          echo "list=$list" >> "$GITHUB_OUTPUT"
+
   build:
     name: Windows
+    needs: contributors
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,6 +83,14 @@ jobs:
           cache-on-failure: true
 
       - run: pnpm install --frozen-lockfile
+
+      # Mitwirkende als Zeile „<!-- contributors: a,b -->“ in den Abschnitt der Version – der Launcher bringt
+      # CHANGELOG.md mit und zeigt den Dank im „Was ist neu“-Dialog; die Release-Hinweise bekommen „Thanks to“.
+      - name: Contributors into CHANGELOG.md
+        shell: bash
+        env:
+          CONTRIBUTORS: ${{ needs.contributors.outputs.list }}
+        run: node --experimental-strip-types scripts/changelog.mjs set-contributors "${TAG#v}" "$CONTRIBUTORS"
 
       # Ohne Changelog-Eintrag (Englisch + Deutsch) für diese Version kein Release –
       # vor dem langen Build prüfen. Der Text landet im Release und im Auto-Update.
@@ -86,6 +133,7 @@ jobs:
 
   linux:
     name: Linux
+    needs: contributors
     # Ältestes unterstütztes Ubuntu-LTS: das glibc hier ist die Untergrenze für
     # AppImage, .deb und .rpm (neuere Distributionen laufen damit alle).
     runs-on: ubuntu-22.04
@@ -116,6 +164,11 @@ jobs:
           cache-on-failure: true
 
       - run: pnpm install --frozen-lockfile
+
+      - name: Contributors into CHANGELOG.md
+        env:
+          CONTRIBUTORS: ${{ needs.contributors.outputs.list }}
+        run: node --experimental-strip-types scripts/changelog.mjs set-contributors "${TAG#v}" "$CONTRIBUTORS"
 
       # Gleiche Prüfung wie unter Windows – ohne Eintrag bricht der Release früh ab.
       - name: Release notes from CHANGELOG.md
@@ -171,6 +224,8 @@ jobs:
     name: Publish
     needs: [build, linux]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:

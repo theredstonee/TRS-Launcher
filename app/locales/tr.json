@@ -3621,7 +3621,8 @@
     "closeImage": "Görseli kapat",
     "imageOf": "Görsel {n} / {total}",
     "versions": "Sürümler",
-    "more": "{n} görsel daha"
+    "more": "{n} görsel daha",
+    "thanks": "Bu güncellemeye katkıları için teşekkürler: {names}."
   },
   "clips": {
     "title": "Klipler",

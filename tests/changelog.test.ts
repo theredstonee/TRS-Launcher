@@ -7,14 +7,18 @@ import {
   changelogFor,
   changesSince,
   compareVersions,
+  contributorsComment,
   parseBanner,
   parseChangelog,
+  parseContributors,
   parseShot,
   postContent,
   releaseNotes,
+  setContributors,
   splitPost,
   versionSeed,
 } from '../app/utils/changelog'
+import { checkPrChangelog, listPoints, newUnreleasedPoints } from '../scripts/changelog-pr.mjs'
 import { checkShots, imageInfo } from '../scripts/news-shots.mjs'
 
 const root = path.resolve(__dirname, '..')
@@ -298,5 +302,94 @@ describe('Changelog', () => {
     } finally {
       rmSync(dir, { recursive: true, force: true })
     }
+  })
+
+  it('liest Mitwirkende und dankt ihnen am Ende der Release-Hinweise', () => {
+    const [a, b] = parseChangelog(
+      [
+        '## 0.15.0 – 2026-10-01 – Together | Zusammen',
+        '<!-- banner: accent=#ff7ab8 motif=/news/0.15.0/banner.png -->',
+        '<!-- contributors: zoe-builds, @Alex,alex,-bad,x-->,,max -->',
+        '### English',
+        '- A',
+        '### Deutsch',
+        '- A',
+        '## 0.14.0 – 2026-09-28',
+        '### English',
+        '- B',
+        '### Deutsch',
+        '- B',
+      ].join('\n'),
+    )
+    expect(a!.contributors).toEqual(['zoe-builds', 'Alex', 'max'])
+    expect(a!.en).toBe('- A')
+    expect(b!.contributors).toEqual([])
+    const notes = releaseNotes(a!)
+    expect(notes.endsWith('- A\n\n## Thanks to / Danke an\n\n@zoe-builds, @Alex, @max\n\n<!-- contributors: zoe-builds,Alex,max -->\n')).toBe(true)
+    // Ohne Mitwirkende: kein Abschnitt, der Text bleibt wie bisher.
+    expect(releaseNotes(b!)).not.toContain('Thanks')
+    expect(releaseNotes(b!).endsWith('- B\n')).toBe(true)
+    expect(parseContributors('a b,c')).toEqual(['a', 'b', 'c'])
+    expect(contributorsComment(['b', 'a', 'B'])).toBe('<!-- contributors: b,a -->')
+  })
+
+  it('schreibt die Mitwirkenden in den Abschnitt einer Version', () => {
+    const text = ['# Changelog', '', '## Unreleased', '### English', '- U', '', '## 0.15.0 – 2026-10-01', '<!-- banner: accent=#ff7ab8 motif=/news/0.15.0/banner.png -->', '', '### English', '- A', '### Deutsch', '- A', '', '## 0.14.0 – 2026-09-28', '### English', '- B'].join('\n')
+    const once = setContributors(text, 'v0.15.0', ['zoe', 'max'])
+    expect(once).toContain('<!-- banner: accent=#ff7ab8 motif=/news/0.15.0/banner.png -->\n\n<!-- contributors: zoe,max -->\n### English\n- A')
+    // Nochmal: ersetzt statt doppelt.
+    const twice = setContributors(once, '0.15.0', ['zoe', 'robin'])
+    expect(twice.match(/contributors:/g)).toHaveLength(1)
+    expect(changelogFor(parseChangelog(twice), '0.15.0')!.contributors).toEqual(['zoe', 'robin'])
+    expect(changelogFor(parseChangelog(twice), '0.14.0')!.contributors).toEqual([])
+    expect(parseChangelog(twice)[0]!.contributors).toEqual([])
+    // Leere Liste (API nicht erreichbar): nichts ändern, eine vorhandene Zeile bleibt.
+    expect(setContributors(once, '0.15.0', [])).toBe(once)
+    expect(setContributors(once, '0.15.0', ['-->'])).toBe(once)
+    // Ohne „### English“ direkt unter die Überschrift; Windows-Zeilenenden bleiben erhalten.
+    expect(setContributors('## 1.0.0 – 2026-01-01\r\n- x\r\n', '1.0.0', ['a'])).toBe('## 1.0.0 – 2026-01-01\r\n<!-- contributors: a -->\r\n- x\r\n')
+    expect(() => setContributors(text, '9.9.9', ['a'])).toThrow('9.9.9')
+  })
+
+  it('PR-Prüfung: neuer Punkt unter „## Unreleased“ in Englisch und Deutsch', () => {
+    const doc = (en: string[], de: string[]) =>
+      [
+        '# Changelog',
+        '<!--',
+        '## Unreleased (nur im Kommentar – zählt nicht)',
+        '-->',
+        '',
+        '## Unreleased',
+        '',
+        '### English',
+        ...en,
+        '',
+        '### Deutsch',
+        ...de,
+        '',
+        '## 0.14.0 – 2026-09-28',
+        '### English',
+        '- Old',
+        '### Deutsch',
+        '- Alt',
+      ].join('\n')
+    const base = doc(['- **Docs.** New docs', '  in three languages.'], ['- **Docs.** Neue Docs', '  in drei Sprachen.'])
+    expect(listPoints('- a\n  more\n  - nested\n* b\n\ntext\n+ c')).toEqual(['a more - nested', 'b', 'c'])
+    // Nichts geändert → beide Sprachen fehlen.
+    expect(checkPrChangelog(base, base)).toHaveLength(2)
+    // Nur Englisch neu.
+    const onlyEn = doc(['- **Docs.** New docs', '  in three languages.', '- Log search'], ['- **Docs.** Neue Docs', '  in drei Sprachen.'])
+    expect(checkPrChangelog(base, onlyEn)).toEqual(['No new point under "## Unreleased" → "### Deutsch".'])
+    // Beide neu (auch ein geänderter Punkt zählt).
+    const both = doc(['- **Docs.** New docs in four languages.'], ['- **Docs.** Neue Docs', '  in drei Sprachen.', '- Log-Suche'])
+    expect(checkPrChangelog(base, both)).toEqual([])
+    expect(newUnreleasedPoints(base, both)).toEqual({ en: ['**Docs.** New docs in four languages.'], de: ['Log-Suche'] })
+    // Nur umgebrochen → kein neuer Punkt.
+    const rewrapped = doc(['- **Docs.** New docs in three', '  languages.'], ['- **Docs.** Neue Docs in drei Sprachen.'])
+    expect(checkPrChangelog(base, rewrapped)).toHaveLength(2)
+    // Ziel-Branch ohne Unreleased (gerade veröffentlicht) oder ohne Datei: alles zählt als neu.
+    expect(checkPrChangelog('', both)).toEqual([])
+    // Kein Abschnitt „## Unreleased“ im PR.
+    expect(checkPrChangelog(base, '# Changelog\n<!--\n## Unreleased\n-->\n## 0.14.0 – 2026-09-28\n### English\n- a')[0]).toContain('no "## Unreleased" section')
   })
 })

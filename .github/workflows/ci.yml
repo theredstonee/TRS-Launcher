@@ -1,17 +1,74 @@
 name: CI
 
-# Tests und Lints laufen getrennt vom Release-Build – so muss der Release
+# Prüfungen für Pull Requests und main. Tests und Lints laufen getrennt vom Release-Build – so muss der Release
 # nicht zweimal kompilieren (Debug für Tests + Release für den Installer).
+#
+# - „changes“ schaut, welche Teile ein PR ändert; nur deren Jobs laufen (Push auf main: immer alle).
+# - „ci-ok“ fasst alles zusammen und ist der EINE Pflicht-Check im Ruleset von main: grün, wenn jeder Job
+#   erfolgreich war oder übersprungen wurde – so blockieren übersprungene Jobs keinen PR.
+# - Label „no-changelog“ schaltet den Changelog-Check ab; Setzen/Entfernen startet die Prüfung neu. Andere Labels
+#   lösen nur einen leeren Lauf aus (eigene Concurrency-Gruppe, „ci-ok“ heißt dort anders), der nichts abbricht und
+#   den echten „ci-ok“ nicht überschreibt.
+#
+# Sicherheit: pull_request (nicht pull_request_target) – fremder Code läuft ohne Secrets und nur mit Lese-Token.
 on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}${{ (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'no-changelog' && '-label' || '' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  check:
+  changes:
+    # Label-Änderungen außer „no-changelog“ ändern am Ergebnis nichts → alles überspringen.
+    if: ${{ !((github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'no-changelog') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      launcher: ${{ steps.filter.outputs.launcher }}
+      client-mod: ${{ steps.filter.outputs.client-mod }}
+    steps:
+      # PR: Merge-Commit + seine erste Eltern-Revision (= Ziel-Branch) → genau die Änderungen des PRs.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Detect changed parts
+        id: filter
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
+            echo "Push to main: run everything."
+            { echo "launcher=true"; echo "client-mod=true"; } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          files=$(git diff --name-only HEAD^1 HEAD)
+          printf 'Changed files:\n%s\n' "$files"
+          # Änderungen an diesem Workflow prüfen alles.
+          all='^\.github/workflows/ci\.yml$'
+          launcher='^(app/|src-tauri/|public/|scripts/|packaging/|tests/|package\.json$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|nuxt\.config\.ts$|tsconfig\.json$|\.npmrc$)'
+          client='^(client-mod/|data/)'
+          has() { grep -qE "$1" <<<"$files"; }
+          if has "$all" || has "$launcher"; then echo "launcher=true" >> "$GITHUB_OUTPUT"; else echo "launcher=false" >> "$GITHUB_OUTPUT"; fi
+          if has "$all" || has "$client"; then echo "client-mod=true" >> "$GITHUB_OUTPUT"; else echo "client-mod=false" >> "$GITHUB_OUTPUT"; fi
+          cat "$GITHUB_OUTPUT"
+
+  launcher-windows:
+    needs: changes
+    if: needs.changes.outputs.launcher == 'true'
     runs-on: windows-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v4
 
@@ -47,12 +104,16 @@ jobs:
         working-directory: src-tauri
         run: cargo test --workspace
 
-  # Gleiche Prüfungen unter Linux (ubuntu-22.04 = Untergrenze der Release-Builds)
-  # plus die Paket-Hilfsskripte und die Metadaten für AUR/Flatpak.
-  linux:
+  # Gleiche Prüfungen unter Linux plus die Frontend-Tests, die Paket-Hilfsskripte und die Metadaten für AUR/Flatpak.
+  launcher-linux:
+    needs: changes
+    if: needs.changes.outputs.launcher == 'true'
     runs-on: ubuntu-24.04  # aktuelles appstream (kennt <developer>, vcs-browser); Release baut weiter auf 22.04
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: System libraries (WebKitGTK 4.1, GTK 3)
         run: |
@@ -101,3 +162,97 @@ jobs:
           for p in trs-launcher trs-launcher-bin; do
             node scripts/aur.mjs --srcinfo packaging/aur/$p/PKGBUILD | diff - packaging/aur/$p/.SRCINFO
           done
+
+  # TRS Client: Unit-Tests von common + Kompilieren ausgewählter Bäume (älteste, mittlere und neueste Ära).
+  # Nur kompilieren – kein Spielstart, keine Autotests. -PtrsVersions richtet nur die genannten Minecraft-Versionen
+  # ein (plus die eingecheckte Stonecutter-Version), statt alle 39 Fabric- bzw. 6 Legacy-Versionen.
+  client-mod:
+    needs: changes
+    if: needs.changes.outputs.client-mod == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      # Toolchains aus setup-java statt Download (foojay bleibt Rückfall).
+      GRADLE_TOOLCHAINS: -Porg.gradle.java.installations.fromEnv=JAVA_HOME_8_X64,JAVA_HOME_17_X64,JAVA_HOME_21_X64,JAVA_HOME_25_X64
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # 8: Legacy-Forge, 17/21: Fabric bis 1.21.11, 25: Fabric 26.x und Gradle selbst (RetroFuturaGradle braucht 25).
+      # Die zuletzt genannte Version wird JAVA_HOME.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: |
+            8
+            17
+            21
+            25
+
+      # Gradle- und Loom-Cache; PRs lesen nur, main schreibt.
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: common tests + Fabric 1.21.11 and 26.3
+        working-directory: client-mod
+        run: ./gradlew --no-daemon $GRADLE_TOOLCHAINS -PtrsVersions=1.21.11,26.3 :common:test :fabric:1.21.11:compileJava :fabric:26.3:compileJava
+
+      - name: Legacy Forge 1.8.9
+        working-directory: client-mod/legacy
+        run: ./gradlew --no-daemon $GRADLE_TOOLCHAINS -PtrsVersions=1.8.9 :1.8.9:compileJava
+
+      - name: Forge 1.7.10
+        working-directory: client-mod/legacy-1.7.10
+        run: ./gradlew --no-daemon $GRADLE_TOOLCHAINS compileJava
+
+      - name: Test report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-mod-test-report
+          path: client-mod/common/build/reports/tests/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # Nur für PRs: neuer Punkt unter „## Unreleased“ in Englisch UND Deutsch (Logik: scripts/changelog-pr.mjs).
+  changelog:
+    needs: changes
+    if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'no-changelog')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Changelog entry (English + German)
+        run: |
+          set -euo pipefail
+          # HEAD = Merge-Commit des PRs, HEAD^1 = Ziel-Branch.
+          git show HEAD^1:CHANGELOG.md > "$RUNNER_TEMP/base-changelog.md" 2>/dev/null || : > "$RUNNER_TEMP/base-changelog.md"
+          node --experimental-strip-types scripts/changelog.mjs pr "$RUNNER_TEMP/base-changelog.md"
+
+  # Der Pflicht-Check für das Ruleset. Übersprungen (Pfad nicht geändert, Label no-changelog, Push) zählt als ok.
+  ci-ok:
+    name: ${{ ((github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'no-changelog') && 'ci-ok (label change, nothing to do)' || 'ci-ok' }}
+    needs: [changes, launcher-windows, launcher-linux, client-mod, changelog]
+    if: ${{ always() && !((github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'no-changelog') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Results
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: echo "$RESULTS"
+
+      # „changes“ muss gelaufen sein; alle anderen dürfen erfolgreich oder übersprungen sein.
+      - name: Fail if a job failed or was cancelled
+        if: needs.changes.result != 'success' || contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: |
+          echo "::error::At least one CI job failed or was cancelled – see the results above."
+          exit 1

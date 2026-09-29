@@ -22,6 +22,11 @@
 // Einzeilig geht auch, Einträge dann mit „;“ trennen: <!-- shots: /news/0.6.5/a.png | A | A ; /news/0.6.5/b.png -->
 // Ältere Beiträge haben Bilder noch als eigene Zeile „![Bildunterschrift](/news/<version>/<datei>.png)“ im
 // Text – postContent() sammelt beides in einer Galerie.
+//
+// Mitwirkende (GitHub-Namen, ohne „@“) trägt der Release-Build als eigene Zeile in den Abschnitt ein
+// (scripts/contributors.mjs → scripts/changelog.mjs set-contributors); dieselbe Zeile steht am Ende des
+// GitHub-Release-Texts, dort liest die Website sie:
+//   <!-- contributors: alice,bob-builder -->
 
 export interface ChangelogEntry {
   /** z. B. „0.4.4“; der Abschnitt „Unreleased“ hat `null`. */
@@ -37,6 +42,8 @@ export interface ChangelogEntry {
   shots: UpdateShot[]
   /** Einträge im Kommentar „shots:“, die nicht gelesen werden konnten (meldet scripts/changelog.mjs check). */
   shotIssues: string[]
+  /** GitHub-Namen der Mitwirkenden (Kommentar „contributors:“, ohne „@“), sonst leer. */
+  contributors: string[]
 }
 
 export interface UpdateBanner {
@@ -61,6 +68,10 @@ export const SHOTS_REQUIRED_FROM = '0.6.5'
 const BANNER_COMMENT = /^<!-- *banner: *(.*?) *-->$/
 /** Platzhalter für gesicherte Banner-Zeilen, bevor die übrigen Kommentare entfernt werden. */
 const BANNER_MARK = '\u0001banner '
+const CONTRIBUTORS_COMMENT = /^<!-- *contributors: *(.*?) *-->$/
+const CONTRIBUTORS_MARK = '\u0001contributors '
+/** GitHub-Benutzername: 1–39 Zeichen, Buchstaben, Ziffern und Bindestriche, nicht am Anfang. */
+export const GITHUB_LOGIN = /^[A-Za-z0-9][A-Za-z0-9-]{0,38}$/
 /** Kommentar „shots:“ – nur, wenn er am Zeilenanfang beginnt und am Zeilenende schließt. */
 const SHOTS_COMMENT = /^[ \t]*<!--\s*shots:([\s\S]*?)-->[ \t]*$/gm
 const SHOT_MARK = '\u0001shot '
@@ -90,6 +101,27 @@ export function parseShot(raw: string): UpdateShot | null {
   return { src, caption: en || de ? { en: en || de, de: de || en } : null }
 }
 
+/**
+ * „alice, @bob,Alice“ → ["alice", "bob"]: nur gültige GitHub-Namen, ohne „@“, jeder nur einmal (Groß-/Kleinschreibung
+ * egal), in der angegebenen Reihenfolge.
+ */
+export function parseContributors(raw: string): string[] {
+  const out: string[] = []
+  const seen = new Set<string>()
+  for (const part of raw.split(/[\s,]+/)) {
+    const name = part.replace(/^@/, '')
+    if (!GITHUB_LOGIN.test(name) || seen.has(name.toLowerCase())) continue
+    seen.add(name.toLowerCase())
+    out.push(name)
+  }
+  return out
+}
+
+/** Die maschinenlesbare Zeile für CHANGELOG.md und den GitHub-Release-Text: „<!-- contributors: a,b -->“. */
+export function contributorsComment(names: string[]): string {
+  return `<!-- contributors: ${parseContributors(names.join(',')).join(',')} -->`
+}
+
 const VERSION_HEADING =
   /^## +(?:\[?v?(\d+\.\d+\.\d+(?:-[\w.]+)?)\]?|(Unreleased))(?: +[–-] +(\d{4}-\d{2}-\d{2}))?(?: +[–-] +(.+?))? *$/i
 
@@ -115,7 +147,9 @@ export function parseChangelog(text: string): ChangelogEntry[] {
     .split(/\r?\n/)
     .map((line) => {
       const m = BANNER_COMMENT.exec(line.trim())
-      return m ? BANNER_MARK + m[1] : line
+      if (m) return BANNER_MARK + m[1]
+      const c = CONTRIBUTORS_COMMENT.exec(line.trim())
+      return c ? CONTRIBUTORS_MARK + c[1] : line
     })
     .join('\n')
     .replace(/<!--[\s\S]*?-->/g, '')
@@ -141,6 +175,7 @@ export function parseChangelog(text: string): ChangelogEntry[] {
         banner: null,
         shots: [],
         shotIssues: [],
+        contributors: [],
       }
       lang = null
       continue
@@ -155,6 +190,10 @@ export function parseChangelog(text: string): ChangelogEntry[] {
     if (!current) continue
     if (line.startsWith(BANNER_MARK)) {
       current.banner ??= parseBanner(line.slice(BANNER_MARK.length))
+      continue
+    }
+    if (line.startsWith(CONTRIBUTORS_MARK)) {
+      current.contributors = parseContributors([...current.contributors, line.slice(CONTRIBUTORS_MARK.length)].join(','))
       continue
     }
     if (line.startsWith(SHOT_MARK)) {
@@ -276,13 +315,47 @@ function withShots(markdown: string, entry: Pick<ChangelogEntry, 'shots'>, lang:
   return images.length ? `${markdown}\n\n${images.join('\n\n')}` : markdown
 }
 
-/** Text für GitHub-Release und Auto-Update: Update-Name, dann Englisch, dann Deutsch – jeweils mit Screenshots. */
+/**
+ * Dank an die Mitwirkenden am Ende des GitHub-Release-Texts: „@name“ (GitHub verlinkt sie und zeigt die Avatare),
+ * darunter die maschinenlesbare Zeile für die Website. Ohne Mitwirkende: leer.
+ */
+function thanksSection(entry: Pick<ChangelogEntry, 'contributors'>): string {
+  const names = parseContributors(entry.contributors.join(','))
+  if (!names.length) return ''
+  return `\n## Thanks to / Danke an\n\n${names.map((n) => `@${n}`).join(', ')}\n\n${contributorsComment(names)}\n`
+}
+
+/**
+ * Text für GitHub-Release und Auto-Update: Update-Name, dann Englisch, dann Deutsch – jeweils mit Screenshots –
+ * und zum Schluss der Dank an die Mitwirkenden.
+ */
 export function releaseNotes(entry: ChangelogEntry): string {
   const version = entry.version ?? ''
   const en = githubImages(withShots(entry.en, entry, 'en'), version)
   const de = githubImages(withShots(entry.de, entry, 'de'), version)
-  if (entry.title) return `# ${entry.title.en}\n\n${en}\n\n# ${entry.title.de}\n\n${de}\n`
-  return `## What's new\n\n${en}\n\n## Neu in dieser Version\n\n${de}\n`
+  const thanks = thanksSection(entry)
+  if (entry.title) return `# ${entry.title.en}\n\n${en}\n\n# ${entry.title.de}\n\n${de}\n${thanks}`
+  return `## What's new\n\n${en}\n\n## Neu in dieser Version\n\n${de}\n${thanks}`
+}
+
+/**
+ * Schreibt die Mitwirkenden in den Abschnitt einer Version (vor „### English“, sonst direkt unter die Überschrift)
+ * und ersetzt eine vorhandene Zeile. Ohne gültige Namen bleibt der Text unverändert – so bleibt eine von Hand
+ * eingetragene Zeile stehen, wenn die GitHub-API im Release-Build nicht antwortet. Fehlt der Abschnitt: Fehler.
+ */
+export function setContributors(text: string, version: string, names: string[]): string {
+  const wanted = version.replace(/^v/, '')
+  const lines = text.split(/\r?\n/)
+  const start = lines.findIndex((line) => VERSION_HEADING.exec(line)?.[1] === wanted)
+  if (start < 0) throw new Error(`CHANGELOG.md has no section "## ${wanted}"`)
+  const valid = parseContributors(names.join(','))
+  if (!valid.length) return text
+  let end = lines.findIndex((line, i) => i > start && /^## /.test(line))
+  if (end < 0) end = lines.length
+  const section = lines.slice(start + 1, end).filter((line) => !CONTRIBUTORS_COMMENT.test(line.trim()))
+  const english = section.findIndex((line) => /^### +english *$/i.test(line))
+  section.splice(english < 0 ? 0 : english, 0, contributorsComment(valid))
+  return [...lines.slice(0, start + 1), ...section, ...lines.slice(end)].join(text.includes('\r\n') ? '\r\n' : '\n')
 }
 
 /** Fester Startwert für die Redstone-Szene eines Updates – jede Version sieht anders, aber immer gleich aus. */

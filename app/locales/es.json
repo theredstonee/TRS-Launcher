@@ -3621,7 +3621,8 @@
     "closeImage": "Cerrar imagen",
     "imageOf": "Imagen {n} de {total}",
     "versions": "Versiones",
-    "more": "{n} imágenes más"
+    "more": "{n} imágenes más",
+    "thanks": "Gracias a {names} por contribuir a esta actualización."
   },
   "clips": {
     "title": "Clips",
