@@ -1,0 +1,116 @@
+/*
+ * TRS-Look der Doku – wie die Website (api/app/assets/css/main.css): Deepslate-Grau als Grund,
+ * Redstone-Rot als Primärfarbe, Lampen-Gelb als Akzent, Pixel-Schrift (Pixelify Sans, lokal gebündelt)
+ * für Überschriften. Docus bindet diese Datei nach Tailwind und Nuxt UI ein – hier Tailwind nicht erneut importieren.
+ */
+@theme static {
+  --color-redstone-50: #fff1f0;
+  --color-redstone-100: #ffdfdc;
+  --color-redstone-200: #ffc4bf;
+  --color-redstone-300: #ff8f85;
+  --color-redstone-400: #ff5a4d;
+  --color-redstone-500: #e0281e;
+  --color-redstone-600: #b31a12;
+  --color-redstone-700: #8f150f;
+  --color-redstone-800: #6b110c;
+  --color-redstone-900: #3a0d09;
+  --color-redstone-950: #230705;
+
+  --color-lamp-50: #fff8eb;
+  --color-lamp-100: #ffefcc;
+  --color-lamp-200: #ffe0a3;
+  --color-lamp-300: #ffd48a;
+  --color-lamp-400: #ffb84d;
+  --color-lamp-500: #e0900c;
+  --color-lamp-600: #b06e00;
+  --color-lamp-700: #8a5300;
+  --color-lamp-800: #5c3a06;
+  --color-lamp-900: #3d2a0c;
+  --color-lamp-950: #241805;
+
+  --color-deepslate-50: #f3f3f8;
+  --color-deepslate-100: #e6e6ee;
+  --color-deepslate-200: #c8c8d8;
+  --color-deepslate-300: #a9a9bb;
+  --color-deepslate-400: #8b8ba2;
+  --color-deepslate-500: #6a6a80;
+  --color-deepslate-600: #4a4a5e;
+  --color-deepslate-700: #333343;
+  --color-deepslate-800: #252531;
+  --color-deepslate-900: #17171e;
+  --color-deepslate-950: #111116;
+
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: "Pixelify Sans Variable", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
+}
+
+/* Dunkel = Standard: Grund #111116 wie die Website. */
+.dark {
+  --ui-bg: var(--color-deepslate-950);
+  --ui-bg-muted: var(--color-deepslate-900);
+  --ui-bg-elevated: #1d1d26;
+  --ui-bg-accented: var(--color-deepslate-800);
+  --ui-border: var(--color-deepslate-800);
+  --ui-border-muted: #1d1d26;
+  --ui-border-accented: var(--color-deepslate-700);
+  --ui-text: var(--color-deepslate-200);
+  --ui-text-muted: var(--color-deepslate-400);
+  --ui-text-toned: var(--color-deepslate-300);
+  --ui-text-highlighted: var(--color-deepslate-50);
+}
+
+:root {
+  --ui-radius: 0.5rem;
+  --deepslate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'><path d='M0 7h16v1H0zM0 15h16v1H0zM7 0h1v16H7zM15 0h1v16h-1z' fill-opacity='.28'/><path d='M8 0h7v7H8zM0 8h7v7H0z' fill='%23fff' fill-opacity='.018'/><path d='M4 0h1v1H4zM12 0h1v1H12zM14 1h1v1H14zM1 4h1v1H1zM5 6h1v1H5zM6 6h1v1H6zM8 6h1v1H8zM11 6h1v1H11zM4 8h1v1H4zM3 9h1v1H3zM13 9h1v1H13zM14 9h1v1H14zM2 10h1v1H2zM13 11h1v1H13zM11 13h1v1H11z' fill-opacity='.2'/></svg>");
+}
+
+/* Überschriften in Pixel-Schrift (wie `.display` auf der Website). */
+h1,
+h2,
+.trs-display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Kopfzeile wie auf der Website: halbdurchsichtig mit Unschärfe, rote Leitung unten. */
+header.bg-default\/75,
+header[class*="bg-default"] {
+  background: color-mix(in srgb, var(--ui-bg) 82%, transparent);
+}
+
+/* Redstone-Staub als Trennlinie (Fußzeile, Startseite). */
+.trs-dust-line {
+  height: 4px;
+  background:
+    radial-gradient(circle, var(--color-redstone-400) 0 1.5px, transparent 2.5px) 0 50% / 24px 4px repeat-x,
+    linear-gradient(var(--color-redstone-600), var(--color-redstone-600)) 0 50% / 100% 2px no-repeat;
+  box-shadow: 0 0 14px -2px color-mix(in srgb, var(--color-redstone-500) 80%, transparent);
+}
+
+/* Fußzeile mit Deepslate-Fliesen (nur dunkel – im Hellen bleibt sie ruhig). */
+.dark .trs-footer {
+  background-image: var(--deepslate);
+  background-size: 48px 48px;
+}
+
+/* Startseite: Lampen-Glühen hinter dem Titel. */
+.trs-hero {
+  position: relative;
+}
+.dark .trs-hero::before {
+  content: "";
+  position: absolute;
+  inset: -4rem 0 auto;
+  height: 22rem;
+  background: radial-gradient(40rem 14rem at 50% 30%, color-mix(in srgb, var(--color-redstone-600) 22%, transparent), transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Pixel-Grafiken (Logo, Minecraft-Texturen) nicht weichzeichnen. */
+.pixelated,
+img[src$="icon.png"] {
+  image-rendering: pixelated;
+}

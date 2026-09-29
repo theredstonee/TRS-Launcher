@@ -1,0 +1,28 @@
+{
+  "name": "trs-launcher-docs",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "license": "GPL-3.0-only",
+  "description": "Documentation for TRS Launcher – the free redstone Minecraft launcher by TheRedstonee – and the TRS Client mod.",
+  "engines": {
+    "node": ">=24.11.0"
+  },
+  "scripts": {
+    "dev": "node scripts/ensure-parent-tsconfig.mjs && nuxt dev",
+    "generate": "node scripts/ensure-parent-tsconfig.mjs && nuxt generate && node scripts/finalize.mjs",
+    "preview": "node scripts/preview.mjs",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@fontsource-variable/pixelify-sans": "^5.3.0",
+    "@nuxtjs/i18n": "^10.6.0",
+    "docus": "5.13.0",
+    "nuxt": "4.5.2"
+  },
+  "overrides": {
+    "@nuxtjs/mdc": "0.23.1",
+    "mdast-util-to-markdown": "2.1.2",
+    "sharp": "^0.35.5"
+  }
+}
