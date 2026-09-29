@@ -37,6 +37,7 @@ clients.
 |---|---|
 | `/` | Organization, WebSite, SoftwareApplication |
 | `/features` | SoftwareApplication, BreadcrumbList |
+| `/minecraft-launcher`, `/redstone-launcher`, `/modpacks`, `/fps-boost-pvp-client` | SoftwareApplication, FAQPage (the visible questions of that page), BreadcrumbList |
 | `/download` | SoftwareApplication, BreadcrumbList |
 | `/blog` | BreadcrumbList |
 | `/blog/<version>` | BlogPosting (headline = update name, date, screenshots + banner motif), BreadcrumbList |
@@ -50,6 +51,42 @@ added – there are none to show.
 
 Open Graph image: `/og.png` (1260×660) by default; blog posts use their first screenshot, `/capes` and
 `/features` use a screenshot from `public/shots`.
+
+## Brand and name variants
+
+The brand is "TRS Launcher by TheRedstonee – the redstone Minecraft launcher". People search for it under several
+names, so they appear in two places:
+
+- JSON-LD `alternateName` (constants in `shared/seo.ts`): SoftwareApplication = `LAUNCHER_ALT_NAMES` (TRS, TRS Minecraft
+  Launcher, Redstone Launcher, The Redstone Launcher, TheRedstonee Launcher), WebSite = the same plus "TRS Client",
+  Organization = TRS, Redstone Launcher. SoftwareApplication has `creator` and Organization `founder` = TheRedstonee.
+- Visible text, written naturally: the home page h1 starts with "TRS Launcher" (kicker line inside the h1), the
+  "What is TRS Launcher?" section (`home.about`) and the footer tagline.
+
+## Topic pages (landing pages)
+
+`/minecraft-launcher`, `/redstone-launcher`, `/modpacks` and `/fps-boost-pvp-client` target the main search topics.
+Content lives in `shared/landing-{en,de,es}.ts` (types and helpers in `shared/landing.ts`), rendered by
+`app/components/LandingView.vue`; the page files only name the id. Each page has one h1, 600–1000 words (English;
+test-enforced), sections with screenshots from `public/news/<version>/` on GitHub (sizes in `SHOT_SIZES`), 4–6 FAQ with
+FAQPage JSON-LD, breadcrumbs and a download call to action.
+
+Rules: every statement must be backed by `CHANGELOG.md` (main) or `/features`; no made-up features; no names of other
+launchers or clients (`COMPETITOR_PATTERN` in `shared/seo.ts`, checked by the tests). All three languages keep the same
+section ids, screenshots, links and number of questions (test).
+
+Internal links: `LandingLinks.vue` shows cards for the topic pages on the home page, `/features`, `/download`, `/faq` and
+on every topic page (without itself); the menu and footer list them under "Topics"; `/features` sections link to the
+matching topic page.
+
+## llms.txt
+
+`/llms.txt` (short overview with link lists, llmstxt.org convention) and `/llms-full.txt` (the whole English content:
+key facts, latest versions, features, topic pages, download, FAQ, privacy summary, links) are built by
+`server/lib/llms.ts` from the same texts as the pages (`messages.en`, `landingTexts.en`, FAQ, `WEBSITE_PRIVACY.en`) plus
+the newest six versions from the changelog – they stay in sync without extra work. Served as
+`text/plain; charset=utf-8`, cached for an hour; allowed explicitly in robots.txt. Changelog headlines that name other
+clients are left out. Tests: `tests/llms.test.ts`.
 
 ## Crawling
 
@@ -67,6 +104,9 @@ Open Graph image: `/og.png` (1260×660) by default; blog posts use their first s
 
 ## Extending
 
+- **New topic page:** add the id to `LandingId`/`LANDING_IDS` in `shared/landing.ts`, write it in all three
+  `landing-*.ts` files, add screenshot sizes to `SHOT_SIZES`, add `SITE_PAGES` and a page file with
+  `<LandingView page="…" />` – menu, footer, cards, sitemap and llms.txt pick it up.
 - **New page:** add it to `SITE_PAGES` in `shared/seo.ts` (sitemap), add `seo.<page>` texts in all three
   languages in `messages.ts`, call `usePageSeo()` in the page, and use `lp('/path')` for links to it.
   `tests/seo.test.ts` checks the length/uniqueness of titles and descriptions.
