@@ -88,6 +88,28 @@ the newest six versions from the changelog – they stay in sync without extra w
 `text/plain; charset=utf-8`, cached for an hour; allowed explicitly in robots.txt. Changelog headlines that name other
 clients are left out. Tests: `tests/llms.test.ts`.
 
+## Documentation (/docs)
+
+The docs are a separate Docus project in `../docs-site` (static, `nuxt generate`, baseURL `/docs/`), bundled into this
+app by `modules/docs.ts` during `nuxt build` (it regenerates the docs when their sources changed; `TRS_DOCS_BUILD=skip`
+or `force`). Details: `docs-site/README.md`, writing rules: `docs-site/CONTENT.md`.
+
+- URLs: `/docs/en/…`, `/docs/de/…`, `/docs/es/…` (own paths per language, not `?lang=`). `/docs` and `/docs/` redirect
+  (302, `Vary: Accept-Language, Cookie`) to `/docs/<lang>` chosen from the `trs_lang` cookie, then `Accept-Language`.
+- The docs pages set their own canonical, hreflang (only languages that exist), Open Graph (pre-rendered image per page)
+  and JSON-LD (Article, BreadcrumbList, WebSite).
+- `sitemap.xml` includes every docs page (`docsSitemapEntries()` in `shared/seo.ts`, list from the docs build's
+  `routes.json`), each language with its hreflang alternates, `lastmod` = last git commit of the Markdown file.
+- `robots.txt` disallows only `/docs/__nuxt_content/` (search database) and `/docs/_i18n/`; `/docs/raw/*.md` is
+  reachable but sends `X-Robots-Tag: noindex`.
+- `/docs/llms.txt` and `/docs/llms-full.txt` (English only) are linked from this site's `/llms.txt` ("Documentation") and
+  `/llms-full.txt` ("Links").
+- Security headers: static files bypass nuxt-security's page CSP, so `modules/docs.ts` sets a route rule for `/docs/**`
+  with a hash-based CSP (`buildDocsCsp()` in `shared/docs.ts`, no `'unsafe-inline'` for scripts) plus
+  Permissions-Policy/CORP/COOP; HSTS, X-Frame-Options, nosniff and Referrer-Policy come from the global `/**` rule.
+- Menu and footer link "Docs"/"Doku"/"Documentación" to `/docs/<lang>` (plain links – it is not a route of this app); the
+  former wiki link is gone.
+
 ## Crawling
 
 - `sitemap.xml` (`server/routes/sitemap.xml.get.ts`): every page from `SITE_PAGES` and every blog post, each

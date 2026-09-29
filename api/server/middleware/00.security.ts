@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
-import { defineEventHandler, getHeader, getRequestHost, sendRedirect, setResponseHeader, setResponseHeaders } from 'h3'
+import { defineEventHandler, getCookie, getHeader, getRequestHost, sendRedirect, setResponseHeader, setResponseHeaders } from 'h3'
+import { docsHome, isDocsPath, isDocsRoot, pickDocsLang } from '../../shared/docs'
 import { useCtx, whenReady } from '../lib/context'
 import { forbidden } from '../lib/errors'
 import { CORS_ALLOWED_HEADERS, CORS_ALLOWED_METHODS, CORS_EXPOSED_HEADERS, SECURITY_HEADERS, isApiPath } from '../lib/headers'
@@ -30,6 +31,19 @@ export default defineEventHandler(async (event) => {
     const host = getRequestHost(event, { xForwardedHost: false }).toLowerCase()
     if (ctx.config.apiOnlyHosts.has(host)) {
       return sendRedirect(event, `${ctx.config.siteUrl}${event.path}`, 301)
+    }
+    const pathname = event.path.split('?')[0]!
+    // Dokumentation (/docs): vorhandene Dateien liefert der Static-Handler schon vor dieser Middleware aus (Header dafür:
+    // Route-Regeln aus modules/docs.ts). Hier landen nur /docs selbst (Sprachwahl) und fehlende Dateien (→ 404-Seite).
+    if (isDocsPath(pathname)) {
+      limit(`ip:${clientIp(event)}`, RULES.globalIp)
+      if (isDocsRoot(pathname)) {
+        // /docs → Sprache wie auf der Website gewählt (Cookie) oder nach Accept-Language, sonst Englisch.
+        setResponseHeaders(event, { 'Vary': 'Accept-Language, Cookie', 'Cache-Control': 'private, no-store' })
+        return sendRedirect(event, docsHome(pickDocsLang(getHeader(event, 'accept-language'), getCookie(event, 'trs_lang'))), 302)
+      }
+      event.context.siteUrl = ctx.config.siteUrl
+      return
     }
     if (!STATIC.test(event.path)) {
       limit(`ip:${clientIp(event)}`, RULES.globalIp)

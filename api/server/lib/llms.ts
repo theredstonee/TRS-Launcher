@@ -46,6 +46,18 @@ function latestLine(r: LlmsLatest | undefined): string | null {
   return `Latest version: ${r.version}${r.name ? ` – “${r.name}”` : ''}${r.date ? ` (released ${r.date})` : ''}.`
 }
 
+/** Abschnitt „Documentation“: die Doku unter /docs mit eigener llms.txt (docs-site, Docus). */
+function documentationSection(u: string): string[] {
+  return [
+    '## Documentation',
+    '',
+    `- [Documentation](${u}/docs/en): guides for installing and using TRS Launcher and the TRS Client mod, help with problems and developer notes`,
+    `- [Documentation index for LLMs](${u}/docs/llms.txt): every documentation page as a Markdown link list`,
+    `- [Full documentation text](${u}/docs/llms-full.txt): all English documentation pages in one Markdown text`,
+    `- Also in [German](${u}/docs/de) and [Spanish](${u}/docs/es)`,
+  ]
+}
+
 /** Kurze Übersicht mit Links zu den wichtigen Seiten. */
 export function buildLlmsTxt(s: LlmsSource): string {
   const u = base(s.siteUrl)
@@ -71,6 +83,8 @@ export function buildLlmsTxt(s: LlmsSource): string {
     '## Topics',
     '',
     ...LANDING_IDS.map((id) => `- [${landing.pages[id].name}](${u}${landingPath(id)}): ${line(landing.pages[id].seo.description)}`),
+    '',
+    ...documentationSection(u),
     '',
     '## Community',
     '',
@@ -171,6 +185,7 @@ export function buildLlmsFullTxt(s: LlmsSource): string {
     `- Features: ${u}/features`,
     ...LANDING_IDS.map((id) => `- ${landing.pages[id].name}: ${u}${landingPath(id)}`),
     `- Download: ${u}/download`,
+    `- Documentation: ${u}/docs/en (LLM index: ${u}/docs/llms.txt, full text: ${u}/docs/llms-full.txt)`,
     `- FAQ: ${u}/faq`,
     `- Blog: ${u}/blog`,
     `- Issue tracker: ${u}/issues`,

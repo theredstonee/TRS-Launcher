@@ -29,7 +29,7 @@ describe('llms.txt', () => {
     const lines = txt.split('\n')
     expect(lines[0]).toBe('# TRS Launcher')
     expect(lines[2]!.startsWith('> TRS Launcher (the Redstone Launcher by TheRedstonee) is a free, open-source')).toBe(true)
-    for (const h of ['## Main pages', '## Topics', '## Community', '## Source and contact', '## Optional']) expect(lines).toContain(h)
+    for (const h of ['## Main pages', '## Topics', '## Documentation', '## Community', '## Source and contact', '## Optional']) expect(lines).toContain(h)
     expect(txt).toMatch(/^- \[[^\]]+\]\(https:\/\/[^)]+\): .+$/m)
   })
 
@@ -41,6 +41,14 @@ describe('llms.txt', () => {
     expect(txt).toContain('](https://github.com/theredstonee/TRS-Launcher)')
     expect(txt).toContain('Latest version: 0.14.0 – “Achievement Unlocked” (released 2026-09-28).')
     expect(txt).not.toContain(`${SITE}//`)
+  })
+
+  it('Abschnitt Documentation verlinkt die Doku und deren llms.txt/llms-full.txt', () => {
+    expect(txt).toContain(`](${SITE}/docs/en)`)
+    expect(txt).toContain(`](${SITE}/docs/llms.txt)`)
+    expect(txt).toContain(`](${SITE}/docs/llms-full.txt)`)
+    expect(txt).toContain(`](${SITE}/docs/de)`)
+    expect(txt).toContain(`](${SITE}/docs/es)`)
   })
 
   it('Namensvarianten und keine anderen Launcher/Clients', () => {
@@ -80,6 +88,10 @@ describe('llms-full.txt', () => {
     expect(noRel).not.toContain('## Latest version')
     expect(noRel).toContain('## Features')
     expect(buildLlmsTxt({ ...source, releases: [] })).not.toContain('Latest version')
+  })
+
+  it('verweist in den Links auf die Doku und deren Volltext', () => {
+    expect(full).toContain(`- Documentation: ${SITE}/docs/en (LLM index: ${SITE}/docs/llms.txt, full text: ${SITE}/docs/llms-full.txt)`)
   })
 
   it('keine anderen Launcher oder Clients mit Namen', () => {

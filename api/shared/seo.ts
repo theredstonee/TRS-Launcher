@@ -1,6 +1,8 @@
 // Suchmaschinen-Bausteine der Website, von Seiten (Kopf) und Server (Sitemap, robots.txt) gemeinsam genutzt.
 // Alles hier ist reine Datenverarbeitung ohne Nuxt/Nitro – dadurch direkt mit vitest prüfbar.
 //
+import { docsPath, groupDocsRoutes, type DocsRoute } from './docs'
+
 // Sprachen: Englisch ist die Adresse ohne Zusatz (`/download`), Deutsch und Spanisch hängen `?lang=de|es`
 // an. Die Seite rendert serverseitig genau die Sprache aus `?lang=` (ohne Cookie), deshalb kann jede
 // Sprachfassung gecrawlt werden. `x-default` ist die Adresse ohne Zusatz (erkennt die Sprache selbst).
@@ -411,7 +413,37 @@ export interface SitemapNews {
   langs: readonly SeoLang[]
 }
 
-export function buildSitemap(siteUrl: string, posts: SitemapPost[], buildTime: string | null, jobs: SitemapJob[] = [], circuits: SitemapJob[] = [], news: SitemapNews[] = []): string {
+/**
+ * Seiten der Dokumentation (/docs, eigene Adressen je Sprache: /docs/en/…, /docs/de/…): je Sprachfassung ein Eintrag mit
+ * hreflang-Alternativen nur zu den Sprachen, in denen es die Seite gibt; `x-default` = Englisch (falls vorhanden).
+ */
+export function docsSitemapEntries(siteUrl: string, routes: readonly DocsRoute[]): string[] {
+  const base = trimBase(siteUrl)
+  const out: string[] = []
+  for (const [key, list] of groupDocsRoutes(routes)) {
+    const def = list.find((r) => r.lang === DEFAULT_LANG) ?? list[0]!
+    const alt = [
+      ...list.map((r) => `<xhtml:link rel="alternate" hreflang="${r.lang}" href="${escapeXml(`${base}${docsPath(key, r.lang)}`)}"/>`),
+      `<xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(`${base}${docsPath(key, def.lang)}`)}"/>`,
+    ].join('')
+    const priority = key === '/' ? 0.8 : 0.6
+    for (const r of list) {
+      const lastmod = r.lastmod && !Number.isNaN(Date.parse(r.lastmod)) ? `<lastmod>${escapeXml(r.lastmod)}</lastmod>` : ''
+      out.push(`<url><loc>${escapeXml(`${base}${docsPath(key, r.lang)}`)}</loc>${lastmod}<priority>${priority.toFixed(1)}</priority>${alt}</url>`)
+    }
+  }
+  return out
+}
+
+export function buildSitemap(
+  siteUrl: string,
+  posts: SitemapPost[],
+  buildTime: string | null,
+  jobs: SitemapJob[] = [],
+  circuits: SitemapJob[] = [],
+  news: SitemapNews[] = [],
+  docs: readonly DocsRoute[] = [],
+): string {
   const newestPost = latest([...posts.map((p) => p.date), ...news.map((n) => n.updatedAt)])
   const newestJob = latest(jobs.map((j) => j.updatedAt))
   const newestCircuit = latest(circuits.map((c) => c.updatedAt))
@@ -424,6 +456,8 @@ export function buildSitemap(siteUrl: string, posts: SitemapPost[], buildTime: s
     ...jobs.flatMap((j) => sitemapEntries(siteUrl, `/team/${j.id}`, j.updatedAt, 0.4)),
     // Schaltungs-Bibliothek (§25): jede veröffentlichte Schaltung hat eine eigene Seite.
     ...circuits.flatMap((c) => sitemapEntries(siteUrl, `/circuits/${c.id}`, c.updatedAt, 0.4)),
+    // Dokumentation (/docs, statisch aus docs-site) – Routenliste aus dem Docs-Build.
+    ...docsSitemapEntries(siteUrl, docs),
   ]
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urls.join('\n')}\n</urlset>\n`
 }
@@ -438,6 +472,8 @@ export function buildRobots(siteUrl: string): string {
     // Kurzfassung und Volltext für Sprachmodelle (llmstxt.org), server/lib/llms.ts
     'Allow: /llms.txt',
     'Allow: /llms-full.txt',
+    'Allow: /docs/llms.txt',
+    'Allow: /docs/llms-full.txt',
     'Allow: /v1/site/',
     'Allow: /v1/capes/*.png',
     'Disallow: /v1/',
@@ -449,6 +485,9 @@ export function buildRobots(siteUrl: string): string {
     'Disallow: /circuits/mine',
     'Disallow: /issues/new',
     'Disallow: /issues/mine',
+    // Doku: Seiten dürfen gecrawlt werden, die Such-Datenbank und Sprachdateien nicht.
+    'Disallow: /docs/__nuxt_content/',
+    'Disallow: /docs/_i18n/',
     '',
     `Sitemap: ${trimBase(siteUrl)}/sitemap.xml`,
     '',
