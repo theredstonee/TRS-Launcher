@@ -31,6 +31,10 @@ public final class OnlineFeatures<T> {
 	/** Kopf-Kosmetik (Quietscheente): Rig-Zustände je Träger und Mesh-Baukasten (nur Render-Thread). */
 	private final dev.theredstonee.trsclient.core.cosmetic.DuckRig hatRig = new dev.theredstonee.trsclient.core.cosmetic.DuckRig();
 	private final dev.theredstonee.trsclient.core.cosmetic.CosmeticMesh hatMesh = new dev.theredstonee.trsclient.core.cosmetic.CosmeticMesh();
+	/** Kopf-Kosmetik im Format 2: Texturen je Teil und der Renderer (nur Render-Thread). */
+	private final dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticAssets<T> cosmetics;
+	private final dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2Renderer v2Renderer =
+			new dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2Renderer();
 	private final dev.theredstonee.trsclient.core.emote.EmoteController emotes;
 	private volatile Thread gameThread;
 	/** Wiederverwendet: Umhang-Einstellungen je Tick (keine Allokation). */
@@ -49,6 +53,7 @@ public final class OnlineFeatures<T> {
 		this.modules = modules;
 		this.online = online;
 		this.textures = new CapeTextures<>(backend, online::loadCape);
+		this.cosmetics = new dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticAssets<>(backend, online::loadCosmetic);
 		this.emotes = new dev.theredstonee.trsclient.core.emote.EmoteController(modules, online);
 		this.localSkin = localSkin;
 	}
@@ -143,6 +148,7 @@ public final class OnlineFeatures<T> {
 			online.wantBadges(modules.badgeTab.get() || modules.badgeNametag.get());
 			online.tick(now, visible, modules.trsOnline.isEnabled());
 			textures.cleanup(now);
+			cosmetics.cleanup(now);
 			if (sync != null) sync.tick(now);
 			if (notesSync != null) notesSync.tick(now);
 		} catch (RuntimeException e) {
@@ -206,6 +212,44 @@ public final class OnlineFeatures<T> {
 			dev.theredstonee.trsclient.core.cosmetic.DuckRig.Pose pose = model.rig != null
 					? hatRig.update(wearer, System.nanoTime()) : null;
 			hatMesh.emit(model, pose, System.currentTimeMillis(), wearer.helmet, sink);
+		} catch (RuntimeException e) {
+			online.reportError(e);
+		}
+	}
+
+	/**
+	 * Kopf-Kosmetik im Format 2 (Studio-Modell) für dieses Bild oder null (nichts/v1 tragen, Modul aus, noch nicht
+	 * geladen). Kopf-Kosmetik bleibt immer sichtbar: Mit Helm ({@code helmet}) wird sie auf den Helm gesetzt – waagerecht
+	 * gestreckt und angehoben ({@code CosmeticV2Renderer#HELMET_SCALE}), wie die Ente (v1) sich mit Helm anhebt.
+	 * Nur im Spiel-/Render-Thread wirksam.
+	 */
+	public dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> hatV2(UUID uuid, boolean helmet) {
+		if (Thread.currentThread() != gameThread) return null;
+		if (!modules.trsOnline.isEnabled() || !modules.trsCosmetics.get()) return null;
+		PlayerInfo info = online.info(uuid);
+		if (info.hat == null || !info.hat.v2()) return null;
+		try {
+			long now = System.currentTimeMillis();
+			dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticAssets.Entry<T> e = cosmetics.get(info.hat, now);
+			if (e == null) return null;
+			T halo = e.model.halos.isEmpty() ? null : cosmetics.halo();
+			return new dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T>(e.model, e.base(now), e.glow(now), halo, now, helmet);
+		} catch (RuntimeException ex) {
+			online.reportError(ex);
+			return null;
+		}
+	}
+
+	/**
+	 * Einen Durchgang der v2-Kosmetik in den Kopf-Raum des Modells ausgeben (siehe {@code CosmeticV2Renderer.PASS_*}).
+	 * {@code eye} = Kamera im Anhängepunkt-Raum (nur für Höfe, null = keine). Fehler landen im Fehlerbericht, nie im Spiel.
+	 */
+	public void emitV2(dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> hat, int pass, double[] eye,
+			dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2Renderer.VertexSink sink) {
+		if (hat == null) return;
+		try {
+			v2Renderer.pose(hat.model, hat.now, true, hat.helmet);
+			v2Renderer.emit(hat.model, pass, hat.now, eye, sink);
 		} catch (RuntimeException e) {
 			online.reportError(e);
 		}

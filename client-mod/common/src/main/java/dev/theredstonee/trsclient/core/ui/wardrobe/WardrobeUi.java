@@ -31,6 +31,7 @@ import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.ui.UiKey;
 import dev.theredstonee.trsclient.core.ui.UiScreen;
 import dev.theredstonee.trsclient.core.ui.menu.NewBadge;
+import dev.theredstonee.trsclient.core.wardrobe.CosmeticCatalog;
 import dev.theredstonee.trsclient.core.wardrobe.CurrentSkin;
 import dev.theredstonee.trsclient.core.wardrobe.SkinEditor;
 import dev.theredstonee.trsclient.core.wardrobe.WardrobeContext;
@@ -62,7 +63,7 @@ import java.util.Set;
 public final class WardrobeUi extends UiScreen {
 	enum Category {
 		SKINS("wardrobe.cat.skins", "shirt"), OUTFITS("wardrobe.cat.outfits", "layers"), CAPES("wardrobe.cat.capes", "cape"),
-		EMOTES("wardrobe.cat.emotes", "dance");
+		COSMETICS("wardrobe.cat.cosmetics", "crown"), EMOTES("wardrobe.cat.emotes", "dance");
 
 		final String key;
 		final String icon;
@@ -90,6 +91,12 @@ public final class WardrobeUi extends UiScreen {
 	private final EmoteRig rig = new EmoteRig();
 	private final float[] emoteFrame = new float[Channel.COUNT];
 	private final float[] pose = new float[SkinModel.PARTS_POSE * 6];
+	/** Kopf-Kosmetik: Katalog (erst beim Öffnen des Reiters), Vorschau am Kopf der Figur, Tag/Nacht. */
+	private CosmeticCatalog catalog;
+	private final CosmeticPreview cosmeticPreview;
+	String selectedCosmetic;
+	boolean cosmeticNight;
+	private int seenCosmeticVersion = -1;
 
 	Category category = Category.SKINS;
 	String selectedSkin;
@@ -186,6 +193,7 @@ public final class WardrobeUi extends UiScreen {
 				showToast(I18n.tr(key));
 			}
 		}, textures);
+		this.cosmeticPreview = new CosmeticPreview(textures);
 		I18n.refresh();
 		service.open();
 		lastAdded = service.state().added;
@@ -224,6 +232,21 @@ public final class WardrobeUi extends UiScreen {
 	/** Selbsttest: der zuletzt bestimmte getragene Skin (null vor dem ersten Bild). */
 	public CurrentSkin current() {
 		return current;
+	}
+
+	/** Selbsttest: Kopf-Kosmetik auswählen (Vorschau am Kopf der Figur). */
+	public void selectCosmetic(String id) {
+		selectedCosmetic = id;
+	}
+
+	/** Selbsttest: Tag/Nacht der Kosmetik-Vorschau. */
+	public void cosmeticNight(boolean night) {
+		cosmeticNight = night;
+	}
+
+	/** Selbsttest: Kosmetik-Katalog (null, bis der Reiter einmal offen war). */
+	public CosmeticCatalog catalog() {
+		return catalog;
 	}
 
 	/** Selbsttest: Emote auswählen (Vorschau spielt es ab). */
@@ -324,6 +347,7 @@ public final class WardrobeUi extends UiScreen {
 		current = resolveCurrent(s, host.look());
 		react(s);
 		reactShares(s, now);
+		reactCosmetics();
 		Theme t = Theme.get();
 		Canvas c = FadeCanvas.of(raw, alpha());
 		c.fill(0, 0, width, height, t.scrim);
@@ -349,7 +373,8 @@ public final class WardrobeUi extends UiScreen {
 		} else {
 			int sideW = bw >= 360 ? 76 : 24;
 			sidebar(c, s, bx, by, sideW, bh, mx, my);
-			int prevW = Math.max(96, Math.min(170, bw / 3));
+			int prevW = category == Category.COSMETICS ? Math.max(110, Math.min(230, bw * 2 / 5))
+					: Math.max(96, Math.min(170, bw / 3));
 			int gx = bx + sideW + GAP;
 			int gw = bw - sideW - prevW - GAP * 2;
 			grid(c, s, gx, by, gw, bh, mx, my);
@@ -691,6 +716,7 @@ public final class WardrobeUi extends UiScreen {
 				Friends f = friends();
 				if (f != null && s.trs && f.snapshot().unseenOffers > 0) NewBadge.dot(c, x + w - 7, cy + 2);
 			}
+			if (cat == Category.COSMETICS && isNew(NewSince.WARDROBE_COSMETICS)) NewBadge.dot(c, x + w - 7, cy + 2);
 			hits.add(x, cy, w, rowH, () -> {
 				host.playClick();
 				category = cat;
@@ -735,6 +761,9 @@ public final class WardrobeUi extends UiScreen {
 				break;
 			case CAPES:
 				content = capes(c, s, ix, top - sc, iw, mx, my);
+				break;
+			case COSMETICS:
+				content = cosmetics(c, ix, top - sc, iw, mx, my);
 				break;
 			case EMOTES:
 				content = emotes(c, s, ix, top - sc, iw, mx, my);
@@ -1170,6 +1199,20 @@ public final class WardrobeUi extends UiScreen {
 				targetYaw = 160f;
 				break;
 			}
+			case COSMETICS: {
+				CosmeticCatalog.State cs = catalog == null ? null : catalog.state();
+				CosmeticCatalog.Item it = cs == null ? null : cs.item(selectedCosmetic);
+				if (it != null) {
+					title = it.name;
+					if (it.locked()) subtitle = I18n.tr("wardrobe.cosmetics.locked");
+					else if (it.id.equals(cs.equipped)) subtitle = I18n.tr("wardrobe.worn");
+					else subtitle = I18n.tr("wardrobe.cosmetics.tryOn");
+				} else {
+					title = I18n.tr("wardrobe.cat.cosmetics");
+				}
+				targetYaw = 25f;
+				break;
+			}
 			case EMOTES: {
 				EmoteDef d = Emotes.byId(selectedEmote);
 				if (d != null) {
@@ -1204,7 +1247,19 @@ public final class WardrobeUi extends UiScreen {
 		}
 		// Kopf
 		int ty = y + 5;
-		if (category == Category.OUTFITS) {
+		if (category == Category.COSMETICS) {
+			if (cosmeticNight) c.fill(x + 1, y + 1, x + w - 1, y + h - 1, NIGHT_SKY);
+			int ab = 14;
+			int bx = x + w - 4 - ab;
+			boolean hov = inside(mx, my, bx, ty - 2, ab, ab);
+			Paint.iconButton(c, bx, ty - 2, ab, cosmeticNight ? "moon" : "sun", hov, cosmeticNight);
+			hits.add(bx, ty - 2, ab, ab, () -> {
+				host.playClick();
+				cosmeticNight = !cosmeticNight;
+			});
+			String tt = c.clip(title, w - 2 * ab - 14);
+			c.text(tt, x + (w - c.textWidth(tt)) / 2, ty, t.text, false);
+		} else if (category == Category.OUTFITS) {
 			int ab = 14;
 			boolean hp = inside(mx, my, x + 4, ty - 2, ab, ab);
 			boolean hn = inside(mx, my, x + w - 4 - ab, ty - 2, ab, ab);
@@ -1249,10 +1304,18 @@ public final class WardrobeUi extends UiScreen {
 		spec.layers = true;
 		spec.base = true;
 		spec.tint = 0xFFFFFFFF;
+		spec.head = null;
+		boolean bust = category == Category.COSMETICS;
+		if (bust) {
+			if (cosmeticNight) spec.tint = NIGHT_TINT;
+			if (prepareCosmetic(now)) spec.head = cosmeticPreview;
+		}
 		if (skin != null && figBottom - figTop > 30) {
 			c.scissor(x + 1, figTop - 4, x + w - 1, figBottom + 2);
-			model.drawFitted(c, x + 6, figTop, w - 12, figBottom - figTop, spec);
+			if (bust) drawBust(c, x + 6, figTop, w - 12, figBottom - figTop);
+			else model.drawFitted(c, x + 6, figTop, w - 12, figBottom - figTop, spec);
 			c.noScissor();
+			if (bust) cosmeticStatus(c, x, figTop, w, figBottom - figTop);
 		} else if (skin == null) {
 			Paint.textCentered(c, c.clip(I18n.tr("wardrobe.loading"), w - 8), x + w / 2, (figTop + figBottom) / 2, t.textDim, false);
 		}
@@ -1263,6 +1326,179 @@ public final class WardrobeUi extends UiScreen {
 	}
 
 	private final int[] previewFig = new int[4];
+
+	// ============================================================================================
+	// Kopf-Kosmetik
+	// ============================================================================================
+
+	/** Nacht in der Kosmetik-Vorschau: Figur auf etwa 20 % (wie die Studio-Werkbank), Hintergrund dunkel. */
+	static final int NIGHT_TINT = 0xFF34343E;
+	static final int NIGHT_SKY = 0xFF07080E;
+
+	private CosmeticCatalog catalogOpen() {
+		if (catalog == null) {
+			catalog = CosmeticCatalog.shared(new WardrobeContext(host.configDir(), host.userAgent(), host.features()));
+			catalog.refresh(true);
+		}
+		return catalog;
+	}
+
+	/** Meldungen des Katalogs als Toast, NEU-Markierung, Auswahl nachziehen. */
+	private void reactCosmetics() {
+		if (category == Category.COSMETICS && !editing) {
+			CosmeticCatalog cat = catalogOpen();
+			cat.refresh(false);
+			seen(NewSince.WARDROBE_COSMETICS);
+		}
+		if (catalog == null) return;
+		CosmeticCatalog.State cs = catalog.state();
+		if (seenCosmeticVersion == -1) seenCosmeticVersion = cs.version;
+		if (cs.version != seenCosmeticVersion) {
+			seenCosmeticVersion = cs.version;
+			if (cs.message != null && cs.busy == null) showToast(message(cs.message));
+		}
+		if (selectedCosmetic == null || (!"none".equals(selectedCosmetic) && cs.loaded && cs.item(selectedCosmetic) == null)) {
+			if (cs.equipped != null && cs.item(cs.equipped) != null) selectedCosmetic = cs.equipped;
+			else if (!cs.items.isEmpty()) selectedCosmetic = cs.items.get(0).id;
+		}
+	}
+
+	/** Wie man ein gesperrtes Teil bekommt. */
+	private static String unlockHint(CosmeticCatalog.Item it) {
+		String key = "wardrobe.cosmetics.unlock." + it.unlock;
+		return I18n.has(key) ? I18n.tr(key) : I18n.tr("wardrobe.cosmetics.unlock.other");
+	}
+
+	/** Vorschau des gewählten Teils vorbereiten; true = bereit zum Zeichnen am Kopf. */
+	private boolean prepareCosmetic(long now) {
+		if (catalog == null || selectedCosmetic == null) {
+			cosmeticPreview.set(null, null, false);
+			return false;
+		}
+		CosmeticCatalog.State cs = catalog.state();
+		if (cs.item(selectedCosmetic) == null || cs.failed.contains(selectedCosmetic)) {
+			cosmeticPreview.set(null, null, false);
+			return false;
+		}
+		CosmeticCatalog.Preview p = cs.previews.get(selectedCosmetic);
+		if (p == null) {
+			catalog.wantPreview(selectedCosmetic);
+			cosmeticPreview.set(null, null, false);
+			return false;
+		}
+		cosmeticPreview.set(selectedCosmetic, p, cosmeticNight);
+		return cosmeticPreview.prepare(now);
+	}
+
+	/** Figur von der Hüfte aufwärts, so groß, dass das Teil ganz hineinpasst. */
+	private void drawBust(Canvas c, int x, int y, int w, int h) {
+		float top = cosmeticPreview.active() ? cosmeticPreview.top() : 9f;
+		float fromY = 9f;
+		float span = 24f + top + 1.5f - fromY;
+		float scale = Math.max(0.5f, Math.min(h / span, w / 22f));
+		float feetY = y + h - 2 + fromY * scale;
+		float cx = x + w / 2f;
+		model.draw(c, cx, feetY, scale, spec);
+		// obere Kante der Figur für Klick-/Zieh-Bereich bleibt previewFig
+	}
+
+	/** Hinweise über der Figur: lädt / nicht verfügbar. */
+	private void cosmeticStatus(Canvas c, int x, int y, int w, int h) {
+		if (catalog == null || selectedCosmetic == null) return;
+		CosmeticCatalog.State cs = catalog.state();
+		if (cs.item(selectedCosmetic) == null) return;
+		String key = null;
+		if (cs.failed.contains(selectedCosmetic)) key = "wardrobe.cosmetics.noPreview";
+		else if (cs.previews.get(selectedCosmetic) == null || !cosmeticPreview.active()) key = "wardrobe.loading";
+		if (key == null) return;
+		Theme t = Theme.get();
+		String text = c.clip(I18n.tr(key), w - 10);
+		c.text(text, x + (w - c.textWidth(text)) / 2, y + 2, t.textDim, false);
+	}
+
+	/** Raster „Kosmetik“: Karten mit Vorschaubild; eigene zuerst, gesperrte ausgegraut. */
+	private int cosmetics(Canvas c, int x, int y, int w, int mx, int my) {
+		int start = y;
+		Theme t = Theme.get();
+		CosmeticCatalog cat = catalogOpen();
+		CosmeticCatalog.State cs = cat.state();
+		if (!cs.trs && cs.loaded) {
+			return note(c, I18n.tr("wardrobe.cosmetics.trsOff"), x, y, w) - start;
+		}
+		if (!cs.loaded) {
+			y = note(c, I18n.tr(cs.trs || cs.loading ? "wardrobe.cosmetics.loading" : "wardrobe.cosmetics.trsOff"), x, y, w);
+			return y - start;
+		}
+		int cols = columns(w);
+		int cw = (w - (cols - 1) * GAP) / cols;
+		int ch = Math.round(cw * 1.15f);
+		List<CosmeticCatalog.Item> own = new ArrayList<CosmeticCatalog.Item>();
+		List<CosmeticCatalog.Item> locked = new ArrayList<CosmeticCatalog.Item>();
+		for (CosmeticCatalog.Item it : cs.items) (it.locked() ? locked : own).add(it);
+		y = section(c, I18n.tr("wardrobe.cosmetics.head"), x, y, w);
+		// „Nichts“ = absetzen
+		cosmeticCard(c, cs, null, x, y, cw, ch, mx, my);
+		for (int i = 0; i < own.size(); i++) {
+			int k = i + 1;
+			cosmeticCard(c, cs, own.get(i), x + (k % cols) * (cw + GAP), y + (k / cols) * (ch + GAP), cw, ch, mx, my);
+		}
+		y += ((own.size() + 1 + cols - 1) / cols) * (ch + GAP);
+		if (!locked.isEmpty()) {
+			y += 2;
+			y = section(c, I18n.tr("wardrobe.cosmetics.lockedSection"), x, y, w);
+			for (int i = 0; i < locked.size(); i++) {
+				cosmeticCard(c, cs, locked.get(i), x + (i % cols) * (cw + GAP), y + (i / cols) * (ch + GAP), cw, ch, mx, my);
+			}
+			y += ((locked.size() + cols - 1) / cols) * (ch + GAP);
+		}
+		return y - start;
+	}
+
+	private void cosmeticCard(Canvas c, CosmeticCatalog.State cs, final CosmeticCatalog.Item it, int x, int y, int w, int h,
+			int mx, int my) {
+		Theme t = Theme.get();
+		final String id = it == null ? "none" : it.id;
+		boolean sel = it == null ? "none".equals(selectedCosmetic) : it.id.equals(selectedCosmetic);
+		boolean hov = inside(mx, my, x, y, w, h);
+		boolean worn = it == null ? cs.equipped == null : it.id.equals(cs.equipped);
+		boolean lockedCard = it != null && it.locked();
+		if (sel) Redstone.glow(c, x, y, w, h, t.glow, 0.45f);
+		Redstone.stone(c, x, y, w, h, hov ? t.surfaceHover : t.surface, sel ? ColorMath.lerp(t.border, t.accent, 0.8f) : t.border);
+		int ih = h - 15;
+		if (it == null) {
+			Icons.draw(c, "close", x + w / 2 - 8, y + ih / 2 - 6, 2, t.textDim);
+		} else {
+			CosmeticCatalog.Art art = cs.card(it.id, cosmeticNight);
+			boolean nightArt = cosmeticNight && cs.cards.containsKey(it.id + "#n");
+			TextureRef tex = art == null ? null
+					: textures.get("wardrobe/cc_" + it.id.replaceAll("[^a-z0-9_]", "") + (nightArt ? "_n" : "_d"), art.argb,
+							art.width, art.height, 0);
+			if (cosmeticNight) c.fill(x + 2, y + 2, x + w - 2, y + ih, NIGHT_SKY);
+			if (tex != null) {
+				float fit = Math.min((w - 6f) / art.width, (ih - 4f) / art.height);
+				float dw = art.width * fit;
+				float dh = art.height * fit;
+				int tint = lockedCard ? 0x88FFFFFF : 0xFFFFFFFF;
+				dev.theredstonee.trsclient.core.ui.Affine.image(c, tex, x + (w - dw) / 2f, y + 2 + (ih - dh) / 2f, dw, dh, 0, 0,
+						art.width, art.height, tint);
+			} else {
+				Icons.draw(c, "crown", x + w / 2 - 8, y + ih / 2 - 6, 2, lockedCard ? t.border : t.textDim);
+			}
+			if (lockedCard) {
+				c.fill(x + 1, y + 1, x + w - 1, y + h - 1, 0x66000000);
+				Icons.draw(c, "lock", x + w - 11, y + 3, 1, t.textDim);
+			}
+		}
+		if (worn) Redstone.pip(c, x + 3, y + 3, 6, 1f);
+		String name = it == null ? I18n.tr("wardrobe.cosmetics.nothing") : it.name;
+		int color = lockedCard ? t.textDim : (sel ? t.text : ColorMath.lerp(t.text, t.textDim, 0.3f));
+		Paint.textClipped(c, name, x + 3, y + h - 11, w - 6, color, false);
+		hits.add(x, y, w, h, () -> {
+			host.playClick();
+			selectedCosmetic = id;
+			lastInteraction = System.currentTimeMillis() - 2000;
+		});
+	}
 
 	private void applyEmote(EmoteDef d, boolean slim) {
 		float total = d.durationMs();
@@ -1444,6 +1680,31 @@ public final class WardrobeUi extends UiScreen {
 					used += hintAbove(c, I18n.tr("wardrobe.share.afterApproval"), x, ay + bh, w);
 				}
 				return used;
+			}
+			case COSMETICS: {
+				if (catalog == null) return 0;
+				final CosmeticCatalog.State cs = catalog.state();
+				if (!cs.trs || !cs.loaded) return 0;
+				boolean cbusy = cs.busy != null;
+				if ("none".equals(selectedCosmetic) || selectedCosmetic == null) {
+					boolean nothing = cs.equipped == null;
+					button(c, x, y, w, bh, I18n.tr(nothing ? "wardrobe.worn" : "wardrobe.cosmetics.takeOff"), !nothing,
+							!nothing && !cbusy, mx, my, () -> catalog.wear(null));
+					return bh;
+				}
+				final CosmeticCatalog.Item it = cs.item(selectedCosmetic);
+				if (it == null) return 0;
+				if (it.locked()) {
+					button(c, x, y, w, bh, I18n.tr("wardrobe.cosmetics.put"), true, false, mx, my, () -> { });
+					return bh + hintAbove(c, unlockHint(it), x, y, w);
+				}
+				boolean worn = it.id.equals(cs.equipped);
+				if (worn) {
+					button(c, x, y, w, bh, I18n.tr("wardrobe.cosmetics.takeOff"), false, !cbusy, mx, my, () -> catalog.wear(null));
+				} else {
+					button(c, x, y, w, bh, I18n.tr("wardrobe.cosmetics.put"), true, !cbusy, mx, my, () -> catalog.wear(it.id));
+				}
+				return bh;
 			}
 			case EMOTES: {
 				if (selectedEmote == null) return 0;

@@ -42,6 +42,8 @@ public final class SkinModelSpec {
 	public float[] pose;
 	/** Grundebene zeichnen (der Editor blendet sie aus, um nur die zweite Ebene zu zeigen). */
 	public boolean base = true;
+	/** Etwas am Kopf (Kopf-Kosmetik in der Garderobe) oder null. */
+	public SkinModel.HeadAttachment head;
 
 	/** Setzt alles auf die Grundwerte zurück (Skin/Umhang bleiben). */
 	public SkinModelSpec resetPose() {

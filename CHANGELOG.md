@@ -45,6 +45,13 @@ How to write an entry:
   language of the client.
 - **Thank you, contributors.** "What's new" now names everyone who helped with an update on GitHub – with code, fixes
   or translations.
+- **TRS Client: real 3D head cosmetics.** Crowns, hats, the TRS cap, the lamp helmet and the halo are now proper 3D
+  models from the TRS Studio – with bones, animations that run in sync for everyone, glowing parts and soft light halos,
+  looking exactly like the preview on the website and in the launcher. They work in every Minecraft version the client
+  supports (Fabric, Forge, NeoForge, 1.8.9–26.3) and sit neatly on top of a helmet. The rubber duck keeps waddling.
+- **TRS Client: new Cosmetics tab in the wardrobe.** Browse your head cosmetics as cards, try one on the big rotating
+  player (with animation and glow, day or night), and put it on or take it off. Locked ones are greyed out and tell you
+  how to get them (redeem a code in the launcher, an achievement or the TRS team).
 
 ### Deutsch
 - **Kopf-Kosmetik in 3D.** Kronen, TRS-Cap, Lampen-Helm, Zylinder und Heiligenschein sind jetzt echte 3D-Modelle mit
@@ -61,6 +68,14 @@ How to write an entry:
   Browser, in der Sprache des Clients.
 - **Danke an alle, die mitmachen.** „Was ist neu“ nennt jetzt alle, die auf GitHub an einem Update mitgearbeitet
   haben – mit Code, Fehlerbehebungen oder Übersetzungen.
+- **TRS Client: echte 3D-Kopf-Kosmetik.** Kronen, Hüte, die TRS-Cap, der Lampen-Helm und der Heiligenschein sind jetzt
+  richtige 3D-Modelle aus dem TRS Studio – mit Knochen, Animationen, die bei allen gleichzeitig laufen, leuchtenden
+  Teilen und weichen Lichthöfen, genau wie in der Vorschau auf der Website und im Launcher. Sie funktionieren in allen
+  Minecraft-Versionen des Clients (Fabric, Forge, NeoForge, 1.8.9–26.3) und sitzen mit Helm sauber auf dem Helm. Die
+  Quietscheente watschelt weiter.
+- **TRS Client: neuer Reiter „Kosmetik“ in der Garderobe.** Deine Kopf-Kosmetik als Karten, Anprobieren an der großen
+  drehbaren Figur (mit Animation und Leuchten, bei Tag oder Nacht) und Aufsetzen oder Absetzen. Gesperrte Teile sind
+  ausgegraut und zeigen, wie du sie bekommst (Code im Launcher einlösen, Erfolg oder TRS-Team).
 
 ## 0.14.0 – 2026-09-28 – Achievement Unlocked | Erfolg freigeschaltet
 <!-- banner: accent=#ffc53d motif=/news/0.14.0/banner.png -->
