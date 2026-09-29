@@ -339,13 +339,17 @@ Auth required. Send 1–100 UUIDs, dashed or not. Duplicates are ignored.
       "cosmetics": {
         "hat": {
           "id": "redstone_crown",
-          "template": "crown",
+          "format": 2,
+          "model": "https://api.theredstonee.de/v1/cosmetics/redstone_crown/model.json?v=9b1f0c77aa21",
           "url": "https://api.theredstonee.de/v1/cosmetics/redstone_crown.png?v=9b1f0c77aa21",
-          "scale": 2,
-          "animated": true,
-          "frames": 8,
-          "frameTimeMs": 120,
-          "emissive": true
+          "scale": 8,
+          "animated": false,
+          "frames": 1,
+          "frameTimeMs": null,
+          "glow": "https://api.theredstonee.de/v1/cosmetics/redstone_crown/glow.png?v=9b1f0c77aa21",
+          "glowFrames": 12,
+          "glowFrameTimeMs": 140,
+          "hash": "9b1f0c77aa21"
         },
         "wings": null,
         "back": null,
@@ -358,7 +362,7 @@ Auth required. Send 1–100 UUIDs, dashed or not. Duplicates are ignored.
 
 Only players who **use TRS and show something** (badge, cape or at least one cosmetic) appear in the list. A missing UUID means "no badge, no cape, no cosmetics": render vanilla.
 
-`cosmetics` always has the four keys `hat`, `wings`, `back` and `aura`. Each is `null` or a **LookupCosmetic**. Render it with the template named in `template` from `GET /v1/cosmetics/templates` (§11). The texture and frame fields work exactly like the cape fields.
+`cosmetics` always has the four keys `hat`, `wings`, `back` and `aura`. Each is `null` or a **LookupCosmetic**. A format-1 item has `template`: render it with that template from `GET /v1/cosmetics/templates` (§11). A **format-2** item (`"format": 2`, 3D model, §11.9) has **no** `template` and no `emissive`, but `model`, `glow`, `glowFrames`, `glowFrameTimeMs` and `hash`. The texture and frame fields work exactly like the cape fields. Clients that only know templates must skip items without a known `template` (older TRS Clients do).
 
 Privacy rules, enforced server-side:
 
@@ -1221,7 +1225,21 @@ Animated particle textures use the same frame formula as models. All particles o
 | `emissive` | Render at full brightness (§11.3). |
 | `emote` | `{ "durationMs", "loop" }` for emotes, otherwise `null`. |
 
-**LookupCosmetic** is the flat form used in the lookup and in events: `{ id, template, url, scale, animated, frames, frameTimeMs, emissive }`.
+**LookupCosmetic** is the flat form used in the lookup and in events: `{ id, template, url, scale, animated, frames, frameTimeMs, emissive }` for format 1, `{ id, format: 2, model, url, scale, animated, frames, frameTimeMs, glow, glowFrames, glowFrameTimeMs, hash }` for format 2 (§11.9).
+
+A **format-2** CosmeticView has `template: null`, `emissive: false` and these extra fields (all absent on format-1 items):
+
+| Field | Meaning |
+|---|---|
+| `format` | `2` |
+| `model` | URL of `model.json` (§11.9), `?v=<hash>`. |
+| `glow` | URL of the glow strip, or `null`. |
+| `card` / `cardNight` | Preview images (three-quarter view, day / night), at most 512 px, own `?v=`. |
+| `frames`, `frameTimeMs` | Base texture strip (usually 1 / `null`). The same values are in `texture`. |
+| `glowFrames`, `glowFrameTimeMs` | Glow strip (0 = none). Frame = `floor(now / glowFrameTimeMs) % glowFrames`. |
+| `hash` | 12 hex digits of the sha256 over `model.json`, texture and glow strip. It is the `?v=` of `model`, `texture.url` and `glow`. |
+
+`texture` stays an object as for format 1 (`url` = the v2 base texture, `width`/`height` = one frame in pixels, `scale` = texels per unit) so older clients can still parse the catalog.
 
 ### 11.7 Endpoints
 
@@ -1231,9 +1249,12 @@ Animated particle textures use the same frame formula as models. All particles o
 | `GET /v1/cosmetics/templates` | no | See §11.1. |
 | `GET /v1/cosmetics/templates/{id}` / `{id}.png?scale=k` | no | One template, or its paint guide (§11.1). `404 template_not_found`. |
 | `GET /v1/me/cosmetics` | yes | `{ equipped: { hat, wings, back, aura }, emotes: [emoteId] }`. Each slot is a CosmeticView or `null`, as you see it (including your pending uploads). `emotes` lists the emotes you may play, in list order. |
-| `PUT /v1/me/cosmetics` | yes | Body `{ "hat"?: id\|null, "wings"?: id\|null, "back"?: id\|null, "aura"?: id\|null }`, with at least one key. An id equips, `null` takes the item off, and a missing key leaves the slot unchanged. **200** has the same shape as `GET /v1/me/cosmetics`. All changes are checked first and then applied together. |
-| `GET /v1/cosmetics/{id}.png` | optional | The texture. Caching, `ETag`/`304` and the pending/private rules are the same as §5.4. Otherwise `404 cosmetic_not_found`. |
+| `PUT /v1/me/cosmetics` | yes | Body `{ "hat"?: id\|null, "wings"?: id\|null, "back"?: id\|null, "aura"?: id\|null }`, with at least one key. An id equips, `null` takes the item off, and a missing key leaves the slot unchanged. Format-2 items are equipped the same way (all of them are `hat`). **200** has the same shape as `GET /v1/me/cosmetics`. All changes are checked first and then applied together. |
+| `GET /v1/cosmetics/{id}.png` | optional | The texture (format 2: the v2 base texture, `ETag` = v2 hash). Caching, `ETag`/`304` and the pending/private rules are the same as §5.4. Otherwise `404 cosmetic_not_found`. |
 | `GET /v1/cosmetics/{id}` | optional | `{ cosmetic: CosmeticView }`. Same visibility as the texture. |
+| `GET /v1/cosmetics/{id}/model.json` | no | Format 2 only (§11.9): the model, byte-for-byte as exported by TRS Studio. `ETag` = full hash; with the matching `?v=` `Cache-Control: public, max-age=31536000, immutable`, otherwise 5 min. `If-None-Match` → `304`. Format-1/unknown ids → `404 cosmetic_not_found`. |
+| `GET /v1/cosmetics/{id}/glow.png` | no | Format 2: glow strip (same caching). `404` if the item has none. |
+| `GET /v1/cosmetics/{id}/card.png`, `…/card-night.png` | no | Format 2: preview images (≤ 512 px, own hash as `ETag`/`?v=`). |
 | `POST /v1/cosmetics/upload?template=<id>&name=<opt>&frameTimeMs=<opt>` | yes | Raw PNG body (`Content-Type: image/png`, at most 512 KiB). **201** `{ cosmetic }` with `status: "pending"`. |
 | `DELETE /v1/cosmetics/{id}` | yes | Deletes your own upload. **204**, or `404 cosmetic_not_found`. |
 | `POST /v1/cosmetics/{id}/report` | yes | `{ reason, note? }` as §5.8. Only `approved` uploads of other users. **204**, or `404 cosmetic_not_found`. |
@@ -1274,22 +1295,39 @@ Animated particle textures use the same frame formula as models. All particles o
 
 | id | Name | Template | Unlock | Animated |
 |---|---|---|---|---|
-| `redstone_crown` | Redstone-Krone | `crown` | code | 8 × 120 ms, emissive |
-| `team_crown` | Team-Krone | `crown` | **admin** | 8 × 150 ms, emissive |
-| `trs_cap` | TRS-Cap | `cap` | free | – |
-| `lamp_helmet` | Redstone-Lampen-Helm | `lamp_helmet` | free | 8 × 150 ms, emissive |
-| `top_hat` | Zylinder | `tophat` | free | – |
+| `redstone_crown` | Redstone-Krone | **format 2** (hat) | code | glow 12 × 140 ms, idle animation |
+| `team_crown` | Team-Krone | **format 2** (hat) | **admin** | glow 12 × 200 ms, idle animation |
+| `trs_cap` | TRS-Cap | **format 2** (hat) | free | glow 12 × 150 ms |
+| `lamp_helmet` | Redstone-Lampen-Helm | **format 2** (hat) | free | glow 12 × 160 ms, idle animation |
+| `top_hat` | Zylinder | **format 2** (hat) | free | glow 12 × 150 ms, idle animation |
 | `redstone_wings` | Redstone-Flügel | `wings` | code | 8 × 120 ms, emissive |
 | `dragon_wings` | Drachenflügel | `wings` | free | – |
 | `backpack` | Rucksack | `backpack` | free | – |
-| `halo` | Heiligenschein | `halo` (aura) | code | 8 × 125 ms, emissive |
+| `halo` | Heiligenschein | **format 2** (hat) | code | glow 12 × 150 ms, idle animation |
 | `redstone_aura` | Redstone-Partikel-Aura | `orbit` (aura) | free | 4 × 150 ms, emissive |
 | `footprints` | Fußspuren | `trail` (aura) | free | – |
 | `rubber_duck` | Quietscheente | `duck` (rig) | code, **hidden** | – (animated by the rig) |
 
-Templates without a built-in item (`ring`) are available for uploads.
+Templates without a built-in item (`ring`, and since format 2 also `crown`, `cap`, `lamp_helmet`, `tophat`, `halo`) are available for uploads. The six format-2 items kept their ids, so owners and codes still work; a `halo` equipped in `aura` moved to `hat` at the first start with format 2 (taken off if `hat` was already in use).
 
 **Hidden items** (`hidden: true` in `catalog.json`, only together with `unlock: "code"`) never appear in `GET /v1/cosmetics` for anyone who has not unlocked them – not even as locked, and not for admins. Once redeemed, they are listed and wearable like any other item, and others see them on the wearer through the lookup. Admins find them for code creation under `GET /v1/admin/cosmetics/builtin` (staff): every built-in item and emote that is not `free`, with `hidden`.
+
+### 11.9 Format 2: 3D models
+
+Built-in head items can be **real 3D models** instead of template + texture. Source of truth is the TRS Studio format description (`trs-studio/cosmetic-format.md`); the short form:
+
+- **Files:** `model.json` + base texture (RGBA, alpha 0/255; vertical strip if `texture.frames > 1`) + optional glow strip (additive, black = nothing). The server ships them in `api/assets/cosmetics/v2/<id>.json`, `<id>.png`, `<id>-glow.png`, plus `<id>-card.png` / `<id>-card-night.png` (previews ≤ 512 px). `catalog.json` lists them as `{ "id", "name", "format": 2, "unlock", "frames", "frameTimeMs"?, "glowFrames", "glowFrameTimeMs"?, "hidden"? }`; the frame values must match the model. Import: `node api/scripts/import-cosmetics-v2.mjs` (copies the approved exports unchanged and makes the cards).
+- **Start check:** every model is validated with the format rules (TypeScript port of `validateModel`, `app/utils/cosmetic-v2/format.ts`) including the image sizes. An invalid model **stops the server start**.
+- **Units and axes:** 1 unit = 1 skin pixel. **+x = the player's left, +y = up, +z = front** (same as three.js/skinview3d). `attach: "head"`: origin = head pivot (neck, centre of the head's bottom). `ModelPart` space: `x' = x, y' = −y, z' = −z`.
+- **Bones:** `{ id, parent?, pivot, rotation? }`, parents before children, pivot in model space, rotation in degrees, order **ZYX** (matrix `Rz·Ry·Rx`). Local matrix `T(pivot + pos) · R(rotation + rot) · S(scale) · T(−pivot)`, world `W = W_parent · L`.
+- **Cubes:** `{ id?, bone, from, to, inflate?, material?, faces }` in model space. `faces.<north|south|east|west|up|down> = { uv: [u0,v0,u1,v1] (units), rotation?: 0|90|180|270, material? }`; a missing face is not drawn. Corner order and UV mapping per face are fixed (see the Studio description, §5); one axis may be 0 thick (drawn double-sided).
+- **Materials:** `cutout` (alpha test 0.5), `emissive` (full bright), `translucent` (alpha blend, no depth write). All faces double-sided, nearest filtering, **no mipmaps**.
+- **Glow:** `glow.png` drawn additively over all faces with the same UVs, full bright, no depth write, small polygon offset. Frame = `floor(t / frameTimeMs) % frames`.
+- **Halos:** additive camera-facing squares (`size`, `pos` on a bone, `color`, `intensity`, optional `normal` + `pulse`), pushed `size/2` towards the camera, radial falloff `(1 − r)^2.5`, pulse `min + (max − min)·(0.5 − 0.5·cos(2π·phase))`, faded out when `normal` points away.
+- **Animations:** tracks `rotation` (degrees, added), `position` (units, added), `scale` (multiplied) with `linear` / `smooth` (`u²(3 − 2u)`) / `step`, **wall clock** (`t = now + offsetMs`, `mod lengthMs` when looping) so every client shows the same phase. Driver `idle` always runs; `walk`, `sneak`, `jump`, `air` are reserved.
+- **Limits:** 64 cubes, 32 bones, 1024 px per image edge, strip ≤ 4096 px, 16 frames, 8 animations, 16 halos, coordinates ±48 on a 0.125 grid, scale 1/2/4/8/16 (the server accepts up to 8).
+
+Reference renderer (three.js + skinview3d, pixel-identical to the Studio workbench, shared with the launcher): `api/app/utils/cosmetic-v2/` (README there). Uploads stay format 1.
 
 ---
 
@@ -1458,6 +1496,7 @@ Public, cached for 5 minutes (`Cache-Control: public, max-age=300`). Used by the
 | `GET /v1/site/blog` | `{ posts: [{ version, date, title: { en, de } | null, headlines: { en: [], de: [] }, banner: { accent, motif } | null, gallery: { en: PostShot[], de: PostShot[] } }] }` from `CHANGELOG.md` on `main`, newest first, released versions only. A PostShot is `{ src, caption }` (caption in that language or `""`); `src` points to `raw.githubusercontent.com`. The gallery comes from the `shots:` comment below the banner line, plus older `![…](/news/…)` lines in the text; at most 8. |
 | `GET /v1/site/blog/{version}` | `{ post: … + markdown: { en, de }, contributors: string[] }` (the text without image lines and without a thanks section), or `404 not_found`. `contributors` are GitHub logins (without `@`) of the people thanked in the release, see below; `[]` if there are none. |
 | `GET /v1/site/capes` | `{ capes: [{ id, name, unlock, url, scale, frames, frameTimeMs }] }`. Approved built-in capes only; `url` is relative (`/v1/capes/<id>.png?v=…`). |
+| `GET /v1/site/cosmetics` | `{ hats: [{ id, name, unlock, achievement, texture, format: 2, model, glow, card, cardNight, frames, frameTimeMs, glowFrames, glowFrameTimeMs, hash }] }`. Built-in format-2 head items (§11.9), never hidden or retired ones; all URLs relative. `achievement` = title `{en,de,es}` if an achievement grants the item, else `null`. |
 
 If GitHub is unreachable, the last good answer is kept. Without one, `release` is `null` and `posts` is empty.
 

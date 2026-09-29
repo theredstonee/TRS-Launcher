@@ -258,7 +258,8 @@ export interface PlayerFile {
     reporterScore: { actioned: number, dismissed: number, low: boolean, score: number | null }
   }
   capes: { id: string, name: string, status: string, url: string, scale: number, frames: number, frameTimeMs: number | null, createdAt: string, reports: number, source: string }[]
-  cosmetics: { id: string, name: string, status: string, slot: string, createdAt: string | null, reports: number, source: string }[]
+  /** `card` nur bei Kosmetik im Format v2 (3D-Modell, Vorschaubild). */
+  cosmetics: { id: string, name: string, status: string, slot: string, card?: string, createdAt: string | null, reports: number, source: string }[]
   worlds: AdminRoom[]
   notes: { id: number, at: string, actor: ActorRef, text: string, deletable: boolean }[]
   can: { sanction: boolean, reason: string | null, limits: { kinds: string[], maxMinutes: number | null, maxWarnMinutes: number | null, permanent: boolean } }

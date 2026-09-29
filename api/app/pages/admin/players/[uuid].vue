@@ -225,7 +225,8 @@ const QUICK: SanctionKind[] = ['warn', 'chat_mute', 'social_ban', 'upload_ban', 
                 <span v-if="c.reports" class="tone tone-warn"><SiteIcon name="flag" class="size-3" />{{ c.reports }}</span>
               </li>
               <li v-for="c in file.cosmetics" :key="`k${c.id}`" class="flex items-center gap-3">
-                <span class="grid w-12 shrink-0 place-items-center rounded-md bg-base-950 py-2 text-[10px] text-base-400 uppercase">{{ c.slot }}</span>
+                <img v-if="c.card" :src="localUrl(c.card)" alt="" class="size-12 shrink-0 rounded-md bg-base-950 object-cover" loading="lazy" />
+                <span v-else class="grid w-12 shrink-0 place-items-center rounded-md bg-base-950 py-2 text-[10px] text-base-400 uppercase">{{ c.slot }}</span>
                 <span class="min-w-0 flex-1">
                   <span class="block truncate text-sm text-base-50">{{ c.name }}</span>
                   <span class="text-xs text-base-400">{{ a.file.source[c.source] }}<template v-if="c.createdAt"> · {{ day(c.createdAt) }}</template></span>

@@ -744,6 +744,19 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
       migrateSyncNotes(db)
     },
   },
+  {
+    // Kosmetik-Format v2 (§11.9): echte 3D-Modelle (model.json + Textur + Leucht-Streifen) statt Vorlage + Textur.
+    // `format` = 1 (Vorlage) oder 2 (Modell). v2-Zeilen tragen in `template` den Platzhalter '@v2', weil der alte
+    // CHECK (Emote ⇔ keine Vorlage ⇔ keine Textur) sich ohne Neuanlage der Tabelle nicht ändern lässt; Modell,
+    // Leucht-Streifen und Karten kommen beim Start aus assets/cosmetics/v2/ (nicht aus der DB). Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 20,
+    run: (db) => {
+      if (!hasColumn(db, 'cosmetics', 'format')) {
+        db.exec('ALTER TABLE cosmetics ADD COLUMN format INTEGER NOT NULL DEFAULT 1 CHECK (format IN (1, 2))')
+      }
+    },
+  },
 ]
 
 /** Notizen-Sync (§17.5), Teil von Migration 19. Exportiert für den Idempotenz-Test. */

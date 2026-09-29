@@ -14,7 +14,7 @@
 // Vorder- und Rückseite, Kanten und Silhouetten automatisch zusammen – und die
 // Vorschau liest die Textur über dieselbe Abbildung zurück (prüft das UV-Netz).
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { deflateSync } from 'node:zlib'
@@ -782,7 +782,10 @@ const range = (n) => Array.from({ length: n }, (_, i) => i)
 
 // view: Ausschnitt [xMin, xMax, yMin, yMax] in Welt-Einheiten (Füße bei y = 0)
 const HEAD_WIN = [-9, 9, 20, 43]
-const cosmetics = [
+// Kronen, Cap, Lampen-Helm, Zylinder und Heiligenschein sind seit 2026-09-29 echte 3D-Modelle (Format v2,
+// assets/cosmetics/v2/, scripts/import-cosmetics-v2.mjs). Ihre alten Vorlagen-Texturen hier nur noch als Vorlage
+// für eigene Entwürfe (V1_LEGACY), nicht mehr im Katalog.
+const V1_LEGACY = [
   { id: 'redstone_crown', name: 'Redstone-Krone', template: 'crown', unlock: 'code', emissive: true,
     frames: range(8).map((f) => redstoneCrown(f, 8)), frameTimeMs: 120, view: 'front', win: HEAD_WIN, previewFrame: 1 },
   { id: 'team_crown', name: 'Team-Krone', template: 'crown', unlock: 'admin', emissive: true,
@@ -791,12 +794,14 @@ const cosmetics = [
   { id: 'lamp_helmet', name: 'Redstone-Lampen-Helm', template: 'lamp_helmet', unlock: 'free', emissive: true,
     frames: range(8).map(lampHelmet), frameTimeMs: 150, view: 'front', win: HEAD_WIN, previewFrame: 3 },
   { id: 'top_hat', name: 'Zylinder', template: 'tophat', unlock: 'free', frames: [topHat()], view: 'front', win: HEAD_WIN },
+  { id: 'halo', name: 'Heiligenschein', template: 'halo', unlock: 'code', emissive: true,
+    frames: range(8).map((f) => halo(f, 8)), frameTimeMs: 125, view: 'front', win: HEAD_WIN },
+]
+const cosmetics = [
   { id: 'redstone_wings', name: 'Redstone-Flügel', template: 'wings', unlock: 'code', emissive: true,
     frames: range(8).map((f) => redstoneWings(f, 8)), frameTimeMs: 120, view: 'back', win: [-19, 19, 6, 34], previewFrame: 2 },
   { id: 'dragon_wings', name: 'Drachenflügel', template: 'wings', unlock: 'free', frames: [dragonWings()], view: 'back', win: [-19, 19, 6, 34] },
   { id: 'backpack', name: 'Rucksack', template: 'backpack', unlock: 'free', frames: [backpack()], view: 'back', win: [-10, 10, 8, 34] },
-  { id: 'halo', name: 'Heiligenschein', template: 'halo', unlock: 'code', emissive: true,
-    frames: range(8).map((f) => halo(f, 8)), frameTimeMs: 125, view: 'front', win: HEAD_WIN },
   { id: 'redstone_aura', name: 'Redstone-Partikel-Aura', template: 'orbit', unlock: 'free', emissive: true,
     frames: range(4).map(redstoneAura), frameTimeMs: 150, view: 'front', win: [-17, 17, -2, 36] },
   { id: 'footprints', name: 'Fußspuren', template: 'trail', unlock: 'free', frames: [footprints()], view: 'top' },
@@ -832,5 +837,16 @@ const catalog = cosmetics.map((c) => {
     ...(c.hidden ? { hidden: true } : {}),
   }
 })
-writeFileSync(join(OUT, 'catalog.json'), `${JSON.stringify(catalog, null, 2)}\n`)
-console.log(`${catalog.length} Kosmetik-Teile → ${OUT}, Vorschauen → ${PREVIEW}`)
+// Nur Vorschauen der alten Vorlagen-Fassungen (für Vergleiche), keine Katalog-Einträge.
+for (const c of V1_LEGACY) {
+  const tpl = TEMPLATES[c.template]
+  const tex = c.frames.length > 1 ? strip(c.frames) : c.frames[0]
+  writeFileSync(join(PREVIEW, `${c.id}-v1.png`), png(renderView(tpl, tex, Math.min(c.previewFrame ?? 0, c.frames.length - 1), c.view, c.win)))
+}
+// v2-Einträge (3D-Modelle, von Hand gepflegt) bleiben vorne erhalten.
+const v2 = existsSync(join(OUT, 'catalog.json'))
+  ? JSON.parse(readFileSync(join(OUT, 'catalog.json'), 'utf8')).filter((e) => e.format === 2)
+  : []
+const all = [...v2, ...catalog.filter((c) => !v2.some((e) => e.id === c.id))]
+writeFileSync(join(OUT, 'catalog.json'), `${JSON.stringify(all, null, 2)}\n`)
+console.log(`${all.length} Kosmetik-Teile (${v2.length} im Format v2) → ${OUT}, Vorschauen → ${PREVIEW}`)

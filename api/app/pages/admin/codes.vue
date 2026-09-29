@@ -19,8 +19,11 @@ interface CodeView {
 const codes = ref<CodeView[]>([])
 const catalog = ref<SiteCape[]>([])
 const lockedCapes = computed(() => catalog.value.filter((c) => c.unlock !== 'free'))
-interface LockableCosmetic { id: string, name: string, slot: string, unlock: string, hidden: boolean }
+/** `card` = Vorschaubild bei Kosmetik im Format v2 (3D-Modell), sonst null. */
+interface LockableCosmetic { id: string, name: string, slot: string, unlock: string, hidden: boolean, card: string | null }
 const cosmetics = ref<LockableCosmetic[]>([])
+const cosmeticCard = (id: string | null) => cosmetics.value.find((c) => c.id === id)?.card ?? null
+const selectedCard = computed(() => (form.target.startsWith('cos:') ? cosmeticCard(form.target.slice(4)) : null))
 // Ziel als „cape:<id>“ bzw. „cos:<id>“ (Umhänge und Kosmetik teilen sich keinen ID-Raum).
 const form = reactive({ target: '', count: 1, maxUses: 1, note: '' })
 const created = ref<string[]>([])
@@ -119,6 +122,7 @@ const cosmeticName = (id: string | null) => cosmetics.value.find((c) => c.id ===
             <option v-for="c in cosmetics" :key="c.id" :value="`cos:${c.id}`">{{ c.name }}{{ c.hidden ? ` (${m.admin.codes.hiddenTag})` : '' }}</option>
           </optgroup>
         </select>
+        <img v-if="selectedCard" :src="selectedCard" alt="" class="mt-3 size-28 rounded-lg border border-base-800 bg-base-950 object-cover" loading="lazy" />
         <div class="mt-3 grid grid-cols-2 gap-3">
           <div>
             <label class="label" for="code-count">{{ m.admin.codes.count }}</label>
@@ -152,7 +156,12 @@ const cosmeticName = (id: string | null) => cosmetics.value.find((c) => c.id ===
             <tbody class="divide-y divide-base-800">
               <tr v-for="c in codes" :key="c.id" :class="{ 'opacity-45': c.revokedAt || c.uses >= c.maxUses }">
                 <td class="px-4 py-2.5 font-mono text-base-50">…{{ c.hint }}</td>
-                <td class="px-4 py-2.5">{{ c.capeId ? capeName(c.capeId) : cosmeticName(c.cosmeticId) }}</td>
+                <td class="px-4 py-2.5">
+                  <span class="flex items-center gap-2">
+                    <img v-if="!c.capeId && cosmeticCard(c.cosmeticId)" :src="cosmeticCard(c.cosmeticId)!" alt="" class="size-7 shrink-0 rounded bg-base-950 object-cover" loading="lazy" />
+                    {{ c.capeId ? capeName(c.capeId) : cosmeticName(c.cosmeticId) }}
+                  </span>
+                </td>
                 <td class="px-4 py-2.5 text-base-400 tabular-nums">{{ fill(m.admin.codes.uses2, { uses: c.uses, max: c.maxUses }) }}</td>
                 <td class="max-w-56 truncate px-4 py-2.5 text-base-400">{{ c.note }}</td>
                 <td class="px-4 py-2.5 text-right">

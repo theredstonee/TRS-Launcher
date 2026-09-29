@@ -114,13 +114,16 @@ describe('bundled cosmetics', () => {
     ]))
     seedBuiltinCosmetics(env.ctx, list)
     for (const c of list) {
+      if (c.format === 2) continue // 3D-Modelle: eigene Tests (cosmetics-v2.test.ts)
       const t = env.ctx.templates.get(c.template)!
       expect(c.png.readUInt32BE(16)).toBe(t.textureWidth * c.scale)
       expect(c.png.readUInt32BE(20)).toBe(t.textureHeight * c.scale * c.frames)
     }
     expect(list.find((c) => c.id === 'team_crown')!.unlock).toBe('admin')
-    expect(list.filter((c) => c.frames > 1).map((c) => c.id)).toEqual(
-      expect.arrayContaining(['redstone_crown', 'lamp_helmet', 'redstone_wings', 'halo']),
+    // Hüte, Kronen und Heiligenschein sind Format v2; die übrigen bleiben Vorlage + Textur.
+    expect(list.filter((c) => c.format === 2).map((c) => c.id).sort()).toEqual(['halo', 'lamp_helmet', 'redstone_crown', 'team_crown', 'top_hat', 'trs_cap'])
+    expect(list.filter((c) => c.format !== 2 && c.frames > 1).map((c) => c.id)).toEqual(
+      expect.arrayContaining(['redstone_wings', 'redstone_aura']),
     )
     const u = await login(env, 'Steve')
     const cat = cosmeticCatalog(env.ctx, u.user.uuid)

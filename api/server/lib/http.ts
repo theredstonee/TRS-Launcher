@@ -225,11 +225,25 @@ export function requireStaff(event: H3Event, need?: Permission | Permission[]): 
  * `?v=` zum Inhalt passt; private (wartende/abgelehnte) nie.
  */
 export function sendPng(event: H3Event, filename: string, tex: { png: Buffer, sha256: string, public: boolean }): Buffer | string {
+  return sendCached(event, filename, 'image/png', { body: tex.png, sha256: tex.sha256, public: tex.public })
+}
+
+/**
+ * Datei mit ETag (= sha256) ausliefern: öffentlich + passendes `?v=` → ein Jahr `immutable`, falsches `?v=` → 5 min,
+ * privat → `no-store`. `If-None-Match` → 304.
+ */
+export function sendCached(
+  event: H3Event,
+  filename: string,
+  contentType: string,
+  file: { body: Buffer, sha256: string, public: boolean },
+): Buffer | string {
+  const tex = file
   const etag = `"${tex.sha256}"`
   const v = getQuery(event).v
   const current = typeof v !== 'string' || tex.sha256.startsWith(v)
   setResponseHeaders(event, {
-    'Content-Type': 'image/png',
+    'Content-Type': contentType,
     'Content-Disposition': `inline; filename="${filename}"`,
     'Cross-Origin-Resource-Policy': 'cross-origin',
     ETag: etag,
@@ -239,7 +253,7 @@ export function sendPng(event: H3Event, filename: string, tex: { png: Buffer, sh
     setResponseStatus(event, 304)
     return ''
   }
-  return tex.png
+  return tex.body
 }
 
 export function noContent(event: H3Event): null {

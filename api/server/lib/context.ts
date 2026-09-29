@@ -1,5 +1,6 @@
 import { join } from 'node:path'
 import type { Config } from './config'
+import type { CosmeticV2Assets } from './cosmetics-v2'
 import { ChatCipher } from './crypto'
 import type { Db } from './db'
 import { EventHub } from './events'
@@ -26,6 +27,8 @@ export interface AppContext {
   skins: SkinService
   /** Kosmetik-Vorlagen (beim Start aus assets/cosmetics/templates.json). */
   templates: TemplateSet
+  /** Mitgelieferte Kosmetik im Format v2 (§11.9): Modell, Textur, Leucht-Streifen, Karten – beim Start eingespielt. */
+  cosmeticsV2: Map<string, CosmeticV2Assets>
   now: () => number
   /** Ordner für Umhang-PNGs (`<DATA_DIR>/capes`). */
   capeDir: string
@@ -83,6 +86,7 @@ export function createContext(opts: {
     limiter,
     skins: new SkinService(opts.mojang, limiter, now, (p) => rememberSkin(opts.db, p, now())),
     templates: opts.templates ?? TemplateSet.empty(),
+    cosmeticsV2: new Map(),
     now,
     capeDir: opts.capeDir,
     cosmeticDir: opts.cosmeticDir,

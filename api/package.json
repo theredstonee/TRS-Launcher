@@ -31,6 +31,7 @@
     "nuxt-security": "^2.6.0",
     "pngjs": "^7.0.0",
     "skinview3d": "3.4.2",
+    "three": "0.156.1",
     "zod": "^4.6.5"
   },
   "devDependencies": {
@@ -38,6 +39,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^24.13.6",
     "@types/pngjs": "^6.0.5",
+    "@types/three": "0.156.0",
     "eslint": "^10.11.0",
     "tailwindcss": "^4.3.3",
     "typescript": "5.9.3",

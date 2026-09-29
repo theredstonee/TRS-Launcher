@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { writeAtomic } from './capes'
+import { shortHash, V2_TEMPLATE, v2File, type BuiltinCosmeticV2, type CosmeticV2Assets, type V2File } from './cosmetics-v2'
 import type { AppContext } from './context'
 import { all, one, run, tx } from './db'
 import { EMOTE_BY_ID, EMOTES } from './emotes'
@@ -40,6 +41,8 @@ export interface CosmeticRow {
   emissive: number
   /** 1 = nur für Besitzer sichtbar (Migration 10). */
   hidden: number
+  /** 1 = Vorlage + Textur, 2 = 3D-Modell (§11.9, Migration 20; `template` ist dann der Platzhalter '@v2'). */
+  format: number
   sort: number
   retired: number
   created_at: number
@@ -60,19 +63,40 @@ export interface CosmeticTexture {
   frameTimeMs: number | null
 }
 
-export interface CosmeticView {
+export interface CosmeticView extends Partial<CosmeticV2Fields> {
   id: string
   name: string
   slot: CosmeticSlot
   kind: 'builtin' | 'upload'
   unlock: CosmeticUnlock
   status: CosmeticStatus
-  /** Vorlagen-ID (`null` bei Emotes). */
+  /** Vorlagen-ID (`null` bei Emotes und bei Format v2). */
   template: string | null
   texture: CosmeticTexture | null
-  /** Ohne Weltlicht rendern (volle Helligkeit). Nur mitgelieferte Designs. */
+  /** Ohne Weltlicht rendern (volle Helligkeit). Nur mitgelieferte Designs (v1). */
   emissive: boolean
   emote: { durationMs: number, loop: boolean } | null
+}
+
+/** Zusatzfelder für Format v2 (§11.9). Fehlen bei v1-Teilen (alte Clients kennen sie nicht). */
+export interface CosmeticV2Fields {
+  format: 2
+  /** URL von model.json (`?v=hash`). */
+  model: string
+  /** URL des Leucht-Streifens oder `null`. */
+  glow: string | null
+  /** Vorschaubild (schräg, Tag), höchstens 512 px. */
+  card: string
+  /** Vorschaubild bei Nacht. */
+  cardNight: string
+  /** Frames der Grundtextur (Streifen) + Dauer. */
+  frames: number
+  frameTimeMs: number | null
+  /** Frames des Leucht-Streifens (0 = keiner) + Dauer. */
+  glowFrames: number
+  glowFrameTimeMs: number | null
+  /** 12 Hex: sha256 über model.json + Textur + Leucht-Streifen (gleich dem `?v=` von model/texture/glow). */
+  hash: string
 }
 
 export interface CosmeticCatalogEntry extends CosmeticView {
@@ -87,8 +111,35 @@ export function cosmeticUrl(ctx: AppContext, c: Pick<CosmeticRow, 'id' | 'sha256
   return `${ctx.config.publicBaseUrl}/v1/cosmetics/${c.id}.png?v=${(c.sha256 ?? '').slice(0, 12)}`
 }
 
+/** v2-Felder mit URLs relativ zu `base` (`publicBaseUrl` für API-Clients, `''` für die Website). */
+export function v2Fields(a: CosmeticV2Assets, base: string): CosmeticV2Fields {
+  const v = shortHash(a.hash)
+  const t = a.model.texture
+  const g = a.model.glow
+  const texFrames = t.frames ?? 1
+  const glowFrames = g ? (g.frames ?? 1) : 0
+  return {
+    format: 2,
+    model: `${base}/v1/cosmetics/${a.id}/model.json?v=${v}`,
+    glow: g ? `${base}/v1/cosmetics/${a.id}/glow.png?v=${v}` : null,
+    card: `${base}/v1/cosmetics/${a.id}/card.png?v=${shortHash(a.cardHash)}`,
+    cardNight: `${base}/v1/cosmetics/${a.id}/card-night.png?v=${shortHash(a.cardNightHash)}`,
+    frames: texFrames,
+    frameTimeMs: texFrames > 1 ? (t.frameTimeMs ?? null) : null,
+    glowFrames,
+    glowFrameTimeMs: glowFrames > 1 ? (g?.frameTimeMs ?? null) : null,
+    hash: v,
+  }
+}
+
+/** v2-Daten einer Zeile (nur Format 2 und nur, solange die Dateien beim Start eingespielt wurden). */
+export function v2Assets(ctx: AppContext, c: Pick<CosmeticRow, 'id' | 'format'>): CosmeticV2Assets | undefined {
+  return c.format === 2 ? ctx.cosmeticsV2.get(c.id) : undefined
+}
+
 export function cosmeticView(ctx: AppContext, c: CosmeticRow): CosmeticView {
   const emote = c.slot === 'emote' ? EMOTE_BY_ID.get(c.id) : undefined
+  const v2 = v2Assets(ctx, c)
   return {
     id: c.id,
     name: c.name,
@@ -96,7 +147,8 @@ export function cosmeticView(ctx: AppContext, c: CosmeticRow): CosmeticView {
     kind: c.kind,
     unlock: c.unlock,
     status: c.status,
-    template: c.template,
+    // v2: keine Vorlage – alte Clients (nur Vorlagen) lassen das Teil so einfach weg.
+    template: c.format === 2 ? null : c.template,
     texture:
       c.sha256 && c.width && c.height && c.scale
         ? {
@@ -111,6 +163,7 @@ export function cosmeticView(ctx: AppContext, c: CosmeticRow): CosmeticView {
         : null,
     emissive: c.emissive === 1,
     emote: emote ? { durationMs: emote.durationMs, loop: emote.loop } : null,
+    ...(v2 ? v2Fields(v2, ctx.config.publicBaseUrl) : {}),
   }
 }
 
@@ -118,14 +171,19 @@ export function getCosmetic(ctx: AppContext, id: string): CosmeticRow | undefine
   return one<CosmeticRow>(ctx.db, 'SELECT * FROM cosmetics WHERE id = ?', id)
 }
 
-/** Vorlage bekannt (Emotes brauchen keine)? Kosmetik mit entfernter Vorlage wird nirgends ausgeliefert. */
-export function renderable(ctx: AppContext, c: Pick<CosmeticRow, 'slot' | 'template'>): boolean {
-  return c.slot === 'emote' || (c.template !== null && ctx.templates.get(c.template) !== undefined)
+/**
+ * Vorlage bekannt (Emotes brauchen keine) bzw. v2-Modell eingespielt? Kosmetik mit entfernter Vorlage oder
+ * fehlendem Modell wird nirgends ausgeliefert.
+ */
+export function renderable(ctx: AppContext, c: Pick<CosmeticRow, 'id' | 'slot' | 'template' | 'format'>): boolean {
+  if (c.format === 2) return ctx.cosmeticsV2.has(c.id)
+  return c.slot === 'emote' || (c.template !== null && c.template !== V2_TEMPLATE && ctx.templates.get(c.template) !== undefined)
 }
 
 // ---------------------------------------------------------------- Katalog einspielen
 
 export interface BuiltinCosmetic {
+  format?: 1
   id: string
   name: string
   template: string
@@ -140,6 +198,9 @@ export interface BuiltinCosmetic {
   png: Buffer
 }
 
+/** Eintrag aus catalog.json: Format 1 (Vorlage + Textur) oder Format 2 (3D-Modell). */
+export type AnyBuiltinCosmetic = BuiltinCosmetic | BuiltinCosmeticV2
+
 function assertNoSlotClash(ctx: AppContext, id: string, slot: CosmeticSlot): void {
   const existing = one<{ slot: CosmeticSlot, kind: string }>(ctx.db, 'SELECT slot, kind FROM cosmetics WHERE id = ?', id)
   if (existing && (existing.kind !== 'builtin' || (existing.slot === 'emote') !== (slot === 'emote'))) {
@@ -148,10 +209,16 @@ function assertNoSlotClash(ctx: AppContext, id: string, slot: CosmeticSlot): voi
 }
 
 /** Mitgelieferte Designs → DB + `<DATA_DIR>/cosmetics`. Fehlende werden ausgemustert (Träger behalten sie). */
-export function seedBuiltinCosmetics(ctx: AppContext, list: BuiltinCosmetic[]): void {
+export function seedBuiltinCosmetics(ctx: AppContext, list: AnyBuiltinCosmetic[]): void {
   const t = ctx.now()
   const ids = new Set<string>()
+  ctx.cosmeticsV2.clear()
   for (const c of list) {
+    if (c.format === 2) {
+      seedV2(ctx, c, t)
+      ids.add(c.id)
+      continue
+    }
     const tpl = ctx.templates.get(c.template)
     if (!tpl) throw new Error(`builtin cosmetic ${c.id}: unknown template ${c.template}`)
     if (EMOTE_BY_ID.has(c.id)) throw new Error(`builtin cosmetic ${c.id}: id is an emote id`)
@@ -174,7 +241,7 @@ export function seedBuiltinCosmetics(ctx: AppContext, list: BuiltinCosmetic[]): 
        ON CONFLICT(id) DO UPDATE SET slot = excluded.slot, template = excluded.template, name = excluded.name,
          unlock = excluded.unlock, sha256 = excluded.sha256, width = excluded.width, height = excluded.height,
          scale = excluded.scale, frames = excluded.frames, frame_time_ms = excluded.frame_time_ms,
-         emissive = excluded.emissive, hidden = excluded.hidden, sort = excluded.sort, retired = 0
+         emissive = excluded.emissive, hidden = excluded.hidden, sort = excluded.sort, retired = 0, format = 1
        WHERE cosmetics.kind = 'builtin'`,
       c.id, tpl.slot, tpl.id, c.name, c.unlock, sha, w, h, c.scale, c.frames, c.frames > 1 ? c.frameTimeMs : null,
       c.emissive ? 1 : 0, c.hidden ? 1 : 0, c.sort, t,
@@ -184,6 +251,40 @@ export function seedBuiltinCosmetics(ctx: AppContext, list: BuiltinCosmetic[]): 
   for (const row of all<{ id: string }>(ctx.db, "SELECT id FROM cosmetics WHERE kind = 'builtin' AND slot <> 'emote' AND retired = 0")) {
     if (!ids.has(row.id)) run(ctx.db, 'UPDATE cosmetics SET retired = 1 WHERE id = ?', row.id)
   }
+}
+
+/**
+ * v2-Teil einspielen: Textur nach `<DATA_DIR>/cosmetics/<id>.png` (gleiche Route wie v1), Rest im Speicher.
+ * `sha256` der Zeile = v2-Hash (Modell + Textur + Leucht-Streifen). Ersetzt ein gleichnamiges v1-Teil (gleiche ID,
+ * Besitz bleibt); war es in einem anderen Platz ausgerüstet (z. B. Heiligenschein früher `aura`), wandert es nach
+ * `hat` – ist `hat` belegt, wird es abgelegt.
+ */
+function seedV2(ctx: AppContext, c: BuiltinCosmeticV2, t: number): void {
+  if (EMOTE_BY_ID.has(c.id)) throw new Error(`builtin cosmetic ${c.id}: id is an emote id`)
+  assertNoSlotClash(ctx, c.id, 'hat')
+  const tex = c.model.texture
+  const frames = tex.frames ?? 1
+  const file = join(ctx.cosmeticDir, `${c.id}.png`)
+  const texSha = sha256Hex(c.files.texture)
+  if (!existsSync(file) || sha256Hex(readFileSync(file)) !== texSha) writeAtomic(ctx.cosmeticDir, `${c.id}.png`, c.files.texture)
+  tx(ctx.db, () => {
+    run(
+      ctx.db,
+      `INSERT INTO cosmetics (id, kind, slot, template, name, owner_uuid, status, unlock, sha256, width, height, scale,
+         frames, frame_time_ms, emissive, hidden, sort, retired, created_at, format)
+       VALUES (?, 'builtin', 'hat', ?, ?, NULL, 'approved', ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 0, ?, 2)
+       ON CONFLICT(id) DO UPDATE SET slot = excluded.slot, template = excluded.template, name = excluded.name,
+         unlock = excluded.unlock, sha256 = excluded.sha256, width = excluded.width, height = excluded.height,
+         scale = excluded.scale, frames = excluded.frames, frame_time_ms = excluded.frame_time_ms,
+         emissive = 0, hidden = excluded.hidden, sort = excluded.sort, retired = 0, format = 2
+       WHERE cosmetics.kind = 'builtin'`,
+      c.id, V2_TEMPLATE, c.name, c.unlock, c.hash, tex.width * tex.scale, tex.height * tex.scale, tex.scale, frames,
+      frames > 1 ? (tex.frameTimeMs ?? null) : null, c.hidden ? 1 : 0, c.sort, t,
+    )
+    run(ctx.db, "UPDATE OR IGNORE equipped_cosmetics SET slot = 'hat' WHERE cosmetic_id = ? AND slot <> 'hat'", c.id)
+    run(ctx.db, "DELETE FROM equipped_cosmetics WHERE cosmetic_id = ? AND slot <> 'hat'", c.id)
+  })
+  ctx.cosmeticsV2.set(c.id, c)
 }
 
 /** Feste Emote-Liste → DB (damit Codes, Zuteilungen und Freischaltung wie bei Kosmetik funktionieren). */
@@ -478,6 +579,18 @@ export function readCosmeticTexture(
     throw notFound('cosmetic_not_found', 'Cosmetic not found')
   }
   return { png, sha256: c.sha256, public: c.status === 'approved' }
+}
+
+/**
+ * Datei eines v2-Teils (model.json, Leucht-Streifen, Karten). Nur mitgelieferte Teile – immer öffentlich, auch
+ * versteckte (wie ihre Textur): die URL erfährt man nur über Katalog/Lookup.
+ */
+export function readCosmeticV2File(ctx: AppContext, id: string, which: V2File): { body: Buffer, sha256: string, public: true } {
+  const c = getCosmetic(ctx, id)
+  const a = c ? v2Assets(ctx, c) : undefined
+  const f = a ? v2File(a, which) : null
+  if (!f) throw notFound('cosmetic_not_found', 'Cosmetic not found')
+  return { ...f, public: true }
 }
 
 // ---------------------------------------------------------------- Zuteilung (Admin, Codes)

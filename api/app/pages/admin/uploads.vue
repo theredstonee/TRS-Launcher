@@ -12,6 +12,8 @@ interface AdminCosmetic {
   status: 'approved' | 'pending' | 'rejected'
   template: string | null
   texture: { url: string, width: number, height: number, frames: number } | null
+  /** Format v2 (3D-Modell): Vorschaubild statt der flachen Textur. */
+  card?: string
   owner: { uuid: string, name: string } | null
   createdAt: string
   rejectReason: string | null
@@ -224,7 +226,8 @@ const { active } = useListKeys(items, {
             <div class="adm-row h-full" :data-row="i" :data-active="active === i" :data-selected="selected.has(c.id)">
               <input type="checkbox" class="adm-check" :checked="selected.has(c.id)" :aria-label="c.name" @change="toggle(c.id)" />
               <span class="grid size-20 shrink-0 place-items-center overflow-hidden rounded-lg bg-base-950">
-                <img v-if="c.texture" :src="localUrl(c.texture.url)" alt="" class="max-h-18 max-w-18 [image-rendering:pixelated]" loading="lazy" />
+                <img v-if="c.card" :src="localUrl(c.card)" alt="" class="size-20 object-cover" loading="lazy" />
+                <img v-else-if="c.texture" :src="localUrl(c.texture.url)" alt="" class="max-h-18 max-w-18 [image-rendering:pixelated]" loading="lazy" />
                 <span v-else class="text-xs text-base-400">{{ c.slot }}</span>
               </span>
               <span class="min-w-0 flex-1">

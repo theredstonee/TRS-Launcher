@@ -14,15 +14,26 @@ export interface LookupCape {
   frameTimeMs: number | null
 }
 
+/**
+ * Flache Form für Lookup und Ereignisse. Format 1: `template` + Textur. Format 2 (§11.9): kein `template`/`emissive`
+ * (ältere Mods kennen nur Vorlagen und lassen das Teil dann weg), dafür `format`, `model`, `glow`, `glowFrames`,
+ * `glowFrameTimeMs`, `hash`; `url`/`scale`/`frames`/`frameTimeMs` beschreiben die Grundtextur.
+ */
 export interface LookupCosmetic {
   id: string
-  template: string
+  template?: string
   url: string
   scale: number
   animated: boolean
   frames: number
   frameTimeMs: number | null
-  emissive: boolean
+  emissive?: boolean
+  format?: 2
+  model?: string
+  glow?: string | null
+  glowFrames?: number
+  glowFrameTimeMs?: number | null
+  hash?: string
 }
 
 export type LookupCosmetics = Record<WearableSlot, LookupCosmetic | null>
@@ -137,17 +148,36 @@ function collect(ctx: AppContext, viewer: string, uuids: string[]): LookupEntry[
     if (self || r.show_cosmetics === 1) {
       for (const c of worn.get(r.uuid) ?? []) {
         if (!visibleStatus(c.status, self) || !renderable(ctx, c) || !WEARABLE_SLOTS.includes(c.eq_slot)) continue
-        const tex = cosmeticView(ctx, c).texture
-        if (!tex || !c.template) continue
-        cosmetics[c.eq_slot] = {
-          id: c.id,
-          template: c.template,
-          url: tex.url,
-          scale: tex.scale,
-          animated: tex.animated,
-          frames: tex.frames,
-          frameTimeMs: tex.frameTimeMs,
-          emissive: c.emissive === 1,
+        const view = cosmeticView(ctx, c)
+        const tex = view.texture
+        if (!tex) continue
+        if (view.format === 2) {
+          cosmetics[c.eq_slot] = {
+            id: c.id,
+            format: 2,
+            model: view.model!,
+            url: tex.url,
+            scale: tex.scale,
+            animated: tex.animated,
+            frames: tex.frames,
+            frameTimeMs: tex.frameTimeMs,
+            glow: view.glow ?? null,
+            glowFrames: view.glowFrames ?? 0,
+            glowFrameTimeMs: view.glowFrameTimeMs ?? null,
+            hash: view.hash!,
+          }
+        } else {
+          if (!c.template) continue
+          cosmetics[c.eq_slot] = {
+            id: c.id,
+            template: c.template,
+            url: tex.url,
+            scale: tex.scale,
+            animated: tex.animated,
+            frames: tex.frames,
+            frameTimeMs: tex.frameTimeMs,
+            emissive: c.emissive === 1,
+          }
         }
         any = true
       }

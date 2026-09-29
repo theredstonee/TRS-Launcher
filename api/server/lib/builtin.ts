@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { BuiltinCape } from './capes'
-import type { BuiltinCosmetic } from './cosmetics'
+import type { AnyBuiltinCosmetic } from './cosmetics'
+import { buildV2Cosmetic } from './cosmetics-v2'
 import { CAPE_ID, COSMETIC_ID } from './ids'
 import { BUILTIN_MAX_SCALE } from './png'
 import { TEMPLATE_ID } from './templates'
@@ -28,10 +29,31 @@ export const catalogSchema = z
   .refine((list) => list.length <= 100, 'too many capes')
   .refine((list) => new Set(list.map((c) => c.id)).size === list.length, 'duplicate cape id')
 
-const cosmeticEntry = z
-  .object({
-    id: z.string().regex(COSMETIC_ID).refine((s) => !/^c[0-9a-f]{20}$/.test(s), 'reserved for uploads'),
+const cosmeticId = z.string().regex(COSMETIC_ID).refine((s) => !/^c[0-9a-f]{20}$/.test(s), 'reserved for uploads')
+
+/**
+ * Format-v2-Eintrag (§11.9): Dateien liegen fest unter `v2/<id>.json`, `v2/<id>.png`, `v2/<id>-glow.png`,
+ * `v2/<id>-card.png`, `v2/<id>-card-night.png`. `frames`/`glowFrames` (+ Zeiten) müssen zum Modell passen.
+ */
+const cosmeticV2Entry = z
+  .strictObject({
+    id: cosmeticId.refine((s) => /^[a-z][a-z0-9_]{0,39}$/.test(s), 'v2 ids: a–z, 0–9, _ (start with a letter)'),
     name: z.string().min(1).max(32),
+    format: z.literal(2),
+    unlock: z.enum(['free', 'code', 'admin']),
+    frames: z.int().min(1).max(16).default(1),
+    frameTimeMs: z.int().min(16).max(10_000).nullish(),
+    glowFrames: z.int().min(0).max(16).default(0),
+    glowFrameTimeMs: z.int().min(16).max(10_000).nullish(),
+    hidden: z.boolean().default(false),
+  })
+  .refine((c) => !c.hidden || c.unlock === 'code', 'hidden cosmetics must be unlocked by code')
+
+const cosmeticV1Entry = z
+  .object({
+    id: cosmeticId,
+    name: z.string().min(1).max(32),
+    format: z.literal(1).optional(),
     template: z.string().regex(TEMPLATE_ID),
     unlock: z.enum(['free', 'code', 'admin']),
     file: z.string().regex(/^[a-z0-9_-]+\.png$/),
@@ -47,22 +69,42 @@ const cosmeticEntry = z
   .refine((c) => c.frames === 1 || (c.frameTimeMs !== null && c.frameTimeMs !== undefined), 'animated cosmetics need frameTimeMs')
   .refine((c) => c.animated === undefined || c.animated === c.frames > 1, 'animated must match frames > 1')
 
+const cosmeticEntry = z.union([cosmeticV2Entry, cosmeticV1Entry])
+
 /** Format von `assets/cosmetics/catalog.json` (Liste oder `{ cosmetics: [...] }`). */
 export const cosmeticCatalogSchema = z
   .union([z.array(cosmeticEntry), z.object({ cosmetics: z.array(cosmeticEntry) }).transform((o) => o.cosmetics)])
   .refine((list) => list.length <= 200, 'too many cosmetics')
   .refine((list) => new Set(list.map((c) => c.id)).size === list.length, 'duplicate cosmetic id')
 
+/**
+ * Liest den Katalog samt Dateien. v2-Teile werden vollständig geprüft (Modell nach dem Format, Bildmaße,
+ * Übereinstimmung mit dem Katalog-Eintrag) – ein ungültiges Modell lässt den Start scheitern.
+ */
 export async function loadBuiltinCosmetics(
   readJson: () => Promise<unknown>,
   readFile: (name: string) => Promise<Buffer | null>,
-): Promise<BuiltinCosmetic[]> {
+): Promise<AnyBuiltinCosmetic[]> {
   const raw = await readJson()
   if (raw === null || raw === undefined) return []
   const list = cosmeticCatalogSchema.parse(raw)
-  const out: BuiltinCosmetic[] = []
+  const out: AnyBuiltinCosmetic[] = []
   let sort = 0
   for (const c of list) {
+    if (c.format === 2) {
+      const need = async (name: string) => {
+        const buf = await readFile(`v2/${name}`)
+        if (!buf) throw new Error(`builtin cosmetic ${c.id}: file missing: v2/${name}`)
+        return buf
+      }
+      const modelJson = await need(`${c.id}.json`)
+      const texture = await need(`${c.id}.png`)
+      const glow = c.glowFrames > 0 ? await need(`${c.id}-glow.png`) : null
+      const card = await need(`${c.id}-card.png`)
+      const cardNight = await need(`${c.id}-card-night.png`)
+      out.push(buildV2Cosmetic({ ...c, sort: sort++, files: { modelJson, texture, glow, card, cardNight } }))
+      continue
+    }
     const png = await readFile(c.file)
     if (!png) throw new Error(`builtin cosmetic file missing: ${c.file}`)
     out.push({

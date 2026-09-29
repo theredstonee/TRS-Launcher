@@ -35,6 +35,9 @@ importers:
       skinview3d:
         specifier: 3.4.2
         version: 3.4.2
+      three:
+        specifier: 0.156.1
+        version: 0.156.1
       zod:
         specifier: ^4.6.5
         version: 4.6.5
@@ -51,6 +54,9 @@ importers:
       '@types/pngjs':
         specifier: ^6.0.5
         version: 6.0.5
+      '@types/three':
+        specifier: 0.156.0
+        version: 0.156.0
       eslint:
         specifier: ^10.11.0
         version: 10.11.0(jiti@2.7.0)(supports-color@10.2.2)

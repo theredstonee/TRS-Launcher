@@ -1,5 +1,6 @@
 import type { AppContext } from './context'
 import { ACHIEVEMENTS } from './achievement-catalog'
+import { v2Assets, v2Fields, type CosmeticV2Fields } from './cosmetics'
 import { all } from './db'
 import { changelogFor, parseChangelog, postContent, type ChangelogEntry, type PostShot, type UpdateBanner } from './changelog'
 import { extractContributors, mergeContributors } from './contributors'
@@ -238,4 +239,45 @@ export function publicCapes(ctx: AppContext): PublicCape[] {
     frames: c.frames,
     frameTimeMs: c.frames > 1 ? c.frame_time_ms : null,
   }))
+}
+
+// --- Kopf-Kosmetik (Format v2) ------------------------------------------------------------
+
+export interface PublicHat extends CosmeticV2Fields {
+  id: string
+  name: string
+  /** Titel des Erfolgs, der dieses Teil als Belohnung vergibt (§31), sonst `null`. */
+  achievement: { en: string, de: string, es: string } | null
+  unlock: 'free' | 'code' | 'admin'
+  /** Grundtextur – relativ zur Website (gleiche Herkunft, CSP `img-src 'self'`). */
+  texture: string
+}
+
+/**
+ * Mitgelieferte Kopf-Kosmetik im Format v2 für die Website (Karten + 3D-Vorschau). Versteckte Teile (per Code,
+ * z. B. die Ente) erscheinen nie, ausgemusterte auch nicht. URLs relativ (gleiche App).
+ */
+export function publicHats(ctx: AppContext): PublicHat[] {
+  const rows = all<{ id: string, name: string, unlock: 'free' | 'code' | 'admin', format: number }>(
+    ctx.db,
+    `SELECT id, name, unlock, format FROM cosmetics
+     WHERE kind = 'builtin' AND slot = 'hat' AND format = 2 AND status = 'approved' AND retired = 0 AND hidden = 0
+     ORDER BY sort, id`,
+  )
+  const byReward = new Map(ACHIEVEMENTS.filter((a) => a.reward?.kind === 'cosmetic').map((a) => [a.reward!.id, a.title]))
+  const out: PublicHat[] = []
+  for (const r of rows) {
+    const a = v2Assets(ctx, r)
+    if (!a) continue
+    const f = v2Fields(a, '')
+    out.push({
+      id: r.id,
+      name: r.name,
+      unlock: r.unlock,
+      achievement: byReward.get(r.id) ?? null,
+      texture: `/v1/cosmetics/${r.id}.png?v=${f.hash}`,
+      ...f,
+    })
+  }
+  return out
 }
