@@ -902,6 +902,85 @@ mod tests {
         assert!(problems.is_empty(), "nicht umgeschriebene Mojang-Namen:\n{}", problems.join("\n"));
     }
 
+    /// Das Jar-in-Jar der eingebauten Mods ist in den mitgelieferten Fabric-Jars vollständig: jede in
+    /// einem `fabric.mod.json` genannte eingebettete Jar existiert (rekursiv) und ist selbst eine Mod,
+    /// und jede eingebaute Mod aus builds.json steckt wirklich darin. ImmediatelyFast bis 1.16 nutzt
+    /// z. B. Reflect (`net.lenni0451`) und bringt es eingebettet mit – fehlt es, stürzt das Spiel ab,
+    /// sobald eine Karte geladen wird (`NoClassDefFoundError: net/lenni0451/reflect/Objects`).
+    #[test]
+    fn bundled_fabric_jars_keep_nested_jars() {
+        use std::io::Read;
+        const REFLECT: &[u8] = b"net/lenni0451/reflect/";
+        /// Eingebettete Mods: Mod-IDs sammeln; `uses_reflect`, wenn eine ihrer Klassen Reflect aufruft.
+        fn walk(label: &str, bytes: Vec<u8>, ids: &mut Vec<String>, uses_reflect: &mut bool, problems: &mut Vec<String>) {
+            let nested_mod = label.contains(" → ");
+            let mut zip = match zip::ZipArchive::new(std::io::Cursor::new(bytes)) {
+                Ok(zip) => zip,
+                Err(e) => return problems.push(format!("{label}: kein Zip ({e})")),
+            };
+            let meta: serde_json::Value = match zip.by_name("fabric.mod.json") {
+                Ok(mut file) => {
+                    let mut text = String::new();
+                    file.read_to_string(&mut text).unwrap();
+                    match serde_json::from_str(&text) {
+                        Ok(meta) => meta,
+                        Err(e) => return problems.push(format!("{label}: fabric.mod.json unlesbar ({e})")),
+                    }
+                }
+                Err(_) => return problems.push(format!("{label}: ohne fabric.mod.json")),
+            };
+            ids.extend(meta["id"].as_str().map(str::to_owned));
+            let own_reflect = zip.file_names().any(|n| n.as_bytes().starts_with(REFLECT));
+            if nested_mod && !own_reflect && !*uses_reflect {
+                for i in 0..zip.len() {
+                    let mut entry = zip.by_index(i).unwrap();
+                    if !entry.name().ends_with(".class") {
+                        continue;
+                    }
+                    let mut class = Vec::new();
+                    entry.read_to_end(&mut class).unwrap();
+                    if class.windows(REFLECT.len()).any(|w| w == REFLECT) {
+                        *uses_reflect = true;
+                        break;
+                    }
+                }
+            }
+            for nested in meta["jars"].as_array().into_iter().flatten() {
+                let Some(path) = nested["file"].as_str() else { continue };
+                let mut data = Vec::new();
+                match zip.by_name(path) {
+                    Ok(mut file) => file.read_to_end(&mut data).map(drop).unwrap(),
+                    Err(_) => {
+                        problems.push(format!("{label}: eingebettete {path} fehlt"));
+                        continue;
+                    }
+                }
+                walk(&format!("{label} → {path}"), data, ids, uses_reflect, problems);
+            }
+        }
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../resources/client-mod");
+        let mut problems = Vec::new();
+        let mut checked_reflect = false;
+        for build in load_builds(&dir).iter().filter(|b| b.loader == "fabric") {
+            let (mut ids, mut uses_reflect) = (Vec::new(), false);
+            walk(&build.file, std::fs::read(dir.join(&build.file)).unwrap(), &mut ids, &mut uses_reflect, &mut problems);
+            for m in &build.bundled {
+                if !ids.contains(&m.id) {
+                    problems.push(format!("{}: eingebaute Mod {} fehlt", build.file, m.id));
+                }
+            }
+            if uses_reflect {
+                checked_reflect = true;
+                if !ids.iter().any(|id| id == "net_lenni0451_reflect") {
+                    problems.push(format!("{}: eingebaute Mod nutzt Reflect (net.lenni0451), es fehlt", build.file));
+                }
+            }
+        }
+        // Stichprobe, dass die Suche greift: ImmediatelyFast für 1.21.11 nutzt Reflect.
+        assert!(checked_reflect, "keine Fabric-Jar mit Reflect-Nutzer gefunden");
+        assert!(problems.is_empty(), "unvollständiges Jar-in-Jar:\n{}", problems.join("\n"));
+    }
+
     #[tokio::test]
     async fn writes_launcher_colours_for_the_mod() {
         let dir = tempfile::tempdir().unwrap();

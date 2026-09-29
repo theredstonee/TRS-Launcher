@@ -518,9 +518,17 @@ Requires a JDK 21+ to run Gradle (Gradle toolchains download JDK 17/21/25 for co
 ./gradlew :fabric:1.21.1:build       # a single version
 ./gradlew :fabric:1.21.1:runClient   # starts that Minecraft version with the mod (game dir: client-mod/run)
 ./gradlew :fabric:26.3:runClient -PtrsAutotest   # self-test: menu, test world, screenshots, quits
+./gradlew :fabric:1.21.11:runProdClient -PtrsAutotest -PtrsAutotestOnly=comfort   # same, but like a player's instance
 ```
 
 Self-test screenshots: `run/screenshots/trsclient-<minecraft>-*.png` (one test world per version).
+
+`runProdClient` starts the real (not dev-mapped) game with Fabric Loader, the finished mod jar exactly as the
+launcher installs it (built-in optimization mods nested unchanged) and the full Fabric API – game dir
+`run/prod-<minecraft>`. Use it when something might only break (or only work) outside the dev environment.
+In `runClient` Loom strips the jar-in-jar list of the built-in mods; the build puts their nested jars (e.g. Reflect
+inside ImmediatelyFast) on the dev classpath itself, otherwise maps crash there with
+`NoClassDefFoundError: net/lenni0451/reflect/Objects`.
 
 ### Launcher contract: `dist/`
 

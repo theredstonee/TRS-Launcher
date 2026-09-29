@@ -8,6 +8,11 @@ def autotest = project.hasProperty('trsAutotest') || rootProject.hasProperty('tr
 /** Spielordner: bei Loom der eingestellte runDir (relativ zum Projekt), sonst der Arbeitsordner der Aufgabe. */
 def gameDirs = { task ->
 	Set<File> dirs = [] as Set
+	// Loom-Start wie beim Spieler (runProdClient): eigener Spielordner
+	if (task.name == 'runProdClient') {
+		dirs << task.runDir.get().asFile
+		return dirs
+	}
 	def loom = project.extensions.findByName('loom')
 	if (loom != null) {
 		try {
@@ -21,7 +26,8 @@ def gameDirs = { task ->
 	dirs
 }
 
-tasks.matching { it.name == 'runClient' }.configureEach { task ->
+// runProdClient (Fabric, Start wie beim Spieler) ist kein JavaExec: ALSOFT_DRIVERS setzt dort TrsProdClientTask.
+tasks.matching { it.name == 'runClient' || it.name == 'runProdClient' }.configureEach { task ->
 	if (!autotest) return
 	// OpenAL Soft (LWJGL 2 und 3) ganz ohne Ausgabegerät – stumm, auch wenn options.txt überschrieben wird.
 	if (task.respondsTo('environment', String, Object)) task.environment('ALSOFT_DRIVERS', 'null')

@@ -113,8 +113,37 @@ def running = project.hasProperty('trsFullApi') ||
 		gradle.startParameter.taskNames.any { it == "${project.path}:runClient".toString() }
 
 /**
+ * Jar-in-Jar einer Mod-JAR (rekursiv) nach outDir auspacken, z. B. Reflect (net.lenni0451) in ImmediatelyFast.
+ * Nur für die Entwicklungsumgebung: Loom streicht beim Remappen von Mod-Abhängigkeiten die "jars"-Liste aus
+ * fabric.mod.json (Abhängigkeiten sollen dort über Maven kommen) – ohne diese Liste fehlten die Klassen im Dev-Lauf
+ * (NoClassDefFoundError net/lenni0451/reflect/Objects, sobald eine Karte geladen wird). In der fertigen Mod-JAR
+ * bleibt die Mod unverändert eingebettet und Fabric lädt ihr Jar-in-Jar selbst.
+ */
+def nestedJars
+nestedJars = { File jar, File outDir ->
+	List<File> out = []
+	new java.util.zip.ZipFile(jar).withCloseable { zip ->
+		def fmj = zip.getEntry('fabric.mod.json')
+		if (fmj == null) return
+		def meta = new groovy.json.JsonSlurper().parse(zip.getInputStream(fmj), 'UTF-8')
+		(meta.jars ?: []).each { j ->
+			def entry = zip.getEntry(j.file.toString())
+			if (entry == null) return
+			File f = new File(outDir, j.file.toString().tokenize('/').last())
+			if (!f.isFile() || f.length() != entry.size) {
+				f.parentFile.mkdirs()
+				zip.getInputStream(entry).withStream { input -> f.withOutputStream { it << input } }
+			}
+			out << f
+			out.addAll(nestedJars(f, outDir))
+		}
+	}
+	out
+}
+
+/**
  * Eingebaute Optimierungs-Mods dieser Version laut fabric/bundled-mods.json: in ~/.gradle/caches/trsclient-bundled
- * laden (nur beim ersten Mal), SHA-512 prüfen. Liste [{id, name, version, license, source, path}].
+ * laden (nur beim ersten Mal), SHA-512 prüfen. Liste [{id, name, version, license, source, path, nested}].
  */
 def bundledMods = { ->
 	if (project.hasProperty('trsNoBundledMods')) return []
@@ -147,7 +176,7 @@ def bundledMods = { ->
 """, 'UTF-8')
 		}
 		[id: e.id, name: e.name, version: e.version, modVersion: e.modVersion ?: '', license: e.license, source: e.source, path: target,
-		 coordinate: "trsclient.bundled:${e.id}:${sha}"]
+		 coordinate: "trsclient.bundled:${e.id}:${sha}", nested: nestedJars(target, new File(target.parentFile, 'nested'))]
 	}
 }()
 ext.bundledMods = bundledMods
@@ -188,6 +217,9 @@ dependencies {
 	bundledMods.each { mod ->
 		add('include', mod.coordinate)
 		if (running) add(modRuntime, mod.coordinate)
+		// Dev-Lauf: deren Jar-in-Jar (z. B. Reflect in ImmediatelyFast) direkt auf den Klassenpfad – Loom streicht es
+		// beim Remappen (siehe nestedJars). Ab 26.1 wird nichts remappt, das Jar-in-Jar bleibt dort erhalten.
+		if (running && !unobfuscated) mod.nested.each { add(modRuntime, files(it)) }
 	}
 }
 
@@ -345,5 +377,32 @@ if (project.hasProperty('trsBenchOptions')) {
 			options.write(lines.join('\n') + '\n', 'UTF-8')
 			logger.lifecycle("Benchmark: ${values[mode]} (${options})")
 		}
+	}
+}
+
+// Release-Weg im Spiel prüfen: ./gradlew :fabric:<v>:runProdClient [-PtrsAutotest -PtrsAutotestOnly=…] startet das
+// echte (nicht entwickler-gemappte) Spiel mit Fabric Loader, genau der fertigen Mod-JAR (inkl. Jar-in-Jar der
+// eingebauten Mods, unverändert) und der kompletten Fabric API – wie eine vom Launcher angelegte Instanz.
+// Spielordner: client-mod/run/prod-<v> (eigene Welt, eigene options.txt).
+def prodFabricApi = configurations.detachedConfiguration(
+		dependencies.create("net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"))
+prodFabricApi.transitive = false
+tasks.register('runProdClient', TrsProdClientTask) {
+	group = 'fabric'
+	description = 'Startet das Spiel wie beim Spieler: fertige Mod-JAR + Fabric API, ohne Dev-Umgebung.'
+	mods.from(modJar)
+	mods.from(prodFabricApi)
+	runDir = rootProject.layout.projectDirectory.dir("run/prod-${mc}")
+	// Dieselben Schalter wie runClient (Autotest, API-Attrappe, …)
+	jvmArgs.addAll(provider { loom.runConfigs.client.vmArgs })
+	programArgs.addAll(provider { loom.runConfigs.client.programArgs })
+}
+
+/** Loom-Start wie beim Spieler, im Autotest ohne Ton (OpenAL ohne Ausgabegerät, siehe autotest-mute.gradle). */
+abstract class TrsProdClientTask extends net.fabricmc.loom.task.prod.ClientProductionRunTask {
+	@Override
+	protected void configureCommand(org.gradle.process.ExecSpec spec) {
+		super.configureCommand(spec)
+		if (getJvmArgs().get().contains('-Dtrsclient.autotest=true')) spec.environment('ALSOFT_DRIVERS', 'null')
 	}
 }
