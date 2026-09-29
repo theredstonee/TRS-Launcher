@@ -96,6 +96,13 @@ public final class TrsApi {
 		Integer scale;
 		Integer frames;
 		Integer frameTimeMs;
+		/** Format 2 (Studio-Modell): {@code format: 2}, Modell-/Leucht-Adresse, Leucht-Frames, Inhalts-Kennung. */
+		Integer format;
+		String model;
+		String glow;
+		Integer glowFrames;
+		Integer glowFrameTimeMs;
+		String hash;
 	}
 
 	static final class LookupCape {
@@ -304,7 +311,9 @@ public final class TrsApi {
 			HatInfo hat = null;
 			if (p.cosmetics != null && p.cosmetics.hat != null) {
 				LookupCosmetic h = p.cosmetics.hat;
-				hat = HatInfo.of(h.id, h.template, h.url, h.scale, h.frames, h.frameTimeMs, config);
+				hat = h.format != null && h.format == 2
+						? HatInfo.v2(h.id, h.model, h.url, h.glow, h.hash, h.frames, h.glowFrames, config)
+						: HatInfo.of(h.id, h.template, h.url, h.scale, h.frames, h.frameTimeMs, config);
 			}
 			out.put(uuid, new PlayerInfo(Boolean.TRUE.equals(p.badge), cape, hat));
 		}
@@ -561,6 +570,20 @@ public final class TrsApi {
 		Http.Response response = http.send(request);
 		if (response.status == 200 || response.status == 304) return response;
 		throw new ApiException(response.status, errorCode(response), retryAfter(response));
+	}
+
+	/**
+	 * Datei der TRS API laden (Kosmetik-Modell, Textur, Vorschaubild): nur TRS-Adressen, höchstens {@code maxBytes},
+	 * nur Status 200. Blockierend – nur im Hintergrund.
+	 */
+	public byte[] asset(String url, String accept, int maxBytes, String token) throws IOException, ApiException {
+		if (!config.isApiUrl(url)) throw new ApiException(0, "foreign_url", 0);
+		Http.Request request = new Http.Request("GET", url).header("Accept", accept);
+		if (token != null) request.header("Authorization", "Bearer " + token);
+		request.maxBytes = maxBytes;
+		Http.Response response = http.send(request);
+		if (response.status != 200) throw new ApiException(response.status, errorCode(response), retryAfter(response));
+		return response.body;
 	}
 
 	// --- Hilfen ---

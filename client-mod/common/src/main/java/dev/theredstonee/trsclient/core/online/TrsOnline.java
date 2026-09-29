@@ -63,6 +63,8 @@ public final class TrsOnline {
 	private final OnlinePlatform platform;
 	private final TrsApi api;
 	private final CapeDiskCache capeCache;
+	/** Kopf-Kosmetik im Format 2 (Modell + Texturen, Cache nach Inhalts-Kennung). */
+	private final dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2Cache cosmeticCache;
 	private final PlayerDirectory directory = new PlayerDirectory();
 	private final ThreadPoolExecutor apiWorker;
 	private final ThreadPoolExecutor capeWorker;
@@ -127,6 +129,8 @@ public final class TrsOnline {
 		this.platform = platform;
 		this.api = new TrsApi(http, config);
 		this.capeCache = new CapeDiskCache(capeDir);
+		Path cosmeticDir = capeDir.getParent() != null ? capeDir.getParent().resolve("cosmetics") : capeDir.resolve("cosmetics");
+		this.cosmeticCache = new dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2Cache(cosmeticDir);
 		this.apiWorker = worker("TRS-Online");
 		this.capeWorker = worker("TRS-Umhaenge");
 		this.events = new PlayerEventStream(eventOpener, config.apiBase());
@@ -748,6 +752,24 @@ public final class TrsOnline {
 				results.add(() -> done.accept(frames));
 			} catch (IOException | ApiException | RuntimeException e) {
 				platform.log("TRS API: Umhang '" + cape.id + "' nicht ladbar (" + e.getMessage() + ")");
+				results.add(failed);
+			}
+		})) failed.run();
+	}
+
+	/**
+	 * Lädt ein Kosmetik-Teil im Format 2 (Platte oder Netz), prüft und zerlegt es – im Textur-Thread. Genau einer der
+	 * Rückrufe läuft danach im Spiel-Thread (nächster Tick).
+	 */
+	public void loadCosmetic(HatInfo hat, java.util.function.Consumer<dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2Cache.Loaded> done,
+			Runnable failed) {
+		String t = token;
+		if (!submit(capeWorker, () -> {
+			try {
+				dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2Cache.Loaded loaded = cosmeticCache.load(hat, api, t);
+				results.add(() -> done.accept(loaded));
+			} catch (IOException | ApiException | RuntimeException e) {
+				platform.log("TRS API: Kosmetik '" + hat.id + "' nicht ladbar (" + e.getMessage() + ")");
 				results.add(failed);
 			}
 		})) failed.run();
