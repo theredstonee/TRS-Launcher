@@ -28,6 +28,18 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Default skin preview.** “Default skin” on the Skins page shows the real skin Minecraft gives this account
+  (Steve, Alex, Ari and the others, with the matching arm width), read from an installed version. The old
+  hand-drawn figure is gone.
+
+### Deutsch
+- **Vorschau des Standard-Skins.** „Standard-Skin“ auf der Skins-Seite zeigt den echten Skin, den Minecraft diesem
+  Konto gibt (Steve, Alex, Ari und die anderen, mit der passenden Armbreite), aus einer installierten Version.
+  Die selbst gemalte Figur gibt es nicht mehr.
+
 ## 0.15.0 – 2026-09-29 – Crowned | Gekrönt
 <!-- banner: accent=#ffa62b motif=/news/0.15.0/banner.png -->
 <!-- shots:

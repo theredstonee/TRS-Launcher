@@ -50,6 +50,7 @@ pub mod process;
 pub mod screenshots;
 pub mod servers;
 pub mod settings;
+mod default_skin;
 pub mod skin_import;
 pub mod skin_sync;
 pub mod skins;
