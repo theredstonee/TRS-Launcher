@@ -263,14 +263,14 @@ export const landingEs: LandingTexts = {
 
     'fps-boost-pvp-client': {
       seo: {
-        title: 'Cliente PvP y FPS boost gratis para Minecraft desde 1.7.10',
+        title: 'Launcher de rendimiento para Minecraft con FPS boost y PvP | TRS',
         description:
-          'El TRS Client sube los FPS y añade un HUD de PvP con teclas y CPS, zoom, freelook, minimapa, emotes y capas: de Minecraft 1.7.10 y 1.8.9 a la última versión.',
+          'TRS Launcher es un launcher de rendimiento gratis para Minecraft: FPS boost, HUD de PvP con teclas y CPS, zoom y minimapa, desde 1.7.10 y 1.8.9.',
       },
       name: 'Cliente PvP y FPS boost',
       teaser: 'El TRS Client: FPS boost, HUD de PvP con teclas y CPS, zoom, minimapa y emotes, desde 1.7.10 hasta la última versión.',
       kicker: 'TRS Client',
-      title: 'El cliente de FPS boost y PvP gratis para Minecraft',
+      title: 'El launcher de rendimiento gratis para Minecraft con FPS boost y cliente PvP',
       lead: 'El TRS Client es el client mod que viene con TRS Launcher. Añade FPS boost, un HUD de PvP limpio, zoom, freelook, un minimapa, emotes y capas a Minecraft – desde 1.7.10 y 1.8.9 hasta la última versión – y sigue siendo justo en los servidores.',
       sections: [
         {
@@ -284,7 +284,7 @@ export const landingEs: LandingTexts = {
         },
         {
           id: 'fps',
-          title: 'Un FPS boost que puedes medir',
+          title: 'Un launcher de rendimiento con un FPS boost que puedes medir',
           text: [
             'Las instancias nuevas empiezan sin límite de fotogramas, con VSync desactivado y ajustes de Java optimizados. En Fabric, el TRS Client trae mods de rendimiento gratuitos como Lithium, FerriteCore, ImmediatelyFast y ModernFix donde existen para tu versión, y el preset de FPS boost del launcher añade Sodium y compañía en tres niveles: Máx. FPS, Shaders ligeros y Shaders bonitos.',
             'En el juego, FPS Boost pone todo en Bajo, Medio o Alto con un clic y muestra los FPS antes y después. Una comprobación de rendimiento encuentra lo que frena tus FPS en los ajustes de vídeo y lo arregla con un clic, Dynamic FPS baja la tasa de fotogramas en segundo plano y Entity Culling se salta lo que no puedes ver. Cada cambio se puede deshacer.',
@@ -331,6 +331,7 @@ export const landingEs: LandingTexts = {
         },
       ],
       faq: [
+        { q: '¿TRS Launcher es un launcher de rendimiento?', a: 'Sí. TRS Launcher configura Java y la memoria por ti, inicia las instancias vanilla con la optimización TRS (Fabric, el TRS Client y mods de rendimiento por debajo) y quita los límites de fotogramas de las instancias nuevas. Funciona con todas las versiones y cargadores de mods, no solo con una versión de cliente.' },
         { q: '¿El TRS Client es gratis?', a: 'Sí. El TRS Client viene gratis con TRS Launcher, que es de código abierto bajo GPL-3.0.' },
         { q: '¿Qué versiones de Minecraft admite el TRS Client?', a: 'Forge desde 1.7.10 (incluida 1.8.9), Fabric y Quilt desde 1.14.4 y NeoForge, hasta la versión más nueva. Algunas funciones necesitan versiones más nuevas, por ejemplo las plantillas de circuitos desde 1.8.9.' },
         { q: '¿El TRS Client de verdad sube los FPS?', a: 'Quita límites habituales de FPS como el tope de fotogramas por defecto y VSync, trae mods de rendimiento en Fabric y te deja elegir entre «Bonito» y «Máx. FPS». Cuánto ganas depende de tu PC y de la versión: FPS Boost muestra los FPS antes y después para que lo compruebes.' },
