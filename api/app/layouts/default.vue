@@ -12,9 +12,11 @@ const menuButton = shallowRef<HTMLButtonElement | null>(null)
 const menuPanel = shallowRef<HTMLElement | null>(null)
 
 // Alle Seiten stecken im Menü (immer, auf jeder Breite) – oben bleiben nur Logo, Sprache, Konto, GitHub, Download.
-const links = computed(() => [
+const links = computed<{ to: string, label: string, icon: string, external?: boolean }[]>(() => [
   { to: lp('/features'), label: m.value.nav.features, icon: 'bolt' },
   { to: lp('/download'), label: m.value.nav.download, icon: 'download' },
+  // Doku: eigene statische App unter /docs – normaler Seitenwechsel statt Router.
+  { to: docsUrl(lang.value), label: m.value.nav.docs, icon: 'docs', external: true },
   { to: lp('/blog'), label: m.value.nav.blog, icon: 'book' },
   { to: lp('/capes'), label: m.value.nav.capes, icon: 'cape' },
   { to: lp('/circuits'), label: c.value.nav, icon: 'blocks' },
@@ -110,7 +112,7 @@ const year = new Date().getFullYear()
           <nav v-if="menuOpen" id="site-menu" ref="menuPanel" class="menu-panel" :aria-label="m.nav.menu">
             <ul class="grid gap-1 sm:grid-cols-2">
               <li v-for="l in links" :key="l.to">
-                <NuxtLink :to="l.to" class="menu-link" :aria-current="isCurrent(l.to) ? 'page' : undefined" @click="closeMenu()">
+                <NuxtLink :to="l.to" :external="l.external" class="menu-link" :aria-current="!l.external && isCurrent(l.to) ? 'page' : undefined" @click="closeMenu()">
                   <SiteIcon :name="l.icon" class="size-4.5 shrink-0" />
                   <span>{{ l.label }}</span>
                 </NuxtLink>
@@ -151,6 +153,7 @@ const year = new Date().getFullYear()
         <nav class="flex flex-col gap-2 text-sm" aria-label="Site">
           <NuxtLink :to="lp('/features')" class="footer-link">{{ m.nav.features }}</NuxtLink>
           <NuxtLink :to="lp('/download')" class="footer-link">{{ m.nav.download }}</NuxtLink>
+          <a :href="docsUrl(lang)" class="footer-link">{{ m.footer.docs }}</a>
           <NuxtLink :to="lp('/blog')" class="footer-link">{{ m.nav.blog }}</NuxtLink>
           <NuxtLink :to="lp('/capes')" class="footer-link">{{ m.nav.capes }}</NuxtLink>
           <NuxtLink :to="lp('/circuits')" class="footer-link">{{ c.nav }}</NuxtLink>
@@ -166,7 +169,6 @@ const year = new Date().getFullYear()
         <nav class="flex flex-col gap-2 text-sm" aria-label="Links">
           <a :href="REPO_URL" class="footer-link" rel="noopener" target="_blank">{{ m.footer.github }}</a>
           <a :href="DISCORD_URL" class="footer-link" rel="noopener" target="_blank">{{ m.footer.discord }}</a>
-          <a :href="WIKI_URL" class="footer-link" rel="noopener" target="_blank">{{ m.footer.wiki }}</a>
           <a :href="IMPRINT_URL" class="footer-link" rel="noopener">{{ m.footer.imprint }}</a>
           <NuxtLink :to="lp('/privacy')" class="footer-link">{{ m.footer.privacy }}</NuxtLink>
         </nav>

@@ -38,7 +38,7 @@ usePageSeo(() => ({
 
     <div class="mt-10 flex flex-wrap gap-3">
       <a :href="DISCORD_URL" class="btn btn-primary" rel="noopener" target="_blank"><SiteIcon name="discord" class="size-4" />{{ m.faq.discord }}</a>
-      <a :href="WIKI_URL" class="btn btn-ghost" rel="noopener" target="_blank"><SiteIcon name="book" class="size-4" />{{ m.faq.wiki }}</a>
+      <a :href="docsUrl(lang)" class="btn btn-ghost"><SiteIcon name="docs" class="size-4" />{{ m.faq.docs }}</a>
     </div>
 
     <LandingLinks class="mt-16" heading-id="related-title" narrow />

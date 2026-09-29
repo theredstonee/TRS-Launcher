@@ -37,7 +37,13 @@ export interface BlogPost extends BlogPostSummary {
 export const REPO_URL = 'https://github.com/theredstonee/TRS-Launcher'
 export const RELEASES_URL = `${REPO_URL}/releases`
 export const DISCORD_URL = 'https://dc.theredstonee.de'
-export const WIKI_URL = `${REPO_URL}/wiki`
+/**
+ * Dokumentation (docs-site, statisch unter /docs mit eigener App) – Startseite in der Sprache der Website. Außerhalb
+ * dieser Nuxt-App: als normalen Link öffnen (`<a href>` bzw. NuxtLink mit `external`), nicht über den Router.
+ */
+export function docsUrl(lang: Lang): string {
+  return `/docs/${lang}`
+}
 export const IMPRINT_URL = 'https://theredstonee.de/imprint/'
 
 export function useRelease() {

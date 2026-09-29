@@ -20,6 +20,8 @@ const PATHS: Record<string, string> = {
   copy: 'M9 9h10v11H9zM5 15V4h10',
   external: 'M14 4h6v6M20 4l-9 9M18 14v6H4V6h6',
   book: 'M4 5c3-1 6-1 8 1 2-2 5-2 8-1v14c-3-1-6-1-8 1-2-2-5-2-8-1V5zM12 6v14',
+  // Doku: aufgeschlagenes Buch mit Zeilen
+  docs: 'M4 5c3-1 6-1 8 1 2-2 5-2 8-1v14c-3-1-6-1-8 1-2-2-5-2-8-1V5zM12 6v14M6.5 9h3M6.5 12h3M14.5 9h3M14.5 12h3',
   logout: 'M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10',
   user: 'M12 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8zM5 20c1-4 4-6 7-6s6 2 7 6',
   chevron: 'M6 9l6 6 6-6',

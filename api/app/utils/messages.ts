@@ -84,7 +84,7 @@ const en = {
       'Windows and Linux',
     ],
   },
-  nav: { home: 'Home', features: 'Features', download: 'Download', blog: 'Blog', capes: 'Capes', faq: 'FAQ', team: 'Team', admin: 'Admin', menu: 'Menu' },
+  nav: { home: 'Home', features: 'Features', download: 'Download', blog: 'Blog', capes: 'Capes', faq: 'FAQ', team: 'Team', admin: 'Admin', menu: 'Menu', docs: 'Docs' },
   common: { loading: 'Loading …', error: 'Could not load this right now. Please try again later.', copy: 'Copy', copied: 'Copied', close: 'Close', version: 'Version {version}', new: 'New' },
   footer: {
     tagline: 'TRS Launcher – The Redstone Launcher by TheRedstonee. A free Minecraft launcher, open source under GPL-3.0.',
@@ -92,7 +92,7 @@ const en = {
     privacy: 'Privacy',
     github: 'GitHub',
     discord: 'Discord',
-    wiki: 'Wiki',
+    docs: 'Docs',
     notAffiliated: 'Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.',
   },
   home: {
@@ -426,7 +426,7 @@ const en = {
   },
   faq: {
     title: 'Frequently asked questions',
-    lead: 'Quick answers. Still stuck? Ask on Discord or have a look at the wiki.',
+    lead: 'Quick answers. Still stuck? Ask on Discord or have a look at the docs.',
     items: [
       { q: 'Is the TRS Launcher free?', a: 'Yes, completely. It is open source (GPL-3.0). You only need your own Minecraft: Java Edition account.' },
       { q: 'Is TRS Launcher open source?', a: 'Yes. The launcher and the TRS Client are open source under GPL-3.0 – the whole code is on GitHub, where you can also report bugs and follow development.' },
@@ -456,7 +456,7 @@ const en = {
       { q: 'Can I use shaders with the FPS boost?', a: 'Yes. The FPS boost preset comes in three levels: Max FPS, Light shaders and Pretty shaders. The shader levels add Iris and a shader on Fabric, Quilt and NeoForge; press K in the game to turn shaders on or off.' },
       { q: 'Does TRS Launcher have achievements?', a: 'Yes. Achievements reward playtime, trying out launcher features and the community. Every achievement gives points and has a rarity, and some come with a reward such as a cape or an emote.' },
     ],
-    wiki: 'Open the wiki',
+    docs: 'Open the docs',
     discord: 'Ask on Discord',
   },
   admin: {
@@ -711,7 +711,7 @@ const de: Messages = {
       'Windows und Linux',
     ],
   },
-  nav: { home: 'Start', features: 'Funktionen', download: 'Download', blog: 'Blog', capes: 'Umhänge', faq: 'FAQ', team: 'Team', admin: 'Admin', menu: 'Menü' },
+  nav: { home: 'Start', features: 'Funktionen', download: 'Download', blog: 'Blog', capes: 'Umhänge', faq: 'FAQ', team: 'Team', admin: 'Admin', menu: 'Menü', docs: 'Doku' },
   common: { loading: 'Lädt …', error: 'Das lässt sich gerade nicht laden. Bitte später noch einmal versuchen.', copy: 'Kopieren', copied: 'Kopiert', close: 'Schließen', version: 'Version {version}', new: 'Neu' },
   footer: {
     tagline: 'TRS Launcher – der Redstone Launcher von TheRedstonee. Ein kostenloser Minecraft-Launcher, Open Source unter GPL-3.0.',
@@ -719,7 +719,7 @@ const de: Messages = {
     privacy: 'Datenschutz',
     github: 'GitHub',
     discord: 'Discord',
-    wiki: 'Wiki',
+    docs: 'Doku',
     notAffiliated: 'Kein offizielles Minecraft-Produkt. Nicht von Mojang oder Microsoft genehmigt oder mit ihnen verbunden.',
   },
   home: {
@@ -1053,7 +1053,7 @@ const de: Messages = {
   },
   faq: {
     title: 'Häufige Fragen',
-    lead: 'Schnelle Antworten. Noch Fragen? Frag auf Discord oder schau ins Wiki.',
+    lead: 'Schnelle Antworten. Noch Fragen? Frag auf Discord oder schau in die Doku.',
     items: [
       { q: 'Ist der TRS Launcher kostenlos?', a: 'Ja, komplett. Er ist Open Source (GPL-3.0). Du brauchst nur dein eigenes Konto für Minecraft: Java Edition.' },
       { q: 'Ist der TRS Launcher Open Source?', a: 'Ja. Launcher und TRS Client sind Open Source unter GPL-3.0 – der komplette Code liegt auf GitHub, wo du auch Fehler melden und die Entwicklung verfolgen kannst.' },
@@ -1083,7 +1083,7 @@ const de: Messages = {
       { q: 'Kann ich Shader mit dem FPS-Boost nutzen?', a: 'Ja. Das FPS-Boost-Preset gibt es in drei Stufen: Max FPS, Shader leicht und Shader schön. Die Shader-Stufen bringen Iris und einen Shader für Fabric, Quilt und NeoForge mit; mit K schaltest du Shader im Spiel an und aus.' },
       { q: 'Hat der TRS Launcher Erfolge?', a: 'Ja. Erfolge belohnen Spielzeit, das Ausprobieren von Launcher-Funktionen und die Community. Jeder Erfolg bringt Punkte und hat eine Seltenheit, manche haben eine Belohnung wie einen Umhang oder ein Emote.' },
     ],
-    wiki: 'Wiki öffnen',
+    docs: 'Doku öffnen',
     discord: 'Auf Discord fragen',
   },
   admin: {
@@ -1336,7 +1336,7 @@ const es: Messages = {
       'Windows y Linux',
     ],
   },
-  nav: { home: 'Inicio', features: 'Funciones', download: 'Descargar', blog: 'Blog', capes: 'Capas', faq: 'FAQ', team: 'Equipo', admin: 'Admin', menu: 'Menú' },
+  nav: { home: 'Inicio', features: 'Funciones', download: 'Descargar', blog: 'Blog', capes: 'Capas', faq: 'FAQ', team: 'Equipo', admin: 'Admin', menu: 'Menú', docs: 'Documentación' },
   common: { loading: 'Cargando …', error: 'Ahora no se puede cargar. Inténtalo más tarde.', copy: 'Copiar', copied: 'Copiado', close: 'Cerrar', version: 'Versión {version}', new: 'Nuevo' },
   footer: {
     tagline: 'TRS Launcher – el Redstone Launcher de TheRedstonee. Un launcher de Minecraft gratis, de código abierto bajo GPL-3.0.',
@@ -1344,7 +1344,7 @@ const es: Messages = {
     privacy: 'Privacidad',
     github: 'GitHub',
     discord: 'Discord',
-    wiki: 'Wiki',
+    docs: 'Documentación',
     notAffiliated: 'No es un producto oficial de Minecraft. No está aprobado por Mojang ni Microsoft ni asociado con ellos.',
   },
   home: {
@@ -1822,7 +1822,7 @@ const es: Messages = {
   },
   faq: {
     title: 'Preguntas frecuentes',
-    lead: 'Respuestas rápidas. ¿Más preguntas? Pregunta en Discord o mira la wiki.',
+    lead: 'Respuestas rápidas. ¿Más preguntas? Pregunta en Discord o mira la documentación.',
     items: [
       { q: '¿El TRS Launcher es gratis?', a: 'Sí, del todo. Es de código abierto (GPL-3.0). Solo necesitas tu propia cuenta de Minecraft: Java Edition.' },
       { q: '¿TRS Launcher es de código abierto?', a: 'Sí. El launcher y el TRS Client son de código abierto bajo GPL-3.0: todo el código está en GitHub, donde también puedes informar de errores y seguir el desarrollo.' },
@@ -1852,7 +1852,7 @@ const es: Messages = {
       { q: '¿Puedo usar shaders con el FPS boost?', a: 'Sí. El preset de FPS boost tiene tres niveles: Máx. FPS, Shaders ligeros y Shaders bonitos. Los niveles con shaders añaden Iris y un shader en Fabric, Quilt y NeoForge; pulsa K en el juego para activar o desactivar los shaders.' },
       { q: '¿TRS Launcher tiene logros?', a: 'Sí. Los logros premian el tiempo de juego, probar funciones del launcher y la comunidad. Cada logro da puntos y tiene una rareza, y algunos traen una recompensa como una capa o un emote.' },
     ],
-    wiki: 'Abrir la wiki',
+    docs: 'Abrir la documentación',
     discord: 'Preguntar en Discord',
   },
   notFound: { title: 'Aquí no hay nada', text: 'Esta página no existe (ya).', home: 'Volver al inicio' },
