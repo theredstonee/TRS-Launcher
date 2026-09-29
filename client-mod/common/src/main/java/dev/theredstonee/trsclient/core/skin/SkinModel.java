@@ -108,16 +108,72 @@ public final class SkinModel {
 		if (spec == null || spec.skin == null || !c.images() || scale <= 0f) return false;
 		setup(spec);
 		int n = sort();
+		HeadAttachment head = spec.head;
+		if (head != null) headView(cx, feetY, scale);
 		for (int k = 0; k < n; k++) {
 			int i = order[k];
 			Part p = parts[i];
+			if (i == HEAD && head != null) head.draw(c, headView, false);
 			TextureRef tex = i == CAPE ? spec.cape : spec.skin;
 			// Texel je Skin-Pixel: Skins 64 breit, Umhänge 64 (Vanilla) bis 512 (TRS, Faktor 8).
 			float unit = tex.width / 64f;
 			if (spec.base || i == CAPE) box(c, p, tex, 0f, p.u, p.v, unit, cx, feetY, scale, spec);
 			if (spec.layers && i != CAPE) box(c, p, tex, p.inflate2, p.u2, p.v2, unit, cx, feetY, scale, spec);
+			if (i == HEAD && head != null) head.draw(c, headView, true);
 		}
 		return true;
+	}
+
+	/**
+	 * Etwas am Kopf der Figur (Kopf-Kosmetik): wird zweimal je Bild gerufen – direkt vor dem Kopf ({@code front} =
+	 * false, alles hinter dem Kopf) und direkt danach ({@code front} = true, alles davor). So passt die Verdeckung zu den
+	 * übrigen Teilen der Figur (Maleralgorithmus).
+	 */
+	public interface HeadAttachment {
+		void draw(Canvas c, HeadView view, boolean front);
+	}
+
+	/**
+	 * Lage des Kopfes in diesem Bild. Punkte im Kopf-Raum (Ursprung = Nacken, +x Figur-links, +y oben, +z vorne, Skin-
+	 * Pixel – der Anhängepunkt {@code head} der Kosmetik) → Bildschirm: {@link #project}. Tiefe: größer = näher.
+	 */
+	public static final class HeadView {
+		/** Drehung Kopf → Kamera (zeilenweise) und Lage des Nackens in Kamerakoordinaten. */
+		public final float[] m = new float[9];
+		public final float[] t = new float[3];
+		public float cx;
+		public float feetY;
+		/** GUI-Pixel je Skin-Pixel. */
+		public float scale;
+		/** Tiefe der Kopfmitte (Grenze zwischen „hinter“ und „vor“ dem Kopf). */
+		public float depth;
+
+		/** Projiziert (x, y, z) im Kopf-Raum: out = {Bildschirm-x, Bildschirm-y, Tiefe}. */
+		public void project(double x, double y, double z, float[] out, int o) {
+			float px = (float) (t[0] + m[0] * x + m[1] * y + m[2] * z);
+			float py = (float) (t[1] + m[3] * x + m[4] * y + m[5] * z);
+			float pz = (float) (t[2] + m[6] * x + m[7] * y + m[8] * z);
+			out[o] = cx + px * scale;
+			out[o + 1] = feetY - py * scale;
+			out[o + 2] = pz;
+		}
+
+		/** Richtung zum Betrachter im Kopf-Raum (orthografisch: überall gleich). */
+		public float towardViewer(int axis) {
+			return m[6 + axis];
+		}
+	}
+
+	private final HeadView headView = new HeadView();
+
+	private void headView(float cx, float feetY, float scale) {
+		Part p = parts[HEAD];
+		System.arraycopy(p.m, 0, headView.m, 0, 9);
+		System.arraycopy(p.t, 0, headView.t, 0, 3);
+		headView.cx = cx;
+		headView.feetY = feetY;
+		headView.scale = scale;
+		headView.depth = p.depth;
 	}
 
 	/** Sortiert die sichtbaren Teile von hinten nach vorn (kleines z = weiter weg); liefert ihre Anzahl. */

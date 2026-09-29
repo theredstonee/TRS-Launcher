@@ -243,6 +243,21 @@ public final class WardrobeApi {
 		}
 	}
 
+	// --- Kopf-Kosmetik (API.md §11) ---
+
+	/** {@code GET /v1/cosmetics}: Katalog (Rohtext, JSON – der Aufrufer liest nur, was er kennt). */
+	public String cosmetics(String token) throws IOException, ApiException {
+		return call("GET", "/v1/cosmetics", null, token, 200, 1024 * 1024).text();
+	}
+
+	/** {@code PUT /v1/me/cosmetics {hat}}: Kopf-Kosmetik aufsetzen ({@code id}) oder absetzen (null). */
+	public void setHat(String token, String id) throws IOException, ApiException {
+		JsonObject body = new JsonObject();
+		if (id == null) body.add("hat", com.google.gson.JsonNull.INSTANCE);
+		else body.addProperty("hat", id);
+		call("PUT", "/v1/me/cosmetics", body.toString(), token, 200, 256 * 1024);
+	}
+
 	// --- Hilfen ---
 
 	private Http.Response call(String method, String path, String json, String token, int expected, int maxBytes)

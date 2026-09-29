@@ -123,6 +123,10 @@ public final class NewSince {
 	public static final String DOCS = "0.15.0";
 	/** Leisten-Eintrag „Hilfe“. */
 	public static final String MENU_DOCS = "menu:docs";
+	/** Kopf-Kosmetik v2 (TRS Client 0.15.0): echte 3D-Hüte/Kronen aus dem TRS Studio mit Animation und Leuchten. */
+	public static final String COSMETICS_V2 = "0.15.0";
+	/** Garderobe → Reiter „Kosmetik“ (Anprobieren, Aufsetzen). */
+	public static final String WARDROBE_COSMETICS = "wardrobe:cosmetics";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
@@ -189,6 +193,8 @@ public final class NewSince {
 		add(NOTES, "notes", "pinnedNote", MENU_NOTES, KEY_NOTES);
 		// Hilfe: Docs auf der Website.
 		add(DOCS, MENU_DOCS);
+		// Kopf-Kosmetik v2: Reiter „Kosmetik“ in der Garderobe.
+		add(COSMETICS_V2, WARDROBE_COSMETICS);
 	}
 
 	private NewSince() {
