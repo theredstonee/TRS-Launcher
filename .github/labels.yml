@@ -1,0 +1,44 @@
+# Labels of the repository (name, colour without "#", description). Not read by any workflow – the maintainer creates
+# them once, e.g. with: gh label create "<name>" --color <color> --description "<description>" --force
+- name: no-changelog
+  color: "cfd3d7"
+  description: Nothing players notice – skips the changelog check
+- name: good first issue
+  color: "7057ff"
+  description: Good for newcomers
+- name: help wanted
+  color: "008672"
+  description: Extra attention or help is welcome
+- name: launcher
+  color: "d73a4a"
+  description: The launcher (app/, src-tauri/)
+- name: client
+  color: "e4572e"
+  description: The TRS Client mod (client-mod/)
+- name: website
+  color: "1d76db"
+  description: Website and TRS API (api/, branch website)
+- name: docs
+  color: "0075ca"
+  description: Documentation and README
+- name: linux
+  color: "fbca04"
+  description: Only on Linux
+- name: windows
+  color: "0e8a16"
+  description: Only on Windows
+- name: translation
+  color: "c5def5"
+  description: Texts and languages (launcher, TRS Client, website)
+- name: bug
+  color: "b60205"
+  description: Something doesn't work
+- name: enhancement
+  color: "a2eeef"
+  description: New feature or improvement
+- name: security
+  color: "5319e7"
+  description: Security-related change
+- name: dependencies
+  color: "0366d6"
+  description: Updates of dependencies

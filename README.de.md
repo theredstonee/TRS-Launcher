@@ -121,6 +121,10 @@ Zu jedem Release gibt es ein **AppImage**, ein **.deb** und ein **.rpm** für x8
 - Spieldateien werden **nicht weiterverteilt**. Sie kommen direkt von Mojangs offiziellen Servern auf deinen PC.
 - Dein Passwort läuft nie durch den Launcher. Tokens bleiben verschlüsselt auf deinem PC und werden nie an fremde Server geschickt.
 
+## Mitmachen
+
+Beiträge sind willkommen – Code, Übersetzungen und Docs. Lies [CONTRIBUTING.md](CONTRIBUTING.md) (Englisch) und die Anleitung [Mitmachen](https://trs-launcher.theredstonee.de/docs/de/developers/contributing) in den Docs. Fehler und Ideen meldest du im [Issue-Tracker auf der Website](https://trs-launcher.theredstonee.de/issues) (nicht in GitHub-Issues), Fragen gehen in die [Discussions](https://github.com/theredstonee/TRS-Launcher/discussions) oder auf [Discord](https://dc.theredstonee.de), Sicherheitslücken bitte nur privat melden (siehe [SECURITY.md](SECURITY.md)). Alle, die an einem Release mitgearbeitet haben, werden in den Release-Hinweisen und im Launcher namentlich erwähnt.
+
 ## Selbst bauen
 
 Die ausführliche Anleitung steht in den Docs: [Selbst bauen](https://trs-launcher.theredstonee.de/docs/de/developers/build-from-source) · [Mitmachen](https://trs-launcher.theredstonee.de/docs/de/developers/contributing) · [Übersetzen](https://trs-launcher.theredstonee.de/docs/de/developers/translating).

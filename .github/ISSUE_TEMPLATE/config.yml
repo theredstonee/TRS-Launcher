@@ -1,0 +1,19 @@
+# GitHub issues are turned off for this repository – bugs and ideas go to the website tracker.
+# This file only matters if issues are ever turned on again: then there is no blank issue, only these links.
+blank_issues_enabled: false
+contact_links:
+  - name: Report a bug or suggest an idea
+    url: https://trs-launcher.theredstonee.de/issues
+    about: Bugs and ideas are collected in the issue tracker on the website (also reachable from the game and the launcher).
+  - name: Ask the community on Discord
+    url: https://dc.theredstonee.de
+    about: Quick help and chat with the TRS community.
+  - name: Read the docs
+    url: https://trs-launcher.theredstonee.de/docs/en/
+    about: Guides for the launcher, the TRS Client and for developers.
+  - name: Ask a question in Discussions
+    url: https://github.com/theredstonee/TRS-Launcher/discussions
+    about: Questions about the code, building from source or contributing.
+  - name: Report a security vulnerability
+    url: https://github.com/theredstonee/TRS-Launcher/security/advisories/new
+    about: Please report security problems privately, never in public.

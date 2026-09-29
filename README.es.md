@@ -121,6 +121,10 @@ Cada versión incluye un **AppImage**, un **.deb** y un **.rpm** para x86_64 (co
 - Los archivos del juego **no se redistribuyen**: se descargan directamente a tu PC desde los servidores oficiales de Mojang.
 - Tu contraseña nunca pasa por el launcher. Los tokens se quedan cifrados en tu PC y nunca se envían a servidores de terceros.
 
+## Contribuir
+
+Las contribuciones son bienvenidas: código, traducciones y documentación. Lee [CONTRIBUTING.md](CONTRIBUTING.md) (en inglés) y la guía [Contribuir](https://trs-launcher.theredstonee.de/docs/es/developers/contributing) de la documentación. Los errores y las ideas se reportan en el [gestor de incidencias de la web](https://trs-launcher.theredstonee.de/issues) (no en GitHub Issues), las preguntas van a [Discussions](https://github.com/theredstonee/TRS-Launcher/discussions) o a [Discord](https://dc.theredstonee.de), y los problemas de seguridad se reportan solo en privado (ver [SECURITY.md](SECURITY.md)). Todas las personas que contribuyen a una versión aparecen por su nombre en las notas de la versión y en el launcher.
+
 ## Compilar desde el código fuente
 
 La guía completa está en la documentación: [Compilar desde el código fuente](https://trs-launcher.theredstonee.de/docs/es/developers/build-from-source) · [Contribuir](https://trs-launcher.theredstonee.de/docs/es/developers/contributing) · [Traducir](https://trs-launcher.theredstonee.de/docs/es/developers/translating).
