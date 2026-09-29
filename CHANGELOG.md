@@ -28,7 +28,15 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.15.0 – 2026-09-29 – Crowned | Gekrönt
+<!-- banner: accent=#ffa62b motif=/news/0.15.0/banner.png -->
+<!-- shots:
+/news/0.15.0/launcher-head-cosmetics.png | Real 3D head cosmetics in the launcher | Echte 3D-Kopf-Kosmetik im Launcher
+/news/0.15.0/launcher-try-on.png | Try a crown on in the big 3D preview – together with your cape | Krone in der großen 3D-Vorschau anprobieren – zusammen mit deinem Umhang
+/news/0.15.0/launcher-night.png | Night mode: see how your cosmetics glow | Nacht-Modus: So leuchtet deine Kosmetik
+/news/0.15.0/game-redstone-crown.png | The Redstone Crown in the game | Die Redstone-Krone im Spiel
+/news/0.15.0/game-team-crown-night.png | The Team Crown glowing at night | Die Team-Krone leuchtet in der Nacht
+-->
 
 ### English
 - **3D head cosmetics.** Crowns, the TRS cap, the lamp helmet, the top hat and the halo are now real 3D models with
