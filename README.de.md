@@ -8,6 +8,8 @@
 
 **Ein schneller, moderner Launcher für Minecraft: Java Edition unter Windows und Linux – mit eigenem In-Game-Client für mehr FPS, HUD und PvP-Funktionen.**
 
+**TRS Launcher von TheRedstonee – der Redstone-Minecraft-Launcher.** Website: [trs-launcher.theredstonee.de](https://trs-launcher.theredstonee.de/?lang=de)
+
 [![Latest release](https://img.shields.io/github/v/release/theredstonee/TRS-Launcher?include_prereleases&sort=semver&label=release&color=e0281e)](https://github.com/theredstonee/TRS-Launcher/releases)
 [![Release build](https://img.shields.io/github/actions/workflow/status/theredstonee/TRS-Launcher/release.yml?label=build)](https://github.com/theredstonee/TRS-Launcher/actions/workflows/release.yml)
 [![Downloads](https://img.shields.io/github/downloads/theredstonee/TRS-Launcher/total?color=ffb84d)](https://github.com/theredstonee/TRS-Launcher/releases)
@@ -20,6 +22,7 @@
 [![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?logo=nuxt&logoColor=white)](https://nuxt.com)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.5.2%E2%80%9326.x-62B47A)](#funktionen)
 
+[**Website**](https://trs-launcher.theredstonee.de/?lang=de) ·
 [Download](https://github.com/theredstonee/TRS-Launcher/releases) ·
 [Wiki](https://github.com/theredstonee/TRS-Launcher/wiki/de-Home) ·
 [Funktionen](#funktionen) ·
