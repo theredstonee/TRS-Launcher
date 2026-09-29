@@ -23,7 +23,7 @@ content/
 └─ es/                        Spanisch  → /docs/es/…
 ```
 
-- Seiten heißen `N.slug.md`. Die Nummer bestimmt nur die Reihenfolge und fällt in der Adresse weg. Slugs: klein,
+- Seiten heißen `NN.slug.md` mit **zweistelliger** Nummer (`01.`, `02.` … `13.`): Nuxt Content sortiert die Pfade als Text, `10.` landet sonst vor `2.`. Die Nummer bestimmt nur die Reihenfolge und fällt in der Adresse weg. Slugs: klein,
   Englisch, Bindestriche (`crash-helper`, nicht `Crash_Helper`).
 - **Gleicher Dateiname in allen Sprachen** (`de/4.help/3.crash-helper.md` ↔ `en/4.help/3.crash-helper.md`). Darüber
   finden sich die Sprachfassungen (hreflang, Sprachumschalter, Sitemap). Fehlt eine Sprache, ist das erlaubt – der

@@ -1,56 +1,56 @@
 [
   {
     "file": "crash-helper.png",
-    "page": "4.help/1.crash-helper",
+    "page": "4.help/01.crash-helper",
     "what": "Crash helper dialog right after a crash: main finding with explanation, involved mods with icons, fix buttons, 'Other possible causes' collapsed, 'Launch again' button",
     "route": "/instances/demo-fabric",
     "state": "Mock instance 'Redstone Fabric' (Fabric 1.21.1). Crash analysis (crashAnalyzed event / get_crash) with primary finding known_issue/sodium_optifine (Sodium + OptiFabric, action disableMods optifabric) and a second finding mixin_conflict/transform; crashed after 12 min of play. Language per shot en/de/es."
   },
   {
     "file": "crash-helper-confirm.png",
-    "page": "4.help/1.crash-helper",
+    "page": "4.help/01.crash-helper",
     "what": "Inline confirmation after clicking 'Disable OptiFabric': text what happens, note about instance history, 'Yes, do it' button",
     "route": "/instances/demo-fabric",
     "state": "Same analysis as crash-helper.png, the disable action clicked once so the confirmation is visible."
   },
   {
     "file": "crash-history.png",
-    "page": "4.help/1.crash-helper",
+    "page": "4.help/01.crash-helper",
     "what": "History tab of the instance with a 'Crashed' entry (exit code, play time, 'Show details') and a 'Disabled OptiFabric' entry above it",
     "route": "/instances/demo-fabric?tab=history",
     "state": "Mock history: Launched, Crashed (crash id of the analysis above), Disabled OptiFabric, Launched again; today."
   },
   {
     "file": "repair.png",
-    "page": "4.help/2.common-problems",
+    "page": "4.help/02.common-problems",
     "what": "Instance settings dialog, section Installation: TRS optimization, Graphics mode (Pretty / Max FPS) and Repair",
     "route": "/instances/demo-vanilla",
     "state": "Mock vanilla 1.21.11 instance with TRS optimization on; instance settings opened and section 'Installation' selected."
   },
   {
     "file": "tasks-panel.png",
-    "page": "4.help/2.common-problems",
+    "page": "4.help/02.common-problems",
     "what": "Tasks panel open with a running modpack install (stage 'Downloading mods', progress bar, time left, pause/cancel) and one finished task",
     "route": "/",
     "state": "Mock task registry: modpack task 'Redstone Pack' at 46 % in stage packFiles, one finished Java install in history; tasks panel opened from the title bar."
   },
   {
     "file": "java-settings.png",
-    "page": "4.help/3.java",
+    "page": "4.help/03.java",
     "what": "Settings, section Java installations: slots Java 8/17/21/25 with 'Automatic' placeholders, one slot with a custom path and version check, 'Install recommended' and 'For all versions'",
     "route": "/settings",
     "state": "Settings opened, section 'Java installations' selected. Java 21 installed by the launcher (managed), Java 8 slot set to a made-up path C:\\Java\\jre8\\bin\\javaw.exe detected as Java 8."
   },
   {
     "file": "log-viewer.png",
-    "page": "4.help/5.logs",
+    "page": "4.help/05.logs",
     "what": "Logs tab: live log with level filter buttons (Errors + Warnings active), search field, one stack trace folded ('Show stack trace (n lines)'), 'Analyze' / share buttons",
     "route": "/instances/demo-fabric?tab=logs",
     "state": "Mock log source 'latest.log' of a Fabric 1.21.1 instance with INFO/WARN/ERROR lines and a Java stack trace; filter Errors + Warnings selected. Only made-up names and paths."
   },
   {
     "file": "log-share.png",
-    "page": "4.help/5.logs",
+    "page": "4.help/05.logs",
     "what": "'Log shared' dialog: link copied, QR code, hints that tokens and the user name were removed",
     "route": "/instances/demo-fabric?tab=logs",
     "state": "Share dialog after a mocked successful upload (mclo.gs link with a made-up id)."

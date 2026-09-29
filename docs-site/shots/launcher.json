@@ -1,175 +1,175 @@
 [
   {
     "file": "getting-started/start-page.png",
-    "page": "1.getting-started/1.installation",
+    "page": "1.getting-started/01.installation",
     "what": "Home page right after setup: greeting, redstone circuit hero with the big lamp play button, 'Jump back in' card, news column",
     "route": "/",
     "state": "tauri-mock default (one instance 'Redstone-Labor' 1.21.1 Fabric, last played 3 h ago), locale en, animatedBackground on, one signed-in test account (made-up name)"
   },
   {
     "file": "getting-started/accounts.png",
-    "page": "1.getting-started/2.sign-in",
+    "page": "1.getting-started/02.sign-in",
     "what": "Accounts page with two made-up Microsoft accounts, one marked 'Active', buttons 'Sign in with code' and 'Add account'",
     "route": "/accounts",
     "state": "mock list_accounts with 2 accounts (e.g. 'RedstoneFan', 'LampLighter'), first active, default skin heads"
   },
   {
     "file": "getting-started/account-menu.png",
-    "page": "1.getting-started/2.sign-in",
+    "page": "1.getting-started/02.sign-in",
     "what": "Account menu opened from the title bar: 'Playing as', both accounts with 'Switch', 'Add account', 'Achievements', 'Manage accounts'",
     "route": "/",
     "state": "same 2 mock accounts; click the account button at the top right of the title bar before the shot"
   },
   {
     "file": "getting-started/new-instance.png",
-    "page": "1.getting-started/3.first-instance",
+    "page": "1.getting-started/03.first-instance",
     "what": "'New instance' dialog: name filled in, Minecraft version selected, loader Fabric selected, presets list with FPS boost ticked",
     "route": "/instances",
     "state": "open the dialog with Ctrl+N; mock the version manifest (a few releases) and list presets with the built-in TRS presets"
   },
   {
     "file": "getting-started/play-starting.png",
-    "page": "1.getting-started/3.first-instance",
+    "page": "1.getting-started/03.first-instance",
     "what": "Home page while an instance starts: lamp button charging, stage text (e.g. 'Game files') and percent",
     "route": "/",
     "state": "set games store phase to 'preparing' with a stage and ~60 % progress via Pinia (see memory: $pinia._s.get('games'))"
   },
   {
     "file": "launcher/instances-library.png",
-    "page": "2.launcher/1.instances",
+    "page": "2.launcher/01.instances",
     "what": "Library with 6–8 instance cards grouped by 'Custom groups' (e.g. PvP, Modpacks, With friends), search/sort/group/filter bar and header buttons 'Modpack by code', 'Import', 'New group', 'New instance'",
     "route": "/instances",
     "state": "mock list_instances with several instances (vanilla, Fabric, Forge, NeoForge, one modpack), groups set, one banner/icon"
   },
   {
     "file": "launcher/instance-page.png",
-    "page": "2.launcher/1.instances",
+    "page": "2.launcher/01.instances",
     "what": "Instance page header (icon, name, version, play time, Play, Settings, Open folder) and the tab bar with the Content tab open",
     "route": "/instances/redstone-labor",
     "state": "default mock instance; mock content list with ~10 mods (Sodium, Lithium, Iris …) and one update badge"
   },
   {
     "file": "launcher/crash-helper.png",
-    "page": "2.launcher/1.instances",
+    "page": "2.launcher/01.instances",
     "what": "Crash helper dialog: cause in plain words, involved mods with icons, buttons such as 'Disable …' and 'Launch again'",
     "route": "/instances/redstone-labor",
     "state": "mock a crash analysis result (e.g. missing dependency or Sodium + OptiFine) and open 'Open crash helper'"
   },
   {
     "file": "launcher/change-version.png",
-    "page": "2.launcher/2.mod-loaders",
+    "page": "2.launcher/02.mod-loaders",
     "what": "'Change version' dialog: Minecraft version, loader version field with 'Show betas', notice box",
     "route": "/instances/redstone-labor",
     "state": "open instance Settings → Installation → Edit; mock loader versions list for Fabric"
   },
   {
     "file": "launcher/discover.png",
-    "page": "2.launcher/3.mods",
+    "page": "2.launcher/03.mods",
     "what": "Discover page: Modrinth/CurseForge switch, content type tabs, search results list with icons, downloads, 'Install' buttons, filter sidebar, 'Install to' instance picker",
     "route": "/browse",
     "state": "mock Modrinth search results (well-known mods, made-up counts are fine) and categories"
   },
   {
     "file": "launcher/content-list.png",
-    "page": "2.launcher/3.mods",
+    "page": "2.launcher/03.mods",
     "what": "Content tab with mixed mods/resource packs/shaders, some disabled, 2 'Update' badges and the 'Update all (2)' button",
     "route": "/instances/redstone-labor?tab=content",
     "state": "mock content list + update check returning 2 updates"
   },
   {
     "file": "launcher/presets.png",
-    "page": "2.launcher/3.mods",
+    "page": "2.launcher/03.mods",
     "what": "Presets page with the TRS presets (FPS boost levels, Voice chat, Replay, Nvidium) and one own preset 'My basics' marked 'Always automatic'",
     "route": "/presets",
     "state": "mock presets list with builtins + one custom preset"
   },
   {
     "file": "launcher/modpack-install.png",
-    "page": "2.launcher/4.modpacks",
+    "page": "2.launcher/04.modpacks",
     "what": "'Install modpack' dialog with Minecraft version/loader line and the choice 'With TRS Client' (Recommended) / 'Without TRS Client'",
     "route": "/browse?kind=modpack",
     "state": "click 'New instance' on a modpack hit; mock pack preview (e.g. 1.21.1 Fabric, 180 mods, no conflicts)"
   },
   {
     "file": "launcher/modpack-progress.png",
-    "page": "2.launcher/4.modpacks",
+    "page": "2.launcher/04.modpacks",
     "what": "Tasks panel open in the title bar with a modpack install ('Downloading mods · 120/261', ~45 %, pause/cancel) and the instance card showing 'Installing'",
     "route": "/instances",
     "state": "simulate a running modpack task in the tasks store (Pinia) and open the tasks button"
   },
   {
     "file": "launcher/share-result.png",
-    "page": "2.launcher/5.share-modpacks",
+    "page": "2.launcher/05.share-modpacks",
     "what": "'Modpack shared' result: code TRS-XXXX-XXXX (made-up), 'Copy code', 'Copy link', 'Open page' and the 'Send to friends' list",
     "route": "/instances/redstone-labor?tab=share",
     "state": "mock pack share response and a friends list with 3 made-up friends; reuse the setup of /news/0.12.0/share-result.png"
   },
   {
     "file": "launcher/pack-by-code.png",
-    "page": "2.launcher/5.share-modpacks",
+    "page": "2.launcher/05.share-modpacks",
     "what": "'Install modpack by code' dialog after 'Check': pack name, 'by …', number of Modrinth mods and settings files",
     "route": "/instances",
     "state": "click 'Modpack by code', enter a made-up code, mock the pack lookup; reuse the setup of /news/0.12.0/install-by-code.png"
   },
   {
     "file": "launcher/import.png",
-    "page": "2.launcher/6.import",
+    "page": "2.launcher/06.import",
     "what": "'Import from another launcher' dialog: 'Found on this PC' with several launchers and installations, one expanded with 'What gets imported'",
     "route": "/instances",
     "state": "click 'Import'; mock the import scan with made-up instances from Minecraft Launcher, Prism Launcher and CurseForge (no real user paths)"
   },
   {
     "file": "launcher/clips-gallery.png",
-    "page": "2.launcher/7.clips",
+    "page": "2.launcher/07.clips",
     "what": "Clips page with 6–8 clip tiles (preview, length, date), search, instance filter and sort",
     "route": "/clips",
     "state": "settings.clips.enabled true; mock clip list with preview thumbnails (OS windows)"
   },
   {
     "file": "launcher/clip-trim.png",
-    "page": "2.launcher/7.clips",
+    "page": "2.launcher/07.clips",
     "what": "Clip player in trim mode: timeline with start/end, 'How to cut' options and 'Save as new clip'",
     "route": "/clips",
     "state": "open a clip, press 'Trim'; reuse the setup of /news/0.7.0/clip-trim.png"
   },
   {
     "file": "launcher/screenshots.png",
-    "page": "2.launcher/7.clips",
+    "page": "2.launcher/07.clips",
     "what": "Screenshot gallery across all instances with instance filter and the 'My shared pictures' button",
     "route": "/screenshots",
     "state": "mock screenshot list (in-game pictures from the autotest runs, no player names visible)"
   },
   {
     "file": "launcher/social-friends.png",
-    "page": "2.launcher/8.social",
+    "page": "2.launcher/08.social",
     "what": "Social → Friends: friend list with online status and faces, requests (one incoming, one cape offer) and blocked players side by side",
     "route": "/social?tab=friends",
     "state": "TRS services on (consent given), mock friends/requests with made-up names; reuse the setup of /news/0.7.0/friends.png"
   },
   {
     "file": "launcher/social-chat.png",
-    "page": "2.launcher/8.social",
+    "page": "2.launcher/08.social",
     "what": "Social → Chat: conversation list and an open chat with a reply, reactions, a picture and a server invite card",
     "route": "/social",
     "state": "mock chat data with made-up names; reuse the setup of /news/0.7.0/chat.png"
   },
   {
     "file": "launcher/social-worlds.png",
-    "page": "2.launcher/8.social",
+    "page": "2.launcher/08.social",
     "what": "Social → Worlds: a friend's open world card (version, game mode, players) with 'Join' / 'Ask to join' and 'Join with a code'",
     "route": "/social?tab=worlds",
     "state": "mock hosting worlds list; reuse the setup of /news/0.8.0/worlds.png"
   },
   {
     "file": "launcher/achievements.png",
-    "page": "2.launcher/9.achievements",
+    "page": "2.launcher/09.achievements",
     "what": "Achievements page: points, unlocked count, categories with progress bars, rarities and a reward",
     "route": "/achievements",
     "state": "mock achievements response; reuse the setup of /news/0.14.0/achievements.png"
   },
   {
     "file": "launcher/achievements-friend.png",
-    "page": "2.launcher/9.achievements",
+    "page": "2.launcher/09.achievements",
     "what": "A friend's achievements shown from Social (points, latest achievements, 'Show all achievements')",
     "route": "/social?tab=friends",
     "state": "click a friend; reuse the setup of /news/0.14.0/friends-achievements.png"
