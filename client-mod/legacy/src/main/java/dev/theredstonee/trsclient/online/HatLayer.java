@@ -34,7 +34,7 @@ import java.util.UUID;
  * <p>Format 2 (Studio-Modelle) per GL: Grundmodell mit Alpha-Test (Alpha &lt; 0,5 unsichtbar) und Entity-Licht,
  * {@code emissive} voll hell (Lightmap 240/240, ohne GL-Licht), durchscheinende Flächen gemischt ohne Tiefe, Leucht-
  * Schicht und Höfe additiv {@code GL_ONE, GL_ONE} voll hell mit kleinem Polygon-Versatz – wie Vanillas Spinnenaugen.
- * Mit Helm bleibt v2 unsichtbar (siehe {@code OnlineFeatures#hatV2}).
+ * Kopf-Kosmetik bleibt immer sichtbar: mit Helm sitzt v2 auf dem Helm (siehe {@code OnlineFeatures#hatV2}).
  */
 public final class HatLayer implements LayerRenderer<AbstractClientPlayer> {
 	private final RenderPlayer renderer;

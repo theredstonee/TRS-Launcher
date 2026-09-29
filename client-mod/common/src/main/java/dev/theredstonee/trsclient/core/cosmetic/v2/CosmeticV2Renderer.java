@@ -56,6 +56,19 @@ public final class CosmeticV2Renderer {
 	 * {@link #faces}, {@link #halos}, {@link #emit} und {@link #world(int)}.
 	 */
 	public void pose(CosmeticV2 m, long timeMs, boolean animate) {
+		pose(m, timeMs, animate, false);
+	}
+
+	/**
+	 * Waagerechte Streckung um die Kopfachse, wenn ein Helm getragen wird: Die Helm-Schicht ist rundum 1 px dicker als
+	 * der Kopf (Kopf ±4 → Helm ±5, oben 8 → 9); v2-Teile sitzen auf der Hut-Ebene (±4,5 / 8,5). Mit x/z × (8 + 2) / 8
+	 * und 1 px höher liegen sie knapp außen auf dem Helm (±5,6 / 9,5) statt darin – Höhe und Form bleiben.
+	 */
+	public static final double HELMET_SCALE = 10.0 / 8.0;
+	public static final double HELMET_LIFT = 1.0;
+
+	/** Wie {@link #pose(CosmeticV2, long, boolean)}; {@code helmet} = auf einen getragenen Helm setzen. */
+	public void pose(CosmeticV2 m, long timeMs, boolean animate, boolean helmet) {
 		int n = Math.min(MAX, m.bones.size());
 		for (int b = 0; b < n; b++) {
 			pPos[b][0] = pPos[b][1] = pPos[b][2] = 0f;
@@ -66,8 +79,17 @@ public final class CosmeticV2Renderer {
 		for (int b = 0; b < n; b++) {
 			CosmeticV2.Bone bone = m.bones.get(b);
 			boneLocal(bone, pPos[b], pRot[b], pScale[b], local);
-			if (bone.parent >= 0) V2Math.multiply(world[b], world[bone.parent], local, tmp);
-			else System.arraycopy(local, 0, world[b], 0, 16);
+			if (bone.parent >= 0) {
+				V2Math.multiply(world[b], world[bone.parent], local, tmp);
+			} else if (helmet) {
+				V2Math.identity(tmp2);
+				tmp2[0] = HELMET_SCALE;
+				tmp2[10] = HELMET_SCALE;
+				tmp2[13] = HELMET_LIFT;
+				V2Math.multiply(world[b], tmp2, local, tmp);
+			} else {
+				System.arraycopy(local, 0, world[b], 0, 16);
+			}
 		}
 	}
 

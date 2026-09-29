@@ -28,7 +28,7 @@ import java.util.UUID;
  * {@code entityCutoutNoCull} (26.x: {@code entityCutout}, dort ohne Culling) mit Weltlicht bzw. voll hell für
  * {@code emissive}, {@code entityTranslucent} für durchscheinende Flächen, die Leucht-Schicht und die Höfe additiv und
  * voll hell über {@code eyes} (bis 1.21.4) bzw. {@code energySwirl} (ab 1.21.5 – dort mischt {@code eyes} nicht mehr
- * additiv). Mit Helm bleibt v2 unsichtbar (siehe {@code OnlineFeatures#hatV2}).
+ * additiv). Kopf-Kosmetik bleibt immer sichtbar: mit Helm sitzt v2 auf dem Helm (siehe {@code OnlineFeatures#hatV2}).
  */
 public final class HatHooks {
 	/** Volle Helligkeit (Himmels- und Blocklicht 15), wie {@code LightTexture.FULL_BRIGHT}. */

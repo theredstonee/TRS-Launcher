@@ -155,6 +155,45 @@ class CosmeticV2Test {
 	}
 
 	@Test
+	void helmetPutsTheModelOnTopOfTheHelmet() throws IOException {
+		CosmeticV2 m = CosmeticV2.parse(res("redstone_crown.json"));
+		CosmeticV2Renderer r = new CosmeticV2Renderer();
+		final List<double[]> plain = new ArrayList<double[]>();
+		final List<double[]> helmet = new ArrayList<double[]>();
+		r.pose(m, 1234567, true, false);
+		r.faces(m, -1, (p, uv, mat, nx, ny, nz) -> plain.add(p.clone()));
+		r.pose(m, 1234567, true, true);
+		r.faces(m, -1, (p, uv, mat, nx, ny, nz) -> helmet.add(p.clone()));
+		assertEquals(plain.size(), helmet.size());
+		double minAbsX = Double.MAX_VALUE;
+		for (int f = 0; f < plain.size(); f++) {
+			for (int k = 0; k < 4; k++) {
+				double[] a = plain.get(f);
+				double[] b = helmet.get(f);
+				// x/z um die Kopfachse × 10/8, y um 1 px höher, Form sonst gleich
+				assertEquals(a[k * 3] * 1.25, b[k * 3], 1e-9);
+				assertEquals(a[k * 3 + 1] + 1.0, b[k * 3 + 1], 1e-9);
+				assertEquals(a[k * 3 + 2] * 1.25, b[k * 3 + 2], 1e-9);
+				if (b[k * 3 + 1] < 9.0) minAbsX = Math.min(minAbsX, Math.max(Math.abs(b[k * 3]), Math.abs(b[k * 3 + 2])));
+			}
+		}
+		// Alles, was unterhalb der Helm-Oberseite (y 9) liegt, bleibt außerhalb der Helm-Schicht (±5).
+		assertTrue(minAbsX > 5.0, "Abstand zur Kopfachse unter y 9: " + minAbsX);
+		// Höfe wachsen mit (um bis zu × 10/8 – bei gedrehten Knochen etwas weniger, die Streckung ist nur waagerecht)
+		final List<Double> halfPlain = new ArrayList<Double>();
+		final List<Double> halfHelmet = new ArrayList<Double>();
+		r.pose(m, 0, false, false);
+		r.halos(m, 0, 0, 0, 1, true, (cx, cy, cz, half, rgb, i) -> halfPlain.add(half));
+		r.pose(m, 0, false, true);
+		r.halos(m, 0, 0, 0, 1, true, (cx, cy, cz, half, rgb, i) -> halfHelmet.add(half));
+		assertEquals(halfPlain.size(), halfHelmet.size());
+		for (int i = 0; i < halfPlain.size(); i++) {
+			double ratio = halfHelmet.get(i) / halfPlain.get(i);
+			assertTrue(ratio >= 1.0 - 1e-9 && ratio <= 1.25 + 1e-9, "Hof " + i + ": " + ratio);
+		}
+	}
+
+	@Test
 	void validationMirrorsReference() throws IOException {
 		String good = res("top_hat.json");
 		assertTrue(CosmeticV2.check(good, -1, -1, -1, -1).ok());

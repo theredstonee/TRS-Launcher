@@ -18,8 +18,8 @@ import net.minecraft.client.Minecraft;
  * Selbsttest „Kopf-Kosmetik v2“ ({@code -PtrsAutotestOnly=cosmetics2}, mit der v2-Attrappe
  * {@code scratchpad/cos2mod/mock-api.mjs}): setzt über den Katalog ({@code PUT /v1/me/cosmetics}) nacheinander alle
  * sechs Studio-Teile auf, wartet, bis Modell und Texturen geladen sind, und fotografiert jedes in der 3. Person von vorne,
- * schräg und hinten – bei Tag und bei Nacht (Kamera per Freelook um die Figur, Zoom auf den Kopf). Dazu: mit Helm
- * (unsichtbar) und die Garderobe (Reiter „Kosmetik“ bei Tag/Nacht, gesperrtes Teil).
+ * schräg und hinten – bei Tag und bei Nacht (Kamera per Freelook um die Figur, Zoom auf den Kopf). Dazu die Garderobe
+ * (Reiter „Kosmetik“ bei Tag/Nacht, gesperrtes Teil) und die Quietscheente (Format 1).
  */
 public final class Cosmetics2Test {
 	private static final String[] IDS = { "redstone_crown", "team_crown", "trs_cap", "lamp_helmet", "top_hat", "halo" };
@@ -131,26 +131,10 @@ public final class Cosmetics2Test {
 				}
 				actions.command("time set day");
 				item++;
-				phase = item < IDS.length ? 2 : 8;
+				phase = item < IDS.length ? 2 : 9;
 				wait = 6;
 				return true;
-			case 8:
-				// Helm-Regel: v2 bleibt mit Helm unsichtbar
-				catalog.wear("redstone_crown");
-				//? if >=1.17 {
-				actions.command("item replace entity @p armor.head with iron_helmet");
-				//?} else
-				/*actions.command("replaceitem entity @p armor.head iron_helmet");*/
-				camera(mc, 142F, 14F);
-				phase = 9;
-				wait = 40;
-				return true;
 			case 9:
-				actions.shot("trsclient-cos2-helmet");
-				//? if >=1.17 {
-				actions.command("item replace entity @p armor.head with air");
-				//?} else
-				/*actions.command("replaceitem entity @p armor.head air");*/
 				TrsClient.get().pvp().forceFreelook(Float.NaN);
 				TrsClient.get().setForceZoom(false);
 				Mc.setHudHidden(false);

@@ -18,7 +18,7 @@ import net.minecraft.client.entity.EntityPlayerSP;
 /**
  * Selbsttest „Kopf-Kosmetik v2“ für Forge 1.8.9–1.12.2 ({@code -PtrsAutotestOnly=cosmetics2}, Attrappe
  * {@code scratchpad/cos2mod/mock-api.mjs}): wie der Fabric-Test – alle sechs Studio-Teile aufsetzen und von vorne,
- * schräg und hinten bei Tag und Nacht fotografieren, dazu Helm-Regel und Garderobe (Reiter „Kosmetik“).
+ * schräg und hinten bei Tag und Nacht fotografieren, dazu Garderobe (Reiter „Kosmetik“) und Quietscheente.
  */
 public final class Cosmetics2Test {
 	private static final String[] IDS = { "redstone_crown", "team_crown", "trs_cap", "lamp_helmet", "top_hat", "halo" };
@@ -126,19 +126,10 @@ public final class Cosmetics2Test {
 				}
 				actions.command("time set 1000");
 				item++;
-				phase = item < IDS.length ? 2 : 8;
+				phase = item < IDS.length ? 2 : 9;
 				wait = 6;
 				return true;
-			case 8:
-				catalog.wear("redstone_crown");
-				actions.command("replaceitem entity " + name + " slot.armor.head minecraft:iron_helmet");
-				camera(mc, 142F, 14F);
-				phase = 9;
-				wait = 40;
-				return true;
 			case 9:
-				actions.shot("cos2-helmet");
-				actions.command("replaceitem entity " + name + " slot.armor.head minecraft:air");
 				TrsClient.get().pvp().forceFreelook(Float.NaN);
 				TrsClient.get().setForceZoom(false);
 				mc.gameSettings.hideGUI = false;

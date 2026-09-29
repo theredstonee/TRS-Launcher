@@ -743,7 +743,6 @@
   "wardrobe.cosmetics.loading": "Wczytywanie kosmetyków …",
   "wardrobe.cosmetics.trsOff": "Połącz się z API TRS (zaloguj się w TRS Launcherze), aby zobaczyć swoje kosmetyki.",
   "wardrobe.cosmetics.noPreview": "Podgląd niedostępny",
-  "wardrobe.cosmetics.helmetHint": "Kosmetyki na głowę są ukryte, gdy nosisz hełm.",
   "wardrobe.cosmetics.error.offline": "Brak połączenia z API TRS",
   "wardrobe.cosmetics.error.locked": "Jeszcze tego nie odblokowano",
   "wardrobe.cosmetics.error.notFound": "Ten kosmetyk już nie istnieje",

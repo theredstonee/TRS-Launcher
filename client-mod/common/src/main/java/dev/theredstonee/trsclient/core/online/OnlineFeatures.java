@@ -219,12 +219,12 @@ public final class OnlineFeatures<T> {
 
 	/**
 	 * Kopf-Kosmetik im Format 2 (Studio-Modell) für dieses Bild oder null (nichts/v1 tragen, Modul aus, noch nicht
-	 * geladen). Mit Helm bleibt sie unsichtbar: v2-Teile sitzen absolut auf Kopf und Hut-Ebene und würden in jedem Helm
-	 * stecken (Empfehlung API.md §11.7 „Hide hat items while a helmet is visible“) – die Ente (v1) hebt sich dagegen an.
+	 * geladen). Kopf-Kosmetik bleibt immer sichtbar: Mit Helm ({@code helmet}) wird sie auf den Helm gesetzt – waagerecht
+	 * gestreckt und angehoben ({@code CosmeticV2Renderer#HELMET_SCALE}), wie die Ente (v1) sich mit Helm anhebt.
 	 * Nur im Spiel-/Render-Thread wirksam.
 	 */
 	public dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> hatV2(UUID uuid, boolean helmet) {
-		if (helmet || Thread.currentThread() != gameThread) return null;
+		if (Thread.currentThread() != gameThread) return null;
 		if (!modules.trsOnline.isEnabled() || !modules.trsCosmetics.get()) return null;
 		PlayerInfo info = online.info(uuid);
 		if (info.hat == null || !info.hat.v2()) return null;
@@ -233,7 +233,7 @@ public final class OnlineFeatures<T> {
 			dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticAssets.Entry<T> e = cosmetics.get(info.hat, now);
 			if (e == null) return null;
 			T halo = e.model.halos.isEmpty() ? null : cosmetics.halo();
-			return new dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T>(e.model, e.base(now), e.glow(now), halo, now);
+			return new dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T>(e.model, e.base(now), e.glow(now), halo, now, helmet);
 		} catch (RuntimeException ex) {
 			online.reportError(ex);
 			return null;
@@ -248,7 +248,7 @@ public final class OnlineFeatures<T> {
 			dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2Renderer.VertexSink sink) {
 		if (hat == null) return;
 		try {
-			v2Renderer.pose(hat.model, hat.now, true);
+			v2Renderer.pose(hat.model, hat.now, true, hat.helmet);
 			v2Renderer.emit(hat.model, pass, hat.now, eye, sink);
 		} catch (RuntimeException e) {
 			online.reportError(e);

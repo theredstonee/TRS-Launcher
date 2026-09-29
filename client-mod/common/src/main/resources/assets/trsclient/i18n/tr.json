@@ -743,7 +743,6 @@
   "wardrobe.cosmetics.loading": "Kozmetikler yükleniyor …",
   "wardrobe.cosmetics.trsOff": "Kozmetiklerini görmek için TRS API’ye bağlan (TRS Launcher ile giriş yap).",
   "wardrobe.cosmetics.noPreview": "Önizleme yok",
-  "wardrobe.cosmetics.helmetHint": "Kask takarken kafa kozmetikleri gizlenir.",
   "wardrobe.cosmetics.error.offline": "TRS API bağlantısı yok",
   "wardrobe.cosmetics.error.locked": "Bunu henüz açmadın",
   "wardrobe.cosmetics.error.notFound": "Bu kozmetik artık yok",

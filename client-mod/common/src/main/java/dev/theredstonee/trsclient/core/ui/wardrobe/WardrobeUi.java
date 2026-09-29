@@ -1451,7 +1451,6 @@ public final class WardrobeUi extends UiScreen {
 			}
 			y += ((locked.size() + cols - 1) / cols) * (ch + GAP);
 		}
-		y = note(c, I18n.tr("wardrobe.cosmetics.helmetHint"), x, y + 2, w);
 		return y - start;
 	}
 

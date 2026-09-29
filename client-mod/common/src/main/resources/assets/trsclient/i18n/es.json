@@ -743,7 +743,6 @@
   "wardrobe.cosmetics.loading": "Cargando cosméticos …",
   "wardrobe.cosmetics.trsOff": "Conéctate a la API de TRS (inicia sesión en el TRS Launcher) para ver tus cosméticos.",
   "wardrobe.cosmetics.noPreview": "Vista previa no disponible",
-  "wardrobe.cosmetics.helmetHint": "Los cosméticos de cabeza se ocultan mientras llevas casco.",
   "wardrobe.cosmetics.error.offline": "Sin conexión con la API de TRS",
   "wardrobe.cosmetics.error.locked": "Aún no lo has desbloqueado",
   "wardrobe.cosmetics.error.notFound": "Este cosmético ya no existe",

@@ -743,7 +743,6 @@
   "wardrobe.cosmetics.loading": "Cosmetica laden …",
   "wardrobe.cosmetics.trsOff": "Verbind met de TRS API (log in via de TRS Launcher) om je cosmetica te zien.",
   "wardrobe.cosmetics.noPreview": "Voorbeeld niet beschikbaar",
-  "wardrobe.cosmetics.helmetHint": "Hoofdcosmetica blijft verborgen zolang je een helm draagt.",
   "wardrobe.cosmetics.error.offline": "Geen verbinding met de TRS API",
   "wardrobe.cosmetics.error.locked": "Nog niet vrijgespeeld",
   "wardrobe.cosmetics.error.notFound": "Dit item bestaat niet meer",

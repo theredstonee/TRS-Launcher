@@ -743,7 +743,6 @@
   "wardrobe.cosmetics.loading": "Chargement des cosmétiques …",
   "wardrobe.cosmetics.trsOff": "Connecte-toi à l’API TRS (via le TRS Launcher) pour voir tes cosmétiques.",
   "wardrobe.cosmetics.noPreview": "Aperçu indisponible",
-  "wardrobe.cosmetics.helmetHint": "Les cosmétiques de tête sont cachés quand tu portes un casque.",
   "wardrobe.cosmetics.error.offline": "Pas de connexion à l’API TRS",
   "wardrobe.cosmetics.error.locked": "Tu ne l’as pas encore débloqué",
   "wardrobe.cosmetics.error.notFound": "Ce cosmétique n’existe plus",

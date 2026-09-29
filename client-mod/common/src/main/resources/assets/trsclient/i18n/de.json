@@ -743,7 +743,6 @@
   "wardrobe.cosmetics.loading": "Kosmetik wird geladen …",
   "wardrobe.cosmetics.trsOff": "Mit der TRS API verbinden (im TRS Launcher anmelden), um deine Kosmetik zu sehen.",
   "wardrobe.cosmetics.noPreview": "Vorschau nicht verfügbar",
-  "wardrobe.cosmetics.helmetHint": "Mit Helm bleibt Kopf-Kosmetik unsichtbar.",
   "wardrobe.cosmetics.error.offline": "Keine Verbindung zur TRS API",
   "wardrobe.cosmetics.error.locked": "Noch nicht freigeschaltet",
   "wardrobe.cosmetics.error.notFound": "Dieses Teil gibt es nicht mehr",

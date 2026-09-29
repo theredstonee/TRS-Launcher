@@ -743,7 +743,6 @@
   "wardrobe.cosmetics.loading": "Loading cosmetics …",
   "wardrobe.cosmetics.trsOff": "Connect to the TRS API (sign in with the TRS Launcher) to see your cosmetics.",
   "wardrobe.cosmetics.noPreview": "Preview not available",
-  "wardrobe.cosmetics.helmetHint": "Head cosmetics stay hidden while you wear a helmet.",
   "wardrobe.cosmetics.error.offline": "No connection to the TRS API",
   "wardrobe.cosmetics.error.locked": "You have not unlocked this yet",
   "wardrobe.cosmetics.error.notFound": "This cosmetic no longer exists",
