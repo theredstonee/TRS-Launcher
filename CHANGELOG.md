@@ -28,6 +28,20 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## 0.15.2 – 2026-09-30 – The Polish Update | Das Feinschliff-Update
+<!-- banner: accent=#ff7a3d motif=/news/0.15.2/banner.png -->
+<!-- shots:
+/news/0.15.2/discover-source.png | Modrinth and CurseForge with their own marks | Modrinth und CurseForge mit ihren eigenen Zeichen
+-->
+
+### English
+- **Source marks.** On Discover, Modrinth and CurseForge show their own marks next to the name. The switch itself
+  stays the same.
+
+### Deutsch
+- **Quellen-Zeichen.** Beim Entdecken stehen neben Modrinth und CurseForge ihre eigenen Zeichen. Der Schalter selbst
+  bleibt gleich.
+
 ## 0.15.1 – 2026-09-30 – The Wardrobe Update | Das Kleiderschrank-Update
 <!-- banner: accent=#e10600 motif=/news/0.15.1/banner.png -->
 <!-- shots:
