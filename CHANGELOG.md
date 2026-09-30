@@ -62,6 +62,62 @@ How to write an entry:
   Builders & Biomes), kannst du anprobieren und anwenden. Geladen wird nur von minecraft.net, danach aus dem Cache;
   ohne Internet ist der Abschnitt ausgeblendet.
 
+## 0.15.1 – 2026-09-30 – The Wardrobe Update | Das Kleiderschrank-Update
+<!-- banner: accent=#e10600 motif=/news/0.15.1/banner.png -->
+<!-- shots:
+/news/0.15.1/skins-page.png | Skins, capes and cosmetics as tabs, with small 3D skin cards | Skins, Umhänge und Kosmetik als Reiter, mit kleinen 3D-Skin-Karten
+-->
+
+### English
+- **Default skin preview.** “Account default” on the Skins page shows the real skin Minecraft gives this account
+  (Steve, Alex, Ari and the others, with the matching arm width), read from an installed version – the option
+  tells you which one and from which Minecraft version. Until a version is installed, a simple figure stands in.
+- **New Skins page.** A large 3D figure with your player name on the left that stays in place while you scroll,
+  and tabs for **Skins**, **Capes** and **Cosmetics** on the right. Skins are cards with a small 3D figure;
+  capes and cosmetics keep their previous cards (the cape picture or the cosmetic, the name and the badge).
+  Whatever you click shows up on the big figure right away, and “Apply” still sends everything at once.
+  Skin sections can be collapsed – the page remembers it.
+- **All 18 default skins.** Alex, Ari, Efe, Kai, Makena, Noor, Steve, Sunny and Zuri – each slim and wide – can be
+  picked and applied directly (the textures come from an installed Minecraft version).
+- **Official skin packs.** The free Java skins Mojang has released on minecraft.net (Chaos Cubed, Tiny Takeover,
+  Mounts of Mayhem, The Copper Age, Chase the Skies, The Garden Awakens, Striding Hero, Builders & Biomes) can be
+  tried on and applied. They are downloaded only from minecraft.net and cached; without internet the section is hidden.
+- **TRS Client: compact "Add Server" window.** In the TRS menu style, "Add Server", "Edit Server" and "Direct
+  Connection" stretched their dark panel to the edge of the screen when another mod put a button in a corner (for
+  example "Set version" from ViaFabricPlus). The panel now always sits compact and centred around the form; buttons of
+  other mods next to the form still get included.
+- **TRS Client: calmer head cosmetics from a distance.** The glowing crowns and hats use very detailed textures. From
+  further away they could flicker and sparkle from frame to frame, which made the Redstone Crown look like it was
+  blinking much too fast. The client now switches to smoother, less detailed versions of the textures the further away
+  (or smaller) the cosmetic is – like Minecraft does for blocks. Up close nothing changes; the animation keeps exactly
+  the pace of the TRS Studio preview (the running light still steps every 140 ms, the lamps pulse every 1.68 s).
+
+### Deutsch
+- **Vorschau des Standard-Skins.** „Standard des Kontos“ auf der Skins-Seite zeigt den echten Skin, den Minecraft diesem
+  Konto gibt (Steve, Alex, Ari und die anderen, mit der passenden Armbreite), aus einer installierten Version – die
+  Auswahl sagt dir, welcher es ist und aus welcher Minecraft-Version. Solange keine Version installiert ist,
+  steht eine einfache Figur da.
+- **Neue Skins-Seite.** Links eine große 3D-Figur mit deinem Spielernamen, die beim Scrollen stehen bleibt, rechts
+  die Reiter **Skins**, **Umhänge** und **Kosmetik**. Skins sind Karten mit kleiner 3D-Figur; Umhänge und
+  Kosmetik behalten ihre bisherigen Karten (Umhang-Bild bzw. Kosmetik, Name und Badge). Was du anklickst,
+  erscheint sofort auf der großen Figur, und „Anwenden“ schickt weiterhin alles auf einmal. Die Skin-Abschnitte
+  lassen sich zuklappen – die Seite merkt sich das.
+- **Alle 18 Standard-Skins.** Alex, Ari, Efe, Kai, Makena, Noor, Steve, Sunny und Zuri – jeweils schmal und breit –
+  lassen sich direkt auswählen und anwenden (die Texturen stammen aus einer installierten Minecraft-Version).
+- **Offizielle Skin-Pakete.** Die kostenlosen Java-Skins, die Mojang auf minecraft.net veröffentlicht hat (Chaos
+  Cubed, Tiny Takeover, Mounts of Mayhem, The Copper Age, Chase the Skies, The Garden Awakens, Striding Hero,
+  Builders & Biomes), kannst du anprobieren und anwenden. Geladen wird nur von minecraft.net, danach aus dem Cache;
+  ohne Internet ist der Abschnitt ausgeblendet.
+- **TRS Client: kompaktes Fenster „Server hinzufügen“.** Im TRS-Menü-Stil zogen „Server hinzufügen“, „Server
+  bearbeiten“ und „Direkt verbinden“ ihre dunkle Fläche bis zum Bildschirmrand, wenn eine andere Mod einen Knopf in eine
+  Ecke setzt (zum Beispiel „Set version“ von ViaFabricPlus). Die Fläche sitzt jetzt immer kompakt und mittig um das
+  Formular; Knöpfe anderer Mods direkt am Formular gehören weiter dazu.
+- **TRS Client: ruhigere Kopf-Kosmetik aus der Entfernung.** Die leuchtenden Kronen und Hüte haben sehr feine
+  Texturen. Aus größerer Entfernung konnten sie von Bild zu Bild flimmern und glitzern – die Redstone-Krone wirkte dann,
+  als würde sie viel zu schnell blinken. Der Client nimmt jetzt je nach Entfernung (bzw. Größe auf dem Bildschirm)
+  weichere, weniger detaillierte Fassungen der Texturen – wie Minecraft bei Blöcken. Aus der Nähe ändert sich nichts; die
+  Animation läuft weiter genau im Takt der Vorschau im TRS Studio (Lauflicht alle 140 ms, Lampen-Puls alle 1,68 s).
+
 ## 0.15.0 – 2026-09-29 – Crowned | Gekrönt
 <!-- banner: accent=#ffa62b motif=/news/0.15.0/banner.png -->
 <!-- shots:
