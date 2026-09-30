@@ -557,7 +557,8 @@
       "playerNameInvalid": "Los nombres de jugador tienen de 1 a 16 caracteres: letras, números o _.",
       "playerNotFound": "No existe ningún jugador llamado «{name}».",
       "playerDefaultSkin": "{name} lleva una skin predeterminada: no hay nada que importar.",
-      "importExpired": "La selección ha caducado; vuelve a añadirla."
+      "importExpired": "La selección ha caducado; vuelve a añadirla.",
+      "builtinMissing": "Esta skin no está disponible ahora mismo; recarga la página."
     },
     "skinSync": {
       "accountSwitched": "Se ha cambiado la cuenta activa: los cambios se han descartado.",
@@ -2356,13 +2357,9 @@
     "submitting": "Enviando …",
     "discard": "Descartar",
     "applyHint": "Elige skin, modelo y capa; no se aplica nada hasta que pulses «Aplicar».",
-    "mySkins": "Mis skins",
     "onAccount": "{variant} · en la cuenta",
     "defaultSkinHint": "Steve / Alex de Mojang",
     "defaultSkinFrom": "{name}, como en Minecraft {version}",
-    "tryOnLabel": "Probar {name}",
-    "selected": "Seleccionada",
-    "tryOn": "Probar",
     "rename": "Renombrar",
     "empty": {
       "title": "Aún no tienes skins propias",
@@ -2461,7 +2458,28 @@
         "allDuplicates": "Estas skins ya están en tu colección.",
         "skipped": "{n} skin ya estaba en tu colección | {n} skins ya estaban en tu colección"
       }
-    }
+    },
+    "tabsLabel": "Skins, capas y cosméticos",
+    "tabs": {
+      "skins": "Skins",
+      "capes": "Capas",
+      "cosmetics": "Cosméticos"
+    },
+    "sections": {
+      "saved": "Skins guardadas",
+      "defaults": "Skins predeterminadas",
+      "packs": "Paquetes de skins oficiales"
+    },
+    "dropHere": "o arrástrala aquí",
+    "badges": {
+      "worn": "Puesta",
+      "reset": "Restablecer",
+      "assigned": "La tuya"
+    },
+    "accountDefault": "Predeterminada de la cuenta",
+    "defaultsFrom": "De Minecraft {version}",
+    "defaultsMissing": "Instala cualquier versión de Minecraft para elegir entre todas las skins predeterminadas.",
+    "packsSource": "Skins gratis de minecraft.net"
   },
   "validation": {
     "invalidCharacters": "Contiene caracteres no válidos",

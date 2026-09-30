@@ -52,6 +52,7 @@ pub mod screenshots;
 pub mod servers;
 pub mod settings;
 pub mod skin_import;
+pub mod skin_packs;
 pub mod skin_sync;
 pub mod skins;
 pub mod storage;

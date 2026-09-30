@@ -557,7 +557,8 @@
       "playerNameInvalid": "Nomes de jogador têm de 1 a 16 caracteres: letras, números ou _.",
       "playerNotFound": "Não existe jogador chamado “{name}”.",
       "playerDefaultSkin": "{name} está usando uma skin padrão – não há nada para importar.",
-      "importExpired": "A seleção expirou – adicione novamente."
+      "importExpired": "A seleção expirou – adicione novamente.",
+      "builtinMissing": "Esta skin não está disponível agora – recarregue a página."
     },
     "skinSync": {
       "accountSwitched": "A conta ativa foi trocada – as alterações foram descartadas.",
@@ -2356,13 +2357,9 @@
     "submitting": "Enviando …",
     "discard": "Descartar",
     "applyHint": "Escolha uma skin, um modelo e uma capa – nada muda até você clicar em “Aplicar”.",
-    "mySkins": "Minhas skins",
     "onAccount": "{variant} · na sua conta",
     "defaultSkinHint": "Steve / Alex da Mojang",
     "defaultSkinFrom": "{name} – como no Minecraft {version}",
-    "tryOnLabel": "Experimentar {name}",
-    "selected": "Selecionada",
-    "tryOn": "Experimentar",
     "rename": "Renomear",
     "empty": {
       "title": "Nenhuma skin própria ainda",
@@ -2461,7 +2458,28 @@
         "allDuplicates": "Essas skins já estão na sua coleção.",
         "skipped": "{n} skin já estava na sua coleção | {n} skins já estavam na sua coleção"
       }
-    }
+    },
+    "tabsLabel": "Skins, capas e cosméticos",
+    "tabs": {
+      "skins": "Skins",
+      "capes": "Capas",
+      "cosmetics": "Cosméticos"
+    },
+    "sections": {
+      "saved": "Skins salvas",
+      "defaults": "Skins padrão",
+      "packs": "Pacotes de skins oficiais"
+    },
+    "dropHere": "ou arraste para cá",
+    "badges": {
+      "worn": "Em uso",
+      "reset": "Redefinir",
+      "assigned": "A sua"
+    },
+    "accountDefault": "Padrão da conta",
+    "defaultsFrom": "Do Minecraft {version}",
+    "defaultsMissing": "Instale qualquer versão do Minecraft para escolher entre todas as skins padrão.",
+    "packsSource": "Skins grátis do minecraft.net"
   },
   "validation": {
     "invalidCharacters": "Contém caracteres inválidos",

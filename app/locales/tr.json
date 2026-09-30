@@ -557,7 +557,8 @@
       "playerNameInvalid": "Oyuncu adları 1–16 karakterdir: harf, rakam veya _.",
       "playerNotFound": "“{name}” adında bir oyuncu yok.",
       "playerDefaultSkin": "{name} varsayılan bir skin giyiyor – içe aktarılacak bir şey yok.",
-      "importExpired": "Seçimin süresi doldu – lütfen yeniden ekle."
+      "importExpired": "Seçimin süresi doldu – lütfen yeniden ekle.",
+      "builtinMissing": "Bu skin şu anda kullanılamıyor – lütfen sayfayı yenile."
     },
     "skinSync": {
       "accountSwitched": "Etkin hesap değiştirildi – değişiklikler atıldı.",
@@ -2356,13 +2357,9 @@
     "submitting": "Gönderiliyor …",
     "discard": "Vazgeç",
     "applyHint": "Bir skin, model ve pelerin seç – “Uygula”ya tıklayana kadar hiçbir şey değişmez.",
-    "mySkins": "Skinlerim",
     "onAccount": "{variant} · hesabında",
     "defaultSkinHint": "Mojang'dan Steve / Alex",
     "defaultSkinFrom": "{name} – Minecraft {version} ile aynı",
-    "tryOnLabel": "Dene: {name}",
-    "selected": "Seçildi",
-    "tryOn": "Dene",
     "rename": "Yeniden adlandır",
     "empty": {
       "title": "Henüz kendi skinin yok",
@@ -2461,7 +2458,28 @@
         "allDuplicates": "Bu skinler zaten koleksiyonunda.",
         "skipped": "{n} skin zaten koleksiyondaydı | {n} skin zaten koleksiyondaydı"
       }
-    }
+    },
+    "tabsLabel": "Skinler, pelerinler ve kozmetikler",
+    "tabs": {
+      "skins": "Skinler",
+      "capes": "Pelerinler",
+      "cosmetics": "Kozmetikler"
+    },
+    "sections": {
+      "saved": "Kayıtlı skinler",
+      "defaults": "Varsayılan skinler",
+      "packs": "Resmî skin paketleri"
+    },
+    "dropHere": "ya da buraya sürükle",
+    "badges": {
+      "worn": "Giyili",
+      "reset": "Sıfırla",
+      "assigned": "Seninki"
+    },
+    "accountDefault": "Hesap varsayılanı",
+    "defaultsFrom": "Minecraft {version} sürümünden",
+    "defaultsMissing": "Tüm varsayılan skinler arasından seçmek için herhangi bir Minecraft sürümü kur.",
+    "packsSource": "minecraft.net’ten ücretsiz skinler"
   },
   "validation": {
     "invalidCharacters": "Geçersiz karakterler içeriyor",

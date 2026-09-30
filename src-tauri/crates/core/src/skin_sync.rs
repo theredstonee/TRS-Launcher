@@ -50,6 +50,8 @@ pub enum SkinChange {
     Library { id: String, variant: SkinVariant },
     Current { variant: SkinVariant },
     Default,
+    /// Standard-Skin (`wide/steve`, …) oder Skin aus einem offiziellen Paket (`pack/<paket>/<skin>`).
+    Builtin { id: String, variant: SkinVariant },
 }
 
 /// Gewünschter Umhang; `id: null` = keinen tragen.
@@ -670,6 +672,11 @@ impl Launcher {
             }
             Some(SkinChange::Current { variant }) => Some(SkinOp::Reupload { variant }),
             Some(SkinChange::Default) => Some(SkinOp::Reset),
+            Some(SkinChange::Builtin { id, variant }) => {
+                // Unbekannte IDs findet der Kern nicht – geladen wird nur aus Jar bzw. Paket-Cache.
+                let bytes = self.selectable_skin_bytes(&id).await?;
+                Some(SkinOp::Upload { library_id: id, variant, bytes })
+            }
         };
         let cape = match changes.cape {
             None => None,
@@ -848,6 +855,12 @@ mod tests {
         assert_eq!(changes.cape, Some(CapeChange { id: None }));
         let changes: SkinChanges = serde_json::from_str(r#"{"skin":{"kind":"default"}}"#).unwrap();
         assert_eq!(changes, SkinChanges { skin: Some(SkinChange::Default), cape: None });
+        let json = r#"{"skin":{"kind":"builtin","id":"pack/chase-the-skies/ghastpilotskin","variant":"classic"}}"#;
+        let changes: SkinChanges = serde_json::from_str(json).unwrap();
+        assert_eq!(
+            changes.skin,
+            Some(SkinChange::Builtin { id: "pack/chase-the-skies/ghastpilotskin".into(), variant: SkinVariant::Classic })
+        );
         assert!(serde_json::from_str::<SkinChanges>(r#"{"skin":{"kind":"url","url":"x"}}"#).is_err());
     }
 

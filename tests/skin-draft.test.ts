@@ -96,6 +96,19 @@ describe('Entwurf', () => {
     expect(sameDraft(a, null)).toBe(false)
     expect(sameDraft(null, null)).toBe(true)
   })
+
+  it('lädt Standard- und Paket-Skins mit der gewählten Armbreite hoch', () => {
+    const p = profile()
+    expect(draftChanges({ skin: { source: 'builtin', id: 'slim/ari' }, variant: 'slim', cape: 'migrator' }, p)).toEqual({
+      skin: { kind: 'builtin', id: 'slim/ari', variant: 'slim' },
+      cape: null,
+    })
+    const a: SkinDraft = { skin: { source: 'builtin', id: 'pack/striding-hero/stray' }, variant: 'classic', cape: null }
+    expect(sameDraft(a, { ...a, skin: { source: 'builtin', id: 'pack/striding-hero/stray' } })).toBe(true)
+    expect(sameDraft(a, { ...a, skin: { source: 'builtin', id: 'wide/steve' } })).toBe(false)
+    // Gleiche ID, aber aus der Sammlung – etwas anderes.
+    expect(sameDraft(a, { ...a, skin: { source: 'library', id: 'pack/striding-hero/stray' } })).toBe(false)
+  })
 })
 
 describe('rebaseDraft', () => {

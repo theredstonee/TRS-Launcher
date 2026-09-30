@@ -4,6 +4,9 @@
 //! Namen) per `Math.floorMod(uuid.hashCode(), 18)`. Ältere Versionen kennen nur
 //! Steve und Alex (`hashCode() & 1`). Die Dateien liegen im Client-Jar; wir
 //! kopieren sie nicht ins Repo, sondern lesen sie aus einer installierten Version.
+//!
+//! Die Skins-Seite zeigt außerdem alle Standard-Skins zum Auswählen
+//! ([`all`]); gewählt wird per ID `wide/steve`, `slim/alex`, …
 
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -42,6 +45,9 @@ static SOURCE: Mutex<Option<(PathBuf, Option<SystemTime>, Source)>> = Mutex::new
 /// Zuletzt gelesene Textur (Jar, Eintrag, Änderungszeit des Jars) – spart das Öffnen des Client-Jars bei jedem Profil-Abruf.
 #[allow(clippy::type_complexity)]
 static PNG: Mutex<Option<(PathBuf, String, Option<SystemTime>, Vec<u8>)>> = Mutex::new(None);
+/// Alle Standard-Skins des zuletzt gelesenen Jars (Jar + Änderungszeit).
+#[allow(clippy::type_complexity)]
+static ALL: Mutex<Option<(PathBuf, Option<SystemTime>, BuiltinSkins)>> = Mutex::new(None);
 
 /// Was die Vorschau zeigen soll: Modell immer, Textur nur wenn ein passendes Jar da ist.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -52,6 +58,92 @@ pub struct DefaultSkin {
     pub name: String,
     /// Minecraft-Version, aus deren Jar die Textur stammt (`None` ohne installierte Version).
     pub version: Option<String>,
+}
+
+/// Einer der Standard-Skins aus dem Client-Jar.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BuiltinSkin {
+    /// `wide/steve`, `slim/alex`, … (Armbreite/Name).
+    pub id: String,
+    /// `steve`, `alex`, …
+    pub name: String,
+    pub variant: SkinVariant,
+    pub png: Vec<u8>,
+}
+
+/// Alle Standard-Skins (leer ohne installierte Version).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct BuiltinSkins {
+    /// Minecraft-Version, aus deren Jar die Texturen stammen.
+    pub version: Option<String>,
+    pub skins: Vec<BuiltinSkin>,
+}
+
+/// Gültige Standard-Skin-ID? (`wide|slim` + einer der neun Namen)
+pub fn is_builtin_id(id: &str) -> bool {
+    id.split_once('/')
+        .is_some_and(|(arm, name)| matches!(arm, "wide" | "slim") && NAMES.contains(&name))
+}
+
+/// Alle Standard-Skins zum Auswählen: ab 1.19.3 alle 18, bei älteren Jars nur Steve und Alex.
+pub async fn all(paths: &Paths) -> BuiltinSkins {
+    let dir = paths.versions_dir();
+    tokio::task::spawn_blocking(move || load_all(&dir)).await.unwrap_or_default()
+}
+
+/// Textur eines Standard-Skins (zum Hochladen); `None` bei unbekannter ID oder ohne installierte Version.
+pub async fn builtin_bytes(paths: &Paths, id: &str) -> Option<Vec<u8>> {
+    if !is_builtin_id(id) {
+        return None;
+    }
+    all(paths).await.skins.into_iter().find(|s| s.id == id).map(|s| s.png)
+}
+
+fn load_all(versions_dir: &Path) -> BuiltinSkins {
+    let Some(source) = locate(versions_dir) else {
+        return BuiltinSkins::default();
+    };
+    let stamp = modified(&source.jar);
+    let mut guard = ALL.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some((jar, when, skins)) = guard.as_ref()
+        && *jar == source.jar
+        && *when == stamp
+    {
+        return skins.clone();
+    }
+    let entries: Vec<(String, &str, SkinVariant, String)> = match source.layout {
+        Layout::Modern => NAMES
+            .iter()
+            .flat_map(|name| {
+                [("wide", SkinVariant::Classic), ("slim", SkinVariant::Slim)].map(|(arm, variant)| {
+                    (format!("{arm}/{name}"), *name, variant, format!("{MODERN_PREFIX}{arm}/{name}.png"))
+                })
+            })
+            .collect(),
+        Layout::Legacy => vec![
+            ("wide/steve".to_owned(), "steve", SkinVariant::Classic, LEGACY_STEVE.to_owned()),
+            ("slim/alex".to_owned(), "alex", SkinVariant::Slim, LEGACY_ALEX.to_owned()),
+        ],
+    };
+    let Some(mut archive) = std::fs::File::open(&source.jar).ok().and_then(|f| zip::ZipArchive::new(f).ok())
+    else {
+        return BuiltinSkins::default();
+    };
+    let skins: Vec<BuiltinSkin> = entries
+        .into_iter()
+        .filter_map(|(id, name, variant, entry)| {
+            let png = read_entry(&mut archive, &entry)?;
+            Some(BuiltinSkin { id, name: name.to_owned(), variant, png })
+        })
+        .collect();
+    let version = if skins.is_empty() {
+        None
+    } else {
+        source.jar.parent().and_then(Path::file_name).and_then(|n| n.to_str()).map(str::to_owned)
+    };
+    let result = BuiltinSkins { version, skins };
+    *guard = Some((source.jar.clone(), stamp, result.clone()));
+    result
 }
 
 /// Standard-Skin für diese Konto-ID. `png` fehlt, wenn noch keine Minecraft-Version installiert ist.
@@ -228,6 +320,11 @@ fn zip_contains(jar: &Path, name: &str) -> bool {
 fn read_png(jar: &Path, name: &str) -> Option<Vec<u8>> {
     let file = std::fs::File::open(jar).ok()?;
     let mut archive = zip::ZipArchive::new(file).ok()?;
+    read_entry(&mut archive, name)
+}
+
+/// Liest eine Skin-Textur aus dem Jar – begrenzt auf die Skin-Größe, nur 64×64 bzw. 64×32.
+fn read_entry<R: std::io::Read + std::io::Seek>(archive: &mut zip::ZipArchive<R>, name: &str) -> Option<Vec<u8>> {
     let entry = archive.by_name(name).ok()?;
     if entry.size() > skins::MAX_SKIN_BYTES as u64 {
         return None;
@@ -399,6 +496,46 @@ mod tests {
         assert_eq!(second.version.as_deref(), Some("1.21.11"));
         assert_eq!(second.name, "efe");
         assert_eq!(second.png.as_deref(), Some(efe.as_slice()));
+    }
+
+    #[test]
+    fn all_builtin_skins_come_from_the_newest_jar() {
+        let root = tempfile::tempdir().unwrap();
+        let versions = root.path().join("versions");
+        let steve = png(4);
+        let zuri = png(5);
+        write_jar(
+            &versions.join("1.21.4").join("1.21.4.jar"),
+            &[
+                (&format!("{MODERN_PREFIX}wide/steve.png"), steve.as_slice()),
+                (&format!("{MODERN_PREFIX}slim/zuri.png"), zuri.as_slice()),
+                (&format!("{MODERN_PREFIX}wide/noor.png"), [0u8; 10].as_slice()),
+            ],
+        );
+        let all = load_all(&versions);
+        assert_eq!(all.version.as_deref(), Some("1.21.4"));
+        let ids: Vec<&str> = all.skins.iter().map(|s| s.id.as_str()).collect();
+        // Kaputte Einträge (kein PNG) fallen weg.
+        assert_eq!(ids, ["wide/steve", "slim/zuri"]);
+        assert_eq!(all.skins[1].variant, SkinVariant::Slim);
+        assert_eq!(all.skins[1].name, "zuri");
+        assert_eq!(all.skins[1].png, zuri);
+        assert!(is_builtin_id("wide/steve") && is_builtin_id("slim/makena"));
+        assert!(!is_builtin_id("wide/herobrine") && !is_builtin_id("big/steve") && !is_builtin_id("../steve"));
+    }
+
+    #[test]
+    fn legacy_jars_offer_steve_and_alex_only() {
+        let root = tempfile::tempdir().unwrap();
+        let versions = root.path().join("versions");
+        write_jar(
+            &versions.join("1.12.2").join("1.12.2.jar"),
+            &[(LEGACY_STEVE, png(1).as_slice()), (LEGACY_ALEX, png(2).as_slice())],
+        );
+        let all = load_all(&versions);
+        let ids: Vec<&str> = all.skins.iter().map(|s| s.id.as_str()).collect();
+        assert_eq!(ids, ["wide/steve", "slim/alex"]);
+        assert!(load_all(&root.path().join("nothing")).skins.is_empty());
     }
 
     #[test]

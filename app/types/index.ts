@@ -1158,11 +1158,37 @@ export interface SkinImportReport {
   failed: SkinImportFailure[]
 }
 
-/** Gewünschter Skin: aus der Sammlung, getragener mit anderem Modell oder Standard. */
+/** Auswählbarer Skin: Standard-Skin (`wide/steve`) oder aus einem offiziellen Paket (`pack/<paket>/<skin>`). */
+export interface SelectableSkin {
+  id: string
+  /** Standard-Skins: `steve`, `alex`, … (klein); Paket-Skins: offizieller Name. */
+  name: string
+  variant: SkinVariant
+  /** Textur als Data-URL. */
+  texture: string
+}
+
+/** Alle Standard-Skins aus einem installierten Client (leer ohne installierte Version). */
+export interface BuiltinSkins {
+  version: string | null
+  skins: SelectableSkin[]
+}
+
+/** Offizielles Skin-Paket von minecraft.net. */
+export interface SkinPack {
+  id: string
+  name: string
+  /** Erscheinungstag `YYYY-MM-DD`. */
+  released: string
+  skins: SelectableSkin[]
+}
+
+/** Gewünschter Skin: aus der Sammlung, getragener mit anderem Modell, Standard oder ein auswählbarer Skin. */
 export type SkinChange =
   | { kind: 'library'; id: string; variant: SkinVariant }
   | { kind: 'current'; variant: SkinVariant }
   | { kind: 'default' }
+  | { kind: 'builtin'; id: string; variant: SkinVariant }
 
 /** Unterschied zwischen Entwurf und Konto – was fehlt, bleibt unverändert. */
 export interface SkinChanges {
