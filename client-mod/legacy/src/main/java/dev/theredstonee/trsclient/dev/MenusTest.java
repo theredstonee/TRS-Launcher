@@ -40,11 +40,77 @@ public final class MenusTest {
 		MinecraftForge.EVENT_BUS.register(new MenusTest());
 	}
 
+	/**
+	 * {@code -PtrsAutotestOnly=addserver}: „Server hinzufügen“ und „Direkt verbinden“ mit breiter GUI (GUI-Größe 1) und
+	 * einem fremden Knopf oben rechts (wie ihn andere Mods per InitGuiEvent setzen), dazu GUI-Größe 2. Die Formular-Fläche
+	 * muss kompakt um das Formular bleiben. Screenshots trsclient-&lt;mc&gt;-menus-*-wide/-narrow.png.
+	 */
+	public static void installAddServer() {
+		MenusTest test = new MenusTest();
+		test.phase = 100;
+		MinecraftForge.EVENT_BUS.register(test);
+	}
+
+	/** Nur im Formular-Test: fremder Knopf in der Ecke oben rechts (wie „Set version“ von ViaFabricPlus). */
+	@SubscribeEvent
+	public void onInit(net.minecraftforge.client.event.GuiScreenEvent.InitGuiEvent.Post event) {
+		if (phase < 100) return;
+		GuiScreen s = Mc.eventGui(event);
+		if (!(s instanceof net.minecraft.client.gui.GuiScreenAddServer) && !(s instanceof net.minecraft.client.gui.GuiScreenServerList)) return;
+		//? if >=1.9 {
+		/*java.util.List<net.minecraft.client.gui.GuiButton> list = event.getButtonList();
+		*///?} else
+		java.util.List<net.minecraft.client.gui.GuiButton> list = event.buttonList;
+		list.add(new net.minecraft.client.gui.GuiButton(4711, s.width - 98 - 5, 5, 98, 20, "Set version"));
+	}
+
+	private void addServerTick(Minecraft mc) {
+		GuiScreen screen = mc.currentScreen;
+		switch (phase) {
+			case 100:
+				if (!(screen instanceof TrsTitleScreen) && !(screen instanceof GuiMainMenu)) return;
+				mc.gameSettings.pauseOnLostFocus = false;
+				mc.gameSettings.guiScale = 1;
+				mc.displayGuiScreen(new net.minecraft.client.gui.GuiScreenAddServer(new GuiMultiplayer(new TrsTitleScreen()), testServer()));
+				phase++;
+				wait = 15;
+				return;
+			case 101:
+				TrsClient.LOGGER.info("[Autotest] Menüs: Fenster {}×{}, GUI {}×{}", mc.displayWidth, mc.displayHeight, screen.width, screen.height);
+				shot(mc, "add-server-wide");
+				mc.displayGuiScreen(new net.minecraft.client.gui.GuiScreenServerList(new GuiMultiplayer(new TrsTitleScreen()), testServer()));
+				phase++;
+				wait = 15;
+				return;
+			case 102:
+				shot(mc, "direct-connect-wide");
+				mc.gameSettings.guiScale = 2;
+				mc.displayGuiScreen(new net.minecraft.client.gui.GuiScreenAddServer(new GuiMultiplayer(new TrsTitleScreen()), testServer()));
+				phase++;
+				wait = 15;
+				return;
+			case 103:
+				TrsClient.LOGGER.info("[Autotest] Menüs: GUI schmal {}×{}", screen.width, screen.height);
+				shot(mc, "add-server-narrow");
+				mc.gameSettings.guiScale = 0;
+				TrsClient.LOGGER.info("[Autotest] Menüs: Formular-Test fertig");
+				phase = 999;
+				mc.shutdown();
+				return;
+			default:
+		}
+	}
+
 	@SubscribeEvent
 	public void onTick(TickEvent.ClientTickEvent event) {
 		if (event.phase != TickEvent.Phase.END) return;
 		Minecraft mc = Minecraft.getMinecraft();
 		try {
+			if (phase >= 100 && phase < 999) {
+				if (wait > 0) wait--;
+				else addServerTick(mc);
+				return;
+			}
 			tick(mc);
 		} catch (RuntimeException e) {
 			TrsClient.LOGGER.error("[Autotest] Menüs: Fehler in Phase {}", phase, e);

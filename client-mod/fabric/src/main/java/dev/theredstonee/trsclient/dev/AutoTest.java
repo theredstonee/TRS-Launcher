@@ -102,6 +102,11 @@ public final class AutoTest {
 			MenusTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=addserver: Formulare der Serverliste im breiten Fenster mit fremdem Eck-Knopf
+		if ("addserver".equals(System.getProperty("trsclient.autotest.only"))) {
+			MenusTest.installAddServer();
+			return;
+		}
 		if ("reload".equals(System.getProperty("trsclient.autotest.only"))) {
 			ReloadTest.install();
 			return;
@@ -156,7 +161,7 @@ public final class AutoTest {
 	private void tick(Minecraft mc) {
 		// Verliert das Fenster den Fokus oder drückt jemand Esc, öffnet Vanilla das Pausenmenü –
 		// für saubere Screenshots wieder schließen und hängende Tasten lösen.
-		if ((step >= 3 && step < 25 || step == 28 || step == 35) && Mc.screen() instanceof PauseScreen) {
+		if ((step >= 3 && step < 25 || step == 28 || step == 35 || step == 37) && Mc.screen() instanceof PauseScreen) {
 			Mc.setScreen(null);
 			KeyMapping.releaseAll();
 		}
@@ -285,7 +290,9 @@ public final class AutoTest {
 					break;
 				}
 				// -PtrsAutotestOnly=cosmetics2: Kopf-Kosmetik v2 (braucht -PtrsApi mit scratchpad/cos2mod/mock-api.mjs)
-				if ("cosmetics2".equals(System.getProperty("trsclient.autotest.only"))) {
+				// -PtrsAutotestOnly=crowntime: nur die Redstone-Krone – Bildfolge alle 100 ms + Protokoll der Leucht-Bilder (3 s)
+				if ("cosmetics2".equals(System.getProperty("trsclient.autotest.only"))
+						|| "crowntime".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 37;
 					break;
 				}

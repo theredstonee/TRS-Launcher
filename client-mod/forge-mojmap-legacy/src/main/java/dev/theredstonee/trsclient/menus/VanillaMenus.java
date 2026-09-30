@@ -276,24 +276,18 @@ public final class VanillaMenus {
 	}
 
 	/**
-	 * Fläche hinter einem Formular {x1, y1, x2, y2}: alle sichtbaren Felder und Knöpfe, oben Platz für die
-	 * Beschriftung über dem ersten Feld (Vanilla schreibt sie 12–16 Pixel darüber), nie in der Kopfleiste.
+	 * Fläche hinter einem Formular {x1, y1, x2, y2}: der Block aus Feldern und Knöpfen um die Bildschirmmitte, oben Platz
+	 * für die Beschriftung über dem ersten Feld, nie in der Kopfleiste. Knöpfe anderer Mods am Rand (z. B. „Set version“
+	 * von ViaFabricPlus oben rechts) zählen nicht mit – sonst reichte die Fläche bis zum Bildschirmrand
+	 * ({@link dev.theredstonee.trsclient.core.menus.FormPanel}).
 	 */
 	static int[] formBounds(Screen s, int header) {
-		int x1 = Integer.MAX_VALUE;
-		int y1 = Integer.MAX_VALUE;
-		int x2 = Integer.MIN_VALUE;
-		int y2 = Integer.MIN_VALUE;
+		List<int[]> rects = new ArrayList<>();
 		for (GuiEventListener child : s.children()) {
 			if (!(child instanceof AbstractWidget) || !((AbstractWidget) child).visible) continue;
-			int[] r = rect((AbstractWidget) child);
-			x1 = Math.min(x1, r[0]);
-			y1 = Math.min(y1, r[1]);
-			x2 = Math.max(x2, r[0] + r[2]);
-			y2 = Math.max(y2, r[1] + r[3]);
+			rects.add(rect((AbstractWidget) child));
 		}
-		if (x1 == Integer.MAX_VALUE) return null;
-		return new int[]{Math.max(2, x1 - 12), Math.max(header + 4, y1 - 22), Math.min(s.width - 2, x2 + 12), Math.min(s.height - 2, y2 + 10)};
+		return dev.theredstonee.trsclient.core.menus.FormPanel.bounds(rects, s.width, s.height, header);
 	}
 
 	static int[] bounds(AbstractSelectionList<?> l) {

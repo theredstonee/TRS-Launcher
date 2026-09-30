@@ -89,18 +89,21 @@ public final class HatLayer implements LayerRenderer<AbstractClientPlayer> {
 		try {
 			if (player.isSneaking()) GlStateManager.translate(0.0F, 0.2F, 0.0F);
 			renderer.getMainModel().bipedHead.postRender(0.0625F);
-			double[] eye = null;
-			if (hat.has(CosmeticV2Renderer.PASS_HALO)) {
+			// Kamera im Kopf-Raum: für die Höfe und die Entfernungs-Stufe der HD-Texturen (gegen Flimmern)
+			double[] cam = null;
+			{
 				matrix.clear();
 				GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, matrix);
 				float[] m = new float[16];
 				matrix.get(m);
 				double[] out = new double[3];
-				if (V2Math.eyeInAttachSpace(m, out)) eye = out;
+				if (V2Math.eyeInAttachSpace(m, out)) cam = out;
 			}
+			double[] eye = hat.has(CosmeticV2Renderer.PASS_HALO) ? cam : null;
+			int lod = hat.level(cam, dev.theredstonee.trsclient.TrsClient.get().worldFov(), net.minecraft.client.Minecraft.getMinecraft().displayHeight);
 			GlStateManager.enableAlpha();
 			GlStateManager.alphaFunc(GL11.GL_GREATER, 0.5F);
-			renderer.bindTexture((ResourceLocation) hat.base);
+			renderer.bindTexture((ResourceLocation) hat.base(lod));
 			if (hat.has(CosmeticV2Renderer.PASS_CUTOUT)) drawV2(f, hat, CosmeticV2Renderer.PASS_CUTOUT, null);
 			if (hat.has(CosmeticV2Renderer.PASS_EMISSIVE)) {
 				GlStateManager.disableLighting();
@@ -130,7 +133,7 @@ public final class HatLayer implements LayerRenderer<AbstractClientPlayer> {
 				GlStateManager.doPolygonOffset(-1.0F, -2.0F);
 				try {
 					if (glow) {
-						renderer.bindTexture((ResourceLocation) hat.glow);
+						renderer.bindTexture((ResourceLocation) hat.glow(lod));
 						drawV2(f, hat, CosmeticV2Renderer.PASS_GLOW, null);
 					}
 					if (eye != null) {

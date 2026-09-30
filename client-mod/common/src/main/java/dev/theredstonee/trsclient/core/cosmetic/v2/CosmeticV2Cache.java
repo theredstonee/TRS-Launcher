@@ -29,11 +29,33 @@ public final class CosmeticV2Cache {
 		public final int[][] base;
 		/** null = keine Leucht-Schicht. */
 		public final int[][] glow;
+		/** Entfernungs-Stufen je Bild: {@code baseLevels[bild][stufe]}, Stufe 0 = {@link #base} (siehe {@link V2Images#levels}). */
+		public final int[][][] baseLevels;
+		/** Wie {@link #baseLevels} für die Leucht-Schicht; null = keine. */
+		public final int[][][] glowLevels;
 
 		public Loaded(CosmeticV2 model, int[][] base, int[][] glow) {
 			this.model = model;
 			this.base = base;
 			this.glow = glow;
+			int levels = CosmeticV2Renderer.maxLod(model.scale);
+			this.baseLevels = new int[base.length][][];
+			for (int f = 0; f < base.length; f++) {
+				baseLevels[f] = V2Images.levels(base[f], model.pixelWidth(), model.pixelHeight(), levels, false);
+			}
+			if (glow == null) {
+				this.glowLevels = null;
+			} else {
+				this.glowLevels = new int[glow.length][][];
+				for (int f = 0; f < glow.length; f++) {
+					glowLevels[f] = V2Images.levels(glow[f], model.pixelWidth(), model.pixelHeight(), levels, true);
+				}
+			}
+		}
+
+		/** Anzahl der Stufen über der vollen Auflösung. */
+		public int levels() {
+			return baseLevels.length == 0 ? 0 : baseLevels[0].length - 1;
 		}
 	}
 

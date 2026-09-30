@@ -85,18 +85,21 @@ public abstract class HatGlMixin {
 		try {
 			if (p.isSneaking()) GlStateManager.translatef(0f, 0.2f, 0f);
 			self.getParentModel().head.translateTo(0.0625f);
-			double[] eye = null;
-			if (hat.has(CosmeticV2Renderer.PASS_HALO)) {
+			// Kamera im Kopf-Raum: für die Höfe und die Entfernungs-Stufe der HD-Texturen (gegen Flimmern)
+			double[] cam = null;
+			{
 				java.nio.FloatBuffer buf = org.lwjgl.BufferUtils.createFloatBuffer(16);
 				GlStateManager.getMatrix(GL11.GL_MODELVIEW_MATRIX, buf);
 				float[] m = new float[16];
 				buf.get(m);
 				double[] out = new double[3];
-				if (V2Math.eyeInAttachSpace(m, out)) eye = out;
+				if (V2Math.eyeInAttachSpace(m, out)) cam = out;
 			}
+			double[] eye = hat.has(CosmeticV2Renderer.PASS_HALO) ? cam : null;
+			int lod = hat.level(cam, dev.theredstonee.trsclient.TrsClient.get().worldFov(), dev.theredstonee.trsclient.compat.Mc.window().getHeight());
 			GlStateManager.enableAlphaTest();
 			GlStateManager.alphaFunc(GL11.GL_GREATER, 0.5f);
-			self.bindTexture((ResourceLocation) hat.base);
+			self.bindTexture((ResourceLocation) hat.base(lod));
 			if (hat.has(CosmeticV2Renderer.PASS_CUTOUT)) draw(f, hat, CosmeticV2Renderer.PASS_CUTOUT, null);
 			if (hat.has(CosmeticV2Renderer.PASS_EMISSIVE)) {
 				GlStateManager.disableLighting();
@@ -127,7 +130,7 @@ public abstract class HatGlMixin {
 				GlStateManager.polygonOffset(-1f, -2f);
 				try {
 					if (glow) {
-						self.bindTexture((ResourceLocation) hat.glow);
+						self.bindTexture((ResourceLocation) hat.glow(lod));
 						draw(f, hat, CosmeticV2Renderer.PASS_GLOW, null);
 					}
 					if (eye != null) {

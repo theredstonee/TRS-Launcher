@@ -152,19 +152,22 @@ public final class HatHooks {
 		pose.pushPose();
 		try {
 			head.translateAndRotate(pose);
-			final double[] eye = hat.has(CosmeticV2Renderer.PASS_HALO) ? eye(pose.last()) : null;
+			// Kamera im Kopf-Raum: für die Höfe und die Entfernungs-Stufe der HD-Texturen (gegen Flimmern)
+			final double[] cam = eye(pose.last());
+			final int lod = hat.level(cam, fov(), screenHeight());
+			final double[] eye = hat.has(CosmeticV2Renderer.PASS_HALO) ? cam : null;
 			if (hat.has(CosmeticV2Renderer.PASS_CUTOUT) || hat.has(CosmeticV2Renderer.PASS_EMISSIVE)) {
-				collector.submitCustomGeometry(pose, cutout(hat.base), (last, vc) -> {
+				collector.submitCustomGeometry(pose, cutout(hat.base(lod)), (last, vc) -> {
 					f.emitV2(hat, CosmeticV2Renderer.PASS_CUTOUT, null, v2sink(vc, last, light));
 					f.emitV2(hat, CosmeticV2Renderer.PASS_EMISSIVE, null, v2sink(vc, last, FULL_BRIGHT));
 				});
 			}
 			if (hat.has(CosmeticV2Renderer.PASS_TRANSLUCENT)) {
-				collector.submitCustomGeometry(pose, translucent(hat.base),
+				collector.submitCustomGeometry(pose, translucent(hat.base(lod)),
 						(last, vc) -> f.emitV2(hat, CosmeticV2Renderer.PASS_TRANSLUCENT, null, v2sink(vc, last, light)));
 			}
 			if (hat.has(CosmeticV2Renderer.PASS_GLOW)) {
-				collector.submitCustomGeometry(pose, additive(hat.glow),
+				collector.submitCustomGeometry(pose, additive(hat.glow(lod)),
 						(last, vc) -> f.emitV2(hat, CosmeticV2Renderer.PASS_GLOW, null, additiveSink(vc, last)));
 			}
 			if (eye != null) {
@@ -186,19 +189,21 @@ public final class HatHooks {
 		try {
 			head.translateAndRotate(pose);
 			PoseStack.Pose last = pose.last();
+			// Kamera im Kopf-Raum: für die Höfe und die Entfernungs-Stufe der HD-Texturen (gegen Flimmern)
+			double[] eye = eye(last);
+			int lod = hat.level(eye, fov(), screenHeight());
 			if (hat.has(CosmeticV2Renderer.PASS_CUTOUT) || hat.has(CosmeticV2Renderer.PASS_EMISSIVE)) {
-				VertexConsumer vc = buffers.getBuffer(cutout(hat.base));
+				VertexConsumer vc = buffers.getBuffer(cutout(hat.base(lod)));
 				f.emitV2(hat, CosmeticV2Renderer.PASS_CUTOUT, null, v2sink(vc, last, light));
 				f.emitV2(hat, CosmeticV2Renderer.PASS_EMISSIVE, null, v2sink(vc, last, FULL_BRIGHT));
 			}
 			if (hat.has(CosmeticV2Renderer.PASS_TRANSLUCENT)) {
-				f.emitV2(hat, CosmeticV2Renderer.PASS_TRANSLUCENT, null, v2sink(buffers.getBuffer(translucent(hat.base)), last, light));
+				f.emitV2(hat, CosmeticV2Renderer.PASS_TRANSLUCENT, null, v2sink(buffers.getBuffer(translucent(hat.base(lod))), last, light));
 			}
 			if (hat.has(CosmeticV2Renderer.PASS_GLOW)) {
-				f.emitV2(hat, CosmeticV2Renderer.PASS_GLOW, null, additiveSink(buffers.getBuffer(additive(hat.glow)), last));
+				f.emitV2(hat, CosmeticV2Renderer.PASS_GLOW, null, additiveSink(buffers.getBuffer(additive(hat.glow(lod))), last));
 			}
 			if (hat.has(CosmeticV2Renderer.PASS_HALO)) {
-				double[] eye = eye(last);
 				if (eye != null) {
 					f.emitV2(hat, CosmeticV2Renderer.PASS_HALO, eye, additiveSink(buffers.getBuffer(additive(hat.halo)), last));
 				}
@@ -268,6 +273,16 @@ public final class HatHooks {
 		return CosmeticV2Renderer.bothSides(v2sink(vc, last, FULL_BRIGHT));
 	}
 	//?}
+
+	/** Senkrechtes Sichtfeld der Welt (mit Zoom) – für die Entfernungs-Stufe der HD-Texturen. */
+	private static double fov() {
+		return dev.theredstonee.trsclient.TrsClient.get().worldFov();
+	}
+
+	/** Bildhöhe in Pixeln – für die Entfernungs-Stufe der HD-Texturen. */
+	private static int screenHeight() {
+		return dev.theredstonee.trsclient.compat.Mc.window().getHeight();
+	}
 
 	/** Kamera im Anhängepunkt-Raum des Kopfes (die Pose bildet auf kamerazentrierte Koordinaten ab). */
 	private static double[] eye(PoseStack.Pose last) {

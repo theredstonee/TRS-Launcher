@@ -416,6 +416,32 @@ public final class CosmeticV2Renderer {
 		};
 	}
 
+	/** Höchste Entfernungs-Stufe für einen Textur-Faktor: bis hinunter auf 1 Unter-Pixel je Texel (Faktor 8 → 3). */
+	public static int maxLod(int scale) {
+		int l = 0;
+		while ((1 << (l + 1)) <= scale && l < 4) l++;
+		return l;
+	}
+
+	/**
+	 * Entfernungs-Stufe (Ersatz für Mipmaps, die Minecraft bei Entity-Texturen nicht hat): wie viele Unter-Pixel der
+	 * HD-Textur ({@code scale} je Texel) auf ein Bildschirm-Pixel fallen, gerundet auf eine Zweierpotenz – wie die
+	 * Mip-Wahl der Grafikkarte ({@code round(log2 ρ)}). {@code eye} = Kamera im Anhängepunkt-Raum (Einheit = 1 Modell-
+	 * Pixel; die Skalierung des Spielermodells kürzt sich heraus), {@code fovDegrees} = senkrechtes Sichtfeld der Welt,
+	 * {@code screenHeight} = Bildhöhe in Pixeln. Nahe (Werkbank-Ansicht, Zoom) = 0 = volle Auflösung.
+	 */
+	public static int lodLevel(int scale, double[] eye, double fovDegrees, int screenHeight) {
+		int max = maxLod(scale);
+		if (max == 0 || eye == null || screenHeight <= 0 || !(fovDegrees > 0 && fovDegrees < 180)) return 0;
+		double d = Math.sqrt(eye[0] * eye[0] + eye[1] * eye[1] + eye[2] * eye[2]);
+		if (!(d > 1e-3)) return 0;
+		double pxPerUnit = screenHeight / (2 * Math.tan(Math.toRadians(fovDegrees) / 2)) / d;
+		double rho = scale / pxPerUnit;
+		if (!(rho > 1)) return 0;
+		int level = (int) Math.floor(Math.log(rho) / Math.log(2) + 0.5);
+		return Math.max(0, Math.min(max, level));
+	}
+
 	/** Bild eines Streifens zur Wanduhr (wie bei Umhängen). */
 	public static int frameAt(long timeMs, int frames, int frameTimeMs) {
 		if (frames <= 1 || frameTimeMs <= 0) return 0;

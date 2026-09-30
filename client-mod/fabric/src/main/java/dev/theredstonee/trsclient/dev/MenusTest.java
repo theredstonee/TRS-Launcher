@@ -57,6 +57,113 @@ public final class MenusTest {
 		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(test::tick);
 	}
 
+	/**
+	 * {@code -PtrsAutotestOnly=addserver}: „Server hinzufügen“ und „Direkt verbinden“ im breiten Fenster (1920×1080,
+	 * GUI-Größe 2) mit einem fremden Knopf oben rechts wie „Set version“ von ViaFabricPlus, dazu schmal (GUI-Größe 4).
+	 * Die Formular-Fläche muss kompakt um das Formular bleiben. Screenshots trsclient-&lt;mc&gt;-menus-*-wide/-narrow.png.
+	 */
+	public static void installAddServer() {
+		final MenusTest test = new MenusTest();
+		test.phase = 100;
+		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(test::tick);
+	}
+
+	/** Fremder Knopf in der Ecke oben rechts (wie ViaFabricPlus' „Set version“). */
+	private static void foreignCornerButton(Screen s) {
+		Object b;
+		//? if >=1.19.3 {
+		b = net.minecraft.client.gui.components.Button.builder(net.minecraft.network.chat.Component.literal("Set version"), x -> { })
+				.bounds(s.width - 98 - 5, 5, 98, 20).build();
+		//?} elif >=1.16 {
+		/*b = new net.minecraft.client.gui.components.Button(s.width - 98 - 5, 5, 98, 20,
+				new net.minecraft.network.chat.TextComponent("Set version"), x -> { });
+		*///?} else
+		/*b = new net.minecraft.client.gui.components.Button(s.width - 98 - 5, 5, 98, 20, "Set version", x -> { });*/
+		((dev.theredstonee.trsclient.menus.WidgetHost) (Object) s).trsclient$addWidget(b);
+	}
+
+	private static void windowSize(int w, int h) {
+		//? if >=26.3 {
+		/*org.lwjgl.sdl.SDLVideo.SDL_SetWindowSize(Mc.window().handle(), w, h);
+		*///?} elif >=1.21.9 {
+		/*org.lwjgl.glfw.GLFW.glfwSetWindowSize(Mc.window().handle(), w, h);
+		*///?} else
+		org.lwjgl.glfw.GLFW.glfwSetWindowSize(Mc.window().getWindow(), w, h);
+	}
+
+	private static void guiScale(Minecraft mc, int scale) {
+		//? if >=1.19 {
+		mc.options.guiScale().set(scale);
+		//?} else
+		/*mc.options.guiScale = scale;*/
+		//? if >=26.1 {
+		/*mc.resizeGui();
+		*///?} else
+		mc.resizeDisplay();
+	}
+
+	/** Ablauf von {@link #installAddServer()} (Phasen ab 100). */
+	private void addServerStep(Minecraft mc) {
+		Screen screen = Mc.screen();
+		switch (phase) {
+			case 100:
+				if (Mc.overlay() != null || screen == null) return;
+				mc.options.pauseOnLostFocus = false;
+				windowSize(1920, 1080);
+				phase++;
+				wait = 20;
+				return;
+			case 101:
+				guiScale(mc, 2);
+				Mc.setScreen(addServer(new JoinMultiplayerScreen(new TrsTitleScreen())));
+				phase++;
+				wait = 10;
+				return;
+			case 102:
+				foreignCornerButton(screen);
+				log("Fenster " + Mc.window().getWidth() + "×" + Mc.window().getHeight() + ", GUI " + screen.width + "×" + screen.height);
+				phase++;
+				wait = 10;
+				return;
+			case 103:
+				shot(mc, "add-server-wide");
+				Mc.setScreen(directJoin(new JoinMultiplayerScreen(new TrsTitleScreen())));
+				phase++;
+				wait = 10;
+				return;
+			case 104:
+				foreignCornerButton(screen);
+				phase++;
+				wait = 10;
+				return;
+			case 105:
+				shot(mc, "direct-connect-wide");
+				guiScale(mc, 4);
+				Mc.setScreen(addServer(new JoinMultiplayerScreen(new TrsTitleScreen())));
+				phase++;
+				wait = 10;
+				return;
+			case 106:
+				foreignCornerButton(screen);
+				log("GUI schmal " + screen.width + "×" + screen.height);
+				phase++;
+				wait = 10;
+				return;
+			case 107:
+				shot(mc, "add-server-narrow");
+				guiScale(mc, 0);
+				phase++;
+				wait = 5;
+				return;
+			case 108:
+				log("Formular-Test fertig");
+				mc.stop();
+				phase = 999;
+				return;
+			default:
+		}
+	}
+
 	private static void log(String text) {
 		TrsClient.LOGGER.info("[Autotest] Menüs: {}", text);
 	}
@@ -81,7 +188,8 @@ public final class MenusTest {
 			return;
 		}
 		try {
-			step(mc);
+			if (phase >= 100) addServerStep(mc);
+			else step(mc);
 		} catch (RuntimeException e) {
 			TrsClient.LOGGER.error("[Autotest] Menüs: Fehler in Phase {}", phase, e);
 			cleanup();

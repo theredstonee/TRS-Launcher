@@ -216,31 +216,23 @@ public final class LegacyMenus {
 		hiddenFields.clear();
 	}
 
-	/** Fläche hinter einem Formular {x1, y1, x2, y2}: Knöpfe und Felder, oben Platz für die Beschriftung. */
+	/**
+	 * Fläche hinter einem Formular {x1, y1, x2, y2}: der Block aus Knöpfen und Feldern um die Bildschirmmitte, oben Platz
+	 * für die Beschriftung; Knöpfe anderer Mods am Rand zählen nicht mit
+	 * ({@link dev.theredstonee.trsclient.core.menus.FormPanel}).
+	 */
 	int[] formBounds(GuiScreen s, List<GuiTextField> fields) {
-		int x1 = Integer.MAX_VALUE;
-		int y1 = Integer.MAX_VALUE;
-		int x2 = Integer.MIN_VALUE;
-		int y2 = Integer.MIN_VALUE;
+		List<int[]> rects = new java.util.ArrayList<int[]>();
 		List<GuiButton> list = buttons.get(s);
 		if (list != null) {
 			for (GuiButton b : list) {
-				if (!b.visible) continue;
-				x1 = Math.min(x1, x(b));
-				y1 = Math.min(y1, y(b));
-				x2 = Math.max(x2, x(b) + b.width);
-				y2 = Math.max(y2, y(b) + height(b));
+				if (b.visible) rects.add(new int[]{x(b), y(b), b.width, height(b)});
 			}
 		}
 		for (GuiTextField f : fields) {
-			if (!f.getVisible()) continue;
-			x1 = Math.min(x1, fieldX(f));
-			y1 = Math.min(y1, fieldY(f));
-			x2 = Math.max(x2, fieldX(f) + f.width);
-			y2 = Math.max(y2, fieldY(f) + f.height);
+			if (f.getVisible()) rects.add(new int[]{fieldX(f), fieldY(f), f.width, f.height});
 		}
-		if (x1 == Integer.MAX_VALUE) return null;
-		return new int[]{Math.max(2, x1 - 12), Math.max(MenuSkin.HEADER + 4, y1 - 22), Math.min(s.width - 2, x2 + 12), Math.min(s.height - 2, y2 + 10)};
+		return dev.theredstonee.trsclient.core.menus.FormPanel.bounds(rects, s.width, s.height, MenuSkin.HEADER);
 	}
 
 	// --- Ereignisse ---

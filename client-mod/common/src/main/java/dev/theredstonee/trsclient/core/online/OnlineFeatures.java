@@ -229,16 +229,24 @@ public final class OnlineFeatures<T> {
 		PlayerInfo info = online.info(uuid);
 		if (info.hat == null || !info.hat.v2()) return null;
 		try {
-			long now = System.currentTimeMillis();
-			dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticAssets.Entry<T> e = cosmetics.get(info.hat, now);
+			java.util.function.LongSupplier clock = v2Clock;
+			long wall = System.currentTimeMillis();
+			long now = clock != null ? clock.getAsLong() : wall;
+			dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticAssets.Entry<T> e = cosmetics.get(info.hat, wall);
 			if (e == null) return null;
 			T halo = e.model.halos.isEmpty() ? null : cosmetics.halo();
-			return new dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T>(e.model, e.base(now), e.glow(now), halo, now, helmet);
+			return new dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T>(e.model, e.base(now), e.glow(now), halo, now, helmet, e);
 		} catch (RuntimeException ex) {
 			online.reportError(ex);
 			return null;
 		}
 	}
+
+	/** Nur für Selbsttests: feste Uhrzeit für v2-Kosmetik (wie {@code ?t=} der Studio-Werkbank); null = Wanduhr. */
+	public static volatile java.util.function.LongSupplier v2Clock;
+
+	/** Nur für Selbsttests: bekommt jeden gezeichneten v2-Durchgang (Tempo der Animation belegen). */
+	public static volatile java.util.function.BiConsumer<dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<?>, Integer> v2Trace;
 
 	/**
 	 * Einen Durchgang der v2-Kosmetik in den Kopf-Raum des Modells ausgeben (siehe {@code CosmeticV2Renderer.PASS_*}).
@@ -247,6 +255,8 @@ public final class OnlineFeatures<T> {
 	public void emitV2(dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> hat, int pass, double[] eye,
 			dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2Renderer.VertexSink sink) {
 		if (hat == null) return;
+		java.util.function.BiConsumer<dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<?>, Integer> trace = v2Trace;
+		if (trace != null) trace.accept(hat, pass);
 		try {
 			v2Renderer.pose(hat.model, hat.now, true, hat.helmet);
 			v2Renderer.emit(hat.model, pass, hat.now, eye, sink);

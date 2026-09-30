@@ -31,6 +31,11 @@ public final class Cosmetics2Test {
 	private boolean night;
 	private CosmeticCatalog catalog;
 	private WardrobeUi ui;
+	/** -PtrsAutotestOnly=crowntime: nur die Redstone-Krone, Tempo der Animation belegen (Bildfolge + Frame-Protokoll). */
+	private final boolean timing = "crowntime".equals(System.getProperty("trsclient.autotest.only"));
+	private final java.util.List<long[]> trace = java.util.Collections.synchronizedList(new java.util.ArrayList<long[]>());
+	private int ticks;
+	private long framesAtStart;
 
 	/** Ein Tick; true = noch nicht fertig. */
 	public boolean step(Minecraft mc, TrsModules modules, CapeTest.Actions actions) {
@@ -98,10 +103,82 @@ public final class Cosmetics2Test {
 				TrsClient.LOGGER.info("[Autotest] Kosmetik {}: {} nach {} Ticks", IDS[item], ok ? "geladen" : "FEHLT", tries);
 				TrsClient.get().setForceZoom(true);
 				TrsClient.get().pvp().forceFreelook(180F);
+				if (timing) {
+					actions.command("time set midnight");
+					camera(mc, 160F, 10F);
+					phase = 40;
+					wait = 20;
+					return true;
+				}
 				phase = 4;
 				wait = 4;
 				return true;
 			}
+			case 40:
+				// 3 s lang jeden gezeichneten Durchgang protokollieren (ohne Screenshots, volle Bildrate), danach alle
+				// 2 Ticks (100 ms) ein Bildschirmfoto
+				trace.clear();
+				framesAtStart = dev.theredstonee.trsclient.perf.PerfHooks.frames;
+				dev.theredstonee.trsclient.core.online.OnlineFeatures.v2Trace = (hat, pass) -> trace.add(new long[]{System.nanoTime(),
+						hat.now, glowIndex(hat.glow), pass, dev.theredstonee.trsclient.perf.PerfHooks.frames});
+				ticks = 0;
+				phase = 41;
+				return true;
+			case 41:
+				if (++ticks < 60) return true;
+				dev.theredstonee.trsclient.core.online.OnlineFeatures.v2Trace = null;
+				report(dev.theredstonee.trsclient.perf.PerfHooks.frames - framesAtStart);
+				ticks = 0;
+				camera(mc, 180F, 12F);
+				phase = 42;
+				return true;
+			case 42: {
+				// Feste Uhrzeiten wie die Werkbank mit ?t= (Vergleichsbilder: workbench.html?model=redstone_crown&shot=front&t=…)
+				int k = ticks / 3;
+				if (ticks % 3 == 0) {
+					if (k > 0) actions.shot(String.format("trsclient-crownfixed-t%04d", (k - 1) * 140));
+					if (k < 12) {
+						final long fixed = k * 140L;
+						dev.theredstonee.trsclient.core.online.OnlineFeatures.v2Clock = () -> fixed;
+					}
+				}
+				if (++ticks <= 36) return true;
+				dev.theredstonee.trsclient.core.online.OnlineFeatures.v2Clock = null;
+				camera(mc, 160F, 10F);
+				ticks = 0;
+				phase = 43;
+				wait = 4;
+				return true;
+			}
+			case 43:
+				if (ticks % 2 == 0) actions.shot(String.format("trsclient-crowntime-%02d", ticks / 2));
+				if (++ticks < 36) return true;
+				// Normale Spielansicht (3. Person, ohne Zoom): Flimmern der HD-Texturen aus normaler Entfernung
+				TrsClient.get().setForceZoom(false);
+				camera(mc, 160F, 10F);
+				ticks = 0;
+				phase = 44;
+				wait = 10;
+				return true;
+			case 44:
+				actions.shot(String.format("trsclient-crowndist-%02d", ticks));
+				if (++ticks < 20) return true;
+				// Animation angehalten (feste Uhrzeit), nur die Kamera kreist langsam (0,5° je Tick): was sich jetzt von Bild zu
+				// Bild ändert, ist reines Abtast-Flimmern der HD-Texturen
+				dev.theredstonee.trsclient.core.online.OnlineFeatures.v2Clock = () -> 0L;
+				ticks = 0;
+				phase = 45;
+				wait = 4;
+				return true;
+			case 45:
+				camera(mc, 160F + ticks * 0.5F, 10F);
+				if (ticks > 0) actions.shot(String.format("trsclient-crownorbit-%02d", ticks - 1));
+				if (++ticks <= 20) return true;
+				dev.theredstonee.trsclient.core.online.OnlineFeatures.v2Clock = null;
+				TrsClient.get().pvp().forceFreelook(Float.NaN);
+				TrsClient.get().setForceZoom(false);
+				Mc.setHudHidden(false);
+				return false;
 			case 4:
 				camera(mc, 180F, 0F);
 				phase = 5;
@@ -241,6 +318,79 @@ public final class Cosmetics2Test {
 			default:
 				return false;
 		}
+	}
+
+	/** Nummer des Leucht-Bildes aus dem Textur-Namen ({@code …/g<n>}), −1 = keins. */
+	private static long glowIndex(Object tex) {
+		if (tex == null) return -1;
+		String s = tex.toString();
+		int i = s.lastIndexOf("/g");
+		try {
+			return i < 0 ? -1 : Long.parseLong(s.substring(i + 2));
+		} catch (NumberFormatException e) {
+			return -1;
+		}
+	}
+
+	/** Protokoll auswerten: Bildwechsel je Sekunde, Dauer je Leucht-Bild, Abweichungen von der Wanduhr-Formel. */
+	private void report(long frames) {
+		java.util.List<long[]> all;
+		synchronized (trace) {
+			all = new java.util.ArrayList<long[]>(trace);
+		}
+		// Durchgänge je gezeichnetem Bild (Bildzähler PerfHooks.frames): fehlt die Krone in manchen Bildern oder wird sie
+		// mehrfach gezeichnet?
+		java.util.Map<Long, int[]> perFrame = new java.util.TreeMap<Long, int[]>();
+		java.util.Set<Long> times = new java.util.HashSet<Long>();
+		java.util.List<long[]> t = new java.util.ArrayList<long[]>();
+		for (long[] e : all) {
+			int[] c = perFrame.get(e[4]);
+			if (c == null) perFrame.put(e[4], c = new int[5]);
+			c[(int) e[3]]++;
+			times.add(e[1]);
+			if (e[3] == dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2Renderer.PASS_GLOW) t.add(e);
+		}
+		int noGlow = 0, multi = 0;
+		StringBuilder counts = new StringBuilder();
+		for (java.util.Map.Entry<Long, int[]> e : perFrame.entrySet()) {
+			int[] c = e.getValue();
+			if (c[3] == 0) noGlow++;
+			if (c[3] > 1) multi++;
+			if (counts.length() < 300) counts.append(java.util.Arrays.toString(c)).append(' ');
+		}
+		TrsClient.LOGGER.info("[Autotest] Kronen-Tempo: {} Bilder gezeichnet, Krone in {} davon ({} verschiedene Uhrzeiten),"
+				+ " {} ohne Leuchten, {} mit mehrfachem Leuchten; Durchgänge je Bild [Grund, Emissiv, Durchsch., Leuchten, Höfe]: {}",
+				frames, perFrame.size(), times.size(), noGlow, multi, counts);
+		if (t.isEmpty()) {
+			TrsClient.LOGGER.info("[Autotest] Kronen-Tempo: KEINE Leucht-Bilder gezeichnet");
+			return;
+		}
+		V2Hat<Object> hat = OnlineHooks.features().hatV2(Minecraft.getInstance().player.getUUID(), false);
+		dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2 m = hat.model;
+		double seconds = (t.get(t.size() - 1)[0] - t.get(0)[0]) / 1e9;
+		int changes = 0;
+		int wrong = 0;
+		long runStart = t.get(0)[1];
+		StringBuilder runs = new StringBuilder();
+		StringBuilder seq = new StringBuilder();
+		for (int i = 0; i < t.size(); i++) {
+			long[] e = t.get(i);
+			int expect = dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2Renderer.frameAt(e[1], m.glowFrames, m.glowFrameTimeMs);
+			if (expect != e[2]) wrong++;
+			if (i > 0 && e[2] != t.get(i - 1)[2]) {
+				changes++;
+				if (runs.length() < 400) runs.append(e[1] - runStart).append("ms ");
+				runStart = e[1];
+				seq.append(e[2]).append(' ');
+			}
+		}
+		TrsClient.LOGGER.info("[Autotest] Kronen-Tempo: {} Leucht-Bilder in {} s ({} Bilder/s gezeichnet), {} Wechsel = {} /s"
+						+ " (Werkbank: {} /s = {} Bilder à {} ms), {} weichen von der Formel ab",
+				t.size(), String.format("%.2f", seconds), String.format("%.1f", t.size() / seconds), changes,
+				String.format("%.2f", changes / seconds), String.format("%.2f", 1000.0 / m.glowFrameTimeMs), m.glowFrames,
+				m.glowFrameTimeMs, wrong);
+		TrsClient.LOGGER.info("[Autotest] Kronen-Tempo: Dauer je Leucht-Bild: {}", runs);
+		TrsClient.LOGGER.info("[Autotest] Kronen-Tempo: Folge: {}", seq);
 	}
 
 	/** Figur schaut stur nach Süden (Yaw 0), Kopf gerade – die Kamera kreist per Freelook. */

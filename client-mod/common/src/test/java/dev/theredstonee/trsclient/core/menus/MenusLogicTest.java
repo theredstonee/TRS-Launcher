@@ -86,4 +86,67 @@ class MenusLogicTest {
 		for (int v : a) out.add(v);
 		return out;
 	}
+
+	/** „Server hinzufügen“ 1.21.11 (ManageServerScreen): Felder und Knöpfe mittig, 200 breit. */
+	private static List<int[]> manageServer(int w, int h) {
+		int x = w / 2 - 100;
+		List<int[]> r = new ArrayList<>();
+		r.add(new int[]{x, 66, 200, 20});
+		r.add(new int[]{x, 106, 200, 20});
+		r.add(new int[]{x, h / 4 + 72, 200, 20});
+		r.add(new int[]{x, h / 4 + 96 + 18, 200, 20});
+		r.add(new int[]{x, h / 4 + 120 + 18, 200, 20});
+		return r;
+	}
+
+	@Test
+	void formPanelHugsTheCentredForm() {
+		// Breites Fenster (1920×1080, GUI-Größe 2 → 960×540): Fläche = Formular + Rand, zentriert.
+		int[] b = FormPanel.bounds(manageServer(960, 540), 960, 540, 32);
+		assertEquals(480 - 100 - FormPanel.PAD_X, b[0]);
+		assertEquals(480 + 100 + FormPanel.PAD_X, b[2]);
+		assertEquals(66 - FormPanel.PAD_TOP, b[1]);
+		assertEquals(540 / 4 + 138 + 20 + FormPanel.PAD_BOTTOM, b[3]);
+	}
+
+	@Test
+	void formPanelIgnoresForeignCornerButtons() {
+		// ViaFabricPlus setzt „Set version“ oben rechts in die Ecke – früher reichte die Fläche dadurch bis zum Rand.
+		for (int[] size : new int[][]{{960, 540}, {1000, 520}, {427, 240}, {320, 240}}) {
+			int w = size[0];
+			int h = size[1];
+			List<int[]> rects = manageServer(w, h);
+			rects.add(new int[]{w - 98 - 5, 5, 98, 20});
+			int[] b = FormPanel.bounds(rects, w, h, 32);
+			assertEquals(w / 2 - 112, b[0], "links bei " + w);
+			assertEquals(w / 2 + 112, b[2], "rechts bei " + w);
+			assertTrue(b[1] >= 36, "nie in der Kopfleiste");
+		}
+		// Fremder Knopf unten rechts in der Ecke (weit weg vom Formular) zählt ebenfalls nicht.
+		List<int[]> rects = manageServer(960, 540);
+		rects.add(new int[]{960 - 105, 540 - 25, 100, 20});
+		assertEquals(480 + 112, FormPanel.bounds(rects, 960, 540, 32)[2]);
+	}
+
+	@Test
+	void formPanelKeepsAdjacentButtons() {
+		// Zusatzknopf direkt neben dem Adressfeld (andere Mod) gehört zum Formular; Fläche bleibt symmetrisch.
+		List<int[]> rects = manageServer(960, 540);
+		rects.add(new int[]{480 + 104, 106, 20, 20});
+		int[] b = FormPanel.bounds(rects, 960, 540, 32);
+		assertEquals(480 + 124 + FormPanel.PAD_X, b[2]);
+		assertEquals(480 - 124 - FormPanel.PAD_X, b[0]);
+		// Zwei Knöpfe nebeneinander (keiner schneidet die Mitte) unter dem Formular bleiben dabei.
+		rects = manageServer(960, 540);
+		rects.add(new int[]{480 - 154, 540 / 4 + 162, 150, 20});
+		rects.add(new int[]{480 + 4, 540 / 4 + 162, 150, 20});
+		b = FormPanel.bounds(rects, 960, 540, 32);
+		assertEquals(480 - 154 - FormPanel.PAD_X, b[0]);
+		assertEquals(540 / 4 + 182 + FormPanel.PAD_BOTTOM, b[3]);
+		// Nichts sichtbar → keine Fläche; nur Widgets in der Kopfleiste → keine Fläche.
+		assertNull(FormPanel.bounds(new ArrayList<int[]>(), 960, 540, 32));
+		List<int[]> onlyHeader = new ArrayList<>();
+		onlyHeader.add(new int[]{900, 5, 50, 20});
+		assertNull(FormPanel.bounds(onlyHeader, 960, 540, 32));
+	}
 }

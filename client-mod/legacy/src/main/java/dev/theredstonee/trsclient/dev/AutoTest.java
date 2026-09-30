@@ -123,6 +123,11 @@ public final class AutoTest {
 			MenusTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=addserver: Formulare der Serverliste mit breiter GUI und fremdem Eck-Knopf
+		if ("addserver".equals(System.getProperty("trsclient.autotest.only"))) {
+			MenusTest.installAddServer();
+			return;
+		}
 		if ("maps".equals(System.getProperty("trsclient.autotest.only"))) {
 			MapsTest.install();
 			return;

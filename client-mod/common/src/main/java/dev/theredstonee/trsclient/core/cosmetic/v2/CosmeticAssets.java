@@ -28,27 +28,65 @@ public final class CosmeticAssets<T> {
 		void load(HatInfo hat, java.util.function.Consumer<CosmeticV2Cache.Loaded> done, Runnable failed);
 	}
 
-	/** Ein fertig hochgeladenes Teil. */
-	public static final class Entry<T> {
+	/**
+	 * Ein fertig hochgeladenes Teil: je Bild die Texturen aller Entfernungs-Stufen ({@link V2Images#levels}). Stufe 0
+	 * (volle Auflösung) ist sofort da, die kleineren Stufen kommen danach im selben Upload-Budget dazu – bis dahin wird
+	 * die nächstgrößere vorhandene Stufe genommen.
+	 */
+	public static final class Entry<T> implements V2Hat.Lod<T> {
 		public final CosmeticV2 model;
-		final List<T> base = new ArrayList<T>();
-		final List<T> glow = new ArrayList<T>();
+		/** [Stufe] → Texturen je Bild. */
+		final List<List<T>> base = new ArrayList<List<T>>();
+		final List<List<T>> glow = new ArrayList<List<T>>();
 
-		Entry(CosmeticV2 model) {
+		Entry(CosmeticV2 model, int levels) {
 			this.model = model;
+			for (int l = 0; l <= levels; l++) {
+				base.add(new ArrayList<T>());
+				glow.add(new ArrayList<T>());
+			}
 		}
 
-		/** Grundtextur zur Wanduhr. */
+		/** Grundtextur zur Wanduhr (volle Auflösung). */
 		public T base(long now) {
-			int n = base.size();
-			return base.get(Math.min(n - 1, CosmeticV2Renderer.frameAt(now, n, model.frameTimeMs)));
+			return base(now, 0);
 		}
 
-		/** Leucht-Schicht zur Wanduhr oder null. */
+		/** Leucht-Schicht zur Wanduhr oder null (volle Auflösung). */
 		public T glow(long now) {
-			int n = glow.size();
+			return glow(now, 0);
+		}
+
+		@Override
+		public T base(long now, int level) {
+			List<T> l = level(base, level);
+			int n = l.size();
+			return l.get(Math.min(n - 1, CosmeticV2Renderer.frameAt(now, n, model.frameTimeMs)));
+		}
+
+		@Override
+		public T glow(long now, int level) {
+			List<T> l = level(glow, level);
+			int n = l.size();
 			if (n == 0) return null;
-			return glow.get(Math.min(n - 1, CosmeticV2Renderer.frameAt(now, n, model.glowFrameTimeMs)));
+			return l.get(Math.min(n - 1, CosmeticV2Renderer.frameAt(now, n, model.glowFrameTimeMs)));
+		}
+
+		/** Gewünschte Stufe, wenn vollständig hochgeladen, sonst die nächstgrößere (Stufe 0 ist immer vollständig). */
+		private List<T> level(List<List<T>> levels, int level) {
+			int want = Math.max(0, Math.min(levels.size() - 1, level));
+			int n0 = levels.get(0).size();
+			for (int l = want; l > 0; l--) {
+				if (levels.get(l).size() == n0) return levels.get(l);
+			}
+			return levels.get(0);
+		}
+
+		int uploaded() {
+			int n = 0;
+			for (List<T> l : base) n += l.size();
+			for (List<T> l : glow) n += l.size();
+			return n;
 		}
 	}
 
@@ -91,7 +129,7 @@ public final class CosmeticAssets<T> {
 			slots.put(hat.key(), slot);
 		}
 		slot.lastUsed = now;
-		if (!slot.ready) {
+		if (!slot.ready || slot.pending != null) {
 			advance(slot, now);
 			if (!slot.ready) return null;
 		}
@@ -120,29 +158,41 @@ public final class CosmeticAssets<T> {
 			return;
 		}
 		CosmeticV2Cache.Loaded l = slot.pending;
-		if (slot.entry == null) slot.entry = new Entry<T>(l.model);
+		int levels = l.levels();
+		if (slot.entry == null) slot.entry = new Entry<T>(l.model, levels);
 		Entry<T> e = slot.entry;
 		int w = l.model.pixelWidth();
 		int h = l.model.pixelHeight();
-		int total = l.base.length + (l.glow == null ? 0 : l.glow.length);
-		while (budget > 0 && e.base.size() + e.glow.size() < total) {
+		int glowCount = l.glow == null ? 0 : l.glow.length;
+		int perLevel = l.base.length + glowCount;
+		int total = perLevel * (levels + 1);
+		// Reihenfolge: Stufe 0 (Grund, dann Leuchten), dann Stufe 1, 2, …
+		while (budget > 0 && e.uploaded() < total) {
 			budget--;
-			boolean isBase = e.base.size() < l.base.length;
-			int i = isBase ? e.base.size() : e.glow.size();
-			T tex = backend.upload(slot.name + (isBase ? "/b" : "/g") + i, w, h, isBase ? l.base[i] : l.glow[i]);
+			int k = e.uploaded();
+			int level = k / perLevel;
+			int i = k % perLevel;
+			boolean isBase = i < l.base.length;
+			int frame = isBase ? i : i - l.base.length;
+			int[] px = isBase ? l.baseLevels[frame][level] : l.glowLevels[frame][level];
+			T tex = backend.upload(slot.name + (isBase ? "/b" : "/g") + frame + (level == 0 ? "" : "_l" + level),
+					w >> level, h >> level, px);
 			if (tex == null) {
+				if (level > 0) {
+					// kleinere Stufen sind nur Zugabe: dann eben ohne sie weiter
+					slot.pending = null;
+					return;
+				}
 				releaseAll(slot);
 				slot.pending = null;
 				slot.requested = false;
 				slot.retryAt = now + RETRY_MS;
 				return;
 			}
-			(isBase ? e.base : e.glow).add(tex);
+			(isBase ? e.base : e.glow).get(level).add(tex);
 		}
-		if (e.base.size() + e.glow.size() == total) {
-			slot.ready = true;
-			slot.pending = null;
-		}
+		if (e.uploaded() >= perLevel) slot.ready = true;
+		if (e.uploaded() >= total) slot.pending = null;
 	}
 
 	/** Lange nicht benutzte Teile freigeben (einmal je Tick aufrufen). */
@@ -162,8 +212,8 @@ public final class CosmeticAssets<T> {
 
 	private void releaseAll(Slot<T> slot) {
 		if (slot.entry != null) {
-			for (T t : slot.entry.base) backend.release(t);
-			for (T t : slot.entry.glow) backend.release(t);
+			for (List<T> l : slot.entry.base) for (T t : l) backend.release(t);
+			for (List<T> l : slot.entry.glow) for (T t : l) backend.release(t);
 		}
 		slot.entry = null;
 		slot.ready = false;

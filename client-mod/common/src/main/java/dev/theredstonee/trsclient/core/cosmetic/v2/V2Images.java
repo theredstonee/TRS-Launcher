@@ -38,6 +38,77 @@ public final class V2Images {
 	}
 
 	/**
+	 * Halbe Auflösung (2×2 → 1) für die Entfernungs-Stufen ({@link CosmeticV2Renderer#lodLevel}). Minecraft zeichnet
+	 * Entity-Texturen ohne Mipmaps; eine HD-Textur (Faktor 8) wird aus normaler Entfernung stark verkleinert und dann je
+	 * Bild an anderen Unter-Pixeln abgetastet – sie flimmert. Die Stufen ersetzen die fehlenden Mipmaps.
+	 *
+	 * <p>{@code additive} (Leucht-Schicht, vormultipliziert, Alpha 255): Mittelwert der Farbe. Sonst (Grundtextur):
+	 * Farbe = Mittel der deckenden Pixel (nach Alpha gewichtet), Alpha = Abdeckung; Grundtexturen mit Alpha nur 0/255
+	 * bleiben so (ab halber Abdeckung deckend) – wie der Alpha-Test 0,5 der Werkbank, ohne Kanten anzufressen.
+	 */
+	public static int[] downsample(int[] src, int width, int height, boolean additive) {
+		int w = width / 2;
+		int h = height / 2;
+		int[] out = new int[w * h];
+		boolean binary = true;
+		if (!additive) {
+			for (int p : src) {
+				int a = p >>> 24;
+				if (a != 0 && a != 255) {
+					binary = false;
+					break;
+				}
+			}
+		}
+		for (int y = 0; y < h; y++) {
+			for (int x = 0; x < w; x++) {
+				int i = (y * 2) * width + x * 2;
+				int[] q = { src[i], src[i + 1], src[i + width], src[i + width + 1] };
+				long r = 0, g = 0, b = 0, a = 0;
+				for (int p : q) {
+					int pa = additive ? 255 : p >>> 24;
+					r += ((p >> 16) & 0xFF) * (long) pa;
+					g += ((p >> 8) & 0xFF) * (long) pa;
+					b += (p & 0xFF) * (long) pa;
+					a += pa;
+				}
+				int oa;
+				int or = 0, og = 0, ob = 0;
+				if (a > 0) {
+					or = (int) ((r + a / 2) / a);
+					og = (int) ((g + a / 2) / a);
+					ob = (int) ((b + a / 2) / a);
+				}
+				if (additive) {
+					oa = 255;
+				} else if (binary) {
+					oa = a >= 2 * 255 ? 255 : 0;
+				} else {
+					oa = (int) ((a + 2) / 4);
+				}
+				out[y * w + x] = oa == 0 && !additive ? 0 : (oa << 24) | (or << 16) | (og << 8) | ob;
+			}
+		}
+		return out;
+	}
+
+	/**
+	 * Stufen eines Bildes: [0] = Original, [k] = Auflösung / 2^k, bis {@code levels} (je Stufe {@link #downsample}).
+	 */
+	public static int[][] levels(int[] src, int width, int height, int levels, boolean additive) {
+		int[][] out = new int[levels + 1][];
+		out[0] = src;
+		int w = width;
+		int h = height;
+		for (int l = 1; l <= levels; l++) {
+			out[l] = downsample(out[l - 1], w, h, additive);
+			w /= 2;
+			h /= 2;
+		}
+		return out;
+	}
+
+	/**
 	 * Leucht-Schicht für additives Zeichnen mit {@code ONE, ONE}: RGB mit Alpha vormultipliziert, Alpha 255 (so
 	 * wirkt auch eine halbdurchsichtige Datei wie in three.js mit {@code SRC_ALPHA, ONE}).
 	 */
