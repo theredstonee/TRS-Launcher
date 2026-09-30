@@ -44,12 +44,75 @@ const draftLibrary = computed(() => {
 const previewSkin = computed(() => {
   const skin = draft.value.skin
   if (skin.source === 'library') return draftLibrary.value?.texture ?? null
-  // Der Kern liest die echte Textur aus einem installierten Client (Steve, Alex, Ari, …).
-  if (skin.source === 'default') return profile.value?.defaultSkin ?? null
+  // Der Kern liest die echte Textur aus einem installierten Client (Steve, Alex, Ari, …);
+  // ohne installierte Version bleibt der gezeichnete Platzhalter (ohne Textur wäre das Modell unsichtbar).
+  if (skin.source === 'default') return profile.value?.defaultSkin ?? defaultSkinTexture()
   return profile.value?.skin ?? null
 })
+
+let defaultTexture: string | null = null
+/**
+ * Rückfall für „Standard-Skin“, solange keine Minecraft-Version installiert ist: eine selbst gezeichnete, schlichte Figur in
+ * Steve-Farben (ohne leere Textur wäre das Modell unsichtbar). Welchen der
+ * Standard-Skins Mojang vergibt, entscheidet Mojang selbst.
+ */
+function defaultSkinTexture(): string | null {
+  if (defaultTexture) return defaultTexture
+  const canvas = document.createElement('canvas')
+  canvas.width = 64
+  canvas.height = 64
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return null
+  const fill = (color: string, x: number, y: number, w: number, h: number) => {
+    ctx.fillStyle = color
+    ctx.fillRect(x, y, w, h)
+  }
+  const skin = '#b98a6c'
+  const hair = '#3b2a1c'
+  const shirt = '#1fa6a6'
+  const pants = '#3b3f9e'
+  const shoes = '#5a5a5a'
+  fill(skin, 0, 0, 32, 16) // Kopf
+  fill(hair, 8, 0, 8, 8) // Oberseite
+  fill(hair, 0, 8, 32, 2) // Haaransatz rundum
+  fill('#ffffff', 9, 12, 2, 1) // Augen
+  fill('#4b3aa8', 10, 12, 1, 1)
+  fill('#ffffff', 13, 12, 2, 1)
+  fill('#4b3aa8', 13, 12, 1, 1)
+  fill('#6e4a36', 11, 14, 2, 1) // Mund
+  fill(shirt, 16, 16, 24, 16) // Körper
+  for (const [x, y] of [
+    [40, 16],
+    [32, 48],
+  ] as const) {
+    fill(skin, x, y, 16, 16) // Arme
+    fill(shirt, x, y + 4, 16, 4) // Ärmel
+    fill(shirt, x + 4, y, 4, 4)
+  }
+  for (const [x, y] of [
+    [0, 16],
+    [16, 48],
+  ] as const) {
+    fill(pants, x, y, 16, 16) // Beine
+    fill(shoes, x, y + 13, 16, 3)
+  }
+  defaultTexture = canvas.toDataURL('image/png')
+  return defaultTexture
+}
+
+/** Hinweis unter „Standard-Skin“: welcher Skin es ist und aus welcher Version – sonst der allgemeine Text. */
+const defaultSkinHint = computed(() => {
+  const p = profile.value
+  if (!p?.defaultSkin || !p.defaultSkinVersion) return t('skins.defaultSkinHint')
+  const name = p.defaultSkinName.charAt(0).toUpperCase() + p.defaultSkinName.slice(1)
+  return t('skins.defaultSkinFrom', { name, version: p.defaultSkinVersion })
+})
 const previewVariant = computed<SkinVariant>(() =>
-  draft.value.skin.source === 'default' ? (profile.value?.defaultVariant ?? 'classic') : draft.value.variant,
+  draft.value.skin.source === 'default'
+    ? profile.value?.defaultSkin
+      ? profile.value.defaultVariant
+      : 'classic'
+    : draft.value.variant,
 )
 /** Angeprobter TRS-Umhang (ersetzt in der Vorschau den Mojang-Umhang, ändert aber nichts am Konto). */
 const trsPreview = ref<TrsCape | null>(null)
@@ -661,7 +724,7 @@ function capeStyle(texture: string, width = 30) {
                 </span>
                 <span class="min-w-0 flex-1">
                   <span class="block truncate text-sm font-medium">{{ t('skins.defaultSkin') }}</span>
-                  <span class="block text-[11px] text-base-400">{{ t('skins.defaultSkinHint') }}</span>
+                  <span class="block text-[11px] text-base-400">{{ defaultSkinHint }}</span>
                 </span>
               </button>
             </li>

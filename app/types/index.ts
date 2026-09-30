@@ -1095,6 +1095,10 @@ export interface SkinProfile {
   defaultSkin: string | null
   /** Armbreite dieser Standard-Textur. */
   defaultVariant: SkinVariant
+  /** Name des Standard-Skins (`steve`, `alex`, `ari`, …). */
+  defaultSkinName: string
+  /** Minecraft-Version, aus der die Standard-Textur stammt, sonst `null`. */
+  defaultSkinVersion: string | null
   capes: Cape[]
 }
 

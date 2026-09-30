@@ -2359,6 +2359,7 @@
     "mySkins": "Moje skiny",
     "onAccount": "{variant} · na twoim koncie",
     "defaultSkinHint": "Steve / Alex od Mojang",
+    "defaultSkinFrom": "{name} – jak w Minecraft {version}",
     "tryOnLabel": "Przymierz {name}",
     "selected": "Wybrano",
     "tryOn": "Przymierz",

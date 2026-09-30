@@ -2359,6 +2359,7 @@
     "mySkins": "Skinlerim",
     "onAccount": "{variant} · hesabında",
     "defaultSkinHint": "Mojang'dan Steve / Alex",
+    "defaultSkinFrom": "{name} – Minecraft {version} ile aynı",
     "tryOnLabel": "Dene: {name}",
     "selected": "Seçildi",
     "tryOn": "Dene",

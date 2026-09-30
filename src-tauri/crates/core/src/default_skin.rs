@@ -8,6 +8,7 @@
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
+use std::time::SystemTime;
 
 use crate::paths::Paths;
 use crate::skins::{self, SkinVariant};
@@ -35,13 +36,22 @@ struct Source {
     layout: Layout,
 }
 
-static SOURCE: Mutex<Option<(PathBuf, Source)>> = Mutex::new(None);
+/// Zuletzt gefundenes Jar, gültig solange sich der `versions`-Ordner nicht ändert
+/// (neue oder gelöschte Version → neue Änderungszeit → neu suchen).
+static SOURCE: Mutex<Option<(PathBuf, Option<SystemTime>, Source)>> = Mutex::new(None);
+/// Zuletzt gelesene Textur (Jar, Eintrag, Änderungszeit des Jars) – spart das Öffnen des Client-Jars bei jedem Profil-Abruf.
+#[allow(clippy::type_complexity)]
+static PNG: Mutex<Option<(PathBuf, String, Option<SystemTime>, Vec<u8>)>> = Mutex::new(None);
 
 /// Was die Vorschau zeigen soll: Modell immer, Textur nur wenn ein passendes Jar da ist.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DefaultSkin {
     pub variant: SkinVariant,
     pub png: Option<Vec<u8>>,
+    /// Name des Standard-Skins (`steve`, `alex`, `ari`, …).
+    pub name: String,
+    /// Minecraft-Version, aus deren Jar die Textur stammt (`None` ohne installierte Version).
+    pub version: Option<String>,
 }
 
 /// Standard-Skin für diese Konto-ID. `png` fehlt, wenn noch keine Minecraft-Version installiert ist.
@@ -50,26 +60,66 @@ pub async fn for_account(paths: &Paths, uuid: &str) -> DefaultSkin {
     let uuid = uuid.to_owned();
     tokio::task::spawn_blocking(move || load(&dir, &uuid))
         .await
-        .unwrap_or(DefaultSkin {
-            variant: SkinVariant::Classic,
-            png: None,
-        })
+        .unwrap_or_else(|_| fallback())
 }
 
 fn load(versions_dir: &Path, uuid: &str) -> DefaultSkin {
     let Some(hash) = java_uuid_hash(uuid) else {
-        return DefaultSkin {
-            variant: SkinVariant::Classic,
-            png: None,
-        };
+        return fallback();
     };
     let source = locate(versions_dir);
     let (variant, entry) = match source.as_ref().map(|s| s.layout) {
         Some(Layout::Legacy) => legacy(hash),
         _ => modern(hash),
     };
-    let png = source.as_ref().and_then(|s| read_png(&s.jar, &entry));
-    DefaultSkin { variant, png }
+    let png = source.as_ref().and_then(|s| cached_png(&s.jar, &entry));
+    let version = png.as_ref().and(source.as_ref()).and_then(|s| {
+        s.jar.parent()?.file_name()?.to_str().map(str::to_owned)
+    });
+    DefaultSkin {
+        variant,
+        png,
+        name: skin_name(&entry),
+        version,
+    }
+}
+
+fn fallback() -> DefaultSkin {
+    DefaultSkin {
+        variant: SkinVariant::Classic,
+        png: None,
+        name: "steve".to_owned(),
+        version: None,
+    }
+}
+
+/// `…/wide/ari.png` → `ari`.
+fn skin_name(entry: &str) -> String {
+    entry
+        .rsplit('/')
+        .next()
+        .and_then(|f| f.strip_suffix(".png"))
+        .unwrap_or("steve")
+        .to_owned()
+}
+
+fn modified(path: &Path) -> Option<SystemTime> {
+    std::fs::metadata(path).and_then(|m| m.modified()).ok()
+}
+
+fn cached_png(jar: &Path, entry: &str) -> Option<Vec<u8>> {
+    let stamp = modified(jar);
+    let mut guard = PNG.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some((j, e, t, bytes)) = guard.as_ref()
+        && j == jar
+        && e == entry
+        && *t == stamp
+    {
+        return Some(bytes.clone());
+    }
+    let bytes = read_png(jar, entry)?;
+    *guard = Some((jar.to_owned(), entry.to_owned(), stamp, bytes.clone()));
+    Some(bytes)
 }
 
 /// Index in die 18er-Liste (`Math.floorMod(hash, 18)`).
@@ -96,17 +146,19 @@ fn legacy(hash: i32) -> (SkinVariant, String) {
 }
 
 fn locate(versions_dir: &Path) -> Option<Source> {
+    let stamp = modified(versions_dir);
     let mut guard = SOURCE.lock().unwrap_or_else(|e| e.into_inner());
-    if let Some((dir, source)) = guard.as_ref()
+    if let Some((dir, when, source)) = guard.as_ref()
         && dir == versions_dir
+        && *when == stamp
         && source.jar.is_file()
     {
         return Some(source.clone());
     }
     let found = scan(versions_dir);
-    if let Some(source) = &found {
-        *guard = Some((versions_dir.to_owned(), source.clone()));
-    }
+    *guard = found
+        .as_ref()
+        .map(|source| (versions_dir.to_owned(), stamp, source.clone()));
     found
 }
 
@@ -319,6 +371,34 @@ mod tests {
         let skin = load(&versions, "00000000-0000-0000-0000-000000000001");
         assert_eq!(skin.variant, SkinVariant::Slim);
         assert_eq!(skin.png.as_deref(), Some(alex.as_slice()));
+    }
+
+    #[test]
+    fn a_newly_installed_version_replaces_the_cached_legacy_jar() {
+        let root = tempfile::tempdir().unwrap();
+        let versions = root.path().join("versions");
+        write_jar(
+            &versions.join("1.8.9").join("1.8.9.jar"),
+            &[(LEGACY_STEVE, png(1).as_slice()), (LEGACY_ALEX, png(2).as_slice())],
+        );
+        let uuid = "00000000-0000-0000-0000-000000000002";
+        let first = load(&versions, uuid);
+        assert_eq!(first.version.as_deref(), Some("1.8.9"));
+        assert_eq!(first.name, "steve");
+        // Neue Version kommt dazu → Ordner ändert sich → das moderne Jar wird gefunden.
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        let efe = png(7);
+        write_jar(
+            &versions.join("1.21.11").join("1.21.11.jar"),
+            &[
+                (&format!("{MODERN_PREFIX}wide/steve.png"), png(3).as_slice()),
+                (&format!("{MODERN_PREFIX}slim/efe.png"), efe.as_slice()),
+            ],
+        );
+        let second = load(&versions, uuid);
+        assert_eq!(second.version.as_deref(), Some("1.21.11"));
+        assert_eq!(second.name, "efe");
+        assert_eq!(second.png.as_deref(), Some(efe.as_slice()));
     }
 
     #[test]

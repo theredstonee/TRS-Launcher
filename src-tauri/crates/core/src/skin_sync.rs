@@ -861,6 +861,8 @@ mod tests {
             skin: None,
             default_skin: None,
             default_variant: SkinVariant::Classic,
+            default_skin_name: "steve".into(),
+            default_skin_version: None,
             capes: vec![],
         }
     }

@@ -148,6 +148,10 @@ pub struct Profile {
     pub default_skin: Option<String>,
     /// Armbreite dieser Standard-Textur (auch ohne installierte Version bekannt).
     pub default_variant: SkinVariant,
+    /// Name des Standard-Skins (`steve`, `alex`, `ari`, …).
+    pub default_skin_name: String,
+    /// Minecraft-Version, aus der die Standard-Textur stammt (`null` ohne installierte Version).
+    pub default_skin_version: Option<String>,
     pub capes: Vec<Cape>,
 }
 
@@ -671,6 +675,8 @@ impl Launcher {
             skin,
             default_skin: assigned.png.as_deref().map(data_url),
             default_variant: assigned.variant,
+            default_skin_name: assigned.name,
+            default_skin_version: assigned.version,
             capes,
         })
     }

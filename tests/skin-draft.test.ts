@@ -20,6 +20,8 @@ function profile(extra: Partial<SkinProfile> = {}): SkinProfile {
     skin: 'data:image/png;base64,AAAA',
     defaultSkin: null,
     defaultVariant: 'classic',
+    defaultSkinName: 'steve',
+    defaultSkinVersion: null,
     capes: [
       { id: 'migrator', name: 'Migrator', active: true, texture: null },
       { id: 'vanilla', name: 'Vanilla', active: false, texture: null },
