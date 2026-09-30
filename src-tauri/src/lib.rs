@@ -381,6 +381,8 @@ pub fn run() {
             commands::skins::skin_profile,
             commands::skins::player_skin_url,
             commands::skins::skin_library,
+            commands::skins::builtin_skins,
+            commands::skins::skin_packs,
             commands::skins::pick_skin_files,
             commands::skins::stage_dropped_skins,
             commands::skins::stage_skin_url,

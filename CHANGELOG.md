@@ -31,15 +31,36 @@ How to write an entry:
 ## Unreleased
 
 ### English
-- **Default skin preview.** “Default skin” on the Skins page shows the real skin Minecraft gives this account
+- **Default skin preview.** “Account default” on the Skins page shows the real skin Minecraft gives this account
   (Steve, Alex, Ari and the others, with the matching arm width), read from an installed version – the option
   tells you which one and from which Minecraft version. Until a version is installed, a simple figure stands in.
+- **New Skins page.** A large 3D figure with your player name on the left that stays in place while you scroll,
+  and tabs for **Skins**, **Capes** and **Cosmetics** on the right. Skins are cards with a small 3D figure;
+  capes and cosmetics keep their previous cards (the cape picture or the cosmetic, the name and the badge).
+  Whatever you click shows up on the big figure right away, and “Apply” still sends everything at once.
+  Skin sections can be collapsed – the page remembers it.
+- **All 18 default skins.** Alex, Ari, Efe, Kai, Makena, Noor, Steve, Sunny and Zuri – each slim and wide – can be
+  picked and applied directly (the textures come from an installed Minecraft version).
+- **Official skin packs.** The free Java skins Mojang has released on minecraft.net (Chaos Cubed, Tiny Takeover,
+  Mounts of Mayhem, The Copper Age, Chase the Skies, The Garden Awakens, Striding Hero, Builders & Biomes) can be
+  tried on and applied. They are downloaded only from minecraft.net and cached; without internet the section is hidden.
 
 ### Deutsch
-- **Vorschau des Standard-Skins.** „Standard-Skin“ auf der Skins-Seite zeigt den echten Skin, den Minecraft diesem
+- **Vorschau des Standard-Skins.** „Standard des Kontos“ auf der Skins-Seite zeigt den echten Skin, den Minecraft diesem
   Konto gibt (Steve, Alex, Ari und die anderen, mit der passenden Armbreite), aus einer installierten Version – die
   Auswahl sagt dir, welcher es ist und aus welcher Minecraft-Version. Solange keine Version installiert ist,
   steht eine einfache Figur da.
+- **Neue Skins-Seite.** Links eine große 3D-Figur mit deinem Spielernamen, die beim Scrollen stehen bleibt, rechts
+  die Reiter **Skins**, **Umhänge** und **Kosmetik**. Skins sind Karten mit kleiner 3D-Figur; Umhänge und
+  Kosmetik behalten ihre bisherigen Karten (Umhang-Bild bzw. Kosmetik, Name und Badge). Was du anklickst,
+  erscheint sofort auf der großen Figur, und „Anwenden“ schickt weiterhin alles auf einmal. Die Skin-Abschnitte
+  lassen sich zuklappen – die Seite merkt sich das.
+- **Alle 18 Standard-Skins.** Alex, Ari, Efe, Kai, Makena, Noor, Steve, Sunny und Zuri – jeweils schmal und breit –
+  lassen sich direkt auswählen und anwenden (die Texturen stammen aus einer installierten Minecraft-Version).
+- **Offizielle Skin-Pakete.** Die kostenlosen Java-Skins, die Mojang auf minecraft.net veröffentlicht hat (Chaos
+  Cubed, Tiny Takeover, Mounts of Mayhem, The Copper Age, Chase the Skies, The Garden Awakens, Striding Hero,
+  Builders & Biomes), kannst du anprobieren und anwenden. Geladen wird nur von minecraft.net, danach aus dem Cache;
+  ohne Internet ist der Abschnitt ausgeblendet.
 
 ## 0.15.0 – 2026-09-29 – Crowned | Gekrönt
 <!-- banner: accent=#ffa62b motif=/news/0.15.0/banner.png -->

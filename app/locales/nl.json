@@ -557,7 +557,8 @@
       "playerNameInvalid": "Spelersnamen hebben 1–16 tekens: letters, cijfers of _.",
       "playerNotFound": "Er is geen speler met de naam “{name}”.",
       "playerDefaultSkin": "{name} draagt een standaardskin – er valt niets te importeren.",
-      "importExpired": "De selectie is verlopen – voeg hem opnieuw toe."
+      "importExpired": "De selectie is verlopen – voeg hem opnieuw toe.",
+      "builtinMissing": "Deze skin is nu niet beschikbaar – laad de pagina opnieuw."
     },
     "skinSync": {
       "accountSwitched": "Het actieve account is gewisseld – de wijzigingen zijn verworpen.",
@@ -2356,13 +2357,9 @@
     "submitting": "Versturen …",
     "discard": "Verwerpen",
     "applyHint": "Kies een skin, model en cape – er verandert niets tot je op “Toepassen” klikt.",
-    "mySkins": "Mijn skins",
     "onAccount": "{variant} · op je account",
     "defaultSkinHint": "Steve / Alex van Mojang",
     "defaultSkinFrom": "{name} – zoals in Minecraft {version}",
-    "tryOnLabel": "{name} passen",
-    "selected": "Geselecteerd",
-    "tryOn": "Passen",
     "rename": "Hernoemen",
     "empty": {
       "title": "Nog geen eigen skins",
@@ -2461,7 +2458,28 @@
         "allDuplicates": "Deze skins staan al in je verzameling.",
         "skipped": "{n} skin stond al in je verzameling | {n} skins stonden al in je verzameling"
       }
-    }
+    },
+    "tabsLabel": "Skins, capes en cosmetica",
+    "tabs": {
+      "skins": "Skins",
+      "capes": "Capes",
+      "cosmetics": "Cosmetica"
+    },
+    "sections": {
+      "saved": "Opgeslagen skins",
+      "defaults": "Standaardskins",
+      "packs": "Officiële skinpakketten"
+    },
+    "dropHere": "of sleep hem hierheen",
+    "badges": {
+      "worn": "Gedragen",
+      "reset": "Herstellen",
+      "assigned": "De jouwe"
+    },
+    "accountDefault": "Standaard van het account",
+    "defaultsFrom": "Uit Minecraft {version}",
+    "defaultsMissing": "Installeer een willekeurige Minecraft-versie om uit alle standaardskins te kiezen.",
+    "packsSource": "Gratis skins van minecraft.net"
   },
   "validation": {
     "invalidCharacters": "Bevat ongeldige tekens",

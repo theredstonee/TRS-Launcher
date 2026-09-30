@@ -557,7 +557,8 @@
       "playerNameInvalid": "Spielernamen haben 1–16 Zeichen: Buchstaben, Ziffern oder _.",
       "playerNotFound": "Es gibt keinen Spieler namens „{name}“.",
       "playerDefaultSkin": "{name} trägt einen Standard-Skin – da gibt es nichts zu übernehmen.",
-      "importExpired": "Die Auswahl ist abgelaufen – bitte erneut hinzufügen."
+      "importExpired": "Die Auswahl ist abgelaufen – bitte erneut hinzufügen.",
+      "builtinMissing": "Dieser Skin ist gerade nicht verfügbar – bitte die Seite neu laden."
     },
     "skinSync": {
       "accountSwitched": "Das aktive Konto wurde gewechselt – die Änderungen wurden verworfen.",
@@ -2356,13 +2357,9 @@
     "submitting": "Wird übergeben …",
     "discard": "Verwerfen",
     "applyHint": "Wähle Skin, Modell und Umhang – angewendet wird erst mit „Anwenden“.",
-    "mySkins": "Meine Skins",
     "onAccount": "{variant} · auf dem Konto",
     "defaultSkinHint": "Steve / Alex von Mojang",
     "defaultSkinFrom": "{name} – wie in Minecraft {version}",
-    "tryOnLabel": "{name} anprobieren",
-    "selected": "Ausgewählt",
-    "tryOn": "Anprobieren",
     "rename": "Umbenennen",
     "empty": {
       "title": "Noch keine eigenen Skins",
@@ -2461,7 +2458,28 @@
         "allDuplicates": "Diese Skins liegen schon in deiner Sammlung.",
         "skipped": "{n} Skin lag schon in der Sammlung | {n} Skins lagen schon in der Sammlung"
       }
-    }
+    },
+    "tabsLabel": "Skins, Umhänge und Kosmetik",
+    "tabs": {
+      "skins": "Skins",
+      "capes": "Umhänge",
+      "cosmetics": "Kosmetik"
+    },
+    "sections": {
+      "saved": "Gespeicherte Skins",
+      "defaults": "Standard-Skins",
+      "packs": "Offizielle Skin-Pakete"
+    },
+    "dropHere": "oder hierher ziehen",
+    "badges": {
+      "worn": "Getragen",
+      "reset": "Zurücksetzen",
+      "assigned": "Deiner"
+    },
+    "accountDefault": "Standard des Kontos",
+    "defaultsFrom": "Aus Minecraft {version}",
+    "defaultsMissing": "Installiere eine beliebige Minecraft-Version, um aus allen Standard-Skins zu wählen.",
+    "packsSource": "Kostenlose Skins von minecraft.net"
   },
   "validation": {
     "invalidCharacters": "Enthält ungültige Zeichen",

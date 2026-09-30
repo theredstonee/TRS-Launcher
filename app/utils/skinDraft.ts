@@ -8,7 +8,15 @@ import { userErrorText } from './backend'
 // erst „Anwenden“ schickt den Unterschied an den Kern. Reine Funktionen,
 // getestet in tests/skin-draft.test.ts.
 
-export type DraftSkin = { source: 'current' } | { source: 'library'; id: string } | { source: 'default' }
+/**
+ * `default` = Konto auf den Standard zurücksetzen (Mojang wählt), `builtin` = ein bestimmter
+ * Standard-Skin (`wide/steve`) oder Paket-Skin (`pack/<paket>/<skin>`), der hochgeladen wird.
+ */
+export type DraftSkin =
+  | { source: 'current' }
+  | { source: 'library'; id: string }
+  | { source: 'default' }
+  | { source: 'builtin'; id: string }
 
 export interface SkinDraft {
   skin: DraftSkin
@@ -27,8 +35,9 @@ export function baseDraft(profile: SkinProfile | null): SkinDraft {
 }
 
 function sameSkin(a: DraftSkin, b: DraftSkin): boolean {
-  if (a.source !== b.source) return false
-  return a.source !== 'library' || (b.source === 'library' && a.id === b.id)
+  if (a.source === 'library') return b.source === 'library' && a.id === b.id
+  if (a.source === 'builtin') return b.source === 'builtin' && a.id === b.id
+  return a.source === b.source
 }
 
 export function sameDraft(a: SkinDraft | null, b: SkinDraft | null): boolean {
@@ -44,6 +53,7 @@ export function draftChanges(draft: SkinDraft, profile: SkinProfile | null): Ski
   if (!profile) return null
   let skin: SkinChanges['skin'] = null
   if (draft.skin.source === 'library') skin = { kind: 'library', id: draft.skin.id, variant: draft.variant }
+  else if (draft.skin.source === 'builtin') skin = { kind: 'builtin', id: draft.skin.id, variant: draft.variant }
   else if (draft.skin.source === 'default') skin = { kind: 'default' }
   else if (draft.variant !== profile.variant) skin = { kind: 'current', variant: draft.variant }
 

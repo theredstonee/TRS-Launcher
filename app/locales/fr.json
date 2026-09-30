@@ -557,7 +557,8 @@
       "playerNameInvalid": "Les pseudos comptent 1 à 16 caractères : lettres, chiffres ou _.",
       "playerNotFound": "Aucun joueur ne s’appelle « {name} ».",
       "playerDefaultSkin": "{name} porte un skin par défaut – rien à importer.",
-      "importExpired": "La sélection a expiré – ajoute-la à nouveau."
+      "importExpired": "La sélection a expiré – ajoute-la à nouveau.",
+      "builtinMissing": "Ce skin n’est pas disponible pour le moment – recharge la page."
     },
     "skinSync": {
       "accountSwitched": "Le compte actif a changé – les modifications ont été abandonnées.",
@@ -2356,13 +2357,9 @@
     "submitting": "Envoi…",
     "discard": "Abandonner",
     "applyHint": "Choisis un skin, un modèle et une cape – rien ne change tant que tu ne cliques pas sur « Appliquer ».",
-    "mySkins": "Mes skins",
     "onAccount": "{variant} · sur ton compte",
     "defaultSkinHint": "Steve / Alex de Mojang",
     "defaultSkinFrom": "{name} – comme dans Minecraft {version}",
-    "tryOnLabel": "Essayer {name}",
-    "selected": "Sélectionné",
-    "tryOn": "Essayer",
     "rename": "Renommer",
     "empty": {
       "title": "Pas encore de skins perso",
@@ -2461,7 +2458,28 @@
         "allDuplicates": "Ces skins sont déjà dans ta collection.",
         "skipped": "{n} skin était déjà dans ta collection | {n} skins étaient déjà dans ta collection"
       }
-    }
+    },
+    "tabsLabel": "Skins, capes et cosmétiques",
+    "tabs": {
+      "skins": "Skins",
+      "capes": "Capes",
+      "cosmetics": "Cosmétiques"
+    },
+    "sections": {
+      "saved": "Skins enregistrés",
+      "defaults": "Skins par défaut",
+      "packs": "Packs de skins officiels"
+    },
+    "dropHere": "ou glisse-le ici",
+    "badges": {
+      "worn": "Porté",
+      "reset": "Réinitialiser",
+      "assigned": "Le tien"
+    },
+    "accountDefault": "Par défaut du compte",
+    "defaultsFrom": "De Minecraft {version}",
+    "defaultsMissing": "Installe n’importe quelle version de Minecraft pour choisir parmi tous les skins par défaut.",
+    "packsSource": "Skins gratuits de minecraft.net"
   },
   "validation": {
     "invalidCharacters": "Contient des caractères invalides",

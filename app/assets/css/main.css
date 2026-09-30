@@ -378,6 +378,11 @@ textarea {
   .tab-on {
     @apply bg-base-800 text-base-50 hover:bg-base-800;
   }
+  /* Skins-Seite: Karten-Raster der Skin-Figuren. */
+  .skin-grid {
+    @apply grid gap-2.5;
+    grid-template-columns: repeat(auto-fill, minmax(6.75rem, 1fr));
+  }
 }
 
 /* Bereinigtes Markdown von Modrinth (Beschreibungen, Changelogs). */

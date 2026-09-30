@@ -557,7 +557,8 @@
       "playerNameInvalid": "Player names have 1–16 characters: letters, digits or _.",
       "playerNotFound": "There’s no player called “{name}”.",
       "playerDefaultSkin": "{name} is wearing a default skin – there’s nothing to import.",
-      "importExpired": "The selection has expired – please add it again."
+      "importExpired": "The selection has expired – please add it again.",
+      "builtinMissing": "This skin isn’t available right now – please reload the page."
     },
     "skinSync": {
       "accountSwitched": "The active account was switched – the changes were discarded.",
@@ -2356,13 +2357,9 @@
     "submitting": "Submitting …",
     "discard": "Discard",
     "applyHint": "Choose a skin, model and cape – nothing changes until you click “Apply”.",
-    "mySkins": "My skins",
     "onAccount": "{variant} · on your account",
     "defaultSkinHint": "Steve / Alex from Mojang",
     "defaultSkinFrom": "{name} – as in Minecraft {version}",
-    "tryOnLabel": "Try on {name}",
-    "selected": "Selected",
-    "tryOn": "Try on",
     "rename": "Rename",
     "empty": {
       "title": "No skins of your own yet",
@@ -2461,7 +2458,28 @@
         "allDuplicates": "These skins are already in your collection.",
         "skipped": "{n} skin was already in your collection | {n} skins were already in your collection"
       }
-    }
+    },
+    "tabsLabel": "Skins, capes and cosmetics",
+    "tabs": {
+      "skins": "Skins",
+      "capes": "Capes",
+      "cosmetics": "Cosmetics"
+    },
+    "sections": {
+      "saved": "Saved skins",
+      "defaults": "Default skins",
+      "packs": "Official skin packs"
+    },
+    "dropHere": "or drag it here",
+    "badges": {
+      "worn": "Worn",
+      "reset": "Reset",
+      "assigned": "Yours"
+    },
+    "accountDefault": "Account default",
+    "defaultsFrom": "From Minecraft {version}",
+    "defaultsMissing": "Install any Minecraft version to choose from all default skins.",
+    "packsSource": "Free skins from minecraft.net"
   },
   "validation": {
     "invalidCharacters": "Contains invalid characters",

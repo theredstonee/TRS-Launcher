@@ -162,6 +162,8 @@ import type {
   SkinProfile,
   SkinSyncStatus,
   SkinVariant,
+  BuiltinSkins,
+  SkinPack,
   ContentItem,
   ContentKind,
   ContentUpdate,
@@ -498,6 +500,10 @@ export const backend = {
   /** Skin-Link eines anderen Spielers (nur textures.minecraft.net), `null` = Standard-Skin. */
   playerSkinUrl: (uuid: string) => call<string | null>('player_skin_url', { uuid }),
   skinLibrary: () => call<LibrarySkin[]>('skin_library'),
+  /** Alle Standard-Skins (Steve, Alex, Ari, … je schmal/breit) aus einem installierten Client. */
+  builtinSkins: () => call<BuiltinSkins>('builtin_skins'),
+  /** Offizielle Skin-Pakete von minecraft.net (leer ohne Internet und Cache). */
+  skinPacks: () => call<SkinPack[]>('skin_packs'),
   /** Dateidialog (Mehrfachauswahl) → vorgemerkte Skins; `null` = abgebrochen. */
   pickSkinFiles: () => call<SkinImportBatch | null>('pick_skin_files'),
   /** Zuletzt ins Fenster gezogene Dateien vormerken (Marke aus dem `file-drop`-Event). */

@@ -557,7 +557,8 @@
       "playerNameInvalid": "Nazwy graczy mają 1–16 znaków: litery, cyfry lub _.",
       "playerNotFound": "Nie ma gracza o nazwie „{name}”.",
       "playerDefaultSkin": "{name} nosi domyślnego skina – nie ma czego importować.",
-      "importExpired": "Wybór wygasł – dodaj go ponownie."
+      "importExpired": "Wybór wygasł – dodaj go ponownie.",
+      "builtinMissing": "Ten skin jest teraz niedostępny – odśwież stronę."
     },
     "skinSync": {
       "accountSwitched": "Aktywne konto zostało przełączone – zmiany zostały odrzucone.",
@@ -2356,13 +2357,9 @@
     "submitting": "Wysyłanie …",
     "discard": "Odrzuć",
     "applyHint": "Wybierz skin, model i pelerynę – nic się nie zmieni, dopóki nie klikniesz „Zastosuj”.",
-    "mySkins": "Moje skiny",
     "onAccount": "{variant} · na twoim koncie",
     "defaultSkinHint": "Steve / Alex od Mojang",
     "defaultSkinFrom": "{name} – jak w Minecraft {version}",
-    "tryOnLabel": "Przymierz {name}",
-    "selected": "Wybrano",
-    "tryOn": "Przymierz",
     "rename": "Zmień nazwę",
     "empty": {
       "title": "Brak własnych skinów",
@@ -2461,7 +2458,28 @@
         "allDuplicates": "Te skiny są już w twojej kolekcji.",
         "skipped": "{n} skin był już w kolekcji | {n} skiny były już w kolekcji | {n} skinów było już w kolekcji"
       }
-    }
+    },
+    "tabsLabel": "Skiny, peleryny i kosmetyki",
+    "tabs": {
+      "skins": "Skiny",
+      "capes": "Peleryny",
+      "cosmetics": "Kosmetyki"
+    },
+    "sections": {
+      "saved": "Zapisane skiny",
+      "defaults": "Domyślne skiny",
+      "packs": "Oficjalne paczki skinów"
+    },
+    "dropHere": "lub przeciągnij go tutaj",
+    "badges": {
+      "worn": "Noszony",
+      "reset": "Resetuj",
+      "assigned": "Twój"
+    },
+    "accountDefault": "Domyślny dla konta",
+    "defaultsFrom": "Z Minecrafta {version}",
+    "defaultsMissing": "Zainstaluj dowolną wersję Minecrafta, aby wybierać spośród wszystkich domyślnych skinów.",
+    "packsSource": "Darmowe skiny z minecraft.net"
   },
   "validation": {
     "invalidCharacters": "Zawiera nieprawidłowe znaki",

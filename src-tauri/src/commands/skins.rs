@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 use trs_core::skin_import::{ImportBatch, ImportCandidate, ImportReport, ImportRequest, LauncherScan};
+use trs_core::skin_packs::{BuiltinSkinsView, SkinPackView};
 use trs_core::skin_sync::{SkinChanges, SkinSyncStatus};
 use trs_core::skins::{LibrarySkinView, Profile};
 
@@ -30,6 +31,18 @@ pub async fn player_skin_url(launcher: State<'_, LauncherState>, uuid: String) -
 #[tauri::command]
 pub async fn skin_library(launcher: State<'_, LauncherState>) -> CommandResult<Vec<LibrarySkinView>> {
     Ok(launcher.skin_library().await?)
+}
+
+/// Alle Standard-Skins (Steve, Alex, Ari, … je schmal und breit) aus einem installierten Client.
+#[tauri::command]
+pub async fn builtin_skins(launcher: State<'_, LauncherState>) -> CommandResult<BuiltinSkinsView> {
+    Ok(launcher.builtin_skins().await)
+}
+
+/// Offizielle Skin-Pakete von minecraft.net (leer ohne Internet und Cache).
+#[tauri::command]
+pub async fn skin_packs(launcher: State<'_, LauncherState>) -> CommandResult<Vec<SkinPackView>> {
+    Ok(launcher.skin_packs().await)
 }
 
 // --- Skins hinzufügen: erst vormerken (geprüft, mit Vorschau), dann übernehmen ---
