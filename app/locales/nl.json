@@ -2359,6 +2359,7 @@
     "mySkins": "Mijn skins",
     "onAccount": "{variant} · op je account",
     "defaultSkinHint": "Steve / Alex van Mojang",
+    "defaultSkinFrom": "{name} – zoals in Minecraft {version}",
     "tryOnLabel": "{name} passen",
     "selected": "Geselecteerd",
     "tryOn": "Passen",

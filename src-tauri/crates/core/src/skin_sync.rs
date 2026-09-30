@@ -854,7 +854,17 @@ mod tests {
     // --- Abarbeiter mit Attrappe -----------------------------------------------------
 
     fn profile() -> Profile {
-        Profile { name: "Test".into(), uuid: "acc".into(), variant: SkinVariant::Classic, skin: None, capes: vec![] }
+        Profile {
+            name: "Test".into(),
+            uuid: "acc".into(),
+            variant: SkinVariant::Classic,
+            skin: None,
+            default_skin: None,
+            default_variant: SkinVariant::Classic,
+            default_skin_name: "steve".into(),
+            default_skin_version: None,
+            capes: vec![],
+        }
     }
 
     /// Spielt vorgegebene Antworten ab und simuliert die Zeit.

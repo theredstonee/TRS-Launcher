@@ -1091,6 +1091,14 @@ export interface SkinProfile {
   variant: SkinVariant
   /** Aktive Skin-Textur als Data-URL. */
   skin: string | null
+  /** Standard-Textur dieses Kontos (aus einem installierten Client), sonst `null`. */
+  defaultSkin: string | null
+  /** Armbreite dieser Standard-Textur. */
+  defaultVariant: SkinVariant
+  /** Name des Standard-Skins (`steve`, `alex`, `ari`, …). */
+  defaultSkinName: string
+  /** Minecraft-Version, aus der die Standard-Textur stammt, sonst `null`. */
+  defaultSkinVersion: string | null
   capes: Cape[]
 }
 

@@ -2359,6 +2359,7 @@
     "mySkins": "My skins",
     "onAccount": "{variant} · on your account",
     "defaultSkinHint": "Steve / Alex from Mojang",
+    "defaultSkinFrom": "{name} – as in Minecraft {version}",
     "tryOnLabel": "Try on {name}",
     "selected": "Selected",
     "tryOn": "Try on",

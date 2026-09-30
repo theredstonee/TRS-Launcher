@@ -44,13 +44,15 @@ const draftLibrary = computed(() => {
 const previewSkin = computed(() => {
   const skin = draft.value.skin
   if (skin.source === 'library') return draftLibrary.value?.texture ?? null
-  if (skin.source === 'default') return defaultSkinTexture()
+  // Der Kern liest die echte Textur aus einem installierten Client (Steve, Alex, Ari, …);
+  // ohne installierte Version bleibt der gezeichnete Platzhalter (ohne Textur wäre das Modell unsichtbar).
+  if (skin.source === 'default') return profile.value?.defaultSkin ?? defaultSkinTexture()
   return profile.value?.skin ?? null
 })
 
 let defaultTexture: string | null = null
 /**
- * Platzhalter für „Standard-Skin“: eine selbst gezeichnete, schlichte Figur in
+ * Rückfall für „Standard-Skin“, solange keine Minecraft-Version installiert ist: eine selbst gezeichnete, schlichte Figur in
  * Steve-Farben (ohne leere Textur wäre das Modell unsichtbar). Welchen der
  * Standard-Skins Mojang vergibt, entscheidet Mojang selbst.
  */
@@ -97,7 +99,21 @@ function defaultSkinTexture(): string | null {
   defaultTexture = canvas.toDataURL('image/png')
   return defaultTexture
 }
-const previewVariant = computed<SkinVariant>(() => (draft.value.skin.source === 'default' ? 'classic' : draft.value.variant))
+
+/** Hinweis unter „Standard-Skin“: welcher Skin es ist und aus welcher Version – sonst der allgemeine Text. */
+const defaultSkinHint = computed(() => {
+  const p = profile.value
+  if (!p?.defaultSkin || !p.defaultSkinVersion) return t('skins.defaultSkinHint')
+  const name = p.defaultSkinName.charAt(0).toUpperCase() + p.defaultSkinName.slice(1)
+  return t('skins.defaultSkinFrom', { name, version: p.defaultSkinVersion })
+})
+const previewVariant = computed<SkinVariant>(() =>
+  draft.value.skin.source === 'default'
+    ? profile.value?.defaultSkin
+      ? profile.value.defaultVariant
+      : 'classic'
+    : draft.value.variant,
+)
 /** Angeprobter TRS-Umhang (ersetzt in der Vorschau den Mojang-Umhang, ändert aber nichts am Konto). */
 const trsPreview = ref<TrsCape | null>(null)
 /** Getragener TRS-Umhang – im Spiel sehen TRS-Spieler ihn statt des Mojang-Umhangs. */
@@ -708,7 +724,7 @@ function capeStyle(texture: string, width = 30) {
                 </span>
                 <span class="min-w-0 flex-1">
                   <span class="block truncate text-sm font-medium">{{ t('skins.defaultSkin') }}</span>
-                  <span class="block text-[11px] text-base-400">{{ t('skins.defaultSkinHint') }}</span>
+                  <span class="block text-[11px] text-base-400">{{ defaultSkinHint }}</span>
                 </span>
               </button>
             </li>
