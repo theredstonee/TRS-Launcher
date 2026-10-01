@@ -79,6 +79,7 @@ const allNav = computed<NavItem[]>(() => [
   { to: '/admin/circuits', icon: 'blocks', label: ct.value.adm.nav, count: counts.value?.circuits, perm: ['circuits.manage'] },
   { to: '/admin/issues', icon: 'bug', label: iss.value.adm.nav, count: counts.value?.issues, perm: ['issues.manage', 'issues.moderate'] },
   { to: '/admin/blog', icon: 'book', label: bt.value.adm.nav, perm: ['blog.write', 'blog.publish'] },
+  { to: '/admin/events', icon: 'moon', label: a.value.nav.events, perm: ['events.manage'] },
   { to: '/admin/codes', icon: 'ticket', label: a.value.nav.codes, perm: ['codes'] },
   { to: '/admin/word-filter', icon: 'filter', label: a.value.nav.wordFilter, perm: ['wordfilter'] },
   { to: '/admin/roles', icon: 'key', label: t.value.adm.nav.roles, perm: ['roles.manage'] },

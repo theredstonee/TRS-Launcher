@@ -104,6 +104,7 @@ const en = {
     allDownloads: 'All downloads',
     latest: 'Latest version {version}',
     free: 'Free · Open source · No account needed to try',
+    halloweenBanner: 'Halloween event: witch hat, pumpkin head, bat and cape free in the launcher',
     tiles: [
       { kicker: 'Vanilla to NeoForge', title: 'Every version', img: 'library.png', to: '/download' },
       { kicker: 'Built into every version', title: 'TRS Client', img: 'emote-wheel.png', to: '/features#client' },
@@ -442,6 +443,12 @@ const en = {
     glowing: 'Glows',
     animated: 'Animated',
     choose: 'Show {name} in 3D',
+    halloween: 'Halloween',
+    companionsTitle: 'Companions',
+    companionsLead: 'A little companion that flies with your head, worn on top of a hat. Free during the Halloween event, and you keep it afterwards.',
+    companionsEmpty: 'No companions to show right now.',
+    companionsHowTitle: 'How do I wear a companion?',
+    companionsHowText: 'Open the TRS Launcher, go to Skins → Cosmetics and pick a companion next to your hat. During Halloween you can claim it there for free.',
   },
   faq: {
     title: 'Frequently asked questions',
@@ -750,6 +757,7 @@ const de: Messages = {
     allDownloads: 'Alle Downloads',
     latest: 'Neueste Version {version}',
     free: 'Kostenlos · Open Source · Zum Ausprobieren ohne Konto',
+    halloweenBanner: 'Halloween-Event: Hexenhut, Kürbiskopf, Fledermaus & Umhang gratis im Launcher',
     tiles: [
       { kicker: 'Vanilla bis NeoForge', title: 'Jede Version', img: 'library.png', to: '/download' },
       { kicker: 'In jeder Version eingebaut', title: 'TRS Client', img: 'emote-wheel.png', to: '/features#client' },
@@ -1088,6 +1096,12 @@ const de: Messages = {
     glowing: 'Leuchtet',
     animated: 'Animiert',
     choose: '{name} in 3D ansehen',
+    halloween: 'Halloween',
+    companionsTitle: 'Begleiter',
+    companionsLead: 'Ein kleiner Begleiter, der mit dem Kopf mitfliegt – zusätzlich zum Hut. Während des Halloween-Events gratis, danach bleibt er dir.',
+    companionsEmpty: 'Gerade keine Begleiter zum Anzeigen.',
+    companionsHowTitle: 'Wie nehme ich einen Begleiter mit?',
+    companionsHowText: 'Öffne den TRS Launcher, geh auf Skins → Kosmetik und wähle einen Begleiter neben dem Hut. Während Halloween holst du ihn dort gratis.',
   },
   faq: {
     title: 'Häufige Fragen',
@@ -1395,6 +1409,7 @@ const es: Messages = {
     allDownloads: 'Todas las descargas',
     latest: 'Última versión {version}',
     free: 'Gratis · Código abierto · Pruébalo sin cuenta',
+    halloweenBanner: 'Evento de Halloween: sombrero de bruja, cabeza de calabaza, murciélago y capa gratis en el launcher',
     tiles: [
       { kicker: 'De Vanilla a NeoForge', title: 'Cada versión', img: 'library.png', to: '/download' },
       { kicker: 'Incluido en cada versión', title: 'TRS Client', img: 'emote-wheel.png', to: '/features#client' },
@@ -1708,6 +1723,12 @@ const es: Messages = {
     glowing: 'Brilla',
     animated: 'Animado',
     choose: 'Ver {name} en 3D',
+    halloween: 'Halloween',
+    companionsTitle: 'Compañeros',
+    companionsLead: 'Un pequeño compañero que vuela con tu cabeza, además del sombrero. Gratis durante el evento de Halloween y te lo quedas.',
+    companionsEmpty: 'Ahora no hay compañeros para mostrar.',
+    companionsHowTitle: '¿Cómo me pongo un compañero?',
+    companionsHowText: 'Abre el TRS Launcher, ve a Skins → Cosméticos y elige un compañero junto al sombrero. Durante Halloween lo reclamas ahí gratis.',
   },
   admin: {
     title: 'Admin',

@@ -11,6 +11,8 @@ interface ApiFetchOptions<T> {
   server?: boolean
   lazy?: boolean
   immediate?: boolean
+  /** z. B. `accept`, damit `/v1/events` nicht den alten SSE-Stream ausliefert. */
+  headers?: Record<string, string>
 }
 
 type RawUseFetch = (request: string | (() => string), opts: ApiFetchOptions<unknown>) => unknown

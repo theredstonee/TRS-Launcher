@@ -114,6 +114,30 @@
   --color-redstone-600: #2447b8;
   --color-redstone-900: #0f1c42;
 }
+/*
+ * Halloween (Klasse am <html>, solange GET /v1/events halloween global an ist).
+ * Nacht, Panel, Text und Orange als Akzent. Redstone-Rot bleibt für Redstone-Elemente.
+ */
+html.theme-halloween {
+  --color-base-950: #120a1c;
+  --color-base-900: #1d1428;
+  --color-base-850: #261a34;
+  --color-base-800: #322246;
+  --color-base-700: #46325c;
+  --color-base-600: #6b4d88;
+  --color-base-400: #c4b0dc;
+  --color-base-200: #e4d8f5;
+  --color-base-50: #efe6ff;
+
+  --color-lamp-300: #ffc48a;
+  --color-lamp-400: #ff7a1a;
+  --color-lamp-900: #3d220c;
+  --color-redstone-500: #e0352b;
+
+  --hw-orange: #ff7a1a;
+  --hw-purple: #6b2fa8;
+}
+
 :root[data-accent="amethyst"] {
   --color-redstone-300: #dcbcff;
   --color-redstone-400: #c38cfb;

@@ -8,6 +8,9 @@ const os = useVisitorOs()
 const { data: releaseData } = await useRelease()
 const { data: blogData } = await useBlog()
 const { data: capeData } = await useCapes()
+const { data: eventsData } = await usePublicEvents()
+/** Halloween-Hero nur, wenn das Event global an ist (dieselbe Abfrage wie die Klasse am html). */
+const halloween = computed(() => eventsData.value?.events.some((e) => e.id === 'halloween' && e.active) ?? false)
 
 const release = computed(() => releaseData.value?.release ?? null)
 const posts = computed(() => (blogData.value?.posts ?? []).slice(0, 3))
@@ -52,12 +55,16 @@ const powered = ref(false)
   <div>
     <section class="hero relative isolate overflow-hidden" :class="{ 'hero-on': powered }">
       <ClientOnly>
-        <RedstoneScene :mode="powered ? 'running' : 'idle'" :anchor="lamp">
+        <HalloweenScene v-if="halloween">
+          <div class="scrim" />
+        </HalloweenScene>
+        <RedstoneScene v-else :mode="powered ? 'running' : 'idle'" :anchor="lamp">
           <div class="scrim" />
         </RedstoneScene>
       </ClientOnly>
 
       <div class="relative mx-auto flex h-full max-w-6xl flex-col justify-end gap-8 px-4 pt-16 pb-12 sm:px-6">
+        <NuxtLink v-if="halloween" :to="lp('/cosmetics')" class="hw-banner">{{ m.home.halloweenBanner }}</NuxtLink>
         <!-- Die Zeile darüber gehört zur Überschrift (sichtbar, gleiche Optik wie vorher) – so steht „Minecraft-Launcher“ in der h1. -->
         <h1>
           <span class="block text-xs font-semibold tracking-[0.2em] text-lamp-300 uppercase">{{ m.home.kicker }}</span>
@@ -228,6 +235,20 @@ const powered = ref(false)
 .hero {
   min-height: 34rem;
   height: min(78vh, 44rem);
+}
+.hw-banner {
+  align-self: flex-start;
+  max-width: 36rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #6b2fa8;
+  background: color-mix(in srgb, #1d1428 88%, transparent);
+  color: #efe6ff;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+.hw-banner:hover {
+  border-color: #ff7a1a;
+  color: #ffc48a;
 }
 .scrim {
   position: absolute;

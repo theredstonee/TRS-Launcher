@@ -7,6 +7,7 @@ const { lang, m, fill } = useLang()
 const [{ data, error }, { data: hatData, error: hatError }] = await Promise.all([useCapes(), useHats()])
 const capes = computed(() => data.value?.capes ?? [])
 const hats = computed(() => hatData.value?.hats ?? [])
+const companions = computed(() => hatData.value?.companions ?? [])
 const selected = ref<SiteCape | null>(null)
 watchEffect(() => {
   if (!selected.value && capes.value.length) selected.value = capes.value[0]!
@@ -26,11 +27,11 @@ usePageSeo(() => ({
   ],
 }))
 
-type Unlockable = { unlock: 'free' | 'code' | 'admin', achievement?: { en: string, de: string, es: string } | null }
+type Unlockable = { unlock: 'free' | 'code' | 'admin' | 'event', achievement?: { en: string, de: string, es: string } | null }
 const unlockLabel = (c: Unlockable) =>
-  c.achievement ? fill(m.value.capes.achievement, { name: c.achievement[lang.value] ?? c.achievement.en }) : c.unlock === 'free' ? m.value.capes.free : c.unlock === 'code' ? m.value.capes.code : m.value.capes.admin
+  c.unlock === 'event' ? m.value.cosmetics.halloween : c.achievement ? fill(m.value.capes.achievement, { name: c.achievement[lang.value] ?? c.achievement.en }) : c.unlock === 'free' ? m.value.capes.free : c.unlock === 'code' ? m.value.capes.code : m.value.capes.admin
 const unlockClass = (c: Unlockable) =>
-  c.achievement ? 'bg-[#2a1f4a] text-[#c4a5ff]' : c.unlock === 'free' ? 'bg-ok/15 text-ok' : c.unlock === 'code' ? 'bg-lamp-900 text-lamp-300' : 'bg-redstone-900 text-redstone-300'
+  c.unlock === 'event' ? 'badge-hw' : c.achievement ? 'bg-[#2a1f4a] text-[#c4a5ff]' : c.unlock === 'free' ? 'bg-ok/15 text-ok' : c.unlock === 'code' ? 'bg-lamp-900 text-lamp-300' : 'bg-redstone-900 text-redstone-300'
 
 // Kopf-Kosmetik: Klick wählt aus, Überfahren (nur mit Maus) zeigt kurz in der Vorschau.
 const hatId = ref<string | null>(null)
@@ -40,8 +41,14 @@ const shownHat = computed(() => hats.value.find((h) => h.id === hoverId.value) ?
 const night = ref(false)
 const animate = ref(true)
 const hatLoading = ref(false)
+const compId = ref<string | null>(null)
+const compHover = ref<string | null>(null)
+const selectedComp = computed(() => companions.value.find((h) => h.id === compId.value) ?? companions.value[0] ?? null)
+const shownComp = computed(() => companions.value.find((h) => h.id === compHover.value) ?? selectedComp.value)
+const compLoading = ref(false)
 let canHover = false
 let hoverTimer: ReturnType<typeof setTimeout> | null = null
+let compHoverTimer: ReturnType<typeof setTimeout> | null = null
 onMounted(() => {
   canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches
   // Weniger Bewegung gewünscht → Animation startet aus (Schalter bleibt da).
@@ -49,6 +56,7 @@ onMounted(() => {
 })
 onBeforeUnmount(() => {
   if (hoverTimer) clearTimeout(hoverTimer)
+  if (compHoverTimer) clearTimeout(compHoverTimer)
 })
 function hoverHat(id: string | null) {
   if (!canHover) return
@@ -59,6 +67,16 @@ function hoverHat(id: string | null) {
 function pickHat(h: SiteHat) {
   hatId.value = h.id
   hoverId.value = null
+}
+
+function hoverComp(id: string | null) {
+  if (!canHover) return
+  if (compHoverTimer) clearTimeout(compHoverTimer)
+  compHoverTimer = setTimeout(() => (compHover.value = id), id ? 140 : 60)
+}
+function pickComp(h: SiteHat) {
+  compId.value = h.id
+  compHover.value = null
 }
 </script>
 
@@ -187,10 +205,79 @@ function pickHat(h: SiteHat) {
         </aside>
       </div>
     </section>
+
+    <div class="divider my-16" role="separator" aria-hidden="true"><span /></div>
+
+    <!-- Begleiter (slot companion), zusätzlich zum Hut -->
+    <section id="companions" class="scroll-mt-24 pb-16" aria-labelledby="companions-title">
+      <h2 id="companions-title" class="display text-3xl text-base-50">{{ m.cosmetics.companionsTitle }}</h2>
+      <p class="mt-2 max-w-2xl text-base-400">{{ m.cosmetics.companionsLead }}</p>
+
+      <p v-if="hatError" class="mt-8 text-lamp-300">{{ m.common.error }}</p>
+      <p v-else-if="!companions.length" class="mt-8 text-base-400">{{ m.cosmetics.companionsEmpty }}</p>
+      <div v-else class="mt-8 grid gap-6 lg:grid-cols-[1fr_22rem]">
+        <ul class="grid grid-cols-2 content-start gap-3 sm:grid-cols-3" @pointerleave="hoverComp(null)">
+          <li v-for="h in companions" :key="h.id">
+            <button
+              type="button"
+              class="cos-card card hat-card"
+              :class="{ 'cos-card-on': selectedComp?.id === h.id }"
+              :aria-pressed="selectedComp?.id === h.id"
+              :aria-label="fill(m.cosmetics.choose, { name: h.name })"
+              @click="pickComp(h)"
+              @pointerenter="hoverComp(h.id)"
+            >
+              <span class="hat-img" :class="{ 'hat-img-night': night }">
+                <img :src="h.card" alt="" width="512" height="512" loading="lazy" decoding="async" class="hat-day" />
+                <img :src="h.cardNight" alt="" width="512" height="512" loading="lazy" decoding="async" class="hat-night" />
+              </span>
+              <span class="mt-3 block truncate text-sm font-semibold text-base-50">{{ h.name }}</span>
+              <span class="mt-1.5 flex flex-wrap justify-center gap-1">
+                <span class="badge" :class="unlockClass(h)">{{ unlockLabel(h) }}</span>
+                <span v-if="h.glowFrames > 0" class="badge bg-redstone-900 text-redstone-300">{{ m.cosmetics.glowing }}</span>
+                <span v-if="h.animated" class="badge bg-lamp-900 text-lamp-300">{{ m.cosmetics.animated }}</span>
+              </span>
+            </button>
+          </li>
+        </ul>
+
+        <aside class="lg:sticky lg:top-24 lg:self-start">
+          <div class="card overflow-hidden">
+            <div class="stage relative" :class="{ 'stage-night': night }">
+              <ClientOnly><HatViewer :hat="shownComp" :night="night" :animate="animate" :height="400" @loading="compLoading = $event" /></ClientOnly>
+              <p class="absolute top-3 left-4 text-xs tracking-[0.18em] text-base-400 uppercase">{{ m.capes.preview }}</p>
+              <p class="absolute right-4 bottom-3 text-xs text-base-600">{{ m.capes.dragHint }}</p>
+              <span v-if="compLoading" class="spinner absolute top-3 right-4" aria-hidden="true" />
+            </div>
+            <div class="flex flex-wrap items-center gap-2 border-t border-base-800 px-5 py-3">
+              <div class="seg" role="group" :aria-label="`${m.cosmetics.day} / ${m.cosmetics.night}`">
+                <button type="button" :aria-pressed="!night" @click="night = false"><SiteIcon name="sun" class="size-3.5" />{{ m.cosmetics.day }}</button>
+                <button type="button" :aria-pressed="night" @click="night = true"><SiteIcon name="moon" class="size-3.5" />{{ m.cosmetics.night }}</button>
+              </div>
+              <button type="button" class="tog" :aria-pressed="animate" @click="animate = !animate">
+                <SiteIcon :name="animate ? 'pause' : 'play'" class="size-3.5" />{{ m.cosmetics.animation }}
+              </button>
+            </div>
+            <div v-if="shownComp" class="border-t border-base-800 p-5">
+              <p class="display text-2xl text-base-50">{{ shownComp.name }}</p>
+              <span class="badge mt-2" :class="unlockClass(shownComp)">{{ unlockLabel(shownComp) }}</span>
+            </div>
+          </div>
+          <div class="mt-5 p-1">
+            <h3 class="font-semibold text-base-50">{{ m.cosmetics.companionsHowTitle }}</h3>
+            <p class="mt-1.5 text-sm text-base-400">{{ m.cosmetics.companionsHowText }}</p>
+          </div>
+        </aside>
+      </div>
+    </section>
   </div>
 </template>
 
 <style scoped>
+.badge-hw {
+  background: #2a1840;
+  color: #ffb06a;
+}
 .cos-card {
   display: block;
   width: 100%;

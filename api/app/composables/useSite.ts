@@ -72,9 +72,23 @@ export function useCapes() {
   return useApiFetch<{ capes: SiteCape[] }>('/v1/site/capes', { key: 'capes', default: () => ({ capes: [] }) })
 }
 
-/** Kopf-Kosmetik im Format v2 (Hüte, Kronen, Heiligenschein) – ohne versteckte Teile. */
+/** Kopf-Kosmetik im Format v2: `hats` und `companions` (Begleiter), ohne versteckte Teile. */
 export function useHats() {
-  return useApiFetch<{ hats: SiteHat[] }>('/v1/site/cosmetics', { key: 'hats', default: () => ({ hats: [] }) })
+  return useApiFetch<{ hats: SiteHat[], companions: SiteHat[] }>('/v1/site/cosmetics', { key: 'hats', default: () => ({ hats: [], companions: [] }) })
+}
+
+export interface PublicEvent {
+  id: string
+  active: boolean
+}
+
+/** Öffentlicher Event-Stand (`GET /v1/events`, nur global). Dieselbe Adresse mit `text/event-stream` ist der alte Stream – useFetch fragt JSON. */
+export function usePublicEvents() {
+  return useApiFetch<{ events: PublicEvent[] }>('/v1/events', {
+    key: 'public-events',
+    default: () => ({ events: [] }),
+    headers: { accept: 'application/json' },
+  })
 }
 
 export function assetFor(release: LatestRelease | null | undefined, platform: Platform): ReleaseAsset | null {
