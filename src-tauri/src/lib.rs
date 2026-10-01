@@ -297,6 +297,8 @@ pub fn run() {
             commands::accounts::set_active_account,
             commands::accounts::remove_account,
             commands::content::list_content,
+            commands::content::duplicate_mods,
+            commands::content::resolve_duplicate_mods,
             commands::content::set_content_enabled,
             commands::content::delete_content,
             commands::content::installed_projects,

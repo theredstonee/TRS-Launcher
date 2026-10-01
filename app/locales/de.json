@@ -1065,6 +1065,16 @@
     "updateTo": "Auf {version} aktualisieren"
   },
   "content": {
+    "duplicates": {
+      "title": "Dieselbe Mod ist mehrfach installiert",
+      "text": "Minecraft lädt jede Kopie. Das kann das Spielfenster verzögern, die FPS senken und im Vollbild abstürzen. Nichts wird gelöscht: ältere Kopien bleiben im Mods-Ordner als .disabled und lassen sich wieder einschalten.",
+      "line": "{name}: {keep} behalten, {files} deaktivieren",
+      "fix": "Neueste behalten",
+      "fixing": "Ältere Kopien werden deaktiviert …",
+      "anyway": "Trotzdem starten",
+      "done": "Ältere Kopien deaktiviert: {files}",
+      "banner": "{n} Mod ist mehrfach installiert. Minecraft lädt jede Kopie – das kann das Fenster verzögern, die FPS senken und im Vollbild abstürzen. | {n} Mods sind mehrfach installiert. Minecraft lädt jede Kopie – das kann das Fenster verzögern, die FPS senken und im Vollbild abstürzen."
+    },
     "toasts": {
       "upToDate": "Alles ist aktuell",
       "fileAdded": "{name} hinzugefügt",

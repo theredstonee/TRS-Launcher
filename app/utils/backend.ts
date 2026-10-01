@@ -166,6 +166,7 @@ import type {
   SkinPack,
   ContentItem,
   ContentKind,
+  DuplicateModGroup,
   ContentUpdate,
   DeviceCode,
   HistoryEntry,
@@ -348,6 +349,10 @@ export const backend = {
   removeAccount: (id: string) => call<void>('remove_account', { id }),
 
   listContent: (id: string, kind: ContentKind) => call<ContentItem[]>('list_content', { id, kind }),
+  /** Aktivierte Jars mit derselben Mod-ID (fabric.mod.json / mods.toml, nicht der Dateiname). */
+  duplicateMods: (id: string) => call<DuplicateModGroup[]>('duplicate_mods', { id }),
+  /** Ältere Kopien nach `.disabled` umbenennen. Löscht nichts. Liefert die deaktivierten Dateinamen. */
+  resolveDuplicateMods: (id: string) => call<string[]>('resolve_duplicate_mods', { id }),
   setContentEnabled: (id: string, kind: ContentKind, fileName: string, enabled: boolean) =>
     call<void>('set_content_enabled', { id, kind, fileName, enabled }),
   deleteContent: (id: string, kind: ContentKind, fileName: string) =>

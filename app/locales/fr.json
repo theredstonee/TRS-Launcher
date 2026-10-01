@@ -1065,6 +1065,16 @@
     "updateTo": "Mettre à jour vers {version}"
   },
   "content": {
+    "duplicates": {
+      "title": "Mods en double",
+      "text": "Minecraft charge chaque copie. Cela peut retarder la fenêtre du jeu, faire chuter les FPS et planter en plein écran. Rien n'est supprimé : les copies plus anciennes restent dans le dossier des mods en .disabled et peuvent être réactivées.",
+      "line": "{name} : garder {keep}, désactiver {files}",
+      "fix": "Garder la plus récente",
+      "fixing": "Désactivation des anciennes copies …",
+      "anyway": "Lancer quand même",
+      "done": "Anciennes copies désactivées : {files}",
+      "banner": "{n} mod est installé plusieurs fois. Minecraft charge chaque copie, ce qui peut retarder la fenêtre, faire chuter les FPS et planter en plein écran. | {n} mods sont installés plusieurs fois. Minecraft charge chaque copie, ce qui peut retarder la fenêtre, faire chuter les FPS et planter en plein écran."
+    },
     "toasts": {
       "upToDate": "Tout est à jour",
       "fileAdded": "{name} ajouté",

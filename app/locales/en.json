@@ -1065,6 +1065,16 @@
     "updateTo": "Update to {version}"
   },
   "content": {
+    "duplicates": {
+      "title": "Duplicate mods",
+      "text": "Minecraft loads every copy. That can delay the game window, drop FPS, and crash in fullscreen. Nothing is deleted: older copies stay in the mods folder as .disabled and can be turned back on.",
+      "line": "{name}: keep {keep}, disable {files}",
+      "fix": "Keep the newest",
+      "fixing": "Disabling older copies …",
+      "anyway": "Start anyway",
+      "done": "Older copies disabled: {files}",
+      "banner": "{n} mod is installed more than once. Minecraft loads every copy, which can delay the window, drop FPS, and crash in fullscreen. | {n} mods are installed more than once. Minecraft loads every copy, which can delay the window, drop FPS, and crash in fullscreen."
+    },
     "toasts": {
       "upToDate": "Everything is up to date",
       "fileAdded": "{name} added",

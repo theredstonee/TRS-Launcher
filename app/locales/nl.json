@@ -1065,6 +1065,16 @@
     "updateTo": "Bijwerken naar {version}"
   },
   "content": {
+    "duplicates": {
+      "title": "Dubbele mods",
+      "text": "Minecraft laadt elke kopie. Dat kan het spelvenster vertragen, de FPS laten dalen en in volledig scherm crashen. Er wordt niets verwijderd: oudere kopieën blijven in de mods-map als .disabled en kunnen weer worden ingeschakeld.",
+      "line": "{name}: {keep} houden, {files} uitschakelen",
+      "fix": "Nieuwste behouden",
+      "fixing": "Oudere kopieën worden uitgeschakeld …",
+      "anyway": "Toch starten",
+      "done": "Oudere kopieën uitgeschakeld: {files}",
+      "banner": "{n} mod is meer dan eens geïnstalleerd. Minecraft laadt elke kopie, wat het venster kan vertragen, de FPS kan laten dalen en in volledig scherm kan crashen. | {n} mods zijn meer dan eens geïnstalleerd. Minecraft laadt elke kopie, wat het venster kan vertragen, de FPS kan laten dalen en in volledig scherm kan crashen."
+    },
     "toasts": {
       "upToDate": "Alles is up-to-date",
       "fileAdded": "{name} toegevoegd",

@@ -1065,6 +1065,16 @@
     "updateTo": "Actualizar a {version}"
   },
   "content": {
+    "duplicates": {
+      "title": "Mods duplicados",
+      "text": "Minecraft carga cada copia. Eso puede retrasar la ventana del juego, bajar los FPS y bloquear el juego en pantalla completa. No se borra nada: las copias antiguas se quedan en la carpeta de mods como .disabled y se pueden volver a activar.",
+      "line": "{name}: conservar {keep}, desactivar {files}",
+      "fix": "Quedarse con la más reciente",
+      "fixing": "Desactivando copias antiguas …",
+      "anyway": "Iniciar de todos modos",
+      "done": "Copias antiguas desactivadas: {files}",
+      "banner": "{n} mod está instalado más de una vez. Minecraft carga cada copia, lo que puede retrasar la ventana, bajar los FPS y bloquear el juego en pantalla completa. | {n} mods están instalados más de una vez. Minecraft carga cada copia, lo que puede retrasar la ventana, bajar los FPS y bloquear el juego en pantalla completa."
+    },
     "toasts": {
       "upToDate": "Todo está actualizado",
       "fileAdded": "{name} añadido",
