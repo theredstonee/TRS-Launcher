@@ -18,6 +18,7 @@ import {
   trsParse,
   trsPlayerCapeSchema,
   trsRedeemSchema,
+  trsAdminEventSchema,
   trsHatSchema,
   trsHeadCosmeticModelSchema,
   trsHeadCosmeticSchema,
@@ -701,6 +702,17 @@ export const backend = {
     /** v2-Modell + Texturen für die 3D-Vorschau (auch gesperrte Teile – zum Anprobieren). */
     headCosmeticModel: (id: string) => checked(trsHeadCosmeticModelSchema, 'trs_head_cosmetic_model', { id }),
     setHat: (id: string | null) => call<void>('trs_set_hat', { id }),
+    /** Begleiter (Fledermaus …) auf-/absetzen, unabhängig vom Hut. */
+    setCompanion: (id: string | null) => call<void>('trs_set_companion', { id }),
+    /** Event-Kosmetik bzw. -Umhang gratis holen (nur solange das Event für dich läuft). */
+    claimCosmetic: (id: string) => call<void>('trs_claim_cosmetic', { id }),
+    claimCape: (id: string) => call<void>('trs_claim_cape', { id }),
+    /** Zuletzt bekannte aktive Events (ohne Netz). */
+    activeEvents: () => checked(z.array(z.string()), 'trs_active_events'),
+    adminEvents: () => checked(z.array(trsAdminEventSchema), 'trs_admin_events'),
+    adminSetEvent: (id: string, enabled: boolean) => call<void>('trs_admin_set_event', { id, enabled }),
+    adminAddEventPlayer: (id: string, player: string) => call<void>('trs_admin_add_event_player', { id, player }),
+    adminRemoveEventPlayer: (id: string, uuid: string) => call<void>('trs_admin_remove_event_player', { id, uuid }),
     playerCapes: (uuids: string[]) => checked(z.array(trsPlayerCapeSchema), 'trs_player_capes', { uuids }),
     /** Umhänge teilen: offene Angebote an mich (mit Vorschau) und von mir. */
     capeOffers: () => checked(trsCapeOffersSchema, 'trs_cape_offers'),

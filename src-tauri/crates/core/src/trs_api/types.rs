@@ -166,8 +166,27 @@ pub enum Unlock {
     Code,
     Admin,
     Owner,
+    /// Gratis, solange ein Event läuft (`unlockEvent`), danach behalten.
+    Event,
     #[serde(other)]
     Other,
+}
+
+/// Freischaltung eines Umhangs: Zeichenkette (`code`) oder Objekt (`{ "type": "event", "event": "halloween" }`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct UnlockSpec {
+    pub kind: Unlock,
+    pub event: Option<String>,
+}
+
+impl<'de> Deserialize<'de> for UnlockSpec {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> std::result::Result<Self, D::Error> {
+        let v = serde_json::Value::deserialize(d)?;
+        let name = v.as_str().or_else(|| v.get("type").and_then(serde_json::Value::as_str)).unwrap_or_default();
+        let kind = serde_json::from_value(serde_json::Value::String(name.to_owned())).unwrap_or(Unlock::Other);
+        let event = v.get("event").and_then(serde_json::Value::as_str).filter(|e| super::events::event_id(e)).map(str::to_owned);
+        Ok(Self { kind, event })
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -188,7 +207,7 @@ pub(crate) struct ApiCape {
     #[serde(default)]
     pub name: String,
     pub kind: CapeKind,
-    pub unlock: Unlock,
+    pub unlock: UnlockSpec,
     pub status: CapeStatus,
     pub url: String,
     pub width: u32,
@@ -262,6 +281,8 @@ pub struct CapeItem {
     pub name: String,
     pub kind: CapeKind,
     pub unlock: Unlock,
+    /// Bei `unlock == event`: welches Event (`halloween`).
+    pub unlock_event: Option<String>,
     pub status: CapeStatus,
     pub width: u32,
     pub height: u32,
@@ -286,7 +307,8 @@ impl CapeItem {
             id: cape.id.clone(),
             name: validate::cape_name(&cape.name, &cape.id),
             kind: cape.kind,
-            unlock: cape.unlock,
+            unlock: cape.unlock.kind,
+            unlock_event: cape.unlock.event.clone(),
             status: cape.status,
             width: cape.width,
             height: cape.height,

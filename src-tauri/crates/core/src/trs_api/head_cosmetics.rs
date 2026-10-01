@@ -207,7 +207,7 @@ pub(crate) fn check_model(model: &Value, id: &str) -> Option<ModelInfo> {
     if uint(o, "format")? != 2 || o.get("id")?.as_str()? != id {
         return None;
     }
-    if o.get("slot")?.as_str()? != "hat" || o.get("attach")?.as_str()? != "head" {
+    if !matches!(o.get("slot")?.as_str()?, "hat" | "companion") || o.get("attach")?.as_str()? != "head" {
         return None;
     }
     let tex = o.get("texture")?.as_object()?;

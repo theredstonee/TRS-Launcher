@@ -252,6 +252,8 @@ export const liveEventSchema = z.discriminatedUnion('type', [
       chatTypingIndicator: z.boolean(),
     }),
   }),
+  /** Aktive Events dieses Spielers haben sich geändert (API §31). */
+  z.object({ type: z.literal('events_changed'), events: z.array(z.string().regex(/^[a-z][a-z0-9_-]{0,31}$/)).max(16) }),
   ...hostingEventSchemas,
   ...packEventSchemas,
   ...issueEventSchemas,

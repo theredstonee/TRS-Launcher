@@ -14,6 +14,8 @@ const text = (max: number) => z.string().max(max)
 const pngDataUrl = z.string().startsWith('data:image/png;base64,').nullable()
 /** Umhang-Faktor 1–8 (bis 512×256 je Frame), mitgelieferte wie eigene – wie `MAX_CAPE_SCALE` im Kern. */
 const capeScale = z.number().int().min(1).max(8)
+/** Event-ID (`halloween`) – wie `event_id` im Kern. */
+export const eventId = z.string().regex(/^[a-z][a-z0-9_-]{0,31}$/)
 
 export const trsStatusSchema = z.object({
   consent: z.enum(['accepted', 'declined']).nullable(),
@@ -43,6 +45,8 @@ export const trsMeSchema = z.object({
   createdAt: text(40).nullable(),
   settings: trsPrivacySchema,
   activeCapeId: capeId.nullable(),
+  /** Events, die für diesen Spieler aktiv sind (API §31); ältere Server: leer. */
+  events: z.array(eventId).max(16).catch([]).default([]),
 })
 
 const userRef = z.object({ uuid, name: text(16) })
@@ -54,7 +58,9 @@ export const trsCapeSchema = z.object({
   id: capeId,
   name: text(48),
   kind: z.enum(['builtin', 'upload', 'other']),
-  unlock: z.enum(['free', 'code', 'admin', 'owner', 'other']),
+  unlock: z.enum(['free', 'code', 'admin', 'owner', 'event', 'other']),
+  /** Bei `event`: welches Event den Umhang gratis macht. */
+  unlockEvent: eventId.nullable().catch(null).default(null),
   status: z.enum(['approved', 'pending', 'rejected', 'other']),
   width: z.number().int().positive(),
   height: z.number().int().positive(),
@@ -106,11 +112,13 @@ export const trsRedeemSchema = z.object({
 })
 
 /** Eigene Kopf-Kosmetik (nur Teile, die der TRS Client zeichnen kann). */
-export const trsHatSchema = z.object({ id: capeId, name: text(48), template: text(32), equipped: z.boolean() })
+/** Kopf-Kosmetik: `hat` (Kopf) oder `companion` (Begleiter, z. B. Fledermaus). */
+export const trsCosmeticSlotSchema = z.enum(['hat', 'companion']).catch('hat').default('hat')
+export const trsHatSchema = z.object({ id: capeId, name: text(48), slot: trsCosmeticSlotSchema, template: text(32), equipped: z.boolean() })
 export type TrsHat = z.infer<typeof trsHatSchema>
 
 /** Wie man an ein Kosmetik-Teil kommt (unbekannte Arten → `other`). */
-export const trsCosmeticUnlockSchema = z.enum(['free', 'code', 'admin', 'achievement', 'owner', 'other']).catch('other')
+export const trsCosmeticUnlockSchema = z.enum(['free', 'code', 'admin', 'achievement', 'owner', 'event', 'other']).catch('other')
 export type TrsCosmeticUnlock = z.infer<typeof trsCosmeticUnlockSchema>
 
 /** Kopf-Kosmetik für die Skins-Seite: besessen oder gesperrt, v2 = 3D-Modell mit Vorschau. */
@@ -118,8 +126,11 @@ export const trsHeadCosmeticSchema = z.object({
   id: capeId,
   name: text(48),
   format: z.union([z.literal(1), z.literal(2)]),
+  slot: trsCosmeticSlotSchema,
   template: text(32).nullable(),
   unlock: trsCosmeticUnlockSchema,
+  /** Bei `event`: welches Event das Teil gratis macht (solange es läuft, danach behalten). */
+  unlockEvent: eventId.nullable().catch(null).default(null),
   owned: z.boolean(),
   equipped: z.boolean(),
   /** Der Launcher kann das Modell in der 3D-Vorschau zeigen. */
@@ -293,6 +304,26 @@ export const trsSyncEventSchema = z.object({
 
 export type TrsStatus = z.infer<typeof trsStatusSchema>
 export type TrsPrivacy = z.infer<typeof trsPrivacySchema>
+/** Event in der Team-Verwaltung (`GET /v1/admin/events`). */
+export const trsAdminEventSchema = z.object({
+  id: eventId,
+  enabled: z.boolean(),
+  updatedAt: z.union([z.string().max(40), z.number()]).nullable().catch(null).default(null),
+  players: z
+    .array(
+      z.object({
+        uuid,
+        name: text(16).catch(''),
+        addedAt: z.union([z.string().max(40), z.number()]).nullable().catch(null).default(null),
+      }),
+    )
+    .max(500)
+    .catch([])
+    .default([]),
+})
+export type TrsAdminEvent = z.infer<typeof trsAdminEventSchema>
+export type TrsCosmeticSlot = z.infer<typeof trsCosmeticSlotSchema>
+
 export type TrsMe = z.infer<typeof trsMeSchema>
 export type TrsCape = z.infer<typeof trsCapeSchema>
 export type TrsIncomingOffer = z.infer<typeof trsIncomingOfferSchema>
@@ -409,6 +440,8 @@ export function trsUnlockLabel(cape: Pick<TrsCape, 'unlock' | 'kind'> & { shared
       return t('trs.unlock.code')
     case 'admin':
       return t('trs.unlock.team')
+    case 'event':
+      return t('trs.unlock.event')
     default:
       return t('trs.unlock.locked')
   }

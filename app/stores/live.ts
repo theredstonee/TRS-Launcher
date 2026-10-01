@@ -69,6 +69,7 @@ export const useLiveStore = defineStore('live', () => {
     const trs = useTrsStore()
     const hosting = useHostingStore()
     await Promise.allSettled([
+      trs.loadMe(),
       trs.loadFriends(),
       trs.loadCapeOffers(),
       useChatStore().resync(),

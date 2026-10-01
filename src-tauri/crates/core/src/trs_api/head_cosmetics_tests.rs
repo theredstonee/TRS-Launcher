@@ -265,3 +265,12 @@ fn event_unlock_and_companion_slot() {
     assert!(wearable_hat(&bat) && listed(&bat));
     assert!(!wearable_hat(&entry(json!({ "id": "bat", "slot": "companion", "template": "duck" }))), "Begleiter nur als v2");
 }
+
+#[test]
+fn companion_models_pass_the_check() {
+    let mut m = model("bat_buddy", Some(12));
+    m["slot"] = json!("companion");
+    assert!(check_model(&m, "bat_buddy").is_some());
+    m["slot"] = json!("back");
+    assert!(check_model(&m, "bat_buddy").is_none());
+}

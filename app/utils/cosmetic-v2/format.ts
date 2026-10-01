@@ -118,7 +118,8 @@ export interface CosmeticModel {
   format: 2
   id: string
   name: string
-  slot: 'hat'
+  /** `hat` = Kopf-Kosmetik, `companion` = Begleiter (zusätzlich zum Hut, seit Halloween 2026). */
+  slot: 'hat' | 'companion'
   attach: 'head'
   texture: CosmeticStrip & { width: number; height: number; scale: number }
   glow?: (CosmeticStrip & { blend?: 'additive' }) | null
@@ -363,7 +364,7 @@ export function validateModel(m: unknown, images: { texture?: ImageSize | null; 
   if (m.format !== FORMAT) err('format', `muss ${FORMAT} sein`)
   if (!ID.test(String(m.id ?? ''))) err('id', 'a–z, 0–9, _ (Anfang Buchstabe), max. 40')
   if (typeof m.name !== 'string' || !m.name.trim() || m.name.length > 60) err('name', '1–60 Zeichen')
-  if (m.slot !== 'hat') err('slot', 'hat')
+  if (m.slot !== 'hat' && m.slot !== 'companion') err('slot', 'hat oder companion')
   if (m.attach !== 'head') err('attach', 'head')
 
   const tex = (isObject(m.texture) ? m.texture : {}) as Record<string, number | string | undefined>

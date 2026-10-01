@@ -174,6 +174,17 @@ mod tests {
     }
 
     #[test]
+    fn cape_unlock_accepts_string_and_event_object() {
+        use super::super::types::{Unlock, UnlockSpec};
+        let plain: UnlockSpec = serde_json::from_value(json!("code")).unwrap();
+        assert_eq!((plain.kind, plain.event), (Unlock::Code, None));
+        let ev: UnlockSpec = serde_json::from_value(json!({ "type": "event", "event": "halloween" })).unwrap();
+        assert_eq!((ev.kind, ev.event.as_deref()), (Unlock::Event, Some("halloween")));
+        let odd: UnlockSpec = serde_json::from_value(json!({ "type": "nuke", "event": "Bad Id" })).unwrap();
+        assert_eq!((odd.kind, odd.event), (Unlock::Other, None));
+    }
+
+    #[test]
     fn admin_events_accept_list_and_wrapper_and_drop_junk() {
         let raw = json!([
             { "id": "halloween", "enabled": true, "updatedAt": 5, "players": [
