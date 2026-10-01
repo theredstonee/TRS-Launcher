@@ -232,10 +232,11 @@ Auth required.
     "chatReadReceipts": true,
     "chatTypingIndicator": true
   },
-  "activeCape": null
+  "activeCape": null,
+  "events": []
 }
 ```
-`activeCape` is either `null` or a **CapeView** (§5.1).
+`activeCape` is either `null` or a **CapeView** (§5.1). `events` lists the ids of the events that are **active for you** – switched on globally **or** you were allowed individually (§32), e.g. `["halloween"]`. Older servers don't send it: treat a missing field as `[]`. Changes arrive as `events_changed` on `GET /v1/events/me` (§19).
 
 | Setting | Default | Effect |
 |---|---|---|
@@ -455,7 +456,8 @@ This object is used everywhere a cape is returned.
 |---|---|
 | `id` | `^[a-z0-9][a-z0-9_-]{0,39}$`. Built-in capes have readable ids such as `redstone` or `team`. Uploads use `u` followed by 20 hex digits. |
 | `kind` | `builtin` \| `upload` |
-| `unlock` | `free` \| `code` (unlockable with a code or an admin grant) \| `admin` (admin grant or code only) \| `owner` (an upload, only for its uploader) |
+| `unlock` | `free` \| `code` (unlockable with a code or an admin grant) \| `admin` (admin grant or code only) \| `owner` (an upload, only for its uploader) \| `event` (free to claim while an event is active for you, §32; the event id is in `event`) |
+| `event` | Only on event capes (`unlock: "event"`), e.g. `"halloween"`. |
 | `status` | `approved` \| `pending` \| `rejected`. Built-in capes are always `approved`. |
 | `url` | Absolute texture URL. `?v=` changes whenever the content changes. **Use the URL as given.** |
 | `width`, `height` | Size of **one frame** in pixels. Always `64·scale × 32·scale`. |
@@ -636,6 +638,16 @@ Auth required. Both paths behave identically and share the rate-limit buckets. A
 | 404 | `invalid_code` (unknown or revoked) |
 | 410 | `code_expired`, `code_used_up` |
 | 429 | Brute-force lock (§1.3) |
+
+### 5.9a `POST /v1/me/capes/{id}/claim`
+
+Auth required. Claims an **event cape** (`unlock: "event"`, §32) for free. **200** `{ "owned": true }`. It is idempotent: whoever already owns the cape gets `owned: true` even after the event ended – claimed items are **kept for good**. Event capes are listed in `GET /v1/capes` only while the event is active for you or once you own them.
+
+| HTTP | code | Meaning |
+|---|---|---|
+| 403 | `event_inactive` | The event is not active for you (neither on globally nor allowed individually). |
+| 400 | `not_claimable` | Not an event cape. |
+| 404 | `cape_not_found` | Unknown, retired or an upload. |
 
 ### 5.10 Sharing capes with friends
 
@@ -1218,14 +1230,14 @@ Animated particle textures use the same frame formula as models. All particles o
 | Field | Meaning |
 |---|---|
 | `id` | `^[a-z0-9][a-z0-9_-]{0,39}$`. Uploads use `c` followed by 20 hex digits. Emotes use their emote id (§12). |
-| `slot` | `hat` \| `wings` \| `back` \| `aura` \| `emote` |
-| `kind`, `unlock`, `status` | As for capes (§5.1). Emotes are always `builtin`. |
+| `slot` | `hat` \| `wings` \| `back` \| `aura` \| `companion` \| `emote`. `companion` (since Halloween 2026, format 2 only) is worn **in addition to** a hat. |
+| `kind`, `unlock`, `status` | As for capes (§5.1). Emotes are always `builtin`. `unlock` can also be `event` (§32): free to claim while the event is active for you; then the extra field `event` holds the event id (e.g. `"halloween"`). |
 | `template` | Template id, or `null` for emotes. |
 | `texture` | `null` for emotes. `width`/`height` are the size of **one frame** in pixels (`textureWidth·scale` × `textureHeight·scale`). `url` works like a cape URL (§5.4). |
 | `emissive` | Render at full brightness (§11.3). |
 | `emote` | `{ "durationMs", "loop" }` for emotes, otherwise `null`. |
 
-**LookupCosmetic** is the flat form used in the lookup and in events: `{ id, template, url, scale, animated, frames, frameTimeMs, emissive }` for format 1, `{ id, format: 2, model, url, scale, animated, frames, frameTimeMs, glow, glowFrames, glowFrameTimeMs, hash }` for format 2 (§11.9).
+**LookupCosmetic** is the flat form used in the lookup and in events (`cosmetics` has the keys `hat`, `wings`, `back`, `aura` and `companion`, each an item or `null`): `{ id, template, url, scale, animated, frames, frameTimeMs, emissive }` for format 1, `{ id, format: 2, model, url, scale, animated, frames, frameTimeMs, glow, glowFrames, glowFrameTimeMs, hash }` for format 2 (§11.9).
 
 A **format-2** CosmeticView has `template: null`, `emissive: false` and these extra fields (all absent on format-1 items):
 
@@ -1246,10 +1258,11 @@ A **format-2** CosmeticView has `template: null`, `emissive: false` and these ex
 | Request | Auth | Response |
 |---|---|---|
 | `GET /v1/cosmetics` | yes | `{ templates: [Template], cosmetics: [CosmeticView + { owned, equipped, rejectReason? }] }`. Lists all built-in items and emotes, plus your own uploads in any status. `rejectReason` is present only for uploads. |
+| `POST /v1/me/cosmetics/{id}/claim` | yes | Claims an **event item** (`unlock: "event"`) for free. **200** `{ "owned": true }`; idempotent (owners keep it after the event). `403 event_inactive` if the event isn't active for you, `400 not_claimable` for other items, `404 cosmetic_not_found`. See §32. |
 | `GET /v1/cosmetics/templates` | no | See §11.1. |
 | `GET /v1/cosmetics/templates/{id}` / `{id}.png?scale=k` | no | One template, or its paint guide (§11.1). `404 template_not_found`. |
-| `GET /v1/me/cosmetics` | yes | `{ equipped: { hat, wings, back, aura }, emotes: [emoteId] }`. Each slot is a CosmeticView or `null`, as you see it (including your pending uploads). `emotes` lists the emotes you may play, in list order. |
-| `PUT /v1/me/cosmetics` | yes | Body `{ "hat"?: id\|null, "wings"?: id\|null, "back"?: id\|null, "aura"?: id\|null }`, with at least one key. An id equips, `null` takes the item off, and a missing key leaves the slot unchanged. Format-2 items are equipped the same way (all of them are `hat`). **200** has the same shape as `GET /v1/me/cosmetics`. All changes are checked first and then applied together. |
+| `GET /v1/me/cosmetics` | yes | `{ equipped: { hat, wings, back, aura, companion }, emotes: [emoteId] }`. Each slot is a CosmeticView or `null`, as you see it (including your pending uploads). `emotes` lists the emotes you may play, in list order. |
+| `PUT /v1/me/cosmetics` | yes | Body `{ "hat"?: id\|null, "wings"?: id\|null, "back"?: id\|null, "aura"?: id\|null, "companion"?: id\|null }`, with at least one key. An id equips, `null` takes the item off, and a missing key leaves the slot unchanged. Format-2 items are equipped the same way (each one in the slot given by its `slot`: `hat` or `companion`; `companion` takes only format-2 items with `slot: "companion"` and only items you own). **200** has the same shape as `GET /v1/me/cosmetics`. All changes are checked first and then applied together. |
 | `GET /v1/cosmetics/{id}.png` | optional | The texture (format 2: the v2 base texture, `ETag` = v2 hash). Caching, `ETag`/`304` and the pending/private rules are the same as §5.4. Otherwise `404 cosmetic_not_found`. |
 | `GET /v1/cosmetics/{id}` | optional | `{ cosmetic: CosmeticView }`. Same visibility as the texture. |
 | `GET /v1/cosmetics/{id}/model.json` | no | Format 2 only (§11.9): the model, byte-for-byte as exported by TRS Studio. `ETag` = full hash; with the matching `?v=` `Cache-Control: public, max-age=31536000, immutable`, otherwise 5 min. `If-None-Match` → `304`. Format-1/unknown ids → `404 cosmetic_not_found`. |
@@ -1307,6 +1320,9 @@ A **format-2** CosmeticView has `template: null`, `emissive: false` and these ex
 | `redstone_aura` | Redstone-Partikel-Aura | `orbit` (aura) | free | 4 × 150 ms, emissive |
 | `footprints` | Fußspuren | `trail` (aura) | free | – |
 | `rubber_duck` | Quietscheente | `duck` (rig) | code, **hidden** | – (animated by the rig) |
+| `witch_hat` | Hexenhut | **format 2** (hat) | **event** `halloween` | glow 12 × 160 ms |
+| `pumpkin_head` | Kürbiskopf | **format 2** (hat) | **event** `halloween` | glow 12 × 120 ms |
+| `bat_buddy` | Fledermaus-Begleiter | **format 2** (**companion**) | **event** `halloween` | glow 12 × 150 ms, orbit animation |
 
 Templates without a built-in item (`ring`, and since format 2 also `crown`, `cap`, `lamp_helmet`, `tophat`, `halo`) are available for uploads. The six format-2 items kept their ids, so owners and codes still work; a `halo` equipped in `aura` moved to `hat` at the first start with format 2 (taken off if `hat` was already in use).
 
@@ -1316,7 +1332,7 @@ Templates without a built-in item (`ring`, and since format 2 also `crown`, `cap
 
 Built-in head items can be **real 3D models** instead of template + texture. Source of truth is the TRS Studio format description (`trs-studio/cosmetic-format.md`); the short form:
 
-- **Files:** `model.json` + base texture (RGBA, alpha 0/255; vertical strip if `texture.frames > 1`) + optional glow strip (additive, black = nothing). The server ships them in `api/assets/cosmetics/v2/<id>.json`, `<id>.png`, `<id>-glow.png`, plus `<id>-card.png` / `<id>-card-night.png` (previews ≤ 512 px). `catalog.json` lists them as `{ "id", "name", "format": 2, "unlock", "frames", "frameTimeMs"?, "glowFrames", "glowFrameTimeMs"?, "hidden"? }`; the frame values must match the model. Import: `node api/scripts/import-cosmetics-v2.mjs` (copies the approved exports unchanged and makes the cards).
+- **Files:** `model.json` + base texture (RGBA, alpha 0/255; vertical strip if `texture.frames > 1`) + optional glow strip (additive, black = nothing). The server ships them in `api/assets/cosmetics/v2/<id>.json`, `<id>.png`, `<id>-glow.png`, plus `<id>-card.png` / `<id>-card-night.png` (previews ≤ 512 px). `catalog.json` lists them as `{ "id", "name", "format": 2, "unlock", "frames", "frameTimeMs"?, "glowFrames", "glowFrameTimeMs"?, "hidden"? }` (`unlock` is `free`, `code`, `admin` or `{ "type": "event", "event": "<id>" }` – stored as `unlock = admin` plus the column `event`, shown as `unlock: "event"`; capes in `assets/capes/catalog.json` take the same form). The slot comes from the model (`"slot": "hat"` or `"companion"`, both with `attach: "head"`); the frame values must match the model. Import: `node api/scripts/import-cosmetics-v2.mjs` (copies the approved exports unchanged and makes the cards).
 - **Start check:** every model is validated with the format rules (TypeScript port of `validateModel`, `app/utils/cosmetic-v2/format.ts`) including the image sizes. An invalid model **stops the server start**.
 - **Units and axes:** 1 unit = 1 skin pixel. **+x = the player's left, +y = up, +z = front** (same as three.js/skinview3d). `attach: "head"`: origin = head pivot (neck, centre of the head's bottom). `ModelPart` space: `x' = x, y' = −y, z' = −z`.
 - **Bones:** `{ id, parent?, pivot, rotation? }`, parents before children, pivot in model space, rotation in degrees, order **ZYX** (matrix `Rz·Ry·Rx`). Local matrix `T(pivot + pos) · R(rotation + rot) · S(scale) · T(−pivot)`, world `W = W_parent · L`.
@@ -1973,6 +1989,7 @@ data: {"type":"chat_message","conversationId":"c…","message":{…}}
 | `hosting_*` | world hosting: `hosting_invite`, `hosting_invite_revoked`, `hosting_join_request`, `hosting_join_accepted`, `hosting_join_declined`, `hosting_kicked`, `hosting_room`, `hosting_room_updated`, `hosting_room_closed`, `hosting_signal` – see §21.5 |
 | `achievement_unlocked` | `{achievement: AchievementView, at, reward: {kind, id}\|null}` – you unlocked an achievement (§31.6) |
 | `notes_changed` | `{cursor}` – your synced notes changed (§17.5); fetch `GET /v1/me/sync/notes?since=<your cursor>` |
+| `events_changed` | `{events}` – the events active for you changed (§32); `events` is the full list (`[]` = none) |
 
 **Rules**
 
@@ -2633,6 +2650,7 @@ The website signs in **only** with the Microsoft account that owns Minecraft: Ja
 | `items.grant` | Give/take capes and cosmetics |
 | `worlds.view` / `worlds.close` | Hosted worlds list / close |
 | `codes` | Codes (list, create, revoke) |
+| `events.manage` | Events (§32): switch on/off, allow single players |
 | `wordfilter` | Word filter (list, add, remove) |
 | `roles.manage` | Roles and members (§24.2 API), old `/v1/admin/roles` |
 | `applications.view` / `.review` / `.manage` / `.decide` | See applications and positions / vote, notes, status new–review–interview / edit positions and forms / accept, reject, reopen, give the linked role |
@@ -3506,3 +3524,48 @@ Auth required, write bucket (30 / min). Strict body (`400 invalid_request` for a
 - Visible to the account itself and its accepted friends (§31.5) only – unless the account hides them from friends.
   Nothing is public.
 - Limits: catalog 60 / min per IP, `GET /v1/players/{uuid}/achievements` 60 / min, reports 30 / min per account.
+
+## 32. Events (Halloween 2026)
+
+A team member (permission **`events.manage`**, default roles owner and admin; migration 21 adds it to the existing default roles) switches an **event** on or off **globally** and can additionally allow **single players** (also while the event is off globally). The first event is `halloween`. For a player an event is **active** when it is on globally **or** the player is on its list. Clients (launcher, TRS Client) show the event theme when it is active for the signed-in player; the website shows it when it is on globally.
+
+Event items (cosmetics and capes with `unlock: "event"`, §5.1/§11.6) are **free to claim while the event is active for you** and **kept afterwards**.
+
+### 32.1 Public state: `GET /v1/events`
+
+No auth. `Cache-Control: public, max-age=60`. Only the **global** state:
+
+```json
+{ "events": [ { "id": "halloween", "active": true } ] }
+```
+
+> `GET /v1/events` is also the old friends stream (§7). The server tells them apart by `Accept`: **`Accept: text/event-stream`** (needs auth) returns the old stream, anything else the JSON above. New clients use `GET /v1/events/me` (§19) for streams anyway.
+
+### 32.2 For the signed-in player
+
+- `GET /v1/me` → `events: string[]` (§3.1): the events active for **you**.
+- `events_changed` on `GET /v1/events/me` (§19): `{ "type": "events_changed", "events": ["halloween"] }`, `events` = what is active for **the receiver now**. Sent to everyone with an open stream when a global switch changes, and to a single player when he is added to or removed from the list. Replayable like other events; after `resync` read `GET /v1/me` again.
+- `POST /v1/me/cosmetics/{id}/claim` (§11.7) and `POST /v1/me/capes/{id}/claim` (§5.9a): `200 { "owned": true }` or `403 event_inactive`.
+- `PUT /v1/me/cosmetics` takes `companion` (§11.7).
+- Catalogs (`GET /v1/cosmetics`, `GET /v1/capes`) list event items while the event is active for you, or when you own them.
+
+### 32.3 Team (`events.manage`)
+
+All changes go to the audit log (`event.enable`, `event.disable`, `event.player_add`, `event.player_remove`, `ref = event:<id>`).
+
+| Request | Body | Response |
+|---|---|---|
+| `GET /v1/admin/events` | – | `[ { id, enabled, updatedAt, players: [ { uuid, name, addedAt } ] } ]` |
+| `PUT /v1/admin/events/{id}` | `{ "enabled": boolean }` | the changed event (same shape). `404 event_not_found` |
+| `POST /v1/admin/events/{id}/players` | `{ "name": "<Minecraft name>" }` **or** `{ "uuid": "<uuid>" }` | **201** + the changed event. A name is looked up among TRS accounts first, then at Mojang (`404 player_not_found`, `502 upstream_unavailable`). `409 already_added` |
+| `DELETE /v1/admin/events/{id}/players/{uuid}` | – | the changed event. `404 player_not_found`. Already claimed items stay. |
+
+Missing permission → `403 missing_permission`.
+
+### 32.4 Companion slot
+
+`companion` is a new cosmetic slot (format 2 only, `attach: "head"`). It is worn **in addition to** the hat: the model is validated like a hat (format §11.9) and rendered with the same pipeline; animations run on the wall clock. The lookup (`POST /v1/lookup`, `GET /v1/events/players`) returns `cosmetics.companion` in the same flat form as `cosmetics.hat` of format 2. Older clients ignore the unknown key.
+
+### 32.5 Data, migration 21
+
+Tables `events (id, enabled, updated_at, updated_by)` (seeded: `halloween`, off) and `event_players (event_id, player_uuid, player_name, added_at, added_by)`; columns `cosmetics.event` and `capes.event` (event items are stored with `unlock = admin` and the event id); `user_cosmetics`/`user_capes` accept `source = 'event'`, `equipped_cosmetics` accepts the slot `companion` (these three leaf tables are rebuilt, data is kept). The website lists (`GET /v1/site/cosmetics` -> `hats` + `companions`, `GET /v1/site/capes`) show event items only while the event is **globally** on, with `unlock: "event"`, `event`, and (cosmetics) `slot`. Idempotent. When merging: renumber if a parallel branch also added a migration 21.
