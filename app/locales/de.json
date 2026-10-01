@@ -2396,7 +2396,8 @@
       "day": "Tag",
       "night": "Nacht",
       "showHead": "Auf den Kopf zoomen",
-      "showBody": "Ganzen Körper zeigen"
+      "showBody": "Ganzen Körper zeigen",
+      "resetCamera": "Kamera zurücksetzen"
     },
     "trsCape": "TRS-Umhang",
     "headCosmetic": "Kopf-Kosmetik",

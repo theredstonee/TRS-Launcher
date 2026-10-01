@@ -2396,7 +2396,8 @@
       "day": "Day",
       "night": "Night",
       "showHead": "Zoom to head",
-      "showBody": "Show whole body"
+      "showBody": "Show whole body",
+      "resetCamera": "Reset camera"
     },
     "trsCape": "TRS cape",
     "headCosmetic": "Head cosmetic",

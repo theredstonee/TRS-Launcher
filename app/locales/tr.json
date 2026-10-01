@@ -2396,7 +2396,8 @@
       "day": "Gündüz",
       "night": "Gece",
       "showHead": "Kafaya yakınlaştır",
-      "showBody": "Tüm vücudu göster"
+      "showBody": "Tüm vücudu göster",
+      "resetCamera": "Kamerayı sıfırla"
     },
     "trsCape": "TRS pelerini",
     "headCosmetic": "Kafa kozmetiği",

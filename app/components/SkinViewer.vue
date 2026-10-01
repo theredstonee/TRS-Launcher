@@ -26,6 +26,8 @@ const props = withDefaults(
     night?: boolean
     /** Kamera: ganzer Spieler oder Kopf + Schultern (fÃ¼r Kopf-Kosmetik). */
     focus?: 'body' | 'head'
+    /** Hochzählen setzt die Kamera auf die Standardansicht zurück. */
+    resetTick?: number
   }>(),
   {
     cape: null,
@@ -37,6 +39,7 @@ const props = withDefaults(
     cosmetic: null,
     night: false,
     focus: 'body',
+    resetTick: 0,
   },
 )
 const emit = defineEmits<{ cosmeticError: [] }>()
@@ -288,6 +291,19 @@ function stepCamera() {
   }
 }
 
+/** Standardblick von skinview3d: gerade von vorne, Kamera auf der z-Achse. */
+const BODY_DIR = normalize({ x: 0, y: 0, z: 1 })
+
+/** Kamera auf die Standardansicht des aktuellen Fokus zurück (Drehung des Nutzers verwerfen). */
+function resetCamera() {
+  if (!viewer) return
+  const goal = focusGoal(props.focus === 'head' ? HEAD_DIR : BODY_DIR)
+  if (!goal) return
+  const target = viewer.controls.target
+  const position = viewer.camera.position
+  tween = { from: [{ ...target }, { ...position }], to: goal, start: performance.now() }
+}
+
 function beforeRender() {
   stepCamera()
   if (viewer && cosmetic) cosmetic.update(Date.now(), { camera: viewer.camera })
@@ -324,6 +340,10 @@ watch(() => props.height, resize)
 watch(() => props.cosmetic, () => void applyCosmetic())
 watch(() => props.night, applyLight)
 watch(() => props.focus, () => applyFocus())
+watch(
+  () => props.resetTick,
+  () => resetCamera(),
+)
 </script>
 
 <template>

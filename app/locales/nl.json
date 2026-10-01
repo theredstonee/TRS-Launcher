@@ -2396,7 +2396,8 @@
       "day": "Dag",
       "night": "Nacht",
       "showHead": "Inzoomen op het hoofd",
-      "showBody": "Hele lichaam tonen"
+      "showBody": "Hele lichaam tonen",
+      "resetCamera": "Camera resetten"
     },
     "trsCape": "TRS-cape",
     "headCosmetic": "Hoofdcosmetica",

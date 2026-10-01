@@ -2396,7 +2396,8 @@
       "day": "Dia",
       "night": "Noite",
       "showHead": "Aproximar da cabeça",
-      "showBody": "Mostrar corpo inteiro"
+      "showBody": "Mostrar corpo inteiro",
+      "resetCamera": "Redefinir câmera"
     },
     "trsCape": "Capa TRS",
     "headCosmetic": "Cosmético de cabeça",

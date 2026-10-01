@@ -2396,7 +2396,8 @@
       "day": "Dzień",
       "night": "Noc",
       "showHead": "Przybliż głowę",
-      "showBody": "Pokaż całe ciało"
+      "showBody": "Pokaż całe ciało",
+      "resetCamera": "Resetuj kamerę"
     },
     "trsCape": "Peleryna TRS",
     "headCosmetic": "Kosmetyk na głowę",
