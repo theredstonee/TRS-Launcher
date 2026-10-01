@@ -70,6 +70,11 @@ public final class Mc {
 		mc().setScreen(screen);
 	}
 
+	/** Tick-Zähler der Vanilla-HUD (Saat für das Wackeln von Herzen und Hungerleiste). */
+	public static int guiTicks() {
+		return mc().gui.getGuiTicks();
+	}
+
 	/** HUD per F1 ausgeblendet? */
 	public static boolean hudHidden() {
 		return mc().options.hideGui;

@@ -28,6 +28,20 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Hunger Overlay in the TRS Client.** A new module on the hunger bar: your saturation shows as a golden outline,
+  the food in your hand flashes how much hunger it fills up and how much health it will heal, and in singleplayer a
+  light bar shows how close the next hunger point is. Each part can be switched off. Idea from AppleSkin, works in
+  every version from Minecraft 1.7.10 to 26.3.
+
+### Deutsch
+- **Hunger-Anzeige im TRS Client.** Ein neues Modul an der Hungerleiste: deine Sättigung erscheint als goldener Rand,
+  das Essen in deiner Hand zeigt blinkend, wie viel Hunger es auffüllt und wie viel Leben es heilt, und im
+  Einzelspieler zeigt ein heller Balken, wie nah der nächste Hungerpunkt ist. Jeder Teil lässt sich abschalten. Idee
+  von AppleSkin, läuft in jeder Version von Minecraft 1.7.10 bis 26.3.
+
 ## 0.15.2 – 2026-09-30 – The Polish Update | Das Feinschliff-Update
 <!-- banner: accent=#ff7a3d motif=/news/0.15.2/banner.png -->
 <!-- shots:

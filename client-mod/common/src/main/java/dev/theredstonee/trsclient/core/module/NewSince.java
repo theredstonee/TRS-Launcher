@@ -128,6 +128,9 @@ public final class NewSince {
 	/** Garderobe → Reiter „Kosmetik“ (Anprobieren, Aufsetzen). */
 	public static final String WARDROBE_COSMETICS = "wardrobe:cosmetics";
 
+	/** Hunger-Anzeige (TRS Client 0.15.1, Idee von AppleSkin): Sättigung, Essens-Vorschau, Heilung, Erschöpfung. */
+	public static final String HUNGER_OVERLAY = "0.15.1";
+
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
 	private static final Map<String, List<String>> EXTRAS = new LinkedHashMap<String, List<String>>();
@@ -195,6 +198,8 @@ public final class NewSince {
 		add(DOCS, MENU_DOCS);
 		// Kopf-Kosmetik v2: Reiter „Kosmetik“ in der Garderobe.
 		add(COSMETICS_V2, WARDROBE_COSMETICS);
+		// Hunger-Anzeige an der Hungerleiste.
+		add(HUNGER_OVERLAY, "hungerOverlay");
 	}
 
 	private NewSince() {

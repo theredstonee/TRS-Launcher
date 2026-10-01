@@ -116,6 +116,8 @@ public final class HudManager {
 		FontRenderer font = mc.fontRenderer;
 		// Signal-Overlay liegt in der Welt – vor den Anzeigen zeichnen.
 		redstoneOverlay.render(font, sw, sh, partialTicks);
+		// Hunger-Anzeige liegt auf der Vanilla-Hungerleiste – unter den verschiebbaren Anzeigen.
+		HungerHud.render(font, sw, sh);
 		for (int i = 0, n = elements.size(); i < n; i++) {
 			HudElement e = elements.get(i);
 			if (e.module().isEnabled() && e.visible()) draw(font, e, sw, sh, false);

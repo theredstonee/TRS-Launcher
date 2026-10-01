@@ -86,6 +86,14 @@ public final class Mc {
 		return mc().options.hideGui;
 	}
 
+	/** Tick-Zähler der Vanilla-HUD (Saat für das Wackeln von Herzen und Hungerleiste). */
+	public static int guiTicks() {
+		//? if >=26.2 {
+		/*return mc().gui.hud.getGuiTicks();
+		*///?} else
+		return mc().gui.getGuiTicks();
+	}
+
 	/** HUD aus-/einblenden (wie F1). */
 	public static void setHudHidden(boolean hidden) {
 		//? if >=26.2 {

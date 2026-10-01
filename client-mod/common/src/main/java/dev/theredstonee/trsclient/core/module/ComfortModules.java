@@ -33,6 +33,13 @@ public final class ComfortModules {
 	public final BoolSetting shotChatActions;
 	public final BoolSetting shotReplaceEssential;
 
+	// --- Hunger-Anzeige (Idee von AppleSkin) ---
+	public final Module hunger;
+	public final BoolSetting hungerSaturation;
+	public final BoolSetting hungerHeldFood;
+	public final BoolSetting hungerHealth;
+	public final BoolSetting hungerExhaustion;
+
 	// --- Suche in der Tastenbelegung ---
 	public final Module keySearch;
 	public final ChoiceSetting<PanoramaFormat> panoramaFormat;
@@ -142,7 +149,17 @@ public final class ComfortModules {
 						+ "(mouse, key:mouse4), mod (mod:sodium), double-bound keys (conflict) or free actions (unbound). The "
 						+ "keyboard button next to it shows everything on the next key you press.", true));
 
+		hunger = registry.register(new Module("hungerOverlay", "Hunger Overlay",
+				"Shows more on the hunger bar: your saturation as a golden outline, what the food in your hand fills up "
+						+ "(flashing), how much health it will heal and – in singleplayer – how close the next hunger point "
+						+ "is (exhaustion). Idea from AppleSkin.", true));
+		hungerSaturation = hunger.add(new BoolSetting("saturation", "Saturation outline", true));
+		hungerHeldFood = hunger.add(new BoolSetting("heldFood", "Preview of the food in your hand", true));
+		hungerHealth = hunger.add(new BoolSetting("health", "Preview of the health it heals", true));
+		hungerExhaustion = hunger.add(new BoolSetting("exhaustion", "Exhaustion bar (singleplayer)", true));
+
 		tooltips.icon("info").category(Category.MISC);
+		hunger.icon("food").category(Category.HUD);
 		keySearch.icon("keyboard").category(Category.MISC);
 		dev.theredstonee.trsclient.core.keys.KeySearch.bind(keySearch);
 		serverProfiles.icon("globe").category(Category.MISC);

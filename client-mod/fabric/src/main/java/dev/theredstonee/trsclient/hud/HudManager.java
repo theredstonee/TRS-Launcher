@@ -167,6 +167,8 @@ public final class HudManager {
 		// Wegpunkte liegen in der Welt – vor den Anzeigen zeichnen, damit sie nichts überdecken.
 		waypointOverlay.render(g, font);
 		redstoneOverlay.render(g, font);
+		// Hunger-Anzeige liegt auf der Vanilla-Hungerleiste – unter den verschiebbaren Anzeigen.
+		dev.theredstonee.trsclient.comfort.HungerHooks.hud(g, font);
 		for (int i = 0, n = elements.size(); i < n; i++) {
 			HudElement e = elements.get(i);
 			if (e.module().isEnabled() && e.visible()) draw(g, font, e, sw, sh, false);
