@@ -71,7 +71,7 @@ fn v2_entries_need_model_and_texture() {
     assert_eq!(source.hash, "abcdef123456");
     assert!(source.glow.is_none(), "fremde Glow-Adresse fällt weg");
     assert!(source.card.is_some() && source.card_night.is_none());
-    assert_eq!(full.unlock, Some(CosmeticUnlock::Code));
+    assert_eq!(full.unlock_kind(), Some(CosmeticUnlock::Code));
 
     // Ohne Hash gilt die Version der Modell-Adresse.
     let no_hash = entry(json!({ "id": "crown", "slot": "hat", "format": 2,
@@ -88,7 +88,7 @@ fn v2_entries_need_model_and_texture() {
     assert!(v2_source(HOST, &BASES, &v1).is_none());
     // Unbekannte Freischaltart bricht nichts.
     let other = entry(json!({ "id": "x", "slot": "hat", "unlock": "season-pass" }));
-    assert_eq!(other.unlock, Some(CosmeticUnlock::Other));
+    assert_eq!(other.unlock_kind(), Some(CosmeticUnlock::Other));
 }
 
 #[test]
@@ -251,4 +251,17 @@ async fn v2_hats_are_wearable_and_redeemable() {
     let redeemed = launcher.trs_redeem("7K3QF-M2XPA-9RTVB-C4HJN").await.unwrap();
     assert_eq!((redeemed.kind.as_str(), redeemed.cosmetic_id.as_deref()), ("cosmetic", Some("halo")));
     assert!(redeemed.wearable_hat);
+}
+
+#[test]
+fn event_unlock_and_companion_slot() {
+    let hat = entry(json!({ "id": "witch_hat", "slot": "hat", "format": 2, "unlock": { "type": "event", "event": "halloween" } }));
+    assert_eq!(hat.unlock_kind(), Some(CosmeticUnlock::Event));
+    assert_eq!(hat.unlock_event().as_deref(), Some("halloween"));
+    let bad = entry(json!({ "id": "x", "slot": "hat", "unlock": { "type": "event", "event": "../x" } }));
+    assert_eq!(bad.unlock_event(), None);
+    assert_eq!(entry(json!({ "id": "x", "slot": "hat", "unlock": "free" })).unlock_event(), None);
+    let bat = entry(json!({ "id": "bat_buddy", "slot": "companion", "format": 2 }));
+    assert!(wearable_hat(&bat) && listed(&bat));
+    assert!(!wearable_hat(&entry(json!({ "id": "bat", "slot": "companion", "template": "duck" }))), "Begleiter nur als v2");
 }

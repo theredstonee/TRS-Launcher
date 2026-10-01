@@ -21,6 +21,7 @@ pub mod achievements;
 pub mod applications;
 pub mod cape_import;
 pub mod chat;
+pub mod events;
 mod head_cosmetics;
 pub mod hosting;
 pub mod moderation;
@@ -385,6 +386,7 @@ fn message_for(code: &str) -> Msg {
         "no_change" => msg!("trsApi.no_change", "Das ist schon das aktuelle Ende."),
         "role_locked" => msg!("trsApi.role_locked", "Diese Rolle ist fest eingestellt und lässt sich hier nicht ändern."),
         "cannot_change_self" => msg!("trsApi.cannot_change_self", "Deine eigene Rolle kannst du nicht ändern."),
+        "event_inactive" => msg!("trsApi.event_inactive", "Dieses Event läuft für dich gerade nicht."),
         "role_not_found" => msg!("trsApi.role_not_found", "Dieser Spieler hat keine Team-Rolle."),
         "note_not_found" => msg!("trsApi.note_not_found", "Diese Notiz gibt es nicht (mehr)."),
         "bulk_too_large" => msg!("trsApi.bulk_too_large", "Höchstens 50 Einträge auf einmal."),
@@ -425,9 +427,22 @@ pub struct TrsApi {
     pub(crate) achievements: achievements::ReportQueue,
     /// Adressen der v2-Kopf-Kosmetik aus dem letzten Katalog (für die 3D-Vorschau).
     head_sources: std::sync::Mutex<std::collections::HashMap<String, head_cosmetics::V2Source>>,
+    /// Aktive Events des Spielers (aus `GET /v1/me` und `events_changed`, §31) – nur im Speicher.
+    events: std::sync::Mutex<Vec<String>>,
 }
 
 impl TrsApi {
+    /// Events, die für den Spieler zuletzt als aktiv gemeldet wurden.
+    pub(crate) fn active_events(&self) -> Vec<String> {
+        self.events.lock().map(|e| e.clone()).unwrap_or_default()
+    }
+
+    pub(crate) fn set_active_events(&self, events: &[String]) {
+        if let Ok(mut e) = self.events.lock() {
+            e.clone_from(&events.to_vec());
+        }
+    }
+
     pub fn new(paths: Paths) -> Result<Self> {
         // Debug-Builds dürfen gegen eine lokale API testen.
         let base = std::env::var("TRS_API_BASE")
@@ -465,6 +480,7 @@ impl TrsApi {
             appeal_tokens: sanctions::AppealTokens::default(),
             achievements: achievements::ReportQueue::default(),
             head_sources: std::sync::Mutex::default(),
+            events: std::sync::Mutex::default(),
         })
     }
 

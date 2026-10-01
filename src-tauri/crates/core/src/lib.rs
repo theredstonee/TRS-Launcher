@@ -832,7 +832,7 @@ impl Launcher {
         // Der Mod liest daraus, ob er die TRS API benutzen darf (nur feste Werte, kein Token).
         let trs_enabled = self.trs.enabled().await;
         if let Err(e) =
-            client_mod::sync(&self.http, &self.paths, client_mod_dir.as_deref(), updates, instance, &settings.ui, trs_enabled)
+            client_mod::sync(&self.http, &self.paths, client_mod_dir.as_deref(), updates, instance, &settings.ui, trs_enabled, &self.trs.active_events())
                 .await
         {
             tracing::warn!("TRS Client konnte nicht eingerichtet werden: {e}");

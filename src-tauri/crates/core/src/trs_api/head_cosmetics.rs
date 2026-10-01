@@ -35,9 +35,14 @@ const MAX_STRIP: u32 = 4096;
 const MAX_FRAMES: u32 = 16;
 const SCALES: [u32; 5] = [1, 2, 4, 8, 16];
 
-/// Kann der TRS Client dieses Teil auf dem Kopf zeichnen?
+/// Kann der TRS Client dieses Teil zeichnen (Kopf-Kosmetik oder Begleiter)?
 pub(crate) fn wearable_hat(c: &ApiCosmeticRef) -> bool {
-    c.slot == "hat" && (c.is_v2() || c.template.as_deref().is_some_and(|t| WEARABLE_HAT_TEMPLATES.contains(&t)))
+    match c.slot.as_str() {
+        "hat" => c.is_v2() || c.template.as_deref().is_some_and(|t| WEARABLE_HAT_TEMPLATES.contains(&t)),
+        // Begleiter (§11, Halloween): gibt es nur als v2-Modell.
+        "companion" => c.is_v2(),
+        _ => false,
+    }
 }
 
 /// Gehört das Teil in die Liste? Versteckte Teile nur, wenn man sie besitzt.
@@ -385,7 +390,9 @@ impl Launcher {
                     name: validate::cape_name(&c.name, &c.id),
                     format: if v2 { 2 } else { 1 },
                     template: if v2 { None } else { c.template.as_deref().map(|t| validate::text(t, 32)) },
-                    unlock: c.unlock.unwrap_or(CosmeticUnlock::Other),
+                    unlock: c.unlock_kind().unwrap_or(CosmeticUnlock::Other),
+                    unlock_event: c.unlock_event(),
+                    slot: c.slot.clone(),
                     owned: c.owned,
                     equipped: c.equipped,
                     preview: source.is_some(),

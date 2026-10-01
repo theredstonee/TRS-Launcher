@@ -178,6 +178,51 @@ pub async fn trs_set_hat(launcher: State<'_, LauncherState>, id: Option<String>)
 }
 
 #[tauri::command]
+pub async fn trs_set_companion(launcher: State<'_, LauncherState>, id: Option<String>) -> CommandResult<()> {
+    Ok(launcher.trs_set_companion(id).await?)
+}
+
+/// Kosmetik-Teil eines laufenden Events gratis holen.
+#[tauri::command]
+pub async fn trs_claim_cosmetic(launcher: State<'_, LauncherState>, id: String) -> CommandResult<()> {
+    Ok(launcher.trs_claim_cosmetic(&id).await?)
+}
+
+/// Event-Umhang gratis holen.
+#[tauri::command]
+pub async fn trs_claim_cape(launcher: State<'_, LauncherState>, id: String) -> CommandResult<()> {
+    Ok(launcher.trs_claim_cape(&id).await?)
+}
+
+/// Events, die für den Spieler zuletzt aktiv waren (Zwischenspeicher, ohne Netz).
+#[tauri::command]
+pub fn trs_active_events(launcher: State<'_, LauncherState>) -> Vec<String> {
+    launcher.trs_active_events()
+}
+
+#[tauri::command]
+pub async fn trs_admin_events(
+    launcher: State<'_, LauncherState>,
+) -> CommandResult<Vec<trs_core::trs_api::events::AdminEvent>> {
+    Ok(launcher.trs_admin_events().await?)
+}
+
+#[tauri::command]
+pub async fn trs_admin_set_event(launcher: State<'_, LauncherState>, id: String, enabled: bool) -> CommandResult<()> {
+    Ok(launcher.trs_admin_set_event(&id, enabled).await?)
+}
+
+#[tauri::command]
+pub async fn trs_admin_add_event_player(launcher: State<'_, LauncherState>, id: String, player: String) -> CommandResult<()> {
+    Ok(launcher.trs_admin_add_event_player(&id, &player).await?)
+}
+
+#[tauri::command]
+pub async fn trs_admin_remove_event_player(launcher: State<'_, LauncherState>, id: String, uuid: String) -> CommandResult<()> {
+    Ok(launcher.trs_admin_remove_event_player(&id, &uuid).await?)
+}
+
+#[tauri::command]
 pub async fn trs_player_capes(launcher: State<'_, LauncherState>, uuids: Vec<String>) -> CommandResult<Vec<PlayerCape>> {
     Ok(launcher.trs_player_capes(&uuids).await?)
 }

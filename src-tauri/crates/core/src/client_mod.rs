@@ -257,6 +257,7 @@ pub async fn sync(
     instance: &Instance,
     ui: &UiSettings,
     trs_api: bool,
+    events: &[String],
 ) -> Result<()> {
     let catalog = Catalog::load(bundled_dir, updater).await;
     // Weder Launcher-Paket noch Kanal bekannt: nichts anfassen.
@@ -329,7 +330,7 @@ pub async fn sync(
     }
 
     // Der Mod übernimmt Thema und Akzentfarbe des Launchers.
-    if let Err(e) = write_theme(paths, &instance.id, ui).await {
+    if let Err(e) = write_theme(paths, &instance.id, ui, events).await {
         tracing::warn!("Farben für den TRS Client konnten nicht geschrieben werden: {e}");
     }
     // Und ob er die TRS API benutzen darf (Einwilligung im Launcher).
@@ -537,10 +538,16 @@ struct LauncherTheme {
     accent_color: &'static str,
     /// Sprache des Launchers ("en", "de", "pt-BR", …) – der Mod darf sie übernehmen.
     language: &'static str,
+    /// Läuft ein Event für diesen Spieler (`"halloween"`), weiß der Mod es sofort; sonst fehlt das Feld.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    event: Option<&'static str>,
 }
 
+/// Events, die der Mod als Theme kennt.
+const THEME_EVENTS: [&str; 1] = ["halloween"];
+
 /// Schreibt `config/trsclient/launcher-theme.json` in die Instanz (nur bekannte, feste Werte).
-pub async fn write_theme(paths: &Paths, instance_id: &str, ui: &UiSettings) -> Result<()> {
+pub async fn write_theme(paths: &Paths, instance_id: &str, ui: &UiSettings, events: &[String]) -> Result<()> {
     let file = theme_path(paths, instance_id);
     let dir = file.parent().expect("Elternordner");
     tokio::fs::create_dir_all(dir).await.map_err(|e| Error::io(dir, e))?;
@@ -550,6 +557,7 @@ pub async fn write_theme(paths: &Paths, instance_id: &str, ui: &UiSettings) -> R
         accent: accent_name(ui.accent),
         accent_color: accent_color(ui.accent),
         language: ui.language.code(),
+        event: THEME_EVENTS.into_iter().find(|e| events.iter().any(|x| x == e)),
     };
     let json = serde_json::to_string_pretty(&theme).map_err(|e| Error::json("launcher-theme.json", e))?;
     tokio::fs::write(&file, json).await.map_err(|e| Error::io(&file, e))
@@ -788,13 +796,13 @@ mod tests {
         let ui = UiSettings::default();
         let mods = content::content_dir(&paths, &inst.id, ContentKind::Mod);
 
-        sync(&http, &paths, Some(bundle.path()), None, &inst, &ui, true).await.unwrap();
+        sync(&http, &paths, Some(bundle.path()), None, &inst, &ui, true, &[]).await.unwrap();
         assert_eq!(std::fs::read(mods.join(INSTALLED_NAME)).unwrap(), b"neu");
 
         // Nutzer schaltet ihn in der Mod-Liste aus, danach kommt ein Launcher-Update.
         std::fs::rename(mods.join(INSTALLED_NAME), mods.join("trsclient.jar.disabled")).unwrap();
         std::fs::write(bundle.path().join("trsclient-forge-1.8.9.jar"), b"neuer").unwrap();
-        sync(&http, &paths, Some(bundle.path()), None, &inst, &ui, true).await.unwrap();
+        sync(&http, &paths, Some(bundle.path()), None, &inst, &ui, true, &[]).await.unwrap();
         assert!(!mods.join(INSTALLED_NAME).exists(), "darf nicht wieder eingeschaltet werden");
         assert_eq!(std::fs::read(mods.join("trsclient.jar.disabled")).unwrap(), b"neuer");
     }
@@ -986,7 +994,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let paths = Paths::new(dir.path().join("root"));
         let mut ui = UiSettings { accent: Accent::Emerald, theme: Theme::Oled, ..UiSettings::default() };
-        write_theme(&paths, "test", &ui).await.unwrap();
+        write_theme(&paths, "test", &ui, &[]).await.unwrap();
 
         let file = paths.instance_game_dir("test").join("config/trsclient/launcher-theme.json");
         let json: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&file).unwrap()).unwrap();
@@ -995,16 +1003,18 @@ mod tests {
         assert_eq!(json["accent"], "emerald");
         assert_eq!(json["accentColor"], "#17A34A");
         assert_eq!(json["language"], "en");
+        assert!(json.get("event").is_none(), "ohne Event fehlt das Feld");
 
         // "System" gibt es im Spiel nicht – dort gilt das dunkle Thema.
         ui.theme = Theme::System;
         ui.accent = Accent::Redstone;
         ui.language = crate::settings::Language::PtBr;
-        write_theme(&paths, "test", &ui).await.unwrap();
+        write_theme(&paths, "test", &ui, &["halloween".into(), "other".into()]).await.unwrap();
         let json: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&file).unwrap()).unwrap();
         assert_eq!(json["theme"], "dark");
-        assert_eq!(json["accentColor"], "#E0281E");
+        assert_eq!(json["accentColor"], "#E0281E", "der gespeicherte Akzent bleibt");
         assert_eq!(json["language"], "pt-BR");
+        assert_eq!(json["event"], "halloween");
     }
 
     #[test]
@@ -1043,7 +1053,7 @@ mod tests {
         let ui = UiSettings::default();
 
         let on = instance("1.21.1", LoaderKind::Fabric, None);
-        sync(&http, &paths, Some(&res), None, &on, &ui, true).await.unwrap();
+        sync(&http, &paths, Some(&res), None, &on, &ui, true, &[]).await.unwrap();
         assert_eq!(tokio::fs::read(mods.join(INSTALLED_NAME)).await.unwrap(), b"v1");
         assert!(theme_path(&paths, "test").is_file(), "Farben des Launchers liegen in der Instanz");
         let trs: serde_json::Value =
@@ -1051,7 +1061,7 @@ mod tests {
         assert_eq!(trs, serde_json::json!({ "version": 1, "enabled": true }), "Einwilligung für den Mod, kein Token");
 
         tokio::fs::write(res.join("trsclient-fabric-1.21.jar"), b"v2").await.unwrap();
-        sync(&http, &paths, Some(&res), None, &on, &ui, false).await.unwrap();
+        sync(&http, &paths, Some(&res), None, &on, &ui, false, &[]).await.unwrap();
         let trs: serde_json::Value =
             serde_json::from_slice(&tokio::fs::read(trs_api_path(&paths, "test")).await.unwrap()).unwrap();
         assert_eq!(trs["enabled"], false, "ohne Einwilligung darf der Mod die API nicht nutzen");
@@ -1059,12 +1069,12 @@ mod tests {
 
         // Versionswechsel auf eine Version ohne Build: alte Kopie verschwindet.
         let other = instance("1.20.4", LoaderKind::Fabric, None);
-        sync(&http, &paths, Some(&res), None, &other, &ui, true).await.unwrap();
+        sync(&http, &paths, Some(&res), None, &other, &ui, true, &[]).await.unwrap();
         assert!(!mods.join(INSTALLED_NAME).exists());
 
-        sync(&http, &paths, Some(&res), None, &on, &ui, true).await.unwrap();
+        sync(&http, &paths, Some(&res), None, &on, &ui, true, &[]).await.unwrap();
         let off = instance("1.21.1", LoaderKind::Fabric, Some(false));
-        sync(&http, &paths, Some(&res), None, &off, &ui, true).await.unwrap();
+        sync(&http, &paths, Some(&res), None, &off, &ui, true, &[]).await.unwrap();
         assert!(!mods.join(INSTALLED_NAME).exists());
         assert!(!theme_path(&paths, "test").exists(), "abgeschaltet: auch die Farbdatei ist weg");
         assert!(!trs_api_path(&paths, "test").exists());
@@ -1121,7 +1131,7 @@ mod tests {
 
         // Noch nichts im Kanal: mitgelieferte Version.
         assert_eq!(updater.check_now(Some("0.2.0")).await, client_mod_update::CheckOutcome::Failed);
-        sync(&http, &paths, Some(&res), Some(&updater), &inst, &ui, true).await.unwrap();
+        sync(&http, &paths, Some(&res), Some(&updater), &inst, &ui, true, &[]).await.unwrap();
         assert_eq!(std::fs::read(&jar).unwrap(), b"v2");
 
         // Neuere Version im Kanal: wird geladen, geprüft und installiert.
@@ -1129,14 +1139,14 @@ mod tests {
         updater.check_now(Some("0.2.0")).await;
         let catalog = Catalog::load(Some(&res), Some(&updater)).await;
         assert_eq!(catalog.status(), ClientModStatus { bundled: Some("0.2.0".into()), update: Some("0.3.0".into()) });
-        sync(&http, &paths, Some(&res), Some(&updater), &inst, &ui, true).await.unwrap();
+        sync(&http, &paths, Some(&res), Some(&updater), &inst, &ui, true, &[]).await.unwrap();
         assert_eq!(std::fs::read(&jar).unwrap(), b"v3");
         let entry = history::list(&paths, "test").await.unwrap().into_iter().next().unwrap();
         assert_eq!(entry.kind, HistoryKind::ModUpdated);
         assert_eq!((entry.from.as_deref(), entry.to.as_deref()), (Some("0.2.0"), Some("0.3.0")));
 
         // Zweiter Start: nichts Neues zu laden, nichts Neues im Verlauf.
-        sync(&http, &paths, Some(&res), Some(&updater), &inst, &ui, true).await.unwrap();
+        sync(&http, &paths, Some(&res), Some(&updater), &inst, &ui, true, &[]).await.unwrap();
         assert_eq!(server.hits("trsclient-fabric-1.21.jar"), 1);
         assert_eq!(history::list(&paths, "test").await.unwrap().len(), 1);
 
@@ -1144,7 +1154,7 @@ mod tests {
         bundle_version(&res, "0.4.0", b"v4");
         let catalog = Catalog::load(Some(&res), Some(&updater)).await;
         assert_eq!(catalog.status(), ClientModStatus { bundled: Some("0.4.0".into()), update: None });
-        sync(&http, &paths, Some(&res), Some(&updater), &inst, &ui, true).await.unwrap();
+        sync(&http, &paths, Some(&res), Some(&updater), &inst, &ui, true, &[]).await.unwrap();
         assert_eq!(std::fs::read(&jar).unwrap(), b"v4");
         updater.cleanup(Some("0.4.0")).await;
         assert!(!paths.client_mod_cache_dir().join("0.3.0").exists());
@@ -1168,13 +1178,13 @@ mod tests {
         publish(&server, &key, "0.3.0", b"v3");
         updater.check_now(Some("0.2.0")).await;
         server.put("trsclient-fabric-1.21.jar", b"v3-manipuliert".to_vec());
-        sync(&http, &paths, Some(&res), Some(&updater), &inst, &ui, true).await.unwrap();
+        sync(&http, &paths, Some(&res), Some(&updater), &inst, &ui, true, &[]).await.unwrap();
         assert_eq!(std::fs::read(mods.join(INSTALLED_NAME)).unwrap(), b"v2", "Rückfall auf die mitgelieferte Version");
 
         // In der Mod-Liste deaktiviert: bleibt aus, die deaktivierte Kopie bekommt das Update.
         std::fs::rename(mods.join(INSTALLED_NAME), mods.join("trsclient.jar.disabled")).unwrap();
         server.put("trsclient-fabric-1.21.jar", b"v3".to_vec());
-        sync(&http, &paths, Some(&res), Some(&updater), &inst, &ui, true).await.unwrap();
+        sync(&http, &paths, Some(&res), Some(&updater), &inst, &ui, true, &[]).await.unwrap();
         assert!(!mods.join(INSTALLED_NAME).exists(), "darf nicht wieder eingeschaltet werden");
         assert_eq!(std::fs::read(mods.join("trsclient.jar.disabled")).unwrap(), b"v3");
         std::fs::rename(mods.join("trsclient.jar.disabled"), mods.join(INSTALLED_NAME)).unwrap();
@@ -1182,22 +1192,22 @@ mod tests {
         // Offline: geprüftes Manifest + Jar aus dem Cache reichen.
         let offline = ClientModUpdater::for_tests(paths.client_mod_cache_dir(), "http://127.0.0.1:9/", &key.public);
         assert_eq!(offline.check_now(Some("0.2.0")).await, client_mod_update::CheckOutcome::Failed);
-        sync(&http, &paths, Some(&res), Some(&offline), &inst, &ui, true).await.unwrap();
+        sync(&http, &paths, Some(&res), Some(&offline), &inst, &ui, true, &[]).await.unwrap();
         assert_eq!(std::fs::read(mods.join(INSTALLED_NAME)).unwrap(), b"v3");
 
         // Offline und Cache weg: die installierte Kopie ist genau dieser Build und bleibt.
         std::fs::remove_dir_all(paths.client_mod_cache_dir().join("0.3.0")).unwrap();
-        sync(&http, &paths, Some(&res), Some(&offline), &inst, &ui, true).await.unwrap();
+        sync(&http, &paths, Some(&res), Some(&offline), &inst, &ui, true, &[]).await.unwrap();
         assert_eq!(std::fs::read(mods.join(INSTALLED_NAME)).unwrap(), b"v3");
 
         // Offline, kein Cache und keine passende Kopie: mitgelieferte Version.
         std::fs::remove_file(mods.join(INSTALLED_NAME)).unwrap();
-        sync(&http, &paths, Some(&res), Some(&offline), &inst, &ui, true).await.unwrap();
+        sync(&http, &paths, Some(&res), Some(&offline), &inst, &ui, true, &[]).await.unwrap();
         assert_eq!(std::fs::read(mods.join(INSTALLED_NAME)).unwrap(), b"v2");
 
         // Keine Quelle hat einen Build für die Version: Kopie wird entfernt.
         let other = instance("1.8.9", LoaderKind::Forge, None);
-        sync(&http, &paths, Some(&res), Some(&offline), &other, &ui, true).await.unwrap();
+        sync(&http, &paths, Some(&res), Some(&offline), &other, &ui, true, &[]).await.unwrap();
         assert!(!mods.join(INSTALLED_NAME).exists(), "kein Build für 1.8.9: entfernt");
     }
 

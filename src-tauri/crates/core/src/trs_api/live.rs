@@ -231,6 +231,8 @@ pub enum LiveEvent {
     IssueUpdated(Box<IssueUpdate>),
     /// Erfolg freigeschaltet: Katalog-Eintrag (auch geheime jetzt mit Titel), Zeitpunkt, ggf. Belohnung.
     AchievementUnlocked { achievement: Box<Achievement>, at: Option<String>, reward: Option<Reward> },
+    /// Die aktiven Events dieses Spielers haben sich geändert (§31, z. B. Halloween an/aus).
+    EventsChanged { events: Vec<String> },
 }
 
 /// Inhalt von `issue_updated` (Felder liegen im JSON neben `type`).
@@ -391,6 +393,8 @@ struct D {
     achievement: Option<serde_json::Value>,
     #[serde(default)]
     reward: Option<serde_json::Value>,
+    #[serde(default)]
+    events: Option<Vec<String>>,
 }
 
 #[derive(Deserialize)]
@@ -593,6 +597,7 @@ pub fn decode(event: &str, data: &str) -> Option<LiveEvent> {
             let reward = Reward::from_value(d.reward).or_else(|| achievement.reward.clone());
             LiveEvent::AchievementUnlocked { achievement: Box::new(achievement), at: time(d.at), reward }
         }
+        "events_changed" => LiveEvent::EventsChanged { events: super::events::clean_events(d.events?) },
         _ => return None,
     })
 }
@@ -849,6 +854,9 @@ impl TrsApi {
                             let first = self.live.first_hello(account);
                             self.live.emit(LiveOut::Event(LiveEvent::Hello { resumed, first }));
                         } else if let Some(event) = decode(&frame.event, &frame.data) {
+                            if let LiveEvent::EventsChanged { events } = &event {
+                                self.set_active_events(events);
+                            }
                             self.live.emit(LiveOut::Event(event));
                         }
                     }

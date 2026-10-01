@@ -197,7 +197,9 @@ impl Launcher {
     }
 
     pub async fn trs_me(&self) -> Result<Me> {
-        me_view(self.trs_get::<ApiMe>(Req::get("/v1/me")).await?)
+        let me = me_view(self.trs_get::<ApiMe>(Req::get("/v1/me")).await?)?;
+        self.trs.set_active_events(&me.events);
+        Ok(me)
     }
 
     pub async fn trs_update_me(&self, patch: SettingsPatch) -> Result<Me> {
@@ -362,6 +364,7 @@ impl Launcher {
             .filter(|c| c.owned && wearable_hat(c) && validate::cape_id(&c.id))
             .map(|c| super::types::HatItem {
                 name: validate::cape_name(&c.name, &c.id),
+                slot: c.slot.clone(),
                 template: c.template.clone().unwrap_or_default(),
                 equipped: c.equipped,
                 id: c.id,

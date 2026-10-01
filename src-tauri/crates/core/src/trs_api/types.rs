@@ -92,6 +92,9 @@ pub(crate) struct ApiMe {
     pub settings: PrivacySettings,
     #[serde(default)]
     pub active_cape: Option<ApiCape>,
+    /// Aktive Events des Spielers (§31); ältere Server: fehlt.
+    #[serde(default)]
+    pub events: Vec<String>,
 }
 
 /// Unterscheidet ein fehlendes Feld (`None` über `default`) von `null` (`Some(Null)`).
@@ -113,6 +116,8 @@ pub struct Me {
     pub created_at: Option<String>,
     pub settings: PrivacySettings,
     pub active_cape_id: Option<String>,
+    /// Events, die für diesen Spieler aktiv sind (z. B. `halloween`, §31).
+    pub events: Vec<String>,
 }
 
 impl ApiMe {
@@ -138,6 +143,7 @@ impl ApiMe {
             created_at: self.created_at.map(|t| validate::text(&t, 40)),
             settings: self.settings,
             active_cape_id: self.active_cape.and_then(|c| validate::cape_id(&c.id).then_some(c.id)),
+            events: super::events::clean_events(self.events),
         })
     }
 }
@@ -440,7 +446,7 @@ pub(crate) struct ApiCosmeticRef {
     pub equipped: bool,
     /// Freischaltart (`free`, `code`, `admin`, `achievement` …); fehlt bei älteren Antworten.
     #[serde(default)]
-    pub unlock: Option<CosmeticUnlock>,
+    pub unlock: Option<serde_json::Value>,
     /// Versteckte Teile (per Code) zeigt der Launcher nur, wenn man sie besitzt.
     #[serde(default)]
     pub hidden: bool,
@@ -470,6 +476,19 @@ pub(crate) struct ApiCosmeticRef {
 }
 
 impl ApiCosmeticRef {
+    /// Freischaltart: Zeichenkette (`code`) oder Objekt (`{ "type": "event", "event": "halloween" }`).
+    pub(crate) fn unlock_kind(&self) -> Option<CosmeticUnlock> {
+        let v = self.unlock.as_ref()?;
+        let name = v.as_str().or_else(|| v.get("type")?.as_str())?;
+        Some(serde_json::from_value(serde_json::Value::String(name.to_owned())).unwrap_or(CosmeticUnlock::Other))
+    }
+
+    /// Event, das das Teil gratis macht (nur bei `unlock.type == "event"`).
+    pub(crate) fn unlock_event(&self) -> Option<String> {
+        let id = self.unlock.as_ref()?.get("event")?.as_str()?;
+        super::events::event_id(id).then(|| id.to_owned())
+    }
+
     /// Kosmetik-Format v2 (3D-Modell)?
     pub(crate) fn is_v2(&self) -> bool {
         self.format == Some(2)
@@ -494,6 +513,8 @@ pub enum CosmeticUnlock {
     Admin,
     Achievement,
     Owner,
+    /// Gratis, solange ein Event läuft (`unlockEvent`), danach behalten.
+    Event,
     #[serde(other)]
     Other,
 }
@@ -506,9 +527,13 @@ pub struct HeadCosmetic {
     pub name: String,
     /// 1 = Vorlage (z. B. Quietscheente), 2 = 3D-Modell.
     pub format: u8,
+    /// `hat` oder `companion`.
+    pub slot: String,
     /// Nur v1: Vorlage (`duck`).
     pub template: Option<String>,
     pub unlock: CosmeticUnlock,
+    /// Bei `unlock == event`: welches Event (`halloween`).
+    pub unlock_event: Option<String>,
     pub owned: bool,
     pub equipped: bool,
     /// Der Launcher kann das Modell in der 3D-Vorschau zeigen ([`HeadCosmeticModel`]).
@@ -547,6 +572,8 @@ pub(crate) struct ApiCosmeticCatalog {
 pub struct HatItem {
     pub id: String,
     pub name: String,
+    /// `hat` oder `companion`.
+    pub slot: String,
     pub template: String,
     pub equipped: bool,
 }
