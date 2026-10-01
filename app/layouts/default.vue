@@ -16,7 +16,7 @@ const whatsNew = useWhatsNewStore()
 const curseforge = useCurseForgeStore()
 const router = useRouter()
 // Event-Theme (Halloween) früh anwenden, auch bevor eine Seite den Store anfasst.
-useEventsStore()
+const events = useEventsStore()
 
 /** Strg+K öffnet überall die Suche; Strg+N legt eine Instanz an. */
 function onKey(e: KeyboardEvent) {
@@ -163,6 +163,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
     <MyApplicationsDialog v-if="applications.dialogOpen && !trs.consentOpen" />
     <WhatsNewDialog v-if="whatsNew.open && !onboarding.open && !trs.consentOpen" />
     <CurseForgeBlockedDialog v-if="curseforge.blockedFor" :key="curseforge.blockedFor" :instance-id="curseforge.blockedFor" @close="curseforge.closeBlocked()" />
+    <!-- Hexe und Fledermäuse über jeder Seite, nur solange das Event läuft. -->
+    <HalloweenFly v-if="events.halloween" />
     <ToastHost />
     <SocialToastHost />
     <JoinServerDialog />

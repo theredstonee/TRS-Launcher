@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { HALLOWEEN_BACKGROUND, HALLOWEEN_WITCH } from '~/utils/halloween'
+import { drawPixelBat, drawWitchSprite } from '~/utils/halloweenFly'
 
 // Nacht-Startseite (Vertrag, Referenz `halloween2.js`): Pixel-Hintergrund,
 // Fledermäuse, die Hexe fliegt ab und zu durch, Lampen-Flackern.
@@ -48,22 +49,17 @@ function paint(t: number) {
   for (let i = 0; i < 5; i++) {
     const x = ((t / 40 + i * 170) % (w + 80)) - 40
     const y = 28 + i * 18 * s + Math.sin(t / 400 + i) * 10
-    const wing = Math.floor(t / 120 + i) % 2 ? 3 : -1
-    ctx.fillStyle = '#120a1c'
-    ctx.fillRect(x, y, 6 * s, 4 * s)
-    ctx.fillRect(x - 6 * s, y - wing * s, 6 * s, 2 * s)
-    ctx.fillRect(x + 6 * s, y - wing * s, 6 * s, 2 * s)
+    drawPixelBat(ctx, x, y, Math.floor(t / 120 + i) % 2 === 1, s)
   }
   // Ein Durchflug, dann Pause – „ab und zu“, nicht dauernd.
+  // Dieselbe Sprite-Hilfe wie der Flug über dem ganzen Fenster.
   const cycle = 14000
   const flight = 7000
   const phase = t % cycle
   if (phase < flight && witch.complete && witch.naturalWidth) {
     const x = (phase / flight) * (w + 220) - 120
     const y = h * 0.16 + Math.sin(t / 500) * 14
-    const frame = Math.floor(t / 110) % 6
-    const size = 96 * s
-    ctx.drawImage(witch, frame * 48, 0, 48, 48, Math.round(x), Math.round(y), size, size)
+    drawWitchSprite(ctx, witch, Math.floor(t / 110), x, y, 2 * s, false)
   }
   ctx.fillStyle = `rgba(255,120,30,${0.04 + 0.03 * Math.sin(t / 90)})`
   ctx.fillRect(0, 0, w, h)

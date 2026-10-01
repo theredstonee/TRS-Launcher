@@ -11,6 +11,7 @@ const router = useRouter()
 const ui = useUiStore()
 const openDocs = useDocs()
 const maximized = ref(false)
+const events = useEventsStore()
 
 let stop: (() => void) | undefined
 onMounted(async () => {
@@ -34,8 +35,29 @@ async function toggleMaximize() {
     data-tauri-drag-region
     class="titlebar relative z-40 flex h-9 shrink-0 items-center gap-2 border-b border-base-800 bg-base-900 pl-3"
   >
-    <div data-tauri-drag-region class="flex items-center gap-2 text-base-200">
+    <!-- Spinnennetz in der Ecke, hinter Logo und Schrift, fängt keine Klicks. -->
+    <svg v-if="events.halloween" class="cobweb" viewBox="0 0 40 40" aria-hidden="true">
+      <g fill="none" stroke="currentColor" stroke-width="1">
+        <path d="M.5.5H39.5M.5.5V39.5M.5.5L39.5 14.5M.5.5L14.5 39.5M.5.5L39.5 39.5" />
+        <path d="M9.5.5V7.5H.5M18.5.5l-3 10-8 3L.5 12.5M27.5.5l-8 13-9 6-6-1L.5 20.5M34.5 4.5l-12 14-10 8-7-2L.5 28.5" />
+      </g>
+    </svg>
+    <div data-tauri-drag-region class="relative z-[1] flex items-center gap-2 text-base-200">
       <img src="/icon.png" alt="" class="pointer-events-none size-4 [image-rendering:pixelated]" />
+      <svg v-if="events.halloween" class="pumpkin" viewBox="0 0 12 12" aria-hidden="true">
+        <rect x="5" y="0" width="2" height="2" fill="#3d7a32" />
+        <rect x="6" y="1" width="2" height="1" fill="#2a5c24" />
+        <rect x="3" y="3" width="6" height="1" fill="#ff7a1a" />
+        <rect x="2" y="4" width="8" height="1" fill="#ff7a1a" />
+        <rect x="1" y="5" width="10" height="3" fill="#ff7a1a" />
+        <rect x="2" y="8" width="8" height="1" fill="#e06512" />
+        <rect x="3" y="9" width="6" height="1" fill="#c95a0a" />
+        <rect x="4" y="3" width="1" height="7" fill="#d4550c" />
+        <rect x="7" y="3" width="1" height="7" fill="#d4550c" />
+        <rect x="3" y="6" width="1" height="1" fill="#2a1008" />
+        <rect x="8" y="6" width="1" height="1" fill="#2a1008" />
+        <rect x="5" y="8" width="2" height="1" fill="#2a1008" />
+      </svg>
       <span data-tauri-drag-region class="display text-[13px] leading-none">TRS Launcher</span>
     </div>
 
@@ -91,6 +113,23 @@ async function toggleMaximize() {
 <style scoped>
 @reference "~/assets/css/main.css";
 
+.cobweb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  width: 36px;
+  height: 36px;
+  pointer-events: none;
+  color: var(--color-base-200);
+  opacity: 0.42;
+}
+.pumpkin {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  pointer-events: none;
+}
 /* Eine Redstone-Leitung unter dem Logo, die nach rechts ausläuft. */
 .titlebar::after {
   content: "";
