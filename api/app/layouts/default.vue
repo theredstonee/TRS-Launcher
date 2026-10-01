@@ -93,6 +93,7 @@ const year = new Date().getFullYear()
 
         <NuxtLink :to="lp('/')" class="flex min-w-0 items-center gap-2.5 text-base-50" aria-label="TRS Launcher">
           <img src="/icon.png" alt="" width="32" height="32" class="size-8 shrink-0 [image-rendering:pixelated]" />
+          <HalloweenPumpkin />
           <span class="display hidden text-xl leading-none min-[400px]:inline">TRS Launcher</span>
         </NuxtLink>
 
@@ -145,6 +146,7 @@ const year = new Date().getFullYear()
         <div>
           <div class="flex items-center gap-2.5 text-base-50">
             <img src="/icon.png" alt="" width="28" height="28" class="size-7 [image-rendering:pixelated]" />
+            <HalloweenPumpkin />
             <span class="display text-lg">TRS Launcher</span>
           </div>
           <p class="mt-3 max-w-sm text-sm text-base-400">{{ m.footer.tagline }}</p>

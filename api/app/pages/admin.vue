@@ -189,6 +189,7 @@ useAdminKeys({
       <section class="w-full max-w-lg">
         <NuxtLink to="/" class="mb-8 flex items-center gap-2.5 text-base-50">
           <img src="/icon.png" alt="" width="32" height="32" class="size-8 [image-rendering:pixelated]" />
+          <HalloweenPumpkin />
           <span class="display text-xl">TRS Launcher</span>
         </NuxtLink>
         <h1 class="display text-5xl text-base-50">{{ a.brand }}</h1>
@@ -217,6 +218,7 @@ useAdminKeys({
       <aside class="adm-side" :data-open="sideOpen" :aria-label="a.nav.menu">
         <div class="flex h-15 items-center gap-2.5 border-b border-base-800 px-4">
           <img src="/icon.png" alt="" width="28" height="28" class="size-7 [image-rendering:pixelated]" />
+          <HalloweenPumpkin />
           <div class="leading-tight">
             <p class="display text-lg text-base-50">TRS</p>
             <p class="text-[11px] tracking-[0.14em] text-base-400 uppercase">{{ a.brand }}</p>

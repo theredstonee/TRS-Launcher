@@ -4,10 +4,17 @@ import type { NuxtError } from '#app'
 const props = defineProps<{ error: NuxtError }>()
 const { m } = useLang()
 const is404 = computed(() => props.error.statusCode === 404)
-useHead({ title: () => `${is404.value ? m.value.notFound.title : 'Error'} · TRS Launcher`, meta: [{ name: 'robots', content: 'noindex' }] })
+const { data: publicEvents } = await usePublicEvents()
+const halloween = computed(() => publicEvents.value?.events.some((e) => e.id === 'halloween' && e.active) ?? false)
+useHead({
+  title: () => `${is404.value ? m.value.notFound.title : 'Error'} · TRS Launcher`,
+  meta: [{ name: 'robots', content: 'noindex' }],
+  htmlAttrs: { class: () => (halloween.value ? 'theme-halloween' : '') },
+})
 </script>
 
 <template>
+  <HalloweenSky v-if="halloween" />
   <NuxtLayout>
     <div class="relative isolate mx-auto grid max-w-3xl place-items-center overflow-hidden px-4 py-28 text-center sm:px-6">
       <p class="display text-8xl text-redstone-500 drop-shadow">{{ error.statusCode || 500 }}</p>

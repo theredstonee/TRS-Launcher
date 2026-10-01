@@ -35,6 +35,7 @@ watch(
 </script>
 
 <template>
+  <HalloweenSky v-if="halloween" />
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>

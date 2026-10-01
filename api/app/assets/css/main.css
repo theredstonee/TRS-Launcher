@@ -136,6 +136,7 @@ html.theme-halloween {
 
   --hw-orange: #ff7a1a;
   --hw-purple: #6b2fa8;
+  accent-color: var(--hw-orange);
 }
 
 :root[data-accent="amethyst"] {
@@ -552,4 +553,145 @@ html {
   html {
     scroll-behavior: auto;
   }
+}
+
+/*
+ * Halloween auf jeder Seite (nur html.theme-halloween).
+ * Orange/Lila für Knöpfe, Links, Fokus, Kopfzeile und Fußzeile.
+ * Redstone-Rot bleibt für Fehler und Redstone-Elemente.
+ * Spinnennetz und Nebel sind ruhig; Hexe und Fledermäuse laufen separat
+ * und bleiben bei „Bewegung reduzieren“ aus.
+ */
+html:not(.theme-halloween) .hw-sky {
+  display: none;
+}
+.hw-pumpkin {
+  display: none;
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+html.theme-halloween .hw-pumpkin {
+  display: block;
+}
+html.theme-halloween :focus-visible {
+  outline-color: #ff9a3d;
+}
+html.theme-halloween .btn-primary:focus-visible {
+  outline-color: #efe6ff;
+}
+html.theme-halloween .btn-primary {
+  background-color: var(--hw-orange);
+  color: #2a1208;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.35),
+    inset 0 -2px 0 rgb(90 32 0 / 0.35);
+}
+html.theme-halloween .btn-primary:not(:disabled):hover {
+  background-color: #ff8d3a;
+  color: #2a1208;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.4),
+    inset 0 -2px 0 rgb(90 32 0 / 0.28),
+    0 0 16px -2px color-mix(in srgb, var(--hw-orange) 75%, transparent);
+}
+html.theme-halloween .btn-primary:not(:disabled):active,
+html.theme-halloween .btn-primary:not(:disabled):hover:active {
+  background-color: #e06512;
+  color: #2a1208;
+}
+html.theme-halloween .btn-ghost:not(:disabled):hover {
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--hw-orange) 70%, transparent);
+}
+html.theme-halloween .field:focus {
+  border-color: var(--hw-orange);
+}
+html.theme-halloween .prose-md a {
+  color: #ffb15a;
+  text-decoration-color: color-mix(in srgb, var(--hw-purple) 70%, transparent);
+}
+html.theme-halloween .prose-md a:hover {
+  color: #ffd2a8;
+  text-decoration-color: #ffb15a;
+}
+html.theme-halloween a.text-redstone-300,
+html.theme-halloween a.text-redstone-400,
+html.theme-halloween a .text-redstone-300,
+html.theme-halloween a .text-redstone-400 {
+  color: #ffb15a;
+}
+html.theme-halloween a.text-redstone-300:hover,
+html.theme-halloween a.text-redstone-400:hover,
+html.theme-halloween a:hover .text-redstone-300,
+html.theme-halloween a:hover .text-redstone-400 {
+  color: #ffd2a8;
+}
+html.theme-halloween .menu-link:hover,
+html.theme-halloween .menu-link:focus-visible {
+  color: #ffd8b0;
+}
+html.theme-halloween .menu-link[aria-current="page"] {
+  background: color-mix(in srgb, var(--hw-purple) 34%, var(--color-base-900));
+  box-shadow: inset 3px 0 0 var(--hw-orange);
+}
+html.theme-halloween .menu-link[aria-current="page"] svg {
+  color: var(--hw-orange);
+}
+html.theme-halloween .footer-link:hover {
+  color: #ffc48a;
+}
+html.theme-halloween .site-header,
+html.theme-halloween .adm-top {
+  border-bottom-color: transparent;
+}
+html.theme-halloween .site-header::after,
+html.theme-halloween .adm-top::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--hw-purple) 16%, var(--hw-orange) 50%, var(--hw-purple) 84%, transparent);
+}
+html.theme-halloween .dust-line {
+  background:
+    radial-gradient(circle, var(--hw-orange) 0 1.5px, transparent 2.5px) 0 50% / 24px 4px repeat-x,
+    linear-gradient(90deg, var(--hw-purple), #e0352b, var(--hw-orange)) 0 50% / 100% 2px no-repeat;
+  box-shadow: 0 0 14px -2px color-mix(in srgb, var(--hw-orange) 65%, transparent);
+}
+html.theme-halloween .adm-check {
+  accent-color: var(--hw-orange);
+}
+html.theme-halloween .adm-nav-link.router-link-active:not(.adm-exact),
+html.theme-halloween .adm-nav-link.router-link-exact-active {
+  background: color-mix(in srgb, var(--hw-purple) 32%, var(--color-base-900));
+  box-shadow: inset 3px 0 0 var(--hw-orange);
+}
+/* Spinnennetz in einer Ecke der Kopfzeile, über der Leiste, unter Dialogen. */
+html.theme-halloween body::before {
+  content: "";
+  position: fixed;
+  z-index: 32;
+  top: 0;
+  right: 0;
+  width: 4.5rem;
+  height: 3.25rem;
+  pointer-events: none;
+  opacity: 0.4;
+  background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='52' viewBox='0 0 72 52'><g fill='none' stroke='%23e4d4f5' stroke-width='1.15'><path d='M72 0H28M72 0 50 12M72 0 60 28M72 0V44M72 0 38 30M72 0 18 16'/><path d='M62 0c-1 5 4 8 8 10M50 0c-3 8 4 14 12 18M38 1c-6 10 2 20 16 26'/></g><path fill='%23e4d4f5' d='M70 0h2v2h-2zM58 10h2v2h-2z'/></svg>") right top / 4.5rem 3.25rem no-repeat;
+}
+/* Weicher Nachtnebel am unteren Rand. Dunkel und kurz, damit Text lesbar bleibt. */
+html.theme-halloween body::after {
+  content: "";
+  position: fixed;
+  z-index: 12;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 14vh;
+  max-height: 6.5rem;
+  pointer-events: none;
+  background: linear-gradient(to top, rgb(18 10 28 / 0.14) 0%, rgb(88 42 140 / 0.045) 42%, transparent 100%);
 }
