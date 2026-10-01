@@ -2,6 +2,7 @@ import type { AppContext } from './context'
 import { ACHIEVEMENTS } from './achievement-catalog'
 import { v2Assets, v2Fields, type CosmeticV2Fields } from './cosmetics'
 import { all } from './db'
+import { globalEvents } from './liveevents'
 import { changelogFor, parseChangelog, postContent, type ChangelogEntry, type PostShot, type UpdateBanner } from './changelog'
 import { extractContributors, mergeContributors } from './contributors'
 
@@ -212,7 +213,9 @@ export interface PublicCape {
   name: string
   /** Titel des Erfolgs, der diesen Umhang als Belohnung vergibt (§31), sonst `null`. */
   achievement: { en: string, de: string, es: string } | null
-  unlock: 'free' | 'code' | 'admin'
+  unlock: 'free' | 'code' | 'admin' | 'event'
+  /** Nur bei Event-Umhängen (`unlock` = `event`): das Event. */
+  event: string | null
   /** Relativ zur Website – gleiche App, gleiche Herkunft. */
   url: string
   scale: number
@@ -222,17 +225,20 @@ export interface PublicCape {
 
 /** Mitgelieferte, freigegebene TRS-Umhänge (keine hochgeladenen Umhänge von Spielern). */
 export function publicCapes(ctx: AppContext): PublicCape[] {
-  const rows = all<{ id: string, name: string, unlock: 'free' | 'code' | 'admin', sha256: string, width: number, frames: number, frame_time_ms: number | null }>(
+  // Event-Umhänge erscheinen nur, solange das Event global an ist (die Website ist anonym).
+  const live = new Set(globalEvents(ctx))
+  const rows = all<{ id: string, name: string, unlock: 'free' | 'code' | 'admin', event: string | null, sha256: string, width: number, frames: number, frame_time_ms: number | null }>(
     ctx.db,
-    `SELECT id, name, unlock, sha256, width, frames, frame_time_ms FROM capes
+    `SELECT id, name, unlock, event, sha256, width, frames, frame_time_ms FROM capes
      WHERE kind = 'builtin' AND status = 'approved' AND retired = 0 ORDER BY sort, id`,
   )
   // Umhänge, die ein Erfolg als Belohnung vergibt (§31): Titel des Erfolgs statt „Nur Team“.
   const byReward = new Map(ACHIEVEMENTS.filter((a) => a.reward?.kind === 'cape').map((a) => [a.reward!.id, a.title]))
-  return rows.map((c) => ({
+  return rows.filter((c) => !c.event || live.has(c.event)).map((c) => ({
     id: c.id,
     name: c.name,
-    unlock: c.unlock,
+    unlock: c.event ? 'event' as const : c.unlock,
+    event: c.event,
     achievement: byReward.get(c.id) ?? null,
     url: `/v1/capes/${c.id}.png?v=${c.sha256.slice(0, 12)}`,
     scale: Math.round(c.width / 64),
@@ -248,7 +254,11 @@ export interface PublicHat extends CosmeticV2Fields {
   name: string
   /** Titel des Erfolgs, der dieses Teil als Belohnung vergibt (§31), sonst `null`. */
   achievement: { en: string, de: string, es: string } | null
-  unlock: 'free' | 'code' | 'admin'
+  unlock: 'free' | 'code' | 'admin' | 'event'
+  /** Nur bei Event-Teilen (`unlock` = `event`): das Event. */
+  event: string | null
+  /** Platz: `hat` (Kopf) oder `companion` (Begleiter). */
+  slot: 'hat' | 'companion'
   /** Grundtextur – relativ zur Website (gleiche Herkunft, CSP `img-src 'self'`). */
   texture: string
   /** Hat das Modell Knochen-Animationen (Treiber idle)? */
@@ -260,9 +270,19 @@ export interface PublicHat extends CosmeticV2Fields {
  * z. B. die Ente) erscheinen nie, ausgemusterte auch nicht. URLs relativ (gleiche App).
  */
 export function publicHats(ctx: AppContext): PublicHat[] {
-  const rows = all<{ id: string, name: string, unlock: 'free' | 'code' | 'admin', format: number }>(
+  return publicV2(ctx, 'hat')
+}
+
+/** Begleiter (Format v2, Platz `companion`) – wie {@link publicHats}. */
+export function publicCompanions(ctx: AppContext): PublicHat[] {
+  return publicV2(ctx, 'companion')
+}
+
+function publicV2(ctx: AppContext, slot: 'hat' | 'companion'): PublicHat[] {
+  const live = new Set(globalEvents(ctx))
+  const rows = all<{ id: string, name: string, unlock: 'free' | 'code' | 'admin', event: string | null, format: number }>(
     ctx.db,
-    `SELECT id, name, unlock, format FROM cosmetics
+    `SELECT id, name, unlock, event, format FROM cosmetics
      WHERE kind = 'builtin' AND slot = 'hat' AND format = 2 AND status = 'approved' AND retired = 0 AND hidden = 0
      ORDER BY sort, id`,
   )
@@ -270,12 +290,14 @@ export function publicHats(ctx: AppContext): PublicHat[] {
   const out: PublicHat[] = []
   for (const r of rows) {
     const a = v2Assets(ctx, r)
-    if (!a) continue
+    if (!a || a.model.slot !== slot || (r.event && !live.has(r.event))) continue
     const f = v2Fields(a, '')
     out.push({
       id: r.id,
       name: r.name,
-      unlock: r.unlock,
+      unlock: r.event ? 'event' : r.unlock,
+      event: r.event,
+      slot,
       achievement: byReward.get(r.id) ?? null,
       texture: `/v1/cosmetics/${r.id}.png?v=${f.hash}`,
       animated: (a.model.animations ?? []).some((x) => (x.driver ?? 'idle') === 'idle'),

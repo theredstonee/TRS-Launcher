@@ -5,7 +5,9 @@ export interface SiteCape {
   name: string
   /** Belohnung für einen Erfolg (Titel je Sprache), sonst `null`. */
   achievement?: { en: string, de: string, es: string } | null
-  unlock: 'free' | 'code' | 'admin'
+  unlock: 'free' | 'code' | 'admin' | 'event'
+  /** Nur bei Event-Umhängen: das Event (z. B. `halloween`). */
+  event?: string | null
   url: string
   scale: number
   frames: number

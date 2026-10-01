@@ -5,7 +5,10 @@ export interface SiteHat {
   name: string
   /** Belohnung für einen Erfolg (Titel je Sprache), sonst `null`. */
   achievement: { en: string, de: string, es: string } | null
-  unlock: 'free' | 'code' | 'admin'
+  unlock: 'free' | 'code' | 'admin' | 'event'
+  /** Nur bei Event-Teilen: das Event (z. B. `halloween`). */
+  event?: string | null
+  slot?: 'hat' | 'companion'
   format: 2
   /** Alle URLs relativ (gleiche Herkunft). */
   model: string

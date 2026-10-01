@@ -25,7 +25,7 @@ import { deleteUser, getUser, updateSettings } from '../server/lib/users'
 import adminSkinRoute from '../server/routes/v1/admin/users/[uuid]/skin.get'
 import { ADMIN, fixtureBuiltins, login, makeEnv, seedFixtures, solidPng, type TestEnv } from './helpers'
 
-const NO_COSMETICS = { hat: null, wings: null, back: null, aura: null }
+const NO_COSMETICS = { hat: null, wings: null, back: null, aura: null, companion: null }
 
 function code(fn: () => unknown): string {
   try {

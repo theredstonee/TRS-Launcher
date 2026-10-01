@@ -11,9 +11,10 @@ import { emitCosmetics } from './playerevents'
 import { decodeRgba, encodeRgba, inspectPng } from './png'
 import { usedMask, WEARABLE_SLOTS, type CosmeticSlot, type Template, type WearableSlot } from './templates'
 import { assertNotSanctioned } from './sanctions'
+import { activeEventsFor, eventActiveFor } from './liveevents'
 import { isAdmin } from './users'
 
-export type CosmeticUnlock = 'free' | 'code' | 'admin' | 'owner'
+export type CosmeticUnlock = 'free' | 'code' | 'admin' | 'owner' | 'event'
 export type CosmeticStatus = 'approved' | 'pending' | 'rejected'
 
 /** Größte Upload-Datei (Streifen mit bis zu 16 Frames in scale 2). */
@@ -32,6 +33,8 @@ export interface CosmeticRow {
   owner_uuid: string | null
   status: CosmeticStatus
   unlock: CosmeticUnlock
+  /** Event-Teil (z. B. `halloween`): in der DB `unlock = 'admin'` + dieses Feld; die Sicht zeigt `unlock: 'event'`. */
+  event: string | null
   sha256: string | null
   width: number | null
   height: number | null
@@ -69,6 +72,8 @@ export interface CosmeticView extends Partial<CosmeticV2Fields> {
   slot: CosmeticSlot
   kind: 'builtin' | 'upload'
   unlock: CosmeticUnlock
+  /** Nur bei Event-Teilen: das Event (`unlock` ist dann `event`). */
+  event?: string
   status: CosmeticStatus
   /** Vorlagen-ID (`null` bei Emotes und bei Format v2). */
   template: string | null
@@ -137,15 +142,23 @@ export function v2Assets(ctx: AppContext, c: Pick<CosmeticRow, 'id' | 'format'>)
   return c.format === 2 ? ctx.cosmeticsV2.get(c.id) : undefined
 }
 
+/**
+ * Tatsächlicher Platz: bei v2-Teilen aus dem Modell (`companion` liegt in der DB wegen des alten CHECKs als `hat`).
+ */
+export function slotOf(ctx: AppContext, c: Pick<CosmeticRow, 'id' | 'slot' | 'format'>): CosmeticSlot {
+  return v2Assets(ctx, c)?.model.slot ?? c.slot
+}
+
 export function cosmeticView(ctx: AppContext, c: CosmeticRow): CosmeticView {
   const emote = c.slot === 'emote' ? EMOTE_BY_ID.get(c.id) : undefined
   const v2 = v2Assets(ctx, c)
   return {
     id: c.id,
     name: c.name,
-    slot: c.slot,
+    slot: slotOf(ctx, c),
     kind: c.kind,
-    unlock: c.unlock,
+    unlock: c.event ? 'event' : c.unlock,
+    ...(c.event ? { event: c.event } : {}),
     status: c.status,
     // v2: keine Vorlage – alte Clients (nur Vorlagen) lassen das Teil so einfach weg.
     template: c.format === 2 ? null : c.template,
@@ -262,6 +275,8 @@ export function seedBuiltinCosmetics(ctx: AppContext, list: AnyBuiltinCosmetic[]
 function seedV2(ctx: AppContext, c: BuiltinCosmeticV2, t: number): void {
   if (EMOTE_BY_ID.has(c.id)) throw new Error(`builtin cosmetic ${c.id}: id is an emote id`)
   assertNoSlotClash(ctx, c.id, 'hat')
+  // DB-Platz bleibt `hat` (CHECK), der echte Platz steht im Modell (`slotOf`).
+  const slot = c.model.slot
   const tex = c.model.texture
   const frames = tex.frames ?? 1
   const file = join(ctx.cosmeticDir, `${c.id}.png`)
@@ -271,18 +286,18 @@ function seedV2(ctx: AppContext, c: BuiltinCosmeticV2, t: number): void {
     run(
       ctx.db,
       `INSERT INTO cosmetics (id, kind, slot, template, name, owner_uuid, status, unlock, sha256, width, height, scale,
-         frames, frame_time_ms, emissive, hidden, sort, retired, created_at, format)
-       VALUES (?, 'builtin', 'hat', ?, ?, NULL, 'approved', ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 0, ?, 2)
+         frames, frame_time_ms, emissive, hidden, sort, retired, created_at, format, event)
+       VALUES (?, 'builtin', 'hat', ?, ?, NULL, 'approved', ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 0, ?, 2, ?)
        ON CONFLICT(id) DO UPDATE SET slot = excluded.slot, template = excluded.template, name = excluded.name,
-         unlock = excluded.unlock, sha256 = excluded.sha256, width = excluded.width, height = excluded.height,
+         unlock = excluded.unlock, event = excluded.event, sha256 = excluded.sha256, width = excluded.width, height = excluded.height,
          scale = excluded.scale, frames = excluded.frames, frame_time_ms = excluded.frame_time_ms,
          emissive = 0, hidden = excluded.hidden, sort = excluded.sort, retired = 0, format = 2
        WHERE cosmetics.kind = 'builtin'`,
       c.id, V2_TEMPLATE, c.name, c.unlock, c.hash, tex.width * tex.scale, tex.height * tex.scale, tex.scale, frames,
-      frames > 1 ? (tex.frameTimeMs ?? null) : null, c.hidden ? 1 : 0, c.sort, t,
+      frames > 1 ? (tex.frameTimeMs ?? null) : null, c.hidden ? 1 : 0, c.sort, t, c.event ?? null,
     )
-    run(ctx.db, "UPDATE OR IGNORE equipped_cosmetics SET slot = 'hat' WHERE cosmetic_id = ? AND slot <> 'hat'", c.id)
-    run(ctx.db, "DELETE FROM equipped_cosmetics WHERE cosmetic_id = ? AND slot <> 'hat'", c.id)
+    run(ctx.db, 'UPDATE OR IGNORE equipped_cosmetics SET slot = ? WHERE cosmetic_id = ? AND slot <> ?', slot, c.id, slot)
+    run(ctx.db, 'DELETE FROM equipped_cosmetics WHERE cosmetic_id = ? AND slot <> ?', c.id, slot)
   })
   ctx.cosmeticsV2.set(c.id, c)
 }
@@ -346,6 +361,7 @@ export function equippedView(ctx: AppContext, uuid: string): EquippedView {
 /** Katalog aus Sicht eines Nutzers: alle mitgelieferten Teile und Emotes + eigene Uploads. */
 export function cosmeticCatalog(ctx: AppContext, uuid: string): CosmeticCatalogEntry[] {
   const equipped = new Set([...equippedMap(ctx, uuid).values()].map((r) => r.id))
+  const events = activeEventsFor(ctx, uuid)
   const rows = all<CosmeticRow>(
     ctx.db,
     `SELECT c.* FROM cosmetics c
@@ -359,6 +375,8 @@ export function cosmeticCatalog(ctx: AppContext, uuid: string): CosmeticCatalogE
     .filter((c) => renderable(ctx, c))
     // Versteckte Teile (per Code) sieht nur, wer sie besitzt – nicht einmal als „gesperrt“.
     .filter((c) => !c.hidden || ownsCosmetic(ctx, uuid, c.id) || equipped.has(c.id))
+    // Event-Teile sieht man, solange das Event für einen aktiv ist – oder wenn man sie schon hat (bzw. trägt).
+    .filter((c) => !c.event || events.includes(c.event) || ownsCosmetic(ctx, uuid, c.id) || equipped.has(c.id))
     .map((c) => ({
       ...cosmeticView(ctx, c),
       owned: canUseCosmetic(ctx, uuid, c),
@@ -396,7 +414,7 @@ export function equipCosmetics(
     if (!c || (c.kind === 'upload' && c.owner_uuid !== uuid) || !renderable(ctx, c)) {
       throw notFound('cosmetic_not_found', `Cosmetic ${id} not found`)
     }
-    if (c.slot !== slot) throw badRequest('wrong_slot', `Cosmetic ${id} belongs in slot ${c.slot}, not ${slot}`)
+    if (slotOf(ctx, c) !== slot) throw badRequest('wrong_slot', `Cosmetic ${id} belongs in slot ${c.slot}, not ${slot}`)
     if (!canUseCosmetic(ctx, uuid, c)) throw forbidden('cosmetic_locked', `You have not unlocked cosmetic ${id}`)
     plan.push([slot, c])
   }
@@ -595,7 +613,7 @@ export function readCosmeticV2File(ctx: AppContext, id: string, which: V2File): 
 
 // ---------------------------------------------------------------- Zuteilung (Admin, Codes)
 
-export function grantCosmetic(ctx: AppContext, uuid: string, id: string, source: 'code' | 'admin'): boolean {
+export function grantCosmetic(ctx: AppContext, uuid: string, id: string, source: 'code' | 'admin' | 'event'): boolean {
   return (
     run(
       ctx.db,
@@ -644,4 +662,18 @@ export function setReviewStatus(
   // Freigabe: andere sehen das Teil ab jetzt. Ablehnung: es wurde abgelegt.
   for (const u of worn) emitCosmetics(ctx, u)
   return cosmeticView(ctx, getCosmetic(ctx, c.id)!)
+}
+
+/**
+ * Event-Teil gratis abholen (`POST /v1/me/cosmetics/{id}/claim`, §32): nur solange das Event für den Spieler aktiv
+ * ist; einmal abgeholt bleibt es für immer. Idempotent: wer es schon hat, bekommt auch bei beendetem Event `owned: true`.
+ */
+export function claimCosmetic(ctx: AppContext, uuid: string, id: string): { owned: true } {
+  const c = getCosmetic(ctx, id)
+  if (!c || c.kind !== 'builtin' || c.retired || !renderable(ctx, c)) throw notFound('cosmetic_not_found', 'Cosmetic not found')
+  if (!c.event) throw badRequest('not_claimable', 'This cosmetic is not an event item')
+  if (ownsCosmetic(ctx, uuid, c.id)) return { owned: true }
+  if (!eventActiveFor(ctx, uuid, c.event)) throw forbidden('event_inactive', 'This event is not active for you')
+  grantCosmetic(ctx, uuid, c.id, 'event')
+  return { owned: true }
 }

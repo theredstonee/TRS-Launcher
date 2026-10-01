@@ -172,10 +172,10 @@ export const adminCapeListQuery = z.strictObject({
 
 export const templateIdSchema = z.string().regex(TEMPLATE_ID, 'invalid template id')
 
-/** `{ hat?, wings?, back?, aura? }`: ID = anlegen, null = ablegen, fehlend = unverändert. */
+/** `{ hat?, wings?, back?, aura?, companion? }`: ID = anlegen, null = ablegen, fehlend = unverändert. */
 const slotValue = cosmeticIdSchema.nullable().optional()
 export const equipBody = z
-  .strictObject({ hat: slotValue, wings: slotValue, back: slotValue, aura: slotValue } satisfies
+  .strictObject({ hat: slotValue, wings: slotValue, back: slotValue, aura: slotValue, companion: slotValue } satisfies
     Record<(typeof WEARABLE_SLOTS)[number], typeof slotValue>)
   .refine((o) => Object.values(o).some((v) => v !== undefined), 'at least one slot is required')
 

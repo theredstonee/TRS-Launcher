@@ -121,6 +121,9 @@ export type ApiEvent =
   // ---------------------------------------------------------------- Notizen-Sync (§17.5, nur /v1/events/me)
   /** Eigene Notizen wurden (auf einem anderen Gerät) geändert: `GET /v1/me/sync/notes?since=<eigener Cursor>`. */
   | { type: 'notes_changed', cursor: string }
+  // ---------------------------------------------------------------- Events (§32, nur /v1/events/me)
+  /** Ein Event wurde ein-/ausgeschaltet oder du wurdest freigegeben/entfernt: `events` = für DICH aktive Events. */
+  | { type: 'events_changed', events: string[] }
 
 export type ApiEventType = ApiEvent['type']
 
@@ -304,6 +307,11 @@ export class EventHub {
     const m = this.listeners.get(uuid)
     if (!m) return
     for (const { onKick } of [...m.values()]) onKick()
+  }
+
+  /** Alle Nutzer mit mindestens einem offenen Stream (für Nachrichten an alle, z. B. Event global an/aus). */
+  listeningUsers(): string[] {
+    return [...this.listeners.keys()]
   }
 
   /** Hat der Nutzer einen offenen Stream? */

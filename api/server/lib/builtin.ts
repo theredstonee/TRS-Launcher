@@ -6,11 +6,20 @@ import { CAPE_ID, COSMETIC_ID } from './ids'
 import { BUILTIN_MAX_SCALE } from './png'
 import { TEMPLATE_ID } from './templates'
 
+/**
+ * Freischaltung eines Katalog-Eintrags: `free` | `code` | `admin` oder `{ "type": "event", "event": "halloween" }`
+ * (Event-Teile: gratis abholbar, solange das Event für den Spieler aktiv ist). In der DB steht dann `admin` + Spalte `event`.
+ */
+const eventUnlock = z.strictObject({ type: z.literal('event'), event: z.string().regex(/^[a-z][a-z0-9_]{0,31}$/) })
+const unlockField = z.union([z.enum(['free', 'code', 'admin']), eventUnlock])
+const splitUnlock = (u: z.output<typeof unlockField>): { unlock: 'free' | 'code' | 'admin', event?: string } =>
+  typeof u === 'string' ? { unlock: u } : { unlock: 'admin', event: u.event }
+
 const entry = z
   .object({
     id: z.string().regex(CAPE_ID).refine((s) => !/^u[0-9a-f]{20}$/.test(s), 'reserved for uploads'),
     name: z.string().min(1).max(32),
-    unlock: z.enum(['free', 'code', 'admin']),
+    unlock: unlockField,
     file: z.string().regex(/^[a-z0-9_-]+\.png$/),
     scale: z.int().min(1).max(BUILTIN_MAX_SCALE).default(1),
     animated: z.boolean().optional(),
@@ -40,7 +49,7 @@ const cosmeticV2Entry = z
     id: cosmeticId.refine((s) => /^[a-z][a-z0-9_]{0,39}$/.test(s), 'v2 ids: a–z, 0–9, _ (start with a letter)'),
     name: z.string().min(1).max(32),
     format: z.literal(2),
-    unlock: z.enum(['free', 'code', 'admin']),
+    unlock: unlockField,
     frames: z.int().min(1).max(16).default(1),
     frameTimeMs: z.int().min(16).max(10_000).nullish(),
     glowFrames: z.int().min(0).max(16).default(0),
@@ -102,7 +111,7 @@ export async function loadBuiltinCosmetics(
       const glow = c.glowFrames > 0 ? await need(`${c.id}-glow.png`) : null
       const card = await need(`${c.id}-card.png`)
       const cardNight = await need(`${c.id}-card-night.png`)
-      out.push(buildV2Cosmetic({ ...c, sort: sort++, files: { modelJson, texture, glow, card, cardNight } }))
+      out.push(buildV2Cosmetic({ ...c, ...splitUnlock(c.unlock), sort: sort++, files: { modelJson, texture, glow, card, cardNight } }))
       continue
     }
     const png = await readFile(c.file)
@@ -139,7 +148,7 @@ export async function loadBuiltins(
     out.push({
       id: c.id,
       name: c.name,
-      unlock: c.unlock,
+      ...splitUnlock(c.unlock),
       sort: sort++,
       scale: c.scale,
       frames: c.frames,

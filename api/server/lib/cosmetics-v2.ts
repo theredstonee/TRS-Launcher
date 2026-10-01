@@ -29,6 +29,8 @@ export interface BuiltinCosmeticV2 {
   unlock: 'free' | 'code' | 'admin'
   sort: number
   hidden?: boolean
+  /** Event-Teil (z. B. `halloween`): gratis abholbar, solange das Event für den Spieler aktiv ist. */
+  event?: string
   model: CosmeticModel
   files: CosmeticV2Files
   /** sha256 (hex) über model.json + Textur + Leucht-Streifen – ändert sich mit jedem der drei. */
@@ -58,6 +60,7 @@ export interface V2EntryInput {
   unlock: 'free' | 'code' | 'admin'
   sort: number
   hidden?: boolean
+  event?: string
   frames: number
   frameTimeMs?: number | null
   glowFrames: number
@@ -90,7 +93,7 @@ export function buildV2Cosmetic(e: V2EntryInput): BuiltinCosmeticV2 {
   if (!r.ok) fail(r.errors.join('; '))
   const model = json as CosmeticModel
   if (model.id !== e.id) fail(`model id "${model.id}" does not match the catalog id`)
-  if (model.slot !== 'hat' || model.attach !== 'head') fail('only slot hat / attach head are supported')
+  if ((model.slot !== 'hat' && model.slot !== 'companion') || model.attach !== 'head') fail('only slot hat or companion / attach head are supported')
   if (model.texture.scale > BUILTIN_MAX_SCALE) fail(`texture scale ${model.texture.scale} > ${BUILTIN_MAX_SCALE} (needs a DB migration)`)
   const texFrames = model.texture.frames ?? 1
   if (texFrames !== e.frames) fail(`catalog frames ${e.frames} ≠ model texture.frames ${texFrames}`)
@@ -110,6 +113,7 @@ export function buildV2Cosmetic(e: V2EntryInput): BuiltinCosmeticV2 {
     unlock: e.unlock,
     sort: e.sort,
     hidden: e.hidden ?? false,
+    ...(e.event ? { event: e.event } : {}),
     model,
     files: e.files,
     hash: v2Hash(e.files),

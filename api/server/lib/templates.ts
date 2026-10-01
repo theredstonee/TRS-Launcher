@@ -8,7 +8,10 @@ import { encodeRgba } from './png'
  * und UV-Netz sind in API.md §11 beschrieben.
  */
 
-export const WEARABLE_SLOTS = ['hat', 'wings', 'back', 'aura'] as const
+/** Plätze für Vorlagen (Format 1). */
+export const TEMPLATE_SLOTS = ['hat', 'wings', 'back', 'aura'] as const
+/** Plätze zum Tragen: zusätzlich `companion` (Begleiter, nur Format 2, wird zusätzlich zum Hut getragen). */
+export const WEARABLE_SLOTS = [...TEMPLATE_SLOTS, 'companion'] as const
 export type WearableSlot = (typeof WEARABLE_SLOTS)[number]
 export type CosmeticSlot = WearableSlot | 'emote'
 
@@ -107,7 +110,7 @@ const templateSchema = z.discriminatedUnion('kind', [
   z.strictObject({
     ...base,
     kind: z.literal('model'),
-    slot: z.enum(WEARABLE_SLOTS),
+    slot: z.enum(TEMPLATE_SLOTS),
     cubes: z.array(cubeSchema).min(1).max(32),
     /**
      * Tier-Kosmetik mit eigenem Verhalten (watscheln, umschauen, blinzeln, Flügel, quaken) – die Mod bewegt

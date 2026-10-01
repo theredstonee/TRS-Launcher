@@ -12,7 +12,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PNG } from 'pngjs'
 
-const IDS = ['redstone_crown', 'team_crown', 'trs_cap', 'lamp_helmet', 'top_hat', 'halo']
+const IDS = ['redstone_crown', 'team_crown', 'trs_cap', 'lamp_helmet', 'top_hat', 'halo', 'witch_hat', 'pumpkin_head', 'bat_buddy']
 const MAX_CARD = 512
 
 const STUDIO = process.argv[2] ?? 'E:/ai/trs-studio'

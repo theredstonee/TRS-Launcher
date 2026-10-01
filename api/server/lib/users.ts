@@ -8,6 +8,7 @@ import { finishChatPurge, prepareChatPurge } from './chat'
 import { forgetCircuitAuthor } from './circuits'
 import { endHostingFor } from './hosting'
 import { forgetIssueAuthor, removeUploadFiles, type UploadRow } from './issues'
+import { activeEventsFor } from './liveevents'
 import { purgeModeration } from './moderation'
 import { emitCape } from './playerevents'
 import { packsOf, removePackFiles } from './packs'
@@ -56,6 +57,8 @@ export interface MeView {
   createdAt: string
   settings: Settings
   activeCape: CapeView | null
+  /** Events, die für dich aktiv sind (global an ODER für dich freigegeben), z. B. `["halloween"]` (§32). */
+  events: string[]
 }
 
 export function getUser(ctx: AppContext, uuid: string): UserRow | undefined {
@@ -142,6 +145,7 @@ export function meView(ctx: AppContext, u: UserRow): MeView {
     createdAt: new Date(u.created_at).toISOString(),
     settings: settingsOf(u),
     activeCape: cape ? capeView(ctx, cape) : null,
+    events: activeEventsFor(ctx, u.uuid),
   }
 }
 

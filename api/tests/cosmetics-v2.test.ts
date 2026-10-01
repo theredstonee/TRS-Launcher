@@ -29,6 +29,8 @@ import { ADMIN, fixtureCosmetics, login, makeEnv, templatePng, type TestEnv } fr
 
 const ASSETS = join(__dirname, '..', 'assets', 'cosmetics')
 const V2_IDS = ['redstone_crown', 'team_crown', 'trs_cap', 'lamp_helmet', 'top_hat', 'halo']
+/** Plus die Halloween-Teile (Event, Migration 21): zwei Hüte und ein Begleiter. */
+const V2_ALL = [...V2_IDS, 'witch_hat', 'pumpkin_head', 'bat_buddy']
 const readCatalog = async () => JSON.parse(readFileSync(join(ASSETS, 'catalog.json'), 'utf8'))
 const readAsset = async (name: string) => {
   try {
@@ -54,10 +56,10 @@ async function seeded(env: TestEnv) {
 }
 
 describe('format v2: bundled models', () => {
-  it('all six hats are format 2, valid against their images and match the catalog', async () => {
+  it('all nine items are format 2, valid against their images and match the catalog', async () => {
     const list = await loadBuiltinCosmetics(readCatalog, readAsset)
     const v2 = list.filter((c) => c.format === 2)
-    expect(v2.map((c) => c.id)).toEqual(V2_IDS)
+    expect(v2.map((c) => c.id)).toEqual(V2_ALL)
     for (const c of v2) {
       const json = JSON.parse(c.files.modelJson.toString('utf8'))
       const png = (b: Buffer) => ({ width: b.readUInt32BE(16), height: b.readUInt32BE(20) })
@@ -76,7 +78,7 @@ describe('format v2: bundled models', () => {
   })
 
   it('the v1 textures of the replaced items are gone', () => {
-    for (const id of V2_IDS) expect(readFileSync.bind(null, join(ASSETS, `${id}.png`))).toThrow()
+    for (const id of V2_ALL) expect(readFileSync.bind(null, join(ASSETS, `${id}.png`))).toThrow()
   })
 
   it('an invalid model stops the start (loader throws)', async () => {

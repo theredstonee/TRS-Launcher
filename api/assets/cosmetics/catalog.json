@@ -54,6 +54,42 @@
     "glowFrameTimeMs": 150
   },
   {
+    "id": "witch_hat",
+    "name": "Hexenhut",
+    "format": 2,
+    "unlock": {
+      "type": "event",
+      "event": "halloween"
+    },
+    "frames": 1,
+    "glowFrames": 12,
+    "glowFrameTimeMs": 160
+  },
+  {
+    "id": "pumpkin_head",
+    "name": "Kürbiskopf",
+    "format": 2,
+    "unlock": {
+      "type": "event",
+      "event": "halloween"
+    },
+    "frames": 1,
+    "glowFrames": 12,
+    "glowFrameTimeMs": 120
+  },
+  {
+    "id": "bat_buddy",
+    "name": "Fledermaus-Begleiter",
+    "format": 2,
+    "unlock": {
+      "type": "event",
+      "event": "halloween"
+    },
+    "frames": 1,
+    "glowFrames": 12,
+    "glowFrameTimeMs": 150
+  },
+  {
     "id": "redstone_wings",
     "name": "Redstone-Flügel",
     "template": "wings",

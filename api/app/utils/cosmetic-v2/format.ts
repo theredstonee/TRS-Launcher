@@ -29,7 +29,7 @@ export const FACE_NORMAL: Readonly<Record<FaceName, Vec3>> = {
 
 export const MATERIALS: readonly MaterialName[] = ['cutout', 'emissive', 'translucent']
 export const ATTACH = ['head'] as const
-export const SLOTS = ['hat'] as const
+export const SLOTS = ['hat', 'companion'] as const
 export const CHANNELS: readonly Channel[] = ['rotation', 'position', 'scale']
 export const INTERPOLATIONS: readonly Interpolation[] = ['linear', 'smooth', 'step']
 export const DRIVERS: readonly Driver[] = ['idle', 'walk', 'sneak', 'jump', 'air']
@@ -141,7 +141,7 @@ export interface CosmeticModel {
   format: 2
   id: string
   name: string
-  slot: 'hat'
+  slot: 'hat' | 'companion'
   attach: 'head'
   texture: TextureSpec
   glow?: GlowSpec | null

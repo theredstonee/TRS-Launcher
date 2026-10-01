@@ -4,6 +4,6 @@ import { publicCapes } from '../../../lib/site'
 
 /** Website: öffentliche Galerie der mitgelieferten TRS-Umhänge. */
 export default defineEventHandler((event) => {
-  setResponseHeader(event, 'Cache-Control', 'public, max-age=300')
+  setResponseHeader(event, 'Cache-Control', 'public, max-age=60')
   return { capes: publicCapes(useCtx()) }
 })

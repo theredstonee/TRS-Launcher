@@ -33,6 +33,7 @@ export const PERMISSIONS = [
   'applications.manage',
   'applications.decide',
   'circuits.manage',
+  'events.manage',
   'team.page',
   'issues.manage',
   'issues.moderate',
@@ -53,6 +54,7 @@ export const PERMISSION_GROUPS: { id: string, permissions: Permission[] }[] = [
   { id: 'worlds', permissions: ['worlds.view', 'worlds.close'] },
   { id: 'applications', permissions: ['applications.view', 'applications.review', 'applications.manage', 'applications.decide'] },
   { id: 'team', permissions: ['roles.manage', 'team.page'] },
+  { id: 'events', permissions: ['events.manage'] },
   { id: 'issues', permissions: ['issues.manage', 'issues.moderate'] },
   { id: 'blog', permissions: ['blog.write', 'blog.publish'] },
 ]

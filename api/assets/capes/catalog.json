@@ -195,5 +195,18 @@
     "animated": true,
     "frames": 4,
     "frameTimeMs": 150
+  },
+  {
+    "id": "halloween",
+    "name": "Halloween",
+    "file": "halloween.png",
+    "unlock": {
+      "type": "event",
+      "event": "halloween"
+    },
+    "scale": 8,
+    "animated": true,
+    "frames": 4,
+    "frameTimeMs": 220
   }
 ]

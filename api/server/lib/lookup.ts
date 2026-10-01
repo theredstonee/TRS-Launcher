@@ -66,7 +66,7 @@ interface Row {
 const visibleStatus = (status: string, self: boolean) => status === 'approved' || (self && status === 'pending')
 
 export function emptyCosmetics(): LookupCosmetics {
-  return { hat: null, wings: null, back: null, aura: null }
+  return { hat: null, wings: null, back: null, aura: null, companion: null }
 }
 
 /**

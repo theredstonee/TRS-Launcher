@@ -757,7 +757,88 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
       }
     },
   },
+  {
+    // Events (§32, erstes: Halloween 2026): `events` (global an/aus) + `event_players` (Freigabe für einzelne Spieler,
+    // auch bei globalem „aus“); Recht `events.manage` (Owner, Admin); Spalte `event` an cosmetics/capes (Event-Teile:
+    // gratis abholbar, solange das Event für den Spieler aktiv ist, danach behalten). Die Blätter-Tabellen
+    // user_cosmetics/user_capes/equipped_cosmetics werden neu angelegt, damit `source = 'event'` bzw. der Platz
+    // `companion` erlaubt sind (SQLite kann CHECKs nicht ändern; sonst verweist niemand auf diese Tabellen). Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 21,
+    run: migrateEvents,
+  },
 ]
+
+/** Migration 21 (siehe oben). Exportiert für den Idempotenz-Test. */
+export function migrateEvents(db: DatabaseSync): void {
+  db.exec(`
+CREATE TABLE IF NOT EXISTS events (
+  id TEXT PRIMARY KEY CHECK (length(id) BETWEEN 1 AND 32),
+  enabled INTEGER NOT NULL DEFAULT 0 CHECK (enabled IN (0, 1)),
+  updated_at INTEGER,
+  updated_by TEXT
+);
+CREATE TABLE IF NOT EXISTS event_players (
+  event_id TEXT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  player_uuid TEXT NOT NULL CHECK (length(player_uuid) = 32),
+  player_name TEXT,
+  added_at INTEGER NOT NULL,
+  added_by TEXT,
+  PRIMARY KEY (event_id, player_uuid)
+);
+CREATE INDEX IF NOT EXISTS event_players_player ON event_players(player_uuid);
+INSERT OR IGNORE INTO events (id, enabled) VALUES ('halloween', 0);
+`)
+  grantBuiltin(db, { owner: ['events.manage'], admin: ['events.manage'] })
+
+  if (!hasColumn(db, 'cosmetics', 'event')) db.exec('ALTER TABLE cosmetics ADD COLUMN event TEXT')
+  if (!hasColumn(db, 'capes', 'event')) db.exec('ALTER TABLE capes ADD COLUMN event TEXT')
+
+  // Blätter-Tabellen neu anlegen (nur wenn der alte CHECK noch gilt).
+  const sqlOf = (name: string) => (db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?").get(name) as { sql: string } | undefined)?.sql ?? ''
+  if (!sqlOf('user_cosmetics').includes("'event'")) {
+    db.exec(`
+CREATE TABLE user_cosmetics_v21 (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  cosmetic_id TEXT NOT NULL REFERENCES cosmetics(id) ON DELETE CASCADE,
+  source TEXT NOT NULL CHECK (source IN ('code', 'admin', 'event')),
+  granted_at INTEGER NOT NULL,
+  PRIMARY KEY (uuid, cosmetic_id)
+);
+INSERT INTO user_cosmetics_v21 (uuid, cosmetic_id, source, granted_at) SELECT uuid, cosmetic_id, source, granted_at FROM user_cosmetics;
+DROP TABLE user_cosmetics;
+ALTER TABLE user_cosmetics_v21 RENAME TO user_cosmetics;
+`)
+  }
+  if (!sqlOf('user_capes').includes("'event'")) {
+    db.exec(`
+CREATE TABLE user_capes_v21 (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  cape_id TEXT NOT NULL REFERENCES capes(id) ON DELETE CASCADE,
+  source TEXT NOT NULL CHECK (source IN ('code', 'admin', 'event')),
+  granted_at INTEGER NOT NULL,
+  PRIMARY KEY (uuid, cape_id)
+);
+INSERT INTO user_capes_v21 (uuid, cape_id, source, granted_at) SELECT uuid, cape_id, source, granted_at FROM user_capes;
+DROP TABLE user_capes;
+ALTER TABLE user_capes_v21 RENAME TO user_capes;
+`)
+  }
+  if (!sqlOf('equipped_cosmetics').includes("'companion'")) {
+    db.exec(`
+CREATE TABLE equipped_cosmetics_v21 (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  slot TEXT NOT NULL CHECK (slot IN ('hat', 'wings', 'back', 'aura', 'companion')),
+  cosmetic_id TEXT NOT NULL REFERENCES cosmetics(id) ON DELETE CASCADE,
+  PRIMARY KEY (uuid, slot)
+);
+INSERT INTO equipped_cosmetics_v21 (uuid, slot, cosmetic_id) SELECT uuid, slot, cosmetic_id FROM equipped_cosmetics;
+DROP TABLE equipped_cosmetics;
+ALTER TABLE equipped_cosmetics_v21 RENAME TO equipped_cosmetics;
+CREATE INDEX IF NOT EXISTS equipped_cosmetics_item ON equipped_cosmetics(cosmetic_id);
+`)
+  }
+}
 
 /** Notizen-Sync (§17.5), Teil von Migration 19. Exportiert für den Idempotenz-Test. */
 export function migrateSyncNotes(db: DatabaseSync): void {

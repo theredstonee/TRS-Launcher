@@ -147,6 +147,7 @@ const en = {
       team: 'Team',
       issues: 'Issues',
       blog: 'Blog',
+      events: 'Events',
     } as Record<string, string>,
     perms: {
       'dashboard.view': 'See the overview',
@@ -179,6 +180,7 @@ const en = {
       'applications.manage': 'Edit positions and forms',
       'applications.decide': 'Accept or reject applications',
       'circuits.manage': 'Manage the circuit library (editor, import, submissions)',
+      'events.manage': 'Switch events on and off, allow single players (e.g. Halloween)',
       'team.page': 'Edit the public team page (members, order, titles)',
       'issues.manage': 'Triage issues (status, priority, assignee, tags, fixed in, merge, internal notes)',
       'issues.moderate': 'Moderate issues (delete, restore, close comments)',
@@ -537,6 +539,7 @@ const de: TeamTexts = {
       team: 'Team',
       issues: 'Issues',
       blog: 'Blog',
+      events: 'Events',
     },
     perms: {
       'dashboard.view': 'Übersicht sehen',
@@ -569,6 +572,7 @@ const de: TeamTexts = {
       'applications.manage': 'Stellen und Formulare bearbeiten',
       'applications.decide': 'Bewerbungen annehmen oder ablehnen',
       'circuits.manage': 'Schaltungs-Bibliothek verwalten (Editor, Import, Einreichungen)',
+      'events.manage': 'Events ein- und ausschalten, einzelne Spieler freigeben (z. B. Halloween)',
       'team.page': 'Öffentliche Team-Seite pflegen (Mitglieder, Reihenfolge, Titel)',
       'issues.manage': 'Issues bearbeiten (Status, Priorität, Zuständig, Tags, Erledigt in, Zusammenführen, interne Notizen)',
       'issues.moderate': 'Issues moderieren (löschen, wiederherstellen, Kommentare schließen)',
@@ -925,6 +929,7 @@ const es: TeamTexts = {
       team: 'Equipo',
       issues: 'Incidencias',
       blog: 'Blog',
+      events: 'Eventos',
     },
     perms: {
       'dashboard.view': 'Ver el resumen',
@@ -957,6 +962,7 @@ const es: TeamTexts = {
       'applications.manage': 'Editar puestos y formularios',
       'applications.decide': 'Aceptar o rechazar solicitudes',
       'circuits.manage': 'Gestionar la biblioteca de circuitos (editor, importación, envíos)',
+      'events.manage': 'Activar y desactivar eventos, permitir a jugadores concretos (p. ej. Halloween)',
       'team.page': 'Editar la página pública del equipo (miembros, orden, títulos)',
       'issues.manage': 'Gestionar incidencias (estado, prioridad, responsable, etiquetas, corregido en, fusionar, notas internas)',
       'issues.moderate': 'Moderar incidencias (eliminar, restaurar, cerrar comentarios)',

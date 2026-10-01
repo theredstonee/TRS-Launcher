@@ -121,7 +121,7 @@ describe('bundled cosmetics', () => {
     }
     expect(list.find((c) => c.id === 'team_crown')!.unlock).toBe('admin')
     // Hüte, Kronen und Heiligenschein sind Format v2; die übrigen bleiben Vorlage + Textur.
-    expect(list.filter((c) => c.format === 2).map((c) => c.id).sort()).toEqual(['halo', 'lamp_helmet', 'redstone_crown', 'team_crown', 'top_hat', 'trs_cap'])
+    expect(list.filter((c) => c.format === 2).map((c) => c.id).sort()).toEqual(['bat_buddy', 'halo', 'lamp_helmet', 'pumpkin_head', 'redstone_crown', 'team_crown', 'top_hat', 'trs_cap', 'witch_hat'])
     expect(list.filter((c) => c.format !== 2 && c.frames > 1).map((c) => c.id)).toEqual(
       expect.arrayContaining(['redstone_wings', 'redstone_aura']),
     )
