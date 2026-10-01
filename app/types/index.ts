@@ -603,6 +603,20 @@ export interface ContentSource {
   platform?: Platform
 }
 
+/** Eine Datei in einer Gruppe gleicher Mod-IDs. */
+export interface DuplicateFile {
+  fileName: string
+  version: string | null
+}
+
+/** Dieselbe Mod-ID in mehreren aktivierten Jars. `keep` bleibt, `disable` wird nur deaktiviert. */
+export interface DuplicateModGroup {
+  id: string
+  name: string
+  keep: DuplicateFile
+  disable: DuplicateFile[]
+}
+
 export interface ContentItem {
   fileName: string
   kind: ContentKind

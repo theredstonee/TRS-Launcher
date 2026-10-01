@@ -170,8 +170,15 @@ public final class LegacyPerf implements GameOptions {
 		frames++;
 		try {
 			Minecraft mc = Minecraft.getMinecraft();
-			boolean focused = Display.isActive() && !forceUnfocused;
-			boolean minimized = !Display.isVisible();
+			boolean fullscreen = false;
+			try {
+				fullscreen = Display.isFullscreen();
+			} catch (RuntimeException | LinkageError ignored) {
+			}
+			boolean iconified = !Display.isVisible();
+			// Exklusives Vollbild: nie die 1-FPS-Grenze, und sichtbar gilt als fokussiert.
+			boolean focused = DynamicFps.focusedForLimit(fullscreen, iconified, Display.isActive()) && !forceUnfocused;
+			boolean minimized = DynamicFps.minimizedForLimit(fullscreen, iconified);
 			boolean afk = perf.afkActive();
 			long now = System.nanoTime();
 			if (afk && (now - anyKeyAt > 250_000_000L || now < anyKeyAt)) {
@@ -188,8 +195,17 @@ public final class LegacyPerf implements GameOptions {
 					if (state == DynamicFps.State.AFK) return true;
 					// Fenster-Nachrichten holen, damit Fokus/Minimieren sofort ankommen (LWJGL 2).
 					Display.processMessages();
-					if (state == DynamicFps.State.MINIMIZED) return !Display.isVisible();
-					return forceUnfocused || !Display.isActive() || !Display.isVisible();
+					boolean fullscreen = false;
+					try {
+						fullscreen = Display.isFullscreen();
+					} catch (RuntimeException | LinkageError ignored) {
+					}
+					boolean iconified = !Display.isVisible();
+					// Vollbild und sichtbar: nicht schlafen. Sonst kommt das Fenster erst nach Sekunden zurück.
+					if (fullscreen && !iconified && !forceUnfocused) return false;
+					if (state == DynamicFps.State.MINIMIZED) return DynamicFps.minimizedForLimit(fullscreen, iconified);
+					return forceUnfocused || DynamicFps.minimizedForLimit(fullscreen, iconified)
+							|| !DynamicFps.focusedForLimit(fullscreen, iconified, Display.isActive());
 				}
 			});
 		} catch (RuntimeException | LinkageError e) {

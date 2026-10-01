@@ -1069,6 +1069,16 @@
     "updateTo": "Güncelle: {version}"
   },
   "content": {
+    "duplicates": {
+      "title": "Yinelenen modlar",
+      "text": "Minecraft her kopyayı yükler. Bu, oyun penceresini geciktirebilir, FPS'i düşürebilir ve tam ekranda çökertir. Hiçbir şey silinmez: eski kopyalar mods klasöründe .disabled olarak kalır ve yeniden açılabilir.",
+      "line": "{name}: {keep} kalsın, {files} devre dışı",
+      "fix": "En yenisini tut",
+      "fixing": "Eski kopyalar kapatılıyor …",
+      "anyway": "Yine de başlat",
+      "done": "Eski kopyalar devre dışı: {files}",
+      "banner": "{n} mod birden fazla kurulu. Minecraft her kopyayı yükler; bu pencereyi geciktirebilir, FPS'i düşürebilir ve tam ekranda çökertebilir. | {n} mod birden fazla kurulu. Minecraft her kopyayı yükler; bu pencereyi geciktirebilir, FPS'i düşürebilir ve tam ekranda çökertebilir."
+    },
     "toasts": {
       "upToDate": "Her şey güncel",
       "fileAdded": "Eklendi: {name}",
@@ -2400,7 +2410,8 @@
       "day": "Gündüz",
       "night": "Gece",
       "showHead": "Kafaya yakınlaştır",
-      "showBody": "Tüm vücudu göster"
+      "showBody": "Tüm vücudu göster",
+      "resetCamera": "Kamerayı sıfırla"
     },
     "trsCape": "TRS pelerini",
     "headCosmetic": "Kafa kozmetiği",

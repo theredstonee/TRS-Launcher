@@ -1069,6 +1069,16 @@
     "updateTo": "Aktualizuj do {version}"
   },
   "content": {
+    "duplicates": {
+      "title": "Zduplikowane mody",
+      "text": "Minecraft ładuje każdą kopię. To może opóźnić okno gry, obniżyć FPS i wywalić grę na pełnym ekranie. Nic nie jest usuwane: starsze kopie zostają w folderze mods jako .disabled i można je włączyć z powrotem.",
+      "line": "{name}: zostaw {keep}, wyłącz {files}",
+      "fix": "Zostaw najnowszą",
+      "fixing": "Wyłączanie starszych kopii …",
+      "anyway": "Uruchom mimo to",
+      "done": "Starsze kopie wyłączone: {files}",
+      "banner": "{n} mod jest zainstalowany więcej niż raz. Minecraft ładuje każdą kopię, co może opóźnić okno, obniżyć FPS i wywalić grę na pełnym ekranie. | {n} mody są zainstalowane więcej niż raz. Minecraft ładuje każdą kopię, co może opóźnić okno, obniżyć FPS i wywalić grę na pełnym ekranie. | {n} modów jest zainstalowanych więcej niż raz. Minecraft ładuje każdą kopię, co może opóźnić okno, obniżyć FPS i wywalić grę na pełnym ekranie."
+    },
     "toasts": {
       "upToDate": "Wszystko jest aktualne",
       "fileAdded": "Dodano {name}",
@@ -2400,7 +2410,8 @@
       "day": "Dzień",
       "night": "Noc",
       "showHead": "Przybliż głowę",
-      "showBody": "Pokaż całe ciało"
+      "showBody": "Pokaż całe ciało",
+      "resetCamera": "Resetuj kamerę"
     },
     "trsCape": "Peleryna TRS",
     "headCosmetic": "Kosmetyk na głowę",

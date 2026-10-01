@@ -193,20 +193,26 @@ public final class PerfHooks {
 			Minecraft mc = Minecraft.getInstance();
 			// Minecrafts Fokus-Merker hängt an Fenster-Ereignissen; geht eines verloren, hielte er das Fenster für
 			// „im Hintergrund“ und Dynamische FPS bremste das laufende Spiel. Im Zweifel zählt, was das System sagt.
-			boolean focused = !forceUnfocused && (mc.isWindowActive() || liveFocused());
 			long now = System.nanoTime();
 			// Fensterzustand und Tasten nur ein paar Mal je Sekunde (jede Abfrage kostet Zeit im Bild);
 			// Maus und Tasten braucht es überhaupt nur für die AFK-Grenze.
-			if (now - minimizedAt > WINDOW_POLL_NS || now < minimizedAt) {
+			// Im Vollbild jedes Bild: beim Umschalten kippt „minimiert“ nur für ein paar Frames.
+			boolean fullscreen = isFullscreen(mc);
+			if (fullscreen || now - minimizedAt > WINDOW_POLL_NS || now < minimizedAt) {
 				minimizedAt = now;
 				minimizedCached = liveMinimized();
 			}
+			// Exklusives Vollbild meldet oft kein Fokus oder „minimiert“. Die 1-FPS-Grenze
+			// würde das Fenster dann erst nach Sekunden zurückbringen.
+			boolean focused = DynamicFps.focusedForLimit(fullscreen, minimizedCached, mc.isWindowActive() || liveFocused());
+			if (forceUnfocused) focused = false;
+			boolean minimized = DynamicFps.minimizedForLimit(fullscreen, minimizedCached);
 			boolean afk = p.afkActive();
 			if (afk && (now - anyKeyAt > WINDOW_POLL_NS || now < anyKeyAt)) {
 				anyKeyAt = now;
 				anyKeyCached = anyKeyDown(mc);
 			}
-			int limit = p.frameLimit(System.currentTimeMillis(), focused, minimizedCached, afk ? mc.mouseHandler.xpos() : 0,
+			int limit = p.frameLimit(System.currentTimeMillis(), focused, minimized, afk ? mc.mouseHandler.xpos() : 0,
 					afk ? mc.mouseHandler.ypos() : 0, afk && anyKeyCached);
 			applyVolume(mc, p.volume());
 			p.pacer().pace(limit, WAKE);
@@ -231,9 +237,13 @@ public final class PerfHooks {
 		if (p == null) return false;
 		DynamicFps.State state = p.dynamicFps().state();
 		if (state == DynamicFps.State.AFK) return true;
+		boolean fullscreen = isFullscreen(Minecraft.getInstance());
 		boolean minimized = liveMinimized();
-		if (state == DynamicFps.State.MINIMIZED) return minimized;
-		return forceUnfocused || minimized || !liveFocused();
+		// Vollbild und sichtbar: nicht schlafen. Sonst kommt das Fenster erst nach Sekunden zurück.
+		if (fullscreen && !minimized && !forceUnfocused) return false;
+		if (state == DynamicFps.State.MINIMIZED) return DynamicFps.minimizedForLimit(fullscreen, minimized);
+		return forceUnfocused || DynamicFps.minimizedForLimit(fullscreen, minimized)
+				|| !DynamicFps.focusedForLimit(fullscreen, minimized, liveFocused());
 	}
 
 	private static long windowHandle() {
@@ -260,6 +270,19 @@ public final class PerfHooks {
 			/*return (org.lwjgl.sdl.SDLVideo.SDL_GetWindowFlags(windowHandle()) & org.lwjgl.sdl.SDLVideo.SDL_WINDOW_MINIMIZED) != 0;
 			*///?} else
 			return org.lwjgl.glfw.GLFW.glfwGetWindowAttrib(windowHandle(), org.lwjgl.glfw.GLFW.GLFW_ICONIFIED) != 0;
+		} catch (RuntimeException | LinkageError e) {
+			return false;
+		}
+	}
+
+	/** Spieler hat Vollbild an. Exklusives Vollbild meldet Fokus und Minimieren oft falsch. */
+	private static boolean isFullscreen(Minecraft mc) {
+		try {
+			if (mc.options == null) return false;
+			//? if >=1.19 {
+			/*return mc.options.fullscreen().get();
+			*///?} else
+			return mc.options.fullscreen;
 		} catch (RuntimeException | LinkageError e) {
 			return false;
 		}

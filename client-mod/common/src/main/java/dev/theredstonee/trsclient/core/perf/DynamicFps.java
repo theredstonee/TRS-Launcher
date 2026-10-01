@@ -84,4 +84,22 @@ public final class DynamicFps {
 	private static int clampFps(int fps) {
 		return Math.max(1, Math.min(240, fps));
 	}
+
+	/**
+	 * Vollbild nie als minimiert werten. Exklusives Vollbild meldet beim Umschalten oft
+	 * „minimiert“; die 1-FPS-Grenze schläft dann eine Sekunde auf dem Render-Thread, und das
+	 * Fenster kommt erst nach mehreren Bildern zurück.
+	 */
+	public static boolean minimizedForLimit(boolean fullscreen, boolean minimized) {
+		return minimized && !fullscreen;
+	}
+
+	/**
+	 * Vollbild und nicht minimiert gilt als fokussiert. GLFW meldet exklusives Vollbild oft
+	 * ohne Fokus, sonst bliebe die ganze Sitzung bei der Hintergrund-Grenze.
+	 */
+	public static boolean focusedForLimit(boolean fullscreen, boolean minimized, boolean focused) {
+		if (fullscreen && !minimized) return true;
+		return focused;
+	}
 }

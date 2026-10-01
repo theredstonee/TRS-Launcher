@@ -11,6 +11,7 @@ pub mod clips;
 pub mod client_mod_update;
 pub mod content;
 pub mod crash;
+pub mod duplicates;
 pub mod curseforge;
 mod default_skin;
 pub mod depcheck;

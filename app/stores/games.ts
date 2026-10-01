@@ -3,6 +3,7 @@ import { listen } from '@tauri-apps/api/event'
 import { defineStore } from 'pinia'
 import type { Diagnosis, GameEvent, LogLine, StageProgress } from '~/types'
 import type { HostedWorld } from '~/utils/hosting'
+import { askDuplicateMods } from '~/utils/duplicateMods'
 
 export type GamePhase = 'idle' | 'preparing' | 'running'
 
@@ -25,6 +26,8 @@ export interface GameState {
 // Gekürzt wird in Schritten, nicht bei jeder Zeile.
 const MAX_LOG_LINES = 100_000
 const TRIM_STEP = 5_000
+/** Instanz, deren Start gerade auf die Doppel-Mod-Frage wartet. */
+const duplicateGate = new Set<string>()
 
 function emptyState(): GameState {
   return { phase: 'idle', progress: null, error: null, logs: [], logTotal: 0, lastExit: null, startedAt: null }
@@ -114,6 +117,30 @@ export const useGamesStore = defineStore('games', () => {
     if (s.phase !== 'idle') return false
     // Modpack lädt noch Dateien: nicht halb installiert starten.
     if (useTasksStore().installingInstance(id)) return false
+    if (duplicateGate.has(id)) return false
+    duplicateGate.add(id)
+    try {
+      // Zwei Jars derselben Mod-ID (nicht nur gleicher Dateiname) laden beide.
+      // Das verzögert das Fenster und stürzt im Vollbild oft ab. Die Frage kommt
+      // vor der Vorbereitung, damit Java nicht schon startet.
+      const groups = await backend.duplicateMods(id).catch(() => [])
+      if (groups.length) {
+        const choice = await askDuplicateMods(id, groups)
+        if (choice === 'cancel') return false
+        if (choice === 'fix') {
+          try {
+            const files = await backend.resolveDuplicateMods(id)
+            if (files.length) useToasts().ok(t('content.duplicates.done', { files: files.join(', ') }))
+          } catch (e) {
+            useToasts().error(e)
+            return false
+          }
+        }
+      }
+    } finally {
+      duplicateGate.delete(id)
+    }
+    if (s.phase !== 'idle' || useTasksStore().installingInstance(id)) return false
     s.phase = 'preparing'
     s.error = null
     s.lastExit = null

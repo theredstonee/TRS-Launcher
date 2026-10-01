@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { isTauri } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-import type { BulkAction, ContentItem, ContentKind, ContentUpdate, DropEvent, Instance, ModrinthVersion, UploadResult } from '~/types'
+import type { BulkAction, ContentItem, ContentKind, ContentUpdate, DropEvent, DuplicateModGroup, Instance, ModrinthVersion, UploadResult } from '~/types'
 import { cancelledError } from '~/stores/tasks'
 
 // Inhalte einer Instanz als EINE Tabelle: Filter-Chips,
@@ -10,6 +10,8 @@ import { cancelledError } from '~/stores/tasks'
 const props = defineProps<{ instance: Instance }>()
 
 const items = ref<ContentItem[]>([])
+const duplicates = ref<DuplicateModGroup[]>([])
+const fixingDuplicates = ref(false)
 const loading = ref(false)
 const error = ref<string | null>(null)
 const filter = ref<'all' | ContentKind>('all')
@@ -70,15 +72,31 @@ const titleOf = (item: ContentItem) => item.title ?? item.fileName
 async function load(quiet = false) {
   if (!quiet) loading.value = true
   error.value = null
+  const duplicateScan = backend.duplicateMods(props.instance.id).catch(() => [] as DuplicateModGroup[])
   try {
     const lists = await Promise.all(contentKinds.map((k) => backend.listContent(props.instance.id, k)))
     items.value = lists.flat()
     const keys = new Set(items.value.map(keyOf))
     selected.value = new Set([...selected.value].filter((k) => keys.has(k)))
+    duplicates.value = await duplicateScan
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
     loading.value = false
+  }
+}
+
+async function keepNewestDuplicates() {
+  if (fixingDuplicates.value) return
+  fixingDuplicates.value = true
+  try {
+    const files = await backend.resolveDuplicateMods(props.instance.id)
+    if (files.length) toasts.ok(t('content.duplicates.done', { files: files.join(', ') }))
+    await load(true)
+  } catch (e) {
+    toasts.error(e)
+  } finally {
+    fixingDuplicates.value = false
   }
 }
 
@@ -345,6 +363,12 @@ const pendingUpdates = computed(() => updates.value ?? [])
     </div>
 
     <p v-if="error" role="alert" class="card mb-3 border-redstone-600/50 px-4 py-2.5 text-sm text-redstone-300">{{ error }}</p>
+    <div v-if="duplicates.length" class="card mb-3 flex flex-wrap items-center gap-3 border-warn/40 px-4 py-2.5 text-sm" data-testid="duplicate-mods-banner">
+      <span class="min-w-0 flex-1 text-base-200">{{ t('content.duplicates.banner', { n: duplicates.length }, duplicates.length) }}</span>
+      <button class="btn btn-primary px-3 py-1 text-xs" :disabled="fixingDuplicates" data-testid="duplicate-mods-keep" @click="keepNewestDuplicates">
+        {{ fixingDuplicates ? t('content.duplicates.fixing') : t('content.duplicates.fix') }}
+      </button>
+    </div>
     <div v-if="blockedCount" class="card mb-3 flex flex-wrap items-center gap-3 border-lamp-400/40 px-4 py-2.5 text-sm">
       <svg viewBox="0 0 24 24" class="size-4 shrink-0 text-lamp-300" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" /></svg>
       <span class="min-w-0 flex-1 text-base-200">{{ t('curseforge.blocked.banner', { count: blockedCount }, blockedCount) }}</span>

@@ -88,7 +88,12 @@ const scroller = useTemplateRef<HTMLElement>('scroller')
 const areaHeight = ref(640)
 let areaObserver: ResizeObserver | null = null
 /** Platz unter/über der Figur in der linken Spalte (Name, Leisten, Entwurf-Karte). */
-const LEFT_CHROME = 240
+const LEFT_CHROME = 276
+/** Kamera-Reset: jede Erhöhung schwenkt die Vorschau auf die Standardansicht. */
+const cameraReset = ref(0)
+function resetPreviewCamera() {
+  cameraReset.value++
+}
 const viewerHeight = computed(() =>
   wide.value ? Math.round(Math.min(520, Math.max(240, areaHeight.value - LEFT_CHROME))) : 300,
 )
@@ -688,6 +693,7 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
                   :companion="viewerCompanion"
                   :night="night"
                   :focus="focus"
+                  :reset-tick="cameraReset"
                   @cosmetic-error="toasts.error(t('headCosmetics.previewFailed'))"
                 />
               </ClientOnly>
@@ -719,44 +725,59 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
                   {{ companionPreview.name }} ✕
                 </button>
               </div>
-              <div class="flex items-center gap-1 border-t border-base-800/80 bg-base-950/60 p-1 text-[11px] backdrop-blur-sm">
-                <button
-                  v-for="key in (['walk', 'idle', 'none'] as const)"
-                  :key="key"
-                  class="seg flex-1 rounded px-2 py-1"
-                  :class="{ 'seg-on': animation === key }"
-                  @click="animation = key"
-                >
-                  {{ t(`skins.animation.${key}`) }}
-                </button>
-                <span class="mx-0.5 h-4 w-px bg-base-700" aria-hidden="true" />
-                <button
-                  class="seg grid size-6 shrink-0 place-items-center rounded px-0 py-0"
-                  :class="{ 'seg-on': focus === 'head' }"
-                  :aria-pressed="focus === 'head'"
-                  :title="focus === 'head' ? t('skins.viewer.showBody') : t('skins.viewer.showHead')"
-                  :aria-label="t('skins.viewer.showHead')"
-                  data-testid="skin-focus"
-                  @click="focus = focus === 'head' ? 'body' : 'head'"
-                >
-                  <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M9 4H5a1 1 0 0 0-1 1v4M15 4h4a1 1 0 0 1 1 1v4M9 20H5a1 1 0 0 1-1-1v-4M15 20h4a1 1 0 0 0 1-1v-4M9 9h6v6H9z" />
-                  </svg>
-                </button>
-                <button
-                  class="seg grid size-6 shrink-0 place-items-center rounded px-0 py-0"
-                  :class="{ 'seg-on': night }"
-                  :aria-pressed="night"
-                  :title="night ? t('skins.viewer.day') : t('skins.viewer.night')"
-                  :aria-label="t('skins.viewer.night')"
-                  data-testid="skin-night"
-                  @click="night = !night"
-                >
-                  <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path v-if="night" d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z" />
-                    <path v-else d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z" />
-                  </svg>
-                </button>
+              <div class="flex flex-col gap-1 border-t border-base-800/80 bg-base-950/60 p-1 text-[11px] backdrop-blur-sm">
+                <div class="flex items-center gap-1">
+                  <button
+                    v-for="key in (['walk', 'idle', 'none'] as const)"
+                    :key="key"
+                    class="seg flex-1 rounded px-2 py-1"
+                    :class="{ 'seg-on': animation === key }"
+                    @click="animation = key"
+                  >
+                    {{ t(`skins.animation.${key}`) }}
+                  </button>
+                </div>
+                <div class="flex flex-wrap items-center justify-center gap-1">
+                  <button
+                    class="seg grid size-6 shrink-0 place-items-center rounded px-0 py-0"
+                    :class="{ 'seg-on': focus === 'head' }"
+                    :aria-pressed="focus === 'head'"
+                    :title="focus === 'head' ? t('skins.viewer.showBody') : t('skins.viewer.showHead')"
+                    :aria-label="t('skins.viewer.showHead')"
+                    data-testid="skin-focus"
+                    @click="focus = focus === 'head' ? 'body' : 'head'"
+                  >
+                    <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M9 4H5a1 1 0 0 0-1 1v4M15 4h4a1 1 0 0 1 1 1v4M9 20H5a1 1 0 0 1-1-1v-4M15 20h4a1 1 0 0 0 1-1v-4M9 9h6v6H9z" />
+                    </svg>
+                  </button>
+                  <button
+                    class="seg inline-flex shrink-0 items-center gap-1 rounded px-2 py-1"
+                    :title="t('skins.viewer.resetCamera')"
+                    :aria-label="t('skins.viewer.resetCamera')"
+                    data-testid="skin-reset-camera"
+                    @click="resetPreviewCamera"
+                  >
+                    <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M3 12a9 9 0 1 0 2.2-5.8M3 4v5h5" />
+                    </svg>
+                    {{ t('skins.viewer.resetCamera') }}
+                  </button>
+                  <button
+                    class="seg grid size-6 shrink-0 place-items-center rounded px-0 py-0"
+                    :class="{ 'seg-on': night }"
+                    :aria-pressed="night"
+                    :title="night ? t('skins.viewer.day') : t('skins.viewer.night')"
+                    :aria-label="t('skins.viewer.night')"
+                    data-testid="skin-night"
+                    @click="night = !night"
+                  >
+                    <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path v-if="night" d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z" />
+                      <path v-else d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
             <p class="flex items-center justify-center gap-1.5 px-3 py-2 text-[11px] text-base-400">

@@ -1,6 +1,7 @@
 use tauri::ipc::Channel;
 use tauri::{AppHandle, State};
 use trs_core::content::{self, ContentItem, ContentKind, Platform};
+use trs_core::duplicates::{self, DuplicateModGroup};
 use trs_core::depcheck::{self, DependencyFix};
 use trs_core::modcompat::{self, CompatReport};
 use trs_core::modpack::{PackPreview, PackProgress};
@@ -25,6 +26,20 @@ pub async fn list_content(
     // `get` stellt sicher, dass die Instanz existiert.
     let instance = launcher.instances().get(&id).await?;
     Ok(content::list(launcher.paths(), &instance.id, kind).await?)
+}
+
+/// Dieselbe Mod-ID in mehreren aktivierten Jars (nicht nur gleiche Dateinamen).
+#[tauri::command]
+pub async fn duplicate_mods(launcher: State<'_, LauncherState>, id: String) -> CommandResult<Vec<DuplicateModGroup>> {
+    let instance = launcher.instances().get(&id).await?;
+    Ok(duplicates::find(launcher.paths(), &instance.id).await?)
+}
+
+/// Ältere Kopien deaktivieren (`.disabled`). Löscht nichts.
+#[tauri::command]
+pub async fn resolve_duplicate_mods(launcher: State<'_, LauncherState>, id: String) -> CommandResult<Vec<String>> {
+    let instance = launcher.instances().get(&id).await?;
+    Ok(duplicates::disable_older(launcher.paths(), &instance.id).await?)
 }
 
 #[tauri::command]
