@@ -47,6 +47,33 @@ class PerformanceTest {
 	}
 
 	@Test
+	void fullscreenSkipsTheMinimizedCapAndStaleFocus() {
+		// Fenster: minimiert bleibt minimiert, ohne Fokus bleibt unfokussiert.
+		assertTrue(DynamicFps.minimizedForLimit(false, true));
+		assertFalse(DynamicFps.minimizedForLimit(false, false));
+		assertFalse(DynamicFps.focusedForLimit(false, false, false));
+		assertTrue(DynamicFps.focusedForLimit(false, false, true));
+		// Vollbild und sichtbar: immer fokussiert, nie die 1-FPS-Grenze – auch wenn das System
+		// das Fenster gerade als minimiert oder ohne Fokus meldet.
+		assertFalse(DynamicFps.minimizedForLimit(true, true));
+		assertFalse(DynamicFps.minimizedForLimit(true, false));
+		assertTrue(DynamicFps.focusedForLimit(true, false, false));
+		// Wirklich weg (Alt-Tab): Fokus gilt wie gemeldet, die Minimiert-Grenze aber nicht.
+		assertFalse(DynamicFps.focusedForLimit(true, true, false));
+		assertTrue(DynamicFps.focusedForLimit(true, true, true));
+
+		DynamicFps d = new DynamicFps();
+		assertEquals(DynamicFps.State.ACTIVE, d.update(1000,
+				DynamicFps.focusedForLimit(true, false, false), DynamicFps.minimizedForLimit(true, true), 0));
+		assertEquals(0, DynamicFps.limit(d.state(), 15, 1, 0));
+		assertEquals(DynamicFps.State.UNFOCUSED, d.update(2000,
+				DynamicFps.focusedForLimit(true, true, false), DynamicFps.minimizedForLimit(true, true), 0));
+		assertEquals(15, DynamicFps.limit(d.state(), 15, 1, 0));
+		assertEquals(DynamicFps.State.MINIMIZED, d.update(3000, false, DynamicFps.minimizedForLimit(false, true), 0));
+		assertEquals(1, DynamicFps.limit(d.state(), 15, 1, 0));
+	}
+
+	@Test
 	void afkAfterMinutesWithoutInputAndBackOnMouseMove() {
 		DynamicFps d = new DynamicFps();
 		d.input(0 + 1, 100, 100, false);
