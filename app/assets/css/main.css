@@ -134,6 +134,37 @@
   --color-redstone-900: #2b1442;
 }
 
+/*
+ * Event „Halloween“ (`data-event` setzt stores/events.ts, nur solange das Event für den
+ * Spieler läuft): überlagert Akzent und Nacht-Palette zur Laufzeit. Die gespeicherte
+ * Einstellung (data-accent) bleibt unberührt und gilt danach wieder.
+ * Orange #ff7a1a, Lila #6b2fa8, Nacht #120a1c, Panel #1d1428, Text #efe6ff.
+ */
+:root[data-event="halloween"] {
+  --halloween-orange: #ff7a1a;
+  --halloween-purple: #6b2fa8;
+  --color-redstone-400: #ff9340;
+  --color-redstone-500: #ff7a1a;
+  --color-redstone-600: #c95a0a;
+}
+:root[data-event="halloween"]:not([data-theme="light"]) {
+  --color-base-950: #120a1c;
+  --color-base-900: #170e22;
+  --color-base-850: #1d1428;
+  --color-base-800: #281a38;
+  --color-base-700: #38274d;
+  --color-base-600: #54406e;
+  --color-base-400: #9c8bb8;
+  --color-base-200: #d6c8ee;
+  --color-base-50: #efe6ff;
+  --color-redstone-300: #ffb680;
+  --color-redstone-900: #3d1b06;
+}
+:root[data-event="halloween"][data-theme="light"] {
+  --color-redstone-300: #b34a00;
+  --color-redstone-900: #ffe9d6;
+}
+
 /* „Erweitertes Rendering“ aus: keine Unschärfe-Effekte. */
 :root.no-blur *,
 :root.no-blur *::before,

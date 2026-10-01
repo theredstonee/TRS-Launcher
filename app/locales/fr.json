@@ -293,7 +293,8 @@
       "missing_permission": "Il manque une permission à ton rôle pour cela.",
       "rank_too_low": "Ton rang dans l’équipe est trop bas pour cela.",
       "application_closed": "Cette candidature est déjà clôturée.",
-      "application_not_found": "Cette candidature n’existe pas (ou plus)."
+      "application_not_found": "Cette candidature n’existe pas (ou plus).",
+      "event_inactive": "Cet événement n’est pas actif pour toi en ce moment."
     },
     "auth": {
       "accountMismatch": "Cette connexion appartient à un autre compte – reconnecte-toi.",
@@ -594,6 +595,9 @@
       "redemptionsRange": "Utilisations par code : de 1 à 100 000.",
       "countRange": "Quantité : de 1 à 100 codes à la fois.",
       "expiryInPast": "La date d'expiration est dans le passé."
+    },
+    "trsEvents": {
+      "invalidEvent": "Événement invalide."
     },
     "trsPng": {
       "fileTooLarge": "Le fichier est trop volumineux (5 Mo max.).",
@@ -2877,7 +2881,8 @@
       "team": "Équipe",
       "locked": "Verrouillée",
       "shared": "Partagée",
-      "achievement": "Succès"
+      "achievement": "Succès",
+      "event": "Événement"
     },
     "status": {
       "pending": "En attente d'approbation",
@@ -3017,6 +3022,7 @@
       "rejectedReason": "Refusée : {reason}.",
       "lockedCode": "Verrouillée – peut être débloquée avec un code.",
       "lockedTeam": "Verrouillée – réservée à l'équipe TRS ou via un code.",
+      "event": "Gratuit tant qu’Halloween est actif pour toi. Tu gardes la cape ensuite.",
       "active": "Tu portes cette cape.",
       "free": "Disponible librement – porte-la pour que les autres la voient.",
       "unlocked": "Débloquée pour toi – porte-la pour que les autres la voient."
@@ -3026,6 +3032,8 @@
       "wear": "Porter",
       "removing": "Retrait…",
       "remove": "Retirer",
+      "claim": "L’obtenir gratuitement",
+      "claiming": "Récupération …",
       "endPreview": "Terminer l'aperçu"
     },
     "pendingCount": "{n} cape est en attente d'approbation. | {n} capes sont en attente d'approbation.",
@@ -3047,7 +3055,8 @@
       "uploaded": "Envoyée – ta cape est en attente d'approbation.",
       "deleted": "Cape supprimée",
       "hatOn": "« {name} » mis",
-      "hatOff": "Cosmétique de tête retiré"
+      "hatOff": "Cosmétique de tête retiré",
+      "claimed": "« {name} » est à toi."
     },
     "editor": {
       "title": "Envoyer ta propre cape",
@@ -3137,6 +3146,8 @@
       "achievement": "Débloque le succès « {name} ».",
       "achievementAny": "Débloque le succès correspondant.",
       "team": "Réservé à l’équipe TRS.",
+      "event": "Gratuit tant que l’événement est actif pour toi. Tu le gardes ensuite.",
+      "eventEnded": "L’événement est terminé – cet objet n’est pas gratuit pour le moment.",
       "other": "Indisponible pour le moment."
     },
     "selected": {
@@ -3149,7 +3160,23 @@
       "remove": "Retirer",
       "wearing": "Équipement…",
       "removing": "Retrait…",
-      "achievements": "Voir les succès"
+      "achievements": "Voir les succès",
+      "claim": "L’obtenir gratuitement",
+      "claiming": "Récupération …"
+    },
+    "toasts": {
+      "claimed": "« {name} » est à toi."
+    },
+    "companion": {
+      "title": "Compagnons",
+      "intro": "Vole autour de ta tête en plus du chapeau. L’aperçu montre chapeau, compagnon et cape ensemble.",
+      "empty": "Pas encore de compagnon.",
+      "wearing": "Compagnon : {name}",
+      "selectedWorn": "Il vole avec toi – tous les joueurs avec le TRS Client le voient.",
+      "toasts": {
+        "on": "« {name} » vole avec toi",
+        "off": "Compagnon retiré"
+      }
     }
   },
   "capeShare": {
@@ -3281,6 +3308,27 @@
     }
   },
   "admin": {
+    "events": {
+      "intro": "Un événement vaut pour tout le monde, ou il reste éteint et ne vaut que pour les joueurs ci-dessous. Tant qu’Halloween est actif pour toi, le launcher utilise le thème de nuit et les cosmétiques de l’événement sont gratuits.",
+      "enabled": "Activé",
+      "disabled": "Éteint",
+      "enable": "Activer",
+      "disable": "Éteindre",
+      "globalHint": "Activé veut dire tout le monde. Éteint veut dire seulement la liste.",
+      "players": "Liste autorisée",
+      "playerPlaceholder": "Nom Minecraft ou UUID",
+      "add": "Ajouter un joueur",
+      "adding": "Ajout …",
+      "remove": "Retirer",
+      "empty": "Aucun événement.",
+      "noPlayers": "Personne sur la liste. Tant que l’événement est éteint, personne ne le voit.",
+      "invalidPlayer": "Saisis un nom Minecraft (1–16 caractères : lettres, chiffres, _) ou un UUID.",
+      "names": {
+        "halloween": "Halloween"
+      },
+      "removeTitle": "Retirer de la liste ?",
+      "removeText": "Retirer {name} de cet événement ?"
+    },
     "tabs": {
       "capes": "Vérifier les capes"
     },
@@ -3394,7 +3442,11 @@
       "codeRevoked": "Code révoqué",
       "alreadyHad": "Avait déjà la cape.",
       "granted": "{cape} attribuée à {player}",
-      "grantRevoked": "Cape révoquée"
+      "grantRevoked": "Cape révoquée",
+      "eventOn": "L’événement est activé pour tout le monde.",
+      "eventOff": "L’événement est éteint – seule la liste l’a encore.",
+      "eventPlayerAdded": "{name} est sur la liste.",
+      "eventPlayerRemoved": "{name} a été retiré."
     },
     "mod": {
       "filters": {
@@ -4574,6 +4626,7 @@
       "worlds": "Mondes",
       "codes": "Codes",
       "wordFilter": "Filtre de mots",
+      "events": "Événements",
       "roles": "Rôles",
       "audit": "Journal d’audit",
       "keysHint": "Appuie sur ? pour les raccourcis clavier.",
@@ -4981,7 +5034,8 @@
       "applications_manage": "Gérer les postes",
       "applications_decide": "Décider des candidatures",
       "blog_write": "Écrire des articles de blog (brouillons, images)",
-      "blog_publish": "Publier, planifier et retirer des articles de blog"
+      "blog_publish": "Publier, planifier et retirer des articles de blog",
+      "events_manage": "Gérer les événements"
     }
   },
   "trsChoice": {

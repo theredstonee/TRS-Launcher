@@ -293,7 +293,8 @@
       "missing_permission": "Falta uma permissão ao seu cargo para isso.",
       "rank_too_low": "Seu nível na equipe é baixo demais para isso.",
       "application_closed": "Esta candidatura já foi encerrada.",
-      "application_not_found": "Esta candidatura não existe (mais)."
+      "application_not_found": "Esta candidatura não existe (mais).",
+      "event_inactive": "Este evento não está ativo para você agora."
     },
     "auth": {
       "accountMismatch": "Este login pertence a outra conta – entre novamente.",
@@ -594,6 +595,9 @@
       "redemptionsRange": "Resgates por código: 1 a 100.000.",
       "countRange": "Quantidade: 1 a 100 códigos de uma vez.",
       "expiryInPast": "A data de validade está no passado."
+    },
+    "trsEvents": {
+      "invalidEvent": "Evento inválido."
     },
     "trsPng": {
       "fileTooLarge": "O arquivo é grande demais (máx. 5 MB).",
@@ -2877,7 +2881,8 @@
       "team": "Equipe",
       "locked": "Bloqueada",
       "shared": "Compartilhada",
-      "achievement": "Conquista"
+      "achievement": "Conquista",
+      "event": "Evento"
     },
     "status": {
       "pending": "Aguardando aprovação",
@@ -3017,6 +3022,7 @@
       "rejectedReason": "Recusada: {reason}.",
       "lockedCode": "Bloqueada – pode ser desbloqueada com um código.",
       "lockedTeam": "Bloqueada – só para a equipe TRS ou via código.",
+      "event": "Grátis enquanto o Halloween estiver ativo para você. Depois a capa continua sua.",
       "active": "Você está usando esta capa.",
       "free": "Disponível livremente – vista-a para que outros possam vê-la.",
       "unlocked": "Desbloqueada para você – vista-a para que outros possam vê-la."
@@ -3026,6 +3032,8 @@
       "wear": "Vestir",
       "removing": "Tirando …",
       "remove": "Tirar",
+      "claim": "Pegar grátis",
+      "claiming": "Pegando …",
       "endPreview": "Encerrar prévia"
     },
     "pendingCount": "{n} capa aguardando aprovação. | {n} capas aguardando aprovação.",
@@ -3047,7 +3055,8 @@
       "uploaded": "Enviada – sua capa está aguardando aprovação.",
       "deleted": "Capa excluída",
       "hatOn": "“{name}” colocado",
-      "hatOff": "Cosmético de cabeça removido"
+      "hatOff": "Cosmético de cabeça removido",
+      "claimed": "“{name}” agora é seu."
     },
     "editor": {
       "title": "Enviar sua própria capa",
@@ -3137,6 +3146,8 @@
       "achievement": "Desbloqueie a conquista “{name}”.",
       "achievementAny": "Desbloqueie a conquista correspondente.",
       "team": "Só para a equipe TRS.",
+      "event": "Grátis enquanto o evento estiver ativo para você. Depois você fica com ele.",
+      "eventEnded": "O evento acabou – este item não está grátis agora.",
       "other": "Indisponível no momento."
     },
     "selected": {
@@ -3149,7 +3160,23 @@
       "remove": "Tirar",
       "wearing": "Colocando …",
       "removing": "Tirando …",
-      "achievements": "Ir para as conquistas"
+      "achievements": "Ir para as conquistas",
+      "claim": "Pegar grátis",
+      "claiming": "Pegando …"
+    },
+    "toasts": {
+      "claimed": "“{name}” agora é seu."
+    },
+    "companion": {
+      "title": "Companheiros",
+      "intro": "Voa em volta da sua cabeça além do chapéu. A prévia mostra chapéu, companheiro e capa juntos.",
+      "empty": "Ainda não há companheiros.",
+      "wearing": "Companheiro: {name}",
+      "selectedWorn": "Voando com você – todo mundo com o TRS Client vê.",
+      "toasts": {
+        "on": "“{name}” está voando com você",
+        "off": "Companheiro removido"
+      }
     }
   },
   "capeShare": {
@@ -3281,6 +3308,27 @@
     }
   },
   "admin": {
+    "events": {
+      "intro": "Um evento vale para todo mundo, ou fica desligado e vale só para os jogadores abaixo. Enquanto o Halloween estiver ativo para você, o launcher usa o tema noturno e a cosmética do evento é grátis.",
+      "enabled": "Ligado",
+      "disabled": "Desligado",
+      "enable": "Ligar",
+      "disable": "Desligar",
+      "globalHint": "Ligado significa todos os jogadores. Desligado significa só a lista.",
+      "players": "Lista de permissão",
+      "playerPlaceholder": "Nome do Minecraft ou UUID",
+      "add": "Adicionar jogador",
+      "adding": "Adicionando …",
+      "remove": "Remover",
+      "empty": "Nenhum evento.",
+      "noPlayers": "Ninguém na lista. Enquanto o evento estiver desligado, ninguém vê.",
+      "invalidPlayer": "Digite um nome do Minecraft (1–16 caracteres: letras, números, _) ou um UUID.",
+      "names": {
+        "halloween": "Halloween"
+      },
+      "removeTitle": "Remover da lista?",
+      "removeText": "Remover {name} deste evento?"
+    },
     "tabs": {
       "capes": "Analisar capas"
     },
@@ -3394,7 +3442,11 @@
       "codeRevoked": "Código revogado",
       "alreadyHad": "Já tinha a capa.",
       "granted": "{cape} concedida a {player}",
-      "grantRevoked": "Capa revogada"
+      "grantRevoked": "Capa revogada",
+      "eventOn": "O evento está ligado para todo mundo.",
+      "eventOff": "O evento está desligado – só a lista ainda tem.",
+      "eventPlayerAdded": "{name} está na lista.",
+      "eventPlayerRemoved": "{name} foi removido."
     },
     "mod": {
       "filters": {
@@ -4574,6 +4626,7 @@
       "worlds": "Mundos",
       "codes": "Códigos",
       "wordFilter": "Filtro de palavras",
+      "events": "Eventos",
       "roles": "Cargos",
       "audit": "Registro de auditoria",
       "keysHint": "Pressione ? para ver os atalhos de teclado.",
@@ -4981,7 +5034,8 @@
       "applications_manage": "Gerenciar vagas",
       "applications_decide": "Decidir candidaturas",
       "blog_write": "Escrever posts do blog (rascunhos, imagens)",
-      "blog_publish": "Publicar, agendar e despublicar posts do blog"
+      "blog_publish": "Publicar, agendar e despublicar posts do blog",
+      "events_manage": "Gerenciar eventos"
     }
   },
   "trsChoice": {

@@ -293,7 +293,8 @@
       "missing_permission": "Your role is missing a permission for this.",
       "rank_too_low": "Your rank in the team is too low for this.",
       "application_closed": "This application is already closed.",
-      "application_not_found": "This application doesn’t exist (any more)."
+      "application_not_found": "This application doesn’t exist (any more).",
+      "event_inactive": "This event isn't on for you right now."
     },
     "auth": {
       "accountMismatch": "This sign-in belongs to a different account – please sign in again.",
@@ -594,6 +595,9 @@
       "redemptionsRange": "Redemptions per code: 1 to 100,000.",
       "countRange": "Amount: 1 to 100 codes at once.",
       "expiryInPast": "The expiry date is in the past."
+    },
+    "trsEvents": {
+      "invalidEvent": "Invalid event."
     },
     "trsPng": {
       "fileTooLarge": "The file is too large (max. 5 MB).",
@@ -2877,7 +2881,8 @@
       "team": "Team",
       "locked": "Locked",
       "shared": "Shared",
-      "achievement": "Achievement"
+      "achievement": "Achievement",
+      "event": "Event"
     },
     "status": {
       "pending": "Awaiting approval",
@@ -3017,6 +3022,7 @@
       "rejectedReason": "Rejected: {reason}.",
       "lockedCode": "Locked – can be unlocked with a code.",
       "lockedTeam": "Locked – only for the TRS team or via code.",
+      "event": "Free while Halloween is on for you. You keep the cape afterwards.",
       "active": "You're wearing this cape.",
       "free": "Freely available – put it on so others can see it.",
       "unlocked": "Unlocked for you – put it on so others can see it."
@@ -3026,6 +3032,8 @@
       "wear": "Put on",
       "removing": "Taking off …",
       "remove": "Take off",
+      "claim": "Get it free",
+      "claiming": "Claiming …",
       "endPreview": "End preview"
     },
     "pendingCount": "{n} cape is awaiting approval. | {n} capes are awaiting approval.",
@@ -3047,7 +3055,8 @@
       "uploaded": "Uploaded – your cape is awaiting approval.",
       "deleted": "Cape deleted",
       "hatOn": "Put on “{name}”",
-      "hatOff": "Head cosmetic taken off"
+      "hatOff": "Head cosmetic taken off",
+      "claimed": "“{name}” is yours now."
     },
     "editor": {
       "title": "Upload your own cape",
@@ -3137,6 +3146,8 @@
       "achievement": "Unlock the achievement “{name}”.",
       "achievementAny": "Unlock the matching achievement.",
       "team": "Only for the TRS team.",
+      "event": "Free while this event is on for you. You keep it afterwards.",
+      "eventEnded": "The event is over, so this item is not free to claim right now.",
       "other": "Not available right now."
     },
     "selected": {
@@ -3149,7 +3160,23 @@
       "remove": "Take off",
       "wearing": "Putting on …",
       "removing": "Taking off …",
-      "achievements": "Go to achievements"
+      "achievements": "Go to achievements",
+      "claim": "Get it free",
+      "claiming": "Claiming …"
+    },
+    "toasts": {
+      "claimed": "“{name}” is yours now."
+    },
+    "companion": {
+      "title": "Companions",
+      "intro": "Flies around your head in addition to a hat. The preview shows hat, companion and cape together.",
+      "empty": "No companions available yet.",
+      "wearing": "Companion: {name}",
+      "selectedWorn": "Flying with you – everyone with the TRS Client sees it.",
+      "toasts": {
+        "on": "“{name}” is flying with you",
+        "off": "Companion taken off"
+      }
     }
   },
   "capeShare": {
@@ -3281,6 +3308,27 @@
     }
   },
   "admin": {
+    "events": {
+      "intro": "Turn an event on for everyone, or leave it off and allow only the players below. While Halloween is on for you, the launcher uses the night theme and the event cosmetics are free to claim.",
+      "enabled": "On",
+      "disabled": "Off",
+      "enable": "Turn on",
+      "disable": "Turn off",
+      "globalHint": "On means every player. Off means only the list below.",
+      "players": "Allowlist",
+      "playerPlaceholder": "Minecraft name or UUID",
+      "add": "Add player",
+      "adding": "Adding …",
+      "remove": "Remove",
+      "empty": "No events.",
+      "noPlayers": "Nobody on the allowlist. While the event is off, nobody sees it.",
+      "invalidPlayer": "Enter a Minecraft name (1–16 characters: letters, digits, _) or a UUID.",
+      "names": {
+        "halloween": "Halloween"
+      },
+      "removeTitle": "Remove from the allowlist?",
+      "removeText": "Remove {name} from this event?"
+    },
     "tabs": {
       "capes": "Review capes"
     },
@@ -3394,7 +3442,11 @@
       "codeRevoked": "Code revoked",
       "alreadyHad": "Already had the cape.",
       "granted": "{cape} granted to {player}",
-      "grantRevoked": "Cape revoked"
+      "grantRevoked": "Cape revoked",
+      "eventOn": "The event is on for everyone.",
+      "eventOff": "The event is off – only the allowlist still has it.",
+      "eventPlayerAdded": "{name} is on the list.",
+      "eventPlayerRemoved": "{name} was removed."
     },
     "mod": {
       "filters": {
@@ -4574,6 +4626,7 @@
       "worlds": "Worlds",
       "codes": "Codes",
       "wordFilter": "Word filter",
+      "events": "Events",
       "roles": "Roles",
       "audit": "Audit log",
       "keysHint": "Press ? for keyboard shortcuts.",
@@ -4981,7 +5034,8 @@
       "applications_manage": "Manage positions",
       "applications_decide": "Decide applications",
       "blog_write": "Write blog posts (drafts, images)",
-      "blog_publish": "Publish, schedule and unpublish blog posts"
+      "blog_publish": "Publish, schedule and unpublish blog posts",
+      "events_manage": "Manage events"
     }
   },
   "trsChoice": {

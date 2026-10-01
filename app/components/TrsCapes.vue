@@ -8,6 +8,7 @@ const props = defineProps<{ previewId: string | null }>()
 const emit = defineEmits<{ preview: [cape: TrsCape | null]; active: [cape: TrsCape | null] }>()
 
 const trs = useTrsStore()
+const events = useEventsStore()
 const accounts = useAccountsStore()
 const toasts = useToasts()
 
@@ -20,6 +21,25 @@ const active = computed(() => capes.value?.find((c) => c.active) ?? null)
 // Die Seite zeigt den getragenen TRS-Umhang in der Vorschau – so wie andere ihn im Spiel sehen.
 watch(active, (cape) => emit('active', cape), { immediate: true })
 const selected = computed(() => capes.value?.find((c) => c.id === props.previewId) ?? null)
+const canClaim = computed(() => {
+  const cape = selected.value
+  return !!cape && !cape.owned && cape.unlock === 'event' && !!cape.unlockEvent && events.has(cape.unlockEvent)
+})
+
+async function claim() {
+  const cape = selected.value
+  if (!cape || busy.value) return
+  busy.value = 'claim'
+  try {
+    await backend.trs.claimCape(cape.id)
+    toasts.ok(t('capes.toasts.claimed', { name: cape.name }))
+    await load()
+  } catch (e) {
+    toasts.error(e)
+  } finally {
+    busy.value = null
+  }
+}
 const pendingCount = computed(() => capes.value?.filter((c) => c.kind === 'upload' && c.status === 'pending').length ?? 0)
 
 async function load() {
@@ -287,6 +307,7 @@ function lockClass(cape: TrsCape) {
                 }}
               </template>
               <template v-else-if="!selected.owned && selected.unlock === 'code'">{{ t('capes.selected.lockedCode') }}</template>
+              <template v-else-if="!selected.owned && selected.unlock === 'event'">{{ t('capes.selected.event') }}</template>
               <template v-else-if="!selected.owned">{{ t('capes.selected.lockedTeam') }}</template>
               <template v-else-if="selected.active">{{ t('capes.selected.active') }}</template>
               <template v-else-if="selected.unlock === 'free'">{{ t('capes.selected.free') }}</template>
@@ -313,6 +334,15 @@ function lockClass(cape: TrsCape) {
           </button>
           <button v-if="selected.active" class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="!!busy" @click="wear(null)">
             {{ busy === 'wear' ? t('capes.actions.removing') : t('capes.actions.remove') }}
+          </button>
+          <button
+            v-if="canClaim"
+            class="btn btn-primary px-3 py-1.5 text-xs"
+            :disabled="!!busy"
+            data-testid="trs-cape-claim"
+            @click="claim"
+          >
+            {{ busy === 'claim' ? t('capes.actions.claiming') : t('capes.actions.claim') }}
           </button>
           <button
             v-if="!selected.owned && selected.unlock === 'code'"

@@ -9,11 +9,14 @@ const props = withDefaults(defineProps<{ percent?: number; powered?: boolean; se
   indeterminate: false,
 })
 
+const events = useEventsStore()
 const lit = computed(() => (props.powered ? props.segments : Math.round((props.percent / 100) * props.segments)))
 </script>
 
 <template>
-  <div class="relative flex items-center gap-[3px]" aria-hidden="true">
+  <!-- Halloween: jede Leitung (Installieren, Starten, Downloads) wird zum Hexen-Balken. -->
+  <WitchProgress v-if="events.halloween" :percent="percent" :powered="powered" :indeterminate="indeterminate" />
+  <div v-else class="relative flex items-center gap-[3px]" aria-hidden="true">
     <span
       v-for="i in segments"
       :key="i"

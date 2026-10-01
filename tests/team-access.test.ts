@@ -79,7 +79,7 @@ describe('me.team aus dem Kern', () => {
 
 describe('Sichtbarkeit nach Rechten', () => {
   it('Admin sieht alles, Rollen/Bewerbungen/Stellen als Website-Links', () => {
-    expect(paths(admin)).toEqual(['/admin', '/admin/reports', '/admin/appeals', '/admin/players', '/admin/sanctions', '/admin/uploads', '/admin/worlds', '/admin/codes', '/admin/word-filter', '/admin/audit'])
+    expect(paths(admin)).toEqual(['/admin', '/admin/reports', '/admin/appeals', '/admin/players', '/admin/sanctions', '/admin/uploads', '/admin/worlds', '/admin/codes', '/admin/word-filter', '/admin/events', '/admin/audit'])
     expect(site(admin)).toEqual(['applications', 'jobs', 'roles', 'blog'])
     expect(websiteSections.every((s) => s.external && s.to.startsWith('https://trs-launcher.theredstonee.de/admin/'))).toBe(true)
   })
@@ -118,7 +118,7 @@ describe('Sichtbarkeit nach Rechten', () => {
     expect(paths(null)).toEqual([])
     expect(mayOpen(admin, '/admin/unbekannt')).toBe(false)
     // Owner dürfen alles, auch ohne ausdrückliche Rechte in der Liste.
-    expect(paths(owner)).toHaveLength(10)
+    expect(paths(owner)).toHaveLength(11)
   })
 })
 

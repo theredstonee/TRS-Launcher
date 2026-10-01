@@ -293,7 +293,8 @@
       "missing_permission": "Deiner Rolle fehlt dafür ein Recht.",
       "rank_too_low": "Dafür ist dein Rang im Team zu niedrig.",
       "application_closed": "Diese Bewerbung ist schon abgeschlossen.",
-      "application_not_found": "Diese Bewerbung gibt es nicht (mehr)."
+      "application_not_found": "Diese Bewerbung gibt es nicht (mehr).",
+      "event_inactive": "Dieses Event läuft für dich gerade nicht."
     },
     "auth": {
       "accountMismatch": "Die Anmeldung gehört zu einem anderen Account – bitte erneut anmelden.",
@@ -594,6 +595,9 @@
       "redemptionsRange": "Einlösungen je Code: 1 bis 100 000.",
       "countRange": "Anzahl: 1 bis 100 Codes auf einmal.",
       "expiryInPast": "Das Ablaufdatum liegt in der Vergangenheit."
+    },
+    "trsEvents": {
+      "invalidEvent": "Ungültiges Event."
     },
     "trsPng": {
       "fileTooLarge": "Die Datei ist zu groß (höchstens 5 MB).",
@@ -2877,7 +2881,8 @@
       "team": "Team",
       "locked": "Gesperrt",
       "shared": "Geteilt",
-      "achievement": "Erfolg"
+      "achievement": "Erfolg",
+      "event": "Event"
     },
     "status": {
       "pending": "Wartet auf Freigabe",
@@ -3017,6 +3022,7 @@
       "rejectedReason": "Abgelehnt: {reason}.",
       "lockedCode": "Gesperrt – mit einem Code freischaltbar.",
       "lockedTeam": "Gesperrt – nur für das TRS-Team bzw. per Code.",
+      "event": "Gratis, solange Halloween für dich läuft. Danach behältst du den Umhang.",
       "active": "Du trägst diesen Umhang.",
       "free": "Frei verfügbar – anlegen, damit ihn andere sehen.",
       "unlocked": "Für dich freigeschaltet – anlegen, damit ihn andere sehen."
@@ -3026,6 +3032,8 @@
       "wear": "Anlegen",
       "removing": "Lege ab …",
       "remove": "Ablegen",
+      "claim": "Gratis holen",
+      "claiming": "Wird geholt …",
       "endPreview": "Vorschau beenden"
     },
     "pendingCount": "{n} Umhang wartet auf Freigabe. | {n} Umhänge warten auf Freigabe.",
@@ -3047,7 +3055,8 @@
       "uploaded": "Hochgeladen – dein Umhang wartet auf Freigabe.",
       "deleted": "Umhang gelöscht",
       "hatOn": "„{name}“ aufgesetzt",
-      "hatOff": "Kopf-Kosmetik abgesetzt"
+      "hatOff": "Kopf-Kosmetik abgesetzt",
+      "claimed": "„{name}“ gehört dir jetzt."
     },
     "editor": {
       "title": "Eigenen Umhang hochladen",
@@ -3137,6 +3146,8 @@
       "achievement": "Schalte den Erfolg „{name}“ frei.",
       "achievementAny": "Schalte den passenden Erfolg frei.",
       "team": "Nur für das TRS-Team.",
+      "event": "Gratis, solange das Event für dich läuft. Danach behältst du es.",
+      "eventEnded": "Das Event ist vorbei – dieses Teil gibt es gerade nicht gratis.",
       "other": "Zurzeit nicht erhältlich."
     },
     "selected": {
@@ -3149,7 +3160,23 @@
       "remove": "Absetzen",
       "wearing": "Setze auf …",
       "removing": "Setze ab …",
-      "achievements": "Zu den Erfolgen"
+      "achievements": "Zu den Erfolgen",
+      "claim": "Gratis holen",
+      "claiming": "Wird geholt …"
+    },
+    "toasts": {
+      "claimed": "„{name}“ gehört dir jetzt."
+    },
+    "companion": {
+      "title": "Begleiter",
+      "intro": "Fliegt zusätzlich zum Hut um deinen Kopf. Die Vorschau zeigt Hut, Begleiter und Umhang zusammen.",
+      "empty": "Noch keine Begleiter.",
+      "wearing": "Begleiter: {name}",
+      "selectedWorn": "Fliegt mit – alle mit TRS Client sehen ihn.",
+      "toasts": {
+        "on": "„{name}“ fliegt mit",
+        "off": "Begleiter abgesetzt"
+      }
     }
   },
   "capeShare": {
@@ -3281,6 +3308,27 @@
     }
   },
   "admin": {
+    "events": {
+      "intro": "Ein Event gilt für alle Spieler, oder es bleibt aus und gilt nur für die Spieler unten. Solange Halloween für dich an ist, nutzt der Launcher das Nacht-Thema und die Event-Kosmetik ist gratis.",
+      "enabled": "An",
+      "disabled": "Aus",
+      "enable": "Einschalten",
+      "disable": "Ausschalten",
+      "globalHint": "An heißt alle Spieler. Aus heißt nur die Liste unten.",
+      "players": "Allowlist",
+      "playerPlaceholder": "Minecraft-Name oder UUID",
+      "add": "Spieler hinzufügen",
+      "adding": "Füge hinzu …",
+      "remove": "Entfernen",
+      "empty": "Keine Events.",
+      "noPlayers": "Niemand auf der Liste. Solange das Event aus ist, sieht es niemand.",
+      "invalidPlayer": "Bitte einen Minecraft-Namen (1–16 Zeichen: A–Z, 0–9, _) oder eine UUID eingeben.",
+      "names": {
+        "halloween": "Halloween"
+      },
+      "removeTitle": "Von der Allowlist nehmen?",
+      "removeText": "{name} von diesem Event nehmen?"
+    },
     "tabs": {
       "capes": "Umhänge prüfen"
     },
@@ -3394,7 +3442,11 @@
       "codeRevoked": "Code widerrufen",
       "alreadyHad": "Hatte den Umhang schon.",
       "granted": "{cape} an {player} vergeben",
-      "grantRevoked": "Umhang entzogen"
+      "grantRevoked": "Umhang entzogen",
+      "eventOn": "Das Event ist für alle an.",
+      "eventOff": "Das Event ist aus – nur die Allowlist hat es noch.",
+      "eventPlayerAdded": "{name} steht auf der Liste.",
+      "eventPlayerRemoved": "{name} wurde entfernt."
     },
     "mod": {
       "filters": {
@@ -4574,6 +4626,7 @@
       "worlds": "Welten",
       "codes": "Codes",
       "wordFilter": "Wortfilter",
+      "events": "Events",
       "roles": "Rollen",
       "audit": "Audit-Log",
       "keysHint": "Mit ? siehst du alle Tastenkürzel.",
@@ -4981,7 +5034,8 @@
       "applications_manage": "Stellen verwalten",
       "applications_decide": "Über Bewerbungen entscheiden",
       "blog_write": "Blog-Beiträge schreiben (Entwürfe, Bilder)",
-      "blog_publish": "Blog-Beiträge veröffentlichen, planen und zurückziehen"
+      "blog_publish": "Blog-Beiträge veröffentlichen, planen und zurückziehen",
+      "events_manage": "Events verwalten"
     }
   },
   "trsChoice": {

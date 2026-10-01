@@ -22,6 +22,8 @@ const props = withDefaults(
     capeFrameTime?: number | null
     /** Kopf-Kosmetik (v2) am Kopf; Animation und Leuchten laufen zur Wanduhr wie im Spiel. */
     cosmetic?: ViewerCosmetic | null
+    /** Begleiter (slot companion), zusätzlich zum Hut, dieselbe Pipeline. */
+    companion?: ViewerCosmetic | null
     /** Nacht: Licht gedimmt, Leuchten bleibt voll hell. */
     night?: boolean
     /** Kamera: ganzer Spieler oder Kopf + Schultern (fÃ¼r Kopf-Kosmetik). */
@@ -35,6 +37,7 @@ const props = withDefaults(
     capeFrames: 1,
     capeFrameTime: null,
     cosmetic: null,
+    companion: null,
     night: false,
     focus: 'body',
   },
@@ -90,7 +93,7 @@ async function build() {
     applyLight()
     await applySkin()
     await setAnimation(props.animation)
-    await applyCosmetic()
+    applyCosmetics()
     applyFocus(true)
   } catch (e) {
     console.error('3D-Vorschau nicht verfÃ¼gbar', e)
@@ -157,20 +160,33 @@ async function applySkin() {
   else viewer.resetCape()
 }
 
-// --- Kopf-Kosmetik (v2) ------------------------------------------------------------------------
+// --- Kopf-Kosmetik (v2) + Begleiter -----------------------------------------------------------
 
-let cosmetic: CosmeticInstance | null = null
-let cosmeticTop = 8
-let cosmeticToken = 0
+interface CosmeticSlot {
+  inst: CosmeticInstance | null
+  top: number
+  token: number
+  /** Ohne Modell: Kamera-Oberkante (Hut 8 = Nacken, Begleiter 0). */
+  emptyTop: number
+}
 
-async function applyCosmetic() {
-  const token = ++cosmeticToken
-  const data = props.cosmetic
+const hatSlot: CosmeticSlot = { inst: null, top: 8, token: 0, emptyTop: 8 }
+const companionSlot: CosmeticSlot = { inst: null, top: 0, token: 0, emptyTop: 0 }
+
+/** Oberkante für die Kamera: Hut und Begleiter zusammen, mindestens der Nacken. */
+function cameraTop(): number {
+  const hat = hatSlot.inst ? hatSlot.top : hatSlot.emptyTop
+  const buddy = companionSlot.inst ? companionSlot.top : companionSlot.emptyTop
+  return Math.max(hat, buddy)
+}
+
+async function applySlot(slot: CosmeticSlot, data: ViewerCosmetic | null | undefined) {
+  const token = ++slot.token
   if (!viewer) return
   if (!data) {
-    cosmetic?.dispose()
-    cosmetic = null
-    cosmeticTop = 8
+    slot.inst?.dispose()
+    slot.inst = null
+    slot.top = slot.emptyTop
     applyFocus()
     return
   }
@@ -180,33 +196,40 @@ async function applyCosmetic() {
       loadImage(data.texture),
       data.glow ? loadImage(data.glow) : Promise.resolve(null),
     ])
-    if (token !== cosmeticToken || !viewer) return
+    if (token !== slot.token || !viewer) return
     const hasGlow = !!glow && data.model.glow != null
     const size = (img: HTMLImageElement) => ({ width: img.naturalWidth, height: img.naturalHeight })
     const check = validateModel(data.model, { texture: size(texture), glow: hasGlow ? size(glow!) : null })
-    if (!check.ok) throw new Error(`Kosmetik-Modell ungÃ¼ltig: ${check.errors.slice(0, 3).join('; ')}`)
+    if (!check.ok) throw new Error(`Kosmetik-Modell ungültig: ${check.errors.slice(0, 3).join('; ')}`)
     const next = createCosmetic(data.model as unknown as CosmeticModel, { texture, glow: hasGlow ? glow : null })
-    cosmetic?.dispose()
-    cosmetic = next
-    cosmeticTop = modelTop(data.model as unknown as CosmeticModel)
+    slot.inst?.dispose()
+    slot.inst = next
+    slot.top = modelTop(data.model as unknown as CosmeticModel)
     viewer.playerObject.skin.head.add(next.root)
     applyLight()
     next.update(Date.now(), { camera: viewer.camera })
     applyFocus()
   } catch (e) {
-    if (token !== cosmeticToken) return
+    if (token !== slot.token) return
     console.warn(e)
-    cosmetic?.dispose()
-    cosmetic = null
+    slot.inst?.dispose()
+    slot.inst = null
     emit('cosmeticError')
   }
+}
+
+function applyCosmetics() {
+  void applySlot(hatSlot, props.cosmetic)
+  void applySlot(companionSlot, props.companion)
 }
 
 function applyLight() {
   if (!viewer) return
   viewer.globalLight.intensity = LIGHT.global * (props.night ? NIGHT.global : 1)
   viewer.cameraLight.intensity = LIGHT.camera * (props.night ? NIGHT.camera : 1)
-  cosmetic?.setLight(props.night ? NIGHT.cosmetic : 1)
+  const light = props.night ? NIGHT.cosmetic : 1
+  hatSlot.inst?.setLight(light)
+  companionSlot.inst?.setLight(light)
 }
 
 // --- Kamera ------------------------------------------------------------------------------------
@@ -236,13 +259,13 @@ function focusGoal(dir: Vec): [Vec, Vec] | null {
   let distance: number
   if (props.focus === 'head') {
     const bottom = neck - 9
-    const top = neck + cosmeticTop + 1.5
+    const top = neck + cameraTop() + 1.5
     target = { x: 0, y: (bottom + top) / 2, z: 0 }
     distance = ((top - bottom) / 2 / Math.tan(fov / 2)) * 1.4
   } else {
     // Standard von skinview3d (passt fÃ¼r 16 + 16 Einheiten), bei hohen Teilen entsprechend weiter weg.
     const bottom = -16
-    const top = Math.max(16, neck + cosmeticTop + 1)
+    const top = Math.max(16, neck + cameraTop() + 1)
     target = { x: 0, y: (bottom + top) / 2, z: 0 }
     distance = (4.5 + 16.5 / Math.tan(fov / 2) / viewer.zoom) * ((top - bottom) / 32)
   }
@@ -253,7 +276,7 @@ let lastFocus: string | null = null
 /** Kamera zum Fokus schwenken â€“ nur wenn sich Fokus oder ModellhÃ¶he geÃ¤ndert haben (sonst bleibt alles, wie der Nutzer es gedreht hat). */
 function applyFocus(instant = false) {
   if (!viewer) return
-  const key = `${props.focus}:${cosmeticTop}`
+  const key = `${props.focus}:${cameraTop()}`
   if (key === lastFocus) return
   const enteringHead = props.focus === 'head' && !lastFocus?.startsWith('head')
   lastFocus = key
@@ -290,7 +313,11 @@ function stepCamera() {
 
 function beforeRender() {
   stepCamera()
-  if (viewer && cosmetic) cosmetic.update(Date.now(), { camera: viewer.camera })
+  if (viewer) {
+    const now = Date.now()
+    hatSlot.inst?.update(now, { camera: viewer.camera })
+    companionSlot.inst?.update(now, { camera: viewer.camera })
+  }
 }
 
 function resize() {
@@ -310,9 +337,12 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   stopCapeAnimation()
   capeToken++
-  cosmeticToken++
-  cosmetic?.dispose()
-  cosmetic = null
+  hatSlot.token++
+  companionSlot.token++
+  hatSlot.inst?.dispose()
+  companionSlot.inst?.dispose()
+  hatSlot.inst = null
+  companionSlot.inst = null
   observer?.disconnect()
   viewer?.dispose()
   viewer = null
@@ -321,7 +351,8 @@ onBeforeUnmount(() => {
 watch(() => [props.skin, props.cape, props.variant, props.capeFrames, props.capeFrameTime], () => void applySkin())
 watch(() => props.animation, (kind) => void setAnimation(kind))
 watch(() => props.height, resize)
-watch(() => props.cosmetic, () => void applyCosmetic())
+watch(() => props.cosmetic, () => void applySlot(hatSlot, props.cosmetic))
+watch(() => props.companion, () => void applySlot(companionSlot, props.companion))
 watch(() => props.night, applyLight)
 watch(() => props.focus, () => applyFocus())
 </script>

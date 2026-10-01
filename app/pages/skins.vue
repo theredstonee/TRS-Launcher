@@ -212,45 +212,63 @@ const headPreview = ref<TrsHeadCosmetic | null>(null)
 /** Aufgesetztes Teil – so sehen andere den Spieler im Spiel. */
 const headEquipped = ref<TrsHeadCosmetic | null>(null)
 const shownHead = computed(() => headPreview.value ?? headEquipped.value)
+/** Begleiter, unabhängig vom Hut. */
+const companionPreview = ref<TrsHeadCosmetic | null>(null)
+const companionEquipped = ref<TrsHeadCosmetic | null>(null)
+const shownCompanion = computed(() => companionPreview.value ?? companionEquipped.value)
 /** Modell + Texturen für die Vorschau (null = nichts am Kopf bzw. noch am Laden). */
 const viewerCosmetic = shallowRef<ViewerCosmetic | null>(null)
+const viewerCompanion = shallowRef<ViewerCosmetic | null>(null)
 /** Tag/Nacht in der Vorschau (nachts leuchten Lampen und Kristalle). */
 const night = ref(false)
 /** Kamera: ganzer Spieler oder Kopf + Schultern. */
 const focus = ref<'body' | 'head'>('body')
 const cosmeticModels = new Map<string, ViewerCosmetic>()
-let cosmeticToken = 0
 
-watch(
-  () => (shownHead.value?.preview ? `${shownHead.value.id}:${shownHead.value.hash ?? ''}` : null),
-  async (key) => {
-    const token = ++cosmeticToken
-    const item = shownHead.value
-    if (!key || !item) {
-      viewerCosmetic.value = null
-      return
-    }
-    const cached = cosmeticModels.get(key)
-    if (cached) {
-      viewerCosmetic.value = cached
-      return
-    }
-    try {
-      const data = await backend.trs.headCosmeticModel(item.id)
-      const loaded: ViewerCosmetic = { model: data.model, texture: data.texture, glow: data.glow }
-      cosmeticModels.set(key, loaded)
-      if (token === cosmeticToken) viewerCosmetic.value = loaded
-    } catch (e) {
-      if (token !== cosmeticToken) return
-      viewerCosmetic.value = null
-      toasts.error(e)
-    }
-  },
-)
+function bindCosmetic(pick: () => TrsHeadCosmetic | null, target: typeof viewerCosmetic) {
+  let token = 0
+  watch(
+    () => {
+      const item = pick()
+      return item?.preview ? `${item.id}:${item.hash ?? ''}` : null
+    },
+    async (key) => {
+      const mine = ++token
+      const item = pick()
+      if (!key || !item) {
+        target.value = null
+        return
+      }
+      const cached = cosmeticModels.get(key)
+      if (cached) {
+        target.value = cached
+        return
+      }
+      try {
+        const data = await backend.trs.headCosmeticModel(item.id)
+        const loaded: ViewerCosmetic = { model: data.model, texture: data.texture, glow: data.glow }
+        cosmeticModels.set(key, loaded)
+        if (mine === token) target.value = loaded
+      } catch (e) {
+        if (mine !== token) return
+        target.value = null
+        toasts.error(e)
+      }
+    },
+  )
+}
+
+bindCosmetic(() => shownHead.value, viewerCosmetic)
+bindCosmetic(() => shownCompanion.value, viewerCompanion)
 
 function previewHead(item: TrsHeadCosmetic | null) {
   headPreview.value = item
   // Anprobieren: Kamera auf den Kopf, damit man das Teil auch sieht.
+  if (item) focus.value = 'head'
+}
+
+function previewCompanion(item: TrsHeadCosmetic | null) {
+  companionPreview.value = item
   if (item) focus.value = 'head'
 }
 
@@ -667,6 +685,7 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
                   :cape-frames="shownTrs?.frames ?? 1"
                   :cape-frame-time="shownTrs?.frameTimeMs ?? null"
                   :cosmetic="viewerCosmetic"
+                  :companion="viewerCompanion"
                   :night="night"
                   :focus="focus"
                   @cosmetic-error="toasts.error(t('headCosmetics.previewFailed'))"
@@ -689,6 +708,15 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
                   @click="previewHead(null)"
                 >
                   {{ headPreview.name }} ✕
+                </button>
+                <button
+                  v-if="companionPreview"
+                  class="badge max-w-full truncate bg-lamp-900/70 text-lamp-200 hover:text-base-50"
+                  :title="t('skins.endHeadPreview')"
+                  data-testid="companion-preview-badge"
+                  @click="previewCompanion(null)"
+                >
+                  {{ companionPreview.name }} ✕
                 </button>
               </div>
               <div class="flex items-center gap-1 border-t border-base-800/80 bg-base-950/60 p-1 text-[11px] backdrop-blur-sm">
@@ -1055,10 +1083,20 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
           <!-- Kosmetik: altes Kartenbild, nur im Reiter. -->
           <div v-show="tab === 'cosmetics'" id="skins-panel-cosmetics" role="tabpanel" aria-labelledby="skins-tab-cosmetics">
             <TrsHeadCosmetics
+              cosmetic-slot="hat"
               :preview-id="headPreview?.id ?? null"
               :night="night"
               @preview="previewHead"
               @equipped="headEquipped = $event"
+              @redeem="capesSection?.startRedeem()"
+            />
+            <TrsHeadCosmetics
+              class="mt-8"
+              cosmetic-slot="companion"
+              :preview-id="companionPreview?.id ?? null"
+              :night="night"
+              @preview="previewCompanion"
+              @equipped="companionEquipped = $event"
               @redeem="capesSection?.startRedeem()"
             />
           </div>

@@ -293,7 +293,8 @@
       "missing_permission": "Je rol mist hiervoor een recht.",
       "rank_too_low": "Je rang in het team is hiervoor te laag.",
       "application_closed": "Deze sollicitatie is al afgesloten.",
-      "application_not_found": "Deze sollicitatie bestaat niet (meer)."
+      "application_not_found": "Deze sollicitatie bestaat niet (meer).",
+      "event_inactive": "Dit evenement staat nu niet voor je aan."
     },
     "auth": {
       "accountMismatch": "Deze login hoort bij een ander account – log opnieuw in.",
@@ -594,6 +595,9 @@
       "redemptionsRange": "Inwisselingen per code: 1 tot 100.000.",
       "countRange": "Aantal: 1 tot 100 codes tegelijk.",
       "expiryInPast": "De vervaldatum ligt in het verleden."
+    },
+    "trsEvents": {
+      "invalidEvent": "Ongeldig evenement."
     },
     "trsPng": {
       "fileTooLarge": "Het bestand is te groot (max. 5 MB).",
@@ -2877,7 +2881,8 @@
       "team": "Team",
       "locked": "Vergrendeld",
       "shared": "Gedeeld",
-      "achievement": "Prestatie"
+      "achievement": "Prestatie",
+      "event": "Evenement"
     },
     "status": {
       "pending": "Wacht op goedkeuring",
@@ -3017,6 +3022,7 @@
       "rejectedReason": "Afgewezen: {reason}.",
       "lockedCode": "Vergrendeld – te ontgrendelen met een code.",
       "lockedTeam": "Vergrendeld – alleen voor het TRS-team of via een code.",
+      "event": "Gratis zolang Halloween voor jou aan staat. Daarna hou je de cape.",
       "active": "Je draagt deze cape.",
       "free": "Vrij beschikbaar – doe hem om zodat anderen hem zien.",
       "unlocked": "Voor je ontgrendeld – doe hem om zodat anderen hem zien."
@@ -3026,6 +3032,8 @@
       "wear": "Omdoen",
       "removing": "Afdoen …",
       "remove": "Afdoen",
+      "claim": "Gratis ophalen",
+      "claiming": "Ophalen …",
       "endPreview": "Preview beëindigen"
     },
     "pendingCount": "{n} cape wacht op goedkeuring. | {n} capes wachten op goedkeuring.",
@@ -3047,7 +3055,8 @@
       "uploaded": "Geüpload – je cape wacht op goedkeuring.",
       "deleted": "Cape verwijderd",
       "hatOn": "„{name}” opgezet",
-      "hatOff": "Hoofdcosmetica afgezet"
+      "hatOff": "Hoofdcosmetica afgezet",
+      "claimed": "„{name}” is nu van jou."
     },
     "editor": {
       "title": "Eigen cape uploaden",
@@ -3137,6 +3146,8 @@
       "achievement": "Ontgrendel de prestatie „{name}”.",
       "achievementAny": "Ontgrendel de bijbehorende prestatie.",
       "team": "Alleen voor het TRS-team.",
+      "event": "Gratis zolang het evenement voor jou aan staat. Daarna hou je het.",
+      "eventEnded": "Het evenement is voorbij – dit item is nu niet gratis.",
       "other": "Momenteel niet verkrijgbaar."
     },
     "selected": {
@@ -3149,7 +3160,23 @@
       "remove": "Afzetten",
       "wearing": "Opzetten …",
       "removing": "Afzetten …",
-      "achievements": "Naar prestaties"
+      "achievements": "Naar prestaties",
+      "claim": "Gratis ophalen",
+      "claiming": "Ophalen …"
+    },
+    "toasts": {
+      "claimed": "„{name}” is nu van jou."
+    },
+    "companion": {
+      "title": "Metgezellen",
+      "intro": "Vliegt om je hoofd, naast een hoed. De preview toont hoed, metgezel en cape samen.",
+      "empty": "Nog geen metgezellen.",
+      "wearing": "Metgezel: {name}",
+      "selectedWorn": "Vliegt mee – iedereen met de TRS Client ziet het.",
+      "toasts": {
+        "on": "„{name}” vliegt mee",
+        "off": "Metgezel afgezet"
+      }
     }
   },
   "capeShare": {
@@ -3281,6 +3308,27 @@
     }
   },
   "admin": {
+    "events": {
+      "intro": "Een evenement geldt voor iedereen, of het blijft uit en geldt alleen voor de spelers hieronder. Zolang Halloween voor jou aan staat, gebruikt de launcher het nachtthema en is de evenement-cosmetica gratis.",
+      "enabled": "Aan",
+      "disabled": "Uit",
+      "enable": "Aanzetten",
+      "disable": "Uitzetten",
+      "globalHint": "Aan betekent alle spelers. Uit betekent alleen de lijst.",
+      "players": "Allowlist",
+      "playerPlaceholder": "Minecraft-naam of UUID",
+      "add": "Speler toevoegen",
+      "adding": "Toevoegen …",
+      "remove": "Verwijderen",
+      "empty": "Geen evenementen.",
+      "noPlayers": "Niemand op de lijst. Zolang het evenement uit staat, ziet niemand het.",
+      "invalidPlayer": "Vul een Minecraft-naam in (1–16 tekens: letters, cijfers, _) of een UUID.",
+      "names": {
+        "halloween": "Halloween"
+      },
+      "removeTitle": "Van de lijst halen?",
+      "removeText": "{name} van dit evenement halen?"
+    },
     "tabs": {
       "capes": "Capes beoordelen"
     },
@@ -3394,7 +3442,11 @@
       "codeRevoked": "Code ingetrokken",
       "alreadyHad": "Had de cape al.",
       "granted": "{cape} toegekend aan {player}",
-      "grantRevoked": "Cape ingetrokken"
+      "grantRevoked": "Cape ingetrokken",
+      "eventOn": "Het evenement staat voor iedereen aan.",
+      "eventOff": "Het evenement staat uit – alleen de lijst heeft het nog.",
+      "eventPlayerAdded": "{name} staat op de lijst.",
+      "eventPlayerRemoved": "{name} is verwijderd."
     },
     "mod": {
       "filters": {
@@ -4574,6 +4626,7 @@
       "worlds": "Werelden",
       "codes": "Codes",
       "wordFilter": "Woordfilter",
+      "events": "Evenementen",
       "roles": "Rollen",
       "audit": "Auditlog",
       "keysHint": "Druk op ? voor sneltoetsen.",
@@ -4981,7 +5034,8 @@
       "applications_manage": "Functies beheren",
       "applications_decide": "Over sollicitaties beslissen",
       "blog_write": "Blogberichten schrijven (concepten, afbeeldingen)",
-      "blog_publish": "Blogberichten publiceren, inplannen en terugtrekken"
+      "blog_publish": "Blogberichten publiceren, inplannen en terugtrekken",
+      "events_manage": "Evenementen beheren"
     }
   },
   "trsChoice": {

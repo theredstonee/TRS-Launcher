@@ -11,6 +11,7 @@ const servers = useServersStore()
 const games = useGamesStore()
 const settings = useSettingsStore()
 const ui = useUiStore()
+const events = useEventsStore()
 
 const addingServer = ref(false)
 const ready = ref(false)
@@ -96,9 +97,11 @@ function play(instance: Instance) {
       :class="`hero-${sceneMode}`"
       :aria-label="featured ? t('home.lastPlayed', { name: featured.name }) : t('nav.home')"
     >
-      <RedstoneScene :mode="sceneMode" :progress="sceneProgress" :anchor="lamp">
+      <HalloweenScene v-if="events.halloween" />
+      <RedstoneScene v-else :mode="sceneMode" :progress="sceneProgress" :anchor="lamp">
         <div class="scrim" />
       </RedstoneScene>
+      <div v-if="events.halloween" class="scrim" />
 
       <div class="relative flex h-full flex-col justify-between gap-6 px-8 pt-7 pb-8">
         <div class="flex items-start justify-between gap-4">

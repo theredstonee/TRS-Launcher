@@ -293,7 +293,8 @@
       "missing_permission": "Twojej roli brakuje do tego uprawnienia.",
       "rank_too_low": "Twoja ranga w zespole jest do tego za niska.",
       "application_closed": "To zgłoszenie jest już zamknięte.",
-      "application_not_found": "To zgłoszenie nie istnieje (już)."
+      "application_not_found": "To zgłoszenie nie istnieje (już).",
+      "event_inactive": "To wydarzenie nie jest teraz dla ciebie włączone."
     },
     "auth": {
       "accountMismatch": "To logowanie należy do innego konta – zaloguj się ponownie.",
@@ -594,6 +595,9 @@
       "redemptionsRange": "Liczba użyć na kod: od 1 do 100 000.",
       "countRange": "Ilość: od 1 do 100 kodów naraz.",
       "expiryInPast": "Data wygaśnięcia jest w przeszłości."
+    },
+    "trsEvents": {
+      "invalidEvent": "Nieprawidłowe wydarzenie."
     },
     "trsPng": {
       "fileTooLarge": "Plik jest za duży (maks. 5 MB).",
@@ -2877,7 +2881,8 @@
       "team": "Zespół",
       "locked": "Zablokowana",
       "shared": "Udostępniona",
-      "achievement": "Osiągnięcie"
+      "achievement": "Osiągnięcie",
+      "event": "Wydarzenie"
     },
     "status": {
       "pending": "Czeka na zatwierdzenie",
@@ -3017,6 +3022,7 @@
       "rejectedReason": "Odrzucona: {reason}.",
       "lockedCode": "Zablokowana – można ją odblokować kodem.",
       "lockedTeam": "Zablokowana – tylko dla zespołu TRS lub przez kod.",
+      "event": "Za darmo, dopóki Halloween jest dla ciebie włączone. Potem peleryna zostaje twoja.",
       "active": "Nosisz tę pelerynę.",
       "free": "Dostępna za darmo – załóż ją, aby inni ją widzieli.",
       "unlocked": "Odblokowana dla ciebie – załóż ją, aby inni ją widzieli."
@@ -3026,6 +3032,8 @@
       "wear": "Załóż",
       "removing": "Zdejmowanie …",
       "remove": "Zdejmij",
+      "claim": "Weź za darmo",
+      "claiming": "Pobieranie …",
       "endPreview": "Zakończ podgląd"
     },
     "pendingCount": "{n} peleryna czeka na zatwierdzenie. | {n} peleryny czekają na zatwierdzenie. | {n} peleryn czeka na zatwierdzenie.",
@@ -3047,7 +3055,8 @@
       "uploaded": "Przesłano – twoja peleryna czeka na zatwierdzenie.",
       "deleted": "Usunięto pelerynę",
       "hatOn": "Założono „{name}”",
-      "hatOff": "Zdjęto kosmetyk z głowy"
+      "hatOff": "Zdjęto kosmetyk z głowy",
+      "claimed": "„{name}” jest już twoje."
     },
     "editor": {
       "title": "Prześlij własną pelerynę",
@@ -3137,6 +3146,8 @@
       "achievement": "Odblokuj osiągnięcie „{name}”.",
       "achievementAny": "Odblokuj odpowiednie osiągnięcie.",
       "team": "Tylko dla zespołu TRS.",
+      "event": "Za darmo, dopóki wydarzenie jest dla ciebie włączone. Potem zostaje twoje.",
+      "eventEnded": "Wydarzenie się skończyło – teraz tego przedmiotu nie da się wziąć za darmo.",
       "other": "Obecnie niedostępne."
     },
     "selected": {
@@ -3149,7 +3160,23 @@
       "remove": "Zdejmij",
       "wearing": "Zakładanie …",
       "removing": "Zdejmowanie …",
-      "achievements": "Przejdź do osiągnięć"
+      "achievements": "Przejdź do osiągnięć",
+      "claim": "Weź za darmo",
+      "claiming": "Pobieranie …"
+    },
+    "toasts": {
+      "claimed": "„{name}” jest już twoje."
+    },
+    "companion": {
+      "title": "Towarzysze",
+      "intro": "Lata wokół głowy oprócz kapelusza. Podgląd pokazuje kapelusz, towarzysza i pelerynę razem.",
+      "empty": "Nie ma jeszcze towarzyszy.",
+      "wearing": "Towarzysz: {name}",
+      "selectedWorn": "Lata z tobą – widzą go wszyscy z TRS Client.",
+      "toasts": {
+        "on": "„{name}” lata z tobą",
+        "off": "Zdjęto towarzysza"
+      }
     }
   },
   "capeShare": {
@@ -3281,6 +3308,27 @@
     }
   },
   "admin": {
+    "events": {
+      "intro": "Wydarzenie działa dla wszystkich albo zostaje wyłączone i dotyczy tylko graczy poniżej. Gdy Halloween jest dla ciebie włączone, launcher używa nocnego motywu, a kosmetyki wydarzenia są za darmo.",
+      "enabled": "Włączone",
+      "disabled": "Wyłączone",
+      "enable": "Włącz",
+      "disable": "Wyłącz",
+      "globalHint": "Włączone znaczy wszyscy gracze. Wyłączone znaczy tylko lista.",
+      "players": "Lista dozwolonych",
+      "playerPlaceholder": "Nazwa Minecraft lub UUID",
+      "add": "Dodaj gracza",
+      "adding": "Dodawanie …",
+      "remove": "Usuń",
+      "empty": "Brak wydarzeń.",
+      "noPlayers": "Nikogo na liście. Gdy wydarzenie jest wyłączone, nikt go nie widzi.",
+      "invalidPlayer": "Podaj nazwę Minecraft (1–16 znaków: litery, cyfry, _) albo UUID.",
+      "names": {
+        "halloween": "Halloween"
+      },
+      "removeTitle": "Usunąć z listy?",
+      "removeText": "Usunąć {name} z tego wydarzenia?"
+    },
     "tabs": {
       "capes": "Weryfikacja peleryn"
     },
@@ -3394,7 +3442,11 @@
       "codeRevoked": "Unieważniono kod",
       "alreadyHad": "Gracz już miał tę pelerynę.",
       "granted": "Przyznano {cape} ({player})",
-      "grantRevoked": "Odebrano pelerynę"
+      "grantRevoked": "Odebrano pelerynę",
+      "eventOn": "Wydarzenie jest włączone dla wszystkich.",
+      "eventOff": "Wydarzenie jest wyłączone – zostaje tylko lista.",
+      "eventPlayerAdded": "{name} jest na liście.",
+      "eventPlayerRemoved": "Usunięto {name}."
     },
     "mod": {
       "filters": {
@@ -4574,6 +4626,7 @@
       "worlds": "Światy",
       "codes": "Kody",
       "wordFilter": "Filtr słów",
+      "events": "Wydarzenia",
       "roles": "Role",
       "audit": "Dziennik audytu",
       "keysHint": "Naciśnij ?, aby zobaczyć skróty klawiszowe.",
@@ -4981,7 +5034,8 @@
       "applications_manage": "Zarządzać stanowiskami",
       "applications_decide": "Decydować o zgłoszeniach",
       "blog_write": "Pisanie wpisów na blogu (szkice, obrazy)",
-      "blog_publish": "Publikowanie, planowanie i wycofywanie wpisów na blogu"
+      "blog_publish": "Publikowanie, planowanie i wycofywanie wpisów na blogu",
+      "events_manage": "Zarządzanie wydarzeniami"
     }
   },
   "trsChoice": {

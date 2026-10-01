@@ -5,6 +5,7 @@
 const props = withDefaults(defineProps<{ instanceId: string; large?: boolean }>(), { large: false })
 
 const games = useGamesStore()
+const events = useEventsStore()
 const game = computed(() => games.state(props.instanceId))
 
 const percent = computed(() =>
@@ -26,8 +27,35 @@ const files = computed(() => {
 </script>
 
 <template>
+  <!-- Groß, während Halloween: Starten und Installieren als Hexen-Balken statt Lampenfüllung. -->
+  <div v-if="large && events.halloween && (install || game.phase === 'preparing')" class="relative min-w-0 flex-1">
+    <div
+      class="rounded-md bg-base-900/80 px-3 py-2"
+      role="progressbar"
+      :aria-valuenow="install ? (install.percent ?? 0) : percent"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      :aria-label="install ? t('instanceCard.stillInstalling') : stage"
+    >
+      <div class="mb-1 flex items-baseline justify-between gap-2 text-xs font-medium">
+        <span class="min-w-0 truncate">{{ install ? (install.stage || t('instanceCard.installing')) : stage }}<span v-if="!install && files" class="ml-1.5 font-normal opacity-70">{{ files }}</span></span>
+        <span class="display shrink-0 tabular-nums text-redstone-300">{{ t('tasks.percent', { percent: install ? (install.percent ?? 0) : percent }) }}</span>
+      </div>
+      <WitchProgress :percent="install ? (install.percent ?? 0) : percent" :indeterminate="!!install && install.percent == null" />
+    </div>
+    <button
+      v-if="game.phase === 'preparing' && canCancel"
+      class="absolute -top-2 -right-2 z-10 grid size-6 place-items-center rounded-full bg-base-850 text-base-300 ring-1 ring-base-700 hover:text-redstone-300"
+      :aria-label="t('play.cancelLaunch')"
+      :title="t('play.cancelLaunch')"
+      @click="games.cancelLaunch(instanceId)"
+    >
+      <svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+    </button>
+  </div>
+
   <!-- Groß: Redstone-Lampe -->
-  <div v-if="large" class="lamp-wrap relative min-w-0 flex-1" :class="`lamp-${game.phase}`" :style="{ '--charge': percent / 100 }">
+  <div v-else-if="large" class="lamp-wrap relative min-w-0 flex-1" :class="`lamp-${game.phase}`" :style="{ '--charge': percent / 100 }">
     <button
       v-if="install"
       class="lamp pixel-corners cursor-progress"

@@ -15,6 +15,8 @@ const applications = useApplicationsStore()
 const whatsNew = useWhatsNewStore()
 const curseforge = useCurseForgeStore()
 const router = useRouter()
+// Event-Theme (Halloween) früh anwenden, auch bevor eine Seite den Store anfasst.
+useEventsStore()
 
 /** Strg+K öffnet überall die Suche; Strg+N legt eine Instanz an. */
 function onKey(e: KeyboardEvent) {

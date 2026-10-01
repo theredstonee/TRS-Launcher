@@ -42,6 +42,8 @@ export const permissions = [
   // Blog (API §30): News schreiben bzw. veröffentlichen – Editor nur auf der Website.
   'blog.write',
   'blog.publish',
+  // Events (API §31): Halloween & Co. schalten, Spieler-Allowlist.
+  'events.manage',
 ] as const
 export type Permission = (typeof permissions)[number]
 const permissionSet: ReadonlySet<string> = new Set(permissions)
@@ -145,6 +147,7 @@ export const teamSections: readonly TeamSection[] = [
   { to: '/admin/worlds', label: 'team.nav.worlds', icon: 'world', perms: ['worlds.view'] },
   { to: '/admin/codes', label: 'team.nav.codes', icon: 'ticket', perms: ['codes'] },
   { to: '/admin/word-filter', label: 'team.nav.wordFilter', icon: 'filter', perms: ['wordfilter'] },
+  { to: '/admin/events', label: 'team.nav.events', icon: 'star', perms: ['events.manage'] },
   { to: '/admin/audit', label: 'team.nav.audit', icon: 'list', perms: ['audit.view'] },
 ]
 

@@ -92,6 +92,14 @@ function bytes(n: number): string {
   return formatBytes(n)
 }
 
+const modsPercent = computed<number | null>(() => {
+  const p = hosting.preparing
+  if (!p) return null
+  if (p.totalBytes) return Math.round((p.bytes / p.totalBytes) * 100)
+  if (p.total) return Math.round((p.done / p.total) * 100)
+  return null
+})
+
 const progressText = computed(() => {
   const p = hosting.preparing
   if (!p) return ''
@@ -211,12 +219,7 @@ const confirmLabel = computed(() =>
 
         <div v-if="hosting.preparing" class="mt-3" data-testid="mods-progress">
           <p class="mb-1 truncate text-xs text-base-300">{{ progressText }}</p>
-          <div class="h-1.5 overflow-hidden rounded-full bg-base-800">
-            <div
-              class="h-full bg-redstone-500 transition-all"
-              :style="{ width: `${hosting.preparing.totalBytes ? Math.round((hosting.preparing.bytes / hosting.preparing.totalBytes) * 100) : hosting.preparing.total ? Math.round((hosting.preparing.done / hosting.preparing.total) * 100) : 5}%` }"
-            />
-          </div>
+          <RedstoneWire :percent="modsPercent ?? 0" :indeterminate="modsPercent == null" :segments="24" />
         </div>
       </template>
       <div v-else-if="choice.loading" class="grid place-items-center py-6 text-sm text-base-400">{{ t('social.hosting.mods.loading') }}</div>

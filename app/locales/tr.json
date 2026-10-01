@@ -293,7 +293,8 @@
       "missing_permission": "Rolünde bunun için bir yetki eksik.",
       "rank_too_low": "Ekipteki rütben bunun için çok düşük.",
       "application_closed": "Bu başvuru zaten kapandı.",
-      "application_not_found": "Bu başvuru (artık) yok."
+      "application_not_found": "Bu başvuru (artık) yok.",
+      "event_inactive": "Bu etkinlik şu anda senin için açık değil."
     },
     "auth": {
       "accountMismatch": "Bu giriş başka bir hesaba ait – lütfen tekrar giriş yap.",
@@ -594,6 +595,9 @@
       "redemptionsRange": "Kod başına kullanım: 1 ile 100.000 arası.",
       "countRange": "Miktar: aynı anda 1 ile 100 kod arası.",
       "expiryInPast": "Son kullanma tarihi geçmişte."
+    },
+    "trsEvents": {
+      "invalidEvent": "Geçersiz etkinlik."
     },
     "trsPng": {
       "fileTooLarge": "Dosya çok büyük (en fazla 5 MB).",
@@ -2877,7 +2881,8 @@
       "team": "Ekip",
       "locked": "Kilitli",
       "shared": "Paylaşılan",
-      "achievement": "Başarım"
+      "achievement": "Başarım",
+      "event": "Etkinlik"
     },
     "status": {
       "pending": "Onay bekliyor",
@@ -3017,6 +3022,7 @@
       "rejectedReason": "Reddedildi: {reason}.",
       "lockedCode": "Kilitli – bir kodla açılabilir.",
       "lockedTeam": "Kilitli – yalnızca TRS ekibi için veya kodla.",
+      "event": "Halloween senin için açıkken ücretsiz. Sonra pelerin sende kalır.",
       "active": "Bu pelerini giyiyorsun.",
       "free": "Serbestçe kullanılabilir – başkaları görsün diye giy.",
       "unlocked": "Senin için açıldı – başkaları görsün diye giy."
@@ -3026,6 +3032,8 @@
       "wear": "Giy",
       "removing": "Çıkarılıyor …",
       "remove": "Çıkar",
+      "claim": "Ücretsiz al",
+      "claiming": "Alınıyor …",
       "endPreview": "Önizlemeyi bitir"
     },
     "pendingCount": "{n} pelerin onay bekliyor. | {n} pelerin onay bekliyor.",
@@ -3047,7 +3055,8 @@
       "uploaded": "Yüklendi – pelerinin onay bekliyor.",
       "deleted": "Pelerin silindi",
       "hatOn": "“{name}” takıldı",
-      "hatOff": "Kafa kozmetiği çıkarıldı"
+      "hatOff": "Kafa kozmetiği çıkarıldı",
+      "claimed": "“{name}” artık senin."
     },
     "editor": {
       "title": "Kendi pelerinini yükle",
@@ -3137,6 +3146,8 @@
       "achievement": "“{name}” başarımını aç.",
       "achievementAny": "İlgili başarımı aç.",
       "team": "Yalnızca TRS ekibi için.",
+      "event": "Etkinlik senin için açıkken ücretsiz. Sonra sende kalır.",
+      "eventEnded": "Etkinlik bitti – bu parça şu anda ücretsiz değil.",
       "other": "Şu anda mevcut değil."
     },
     "selected": {
@@ -3149,7 +3160,23 @@
       "remove": "Çıkar",
       "wearing": "Takılıyor …",
       "removing": "Çıkarılıyor …",
-      "achievements": "Başarımlara git"
+      "achievements": "Başarımlara git",
+      "claim": "Ücretsiz al",
+      "claiming": "Alınıyor …"
+    },
+    "toasts": {
+      "claimed": "“{name}” artık senin."
+    },
+    "companion": {
+      "title": "Yoldaşlar",
+      "intro": "Şapkanın yanında başının etrafında uçar. Önizleme şapkayı, yoldaşı ve pelerini birlikte gösterir.",
+      "empty": "Henüz yoldaş yok.",
+      "wearing": "Yoldaş: {name}",
+      "selectedWorn": "Seninle uçuyor – TRS Client kullanan herkes görür.",
+      "toasts": {
+        "on": "“{name}” seninle uçuyor",
+        "off": "Yoldaş çıkarıldı"
+      }
     }
   },
   "capeShare": {
@@ -3281,6 +3308,27 @@
     }
   },
   "admin": {
+    "events": {
+      "intro": "Bir etkinlik herkes için geçerlidir ya da kapalı kalır ve yalnızca aşağıdaki oyuncular için geçerlidir. Halloween senin için açıkken başlatıcı gece temasını kullanır ve etkinlik kozmetikleri ücretsizdir.",
+      "enabled": "Açık",
+      "disabled": "Kapalı",
+      "enable": "Aç",
+      "disable": "Kapat",
+      "globalHint": "Açık, tüm oyuncular demektir. Kapalı, yalnızca liste demektir.",
+      "players": "İzin listesi",
+      "playerPlaceholder": "Minecraft adı veya UUID",
+      "add": "Oyuncu ekle",
+      "adding": "Ekleniyor …",
+      "remove": "Kaldır",
+      "empty": "Etkinlik yok.",
+      "noPlayers": "Listede kimse yok. Etkinlik kapalıyken kimse görmez.",
+      "invalidPlayer": "Bir Minecraft adı (1–16 karakter: harf, rakam, _) veya UUID gir.",
+      "names": {
+        "halloween": "Halloween"
+      },
+      "removeTitle": "Listeden kaldırılsın mı?",
+      "removeText": "{name} bu etkinlikten kaldırılsın mı?"
+    },
     "tabs": {
       "capes": "Pelerinleri incele"
     },
@@ -3394,7 +3442,11 @@
       "codeRevoked": "Kod iptal edildi",
       "alreadyHad": "Pelerin zaten vardı.",
       "granted": "{player} oyuncusuna verildi: {cape}",
-      "grantRevoked": "Pelerin geri alındı"
+      "grantRevoked": "Pelerin geri alındı",
+      "eventOn": "Etkinlik herkes için açık.",
+      "eventOff": "Etkinlik kapalı – yalnızca listede kalanlar görür.",
+      "eventPlayerAdded": "{name} listede.",
+      "eventPlayerRemoved": "{name} kaldırıldı."
     },
     "mod": {
       "filters": {
@@ -4574,6 +4626,7 @@
       "worlds": "Dünyalar",
       "codes": "Kodlar",
       "wordFilter": "Kelime filtresi",
+      "events": "Etkinlikler",
       "roles": "Roller",
       "audit": "Denetim kaydı",
       "keysHint": "Klavye kısayolları için ? tuşuna bas.",
@@ -4981,7 +5034,8 @@
       "applications_manage": "Pozisyonları yönetme",
       "applications_decide": "Başvurulara karar verme",
       "blog_write": "Blog yazıları yazma (taslaklar, görseller)",
-      "blog_publish": "Blog yazılarını yayınlama, zamanlama ve yayından kaldırma"
+      "blog_publish": "Blog yazılarını yayınlama, zamanlama ve yayından kaldırma",
+      "events_manage": "Etkinlikleri yönet"
     }
   },
   "trsChoice": {

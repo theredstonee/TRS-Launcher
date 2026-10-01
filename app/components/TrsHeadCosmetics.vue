@@ -5,7 +5,9 @@ import type { TrsHeadCosmetic } from '~/utils/trs'
 // gesperrt – versteckte nur, wenn man sie hat). Klick = in der großen 3D-Vorschau
 // der Seite anprobieren (per `preview`), Aufsetzen/Absetzen, und bei gesperrten
 // Teilen steht dabei, wie man sie bekommt (Code, Erfolg, nur Team).
-const props = defineProps<{ previewId: string | null; night: boolean }>()
+const props = withDefaults(defineProps<{ previewId: string | null; night: boolean; cosmeticSlot?: 'hat' | 'companion' }>(), {
+  cosmeticSlot: 'hat',
+})
 const emit = defineEmits<{
   preview: [item: TrsHeadCosmetic | null]
   equipped: [item: TrsHeadCosmetic | null]
@@ -13,6 +15,7 @@ const emit = defineEmits<{
 }>()
 
 const trs = useTrsStore()
+const events = useEventsStore()
 const accounts = useAccountsStore()
 const achievements = useAchievementsStore()
 const toasts = useToasts()
@@ -22,10 +25,14 @@ const loading = ref(false)
 const offline = ref(false)
 const busy = ref(false)
 
-const equipped = computed(() => items.value?.find((c) => c.equipped) ?? null)
+const listed = computed(() =>
+  (items.value ?? []).filter((c) => (props.cosmeticSlot === 'companion' ? c.slot === 'companion' : c.slot === 'hat')),
+)
+const equipped = computed(() => listed.value.find((c) => c.equipped) ?? null)
 // Die Seite zeigt das getragene Teil in der Vorschau – so wie andere es im Spiel sehen.
 watch(equipped, (item) => emit('equipped', item), { immediate: true })
-const selected = computed(() => items.value?.find((c) => c.id === props.previewId) ?? null)
+const selected = computed(() => listed.value.find((c) => c.id === props.previewId) ?? null)
+const companion = computed(() => props.cosmeticSlot === 'companion')
 
 async function load() {
   if (!trs.enabled || !accounts.active) {
@@ -55,12 +62,37 @@ function preview(item: TrsHeadCosmetic) {
   emit('preview', props.previewId === item.id ? null : item)
 }
 
+const canClaim = computed(() => {
+  const item = selected.value
+  return !!item && !item.owned && item.unlock === 'event' && !!item.unlockEvent && events.has(item.unlockEvent)
+})
+
+async function claim() {
+  const item = selected.value
+  if (!item || busy.value) return
+  busy.value = true
+  try {
+    await backend.trs.claimCosmetic(item.id)
+    toasts.ok(t('headCosmetics.toasts.claimed', { name: item.name }))
+    await load()
+  } catch (e) {
+    toasts.error(e)
+  } finally {
+    busy.value = false
+  }
+}
+
 async function wear(item: TrsHeadCosmetic | null) {
   if (busy.value) return
   busy.value = true
   try {
-    await backend.trs.setHat(item?.id ?? null)
-    toasts.ok(item ? t('capes.toasts.hatOn', { name: item.name }) : t('capes.toasts.hatOff'))
+    if (companion.value) await backend.trs.setCompanion(item?.id ?? null)
+    else await backend.trs.setHat(item?.id ?? null)
+    toasts.ok(
+      item
+        ? t(companion.value ? 'headCosmetics.companion.toasts.on' : 'capes.toasts.hatOn', { name: item.name })
+        : t(companion.value ? 'headCosmetics.companion.toasts.off' : 'capes.toasts.hatOff'),
+    )
     await load()
   } catch (e) {
     toasts.error(e)
@@ -86,6 +118,8 @@ function unlockLabel(item: TrsHeadCosmetic): string {
       return t('trs.unlock.team')
     case 'owner':
       return t('trs.unlock.own')
+    case 'event':
+      return t('trs.unlock.event')
     default:
       return item.owned ? t('headCosmetics.unlocked') : t('trs.unlock.locked')
   }
@@ -95,6 +129,7 @@ function lockClass(item: TrsHeadCosmetic) {
   if (item.unlock === 'free') return 'bg-ok/10 text-ok'
   if (item.unlock === 'code') return 'bg-lamp-900/60 text-lamp-300'
   if (item.unlock === 'achievement') return 'bg-base-800 text-lamp-200'
+  if (item.unlock === 'event') return 'bg-lamp-900/60 text-lamp-300'
   return 'bg-redstone-900/50 text-redstone-300'
 }
 
@@ -120,6 +155,8 @@ const howText = computed(() => {
         : t('headCosmetics.how.achievementAny')
     case 'admin':
       return t('headCosmetics.how.team')
+    case 'event':
+      return item.unlockEvent && events.has(item.unlockEvent) ? t('headCosmetics.how.event') : t('headCosmetics.how.eventEnded')
     default:
       return t('headCosmetics.how.other')
   }
@@ -127,12 +164,16 @@ const howText = computed(() => {
 </script>
 
 <template>
-  <section aria-labelledby="trs-head-title" data-testid="trs-head-cosmetics">
+  <section :aria-labelledby="companion ? 'trs-companion-title' : 'trs-head-title'" :data-testid="companion ? 'trs-companions' : 'trs-head-cosmetics'">
     <div class="mb-2 flex flex-wrap items-center gap-2">
-      <h2 id="trs-head-title" class="section-title">{{ t('headCosmetics.title') }}</h2>
-      <span v-if="equipped" class="badge bg-ok/10 text-ok">{{ t('headCosmetics.wearing', { name: equipped.name }) }}</span>
+      <h2 :id="companion ? 'trs-companion-title' : 'trs-head-title'" class="section-title">
+        {{ t(companion ? 'headCosmetics.companion.title' : 'headCosmetics.title') }}
+      </h2>
+      <span v-if="equipped" class="badge bg-ok/10 text-ok">
+        {{ t(companion ? 'headCosmetics.companion.wearing' : 'headCosmetics.wearing', { name: equipped.name }) }}
+      </span>
     </div>
-    <p class="mb-3 text-xs text-base-400">{{ t('headCosmetics.intro') }}</p>
+    <p class="mb-3 text-xs text-base-400">{{ t(companion ? 'headCosmetics.companion.intro' : 'headCosmetics.intro') }}</p>
 
     <TrsGate what="cosmetics">
       <div v-if="offline" class="card flex items-center gap-3 px-4 py-3 text-sm text-base-400">
@@ -144,8 +185,8 @@ const howText = computed(() => {
         <div v-for="i in 6" :key="i" class="skeleton aspect-[4/5]" />
       </div>
       <template v-else-if="items">
-        <ul class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3" data-testid="trs-head-list">
-          <li v-for="item in items" :key="item.id">
+        <ul class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3" :data-testid="companion ? 'trs-companion-list' : 'trs-head-list'">
+          <li v-for="item in listed" :key="item.id">
             <button
               class="card card-hover group flex h-full w-full flex-col items-center gap-2 p-2 pb-3"
               :class="{ 'border-redstone-600/60 bg-redstone-900/20': previewId === item.id }"
@@ -195,7 +236,9 @@ const howText = computed(() => {
             </button>
           </li>
         </ul>
-        <p v-if="!items.length" class="card px-4 py-6 text-center text-sm text-base-400">{{ t('headCosmetics.empty') }}</p>
+        <p v-if="!listed.length" class="card px-4 py-6 text-center text-sm text-base-400">
+          {{ t(companion ? 'headCosmetics.companion.empty' : 'headCosmetics.empty') }}
+        </p>
 
         <!-- Aktionen für das angeprobte Teil -->
         <div v-if="selected" class="card mt-3 flex flex-wrap items-center gap-3 px-4 py-3" data-testid="trs-head-actions">
@@ -205,7 +248,11 @@ const howText = computed(() => {
               <span class="font-semibold text-lamp-300">{{ t('headCosmetics.how.title') }}:</span> {{ howText }}
             </p>
             <p v-else class="text-xs text-base-400">
-              {{ selected.equipped ? t('headCosmetics.selected.worn') : t('headCosmetics.selected.owned') }}
+              {{
+                selected.equipped
+                  ? t(companion ? 'headCosmetics.companion.selectedWorn' : 'headCosmetics.selected.worn')
+                  : t('headCosmetics.selected.owned')
+              }}
             </p>
             <p v-if="!selected.preview" class="text-xs text-base-600">{{ t('headCosmetics.selected.noPreview') }}</p>
           </div>
@@ -220,6 +267,9 @@ const howText = computed(() => {
           </button>
           <button v-if="selected.equipped" class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="busy" @click="wear(null)">
             {{ busy ? t('headCosmetics.actions.removing') : t('headCosmetics.actions.remove') }}
+          </button>
+          <button v-if="canClaim" class="btn btn-primary px-3 py-1.5 text-xs" :disabled="busy" data-testid="trs-cosmetic-claim" @click="claim">
+            {{ busy ? t('headCosmetics.actions.claiming') : t('headCosmetics.actions.claim') }}
           </button>
           <button v-if="!selected.owned && selected.unlock === 'code'" class="btn btn-ghost px-3 py-1.5 text-xs" @click="emit('redeem')">
             {{ t('capes.redeem') }}
