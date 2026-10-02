@@ -218,9 +218,10 @@ In der Screenshot-Galerie des Launchers und im TRS Client („Clips & Bilder“)
 ### Modpacks teilen
 
 Im Launcher kannst du eine Instanz als Modpack teilen (*Instanz → Teilen → Modpack teilen*). Der Launcher packt die
-**Mod-Liste** (Mods, die es auf Modrinth gibt, stehen nur mit ihrer Download-Adresse drin) und die **Ordner, die du
-auswählst** (z. B. Einstellungen/Configs, Resource Packs, eigene Mod-Dateien) in eine `.mrpack`-Datei und lädt sie erst
-hoch, wenn du auf „Teilen“ klickst. Welten, Screenshots, Logs und Konto-Dateien kommen nie mit.
+**Mod-Liste** (Mods, Resource Packs und Shader, die Modrinth, CurseForge oder GitHub ausliefern kann, stehen nur mit
+ihrer Download-Adresse drin) und die **Ordner, die du auswählst** (z. B. Einstellungen/Configs, Resource Packs, eigene
+Mod-Dateien) in eine `.mrpack`-Datei und lädt sie erst hoch, wenn du auf „Teilen“ klickst. Welten, Screenshots, Logs
+und Konto-Dateien kommen nie mit.
 
 - **Was gespeichert wird:** die Pack-Datei, Name, Beschreibung und Version, Minecraft-Version und Modloader, wie viele
   Dateien sie enthält, wann sie geteilt, aktualisiert wurde und wann sie abläuft, wie oft sie installiert wurde, der
@@ -233,7 +234,7 @@ hoch, wenn du auf „Teilen“ klickst. Welten, Screenshots, Logs und Konto-Date
   gelöscht; vorher kannst du ein Pack unter „Meine Modpacks“ löschen – Code und Link gelten dann sofort nicht mehr
   (Kopien, die andere schon installiert haben, bleiben auf deren PCs). Eine neue Version behält den Code; wer das Pack
   installiert hat, sieht „Update verfügbar“.
-- **Grenzen:** höchstens 50 MB je Pack, 10 geteilte Packs und 30 Uploads pro Tag je Account. Eine Upload-Sperre der
+- **Grenzen:** höchstens 1 GB je Pack, 10 geteilte Packs und 30 Uploads pro Tag je Account. Eine Upload-Sperre der
   Moderation verhindert auch das Teilen.
 - **Meldungen:** Ein Pack kann im Launcher oder auf seiner Seite (angemeldet) gemeldet werden. Die Meldung bewahrt Name,
   Code, Beschreibung, Inhaltsübersicht und Prüfsumme des Packs als Beleg auf (nicht die Datei); das Team kann Packs

@@ -26,7 +26,7 @@ interface PublicPack {
 interface ContentItem {
   name: string
   file: string
-  source: 'modrinth' | 'pack'
+  source: 'modrinth' | 'curseforge' | 'github' | 'pack'
   projectId: string | null
   title: string | null
   version: string | null

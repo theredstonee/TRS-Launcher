@@ -205,9 +205,10 @@ In the launcher's screenshot gallery and in the TRS Client ("Clips & pictures") 
 ### Sharing modpacks
 
 In the launcher you can share an instance as a modpack (*Instance → Share → Share modpack*). The launcher packs the
-**mod list** (mods that are on Modrinth are only listed with their download address) and the **folders you pick**
-(e.g. settings/configs, resource packs, your own mod files) into a `.mrpack` file and uploads it only when you click
-"Share". Worlds, screenshots, logs and account files are never included.
+**mod list** (mods, resource packs and shaders that Modrinth, CurseForge or GitHub can serve are only listed with
+their download address) and the **folders you pick** (e.g. settings/configs, resource packs, your own mod files) into
+a `.mrpack` file and uploads it only when you click "Share". Worlds, screenshots, logs and account files are never
+included.
 
 - **What is stored:** the pack file, its name, description and version, Minecraft version and mod loader, how many
   files it contains, when it was shared, updated and when it expires, how often it was installed, the sharing TRS
@@ -219,7 +220,7 @@ In the launcher you can share an instance as a modpack (*Instance → Share → 
 - **How long:** you choose per pack – **1, 7 or 30 days, or no expiry**. Expired packs are deleted automatically; you
   can delete a pack earlier in "My modpacks" – code and link stop working right away (copies others already installed
   stay on their PCs). A new version keeps the code; friends who installed it see "Update available".
-- **Limits:** at most 50 MB per pack, 10 shared packs and 30 uploads per day per account. An upload ban from
+- **Limits:** at most 1 GB per pack, 10 shared packs and 30 uploads per day per account. An upload ban from
   moderation also blocks sharing.
 - **Reports:** a pack can be reported in the launcher or on its page (signed in). The report keeps the pack's name,
   code, description, contents summary and checksum as evidence (not the file); the team can delete packs.

@@ -2914,11 +2914,14 @@ list of `GET /v1/site/team` (everyone with a public role) is replaced by the man
 
 ## 27. Shared modpacks
 
-A player shares an instance as a Modrinth pack (`.mrpack`): the launcher exports it (mods that Modrinth knows are only
-listed with their download address, everything else – configs, resource packs, own mod files – goes into `overrides/`)
+A player shares an instance as a Modrinth pack (`.mrpack`): the launcher exports it (files under `mods/`,
+`resourcepacks/`, `shaderpacks/` and datapacks that Modrinth, CurseForge or GitHub can serve go in as download links
+in `modrinth.index.json`; configs, options, custom jars and anything that could not be resolved go into `overrides/`)
 and uploads the file. Others install it by **code** (`TRS-XXXX-XXXX`, 8 characters Crockford base32), by **link**
 (`https://trs-launcher.theredstonee.de/p/TRS-XXXX-XXXX`) or from the list of packs friends sent them. A new version
-keeps the code and raises `revision` – that is how launchers detect updates.
+keeps the code and raises `revision` – that is how launchers detect updates. The uploaded file may be up to
+`PACK_MAX_MB` (default **1024**). A single request stays at most **100 MB** (Cloudflare); larger packs use the
+chunked upload in §27.7. Older launchers keep sending the file in one request.
 
 ### 27.1 Pack view
 
@@ -2932,21 +2935,26 @@ keeps the code and raises `revision` – that is how launchers detect updates.
 ```
 
 Own packs (`/v1/me/packs`, upload answers) add `duration` (`1d|7d|30d|forever`), `installs` (downloads by others) and
-`sentTo` (friends it was sent to). `expiresAt: null` = no expiry. `ownJars` > 0 means mod files that are not from
-Modrinth – launchers show a trust warning before installing.
+`sentTo` (friends it was sent to). `expiresAt: null` = no expiry. `modrinthFiles` counts every file listed in the
+index (Modrinth, CurseForge or GitHub). The name stays so older clients keep working. `ownJars` > 0 means jar files
+stored in the pack (not a download link) – launchers show a trust warning before installing.
 
 ### 27.2 Routes
 
 | Route | Auth | Notes |
 |---|---|---|
-| `POST /v1/packs?duration=7d` | user | raw `.mrpack` body (`application/x-modrinth-modpack+zip`, `application/zip` or `application/octet-stream`), ≤ `PACK_MAX_MB` (50) → 201 `{ pack }` (own view) |
-| `PUT /v1/packs/{id}/file` | owner | new version, same code, `revision + 1`; recipients get `pack_updated`. `pack_unchanged` (409) for the same file |
+| `POST /v1/packs?duration=7d` | user | raw `.mrpack` body (`application/x-modrinth-modpack+zip`, `application/zip` or `application/octet-stream`), ≤ min(`PACK_MAX_MB`, 100 MB) → 201 `{ pack }` (own view). `Content-Type: application/json` with `{ uploadToken }` uses a finished chunked upload (§27.7) instead; `duration` stays a query parameter |
+| `PUT /v1/packs/{id}/file` | owner | new version, same code, `revision + 1`; recipients get `pack_updated`. Same body rules as the create route (raw file or `{ uploadToken }`). `pack_unchanged` (409) for the same file |
 | `PATCH /v1/packs/{id}` | owner | `{ duration }` – counts from now |
 | `DELETE /v1/packs/{id}` | owner | 204; code and link stop working, recipients get `pack_removed` |
 | `GET /v1/me/packs` | user | `{ packs, limits: { active, maxActive, uploadsToday, maxPerDay, maxBytes } }` |
 | `GET /v1/packs/code/{code}` | public | `{ pack }` – code case-insensitive, with or without `TRS-`/dashes, O→0, I/L→1. 60/min per IP without account |
-| `GET /v1/packs/code/{code}/contents` | public | `{ contents: { mods, resourcePacks, shaderPacks } }` – each `[{ name, file, source: "modrinth"\|"pack", projectId }]` (§27.6); same limits as the pack view, does not count an install |
-| `GET /v1/packs/code/{code}/file` | user | the `.mrpack` (headers `X-Pack-Revision`, `X-Pack-Sha256`); counts an install unless you are the owner |
+| `GET /v1/packs/code/{code}/contents` | public | `{ contents: { mods, resourcePacks, shaderPacks } }` – each `[{ name, file, source: "modrinth"\|"curseforge"\|"github"\|"pack", projectId }]` (§27.6); same limits as the pack view, does not count an install |
+| `GET /v1/packs/code/{code}/file` | user | the `.mrpack`, streamed, with `Range` (§27.8). Headers `X-Pack-Revision`, `X-Pack-Sha256`, `Accept-Ranges: bytes`, `Content-Length`. Counts an install only when the range starts at byte 0 and you are not the owner |
+| `POST /v1/packs/uploads` | user | start a chunked upload (§27.7) → 201 `{ uploadId, chunkSize, expiresAt }` |
+| `PUT /v1/packs/uploads/{uploadId}/chunks/{index}` | user | one chunk, raw bytes, header `X-Chunk-Sha256` → 204 |
+| `GET /v1/packs/uploads/{uploadId}` | user | `{ received, size, chunkSize }` – which chunks are already stored |
+| `POST /v1/packs/uploads/{uploadId}/complete` | user | assemble and check the file → `{ uploadToken }` |
 | `POST /v1/packs/lookup` | user | `{ codes: [≤ 100] }` → `{ packs }` (update check; unknown/expired codes are missing) |
 | `POST /v1/packs/{id}/send` | user | `{ to: [uuid ≤ 20] }` → `{ sent: [PlayerRef], skipped: [uuid] }`. Anyone who can see a pack may send it to **their own friends**; non-friends and blocks are skipped, `no_recipients` (400) if nobody was left |
 | `GET /v1/me/pack-inbox` | user | `{ packs: [{ pack, from, sentAt }] }` – newest first, without dismissed/expired |
@@ -2955,14 +2963,23 @@ Modrinth – launchers show a trust warning before installing.
 Packs of banned accounts are hidden (404). Errors: `invalid_pack` (422, with a readable message and sometimes
 `details.path`), `pack_not_found` (404), `pack_limit` (409, `details.max`), `pack_daily_limit` (429, `Retry-After`),
 `payload_too_large` (413), `storage_full` (507), `sanctioned` (403, upload ban for uploads, social ban for sending).
+Chunked uploads add `upload_not_found` (404), `upload_expired` (410), `upload_limit` (409, `details.max`),
+`upload_incomplete` (409, `details.missing` up to 32 indexes and `details.missingCount`), `upload_closed` (409),
+`upload_used` (409), `chunk_conflict` (409), `invalid_chunk` (400), `checksum_mismatch` (422) and
+`range_not_satisfiable` (416, header `Content-Range: bytes */<size>`).
 
 ### 27.3 What the server checks
 
 Only real Modrinth packs: a zip (no ZIP64, no encryption) with `modrinth.index.json` (`formatVersion` 1, `game`
 `minecraft`, `dependencies.minecraft` plus at most one of `forge`, `neoforge`, `fabric-loader`, `quilt-loader`) and
 files only under `overrides/`, `client-overrides/`, `server-overrides/`. All paths relative without `..`, backslashes
-or drive letters; no file twice. Index downloads **only from `https://cdn.modrinth.com/`**. At most 20,000 zip entries,
-5,000 index files and 1 GB unpacked. The server never unpacks anything to disk.
+or drive letters; no file twice. Every index `downloads[]` entry must be **https**, with no userinfo, no backslash and no
+port other than 443, and the hostname (lower case, one trailing dot ignored) must be exactly one of
+`cdn.modrinth.com`, `edge.forgecdn.net`, `mediafilez.forgecdn.net`, `github.com`, `raw.githubusercontent.com`.
+Lookalikes (`www.github.com`, `objects.githubusercontent.com`, `release-assets.githubusercontent.com`) are rejected.
+Each file needs `hashes.sha1`, `hashes.sha512`, `fileSize` and 1–5 of those URLs. The server does **not** fetch the
+URLs and does **not** follow redirects. At most 20,000 zip entries, 5,000 index files and 1 GB unpacked. The server
+never unpacks anything to disk. ZIP64 is rejected.
 
 The pack page links to `trs-launcher://pack/TRS-XXXX-XXXX` (“Open in TRS Launcher”, launcher ≥ 0.12.0). The launcher
 only accepts exactly this form and opens its “Modpack by code” preview – it never installs without a click.
@@ -2976,30 +2993,98 @@ only accepts exactly this form and opens its “Modpack by code” preview – i
 ### 27.5 Limits, reports, data
 
 Per account: 10 active packs (`maxSharedPacks`), 30 uploads (new packs and versions) per 24 h, 100 unread packs in the
-inbox; all packs together ≤ `PACK_STORAGE_MAX_MB` (5120). Rate limits: upload 6/min, manage 60/min, lookup 60/min,
-download 20/min per account, public page 60/min per IP.
+inbox; all packs together ≤ `PACK_STORAGE_MAX_MB` (default **51200**). One pack file ≤ `PACK_MAX_MB` (default
+**1024**, allowed 1–2048). A direct upload body is capped at min(that, **100 MB**); above 100 MB the client uses
+§27.7. Open upload sessions count toward the storage limit. The daily counter increments when a pack is created or
+updated, not when a chunk session starts. `GET /v1/me/packs` → `limits.maxBytes` is `PACK_MAX_MB` in bytes.
+Rate limits: upload 6/min (also starts and completes a chunked upload), chunk bytes 120/min, manage 60/min (also the
+upload status), lookup 60/min, download 20/min per account, public page 60/min per IP.
 
 Reports: `POST /v1/reports` with `{ kind: "pack", packId, reason }`. Evidence keeps name, code, description, revision,
 Minecraft version, loader, own-jar count, checksum and owner (not the file). Team action `delete_pack`.
 
 Migration 16: tables `shared_packs` (file `<DATA_DIR>/packs/<xx>/<id>.<revision>.mrpack`, only the current version is
-kept), `shared_pack_recipients`, `shared_pack_uploads`; report kind `pack` + column `pack_id`. Expired packs are
-removed every 10 minutes, orphaned files every 6 hours; account deletion removes all own packs and files.
+kept), `shared_pack_recipients`, `shared_pack_uploads`; report kind `pack` + column `pack_id`. Migration 22: tables
+`pack_upload_sessions` and `pack_upload_chunks` (bytes live under `<DATA_DIR>/packs/tmp/<uploadId>/`, not in the
+database). Expired packs and expired upload sessions are removed every 10 minutes; orphaned pack files every 6 hours
+(the sweeper skips `packs/tmp`). Account deletion removes all own packs, pack files and upload temp directories.
 
 ### 27.6 Contents on the pack page
 
 `/p/<code>` lists what is inside, read from the stored file (only the zip directory and the index, nothing is
 unpacked): **mods** (`mods/*.jar`), **resource packs** (`resourcepacks/*.zip` or a folder) and **shaders**
-(`shaderpacks/*.zip` or a folder) – from the index (`source: "modrinth"`, `projectId` from the CDN address
-`/data/<id>/versions/…`, linked to `https://modrinth.com/project/<id>`) and from `overrides/`/`client-overrides/`
-(`source: "pack"`, marked as own file). Files for servers only (`env.client` `unsupported`, `server-overrides/`) are
+(`shaderpacks/*.zip` or a folder) – from the index (`source`: `modrinth`, `curseforge` or `github`, from the first
+download host) and from `overrides/`/`client-overrides/` (`source: "pack"`, marked as own file). `projectId` and
+`versionId` are filled only for `cdn.modrinth.com` addresses of the form `/data/<8>/versions/…` (then linked to
+`https://modrinth.com/project/<id>`). Files for servers only (`env.client` `unsupported`, `server-overrides/`) are
 left out. At most 1,000 per list; `name` is the file name without extension. Cached per pack revision.
 
 Each entry also has `versionId` (from the CDN address), `title` and `version` (looked up on Modrinth's public API –
 `/v2/projects?ids=` and `/v2/versions?ids=`, only IDs from the pack, cached for a day, file names as fallback when
 Modrinth is down), `url` (project page on modrinth.com) and `icon` (`/v1/modrinth/icon/{projectId}` – the server
 fetches the icon from `cdn.modrinth.com` itself, only PNG/JPEG/GIF/WebP ≤ 512 KB, only for projects that appeared in a
-pack list; 600/min per IP, `Cache-Control: public, max-age=86400`). Sorted by title (else name).
+pack list; 600/min per IP, `Cache-Control: public, max-age=86400`). Sorted by title (else name). CurseForge and GitHub
+entries have no Modrinth project page; the website shows them as remote files, not as own files.
+
+### 27.7 Chunked upload
+
+Cloudflare rejects a request body above 100 MB, so a pack between 100 MB and `PACK_MAX_MB` is uploaded in pieces.
+The session lasts **24 hours**. At most **3** unexpired sessions per account (finished ones that still hold a token
+count). A fourth returns `409 upload_limit`.
+
+`POST /v1/packs/uploads` with `{ "size": <bytes>, "sha256": "<64 hex>", "name"?: "<1–64>" }` → **201**
+
+```json
+{ "uploadId": "22 chars", "chunkSize": 33554432, "expiresAt": "…" }
+```
+
+`size` must be ≥ 1 and ≤ `PACK_MAX_MB`. `chunkSize` comes from `PACK_CHUNK_BYTES` (default 33,554,432, at most that).
+Clients must use the returned value. More than 4,096 chunks is `400 invalid_request`.
+
+`PUT /v1/packs/uploads/{uploadId}/chunks/{index}` – raw bytes, header `X-Chunk-Sha256` (64 hex). `index` starts at 0.
+Every chunk except the last is exactly `chunkSize` bytes; the last is the remainder. → **204**. Sending the same
+bytes again is fine. Different bytes for an index that is already stored → `409 chunk_conflict`. A hash that does
+not match the body → `422 checksum_mismatch` (nothing stored). A short or out-of-range index → `400 invalid_chunk`.
+A body longer than that chunk → `413 payload_too_large`. After complete, further chunks → `409 upload_closed`.
+
+`GET /v1/packs/uploads/{uploadId}` → `{ "received": [0, 2], "size": …, "chunkSize": … }` (indexes in order) so a
+client can resume. Unknown, foreign or already used ids are `404 upload_not_found`. Past `expiresAt` is
+`410 upload_expired` on status, chunk and complete.
+
+`POST /v1/packs/uploads/{uploadId}/complete` assembles the chunks under `packs/tmp/<uploadId>/assembled.mrpack`,
+checks the total size and SHA-256, then runs the same pack checks as a direct upload (§27.3, including the download
+hosts). → `{ "uploadToken": "up_" + 43 base64url characters }`. The token is returned **once**. A second complete is
+`409 upload_closed` – the client must have saved the token. Missing chunks → `409 upload_incomplete` with
+`missing` (at most 32 indexes) and `missingCount`; those chunks can be sent again. If a stored chunk's bytes no
+longer match its row, that index is dropped and returned in `missing`. A wrong total hash or size →
+`422 checksum_mismatch` and the chunks stay (start a new session if the declared hash was wrong). An invalid pack
+deletes the session and returns `422 invalid_pack`.
+
+`POST /v1/packs?duration=` and `PUT /v1/packs/{id}/file` accept `Content-Type: application/json` and
+`{ "uploadToken": "up_…" }` and then behave like a normal create or update (same answer, same daily limit, same
+`pack_updated` event). The token works once. Using it again, or a token from another account, is
+`404 upload_not_found` (a non-owner update is still `404 pack_not_found`). An expired token is `410 upload_expired`.
+Temp files are removed when the token is used, when the session expires, or when the account is deleted.
+
+### 27.8 Download and what the installer checks
+
+`GET /v1/packs/code/{code}/file` streams the file. `Content-Length` is the number of bytes in the response.
+`Accept-Ranges: bytes`.
+
+- No `Range`, or a header that is not a single `bytes=` range (including multipart `bytes=0-1,2-3`) → **200**, the
+  whole file, no `Content-Range`.
+- `bytes=<start>-<end>`, `bytes=<start>-` or `bytes=-<suffix>` → **206** with `Content-Range: bytes start-end/total`.
+  `end` is inclusive. The stream is that slice.
+- A range that starts at or past the end, or an empty file with a range → **416** `range_not_satisfiable` and
+  `Content-Range: bytes */<size>`.
+
+An install is counted only when the requester is not the owner, the file is not empty, and the response starts at
+byte 0 (a full download or a range such as `bytes=0-…`). A resume from a later byte does not count again.
+
+The **installer** (launcher, not this server) downloads each index file itself. It may follow a redirect only when
+the next URL is still https on one of the five hosts in §27.3. Any other host aborts the install. After each
+download it checks `fileSize`, `hashes.sha1` and `hashes.sha512`. A mismatch aborts with a clear error and does not
+keep the file. The API never requests those URLs.
 
 ## 28. Issues & roadmap
 

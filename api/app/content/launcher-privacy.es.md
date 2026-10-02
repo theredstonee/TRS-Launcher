@@ -217,9 +217,10 @@ enlace»; tus demás capturas se quedan en tu PC.
 ### Compartir modpacks
 
 En el launcher puedes compartir una instancia como modpack (*Instancia → Compartir → Compartir modpack*). El launcher
-guarda la **lista de mods** (los mods que están en Modrinth solo aparecen con su dirección de descarga) y las **carpetas
-que elijas** (p. ej. ajustes/configs, resource packs, tus propios archivos de mods) en un archivo `.mrpack` y solo lo
-sube cuando pulsas «Compartir». Nunca se incluyen mundos, capturas, registros ni archivos de cuenta.
+guarda la **lista de mods** (los mods, resource packs y shaders que Modrinth, CurseForge o GitHub pueden servir solo
+aparecen con su dirección de descarga) y las **carpetas que elijas** (p. ej. ajustes/configs, resource packs, tus
+propios archivos de mods) en un archivo `.mrpack` y solo lo sube cuando pulsas «Compartir». Nunca se incluyen mundos,
+capturas, registros ni archivos de cuenta.
 
 - **Qué se guarda:** el archivo del pack, su nombre, descripción y versión, la versión de Minecraft y el cargador de
   mods, cuántos archivos contiene, cuándo se compartió, se actualizó y cuándo caduca, cuántas veces se instaló, la
@@ -232,7 +233,7 @@ sube cuando pulsas «Compartir». Nunca se incluyen mundos, capturas, registros 
   automáticamente; puedes borrar un pack antes en «Mis modpacks» y el código y el enlace dejan de funcionar al momento
   (las copias que otros ya instalaron se quedan en sus PC). Una versión nueva mantiene el código; quien lo instaló ve
   «Actualización disponible».
-- **Límites:** como máximo 50 MB por pack, 10 packs compartidos y 30 subidas al día por cuenta. Una prohibición de
+- **Límites:** como máximo 1 GB por pack, 10 packs compartidos y 30 subidas al día por cuenta. Una prohibición de
   subidas de la moderación también impide compartir.
 - **Denuncias:** un pack se puede denunciar en el launcher o en su página (con sesión iniciada). La denuncia guarda
   como prueba el nombre, el código, la descripción, el resumen del contenido y la suma de comprobación (no el archivo);
