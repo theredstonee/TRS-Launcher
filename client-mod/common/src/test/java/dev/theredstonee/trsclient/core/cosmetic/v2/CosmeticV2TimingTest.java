@@ -18,11 +18,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tempo und Verlauf der Redstone-Krone im Spiel = Studio-Werkbank: für 5 s ab einer echten Wanduhr-Zeit (20-ms-Schritte)
- * dasselbe Leucht-Bild (über {@link CosmeticAssets} wie im Spiel, also mit {@code glowFrameTimeMs} 140 statt
- * {@code frameTimeMs}), dieselbe Hof-Helligkeit und dieselbe Pose (Wippen, Lampen-Puls) wie {@code cosmetic-format.mjs}
- * (Referenz erzeugt mit {@code scratchpad/fixac/crown-timeline.mjs} → {@code redstone_crown.timeline.json}). Dazu die
- * Entfernungs-Stufen gegen das Flimmern der HD-Texturen.
+ * Tempo und Verlauf der Redstone-Lampe ({@code lamp_helmet}, freies Teil) im Spiel = Studio-Werkbank: für 5 s ab einer
+ * echten Wanduhr-Zeit (20-ms-Schritte) dasselbe Leucht-Bild (über {@link CosmeticAssets} wie im Spiel, also mit
+ * {@code glowFrameTimeMs} 160 statt {@code frameTimeMs}), dieselbe Hof-Helligkeit und dieselbe Pose (Lampen-Puls) wie
+ * {@code cosmetic-format.mjs} (Referenz → {@code lamp_helmet.timeline.json}). Dazu die Entfernungs-Stufen gegen das
+ * Flimmern der HD-Texturen.
  */
 class CosmeticV2TimingTest {
 	/** Spiel-Backend-Attrappe: Textur = ihr Name. */
@@ -41,7 +41,7 @@ class CosmeticV2TimingTest {
 		}
 	}
 
-	static CosmeticV2Cache.Loaded crown(CosmeticV2 m) {
+	static CosmeticV2Cache.Loaded pixels(CosmeticV2 m) {
 		int n = m.pixelWidth() * m.pixelHeight();
 		int[][] base = new int[Math.max(1, m.frames)][n];
 		int[][] glow = new int[m.glowFrames][n];
@@ -50,11 +50,11 @@ class CosmeticV2TimingTest {
 	}
 
 	static CosmeticAssets.Entry<String> upload(CosmeticV2 m, Names names, int ticks) {
-		final CosmeticV2Cache.Loaded loaded = crown(m);
-		CosmeticAssets<String> assets = new CosmeticAssets<String>(names, (hat, done, failed) -> done.accept(loaded));
+		final CosmeticV2Cache.Loaded data = pixels(m);
+		CosmeticAssets<String> assets = new CosmeticAssets<String>(names, (hat, done, failed) -> done.accept(data));
 		OnlineConfig cfg = new OnlineConfig(true, "https://trs-launcher.theredstonee.de", OnlineConfig.DEFAULT_SESSION);
-		HatInfo hat = HatInfo.v2("redstone_crown", "/v1/cosmetics/redstone_crown/model.json?v=d8cb59273565",
-				"/v1/cosmetics/redstone_crown.png?v=d8cb59273565", "/v1/cosmetics/redstone_crown/glow.png?v=d8cb59273565",
+		HatInfo hat = HatInfo.v2("lamp_helmet", "/v1/cosmetics/lamp_helmet/model.json?v=d8cb59273565",
+				"/v1/cosmetics/lamp_helmet.png?v=d8cb59273565", "/v1/cosmetics/lamp_helmet/glow.png?v=d8cb59273565",
 				"d8cb59273565", 1, 12, cfg);
 		CosmeticAssets.Entry<String> e = null;
 		for (int i = 0; i < ticks; i++) {
@@ -65,14 +65,14 @@ class CosmeticV2TimingTest {
 	}
 
 	@Test
-	void crownMatchesTheWorkbenchOverTime() throws IOException {
-		CosmeticV2 m = CosmeticV2.parse(CosmeticV2Test.res("redstone_crown.json"));
+	void lampHelmetMatchesTheWorkbenchOverTime() throws IOException {
+		CosmeticV2 m = CosmeticV2.parse(CosmeticV2Test.res("lamp_helmet.json"));
 		assertEquals(12, m.glowFrames);
-		assertEquals(140, m.glowFrameTimeMs, "Leucht-Streifen: 12 Bilder à 140 ms");
+		assertEquals(160, m.glowFrameTimeMs, "Leucht-Streifen: 12 Bilder à 160 ms");
 		assertEquals(0, m.frameTimeMs, "Grundtextur steht (1 Bild)");
 		CosmeticAssets.Entry<String> e = upload(m, new Names(), 100);
 		assertNotNull(e);
-		JsonObject ref = new JsonParser().parse(CosmeticV2Test.res("redstone_crown.timeline.json")).getAsJsonObject();
+		JsonObject ref = new JsonParser().parse(CosmeticV2Test.res("lamp_helmet.timeline.json")).getAsJsonObject();
 		CosmeticV2Renderer r = new CosmeticV2Renderer();
 		int changes = 0;
 		String last = null;
@@ -81,8 +81,8 @@ class CosmeticV2TimingTest {
 			long t = s.get("t").getAsLong();
 			// Leucht-Bild: genau das Bild der Werkbank (Textur-Name endet auf /g<bild>)
 			V2Hat<String> hat = new V2Hat<String>(m, e.base(t), e.glow(t), "halo", t, false, e);
-			assertEquals("cosmetics/redstone_crown_0/g" + s.get("glowFrame").getAsInt(), hat.glow, "Leucht-Bild bei t=" + t);
-			assertEquals("cosmetics/redstone_crown_0/b0", hat.base, "Grundbild bei t=" + t);
+			assertEquals("cosmetics/lamp_helmet_0/g" + s.get("glowFrame").getAsInt(), hat.glow, "Leucht-Bild bei t=" + t);
+			assertEquals("cosmetics/lamp_helmet_0/b0", hat.base, "Grundbild bei t=" + t);
 			if (!hat.glow.equals(last)) changes++;
 			last = hat.glow;
 			// Hof-Helligkeit
@@ -91,13 +91,13 @@ class CosmeticV2TimingTest {
 				assertEquals(halos.get(i).getAsDouble(), CosmeticV2Renderer.haloIntensity(m.halos.get(i), t), 1e-6,
 						"Hof " + i + " bei t=" + t);
 			}
-			// Pose: Wippen der Krone, Puls der Lampe
+			// Pose: Helm steht, die Lampe pulst
 			r.pose(m, t, true);
-			assertMatrix(s.getAsJsonArray("crown"), r.world(boneIndex(m, "crown")), "crown t=" + t);
-			assertMatrix(s.getAsJsonArray("jewel"), r.world(boneIndex(m, "jewel")), "jewel t=" + t);
+			assertMatrix(s.getAsJsonArray("helmet"), r.world(boneIndex(m, "helmet")), "helmet t=" + t);
+			assertMatrix(s.getAsJsonArray("lamp"), r.world(boneIndex(m, "lamp")), "lamp t=" + t);
 		}
-		// 5 s bei 140 ms je Bild: 35–37 Wechsel (≈ 7 je Sekunde), nicht je Render-Bild
-		assertTrue(changes >= 35 && changes <= 37, "Wechsel in 5 s: " + changes);
+		// 5 s bei 160 ms je Bild: genau 32 Wechsel (erster Stand plus 31 Schritte), nicht je Render-Bild
+		assertEquals(32, changes, "Wechsel in 5 s: " + changes);
 	}
 
 	@Test
@@ -128,25 +128,25 @@ class CosmeticV2TimingTest {
 
 	@Test
 	void lodTexturesUploadAfterFullResolutionAndKeepTheFrame() throws IOException {
-		CosmeticV2 m = CosmeticV2.parse(CosmeticV2Test.res("redstone_crown.json"));
+		CosmeticV2 m = CosmeticV2.parse(CosmeticV2Test.res("lamp_helmet.json"));
 		Names names = new Names();
 		// 4 Uploads je Tick (erster Tick lädt nur): nach 5 Ticks ist Stufe 0 (1 + 12 Bilder) da, die kleineren Stufen fehlen noch
 		CosmeticAssets.Entry<String> early = upload(m, names, 5);
 		assertNotNull(early, "volle Auflösung nach 13 Uploads bereit");
 		long t = 1790000000000L + 700;
-		int frame = CosmeticV2Renderer.frameAt(t, 12, 140);
+		int frame = CosmeticV2Renderer.frameAt(t, 12, 160);
 		V2Hat<String> hat = new V2Hat<String>(m, early.base(t), early.glow(t), null, t, false, early);
 		// Stufe 2 noch nicht hochgeladen → volle Auflösung statt Lücke
-		assertEquals("cosmetics/redstone_crown_0/g" + frame, hat.glow(2));
+		assertEquals("cosmetics/lamp_helmet_0/g" + frame, hat.glow(2));
 		names = new Names();
 		CosmeticAssets.Entry<String> e = upload(m, names, 20);
 		assertEquals(13 * 4, names.uploaded.size(), "4 Stufen × (1 Grund + 12 Leucht)");
-		assertTrue(names.uploaded.contains("cosmetics/redstone_crown_0/g11_l3@40x32"), names.uploaded.toString());
+		assertTrue(names.uploaded.contains("cosmetics/lamp_helmet_0/g11_l3@48x32"), names.uploaded.toString());
 		hat = new V2Hat<String>(m, e.base(t), e.glow(t), null, t, false, e);
 		for (int level = 0; level <= 3; level++) {
 			String suffix = level == 0 ? "" : "_l" + level;
-			assertEquals("cosmetics/redstone_crown_0/g" + frame + suffix, hat.glow(level), "gleiches Bild in Stufe " + level);
-			assertEquals("cosmetics/redstone_crown_0/b0" + suffix, hat.base(level));
+			assertEquals("cosmetics/lamp_helmet_0/g" + frame + suffix, hat.glow(level), "gleiches Bild in Stufe " + level);
+			assertEquals("cosmetics/lamp_helmet_0/b0" + suffix, hat.base(level));
 		}
 		assertEquals(hat.glow(3), hat.glow(9), "über der höchsten Stufe: höchste Stufe");
 	}

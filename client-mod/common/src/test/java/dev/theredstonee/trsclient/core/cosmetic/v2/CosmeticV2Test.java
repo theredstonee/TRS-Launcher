@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Kosmetik-Format v2: Prüfung (Port von {@code validateModel}) und Mathematik gegen Werte der Studio-Referenz
- * ({@code cosmetic-format.mjs}, erzeugt mit {@code scratchpad/cos2mod/expected.mjs} → {@code *.expected.json}).
+ * ({@code cosmetic-format.mjs} → {@code *.expected.json}) für die freien Teile lamp_helmet, trs_cap und top_hat.
  */
 class CosmeticV2Test {
 	private static final double EPS = 1e-4;
@@ -51,7 +51,7 @@ class CosmeticV2Test {
 
 	@Test
 	void parsesStudioExports() throws IOException {
-		for (String id : new String[] { "redstone_crown", "halo", "top_hat" }) {
+		for (String id : new String[] { "lamp_helmet", "trs_cap", "top_hat" }) {
 			CosmeticV2 m = CosmeticV2.parse(res(id + ".json"));
 			JsonObject exp = new JsonParser().parse(res(id + ".expected.json")).getAsJsonObject();
 			assertEquals(id, m.id);
@@ -60,21 +60,21 @@ class CosmeticV2Test {
 			assertTrue(m.glow);
 			assertEquals(12, m.glowFrames);
 		}
-		CosmeticV2 crown = CosmeticV2.parse(res("redstone_crown.json"));
-		assertEquals(40, crown.textureWidth);
-		assertEquals(32, crown.textureHeight);
-		assertEquals(8, crown.scale);
-		assertEquals(320, crown.pixelWidth());
-		assertEquals(140, crown.glowFrameTimeMs);
-		assertEquals(12, crown.halos.size());
-		assertTrue(crown.has(CosmeticV2.EMISSIVE));
-		assertFalse(crown.has(CosmeticV2.TRANSLUCENT));
+		CosmeticV2 lamp = CosmeticV2.parse(res("lamp_helmet.json"));
+		assertEquals(48, lamp.textureWidth);
+		assertEquals(32, lamp.textureHeight);
+		assertEquals(8, lamp.scale);
+		assertEquals(384, lamp.pixelWidth());
+		assertEquals(160, lamp.glowFrameTimeMs);
+		assertEquals(5, lamp.halos.size());
+		assertTrue(lamp.has(CosmeticV2.EMISSIVE));
+		assertFalse(lamp.has(CosmeticV2.TRANSLUCENT));
 	}
 
 	@Test
 	void mathMatchesStudio() throws IOException {
 		CosmeticV2Renderer r = new CosmeticV2Renderer();
-		for (String id : new String[] { "redstone_crown", "halo", "top_hat" }) {
+		for (String id : new String[] { "lamp_helmet", "trs_cap", "top_hat" }) {
 			CosmeticV2 m = CosmeticV2.parse(res(id + ".json"));
 			JsonObject exp = new JsonParser().parse(res(id + ".expected.json")).getAsJsonObject();
 			for (JsonElement te : exp.getAsJsonArray("times")) {
@@ -156,7 +156,7 @@ class CosmeticV2Test {
 
 	@Test
 	void helmetPutsTheModelOnTopOfTheHelmet() throws IOException {
-		CosmeticV2 m = CosmeticV2.parse(res("redstone_crown.json"));
+		CosmeticV2 m = CosmeticV2.parse(res("lamp_helmet.json"));
 		CosmeticV2Renderer r = new CosmeticV2Renderer();
 		final List<double[]> plain = new ArrayList<double[]>();
 		final List<double[]> helmet = new ArrayList<double[]>();
@@ -218,7 +218,7 @@ class CosmeticV2Test {
 				.addProperty("bone", "missing");
 		assertInvalid(m2.toString(), "animations[0].tracks[0]");
 		// Eltern-Knochen muss vorher stehen
-		JsonObject m3 = new JsonParser().parse(res("redstone_crown.json")).getAsJsonObject();
+		JsonObject m3 = new JsonParser().parse(res("lamp_helmet.json")).getAsJsonObject();
 		JsonArray bones = m3.getAsJsonArray("bones");
 		JsonElement first = bones.get(0);
 		bones.set(0, bones.get(1));
@@ -238,14 +238,14 @@ class CosmeticV2Test {
 
 	@Test
 	void decodesAndSplitsStrips() throws IOException {
-		CosmeticV2Cache.Loaded l = CosmeticV2Cache.decode(res("halo.json"), bytes("halo.png"), bytes("halo-glow.png"));
+		CosmeticV2Cache.Loaded l = CosmeticV2Cache.decode(res("lamp_helmet.json"), bytes("lamp_helmet.png"), bytes("lamp_helmet-glow.png"));
 		assertEquals(1, l.base.length);
-		assertEquals(128 * 128, l.base[0].length);
+		assertEquals(384 * 256, l.base[0].length);
 		assertEquals(12, l.glow.length);
 		// Leuchten vormultipliziert: Alpha immer 255
 		for (int[] f : l.glow) for (int p : f) assertEquals(0xFF, p >>> 24);
 		// Falsche Maße (Leucht-Streifen als Textur) → Fehler
-		assertThrows(IOException.class, () -> CosmeticV2Cache.decode(res("halo.json"), bytes("halo-glow.png"), null));
+		assertThrows(IOException.class, () -> CosmeticV2Cache.decode(res("lamp_helmet.json"), bytes("lamp_helmet-glow.png"), null));
 	}
 
 	@Test
@@ -299,9 +299,9 @@ class CosmeticV2Test {
 	@Test
 	void diskCacheServesSecondLoadWithoutNetwork(@org.junit.jupiter.api.io.TempDir Path dir) throws Exception {
 		final Map<String, byte[]> files = new java.util.HashMap<String, byte[]>();
-		files.put("model", bytes("halo.json"));
-		files.put("tex", bytes("halo.png"));
-		files.put("glow", bytes("halo-glow.png"));
+		files.put("model", bytes("lamp_helmet.json"));
+		files.put("tex", bytes("lamp_helmet.png"));
+		files.put("glow", bytes("lamp_helmet-glow.png"));
 		final int[] calls = { 0 };
 		OnlineConfig cfg = new OnlineConfig(true, "http://127.0.0.1:1", OnlineConfig.DEFAULT_SESSION);
 		dev.theredstonee.trsclient.core.online.Http http = request -> {
@@ -311,21 +311,21 @@ class CosmeticV2Test {
 			return new dev.theredstonee.trsclient.core.online.Http.Response(200, new java.util.HashMap<String, String>(), body);
 		};
 		dev.theredstonee.trsclient.core.online.TrsApi api = new dev.theredstonee.trsclient.core.online.TrsApi(http, cfg);
-		HatInfo hat = HatInfo.v2("halo", "/v1/cosmetics/halo/model.json?v=aaa111", "/v1/cosmetics/halo.png?v=aaa111",
-				"/v1/cosmetics/halo/glow.png?v=aaa111", "aaa111", 1, 12, cfg);
+		HatInfo hat = HatInfo.v2("lamp_helmet", "/v1/cosmetics/lamp_helmet/model.json?v=aaa111", "/v1/cosmetics/lamp_helmet.png?v=aaa111",
+				"/v1/cosmetics/lamp_helmet/glow.png?v=aaa111", "aaa111", 1, 12, cfg);
 		CosmeticV2Cache cache = new CosmeticV2Cache(dir);
 		CosmeticV2Cache.Loaded first = cache.load(hat, api, null);
 		assertEquals(3, calls[0]);
-		assertTrue(Files.isRegularFile(dir.resolve("halo-aaa111.json")));
+		assertTrue(Files.isRegularFile(dir.resolve("lamp_helmet-aaa111.json")));
 		CosmeticV2Cache.Loaded second = cache.load(hat, api, null);
 		assertEquals(3, calls[0]);
 		assertEquals(first.model.faceCount, second.model.faceCount);
 		// neuer Stand löscht den alten
-		HatInfo newer = HatInfo.v2("halo", "/v1/cosmetics/halo/model.json?v=bbb222", "/v1/cosmetics/halo.png?v=bbb222",
-				"/v1/cosmetics/halo/glow.png?v=bbb222", "bbb222", 1, 12, cfg);
+		HatInfo newer = HatInfo.v2("lamp_helmet", "/v1/cosmetics/lamp_helmet/model.json?v=bbb222", "/v1/cosmetics/lamp_helmet.png?v=bbb222",
+				"/v1/cosmetics/lamp_helmet/glow.png?v=bbb222", "bbb222", 1, 12, cfg);
 		cache.load(newer, api, null);
 		assertEquals(6, calls[0]);
-		assertFalse(Files.exists(dir.resolve("halo-aaa111.json")));
-		assertTrue(Files.exists(dir.resolve("halo-bbb222-glow.png")));
+		assertFalse(Files.exists(dir.resolve("lamp_helmet-aaa111.json")));
+		assertTrue(Files.exists(dir.resolve("lamp_helmet-bbb222-glow.png")));
 	}
 }
