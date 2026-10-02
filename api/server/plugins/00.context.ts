@@ -4,8 +4,9 @@ import { grantPendingRewards } from '../lib/achievements'
 import { rotateAttachmentKeys, sweepOrphanFiles, sweepPendingAttachments } from '../lib/attachments'
 import { sweepExpired } from '../lib/auth'
 import { loadBuiltinCosmetics, loadBuiltins } from '../lib/builtin'
-import { seedBuiltins } from '../lib/capes'
-import { seedBuiltinCosmetics, seedEmotes } from '../lib/cosmetics'
+import { seedBuiltins, type BuiltinCape } from '../lib/capes'
+import { seedBuiltinCosmetics, seedEmotes, type AnyBuiltinCosmetic } from '../lib/cosmetics'
+import { loadPrivateCapes, loadPrivateCosmetics, mergeBuiltins, privateAssetsAvailable } from '../lib/private-assets'
 import { ConfigError, loadConfig, type Config } from '../lib/config'
 import { createContext, setContext, setReady } from '../lib/context'
 import { rotateMessageKeys, sweepTyping } from '../lib/chat'
@@ -69,11 +70,37 @@ export default defineNitroPlugin((nitroApp) => {
     return wasm
   })
 
+  const warn = (message: string) => console.warn(`[trs-api] ${message}`)
+  // Fehlender privater Ordner: eine Warnung, öffentliche Teile laufen weiter. Ein Wurf hier darf den Start nicht beenden.
+  let privateReady = false
+  try {
+    privateReady = privateAssetsAvailable(config.privateAssetsDir, warn)
+  } catch {
+    warn('private assets failed to load – private built-ins skipped')
+  }
+
   async function start(): Promise<void> {
-    const capes = await loadBuiltins(() => capeAssets.json('catalog.json'), capeAssets.file)
-    // Ohne Katalog nichts ausmustern – bestehende Einträge bleiben, wie sie sind.
-    if (capes.length === 0) console.warn('[trs-api] assets/capes/catalog.json not found – built-in capes unchanged')
-    else seedBuiltins(ctx, capes)
+    // Ohne öffentlichen Katalog nichts einspielen – sonst würden die vorhandenen Zeilen ausgemustert,
+    // nur weil die privaten Teile da sind. Ein leerer Katalog zählt genauso als „unverändert“.
+    const capeRaw = await capeAssets.json('catalog.json')
+    let capes: BuiltinCape[] = []
+    if (capeRaw == null) console.warn('[trs-api] assets/capes/catalog.json not found – built-in capes unchanged')
+    else {
+      const publicCapes = await loadBuiltins(async () => capeRaw, capeAssets.file)
+      if (publicCapes.length === 0) console.warn('[trs-api] assets/capes/catalog.json not found – built-in capes unchanged')
+      else {
+        let priv = { loaded: [] as { item: BuiltinCape, at: number | null }[], reserved: [] as number[] }
+        if (privateReady) {
+          try {
+            priv = loadPrivateCapes(config.privateAssetsDir, warn)
+          } catch {
+            warn('private capes failed to load – private capes skipped')
+          }
+        }
+        capes = mergeBuiltins(publicCapes, priv.loaded, priv.reserved, warn)
+        seedBuiltins(ctx, capes)
+      }
+    }
 
     seedEmotes(ctx)
     const templates = await cosmeticAssets.json('templates.json')
@@ -82,10 +109,25 @@ export default defineNitroPlugin((nitroApp) => {
       console.warn('[trs-api] assets/cosmetics/templates.json not found – cosmetics disabled, built-ins unchanged')
     } else {
       ctx.templates = parseTemplates(templates)
-      const list = await loadBuiltinCosmetics(() => cosmeticAssets.json('catalog.json'), cosmeticAssets.file)
-      if (list.length === 0) console.warn('[trs-api] assets/cosmetics/catalog.json not found – built-in cosmetics unchanged')
-      else seedBuiltinCosmetics(ctx, list)
-      cosmetics = list.length
+      const cosmeticRaw = await cosmeticAssets.json('catalog.json')
+      if (cosmeticRaw == null) console.warn('[trs-api] assets/cosmetics/catalog.json not found – built-in cosmetics unchanged')
+      else {
+        const list = await loadBuiltinCosmetics(async () => cosmeticRaw, cosmeticAssets.file)
+        if (list.length === 0) console.warn('[trs-api] assets/cosmetics/catalog.json not found – built-in cosmetics unchanged')
+        else {
+          let priv = { loaded: [] as { item: AnyBuiltinCosmetic, at: number | null }[], reserved: [] as number[] }
+          if (privateReady) {
+            try {
+              priv = loadPrivateCosmetics(config.privateAssetsDir, ctx, warn)
+            } catch {
+              warn('private cosmetics failed to load – private cosmetics skipped')
+            }
+          }
+          const merged = mergeBuiltins(list, priv.loaded, priv.reserved, warn)
+          seedBuiltinCosmetics(ctx, merged)
+          cosmetics = merged.length
+        }
+      }
     }
     // Schaltungs-Bibliothek (§25): mitgelieferte Schaltungen einspielen (nur fehlende bzw. unveränderte Seed-Einträge).
     const circuitOrder = await circuitAssets.json('index.json').catch(() => null)

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import type { BuiltinCape } from './capes'
-import type { AnyBuiltinCosmetic } from './cosmetics'
+import type { AnyBuiltinCosmetic, BuiltinCosmetic } from './cosmetics'
 import { buildV2Cosmetic } from './cosmetics-v2'
 import { CAPE_ID, COSMETIC_ID } from './ids'
 import { BUILTIN_MAX_SCALE } from './png'
@@ -12,8 +12,12 @@ import { TEMPLATE_ID } from './templates'
  */
 const eventUnlock = z.strictObject({ type: z.literal('event'), event: z.string().regex(/^[a-z][a-z0-9_]{0,31}$/) })
 const unlockField = z.union([z.enum(['free', 'code', 'admin']), eventUnlock])
-const splitUnlock = (u: z.output<typeof unlockField>): { unlock: 'free' | 'code' | 'admin', event?: string } =>
-  typeof u === 'string' ? { unlock: u } : { unlock: 'admin', event: u.event }
+export function splitUnlock(u: z.output<typeof unlockField>): { unlock: 'free' | 'code' | 'admin', event?: string } {
+  return typeof u === 'string' ? { unlock: u } : { unlock: 'admin', event: u.event }
+}
+
+/** Original-Index aus dem gemeinsamen Katalog. Nur private Kataloge setzen ihn; öffentliche bleiben ohne. */
+const sortField = z.int().min(0).max(10_000).optional()
 
 const entry = z
   .object({
@@ -25,9 +29,13 @@ const entry = z
     animated: z.boolean().optional(),
     frames: z.int().min(1).max(64).default(1),
     frameTimeMs: z.int().min(20).max(10_000).nullish(),
+    sort: sortField,
   })
   .refine((c) => c.frames === 1 || (c.frameTimeMs !== null && c.frameTimeMs !== undefined), 'animated capes need frameTimeMs')
   .refine((c) => c.animated === undefined || c.animated === c.frames > 1, 'animated must match frames > 1')
+
+/** Ein Umhang-Eintrag (öffentlich oder privat). */
+export const capeEntrySchema = entry
 
 /**
  * Format von `assets/capes/catalog.json`: Liste der Standard-Umhänge
@@ -55,6 +63,7 @@ const cosmeticV2Entry = z
     glowFrames: z.int().min(0).max(16).default(0),
     glowFrameTimeMs: z.int().min(16).max(10_000).nullish(),
     hidden: z.boolean().default(false),
+    sort: sortField,
   })
   .refine((c) => !c.hidden || c.unlock === 'code', 'hidden cosmetics must be unlocked by code')
 
@@ -73,12 +82,45 @@ const cosmeticV1Entry = z
     emissive: z.boolean().default(false),
     /** Versteckt: erscheint nur bei denen, die es besitzen (per Code). Nur zusammen mit unlock "code". */
     hidden: z.boolean().default(false),
+    sort: sortField,
   })
   .refine((c) => !c.hidden || c.unlock === 'code', 'hidden cosmetics must be unlocked by code')
   .refine((c) => c.frames === 1 || (c.frameTimeMs !== null && c.frameTimeMs !== undefined), 'animated cosmetics need frameTimeMs')
   .refine((c) => c.animated === undefined || c.animated === c.frames > 1, 'animated must match frames > 1')
 
 const cosmeticEntry = z.union([cosmeticV2Entry, cosmeticV1Entry])
+
+/** Ein Kosmetik-Eintrag (öffentlich oder privat, Format 1 oder 2). */
+export const cosmeticEntrySchema = cosmeticEntry
+
+export function toBuiltinCape(c: z.output<typeof entry>, png: Buffer, sort: number): BuiltinCape {
+  return {
+    id: c.id,
+    name: c.name,
+    ...splitUnlock(c.unlock),
+    sort,
+    scale: c.scale,
+    frames: c.frames,
+    frameTimeMs: c.frames > 1 ? (c.frameTimeMs ?? null) : null,
+    png,
+  }
+}
+
+export function toBuiltinCosmeticV1(c: z.output<typeof cosmeticV1Entry>, png: Buffer, sort: number): BuiltinCosmetic {
+  return {
+    id: c.id,
+    name: c.name,
+    template: c.template,
+    unlock: c.unlock,
+    sort,
+    scale: c.scale,
+    frames: c.frames,
+    frameTimeMs: c.frames > 1 ? (c.frameTimeMs ?? null) : null,
+    emissive: c.emissive,
+    hidden: c.hidden,
+    png,
+  }
+}
 
 /** Format von `assets/cosmetics/catalog.json` (Liste oder `{ cosmetics: [...] }`). */
 export const cosmeticCatalogSchema = z
@@ -116,19 +158,7 @@ export async function loadBuiltinCosmetics(
     }
     const png = await readFile(c.file)
     if (!png) throw new Error(`builtin cosmetic file missing: ${c.file}`)
-    out.push({
-      id: c.id,
-      name: c.name,
-      template: c.template,
-      unlock: c.unlock,
-      sort: sort++,
-      scale: c.scale,
-      frames: c.frames,
-      frameTimeMs: c.frames > 1 ? (c.frameTimeMs ?? null) : null,
-      emissive: c.emissive,
-      hidden: c.hidden,
-      png,
-    })
+    out.push(toBuiltinCosmeticV1(c, png, sort++))
   }
   return out
 }
@@ -145,16 +175,8 @@ export async function loadBuiltins(
   for (const c of list) {
     const png = await readFile(c.file)
     if (!png) throw new Error(`builtin cape file missing: ${c.file}`)
-    out.push({
-      id: c.id,
-      name: c.name,
-      ...splitUnlock(c.unlock),
-      sort: sort++,
-      scale: c.scale,
-      frames: c.frames,
-      frameTimeMs: c.frames > 1 ? (c.frameTimeMs ?? null) : null,
-      png,
-    })
+    // `sort` im JSON gilt nur für private Kataloge. Hier zählt die Reihenfolge in der Datei.
+    out.push(toBuiltinCape(c, png, sort++))
   }
   return out
 }

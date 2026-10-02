@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { ConfigError, loadConfig } from '../server/lib/config'
 import { isApiError } from '../server/lib/errors'
@@ -146,5 +147,21 @@ describe('config', () => {
     expect(loadConfig({ ...base, ADMIN_API_KEY: '' }).adminApiKey).toBeNull()
     expect(() => loadConfig({ ...base, MOJANG_SESSIONSERVER_URL: 'http://127.0.0.1:9000' })).toThrow(ConfigError)
     expect(loadConfig({ ...base, MOJANG_SESSIONSERVER_URL: 'http://127.0.0.1:9000', ALLOW_INSECURE_MOJANG_URL: 'true' }).mojangSessionUrl).toBe('http://127.0.0.1:9000')
+  })
+
+  it('PRIVATE_ASSETS_DIR defaults under DATA_DIR and never echoes a rejected value', () => {
+    expect(loadConfig(base).privateAssetsDir).toBe(join('/data', 'private-assets'))
+    expect(loadConfig({ ...base, DATA_DIR: 'D:/trs-data', PRIVATE_ASSETS_DIR: '  ' }).privateAssetsDir).toBe(join('D:/trs-data', 'private-assets'))
+    expect(loadConfig({ ...base, PRIVATE_ASSETS_DIR: 'E:/ai/trs-private-assets' }).privateAssetsDir).toBe('E:/ai/trs-private-assets')
+    const sneaky = `E:\\secret-dir\0hidden`
+    try {
+      loadConfig({ ...base, PRIVATE_ASSETS_DIR: sneaky })
+      expect.unreachable()
+    } catch (e) {
+      expect(e).toBeInstanceOf(ConfigError)
+      expect((e as Error).message).toContain('PRIVATE_ASSETS_DIR')
+      expect((e as Error).message).not.toContain('secret-dir')
+      expect((e as Error).message).not.toContain('hidden')
+    }
   })
 })

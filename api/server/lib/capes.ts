@@ -116,6 +116,19 @@ export interface BuiltinCape {
   png: Buffer
 }
 
+/** Gleiche Bildprüfung wie beim Einspielen. Wirft, statt ein kaputtes PNG in die DB zu schreiben. */
+export function assertBuiltinCape(c: BuiltinCape): void {
+  const { header } = inspectPng(c.png)
+  const frames = c.frames
+  if (frames < 1 || frames > 64 || header.height % frames !== 0) throw new Error(`builtin cape ${c.id}: bad frame count`)
+  const frameH = header.height / frames
+  const layout = capeLayout(header.width, frameH, BUILTIN_MAX_SCALE)
+  if (!layout || layout.source !== 'full' || layout.scale !== c.scale) {
+    throw new Error(`builtin cape ${c.id}: ${header.width}x${header.height} does not match scale ${c.scale} x ${frames} frames`)
+  }
+  if (frames > 1 && !c.frameTimeMs) throw new Error(`builtin cape ${c.id}: animated without frameTimeMs`)
+}
+
 /**
  * Übernimmt die mitgelieferten Designs in DB + `<DATA_DIR>/capes`. Nicht mehr
  * enthaltene werden `retired` (bleiben für bestehende Nutzer sichtbar).
@@ -124,15 +137,10 @@ export function seedBuiltins(ctx: AppContext, capes: BuiltinCape[]): void {
   const t = ctx.now()
   const ids = new Set<string>()
   for (const c of capes) {
+    assertBuiltinCape(c)
     const { header } = inspectPng(c.png)
     const frames = c.frames
-    if (frames < 1 || frames > 64 || header.height % frames !== 0) throw new Error(`builtin cape ${c.id}: bad frame count`)
     const frameH = header.height / frames
-    const layout = capeLayout(header.width, frameH, BUILTIN_MAX_SCALE)
-    if (!layout || layout.source !== 'full' || layout.scale !== c.scale) {
-      throw new Error(`builtin cape ${c.id}: ${header.width}x${header.height} does not match scale ${c.scale} x ${frames} frames`)
-    }
-    if (frames > 1 && !c.frameTimeMs) throw new Error(`builtin cape ${c.id}: animated without frameTimeMs`)
     const sha = sha256Hex(c.png)
     const file = join(ctx.capeDir, `${c.id}.png`)
     if (!existsSync(file) || sha256Hex(readFileSync(file)) !== sha) writeAtomic(ctx.capeDir, `${c.id}.png`, c.png)

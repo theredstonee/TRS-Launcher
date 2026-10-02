@@ -1,9 +1,12 @@
 // Erzeugt die offiziellen TRS-Umhänge als HD-Pixel-Art (128×64 je Bild, also
 // doppelte Vanilla-Auflösung). Animierte Umhänge sind senkrechte Bildstreifen.
 //
-//   node api/scripts/generate-capes.mjs
+//   node api/scripts/generate-capes.mjs [--private <ordner>]
 //
-// Ausgabe: api/assets/capes/*.png + catalog.json, Vorschauen in api/assets/previews/.
+// Ausgabe: öffentliche Umhänge in api/assets/capes/*.png + catalog.json,
+// Vorschauen in api/assets/previews/. Code-/Team-Umhänge (trs, team, tester)
+// und studio.private.json landen in PRIVATE_ASSETS_DIR (Standard
+// E:/ai/trs-private-assets), nicht im Repository.
 // Keine Abhängigkeiten: PNG wird mit node:zlib selbst geschrieben.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -14,6 +17,27 @@ import { deflateSync } from 'node:zlib'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets')
 const OUT = join(ROOT, 'capes')
 const PREVIEW = join(ROOT, 'previews')
+
+function privateDir() {
+  let dir = process.env.PRIVATE_ASSETS_DIR || 'E:/ai/trs-private-assets'
+  const argv = process.argv.slice(2)
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--private') {
+      dir = argv[++i]
+      if (!dir) throw new Error('--private needs a directory')
+    } else if (argv[i].startsWith('-')) {
+      throw new Error(`unknown option ${argv[i]}`)
+    } else {
+      throw new Error(`unexpected argument ${argv[i]}`)
+    }
+  }
+  return dir
+}
+
+const PRIV = privateDir()
+/** Original-Index, damit ein Neutexturieren die Katalogreihenfolge hält. */
+const PRIVATE_SORT = { trs: 6, team: 7, tester: 8 }
+const STUDIO_PRIVATE = new Set(['content-team', 'veteran', 'ideengeber'])
 
 /** Vanilla-Umhang 64×32 × SCALE. */
 const SCALE = 2
@@ -377,6 +401,8 @@ function preview(img) {
 
 mkdirSync(OUT, { recursive: true })
 mkdirSync(PREVIEW, { recursive: true })
+mkdirSync(join(PRIV, 'capes'), { recursive: true })
+mkdirSync(join(PRIV, 'previews'), { recursive: true })
 
 // Team-Takt: aus, aus, aus, an (hell), an, an, verglimmend, aus
 const TEAM_ON = [0, 0, 0, 1, 1, 0.9, 0.45, 0.1]
@@ -393,12 +419,14 @@ const capes = [
   { id: 'tester', name: 'Tester', unlock: 'admin', img: testerCape() },
 ]
 
-const catalog = capes.map((c) => {
+const catalog = []
+const privateCatalog = []
+for (const c of capes) {
   const frames = c.frames ?? [c.img]
-  writeFileSync(join(OUT, `${c.id}.png`), png(frames.length > 1 ? strip(frames) : frames[0]))
+  const tex = png(frames.length > 1 ? strip(frames) : frames[0])
   // Vorschau mit leuchtender Lampe (bei animierten das hellste Bild)
-  writeFileSync(join(PREVIEW, `${c.id}.png`), png(preview(frames[Math.min(3, frames.length - 1)])))
-  return {
+  const previewPng = png(preview(frames[Math.min(3, frames.length - 1)]))
+  const entry = {
     id: c.id,
     name: c.name,
     file: `${c.id}.png`,
@@ -408,9 +436,30 @@ const catalog = capes.map((c) => {
     frames: frames.length,
     ...(frames.length > 1 ? { frameTimeMs: c.frameTimeMs } : {}),
   }
-})
+  if (Object.prototype.hasOwnProperty.call(PRIVATE_SORT, c.id)) {
+    writeFileSync(join(PRIV, 'capes', `${c.id}.png`), tex)
+    writeFileSync(join(PRIV, 'previews', `${c.id}.png`), previewPng)
+    privateCatalog.push({ ...entry, sort: PRIVATE_SORT[c.id] })
+  } else {
+    writeFileSync(join(OUT, `${c.id}.png`), tex)
+    writeFileSync(join(PREVIEW, `${c.id}.png`), previewPng)
+    catalog.push(entry)
+  }
+}
 // Im TRS Studio gestaltete Umhänge (studio.json + PNGs) bleiben erhalten und kommen ans Ende.
+// Code-/Team-Umhänge stehen in studio.private.json und dürfen nicht zurück in den öffentlichen Katalog.
 const studioFile = join(OUT, 'studio.json')
-if (existsSync(studioFile)) catalog.push(...JSON.parse(readFileSync(studioFile, 'utf8')))
+if (existsSync(studioFile)) {
+  catalog.push(...JSON.parse(readFileSync(studioFile, 'utf8')).filter((e) => !STUDIO_PRIVATE.has(e.id) && !Object.prototype.hasOwnProperty.call(PRIVATE_SORT, e.id)))
+}
+const studioPriv = join(PRIV, 'capes', 'studio.private.json')
+if (existsSync(studioPriv)) {
+  for (const e of JSON.parse(readFileSync(studioPriv, 'utf8'))) {
+    if (!privateCatalog.some((c) => c.id === e.id)) privateCatalog.push(e)
+  }
+}
+privateCatalog.sort((a, b) => (a.sort ?? 1000) - (b.sort ?? 1000))
 writeFileSync(join(OUT, 'catalog.json'), `${JSON.stringify(catalog, null, 2)}\n`)
-console.log(`${catalog.length} Umhänge → ${OUT}`)
+writeFileSync(join(PRIV, 'capes', 'catalog.private.json'), `${JSON.stringify(privateCatalog, null, 2)}\n`)
+console.log(`${catalog.length} öffentliche Umhänge → ${OUT}`)
+console.log(`${privateCatalog.length} private Umhänge → ${join(PRIV, 'capes')}`)

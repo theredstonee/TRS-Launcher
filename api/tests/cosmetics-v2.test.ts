@@ -16,7 +16,7 @@ import {
   seedBuiltinCosmetics,
   type AnyBuiltinCosmetic,
 } from '../server/lib/cosmetics'
-import { v2Hash } from '../server/lib/cosmetics-v2'
+import { buildV2Cosmetic, v2Hash } from '../server/lib/cosmetics-v2'
 import { isApiError } from '../server/lib/errors'
 import { lookupPlayers } from '../server/lib/lookup'
 import { publicHats } from '../server/lib/site'
@@ -25,11 +25,12 @@ import cardNightRoute from '../server/routes/v1/cosmetics/[id]/card-night.png.ge
 import cardRoute from '../server/routes/v1/cosmetics/[id]/card.png.get'
 import glowRoute from '../server/routes/v1/cosmetics/[id]/glow.png.get'
 import modelRoute from '../server/routes/v1/cosmetics/[id]/model.json.get'
-import { ADMIN, fixtureCosmetics, login, makeEnv, templatePng, type TestEnv } from './helpers'
+import { ADMIN, fixtureCosmetics, login, makeEnv, solidPng, templatePng, type TestEnv } from './helpers'
 
 const ASSETS = join(__dirname, '..', 'assets', 'cosmetics')
-const V2_IDS = ['redstone_crown', 'team_crown', 'trs_cap', 'lamp_helmet', 'top_hat', 'halo']
-/** Plus die Halloween-Teile (Event, Migration 21): zwei Hüte und ein Begleiter. */
+/** Öffentliche Hüte ohne Event (Event aus → nicht in der Website-Liste). */
+const V2_IDS = ['trs_cap', 'lamp_helmet', 'top_hat']
+/** Alle öffentlichen Format-2-Teile, in Katalogreihenfolge. */
 const V2_ALL = [...V2_IDS, 'witch_hat', 'pumpkin_head', 'bat_buddy']
 const readCatalog = async () => JSON.parse(readFileSync(join(ASSETS, 'catalog.json'), 'utf8'))
 const readAsset = async (name: string) => {
@@ -55,8 +56,34 @@ async function seeded(env: TestEnv) {
   return list
 }
 
+/** Kleines gültiges Format-2-Teil, ohne die proprietären Studio-Dateien. */
+function syntheticV2(id: string, unlock: 'free' | 'code' | 'admin'): AnyBuiltinCosmetic {
+  const model = {
+    format: 2,
+    id,
+    name: id,
+    slot: 'hat',
+    attach: 'head',
+    texture: { file: `${id}.png`, width: 16, height: 16, scale: 1 },
+    bones: [{ id: 'root', pivot: [0, 8, 0] }],
+    cubes: [{ bone: 'root', from: [-1, 8, -1], to: [1, 9, 1], faces: { south: { uv: [0, 0, 2, 1] } } }],
+  }
+  const card = solidPng(8, 8)
+  return buildV2Cosmetic({
+    id,
+    name: id,
+    unlock,
+    sort: 0,
+    frames: 1,
+    frameTimeMs: null,
+    glowFrames: 0,
+    glowFrameTimeMs: null,
+    files: { modelJson: Buffer.from(JSON.stringify(model)), texture: solidPng(16, 16), glow: null, card, cardNight: card },
+  })
+}
+
 describe('format v2: bundled models', () => {
-  it('all nine items are format 2, valid against their images and match the catalog', async () => {
+  it('every public format-2 item is valid against its images and matches the catalog', async () => {
     const list = await loadBuiltinCosmetics(readCatalog, readAsset)
     const v2 = list.filter((c) => c.format === 2)
     expect(v2.map((c) => c.id)).toEqual(V2_ALL)
@@ -72,9 +99,9 @@ describe('format v2: bundled models', () => {
       // Mitgelieferte Dateien = unveränderte Studio-Exporte
       expect(c.files.modelJson.equals(readFileSync(join(ASSETS, 'v2', `${c.id}.json`)))).toBe(true)
     }
-    // Die Ente bleibt v1 (Vorlage duck, Rig).
-    expect(list.find((c) => c.id === 'rubber_duck')).toMatchObject({ template: 'duck', hidden: true })
-    expect(list.find((c) => c.id === 'rubber_duck')!.format).toBeUndefined()
+    expect(list.find((c) => c.id === 'rubber_duck')).toBeUndefined()
+    expect(list.find((c) => c.id === 'dragon_wings')).toMatchObject({ template: 'wings' })
+    expect(list.find((c) => c.id === 'dragon_wings')!.format).toBeUndefined()
   })
 
   it('the v1 textures of the replaced items are gone', () => {
@@ -121,7 +148,7 @@ describe('format v2: catalog, equip, lookup', () => {
       texture: { url: `https://api.example.test/v1/cosmetics/trs_cap.png?v=${v}`, width: 256, height: 256, scale: 8, frames: 1, animated: false },
     })
     // v1-Teile ohne v2-Felder
-    const wings = cosmeticCatalog(env.ctx, u).find((c) => c.id === 'redstone_wings')!
+    const wings = cosmeticCatalog(env.ctx, u).find((c) => c.id === 'dragon_wings')!
     expect(wings.template).toBe('wings')
     expect('format' in wings).toBe(false)
     // Textur-Datei = v2-Textur, ETag = v2-Hash
@@ -132,36 +159,37 @@ describe('format v2: catalog, equip, lookup', () => {
 
   it('PUT hat accepts v2 ids with the usual unlock rules; lookup has v2 fields without template/emissive', async () => {
     const env = makeEnv()
-    await seeded(env)
+    const list = await seeded(env)
     const u = (await login(env, 'Steve')).user.uuid
     const admin = (await login(env, 'Theredstonee', ADMIN)).user.uuid
+    seedBuiltinCosmetics(env.ctx, [...list, syntheticV2('priv_code', 'code'), syntheticV2('priv_admin', 'admin')])
     expect(equipCosmetics(env.ctx, u, { hat: 'top_hat' }).hat).toMatchObject({ id: 'top_hat', format: 2, template: null })
-    expect(code(() => equipCosmetics(env.ctx, u, { hat: 'redstone_crown' }))).toBe('cosmetic_locked')
-    expect(code(() => equipCosmetics(env.ctx, u, { aura: 'halo' }))).toBe('wrong_slot')
-    expect(code(() => equipCosmetics(env.ctx, u, { hat: 'team_crown' }))).toBe('cosmetic_locked')
-    expect(equipCosmetics(env.ctx, admin, { hat: 'team_crown' }).hat?.id).toBe('team_crown')
-    grantCosmetic(env.ctx, u, 'halo', 'code')
-    expect(equipCosmetics(env.ctx, u, { hat: 'halo' }).hat?.id).toBe('halo')
+    expect(code(() => equipCosmetics(env.ctx, u, { hat: 'priv_code' }))).toBe('cosmetic_locked')
+    expect(code(() => equipCosmetics(env.ctx, u, { aura: 'trs_cap' }))).toBe('wrong_slot')
+    expect(code(() => equipCosmetics(env.ctx, u, { hat: 'priv_admin' }))).toBe('cosmetic_locked')
+    expect(equipCosmetics(env.ctx, admin, { hat: 'priv_admin' }).hat?.id).toBe('priv_admin')
+    grantCosmetic(env.ctx, u, 'priv_code', 'code')
+    expect(equipCosmetics(env.ctx, u, { hat: 'priv_code' }).hat?.id).toBe('priv_code')
 
     const other = (await login(env, 'Alex')).user.uuid
     updateSettings(env.ctx, u, { showCosmeticsToOthers: true })
     const hat = lookupPlayers(env.ctx, other, [u]).players[0]!.cosmetics.hat!
-    const a = env.ctx.cosmeticsV2.get('halo')!
+    const a = env.ctx.cosmeticsV2.get('priv_code')!
     expect(hat).toEqual({
-      id: 'halo', format: 2,
-      model: `https://api.example.test/v1/cosmetics/halo/model.json?v=${a.hash.slice(0, 12)}`,
-      url: `https://api.example.test/v1/cosmetics/halo.png?v=${a.hash.slice(0, 12)}`,
-      scale: 8, animated: false, frames: 1, frameTimeMs: null,
-      glow: `https://api.example.test/v1/cosmetics/halo/glow.png?v=${a.hash.slice(0, 12)}`,
-      glowFrames: 12, glowFrameTimeMs: 150, hash: a.hash.slice(0, 12),
+      id: 'priv_code', format: 2,
+      model: `https://api.example.test/v1/cosmetics/priv_code/model.json?v=${a.hash.slice(0, 12)}`,
+      url: `https://api.example.test/v1/cosmetics/priv_code.png?v=${a.hash.slice(0, 12)}`,
+      scale: 1, animated: false, frames: 1, frameTimeMs: null,
+      glow: null, glowFrames: 0, glowFrameTimeMs: null, hash: a.hash.slice(0, 12),
     })
     // Ältere Mods: kein template → HatInfo.of(...) liefert null (nichts zeichnen, kein Absturz).
     expect(hat.template).toBeUndefined()
   })
 
-  it('replaces the v1 items with the same id: owners keep them, halo moves from aura to hat', async () => {
+  it('replaces the v1 items with the same id: owners keep them, the aura item moves to hat', async () => {
     const env = makeEnv()
-    // Alter Stand: v1-Heiligenschein (Vorlage halo, Platz aura) + v1-Krone im Hut-Platz
+    // Alter Stand: v1-Heiligenschein (Vorlage halo, Platz aura) + v1-Krone im Hut-Platz.
+    // Die Modelle sind synthetisch – die echten Dateien liegen nicht im Repository.
     const old: AnyBuiltinCosmetic[] = [
       { id: 'halo', name: 'Heiligenschein', template: 'halo', unlock: 'code', sort: 0, scale: 2, frames: 1, frameTimeMs: null, emissive: true, png: templatePng(env, 'halo', 2) },
       { id: 'redstone_crown', name: 'Redstone-Krone', template: 'crown', unlock: 'code', sort: 1, scale: 2, frames: 1, frameTimeMs: null, emissive: true, png: templatePng(env, 'crown', 2) },
@@ -178,7 +206,7 @@ describe('format v2: catalog, equip, lookup', () => {
     equipCosmetics(env.ctx, b, { aura: 'halo', hat: 'redstone_crown' })
     expect(getCosmetic(env.ctx, 'halo')).toMatchObject({ slot: 'aura', format: 1 })
 
-    await seeded(env)
+    seedBuiltinCosmetics(env.ctx, [syntheticV2('halo', 'code'), syntheticV2('redstone_crown', 'code')])
     expect(getCosmetic(env.ctx, 'halo')).toMatchObject({ slot: 'hat', format: 2, template: '@v2', retired: 0 })
     // a: Hut-Platz frei → Heiligenschein wandert nach hat; b: Hut belegt → abgelegt, Krone (jetzt v2) bleibt.
     expect(equipCosmetics(env.ctx, a, {})).toMatchObject({ hat: { id: 'halo', format: 2 }, aura: null })
@@ -203,9 +231,9 @@ describe('format v2: catalog, equip, lookup', () => {
     await seeded(env)
     const hats = publicHats(env.ctx)
     expect(hats.map((h) => h.id)).toEqual(V2_IDS)
-    const crown = hats.find((h) => h.id === 'team_crown')!
-    expect(crown).toMatchObject({ unlock: 'admin', achievement: null, format: 2, glowFrames: 12 })
-    for (const k of ['model', 'texture', 'glow', 'card', 'cardNight'] as const) expect(crown[k]).toMatch(/^\/v1\/cosmetics\//)
+    const cap = hats.find((h) => h.id === 'trs_cap')!
+    expect(cap).toMatchObject({ unlock: 'free', achievement: null, format: 2, glowFrames: 12 })
+    for (const k of ['model', 'texture', 'glow', 'card', 'cardNight'] as const) expect(cap[k]).toMatch(/^\/v1\/cosmetics\//)
     expect(hats.some((h) => h.id === 'rubber_duck')).toBe(false)
     // Ein verstecktes v2-Teil taucht nicht auf.
     const list = await loadBuiltinCosmetics(readCatalog, readAsset)
@@ -248,33 +276,33 @@ describe('format v2: HTTP routes', () => {
     const env = makeEnv()
     await seeded(env)
     const base = await serve(env)
-    const a = env.ctx.cosmeticsV2.get('redstone_crown')!
+    const a = env.ctx.cosmeticsV2.get('trs_cap')!
     const v = a.hash.slice(0, 12)
 
-    const model = await fetch(`${base}/v1/cosmetics/redstone_crown/model.json?v=${v}`)
+    const model = await fetch(`${base}/v1/cosmetics/trs_cap/model.json?v=${v}`)
     expect(model.status).toBe(200)
     expect(model.headers.get('content-type')).toContain('application/json')
     expect(model.headers.get('etag')).toBe(`"${a.hash}"`)
     expect(model.headers.get('cache-control')).toBe('public, max-age=31536000, immutable')
     expect(Buffer.from(await model.arrayBuffer()).equals(a.files.modelJson)).toBe(true)
 
-    const stale = await fetch(`${base}/v1/cosmetics/redstone_crown/model.json?v=000000000000`)
+    const stale = await fetch(`${base}/v1/cosmetics/trs_cap/model.json?v=000000000000`)
     expect(stale.headers.get('cache-control')).toBe('public, max-age=300')
-    const again = await fetch(`${base}/v1/cosmetics/redstone_crown/model.json`, { headers: { 'if-none-match': `"${a.hash}"` } })
+    const again = await fetch(`${base}/v1/cosmetics/trs_cap/model.json`, { headers: { 'if-none-match': `"${a.hash}"` } })
     expect(again.status).toBe(304)
 
-    const glow = await fetch(`${base}/v1/cosmetics/redstone_crown/glow.png?v=${v}`)
+    const glow = await fetch(`${base}/v1/cosmetics/trs_cap/glow.png?v=${v}`)
     expect(glow.headers.get('content-type')).toBe('image/png')
     expect(Buffer.from(await glow.arrayBuffer()).equals(a.files.glow!)).toBe(true)
 
-    const card = await fetch(`${base}/v1/cosmetics/redstone_crown/card.png?v=${a.cardHash.slice(0, 12)}`)
+    const card = await fetch(`${base}/v1/cosmetics/trs_cap/card.png?v=${a.cardHash.slice(0, 12)}`)
     expect(card.headers.get('etag')).toBe(`"${a.cardHash}"`)
     expect(card.headers.get('cache-control')).toContain('immutable')
-    const night = await fetch(`${base}/v1/cosmetics/redstone_crown/card-night.png`)
+    const night = await fetch(`${base}/v1/cosmetics/trs_cap/card-night.png`)
     expect(Buffer.from(await night.arrayBuffer()).equals(a.files.cardNight)).toBe(true)
 
     // v1-Teil, unbekannt, ungültige ID → 404
-    expect((await fetch(`${base}/v1/cosmetics/redstone_wings/model.json`)).status).toBe(404)
+    expect((await fetch(`${base}/v1/cosmetics/dragon_wings/model.json`)).status).toBe(404)
     expect((await fetch(`${base}/v1/cosmetics/nope/card.png`)).status).toBe(404)
     expect((await fetch(`${base}/v1/cosmetics/..%2Fx/model.json`)).status).toBe(404)
   })

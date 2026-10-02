@@ -20,7 +20,13 @@ So läuft die API auf `panel.theredstonee.de` (Node GER-Schliersee, Server „TR
 
 ## Update einspielen
 
-1. `cd api && pnpm build`
-2. `.output/` (und bei Bedarf `start.sh`) als Zip hochladen und im Datei-Manager entpacken –
+1. Vor dem Deploy die proprietären Kosmetik-Dateien hochladen: den Inhalt von
+   `E:\ai\trs-private-assets\` nach `<DATA_DIR>/private-assets` kopieren.
+   `start.sh` setzt `DATA_DIR` sonst auf `/home/container/data`, also
+   `/home/container/data/private-assets`. Ohne diesen Ordner starten die
+   öffentlichen Teile normal; Code- und Team-Teile fehlen, bis die Dateien da
+   sind. Besitz-Einträge bleiben erhalten. `data/` beim Entpacken nicht überschreiben.
+2. `cd api && pnpm build`
+3. `.output/` (und bei Bedarf `start.sh`) als Zip hochladen und im Datei-Manager entpacken –
    `.env` und `data/` **nicht** überschreiben.
-3. Server neu starten.
+4. Server neu starten.

@@ -12,16 +12,19 @@ describe('mitgelieferter Umhang-Katalog', () => {
       async () => JSON.parse(readFileSync(join(dir, 'catalog.json'), 'utf8')),
       async (name) => readFileSync(join(dir, name)),
     )
-    expect(capes.map((c) => c.id)).toEqual(expect.arrayContaining(['team', 'tester', 'redstone']))
+    const ids = capes.map((c) => c.id)
+    expect(ids).toEqual(expect.arrayContaining(['redstone', 'halloween']))
+    for (const id of ['trs', 'team', 'tester', 'content-team', 'veteran', 'ideengeber']) expect(ids).not.toContain(id)
     for (const c of capes) {
       // PNG-Größe aus dem IHDR: (64·scale) × (32·scale·frames)
       expect(c.png.readUInt32BE(16)).toBe(64 * c.scale)
       expect(c.png.readUInt32BE(20)).toBe(32 * c.scale * c.frames)
     }
-    const team = capes.find((c) => c.id === 'team')!
-    expect(team.unlock).toBe('admin')
-    expect(team.frames).toBeGreaterThan(1)
-    expect(team.frameTimeMs).toBeGreaterThanOrEqual(20)
-    expect(capes.find((c) => c.id === 'tester')!.unlock).toBe('admin')
+    const redstone = capes.find((c) => c.id === 'redstone')!
+    expect(redstone.unlock).toBe('free')
+    expect(redstone.frames).toBe(1)
+    const halloween = capes.find((c) => c.id === 'halloween')!
+    expect(halloween).toMatchObject({ unlock: 'admin', event: 'halloween', frames: 4 })
+    expect(halloween.frameTimeMs).toBeGreaterThanOrEqual(20)
   })
 })

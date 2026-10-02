@@ -108,10 +108,11 @@ describe('bundled cosmetics', () => {
       async () => JSON.parse(readFileSync(join(ASSETS, 'catalog.json'), 'utf8')),
       async (name) => readFileSync(join(ASSETS, name)),
     )
-    expect(list.map((c) => c.id)).toEqual(expect.arrayContaining([
-      'redstone_crown', 'team_crown', 'trs_cap', 'lamp_helmet', 'top_hat', 'redstone_wings', 'dragon_wings',
-      'backpack', 'halo', 'redstone_aura', 'footprints',
+    const ids = list.map((c) => c.id)
+    expect(ids).toEqual(expect.arrayContaining([
+      'trs_cap', 'lamp_helmet', 'top_hat', 'dragon_wings', 'backpack', 'redstone_aura', 'footprints',
     ]))
+    for (const id of ['redstone_crown', 'team_crown', 'halo', 'redstone_wings', 'rubber_duck']) expect(ids).not.toContain(id)
     seedBuiltinCosmetics(env.ctx, list)
     for (const c of list) {
       if (c.format === 2) continue // 3D-Modelle: eigene Tests (cosmetics-v2.test.ts)
@@ -119,16 +120,14 @@ describe('bundled cosmetics', () => {
       expect(c.png.readUInt32BE(16)).toBe(t.textureWidth * c.scale)
       expect(c.png.readUInt32BE(20)).toBe(t.textureHeight * c.scale * c.frames)
     }
-    expect(list.find((c) => c.id === 'team_crown')!.unlock).toBe('admin')
-    // Hüte, Kronen und Heiligenschein sind Format v2; die übrigen bleiben Vorlage + Textur.
-    expect(list.filter((c) => c.format === 2).map((c) => c.id).sort()).toEqual(['bat_buddy', 'halo', 'lamp_helmet', 'pumpkin_head', 'redstone_crown', 'team_crown', 'top_hat', 'trs_cap', 'witch_hat'])
-    expect(list.filter((c) => c.format !== 2 && c.frames > 1).map((c) => c.id)).toEqual(
-      expect.arrayContaining(['redstone_wings', 'redstone_aura']),
-    )
+    expect(list.find((c) => c.id === 'trs_cap')!.unlock).toBe('free')
+    // Öffentliche Hüte sind Format v2; Code- und Team-Teile liegen nicht im Repository.
+    expect(list.filter((c) => c.format === 2).map((c) => c.id).sort()).toEqual(['bat_buddy', 'lamp_helmet', 'pumpkin_head', 'top_hat', 'trs_cap', 'witch_hat'])
+    expect(list.filter((c) => c.format !== 2 && c.frames > 1).map((c) => c.id)).toEqual(['redstone_aura'])
     const u = await login(env, 'Steve')
     const cat = cosmeticCatalog(env.ctx, u.user.uuid)
-    expect(cat.find((c) => c.id === 'team_crown')).toMatchObject({ owned: false, slot: 'hat', unlock: 'admin' })
-    expect(cat.find((c) => c.id === 'redstone_wings')!.texture).toMatchObject({ scale: 2, width: 128, height: 64, frames: 8, animated: true })
+    expect(cat.find((c) => c.id === 'trs_cap')).toMatchObject({ owned: true, slot: 'hat', unlock: 'free' })
+    expect(cat.find((c) => c.id === 'redstone_aura')!.texture).toMatchObject({ scale: 2, frames: 4, animated: true })
   })
 
   it('rejects wrong sizes, unknown templates and id clashes with emotes', () => {
@@ -397,7 +396,7 @@ describe('codes for cosmetics and emotes', () => {
 })
 
 describe('hidden cosmetics (rubber duck)', () => {
-  it('bundled duck: rig template, hidden and code-only', async () => {
+  it('duck template stays public; the proprietary duck is not in the catalog', async () => {
     const env = makeEnv()
     const duck = bundledTemplates().get('duck')!
     expect(duck).toMatchObject({ kind: 'model', slot: 'hat', rig: { type: 'duck', neck: [0, 12, 2] } })
@@ -405,9 +404,12 @@ describe('hidden cosmetics (rubber duck)', () => {
       async () => JSON.parse(readFileSync(join(ASSETS, 'catalog.json'), 'utf8')),
       async (name) => readFileSync(join(ASSETS, name)),
     )
-    expect(list.find((c) => c.id === 'rubber_duck')).toMatchObject({ template: 'duck', unlock: 'code', hidden: true, scale: 2 })
-    seedBuiltinCosmetics(env.ctx, list)
-    expect(getCosmetic(env.ctx, 'rubber_duck')!.hidden).toBe(1)
+    expect(list.find((c) => c.id === 'rubber_duck')).toBeUndefined()
+    seedBuiltinCosmetics(env.ctx, [
+      ...list,
+      { id: 'secret_duck', name: 'Ente', template: 'duck', unlock: 'code', hidden: true, sort: 9, scale: 1, frames: 1, frameTimeMs: null, emissive: false, png: templatePng(env, 'duck', 1) },
+    ])
+    expect(getCosmetic(env.ctx, 'secret_duck')!.hidden).toBe(1)
   })
 
   it('stays out of every catalog until redeemed, then shows up and can be worn', async () => {

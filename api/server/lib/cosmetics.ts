@@ -214,11 +214,33 @@ export interface BuiltinCosmetic {
 /** Eintrag aus catalog.json: Format 1 (Vorlage + Textur) oder Format 2 (3D-Modell). */
 export type AnyBuiltinCosmetic = BuiltinCosmetic | BuiltinCosmeticV2
 
-function assertNoSlotClash(ctx: AppContext, id: string, slot: CosmeticSlot): void {
+export function assertNoSlotClash(ctx: AppContext, id: string, slot: CosmeticSlot): void {
   const existing = one<{ slot: CosmeticSlot, kind: string }>(ctx.db, 'SELECT slot, kind FROM cosmetics WHERE id = ?', id)
   if (existing && (existing.kind !== 'builtin' || (existing.slot === 'emote') !== (slot === 'emote'))) {
     throw new Error(`cosmetic id ${id} is already used by another item`)
   }
+}
+
+/** Gleiche Prüfung wie beim Einspielen eines v1-Teils. Wirft, statt die Zeile anzulegen. */
+export function assertBuiltinCosmeticV1(ctx: AppContext, c: BuiltinCosmetic): Template {
+  const tpl = ctx.templates.get(c.template)
+  if (!tpl) throw new Error(`builtin cosmetic ${c.id}: unknown template ${c.template}`)
+  if (EMOTE_BY_ID.has(c.id)) throw new Error(`builtin cosmetic ${c.id}: id is an emote id`)
+  const { header } = inspectPng(c.png)
+  const w = tpl.textureWidth * c.scale
+  const h = tpl.textureHeight * c.scale
+  if (c.frames < 1 || c.frames > 64 || header.width !== w || header.height !== h * c.frames) {
+    throw new Error(`builtin cosmetic ${c.id}: ${header.width}x${header.height} does not match ${w}x${h} x ${c.frames} frames`)
+  }
+  if (c.frames > 1 && !c.frameTimeMs) throw new Error(`builtin cosmetic ${c.id}: animated without frameTimeMs`)
+  assertNoSlotClash(ctx, c.id, tpl.slot)
+  return tpl
+}
+
+/** Platz-Konflikt und Emote-ID, bevor ein v2-Teil die gleichnamige Zeile ersetzt. */
+export function assertBuiltinCosmeticV2(ctx: AppContext, c: BuiltinCosmeticV2): void {
+  if (EMOTE_BY_ID.has(c.id)) throw new Error(`builtin cosmetic ${c.id}: id is an emote id`)
+  assertNoSlotClash(ctx, c.id, 'hat')
 }
 
 /** Mitgelieferte Designs → DB + `<DATA_DIR>/cosmetics`. Fehlende werden ausgemustert (Träger behalten sie). */
@@ -232,17 +254,9 @@ export function seedBuiltinCosmetics(ctx: AppContext, list: AnyBuiltinCosmetic[]
       ids.add(c.id)
       continue
     }
-    const tpl = ctx.templates.get(c.template)
-    if (!tpl) throw new Error(`builtin cosmetic ${c.id}: unknown template ${c.template}`)
-    if (EMOTE_BY_ID.has(c.id)) throw new Error(`builtin cosmetic ${c.id}: id is an emote id`)
-    const { header } = inspectPng(c.png)
+    const tpl = assertBuiltinCosmeticV1(ctx, c)
     const w = tpl.textureWidth * c.scale
     const h = tpl.textureHeight * c.scale
-    if (c.frames < 1 || c.frames > 64 || header.width !== w || header.height !== h * c.frames) {
-      throw new Error(`builtin cosmetic ${c.id}: ${header.width}x${header.height} does not match ${w}x${h} x ${c.frames} frames`)
-    }
-    if (c.frames > 1 && !c.frameTimeMs) throw new Error(`builtin cosmetic ${c.id}: animated without frameTimeMs`)
-    assertNoSlotClash(ctx, c.id, tpl.slot)
     const sha = sha256Hex(c.png)
     const file = join(ctx.cosmeticDir, `${c.id}.png`)
     if (!existsSync(file) || sha256Hex(readFileSync(file)) !== sha) writeAtomic(ctx.cosmeticDir, `${c.id}.png`, c.png)
@@ -273,8 +287,7 @@ export function seedBuiltinCosmetics(ctx: AppContext, list: AnyBuiltinCosmetic[]
  * `hat` – ist `hat` belegt, wird es abgelegt.
  */
 function seedV2(ctx: AppContext, c: BuiltinCosmeticV2, t: number): void {
-  if (EMOTE_BY_ID.has(c.id)) throw new Error(`builtin cosmetic ${c.id}: id is an emote id`)
-  assertNoSlotClash(ctx, c.id, 'hat')
+  assertBuiltinCosmeticV2(ctx, c)
   // DB-Platz bleibt `hat` (CHECK), der echte Platz steht im Modell (`slotOf`).
   const slot = c.model.slot
   const tex = c.model.texture

@@ -54,34 +54,6 @@
     "frames": 1
   },
   {
-    "id": "trs",
-    "name": "TRS",
-    "file": "trs.png",
-    "unlock": "code",
-    "scale": 2,
-    "animated": false,
-    "frames": 1
-  },
-  {
-    "id": "team",
-    "name": "Team",
-    "file": "team.png",
-    "unlock": "admin",
-    "scale": 2,
-    "animated": true,
-    "frames": 8,
-    "frameTimeMs": 150
-  },
-  {
-    "id": "tester",
-    "name": "Tester",
-    "file": "tester.png",
-    "unlock": "admin",
-    "scale": 2,
-    "animated": false,
-    "frames": 1
-  },
-  {
     "id": "phoenix",
     "name": "Phönix",
     "file": "phoenix.png",
@@ -161,36 +133,6 @@
     "name": "Sonne",
     "file": "sonne.png",
     "unlock": "free",
-    "scale": 8,
-    "animated": true,
-    "frames": 4,
-    "frameTimeMs": 150
-  },
-  {
-    "id": "content-team",
-    "name": "Content Team",
-    "file": "content-team.png",
-    "unlock": "code",
-    "scale": 8,
-    "animated": true,
-    "frames": 4,
-    "frameTimeMs": 150
-  },
-  {
-    "id": "veteran",
-    "name": "Veteran",
-    "file": "veteran.png",
-    "unlock": "admin",
-    "scale": 8,
-    "animated": true,
-    "frames": 4,
-    "frameTimeMs": 150
-  },
-  {
-    "id": "ideengeber",
-    "name": "Ideengeber",
-    "file": "ideengeber.png",
-    "unlock": "admin",
     "scale": 8,
     "animated": true,
     "frames": 4,

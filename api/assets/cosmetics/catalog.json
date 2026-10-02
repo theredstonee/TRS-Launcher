@@ -1,23 +1,5 @@
 [
   {
-    "id": "redstone_crown",
-    "name": "Redstone-Krone",
-    "format": 2,
-    "unlock": "code",
-    "frames": 1,
-    "glowFrames": 12,
-    "glowFrameTimeMs": 140
-  },
-  {
-    "id": "team_crown",
-    "name": "Team-Krone",
-    "format": 2,
-    "unlock": "admin",
-    "frames": 1,
-    "glowFrames": 12,
-    "glowFrameTimeMs": 200
-  },
-  {
     "id": "trs_cap",
     "name": "TRS-Cap",
     "format": 2,
@@ -40,15 +22,6 @@
     "name": "Zylinder",
     "format": 2,
     "unlock": "free",
-    "frames": 1,
-    "glowFrames": 12,
-    "glowFrameTimeMs": 150
-  },
-  {
-    "id": "halo",
-    "name": "Heiligenschein",
-    "format": 2,
-    "unlock": "code",
     "frames": 1,
     "glowFrames": 12,
     "glowFrameTimeMs": 150
@@ -88,18 +61,6 @@
     "frames": 1,
     "glowFrames": 12,
     "glowFrameTimeMs": 150
-  },
-  {
-    "id": "redstone_wings",
-    "name": "Redstone-Flügel",
-    "template": "wings",
-    "file": "redstone_wings.png",
-    "unlock": "code",
-    "scale": 2,
-    "animated": true,
-    "frames": 8,
-    "frameTimeMs": 120,
-    "emissive": true
   },
   {
     "id": "dragon_wings",
@@ -145,17 +106,5 @@
     "animated": false,
     "frames": 1,
     "emissive": false
-  },
-  {
-    "id": "rubber_duck",
-    "name": "Quietscheente",
-    "template": "duck",
-    "file": "rubber_duck.png",
-    "unlock": "code",
-    "scale": 2,
-    "animated": false,
-    "frames": 1,
-    "emissive": false,
-    "hidden": true
   }
 ]

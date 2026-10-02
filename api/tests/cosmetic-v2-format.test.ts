@@ -33,7 +33,7 @@ import {
 import { applyDayNight, createCosmetic, frameHead } from '../app/utils/cosmetic-v2/view'
 
 const V2 = join(__dirname, '..', 'assets', 'cosmetics', 'v2')
-const IDS = ['redstone_crown', 'team_crown', 'trs_cap', 'lamp_helmet', 'top_hat', 'halo']
+const IDS = ['trs_cap', 'lamp_helmet', 'top_hat', 'witch_hat', 'pumpkin_head', 'bat_buddy']
 const model = (id: string): CosmeticModel => JSON.parse(readFileSync(join(V2, `${id}.json`), 'utf8'))
 const pngSize = (file: string) => {
   const b = readFileSync(file)

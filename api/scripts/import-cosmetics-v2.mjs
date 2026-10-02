@@ -1,6 +1,8 @@
-// Übernimmt die freigegebenen v2-Kosmetik-Exporte aus dem TRS Studio nach api/assets/cosmetics/v2/.
+// Übernimmt die freigegebenen v2-Kosmetik-Exporte aus dem TRS Studio.
+// Öffentliche Teile → api/assets/cosmetics/v2/. Code-/Team-Teile → PRIVATE_ASSETS_DIR/cosmetics/v2/.
 //
-//   node api/scripts/import-cosmetics-v2.mjs [<studio-ordner>]   (Standard: E:/ai/trs-studio)
+//   node api/scripts/import-cosmetics-v2.mjs [<studio-ordner>] [--private <ordner>]
+//   Standard: Studio E:/ai/trs-studio, privat PRIVATE_ASSETS_DIR oder E:/ai/trs-private-assets
 //
 // Kopiert 1:1 (nicht verändern – vom User abgenommen): exports/cosmetic-v2/<id>.json, <id>.png, <id>-glow.png.
 // Karten: cosmetics/<id>/preview-three.png → <id>-card.png, preview-three-night.png → <id>-card-night.png,
@@ -13,11 +15,33 @@ import { fileURLToPath } from 'node:url'
 import { PNG } from 'pngjs'
 
 const IDS = ['redstone_crown', 'team_crown', 'trs_cap', 'lamp_helmet', 'top_hat', 'halo', 'witch_hat', 'pumpkin_head', 'bat_buddy']
+const PRIVATE_IDS = new Set(['redstone_crown', 'team_crown', 'halo'])
 const MAX_CARD = 512
 
-const STUDIO = process.argv[2] ?? 'E:/ai/trs-studio'
+function args() {
+  let studio = null
+  let priv = process.env.PRIVATE_ASSETS_DIR || 'E:/ai/trs-private-assets'
+  const argv = process.argv.slice(2)
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--private') {
+      priv = argv[++i]
+      if (!priv) throw new Error('--private needs a directory')
+    } else if (argv[i].startsWith('-')) {
+      throw new Error(`unknown option ${argv[i]}`)
+    } else if (studio) {
+      throw new Error(`unexpected argument ${argv[i]}`)
+    } else {
+      studio = argv[i]
+    }
+  }
+  return { studio: studio ?? 'E:/ai/trs-studio', priv }
+}
+
+const { studio: STUDIO, priv: PRIV } = args()
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'cosmetics', 'v2')
+const PRIVATE_OUT = join(PRIV, 'cosmetics', 'v2')
 mkdirSync(OUT, { recursive: true })
+mkdirSync(PRIVATE_OUT, { recursive: true })
 
 /** Flächenmittel-Verkleinerung (jedes Ziel-Pixel = gewichteter Mittelwert der überdeckten Quell-Pixel). */
 function downscale(src, dw, dh) {
@@ -74,6 +98,7 @@ function card(src, dest) {
 }
 
 for (const id of IDS) {
+  const dest = PRIVATE_IDS.has(id) ? PRIVATE_OUT : OUT
   const exp = join(STUDIO, 'exports', 'cosmetic-v2')
   for (const f of [`${id}.json`, `${id}.png`, `${id}-glow.png`]) {
     const from = join(exp, f)
@@ -81,11 +106,12 @@ for (const id of IDS) {
       if (f.endsWith('-glow.png')) continue
       throw new Error(`missing ${from}`)
     }
-    copyFileSync(from, join(OUT, f))
+    copyFileSync(from, join(dest, f))
   }
   const dir = join(STUDIO, 'cosmetics', id)
-  const day = card(join(dir, 'preview-three.png'), join(OUT, `${id}-card.png`))
-  const night = card(join(dir, 'preview-three-night.png'), join(OUT, `${id}-card-night.png`))
-  console.log(`${id}: card ${day}, night ${night}`)
+  const day = card(join(dir, 'preview-three.png'), join(dest, `${id}-card.png`))
+  const night = card(join(dir, 'preview-three-night.png'), join(dest, `${id}-card-night.png`))
+  console.log(`${id}: card ${day}, night ${night} → ${dest}`)
 }
-console.log(`→ ${OUT}`)
+console.log(`öffentlich → ${OUT}`)
+console.log(`privat → ${PRIVATE_OUT}`)

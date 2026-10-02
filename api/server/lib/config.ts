@@ -1,4 +1,5 @@
 import { hkdfSync } from 'node:crypto'
+import { join } from 'node:path'
 import { z } from 'zod'
 import { normalizeUuid } from './ids'
 import type { MicrosoftConfig } from './microsoft'
@@ -6,6 +7,11 @@ import type { MicrosoftConfig } from './microsoft'
 /** Laufzeit-Konfiguration – ausschließlich aus Umgebungsvariablen (.env). */
 export interface Config {
   dataDir: string
+  /**
+   * Proprietäre Built-ins (Code/Team), nicht im Repository.
+   * Leer oder ungesetzt → `<DATA_DIR>/private-assets`.
+   */
+  privateAssetsDir: string
   publicBaseUrl: string
   /** Adresse der Website (Links, Weiterleitungen, Sitemap). */
   siteUrl: string
@@ -217,6 +223,13 @@ const origin = (s: string): string | null => {
 
 const envSchema = z.object({
   DATA_DIR: z.string().min(1).default('/data'),
+  // Proprietäre Kosmetik. Leer = `<DATA_DIR>/private-assets`. Der Ordner darf beim Start fehlen.
+  PRIVATE_ASSETS_DIR: z
+    .string()
+    .max(4096)
+    .default('')
+    .refine((s) => !s.includes('\0'), 'invalid path')
+    .transform((s) => s.trim()),
   PUBLIC_BASE_URL: z
     .url({ protocol: /^https?$/ })
     .default('https://api.theredstonee.de')
@@ -371,6 +384,7 @@ export function loadConfig(env: Record<string, string | undefined>, limits: Part
   }
   return {
     dataDir: e.DATA_DIR,
+    privateAssetsDir: e.PRIVATE_ASSETS_DIR === '' ? join(e.DATA_DIR, 'private-assets') : e.PRIVATE_ASSETS_DIR,
     publicBaseUrl: e.PUBLIC_BASE_URL,
     siteUrl: e.SITE_URL,
     apiOnlyHosts: e.API_ONLY_HOSTS,

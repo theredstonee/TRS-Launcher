@@ -85,11 +85,11 @@ CREATE TABLE user_capes (uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CAS
 CREATE TABLE equipped_cosmetics (uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE, slot TEXT NOT NULL CHECK (slot IN ('hat', 'wings', 'back', 'aura')), cosmetic_id TEXT NOT NULL REFERENCES cosmetics(id) ON DELETE CASCADE, PRIMARY KEY (uuid, slot));
 `)
     run(db, "INSERT INTO user_cosmetics VALUES (?, 'trs_cap', 'code', 5)", u)
-    run(db, "INSERT INTO user_capes VALUES (?, 'veteran', 'admin', 6)", u)
+    run(db, "INSERT INTO user_capes VALUES (?, 'redstone', 'admin', 6)", u)
     run(db, "INSERT INTO equipped_cosmetics VALUES (?, 'hat', 'trs_cap')", u)
     migrateEvents(db)
     expect(all(db, 'SELECT * FROM user_cosmetics')).toEqual([{ uuid: u, cosmetic_id: 'trs_cap', source: 'code', granted_at: 5 }])
-    expect(all(db, 'SELECT * FROM user_capes')).toEqual([{ uuid: u, cape_id: 'veteran', source: 'admin', granted_at: 6 }])
+    expect(all(db, 'SELECT * FROM user_capes')).toEqual([{ uuid: u, cape_id: 'redstone', source: 'admin', granted_at: 6 }])
     expect(all(db, 'SELECT * FROM equipped_cosmetics')).toEqual([{ uuid: u, slot: 'hat', cosmetic_id: 'trs_cap' }])
     run(db, "INSERT INTO user_cosmetics VALUES (?, 'witch_hat', 'event', 7)", u)
     run(db, "INSERT INTO user_capes VALUES (?, 'halloween', 'event', 7)", u)

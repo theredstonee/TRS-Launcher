@@ -85,36 +85,6 @@
     "frameTimeMs": 150
   },
   {
-    "id": "content-team",
-    "name": "Content Team",
-    "file": "content-team.png",
-    "unlock": "code",
-    "scale": 8,
-    "animated": true,
-    "frames": 4,
-    "frameTimeMs": 150
-  },
-  {
-    "id": "veteran",
-    "name": "Veteran",
-    "file": "veteran.png",
-    "unlock": "admin",
-    "scale": 8,
-    "animated": true,
-    "frames": 4,
-    "frameTimeMs": 150
-  },
-  {
-    "id": "ideengeber",
-    "name": "Ideengeber",
-    "file": "ideengeber.png",
-    "unlock": "admin",
-    "scale": 8,
-    "animated": true,
-    "frames": 4,
-    "frameTimeMs": 150
-  },
-  {
     "id": "halloween",
     "name": "Halloween",
     "file": "halloween.png",

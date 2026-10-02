@@ -2,11 +2,15 @@
 // den Vorlagen in api/assets/cosmetics/templates.json. Animierte Teile sind
 // senkrechte Bildstreifen (Frame 0 oben), genau wie bei den Umhängen.
 //
-//   node api/scripts/generate-cosmetics.mjs
+//   node api/scripts/generate-cosmetics.mjs [--private <ordner>]
 //
-// Ausgabe: api/assets/cosmetics/*.png + catalog.json,
+// Ausgabe: öffentliche Teile in api/assets/cosmetics/*.png + catalog.json,
 //          Vorschauen (Frontansicht ×8, Flügel/Rucksack von hinten, Spur von oben)
 //          in api/assets/cosmetic-previews/.
+//          Code-/Team-Teile (redstone_wings, rubber_duck und die v1-Vorschauen
+//          von redstone_crown, team_crown, halo) nach PRIVATE_ASSETS_DIR
+//          (Standard E:/ai/trs-private-assets), nicht ins Repository.
+//          Vorhandene private Format-2-Einträge in catalog.private.json bleiben.
 // Keine Abhängigkeiten: PNG wird mit node:zlib selbst geschrieben.
 //
 // Gemalt wird in Weltkoordinaten: für jedes Texel einer Würfelfläche berechnet
@@ -22,6 +26,26 @@ import { deflateSync } from 'node:zlib'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets')
 const OUT = join(ROOT, 'cosmetics')
 const PREVIEW = join(ROOT, 'cosmetic-previews')
+
+function privateDir() {
+  let dir = process.env.PRIVATE_ASSETS_DIR || 'E:/ai/trs-private-assets'
+  const argv = process.argv.slice(2)
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--private') {
+      dir = argv[++i]
+      if (!dir) throw new Error('--private needs a directory')
+    } else if (argv[i].startsWith('-')) {
+      throw new Error(`unknown option ${argv[i]}`)
+    } else {
+      throw new Error(`unexpected argument ${argv[i]}`)
+    }
+  }
+  return dir
+}
+
+const PRIV = privateDir()
+const PRIVATE_V1_SORT = { redstone_wings: 9, rubber_duck: 14 }
+const PRIVATE_V2 = new Set(['redstone_crown', 'team_crown', 'halo'])
 const TEMPLATES = Object.fromEntries(
   JSON.parse(readFileSync(join(OUT, 'templates.json'), 'utf8')).templates.map((t) => [t.id, t]),
 )
@@ -811,19 +835,21 @@ const cosmetics = [
 
 mkdirSync(OUT, { recursive: true })
 mkdirSync(PREVIEW, { recursive: true })
+mkdirSync(join(PRIV, 'cosmetics'), { recursive: true })
+mkdirSync(join(PRIV, 'cosmetic-previews'), { recursive: true })
 
-const catalog = cosmetics.map((c) => {
+const catalog = []
+const privateV1 = []
+for (const c of cosmetics) {
   const tpl = TEMPLATES[c.template]
   if (!tpl) throw new Error(`unknown template ${c.template}`)
   for (const f of c.frames) {
     if (f.w !== tpl.textureWidth * SCALE || f.h !== tpl.textureHeight * SCALE) throw new Error(`${c.id}: frame size mismatch`)
   }
   const tex = c.frames.length > 1 ? strip(c.frames) : c.frames[0]
-  writeFileSync(join(OUT, `${c.id}.png`), png(tex))
   const frame = Math.min(c.previewFrame ?? 0, c.frames.length - 1)
   const view = c.view === 'top' ? renderTrailTop(tpl, tex) : renderView(tpl, tex, frame, c.view, c.win)
-  writeFileSync(join(PREVIEW, `${c.id}.png`), png(view))
-  return {
+  const entry = {
     id: c.id,
     name: c.name,
     template: c.template,
@@ -836,17 +862,35 @@ const catalog = cosmetics.map((c) => {
     emissive: c.emissive === true,
     ...(c.hidden ? { hidden: true } : {}),
   }
-})
+  if (Object.prototype.hasOwnProperty.call(PRIVATE_V1_SORT, c.id)) {
+    writeFileSync(join(PRIV, 'cosmetics', `${c.id}.png`), png(tex))
+    writeFileSync(join(PRIV, 'cosmetic-previews', `${c.id}.png`), png(view))
+    privateV1.push({ ...entry, sort: PRIVATE_V1_SORT[c.id] })
+  } else {
+    writeFileSync(join(OUT, `${c.id}.png`), png(tex))
+    writeFileSync(join(PREVIEW, `${c.id}.png`), png(view))
+    catalog.push(entry)
+  }
+}
 // Nur Vorschauen der alten Vorlagen-Fassungen (für Vergleiche), keine Katalog-Einträge.
 for (const c of V1_LEGACY) {
   const tpl = TEMPLATES[c.template]
   const tex = c.frames.length > 1 ? strip(c.frames) : c.frames[0]
-  writeFileSync(join(PREVIEW, `${c.id}-v1.png`), png(renderView(tpl, tex, Math.min(c.previewFrame ?? 0, c.frames.length - 1), c.view, c.win)))
+  const dest = PRIVATE_V2.has(c.id) ? join(PRIV, 'cosmetic-previews') : PREVIEW
+  writeFileSync(join(dest, `${c.id}-v1.png`), png(renderView(tpl, tex, Math.min(c.previewFrame ?? 0, c.frames.length - 1), c.view, c.win)))
 }
-// v2-Einträge (3D-Modelle, von Hand gepflegt) bleiben vorne erhalten.
+// v2-Einträge (3D-Modelle, von Hand gepflegt) bleiben vorne erhalten. Private IDs nie zurück in den öffentlichen Katalog.
 const v2 = existsSync(join(OUT, 'catalog.json'))
-  ? JSON.parse(readFileSync(join(OUT, 'catalog.json'), 'utf8')).filter((e) => e.format === 2)
+  ? JSON.parse(readFileSync(join(OUT, 'catalog.json'), 'utf8')).filter((e) => e.format === 2 && !PRIVATE_V2.has(e.id))
   : []
 const all = [...v2, ...catalog.filter((c) => !v2.some((e) => e.id === c.id))]
 writeFileSync(join(OUT, 'catalog.json'), `${JSON.stringify(all, null, 2)}\n`)
-console.log(`${all.length} Kosmetik-Teile (${v2.length} im Format v2) → ${OUT}, Vorschauen → ${PREVIEW}`)
+const privPath = join(PRIV, 'cosmetics', 'catalog.private.json')
+const prev = existsSync(privPath) ? JSON.parse(readFileSync(privPath, 'utf8')) : []
+const prevSort = new Map(prev.map((e) => [e.id, e.sort]))
+const privV2 = prev.filter((e) => e.format === 2 && !privateV1.some((v) => v.id === e.id))
+const privV1 = privateV1.map((e) => ({ ...e, sort: prevSort.get(e.id) ?? e.sort }))
+const privAll = [...privV2, ...privV1].sort((a, b) => (a.sort ?? 1000) - (b.sort ?? 1000))
+writeFileSync(privPath, `${JSON.stringify(privAll, null, 2)}\n`)
+console.log(`${all.length} öffentliche Kosmetik-Teile (${v2.length} im Format v2) → ${OUT}`)
+console.log(`${privAll.length} private Kosmetik-Teile → ${join(PRIV, 'cosmetics')}`)

@@ -9,6 +9,8 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 General Public License for more details.
 
+Cosmetics that can only be obtained by code or are granted by the TRS team are proprietary (All rights reserved) and are not part of this repository; the remaining cosmetics in api/assets are covered by the GPL-3.0.
+
 Third-party parts
 -----------------
 - Polyfrost OneLauncher (GPL-3.0-only): parts of the launcher's process handling are adapted from
