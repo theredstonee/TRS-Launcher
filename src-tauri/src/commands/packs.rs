@@ -14,19 +14,40 @@ use crate::commands::instances::{InstanceView, view};
 use crate::commands::tasks::tracked;
 use crate::error::CommandResult;
 
-/// Instanz packen und teilen; `update` = neue Version des schon geteilten Packs (gleicher Code).
+/// Instanz packen und zum Hochladen bereitlegen; `update` = neue Version des schon geteilten Packs (gleicher Code).
 #[tauri::command]
 pub async fn share_pack(
+    app: AppHandle,
     launcher: State<'_, LauncherState>,
     id: String,
     options: SharePackOptions,
     update: bool,
     on_progress: Channel<ExportProgress>,
+    task_id: Option<String>,
 ) -> CommandResult<SharePackOutcome> {
     let progress: trs_core::modpack_export::ExportProgressFn = Arc::new(move |p| {
         let _ = on_progress.send(p);
     });
-    Ok(launcher.share_pack(&id, &options, update, &progress).await?)
+    let work = launcher.share_pack(&id, &options, update, &progress);
+    Ok(tracked(&app, task_id, work).await?)
+}
+
+/// Vorbereitetes Pack in Chunks hochladen und teilen.
+#[tauri::command]
+pub async fn upload_shared_pack(
+    app: AppHandle,
+    launcher: State<'_, LauncherState>,
+    token: String,
+    task_id: Option<String>,
+) -> CommandResult<OwnPack> {
+    let work = launcher.upload_shared_pack(&token);
+    Ok(tracked(&app, task_id, work).await?)
+}
+
+/// Vorbereitetes Pack verwerfen (Dialog zu, ohne Upload).
+#[tauri::command]
+pub async fn discard_share_pack(launcher: State<'_, LauncherState>, token: String) -> CommandResult<()> {
+    Ok(launcher.discard_share_pack(&token).await?)
 }
 
 #[tauri::command]

@@ -176,6 +176,9 @@ pub async fn ensure_runtime(
             path: manifest_file.clone(),
             sha1: Some(entry.manifest.sha1.clone()),
             size: Some(entry.manifest.size),
+            sha512: None,
+            strict_size: false,
+            pack: false,
         },
     )
     .await?;
@@ -196,6 +199,9 @@ pub async fn ensure_runtime(
                 path: target,
                 sha1: Some(d.raw.sha1.clone()),
                 size: Some(d.raw.size),
+                sha512: None,
+                strict_size: false,
+                pack: false,
             }),
             // Symlinks (nur Linux-/macOS-Runtimes) entstehen nach dem Download.
             _ => {}

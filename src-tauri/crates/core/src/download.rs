@@ -5,6 +5,8 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
+use std::sync::OnceLock;
+
 use futures::StreamExt;
 use sha1::{Digest, Sha1};
 use tokio::io::AsyncWriteExt;
@@ -24,6 +26,54 @@ pub struct Task {
     pub path: PathBuf,
     pub sha1: Option<String>,
     pub size: Option<u64>,
+    /// SHA-512 aus dem Pack-Index, wenn vorhanden. Wird dann zusätzlich geprüft.
+    pub sha512: Option<String>,
+    /// Geteiltes Pack: die Größe muss exakt stimmen. Sonst gewinnt die Prüfsumme
+    /// (manche fremden Packs liegen um ein Byte daneben).
+    pub strict_size: bool,
+    /// Modpack-Datei: Weiterleitungen nur auf die erlaubten Download-Hosts.
+    pub pack: bool,
+}
+
+/// Hosts, von denen ein Modpack Dateien laden darf (https, ohne Umleitung woandershin).
+const PACK_HOSTS: [&str; 6] = [
+    "cdn.modrinth.com",
+    "edge.forgecdn.net",
+    "mediafilez.forgecdn.net",
+    "github.com",
+    "raw.githubusercontent.com",
+    "gitlab.com",
+];
+
+/// Darf diese Adresse eine Modpack-Datei sein? Nur HTTPS, kein Benutzer, Port 443, Host aus der Liste.
+pub(crate) fn allowed_pack_url(url: &str) -> bool {
+    let Ok(url) = reqwest::Url::parse(url) else { return false };
+    url.scheme() == "https"
+        && url.username().is_empty()
+        && url.password().is_none()
+        && url.port().is_none_or(|p| p == 443)
+        && url.host_str().is_some_and(|h| PACK_HOSTS.contains(&h))
+}
+
+/// Client für Pack-Dateien: folgt Weiterleitungen nur, wenn das Ziel erlaubt bleibt.
+fn pack_http() -> &'static reqwest::Client {
+    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
+    CLIENT.get_or_init(|| {
+        reqwest::Client::builder()
+            .user_agent(crate::USER_AGENT)
+            .connect_timeout(Duration::from_secs(15))
+            .redirect(reqwest::redirect::Policy::custom(|attempt| {
+                if attempt.previous().len() > 5 {
+                    attempt.error("redirect-host")
+                } else if allowed_pack_url(attempt.url().as_str()) {
+                    attempt.follow()
+                } else {
+                    attempt.error("redirect-host")
+                }
+            }))
+            .build()
+            .expect("pack http client")
+    })
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -56,18 +106,48 @@ pub async fn is_valid(task: &Task, verify_hash: bool) -> bool {
     if !meta.is_file() {
         return false;
     }
+    if task.strict_size && task.size.is_some_and(|s| s != meta.len()) {
+        return false;
+    }
     if task.size.is_some_and(|s| s != meta.len()) {
         return match &task.sha1 {
-            Some(expected) => sha1_of_file(&task.path).await.is_ok_and(|h| h.eq_ignore_ascii_case(expected)),
+            Some(expected) => sha1_of_file(&task.path).await.is_ok_and(|h| h.eq_ignore_ascii_case(expected)) && sha512_matches(task).await,
             None => false,
         };
     }
-    match (&task.sha1, verify_hash) {
-        (Some(expected), true) => {
-            sha1_of_file(&task.path).await.is_ok_and(|h| h.eq_ignore_ascii_case(expected))
-        }
-        _ => true,
+    if !verify_hash {
+        return true;
     }
+    if let Some(expected) = &task.sha1
+        && !sha1_of_file(&task.path).await.is_ok_and(|h| h.eq_ignore_ascii_case(expected))
+    {
+        return false;
+    }
+    sha512_matches(task).await
+}
+
+async fn sha512_matches(task: &Task) -> bool {
+    let Some(expected) = &task.sha512 else { return true };
+    sha512_of_file(&task.path).await.is_ok_and(|h| h.eq_ignore_ascii_case(expected))
+}
+
+pub async fn sha512_of_file(path: &Path) -> Result<String> {
+    let path = path.to_owned();
+    tokio::task::spawn_blocking(move || {
+        let mut file = std::fs::File::open(&path).map_err(|e| Error::io(&path, e))?;
+        let mut hasher = sha2::Sha512::new();
+        let mut buf = vec![0u8; 64 * 1024];
+        loop {
+            let n = std::io::Read::read(&mut file, &mut buf).map_err(|e| Error::io(&path, e))?;
+            if n == 0 {
+                break;
+            }
+            sha2::Digest::update(&mut hasher, &buf[..n]);
+        }
+        Ok(hex(&sha2::Digest::finalize(hasher)))
+    })
+    .await
+    .map_err(|e| Error::Internal(e.to_string()))?
 }
 
 pub async fn sha1_of_file(path: &Path) -> Result<String> {
@@ -123,8 +203,11 @@ fn attempts_for(err: &Error) -> u32 {
     if reason.starts_with("nicht unterstütztes URL-Schema") {
         return 1;
     }
-    if reason == "Prüfsumme stimmt nicht" {
+    if reason == "Prüfsumme stimmt nicht" || reason == "unerwartete Dateigröße" {
         return MAX_CHECKSUM_ATTEMPTS;
+    }
+    if reason.contains("redirect-host") {
+        return 1;
     }
     if let Some(code) = reason.strip_prefix("HTTP ").and_then(|r| r.get(..3)).and_then(|c| c.parse::<u16>().ok()) {
         // 408 (Timeout), 425 (zu früh) und 429 (gedrosselt) sind vorübergehend, andere 4xx nicht.
@@ -135,20 +218,30 @@ fn attempts_for(err: &Error) -> u32 {
     MAX_ATTEMPTS
 }
 
-/// Ist der geladene Inhalt der richtige? Mit Prüfsumme zählt nur die Prüfsumme (die Größe
-/// in Modpacks ist manchmal falsch); ohne Prüfsumme muss wenigstens die Größe stimmen.
-fn check_content(task: &Task, url: &str, written: u64, sha1: &str) -> Result<()> {
-    match &task.sha1 {
-        Some(expected) if !sha1.eq_ignore_ascii_case(expected) => Err(Error::download(url, "Prüfsumme stimmt nicht")),
-        Some(_) => {
-            if task.size.is_some_and(|s| s != written) {
-                tracing::debug!("Größe weicht ab ({written} statt {:?}), Prüfsumme stimmt: {url}", task.size);
-            }
-            Ok(())
-        }
-        None if task.size.is_some_and(|s| s != written) => Err(Error::download(url, "unerwartete Dateigröße")),
-        None => Ok(()),
+/// Ist der geladene Inhalt der richtige? Ohne `strict_size` zählt bei vorhandener Prüfsumme
+/// nur diese (manche fremden Packs nennen die Größe falsch). Geteilte Packs verlangen beides,
+/// und SHA-512, sobald der Index einen hat.
+fn check_content(task: &Task, url: &str, written: u64, sha1: &str, sha512: Option<&str>) -> Result<()> {
+    if let Some(expected) = &task.sha1
+        && !sha1.eq_ignore_ascii_case(expected)
+    {
+        return Err(Error::download(url, "Prüfsumme stimmt nicht"));
     }
+    if let Some(expected) = &task.sha512 {
+        let Some(got) = sha512 else {
+            return Err(Error::download(url, "Prüfsumme stimmt nicht"));
+        };
+        if !got.eq_ignore_ascii_case(expected) {
+            return Err(Error::download(url, "Prüfsumme stimmt nicht"));
+        }
+    }
+    if task.size.is_some_and(|s| s != written) {
+        if task.strict_size || task.sha1.is_none() {
+            return Err(Error::download(url, "unerwartete Dateigröße"));
+        }
+        tracing::debug!("Größe weicht ab ({written} statt {:?}), Prüfsumme stimmt: {url}", task.size);
+    }
+    Ok(())
 }
 
 pub async fn fetch_one(http: &reqwest::Client, task: &Task) -> Result<()> {
@@ -197,11 +290,15 @@ async fn fetch_attempt(
     on_bytes: &(dyn Fn(u64) + Sync),
 ) -> Result<()> {
     let url = secure_url(&task.url)?;
+    if task.pack && !allowed_pack_url(&url) {
+        return Err(Error::download(&url, "redirect-host"));
+    }
     if let Some(parent) = task.path.parent() {
         fsutil::ensure_dir(parent).await?;
     }
 
-    let response = http
+    let client = if task.pack { pack_http() } else { http };
+    let response = client
         .get(&url)
         // Das globale Timeout wäre für große Dateien zu knapp; der Stream
         // unten hat stattdessen ein Timeout pro Chunk.
@@ -231,6 +328,7 @@ async fn fetch_attempt(
     let result = async {
         let mut file = tokio::fs::File::create(&tmp).await.map_err(|e| Error::io(&tmp, e))?;
         let mut hasher = Sha1::new();
+        let mut hasher512 = task.sha512.is_some().then(sha2::Sha512::new);
         let mut written = 0u64;
         let mut stream = response.bytes_stream();
 
@@ -243,6 +341,9 @@ async fn fetch_attempt(
             let Some(chunk) = chunk else { break };
             let chunk = chunk.map_err(|e| Error::download(&url, e.without_url().to_string()))?;
             hasher.update(&chunk);
+            if let Some(h) = hasher512.as_mut() {
+                sha2::Digest::update(h, &chunk);
+            }
             file.write_all(&chunk).await.map_err(|e| Error::io(&tmp, e))?;
             written += chunk.len() as u64;
             on_bytes(chunk.len() as u64);
@@ -250,7 +351,8 @@ async fn fetch_attempt(
         file.flush().await.map_err(|e| Error::io(&tmp, e))?;
         drop(file);
 
-        check_content(task, &url, written, &hex(&hasher.finalize()))?;
+        let sha512 = hasher512.map(|h| hex(&sha2::Digest::finalize(h)));
+        check_content(task, &url, written, &hex(&hasher.finalize()), sha512.as_deref())?;
         tokio::fs::rename(&tmp, &task.path).await.map_err(|e| Error::io(&task.path, e))
     }
     .await;
@@ -421,18 +523,52 @@ mod tests {
         assert_eq!(attempts_for(&e("Zeitüberschreitung")), MAX_ATTEMPTS);
         assert_eq!(attempts_for(&e("connection reset")), MAX_ATTEMPTS);
         assert_eq!(attempts_for(&e("Prüfsumme stimmt nicht")), MAX_CHECKSUM_ATTEMPTS);
+        assert_eq!(attempts_for(&e("unerwartete Dateigröße")), MAX_CHECKSUM_ATTEMPTS);
+        assert_eq!(attempts_for(&e("redirect-host")), 1);
     }
 
     #[test]
     fn checksum_wins_over_a_wrong_size() {
         // Better MC (BMC4) nennt für Balm 591397 Bytes, die Datei hat 591398 – die SHA1 stimmt.
         let sha = "c689f4cbe1a5250177aced15b66ca251d9476d35";
-        let task = Task { url: String::new(), path: PathBuf::new(), sha1: Some(sha.into()), size: Some(591_397) };
-        assert!(check_content(&task, "https://x", 591_398, sha).is_ok());
-        assert!(check_content(&task, "https://x", 591_398, &"0".repeat(40)).is_err());
-        let no_hash = Task { sha1: None, ..task };
-        assert!(check_content(&no_hash, "https://x", 591_398, sha).is_err());
-        assert!(check_content(&no_hash, "https://x", 591_397, sha).is_ok());
+        let task = Task {
+            url: String::new(),
+            path: PathBuf::new(),
+            sha1: Some(sha.into()),
+            size: Some(591_397),
+            sha512: None,
+            strict_size: false,
+            pack: false,
+        };
+        assert!(check_content(&task, "https://x", 591_398, sha, None).is_ok());
+        assert!(check_content(&task, "https://x", 591_398, &"0".repeat(40), None).is_err());
+        let no_hash = Task { sha1: None, ..task.clone() };
+        assert!(check_content(&no_hash, "https://x", 591_398, sha, None).is_err());
+        assert!(check_content(&no_hash, "https://x", 591_397, sha, None).is_ok());
+        let strict = Task { strict_size: true, ..task.clone() };
+        assert!(check_content(&strict, "https://x", 591_398, sha, None).is_err());
+        assert!(check_content(&strict, "https://x", 591_397, sha, None).is_ok());
+        let sha512 = "ab".repeat(64);
+        let with_512 = Task { sha512: Some(sha512.clone()), ..task };
+        assert!(check_content(&with_512, "https://x", 591_397, sha, Some(&sha512)).is_ok());
+        assert!(check_content(&with_512, "https://x", 591_397, sha, Some(&"00".repeat(64))).is_err());
+        assert!(check_content(&with_512, "https://x", 591_397, sha, None).is_err());
+    }
+
+    #[test]
+    fn pack_urls_stay_on_the_allowed_hosts() {
+        assert!(allowed_pack_url("https://cdn.modrinth.com/data/x/versions/y/a.jar"));
+        assert!(allowed_pack_url("https://edge.forgecdn.net/files/1/2/a.jar"));
+        assert!(allowed_pack_url("https://mediafilez.forgecdn.net/files/1/2/a.jar"));
+        assert!(allowed_pack_url("https://github.com/owner/repo/releases/download/v1/a.jar"));
+        assert!(allowed_pack_url("https://raw.githubusercontent.com/owner/repo/main/a.jar"));
+        assert!(allowed_pack_url("https://gitlab.com/owner/repo/-/raw/main/a.jar"));
+        assert!(!allowed_pack_url("https://cdn.modrinth.com.evil/a.jar"));
+        assert!(!allowed_pack_url("https://evil.example/a.jar"));
+        assert!(!allowed_pack_url("https://user:pw@cdn.modrinth.com/a.jar"));
+        assert!(!allowed_pack_url("http://cdn.modrinth.com/a.jar"));
+        assert!(!allowed_pack_url("https://cdn.modrinth.com:8443/a.jar"));
+        assert!(!allowed_pack_url("https://objects.githubusercontent.com/a.jar"));
     }
 
     #[test]
@@ -449,12 +585,14 @@ mod tests {
         tokio::fs::write(&path, b"hello").await.unwrap();
         let sha = "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d";
 
-        let ok = Task { url: String::new(), path: path.clone(), sha1: Some(sha.into()), size: Some(5) };
+        let ok = Task { url: String::new(), path: path.clone(), sha1: Some(sha.into()), size: Some(5), sha512: None, strict_size: false, pack: false };
         assert!(is_valid(&ok, true).await);
 
         // Falsche Größe, aber passende Prüfsumme: die Datei ist richtig (Modpack-Angabe falsch).
         let wrong_size = Task { size: Some(6), ..ok.clone() };
         assert!(is_valid(&wrong_size, false).await);
+        let strict = Task { strict_size: true, ..wrong_size.clone() };
+        assert!(!is_valid(&strict, false).await);
         let wrong_size_no_hash = Task { size: Some(6), sha1: None, ..ok.clone() };
         assert!(!is_valid(&wrong_size_no_hash, false).await);
         let wrong_size_and_hash = Task { size: Some(6), sha1: Some("00".repeat(20)), ..ok.clone() };

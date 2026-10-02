@@ -96,6 +96,8 @@ pub(crate) enum Body {
     Png(Vec<u8>),
     /// Rohes Bild (Chat-Upload) mit seinem Typ.
     Image(&'static str, Vec<u8>),
+    /// Rohe Bytes (Chunk eines Modpacks), ohne JSON.
+    Raw(Vec<u8>),
 }
 
 /// Eine Anfrage an die API (Pfad ab `/v1/...`, Query schon kodiert angehängt).
@@ -108,34 +110,41 @@ pub(crate) struct Req {
     pub limit: usize,
     /// Eigene Zeitgrenze statt der üblichen 20 s (große Uploads/Downloads, z. B. Modpacks).
     pub timeout: Option<Duration>,
+    /// Zusätzliche Header (z. B. `X-Chunk-Sha256`, `Range`).
+    pub extra_headers: Vec<(String, String)>,
 }
 
 impl Req {
     pub fn get(path: impl Into<String>) -> Self {
-        Self { method: Method::GET, path: path.into(), body: Body::Empty, limit: MAX_JSON_BYTES, timeout: None }
+        Self { method: Method::GET, path: path.into(), body: Body::Empty, limit: MAX_JSON_BYTES, timeout: None, extra_headers: Vec::new() }
     }
     pub fn post(path: impl Into<String>, body: serde_json::Value) -> Self {
-        Self { method: Method::POST, path: path.into(), body: Body::Json(body), limit: MAX_JSON_BYTES, timeout: None }
+        Self { method: Method::POST, path: path.into(), body: Body::Json(body), limit: MAX_JSON_BYTES, timeout: None, extra_headers: Vec::new() }
     }
     pub fn post_empty(path: impl Into<String>) -> Self {
-        Self { method: Method::POST, path: path.into(), body: Body::Empty, limit: MAX_JSON_BYTES, timeout: None }
+        Self { method: Method::POST, path: path.into(), body: Body::Empty, limit: MAX_JSON_BYTES, timeout: None, extra_headers: Vec::new() }
     }
     pub fn put(path: impl Into<String>, body: serde_json::Value) -> Self {
-        Self { method: Method::PUT, path: path.into(), body: Body::Json(body), limit: MAX_JSON_BYTES, timeout: None }
+        Self { method: Method::PUT, path: path.into(), body: Body::Json(body), limit: MAX_JSON_BYTES, timeout: None, extra_headers: Vec::new() }
     }
     pub fn patch(path: impl Into<String>, body: serde_json::Value) -> Self {
-        Self { method: Method::PATCH, path: path.into(), body: Body::Json(body), limit: MAX_JSON_BYTES, timeout: None }
+        Self { method: Method::PATCH, path: path.into(), body: Body::Json(body), limit: MAX_JSON_BYTES, timeout: None, extra_headers: Vec::new() }
     }
     pub fn delete(path: impl Into<String>) -> Self {
-        Self { method: Method::DELETE, path: path.into(), body: Body::Empty, limit: MAX_JSON_BYTES, timeout: None }
+        Self { method: Method::DELETE, path: path.into(), body: Body::Empty, limit: MAX_JSON_BYTES, timeout: None, extra_headers: Vec::new() }
     }
     /// Beliebiger Body mit eigener Grenze für die Antwort.
     pub fn with(method: Method, path: impl Into<String>, body: Body, limit: usize) -> Self {
-        Self { method, path: path.into(), body, limit, timeout: None }
+        Self { method, path: path.into(), body, limit, timeout: None, extra_headers: Vec::new() }
     }
     /// Längere Zeitgrenze für diese Anfrage.
     pub fn timeout(mut self, timeout: Duration) -> Self {
         self.timeout = Some(timeout);
+        self
+    }
+    /// Ein zusätzlicher Header. Ungültige Werte scheitern erst beim Senden.
+    pub fn header(mut self, name: impl Into<String>, value: impl Into<String>) -> Self {
+        self.extra_headers.push((name.into(), value.into()));
         self
     }
 }
@@ -521,8 +530,9 @@ impl TrsApi {
 
     // --- HTTP ---------------------------------------------------------------------------
 
-    /// Schickt eine Anfrage genau einmal. `Ok` = 2xx mit Body-Bytes (leer bei 204).
-    async fn send_once(&self, req: &Req, token: Option<&str>) -> std::result::Result<Vec<u8>, Failure> {
+    /// Baut die Anfrage (Header, Body, Zeitgrenze). Der Body wird kopiert, damit ein
+    /// Fehlversuch dieselbe Anfrage noch einmal schicken kann.
+    fn prepare(&self, req: &Req, token: Option<&str>) -> reqwest::RequestBuilder {
         let url = format!("{}{}", self.base, req.path);
         let mut builder = self.http.request(req.method.clone(), &url).header("Accept", "application/json");
         if let Some(token) = token {
@@ -531,16 +541,37 @@ impl TrsApi {
         if let Some(timeout) = req.timeout {
             builder = builder.timeout(timeout);
         }
-        builder = match &req.body {
+        for (name, value) in &req.extra_headers {
+            builder = builder.header(name, value);
+        }
+        match &req.body {
             Body::Empty => builder,
             Body::Json(value) => builder.json(value),
             Body::Png(bytes) => builder.header("Content-Type", "image/png").body(bytes.clone()),
             Body::Image(mime, bytes) => builder.header("Content-Type", *mime).body(bytes.clone()),
-        };
-        let response = builder.send().await.map_err(|e| {
+            Body::Raw(bytes) => builder.header("Content-Type", "application/octet-stream").body(bytes.clone()),
+        }
+    }
+
+    /// Liegt die Antwort noch auf derselben API-Adresse? Weiterleitungen auf fremde Hosts gelten nicht.
+    fn same_origin(&self, url: &reqwest::Url) -> bool {
+        let Ok(base) = reqwest::Url::parse(&self.base) else { return false };
+        url.scheme() == base.scheme()
+            && url.host() == base.host()
+            && url.port_or_known_default() == base.port_or_known_default()
+    }
+
+    /// Schickt eine Anfrage genau einmal. `Ok` = 2xx, Body noch nicht gelesen.
+    /// Fremde Hosts nach einer Weiterleitung und zu große `Content-Length` werden verworfen.
+    async fn send_open(&self, req: &Req, token: Option<&str>) -> std::result::Result<reqwest::Response, Failure> {
+        let response = self.prepare(req, token).send().await.map_err(|e| {
             tracing::debug!("TRS API nicht erreichbar ({} {}): {e}", req.method, req.path);
             Failure::Network
         })?;
+        if !self.same_origin(response.url()) {
+            tracing::debug!("TRS API hat auf einen fremden Host weitergeleitet ({})", response.url());
+            return Err(Failure::Network);
+        }
         let status = response.status();
         let retry_after = response
             .headers()
@@ -550,12 +581,12 @@ impl TrsApi {
         if response.content_length().is_some_and(|l| l > req.limit as u64) {
             return Err(Failure::Network);
         }
+        if status.is_success() {
+            return Ok(response);
+        }
         let bytes = response.bytes().await.map_err(|_| Failure::Network)?;
         if bytes.len() > req.limit {
             return Err(Failure::Network);
-        }
-        if status.is_success() {
-            return Ok(bytes.to_vec());
         }
         let parsed: Option<serde_json::Value> = serde_json::from_slice(&bytes).ok();
         let error = parsed.as_ref().and_then(|v| v.get("error"));
@@ -579,6 +610,16 @@ impl TrsApi {
         Err(Failure::Api { status: status.as_u16(), code, retry_after, current, detail, permission })
     }
 
+    /// Schickt eine Anfrage genau einmal. `Ok` = 2xx mit Body-Bytes (leer bei 204).
+    async fn send_once(&self, req: &Req, token: Option<&str>) -> std::result::Result<Vec<u8>, Failure> {
+        let response = self.send_open(req, token).await?;
+        let bytes = response.bytes().await.map_err(|_| Failure::Network)?;
+        if bytes.len() > req.limit {
+            return Err(Failure::Network);
+        }
+        Ok(bytes.to_vec())
+    }
+
     /// Wie [`Self::send_once`], wartet aber kurze `429` einmal selbst ab.
     async fn send(&self, req: &Req, token: Option<&str>) -> std::result::Result<Vec<u8>, Failure> {
         match self.send_once(req, token).await {
@@ -587,6 +628,19 @@ impl TrsApi {
             {
                 tokio::time::sleep(Duration::from_secs(secs.max(1))).await;
                 self.send_once(req, token).await
+            }
+            other => other,
+        }
+    }
+
+    /// Wie [`Self::send`], lässt den Body aber offen (große Downloads, `Range`).
+    async fn send_response(&self, req: &Req, token: Option<&str>) -> std::result::Result<reqwest::Response, Failure> {
+        match self.send_open(req, token).await {
+            Err(Failure::Api { status: 429, retry_after: Some(secs), .. })
+                if Duration::from_secs(secs) <= MAX_INLINE_RETRY =>
+            {
+                tokio::time::sleep(Duration::from_secs(secs.max(1))).await;
+                self.send_open(req, token).await
             }
             other => other,
         }
@@ -618,6 +672,39 @@ impl TrsApi {
                 Err(Failure::Api { status: 409, current: Some(current), .. }) => return Ok(Outcome::Stale(current)),
                 Err(Failure::Api { status: 401, .. }) if !fresh_login => {
                     // Token abgelaufen oder widerrufen: einmal neu anmelden.
+                    let _ = self.store.take_token(account).await;
+                    fresh_login = true;
+                    let _ = self.login(sessions, account).await?;
+                }
+                Err(Failure::Api { status: 401, .. }) => {
+                    let _ = self.store.take_token(account).await;
+                    return Err(auth_failed(crate::msg!("trs.loginRejected", "Die TRS-Anmeldung wurde abgelehnt – bitte später erneut versuchen.")));
+                }
+                Err(e) => return Err(e.into_error()),
+            }
+        }
+    }
+
+    /// Wie [`Self::call_raw`], der Body bleibt offen (Stream, `Range`). Bei `401` genau einmal neu anmelden.
+    pub(crate) async fn call_response(
+        &self,
+        sessions: &dyn SessionSource,
+        account: &str,
+        req: &Req,
+    ) -> Result<reqwest::Response> {
+        self.ensure_enabled().await?;
+        let mut fresh_login = false;
+        loop {
+            let token = match self.store.token(account).await {
+                Some(token) => token,
+                None => {
+                    fresh_login = true;
+                    self.login(sessions, account).await?
+                }
+            };
+            match self.send_response(req, Some(&token)).await {
+                Ok(response) => return Ok(response),
+                Err(Failure::Api { status: 401, .. }) if !fresh_login => {
                     let _ = self.store.take_token(account).await;
                     fresh_login = true;
                     let _ = self.login(sessions, account).await?;
@@ -794,7 +881,7 @@ pub(crate) fn me_view(me: ApiMe) -> Result<types::Me> {
 #[cfg(test)]
 pub(crate) mod testkit;
 #[cfg(test)]
-mod tests;
+pub(crate) mod tests;
 #[cfg(test)]
 mod sync_tests;
 #[cfg(test)]

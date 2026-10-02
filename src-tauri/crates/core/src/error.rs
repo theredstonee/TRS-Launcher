@@ -141,6 +141,29 @@ pub struct UserError {
     pub api_code: Option<String>,
 }
 
+/// Übersetzungs-Code für einen Download-Fehler (`errors.<code>`).
+fn download_code(reason: &str) -> &'static str {
+    if reason == "Prüfsumme stimmt nicht" {
+        "checksum"
+    } else if reason == "unerwartete Dateigröße" {
+        "sizeMismatch"
+    } else if reason.contains("redirect-host") {
+        "redirectHost"
+    } else {
+        "download"
+    }
+}
+
+/// Deutsche Rückfall-Meldung, passend zu [`download_code`].
+fn download_public(reason: &str) -> &'static str {
+    match download_code(reason) {
+        "checksum" => "Download abgelehnt – die Prüfsumme der Datei stimmt nicht.",
+        "sizeMismatch" => "Download abgelehnt – die Dateigröße stimmt nicht.",
+        "redirectHost" => "Download wurde abgelehnt, weil er auf einen anderen Server weiterleitet.",
+        _ => "Download fehlgeschlagen – bitte Internetverbindung prüfen und erneut versuchen.",
+    }
+}
+
 impl Error {
     pub fn io(path: impl Into<PathBuf>, source: std::io::Error) -> Self {
         Self::Io { path: path.into(), source }
@@ -199,7 +222,7 @@ impl Error {
             Self::Io { .. } => "io",
             Self::Http(_) => "network",
             Self::Json { .. } => "data",
-            Self::Download { .. } => "download",
+            Self::Download { reason, .. } => download_code(reason),
             Self::InstanceNotFound(_) => "instanceNotFound",
             Self::UnknownGameVersion(_) => "unknownVersion",
             Self::AuthNotApproved => "authNotApproved",
@@ -229,9 +252,7 @@ impl Error {
             Self::Io { .. } => "Datei konnte nicht gelesen oder geschrieben werden.".into(),
             Self::Http(_) => "Netzwerkfehler – bitte Internetverbindung prüfen.".into(),
             Self::Json { .. } => "Daten konnten nicht verarbeitet werden.".into(),
-            Self::Download { .. } => {
-                "Download fehlgeschlagen – bitte Internetverbindung prüfen und erneut versuchen.".into()
-            }
+            Self::Download { reason, .. } => download_public(reason).into(),
             Self::AuthNotApproved => {
                 "Der Microsoft-Login ist noch nicht freigeschaltet: Die App-Registrierung wartet \
                  auf die Freigabe durch Mojang."

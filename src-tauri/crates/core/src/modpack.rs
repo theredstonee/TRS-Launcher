@@ -14,9 +14,6 @@ use crate::{Error, Launcher, Result, fsutil};
 
 const MAX_INDEX_BYTES: u64 = 16 << 20;
 const MAX_PACK_FILES: usize = 5000;
-/// Laut Format-Spezifikation die einzigen erlaubten Download-Hosts.
-const ALLOWED_HOSTS: [&str; 4] =
-    ["https://cdn.modrinth.com/", "https://github.com/", "https://raw.githubusercontent.com/", "https://gitlab.com/"];
 
 #[derive(Debug, Clone, Copy, Default, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -97,6 +94,13 @@ struct PackFile {
 #[derive(Debug, Deserialize)]
 struct PackHashes {
     sha1: String,
+    /// SHA-512, wenn der Index einen nennt. Fehlt er, reicht SHA-1.
+    #[serde(default)]
+    sha512: Option<String>,
+}
+
+fn hex_len(value: &str, len: usize) -> bool {
+    value.len() == len && value.bytes().all(|b| b.is_ascii_hexdigit())
 }
 
 #[derive(Debug, Deserialize)]
@@ -219,7 +223,7 @@ pub(crate) fn extract_folders(pack: &Path, game_dir: &Path, prefixes: &[&str]) -
     Ok(())
 }
 
-pub(crate) fn download_tasks(index: &PackIndex, game_dir: &Path) -> Result<Vec<Task>> {
+pub(crate) fn download_tasks(index: &PackIndex, game_dir: &Path, strict_size: bool) -> Result<Vec<Task>> {
     let mut tasks = Vec::new();
     for file in &index.files {
         if file.env.as_ref().and_then(|e| e.client.as_deref()) == Some("unsupported") {
@@ -233,23 +237,36 @@ pub(crate) fn download_tasks(index: &PackIndex, game_dir: &Path) -> Result<Vec<T
         let url = file
             .downloads
             .iter()
-            .find(|u| ALLOWED_HOSTS.iter().any(|host| u.starts_with(host)))
+            .find(|u| download::allowed_pack_url(u))
             .ok_or_else(|| Error::validation(crate::msg!(
                 "modpack.disallowedSource",
                 "Das Modpack verweist auf eine nicht erlaubte Download-Quelle."
             )))?;
-        let sha1_ok = file.hashes.sha1.len() == 40 && file.hashes.sha1.bytes().all(|b| b.is_ascii_hexdigit());
-        if !sha1_ok {
+        if !hex_len(&file.hashes.sha1, 40) {
             return Err(Error::validation(crate::msg!(
                 "modpack.invalidChecksum",
                 "Das Modpack enthält eine ungültige Prüfsumme."
             )));
         }
+        let sha512 = match file.hashes.sha512.as_deref() {
+            None => None,
+            Some(s) if s.is_empty() => None,
+            Some(s) if hex_len(s, 128) => Some(s.to_owned()),
+            Some(_) => {
+                return Err(Error::validation(crate::msg!(
+                    "modpack.invalidChecksum",
+                    "Das Modpack enthält eine ungültige Prüfsumme."
+                )));
+            }
+        };
         tasks.push(Task {
             url: url.clone(),
             path: game_dir.join(rel),
             sha1: Some(file.hashes.sha1.clone()),
             size: file.file_size,
+            sha512,
+            strict_size,
+            pack: true,
         });
     }
     Ok(tasks)
@@ -377,7 +394,7 @@ impl Launcher {
             )));
         }
         let path = pack_cache_dir(self.paths()).join(format!("mr-{sha1}.mrpack"));
-        let task = Task { url: file.url.clone(), path, sha1: Some(sha1), size: Some(file.size) };
+        let task = Task { url: file.url.clone(), path, sha1: Some(sha1), size: Some(file.size), sha512: None, strict_size: false, pack: false };
         Ok((version, task))
     }
 
@@ -474,7 +491,7 @@ impl Launcher {
             let cf = self.curseforge()?;
             return Ok(self.install_curseforge_pack(cf, pack, trs_client, on_progress).await?.instance);
         }
-        self.install_local_pack(pack, trs_client, on_progress).await
+        self.install_local_pack(pack, trs_client, false, on_progress).await
     }
 
     async fn install_pack_file(
@@ -487,13 +504,14 @@ impl Launcher {
             on_progress(PackProgress::new(PackPhase::Pack, p.percent()));
         })
         .await?;
-        self.install_local_pack(&pack_task.path, trs_client, on_progress).await
+        self.install_local_pack(&pack_task.path, trs_client, false, on_progress).await
     }
 
     pub(crate) async fn install_local_pack(
         &self,
         pack: &Path,
         trs_client: Option<bool>,
+        strict_size: bool,
         on_progress: &PackProgressFn,
     ) -> Result<Instance> {
         let pack_path = pack.to_owned();
@@ -521,7 +539,7 @@ impl Launcher {
 
         let game_dir = self.paths().instance_game_dir(&instance.id);
         let files = async {
-            let tasks = pack_download_order(download_tasks(&index, &game_dir)?);
+            let tasks = pack_download_order(download_tasks(&index, &game_dir, strict_size)?);
             let concurrency = pack_concurrency(self.settings().await.concurrent_downloads);
             download::fetch_all(self.http(), tasks, concurrency, &|p| {
                 on_progress(PackProgress::files(&p));
@@ -565,10 +583,10 @@ mod tests {
         "formatVersion": 1, "game": "minecraft", "versionId": "1.0", "name": "Testpack",
         "dependencies": { "minecraft": "1.21.1", "fabric-loader": "0.16.10" },
         "files": [
-          { "path": "mods/a.jar", "hashes": { "sha1": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "sha512": "x" },
+          { "path": "mods/a.jar", "hashes": { "sha1": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "sha512": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" },
             "env": { "client": "required", "server": "required" },
             "downloads": ["https://evil.example/a.jar", "https://cdn.modrinth.com/data/x/versions/y/a.jar"], "fileSize": 10 },
-          { "path": "mods/server-only.jar", "hashes": { "sha1": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "sha512": "x" },
+          { "path": "mods/server-only.jar", "hashes": { "sha1": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
             "env": { "client": "unsupported", "server": "required" },
             "downloads": ["https://cdn.modrinth.com/data/x/versions/y/s.jar"], "fileSize": 10 }
         ] }"#;
@@ -599,9 +617,11 @@ mod tests {
         assert_eq!(index.game_version().unwrap(), "1.21.1");
         assert_eq!(index.loader().unwrap(), Loader { kind: LoaderKind::Fabric, version: Some("0.16.10".into()) });
 
-        let tasks = download_tasks(&index, dir.path()).unwrap();
+        let tasks = download_tasks(&index, dir.path(), false).unwrap();
         assert_eq!(tasks.len(), 1, "server-only Dateien werden übersprungen");
         assert!(tasks[0].url.starts_with("https://cdn.modrinth.com/"), "nicht erlaubter Host wird ignoriert");
+        assert!(tasks[0].pack && !tasks[0].strict_size);
+        assert_eq!(tasks[0].sha512.as_deref().map(str::len), Some(128));
         assert!(tasks[0].path.ends_with("mods/a.jar") || tasks[0].path.ends_with("mods\\a.jar"));
     }
 
@@ -628,11 +648,31 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let evil = INDEX.replace("mods/a.jar", "../../evil.jar");
         let index: PackIndex = serde_json::from_str(&evil).unwrap();
-        assert!(download_tasks(&index, dir.path()).is_err());
+        assert!(download_tasks(&index, dir.path(), false).is_err());
 
         let only_evil = INDEX.replace("https://cdn.modrinth.com/data/x/versions/y/a.jar", "https://evil.example/b.jar");
         let index: PackIndex = serde_json::from_str(&only_evil).unwrap();
-        assert!(download_tasks(&index, dir.path()).is_err());
+        assert!(download_tasks(&index, dir.path(), false).is_err());
+
+        let lookalike = INDEX.replace("https://cdn.modrinth.com/", "https://cdn.modrinth.com.evil/");
+        let index: PackIndex = serde_json::from_str(&lookalike).unwrap();
+        assert!(download_tasks(&index, dir.path(), false).is_err());
+
+        let forge = INDEX.replace(
+            "https://cdn.modrinth.com/data/x/versions/y/a.jar",
+            "https://edge.forgecdn.net/files/1/2/a.jar",
+        );
+        let index: PackIndex = serde_json::from_str(&forge).unwrap();
+        let tasks = download_tasks(&index, dir.path(), true).unwrap();
+        assert!(tasks[0].url.starts_with("https://edge.forgecdn.net/"));
+        assert!(tasks[0].strict_size);
+
+        let bad_sha = INDEX.replace(
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "x",
+        );
+        let index: PackIndex = serde_json::from_str(&bad_sha).unwrap();
+        assert!(download_tasks(&index, dir.path(), false).is_err());
     }
 
     #[test]

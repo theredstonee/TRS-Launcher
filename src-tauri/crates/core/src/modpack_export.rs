@@ -418,6 +418,66 @@ fn write_pack(
     result
 }
 
+/// Modrinth-Datei nur, wenn SHA-1 und SHA-512 zur lokalen Datei passen und die Adresse auf dem CDN liegt.
+fn modrinth_download(known: &HashMap<String, modrinth::Version>, sha1: &str, sha512: &str) -> Option<String> {
+    let version = known.get(&sha512.to_ascii_lowercase())?;
+    version.files.iter().find_map(|f| {
+        let hash_ok = f.hashes.sha1.eq_ignore_ascii_case(sha1)
+            && f.hashes.sha512.as_deref().is_some_and(|h| h.eq_ignore_ascii_case(sha512));
+        (hash_ok && f.url.starts_with(modrinth::CDN_PREFIX)).then(|| f.url.clone())
+    })
+}
+
+/// CurseForge-Download nur bei passendem Fingerprint, SHA-1 (wenn genannt) und erlaubter Adresse.
+/// `file_length == 0` heißt „Größe unbekannt“ und sperrt den Treffer nicht.
+fn accepted_curseforge_url(file: &crate::curseforge::RawFile, fingerprint: u32, sha1: &str, size: u64) -> Option<String> {
+    if file.file_fingerprint != u64::from(fingerprint) {
+        return None;
+    }
+    if file.sha1().is_some_and(|h| !h.eq_ignore_ascii_case(sha1)) {
+        return None;
+    }
+    if file.file_length != 0 && file.file_length != size {
+        return None;
+    }
+    let url = file.download_url.as_deref().filter(|u| !u.is_empty())?;
+    crate::curseforge::is_allowed_download_url(url).then(|| url.to_owned())
+}
+
+/// Fingerprints der noch offenen Dateien, dann die erlaubten Download-Adressen.
+async fn curseforge_downloads(
+    cf: &crate::curseforge::CurseForge,
+    game_dir: &Path,
+    files: &[(PathBuf, u64, String, String)],
+) -> Result<Vec<(PathBuf, u64, String, String, String)>> {
+    let game_dir = game_dir.to_owned();
+    let list = files.to_vec();
+    let fingerprinted = tokio::task::spawn_blocking(move || {
+        let mut out = Vec::new();
+        for (rel, size, sha1, sha512) in list {
+            let Ok(bytes) = std::fs::read(game_dir.join(&rel)) else { continue };
+            let fp = crate::hosting_mods::murmur::curseforge_fingerprint(&bytes);
+            out.push((rel, size, sha1, sha512, fp));
+        }
+        out
+    })
+    .await
+    .map_err(|e| Error::Internal(e.to_string()))?;
+    if fingerprinted.is_empty() {
+        return Ok(Vec::new());
+    }
+    let fps: Vec<u32> = fingerprinted.iter().map(|(_, _, _, _, fp)| *fp).collect();
+    let matches = cf.fingerprint_matches(&fps).await?;
+    let mut found = Vec::new();
+    for (rel, size, sha1, sha512, fp) in fingerprinted {
+        let url = matches.iter().find_map(|m| accepted_curseforge_url(&m.file, fp, &sha1, size));
+        if let Some(url) = url {
+            found.push((rel, size, sha1, sha512, url));
+        }
+    }
+    Ok(found)
+}
+
 /// SHA1 und SHA512 einer Datei in einem Durchgang.
 fn hash_file(path: &Path) -> Result<(String, String)> {
     use sha1::Digest as _;
@@ -499,30 +559,41 @@ impl Launcher {
         .await
         .map_err(|e| Error::Internal(e.to_string()))?;
 
-        // 2. Modrinth fragen, welche dieser Dateien es dort zum Download gibt.
+        // 2. Modrinth (SHA-512) und danach CurseForge: was als Link gehen kann, kommt nicht ins Archiv.
         on_progress(ExportProgress { phase: ExportPhase::Lookup, percent: 0.0 });
-        let sha1s: Vec<String> = hashed.iter().map(|(_, _, sha1, _)| sha1.clone()).collect();
-        let known = match modrinth::versions_by_hashes(self.http(), &sha1s).await {
-            Ok(found) => found,
-            // Ohne Netz kommt eben alles in die Overrides – der Export klappt trotzdem.
-            Err(e) => {
-                tracing::warn!("Modrinth-Abgleich beim Export fehlgeschlagen: {e}");
-                HashMap::new()
+        let sha512s: Vec<String> = hashed.iter().map(|(_, _, _, sha512)| sha512.clone()).collect();
+        let known = if sha512s.is_empty() {
+            HashMap::new()
+        } else {
+            match modrinth::versions_by_sha512(self.http(), &sha512s).await {
+                Ok(found) => found,
+                // Ohne Netz kommt eben alles in die Overrides – der Export klappt trotzdem.
+                Err(e) => {
+                    tracing::warn!("Modrinth-Abgleich beim Export fehlgeschlagen: {e}");
+                    HashMap::new()
+                }
             }
         };
         let mut resolved: HashMap<String, Resolved> = HashMap::new();
+        let mut unresolved: Vec<(PathBuf, u64, String, String)> = Vec::new();
         for (rel, size, sha1, sha512) in &hashed {
-            let Some(version) = known.get(sha1) else { continue };
-            let Some(file) = version.files.iter().find(|f| f.hashes.sha1.eq_ignore_ascii_case(sha1)) else { continue };
-            if !file.url.starts_with(modrinth::CDN_PREFIX) {
-                continue;
+            if let Some(url) = modrinth_download(&known, sha1, sha512) {
+                resolved.insert(pack_path(rel), Resolved { url, sha1: sha1.clone(), sha512: sha512.clone(), size: *size });
+            } else {
+                unresolved.push((rel.clone(), *size, sha1.clone(), sha512.clone()));
             }
-            resolved.insert(pack_path(rel), Resolved {
-                url: file.url.clone(),
-                sha1: sha1.clone(),
-                sha512: sha512.clone(),
-                size: if file.size > 0 { file.size } else { *size },
-            });
+        }
+        if !unresolved.is_empty()
+            && let Some(cf) = self.curseforge.as_ref()
+        {
+            match curseforge_downloads(cf, &game_dir, &unresolved).await {
+                Ok(found) => {
+                    for (rel, size, sha1, sha512, url) in found {
+                        resolved.insert(pack_path(&rel), Resolved { url, sha1, sha512, size });
+                    }
+                }
+                Err(e) => tracing::warn!("CurseForge-Abgleich beim Export fehlgeschlagen: {e}"),
+            }
         }
         on_progress(ExportProgress { phase: ExportPhase::Lookup, percent: 100.0 });
 
@@ -666,7 +737,7 @@ mod tests {
         assert_eq!(parsed.game_version().unwrap(), "1.21.1");
         assert_eq!(parsed.loader().unwrap().version.as_deref(), Some("0.16.10"));
         let target = dir.path().join("neu");
-        let tasks = crate::modpack::download_tasks(&parsed, &target).unwrap();
+        let tasks = crate::modpack::download_tasks(&parsed, &target, false).unwrap();
         assert_eq!(tasks.len(), 1);
         assert!(tasks[0].url.starts_with("https://cdn.modrinth.com/"));
         assert_eq!(tasks[0].sha1.as_deref(), Some(sha1.as_str()));
@@ -703,5 +774,47 @@ mod tests {
         assert!(names.contains(&"mods"));
         assert!(!names.contains(&"logs"));
         assert!(entries.iter().find(|e| e.name == "mods").unwrap().recommended);
+    }
+
+    #[test]
+    fn curseforge_link_needs_fingerprint_hash_and_cdn() {
+        use crate::curseforge::{RawFile, RawHash};
+        let sha = "ab".repeat(20);
+        let mut file = RawFile {
+            id: 1,
+            mod_id: 2,
+            display_name: String::new(),
+            file_name: "a.jar".into(),
+            release_type: 1,
+            hashes: vec![RawHash { value: sha.clone(), algo: 1 }],
+            file_date: None,
+            file_length: 13,
+            download_url: Some("https://edge.forgecdn.net/files/1/2/a.jar".into()),
+            file_fingerprint: 7,
+            game_versions: Vec::new(),
+            dependencies: Vec::new(),
+            is_server_pack: None,
+            is_available: None,
+        };
+        assert_eq!(
+            accepted_curseforge_url(&file, 7, &sha, 13).as_deref(),
+            Some("https://edge.forgecdn.net/files/1/2/a.jar")
+        );
+        file.download_url = Some("https://mediafilez.forgecdn.net/files/1/2/a.jar".into());
+        assert!(accepted_curseforge_url(&file, 7, &sha, 13).is_some());
+        file.download_url = None;
+        assert!(accepted_curseforge_url(&file, 7, &sha, 13).is_none());
+        file.download_url = Some("https://evil.example/a.jar".into());
+        assert!(accepted_curseforge_url(&file, 7, &sha, 13).is_none());
+        file.download_url = Some("https://edge.forgecdn.net/files/1/2/a.jar".into());
+        file.hashes[0].value = "00".repeat(20);
+        assert!(accepted_curseforge_url(&file, 7, &sha, 13).is_none());
+        file.hashes.clear();
+        assert!(accepted_curseforge_url(&file, 7, &sha, 13).is_some(), "fehlende SHA-1 sperrt nicht");
+        assert!(accepted_curseforge_url(&file, 8, &sha, 13).is_none());
+        file.file_length = 99;
+        assert!(accepted_curseforge_url(&file, 7, &sha, 13).is_none());
+        file.file_length = 0;
+        assert!(accepted_curseforge_url(&file, 7, &sha, 13).is_some());
     }
 }

@@ -509,8 +509,9 @@ fn hit_from_raw(h: RawHit) -> SearchHit {
     }
 }
 
-/// Sucht Versionen zu Datei-Prüfsummen (SHA1). Unbekannte Hashes fehlen in
-/// der Antwort. Wird für „woher stammt diese Datei?“ benutzt (Export, Updates).
+/// Sucht Versionen zu Datei-Prüfsummen (SHA-1). Unbekannte Hashes fehlen in
+/// der Antwort. Das Teilen nutzt [`versions_by_sha512`]; die SHA-1-Suche bleibt für andere Aufrufer.
+#[allow(dead_code)]
 pub(crate) async fn versions_by_hashes(
     http: &reqwest::Client,
     hashes: &[String],
@@ -1233,6 +1234,9 @@ pub(crate) async fn install_version(
             path: dir.join(&file.filename),
             sha1: Some(file.hashes.sha1.clone()),
             size: Some(file.size),
+            sha512: None,
+            strict_size: false,
+            pack: false,
         },
     )
     .await?;

@@ -13,7 +13,7 @@ use super::*;
 use crate::Launcher;
 use crate::launch::Session;
 
-pub(super) const ACC: &str = "75c1a6f3112240abbdb57b9d21c64232";
+pub(crate) const ACC: &str = "75c1a6f3112240abbdb57b9d21c64232";
 const OTHER: &str = "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0";
 
 fn token(n: u8) -> String {
@@ -245,7 +245,7 @@ struct World {
 }
 
 /// Launcher mit einem angemeldeten Account und TRS-Endpunkten auf dem Mock.
-pub(super) async fn launcher(server: &MockServer, accounts: &[&str]) -> (tempfile::TempDir, Arc<Launcher>) {
+pub(crate) async fn launcher(server: &MockServer, accounts: &[&str]) -> (tempfile::TempDir, Arc<Launcher>) {
     let dir = tempfile::tempdir().unwrap();
     let list: Vec<_> = accounts
         .iter()
@@ -263,6 +263,13 @@ pub(super) async fn launcher(server: &MockServer, accounts: &[&str]) -> (tempfil
     launcher.trs = TrsApi::with_endpoints(launcher.paths.clone(), &server.base, &server.base, &server.base).unwrap();
     launcher.trs.store.set_consent(Consent::Accepted).await;
     (dir, Arc::new(launcher))
+}
+
+/// Launcher mit gültigem API-Token, ohne Anmeldung über den Mock.
+pub(crate) async fn signed_in(server: &MockServer) -> (tempfile::TempDir, Arc<Launcher>) {
+    let (dir, launcher) = launcher(server, &[ACC]).await;
+    launcher.trs.store.put_token(ACC, &token(b'a'), chrono::Utc::now() + chrono::Duration::days(1)).await.unwrap();
+    (dir, launcher)
 }
 
 fn full_api(base: Arc<std::sync::OnceLock<String>>, world: &World) -> impl Fn(&Request) -> Response + Send + Sync + 'static {

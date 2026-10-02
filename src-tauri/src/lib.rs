@@ -430,6 +430,8 @@ pub fn run() {
             commands::export::import_modpack_file,
             commands::export::pick_modpack_file,
             commands::packs::share_pack,
+            commands::packs::upload_shared_pack,
+            commands::packs::discard_share_pack,
             deeplink::take_pending_pack_link,
             deeplink::take_pending_web_login,
             commands::packs::packs_mine,

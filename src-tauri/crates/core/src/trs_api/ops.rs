@@ -161,6 +161,12 @@ impl Launcher {
         self.trs.call_raw(self.accounts(), &account, &req).await.map(|_| ())
     }
 
+    /// Antwort offen lassen (große Downloads mit `Range`).
+    pub(super) async fn trs_open(&self, req: Req) -> Result<reqwest::Response> {
+        let account = self.trs_account().await?;
+        self.trs.call_response(self.accounts(), &account, &req).await
+    }
+
     // --- Einwilligung & Konto -----------------------------------------------------------
 
     pub async fn trs_status(&self) -> Result<TrsStatus> {

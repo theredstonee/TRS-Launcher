@@ -323,6 +323,9 @@ impl CurseForge {
                 path: dir.join(&file.file_name),
                 sha1: file.sha1(),
                 size: Some(file.file_length).filter(|s| *s > 0),
+                sha512: None,
+                strict_size: false,
+                pack: false,
             },
         )
         .await?;

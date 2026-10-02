@@ -451,6 +451,9 @@ pub async fn fetch_vanilla(
         path: file.clone(),
         sha1: Some(entry.sha1.clone()),
         size: None,
+        sha512: None,
+        strict_size: false,
+        pack: false,
     };
     // Die SHA1 im Manifest ändert sich, wenn Mojang das JSON aktualisiert –
     // deshalb hier immer gegen den Hash prüfen statt nur auf Existenz.

@@ -11,10 +11,14 @@ use super::types::{UserRef, clean_user};
 use super::{Body, Req, validate};
 use crate::{Error, Launcher, Result};
 
-/// Größte Pack-Datei, die hoch- oder heruntergeladen wird (Server: `PACK_MAX_MB` = 50).
-pub const MAX_PACK_BYTES: usize = 50 * 1024 * 1024;
-/// Hoch-/Herunterladen einer Pack-Datei darf dauern (50 MB bei langsamer Leitung).
+/// Größte Pack-Datei, die hoch- oder heruntergeladen wird (Server: `PACK_MAX_MB` = 1024).
+pub const MAX_PACK_BYTES: u64 = 1024 * 1024 * 1024;
+/// Ein Chunk darf nicht größer sein als das, was vor der 100-MB-Grenze von Cloudflare ankommt.
+const MAX_CHUNK_BYTES: u64 = 64 * 1024 * 1024;
+/// Hochladen eines Chunks bzw. Zusammensetzen des Packs.
 const TRANSFER_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(15 * 60);
+/// Herunterladen eines großen Packs (bis 1 GB).
+pub(crate) const DOWNLOAD_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(60 * 60);
 /// Laufzeiten, die der Server kennt.
 pub const DURATIONS: [&str; 4] = ["1d", "7d", "30d", "forever"];
 
@@ -283,7 +287,7 @@ fn pack_error(e: Error) -> Error {
         "pack_not_found" => crate::msg!("packShare.notFound", "Dieses Modpack gibt es nicht (mehr)."),
         "pack_unchanged" => crate::msg!("packShare.unchanged", "Seit der letzten Version hat sich nichts geändert."),
         "invalid_pack" => crate::msg!("packShare.invalidPack", "Der Server hat das Modpack abgelehnt – es ist kein gültiges Modrinth-Pack."),
-        "payload_too_large" => crate::msg!("packShare.tooLarge", "Das Modpack ist größer als 50 MB – wähle weniger Ordner aus (z. B. ohne Resource Packs)."),
+        "payload_too_large" => crate::msg!("packShare.tooLarge", "Das Modpack ist größer als 1 GB – wähle weniger Ordner aus (z. B. ohne Resource Packs)."),
         "no_recipients" => crate::msg!("packShare.noRecipients", "Modpacks kannst du nur an deine Freunde schicken."),
         _ => msg,
     };
@@ -307,7 +311,8 @@ impl Launcher {
         raw.cleaned(&bases, own).map(|(p, ..)| p)
     }
 
-    /// Fertige `.mrpack`-Datei hochladen (neues Pack).
+    /// Fertige `.mrpack`-Datei in einem Request hochladen (ältere Launcher). Dieser Launcher teilt in Chunks.
+    #[allow(dead_code)]
     pub(crate) async fn trs_pack_upload(&self, bytes: Vec<u8>, duration: &str) -> Result<OwnPack> {
         if !DURATIONS.contains(&duration) {
             return Err(Error::validation(crate::msg!("packShare.invalidDuration", "Ungültige Laufzeit.")));
@@ -323,7 +328,8 @@ impl Launcher {
         self.own_pack(env.pack)
     }
 
-    /// Neue Version eines eigenen Packs (gleicher Code).
+    /// Neue Version in einem Request (ältere Launcher, gleicher Code).
+    #[allow(dead_code)]
     pub(crate) async fn trs_pack_upload_version(&self, id: &str, bytes: Vec<u8>) -> Result<OwnPack> {
         let id = id_arg(id)?;
         let req = Req::with(
@@ -363,7 +369,7 @@ impl Launcher {
                 max_active: cap(l.max_active),
                 uploads_today: cap(l.uploads_today),
                 max_per_day: cap(l.max_per_day),
-                max_bytes: l.max_bytes.min(MAX_PACK_BYTES as u64 * 20),
+                max_bytes: l.max_bytes.min(MAX_PACK_BYTES),
             },
         })
     }
@@ -375,12 +381,15 @@ impl Launcher {
         self.shared_pack(env.pack).ok_or_else(super::bad_response)
     }
 
-    /// Die `.mrpack`-Datei zu einem Code.
-    pub(crate) async fn trs_pack_download(&self, code: &str) -> Result<Vec<u8>> {
+    /// Öffnet den Download der `.mrpack`-Datei (Body bleibt offen, `Range` möglich).
+    pub(crate) async fn trs_pack_open_file(&self, code: &str, range_from: Option<u64>) -> Result<reqwest::Response> {
         let code = normalize_code(code).ok_or_else(invalid_code)?;
-        let req = Req::with(reqwest::Method::GET, format!("/v1/packs/code/{code}/file"), Body::Empty, MAX_PACK_BYTES + 1024)
-            .timeout(TRANSFER_TIMEOUT);
-        self.trs_raw(req).await.map_err(pack_error)
+        let limit = usize::try_from(MAX_PACK_BYTES.saturating_add(1024)).unwrap_or(usize::MAX);
+        let mut req = Req::with(reqwest::Method::GET, format!("/v1/packs/code/{code}/file"), Body::Empty, limit).timeout(DOWNLOAD_TIMEOUT);
+        if let Some(from) = range_from {
+            req = req.header("Range", format!("bytes={from}-"));
+        }
+        self.trs_open(req).await.map_err(pack_error)
     }
 
     /// Aktueller Stand vieler Packs (Update-Prüfung). Unbekannte/abgelaufene fehlen.
@@ -420,6 +429,181 @@ impl Launcher {
     pub async fn trs_pack_inbox_dismiss(&self, id: &str) -> Result<()> {
         let id = id_arg(id)?;
         self.trs_do(Req::delete(format!("/v1/me/pack-inbox/{id}"))).await.map_err(pack_error)
+    }
+
+    /// Neue Upload-Sitzung (Chunks, 24 h). `name` ist nur ein Hinweis für den Server.
+    pub(crate) async fn trs_pack_upload_begin(&self, size: u64, sha256: &str, name: Option<&str>) -> Result<UploadTicket> {
+        if size == 0 || size > MAX_PACK_BYTES || !is_sha256(sha256) {
+            return Err(too_large());
+        }
+        let mut body = json!({ "size": size, "sha256": sha256 });
+        if let Some(name) = name {
+            let name = validate::text(name, 64);
+            if !name.is_empty() {
+                body["name"] = json!(name);
+            }
+        }
+        let raw: ApiUpload = self.trs_get(Req::post("/v1/packs/uploads", body)).await.map_err(pack_error)?;
+        UploadTicket::from_api(raw).ok_or_else(super::bad_response)
+    }
+
+    /// Welche Chunks schon da sind (Fortsetzen).
+    pub(crate) async fn trs_pack_upload_status(&self, upload_id: &str) -> Result<UploadProgress> {
+        let upload_id = upload_ref(upload_id)?;
+        let raw: ApiUploadStatus =
+            self.trs_get(Req::get(format!("/v1/packs/uploads/{upload_id}"))).await.map_err(pack_error)?;
+        if !chunk_size_ok(raw.chunk_size) || raw.size > MAX_PACK_BYTES {
+            return Err(super::bad_response());
+        }
+        let received = raw.received.into_iter().filter(|i| *i <= 10_000).map(|i| i as u32).collect();
+        Ok(UploadProgress { received, size: raw.size, chunk_size: raw.chunk_size })
+    }
+
+    /// Ein Chunk. Dieselbe Bytes + derselbe Hash noch einmal zu schicken ist in Ordnung.
+    pub(crate) async fn trs_pack_upload_chunk(&self, upload_id: &str, index: u32, bytes: Vec<u8>, sha256: &str) -> Result<()> {
+        let upload_id = upload_ref(upload_id)?;
+        if bytes.is_empty() || bytes.len() as u64 > MAX_CHUNK_BYTES || !is_sha256(sha256) {
+            return Err(Error::validation(crate::msg!("packShare.invalidPack", "Der Server hat das Modpack abgelehnt – es ist kein gültiges Modrinth-Pack.")));
+        }
+        let req = Req::with(
+            reqwest::Method::PUT,
+            format!("/v1/packs/uploads/{upload_id}/chunks/{index}"),
+            Body::Raw(bytes),
+            super::MAX_JSON_BYTES,
+        )
+        .timeout(TRANSFER_TIMEOUT)
+        .header("X-Chunk-Sha256", sha256);
+        self.trs_do(req).await.map_err(pack_error)
+    }
+
+    /// Pack zusammensetzen. Liefert das `uploadToken` für Anlegen oder Aktualisieren.
+    pub(crate) async fn trs_pack_upload_complete(&self, upload_id: &str) -> Result<String> {
+        let upload_id = upload_ref(upload_id)?;
+        let raw: ApiUploadDone = self
+            .trs_get(Req::post_empty(format!("/v1/packs/uploads/{upload_id}/complete")).timeout(TRANSFER_TIMEOUT))
+            .await
+            .map_err(pack_error)?;
+        upload_ref(&raw.upload_token).map(str::to_owned)
+    }
+
+    /// Pack aus einem fertigen Upload anlegen (`duration`) oder als neue Version ersetzen (`update_id`).
+    pub(crate) async fn trs_pack_finish_token(&self, token: &str, update_id: Option<&str>, duration: &str) -> Result<OwnPack> {
+        let token = upload_ref(token)?;
+        let req = match update_id {
+            Some(id) => {
+                let id = id_arg(id)?;
+                Req::put(format!("/v1/packs/{id}/file"), json!({ "uploadToken": token }))
+            }
+            None => {
+                if !DURATIONS.contains(&duration) {
+                    return Err(Error::validation(crate::msg!("packShare.invalidDuration", "Ungültige Laufzeit.")));
+                }
+                Req::post(format!("/v1/packs?duration={duration}"), json!({ "uploadToken": token }))
+            }
+        };
+        let env: PackEnvelope = self.trs_get(req.timeout(TRANSFER_TIMEOUT)).await.map_err(pack_error)?;
+        self.own_pack(env.pack)
+    }
+}
+
+/// Sitzung für den Chunk-Upload.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct UploadTicket {
+    pub upload_id: String,
+    pub chunk_size: u64,
+    pub expires_at: String,
+}
+
+/// Stand einer laufenden Sitzung.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct UploadProgress {
+    pub received: Vec<u32>,
+    pub size: u64,
+    pub chunk_size: u64,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ApiUpload {
+    upload_id: String,
+    chunk_size: u64,
+    expires_at: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ApiUploadStatus {
+    #[serde(default)]
+    received: Vec<u64>,
+    size: u64,
+    chunk_size: u64,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ApiUploadDone {
+    upload_token: String,
+}
+
+impl UploadTicket {
+    fn from_api(raw: ApiUpload) -> Option<Self> {
+        if upload_ref(&raw.upload_id).is_err() || !chunk_size_ok(raw.chunk_size) {
+            return None;
+        }
+        let expires_at = validate::text(&raw.expires_at, 40);
+        if chrono::DateTime::parse_from_rfc3339(&expires_at).is_err() {
+            return None;
+        }
+        Some(Self { upload_id: raw.upload_id, chunk_size: raw.chunk_size, expires_at })
+    }
+}
+
+fn chunk_size_ok(size: u64) -> bool {
+    (1..=MAX_CHUNK_BYTES).contains(&size)
+}
+
+fn is_sha256(value: &str) -> bool {
+    value.len() == 64 && value.bytes().all(|b| b.is_ascii_hexdigit())
+}
+
+/// `uploadId` und `uploadToken`: 8 bis 128 Zeichen, nur Buchstaben, Ziffern, `_` und `-`.
+fn upload_ref(value: &str) -> Result<&str> {
+    let ok = (8..=128).contains(&value.len()) && value.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-');
+    if ok { Ok(value) } else { Err(super::bad_response()) }
+}
+
+fn too_large() -> Error {
+    Error::validation(crate::msg!(
+        "packShare.tooLarge",
+        "Das Modpack ist größer als 1 GB – wähle weniger Ordner aus (z. B. ohne Resource Packs)."
+    ))
+}
+
+/// Sitzung abgelaufen oder weg – der Aufrufer legt einmal eine neue an.
+pub(crate) fn upload_gone(err: &Error) -> bool {
+    matches!(err.code(), Some("upload_expired" | "upload_not_found" | "not_found"))
+}
+
+/// `expiresAt` liegt in der Vergangenheit oder ist kein Datum.
+pub(crate) fn upload_expired(expires_at: &str) -> bool {
+    match chrono::DateTime::parse_from_rfc3339(expires_at) {
+        Ok(t) => t <= chrono::Utc::now(),
+        Err(_) => true,
+    }
+}
+
+/// Vorübergehend (noch einmal versuchen) oder endgültig (400, Abbruch).
+pub(crate) fn chunk_retryable(err: &Error) -> bool {
+    match err {
+        Error::Cancelled | Error::Validation(_) => false,
+        Error::TrsApi { kind, code, .. } => {
+            if matches!(code.as_str(), "chunk_hash" | "payload_too_large" | "invalid_pack" | "upload_expired" | "upload_not_found") {
+                return false;
+            }
+            matches!(*kind, "trs_offline" | "trs_rate_limited")
+        }
+        Error::Http(_) => true,
+        _ => false,
     }
 }
 

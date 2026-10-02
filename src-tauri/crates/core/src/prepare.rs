@@ -136,7 +136,7 @@ pub async fn prepare(
         .and_then(|d| d.client.as_ref())
         .ok_or_else(|| Error::launch(crate::msg!("prepare.noClientDownload", "Diese Version enthält keinen Client-Download.")))?;
     let client_task =
-        Task { url: client.url.clone(), path: client_jar.clone(), sha1: client.sha1.clone(), size: client.size };
+        Task { url: client.url.clone(), path: client_jar.clone(), sha1: client.sha1.clone(), size: client.size, sha512: None, strict_size: false, pack: false };
 
     // Forge/NeoForge: Der Installer patcht das Vanilla-Jar mit dem Java der
     // Spielversion – beides muss deshalb vorher da sein. Erst danach steht
@@ -187,6 +187,9 @@ pub async fn prepare(
             path: library_path(paths, l),
             sha1: l.sha1.clone(),
             size: l.size,
+            sha512: None,
+            strict_size: false,
+            pack: false,
         })
         .collect();
     tasks.push(client_task);
@@ -199,6 +202,9 @@ pub async fn prepare(
                 path: path.clone(),
                 sha1: Some(cfg.file.sha1.clone()),
                 size: Some(cfg.file.size),
+                sha512: None,
+                strict_size: false,
+                pack: false,
             });
             Some(path)
         }
@@ -315,6 +321,9 @@ async fn install_assets(
         path: index_file.clone(),
         sha1: Some(index_ref.sha1.clone()),
         size: Some(index_ref.size),
+        sha512: None,
+        strict_size: false,
+        pack: false,
     };
     if !download::is_valid(&index_task, true).await {
         // Offline mit vorhandenem (evtl. älterem) Index weiterstarten.
@@ -343,6 +352,9 @@ async fn install_assets(
             path: paths.asset_object(&o.hash),
             sha1: Some(o.hash.clone()),
             size: Some(o.size),
+            sha512: None,
+            strict_size: false,
+            pack: false,
         })
         .collect();
     download::fetch_all_with(http, tasks, concurrency, verify, &|p| {

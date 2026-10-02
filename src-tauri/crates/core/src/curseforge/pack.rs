@@ -540,6 +540,9 @@ pub(crate) fn plan_downloads(entries: &[PackEntry], game_dir: &Path) -> Result<(
                 path: game_dir.join(e.kind.dir_name()).join(&e.file.file_name),
                 sha1: e.file.sha1(),
                 size: Some(e.file.file_length).filter(|s| *s > 0),
+                sha512: None,
+                strict_size: false,
+                pack: false,
             }),
             Some(_) => {
                 return Err(Error::validation(crate::msg!(
@@ -620,7 +623,7 @@ impl Launcher {
             return Err(Error::download(&url, "Download liegt nicht auf CurseForges CDN"));
         }
         let path = crate::modpack::pack_cache_dir(self.paths()).join(format!("cf-{}-{}.zip", m.id, file.id));
-        let task = Task { url, path, sha1: file.sha1(), size: Some(file.file_length).filter(|s| *s > 0) };
+        let task = Task { url, path, sha1: file.sha1(), size: Some(file.file_length).filter(|s| *s > 0), sha512: None, strict_size: false, pack: false };
         Ok((m, file, task))
     }
 

@@ -499,7 +499,7 @@ async fn fetch_store(
         }
         _ => return Err(Error::Internal("keine Store-Mod".into())),
     };
-    let task = download::Task { url, path: tmp.clone(), sha1: Some(m.sha1.clone()), size: Some(m.size) };
+    let task = download::Task { url, path: tmp.clone(), sha1: Some(m.sha1.clone()), size: Some(m.size), sha512: None, strict_size: false, pack: false };
     let result = async {
         download::fetch_one(task_client, &task).await?;
         let len = tokio::fs::metadata(&tmp).await.map_err(|e| Error::io(&tmp, e))?.len();

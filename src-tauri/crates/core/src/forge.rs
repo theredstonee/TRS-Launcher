@@ -814,7 +814,7 @@ async fn download_installer(
     if sha1.is_none() {
         tracing::warn!("Keine Prüfsumme für den Installer verfügbar");
     }
-    let task = Task { url, path: path.clone(), sha1, size: None };
+    let task = Task { url, path: path.clone(), sha1, size: None, sha512: None, strict_size: false, pack: false };
     download::fetch_all(ctx.http, vec![task], 1, &|p: Progress| {
         report(p.percent() / 100.0 * PERCENT_INSTALLER, p.done_files, p.total_files);
     })
@@ -877,7 +877,7 @@ async fn install_modern(
                 }
                 tracked.push(resolved.path);
             } else {
-                tasks.push(Task { url: resolved.url, path, sha1: resolved.sha1, size: resolved.size });
+                tasks.push(Task { url: resolved.url, path, sha1: resolved.sha1, size: resolved.size, sha512: None, strict_size: false, pack: false });
             }
         }
     }
@@ -1187,7 +1187,7 @@ async fn fetch_legacy_library(
 ) -> Result<()> {
     let mut last_err = None;
     for url in &lib.urls {
-        let task = Task { url: url.clone(), path: lib.path.clone(), sha1: None, size: None };
+        let task = Task { url: url.clone(), path: lib.path.clone(), sha1: None, size: None, sha512: None, strict_size: false, pack: false };
         match download::fetch_one(http, &task).await {
             Ok(()) => {
                 if checksum_allowed(&lib.path, &lib.checksums).await {

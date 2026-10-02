@@ -9,19 +9,25 @@
 //!   unveränderte alte Dateien, die nicht mehr im Pack sind, werden gelöscht.
 
 use std::collections::{BTreeMap, HashSet};
-use std::io::Read;
+use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
 
+use futures::StreamExt;
 use serde::{Deserialize, Serialize};
+use tokio::io::AsyncWriteExt;
 use sha1::Digest as _;
 
 use crate::download::{self, Task};
 use crate::history::{HistoryEntry, HistoryKind};
 use crate::instance::{Instance, validate_id};
 use crate::modpack::{PackPhase, PackPreview, PackProgress, PackProgressFn, safe_relative};
-use crate::modpack_export::{ExportOptions, ExportPhase, ExportProgress, ExportProgressFn};
+use crate::modpack_export::{ExportOptions, ExportProgressFn};
 use crate::paths::Paths;
-use crate::trs_api::packs::{MAX_PACK_BYTES, OwnPack, SharedPack, normalize_code, pack_id};
+use crate::trs_api::packs::{
+    chunk_retryable, normalize_code, pack_id, upload_expired, upload_gone, DOWNLOAD_TIMEOUT, MAX_PACK_BYTES, OwnPack, SharedPack,
+    UploadTicket,
+};
 use crate::{Error, Launcher, Result, fsutil, history};
 
 /// Merkzettel im Instanz-Ordner (nicht im Spielordner – das Spiel sieht ihn nicht).
@@ -68,7 +74,7 @@ pub struct PackLinkView {
     pub include: Vec<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SharePackOptions {
     pub name: String,
@@ -89,13 +95,33 @@ fn default_duration() -> String {
     "7d".into()
 }
 
-/// Ergebnis von „Teilen“: geteilt – oder erst bestätigen, dass eigene Mod-Dateien mitgehen.
+/// Ergebnis von „Vorbereiten“: das Pack liegt bereit – oder eigene Mod-Dateien müssen erst bestätigt werden.
+/// Hochgeladen wird danach mit [`Launcher::upload_shared_pack`] (der `token` zeigt auf die vorbereitete Datei).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(tag = "status", rename_all = "camelCase")]
 pub enum SharePackOutcome {
-    Shared { pack: Box<OwnPack> },
+    Ready { token: String, downloads: u32, uploaded: u32, bytes: u64 },
     #[serde(rename_all = "camelCase")]
-    ConfirmOwnJars { files: Vec<String> },
+    ConfirmOwnJars { files: Vec<String>, token: String, downloads: u32, uploaded: u32, bytes: u64 },
+}
+
+/// Merkzettel neben der vorbereiteten `.mrpack`, damit ein abgebrochener Upload weitergeht.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ShareDraft {
+    instance_id: String,
+    update: bool,
+    #[serde(default)]
+    pack_id: Option<String>,
+    options: SharePackOptions,
+    downloads: u32,
+    uploaded: u32,
+    bytes: u64,
+    sha256: String,
+    #[serde(default)]
+    upload_id: Option<String>,
+    #[serde(default)]
+    upload_expires: Option<String>,
 }
 
 /// Vorschau vor „Per Code installieren“: was die API sagt + was im Pack steckt (für „mit/ohne TRS Client“).
@@ -364,6 +390,97 @@ fn sha256_hex(bytes: &[u8]) -> String {
     hex(&sha2::Sha256::digest(bytes))
 }
 
+fn too_large() -> Error {
+    invalid(crate::msg!(
+        "packShare.tooLarge",
+        "Das Modpack ist größer als 1 GB – wähle weniger Ordner aus (z. B. ohne Resource Packs)."
+    ))
+}
+
+/// 32 Hex-Zeichen, nichts anderes – der Token wird Teil eines Dateinamens.
+fn share_token(token: &str) -> Result<&str> {
+    let ok = token.len() == 32 && token.bytes().all(|b| b.is_ascii_hexdigit());
+    if ok { Ok(token) } else { Err(invalid(crate::msg!("packShare.notFound", "Dieses Modpack gibt es nicht (mehr)."))) }
+}
+
+fn share_paths(paths: &Paths, token: &str) -> Result<(PathBuf, PathBuf)> {
+    share_paths_in(&crate::modpack::pack_cache_dir(paths), token)
+}
+
+fn share_paths_in(dir: &Path, token: &str) -> Result<(PathBuf, PathBuf)> {
+    let token = share_token(token)?;
+    Ok((dir.join(format!("share-{token}.mrpack")), dir.join(format!("share-{token}.json"))))
+}
+
+fn sha256_file(path: &Path) -> impl std::future::Future<Output = Result<String>> + Send {
+    let path = path.to_owned();
+    async move {
+        tokio::task::spawn_blocking(move || {
+            let mut file = std::fs::File::open(&path).map_err(|e| Error::io(&path, e))?;
+            let mut hasher = sha2::Sha256::new();
+            let mut buf = vec![0u8; 128 * 1024];
+            loop {
+                let n = std::io::Read::read(&mut file, &mut buf).map_err(|e| Error::io(&path, e))?;
+                if n == 0 {
+                    break;
+                }
+                sha2::Digest::update(&mut hasher, &buf[..n]);
+            }
+            Ok(hex(&sha2::Digest::finalize(hasher)))
+        })
+        .await
+        .map_err(|e| Error::Internal(e.to_string()))?
+    }
+}
+
+fn hash_prefix(path: &Path, len: u64) -> impl std::future::Future<Output = Result<sha2::Sha256>> + Send {
+    let path = path.to_owned();
+    async move {
+        tokio::task::spawn_blocking(move || {
+            let mut file = std::fs::File::open(&path).map_err(|e| Error::io(&path, e))?;
+            let mut hasher = sha2::Sha256::new();
+            let mut left = len;
+            let mut buf = vec![0u8; 128 * 1024];
+            while left > 0 {
+                let want = usize::try_from(left.min(buf.len() as u64)).unwrap_or(buf.len());
+                let n = std::io::Read::read(&mut file, &mut buf[..want]).map_err(|e| Error::io(&path, e))?;
+                if n == 0 {
+                    return Err(Error::io(&path, std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "kurz")));
+                }
+                sha2::Digest::update(&mut hasher, &buf[..n]);
+                left -= n as u64;
+            }
+            Ok(hasher)
+        })
+        .await
+        .map_err(|e| Error::Internal(e.to_string()))?
+    }
+}
+
+fn read_at(path: &Path, offset: u64, len: usize) -> Result<Vec<u8>> {
+    let mut file = std::fs::File::open(path).map_err(|e| Error::io(path, e))?;
+    file.seek(SeekFrom::Start(offset)).map_err(|e| Error::io(path, e))?;
+    let mut buf = vec![0u8; len];
+    file.read_exact(&mut buf).map_err(|e| Error::io(path, e))?;
+    Ok(buf)
+}
+
+async fn cached_pack(path: &Path, size: u64, sha256: &str) -> Result<bool> {
+    let Ok(meta) = tokio::fs::metadata(path).await else { return Ok(false) };
+    if !meta.is_file() || meta.len() != size {
+        return Ok(false);
+    }
+    Ok(sha256_file(path).await?.eq_ignore_ascii_case(sha256))
+}
+
+/// `bytes 12-34/100` → 12. Alles andere ist kein gültiger Anfang.
+fn content_range_start(header: Option<&str>) -> Option<u64> {
+    let rest = header?.strip_prefix("bytes ")?;
+    let (range, _) = rest.split_once('/')?;
+    let (start, _) = range.split_once('-')?;
+    start.parse().ok()
+}
+
 impl Launcher {
     fn ensure_idle(&self, instance_id: &str) -> Result<()> {
         if self.games().is_running(instance_id) || self.is_preparing(instance_id) {
@@ -396,7 +513,8 @@ impl Launcher {
         Ok(())
     }
 
-    /// Instanz packen und teilen (`update` = neue Version des schon geteilten Packs, gleicher Code).
+    /// Instanz packen und zum Hochladen bereitlegen (`update` = neue Version des schon geteilten Packs).
+    /// Die Datei bleibt liegen, bis [`Self::upload_shared_pack`] oder [`Self::discard_share_pack`] sie wegräumt.
     pub async fn share_pack(
         &self,
         instance_id: &str,
@@ -416,7 +534,8 @@ impl Launcher {
         };
         let dir = crate::modpack::pack_cache_dir(self.paths());
         fsutil::ensure_dir(&dir).await?;
-        let dest = dir.join(format!("share-{}.mrpack", uuid::Uuid::new_v4().simple()));
+        let token = uuid::Uuid::new_v4().simple().to_string();
+        let (dest, draft_path) = share_paths_in(&dir, &token)?;
         let export = ExportOptions {
             name: options.name.clone(),
             version: options.version.clone(),
@@ -424,7 +543,12 @@ impl Launcher {
             include: options.include.clone(),
         };
         let result = async {
-            self.export_modpack(&instance.id, &export, &dest, on_progress).await?;
+            let summary = self.export_modpack(&instance.id, &export, &dest, on_progress).await?;
+            let bytes = tokio::fs::metadata(&dest).await.map_err(|e| Error::io(&dest, e))?.len();
+            if bytes > MAX_PACK_BYTES {
+                return Err(too_large());
+            }
+            let sha256 = sha256_file(&dest).await?;
             let path = dest.clone();
             let own = tokio::task::spawn_blocking(move || {
                 crate::modpack::override_mod_names(&path, &["overrides/", "client-overrides/"])
@@ -434,37 +558,179 @@ impl Launcher {
             })
             .await
             .map_err(|e| Error::Internal(e.to_string()))?;
+            let draft = ShareDraft {
+                instance_id: instance.id.clone(),
+                update: target.is_some(),
+                pack_id: target.clone(),
+                options: options.clone(),
+                downloads: u32::try_from(summary.downloads).unwrap_or(u32::MAX),
+                uploaded: u32::try_from(summary.overrides).unwrap_or(u32::MAX),
+                bytes,
+                sha256,
+                upload_id: None,
+                upload_expires: None,
+            };
+            fsutil::write_json(&draft_path, &draft).await?;
+            let plan = (token.clone(), draft.downloads, draft.uploaded, bytes);
             if !own.is_empty() && !options.allow_own_jars {
-                return Ok(SharePackOutcome::ConfirmOwnJars { files: own.into_iter().take(200).collect() });
+                return Ok(SharePackOutcome::ConfirmOwnJars {
+                    files: own.into_iter().take(200).collect(),
+                    token: plan.0,
+                    downloads: plan.1,
+                    uploaded: plan.2,
+                    bytes: plan.3,
+                });
             }
-            let bytes = tokio::fs::read(&dest).await.map_err(|e| Error::io(&dest, e))?;
-            if bytes.len() > MAX_PACK_BYTES {
-                return Err(invalid(crate::msg!(
-                    "packShare.tooLarge",
-                    "Das Modpack ist größer als 50 MB – wähle weniger Ordner aus (z. B. ohne Resource Packs)."
-                )));
-            }
-            on_progress(ExportProgress { phase: ExportPhase::Uploading, percent: 0.0 });
-            let pack = match &target {
-                Some(id) => self.trs_pack_upload_version(id, bytes).await?,
-                None => self.trs_pack_upload(bytes, &options.duration).await?,
-            };
-            on_progress(ExportProgress { phase: ExportPhase::Uploading, percent: 100.0 });
-            let link = PackLink {
-                role: PackRole::Shared,
-                pack_id: pack.pack.id.clone(),
-                code: pack.pack.code.clone(),
-                revision: pack.pack.revision,
-                name: pack.pack.name.clone(),
-                include: options.include.clone(),
-                files: BTreeMap::new(),
-            };
-            write_link(self.paths(), &instance.id, &link).await?;
-            Ok(SharePackOutcome::Shared { pack: Box::new(pack) })
+            Ok(SharePackOutcome::Ready { token: plan.0, downloads: plan.1, uploaded: plan.2, bytes: plan.3 })
         }
         .await;
-        let _ = tokio::fs::remove_file(&dest).await;
+        if result.is_err() {
+            let _ = tokio::fs::remove_file(&dest).await;
+            let _ = tokio::fs::remove_file(&draft_path).await;
+        }
         result
+    }
+
+    /// Vorbereitetes Pack in Chunks hochladen (fortsetzbar) und teilen.
+    pub async fn upload_shared_pack(&self, token: &str) -> Result<OwnPack> {
+        let (pack_path, draft_path) = share_paths(self.paths(), token)?;
+        let mut draft: ShareDraft = fsutil::read_json(&draft_path)
+            .await?
+            .ok_or_else(|| invalid(crate::msg!("packShare.notFound", "Dieses Modpack gibt es nicht (mehr).")))?;
+        validate_id(&draft.instance_id)?;
+        let len = tokio::fs::metadata(&pack_path).await.map_err(|e| Error::io(&pack_path, e))?.len();
+        if len != draft.bytes || len > MAX_PACK_BYTES || sha256_file(&pack_path).await? != draft.sha256.to_ascii_lowercase() {
+            return Err(too_large());
+        }
+        crate::task::add_total(draft.bytes);
+        let mut restarted = false;
+        let upload_token = loop {
+            let (session, received) = match self.share_session(&mut draft, &draft_path).await {
+                Ok(session) => session,
+                Err(e) if upload_gone(&e) && !restarted => {
+                    restarted = true;
+                    draft.upload_id = None;
+                    draft.upload_expires = None;
+                    fsutil::write_json(&draft_path, &draft).await?;
+                    continue;
+                }
+                Err(e) => return Err(e),
+            };
+            match self.send_share_chunks(&draft, &pack_path, &session, &received).await {
+                Ok(()) => match self.trs_pack_upload_complete(&session.upload_id).await {
+                    Ok(token) => break token,
+                    Err(e) if upload_gone(&e) && !restarted => {
+                        restarted = true;
+                        draft.upload_id = None;
+                        draft.upload_expires = None;
+                        fsutil::write_json(&draft_path, &draft).await?;
+                        continue;
+                    }
+                    Err(e) => return Err(e),
+                },
+                Err(e) if upload_gone(&e) && !restarted => {
+                    restarted = true;
+                    draft.upload_id = None;
+                    draft.upload_expires = None;
+                    fsutil::write_json(&draft_path, &draft).await?;
+                    continue;
+                }
+                Err(e) => return Err(e),
+            }
+        };
+        let update_id = draft.update.then(|| draft.pack_id.clone()).flatten();
+        let pack = self.trs_pack_finish_token(&upload_token, update_id.as_deref(), &draft.options.duration).await?;
+        let link = PackLink {
+            role: PackRole::Shared,
+            pack_id: pack.pack.id.clone(),
+            code: pack.pack.code.clone(),
+            revision: pack.pack.revision,
+            name: pack.pack.name.clone(),
+            include: draft.options.include.clone(),
+            files: BTreeMap::new(),
+        };
+        write_link(self.paths(), &draft.instance_id, &link).await?;
+        let _ = tokio::fs::remove_file(&pack_path).await;
+        let _ = tokio::fs::remove_file(&draft_path).await;
+        Ok(pack)
+    }
+
+    /// Vorbereitetes Pack verwerfen (Dialog zu, ohne Upload).
+    pub async fn discard_share_pack(&self, token: &str) -> Result<()> {
+        let (pack_path, draft_path) = share_paths(self.paths(), token)?;
+        let _ = tokio::fs::remove_file(&pack_path).await;
+        let _ = tokio::fs::remove_file(&draft_path).await;
+        Ok(())
+    }
+
+    /// Laufende Sitzung weiterverwenden oder eine neue anlegen und im Merkzettel merken.
+    /// Die Liste sind die Chunk-Indizes, die der Server schon hat.
+    async fn share_session(&self, draft: &mut ShareDraft, draft_path: &Path) -> Result<(UploadTicket, Vec<u32>)> {
+        if let Some(id) = draft.upload_id.clone()
+            && draft.upload_expires.as_deref().is_some_and(|t| !upload_expired(t))
+        {
+            match self.trs_pack_upload_status(&id).await {
+                Ok(progress) if progress.size == draft.bytes => {
+                    return Ok((
+                        UploadTicket {
+                            upload_id: id,
+                            chunk_size: progress.chunk_size,
+                            expires_at: draft.upload_expires.clone().unwrap_or_default(),
+                        },
+                        progress.received,
+                    ));
+                }
+                Ok(_) => {}
+                Err(e) if upload_gone(&e) => {}
+                Err(e) => return Err(e),
+            }
+        }
+        let ticket = self.trs_pack_upload_begin(draft.bytes, &draft.sha256, Some(&draft.options.name)).await?;
+        if upload_expired(&ticket.expires_at) {
+            return Err(invalid(crate::msg!("packShare.notFound", "Dieses Modpack gibt es nicht (mehr).")));
+        }
+        draft.upload_id = Some(ticket.upload_id.clone());
+        draft.upload_expires = Some(ticket.expires_at.clone());
+        fsutil::write_json(draft_path, draft).await?;
+        Ok((ticket, Vec::new()))
+    }
+
+    /// Fehlende Chunks schicken. Schon empfangene werden übersprungen (Fortsetzen). Pause zwischen den Chunks.
+    async fn send_share_chunks(&self, draft: &ShareDraft, pack_path: &Path, session: &UploadTicket, received: &[u32]) -> Result<()> {
+        let UploadTicket { upload_id, chunk_size, .. } = session;
+        if *chunk_size == 0 || draft.bytes.div_ceil(*chunk_size) > 4096 {
+            return Err(crate::trs_api::bad_response());
+        }
+        let have: HashSet<u32> = received.iter().copied().collect();
+        let count = u32::try_from(draft.bytes.div_ceil(*chunk_size)).unwrap_or(u32::MAX);
+        for index in 0..count {
+            crate::task::checkpoint().await?;
+            let start = u64::from(index) * *chunk_size;
+            let len = usize::try_from((draft.bytes - start).min(*chunk_size)).unwrap_or(usize::MAX);
+            if have.contains(&index) {
+                crate::task::add_done(len as i64);
+                continue;
+            }
+            let path = pack_path.to_owned();
+            let bytes = tokio::task::spawn_blocking(move || read_at(&path, start, len))
+                .await
+                .map_err(|e| Error::Internal(e.to_string()))??;
+            let hash = sha256_hex(&bytes);
+            let mut attempt = 0u32;
+            loop {
+                attempt += 1;
+                match self.trs_pack_upload_chunk(upload_id, index, bytes.clone(), &hash).await {
+                    Ok(()) => break,
+                    Err(e) if attempt < 3 && chunk_retryable(&e) => {
+                        let wait = if attempt == 1 { Duration::from_millis(500) } else { Duration::from_secs(2) };
+                        crate::task::sleep(wait).await?;
+                    }
+                    Err(e) => return Err(e),
+                }
+            }
+            crate::task::add_done(len as i64);
+        }
+        Ok(())
     }
 
     /// Eigenes Pack löschen; Instanzen, die es geteilt haben, verlieren die Verknüpfung.
@@ -478,37 +744,107 @@ impl Launcher {
         Ok(())
     }
 
-    /// Pack herunterladen und gegen die Prüfsumme der API prüfen. Liegt es schon im Zwischenspeicher, wird es
-    /// nicht neu geladen. Rückgabe: Datei + aktueller Stand.
-    async fn fetch_pack(&self, code: &str) -> Result<(PathBuf, SharedPack)> {
+    /// Pack herunterladen (mit `Range`, fortsetzbar) und gegen Größe und SHA-256 der API prüfen.
+    /// Liegt es schon im Zwischenspeicher, wird es nicht neu geladen.
+    async fn fetch_pack(&self, code: &str, on_progress: &(dyn Fn(u64, u64) + Sync)) -> Result<(PathBuf, SharedPack)> {
         let mut pack = self.trs_pack_by_code(code).await?;
         let dir = crate::modpack::pack_cache_dir(self.paths());
         fsutil::ensure_dir(&dir).await?;
         for attempt in 0..2 {
+            if pack.bytes > MAX_PACK_BYTES || pack.sha256.len() != 64 {
+                return Err(invalid(crate::msg!("packShare.invalidPack", "Der Server hat das Modpack abgelehnt – es ist kein gültiges Modrinth-Pack.")));
+            }
             let path = dir.join(format!("trs-{}.mrpack", pack.sha256));
-            if let Ok(bytes) = tokio::fs::read(&path).await
-                && sha256_hex(&bytes) == pack.sha256
-            {
+            if cached_pack(&path, pack.bytes, &pack.sha256).await? {
+                crate::task::add_total(pack.bytes);
+                crate::task::add_done(pack.bytes as i64);
+                on_progress(pack.bytes, pack.bytes);
                 return Ok((path, pack));
             }
-            let bytes = self.trs_pack_download(&pack.code).await?;
-            if sha256_hex(&bytes) == pack.sha256 {
-                let tmp = dir.join(format!("trs-{}.part", uuid::Uuid::new_v4().simple()));
-                tokio::fs::write(&tmp, &bytes).await.map_err(|e| Error::io(&tmp, e))?;
-                tokio::fs::rename(&tmp, &path).await.map_err(|e| Error::io(&path, e))?;
-                return Ok((path, pack));
-            }
-            // Während des Ladens kam eine neue Version – einmal neu fragen.
-            if attempt == 0 {
-                pack = self.trs_pack_by_code(&pack.code).await?;
+            let _ = tokio::fs::remove_file(&path).await;
+            match self.stream_pack(&pack, &path, on_progress).await {
+                Ok(()) => return Ok((path, pack)),
+                Err(e) if attempt == 0 => {
+                    tracing::warn!("Pack-Download, neuer Versuch: {e}");
+                    pack = self.trs_pack_by_code(&pack.code).await?;
+                }
+                Err(e) => return Err(e),
             }
         }
         Err(invalid(crate::msg!("packShare.changed", "Das Modpack hat sich gerade geändert – bitte noch einmal versuchen.")))
     }
 
+    /// Schreibt die Pack-Datei nach `dest`. Eine halbfertige Datei (`*.part`) wird per `Range` fortgesetzt.
+    async fn stream_pack(&self, pack: &SharedPack, dest: &Path, on_progress: &(dyn Fn(u64, u64) + Sync)) -> Result<()> {
+        let part = dest.with_extension("part");
+        let mut have = tokio::fs::metadata(&part).await.map(|m| m.len()).unwrap_or(0);
+        if have > pack.bytes {
+            let _ = tokio::fs::remove_file(&part).await;
+            have = 0;
+        }
+        crate::task::add_total(pack.bytes);
+        let mut hasher = if have > 0 { hash_prefix(&part, have).await? } else { sha2::Sha256::new() };
+        if have > 0 {
+            crate::task::add_done(have as i64);
+            on_progress(have, pack.bytes);
+        }
+        if have < pack.bytes {
+            let response = self.trs_pack_open_file(&pack.code, (have > 0).then_some(have)).await?;
+            let status = response.status();
+            if status.as_u16() == 200 && have > 0 {
+                crate::task::add_done(-(have as i64));
+                have = 0;
+                hasher = sha2::Sha256::new();
+                let _ = tokio::fs::remove_file(&part).await;
+            } else if status.as_u16() == 206 {
+                let start = content_range_start(response.headers().get(reqwest::header::CONTENT_RANGE).and_then(|v| v.to_str().ok()));
+                if start != Some(have) {
+                    let _ = tokio::fs::remove_file(&part).await;
+                    return Err(Error::download(&pack.code, "unerwartete Dateigröße"));
+                }
+            } else if !status.is_success() {
+                return Err(Error::download(&pack.code, format!("HTTP {}", status.as_u16())));
+            }
+            let mut file = tokio::fs::OpenOptions::new().create(true).append(have > 0).write(true).open(&part).await.map_err(|e| Error::io(&part, e))?;
+            if have == 0 {
+                file.set_len(0).await.map_err(|e| Error::io(&part, e))?;
+            }
+            let deadline = Instant::now() + DOWNLOAD_TIMEOUT;
+            let mut stream = response.bytes_stream();
+            loop {
+                if Instant::now() >= deadline {
+                    return Err(Error::download(&pack.code, "Zeitüberschreitung"));
+                }
+                crate::task::checkpoint().await?;
+                let next = tokio::time::timeout(Duration::from_secs(45), stream.next()).await.map_err(|_| Error::download(&pack.code, "Zeitüberschreitung"))?;
+                let Some(chunk) = next else { break };
+                let chunk = chunk.map_err(|e| Error::download(&pack.code, e.without_url().to_string()))?;
+                let next_len = have.saturating_add(chunk.len() as u64);
+                if next_len > pack.bytes {
+                    let _ = tokio::fs::remove_file(&part).await;
+                    return Err(Error::download(&pack.code, "unerwartete Dateigröße"));
+                }
+                sha2::Digest::update(&mut hasher, &chunk);
+                file.write_all(&chunk).await.map_err(|e| Error::io(&part, e))?;
+                have = next_len;
+                crate::task::add_done(chunk.len() as i64);
+                on_progress(have, pack.bytes);
+            }
+            file.flush().await.map_err(|e| Error::io(&part, e))?;
+        }
+        let got = hex(&sha2::Digest::finalize(hasher));
+        if have != pack.bytes || !got.eq_ignore_ascii_case(&pack.sha256) {
+            let _ = tokio::fs::remove_file(&part).await;
+            let reason = if have != pack.bytes { "unerwartete Dateigröße" } else { "Prüfsumme stimmt nicht" };
+            return Err(Error::download(&pack.code, reason));
+        }
+        tokio::fs::rename(&part, dest).await.map_err(|e| Error::io(dest, e))?;
+        Ok(())
+    }
+
     /// Vorschau zu einem Code: Pack laden (bleibt für die Installation liegen) und prüfen, was drinsteckt.
     pub async fn preview_pack_code(&self, code: &str) -> Result<PackCodePreview> {
-        let (path, pack) = self.fetch_pack(code).await?;
+        let (path, pack) = self.fetch_pack(code, &|_, _| {}).await?;
         let mut preview = self.preview_pack_file(&path).await?;
         preview.name.clone_from(&pack.name);
         Ok(PackCodePreview { pack, preview })
@@ -517,9 +853,12 @@ impl Launcher {
     /// Pack per Code als neue Instanz installieren und für Updates merken.
     pub async fn install_pack_code(&self, code: &str, trs_client: Option<bool>, on_progress: &PackProgressFn) -> Result<Instance> {
         on_progress(PackProgress::new(PackPhase::Pack, 0.0));
-        let (path, pack) = self.fetch_pack(code).await?;
-        on_progress(PackProgress::new(PackPhase::Pack, 100.0));
-        let instance = self.install_local_pack(&path, trs_client, on_progress).await?;
+        let (path, pack) = self.fetch_pack(code, &|done, total| {
+            let percent = if total == 0 { 100.0 } else { (done as f64 / total as f64 * 100.0).min(100.0) };
+            on_progress(PackProgress::new(PackPhase::Pack, percent));
+        })
+        .await?;
+        let instance = self.install_local_pack(&path, trs_client, true, on_progress).await?;
         let p = path.clone();
         let files = tokio::task::spawn_blocking(move || pack_files(&p))
             .await
@@ -578,7 +917,11 @@ impl Launcher {
         self.ensure_idle(&instance.id)?;
         let link = read_link(self.paths(), &instance.id).await.filter(|l| l.role == PackRole::Installed).ok_or_else(not_linked)?;
         on_progress(PackProgress::new(PackPhase::Pack, 0.0));
-        let (path, pack) = self.fetch_pack(&link.code).await?;
+        let (path, pack) = self.fetch_pack(&link.code, &|done, total| {
+            let percent = if total == 0 { 100.0 } else { (done as f64 / total as f64 * 100.0).min(100.0) };
+            on_progress(PackProgress::new(PackPhase::Pack, percent));
+        })
+        .await?;
         if pack.id != link.pack_id {
             return Err(not_linked());
         }
@@ -605,7 +948,7 @@ impl Launcher {
 
         // Downloads (Modrinth, per SHA-1 geprüft).
         let wanted: HashSet<&str> = plan.download.iter().map(String::as_str).collect();
-        let tasks: Vec<Task> = crate::modpack::download_tasks(&index, &game_dir)?
+        let tasks: Vec<Task> = crate::modpack::download_tasks(&index, &game_dir, true)?
             .into_iter()
             .filter(|t| t.path.strip_prefix(&game_dir).ok().is_some_and(|rel| wanted.contains(rel.to_string_lossy().replace('\\', "/").as_str())))
             .collect();
@@ -674,8 +1017,12 @@ fn view(instance_id: &str, link: PackLink) -> PackLinkView {
 #[cfg(test)]
 mod tests {
     use std::io::Write;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Arc;
 
     use super::*;
+    use crate::trs_api::testkit::{MockServer, Response};
+    use crate::trs_api::tests::signed_in;
 
     fn map(items: &[(&str, &str)]) -> BTreeMap<String, String> {
         items.iter().map(|(k, v)| ((*k).to_owned(), (*v).to_owned())).collect()
@@ -783,5 +1130,412 @@ mod tests {
         std::fs::write(link_path(&paths, "inst"), text.to_string().replace("Qm9vLWJhei1xdXV4LTEyMw", "../x")).unwrap();
         assert!(read_link(&paths, "inst").await.is_none());
         assert!(read_link(&paths, "../inst").await.is_none());
+    }
+
+    #[test]
+    fn content_range_start_reads_the_first_byte() {
+        assert_eq!(content_range_start(Some("bytes 12-34/100")), Some(12));
+        assert_eq!(content_range_start(Some("bytes 0-0/1")), Some(0));
+        assert_eq!(content_range_start(Some("bytes */100")), None);
+        assert_eq!(content_range_start(Some("12-34/100")), None);
+        assert_eq!(content_range_start(None), None);
+    }
+
+    const SHARE_TOKEN: &str = "0123456789abcdef0123456789abcdef";
+    const PACK_CODE: &str = "TRS-7K2M-Q9XA";
+    const CHUNK: u64 = 8;
+
+    fn sha256_of(bytes: &[u8]) -> String {
+        let mut hasher = sha2::Sha256::new();
+        sha2::Digest::update(&mut hasher, bytes);
+        hex(&sha2::Digest::finalize(hasher))
+    }
+
+    fn sample_bytes() -> Vec<u8> {
+        b"abcdefghijklmnopqrstuvwx".to_vec()
+    }
+
+    /// Legt `.mrpack` + Merkzettel so ab, wie `share_pack` sie hinterlässt.
+    fn plant_share(paths: &Paths, bytes: &[u8], upload_id: Option<&str>, upload_expires: Option<&str>) -> String {
+        let dir = crate::modpack::pack_cache_dir(paths);
+        std::fs::create_dir_all(&dir).unwrap();
+        let (pack, draft) = share_paths_in(&dir, SHARE_TOKEN).unwrap();
+        std::fs::write(&pack, bytes).unwrap();
+        let sha = sha256_of(bytes);
+        let mut value = serde_json::json!({
+            "instanceId": "testpack",
+            "update": false,
+            "options": { "name": "Pack", "version": "1.0.0", "include": ["config"], "duration": "7d" },
+            "downloads": 2,
+            "uploaded": 1,
+            "bytes": bytes.len(),
+            "sha256": sha
+        });
+        if let Some(id) = upload_id {
+            value["uploadId"] = serde_json::json!(id);
+        }
+        if let Some(exp) = upload_expires {
+            value["uploadExpires"] = serde_json::json!(exp);
+        }
+        std::fs::write(&draft, value.to_string()).unwrap();
+        sha
+    }
+
+    fn own_pack_json() -> serde_json::Value {
+        serde_json::json!({
+            "pack": {
+                "id": "Qm9vLWJhei1xdXV4LTEyMw", "code": PACK_CODE, "name": "Pack", "packVersion": "1.0.0",
+                "revision": 1, "mcVersion": "1.21.1", "loader": { "kind": "fabric", "version": "0.16.9" },
+                "bytes": 24, "sha256": "ab".repeat(32),
+                "owner": { "uuid": "0123456789abcdef0123456789abcdef", "name": "Alex" },
+                "duration": "7d", "installs": 0, "sentTo": 0
+            }
+        })
+    }
+
+    fn upload_created(id: &str) -> Response {
+        Response::json(201, serde_json::json!({
+            "uploadId": id, "chunkSize": CHUNK, "expiresAt": "2099-01-01T00:00:00Z"
+        }))
+    }
+
+    fn shared_pack_json(sha: &str, bytes: usize) -> serde_json::Value {
+        serde_json::json!({
+            "pack": {
+                "id": "Qm9vLWJhei1xdXV4LTEyMw", "code": PACK_CODE, "name": "Pack", "packVersion": "1.0.0",
+                "revision": 2, "mcVersion": "1.21.1", "loader": { "kind": "fabric" },
+                "bytes": bytes, "sha256": sha,
+                "owner": { "uuid": "0123456789abcdef0123456789abcdef", "name": "Alex" }
+            }
+        })
+    }
+
+    fn file_response(status: u16, body: Vec<u8>, content_range: Option<&str>) -> Response {
+        let mut headers = Vec::new();
+        if let Some(range) = content_range {
+            headers.push(("content-range".into(), range.into()));
+        }
+        Response { status, headers, body }
+    }
+
+    fn chunk_paths(server: &MockServer) -> Vec<String> {
+        server.requests().into_iter().filter(|r| r.method == "PUT").map(|r| r.path).collect()
+    }
+
+    #[tokio::test]
+    async fn chunk_upload_sends_in_order_and_retries_the_same_chunk() {
+        let fails = Arc::new(AtomicUsize::new(0));
+        let seen = Arc::clone(&fails);
+        let server = MockServer::start(move |req| {
+            let path = req.path.split('?').next().unwrap_or("");
+            match (req.method.as_str(), path) {
+                ("POST", "/v1/packs/uploads") => upload_created("upload-01"),
+                ("PUT", p) if p == "/v1/packs/uploads/upload-01/chunks/1" && seen.fetch_add(1, Ordering::SeqCst) == 0 => {
+                    Response::error(500, "database_unavailable")
+                }
+                ("PUT", p) if p.starts_with("/v1/packs/uploads/upload-01/chunks/") => Response::empty(204),
+                ("POST", "/v1/packs/uploads/upload-01/complete") => {
+                    Response::json(200, serde_json::json!({ "uploadToken": "token-abc" }))
+                }
+                ("POST", "/v1/packs") => Response::json(201, own_pack_json()),
+                _ => Response::error(404, "not_found"),
+            }
+        })
+        .await;
+        let (_dir, launcher) = signed_in(&server).await;
+        let bytes = sample_bytes();
+        let sha = plant_share(launcher.paths(), &bytes, None, None);
+
+        let pack = launcher.upload_shared_pack(SHARE_TOKEN).await.unwrap();
+        assert_eq!(pack.pack.code, PACK_CODE);
+
+        let begin = server.hits("POST", "/v1/packs/uploads");
+        assert_eq!(begin.len(), 1);
+        assert_eq!(begin[0].json()["size"], bytes.len());
+        assert_eq!(begin[0].json()["sha256"], sha);
+        assert_eq!(begin[0].json()["name"], "Pack");
+
+        let puts = server.requests().into_iter().filter(|r| r.method == "PUT").collect::<Vec<_>>();
+        let indexes: Vec<_> = puts.iter().map(|r| r.path.rsplit('/').next().unwrap()).collect();
+        assert_eq!(indexes, vec!["0", "1", "1", "2"]);
+        assert_eq!(puts[0].body, bytes[0..8]);
+        assert_eq!(puts[1].body, bytes[8..16]);
+        assert_eq!(puts[2].body, bytes[8..16]);
+        assert_eq!(puts[3].body, bytes[16..24]);
+        for put in &puts {
+            assert_eq!(put.header("x-chunk-sha256"), Some(sha256_of(&put.body).as_str()));
+            assert_eq!(put.header("content-type"), Some("application/octet-stream"));
+        }
+
+        let finish = server.hits("POST", "/v1/packs");
+        assert_eq!(finish.len(), 1);
+        assert_eq!(finish[0].json()["uploadToken"], "token-abc");
+        assert!(finish[0].path.contains("duration=7d"));
+
+        let link = read_link(launcher.paths(), "testpack").await.unwrap();
+        assert_eq!(link.role, PackRole::Shared);
+        assert_eq!(link.include, vec!["config".to_owned()]);
+        let (pack_path, draft_path) = share_paths(launcher.paths(), SHARE_TOKEN).unwrap();
+        assert!(!pack_path.exists());
+        assert!(!draft_path.exists());
+    }
+
+    #[tokio::test]
+    async fn chunk_upload_resumes_the_missing_indexes() {
+        let server = MockServer::start(|req| {
+            let path = req.path.split('?').next().unwrap_or("");
+            match (req.method.as_str(), path) {
+                ("GET", "/v1/packs/uploads/upload-01") => Response::json(
+                    200,
+                    serde_json::json!({ "received": [0, 2], "size": 24, "chunkSize": CHUNK }),
+                ),
+                ("PUT", "/v1/packs/uploads/upload-01/chunks/1") => Response::empty(204),
+                ("POST", "/v1/packs/uploads/upload-01/complete") => {
+                    Response::json(200, serde_json::json!({ "uploadToken": "token-abc" }))
+                }
+                ("POST", "/v1/packs") => Response::json(201, own_pack_json()),
+                _ => Response::error(404, "not_found"),
+            }
+        })
+        .await;
+        let (_dir, launcher) = signed_in(&server).await;
+        let bytes = sample_bytes();
+        plant_share(launcher.paths(), &bytes, Some("upload-01"), Some("2099-01-01T00:00:00Z"));
+
+        launcher.upload_shared_pack(SHARE_TOKEN).await.unwrap();
+        assert!(server.hits("POST", "/v1/packs/uploads").is_empty());
+        let puts = server.requests().into_iter().filter(|r| r.method == "PUT").collect::<Vec<_>>();
+        assert_eq!(puts.len(), 1);
+        assert_eq!(puts[0].path, "/v1/packs/uploads/upload-01/chunks/1");
+        assert_eq!(puts[0].body, bytes[8..16]);
+        assert_eq!(puts[0].header("x-chunk-sha256"), Some(sha256_of(&puts[0].body).as_str()));
+    }
+
+    #[tokio::test]
+    async fn chunk_upload_does_not_retry_a_bad_hash() {
+        let server = MockServer::start(|req| {
+            let path = req.path.split('?').next().unwrap_or("");
+            match (req.method.as_str(), path) {
+                ("POST", "/v1/packs/uploads") => upload_created("upload-01"),
+                ("PUT", _) => Response::error(400, "chunk_hash"),
+                _ => Response::error(404, "not_found"),
+            }
+        })
+        .await;
+        let (_dir, launcher) = signed_in(&server).await;
+        plant_share(launcher.paths(), &sample_bytes(), None, None);
+
+        let err = launcher.upload_shared_pack(SHARE_TOKEN).await.unwrap_err();
+        assert_eq!(err.code(), Some("chunk_hash"));
+        assert_eq!(chunk_paths(&server), vec!["/v1/packs/uploads/upload-01/chunks/0".to_owned()]);
+        let (_, draft_path) = share_paths(launcher.paths(), SHARE_TOKEN).unwrap();
+        let draft: serde_json::Value = serde_json::from_slice(&std::fs::read(draft_path).unwrap()).unwrap();
+        assert_eq!(draft["uploadId"], "upload-01");
+    }
+
+    #[tokio::test]
+    async fn oversized_pack_never_starts_an_upload() {
+        let server = MockServer::start(|_| Response::error(500, "nope")).await;
+        let (_dir, launcher) = signed_in(&server).await;
+        let sha = "ab".repeat(32);
+        let err = launcher.trs_pack_upload_begin(MAX_PACK_BYTES + 1, &sha, None).await.unwrap_err();
+        assert_eq!(err.message_code(), "packShare.tooLarge");
+
+        let dir = crate::modpack::pack_cache_dir(launcher.paths());
+        std::fs::create_dir_all(&dir).unwrap();
+        let (pack, draft) = share_paths_in(&dir, SHARE_TOKEN).unwrap();
+        std::fs::File::create(&pack).unwrap().set_len(MAX_PACK_BYTES + 1).unwrap();
+        std::fs::write(
+            &draft,
+            serde_json::json!({
+                "instanceId": "testpack",
+                "update": false,
+                "options": { "name": "Pack", "version": "1.0.0", "duration": "7d" },
+                "downloads": 0,
+                "uploaded": 0,
+                "bytes": MAX_PACK_BYTES + 1,
+                "sha256": sha
+            })
+            .to_string(),
+        )
+        .unwrap();
+        let err = launcher.upload_shared_pack(SHARE_TOKEN).await.unwrap_err();
+        assert_eq!(err.message_code(), "packShare.tooLarge");
+        assert!(server.requests().is_empty());
+    }
+
+    #[tokio::test]
+    async fn expired_session_starts_one_new_upload() {
+        let server = MockServer::start(|req| {
+            let path = req.path.split('?').next().unwrap_or("");
+            match (req.method.as_str(), path) {
+                ("POST", "/v1/packs/uploads") => upload_created("uploadnew"),
+                ("PUT", p) if p.starts_with("/v1/packs/uploads/uploadnew/chunks/") => Response::empty(204),
+                ("POST", "/v1/packs/uploads/uploadnew/complete") => {
+                    Response::json(200, serde_json::json!({ "uploadToken": "token-abc" }))
+                }
+                ("POST", "/v1/packs") => Response::json(201, own_pack_json()),
+                _ => Response::error(404, "not_found"),
+            }
+        })
+        .await;
+        let (_dir, launcher) = signed_in(&server).await;
+        plant_share(launcher.paths(), &sample_bytes(), Some("oldupload"), Some("2000-01-01T00:00:00Z"));
+
+        launcher.upload_shared_pack(SHARE_TOKEN).await.unwrap();
+        assert_eq!(server.hits("POST", "/v1/packs/uploads").len(), 1);
+        assert!(server.requests().iter().all(|r| !r.path.contains("oldupload")));
+        assert_eq!(chunk_paths(&server).len(), 3);
+    }
+
+    #[tokio::test]
+    async fn expired_complete_restarts_the_session_once() {
+        let begins = Arc::new(AtomicUsize::new(0));
+        let count = Arc::clone(&begins);
+        let server = MockServer::start(move |req| {
+            let path = req.path.split('?').next().unwrap_or("");
+            match (req.method.as_str(), path) {
+                ("POST", "/v1/packs/uploads") => {
+                    let n = count.fetch_add(1, Ordering::SeqCst);
+                    upload_created(if n == 0 { "uploadold" } else { "uploadnew" })
+                }
+                ("PUT", p) if p.contains("/chunks/") => Response::empty(204),
+                ("POST", "/v1/packs/uploads/uploadold/complete") => Response::error(404, "upload_expired"),
+                ("POST", "/v1/packs/uploads/uploadnew/complete") => {
+                    Response::json(200, serde_json::json!({ "uploadToken": "token-abc" }))
+                }
+                ("POST", "/v1/packs") => Response::json(201, own_pack_json()),
+                _ => Response::error(404, "not_found"),
+            }
+        })
+        .await;
+        let (_dir, launcher) = signed_in(&server).await;
+        plant_share(launcher.paths(), &sample_bytes(), None, None);
+
+        launcher.upload_shared_pack(SHARE_TOKEN).await.unwrap();
+        assert_eq!(begins.load(Ordering::SeqCst), 2);
+        let puts = chunk_paths(&server);
+        assert_eq!(puts.len(), 6);
+        assert!(puts[..3].iter().all(|p| p.contains("uploadold")));
+        assert!(puts[3..].iter().all(|p| p.contains("uploadnew")));
+        assert_eq!(server.hits("POST", "/v1/packs/uploads/uploadold/complete").len(), 1);
+        assert_eq!(server.hits("POST", "/v1/packs/uploads/uploadnew/complete").len(), 1);
+    }
+
+    #[tokio::test]
+    async fn pack_download_resumes_with_range() {
+        let body = b"0123456789abcdef".to_vec();
+        let sha = sha256_of(&body);
+        let file_sha = sha.clone();
+        let file_body = body.clone();
+        let server = MockServer::start(move |req| {
+            let path = req.path.split('?').next().unwrap_or("");
+            if req.method == "GET" && path == format!("/v1/packs/code/{PACK_CODE}") {
+                return Response::json(200, shared_pack_json(&file_sha, file_body.len()));
+            }
+            if req.method == "GET" && path == format!("/v1/packs/code/{PACK_CODE}/file") {
+                let rest = file_body[6..].to_vec();
+                return file_response(206, rest, Some("bytes 6-15/16"));
+            }
+            Response::error(404, "not_found")
+        })
+        .await;
+        let (_dir, launcher) = signed_in(&server).await;
+        let dir = crate::modpack::pack_cache_dir(launcher.paths());
+        std::fs::create_dir_all(&dir).unwrap();
+        let part = dir.join(format!("trs-{sha}.mrpack")).with_extension("part");
+        std::fs::write(&part, &b"0123456789abcdef"[..6]).unwrap();
+
+        let (path, pack) = launcher.fetch_pack(PACK_CODE, &|_, _| {}).await.unwrap();
+        assert_eq!(pack.sha256, sha);
+        assert_eq!(std::fs::read(&path).unwrap(), b"0123456789abcdef");
+        assert!(!part.exists());
+        let files = server.hits("GET", &format!("/v1/packs/code/{PACK_CODE}/file"));
+        assert_eq!(files.len(), 1);
+        assert_eq!(files[0].header("range"), Some("bytes=6-"));
+    }
+
+    #[tokio::test]
+    async fn pack_download_rewrites_when_the_server_ignores_range() {
+        let body = b"0123456789abcdef".to_vec();
+        let sha = sha256_of(&body);
+        let file_sha = sha.clone();
+        let len = body.len();
+        let server = MockServer::start(move |req| {
+            let path = req.path.split('?').next().unwrap_or("");
+            if req.method == "GET" && path == format!("/v1/packs/code/{PACK_CODE}") {
+                return Response::json(200, shared_pack_json(&file_sha, len));
+            }
+            if req.method == "GET" && path == format!("/v1/packs/code/{PACK_CODE}/file") {
+                return file_response(200, body.clone(), None);
+            }
+            Response::error(404, "not_found")
+        })
+        .await;
+        let (_dir, launcher) = signed_in(&server).await;
+        let dir = crate::modpack::pack_cache_dir(launcher.paths());
+        std::fs::create_dir_all(&dir).unwrap();
+        let part = dir.join(format!("trs-{sha}.mrpack")).with_extension("part");
+        std::fs::write(&part, b"XXXXXX").unwrap();
+
+        let (path, _) = launcher.fetch_pack(PACK_CODE, &|_, _| {}).await.unwrap();
+        assert_eq!(std::fs::read(&path).unwrap(), b"0123456789abcdef");
+    }
+
+    #[tokio::test]
+    async fn cached_pack_is_not_downloaded_again() {
+        let body = b"0123456789abcdef".to_vec();
+        let sha = sha256_of(&body);
+        let file_sha = sha.clone();
+        let len = body.len();
+        let server = MockServer::start(move |req| {
+            let path = req.path.split('?').next().unwrap_or("");
+            if req.method == "GET" && path == format!("/v1/packs/code/{PACK_CODE}") {
+                return Response::json(200, shared_pack_json(&file_sha, len));
+            }
+            Response::error(500, "nope")
+        })
+        .await;
+        let (_dir, launcher) = signed_in(&server).await;
+        let dir = crate::modpack::pack_cache_dir(launcher.paths());
+        std::fs::create_dir_all(&dir).unwrap();
+        let dest = dir.join(format!("trs-{sha}.mrpack"));
+        std::fs::write(&dest, &body).unwrap();
+
+        let (path, pack) = launcher.fetch_pack(PACK_CODE, &|done, total| {
+            assert_eq!((done, total), (body.len() as u64, body.len() as u64));
+        })
+        .await
+        .unwrap();
+        assert_eq!(path, dest);
+        assert_eq!(pack.bytes, body.len() as u64);
+        assert!(server.hits("GET", &format!("/v1/packs/code/{PACK_CODE}/file")).is_empty());
+    }
+
+    #[tokio::test]
+    async fn pack_download_aborts_when_the_checksum_does_not_match() {
+        let body = b"0123456789abcdef".to_vec();
+        let sha = sha256_of(&body);
+        let file_sha = sha.clone();
+        let len = body.len();
+        let server = MockServer::start(move |req| {
+            let path = req.path.split('?').next().unwrap_or("");
+            if req.method == "GET" && path == format!("/v1/packs/code/{PACK_CODE}") {
+                return Response::json(200, shared_pack_json(&file_sha, len));
+            }
+            if req.method == "GET" && path == format!("/v1/packs/code/{PACK_CODE}/file") {
+                return file_response(200, vec![0; len], None);
+            }
+            Response::error(404, "not_found")
+        })
+        .await;
+        let (_dir, launcher) = signed_in(&server).await;
+        let err = launcher.fetch_pack(PACK_CODE, &|_, _| {}).await.unwrap_err();
+        assert_eq!(err.message_code(), "checksum");
+        let dir = crate::modpack::pack_cache_dir(launcher.paths());
+        let dest = dir.join(format!("trs-{sha}.mrpack"));
+        assert!(!dest.exists());
+        assert!(!dest.with_extension("part").exists());
+        assert_eq!(server.hits("GET", &format!("/v1/packs/code/{PACK_CODE}/file")).len(), 2);
     }
 }
