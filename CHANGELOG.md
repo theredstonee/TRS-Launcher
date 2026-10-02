@@ -41,6 +41,10 @@ How to write an entry:
   dzwdz (MPL-2.0).
 - **Fix: crash on start with some mod packs.** Since the borderless fullscreen update the game could crash while
   loading when another mod brought its own MixinExtras. Fixed.
+- **Sharing modpacks 2.0.** Shared packs are now much smaller: mods from Modrinth and CurseForge are stored as
+  download links (found by their file fingerprint, even when renamed) and only your own files are uploaded. Packs
+  may be up to 1 GB, the upload runs in parts with progress, speed, pause and resume, and the share code installs
+  everything again 1:1 – every download is checked against its fingerprint.
 
 ### Deutsch
 - **Randloses Vollbild im TRS Client.** F11 füllt jetzt den Bildschirm mit einem randlosen Fenster statt
@@ -53,6 +57,11 @@ How to write an entry:
   Chat Heads von dzwdz (MPL-2.0).
 - **Behoben: Absturz beim Start mit manchen Modpacks.** Seit dem randlosen Vollbild konnte das Spiel beim Laden
   abstürzen, wenn eine andere Mod ihr eigenes MixinExtras mitbrachte. Behoben.
+- **Modpacks teilen 2.0.** Geteilte Packs sind jetzt viel kleiner: Mods von Modrinth und CurseForge werden als
+  Download-Link gespeichert (am Datei-Fingerabdruck erkannt, auch wenn sie umbenannt sind), hochgeladen werden nur
+  deine eigenen Dateien. Packs dürfen bis zu 1 GB groß sein, der Upload läuft in Teilen mit Fortschritt, Tempo,
+  Pause und Fortsetzen, und der Teilen-Code installiert alles wieder 1:1 – jeder Download wird anhand seines
+  Fingerabdrucks geprüft.
 
 ## 0.16.0 – 2026-10-02 – Spooky Season | Gruselzeit
 <!-- banner: accent=#ff7a1a motif=/news/0.16.0/banner.png -->
