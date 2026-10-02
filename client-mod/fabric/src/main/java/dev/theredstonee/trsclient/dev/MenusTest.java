@@ -74,7 +74,10 @@ public final class MenusTest {
 		//? if >=1.19.3 {
 		b = net.minecraft.client.gui.components.Button.builder(net.minecraft.network.chat.Component.literal("Set version"), x -> { })
 				.bounds(s.width - 98 - 5, 5, 98, 20).build();
-		//?} elif >=1.16 {
+		//?} elif >=1.19 {
+		/*b = new net.minecraft.client.gui.components.Button(s.width - 98 - 5, 5, 98, 20,
+				net.minecraft.network.chat.Component.literal("Set version"), x -> { });
+		*///?} elif >=1.16 {
 		/*b = new net.minecraft.client.gui.components.Button(s.width - 98 - 5, 5, 98, 20,
 				new net.minecraft.network.chat.TextComponent("Set version"), x -> { });
 		*///?} else

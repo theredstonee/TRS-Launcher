@@ -28,7 +28,13 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.16.0 – 2026-10-02 – Spooky Season | Gruselzeit
+<!-- banner: accent=#ff7a1a motif=/news/0.16.0/banner.png -->
+<!-- shots:
+/news/0.16.0/halloween-cosmetics.webp | Witch hat, pumpkin head and the new bat companion | Hexenhut, Kürbiskopf und der neue Fledermaus-Begleiter
+/news/0.16.0/website-halloween.webp | Halloween look with the night scene and the flying witch | Halloween-Look mit Nachtszene und fliegender Hexe
+/news/0.16.0/hunger-overlay.png | Hunger Overlay: saturation and a preview of the food in your hand | Hunger-Anzeige: Sättigung und Vorschau für das Essen in der Hand
+-->
 
 ### English
 - **Hunger Overlay in the TRS Client.** A new module on the hunger bar: your saturation shows as a golden outline,
