@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import type { ExportEntry, ExportProgress, Instance } from '~/types'
-import { PACK_DURATIONS, type OwnPack, type PackDuration } from '~/utils/packs'
+import { PACK_DURATIONS, type OwnPack, type PackDuration, type SharePackOutcome } from '~/utils/packs'
 
-// Instanz als Modpack teilen (API §27): Name, Version, Ordner (Mod-Liste +
-// Einstellungen), Laufzeit. Danach Code + Link und „an Freunde schicken“.
-// Ist die Instanz schon geteilt, geht standardmäßig eine neue Version hoch –
-// der Code bleibt, wer das Pack installiert hat, bekommt ein Update angeboten.
+// Instanz als Modpack teilen: vorbereiten (.mrpack), eigene JARs bestätigen,
+// Zusammenfassung, dann ein eigener Upload. Vor dem Upload verwirft Schließen die Datei.
 const props = defineProps<{ instance: Instance }>()
 const emit = defineEmits<{ close: [] }>()
 
@@ -14,8 +12,10 @@ const packs = usePacksStore()
 const tasks = useTasksStore()
 const toasts = useToasts()
 const key = computed(() => taskKey('packshare', props.instance.id))
+const uploadKey = computed(() => taskKey('packupload', props.instance.id))
 const task = computed(() => tasks.get(key.value))
 const progress = computed(() => (task.value?.status === 'running' ? { percent: task.value.percent ?? 0, stage: task.value.stage } : null))
+const uploading = computed(() => tasks.get(uploadKey.value)?.status === 'running')
 
 const link = computed(() => {
   const l = packs.linkOf(props.instance.id)
@@ -32,7 +32,24 @@ const duration = ref<PackDuration>('7d')
 const formError = ref<string | null>(null)
 /** Eigene Mod-Dateien (nicht von Modrinth), die erst bestätigt werden müssen. */
 const ownJars = ref<string[] | null>(null)
+const plan = ref<Pick<SharePackOutcome, 'token' | 'downloads' | 'uploaded' | 'bytes'> | null>(null)
 const result = ref<OwnPack | null>(null)
+const preparedName = ref(props.instance.name)
+const preparedUpdate = ref(false)
+// Dialog noch offen? Schließen während der Vorbereitung verwirft den Token, sobald er da ist.
+let alive = true
+let closing = false
+// Zurück und Schließen dürfen denselben Token nicht zweimal verwerfen.
+let claimed: string | null = null
+
+onBeforeUnmount(() => {
+  alive = false
+  // Seite weg, ohne dass der Dialog „Schließen“ gesehen hat: Vorbereitung stoppen, Datei loslassen.
+  if (!uploading.value && tasks.isRunning(key.value)) void tasks.cancel(key.value)
+  if (uploading.value || result.value) return
+  const token = claimToken()
+  if (token) void backend.packs.discardShare(token).catch(() => {})
+})
 
 onMounted(async () => {
   await packs.loadLinks()
@@ -52,12 +69,30 @@ onMounted(async () => {
 })
 
 const totalSize = computed(() => entries.value.filter((e) => selected.value.includes(e.name)).reduce((sum, e) => sum + e.size, 0))
+const planLine = computed(() => {
+  const current = plan.value
+  if (!current) return ''
+  return `${t('packs.share.planLinks', current.downloads)} · ${t('packs.share.planFiles', current.uploaded)} · ${formatBytes(current.bytes)}`
+})
 
 function toggle(entry: ExportEntry) {
   selected.value = selected.value.includes(entry.name) ? selected.value.filter((n) => n !== entry.name) : [...selected.value, entry.name]
 }
 
-async function start(allowOwnJars = false) {
+function remember(outcome: SharePackOutcome) {
+  plan.value = { token: outcome.token, downloads: outcome.downloads, uploaded: outcome.uploaded, bytes: outcome.bytes }
+  ownJars.value = outcome.status === 'confirmOwnJars' ? outcome.files : null
+}
+
+function claimToken(): string | null {
+  const token = plan.value?.token
+  if (!token || claimed === token) return null
+  claimed = token
+  return token
+}
+
+async function start() {
+  if (closing) return
   const parsed = exportOptionsSchema.safeParse({ name: name.value, version: version.value, summary: summary.value.trim() || null, include: selected.value })
   if (!parsed.success) {
     formError.value = firstIssue(parsed.error)
@@ -66,36 +101,105 @@ async function start(allowOwnJars = false) {
   formError.value = null
   ownJars.value = null
   const update = !!link.value && asUpdate.value
-  const options = { ...parsed.data, summary: parsed.data.summary ?? null, duration: duration.value, allowOwnJars }
-  // Rückfrage wegen eigener Mod-Dateien: Aufgabe verwerfen (kein Eintrag im Verlauf), Liste hier merken.
-  let confirm: string[] | null = null
-  const run = await tasks.run(
-    { key: key.value, kind: 'export', title: parsed.data.name, stage: t('packs.share.preparing'), instanceId: props.instance.id },
+  preparedName.value = parsed.data.name
+  preparedUpdate.value = update
+  const options = { ...parsed.data, summary: parsed.data.summary ?? null, duration: duration.value, allowOwnJars: false }
+  await tasks.run(
+    { key: key.value, kind: 'export', title: parsed.data.name, stage: t('packs.share.preparing'), instanceId: props.instance.id, cancellable: true, pausable: false },
     async (ctx) => {
-      const outcome = await backend.packs.share(props.instance.id, options, update, (p: ExportProgress) =>
-        ctx.progress(p.percent, `${t(`exportPack.phase.${p.phase}`)} …`),
-      )
-      if (outcome.status === 'confirmOwnJars') {
-        confirm = outcome.files
+      try {
+        const outcome = await backend.packs.share(
+          props.instance.id,
+          options,
+          update,
+          (p: ExportProgress) => ctx.progress(p.percent, `${t(`exportPack.phase.${p.phase}`)} …`),
+          ctx.taskId,
+        )
+        // Noch kein „geteilt“: der Upload ist eine eigene Aufgabe.
         ctx.discard()
-        return outcome
+        if (!alive) {
+          void backend.packs.discardShare(outcome.token).catch(() => {})
+          return
+        }
+        remember(outcome)
+      } catch (e) {
+        if (!alive) ctx.discard()
+        throw e
       }
-      ctx.update({ doneText: t(update ? 'packs.share.doneUpdate' : 'packs.share.done', { name: outcome.pack.name, code: outcome.pack.code }) })
-      return outcome
     },
   )
-  if (confirm) {
-    ownJars.value = confirm
+}
+
+function confirmJars() {
+  if (plan.value) ownJars.value = null
+}
+
+async function backToForm() {
+  if (closing || uploading.value) return
+  const token = claimToken()
+  if (!token) return
+  try {
+    await backend.packs.discardShare(token)
+  } catch (e) {
+    claimed = null
+    toasts.error(e)
     return
   }
-  if (!run.ok || run.value.status !== 'shared') return
-  result.value = run.value.pack
+  plan.value = null
+  ownJars.value = null
+}
+
+async function upload() {
+  const current = plan.value
+  if (closing || !current || uploading.value) return
+  const update = preparedUpdate.value
+  const run = await tasks.run(
+    {
+      key: uploadKey.value,
+      kind: 'export',
+      title: preparedName.value,
+      stage: t('packs.share.uploading'),
+      instanceId: props.instance.id,
+      pausable: true,
+      cancellable: true,
+    },
+    async (ctx) => {
+      const pack = await backend.packs.uploadShare(current.token, ctx.taskId)
+      ctx.update({ doneText: t(update ? 'packs.share.doneUpdate' : 'packs.share.done', { name: pack.name, code: pack.code }) })
+      return pack
+    },
+  )
+  if (!run.ok) return
+  result.value = run.value
+  plan.value = null
   void packs.loadLinks()
+}
+
+async function close() {
+  if (closing) return
+  closing = true
+  alive = false
+  if (uploading.value || result.value) {
+    emit('close')
+    return
+  }
+  if (tasks.isRunning(key.value)) void tasks.cancel(key.value)
+  const token = claimToken()
+  if (token) {
+    try {
+      await backend.packs.discardShare(token)
+    } catch (e) {
+      toasts.error(e)
+    }
+  }
+  plan.value = null
+  ownJars.value = null
+  emit('close')
 }
 </script>
 
 <template>
-  <BaseDialog :title="result ? t('packs.share.resultTitle') : t('packs.share.title')" wide @close="emit('close')">
+  <BaseDialog :title="result ? t('packs.share.resultTitle') : t('packs.share.title')" wide @close="close">
     <!-- Geteilt: Code, Link, an Freunde -->
     <template v-if="result">
       <p class="mb-3 text-sm text-base-200">{{ t('packs.share.resultIntro', { name: result.name }) }}</p>
@@ -113,6 +217,11 @@ async function start(allowOwnJars = false) {
         <li v-for="f in ownJars" :key="f" class="truncate">{{ f }}</li>
       </ul>
       <p class="mt-3 text-xs leading-relaxed text-base-400">{{ t('packs.share.ownJarsHint') }}</p>
+    </template>
+
+    <template v-else-if="plan">
+      <p class="text-sm text-base-200">{{ planLine }}</p>
+      <TaskTransfer v-if="uploading" class="mt-4" :task-key="uploadKey" />
     </template>
 
     <template v-else>
@@ -176,15 +285,19 @@ async function start(allowOwnJars = false) {
 
     <template #actions>
       <template v-if="result">
-        <button class="btn btn-ghost" @click="packs.mineOpen = true; emit('close')">{{ t('packs.mine.open') }}</button>
-        <button class="btn btn-primary" @click="emit('close')">{{ t('common.actions.close') }}</button>
+        <button class="btn btn-ghost" @click="packs.mineOpen = true; close()">{{ t('packs.mine.open') }}</button>
+        <button class="btn btn-primary" @click="close()">{{ t('common.actions.close') }}</button>
       </template>
       <template v-else-if="ownJars">
-        <button class="btn btn-ghost" @click="ownJars = null">{{ t('common.actions.back') }}</button>
-        <button class="btn btn-primary" @click="start(true)">{{ t('packs.share.ownJarsConfirm') }}</button>
+        <button class="btn btn-ghost" @click="backToForm">{{ t('common.actions.back') }}</button>
+        <button class="btn btn-primary" @click="confirmJars">{{ t('packs.share.ownJarsConfirm') }}</button>
+      </template>
+      <template v-else-if="plan">
+        <button class="btn btn-ghost" :disabled="uploading" @click="backToForm">{{ t('common.actions.back') }}</button>
+        <button class="btn btn-primary" :disabled="uploading" @click="upload">{{ uploading ? t('packs.share.uploading') : t('packs.share.upload') }}</button>
       </template>
       <template v-else>
-        <button class="btn btn-ghost" @click="emit('close')">{{ progress ? t('common.actions.close') : t('common.actions.cancel') }}</button>
+        <button class="btn btn-ghost" @click="close()">{{ progress ? t('common.actions.close') : t('common.actions.cancel') }}</button>
         <button class="btn btn-primary" :disabled="!!progress || loading || !selected.length || !trs.enabled" @click="start()">
           {{ progress ? t('packs.share.sharing') : link && asUpdate ? t('packs.share.actionUpdate') : t('packs.share.action') }}
         </button>

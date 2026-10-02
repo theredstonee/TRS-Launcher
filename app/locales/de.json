@@ -144,6 +144,9 @@
     "network": "Netzwerkfehler – bitte Internetverbindung prüfen.",
     "data": "Daten konnten nicht verarbeitet werden.",
     "download": "Download fehlgeschlagen – bitte Internetverbindung prüfen und erneut versuchen.",
+    "checksum": "Download abgelehnt – die Prüfsumme der Datei stimmt nicht.",
+    "sizeMismatch": "Download abgelehnt – die Dateigröße stimmt nicht.",
+    "redirectHost": "Download wurde abgelehnt, weil er auf einen anderen Server weiterleitet.",
     "internal": "Ein interner Fehler ist aufgetreten.",
     "cancelled": "Vorgang abgebrochen",
     "openFolder": "Ordner konnte nicht geöffnet werden.",
@@ -781,7 +784,7 @@
     },
     "packShare": {
       "notLinked": "Diese Instanz gehört zu keinem geteilten Modpack.",
-      "tooLarge": "Das Modpack ist größer als 50 MB – wähle weniger Ordner aus (z. B. ohne Resource Packs).",
+      "tooLarge": "Das Modpack ist größer als 1 GB – wähle weniger Ordner aus (z. B. ohne Resource Packs).",
       "changed": "Das Modpack hat sich gerade geändert – bitte noch einmal versuchen.",
       "notFound": "Dieses Modpack gibt es nicht (mehr).",
       "invalidCode": "Das ist kein gültiger Modpack-Code (Form: TRS-XXXX-XXXX).",
@@ -5241,13 +5244,17 @@
       "modeUpdateHint": "Der Code bleibt gleich – alle, die es installiert haben, bekommen ein Update.",
       "modeNew": "Als neues Pack teilen (neuer Code)",
       "included": "Kommt mit (Mod-Liste und Einstellungen)",
-      "hint": "Mods, die es auf Modrinth gibt, kommen nur als Liste mit; alles andere wird kopiert ({size}). Welten, Logs und deine TRS-Client-Dateien kommen nie mit. Höchstens 50 MB.",
+      "hint": "Mods, die es auf Modrinth gibt, kommen nur als Liste mit; alles andere wird kopiert ({size}). Welten, Logs und deine TRS-Client-Dateien kommen nie mit. Höchstens 1 GB.",
       "ownJarsIntro": "Diese Datei gibt es nicht auf Modrinth, sie würde ins Pack kopiert: | Diese Dateien gibt es nicht auf Modrinth, sie würden ins Pack kopiert:",
       "ownJarsHint": "Teile nur Mods, die du weitergeben darfst. Wer das Pack installiert, sieht einen Hinweis.",
       "ownJarsConfirm": "Mit diesen Dateien teilen",
       "action": "Teilen",
       "actionUpdate": "Neue Version teilen",
-      "sharing": "Wird geteilt …"
+      "sharing": "Wird geteilt …",
+      "planLinks": "{n} Mod als Link | {n} Mods als Link",
+      "planFiles": "{n} Datei hochgeladen | {n} Dateien hochgeladen",
+      "upload": "Hochladen",
+      "uploading": "Wird hochgeladen …"
     },
     "mine": {
       "open": "Meine Modpacks",

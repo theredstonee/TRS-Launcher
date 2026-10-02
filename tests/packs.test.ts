@@ -44,7 +44,11 @@ describe('shared modpacks (utils)', () => {
     expect(sharedPackSchema.safeParse(pack).success).toBe(true)
     expect(sharedPackSchema.safeParse({ ...pack, url: 'javascript:alert(1)' }).success).toBe(false)
     expect(sharedPackSchema.safeParse({ ...pack, code: 'TRS-7K2M-Q9XU' }).success).toBe(false)
-    expect(sharePackOutcomeSchema.parse({ status: 'confirmOwnJars', files: ['own.jar'] })).toEqual({ status: 'confirmOwnJars', files: ['own.jar'] })
+    const jars = { status: 'confirmOwnJars' as const, files: ['own.jar'], token: 'a'.repeat(32), downloads: 1, uploaded: 2, bytes: 100 }
+    expect(sharePackOutcomeSchema.parse(jars)).toEqual(jars)
+    const ready = { status: 'ready' as const, token: 'b'.repeat(32), downloads: 42, uploaded: 3, bytes: 12_582_912 }
+    expect(sharePackOutcomeSchema.parse(ready)).toEqual(ready)
+    expect(sharePackOutcomeSchema.safeParse({ status: 'shared', pack }).success).toBe(false)
   })
 
   it('parses pack live events', () => {

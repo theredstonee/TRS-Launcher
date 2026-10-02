@@ -24,6 +24,16 @@ const offer = computed(() => preview.value?.trsClient ?? null)
 const showChoice = computed(() => trsShowsChoice(offer.value))
 const normalized = computed(() => normalizePackCode(input.value))
 const canInstall = computed(() => !!pack.value && (!pack.value.ownJars || trusted.value))
+const installKey = computed(() => (pack.value ? taskKey('packcode', pack.value.code) : ''))
+const installing = computed(() => !!installKey.value && tasks.get(installKey.value)?.status === 'running')
+
+// Nur nach running → done schließen: ein alter Eintrag „done“ (gleicher Code) darf den Dialog nicht sofort zu machen.
+watch(
+  () => (installKey.value ? tasks.get(installKey.value)?.status : undefined),
+  (status, prev) => {
+    if (status === 'done' && prev === 'running') emit('close')
+  },
+)
 
 async function check() {
   const code = normalized.value
@@ -52,10 +62,10 @@ onMounted(() => {
 
 function install() {
   const p = pack.value
-  if (!p || !canInstall.value) return
+  if (!p || !canInstall.value || installing.value) return
   const trsClient = trsRequest(offer.value, choice.value)
   void tasks.run(
-    { key: taskKey('packcode', p.code), kind: 'modpack', title: p.name, stage: packStageLabel('pack'), cancellable: true },
+    { key: taskKey('packcode', p.code), kind: 'modpack', title: p.name, stage: packStageLabel('pack'), cancellable: true, pausable: true },
     async (ctx) => {
       const instance = await backend.packs.installCode(p.code, trsClient, (pr) => packTaskProgress(ctx, pr), ctx.taskId)
       ctx.update({ instanceId: instance.id, doneText: t('tasks.toast.modpackReady', { name: instance.name }) })
@@ -64,7 +74,6 @@ function install() {
       return instance
     },
   )
-  emit('close')
 }
 </script>
 
@@ -116,13 +125,14 @@ function install() {
         <h3 class="mt-4 mb-1.5 text-xs font-medium tracking-wide text-base-400 uppercase">{{ t('trsChoice.title') }}</h3>
         <TrsClientChoice v-model="choice" :offer="offer" :loading="false" :failed="false" />
       </template>
+      <TaskTransfer v-if="installing" class="mt-4" :task-key="installKey" />
     </template>
 
     <template #actions>
       <template v-if="pack">
         <button class="btn btn-ghost mr-auto text-xs" @click="reporting = true">{{ t('packs.code.report') }}</button>
-        <button class="btn btn-ghost" @click="pack = null; preview = null">{{ t('common.actions.back') }}</button>
-        <button class="btn btn-primary" :disabled="!canInstall" @click="install">{{ t('common.actions.install') }}</button>
+        <button class="btn btn-ghost" :disabled="installing" @click="pack = null; preview = null">{{ t('common.actions.back') }}</button>
+        <button class="btn btn-primary" :disabled="!canInstall || installing" @click="install">{{ t('common.actions.install') }}</button>
       </template>
       <button v-else class="btn btn-ghost" @click="emit('close')">{{ t('common.actions.cancel') }}</button>
     </template>

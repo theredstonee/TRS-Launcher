@@ -144,6 +144,9 @@
     "network": "Netwerkfout – controleer je internetverbinding.",
     "data": "Gegevens konden niet worden verwerkt.",
     "download": "Download mislukt – controleer je internetverbinding en probeer het opnieuw.",
+    "checksum": "Download geweigerd – de controlesom klopt niet.",
+    "sizeMismatch": "Download geweigerd – de bestandsgrootte klopt niet.",
+    "redirectHost": "Download geweigerd omdat die naar een andere server doorverwijst.",
     "internal": "Er is een interne fout opgetreden.",
     "cancelled": "Geannuleerd",
     "openFolder": "De map kon niet worden geopend.",
@@ -781,7 +784,7 @@
     },
     "packShare": {
       "notLinked": "Deze instantie hoort niet bij een gedeeld modpack.",
-      "tooLarge": "Het modpack is groter dan 50 MB – kies minder mappen (bijvoorbeeld zonder resource packs).",
+      "tooLarge": "Het modpack is groter dan 1 GB – kies minder mappen (bijvoorbeeld zonder resource packs).",
       "changed": "Het modpack is net veranderd – probeer het opnieuw.",
       "notFound": "Dit modpack bestaat niet (meer).",
       "invalidCode": "Dat is geen geldige modpack-code (zoals TRS-XXXX-XXXX).",
@@ -5241,13 +5244,17 @@
       "modeUpdateHint": "De code blijft hetzelfde – iedereen die het heeft geïnstalleerd, krijgt een update.",
       "modeNew": "Als nieuw pack delen (nieuwe code)",
       "included": "Gaat mee (modlijst en instellingen)",
-      "hint": "Mods die op Modrinth staan, gaan alleen als lijst mee; de rest wordt gekopieerd ({size}). Werelden, logs en je TRS Client-bestanden gaan nooit mee. Maximaal 50 MB.",
+      "hint": "Mods die op Modrinth staan, gaan alleen als lijst mee; de rest wordt gekopieerd ({size}). Werelden, logs en je TRS Client-bestanden gaan nooit mee. Maximaal 1 GB.",
       "ownJarsIntro": "Dit bestand staat niet op Modrinth en zou in het pack worden gekopieerd: | Deze bestanden staan niet op Modrinth en zouden in het pack worden gekopieerd:",
       "ownJarsHint": "Deel alleen mods die je mag doorgeven. Wie het pack installeert, ziet een waarschuwing.",
       "ownJarsConfirm": "Met deze bestanden delen",
       "action": "Delen",
       "actionUpdate": "Nieuwe versie delen",
-      "sharing": "Delen …"
+      "sharing": "Delen …",
+      "planLinks": "{n} mod als link | {n} mods als link",
+      "planFiles": "{n} bestand geüpload | {n} bestanden geüpload",
+      "upload": "Uploaden",
+      "uploading": "Uploaden …"
     },
     "mine": {
       "open": "Mijn modpacks",

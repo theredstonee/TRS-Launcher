@@ -81,7 +81,7 @@ export const usePacksStore = defineStore('packs', () => {
     const instance = useInstancesStore().items.find((i) => i.id === instanceId)
     const title = instance?.name ?? info?.latest.name ?? 'Modpack'
     return useTasksStore().run(
-      { key: taskKey('packupdate', instanceId), kind: 'modpack', title, stage: packStageLabel('pack'), instanceId, cancellable: true },
+      { key: taskKey('packupdate', instanceId), kind: 'modpack', title, stage: packStageLabel('pack'), instanceId, cancellable: true, pausable: true },
       async (ctx) => {
         const result = await backend.packs.update(instanceId, (p) => ctx.progress(packPercent(p), packStageLabel(p.phase, p)), ctx.taskId)
         ctx.update({

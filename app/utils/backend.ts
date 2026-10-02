@@ -757,9 +757,13 @@ export const backend = {
 
   /** Geteilte Modpacks (API §27): per Code/Link/an Freunde teilen, per Code installieren, Updates. */
   packs: {
-    /** Instanz packen und hochladen; `update` = neue Version des schon geteilten Packs (gleicher Code). */
-    share: (id: string, options: SharePackOptions, update: boolean, onProgress: (p: ExportProgress) => void) =>
-      checked(sharePackOutcomeSchema, 'share_pack', { id, options, update, onProgress: channel(onProgress) }),
+    /** .mrpack vorbereiten (kein Upload). `update` = neue Version des schon geteilten Packs (gleicher Code). */
+    share: (id: string, options: SharePackOptions, update: boolean, onProgress: (p: ExportProgress) => void, taskId: string | null = null) =>
+      checked(sharePackOutcomeSchema, 'share_pack', { id, options, update, onProgress: channel(onProgress), taskId }),
+    /** Vorbereitetes Pack hochladen (chunked, pausierbar). */
+    uploadShare: (token: string, taskId: string | null = null) => checked(ownPackSchema, 'upload_shared_pack', { token, taskId }),
+    /** Vorbereitetes Pack verwerfen, solange kein Upload läuft. */
+    discardShare: (token: string) => call<void>('discard_share_pack', { token }),
     mine: () => checked(myPacksSchema, 'packs_mine'),
     setDuration: (id: string, duration: PackDuration) => checked(ownPackSchema, 'pack_set_duration', { id, duration }),
     remove: (id: string) => call<void>('pack_delete', { id }),

@@ -144,6 +144,9 @@
     "network": "Erro de rede – verifique sua conexão com a internet.",
     "data": "Não foi possível processar os dados.",
     "download": "Falha no download – verifique sua conexão com a internet e tente novamente.",
+    "checksum": "Download recusado – a soma de verificação não confere.",
+    "sizeMismatch": "Download recusado – o tamanho do arquivo não confere.",
+    "redirectHost": "Download recusado porque redireciona para outro servidor.",
     "internal": "Ocorreu um erro interno.",
     "cancelled": "Cancelado",
     "openFolder": "Não foi possível abrir a pasta.",
@@ -781,7 +784,7 @@
     },
     "packShare": {
       "notLinked": "Esta instância não pertence a nenhum modpack compartilhado.",
-      "tooLarge": "O modpack tem mais de 50 MB – escolha menos pastas (por exemplo, sem resource packs).",
+      "tooLarge": "O modpack tem mais de 1 GB – escolha menos pastas (por exemplo, sem resource packs).",
       "changed": "O modpack acabou de mudar – tente de novo.",
       "notFound": "Este modpack não existe (mais).",
       "invalidCode": "Isso não é um código de modpack válido (como TRS-XXXX-XXXX).",
@@ -5241,13 +5244,17 @@
       "modeUpdateHint": "O código continua o mesmo – quem instalou recebe uma atualização.",
       "modeNew": "Compartilhar como pack novo (código novo)",
       "included": "Incluído (lista de mods e configurações)",
-      "hint": "Mods que estão no Modrinth vão só como lista; o resto é copiado ({size}). Mundos, logs e seus arquivos do TRS Client nunca vão junto. No máximo 50 MB.",
+      "hint": "Mods que estão no Modrinth vão só como lista; o resto é copiado ({size}). Mundos, logs e seus arquivos do TRS Client nunca vão junto. No máximo 1 GB.",
       "ownJarsIntro": "Este arquivo não está no Modrinth e seria copiado para o pack: | Estes arquivos não estão no Modrinth e seriam copiados para o pack:",
       "ownJarsHint": "Compartilhe só mods que você pode repassar. Quem instalar o pack verá um aviso.",
       "ownJarsConfirm": "Compartilhar com esses arquivos",
       "action": "Compartilhar",
       "actionUpdate": "Compartilhar nova versão",
-      "sharing": "Compartilhando …"
+      "sharing": "Compartilhando …",
+      "planLinks": "{n} mod como link | {n} mods como link",
+      "planFiles": "{n} arquivo enviado | {n} arquivos enviados",
+      "upload": "Enviar",
+      "uploading": "Enviando …"
     },
     "mine": {
       "open": "Meus modpacks",

@@ -144,6 +144,9 @@
     "network": "Erreur réseau – vérifie ta connexion Internet.",
     "data": "Impossible de traiter les données.",
     "download": "Échec du téléchargement – vérifie ta connexion Internet et réessaie.",
+    "checksum": "Téléchargement refusé – la somme de contrôle ne correspond pas.",
+    "sizeMismatch": "Téléchargement refusé – la taille du fichier ne correspond pas.",
+    "redirectHost": "Téléchargement refusé, car il redirige vers un autre serveur.",
     "internal": "Une erreur interne s'est produite.",
     "cancelled": "Annulé",
     "openFolder": "Impossible d'ouvrir le dossier.",
@@ -781,7 +784,7 @@
     },
     "packShare": {
       "notLinked": "Cette instance n’appartient à aucun modpack partagé.",
-      "tooLarge": "Le modpack dépasse 50 Mo – choisis moins de dossiers (par exemple sans resource packs).",
+      "tooLarge": "Le modpack dépasse 1 Go – choisis moins de dossiers (par exemple sans resource packs).",
       "changed": "Le modpack vient de changer – réessaie.",
       "notFound": "Ce modpack n’existe pas (ou plus).",
       "invalidCode": "Ce n’est pas un code de modpack valide (du type TRS-XXXX-XXXX).",
@@ -5241,13 +5244,17 @@
       "modeUpdateHint": "Le code ne change pas – tous ceux qui l’ont installé reçoivent une mise à jour.",
       "modeNew": "Partager comme nouveau pack (nouveau code)",
       "included": "Inclus (liste des mods et réglages)",
-      "hint": "Les mods présents sur Modrinth sont seulement listés ; le reste est copié ({size}). Les mondes, logs et tes fichiers TRS Client ne sont jamais inclus. 50 Mo maximum.",
+      "hint": "Les mods présents sur Modrinth sont seulement listés ; le reste est copié ({size}). Les mondes, logs et tes fichiers TRS Client ne sont jamais inclus. 1 Go maximum.",
       "ownJarsIntro": "Ce fichier n’est pas sur Modrinth et serait copié dans le pack : | Ces fichiers ne sont pas sur Modrinth et seraient copiés dans le pack :",
       "ownJarsHint": "Ne partage que des mods que tu as le droit de redistribuer. Ceux qui installent le pack voient un avertissement.",
       "ownJarsConfirm": "Partager avec ces fichiers",
       "action": "Partager",
       "actionUpdate": "Partager la nouvelle version",
-      "sharing": "Partage …"
+      "sharing": "Partage …",
+      "planLinks": "{n} mod en lien | {n} mods en lien",
+      "planFiles": "{n} fichier envoyé | {n} fichiers envoyés",
+      "upload": "Envoyer",
+      "uploading": "Envoi …"
     },
     "mine": {
       "open": "Mes modpacks",

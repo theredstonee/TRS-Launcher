@@ -144,6 +144,9 @@
     "network": "Ağ hatası – lütfen internet bağlantını kontrol et.",
     "data": "Veriler işlenemedi.",
     "download": "İndirme başarısız – lütfen internet bağlantını kontrol edip tekrar dene.",
+    "checksum": "İndirme reddedildi – dosya sağlama toplamı eşleşmiyor.",
+    "sizeMismatch": "İndirme reddedildi – dosya boyutu eşleşmiyor.",
+    "redirectHost": "İndirme reddedildi, çünkü başka bir sunucuya yönlendiriyor.",
     "internal": "Dahili bir hata oluştu.",
     "cancelled": "İptal edildi",
     "openFolder": "Klasör açılamadı.",
@@ -781,7 +784,7 @@
     },
     "packShare": {
       "notLinked": "Bu örnek paylaşılan bir modpack’e ait değil.",
-      "tooLarge": "Modpack 50 MB’tan büyük – daha az klasör seç (örneğin kaynak paketleri olmadan).",
+      "tooLarge": "Modpack 1 GB’tan büyük – daha az klasör seç (örneğin kaynak paketleri olmadan).",
       "changed": "Modpack az önce değişti – lütfen tekrar dene.",
       "notFound": "Bu modpack yok (artık yok).",
       "invalidCode": "Bu geçerli bir modpack kodu değil (TRS-XXXX-XXXX gibi).",
@@ -5241,13 +5244,17 @@
       "modeUpdateHint": "Kod aynı kalır – yükleyen herkes güncelleme alır.",
       "modeNew": "Yeni paket olarak paylaş (yeni kod)",
       "included": "Dahil (mod listesi ve ayarlar)",
-      "hint": "Modrinth’te olan modlar sadece liste olarak eklenir; geri kalanı kopyalanır ({size}). Dünyalar, günlükler ve TRS Client dosyaların asla eklenmez. En fazla 50 MB.",
+      "hint": "Modrinth’te olan modlar sadece liste olarak eklenir; geri kalanı kopyalanır ({size}). Dünyalar, günlükler ve TRS Client dosyaların asla eklenmez. En fazla 1 GB.",
       "ownJarsIntro": "Bu dosya Modrinth’te yok ve pakete kopyalanacak: | Bu dosyalar Modrinth’te yok ve pakete kopyalanacak:",
       "ownJarsHint": "Sadece dağıtmana izin verilen modları paylaş. Paketi yükleyen herkes bir uyarı görür.",
       "ownJarsConfirm": "Bu dosyalarla paylaş",
       "action": "Paylaş",
       "actionUpdate": "Yeni sürümü paylaş",
-      "sharing": "Paylaşılıyor …"
+      "sharing": "Paylaşılıyor …",
+      "planLinks": "{n} mod bağlantı olarak | {n} mod bağlantı olarak",
+      "planFiles": "{n} dosya yüklendi | {n} dosya yüklendi",
+      "upload": "Yükle",
+      "uploading": "Yükleniyor …"
     },
     "mine": {
       "open": "Modpacklerim",

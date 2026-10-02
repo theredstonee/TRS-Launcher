@@ -144,6 +144,9 @@
     "network": "Błąd sieci – sprawdź połączenie z internetem.",
     "data": "Nie udało się przetworzyć danych.",
     "download": "Pobieranie nie powiodło się – sprawdź połączenie z internetem i spróbuj ponownie.",
+    "checksum": "Pobieranie odrzucone – suma kontrolna pliku się nie zgadza.",
+    "sizeMismatch": "Pobieranie odrzucone – rozmiar pliku się nie zgadza.",
+    "redirectHost": "Pobieranie odrzucone, bo prowadzi na inny serwer.",
     "internal": "Wystąpił błąd wewnętrzny.",
     "cancelled": "Anulowano",
     "openFolder": "Nie udało się otworzyć folderu.",
@@ -781,7 +784,7 @@
     },
     "packShare": {
       "notLinked": "Ta instancja nie należy do żadnego udostępnionego modpacka.",
-      "tooLarge": "Modpack ma ponad 50 MB – wybierz mniej folderów (np. bez resource packów).",
+      "tooLarge": "Modpack ma ponad 1 GB – wybierz mniej folderów (np. bez resource packów).",
       "changed": "Modpack właśnie się zmienił – spróbuj ponownie.",
       "notFound": "Ten modpack nie istnieje (już).",
       "invalidCode": "To nie jest prawidłowy kod modpacka (np. TRS-XXXX-XXXX).",
@@ -5241,13 +5244,17 @@
       "modeUpdateHint": "Kod się nie zmienia – każdy, kto go zainstalował, dostanie aktualizację.",
       "modeNew": "Udostępnij jako nowy pack (nowy kod)",
       "included": "W zestawie (lista modów i ustawienia)",
-      "hint": "Mody dostępne na Modrinth trafiają tylko jako lista; resztę kopiujemy ({size}). Światy, logi i twoje pliki TRS Client nigdy nie trafiają do packa. Maksymalnie 50 MB.",
+      "hint": "Mody dostępne na Modrinth trafiają tylko jako lista; resztę kopiujemy ({size}). Światy, logi i twoje pliki TRS Client nigdy nie trafiają do packa. Maksymalnie 1 GB.",
       "ownJarsIntro": "Tego pliku nie ma na Modrinth i zostałby skopiowany do packa: | Tych plików nie ma na Modrinth i zostałyby skopiowane do packa: | Tych plików nie ma na Modrinth i zostałyby skopiowane do packa:",
       "ownJarsHint": "Udostępniaj tylko mody, które możesz przekazywać dalej. Osoby instalujące pack zobaczą ostrzeżenie.",
       "ownJarsConfirm": "Udostępnij z tymi plikami",
       "action": "Udostępnij",
       "actionUpdate": "Udostępnij nową wersję",
-      "sharing": "Udostępnianie …"
+      "sharing": "Udostępnianie …",
+      "planLinks": "{n} mod jako link | {n} mody jako link | {n} modów jako link",
+      "planFiles": "{n} plik wysłany | {n} pliki wysłane | {n} plików wysłanych",
+      "upload": "Wyślij",
+      "uploading": "Wysyłanie …"
     },
     "mine": {
       "open": "Moje modpacki",

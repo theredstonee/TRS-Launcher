@@ -68,9 +68,18 @@ export const packUpdateResultSchema = z.object({
   kept: z.array(z.string().max(300)),
 })
 
+const shareCount = z.number().int().min(0).max(100000)
+const sharePlan = {
+  token: z.string().regex(/^[a-f0-9]{32}$/),
+  downloads: shareCount,
+  uploaded: shareCount,
+  bytes: z.number().int().min(0),
+}
+
+/** `share_pack` lädt nicht mehr hoch: fertiger Plan oder Rückfrage wegen eigener JARs. */
 export const sharePackOutcomeSchema = z.discriminatedUnion('status', [
-  z.object({ status: z.literal('shared'), pack: ownPackSchema }),
-  z.object({ status: z.literal('confirmOwnJars'), files: z.array(z.string().max(300)) }),
+  z.object({ status: z.literal('ready'), ...sharePlan }),
+  z.object({ status: z.literal('confirmOwnJars'), files: z.array(z.string().max(300)), ...sharePlan }),
 ])
 
 /** Live-Ereignisse (`trs-live`) rund um Packs. */
