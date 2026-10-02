@@ -286,6 +286,7 @@ public final class TrsClient {
 	public void onChat(net.minecraftforge.client.event.ClientChatReceivedEvent event) {
 		dev.theredstonee.trsclient.core.map.MapEngine maps = dev.theredstonee.trsclient.core.map.MapEngine.get();
 		if (maps != null && event.getMessage() != null) maps.onServerText(event.getMessage().getFormattedText());
+		dev.theredstonee.trsclient.chatheads.ChatHeads.onChat(event);
 	}
 
 	@SubscribeEvent
@@ -358,6 +359,7 @@ public final class TrsClient {
 		HookStats.hud++;
 		Minecraft mc = Minecraft.getInstance();
 		hud.render(mc.mainWindow.getScaledWidth(), mc.mainWindow.getScaledHeight(), event.getPartialTicks());
+		dev.theredstonee.trsclient.chatheads.ChatHeads.render(mc.mainWindow.getScaledHeight());
 	}
 
 	// --- Eingabe ---

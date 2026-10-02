@@ -12,6 +12,8 @@
 		"HatLayerMixin",
 		"ChatComponentAccessor",
 		"ChatMixin",
+		"ChatHeadMixin",
+		"ChatHeadLineMixin"${chatSenderMixin},
 		"ChatScreenMixin",
 		"ColorGradeMixin",
 		"EmoteModelMixin",

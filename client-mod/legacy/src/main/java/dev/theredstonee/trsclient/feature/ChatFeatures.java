@@ -83,9 +83,18 @@ public final class ChatFeatures {
 				rewrite = true;
 			}
 		}
+		// Köpfe auch ohne Zeitstempel/Stapeln: die Zeile muss selbst umbrochen werden, damit Folgezeilen einrücken.
+		if (modules.qol.chatHeads.isEnabled()) rewrite = true;
 		if (rewrite) {
 			int id = nextId++;
-			if (ChatCompat.reprint(event, prefix, suffix, id)) {
+			boolean printed;
+			if (modules.qol.chatHeads.isEnabled()) {
+				String hover = modules.chat.isEnabled() && modules.chatCoordLinks.get() ? I18n.tr("chat.coords.hover") : null;
+				printed = ChatCompat.reprintIndented(event, prefix, suffix, id, hover);
+			} else {
+				printed = ChatCompat.reprint(event, prefix, suffix, id);
+			}
+			if (printed) {
 				lastLineId = id;
 			} else {
 				lastLineId = 0;

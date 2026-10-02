@@ -161,6 +161,9 @@ jar {
 	from(rootProject.file('../LICENSE')) {
 		rename { "${it}_trsclient" }
 	}
+	from(rootProject.file('../licenses/chat-heads-MPL-2.0.txt')) {
+		into 'META-INF'
+	}
 }
 
 // Die fertige, auf SRG-Namen remappte Mod-JAR dieser Version (für collectLauncherJars im Controller).

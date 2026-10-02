@@ -32,6 +32,10 @@ public final class QolModules {
 	public final ChoiceSetting<ChatMentions.Sound> mentionsSoundType;
 	public final NumberSetting mentionsVolume;
 
+	// --- Chat-Köpfe (MPL-2.0, dzwdz/chat_heads) ---
+	public final Module chatHeads;
+	public final BoolSetting chatHeadsHat;
+
 	// --- Filter ---
 	public final Module chatFilter;
 	public final TextSetting chatFilterWords;
@@ -168,6 +172,11 @@ public final class QolModules {
 				ChatMentions.Sound.PLING));
 		mentionsVolume = mentions.add(new NumberSetting("volume", "Volume", 60, 10, 100, 10, "", "%"));
 
+		chatHeads = registry.register(new Module("chatHeads", "Chat Heads",
+				"Shows the sender's skin head in front of player chat, whispers and the chat history. "
+						+ "Only on your screen – nothing is sent. Based on Chat Heads by dzwdz (MPL-2.0).", true));
+		chatHeadsHat = chatHeads.add(new BoolSetting("hat", "Hat layer", true));
+
 		chatFilter = registry.register(new Module("chatFilter", "Chat Filter",
 				"Hides chat messages that contain one of your words (e.g. advertising). Only on your screen – "
 						+ "nothing is sent or reported.", false));
@@ -267,6 +276,7 @@ public final class QolModules {
 		streamerKey = streamer.add(new KeySetting("key", "Toggle key"));
 
 		mentions.icon("bell").category(Category.CHAT);
+		chatHeads.icon("head").category(Category.CHAT);
 		chatFilter.icon("mute").category(Category.CHAT);
 		autoReconnect.icon("reset").category(Category.MISC);
 		queueAlerts.icon("clock").category(Category.MISC);

@@ -4,6 +4,8 @@ The in-game client mod of the TRS Launcher (Lunar/Badlion style). Client-only, o
 Minecraft release: **Fabric 1.14.4–26.3**, **Forge 1.7.10–26.3**, **NeoForge 1.20.2–26.3** (see below).
 License: GPL-3.0-only, author: theredstonee.
 
+Chat Heads by dzwdz ([github.com/dzwdz/chat_heads](https://github.com/dzwdz/chat_heads), MPL-2.0): parts of the code reused in `core/chatheads`. The full license is `licenses/chat-heads-MPL-2.0.txt` (also inside the built jars).
+
 Player guide: [TRS Client docs](https://trs-launcher.theredstonee.de/docs/en/client/overview) (also reachable in game
 under TRS menu → Help).
 

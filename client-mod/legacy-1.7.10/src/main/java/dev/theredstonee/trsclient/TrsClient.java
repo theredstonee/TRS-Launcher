@@ -322,6 +322,7 @@ public final class TrsClient {
 	public void onChat(net.minecraftforge.client.event.ClientChatReceivedEvent event) {
 		dev.theredstonee.trsclient.core.map.MapEngine maps = dev.theredstonee.trsclient.core.map.MapEngine.get();
 		if (maps != null && event.message != null) maps.onServerText(event.message.getFormattedText());
+		dev.theredstonee.trsclient.chatheads.ChatHeads.onChat(event);
 	}
 
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
@@ -360,6 +361,7 @@ public final class TrsClient {
 		if (event.type != RenderGameOverlayEvent.ElementType.ALL) return;
 		HookStats.hud++;
 		hud.render(event.resolution.getScaledWidth(), event.resolution.getScaledHeight(), event.partialTicks);
+		dev.theredstonee.trsclient.chatheads.ChatHeads.render(event.resolution.getScaledHeight());
 	}
 
 	/** Direkt vor {@code EntityPlayerSP.onLivingUpdate}: umgeschaltete Sprint-/Schleich-Taste halten. */

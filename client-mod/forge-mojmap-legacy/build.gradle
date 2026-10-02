@@ -115,6 +115,7 @@ def props = [
 		mixinJava  : "JAVA_${javaVersion}",
 		// Ab Forge 1.19 steht die Client-only-Kennzeichnung in mods.toml, davor per Extension-Point im Code.
 		displayTest: stonecutter.eval(mc, '>=1.19') ? 'displayTest = "IGNORE_ALL_VERSION"' : '',
+		chatSenderMixin: stonecutter.eval(mc, '>=1.19.1') ? ', "ChatSenderMixin"' : '',
 ]
 processResources {
 	inputs.properties(props)
@@ -128,6 +129,9 @@ tasks.withType(Jar).configureEach {
 	if (!withMixins) exclude 'dev/theredstonee/trsclient/mixin/**'
 	from(rootProject.file('../LICENSE')) {
 		rename { "${it}_trsclient" }
+	}
+	from(rootProject.file('../licenses/chat-heads-MPL-2.0.txt')) {
+		into 'META-INF'
 	}
 }
 

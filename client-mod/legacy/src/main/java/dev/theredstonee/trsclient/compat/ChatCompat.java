@@ -1,5 +1,8 @@
 package dev.theredstonee.trsclient.compat;
 
+import dev.theredstonee.trsclient.core.chat.ChatCoords;
+import dev.theredstonee.trsclient.core.chat.ChatText;
+import dev.theredstonee.trsclient.core.chatheads.ChatHeadLayout;
 import net.minecraft.client.gui.GuiNewChat;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
 //? if >=1.9 {
@@ -223,4 +226,98 @@ public final class ChatCompat {
 		//?}
 		return c == null ? null : c.getUnformattedText();
 	}
+
+	/**
+	 * Wie {@link #reprint}, aber jede umbrochene Zeile fängt mit zwei Leerzeichen an (Platz für den Kopf).
+	 * Koordinaten werden danach neu markiert, weil der umbrochene Text die alten Stile nicht mitnimmt.
+	 * {@code coordHover} null = keine Koordinaten-Markierung.
+	 */
+	public static boolean reprintIndented(ClientChatReceivedEvent event, String prefix, String suffix, int id, String coordHover) {
+		GuiNewChat gui = chat();
+		if (gui == null) return false;
+		float scale = gui.getChatScale();
+		if (scale <= 0f) scale = 1f;
+		int width = ChatHeadLayout.wrapWidth((int) Math.floor(gui.getChatWidth() / scale), ChatHeadLayout.LEGACY_PAD);
+		String padded = ChatHeadLayout.indentLines(Mc.font().listFormattedStringToWidth(
+				prefix + formatted(event) + suffix, Math.max(1, width)));
+		//? if >=1.9 {
+		/*event.setMessage(withCoords19(padded, coordHover));
+		event.setCanceled(true);
+		gui.printChatMessageWithOptionalDeletion(event.getMessage(), id);
+		*///?} else {
+		event.message = withCoords18(padded, coordHover);
+		event.setCanceled(true);
+		gui.printChatMessageWithOptionalDeletion(event.message, id);
+		//?}
+		return true;
+	}
+
+	/** Stelle im formatierten Text, an der das {@code plainIndex}-te sichtbare Zeichen steht. */
+	private static int atPlain(String formatted, int plainIndex) {
+		if (formatted == null) return 0;
+		int plain = 0;
+		for (int i = 0; i < formatted.length(); i++) {
+			if (formatted.charAt(i) == '§') {
+				i++;
+				continue;
+			}
+			if (plain == plainIndex) return i;
+			plain++;
+		}
+		return formatted.length();
+	}
+
+	//? if >=1.9 {
+	/*private static ITextComponent withCoords19(String formatted, String hover) {
+		java.util.List<ChatCoords.Hit> hits = hover == null ? java.util.Collections.<ChatCoords.Hit>emptyList()
+				: ChatCoords.find(ChatText.strip(formatted));
+		if (hits.isEmpty()) return new TextComponentString(formatted);
+		TextComponentString out = new TextComponentString("");
+		int plain = 0;
+		for (ChatCoords.Hit h : hits) {
+			int from = atPlain(formatted, plain);
+			int start = atPlain(formatted, h.start);
+			int end = atPlain(formatted, h.end);
+			if (start > from) out.appendSibling(new TextComponentString(formatted.substring(from, start)));
+			if (end > start) {
+				net.minecraft.util.text.Style style = new net.minecraft.util.text.Style();
+				style.setUnderlined(true);
+				style.setInsertion(h.insertion());
+				style.setHoverEvent(new net.minecraft.util.text.event.HoverEvent(
+						net.minecraft.util.text.event.HoverEvent.Action.SHOW_TEXT, new TextComponentString(hover)));
+				out.appendSibling(new TextComponentString(formatted.substring(start, end)).setStyle(style));
+			}
+			plain = h.end;
+		}
+		int tail = atPlain(formatted, plain);
+		if (tail < formatted.length()) out.appendSibling(new TextComponentString(formatted.substring(tail)));
+		return out;
+	}
+	*///?} else {
+	private static IChatComponent withCoords18(String formatted, String hover) {
+		java.util.List<ChatCoords.Hit> hits = hover == null ? java.util.Collections.<ChatCoords.Hit>emptyList()
+				: ChatCoords.find(ChatText.strip(formatted));
+		if (hits.isEmpty()) return new ChatComponentText(formatted);
+		ChatComponentText out = new ChatComponentText("");
+		int plain = 0;
+		for (ChatCoords.Hit h : hits) {
+			int from = atPlain(formatted, plain);
+			int start = atPlain(formatted, h.start);
+			int end = atPlain(formatted, h.end);
+			if (start > from) out.appendSibling(new ChatComponentText(formatted.substring(from, start)));
+			if (end > start) {
+				net.minecraft.util.ChatStyle style = new net.minecraft.util.ChatStyle();
+				style.setUnderlined(true);
+				style.setInsertion(h.insertion());
+				style.setChatHoverEvent(new net.minecraft.event.HoverEvent(net.minecraft.event.HoverEvent.Action.SHOW_TEXT,
+						new ChatComponentText(hover)));
+				out.appendSibling(new ChatComponentText(formatted.substring(start, end)).setChatStyle(style));
+			}
+			plain = h.end;
+		}
+		int tail = atPlain(formatted, plain);
+		if (tail < formatted.length()) out.appendSibling(new ChatComponentText(formatted.substring(tail)));
+		return out;
+	}
+	//?}
 }

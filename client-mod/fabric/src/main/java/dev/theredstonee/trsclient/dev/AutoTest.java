@@ -301,6 +301,11 @@ public final class AutoTest {
 					step = 38;
 					break;
 				}
+				// -PtrsAutotestOnly=chatheads: Köpfe vor ein paar Chat-Zeilen
+				if ("chatheads".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 39;
+					break;
+				}
 				// -PtrsAutotestOnly=duck: nur die Quietscheente (braucht -PtrsApi mit Enten-Attrappe)
 				if ("duck".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 29;
@@ -707,6 +712,22 @@ public final class AutoTest {
 				step = 24;
 				wait = 5;
 				break;
+			case 39:
+				// Chat-Köpfe: Screenshots trsclient-<mc>-chatheads-*.png
+				if (chatHeadsTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				step = 24;
+				wait = 5;
+				break;
 			case 33:
 				// Suche in der Tastenbelegung: Screenshots trsclient-<mc>-keysearch-*.png
 				if (keySearchTest.step(mc, new CapeTest.Actions() {
@@ -745,6 +766,7 @@ public final class AutoTest {
 	private final QolTest qolTest = new QolTest();
 	private final ComfortTest comfortTest = new ComfortTest();
 	private final HungerOverlayTest hungerTest = new HungerOverlayTest();
+	private final ChatHeadsTest chatHeadsTest = new ChatHeadsTest();
 	private final CircuitTest circuitTest = new CircuitTest();
 	private final ScreenshotTest screenshotTest = new ScreenshotTest();
 	private final NotesTest notesTest = new NotesTest();

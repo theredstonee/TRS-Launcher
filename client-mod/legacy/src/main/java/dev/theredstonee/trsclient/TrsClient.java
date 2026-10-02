@@ -618,6 +618,7 @@ public final class TrsClient {
 		HookStats.hud++;
 		ScaledResolution res = Mc.resolution(event);
 		hud.render(Gfx.of(res.getScaledWidth(), res.getScaledHeight()), Mc.partialTicks(event));
+		dev.theredstonee.trsclient.chatheads.ChatHeads.render(res.getScaledHeight());
 		// Sozial-Toasts im Spiel (über Bildschirmen zeichnet sie onScreenDrawn).
 		if (Mc.screen() == null && !Mc.hudHidden()) drawToasts(res.getScaledWidth(), res.getScaledHeight());
 		dev.theredstonee.trsclient.screenshot.LegacyScreenshots.hud(res.getScaledWidth(), res.getScaledHeight());

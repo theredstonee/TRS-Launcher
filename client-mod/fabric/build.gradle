@@ -277,8 +277,10 @@ if (stonecutter.eval(mc, '>=1.15') && stonecutter.eval(mc, '<1.21.9')) mixinClas
 // ab 26.3 kommt das Modell der Hand aus FirstPersonHandsAndItems.
 // Komfort/PvP: Chat-Filter + Verlauf, Scoreboard/Titel/Bossleiste, Tab-Ping, Totems/Partikel, Namensschutz,
 // Auto-Reconnect-Knopf, Serverliste im Streamer-Modus.
-mixinClasses += ['QolChatMixin', 'QolGuiMixin', 'BossBarMixin', 'TabPingMixin', 'QolEntityMixin', 'QolParticleMixin',
+mixinClasses += ['QolChatMixin', 'ChatHeadMixin', 'ChatHeadLineMixin', 'QolGuiMixin', 'BossBarMixin', 'TabPingMixin', 'QolEntityMixin', 'QolParticleMixin',
 		'NameMaskMixin', 'DisconnectScreenMixin', 'StreamerServerEntryMixin']
+if (stonecutter.eval(mc, '>=1.19.1')) mixinClasses << 'ChatSenderMixin'
+if (stonecutter.eval(mc, '>=1.21.11')) mixinClasses << 'ChatHeadInnerMixin'
 mixinClasses << 'ShieldHandMixin'
 if (stonecutter.eval(mc, '>=1.21.9')) mixinClasses << 'ShieldSubmitMixin'
 if (stonecutter.eval(mc, '>=26.3')) mixinClasses << 'ShieldModelMixin'
@@ -315,6 +317,9 @@ tasks.withType(Jar).configureEach {
 	// Lizenzen und Quellen der eingebauten Mods (die Mod-JARs selbst bringen ihre Lizenztexte mit).
 	from(rootProject.file('fabric/BUNDLED-MODS.md')) {
 		rename { 'THIRD-PARTY_trsclient.md' }
+	}
+	from(rootProject.file('licenses/chat-heads-MPL-2.0.txt')) {
+		into 'META-INF'
 	}
 }
 

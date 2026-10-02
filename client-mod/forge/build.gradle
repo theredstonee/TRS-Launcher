@@ -148,8 +148,10 @@ if (stonecutter.eval(mc, '<1.21.9')) mixinClasses << 'HitboxColorMixin'
 // Schild-Position: Haken am Hand-Renderer; Deckkraft ab 1.21.9 im Submit-Sammler; ab 26.3 Modell aus FirstPersonHandsAndItems.
 // Komfort/PvP: Chat-Filter + Verlauf, Scoreboard/Titel/Bossleiste, Tab-Ping, Totems/Partikel, Namensschutz,
 // Auto-Reconnect-Knopf, Serverliste im Streamer-Modus.
-mixinClasses += ['QolChatMixin', 'QolGuiMixin', 'BossBarMixin', 'TabPingMixin', 'QolEntityMixin', 'QolParticleMixin',
+mixinClasses += ['QolChatMixin', 'ChatHeadMixin', 'ChatHeadLineMixin', 'QolGuiMixin', 'BossBarMixin', 'TabPingMixin', 'QolEntityMixin', 'QolParticleMixin',
 		'NameMaskMixin', 'DisconnectScreenMixin', 'StreamerServerEntryMixin']
+if (stonecutter.eval(mc, '>=1.19.1')) mixinClasses << 'ChatSenderMixin'
+if (stonecutter.eval(mc, '>=1.21.11')) mixinClasses << 'ChatHeadInnerMixin'
 mixinClasses << 'ShieldHandMixin'
 // Komfort-Paket 2: bessere Tooltips (Zusatzkarte am Inventar, Text-Zusätze an der Tooltip-Liste).
 mixinClasses += ['TooltipScreenMixin', 'TooltipLinesMixin']
@@ -178,6 +180,9 @@ tasks.named('jar', Jar) {
 	manifest.attributes('MixinConfigs': 'trsclient.mixins.json')
 	from(rootProject.file('../LICENSE')) {
 		rename { "${it}_trsclient" }
+	}
+	from(rootProject.file('../licenses/chat-heads-MPL-2.0.txt')) {
+		into 'META-INF'
 	}
 }
 
