@@ -172,7 +172,7 @@ public final class LegacyPerf implements GameOptions {
 			Minecraft mc = Minecraft.getMinecraft();
 			boolean fullscreen = false;
 			try {
-				fullscreen = Display.isFullscreen();
+				fullscreen = Display.isFullscreen() || dev.theredstonee.trsclient.core.ui.BorderlessState.active();
 			} catch (RuntimeException | LinkageError ignored) {
 			}
 			boolean iconified = !Display.isVisible();
@@ -197,7 +197,7 @@ public final class LegacyPerf implements GameOptions {
 					Display.processMessages();
 					boolean fullscreen = false;
 					try {
-						fullscreen = Display.isFullscreen();
+						fullscreen = Display.isFullscreen() || dev.theredstonee.trsclient.core.ui.BorderlessState.active();
 					} catch (RuntimeException | LinkageError ignored) {
 					}
 					boolean iconified = !Display.isVisible();

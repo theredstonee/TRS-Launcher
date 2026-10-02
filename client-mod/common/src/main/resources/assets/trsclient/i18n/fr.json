@@ -1933,6 +1933,8 @@
   "setting.hungerOverlay.heldFood": "Aperçu de la nourriture en main",
   "setting.hungerOverlay.health": "Aperçu des soins",
   "setting.hungerOverlay.exhaustion": "Barre d’épuisement (solo)",
+  "module.borderlessFullscreen": "Plein écran sans bordure",
+  "module.borderlessFullscreen.desc": "Le plein écran (F11 ou paramètres vidéo) couvre l’écran actuel en fenêtre sans bordure, sans le mode exclusif. Quitter le plein écran rétablit la position et la taille. Le désactiver en plein écran revient au mode exclusif.",
   "module.tooltips": "Infobulles améliorées",
   "module.tooltips.desc": "Plus d’infos au survol des objets : contenu des boîtes de shulker en grille à la couleur de la boîte, aperçu des cartes, durabilité en chiffres, faim et saturation de la nourriture et enchantements compacts. Affichage uniquement.",
   "setting.tooltips.shulker": "Contenu des boîtes de shulker",

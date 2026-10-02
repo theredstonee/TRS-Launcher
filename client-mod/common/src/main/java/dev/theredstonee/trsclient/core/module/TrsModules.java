@@ -114,6 +114,8 @@ public final class TrsModules {
 	public final Module netOptimize;
 	/** Niedrige Eingabeverzögerung: GPU-Warteschlange begrenzen, Eingaben direkt vor dem Bild lesen (core.perf.LowLatency). */
 	public final Module lowLatency;
+	/** Randloses Vollbild: F11 deckt den aktuellen Monitor ab, ohne den exklusiven Vollbildmodus. */
+	public final Module borderlessFullscreen;
 	public final ChoiceSetting<dev.theredstonee.trsclient.core.perf.LowLatency.Mode> lowLatencyMode;
 	public final BoolSetting lowLatencyLatePoll;
 
@@ -631,6 +633,10 @@ public final class TrsModules {
 		dynamicFps = registry.register(new Module("dynamicFps", "Dynamic FPS",
 				"Limits the frame rate while the game is in the background, minimized or you are AFK, and makes it "
 						+ "quieter. Full FPS the moment you come back.", true));
+		borderlessFullscreen = registry.register(new Module("borderlessFullscreen", "Borderless Fullscreen",
+				"Fullscreen (F11 or Video Settings) covers the current monitor with a borderless window instead of "
+						+ "exclusive fullscreen. Turning fullscreen off restores the previous position and size. "
+						+ "Switching this off while fullscreen goes back to exclusive fullscreen.", true));
 		entityCulling = registry.register(new Module("entityCulling", "Entity Culling",
 				"Skips drawing mobs, chests, signs, dropped items and item frames that are hidden behind walls or "
 						+ "further away than you set. Display only – nothing changes in the world.", false));
@@ -651,6 +657,7 @@ public final class TrsModules {
 		redstoneClock.icon("wave").category(Category.REDSTONE);
 		fpsBoost.icon("bolt").category(Category.PERFORMANCE);
 		dynamicFps.icon("moon").category(Category.PERFORMANCE);
+		borderlessFullscreen.icon("expand").category(Category.PERFORMANCE);
 		entityCulling.icon("cull").category(Category.PERFORMANCE);
 		particles.icon("sparkle").category(Category.PERFORMANCE);
 		worldDetails.icon("cloud").category(Category.PERFORMANCE);
@@ -672,7 +679,7 @@ public final class TrsModules {
 				return dev.theredstonee.trsclient.core.perf.BundledMods.get().available();
 			}
 		});
-		for (Module m : new Module[]{fpsBoost, dynamicFps, entityCulling, particles, worldDetails, netOptimize, lowLatency}) {
+		for (Module m : new Module[]{fpsBoost, dynamicFps, borderlessFullscreen, entityCulling, particles, worldDetails, netOptimize, lowLatency}) {
 			m.profiled();
 		}
 		clips.icon("record").category(Category.MISC);

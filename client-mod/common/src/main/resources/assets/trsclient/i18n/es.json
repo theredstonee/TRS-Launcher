@@ -1933,6 +1933,8 @@
   "setting.hungerOverlay.heldFood": "Vista previa de la comida en la mano",
   "setting.hungerOverlay.health": "Vista previa de la curación",
   "setting.hungerOverlay.exhaustion": "Barra de agotamiento (un jugador)",
+  "module.borderlessFullscreen": "Pantalla completa sin bordes",
+  "module.borderlessFullscreen.desc": "La pantalla completa (F11 o ajustes de vídeo) cubre el monitor actual como ventana sin bordes, en lugar del modo exclusivo. Al salir se recupera la posición y el tamaño anteriores. Desactivarlo en pantalla completa vuelve al modo exclusivo.",
   "module.tooltips": "Mejores descripciones",
   "module.tooltips.desc": "Más información al pasar el ratón sobre objetos: contenido de las cajas de shulker como cuadrícula en el color de la caja, vista previa de mapas, durabilidad como número, hambre y saturación de la comida y encantamientos compactos. Solo visual.",
   "setting.tooltips.shulker": "Contenido de cajas de shulker",

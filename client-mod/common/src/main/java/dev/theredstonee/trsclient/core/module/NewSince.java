@@ -130,6 +130,8 @@ public final class NewSince {
 
 	/** Hunger-Anzeige (TRS Client 0.15.1, Idee von AppleSkin): Sättigung, Essens-Vorschau, Heilung, Erschöpfung. */
 	public static final String HUNGER_OVERLAY = "0.15.1";
+	/** Randloses Vollbild (TRS Client 0.15.2): F11 füllt den aktuellen Monitor ohne exklusiven Vollbildmodus. */
+	public static final String BORDERLESS_FULLSCREEN = "0.15.2";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
@@ -200,6 +202,8 @@ public final class NewSince {
 		add(COSMETICS_V2, WARDROBE_COSMETICS);
 		// Hunger-Anzeige an der Hungerleiste.
 		add(HUNGER_OVERLAY, "hungerOverlay");
+		// Randloses Vollbild statt exklusivem Vollbild.
+		add(BORDERLESS_FULLSCREEN, "borderlessFullscreen");
 	}
 
 	private NewSince() {

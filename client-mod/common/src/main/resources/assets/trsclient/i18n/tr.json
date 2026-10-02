@@ -1933,6 +1933,8 @@
   "setting.hungerOverlay.heldFood": "Eldeki yiyeceğin önizlemesi",
   "setting.hungerOverlay.health": "İyileşme önizlemesi",
   "setting.hungerOverlay.exhaustion": "Bitkinlik çubuğu (tek oyunculu)",
+  "module.borderlessFullscreen": "Kenarlıksız tam ekran",
+  "module.borderlessFullscreen.desc": "Tam ekran (F11 veya görüntü ayarları) geçerli monitörü kenarlıksız bir pencereyle kaplar, özel tam ekran kullanmaz. Tam ekrandan çıkınca önceki konum ve boyut geri gelir. Tam ekrandayken kapatmak özel tam ekrana döner.",
   "module.tooltips": "Daha iyi ipuçları",
   "module.tooltips.desc": "Eşyaların üzerine gelince daha fazla bilgi: shulker kutusu içeriği kutu renginde ızgara olarak, harita önizlemesi, sayı olarak dayanıklılık, yiyeceklerin açlık ve doygunluk değeri ve kısa büyüler. Yalnızca görüntü.",
   "setting.tooltips.shulker": "Shulker kutusu içeriği",

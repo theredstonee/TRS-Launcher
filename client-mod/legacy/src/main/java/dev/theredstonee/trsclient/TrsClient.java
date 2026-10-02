@@ -335,6 +335,7 @@ public final class TrsClient {
 		if (accountSwap != null) accountSwap.drain();
 		dev.theredstonee.trsclient.screenshot.LegacyScreenshots.tick();
 		Minecraft mc = Minecraft.getMinecraft();
+		dev.theredstonee.trsclient.ui.BorderlessDisplay.tick(mc);
 		migrateKeys(mc);
 		while (TrsKeys.hudProfile.isPressed()) {
 			Mc.actionBar(I18n.tr("toast.hudProfile", modules.profiles.cycle()));

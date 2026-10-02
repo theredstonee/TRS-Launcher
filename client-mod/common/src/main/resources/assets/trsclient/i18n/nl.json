@@ -1933,6 +1933,8 @@
   "setting.hungerOverlay.heldFood": "Voorbeeld van het eten in je hand",
   "setting.hungerOverlay.health": "Voorbeeld van de genezing",
   "setting.hungerOverlay.exhaustion": "Uitputtingsbalk (singleplayer)",
+  "module.borderlessFullscreen": "Randloos volledig scherm",
+  "module.borderlessFullscreen.desc": "Volledig scherm (F11 of video-instellingen) vult de huidige monitor als randloos venster, zonder exclusief volledig scherm. Uitzetten herstelt positie en grootte. Uitschakelen tijdens volledig scherm gaat terug naar exclusief.",
   "module.tooltips": "Betere tooltips",
   "module.tooltips.desc": "Meer info bij het aanwijzen van voorwerpen: inhoud van shulkerdozen als raster in de doosskleur, voorbeeld van kaarten, duurzaamheid als getal, honger en verzadiging van eten en compacte betoveringen. Alleen weergave.",
   "setting.tooltips.shulker": "Inhoud van shulkerdozen",

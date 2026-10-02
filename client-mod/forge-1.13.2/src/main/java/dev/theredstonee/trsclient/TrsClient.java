@@ -291,6 +291,7 @@ public final class TrsClient {
 	@SubscribeEvent
 	public void onRenderTick(TickEvent.RenderTickEvent event) {
 		Minecraft mc = Minecraft.getInstance();
+		if (event.phase == TickEvent.Phase.START) dev.theredstonee.trsclient.ui.BorderlessGlfw.sync(mc);
 		if (event.phase == TickEvent.Phase.START) {
 			handPass = false;
 			checkZoomScroll(mc);

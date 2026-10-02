@@ -191,6 +191,13 @@ public final class PerfHooks {
 		Runnable probe = frameProbe;
 		if (probe != null) probe.run();
 		FRAME_STATS.frame(System.nanoTime());
+		try {
+			//? if >=26.3 {
+			/*dev.theredstonee.trsclient.ui.BorderlessSdl.sync();
+			*///?} else
+			dev.theredstonee.trsclient.ui.BorderlessGlfw.sync();
+		} catch (RuntimeException | LinkageError ignored) {
+		}
 		Performance p = perf;
 		if (p == null) return;
 		frames++;
@@ -202,7 +209,7 @@ public final class PerfHooks {
 			// Fensterzustand und Tasten nur ein paar Mal je Sekunde (jede Abfrage kostet Zeit im Bild);
 			// Maus und Tasten braucht es überhaupt nur für die AFK-Grenze.
 			// Im Vollbild jedes Bild: beim Umschalten kippt „minimiert“ nur für ein paar Frames.
-			boolean fullscreen = isFullscreen(mc);
+			boolean fullscreen = isFullscreen(mc) || dev.theredstonee.trsclient.core.ui.BorderlessState.active();
 			if (fullscreen || now - minimizedAt > WINDOW_POLL_NS || now < minimizedAt) {
 				minimizedAt = now;
 				minimizedCached = liveMinimized();
@@ -242,7 +249,7 @@ public final class PerfHooks {
 		if (p == null) return false;
 		DynamicFps.State state = p.dynamicFps().state();
 		if (state == DynamicFps.State.AFK) return true;
-		boolean fullscreen = isFullscreen(Minecraft.getInstance());
+		boolean fullscreen = isFullscreen(Minecraft.getInstance()) || dev.theredstonee.trsclient.core.ui.BorderlessState.active();
 		boolean minimized = liveMinimized();
 		// Vollbild und sichtbar: nicht schlafen. Sonst kommt das Fenster erst nach Sekunden zurück.
 		if (fullscreen && !minimized && !forceUnfocused) return false;

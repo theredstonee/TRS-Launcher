@@ -223,6 +223,7 @@ public final class TrsClient {
 				pvp.countPresses(mc);
 				return;
 			}
+			dev.theredstonee.trsclient.ui.BorderlessDisplay.tick(mc);
 			migrateKeys(mc);
 			tickServerProfiles(mc);
 			while (TrsKeys.hudProfile.isPressed()) {

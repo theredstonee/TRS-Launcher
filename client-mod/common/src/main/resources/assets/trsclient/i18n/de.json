@@ -1933,6 +1933,8 @@
   "setting.hungerOverlay.heldFood": "Vorschau für das Essen in der Hand",
   "setting.hungerOverlay.health": "Vorschau der Heilung",
   "setting.hungerOverlay.exhaustion": "Erschöpfungs-Balken (Einzelspieler)",
+  "module.borderlessFullscreen": "Randloses Vollbild",
+  "module.borderlessFullscreen.desc": "Vollbild (F11 oder Grafikeinstellungen) füllt den aktuellen Bildschirm als randloses Fenster, ohne den exklusiven Vollbildmodus. Vollbild aus stellt Fenstergröße und Position wieder her. Ausschalten im Vollbild wechselt sauber zurück zum exklusiven Vollbild.",
   "module.tooltips": "Bessere Tooltips",
   "module.tooltips.desc": "Mehr Infos beim Überfahren von Gegenständen: Inhalt von Shulker-Kisten als Raster in der Kistenfarbe, Vorschau gefüllter Karten, Haltbarkeit als Zahl, Hunger und Sättigung von Essen und kompakte Verzauberungen. Nur Anzeige.",
   "setting.tooltips.shulker": "Inhalt von Shulker-Kisten",

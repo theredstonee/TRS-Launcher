@@ -1933,6 +1933,8 @@
   "setting.hungerOverlay.heldFood": "Preview of the food in your hand",
   "setting.hungerOverlay.health": "Preview of the health it heals",
   "setting.hungerOverlay.exhaustion": "Exhaustion bar (singleplayer)",
+  "module.borderlessFullscreen": "Borderless Fullscreen",
+  "module.borderlessFullscreen.desc": "Fullscreen (F11 or Video Settings) covers the current monitor with a borderless window instead of exclusive fullscreen. Turning fullscreen off restores the previous position and size. Switching this off while fullscreen goes back to exclusive fullscreen.",
   "module.tooltips": "Better Tooltips",
   "module.tooltips.desc": "More information when hovering over items: shulker box contents as a grid in the box colour, a preview of filled maps, durability as a number, hunger and saturation of food and compact enchantments. Display only.",
   "setting.tooltips.shulker": "Shulker box contents",

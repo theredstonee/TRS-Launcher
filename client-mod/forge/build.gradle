@@ -135,7 +135,7 @@ if (stonecutter.eval(mc, '>=1.20.3')) mixinClasses += ['HostingPackServerMixin',
 if (stonecutter.eval(mc, '<1.20.3')) mixinClasses << 'SelectionListAccessor'
 if (stonecutter.eval(mc, '>=26.1')) mixinClasses << 'PauseBackgroundMixin'
 // Leistung: Dynamische FPS/FPS-Messung, Partikel, Entity-Culling, Welt-Details (alle require = 0).
-mixinClasses += ['FramePaceMixin', 'ParticleLimitMixin', 'EntityCullMixin', 'BlockEntityCullMixin', 'NameTagCullMixin',
+mixinClasses += ['FramePaceMixin', 'WindowMixin', 'ParticleLimitMixin', 'EntityCullMixin', 'BlockEntityCullMixin', 'NameTagCullMixin',
 		'LivingNameTagCullMixin', 'TextureAnimationMixin', 'SkyMixin', 'StarsMixin', 'WeatherMixin']
 // Netzwerk-Optimierung + Ping (Handler an der Client-Verbindung), niedrige Eingabeverzögerung (spätes Lesen der Maus).
 mixinClasses += ['NetConnectionMixin', 'LatencyMixin']

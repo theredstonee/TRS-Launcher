@@ -19,6 +19,7 @@
 		"BlockEntityCullMixin",
 		"FogMixin",
 		"FramePaceMixin",
+		"WindowMixin",
 		"LatencyMixin",
 		"NetConnectionMixin",
 		"LivingNameTagCullMixin",
