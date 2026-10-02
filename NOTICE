@@ -1,0 +1,25 @@
+TRS Launcher, TRS Client and the TRS Launcher website
+Copyright (C) 2026 Ohev Tamerin (Theredstonee)
+
+This program is free software: you can redistribute it and/or modify it under the terms of the
+GNU General Public License as published by the Free Software Foundation, version 3 of the License
+(see LICENSE).
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+Third-party parts
+-----------------
+- Polyfrost OneLauncher (GPL-3.0-only): parts of the launcher's process handling are adapted from
+  https://github.com/Polyfrost/OneLauncher
+- Chat Heads by dzwdz (MPL-2.0): parts of the TRS Client chat heads code (client-mod, packages
+  "chatheads") are based on https://github.com/dzwdz/chat_heads. Those files keep their MPL-2.0
+  header; the license text is in client-mod/licenses/chat-heads-MPL-2.0.txt.
+- AppleSkin by squeek502 (The Unlicense): idea for the TRS Client hunger overlay; resource packs
+  that ship AppleSkin textures are supported.
+- Further libraries and bundled mods are listed with their licenses in README.md and
+  client-mod/README.md.
+
+"Minecraft" is a trademark of Mojang Synergies AB. TRS Launcher is not an official Minecraft
+product and is not approved by or associated with Mojang or Microsoft.
