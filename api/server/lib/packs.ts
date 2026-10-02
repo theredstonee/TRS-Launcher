@@ -1,5 +1,5 @@
 import { randomBytes, randomInt } from 'node:crypto'
-import { readdirSync, readFileSync, rmSync, statSync } from 'node:fs'
+import { mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { getHeader, type H3Event } from 'h3'
 import { writeFileAtomic } from './attachments'
@@ -10,7 +10,8 @@ import type { PlayerRef } from './events'
 import { areFriends, hasBlocked } from './friends'
 import { sha256Hex } from './ids'
 import { loadModrinth, modrinthProject, modrinthVersion } from './modrinth'
-import { inspectPack, listPackContents, type PackContentItem, type PackContents, type PackLoader } from './packfile'
+import { inspectPack, inspectPackFile, listPackContentsFile, type PackContentItem, type PackContents, type PackLoader } from './packfile'
+import { openCompletedUpload, sweepExpiredUploads, takePackUpload } from './packupload'
 import { assertNotSanctioned } from './sanctions'
 import { ACTIVE_BANS, getUser } from './users'
 
@@ -72,7 +73,7 @@ export interface PackView {
   revision: number
   mcVersion: string
   loader: { kind: PackLoader, version: string | null }
-  /** Mods & Co., die der Launcher von Modrinth lädt. */
+  /** Dateien im Index (Download von Modrinth, CurseForge oder GitHub). Der Feldname bleibt für alte Clients. */
   modrinthFiles: number
   /** Eigene Mod-Dateien im Pack (nicht von Modrinth) – der Launcher weist darauf hin. */
   ownJars: number
@@ -344,6 +345,138 @@ export function updatePackFile(ctx: AppContext, uuid: string, id: string, body: 
   return ownView(ctx, row)
 }
 
+/** Fertige Upload-Datei an ihren Platz legen. Weg ist sie schon, wenn ein zweiter Abschluss gewinnt. */
+function placeUpload(up: { path: string }, dest: string): void {
+  mkdirSync(join(dest, '..'), { recursive: true })
+  try {
+    renameSync(up.path, dest)
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') throw conflict('upload_used', 'This upload was already used')
+    throw err
+  }
+}
+
+function restoreUpload(up: { path: string }, dest: string): void {
+  try {
+    renameSync(dest, up.path)
+  } catch {
+    rmSync(dest, { force: true })
+  }
+}
+
+/**
+ * Neues Pack aus einem abgeschlossenen Stück-Upload (`uploadToken` von `POST …/complete`).
+ * Dieselbe Prüfung und dieselben Grenzen wie {@link uploadPack}.
+ */
+export function uploadPackFromToken(ctx: AppContext, uuid: string, token: string, duration: PackDuration): OwnPackView {
+  const up = openCompletedUpload(ctx, uuid, token)
+  if (up.size > ctx.config.packMaxBytes) throw new ApiError(413, 'payload_too_large', 'The modpack is too large')
+  assertCanUpload(ctx, uuid, up.size, true)
+  const info = inspectPackFile(up.path, up.size)
+  const t = ctx.now()
+  const row: PackRow = {
+    id: newPackId(),
+    code: '',
+    owner_uuid: uuid,
+    name: info.name,
+    summary: info.summary,
+    pack_version: info.packVersion,
+    mc_version: info.mcVersion,
+    loader: info.loader,
+    loader_version: info.loaderVersion,
+    index_files: info.downloads,
+    own_jars: info.ownJars,
+    other_files: info.overrides,
+    revision: 1,
+    bytes: up.size,
+    sha256: up.sha256,
+    duration,
+    installs: 0,
+    created_at: t,
+    updated_at: t,
+    expires_at: expiry(ctx, duration),
+  }
+  const dest = fileOf(ctx, row)
+  placeUpload(up, dest)
+  try {
+    tx(ctx.db, () => {
+      for (let i = 0; ; i++) {
+        row.code = newPackCode()
+        if (!one(ctx.db, 'SELECT 1 AS x FROM shared_packs WHERE code = ?', row.code)) break
+        if (i > 20) throw new Error('no free pack code')
+      }
+      run(
+        ctx.db,
+        `INSERT INTO shared_packs (id, code, owner_uuid, name, summary, pack_version, mc_version, loader, loader_version, index_files,
+           own_jars, other_files, revision, bytes, sha256, duration, installs, created_at, updated_at, expires_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        row.id, row.code, row.owner_uuid, row.name, row.summary, row.pack_version, row.mc_version, row.loader, row.loader_version,
+        row.index_files, row.own_jars, row.other_files, row.revision, row.bytes, row.sha256, row.duration, row.installs,
+        row.created_at, row.updated_at, row.expires_at,
+      )
+      run(ctx.db, 'INSERT INTO shared_pack_uploads (uuid, at) VALUES (?, ?)', uuid, t)
+      takePackUpload(ctx, up.id)
+    })
+  } catch (err) {
+    restoreUpload(up, dest)
+    throw err
+  }
+  rmSync(join(ctx.packDir, 'tmp', up.id), { recursive: true, force: true })
+  return ownView(ctx, row)
+}
+
+/** Neue Version aus einem abgeschlossenen Stück-Upload. Gleicher Code, `revision` + 1. */
+export function updatePackFromToken(ctx: AppContext, uuid: string, id: string, token: string): OwnPackView {
+  const old = ownPack(ctx, uuid, id)
+  const up = openCompletedUpload(ctx, uuid, token)
+  if (up.size > ctx.config.packMaxBytes) throw new ApiError(413, 'payload_too_large', 'The modpack is too large')
+  assertCanUpload(ctx, uuid, Math.max(0, up.size - old.bytes), false)
+  if (up.sha256 === old.sha256) throw conflict('pack_unchanged', 'This is the same file as the current version')
+  const info = inspectPackFile(up.path, up.size)
+  const t = ctx.now()
+  const row: PackRow = {
+    ...old,
+    name: info.name,
+    summary: info.summary,
+    pack_version: info.packVersion,
+    mc_version: info.mcVersion,
+    loader: info.loader,
+    loader_version: info.loaderVersion,
+    index_files: info.downloads,
+    own_jars: info.ownJars,
+    other_files: info.overrides,
+    revision: old.revision + 1,
+    bytes: up.size,
+    sha256: up.sha256,
+    updated_at: t,
+  }
+  const dest = fileOf(ctx, row)
+  placeUpload(up, dest)
+  try {
+    tx(ctx.db, () => {
+      const n = run(
+        ctx.db,
+        `UPDATE shared_packs SET name = ?, summary = ?, pack_version = ?, mc_version = ?, loader = ?, loader_version = ?, index_files = ?,
+           own_jars = ?, other_files = ?, revision = ?, bytes = ?, sha256 = ?, updated_at = ?
+         WHERE id = ? AND revision = ?`,
+        row.name, row.summary, row.pack_version, row.mc_version, row.loader, row.loader_version, row.index_files, row.own_jars,
+        row.other_files, row.revision, row.bytes, row.sha256, row.updated_at, row.id, old.revision,
+      )
+      if (n !== 1) throw conflict('pack_changed', 'The modpack was changed at the same time – try again')
+      run(ctx.db, 'INSERT INTO shared_pack_uploads (uuid, at) VALUES (?, ?)', uuid, t)
+      takePackUpload(ctx, up.id)
+    })
+  } catch (err) {
+    restoreUpload(up, dest)
+    throw err
+  }
+  rmSync(fileOf(ctx, old), { force: true })
+  rmSync(join(ctx.packDir, 'tmp', up.id), { recursive: true, force: true })
+  const view = packView(ctx, row)
+  for (const u of recipients(ctx, row.id)) ctx.events.publish(u, { type: 'pack_updated', pack: view })
+  return ownView(ctx, row)
+}
+
 /** Laufzeit ändern – zählt ab jetzt neu. */
 export function setPackDuration(ctx: AppContext, uuid: string, id: string, duration: PackDuration): OwnPackView {
   const r = ownPack(ctx, uuid, id)
@@ -389,11 +522,75 @@ export function removePackFiles(ctx: AppContext, rows: Pick<PackRow, 'id' | 'rev
   for (const r of rows) rmSync(fileOf(ctx, r), { force: true })
 }
 
-/** Datei zum Herunterladen (zählt die Installation). */
+/** Datei zum Herunterladen (zählt die Installation). Für große Packs streamt die Route, siehe {@link planPackDownload}. */
 export function readPackFile(ctx: AppContext, r: PackRow, count: boolean): Buffer {
   const data = readFileSync(fileOf(ctx, r))
   if (count) run(ctx.db, 'UPDATE shared_packs SET installs = installs + 1 WHERE id = ?', r.id)
   return data
+}
+
+export interface PackDownloadPlan {
+  status: 200 | 206
+  path: string
+  /** Inklusiv, wie bei `createReadStream`. */
+  start: number
+  end: number
+  total: number
+  contentLength: number
+  contentRange: string | null
+  /** Nur der Anfang eines fremden Downloads zählt (Fortsetzung nicht noch einmal). */
+  countInstall: boolean
+}
+
+/**
+ * `Range: bytes=` auswerten. Ein Bereich → 206, mehrere oder ein unverständlicher Kopf → die ganze Datei (200).
+ * Unerfüllbar → 416 `range_not_satisfiable`.
+ */
+export function parseByteRange(header: string | undefined, size: number): { start: number, end: number } | null {
+  if (header === undefined || header.trim() === '') return null
+  const h = header.trim().toLowerCase()
+  if (!h.startsWith('bytes=')) return null
+  const spec = h.slice('bytes='.length)
+  if (spec.includes(',')) return null
+  const m = /^(\d*)-(\d*)$/.exec(spec)
+  if (!m || (m[1] === '' && m[2] === '')) return null
+  const unsat = () => new ApiError(416, 'range_not_satisfiable', 'Range not satisfiable', undefined, {
+    'Content-Range': `bytes */${size}`,
+  })
+  if (size <= 0) throw unsat()
+  if (m[1] === '') {
+    const n = Number(m[2])
+    if (!Number.isSafeInteger(n) || n <= 0) throw unsat()
+    return { start: Math.max(0, size - n), end: size - 1 }
+  }
+  const start = Number(m[1])
+  const end = m[2] === '' ? size - 1 : Number(m[2])
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || start > end || start >= size) throw unsat()
+  return { start, end: Math.min(end, size - 1) }
+}
+
+/** Was die Download-Route streamt: richtige Länge, Bereich und ob die Installation zählt. */
+export function planPackDownload(ctx: AppContext, r: PackRow, rangeHeader: string | undefined, requester: string): PackDownloadPlan {
+  const path = fileOf(ctx, r)
+  let total: number
+  try {
+    total = statSync(path).size
+  } catch {
+    throw notFound('pack_not_found', 'No modpack with this code (wrong code, expired or deleted)')
+  }
+  const range = parseByteRange(rangeHeader, total)
+  const start = range?.start ?? 0
+  const end = range ? range.end : Math.max(0, total - 1)
+  return {
+    status: range ? 206 : 200,
+    path,
+    start,
+    end,
+    total,
+    contentLength: total === 0 ? 0 : end - start + 1,
+    contentRange: range ? `bytes ${start}-${end}/${total}` : null,
+    countInstall: requester !== r.owner_uuid && start === 0 && total > 0,
+  }
 }
 
 /** Letzte Inhaltslisten je Pack-Version (die Datei ändert sich nur mit einer neuen `revision`). */
@@ -419,13 +616,14 @@ function baseContents(ctx: AppContext, r: PackRow): PackContents {
   const key = `${r.id}.${r.revision}`
   const hit = contentsCache.get(key)
   if (hit) return hit
-  let data: Buffer
+  const path = fileOf(ctx, r)
+  let size: number
   try {
-    data = readFileSync(fileOf(ctx, r))
+    size = statSync(path).size
   } catch {
     throw notFound('pack_not_found', 'Modpack not found')
   }
-  const list = listPackContents(data)
+  const list = listPackContentsFile(path, size)
   contentsCache.set(key, list)
   if (contentsCache.size > 64) contentsCache.delete(contentsCache.keys().next().value!)
   return list
@@ -544,6 +742,7 @@ export function sweepExpiredPacks(ctx: AppContext): number {
   const rows = all<PackRow>(ctx.db, 'SELECT * FROM shared_packs WHERE expires_at IS NOT NULL AND expires_at <= ? LIMIT 500', t)
   removePacks(ctx, rows, false)
   run(ctx.db, 'DELETE FROM shared_pack_uploads WHERE at <= ?', t - DAY)
+  sweepExpiredUploads(ctx)
   return rows.length
 }
 
@@ -564,6 +763,7 @@ export function sweepOrphanPackFiles(ctx: AppContext): number {
     } catch {
       continue
     }
+    if (d === 'tmp') continue
     for (const f of files) {
       const m = /^([A-Za-z0-9_-]{22})\.(\d+)\.mrpack$/.exec(f)
       if (m && one(ctx.db, 'SELECT 1 AS x FROM shared_packs WHERE id = ? AND revision = ?', m[1]!, Number(m[2])) !== undefined) continue

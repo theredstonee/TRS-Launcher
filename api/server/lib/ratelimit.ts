@@ -195,8 +195,10 @@ export const RULES = {
   /** Anonyme Meldungen von der öffentlichen Seite je IP. */
   shareReportIp: { limit: 5, windowMs: HOUR },
   // ------------------------------------------------ Geteilte Modpacks (§27)
-  /** Hochladen (neu + neue Version) – die Tagesgrenze steht zusätzlich in der Datenbank. */
+  /** Hochladen (neu + neue Version, Sitzung anlegen, abschließen) – die Tagesgrenze steht zusätzlich in der Datenbank. */
   packUploadUser: { limit: 6, windowMs: MIN },
+  /** Stücke eines großen Packs (32 MiB). Ein 1-GB-Pack hat 32 Stücke, dazu Wiederholungen. */
+  packChunkUser: { limit: 120, windowMs: MIN },
   /** Eigene Liste, Laufzeit, Löschen, an Freunde schicken, Posteingang. */
   packManageUser: { limit: 60, windowMs: MIN },
   /** Code einlösen / Update-Prüfung mit Konto. */

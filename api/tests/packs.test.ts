@@ -1,14 +1,16 @@
-import { existsSync, readdirSync } from 'node:fs'
+import { createReadStream, existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { crc32, deflateRawSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
+import { loadConfig } from '../server/lib/config'
 import { migrate, one } from '../server/lib/db'
 import { block } from '../server/lib/friends'
-import { migrateSharedPacks } from '../server/lib/migrations'
+import { sha256Hex } from '../server/lib/ids'
+import { migratePackUploads, migrateSharedPacks } from '../server/lib/migrations'
 import { adminReportAction, createReport } from '../server/lib/moderation'
 import { modrinthIcon, resetModrinthCache } from '../server/lib/modrinth'
-import { inspectPack, listPackContents } from '../server/lib/packfile'
+import { inspectPack, listPackContents, packDownloadHost } from '../server/lib/packfile'
 import {
   deletePack,
   dismissInbox,
@@ -18,13 +20,23 @@ import {
   packByCode,
   packContents,
   packInbox,
+  planPackDownload,
   readPackFile,
   sendPack,
   setPackDuration,
   sweepExpiredPacks,
   updatePackFile,
+  updatePackFromToken,
   uploadPack,
+  uploadPackFromToken,
 } from '../server/lib/packs'
+import {
+  completePackUpload,
+  createPackUpload,
+  packUploadStatus,
+  putPackChunk,
+  sweepExpiredUploads,
+} from '../server/lib/packupload'
 import { createSanction } from '../server/lib/sanctions'
 import { ownerStaff } from '../server/lib/team'
 import { deleteUser } from '../server/lib/users'
@@ -129,8 +141,19 @@ describe('pack file check (§27)', () => {
     expect(bad(Buffer.from('not a zip at all, sorry'))).toBe('invalid_pack')
     expect(bad(zip({ 'overrides/a.txt': 'x' }))).toBe('invalid_pack')
     expect(bad(zip({ 'modrinth.index.json': '{no json' }))).toBe('invalid_pack')
-    // Downloads nur von Modrinths CDN.
-    for (const url of ['https://evil.example/x.jar', 'http://cdn.modrinth.com/x.jar', 'https://cdn.modrinth.com.evil.test/x.jar', 'https://u:p@cdn.modrinth.com/x.jar']) {
+    // Downloads nur von den erlaubten HTTPS-Hosts, ohne Login, Port oder Lookalike.
+    for (const url of [
+      'https://evil.example/x.jar',
+      'http://cdn.modrinth.com/x.jar',
+      'http://edge.forgecdn.net/x.jar',
+      'https://cdn.modrinth.com.evil.test/x.jar',
+      'https://edge.forgecdn.net.evil.test/x.jar',
+      'https://u:p@cdn.modrinth.com/x.jar',
+      'https://edge.forgecdn.net:444/x.jar',
+      'https://objects.githubusercontent.com/x.jar',
+      'https://www.github.com/owner/repo/x.jar',
+      'https://github.com.evil.test/x.jar',
+    ]) {
       const files = [{ path: 'mods/x.jar', hashes: { sha1: SHA1, sha512: SHA512 }, downloads: [url], fileSize: 1 }]
       expect(bad(zip({ 'modrinth.index.json': index({ files }) }))).toBe('invalid_pack')
     }
@@ -145,6 +168,32 @@ describe('pack file check (§27)', () => {
     expect(bad(zip({ 'modrinth.index.json': index({ dependencies: { minecraft: '1.21.1', 'evil-loader': '1' } }) }))).toBe('invalid_pack')
     expect(bad(zip({ 'modrinth.index.json': index({ dependencies: { 'fabric-loader': '1' } }) }))).toBe('invalid_pack')
     expect(bad(zip({ 'modrinth.index.json': index({ game: 'terraria' }) }))).toBe('invalid_pack')
+  })
+
+  it('accepts Modrinth, CurseForge and GitHub links and nothing that only looks like them', () => {
+    const ok = (url: string) => {
+      const files = [{ path: 'mods/x.jar', hashes: { sha1: SHA1, sha512: SHA512 }, downloads: [url], fileSize: 1 }]
+      expect(code(() => inspectPack(zip({ 'modrinth.index.json': index({ files }) })))).toBe('ok')
+      expect(packDownloadHost(url)).not.toBeNull()
+    }
+    ok('https://cdn.modrinth.com/data/AANobbMI/versions/x/sodium.jar')
+    ok('https://cdn.modrinth.com:443/data/AANobbMI/versions/x/sodium.jar')
+    ok('https://edge.forgecdn.net/files/123/456/sodium.jar')
+    ok('https://mediafilez.forgecdn.net/files/123/456/sodium.jar')
+    ok('https://github.com/owner/repo/releases/download/v1/sodium.jar')
+    ok('https://GitHub.com/owner/repo/releases/download/v1/sodium.jar')
+    ok('https://raw.githubusercontent.com/owner/repo/v1/sodium.jar')
+    const files = [
+      { path: 'mods/sodium.jar', hashes: { sha1: SHA1, sha512: SHA512 }, downloads: ['https://edge.forgecdn.net/files/1/2/sodium.jar'], fileSize: 1 },
+      { path: 'mods/extra.jar', hashes: { sha1: SHA1, sha512: SHA512 }, downloads: ['https://github.com/owner/repo/releases/download/v1/extra.jar'], fileSize: 1 },
+      { path: 'resourcepacks/pack.zip', hashes: { sha1: SHA1, sha512: SHA512 }, downloads: ['https://raw.githubusercontent.com/owner/repo/main/pack.zip'], fileSize: 1 },
+    ]
+    const listed = listPackContents(zip({ 'modrinth.index.json': index({ files }) }))
+    expect(listed.mods.map((m) => [m.file, m.source, m.projectId])).toEqual([
+      ['extra.jar', 'github', null],
+      ['sodium.jar', 'curseforge', null],
+    ])
+    expect(listed.resourcePacks.map((m) => [m.file, m.source])).toEqual([['pack.zip', 'github']])
   })
 
   it('normalizes codes forgivingly', () => {
@@ -357,5 +406,176 @@ describe('pack contents for the website (§27.6)', () => {
     const c = await packContents(env.ctx, packByCode(env.ctx, shared.code)!)
     expect(c.mods.map((m) => [m.name, m.title])).toEqual([['own-mod', null], ['sodium', null]])
     resetModrinthCache()
+  })
+})
+
+function readStream(path: string, start: number, end: number): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = []
+    createReadStream(path, { start, end })
+      .on('data', (c: Buffer) => chunks.push(c))
+      .on('error', reject)
+      .on('end', () => resolve(Buffer.concat(chunks)))
+  })
+}
+
+describe('chunked modpack upload (§27.7)', () => {
+  const secret = 'test-secret-key-0123456789abcdef-0123456789'
+
+  function pieces(buf: Buffer, size: number): Buffer[] {
+    const out: Buffer[] = []
+    for (let i = 0; i < buf.length; i += size) out.push(Buffer.from(buf.subarray(i, Math.min(i + size, buf.length))))
+    return out
+  }
+
+  it('defaults to 1 GB per pack and 51200 MB of storage, overridable for tests', async () => {
+    const defaults = loadConfig({ SECRET_KEY: secret })
+    expect(defaults.packMaxBytes).toBe(1024 * 1024 * 1024)
+    expect(defaults.packStorageMaxBytes).toBe(51200 * 1024 * 1024)
+    expect(defaults.packChunkBytes).toBe(33_554_432)
+    const env = makeEnv({ env: { PACK_MAX_MB: '1', PACK_CHUNK_BYTES: '8' } })
+    expect(env.ctx.config.packMaxBytes).toBe(1024 * 1024)
+    const [alex] = await players(env, 'Alex')
+    expect(code(() => createPackUpload(env.ctx, alex!.uuid, { size: 2 * 1024 * 1024, sha256: 'ab'.repeat(32) }))).toBe('payload_too_large')
+    const body = pack()
+    const up = createPackUpload(env.ctx, alex!.uuid, { size: body.length, sha256: sha256Hex(body) })
+    expect(up.chunkSize).toBe(8)
+    expect(up.expiresAt).toBe(new Date(env.clock.t + DAY).toISOString())
+  })
+
+  it('accepts chunks in any order, a duplicate chunk and a resume, then installs the same bytes', async () => {
+    const env = makeEnv({ env: { PACK_CHUNK_BYTES: '8' } })
+    const [alex, ben] = await players(env, 'Alex', 'Ben')
+    const body = pack({ versionId: '2.0.0' })
+    const up = createPackUpload(env.ctx, alex!.uuid, { size: body.length, sha256: sha256Hex(body).toUpperCase(), name: 'Redstone Pack' })
+    const piece = pieces(body, up.chunkSize)
+    expect(piece.length).toBeGreaterThan(2)
+    expect(code(() => packUploadStatus(env.ctx, ben!.uuid, up.uploadId))).toBe('upload_not_found')
+    for (const i of piece.map((_, n) => n).reverse()) {
+      if (i % 2 === 0) continue
+      putPackChunk(env.ctx, alex!.uuid, up.uploadId, i, piece[i]!, sha256Hex(piece[i]!))
+    }
+    expect(packUploadStatus(env.ctx, alex!.uuid, up.uploadId).received).toEqual(
+      piece.map((_, n) => n).filter((n) => n % 2 === 1).sort((a, b) => a - b),
+    )
+    expect(code(() => completePackUpload(env.ctx, alex!.uuid, up.uploadId))).toBe('upload_incomplete')
+    for (const i of piece.map((_, n) => n)) {
+      if (i % 2 === 1) continue
+      putPackChunk(env.ctx, alex!.uuid, up.uploadId, i, piece[i]!, sha256Hex(piece[i]!))
+    }
+    putPackChunk(env.ctx, alex!.uuid, up.uploadId, 0, piece[0]!, sha256Hex(piece[0]!))
+    expect(packUploadStatus(env.ctx, alex!.uuid, up.uploadId)).toMatchObject({
+      received: piece.map((_, n) => n),
+      size: body.length,
+      chunkSize: 8,
+    })
+    const done = completePackUpload(env.ctx, alex!.uuid, up.uploadId)
+    expect(done.uploadToken).toMatch(/^up_[A-Za-z0-9_-]{43}$/)
+    expect(code(() => completePackUpload(env.ctx, alex!.uuid, up.uploadId))).toBe('upload_closed')
+    const shared = uploadPackFromToken(env.ctx, alex!.uuid, done.uploadToken, '7d')
+    const row = packByCode(env.ctx, shared.code)!
+    expect(readPackFile(env.ctx, row, false).equals(body)).toBe(true)
+    expect(shared).toMatchObject({ packVersion: '2.0.0', revision: 1 })
+    expect(code(() => uploadPackFromToken(env.ctx, alex!.uuid, done.uploadToken, '7d'))).toBe('upload_not_found')
+    expect(code(() => updatePackFromToken(env.ctx, ben!.uuid, shared.id, 'up_' + 'a'.repeat(43)))).toBe('pack_not_found')
+
+    const body2 = pack({ versionId: '2.1.0' })
+    const up2 = createPackUpload(env.ctx, alex!.uuid, { size: body2.length, sha256: sha256Hex(body2) })
+    for (const [i, part] of pieces(body2, up2.chunkSize).entries()) putPackChunk(env.ctx, alex!.uuid, up2.uploadId, i, part, sha256Hex(part))
+    const token2 = completePackUpload(env.ctx, alex!.uuid, up2.uploadId).uploadToken
+    const updated = updatePackFromToken(env.ctx, alex!.uuid, shared.id, token2)
+    expect(updated).toMatchObject({ code: shared.code, revision: 2, packVersion: '2.1.0' })
+    expect(readPackFile(env.ctx, packByCode(env.ctx, shared.code)!, false).equals(body2)).toBe(true)
+    expect(code(() => updatePackFromToken(env.ctx, alex!.uuid, shared.id, token2))).toBe('upload_not_found')
+  })
+
+  it('rejects a bad chunk hash, the wrong size, a conflicting resend and a checksum that does not match', async () => {
+    const env = makeEnv({ env: { PACK_CHUNK_BYTES: '8' } })
+    const [alex] = await players(env, 'Alex')
+    const body = pack()
+    const up = createPackUpload(env.ctx, alex!.uuid, { size: body.length, sha256: sha256Hex(body) })
+    const piece = pieces(body, up.chunkSize)
+    expect(code(() => putPackChunk(env.ctx, alex!.uuid, up.uploadId, 0, piece[0]!, 'b'.repeat(64)))).toBe('checksum_mismatch')
+    expect(packUploadStatus(env.ctx, alex!.uuid, up.uploadId).received).toEqual([])
+    expect(code(() => putPackChunk(env.ctx, alex!.uuid, up.uploadId, 0, Buffer.alloc(3), sha256Hex(Buffer.alloc(3))))).toBe('invalid_chunk')
+    expect(code(() => putPackChunk(env.ctx, alex!.uuid, up.uploadId, 0, Buffer.alloc(9), 'a'.repeat(64)))).toBe('payload_too_large')
+    expect(code(() => putPackChunk(env.ctx, alex!.uuid, up.uploadId, piece.length, piece[0]!, sha256Hex(piece[0]!)))).toBe('invalid_chunk')
+    putPackChunk(env.ctx, alex!.uuid, up.uploadId, 0, piece[0]!, sha256Hex(piece[0]!))
+    const other = Buffer.alloc(piece[0]!.length, 7)
+    expect(code(() => putPackChunk(env.ctx, alex!.uuid, up.uploadId, 0, other, sha256Hex(other)))).toBe('chunk_conflict')
+    putPackChunk(env.ctx, alex!.uuid, up.uploadId, 0, piece[0]!, sha256Hex(piece[0]!))
+
+    const bad = createPackUpload(env.ctx, alex!.uuid, { size: body.length, sha256: 'a'.repeat(64) })
+    putPackChunk(env.ctx, alex!.uuid, bad.uploadId, 0, piece[0]!, sha256Hex(piece[0]!))
+    for (let i = 1; i < piece.length; i++) putPackChunk(env.ctx, alex!.uuid, bad.uploadId, i, piece[i]!, sha256Hex(piece[i]!))
+    expect(code(() => completePackUpload(env.ctx, alex!.uuid, bad.uploadId))).toBe('checksum_mismatch')
+    expect(packUploadStatus(env.ctx, alex!.uuid, bad.uploadId).received).toHaveLength(piece.length)
+  })
+
+  it('drops an invalid pack so another upload can start, and expires after 24 hours', async () => {
+    const env = makeEnv({ env: { PACK_CHUNK_BYTES: '8' } })
+    const [alex] = await players(env, 'Alex')
+    const junk = zip({ 'overrides/a.txt': 'no index' })
+    const bad = createPackUpload(env.ctx, alex!.uuid, { size: junk.length, sha256: sha256Hex(junk) })
+    for (const [i, part] of pieces(junk, bad.chunkSize).entries()) putPackChunk(env.ctx, alex!.uuid, bad.uploadId, i, part, sha256Hex(part))
+    expect(code(() => completePackUpload(env.ctx, alex!.uuid, bad.uploadId))).toBe('invalid_pack')
+    expect(code(() => packUploadStatus(env.ctx, alex!.uuid, bad.uploadId))).toBe('upload_not_found')
+
+    const body = pack()
+    const up = createPackUpload(env.ctx, alex!.uuid, { size: body.length, sha256: sha256Hex(body) })
+    putPackChunk(env.ctx, alex!.uuid, up.uploadId, 0, pieces(body, up.chunkSize)[0]!, sha256Hex(pieces(body, up.chunkSize)[0]!))
+    expect(existsSync(join(env.ctx.packDir, 'tmp', up.uploadId))).toBe(true)
+    env.clock.advance(DAY)
+    expect(code(() => packUploadStatus(env.ctx, alex!.uuid, up.uploadId))).toBe('upload_expired')
+    expect(code(() => putPackChunk(env.ctx, alex!.uuid, up.uploadId, 1, Buffer.alloc(8), 'a'.repeat(64)))).toBe('upload_expired')
+    expect(code(() => completePackUpload(env.ctx, alex!.uuid, up.uploadId))).toBe('upload_expired')
+    expect(sweepExpiredUploads(env.ctx)).toBeGreaterThan(0)
+    expect(existsSync(join(env.ctx.packDir, 'tmp', up.uploadId))).toBe(false)
+    expect(code(() => createPackUpload(env.ctx, alex!.uuid, { size: body.length, sha256: sha256Hex(body) }))).toBe('ok')
+  })
+
+  it('allows three open uploads and refuses a fourth; deleting the account removes the chunks', async () => {
+    const env = makeEnv({ env: { PACK_CHUNK_BYTES: '8' } })
+    const [alex] = await players(env, 'Alex')
+    const body = pack()
+    const sha = sha256Hex(body)
+    const ids = [0, 1, 2].map(() => createPackUpload(env.ctx, alex!.uuid, { size: body.length, sha256: sha }).uploadId)
+    expect(code(() => createPackUpload(env.ctx, alex!.uuid, { size: body.length, sha256: sha }))).toBe('upload_limit')
+    putPackChunk(env.ctx, alex!.uuid, ids[0]!, 0, pieces(body, 8)[0]!, sha256Hex(pieces(body, 8)[0]!))
+    deleteUser(env.ctx, alex!.uuid)
+    expect(existsSync(join(env.ctx.packDir, 'tmp', ids[0]!))).toBe(false)
+  })
+
+  it('streams a byte range with the right length and counts an install only from the start', async () => {
+    const env = makeEnv()
+    const [alex, ben] = await players(env, 'Alex', 'Ben')
+    const body = pack()
+    const shared = uploadPack(env.ctx, alex!.uuid, body, '7d')
+    const row = packByCode(env.ctx, shared.code)!
+    const plan = planPackDownload(env.ctx, row, 'bytes=0-4', ben!.uuid)
+    expect(plan).toMatchObject({ status: 206, contentLength: 5, contentRange: `bytes 0-4/${body.length}`, countInstall: true })
+    expect((await readStream(plan.path, plan.start, plan.end)).equals(body.subarray(0, 5))).toBe(true)
+    const middle = planPackDownload(env.ctx, row, 'bytes=1-4', ben!.uuid)
+    expect(middle).toMatchObject({ status: 206, contentLength: 4, contentRange: `bytes 1-4/${body.length}`, countInstall: false })
+    expect((await readStream(middle.path, middle.start, middle.end)).equals(body.subarray(1, 5))).toBe(true)
+    const tail = planPackDownload(env.ctx, row, `bytes=${body.length - 3}-`, ben!.uuid)
+    expect(tail.countInstall).toBe(false)
+    expect(tail.start).toBe(body.length - 3)
+    expect(tail.contentLength).toBe(3)
+    expect((await readStream(tail.path, tail.start, tail.end)).equals(body.subarray(body.length - 3))).toBe(true)
+    expect(planPackDownload(env.ctx, row, 'bytes=0-1,2-3', ben!.uuid).status).toBe(200)
+    expect(planPackDownload(env.ctx, row, undefined, alex!.uuid)).toMatchObject({ status: 200, contentLength: body.length, countInstall: false })
+    expect(code(() => planPackDownload(env.ctx, row, 'bytes=999999-1000000', ben!.uuid))).toBe('range_not_satisfiable')
+    expect(code(() => planPackDownload(env.ctx, row, 'bytes=-0', ben!.uuid))).toBe('range_not_satisfiable')
+  })
+
+  it('migration 22 is idempotent', () => {
+    const db = new DatabaseSync(':memory:')
+    db.exec('PRAGMA foreign_keys = ON')
+    migrate(db)
+    migratePackUploads(db)
+    migratePackUploads(db)
+    expect(one(db, "SELECT 1 AS x FROM sqlite_master WHERE name = 'pack_upload_sessions'")).toBeDefined()
+    expect(one(db, "SELECT 1 AS x FROM sqlite_master WHERE name = 'pack_upload_chunks'")).toBeDefined()
   })
 })

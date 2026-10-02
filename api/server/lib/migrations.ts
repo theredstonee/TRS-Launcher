@@ -767,7 +767,43 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 21,
     run: migrateEvents,
   },
+  {
+    // Modpack-Upload in Stücken (§27.7): Sitzung (24 h) + empfangene Stücke. Die Bytes liegen unter
+    // `<DATA_DIR>/packs/tmp/<id>/`, nicht in der Datenbank. Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 22,
+    run: migratePackUploads,
+  },
 ]
+
+/** Migration 22 (siehe oben). Exportiert für den Idempotenz-Test. */
+export function migratePackUploads(db: DatabaseSync): void {
+  db.exec(`
+CREATE TABLE IF NOT EXISTS pack_upload_sessions (
+  id TEXT PRIMARY KEY CHECK (length(id) = 22),
+  owner_uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  size INTEGER NOT NULL CHECK (size >= 1),
+  sha256 TEXT NOT NULL CHECK (length(sha256) = 64),
+  name TEXT,
+  chunk_size INTEGER NOT NULL CHECK (chunk_size >= 1),
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL,
+  completed_at INTEGER,
+  token_hash TEXT UNIQUE,
+  consumed_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS pack_upload_sessions_owner ON pack_upload_sessions(owner_uuid, expires_at);
+CREATE INDEX IF NOT EXISTS pack_upload_sessions_expires ON pack_upload_sessions(expires_at);
+
+CREATE TABLE IF NOT EXISTS pack_upload_chunks (
+  upload_id TEXT NOT NULL REFERENCES pack_upload_sessions(id) ON DELETE CASCADE,
+  idx INTEGER NOT NULL CHECK (idx >= 0),
+  sha256 TEXT NOT NULL CHECK (length(sha256) = 64),
+  bytes INTEGER NOT NULL CHECK (bytes >= 1),
+  PRIMARY KEY (upload_id, idx)
+);
+`)
+}
 
 /** Migration 21 (siehe oben). Exportiert für den Idempotenz-Test. */
 export function migrateEvents(db: DatabaseSync): void {

@@ -101,7 +101,7 @@ CREATE TABLE equipped_cosmetics (uuid TEXT NOT NULL REFERENCES users(uuid) ON DE
     const db = new DatabaseSync(':memory:')
     db.exec('PRAGMA foreign_keys = ON')
     migrate(db)
-    expect(one<{ v: number }>(db, 'SELECT MAX(version) AS v FROM schema_migrations')!.v).toBe(21)
+    expect(one<{ v: number }>(db, 'SELECT version AS v FROM schema_migrations WHERE version = 21')!.v).toBe(21)
   })
 })
 

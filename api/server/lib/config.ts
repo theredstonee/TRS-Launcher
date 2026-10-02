@@ -29,10 +29,12 @@ export interface Config {
   chatStorageMaxBytes: number
   /** Höchstens so viele Bytes geteilte Screenshots insgesamt (§23), `SHARE_STORAGE_MAX_MB`. */
   shareStorageMaxBytes: number
-  /** Geteilte Modpacks (§27): größte Pack-Datei, `PACK_MAX_MB`. */
+  /** Geteilte Modpacks (§27): größte Pack-Datei, `PACK_MAX_MB` (Vorgabe 1024). */
   packMaxBytes: number
   /** Höchstens so viele Bytes geteilte Modpacks insgesamt, `PACK_STORAGE_MAX_MB`. */
   packStorageMaxBytes: number
+  /** Stückgröße des wiederaufnehmbaren Uploads, `PACK_CHUNK_BYTES` (Vorgabe 32 MiB). */
+  packChunkBytes: number
   /** Server-Einladungen: Status vom Server abfragen (Ping mit SSRF-Schutz). `SERVER_PING=false` schaltet ab. */
   serverPing: boolean
   /** Welt-Hosting (§21): Relay-Adresse + gemeinsames Geheimnis. `null` = Hosting aus (503 hosting_unavailable). */
@@ -251,8 +253,10 @@ const envSchema = z.object({
   CHAT_KEYS: z.string().default(''),
   CHAT_STORAGE_MAX_MB: z.coerce.number().int().min(10).max(1_000_000).default(1024),
   SHARE_STORAGE_MAX_MB: z.coerce.number().int().min(10).max(1_000_000).default(1024),
-  PACK_MAX_MB: z.coerce.number().int().min(1).max(500).default(50),
-  PACK_STORAGE_MAX_MB: z.coerce.number().int().min(10).max(1_000_000).default(5120),
+  PACK_MAX_MB: z.coerce.number().int().min(1).max(2048).default(1024),
+  PACK_STORAGE_MAX_MB: z.coerce.number().int().min(10).max(1_000_000).default(51200),
+  /** Nur für Tests kleiner als 32 MiB setzen. Clients müssen `chunkSize` aus der Antwort nehmen. */
+  PACK_CHUNK_BYTES: z.coerce.number().int().min(1).max(33_554_432).default(33_554_432),
   SERVER_PING: bool.default(true),
   // Welt-Hosting: Relay (eigener Pterodactyl-Server). Ohne RELAY_SECRET + RELAY_HOST ist Hosting aus.
   RELAY_SECRET: z.string().default(''),
@@ -383,6 +387,7 @@ export function loadConfig(env: Record<string, string | undefined>, limits: Part
     shareStorageMaxBytes: e.SHARE_STORAGE_MAX_MB * 1024 * 1024,
     packMaxBytes: e.PACK_MAX_MB * 1024 * 1024,
     packStorageMaxBytes: e.PACK_STORAGE_MAX_MB * 1024 * 1024,
+    packChunkBytes: e.PACK_CHUNK_BYTES,
     serverPing: e.SERVER_PING,
     hosting: parseHosting(e),
     microsoft: parseMicrosoft(e),
