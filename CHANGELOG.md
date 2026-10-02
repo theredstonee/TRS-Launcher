@@ -28,6 +28,22 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Borderless fullscreen in the TRS Client.** F11 now fills your monitor with a borderless window instead of
+  exclusive fullscreen: alt-tab is instant, Discord and clips work reliably. On by default, switch it off under
+  Performance → Borderless Fullscreen.
+- **Hunger Overlay follows your resource pack.** If a pack ships AppleSkin textures, the TRS Client uses them;
+  otherwise the saturation outline takes the shape of the pack's own hunger icons.
+
+### Deutsch
+- **Randloses Vollbild im TRS Client.** F11 füllt jetzt den Bildschirm mit einem randlosen Fenster statt
+  exklusivem Vollbild: Alt-Tab geht sofort, Discord und Clips laufen zuverlässig. Ab Werk an, abschaltbar unter
+  Leistung → Randloses Vollbild.
+- **Hunger-Anzeige passt sich dem Resource Pack an.** Bringt ein Pack AppleSkin-Texturen mit, nutzt der TRS Client
+  diese; sonst übernimmt der Sättigungsrand die Form der Hunger-Symbole des Packs.
+
 ## 0.16.0 – 2026-10-02 – Spooky Season | Gruselzeit
 <!-- banner: accent=#ff7a1a motif=/news/0.16.0/banner.png -->
 <!-- shots:
