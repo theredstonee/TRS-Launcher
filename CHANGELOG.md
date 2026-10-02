@@ -35,12 +35,38 @@ How to write an entry:
   the food in your hand flashes how much hunger it fills up and how much health it will heal, and in singleplayer a
   light bar shows how close the next hunger point is. Each part can be switched off. Idea from AppleSkin, works in
   every version from Minecraft 1.7.10 to 26.3.
+- **Halloween in the launcher.** When the TRS team switches on the Halloween event (for everyone or just for you), the
+  launcher turns orange and purple: a night start page with a full moon, pumpkins and bats, a witch on a broom who
+  now and then flies across every page, and every progress bar becomes a redstone bar with the witch flying along.
+  Under Skins you can grab the witch hat, the pumpkin head, the bat companion and the Halloween cape for free while
+  the event runs – they stay yours afterwards. The bat is a new kind of cosmetic: a companion you wear next to your
+  hat. The team switches the event under Team → Events.
+- **Duplicate mods.** If an instance has the same mod twice (for example two Sodium versions), the launcher now warns
+  before starting and in the mods list, and fixes it with one click: the newest version stays, older copies are
+  disabled (not deleted).
+- **Smoother fullscreen in the TRS Client.** Dynamic FPS treated a visible fullscreen window like a minimised one and
+  dropped to 1 FPS, which caused lag and a delay of a few seconds after clicking or alt-tabbing. Fullscreen now counts
+  as focused.
+- **Skins page.** The reset-camera button now sits centred under the preview.
 
 ### Deutsch
 - **Hunger-Anzeige im TRS Client.** Ein neues Modul an der Hungerleiste: deine Sättigung erscheint als goldener Rand,
   das Essen in deiner Hand zeigt blinkend, wie viel Hunger es auffüllt und wie viel Leben es heilt, und im
   Einzelspieler zeigt ein heller Balken, wie nah der nächste Hungerpunkt ist. Jeder Teil lässt sich abschalten. Idee
   von AppleSkin, läuft in jeder Version von Minecraft 1.7.10 bis 26.3.
+- **Halloween im Launcher.** Schaltet das TRS-Team das Halloween-Event ein (für alle oder nur für dich), wird der
+  Launcher orange und lila: eine nächtliche Startseite mit Vollmond, Kürbissen und Fledermäusen, eine Hexe auf dem
+  Besen, die ab und zu über jede Seite fliegt, und jeder Fortschrittsbalken wird ein Redstone-Balken mit
+  mitfliegender Hexe. Unter Skins holst du dir während des Events gratis den Hexenhut, den Kürbiskopf, den
+  Fledermaus-Begleiter und den Halloween-Umhang – sie bleiben danach deine. Die Fledermaus ist eine neue Art
+  Kosmetik: ein Begleiter, den du zusätzlich zum Hut trägst. Das Team schaltet das Event unter Team → Events.
+- **Doppelte Mods.** Liegt eine Mod doppelt in einer Instanz (zum Beispiel zwei Sodium-Versionen), warnt der Launcher
+  jetzt vor dem Start und in der Mod-Liste und behebt es mit einem Klick: Die neueste Version bleibt, ältere Kopien
+  werden deaktiviert (nicht gelöscht).
+- **Flüssigeres Vollbild im TRS Client.** Die dynamischen FPS haben ein sichtbares Vollbild wie ein minimiertes
+  Fenster behandelt und auf 1 FPS gedrosselt – das gab Ruckler und ein paar Sekunden Verzögerung nach Klick oder
+  Alt-Tab. Vollbild zählt jetzt als aktiv.
+- **Skins-Seite.** Der Knopf zum Zurücksetzen der Kamera sitzt jetzt mittig unter der Vorschau.
 
 ## 0.15.2 – 2026-09-30 – The Polish Update | Das Feinschliff-Update
 <!-- banner: accent=#ff7a3d motif=/news/0.15.2/banner.png -->
