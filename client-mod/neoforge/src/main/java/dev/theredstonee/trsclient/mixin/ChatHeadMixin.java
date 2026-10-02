@@ -122,13 +122,13 @@ public abstract class ChatHeadMixin {
 	private int trsclient$move(net.minecraft.client.gui.Font font, net.minecraft.util.FormattedCharSequence line, int x, int y, int color) {
 		return ChatHeadHooks.offset(x, line, y, color);
 	}
-	*///?} elif >=1.16 {
+	*///?} elif >=1.16 && <1.20 {
 	/*@ModifyArg(method = "render(Lcom/mojang/blaze3d/vertex/PoseStack;I)V", index = 2, require = 1,
 			at = @At(value = "INVOKE", ordinal = 0, target = "Lnet/minecraft/client/gui/Font;drawShadow(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/util/FormattedCharSequence;FFI)I"))
 	private float trsclient$move(com.mojang.blaze3d.vertex.PoseStack pose, net.minecraft.util.FormattedCharSequence line, float x, float y, int color) {
 		return ChatHeadHooks.offset(x, line, y, color);
 	}
-	*///?} else {
+	*///?} elif <1.16 {
 	/*@ModifyArg(method = "render(I)V", index = 1, require = 0,
 			at = @At(value = "INVOKE", ordinal = 0, target = "Lnet/minecraft/client/gui/Font;drawShadow(Ljava/lang/String;FFI)I"))
 	private float trsclient$move(String line, float x, float y, int color) {
