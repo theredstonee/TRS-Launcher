@@ -57,6 +57,9 @@ public final class GfxImage {
 		}
 
 		private final Map<String, Entry> entries = new HashMap<String, Entry>();
+		private Object seenManager;
+		private int generation;
+		private boolean reloadHooked;
 
 		private Store() {
 		}
@@ -111,6 +114,57 @@ public final class GfxImage {
 		public Textures.DefaultSkin defaultSkin(UUID uuid) {
 			return new Textures.DefaultSkin(new TextureRef(DefaultPlayerSkin.getDefaultSkin(uuid), 64, 64),
 					"slim".equals(DefaultPlayerSkin.getSkinType(uuid)));
+		}
+
+		@Override
+		public byte[] gameBytes(String location) {
+			int colon = location == null ? -1 : location.indexOf(':');
+			if (colon <= 0 || colon >= location.length() - 1) return null;
+			try {
+				net.minecraft.client.resources.IResource res = Minecraft.getMinecraft().getResourceManager()
+						.getResource(new ResourceLocation(location.substring(0, colon), location.substring(colon + 1)));
+				try (java.io.InputStream in = res.getInputStream()) {
+					return readAll(in);
+				}
+			} catch (Throwable ignored) {
+				return null;
+			}
+		}
+
+		@Override
+		public int resourceGeneration() {
+			try {
+				net.minecraft.client.resources.IResourceManager manager = Minecraft.getMinecraft().getResourceManager();
+				if (manager != seenManager) {
+					seenManager = manager;
+					generation++;
+					reloadHooked = false;
+				}
+				// 1.8–1.12 lädt denselben Manager neu – die Identität allein reicht nicht.
+				if (!reloadHooked && manager instanceof net.minecraft.client.resources.IReloadableResourceManager) {
+					reloadHooked = true;
+					((net.minecraft.client.resources.IReloadableResourceManager) manager).registerReloadListener(
+							new net.minecraft.client.resources.IResourceManagerReloadListener() {
+								@Override
+								public void onResourceManagerReload(net.minecraft.client.resources.IResourceManager resourceManager) {
+									generation++;
+								}
+							});
+				}
+			} catch (Throwable ignored) {
+			}
+			return generation;
+		}
+
+		private static byte[] readAll(java.io.InputStream in) throws java.io.IOException {
+			java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream(4096);
+			byte[] buf = new byte[8192];
+			int n;
+			while ((n = in.read(buf)) > 0) {
+				out.write(buf, 0, n);
+				if (out.size() > (4 << 20)) return null;
+			}
+			return out.toByteArray();
 		}
 	}
 }

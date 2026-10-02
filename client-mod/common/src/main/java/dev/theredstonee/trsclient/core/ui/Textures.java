@@ -33,6 +33,22 @@ public final class Textures {
 
 		/** Standard-Skin dieser Minecraft-Version für die UUID (Steve/Alex/…), nie null. */
 		DefaultSkin defaultSkin(UUID uuid);
+
+		/**
+		 * Rohbytes einer Spiel-Ressource ({@code namespace:pfad}), z. B. {@code minecraft:textures/gui/icons.png}.
+		 * Null, wenn sie fehlt oder nicht lesbar ist. Resource Packs gewinnen über die Vanilla-Datei.
+		 */
+		default byte[] gameBytes(String location) {
+			return null;
+		}
+
+		/**
+		 * Zähler, der nach jedem Ressourcen-Neuladen (Resource Pack an/aus) steigt. Die Hunger-Anzeige baut daraus
+		 * ihren Umriss neu. 0, wenn die Version das nicht meldet.
+		 */
+		default int resourceGeneration() {
+			return 0;
+		}
 	}
 
 	/** Standard-Skin: Textur (64×64) und Armform. */

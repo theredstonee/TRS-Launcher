@@ -1,6 +1,8 @@
 package dev.theredstonee.trsclient.core.hunger;
 
 import dev.theredstonee.trsclient.core.ui.Canvas;
+import dev.theredstonee.trsclient.core.ui.TextureRef;
+import dev.theredstonee.trsclient.core.ui.Textures;
 
 /**
  * Hunger-Anzeige über der Vanilla-Hungerleiste (Idee von AppleSkin, eigene Umsetzung): Sättigung als goldener Rand,
@@ -28,6 +30,11 @@ public final class HungerOverlay {
 
 	private final int[] heartJitter = new int[1000];
 	private final int[] foodJitter = new int[10];
+	/** Gecachter Blick (AppleSkin-Textur oder Pack-Umriss). {@link Integer#MIN_VALUE} = noch nie gebaut. */
+	private int seenGen = Integer.MIN_VALUE;
+	private HungerLook.Source source = HungerLook.Source.BUILTIN;
+	private int[][][] packOutline = OUTLINE;
+	private TextureRef appleskin;
 
 	/** Was gezeichnet wird. */
 	public boolean showSaturation = true;
@@ -38,6 +45,7 @@ public final class HungerOverlay {
 	/** Zeichnet alles für Zustand {@code s} (Wanduhr {@code nowMs} für das Blinken). */
 	public void draw(Canvas c, HungerState s, HudIcons icons, long nowMs) {
 		if (!s.survival) return;
+		refresh();
 		HungerMath.jitter(s, heartJitter, foodJitter);
 		int right = s.width / 2 + 91;
 		int left = s.width / 2 - 91;
@@ -59,11 +67,18 @@ public final class HungerOverlay {
 		if (held && showHealth && icons != null) drawHealthPreview(c, icons, s, left, top, flash);
 	}
 
-	/** Erschöpfung 0–4 als heller Balken über den Keulen, von rechts nach links. */
+	/** Erschöpfung 0–4 als heller Balken über den Keulen, von rechts nach links. Mit AppleSkin aus deren Textur. */
 	private void drawExhaustion(Canvas c, float exhaustion, int right, int top) {
 		float ratio = Math.max(0f, Math.min(1f, exhaustion / HungerMath.EXHAUSTION_STEP));
-		int w = Math.round(ratio * 81);
+		int w = HungerLook.exhaustionWidth(ratio);
 		if (w <= 0) return;
+		if (source == HungerLook.Source.APPLESKIN && appleskin != null) {
+			c.push();
+			c.translate(right - w, top);
+			c.image(appleskin, 81 - w, 18, w, HudIcons.SIZE, 0xFFFFFFFF);
+			c.pop();
+			return;
+		}
 		c.fill(right - w, top, right, top + HudIcons.SIZE, EXHAUSTION);
 	}
 
@@ -81,11 +96,18 @@ public final class HungerOverlay {
 		int shade = (SATURATION_SHADE & 0xFFFFFF) | a;
 		for (int i = start; i < end && i < 10; i++) {
 			float part = to / 2f - i;
-			// Sichtbare Spalten von rechts: ganz, ¾, ½, ¼.
-			int cols = part >= 1 ? 9 : part > 0.5f ? 7 : part > 0.25f ? 5 : 3;
 			int x = right - i * 8 - 9;
 			int y = top + foodJitter[i];
-			outline(c, x, y, 9 - cols, gold, shade);
+			if (source == HungerLook.Source.APPLESKIN && appleskin != null) {
+				c.push();
+				c.translate(x, y);
+				c.image(appleskin, HungerLook.saturationU(part), 0, HudIcons.SIZE, HudIcons.SIZE, color(alpha));
+				c.pop();
+			} else {
+				// Sichtbare Spalten von rechts: ganz, ¾, ½, ¼.
+				int cols = part >= 1 ? 9 : part > 0.5f ? 7 : part > 0.25f ? 5 : 3;
+				paint(c, x, y, 9 - cols, gold, shade);
+			}
 		}
 	}
 
@@ -133,14 +155,54 @@ public final class HungerOverlay {
 	}
 
 	/** Umriss ab Spalte {@code fromCol}; die unteren Kanten etwas dunkler, damit der Rand auf hellem Grund lesbar bleibt. */
-	private static void outline(Canvas c, int x, int y, int fromCol, int gold, int shade) {
-		for (int row = 0; row < OUTLINE.length; row++) {
+	private void paint(Canvas c, int x, int y, int fromCol, int gold, int shade) {
+		int[][][] rows = packOutline != null ? packOutline : OUTLINE;
+		for (int row = 0; row < rows.length; row++) {
 			int color = row >= 6 ? shade : gold;
-			for (int[] run : OUTLINE[row]) {
+			if (rows[row] == null) continue;
+			for (int[] run : rows[row]) {
 				int a = Math.max(run[0], fromCol);
 				if (a < run[1]) c.fill(x + a, y + row, x + run[1], y + row + 1, color);
 			}
 		}
+	}
+
+	/**
+	 * Baut den Blick neu, wenn sich die Ressourcen geändert haben. Ohne Store (Tests) bleibt die eingebaute Keule,
+	 * und das Fehlen wird nicht gecacht – der nächste Store mit Generation 0 soll noch ankommen.
+	 */
+	private void refresh() {
+		Textures.Store store = Textures.store();
+		if (store == null) {
+			source = HungerLook.Source.BUILTIN;
+			packOutline = OUTLINE;
+			appleskin = null;
+			return;
+		}
+		int gen = store.resourceGeneration();
+		if (gen == seenGen) return;
+		byte[] skin = store.gameBytes(HungerLook.APPLESKIN);
+		if (skin != null && skin.length > 0) {
+			TextureRef tex = store.game(HungerLook.APPLESKIN, 256, 256);
+			if (tex != null) {
+				source = HungerLook.Source.APPLESKIN;
+				appleskin = tex;
+				packOutline = OUTLINE;
+				seenGen = gen;
+				return;
+			}
+		}
+		appleskin = null;
+		int[][][] built = HungerLook.fromPng(store.gameBytes(HungerLook.FOOD_EMPTY), false);
+		if (built == null) built = HungerLook.fromPng(store.gameBytes(HungerLook.ICONS), true);
+		if (built != null) {
+			source = HungerLook.Source.PACK;
+			packOutline = built;
+		} else {
+			source = HungerLook.Source.BUILTIN;
+			packOutline = OUTLINE;
+		}
+		seenGen = gen;
 	}
 
 	private static int color(float alpha) {

@@ -3,6 +3,7 @@ package dev.theredstonee.trsclient.core.hunger;
 import dev.theredstonee.trsclient.core.ui.Canvas;
 import dev.theredstonee.trsclient.core.ui.TextureRef;
 import dev.theredstonee.trsclient.core.ui.Textures;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -13,6 +14,11 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HungerTest {
+	@AfterEach
+	void resetTextures() {
+		Textures.replaceForTests(null);
+	}
+
 	@Test
 	void foodAndSaturationAfterEatingAreCapped() {
 		assertEquals(20, HungerMath.foodAfter(16, 8));
@@ -147,6 +153,78 @@ class HungerTest {
 	}
 
 	@Test
+	void appleskinTextureWinsOverAPackOutline() {
+		int[][][] pack = block3();
+		assertEquals(HungerLook.Source.APPLESKIN, HungerLook.choose(new byte[]{1, 2, 3}, pack));
+		assertEquals(HungerLook.Source.PACK, HungerLook.choose(null, pack));
+		assertEquals(HungerLook.Source.PACK, HungerLook.choose(new byte[0], pack));
+		assertEquals(HungerLook.Source.BUILTIN, HungerLook.choose(null, null));
+		assertEquals(HungerLook.Source.BUILTIN, HungerLook.choose(new byte[0], null));
+		// Kaputte PNG fällt auf die eingebaute Keule zurück.
+		assertNull(HungerLook.fromPng(new byte[]{1, 2, 3, 4}, false));
+		assertNull(HungerLook.fromPng(null, true));
+		assertEquals(HungerLook.Source.BUILTIN, HungerLook.choose(null, HungerLook.fromPng(new byte[]{9}, false)));
+	}
+
+	@Test
+	void saturationColumnsMatchTheAppleSkinLayout() {
+		assertEquals(0, HungerLook.saturationU(0f));
+		assertEquals(0, HungerLook.saturationU(0.25f));
+		assertEquals(9, HungerLook.saturationU(0.26f));
+		assertEquals(9, HungerLook.saturationU(0.5f));
+		assertEquals(18, HungerLook.saturationU(0.51f));
+		assertEquals(27, HungerLook.saturationU(1f));
+		assertEquals(0, HungerLook.exhaustionWidth(0f));
+		assertEquals(81, HungerLook.exhaustionWidth(1f));
+		assertEquals(41, HungerLook.exhaustionWidth(0.5f));
+	}
+
+	@Test
+	void customMaskBecomesAnOutlineOn9And18() {
+		int[][][] small = HungerLook.outline(blockArgb(9, 3), 9, 9);
+		int[][][] big = HungerLook.outline(blockArgb(18, 6), 18, 18);
+		assertNotNull(small);
+		assertNotNull(big);
+		assertEquals(9, small.length);
+		// 3×3-Block links oben: die Mitte (1,1) ist innen, nur der Rand bleibt.
+		assertArrayEquals(new int[]{0, 3}, small[0][0]);
+		assertEquals(2, small[1].length);
+		assertArrayEquals(new int[]{0, 1}, small[1][0]);
+		assertArrayEquals(new int[]{2, 3}, small[1][1]);
+		assertArrayEquals(small[0][0], big[0][0]);
+		assertEquals(small[1].length, big[1].length);
+		assertArrayEquals(small[1][0], big[1][0]);
+		assertArrayEquals(small[1][1], big[1][1]);
+		// Volle Durchsichtigkeit ist kein Umriss.
+		assertNull(HungerLook.outline(new int[81], 9, 9));
+	}
+
+	@Test
+	void appleskinIconsAreDrawnAtTheFoodSlots() {
+		HungerState s = state();
+		s.food = 20;
+		s.saturation = 20;
+		s.exhaustion = 4f;
+		Textures.replaceForTests(new ByteStore(new byte[]{8}));
+		Recorder c = new Recorder();
+		new HungerOverlay().draw(c, s, HudIcons.sprites(new FakeStore()), 800);
+		assertEquals(1, countExact(c.images, "appleskin:textures/icons.png@0,18"), "Erschöpfung");
+		assertEquals(10, countExact(c.images, "appleskin:textures/icons.png@27,0"), "volle Sättigung");
+		assertEquals(0, c.fills);
+	}
+
+	@Test
+	void missingPackTextureFallsBackToTheBuiltinDrumstick() {
+		Textures.replaceForTests(new ByteStore(null));
+		HungerState s = state();
+		s.saturation = 3;
+		Recorder c = new Recorder();
+		new HungerOverlay().draw(c, s, HudIcons.sprites(new FakeStore()), 800);
+		assertEquals(0, c.images.size());
+		assertTrue(c.fills > 0, "eingebaute Keule");
+	}
+
+	@Test
 	void sheetIconsUseTheLegacyAtlas() {
 		HudIcons icons = HudIcons.sheet(new FakeStore());
 		Recorder c = new Recorder();
@@ -158,6 +236,25 @@ class HungerTest {
 		int n = 0;
 		for (String s : list) if (s.startsWith(prefix)) n++;
 		return n;
+	}
+
+	private static int countExact(List<String> list, String value) {
+		int n = 0;
+		for (String s : list) if (value.equals(s)) n++;
+		return n;
+	}
+
+	/** Deckender Block links oben, Kante {@code edge} px in einem {@code size}×{@code size}-Bild. */
+	private static int[] blockArgb(int size, int edge) {
+		int[] argb = new int[size * size];
+		for (int y = 0; y < edge; y++) {
+			for (int x = 0; x < edge; x++) argb[y * size + x] = 0xFF000000;
+		}
+		return argb;
+	}
+
+	private static int[][][] block3() {
+		return HungerLook.outline(blockArgb(9, 3), 9, 9);
 	}
 
 	private static HungerState state() {
@@ -174,7 +271,27 @@ class HungerTest {
 		return s;
 	}
 
-	private static final class FakeStore implements Textures.Store {
+	/** Store, der für die AppleSkin-Datei feste Bytes liefert (null = fehlt). */
+	private static final class ByteStore extends FakeStore {
+		private final byte[] appleskin;
+
+		ByteStore(byte[] appleskin) {
+			this.appleskin = appleskin;
+		}
+
+		@Override
+		public byte[] gameBytes(String location) {
+			if (HungerLook.APPLESKIN.equals(location)) return appleskin;
+			return null;
+		}
+
+		@Override
+		public int resourceGeneration() {
+			return 1;
+		}
+	}
+
+	private static class FakeStore implements Textures.Store {
 		@Override public TextureRef upload(String name, int width, int height, int[] argb) { return null; }
 		@Override public void release(TextureRef texture) { }
 		@Override public TextureRef game(String location, int width, int height) { return new TextureRef(location, width, height); }

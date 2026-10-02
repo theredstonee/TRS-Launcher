@@ -31,6 +31,10 @@ public final class TextureStore implements Textures.Store {
 	}
 
 	private final Map<String, Entry> entries = new HashMap<>();
+	/** Ressourcen-Manager, dessen Identität wir schon gezählt haben. */
+	private Object seenManager;
+	private int generation;
+	private boolean reloadHooked;
 
 	private TextureStore() {
 	}
@@ -121,5 +125,74 @@ public final class TextureStore implements Textures.Store {
 		/*return new Textures.DefaultSkin(new TextureRef(DefaultPlayerSkin.getDefaultSkin(uuid), 64, 64),
 				"slim".equals(DefaultPlayerSkin.getSkinModelName(uuid)));
 		*///?}
+	}
+
+	@Override
+	public byte[] gameBytes(String location) {
+		int colon = location == null ? -1 : location.indexOf(':');
+		if (colon <= 0 || colon >= location.length() - 1) return null;
+		String namespace = location.substring(0, colon);
+		String path = location.substring(colon + 1);
+		try {
+			Minecraft mc = Minecraft.getInstance();
+			//? if >=1.21.11 {
+			/*net.minecraft.resources.Identifier id = net.minecraft.resources.Identifier.fromNamespaceAndPath(namespace, path);
+			*///?} elif >=1.21 {
+			net.minecraft.resources.ResourceLocation id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(namespace, path);
+			//?} else
+			/*net.minecraft.resources.ResourceLocation id = new net.minecraft.resources.ResourceLocation(namespace, path);*/
+			//? if >=1.19 {
+			java.util.Optional<net.minecraft.server.packs.resources.Resource> found = mc.getResourceManager().getResource(id);
+			if (!found.isPresent()) return null;
+			try (java.io.InputStream in = found.get().open()) {
+				return readAll(in);
+			}
+			//?} else {
+			/*try (net.minecraft.server.packs.resources.Resource res = mc.getResourceManager().getResource(id);
+					java.io.InputStream in = res.getInputStream()) {
+				return readAll(in);
+			} catch (java.io.FileNotFoundException e) {
+				return null;
+			}
+			*///?}
+		} catch (Throwable ignored) {
+			return null;
+		}
+	}
+
+	@Override
+	public int resourceGeneration() {
+		try {
+			net.minecraft.server.packs.resources.ResourceManager manager = Minecraft.getInstance().getResourceManager();
+			if (manager != seenManager) {
+				seenManager = manager;
+				generation++;
+				reloadHooked = false;
+			}
+			if (!reloadHooked && manager instanceof net.minecraft.server.packs.resources.ReloadableResourceManager) {
+				reloadHooked = true;
+				((net.minecraft.server.packs.resources.ReloadableResourceManager) manager).registerReloadListener(
+						new net.minecraft.server.packs.resources.ResourceManagerReloadListener() {
+							@Override
+							public void onResourceManagerReload(net.minecraft.server.packs.resources.ResourceManager resourceManager) {
+								generation++;
+							}
+						});
+			}
+		} catch (Throwable ignored) {
+		}
+		return generation;
+	}
+
+	/** Höchstens 4 MB – größere Dateien sind keine Hunger-Icons. */
+	private static byte[] readAll(java.io.InputStream in) throws java.io.IOException {
+		java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream(4096);
+		byte[] buf = new byte[8192];
+		int n;
+		while ((n = in.read(buf)) > 0) {
+			out.write(buf, 0, n);
+			if (out.size() > (4 << 20)) return null;
+		}
+		return out.toByteArray();
 	}
 }
