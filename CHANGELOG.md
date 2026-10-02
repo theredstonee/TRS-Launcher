@@ -36,6 +36,9 @@ How to write an entry:
   Performance → Borderless Fullscreen.
 - **Hunger Overlay follows your resource pack.** If a pack ships AppleSkin textures, the TRS Client uses them;
   otherwise the saturation outline takes the shape of the pack's own hunger icons.
+- **Chat Heads in the TRS Client.** The sender's skin head now shows in front of chat messages – also for server
+  formats like [Rank] Name » text, private messages and in the chat history. On by default. Based on Chat Heads by
+  dzwdz (MPL-2.0).
 
 ### Deutsch
 - **Randloses Vollbild im TRS Client.** F11 füllt jetzt den Bildschirm mit einem randlosen Fenster statt
@@ -43,6 +46,9 @@ How to write an entry:
   Leistung → Randloses Vollbild.
 - **Hunger-Anzeige passt sich dem Resource Pack an.** Bringt ein Pack AppleSkin-Texturen mit, nutzt der TRS Client
   diese; sonst übernimmt der Sättigungsrand die Form der Hunger-Symbole des Packs.
+- **Chat-Köpfe im TRS Client.** Vor Chat-Nachrichten erscheint jetzt der Skin-Kopf des Absenders – auch bei
+  Server-Formaten wie [Rang] Name » Text, bei privaten Nachrichten und im Chat-Verlauf. Ab Werk an. Basiert auf
+  Chat Heads von dzwdz (MPL-2.0).
 
 ## 0.16.0 – 2026-10-02 – Spooky Season | Gruselzeit
 <!-- banner: accent=#ff7a1a motif=/news/0.16.0/banner.png -->
