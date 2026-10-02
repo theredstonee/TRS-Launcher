@@ -39,6 +39,8 @@ How to write an entry:
 - **Chat Heads in the TRS Client.** The sender's skin head now shows in front of chat messages – also for server
   formats like [Rank] Name » text, private messages and in the chat history. On by default. Based on Chat Heads by
   dzwdz (MPL-2.0).
+- **Fix: crash on start with some mod packs.** Since the borderless fullscreen update the game could crash while
+  loading when another mod brought its own MixinExtras. Fixed.
 
 ### Deutsch
 - **Randloses Vollbild im TRS Client.** F11 füllt jetzt den Bildschirm mit einem randlosen Fenster statt
@@ -49,6 +51,8 @@ How to write an entry:
 - **Chat-Köpfe im TRS Client.** Vor Chat-Nachrichten erscheint jetzt der Skin-Kopf des Absenders – auch bei
   Server-Formaten wie [Rang] Name » Text, bei privaten Nachrichten und im Chat-Verlauf. Ab Werk an. Basiert auf
   Chat Heads von dzwdz (MPL-2.0).
+- **Behoben: Absturz beim Start mit manchen Modpacks.** Seit dem randlosen Vollbild konnte das Spiel beim Laden
+  abstürzen, wenn eine andere Mod ihr eigenes MixinExtras mitbrachte. Behoben.
 
 ## 0.16.0 – 2026-10-02 – Spooky Season | Gruselzeit
 <!-- banner: accent=#ff7a1a motif=/news/0.16.0/banner.png -->

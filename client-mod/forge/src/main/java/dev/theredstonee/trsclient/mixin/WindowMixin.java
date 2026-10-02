@@ -7,7 +7,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
@@ -91,31 +90,30 @@ public abstract class WindowMixin {
 		}
 	}
 
-	@Redirect(method = "setMode", at = @At(value = "INVOKE", target = "Lorg/lwjgl/glfw/GLFW;glfwSetWindowMonitor(JJIIIII)V", ordinal = 0))
-	private void trsclient$monitor0(long window, long monitor, int x, int y, int w, int h, int rate) {
-		trsclient$monitor(window, monitor, x, y, w, h, rate);
-	}
-
-	@Redirect(method = "setMode", at = @At(value = "INVOKE", target = "Lorg/lwjgl/glfw/GLFW;glfwSetWindowMonitor(JJIIIII)V", ordinal = 1))
-	private void trsclient$monitor1(long window, long monitor, int x, int y, int w, int h, int rate) {
-		trsclient$monitor(window, monitor, x, y, w, h, rate);
-	}
-
-	private void trsclient$monitor(long window, long monitor, int x, int y, int w, int h, int rate) {
-		if (monitor != 0L && BorderlessHooks.want()) {
+	/**
+	 * Nach Vanillas setMode: liegt das Fenster jetzt im exklusiven Vollbild und ist randlos gewünscht, auf ein randloses
+	 * Fenster über dem Monitor umstellen; beim Verlassen den Rahmen zurückgeben. Bewusst ohne @Redirect – der ließ
+	 * MixinExtras (von anderen Mods mitgebracht) beim Laden von Window abstürzen.
+	 */
+	@Inject(method = "setMode", at = @At("RETURN"))
+	private void trsclient$borderlessAfter(CallbackInfo ci) {
+		long window = trsclient$handle();
+		long monitor = org.lwjgl.glfw.GLFW.glfwGetWindowMonitor(window);
+		if (this.fullscreen && monitor != 0L && BorderlessHooks.want()) {
 			int[] mx = new int[1];
 			int[] my = new int[1];
 			org.lwjgl.glfw.GLFW.glfwGetMonitorPos(monitor, mx, my);
+			org.lwjgl.glfw.GLFWVidMode mode = org.lwjgl.glfw.GLFW.glfwGetVideoMode(monitor);
+			if (mode == null) return;
 			org.lwjgl.glfw.GLFW.glfwSetWindowAttrib(window, BorderlessGlfw.DECORATED, BorderlessGlfw.FALSE);
 			BorderlessState.mark(true);
-			org.lwjgl.glfw.GLFW.glfwSetWindowMonitor(window, 0L, mx[0], my[0], w, h, BorderlessGlfw.DONT_CARE);
+			org.lwjgl.glfw.GLFW.glfwSetWindowMonitor(window, 0L, mx[0], my[0], mode.width(), mode.height(), BorderlessGlfw.DONT_CARE);
 			return;
 		}
-		if (BorderlessState.active()) {
+		if (!this.fullscreen && BorderlessState.active()) {
 			org.lwjgl.glfw.GLFW.glfwSetWindowAttrib(window, BorderlessGlfw.DECORATED, BorderlessGlfw.TRUE);
 			BorderlessState.mark(false);
 		}
-		org.lwjgl.glfw.GLFW.glfwSetWindowMonitor(window, monitor, x, y, w, h, rate);
 	}
 
 	private long trsclient$handle() {
