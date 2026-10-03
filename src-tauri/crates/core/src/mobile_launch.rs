@@ -320,12 +320,26 @@ impl Launcher {
     fn engine_on_exit(self: &Arc<Self>, instance_id: &str) -> process::OnExit {
         let launcher = Arc::clone(self);
         let id = instance_id.to_owned();
+        // Das Ende meldet die Engine aus einem fremden Thread (JNI/Swift) – dort gibt es keine
+        // Tokio-Laufzeit; deshalb die des Starts merken (sonst eine kurze eigene).
+        let runtime = tokio::runtime::Handle::try_current().ok();
         Box::new(move |play_seconds: u64| {
-            tokio::spawn(async move {
+            let work = async move {
                 if let Err(e) = launcher.instances.add_play_time(&id, play_seconds).await {
                     tracing::warn!("Spielzeit für '{id}' konnte nicht gespeichert werden: {e}");
                 }
-            });
+            };
+            match runtime {
+                Some(handle) => {
+                    handle.spawn(work);
+                }
+                None => {
+                    std::thread::spawn(move || match tokio::runtime::Builder::new_current_thread().enable_all().build() {
+                        Ok(rt) => rt.block_on(work),
+                        Err(e) => tracing::warn!("Spielzeit konnte nicht gespeichert werden: {e}"),
+                    });
+                }
+            }
         })
     }
 

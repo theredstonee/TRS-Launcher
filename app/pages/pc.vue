@@ -160,7 +160,7 @@ function loaderLine(i: StatusInstance): string {
 </script>
 
 <template>
-  <div class="mx-auto w-full max-w-3xl">
+  <div class="mx-auto w-full max-w-3xl p-6 mobile:p-4">
     <PageHeader :title="t('remote.pc.title')" :subtitle="t('remote.pc.subtitle')">
       <button v-if="trs.enabled && remote.pcs.length && !pairOpen" type="button" class="btn btn-ghost px-3 py-1.5 text-xs" @click="pairOpen = true">
         {{ t('remote.pc.pairAnother') }}

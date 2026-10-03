@@ -163,7 +163,7 @@ class GameActivity : Activity() {
         val logFile = File(cacheDir, "game-${config.session}.log").apply { writeText("") }
         Logger.begin(logFile.absolutePath)
         // TRS Client im Touch-Modus: Tastatur-Wunsch über Datei (Abfrage) und Log-Zeile.
-        val keyboard = { show: Boolean -> main.post { setKeyboard(show) } }
+        val keyboard: (Boolean) -> Unit = { show -> main.post { setKeyboard(show) } }
         if (config.trsClient) {
             touchState = TouchStateWatcher(File(config.gameDir), keyboard).also { it.start() }
         }

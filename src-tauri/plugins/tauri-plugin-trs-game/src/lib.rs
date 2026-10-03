@@ -26,7 +26,9 @@ pub use models::*;
 /// Zugriff auf die Engine.
 pub struct TrsGame<R: Runtime> {
     app: AppHandle<R>,
-    http: RwLock<reqwest::Client>,
+    /// Vom Launcher gesetzt (TLS-Anbieter, Proxy). Kein eigener Client beim Start: mit
+    /// `rustls-no-provider` (mobil) bräche `Client::new()` vor der Einrichtung durch den Kern ab.
+    http: RwLock<Option<reqwest::Client>>,
     #[cfg(mobile)]
     mobile: mobile::Engine<R>,
 }
@@ -34,11 +36,14 @@ pub struct TrsGame<R: Runtime> {
 impl<R: Runtime> TrsGame<R> {
     /// HTTP-Client des Launchers übernehmen (Proxy, TLS, User-Agent).
     pub fn set_http_client(&self, client: reqwest::Client) {
-        *self.http.write().unwrap_or_else(std::sync::PoisonError::into_inner) = client;
+        *self.http.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(client);
     }
 
-    fn http(&self) -> reqwest::Client {
-        self.http.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
+    fn http(&self) -> Result<reqwest::Client> {
+        if let Some(client) = self.http.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone() {
+            return Ok(client);
+        }
+        reqwest::Client::builder().build().map_err(|e| Error::Download(e.to_string()))
     }
 
     /// `<App-Daten>/engine/runtimes`.
@@ -55,7 +60,7 @@ impl<R: Runtime> TrsGame<R> {
         let archive = runtime::archive_for(runtime::platform_table(), java_major, runtime::current_arch())?;
         let root = self.runtimes_root()?;
         let app = self.app.clone();
-        runtime::ensure(&self.http(), &root, archive, &move |p| {
+        runtime::ensure(&self.http()?, &root, archive, &move |p| {
             let _ = app.emit(EVENT_RUNTIME_PROGRESS, p);
         })
         .await
@@ -141,7 +146,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             let _ = api;
             app.manage(TrsGame {
                 app: app.clone(),
-                http: RwLock::new(reqwest::Client::new()),
+                http: RwLock::new(None),
                 #[cfg(mobile)]
                 mobile,
             });

@@ -43,6 +43,9 @@ class OverlayController(private val sink: InputSink, layout: Layout) {
 
     private val pointers = HashMap<Int, Target>()
     private var lastTick = 0L
+    /** Feste TRS-Tasten (F13/F14): seit wann gedrückt, und wann sie spätestens losgelassen werden. */
+    private val fixedSince = HashMap<Int, Long>()
+    private val fixedUpAt = HashMap<Int, Long>()
 
     fun setSize(w: Float, h: Float, insets: Insets = this.insets) {
         width = w
@@ -72,7 +75,7 @@ class OverlayController(private val sink: InputSink, layout: Layout) {
             button == null -> freeArea(x, y, now, grabbed)
             button.isJoystick -> Target.Stick(button, emptySet()).also { stickMove(it, x, y) }
             button.isHotbar -> Target.Hotbar(button, -1).also { hotbarAt(it, x, initial = true) }
-            else -> Target.Btn(button, x, y).also { press(button) }
+            else -> Target.Btn(button, x, y).also { press(button, now) }
         }
         if (button != null) {
             pressed.add(button.id)
@@ -125,7 +128,7 @@ class OverlayController(private val sink: InputSink, layout: Layout) {
         val t = pointers.remove(pointer) ?: return
         when (t) {
             is Target.Btn -> {
-                release(t.button)
+                release(t.button, now)
                 pressed.remove(t.button.id)
             }
             is Target.Stick -> {
@@ -146,7 +149,7 @@ class OverlayController(private val sink: InputSink, layout: Layout) {
     fun cancelAll() {
         for ((_, t) in pointers) {
             when (t) {
-                is Target.Btn -> release(t.button)
+                is Target.Btn -> release(t.button, Long.MAX_VALUE)
                 is Target.Stick -> t.keys.forEach { held.keyUp(it) }
                 is Target.Camera -> t.gesture.cancel()
                 else -> {}
@@ -162,6 +165,13 @@ class OverlayController(private val sink: InputSink, layout: Layout) {
         val dt = if (lastTick == 0L) 0f else ((now - lastTick).coerceIn(0L, 100L)) / 1000f
         lastTick = now
         var more = false
+        // Kurz angetippte TRS-Tasten jetzt loslassen (die Mod fragt sie je Spiel-Tick ab).
+        val due = fixedUpAt.filterValues { it <= now }.keys
+        due.forEach { key ->
+            fixedUpAt.remove(key)
+            held.keyUp(key)
+        }
+        if (fixedUpAt.isNotEmpty()) more = true
         for (t in pointers.values) {
             when (t) {
                 is Target.Camera -> more = t.gesture.tick(now) || more
@@ -215,7 +225,7 @@ class OverlayController(private val sink: InputSink, layout: Layout) {
 
     private fun isLatching(button: Button) = button.action is Action.Toggle || (button.toggle && (button.action is Action.Key || button.action is Action.Mouse))
 
-    private fun press(button: Button) {
+    private fun press(button: Button, now: Long) {
         if (isLatching(button)) {
             if (latched.remove(button.id)) releaseAction(button) else {
                 latched.add(button.id)
@@ -228,8 +238,8 @@ class OverlayController(private val sink: InputSink, layout: Layout) {
             is Action.Fn -> when (a.special) {
                 Special.KEYBOARD -> setKeyboard(!keyboardShown)
                 Special.MENU -> held.keyDown(Glfw.KEY_ESCAPE)
-                Special.TRS_MENU -> held.keyDown(Glfw.KEY_F13)
-                Special.EMOTE_WHEEL -> held.keyDown(Glfw.KEY_F14)
+                Special.TRS_MENU -> pressFixed(Glfw.KEY_F13, now)
+                Special.EMOTE_WHEEL -> pressFixed(Glfw.KEY_F14, now)
                 Special.CHAT -> {
                     held.tapKey(Glfw.KEY_T)
                     setKeyboard(true)
@@ -242,19 +252,42 @@ class OverlayController(private val sink: InputSink, layout: Layout) {
         }
     }
 
-    private fun release(button: Button) {
+    private fun release(button: Button, now: Long) {
         if (isLatching(button)) return
         when (val a = button.action) {
             is Action.Key, is Action.Mouse -> releaseAction(button)
             is Action.Fn -> when (a.special) {
                 Special.MENU -> held.keyUp(Glfw.KEY_ESCAPE)
-                Special.TRS_MENU -> held.keyUp(Glfw.KEY_F13)
-                Special.EMOTE_WHEEL -> held.keyUp(Glfw.KEY_F14)
+                Special.TRS_MENU -> releaseFixed(Glfw.KEY_F13, now)
+                Special.EMOTE_WHEEL -> releaseFixed(Glfw.KEY_F14, now)
                 else -> {}
             }
             else -> {}
         }
     }
+
+    private fun pressFixed(key: Int, now: Long) {
+        fixedUpAt.remove(key)
+        fixedSince[key] = now
+        held.keyDown(key)
+    }
+
+    /**
+     * Die TRS-Tasten fragt die Mod nur je Spiel-Tick ab (50 ms): ein kurzes Antippen bleibt deshalb
+     * mindestens [FIXED_KEY_MIN_MS] gedrückt (losgelassen in [tick]). `now = Long.MAX_VALUE`: sofort.
+     */
+    private fun releaseFixed(key: Int, now: Long) {
+        val since = fixedSince.remove(key) ?: now
+        if (now == Long.MAX_VALUE || now - since >= FIXED_KEY_MIN_MS) {
+            fixedUpAt.remove(key)
+            held.keyUp(key)
+        } else {
+            fixedUpAt[key] = since + FIXED_KEY_MIN_MS
+        }
+    }
+
+    /** Muss [tick] noch laufen (verzögert losgelassene TRS-Tasten)? */
+    fun needsTick(): Boolean = fixedUpAt.isNotEmpty()
 
     fun setKeyboard(show: Boolean) {
         keyboardShown = show
@@ -291,5 +324,7 @@ class OverlayController(private val sink: InputSink, layout: Layout) {
     companion object {
         /** Kamera-Stick: voller Ausschlag ≈ so viele dp Wischen pro Sekunde. */
         const val CAMERA_STICK_DP = 220f
+        /** Mindestdauer eines Drucks der TRS-Tasten F13/F14 (mehr als zwei Spiel-Ticks). */
+        const val FIXED_KEY_MIN_MS = 120L
     }
 }

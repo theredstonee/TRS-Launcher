@@ -21,6 +21,14 @@ fn attach_lock() -> std::sync::MutexGuard<'static, ()> {
     ATTACH.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
+/// Engine-Ereignisse kommen auf fremden Threads (JNI/Swift) an: Der Kern (Spielzeit, Verlauf,
+/// Absturz-Helfer) braucht dort die Tokio-Laufzeit der App.
+fn in_runtime<T>(work: impl FnOnce() -> T) -> T {
+    let handle = tauri::async_runtime::handle();
+    let _enter = handle.inner().enter();
+    work()
+}
+
 /// Plugin-Fehler → Launcher-Fehler mit Übersetzungs-Code (`errors.game.*`).
 pub fn engine_error(err: tauri_plugin_trs_game::Error) -> trs_core::Error {
     use tauri_plugin_trs_game::Error as E;
@@ -117,18 +125,18 @@ pub async fn launch<R: Runtime>(
 pub fn forward_events<R: Runtime>(app: &AppHandle<R>, launcher: &Arc<Launcher>) {
     let logs = Arc::clone(launcher);
     app.listen(tauri_plugin_trs_game::EVENT_LOG, move |event| match serde_json::from_str::<GameLogEvent>(event.payload()) {
-        Ok(log) => {
+        Ok(log) => in_runtime(|| {
             let _attach = attach_lock();
             logs.games().engine_logs(&log.session, &log.lines);
-        }
+        }),
         Err(e) => log::debug!("trs-game://log unlesbar: {e}"),
     });
     let states = Arc::clone(launcher);
     app.listen(tauri_plugin_trs_game::EVENT_STATE, move |event| match serde_json::from_str::<GameStateEvent>(event.payload()) {
-        Ok(state) => {
+        Ok(state) => in_runtime(|| {
             let _attach = attach_lock();
             apply_state(&states, state);
-        }
+        }),
         Err(e) => log::debug!("trs-game://state unlesbar: {e}"),
     });
 }
@@ -158,7 +166,7 @@ pub fn finish_last_session<R: Runtime>(app: &AppHandle<R>, launcher: &Arc<Launch
         .unwrap_or_else(|_| chrono::Utc::now());
     if let Some(event) = take_last_session(&docs) {
         let crashed = event.state == GameState::Crashed;
-        launcher.engine_session_ended_offline(&event.session, ended_at, event.exit_code, crashed, &event.log_tail);
+        in_runtime(|| launcher.engine_session_ended_offline(&event.session, ended_at, event.exit_code, crashed, &event.log_tail));
     } else {
         // Keine Endmeldung: übrig gebliebene Sitzungen vergessen.
         let _ = launcher.games().take_engine_records();

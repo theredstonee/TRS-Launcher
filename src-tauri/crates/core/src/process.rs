@@ -464,6 +464,7 @@ impl SessionRecord {
 }
 
 /// Wie sich ein laufendes Spiel beenden lässt.
+#[derive(Clone)]
 enum Control {
     /// Eigener Java-Prozess (Desktop).
     Process(Arc<ProcessHandle>),
@@ -565,21 +566,31 @@ impl GameManager {
 
     /// Beendet alle Prozesse der Instanz.
     pub fn kill(&self, instance_id: &str) -> bool {
-        let state = self.lock();
-        let mut any = false;
-        for running in state.running.values().filter(|r| r.info.instance_id == instance_id) {
-            running.killed.store(true, Ordering::Relaxed);
-            any |= running.control.terminate();
-        }
-        any
+        // Erst die Sperre lösen: Die Engine meldet das Ende evtl. sofort (gleicher Thread).
+        let controls: Vec<Control> = {
+            let state = self.lock();
+            state
+                .running
+                .values()
+                .filter(|r| r.info.instance_id == instance_id)
+                .map(|r| {
+                    r.killed.store(true, Ordering::Relaxed);
+                    r.control.clone()
+                })
+                .collect()
+        };
+        controls.iter().fold(false, |any, c| c.terminate() | any)
     }
 
     /// Beendet genau einen Prozess (Schlüssel aus [`RunningGame::key`]) der Instanz.
     pub fn kill_key(&self, instance_id: &str, key: &str) -> bool {
-        let state = self.lock();
-        let Some(running) = state.running.get(key).filter(|r| r.info.instance_id == instance_id) else { return false };
-        running.killed.store(true, Ordering::Relaxed);
-        running.control.terminate()
+        let control = {
+            let state = self.lock();
+            let Some(running) = state.running.get(key).filter(|r| r.info.instance_id == instance_id) else { return false };
+            running.killed.store(true, Ordering::Relaxed);
+            running.control.clone()
+        };
+        control.terminate()
     }
 
     fn lock(&self) -> std::sync::MutexGuard<'_, State> {
@@ -1415,6 +1426,23 @@ More details:
         // Doppeltes Ende wird ignoriert.
         drop(events);
         manager.engine_exited("g1", Some(0), false, &[]);
+    }
+
+    #[test]
+    fn engine_stop_may_report_the_end_right_away() {
+        // Die Engine meldet „exited“ noch im Stop-Aufruf (gleicher Thread) – darf nicht hängen.
+        let (_dir, _events, manager) = engine_manager();
+        let manager = Arc::new(manager);
+        let weak = Arc::downgrade(&manager);
+        let stop: StopFn = Arc::new(move || {
+            if let Some(m) = weak.upgrade() {
+                m.engine_exited("s", Some(0), false, &[]);
+            }
+            true
+        });
+        manager.attach_engine("x", "s", vec![], stop, Box::new(|_| {})).unwrap();
+        assert!(manager.kill("x"));
+        assert!(!manager.is_running("x"));
     }
 
     #[test]

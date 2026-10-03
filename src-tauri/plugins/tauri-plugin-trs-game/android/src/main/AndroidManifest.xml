@@ -13,6 +13,8 @@
         <activity
             android:name=".engine.GameActivity"
             android:process=":trsgame"
+            android:taskAffinity="dev.theredstonee.trs.game"
+            android:launchMode="singleTask"
             android:exported="false"
             android:screenOrientation="sensorLandscape"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|navigation|uiMode|density|fontScale|touchscreen"

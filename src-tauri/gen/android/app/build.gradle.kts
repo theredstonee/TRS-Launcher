@@ -23,17 +23,26 @@ android {
         targetSdk = 36
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
-        // Die Spiel-Engine (Plugin trs-game) gibt es nur für 64 Bit: Handys/Tablets (arm64) und Emulator (x86_64).
-        ndk {
-            abiFilters += listOf("arm64-v8a", "x86_64")
-        }
     }
     packaging {
         jniLibs {
             // Die Engine lädt JVM, Renderer und LWJGL als Dateien aus nativeLibraryDir – also entpackt installieren.
             useLegacyPackaging = true
-            // 32-Bit-Teile (falls doch mitgebaut) weglassen: ohne Engine-Bibliotheken liefe dort kein Spiel.
+            // Die Spiel-Engine (Plugin trs-game) gibt es nur für 64 Bit (arm64, x86_64): 32-Bit-Teile weglassen,
+            // ohne Engine-Bibliotheken liefe dort kein Spiel. Welche ABIs hinein, bestimmen die Flavors (--target).
             excludes += listOf("**/armeabi-v7a/*.so", "**/x86/*.so")
+        }
+    }
+    // Release-Signatur aus der Umgebung (CI: Secrets, lokal: eigener Keystore) – ohne sie bleibt die APK unsigniert.
+    val releaseKeystore = System.getenv("ANDROID_KEYSTORE_PATH")?.takeIf { it.isNotBlank() }?.let { file(it) }?.takeIf { it.isFile }
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = releaseKeystore
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+            }
         }
     }
     buildTypes {
@@ -49,6 +58,7 @@ android {
             }
         }
         getByName("release") {
+            if (releaseKeystore != null) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(
                 *fileTree(".") { include("**/*.pro") }

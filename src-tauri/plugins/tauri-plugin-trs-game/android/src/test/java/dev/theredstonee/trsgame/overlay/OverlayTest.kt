@@ -136,6 +136,27 @@ class LayoutTest {
     }
 
     @Test
+    fun trsKeysStayDownLongEnoughForTheModsTick() {
+        val layout = Layout.parse(
+            """{"version":1,"id":"x","name":"X","profile":"custom","buttons":[{"id":"t","icon":"trs","x":0,"y":0,"w":0.1,"h":0.1,"action":{"type":"special","special":"trsMenu"}}],
+               "gestures":{"tapAttack":true,"holdUse":false,"swipeHotbar":false,"cameraSensitivity":1}}""",
+        )
+        val sink = FakeSink()
+        val c = OverlayController(sink, layout)
+        c.setSize(1000f, 500f)
+        c.down(1, 50f, 25f, 1000)
+        c.up(1, 50f, 25f, 1010)
+        // Kurz angetippt: F13 bleibt gedrückt, bis die Mod sie in einem Tick sieht.
+        assertEquals(listOf("key 302 down"), sink.clicksAndKeys())
+        assertTrue(c.needsTick())
+        c.tick(1060)
+        assertEquals(listOf("key 302 down"), sink.clicksAndKeys())
+        c.tick(1130)
+        assertEquals(listOf("key 302 down", "key 302 up"), sink.clicksAndKeys())
+        assertFalse(c.needsTick())
+    }
+
+    @Test
     fun iconsAreEightByEight() {
         for ((name, rows) in Icons.BITMAPS) {
             assertEquals(name, 8, rows.size)

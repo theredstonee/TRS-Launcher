@@ -130,6 +130,9 @@ Repository → Settings → Secrets and variables → Actions:
 | `ANDROID_KEY_ALIAS`         | `trs-launcher` (the `-alias` above)             |
 | `ANDROID_KEY_PASSWORD`      | key password (same as the keystore by default)  |
 
-Without these secrets the release still builds the APK (uploaded as an unsigned workflow artifact) but does not
+Gradle signs the release APK itself (`signingConfig` in `src-tauri/gen/android/app/build.gradle.kts`) when
+`ANDROID_KEYSTORE_PATH` points to the keystore and `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and
+`ANDROID_KEY_PASSWORD` are set – the release job decodes the secret into a temporary file for that; locally you set
+the same variables. Without these secrets the release still builds the APK (uploaded as an unsigned workflow artifact) but does not
 publish anything to the `mobile` channel. `TAURI_SIGNING_PRIVATE_KEY` / `_PASSWORD` (already used for the desktop
 updater) sign `mobile.json`.

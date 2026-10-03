@@ -131,7 +131,10 @@ class TrsGamePlugin(private val activity: Activity) : Plugin(activity) {
             val file = File(activity.cacheDir, "trs-launch-${args.session}.json")
             file.writeText(raw.toString())
             channels[args.session] = args.onEvent
-            val intent = Intent(activity, GameActivity::class.java).putExtra(GameActivity.EXTRA_CONFIG, file.absolutePath)
+            // Eigene Aufgabe: Zurück zum Launcher (Symbol, Übersicht) beendet das Spiel nicht.
+            val intent = Intent(activity, GameActivity::class.java)
+                .putExtra(GameActivity.EXTRA_CONFIG, file.absolutePath)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             activity.startActivity(intent)
             invoke.resolve()
         } catch (e: Exception) {
