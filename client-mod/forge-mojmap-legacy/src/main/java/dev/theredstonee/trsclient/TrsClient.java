@@ -356,6 +356,8 @@ public final class TrsClient {
 	private void onTick(Minecraft mc) {
 		migrateKeys(mc);
 		dev.theredstonee.trsclient.menus.KeySearchUi.poll();
+		// Touch-Modus (mobile Engine): feste Overlay-Tasten + Bildschirmtastatur; sonst nichts.
+		dev.theredstonee.trsclient.touch.TouchHooks.tick();
 		while (TrsKeys.hudProfile.consumeClick()) {
 			String name = modules.profiles.cycle();
 			Mc.actionBar(I18n.tr("toast.hudProfile", name));

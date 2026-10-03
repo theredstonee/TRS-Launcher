@@ -816,6 +816,12 @@ public final class ScreenshotEditorUi extends UiScreen {
 		});
 	}
 
+	/** Touch: Zeichnen und Zuschneiden folgen dem Finger sofort. */
+	@Override
+	protected boolean touchDirect(double x, double y) {
+		return true;
+	}
+
 	private static boolean inside(double mx, double my, int x, int y, int w, int h) {
 		return mx >= x && my >= y && mx < x + w && my < y + h;
 	}

@@ -4,7 +4,7 @@ package dev.theredstonee.trsclient.core.ui;
  * Einzeiliges Eingabefeld (Suche, Profilnamen) – eigener Code, weil Vanilla-Textfelder
  * in jeder Minecraft-Version anders angelegt und gezeichnet werden.
  */
-public final class TextInput {
+public final class TextInput implements dev.theredstonee.trsclient.core.touch.TouchKeyboard.Field {
 	private final StringBuilder text = new StringBuilder();
 	private final int maxLength;
 	private int cursor;
@@ -37,6 +37,7 @@ public final class TextInput {
 		return cursor;
 	}
 
+	@Override
 	public boolean focused() {
 		return focused;
 	}
@@ -44,6 +45,8 @@ public final class TextInput {
 	public void setFocused(boolean focused) {
 		this.focused = focused;
 		if (focused) cursor = text.length();
+		// Touch-Modus: Bildschirmtastatur anfordern (sonst nichts).
+		dev.theredstonee.trsclient.core.touch.TouchKeyboard.focus(this, focused, false);
 	}
 
 	public void clear() {

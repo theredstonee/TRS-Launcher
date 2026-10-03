@@ -4,6 +4,7 @@ import dev.theredstonee.trsclient.core.emote.EmoteController;
 import dev.theredstonee.trsclient.core.emote.EmoteDef;
 import dev.theredstonee.trsclient.core.emote.WheelMath;
 import dev.theredstonee.trsclient.core.i18n.I18n;
+import dev.theredstonee.trsclient.core.touch.TouchMode;
 import dev.theredstonee.trsclient.core.ui.Anim;
 import dev.theredstonee.trsclient.core.ui.Canvas;
 import dev.theredstonee.trsclient.core.ui.ColorMath;
@@ -26,6 +27,9 @@ import java.util.List;
  *
  * <p>Kurz angetippt (Taste schon wieder los, bevor das Rad richtig offen ist) bleibt das Rad offen: dann wählt ein
  * Klick oder ein zweiter Druck auf die Taste, Esc schließt.
+ *
+ * <p>Touch-Modus: Das Overlay öffnet das Rad (feste Taste, siehe {@code TouchRuntime}); es bleibt offen, ein Finger
+ * zeigt auf ein Emote und spielt es beim Loslassen ab (auch Antippen). Loslassen in der Mitte oder außerhalb schließt.
  */
 public final class EmoteWheel extends UiScreen {
 	/** So kurz gedrückt = angetippt (Rad bleibt offen). */
@@ -84,7 +88,8 @@ public final class EmoteWheel extends UiScreen {
 
 	private void checkKey(long now) {
 		if (decided || isClosing()) return;
-		Boolean held = host.keyHeld();
+		// Touch: keine Taste zum Halten – das Rad bleibt offen, der Finger wählt.
+		Boolean held = TouchMode.enabled() ? null : host.keyHeld();
 		if (held == null) {
 			sticky = true;
 			return;
@@ -128,6 +133,11 @@ public final class EmoteWheel extends UiScreen {
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
 		if (decided || isClosing()) return true;
+		if (TouchMode.enabled() && button == 0) {
+			// Finger aufgesetzt: erst beim Loslassen wählen (Ziehen zum Emote möglich).
+			fingerDown = true;
+			return true;
+		}
 		long now = System.currentTimeMillis();
 		int i = pick(mouseX, mouseY);
 		if (button == 0 && i >= 0) {
@@ -138,6 +148,39 @@ public final class EmoteWheel extends UiScreen {
 		}
 		decided = true;
 		requestClose();
+		return true;
+	}
+
+	/** Touch: Finger liegt auf dem Rad (Auswahl beim Loslassen). */
+	private boolean fingerDown;
+
+	@Override
+	public boolean mouseReleased(double mouseX, double mouseY, int button) {
+		if (!fingerDown || button != 0) return super.mouseReleased(mouseX, mouseY, button);
+		fingerDown = false;
+		if (decided || isClosing()) return true;
+		releaseAt(mouseX, mouseY, System.currentTimeMillis());
+		return true;
+	}
+
+	/** Touch: Finger losgelassen – Emote dort abspielen; gesperrt = Hinweis, Mitte/außerhalb = schließen. */
+	private void releaseAt(double x, double y, long now) {
+		int i = pick(x, y);
+		if (i < 0) {
+			decided = true;
+			requestClose();
+			return;
+		}
+		if (!emotes.unlocked(defs.get(i).id())) {
+			host.actionBar(I18n.tr("wheel.lockedToast"));
+			return;
+		}
+		hovered = i;
+		confirm(now);
+	}
+
+	@Override
+	protected boolean touchDirect(double x, double y) {
 		return true;
 	}
 
@@ -235,7 +278,7 @@ public final class EmoteWheel extends UiScreen {
 			slotX[i] = WheelMath.slotX(centerX, r, i, n);
 			slotY[i] = WheelMath.slotY(centerY, r, i, n);
 		}
-		if (!decided && !forced && state == EmoteController.State.READY) {
+		if (!decided && !forced && state == EmoteController.State.READY && (!TouchMode.enabled() || fingerDown)) {
 			int pick = WheelMath.select(mouseX - centerX, mouseY - centerY, n, deadZone);
 			if (pick >= 0 || !sticky) hovered = pick;
 		}
@@ -296,7 +339,8 @@ public final class EmoteWheel extends UiScreen {
 		}
 		int bottom = centerY + r + s / 2 + 6;
 		if (bottom + 9 <= height - 2) {
-			String hint = sticky ? I18n.tr("wheel.hintClick") : I18n.tr("wheel.hintHold", host.keyName());
+			String hint = TouchMode.enabled() ? I18n.tr("wheel.hintTouch")
+					: sticky ? I18n.tr("wheel.hintClick") : I18n.tr("wheel.hintHold", host.keyName());
 			centered(c, hint, centerX, bottom, t.textDim, width - 8);
 		}
 	}

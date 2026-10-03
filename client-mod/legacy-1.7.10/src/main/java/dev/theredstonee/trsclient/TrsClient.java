@@ -224,6 +224,8 @@ public final class TrsClient {
 				return;
 			}
 			dev.theredstonee.trsclient.ui.BorderlessDisplay.tick(mc);
+			// Touch-Modus (mobile Engine): feste Overlay-Tasten + Bildschirmtastatur; sonst nichts.
+			dev.theredstonee.trsclient.touch.TouchHooks.tick();
 			migrateKeys(mc);
 			tickServerProfiles(mc);
 			while (TrsKeys.hudProfile.isPressed()) {

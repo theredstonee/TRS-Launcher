@@ -98,6 +98,12 @@ How to write an entry:
   explains step by step how to turn it on (SideStore + StikDebug, AltServer, TrollStore) and starts the game as
   soon as it is enabled. The Java runtime is downloaded and checked on first start, and the memory for the game
   is chosen to fit your device.
+- **TRS Client: touch mode for phones and tablets.** When the game runs in the TRS mobile engine, the TRS menus get
+  bigger buttons and text, lists scroll by dragging with your finger (with momentum), a long press opens the context
+  menu or shows the tooltip, and the on-screen keyboard pops up when you tap a text field, the chat, a sign or an
+  anvil. In the HUD editor you drag elements with your finger, they stay clear of the notch, and the new
+  "Touch layout" moves your HUD away from the touch buttons. The emote wheel opens from a touch button – slide to an
+  emote and let go. Nothing changes on the desktop.
 
 ### Deutsch
 - **Suche, Filter und Details für TRS-Umhänge.** Die Umhang-Liste auf der Skins-Seite hat ein Suchfeld, Filter
@@ -173,6 +179,12 @@ How to write an entry:
   JIT aus, erklärt die App Schritt für Schritt, wie du es einschaltest (SideStore + StikDebug, AltServer,
   TrollStore), und startet das Spiel, sobald es an ist. Die Java-Laufzeit wird beim ersten Start geladen und
   geprüft, und der Arbeitsspeicher für das Spiel wird passend zu deinem Gerät gewählt.
+- **TRS Client: Touch-Modus für Handys und Tablets.** Läuft das Spiel in der mobilen Engine von TRS, bekommen die
+  TRS-Menüs größere Knöpfe und Schrift, Listen scrollen per Fingerziehen (mit Schwung), langes Drücken öffnet das
+  Kontextmenü oder zeigt den Tooltip, und beim Antippen eines Textfelds, des Chats, eines Schilds oder Ambosses
+  erscheint die Bildschirmtastatur. Im HUD-Editor ziehst du Elemente mit dem Finger, sie halten Abstand zur Notch, und
+  das neue „Touch-Layout“ rückt dein HUD von den Touch-Knöpfen weg. Das Emote-Rad öffnet sich über einen Touch-Knopf –
+  zum Emote wischen und loslassen. Am Desktop ändert sich nichts.
 
 ## 0.17.1 – 2026-10-03 – Light Luggage Fix | Leichtes Gepäck – Fix
 <!-- banner: accent=#ffb02e motif=/news/0.17.0/banner.png -->

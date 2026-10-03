@@ -6,6 +6,9 @@ import dev.theredstonee.trsclient.core.hud.HudProfiles;
 import dev.theredstonee.trsclient.core.hud.HudSnap;
 import dev.theredstonee.trsclient.core.module.HudModule;
 import dev.theredstonee.trsclient.core.module.Setting;
+import dev.theredstonee.trsclient.core.touch.SafeArea;
+import dev.theredstonee.trsclient.core.touch.TouchLayout;
+import dev.theredstonee.trsclient.core.touch.TouchMode;
 import dev.theredstonee.trsclient.core.ui.Anim;
 import dev.theredstonee.trsclient.core.ui.Canvas;
 import dev.theredstonee.trsclient.core.ui.ColorMath;
@@ -24,9 +27,15 @@ import java.util.List;
  * HUD-Editor: Elemente mit der Maus verschieben (rastet an Bildschirmrändern, Bildschirmmitte und
  * den anderen Elementen ein – mit Hilfslinien), Größe, Hintergrund-Deckkraft, Textschatten und
  * Chroma je Modul einstellen, Profile wechseln. Shift = frei schieben, Rechtsklick = zurücksetzen.
+ *
+ * <p>Touch-Modus: Finger zieht direkt, größere Greifflächen und Knöpfe, Einrasten an der sicheren Fläche
+ * ({@code -Dtrs.safeInsets}) und der Knopf „Touch-Layout“ (HUD weg von den Overlay-Knöpfen).
  */
 public final class HudEditor extends UiScreen {
 	private static final int PANEL_W = 174;
+	/** Zusätzliche Greiffläche um ein Element (Maus / Finger). */
+	private static final int GRAB_PAD = 2;
+	private static final int GRAB_PAD_TOUCH = 8;
 
 	private final MenuHost host;
 	private final SettingsPanel panel = new SettingsPanel();
@@ -78,6 +87,8 @@ public final class HudEditor extends UiScreen {
 			c.fill(0, guideY, width, guideY + 1, t.dustOn);
 		}
 
+		if (TouchMode.enabled()) safeArea(c, t, width, height);
+
 		List<HudItem> items = enabled();
 		HudItem hovered = dragging != null ? dragging : itemAt(mouseX, mouseY, width, height);
 		for (int i = 0; i < items.size(); i++) {
@@ -91,6 +102,7 @@ public final class HudEditor extends UiScreen {
 			int color = item == dragging ? t.dustOn : (item == selected ? t.lampOn : (item == hovered ? 0xE0FFFFFF : 0x60FFFFFF));
 			if (item == dragging || item == selected) Redstone.glow(c, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, item == dragging ? t.glow : t.lampGlow, 0.6f);
 			Redstone.frame(c, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, color);
+			if (TouchMode.enabled()) handles(c, b, item == dragging || item == selected ? t.dustOn : 0xA0FFFFFF);
 			if (item == hovered || item == selected) {
 				String label = item.module().name();
 				int ly = b[1] - 11 >= 0 ? b[1] - 11 : b[1] + b[3] + 3;
@@ -112,24 +124,31 @@ public final class HudEditor extends UiScreen {
 
 	private void topBar(Canvas c, int width, int mx, int my) {
 		Theme t = Theme.get();
-		int h = 22;
+		boolean touch = TouchMode.enabled();
+		// Touch: höhere Leiste und Knöpfe (Fingerbreite); die Leiste beginnt unter dem sicheren Rand oben.
+		int top = touch ? TouchMode.insetsGui().top : 0;
+		int bh = touch ? 24 : 16;
+		int h = top + bh + 6;
+		int by = top + 3;
+		barHeight = h;
 		c.fill(0, 0, width, h, ColorMath.withAlpha(t.surfaceHigh, 235));
 		c.fill(0, 0, width, 1, ColorMath.lerp(t.surfaceHigh, t.bevelLight, 0.6f));
 		c.fill(0, h - 1, width, h, t.border);
 		// Staubleitung unter der Leiste – ein Hinweis, dass hier "Strom" (Bearbeiten) anliegt.
 		c.fill(0, h, width, h + 1, ColorMath.withAlpha(t.dustOn, 160));
-		Redstone.pip(c, 8, 7, 8, 1f);
+		int ty = by + (bh - 8) / 2;
+		Redstone.pip(c, 8, ty, 8, 1f);
 		String title = I18n.tr("editor.title");
-		c.text(title, 22, 7, t.text, false);
+		c.text(title, 22, ty, t.text, false);
 
 		// Profilwechsel
 		final HudProfiles profiles = host.modules().profiles;
 		String label = I18n.tr("editor.profile", profiles.activeName());
 		int pw = Math.min(150, c.textWidth(label) + 16);
 		int px = 22 + c.textWidth(title) + 12;
-		boolean pHover = inside(mx, my, px, 3, pw, 16);
-		Paint.button(c, px, 3, pw, 16, label, false, pHover);
-		hits.add(px, 3, pw, 16, new Runnable() {
+		boolean pHover = inside(mx, my, px, by, pw, bh);
+		Paint.button(c, px, by, pw, bh, label, false, pHover);
+		hits.add(px, by, pw, bh, new Runnable() {
 			@Override
 			public void run() {
 				host.playClick();
@@ -142,9 +161,9 @@ public final class HudEditor extends UiScreen {
 		String menuLabel = I18n.tr("editor.menu");
 		int doneW = Math.max(58, c.textWidth(doneLabel) + 16);
 		int doneX = width - doneW - 8;
-		boolean doneHover = inside(mx, my, doneX, 3, doneW, 16);
-		Paint.button(c, doneX, 3, doneW, 16, doneLabel, true, doneHover);
-		hits.add(doneX, 3, doneW, 16, new Runnable() {
+		boolean doneHover = inside(mx, my, doneX, by, doneW, bh);
+		Paint.button(c, doneX, by, doneW, bh, doneLabel, true, doneHover);
+		hits.add(doneX, by, doneW, bh, new Runnable() {
 			@Override
 			public void run() {
 				host.playClick();
@@ -153,9 +172,9 @@ public final class HudEditor extends UiScreen {
 		});
 		int menuW = Math.max(58, c.textWidth(menuLabel) + 16);
 		int menuX = doneX - menuW - 6;
-		boolean menuHover = inside(mx, my, menuX, 3, menuW, 16);
-		Paint.button(c, menuX, 3, menuW, 16, menuLabel, false, menuHover);
-		hits.add(menuX, 3, menuW, 16, new Runnable() {
+		boolean menuHover = inside(mx, my, menuX, by, menuW, bh);
+		Paint.button(c, menuX, by, menuW, bh, menuLabel, false, menuHover);
+		hits.add(menuX, by, menuW, bh, new Runnable() {
 			@Override
 			public void run() {
 				host.playClick();
@@ -163,17 +182,34 @@ public final class HudEditor extends UiScreen {
 				host.openMenu();
 			}
 		});
+		if (touch) {
+			// Touch-Layout: eigenes Profil, HUD weg von den Standard-Knöpfen des Overlays.
+			String touchLabel = I18n.tr("editor.touchLayout");
+			int tw = Math.max(58, c.textWidth(touchLabel) + 16);
+			int tx = menuX - tw - 6;
+			if (tx > px + pw + 6) {
+				boolean tHover = inside(mx, my, tx, by, tw, bh);
+				Paint.button(c, tx, by, tw, bh, touchLabel, false, tHover);
+				hits.add(tx, by, tw, bh, new Runnable() {
+					@Override
+					public void run() {
+						host.playClick();
+						applyTouchLayout();
+					}
+				});
+			}
+		}
 
 	}
 
 	/** Bedienhinweis unten in der Mitte (weicht keinem Knopf der Leiste). */
 	private static void hint(Canvas c, int width, int height) {
 		Theme t = Theme.get();
-		String hint = I18n.tr("editor.hint");
+		String hint = I18n.tr(TouchMode.enabled() ? "editor.hintTouch" : "editor.hint");
 		String text = c.textWidth(hint) + 16 <= width ? hint : c.clip(hint, width - 24) + "…";
 		int tw = c.textWidth(text);
 		int x = (width - tw) / 2 - 7;
-		int y = height - 20;
+		int y = height - 20 - TouchMode.insetsGui().bottom;
 		Redstone.block(c, x, y, tw + 14, 15, ColorMath.withAlpha(t.surfaceHigh, 225));
 		Redstone.frame(c, x, y, tw + 14, 15, t.border);
 		c.text(text, x + 7, y + 4, t.textDim, false);
@@ -191,8 +227,8 @@ public final class HudEditor extends UiScreen {
 		settings.add(module.textColor);
 
 		int h = 40 + panel.height(settings) + 22;
-		int x = width - PANEL_W - 8 + Math.round((1 - Anim.easeOut(panelIn)) * 20);
-		int y = Math.min(34, Math.max(30, height - h - 8));
+		int x = width - PANEL_W - 8 - TouchMode.insetsGui().right + Math.round((1 - Anim.easeOut(panelIn)) * 20);
+		int y = Math.min(barHeight + 12, Math.max(barHeight + 8, height - h - 8));
 		Redstone.window(c, x, y, PANEL_W, h);
 
 		Redstone.iconWell(c, x + 6, y + 5, 1, module.icon(), t.dustOn, 1f);
@@ -257,6 +293,15 @@ public final class HudEditor extends UiScreen {
 		int h = b[3];
 		int x = (int) Math.round(mouseX - grabX);
 		int y = (int) Math.round(mouseY - grabY);
+		if (TouchMode.enabled()) {
+			// Finger: größere Einrast-Distanz, Ränder = sichere Fläche (Notch, Kamera-Loch).
+			SafeArea.Snap snap = SafeArea.snap(x, y, w, h, lastWidth, lastHeight, others(dragging), TOUCH_SNAP,
+					TouchMode.insetsGui());
+			guideX = snap.guideX == SafeArea.NO_GUIDE ? HudSnap.NO_GUIDE : snap.guideX;
+			guideY = snap.guideY == SafeArea.NO_GUIDE ? HudSnap.NO_GUIDE : snap.guideY;
+			dragging.module().position().set(HudLayout.fromPixels(snap.x, snap.y, w, h, lastWidth, lastHeight));
+			return true;
+		}
 		HudSnap.Result result = host.shiftDown()
 				? HudSnap.clampOnly(x, y, w, h, lastWidth, lastHeight)
 				: HudSnap.snap(x, y, w, h, lastWidth, lastHeight, others(dragging), HudSnap.DISTANCE);
@@ -351,9 +396,90 @@ public final class HudEditor extends UiScreen {
 		List<HudItem> items = enabled();
 		for (int i = 0; i < items.size(); i++) {
 			int[] b = bounds(items.get(i), screenW, screenH);
-			if (inside(mx, my, b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4)) found = items.get(i);
+			int pad = TouchMode.enabled() ? GRAB_PAD_TOUCH : GRAB_PAD;
+			if (inside(mx, my, b[0] - pad, b[1] - pad, b[2] + 2 * pad, b[3] + 2 * pad)) found = items.get(i);
 		}
 		return found;
+	}
+
+	// --- Touch-Modus ---
+
+	/** Einrast-Distanz für den Finger (größer als mit der Maus). */
+	private static final int TOUCH_SNAP = 10;
+	/** Höhe der Leiste im letzten Frame (das Seitenfeld liegt darunter). */
+	private int barHeight = 22;
+
+	/** HUD-Editor zeigt echte Bildschirmpositionen – nie vergrößern. */
+	@Override
+	protected float touchScale(int width, int height) {
+		return 1f;
+	}
+
+	/** Im Editor bedient der Finger immer direkt (Ziehen der Elemente statt Scrollen). */
+	@Override
+	protected boolean touchDirect(double x, double y) {
+		return true;
+	}
+
+	/** Unsichere Ränder (Notch) abdunkeln und die sichere Fläche als Staublinie zeigen. */
+	private static void safeArea(Canvas c, Theme t, int width, int height) {
+		SafeArea.Insets in = TouchMode.insetsGui();
+		if (in.isZero()) return;
+		int shade = ColorMath.withAlpha(0xFF000000, 90);
+		if (in.left > 0) c.fill(0, 0, in.left, height, shade);
+		if (in.right > 0) c.fill(width - in.right, 0, width, height, shade);
+		if (in.top > 0) c.fill(in.left, 0, width - in.right, in.top, shade);
+		if (in.bottom > 0) c.fill(in.left, height - in.bottom, width - in.right, height, shade);
+		Redstone.frame(c, in.left, in.top, width - in.left - in.right, height - in.top - in.bottom,
+				ColorMath.withAlpha(t.dustOff, 160));
+	}
+
+	/** Griffe an den Ecken (Finger-Ziel; das ganze Element bleibt greifbar). */
+	private static void handles(Canvas c, int[] b, int color) {
+		int s = 4;
+		int x1 = b[0] - 2 - s / 2;
+		int y1 = b[1] - 2 - s / 2;
+		int x2 = b[0] + b[2] + 2 - s / 2;
+		int y2 = b[1] + b[3] + 2 - s / 2;
+		c.fill(x1, y1, x1 + s, y1 + s, color);
+		c.fill(x2, y1, x2 + s, y1 + s, color);
+		c.fill(x1, y2, x1 + s, y2 + s, color);
+		c.fill(x2, y2, x2 + s, y2 + s, color);
+	}
+
+	/**
+	 * Knopf „Touch-Layout“: wechselt in das gleichnamige Profil (legt es beim ersten Mal als Kopie an) und verteilt
+	 * die aktiven Elemente – ausgehend von ihrer Standardposition – außerhalb der Overlay-Knöpfe und der unsicheren
+	 * Ränder.
+	 */
+	public void applyTouchLayout() {
+		HudProfiles profiles = host.modules().profiles;
+		int existing = -1;
+		for (int i = 0; i < profiles.size(); i++) {
+			if (TouchLayout.PROFILE_NAME.equalsIgnoreCase(profiles.name(i))) existing = i;
+		}
+		if (existing >= 0) profiles.switchTo(existing);
+		else profiles.create(TouchLayout.PROFILE_NAME);
+		selected = null;
+		int w = lastWidth;
+		int h = lastHeight;
+		if (w <= 0 || h <= 0) return;
+		List<HudItem> items = enabled();
+		List<int[]> rects = new ArrayList<int[]>();
+		for (int i = 0; i < items.size(); i++) {
+			HudItem item = items.get(i);
+			float scale = item.module().scale.getFloat();
+			int iw = (int) Math.ceil(item.width() * scale);
+			int ih = (int) Math.ceil(item.height() * scale);
+			HudModule m = item.module();
+			rects.add(new int[]{HudLayout.resolveX(m.defaultPosition(), iw, w), HudLayout.resolveY(m.defaultPosition(), ih, h), iw, ih});
+		}
+		int[][] placed = TouchLayout.place(rects, w, h, TouchLayout.zones(w, h), TouchMode.insetsGui());
+		for (int i = 0; i < items.size(); i++) {
+			int[] r = rects.get(i);
+			items.get(i).module().position().set(HudLayout.fromPixels(placed[i][0], placed[i][1], r[2], r[3], w, h));
+		}
+		host.save();
 	}
 
 	/** Merkt sich die Bildschirmgröße für die Eingaben (die kommen ohne Größe). */

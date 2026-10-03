@@ -336,6 +336,8 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.screenshot.LegacyScreenshots.tick();
 		Minecraft mc = Minecraft.getMinecraft();
 		dev.theredstonee.trsclient.ui.BorderlessDisplay.tick(mc);
+		// Touch-Modus (mobile Engine): feste Overlay-Tasten + Bildschirmtastatur; sonst nichts.
+		dev.theredstonee.trsclient.touch.TouchHooks.tick();
 		migrateKeys(mc);
 		while (TrsKeys.hudProfile.isPressed()) {
 			Mc.actionBar(I18n.tr("toast.hudProfile", modules.profiles.cycle()));

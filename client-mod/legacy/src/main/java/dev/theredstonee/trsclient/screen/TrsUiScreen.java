@@ -42,22 +42,22 @@ public class TrsUiScreen extends TrsScreen {
 
 	@Override
 	protected boolean onClick(double mouseX, double mouseY, int button) {
-		return ui.mouseClicked(mouseX, mouseY, button);
+		return ui.inputClick(mouseX, mouseY, button);
 	}
 
 	@Override
 	protected boolean onRelease(double mouseX, double mouseY, int button) {
-		return ui.mouseReleased(mouseX, mouseY, button);
+		return ui.inputRelease(mouseX, mouseY, button);
 	}
 
 	@Override
 	protected boolean onDrag(double mouseX, double mouseY, int button) {
-		return ui.mouseDragged(mouseX, mouseY, button);
+		return ui.inputDrag(mouseX, mouseY, button);
 	}
 
 	@Override
 	protected boolean onScroll(double mouseX, double mouseY, double amount) {
-		return ui.mouseScrolled(mouseX, mouseY, amount);
+		return ui.inputScroll(mouseX, mouseY, amount);
 	}
 
 	@Override
@@ -66,8 +66,8 @@ public class TrsUiScreen extends TrsScreen {
 		// Strg+V / Strg+A (Cmd unter macOS) für Textfelder.
 		if (isCtrlKeyDown() && key == org.lwjgl.input.Keyboard.KEY_V) logical = UiKey.PASTE;
 		else if (isCtrlKeyDown() && key == org.lwjgl.input.Keyboard.KEY_A) logical = UiKey.SELECT_ALL;
-		boolean used = ui.keyPressed(key, logical, shiftDown());
-		if (!used && logical == UiKey.NONE && TextInput.allowed(typed)) used = ui.charTyped(typed);
+		boolean used = ui.inputKey(key, logical, shiftDown());
+		if (!used && logical == UiKey.NONE && TextInput.allowed(typed)) used = ui.inputChar(typed);
 		return used;
 	}
 

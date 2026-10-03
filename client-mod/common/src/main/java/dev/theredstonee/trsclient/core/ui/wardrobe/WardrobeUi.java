@@ -298,6 +298,14 @@ public final class WardrobeUi extends UiScreen {
 		host.closeScreen();
 	}
 
+	/** Touch: Skin-Editor (Malen) und die Figur (Drehen) bedient der Finger direkt. */
+	@Override
+	protected boolean touchDirect(double x, double y) {
+		if (editing) return true;
+		if (inside(x, y, previewFig[0], previewFig[1], previewFig[2], previewFig[3])) return true;
+		return super.touchDirect(x, y);
+	}
+
 	private static boolean inside(double mx, double my, int x, int y, int w, int h) {
 		return mx >= x && my >= y && mx < x + w && my < y + h;
 	}

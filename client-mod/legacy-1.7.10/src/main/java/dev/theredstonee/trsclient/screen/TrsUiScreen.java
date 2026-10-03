@@ -37,14 +37,14 @@ public class TrsUiScreen extends GuiScreen {
 		if (vanillaBackground()) drawDefaultBackground();
 		lastMouseX = mouseX;
 		lastMouseY = mouseY;
-		if (dragging && Mouse.isButtonDown(0)) ui.mouseDragged(mouseX, mouseY, 0);
+		if (dragging && Mouse.isButtonDown(0)) ui.inputDrag(mouseX, mouseY, 0);
 		ui.render(BrandCanvas.of(fontRendererObj), width, height, mouseX, mouseY);
 	}
 
 	@Override
 	protected void mouseClicked(int mouseX, int mouseY, int button) {
 		dragging = button == 0;
-		if (!ui.mouseClicked(mouseX, mouseY, button)) super.mouseClicked(mouseX, mouseY, button);
+		if (!ui.inputClick(mouseX, mouseY, button)) super.mouseClicked(mouseX, mouseY, button);
 	}
 
 	@Override
@@ -52,7 +52,7 @@ public class TrsUiScreen extends GuiScreen {
 		// state == -1: Maus bewegt (gedrückt), sonst die losgelassene Taste
 		if (state >= 0) {
 			dragging = false;
-			ui.mouseReleased(mouseX, mouseY, state);
+			ui.inputRelease(mouseX, mouseY, state);
 		}
 		super.mouseMovedOrUp(mouseX, mouseY, state);
 	}
@@ -64,14 +64,14 @@ public class TrsUiScreen extends GuiScreen {
 		if (wheel == 0) return;
 		int mx = Mouse.getEventX() * width / mc.displayWidth;
 		int my = height - Mouse.getEventY() * height / mc.displayHeight - 1;
-		ui.mouseScrolled(mx, my, wheel > 0 ? 1 : -1);
+		ui.inputScroll(mx, my, wheel > 0 ? 1 : -1);
 	}
 
 	@Override
 	protected void keyTyped(char typedChar, int keyCode) {
 		UiKey logical = Keys.ui(keyCode);
-		if (ui.keyPressed(keyCode, logical, isShiftKeyDown())) return;
-		if (logical == UiKey.NONE && TextInput.allowed(typedChar) && ui.charTyped(typedChar)) return;
+		if (ui.inputKey(keyCode, logical, isShiftKeyDown())) return;
+		if (logical == UiKey.NONE && TextInput.allowed(typedChar) && ui.inputChar(typedChar)) return;
 		if (keyCode == 1) { // Esc
 			ui.requestClose();
 			return;
