@@ -13,6 +13,7 @@ use tauri::{AppHandle, Emitter, Manager, Runtime};
 
 mod commands;
 mod error;
+pub mod ios;
 mod models;
 pub mod runtime;
 

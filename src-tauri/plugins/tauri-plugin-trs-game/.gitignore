@@ -5,3 +5,7 @@
 /android/local.properties
 /ios/.tauri
 /ios/.build
+# iOS: tauri-plugin legt tauri-api neben ios/ ab; CMake-Bauordner der Engine
+/.tauri
+/ios/.swiftpm
+/ios/Engine/build

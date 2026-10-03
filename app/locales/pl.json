@@ -887,7 +887,10 @@
       "runtimeDownloadFailed": "Nie udało się pobrać Javy dla gry. Sprawdź połączenie z internetem.",
       "runtimeMissing": "Wciąż brakuje Javy dla gry. Uruchom ponownie.",
       "unsupportedPlatform": "Gra nie jest obsługiwana na tym urządzeniu.",
-      "worldJoinUnsupported": "Hostowane światy nie są jeszcze dostępne na tym urządzeniu."
+      "worldJoinUnsupported": "Hostowane światy nie są jeszcze dostępne na tym urządzeniu.",
+      "engineMissing": "Ta wersja aplikacji nie zawiera silnika gry.",
+      "notEnoughMemory": "Za mało pamięci dla gry. Zamknij inne aplikacje lub zmniejsz pamięć w ustawieniach instancji.",
+      "restartRequired": "Gra była już uruchomiona w tej sesji. Zamknij aplikację całkowicie i otwórz ją ponownie."
     }
   },
   "browse": {

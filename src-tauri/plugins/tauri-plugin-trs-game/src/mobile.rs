@@ -1,4 +1,6 @@
 //! Brücke zur nativen Engine (Kotlin `TrsGamePlugin` / Swift `TrsGamePlugin`).
+// iOS startet über `crate::ios` – der Android-Weg bleibt dort ungenutzt.
+#![cfg_attr(target_os = "ios", allow(dead_code))]
 
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -32,6 +34,18 @@ impl<R: Runtime> Engine<R> {
     }
 
     pub fn launch(&self, spec: &GameLaunchSpec, runtime: &RuntimeInfo) -> Result<SessionId> {
+        // iOS: JIT, Speicher und JVM-Argumente in Rust (src/ios/), Engine im App-Prozess.
+        #[cfg(target_os = "ios")]
+        {
+            crate::ios::tauri_bridge::launch(&self.app, &self.handle, spec, runtime)
+        }
+        #[cfg(not(target_os = "ios"))]
+        {
+            self.launch_engine(spec, runtime)
+        }
+    }
+
+    fn launch_engine(&self, spec: &GameLaunchSpec, runtime: &RuntimeInfo) -> Result<SessionId> {
         let session = new_session_id();
         let renderer = spec.renderer.resolve(spec.game_version.as_deref());
         let app = self.app.clone();

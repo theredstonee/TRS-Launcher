@@ -887,7 +887,10 @@
       "runtimeDownloadFailed": "Oyun için Java indirilemedi. Lütfen internet bağlantını kontrol et.",
       "runtimeMissing": "Oyun için Java hâlâ eksik. Lütfen yeniden başlat.",
       "unsupportedPlatform": "Oyun bu cihazda desteklenmiyor.",
-      "worldJoinUnsupported": "Barındırılan dünyalar bu cihazda henüz kullanılamıyor."
+      "worldJoinUnsupported": "Barındırılan dünyalar bu cihazda henüz kullanılamıyor.",
+      "engineMissing": "Uygulamanın bu sürümü oyun motorunu içermiyor.",
+      "notEnoughMemory": "Oyun için yeterli bellek yok. Diğer uygulamaları kapat ya da kurulum ayarlarında belleği azalt.",
+      "restartRequired": "Oyun bu oturumda zaten çalıştı. Uygulamayı tamamen kapatıp yeniden aç."
     }
   },
   "browse": {

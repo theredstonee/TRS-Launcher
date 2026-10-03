@@ -93,6 +93,11 @@ How to write an entry:
 - **"My servers" with a live console.** Servers set up in the launcher get their own page: live log, command line
   (list, say, op …), start, stop, restart and the number of players online. When you close the launcher, running
   servers are stopped cleanly so the world is saved.
+- **Minecraft Java on iPhone and iPad (sideload, preview).** The iOS app (installed via AltStore or SideStore)
+  can start Minecraft Java Edition itself, based on the Amethyst engine. It needs JIT: if JIT is off, the app
+  explains step by step how to turn it on (SideStore + StikDebug, AltServer, TrollStore) and starts the game as
+  soon as it is enabled. The Java runtime is downloaded and checked on first start, and the memory for the game
+  is chosen to fit your device.
 
 ### Deutsch
 - **Suche, Filter und Details für TRS-Umhänge.** Die Umhang-Liste auf der Skins-Seite hat ein Suchfeld, Filter
@@ -163,6 +168,11 @@ How to write an entry:
 - **„Meine Server“ mit Live-Konsole.** Im Launcher angelegte Server bekommen eine eigene Seite: Live-Log,
   Befehlszeile (list, say, op …), Starten, Stoppen, Neustarten und die Zahl der Spieler online. Beim Schließen des
   Launchers werden laufende Server sauber gestoppt, damit die Welt gespeichert wird.
+- **Minecraft Java auf iPhone und iPad (Sideload, Vorschau).** Die iOS-App (installiert über AltStore oder
+  SideStore) kann Minecraft Java Edition selbst starten, auf Basis der Amethyst-Engine. Dafür braucht es JIT: Ist
+  JIT aus, erklärt die App Schritt für Schritt, wie du es einschaltest (SideStore + StikDebug, AltServer,
+  TrollStore), und startet das Spiel, sobald es an ist. Die Java-Laufzeit wird beim ersten Start geladen und
+  geprüft, und der Arbeitsspeicher für das Spiel wird passend zu deinem Gerät gewählt.
 
 ## 0.17.1 – 2026-10-03 – Light Luggage Fix | Leichtes Gepäck – Fix
 <!-- banner: accent=#ffb02e motif=/news/0.17.0/banner.png -->

@@ -887,7 +887,10 @@
       "runtimeDownloadFailed": "Java voor het spel kon niet worden gedownload. Controleer je internetverbinding.",
       "runtimeMissing": "Java voor het spel ontbreekt nog. Start opnieuw.",
       "unsupportedPlatform": "Het spel wordt op dit apparaat niet ondersteund.",
-      "worldJoinUnsupported": "Gehoste werelden zijn op dit apparaat nog niet beschikbaar."
+      "worldJoinUnsupported": "Gehoste werelden zijn op dit apparaat nog niet beschikbaar.",
+      "engineMissing": "Deze versie van de app bevat de game-engine niet.",
+      "notEnoughMemory": "Er is niet genoeg geheugen voor het spel. Sluit andere apps of verlaag het geheugen in de instellingen van de instantie.",
+      "restartRequired": "Het spel draaide al in deze sessie. Sluit de app volledig en open hem opnieuw."
     }
   },
   "browse": {

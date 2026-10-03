@@ -1,0 +1,138 @@
+name: iOS engine
+
+# Baut die iOS-Spiel-Engine (Teile von Amethyst-iOS + TRS-Anbindung) auf macOS und prüft, dass Rust
+# und Swift des Spiel-Plugins für iOS kompilieren. Lokal (Windows/Linux) geht das nicht.
+#
+# Aufruf aus einem anderen Workflow (z. B. Job „launcher-ios“ in ci.yml/release.yml):
+#
+#   ios-engine:
+#     needs: launcher-ios                    # lädt die unsignierte App als Artefakt hoch
+#     uses: ./.github/workflows/ios-engine.yml
+#     with:
+#       app-artifact: launcher-ios-app       # Artefakt mit TRS.app oder einer unsignierten .ipa
+#       version: 0.18.0                      # optional, sonst CFBundleShortVersionString
+#       download-url: https://github.com/<owner>/<repo>/releases/download/v0.18.0/TRS-Launcher.ipa
+#
+# Ergebnis: Artefakt „engine-ios“ (Engine-Ordner, siehe scripts/ios/build-engine.sh) und mit app-artifact
+# zusätzlich „trs-launcher-ios“ (TRS-Launcher.ipa mit ldid-Pseudosignatur + altstore-app.json).
+# Ohne Workflow geht dasselbe auf einem Mac: scripts/ios/build-engine.sh <ordner>, dann
+# scripts/ios/package-ipa.sh <TRS.app> <ordner> <TRS-Launcher.ipa>.
+on:
+  workflow_call:
+    inputs:
+      app-artifact:
+        description: Artefakt mit der unsignierten TRS.app oder .ipa (leer = nur Engine bauen)
+        type: string
+        default: ''
+      version:
+        description: Version für den AltStore-Eintrag (leer = aus der App)
+        type: string
+        default: ''
+      download-url:
+        description: Download-Adresse der IPA für den AltStore-Eintrag
+        type: string
+        default: ''
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - src-tauri/plugins/tauri-plugin-trs-game/**
+      - scripts/ios/**
+      - .github/workflows/ios-engine.yml
+  pull_request:
+    paths:
+      - src-tauri/plugins/tauri-plugin-trs-game/**
+      - scripts/ios/**
+      - .github/workflows/ios-engine.yml
+
+permissions:
+  contents: read
+
+jobs:
+  engine:
+    name: Engine (macOS)
+    runs-on: macos-15
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # Amethysts Java-Teil braucht ein JDK 8 mit com.apple.eawt (macOS-Build).
+      - uses: actions/setup-java@v4
+        id: java8
+        with:
+          distribution: zulu
+          java-version: '8'
+
+      - name: Install ldid
+        run: brew install ldid
+
+      - name: Build engine
+        env:
+          JAVA8_HOME: ${{ steps.java8.outputs.path }}
+        run: bash scripts/ios/build-engine.sh "$RUNNER_TEMP/engine-ios"
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          key: ios-plugin
+
+      # Baut den Rust-Teil für iOS und dabei (über tauri-plugin/swift-rs) das Swift-Paket ios/.
+      - name: Compile game plugin for iOS (Rust + Swift)
+        working-directory: src-tauri
+        env:
+          IPHONEOS_DEPLOYMENT_TARGET: '14.0'
+        run: cargo build -p tauri-plugin-trs-game --target aarch64-apple-ios
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: engine-ios
+          path: ${{ runner.temp }}/engine-ios
+          if-no-files-found: error
+
+      - name: Download app
+        if: ${{ inputs.app-artifact }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.app-artifact }}
+          path: ${{ runner.temp }}/app
+
+      - name: Package IPA and AltStore entry
+        if: ${{ inputs.app-artifact }}
+        env:
+          VERSION: ${{ inputs.version }}
+          DOWNLOAD_URL: ${{ inputs.download-url || format('https://github.com/{0}/releases/latest/download/TRS-Launcher.ipa', github.repository) }}
+        run: |
+          set -euo pipefail
+          app_in="$(find "$RUNNER_TEMP/app" -maxdepth 4 \( -name '*.ipa' -o -name '*.app' \) | head -n 1)"
+          [ -n "$app_in" ] || { echo "Keine .app/.ipa im Artefakt"; exit 1; }
+          out="$RUNNER_TEMP/out"
+          mkdir -p "$out"
+          bash scripts/ios/package-ipa.sh "$app_in" "$RUNNER_TEMP/engine-ios" "$out/TRS-Launcher.ipa"
+
+          check="$RUNNER_TEMP/check"
+          rm -rf "$check"
+          unzip -q "$out/TRS-Launcher.ipa" -d "$check"
+          app="$(find "$check/Payload" -maxdepth 1 -name '*.app' | head -n 1)"
+          exe="$(plutil -extract CFBundleExecutable raw "$app/Info.plist")"
+          plutil -convert json -o "$RUNNER_TEMP/info.json" "$app/Info.plist"
+          ldid -e "$app/$exe" > "$RUNNER_TEMP/entitlements.plist"
+          plutil -convert json -o "$RUNNER_TEMP/entitlements.json" "$RUNNER_TEMP/entitlements.plist"
+          version="${VERSION:-$(plutil -extract CFBundleShortVersionString raw "$app/Info.plist")}"
+          node scripts/ios/altstore-entry.mjs app \
+            --version "$version" --url "$DOWNLOAD_URL" --ipa "$out/TRS-Launcher.ipa" \
+            --info-plist "$RUNNER_TEMP/info.json" --entitlements "$RUNNER_TEMP/entitlements.json" \
+            > "$out/altstore-app.json"
+          cat "$out/altstore-app.json"
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ inputs.app-artifact }}
+        with:
+          name: trs-launcher-ios
+          path: ${{ runner.temp }}/out
+          if-no-files-found: error

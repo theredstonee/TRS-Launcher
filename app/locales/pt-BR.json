@@ -887,7 +887,10 @@
       "runtimeDownloadFailed": "Não foi possível baixar o Java para o jogo. Verifique sua conexão com a internet.",
       "runtimeMissing": "O Java para o jogo ainda está faltando. Inicie novamente.",
       "unsupportedPlatform": "O jogo não é compatível com este dispositivo.",
-      "worldJoinUnsupported": "Mundos hospedados ainda não estão disponíveis neste dispositivo."
+      "worldJoinUnsupported": "Mundos hospedados ainda não estão disponíveis neste dispositivo.",
+      "engineMissing": "Esta versão do app não inclui o motor do jogo.",
+      "notEnoughMemory": "Não há memória suficiente para o jogo. Feche outros apps ou reduza a memória nas configurações da instância.",
+      "restartRequired": "O jogo já rodou nesta sessão. Feche o app completamente e abra de novo."
     }
   },
   "browse": {

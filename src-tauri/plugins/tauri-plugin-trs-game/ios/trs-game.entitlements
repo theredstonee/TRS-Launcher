@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  TRS Launcher (iOS, Sideload) – Entitlements für die unsignierte IPA (ldid).
+  AltStore/SideStore signieren die App neu und übernehmen nur, was das Konto erlaubt:
+  mit kostenlosem Apple-Konto fallen increased-memory-limit und extended-virtual-addressing
+  meist weg. Die App prüft deshalb zur Laufzeit, was wirklich da ist, und wählt -Xmx danach
+  (src/ios/memory.rs).
+-->
+<plist version="1.0">
+<dict>
+	<!-- Debugger darf sich anhängen: Voraussetzung für JIT (StikDebug, AltServer, TrollStore). -->
+	<key>get-task-allow</key>
+	<true/>
+	<!-- Höheres Speicherlimit (Jetsam) für die JVM. -->
+	<key>com.apple.developer.kernel.increased-memory-limit</key>
+	<true/>
+	<!-- Großer Adressraum für Heap und komprimierte Klassenzeiger. -->
+	<key>com.apple.developer.kernel.extended-virtual-addressing</key>
+	<true/>
+</dict>
+</plist>

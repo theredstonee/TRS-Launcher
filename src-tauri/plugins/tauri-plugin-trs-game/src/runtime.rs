@@ -53,8 +53,40 @@ pub const ANDROID_RUNTIMES: &[RuntimeArchive] = &[
     aamc!(25, "x86_64", "download_jre25", "jre25-android-x86_64.tar.xz", "7fca862ee1b2d5fe23cd9c9c3d9b7ad3c241947ad1a6cc9464ef2e674867105d", 39_061_384),
 ];
 
-/// iOS-Runtimes – trägt der iOS-Teil ein (gleiches Format, Amethyst-iOS-Builds).
-pub const IOS_RUNTIMES: &[RuntimeArchive] = &[];
+/// iOS-Runtimes (ios-aarch64) von Amethyst-iOS (`Makefile`, Ziel `jre`), Stand 2026-10-03:
+/// ZIP mit genau einer `jre<n>-ios-arm64-….tar.xz` darin. Die Adressen sind nicht versioniert –
+/// ersetzt Amethyst eine Datei, schlägt die Prüfsumme fehl (`game.runtimeChecksum`); dann hier
+/// neue Werte eintragen (siehe ios/README.md).
+pub const IOS_RUNTIMES: &[RuntimeArchive] = &[
+    RuntimeArchive {
+        java_major: 8,
+        arch: "aarch64",
+        url: "https://assets.angelauramc.dev/openjdk/ios-arm64/jre8-ios-aarch64.zip",
+        sha256: "d39b627dfd96ef0224da3f36641c127da875c801a06ad4beceef02bd38807c59",
+        size: 27_539_002,
+    },
+    RuntimeArchive {
+        java_major: 17,
+        arch: "aarch64",
+        url: "https://assets.angelauramc.dev/openjdk/ios-arm64/jre17-ios-aarch64.zip",
+        sha256: "75e19f724afb6ffc86635fcbccc43e1e8b7345f0794261c745b16678561fe76f",
+        size: 21_928_331,
+    },
+    RuntimeArchive {
+        java_major: 21,
+        arch: "aarch64",
+        url: "https://assets.angelauramc.dev/openjdk/ios-arm64/jre21-ios-aarch64.zip",
+        sha256: "64043966e5e67e47bd244bb1e27f52367895674699f46693703ebd9a120b73fa",
+        size: 24_069_623,
+    },
+    RuntimeArchive {
+        java_major: 25,
+        arch: "aarch64",
+        url: "https://assets.angelauramc.dev/openjdk/ios-arm64/jre25-ios-aarch64.zip",
+        sha256: "3686cc278ff2d394b13cc449907259596451829bab0187786264c598dd6bd888",
+        size: 24_427_867,
+    },
+];
 
 /// Obergrenze für entpackte Daten (Schutz vor Archiv-Bomben; echte JREs ≈ 150–250 MB).
 const MAX_UNPACKED: u64 = 1024 * 1024 * 1024;
@@ -147,7 +179,8 @@ pub async fn ensure(
     let staging = root.join(format!(".jre-{}.tmp", archive.java_major));
     let _ = tokio::fs::remove_dir_all(&staging).await;
     let (src, dest) = (download.clone(), staging.clone());
-    let unpacked = tokio::task::spawn_blocking(move || unpack_tar_xz(&src, &dest))
+    let zipped = archive.url.ends_with(".zip");
+    let unpacked = tokio::task::spawn_blocking(move || if zipped { unpack_zip_tar_xz(&src, &dest) } else { unpack_tar_xz(&src, &dest) })
         .await
         .map_err(|e| Error::Archive(e.to_string()))?;
     let _ = tokio::fs::remove_file(&download).await;
@@ -221,6 +254,24 @@ pub fn unpack_tar_xz(archive: &Path, dest: &Path) -> Result<()> {
     let file = std::fs::File::open(archive)?;
     let xz = lzma_rust2::XzReader::new(std::io::BufReader::new(file), true);
     unpack_tar(xz, dest)
+}
+
+/// iOS: ZIP mit genau einer `.tar.xz` darin (wird beim Lesen entpackt, nicht zwischengespeichert).
+pub fn unpack_zip_tar_xz(archive: &Path, dest: &Path) -> Result<()> {
+    let file = std::fs::File::open(archive)?;
+    let mut zip = zip::ZipArchive::new(std::io::BufReader::new(file)).map_err(|e| Error::Archive(e.to_string()))?;
+    let mut inner = None;
+    for i in 0..zip.len() {
+        let entry = zip.by_index(i).map_err(|e| Error::Archive(e.to_string()))?;
+        let name = entry.name();
+        if name.starts_with("jre") && name.ends_with(".tar.xz") && !name.contains(['/', '\\']) {
+            inner = Some(i);
+            break;
+        }
+    }
+    let index = inner.ok_or_else(|| Error::Archive("keine .tar.xz im ZIP".into()))?;
+    let entry = zip.by_index(index).map_err(|e| Error::Archive(e.to_string()))?;
+    unpack_tar(lzma_rust2::XzReader::new(entry, true), dest)
 }
 
 fn unpack_tar(reader: impl Read, dest: &Path) -> Result<()> {
@@ -352,6 +403,55 @@ mod tests {
         assert!(dest.join("lib/server/libjvm.so").is_file());
         assert!(!dest.join("legal/x/LICENSE").exists());
         assert_eq!(release_version(&dest).as_deref(), Some("21.0.8"));
+    }
+
+    #[test]
+    fn table_is_complete_for_ios() {
+        for major in crate::models::JAVA_MAJORS {
+            let a = archive_for(IOS_RUNTIMES, major, "aarch64").unwrap();
+            assert_eq!(a.sha256.len(), 64);
+            assert!(a.url.starts_with("https://assets.angelauramc.dev/openjdk/ios-arm64/"));
+            assert!(a.url.ends_with(&format!("jre{major}-ios-aarch64.zip")));
+        }
+        assert!(archive_for(IOS_RUNTIMES, 17, "x86_64").is_err());
+    }
+
+    #[test]
+    fn unpacks_ios_zip() {
+        let dir = tempfile::tempdir().unwrap();
+        let data = tar_xz(&[("./release", b"JAVA_VERSION=\"17.0.15\"\n"), ("./lib/libjli.dylib", b"jli")], &[]);
+        let archive = dir.path().join("jre17.zip");
+        let mut zip = zip::ZipWriter::new(std::fs::File::create(&archive).unwrap());
+        zip.start_file("jre17-ios-arm64-20260708-release.tar.xz", zip::write::SimpleFileOptions::default()).unwrap();
+        std::io::Write::write_all(&mut zip, &data).unwrap();
+        zip.finish().unwrap();
+        let dest = dir.path().join("out");
+        unpack_zip_tar_xz(&archive, &dest).unwrap();
+        assert!(dest.join("lib/libjli.dylib").is_file());
+        assert_eq!(release_version(&dest).as_deref(), Some("17.0.15"));
+        // ZIP ohne passenden Inhalt wird abgelehnt.
+        let empty = dir.path().join("empty.zip");
+        let mut zip = zip::ZipWriter::new(std::fs::File::create(&empty).unwrap());
+        zip.start_file("readme.txt", zip::write::SimpleFileOptions::default()).unwrap();
+        zip.finish().unwrap();
+        assert!(unpack_zip_tar_xz(&empty, &dir.path().join("out2")).is_err());
+    }
+
+    /// Echte Amethyst-Datei: `TRS_IOS_JRE_ZIP=<pfad> TRS_IOS_JRE_MAJOR=17 cargo test -- --ignored`.
+    #[test]
+    #[ignore]
+    fn real_ios_archive() {
+        let (Some(path), Some(major)) = (std::env::var_os("TRS_IOS_JRE_ZIP"), std::env::var("TRS_IOS_JRE_MAJOR").ok()) else {
+            return;
+        };
+        let archive = archive_for(IOS_RUNTIMES, major.parse().unwrap(), "aarch64").unwrap();
+        let bytes = std::fs::read(&path).unwrap();
+        assert_eq!(bytes.len() as u64, archive.size);
+        assert_eq!(hex(&Sha256::digest(&bytes)), archive.sha256);
+        let dir = tempfile::tempdir().unwrap();
+        unpack_zip_tar_xz(Path::new(&path), dir.path()).unwrap();
+        assert!(dir.path().join("release").is_file());
+        assert!(dir.path().join("lib/server/libjvm.dylib").is_file());
     }
 
     #[test]

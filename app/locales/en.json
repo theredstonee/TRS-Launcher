@@ -887,7 +887,10 @@
       "runtimeDownloadFailed": "Java for the game could not be downloaded. Please check your internet connection.",
       "runtimeMissing": "Java for the game is still missing. Please start again.",
       "unsupportedPlatform": "The game is not supported on this device.",
-      "worldJoinUnsupported": "Hosted worlds are not available on this device yet."
+      "worldJoinUnsupported": "Hosted worlds are not available on this device yet.",
+      "engineMissing": "This build of the app doesn't contain the game engine.",
+      "notEnoughMemory": "There isn't enough memory for the game. Close other apps or lower the memory in the instance settings.",
+      "restartRequired": "The game already ran in this session. Close the app completely and open it again."
     }
   },
   "browse": {

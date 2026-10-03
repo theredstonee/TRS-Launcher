@@ -23,6 +23,13 @@ pub enum Error {
     Io(#[from] std::io::Error),
     #[error("Spiel-Engine: {0}")]
     Engine(String),
+    // iOS: Engine fehlt im Build, JVM lief schon in diesem Prozess, zu wenig Speicher.
+    #[error("Spiel-Engine fehlt in diesem Build")]
+    EngineMissing,
+    #[error("Engine lief schon – App neu starten")]
+    RestartRequired,
+    #[error("zu wenig Arbeitsspeicher für das Spiel")]
+    NotEnoughMemory,
     #[error(transparent)]
     Tauri(#[from] tauri::Error),
     #[cfg(mobile)]
@@ -44,6 +51,9 @@ impl Error {
             Error::Archive(_) => "game.runtimeArchive",
             Error::Io(_) => "game.io",
             Error::Engine(_) | Error::Tauri(_) => "game.engine",
+            Error::EngineMissing => "game.engineMissing",
+            Error::RestartRequired => "game.restartRequired",
+            Error::NotEnoughMemory => "game.notEnoughMemory",
             #[cfg(mobile)]
             Error::PluginInvoke(_) => "game.engine",
         }
