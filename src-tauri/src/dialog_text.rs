@@ -286,6 +286,7 @@ const TEXTS: [[&str; 8]; 27] = [
         "Yeni konumu seç",
         "Nieuwe locatie kiezen",
     ],
+    [
         "Save server",
         "Server speichern",
         "Guardar servidor",
