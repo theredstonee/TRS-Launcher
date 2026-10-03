@@ -128,6 +128,12 @@ async function close() {
 }
 onBeforeUnmount(() => clearTimeout(timer))
 
+/** Einstellungen schließen (speichert Offenes) und in den Big-Picture-Modus. */
+async function openBigPicture() {
+  await close()
+  useBigPictureStore().open()
+}
+
 // --- Aussehen -----------------------------------------------------------------
 // Namen kommen beim Rendern aus settings.appearance.themes/accents.
 const themes: { key: Theme; bg: string; panel: string; line: string }[] = [
@@ -416,6 +422,17 @@ async function allowFirewall() {
       </SettingRow>
       <SettingRow :title="t('settings.behavior.restartOnboardingTitle')" :description="t('settings.behavior.restartOnboardingDescription')">
         <button class="btn btn-ghost" @click="close(); onboarding.restart()">{{ t('common.actions.start') }}</button>
+      </SettingRow>
+
+      <h3 class="section-heading mt-6">{{ t('settings.bigPicture.title') }}</h3>
+      <SettingRow :title="t('settings.bigPicture.openTitle')" :description="t('settings.bigPicture.openDescription')">
+        <button class="btn btn-ghost" data-testid="settings-big-picture" @click="openBigPicture">{{ t('settings.bigPicture.open') }}</button>
+      </SettingRow>
+      <SettingRow :title="t('settings.bigPicture.onStartTitle')" :description="t('settings.bigPicture.onStartDescription')">
+        <ToggleSwitch v-model="form.ui.bigPictureOnStart" :label="t('settings.bigPicture.onStartTitle')" />
+      </SettingRow>
+      <SettingRow v-if="caps.platform === 'linux'" :title="t('settings.bigPicture.autoTitle')" :description="t('settings.bigPicture.autoDescription')">
+        <ToggleSwitch v-model="form.ui.bigPictureAuto" :label="t('settings.bigPicture.autoTitle')" />
       </SettingRow>
     </div>
 

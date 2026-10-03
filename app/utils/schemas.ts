@@ -125,6 +125,8 @@ export const uiSettingsSchema = z.object({
   compactLibrary: z.boolean(),
   showPlayTime: z.boolean(),
   language: z.enum(supportedLocales),
+  bigPictureOnStart: z.boolean().default(false),
+  bigPictureAuto: z.boolean().default(true),
 })
 
 /** Clips & Aufnahme – gleiche Grenzen wie `trs_core::clips::settings`. */

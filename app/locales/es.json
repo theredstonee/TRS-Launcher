@@ -2248,6 +2248,16 @@
       "preview": "Mostrar una notificación de prueba",
       "previewTitle": "TRS Launcher",
       "previewBody": "Así se ven las notificaciones."
+    },
+    "bigPicture": {
+      "title": "Modo Big Picture",
+      "openTitle": "Abrir Big Picture",
+      "openDescription": "Pantalla completa con mosaicos grandes para TV, Steam Deck y mandos. Atajo: F11.",
+      "open": "Abrir",
+      "onStartTitle": "Abrir en Big Picture al iniciar",
+      "onStartDescription": "El launcher se inicia directamente en el modo Big Picture.",
+      "autoTitle": "Big Picture en Steam Deck",
+      "autoDescription": "Se inicia solo en el modo Big Picture en Steam Deck, SteamOS y en gamescope (modo juego de Steam)."
     }
   },
   "settingsShell": {
@@ -2544,7 +2554,8 @@
       "uptime": "activa desde hace {time}",
       "openLogs": "Abrir registros",
       "openLogsNamed": "Abrir registros de {name}"
-    }
+    },
+    "bigPicture": "Modo Big Picture (F11)"
   },
   "nav": {
     "mainLabel": "Navegación principal",
@@ -2630,7 +2641,8 @@
       "websiteLogin": "web iniciar sesión login código confirmar launcher microsoft navegador equipo",
       "myApplications": "solicitudes solicitar equipo puesto estado",
       "achievements": "logros trofeos puntos recompensas insignias desbloquear achievements",
-      "docs": "ayuda docs documentación guía wiki faq manual soporte preguntas help"
+      "docs": "ayuda docs documentación guía wiki faq manual soporte preguntas help",
+      "bigPicture": "big picture tv mando gamepad steam deck pantalla completa sofá consola"
     },
     "actions": {
       "newInstance": {
@@ -2654,6 +2666,10 @@
       },
       "myApplications": {
         "subtitle": "Estado y respuestas de tus solicitudes al equipo"
+      },
+      "bigPicture": {
+        "title": "Modo Big Picture",
+        "subtitle": "Vista a pantalla completa para TV, Steam Deck y mandos"
       }
     }
   },
@@ -5414,5 +5430,69 @@
     "logs": "Ayuda con los registros",
     "java": "Guía de Java",
     "linux": "Guía para Linux"
+  },
+  "bigPicture": {
+    "title": "Big Picture",
+    "sectionsLabel": "Secciones",
+    "exit": "Salir de Big Picture",
+    "quit": "Cerrar el launcher",
+    "sections": {
+      "home": "Inicio",
+      "instances": "Biblioteca",
+      "servers": "Servidores",
+      "friends": "Amigos",
+      "settings": "Ajustes"
+    },
+    "hints": {
+      "select": "Elegir",
+      "back": "Atrás",
+      "options": "Opciones",
+      "menu": "Menú"
+    },
+    "menu": {
+      "title": "Menú",
+      "resume": "Continuar"
+    },
+    "home": {
+      "continue": "Seguir jugando",
+      "recent": "Jugado recientemente",
+      "emptyTitle": "Aún no hay instancias",
+      "emptyText": "Crea o importa una instancia en la vista normal y vuelve aquí."
+    },
+    "instance": {
+      "options": "Opciones",
+      "openDesktop": "Abrir en la vista normal"
+    },
+    "memory": {
+      "title": "Memoria (RAM)",
+      "less": "Menos memoria",
+      "more": "Más memoria",
+      "hint": "Se aplica la próxima vez que inicies el juego."
+    },
+    "servers": {
+      "joinWith": "Entra con {name}",
+      "joinNamed": "Entrar en {name}",
+      "chooseInstance": "¿Con qué instancia entrar?",
+      "emptyText": "Añade servidores en la vista normal."
+    },
+    "friends": {
+      "title": "Amigos conectados",
+      "offline": "{count} amigo desconectado | {count} amigos desconectados",
+      "offTitle": "Los servicios TRS están desactivados",
+      "offText": "Activa los servicios TRS en la vista normal para ver aquí a tus amigos.",
+      "noneOnline": "Ahora mismo ninguno de tus amigos está conectado.",
+      "joinNamed": "Unirse a {name} en {server}"
+    },
+    "settings": {
+      "accounts": "Cuenta",
+      "activeAccount": "Activa",
+      "useAccount": "Cambiar a esta cuenta",
+      "switching": "Cambiando…",
+      "noAccounts": "Añade una cuenta de Microsoft en la vista normal.",
+      "memory": "Memoria por instancia",
+      "previousInstance": "Instancia anterior",
+      "nextInstance": "Instancia siguiente",
+      "mode": "Big Picture"
+    }
   }
 }

@@ -2248,6 +2248,16 @@
       "preview": "Mostrar notificação de teste",
       "previewTitle": "TRS Launcher",
       "previewBody": "É assim que as notificações aparecem."
+    },
+    "bigPicture": {
+      "title": "Modo Big Picture",
+      "openTitle": "Abrir Big Picture",
+      "openDescription": "Tela cheia com blocos grandes para TV, Steam Deck e controles. Atalho: F11.",
+      "open": "Abrir",
+      "onStartTitle": "Abrir no Big Picture ao iniciar",
+      "onStartDescription": "O launcher inicia direto no modo Big Picture.",
+      "autoTitle": "Big Picture no Steam Deck",
+      "autoDescription": "Inicia sozinho no modo Big Picture no Steam Deck, SteamOS e no gamescope (modo de jogo do Steam)."
     }
   },
   "settingsShell": {
@@ -2544,7 +2554,8 @@
       "uptime": "rodando há {time}",
       "openLogs": "Abrir logs",
       "openLogsNamed": "Abrir logs de {name}"
-    }
+    },
+    "bigPicture": "Modo Big Picture (F11)"
   },
   "nav": {
     "mainLabel": "Navegação principal",
@@ -2630,7 +2641,8 @@
       "websiteLogin": "site entrar login código confirmar launcher microsoft navegador equipe",
       "myApplications": "candidaturas candidatar equipe vaga status",
       "achievements": "conquistas troféus pontos recompensas emblemas desbloquear achievements",
-      "docs": "ajuda docs documentação guia wiki faq manual suporte perguntas help"
+      "docs": "ajuda docs documentação guia wiki faq manual suporte perguntas help",
+      "bigPicture": "big picture tv televisão controle gamepad steam deck tela cheia sofá console"
     },
     "actions": {
       "newInstance": {
@@ -2654,6 +2666,10 @@
       },
       "myApplications": {
         "subtitle": "Status e respostas das suas candidaturas"
+      },
+      "bigPicture": {
+        "title": "Modo Big Picture",
+        "subtitle": "Tela cheia para TV, Steam Deck e controles"
       }
     }
   },
@@ -5414,5 +5430,69 @@
     "logs": "Ajuda com os logs",
     "java": "Guia do Java",
     "linux": "Guia para Linux"
+  },
+  "bigPicture": {
+    "title": "Big Picture",
+    "sectionsLabel": "Seções",
+    "exit": "Sair do Big Picture",
+    "quit": "Fechar o launcher",
+    "sections": {
+      "home": "Início",
+      "instances": "Biblioteca",
+      "servers": "Servidores",
+      "friends": "Amigos",
+      "settings": "Configurações"
+    },
+    "hints": {
+      "select": "Escolher",
+      "back": "Voltar",
+      "options": "Opções",
+      "menu": "Menu"
+    },
+    "menu": {
+      "title": "Menu",
+      "resume": "Continuar"
+    },
+    "home": {
+      "continue": "Continuar jogando",
+      "recent": "Jogado recentemente",
+      "emptyTitle": "Nenhuma instância ainda",
+      "emptyText": "Crie ou importe uma instância na visão normal e depois volte aqui."
+    },
+    "instance": {
+      "options": "Opções",
+      "openDesktop": "Abrir na visão normal"
+    },
+    "memory": {
+      "title": "Memória (RAM)",
+      "less": "Menos memória",
+      "more": "Mais memória",
+      "hint": "Vale a partir da próxima vez que o jogo iniciar."
+    },
+    "servers": {
+      "joinWith": "Entra com {name}",
+      "joinNamed": "Entrar em {name}",
+      "chooseInstance": "Entrar com qual instância?",
+      "emptyText": "Adicione servidores na visão normal."
+    },
+    "friends": {
+      "title": "Amigos online",
+      "offline": "{count} amigo offline | {count} amigos offline",
+      "offTitle": "Os serviços TRS estão desligados",
+      "offText": "Ligue os serviços TRS na visão normal para ver seus amigos aqui.",
+      "noneOnline": "Nenhum dos seus amigos está online agora.",
+      "joinNamed": "Entrar com {name} em {server}"
+    },
+    "settings": {
+      "accounts": "Conta",
+      "activeAccount": "Ativa",
+      "useAccount": "Trocar para esta conta",
+      "switching": "Trocando…",
+      "noAccounts": "Adicione uma conta Microsoft na visão normal.",
+      "memory": "Memória por instância",
+      "previousInstance": "Instância anterior",
+      "nextInstance": "Próxima instância",
+      "mode": "Big Picture"
+    }
   }
 }

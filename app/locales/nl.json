@@ -2248,6 +2248,16 @@
       "preview": "Testmelding tonen",
       "previewTitle": "TRS Launcher",
       "previewBody": "Zo zien meldingen eruit."
+    },
+    "bigPicture": {
+      "title": "Big Picture-modus",
+      "openTitle": "Big Picture openen",
+      "openDescription": "Volledig scherm met grote tegels voor tv, Steam Deck en controllers. Sneltoets: F11.",
+      "open": "Openen",
+      "onStartTitle": "Bij het starten in Big Picture openen",
+      "onStartDescription": "De launcher start meteen in de Big Picture-modus.",
+      "autoTitle": "Big Picture op de Steam Deck",
+      "autoDescription": "Start vanzelf in de Big Picture-modus op Steam Deck, SteamOS en in gamescope (Steam-gamemodus)."
     }
   },
   "settingsShell": {
@@ -2544,7 +2554,8 @@
       "uptime": "actief sinds {time}",
       "openLogs": "Logs openen",
       "openLogsNamed": "Logs van {name} openen"
-    }
+    },
+    "bigPicture": "Big Picture-modus (F11)"
   },
   "nav": {
     "mainLabel": "Hoofdnavigatie",
@@ -2630,7 +2641,8 @@
       "websiteLogin": "website inloggen login code bevestigen launcher microsoft browser team",
       "myApplications": "sollicitaties solliciteren team functie status",
       "achievements": "prestaties trofeeën punten beloningen badges ontgrendelen achievements",
-      "docs": "hulp docs documentatie handleiding wiki faq support vragen help"
+      "docs": "hulp docs documentatie handleiding wiki faq support vragen help",
+      "bigPicture": "big picture tv televisie controller gamepad steam deck volledig scherm bank console"
     },
     "actions": {
       "newInstance": {
@@ -2654,6 +2666,10 @@
       },
       "myApplications": {
         "subtitle": "Status en antwoorden van je teamsollicitaties"
+      },
+      "bigPicture": {
+        "title": "Big Picture-modus",
+        "subtitle": "Volledig scherm voor tv, Steam Deck en controllers"
       }
     }
   },
@@ -5414,5 +5430,69 @@
     "logs": "Hulp bij logs",
     "java": "Java-handleiding",
     "linux": "Linux-handleiding"
+  },
+  "bigPicture": {
+    "title": "Big Picture",
+    "sectionsLabel": "Onderdelen",
+    "exit": "Big Picture verlaten",
+    "quit": "Launcher afsluiten",
+    "sections": {
+      "home": "Start",
+      "instances": "Bibliotheek",
+      "servers": "Servers",
+      "friends": "Vrienden",
+      "settings": "Instellingen"
+    },
+    "hints": {
+      "select": "Kiezen",
+      "back": "Terug",
+      "options": "Opties",
+      "menu": "Menu"
+    },
+    "menu": {
+      "title": "Menu",
+      "resume": "Verder"
+    },
+    "home": {
+      "continue": "Verder spelen",
+      "recent": "Onlangs gespeeld",
+      "emptyTitle": "Nog geen instanties",
+      "emptyText": "Maak of importeer een instantie in de normale weergave en kom dan hier terug."
+    },
+    "instance": {
+      "options": "Opties",
+      "openDesktop": "Openen in de normale weergave"
+    },
+    "memory": {
+      "title": "Geheugen (RAM)",
+      "less": "Minder geheugen",
+      "more": "Meer geheugen",
+      "hint": "Geldt vanaf de volgende keer dat het spel start."
+    },
+    "servers": {
+      "joinWith": "Doet mee met {name}",
+      "joinNamed": "{name} joinen",
+      "chooseInstance": "Met welke instantie joinen?",
+      "emptyText": "Voeg servers toe in de normale weergave."
+    },
+    "friends": {
+      "title": "Vrienden online",
+      "offline": "{count} vriend offline | {count} vrienden offline",
+      "offTitle": "TRS-diensten staan uit",
+      "offText": "Zet de TRS-diensten aan in de normale weergave om je vrienden hier te zien.",
+      "noneOnline": "Er zijn nu geen vrienden van je online.",
+      "joinNamed": "{name} joinen op {server}"
+    },
+    "settings": {
+      "accounts": "Account",
+      "activeAccount": "Actief",
+      "useAccount": "Naar dit account wisselen",
+      "switching": "Wisselen…",
+      "noAccounts": "Voeg een Microsoft-account toe in de normale weergave.",
+      "memory": "Geheugen per instantie",
+      "previousInstance": "Vorige instantie",
+      "nextInstance": "Volgende instantie",
+      "mode": "Big Picture"
+    }
   }
 }

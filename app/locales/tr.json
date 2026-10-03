@@ -2248,6 +2248,16 @@
       "preview": "Test bildirimi göster",
       "previewTitle": "TRS Launcher",
       "previewBody": "Bildirimler böyle görünür."
+    },
+    "bigPicture": {
+      "title": "Big Picture modu",
+      "openTitle": "Big Picture’ı aç",
+      "openDescription": "TV, Steam Deck ve oyun kolları için büyük kutucuklu tam ekran. Kısayol: F11.",
+      "open": "Aç",
+      "onStartTitle": "Açılışta Big Picture ile başlat",
+      "onStartDescription": "Launcher doğrudan Big Picture modunda açılır.",
+      "autoTitle": "Steam Deck’te Big Picture",
+      "autoDescription": "Steam Deck, SteamOS ve gamescope’ta (Steam oyun modu) kendiliğinden Big Picture modunda başlar."
     }
   },
   "settingsShell": {
@@ -2544,7 +2554,8 @@
       "uptime": "{time} süredir çalışıyor",
       "openLogs": "Günlükleri aç",
       "openLogsNamed": "Günlükleri aç: {name}"
-    }
+    },
+    "bigPicture": "Big Picture modu (F11)"
   },
   "nav": {
     "mainLabel": "Ana gezinme",
@@ -2630,7 +2641,8 @@
       "websiteLogin": "web sitesi oturum aç giriş kod onayla launcher microsoft tarayıcı ekip",
       "myApplications": "başvurular başvur ekip pozisyon durum",
       "achievements": "başarımlar kupalar puanlar ödüller rozetler kilit achievements",
-      "docs": "yardım docs belgeler rehber wiki sss kılavuz destek sorular help"
+      "docs": "yardım docs belgeler rehber wiki sss kılavuz destek sorular help",
+      "bigPicture": "big picture tv televizyon oyun kolu gamepad steam deck tam ekran kanepe konsol"
     },
     "actions": {
       "newInstance": {
@@ -2654,6 +2666,10 @@
       },
       "myApplications": {
         "subtitle": "Ekip başvurularının durumu ve yanıtları"
+      },
+      "bigPicture": {
+        "title": "Big Picture modu",
+        "subtitle": "TV, Steam Deck ve oyun kolları için tam ekran görünüm"
       }
     }
   },
@@ -5414,5 +5430,69 @@
     "logs": "Günlükler hakkında yardım",
     "java": "Java rehberi",
     "linux": "Linux rehberi"
+  },
+  "bigPicture": {
+    "title": "Big Picture",
+    "sectionsLabel": "Bölümler",
+    "exit": "Big Picture’dan çık",
+    "quit": "Launcher’ı kapat",
+    "sections": {
+      "home": "Ana sayfa",
+      "instances": "Kütüphane",
+      "servers": "Sunucular",
+      "friends": "Arkadaşlar",
+      "settings": "Ayarlar"
+    },
+    "hints": {
+      "select": "Seç",
+      "back": "Geri",
+      "options": "Seçenekler",
+      "menu": "Menü"
+    },
+    "menu": {
+      "title": "Menü",
+      "resume": "Devam et"
+    },
+    "home": {
+      "continue": "Oynamaya devam et",
+      "recent": "Son oynananlar",
+      "emptyTitle": "Henüz örnek yok",
+      "emptyText": "Normal görünümde bir örnek oluştur ya da içe aktar, sonra buraya dön."
+    },
+    "instance": {
+      "options": "Seçenekler",
+      "openDesktop": "Normal görünümde aç"
+    },
+    "memory": {
+      "title": "Bellek (RAM)",
+      "less": "Daha az bellek",
+      "more": "Daha fazla bellek",
+      "hint": "Oyun bir sonraki açılışta bu değerle başlar."
+    },
+    "servers": {
+      "joinWith": "{name} ile katılır",
+      "joinNamed": "{name} sunucusuna katıl",
+      "chooseInstance": "Hangi örnekle katılınsın?",
+      "emptyText": "Sunucuları normal görünümde ekle."
+    },
+    "friends": {
+      "title": "Çevrimiçi arkadaşlar",
+      "offline": "{count} arkadaş çevrimdışı | {count} arkadaş çevrimdışı",
+      "offTitle": "TRS hizmetleri kapalı",
+      "offText": "Arkadaşlarını burada görmek için normal görünümde TRS hizmetlerini aç.",
+      "noneOnline": "Şu anda hiçbir arkadaşın çevrimiçi değil.",
+      "joinNamed": "{name} ile {server} sunucusuna katıl"
+    },
+    "settings": {
+      "accounts": "Hesap",
+      "activeAccount": "Etkin",
+      "useAccount": "Bu hesaba geç",
+      "switching": "Geçiliyor…",
+      "noAccounts": "Normal görünümde bir Microsoft hesabı ekle.",
+      "memory": "Örnek başına bellek",
+      "previousInstance": "Önceki örnek",
+      "nextInstance": "Sonraki örnek",
+      "mode": "Big Picture"
+    }
   }
 }

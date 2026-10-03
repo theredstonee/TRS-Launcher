@@ -2248,6 +2248,16 @@
       "preview": "Afficher une notification de test",
       "previewTitle": "TRS Launcher",
       "previewBody": "Voici à quoi ressemblent les notifications."
+    },
+    "bigPicture": {
+      "title": "Mode Big Picture",
+      "openTitle": "Ouvrir Big Picture",
+      "openDescription": "Plein écran avec de grandes tuiles pour TV, Steam Deck et manettes. Raccourci : F11.",
+      "open": "Ouvrir",
+      "onStartTitle": "Ouvrir en Big Picture au démarrage",
+      "onStartDescription": "Le launcher démarre directement en mode Big Picture.",
+      "autoTitle": "Big Picture sur Steam Deck",
+      "autoDescription": "Démarre de lui-même en mode Big Picture sur Steam Deck, SteamOS et dans gamescope (mode jeu de Steam)."
     }
   },
   "settingsShell": {
@@ -2544,7 +2554,8 @@
       "uptime": "en cours depuis {time}",
       "openLogs": "Ouvrir les journaux",
       "openLogsNamed": "Ouvrir les journaux de {name}"
-    }
+    },
+    "bigPicture": "Mode Big Picture (F11)"
   },
   "nav": {
     "mainLabel": "Navigation principale",
@@ -2630,7 +2641,8 @@
       "websiteLogin": "site connexion login code confirmer launcher microsoft navigateur équipe",
       "myApplications": "candidatures postuler équipe poste statut",
       "achievements": "succès trophées points récompenses badges débloquer achievements",
-      "docs": "aide docs documentation guide wiki faq manuel support questions help"
+      "docs": "aide docs documentation guide wiki faq manuel support questions help",
+      "bigPicture": "big picture tv télé manette gamepad steam deck plein écran canapé console"
     },
     "actions": {
       "newInstance": {
@@ -2654,6 +2666,10 @@
       },
       "myApplications": {
         "subtitle": "Statut et réponses de tes candidatures"
+      },
+      "bigPicture": {
+        "title": "Mode Big Picture",
+        "subtitle": "Affichage plein écran pour TV, Steam Deck et manettes"
       }
     }
   },
@@ -5414,5 +5430,69 @@
     "logs": "Aide sur les journaux",
     "java": "Guide Java",
     "linux": "Guide Linux"
+  },
+  "bigPicture": {
+    "title": "Big Picture",
+    "sectionsLabel": "Sections",
+    "exit": "Quitter Big Picture",
+    "quit": "Fermer le launcher",
+    "sections": {
+      "home": "Accueil",
+      "instances": "Bibliothèque",
+      "servers": "Serveurs",
+      "friends": "Amis",
+      "settings": "Paramètres"
+    },
+    "hints": {
+      "select": "Choisir",
+      "back": "Retour",
+      "options": "Options",
+      "menu": "Menu"
+    },
+    "menu": {
+      "title": "Menu",
+      "resume": "Reprendre"
+    },
+    "home": {
+      "continue": "Reprendre la partie",
+      "recent": "Joué récemment",
+      "emptyTitle": "Aucune instance pour le moment",
+      "emptyText": "Crée ou importe une instance dans la vue normale, puis reviens ici."
+    },
+    "instance": {
+      "options": "Options",
+      "openDesktop": "Ouvrir dans la vue normale"
+    },
+    "memory": {
+      "title": "Mémoire (RAM)",
+      "less": "Moins de mémoire",
+      "more": "Plus de mémoire",
+      "hint": "S’applique au prochain lancement du jeu."
+    },
+    "servers": {
+      "joinWith": "Rejoint avec {name}",
+      "joinNamed": "Rejoindre {name}",
+      "chooseInstance": "Rejoindre avec quelle instance ?",
+      "emptyText": "Ajoute des serveurs dans la vue normale."
+    },
+    "friends": {
+      "title": "Amis en ligne",
+      "offline": "{count} ami hors ligne | {count} amis hors ligne",
+      "offTitle": "Les services TRS sont désactivés",
+      "offText": "Active les services TRS dans la vue normale pour voir tes amis ici.",
+      "noneOnline": "Aucun de tes amis n’est en ligne pour le moment.",
+      "joinNamed": "Rejoindre {name} sur {server}"
+    },
+    "settings": {
+      "accounts": "Compte",
+      "activeAccount": "Actif",
+      "useAccount": "Passer à ce compte",
+      "switching": "Changement…",
+      "noAccounts": "Ajoute un compte Microsoft dans la vue normale.",
+      "memory": "Mémoire par instance",
+      "previousInstance": "Instance précédente",
+      "nextInstance": "Instance suivante",
+      "mode": "Big Picture"
+    }
   }
 }

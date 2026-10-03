@@ -21,7 +21,7 @@ export const isLinux = hostOs === 'linux'
 
 /** Rückfall, solange `appInfo` noch nicht geladen ist (oder im Browser ohne Tauri). */
 export function defaultCapabilities(os: OsName = hostOs): PlatformCapabilities {
-  return { platform: os, firewall: os === 'windows', trash: true, clips: os === 'windows', updates: os === 'windows' ? 'auto' : 'package' }
+  return { platform: os, firewall: os === 'windows', trash: true, clips: os === 'windows', updates: os === 'windows' ? 'auto' : 'package', consoleSession: false }
 }
 
 let cached: Promise<AppInfo> | null = null

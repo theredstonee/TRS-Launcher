@@ -18,9 +18,18 @@ const router = useRouter()
 // Event-Theme (Halloween) früh anwenden, auch bevor eine Seite den Store anfasst.
 const events = useEventsStore()
 
-/** Strg+K öffnet überall die Suche; Strg+N legt eine Instanz an. */
+const bigPicture = useBigPictureStore()
+
+/** Strg+K öffnet überall die Suche; Strg+N legt eine Instanz an; F11 schaltet Big Picture. */
 function onKey(e: KeyboardEvent) {
+  if (e.key === BIG_PICTURE_KEY && !e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey) {
+    e.preventDefault()
+    if (!e.repeat) bigPicture.toggle()
+    return
+  }
   if (!(e.ctrlKey || e.metaKey) || e.altKey) return
+  // In Big Picture gibt es weder Suche noch den Dialog „Neue Instanz“.
+  if (isBig.value) return
   const key = e.key.toLowerCase()
   if (key === 'k') {
     e.preventDefault()
@@ -36,6 +45,8 @@ const main = useTemplateRef<HTMLElement>('main')
 const route = useRoute()
 // Die Startseite zeigt die Schaltung schon groß im Kopfbereich.
 const appBackground = computed(() => settings.current?.ui.animatedBackground !== false && route.path !== '/')
+// Big Picture: eigener Rahmen ohne Titelleiste und Seitenleiste (Dialoge bleiben hier).
+const isBig = computed(() => route.path === BIG_PICTURE_PATH)
 watch(
   () => route.fullPath,
   () => main.value?.scrollTo({ top: 0 }),
@@ -57,6 +68,8 @@ onMounted(async () => {
   // Erst wenn beides geladen ist, entscheiden, ob der Einrichtungs-Assistent kommt.
   await Promise.allSettled([accounts.load(), instances.load()])
   onboarding.openIfFirstRun()
+  // Big Picture beim Start (Einstellung oder Steam Deck/gamescope) – nicht über den Einrichtungs-Assistenten.
+  if (!onboarding.open) void bigPicture.autoStart()
   // Nach einem Update einmal zeigen, was neu ist (beim allerersten Start nicht).
   void whatsNew.check(onboarding.open)
   await trs.init()
@@ -123,9 +136,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
 <template>
   <div class="flex h-full flex-col">
-    <TitleBar />
+    <BigShell v-if="isBig">
+      <slot />
+    </BigShell>
+    <TitleBar v-if="!isBig" />
     <!-- Der Assistent überdeckt alles unter der Titelleiste; die Fenstersteuerung bleibt bedienbar. -->
-    <div class="relative flex min-h-0 flex-1 flex-col">
+    <div v-if="!isBig" class="relative flex min-h-0 flex-1 flex-col">
       <div class="flex min-h-0 flex-1">
         <SideNav />
         <!-- Redstone-Schaltung hinter allen Seiten (die Startseite hat ihre eigene im Kopfbereich). -->

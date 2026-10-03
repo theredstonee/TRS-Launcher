@@ -97,6 +97,8 @@ pub struct Capabilities {
     /// Wie der Launcher sich aktualisiert: `auto` (eingebauter Updater),
     /// `package` (Paketverwaltung: .deb/.rpm/AUR) oder `flatpak`.
     pub updates: &'static str,
+    /// Steam Deck, SteamOS oder eine gamescope-Sitzung: Big-Picture-Modus startet von selbst.
+    pub console_session: bool,
 }
 
 pub fn capabilities() -> Capabilities {
@@ -112,7 +114,35 @@ pub fn capabilities() -> Capabilities {
         trash: true,
         clips: cfg!(windows),
         updates: update_mode(),
+        console_session: console_session(),
     }
+}
+
+/// Läuft der Launcher auf Steam Deck/SteamOS oder in gamescope (Steam-Spielmodus)?
+/// Nur Linux; dort aus den Umgebungsvariablen und `/etc/os-release`.
+fn console_session() -> bool {
+    if !cfg!(target_os = "linux") {
+        return false;
+    }
+    let os_release = std::fs::read_to_string("/etc/os-release").unwrap_or_default();
+    detect_console_session(|key| std::env::var(key).ok(), &os_release)
+}
+
+/// `SteamDeck=1`/`SteamOS=1` (setzt Steam), `XDG_CURRENT_DESKTOP=gamescope`
+/// oder `ID=steamos` in `os-release`.
+fn detect_console_session(env: impl Fn(&str) -> Option<String>, os_release: &str) -> bool {
+    let flag = |key: &str| env(key).is_some_and(|v| v.trim() == "1");
+    if flag("SteamDeck") || flag("SteamOS") {
+        return true;
+    }
+    if env("XDG_CURRENT_DESKTOP").is_some_and(|v| v.split(':').any(|d| d.trim().eq_ignore_ascii_case("gamescope"))) {
+        return true;
+    }
+    os_release.lines().any(|line| {
+        line.trim()
+            .strip_prefix("ID=")
+            .is_some_and(|id| id.trim_matches(|c| c == '"' || c == '\'').eq_ignore_ascii_case("steamos"))
+    })
 }
 
 /// Unter Linux kann sich nur das AppImage selbst ersetzen; Pakete aus
@@ -177,5 +207,26 @@ MemFree: 1 kB"), Some(15931));
         let caps = capabilities();
         assert_eq!(caps.firewall, cfg!(windows));
         assert!(matches!(caps.updates, "auto" | "package" | "flatpak"));
+        if cfg!(windows) {
+            assert!(!caps.console_session);
+        }
+    }
+
+    #[test]
+    fn console_session_is_detected() {
+        let env = |pairs: &'static [(&'static str, &'static str)]| {
+            move |key: &str| pairs.iter().find(|(k, _)| *k == key).map(|(_, v)| (*v).to_string())
+        };
+        assert!(detect_console_session(env(&[("SteamDeck", "1")]), ""));
+        assert!(detect_console_session(env(&[("SteamOS", "1")]), ""));
+        assert!(detect_console_session(env(&[("XDG_CURRENT_DESKTOP", "gamescope")]), ""));
+        assert!(detect_console_session(env(&[("XDG_CURRENT_DESKTOP", "KDE:Gamescope")]), ""));
+        assert!(detect_console_session(env(&[]), "NAME=\"SteamOS\"\nID=steamos\nVERSION_ID=3.6"));
+        assert!(detect_console_session(env(&[]), "ID=\"steamos\""));
+
+        assert!(!detect_console_session(env(&[]), ""));
+        assert!(!detect_console_session(env(&[("SteamDeck", "0")]), ""));
+        assert!(!detect_console_session(env(&[("XDG_CURRENT_DESKTOP", "KDE")]), "ID=arch\nID_LIKE=steamos"));
+        assert!(!detect_console_session(env(&[]), "ID=ubuntu\nNAME=\"steamos-like\""));
     }
 }
