@@ -1293,7 +1293,9 @@
     "card": {
       "checking": "Kontrol ediliyor …",
       "unreachable": "Ulaşılamıyor",
-      "join": "Katıl"
+      "join": "Katıl",
+      "fastConnect": "Önceden çözüldü · {family} · {ms} ms",
+      "fastConnectHint": "Hızlı bağlanma: Launcher bu sunucuyu önceden çözdü ve en hızlı bağlantıyı ölçtü (bilinen adresler: {n}). TRS Client katılırken bunu kullanır."
     },
     "ping": {
       "test": "Ping testi",

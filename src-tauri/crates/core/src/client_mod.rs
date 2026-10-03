@@ -285,6 +285,7 @@ pub async fn sync(
         for file in [
             theme_path(paths, &instance.id),
             trs_api_path(paths, &instance.id),
+            connect_hints_path(paths, &instance.id),
             paths.instance_dir(&instance.id).join(VERSION_MARKER),
         ] {
             if file.is_file() {
@@ -513,6 +514,22 @@ fn theme_path(paths: &Paths, instance_id: &str) -> std::path::PathBuf {
 
 fn trs_api_path(paths: &Paths, instance_id: &str) -> std::path::PathBuf {
     paths.instance_game_dir(instance_id).join("config").join(TRS_API_FILE)
+}
+
+fn connect_hints_path(paths: &Paths, instance_id: &str) -> std::path::PathBuf {
+    paths.instance_game_dir(instance_id).join("config").join(crate::connect_hints::FILE)
+}
+
+/// `config/trsclient/connect-hints.json` schreiben (`Some`) bzw. löschen (`None`).
+pub async fn write_connect_hints(paths: &Paths, instance_id: &str, json: Option<&str>) -> Result<()> {
+    let file = connect_hints_path(paths, instance_id);
+    match json {
+        Some(json) => fsutil::write_atomic(&file, json.as_bytes()).await,
+        None => match tokio::fs::remove_file(&file).await {
+            Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(Error::io(&file, e)),
+            _ => Ok(()),
+        },
+    }
 }
 
 /// `config/trsclient/trs-api.json`: Darf der Mod die TRS API benutzen?

@@ -1,5 +1,30 @@
 import { ref, watch, type Ref } from 'vue'
+import { z } from 'zod'
 import type { ServerStatus } from '~/types'
+
+/** „Schnell verbinden“ aus `ping_server`: Familie, Verbindungszeit und Zahl der Adressen. */
+export const fastConnectSchema = z.object({
+  family: z.enum(['ipv4', 'ipv6']),
+  connectMs: z.number().int().min(0).max(60_000),
+  addresses: z.number().int().min(1).max(16),
+})
+
+/** Antwort von `ping_server`. */
+export const pingStatusSchema = z.object({
+  online: z.boolean(),
+  playersOnline: z.number().int().min(0),
+  playersMax: z.number().int().min(0),
+  motd: z.string().max(5_000),
+  version: z.string().max(1_000),
+  favicon: z.string().max(200_000).nullable(),
+  latencyMs: z.number().int().min(0),
+  fastConnect: fastConnectSchema.optional(),
+})
+
+/** Kurztext für die Server-Karte, z. B. „IPv6“ – Familien-Namen werden nicht übersetzt. */
+export function familyLabel(family: 'ipv4' | 'ipv6'): string {
+  return family === 'ipv6' ? 'IPv6' : 'IPv4'
+}
 
 // Ping-Test: misst nur die Latenz zu den Servern – schneller macht er sie nicht.
 // Sortieren ändert nur die Anzeige, nie die gespeicherte Reihenfolge.

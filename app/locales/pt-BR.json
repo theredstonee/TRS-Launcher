@@ -1293,7 +1293,9 @@
     "card": {
       "checking": "Verificando …",
       "unreachable": "Inacessível",
-      "join": "Entrar"
+      "join": "Entrar",
+      "fastConnect": "Resolvido antes · {family} · {ms} ms",
+      "fastConnectHint": "Conexão rápida: o launcher já resolveu este servidor e mediu a conexão mais rápida (endereços conhecidos: {n}). O TRS Client usa isso quando você entra."
     },
     "ping": {
       "test": "Teste de ping",

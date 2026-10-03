@@ -1,7 +1,32 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import type { ServerStatus } from '../app/types'
-import { latencyOf, runLimited, sortByPing, usePingSort } from '../app/utils/ping'
+import { familyLabel, latencyOf, pingStatusSchema, runLimited, sortByPing, usePingSort } from '../app/utils/ping'
+
+describe('ping_server-Antwort', () => {
+  const base = { online: true, playersOnline: 3, playersMax: 20, motd: 'Hallo', version: '1.21.1', favicon: null, latencyMs: 42 }
+
+  it('nimmt „Schnell verbinden“ an, wenn der Kern es mitschickt', () => {
+    const parsed = pingStatusSchema.parse({ ...base, fastConnect: { family: 'ipv6', connectMs: 23, addresses: 2 } })
+    expect(parsed.fastConnect).toEqual({ family: 'ipv6', connectMs: 23, addresses: 2 })
+    expect(familyLabel(parsed.fastConnect!.family)).toBe('IPv6')
+    expect(familyLabel('ipv4')).toBe('IPv4')
+    // Ohne Messung fehlt das Feld einfach.
+    expect(pingStatusSchema.parse(base).fastConnect).toBeUndefined()
+  })
+
+  it('lehnt unbekannte Familien und Unsinn ab', () => {
+    for (const fastConnect of [
+      { family: 'ipx', connectMs: 1, addresses: 1 },
+      { family: 'ipv4', connectMs: -1, addresses: 1 },
+      { family: 'ipv4', connectMs: 1, addresses: 99 },
+      'ipv4',
+    ]) {
+      expect(pingStatusSchema.safeParse({ ...base, fastConnect }).success).toBe(false)
+    }
+    expect(pingStatusSchema.safeParse({ ...base, latencyMs: 'schnell' }).success).toBe(false)
+  })
+})
 
 // Ping-Test: Sortierung nur für die Anzeige, begrenzte Parallelität, gemerkter Schalter.
 

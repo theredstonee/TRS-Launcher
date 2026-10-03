@@ -1293,7 +1293,9 @@
     "card": {
       "checking": "Checking …",
       "unreachable": "Unreachable",
-      "join": "Join"
+      "join": "Join",
+      "fastConnect": "Pre-resolved · {family} · {ms} ms",
+      "fastConnectHint": "Fast connect: the launcher has already looked up this server and measured the quickest connection (known addresses: {n}). The TRS Client uses this when you join."
     },
     "ping": {
       "test": "Ping test",

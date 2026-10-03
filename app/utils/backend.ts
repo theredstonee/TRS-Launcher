@@ -224,6 +224,7 @@ import type {
   VersionManifest,
 } from '~/types'
 import { sharedFolderStatusSchema } from './schemas'
+import { pingStatusSchema } from './ping'
 
 export class BackendError extends Error {
   constructor(
@@ -570,7 +571,7 @@ export const backend = {
   addServer: (server: ServerInput) => call<Server>('add_server', { server }),
   updateServer: (id: string, server: ServerInput) => call<Server>('update_server', { id, server }),
   removeServer: (id: string) => call<void>('remove_server', { id }),
-  pingServer: (id: string) => call<ServerStatus>('ping_server', { id }),
+  pingServer: (id: string): Promise<ServerStatus> => checked(pingStatusSchema, 'ping_server', { id }),
 
   /** Profil des aktiven Accounts (Skin, Modell, Umhänge) – Texturen als Data-URL. */
   skinProfile: () => call<SkinProfile>('skin_profile'),
