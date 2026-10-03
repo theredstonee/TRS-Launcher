@@ -5,7 +5,7 @@ defineProps<{ title: string; description?: string; stacked?: boolean; danger?: b
 </script>
 
 <template>
-  <div class="border-b border-base-800 py-4 last:border-b-0" :class="stacked ? 'space-y-3' : 'flex items-center justify-between gap-6'">
+  <div class="border-b border-base-800 py-4 last:border-b-0" :class="stacked ? 'space-y-3' : 'flex items-center justify-between gap-6 mobile:gap-3'">
     <div class="min-w-0">
       <h4 class="text-sm font-semibold" :class="danger ? 'text-redstone-300' : 'text-base-50'">{{ title }}</h4>
       <p v-if="description" class="mt-0.5 text-xs leading-relaxed text-base-400">{{ description }}</p>

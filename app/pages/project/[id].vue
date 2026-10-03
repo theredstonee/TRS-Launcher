@@ -14,6 +14,7 @@ const projectId = computed(() => String(route.params.id))
 const platform = computed<Platform>(() => (route.query.platform === 'curseforge' ? 'curseforge' : 'modrinth'))
 const isCf = computed(() => platform.value === 'curseforge')
 const tab = ref<'description' | 'gallery' | 'versions' | 'dependencies'>('description')
+const mobile = mobileUi
 
 const details = ref<ProjectDetails | null>(null)
 const versions = ref<ModrinthVersion[]>([])
@@ -139,8 +140,9 @@ function back() {
 </script>
 
 <template>
-  <div class="p-6">
-    <button class="mb-4 inline-flex items-center gap-1 text-xs text-base-400 hover:text-base-50" @click="back">
+  <div class="p-6 mobile:p-4">
+    <!-- Am Handy führt der Pfeil in der Kopfzeile zurück. -->
+    <button class="mb-4 inline-flex items-center gap-1 text-xs text-base-400 hover:text-base-50 mobile:hidden" @click="back">
       <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 5l-7 7 7 7" /></svg>
       {{ t('common.actions.back') }}
     </button>
@@ -159,10 +161,10 @@ function back() {
     </div>
 
     <template v-else-if="details">
-      <header class="project-hero relative mb-6 flex flex-wrap items-start gap-6 overflow-hidden rounded-2xl border border-base-800 p-6">
-        <ModIcon :src="details.iconUrl" :name="details.title" :size="104" class="shadow-lg shadow-black/30" />
-        <div class="min-w-0 flex-1 basis-80">
-          <h1 class="display text-4xl leading-tight break-words text-base-50">{{ details.title }}</h1>
+      <header class="project-hero relative mb-6 flex flex-wrap items-start gap-6 overflow-hidden rounded-2xl border border-base-800 p-6 mobile:mb-4 mobile:gap-4 mobile:p-4">
+        <ModIcon :src="details.iconUrl" :name="details.title" :size="mobile ? 72 : 104" class="shadow-lg shadow-black/30" />
+        <div class="min-w-0 flex-1 basis-80 mobile:basis-full">
+          <h1 class="display text-4xl leading-tight break-words text-base-50 mobile:text-3xl">{{ details.title }}</h1>
           <p v-if="isCf" class="mt-1 flex items-center gap-1.5 text-xs text-base-400">
             <span class="size-1.5 rounded-full bg-[#f16436]" aria-hidden="true" />
             {{ t('project.viaCurseForge') }}
@@ -217,7 +219,7 @@ function back() {
             </div>
             <template v-else-if="packTask?.status === 'done' && packTask.instanceId">
               <button class="btn btn-primary w-full" @click="router.push(`/instances/${packTask.instanceId}`)">{{ t('project.pack.openInstance') }}</button>
-              <button class="mt-2 w-full text-center text-xs text-base-400 hover:text-base-200" @click="installPack">{{ t('project.pack.reinstall') }}</button>
+              <button class="mt-2 w-full text-center text-xs text-base-400 hover:text-base-200 mobile:mt-1 mobile:min-h-11" @click="installPack">{{ t('project.pack.reinstall') }}</button>
             </template>
             <template v-else-if="packPageUrl">
               <p class="mb-2 text-xs leading-relaxed text-warn">{{ t('curseforge.packBlocked') }}</p>
@@ -256,20 +258,20 @@ function back() {
             <p v-else-if="target && !loadingVersions && !newestFitting && !installed" class="mt-2 text-xs text-warn">
               {{ t('project.install.noVersion', { version: target.gameVersion, loader: loaderLabels[target.loader.kind] }) }}
             </p>
-            <button class="mt-2 w-full text-center text-xs text-base-400 hover:text-base-50" @click="tab = 'versions'">
+            <button class="mt-2 w-full text-center text-xs text-base-400 hover:text-base-50 mobile:mt-1 mobile:min-h-11" @click="tab = 'versions'">
               {{ installed ? t('project.install.switchVersion') : t('project.install.otherVersion') }}
             </button>
           </template>
 
           <div v-if="details.links.length" class="mt-4 flex flex-wrap gap-1.5 border-t border-base-800 pt-3">
-            <button v-for="l in details.links" :key="l.kind" class="chip hover:bg-base-700 hover:text-base-50" @click="openLink(l)">
+            <button v-for="l in details.links" :key="l.kind" class="chip hover:bg-base-700 hover:text-base-50 mobile:min-h-10 mobile:px-3.5" @click="openLink(l)">
               {{ t(`project.links.${l.kind}`) }}
             </button>
           </div>
         </aside>
       </header>
 
-      <nav class="mb-4 flex gap-1" :aria-label="t('project.tabs.label')">
+      <nav class="mb-4 flex gap-1 mobile-scroll-x mobile:-mx-4 mobile:px-4" :aria-label="t('project.tabs.label')">
         <button class="tab" :class="{ 'tab-on': tab === 'description' }" @click="tab = 'description'">{{ t('common.labels.description') }}</button>
         <button class="tab" :class="{ 'tab-on': tab === 'gallery' }" @click="tab = 'gallery'">
           {{ t('project.tabs.gallery') }} <span v-if="details.gallery.length" class="ml-1 text-xs text-base-600">{{ details.gallery.length }}</span>
@@ -281,7 +283,7 @@ function back() {
       </nav>
 
       <div v-if="tab === 'description'" class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]">
-        <article class="card min-w-0 px-6 py-5">
+        <article class="card min-w-0 px-6 py-5 mobile:px-4 mobile:py-4">
           <MarkdownView v-if="details.body" :source="details.body" :html="isCf" />
           <p v-else class="text-sm text-base-400">{{ t('project.noDescription') }}</p>
         </article>

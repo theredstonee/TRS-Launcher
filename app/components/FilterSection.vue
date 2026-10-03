@@ -12,7 +12,7 @@ const id = useId()
 <template>
   <section class="border-b border-base-800 py-3 last:border-b-0">
     <button
-      class="flex w-full items-center gap-2 rounded-md px-1 py-0.5 text-left text-sm font-semibold text-base-50 hover:text-white"
+      class="flex w-full items-center gap-2 rounded-md px-1 py-0.5 text-left text-sm font-semibold text-base-50 hover:text-white mobile:min-h-11"
       :aria-expanded="open"
       :aria-controls="id"
       @click="open = !open"

@@ -16,8 +16,10 @@ const toasts = useToasts()
 const hosting = useHostingStore()
 
 type Tab = 'chat' | 'friends' | 'worlds'
+/** Gehostete Welten braucht das Spiel – ohne Spielstart (Handy) gibt es den Reiter nicht. */
+const worldsTab = computed(() => platformCaps.value.gameLaunch)
 function tabFromQuery(value: unknown): Tab | null {
-  return value === 'friends' || value === 'worlds' ? value : null
+  return value === 'friends' || (value === 'worlds' && worldsTab.value) ? value : null
 }
 const tab = ref<Tab>(tabFromQuery(route.query.tab) ?? 'chat')
 const search = ref('')
@@ -115,13 +117,23 @@ function reportPlayer(friend: TrsUserRef) {
 }
 
 const retryIn = computed(() => Math.ceil((live.status.retryInMs ?? 0) / 1000))
+
+// Handy: Liste und Unterhaltung nacheinander (Unterhaltung im Vollbild), Zurück führt zur Liste.
+const mobile = mobileUi
+function closeConversation() {
+  chat.close()
+  if (route.query.c || route.query.dm) void router.replace({ query: {} })
+}
+async function refreshChat() {
+  await Promise.allSettled([chat.loadList(), trs.loadFriends()])
+}
 </script>
 
 <template>
-  <div class="flex h-full min-h-0 flex-col gap-3 p-4" data-testid="social-page">
+  <div class="flex h-full min-h-0 flex-col gap-3 p-4 mobile:gap-2 mobile:p-2" data-testid="social-page">
     <!-- Kopf: Titel, Reiter, Aktionen -->
-    <header class="card flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5">
-      <h1 class="display text-2xl leading-none text-base-50">{{ t('social.title') }}</h1>
+    <header class="card flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 mobile:gap-x-2 mobile:px-2 mobile:py-2">
+      <h1 class="display text-2xl leading-none text-base-50 mobile:hidden">{{ t('social.title') }}</h1>
       <div class="flex gap-1" role="tablist" :aria-label="t('social.tabs.label')">
         <button class="tab flex items-center gap-1.5" :class="{ 'tab-on': tab === 'chat' }" role="tab" :aria-selected="tab === 'chat'" data-testid="tab-chat" @click="tab = 'chat'">
           {{ t('social.tabs.chat') }}
@@ -131,7 +143,7 @@ const retryIn = computed(() => Math.ceil((live.status.retryInMs ?? 0) / 1000))
           {{ t('social.tabs.friends') }}
           <span v-if="requestBadge" class="rounded-full bg-redstone-500 px-1.5 text-[10px] font-bold text-white">{{ requestBadge }}</span>
         </button>
-        <button class="tab flex items-center gap-1.5" :class="{ 'tab-on': tab === 'worlds' }" role="tab" :aria-selected="tab === 'worlds'" data-testid="tab-worlds" @click="tab = 'worlds'">
+        <button v-if="worldsTab" class="tab flex items-center gap-1.5" :class="{ 'tab-on': tab === 'worlds' }" role="tab" :aria-selected="tab === 'worlds'" data-testid="tab-worlds" @click="tab = 'worlds'">
           {{ t('social.tabs.worlds') }}
           <span v-if="hosting.invitedCount" class="rounded-full bg-redstone-500 px-1.5 text-[10px] font-bold text-white">{{ hosting.invitedCount }}</span>
         </button>
@@ -146,19 +158,19 @@ const retryIn = computed(() => Math.ceil((live.status.retryInMs ?? 0) / 1000))
         <span class="hidden xl:inline">{{ live.status.state === 'down' ? t('common.status.offline') : t(`social.live.${live.status.state}`) }}</span>
       </span>
 
-      <div class="ml-auto flex items-center gap-1.5">
-        <div v-if="searchOpen" class="relative">
+      <div class="ml-auto flex items-center gap-1.5 mobile:ml-0 mobile:w-full mobile:flex-wrap mobile:justify-between">
+        <div v-if="searchOpen" class="relative mobile:order-last mobile:w-full">
           <SocialIcon name="search" class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-base-400" />
           <input
             ref="searchInput"
             v-model="search"
-            class="field w-56 py-1.5 pr-8 pl-8"
+            class="field w-56 py-1.5 pr-8 pl-8 mobile:w-full"
             :placeholder="t('social.actions.searchPlaceholder')"
             :aria-label="t('social.actions.search')"
             data-testid="social-search"
             @keydown.esc="toggleSearch"
           />
-          <button class="absolute top-1/2 right-2 -translate-y-1/2 text-base-400 hover:text-base-50" :aria-label="t('social.actions.clearSearch')" @click="toggleSearch">
+          <button class="absolute top-1/2 right-2 -translate-y-1/2 text-base-400 hover:text-base-50 mobile:grid mobile:size-10 mobile:place-items-center mobile:right-0.5" :aria-label="t('social.actions.clearSearch')" @click="toggleSearch">
             <SocialIcon name="close" class="size-3.5" />
           </button>
         </div>
@@ -197,8 +209,8 @@ const retryIn = computed(() => Math.ceil((live.status.retryInMs ?? 0) / 1000))
 
       <!-- Chat -->
       <div v-if="tab === 'chat'" class="card flex min-h-0 flex-1 overflow-hidden" data-testid="chat-tab">
-        <aside class="flex w-80 shrink-0 flex-col border-r border-base-800">
-          <SocialChatList :search="search" class="min-h-0 flex-1" @open="openConversation" @open-friend="openFriend" />
+        <aside class="flex w-80 shrink-0 flex-col border-r border-base-800 mobile:w-full mobile:border-r-0">
+          <SocialChatList :search="search" class="min-h-0 flex-1" :refresh="mobile ? refreshChat : undefined" @open="openConversation" @open-friend="openFriend" />
         </aside>
         <SocialConversation
           v-if="chat.activeId && chat.conversations[chat.activeId]"
@@ -206,8 +218,9 @@ const retryIn = computed(() => Math.ceil((live.status.retryInMs ?? 0) / 1000))
           :conversation-id="chat.activeId"
           @manage-group="managing = chat.activeId"
           @removed="chat.activeId = null"
+          @back="closeConversation"
         />
-        <div v-else class="grid min-w-0 flex-1 place-items-center p-8">
+        <div v-else class="grid min-w-0 flex-1 place-items-center p-8 mobile:hidden">
           <RedstoneEmpty :title="t('social.chat.selectTitle')" :text="t('social.chat.selectText')" :seed="0x5c" compact>
             <button class="btn btn-primary" @click="dialog = 'add'">{{ t('social.actions.addFriend') }}</button>
           </RedstoneEmpty>
@@ -218,7 +231,7 @@ const retryIn = computed(() => Math.ceil((live.status.retryInMs ?? 0) / 1000))
       <SocialFriendsPanel v-else-if="tab === 'friends'" :search="search" @message="openFriend" @report="reportPlayer" />
 
       <!-- Welten (gehostete Welten von Freunden) -->
-      <SocialWorldsPanel v-else :search="search" />
+      <SocialWorldsPanel v-else-if="worldsTab" :search="search" />
     </TrsGate>
 
     <SocialPlayerDialog v-if="dialog === 'add' || dialog === 'block'" :mode="dialog" @close="dialog = null" />

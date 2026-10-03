@@ -77,6 +77,17 @@ onMounted(async () => {
   if (!activeList.value.length && pastList.value.length) tab.value = 'past'
 })
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
+// Handy: Bottom-Sheet (nach unten wegwischen), Zurück-Taste schließt.
+const mobile = mobileUi
+useOverlay(close)
+const swipe = useSheetSwipe(close)
+/** Wischen nur am Kopf selbst, nicht auf seinen Knöpfen (sonst kommt deren Klick nicht an). */
+const swipeOn = {
+  ...swipe.handlers,
+  pointerdown: (e: PointerEvent) => {
+    if (!(e.target as HTMLElement | null)?.closest('button')) swipe.handlers.pointerdown(e)
+  },
+}
 
 function tone(s: MySanction): string {
   if (!sanctionIsActive(s)) return 'border-base-800'
@@ -88,15 +99,17 @@ function tone(s: MySanction): string {
 
 <template>
   <Teleport to="body">
-    <div class="fixed inset-0 z-[55] flex items-center justify-center bg-black/60 p-6" @mousedown.self="close">
+    <div class="fixed inset-0 z-[55] flex items-center justify-center bg-black/60 p-6 mobile:items-end mobile:p-0 mobile:pt-[calc(var(--safe-top)+1.5rem)]" @mousedown.self="close">
       <section
         role="dialog"
         aria-modal="true"
         :aria-label="t('sanctions.dialog.title')"
-        class="card flex max-h-full w-full max-w-2xl flex-col bg-base-850 shadow-2xl"
+        class="card flex max-h-full w-full max-w-2xl flex-col bg-base-850 shadow-2xl mobile:max-w-none mobile:animate-sheet mobile:rounded-t-2xl mobile:rounded-b-none mobile:transition-transform"
+        :style="swipe.style.value"
         data-testid="my-sanctions"
       >
-        <header class="flex items-center gap-3 border-b border-base-800 px-5 py-3.5">
+        <header class="flex items-center gap-3 border-b border-base-800 px-5 py-3.5 mobile:relative mobile:touch-none mobile:pt-5" v-on="mobile ? swipeOn : {}">
+          <span v-if="mobile" class="absolute top-2 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-base-700" aria-hidden="true" />
           <SocialIcon name="shield" class="size-5 text-redstone-300" />
           <div class="min-w-0 flex-1">
             <h2 class="font-semibold">{{ t('sanctions.dialog.title') }}</h2>
@@ -184,7 +197,7 @@ function tone(s: MySanction): string {
           </ul>
         </div>
 
-        <footer class="border-t border-base-800 px-5 py-3 text-[11px] text-base-400">
+        <footer class="mobile:pb-[calc(0.75rem+var(--safe-bottom))] border-t border-base-800 px-5 py-3 text-[11px] text-base-400">
           {{ t('sanctions.dialog.footer') }}
         </footer>
       </section>

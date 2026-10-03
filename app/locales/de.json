@@ -6068,5 +6068,19 @@
       "text": "Öffne eine Instanz, geh zu „Teilen“ und wähle „Als Server exportieren“ mit „Hier anlegen und starten“.",
       "action": "Zur Bibliothek"
     }
+  },
+  "mobile": {
+    "more": "Mehr",
+    "accounts": "Konten",
+    "import": "Importieren",
+    "help": "Hilfe",
+    "pullToRefresh": "Zum Aktualisieren ziehen",
+    "accountsPage": {
+      "browser": "Über den Browser anmelden",
+      "openPage": "Code kopieren & Anmeldeseite öffnen"
+    },
+    "browse": {
+      "showResults": "{count} Ergebnis anzeigen | {count} Ergebnisse anzeigen"
+    }
   }
 }

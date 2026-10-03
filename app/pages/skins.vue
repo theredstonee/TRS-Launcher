@@ -81,6 +81,8 @@ function onTabKey(e: KeyboardEvent) {
 // --- Große Vorschau: Höhe je nach Fensterbreite -------------------------------------
 
 const wide = ref(true)
+/** Handy: kleinere Figur, die beim Scrollen oben stehen bleibt. */
+const mobile = mobileUi
 let wideQuery: MediaQueryList | null = null
 const onWide = (e: MediaQueryListEvent | MediaQueryList) => (wide.value = e.matches)
 /** Höhe des Scroll-Bereichs: Die stehende Spalte links muss samt „Anwenden“ hineinpassen. */
@@ -95,7 +97,7 @@ function resetPreviewCamera() {
   cameraReset.value++
 }
 const viewerHeight = computed(() =>
-  wide.value ? Math.round(Math.min(520, Math.max(240, areaHeight.value - LEFT_CHROME))) : 300,
+  wide.value ? Math.round(Math.min(520, Math.max(240, areaHeight.value - LEFT_CHROME))) : mobile.value ? 230 : 300,
 )
 
 // --- Entwurf ----------------------------------------------------------------------
@@ -643,7 +645,7 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
 </script>
 
 <template>
-  <div class="flex h-full min-h-0 flex-col p-6">
+  <div class="flex h-full min-h-0 flex-col p-6 mobile:h-auto mobile:p-4">
     <PageHeader :title="t('skins.title')" :subtitle="t('skins.subtitle')">
       <button class="btn btn-ghost" :disabled="!!busy || !profile" @click="saveActive">
         {{ busy === 'save' ? t('skins.savingCurrent') : t('skins.saveCurrent') }}
@@ -656,22 +658,22 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
       <p class="mt-1 text-xs text-base-400">{{ t('skins.loadErrorHint') }}</p>
     </div>
 
-    <div ref="scroller" class="min-h-0 flex-1 overflow-y-auto pr-1" data-testid="skins-scroller">
+    <div ref="scroller" class="min-h-0 flex-1 overflow-y-auto pr-1 mobile:overflow-visible mobile:pr-0" data-testid="skins-scroller">
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(300px,360px)_1fr] xl:grid-cols-[400px_1fr]">
         <!-- Große 3D-Figur + Entwurf (bleibt beim Scrollen stehen) ------------------ -->
         <section
-          class="flex flex-col gap-3 lg:sticky lg:top-0 lg:self-start lg:overflow-y-auto"
+          class="flex flex-col gap-3 lg:sticky lg:top-0 lg:self-start lg:overflow-y-auto mobile:contents"
           :style="wide ? { maxHeight: `${areaHeight}px` } : undefined"
           :aria-label="t('skins.previewLabel')"
         >
-          <div class="card shrink-0 overflow-hidden">
+          <div class="card shrink-0 overflow-hidden mobile:sticky mobile:top-0 mobile:z-20 mobile:shadow-lg mobile:shadow-black/60">
             <div
               class="relative bg-gradient-to-b transition-colors duration-500"
               :class="night ? 'from-[#0b0d18] to-[#030409]' : 'from-base-850 via-base-900 to-base-950'"
               data-testid="skin-preview"
             >
               <div class="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center gap-2 px-4 pt-3">
-                <h2 class="display min-w-0 flex-1 truncate text-2xl leading-tight text-base-50 drop-shadow" data-testid="skin-player-name">
+                <h2 class="display min-w-0 flex-1 truncate text-2xl leading-tight text-base-50 drop-shadow mobile:text-lg" data-testid="skin-player-name">
                   {{ playerName }}
                 </h2>
                 <span v-if="unapplied" class="badge bg-warn/15 text-warn" data-testid="skin-unapplied">
@@ -725,21 +727,21 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
                   {{ companionPreview.name }} ✕
                 </button>
               </div>
-              <div class="flex flex-col gap-1 border-t border-base-800/80 bg-base-950/60 p-1 text-[11px] backdrop-blur-sm">
-                <div class="flex items-center gap-1">
+              <div class="flex flex-col gap-1 border-t border-base-800/80 bg-base-950/60 p-1 text-[11px] backdrop-blur-sm mobile:flex-row mobile:items-center">
+                <div class="flex items-center gap-1 mobile:min-w-0 mobile:flex-1">
                   <button
                     v-for="key in (['walk', 'idle', 'none'] as const)"
                     :key="key"
-                    class="seg flex-1 rounded px-2 py-1"
+                    class="seg flex-1 rounded px-2 py-1 mobile:min-h-10"
                     :class="{ 'seg-on': animation === key }"
                     @click="animation = key"
                   >
                     {{ t(`skins.animation.${key}`) }}
                   </button>
                 </div>
-                <div class="flex flex-wrap items-center justify-center gap-1">
+                <div class="flex flex-wrap items-center justify-center gap-1 mobile:flex-nowrap">
                   <button
-                    class="seg grid size-6 shrink-0 place-items-center rounded px-0 py-0"
+                    class="seg grid size-6 shrink-0 place-items-center rounded px-0 py-0 mobile:size-10"
                     :class="{ 'seg-on': focus === 'head' }"
                     :aria-pressed="focus === 'head'"
                     :title="focus === 'head' ? t('skins.viewer.showBody') : t('skins.viewer.showHead')"
@@ -752,7 +754,7 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
                     </svg>
                   </button>
                   <button
-                    class="seg inline-flex shrink-0 items-center gap-1 rounded px-2 py-1"
+                    class="seg inline-flex shrink-0 items-center gap-1 rounded px-2 py-1 mobile:min-h-10 mobile:min-w-10 mobile:justify-center mobile:px-0"
                     :title="t('skins.viewer.resetCamera')"
                     :aria-label="t('skins.viewer.resetCamera')"
                     data-testid="skin-reset-camera"
@@ -761,10 +763,10 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
                     <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                       <path d="M3 12a9 9 0 1 0 2.2-5.8M3 4v5h5" />
                     </svg>
-                    {{ t('skins.viewer.resetCamera') }}
+                    <span class="mobile:sr-only">{{ t('skins.viewer.resetCamera') }}</span>
                   </button>
                   <button
-                    class="seg grid size-6 shrink-0 place-items-center rounded px-0 py-0"
+                    class="seg grid size-6 shrink-0 place-items-center rounded px-0 py-0 mobile:size-10"
                     :class="{ 'seg-on': night }"
                     :aria-pressed="night"
                     :title="night ? t('skins.viewer.day') : t('skins.viewer.night')"
@@ -780,7 +782,7 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
                 </div>
               </div>
             </div>
-            <p class="flex items-center justify-center gap-1.5 px-3 py-2 text-[11px] text-base-400">
+            <p class="flex items-center justify-center gap-1.5 px-3 py-2 text-[11px] text-base-400 mobile:hidden">
               <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M3 12a9 4 0 0 0 18 0M21 12a9 4 0 0 0-18 0M18 9l3 3-3 3" />
               </svg>
@@ -796,7 +798,7 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
                 <button
                   v-for="v in skinVariants"
                   :key="v"
-                  class="seg flex-1 rounded-md"
+                  class="seg flex-1 rounded-md mobile:min-h-10"
                   :class="{ 'seg-on': draft.variant === v }"
                   role="radio"
                   :aria-checked="draft.variant === v"
@@ -869,7 +871,7 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
 
         <!-- Reiter ------------------------------------------------------------------ -->
         <div class="min-w-0">
-          <div class="tabbar mb-3" role="tablist" :aria-label="t('skins.tabsLabel')" @keydown="onTabKey">
+          <div class="tabbar mb-3 mobile-scroll-x mobile:flex-nowrap" role="tablist" :aria-label="t('skins.tabsLabel')" @keydown="onTabKey">
             <button
               v-for="key in TABS"
               :id="`skins-tab-${key}`"
@@ -933,7 +935,7 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
                       <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
                     </span>
                     <span class="text-xs font-medium text-base-50">{{ t('skins.add') }}</span>
-                    <span class="text-[11px] leading-tight text-base-400">{{ t('skins.dropHere') }}</span>
+                    <span class="text-[11px] leading-tight text-base-400 mobile:hidden">{{ t('skins.dropHere') }}</span>
                   </button>
                 </li>
                 <li v-if="profile">
@@ -1163,7 +1165,7 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
   @apply relative flex flex-wrap gap-0.5 border-b border-base-800;
 }
 .itab {
-  @apply relative -mb-px inline-flex items-center gap-2 rounded-t-lg px-3.5 py-2 text-sm font-medium text-base-400 transition-colors outline-none hover:bg-base-900 hover:text-base-50 focus-visible:bg-base-900 focus-visible:text-base-50;
+  @apply relative -mb-px inline-flex items-center gap-2 rounded-t-lg px-3.5 py-2 text-sm font-medium text-base-400 transition-colors outline-none hover:bg-base-900 hover:text-base-50 focus-visible:bg-base-900 focus-visible:text-base-50 mobile:min-h-11 mobile:shrink-0 mobile:whitespace-nowrap;
 }
 .itab:focus-visible {
   outline: 2px solid var(--color-redstone-400);
@@ -1203,6 +1205,6 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
   width: 6.75rem;
 }
 .card-action {
-  @apply grid size-7 place-items-center rounded-md bg-base-900/85 text-base-50 shadow-md backdrop-blur-sm transition-colors hover:bg-base-700 disabled:opacity-50;
+  @apply grid size-7 place-items-center rounded-md bg-base-900/85 text-base-50 shadow-md backdrop-blur-sm transition-colors hover:bg-base-700 disabled:opacity-50 mobile:size-9;
 }
 </style>

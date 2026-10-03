@@ -1,4 +1,7 @@
+import { computed } from 'vue'
 import type { ShellSection } from '~/components/SettingsShell.vue'
+import type { PlatformCapabilities } from '~/types'
+import { platformCaps } from './system'
 import type { IconName } from '~/utils/icons'
 import type { MessageKey } from '~/utils/i18n'
 
@@ -35,8 +38,21 @@ const allAppSettingsSections: ShellSection[] = [
   section('network', 'settingsSections.app.network', 'network', 'settingsSections.groups.instances'),
 ]
 
-/** Clips (Spielaufnahme) gibt es vorerst nur unter Windows. */
-export const appSettingsSections: ShellSection[] = allAppSettingsSections.filter((s) => s.key !== 'clips' || !isLinux)
+/**
+ * Bereiche, die es auf diesem System gibt: Clips (Spielaufnahme) vorerst nur unter Windows,
+ * Java und die Spiel-Standards (Speicher, JVM, Fenster, Hooks) nur, wo das Spiel startet –
+ * am Handy also (noch) nicht.
+ */
+export function appSettingsSectionsFor(caps: Pick<PlatformCapabilities, 'clips' | 'java' | 'gameLaunch'>): ShellSection[] {
+  return allAppSettingsSections.filter(
+    (s) => (s.key !== 'clips' || caps.clips) && (s.key !== 'java' || caps.java) && (s.key !== 'defaults' || caps.gameLaunch),
+  )
+}
+
+/** Bereiche für dieses System (reaktiv: folgt den Fähigkeiten aus `app_info`). */
+export function useAppSettingsSections() {
+  return computed(() => appSettingsSectionsFor(platformCaps.value))
+}
 
 /** Bereiche der Instanz-Einstellungen. */
 export const instanceSettingsSections: ShellSection[] = [

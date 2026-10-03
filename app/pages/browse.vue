@@ -10,6 +10,7 @@ import type {
   SearchEnvironment,
   SortIndex,
 } from '~/types'
+import { MobileSheet } from '#components'
 
 const route = useRoute()
 const instances = useInstancesStore()
@@ -280,7 +281,11 @@ watch(
   { flush: 'sync' },
 )
 watch(requestKey, () => search(), { immediate: true })
-watch(page, () => listEl.value?.scrollTo({ top: 0 }))
+watch(page, () => {
+  listEl.value?.scrollTo({ top: 0 })
+  // Handy: die ganze Seite scrollt (nicht die Liste).
+  if (mobile.value) listEl.value?.closest('main')?.scrollTo({ top: 0 })
+})
 watch(target, loadInstalled, { immediate: true })
 // Inhalte, die (auch im Hintergrund) fertig geworden sind, als installiert markieren.
 const finishedForTarget = computed(
@@ -338,6 +343,15 @@ function resetFilters() {
   pickedLoaders.value = []
 }
 
+// Handy: Filter in einem Sheet statt in der Leiste rechts (gleicher Inhalt).
+const mobile = mobileUi
+const filtersOpen = ref(false)
+const filterBox = computed(() =>
+  mobile.value
+    ? { is: MobileSheet, attrs: { title: t('browse.filters.label'), onClose: () => (filtersOpen.value = false) } }
+    : { is: 'aside', attrs: { class: 'card max-h-full w-72 shrink-0 self-start overflow-y-auto px-4 py-1', 'aria-label': t('browse.filters.label') } },
+)
+
 function goToPage(n: number) {
   page.value = Math.min(Math.max(1, n), totalPages.value)
 }
@@ -384,9 +398,9 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
+  <div class="flex h-full flex-col mobile:h-auto">
     <!-- Kopf: Instanz oder Auswahl -->
-    <header class="flex items-center gap-4 px-6 pt-6 pb-4">
+    <header class="flex items-center gap-4 px-6 pt-6 pb-4 mobile:flex-wrap mobile:gap-3 mobile:px-4 mobile:pt-4 mobile:pb-3">
       <template v-if="instanceMode && target">
         <NuxtLink :to="`/instances/${target.id}`" class="btn-icon rounded-full" :aria-label="t('browse.backToInstance')">
           <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6" /></svg>
@@ -407,32 +421,33 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
       <template v-else>
         <div class="min-w-0 flex-1">
           <h1 class="text-xl font-semibold tracking-tight">{{ t('browse.title') }}</h1>
-          <p class="mt-0.5 text-sm text-base-400">{{ t('browse.subtitle') }}</p>
+          <p class="mt-0.5 text-sm text-base-400 mobile:hidden">{{ t('browse.subtitle') }}</p>
         </div>
-        <label v-if="!isPack" class="flex items-center gap-2 text-xs text-base-400">
+        <label v-if="!isPack" class="flex items-center gap-2 text-xs text-base-400 mobile:w-full">
           {{ t('browse.installInto') }}
-          <select v-model="instanceId" class="field w-60 py-1.5" :disabled="!instances.items.length">
+          <select v-model="instanceId" class="field w-60 py-1.5 mobile:w-auto mobile:min-w-0 mobile:flex-1" :disabled="!instances.items.length">
             <option v-if="!instances.items.length" value="">{{ t('browse.noInstance') }}</option>
             <option v-for="i in instances.items" :key="i.id" :value="i.id">
               {{ i.name }} ({{ i.gameVersion }}, {{ loaderLabels[i.loader.kind] }})
             </option>
           </select>
         </label>
-        <p v-else class="text-xs text-base-400">{{ t('browse.packHint') }}</p>
+        <p v-else class="text-xs text-base-400 mobile:w-full">{{ t('browse.packHint') }}</p>
       </template>
     </header>
 
-    <div class="flex min-h-0 flex-1 gap-5 px-6 pb-6">
+    <div class="flex min-h-0 flex-1 gap-5 px-6 pb-6 mobile:px-4 mobile:pb-4">
       <!-- Ergebnisse -->
-      <div ref="listEl" class="min-w-0 flex-1 overflow-y-auto pr-1">
+      <div ref="listEl" class="min-w-0 flex-1 overflow-y-auto pr-1 mobile:overflow-visible mobile:pr-0">
+        <PullToRefresh :refresh="search" />
         <div class="mb-3 flex flex-wrap items-center gap-2">
-          <div class="inline-flex flex-wrap rounded-full bg-base-900 p-1 ring-1 ring-base-800" role="tablist" :aria-label="t('browse.kindTabs')">
+          <div class="inline-flex flex-wrap rounded-full bg-base-900 p-1 ring-1 ring-base-800 mobile-scroll-x mobile:flex mobile:w-full mobile:flex-nowrap" role="tablist" :aria-label="t('browse.kindTabs')">
             <button
               v-for="k in kinds"
               :key="k"
               role="tab"
               :aria-selected="kind === k"
-              class="tab px-4 py-1.5"
+              class="tab px-4 py-1.5 mobile:shrink-0 mobile:px-3.5"
               :class="{ 'tab-on': kind === k }"
               @click="kind = k"
             >
@@ -440,7 +455,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
             </button>
           </div>
           <!-- Quelle: Modrinth oder CurseForge (ohne API-Schlüssel im Build ausgegraut). -->
-          <div class="ml-auto inline-flex rounded-full bg-base-900 p-1 ring-1 ring-base-800" role="radiogroup" :aria-label="t('browse.source.label')">
+          <div class="ml-auto inline-flex rounded-full bg-base-900 p-1 ring-1 ring-base-800 mobile:ml-0" role="radiogroup" :aria-label="t('browse.source.label')">
             <button
               v-for="p in platforms"
               :key="p"
@@ -468,7 +483,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
             maxlength="100"
             :placeholder="t(`browse.searchPlaceholder.${kind}`)"
             spellcheck="false"
-            autofocus
+            :autofocus="!mobile"
             :aria-label="t('common.actions.search')"
           />
           <button v-if="query" class="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-base-400 hover:text-base-50" :aria-label="t('browse.clearSearch')" @click="query = ''">
@@ -477,21 +492,26 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
         </div>
 
         <div class="mb-3 flex flex-wrap items-center gap-2">
-          <label class="flex items-center gap-2 rounded-lg bg-base-900 py-1 pr-1 pl-3 text-sm text-base-400 ring-1 ring-base-800">
-            {{ t('browse.sortBy') }}
-            <select v-model="index" class="rounded-md bg-base-800 px-2 py-1 text-sm text-base-50 outline-none">
+          <label class="flex items-center gap-2 rounded-lg bg-base-900 py-1 pr-1 pl-3 text-sm text-base-400 ring-1 ring-base-800 mobile:min-h-11 mobile:pl-1">
+            <span class="mobile:sr-only">{{ t('browse.sortBy') }}</span>
+            <select v-model="index" class="rounded-md bg-base-800 px-2 py-1 text-sm text-base-50 outline-none mobile:min-h-9 mobile:text-base">
               <option v-for="o in sortIndexesFor(platform)" :key="o" :value="o">{{ sortOptionLabel(o) }}</option>
             </select>
           </label>
-          <label class="flex items-center gap-2 rounded-lg bg-base-900 py-1 pr-1 pl-3 text-sm text-base-400 ring-1 ring-base-800">
+          <label class="flex items-center gap-2 rounded-lg bg-base-900 py-1 pr-1 pl-3 text-sm text-base-400 ring-1 ring-base-800 mobile:hidden">
             {{ t('browse.perPage') }}
             <select v-model.number="limit" class="rounded-md bg-base-800 px-2 py-1 text-sm text-base-50 outline-none">
               <option v-for="n in pageSizesFor(platform)" :key="n" :value="n">{{ n }}</option>
             </select>
           </label>
-          <span class="text-xs text-base-400 tabular-nums">{{ t('browse.results', { count: formatCount(totalHits) }, totalHits) }}</span>
+          <button v-if="mobile" class="btn btn-ghost ml-auto" :aria-expanded="filtersOpen" data-testid="browse-filters" @click="filtersOpen = true">
+            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.filter" /></svg>
+            {{ t('browse.filters.label') }}
+            <span v-if="activeFilterCount" class="rounded-full bg-redstone-500 px-1.5 text-[11px] leading-4 font-bold text-white tabular-nums">{{ activeFilterCount }}</span>
+          </button>
+          <span class="text-xs text-base-400 tabular-nums mobile:w-full">{{ t('browse.results', { count: formatCount(totalHits) }, totalHits) }}</span>
 
-          <nav v-if="totalPages > 1" class="ml-auto flex items-center gap-1" :aria-label="t('browse.pages')">
+          <nav v-if="totalPages > 1" class="ml-auto flex items-center gap-1 mobile:hidden" :aria-label="t('browse.pages')">
             <button class="btn-icon size-8" :disabled="page <= 1" :aria-label="t('browse.prevPage')" @click="goToPage(page - 1)">
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6" /></svg>
             </button>
@@ -580,13 +600,13 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
         </ul>
 
         <ul v-else class="flex flex-col gap-2.5 transition-opacity" :class="{ 'opacity-60': loading }">
-          <li v-for="hit in visibleHits" :key="hit.projectId" class="card card-hover group flex gap-4 p-4">
-            <NuxtLink :to="detailLink(hit)" class="flex min-w-0 flex-1 gap-4 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-redstone-500">
-              <ModIcon :src="hit.iconUrl" :name="hit.title" :size="80" />
+          <li v-for="hit in visibleHits" :key="hit.projectId" class="card card-hover group flex gap-4 p-4 mobile:flex-col mobile:gap-3 mobile:p-3">
+            <NuxtLink :to="detailLink(hit)" class="flex min-w-0 flex-1 gap-4 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-redstone-500 mobile:gap-3">
+              <ModIcon :src="hit.iconUrl" :name="hit.title" :size="mobile ? 56 : 80" />
               <div class="min-w-0 flex-1">
-                <p class="flex items-baseline gap-2">
-                  <span class="truncate text-base font-semibold group-hover:text-redstone-300">{{ hit.title }}</span>
-                  <span class="shrink-0 truncate text-xs text-base-400">{{ t('browse.hit.by', { author: hit.author }) }}</span>
+                <p class="flex items-baseline gap-2 mobile:flex-col mobile:gap-0">
+                  <span class="truncate text-base font-semibold group-hover:text-redstone-300 mobile:max-w-full">{{ hit.title }}</span>
+                  <span class="shrink-0 truncate text-xs text-base-400 mobile:max-w-full">{{ t('browse.hit.by', { author: hit.author }) }}</span>
                 </p>
                 <p class="mt-1 line-clamp-2 text-sm leading-relaxed text-base-200">{{ hit.description }}</p>
                 <div class="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px]">
@@ -611,8 +631,8 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
               </div>
             </NuxtLink>
 
-            <div class="flex w-40 shrink-0 flex-col items-end justify-between gap-2">
-              <div class="flex w-full flex-col items-stretch gap-1">
+            <div class="flex w-40 shrink-0 flex-col items-end justify-between gap-2 mobile:w-full mobile:flex-row-reverse mobile:items-center">
+              <div class="flex w-full flex-col items-stretch gap-1 mobile:w-auto mobile:flex-row-reverse mobile:items-center mobile:gap-2">
                 <template v-if="hitTask(hit)?.status === 'running'">
                   <button
                     class="display text-center text-sm tabular-nums text-redstone-300 hover:text-redstone-200"
@@ -626,20 +646,20 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
                 <NuxtLink
                   v-else-if="isPack && hitTask(hit)?.status === 'done' && hitTask(hit)!.instanceId"
                   :to="`/instances/${hitTask(hit)!.instanceId}`"
-                  class="inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-ok ring-1 ring-ok/50 hover:bg-base-800"
+                  class="inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-ok ring-1 ring-ok/50 hover:bg-base-800 mobile:min-h-11"
                 >
                   {{ t('browse.hit.openInstance') }}
                 </NuxtLink>
                 <span
                   v-else-if="!isPack && isInstalled(hit)"
-                  class="inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-ok ring-1 ring-ok/50"
+                  class="inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-ok ring-1 ring-ok/50 mobile:min-h-11"
                 >
                   <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m5 12 5 5 9-10" /></svg>
                   {{ t('browse.hit.installed') }}
                 </span>
                 <template v-else>
                   <button
-                    class="inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-redstone-300 ring-1 ring-redstone-500/60 transition-colors hover:bg-redstone-900/60 hover:text-redstone-300 disabled:cursor-not-allowed disabled:opacity-40"
+                    class="inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-redstone-300 mobile:min-h-11 mobile:px-4 ring-1 ring-redstone-500/60 transition-colors hover:bg-redstone-900/60 hover:text-redstone-300 disabled:cursor-not-allowed disabled:opacity-40"
                     :disabled="!isPack && (!target || modsBlocked)"
                     @click="install(hit)"
                   >
@@ -648,7 +668,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
                   </button>
                   <button
                     v-if="!isPack"
-                    class="text-[11px] text-base-400 hover:text-base-50 disabled:opacity-40"
+                    class="text-[11px] text-base-400 hover:text-base-50 disabled:opacity-40 mobile:min-h-11 mobile:px-1 mobile:text-xs"
                     :disabled="!target || modsBlocked"
                     @click="picking = hit"
                   >
@@ -656,7 +676,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
                   </button>
                 </template>
               </div>
-              <div class="flex flex-col items-end gap-0.5 text-xs text-base-400 tabular-nums">
+              <div class="flex flex-col items-end gap-0.5 text-xs text-base-400 tabular-nums mobile:flex-row mobile:flex-wrap mobile:gap-x-3">
                 <span class="flex items-center gap-1.5" :title="t('browse.hit.downloads', { count: formatNumber(hit.downloads) }, hit.downloads)">
                   <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" /></svg>
                   <span class="font-medium text-base-200">{{ formatCount(hit.downloads) }}</span>
@@ -684,15 +704,15 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
           <button v-if="activeFilterCount" class="btn btn-ghost" @click="resetFilters">{{ t('browse.empty.resetFilters') }}</button>
         </RedstoneEmpty>
 
-        <nav v-if="totalPages > 1 && hits.length" class="flex items-center justify-center gap-1 py-4" :aria-label="t('browse.pagesBottom')">
-          <button class="btn-icon size-8" :disabled="page <= 1" :aria-label="t('browse.prevPage')" @click="goToPage(page - 1)">
+        <nav v-if="totalPages > 1 && hits.length" class="flex items-center justify-center gap-1 py-4 mobile:flex-wrap" :aria-label="t('browse.pagesBottom')">
+          <button class="btn-icon size-8 mobile:size-11" :disabled="page <= 1" :aria-label="t('browse.prevPage')" @click="goToPage(page - 1)">
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6" /></svg>
           </button>
           <template v-for="(p, i) in pageItems(page, totalPages)" :key="i">
             <span v-if="p === null" class="px-1 text-base-400">…</span>
             <button
               v-else
-              class="h-8 min-w-8 rounded-md px-2 text-sm tabular-nums transition-colors"
+              class="h-8 min-w-8 rounded-md px-2 text-sm tabular-nums transition-colors mobile:h-11 mobile:min-w-10"
               :class="p === page ? 'bg-redstone-500 font-semibold text-white' : 'bg-base-800 text-base-200 hover:bg-base-700'"
               :aria-current="p === page ? 'page' : undefined"
               @click="goToPage(p)"
@@ -700,16 +720,16 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
               {{ p }}
             </button>
           </template>
-          <button class="btn-icon size-8" :disabled="page >= totalPages" :aria-label="t('browse.nextPage')" @click="goToPage(page + 1)">
+          <button class="btn-icon size-8 mobile:size-11" :disabled="page >= totalPages" :aria-label="t('browse.nextPage')" @click="goToPage(page + 1)">
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6" /></svg>
           </button>
         </nav>
       </div>
 
-      <!-- Filterleiste -->
-      <aside class="card max-h-full w-72 shrink-0 self-start overflow-y-auto px-4 py-1" :aria-label="t('browse.filters.label')">
+      <!-- Filterleiste (am Handy als Sheet, nur wenn geöffnet) -->
+      <component :is="filterBox.is" v-if="!mobile || filtersOpen" v-bind="filterBox.attrs">
         <section v-if="bound" class="border-b border-base-800 py-3">
-          <label class="flex cursor-pointer items-center justify-between gap-3 text-sm text-base-200">
+          <label class="flex cursor-pointer items-center justify-between gap-3 text-sm text-base-200 mobile:min-h-11">
             {{ t('browse.filters.hideInstalled') }}
             <button
               role="switch"
@@ -735,7 +755,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
             <input v-model="versionFilter" class="field mb-2 py-1.5 text-xs" :placeholder="t('browse.filters.searchVersionPlaceholder')" maxlength="32" spellcheck="false" :aria-label="t('browse.filters.searchVersionLabel')" />
             <ul class="max-h-56 overflow-y-auto pr-1">
               <li v-for="v in filteredVersions" :key="v">
-                <label class="flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1 text-sm text-base-200 hover:bg-base-850">
+                <label class="flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1 text-sm text-base-200 hover:bg-base-850 mobile:min-h-11">
                   <input type="checkbox" class="accent-redstone-500" :checked="pickedVersions.includes(v)" @change="pickedVersions = toggled(pickedVersions, v)" />
                   {{ v }}
                 </label>
@@ -755,7 +775,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
             </button>
           </div>
           <template v-else>
-            <label v-for="l in searchLoaders" :key="l" class="flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1 text-sm text-base-200 hover:bg-base-850">
+            <label v-for="l in searchLoaders" :key="l" class="flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1 text-sm text-base-200 hover:bg-base-850 mobile:min-h-11">
               <input type="checkbox" class="accent-redstone-500" :checked="pickedLoaders.includes(l)" @change="pickedLoaders = toggled(pickedLoaders, l)" />
               <span class="size-2 rounded-full" :style="{ background: loaderColors[l] }" />
               {{ loaderNames[l] }}
@@ -778,14 +798,14 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
           </div>
           <ul>
             <li v-for="c in list" :key="c.name" class="group/cat flex items-center gap-1 rounded-md hover:bg-base-850">
-              <label class="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 px-1.5 py-1 text-sm" :class="excludeCats.includes(c.name) ? 'text-redstone-300 line-through' : 'text-base-200'">
+              <label class="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 px-1.5 py-1 text-sm mobile:min-h-11" :class="excludeCats.includes(c.name) ? 'text-redstone-300 line-through' : 'text-base-200'">
                 <input type="checkbox" class="accent-redstone-500" :checked="includeCats.includes(c.name)" @change="toggleInclude(c.name)" />
                 <img v-if="categoryIcons.get(c.name)" :src="categoryIcons.get(c.name)" alt="" class="size-4 shrink-0" draggable="false" />
                 <span class="truncate">{{ catLabel(c.name) }}</span>
               </label>
               <button
                 v-if="!isCf"
-                class="mr-1 rounded p-1 text-base-400 transition-opacity hover:text-redstone-300"
+                class="mr-1 rounded p-1 text-base-400 transition-opacity hover:text-redstone-300 mobile:grid mobile:size-11 mobile:place-items-center mobile:opacity-100"
                 :class="excludeCats.includes(c.name) ? 'text-redstone-300 opacity-100' : 'opacity-0 group-hover/cat:opacity-100 focus-visible:opacity-100'"
                 :aria-pressed="excludeCats.includes(c.name)"
                 :aria-label="t('browse.filters.exclude', { category: catLabel(c.name) })"
@@ -800,14 +820,14 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
         <p v-if="!kindCategories.length" class="border-b border-base-800 py-3 text-xs text-base-400">{{ t('browse.filters.loadingCategories') }}</p>
 
         <FilterSection v-if="hasLoaders && !isCf" :title="t('browse.filters.environment')" :count="environments.length">
-          <label v-for="e in (['client', 'server'] as const)" :key="e" class="flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1 text-sm text-base-200 hover:bg-base-850">
+          <label v-for="e in (['client', 'server'] as const)" :key="e" class="flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1 text-sm text-base-200 hover:bg-base-850 mobile:min-h-11">
             <input type="checkbox" class="accent-redstone-500" :checked="environments.includes(e)" @change="environments = toggled(environments, e)" />
             {{ t(`modrinth.environment.${e}`) }}
           </label>
         </FilterSection>
 
         <FilterSection v-if="!isCf" :title="t('browse.filters.license')" :count="openSource ? 1 : 0">
-          <label class="flex cursor-pointer items-center justify-between gap-3 px-1.5 py-1 text-sm text-base-200">
+          <label class="flex cursor-pointer items-center justify-between gap-3 px-1.5 py-1 text-sm text-base-200 mobile:min-h-11">
             {{ t('browse.filters.openSourceOnly') }}
             <button
               role="switch"
@@ -820,7 +840,11 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
             </button>
           </label>
         </FilterSection>
-      </aside>
+        <template v-if="mobile" #actions>
+          <button v-if="activeFilterCount" class="btn btn-ghost" @click="resetFilters">{{ t('browse.chips.resetAll') }}</button>
+          <button class="btn btn-primary flex-1" @click="filtersOpen = false">{{ t('mobile.browse.showResults', { count: formatCount(totalHits) }, totalHits) }}</button>
+        </template>
+      </component>
     </div>
 
     <VersionPickerDialog

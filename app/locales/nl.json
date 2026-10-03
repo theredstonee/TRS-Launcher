@@ -6068,5 +6068,19 @@
       "text": "Open een instantie, ga naar \"Delen\" en kies \"Als server exporteren\" met \"Hier aanmaken en starten\".",
       "action": "Naar de bibliotheek"
     }
+  },
+  "mobile": {
+    "more": "Meer",
+    "accounts": "Accounts",
+    "import": "Importeren",
+    "help": "Hulp",
+    "pullToRefresh": "Trek om te vernieuwen",
+    "accountsPage": {
+      "browser": "Aanmelden via de browser",
+      "openPage": "Code kopiëren en aanmeldpagina openen"
+    },
+    "browse": {
+      "showResults": "{count} resultaat tonen | {count} resultaten tonen"
+    }
   }
 }

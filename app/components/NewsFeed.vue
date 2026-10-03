@@ -130,6 +130,8 @@ async function loadImages() {
 }
 
 onMounted(() => load())
+// Startseite am Handy: „Zum Aktualisieren ziehen“ lädt die Neuigkeiten neu.
+defineExpose({ refresh: () => load(true) })
 
 function open(item: NewsItem) {
   if (item.source === 'trs') {
@@ -176,13 +178,13 @@ async function showPatchNotes(item: NewsItem) {
   <section class="min-w-0" aria-labelledby="news-heading">
     <header class="mb-3 flex flex-wrap items-center justify-between gap-3">
       <h2 id="news-heading" class="heading">{{ t('news.title') }}</h2>
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center gap-1.5 mobile:w-full">
         <span v-if="stale" class="badge bg-base-800 text-base-400" :title="t('news.offlineHint')">{{ t('common.status.offline') }}</span>
-        <div class="flex items-center rounded-lg border border-base-800 bg-base-900 p-0.5 text-xs" role="group" :aria-label="t('news.sourceLabel')">
+        <div class="mobile-scroll-x flex items-center rounded-lg border border-base-800 bg-base-900 p-0.5 text-xs mobile:min-w-0 mobile:flex-1" role="group" :aria-label="t('news.sourceLabel')">
           <button
             v-for="f in filters"
             :key="f"
-            class="seg rounded-md px-2.5 py-1"
+            class="seg rounded-md px-2.5 py-1 mobile:min-h-9 mobile:shrink-0 mobile:whitespace-nowrap"
             :class="{ 'seg-on': filter === f }"
             :aria-pressed="filter === f"
             @click="filter = f"
@@ -190,7 +192,7 @@ async function showPatchNotes(item: NewsItem) {
             {{ t(`news.filters.${f}`) }}
           </button>
         </div>
-        <button class="btn-icon size-8" :title="t('news.reload')" :aria-label="t('news.reloadLabel')" :disabled="refreshing" @click="load(true)">
+        <button class="btn-icon size-8 mobile:hidden" :title="t('news.reload')" :aria-label="t('news.reloadLabel')" :disabled="refreshing" @click="load(true)">
           <svg viewBox="0 0 24 24" class="size-4" :class="{ 'animate-spin': refreshing }" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5" />
           </svg>
@@ -218,19 +220,19 @@ async function showPatchNotes(item: NewsItem) {
       <!-- Aufmacher: großes Titelbild, Titel darauf. -->
       <article class="card card-hover group overflow-hidden">
         <button class="block w-full text-left" :title="actionLabel(featured)" @click="open(featured)">
-          <div class="relative aspect-[21/9] max-h-80 w-full overflow-hidden bg-base-850">
+          <div class="relative aspect-[21/9] max-h-80 w-full overflow-hidden bg-base-850 mobile:aspect-[16/9]">
             <NewsCover :item="featured" :image="images[featured.id]" :post="launcherPost(featured)" large />
             <div class="cover-shade absolute inset-0" />
             <span class="badge absolute top-3 left-3 bg-black/65 text-white backdrop-blur">{{ sourceLabel(featured.source) }}</span>
-            <div class="absolute inset-x-5 bottom-4">
+            <div class="absolute inset-x-5 bottom-4 mobile:inset-x-4 mobile:bottom-3">
               <p class="flex items-center gap-2 text-xs text-base-200">
                 <span v-if="tagOf(featured)" class="truncate">{{ tagOf(featured) }}</span>
                 <span v-if="featured.date" class="shrink-0">· {{ formatRelative(featured.date) }}</span>
               </p>
-              <h3 class="display mt-1 line-clamp-2 text-3xl leading-tight text-base-50 drop-shadow">{{ titleOf(featured) }}</h3>
+              <h3 class="display mt-1 line-clamp-2 text-3xl leading-tight text-base-50 drop-shadow mobile:text-2xl">{{ titleOf(featured) }}</h3>
             </div>
           </div>
-          <div class="flex items-center gap-4 px-5 py-3">
+          <div class="flex items-center gap-4 px-5 py-3 mobile:px-4">
             <p class="line-clamp-2 flex-1 text-sm leading-relaxed text-base-400">{{ summaryOf(featured) }}</p>
             <span class="shrink-0 text-xs font-medium text-redstone-300">{{ actionLabel(featured) }}</span>
           </div>

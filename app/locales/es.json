@@ -6068,5 +6068,19 @@
       "text": "Abre una instancia, ve a «Compartir» y elige «Exportar como servidor» con «Crear aquí e iniciar».",
       "action": "Ir a la biblioteca"
     }
+  },
+  "mobile": {
+    "more": "Más",
+    "accounts": "Cuentas",
+    "import": "Importar",
+    "help": "Ayuda",
+    "pullToRefresh": "Desliza para actualizar",
+    "accountsPage": {
+      "browser": "Iniciar sesión con el navegador",
+      "openPage": "Copiar código y abrir la página de inicio de sesión"
+    },
+    "browse": {
+      "showResults": "Ver {count} resultado | Ver {count} resultados"
+    }
   }
 }

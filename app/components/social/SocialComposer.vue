@@ -181,7 +181,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="border-t border-base-800 bg-base-900/80 px-3 pt-2 pb-3">
+  <div class="border-t border-base-800 bg-base-900/80 px-3 pt-2 pb-3 mobile:px-2 mobile:pb-2">
     <!-- Gesperrt: nicht befreundet / stummgeschaltet -->
     <p v-if="blocked" class="flex items-center gap-2 rounded-lg bg-base-850 px-3 py-2.5 text-sm text-base-400" role="status" data-testid="composer-blocked">
       <SocialIcon :name="blocked === 'muted' ? 'bellOff' : 'block'" class="size-4 shrink-0" />
@@ -206,7 +206,7 @@ onBeforeUnmount(() => {
             <span class="text-base-400"> · {{ messageSummary(replyTo) }}</span>
           </template>
         </span>
-        <button class="btn-icon size-6 bg-transparent" :aria-label="t('common.actions.cancel')" @click="cancel">
+        <button class="btn-icon size-6 bg-transparent mobile:size-9" :aria-label="t('common.actions.cancel')" @click="cancel">
           <SocialIcon name="close" class="size-3.5" />
         </button>
       </div>
@@ -224,7 +224,7 @@ onBeforeUnmount(() => {
       <div class="composer flex items-end gap-2 rounded-xl px-2 py-1.5">
         <button
           v-if="!editing"
-          class="btn-icon size-9"
+          class="btn-icon size-9 mobile:size-11"
           :class="{ 'bg-redstone-500 text-white hover:bg-redstone-400': pickerOpen }"
           :aria-label="t('social.composer.images')"
           :title="t('social.composer.images')"
@@ -236,7 +236,7 @@ onBeforeUnmount(() => {
         </button>
         <button
           v-if="!editing"
-          class="btn-icon size-9"
+          class="btn-icon size-9 mobile:size-11"
           :aria-label="t('social.composer.invite')"
           :title="t('social.composer.invite')"
           data-testid="composer-invite"
@@ -248,7 +248,7 @@ onBeforeUnmount(() => {
           ref="input"
           v-model="text"
           rows="1"
-          class="min-h-9 flex-1 resize-none bg-transparent px-1 py-2 text-sm text-base-50 outline-none placeholder:text-base-400"
+          class="min-h-9 flex-1 resize-none bg-transparent px-1 py-2 text-sm text-base-50 mobile:min-h-11 mobile:py-2.5 mobile:text-base outline-none placeholder:text-base-400"
           :placeholder="placeholder"
           :aria-label="placeholder"
           spellcheck="true"
@@ -261,7 +261,7 @@ onBeforeUnmount(() => {
           {{ length }}/{{ MAX_TEXT }}
         </span>
         <button
-          class="btn btn-primary size-9 shrink-0 p-0"
+          class="btn btn-primary size-9 shrink-0 p-0 mobile:size-11"
           :disabled="!canSend"
           :aria-label="editing ? t('common.actions.save') : t('social.composer.send')"
           :title="editing ? t('common.actions.save') : t('social.composer.send')"
@@ -271,7 +271,7 @@ onBeforeUnmount(() => {
           <SocialIcon :name="editing ? 'check' : 'send'" class="size-4" />
         </button>
       </div>
-      <p class="mt-1 px-1 text-[10px] text-base-400">{{ t('social.composer.hint') }}</p>
+      <p class="mt-1 px-1 text-[10px] text-base-400 mobile:hidden">{{ t('social.composer.hint') }}</p>
     </template>
   </div>
 </template>

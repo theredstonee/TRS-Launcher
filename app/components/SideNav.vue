@@ -13,8 +13,8 @@ interface NavItem {
   optional?: boolean
   /** Nur für das TRS-Team (Admins und Moderatoren). */
   admin?: boolean
-  /** Nur unter Windows (z. B. Clips). */
-  windowsOnly?: boolean
+  /** Nur wo es Spiel-Clips gibt (derzeit Windows). */
+  clipsOnly?: boolean
   /** Nur, wenn es lokale Server gibt. */
   localServers?: boolean
 }
@@ -27,7 +27,7 @@ const items: NavItem[] = [
   { to: '/servers', label: 'nav.servers', icon: 'server' },
   { to: '/local-servers', label: 'nav.localServers', icon: 'terminal', localServers: true },
   { to: '/screenshots', label: 'nav.screenshots', icon: 'screenshots', optional: true },
-  { to: '/clips', label: 'nav.clips', icon: 'clips', optional: true, windowsOnly: true },
+  { to: '/clips', label: 'nav.clips', icon: 'clips', optional: true, clipsOnly: true },
   { to: '/skins', label: 'nav.skins', icon: 'skins', optional: true },
   { to: '/social', label: 'nav.social', icon: 'chat' },
   { to: '/admin', label: 'nav.admin', icon: 'admin', admin: true },
@@ -62,7 +62,7 @@ const visibleItems = computed(() =>
       (!item.optional || router.resolve(item.to).matched.length > 0) &&
       (!item.admin || trs.isStaff) &&
       // Clips (Spielaufnahme) gibt es vorerst nur unter Windows.
-      (!item.windowsOnly || !isLinux) &&
+      (!item.clipsOnly || platformCaps.value.clips) &&
       // Lokale Server erst, wenn es einen gibt (Server-Export „lokal anlegen“).
       (!item.localServers || localServers.items.length > 0),
   ),

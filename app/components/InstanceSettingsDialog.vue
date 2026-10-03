@@ -18,8 +18,16 @@ const running = computed(() => games.state(inst.value.id).phase !== 'idle')
 const g = computed(() => settings.current)
 
 // Die Beschriftungen sind Getter und folgen der eingestellten Sprache.
-const sections: ShellSection[] = instanceSettingsSections
-const active = ref(sections.some((s) => s.key === props.initial) ? props.initial : 'general')
+// Ohne Spielstart (Handy) keine Fenster-/Start-Befehle, ohne Java-Verwaltung kein Java.
+const sections = computed<ShellSection[]>(() =>
+  instanceSettingsSections.filter(
+    (s) => ((s.key !== 'window' && s.key !== 'hooks') || platformCaps.value.gameLaunch) && (s.key !== 'java' || platformCaps.value.java),
+  ),
+)
+const active = ref(sections.value.some((s) => s.key === props.initial) ? props.initial : 'general')
+watch(sections, (list) => {
+  if (!list.some((s) => s.key === active.value)) active.value = 'general'
+})
 
 // --- Formularzustand ----------------------------------------------------------
 const o = inst.value.overrides

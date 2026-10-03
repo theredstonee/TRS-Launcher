@@ -20,6 +20,29 @@ function onKey(e: KeyboardEvent) {
 }
 onMounted(() => window.addEventListener('keydown', onKey))
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
+
+// Handy: Zurück-Taste schließt die Vollbild-Ansicht, Wischen blättert.
+let overlay: number | null = null
+watch(image, (img) => {
+  if (img && overlay === null) overlay = pushOverlay(() => (current.value = null))
+  else if (!img && overlay !== null) {
+    removeOverlay(overlay)
+    overlay = null
+  }
+})
+onBeforeUnmount(() => {
+  if (overlay !== null) removeOverlay(overlay)
+})
+let swipeX: number | null = null
+function swipeStart(e: TouchEvent) {
+  swipeX = e.touches.length === 1 ? e.touches[0]!.clientX : null
+}
+function swipeEnd(e: TouchEvent) {
+  if (swipeX === null) return
+  const dx = (e.changedTouches[0]?.clientX ?? swipeX) - swipeX
+  swipeX = null
+  if (Math.abs(dx) > 50) step(dx < 0 ? 1 : -1)
+}
 </script>
 
 <template>
@@ -43,11 +66,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
       <Transition name="fade">
         <div
           v-if="image"
-          class="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-3 bg-black/90 p-10"
+          class="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-3 bg-black/90 p-10 mobile:px-3 mobile:pt-[calc(var(--safe-top)+3.5rem)] mobile:pb-[calc(var(--safe-bottom)+1rem)]"
           role="dialog"
           aria-modal="true"
           :aria-label="image.title ?? t('project.gallery.image')"
           @mousedown.self="current = null"
+          @touchstart.passive="swipeStart"
+          @touchend.passive="swipeEnd"
         >
           <img :src="image.url" alt="" referrerpolicy="no-referrer" class="max-h-[80vh] max-w-full rounded-lg object-contain shadow-2xl" />
           <div class="max-w-2xl text-center">
@@ -55,7 +80,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
             <p v-if="image.description" class="mt-0.5 text-sm text-base-400">{{ image.description }}</p>
             <p class="mt-1 text-xs text-base-600">{{ (current ?? 0) + 1 }} / {{ images.length }}</p>
           </div>
-          <button class="btn-icon absolute top-4 right-4" :aria-label="t('common.actions.close')" @click="current = null">
+          <button class="btn-icon absolute top-4 right-4 mobile:top-[calc(var(--safe-top)+0.5rem)]" :aria-label="t('common.actions.close')" @click="current = null">
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6 6 18" /></svg>
           </button>
           <template v-if="images.length > 1">

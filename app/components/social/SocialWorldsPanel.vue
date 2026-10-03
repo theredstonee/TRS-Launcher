@@ -60,7 +60,7 @@ function modeLabel(r: HostingRoom): string {
 </script>
 
 <template>
-  <div class="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto lg:grid-cols-3 lg:overflow-hidden" data-testid="worlds-panel">
+  <div class="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto lg:grid-cols-3 lg:overflow-hidden mobile:auto-rows-max mobile:gap-2" data-testid="worlds-panel">
     <!-- Welten von Freunden -->
     <section class="card flex min-h-0 flex-col lg:col-span-2">
       <h2 class="display flex items-center gap-2 border-b border-base-800 px-4 py-3 text-base text-base-50">

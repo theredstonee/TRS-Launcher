@@ -153,6 +153,9 @@ const pingClass = (ms: number) => (ms < 80 ? 'text-ok' : ms < 180 ? 'text-lamp-4
 const shownServers = computed(() =>
   sortServersByPing.value ? sortByPing(serverList.value, (s) => latencyOf(statusOf(s))) : serverList.value,
 )
+// Handy: kein Ordner-Öffnen, Beitreten nur mit Spielstart.
+const mobile = mobileUi
+const canLaunch = computed(() => platformCaps.value.gameLaunch)
 function join(s: InstanceServer) {
   if (running.value) return
   games.launch(props.instance.id, s.launcherId, s.launcherId ? null : s.address)
@@ -204,7 +207,7 @@ const joinTitle = (s: InstanceServer) =>
             </div>
           </div>
           <div class="flex shrink-0 flex-col gap-1">
-            <button class="btn-icon size-8" :title="t('common.actions.openFolder')" :aria-label="t('worlds.openFolderOf', { name: w.name })" @click="openFolder(w)">
+            <button v-if="!mobile" class="btn-icon size-8" :title="t('common.actions.openFolder')" :aria-label="t('worlds.openFolderOf', { name: w.name })" @click="openFolder(w)">
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" /></svg>
             </button>
             <button class="btn-icon size-8" :title="t('worlds.backup')" :aria-label="t('worlds.backupOf', { name: w.name })" :disabled="backupTask(w.folder)?.status === 'running'" @click="backup(w)">
@@ -221,16 +224,17 @@ const joinTitle = (s: InstanceServer) =>
 
     <!-- Server -->
     <section :aria-label="t('worlds.servers.title')">
-      <header class="mb-3 flex items-center gap-2">
+      <header class="mb-3 flex items-center gap-2 mobile:flex-wrap">
         <h2 class="heading text-base">{{ t('worlds.servers.title') }}</h2>
         <span v-if="serverList.length" class="chip">{{ formatNumber(serverList.length) }}</span>
-        <label v-if="serverList.length > 1" class="ml-auto flex cursor-pointer items-center gap-2 text-xs text-base-400" :title="t('servers.ping.sortHint')">
+        <label v-if="serverList.length > 1" class="ml-auto flex cursor-pointer items-center gap-2 text-xs text-base-400 mobile:min-h-11" :title="t('servers.ping.sortHint')">
           <input v-model="sortServersByPing" type="checkbox" class="size-4 accent-redstone-500" />
           {{ t('servers.ping.sort') }}
         </label>
+        <span v-if="mobile" class="basis-full" aria-hidden="true" />
         <button
           v-if="serverList.length"
-          class="btn btn-ghost h-8 px-3 py-0 text-xs"
+          class="btn btn-ghost h-8 px-3 py-0 text-xs mobile:ml-0 mobile:flex-1 mobile:whitespace-nowrap"
           :class="{ 'ml-auto': serverList.length < 2 }"
           :disabled="pingTesting || pingCoolingDown"
           :title="pingCoolingDown ? t('worlds.servers.pingCooldown') : t('servers.ping.hint')"
@@ -239,7 +243,7 @@ const joinTitle = (s: InstanceServer) =>
           <svg viewBox="0 0 24 24" class="size-3.5" :class="{ 'animate-spin': pingTesting }" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path :d="icons.sync" /></svg>
           {{ pingTesting ? t('servers.ping.running') : t('servers.ping.test') }}
         </button>
-        <button class="btn btn-primary h-8 px-3 py-0 text-xs" :class="{ 'ml-auto': !serverList.length }" @click="editing = 'new'">
+        <button class="btn btn-primary h-8 px-3 py-0 text-xs mobile:ml-0 mobile:flex-1 mobile:whitespace-nowrap" :class="{ 'ml-auto': !serverList.length }" @click="editing = 'new'">
           <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5"><path :d="icons.plus" /></svg>
           {{ t('servers.add') }}
         </button>
@@ -281,13 +285,13 @@ const joinTitle = (s: InstanceServer) =>
           <button class="btn-icon size-8" :title="t('common.actions.edit')" :aria-label="t('worlds.servers.editOf', { name: s.name })" @click="editing = s">
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4" /></svg>
           </button>
-          <button class="btn btn-primary px-3 py-1.5 text-xs" :disabled="running || !s.joinable" :title="joinTitle(s)" @click="join(s)">
+          <button v-if="canLaunch" class="btn btn-primary px-3 py-1.5 text-xs" :disabled="running || !s.joinable" :title="joinTitle(s)" @click="join(s)">
             <svg viewBox="0 0 24 24" class="size-3.5" fill="currentColor"><path :d="icons.play" /></svg>
             {{ t('servers.card.join') }}
           </button>
         </li>
       </ul>
-      <p v-if="serverList.length" class="mt-2 text-[11px] text-base-600">
+      <p v-if="serverList.length && canLaunch" class="mt-2 text-[11px] text-base-600">
         {{ t('worlds.servers.joinNote') }}
         <template v-if="sortServersByPing && serverList.length > 1"> {{ t('worlds.servers.sortNote') }}</template>
       </p>

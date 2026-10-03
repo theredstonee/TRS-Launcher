@@ -116,7 +116,8 @@ function progressText(item: AchievementItem): string {
 </script>
 
 <template>
-  <div class="mx-auto max-w-5xl p-6" data-testid="achievements-page">
+  <div class="mx-auto max-w-5xl p-6 mobile:p-4" data-testid="achievements-page">
+    <PullToRefresh :refresh="() => load(true)" />
     <PageHeader
       :title="friendUuid ? t('achievements.friend.title', { name: friendName }) : t('achievements.title')"
       :subtitle="friendUuid ? t('achievements.friend.subtitle') : t('achievements.subtitle')"
@@ -124,7 +125,7 @@ function progressText(item: AchievementItem): string {
       <NuxtLink v-if="friendUuid" to="/social?tab=friends" class="btn btn-ghost">
         <SocialIcon name="reply" class="size-4" />{{ t('achievements.friend.back') }}
       </NuxtLink>
-      <button class="btn btn-ghost" :disabled="store.loading || friendLoading || !trs.enabled" data-testid="achievements-refresh" @click="load(true)">
+      <button class="btn btn-ghost mobile:hidden" :disabled="store.loading || friendLoading || !trs.enabled" data-testid="achievements-refresh" @click="load(true)">
         <SocialIcon name="sync" class="size-4" :class="{ 'animate-spin': store.loading || friendLoading }" />{{ t('achievements.refresh') }}
       </button>
     </PageHeader>
@@ -156,7 +157,7 @@ function progressText(item: AchievementItem): string {
 
       <template v-else-if="shown && summary">
         <!-- Übersicht -->
-        <section class="card mb-5 flex flex-wrap items-center gap-x-6 gap-y-3 px-5 py-4" data-testid="achievements-summary">
+        <section class="card mb-5 flex flex-wrap items-center gap-x-6 gap-y-3 px-5 py-4 mobile:gap-x-4 mobile:px-4" data-testid="achievements-summary">
           <span v-if="friendUuid" class="block size-12 shrink-0 overflow-hidden rounded-lg"><PlayerFace :uuid="friendUuid" :name="friendName" /></span>
           <span v-else class="grid size-12 shrink-0 place-items-center rounded-lg bg-lamp-900 text-lamp-300">
             <SocialIcon name="trophy" class="size-6" />
@@ -165,7 +166,7 @@ function progressText(item: AchievementItem): string {
             <p class="display text-3xl leading-none text-base-50" data-testid="achievements-points">{{ formatNumber(summary.points) }}</p>
             <p class="mt-1 text-xs text-base-400">{{ t('achievements.pointsOf', { max: formatNumber(summary.maxPoints) }) }}</p>
           </div>
-          <div class="min-w-48 flex-1">
+          <div class="min-w-48 flex-1 mobile:min-w-0 mobile:basis-full">
             <div class="flex items-baseline justify-between text-xs">
               <span class="text-base-200">{{ t('achievements.unlockedOf', { n: summary.unlocked, total: summary.total }) }}</span>
               <span class="text-base-400">{{ overall }} %</span>
@@ -181,7 +182,7 @@ function progressText(item: AchievementItem): string {
               <div class="h-full rounded-full bg-lamp-400 transition-[width] duration-500" :style="{ width: `${overall}%` }" />
             </div>
           </div>
-          <div class="flex gap-1" role="radiogroup" :aria-label="t('achievements.filter.label')">
+          <div class="flex gap-1 mobile-scroll-x mobile:basis-full" role="radiogroup" :aria-label="t('achievements.filter.label')">
             <button
               v-for="f in achievementFilters"
               :key="f"
@@ -214,7 +215,7 @@ function progressText(item: AchievementItem): string {
             <article
               v-for="item in g.items"
               :key="item.achievement.id"
-              class="card achievement flex gap-3.5 p-3.5"
+              class="card achievement flex gap-3.5 p-3.5 mobile:min-w-0 mobile:gap-3 mobile:p-3"
               :class="[`rarity-${item.achievement.rarity}`, { locked: !item.unlocked, highlighted: highlightId === item.achievement.id }]"
               :data-achievement="item.achievement.id"
               :data-testid="item.unlocked ? 'achievement-unlocked' : 'achievement-locked'"
@@ -234,7 +235,7 @@ function progressText(item: AchievementItem): string {
                 <div class="mt-2 flex flex-wrap items-center gap-1.5">
                   <span class="badge rarity-chip">{{ achievementRarityLabel(item.achievement.rarity) }}</span>
                   <span v-if="item.achievement.secret && item.achievement.category !== 'secret'" class="badge bg-base-800 text-base-200">{{ t('achievements.secret.badge') }}</span>
-                  <span v-if="item.achievement.reward" class="badge bg-redstone-900/50 text-redstone-300" data-testid="achievement-reward">
+                  <span v-if="item.achievement.reward" class="badge bg-redstone-900/50 text-redstone-300 mobile:shrink mobile:whitespace-normal" data-testid="achievement-reward">
                     <SocialIcon :name="item.achievement.reward.kind === 'cape' ? 'skins' : 'crown'" class="size-3" />
                     {{ achievementRewardLabel(item.achievement.reward, store.rewardNames) }}
                   </span>
@@ -264,7 +265,7 @@ function progressText(item: AchievementItem): string {
 
                 <button
                   v-if="actionFor(item)"
-                  class="btn btn-ghost mt-2 px-2.5 py-1 text-xs"
+                  class="btn btn-ghost mt-2 px-2.5 py-1 text-xs mobile:text-sm"
                   :disabled="wearing !== null"
                   data-testid="achievement-wear"
                   @click="wear(item)"

@@ -12,6 +12,10 @@ const toRemove = ref<Account | null>(null)
 
 const route = useRoute()
 const router = useRouter()
+// Handy: Anmeldung per Code zuerst – der Rückruf an localhost klappt dort nicht zuverlässig.
+const mobile = mobileUi
+// Handy (auch schmaler Touch-Bildschirm): Gerätecode, sonst der Standard des Systems.
+const primaryMode = computed<LoginMode>(() => (mobile.value ? 'code' : defaultLoginMode))
 
 onMounted(() => accounts.load().catch((e) => (error.value = errorMessage(e))))
 
@@ -21,10 +25,18 @@ watch(
   (add) => {
     if (add !== 'browser') return
     router.replace({ query: {} })
-    if (!login.value) start(defaultLoginMode)
+    if (!login.value) start(primaryMode.value)
   },
   { immediate: true },
 )
+
+/** Handy: Code kopieren und die Microsoft-Seite öffnen (dort nur noch einfügen). */
+async function openLoginPage() {
+  const code = login.value?.code
+  if (!code) return
+  await copyCode()
+  backend.openExternalUrl(code.verificationUri).catch((e) => (error.value = errorMessage(e)))
+}
 
 async function start(mode: LoginMode) {
   error.value = null
@@ -75,13 +87,21 @@ async function confirmRemove() {
 </script>
 
 <template>
-  <div class="mx-auto max-w-2xl p-6">
+  <div class="mx-auto max-w-2xl p-6 mobile:p-4">
     <PageHeader :title="t('accounts.title')" :subtitle="t('accounts.subtitle')">
-      <button class="btn btn-ghost" :disabled="!!login" @click="start('code')">{{ t('accounts.signInWithCode') }}</button>
-      <button class="btn btn-primary" :disabled="!!login" @click="start('browser')">
-        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" /></svg>
-        {{ t('accounts.add') }}
-      </button>
+      <template v-if="mobile">
+        <button class="btn btn-primary w-full" :disabled="!!login" data-testid="accounts-code" @click="start('code')">
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" /></svg>
+          {{ t('accounts.signInWithCode') }}
+        </button>
+      </template>
+      <template v-else>
+        <button class="btn btn-ghost" :disabled="!!login" @click="start('code')">{{ t('accounts.signInWithCode') }}</button>
+        <button class="btn btn-primary" :disabled="!!login" @click="start('browser')">
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" /></svg>
+          {{ t('accounts.add') }}
+        </button>
+      </template>
     </PageHeader>
 
     <div v-if="error" role="alert" class="card mb-4 px-4 py-3 text-sm" :class="notApproved ? 'border-warn/40 text-warn' : 'border-redstone-600/50 text-redstone-300'">
@@ -112,8 +132,13 @@ async function confirmRemove() {
       :title="t('accounts.empty.title')"
       :text="t('accounts.empty.text')"
     >
-      <button class="btn btn-primary" :disabled="!!login" @click="start('browser')">{{ t('accounts.login.signInMicrosoft') }}</button>
+      <button class="btn btn-primary" :disabled="!!login" @click="start(primaryMode)">{{ t('accounts.login.signInMicrosoft') }}</button>
     </RedstoneEmpty>
+
+    <!-- Handy: Browser-Anmeldung nur als Ausweg (der Rückruf an localhost klappt dort nicht immer). -->
+    <button v-if="mobile" class="btn btn-ghost mt-4 w-full" :disabled="!!login" data-testid="accounts-browser" @click="start('browser')">
+      {{ t('mobile.accountsPage.browser') }}
+    </button>
 
     <BaseDialog v-if="login" :title="t('accounts.login.signInMicrosoft')" @close="cancel">
       <template v-if="login.mode === 'browser'">
@@ -134,6 +159,10 @@ async function confirmRemove() {
             <template #url><span class="font-mono select-text">{{ login.code.verificationUri }}</span></template>
           </i18n-t>
         </p>
+        <button v-if="mobile" class="btn btn-primary mt-4 w-full" data-testid="accounts-open-login" @click="openLoginPage">
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.external" /></svg>
+          {{ t('mobile.accountsPage.openPage') }}
+        </button>
       </template>
       <p v-else class="text-sm text-base-400">{{ t('accounts.login.requestingCode') }}</p>
 

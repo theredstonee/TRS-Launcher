@@ -6068,5 +6068,19 @@
       "text": "Bir örnek aç, \"Paylaş\" bölümüne git ve \"Burada kur ve başlat\" ile \"Sunucu olarak dışa aktar\"ı seç.",
       "action": "Kütüphaneye git"
     }
+  },
+  "mobile": {
+    "more": "Daha fazla",
+    "accounts": "Hesaplar",
+    "import": "İçe aktar",
+    "help": "Yardım",
+    "pullToRefresh": "Yenilemek için çekin",
+    "accountsPage": {
+      "browser": "Tarayıcı ile giriş yap",
+      "openPage": "Kodu kopyala ve giriş sayfasını aç"
+    },
+    "browse": {
+      "showResults": "{count} sonucu göster | {count} sonucu göster"
+    }
   }
 }

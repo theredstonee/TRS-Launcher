@@ -4,6 +4,7 @@ import { isTauri } from '@tauri-apps/api/core'
 import type { DropEvent } from '~/types'
 import {
   MAX_IMAGES,
+  REACTIONS,
   attachmentUrl,
   buildTimeline,
   conversationTitle,
@@ -18,12 +19,27 @@ import {
   type ReportTarget,
 } from '~/utils/chat'
 import type { DraftImage } from '~/stores/chat'
+import MobileSheet from '~/components/MobileSheet.vue'
 
 // Eine Unterhaltung: Kopf mit Gesicht/Name und Menü, Verlauf mit Tagestrennern,
 // „schreibt …“, Lesestatus, Bildauswahl und Eingabe. Neues kommt über den
 // Echtzeit-Kanal – nichts muss neu geladen werden.
 const props = defineProps<{ conversationId: string }>()
-const emit = defineEmits<{ manageGroup: []; removed: [] }>()
+const emit = defineEmits<{ manageGroup: []; removed: []; back: [] }>()
+
+// Handy: Vollbild über Kopf- und Tab-Leiste, Zurück (Pfeil oder Android-Taste) führt zur Liste.
+const mobile = mobileUi
+if (mobileUi.value) useOverlay(() => emit('back'))
+/** Höhe über der Tastatur (iOS verkleinert die Seite nicht von selbst). */
+const viewportHeight = ref<number | null>(null)
+function onViewport() {
+  const vv = window.visualViewport
+  viewportHeight.value = vv && vv.height < window.innerHeight - 1 ? Math.round(vv.height) : null
+}
+onMounted(() => {
+  if (mobileUi.value) window.visualViewport?.addEventListener('resize', onViewport)
+})
+onBeforeUnmount(() => window.visualViewport?.removeEventListener('resize', onViewport))
 
 const chat = useChatStore()
 const trs = useTrsStore()
@@ -194,15 +210,35 @@ function openImage(m: LocalMessage, index: number) {
 // --- Kontextmenü ------------------------------------------------------------------------------
 
 const menu = ref<{ message: LocalMessage; x: number; y: number } | null>(null)
+let menuOpenedAt = 0
 function openMenu(m: LocalMessage, e: MouseEvent) {
   if (m.local || m.kind === 'system') return
+  menuOpenedAt = Date.now()
   menu.value = { message: m, x: Math.min(e.clientX, window.innerWidth - 220), y: Math.min(e.clientY, window.innerHeight - 260) }
 }
 function closeMenu() {
   menu.value = null
 }
+/** Handy: Das Loslassen nach dem langen Druck erzeugt noch ein Maus-Ereignis – das darf das Sheet nicht gleich schließen. */
+function closeMenuSoft() {
+  if (Date.now() - menuOpenedAt > 500) closeMenu()
+}
 const menuMine = computed(() => menu.value?.message.sender?.uuid === chat.me)
 const menuCanDelete = computed(() => menuMine.value || isOwner.value)
+const canReact = (m: LocalMessage) => !m.local && !m.deleted && !m.hidden && m.kind === 'text'
+/** Am Handy als Bottom-Sheet (mit Reaktionen), am Desktop als schwebendes Menü an der Maus. */
+const menuShell = computed(() => (mobile.value ? MobileSheet : 'div'))
+const menuAttrs = computed(() =>
+  mobile.value || !menu.value
+    ? { onClose: closeMenuSoft }
+    : {
+        class: 'menu fixed z-50 w-52',
+        style: { left: `${menu.value.x}px`, top: `${menu.value.y}px` },
+        role: 'menu',
+        'data-message-menu': '',
+        'data-testid': 'message-menu',
+      },
+)
 
 async function copy(m: ChatMessage) {
   try {
@@ -241,7 +277,7 @@ function closeHeader(e: MouseEvent) {
     headerMenu.value = false
     muteMenu.value = false
   }
-  if (!(e.target as HTMLElement | null)?.closest?.('[data-message-menu]')) closeMenu()
+  if (!(e.target as HTMLElement | null)?.closest?.('[data-message-menu]')) closeMenuSoft()
 }
 const muteOptions: { key: 'h1' | 'h8' | 'd1' | 'forever'; ms: number | null }[] = [
   { key: 'h1', ms: 3_600_000 },
@@ -333,9 +369,18 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section v-if="conversation" class="relative flex min-h-0 min-w-0 flex-1 flex-col" :aria-label="title" data-testid="conversation">
+  <section
+    v-if="conversation"
+    class="relative flex min-h-0 min-w-0 flex-1 flex-col mobile:fixed mobile:inset-0 mobile:z-40 mobile:bg-base-950 mobile:pt-[var(--safe-top)] mobile:pr-[var(--safe-right)] mobile:pb-[var(--safe-bottom)] mobile:pl-[var(--safe-left)]"
+    :style="mobile && viewportHeight ? { height: `${viewportHeight}px`, bottom: 'auto', paddingBottom: '0' } : undefined"
+    :aria-label="title"
+    data-testid="conversation"
+  >
     <!-- Kopf -->
-    <header class="flex items-center gap-3 border-b border-base-800 bg-base-900/80 px-4 py-2.5">
+    <header class="flex items-center gap-3 border-b border-base-800 bg-base-900/80 px-4 py-2.5 mobile:gap-2 mobile:px-2 mobile:py-1.5">
+      <button v-if="mobile" class="btn-icon shrink-0 bg-transparent" :aria-label="t('common.actions.back')" data-testid="conversation-back" @click="emit('back')">
+        <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7" /></svg>
+      </button>
       <SocialAvatar :conversation="conversation" :size="36" :online="peerPresence?.presence?.state ?? null" />
       <div class="min-w-0 flex-1">
         <h2 class="display flex items-center gap-2 truncate text-lg leading-tight text-base-50">
@@ -462,14 +507,20 @@ onBeforeUnmount(() => {
     />
 
     <!-- Kontextmenü einer Nachricht -->
-    <div
-      v-if="menu"
-      class="menu fixed z-50 w-52"
-      :style="{ left: `${menu.x}px`, top: `${menu.y}px` }"
-      role="menu"
-      data-message-menu
-      data-testid="message-menu"
-    >
+    <component :is="menuShell" v-if="menu" v-bind="menuAttrs">
+      <div :class="{ contents: !mobile }" :role="mobile ? 'menu' : undefined" data-message-menu :data-testid="mobile ? 'message-menu' : undefined">
+      <!-- Handy: Reaktionen direkt im Sheet (am Desktop über den Knopf neben der Nachricht). -->
+      <div v-if="mobile && canReact(menu.message)" class="mb-2 flex flex-wrap justify-center gap-1.5" data-testid="message-menu-reactions">
+        <button
+          v-for="(emoji, id) in REACTIONS"
+          :key="id"
+          class="grid size-11 place-items-center rounded-full bg-base-800 text-xl active:bg-base-700"
+          :aria-label="t('social.message.react')"
+          @click="react(menu.message, id); closeMenu()"
+        >
+          {{ emoji }}
+        </button>
+      </div>
       <template v-if="!menu.message.deleted && !menu.message.hidden">
         <button v-if="conversation.canWrite" class="menu-item" role="menuitem" @click="replyTo = menu.message; editing = null; closeMenu(); composer?.focus()">
           <SocialIcon name="reply" class="size-4" />{{ t('social.message.reply') }}
@@ -496,7 +547,8 @@ onBeforeUnmount(() => {
       >
         <SocialIcon name="flag" class="size-4" />{{ t('social.message.report') }}
       </button>
-    </div>
+      </div>
+    </component>
 
     <!-- Dialoge -->
     <SocialLightbox

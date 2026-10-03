@@ -6068,5 +6068,19 @@
       "text": "Otwórz instancję, przejdź do „Udostępnij” i wybierz „Eksportuj jako serwer” z opcją „Utwórz tutaj i uruchom”.",
       "action": "Do biblioteki"
     }
+  },
+  "mobile": {
+    "more": "Więcej",
+    "accounts": "Konta",
+    "import": "Importuj",
+    "help": "Pomoc",
+    "pullToRefresh": "Pociągnij, aby odświeżyć",
+    "accountsPage": {
+      "browser": "Zaloguj przez przeglądarkę",
+      "openPage": "Skopiuj kod i otwórz stronę logowania"
+    },
+    "browse": {
+      "showResults": "Pokaż {count} wynik | Pokaż {count} wyniki | Pokaż {count} wyników"
+    }
   }
 }

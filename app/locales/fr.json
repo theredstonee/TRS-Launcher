@@ -6068,5 +6068,19 @@
       "text": "Ouvre une instance, va dans « Partager » et choisis « Exporter en serveur » avec « Installer ici et lancer ».",
       "action": "Vers la bibliothèque"
     }
+  },
+  "mobile": {
+    "more": "Plus",
+    "accounts": "Comptes",
+    "import": "Importer",
+    "help": "Aide",
+    "pullToRefresh": "Tirer pour actualiser",
+    "accountsPage": {
+      "browser": "Se connecter via le navigateur",
+      "openPage": "Copier le code et ouvrir la page de connexion"
+    },
+    "browse": {
+      "showResults": "Afficher {count} résultat | Afficher {count} résultats"
+    }
   }
 }
