@@ -281,6 +281,9 @@ pub fn build(input: BuildInput<'_>) -> Result<EngineLaunch> {
     }
     // Ohne extended-virtual-addressing schlägt der komprimierte Klassenbereich fehl.
     a.push("-XX:-UseCompressedClassPointers".into());
+    // Sodium bricht sonst wegen der mitgebrachten LWJGL ab (26.x will 3.4.3). Vor den eigenen
+    // Argumenten, damit ein eigener Wert ihn noch überschreiben kann.
+    a.push("-Dsodium.checks.issue2561=false".into());
     a.extend(extra_jvm);
     // Vertrag: das liest der TRS Client.
     let [l, t, r, b] = probe.safe_insets_px;

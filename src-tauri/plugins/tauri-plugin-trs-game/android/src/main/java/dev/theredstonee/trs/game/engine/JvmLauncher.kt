@@ -93,6 +93,9 @@ internal object JvmLauncher {
             "-Dloader.disable_forked_guis=true",
             "-Dfml.ignoreInvalidMinecraftCertificates=true",
             "-Djava.awt.headless=true",
+            // Sodium bricht sonst ab, weil die Engine ihre eigene LWJGL mitbringt (26.x will 3.4.3);
+            // FCL und Zalith setzen das ebenso.
+            "-Dsodium.checks.issue2561=false",
             "-Dtrs.mobile=android",
             "-Dtrs.touch=true",
             "-Dtrs.overlay.version=1",
