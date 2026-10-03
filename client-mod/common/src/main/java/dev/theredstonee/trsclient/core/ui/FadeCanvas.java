@@ -27,9 +27,9 @@ public final class FadeCanvas implements Canvas {
 		return delegate;
 	}
 
-	/** Liefert die echte Zeichenfläche hinter einer möglichen Blende. */
+	/** Liefert die echte Zeichenfläche hinter einer möglichen Blende (und Touch-Vergrößerung). */
 	public static Canvas unwrap(Canvas canvas) {
-		return canvas instanceof FadeCanvas ? ((FadeCanvas) canvas).delegate : canvas;
+		return ScaledCanvas.unwrap(canvas instanceof FadeCanvas ? ((FadeCanvas) canvas).delegate : canvas);
 	}
 
 	private int color(int argb) {

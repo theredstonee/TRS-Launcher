@@ -28,6 +28,24 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **TRS Client: touch mode for phones and tablets.** When the game runs in the TRS mobile engine, the TRS menus get
+  bigger buttons and text, lists scroll by dragging with your finger (with momentum), a long press opens the context
+  menu or shows the tooltip, and the on-screen keyboard pops up when you tap a text field, the chat, a sign or an
+  anvil. In the HUD editor you drag elements with your finger, they stay clear of the notch, and the new
+  "Touch layout" moves your HUD away from the touch buttons. The emote wheel opens from a touch button – slide to an
+  emote and let go. Nothing changes on the desktop.
+
+### Deutsch
+- **TRS Client: Touch-Modus für Handys und Tablets.** Läuft das Spiel in der mobilen Engine von TRS, bekommen die
+  TRS-Menüs größere Knöpfe und Schrift, Listen scrollen per Fingerziehen (mit Schwung), langes Drücken öffnet das
+  Kontextmenü oder zeigt den Tooltip, und beim Antippen eines Textfelds, des Chats, eines Schilds oder Ambosses
+  erscheint die Bildschirmtastatur. Im HUD-Editor ziehst du Elemente mit dem Finger, sie halten Abstand zur Notch, und
+  das neue „Touch-Layout“ rückt dein HUD von den Touch-Knöpfen weg. Das Emote-Rad öffnet sich über einen Touch-Knopf –
+  zum Emote wischen und loslassen. Am Desktop ändert sich nichts.
+
 ## 0.17.0 – 2026-10-03 – Light Luggage | Leichtes Gepäck
 <!-- banner: accent=#ff3b30 motif=/news/0.17.0/banner.png -->
 <!-- shots:

@@ -92,6 +92,15 @@ public final class Hits {
 		return false;
 	}
 
+	/** Liegt an dieser Stelle (zuoberst) eine Zieh-Fläche für die linke Taste? (Touch: Finger bedient direkt) */
+	public boolean dragAt(double mx, double my) {
+		for (int i = spots.size() - 1; i >= 0; i--) {
+			Spot s = spots.get(i);
+			if (s.button == 0 && s.contains(mx, my)) return s.drag != null;
+		}
+		return false;
+	}
+
 	/** Führt die oberste passende Aktion aus; true = getroffen. */
 	public boolean click(double mx, double my, int button) {
 		for (int i = spots.size() - 1; i >= 0; i--) {

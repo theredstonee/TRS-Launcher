@@ -40,37 +40,37 @@ public class TrsUiScreen extends TrsScreen {
 
 	@Override
 	protected boolean onClick(double mouseX, double mouseY, int button) {
-		return ui.mouseClicked(mouseX, mouseY, button);
+		return ui.inputClick(mouseX, mouseY, button);
 	}
 
 	@Override
 	protected boolean onRelease(double mouseX, double mouseY, int button) {
-		return ui.mouseReleased(mouseX, mouseY, button);
+		return ui.inputRelease(mouseX, mouseY, button);
 	}
 
 	@Override
 	protected boolean onDrag(double mouseX, double mouseY, int button) {
-		return ui.mouseDragged(mouseX, mouseY, button);
+		return ui.inputDrag(mouseX, mouseY, button);
 	}
 
 	@Override
 	protected boolean onScroll(double mouseX, double mouseY, double amount) {
-		return ui.mouseScrolled(mouseX, mouseY, amount);
+		return ui.inputScroll(mouseX, mouseY, amount);
 	}
 
 	@Override
 	protected boolean onKey(int key, int modifiers) {
 		// Strg+V / Strg+A (Cmd auf macOS) für Textfelder der Oberfläche.
 		if (SocialHooks.control() && !shiftDown()) {
-			if (key == Keys.code("key.keyboard.v") && ui.keyPressed(key, UiKey.PASTE, false)) return true;
-			if (key == Keys.code("key.keyboard.a") && ui.keyPressed(key, UiKey.SELECT_ALL, false)) return true;
+			if (key == Keys.code("key.keyboard.v") && ui.inputKey(key, UiKey.PASTE, false)) return true;
+			if (key == Keys.code("key.keyboard.a") && ui.inputKey(key, UiKey.SELECT_ALL, false)) return true;
 		}
-		return ui.keyPressed(key, Keys.ui(key), shiftDown());
+		return ui.inputKey(key, Keys.ui(key), shiftDown());
 	}
 
 	@Override
 	protected boolean onChar(char c) {
-		return ui.charTyped(c);
+		return ui.inputChar(c);
 	}
 
 	@Override

@@ -410,6 +410,18 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 		return viewingOther() ? e.waypointsIn(viewDim) : e.waypoints();
 	}
 
+	/** Touch: die Karte zeigt Blockpixel nach GUI-Skalierung – nicht zusätzlich vergrößern. */
+	@Override
+	protected float touchScale(int width, int height) {
+		return 1f;
+	}
+
+	/** Touch: auf der Karte schiebt der Finger direkt; über der Seitenleiste scrollt er die Liste. */
+	@Override
+	protected boolean touchDirect(double x, double y) {
+		return !overSidebar(x, y) || super.touchDirect(x, y);
+	}
+
 	private boolean overSidebar(double mx, double my) {
 		return sidebarOpen && sidebar.contains(mx, my);
 	}

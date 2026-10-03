@@ -217,6 +217,21 @@ Essential's screenshot popup – own code, Essential is closed source.
   `-editor-empty`, `-editor`, `-editor-crop`, `-editor-share`, `-editor-saved`, `-favorites`. "Copy picture" only with
   `-Dtrsclient.autotest.clipboard=true` (it would overwrite the clipboard of the machine).
 
+## Touch mode (mobile engine)
+
+Only with `-Dtrs.touch=true` (set by the TRS mobile engine); the desktop never takes these paths. Logic in
+`common/core/touch`, per tree only `touch/TouchHooks` (client tick) and the bridges `screen/TrsUiScreen`, which hand
+every input to `UiScreen.input*`. Contract for engine and overlay: [`docs/touch-mode.md`](../docs/touch-mode.md).
+
+- TRS menus are drawn enlarged (`trs.touchScale`, `ScaledCanvas` fixes scissors per version); finger gestures in
+  `TouchGestures`: tap = click on release, drag = wheel steps with momentum (`TouchScroller`), long press = right
+  click or tooltip, drag targets (`Hits.addDrag`, `UiScreen#touchDirect`) get the raw pointer.
+- On-screen keyboard (`TouchKeyboard`): focused TRS text fields and vanilla chat/sign/anvil/book → link line
+  `keyboard.show|hide` (feature `keyboard`) + `config/trsclient/touch-state.json` + log line.
+- Fixed overlay keys F13 (TRS menu), F14 (emote wheel, stays open, finger slide + release), F15 (HUD editor).
+- HUD editor: finger drag, safe-area snapping (`trs.safeInsets`), "Touch layout" profile (`TouchLayout`).
+- Tests: `TouchTest` (scaling, momentum, safe area, gestures, keyboard, layout).
+
 ## TRS Link & Kontowechsel
 
 **TRS Link** (`common/core/link`): one daemon thread „TRS-Link“ to the launcher on **127.0.0.1**.

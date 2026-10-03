@@ -36,28 +36,28 @@ public class TrsUiScreen extends GuiScreen {
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
-		return ui.mouseClicked(mouseX, mouseY, button) || super.mouseClicked(mouseX, mouseY, button);
+		return ui.inputClick(mouseX, mouseY, button) || super.mouseClicked(mouseX, mouseY, button);
 	}
 
 	@Override
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		return ui.mouseReleased(mouseX, mouseY, button) || super.mouseReleased(mouseX, mouseY, button);
+		return ui.inputRelease(mouseX, mouseY, button) || super.mouseReleased(mouseX, mouseY, button);
 	}
 
 	@Override
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		return ui.mouseDragged(mouseX, mouseY, button) || super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+		return ui.inputDrag(mouseX, mouseY, button) || super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
 	}
 
 	@Override
 	public boolean mouseScrolled(double delta) {
 		if (delta == 0) return false;
-		return ui.mouseScrolled(mouseGuiX(), mouseGuiY(), delta) || super.mouseScrolled(delta);
+		return ui.inputScroll(mouseGuiX(), mouseGuiY(), delta) || super.mouseScrolled(delta);
 	}
 
 	@Override
 	public boolean keyPressed(int key, int scanCode, int modifiers) {
-		if (ui.keyPressed(key, Keys.ui(key), isShiftKeyDown())) return true;
+		if (ui.inputKey(key, Keys.ui(key), isShiftKeyDown())) return true;
 		// Esc: erst die Schließ-Animation, dann schließt der Bildschirm sich selbst.
 		if (key == Keys.code("key.keyboard.escape")) {
 			ui.requestClose();
@@ -68,7 +68,7 @@ public class TrsUiScreen extends GuiScreen {
 
 	@Override
 	public boolean charTyped(char typed, int modifiers) {
-		return (TextInput.allowed(typed) && ui.charTyped(typed)) || super.charTyped(typed, modifiers);
+		return (TextInput.allowed(typed) && ui.inputChar(typed)) || super.charTyped(typed, modifiers);
 	}
 
 	@Override

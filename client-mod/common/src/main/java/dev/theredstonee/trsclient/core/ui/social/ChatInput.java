@@ -7,7 +7,7 @@ import dev.theredstonee.trsclient.core.ui.UiKey;
  * Mehrzeiliges Eingabefeld des Chats: Zeilenumbrüche (Umschalt+Enter), Einfügen, Cursor, höchstens
  * {@link SafeText#MAX_MESSAGE} Codepunkte. Formatierungszeichen ({@code §}) und Steuerzeichen werden nie übernommen.
  */
-public final class ChatInput {
+public final class ChatInput implements dev.theredstonee.trsclient.core.touch.TouchKeyboard.Field {
 	private final StringBuilder text = new StringBuilder();
 	private final int max;
 	private int cursor;
@@ -29,6 +29,7 @@ public final class ChatInput {
 		return cursor;
 	}
 
+	@Override
 	public boolean focused() {
 		return focused;
 	}
@@ -47,6 +48,8 @@ public final class ChatInput {
 
 	public void setFocused(boolean f) {
 		focused = f;
+		// Touch-Modus: Bildschirmtastatur anfordern (sonst nichts).
+		dev.theredstonee.trsclient.core.touch.TouchKeyboard.focus(this, f, true);
 	}
 
 	public void clear() {

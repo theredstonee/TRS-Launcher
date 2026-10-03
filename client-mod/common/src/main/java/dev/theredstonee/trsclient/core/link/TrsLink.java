@@ -106,6 +106,12 @@ public final class TrsLink {
 	/** Was DIESES Spiel kann – geht in der {@code auth}-Zeile mit (Launcher schickt sonst keinen Welt-Beitritt). */
 	static final String GAME_FEATURES_JSON = "[\"" + FEATURE_HOSTING_JOIN + "\"]";
 
+	/** Merkmale dieses Spiels; im Touch-Modus (mobile Engine) zusätzlich Tastatur-Anfragen (docs/touch-mode.md). */
+	static String gameFeaturesJson() {
+		if (!dev.theredstonee.trsclient.core.touch.TouchMode.enabled()) return GAME_FEATURES_JSON;
+		return "[\"" + FEATURE_HOSTING_JOIN + "\",\"" + dev.theredstonee.trsclient.core.touch.TouchKeyboard.FEATURE + "\"]";
+	}
+
 	public static final String FEATURE_CLIPS_ENABLE = "clips.enable";
 	/** Merkmal des Launchers: kleine Vorschau-Animation eines Clips ({@code clips.preview}). */
 	public static final String FEATURE_CLIPS_PREVIEW = "clips.preview";
@@ -530,7 +536,7 @@ public final class TrsLink {
 					return Result.DENIED;
 				}
 				String proof = LinkCrypto.gameProof(target.key, target.sid, gameNonce, challenge.nonce);
-				if (!write(o, "{\"type\":\"auth\",\"proof\":\"" + proof + "\",\"features\":" + GAME_FEATURES_JSON + "}")) {
+				if (!write(o, "{\"type\":\"auth\",\"proof\":\"" + proof + "\",\"features\":" + gameFeaturesJson() + "}")) {
 					return Result.FAILED;
 				}
 				sealKey = LinkCrypto.sealKey(target.key, gameNonce, challenge.nonce);
