@@ -20,6 +20,7 @@ const taskKindKeys: Record<TaskKind, MessageKey> = {
   'version-change': 'tasks.kind.versionChange',
   launch: 'tasks.kind.launch',
   ffmpeg: 'tasks.kind.ffmpeg',
+  move: 'tasks.kind.move',
 }
 
 /** Beschriftung im Verlauf („vor 2 Monaten · Modpack“) in der eingestellten Sprache. */

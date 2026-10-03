@@ -21,7 +21,7 @@ const label = computed(() => {
 })
 const title = computed(() => {
   const version = updater.version ?? ''
-  if (updater.phase === 'external') return t('updater.externalHint')
+  if (updater.phase === 'external') return updater.mode === 'portable' ? t('updater.portableHint') : t('updater.externalHint')
   if (updater.phase === 'downloading') return t('updater.downloading', { version, percent: updater.percent })
   if (updater.phase === 'failed') return t('updater.failed', { reason: updater.failReason })
   return running.value ? t('updater.readyRunning', { version }) : t('updater.ready', { version })

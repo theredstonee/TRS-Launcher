@@ -95,7 +95,8 @@ pub struct Capabilities {
     /// Spiel-Clips aufnehmen (derzeit nur Windows).
     pub clips: bool,
     /// Wie der Launcher sich aktualisiert: `auto` (eingebauter Updater),
-    /// `package` (Paketverwaltung: .deb/.rpm/AUR) oder `flatpak`.
+    /// `package` (Paketverwaltung: .deb/.rpm/AUR), `flatpak` oder `portable`
+    /// (ZIP neben der EXE – neue Version von Hand herunterladen).
     pub updates: &'static str,
 }
 
@@ -118,6 +119,10 @@ pub fn capabilities() -> Capabilities {
 /// Unter Linux kann sich nur das AppImage selbst ersetzen; Pakete aus
 /// .deb/.rpm/AUR/Flatpak aktualisiert die Paketverwaltung.
 fn update_mode() -> &'static str {
+    // Portabel: Der Updater würde den Installer ausführen – stattdessen nur Bescheid geben.
+    if crate::data_location::is_portable() {
+        return "portable";
+    }
     if cfg!(windows) {
         return "auto";
     }
@@ -176,6 +181,6 @@ MemFree: 1 kB"), Some(15931));
         }
         let caps = capabilities();
         assert_eq!(caps.firewall, cfg!(windows));
-        assert!(matches!(caps.updates, "auto" | "package" | "flatpak"));
+        assert!(matches!(caps.updates, "auto" | "package" | "flatpak" | "portable"));
     }
 }

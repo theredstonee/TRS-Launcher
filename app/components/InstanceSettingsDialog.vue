@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EnvVar, FpsMode, Instance, InstanceOverrides, SyncItem, UpdateChannel } from '~/types'
+import type { EnvVar, FpsMode, Instance, InstanceLocation, InstanceOverrides, SyncItem, UpdateChannel } from '~/types'
 import type { ShellSection } from '~/components/SettingsShell.vue'
 
 // Instanz-Einstellungen: Modal mit Bereichen links,
@@ -248,6 +248,21 @@ async function duplicate() {
   }
 }
 
+// --- Speicherort ------------------------------------------------------------------
+const location = ref<InstanceLocation | null>(null)
+const moving = ref<'custom' | 'default' | null>(null)
+const moveRunning = computed(() => tasks.isRunning(taskKey('move', inst.value.id)))
+async function loadLocation() {
+  try {
+    location.value = await backend.instanceLocation(inst.value.id)
+  } catch {
+    location.value = null
+  }
+}
+onMounted(() => void loadLocation())
+// Auch wenn der Umzug-Dialog vorher zugeht: nach dem Ende neu laden.
+watch(moveRunning, (now, before) => before && !now && void loadLocation())
+
 const deleting = ref(false)
 const deleteBusy = ref(false)
 async function confirmDelete() {
@@ -385,6 +400,17 @@ const loaderLine = computed(() => {
             <span class="block text-sm font-semibold">{{ t(`instanceSettings.general.channel.${c}.label`) }}</span>
             <span class="block text-xs text-base-400">{{ t(`instanceSettings.general.channel.${c}.hint`) }}</span>
           </button>
+        </div>
+      </SettingRow>
+
+      <SettingRow :title="t('relocate.instance.rowTitle')" stacked>
+        <template #description>
+          <p class="mt-0.5 text-xs text-base-400">{{ location?.custom ? t('relocate.instance.rowCustom') : t('relocate.instance.rowDefault') }}</p>
+          <p v-if="location" class="mt-0.5 truncate font-mono text-xs text-base-400" :title="location.path">{{ location.path }}</p>
+        </template>
+        <div class="flex flex-wrap gap-2">
+          <button class="btn btn-ghost" :disabled="running || moveRunning || !location" @click="moving = 'custom'">{{ moveRunning ? t('relocate.instance.moving') : t('relocate.instance.move') }}</button>
+          <button v-if="location?.custom" class="btn btn-ghost" :disabled="running || moveRunning" @click="moving = 'default'">{{ t('relocate.instance.back') }}</button>
         </div>
       </SettingRow>
 
@@ -562,6 +588,15 @@ const loaderLine = computed(() => {
   <ChangeVersionDialog v-if="changingVersion" :instance="inst" @close="changingVersion = false" @changed="onVersionChanged" />
 
   <ExportPackDialog v-if="exporting" :instance="inst" @close="exporting = false" />
+
+  <InstanceMoveDialog
+    v-if="moving && location"
+    :instance="inst"
+    :location="location"
+    :to-default="moving === 'default'"
+    @close="moving = null"
+    @moved="(l) => (location = l)"
+  />
 
   <BaseDialog v-if="confirmReinstall" :title="t('instanceSettings.installation.reinstallConfirmTitle')" @close="confirmReinstall = false">
     <p class="text-sm text-base-200">{{ t('instanceSettings.installation.reinstallConfirmText') }}</p>

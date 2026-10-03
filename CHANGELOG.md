@@ -28,6 +28,31 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Move the data folder.** Settings → Storage → "Move data folder…" moves everything (instances, Java, game
+  versions, accounts, settings) to another folder or drive. Every file is checked after copying; only then does the
+  launcher switch over and restart. You decide whether the old folder is deleted or kept – your accounts stay signed
+  in.
+- **Instances anywhere.** In an instance's settings, "Location" moves it to a folder of your choice (e.g.
+  `D:\Minecraft\Modpack`) and back to the default with one click. If the drive is unplugged, the library shows the
+  instance as "not available" instead of breaking.
+- **Portable version.** A new ZIP download runs without installing: put it on a USB stick and all data stays in the
+  "data" folder next to it. It doesn't update itself – the launcher tells you when a new version is out.
+
+### Deutsch
+- **Datenordner verschieben.** Einstellungen → Speicher → „Datenordner verschieben…“ zieht alles (Instanzen, Java,
+  Spielversionen, Konten, Einstellungen) in einen anderen Ordner oder auf ein anderes Laufwerk. Nach dem Kopieren wird
+  jede Datei geprüft, erst dann stellt der Launcher um und startet neu. Ob der alte Ordner gelöscht oder behalten
+  wird, entscheidest du – deine Konten bleiben angemeldet.
+- **Instanzen, wo du willst.** In den Einstellungen einer Instanz verschiebt „Speicherort“ sie in einen Ordner deiner
+  Wahl (z. B. `D:\Minecraft\Modpack`) und mit einem Klick wieder zurück. Ist das Laufwerk abgesteckt, zeigt die
+  Bibliothek die Instanz als „nicht verfügbar“, statt kaputtzugehen.
+- **Portable Version.** Ein neuer ZIP-Download läuft ohne Installation: auf einen USB-Stick legen, alle Daten bleiben
+  im Ordner „data“ daneben. Sie aktualisiert sich nicht selbst – der Launcher sagt Bescheid, wenn es eine neue Version
+  gibt.
+
 ## 0.17.0 – 2026-10-03 – Light Luggage | Leichtes Gepäck
 <!-- banner: accent=#ff3b30 motif=/news/0.17.0/banner.png -->
 <!-- shots:

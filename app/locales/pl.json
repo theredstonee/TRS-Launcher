@@ -800,6 +800,23 @@
       "invalidCode": "To nie jest prawidłowy kod (format: XXX-XXX).",
       "expired": "To żądanie logowania nie istnieje (już) – zacznij logowanie na stronie od nowa.",
       "used": "Na to żądanie logowania już odpowiedziano."
+    },
+    "relocate": {
+      "invalidPath": "Nie można użyć tego folderu.",
+      "network": "Ścieżki sieciowe nie są obsługiwane.",
+      "notAbsolute": "Wybierz pełną ścieżkę folderu.",
+      "notADirectory": "W miejscu docelowym jest plik o tej nazwie.",
+      "notEmpty": "Folder docelowy nie jest pusty.",
+      "protected": "Nie można używać folderów systemowych.",
+      "overlap": "Cel i obecny folder nie mogą leżeć jeden w drugim.",
+      "insideLauncher": "Cel nie może leżeć w folderze danych launchera ani w innej instancji.",
+      "notWritable": "Nie można zapisywać w tym folderze.",
+      "verifyFailed": "Kopia jest niekompletna – nic nie zostało przełączone.",
+      "notEnoughSpace": "Na dysku docelowym jest za mało wolnego miejsca.",
+      "dataMoving": "Folder danych został przeniesiony – uruchom launcher ponownie.",
+      "notMovable": "W trybie przenośnym nie można przenieść folderu danych.",
+      "noMove": "Nic nie zostało przeniesione.",
+      "alreadyDefault": "Instancja jest już w domyślnej lokalizacji."
     }
   },
   "browse": {
@@ -1983,7 +2000,8 @@
       "clientModUpdate": "TRS Client: pobrano aktualizację do {version}",
       "clientModCurrent": "TRS Client: wersja {version} (aktualna)",
       "updatesPackage": "Aktualizacje przychodzą przez menedżer pakietów",
-      "updatesFlatpak": "Aktualizacje przychodzą przez Flatpak"
+      "updatesFlatpak": "Aktualizacje przychodzą przez Flatpak",
+      "updatesPortable": "Wersja przenośna – aktualizacje są na stronie pobierania"
     },
     "appearance": {
       "colorScheme": "Motyw kolorów",
@@ -2145,7 +2163,16 @@
       "credentialsKeyring": "Klucz do logowań Microsoft jest przechowywany w pęku kluczy systemu (np. GNOME Keyring lub KWallet).",
       "credentialsFile": "Nie znaleziono pęku kluczy, więc logowania są chronione tylko uprawnieniami plików (odczytać je może tylko twój użytkownik). Dla lepszej ochrony zainstaluj i odblokuj pęk kluczy, np. GNOME Keyring lub KWallet.",
       "credentialsKeyringShort": "Pęk kluczy",
-      "credentialsFileShort": "Tylko uprawnienia plików"
+      "credentialsFileShort": "Tylko uprawnienia plików",
+      "sourceDefault": "Folder domyślny",
+      "sourceCustom": "Własny folder",
+      "sourcePortable": "Przenośna",
+      "sourceEnv": "Ustawiony przez TRS_LAUNCHER_HOME",
+      "missingDataDir": "Nie znaleziono wybranego folderu danych {path} (odłączony dysk?). Do tego czasu launcher używa folderu domyślnego.",
+      "portableHint": "Tryb przenośny: dane leżą obok launchera w folderze „data”.",
+      "envHint": "Folder danych jest ustawiony przez zmienną środowiskową TRS_LAUNCHER_HOME.",
+      "moveDataDir": "Przenieś folder danych…",
+      "downloadPage": "Strona pobierania"
     },
     "network": {
       "title": "Sieć",
@@ -2710,7 +2737,8 @@
       "versionChange": "Zmieniono wersję",
       "launch": "Uruchomienie gry",
       "presets": "Zainstalowano presety",
-      "ffmpeg": "Nagrywarka zainstalowana"
+      "ffmpeg": "Nagrywarka zainstalowana",
+      "move": "Przeniesiono"
     },
     "stage": {
       "preparing": "Przygotowywanie",
@@ -2752,7 +2780,8 @@
     "downloadInstaller": "Pobierz instalator",
     "splash": "Aktualizowanie – za chwilę ponowne uruchomienie …",
     "availableExternal": "Dostępna aktualizacja {version}",
-    "externalHint": "Zainstaluj ją menedżerem pakietów (np. yay/paru dla AUR, apt lub dnf) albo pobierz z GitHuba."
+    "externalHint": "Zainstaluj ją menedżerem pakietów (np. yay/paru dla AUR, apt lub dnf) albo pobierz z GitHuba.",
+    "portableHint": "Wersja przenośna: pobierz nowy ZIP ze strony wydania i zastąp stare pliki – zachowaj folder „data”."
   },
   "play": {
     "stopGame": "Zatrzymaj grę",
@@ -5414,5 +5443,62 @@
     "logs": "Pomoc dotycząca logów",
     "java": "Poradnik Java",
     "linux": "Poradnik dla Linuksa"
+  },
+  "relocate": {
+    "pickFirst": "Najpierw wybierz folder.",
+    "currentFolder": "Obecny folder",
+    "newFolder": "Nowy folder",
+    "newFolderPlaceholder": "np. D:\\Gry\\TRS-Launcher",
+    "browse": "Przeglądaj…",
+    "emptyHint": "Wybierz pusty lub nowy folder. Jeśli są już w nim pliki, zostanie w nim utworzony podfolder.",
+    "size": "Rozmiar",
+    "files": "{count} plik | {count} pliki | {count} plików",
+    "free": "Wolne na dysku",
+    "freeUnknown": "nieznane",
+    "sameDrive": "ten sam dysk – tylko zmiana nazwy",
+    "linksSkipped": "{count} połączony folder (symlink/junction) nie zostanie skopiowany. | {count} połączone foldery (symlinki/junctions) nie zostaną skopiowane. | {count} połączonych folderów (symlinków/junctions) nie zostanie skopiowanych.",
+    "checking": "Sprawdzanie…",
+    "next": "Dalej",
+    "back": "Wstecz",
+    "startCopy": "Skopiuj i przełącz",
+    "stageCopying": "Kopiowanie plików …",
+    "stageVerifying": "Sprawdzanie kopii …",
+    "keepOpen": "Nie zamykaj launchera. Podczas przenoszenia nie można uruchamiać gier.",
+    "cancelled": "Anulowano – nic nie zostało zmienione.",
+    "blockedGames": "Najpierw zamknij wszystkie uruchomione gry.",
+    "blockedSpace": "Na dysku docelowym jest za mało wolnego miejsca.",
+    "hide": "Ukryj",
+    "data": {
+      "title": "Przenieś folder danych",
+      "intro": "Przenosi wszystkie dane launchera (instancje, Javę, wersje gry, konta, ustawienia) do innego folderu, np. na większy dysk. Następnie launcher uruchomi się ponownie.",
+      "taskTitle": "Folder danych",
+      "restartHint": "Po skopiowaniu każdy plik jest sprawdzany. Dopiero wtedy launcher się przełącza i uruchamia ponownie – twoje konta pozostają zalogowane.",
+      "verified": "Kopia gotowa i sprawdzona. Od teraz launcher używa:",
+      "oldQuestion": "Co zrobić ze starym folderem? Zostanie usunięty dopiero po ponownym uruchomieniu.",
+      "keepOld": "Zachowaj stary folder i uruchom ponownie",
+      "deleteOld": "Usuń stary folder i uruchom ponownie"
+    },
+    "instance": {
+      "rowTitle": "Lokalizacja",
+      "rowDefault": "W folderze danych launchera (domyślnie).",
+      "rowCustom": "W wybranym przez ciebie folderze.",
+      "move": "Przenieś…",
+      "moving": "Przenoszenie…",
+      "back": "Przywróć domyślną",
+      "title": "Przenieś instancję",
+      "backTitle": "Przenieś instancję z powrotem do domyślnej lokalizacji",
+      "intro": "Przenosi tę instancję ze światami, modami i ustawieniami do wybranego folderu, np. na inny dysk.",
+      "placeholder": "np. D:\\Minecraft\\Modpack",
+      "hint": "Na tym samym dysku folder jest tylko przemianowywany. W przeciwnym razie jest kopiowany i sprawdzany, a dopiero potem stary folder znika.",
+      "blockedRunning": "Najpierw zamknij instancję.",
+      "start": "Przenieś",
+      "done": "„{name}” została przeniesiona."
+    },
+    "unavailable": {
+      "title": "„{name}” jest niedostępna",
+      "text": "Nie znaleziono folderu: {path} – czy dysk jest podłączony?",
+      "retry": "Sprawdź ponownie",
+      "forget": "Usuń z listy"
+    }
   }
 }

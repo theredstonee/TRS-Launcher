@@ -125,6 +125,51 @@ jobs:
           node scripts/updater-manifest.mjs platform windows-x86_64 "out/$exe" > out/platform-windows.json
           ls -la out
 
+      # Portable Version: EXE + mitgelieferte Ressourcen (TRS Client in client-mod/, liegen wie beim Installer
+      # neben der EXE) + Marker portable.txt + kurzes README. Die Daten landen dann in data/ daneben.
+      # Kein Eintrag in latest.json – die portable Version aktualisiert sich nicht selbst.
+      - name: Portable ZIP
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = $env:TAG.TrimStart('v')
+          $release = 'src-tauri/target/release'
+          $exe = @("$release/TRS Launcher.exe", "$release/trs-launcher.exe") | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+          if (-not $exe) { throw 'Launcher-EXE not found in target/release' }
+          $stage = 'portable'
+          New-Item -ItemType Directory -Force "$stage/client-mod" | Out-Null
+          Copy-Item -LiteralPath $exe "$stage/TRS Launcher.exe"
+          Copy-Item -Recurse -Force 'src-tauri/resources/client-mod/*' "$stage/client-mod/"
+          Set-Content -Encoding utf8 "$stage/portable.txt" "This file switches the TRS Launcher to portable mode. Data is stored in the 'data' folder next to it."
+          $readme = @(
+            "TRS Launcher $version - portable",
+            "",
+            "Unzip this folder anywhere (e.g. a USB stick) and start 'TRS Launcher.exe'.",
+            "All data (instances, Java, accounts, settings) is stored in the 'data' folder next to it.",
+            "Needs the Microsoft Edge WebView2 Runtime (built into Windows 10/11).",
+            "",
+            "Updates: the portable version doesn't update itself. Download the new ZIP from",
+            "https://github.com/theredstonee/TRS-Launcher/releases and replace the files - keep the 'data' folder.",
+            "Delete portable.txt to use the normal data folder in %APPDATA% instead.",
+            "",
+            "---",
+            "",
+            "TRS Launcher $version - portabel",
+            "",
+            "Den Ordner irgendwohin entpacken (z. B. auf einen USB-Stick) und 'TRS Launcher.exe' starten.",
+            "Alle Daten (Instanzen, Java, Konten, Einstellungen) liegen im Ordner 'data' daneben.",
+            "Braucht die Microsoft Edge WebView2 Runtime (in Windows 10/11 enthalten).",
+            "",
+            "Updates: Die portable Version aktualisiert sich nicht selbst. Neue ZIP von",
+            "https://github.com/theredstonee/TRS-Launcher/releases laden und die Dateien ersetzen - den Ordner 'data' behalten.",
+            "Ohne portable.txt nutzt der Launcher wieder den normalen Datenordner in %APPDATA%."
+          )
+          Set-Content -Encoding utf8 "$stage/README.txt" $readme
+          New-Item -ItemType Directory -Force out | Out-Null
+          $zip = "out/TRS-Launcher_${version}_x64-portable.zip"
+          Compress-Archive -Path "$stage/*" -DestinationPath $zip -CompressionLevel Optimal
+          Get-Item $zip | Format-List Name, Length
+
       - uses: actions/upload-artifact@v4
         with:
           name: windows

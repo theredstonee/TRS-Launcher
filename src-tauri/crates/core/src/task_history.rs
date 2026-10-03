@@ -48,6 +48,8 @@ pub enum TaskKind {
     Launch,
     /// FFmpeg für Clips & Aufnahme geladen.
     Ffmpeg,
+    /// Datenordner oder Instanz verschoben.
+    Move,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

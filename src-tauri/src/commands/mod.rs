@@ -20,6 +20,7 @@ pub mod moderation;
 pub mod news;
 pub mod packs;
 pub mod presets;
+pub mod relocate;
 pub mod screenshots;
 pub mod servers;
 pub mod settings;

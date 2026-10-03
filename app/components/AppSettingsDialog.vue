@@ -25,6 +25,7 @@ const caps = computed(() => info.value?.capabilities ?? defaultCapabilities())
 const updatesLine = computed(() => {
   if (caps.value.updates === 'package') return t('settings.footer.updatesPackage')
   if (caps.value.updates === 'flatpak') return t('settings.footer.updatesFlatpak')
+  if (caps.value.updates === 'portable') return t('settings.footer.updatesPortable')
   return null
 })
 const clientMod = ref<ClientModStatus | null>(null)
@@ -281,6 +282,9 @@ async function clean() {
 function openDataDir() {
   backend.openDataDir().catch(() => {})
 }
+// Datenordner verschieben (Assistent mit Neustart).
+const games = useGamesStore()
+const movingData = ref(false)
 
 // --- Netzwerk -----------------------------------------------------------------
 const firewall = ref<{ total: number; missing: number } | null>(null)
@@ -631,9 +635,32 @@ async function allowFirewall() {
       </SettingRow>
       <SettingRow :title="t('settings.storage.dataDirTitle')" stacked>
         <template #description>
+          <p v-if="info" class="mt-0.5 text-xs text-base-400">
+            <span class="badge mr-1" :class="info.dataSource === 'portable' ? 'bg-lamp-400/15 text-lamp-300' : 'bg-base-800 text-base-300'">{{ t(dataSourceKey(info.dataSource)) }}</span>
+          </p>
           <p class="mt-0.5 truncate font-mono text-xs text-base-400" :title="info?.dataDir">{{ info?.dataDir }}</p>
+          <p v-if="info?.missingDataDir" class="mt-1 text-xs text-warn" role="alert">{{ t('settings.storage.missingDataDir', { path: info.missingDataDir }) }}</p>
+          <p v-if="info && !info.dataMovable" class="mt-1 text-xs text-base-400">
+            {{ info.dataSource === 'portable' ? t('settings.storage.portableHint') : t('settings.storage.envHint') }}
+          </p>
+          <p v-if="caps.updates === 'portable'" class="mt-1 text-xs text-base-400">
+            {{ t('updater.portableHint') }}
+            <button type="button" class="text-redstone-300 hover:underline" @click="backend.openExternalUrl(releasesUrl).catch(() => {})">{{ t('settings.storage.downloadPage') }}</button>
+          </p>
         </template>
-        <button class="btn btn-ghost" @click="openDataDir">{{ t('common.actions.openFolder') }}</button>
+        <div class="flex flex-wrap gap-2">
+          <button class="btn btn-ghost" @click="openDataDir">{{ t('common.actions.openFolder') }}</button>
+          <button
+            v-if="info?.dataMovable"
+            class="btn btn-ghost"
+            :disabled="games.runningCount > 0"
+            :title="games.runningCount > 0 ? t('relocate.blockedGames') : undefined"
+            data-testid="move-data-dir"
+            @click="movingData = true"
+          >
+            {{ t('settings.storage.moveDataDir') }}
+          </button>
+        </div>
       </SettingRow>
       <!-- Linux: Anmeldedaten im Schlüsselbund oder – ohne Schlüsselbund – nur per Dateirechte geschützt. -->
       <SettingRow
@@ -677,6 +704,8 @@ async function allowFirewall() {
       </SettingRow>
     </div>
   </SettingsShell>
+
+  <DataMoveDialog v-if="movingData && info" :current="info.dataDir" @close="movingData = false" />
 
   <BaseDialog v-if="confirmClean" :title="t('settings.storage.confirmTitle')" @close="confirmClean = false">
     <p class="text-sm text-base-200">

@@ -800,6 +800,23 @@
       "invalidCode": "Bu geçerli bir kod değil (biçim: XXX-XXX).",
       "expired": "Bu oturum açma isteği yok (artık) – web sitesinde oturum açmayı yeniden başlat.",
       "used": "Bu oturum açma isteği zaten yanıtlandı."
+    },
+    "relocate": {
+      "invalidPath": "Bu klasör kullanılamaz.",
+      "network": "Ağ yolları desteklenmiyor.",
+      "notAbsolute": "Tam bir klasör yolu seç.",
+      "notADirectory": "Hedefte bu adda bir dosya var.",
+      "notEmpty": "Hedef klasör boş değil.",
+      "protected": "Sistem klasörleri kullanılamaz.",
+      "overlap": "Hedef ve geçerli klasör iç içe olamaz.",
+      "insideLauncher": "Hedef, launcher’ın veri klasöründe veya başka bir kurulumun içinde olamaz.",
+      "notWritable": "Bu klasöre yazılamıyor.",
+      "verifyFailed": "Kopya eksik – hiçbir geçiş yapılmadı.",
+      "notEnoughSpace": "Hedef sürücüde yeterli boş alan yok.",
+      "dataMoving": "Veri klasörü taşındı – lütfen launcher’ı yeniden başlat.",
+      "notMovable": "Taşınabilir modda veri klasörü taşınamaz.",
+      "noMove": "Hiçbir şey taşınmadı.",
+      "alreadyDefault": "Kurulum zaten varsayılan konumda."
     }
   },
   "browse": {
@@ -1983,7 +2000,8 @@
       "clientModUpdate": "TRS Client: güncelleme indirildi ({version})",
       "clientModCurrent": "TRS Client: sürüm {version} (güncel)",
       "updatesPackage": "Güncellemeler paket yöneticin üzerinden gelir",
-      "updatesFlatpak": "Güncellemeler Flatpak üzerinden gelir"
+      "updatesFlatpak": "Güncellemeler Flatpak üzerinden gelir",
+      "updatesPortable": "Taşınabilir sürüm – güncellemeler indirme sayfasında"
     },
     "appearance": {
       "colorScheme": "Renk teması",
@@ -2145,7 +2163,16 @@
       "credentialsKeyring": "Microsoft oturumlarının anahtarı sistem anahtarlığında tutulur (ör. GNOME Keyring veya KWallet).",
       "credentialsFile": "Sistem anahtarlığı bulunamadı; oturumların yalnızca dosya izinleriyle korunuyor (yalnızca kullanıcın okuyabilir). Daha iyi koruma için GNOME Keyring veya KWallet gibi bir anahtarlık kurup kilidini aç.",
       "credentialsKeyringShort": "Anahtarlık",
-      "credentialsFileShort": "Yalnızca dosya izinleri"
+      "credentialsFileShort": "Yalnızca dosya izinleri",
+      "sourceDefault": "Varsayılan klasör",
+      "sourceCustom": "Özel klasör",
+      "sourcePortable": "Taşınabilir",
+      "sourceEnv": "TRS_LAUNCHER_HOME ile ayarlandı",
+      "missingDataDir": "Seçilen veri klasörü {path} bulunamadı (sürücü çıkarıldı mı?). Launcher şimdilik varsayılan klasörü kullanıyor.",
+      "portableHint": "Taşınabilir mod: veriler launcher’ın yanında “data” klasöründe durur.",
+      "envHint": "Veri klasörü TRS_LAUNCHER_HOME ortam değişkeniyle ayarlanmış.",
+      "moveDataDir": "Veri klasörünü taşı…",
+      "downloadPage": "İndirme sayfası"
     },
     "network": {
       "title": "Ağ",
@@ -2710,7 +2737,8 @@
       "versionChange": "Sürüm değiştirildi",
       "launch": "Oyun başlatma",
       "presets": "Ön ayarlar yüklendi",
-      "ffmpeg": "Kaydedici kuruldu"
+      "ffmpeg": "Kaydedici kuruldu",
+      "move": "Taşındı"
     },
     "stage": {
       "preparing": "Hazırlanıyor",
@@ -2752,7 +2780,8 @@
     "downloadInstaller": "Yükleyiciyi indir",
     "splash": "Güncelleniyor – birazdan yeniden başlatılıyor …",
     "availableExternal": "{version} güncellemesi mevcut",
-    "externalHint": "Paket yöneticinle kur (ör. AUR için yay/paru, apt veya dnf) ya da GitHub’dan indir."
+    "externalHint": "Paket yöneticinle kur (ör. AUR için yay/paru, apt veya dnf) ya da GitHub’dan indir.",
+    "portableHint": "Taşınabilir sürüm: yeni ZIP’i sürüm sayfasından indir ve eski dosyaların yerine koy – “data” klasörünü sakla."
   },
   "play": {
     "stopGame": "Oyunu durdur",
@@ -5414,5 +5443,62 @@
     "logs": "Günlükler hakkında yardım",
     "java": "Java rehberi",
     "linux": "Linux rehberi"
+  },
+  "relocate": {
+    "pickFirst": "Önce bir klasör seç.",
+    "currentFolder": "Geçerli klasör",
+    "newFolder": "Yeni klasör",
+    "newFolderPlaceholder": "ör. D:\\Oyunlar\\TRS-Launcher",
+    "browse": "Gözat…",
+    "emptyHint": "Boş ya da yeni bir klasör seç. İçinde zaten dosyalar varsa, içine bir alt klasör oluşturulur.",
+    "size": "Boyut",
+    "files": "{count} dosya | {count} dosya",
+    "free": "Sürücüde boş alan",
+    "freeUnknown": "bilinmiyor",
+    "sameDrive": "aynı sürücü – sadece yeniden adlandırılır",
+    "linksSkipped": "{count} bağlantılı klasör (symlink/junction) kopyalanmayacak. | {count} bağlantılı klasör (symlink/junction) kopyalanmayacak.",
+    "checking": "Kontrol ediliyor…",
+    "next": "İleri",
+    "back": "Geri",
+    "startCopy": "Kopyala ve geçiş yap",
+    "stageCopying": "Dosyalar kopyalanıyor …",
+    "stageVerifying": "Kopya kontrol ediliyor …",
+    "keepOpen": "Launcher’ı açık bırak. Taşıma sırasında oyun başlatılamaz.",
+    "cancelled": "İptal edildi – hiçbir şey değişmedi.",
+    "blockedGames": "Önce çalışan tüm oyunları kapat.",
+    "blockedSpace": "Hedef sürücüde yeterli boş alan yok.",
+    "hide": "Gizle",
+    "data": {
+      "title": "Veri klasörünü taşı",
+      "intro": "Launcher’ın tüm verilerini (kurulumlar, Java, oyun sürümleri, hesaplar, ayarlar) başka bir klasöre, ör. daha büyük bir sürücüye taşır. Ardından launcher yeniden başlar.",
+      "taskTitle": "Veri klasörü",
+      "restartHint": "Kopyalamadan sonra her dosya kontrol edilir. Ancak ondan sonra launcher geçiş yapar ve yeniden başlar – hesapların oturumu açık kalır.",
+      "verified": "Kopya tamamlandı ve kontrol edildi. Launcher artık şunu kullanıyor:",
+      "oldQuestion": "Eski klasöre ne olsun? Yalnızca yeniden başlatmadan sonra silinir.",
+      "keepOld": "Eski klasörü sakla ve yeniden başlat",
+      "deleteOld": "Eski klasörü sil ve yeniden başlat"
+    },
+    "instance": {
+      "rowTitle": "Konum",
+      "rowDefault": "Launcher’ın veri klasöründe (varsayılan).",
+      "rowCustom": "Senin seçtiğin bir klasörde.",
+      "move": "Taşı…",
+      "moving": "Taşınıyor…",
+      "back": "Varsayılana geri dön",
+      "title": "Kurulumu taşı",
+      "backTitle": "Kurulumu varsayılan konuma geri taşı",
+      "intro": "Bu kurulumu dünyaları, modları ve ayarlarıyla birlikte seçtiğin bir klasöre, ör. başka bir sürücüye taşır.",
+      "placeholder": "ör. D:\\Minecraft\\Modpack",
+      "hint": "Aynı sürücüde klasör yalnızca yeniden adlandırılır. Aksi halde kopyalanıp kontrol edilir; eski klasör ancak ondan sonra silinir.",
+      "blockedRunning": "Önce kurulumu kapat.",
+      "start": "Taşı",
+      "done": "“{name}” taşındı."
+    },
+    "unavailable": {
+      "title": "“{name}” kullanılamıyor",
+      "text": "Klasör bulunamadı: {path} – sürücü bağlı mı?",
+      "retry": "Tekrar kontrol et",
+      "forget": "Listeden kaldır"
+    }
   }
 }

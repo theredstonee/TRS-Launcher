@@ -166,6 +166,14 @@ pub struct Instance {
     pub group: Option<String>,
 }
 
+/// Instanz an eigenem Ort, deren Ordner fehlt – die Bibliothek zeigt sie als „nicht verfügbar“.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UnavailableInstance {
+    pub id: String,
+    pub path: String,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NewInstance {
@@ -197,13 +205,18 @@ impl InstanceStore {
     pub async fn list(&self) -> Result<Vec<Instance>> {
         let dir = self.paths.instances_dir();
         let mut entries = fs::read_dir(&dir).await.map_err(|e| Error::io(&dir, e))?;
-        let mut out = Vec::new();
-
+        let mut ids = std::collections::BTreeSet::new();
         while let Some(entry) = entries.next_entry().await.map_err(|e| Error::io(&dir, e))? {
             let Some(id) = entry.file_name().to_str().map(str::to_owned) else { continue };
-            if validate_id(&id).is_err() {
-                continue;
+            if validate_id(&id).is_ok() {
+                ids.insert(id);
             }
+        }
+        // Instanzen an eigenem Ort; fehlt deren Ordner (Laufwerk getrennt), stehen sie in [`Self::unavailable`].
+        ids.extend(self.paths.custom_locations().into_iter().map(|(id, _)| id));
+
+        let mut out = Vec::new();
+        for id in ids {
             match fsutil::read_json::<Instance>(&self.paths.instance_file(&id)).await {
                 // Der Ordnername ist maßgeblich, nicht die ID in der Datei.
                 Ok(Some(inst)) => out.push(Instance { id, ..inst }),
@@ -327,19 +340,48 @@ impl InstanceStore {
         fsutil::write_json(&self.paths.instance_file(id), &instance).await
     }
 
-    /// Löscht die Instanz inklusive Welten, Mods und Screenshots.
+    /// Löscht die Instanz inklusive Welten, Mods und Screenshots. Bei eigenem
+    /// Speicherort nur deren Ordner (er war beim Verschieben leer bzw. neu).
     pub async fn delete(&self, id: &str) -> Result<()> {
         let _guard = self.write_lock.lock().await;
         self.get(id).await?;
         let dir = self.paths.instance_dir(id);
-        fs::remove_dir_all(&dir).await.map_err(|e| Error::io(&dir, e))
+        fs::remove_dir_all(&dir).await.map_err(|e| Error::io(&dir, e))?;
+        if self.paths.instance_location(id).is_some() {
+            self.paths.set_instance_location(id, None)?;
+        }
+        Ok(())
+    }
+
+    /// Instanzen an eigenem Ort, deren Ordner gerade fehlt (z. B. Laufwerk getrennt).
+    pub async fn unavailable(&self) -> Vec<UnavailableInstance> {
+        let mut out = Vec::new();
+        for (id, dir) in self.paths.custom_locations() {
+            if !fs::try_exists(dir.join("instance.json")).await.unwrap_or(false) {
+                out.push(UnavailableInstance { id, path: dir.display().to_string() });
+            }
+        }
+        out
+    }
+
+    /// Entfernt eine nicht erreichbare Instanz aus der Liste (ihr Ordner bleibt unberührt).
+    pub async fn forget_unavailable(&self, id: &str) -> Result<()> {
+        validate_id(id)?;
+        let _guard = self.write_lock.lock().await;
+        if !self.unavailable().await.iter().any(|u| u.id == id) {
+            return Err(Error::InstanceNotFound(id.to_owned()));
+        }
+        self.paths.set_instance_location(id, None)
     }
 
     async fn unique_id(&self, name: &str) -> String {
         let base = slugify(name);
         let mut candidate = base.clone();
         let mut n = 2u32;
-        while fs::try_exists(self.paths.instance_dir(&candidate)).await.unwrap_or(true) {
+        // Auch IDs mit eigenem Speicherort sind vergeben – selbst wenn deren Laufwerk gerade fehlt.
+        while self.paths.instance_location(&candidate).is_some()
+            || fs::try_exists(self.paths.instance_dir(&candidate)).await.unwrap_or(true)
+        {
             let suffix = format!("-{n}");
             let keep = MAX_ID_LEN - suffix.len();
             candidate = format!("{}{suffix}", &base[..base.len().min(keep)]);

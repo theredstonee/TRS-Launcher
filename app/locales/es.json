@@ -800,6 +800,23 @@
       "invalidCode": "No es un código válido (formato: XXX-XXX).",
       "expired": "Esta solicitud de inicio de sesión no existe (ya): vuelve a empezar en la web.",
       "used": "Esta solicitud de inicio de sesión ya se respondió."
+    },
+    "relocate": {
+      "invalidPath": "No se puede usar esta carpeta.",
+      "network": "Las rutas de red no son compatibles.",
+      "notAbsolute": "Elige una ruta de carpeta completa.",
+      "notADirectory": "En el destino hay un archivo con este nombre.",
+      "notEmpty": "La carpeta de destino no está vacía.",
+      "protected": "No se pueden usar carpetas del sistema.",
+      "overlap": "El destino y la carpeta actual no pueden estar uno dentro del otro.",
+      "insideLauncher": "El destino no puede estar dentro de la carpeta de datos del launcher ni dentro de otra instancia.",
+      "notWritable": "No se puede escribir en esta carpeta.",
+      "verifyFailed": "La copia está incompleta – no se ha cambiado nada.",
+      "notEnoughSpace": "No hay suficiente espacio libre en la unidad de destino.",
+      "dataMoving": "La carpeta de datos se ha movido – reinicia el launcher.",
+      "notMovable": "En el modo portátil no se puede mover la carpeta de datos.",
+      "noMove": "No se ha movido nada.",
+      "alreadyDefault": "La instancia ya está en la ubicación predeterminada."
     }
   },
   "browse": {
@@ -1983,7 +2000,8 @@
       "clientModUpdate": "TRS Client: actualización a {version} descargada",
       "clientModCurrent": "TRS Client: versión {version} (al día)",
       "updatesPackage": "Las actualizaciones llegan por tu gestor de paquetes",
-      "updatesFlatpak": "Las actualizaciones llegan por Flatpak"
+      "updatesFlatpak": "Las actualizaciones llegan por Flatpak",
+      "updatesPortable": "Versión portátil – las actualizaciones están en la página de descargas"
     },
     "appearance": {
       "colorScheme": "Tema de color",
@@ -2145,7 +2163,16 @@
       "credentialsKeyring": "La clave de tus inicios de sesión de Microsoft se guarda en el llavero del sistema (p. ej. GNOME Keyring o KWallet).",
       "credentialsFile": "No se encontró ningún llavero del sistema, así que tus inicios de sesión solo están protegidos por permisos de archivo (solo tu usuario puede leerlos). Para más protección, instala y desbloquea un llavero como GNOME Keyring o KWallet.",
       "credentialsKeyringShort": "Llavero",
-      "credentialsFileShort": "Solo permisos de archivo"
+      "credentialsFileShort": "Solo permisos de archivo",
+      "sourceDefault": "Carpeta predeterminada",
+      "sourceCustom": "Carpeta propia",
+      "sourcePortable": "Portátil",
+      "sourceEnv": "Definida por TRS_LAUNCHER_HOME",
+      "missingDataDir": "No se encontró la carpeta de datos elegida {path} (¿unidad desconectada?). Mientras tanto, el launcher usa la carpeta predeterminada.",
+      "portableHint": "Modo portátil: los datos están junto al launcher, en la carpeta «data».",
+      "envHint": "La carpeta de datos está definida por la variable de entorno TRS_LAUNCHER_HOME.",
+      "moveDataDir": "Mover carpeta de datos…",
+      "downloadPage": "Página de descargas"
     },
     "network": {
       "title": "Red",
@@ -2710,7 +2737,8 @@
       "versionChange": "Versión cambiada",
       "launch": "Inicio del juego",
       "presets": "Presets instalados",
-      "ffmpeg": "Grabador instalado"
+      "ffmpeg": "Grabador instalado",
+      "move": "Movido"
     },
     "stage": {
       "preparing": "Preparando",
@@ -2752,7 +2780,8 @@
     "downloadInstaller": "Descargar instalador",
     "splash": "Actualizando: se reiniciará enseguida …",
     "availableExternal": "Actualización {version} disponible",
-    "externalHint": "Instálala con tu gestor de paquetes (p. ej. yay/paru para AUR, apt o dnf) o descárgala de GitHub."
+    "externalHint": "Instálala con tu gestor de paquetes (p. ej. yay/paru para AUR, apt o dnf) o descárgala de GitHub.",
+    "portableHint": "Versión portátil: descarga el nuevo ZIP desde la página de la versión y reemplaza los archivos antiguos – conserva la carpeta «data»."
   },
   "play": {
     "stopGame": "Cerrar el juego",
@@ -5414,5 +5443,62 @@
     "logs": "Ayuda con los registros",
     "java": "Guía de Java",
     "linux": "Guía para Linux"
+  },
+  "relocate": {
+    "pickFirst": "Elige primero una carpeta.",
+    "currentFolder": "Carpeta actual",
+    "newFolder": "Carpeta nueva",
+    "newFolderPlaceholder": "p. ej. D:\\Juegos\\TRS-Launcher",
+    "browse": "Examinar…",
+    "emptyHint": "Elige una carpeta vacía o nueva. Si ya contiene archivos, se crea una subcarpeta dentro.",
+    "size": "Tamaño",
+    "files": "{count} archivo | {count} archivos",
+    "free": "Libre en la unidad",
+    "freeUnknown": "desconocido",
+    "sameDrive": "misma unidad – solo se renombra",
+    "linksSkipped": "{count} carpeta enlazada (symlink/junction) no se copiará. | {count} carpetas enlazadas (symlinks/junctions) no se copiarán.",
+    "checking": "Comprobando…",
+    "next": "Siguiente",
+    "back": "Atrás",
+    "startCopy": "Copiar y cambiar",
+    "stageCopying": "Copiando archivos …",
+    "stageVerifying": "Comprobando la copia …",
+    "keepOpen": "Deja el launcher abierto. Mientras se mueven los datos no se pueden iniciar juegos.",
+    "cancelled": "Cancelado – no se ha cambiado nada.",
+    "blockedGames": "Cierra primero todos los juegos en ejecución.",
+    "blockedSpace": "No hay suficiente espacio libre en la unidad de destino.",
+    "hide": "Ocultar",
+    "data": {
+      "title": "Mover carpeta de datos",
+      "intro": "Mueve todos los datos del launcher (instancias, Java, versiones del juego, cuentas, ajustes) a otra carpeta, p. ej. a una unidad más grande. Después, el launcher se reinicia.",
+      "taskTitle": "Carpeta de datos",
+      "restartHint": "Tras copiar se comprueba cada archivo. Solo entonces el launcher cambia y se reinicia – tus cuentas siguen con la sesión iniciada.",
+      "verified": "Copia terminada y comprobada. A partir de ahora el launcher usa:",
+      "oldQuestion": "¿Qué hacemos con la carpeta antigua? Solo se elimina después del reinicio.",
+      "keepOld": "Conservar carpeta antigua y reiniciar",
+      "deleteOld": "Eliminar carpeta antigua y reiniciar"
+    },
+    "instance": {
+      "rowTitle": "Ubicación",
+      "rowDefault": "En la carpeta de datos del launcher (predeterminado).",
+      "rowCustom": "En una carpeta elegida por ti.",
+      "move": "Mover…",
+      "moving": "Moviendo…",
+      "back": "Volver a la predeterminada",
+      "title": "Mover instancia",
+      "backTitle": "Volver a mover la instancia a la ubicación predeterminada",
+      "intro": "Mueve esta instancia con sus mundos, mods y ajustes a la carpeta que elijas, p. ej. en otra unidad.",
+      "placeholder": "p. ej. D:\\Minecraft\\Modpack",
+      "hint": "En la misma unidad la carpeta solo se renombra. Si no, se copia y se comprueba, y solo después se elimina la carpeta antigua.",
+      "blockedRunning": "Cierra primero la instancia.",
+      "start": "Mover",
+      "done": "«{name}» se ha movido."
+    },
+    "unavailable": {
+      "title": "«{name}» no está disponible",
+      "text": "Carpeta no encontrada: {path} – ¿está conectada la unidad?",
+      "retry": "Comprobar de nuevo",
+      "forget": "Quitar de la lista"
+    }
   }
 }

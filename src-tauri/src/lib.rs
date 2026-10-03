@@ -4,22 +4,19 @@ mod dialog_text;
 mod error;
 mod open;
 
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use tauri::{Emitter, Manager};
 use trs_core::Launcher;
-
-/// Überschreibt das Datenverzeichnis – praktisch für Entwicklung und Tests.
-const HOME_ENV: &str = "TRS_LAUNCHER_HOME";
+use trs_core::data_location::{self, DataLocation};
 
 pub type LauncherState = Arc<Launcher>;
 
-fn data_root(app: &tauri::App) -> Result<PathBuf, Box<dyn std::error::Error>> {
-    if let Some(custom) = std::env::var_os(HOME_ENV).filter(|v| !v.is_empty()) {
-        return Ok(PathBuf::from(custom));
-    }
-    Ok(app.path().data_dir()?.join(trs_core::LAUNCHER_NAME))
+/// Datenordner: `TRS_LAUNCHER_HOME` > portabel > eigener Ordner (Zeiger-Datei) > Standard.
+fn data_location(app: &tauri::App) -> Result<DataLocation, Box<dyn std::error::Error>> {
+    let app_data = app.path().data_dir()?;
+    let exe_dir = data_location::exe_dir();
+    Ok(data_location::resolve(std::env::var_os(data_location::HOME_ENV), exe_dir.as_deref(), &app_data))
 }
 
 pub fn run() {
@@ -51,8 +48,15 @@ pub fn run() {
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
-            let root = data_root(app)?;
-            log::info!("Datenverzeichnis: {}", root.display());
+            let location = data_location(app)?;
+            let root = location.root.clone();
+            log::info!("Datenverzeichnis: {} ({:?})", root.display(), location.source);
+            if let Some(missing) = &location.missing_custom {
+                log::warn!("Gewählter Datenordner nicht erreichbar ({}) – Standardordner wird benutzt", missing.display());
+            }
+            // Nach einem Umzug: den alten Ordner (falls bestätigt) im Hintergrund löschen.
+            let cleanup = location.clone();
+            tauri::async_runtime::spawn_blocking(move || data_location::finish_pending_delete(&cleanup));
             // Spielstart, Logs und Spielende gehen als Event ans Frontend.
             let handle = app.handle().clone();
             let events = Arc::new(move |event: trs_core::launch::GameEvent| {
@@ -164,6 +168,7 @@ pub fn run() {
             // Discord-Status (nur lokal mit der Discord-App; läuft Discord nicht, passiert nichts).
             tauri::async_runtime::spawn(Arc::clone(&launcher).run_discord());
             app.manage::<LauncherState>(launcher);
+            app.manage(location);
             app.manage(commands::system::DropState::default());
             app.manage(commands::export::PackPickState::default());
             app.manage(commands::tasks::TaskRegistry::default());
@@ -261,6 +266,15 @@ pub fn run() {
             commands::app::open_data_dir,
             commands::app::firewall_status,
             commands::app::firewall_allow_all,
+            commands::relocate::pick_target_folder,
+            commands::relocate::data_move_plan,
+            commands::relocate::move_data_dir,
+            commands::relocate::confirm_data_move,
+            commands::relocate::instance_location,
+            commands::relocate::instance_move_plan,
+            commands::relocate::move_instance,
+            commands::relocate::unavailable_instances,
+            commands::relocate::forget_unavailable_instance,
             commands::settings::get_settings,
             commands::settings::update_settings,
             commands::instances::list_instances,

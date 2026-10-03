@@ -364,8 +364,40 @@ export interface PlatformCapabilities {
   trash: boolean
   /** Spiel-Clips aufnehmen (derzeit nur Windows). */
   clips: boolean
-  /** `auto` = eingebauter Updater, `package` = Paketverwaltung (.deb/.rpm/AUR), `flatpak`. */
-  updates: 'auto' | 'package' | 'flatpak'
+  /**
+   * `auto` = eingebauter Updater, `package` = Paketverwaltung (.deb/.rpm/AUR), `flatpak`,
+   * `portable` = ZIP-Version (neue Version von Hand von der Download-Seite).
+   */
+  updates: 'auto' | 'package' | 'flatpak' | 'portable'
+}
+
+/** Woher der Datenordner kommt. */
+export type DataSource = 'default' | 'custom' | 'portable' | 'env'
+
+/** Zusammenfassung vor einem Umzug (Datenordner oder Instanz). */
+export interface MovePlan {
+  /** Endgültiger Zielordner (bei einem nicht leeren Ordner ein Unterordner darin). */
+  target: string
+  bytes: number
+  files: number
+  /** Verknüpfungen, die nicht mitkopiert werden. */
+  links: number
+  free: number | null
+  sameVolume: boolean
+  enoughSpace: boolean
+}
+
+/** Wo eine Instanz liegt. */
+export interface InstanceLocation {
+  path: string
+  custom: boolean
+  defaultPath: string
+}
+
+/** Instanz an eigenem Ort, deren Ordner fehlt (Laufwerk getrennt). */
+export interface UnavailableInstance {
+  id: string
+  path: string
 }
 
 export interface AppInfo {
@@ -375,6 +407,12 @@ export interface AppInfo {
   capabilities: PlatformCapabilities
   /** Schutz der gespeicherten Anmeldedaten: `dpapi`, `keyring` (Schlüsselbund), `file` (nur Dateirechte) oder `none`. */
   tokenProtection: 'dpapi' | 'keyring' | 'file' | 'none'
+  /** Woher der Datenordner kommt. */
+  dataSource: DataSource
+  /** Lässt sich der Datenordner verschieben (nicht portabel, nicht per Umgebungsvariable)? */
+  dataMovable: boolean
+  /** Gewählter eigener Datenordner, der beim Start fehlte (dann gilt der Standard). */
+  missingDataDir: string | null
 }
 
 /** TRS Client (In-Game-Mod): mitgelieferte Version, `update` = neuere aus dem Update-Kanal. */
@@ -1329,6 +1367,7 @@ export type TaskKind =
   | 'version-change'
   | 'launch'
   | 'ffmpeg'
+  | 'move'
 
 /** Eintrag im Verlauf fertiger Aufgaben (`task-history.json`, neueste zuerst). */
 export interface TaskRecord {
