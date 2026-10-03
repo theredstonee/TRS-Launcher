@@ -923,6 +923,9 @@
       "commandDisabled": "Dit staat uit in de launcher op de pc.",
       "commandExpired": "De opdracht is verlopen.",
       "commandHandled": "De opdracht is al verwerkt."
+    },
+    "push": {
+      "noDistributorApp": "De push-app kan niet worden geopend."
     }
   },
   "browse": {
@@ -2457,7 +2460,8 @@
         "pollingAndroid": "Actief – de app kijkt ongeveer elke 15 minuten naar nieuwe meldingen.",
         "pollingIos": "Actief – iOS laat de app af en toe op de achtergrond naar nieuwe meldingen kijken (minder vaak in de energiebesparingsmodus).",
         "error": "Meldingen konden niet worden ingesteld.",
-        "errorWith": "Meldingen konden niet worden ingesteld: {error}"
+        "errorWith": "Meldingen konden niet worden ingesteld: {error}",
+        "distributorInactive": "{name} is nog niet verbonden. Open {name} één keer zodat het verbinding maakt met zijn server – daarna komen meldingen ook als beide apps gesloten zijn."
       },
       "categoriesTitle": "Meld me bij",
       "categories": {
@@ -2481,7 +2485,8 @@
       "lastSeen": "actief {date}",
       "failing": "De laatste bezorging is mislukt.",
       "remove": "Verwijderen",
-      "noDevices": "Nog geen apparaat krijgt meldingen."
+      "noDevices": "Nog geen apparaat krijgt meldingen.",
+      "openDistributor": "{name} openen"
     }
   },
   "settingsShell": {

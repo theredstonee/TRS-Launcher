@@ -923,6 +923,9 @@
       "commandDisabled": "Bu, bilgisayardaki başlatıcıda kapalı.",
       "commandExpired": "Komutun süresi doldu.",
       "commandHandled": "Komut zaten işlendi."
+    },
+    "push": {
+      "noDistributorApp": "Push uygulaması açılamıyor."
     }
   },
   "browse": {
@@ -2457,7 +2460,8 @@
         "pollingAndroid": "Etkin – uygulama yaklaşık 15 dakikada bir yeni bildirimlere bakar.",
         "pollingIos": "Etkin – iOS, uygulamanın arka planda ara sıra yeni bildirimlere bakmasına izin verir (Düşük Güç Modu'nda daha seyrek).",
         "error": "Bildirimler ayarlanamadı.",
-        "errorWith": "Bildirimler ayarlanamadı: {error}"
+        "errorWith": "Bildirimler ayarlanamadı: {error}",
+        "distributorInactive": "{name} henüz bağlı değil. Sunucusuna bağlanması için {name} uygulamasını bir kez aç – sonra her iki uygulama kapalıyken de bildirimler gelir."
       },
       "categoriesTitle": "Şunlar için bildir",
       "categories": {
@@ -2481,7 +2485,8 @@
       "lastSeen": "etkin {date}",
       "failing": "Son iletim başarısız oldu.",
       "remove": "Kaldır",
-      "noDevices": "Henüz hiçbir cihaz bildirim almıyor."
+      "noDevices": "Henüz hiçbir cihaz bildirim almıyor.",
+      "openDistributor": "{name} uygulamasını aç"
     }
   },
   "settingsShell": {

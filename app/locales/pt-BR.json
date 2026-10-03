@@ -923,6 +923,9 @@
       "commandDisabled": "Isso está desativado no launcher do PC.",
       "commandExpired": "O comando expirou.",
       "commandHandled": "O comando já foi processado."
+    },
+    "push": {
+      "noDistributorApp": "Não foi possível abrir o app de push."
     }
   },
   "browse": {
@@ -2457,7 +2460,8 @@
         "pollingAndroid": "Ativo – o app procura novos avisos a cada 15 minutos, mais ou menos.",
         "pollingIos": "Ativo – o iOS deixa o app procurar novos avisos em segundo plano de vez em quando (com menos frequência no Modo de Pouca Energia).",
         "error": "Não foi possível configurar as notificações.",
-        "errorWith": "Não foi possível configurar as notificações: {error}"
+        "errorWith": "Não foi possível configurar as notificações: {error}",
+        "distributorInactive": "O {name} ainda não está conectado. Abra o {name} uma vez para ele se conectar ao servidor – depois disso, as notificações chegam mesmo com os dois apps fechados."
       },
       "categoriesTitle": "Avisar sobre",
       "categories": {
@@ -2481,7 +2485,8 @@
       "lastSeen": "ativo {date}",
       "failing": "A última entrega falhou.",
       "remove": "Remover",
-      "noDevices": "Nenhum aparelho recebe notificações ainda."
+      "noDevices": "Nenhum aparelho recebe notificações ainda.",
+      "openDistributor": "Abrir {name}"
     }
   },
   "settingsShell": {

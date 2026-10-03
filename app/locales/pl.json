@@ -923,6 +923,9 @@
       "commandDisabled": "To jest wyłączone w launcherze na komputerze.",
       "commandExpired": "Polecenie wygasło.",
       "commandHandled": "Polecenie zostało już obsłużone."
+    },
+    "push": {
+      "noDistributorApp": "Nie można otworzyć aplikacji push."
     }
   },
   "browse": {
@@ -2457,7 +2460,8 @@
         "pollingAndroid": "Aktywne – aplikacja sprawdza nowe powiadomienia mniej więcej co 15 minut.",
         "pollingIos": "Aktywne – iOS co jakiś czas pozwala aplikacji sprawdzić nowe powiadomienia w tle (rzadziej w trybie niskiego zużycia energii).",
         "error": "Nie udało się skonfigurować powiadomień.",
-        "errorWith": "Nie udało się skonfigurować powiadomień: {error}"
+        "errorWith": "Nie udało się skonfigurować powiadomień: {error}",
+        "distributorInactive": "{name} nie jest jeszcze połączony. Otwórz {name} raz, aby połączył się ze swoim serwerem – potem powiadomienia dotrą nawet przy zamkniętych aplikacjach."
       },
       "categoriesTitle": "Powiadamiaj o",
       "categories": {
@@ -2481,7 +2485,8 @@
       "lastSeen": "aktywne {date}",
       "failing": "Ostatnie dostarczenie nie powiodło się.",
       "remove": "Usuń",
-      "noDevices": "Żadne urządzenie nie dostaje jeszcze powiadomień."
+      "noDevices": "Żadne urządzenie nie dostaje jeszcze powiadomień.",
+      "openDistributor": "Otwórz {name}"
     }
   },
   "settingsShell": {

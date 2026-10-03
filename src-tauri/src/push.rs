@@ -24,6 +24,9 @@ use crate::error::CommandResult;
 /// Kern und Datenordner für den Hintergrundabruf (ohne Tauri-Zustand).
 static LAUNCHER: OnceLock<LauncherState> = OnceLock::new();
 static ROOT: OnceLock<PathBuf> = OnceLock::new();
+/// Letzte Prüfung der Verteiler-Verbindung: (Adresse gehasht, Zeitpunkt, verbunden).
+#[cfg(mobile)]
+static PROBE: std::sync::Mutex<Option<(u64, std::time::Instant, bool)>> = std::sync::Mutex::new(None);
 
 /// Ein Verteiler für die Auswahl in den Einstellungen.
 #[derive(Debug, Clone, Serialize)]
@@ -49,7 +52,8 @@ pub struct PushStatus {
     pub supported: bool,
     pub settings: PushSettings,
     /// `unsupported` | `off` | `signedOut` | `permission` | `noDistributor` | `chooseDistributor` | `waiting` |
-    /// `registered` | `polling` | `error`
+    /// `distributorInactive` (angemeldet, aber die Verteiler-App ist noch nicht verbunden) | `registered` | `polling` |
+    /// `error`
     pub state: &'static str,
     /// Installierte UnifiedPush-Verteiler (Android).
     pub distributors: Vec<DistributorView>,
@@ -164,6 +168,53 @@ mod native {
         }
     }
 
+    /// Schon als Benachrichtigung gezeigte Ereignisse (Android: Plugin, iOS: abgeholte Hinweise im Kern).
+    pub(super) async fn shown_ids(app: &AppHandle, launcher: &LauncherState) -> Vec<String> {
+        if cfg!(target_os = "ios") {
+            return launcher.push_shown_ids().await;
+        }
+        let handle = app.clone();
+        match blocking(move || handle.trs_push().shown_ids()).await {
+            Some(Ok(ids)) => ids,
+            _ => Vec::new(),
+        }
+    }
+
+    /// Android: Verteiler-App öffnen.
+    pub(super) async fn open_distributor(app: &AppHandle) -> Result<(), String> {
+        let handle = app.clone();
+        blocking(move || handle.trs_push().open_distributor().map_err(|e| e.0)).await.unwrap_or_else(|| Err("internal".into()))
+    }
+
+    /// Nimmt der Push-Server Nachrichten für diese Adresse an? ntfy tut das erst, wenn seine App einmal offen war
+    /// und sich verbunden hat (sonst `507`). Geprüft mit einer kleinen Nachricht, die die App nicht entschlüsseln kann
+    /// und verwirft; Ergebnis je Adresse gemerkt, bei „nicht verbunden“ nach 15 s erneut.
+    async fn distributor_active(launcher: &LauncherState, endpoint: &str) -> bool {
+        use std::hash::{Hash, Hasher};
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        endpoint.hash(&mut hasher);
+        let key = hasher.finish();
+        if let Some((k, at, active)) = *PROBE.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+            && k == key
+            && (active || at.elapsed() < std::time::Duration::from_secs(15))
+        {
+            return active;
+        }
+        let response = launcher
+            .http()
+            .post(endpoint)
+            .header("Content-Type", "application/octet-stream")
+            .header("TTL", "0")
+            .body(vec![0u8; 16])
+            .timeout(std::time::Duration::from_secs(8))
+            .send()
+            .await;
+        // Nur ein eindeutiges „kein Empfänger“ zählt – Netzfehler oder andere Server blockieren nichts.
+        let active = !matches!(&response, Ok(r) if r.status().as_u16() == 507);
+        *PROBE.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some((key, std::time::Instant::now(), active));
+        active
+    }
+
     /// Abholen im Hintergrund planen bzw. abbestellen.
     async fn set_poll(app: &AppHandle, enabled: bool) {
         let root = ROOT.get().map(|r| r.display().to_string()).unwrap_or_default();
@@ -242,7 +293,9 @@ mod native {
                 status.device_id = r.device_id;
                 status.state = match (&transport, &status.device_id) {
                     (Some(Transport::Poll), Some(_)) => "polling",
-                    (Some(_), Some(_)) => "registered",
+                    (Some(Transport::UnifiedPush { endpoint, .. }), Some(_)) => {
+                        if distributor_active(launcher, endpoint).await { "registered" } else { "distributorInactive" }
+                    }
                     _ => why,
                 };
             }
@@ -298,6 +351,17 @@ pub async fn push_choose_distributor(app: AppHandle, launcher: State<'_, Launche
     Ok(sync(&app, &launcher, Options { ask_permission: true, distributor }).await)
 }
 
+/// Android: Verteiler-App (z. B. ntfy) öffnen – sie verbindet sich erst nach dem ersten Öffnen mit ihrem Server.
+#[tauri::command]
+pub async fn push_open_distributor(app: AppHandle) -> CommandResult<()> {
+    #[cfg(mobile)]
+    if native::open_distributor(&app).await.is_ok() {
+        return Ok(());
+    }
+    let _ = app;
+    Err(trs_core::Error::validation(trs_core::msg!("push.noDistributorApp", "Die Push-App lässt sich nicht öffnen.")).into())
+}
+
 /// Alle Geräte des Kontos (Einstellungen → Benachrichtigungen → Geräte).
 #[tauri::command]
 pub async fn push_devices(launcher: State<'_, LauncherState>) -> CommandResult<Vec<PushDevice>> {
@@ -333,12 +397,17 @@ async fn sync(app: &AppHandle, launcher: &LauncherState, opts: Options) -> PushS
 pub fn on_foreground(app: &AppHandle, foreground: bool) {
     let Some(launcher) = app.try_state::<LauncherState>().map(|s| s.inner().clone()) else { return };
     log::debug!("App {}", if foreground { "wieder vorn" } else { "im Hintergrund – Echtzeit-Kanal zu" });
-    launcher.trs_live_pause(!foreground);
     if !foreground {
+        launcher.trs_live_pause(true);
         return;
     }
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
+        // Was schon als System-Benachrichtigung kam, holt der Echtzeit-Kanal nur still nach (kein zweiter Hinweis) –
+        // deshalb erst danach wieder verbinden.
+        #[cfg(mobile)]
+        launcher.trs_live_mark_notified(native::shown_ids(&app, &launcher).await);
+        launcher.trs_live_pause(false);
         // Abholen: was im Hintergrund liegen blieb, sieht man jetzt in der App – nicht noch einmal melden.
         if launcher.push_polling().await
             && let Err(e) = launcher.push_poll().await

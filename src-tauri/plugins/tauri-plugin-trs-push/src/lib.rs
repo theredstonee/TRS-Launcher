@@ -144,6 +144,30 @@ impl<R: Runtime> TrsPush<R> {
         }
     }
 
+    /// Android: IDs der zuletzt als Benachrichtigung gezeigten Ereignisse (für den Echtzeit-Kanal).
+    pub fn shown_ids(&self) -> Result<Vec<String>> {
+        #[derive(Deserialize)]
+        struct Ids {
+            #[serde(default)]
+            ids: Vec<String>,
+        }
+        #[cfg(mobile)]
+        return self.mobile.call::<Ids, _>("shownIds", ()).map(|r| r.ids.into_iter().take(200).collect());
+        #[cfg(not(mobile))]
+        {
+            let _ = Ids { ids: Vec::new() }.ids;
+            Err(Error("unsupported".into()))
+        }
+    }
+
+    /// Android: die Verteiler-App öffnen (ntfy verbindet sich erst nach dem ersten Öffnen).
+    pub fn open_distributor(&self) -> Result<()> {
+        #[cfg(mobile)]
+        return self.mobile.call::<serde_json::Value, _>("openDistributor", ()).map(|_| ());
+        #[cfg(not(mobile))]
+        Err(Error("unsupported".into()))
+    }
+
     /// iOS: Hintergrundabruf planen (`enabled`) oder abbestellen. Android macht das die App selbst.
     pub fn set_poll(&self, enabled: bool, root: &str) -> Result<()> {
         #[cfg(mobile)]

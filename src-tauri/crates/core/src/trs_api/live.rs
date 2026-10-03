@@ -77,6 +77,8 @@ impl LiveConfig {
 pub struct SseFrame {
     pub event: String,
     pub data: String,
+    /// `id:` beim Abschluss des Ereignisses (wie `lastEventId`).
+    pub id: Option<String>,
 }
 
 /// Zu große Zeile (Schutz vor endlosem Speicherverbrauch).
@@ -123,7 +125,7 @@ impl SseParser {
         if line.is_empty() {
             let event = self.event.take();
             if let Some(data) = self.data.take() {
-                out.push(SseFrame { event: event.unwrap_or_else(|| "message".into()), data });
+                out.push(SseFrame { event: event.unwrap_or_else(|| "message".into()), data, id: self.last_id.clone() });
             }
             return Ok(());
         }
@@ -645,7 +647,13 @@ pub struct LiveStatus {
 pub enum LiveOut {
     Status(LiveStatus),
     Event(LiveEvent),
+    /// Nachgeholtes Ereignis, das schon als System-Benachrichtigung (Push) zu sehen war: Zustand übernehmen,
+    /// aber keinen Hinweis in der App zeigen.
+    Notified(LiveEvent),
 }
+
+/// So viele schon per Push gezeigte Ereignisse merkt sich der Kanal höchstens.
+const MAX_NOTIFIED: usize = 500;
 
 pub type LiveSink = Arc<dyn Fn(LiveOut) + Send + Sync>;
 
@@ -655,6 +663,8 @@ struct Inner {
     last_ids: HashMap<String, String>,
     connected: HashSet<String>,
     sink: Option<LiveSink>,
+    /// IDs der Ereignisse, die schon als Push-Benachrichtigung kamen (§33.5 `id` = Ereignis-ID).
+    notified: HashSet<String>,
 }
 
 #[derive(Default)]
@@ -673,6 +683,21 @@ impl LiveState {
     /// Schleife wecken (Account-Wechsel, Einwilligung, „jetzt neu verbinden“).
     pub fn kick(&self) {
         self.notify.notify_one();
+    }
+
+    /// Diese Ereignisse kamen schon als Push-Benachrichtigung – nachgeholt nur still übernehmen.
+    pub fn mark_notified(&self, ids: impl IntoIterator<Item = String>) {
+        let mut inner = self.inner();
+        for id in ids.into_iter().filter(|id| valid_event_id(id)) {
+            if inner.notified.len() >= MAX_NOTIFIED {
+                inner.notified.clear();
+            }
+            inner.notified.insert(id);
+        }
+    }
+
+    fn take_notified(&self, id: Option<&str>) -> bool {
+        id.is_some_and(|id| self.inner().notified.remove(id))
     }
 
     /// App im Hintergrund (`true`) bzw. wieder vorn (`false`).
@@ -907,7 +932,11 @@ impl TrsApi {
                             if let LiveEvent::EventsChanged { events } = &event {
                                 self.set_active_events(events);
                             }
-                            self.live.emit(LiveOut::Event(event));
+                            if self.live.take_notified(frame.id.as_deref()) {
+                                self.live.emit(LiveOut::Notified(event));
+                            } else {
+                                self.live.emit(LiveOut::Event(event));
+                            }
                         }
                     }
                 }
@@ -960,6 +989,11 @@ impl crate::Launcher {
     pub fn trs_live_pause(&self, paused: bool) {
         self.trs.live.set_paused(paused);
     }
+
+    /// Handy: Diese Ereignisse waren schon als Push-Benachrichtigung zu sehen (vor dem Wiederverbinden setzen).
+    pub fn trs_live_mark_notified(&self, ids: Vec<String>) {
+        self.trs.live.mark_notified(ids);
+    }
 }
 
 #[cfg(test)]
@@ -976,7 +1010,8 @@ mod tests {
             frames.extend(p.feed(chunk).unwrap());
         }
         assert_eq!(frames.len(), 3);
-        assert_eq!(frames[0], SseFrame { event: "hello".into(), data: "{\"type\":\"hello\"}".into() });
+        assert_eq!(frames[0], SseFrame { event: "hello".into(), data: "{\"type\":\"hello\"}".into(), id: Some("e.1".into()) });
+        assert_eq!(frames[1].id.as_deref(), Some("e.1"), "ohne eigene id gilt die letzte");
         assert_eq!(frames[1].event, "ping");
         assert_eq!(frames[2].data, "a\nb");
         assert_eq!(p.last_id.as_deref(), Some("e.2"));

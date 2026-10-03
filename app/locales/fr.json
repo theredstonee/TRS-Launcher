@@ -923,6 +923,9 @@
       "commandDisabled": "C’est désactivé dans le launcher du PC.",
       "commandExpired": "La commande a expiré.",
       "commandHandled": "La commande a déjà été traitée."
+    },
+    "push": {
+      "noDistributorApp": "Impossible d’ouvrir l’app push."
     }
   },
   "browse": {
@@ -2457,7 +2460,8 @@
         "pollingAndroid": "Actif – l’app vérifie les nouvelles notifications environ toutes les 15 minutes.",
         "pollingIos": "Actif – iOS laisse l’app vérifier de temps en temps les nouvelles notifications en arrière-plan (moins souvent en mode économie d’énergie).",
         "error": "Impossible de configurer les notifications.",
-        "errorWith": "Impossible de configurer les notifications : {error}"
+        "errorWith": "Impossible de configurer les notifications : {error}",
+        "distributorInactive": "{name} n’est pas encore connecté. Ouvre {name} une fois pour qu’il se connecte à son serveur – ensuite, les notifications arrivent même quand les deux apps sont fermées."
       },
       "categoriesTitle": "Me prévenir pour",
       "categories": {
@@ -2481,7 +2485,8 @@
       "lastSeen": "actif {date}",
       "failing": "La dernière livraison a échoué.",
       "remove": "Retirer",
-      "noDevices": "Aucun appareil ne reçoit encore de notifications."
+      "noDevices": "Aucun appareil ne reçoit encore de notifications.",
+      "openDistributor": "Ouvrir {name}"
     }
   },
   "settingsShell": {

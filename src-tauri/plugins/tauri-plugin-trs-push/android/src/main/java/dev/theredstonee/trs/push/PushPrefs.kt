@@ -52,6 +52,10 @@ object PushPrefs {
 
     fun failure(context: Context): String? = prefs(context).getString("failure", null)
 
+    /** Zuletzt gezeigte Hinweise (Ereignis-IDs, älteste zuerst). */
+    fun seenIds(context: Context): List<String> =
+        prefs(context).getString("seen", "")!!.split('\n').filter { it.isNotEmpty() }
+
     /** `true`, wenn [id] neu ist (und merkt sie sich) – doppelte Zustellung zeigt nichts zweimal. */
     @Synchronized
     fun firstTime(context: Context, id: String): Boolean {

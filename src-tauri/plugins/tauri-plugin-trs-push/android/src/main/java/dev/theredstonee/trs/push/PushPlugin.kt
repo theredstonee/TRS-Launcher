@@ -156,6 +156,30 @@ class PushPlugin(private val activity: Activity) : Plugin(activity) {
         invoke.resolve()
     }
 
+    /** Schon als Benachrichtigung gezeigte Ereignisse – die App holt sie im Echtzeit-Kanal still nach. */
+    @Command
+    fun shownIds(invoke: Invoke) {
+        val list = JSArray()
+        for (id in PushPrefs.seenIds(activity.applicationContext)) list.put(id)
+        val result = JSObject()
+        result.put("ids", list)
+        invoke.resolve(result)
+    }
+
+    /** Den gewählten Verteiler öffnen (ntfy verbindet sich erst nach dem ersten Öffnen mit seinem Server). */
+    @Command
+    fun openDistributor(invoke: Invoke) {
+        val ctx = activity.applicationContext
+        val pkg = UnifiedPushBridge.current(ctx) ?: UnifiedPushBridge.distributors(ctx).firstOrNull()?.get(0)
+        val intent = pkg?.let { ctx.packageManager.getLaunchIntentForPackage(it) }
+        if (intent == null) {
+            invoke.reject("no_distributor", "no_distributor")
+            return
+        }
+        activity.startActivity(intent)
+        invoke.resolve()
+    }
+
     /** Android: Das Abholen im Hintergrund plant die App (WorkManager im App-Modul). */
     @Command
     fun setPoll(invoke: Invoke) {

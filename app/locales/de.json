@@ -923,6 +923,9 @@
       "commandDisabled": "Das ist im Launcher am PC ausgeschaltet.",
       "commandExpired": "Der Befehl ist abgelaufen.",
       "commandHandled": "Der Befehl wurde schon bearbeitet."
+    },
+    "push": {
+      "noDistributorApp": "Die Push-App lässt sich nicht öffnen."
     }
   },
   "browse": {
@@ -2457,7 +2460,8 @@
         "pollingAndroid": "Aktiv – die App sieht etwa alle 15 Minuten nach neuen Hinweisen.",
         "pollingIos": "Aktiv – iOS lässt die App ab und zu im Hintergrund nach neuen Hinweisen sehen (im Stromsparmodus seltener).",
         "error": "Benachrichtigungen konnten nicht eingerichtet werden.",
-        "errorWith": "Benachrichtigungen konnten nicht eingerichtet werden: {error}"
+        "errorWith": "Benachrichtigungen konnten nicht eingerichtet werden: {error}",
+        "distributorInactive": "{name} ist noch nicht verbunden. Öffne {name} einmal, damit es sich mit seinem Server verbindet – danach kommen Benachrichtigungen auch bei geschlossenen Apps."
       },
       "categoriesTitle": "Benachrichtigen bei",
       "categories": {
@@ -2481,7 +2485,8 @@
       "lastSeen": "aktiv {date}",
       "failing": "Die letzte Zustellung ist fehlgeschlagen.",
       "remove": "Entfernen",
-      "noDevices": "Noch bekommt kein Gerät Benachrichtigungen."
+      "noDevices": "Noch bekommt kein Gerät Benachrichtigungen.",
+      "openDistributor": "{name} öffnen"
     }
   },
   "settingsShell": {

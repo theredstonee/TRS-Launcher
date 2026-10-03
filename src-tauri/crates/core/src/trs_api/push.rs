@@ -922,6 +922,13 @@ impl Launcher {
         self.trs.push_poll(self.accounts(), &account).await
     }
 
+    /// Abholen: zuletzt gemeldete Hinweise (zeigt die App als System-Benachrichtigung; nachgeholt im
+    /// Echtzeit-Kanal dann ohne Hinweis).
+    pub async fn push_shown_ids(&self) -> Vec<String> {
+        let Ok(account) = self.trs_account().await else { return Vec::new() };
+        self.trs.push.record(&account).await.map(|r| r.seen).unwrap_or_default()
+    }
+
     /// Gerät der Art `poll` angemeldet?
     pub async fn push_polling(&self) -> bool {
         let Ok(account) = self.trs_account().await else { return false };

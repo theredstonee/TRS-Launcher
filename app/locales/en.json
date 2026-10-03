@@ -923,6 +923,9 @@
       "commandDisabled": "This is switched off in the launcher on the PC.",
       "commandExpired": "The command expired.",
       "commandHandled": "The command was already handled."
+    },
+    "push": {
+      "noDistributorApp": "The push app can't be opened."
     }
   },
   "browse": {
@@ -2457,7 +2460,8 @@
         "pollingAndroid": "Active – the app checks for new notifications about every 15 minutes.",
         "pollingIos": "Active – iOS lets the app check for new notifications in the background now and then (less often in Low Power Mode).",
         "error": "Notifications couldn't be set up.",
-        "errorWith": "Notifications couldn't be set up: {error}"
+        "errorWith": "Notifications couldn't be set up: {error}",
+        "distributorInactive": "{name} isn't connected yet. Open {name} once so it connects to its server – after that, notifications arrive even when both apps are closed."
       },
       "categoriesTitle": "Notify me about",
       "categories": {
@@ -2481,7 +2485,8 @@
       "lastSeen": "active {date}",
       "failing": "The last delivery failed.",
       "remove": "Remove",
-      "noDevices": "No device gets notifications yet."
+      "noDevices": "No device gets notifications yet.",
+      "openDistributor": "Open {name}"
     }
   },
   "settingsShell": {

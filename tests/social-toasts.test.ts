@@ -120,6 +120,16 @@ describe('Benachrichtigungs-Store', () => {
     expect(await store.notify('message', { key: 'msg:z', title: 'Bob', body: 'hi', face: null, actions: [] })).toBe(false)
     expect(store.items).toHaveLength(0)
   })
+
+  it('nachgeholte Ereignisse, die schon als Push kamen, zeigen keinen Hinweis', async () => {
+    const store = useSocialToasts()
+    const shown = await store.quietly(() => store.notify('friendRequest', { key: 'fr:a', title: 'Alice', body: '', face: null, actions: [] }))
+    expect(shown).toBe(false)
+    expect(store.items).toHaveLength(0)
+    // Danach wieder normal.
+    expect(await store.notify('friendRequest', { key: 'fr:b', title: 'Bob', body: '', face: null, actions: [] })).toBe(true)
+    expect(playNotificationSound).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('Moderation (Admin)', () => {

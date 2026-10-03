@@ -187,6 +187,17 @@ pub fn run() {
             launcher.set_trs_live_sink(Arc::new(move |out| {
                 let result = match out {
                     trs_core::trs_api::live::LiveOut::Event(event) => handle.emit("trs-live", &event),
+                    // Schon als Push-Benachrichtigung gezeigt: Oberfläche übernimmt den Zustand ohne Hinweis.
+                    trs_core::trs_api::live::LiveOut::Notified(event) => match serde_json::to_value(&event) {
+                        Ok(mut value) => {
+                            value["quiet"] = serde_json::Value::Bool(true);
+                            handle.emit("trs-live", &value)
+                        }
+                        Err(e) => {
+                            log::warn!("trs-live nicht serialisierbar: {e}");
+                            Ok(())
+                        }
+                    },
                     trs_core::trs_api::live::LiveOut::Status(status) => handle.emit("trs-live-status", &status),
                 };
                 if let Err(e) = result {
@@ -383,6 +394,7 @@ pub fn run() {
             push::push_set_settings,
             push::push_choose_distributor,
             push::push_devices,
+            push::push_open_distributor,
             push::push_remove_device,
             commands::settings::get_settings,
             commands::settings::update_settings,

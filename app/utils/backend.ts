@@ -982,6 +982,8 @@ export const backend = {
     /** Android: Verteiler (Paketname) wählen oder `null` = ohne Verteiler abholen. */
     chooseDistributor: (distributor: string | null) => checked(pushStatusSchema, 'push_choose_distributor', { distributor }),
     devices: () => checked(z.array(pushDeviceSchema).max(50), 'push_devices'),
+    /** Android: Verteiler-App (ntfy …) öffnen – sie verbindet sich erst nach dem ersten Öffnen. */
+    openDistributor: () => call<void>('push_open_distributor'),
     removeDevice: (id: string) => checked(pushStatusSchema, 'push_remove_device', { id }),
     /** Route einer angetippten Benachrichtigung beim Start (einmalig abholen). */
     takePendingTarget: () => call<string | null>('take_pending_push_target'),

@@ -82,7 +82,11 @@ fn api(world: Arc<World>) -> impl Fn(&Request) -> Response + Send + Sync + 'stat
                 Response::json(200, json!({ "notifications": page, "cursor": cursor.to_string(), "more": newer.len() > 2 }))
             }
             ("POST", "/v1/auth/logout") => Response::empty(204),
-            ("GET", "/v1/events/me") => crate::trs_api::chat_tests::sse("id: e1.1\nevent: hello\ndata: {\"type\":\"hello\",\"resumed\":false}\n\n"),
+            ("GET", "/v1/events/me") => crate::trs_api::chat_tests::sse(concat!(
+                "id: e1.1\nevent: hello\ndata: {\"type\":\"hello\",\"resumed\":true}\n\n",
+                "id: e1.2\nevent: friend_request\ndata: {\"from\":{\"uuid\":\"b0b0b0b0b0b04b0b8b0b0b0b0b0b0b0b\",\"name\":\"Bob\"}}\n\n",
+                "id: e1.3\nevent: friend_request\ndata: {\"from\":{\"uuid\":\"c0c0c0c0c0c04c0c8c0c0c0c0c0c0c0c\",\"name\":\"Cid\"}}\n\n",
+            )),
             _ => Response::error(404, "not_found"),
         }
     }
@@ -378,4 +382,22 @@ async fn live_stream_names_the_push_device_and_pauses_in_the_background() {
     assert_eq!(&states[..2], ["off", "connecting"]);
     let streams = server.hits("GET", "/v1/events/me");
     assert_eq!(streams[0].path, format!("/v1/events/me?pushDevice={DEV}"));
+}
+
+#[tokio::test]
+async fn replayed_events_already_pushed_stay_quiet() {
+    use crate::trs_api::chat_tests::{collect, run_until, test_config};
+    use crate::trs_api::live::{LiveEvent, LiveOut};
+
+    let w = world();
+    let server = MockServer::start(api(Arc::clone(&w))).await;
+    let (_dir, launcher) = signed_in(&server).await;
+    let log = collect(&launcher);
+    // e1.2 kam schon als Push-Benachrichtigung, e1.3 nicht; Unsinn wird ignoriert.
+    launcher.trs_live_mark_notified(vec!["e1.2".into(), "kaputt id".into()]);
+    let events = || log.lock().unwrap().iter().filter(|o| !matches!(o, LiveOut::Status(_))).cloned().collect::<Vec<_>>();
+    run_until(&launcher, &test_config(), || events().len() >= 3).await;
+    let out = events();
+    assert!(matches!(&out[1], LiveOut::Notified(LiveEvent::FriendRequest { from }) if from.name == "Bob"), "{out:?}");
+    assert!(matches!(&out[2], LiveOut::Event(LiveEvent::FriendRequest { from }) if from.name == "Cid"), "{out:?}");
 }

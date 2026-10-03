@@ -74,6 +74,18 @@ async function remove(device: PushDevice) {
   }
 }
 
+/** Verteiler-App öffnen; zurück in der App prüft der Abgleich die Verbindung erneut (siehe unten). */
+function openDistributor() {
+  void backend.push.openDistributor().catch((e) => toasts.error(e))
+}
+
+/** Zurück aus ntfy & Co.: Stand neu holen (neue Adresse, Verbindung, Recht für Benachrichtigungen). */
+function onVisible() {
+  if (document.visibilityState === 'visible') void apply(() => backend.push.status())
+}
+onMounted(() => document.addEventListener('visibilitychange', onVisible))
+onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible))
+
 function open(url: string) {
   void backend.openExternalUrl(url).catch((e) => toasts.error(e))
 }
@@ -141,6 +153,16 @@ watch(
         <template v-else-if="status.state === 'waiting'">
           <p>{{ distributorName ? t('settings.push.state.waitingFor', { name: distributorName }) : t('settings.push.state.waiting') }}</p>
           <button type="button" class="btn btn-ghost mt-3 px-3 py-1.5 text-xs" :disabled="busy" @click="apply(() => backend.push.status())">{{ t('settings.push.retry') }}</button>
+        </template>
+
+        <template v-else-if="status.state === 'distributorInactive'">
+          <p>{{ t('settings.push.state.distributorInactive', { name: distributorName ?? 'ntfy' }) }}</p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <button type="button" class="btn btn-primary px-3 py-1.5 text-xs" data-testid="push-open-distributor" @click="openDistributor">
+              {{ t('settings.push.openDistributor', { name: distributorName ?? 'ntfy' }) }}
+            </button>
+            <button type="button" class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="busy" @click="apply(() => backend.push.status())">{{ t('settings.push.retry') }}</button>
+          </div>
         </template>
 
         <template v-else-if="status.state === 'registered'">

@@ -26,6 +26,7 @@ export const PUSH_STATES = [
   'noDistributor',
   'chooseDistributor',
   'waiting',
+  'distributorInactive',
   'registered',
   'polling',
   'error',

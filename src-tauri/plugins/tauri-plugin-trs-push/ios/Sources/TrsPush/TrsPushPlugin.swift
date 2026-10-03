@@ -32,14 +32,68 @@ class NotifyArgs: Decodable {
   let notifications: [PushNotification]
 }
 
+/// Tipp auf eine eigene Benachrichtigung → `trs-launcher://notify<route>` (die App öffnet die passende Seite, wie
+/// unter Android). Alles andere geht unverändert an den bisherigen Delegate (Notification-Plugin).
+class TapForwarder: NSObject, UNUserNotificationCenterDelegate {
+  static let targetKey = "trsPushTarget"
+  weak var previous: UNUserNotificationCenterDelegate?
+
+  func userNotificationCenter(
+    _ center: UNUserNotificationCenter, willPresent notification: UNNotification,
+    withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+  ) {
+    if let previous = previous,
+      previous.responds(to: #selector(UNUserNotificationCenterDelegate.userNotificationCenter(_:willPresent:withCompletionHandler:)))
+    {
+      previous.userNotificationCenter?(center, willPresent: notification, withCompletionHandler: completionHandler)
+      return
+    }
+    completionHandler([.banner, .sound])
+  }
+
+  func userNotificationCenter(
+    _ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
+    withCompletionHandler completionHandler: @escaping () -> Void
+  ) {
+    let info = response.notification.request.content.userInfo
+    if let target = info[TapForwarder.targetKey] as? String, target.hasPrefix("/"), target.count <= 300,
+      let url = URL(string: "trs-launcher://notify" + target)
+    {
+      // Die Route prüft die App beim Öffnen des Links noch einmal (deeplink.rs).
+      DispatchQueue.main.async { UIApplication.shared.open(url) }
+      completionHandler()
+      return
+    }
+    if let previous = previous,
+      previous.responds(to: #selector(UNUserNotificationCenterDelegate.userNotificationCenter(_:didReceive:withCompletionHandler:)))
+    {
+      previous.userNotificationCenter?(center, didReceive: response, withCompletionHandler: completionHandler)
+      return
+    }
+    completionHandler()
+  }
+}
+
 class TrsPushPlugin: Plugin {
   /// Muss in Info.plist unter BGTaskSchedulerPermittedIdentifiers stehen.
   static let taskId = "dev.theredstonee.trslauncher.push-poll"
   private static var registered = false
   private static var polling = false
+  /// Der Delegate des Benachrichtigungszentrums ist `weak` – hier festhalten.
+  private static var forwarder: TapForwarder?
 
   override func load(webview: WKWebView) {
     TrsPushPlugin.registerTask()
+    TrsPushPlugin.installTapForwarder()
+  }
+
+  static func installTapForwarder() {
+    if forwarder != nil { return }
+    let center = UNUserNotificationCenter.current()
+    let f = TapForwarder()
+    f.previous = center.delegate
+    forwarder = f
+    center.delegate = f
   }
 
   static func registerTask() {
@@ -96,7 +150,7 @@ class TrsPushPlugin: Plugin {
       content.body = String(n.body.prefix(200))
       content.sound = .default
       content.threadIdentifier = n.category
-      content.userInfo = ["target": n.target]
+      content.userInfo = [TapForwarder.targetKey: n.target]
       let request = UNNotificationRequest(identifier: n.collapse ?? n.id, content: content, trigger: nil)
       center.add(request, withCompletionHandler: nil)
     }
