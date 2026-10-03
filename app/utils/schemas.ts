@@ -116,6 +116,7 @@ export const updateInstanceSchema = z.object({
     syncSeparate: z.array(z.enum(syncItems)).max(syncItems.length),
     // Ändert der Kern nur über set_instance_shared_folder – hier nur durchgereicht.
     sharedFolders: z.array(z.enum(sharedFolderKinds)).max(sharedFolderKinds.length).default([]),
+    touchProfile: z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/).nullable().default(null),
   }),
 })
 

@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "id": "pvp",
+  "name": "PvP",
+  "profile": "pvp",
+  "builtinRev": 1,
+  "buttons": [
+    { "id": "move", "label": "WASD", "x": 0.03, "y": 0.5, "w": 0.19, "h": 0.4, "opacity": 0.55, "shape": "round", "action": { "type": "joystick", "mode": "wasd" } },
+    { "id": "sprint", "icon": "sprint", "label": "Sprint", "x": 0.235, "y": 0.52, "w": 0.06, "h": 0.12, "opacity": 0.6, "shape": "round", "action": { "type": "toggle", "key": 341 } },
+    { "id": "attack", "icon": "attack", "label": "Attack", "x": 0.8, "y": 0.38, "w": 0.1, "h": 0.2, "opacity": 0.7, "shape": "round", "action": { "type": "mouse", "button": 0 }, "passThrough": true },
+    { "id": "use", "icon": "use", "label": "Use", "x": 0.69, "y": 0.56, "w": 0.085, "h": 0.17, "opacity": 0.65, "shape": "round", "action": { "type": "mouse", "button": 1 }, "passThrough": true },
+    { "id": "jump", "icon": "jump", "label": "Jump", "x": 0.885, "y": 0.62, "w": 0.09, "h": 0.18, "opacity": 0.65, "shape": "round", "action": { "type": "key", "key": 32 } },
+    { "id": "sneak", "icon": "sneak", "label": "Sneak", "x": 0.8, "y": 0.68, "w": 0.07, "h": 0.14, "opacity": 0.6, "shape": "round", "action": { "type": "key", "key": 340 } },
+    { "id": "hotbar", "icon": "hotbar", "label": "Hotbar", "x": 0.3, "y": 0.88, "w": 0.4, "h": 0.12, "opacity": 0.15, "shape": "rect", "action": { "type": "special", "special": "hotbarSwipe" } },
+    { "id": "drop", "icon": "drop", "label": "Q", "x": 0.245, "y": 0.89, "w": 0.045, "h": 0.09, "opacity": 0.5, "shape": "rect", "action": { "type": "key", "key": 81 } },
+    { "id": "inventory", "icon": "inventory", "label": "E", "x": 0.71, "y": 0.88, "w": 0.05, "h": 0.1, "opacity": 0.6, "shape": "rect", "action": { "type": "key", "key": 69 }, "show": "always" },
+    { "id": "offhand", "icon": "swap", "label": "F", "x": 0.69, "y": 0.38, "w": 0.06, "h": 0.12, "opacity": 0.5, "shape": "round", "action": { "type": "key", "key": 70 } },
+    { "id": "chat", "icon": "chat", "label": "Chat", "x": 0.02, "y": 0.02, "w": 0.05, "h": 0.1, "opacity": 0.55, "shape": "rect", "action": { "type": "special", "special": "chat" } },
+    { "id": "keyboard", "icon": "keyboard", "label": "Keyboard", "x": 0.075, "y": 0.02, "w": 0.05, "h": 0.1, "opacity": 0.55, "shape": "rect", "action": { "type": "special", "special": "keyboard" } },
+    { "id": "menu", "icon": "menu", "label": "Menu", "x": 0.475, "y": 0.01, "w": 0.05, "h": 0.1, "opacity": 0.55, "shape": "rect", "action": { "type": "special", "special": "menu" } },
+    { "id": "perspective", "icon": "perspective", "label": "F5", "x": 0.82, "y": 0.02, "w": 0.05, "h": 0.1, "opacity": 0.5, "shape": "rect", "action": { "type": "key", "key": 294 } },
+    { "id": "emotes", "icon": "emote", "label": "Emotes", "x": 0.875, "y": 0.02, "w": 0.05, "h": 0.1, "opacity": 0.5, "shape": "rect", "action": { "type": "special", "special": "emoteWheel" } },
+    { "id": "trs", "icon": "trs", "label": "TRS", "x": 0.93, "y": 0.02, "w": 0.05, "h": 0.1, "opacity": 0.6, "shape": "rect", "action": { "type": "special", "special": "trsMenu" } }
+  ],
+  "gestures": { "tapAttack": true, "holdUse": true, "swipeHotbar": true, "cameraSensitivity": 1.0, "haptics": true }
+}

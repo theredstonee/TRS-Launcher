@@ -80,6 +80,8 @@ pub struct InstanceOverrides {
     /// [`InstanceStore::set_shared_folders`] – nie über das normale Speichern.
     #[serde(deserialize_with = "crate::shared_folders::lenient")]
     pub shared_folders: Vec<SharedFolder>,
+    /// Touch-Steuerung (mobile App): Layout-ID; `None` = PvP.
+    pub touch_profile: Option<String>,
 }
 
 /// Update-Kanal für Inhalte (Modrinth-Versionstypen).
@@ -147,6 +149,11 @@ impl InstanceOverrides {
         }
         if let Some(r) = &self.resolution {
             r.validate()?;
+        }
+        if let Some(id) = &self.touch_profile
+            && !crate::controls::is_valid_id(id)
+        {
+            return Err(Error::validation(crate::msg!("controls.notFound", "Dieses Layout gibt es nicht mehr.")));
         }
         Ok(())
     }
@@ -316,6 +323,20 @@ impl InstanceStore {
         let _guard = self.write_lock.lock().await;
         let mut instance = self.get(id).await?;
         instance.group = group;
+        fsutil::write_json(&self.paths.instance_file(id), &instance).await?;
+        Ok(instance)
+    }
+
+    /// Touch-Layout der Instanz (`None` = Standard). Ob es das Layout gibt,
+    /// prüft der Start (fehlt es, gilt PvP).
+    pub async fn set_touch_profile(&self, id: &str, profile: Option<&str>) -> Result<Instance> {
+        let profile = profile.map(str::trim).filter(|p| !p.is_empty());
+        if profile.is_some_and(|p| !crate::controls::is_valid_id(p)) {
+            return Err(Error::validation(crate::msg!("controls.notFound", "Dieses Layout gibt es nicht mehr.")));
+        }
+        let _guard = self.write_lock.lock().await;
+        let mut instance = self.get(id).await?;
+        instance.overrides.touch_profile = profile.map(str::to_owned);
         fsutil::write_json(&self.paths.instance_file(id), &instance).await?;
         Ok(instance)
     }
@@ -694,6 +715,12 @@ mod tests {
             ..Default::default()
         };
         assert!(store.update(&a.id, UpdateInstance { name: "x".into(), overrides: bad }).await.is_err());
+
+        // Touch-Layout: gesetzt, geprüft, wieder Standard.
+        let set = store.set_touch_profile(&a.id, Some("redstone")).await.unwrap();
+        assert_eq!(set.overrides.touch_profile.as_deref(), Some("redstone"));
+        assert!(store.set_touch_profile(&a.id, Some("../x")).await.is_err());
+        assert_eq!(store.set_touch_profile(&a.id, Some(" ")).await.unwrap().overrides.touch_profile, None);
     }
 
     #[test]

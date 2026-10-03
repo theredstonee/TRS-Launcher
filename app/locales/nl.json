@@ -891,6 +891,18 @@
       "engineMissing": "Deze versie van de app bevat de game-engine niet.",
       "notEnoughMemory": "Er is niet genoeg geheugen voor het spel. Sluit andere apps of verlaag het geheugen in de instellingen van de instantie.",
       "restartRequired": "Het spel draaide al in deze sessie. Sluit de app volledig en open hem opnieuw."
+    },
+    "controls": {
+      "invalidLayout": "De indeling is ongeldig ({reason}).",
+      "notFound": "Deze indeling bestaat niet meer.",
+      "builtinReadOnly": "Ingebouwde indelingen kun je niet verwijderen – alleen herstellen.",
+      "tooMany": "Meer dan {max} eigen indelingen worden niet ondersteund.",
+      "invalidCode": "Dit is geen geldige bedieningscode.",
+      "invalidFile": "Dit is geen geldig bedieningsbestand.",
+      "tooLarge": "Het bedieningsbestand is te groot.",
+      "newerVersion": "Deze indeling komt uit een nieuwere launcherversie.",
+      "nameLength": "De naam moet tussen 1 en {max} tekens lang zijn.",
+      "buttonCount": "Een indeling heeft 1 tot {max} knoppen nodig."
     }
   },
   "browse": {
@@ -2723,7 +2735,8 @@
     "social": "Sociaal",
     "socialBadge": "{messages} ongelezen · {requests} verzoeken",
     "achievements": "Prestaties",
-    "localServers": "Mijn servers"
+    "localServers": "Mijn servers",
+    "controls": "Bediening"
   },
   "accountMenu": {
     "menuLabel": "Accounts",
@@ -6092,6 +6105,139 @@
     },
     "browse": {
       "showResults": "{count} resultaat tonen | {count} resultaten tonen"
+    }
+  },
+  "controls": {
+    "builtin": {
+      "pvp": "PvP",
+      "build": "Bouwen",
+      "redstone": "Redstone",
+      "pvpHint": "Grote aanval- en gebruikknoppen, sprinten vastzetten, tikken om te slaan.",
+      "buildHint": "Tikken plaatst, vasthouden breekt, omhoog/omlaag vliegen, blok kiezen.",
+      "redstoneHint": "Sluipend plaatsen, F3-sneltoetsen en de TRS-signaallaag (F6/F8)."
+    },
+    "keys": {
+      "space": "Spatie",
+      "escape": "Esc",
+      "enter": "Enter",
+      "tab": "Tab",
+      "backspace": "Backspace",
+      "right": "Pijl rechts",
+      "left": "Pijl links",
+      "down": "Pijl omlaag",
+      "up": "Pijl omhoog",
+      "leftShift": "Linker Shift",
+      "leftCtrl": "Linker Ctrl",
+      "leftAlt": "Linker Alt",
+      "rightShift": "Rechter Shift",
+      "rightCtrl": "Rechter Ctrl",
+      "rightAlt": "Rechter Alt"
+    },
+    "mouse": {
+      "left": "Linkerklik",
+      "right": "Rechterklik",
+      "middle": "Middelklik",
+      "other": "Muisknop {n}"
+    },
+    "special": {
+      "keyboard": "Toetsenbord",
+      "menu": "Pauzemenu",
+      "trsMenu": "TRS-menu",
+      "emoteWheel": "Emote-wiel",
+      "chat": "Chat",
+      "hotbarSwipe": "Hotbar (tikken/vegen)",
+      "scrollUp": "Vorig vak",
+      "scrollDown": "Volgend vak"
+    },
+    "action": {
+      "toggleOf": "{key} (vast)",
+      "joystickMove": "Loopstick",
+      "joystickCamera": "Camerastick",
+      "types": {
+        "key": "Toets",
+        "mouse": "Muisknop",
+        "toggle": "Toets vastzetten",
+        "joystick": "Joystick",
+        "special": "Speciaal"
+      }
+    },
+    "page": {
+      "title": "Touchbediening",
+      "subtitle": "Knopindelingen voor de mobiele TRS-app – hier of in het spel bewerken",
+      "importCode": "Code plakken",
+      "importFile": "Bestand importeren",
+      "edit": "Bewerken",
+      "editNamed": "{name} bewerken",
+      "duplicate": "Dupliceren",
+      "copyName": "{name} (kopie)",
+      "shareCode": "Code delen",
+      "exportFile": "Opslaan als bestand",
+      "reset": "Herstellen",
+      "resetConfirm": "Echt herstellen?",
+      "deleteConfirm": "Echt verwijderen?",
+      "modified": "Gewijzigd",
+      "buttons": "{n} knop | {n} knoppen",
+      "saved": "‘{name}’ opgeslagen",
+      "deleted": "‘{name}’ verwijderd",
+      "resetDone": "‘{name}’ hersteld",
+      "imported": "‘{name}’ geïmporteerd",
+      "exported": "‘{name}’ als bestand opgeslagen",
+      "codeCopied": "Code gekopieerd"
+    },
+    "instances": {
+      "title": "Per instantie",
+      "hint": "Met welke indeling een instantie start op je telefoon of tablet.",
+      "default": "Standaard ({name})",
+      "none": "Nog geen instanties.",
+      "selectFor": "Touchindeling voor {name}"
+    },
+    "code": {
+      "title": "Code delen",
+      "hint": "Stuur deze code van ‘{name}’ naar een vriend – die voegt hem toe met ‘Code plakken’.",
+      "importTitle": "Code plakken",
+      "importHint": "Plak een code voor touchbediening (begint met TRSC1-)."
+    },
+    "editor": {
+      "title": "‘{name}’ bewerken",
+      "name": "Naam",
+      "add": "Knop",
+      "remove": "Verwijderen",
+      "button": "Gekozen knop",
+      "grid": "Raster",
+      "notch": "Notch",
+      "discard": "Wijzigingen weggooien?",
+      "selectHint": "Tik op een knop om hem te wijzigen. Sleep om te verplaatsen, de rode hoek wijzigt de grootte. Pijltjestoetsen schuiven precies.",
+      "actionType": "Actie",
+      "key": "Toets",
+      "chord": "Eerst vasthouden",
+      "chordNone": "Niets",
+      "mouseButton": "Muisknop",
+      "mode": "Modus",
+      "special": "Functie",
+      "label": "Opschrift",
+      "labelFromAction": "Uit actie",
+      "icon": "Symbool",
+      "noIcon": "Alleen tekst",
+      "round": "Rond",
+      "rect": "Vierkant",
+      "opacity": "Dekking",
+      "toggle": "Vastzetten (tik aan, tik uit)",
+      "passThrough": "Vinger draait ook de camera",
+      "show": "Zichtbaar",
+      "showAutoIs": "Automatisch ({mode})",
+      "showGame": "In het spel",
+      "showMenu": "In menu’s",
+      "showAlways": "Altijd",
+      "gestures": "Gebaren",
+      "tapAttack": "Tikken valt aan",
+      "tapAttackHint": "Uit: tikken plaatst of gebruikt",
+      "holdUse": "Vasthouden gebruikt",
+      "holdUseHint": "Uit: vasthouden breekt blokken",
+      "swipeHotbar": "Over de hotbar vegen",
+      "haptics": "Trillen bij indrukken",
+      "sensitivity": "Camerasnelheid",
+      "invalid": "De indeling kan niet worden opgeslagen: {reason}",
+      "maxButtons": "Hoogstens {max} knoppen"
     }
   }
 }

@@ -85,6 +85,8 @@ export const icons = {
   trophy: 'M8 4h8v6a4 4 0 0 1-8 0zM8 6H4.5v1.5A3.5 3.5 0 0 0 8 11M16 6h3.5v1.5A3.5 3.5 0 0 1 16 11M12 14v4M8.5 21h7M9.5 18h5v3h-5z',
   /** Big-Picture-Modus: Controller. */
   gamepad: 'M7 7h10a5 5 0 0 1 4.9 6l-.6 3.2a2.6 2.6 0 0 1-4.6 1.1L15 15H9l-1.7 2.3a2.6 2.6 0 0 1-4.6-1.1L2.1 13A5 5 0 0 1 7 7zM7.5 10v4M5.5 12h4M15.5 11h.01M18 13h.01',
+  /** Touch-Steuerung: Handy quer mit Stick und Knöpfen. */
+  touch: 'M3 6h18a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zM7 10v4M5 12h4M16 11h.01M18 13h.01',
 } as const
 
 export type IconName = keyof typeof icons

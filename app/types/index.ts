@@ -37,6 +37,8 @@ export interface InstanceOverrides {
   syncSeparate: SyncItem[]
   /** Ordner, die diese Instanz per Link mit anderen teilt (nur über `setInstanceSharedFolder` änderbar). */
   sharedFolders: SharedFolder[]
+  /** Touch-Layout der mobilen App; null/fehlt = Standard (PvP) */
+  touchProfile?: string | null
 }
 
 /** Gemeinsame Ordner zwischen Instanzen (Rust: `shared_folders::SharedFolder`). */

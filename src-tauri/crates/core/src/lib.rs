@@ -13,6 +13,7 @@ pub mod client_mod_update;
 pub mod bisect;
 pub mod content;
 pub mod content_groups;
+pub mod controls;
 pub mod crash;
 pub mod data_location;
 pub mod duplicates;

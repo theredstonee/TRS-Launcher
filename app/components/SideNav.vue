@@ -17,6 +17,8 @@ interface NavItem {
   clipsOnly?: boolean
   /** Nur, wenn es lokale Server gibt. */
   localServers?: boolean
+  /** Nur in der mobilen App (und beim Entwickeln). */
+  touchOnly?: boolean
 }
 
 const items: NavItem[] = [
@@ -30,6 +32,7 @@ const items: NavItem[] = [
   { to: '/clips', label: 'nav.clips', icon: 'clips', optional: true, clipsOnly: true },
   { to: '/skins', label: 'nav.skins', icon: 'skins', optional: true },
   { to: '/social', label: 'nav.social', icon: 'chat' },
+  { to: '/controls', label: 'nav.controls', icon: 'touch', touchOnly: true },
   { to: '/admin', label: 'nav.admin', icon: 'admin', admin: true },
 ]
 
@@ -64,7 +67,9 @@ const visibleItems = computed(() =>
       // Clips (Spielaufnahme) gibt es vorerst nur unter Windows.
       (!item.clipsOnly || platformCaps.value.clips) &&
       // Lokale Server erst, wenn es einen gibt (Server-Export „lokal anlegen“).
-      (!item.localServers || localServers.items.length > 0),
+      (!item.localServers || localServers.items.length > 0) &&
+      // Touch-Steuerung braucht die mobile App; beim Entwickeln zum Testen sichtbar.
+      (!item.touchOnly || isTouchApp() || import.meta.dev),
   ),
 )
 

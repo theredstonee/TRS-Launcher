@@ -51,6 +51,11 @@ pub enum DialogText {
     SaveServer,
     /// Filtername für `.zip`.
     ZipArchive,
+    /// Touch-Steuerung als Datei speichern.
+    SaveControls,
+    PickControls,
+    /// Filtername für Steuerungs-Dateien.
+    ControlsFile,
 }
 
 impl DialogText {
@@ -62,7 +67,7 @@ impl DialogText {
 
 /// Je Text eine Zeile in der Reihenfolge von [`Language::ALL`]:
 /// en, de, es, fr, pl, pt-BR, tr, nl.
-const TEXTS: [[&str; 8]; 27] = [
+const TEXTS: [[&str; 8]; 30] = [
     [
         "Save modpack",
         "Modpack speichern",
@@ -297,6 +302,36 @@ const TEXTS: [[&str; 8]; 27] = [
         "Server opslaan",
     ],
     ["ZIP archive", "ZIP-Archiv", "Archivo ZIP", "Archive ZIP", "Archiwum ZIP", "Arquivo ZIP", "ZIP arşivi", "ZIP-archief"],
+    [
+        "Save touch controls",
+        "Touch-Steuerung speichern",
+        "Guardar controles táctiles",
+        "Enregistrer les commandes tactiles",
+        "Zapisz sterowanie dotykowe",
+        "Salvar controles de toque",
+        "Dokunmatik kontrolleri kaydet",
+        "Touchbediening opslaan",
+    ],
+    [
+        "Choose a touch controls file",
+        "Steuerungs-Datei wählen",
+        "Elige un archivo de controles",
+        "Choisir un fichier de commandes",
+        "Wybierz plik sterowania",
+        "Escolher arquivo de controles",
+        "Kontrol dosyası seç",
+        "Bedieningsbestand kiezen",
+    ],
+    [
+        "TRS touch controls",
+        "TRS-Touch-Steuerung",
+        "Controles táctiles TRS",
+        "Commandes tactiles TRS",
+        "Sterowanie dotykowe TRS",
+        "Controles de toque TRS",
+        "TRS dokunmatik kontroller",
+        "TRS-touchbediening",
+    ],
 ];
 
 impl DialogText {
@@ -317,7 +352,7 @@ pub async fn language(launcher: &LauncherState) -> Language {
 mod tests {
     use super::*;
 
-    const ALL: [DialogText; 27] = [
+    const ALL: [DialogText; 30] = [
         DialogText::SaveModpack,
         DialogText::PickModpack,
         DialogText::ModrinthModpack,
@@ -345,6 +380,9 @@ mod tests {
         DialogText::PickTargetFolder,
         DialogText::SaveServer,
         DialogText::ZipArchive,
+        DialogText::SaveControls,
+        DialogText::PickControls,
+        DialogText::ControlsFile,
     ];
 
     #[test]

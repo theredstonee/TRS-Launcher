@@ -891,6 +891,18 @@
       "engineMissing": "Ta wersja aplikacji nie zawiera silnika gry.",
       "notEnoughMemory": "Za mało pamięci dla gry. Zamknij inne aplikacje lub zmniejsz pamięć w ustawieniach instancji.",
       "restartRequired": "Gra była już uruchomiona w tej sesji. Zamknij aplikację całkowicie i otwórz ją ponownie."
+    },
+    "controls": {
+      "invalidLayout": "Układ jest nieprawidłowy ({reason}).",
+      "notFound": "Ten układ już nie istnieje.",
+      "builtinReadOnly": "Wbudowanych układów nie można usunąć – tylko przywrócić.",
+      "tooMany": "Więcej niż {max} własnych układów nie jest obsługiwane.",
+      "invalidCode": "To nie jest prawidłowy kod sterowania.",
+      "invalidFile": "To nie jest prawidłowy plik sterowania.",
+      "tooLarge": "Plik sterowania jest za duży.",
+      "newerVersion": "Ten układ pochodzi z nowszej wersji launchera.",
+      "nameLength": "Nazwa musi mieć od 1 do {max} znaków.",
+      "buttonCount": "Układ potrzebuje od 1 do {max} przycisków."
     }
   },
   "browse": {
@@ -2723,7 +2735,8 @@
     "social": "Społeczność",
     "socialBadge": "{messages} nieprzeczytane · {requests} zaproszenia",
     "achievements": "Osiągnięcia",
-    "localServers": "Moje serwery"
+    "localServers": "Moje serwery",
+    "controls": "Sterowanie"
   },
   "accountMenu": {
     "menuLabel": "Konta",
@@ -6092,6 +6105,139 @@
     },
     "browse": {
       "showResults": "Pokaż {count} wynik | Pokaż {count} wyniki | Pokaż {count} wyników"
+    }
+  },
+  "controls": {
+    "builtin": {
+      "pvp": "PvP",
+      "build": "Budowanie",
+      "redstone": "Redstone",
+      "pvpHint": "Duże przyciski ataku i użycia, przełącznik sprintu, dotknięcie uderza.",
+      "buildHint": "Dotknięcie stawia, przytrzymanie niszczy, lot w górę/w dół, wybór bloku.",
+      "redstoneHint": "Stawianie z kucaniem, skróty F3 i nakładka sygnału TRS (F6/F8)."
+    },
+    "keys": {
+      "space": "Spacja",
+      "escape": "Esc",
+      "enter": "Enter",
+      "tab": "Tab",
+      "backspace": "Backspace",
+      "right": "Strzałka w prawo",
+      "left": "Strzałka w lewo",
+      "down": "Strzałka w dół",
+      "up": "Strzałka w górę",
+      "leftShift": "Lewy Shift",
+      "leftCtrl": "Lewy Ctrl",
+      "leftAlt": "Lewy Alt",
+      "rightShift": "Prawy Shift",
+      "rightCtrl": "Prawy Ctrl",
+      "rightAlt": "Prawy Alt"
+    },
+    "mouse": {
+      "left": "Lewy przycisk",
+      "right": "Prawy przycisk",
+      "middle": "Środkowy przycisk",
+      "other": "Przycisk myszy {n}"
+    },
+    "special": {
+      "keyboard": "Klawiatura",
+      "menu": "Menu pauzy",
+      "trsMenu": "Menu TRS",
+      "emoteWheel": "Koło emotek",
+      "chat": "Czat",
+      "hotbarSwipe": "Pasek szybkiego dostępu (dotknij/przesuń)",
+      "scrollUp": "Poprzedni slot",
+      "scrollDown": "Następny slot"
+    },
+    "action": {
+      "toggleOf": "{key} (przełącznik)",
+      "joystickMove": "Gałka ruchu",
+      "joystickCamera": "Gałka kamery",
+      "types": {
+        "key": "Klawisz",
+        "mouse": "Przycisk myszy",
+        "toggle": "Klawisz przełączany",
+        "joystick": "Joystick",
+        "special": "Specjalne"
+      }
+    },
+    "page": {
+      "title": "Sterowanie dotykowe",
+      "subtitle": "Układy przycisków dla mobilnej aplikacji TRS – edytuj je tutaj lub w grze",
+      "importCode": "Wklej kod",
+      "importFile": "Importuj plik",
+      "edit": "Edytuj",
+      "editNamed": "Edytuj {name}",
+      "duplicate": "Duplikuj",
+      "copyName": "{name} (kopia)",
+      "shareCode": "Udostępnij kod",
+      "exportFile": "Zapisz jako plik",
+      "reset": "Przywróć",
+      "resetConfirm": "Na pewno przywrócić?",
+      "deleteConfirm": "Na pewno usunąć?",
+      "modified": "Zmieniony",
+      "buttons": "{n} przycisk | {n} przyciski | {n} przycisków",
+      "saved": "Zapisano „{name}”",
+      "deleted": "Usunięto „{name}”",
+      "resetDone": "Przywrócono „{name}”",
+      "imported": "Zaimportowano „{name}”",
+      "exported": "Zapisano „{name}” jako plik",
+      "codeCopied": "Skopiowano kod"
+    },
+    "instances": {
+      "title": "Dla instancji",
+      "hint": "Z jakim układem instancja startuje na telefonie lub tablecie.",
+      "default": "Domyślny ({name})",
+      "none": "Nie ma jeszcze instancji.",
+      "selectFor": "Układ dotykowy dla {name}"
+    },
+    "code": {
+      "title": "Udostępnij kod",
+      "hint": "Wyślij ten kod układu „{name}” znajomym – dodadzą go przez „Wklej kod”.",
+      "importTitle": "Wklej kod",
+      "importHint": "Wklej kod sterowania dotykowego (zaczyna się od TRSC1-)."
+    },
+    "editor": {
+      "title": "Edytuj „{name}”",
+      "name": "Nazwa",
+      "add": "Przycisk",
+      "remove": "Usuń",
+      "button": "Wybrany przycisk",
+      "grid": "Siatka",
+      "notch": "Wcięcie",
+      "discard": "Odrzucić zmiany?",
+      "selectHint": "Dotknij przycisku, aby go zmienić. Przeciągnij, aby przesunąć, czerwony róg zmienia rozmiar. Strzałki przesuwają dokładnie.",
+      "actionType": "Akcja",
+      "key": "Klawisz",
+      "chord": "Najpierw przytrzymaj",
+      "chordNone": "Nic",
+      "mouseButton": "Przycisk myszy",
+      "mode": "Tryb",
+      "special": "Funkcja",
+      "label": "Etykieta",
+      "labelFromAction": "Z akcji",
+      "icon": "Ikona",
+      "noIcon": "Tylko tekst",
+      "round": "Okrągły",
+      "rect": "Kwadratowy",
+      "opacity": "Krycie",
+      "toggle": "Przełącznik (dotknij wł., dotknij wył.)",
+      "passThrough": "Palec obraca też kamerę",
+      "show": "Widoczny",
+      "showAutoIs": "Automatycznie ({mode})",
+      "showGame": "W grze",
+      "showMenu": "W menu",
+      "showAlways": "Zawsze",
+      "gestures": "Gesty",
+      "tapAttack": "Dotknięcie atakuje",
+      "tapAttackHint": "Wył.: dotknięcie stawia lub używa",
+      "holdUse": "Przytrzymanie używa",
+      "holdUseHint": "Wył.: przytrzymanie niszczy bloki",
+      "swipeHotbar": "Przesuwanie po pasku",
+      "haptics": "Wibracja przy naciśnięciu",
+      "sensitivity": "Szybkość kamery",
+      "invalid": "Nie można zapisać układu: {reason}",
+      "maxButtons": "Maksymalnie {max} przycisków"
     }
   }
 }

@@ -891,6 +891,18 @@
       "engineMissing": "Cette version de l'app ne contient pas le moteur de jeu.",
       "notEnoughMemory": "Pas assez de mémoire pour le jeu. Ferme d'autres apps ou réduis la mémoire dans les paramètres de l'instance.",
       "restartRequired": "Le jeu a déjà tourné pendant cette session. Ferme complètement l'app et rouvre-la."
+    },
+    "controls": {
+      "invalidLayout": "La disposition n’est pas valide ({reason}).",
+      "notFound": "Cette disposition n’existe plus.",
+      "builtinReadOnly": "Les dispositions intégrées ne peuvent pas être supprimées, seulement réinitialisées.",
+      "tooMany": "Plus de {max} dispositions personnelles ne sont pas prises en charge.",
+      "invalidCode": "Ce n’est pas un code de commandes valide.",
+      "invalidFile": "Ce n’est pas un fichier de commandes valide.",
+      "tooLarge": "Le fichier de commandes est trop volumineux.",
+      "newerVersion": "Cette disposition provient d’une version plus récente du launcher.",
+      "nameLength": "Le nom doit contenir entre 1 et {max} caractères.",
+      "buttonCount": "Une disposition a besoin de 1 à {max} boutons."
     }
   },
   "browse": {
@@ -2723,7 +2735,8 @@
     "social": "Social",
     "socialBadge": "{messages} non lus · {requests} demandes",
     "achievements": "Succès",
-    "localServers": "Mes serveurs"
+    "localServers": "Mes serveurs",
+    "controls": "Commandes"
   },
   "accountMenu": {
     "menuLabel": "Comptes",
@@ -6092,6 +6105,139 @@
     },
     "browse": {
       "showResults": "Afficher {count} résultat | Afficher {count} résultats"
+    }
+  },
+  "controls": {
+    "builtin": {
+      "pvp": "PvP",
+      "build": "Construction",
+      "redstone": "Redstone",
+      "pvpHint": "Grands boutons attaquer et utiliser, sprint verrouillable, toucher pour frapper.",
+      "buildHint": "Toucher pose, maintenir casse, voler haut/bas, choisir le bloc.",
+      "redstoneHint": "Poser accroupi, raccourcis F3 et la surcouche de signal TRS (F6/F8)."
+    },
+    "keys": {
+      "space": "Espace",
+      "escape": "Échap",
+      "enter": "Entrée",
+      "tab": "Tab",
+      "backspace": "Retour arrière",
+      "right": "Flèche droite",
+      "left": "Flèche gauche",
+      "down": "Flèche bas",
+      "up": "Flèche haut",
+      "leftShift": "Maj gauche",
+      "leftCtrl": "Ctrl gauche",
+      "leftAlt": "Alt gauche",
+      "rightShift": "Maj droite",
+      "rightCtrl": "Ctrl droite",
+      "rightAlt": "Alt Gr"
+    },
+    "mouse": {
+      "left": "Clic gauche",
+      "right": "Clic droit",
+      "middle": "Clic molette",
+      "other": "Bouton de souris {n}"
+    },
+    "special": {
+      "keyboard": "Clavier",
+      "menu": "Menu pause",
+      "trsMenu": "Menu TRS",
+      "emoteWheel": "Roue d’emotes",
+      "chat": "Chat",
+      "hotbarSwipe": "Barre d’action (toucher/glisser)",
+      "scrollUp": "Emplacement précédent",
+      "scrollDown": "Emplacement suivant"
+    },
+    "action": {
+      "toggleOf": "{key} (verrouillé)",
+      "joystickMove": "Stick de déplacement",
+      "joystickCamera": "Stick caméra",
+      "types": {
+        "key": "Touche",
+        "mouse": "Bouton de souris",
+        "toggle": "Touche verrouillable",
+        "joystick": "Joystick",
+        "special": "Spécial"
+      }
+    },
+    "page": {
+      "title": "Commandes tactiles",
+      "subtitle": "Dispositions de boutons pour l’app mobile TRS – à modifier ici ou en jeu",
+      "importCode": "Coller un code",
+      "importFile": "Importer un fichier",
+      "edit": "Modifier",
+      "editNamed": "Modifier {name}",
+      "duplicate": "Dupliquer",
+      "copyName": "{name} (copie)",
+      "shareCode": "Partager le code",
+      "exportFile": "Enregistrer comme fichier",
+      "reset": "Réinitialiser",
+      "resetConfirm": "Vraiment réinitialiser ?",
+      "deleteConfirm": "Vraiment supprimer ?",
+      "modified": "Modifiée",
+      "buttons": "{n} bouton | {n} boutons",
+      "saved": "« {name} » enregistrée",
+      "deleted": "« {name} » supprimée",
+      "resetDone": "« {name} » réinitialisée",
+      "imported": "« {name} » importée",
+      "exported": "« {name} » enregistrée comme fichier",
+      "codeCopied": "Code copié"
+    },
+    "instances": {
+      "title": "Par instance",
+      "hint": "La disposition avec laquelle une instance démarre sur ton téléphone ou ta tablette.",
+      "default": "Par défaut ({name})",
+      "none": "Pas encore d’instances.",
+      "selectFor": "Disposition tactile pour {name}"
+    },
+    "code": {
+      "title": "Partager le code",
+      "hint": "Envoie ce code de « {name} » à un ami – il peut l’ajouter avec « Coller un code ».",
+      "importTitle": "Coller un code",
+      "importHint": "Colle un code de commandes tactiles (il commence par TRSC1-)."
+    },
+    "editor": {
+      "title": "Modifier « {name} »",
+      "name": "Nom",
+      "add": "Bouton",
+      "remove": "Retirer",
+      "button": "Bouton sélectionné",
+      "grid": "Grille",
+      "notch": "Encoche",
+      "discard": "Abandonner les modifications ?",
+      "selectHint": "Touche un bouton pour le modifier. Glisse pour le déplacer, le coin rouge change la taille. Les flèches l’ajustent finement.",
+      "actionType": "Action",
+      "key": "Touche",
+      "chord": "Maintenir avant",
+      "chordNone": "Rien",
+      "mouseButton": "Bouton de souris",
+      "mode": "Mode",
+      "special": "Fonction",
+      "label": "Libellé",
+      "labelFromAction": "Depuis l’action",
+      "icon": "Icône",
+      "noIcon": "Texte seul",
+      "round": "Rond",
+      "rect": "Carré",
+      "opacity": "Opacité",
+      "toggle": "Verrouillable (toucher active, toucher désactive)",
+      "passThrough": "Le doigt tourne aussi la caméra",
+      "show": "Visible",
+      "showAutoIs": "Automatique ({mode})",
+      "showGame": "En jeu",
+      "showMenu": "Dans les menus",
+      "showAlways": "Toujours",
+      "gestures": "Gestes",
+      "tapAttack": "Toucher attaque",
+      "tapAttackHint": "Désactivé : toucher pose ou utilise",
+      "holdUse": "Maintenir utilise",
+      "holdUseHint": "Désactivé : maintenir casse les blocs",
+      "swipeHotbar": "Glisser sur la barre d’action",
+      "haptics": "Vibrer à l’appui",
+      "sensitivity": "Vitesse de la caméra",
+      "invalid": "Impossible d’enregistrer la disposition : {reason}",
+      "maxButtons": "{max} boutons au maximum"
     }
   }
 }
