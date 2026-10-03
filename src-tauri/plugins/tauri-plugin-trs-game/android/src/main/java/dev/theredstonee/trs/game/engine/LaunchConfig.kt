@@ -21,6 +21,8 @@ internal data class LaunchConfig(
     val memoryMb: Int,
     val extraEnv: Map<String, String>,
     val touchProfile: String?,
+    /** Ordner der Touch-Layouts (`<Launcher-Daten>/controls`). */
+    val controlsDir: String?,
     val trsClient: Boolean,
     /** LWJGL-Fork der Engine: `3.3.3` oder `3.4.1`. */
     val lwjgl: String,
@@ -44,6 +46,7 @@ internal data class LaunchConfig(
                 memoryMb = spec.optInt("memoryMb", 2048),
                 extraEnv = spec.optJSONObject("extraEnv").stringMap(),
                 touchProfile = spec.optString("touchProfile").takeIf { it.isNotEmpty() && it != "null" },
+                controlsDir = spec.optString("controlsDir").takeIf { it.isNotEmpty() && it != "null" },
                 trsClient = spec.optBoolean("trsClient", false),
                 lwjgl = json.optString("lwjgl", "3.3.3").takeIf { it == "3.4.1" } ?: "3.3.3",
                 lwjglx = json.optBoolean("lwjglx", false),

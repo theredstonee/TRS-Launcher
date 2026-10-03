@@ -17,7 +17,7 @@ import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import dev.theredstonee.trsgame.GameInput
+import dev.theredstonee.trs.game.engine.GameInput
 import java.io.File
 import java.util.Locale
 
@@ -36,6 +36,8 @@ interface OverlayHandle {
     val view: View
     /** Editor an/aus (Pause → „Steuerung bearbeiten“). */
     fun setEditing(editing: Boolean)
+    /** Editor geöffnet/geschlossen (auch über „Abbrechen“/„Speichern“ in der Werkzeugleiste). */
+    var onEditingChanged: ((Boolean) -> Unit)?
     /** Anderes Layout laden (z. B. nach Änderung im Launcher). */
     fun reload(profileId: String?)
     /** Engine meldet Controller-/Maus-/Tastatur-Eingabe → Overlay ausblenden. */
@@ -70,7 +72,8 @@ object TouchOverlay : OverlayProvider {
         private val context: Context = parent.context
         private val store = LayoutStore(config.controlsDir)
         private val touchView = TouchOverlayView(context, sink, store.load(config.profileId), config.insets)
-        private val toolbar = Toolbar(context, touchView, store)
+        override var onEditingChanged: ((Boolean) -> Unit)? = null
+        private val toolbar = Toolbar(context, touchView, store) { onEditingChanged?.invoke(false) }
         override val view: View = FrameLayout(context).apply {
             addView(touchView, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
             addView(toolbar.root, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP))
@@ -98,6 +101,7 @@ object TouchOverlay : OverlayProvider {
             if (editing) touchView.startEditing() else touchView.stopEditing()
             toolbar.root.visibility = if (editing) View.VISIBLE else View.GONE
             toolbar.refresh()
+            onEditingChanged?.invoke(editing)
         }
 
         override fun reload(profileId: String?) {
@@ -115,7 +119,12 @@ object TouchOverlay : OverlayProvider {
     }
 
     /** Werkzeugleiste des Editors im Spiel (oben, waagerecht scrollbar). */
-    private class Toolbar(private val context: Context, private val touchView: TouchOverlayView, private val store: LayoutStore) {
+    private class Toolbar(
+        private val context: Context,
+        private val touchView: TouchOverlayView,
+        private val store: LayoutStore,
+        private val onClosed: () -> Unit,
+    ) {
         private val lang = Locale.getDefault().toLanguageTag()
         private fun s(key: String) = OverlayStrings.get(key, lang)
         private val dp = context.resources.displayMetrics.density
@@ -211,6 +220,7 @@ object TouchOverlay : OverlayProvider {
         private fun close() {
             touchView.stopEditing()
             root.visibility = View.GONE
+            onClosed()
         }
 
         private fun save() {

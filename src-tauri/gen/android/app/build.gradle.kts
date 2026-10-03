@@ -23,6 +23,18 @@ android {
         targetSdk = 36
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
+        // Die Spiel-Engine (Plugin trs-game) gibt es nur für 64 Bit: Handys/Tablets (arm64) und Emulator (x86_64).
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
+    }
+    packaging {
+        jniLibs {
+            // Die Engine lädt JVM, Renderer und LWJGL als Dateien aus nativeLibraryDir – also entpackt installieren.
+            useLegacyPackaging = true
+            // 32-Bit-Teile (falls doch mitgebaut) weglassen: ohne Engine-Bibliotheken liefe dort kein Spiel.
+            excludes += listOf("**/armeabi-v7a/*.so", "**/x86/*.so")
+        }
     }
     buildTypes {
         getByName("debug") {

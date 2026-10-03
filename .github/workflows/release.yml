@@ -370,11 +370,11 @@ jobs:
       - name: Release notes from CHANGELOG.md
         run: node --experimental-strip-types scripts/changelog.mjs notes "${TAG#v}" > /dev/null
 
-      # Telefone (arm64, armv7) und Chromebooks/Emulatoren (x86_64) in einer APK.
+      # Telefone (arm64) und Chromebooks/Emulatoren (x86_64) in einer APK – die Spiel-Engine gibt es nur für 64 Bit.
       - name: Build release APK (unsigned)
         env:
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
-        run: pnpm tauri android build --apk --ci --target aarch64 --target armv7 --target x86_64
+        run: pnpm tauri android build --apk --ci --target aarch64 --target x86_64
 
       - name: Sign APK
         id: sign
@@ -457,11 +457,19 @@ jobs:
           path: out/
           if-no-files-found: error
 
+  # iOS-Spiel-Engine bauen und ins IPA packen (Artefakt „trs-launcher-ios“: TRS-Launcher.ipa + altstore-app.json).
+  ios-engine:
+    name: iOS engine
+    needs: ios
+    uses: ./.github/workflows/ios-engine.yml
+    with:
+      app-artifact: ios
+
   # Kanal "mobile": mobile.json (signiert wie client-mod.json) + AltStore-Quelle; APK/IPA zusätzlich am Versions-Release.
   # Wartet auf "publish", damit das Versions-Release schon existiert.
   mobile:
     name: Publish mobile
-    needs: [publish, android, ios]
+    needs: [publish, android, ios, ios-engine]
     if: needs.android.outputs.signed == 'true'
     runs-on: ubuntu-latest
     permissions:
@@ -493,9 +501,11 @@ jobs:
           set -euo pipefail
           version="${TAG#v}"
           node --experimental-strip-types scripts/changelog.mjs notes "$version" > release-notes.md
+          # IPA mit Spiel-Engine (ios-engine) statt der reinen App; Entitlements/Datenschutz für AltStore von dort.
+          cp artifacts/trs-launcher-ios/TRS-Launcher.ipa "artifacts/ios/TRS-Launcher_${version}.ipa"
           node scripts/mobile-channel.mjs --version "$version" --notes release-notes.md --repo "$GITHUB_REPOSITORY" \
             --apk "artifacts/android/TRS-Launcher_${version}.apk" --ipa "artifacts/ios/TRS-Launcher_${version}.ipa" \
-            --out out/mobile
+            --altstore-app artifacts/trs-launcher-ios/altstore-app.json --out out/mobile
           ls -la out/mobile
 
       - name: Publish to the mobile channel

@@ -198,6 +198,20 @@ pub fn run() {
             }));
             let launcher = Arc::new(launcher);
             app.manage(mobile::UpdateState::new(&launcher)?);
+            // Spiel-Engine: HTTP des Launchers (TLS, Proxy) für Runtime-Downloads, Zustand und
+            // Logs der Engine in den Spiele-Manager (game-event, Spielzeit, Logs).
+            #[cfg(mobile)]
+            {
+                use tauri_plugin_trs_game::TrsGameExt;
+                app.trs_game().set_http_client(launcher.http().clone());
+                mobile_game::forward_events(app.handle(), &launcher);
+                // iOS: Das Spielende beendet die App – Ende der letzten Sitzung nachtragen.
+                #[cfg(target_os = "ios")]
+                mobile_game::finish_last_session(app.handle(), &launcher);
+                // Android: Sitzungen eines beendeten Launcher-Prozesses kommen nicht zurück.
+                #[cfg(target_os = "android")]
+                drop(launcher.games().take_engine_records());
+            }
             // Desktop: Clips wieder aufnehmen, TRS-Client-Kanal prüfen, Präsenz senden.
             // Android/iOS: nichts davon (kein Spiel auf dem Gerät).
             #[cfg(desktop)]
@@ -351,6 +365,7 @@ pub fn run() {
             commands::relocate::forget_unavailable_instance,
             mobile::mobile_update_check,
             mobile::mobile_update_install,
+            mobile::mobile_exit_app,
             commands::settings::get_settings,
             commands::settings::update_settings,
             commands::instances::list_instances,

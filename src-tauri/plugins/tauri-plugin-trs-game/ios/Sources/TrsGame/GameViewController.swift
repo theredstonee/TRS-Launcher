@@ -21,6 +21,9 @@ struct LaunchRequest: Decodable {
   let metalLayer: Bool
   let waitForJit: Bool
   let jitHelp: String
+  /// Touch-Layout und sein Ordner (`<Launcher-Daten>/controls`), fehlt bei älteren Kernen.
+  let touchProfile: String?
+  let controlsDir: String?
 }
 
 /// Ereignis an Rust (src/ios/session.rs, `EngineEvent`).
@@ -64,7 +67,13 @@ final class GameSession {
 // C-Rückrufe der Engine (ohne Kontext, daher über GameSession.current).
 private let engineLogCallback: Engine.LogCallback = { line in
   guard let line = line else { return }
-  GameSession.current?.send(EngineEventOut(type: "log", line: String(cString: line)))
+  let text = String(cString: line)
+  GameSession.current?.send(EngineEventOut(type: "log", line: text))
+  // TRS Client im Touch-Modus wünscht die Tastatur (docs/touch-mode.md, Log-Zeile je Änderung).
+  if text.contains("[TRS-Touch] keyboard.show") || text.contains("[TRS-Touch] keyboard.hide") {
+    let show = text.contains("[TRS-Touch] keyboard.show")
+    DispatchQueue.main.async { GameViewController.current?.showKeyboard(show: show) }
+  }
 }
 
 private let engineExitCallback: Engine.CodeCallback = { code in
@@ -117,6 +126,8 @@ public final class GameViewController: UIViewController, GameInput {
   private var jitHelp: JitHelpView?
   private var started = false
   private var observers: [NSObjectProtocol] = []
+  /// Eingebaute Touch-Steuerung (ohne eigene `overlayFactory`).
+  private var touchOverlay: TouchOverlayHandle?
 
   init(engine: Engine, session: GameSession) {
     self.engine = engine
@@ -165,6 +176,12 @@ public final class GameViewController: UIViewController, GameInput {
       overlay.frame = view.bounds
       overlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
       view.addSubview(overlay)
+    } else {
+      // Touch-Steuerung (Sources/Overlay) mit dem Layout der Instanz.
+      let request = session.request
+      let dir = request.controlsDir.map { URL(fileURLWithPath: $0, isDirectory: true) }
+        ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("controls", isDirectory: true)
+      touchOverlay = TouchOverlay.shared.attach(to: view, input: self, config: TouchOverlayConfig(controlsDir: dir, profileId: request.touchProfile, insets: nil))
     }
 
     let center = NotificationCenter.default

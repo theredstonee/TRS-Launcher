@@ -228,8 +228,8 @@ class OverlayController(private val sink: InputSink, layout: Layout) {
             is Action.Fn -> when (a.special) {
                 Special.KEYBOARD -> setKeyboard(!keyboardShown)
                 Special.MENU -> held.keyDown(Glfw.KEY_ESCAPE)
-                Special.TRS_MENU -> held.keyDown(Glfw.KEY_RIGHT_SHIFT)
-                Special.EMOTE_WHEEL -> held.keyDown(Glfw.KEY_R)
+                Special.TRS_MENU -> held.keyDown(Glfw.KEY_F13)
+                Special.EMOTE_WHEEL -> held.keyDown(Glfw.KEY_F14)
                 Special.CHAT -> {
                     held.tapKey(Glfw.KEY_T)
                     setKeyboard(true)
@@ -248,8 +248,8 @@ class OverlayController(private val sink: InputSink, layout: Layout) {
             is Action.Key, is Action.Mouse -> releaseAction(button)
             is Action.Fn -> when (a.special) {
                 Special.MENU -> held.keyUp(Glfw.KEY_ESCAPE)
-                Special.TRS_MENU -> held.keyUp(Glfw.KEY_RIGHT_SHIFT)
-                Special.EMOTE_WHEEL -> held.keyUp(Glfw.KEY_R)
+                Special.TRS_MENU -> held.keyUp(Glfw.KEY_F13)
+                Special.EMOTE_WHEEL -> held.keyUp(Glfw.KEY_F14)
                 else -> {}
             }
             else -> {}

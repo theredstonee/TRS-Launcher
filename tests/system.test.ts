@@ -35,11 +35,11 @@ describe('Betriebssystem', () => {
         trash: false,
         clips: false,
         updates: 'mobile',
-        gameLaunch: false,
+        gameLaunch: true,
         java: false,
         windowControls: false,
         pushSupported: false,
-        gameEngine: false,
+        gameEngine: true,
         consoleSession: false,
       })
     }
@@ -50,7 +50,8 @@ describe('Betriebssystem', () => {
     expect(normalizeCapabilities({ platform: 'windows', firewall: true, trash: true, clips: true, updates: 'auto' })).toMatchObject({ gameLaunch: true, java: true, windowControls: true, pushSupported: false })
     // Handy-Kern meldet selbst – seine Werte gelten.
     expect(normalizeCapabilities({ platform: 'android', pushSupported: true }).pushSupported).toBe(true)
-    expect(normalizeCapabilities({ platform: 'android', pushSupported: true }).gameLaunch).toBe(false)
+    expect(normalizeCapabilities({ platform: 'android', pushSupported: true }).gameEngine).toBe(true)
+    expect(normalizeCapabilities({ platform: 'android', gameLaunch: false }).gameLaunch).toBe(false)
     expect(normalizeCapabilities({ platform: 'linux', clips: 'yes' as unknown as boolean }).clips).toBe(false)
     expect(normalizeCapabilities(null).platform).toBeTypeOf('string')
   })

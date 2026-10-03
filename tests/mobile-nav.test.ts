@@ -22,12 +22,16 @@ describe('Handy-Navigation', () => {
   })
 
   it('zeigt in „Mehr“ nur, was das Gerät kann – und nie den Team-Bereich', () => {
-    const phone = mobileMoreItems({ clips: false, gameLaunch: false })
+    const phone = mobileMoreItems({ clips: false, gameLaunch: true, gameEngine: true })
     expect(phone.some((i) => i.to === '/clips')).toBe(false)
     expect(phone.some((i) => i.to?.startsWith('/admin'))).toBe(false)
     expect(phone.some((i) => i.to === '/skins')).toBe(true)
     expect(phone.some((i) => i.action === 'settings')).toBe(true)
-    expect(mobileMoreItems({ clips: true, gameLaunch: true }).some((i) => i.to === '/clips')).toBe(true)
+    expect(mobileMoreItems({ clips: true, gameLaunch: true, gameEngine: false }).some((i) => i.to === '/clips')).toBe(true)
+    // Touch-Steuerung nur mit Spiel-Engine, die PC-Fernbedienung immer.
+    expect(phone.some((i) => i.to === '/controls')).toBe(true)
+    expect(phone.some((i) => i.to === '/pc')).toBe(true)
+    expect(mobileMoreItems({ clips: true, gameLaunch: true, gameEngine: false }).some((i) => i.to === '/controls')).toBe(false)
   })
 })
 

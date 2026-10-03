@@ -1,6 +1,7 @@
 // PC-Fernbedienung (API §33) – Schemata und reine Helfer, getestet in tests/remote.test.ts.
 // Keine Nuxt-Auto-Imports, damit die Tests sie direkt laden können.
 import { z } from 'zod'
+import { detectOs, isMobileOs } from './system'
 
 const deviceId = z.string().regex(/^[A-Za-z0-9_-]{22}$/)
 const instanceId = z.string().regex(/^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/)
@@ -20,9 +21,7 @@ export const REMOTE_DEBOUNCE_MS = 2_000
  * iPadOS meldet sich wie ein Mac, hat aber Touch.
  */
 export function detectRemoteRole(userAgent = globalThis.navigator?.userAgent ?? '', touchPoints = globalThis.navigator?.maxTouchPoints ?? 0): 'desktop' | 'phone' {
-  if (/Android|iPhone|iPad|iPod/i.test(userAgent)) return 'phone'
-  if (/Macintosh/i.test(userAgent) && touchPoints > 1) return 'phone'
-  return 'desktop'
+  return isMobileOs(detectOs(userAgent, touchPoints)) ? 'phone' : 'desktop'
 }
 
 export const statusInstanceSchema = z.object({

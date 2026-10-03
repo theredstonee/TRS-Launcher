@@ -28,6 +28,9 @@ object Glfw {
     const val KEY_S = 83
     const val KEY_D = 68
     const val KEY_ESCAPE = 256
+    // Feste Tasten des TRS Clients im Touch-Modus (docs/touch-mode.md): TRS-Menü, Emote-Rad.
+    const val KEY_F13 = 302
+    const val KEY_F14 = 303
     const val KEY_LEFT_SHIFT = 340
     const val KEY_LEFT_CONTROL = 341
     const val KEY_LEFT_ALT = 342

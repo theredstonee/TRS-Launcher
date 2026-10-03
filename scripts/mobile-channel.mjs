@@ -41,7 +41,7 @@ function fail(message) {
 }
 
 function parseArgs(argv) {
-  const args = { version: null, notes: null, apk: null, ipa: null, out: join(ROOT, 'out', 'mobile'), repo: 'theredstonee/TRS-Launcher', date: null }
+  const args = { version: null, notes: null, apk: null, ipa: null, altstoreApp: null, out: join(ROOT, 'out', 'mobile'), repo: 'theredstonee/TRS-Launcher', date: null }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     const value = () => argv[++i] ?? fail(`${a} braucht einen Wert`)
@@ -49,6 +49,8 @@ function parseArgs(argv) {
     else if (a === '--notes') args.notes = resolve(value())
     else if (a === '--apk') args.apk = resolve(value())
     else if (a === '--ipa') args.ipa = resolve(value())
+    // App-Eintrag aus ios-engine (altstore-entry.mjs): Entitlements und Datenschutz-Schlüssel der IPA.
+    else if (a === '--altstore-app') args.altstoreApp = resolve(value())
     else if (a === '--out') args.out = resolve(value())
     else if (a === '--repo') args.repo = value()
     else if (a === '--date') args.date = value()
@@ -123,11 +125,25 @@ function verifyLikeTheApp(data, sigFileContent) {
 
 // --- AltStore-/SideStore-Quelle (Source v2) ------------------------------------------------
 
+/** Entitlements/Datenschutz aus dem App-Eintrag von ios-engine – AltStore prüft, dass sie zur IPA passen. */
+function appPermissions(file) {
+  if (!file) return { entitlements: [], privacy: {} }
+  if (!existsSync(file)) fail(`${file} fehlt`)
+  const app = JSON.parse(readFileSync(file, 'utf8'))
+  const perms = app?.appPermissions ?? {}
+  const entitlements = Array.isArray(perms.entitlements) ? perms.entitlements.filter((e) => typeof e === 'string' && e.length <= 200) : []
+  const privacy = {}
+  for (const [key, value] of Object.entries(perms.privacy ?? {})) {
+    if (/^NS[A-Za-z]+UsageDescription$/.test(key) && typeof value === 'string') privacy[key] = value.slice(0, 500)
+  }
+  return { entitlements, privacy }
+}
+
 function altstoreSource(args, notes, pubDate, ios) {
   const raw = `https://raw.githubusercontent.com/${args.repo}/main/src-tauri/icons/ios/AppIcon-512@2x.png`
   const description =
-    'Companion app of the TRS Launcher: accounts, friends and chat, skins and capes, modpacks and news. ' +
-    'Minecraft itself still starts in the desktop version.'
+    'TRS Launcher for iPhone and iPad: Minecraft Java Edition with your instances, modpacks and the TRS Client – plus friends, chat and your wardrobe. ' +
+    'Playing needs JIT (SideStore + StikDebug, AltServer or TrollStore) and your own Minecraft account.'
   return {
     name: 'TRS Launcher',
     identifier: `${BUNDLE_ID}.source`,
@@ -160,10 +176,7 @@ function altstoreSource(args, notes, pubDate, ios) {
             minOSVersion: MIN_IOS,
           },
         ],
-        appPermissions: {
-          entitlements: [],
-          privacy: {},
-        },
+        appPermissions: appPermissions(args.altstoreApp),
       },
     ],
     news: [],

@@ -1,16 +1,17 @@
-# TRS Launcher for Android and iOS (companion app)
+# TRS Launcher for Android and iOS
 
-The launcher builds as a Tauri 2 mobile app. On the phone it is a **companion**: accounts (device-code login),
-friends and chat, skins and capes, modpacks/sharing, news. Minecraft itself does **not** start on the phone yet –
-a native game engine will come later as its own plugin.
+The launcher builds as a Tauri 2 mobile app: accounts (device-code login), friends and chat, skins and capes,
+modpacks/sharing, news – and Minecraft Java through the built-in game engine (plugin
+`src-tauri/plugins/tauri-plugin-trs-game`, Android: own process `:trsgame`; iOS: in the app process, sideload + JIT)
+with the touch overlay (`docs/touch-mode.md` for the TRS Client side).
 
 ## What the app reports (`app_info().capabilities`)
 
 | Field            | Desktop                        | Android / iOS                         |
 |------------------|--------------------------------|---------------------------------------|
 | `platform`       | `windows` / `linux` / `macos`  | `android` / `ios`                     |
-| `gameLaunch`     | `true`                         | `false` (until the engine plugin)     |
-| `gameEngine`     | `false`                        | `false` – hook for the engine plugin  |
+| `gameLaunch`     | `true`                         | `true` (through the game engine)      |
+| `gameEngine`     | `false`                        | `true`                                |
 | `java`           | `true`                         | `false`                               |
 | `clips`          | Windows only                   | `false`                               |
 | `firewall`       | Windows only                   | `false`                               |
@@ -19,8 +20,24 @@ a native game engine will come later as its own plugin.
 | `updates`        | `auto` / `package` / `flatpak` | `mobile`                              |
 | `pushSupported`  | `false`                        | `false` (no server push yet)          |
 
-Desktop-only commands (game launch, repair, Java, clips, firewall, TRS Client/FPS mode, hosting join) return the
-error kind `unsupported_on_mobile` (code `unsupportedOnMobile`) on the phone.
+Desktop-only commands (Java, repair, clips, firewall, TRS Client/FPS mode, hosting join, moving the data folder or
+an instance) return the error kind `unsupported_on_mobile` (code `unsupportedOnMobile`) on the phone.
+
+## Game start on the phone
+
+`launch_instance` → `mobile_game::launch`: the core prepares everything like on the desktop
+(`Launcher::prepare_mobile_launch` → `GameLaunchSpec` with `touchProfile` from `controls::resolve` and
+`controlsDir`), the plugin downloads the pinned Java runtime once and starts the engine. The session is then attached
+to the core's game manager (`GameManager::attach_engine`, PID 0): `trs-game://state` / `trs-game://log` become the
+normal `game-event`s (`started`, `logs`, `exited` with play time, crash diagnosis and crash helper), "Stop" ends the
+engine session. Only one game runs at a time. iOS ends the app with the game: the engine writes
+`Documents/trs-last-session.json`, and the next app start books the play time (`engine-sessions.json` remembers the
+running session).
+
+Touch overlay (Android): the engine loads the overlay named in the manifest meta-data
+`dev.theredstonee.trs.game.OVERLAY_PROVIDER` – the plugin registers `dev.theredstonee.trsgame.overlay.TouchOverlayProvider`
+(the built-in `FallbackOverlay` is only used if it is missing). In game menus the overlay shows "Edit controls". The
+TRS Client's keyboard requests come from `config/trsclient/touch-state.json` (polled) and its `[TRS-Touch]` log lines.
 
 Platform differences in the Rust core:
 
@@ -48,6 +65,17 @@ $env:JAVA_HOME    = "C:\Program Files\Android\Android Studio\jbr"
 pnpm tauri android build --apk --debug --target x86_64   # emulator
 pnpm tauri android build --apk --target aarch64           # phone (unsigned release)
 ```
+
+The game engine plugin needs NDK r27d (`ndk;27.3.13750724`) in addition and downloads its prebuilt parts
+(`android/prebuilt.lock`, SHA-256 pinned) on the first Gradle build. Only 64-bit ABIs are packaged (arm64-v8a,
+x86_64) and native libraries are installed extracted (`useLegacyPackaging`), because the engine loads them from
+`nativeLibraryDir`. The emulator needs `-gpu host` (SwiftShader crashes in the renderer's Vulkan probe).
+
+On Windows, `tauri android build` links the Rust library into `gen/android/app/src/main/jniLibs` with a symbolic
+link; without Developer Mode (or admin rights) that fails with "A required privilege is not held by the client".
+Either enable Developer Mode or copy the library yourself
+(`<target>/<triple>/debug/libtrs_launcher_lib.so` → `jniLibs/<abi>/`) and run `gradlew assembleX86_64Debug` in
+`src-tauri/gen/android`.
 
 The Gradle project is checked in under `src-tauri/gen/android` (minSdk 26). Our own Kotlin code lives there:
 `TrsMobilePlugin.kt` (APK installation via `PackageInstaller`). Permissions: `INTERNET`, `POST_NOTIFICATIONS`,

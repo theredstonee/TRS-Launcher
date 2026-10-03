@@ -18,6 +18,8 @@ const exportingServer = ref(false)
 // Handy: kein Hover – Menü als Bottom-Sheet (Tippen auf ⋮ oder lange drücken), Spielen nur mit Spielstart.
 const mobile = mobileUi
 const canLaunch = computed(() => platformCaps.value.gameLaunch)
+// „Nochmal starten“ braucht eigene Java-Prozesse – die Spiel-Engine am Handy hat nur einen.
+const canLaunchAgain = computed(() => platformCaps.value.gameLaunch && platformCaps.value.java)
 const longPress = useLongPress(() => (menu.value = 'main'))
 
 /** Modpack wird noch installiert (Instanz ist schon angelegt): Fortschritt statt „Spielen“. */
@@ -139,7 +141,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
           @close="menu = null"
         >
           <button v-if="canLaunch" class="menu-item" role="menuitem" :disabled="game.phase !== 'idle' || !!install" @click="menu = null; games.launch(instance.id)">{{ t('common.actions.play') }}</button>
-          <button v-if="canLaunch && game.phase === 'running'" class="menu-item" role="menuitem" :disabled="games.extraBusy.has(instance.id)" data-testid="card-play-again" @click="menu = null; games.extraPrompt = instance.id">{{ t('play.again.menu') }}</button>
+          <button v-if="canLaunchAgain && game.phase === 'running'" class="menu-item" role="menuitem" :disabled="games.extraBusy.has(instance.id)" data-testid="card-play-again" @click="menu = null; games.extraPrompt = instance.id">{{ t('play.again.menu') }}</button>
           <NuxtLink :to="{ path: `/instances/${instance.id}`, query: { settings: 'general' } }" class="menu-item" role="menuitem">{{ t('instanceCard.settings') }}</NuxtLink>
           <button class="menu-item justify-between" role="menuitem" @click="menu = 'groups'">
             {{ t('instanceCard.moveToGroup') }}

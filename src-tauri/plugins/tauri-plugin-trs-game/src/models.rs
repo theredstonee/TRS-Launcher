@@ -74,6 +74,9 @@ pub struct GameLaunchSpec {
     pub extra_env: BTreeMap<String, String>,
     #[serde(default)]
     pub touch_profile: Option<String>,
+    /// Ordner der Touch-Layouts (`<Launcher-Daten>/controls`), liest das Overlay im Spiel.
+    #[serde(default)]
+    pub controls_dir: Option<PathBuf>,
     #[serde(default)]
     pub trs_client: bool,
     /// Minecraft-Version (für `renderer: auto`).
@@ -106,7 +109,7 @@ impl GameLaunchSpec {
         if self.classpath.iter().any(|p| p.contains(':')) {
             return Err(Error::InvalidSpec("classpath"));
         }
-        for dir in [&self.game_dir, &self.assets_dir] {
+        for dir in [&self.game_dir, &self.assets_dir].into_iter().chain(self.controls_dir.as_ref()) {
             if !dir.is_absolute() {
                 return Err(Error::InvalidSpec("dirs"));
             }
@@ -323,6 +326,20 @@ mod tests {
         assert_eq!(json["renderer"], "auto");
         let back: GameLaunchSpec = serde_json::from_value(json).unwrap();
         assert_eq!(back, spec());
+    }
+
+    #[test]
+    fn controls_dir_must_be_absolute() {
+        let mut s = spec();
+        s.controls_dir = Some(abs("controls"));
+        assert!(s.validate().is_ok());
+        assert_eq!(serde_json::to_value(&s).unwrap()["controlsDir"], serde_json::json!(abs("controls")));
+        s.controls_dir = Some("controls".into());
+        assert!(s.validate().is_err());
+        // Ältere Kerne kennen das Feld nicht.
+        let mut json = serde_json::to_value(spec()).unwrap();
+        json.as_object_mut().unwrap().remove("controlsDir");
+        assert_eq!(serde_json::from_value::<GameLaunchSpec>(json).unwrap().controls_dir, None);
     }
 
     #[test]

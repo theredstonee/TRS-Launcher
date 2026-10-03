@@ -3,6 +3,7 @@
 // Keine Nuxt-Auto-Imports, damit die Tests die Datei direkt laden können.
 import { z } from 'zod'
 import { t, type MessageKey } from './i18n'
+import { detectOs, isMobileOs } from './system'
 
 export const LAYOUT_VERSION = 1
 export const MAX_BUTTONS = 48
@@ -454,7 +455,6 @@ export function layoutIssue(layout: unknown): string | null {
 
 /** Läuft der Launcher als mobile App (Android, iPhone, iPad)? */
 export function isTouchApp(userAgent = globalThis.navigator?.userAgent ?? '', touchPoints = globalThis.navigator?.maxTouchPoints ?? 0): boolean {
-  if (/Android|iPhone|iPad|iPod/i.test(userAgent)) return true
-  // iPadOS meldet sich als Mac – erkennbar an mehreren Touch-Punkten.
-  return /Macintosh/i.test(userAgent) && touchPoints > 1
+  // Gleiche Erkennung wie überall (iPadOS meldet sich als Mac – erkennbar an Touch-Punkten).
+  return isMobileOs(detectOs(userAgent, touchPoints))
 }

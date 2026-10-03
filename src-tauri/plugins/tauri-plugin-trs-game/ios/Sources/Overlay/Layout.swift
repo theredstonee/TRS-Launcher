@@ -27,6 +27,9 @@ enum TouchGlfw {
     static let keyT = 84
     static let keyW = 87
     static let keyEscape = 256
+    // Feste Tasten des TRS Clients im Touch-Modus (docs/touch-mode.md): TRS-Menü, Emote-Rad.
+    static let keyF13 = 302
+    static let keyF14 = 303
     static let keyLeftShift = 340
     static let keyLeftControl = 341
     static let keyLeftAlt = 342

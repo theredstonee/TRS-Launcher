@@ -45,7 +45,8 @@ pub enum DialogText {
     Mp4Video,
     /// Bilder für eine Chat-Nachricht wählen.
     PickChatImages,
-    /// Zielordner für den Datenordner bzw. eine Instanz (Umzug).
+    /// Zielordner für den Datenordner bzw. eine Instanz (Umzug; mobil gibt es keinen).
+    #[cfg_attr(mobile, allow(dead_code))]
     PickTargetFolder,
     /// Server-Export als ZIP speichern.
     SaveServer,

@@ -1,15 +1,25 @@
 //! Spielstart auf Android/iOS: Der Kern baut die Startbeschreibung, das Plugin
 //! `trs-game` startet die eingebettete JVM. Forge-/NeoForge-Processors laufen
-//! über dieselbe Engine (kopflose JVM in eigenem Prozess).
+//! über dieselbe Engine (kopflose JVM in eigenem Prozess). Zustand und Logs der
+//! Engine (`trs-game://state`/`trs-game://log`) landen im Spiele-Manager des
+//! Kerns – damit gibt es `game-event`, Laufzeit, Spielzeit und Logs wie am PC.
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
-use tauri::{AppHandle, Runtime};
-use tauri_plugin_trs_game::{JavaRunSpec, TrsGameExt};
+use tauri::{AppHandle, Listener, Runtime};
+use tauri_plugin_trs_game::{GameLogEvent, GameState, GameStateEvent, JavaRunSpec, TrsGameExt};
 use trs_core::Launcher;
 use trs_core::forge::{ProcessorCall, ProcessorOutput, ProcessorRunner};
-use trs_core::mobile_launch::engine_java;
+use trs_core::mobile_launch::{MobileLaunch, engine_java};
 use trs_core::prepare::ProgressFn;
+
+/// Start und Übernahme in den Spiele-Manager am Stück: Ereignisse der Engine warten,
+/// bis die Sitzung eingetragen ist (sonst gingen frühe Zeilen verloren).
+static ATTACH: Mutex<()> = Mutex::new(());
+
+fn attach_lock() -> std::sync::MutexGuard<'static, ()> {
+    ATTACH.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+}
 
 /// Plugin-Fehler → Launcher-Fehler mit Übersetzungs-Code (`errors.game.*`).
 pub fn engine_error(err: tauri_plugin_trs_game::Error) -> trs_core::Error {
@@ -22,6 +32,9 @@ pub fn engine_error(err: tauri_plugin_trs_game::Error) -> trs_core::Error {
         E::Download(_) => trs_core::msg!("game.runtimeDownloadFailed", "Java für das Spiel konnte nicht geladen werden. Bitte Internetverbindung prüfen."),
         E::Checksum | E::Archive(_) => trs_core::msg!("game.runtimeBroken", "Die geladene Java-Laufzeit ist beschädigt. Bitte erneut versuchen."),
         E::RuntimeMissing(_) => trs_core::msg!("game.runtimeMissing", "Java für das Spiel fehlt noch. Bitte erneut starten."),
+        E::EngineMissing => trs_core::msg!("game.engineMissing", "Diese Version der App enthält die Spiel-Engine nicht."),
+        E::RestartRequired => trs_core::msg!("game.restartRequired", "Bitte die App neu starten, um wieder zu spielen."),
+        E::NotEnoughMemory => trs_core::msg!("game.notEnoughMemory", "Zu wenig Arbeitsspeicher für das Spiel."),
         _ => trs_core::msg!("game.engineFailed", "Die Spiel-Engine konnte nicht gestartet werden."),
     };
     trs_core::Error::launch(msg)
@@ -58,8 +71,8 @@ mod futures_like {
     pub type BoxFuture<'a, T> = std::pin::Pin<Box<dyn std::future::Future<Output = T> + Send + 'a>>;
 }
 
-/// Vorbereiten + Runtime + Start. Rückgabe 0 (es gibt keine PID); Status und Logs
-/// kommen als `trs-game://state` / `trs-game://log`.
+/// Vorbereiten + Runtime + Start. Rückgabe 0 (es gibt keine PID im Launcher); das
+/// Spiel erscheint über `game-event` als laufend.
 pub async fn launch<R: Runtime>(
     app: &AppHandle<R>,
     launcher: &Arc<Launcher>,
@@ -70,7 +83,8 @@ pub async fn launch<R: Runtime>(
 ) -> trs_core::Result<u32> {
     let runner = EngineRunner { app: app.clone() };
     // Am Handy läuft immer nur ein Spiel – „noch einmal starten“ gibt es nicht.
-    let spec = launcher.prepare_mobile_launch(id, join, options.account_id.as_deref(), Some(&runner), on_progress).await?;
+    let MobileLaunch { spec, secrets } =
+        launcher.prepare_mobile_launch(id, join, options.account_id.as_deref(), Some(&runner), on_progress).await?;
     let engine = app.trs_game();
     engine.prepare_runtime(spec.java_major).await.map_err(engine_error)?;
     // Gleiche JSON-Form auf beiden Seiten (Vertrag GameLaunchSpec).
@@ -80,7 +94,73 @@ pub async fn launch<R: Runtime>(
             log::error!("Startbeschreibung passt nicht zum Plugin: {e}");
             trs_core::Error::launch(trs_core::msg!("game.engineFailed", "Die Spiel-Engine konnte nicht gestartet werden."))
         })?;
+    let _attach = attach_lock();
     let session = engine.launch(spec).map_err(engine_error)?;
     log::info!("Spiel gestartet (Sitzung {})", session.0);
+    let stop_app = app.clone();
+    let stop_session = session.clone();
+    let stop: trs_core::process::StopFn = Arc::new(move || match stop_app.trs_game().stop(&stop_session) {
+        Ok(()) => true,
+        Err(e) => {
+            log::warn!("Spiel konnte nicht beendet werden: {e}");
+            false
+        }
+    });
+    if let Err(e) = launcher.attach_engine_game(id, &session.0, secrets, stop.clone()) {
+        stop();
+        return Err(e);
+    }
     Ok(0)
+}
+
+/// `trs-game://state` und `trs-game://log` an den Spiele-Manager weiterreichen (einmal beim Start).
+pub fn forward_events<R: Runtime>(app: &AppHandle<R>, launcher: &Arc<Launcher>) {
+    let logs = Arc::clone(launcher);
+    app.listen(tauri_plugin_trs_game::EVENT_LOG, move |event| match serde_json::from_str::<GameLogEvent>(event.payload()) {
+        Ok(log) => {
+            let _attach = attach_lock();
+            logs.games().engine_logs(&log.session, &log.lines);
+        }
+        Err(e) => log::debug!("trs-game://log unlesbar: {e}"),
+    });
+    let states = Arc::clone(launcher);
+    app.listen(tauri_plugin_trs_game::EVENT_STATE, move |event| match serde_json::from_str::<GameStateEvent>(event.payload()) {
+        Ok(state) => {
+            let _attach = attach_lock();
+            apply_state(&states, state);
+        }
+        Err(e) => log::debug!("trs-game://state unlesbar: {e}"),
+    });
+}
+
+fn apply_state(launcher: &Arc<Launcher>, event: GameStateEvent) {
+    match event.state {
+        // Läuft schon seit `attach_engine_game` als gestartet.
+        GameState::Starting | GameState::Running => {}
+        GameState::Exited | GameState::Crashed => {
+            let crashed = event.state == GameState::Crashed;
+            launcher.games().engine_exited(&event.session, event.exit_code, crashed, &event.log_tail);
+        }
+    }
+}
+
+/// iOS: Das Spielende beendet die App. Die Engine schreibt das Ende nach
+/// `Documents/trs-last-session.json` – beim nächsten Start Spielzeit und Verlauf nachtragen.
+#[cfg(target_os = "ios")]
+pub fn finish_last_session<R: Runtime>(app: &AppHandle<R>, launcher: &Arc<Launcher>) {
+    use tauri::Manager;
+    use tauri_plugin_trs_game::ios::session::{LAST_SESSION_FILE, take_last_session};
+    let Ok(docs) = app.path().document_dir() else { return };
+    // Zeitpunkt des Endes: Die Engine schreibt die Datei beim Beenden.
+    let ended_at = std::fs::metadata(docs.join(LAST_SESSION_FILE))
+        .and_then(|m| m.modified())
+        .map(chrono::DateTime::<chrono::Utc>::from)
+        .unwrap_or_else(|_| chrono::Utc::now());
+    if let Some(event) = take_last_session(&docs) {
+        let crashed = event.state == GameState::Crashed;
+        launcher.engine_session_ended_offline(&event.session, ended_at, event.exit_code, crashed, &event.log_tail);
+    } else {
+        // Keine Endmeldung: übrig gebliebene Sitzungen vergessen.
+        let _ = launcher.games().take_engine_records();
+    }
 }

@@ -62,6 +62,13 @@ class TrsMobilePlugin(private val activity: Activity) : Plugin(activity) {
         }
     }
 
+    /** Zurück-Taste auf der Startseite: App schließen wie andere Android-Apps. */
+    @Command
+    fun exitApp(invoke: Invoke) {
+        invoke.resolve()
+        activity.runOnUiThread { activity.finish() }
+    }
+
     @Command
     fun installApk(invoke: Invoke) {
         try {

@@ -408,8 +408,8 @@ final class TouchOverlayController {
             switch s {
             case .keyboard: setKeyboard(!keyboardShown)
             case .menu: held.keyDown(TouchGlfw.keyEscape)
-            case .trsMenu: held.keyDown(TouchGlfw.keyRightShift)
-            case .emoteWheel: held.keyDown(TouchGlfw.keyR)
+            case .trsMenu: held.keyDown(TouchGlfw.keyF13)
+            case .emoteWheel: held.keyDown(TouchGlfw.keyF14)
             case .chat:
                 held.tapKey(TouchGlfw.keyT)
                 setKeyboard(true)
@@ -427,8 +427,8 @@ final class TouchOverlayController {
         switch b.action {
         case .key, .mouse: releaseAction(b)
         case .special(.menu): held.keyUp(TouchGlfw.keyEscape)
-        case .special(.trsMenu): held.keyUp(TouchGlfw.keyRightShift)
-        case .special(.emoteWheel): held.keyUp(TouchGlfw.keyR)
+        case .special(.trsMenu): held.keyUp(TouchGlfw.keyF13)
+        case .special(.emoteWheel): held.keyUp(TouchGlfw.keyF14)
         default: break
         }
     }

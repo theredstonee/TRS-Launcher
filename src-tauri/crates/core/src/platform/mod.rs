@@ -111,7 +111,7 @@ pub struct Capabilities {
     pub updates: &'static str,
     /// Steam Deck, SteamOS oder eine gamescope-Sitzung: Big-Picture-Modus startet von selbst.
     pub console_session: bool,
-    /// Minecraft starten (Desktop über Java).
+    /// Minecraft starten (Desktop über Java, mobil über die Spiel-Engine).
     pub game_launch: bool,
     /// Java suchen, installieren und wählen.
     pub java: bool,
@@ -119,7 +119,7 @@ pub struct Capabilities {
     pub window_controls: bool,
     /// Push-Benachrichtigungen des Systems (nur mobil, derzeit noch ohne Server-Anbindung).
     pub push_supported: bool,
-    /// Eingebaute Spiel-Engine als natives Plugin (mobil, folgt später).
+    /// Eingebaute Spiel-Engine als natives Plugin (Android/iOS).
     pub game_engine: bool,
 }
 
@@ -141,11 +141,12 @@ pub fn capabilities() -> Capabilities {
         clips: cfg!(windows),
         updates: update_mode(),
         console_session: console_session(),
-        game_launch: !MOBILE,
+        // Mobil startet das Spiel über die eingebaute Engine (Plugin `trs-game`).
+        game_launch: true,
         java: !MOBILE,
         window_controls: !MOBILE,
         push_supported: false,
-        game_engine: false,
+        game_engine: MOBILE,
     }
 }
 
@@ -258,12 +259,13 @@ MemFree: 1 kB"), Some(15931));
         if cfg!(windows) {
             assert!(!caps.console_session);
         }
-        // Vertrag mit dem Frontend (PlatformCapabilities): Desktop kann starten, mobil nicht.
+        // Vertrag mit dem Frontend (PlatformCapabilities): Desktop startet über Java, mobil über die Engine.
         let json = serde_json::to_value(caps).unwrap();
-        for key in ["gameLaunch", "java", "windowControls"] {
+        for key in ["java", "windowControls"] {
             assert_eq!(json[key], !MOBILE, "{key}");
         }
-        assert_eq!(json["gameEngine"], false);
+        assert_eq!(json["gameLaunch"], true);
+        assert_eq!(json["gameEngine"], MOBILE);
         assert_eq!(json["pushSupported"], false);
         assert!(desktop_only().is_ok());
     }

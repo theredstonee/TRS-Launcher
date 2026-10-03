@@ -50,7 +50,8 @@ export function appSettingsSectionsFor(caps: Pick<PlatformCapabilities, 'clips' 
     (s) =>
       (s.key !== 'clips' || caps.clips) &&
       (s.key !== 'java' || caps.java) &&
-      (s.key !== 'defaults' || caps.gameLaunch) &&
+      // Fenster, JVM, Hooks: nur mit eigenem Java (mobil setzt die Engine das selbst).
+      (s.key !== 'defaults' || (caps.gameLaunch && caps.java)) &&
       (s.key !== 'remote' || desktop),
   )
 }

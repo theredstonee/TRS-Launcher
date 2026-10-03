@@ -54,6 +54,7 @@ class GameActivity : Activity() {
     private var surface: Surface? = null
     private var insets = IntArray(4)
     private val main = Handler(Looper.getMainLooper())
+    private var touchState: TouchStateWatcher? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,7 +89,7 @@ class GameActivity : Activity() {
         root.addView(surfaceView, FrameLayout.LayoutParams(-1, -1))
         keyboardSink = KeyboardSink(this, input)
         root.addView(keyboardSink, FrameLayout.LayoutParams(1, 1))
-        overlayView = overlay.createOverlay(this, input, config.touchProfile)
+        overlayView = overlay.createOverlay(this, input, config.touchProfile, config.controlsDir?.let(::File))
         root.addView(overlayView, FrameLayout.LayoutParams(-1, -1))
         setContentView(root)
         hideSystemBars()
@@ -161,10 +162,21 @@ class GameActivity : Activity() {
         jvmStarted = true
         val logFile = File(cacheDir, "game-${config.session}.log").apply { writeText("") }
         Logger.begin(logFile.absolutePath)
-        Logger.addLogListener { chunk ->
-            for (line in chunk.split('\n')) if (line.isNotEmpty()) EngineEvents.log(line)
+        // TRS Client im Touch-Modus: Tastatur-Wunsch über Datei (Abfrage) und Log-Zeile.
+        val keyboard = { show: Boolean -> main.post { setKeyboard(show) } }
+        if (config.trsClient) {
+            touchState = TouchStateWatcher(File(config.gameDir), keyboard).also { it.start() }
         }
-        val window = JvmLauncher.Window(width, height, insets.copyOf())
+        Logger.addLogListener { chunk ->
+            for (line in chunk.split('\n')) {
+                if (line.isEmpty()) continue
+                EngineEvents.log(line)
+                TouchStateWatcher.fromLogLine(line)?.let(keyboard)
+            }
+        }
+        // `-Dtrs.safeInsets` zählt in Fensterpixeln des Spiels (Auflösung × Skalierung).
+        val scaled = IntArray(4) { i -> Math.round(insets[i] * if (i % 2 == 0) input.scaleX else input.scaleY) }
+        val window = JvmLauncher.Window(width, height, scaled)
         Thread({
             var code = 1
             try {
@@ -343,6 +355,7 @@ class GameActivity : Activity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        touchState?.stop()
         CallbackBridge.setListener(null)
         // Activity weg, JVM läuft noch (z. B. vom System beendet): Prozess beenden, Ende melden.
         if (jvmStarted && isFinishing) {

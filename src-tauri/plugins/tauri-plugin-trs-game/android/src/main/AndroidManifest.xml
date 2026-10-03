@@ -5,6 +5,10 @@
     <uses-feature android:glEsVersion="0x00030000" android:required="false" />
 
     <application>
+        <!-- Touch-Steuerung (Overlay-Paket dev.theredstonee.trsgame.overlay) statt des eingebauten Notfall-Overlays. -->
+        <meta-data
+            android:name="dev.theredstonee.trs.game.OVERLAY_PROVIDER"
+            android:value="dev.theredstonee.trsgame.overlay.TouchOverlayProvider" />
         <!-- Spiel in eigenem Prozess: System.exit() des Spiels beendet nicht den Launcher. -->
         <activity
             android:name=".engine.GameActivity"

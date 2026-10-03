@@ -32,18 +32,8 @@ on:
         description: Download-Adresse der IPA für den AltStore-Eintrag
         type: string
         default: ''
+  # Läuft in CI (ci.yml, nach „launcher-ios“) und im Release (release.yml, nach „ios“); von Hand zum Testen.
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - src-tauri/plugins/tauri-plugin-trs-game/**
-      - scripts/ios/**
-      - .github/workflows/ios-engine.yml
-  pull_request:
-    paths:
-      - src-tauri/plugins/tauri-plugin-trs-game/**
-      - scripts/ios/**
-      - .github/workflows/ios-engine.yml
 
 permissions:
   contents: read

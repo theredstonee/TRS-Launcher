@@ -164,7 +164,7 @@ onMounted(async () => {
     if (action === 'close') closeTopOverlay()
     else if (action === 'back') router.back()
     else if (action === 'home') void router.push('/')
-    else void invoke('plugin:app|exit').catch(() => {})
+    else void invoke('mobile_exit_app').catch(() => {})
   }).catch(() => null)
 })
 onBeforeUnmount(() => void backListener?.unregister())

@@ -13,6 +13,8 @@ const ui = computed(() => settings.current?.ui)
 // Handy: Seite scrollt als Ganzes, Tabs als wischbare Leiste; ohne Spielstart keine Logs/Spielen.
 const mobile = mobileUi
 const canLaunch = computed(() => platformCaps.value.gameLaunch)
+// „Nochmal starten“ braucht eigene Java-Prozesse – die Spiel-Engine am Handy hat nur einen.
+const canLaunchAgain = computed(() => platformCaps.value.gameLaunch && platformCaps.value.java)
 
 const instance = ref<Instance | null>(null)
 const loadError = ref<string | null>(null)
@@ -230,7 +232,7 @@ function openFolder() {
             <div class="flex w-80 shrink-0 items-center gap-2" :class="canLaunch ? 'mobile:w-full' : 'mobile:w-auto'">
               <PlayButton :instance-id="instance.id" large />
               <button
-                v-if="game.phase === 'running'"
+                v-if="canLaunchAgain && game.phase === 'running'"
                 class="btn-icon size-12 bg-base-900/80 backdrop-blur"
                 :title="t('play.again.menu')"
                 :aria-label="t('play.again.menu')"

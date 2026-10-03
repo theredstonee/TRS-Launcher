@@ -56,7 +56,7 @@ jobs:
           all='^\.github/workflows/ci\.yml$'
           launcher='^(app/|src-tauri/|public/|scripts/|packaging/|tests/|package\.json$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|nuxt\.config\.ts$|tsconfig\.json$|\.npmrc$)'
           # Android/iOS: dieselbe Rust-/Frontend-Basis plus die Projekte in src-tauri/gen und die Kanal-Skripte.
-          mobile='^(app/|src-tauri/|public/|scripts/mobile-channel\.mjs$|package\.json$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|nuxt\.config\.ts$|tsconfig\.json$|\.npmrc$)'
+          mobile='^(app/|src-tauri/|public/|scripts/mobile-channel\.mjs$|scripts/ios/|\.github/workflows/ios-engine\.yml$|package\.json$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|nuxt\.config\.ts$|tsconfig\.json$|\.npmrc$)'
           client='^(client-mod/|data/)'
           has() { grep -qE "$1" <<<"$files"; }
           if has "$all" || has "$launcher"; then echo "launcher=true" >> "$GITHUB_OUTPUT"; else echo "launcher=false" >> "$GITHUB_OUTPUT"; fi
@@ -176,6 +176,8 @@ jobs:
     timeout-minutes: 90
     env:
       NDK_VERSION: 28.2.13676358
+      # Spiel-Engine (Plugin trs-game, ndk-build) ist auf NDK r27d festgelegt.
+      ENGINE_NDK_VERSION: 27.3.13750724
     steps:
       - uses: actions/checkout@v4
         with:
@@ -191,7 +193,7 @@ jobs:
       - name: Android NDK
         run: |
           set -euo pipefail
-          sdkmanager --install "ndk;$NDK_VERSION" > /dev/null
+          sdkmanager --install "ndk;$NDK_VERSION" "ndk;$ENGINE_NDK_VERSION" > /dev/null
           ndk="$ANDROID_HOME/ndk/$NDK_VERSION"
           bin="$ndk/toolchains/llvm/prebuilt/linux-x86_64/bin"
           {
@@ -233,6 +235,11 @@ jobs:
       # beforeBuildCommand (pnpm generate) lief schon.
       - name: Debug APK (arm64)
         run: pnpm tauri android build --apk --debug --target aarch64 --ci -c '{"build":{"beforeBuildCommand":""}}'
+
+      # Touch-Overlay und Engine-Logik (JUnit, ohne Gerät).
+      - name: Game plugin unit tests
+        working-directory: src-tauri/gen/android
+        run: ./gradlew --no-daemon :tauri-plugin-trs-game:testDebugUnitTest
 
       - uses: actions/upload-artifact@v4
         with:
@@ -292,6 +299,13 @@ jobs:
           path: ${{ runner.temp }}/TRS-Launcher-ci.ipa
           if-no-files-found: error
           retention-days: 7
+  # iOS-Spiel-Engine (Amethyst-iOS) bauen und in das unsignierte IPA aus „launcher-ios“ packen.
+  ios-engine:
+    needs: launcher-ios
+    uses: ./.github/workflows/ios-engine.yml
+    with:
+      app-artifact: ios-unsigned-ipa
+
   # TRS Client: Unit-Tests von common + Kompilieren ausgewählter Bäume (älteste, mittlere und neueste Ära).
   # Nur kompilieren – kein Spielstart, keine Autotests. -PtrsVersions richtet nur die genannten Minecraft-Versionen
   # ein (plus die eingecheckte Stonecutter-Version), statt alle 39 Fabric- bzw. 6 Legacy-Versionen.
@@ -369,7 +383,7 @@ jobs:
   # Der Pflicht-Check für das Ruleset. Übersprungen (Pfad nicht geändert, Label no-changelog, Push) zählt als ok.
   ci-ok:
     name: ${{ ((github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'no-changelog') && 'ci-ok (label change, nothing to do)' || 'ci-ok' }}
-    needs: [changes, launcher-windows, launcher-linux, launcher-android, launcher-ios, client-mod, changelog]
+    needs: [changes, launcher-windows, launcher-linux, launcher-android, launcher-ios, ios-engine, client-mod, changelog]
     if: ${{ always() && !((github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'no-changelog') }}
     runs-on: ubuntu-latest
     timeout-minutes: 5

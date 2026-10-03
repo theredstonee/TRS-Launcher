@@ -1,13 +1,14 @@
 {
   "$schema": "../gen/schemas/mobile-schema.json",
   "identifier": "mobile",
-  "description": "Rechte der mobilen App (Android/iOS): kein Fenster-Steuern, kein eingebauter Updater. Dateisystem, Netzwerk und Updates laufen ausschließlich über eigene Rust-Commands.",
+  "description": "Rechte der mobilen App (Android/iOS): kein Fenster-Steuern, kein eingebauter Updater. Dateisystem, Netzwerk, Updates und App-Beenden (Zurück-Taste) laufen ausschließlich über eigene Rust-Commands; die Spiel-Engine (trs-game) startet der Kern.",
   "platforms": ["android", "iOS"],
   "windows": [
     "main"
   ],
   "permissions": [
     "core:default",
-    "log:default"
+    "log:default",
+    "trs-game:default"
   ]
 }

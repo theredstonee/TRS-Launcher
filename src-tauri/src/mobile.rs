@@ -87,6 +87,22 @@ async fn install(app: &AppHandle, path: std::path::PathBuf) -> CommandResult<Ins
     Ok(outcome)
 }
 
+/// Android-Zurück-Taste auf der Startseite: App schließen (Activity beenden). Sonst nichts.
+#[tauri::command]
+pub fn mobile_exit_app(app: AppHandle) {
+    #[cfg(target_os = "android")]
+    {
+        use tauri::Manager;
+        if let Some(installer) = app.try_state::<android::Installer>()
+            && let Err(e) = installer.0.run_mobile_plugin::<serde_json::Value>("exitApp", ())
+        {
+            log::warn!("App konnte nicht geschlossen werden: {e}");
+        }
+    }
+    #[cfg(not(target_os = "android"))]
+    let _ = app;
+}
+
 #[cfg(not(target_os = "android"))]
 async fn install(_app: &AppHandle, _path: std::path::PathBuf) -> CommandResult<InstallOutcome> {
     Err(trs_core::Error::UnsupportedOnMobile.into())

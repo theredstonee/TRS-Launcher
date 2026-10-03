@@ -75,6 +75,8 @@ dependencies {
     // libjnidispatch für JNA im Spiel (Apache-2.0/LGPL-2.1)
     implementation("net.java.dev.jna:jna:5.14.0@aar")
     implementation(project(":tauri-android"))
+    // Unit-Tests des Touch-Overlays (OverlayTest, ohne Gerät).
+    testImplementation("junit:junit:4.13.2")
 }
 
 // --- Fertige Binärteile (prebuilt.lock) --------------------------------------------

@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.pm.PackageManager
 import android.util.Log
 import android.view.View
+import java.io.File
 
 /**
  * Touch-Overlay über der Spielfläche. Das Touch-Steuerungs-Modul meldet seine
@@ -20,6 +21,10 @@ interface OverlayProvider {
     /** Erzeugt das Overlay (Vollbild-View über dem Spiel). [profile] = `touchProfile` der Startbeschreibung. */
     fun createOverlay(activity: Activity, input: GameInput, profile: String?): View
 
+    /** Wie oben, mit dem Ordner der Touch-Layouts (`controlsDir` der Startbeschreibung, `null` = unbekannt). */
+    fun createOverlay(activity: Activity, input: GameInput, profile: String?, controlsDir: File?): View =
+        createOverlay(activity, input, profile)
+
     /** Maus gefangen (im Spiel) oder frei (Menü). */
     fun onGrabChanged(grabbed: Boolean) {}
 
@@ -28,6 +33,9 @@ interface OverlayProvider {
 
     /** Ränder (Notch/Navigationsleiste) in Pixeln. */
     fun onSafeInsets(left: Int, top: Int, right: Int, bottom: Int) {}
+
+    /** Editor der Steuerung an/aus (z. B. aus dem Pause-Menü). */
+    fun setEditing(editing: Boolean) {}
 }
 
 internal object OverlayProviders {

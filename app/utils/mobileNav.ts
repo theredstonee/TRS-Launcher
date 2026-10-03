@@ -10,7 +10,7 @@ export interface MobileNavItem {
   label: MessageKey
   icon: IconName
   /** Nur zeigen, wenn diese Fähigkeit da ist. */
-  needs?: 'clips' | 'gameLaunch'
+  needs?: 'clips' | 'gameLaunch' | 'gameEngine'
 }
 
 export const mobileTabs: MobileNavItem[] = [
@@ -27,6 +27,9 @@ const moreAll: MobileNavItem[] = [
   { to: '/presets', label: 'nav.presets', icon: 'presets' },
   { to: '/servers', label: 'nav.servers', icon: 'server' },
   { to: '/clips', label: 'nav.clips', icon: 'clips', needs: 'clips' },
+  // Touch-Steuerung fürs Spiel am Handy und die Fernbedienung des PCs.
+  { to: '/controls', label: 'nav.controls', icon: 'touch', needs: 'gameEngine' },
+  { to: '/pc', label: 'nav.pc', icon: 'monitor' },
   { to: '/accounts', label: 'mobile.accounts', icon: 'user' },
   { action: 'settings', label: 'nav.settings', icon: 'gear' },
   { action: 'create', label: 'nav.newInstance', icon: 'plus' },
@@ -36,7 +39,7 @@ const moreAll: MobileNavItem[] = [
 ]
 
 /** Einträge im Sheet „Mehr“ – ohne das, was dieses Gerät nicht kann. Der Team-Bereich bleibt Desktop-only. */
-export function mobileMoreItems(caps: Pick<PlatformCapabilities, 'clips' | 'gameLaunch'>): MobileNavItem[] {
+export function mobileMoreItems(caps: Pick<PlatformCapabilities, 'clips' | 'gameLaunch' | 'gameEngine'>): MobileNavItem[] {
   return moreAll.filter((item) => !item.needs || caps[item.needs])
 }
 

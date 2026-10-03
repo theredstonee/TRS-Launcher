@@ -30,7 +30,7 @@ export function isMobileOs(os: OsName): boolean {
 
 export const hostOs: OsName = detectOs()
 export const isLinux = hostOs === 'linux'
-/** Android oder iOS (Begleit-App, Spielstart nur über die Spiel-Engine). */
+/** Android oder iOS (Spielstart über die eingebaute Spiel-Engine statt Java). */
 export const isMobile = isMobileOs(hostOs)
 /**
  * Standard-Anmeldung: Desktop über den Browser (Rückleitung an localhost), mobil per Gerätecode –
@@ -59,11 +59,12 @@ export function defaultCapabilities(os: OsName = hostOs): PlatformCapabilities {
     clips: os === 'windows',
     updates: mobile ? 'mobile' : os === 'windows' ? 'auto' : 'package',
     consoleSession: false,
-    gameLaunch: !mobile,
+    // Mobil startet das Spiel über die eingebaute Engine.
+    gameLaunch: true,
     java: !mobile,
     windowControls: !mobile,
     pushSupported: false,
-    gameEngine: false,
+    gameEngine: mobile,
   }
 }
 

@@ -93,6 +93,15 @@ How to write an entry:
 - **"My servers" with a live console.** Servers set up in the launcher get their own page: live log, command line
   (list, say, op …), start, stop, restart and the number of players online. When you close the launcher, running
   servers are stopped cleanly so the world is saved.
+- **TRS Launcher for Android (preview).** The launcher now also runs as an app on Android phones and tablets: a
+  layout made for touch with a tab bar, sign-in with a device code, friends and chat, skins, modpacks and news, and
+  updates straight from the app. Minecraft Java starts right on the device with the built-in game engine – the first
+  start downloads the matching Java once. Running games show up like on the PC, with play time, logs and the crash
+  helper.
+- **Touch controls.** On the phone you play with on-screen controls: ready-made layouts for PvP, building and redstone,
+  your own layouts on the new "Touch controls" page (move, resize, change buttons, share them as a code or file) and a
+  layout per instance. In a game menu, "Edit controls" opens the editor right in the game. With the TRS Client, the
+  keyboard opens by itself when you tap a text field, and the TRS menu and emote wheel have their own buttons.
 - **Minecraft Java on iPhone and iPad (sideload, preview).** The iOS app (installed via AltStore or SideStore)
   can start Minecraft Java Edition itself, based on the Amethyst engine. It needs JIT: if JIT is off, the app
   explains step by step how to turn it on (SideStore + StikDebug, AltServer, TrollStore) and starts the game as
@@ -179,6 +188,16 @@ How to write an entry:
 - **„Meine Server“ mit Live-Konsole.** Im Launcher angelegte Server bekommen eine eigene Seite: Live-Log,
   Befehlszeile (list, say, op …), Starten, Stoppen, Neustarten und die Zahl der Spieler online. Beim Schließen des
   Launchers werden laufende Server sauber gestoppt, damit die Welt gespeichert wird.
+- **TRS Launcher für Android (Vorschau).** Den Launcher gibt es jetzt auch als App für Android-Handys und -Tablets:
+  eine Oberfläche für Touch mit Tab-Leiste, Anmeldung per Gerätecode, Freunde und Chat, Skins, Modpacks und News sowie
+  Updates direkt aus der App. Minecraft Java startet mit der eingebauten Spiel-Engine direkt auf dem Gerät – beim
+  ersten Start lädt die App einmal das passende Java. Laufende Spiele erscheinen wie am PC, mit Spielzeit, Logs und
+  Absturz-Helfer.
+- **Touch-Steuerung.** Am Handy spielst du mit Knöpfen auf dem Bildschirm: fertige Layouts für PvP, Bauen und
+  Redstone, eigene Layouts auf der neuen Seite „Touch-Steuerung“ (verschieben, Größe ändern, Knöpfe tauschen, als Code
+  oder Datei teilen) und ein Layout je Instanz. In einem Spielmenü öffnet „Steuerung bearbeiten“ den Editor direkt im
+  Spiel. Mit dem TRS Client erscheint die Tastatur von selbst, sobald du ein Textfeld antippst, und TRS-Menü und
+  Emote-Rad haben eigene Knöpfe.
 - **Minecraft Java auf iPhone und iPad (Sideload, Vorschau).** Die iOS-App (installiert über AltStore oder
   SideStore) kann Minecraft Java Edition selbst starten, auf Basis der Amethyst-Engine. Dafür braucht es JIT: Ist
   JIT aus, erklärt die App Schritt für Schritt, wie du es einschaltest (SideStore + StikDebug, AltServer,

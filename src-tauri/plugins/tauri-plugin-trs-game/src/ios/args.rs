@@ -77,6 +77,9 @@ pub struct EngineLaunch {
     pub metal_layer: bool,
     pub wait_for_jit: bool,
     pub jit_help: JitHelp,
+    /// Touch-Layout (`GameLaunchSpec.touchProfile`) und sein Ordner – für das Overlay.
+    pub touch_profile: Option<String>,
+    pub controls_dir: Option<String>,
 }
 
 /// `auto` bleibt auf iOS `auto`: Amethysts eigene Wahl (Start mit ANGLE, dann je nach
@@ -306,6 +309,15 @@ pub fn build(input: BuildInput<'_>) -> Result<EngineLaunch> {
     env.insert("POJAV_RENDERER".into(), renderer.into());
     env.insert("TRS_ENGINE_LIB".into(), format!("{frameworks}/{ENGINE_LIB}"));
 
+    let controls_dir = match &spec.controls_dir {
+        Some(dir) => {
+            let dir = dir.display().to_string();
+            check_abs_path(&dir, "controlsDir")?;
+            Some(dir)
+        }
+        None => None,
+    };
+
     Ok(EngineLaunch {
         session: session.into(),
         java_home: java_home.into(),
@@ -320,6 +332,8 @@ pub fn build(input: BuildInput<'_>) -> Result<EngineLaunch> {
         metal_layer: spec.renderer != Renderer::Zink,
         wait_for_jit,
         jit_help,
+        touch_profile: spec.touch_profile.clone(),
+        controls_dir,
     })
 }
 

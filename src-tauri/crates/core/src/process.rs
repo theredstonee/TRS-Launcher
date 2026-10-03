@@ -89,6 +89,12 @@ pub type EventSink = Arc<dyn Fn(GameEvent) + Send + Sync>;
 /// Was nach dem Spielende passieren soll (Spielzeit verbuchen).
 pub type OnExit = Box<dyn FnOnce(u64) + Send>;
 
+/// Beendet ein Spiel der mobilen Engine (kein Prozess im Launcher); `true` = Anfrage gestellt.
+pub type StopFn = Arc<dyn Fn() -> bool + Send + Sync>;
+
+/// Höchstens so viele Engine-Sitzungen merkt sich der Launcher (eine läuft, ältere sind Reste).
+const MAX_ENGINE_RECORDS: usize = 8;
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RunningGame {
@@ -457,16 +463,55 @@ impl SessionRecord {
     }
 }
 
+/// Wie sich ein laufendes Spiel beenden lässt.
+enum Control {
+    /// Eigener Java-Prozess (Desktop).
+    Process(Arc<ProcessHandle>),
+    /// Mobile Spiel-Engine: Beenden über das Plugin.
+    Engine(StopFn),
+}
+
+impl Control {
+    fn terminate(&self) -> bool {
+        match self {
+            Self::Process(process) => process.terminate(),
+            Self::Engine(stop) => stop(),
+        }
+    }
+}
+
 struct Running {
     info: RunningGame,
-    process: Arc<ProcessHandle>,
+    control: Control,
     killed: Arc<AtomicBool>,
+}
+
+/// Engine-Sitzung (mobil): Zeilen kommen von der Engine statt aus Log-Dateien.
+struct EngineSession {
+    instance_id: String,
+    key: String,
+    started_at: DateTime<Utc>,
+    parser: LogParser,
+    secrets: Vec<String>,
+    on_exit: Option<OnExit>,
+}
+
+/// Gemerkte Engine-Sitzung (`engine-sessions.json`): Endet das Spiel, während der Launcher
+/// nicht läuft (iOS beendet die App mit dem Spiel), wird die Spielzeit beim nächsten Start verbucht.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EngineRecord {
+    pub session: String,
+    pub instance_id: String,
+    pub started_at: DateTime<Utc>,
 }
 
 #[derive(Default)]
 struct State {
     running: HashMap<String, Running>,
     logs: HashMap<String, VecDeque<LogLine>>,
+    /// Engine-Sitzungs-ID → Sitzung.
+    engine: HashMap<String, EngineSession>,
 }
 
 pub struct GameManager {
@@ -524,7 +569,7 @@ impl GameManager {
         let mut any = false;
         for running in state.running.values().filter(|r| r.info.instance_id == instance_id) {
             running.killed.store(true, Ordering::Relaxed);
-            any |= running.process.terminate();
+            any |= running.control.terminate();
         }
         any
     }
@@ -534,7 +579,7 @@ impl GameManager {
         let state = self.lock();
         let Some(running) = state.running.get(key).filter(|r| r.info.instance_id == instance_id) else { return false };
         running.killed.store(true, Ordering::Relaxed);
-        running.process.terminate()
+        running.control.terminate()
     }
 
     fn lock(&self) -> std::sync::MutexGuard<'_, State> {
@@ -633,7 +678,7 @@ impl GameManager {
                 id.clone(),
                 Running {
                     info: RunningGame { instance_id: instance.clone(), key: id.clone(), pid: record.pid, started_at: record.started_at },
-                    process: process.clone(),
+                    control: Control::Process(process.clone()),
                     killed: killed.clone(),
                 },
             );
@@ -664,31 +709,160 @@ impl GameManager {
             let was_killed = killed.load(Ordering::Relaxed);
             // Wiedergefundene Spiele unter Linux: Exit-Code unbekannt – dann kein Absturz melden.
             let crashed = !was_killed && exit_code.map_or(process.exit_code_known(), |code| code != 0);
-            let (diagnosis, crash) = {
+            let event = {
                 let mut state = state.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
                 state.running.remove(&id);
-                if crashed {
-                    let tail = |n: usize| {
-                        state.logs.get(&id).map(|h| h.iter().skip(h.len().saturating_sub(n)).cloned().collect::<Vec<_>>())
-                    };
-                    let diagnosis = tail(DIAGNOSIS_LINES).as_deref().and_then(diagnose).map(Box::new);
-                    let context = crate::crash::CrashContext {
-                        crash_id: crate::crash::CrashContext::new_id(Utc::now()),
-                        lines: tail(CRASH_HELPER_LINES).unwrap_or_default(),
-                        started_at: record.started_at,
-                        exit_code,
-                        play_seconds,
-                    };
-                    (diagnosis, Some(Arc::new(context)))
-                } else {
-                    (None, None)
-                }
+                exit_event(&state, instance, id.clone(), record.started_at, exit_code, crashed, play_seconds)
             };
             sessions.remove(&id);
             on_exit(play_seconds);
-            let crash_id = crash.as_ref().map(|c| c.crash_id.clone());
-            sink(GameEvent::Exited { instance_id: instance, key: id, exit_code, crashed, play_seconds, diagnosis, crash_id, crash });
+            sink(event);
         });
+    }
+
+    // --- Mobile Spiel-Engine ----------------------------------------------------
+
+    fn engine_file(&self) -> PathBuf {
+        self.sessions_file.with_file_name("engine-sessions.json")
+    }
+
+    fn update_engine_records(&self, change: impl FnOnce(&mut Vec<EngineRecord>)) {
+        let _guard = self.sessions_lock.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let path = self.engine_file();
+        let mut list: Vec<EngineRecord> = std::fs::read(&path).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default();
+        change(&mut list);
+        let len = list.len();
+        if len > MAX_ENGINE_RECORDS {
+            list.drain(..len - MAX_ENGINE_RECORDS);
+        }
+        let written = if list.is_empty() {
+            match std::fs::remove_file(&path) {
+                Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(e),
+                _ => Ok(()),
+            }
+        } else {
+            serde_json::to_vec_pretty(&list).map_err(std::io::Error::other).and_then(|b| std::fs::write(&path, b))
+        };
+        if let Err(e) = written {
+            tracing::warn!("Engine-Sitzungen konnten nicht gespeichert werden: {e}");
+        }
+    }
+
+    /// Spiel in der mobilen Engine übernehmen: meldet `started` (PID 0 – es gibt keinen
+    /// Prozess im Launcher). Zeilen und Ende kommen über [`Self::engine_logs`] / [`Self::engine_exited`].
+    pub fn attach_engine(&self, instance_id: &str, session: &str, secrets: Vec<String>, stop: StopFn, on_exit: OnExit) -> Result<()> {
+        let key = instance_id.to_owned();
+        let started_at = Utc::now();
+        {
+            let mut state = self.lock();
+            if state.running.contains_key(&key) {
+                return Err(Error::launch(crate::msg!("launcher.alreadyRunning", "Diese Instanz läuft bereits.")));
+            }
+            state.logs.insert(key.clone(), VecDeque::new());
+            state.running.insert(
+                key.clone(),
+                Running {
+                    info: RunningGame { instance_id: key.clone(), key: key.clone(), pid: 0, started_at },
+                    control: Control::Engine(stop),
+                    killed: Arc::new(AtomicBool::new(false)),
+                },
+            );
+            state.engine.insert(
+                session.to_owned(),
+                EngineSession {
+                    instance_id: key.clone(),
+                    key: key.clone(),
+                    started_at,
+                    parser: LogParser::stdout(),
+                    secrets: secrets.into_iter().filter(|s| s.len() >= 8).collect(),
+                    on_exit: Some(on_exit),
+                },
+            );
+        }
+        let record = EngineRecord { session: session.to_owned(), instance_id: key.clone(), started_at };
+        self.update_engine_records(|list| {
+            list.retain(|r| r.session != record.session);
+            list.push(record);
+        });
+        (self.sink)(GameEvent::Started { instance_id: key.clone(), key, pid: 0 });
+        Ok(())
+    }
+
+    /// Log-Zeilen einer Engine-Sitzung (unbekannte Sitzungen werden ignoriert).
+    pub fn engine_logs(&self, session: &str, lines: &[String]) {
+        let now = Utc::now().timestamp_millis();
+        let (instance_id, key, batch) = {
+            let mut guard = self.lock();
+            let state = &mut *guard;
+            let Some(engine) = state.engine.get_mut(session) else { return };
+            let mut batch = Vec::new();
+            for raw in lines {
+                let Some(mut line) = engine.parser.feed(raw, now) else { continue };
+                for secret in &engine.secrets {
+                    if line.message.contains(secret.as_str()) {
+                        line.message = line.message.replace(secret.as_str(), "********");
+                    }
+                }
+                batch.push(line);
+            }
+            if batch.is_empty() {
+                return;
+            }
+            let history = state.logs.entry(engine.key.clone()).or_default();
+            history.extend(batch.iter().cloned());
+            while history.len() > LOG_HISTORY {
+                history.pop_front();
+            }
+            (engine.instance_id.clone(), engine.key.clone(), batch)
+        };
+        (self.sink)(GameEvent::Logs { instance_id, key, lines: batch });
+    }
+
+    /// Ende einer Engine-Sitzung: Spielzeit verbuchen, Absturz auswerten, `exited` melden.
+    /// `tail`: letzte Zeilen der Engine (falls unterwegs keine Zeilen ankamen).
+    pub fn engine_exited(&self, session: &str, exit_code: Option<i32>, crashed: bool, tail: &[String]) {
+        let (event, on_exit, play_seconds) = {
+            let mut state = self.lock();
+            let Some(mut engine) = state.engine.remove(session) else { return };
+            let killed = state.running.remove(&engine.key).is_some_and(|r| r.killed.load(Ordering::Relaxed));
+            if state.logs.get(&engine.key).is_none_or(VecDeque::is_empty) && !tail.is_empty() {
+                let now = Utc::now().timestamp_millis();
+                let lines: Vec<LogLine> = tail.iter().filter_map(|l| engine.parser.feed(l, now)).collect();
+                state.logs.entry(engine.key.clone()).or_default().extend(lines);
+            }
+            let play_seconds = (Utc::now() - engine.started_at).num_seconds().max(0) as u64;
+            let crashed = crashed && !killed;
+            let event = exit_event(&state, engine.instance_id.clone(), engine.key.clone(), engine.started_at, exit_code, crashed, play_seconds);
+            (event, engine.on_exit.take(), play_seconds)
+        };
+        self.update_engine_records(|list| list.retain(|r| r.session != session));
+        if let Some(on_exit) = on_exit {
+            on_exit(play_seconds);
+        }
+        (self.sink)(event);
+    }
+
+    /// Gemerkte Engine-Sitzungen (nach einem App-Neustart) – danach vergessen.
+    pub fn take_engine_records(&self) -> Vec<EngineRecord> {
+        let mut out = Vec::new();
+        self.update_engine_records(|list| out = std::mem::take(list));
+        out
+    }
+
+    /// Sitzung, die ohne laufenden Launcher endete (iOS: Spielende beendet die App): wie ein
+    /// normales Ende melden, Spielzeit bis `ended_at`.
+    pub fn engine_recovered(&self, record: &EngineRecord, ended_at: DateTime<Utc>, exit_code: Option<i32>, crashed: bool, tail: &[String], on_exit: OnExit) {
+        let play_seconds = (ended_at - record.started_at).num_seconds().max(0) as u64;
+        let event = {
+            let mut state = self.lock();
+            let mut parser = LogParser::stdout();
+            let now = Utc::now().timestamp_millis();
+            let lines: VecDeque<LogLine> = tail.iter().filter_map(|l| parser.feed(l, now)).collect();
+            state.logs.insert(record.instance_id.clone(), lines);
+            exit_event(&state, record.instance_id.clone(), record.instance_id.clone(), record.started_at, exit_code, crashed, play_seconds)
+        };
+        on_exit(play_seconds);
+        (self.sink)(event);
     }
 
     fn sessions_handle(&self) -> SessionsFile {
@@ -702,6 +876,34 @@ impl GameManager {
     fn write_sessions(&self, list: &[SessionRecord]) {
         self.sessions_handle().update(|current| *current = list.to_vec());
     }
+}
+
+/// `exited`-Ereignis; nach einem Absturz mit Diagnose und Log-Ende für den Absturz-Helfer.
+fn exit_event(
+    state: &State,
+    instance_id: String,
+    key: String,
+    started_at: DateTime<Utc>,
+    exit_code: Option<i32>,
+    crashed: bool,
+    play_seconds: u64,
+) -> GameEvent {
+    let (diagnosis, crash) = if crashed {
+        let tail = |n: usize| state.logs.get(&key).map(|h| h.iter().skip(h.len().saturating_sub(n)).cloned().collect::<Vec<_>>());
+        let diagnosis = tail(DIAGNOSIS_LINES).as_deref().and_then(diagnose).map(Box::new);
+        let context = crate::crash::CrashContext {
+            crash_id: crate::crash::CrashContext::new_id(Utc::now()),
+            lines: tail(CRASH_HELPER_LINES).unwrap_or_default(),
+            started_at,
+            exit_code,
+            play_seconds,
+        };
+        (diagnosis, Some(Arc::new(context)))
+    } else {
+        (None, None)
+    };
+    let crash_id = crash.as_ref().map(|c| c.crash_id.clone());
+    GameEvent::Exited { instance_id, key, exit_code, crashed, play_seconds, diagnosis, crash_id, crash }
 }
 
 struct SessionsFile {
@@ -1156,6 +1358,85 @@ More details:
         let exited = events.lock().unwrap().iter().any(|e| matches!(e, GameEvent::Exited { crashed: false, .. }));
         assert!(exited, "Stoppen ist kein Absturz");
         assert!(!std::fs::read_to_string(dir.path().join("running.json")).unwrap().contains("test"));
+    }
+
+    fn engine_manager() -> (tempfile::TempDir, Arc<Mutex<Vec<GameEvent>>>, GameManager) {
+        let dir = tempfile::tempdir().unwrap();
+        let events = Arc::new(Mutex::new(Vec::new()));
+        let sink_events = events.clone();
+        let manager =
+            GameManager::new(Arc::new(move |e: GameEvent| sink_events.lock().unwrap().push(e)), dir.path().join("running.json"));
+        (dir, events, manager)
+    }
+
+    #[test]
+    fn engine_session_runs_logs_and_books_play_time() {
+        let (dir, events, manager) = engine_manager();
+        let stopped = Arc::new(AtomicBool::new(false));
+        let stop_flag = stopped.clone();
+        let booked = Arc::new(Mutex::new(None));
+        let booked_in = booked.clone();
+        manager
+            .attach_engine(
+                "inst",
+                "g1",
+                vec!["geheimes-token-123".into()],
+                Arc::new(move || {
+                    stop_flag.store(true, Ordering::Relaxed);
+                    true
+                }),
+                Box::new(move |secs| *booked_in.lock().unwrap() = Some(secs)),
+            )
+            .unwrap();
+        // Läuft wie ein Desktop-Spiel (PID 0), die Sitzung ist gemerkt.
+        assert!(manager.is_running("inst"));
+        assert_eq!(manager.running()[0].pid, 0);
+        assert!(std::fs::read_to_string(dir.path().join("engine-sessions.json")).unwrap().contains("\"session\": \"g1\""));
+        // Zweiter Start derselben Instanz geht nicht.
+        assert!(manager.attach_engine("inst", "g2", vec![], Arc::new(|| true), Box::new(|_| {})).is_err());
+
+        manager.engine_logs("g1", &["[12:00:00] [Render thread/INFO]: token geheimes-token-123".into(), String::new()]);
+        manager.engine_logs("unbekannt", &["nichts".into()]);
+        let logs = manager.logs("inst");
+        assert_eq!(logs.len(), 1);
+        assert!(logs[0].message.contains("********") && !logs[0].message.contains("geheimes"));
+
+        assert!(manager.kill("inst"));
+        assert!(stopped.load(Ordering::Relaxed));
+        // Beendet über den Launcher: kein Absturz, auch wenn die Engine „crashed“ meldet.
+        manager.engine_exited("g1", Some(1), true, &[]);
+        assert!(!manager.is_running("inst"));
+        assert!(booked.lock().unwrap().is_some());
+        assert!(!dir.path().join("engine-sessions.json").exists());
+        let events = events.lock().unwrap();
+        assert!(matches!(events.first(), Some(GameEvent::Started { pid: 0, .. })));
+        assert!(events.iter().any(|e| matches!(e, GameEvent::Logs { lines, .. } if lines.len() == 1)));
+        assert!(matches!(events.last(), Some(GameEvent::Exited { crashed: false, exit_code: Some(1), .. })));
+        // Doppeltes Ende wird ignoriert.
+        drop(events);
+        manager.engine_exited("g1", Some(0), false, &[]);
+    }
+
+    #[test]
+    fn engine_crash_uses_log_tail_and_offline_end_is_booked() {
+        let (_dir, events, manager) = engine_manager();
+        manager.attach_engine("a", "s1", vec![], Arc::new(|| true), Box::new(|_| {})).unwrap();
+        // Keine Zeilen unterwegs: das Log-Ende der Engine reicht für die Absturz-Auswertung.
+        manager.engine_exited("s1", Some(-1), true, &["java.lang.OutOfMemoryError: Java heap space".into()]);
+        assert!(!manager.logs("a").is_empty());
+        assert!(matches!(events.lock().unwrap().last(), Some(GameEvent::Exited { crashed: true, crash_id: Some(_), .. })));
+
+        // iOS: Spiel endete ohne laufenden Launcher – beim nächsten Start nachtragen.
+        manager.attach_engine("b", "s2", vec![], Arc::new(|| true), Box::new(|_| {})).unwrap();
+        let records = manager.take_engine_records();
+        assert_eq!(records.len(), 1);
+        assert!(manager.take_engine_records().is_empty());
+        let booked = Arc::new(Mutex::new(0));
+        let booked_in = booked.clone();
+        let ended = records[0].started_at + chrono::Duration::seconds(90);
+        manager.engine_recovered(&records[0], ended, Some(0), false, &[], Box::new(move |secs| *booked_in.lock().unwrap() = secs));
+        assert_eq!(*booked.lock().unwrap(), 90);
+        assert!(matches!(events.lock().unwrap().last(), Some(GameEvent::Exited { play_seconds: 90, crashed: false, .. })));
     }
 
     #[test]

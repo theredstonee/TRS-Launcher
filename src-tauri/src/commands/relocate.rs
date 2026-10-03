@@ -3,6 +3,7 @@
 
 use tauri::ipc::Channel;
 use tauri::{AppHandle, State};
+#[cfg(desktop)]
 use tauri_plugin_dialog::DialogExt;
 use trs_core::data_location::DataLocation;
 use trs_core::instance::UnavailableInstance;
@@ -10,10 +11,21 @@ use trs_core::relocate::{InstanceLocation, MovePlan};
 
 use crate::LauncherState;
 use crate::commands::tasks::tracked;
+#[cfg(desktop)]
 use crate::dialog_text::{self, DialogText};
 use crate::error::CommandResult;
 
 /// Ordner im nativen Dialog wählen. `None` = abgebrochen. Geprüft wird erst im Plan.
+/// Android/iOS: Daten liegen fest in der App-Sandbox – kein Umzug.
+#[cfg(mobile)]
+#[tauri::command]
+pub async fn pick_target_folder(app: AppHandle, launcher: State<'_, LauncherState>) -> CommandResult<Option<String>> {
+    let _ = (app, launcher);
+    Err(trs_core::Error::UnsupportedOnMobile.into())
+}
+
+/// Ordner im nativen Dialog wählen. `None` = abgebrochen. Geprüft wird erst im Plan.
+#[cfg(desktop)]
 #[tauri::command]
 pub async fn pick_target_folder(app: AppHandle, launcher: State<'_, LauncherState>) -> CommandResult<Option<String>> {
     let lang = dialog_text::language(&launcher).await;
@@ -30,6 +42,7 @@ pub async fn pick_target_folder(app: AppHandle, launcher: State<'_, LauncherStat
 /// Zusammenfassung (Ziel, Größe, freier Platz) vor dem Umzug des Datenordners.
 #[tauri::command]
 pub async fn data_move_plan(launcher: State<'_, LauncherState>, location: State<'_, DataLocation>, target: String) -> CommandResult<MovePlan> {
+    trs_core::platform::desktop_only()?;
     Ok(launcher.data_move_plan(&location, &target).await?)
 }
 
@@ -43,6 +56,7 @@ pub async fn move_data_dir(
     on_progress: Channel<u8>,
     task_id: Option<String>,
 ) -> CommandResult<String> {
+    trs_core::platform::desktop_only()?;
     let work = launcher.move_data_dir(&location, &target, move |p| {
         let _ = on_progress.send(p);
     });
@@ -63,6 +77,7 @@ pub async fn instance_location(launcher: State<'_, LauncherState>, id: String) -
 /// `target`: `None` = zurück an den Standardort.
 #[tauri::command]
 pub async fn instance_move_plan(launcher: State<'_, LauncherState>, id: String, target: Option<String>) -> CommandResult<MovePlan> {
+    trs_core::platform::desktop_only()?;
     Ok(launcher.instance_move_plan(&id, target.as_deref()).await?)
 }
 
@@ -75,6 +90,7 @@ pub async fn move_instance(
     on_progress: Channel<u8>,
     task_id: Option<String>,
 ) -> CommandResult<InstanceLocation> {
+    trs_core::platform::desktop_only()?;
     let work = launcher.move_instance(&id, target.as_deref(), move |p| {
         let _ = on_progress.send(p);
     });

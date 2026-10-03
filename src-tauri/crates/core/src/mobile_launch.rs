@@ -15,7 +15,7 @@ use crate::instance::{Instance, LoaderKind};
 use crate::launch::{self, JoinTarget, LaunchDirs};
 use crate::meta::version::VersionInfo;
 use crate::prepare::{self, JavaChoice, Prepared, ProgressFn, Stage, StageProgress};
-use crate::{Error, Join, Launcher, Result, boost, client_mod, depcheck, forge, fsutil, history, instance, servers, task};
+use crate::{Error, Join, Launcher, Result, boost, client_mod, depcheck, forge, fsutil, history, instance, process, servers, task};
 
 /// Java-Hauptversionen der Engine (Runtimes zum Herunterladen).
 pub const ENGINE_JAVA: [u32; 4] = [8, 17, 21, 25];
@@ -38,6 +38,9 @@ pub struct GameLaunchSpec {
     pub memory_mb: u32,
     pub extra_env: BTreeMap<String, String>,
     pub touch_profile: Option<String>,
+    /// `<daten>/controls` – hier liest das Touch-Overlay im Spiel die Layouts.
+    #[serde(default)]
+    pub controls_dir: Option<PathBuf>,
     pub trs_client: bool,
     pub game_version: Option<String>,
     pub lwjgl_version: Option<String>,
@@ -152,10 +155,18 @@ pub fn spec_from_command(
         memory_mb,
         extra_env: BTreeMap::new(),
         touch_profile: None,
+        controls_dir: None,
         trs_client,
         game_version: Some(instance.game_version.clone()),
         lwjgl_version: lwjgl_version(version),
     })
+}
+
+/// Ergebnis von [`Launcher::prepare_mobile_launch`].
+pub struct MobileLaunch {
+    pub spec: GameLaunchSpec,
+    /// Werden aus allen Log-Zeilen entfernt (Zugriffstoken).
+    pub secrets: Vec<String>,
 }
 
 impl Launcher {
@@ -169,8 +180,12 @@ impl Launcher {
         account_id: Option<&str>,
         runner: Option<&dyn forge::ProcessorRunner>,
         on_progress: &ProgressFn,
-    ) -> Result<GameLaunchSpec> {
+    ) -> Result<MobileLaunch> {
         let instance = self.instances.get(instance_id).await?;
+        // Am Handy läuft immer nur ein Spiel (die Engine hat einen Spielprozess).
+        if !self.games.running().is_empty() {
+            return Err(Error::launch(crate::msg!("launcher.alreadyRunning", "Diese Instanz läuft bereits.")));
+        }
         {
             let mut preparing = self.preparing.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
             if !preparing.insert(instance.id.clone()) {
@@ -189,7 +204,7 @@ impl Launcher {
         account_id: Option<&str>,
         runner: Option<&dyn forge::ProcessorRunner>,
         on_progress: &ProgressFn,
-    ) -> Result<GameLaunchSpec> {
+    ) -> Result<MobileLaunch> {
         let join: Option<JoinTarget> = match join_request {
             Some(Join::Server(id)) => Some(servers::join_target(&self.servers.get(id).await?.address).await?),
             Some(Join::Address(address)) => Some(servers::join_target(address).await?),
@@ -276,6 +291,15 @@ impl Launcher {
         let memory = mobile_heap_mb(configured, crate::platform::total_memory_mb());
         let mut spec = spec_from_command(&prepared, command, instance, memory, trs_client)?;
         spec.assets_dir = assets_dir;
+        // Touch-Steuerung: Layout der Instanz (fehlt es, gilt PvP) und der Ordner der Layouts.
+        spec.touch_profile = match crate::controls::resolve(&self.paths, instance.overrides.touch_profile.as_deref()).await {
+            Ok(id) => Some(id),
+            Err(e) => {
+                tracing::warn!("Touch-Layouts konnten nicht eingerichtet werden: {e}");
+                None
+            }
+        };
+        spec.controls_dir = Some(crate::controls::dir(&self.paths));
         if trs_client && let Some(build) = client_mod::build_for(catalog.builds(), instance.loader.kind, &instance.game_version) {
             let extra = client_mod::bundled_jvm_args(&self.paths, build, instance).await;
             for arg in extra {
@@ -287,7 +311,45 @@ impl Launcher {
         }
         self.instances.touch_last_played(&instance.id).await?;
         history::record(&self.paths, &instance.id, HistoryEntry::new(HistoryKind::Launched)).await;
-        Ok(spec)
+        // Erfolge: Spielstart mit lokaler Stunde (gesendet wird gesammelt im Hintergrund).
+        self.trs.achievements.push(&session.uuid, crate::trs_api::achievements::ReportKind::launch_now());
+        Ok(MobileLaunch { spec, secrets: vec![session.access_token.clone()] })
+    }
+
+    /// Spielzeit nach dem Ende einer Engine-Sitzung verbuchen.
+    fn engine_on_exit(self: &Arc<Self>, instance_id: &str) -> process::OnExit {
+        let launcher = Arc::clone(self);
+        let id = instance_id.to_owned();
+        Box::new(move |play_seconds: u64| {
+            tokio::spawn(async move {
+                if let Err(e) = launcher.instances.add_play_time(&id, play_seconds).await {
+                    tracing::warn!("Spielzeit für '{id}' konnte nicht gespeichert werden: {e}");
+                }
+            });
+        })
+    }
+
+    /// Die Engine hat das Spiel gestartet (`session` = ihre Sitzungs-ID): ab jetzt läuft die
+    /// Instanz wie auf dem Desktop (`game-event`, Logs, Spielzeit). `stop` beendet die Sitzung.
+    pub fn attach_engine_game(self: &Arc<Self>, instance_id: &str, session: &str, secrets: Vec<String>, stop: process::StopFn) -> Result<()> {
+        let on_exit = self.engine_on_exit(instance_id);
+        self.games.attach_engine(instance_id, session, secrets, stop, on_exit)
+    }
+
+    /// Ende einer Sitzung, die ohne laufenden Launcher endete (iOS: das Spielende beendet die
+    /// App). Ohne passende gemerkte Sitzung passiert nichts; übrige Reste werden vergessen.
+    pub fn engine_session_ended_offline(
+        self: &Arc<Self>,
+        session: &str,
+        ended_at: chrono::DateTime<chrono::Utc>,
+        exit_code: Option<i32>,
+        crashed: bool,
+        tail: &[String],
+    ) {
+        let records = self.games.take_engine_records();
+        let Some(record) = records.iter().find(|r| r.session == session) else { return };
+        let on_exit = self.engine_on_exit(&record.instance_id);
+        self.games.engine_recovered(record, ended_at, exit_code, crashed, tail, on_exit);
     }
 }
 
