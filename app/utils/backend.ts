@@ -1,6 +1,7 @@
 import { Channel, invoke, isTauri } from '@tauri-apps/api/core'
 import { hasKey, t, tKey } from './i18n'
 import { z } from 'zod'
+import { savedTextSchema, textFileSchema } from './config/types'
 import {
   trsAdminCapeSchema,
   trsAdminStatsSchema,
@@ -670,6 +671,12 @@ export const backend = {
   trashInstanceFiles: (id: string, paths: string[]) => call<number>('trash_instance_files', { id, paths }),
   openInstanceFile: (id: string, path: string) => call<void>('open_instance_file', { id, path }),
   revealInstanceFile: (id: string, path: string) => call<void>('reveal_instance_file', { id, path }),
+  /** Config-Editor: UTF-8-Text (höchstens 2 MB, keine Geheimnisse). */
+  readInstanceText: (id: string, path: string) => checked(textFileSchema, 'read_instance_text', { id, path }),
+  readInstanceTextBackup: (id: string, path: string) => checked(textFileSchema.nullable(), 'read_instance_text_backup', { id, path }),
+  /** `expected` = Version beim Lesen; `null` überschreibt bewusst fremde Änderungen. */
+  writeInstanceText: (id: string, path: string, text: string, expected: string | null, bom: boolean) =>
+    checked(savedTextSchema, 'write_instance_text', { id, path, text, expected, bom }),
   /** Dateidialog; `null` = abgebrochen. */
   pickInstanceUpload: (id: string, parent: string) => call<ImportReport | null>('pick_instance_upload', { id, parent }),
   importDroppedInstanceFiles: (id: string, parent: string, token: number) =>

@@ -1,0 +1,33 @@
+# This is the main configuration file for the plugin.
+# Edit with care.
+settings:
+  # Allow players to enter the End
+  allow-end: true
+  warn-on-overload: yes
+  permissions-file: permissions.yml
+  connection-throttle: 4000
+  shutdown-message: 'Server closed'
+  minimum-api: none
+spawn-limits:
+  monsters: 70
+  animals: 10
+worlds:
+  - world
+  - world_nether
+  - "world the end"
+# Motd line
+motd: "&aWelcome &b%player%"  # colors
+ratio: 0.75
+empty:
+flow: [a, b, 'c d']
+messages:
+  - text: hello
+    delay: 5
+  - text: bye
+    delay: 10
+description: |
+  Line one
+  Line two
+anchor: &base
+  x: 1
+version: '1.2'

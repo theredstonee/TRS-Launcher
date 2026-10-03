@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
-use trs_core::instance_files::{DirListing, ImportReport, Jail, opens_directly};
+use trs_core::instance_files::{DirListing, ImportReport, Jail, SavedText, TextFile, opens_directly};
 
 use super::system::DropState;
 use crate::LauncherState;
@@ -82,6 +82,41 @@ pub async fn open_instance_file(app: AppHandle, launcher: State<'_, LauncherStat
         app.opener().reveal_item_in_dir(target)?;
     }
     Ok(())
+}
+
+/// Config-Editor: Textdatei lesen (UTF-8, höchstens 2 MB, keine Geheimnisse).
+#[tauri::command]
+pub async fn read_instance_text(launcher: State<'_, LauncherState>, id: String, path: String) -> CommandResult<TextFile> {
+    let jail = jail(&launcher, &id).await?;
+    Ok(blocking(move || jail.read_text(&path)).await?)
+}
+
+/// Vorversion vom letzten Speichern im Editor (`None` = keine).
+#[tauri::command]
+pub async fn read_instance_text_backup(launcher: State<'_, LauncherState>, id: String, path: String) -> CommandResult<Option<TextFile>> {
+    let jail = jail(&launcher, &id).await?;
+    Ok(blocking(move || jail.read_text_backup(&path)).await?)
+}
+
+/// Config-Editor: atomar speichern. `expected` = Version beim Lesen (`None` = trotzdem überschreiben).
+#[tauri::command]
+pub async fn write_instance_text(
+    launcher: State<'_, LauncherState>,
+    id: String,
+    path: String,
+    text: String,
+    expected: Option<String>,
+    bom: bool,
+) -> CommandResult<SavedText> {
+    if expected.as_ref().is_some_and(|v| v.len() != 64 || !v.bytes().all(|b| b.is_ascii_hexdigit())) {
+        // Keine gültige Version vom Lesen → wie „inzwischen geändert“ behandeln.
+        Err(trs_core::Error::validation(trs_core::msg!(
+            "files.changedOnDisk",
+            "Die Datei wurde inzwischen außerhalb des Editors geändert."
+        )))?;
+    }
+    let jail = jail(&launcher, &id).await?;
+    Ok(blocking(move || jail.write_text(&path, &text, expected.as_deref(), bom)).await?)
 }
 
 #[tauri::command]

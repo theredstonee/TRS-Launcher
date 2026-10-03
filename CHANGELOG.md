@@ -58,6 +58,12 @@ How to write an entry:
   (Ctrl+K), in the settings under Behavior, or with F11. Optionally the launcher starts in Big Picture right away; on
   the Steam Deck and in Steam's game mode it does so by itself (can be switched off). After playing, the launcher
   comes back in Big Picture.
+- **Edit configs right in the launcher.** In an instance's Files tab, mod and game settings (TOML, JSON, JSON5,
+  YAML, .properties, options.txt and old Forge .cfg files) now open in a built-in editor. "Simple" shows them as a
+  form with switches, number fields with sliders, dropdowns, lists and the mod's own help texts, a search box and
+  "undo" per setting; "Advanced" shows the whole file with colours, line numbers and live error checking. Saving
+  only changes the values you edited – comments, order and formatting stay exactly as they were – and keeps the
+  previous version so you can restore it. "Open externally" is still in the right-click menu.
 
 ### Deutsch
 - **Suche, Filter und Details für TRS-Umhänge.** Die Umhang-Liste auf der Skins-Seite hat ein Suchfeld, Filter
@@ -89,6 +95,13 @@ How to write an entry:
   den Controller-Knopf in der Titelleiste, die Suche (Strg+K), die Einstellungen unter Verhalten oder mit F11. Auf
   Wunsch startet der Launcher gleich im Big-Picture-Modus; auf dem Steam Deck und im Spielmodus von Steam tut er das
   von selbst (abschaltbar). Nach dem Spielen kommt der Launcher im Big-Picture-Modus zurück.
+- **Configs direkt im Launcher bearbeiten.** Im Tab „Dateien“ einer Instanz öffnen sich Mod- und
+  Spieleinstellungen (TOML, JSON, JSON5, YAML, .properties, options.txt und alte Forge-.cfg-Dateien) jetzt in einem
+  eingebauten Editor. „Einfach“ zeigt sie als Formular mit Schaltern, Zahlenfeldern mit Reglern, Auswahllisten,
+  Listen und den Hilfetexten der Mod, dazu eine Suche und „Zurücksetzen“ je Einstellung; „Erweitert“ zeigt die
+  ganze Datei mit Farben, Zeilennummern und Fehlerprüfung beim Tippen. Beim Speichern ändern sich nur die
+  bearbeiteten Werte – Kommentare, Reihenfolge und Formatierung bleiben genau erhalten – und die vorherige Fassung
+  wird aufbewahrt, damit du sie wiederherstellen kannst. „Extern öffnen“ gibt es weiter im Rechtsklick-Menü.
 
 ## 0.17.0 – 2026-10-03 – Light Luggage | Leichtes Gepäck
 <!-- banner: accent=#ff3b30 motif=/news/0.17.0/banner.png -->
