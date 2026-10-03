@@ -101,6 +101,7 @@ export const updateInstanceSchema = z.object({
     hooks: hooksSchema.nullable(),
     env: envSchema.nullable(),
     syncSeparate: z.array(z.enum(syncItems)).max(syncItems.length),
+    touchProfile: z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/).nullable().default(null),
   }),
 })
 

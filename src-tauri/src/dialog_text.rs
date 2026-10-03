@@ -45,6 +45,11 @@ pub enum DialogText {
     Mp4Video,
     /// Bilder für eine Chat-Nachricht wählen.
     PickChatImages,
+    /// Touch-Steuerung als Datei speichern.
+    SaveControls,
+    PickControls,
+    /// Filtername für Steuerungs-Dateien.
+    ControlsFile,
 }
 
 impl DialogText {
@@ -56,7 +61,7 @@ impl DialogText {
 
 /// Je Text eine Zeile in der Reihenfolge von [`Language::ALL`]:
 /// en, de, es, fr, pl, pt-BR, tr, nl.
-const TEXTS: [[&str; 8]; 24] = [
+const TEXTS: [[&str; 8]; 27] = [
     [
         "Save modpack",
         "Modpack speichern",
@@ -270,6 +275,36 @@ const TEXTS: [[&str; 8]; 24] = [
         "Gönderilecek resimleri seç",
         "Afbeeldingen kiezen om te versturen",
     ],
+    [
+        "Save touch controls",
+        "Touch-Steuerung speichern",
+        "Guardar controles táctiles",
+        "Enregistrer les commandes tactiles",
+        "Zapisz sterowanie dotykowe",
+        "Salvar controles de toque",
+        "Dokunmatik kontrolleri kaydet",
+        "Touchbediening opslaan",
+    ],
+    [
+        "Choose a touch controls file",
+        "Steuerungs-Datei wählen",
+        "Elige un archivo de controles",
+        "Choisir un fichier de commandes",
+        "Wybierz plik sterowania",
+        "Escolher arquivo de controles",
+        "Kontrol dosyası seç",
+        "Bedieningsbestand kiezen",
+    ],
+    [
+        "TRS touch controls",
+        "TRS-Touch-Steuerung",
+        "Controles táctiles TRS",
+        "Commandes tactiles TRS",
+        "Sterowanie dotykowe TRS",
+        "Controles de toque TRS",
+        "TRS dokunmatik kontroller",
+        "TRS-touchbediening",
+    ],
 ];
 
 impl DialogText {
@@ -290,7 +325,7 @@ pub async fn language(launcher: &LauncherState) -> Language {
 mod tests {
     use super::*;
 
-    const ALL: [DialogText; 24] = [
+    const ALL: [DialogText; 27] = [
         DialogText::SaveModpack,
         DialogText::PickModpack,
         DialogText::ModrinthModpack,
@@ -315,6 +350,9 @@ mod tests {
         DialogText::SaveClip,
         DialogText::Mp4Video,
         DialogText::PickChatImages,
+        DialogText::SaveControls,
+        DialogText::PickControls,
+        DialogText::ControlsFile,
     ];
 
     #[test]

@@ -800,6 +800,18 @@
       "invalidCode": "Das ist kein gültiger Code (Form: XXX-XXX).",
       "expired": "Diese Anmelde-Anfrage gibt es nicht (mehr) – starte die Anmeldung auf der Website neu.",
       "used": "Diese Anmelde-Anfrage wurde schon beantwortet."
+    },
+    "controls": {
+      "invalidLayout": "Das Layout ist ungültig ({reason}).",
+      "notFound": "Dieses Layout gibt es nicht mehr.",
+      "builtinReadOnly": "Fertige Layouts lassen sich nicht löschen – nur zurücksetzen.",
+      "tooMany": "Mehr als {max} eigene Layouts gehen nicht.",
+      "invalidCode": "Das ist kein gültiger Steuerungs-Code.",
+      "invalidFile": "Das ist keine gültige Steuerungs-Datei.",
+      "tooLarge": "Die Steuerungs-Datei ist zu groß.",
+      "newerVersion": "Dieses Layout stammt aus einer neueren Launcher-Version.",
+      "nameLength": "Der Name muss zwischen 1 und {max} Zeichen lang sein.",
+      "buttonCount": "Ein Layout braucht 1 bis {max} Knöpfe."
     }
   },
   "browse": {
@@ -2572,7 +2584,8 @@
     "clips": "Clips",
     "social": "Sozial",
     "socialBadge": "{messages} ungelesen · {requests} Anfragen",
-    "achievements": "Erfolge"
+    "achievements": "Erfolge",
+    "controls": "Steuerung"
   },
   "accountMenu": {
     "menuLabel": "Konten",
@@ -5414,5 +5427,138 @@
     "logs": "Hilfe zu Logs",
     "java": "Anleitung zu Java",
     "linux": "Anleitung für Linux"
+  },
+  "controls": {
+    "builtin": {
+      "pvp": "PvP",
+      "build": "Bauen",
+      "redstone": "Redstone",
+      "pvpHint": "Große Angriffs- und Benutzen-Knöpfe, Sprinten zum Einrasten, Tippen schlägt.",
+      "buildHint": "Tippen setzt, Halten baut ab, hoch/runter fliegen, Block auswählen.",
+      "redstoneHint": "Schleichend setzen, F3-Kürzel und das TRS-Signal-Overlay (F6/F8)."
+    },
+    "keys": {
+      "space": "Leertaste",
+      "escape": "Esc",
+      "enter": "Eingabe",
+      "tab": "Tab",
+      "backspace": "Rücktaste",
+      "right": "Pfeil rechts",
+      "left": "Pfeil links",
+      "down": "Pfeil runter",
+      "up": "Pfeil hoch",
+      "leftShift": "Umschalt links",
+      "leftCtrl": "Strg links",
+      "leftAlt": "Alt links",
+      "rightShift": "Umschalt rechts",
+      "rightCtrl": "Strg rechts",
+      "rightAlt": "Alt Gr"
+    },
+    "mouse": {
+      "left": "Linksklick",
+      "right": "Rechtsklick",
+      "middle": "Mittelklick",
+      "other": "Maustaste {n}"
+    },
+    "special": {
+      "keyboard": "Tastatur",
+      "menu": "Pausenmenü",
+      "trsMenu": "TRS-Menü",
+      "emoteWheel": "Emote-Rad",
+      "chat": "Chat",
+      "hotbarSwipe": "Hotbar (tippen/wischen)",
+      "scrollUp": "Platz zurück",
+      "scrollDown": "Platz weiter"
+    },
+    "action": {
+      "toggleOf": "{key} (einrastend)",
+      "joystickMove": "Lauf-Stick",
+      "joystickCamera": "Kamera-Stick",
+      "types": {
+        "key": "Taste",
+        "mouse": "Maustaste",
+        "toggle": "Taste einrasten",
+        "joystick": "Joystick",
+        "special": "Sonderfunktion"
+      }
+    },
+    "page": {
+      "title": "Touch-Steuerung",
+      "subtitle": "Knopf-Layouts für die TRS-App auf Handy und Tablet – hier oder im Spiel bearbeiten",
+      "importCode": "Code einfügen",
+      "importFile": "Datei importieren",
+      "edit": "Bearbeiten",
+      "editNamed": "{name} bearbeiten",
+      "duplicate": "Kopieren",
+      "copyName": "{name} (Kopie)",
+      "shareCode": "Code teilen",
+      "exportFile": "Als Datei speichern",
+      "reset": "Zurücksetzen",
+      "resetConfirm": "Wirklich zurücksetzen?",
+      "deleteConfirm": "Wirklich löschen?",
+      "modified": "Geändert",
+      "buttons": "{n} Knopf | {n} Knöpfe",
+      "saved": "„{name}“ gespeichert",
+      "deleted": "„{name}“ gelöscht",
+      "resetDone": "„{name}“ zurückgesetzt",
+      "imported": "„{name}“ importiert",
+      "exported": "„{name}“ als Datei gespeichert",
+      "codeCopied": "Code kopiert"
+    },
+    "instances": {
+      "title": "Je Instanz",
+      "hint": "Mit welchem Layout eine Instanz auf Handy oder Tablet startet.",
+      "default": "Standard ({name})",
+      "none": "Noch keine Instanzen.",
+      "selectFor": "Touch-Layout für {name}"
+    },
+    "code": {
+      "title": "Code teilen",
+      "hint": "Schick diesen Code für „{name}“ an Freunde – sie fügen ihn unter „Code einfügen“ ein.",
+      "importTitle": "Code einfügen",
+      "importHint": "Füge einen Steuerungs-Code ein (er beginnt mit TRSC1-)."
+    },
+    "editor": {
+      "title": "„{name}“ bearbeiten",
+      "name": "Name",
+      "add": "Knopf",
+      "remove": "Entfernen",
+      "button": "Gewählter Knopf",
+      "grid": "Raster",
+      "notch": "Notch",
+      "discard": "Änderungen verwerfen?",
+      "selectHint": "Tippe einen Knopf an, um ihn zu ändern. Ziehen verschiebt, die rote Ecke ändert die Größe. Pfeiltasten schieben fein.",
+      "actionType": "Aktion",
+      "key": "Taste",
+      "chord": "Vorher halten",
+      "chordNone": "Nichts",
+      "mouseButton": "Maustaste",
+      "mode": "Modus",
+      "special": "Funktion",
+      "label": "Beschriftung",
+      "labelFromAction": "Aus Aktion",
+      "icon": "Symbol",
+      "noIcon": "Nur Text",
+      "round": "Rund",
+      "rect": "Eckig",
+      "opacity": "Deckkraft",
+      "toggle": "Einrastend (tippen an, tippen aus)",
+      "passThrough": "Finger dreht auch die Kamera",
+      "show": "Sichtbar",
+      "showAutoIs": "Automatisch ({mode})",
+      "showGame": "Im Spiel",
+      "showMenu": "In Menüs",
+      "showAlways": "Immer",
+      "gestures": "Gesten",
+      "tapAttack": "Tippen greift an",
+      "tapAttackHint": "Aus: Tippen setzt oder benutzt",
+      "holdUse": "Halten benutzt",
+      "holdUseHint": "Aus: Halten baut Blöcke ab",
+      "swipeHotbar": "Über die Hotbar wischen",
+      "haptics": "Beim Drücken vibrieren",
+      "sensitivity": "Kamera-Tempo",
+      "invalid": "Das Layout lässt sich nicht speichern: {reason}",
+      "maxButtons": "Höchstens {max} Knöpfe"
+    }
   }
 }

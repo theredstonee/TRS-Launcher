@@ -15,6 +15,8 @@ interface NavItem {
   admin?: boolean
   /** Nur unter Windows (z. B. Clips). */
   windowsOnly?: boolean
+  /** Nur in der mobilen App (und beim Entwickeln). */
+  touchOnly?: boolean
 }
 
 const items: NavItem[] = [
@@ -27,6 +29,7 @@ const items: NavItem[] = [
   { to: '/clips', label: 'nav.clips', icon: 'clips', optional: true, windowsOnly: true },
   { to: '/skins', label: 'nav.skins', icon: 'skins', optional: true },
   { to: '/social', label: 'nav.social', icon: 'chat' },
+  { to: '/controls', label: 'nav.controls', icon: 'touch', touchOnly: true },
   { to: '/admin', label: 'nav.admin', icon: 'admin', admin: true },
 ]
 
@@ -58,7 +61,9 @@ const visibleItems = computed(() =>
       (!item.optional || router.resolve(item.to).matched.length > 0) &&
       (!item.admin || trs.isStaff) &&
       // Clips (Spielaufnahme) gibt es vorerst nur unter Windows.
-      (!item.windowsOnly || !isLinux),
+      (!item.windowsOnly || !isLinux) &&
+      // Touch-Steuerung braucht die mobile App; beim Entwickeln zum Testen sichtbar.
+      (!item.touchOnly || isTouchApp() || import.meta.dev),
   ),
 )
 

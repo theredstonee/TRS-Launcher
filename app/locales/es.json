@@ -800,6 +800,18 @@
       "invalidCode": "No es un código válido (formato: XXX-XXX).",
       "expired": "Esta solicitud de inicio de sesión no existe (ya): vuelve a empezar en la web.",
       "used": "Esta solicitud de inicio de sesión ya se respondió."
+    },
+    "controls": {
+      "invalidLayout": "El diseño no es válido ({reason}).",
+      "notFound": "Este diseño ya no existe.",
+      "builtinReadOnly": "Los diseños incluidos no se pueden borrar, solo restablecer.",
+      "tooMany": "No se admiten más de {max} diseños propios.",
+      "invalidCode": "Este no es un código de controles válido.",
+      "invalidFile": "Este no es un archivo de controles válido.",
+      "tooLarge": "El archivo de controles es demasiado grande.",
+      "newerVersion": "Este diseño viene de una versión más nueva del launcher.",
+      "nameLength": "El nombre debe tener entre 1 y {max} caracteres.",
+      "buttonCount": "Un diseño necesita de 1 a {max} botones."
     }
   },
   "browse": {
@@ -2572,7 +2584,8 @@
     "clips": "Clips",
     "social": "Social",
     "socialBadge": "{messages} sin leer · {requests} solicitudes",
-    "achievements": "Logros"
+    "achievements": "Logros",
+    "controls": "Controles"
   },
   "accountMenu": {
     "menuLabel": "Cuentas",
@@ -5414,5 +5427,138 @@
     "logs": "Ayuda con los registros",
     "java": "Guía de Java",
     "linux": "Guía para Linux"
+  },
+  "controls": {
+    "builtin": {
+      "pvp": "PvP",
+      "build": "Construir",
+      "redstone": "Redstone",
+      "pvpHint": "Botones grandes de atacar y usar, sprint fijo, tocar para golpear.",
+      "buildHint": "Tocar coloca, mantener rompe, volar arriba/abajo, elegir bloque.",
+      "redstoneHint": "Colocar agachado, atajos F3 y la capa de señal TRS (F6/F8)."
+    },
+    "keys": {
+      "space": "Espacio",
+      "escape": "Esc",
+      "enter": "Intro",
+      "tab": "Tab",
+      "backspace": "Retroceso",
+      "right": "Flecha derecha",
+      "left": "Flecha izquierda",
+      "down": "Flecha abajo",
+      "up": "Flecha arriba",
+      "leftShift": "Mayús izq.",
+      "leftCtrl": "Ctrl izq.",
+      "leftAlt": "Alt izq.",
+      "rightShift": "Mayús der.",
+      "rightCtrl": "Ctrl der.",
+      "rightAlt": "Alt der."
+    },
+    "mouse": {
+      "left": "Clic izquierdo",
+      "right": "Clic derecho",
+      "middle": "Clic central",
+      "other": "Botón del ratón {n}"
+    },
+    "special": {
+      "keyboard": "Teclado",
+      "menu": "Menú de pausa",
+      "trsMenu": "Menú TRS",
+      "emoteWheel": "Rueda de emotes",
+      "chat": "Chat",
+      "hotbarSwipe": "Barra rápida (tocar/deslizar)",
+      "scrollUp": "Casilla anterior",
+      "scrollDown": "Casilla siguiente"
+    },
+    "action": {
+      "toggleOf": "{key} (fijo)",
+      "joystickMove": "Stick de movimiento",
+      "joystickCamera": "Stick de cámara",
+      "types": {
+        "key": "Tecla",
+        "mouse": "Botón del ratón",
+        "toggle": "Tecla fija",
+        "joystick": "Joystick",
+        "special": "Especial"
+      }
+    },
+    "page": {
+      "title": "Controles táctiles",
+      "subtitle": "Diseños de botones para la app móvil de TRS: edítalos aquí o en el juego",
+      "importCode": "Pegar código",
+      "importFile": "Importar archivo",
+      "edit": "Editar",
+      "editNamed": "Editar {name}",
+      "duplicate": "Duplicar",
+      "copyName": "{name} (copia)",
+      "shareCode": "Compartir código",
+      "exportFile": "Guardar como archivo",
+      "reset": "Restablecer",
+      "resetConfirm": "¿Restablecer de verdad?",
+      "deleteConfirm": "¿Borrar de verdad?",
+      "modified": "Modificado",
+      "buttons": "{n} botón | {n} botones",
+      "saved": "«{name}» guardado",
+      "deleted": "«{name}» borrado",
+      "resetDone": "«{name}» restablecido",
+      "imported": "«{name}» importado",
+      "exported": "«{name}» guardado como archivo",
+      "codeCopied": "Código copiado"
+    },
+    "instances": {
+      "title": "Por instancia",
+      "hint": "Con qué diseño arranca una instancia en tu móvil o tablet.",
+      "default": "Predeterminado ({name})",
+      "none": "Aún no hay instancias.",
+      "selectFor": "Diseño táctil para {name}"
+    },
+    "code": {
+      "title": "Compartir código",
+      "hint": "Envía este código de «{name}» a un amigo: puede añadirlo con «Pegar código».",
+      "importTitle": "Pegar código",
+      "importHint": "Pega un código de controles táctiles (empieza por TRSC1-)."
+    },
+    "editor": {
+      "title": "Editar «{name}»",
+      "name": "Nombre",
+      "add": "Botón",
+      "remove": "Quitar",
+      "button": "Botón seleccionado",
+      "grid": "Cuadrícula",
+      "notch": "Muesca",
+      "discard": "¿Descartar cambios?",
+      "selectHint": "Toca un botón para cambiarlo. Arrastra para moverlo y la esquina roja para cambiar el tamaño. Las flechas lo mueven poco a poco.",
+      "actionType": "Acción",
+      "key": "Tecla",
+      "chord": "Mantener antes",
+      "chordNone": "Nada",
+      "mouseButton": "Botón del ratón",
+      "mode": "Modo",
+      "special": "Función",
+      "label": "Etiqueta",
+      "labelFromAction": "Desde la acción",
+      "icon": "Icono",
+      "noIcon": "Solo texto",
+      "round": "Redondo",
+      "rect": "Cuadrado",
+      "opacity": "Opacidad",
+      "toggle": "Fijo (tocar activa, tocar desactiva)",
+      "passThrough": "El dedo también gira la cámara",
+      "show": "Visible",
+      "showAutoIs": "Automático ({mode})",
+      "showGame": "En el juego",
+      "showMenu": "En menús",
+      "showAlways": "Siempre",
+      "gestures": "Gestos",
+      "tapAttack": "Tocar ataca",
+      "tapAttackHint": "Desactivado: tocar coloca o usa",
+      "holdUse": "Mantener usa",
+      "holdUseHint": "Desactivado: mantener rompe bloques",
+      "swipeHotbar": "Deslizar por la barra rápida",
+      "haptics": "Vibrar al pulsar",
+      "sensitivity": "Velocidad de cámara",
+      "invalid": "El diseño no se puede guardar: {reason}",
+      "maxButtons": "Como máximo {max} botones"
+    }
   }
 }

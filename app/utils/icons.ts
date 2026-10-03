@@ -82,6 +82,8 @@ export const icons = {
   lightbulb: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z',
   /** Erfolge: Pokal. */
   trophy: 'M8 4h8v6a4 4 0 0 1-8 0zM8 6H4.5v1.5A3.5 3.5 0 0 0 8 11M16 6h3.5v1.5A3.5 3.5 0 0 1 16 11M12 14v4M8.5 21h7M9.5 18h5v3h-5z',
+  /** Touch-Steuerung: Handy quer mit Stick und Knöpfen. */
+  touch: 'M3 6h18a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zM7 10v4M5 12h4M16 11h.01M18 13h.01',
 } as const
 
 export type IconName = keyof typeof icons

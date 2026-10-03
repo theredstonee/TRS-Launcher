@@ -35,6 +35,8 @@ export interface InstanceOverrides {
   env: EnvVar[] | null
   /** Diese Dinge bleiben in dieser Instanz separat. */
   syncSeparate: SyncItem[]
+  /** Touch-Layout der mobilen App; null/fehlt = Standard (PvP) */
+  touchProfile?: string | null
 }
 
 export type UpdateChannel = 'release' | 'beta' | 'alpha'

@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "id": "build",
+  "name": "Build",
+  "profile": "build",
+  "builtinRev": 1,
+  "buttons": [
+    { "id": "move", "label": "WASD", "x": 0.03, "y": 0.5, "w": 0.19, "h": 0.4, "opacity": 0.5, "shape": "round", "action": { "type": "joystick", "mode": "wasd" } },
+    { "id": "sneakLock", "icon": "sneak", "label": "Sneak", "x": 0.235, "y": 0.52, "w": 0.06, "h": 0.12, "opacity": 0.55, "shape": "round", "action": { "type": "toggle", "key": 340 } },
+    { "id": "place", "icon": "place", "label": "Place", "x": 0.77, "y": 0.52, "w": 0.09, "h": 0.18, "opacity": 0.65, "shape": "round", "action": { "type": "mouse", "button": 1 }, "passThrough": true },
+    { "id": "break", "icon": "break", "label": "Break", "x": 0.67, "y": 0.62, "w": 0.08, "h": 0.16, "opacity": 0.6, "shape": "round", "action": { "type": "mouse", "button": 0 }, "passThrough": true },
+    { "id": "pick", "icon": "pick", "label": "Pick", "x": 0.79, "y": 0.32, "w": 0.06, "h": 0.12, "opacity": 0.55, "shape": "round", "action": { "type": "mouse", "button": 2 } },
+    { "id": "up", "icon": "flyUp", "label": "Up", "x": 0.885, "y": 0.44, "w": 0.085, "h": 0.17, "opacity": 0.6, "shape": "round", "action": { "type": "key", "key": 32 } },
+    { "id": "down", "icon": "flyDown", "label": "Down", "x": 0.885, "y": 0.66, "w": 0.085, "h": 0.17, "opacity": 0.6, "shape": "round", "action": { "type": "key", "key": 340 } },
+    { "id": "prev", "icon": "prev", "label": "Prev", "x": 0.25, "y": 0.89, "w": 0.045, "h": 0.09, "opacity": 0.5, "shape": "rect", "action": { "type": "special", "special": "scrollUp" } },
+    { "id": "hotbar", "icon": "hotbar", "label": "Hotbar", "x": 0.3, "y": 0.88, "w": 0.4, "h": 0.12, "opacity": 0.15, "shape": "rect", "action": { "type": "special", "special": "hotbarSwipe" } },
+    { "id": "next", "icon": "next", "label": "Next", "x": 0.705, "y": 0.89, "w": 0.045, "h": 0.09, "opacity": 0.5, "shape": "rect", "action": { "type": "special", "special": "scrollDown" } },
+    { "id": "inventory", "icon": "inventory", "label": "E", "x": 0.76, "y": 0.88, "w": 0.05, "h": 0.1, "opacity": 0.6, "shape": "rect", "action": { "type": "key", "key": 69 }, "show": "always" },
+    { "id": "chat", "icon": "chat", "label": "Chat", "x": 0.02, "y": 0.02, "w": 0.05, "h": 0.1, "opacity": 0.55, "shape": "rect", "action": { "type": "special", "special": "chat" } },
+    { "id": "keyboard", "icon": "keyboard", "label": "Keyboard", "x": 0.075, "y": 0.02, "w": 0.05, "h": 0.1, "opacity": 0.55, "shape": "rect", "action": { "type": "special", "special": "keyboard" } },
+    { "id": "drop", "icon": "drop", "label": "Q", "x": 0.13, "y": 0.02, "w": 0.05, "h": 0.1, "opacity": 0.45, "shape": "rect", "action": { "type": "key", "key": 81 } },
+    { "id": "menu", "icon": "menu", "label": "Menu", "x": 0.475, "y": 0.01, "w": 0.05, "h": 0.1, "opacity": 0.55, "shape": "rect", "action": { "type": "special", "special": "menu" } },
+    { "id": "zoom", "icon": "zoom", "label": "Zoom", "x": 0.765, "y": 0.02, "w": 0.05, "h": 0.1, "opacity": 0.5, "shape": "rect", "action": { "type": "key", "key": 86 } },
+    { "id": "perspective", "icon": "perspective", "label": "F5", "x": 0.82, "y": 0.02, "w": 0.05, "h": 0.1, "opacity": 0.5, "shape": "rect", "action": { "type": "key", "key": 294 } },
+    { "id": "emotes", "icon": "emote", "label": "Emotes", "x": 0.875, "y": 0.02, "w": 0.05, "h": 0.1, "opacity": 0.5, "shape": "rect", "action": { "type": "special", "special": "emoteWheel" } },
+    { "id": "trs", "icon": "trs", "label": "TRS", "x": 0.93, "y": 0.02, "w": 0.05, "h": 0.1, "opacity": 0.6, "shape": "rect", "action": { "type": "special", "special": "trsMenu" } }
+  ],
+  "gestures": { "tapAttack": false, "holdUse": false, "swipeHotbar": true, "cameraSensitivity": 1.0, "haptics": true }
+}

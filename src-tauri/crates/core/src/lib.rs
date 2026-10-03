@@ -10,6 +10,7 @@ pub mod client_mod;
 pub mod clips;
 pub mod client_mod_update;
 pub mod content;
+pub mod controls;
 pub mod crash;
 pub mod duplicates;
 pub mod curseforge;

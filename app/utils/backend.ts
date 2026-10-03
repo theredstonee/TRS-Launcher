@@ -78,6 +78,7 @@ import { myApplicationSchema, myApplicationsSchema } from './applications'
 import { myAchievementsSchema, playerAchievementsSchema } from './achievements'
 import { teamErrorText } from './teamAccess'
 import { sharedImageSchema, sharesPageSchema } from './share'
+import { storedLayoutSchema, type ControlLayout } from './controls'
 import { webLoginAccountSchema, webLoginRequestSchema } from './webLogin'
 import {
   appealEnvelopeSchema,
@@ -474,6 +475,23 @@ export const backend = {
     /** `fileId: null` = alle verwerfen. */
     dismissBlocked: (id: string, fileId: string | null) => call<BlockedFile[]>('curseforge_dismiss_blocked', { id, fileId }),
   },
+  /** Touch-Steuerung der mobilen App (Layouts in `<daten>/controls`). */
+  controls: {
+    list: () => checked(z.array(storedLayoutSchema), 'controls_list'),
+    save: (layout: ControlLayout) => checked(storedLayoutSchema, 'controls_save', { layout }),
+    duplicate: (id: string, name: string) => checked(storedLayoutSchema, 'controls_duplicate', { id, name }),
+    remove: (id: string) => call<void>('controls_delete', { id }),
+    reset: (id: string) => checked(storedLayoutSchema, 'controls_reset', { id }),
+    exportCode: (id: string) => checked(z.string().max(70000), 'controls_export_code', { id }),
+    importCode: (code: string) => checked(storedLayoutSchema, 'controls_import_code', { code }),
+    /** `false` = Dialog abgebrochen. */
+    exportFile: (id: string) => checked(z.boolean(), 'controls_export_file', { id }),
+    /** `null` = Dialog abgebrochen. */
+    importFile: () => checked(storedLayoutSchema.nullable(), 'controls_import_file'),
+    /** Layout einer Instanz (`null` = Standard). */
+    setInstanceProfile: (id: string, profile: string | null) => call<Instance>('set_instance_touch_profile', { id, profile }),
+  },
+
   listPresets: () => call<Preset[]>('list_presets'),
   createPreset: (preset: PresetInput) => call<Preset>('create_preset', { preset }),
   updatePreset: (id: string, preset: PresetInput) => call<Preset>('update_preset', { id, preset }),

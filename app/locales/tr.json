@@ -800,6 +800,18 @@
       "invalidCode": "Bu geçerli bir kod değil (biçim: XXX-XXX).",
       "expired": "Bu oturum açma isteği yok (artık) – web sitesinde oturum açmayı yeniden başlat.",
       "used": "Bu oturum açma isteği zaten yanıtlandı."
+    },
+    "controls": {
+      "invalidLayout": "Düzen geçersiz ({reason}).",
+      "notFound": "Bu düzen artık yok.",
+      "builtinReadOnly": "Hazır düzenler silinemez – yalnızca sıfırlanabilir.",
+      "tooMany": "{max} taneden fazla kendi düzeni desteklenmiyor.",
+      "invalidCode": "Bu geçerli bir kontrol kodu değil.",
+      "invalidFile": "Bu geçerli bir kontrol dosyası değil.",
+      "tooLarge": "Kontrol dosyası çok büyük.",
+      "newerVersion": "Bu düzen launcher’ın daha yeni bir sürümünden geliyor.",
+      "nameLength": "Ad 1 ile {max} karakter arasında olmalı.",
+      "buttonCount": "Bir düzen 1 ile {max} arasında düğme gerektirir."
     }
   },
   "browse": {
@@ -2572,7 +2584,8 @@
     "clips": "Klipler",
     "social": "Sosyal",
     "socialBadge": "{messages} okunmamış · {requests} istek",
-    "achievements": "Başarımlar"
+    "achievements": "Başarımlar",
+    "controls": "Kontroller"
   },
   "accountMenu": {
     "menuLabel": "Hesaplar",
@@ -5414,5 +5427,138 @@
     "logs": "Günlükler hakkında yardım",
     "java": "Java rehberi",
     "linux": "Linux rehberi"
+  },
+  "controls": {
+    "builtin": {
+      "pvp": "PvP",
+      "build": "İnşa",
+      "redstone": "Redstone",
+      "pvpHint": "Büyük saldırı ve kullan düğmeleri, sabitlenen koşma, dokununca vurur.",
+      "buildHint": "Dokunmak koyar, basılı tutmak kırar, yukarı/aşağı uçuş, blok seçme.",
+      "redstoneHint": "Eğilerek koyma, F3 kısayolları ve TRS sinyal katmanı (F6/F8)."
+    },
+    "keys": {
+      "space": "Boşluk",
+      "escape": "Esc",
+      "enter": "Enter",
+      "tab": "Tab",
+      "backspace": "Geri al",
+      "right": "Sağ ok",
+      "left": "Sol ok",
+      "down": "Aşağı ok",
+      "up": "Yukarı ok",
+      "leftShift": "Sol Shift",
+      "leftCtrl": "Sol Ctrl",
+      "leftAlt": "Sol Alt",
+      "rightShift": "Sağ Shift",
+      "rightCtrl": "Sağ Ctrl",
+      "rightAlt": "Sağ Alt"
+    },
+    "mouse": {
+      "left": "Sol tık",
+      "right": "Sağ tık",
+      "middle": "Orta tık",
+      "other": "Fare düğmesi {n}"
+    },
+    "special": {
+      "keyboard": "Klavye",
+      "menu": "Duraklatma menüsü",
+      "trsMenu": "TRS menüsü",
+      "emoteWheel": "Emote çarkı",
+      "chat": "Sohbet",
+      "hotbarSwipe": "Hızlı erişim çubuğu (dokun/kaydır)",
+      "scrollUp": "Önceki yuva",
+      "scrollDown": "Sonraki yuva"
+    },
+    "action": {
+      "toggleOf": "{key} (sabit)",
+      "joystickMove": "Hareket çubuğu",
+      "joystickCamera": "Kamera çubuğu",
+      "types": {
+        "key": "Tuş",
+        "mouse": "Fare düğmesi",
+        "toggle": "Sabitlenen tuş",
+        "joystick": "Joystick",
+        "special": "Özel"
+      }
+    },
+    "page": {
+      "title": "Dokunmatik kontroller",
+      "subtitle": "TRS mobil uygulaması için düğme düzenleri – burada veya oyunda düzenle",
+      "importCode": "Kod yapıştır",
+      "importFile": "Dosya içe aktar",
+      "edit": "Düzenle",
+      "editNamed": "{name} düzenle",
+      "duplicate": "Kopyala",
+      "copyName": "{name} (kopya)",
+      "shareCode": "Kodu paylaş",
+      "exportFile": "Dosya olarak kaydet",
+      "reset": "Sıfırla",
+      "resetConfirm": "Gerçekten sıfırlansın mı?",
+      "deleteConfirm": "Gerçekten silinsin mi?",
+      "modified": "Değiştirildi",
+      "buttons": "{n} düğme | {n} düğme",
+      "saved": "“{name}” kaydedildi",
+      "deleted": "“{name}” silindi",
+      "resetDone": "“{name}” sıfırlandı",
+      "imported": "“{name}” içe aktarıldı",
+      "exported": "“{name}” dosya olarak kaydedildi",
+      "codeCopied": "Kod kopyalandı"
+    },
+    "instances": {
+      "title": "Örnek başına",
+      "hint": "Bir örneğin telefonda veya tablette hangi düzenle başlayacağı.",
+      "default": "Varsayılan ({name})",
+      "none": "Henüz örnek yok.",
+      "selectFor": "{name} için dokunmatik düzen"
+    },
+    "code": {
+      "title": "Kodu paylaş",
+      "hint": "“{name}” için bu kodu bir arkadaşına gönder – “Kod yapıştır” ile ekleyebilir.",
+      "importTitle": "Kod yapıştır",
+      "importHint": "Bir dokunmatik kontrol kodu yapıştır (TRSC1- ile başlar)."
+    },
+    "editor": {
+      "title": "“{name}” düzenle",
+      "name": "Ad",
+      "add": "Düğme",
+      "remove": "Kaldır",
+      "button": "Seçili düğme",
+      "grid": "Izgara",
+      "notch": "Çentik",
+      "discard": "Değişiklikler atılsın mı?",
+      "selectHint": "Değiştirmek için bir düğmeye dokun. Taşımak için sürükle, kırmızı köşe boyutu değiştirir. Ok tuşları ince ayar yapar.",
+      "actionType": "Eylem",
+      "key": "Tuş",
+      "chord": "Önce basılı tut",
+      "chordNone": "Hiçbiri",
+      "mouseButton": "Fare düğmesi",
+      "mode": "Mod",
+      "special": "İşlev",
+      "label": "Etiket",
+      "labelFromAction": "Eylemden",
+      "icon": "Simge",
+      "noIcon": "Yalnızca metin",
+      "round": "Yuvarlak",
+      "rect": "Kare",
+      "opacity": "Opaklık",
+      "toggle": "Sabit (dokun aç, dokun kapat)",
+      "passThrough": "Parmak kamerayı da döndürür",
+      "show": "Görünür",
+      "showAutoIs": "Otomatik ({mode})",
+      "showGame": "Oyunda",
+      "showMenu": "Menülerde",
+      "showAlways": "Her zaman",
+      "gestures": "Hareketler",
+      "tapAttack": "Dokunmak saldırır",
+      "tapAttackHint": "Kapalı: dokunmak koyar veya kullanır",
+      "holdUse": "Basılı tutmak kullanır",
+      "holdUseHint": "Kapalı: basılı tutmak blok kırar",
+      "swipeHotbar": "Hızlı erişim çubuğunda kaydır",
+      "haptics": "Basınca titre",
+      "sensitivity": "Kamera hızı",
+      "invalid": "Düzen kaydedilemiyor: {reason}",
+      "maxButtons": "En fazla {max} düğme"
+    }
   }
 }

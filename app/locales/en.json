@@ -800,6 +800,18 @@
       "invalidCode": "That is not a valid code (format: XXX-XXX).",
       "expired": "This sign-in request doesn’t exist (anymore) – start the sign-in on the website again.",
       "used": "This sign-in request was already answered."
+    },
+    "controls": {
+      "invalidLayout": "The layout is invalid ({reason}).",
+      "notFound": "This layout no longer exists.",
+      "builtinReadOnly": "Built-in layouts can’t be deleted – only reset.",
+      "tooMany": "More than {max} custom layouts aren’t supported.",
+      "invalidCode": "This isn’t a valid touch controls code.",
+      "invalidFile": "This isn’t a valid touch controls file.",
+      "tooLarge": "The touch controls file is too large.",
+      "newerVersion": "This layout comes from a newer launcher version.",
+      "nameLength": "The name must be between 1 and {max} characters long.",
+      "buttonCount": "A layout needs 1 to {max} buttons."
     }
   },
   "browse": {
@@ -2572,7 +2584,8 @@
     "clips": "Clips",
     "social": "Social",
     "socialBadge": "{messages} unread · {requests} requests",
-    "achievements": "Achievements"
+    "achievements": "Achievements",
+    "controls": "Controls"
   },
   "accountMenu": {
     "menuLabel": "Accounts",
@@ -5414,5 +5427,138 @@
     "logs": "Help with logs",
     "java": "Java guide",
     "linux": "Linux guide"
+  },
+  "controls": {
+    "builtin": {
+      "pvp": "PvP",
+      "build": "Build",
+      "redstone": "Redstone",
+      "pvpHint": "Big attack and use buttons, sprint toggle, tap to hit.",
+      "buildHint": "Tap to place, hold to break, fly up/down, pick block.",
+      "redstoneHint": "Sneak-place, F3 shortcuts and the TRS signal overlay (F6/F8)."
+    },
+    "keys": {
+      "space": "Space",
+      "escape": "Esc",
+      "enter": "Enter",
+      "tab": "Tab",
+      "backspace": "Backspace",
+      "right": "Right arrow",
+      "left": "Left arrow",
+      "down": "Down arrow",
+      "up": "Up arrow",
+      "leftShift": "Left Shift",
+      "leftCtrl": "Left Ctrl",
+      "leftAlt": "Left Alt",
+      "rightShift": "Right Shift",
+      "rightCtrl": "Right Ctrl",
+      "rightAlt": "Right Alt"
+    },
+    "mouse": {
+      "left": "Left click",
+      "right": "Right click",
+      "middle": "Middle click",
+      "other": "Mouse button {n}"
+    },
+    "special": {
+      "keyboard": "Keyboard",
+      "menu": "Pause menu",
+      "trsMenu": "TRS menu",
+      "emoteWheel": "Emote wheel",
+      "chat": "Chat",
+      "hotbarSwipe": "Hotbar (tap/swipe)",
+      "scrollUp": "Previous slot",
+      "scrollDown": "Next slot"
+    },
+    "action": {
+      "toggleOf": "{key} (toggle)",
+      "joystickMove": "Move stick",
+      "joystickCamera": "Camera stick",
+      "types": {
+        "key": "Key",
+        "mouse": "Mouse button",
+        "toggle": "Toggle key",
+        "joystick": "Joystick",
+        "special": "Special"
+      }
+    },
+    "page": {
+      "title": "Touch controls",
+      "subtitle": "Button layouts for the TRS mobile app – edit them here or in the game",
+      "importCode": "Paste code",
+      "importFile": "Import file",
+      "edit": "Edit",
+      "editNamed": "Edit {name}",
+      "duplicate": "Duplicate",
+      "copyName": "{name} (copy)",
+      "shareCode": "Share code",
+      "exportFile": "Save as file",
+      "reset": "Reset",
+      "resetConfirm": "Really reset?",
+      "deleteConfirm": "Really delete?",
+      "modified": "Changed",
+      "buttons": "{n} button | {n} buttons",
+      "saved": "“{name}” saved",
+      "deleted": "“{name}” deleted",
+      "resetDone": "“{name}” reset",
+      "imported": "“{name}” imported",
+      "exported": "“{name}” saved as a file",
+      "codeCopied": "Code copied"
+    },
+    "instances": {
+      "title": "Per instance",
+      "hint": "Which layout an instance starts with on your phone or tablet.",
+      "default": "Default ({name})",
+      "none": "No instances yet.",
+      "selectFor": "Touch layout for {name}"
+    },
+    "code": {
+      "title": "Share code",
+      "hint": "Send this code for “{name}” to a friend – they can add it with “Paste code”.",
+      "importTitle": "Paste code",
+      "importHint": "Paste a touch controls code (it starts with TRSC1-)."
+    },
+    "editor": {
+      "title": "Edit “{name}”",
+      "name": "Name",
+      "add": "Button",
+      "remove": "Remove",
+      "button": "Selected button",
+      "grid": "Grid",
+      "notch": "Notch",
+      "discard": "Discard changes?",
+      "selectHint": "Tap a button to change it. Drag to move, drag the red corner to resize. Arrow keys nudge it.",
+      "actionType": "Action",
+      "key": "Key",
+      "chord": "Hold first",
+      "chordNone": "Nothing",
+      "mouseButton": "Mouse button",
+      "mode": "Mode",
+      "special": "Function",
+      "label": "Label",
+      "labelFromAction": "From action",
+      "icon": "Icon",
+      "noIcon": "Text only",
+      "round": "Round",
+      "rect": "Square",
+      "opacity": "Opacity",
+      "toggle": "Toggle (tap on, tap off)",
+      "passThrough": "Finger also turns the camera",
+      "show": "Visible",
+      "showAutoIs": "Automatic ({mode})",
+      "showGame": "In game",
+      "showMenu": "In menus",
+      "showAlways": "Always",
+      "gestures": "Gestures",
+      "tapAttack": "Tap to attack",
+      "tapAttackHint": "Off: a tap places or uses",
+      "holdUse": "Hold to use",
+      "holdUseHint": "Off: holding breaks blocks",
+      "swipeHotbar": "Swipe along the hotbar",
+      "haptics": "Vibrate on press",
+      "sensitivity": "Camera speed",
+      "invalid": "The layout can’t be saved: {reason}",
+      "maxButtons": "At most {max} buttons"
+    }
   }
 }
