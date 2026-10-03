@@ -805,6 +805,21 @@
     "bedrock": {
       "notInstalled": "Minecraft Bedrock is niet geïnstalleerd op deze pc.",
       "startFailed": "Minecraft Bedrock kon niet worden gestart."
+    },
+    "bisect": {
+      "tooFewMods": "Voor het zoeken zijn minstens twee ingeschakelde mods nodig (naast de TRS Client en bibliotheken).",
+      "notRunning": "Voor deze instantie loopt geen zoektocht.",
+      "staleRound": "Deze ronde is al beantwoord – laad opnieuw.",
+      "applyFailed": "{count} mods konden niet worden omgezet. Draait het spel nog?",
+      "alreadyRunning": "Voor deze instantie loopt al een zoektocht.",
+      "tooManyMods": "Te veel mods voor het zoeken (hoogstens {max}).",
+      "gameRunning": "Sluit eerst het spel."
+    },
+    "contentGroups": {
+      "invalidName": "De groepsnaam moet 1–40 tekens lang zijn.",
+      "unknownGroup": "Deze groep bestaat niet meer.",
+      "tooMany": "Hoogstens {max} groepen per instantie",
+      "tooManyEntries": "Te veel items in groepen."
     }
   },
   "browse": {
@@ -5496,5 +5511,113 @@
     "hint": "Start het geïnstalleerde spel – zonder instantie, zonder mods",
     "playLabel": "Minecraft Bedrock starten",
     "started": "Minecraft Bedrock start …"
+  },
+  "contentGroups": {
+    "newGroup": "Nieuwe groep",
+    "assign": "Groep",
+    "dragHandle": "{name} naar een groep slepen",
+    "dragging": "{n} item | {n} items",
+    "dragInto": "{n} item → {name} | {n} items → {name}",
+    "dialog": {
+      "createTitle": "Nieuwe groep",
+      "editTitle": "Groep bewerken",
+      "placeholder": "bijv. Prestaties",
+      "color": "Kleur",
+      "assignHint": "Het geselecteerde item gaat naar de nieuwe groep. | De {n} geselecteerde items gaan naar de nieuwe groep.",
+      "nameInvalid": "De naam moet 1–{max} tekens lang zijn.",
+      "create": "Groep maken"
+    },
+    "header": {
+      "ungrouped": "Zonder groep",
+      "expand": "{name} uitklappen",
+      "collapse": "{name} inklappen",
+      "count": "{on}/{total} aan",
+      "toggle": "De hele groep {name} aan- of uitzetten",
+      "menu": "Meer acties voor groep {name}"
+    },
+    "menu": {
+      "moveTo": "Naar groep verplaatsen",
+      "removeFromGroup": "Uit groep halen",
+      "edit": "Hernoemen / kleur wijzigen",
+      "delete": "Groep verwijderen"
+    },
+    "filter": {
+      "label": "Op groep filteren",
+      "all": "Alle groepen"
+    },
+    "origin": {
+      "label": "Op herkomst filteren",
+      "all": "Elke herkomst",
+      "pack": "Uit het modpack",
+      "manual": "Zelf toegevoegd",
+      "packBadge": "Modpack",
+      "manualBadge": "Zelf toegevoegd",
+      "packTitle": "Kwam mee met het modpack",
+      "manualTitle": "Heb je zelf toegevoegd – geen deel van het modpack"
+    },
+    "toasts": {
+      "created": "Groep {name} gemaakt",
+      "moved": "{n} item naar {name} verplaatst | {n} items naar {name} verplaatst",
+      "removed": "{n} item uit de groep gehaald | {n} items uit hun groepen gehaald"
+    },
+    "deleteDialog": {
+      "title": "Groep verwijderen?",
+      "text": "De groep {name} wordt verwijderd. De inhoud blijft geïnstalleerd – alleen zonder groep."
+    },
+    "colors": {
+      "red": "Rood",
+      "orange": "Oranje",
+      "yellow": "Geel",
+      "green": "Groen",
+      "cyan": "Turquoise",
+      "blue": "Blauw",
+      "purple": "Paars",
+      "pink": "Roze",
+      "gray": "Grijs"
+    }
+  },
+  "bisect": {
+    "title": "Schuldige mod vinden",
+    "button": "Schuldige mod vinden",
+    "buttonTitle": "Zet steeds de helft van je mods uit tot de mod achter het probleem gevonden is",
+    "round": "Ronde {round} van ~{total}",
+    "progress": "Nog verdacht: {suspects} · nu uitgeschakeld: {off}",
+    "hintIdle": "Start het spel en controleer of het probleem er nog is. Een crash wordt automatisch herkend.",
+    "hintPreparing": "Het spel start …",
+    "hintRunning": "Het spel draait. Is het probleem er nog?",
+    "showSuspects": "De verdachte mod tonen | De {n} verdachte mods tonen",
+    "launch": "Spel starten",
+    "stillBroken": "Probleem nog steeds",
+    "worksFine": "Werkt zonder problemen",
+    "stopFirst": "Sluit eerst het spel",
+    "cancelTitle": "Annuleren en alle mods precies zoals eerst herstellen",
+    "foundOne": "Gevonden! Deze mod veroorzaakt het probleem:",
+    "foundSet": "Deze mod veroorzaakt het probleem: | Deze {n} mods zijn alleen samen te testen – een ervan veroorzaakt het probleem:",
+    "openPage": "Pagina openen",
+    "restoredNote": "Alle mods zijn weer zoals eerst. Er was {rounds} ronde nodig. | Alle mods zijn weer zoals eerst. Er waren {rounds} rondes nodig.",
+    "disableResult": "Uitschakelen | Allemaal uitschakelen",
+    "keepSearching": "Verder zoeken",
+    "done": "Klaar",
+    "notFound": "Zonder de verdachte mods kwam het probleem niet terug – het ligt dus waarschijnlijk niet aan één mod (misschien aan een instelling, de wereld of een resourcepack). Alle mods zijn weer zoals eerst.",
+    "openContent": "Inhoud openen",
+    "crashDetected": "Crash herkend – telt als „probleem nog steeds”.",
+    "banner": "Schuldige mod zoeken: sommige mods staan voorlopig uit. Aan het eind of bij annuleren wordt alles precies zoals eerst hersteld.",
+    "showWindow": "Venster tonen",
+    "lockedTitle": "Vergrendeld zolang de zoektocht loopt",
+    "minimize": "Inklappen",
+    "expand": "Uitklappen",
+    "start": {
+      "title": "Schuldige mod vinden",
+      "intro": "De launcher zoekt in {name} naar de mod achter je probleem:",
+      "stepHalf": "Elke ronde gaat ongeveer de helft van de verdachte mods uit. Mods en de bibliotheken die ze nodig hebben blijven samen; de TRS Client en loader-bibliotheken worden nooit aangeraakt.",
+      "stepAsk": "Jij start het spel en zegt of het probleem er nog is. Een crash wordt automatisch herkend.",
+      "stepKeep": "Na een paar rondes blijft er één mod over – je kunt hem uitschakelen of verder zoeken.",
+      "stepRestore": "Aan het eind of bij annuleren worden alle mods precies zoals eerst hersteld – ook als de launcher tussendoor sluit.",
+      "submit": "Zoeken starten"
+    },
+    "toasts": {
+      "restored": "Alle mods hersteld",
+      "disabled": "Mods hersteld, schuldige uitgeschakeld"
+    }
   }
 }

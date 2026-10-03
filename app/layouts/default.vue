@@ -50,6 +50,7 @@ onMounted(async () => {
   ui.restore()
   window.addEventListener('keydown', onKey)
   games.init()
+  void useBisectStore().init()
   void useClipsStore().init()
   void useHostingStore().init()
   // Darstellung (Theme, Akzent) und Oberflächen-Schalter früh laden.
@@ -172,6 +173,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
     <HostingModsDialog />
     <CrashHelperDialog />
     <ExtraLaunchDialog />
+    <BisectPanel />
     <DuplicateModsDialog />
   </div>
 </template>

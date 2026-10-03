@@ -187,7 +187,7 @@ pub(crate) fn find_conflicts(entries: &[Entry], builtins: &[ModInfo]) -> Vec<Con
 }
 
 /// Mod-IDs, die Spiel und Modloader selbst mitbringen – nie eine eigene Datei.
-const PLATFORM_IDS: &[&str] = &[
+pub(crate) const PLATFORM_IDS: &[&str] = &[
     "minecraft",
     "java",
     "fabricloader",

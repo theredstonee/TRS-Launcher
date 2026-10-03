@@ -805,6 +805,21 @@
     "bedrock": {
       "notInstalled": "Minecraft Bedrock ist auf diesem PC nicht installiert.",
       "startFailed": "Minecraft Bedrock konnte nicht gestartet werden."
+    },
+    "bisect": {
+      "tooFewMods": "Für die Suche braucht es mindestens zwei aktivierte Mods (außer dem TRS Client und Bibliotheken).",
+      "notRunning": "Für diese Instanz läuft keine Fehlersuche.",
+      "staleRound": "Diese Runde ist schon beantwortet – bitte neu laden.",
+      "applyFailed": "{count} Mods konnten nicht umgeschaltet werden. Läuft das Spiel noch?",
+      "alreadyRunning": "Für diese Instanz läuft schon eine Fehlersuche.",
+      "tooManyMods": "Zu viele Mods für die Suche (höchstens {max}).",
+      "gameRunning": "Bitte beende zuerst das Spiel."
+    },
+    "contentGroups": {
+      "invalidName": "Der Gruppenname muss 1–40 Zeichen lang sein.",
+      "unknownGroup": "Diese Gruppe gibt es nicht mehr.",
+      "tooMany": "Höchstens {max} Gruppen je Instanz",
+      "tooManyEntries": "Zu viele Einträge in Gruppen."
     }
   },
   "browse": {
@@ -5496,5 +5511,113 @@
     "hint": "Startet das installierte Spiel – ohne Instanz, ohne Mods",
     "playLabel": "Minecraft Bedrock starten",
     "started": "Minecraft Bedrock startet …"
+  },
+  "contentGroups": {
+    "newGroup": "Neue Gruppe",
+    "assign": "Gruppe",
+    "dragHandle": "{name} in eine Gruppe ziehen",
+    "dragging": "{n} Eintrag | {n} Einträge",
+    "dragInto": "{n} Eintrag → {name} | {n} Einträge → {name}",
+    "dialog": {
+      "createTitle": "Neue Gruppe",
+      "editTitle": "Gruppe bearbeiten",
+      "placeholder": "z. B. Performance",
+      "color": "Farbe",
+      "assignHint": "Der ausgewählte Eintrag kommt in die neue Gruppe. | Die {n} ausgewählten Einträge kommen in die neue Gruppe.",
+      "nameInvalid": "Der Name muss 1–{max} Zeichen lang sein.",
+      "create": "Gruppe anlegen"
+    },
+    "header": {
+      "ungrouped": "Ohne Gruppe",
+      "expand": "{name} aufklappen",
+      "collapse": "{name} zuklappen",
+      "count": "{on}/{total} an",
+      "toggle": "Ganze Gruppe {name} ein- oder ausschalten",
+      "menu": "Weitere Aktionen für die Gruppe {name}"
+    },
+    "menu": {
+      "moveTo": "In Gruppe verschieben",
+      "removeFromGroup": "Aus der Gruppe nehmen",
+      "edit": "Umbenennen / Farbe ändern",
+      "delete": "Gruppe löschen"
+    },
+    "filter": {
+      "label": "Nach Gruppe filtern",
+      "all": "Alle Gruppen"
+    },
+    "origin": {
+      "label": "Nach Herkunft filtern",
+      "all": "Jede Herkunft",
+      "pack": "Vom Modpack",
+      "manual": "Selbst hinzugefügt",
+      "packBadge": "Modpack",
+      "manualBadge": "Selbst hinzugefügt",
+      "packTitle": "Kam mit dem Modpack",
+      "manualTitle": "Hast du selbst hinzugefügt – nicht Teil des Modpacks"
+    },
+    "toasts": {
+      "created": "Gruppe {name} angelegt",
+      "moved": "{n} Eintrag nach {name} verschoben | {n} Einträge nach {name} verschoben",
+      "removed": "{n} Eintrag aus der Gruppe genommen | {n} Einträge aus ihren Gruppen genommen"
+    },
+    "deleteDialog": {
+      "title": "Gruppe löschen?",
+      "text": "Die Gruppe {name} wird gelöscht. Die Inhalte bleiben installiert – nur ohne Gruppe."
+    },
+    "colors": {
+      "red": "Rot",
+      "orange": "Orange",
+      "yellow": "Gelb",
+      "green": "Grün",
+      "cyan": "Türkis",
+      "blue": "Blau",
+      "purple": "Lila",
+      "pink": "Pink",
+      "gray": "Grau"
+    }
+  },
+  "bisect": {
+    "title": "Schuldige Mod finden",
+    "button": "Schuldige Mod finden",
+    "buttonTitle": "Schaltet abwechselnd die Hälfte deiner Mods aus, bis die Mod hinter dem Problem gefunden ist",
+    "round": "Runde {round} von ~{total}",
+    "progress": "Noch verdächtig: {suspects} · gerade ausgeschaltet: {off}",
+    "hintIdle": "Starte das Spiel und prüfe, ob der Fehler noch auftritt. Ein Absturz wird automatisch erkannt.",
+    "hintPreparing": "Das Spiel startet …",
+    "hintRunning": "Das Spiel läuft. Tritt der Fehler noch auf?",
+    "showSuspects": "Die verdächtige Mod zeigen | Die {n} verdächtigen Mods zeigen",
+    "launch": "Spiel starten",
+    "stillBroken": "Fehler noch da",
+    "worksFine": "Läuft ohne Fehler",
+    "stopFirst": "Beende zuerst das Spiel",
+    "cancelTitle": "Abbrechen und alle Mods genau wie vorher wiederherstellen",
+    "foundOne": "Gefunden! Diese Mod verursacht das Problem:",
+    "foundSet": "Diese Mod verursacht das Problem: | Diese {n} Mods lassen sich nur zusammen prüfen – eine davon verursacht das Problem:",
+    "openPage": "Seite öffnen",
+    "restoredNote": "Alle Mods sind wieder wie vorher. Gebraucht: {rounds} Runde. | Alle Mods sind wieder wie vorher. Gebraucht: {rounds} Runden.",
+    "disableResult": "Deaktivieren | Alle deaktivieren",
+    "keepSearching": "Weitersuchen",
+    "done": "Fertig",
+    "notFound": "Ohne die verdächtigen Mods kam der Fehler nicht wieder – es liegt also wohl nicht an einer einzelnen Mod (vielleicht an einer Einstellung, der Welt oder einem Ressourcenpaket). Alle Mods sind wieder wie vorher.",
+    "openContent": "Inhalte öffnen",
+    "crashDetected": "Absturz erkannt – zählt als „Fehler noch da“.",
+    "banner": "Schuldige Mod finden: Einige Mods sind gerade ausgeschaltet. Am Ende oder beim Abbrechen wird alles genau wie vorher wiederhergestellt.",
+    "showWindow": "Fenster zeigen",
+    "lockedTitle": "Gesperrt, solange die Fehlersuche läuft",
+    "minimize": "Einklappen",
+    "expand": "Ausklappen",
+    "start": {
+      "title": "Schuldige Mod finden",
+      "intro": "Der Launcher sucht in {name} nach der Mod hinter deinem Problem:",
+      "stepHalf": "Jede Runde wird etwa die Hälfte der verdächtigen Mods ausgeschaltet. Mods und die Bibliotheken, die sie brauchen, bleiben zusammen; TRS Client und Loader-Bibliotheken werden nie angefasst.",
+      "stepAsk": "Du startest das Spiel und sagst, ob der Fehler noch da ist. Ein Absturz wird automatisch erkannt.",
+      "stepKeep": "Nach ein paar Runden bleibt eine Mod übrig – du kannst sie deaktivieren oder weitersuchen.",
+      "stepRestore": "Am Ende oder beim Abbrechen werden alle Mods genau wie vorher wiederhergestellt – auch wenn der Launcher zwischendurch zugeht.",
+      "submit": "Suche starten"
+    },
+    "toasts": {
+      "restored": "Alle Mods wiederhergestellt",
+      "disabled": "Mods wiederhergestellt, Schuldige deaktiviert"
+    }
   }
 }

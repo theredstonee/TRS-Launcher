@@ -765,6 +765,12 @@ impl Launcher {
 
         match work {
             Ok(blocked) => {
+                // Herkunft merken – auch für Dateien, die der Nutzer noch selbst lädt.
+                let extra: Vec<String> =
+                    blocked.iter().map(|b| content::project_key(content::Platform::CurseForge, &b.project_id)).collect();
+                if let Err(e) = crate::content_groups::record_pack_contents(self.paths(), &instance.id, &extra).await {
+                    tracing::warn!("Modpack-Herkunft für '{}' nicht gespeichert: {e}", instance.id);
+                }
                 self.trs_achievement_event(crate::trs_api::achievements::ReportKind::ModpackInstalled, None).await;
                 Ok(PackOutcome { instance, blocked })
             }

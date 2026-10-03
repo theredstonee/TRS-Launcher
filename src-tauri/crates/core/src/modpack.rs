@@ -568,6 +568,10 @@ impl Launcher {
             }
             return Err(e);
         }
+        // Herkunft merken: alles, was jetzt in der Instanz liegt, kam aus dem Pack.
+        if let Err(e) = crate::content_groups::record_pack_contents(self.paths(), &instance.id, &[]).await {
+            tracing::warn!("Modpack-Herkunft für '{}' nicht gespeichert: {e}", instance.id);
+        }
         self.trs_achievement_event(crate::trs_api::achievements::ReportKind::ModpackInstalled, None).await;
         Ok(instance)
     }

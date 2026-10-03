@@ -313,7 +313,7 @@ pub(crate) async fn display_name(paths: &Paths, instance_id: &str, kind: Content
 }
 
 /// Benennt um (`.disabled`); `true`, wenn sich etwas geändert hat.
-async fn rename_enabled(paths: &Paths, instance_id: &str, kind: ContentKind, file_name: &str, enabled: bool) -> Result<bool> {
+pub(crate) async fn rename_enabled(paths: &Paths, instance_id: &str, kind: ContentKind, file_name: &str, enabled: bool) -> Result<bool> {
     validate_id(instance_id)?;
     validate_file_name(kind, file_name)?;
     let dir = content_dir(paths, instance_id, kind);

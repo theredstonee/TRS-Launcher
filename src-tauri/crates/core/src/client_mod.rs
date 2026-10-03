@@ -89,6 +89,11 @@ pub fn parse_manifest(bytes: &[u8]) -> Option<Manifest> {
     Some(Manifest { version, builds })
 }
 
+/// Ist das die Datei, die der Launcher selbst für den TRS Client verwaltet?
+pub fn is_client_mod_file(kind: ContentKind, file_name: &str) -> bool {
+    kind == ContentKind::Mod && file_name == INSTALLED_NAME
+}
+
 /// Nur einfache Jar-Namen ohne Pfadanteile.
 pub fn validate_build_file(file: &str) -> Result<()> {
     content::validate_file_name(ContentKind::Mod, file)

@@ -10,6 +10,7 @@ const games = useGamesStore()
 const instances = useInstancesStore()
 const router = useRouter()
 const openDocs = useDocs()
+const bisect = useBisectStore()
 
 const crash = computed(() => helper.current)
 const primary = computed(() => crash.value?.findings[0] ?? null)
@@ -79,6 +80,14 @@ function openJavaSettings() {
   if (!id) return
   helper.close()
   router.push({ path: `/instances/${id}`, query: { settings: 'java' } })
+}
+
+/** „Schuldige Mod finden“: Mods abwechselnd halbieren, bis die Ursache übrig ist. */
+function findCulprit() {
+  const id = crash.value?.instanceId
+  if (!id) return
+  helper.close()
+  bisect.askStart(id)
 }
 
 function openContent() {
@@ -220,6 +229,17 @@ function openContent() {
 
     <template #actions>
       <button type="button" class="btn btn-ghost" @click="sharing = true">{{ t('crash.shareLog') }}</button>
+      <button
+        v-if="!bisect.isActive(crash.instanceId)"
+        type="button"
+        class="btn btn-ghost"
+        :disabled="running"
+        :title="t('bisect.buttonTitle')"
+        data-testid="crash-bisect"
+        @click="findCulprit"
+      >
+        {{ t('bisect.button') }}
+      </button>
       <button type="button" class="btn btn-ghost" :disabled="running" @click="relaunch">{{ t('crashHelper.relaunch') }}</button>
       <button type="button" class="btn btn-primary" @click="helper.close()">{{ t('common.actions.close') }}</button>
     </template>

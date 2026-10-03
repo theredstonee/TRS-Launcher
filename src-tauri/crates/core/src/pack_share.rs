@@ -983,6 +983,10 @@ impl Launcher {
         files.extend(overrides);
         let new_link = PackLink { revision: pack.revision, name: pack.name.clone(), files, ..link.clone() };
         write_link(self.paths(), &instance.id, &new_link).await?;
+        let pack_files: Vec<String> = new_link.files.keys().cloned().collect();
+        if let Err(e) = crate::content_groups::record_pack_paths(self.paths(), &instance.id, &pack_files).await {
+            tracing::warn!("Modpack-Herkunft für '{}' nicht gespeichert: {e}", instance.id);
+        }
         history::record(
             self.paths(),
             &instance.id,

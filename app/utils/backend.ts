@@ -42,6 +42,8 @@ import {
   type PackDuration,
   type SharePackOptions,
 } from './packs'
+import { contentGroupSchema, contentOrganizationSchema, type GroupColor } from './contentGroups'
+import { bisectViewSchema } from './bisect'
 import {
   chatAttachmentSchema,
   chatConversationSchema,
@@ -375,6 +377,25 @@ export const backend = {
   /** Übernimmt die zuletzt ins Fenster gezogenen Dateien (Marke aus dem `file-drop`-Event). */
   addDroppedFiles: (id: string, token: number) => call<UploadResult[]>('add_dropped_files', { id, token }),
   installedProjects: (id: string) => call<string[]>('installed_projects', { id }),
+  /** Eigene Gruppen und Herkunft (Modpack / selbst hinzugefügt), aufgelöst auf die vorhandenen Dateien. */
+  contentOrganization: (id: string) => checked(contentOrganizationSchema, 'content_organization', { id }),
+  createContentGroup: (id: string, name: string, color: GroupColor) =>
+    checked(contentGroupSchema, 'create_content_group', { id, name, color }),
+  updateContentGroup: (id: string, groupId: string, patch: { name?: string; color?: GroupColor; collapsed?: boolean }) =>
+    checked(contentGroupSchema, 'update_content_group', { id, groupId, patch }),
+  deleteContentGroup: (id: string, groupId: string) => call<void>('delete_content_group', { id, groupId }),
+  /** `groupId: null` nimmt die Inhalte aus ihrer Gruppe. */
+  assignContentGroup: (id: string, targets: { kind: ContentKind; fileName: string }[], groupId: string | null) =>
+    checked(z.number().int().nonnegative(), 'assign_content_group', { id, targets, groupId }),
+  /** „Schuldige Mod finden“ – Stand der Suche einer Instanz (`null` = keine). */
+  bisectStatus: (id: string) => checked(bisectViewSchema.nullable(), 'bisect_status', { id }),
+  /** Alle laufenden Suchen, auch aus einer früheren Sitzung. */
+  bisectActive: () => checked(z.array(bisectViewSchema), 'bisect_active'),
+  bisectStart: (id: string) => checked(bisectViewSchema, 'bisect_start', { id }),
+  bisectAnswer: (id: string, round: number, failed: boolean) => checked(bisectViewSchema, 'bisect_answer', { id, round, failed }),
+  bisectContinue: (id: string) => checked(bisectViewSchema, 'bisect_continue', { id }),
+  /** Beenden/Abbrechen: stellt den ursprünglichen Zustand wieder her; `disableResult` schaltet den Fund danach aus. */
+  bisectFinish: (id: string, disableResult: boolean) => call<void>('bisect_finish', { id, disableResult }),
   checkContentUpdates: (id: string) => call<ContentUpdate[]>('check_content_updates', { id }),
   /** Tauscht unverträgliche Mods gegen passende Versionen (`prefer` = Mod-ID aus der Absturz-Meldung). */
   fixModConflicts: (id: string, prefer: string | null, taskId: string | null = null) =>

@@ -46,6 +46,7 @@
     get_instance: () => instance,
     list_accounts: () => [],
     running_games: () => [],
+    bisect_active: () => [],
     list_servers: () => [],
     get_news: () => news,
     news_image: ({ url }) => url,

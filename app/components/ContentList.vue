@@ -3,10 +3,26 @@ import { isTauri } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import type { BulkAction, ContentItem, ContentKind, ContentUpdate, DropEvent, DuplicateModGroup, Instance, ModrinthVersion, UploadResult } from '~/types'
 import { cancelledError } from '~/stores/tasks'
+import {
+  buildSections,
+  contentKey,
+  emptyOrganization,
+  GROUP_COLOR_HEX,
+  groupToggleState,
+  indexOrganization,
+  matchesFilters,
+  sortedGroups,
+  type ContentGroup,
+  type ContentOrganization,
+  type ContentSection,
+  type GroupColor,
+  type OriginFilter,
+} from '~/utils/contentGroups'
 
 // Inhalte einer Instanz als EINE Tabelle: Filter-Chips,
 // Suche, Sortierung, Mehrfachauswahl mit Sammelaktionen, Dateien per Dialog
-// oder Drag & Drop hinzufügen.
+// oder Drag & Drop hinzufügen. Eigene Gruppen (klappbar, als Ganzes schaltbar,
+// per Menü oder Ziehen zuordnen) und Herkunft „vom Modpack“ / „selbst hinzugefügt“.
 const props = defineProps<{ instance: Instance }>()
 
 const items = ref<ContentItem[]>([])
@@ -62,6 +78,34 @@ const changelogFor = ref<ContentItem | null>(null)
 const toDelete = ref<ContentItem[] | null>(null)
 const dragging = ref(false)
 
+// --- Gruppen & Herkunft ----------------------------------------------------------
+const org = ref<ContentOrganization>(emptyOrganization())
+const orgIndex = computed(() => indexOrganization(org.value))
+const origin = ref<OriginFilter>('all')
+const groupFilter = ref<string>('all')
+/** Gruppe anlegen (`group: null`) oder bearbeiten; `assign` kommt nach dem Anlegen hinein. */
+const groupDialog = ref<{ group: ContentGroup | null; assign: ContentItem[] } | null>(null)
+const groupToDelete = ref<ContentGroup | null>(null)
+const groupMenuFor = ref<string | null>(null)
+const assignMenu = ref(false)
+const groupOf = (item: ContentItem) => {
+  const id = orgIndex.value.groupOf.get(contentKey(item))
+  return id ? (orgIndex.value.groups.get(id) ?? null) : null
+}
+const isFromPack = (item: ContentItem) => orgIndex.value.fromPack.has(contentKey(item))
+watch(
+  () => org.value.groups.map((g) => g.id),
+  (ids) => {
+    if (groupFilter.value !== 'all' && groupFilter.value !== 'none' && !ids.includes(groupFilter.value)) groupFilter.value = 'all'
+  },
+)
+
+// --- Fehlersuche („Schuldige Mod finden“) ---------------------------------------------
+const bisect = useBisectStore()
+const bisecting = computed(() => bisect.isActive(props.instance.id))
+// Die Suche schaltet Mods um – Liste neu laden.
+watch(() => bisect.revision, () => load(true))
+
 const keyOf = (i: { kind: ContentKind; fileName: string }) => `${i.kind}/${i.fileName}`
 const updateFor = (item: ContentItem) => updates.value?.find((u) => u.kind === item.kind && u.fileName === item.fileName)
 const isVanilla = computed(() => props.instance.loader.kind === 'vanilla')
@@ -73,11 +117,13 @@ async function load(quiet = false) {
   if (!quiet) loading.value = true
   error.value = null
   const duplicateScan = backend.duplicateMods(props.instance.id).catch(() => [] as DuplicateModGroup[])
+  const orgScan = backend.contentOrganization(props.instance.id).catch(() => null)
   try {
     const lists = await Promise.all(contentKinds.map((k) => backend.listContent(props.instance.id, k)))
     items.value = lists.flat()
     const keys = new Set(items.value.map(keyOf))
     selected.value = new Set([...selected.value].filter((k) => keys.has(k)))
+    org.value = (await orgScan) ?? org.value
     duplicates.value = await duplicateScan
   } catch (e) {
     error.value = errorMessage(e)
@@ -141,11 +187,8 @@ watch(chips, (list) => {
 
 const visible = computed(() => {
   const needle = search.value.trim().toLowerCase()
-  const list = items.value.filter(
-    (i) =>
-      (filter.value === 'all' || i.kind === filter.value) &&
-      (!needle || `${i.title ?? ''} ${i.fileName} ${i.author ?? ''}`.toLowerCase().includes(needle)),
-  )
+  const filters = { needle, origin: origin.value, group: groupFilter.value }
+  const list = items.value.filter((i) => (filter.value === 'all' || i.kind === filter.value) && matchesFilters(i, orgIndex.value, filters))
   const byName = (a: ContentItem, b: ContentItem) => compareText(titleOf(a), titleOf(b))
   const rank: Record<typeof sort.value, (i: ContentItem) => number> = {
     name: () => 0,
@@ -154,6 +197,25 @@ const visible = computed(() => {
     kind: (i) => contentKinds.indexOf(i.kind),
   }
   return list.sort((a, b) => rank[sort.value](a) - rank[sort.value](b) || byName(a, b))
+})
+
+/** Mit Gruppen: Abschnitte (Kopfzeile + Inhalte), sonst nur die Inhalte. */
+type Row = { type: 'header'; key: string; section: ContentSection } | { type: 'item'; key: string; item: ContentItem }
+const filtering = computed(() => !!search.value.trim() || filter.value !== 'all' || origin.value !== 'all' || groupFilter.value !== 'all')
+const rows = computed<Row[]>(() => {
+  if (!org.value.groups.length) return visible.value.map((item): Row => ({ type: 'item', key: keyOf(item), item }))
+  const out: Row[] = []
+  // Beim Suchen sind auch eingeklappte Gruppen offen.
+  const searching = !!search.value.trim()
+  for (const section of buildSections(visible.value, items.value, org.value, filtering.value)) {
+    out.push({ type: 'header', key: `group:${section.group?.id ?? 'none'}`, section })
+    if (!section.group?.collapsed || searching) for (const item of section.items) out.push({ type: 'item', key: keyOf(item), item })
+  }
+  return out
+})
+const originCounts = computed(() => {
+  const pack = items.value.filter(isFromPack).length
+  return { pack, manual: items.value.length - pack }
 })
 
 // --- Auswahl ---------------------------------------------------------------------
@@ -172,6 +234,115 @@ function toggleOne(item: ContentItem) {
   selected.value = next
 }
 const selectedUpdates = computed(() => selectedItems.value.map(updateFor).filter((u): u is ContentUpdate => !!u))
+
+// --- Gruppen ----------------------------------------------------------------------
+const targetsOf = (list: ContentItem[]) => list.map((item) => ({ kind: item.kind, fileName: item.fileName }))
+
+async function reloadOrg() {
+  try {
+    org.value = await backend.contentOrganization(props.instance.id)
+  } catch (e) {
+    toasts.error(e)
+  }
+}
+
+async function saveGroup(name: string, color: GroupColor) {
+  const dialog = groupDialog.value
+  groupDialog.value = null
+  if (!dialog) return
+  try {
+    if (dialog.group) {
+      await backend.updateContentGroup(props.instance.id, dialog.group.id, { name, color })
+    } else {
+      const created = await backend.createContentGroup(props.instance.id, name, color)
+      if (dialog.assign.length) await backend.assignContentGroup(props.instance.id, targetsOf(dialog.assign), created.id)
+      toasts.ok(t('contentGroups.toasts.created', { name: created.name }))
+    }
+  } catch (e) {
+    toasts.error(e)
+  }
+  await reloadOrg()
+}
+
+async function assignTo(list: ContentItem[], groupId: string | null) {
+  assignMenu.value = false
+  menuFor.value = null
+  if (!list.length || list.every((i) => (groupOf(i)?.id ?? null) === groupId)) return
+  try {
+    const n = await backend.assignContentGroup(props.instance.id, targetsOf(list), groupId)
+    const name = groupId ? (orgIndex.value.groups.get(groupId)?.name ?? '') : ''
+    toasts.ok(groupId ? t('contentGroups.toasts.moved', { name, n }, n) : t('contentGroups.toasts.removed', n))
+  } catch (e) {
+    toasts.error(e)
+  }
+  await reloadOrg()
+}
+
+async function toggleCollapse(group: ContentGroup) {
+  group.collapsed = !group.collapsed
+  try {
+    await backend.updateContentGroup(props.instance.id, group.id, { collapsed: group.collapsed })
+  } catch (e) {
+    toasts.error(e)
+    await reloadOrg()
+  }
+}
+
+async function confirmDeleteGroup() {
+  const group = groupToDelete.value
+  groupToDelete.value = null
+  if (!group) return
+  try {
+    await backend.deleteContentGroup(props.instance.id, group.id)
+  } catch (e) {
+    toasts.error(e)
+  }
+  await reloadOrg()
+}
+
+/** Ganze Gruppe schalten: alle an → alle aus, sonst alle an. */
+function toggleGroup(section: ContentSection) {
+  if (!section.all.length) return
+  void bulk(groupToggleState(section.all) === 'on' ? 'disable' : 'enable', section.all)
+}
+
+// Ziehen in eine Gruppe – mit Zeiger-Ereignissen, weil das Fenster Datei-Drops
+// selbst abfängt (HTML5-Drag & Drop geht unter Windows dann nicht).
+const drag = ref<{ items: ContentItem[]; x: number; y: number; over: string | null } | null>(null)
+function startDrag(e: PointerEvent, item: ContentItem) {
+  if (e.button !== 0 || !org.value.groups.length) return
+  e.preventDefault()
+  const list = selected.value.has(keyOf(item)) ? selectedItems.value : [item]
+  drag.value = { items: list, x: e.clientX, y: e.clientY, over: null }
+  window.addEventListener('pointermove', onDragMove)
+  window.addEventListener('pointerup', onDragEnd)
+  window.addEventListener('keydown', onDragKey)
+}
+function onDragMove(e: PointerEvent) {
+  if (!drag.value) return
+  const target = (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null)?.closest<HTMLElement>('[data-group-drop]')
+  drag.value = { ...drag.value, x: e.clientX, y: e.clientY, over: target?.dataset.groupDrop ?? null }
+}
+function stopDrag() {
+  window.removeEventListener('pointermove', onDragMove)
+  window.removeEventListener('pointerup', onDragEnd)
+  window.removeEventListener('keydown', onDragKey)
+  drag.value = null
+}
+function onDragEnd() {
+  const d = drag.value
+  stopDrag()
+  if (d?.over) void assignTo(d.items, d.over === 'none' ? null : d.over)
+}
+function onDragKey(e: KeyboardEvent) {
+  if (e.key === 'Escape') stopDrag()
+}
+onBeforeUnmount(stopDrag)
+const dragTargetName = computed(() => {
+  const over = drag.value?.over
+  if (!over) return null
+  return over === 'none' ? t('contentGroups.header.ungrouped') : (orgIndex.value.groups.get(over)?.name ?? null)
+})
 
 // --- Aktionen --------------------------------------------------------------------
 async function toggle(item: ContentItem) {
@@ -312,7 +483,10 @@ function projectLink(item: ContentItem) {
   return item.source?.projectId ? projectRoute(sourcePlatform(item.source), item.source.projectId, props.instance.id) : null
 }
 function closeMenu(e: MouseEvent) {
-  if (!(e.target as HTMLElement | null)?.closest('[data-row-menu]')) menuFor.value = null
+  const target = e.target as HTMLElement | null
+  if (!target?.closest('[data-row-menu]')) menuFor.value = null
+  if (!target?.closest('[data-group-menu]')) groupMenuFor.value = null
+  if (!target?.closest('[data-assign-menu]')) assignMenu.value = false
 }
 onMounted(() => document.addEventListener('mousedown', closeMenu))
 onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
@@ -357,12 +531,39 @@ const pendingUpdates = computed(() => updates.value ?? [])
       <button v-for="k in chips" :key="k" class="filter-chip" :class="{ 'filter-chip-on': filter === k }" @click="filter = k">
         {{ contentKindLabel(k) }} <span class="opacity-60">{{ counts[k] }}</span>
       </button>
-      <button class="ml-auto text-xs text-base-400 hover:text-base-50 disabled:opacity-50" :disabled="presetsBusy" :title="t('presets.apply.buttonTitle')" @click="applyingPreset = true">
+      <select v-if="org.packKnown" v-model="origin" class="field h-7 w-auto rounded-full py-0 text-xs" :aria-label="t('contentGroups.origin.label')" data-testid="content-origin-filter">
+        <option value="all">{{ t('contentGroups.origin.all') }}</option>
+        <option value="pack">{{ t('contentGroups.origin.pack') }} ({{ originCounts.pack }})</option>
+        <option value="manual">{{ t('contentGroups.origin.manual') }} ({{ originCounts.manual }})</option>
+      </select>
+      <select v-if="org.groups.length" v-model="groupFilter" class="field h-7 w-auto rounded-full py-0 text-xs" :aria-label="t('contentGroups.filter.label')" data-testid="content-group-filter">
+        <option value="all">{{ t('contentGroups.filter.all') }}</option>
+        <option value="none">{{ t('contentGroups.header.ungrouped') }}</option>
+        <option v-for="g in sortedGroups(org.groups)" :key="g.id" :value="g.id">{{ g.name }}</option>
+      </select>
+      <button class="ml-auto text-xs text-base-400 hover:text-base-50" data-testid="content-new-group" @click="groupDialog = { group: null, assign: [] }">
+        + {{ t('contentGroups.newGroup') }}
+      </button>
+      <button
+        v-if="!bisecting && (counts.mod ?? 0) >= 2"
+        class="text-xs text-base-400 hover:text-base-50"
+        :title="t('bisect.buttonTitle')"
+        data-testid="content-bisect"
+        @click="bisect.askStart(instance.id)"
+      >
+        {{ t('bisect.button') }}
+      </button>
+      <button class="text-xs text-base-400 hover:text-base-50 disabled:opacity-50" :disabled="presetsBusy" :title="t('presets.apply.buttonTitle')" @click="applyingPreset = true">
         {{ presetsBusy ? t('presets.apply.installing') : t('presets.apply.button') }}
       </button>
     </div>
 
     <p v-if="error" role="alert" class="card mb-3 border-redstone-600/50 px-4 py-2.5 text-sm text-redstone-300">{{ error }}</p>
+    <div v-if="bisecting" class="card mb-3 flex flex-wrap items-center gap-3 border-redstone-600/40 px-4 py-2.5 text-sm" data-testid="bisect-banner">
+      <svg viewBox="0 0 24 24" class="size-4 shrink-0 text-redstone-300" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5" /></svg>
+      <span class="min-w-0 flex-1 text-base-200">{{ t('bisect.banner') }}</span>
+      <button class="btn btn-ghost px-3 py-1 text-xs" @click="bisect.minimized = false">{{ t('bisect.showWindow') }}</button>
+    </div>
     <div v-if="duplicates.length" class="card mb-3 flex flex-wrap items-center gap-3 border-warn/40 px-4 py-2.5 text-sm" data-testid="duplicate-mods-banner">
       <span class="min-w-0 flex-1 text-base-200">{{ t('content.duplicates.banner', { n: duplicates.length }, duplicates.length) }}</span>
       <button class="btn btn-primary px-3 py-1 text-xs" :disabled="fixingDuplicates" data-testid="duplicate-mods-keep" @click="keepNewestDuplicates">
@@ -386,7 +587,7 @@ const pendingUpdates = computed(() => updates.value ?? [])
       </div>
     </div>
 
-    <div v-else-if="visible.length" class="card min-h-0 flex-1 overflow-y-auto">
+    <div v-else-if="rows.length" class="card min-h-0 flex-1 overflow-y-auto">
       <!-- Kopfzeile bzw. Sammelaktionen -->
       <div class="sticky top-0 z-10 grid min-h-11 grid-cols-[1.5rem_minmax(0,1fr)_11rem_10.5rem] items-center gap-3 border-b border-base-800 bg-base-900/95 px-3 py-1.5 text-[11px] font-medium text-base-600 backdrop-blur">
         <input
@@ -400,8 +601,19 @@ const pendingUpdates = computed(() => updates.value ?? [])
         <template v-if="selectedItems.length">
           <div class="col-span-3 flex flex-wrap items-center gap-1.5 text-xs">
             <span class="mr-1 font-semibold text-base-50">{{ t('content.selection.selected', selectedItems.length) }}</span>
-            <button class="bulk-btn" :disabled="!!bulkBusy" @click="bulk('enable', selectedItems)">{{ t('common.actions.enable') }}</button>
-            <button class="bulk-btn" :disabled="!!bulkBusy" @click="bulk('disable', selectedItems)">{{ t('common.actions.disable') }}</button>
+            <button class="bulk-btn" :disabled="!!bulkBusy || bisecting" @click="bulk('enable', selectedItems)">{{ t('common.actions.enable') }}</button>
+            <button class="bulk-btn" :disabled="!!bulkBusy || bisecting" @click="bulk('disable', selectedItems)">{{ t('common.actions.disable') }}</button>
+            <div class="relative" data-assign-menu>
+              <button class="bulk-btn" :aria-expanded="assignMenu" data-testid="content-assign-group" @click="assignMenu = !assignMenu">{{ t('contentGroups.assign') }} ▾</button>
+              <div v-if="assignMenu" class="menu top-8 left-0 min-w-48" role="menu">
+                <button v-for="g in sortedGroups(org.groups)" :key="g.id" class="menu-item flex items-center gap-2" role="menuitem" @click="assignTo(selectedItems, g.id)">
+                  <span class="size-2.5 shrink-0 rounded-full" :style="{ background: GROUP_COLOR_HEX[g.color] }" />
+                  <span class="truncate">{{ g.name }}</span>
+                </button>
+                <button class="menu-item" role="menuitem" @click="assignMenu = false; groupDialog = { group: null, assign: [...selectedItems] }">+ {{ t('contentGroups.newGroup') }}</button>
+                <button v-if="selectedItems.some((i) => groupOf(i))" class="menu-item" role="menuitem" @click="assignTo(selectedItems, null)">{{ t('contentGroups.menu.removeFromGroup') }}</button>
+              </div>
+            </div>
             <button v-if="selectedUpdates.length" class="bulk-btn text-lamp-300" :disabled="!!bulkBusy" @click="applyUpdates(selectedUpdates)">{{ t('content.selection.update', { n: selectedUpdates.length }) }}</button>
             <button class="bulk-btn text-redstone-300" :disabled="!!bulkBusy" @click="toDelete = [...selectedItems]">{{ t('common.actions.delete') }}</button>
             <button class="ml-auto text-base-400 hover:text-base-50" @click="selected = new Set()">{{ t('content.selection.clear') }}</button>
@@ -415,87 +627,181 @@ const pendingUpdates = computed(() => updates.value ?? [])
       </div>
 
       <ul class="divide-y divide-base-800/70">
-        <li
-          v-for="item in visible"
-          :key="keyOf(item)"
+        <template v-for="row in rows" :key="row.key">
+          <!-- Gruppen-Kopf: klappen, ganze Gruppe schalten, Menü; Ziel beim Ziehen -->
+          <li
+            v-if="row.type === 'header'"
+            class="flex min-h-10 items-center gap-2.5 bg-base-900/60 px-3 py-1.5 transition-colors"
+            :class="{ 'bg-redstone-900/30 ring-2 ring-redstone-500/60 ring-inset': drag && drag.over === (row.section.group?.id ?? 'none') }"
+            :data-group-drop="row.section.group?.id ?? 'none'"
+            data-testid="content-group-header"
+          >
+            <template v-if="row.section.group">
+              <button
+                class="btn-icon size-6 bg-transparent"
+                :aria-expanded="!row.section.group.collapsed"
+                :aria-label="row.section.group.collapsed ? t('contentGroups.header.expand', { name: row.section.group.name }) : t('contentGroups.header.collapse', { name: row.section.group.name })"
+                @click="toggleCollapse(row.section.group)"
+              >
+                <svg viewBox="0 0 24 24" class="size-3.5 transition-transform" :class="{ '-rotate-90': row.section.group.collapsed && !search.trim() }" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m6 9 6 6 6-6" /></svg>
+              </button>
+              <span class="size-2.5 shrink-0 rounded-full" :style="{ background: GROUP_COLOR_HEX[row.section.group.color] }" />
+              <span class="min-w-0 truncate text-xs font-semibold text-base-50">{{ row.section.group.name }}</span>
+              <span class="shrink-0 text-[11px] text-base-400">{{ t('contentGroups.header.count', { on: row.section.all.filter((i) => i.enabled).length, total: row.section.all.length }) }}</span>
+              <div class="ml-auto flex items-center gap-1">
+                <button
+                  role="switch"
+                  :aria-checked="groupToggleState(row.section.all) === 'on' ? 'true' : groupToggleState(row.section.all) === 'mixed' ? 'mixed' : 'false'"
+                  :aria-label="t('contentGroups.header.toggle', { name: row.section.group.name })"
+                  :title="bisecting ? t('bisect.lockedTitle') : t('contentGroups.header.toggle', { name: row.section.group.name })"
+                  class="relative mx-1 h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-40"
+                  :class="{ 'bg-redstone-500': groupToggleState(row.section.all) === 'on', 'bg-redstone-500/45': groupToggleState(row.section.all) === 'mixed', 'bg-base-700': groupToggleState(row.section.all) === 'off' }"
+                  :disabled="!row.section.all.length || !!bulkBusy || bisecting"
+                  data-testid="content-group-toggle"
+                  @click="toggleGroup(row.section)"
+                >
+                  <span
+                    class="absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform"
+                    :class="{ 'translate-x-4': groupToggleState(row.section.all) === 'on', 'translate-x-2': groupToggleState(row.section.all) === 'mixed' }"
+                  />
+                </button>
+                <div class="relative" data-group-menu>
+                  <button
+                    class="btn-icon size-7 bg-transparent"
+                    :aria-label="t('contentGroups.header.menu', { name: row.section.group.name })"
+                    :aria-expanded="groupMenuFor === row.section.group.id"
+                    @click="groupMenuFor = groupMenuFor === row.section.group.id ? null : row.section.group.id"
+                  >
+                    <svg viewBox="0 0 24 24" class="size-4" fill="currentColor"><circle cx="12" cy="5.5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="18.5" r="1.7" /></svg>
+                  </button>
+                  <div v-if="groupMenuFor === row.section.group.id" class="menu top-8 right-0" role="menu">
+                    <button class="menu-item" role="menuitem" @click="groupMenuFor = null; groupDialog = { group: row.section.group, assign: [] }">{{ t('contentGroups.menu.edit') }}</button>
+                    <button class="menu-item text-redstone-300" role="menuitem" @click="groupMenuFor = null; groupToDelete = row.section.group">{{ t('contentGroups.menu.delete') }}</button>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <template v-else>
+              <span class="text-xs font-semibold text-base-400">{{ t('contentGroups.header.ungrouped') }}</span>
+              <span class="text-[11px] text-base-600">{{ row.section.all.length }}</span>
+            </template>
+          </li>
+          <li
+            v-else
           class="group grid grid-cols-[1.5rem_minmax(0,1fr)_11rem_10.5rem] items-center gap-3 px-3 py-2 transition-colors hover:bg-base-850"
-          :class="{ 'bg-redstone-900/15': selected.has(keyOf(item)) }"
-        >
-          <input type="checkbox" class="size-4 accent-redstone-500" :checked="selected.has(keyOf(item))" :aria-label="t('content.row.select', { name: titleOf(item) })" @change="toggleOne(item)" />
+          :class="{ 'bg-redstone-900/15': selected.has(keyOf(row.item)), 'opacity-40': drag?.items.includes(row.item) }"
+          >
+          <input type="checkbox" class="size-4 accent-redstone-500" :checked="selected.has(keyOf(row.item))" :aria-label="t('content.row.select', { name: titleOf(row.item) })" @change="toggleOne(row.item)" />
 
-          <div class="flex min-w-0 items-center gap-3" :class="{ 'opacity-55': !item.enabled }">
-            <ModIcon :src="item.iconUrl" :name="titleOf(item)" :size="40" :class="{ grayscale: !item.enabled }" />
+          <div class="flex min-w-0 items-center gap-3" :class="{ 'opacity-55': !row.item.enabled }">
+            <button
+              v-if="org.groups.length"
+              class="-mr-1.5 -ml-1 shrink-0 cursor-grab touch-none text-base-600 opacity-0 group-hover:opacity-100 hover:text-base-50 focus-visible:opacity-100"
+              :aria-label="t('contentGroups.dragHandle', { name: titleOf(row.item) })"
+              :title="t('contentGroups.dragHandle', { name: titleOf(row.item) })"
+              @pointerdown="startDrag($event, row.item)"
+            >
+              <svg viewBox="0 0 24 24" class="size-4" fill="currentColor"><circle cx="9" cy="6" r="1.5" /><circle cx="15" cy="6" r="1.5" /><circle cx="9" cy="12" r="1.5" /><circle cx="15" cy="12" r="1.5" /><circle cx="9" cy="18" r="1.5" /><circle cx="15" cy="18" r="1.5" /></svg>
+            </button>
+            <ModIcon :src="row.item.iconUrl" :name="titleOf(row.item)" :size="40" :class="{ grayscale: !row.item.enabled }" />
             <div class="min-w-0">
-              <NuxtLink v-if="projectLink(item)" :to="projectLink(item)!" class="block truncate text-sm font-semibold hover:text-redstone-300">{{ titleOf(item) }}</NuxtLink>
-              <p v-else class="truncate text-sm font-semibold">{{ titleOf(item) }}</p>
+              <div class="flex min-w-0 items-center gap-1.5">
+                <NuxtLink v-if="projectLink(row.item)" :to="projectLink(row.item)!" class="block truncate text-sm font-semibold hover:text-redstone-300">{{ titleOf(row.item) }}</NuxtLink>
+                <p v-else class="truncate text-sm font-semibold">{{ titleOf(row.item) }}</p>
+                <span
+                  v-if="org.packKnown"
+                  class="badge shrink-0 text-[10px]"
+                  :class="isFromPack(row.item) ? 'bg-base-800 text-base-400' : 'bg-lamp-900 text-lamp-300 ring-1 ring-lamp-400/30'"
+                  :title="isFromPack(row.item) ? t('contentGroups.origin.packTitle') : t('contentGroups.origin.manualTitle')"
+                >
+                  {{ isFromPack(row.item) ? t('contentGroups.origin.packBadge') : t('contentGroups.origin.manualBadge') }}
+                </span>
+              </div>
               <p class="truncate text-xs text-base-400">
-                <template v-if="item.author">{{ t('content.row.by', { author: item.author }) }}</template>
+                <template v-if="row.item.author">{{ t('content.row.by', { author: row.item.author }) }}</template>
                 <template v-else>{{ t('content.row.unknownAuthor') }}</template>
-                <template v-if="filter === 'all'"><span class="text-base-600"> · </span>{{ contentKindLabel(item.kind) }}</template>
-                <template v-if="sourcePlatform(item.source) === 'curseforge' && item.source"><span class="text-base-600"> · </span>{{ t('content.row.viaCurseForge') }}</template>
+                <template v-if="filter === 'all'"><span class="text-base-600"> · </span>{{ contentKindLabel(row.item.kind) }}</template>
+                <template v-if="sourcePlatform(row.item.source) === 'curseforge' && row.item.source"><span class="text-base-600"> · </span>{{ t('content.row.viaCurseForge') }}</template>
               </p>
             </div>
           </div>
 
           <div class="min-w-0">
             <div class="flex items-center gap-1.5">
-              <span class="truncate font-mono text-xs text-base-200" :title="displayVersion(item) ?? ''">{{ displayVersion(item) ?? '–' }}</span>
+              <span class="truncate font-mono text-xs text-base-200" :title="displayVersion(row.item) ?? ''">{{ displayVersion(row.item) ?? '–' }}</span>
               <button
-                v-if="updateFor(item) && !isBusy(item)"
+                v-if="updateFor(row.item) && !isBusy(row.item)"
                 class="badge shrink-0 bg-lamp-900 text-lamp-300 ring-1 ring-lamp-400/30 hover:bg-lamp-400 hover:text-base-950"
                 :title="
-                  updateFor(item)!.compatWith
-                    ? t('content.row.compatTitle', { version: updateFor(item)!.versionNumber, other: updateFor(item)!.compatWith! })
-                    : t('content.row.updateTitle', { version: updateFor(item)!.versionNumber })
+                  updateFor(row.item)!.compatWith
+                    ? t('content.row.compatTitle', { version: updateFor(row.item)!.versionNumber, other: updateFor(row.item)!.compatWith! })
+                    : t('content.row.updateTitle', { version: updateFor(row.item)!.versionNumber })
                 "
-                @click="item.source && !updateFor(item)!.compatWith ? (changelogFor = item) : applyUpdates([updateFor(item)!])"
+                @click="row.item.source && !updateFor(row.item)!.compatWith ? (changelogFor = row.item) : applyUpdates([updateFor(row.item)!])"
               >
                 <svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5m0 0-6 6m6-6 6 6" /></svg>
-                {{ updateFor(item)!.compatWith ? t('content.row.compatBadge') : t('content.row.updateBadge') }}
+                {{ updateFor(row.item)!.compatWith ? t('content.row.compatBadge') : t('content.row.updateBadge') }}
               </button>
             </div>
-            <span v-if="isBusy(item)" class="mt-1 block w-24"><RedstoneWire :percent="60" :segments="8" /></span>
-            <p v-else class="truncate text-[11px] text-base-600" :title="item.fileName">{{ item.fileName }}</p>
+            <span v-if="isBusy(row.item)" class="mt-1 block w-24"><RedstoneWire :percent="60" :segments="8" /></span>
+            <p v-else class="truncate text-[11px] text-base-600" :title="row.item.fileName">{{ row.item.fileName }}</p>
           </div>
 
           <div class="flex items-center justify-end gap-1">
             <button
               class="btn-icon size-8 bg-transparent opacity-70 group-hover:opacity-100 disabled:opacity-25"
-              :disabled="!item.source"
-              :title="item.source ? t('content.row.switchVersion') : t('content.row.onlyModrinth')"
-              :aria-label="t('content.row.switchVersionOf', { name: titleOf(item) })"
-              @click="switching = item"
+              :disabled="!row.item.source"
+              :title="row.item.source ? t('content.row.switchVersion') : t('content.row.onlyModrinth')"
+              :aria-label="t('content.row.switchVersionOf', { name: titleOf(row.item) })"
+              @click="switching = row.item"
             >
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h13m0 0-4-4m4 4-4 4M20 16H7m0 0 4-4m-4 4 4 4" /></svg>
             </button>
             <button
               role="switch"
-              :aria-checked="item.enabled"
-              :aria-label="t(item.enabled ? 'content.row.disable' : 'content.row.enable', { name: titleOf(item) })"
-              class="relative mx-1 h-5 w-9 shrink-0 rounded-full transition-colors"
-              :class="item.enabled ? 'bg-redstone-500' : 'bg-base-700'"
-              @click="toggle(item)"
+              :aria-checked="row.item.enabled"
+              :aria-label="t(row.item.enabled ? 'content.row.disable' : 'content.row.enable', { name: titleOf(row.item) })"
+              class="relative mx-1 h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-40"
+              :class="row.item.enabled ? 'bg-redstone-500' : 'bg-base-700'"
+              :disabled="bisecting"
+              :title="bisecting ? t('bisect.lockedTitle') : undefined"
+              @click="toggle(row.item)"
             >
-              <span class="absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform" :class="{ 'translate-x-4': item.enabled }" />
+              <span class="absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform" :class="{ 'translate-x-4': row.item.enabled }" />
             </button>
-            <button class="btn-icon size-8 bg-transparent opacity-70 group-hover:opacity-100 hover:text-redstone-300" :aria-label="t('content.row.delete', { name: titleOf(item) })" :title="t('common.actions.delete')" @click="toDelete = [item]">
+            <button class="btn-icon size-8 bg-transparent opacity-70 group-hover:opacity-100 hover:text-redstone-300" :aria-label="t('content.row.delete', { name: titleOf(row.item) })" :title="t('common.actions.delete')" @click="toDelete = [row.item]">
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
             </button>
             <div class="relative" data-row-menu>
-              <button class="btn-icon size-8 bg-transparent opacity-70 group-hover:opacity-100" :aria-label="t('content.row.moreActions', { name: titleOf(item) })" :aria-expanded="menuFor === keyOf(item)" @click="menuFor = menuFor === keyOf(item) ? null : keyOf(item)">
+              <button class="btn-icon size-8 bg-transparent opacity-70 group-hover:opacity-100" :aria-label="t('content.row.moreActions', { name: titleOf(row.item) })" :aria-expanded="menuFor === keyOf(row.item)" @click="menuFor = menuFor === keyOf(row.item) ? null : keyOf(row.item)">
                 <svg viewBox="0 0 24 24" class="size-4" fill="currentColor"><circle cx="12" cy="5.5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="18.5" r="1.7" /></svg>
               </button>
-              <div v-if="menuFor === keyOf(item)" class="menu top-9 right-0" role="menu">
-                <button v-if="updateFor(item)" class="menu-item text-lamp-300" role="menuitem" @click="menuFor = null; applyUpdates([updateFor(item)!])">
-                  {{ t('content.menu.updateTo', { version: updateFor(item)!.versionNumber }) }}
+              <div v-if="menuFor === keyOf(row.item)" class="menu top-9 right-0" role="menu">
+                <button v-if="updateFor(row.item)" class="menu-item text-lamp-300" role="menuitem" @click="menuFor = null; applyUpdates([updateFor(row.item)!])">
+                  {{ t('content.menu.updateTo', { version: updateFor(row.item)!.versionNumber }) }}
                 </button>
-                <button v-if="item.source" class="menu-item" role="menuitem" @click="menuFor = null; changelogFor = item">{{ t('content.menu.changelog') }}</button>
-                <NuxtLink v-if="projectLink(item)" :to="projectLink(item)!" class="menu-item" role="menuitem">{{ t('content.menu.projectPage') }}</NuxtLink>
-                <p v-if="!item.source" class="px-2.5 py-1.5 text-xs text-base-400">{{ t('content.menu.notModrinth') }}</p>
+                <button v-if="row.item.source" class="menu-item" role="menuitem" @click="menuFor = null; changelogFor = row.item">{{ t('content.menu.changelog') }}</button>
+                <NuxtLink v-if="projectLink(row.item)" :to="projectLink(row.item)!" class="menu-item" role="menuitem">{{ t('content.menu.projectPage') }}</NuxtLink>
+                <p v-if="!row.item.source" class="px-2.5 py-1.5 text-xs text-base-400">{{ t('content.menu.notModrinth') }}</p>
+                <p class="border-t border-base-800 px-2.5 pt-1.5 pb-0.5 text-[11px] text-base-600">{{ t('contentGroups.menu.moveTo') }}</p>
+                <button
+                  v-for="g in sortedGroups(org.groups)"
+                  :key="g.id"
+                  class="menu-item flex items-center gap-2 disabled:opacity-50"
+                  role="menuitem"
+                  :disabled="groupOf(row.item)?.id === g.id"
+                  @click="assignTo([row.item], g.id)"
+                >
+                  <span class="size-2.5 shrink-0 rounded-full" :style="{ background: GROUP_COLOR_HEX[g.color] }" />
+                  <span class="truncate">{{ g.name }}</span>
+                </button>
+                <button class="menu-item" role="menuitem" @click="menuFor = null; groupDialog = { group: null, assign: [row.item] }">+ {{ t('contentGroups.newGroup') }}</button>
+                <button v-if="groupOf(row.item)" class="menu-item" role="menuitem" @click="assignTo([row.item], null)">{{ t('contentGroups.menu.removeFromGroup') }}</button>
               </div>
             </div>
           </div>
-        </li>
+          </li>
+        </template>
       </ul>
     </div>
 
@@ -538,6 +844,22 @@ const pendingUpdates = computed(() => updates.value ?? [])
     <ChangelogDialog v-if="changelogFor?.source" :instance="instance" :item="changelogFor" @close="changelogFor = null" @install="switchVersion(changelogFor!, $event)" />
 
     <ApplyPresetDialog v-if="applyingPreset" :instance="instance" @close="applyingPreset = false" />
+    <ContentGroupDialog v-if="groupDialog" :group="groupDialog.group" :count="groupDialog.assign.length" @close="groupDialog = null" @save="saveGroup" />
+    <BaseDialog v-if="groupToDelete" :title="t('contentGroups.deleteDialog.title')" @close="groupToDelete = null">
+      <p class="text-sm text-base-200">{{ t('contentGroups.deleteDialog.text', { name: groupToDelete.name }) }}</p>
+      <template #actions>
+        <button class="btn btn-ghost" @click="groupToDelete = null">{{ t('common.actions.cancel') }}</button>
+        <button class="btn btn-danger" @click="confirmDeleteGroup">{{ t('common.actions.delete') }}</button>
+      </template>
+    </BaseDialog>
+    <!-- Beim Ziehen: was wohin -->
+    <div
+      v-if="drag"
+      class="pointer-events-none fixed z-50 rounded-full bg-base-800 px-3 py-1 text-xs font-medium text-base-50 shadow-lg ring-1 ring-base-700"
+      :style="{ left: `${drag.x + 14}px`, top: `${drag.y + 10}px` }"
+    >
+      {{ dragTargetName ? t('contentGroups.dragInto', { n: drag.items.length, name: dragTargetName }, drag.items.length) : t('contentGroups.dragging', drag.items.length) }}
+    </div>
     <BaseDialog
       v-if="toDelete"
       :title="toDelete.length === 1 ? t('content.deleteDialog.titleOne') : t('content.deleteDialog.titleMany', toDelete.length)"

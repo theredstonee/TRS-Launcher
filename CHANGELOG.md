@@ -40,6 +40,17 @@ How to write an entry:
   "Stop" asks which one to stop, or stops all. The second game runs without TRS Link features.
 - **Start Minecraft Bedrock.** On Windows, a "Minecraft Bedrock" card appears in the library when the Microsoft
   Store version is installed and starts it. You can hide it under Settings → Behavior. Not shown on Linux.
+- **Mod groups.** Sort mods, resource packs and shaders in the Content tab into your own groups with a name and a
+  colour – via the menu, the selection bar or by dragging them onto a group. Groups can be collapsed and switched on
+  or off as a whole, the search also finds group names, and groups stay intact when a mod is updated.
+- **From the modpack or added by you.** Modpack instances now show which content came with the pack and what you
+  added yourself – as a small badge and as a filter.
+- **Find the culprit mod.** Something broken and no idea which mod is to blame? Start the search in the Content tab or
+  from the crash helper: the launcher switches off half of the suspected mods each round (mods stay together with the
+  libraries they need, the TRS Client is never touched), you start the game and say "problem still there" or "runs
+  fine" – a crash is detected automatically. After a few rounds the culprit is left; disable it, open its page or keep
+  searching. At the end or when you cancel, every mod is restored exactly as it was – even if the launcher closes in
+  between.
 
 ### Deutsch
 - **Suche, Filter und Details für TRS-Umhänge.** Die Umhang-Liste auf der Skins-Seite hat ein Suchfeld, Filter
@@ -53,6 +64,17 @@ How to write an entry:
 - **Minecraft Bedrock starten.** Unter Windows erscheint in der Bibliothek eine Karte „Minecraft Bedrock“, wenn die
   Version aus dem Microsoft Store installiert ist, und startet sie. Ausblenden geht unter Einstellungen → Verhalten.
   Unter Linux wird sie nicht angezeigt.
+- **Mod-Gruppen.** Sortiere Mods, Ressourcenpakete und Shader im Inhalte-Tab in eigene Gruppen mit Namen und Farbe –
+  über das Menü, die Auswahlleiste oder per Ziehen auf eine Gruppe. Gruppen lassen sich einklappen und als Ganzes ein-
+  oder ausschalten, die Suche findet auch Gruppennamen, und Gruppen bleiben erhalten, wenn eine Mod aktualisiert wird.
+- **Vom Modpack oder selbst hinzugefügt.** Modpack-Instanzen zeigen jetzt, welche Inhalte mit dem Pack kamen und was
+  du selbst hinzugefügt hast – als kleines Abzeichen und als Filter.
+- **Schuldige Mod finden.** Etwas ist kaputt und du weißt nicht, welche Mod schuld ist? Starte die Suche im
+  Inhalte-Tab oder im Absturz-Helfer: Der Launcher schaltet jede Runde die Hälfte der verdächtigen Mods aus (Mods
+  bleiben mit den Bibliotheken zusammen, die sie brauchen, der TRS Client wird nie angefasst), du startest das Spiel
+  und sagst „Fehler noch da“ oder „läuft ohne Fehler“ – ein Absturz wird automatisch erkannt. Nach ein paar Runden
+  bleibt die Schuldige übrig: deaktivieren, ihre Seite öffnen oder weitersuchen. Am Ende oder beim Abbrechen wird
+  jede Mod genau wie vorher wiederhergestellt – auch wenn der Launcher zwischendurch zugeht.
 
 ## 0.17.0 – 2026-10-03 – Light Luggage | Leichtes Gepäck
 <!-- banner: accent=#ff3b30 motif=/news/0.17.0/banner.png -->

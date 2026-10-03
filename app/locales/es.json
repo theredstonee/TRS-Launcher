@@ -805,6 +805,21 @@
     "bedrock": {
       "notInstalled": "Minecraft Bedrock no está instalado en este PC.",
       "startFailed": "No se pudo iniciar Minecraft Bedrock."
+    },
+    "bisect": {
+      "tooFewMods": "La búsqueda necesita al menos dos mods activados (aparte del TRS Client y las bibliotecas).",
+      "notRunning": "No hay ninguna búsqueda en marcha para esta instancia.",
+      "staleRound": "Esta ronda ya tiene respuesta – recarga, por favor.",
+      "applyFailed": "No se pudieron cambiar {count} mods. ¿Sigue abierto el juego?",
+      "alreadyRunning": "Ya hay una búsqueda en marcha para esta instancia.",
+      "tooManyMods": "Demasiados mods para la búsqueda (como máximo {max}).",
+      "gameRunning": "Cierra primero el juego."
+    },
+    "contentGroups": {
+      "invalidName": "El nombre del grupo debe tener entre 1 y 40 caracteres.",
+      "unknownGroup": "Este grupo ya no existe.",
+      "tooMany": "Como máximo {max} grupos por instancia",
+      "tooManyEntries": "Demasiadas entradas en grupos."
     }
   },
   "browse": {
@@ -5496,5 +5511,113 @@
     "hint": "Inicia el juego instalado: sin instancia ni mods",
     "playLabel": "Iniciar Minecraft Bedrock",
     "started": "Minecraft Bedrock se está iniciando …"
+  },
+  "contentGroups": {
+    "newGroup": "Nuevo grupo",
+    "assign": "Grupo",
+    "dragHandle": "Arrastra {name} a un grupo",
+    "dragging": "{n} elemento | {n} elementos",
+    "dragInto": "{n} elemento → {name} | {n} elementos → {name}",
+    "dialog": {
+      "createTitle": "Nuevo grupo",
+      "editTitle": "Editar grupo",
+      "placeholder": "p. ej. Rendimiento",
+      "color": "Color",
+      "assignHint": "El elemento seleccionado irá al nuevo grupo. | Los {n} elementos seleccionados irán al nuevo grupo.",
+      "nameInvalid": "El nombre debe tener entre 1 y {max} caracteres.",
+      "create": "Crear grupo"
+    },
+    "header": {
+      "ungrouped": "Sin grupo",
+      "expand": "Desplegar {name}",
+      "collapse": "Plegar {name}",
+      "count": "{on}/{total} activos",
+      "toggle": "Activar o desactivar todo el grupo {name}",
+      "menu": "Más acciones para el grupo {name}"
+    },
+    "menu": {
+      "moveTo": "Mover al grupo",
+      "removeFromGroup": "Quitar del grupo",
+      "edit": "Renombrar / cambiar color",
+      "delete": "Eliminar grupo"
+    },
+    "filter": {
+      "label": "Filtrar por grupo",
+      "all": "Todos los grupos"
+    },
+    "origin": {
+      "label": "Filtrar por origen",
+      "all": "Cualquier origen",
+      "pack": "Del modpack",
+      "manual": "Añadido por ti",
+      "packBadge": "Modpack",
+      "manualBadge": "Añadido por ti",
+      "packTitle": "Vino con el modpack",
+      "manualTitle": "Lo añadiste tú – no forma parte del modpack"
+    },
+    "toasts": {
+      "created": "Grupo {name} creado",
+      "moved": "{n} elemento movido a {name} | {n} elementos movidos a {name}",
+      "removed": "{n} elemento quitado de su grupo | {n} elementos quitados de sus grupos"
+    },
+    "deleteDialog": {
+      "title": "¿Eliminar grupo?",
+      "text": "Se eliminará el grupo {name}. Su contenido sigue instalado, solo que sin grupo."
+    },
+    "colors": {
+      "red": "Rojo",
+      "orange": "Naranja",
+      "yellow": "Amarillo",
+      "green": "Verde",
+      "cyan": "Turquesa",
+      "blue": "Azul",
+      "purple": "Morado",
+      "pink": "Rosa",
+      "gray": "Gris"
+    }
+  },
+  "bisect": {
+    "title": "Encontrar el mod culpable",
+    "button": "Encontrar mod culpable",
+    "buttonTitle": "Desactiva por turnos la mitad de tus mods hasta encontrar el mod que causa el problema",
+    "round": "Ronda {round} de ~{total}",
+    "progress": "Aún sospechosos: {suspects} · desactivados ahora: {off}",
+    "hintIdle": "Inicia el juego y comprueba si el problema sigue. Un cierre inesperado se detecta automáticamente.",
+    "hintPreparing": "El juego se está iniciando …",
+    "hintRunning": "El juego está en marcha. ¿Sigue el problema?",
+    "showSuspects": "Mostrar el mod sospechoso | Mostrar los {n} mods sospechosos",
+    "launch": "Iniciar juego",
+    "stillBroken": "El problema sigue",
+    "worksFine": "Funciona sin problemas",
+    "stopFirst": "Cierra el juego primero",
+    "cancelTitle": "Cancelar y restaurar todos los mods tal como estaban",
+    "foundOne": "¡Encontrado! Este mod causa el problema:",
+    "foundSet": "Este mod causa el problema: | Estos {n} mods solo se pueden probar juntos – uno de ellos causa el problema:",
+    "openPage": "Abrir página",
+    "restoredNote": "Todos los mods están como antes. Hizo falta {rounds} ronda. | Todos los mods están como antes. Hicieron falta {rounds} rondas.",
+    "disableResult": "Desactivarlo | Desactivarlos",
+    "keepSearching": "Seguir buscando",
+    "done": "Listo",
+    "notFound": "Sin los mods sospechosos el problema no volvió, así que probablemente no se debe a un solo mod (quizá a un ajuste, al mundo o a un paquete de recursos). Todos los mods están como antes.",
+    "openContent": "Abrir contenido",
+    "crashDetected": "Cierre inesperado detectado – cuenta como «el problema sigue».",
+    "banner": "Buscando el mod culpable: algunos mods están desactivados por ahora. Al terminar o cancelar la búsqueda, todo se restaura exactamente como estaba.",
+    "showWindow": "Mostrar ventana",
+    "lockedTitle": "Bloqueado mientras se busca el mod culpable",
+    "minimize": "Minimizar",
+    "expand": "Desplegar",
+    "start": {
+      "title": "Encontrar el mod culpable",
+      "intro": "El launcher busca en {name} el mod que causa tu problema:",
+      "stepHalf": "En cada ronda se desactiva más o menos la mitad de los mods sospechosos. Los mods y las bibliotecas que necesitan van juntos; el TRS Client y las bibliotecas del loader nunca se tocan.",
+      "stepAsk": "Inicias el juego y dices si el problema sigue. Un cierre inesperado se detecta automáticamente.",
+      "stepKeep": "Tras unas rondas queda un mod: puedes desactivarlo o seguir buscando.",
+      "stepRestore": "Al terminar o cancelar, todos los mods se restauran tal como estaban, aunque el launcher se cierre entre medias.",
+      "submit": "Iniciar búsqueda"
+    },
+    "toasts": {
+      "restored": "Todos los mods restaurados",
+      "disabled": "Mods restaurados, culpable desactivado"
+    }
   }
 }
