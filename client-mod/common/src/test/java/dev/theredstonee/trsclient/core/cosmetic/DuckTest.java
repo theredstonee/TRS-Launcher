@@ -13,9 +13,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Quietscheente: Vorlage, Mesh (Umlaufsinn, UVs, Lage auf dem Kopf) und Verhalten des Rigs. */
+/** Quietscheente: synthetische Vorlage (nicht das echte Modell), Mesh und Verhalten des Rigs. */
 class DuckTest {
 	static final OnlineConfig CONFIG = new OnlineConfig(true, "https://trs-launcher.theredstonee.de", "https://sessionserver.mojang.com");
+
+	/** Ein Würfel auf der Kopfoberfläche – kein Quietscheenten-Modell. */
+	static final CosmeticModel BLOCK = CosmeticModel.parse("{\"id\":\"block\",\"kind\":\"model\",\"slot\":\"hat\","
+			+ "\"textureWidth\":64,\"textureHeight\":32,\"cubes\":[{\"from\":[-4,8,-4],\"to\":[4,12,4],\"uv\":[0,0],\"attach\":\"head\"}]}");
 
 	static final class Quad {
 		final float[] p = new float[12];
@@ -26,7 +30,7 @@ class DuckTest {
 	static List<Quad> mesh(DuckRig.Pose pose, boolean helmet) {
 		final List<Quad> out = new ArrayList<>();
 		final int[] k = { 0 };
-		new CosmeticMesh().emit(CosmeticModels.get("duck"), pose, 0L, helmet, (x, y, z, u, v, nx, ny, nz) -> {
+		new CosmeticMesh().emit(BLOCK, pose, 0L, helmet, (x, y, z, u, v, nx, ny, nz) -> {
 			if (k[0] % 4 == 0) out.add(new Quad());
 			Quad q = out.get(out.size() - 1);
 			int i = k[0] % 4;
@@ -44,13 +48,13 @@ class DuckTest {
 	}
 
 	@Test
-	void bundledTemplateParses() {
-		CosmeticModel m = CosmeticModels.get("duck");
-		assertNotNull(m);
-		assertEquals("duck", m.rig);
-		assertEquals(9, m.cubes.size());
-		assertEquals(64, m.textureWidth);
-		assertEquals(2f, m.neckZ);
+	void syntheticTemplateParsesAndDuckIsNotBundled() {
+		assertEquals("block", BLOCK.id);
+		assertNull(BLOCK.rig);
+		assertEquals(1, BLOCK.cubes.size());
+		assertEquals(64, BLOCK.textureWidth);
+		assertNull(CosmeticModels.bundled("duck"));
+		assertNull(CosmeticModels.class.getResource("/assets/trsclient/cosmetics/duck.json"));
 		assertNull(CosmeticModels.get("crown"), "andere Kopf-Kosmetik bleibt vorerst unsichtbar");
 	}
 
@@ -68,16 +72,23 @@ class DuckTest {
 	@Test
 	void hatInfoOnlyForKnownTemplatesAndApiUrls() {
 		String url = "https://trs-launcher.theredstonee.de/v1/cosmetics/rubber_duck.png?v=1";
-		assertNotNull(HatInfo.of("rubber_duck", "duck", url, 2, 1, null, CONFIG));
+		String tpl = "/v1/cosmetics/rubber_duck/template.json?v=abc123abc123";
+		HatInfo hat = HatInfo.of("rubber_duck", "duck", url, 2, 1, null, tpl, CONFIG);
+		assertNotNull(hat);
+		assertEquals("https://trs-launcher.theredstonee.de/v1/cosmetics/rubber_duck/template.json?v=abc123abc123", hat.templateUrl);
+		assertNull(HatInfo.of("rubber_duck", "duck", url, 2, 1, null, CONFIG).templateUrl);
+		HatInfo foreign = HatInfo.of("rubber_duck", "duck", url, 2, 1, null, "https://evil.example/template.json", CONFIG);
+		assertNotNull(foreign);
+		assertNull(foreign.templateUrl, "fremde Vorlagen-Adresse fällt auf den festen Pfad zurück");
 		assertNull(HatInfo.of("crown", "crown", url, 2, 1, null, CONFIG));
 		assertNull(HatInfo.of("rubber_duck", "duck", "https://evil.example/duck.png", 2, 1, null, CONFIG));
-		assertEquals("cos-rubber_duck", HatInfo.of("rubber_duck", "duck", url, 2, 1, null, CONFIG).texture.id);
+		assertEquals("cos-rubber_duck", hat.texture.id);
 	}
 
 	@Test
 	void meshSitsOnTheHeadWithOutwardQuadsAndValidUvs() {
 		List<Quad> quads = mesh(null, false);
-		assertEquals(9 * 6, quads.size());
+		assertEquals(6, quads.size());
 		float minY = Float.MAX_VALUE;
 		for (Quad q : quads) {
 			for (int i = 0; i < 4; i++) {
@@ -98,11 +109,11 @@ class DuckTest {
 	}
 
 	@Test
-	void beakFacesForward() {
-		// Oberschnabel (Würfel 2), Fläche 0 = vorne: im ModelPart-Raum ist vorne −z.
-		Quad beakFront = mesh(null, false).get(2 * 6);
-		assertEquals(-6f / 16f, beakFront.p[2], 1e-5f);
-		assertEquals(-1f, beakFront.n[2], 1e-5f);
+	void frontFacePointsForward() {
+		// Fläche 0 = vorne: im ModelPart-Raum ist vorne −z. Der Würfel endet bei z = 4.
+		Quad front = mesh(null, false).get(0);
+		assertEquals(-4f / 16f, front.p[2], 1e-5f);
+		assertEquals(-1f, front.n[2], 1e-5f);
 	}
 
 	static Wearer standing() {

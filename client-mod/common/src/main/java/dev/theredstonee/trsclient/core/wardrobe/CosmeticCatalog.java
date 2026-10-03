@@ -54,11 +54,13 @@ public final class CosmeticCatalog {
 		/** Format 1: Vorlage + Textur. */
 		public final String template;
 		public final String textureUrl;
+		/** Format 1: Adresse von {@code template.json} (absolut) oder null → fester Pfad. */
+		public final String templateUrl;
 		public final String cardUrl;
 		public final String cardNightUrl;
 
 		Item(String id, String name, int format, String unlock, boolean owned, boolean hidden, HatInfo hat, String template,
-				String textureUrl, String cardUrl, String cardNightUrl) {
+				String textureUrl, String templateUrl, String cardUrl, String cardNightUrl) {
 			this.id = id;
 			this.name = name;
 			this.format = format;
@@ -68,6 +70,7 @@ public final class CosmeticCatalog {
 			this.hat = hat;
 			this.template = template;
 			this.textureUrl = textureUrl;
+			this.templateUrl = templateUrl;
 			this.cardUrl = cardUrl;
 			this.cardNightUrl = cardNightUrl;
 		}
@@ -369,13 +372,14 @@ public final class CosmeticCatalog {
 			HatInfo hat = HatInfo.v2(id, str(o, "model"), textureUrl, str(o, "glow"), str(o, "hash"),
 					integer(o, "frames"), integer(o, "glowFrames"), cfg);
 			if (hat == null) return null;
-			return new Item(id, name, 2, unlock, owned, hidden, hat, null, null, card, cardNight);
+			return new Item(id, name, 2, unlock, owned, hidden, hat, null, null, null, card, cardNight);
 		}
 		String template = str(o, "template");
 		if (template == null || !CosmeticModels.supported(template) || !owned) return null;
 		String url = resolve(textureUrl, cfg);
 		if (url == null) return null;
-		return new Item(id, name, 1, unlock, owned, hidden, null, template, url, card, cardNight);
+		return new Item(id, name, 1, unlock, owned, hidden, null, template, url, resolve(str(o, "templateUrl"), cfg), card,
+				cardNight);
 	}
 
 	private static String resolve(String url, OnlineConfig cfg) {
@@ -441,7 +445,16 @@ public final class CosmeticCatalog {
 				CosmeticV2Cache cache = new CosmeticV2Cache(platform.configDir().resolve("trsclient").resolve("cosmetics"));
 				p = new Preview(cache.load(it.hat, trsApi(), token), null, null, 0, 0);
 			} else {
-				CosmeticModel model = CosmeticModels.get(it.template);
+				final String tokenFinal = token;
+				CosmeticModel model = CosmeticModels.load(
+						platform.configDir().resolve("trsclient").resolve("cosmetics").resolve("templates"), it.id,
+						it.template, it.templateUrl, config(), url -> {
+							try {
+								return trsApi().asset(url, "application/json", CosmeticModels.MAX_BYTES, tokenFinal);
+							} catch (ApiException e) {
+								throw new IOException(e.code());
+							}
+						});
 				if (model == null) throw new IOException("Vorlage");
 				PngDecoder.Image img = PngDecoder.decode(trsApi().asset(it.textureUrl, "image/png", TrsApi.MAX_TEXTURE_BYTES, token));
 				int fw = img.width;

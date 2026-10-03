@@ -188,7 +188,7 @@ public final class OnlineFeatures<T> {
 		if (Thread.currentThread() != gameThread) return null;
 		if (!modules.trsOnline.isEnabled() || !modules.trsCosmetics.get()) return null;
 		PlayerInfo info = online.info(uuid);
-		if (info.hat == null || dev.theredstonee.trsclient.core.cosmetic.CosmeticModels.get(info.hat.template) == null) return null;
+		if (info.hat == null || info.hat.v2() || dev.theredstonee.trsclient.core.cosmetic.CosmeticModels.get(info.hat) == null) return null;
 		try {
 			return textures.texture(info.hat.texture, System.currentTimeMillis());
 		} catch (RuntimeException e) {
@@ -205,7 +205,7 @@ public final class OnlineFeatures<T> {
 		PlayerInfo info = online.info(uuid);
 		if (info.hat == null) return;
 		dev.theredstonee.trsclient.core.cosmetic.CosmeticModel model =
-				dev.theredstonee.trsclient.core.cosmetic.CosmeticModels.get(info.hat.template);
+				dev.theredstonee.trsclient.core.cosmetic.CosmeticModels.get(info.hat);
 		if (model == null) return;
 		try {
 			wearer.emote = emotes.animating(uuid);

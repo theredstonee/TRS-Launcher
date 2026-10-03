@@ -103,6 +103,8 @@ public final class TrsApi {
 		Integer glowFrames;
 		Integer glowFrameTimeMs;
 		String hash;
+		/** Format 1: {@code /v1/cosmetics/<id>/template.json?v=<hash>} (fehlt bei älteren APIs). */
+		String templateUrl;
 	}
 
 	static final class LookupCape {
@@ -313,7 +315,7 @@ public final class TrsApi {
 				LookupCosmetic h = p.cosmetics.hat;
 				hat = h.format != null && h.format == 2
 						? HatInfo.v2(h.id, h.model, h.url, h.glow, h.hash, h.frames, h.glowFrames, config)
-						: HatInfo.of(h.id, h.template, h.url, h.scale, h.frames, h.frameTimeMs, config);
+						: HatInfo.of(h.id, h.template, h.url, h.scale, h.frames, h.frameTimeMs, h.templateUrl, config);
 			}
 			out.put(uuid, new PlayerInfo(Boolean.TRUE.equals(p.badge), cape, hat));
 		}

@@ -3,6 +3,7 @@ package dev.theredstonee.trsclient.core.online;
 import dev.theredstonee.trsclient.core.cape.CapeDiskCache;
 import dev.theredstonee.trsclient.core.cape.CapeFrames;
 import dev.theredstonee.trsclient.core.cape.PngDecoder;
+import dev.theredstonee.trsclient.core.cosmetic.CosmeticModels;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -131,6 +132,13 @@ public final class TrsOnline {
 		this.capeCache = new CapeDiskCache(capeDir);
 		Path cosmeticDir = capeDir.getParent() != null ? capeDir.getParent().resolve("cosmetics") : capeDir.resolve("cosmetics");
 		this.cosmeticCache = new dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2Cache(cosmeticDir);
+		CosmeticModels.install(cosmeticDir.resolve("templates"), config, url -> {
+			try {
+				return api.asset(url, "application/json", CosmeticModels.MAX_BYTES, token);
+			} catch (ApiException e) {
+				throw new IOException(e.code());
+			}
+		}, message -> platform.log(message));
 		this.apiWorker = worker("TRS-Online");
 		this.capeWorker = worker("TRS-Umhaenge");
 		this.events = new PlayerEventStream(eventOpener, config.apiBase());

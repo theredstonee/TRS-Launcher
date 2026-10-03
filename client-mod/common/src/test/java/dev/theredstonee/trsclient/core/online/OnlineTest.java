@@ -180,6 +180,19 @@ class OnlineTest {
 	}
 
 	@Test
+	void lookupKeepsTheTemplateUrlOfV1Hats() throws Exception {
+		FakeHttp http = new FakeHttp().json("POST /v1/players/lookup", 200, "{\"players\":[{\"uuid\":\"" + OWN
+				+ "\",\"badge\":false,\"cosmetics\":{\"hat\":{\"id\":\"rubber_duck\",\"template\":\"duck\","
+				+ "\"url\":\"https://trs-launcher.theredstonee.de/v1/cosmetics/rubber_duck.png?v=1\",\"scale\":2,\"frames\":1,"
+				+ "\"templateUrl\":\"/v1/cosmetics/rubber_duck/template.json?v=abc123abc123\"}}}]}");
+		PlayerInfo info = new TrsApi(http, CONFIG).lookup(TOKEN, Collections.singletonList(OWN)).get(OWN);
+		assertNotNull(info.hat);
+		assertEquals("duck", info.hat.template);
+		assertEquals("https://trs-launcher.theredstonee.de/v1/cosmetics/rubber_duck/template.json?v=abc123abc123",
+				info.hat.templateUrl);
+	}
+
+	@Test
 	void rateLimitCarriesRetryAfter() {
 		FakeHttp http = new FakeHttp().on("POST /v1/players/lookup", r -> {
 			Http.Response resp = FakeHttp.response(429, "{\"error\":{\"code\":\"rate_limited\",\"retryAfter\":12}}");

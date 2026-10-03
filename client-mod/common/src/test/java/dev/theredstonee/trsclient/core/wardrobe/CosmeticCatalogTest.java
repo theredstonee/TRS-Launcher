@@ -53,9 +53,16 @@ class CosmeticCatalogTest {
 		assertNull(CosmeticCatalog.parse(json("{\"id\":\"old_crown\",\"slot\":\"hat\",\"template\":\"crown\",\"owned\":true,"
 				+ "\"texture\":{\"url\":\"/v1/cosmetics/old_crown.png\"}}"), CFG));
 		CosmeticCatalog.Item duck = CosmeticCatalog.parse(json("{\"id\":\"rubber_duck\",\"name\":\"Quietscheente\",\"slot\":\"hat\","
-				+ "\"template\":\"duck\",\"owned\":true,\"hidden\":true,\"texture\":{\"url\":\"/v1/cosmetics/rubber_duck.png?v=1\"}}"), CFG);
+				+ "\"template\":\"duck\",\"owned\":true,\"hidden\":true,\"texture\":{\"url\":\"/v1/cosmetics/rubber_duck.png?v=1\"},"
+				+ "\"templateUrl\":\"/v1/cosmetics/rubber_duck/template.json?v=abc123abc123\"}"), CFG);
 		assertNotNull(duck);
 		assertEquals(1, duck.format);
+		assertEquals("https://trs-launcher.theredstonee.de/v1/cosmetics/rubber_duck/template.json?v=abc123abc123", duck.templateUrl);
+		CosmeticCatalog.Item plain = CosmeticCatalog.parse(json("{\"id\":\"rubber_duck\",\"name\":\"Quietscheente\",\"slot\":\"hat\","
+				+ "\"template\":\"duck\",\"owned\":true,\"texture\":{\"url\":\"/v1/cosmetics/rubber_duck.png?v=1\"},"
+				+ "\"templateUrl\":\"https://evil.example/template.json\"}"), CFG);
+		assertNotNull(plain);
+		assertNull(plain.templateUrl);
 		assertNull(CosmeticCatalog.parse(json("{\"id\":\"rubber_duck\",\"slot\":\"hat\",\"template\":\"duck\",\"owned\":false,"
 				+ "\"texture\":{\"url\":\"/v1/cosmetics/rubber_duck.png?v=1\"}}"), CFG));
 	}
