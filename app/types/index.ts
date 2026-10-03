@@ -1406,6 +1406,7 @@ export type TaskKind =
   | 'reinstall'
   | 'version-change'
   | 'launch'
+  | 'server-export'
   | 'ffmpeg'
   | 'shared-folders'
   | 'move'

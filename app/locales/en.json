@@ -850,6 +850,28 @@
       "notMovable": "The data folder can't be moved in portable mode.",
       "noMove": "Nothing has been moved.",
       "alreadyDefault": "The instance is already in the default location."
+    },
+    "serverExport": {
+      "nameRequired": "Please enter a name for the server.",
+      "noTarget": "Choose: save as ZIP and/or set up here.",
+      "eulaRequired": "To start the server here, you have to accept the Minecraft EULA.",
+      "invalidPort": "The port must be between 1024 and 65535.",
+      "invalidMaxPlayers": "The number of players must be between 1 and 1000.",
+      "invalidMods": "The mod selection is invalid – please open the dialog again.",
+      "invalidWorld": "This world doesn't exist (anymore).",
+      "noServerJar": "There is no official server for Minecraft {version}.",
+      "loaderUnavailable": "This mod loader isn't available as a server for Minecraft {version}.",
+      "installerFailed": "The mod loader installer failed. Please check your internet connection and try again."
+    },
+    "localServer": {
+      "notFound": "This server doesn't exist (anymore).",
+      "eulaMissing": "The server only starts once the Minecraft EULA is accepted.",
+      "portInUse": "Port {port} is already in use – is another server still running there?",
+      "startFailed": "The server couldn't be started.",
+      "invalidCommand": "The command is empty, too long or contains invalid characters.",
+      "notRunning": "The server isn't running.",
+      "stopTimeout": "The server didn't stop in time.",
+      "stillRunning": "Please stop the server first."
     }
   },
   "browse": {
@@ -2681,7 +2703,8 @@
     "clips": "Clips",
     "social": "Social",
     "socialBadge": "{messages} unread · {requests} requests",
-    "achievements": "Achievements"
+    "achievements": "Achievements",
+    "localServers": "My servers"
   },
   "accountMenu": {
     "menuLabel": "Accounts",
@@ -2826,7 +2849,8 @@
       "presets": "Presets installed",
       "ffmpeg": "Recorder installed",
       "sharedFolders": "Shared folder",
-      "move": "Moved"
+      "move": "Moved",
+      "serverExport": "Minecraft server"
     },
     "stage": {
       "preparing": "Preparing",
@@ -2913,7 +2937,8 @@
     "settings": "Settings",
     "moveToGroup": "Move to group",
     "removeFromGroup": "Remove from group",
-    "newGroup": "+ New group …"
+    "newGroup": "+ New group …",
+    "exportServer": "Export as server …"
   },
   "home": {
     "greeting": {
@@ -4352,6 +4377,11 @@
       "textShared": "Shared as {code}. Upload a new version – everyone who installed it gets an update.",
       "action": "Share …",
       "actionUpdate": "New version …"
+    },
+    "server": {
+      "title": "Export as server",
+      "text": "Builds a Minecraft server with the right loader and only the mods a server needs – as a ZIP for friends or a host, or set up and started right here.",
+      "action": "Export …"
     }
   },
   "social": {
@@ -5920,6 +5950,115 @@
       "text": "Folder not found: {path} – is the drive connected?",
       "retry": "Check again",
       "forget": "Remove from list"
+    }
+  },
+  "serverExport": {
+    "title": "Export as server",
+    "analyzing": "Checking which mods belong on a server …",
+    "unsupported": "There is no official server for Minecraft {version}.",
+    "offline": "Modrinth and CurseForge couldn't be reached – mods were only sorted by what their files say. Check the list before exporting.",
+    "defaultMotd": "{name} – a TRS Launcher server",
+    "mods": {
+      "title": "Mods",
+      "summary": "{on} on the server · {off} left out",
+      "none": "This instance has no mods – the server runs as it is.",
+      "hint": "Client-only mods (graphics, minimaps, HUD) don't work on a server and are left out. Players keep them in their own game. Click a mod to move it.",
+      "filter": "Filter mods …",
+      "server": "On the server ({count})",
+      "leftOut": "Left out ({count})",
+      "empty": "None",
+      "trsLocked": "The TRS Client only runs in the game and never goes on a server.",
+      "unknownHint": "{count} mods say nothing about where they run (marked \"?\"). They are included to be safe – remove them if the server doesn't start."
+    },
+    "side": {
+      "client": "Client",
+      "server": "Server",
+      "both": "Both",
+      "unknown": "?"
+    },
+    "source": {
+      "trs": "Managed by the launcher",
+      "list": "Known client-only mod",
+      "jar": "From the mod file",
+      "modrinth": "From Modrinth",
+      "curseforge": "From CurseForge",
+      "none": "No information – included to be safe"
+    },
+    "world": "World",
+    "newWorld": "New world (the server creates one)",
+    "configs": "Include configs",
+    "port": "Port",
+    "maxPlayers": "Max. players",
+    "motd": "Server description (MOTD)",
+    "onlineMode": "Online mode",
+    "onlineModeOn": "Only players with a real Minecraft account can join (recommended).",
+    "onlineModeOff": "Anyone can join with any name – not recommended.",
+    "ram": "RAM",
+    "ramValue": "{gb} GB",
+    "ramRange": "RAM must be between 512 MB and 128 GB.",
+    "javaHint": "The server needs Java {major}. The start scripts use \"java\" – the README explains how to pick another one.",
+    "eula": "I have read and accept the Minecraft EULA.",
+    "eulaLink": "Read the EULA",
+    "eulaAccepted": "eula.txt will be created with your consent.",
+    "eulaNotAccepted": "Without your consent there is no eula.txt – the server stops on the first start until you accept the EULA there.",
+    "asZip": "Save as ZIP",
+    "local": "Set up here and start",
+    "localHint": "The server lands in the launcher's data folder and starts right away. You control it under \"My servers\".",
+    "actions": {
+      "zip": "Save ZIP …",
+      "local": "Set up and start",
+      "both": "Save ZIP and start …"
+    },
+    "pickLocation": "Choose where to save …",
+    "phase": {
+      "java": "Preparing Java",
+      "server": "Downloading server and loader",
+      "files": "Copying mods, configs and world",
+      "zip": "Writing ZIP",
+      "start": "Starting the server"
+    },
+    "runsInBackground": "{stage} – keeps running when you close this window.",
+    "exporting": "Exporting …",
+    "doneZip": "Server saved: {file} ({size})",
+    "doneLocal": "Server \"{name}\" is set up",
+    "localCreated": "Server \"{name}\" is set up.",
+    "openConsole": "Open console"
+  },
+  "localServers": {
+    "title": "My servers",
+    "subtitle": "Minecraft servers on this PC – log, commands and players",
+    "runningCount": "{count} running",
+    "stopped": "Stopped",
+    "players": "{now}/{max} players",
+    "state": {
+      "starting": "starting …",
+      "running": "running",
+      "stopping": "stopping …",
+      "stopped": "stopped"
+    },
+    "meta": "Minecraft {version} · {loader} · port {port} · {ram} MB RAM · Java {java}",
+    "exitCode": "Last run ended with an error (code {code}) – see the log.",
+    "start": "Start",
+    "starting": "Starting …",
+    "stop": "Stop",
+    "restart": "Restart",
+    "kill": "Force stop",
+    "killHint": "Ends the server right away without saving the world.",
+    "delete": "Delete server",
+    "deleteConfirm": "Move to recycle bin?",
+    "eulaMissing": "The Minecraft EULA hasn't been accepted for this server – set eula=true in eula.txt in its folder if you agree.",
+    "network": "Players in your network join with this PC's IP address and port {port}. Windows may ask once whether Java may use the network – allow it. For friends over the internet, forward port {port} in your router.",
+    "allowFirewall": "Allow Java in the firewall",
+    "log": "Server log",
+    "hiddenLines": "{count} older lines hidden",
+    "noLog": "No log yet – start the server.",
+    "commandPlaceholder": "Command, e.g. say Hello or op <name>",
+    "command": "Server command",
+    "send": "Send",
+    "empty": {
+      "title": "No servers yet",
+      "text": "Open an instance, go to \"Share\" and choose \"Export as server\" with \"Set up here and start\".",
+      "action": "To the library"
     }
   }
 }

@@ -46,6 +46,8 @@ pub enum TaskKind {
     Reinstall,
     VersionChange,
     Launch,
+    /// Instanz als Minecraft-Server exportiert.
+    ServerExport,
     /// FFmpeg für Clips & Aufnahme geladen.
     Ffmpeg,
     /// Gemeinsamer Ordner ein-/ausgeschaltet (Zusammenführen bzw. Kopieren).

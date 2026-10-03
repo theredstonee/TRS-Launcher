@@ -15,6 +15,8 @@ interface NavItem {
   admin?: boolean
   /** Nur unter Windows (z. B. Clips). */
   windowsOnly?: boolean
+  /** Nur, wenn es lokale Server gibt. */
+  localServers?: boolean
 }
 
 const items: NavItem[] = [
@@ -23,6 +25,7 @@ const items: NavItem[] = [
   { to: '/browse', label: 'nav.discover', icon: 'compass' },
   { to: '/presets', label: 'nav.presets', icon: 'presets' },
   { to: '/servers', label: 'nav.servers', icon: 'server' },
+  { to: '/local-servers', label: 'nav.localServers', icon: 'terminal', localServers: true },
   { to: '/screenshots', label: 'nav.screenshots', icon: 'screenshots', optional: true },
   { to: '/clips', label: 'nav.clips', icon: 'clips', optional: true, windowsOnly: true },
   { to: '/skins', label: 'nav.skins', icon: 'skins', optional: true },
@@ -39,6 +42,7 @@ const settings = useSettingsStore()
 const ui = useUiStore()
 const trs = useTrsStore()
 const chat = useChatStore()
+const localServers = useLocalServersStore()
 /** Anfragen + Umhang-Angebote + ungelesene Nachrichten. */
 const socialCount = computed(() => trs.incomingCount + chat.unreadTotal)
 
@@ -58,7 +62,9 @@ const visibleItems = computed(() =>
       (!item.optional || router.resolve(item.to).matched.length > 0) &&
       (!item.admin || trs.isStaff) &&
       // Clips (Spielaufnahme) gibt es vorerst nur unter Windows.
-      (!item.windowsOnly || !isLinux),
+      (!item.windowsOnly || !isLinux) &&
+      // Lokale Server erst, wenn es einen gibt (Server-Export „lokal anlegen“).
+      (!item.localServers || localServers.items.length > 0),
   ),
 )
 
@@ -105,6 +111,12 @@ function play(id: string) {
         class="size-1.5 animate-lamp rounded-full bg-lamp-400"
         :class="expanded ? 'ml-auto' : 'absolute top-1.5 right-1.5'"
         :title="t('nav.runningCount', games.runningCount)"
+      />
+      <span
+        v-if="item.to === '/local-servers' && localServers.running.length"
+        class="size-1.5 animate-lamp rounded-full bg-ok"
+        :class="expanded ? 'ml-auto' : 'absolute top-1.5 right-1.5'"
+        :title="t('localServers.runningCount', { count: localServers.running.length })"
       />
       <span
         v-if="item.to === '/social' && socialCount"

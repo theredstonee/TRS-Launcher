@@ -4,6 +4,8 @@ import type { Server } from '~/types'
 const servers = useServersStore()
 const instances = useInstancesStore()
 const games = useGamesStore()
+/** Eigene lokale Server (Server-Export) – Link zur Konsole. */
+const localServers = useLocalServersStore()
 
 const editing = ref<Server | null>(null)
 const adding = ref(false)
@@ -37,6 +39,10 @@ function join(server: Server) {
 <template>
   <div class="mx-auto max-w-3xl p-6">
     <PageHeader :title="t('servers.title')" :subtitle="t('servers.subtitle')">
+      <NuxtLink v-if="localServers.items.length" to="/local-servers" class="btn btn-ghost">
+        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.terminal" /></svg>
+        {{ t('localServers.title') }}
+      </NuxtLink>
       <button class="btn btn-ghost" :disabled="refreshing || !servers.items.length" :title="t('servers.ping.hint')" @click="refresh">
         <svg viewBox="0 0 24 24" class="size-4" :class="{ 'animate-spin': refreshing }" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path :d="icons.sync" /></svg>
         {{ refreshing ? t('servers.ping.running') : t('servers.ping.test') }}

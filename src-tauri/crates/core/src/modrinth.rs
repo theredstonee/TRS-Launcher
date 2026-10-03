@@ -846,6 +846,41 @@ fn safe_icon(url: Option<String>) -> Option<String> {
     url.filter(|u| is_allowed_icon_url(u))
 }
 
+/// Wo ein Projekt läuft (für den Server-Export).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ProjectSide {
+    pub slug: String,
+    pub title: String,
+    pub client_side: String,
+    pub server_side: String,
+}
+
+/// `client_side`/`server_side`, Slug und Titel mehrerer Projekte (ohne Autoren).
+pub(crate) async fn project_sides(http: &reqwest::Client, ids: &[String]) -> Result<HashMap<String, ProjectSide>> {
+    let ids: Vec<&String> = ids.iter().filter(|id| is_safe_project_id(id)).collect();
+    let mut out = HashMap::new();
+    for chunk in ids.chunks(IDS_PER_REQUEST) {
+        let projects: Vec<RawProject> = http
+            .get(format!("{API}/projects"))
+            .query(&[("ids", json(chunk)?)])
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
+        for p in projects.into_iter().filter(|p| is_safe_project_id(&p.id)) {
+            let side = ProjectSide {
+                slug: clip(p.slug, 100),
+                title: clip(p.title, 100),
+                client_side: side(p.client_side),
+                server_side: side(p.server_side),
+            };
+            out.insert(p.id, side);
+        }
+    }
+    Ok(out)
+}
+
 /// Mehrere Projekte (plus Autoren) in zwei Anfragen.
 async fn fetch_projects(http: &reqwest::Client, ids: &[String]) -> Result<Vec<(RawProject, Option<String>)>> {
     let ids: Vec<&String> = ids.iter().filter(|id| is_safe_project_id(id)).collect();

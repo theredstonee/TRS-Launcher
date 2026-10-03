@@ -161,6 +161,9 @@ pub struct AssetIndexRef {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VersionDownloads {
     pub client: Option<Artifact>,
+    /// Dedizierter Server (fehlt bei sehr alten Versionen).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub server: Option<Artifact>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

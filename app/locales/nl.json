@@ -850,6 +850,28 @@
       "notMovable": "In de draagbare modus kan de datamap niet worden verplaatst.",
       "noMove": "Er is niets verplaatst.",
       "alreadyDefault": "De instantie staat al op de standaardlocatie."
+    },
+    "serverExport": {
+      "nameRequired": "Voer een naam voor de server in.",
+      "noTarget": "Kies: als ZIP opslaan en/of hier aanmaken.",
+      "eulaRequired": "Om de server hier te starten, moet je de Minecraft-EULA accepteren.",
+      "invalidPort": "De poort moet tussen 1024 en 65535 liggen.",
+      "invalidMaxPlayers": "Het aantal spelers moet tussen 1 en 1000 liggen.",
+      "invalidMods": "De modselectie is ongeldig – open het venster opnieuw.",
+      "invalidWorld": "Deze wereld bestaat niet (meer).",
+      "noServerJar": "Er is geen officiële server voor Minecraft {version}.",
+      "loaderUnavailable": "Deze modloader bestaat niet als server voor Minecraft {version}.",
+      "installerFailed": "De installer van de modloader is mislukt. Controleer je internetverbinding en probeer het opnieuw."
+    },
+    "localServer": {
+      "notFound": "Deze server bestaat niet (meer).",
+      "eulaMissing": "De server start pas als de Minecraft-EULA is geaccepteerd.",
+      "portInUse": "Poort {port} is al in gebruik – draait daar nog een andere server?",
+      "startFailed": "De server kon niet worden gestart.",
+      "invalidCommand": "Het commando is leeg, te lang of bevat ongeldige tekens.",
+      "notRunning": "De server draait niet.",
+      "stopTimeout": "De server stopte niet op tijd.",
+      "stillRunning": "Stop eerst de server."
     }
   },
   "browse": {
@@ -2681,7 +2703,8 @@
     "clips": "Clips",
     "social": "Sociaal",
     "socialBadge": "{messages} ongelezen · {requests} verzoeken",
-    "achievements": "Prestaties"
+    "achievements": "Prestaties",
+    "localServers": "Mijn servers"
   },
   "accountMenu": {
     "menuLabel": "Accounts",
@@ -2826,7 +2849,8 @@
       "presets": "Presets geïnstalleerd",
       "ffmpeg": "Recorder geïnstalleerd",
       "sharedFolders": "Gedeelde map",
-      "move": "Verplaatst"
+      "move": "Verplaatst",
+      "serverExport": "Minecraft-server"
     },
     "stage": {
       "preparing": "Voorbereiden",
@@ -2913,7 +2937,8 @@
     "settings": "Instellingen",
     "moveToGroup": "Naar groep verplaatsen",
     "removeFromGroup": "Uit groep verwijderen",
-    "newGroup": "+ Nieuwe groep …"
+    "newGroup": "+ Nieuwe groep …",
+    "exportServer": "Als server exporteren …"
   },
   "home": {
     "greeting": {
@@ -4352,6 +4377,11 @@
       "textShared": "Gedeeld als {code}. Upload een nieuwe versie – iedereen die het heeft geïnstalleerd, krijgt een update.",
       "action": "Delen …",
       "actionUpdate": "Nieuwe versie …"
+    },
+    "server": {
+      "title": "Als server exporteren",
+      "text": "Bouwt een Minecraft-server met de juiste loader en alleen de mods die een server nodig heeft – als ZIP voor vrienden of een host, of meteen hier aangemaakt en gestart.",
+      "action": "Exporteren …"
     }
   },
   "social": {
@@ -5920,6 +5950,115 @@
       "text": "Map niet gevonden: {path} – is de schijf aangesloten?",
       "retry": "Opnieuw controleren",
       "forget": "Uit lijst verwijderen"
+    }
+  },
+  "serverExport": {
+    "title": "Als server exporteren",
+    "analyzing": "Controleren welke mods op een server horen …",
+    "unsupported": "Er is geen officiële server voor Minecraft {version}.",
+    "offline": "Modrinth en CurseForge waren niet bereikbaar – de mods zijn alleen ingedeeld op basis van hun bestanden. Controleer de lijst voor het exporteren.",
+    "defaultMotd": "{name} – een TRS Launcher-server",
+    "mods": {
+      "title": "Mods",
+      "summary": "{on} op de server · {off} weggelaten",
+      "none": "Deze instantie heeft geen mods – de server draait zoals hij is.",
+      "hint": "Mods die alleen voor de client zijn (graphics, minimaps, HUD) werken niet op een server en worden weggelaten. Spelers houden ze in hun eigen spel. Klik op een mod om hem te verplaatsen.",
+      "filter": "Mods filteren …",
+      "server": "Op de server ({count})",
+      "leftOut": "Weggelaten ({count})",
+      "empty": "Geen",
+      "trsLocked": "De TRS Client werkt alleen in het spel en komt nooit op een server.",
+      "unknownHint": "{count} mods zeggen niet waar ze draaien (gemarkeerd met \"?\"). Ze gaan voor de zekerheid mee – haal ze weg als de server niet start."
+    },
+    "side": {
+      "client": "Client",
+      "server": "Server",
+      "both": "Beide",
+      "unknown": "?"
+    },
+    "source": {
+      "trs": "Beheerd door de launcher",
+      "list": "Bekende client-mod",
+      "jar": "Volgens het modbestand",
+      "modrinth": "Volgens Modrinth",
+      "curseforge": "Volgens CurseForge",
+      "none": "Geen informatie – voor de zekerheid meegenomen"
+    },
+    "world": "Wereld",
+    "newWorld": "Nieuwe wereld (de server maakt er een)",
+    "configs": "Configs meenemen",
+    "port": "Poort",
+    "maxPlayers": "Max. spelers",
+    "motd": "Serverbeschrijving (MOTD)",
+    "onlineMode": "Online-modus",
+    "onlineModeOn": "Alleen spelers met een echt Minecraft-account kunnen meedoen (aanbevolen).",
+    "onlineModeOff": "Iedereen kan meedoen met elke naam – niet aanbevolen.",
+    "ram": "RAM",
+    "ramValue": "{gb} GB",
+    "ramRange": "Het RAM moet tussen 512 MB en 128 GB liggen.",
+    "javaHint": "De server heeft Java {major} nodig. De startscripts gebruiken \"java\" – in de README staat hoe je een andere kiest.",
+    "eula": "Ik heb de Minecraft-EULA gelezen en ga ermee akkoord.",
+    "eulaLink": "EULA lezen",
+    "eulaAccepted": "eula.txt wordt met jouw toestemming aangemaakt.",
+    "eulaNotAccepted": "Zonder jouw toestemming is er geen eula.txt – de server stopt bij de eerste start tot je daar de EULA accepteert.",
+    "asZip": "Als ZIP opslaan",
+    "local": "Hier aanmaken en starten",
+    "localHint": "De server komt in de gegevensmap van de launcher en start meteen. Je bedient hem onder \"Mijn servers\".",
+    "actions": {
+      "zip": "ZIP opslaan …",
+      "local": "Aanmaken en starten",
+      "both": "ZIP opslaan en starten …"
+    },
+    "pickLocation": "Kies waar je wilt opslaan …",
+    "phase": {
+      "java": "Java voorbereiden",
+      "server": "Server en loader downloaden",
+      "files": "Mods, configs en wereld kopiëren",
+      "zip": "ZIP schrijven",
+      "start": "Server starten"
+    },
+    "runsInBackground": "{stage} – gaat door, ook als je dit venster sluit.",
+    "exporting": "Exporteren …",
+    "doneZip": "Server opgeslagen: {file} ({size})",
+    "doneLocal": "Server \"{name}\" is aangemaakt",
+    "localCreated": "Server \"{name}\" is aangemaakt.",
+    "openConsole": "Console openen"
+  },
+  "localServers": {
+    "title": "Mijn servers",
+    "subtitle": "Minecraft-servers op deze pc – log, commando's en spelers",
+    "runningCount": "{count} actief",
+    "stopped": "Gestopt",
+    "players": "{now}/{max} spelers",
+    "state": {
+      "starting": "start …",
+      "running": "actief",
+      "stopping": "stopt …",
+      "stopped": "gestopt"
+    },
+    "meta": "Minecraft {version} · {loader} · poort {port} · {ram} MB RAM · Java {java}",
+    "exitCode": "De laatste keer eindigde met een fout (code {code}) – zie de log.",
+    "start": "Starten",
+    "starting": "Starten …",
+    "stop": "Stoppen",
+    "restart": "Herstarten",
+    "kill": "Geforceerd stoppen",
+    "killHint": "Stopt de server meteen zonder de wereld op te slaan.",
+    "delete": "Server verwijderen",
+    "deleteConfirm": "Naar de prullenbak?",
+    "eulaMissing": "De Minecraft-EULA is voor deze server niet geaccepteerd – zet eula=true in eula.txt in de map als je akkoord gaat.",
+    "network": "Spelers in je netwerk verbinden met het IP-adres van deze pc en poort {port}. Windows vraagt misschien één keer of Java het netwerk mag gebruiken – sta het toe. Voor vrienden via internet: stuur poort {port} door in je router.",
+    "allowFirewall": "Java toestaan in de firewall",
+    "log": "Serverlog",
+    "hiddenLines": "{count} oudere regels verborgen",
+    "noLog": "Nog geen log – start de server.",
+    "commandPlaceholder": "Commando, bijv. say Hallo of op <naam>",
+    "command": "Servercommando",
+    "send": "Versturen",
+    "empty": {
+      "title": "Nog geen servers",
+      "text": "Open een instantie, ga naar \"Delen\" en kies \"Als server exporteren\" met \"Hier aanmaken en starten\".",
+      "action": "Naar de bibliotheek"
     }
   }
 }

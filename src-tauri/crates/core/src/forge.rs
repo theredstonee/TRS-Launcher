@@ -756,6 +756,17 @@ async fn write_marker(paths: &Paths, marker_file: &Path, profile_id: &str, track
 
 // --- Installation ------------------------------------------------------------
 
+/// Installer-Jar für einen Server-Export (`--installServer`): Version auflösen und
+/// laden (SHA-1 von Maven). Liefert Pfad und volle Loader-Version.
+pub(crate) async fn server_installer(
+    ctx: &InstallContext<'_>,
+    report: &(dyn Fn(f64) + Sync),
+) -> Result<(PathBuf, String)> {
+    let installer = resolve_installer(ctx).await?;
+    let jar = download_installer(ctx, &installer, &|percent, _, _| report(percent / PERCENT_INSTALLER * 100.0)).await?;
+    Ok((jar, installer.version))
+}
+
 /// Stellt sicher, dass Forge/NeoForge für die Spielversion installiert ist, und
 /// liefert das Loader-Profil (noch nicht mit Vanilla gemergt).
 pub async fn ensure_installed(
@@ -828,7 +839,7 @@ async fn download_installer(
 }
 
 /// Maven-Repos legen neben jede Datei eine `.sha1`.
-async fn fetch_sha1(http: &reqwest::Client, url: &str) -> Option<String> {
+pub(crate) async fn fetch_sha1(http: &reqwest::Client, url: &str) -> Option<String> {
     let text = http.get(format!("{url}.sha1")).send().await.ok()?.error_for_status().ok()?.text().await.ok()?;
     let hash = text.trim().get(..40)?;
     hash.bytes().all(|b| b.is_ascii_hexdigit()).then(|| hash.to_ascii_lowercase())

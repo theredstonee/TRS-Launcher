@@ -47,6 +47,10 @@ pub enum DialogText {
     PickChatImages,
     /// Zielordner für den Datenordner bzw. eine Instanz (Umzug).
     PickTargetFolder,
+    /// Server-Export als ZIP speichern.
+    SaveServer,
+    /// Filtername für `.zip`.
+    ZipArchive,
 }
 
 impl DialogText {
@@ -58,7 +62,7 @@ impl DialogText {
 
 /// Je Text eine Zeile in der Reihenfolge von [`Language::ALL`]:
 /// en, de, es, fr, pl, pt-BR, tr, nl.
-const TEXTS: [[&str; 8]; 25] = [
+const TEXTS: [[&str; 8]; 27] = [
     [
         "Save modpack",
         "Modpack speichern",
@@ -282,6 +286,16 @@ const TEXTS: [[&str; 8]; 25] = [
         "Yeni konumu seç",
         "Nieuwe locatie kiezen",
     ],
+        "Save server",
+        "Server speichern",
+        "Guardar servidor",
+        "Enregistrer le serveur",
+        "Zapisz serwer",
+        "Salvar servidor",
+        "Sunucuyu kaydet",
+        "Server opslaan",
+    ],
+    ["ZIP archive", "ZIP-Archiv", "Archivo ZIP", "Archive ZIP", "Archiwum ZIP", "Arquivo ZIP", "ZIP arşivi", "ZIP-archief"],
 ];
 
 impl DialogText {
@@ -302,7 +316,7 @@ pub async fn language(launcher: &LauncherState) -> Language {
 mod tests {
     use super::*;
 
-    const ALL: [DialogText; 25] = [
+    const ALL: [DialogText; 27] = [
         DialogText::SaveModpack,
         DialogText::PickModpack,
         DialogText::ModrinthModpack,
@@ -328,6 +342,8 @@ mod tests {
         DialogText::Mp4Video,
         DialogText::PickChatImages,
         DialogText::PickTargetFolder,
+        DialogText::SaveServer,
+        DialogText::ZipArchive,
     ];
 
     #[test]

@@ -35,7 +35,7 @@ const NEVER: &[&str] = &[
 ];
 /// Nie im Pack, auch wenn der Ordner gewählt ist: Dateien, die der Launcher für den TRS Client selbst verwaltet
 /// (Mod, Einstellungen, Farben, Schlüssel – der Empfänger wählt den TRS Client selbst) und Dateien mit Geheimnissen.
-fn is_private_file(rel: &Path) -> bool {
+pub(crate) fn is_private_file(rel: &Path) -> bool {
     let parts: Vec<String> = rel
         .components()
         .filter_map(|c| match c {
@@ -115,7 +115,7 @@ pub struct ExportSummary {
 
 // --- Auswahl ---------------------------------------------------------------------
 
-fn is_plain_entry(name: &str) -> bool {
+pub(crate) fn is_plain_entry(name: &str) -> bool {
     !name.is_empty()
         && name.len() <= 120
         && name != "."
@@ -177,7 +177,7 @@ pub async fn export_candidates(paths: &Paths, instance_id: &str) -> Result<Vec<E
 /// Läuft rekursiv durch einen Ordner; `visit` bekommt den Pfad relativ zum
 /// Spielordner und die Dateigröße. Verknüpfungen werden ausgelassen – außer
 /// Links auf gemeinsame Ordner (z. B. `config/worldedit/schematics`).
-fn collect_dir(dir: &Path, rel: &Path, links: &SharedLinks, visit: &mut impl FnMut(PathBuf, u64)) {
+pub(crate) fn collect_dir(dir: &Path, rel: &Path, links: &SharedLinks, visit: &mut impl FnMut(PathBuf, u64)) {
     let Ok(read) = std::fs::read_dir(dir) else { return };
     for entry in read.flatten() {
         let Ok(name) = entry.file_name().into_string() else { continue };
@@ -486,7 +486,7 @@ async fn curseforge_downloads(
 }
 
 /// SHA1 und SHA512 einer Datei in einem Durchgang.
-fn hash_file(path: &Path) -> Result<(String, String)> {
+pub(crate) fn hash_file(path: &Path) -> Result<(String, String)> {
     use sha1::Digest as _;
     let mut file = std::fs::File::open(path).map_err(|e| Error::io(path, e))?;
     let mut sha1 = sha1::Sha1::new();

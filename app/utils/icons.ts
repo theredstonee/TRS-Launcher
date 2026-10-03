@@ -21,6 +21,7 @@ export const icons = {
   compass: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM15.5 8.5l-2 5-5 2 2-5z',
   presets: 'M4 6h10M4 12h7M4 18h7M17 4v6M14 7h6M15 15l2 2 4-4',
   server: 'M4 5h16v5H4zM4 14h16v5H4zM7.5 7.5h.01M7.5 16.5h.01',
+  terminal: 'M4 5h16v14H4zM7.5 9.5l3 2.5-3 2.5M12.5 15h4',
   screenshots: 'M4 8h3l1.5-2h7L17 8h3v11H4zM12 16.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z',
   clips: 'M3 6h13v12H3zM16 10l5-3v10l-5-3',
   record: 'M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10z',

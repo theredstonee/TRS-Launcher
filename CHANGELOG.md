@@ -81,6 +81,18 @@ How to write an entry:
   instance as "not available" instead of breaking.
 - **Portable version.** A new ZIP download runs without installing: put it on a USB stick and all data stays in the
   "data" folder next to it. It doesn't update itself – the launcher tells you when a new version is out.
+- **Export an instance as a Minecraft server.** In the "Share" tab (or the instance menu in the library) choose
+  "Export as server": the launcher picks the right server and mod loader (Vanilla, Fabric, Quilt, Forge, NeoForge)
+  and only the mods a server needs. Client-only mods like Sodium, Iris or minimaps are left out automatically – you
+  see why for every mod and can move each one yourself. Mods without any information are marked "?" and included to
+  be safe. Choose a world, configs, port, description, player limit, online mode and RAM. The Minecraft EULA is
+  never accepted for you: you tick it yourself, with a link to read it.
+- **As a ZIP or right here.** Save the server as a ZIP with start scripts for Windows and Linux and a short guide –
+  or tick "Set up here and start" and play on it straight away. Downloads are checked against their checksums where
+  the source provides one, and the whole export can be cancelled.
+- **"My servers" with a live console.** Servers set up in the launcher get their own page: live log, command line
+  (list, say, op …), start, stop, restart and the number of players online. When you close the launcher, running
+  servers are stopped cleanly so the world is saved.
 
 ### Deutsch
 - **Suche, Filter und Details für TRS-Umhänge.** Die Umhang-Liste auf der Skins-Seite hat ein Suchfeld, Filter
@@ -138,6 +150,19 @@ How to write an entry:
 - **Portable Version.** Ein neuer ZIP-Download läuft ohne Installation: auf einen USB-Stick legen, alle Daten bleiben
   im Ordner „data“ daneben. Sie aktualisiert sich nicht selbst – der Launcher sagt Bescheid, wenn es eine neue Version
   gibt.
+- **Instanz als Minecraft-Server exportieren.** Im Tab „Teilen“ (oder im Instanz-Menü der Bibliothek) „Als Server
+  exportieren“ wählen: Der Launcher nimmt den passenden Server und Modloader (Vanilla, Fabric, Quilt, Forge,
+  NeoForge) und nur die Mods, die ein Server braucht. Reine Client-Mods wie Sodium, Iris oder Minimaps bleiben
+  automatisch weg – bei jeder Mod siehst du, warum, und kannst sie selbst verschieben. Mods ohne Angaben sind mit
+  „?“ markiert und kommen sicherheitshalber mit. Dazu Welt, Configs, Port, Beschreibung, Spielerzahl, Online-Modus
+  und Arbeitsspeicher wählen. Die Minecraft-EULA wird nie für dich akzeptiert: Du hakst sie selbst an, mit Link zum
+  Nachlesen.
+- **Als ZIP oder direkt hier.** Den Server als ZIP speichern – mit Startskripten für Windows und Linux und einer
+  kurzen Anleitung – oder „Hier anlegen und starten“ anhaken und sofort darauf spielen. Downloads werden gegen ihre
+  Prüfsummen geprüft, wo die Quelle eine nennt, und der ganze Export lässt sich abbrechen.
+- **„Meine Server“ mit Live-Konsole.** Im Launcher angelegte Server bekommen eine eigene Seite: Live-Log,
+  Befehlszeile (list, say, op …), Starten, Stoppen, Neustarten und die Zahl der Spieler online. Beim Schließen des
+  Launchers werden laufende Server sauber gestoppt, damit die Welt gespeichert wird.
 
 ## 0.17.1 – 2026-10-03 – Light Luggage Fix | Leichtes Gepäck – Fix
 <!-- banner: accent=#ffb02e motif=/news/0.17.0/banner.png -->

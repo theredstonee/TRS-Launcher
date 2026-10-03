@@ -850,6 +850,28 @@
       "notMovable": "Taşınabilir modda veri klasörü taşınamaz.",
       "noMove": "Hiçbir şey taşınmadı.",
       "alreadyDefault": "Kurulum zaten varsayılan konumda."
+    },
+    "serverExport": {
+      "nameRequired": "Lütfen sunucu için bir ad gir.",
+      "noTarget": "Seç: ZIP olarak kaydet ve/veya burada kur.",
+      "eulaRequired": "Sunucuyu burada başlatmak için Minecraft EULA'sını kabul etmelisin.",
+      "invalidPort": "Port 1024 ile 65535 arasında olmalı.",
+      "invalidMaxPlayers": "Oyuncu sayısı 1 ile 1000 arasında olmalı.",
+      "invalidMods": "Mod seçimi geçersiz – lütfen pencereyi yeniden aç.",
+      "invalidWorld": "Bu dünya (artık) yok.",
+      "noServerJar": "Minecraft {version} için resmi bir sunucu yok.",
+      "loaderUnavailable": "Bu mod loader, Minecraft {version} için sunucu olarak mevcut değil.",
+      "installerFailed": "Mod loader yükleyicisi başarısız oldu. İnternet bağlantını kontrol edip tekrar dene."
+    },
+    "localServer": {
+      "notFound": "Bu sunucu (artık) yok.",
+      "eulaMissing": "Sunucu ancak Minecraft EULA'sı kabul edildiğinde başlar.",
+      "portInUse": "{port} portu zaten kullanımda – orada hâlâ başka bir sunucu mu çalışıyor?",
+      "startFailed": "Sunucu başlatılamadı.",
+      "invalidCommand": "Komut boş, çok uzun veya geçersiz karakterler içeriyor.",
+      "notRunning": "Sunucu çalışmıyor.",
+      "stopTimeout": "Sunucu zamanında durmadı.",
+      "stillRunning": "Lütfen önce sunucuyu durdur."
     }
   },
   "browse": {
@@ -2681,7 +2703,8 @@
     "clips": "Klipler",
     "social": "Sosyal",
     "socialBadge": "{messages} okunmamış · {requests} istek",
-    "achievements": "Başarımlar"
+    "achievements": "Başarımlar",
+    "localServers": "Sunucularım"
   },
   "accountMenu": {
     "menuLabel": "Hesaplar",
@@ -2826,7 +2849,8 @@
       "presets": "Ön ayarlar yüklendi",
       "ffmpeg": "Kaydedici kuruldu",
       "sharedFolders": "Ortak klasör",
-      "move": "Taşındı"
+      "move": "Taşındı",
+      "serverExport": "Minecraft sunucusu"
     },
     "stage": {
       "preparing": "Hazırlanıyor",
@@ -2913,7 +2937,8 @@
     "settings": "Ayarlar",
     "moveToGroup": "Gruba taşı",
     "removeFromGroup": "Gruptan çıkar",
-    "newGroup": "+ Yeni grup …"
+    "newGroup": "+ Yeni grup …",
+    "exportServer": "Sunucu olarak dışa aktar …"
   },
   "home": {
     "greeting": {
@@ -4352,6 +4377,11 @@
       "textShared": "{code} olarak paylaşıldı. Yeni bir sürüm yükle – yükleyen herkes güncelleme alır.",
       "action": "Paylaş …",
       "actionUpdate": "Yeni sürüm …"
+    },
+    "server": {
+      "title": "Sunucu olarak dışa aktar",
+      "text": "Doğru loader ve yalnızca bir sunucunun ihtiyaç duyduğu modlarla bir Minecraft sunucusu oluşturur – arkadaşların ya da bir barındırma hizmeti için ZIP olarak veya doğrudan burada kurulup başlatılır.",
+      "action": "Dışa aktar …"
     }
   },
   "social": {
@@ -5920,6 +5950,115 @@
       "text": "Klasör bulunamadı: {path} – sürücü bağlı mı?",
       "retry": "Tekrar kontrol et",
       "forget": "Listeden kaldır"
+    }
+  },
+  "serverExport": {
+    "title": "Sunucu olarak dışa aktar",
+    "analyzing": "Hangi modların sunucuya ait olduğu kontrol ediliyor …",
+    "unsupported": "Minecraft {version} için resmi bir sunucu yok.",
+    "offline": "Modrinth ve CurseForge'a ulaşılamadı – modlar yalnızca kendi dosyalarındaki bilgilere göre sınıflandırıldı. Dışa aktarmadan önce listeyi kontrol et.",
+    "defaultMotd": "{name} – bir TRS Launcher sunucusu",
+    "mods": {
+      "title": "Modlar",
+      "summary": "Sunucuda {on} · dışarıda {off}",
+      "none": "Bu örnekte mod yok – sunucu olduğu gibi çalışır.",
+      "hint": "Yalnızca istemci modları (grafik, mini harita, HUD) sunucuda çalışmaz ve dışarıda bırakılır. Oyuncular bunları kendi oyunlarında tutar. Taşımak için bir moda tıkla.",
+      "filter": "Modları filtrele …",
+      "server": "Sunucuda ({count})",
+      "leftOut": "Dışarıda bırakılan ({count})",
+      "empty": "Yok",
+      "trsLocked": "TRS Client yalnızca oyunda çalışır ve asla sunucuya konmaz.",
+      "unknownHint": "{count} mod nerede çalıştığını belirtmiyor (\"?\" ile işaretli). Güvenlik için dahil edildiler – sunucu başlamazsa bunları çıkar."
+    },
+    "side": {
+      "client": "İstemci",
+      "server": "Sunucu",
+      "both": "İkisi de",
+      "unknown": "?"
+    },
+    "source": {
+      "trs": "Launcher tarafından yönetilir",
+      "list": "Bilinen istemci modu",
+      "jar": "Mod dosyasına göre",
+      "modrinth": "Modrinth'e göre",
+      "curseforge": "CurseForge'a göre",
+      "none": "Bilgi yok – güvenlik için dahil"
+    },
+    "world": "Dünya",
+    "newWorld": "Yeni dünya (sunucu oluşturur)",
+    "configs": "Ayar dosyalarını dahil et",
+    "port": "Port",
+    "maxPlayers": "Maks. oyuncu",
+    "motd": "Sunucu açıklaması (MOTD)",
+    "onlineMode": "Çevrimiçi mod",
+    "onlineModeOn": "Yalnızca gerçek Minecraft hesabı olan oyuncular katılabilir (önerilir).",
+    "onlineModeOff": "Herkes herhangi bir adla katılabilir – önerilmez.",
+    "ram": "RAM",
+    "ramValue": "{gb} GB",
+    "ramRange": "RAM 512 MB ile 128 GB arasında olmalı.",
+    "javaHint": "Sunucunun Java {major} sürümüne ihtiyacı var. Başlatma betikleri \"java\" kullanır – başkasını nasıl seçeceğin README'de yazıyor.",
+    "eula": "Minecraft EULA'sını okudum ve kabul ediyorum.",
+    "eulaLink": "EULA'yı oku",
+    "eulaAccepted": "eula.txt senin onayınla oluşturulacak.",
+    "eulaNotAccepted": "Onayın olmadan eula.txt olmaz – sunucu, oradaki EULA'yı kabul edene kadar ilk başlatmada durur.",
+    "asZip": "ZIP olarak kaydet",
+    "local": "Burada kur ve başlat",
+    "localHint": "Sunucu launcher'ın veri klasörüne kurulur ve hemen başlar. \"Sunucularım\" bölümünden yönetirsin.",
+    "actions": {
+      "zip": "ZIP'i kaydet …",
+      "local": "Kur ve başlat",
+      "both": "ZIP'i kaydet ve başlat …"
+    },
+    "pickLocation": "Kaydedilecek yeri seç …",
+    "phase": {
+      "java": "Java hazırlanıyor",
+      "server": "Sunucu ve loader indiriliyor",
+      "files": "Modlar, ayarlar ve dünya kopyalanıyor",
+      "zip": "ZIP yazılıyor",
+      "start": "Sunucu başlatılıyor"
+    },
+    "runsInBackground": "{stage} – bu pencereyi kapatsan da devam eder.",
+    "exporting": "Dışa aktarılıyor …",
+    "doneZip": "Sunucu kaydedildi: {file} ({size})",
+    "doneLocal": "\"{name}\" sunucusu kuruldu",
+    "localCreated": "\"{name}\" sunucusu kuruldu.",
+    "openConsole": "Konsolu aç"
+  },
+  "localServers": {
+    "title": "Sunucularım",
+    "subtitle": "Bu bilgisayardaki Minecraft sunucuları – günlük, komutlar ve oyuncular",
+    "runningCount": "{count} çalışıyor",
+    "stopped": "Durduruldu",
+    "players": "{now}/{max} oyuncu",
+    "state": {
+      "starting": "başlıyor …",
+      "running": "çalışıyor",
+      "stopping": "duruyor …",
+      "stopped": "durduruldu"
+    },
+    "meta": "Minecraft {version} · {loader} · port {port} · {ram} MB RAM · Java {java}",
+    "exitCode": "Son çalıştırma bir hatayla bitti (kod {code}) – günlüğe bak.",
+    "start": "Başlat",
+    "starting": "Başlıyor …",
+    "stop": "Durdur",
+    "restart": "Yeniden başlat",
+    "kill": "Zorla durdur",
+    "killHint": "Sunucuyu dünyayı kaydetmeden hemen kapatır.",
+    "delete": "Sunucuyu sil",
+    "deleteConfirm": "Çöp kutusuna taşınsın mı?",
+    "eulaMissing": "Bu sunucu için Minecraft EULA'sı kabul edilmedi – kabul ediyorsan klasöründeki eula.txt dosyasında eula=true yap.",
+    "network": "Ağındaki oyuncular bu bilgisayarın IP adresi ve {port} portu ile bağlanır. Windows, Java'nın ağı kullanıp kullanamayacağını bir kez sorabilir – izin ver. İnternet üzerinden arkadaşlar için yönlendiricinde {port} portunu yönlendir.",
+    "allowFirewall": "Güvenlik duvarında Java'ya izin ver",
+    "log": "Sunucu günlüğü",
+    "hiddenLines": "{count} eski satır gizlendi",
+    "noLog": "Henüz günlük yok – sunucuyu başlat.",
+    "commandPlaceholder": "Komut, ör. say Merhaba veya op <ad>",
+    "command": "Sunucu komutu",
+    "send": "Gönder",
+    "empty": {
+      "title": "Henüz sunucu yok",
+      "text": "Bir örnek aç, \"Paylaş\" bölümüne git ve \"Burada kur ve başlat\" ile \"Sunucu olarak dışa aktar\"ı seç.",
+      "action": "Kütüphaneye git"
     }
   }
 }

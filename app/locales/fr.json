@@ -850,6 +850,28 @@
       "notMovable": "Le dossier de données ne peut pas être déplacé en mode portable.",
       "noMove": "Rien n’a été déplacé.",
       "alreadyDefault": "L’instance est déjà à l’emplacement par défaut."
+    },
+    "serverExport": {
+      "nameRequired": "Saisis un nom pour le serveur.",
+      "noTarget": "Choisis : enregistrer en ZIP et/ou installer ici.",
+      "eulaRequired": "Pour lancer le serveur ici, tu dois accepter l'EULA de Minecraft.",
+      "invalidPort": "Le port doit être compris entre 1024 et 65535.",
+      "invalidMaxPlayers": "Le nombre de joueurs doit être compris entre 1 et 1000.",
+      "invalidMods": "La sélection de mods n'est pas valide : rouvre la fenêtre.",
+      "invalidWorld": "Ce monde n'existe pas (ou plus).",
+      "noServerJar": "Il n'existe pas de serveur officiel pour Minecraft {version}.",
+      "loaderUnavailable": "Ce mod loader n'existe pas en version serveur pour Minecraft {version}.",
+      "installerFailed": "L'installateur du mod loader a échoué. Vérifie ta connexion internet et réessaie."
+    },
+    "localServer": {
+      "notFound": "Ce serveur n'existe pas (ou plus).",
+      "eulaMissing": "Le serveur ne démarre qu'une fois l'EULA de Minecraft acceptée.",
+      "portInUse": "Le port {port} est déjà utilisé : un autre serveur y tourne-t-il encore ?",
+      "startFailed": "Le serveur n'a pas pu démarrer.",
+      "invalidCommand": "La commande est vide, trop longue ou contient des caractères non valides.",
+      "notRunning": "Le serveur ne tourne pas.",
+      "stopTimeout": "Le serveur ne s'est pas arrêté à temps.",
+      "stillRunning": "Arrête d'abord le serveur."
     }
   },
   "browse": {
@@ -2681,7 +2703,8 @@
     "clips": "Clips",
     "social": "Social",
     "socialBadge": "{messages} non lus · {requests} demandes",
-    "achievements": "Succès"
+    "achievements": "Succès",
+    "localServers": "Mes serveurs"
   },
   "accountMenu": {
     "menuLabel": "Comptes",
@@ -2826,7 +2849,8 @@
       "presets": "Préréglages installés",
       "ffmpeg": "Enregistreur installé",
       "sharedFolders": "Dossier partagé",
-      "move": "Déplacé"
+      "move": "Déplacé",
+      "serverExport": "Serveur Minecraft"
     },
     "stage": {
       "preparing": "Préparation",
@@ -2913,7 +2937,8 @@
     "settings": "Paramètres",
     "moveToGroup": "Déplacer vers un groupe",
     "removeFromGroup": "Retirer du groupe",
-    "newGroup": "+ Nouveau groupe…"
+    "newGroup": "+ Nouveau groupe…",
+    "exportServer": "Exporter en serveur …"
   },
   "home": {
     "greeting": {
@@ -4352,6 +4377,11 @@
       "textShared": "Partagé comme {code}. Envoie une nouvelle version – tous ceux qui l’ont installé reçoivent une mise à jour.",
       "action": "Partager …",
       "actionUpdate": "Nouvelle version …"
+    },
+    "server": {
+      "title": "Exporter en serveur",
+      "text": "Crée un serveur Minecraft avec le bon loader et seulement les mods dont un serveur a besoin : en ZIP pour des amis ou un hébergeur, ou installé et lancé directement ici.",
+      "action": "Exporter …"
     }
   },
   "social": {
@@ -5920,6 +5950,115 @@
       "text": "Dossier introuvable : {path} – le disque est-il branché ?",
       "retry": "Vérifier à nouveau",
       "forget": "Retirer de la liste"
+    }
+  },
+  "serverExport": {
+    "title": "Exporter en serveur",
+    "analyzing": "Vérification des mods qui vont sur un serveur …",
+    "unsupported": "Il n'existe pas de serveur officiel pour Minecraft {version}.",
+    "offline": "Modrinth et CurseForge sont injoignables : les mods ont été triés uniquement d'après leurs fichiers. Vérifie la liste avant d'exporter.",
+    "defaultMotd": "{name} – un serveur TRS Launcher",
+    "mods": {
+      "title": "Mods",
+      "summary": "{on} sur le serveur · {off} exclus",
+      "none": "Cette instance n'a pas de mods : le serveur fonctionne tel quel.",
+      "hint": "Les mods uniquement client (graphismes, minicartes, HUD) ne fonctionnent pas sur un serveur et sont exclus. Les joueurs les gardent dans leur propre jeu. Clique sur un mod pour le déplacer.",
+      "filter": "Filtrer les mods …",
+      "server": "Sur le serveur ({count})",
+      "leftOut": "Exclus ({count})",
+      "empty": "Aucun",
+      "trsLocked": "Le TRS Client ne fonctionne que dans le jeu et ne va jamais sur un serveur.",
+      "unknownHint": "{count} mods n'indiquent pas où ils fonctionnent (marqués « ? »). Ils sont inclus par précaution : retire-les si le serveur ne démarre pas."
+    },
+    "side": {
+      "client": "Client",
+      "server": "Serveur",
+      "both": "Les deux",
+      "unknown": "?"
+    },
+    "source": {
+      "trs": "Géré par le launcher",
+      "list": "Mod client connu",
+      "jar": "D'après le fichier du mod",
+      "modrinth": "D'après Modrinth",
+      "curseforge": "D'après CurseForge",
+      "none": "Aucune info : inclus par précaution"
+    },
+    "world": "Monde",
+    "newWorld": "Nouveau monde (le serveur en crée un)",
+    "configs": "Inclure les configs",
+    "port": "Port",
+    "maxPlayers": "Joueurs max.",
+    "motd": "Description du serveur (MOTD)",
+    "onlineMode": "Mode en ligne",
+    "onlineModeOn": "Seuls les joueurs avec un vrai compte Minecraft peuvent rejoindre (recommandé).",
+    "onlineModeOff": "N'importe qui peut rejoindre avec n'importe quel nom : déconseillé.",
+    "ram": "RAM",
+    "ramValue": "{gb} Go",
+    "ramRange": "La RAM doit être comprise entre 512 Mo et 128 Go.",
+    "javaHint": "Le serveur a besoin de Java {major}. Les scripts de lancement utilisent « java » ; le README explique comment en choisir un autre.",
+    "eula": "J'ai lu et j'accepte le CLUF (EULA) de Minecraft.",
+    "eulaLink": "Lire l'EULA",
+    "eulaAccepted": "eula.txt sera créé avec ton accord.",
+    "eulaNotAccepted": "Sans ton accord, pas de eula.txt : le serveur s'arrête au premier lancement jusqu'à ce que tu y acceptes l'EULA.",
+    "asZip": "Enregistrer en ZIP",
+    "local": "Installer ici et lancer",
+    "localHint": "Le serveur est placé dans le dossier de données du launcher et démarre aussitôt. Tu le contrôles dans « Mes serveurs ».",
+    "actions": {
+      "zip": "Enregistrer le ZIP …",
+      "local": "Installer et lancer",
+      "both": "Enregistrer le ZIP et lancer …"
+    },
+    "pickLocation": "Choisir l'emplacement …",
+    "phase": {
+      "java": "Préparation de Java",
+      "server": "Téléchargement du serveur et du loader",
+      "files": "Copie des mods, configs et du monde",
+      "zip": "Écriture du ZIP",
+      "start": "Démarrage du serveur"
+    },
+    "runsInBackground": "{stage} – continue même si tu fermes cette fenêtre.",
+    "exporting": "Export en cours …",
+    "doneZip": "Serveur enregistré : {file} ({size})",
+    "doneLocal": "Le serveur « {name} » est installé",
+    "localCreated": "Le serveur « {name} » est installé.",
+    "openConsole": "Ouvrir la console"
+  },
+  "localServers": {
+    "title": "Mes serveurs",
+    "subtitle": "Serveurs Minecraft sur ce PC : journal, commandes et joueurs",
+    "runningCount": "{count} en cours",
+    "stopped": "Arrêté",
+    "players": "{now}/{max} joueurs",
+    "state": {
+      "starting": "démarrage …",
+      "running": "en cours",
+      "stopping": "arrêt …",
+      "stopped": "arrêté"
+    },
+    "meta": "Minecraft {version} · {loader} · port {port} · {ram} Mo de RAM · Java {java}",
+    "exitCode": "La dernière exécution s'est terminée par une erreur (code {code}) : voir le journal.",
+    "start": "Démarrer",
+    "starting": "Démarrage …",
+    "stop": "Arrêter",
+    "restart": "Redémarrer",
+    "kill": "Forcer l'arrêt",
+    "killHint": "Arrête le serveur immédiatement sans sauvegarder le monde.",
+    "delete": "Supprimer le serveur",
+    "deleteConfirm": "Mettre à la corbeille ?",
+    "eulaMissing": "L'EULA de Minecraft n'a pas été acceptée pour ce serveur : mets eula=true dans eula.txt de son dossier si tu es d'accord.",
+    "network": "Les joueurs de ton réseau se connectent avec l'adresse IP de ce PC et le port {port}. Windows peut demander une fois si Java peut utiliser le réseau : autorise-le. Pour des amis via internet, redirige le port {port} dans ton routeur.",
+    "allowFirewall": "Autoriser Java dans le pare-feu",
+    "log": "Journal du serveur",
+    "hiddenLines": "{count} lignes plus anciennes masquées",
+    "noLog": "Pas encore de journal : démarre le serveur.",
+    "commandPlaceholder": "Commande, p. ex. say Salut ou op <nom>",
+    "command": "Commande du serveur",
+    "send": "Envoyer",
+    "empty": {
+      "title": "Pas encore de serveurs",
+      "text": "Ouvre une instance, va dans « Partager » et choisis « Exporter en serveur » avec « Installer ici et lancer ».",
+      "action": "Vers la bibliothèque"
     }
   }
 }

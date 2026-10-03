@@ -850,6 +850,28 @@
       "notMovable": "W trybie przenośnym nie można przenieść folderu danych.",
       "noMove": "Nic nie zostało przeniesione.",
       "alreadyDefault": "Instancja jest już w domyślnej lokalizacji."
+    },
+    "serverExport": {
+      "nameRequired": "Podaj nazwę serwera.",
+      "noTarget": "Wybierz: zapisz jako ZIP i/lub utwórz tutaj.",
+      "eulaRequired": "Aby uruchomić serwer tutaj, musisz zaakceptować EULA Minecrafta.",
+      "invalidPort": "Port musi mieścić się w zakresie od 1024 do 65535.",
+      "invalidMaxPlayers": "Liczba graczy musi wynosić od 1 do 1000.",
+      "invalidMods": "Wybór modów jest nieprawidłowy – otwórz okno ponownie.",
+      "invalidWorld": "Ten świat (już) nie istnieje.",
+      "noServerJar": "Dla Minecrafta {version} nie ma oficjalnego serwera.",
+      "loaderUnavailable": "Ten mod loader nie jest dostępny jako serwer dla Minecrafta {version}.",
+      "installerFailed": "Instalator mod loadera nie powiódł się. Sprawdź połączenie z internetem i spróbuj ponownie."
+    },
+    "localServer": {
+      "notFound": "Ten serwer (już) nie istnieje.",
+      "eulaMissing": "Serwer uruchomi się dopiero po zaakceptowaniu EULA Minecrafta.",
+      "portInUse": "Port {port} jest już zajęty – czy działa tam jeszcze inny serwer?",
+      "startFailed": "Nie udało się uruchomić serwera.",
+      "invalidCommand": "Komenda jest pusta, za długa lub zawiera nieprawidłowe znaki.",
+      "notRunning": "Serwer nie działa.",
+      "stopTimeout": "Serwer nie zatrzymał się na czas.",
+      "stillRunning": "Najpierw zatrzymaj serwer."
     }
   },
   "browse": {
@@ -2681,7 +2703,8 @@
     "clips": "Klipy",
     "social": "Społeczność",
     "socialBadge": "{messages} nieprzeczytane · {requests} zaproszenia",
-    "achievements": "Osiągnięcia"
+    "achievements": "Osiągnięcia",
+    "localServers": "Moje serwery"
   },
   "accountMenu": {
     "menuLabel": "Konta",
@@ -2826,7 +2849,8 @@
       "presets": "Zainstalowano presety",
       "ffmpeg": "Nagrywarka zainstalowana",
       "sharedFolders": "Wspólny folder",
-      "move": "Przeniesiono"
+      "move": "Przeniesiono",
+      "serverExport": "Serwer Minecraft"
     },
     "stage": {
       "preparing": "Przygotowywanie",
@@ -2913,7 +2937,8 @@
     "settings": "Ustawienia",
     "moveToGroup": "Przenieś do grupy",
     "removeFromGroup": "Usuń z grupy",
-    "newGroup": "+ Nowa grupa …"
+    "newGroup": "+ Nowa grupa …",
+    "exportServer": "Eksportuj jako serwer …"
   },
   "home": {
     "greeting": {
@@ -4352,6 +4377,11 @@
       "textShared": "Udostępniono jako {code}. Prześlij nową wersję – każdy, kto go zainstalował, dostanie aktualizację.",
       "action": "Udostępnij …",
       "actionUpdate": "Nowa wersja …"
+    },
+    "server": {
+      "title": "Eksportuj jako serwer",
+      "text": "Tworzy serwer Minecraft z odpowiednim loaderem i tylko tymi modami, których potrzebuje serwer – jako ZIP dla znajomych lub hostingu albo od razu utworzony i uruchomiony tutaj.",
+      "action": "Eksportuj …"
     }
   },
   "social": {
@@ -5920,6 +5950,115 @@
       "text": "Nie znaleziono folderu: {path} – czy dysk jest podłączony?",
       "retry": "Sprawdź ponownie",
       "forget": "Usuń z listy"
+    }
+  },
+  "serverExport": {
+    "title": "Eksportuj jako serwer",
+    "analyzing": "Sprawdzanie, które mody pasują na serwer …",
+    "unsupported": "Dla Minecrafta {version} nie ma oficjalnego serwera.",
+    "offline": "Nie udało się połączyć z Modrinth i CurseForge – mody zostały przypisane tylko na podstawie ich plików. Sprawdź listę przed eksportem.",
+    "defaultMotd": "{name} – serwer TRS Launchera",
+    "mods": {
+      "title": "Mody",
+      "summary": "{on} na serwerze · {off} pominięte",
+      "none": "Ta instancja nie ma modów – serwer działa bez zmian.",
+      "hint": "Mody tylko dla klienta (grafika, minimapy, HUD) nie działają na serwerze i zostają pominięte. Gracze zachowują je we własnej grze. Kliknij mod, aby go przenieść.",
+      "filter": "Filtruj mody …",
+      "server": "Na serwerze ({count})",
+      "leftOut": "Pominięte ({count})",
+      "empty": "Brak",
+      "trsLocked": "TRS Client działa tylko w grze i nigdy nie trafia na serwer.",
+      "unknownHint": "{count} modów nie podaje, gdzie działa (oznaczone „?”). Dla bezpieczeństwa są dołączone – usuń je, jeśli serwer się nie uruchamia."
+    },
+    "side": {
+      "client": "Klient",
+      "server": "Serwer",
+      "both": "Oba",
+      "unknown": "?"
+    },
+    "source": {
+      "trs": "Zarządzany przez launcher",
+      "list": "Znany mod tylko dla klienta",
+      "jar": "Według pliku moda",
+      "modrinth": "Według Modrinth",
+      "curseforge": "Według CurseForge",
+      "none": "Brak informacji – dołączony dla bezpieczeństwa"
+    },
+    "world": "Świat",
+    "newWorld": "Nowy świat (serwer go utworzy)",
+    "configs": "Dołącz konfiguracje",
+    "port": "Port",
+    "maxPlayers": "Maks. graczy",
+    "motd": "Opis serwera (MOTD)",
+    "onlineMode": "Tryb online",
+    "onlineModeOn": "Dołączyć mogą tylko gracze z prawdziwym kontem Minecraft (zalecane).",
+    "onlineModeOff": "Każdy może dołączyć z dowolną nazwą – niezalecane.",
+    "ram": "RAM",
+    "ramValue": "{gb} GB",
+    "ramRange": "RAM musi wynosić od 512 MB do 128 GB.",
+    "javaHint": "Serwer wymaga Javy {major}. Skrypty startowe używają „java” – w README opisano, jak wybrać inną.",
+    "eula": "Przeczytałem(-am) i akceptuję EULA Minecrafta.",
+    "eulaLink": "Przeczytaj EULA",
+    "eulaAccepted": "Plik eula.txt zostanie utworzony za twoją zgodą.",
+    "eulaNotAccepted": "Bez twojej zgody nie ma pliku eula.txt – serwer zatrzyma się przy pierwszym uruchomieniu, dopóki nie zaakceptujesz tam EULA.",
+    "asZip": "Zapisz jako ZIP",
+    "local": "Utwórz tutaj i uruchom",
+    "localHint": "Serwer trafi do folderu danych launchera i od razu się uruchomi. Sterujesz nim w „Moje serwery”.",
+    "actions": {
+      "zip": "Zapisz ZIP …",
+      "local": "Utwórz i uruchom",
+      "both": "Zapisz ZIP i uruchom …"
+    },
+    "pickLocation": "Wybierz miejsce zapisu …",
+    "phase": {
+      "java": "Przygotowywanie Javy",
+      "server": "Pobieranie serwera i loadera",
+      "files": "Kopiowanie modów, konfiguracji i świata",
+      "zip": "Zapisywanie ZIP",
+      "start": "Uruchamianie serwera"
+    },
+    "runsInBackground": "{stage} – działa dalej, nawet jeśli zamkniesz to okno.",
+    "exporting": "Eksportowanie …",
+    "doneZip": "Serwer zapisany: {file} ({size})",
+    "doneLocal": "Serwer „{name}” został utworzony",
+    "localCreated": "Serwer „{name}” został utworzony.",
+    "openConsole": "Otwórz konsolę"
+  },
+  "localServers": {
+    "title": "Moje serwery",
+    "subtitle": "Serwery Minecraft na tym komputerze – log, komendy i gracze",
+    "runningCount": "Działające: {count}",
+    "stopped": "Zatrzymany",
+    "players": "{now}/{max} graczy",
+    "state": {
+      "starting": "uruchamianie …",
+      "running": "działa",
+      "stopping": "zatrzymywanie …",
+      "stopped": "zatrzymany"
+    },
+    "meta": "Minecraft {version} · {loader} · port {port} · {ram} MB RAM · Java {java}",
+    "exitCode": "Ostatnie uruchomienie zakończyło się błędem (kod {code}) – zobacz log.",
+    "start": "Uruchom",
+    "starting": "Uruchamianie …",
+    "stop": "Zatrzymaj",
+    "restart": "Uruchom ponownie",
+    "kill": "Wymuś zatrzymanie",
+    "killHint": "Natychmiast zamyka serwer bez zapisywania świata.",
+    "delete": "Usuń serwer",
+    "deleteConfirm": "Przenieść do kosza?",
+    "eulaMissing": "Dla tego serwera nie zaakceptowano EULA Minecrafta – ustaw eula=true w pliku eula.txt w jego folderze, jeśli się zgadzasz.",
+    "network": "Gracze w twojej sieci łączą się przez adres IP tego komputera i port {port}. Windows może raz zapytać, czy Java może korzystać z sieci – zezwól. Dla znajomych przez internet przekieruj port {port} w routerze.",
+    "allowFirewall": "Zezwól Javie w zaporze",
+    "log": "Log serwera",
+    "hiddenLines": "Ukryte starsze linie: {count}",
+    "noLog": "Brak logu – uruchom serwer.",
+    "commandPlaceholder": "Komenda, np. say Cześć lub op <nazwa>",
+    "command": "Komenda serwera",
+    "send": "Wyślij",
+    "empty": {
+      "title": "Brak serwerów",
+      "text": "Otwórz instancję, przejdź do „Udostępnij” i wybierz „Eksportuj jako serwer” z opcją „Utwórz tutaj i uruchom”.",
+      "action": "Do biblioteki"
     }
   }
 }

@@ -153,7 +153,7 @@ pub(crate) fn from_entries(mut read: impl FnMut(&str) -> Option<String>) -> Vec<
 
 /// JSON streng lesen; manche Mods haben rohe Zeilenumbrüche in Strings, die
 /// der Loader duldet – dann ein zweiter Versuch ohne Steuerzeichen.
-fn lenient_json(text: &str) -> Option<serde_json::Value> {
+pub(crate) fn lenient_json(text: &str) -> Option<serde_json::Value> {
     let text = text.trim_start_matches('\u{feff}');
     serde_json::from_str(text).ok().or_else(|| {
         let cleaned: String = text.chars().map(|c| if c.is_control() { ' ' } else { c }).collect();
