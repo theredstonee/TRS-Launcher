@@ -88,7 +88,14 @@ impl TaskControl {
             self.0.done_bytes.fetch_add(delta as u64, Ordering::Relaxed);
         } else {
             let sub = delta.unsigned_abs();
-            let _ = self.0.done_bytes.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |v| Some(v.saturating_sub(sub)));
+            // Ohne fetch_update/try_update: die Methode wurde umbenannt, je nach Toolchain ist eine davon veraltet.
+            let mut cur = self.0.done_bytes.load(Ordering::Relaxed);
+            loop {
+                match self.0.done_bytes.compare_exchange_weak(cur, cur.saturating_sub(sub), Ordering::Relaxed, Ordering::Relaxed) {
+                    Ok(_) => break,
+                    Err(actual) => cur = actual,
+                }
+            }
         }
     }
 

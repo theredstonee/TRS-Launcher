@@ -250,7 +250,7 @@ pub(crate) fn download_tasks(index: &PackIndex, game_dir: &Path, strict_size: bo
         }
         let sha512 = match file.hashes.sha512.as_deref() {
             None => None,
-            Some(s) if s.is_empty() => None,
+            Some("") => None,
             Some(s) if hex_len(s, 128) => Some(s.to_owned()),
             Some(_) => {
                 return Err(Error::validation(crate::msg!(

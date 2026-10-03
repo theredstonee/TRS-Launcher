@@ -249,6 +249,7 @@ pub fn availability(builds: &[Build], instance: &Instance) -> Availability {
 /// in der Instanz liegt – bzw. entfernt ihn, wenn er abgeschaltet wurde oder
 /// für die Version keinen Build mehr hat. Quelle ist die neueste geprüfte
 /// Version: Update-Kanal (falls neuer und ladbar), sonst das Launcher-Paket.
+#[allow(clippy::too_many_arguments)]
 pub async fn sync(
     http: &reqwest::Client,
     paths: &Paths,
