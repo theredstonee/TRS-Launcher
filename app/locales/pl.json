@@ -903,6 +903,21 @@
       "newerVersion": "Ten układ pochodzi z nowszej wersji launchera.",
       "nameLength": "Nazwa musi mieć od 1 do {max} znaków.",
       "buttonCount": "Układ potrzebuje od 1 do {max} przycisków."
+    },
+    "remote": {
+      "disabled": "Pilot jest wyłączony w ustawieniach.",
+      "notAllowed": "Pilot nie może tego zrobić (Ustawienia → Pilot).",
+      "invalidCode": "To nie jest prawidłowy kod parowania (format: XXX-XXX).",
+      "invalidCommand": "To polecenie jest nieprawidłowe.",
+      "deviceInvalid": "To urządzenie nie jest już zarejestrowane do sterowania zdalnego – sparuj je ponownie.",
+      "wrongAccount": "Komputer jest zalogowany na inne konto TRS – użyj tego samego konta na obu urządzeniach.",
+      "codeExpired": "Ten kod parowania nie istnieje (już) – wyświetl nowy na komputerze.",
+      "pairingLimit": "Z tym komputerem sparowano już 10 telefonów – najpierw usuń jeden.",
+      "peerNotFound": "To urządzenie nie jest (już) sparowane.",
+      "offline": "Komputer jest offline albo pilot jest tam wyłączony.",
+      "commandDisabled": "To jest wyłączone w launcherze na komputerze.",
+      "commandExpired": "Polecenie wygasło.",
+      "commandHandled": "Polecenie zostało już obsłużone."
     }
   },
   "browse": {
@@ -2736,7 +2751,8 @@
     "socialBadge": "{messages} nieprzeczytane · {requests} zaproszenia",
     "achievements": "Osiągnięcia",
     "localServers": "Moje serwery",
-    "controls": "Sterowanie"
+    "controls": "Sterowanie",
+    "pc": "PC"
   },
   "accountMenu": {
     "menuLabel": "Konta",
@@ -3056,7 +3072,8 @@
       "storage": "Pamięć dyskowa",
       "network": "Sieć",
       "clips": "Klipy i nagrywanie",
-      "notifications": "Powiadomienia"
+      "notifications": "Powiadomienia",
+      "remote": "Pilot"
     },
     "instance": {
       "general": "Ogólne",
@@ -3117,7 +3134,8 @@
       "button": "Dowiedz się więcej i włącz",
       "shares": "Aby udostępniać zrzuty ekranu jako link, launcher loguje się na serwerze TRS. Dzieje się to dopiero po Twojej zgodzie.",
       "achievements": "Aby pokazać twoje osiągnięcia, launcher loguje się na serwer TRS. Dzieje się to dopiero po twojej zgodzie.",
-      "cosmetics": "Aby wyświetlić kosmetyki na głowę TRS, launcher loguje się do serwera TRS. Dzieje się to dopiero po twojej zgodzie."
+      "cosmetics": "Aby wyświetlić kosmetyki na głowę TRS, launcher loguje się do serwera TRS. Dzieje się to dopiero po twojej zgodzie.",
+      "remote": "Aby sterować komputerem z tego telefonu, launcher loguje się na serwerze TRS. Dzieje się to dopiero po Twojej zgodzie."
     },
     "account": {
       "title": "Brak zalogowanego konta",
@@ -6238,6 +6256,90 @@
       "sensitivity": "Szybkość kamery",
       "invalid": "Nie można zapisać układu: {reason}",
       "maxButtons": "Maksymalnie {max} przycisków"
+    }
+  },
+  "remote": {
+    "settings": {
+      "title": "Pilot z telefonu",
+      "intro": "Uruchamiaj gry na tym komputerze, sprawdzaj, co działa, i instaluj modpacki kodem – z TRS Launchera na telefonie. Oba urządzenia muszą używać tego samego konta TRS. Nic się nie dzieje, dopóki nie włączysz tego tutaj.",
+      "needsTrs": "Pilot korzysta z usług TRS. Najpierw je włącz.",
+      "enabled": "Zezwól na pilota",
+      "enabledHint": "Domyślnie wyłączone. Gdy jest włączone, ten komputer przesyła swoje instancje i bieżące zadania do sparowanych telefonów.",
+      "allowLaunch": "Uruchamianie i zamykanie gier",
+      "allowLaunchHint": "Telefon może uruchamiać i zamykać instancje. Za każdym razem na tym komputerze pojawi się powiadomienie.",
+      "allowInstall": "Instalowanie modpacków kodem",
+      "allowInstallHint": "Telefon może zainstalować udostępniony modpack (TRS-XXXX-XXXX). Paczki z własnymi plikami modów i tak wymagają potwierdzenia tutaj.",
+      "pairTitle": "Sparuj telefon",
+      "pairSteps": "Na telefonie otwórz TRS Launcher → „PC” i zeskanuj ten kod QR albo wpisz kod.",
+      "expiresIn": "Ważny jeszcze {time}",
+      "expired": "Kod wygasł.",
+      "newCode": "Nowy kod",
+      "pairWarning": "Paruj tylko swój własny telefon. Nigdy nikomu nie wysyłaj tego kodu.",
+      "creating": "Tworzenie kodu…",
+      "pair": "Sparuj telefon",
+      "phones": "Sparowane telefony",
+      "pairedAt": "Sparowano {date}",
+      "lastSeen": "ostatnio widziany {date}",
+      "remove": "Usuń",
+      "noPhones": "Nie sparowano jeszcze żadnego telefonu.",
+      "paired": "Telefon sparowany",
+      "notSaved": "Ustawienie jest jeszcze zapisywane – spróbuj ponownie za chwilę."
+    },
+    "pc": {
+      "title": "PC",
+      "subtitle": "Steruj TRS Launcherem na komputerze",
+      "pairAnother": "Sparuj kolejny komputer",
+      "pairTitle": "Sparuj komputer",
+      "pairIntro": "Na komputerze otwórz Ustawienia → Pilot i wybierz „Sparuj telefon”. Następnie zeskanuj kod QR albo wpisz kod.",
+      "scan": "Skanuj kod QR",
+      "scanning": "Otwieranie aparatu…",
+      "codeLabel": "Kod z komputera",
+      "pairing": "Parowanie…",
+      "pair": "Sparuj",
+      "sameAccount": "Telefon i komputer muszą być zalogowane na to samo konto TRS.",
+      "invalidCode": "Wpisz 6-znakowy kod z komputera (np. K7Q-2MX).",
+      "paired": "Sparowano z {name}",
+      "cameraDenied": "Brak dostępu do aparatu – zezwól na niego w ustawieniach telefonu albo wpisz kod.",
+      "notAPairCode": "Ten kod QR nie jest kodem parowania TRS Launchera.",
+      "scanFailed": "Skanowanie nie powiodło się – wpisz kod ręcznie.",
+      "launchSent": "Uruchamianie {name} na {pc}…",
+      "stopSent": "Zamykanie {name} na {pc}…",
+      "installSent": "Instalowanie {code} na {pc}…",
+      "online": "Online",
+      "offline": "Offline",
+      "remove": "Usuń",
+      "offlineHint": "Komputer jest offline, launcher jest zamknięty albo pilot jest tam wyłączony.",
+      "instances": "Instancje",
+      "launchOff": "Uruchamianie gier jest wyłączone na tym komputerze.",
+      "running": "działa",
+      "stopNamed": "Zamknij {name}",
+      "stop": "Zamknij",
+      "playNamed": "Graj w {name}",
+      "sending": "Wysyłanie…",
+      "play": "Graj",
+      "noInstances": "Na tym komputerze nie ma jeszcze instancji.",
+      "installTitle": "Zainstaluj modpack na komputerze",
+      "installOff": "Instalowanie modpacków jest wyłączone na tym komputerze.",
+      "install": "Zainstaluj",
+      "installHint": "Paczki z własnymi plikami modów trzeba potwierdzić na komputerze.",
+      "noStatus": "Czekam na komputer…",
+      "emptyTitle": "Brak sparowanego komputera",
+      "emptyText": "Sparuj komputer, aby uruchamiać gry z telefonu."
+    },
+    "toast": {
+      "launched": "Uruchomiono z telefonu: {name} ({phone})",
+      "stopped": "Zamknięto z telefonu: {name} ({phone})",
+      "installing": "Instalacja z telefonu: {name} ({phone})",
+      "packNeedsPc": "{phone} chce zainstalować {name} – potwierdź to tutaj."
+    },
+    "result": {
+      "instance_not_found": "Ta instancja nie istnieje (już) na komputerze.",
+      "already_running": "Ta instancja już działa.",
+      "not_running": "Ta instancja nie działa.",
+      "busy": "Komputer wciąż instaluje tę instancję.",
+      "needs_pc": "Ta paczka zawiera własne pliki modów – potwierdź instalację na komputerze.",
+      "disabled": "To jest wyłączone w launcherze na komputerze.",
+      "failed": "Na komputerze się nie udało."
     }
   }
 }

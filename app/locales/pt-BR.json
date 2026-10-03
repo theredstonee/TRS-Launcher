@@ -903,6 +903,21 @@
       "newerVersion": "Este layout vem de uma versão mais nova do launcher.",
       "nameLength": "O nome deve ter entre 1 e {max} caracteres.",
       "buttonCount": "Um layout precisa de 1 a {max} botões."
+    },
+    "remote": {
+      "disabled": "O controle remoto está desativado nas configurações.",
+      "notAllowed": "O controle remoto não pode fazer isso (Configurações → Controle remoto).",
+      "invalidCode": "Esse não é um código de pareamento válido (formato: XXX-XXX).",
+      "invalidCommand": "Este comando é inválido.",
+      "deviceInvalid": "Este dispositivo não está mais registrado para o controle remoto – pareie de novo.",
+      "wrongAccount": "O PC está conectado com outra conta TRS – use a mesma conta nos dois dispositivos.",
+      "codeExpired": "Este código de pareamento não existe (mais) – mostre um novo no PC.",
+      "pairingLimit": "Já há 10 celulares pareados com este PC – remova um primeiro.",
+      "peerNotFound": "Este dispositivo não está (mais) pareado.",
+      "offline": "O PC está offline ou o controle remoto está desativado nele.",
+      "commandDisabled": "Isso está desativado no launcher do PC.",
+      "commandExpired": "O comando expirou.",
+      "commandHandled": "O comando já foi processado."
     }
   },
   "browse": {
@@ -2736,7 +2751,8 @@
     "socialBadge": "{messages} não lidas · {requests} pedidos",
     "achievements": "Conquistas",
     "localServers": "Meus servidores",
-    "controls": "Controles"
+    "controls": "Controles",
+    "pc": "PC"
   },
   "accountMenu": {
     "menuLabel": "Contas",
@@ -3056,7 +3072,8 @@
       "storage": "Armazenamento",
       "network": "Rede",
       "clips": "Clipes e gravação",
-      "notifications": "Notificações"
+      "notifications": "Notificações",
+      "remote": "Controle remoto"
     },
     "instance": {
       "general": "Geral",
@@ -3117,7 +3134,8 @@
       "button": "Saiba mais e ative",
       "shares": "Para compartilhar capturas como link, o launcher entra no servidor TRS. Isso só acontece depois que você concordar.",
       "achievements": "Para mostrar suas conquistas, o launcher entra no servidor TRS. Isso só acontece depois que você concordar.",
-      "cosmetics": "Para mostrar os cosméticos de cabeça TRS, o launcher entra no servidor TRS. Isso só acontece depois que você concordar."
+      "cosmetics": "Para mostrar os cosméticos de cabeça TRS, o launcher entra no servidor TRS. Isso só acontece depois que você concordar.",
+      "remote": "Para controlar seu PC por este celular, o launcher faz login no servidor TRS. Isso só acontece depois que você concordar."
     },
     "account": {
       "title": "Nenhuma conta conectada",
@@ -6238,6 +6256,90 @@
       "sensitivity": "Velocidade da câmera",
       "invalid": "Não é possível salvar o layout: {reason}",
       "maxButtons": "No máximo {max} botões"
+    }
+  },
+  "remote": {
+    "settings": {
+      "title": "Controle remoto pelo celular",
+      "intro": "Inicie jogos neste PC, veja o que está rodando e instale modpacks por código – pelo TRS Launcher no seu celular. Os dois dispositivos precisam usar a mesma conta TRS. Nada acontece até você ativar aqui.",
+      "needsTrs": "O controle remoto usa os serviços TRS. Ative-os primeiro.",
+      "enabled": "Permitir controle remoto",
+      "enabledHint": "Desativado por padrão. Enquanto estiver ativo, este PC informa suas instâncias e tarefas em andamento aos celulares pareados.",
+      "allowLaunch": "Iniciar e fechar jogos",
+      "allowLaunchHint": "Seu celular pode iniciar e fechar instâncias. Um aviso aparece neste PC a cada vez.",
+      "allowInstall": "Instalar modpacks por código",
+      "allowInstallHint": "Seu celular pode instalar um modpack compartilhado (TRS-XXXX-XXXX). Packs com arquivos de mods próprios ainda precisam da sua confirmação aqui.",
+      "pairTitle": "Parear um celular",
+      "pairSteps": "No celular, abra o TRS Launcher → “PC” e escaneie este QR code ou digite o código.",
+      "expiresIn": "Válido por mais {time}",
+      "expired": "O código expirou.",
+      "newCode": "Novo código",
+      "pairWarning": "Pareie só o seu próprio celular. Nunca envie este código para ninguém.",
+      "creating": "Criando código…",
+      "pair": "Parear celular",
+      "phones": "Celulares pareados",
+      "pairedAt": "Pareado em {date}",
+      "lastSeen": "visto por último {date}",
+      "remove": "Remover",
+      "noPhones": "Nenhum celular pareado ainda.",
+      "paired": "Celular pareado",
+      "notSaved": "A configuração ainda está sendo salva – tente de novo daqui a pouco."
+    },
+    "pc": {
+      "title": "PC",
+      "subtitle": "Controle o TRS Launcher no seu PC",
+      "pairAnother": "Parear outro PC",
+      "pairTitle": "Parear um PC",
+      "pairIntro": "No PC, abra Configurações → Controle remoto e escolha “Parear celular”. Depois escaneie o QR code ou digite o código.",
+      "scan": "Escanear QR code",
+      "scanning": "Abrindo a câmera…",
+      "codeLabel": "Código do PC",
+      "pairing": "Pareando…",
+      "pair": "Parear",
+      "sameAccount": "Celular e PC precisam estar conectados com a mesma conta TRS.",
+      "invalidCode": "Digite o código de 6 caracteres do PC (ex.: K7Q-2MX).",
+      "paired": "Pareado com {name}",
+      "cameraDenied": "Sem acesso à câmera – permita nas configurações do celular ou digite o código.",
+      "notAPairCode": "Esse QR code não é um código de pareamento do TRS Launcher.",
+      "scanFailed": "Não deu para escanear – digite o código.",
+      "launchSent": "Iniciando {name} em {pc}…",
+      "stopSent": "Fechando {name} em {pc}…",
+      "installSent": "Instalando {code} em {pc}…",
+      "online": "Online",
+      "offline": "Offline",
+      "remove": "Remover",
+      "offlineHint": "O PC está offline, o launcher está fechado ou o controle remoto está desativado nele.",
+      "instances": "Instâncias",
+      "launchOff": "Iniciar jogos está desativado neste PC.",
+      "running": "em execução",
+      "stopNamed": "Fechar {name}",
+      "stop": "Fechar",
+      "playNamed": "Jogar {name}",
+      "sending": "Enviando…",
+      "play": "Jogar",
+      "noInstances": "Ainda não há instâncias neste PC.",
+      "installTitle": "Instalar um modpack no PC",
+      "installOff": "Instalar modpacks está desativado neste PC.",
+      "install": "Instalar",
+      "installHint": "Packs com arquivos de mods próprios precisam de confirmação no PC.",
+      "noStatus": "Aguardando o PC…",
+      "emptyTitle": "Nenhum PC pareado ainda",
+      "emptyText": "Pareie seu PC para iniciar jogos pelo celular."
+    },
+    "toast": {
+      "launched": "Iniciado pelo celular: {name} ({phone})",
+      "stopped": "Fechado pelo celular: {name} ({phone})",
+      "installing": "Instalando pelo celular: {name} ({phone})",
+      "packNeedsPc": "{phone} quer instalar {name} – confirme aqui."
+    },
+    "result": {
+      "instance_not_found": "Esta instância não existe (mais) no PC.",
+      "already_running": "Esta instância já está em execução.",
+      "not_running": "Esta instância não está em execução.",
+      "busy": "O PC ainda está instalando esta instância.",
+      "needs_pc": "Este pack traz arquivos de mods próprios – confirme a instalação no PC.",
+      "disabled": "Isso está desativado no launcher do PC.",
+      "failed": "Não funcionou no PC."
     }
   }
 }

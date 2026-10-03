@@ -19,6 +19,8 @@ interface NavItem {
   localServers?: boolean
   /** Nur in der mobilen App (und beim Entwickeln). */
   touchOnly?: boolean
+  /** Nur am Handy (PC-Fernbedienung). */
+  phoneOnly?: boolean
 }
 
 const items: NavItem[] = [
@@ -33,6 +35,7 @@ const items: NavItem[] = [
   { to: '/skins', label: 'nav.skins', icon: 'skins', optional: true },
   { to: '/social', label: 'nav.social', icon: 'chat' },
   { to: '/controls', label: 'nav.controls', icon: 'touch', touchOnly: true },
+  { to: '/pc', label: 'nav.pc', icon: 'monitor', phoneOnly: true },
   { to: '/admin', label: 'nav.admin', icon: 'admin', admin: true },
 ]
 
@@ -69,7 +72,9 @@ const visibleItems = computed(() =>
       // Lokale Server erst, wenn es einen gibt (Server-Export „lokal anlegen“).
       (!item.localServers || localServers.items.length > 0) &&
       // Touch-Steuerung braucht die mobile App; beim Entwickeln zum Testen sichtbar.
-      (!item.touchOnly || isTouchApp() || import.meta.dev),
+      (!item.touchOnly || isTouchApp() || import.meta.dev) &&
+      // Die PC-Fernbedienung bedient man vom Handy aus.
+      (!item.phoneOnly || detectRemoteRole() === 'phone'),
   ),
 )
 

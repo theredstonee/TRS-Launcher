@@ -76,6 +76,8 @@ onMounted(async () => {
   // Nach einem Update einmal zeigen, was neu ist (beim allerersten Start nicht).
   void whatsNew.check(onboarding.open)
   await trs.init()
+  // PC-Fernbedienung: tut nichts, solange sie in den Einstellungen aus ist.
+  useRemoteStore().start()
 })
 
 // „Im Launcher öffnen“ auf der Website (`trs-launcher://pack/<Code>`): Dialog „Modpack per Code“ mit Vorschau.
@@ -104,6 +106,20 @@ onMounted(async () => {
   open(await backend.webLogin.takePending().catch(() => null))
 })
 onBeforeUnmount(() => unlistenWebLogin?.())
+
+// QR-Code der PC-Fernbedienung mit der Handy-Kamera gescannt (`trs-launcher://remote-pair/<Code>`): Seite „PC“ mit dem
+// Code – gekoppelt wird dort erst nach einem Tipp. Am PC gibt es nichts zu koppeln.
+let unlistenRemotePair: (() => void) | null = null
+onMounted(async () => {
+  if (!isTauri() || detectRemoteRole() !== 'phone') return
+  const open = (code: unknown) => {
+    const c = typeof code === 'string' ? normalizePairCode(code) : null
+    if (c) void router.push({ path: '/pc', query: { code: c } })
+  }
+  unlistenRemotePair = await listen<string>('open-remote-pair', (e) => open(e.payload))
+  open(await backend.remote.takePendingPair().catch(() => null))
+})
+onBeforeUnmount(() => unlistenRemotePair?.())
 
 // Geteilte Modpacks: Updates und „An dich geschickt“ laden, sobald die TRS-Dienste an sind.
 watch(

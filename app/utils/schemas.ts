@@ -221,6 +221,10 @@ export const settingsSchema = z
     modpackTrsClient: z.enum(['ask', 'always', 'never']).default('ask'),
     showBedrock: z.boolean().default(true),
     sharedFolders: z.array(z.enum(sharedFolderKinds)).max(sharedFolderKinds.length).default([]),
+    /** PC-Fernbedienung – fehlt das Feld (älterer Kern), ist sie aus. */
+    remote: z
+      .object({ enabled: z.boolean().default(false), allowLaunch: z.boolean().default(false), allowInstall: z.boolean().default(false) })
+      .prefault({}),
   })
   .passthrough()
   .refine((s) => s.minMemoryMb <= s.maxMemoryMb, {

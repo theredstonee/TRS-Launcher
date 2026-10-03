@@ -225,6 +225,17 @@ export interface Settings {
   showBedrock: boolean
   /** Ordner, die neue Instanzen von Anfang an teilen */
   sharedFolders: SharedFolder[]
+  /** PC-Fernbedienung vom Handy (ab Werk aus) */
+  remote: RemoteSettings
+}
+
+/** PC-Fernbedienung (Rust: `RemoteSettings`): an/aus und je Befehlsart erlaubt. */
+export interface RemoteSettings {
+  enabled: boolean
+  /** Spiele starten und beenden */
+  allowLaunch: boolean
+  /** Modpacks per Code installieren */
+  allowInstall: boolean
 }
 
 /** Benachrichtigungen aus „Sozial“ (Rust: `SocialSettings`). */

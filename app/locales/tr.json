@@ -903,6 +903,21 @@
       "newerVersion": "Bu düzen launcher’ın daha yeni bir sürümünden geliyor.",
       "nameLength": "Ad 1 ile {max} karakter arasında olmalı.",
       "buttonCount": "Bir düzen 1 ile {max} arasında düğme gerektirir."
+    },
+    "remote": {
+      "disabled": "Uzaktan kumanda ayarlarda kapalı.",
+      "notAllowed": "Uzaktan kumandanın bunu yapmasına izin verilmiyor (Ayarlar → Uzaktan kumanda).",
+      "invalidCode": "Bu geçerli bir eşleştirme kodu değil (biçim: XXX-XXX).",
+      "invalidCommand": "Bu komut geçersiz.",
+      "deviceInvalid": "Bu cihaz artık uzaktan kumanda için kayıtlı değil – lütfen yeniden eşleştir.",
+      "wrongAccount": "Bilgisayar başka bir TRS hesabıyla oturum açmış – iki cihazda da aynı hesabı kullan.",
+      "codeExpired": "Bu eşleştirme kodu (artık) yok – bilgisayarda yeni bir kod göster.",
+      "pairingLimit": "Bu bilgisayarla zaten 10 telefon eşleştirildi – önce birini kaldır.",
+      "peerNotFound": "Bu cihaz (artık) eşleştirilmiş değil.",
+      "offline": "Bilgisayar çevrimdışı ya da orada uzaktan kumanda kapalı.",
+      "commandDisabled": "Bu, bilgisayardaki başlatıcıda kapalı.",
+      "commandExpired": "Komutun süresi doldu.",
+      "commandHandled": "Komut zaten işlendi."
     }
   },
   "browse": {
@@ -2736,7 +2751,8 @@
     "socialBadge": "{messages} okunmamış · {requests} istek",
     "achievements": "Başarımlar",
     "localServers": "Sunucularım",
-    "controls": "Kontroller"
+    "controls": "Kontroller",
+    "pc": "PC"
   },
   "accountMenu": {
     "menuLabel": "Hesaplar",
@@ -3056,7 +3072,8 @@
       "storage": "Depolama",
       "network": "Ağ",
       "clips": "Klipler ve kayıt",
-      "notifications": "Bildirimler"
+      "notifications": "Bildirimler",
+      "remote": "Uzaktan kumanda"
     },
     "instance": {
       "general": "Genel",
@@ -3117,7 +3134,8 @@
       "button": "Daha fazla bilgi ve aç",
       "shares": "Ekran görüntülerini bağlantı olarak paylaşmak için başlatıcı TRS sunucusuna giriş yapar. Bu yalnızca onay verdiğinde olur.",
       "achievements": "Başarımlarını göstermek için launcher TRS sunucusuna giriş yapar. Bu yalnızca onay verdiğinde olur.",
-      "cosmetics": "TRS kafa kozmetiklerini göstermek için launcher TRS sunucusuna giriş yapar. Bu yalnızca sen onay verdikten sonra olur."
+      "cosmetics": "TRS kafa kozmetiklerini göstermek için launcher TRS sunucusuna giriş yapar. Bu yalnızca sen onay verdikten sonra olur.",
+      "remote": "Bilgisayarını bu telefondan kontrol etmek için başlatıcı TRS sunucusunda oturum açar. Bu yalnızca sen onay verdikten sonra olur."
     },
     "account": {
       "title": "Giriş yapılmış hesap yok",
@@ -6238,6 +6256,90 @@
       "sensitivity": "Kamera hızı",
       "invalid": "Düzen kaydedilemiyor: {reason}",
       "maxButtons": "En fazla {max} düğme"
+    }
+  },
+  "remote": {
+    "settings": {
+      "title": "Telefondan uzaktan kumanda",
+      "intro": "Bu bilgisayarda oyun başlat, neyin çalıştığını gör ve kodla modpack kur – telefonundaki TRS Launcher ile. İki cihaz da aynı TRS hesabını kullanmalı. Burada açmadığın sürece hiçbir şey olmaz.",
+      "needsTrs": "Uzaktan kumanda TRS hizmetlerini kullanır. Önce onları aç.",
+      "enabled": "Uzaktan kumandaya izin ver",
+      "enabledHint": "Varsayılan olarak kapalı. Açıkken bu bilgisayar örneklerini ve süren görevlerini eşleştirilmiş telefonlarına bildirir.",
+      "allowLaunch": "Oyunları başlat ve kapat",
+      "allowLaunchHint": "Telefonun örnekleri başlatıp kapatabilir. Her seferinde bu bilgisayarda bir bildirim görünür.",
+      "allowInstall": "Kodla modpack kur",
+      "allowInstallHint": "Telefonun paylaşılan bir modpack (TRS-XXXX-XXXX) kurabilir. Kendi mod dosyalarını getiren paketler yine de burada onayını gerektirir.",
+      "pairTitle": "Telefon eşleştir",
+      "pairSteps": "Telefonunda TRS Launcher → “PC” bölümünü aç ve bu QR kodunu tara ya da kodu yaz.",
+      "expiresIn": "{time} daha geçerli",
+      "expired": "Kodun süresi doldu.",
+      "newCode": "Yeni kod",
+      "pairWarning": "Yalnızca kendi telefonunu eşleştir. Bu kodu asla kimseye gönderme.",
+      "creating": "Kod oluşturuluyor…",
+      "pair": "Telefon eşleştir",
+      "phones": "Eşleştirilmiş telefonlar",
+      "pairedAt": "{date} tarihinde eşleştirildi",
+      "lastSeen": "son görülme {date}",
+      "remove": "Kaldır",
+      "noPhones": "Henüz eşleştirilmiş telefon yok.",
+      "paired": "Telefon eşleştirildi",
+      "notSaved": "Ayar hâlâ kaydediliyor – birazdan tekrar dene."
+    },
+    "pc": {
+      "title": "PC",
+      "subtitle": "Bilgisayarındaki TRS Launcher’ı kontrol et",
+      "pairAnother": "Başka bir bilgisayar eşleştir",
+      "pairTitle": "Bilgisayar eşleştir",
+      "pairIntro": "Bilgisayarında Ayarlar → Uzaktan kumanda bölümünü aç ve “Telefon eşleştir”i seç. Sonra QR kodunu tara ya da kodu yaz.",
+      "scan": "QR kodu tara",
+      "scanning": "Kamera açılıyor…",
+      "codeLabel": "Bilgisayardaki kod",
+      "pairing": "Eşleştiriliyor…",
+      "pair": "Eşleştir",
+      "sameAccount": "Telefon ve bilgisayar aynı TRS hesabıyla oturum açmış olmalı.",
+      "invalidCode": "Bilgisayardaki 6 karakterlik kodu gir (ör. K7Q-2MX).",
+      "paired": "{name} ile eşleştirildi",
+      "cameraDenied": "Kamera erişimi yok – telefonun ayarlarından izin ver ya da kodu yaz.",
+      "notAPairCode": "Bu QR kodu bir TRS Launcher eşleştirme kodu değil.",
+      "scanFailed": "Tarama işe yaramadı – kodu elle yaz.",
+      "launchSent": "{name}, {pc} üzerinde başlatılıyor…",
+      "stopSent": "{name}, {pc} üzerinde kapatılıyor…",
+      "installSent": "{code}, {pc} üzerine kuruluyor…",
+      "online": "Çevrimiçi",
+      "offline": "Çevrimdışı",
+      "remove": "Kaldır",
+      "offlineHint": "Bilgisayar çevrimdışı, başlatıcı kapalı ya da orada uzaktan kumanda kapalı.",
+      "instances": "Örnekler",
+      "launchOff": "Bu bilgisayarda oyun başlatma kapalı.",
+      "running": "çalışıyor",
+      "stopNamed": "{name} kapat",
+      "stop": "Kapat",
+      "playNamed": "{name} oyna",
+      "sending": "Gönderiliyor…",
+      "play": "Oyna",
+      "noInstances": "Bu bilgisayarda henüz örnek yok.",
+      "installTitle": "Bilgisayara modpack kur",
+      "installOff": "Bu bilgisayarda modpack kurma kapalı.",
+      "install": "Kur",
+      "installHint": "Kendi mod dosyalarını getiren paketlerin bilgisayarda onaylanması gerekir.",
+      "noStatus": "Bilgisayar bekleniyor…",
+      "emptyTitle": "Henüz eşleştirilmiş bilgisayar yok",
+      "emptyText": "Telefonundan oyun başlatmak için bilgisayarını eşleştir."
+    },
+    "toast": {
+      "launched": "Telefondan başlatıldı: {name} ({phone})",
+      "stopped": "Telefondan kapatıldı: {name} ({phone})",
+      "installing": "Telefondan kuruluyor: {name} ({phone})",
+      "packNeedsPc": "{phone}, {name} kurmak istiyor – lütfen burada onayla."
+    },
+    "result": {
+      "instance_not_found": "Bu örnek bilgisayarda (artık) yok.",
+      "already_running": "Bu örnek zaten çalışıyor.",
+      "not_running": "Bu örnek çalışmıyor.",
+      "busy": "Bilgisayar bu örneği hâlâ kuruyor.",
+      "needs_pc": "Bu paket kendi mod dosyalarını getiriyor – lütfen kurulumu bilgisayarda onayla.",
+      "disabled": "Bu, bilgisayardaki başlatıcıda kapalı.",
+      "failed": "Bilgisayarda işe yaramadı."
     }
   }
 }

@@ -23,6 +23,7 @@ pub mod news;
 pub mod packs;
 pub mod presets;
 pub mod relocate;
+pub mod remote;
 pub mod screenshots;
 pub mod server_export;
 pub mod servers;

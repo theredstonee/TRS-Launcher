@@ -31,6 +31,7 @@ const allAppSettingsSections: ShellSection[] = [
   section('notifications', 'settingsSections.app.notifications', 'bell', 'settingsSections.groups.interface'),
   section('profile', 'settingsSections.app.profile', 'user', 'settingsSections.groups.account'),
   section('privacy', 'settingsSections.app.privacy', 'shield', 'settingsSections.groups.account'),
+  section('remote', 'settingsSections.app.remote', 'phone', 'settingsSections.groups.account'),
   section('defaults', 'settingsSections.app.defaults', 'defaults', 'settingsSections.groups.instances'),
   section('java', 'settingsSections.app.java', 'java', 'settingsSections.groups.instances'),
   section('clips', 'settingsSections.app.clips', 'clips', 'settingsSections.groups.instances'),
@@ -41,11 +42,16 @@ const allAppSettingsSections: ShellSection[] = [
 /**
  * Bereiche, die es auf diesem System gibt: Clips (Spielaufnahme) vorerst nur unter Windows,
  * Java und die Spiel-Standards (Speicher, JVM, Fenster, Hooks) nur, wo das Spiel startet –
- * am Handy also (noch) nicht.
+ * am Handy also (noch) nicht. Die Fernbedienung stellt man am PC ein (nicht am Handy).
  */
-export function appSettingsSectionsFor(caps: Pick<PlatformCapabilities, 'clips' | 'java' | 'gameLaunch'>): ShellSection[] {
+export function appSettingsSectionsFor(caps: Pick<PlatformCapabilities, 'clips' | 'java' | 'gameLaunch' | 'platform'>): ShellSection[] {
+  const desktop = caps.platform !== 'android' && caps.platform !== 'ios'
   return allAppSettingsSections.filter(
-    (s) => (s.key !== 'clips' || caps.clips) && (s.key !== 'java' || caps.java) && (s.key !== 'defaults' || caps.gameLaunch),
+    (s) =>
+      (s.key !== 'clips' || caps.clips) &&
+      (s.key !== 'java' || caps.java) &&
+      (s.key !== 'defaults' || caps.gameLaunch) &&
+      (s.key !== 'remote' || desktop),
   )
 }
 

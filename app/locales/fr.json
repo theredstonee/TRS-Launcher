@@ -903,6 +903,21 @@
       "newerVersion": "Cette disposition provient d’une version plus récente du launcher.",
       "nameLength": "Le nom doit contenir entre 1 et {max} caractères.",
       "buttonCount": "Une disposition a besoin de 1 à {max} boutons."
+    },
+    "remote": {
+      "disabled": "La télécommande est désactivée dans les paramètres.",
+      "notAllowed": "La télécommande n’a pas le droit de faire ça (Paramètres → Télécommande).",
+      "invalidCode": "Ce n’est pas un code d’appairage valide (format : XXX-XXX).",
+      "invalidCommand": "Cette commande n’est pas valide.",
+      "deviceInvalid": "Cet appareil n’est plus enregistré pour la télécommande – appaire-le à nouveau.",
+      "wrongAccount": "Le PC est connecté avec un autre compte TRS – utilise le même compte sur les deux appareils.",
+      "codeExpired": "Ce code d’appairage n’existe pas (ou plus) – affiche-en un nouveau sur le PC.",
+      "pairingLimit": "10 téléphones sont déjà appairés à ce PC – retires-en un d’abord.",
+      "peerNotFound": "Cet appareil n’est pas (ou plus) appairé.",
+      "offline": "Le PC est hors ligne ou la télécommande y est désactivée.",
+      "commandDisabled": "C’est désactivé dans le launcher du PC.",
+      "commandExpired": "La commande a expiré.",
+      "commandHandled": "La commande a déjà été traitée."
     }
   },
   "browse": {
@@ -2736,7 +2751,8 @@
     "socialBadge": "{messages} non lus · {requests} demandes",
     "achievements": "Succès",
     "localServers": "Mes serveurs",
-    "controls": "Commandes"
+    "controls": "Commandes",
+    "pc": "PC"
   },
   "accountMenu": {
     "menuLabel": "Comptes",
@@ -3056,7 +3072,8 @@
       "storage": "Stockage",
       "network": "Réseau",
       "clips": "Clips et enregistrement",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "remote": "Télécommande"
     },
     "instance": {
       "general": "Général",
@@ -3117,7 +3134,8 @@
       "button": "En savoir plus et activer",
       "shares": "Pour partager des captures par lien, le launcher se connecte au serveur TRS. Cela n’arrive qu’après ton accord.",
       "achievements": "Pour afficher tes succès, le launcher se connecte au serveur TRS. Cela n'arrive qu'une fois que tu as accepté.",
-      "cosmetics": "Pour afficher les cosmétiques de tête TRS, le launcher se connecte au serveur TRS. Cela n’arrive qu’une fois que tu as donné ton accord."
+      "cosmetics": "Pour afficher les cosmétiques de tête TRS, le launcher se connecte au serveur TRS. Cela n’arrive qu’une fois que tu as donné ton accord.",
+      "remote": "Pour contrôler ton PC depuis ce téléphone, le launcher se connecte au serveur TRS. Cela n’arrive qu’après ton accord."
     },
     "account": {
       "title": "Aucun compte connecté",
@@ -6238,6 +6256,90 @@
       "sensitivity": "Vitesse de la caméra",
       "invalid": "Impossible d’enregistrer la disposition : {reason}",
       "maxButtons": "{max} boutons au maximum"
+    }
+  },
+  "remote": {
+    "settings": {
+      "title": "Télécommande depuis ton téléphone",
+      "intro": "Lance des jeux sur ce PC, vois ce qui tourne et installe des modpacks par code – depuis le TRS Launcher de ton téléphone. Les deux appareils doivent utiliser le même compte TRS. Rien ne se passe tant que tu ne l’actives pas ici.",
+      "needsTrs": "La télécommande utilise les services TRS. Active-les d’abord.",
+      "enabled": "Autoriser la télécommande",
+      "enabledHint": "Désactivée par défaut. Tant qu’elle est active, ce PC envoie ses instances et ses tâches en cours à tes téléphones appairés.",
+      "allowLaunch": "Lancer et arrêter des jeux",
+      "allowLaunchHint": "Ton téléphone peut lancer et quitter des instances. Un avis s’affiche à chaque fois sur ce PC.",
+      "allowInstall": "Installer des modpacks par code",
+      "allowInstallHint": "Ton téléphone peut installer un modpack partagé (TRS-XXXX-XXXX). Les packs avec leurs propres fichiers de mods demandent quand même ta confirmation ici.",
+      "pairTitle": "Appairer un téléphone",
+      "pairSteps": "Sur ton téléphone, ouvre le TRS Launcher → « PC » et scanne ce QR code, ou saisis le code.",
+      "expiresIn": "Valable encore {time}",
+      "expired": "Le code a expiré.",
+      "newCode": "Nouveau code",
+      "pairWarning": "N’appaire que ton propre téléphone. N’envoie jamais ce code à quelqu’un.",
+      "creating": "Création du code…",
+      "pair": "Appairer un téléphone",
+      "phones": "Téléphones appairés",
+      "pairedAt": "Appairé le {date}",
+      "lastSeen": "vu pour la dernière fois {date}",
+      "remove": "Retirer",
+      "noPhones": "Aucun téléphone appairé pour l’instant.",
+      "paired": "Téléphone appairé",
+      "notSaved": "Le paramètre est encore en cours d’enregistrement – réessaie dans un instant."
+    },
+    "pc": {
+      "title": "PC",
+      "subtitle": "Contrôle le TRS Launcher de ton PC",
+      "pairAnother": "Appairer un autre PC",
+      "pairTitle": "Appairer un PC",
+      "pairIntro": "Sur ton PC, ouvre Paramètres → Télécommande et choisis « Appairer un téléphone ». Scanne ensuite le QR code ou saisis le code.",
+      "scan": "Scanner le QR code",
+      "scanning": "Ouverture de la caméra…",
+      "codeLabel": "Code du PC",
+      "pairing": "Appairage…",
+      "pair": "Appairer",
+      "sameAccount": "Le téléphone et le PC doivent être connectés avec le même compte TRS.",
+      "invalidCode": "Saisis le code à 6 caractères du PC (p. ex. K7Q-2MX).",
+      "paired": "Appairé avec {name}",
+      "cameraDenied": "Pas d’accès à la caméra – autorise-le dans les réglages du téléphone ou saisis le code.",
+      "notAPairCode": "Ce QR code n’est pas un code d’appairage du TRS Launcher.",
+      "scanFailed": "Le scan n’a pas fonctionné – saisis plutôt le code.",
+      "launchSent": "Lancement de {name} sur {pc}…",
+      "stopSent": "Arrêt de {name} sur {pc}…",
+      "installSent": "Installation de {code} sur {pc}…",
+      "online": "En ligne",
+      "offline": "Hors ligne",
+      "remove": "Retirer",
+      "offlineHint": "Le PC est hors ligne, le launcher est fermé ou la télécommande y est désactivée.",
+      "instances": "Instances",
+      "launchOff": "Le lancement de jeux est désactivé sur ce PC.",
+      "running": "en cours",
+      "stopNamed": "Arrêter {name}",
+      "stop": "Arrêter",
+      "playNamed": "Jouer à {name}",
+      "sending": "Envoi…",
+      "play": "Jouer",
+      "noInstances": "Aucune instance sur ce PC pour l’instant.",
+      "installTitle": "Installer un modpack sur le PC",
+      "installOff": "L’installation de modpacks est désactivée sur ce PC.",
+      "install": "Installer",
+      "installHint": "Les packs avec leurs propres fichiers de mods doivent être confirmés sur le PC.",
+      "noStatus": "En attente du PC…",
+      "emptyTitle": "Aucun PC appairé",
+      "emptyText": "Appaire ton PC pour lancer des jeux depuis ton téléphone."
+    },
+    "toast": {
+      "launched": "Lancé depuis le téléphone : {name} ({phone})",
+      "stopped": "Arrêté depuis le téléphone : {name} ({phone})",
+      "installing": "Installation depuis le téléphone : {name} ({phone})",
+      "packNeedsPc": "{phone} veut installer {name} – confirme-le ici."
+    },
+    "result": {
+      "instance_not_found": "Cette instance n’existe pas (ou plus) sur le PC.",
+      "already_running": "Cette instance tourne déjà.",
+      "not_running": "Cette instance ne tourne pas.",
+      "busy": "Le PC installe encore cette instance.",
+      "needs_pc": "Ce pack contient ses propres fichiers de mods – confirme l’installation sur le PC.",
+      "disabled": "C’est désactivé dans le launcher du PC.",
+      "failed": "Ça n’a pas fonctionné sur le PC."
     }
   }
 }

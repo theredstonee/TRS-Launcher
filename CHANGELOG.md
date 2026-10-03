@@ -104,6 +104,11 @@ How to write an entry:
   anvil. In the HUD editor you drag elements with your finger, they stay clear of the notch, and the new
   "Touch layout" moves your HUD away from the touch buttons. The emote wheel opens from a touch button – slide to an
   emote and let go. Nothing changes on the desktop.
+- **PC remote control from your phone.** With the TRS Launcher on your phone you can start and quit games on your PC,
+  see what's running and how far an installation is, and install a shared modpack by code – as long as both use the
+  same TRS account. Off by default: switch it on under Settings → Remote control, choose what your phone may do, and
+  pair your phone by scanning the QR code (or typing the code). The PC shows a notice whenever your phone starts
+  something, and you can remove paired phones at any time.
 
 ### Deutsch
 - **Suche, Filter und Details für TRS-Umhänge.** Die Umhang-Liste auf der Skins-Seite hat ein Suchfeld, Filter
@@ -185,6 +190,11 @@ How to write an entry:
   erscheint die Bildschirmtastatur. Im HUD-Editor ziehst du Elemente mit dem Finger, sie halten Abstand zur Notch, und
   das neue „Touch-Layout“ rückt dein HUD von den Touch-Knöpfen weg. Das Emote-Rad öffnet sich über einen Touch-Knopf –
   zum Emote wischen und loslassen. Am Desktop ändert sich nichts.
+- **PC-Fernbedienung vom Handy.** Mit dem TRS Launcher auf dem Handy startest und beendest du Spiele auf deinem PC,
+  siehst, was gerade läuft und wie weit eine Installation ist, und installierst ein geteiltes Modpack per Code –
+  solange beide dasselbe TRS-Konto nutzen. Ab Werk aus: unter Einstellungen → Fernbedienung einschalten, festlegen,
+  was das Handy darf, und das Handy per QR-Code (oder Code eintippen) koppeln. Der PC zeigt jedes Mal einen Hinweis,
+  wenn das Handy etwas startet, und gekoppelte Handys lassen sich jederzeit entfernen.
 
 ## 0.17.1 – 2026-10-03 – Light Luggage Fix | Leichtes Gepäck – Fix
 <!-- banner: accent=#ffb02e motif=/news/0.17.0/banner.png -->

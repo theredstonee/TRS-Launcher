@@ -233,6 +233,27 @@ pub enum LiveEvent {
     AchievementUnlocked { achievement: Box<Achievement>, at: Option<String>, reward: Option<Reward> },
     /// Die aktiven Events dieses Spielers haben sich geändert (§31, z. B. Halloween an/aus).
     EventsChanged { events: Vec<String> },
+    /// Fernbedienung (§33): geprüfter Befehl vom Handy an DIESEN PC (Signatur, Ziel und Argumente geprüft).
+    RemoteCommand { command: Box<super::remote::RemoteCommand> },
+    /// Ein Befehl wurde am PC abgeholt (`running`), ist fertig (`done`) oder gescheitert (`failed`).
+    RemoteCommandUpdate {
+        command_id: String,
+        desktop_id: String,
+        phone_id: String,
+        command_type: String,
+        state: String,
+        error: Option<String>,
+    },
+    /// Neuer Stand eines PCs (Instanzen, Aufgaben, erlaubte Befehle).
+    RemoteStatus { desktop_id: String, online: bool, status: Box<super::remote::RemoteStatus>, at: Option<String> },
+    /// Handy und PC gekoppelt (`added`) oder getrennt (`removed`).
+    RemotePairing {
+        action: String,
+        desktop_id: String,
+        phone_id: String,
+        desktop: Option<Box<super::remote::RemotePeer>>,
+        phone: Option<Box<super::remote::RemotePeer>>,
+    },
 }
 
 /// Inhalt von `issue_updated` (Felder liegen im JSON neben `type`).
@@ -452,6 +473,10 @@ fn live_pack(raw: super::packs::ApiPack) -> Option<Box<super::packs::SharedPack>
 /// Wandelt ein Ereignis der API in ein gesäubertes [`LiveEvent`]. Unbekannte
 /// oder kaputte Ereignisse → `None` (neue Typen kommen dazu, §19).
 pub fn decode(event: &str, data: &str) -> Option<LiveEvent> {
+    // Fernbedienung (§33) hat eigene Felder (`status` ist dort ein Objekt).
+    if event.starts_with("remote_") {
+        return super::remote::decode_live(event, data);
+    }
     let d: D = serde_json::from_str(data).ok()?;
     let message = |d: D| -> Option<(String, Box<ChatMessage>)> {
         let c = conv(d.conversation_id)?;
@@ -853,6 +878,11 @@ impl TrsApi {
                             self.live.set_status("live", Some(account), None);
                             let first = self.live.first_hello(account);
                             self.live.emit(LiveOut::Event(LiveEvent::Hello { resumed, first }));
+                        } else if frame.event == "remote_command" {
+                            // Nur geprüfte Befehle an das eigene PC-Gerät erreichen die Oberfläche.
+                            if let Some(command) = self.remote_verify(account, &frame.data).await {
+                                self.live.emit(LiveOut::Event(LiveEvent::RemoteCommand { command: Box::new(command) }));
+                            }
                         } else if let Some(event) = decode(&frame.event, &frame.data) {
                             if let LiveEvent::EventsChanged { events } = &event {
                                 self.set_active_events(events);

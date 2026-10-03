@@ -87,6 +87,20 @@ pub struct Settings {
     /// (siehe [`crate::shared_folders`]). Ab Werk keine.
     #[serde(deserialize_with = "crate::shared_folders::lenient")]
     pub shared_folders: Vec<crate::shared_folders::SharedFolder>,
+    /// PC-Fernbedienung vom Handy (ab Werk aus).
+    pub remote: RemoteSettings,
+}
+
+/// PC-Fernbedienung (API §33): das Handy desselben TRS-Kontos darf diesen PC steuern.
+/// Ab Werk aus; jede Befehlsart hat ihren eigenen Schalter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct RemoteSettings {
+    pub enabled: bool,
+    /// Spiele starten und beenden.
+    pub allow_launch: bool,
+    /// Modpacks per Code installieren.
+    pub allow_install: bool,
 }
 
 /// Ecken für Benachrichtigungen.
@@ -364,6 +378,7 @@ impl Default for Settings {
             modpack_trs_client: crate::trs_choice::ModpackTrsPolicy::Ask,
             show_bedrock: true,
             shared_folders: Vec::new(),
+            remote: RemoteSettings::default(),
         }
     }
 }
