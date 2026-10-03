@@ -55,7 +55,8 @@
       "version": "Version",
       "gameVersion": "Version du jeu",
       "loader": "Chargeur de mods"
-    }
+    },
+    "memoryHigh": "Minecraft a rarement besoin de plus de 8–12 Go. Trop de RAM ralentit le ramasse-miettes et peut empêcher Java de démarrer quand d'autres programmes utilisent la mémoire."
   },
   "language": {
     "title": "Langue",
@@ -427,7 +428,9 @@
       "signInFirst": "Connecte-toi d'abord avec ton compte Microsoft dans « Comptes ».",
       "stopAllGamesFirst": "Ferme d'abord tous les jeux en cours.",
       "syncAfterExitFailed": "Impossible de synchroniser les paramètres avec les autres instances.",
-      "dependenciesAdded": "Dépendances manquantes ajoutées : {list} (requises par {mods})."
+      "dependenciesAdded": "Dépendances manquantes ajoutées : {list} (requises par {mods}).",
+      "memorySafeStart": "Peu de mémoire libre : le jeu démarre petit et prend plus de mémoire selon ses besoins.",
+      "notEnoughMemory": "Pas assez de mémoire libre pour Java. Ferme d'autres programmes ou donne moins de RAM à l'instance."
     },
     "loaders": {
       "invalidGameVersion": "Version de Minecraft invalide",

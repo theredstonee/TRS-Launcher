@@ -55,7 +55,8 @@
       "version": "Version",
       "gameVersion": "Game version",
       "loader": "Mod loader"
-    }
+    },
+    "memoryHigh": "Minecraft rarely needs more than 8–12 GB. Too much RAM makes garbage collection slower and can stop Java from starting when other programs use memory."
   },
   "language": {
     "title": "Language",
@@ -427,7 +428,9 @@
       "signInFirst": "Please sign in with your Microsoft account under “Accounts” first.",
       "stopAllGamesFirst": "Please close all running games first.",
       "syncAfterExitFailed": "The settings couldn't be synced with the other instances.",
-      "dependenciesAdded": "Added missing dependencies: {list} (needed by {mods})."
+      "dependenciesAdded": "Added missing dependencies: {list} (needed by {mods}).",
+      "memorySafeStart": "Little free memory: the game starts small and takes more memory as it needs it.",
+      "notEnoughMemory": "Not enough free memory for Java. Close other programs or give the instance less RAM."
     },
     "loaders": {
       "invalidGameVersion": "Invalid Minecraft version",

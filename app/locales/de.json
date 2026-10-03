@@ -55,7 +55,8 @@
       "version": "Version",
       "gameVersion": "Spielversion",
       "loader": "Modloader"
-    }
+    },
+    "memoryHigh": "Minecraft braucht selten mehr als 8–12 GB. Zu viel RAM macht die Speicherbereinigung langsamer und kann den Start verhindern, wenn andere Programme Speicher belegen."
   },
   "language": {
     "title": "Sprache",
@@ -427,7 +428,9 @@
       "signInFirst": "Bitte melde dich zuerst unter „Accounts“ mit deinem Microsoft-Konto an.",
       "stopAllGamesFirst": "Bitte erst alle laufenden Spiele beenden.",
       "syncAfterExitFailed": "Die Einstellungen konnten nicht mit den anderen Instanzen synchronisiert werden.",
-      "dependenciesAdded": "Fehlende Abhängigkeiten ergänzt: {list} (gebraucht von {mods})."
+      "dependenciesAdded": "Fehlende Abhängigkeiten ergänzt: {list} (gebraucht von {mods}).",
+      "memorySafeStart": "Wenig freier Arbeitsspeicher: Das Spiel startet klein und holt sich den Speicher nach Bedarf.",
+      "notEnoughMemory": "Nicht genug freier Arbeitsspeicher für Java. Schließe andere Programme oder stelle der Instanz weniger RAM ein."
     },
     "loaders": {
       "invalidGameVersion": "Ungültige Minecraft-Version",

@@ -71,8 +71,23 @@ pub fn insert_jvm_args(command: &mut Command, prepared: &Prepared, extra: Vec<St
     command.args.splice(pos..pos, extra);
 }
 
-/// `system_memory_mb`: eingebauter Arbeitsspeicher (`None` = unbekannt) – der
-/// Heap wird so begrenzt, dass dem System noch 2 GB bleiben.
+/// Arbeitsspeicher des PCs beim Start (`None` = unbekannt).
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Memory {
+    /// Eingebaut – der Heap wird so begrenzt, dass dem System noch 2 GB bleiben.
+    pub total_mb: Option<u32>,
+    /// Gerade frei – mehr wird beim Start nicht fest reserviert.
+    pub free_mb: Option<u32>,
+    /// Sichere Werte nach einem Speicherfehler: klein starten, nichts vorab belegen.
+    pub safe: bool,
+}
+
+impl Memory {
+    pub fn now(safe: bool) -> Self {
+        Self { total_mb: crate::platform::total_memory_mb(), free_mb: crate::platform::available_memory_mb(), safe }
+    }
+}
+
 pub fn build_command(
     prepared: &Prepared,
     instance: &Instance,
@@ -80,7 +95,7 @@ pub fn build_command(
     session: &Session,
     dirs: LaunchDirs<'_>,
     join: Option<&JoinTarget>,
-    system_memory_mb: Option<u32>,
+    memory: Memory,
 ) -> Result<Command> {
     let (game_dir, assets_root, libraries_dir) = (dirs.game, dirs.assets, dirs.libraries);
     let version = &prepared.version;
@@ -100,7 +115,9 @@ pub fn build_command(
             java_major,
             max_mb: instance.overrides.max_memory_mb.unwrap_or(settings.max_memory_mb),
             min_mb: settings.min_memory_mb,
-            system_mb: system_memory_mb,
+            system_mb: memory.total_mb,
+            free_mb: memory.free_mb,
+            safe: memory.safe,
         },
         &user_jvm,
     );
@@ -200,6 +217,66 @@ pub fn build_command(
     Ok(Command { program: prepared.java.clone(), args, cwd: game_dir.to_owned(), env: Vec::new(), high_priority: false })
 }
 
+// --- Speicher-Probe ----------------------------------------------------------------
+
+/// Meldungen, mit denen Java beim Start am Arbeitsspeicher scheitert.
+const HEAP_FAILURES: &[&str] = &[
+    "Failed to allocate initial Java heap",
+    "Could not reserve enough space",
+    "Failed to commit memory",
+    "insufficient memory for the Java Runtime",
+    "Initial heap size set to a larger value than the maximum heap size",
+];
+
+/// Scheitert Java laut dieser Ausgabe am Speicher?
+pub fn is_heap_failure(output: &str) -> bool {
+    HEAP_FAILURES.iter().any(|m| output.contains(m))
+}
+
+/// Startet Java kurz mit den Speicher- und GC-Flags des Befehls und `-version`
+/// (ohne Vorab-Belegen, Konsolen-Java ohne Fenster). `false` = Java bekommt den
+/// Speicher nicht – sonst würde das Spiel mit „Could not create the Java Virtual
+/// Machine“ abbrechen. Andere Fehler blockieren den Start nicht.
+pub async fn heap_probe(command: &Command) -> bool {
+    let console = command.program.with_file_name(crate::platform::JAVA_CONSOLE_BIN);
+    let program = if console.is_file() { console } else { command.program.clone() };
+    let flags: Vec<&String> = command
+        .args
+        .iter()
+        .filter(|a| (a.starts_with("-Xmx") || a.starts_with("-Xms") || a.starts_with("-XX:")) && !a.contains("AlwaysPreTouch"))
+        .collect();
+    let mut cmd = tokio::process::Command::new(&program);
+    crate::platform::hide_console(&mut cmd);
+    cmd.args(flags)
+        .arg("-version")
+        // Scheitert Java, legt es eine hs_err-Datei ins Arbeitsverzeichnis – nicht in die Instanz.
+        .current_dir(std::env::temp_dir())
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .kill_on_drop(true);
+    let output = match tokio::time::timeout(std::time::Duration::from_secs(20), cmd.output()).await {
+        Ok(Ok(output)) => output,
+        Ok(Err(e)) => {
+            tracing::warn!("Speicher-Probe konnte Java nicht starten: {e}");
+            return true;
+        }
+        Err(_) => {
+            tracing::warn!("Speicher-Probe: Java antwortet nicht – Start wird trotzdem versucht");
+            return true;
+        }
+    };
+    if output.status.success() {
+        return true;
+    }
+    let text = format!("{}{}", String::from_utf8_lossy(&output.stdout), String::from_utf8_lossy(&output.stderr));
+    let failed = is_heap_failure(&text);
+    if failed {
+        tracing::warn!("Speicher-Probe: Java bekommt den Speicher nicht: {}", text.lines().take(4).collect::<Vec<_>>().join(" | "));
+    }
+    !failed
+}
+
 // --- JVM: Speicher und Garbage Collector -------------------------------------------
 
 /// Ab so viel Heap lohnt sich ZGC; darunter hat es zu wenig Luft und neigt zu
@@ -209,6 +286,12 @@ const ZGC_MIN_HEAP_MB: u32 = 12_288;
 const SYSTEM_RESERVE_MB: u32 = 2048;
 /// Kleiner wird der Heap durch die Begrenzung nie.
 const MIN_CAPPED_HEAP_MB: u32 = 1024;
+/// Abgestimmt wird höchstens so viel fest reserviert; der Rest wächst nach Bedarf.
+const MAX_FIXED_HEAP_MB: u32 = 8192;
+/// So viel vom gerade freien Speicher bleibt beim festen Reservieren übrig.
+const FREE_RESERVE_MB: u32 = 1024;
+/// Kleinster Startwert (auch bei sicheren Werten).
+const MIN_INITIAL_HEAP_MB: u32 = 512;
 const UNLOCK_EXPERIMENTAL: &str = "-XX:+UnlockExperimentalVMOptions";
 
 /// Was in die Speicher- und GC-Flags einfließt.
@@ -224,6 +307,10 @@ struct JvmOptions {
     min_mb: u32,
     /// Eingebauter Arbeitsspeicher; `None` = unbekannt.
     system_mb: Option<u32>,
+    /// Gerade freier Arbeitsspeicher; `None` = unbekannt.
+    free_mb: Option<u32>,
+    /// Sichere Werte nach einem Speicherfehler.
+    safe: bool,
 }
 
 /// `heap` kommt vor, `tuning` nach den JVM-Argumenten der Version.
@@ -251,9 +338,15 @@ fn jvm_flags(opts: &JvmOptions, user: &[String]) -> JvmFlags {
         heap.push(format!("-Xmx{max_mb}M"));
     }
     if user_min.is_none() {
-        // Abgestimmt: gleich den ganzen Speicher holen (kein Nachwachsen im Spiel).
-        // Sonst der Mindestwert – aber nie über dem Maximum (sonst startet Java nicht).
-        let min = if opts.tuned { heap_mb } else { heap_mb.map(|h| opts.min_mb.min(h)) };
+        // Abgestimmt: bis 8 GB fest holen (kein Nachwachsen im Spiel) – aber nur, was
+        // gerade frei ist. Sonst der Mindestwert – nie über dem Maximum (sonst startet Java nicht).
+        let min = if opts.safe {
+            heap_mb.map(|h| MIN_INITIAL_HEAP_MB.min(h))
+        } else if opts.tuned {
+            heap_mb.map(|h| fixed_heap_mb(h, opts.free_mb))
+        } else {
+            heap_mb.map(|h| opts.min_mb.min(h))
+        };
         if let Some(min) = min {
             heap.push(format!("-Xms{min}M"));
         }
@@ -272,7 +365,7 @@ fn jvm_flags(opts: &JvmOptions, user: &[String]) -> JvmFlags {
         !(user_names.contains(name)
             || (own_collector && is_gc_specific(name))
             || (no_experimental && is_experimental(name, opts.java_major))
-            || (too_big && name == "AlwaysPreTouch"))
+            || ((too_big || opts.safe) && name == "AlwaysPreTouch"))
     });
     // Experimentelle Optionen brauchen die Freischaltung – genau einmal, davor.
     if flags.iter().filter_map(|f| xx_name(f)).any(|n| is_experimental(n, opts.java_major)) {
@@ -281,6 +374,16 @@ fn jvm_flags(opts: &JvmOptions, user: &[String]) -> JvmFlags {
     let mut seen = std::collections::HashSet::new();
     flags.retain(|f| seen.insert(f.clone()));
     JvmFlags { heap, tuning: flags }
+}
+
+/// Fest reservierter Startwert bei Abstimmung: höchstens [`MAX_FIXED_HEAP_MB`] und
+/// nur, was gerade frei ist (minus [`FREE_RESERVE_MB`]) – nie über dem Heap.
+fn fixed_heap_mb(heap_mb: u32, free_mb: Option<u32>) -> u32 {
+    let mut fixed = heap_mb.min(MAX_FIXED_HEAP_MB);
+    if let Some(free) = free_mb {
+        fixed = fixed.min(free.saturating_sub(FREE_RESERVE_MB));
+    }
+    fixed.max(MIN_INITIAL_HEAP_MB).min(heap_mb)
 }
 
 /// Heap so begrenzen, dass dem System [`SYSTEM_RESERVE_MB`] bleiben – mit
@@ -576,12 +679,12 @@ mod tests {
     }
 
     fn build(p: &Prepared, inst: &Instance, s: &Session) -> Vec<String> {
-        build_command(p, inst, &Settings::default(), s, dirs(), None, None).unwrap().args
+        build_command(p, inst, &Settings::default(), s, dirs(), None, Memory::default()).unwrap().args
     }
 
     fn build_joining(p: &Prepared) -> Vec<String> {
         let join = JoinTarget { address: "play.cooltiers.de".into(), host: "srv.cooltiers.de".into(), port: 25577 };
-        build_command(p, &instance(), &Settings::default(), &session(), dirs(), Some(&join), None).unwrap().args
+        build_command(p, &instance(), &Settings::default(), &session(), dirs(), Some(&join), Memory::default()).unwrap().args
     }
 
     fn has(flags: &[String], f: &str) -> bool {
@@ -593,7 +696,7 @@ mod tests {
     }
 
     fn opts(tuned: bool, java_major: u32, max_mb: u32) -> JvmOptions {
-        JvmOptions { tuned, java_major, max_mb, min_mb: 512, system_mb: None }
+        JvmOptions { tuned, java_major, max_mb, min_mb: 512, system_mb: None, free_mb: None, safe: false }
     }
 
     fn user(args: &str) -> Vec<String> {
@@ -729,7 +832,7 @@ mod tests {
     fn heap_is_capped_to_the_pc() {
         // 16 GB PC: 20 GB eingestellt → 14 GB (2 GB bleiben frei).
         let f = jvm_flags(&JvmOptions { system_mb: Some(16_384), ..opts(true, 21, 20_480) }, &[]);
-        assert_eq!(f.heap, ["-Xmx14336M", "-Xms14336M"]);
+        assert_eq!(f.heap, ["-Xmx14336M", "-Xms8192M"], "fest höchstens 8 GB");
         assert!(has(&f.tuning, "-XX:+AlwaysPreTouch"));
         // Passt: bleibt.
         assert_eq!(cap_heap(6144, Some(16_384)), 6144);
@@ -739,6 +842,34 @@ mod tests {
         // Eigenes -Xmx größer als der PC: bleibt, aber ohne Vorab-Belegung.
         let f = jvm_flags(&JvmOptions { system_mb: Some(8192), ..opts(true, 21, 4096) }, &user("-Xmx12G"));
         assert!(!has(&f.tuning, "-XX:+AlwaysPreTouch"));
+    }
+
+    #[test]
+    fn heap_failures_are_recognised() {
+        let log = "[3.663s][error][gc] Failed to commit memory (1455)\n[3.935s][error][gc] Failed to allocate initial Java heap (24064M)";
+        assert!(is_heap_failure(log));
+        assert!(is_heap_failure("Error occurred during initialization of VM\nCould not reserve enough space for 24641536KB object heap"));
+        assert!(!is_heap_failure("Error: Could not find or load main class net.minecraft.client.main.Main"));
+    }
+
+    #[test]
+    fn fixed_heap_follows_free_memory() {
+        // 24 GB eingestellt, 32 GB PC, nur 6 GB frei: fest 5 GB, Rest wächst nach Bedarf.
+        let pc = |free| JvmOptions { system_mb: Some(32_768), free_mb: free, ..opts(true, 21, 24_064) };
+        assert_eq!(jvm_flags(&pc(Some(6144)), &[]).heap, ["-Xmx24064M", "-Xms5120M"]);
+        // Viel frei: höchstens 8 GB fest.
+        assert_eq!(jvm_flags(&pc(Some(30_000)), &[]).heap, ["-Xmx24064M", "-Xms8192M"]);
+        // Fast nichts frei: klein starten, nie unter 512 MB.
+        assert_eq!(jvm_flags(&pc(Some(900)), &[]).heap, ["-Xmx24064M", "-Xms512M"]);
+        // Kleiner Heap bleibt komplett fest, wenn genug frei ist.
+        let f = jvm_flags(&JvmOptions { free_mb: Some(10_000), ..opts(true, 21, 4096) }, &[]);
+        assert_eq!(f.heap, ["-Xmx4096M", "-Xms4096M"]);
+        // Sichere Werte: 512 MB Start, nichts vorab belegen.
+        let f = jvm_flags(&JvmOptions { safe: true, ..pc(Some(30_000)) }, &[]);
+        assert_eq!(f.heap, ["-Xmx24064M", "-Xms512M"]);
+        assert!(!has(&f.tuning, "-XX:+AlwaysPreTouch"));
+        // Nie über dem Heap.
+        assert_eq!(fixed_heap_mb(256, Some(10_000)), 256);
     }
 
     #[test]
@@ -893,10 +1024,10 @@ mod tests {
         assert!(build(&prepared(MODERN), &inst, &session()).ends_with(&["--fullscreen".to_owned()]));
 
         let settings = Settings { fullscreen: true, ..Default::default() };
-        let args = build_command(&prepared(MODERN), &instance(), &settings, &session(), dirs(), None, None).unwrap().args;
+        let args = build_command(&prepared(MODERN), &instance(), &settings, &session(), dirs(), None, Memory::default()).unwrap().args;
         assert!(args.contains(&"--fullscreen".to_owned()));
         inst.overrides.fullscreen = Some(false);
-        let args = build_command(&prepared(MODERN), &inst, &settings, &session(), dirs(), None, None).unwrap().args;
+        let args = build_command(&prepared(MODERN), &inst, &settings, &session(), dirs(), None, Memory::default()).unwrap().args;
         assert!(!args.contains(&"--fullscreen".to_owned()));
     }
 
@@ -924,7 +1055,7 @@ mod tests {
     fn extra_jvm_args_go_before_the_main_class_unless_the_user_set_them() {
         let p = prepared(r#"{"id":"1.21.1","mainClass":"net.minecraft.client.main.Main",
             "arguments":{"game":["--username","${auth_player_name}"],"jvm":["-cp","${classpath}"]}}"#);
-        let mut cmd = build_command(&p, &instance(), &Settings::default(), &session(), dirs(), None, None).unwrap();
+        let mut cmd = build_command(&p, &instance(), &Settings::default(), &session(), dirs(), None, Memory::default()).unwrap();
         insert_jvm_args(&mut cmd, &p, vec!["-Dfabric.debug.disableModIds=lithium".into()]);
         let main = cmd.args.iter().position(|a| a == "net.minecraft.client.main.Main").unwrap();
         assert_eq!(cmd.args[main - 1], "-Dfabric.debug.disableModIds=lithium");

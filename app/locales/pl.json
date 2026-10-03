@@ -55,7 +55,8 @@
       "version": "Wersja",
       "gameVersion": "Wersja gry",
       "loader": "Mod loader"
-    }
+    },
+    "memoryHigh": "Minecraft rzadko potrzebuje więcej niż 8–12 GB. Za dużo RAM spowalnia odśmiecanie pamięci i może uniemożliwić start Javy, gdy inne programy zajmują pamięć."
   },
   "language": {
     "title": "Język",
@@ -427,7 +428,9 @@
       "signInFirst": "Najpierw zaloguj się kontem Microsoft w sekcji „Konta”.",
       "stopAllGamesFirst": "Najpierw zamknij wszystkie uruchomione gry.",
       "syncAfterExitFailed": "Nie udało się zsynchronizować ustawień z innymi instancjami.",
-      "dependenciesAdded": "Dodano brakujące zależności: {list} (potrzebne dla {mods})."
+      "dependenciesAdded": "Dodano brakujące zależności: {list} (potrzebne dla {mods}).",
+      "memorySafeStart": "Mało wolnej pamięci: gra startuje z małą ilością i pobiera więcej w razie potrzeby.",
+      "notEnoughMemory": "Za mało wolnej pamięci dla Javy. Zamknij inne programy lub przydziel instancji mniej RAM."
     },
     "loaders": {
       "invalidGameVersion": "Nieprawidłowa wersja Minecrafta",

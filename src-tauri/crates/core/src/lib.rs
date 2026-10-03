@@ -106,6 +106,8 @@ pub struct Launcher {
     client_mod_updates: client_mod_update::ClientModUpdater,
     /// Instanzen, die gerade vorbereitet werden (Schutz vor Doppelklicks).
     preparing: Mutex<HashSet<String>>,
+    /// Instanzen, deren nächster Start nach einem Speicherfehler sichere Werte nimmt.
+    safe_memory: Mutex<HashSet<String>>,
     /// Warteschlange für Skin-/Umhang-Änderungen.
     skin_sync: skin_sync::SkinSync,
     /// Geprüfte Skins, die auf „Übernehmen“ im Import-Dialog warten.
@@ -211,6 +213,7 @@ impl Launcher {
             client_mod_dir: std::sync::RwLock::default(),
             client_mod_updates: client_mod_update::ClientModUpdater::new(&paths)?,
             preparing: Mutex::default(),
+            safe_memory: Mutex::default(),
             skin_sync: skin_sync::SkinSync::default(),
             skin_imports: skin_import::Staging::default(),
             trs: trs_api::TrsApi::new(paths.clone())?,
@@ -902,19 +905,26 @@ impl Launcher {
         if let Err(e) = self.servers.sync_to_instance(&game_dir).await {
             tracing::warn!("servers.dat konnte nicht aktualisiert werden: {e}");
         }
-        let mut command = launch::build_command(
-            &prepared,
-            instance,
-            &settings,
-            &session,
-            launch::LaunchDirs {
-                game: &game_dir,
-                assets: &self.paths.assets_dir(),
-                libraries: &self.paths.libraries_dir(),
-            },
-            join.as_ref(),
-            platform::total_memory_mb(),
-        )?;
+        let assets_dir = self.paths.assets_dir();
+        let libraries_dir = self.paths.libraries_dir();
+        let dirs = launch::LaunchDirs { game: &game_dir, assets: &assets_dir, libraries: &libraries_dir };
+        // Nach einem Speicherfehler beim letzten Versuch: gleich mit sicheren Werten.
+        let retry_safe = self.safe_memory.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(&instance.id);
+        let mut memory = launch::Memory::now(retry_safe);
+        let mut command = launch::build_command(&prepared, instance, &settings, &session, dirs, join.as_ref(), memory)?;
+        // Vorab prüfen, ob Java den Speicher bekommt – sonst bricht es mit „Could not create
+        // the Java Virtual Machine“ ab. Dann klein starten und nach Bedarf wachsen.
+        if !memory.safe && !launch::heap_probe(&command).await {
+            memory.safe = true;
+            command = launch::build_command(&prepared, instance, &settings, &session, dirs, join.as_ref(), memory)?;
+            if !launch::heap_probe(&command).await {
+                return Err(Error::launch(crate::msg!(
+                    "launcher.notEnoughMemory",
+                    "Nicht genug freier Arbeitsspeicher für Java. Schließe andere Programme oder stelle der Instanz weniger RAM ein."
+                )));
+            }
+            self.games.sink()(GameEvent::notice(instance.id.clone(), &memory_safe_notice()));
+        }
 
         // Eingebaute Optimierungen des TRS Clients im Menü abgeschaltet: Fabric lässt sie weg.
         if instance.overrides.trs_client != Some(false)
@@ -1000,6 +1010,9 @@ impl Launcher {
             }
         };
         self.link.set_pid(&instance.id, pid);
+        if !memory.safe {
+            self.watch_heap_failure(instance.id.clone(), log_dir.clone());
+        }
         self.clips.game_started(
             clips::RunningGame {
                 instance_id: instance.id.clone(),
@@ -1018,6 +1031,63 @@ impl Launcher {
         // Erfolge: Spielstart mit lokaler Stunde (gesendet wird gesammelt im Hintergrund).
         self.trs.achievements.push(&session.uuid, trs_api::achievements::ReportKind::launch_now());
         Ok(pid)
+    }
+}
+
+/// Hinweis: Das Spiel startet mit sicheren Speicherwerten.
+fn memory_safe_notice() -> error::Msg {
+    crate::msg!(
+        "launcher.memorySafeStart",
+        "Wenig freier Arbeitsspeicher: Das Spiel startet klein und holt sich den Speicher nach Bedarf."
+    )
+}
+
+impl Launcher {
+    /// Scheitert Java in den ersten Sekunden doch noch am Speicher (z. B. weil andere
+    /// Programme ihn inzwischen belegt haben): Spiel beenden – das schließt auch das
+    /// Java-Fehlerfenster – und einmal mit sicheren Werten neu starten.
+    fn watch_heap_failure(self: &Arc<Self>, instance_id: String, log_dir: PathBuf) {
+        let launcher = Arc::clone(self);
+        tokio::spawn(async move {
+            let read = |name: &str| {
+                std::fs::read(log_dir.join(name))
+                    .map(|b| String::from_utf8_lossy(&b[..b.len().min(64 * 1024)]).into_owned())
+                    .unwrap_or_default()
+            };
+            let mut failed = false;
+            for _ in 0..60 {
+                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                let running = launcher.games.is_running(&instance_id);
+                if launch::is_heap_failure(&read("launcher-stdout.log")) || launch::is_heap_failure(&read("launcher-stderr.log")) {
+                    failed = true;
+                    break;
+                }
+                if !running {
+                    break;
+                }
+            }
+            if !failed {
+                return;
+            }
+            tracing::warn!("Java ist für '{instance_id}' am Speicher gescheitert – Neustart mit sicheren Werten");
+            launcher.games.kill(&instance_id);
+            for _ in 0..40 {
+                if !launcher.games.is_running(&instance_id) {
+                    break;
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+            }
+            // Nachlauf des beendeten Spiels (Sync, Spielzeit) abwarten.
+            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+            launcher.safe_memory.lock().unwrap_or_else(std::sync::PoisonError::into_inner).insert(instance_id.clone());
+            let sink = launcher.games.sink();
+            sink(GameEvent::notice(instance_id.clone(), &memory_safe_notice()));
+            let no_progress = |_: StageProgress| {};
+            if let Err(e) = launcher.launch(&instance_id, None, &no_progress).await {
+                tracing::warn!("Neustart mit sicheren Speicherwerten fehlgeschlagen: {e}");
+                sink(GameEvent::notice_error(instance_id.clone(), &e));
+            }
+        });
     }
 }
 

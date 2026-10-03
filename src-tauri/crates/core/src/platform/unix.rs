@@ -198,6 +198,11 @@ pub fn total_memory_mb() -> Option<u32> {
     std::fs::read_to_string("/proc/meminfo").ok().as_deref().and_then(super::parse_meminfo)
 }
 
+/// Gerade freier Arbeitsspeicher in MB (`MemAvailable` aus `/proc/meminfo`).
+pub fn available_memory_mb() -> Option<u32> {
+    std::fs::read_to_string("/proc/meminfo").ok().as_deref().and_then(|t| super::parse_meminfo_field(t, "MemAvailable:"))
+}
+
 // --- Download-Ordner -------------------------------------------------------------------------
 
 /// `XDG_DOWNLOAD_DIR="$HOME/Downloads"` aus dem Inhalt von `user-dirs.dirs`.
