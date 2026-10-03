@@ -195,6 +195,8 @@ export interface Settings {
   social: SocialSettings
   /** TRS Client bei Modpacks/Importen mit Mods: fragen (Standard) oder immer mit/ohne */
   modpackTrsClient: ModpackTrsPolicy
+  /** „Minecraft Bedrock“ in der Bibliothek zeigen, wenn installiert (nur Windows) – ab Werk an */
+  showBedrock: boolean
 }
 
 /** Benachrichtigungen aus „Sozial“ (Rust: `SocialSettings`). */
@@ -430,18 +432,26 @@ export interface LogLine {
   message: string
 }
 
+/** Minecraft Bedrock (Microsoft Store), nur Windows */
+export interface BedrockInfo {
+  installed: boolean
+}
+
 export interface RunningGame {
   instanceId: string
+  /** Prozess-Schlüssel: die Instanz-ID beim ersten Start, `<id>~2` usw. bei weiteren Starts derselben Instanz */
+  key: string
   pid: number
   startedAt: string
 }
 
 export type GameEvent =
-  | { type: 'started'; instanceId: string; pid: number }
-  | { type: 'logs'; instanceId: string; lines: LogLine[] }
+  | { type: 'started'; instanceId: string; key: string; pid: number }
+  | { type: 'logs'; instanceId: string; key: string; lines: LogLine[] }
   | {
       type: 'exited'
       instanceId: string
+      key: string
       exitCode: number | null
       crashed: boolean
       playSeconds: number

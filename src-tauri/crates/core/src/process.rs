@@ -35,10 +35,13 @@ const CRASH_HELPER_LINES: usize = LOG_HISTORY;
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type", rename_all = "camelCase", rename_all_fields = "camelCase")]
 pub enum GameEvent {
-    Started { instance_id: String, pid: u32 },
-    Logs { instance_id: String, lines: Vec<LogLine> },
+    /// `key`: Prozess-Schlüssel – die Instanz-ID beim ersten Prozess, `<id>~2` usw. bei weiteren
+    /// Starts derselben Instanz ([`extra_key`]).
+    Started { instance_id: String, key: String, pid: u32 },
+    Logs { instance_id: String, key: String, lines: Vec<LogLine> },
     Exited {
         instance_id: String,
+        key: String,
         exit_code: Option<i32>,
         crashed: bool,
         play_seconds: u64,
@@ -78,6 +81,9 @@ impl GameEvent {
     }
 }
 
+/// Siehe [`GameManager::running_probe`].
+pub type RunningProbe = Arc<dyn Fn(&str) -> bool + Send + Sync>;
+
 pub type EventSink = Arc<dyn Fn(GameEvent) + Send + Sync>;
 
 /// Was nach dem Spielende passieren soll (Spielzeit verbuchen).
@@ -87,8 +93,20 @@ pub type OnExit = Box<dyn FnOnce(u64) + Send>;
 #[serde(rename_all = "camelCase")]
 pub struct RunningGame {
     pub instance_id: String,
+    /// Prozess-Schlüssel (siehe [`GameEvent::Started`]).
+    pub key: String,
     pub pid: u32,
     pub started_at: DateTime<Utc>,
+}
+
+/// Schlüssel eines weiteren Prozesses derselben Instanz („Nochmal starten“).
+pub fn extra_key(instance_id: &str, n: u32) -> String {
+    format!("{instance_id}~{n}")
+}
+
+/// Ist das ein zusätzlicher Prozess (nicht der erste Start der Instanz)?
+pub fn is_extra_key(instance_id: &str, key: &str) -> bool {
+    key != instance_id
 }
 
 // --- Absturz-Diagnose ----------------------------------------------------------
@@ -423,11 +441,20 @@ pub fn prefer_dedicated_gpu(program: &Path) -> Vec<(String, String)> {
 #[serde(rename_all = "camelCase")]
 struct SessionRecord {
     instance_id: String,
+    /// Prozess-Schlüssel; ältere Dateien kennen ihn nicht (dann = Instanz-ID).
+    #[serde(default)]
+    key: String,
     pid: u32,
     started_at: DateTime<Utc>,
     creation_time: u64,
     stdout_log: PathBuf,
     stderr_log: PathBuf,
+}
+
+impl SessionRecord {
+    fn key(&self) -> &str {
+        if self.key.is_empty() { &self.instance_id } else { &self.key }
+    }
 }
 
 struct Running {
@@ -463,17 +490,49 @@ impl GameManager {
         self.lock().running.values().map(|r| r.info.clone()).collect()
     }
 
+    /// Läuft mindestens ein Prozess der Instanz?
     pub fn is_running(&self, instance_id: &str) -> bool {
-        self.lock().running.contains_key(instance_id)
+        self.lock().running.values().any(|r| r.info.instance_id == instance_id)
+    }
+
+    /// Abfrage „läuft die Instanz noch?“ für Nachlauf-Code, der den Manager nicht festhalten kann.
+    pub fn running_probe(&self) -> RunningProbe {
+        let state = self.state.clone();
+        Arc::new(move |instance_id: &str| {
+            state.lock().unwrap_or_else(std::sync::PoisonError::into_inner).running.values().any(|r| r.info.instance_id == instance_id)
+        })
+    }
+
+    /// Wie viele Prozesse der Instanz laufen?
+    pub fn count(&self, instance_id: &str) -> usize {
+        self.lock().running.values().filter(|r| r.info.instance_id == instance_id).count()
+    }
+
+    /// Erster freier Schlüssel für einen weiteren Prozess der Instanz.
+    fn free_extra_key(&self, instance_id: &str) -> String {
+        let state = self.lock();
+        (2u32..).map(|n| extra_key(instance_id, n)).find(|k| !state.running.contains_key(k)).unwrap_or_else(|| extra_key(instance_id, 2))
     }
 
     pub fn logs(&self, instance_id: &str) -> Vec<LogLine> {
         self.lock().logs.get(instance_id).map(|l| l.iter().cloned().collect()).unwrap_or_default()
     }
 
+    /// Beendet alle Prozesse der Instanz.
     pub fn kill(&self, instance_id: &str) -> bool {
         let state = self.lock();
-        let Some(running) = state.running.get(instance_id) else { return false };
+        let mut any = false;
+        for running in state.running.values().filter(|r| r.info.instance_id == instance_id) {
+            running.killed.store(true, Ordering::Relaxed);
+            any |= running.process.terminate();
+        }
+        any
+    }
+
+    /// Beendet genau einen Prozess (Schlüssel aus [`RunningGame::key`]) der Instanz.
+    pub fn kill_key(&self, instance_id: &str, key: &str) -> bool {
+        let state = self.lock();
+        let Some(running) = state.running.get(key).filter(|r| r.info.instance_id == instance_id) else { return false };
         running.killed.store(true, Ordering::Relaxed);
         running.process.terminate()
     }
@@ -491,10 +550,19 @@ impl GameManager {
         log_dir: &Path,
         secrets: Vec<String>,
         on_exit: OnExit,
+        extra: bool,
     ) -> Result<u32> {
-        if self.is_running(instance_id) {
+        // Ein weiterer Prozess bekommt Schlüssel `<id>~n` und eigene Log-Dateien.
+        let (key, log_dir) = if extra && self.is_running(instance_id) {
+            let key = self.free_extra_key(instance_id);
+            let dir = log_dir.join(key.rsplit('~').next().map_or_else(|| "extra".to_owned(), |n| format!("extra-{n}")));
+            (key, dir)
+        } else if self.is_running(instance_id) {
             return Err(Error::launch(crate::msg!("launcher.alreadyRunning", "Diese Instanz läuft bereits.")));
-        }
+        } else {
+            (instance_id.to_owned(), log_dir.to_owned())
+        };
+        let log_dir = log_dir.as_path();
         std::fs::create_dir_all(log_dir).map_err(|e| Error::io(log_dir, e))?;
         let stdout_log = log_dir.join("launcher-stdout.log");
         let stderr_log = log_dir.join("launcher-stderr.log");
@@ -523,6 +591,7 @@ impl GameManager {
 
         let record = SessionRecord {
             instance_id: instance_id.to_owned(),
+            key,
             pid,
             started_at: Utc::now(),
             creation_time: process.creation_time().unwrap_or_default(),
@@ -535,7 +604,7 @@ impl GameManager {
     }
 
     /// Findet Spiele wieder, die beim letzten Schließen des Launchers noch liefen.
-    pub fn recover(&self, on_exit: impl Fn(&str) -> OnExit) {
+    pub fn recover(&self, on_exit: impl Fn(&str, bool) -> OnExit) {
         let records: Vec<SessionRecord> =
             std::fs::read(&self.sessions_file).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default();
         let mut alive = Vec::new();
@@ -547,14 +616,15 @@ impl GameManager {
             }
             tracing::info!("Laufendes Spiel wiedergefunden: {} (PID {})", record.instance_id, record.pid);
             alive.push(record.clone());
-            let exit = on_exit(&record.instance_id);
+            let exit = on_exit(&record.instance_id, is_extra_key(&record.instance_id, record.key()));
             self.attach(record, Arc::new(process), Vec::new(), exit);
         }
         self.write_sessions(&alive);
     }
 
     fn attach(&self, record: SessionRecord, process: Arc<ProcessHandle>, secrets: Vec<String>, on_exit: OnExit) {
-        let id = record.instance_id.clone();
+        let instance = record.instance_id.clone();
+        let id = record.key().to_owned();
         let killed = Arc::new(AtomicBool::new(false));
         {
             let mut state = self.lock();
@@ -562,13 +632,13 @@ impl GameManager {
             state.running.insert(
                 id.clone(),
                 Running {
-                    info: RunningGame { instance_id: id.clone(), pid: record.pid, started_at: record.started_at },
+                    info: RunningGame { instance_id: instance.clone(), key: id.clone(), pid: record.pid, started_at: record.started_at },
                     process: process.clone(),
                     killed: killed.clone(),
                 },
             );
         }
-        (self.sink)(GameEvent::Started { instance_id: id.clone(), pid: record.pid });
+        (self.sink)(GameEvent::Started { instance_id: instance.clone(), key: id.clone(), pid: record.pid });
 
         let exited = Arc::new(AtomicBool::new(false));
         let secrets: Arc<Vec<String>> = Arc::new(secrets.into_iter().filter(|s| s.len() >= 8).collect());
@@ -577,7 +647,7 @@ impl GameManager {
             tokio::spawn(tail(record.stdout_log.clone(), LogParser::stdout(), line_tx.clone(), secrets.clone(), exited.clone())),
             tokio::spawn(tail(record.stderr_log.clone(), LogParser::stderr(), line_tx, secrets, exited.clone())),
         ];
-        let forwarder = tokio::spawn(forward(line_rx, self.state.clone(), self.sink.clone(), id.clone()));
+        let forwarder = tokio::spawn(forward(line_rx, self.state.clone(), self.sink.clone(), instance.clone(), id.clone()));
 
         let (state, sink, sessions) = (self.state.clone(), self.sink.clone(), self.sessions_handle());
         tokio::spawn(async move {
@@ -617,7 +687,7 @@ impl GameManager {
             sessions.remove(&id);
             on_exit(play_seconds);
             let crash_id = crash.as_ref().map(|c| c.crash_id.clone());
-            sink(GameEvent::Exited { instance_id: id, exit_code, crashed, play_seconds, diagnosis, crash_id, crash });
+            sink(GameEvent::Exited { instance_id: instance, key: id, exit_code, crashed, play_seconds, diagnosis, crash_id, crash });
         });
     }
 
@@ -655,8 +725,8 @@ impl SessionsFile {
         }
     }
 
-    fn remove(&self, instance_id: &str) {
-        self.update(|list| list.retain(|r| r.instance_id != instance_id));
+    fn remove(&self, key: &str) {
+        self.update(|list| list.retain(|r| r.key() != key));
     }
 }
 
@@ -731,7 +801,7 @@ fn emit(parser: &mut LogParser, raw: &[u8], secrets: &[String], tx: &mpsc::Unbou
 
 /// Reicht Log-Zeilen gebündelt weiter, damit das Frontend bei Ausgabe-Stürmen
 /// nicht mit Einzel-Events geflutet wird.
-async fn forward(mut rx: mpsc::UnboundedReceiver<LogLine>, state: Arc<Mutex<State>>, sink: EventSink, id: String) {
+async fn forward(mut rx: mpsc::UnboundedReceiver<LogLine>, state: Arc<Mutex<State>>, sink: EventSink, instance: String, id: String) {
     while let Some(first) = rx.recv().await {
         let mut batch = vec![first];
         while batch.len() < LOG_BATCH_MAX
@@ -747,7 +817,7 @@ async fn forward(mut rx: mpsc::UnboundedReceiver<LogLine>, state: Arc<Mutex<Stat
                 history.pop_front();
             }
         }
-        sink(GameEvent::Logs { instance_id: id.clone(), lines: batch });
+        sink(GameEvent::Logs { instance_id: instance.clone(), key: id.clone(), lines: batch });
         tokio::time::sleep(LOG_BATCH_INTERVAL).await;
     }
 }
@@ -1061,7 +1131,7 @@ More details:
         };
         let command =
             Command { program: PathBuf::from(program), args, cwd: dir.path().to_owned(), env: Vec::new(), high_priority: false };
-        manager.spawn("test", command, &dir.path().join("logs"), vec![], Box::new(|_| {})).unwrap();
+        manager.spawn("test", command, &dir.path().join("logs"), vec![], Box::new(|_| {}), false).unwrap();
         assert!(manager.is_running("test"));
         let saved = std::fs::read_to_string(dir.path().join("running.json")).unwrap();
         assert!(saved.contains("\"instanceId\": \"test\""));
@@ -1086,5 +1156,92 @@ More details:
         let exited = events.lock().unwrap().iter().any(|e| matches!(e, GameEvent::Exited { crashed: false, .. }));
         assert!(exited, "Stoppen ist kein Absturz");
         assert!(!std::fs::read_to_string(dir.path().join("running.json")).unwrap().contains("test"));
+    }
+
+    #[test]
+    fn extra_keys() {
+        assert_eq!(extra_key("a", 2), "a~2");
+        assert!(is_extra_key("a", "a~2") && !is_extra_key("a", "a"));
+        // Alte running.json ohne `key`.
+        let old: SessionRecord = serde_json::from_str(
+            r#"{"instanceId":"a","pid":1,"startedAt":"2026-01-01T00:00:00Z","creationTime":1,"stdoutLog":"x","stderrLog":"y"}"#,
+        )
+        .unwrap();
+        assert_eq!(old.key(), "a");
+    }
+
+    #[tokio::test]
+    async fn second_process_of_an_instance_has_its_own_key_logs_and_exit() {
+        let dir = tempfile::tempdir().unwrap();
+        let events = Arc::new(Mutex::new(Vec::new()));
+        let sink_events = events.clone();
+        let manager = GameManager::new(
+            Arc::new(move |e: GameEvent| sink_events.lock().unwrap().push(e)),
+            dir.path().join("running.json"),
+        );
+        let (program, args): (&str, Vec<String>) = if cfg!(windows) {
+            (r"C:\Windows\System32\PING.EXE", vec!["-n".into(), "30".into(), "127.0.0.1".into()])
+        } else {
+            ("/bin/sh", vec!["-c".into(), "while true; do echo tick; sleep 1; done".into()])
+        };
+        let command = || Command {
+            program: PathBuf::from(program),
+            args: args.clone(),
+            cwd: dir.path().to_owned(),
+            env: Vec::new(),
+            high_priority: false,
+        };
+        let logs = dir.path().join("logs");
+        manager.spawn("inst", command(), &logs, vec![], Box::new(|_| {}), false).unwrap();
+        // Ohne `extra` bleibt es bei einem Prozess je Instanz.
+        assert!(manager.spawn("inst", command(), &logs, vec![], Box::new(|_| {}), false).is_err());
+        manager.spawn("inst", command(), &logs, vec![], Box::new(|_| {}), true).unwrap();
+        manager.spawn("inst", command(), &logs, vec![], Box::new(|_| {}), true).unwrap();
+        assert_eq!(manager.count("inst"), 3);
+        let mut keys: Vec<String> = manager.running().into_iter().map(|g| g.key).collect();
+        keys.sort();
+        assert_eq!(keys, ["inst", "inst~2", "inst~3"]);
+        assert!(logs.join("extra-2").join("launcher-stdout.log").exists());
+        assert!(!manager.is_running("other"));
+
+        // Einen Prozess beenden: die anderen laufen weiter.
+        assert!(!manager.kill_key("other", "inst~2"));
+        assert!(manager.kill_key("inst", "inst~2"));
+        for _ in 0..50 {
+            if manager.count("inst") == 2 {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+        assert_eq!(manager.count("inst"), 2);
+        assert!(manager.is_running("inst"));
+        // Die Sitzungsdatei vergisst nur den beendeten Prozess.
+        tokio::time::sleep(Duration::from_millis(300)).await;
+        let saved = std::fs::read_to_string(dir.path().join("running.json")).unwrap();
+        assert!(saved.contains("\"key\": \"inst\"") && saved.contains("\"key\": \"inst~3\"") && !saved.contains("inst~2"), "{saved}");
+        // Der freie Schlüssel wird wieder vergeben.
+        manager.spawn("inst", command(), &logs, vec![], Box::new(|_| {}), true).unwrap();
+        assert!(manager.running().iter().any(|g| g.key == "inst~2"));
+
+        // Alle auf einmal beenden.
+        assert!(manager.kill("inst"));
+        for _ in 0..50 {
+            if !manager.is_running("inst") {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+        assert!(!manager.is_running("inst"));
+        tokio::time::sleep(Duration::from_millis(300)).await;
+        let exited: Vec<String> = events
+            .lock()
+            .unwrap()
+            .iter()
+            .filter_map(|e| match e {
+                GameEvent::Exited { key, crashed: false, .. } => Some(key.clone()),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(exited.len(), 4, "{exited:?}");
     }
 }

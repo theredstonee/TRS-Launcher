@@ -427,7 +427,8 @@
       "signInFirst": "Bitte melde dich zuerst unter „Accounts“ mit deinem Microsoft-Konto an.",
       "stopAllGamesFirst": "Bitte erst alle laufenden Spiele beenden.",
       "syncAfterExitFailed": "Die Einstellungen konnten nicht mit den anderen Instanzen synchronisiert werden.",
-      "dependenciesAdded": "Fehlende Abhängigkeiten ergänzt: {list} (gebraucht von {mods})."
+      "dependenciesAdded": "Fehlende Abhängigkeiten ergänzt: {list} (gebraucht von {mods}).",
+      "accountMissing": "Das gewählte Konto gibt es nicht mehr."
     },
     "loaders": {
       "invalidGameVersion": "Ungültige Minecraft-Version",
@@ -800,6 +801,10 @@
       "invalidCode": "Das ist kein gültiger Code (Form: XXX-XXX).",
       "expired": "Diese Anmelde-Anfrage gibt es nicht (mehr) – starte die Anmeldung auf der Website neu.",
       "used": "Diese Anmelde-Anfrage wurde schon beantwortet."
+    },
+    "bedrock": {
+      "notInstalled": "Minecraft Bedrock ist auf diesem PC nicht installiert.",
+      "startFailed": "Minecraft Bedrock konnte nicht gestartet werden."
     }
   },
   "browse": {
@@ -2040,7 +2045,9 @@
       "showSnapshotsTitle": "Snapshots anzeigen",
       "showSnapshotsDescription": "Snapshots und alte Versionen standardmäßig in der Versionsauswahl.",
       "restartOnboardingTitle": "Einrichtung erneut starten",
-      "restartOnboardingDescription": "Führt noch einmal durch Anmeldung und erste Instanz."
+      "restartOnboardingDescription": "Führt noch einmal durch Anmeldung und erste Instanz.",
+      "showBedrockTitle": "Minecraft Bedrock in der Bibliothek zeigen",
+      "showBedrockDescription": "Ist die Version aus dem Microsoft Store installiert, startet eine Karte sie von hier."
     },
     "profile": {
       "title": "Minecraft-Accounts",
@@ -2763,7 +2770,30 @@
     "starting": "Starte …",
     "startingShort": "Startet",
     "runningNow": "Läuft gerade",
-    "preparing": "Wird vorbereitet …"
+    "preparing": "Wird vorbereitet …",
+    "again": {
+      "menu": "Nochmal starten",
+      "title": "{name} nochmal starten",
+      "taskTitle": "{name} (zweiter Start)",
+      "intro": "Die Instanz läuft schon. Ein zweites Spiel startet als eigener Prozess, zum Beispiel um mit einem anderen Konto zu spielen.",
+      "account": "Konto für diesen Start",
+      "active": "aktiv",
+      "noAccounts": "Kein Konto – Demo-Modus",
+      "sameAccount": "Mit diesem Konto läuft schon ein Spiel. Server nehmen dasselbe Konto meist nicht zweimal an.",
+      "worldHint": "Beide Spiele nutzen denselben Speicherordner. Öffne dieselbe Einzelspieler-Welt nicht in beiden – das kann die Welt beschädigen.",
+      "noLink": "Das zweite Spiel läuft ohne TRS-Link-Funktionen (Kontowechsel, Clips, Online-Status) – die bleiben beim ersten.",
+      "start": "Starten",
+      "unknownAccount": "Unbekanntes Konto"
+    },
+    "stopChoice": {
+      "title": "{name} beenden",
+      "intro": "Von dieser Instanz laufen mehrere Spiele. Welches soll beendet werden?",
+      "process": "Spiel {n}",
+      "since": "Gestartet um {time}",
+      "all": "Alle beenden"
+    },
+    "stopMany": "Beenden ({n})",
+    "logProcess": "Log von"
   },
   "instanceCard": {
     "installing": "Wird installiert",
@@ -3048,7 +3078,8 @@
       "remove": "Ablegen",
       "claim": "Gratis holen",
       "claiming": "Wird geholt …",
-      "endPreview": "Vorschau beenden"
+      "endPreview": "Vorschau beenden",
+      "info": "Details"
     },
     "pendingCount": "{n} Umhang wartet auf Freigabe. | {n} Umhänge warten auf Freigabe.",
     "redeemDialog": {
@@ -3139,6 +3170,49 @@
       "text": "Jetzt aufsetzen? Du siehst sie im TRS Client auf deinem Kopf (3. Person), andere TRS-Spieler auch.",
       "wear": "Aufsetzen",
       "later": "Später"
+    },
+    "filter": {
+      "search": "Umhänge nach Namen suchen",
+      "label": "Filter",
+      "all": "Alle Umhänge",
+      "animated": "Animiert",
+      "owned": "Freigeschaltet",
+      "available": "Noch nicht freigeschaltet",
+      "friends": "Von Freunden",
+      "own": "Meine Uploads",
+      "none": "Kein Umhang passt zu deiner Suche."
+    },
+    "sort": {
+      "label": "Sortieren",
+      "default": "Standardreihenfolge",
+      "name": "Name A–Z",
+      "nameDesc": "Name Z–A",
+      "ownedFirst": "Freigeschaltete zuerst",
+      "animatedFirst": "Animierte zuerst"
+    },
+    "info": {
+      "source": "Herkunft",
+      "from": "Geteilt von",
+      "creator": "von {name} gemacht",
+      "animated": "Animiert",
+      "framesYes": "Ja, {n} Bilder",
+      "no": "Nein",
+      "size": "Größe (Pixel)",
+      "status": "Status",
+      "owned": "Für dich freigeschaltet",
+      "notOwned": "Noch nicht freigeschaltet",
+      "holders": "Geteilt mit",
+      "how": "So bekommst du ihn",
+      "howOwned": "Du hast ihn schon – leg ihn an, damit andere ihn sehen.",
+      "origin": {
+        "friend": "Von einem Freund geteilt",
+        "upload": "Upload eines Spielers",
+        "event": "Event-Umhang",
+        "code": "Code-Umhang (Aktionen, Partner)",
+        "team": "TRS-Team-Umhang",
+        "free": "TRS-Umhang für alle",
+        "other": "TRS-Umhang"
+      }
     }
   },
   "headCosmetics": {
@@ -5414,5 +5488,13 @@
     "logs": "Hilfe zu Logs",
     "java": "Anleitung zu Java",
     "linux": "Anleitung für Linux"
+  },
+  "bedrock": {
+    "label": "Bedrock",
+    "title": "Minecraft Bedrock",
+    "subtitle": "Microsoft Store / Xbox-App",
+    "hint": "Startet das installierte Spiel – ohne Instanz, ohne Mods",
+    "playLabel": "Minecraft Bedrock starten",
+    "started": "Minecraft Bedrock startet …"
   }
 }

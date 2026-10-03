@@ -20,6 +20,7 @@ const canCancel = computed(() => {
 })
 /** Modpack lädt noch Dateien in diese Instanz: statt „Spielen“ der Installationsstand. */
 const install = computed(() => (game.value.phase === 'idle' ? tasks.installingInstance(props.instanceId) : null))
+const procCount = computed(() => games.processes(props.instanceId).length)
 const files = computed(() => {
   const p = game.value.progress
   return p && p.totalFiles > 1 ? `${p.doneFiles} / ${p.totalFiles}` : ''
@@ -108,12 +109,12 @@ const files = computed(() => {
       </span>
     </div>
 
-    <button v-else class="lamp pixel-corners" :title="t('play.stopGame')" @click="games.stop(instanceId)">
+    <button v-else class="lamp pixel-corners" :title="t('play.stopGame')" @click="games.requestStop(instanceId)">
       <span class="lamp-light" />
       <span class="lamp-glass" />
       <span class="relative flex items-center gap-2.5">
         <span class="display text-xl">{{ t('common.status.running') }}</span>
-        <span class="text-xs font-medium opacity-75">{{ t('common.actions.stop') }}</span>
+        <span class="text-xs font-medium opacity-75">{{ procCount > 1 ? t('play.stopMany', { n: procCount }) : t('common.actions.stop') }}</span>
       </span>
     </button>
     <!-- Nach der v-if-Kette, sonst hinge der Stopp-Knopf an dieser Bedingung. -->
@@ -178,7 +179,7 @@ const files = computed(() => {
       <RedstoneWire :percent="percent" :segments="20" class="mt-1" />
     </div>
 
-    <button v-else class="btn w-full bg-lamp-900 text-lamp-300 ring-1 ring-lamp-400/40 hover:bg-base-800" @click="games.stop(instanceId)">
+    <button v-else class="btn w-full bg-lamp-900 text-lamp-300 ring-1 ring-lamp-400/40 hover:bg-base-800" @click="games.requestStop(instanceId)">
       <span class="size-2 animate-lamp rounded-full bg-lamp-400" />
       {{ t('play.runningStop') }}
     </button>

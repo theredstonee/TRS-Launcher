@@ -49,6 +49,16 @@ function rememberedTab(): Tab | null {
   }
 }
 const tab = ref<Tab>('content')
+/** Logs eines weiteren Prozesses der Instanz: dessen Schlüssel (sonst der erste Prozess) */
+const logKey = ref(id.value)
+watch(id, (v) => (logKey.value = v))
+const logState = computed(() => (logKey.value !== id.value ? (games.extraLogs[logKey.value] ?? game.value) : game.value))
+watch(
+  () => games.extras[id.value]?.length,
+  () => {
+    if (logKey.value !== id.value && !games.extras[id.value]?.some((e) => e.key === logKey.value)) logKey.value = id.value
+  },
+)
 /** „Neue Version teilen“ aus dem Hinweis über den Tabs. */
 const sharingPack = ref(false)
 
@@ -212,6 +222,17 @@ function openFolder() {
 
             <div class="flex w-80 shrink-0 items-center gap-2">
               <PlayButton :instance-id="instance.id" large />
+              <button
+                v-if="game.phase === 'running'"
+                class="btn-icon size-12 bg-base-900/80 backdrop-blur"
+                :title="t('play.again.menu')"
+                :aria-label="t('play.again.menu')"
+                :disabled="games.extraBusy.has(instance.id)"
+                data-testid="play-again"
+                @click="games.extraPrompt = instance.id"
+              >
+                <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="12" height="12" rx="1.5" /><path d="M9 21h10a2 2 0 0 0 2-2V9M7.5 9.5v4l3.5-2z" /></svg>
+              </button>
               <button class="btn-icon size-12 bg-base-900/80 backdrop-blur" :title="t('instance.settings')" :aria-label="t('instance.settings')" @click="settingsOpen = 'general'">
                 <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.gear" /></svg>
               </button>
@@ -267,7 +288,16 @@ function openFolder() {
           <InstanceGallery v-else-if="tab === 'screenshots'" :instance="instance" @updated="onUpdated" />
           <ClipGallery v-else-if="tab === 'clips'" :instance-id="instance.id" class="pt-3" />
           <HistoryList v-else-if="tab === 'history'" :instance="instance" :refresh-key="historyKey" />
-          <LogViewer v-else-if="tab === 'logs'" :instance-id="instance.id" :running="game.phase === 'running'" :lines="game.logs" :log-total="game.logTotal" />
+          <template v-else-if="tab === 'logs'">
+            <label v-if="games.processes(instance.id).length > 1" class="mb-2 flex items-center gap-2 text-xs text-base-400">
+              {{ t('play.logProcess') }}
+              <select v-model="logKey" class="field h-8 w-auto py-0 text-xs text-base-50" data-testid="log-process">
+                <option :value="instance.id">{{ t('play.stopChoice.process', { n: 1 }) }}</option>
+                <option v-for="(e, i) in games.extras[instance.id] ?? []" :key="e.key" :value="e.key">{{ t('play.stopChoice.process', { n: i + 2 }) }}</option>
+              </select>
+            </label>
+            <LogViewer :key="logKey" :instance-id="instance.id" :running="game.phase === 'running'" :lines="logState.logs" :log-total="logState.logTotal" />
+          </template>
           <SharePanel v-else-if="tab === 'share'" :instance="instance" @navigate="selectTab" />
         </div>
       </template>

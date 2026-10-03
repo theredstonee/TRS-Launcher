@@ -427,7 +427,8 @@
       "signInFirst": "Log eerst in met je Microsoft-account onder “Accounts”.",
       "stopAllGamesFirst": "Sluit eerst alle actieve games.",
       "syncAfterExitFailed": "De instellingen konden niet worden gesynchroniseerd met de andere instanties.",
-      "dependenciesAdded": "Ontbrekende afhankelijkheden toegevoegd: {list} (nodig voor {mods})."
+      "dependenciesAdded": "Ontbrekende afhankelijkheden toegevoegd: {list} (nodig voor {mods}).",
+      "accountMissing": "Het gekozen account bestaat niet meer."
     },
     "loaders": {
       "invalidGameVersion": "Ongeldige Minecraft-versie",
@@ -800,6 +801,10 @@
       "invalidCode": "Dat is geen geldige code (vorm: XXX-XXX).",
       "expired": "Dit inlogverzoek bestaat niet (meer) – start het inloggen op de website opnieuw.",
       "used": "Dit inlogverzoek is al beantwoord."
+    },
+    "bedrock": {
+      "notInstalled": "Minecraft Bedrock is niet geïnstalleerd op deze pc.",
+      "startFailed": "Minecraft Bedrock kon niet worden gestart."
     }
   },
   "browse": {
@@ -2040,7 +2045,9 @@
       "showSnapshotsTitle": "Snapshots tonen",
       "showSnapshotsDescription": "Snapshots en oude versies standaard in de versiekiezer opnemen.",
       "restartOnboardingTitle": "Installatie opnieuw doorlopen",
-      "restartOnboardingDescription": "Leidt je nog een keer door het inloggen en je eerste instantie."
+      "restartOnboardingDescription": "Leidt je nog een keer door het inloggen en je eerste instantie.",
+      "showBedrockTitle": "Minecraft Bedrock in de bibliotheek tonen",
+      "showBedrockDescription": "Is de Microsoft Store-versie geïnstalleerd, dan start een kaart die vanaf hier."
     },
     "profile": {
       "title": "Minecraft-accounts",
@@ -2763,7 +2770,30 @@
     "starting": "Starten …",
     "startingShort": "Starten",
     "runningNow": "Nu actief",
-    "preparing": "Voorbereiden …"
+    "preparing": "Voorbereiden …",
+    "again": {
+      "menu": "Nog een keer starten",
+      "title": "{name} nog een keer starten",
+      "taskTitle": "{name} (tweede start)",
+      "intro": "De instantie draait al. Een tweede spel start als eigen proces, bijvoorbeeld om met een ander account te spelen.",
+      "account": "Account voor deze start",
+      "active": "actief",
+      "noAccounts": "Geen accounts – demomodus",
+      "sameAccount": "Met dit account wordt al gespeeld. Servers accepteren hetzelfde account meestal niet twee keer.",
+      "worldHint": "Beide spellen gebruiken dezelfde opslagmap. Open dezelfde singleplayerwereld niet in allebei – dat kan de wereld beschadigen.",
+      "noLink": "Het tweede spel draait zonder TRS Link-functies (accountwissel, clips, online-status) – die blijven bij het eerste.",
+      "start": "Starten",
+      "unknownAccount": "Onbekend account"
+    },
+    "stopChoice": {
+      "title": "{name} stoppen",
+      "intro": "Van deze instantie draaien meerdere spellen. Welk wil je stoppen?",
+      "process": "Spel {n}",
+      "since": "Gestart om {time}",
+      "all": "Alles stoppen"
+    },
+    "stopMany": "Stoppen ({n})",
+    "logProcess": "Log van"
   },
   "instanceCard": {
     "installing": "Wordt geïnstalleerd",
@@ -3048,7 +3078,8 @@
       "remove": "Afdoen",
       "claim": "Gratis ophalen",
       "claiming": "Ophalen …",
-      "endPreview": "Preview beëindigen"
+      "endPreview": "Preview beëindigen",
+      "info": "Details"
     },
     "pendingCount": "{n} cape wacht op goedkeuring. | {n} capes wachten op goedkeuring.",
     "redeemDialog": {
@@ -3139,6 +3170,49 @@
       "text": "Nu opzetten? Je ziet het op je hoofd in de TRS Client (derde persoon), net als andere TRS-spelers.",
       "wear": "Opzetten",
       "later": "Later"
+    },
+    "filter": {
+      "search": "Capes zoeken op naam",
+      "label": "Filter",
+      "all": "Alle capes",
+      "animated": "Geanimeerd",
+      "owned": "Ontgrendeld",
+      "available": "Nog niet ontgrendeld",
+      "friends": "Van vrienden",
+      "own": "Mijn uploads",
+      "none": "Geen cape komt overeen met je zoekopdracht."
+    },
+    "sort": {
+      "label": "Sorteren",
+      "default": "Standaardvolgorde",
+      "name": "Naam A–Z",
+      "nameDesc": "Naam Z–A",
+      "ownedFirst": "Ontgrendeld eerst",
+      "animatedFirst": "Geanimeerd eerst"
+    },
+    "info": {
+      "source": "Herkomst",
+      "from": "Gedeeld door",
+      "creator": "gemaakt door {name}",
+      "animated": "Geanimeerd",
+      "framesYes": "Ja, {n} frames",
+      "no": "Nee",
+      "size": "Grootte (pixels)",
+      "status": "Status",
+      "owned": "Voor jou ontgrendeld",
+      "notOwned": "Nog niet ontgrendeld",
+      "holders": "Gedeeld met",
+      "how": "Zo krijg je hem",
+      "howOwned": "Je hebt hem al – doe hem om zodat anderen hem zien.",
+      "origin": {
+        "friend": "Gedeeld door een vriend",
+        "upload": "Upload van een speler",
+        "event": "Eventcape",
+        "code": "Codecape (acties, partners)",
+        "team": "TRS-teamcape",
+        "free": "TRS-cape voor iedereen",
+        "other": "TRS-cape"
+      }
     }
   },
   "headCosmetics": {
@@ -5414,5 +5488,13 @@
     "logs": "Hulp bij logs",
     "java": "Java-handleiding",
     "linux": "Linux-handleiding"
+  },
+  "bedrock": {
+    "label": "Bedrock",
+    "title": "Minecraft Bedrock",
+    "subtitle": "Microsoft Store / Xbox-app",
+    "hint": "Start het geïnstalleerde spel – zonder instantie, zonder mods",
+    "playLabel": "Minecraft Bedrock starten",
+    "started": "Minecraft Bedrock start …"
   }
 }

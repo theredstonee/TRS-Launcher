@@ -4,8 +4,18 @@ import { defineStore } from 'pinia'
 import type { Diagnosis, GameEvent, LogLine, StageProgress } from '~/types'
 import type { HostedWorld } from '~/utils/hosting'
 import { askDuplicateMods } from '~/utils/duplicateMods'
+import { aggregatePhase, isExtraKey } from '~/utils/processes'
 
 export type GamePhase = 'idle' | 'preparing' | 'running'
+
+/** Ein weiterer Prozess einer laufenden Instanz („Nochmal starten“). */
+export interface ExtraProcess {
+  key: string
+  pid: number | null
+  startedAt: number
+  /** Konto-ID, mit der er gestartet wurde (nach einem Launcher-Neustart unbekannt) */
+  accountId: string | null
+}
 
 export interface GameState {
   phase: GamePhase
@@ -20,6 +30,10 @@ export interface GameState {
   lastExit: { exitCode: number | null; crashed: boolean; diagnosis: Diagnosis | null; crashId?: string | null } | null
   /** Startzeit (ms) des laufenden Spiels – für die Laufzeit in der Titelleiste. */
   startedAt: number | null
+  /** Läuft der erste Prozess (Schlüssel = Instanz-ID)? Weitere stehen in `extras`. */
+  mainAlive: boolean
+  /** Konto des ersten Prozesses, falls bekannt */
+  mainAccountId: string | null
 }
 
 // Die Log-Ansicht ist virtualisiert – viele Zeilen kosten nur Speicher.
@@ -30,16 +44,62 @@ const TRIM_STEP = 5_000
 const duplicateGate = new Set<string>()
 
 function emptyState(): GameState {
-  return { phase: 'idle', progress: null, error: null, logs: [], logTotal: 0, lastExit: null, startedAt: null }
+  return { phase: 'idle', progress: null, error: null, logs: [], logTotal: 0, lastExit: null, startedAt: null, mainAlive: false, mainAccountId: null }
 }
 
 export const useGamesStore = defineStore('games', () => {
   const states = ref<Record<string, GameState>>({})
+  /** Weitere Prozesse je Instanz (zusätzlich zum ersten) */
+  const extras = ref<Record<string, ExtraProcess[]>>({})
+  /** Logs der weiteren Prozesse je Schlüssel */
+  const extraLogs = ref<Record<string, GameState>>({})
+  /** Instanz, bei der gerade „Nochmal starten“ bzw. „Welchen Prozess beenden?“ gefragt wird (Dialog im Layout) */
+  const extraPrompt = ref<string | null>(null)
+  const stopPrompt = ref<string | null>(null)
+  const extraBusy = ref<Set<string>>(new Set())
   let initialized = false
 
   function state(id: string): GameState {
     return (states.value[id] ??= emptyState())
   }
+
+  /** Phase neu bestimmen, wenn sich die Prozesse einer Instanz ändern. */
+  function refresh(id: string) {
+    const s = state(id)
+    const list = extras.value[id] ?? []
+    s.phase = aggregatePhase(s.phase, s.mainAlive, list.length)
+    if (s.phase === 'running') s.startedAt = s.mainAlive ? s.startedAt : Math.min(...list.map((e) => e.startedAt))
+    else if (s.phase === 'idle') s.startedAt = null
+  }
+
+  function onExtraEvent(event: Exclude<GameEvent, { type: 'notice' | 'crashAnalyzed' }>) {
+    const id = event.instanceId
+    if (event.type === 'started') {
+      const list = (extras.value[id] ??= [])
+      if (!list.some((e) => e.key === event.key)) {
+        const known = pendingExtraAccount.get(id) ?? null
+        pendingExtraAccount.delete(id)
+        list.push({ key: event.key, pid: event.pid, startedAt: Date.now(), accountId: known })
+      }
+      extraLogs.value[event.key] = emptyState()
+      refresh(id)
+    } else if (event.type === 'logs') {
+      const s = (extraLogs.value[event.key] ??= emptyState())
+      for (const line of event.lines) s.logs.push(markRaw(line))
+      s.logTotal += event.lines.length
+      if (s.logs.length > MAX_LOG_LINES + TRIM_STEP) s.logs.splice(0, s.logs.length - MAX_LOG_LINES)
+    } else {
+      extras.value[id] = (extras.value[id] ?? []).filter((e) => e.key !== event.key)
+      if (!extras.value[id]!.length) delete extras.value[id]
+      const s = (extraLogs.value[event.key] ??= emptyState())
+      s.lastExit = { exitCode: event.exitCode, crashed: event.crashed, diagnosis: event.diagnosis, crashId: event.crashId ?? null }
+      refresh(id)
+      if (event.crashed) useToasts().error(event.diagnosis ? userErrorText(event.diagnosis) : t('game.crashed'))
+      useInstancesStore().load()
+    }
+  }
+  /** Konto, mit dem der gerade angeforderte weitere Prozess startet – das `started`-Event trägt es nicht. */
+  const pendingExtraAccount = new Map<string, string | null>()
 
   function onEvent(event: GameEvent) {
     // Hook oder Synchronisierung nach dem Beenden fehlgeschlagen.
@@ -52,8 +112,13 @@ export const useGamesStore = defineStore('games', () => {
       useCrashHelperStore().received(event.crash)
       return
     }
+    if (isExtraKey(event.instanceId, event.key)) {
+      onExtraEvent(event)
+      return
+    }
     const s = state(event.instanceId)
     if (event.type === 'started') {
+      s.mainAlive = true
       s.phase = 'running'
       s.progress = null
       s.startedAt = Date.now()
@@ -63,8 +128,11 @@ export const useGamesStore = defineStore('games', () => {
       s.logTotal += event.lines.length
       if (s.logs.length > MAX_LOG_LINES + TRIM_STEP) s.logs.splice(0, s.logs.length - MAX_LOG_LINES)
     } else {
+      s.mainAlive = false
       s.phase = 'idle'
       s.startedAt = null
+      s.mainAccountId = null
+      refresh(event.instanceId)
       s.lastExit = { exitCode: event.exitCode, crashed: event.crashed, diagnosis: event.diagnosis, crashId: event.crashId ?? null }
       if (event.crashed) {
         const toast = () => useToasts().error(event.diagnosis ? userErrorText(event.diagnosis) : t('game.crashed'))
@@ -89,10 +157,22 @@ export const useGamesStore = defineStore('games', () => {
     await listen<GameEvent>('game-event', (e) => onEvent(e.payload))
     try {
       for (const game of await backend.runningGames()) {
+        const startedAt = Date.parse(game.startedAt) || Date.now()
+        const logs = (await backend.getGameLogs(game.key ?? game.instanceId)).map((l) => markRaw(l))
+        if (isExtraKey(game.instanceId, game.key)) {
+          const list = (extras.value[game.instanceId] ??= [])
+          if (!list.some((e) => e.key === game.key)) list.push({ key: game.key, pid: game.pid, startedAt, accountId: null })
+          const l = (extraLogs.value[game.key] ??= emptyState())
+          l.logs = logs
+          l.logTotal = logs.length
+          refresh(game.instanceId)
+          continue
+        }
         const s = state(game.instanceId)
+        s.mainAlive = true
         s.phase = 'running'
-        s.startedAt = Date.parse(game.startedAt) || Date.now()
-        s.logs = (await backend.getGameLogs(game.instanceId)).map((l) => markRaw(l))
+        s.startedAt = startedAt
+        s.logs = logs
         s.logTotal = s.logs.length
       }
     } catch {
@@ -142,6 +222,7 @@ export const useGamesStore = defineStore('games', () => {
     }
     if (s.phase !== 'idle' || useTasksStore().installingInstance(id)) return false
     s.phase = 'preparing'
+    s.mainAccountId = useAccountsStore().active?.id ?? null
     s.error = null
     s.lastExit = null
     s.logs = []
@@ -184,6 +265,7 @@ export const useGamesStore = defineStore('games', () => {
       return true
     }
     s.phase = 'idle'
+    refresh(id)
     if (!result.cancelled) {
       s.error = errorMessage(result.error)
       useToasts().error(result.error)
@@ -196,12 +278,74 @@ export const useGamesStore = defineStore('games', () => {
     return useTasksStore().cancel(taskKey('launch', id))
   }
 
-  async function stop(id: string) {
+  /**
+   * Instanz noch einmal starten, während sie läuft (eigener Prozess, eigene Logs).
+   * `accountId`: Konto für diesen Start (null = das aktive). Liefert, ob es geklappt hat.
+   */
+  async function launchExtra(id: string, accountId: string | null): Promise<boolean> {
+    if (state(id).phase !== 'running' || extraBusy.value.has(id)) return false
+    extraBusy.value = new Set([...extraBusy.value, id])
+    const instance = useInstancesStore().items.find((i) => i.id === id)
+    pendingExtraAccount.set(id, accountId ?? useAccountsStore().active?.id ?? null)
     try {
-      await backend.stopInstance(id)
+      const result = await useTasksStore().run(
+        {
+          key: taskKey('launch', id, 'extra'),
+          kind: 'launch',
+          title: t('play.again.taskTitle', { name: instance?.name ?? id }),
+          stage: t('game.preparing'),
+          instanceId: id,
+          cancellable: true,
+          pausable: true,
+          record: false,
+          notify: false,
+        },
+        (ctx) =>
+          backend.launchInstance(
+            id,
+            null,
+            (p) => {
+              ctx.progress(overallPercent(p.stage, p.percent), stageLabel(p.stage))
+              if (p.stage === 'starting') ctx.update({ cancellable: false, pausable: false })
+            },
+            ctx.taskId,
+            null,
+            null,
+            true,
+            accountId,
+          ),
+      )
+      if (!result.ok && !result.cancelled) useToasts().error(result.error)
+      return result.ok
+    } finally {
+      pendingExtraAccount.delete(id)
+      const next = new Set(extraBusy.value)
+      next.delete(id)
+      extraBusy.value = next
+    }
+  }
+
+  /** Alle Prozesse der Instanz beenden – oder nur den mit `key`. */
+  async function stop(id: string, key: string | null = null) {
+    try {
+      await backend.stopInstance(id, key)
     } catch (e) {
       state(id).error = errorMessage(e)
     }
+  }
+
+  /** Alle laufenden Prozesse einer Instanz (der erste zuerst). */
+  function processes(id: string): { key: string; startedAt: number; accountId: string | null; main: boolean }[] {
+    const s = state(id)
+    const list = (extras.value[id] ?? []).map((e) => ({ key: e.key, startedAt: e.startedAt, accountId: e.accountId, main: false }))
+    if (s.mainAlive) list.unshift({ key: id, startedAt: s.startedAt ?? Date.now(), accountId: s.mainAccountId, main: true })
+    return list
+  }
+
+  /** „Beenden“: bei einem Prozess sofort, bei mehreren fragt der Dialog (einen oder alle). */
+  function requestStop(id: string) {
+    if (processes(id).length > 1) stopPrompt.value = id
+    else void stop(id)
   }
 
   const runningCount = computed(() => Object.values(states.value).filter((s) => s.phase !== 'idle').length)
@@ -214,5 +358,22 @@ export const useGamesStore = defineStore('games', () => {
       .sort((a, b) => a.startedAt - b.startedAt),
   )
 
-  return { states, state, init, launch, cancelLaunch, stop, runningCount, running }
+  return {
+    states,
+    state,
+    extras,
+    extraLogs,
+    extraPrompt,
+    stopPrompt,
+    extraBusy,
+    init,
+    launch,
+    launchExtra,
+    cancelLaunch,
+    stop,
+    processes,
+    requestStop,
+    runningCount,
+    running,
+  }
 })

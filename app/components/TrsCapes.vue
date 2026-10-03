@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TrsCape } from '~/utils/trs'
+import { capeFilters, capeOrigin, capeSorts, filterCapes, type CapeFilter, type CapeSort } from '~/utils/capeFilter'
 
 // TRS-Umhänge auf der Skins-Seite: Katalog mit Sperr-Status, Vorschau in der
 // großen 3D-Ansicht der Seite (per `preview`), Anlegen/Ablegen, Code einlösen,
@@ -40,6 +41,12 @@ async function claim() {
     busy.value = null
   }
 }
+// Suche, Filter, Sortierung und Info-Karte
+const query = ref('')
+const filter = ref<CapeFilter>('all')
+const sort = ref<CapeSort>('default')
+const shown = computed(() => filterCapes(capes.value ?? [], query.value, filter.value, sort.value))
+const infoCape = ref<TrsCape | null>(null)
 const pendingCount = computed(() => capes.value?.filter((c) => c.kind === 'upload' && c.status === 'pending').length ?? 0)
 
 async function load() {
@@ -237,8 +244,24 @@ function lockClass(cape: TrsCape) {
         <div v-for="i in 6" :key="i" class="skeleton h-32" />
       </div>
       <template v-else-if="capes">
+        <div v-if="capes.length > 1" class="mb-3 flex flex-wrap items-center gap-2" data-testid="trs-cape-filters">
+          <input
+            v-model="query"
+            type="search"
+            class="field min-w-40 flex-1 py-1.5 text-xs"
+            maxlength="48"
+            :placeholder="t('capes.filter.search')"
+            :aria-label="t('capes.filter.search')"
+          />
+          <select v-model="filter" class="field w-auto py-1.5 text-xs" :aria-label="t('capes.filter.label')">
+            <option v-for="f in capeFilters" :key="f" :value="f">{{ t(`capes.filter.${f}`) }}</option>
+          </select>
+          <select v-model="sort" class="field w-auto py-1.5 text-xs" :aria-label="t('capes.sort.label')">
+            <option v-for="s in capeSorts" :key="s" :value="s">{{ t(`capes.sort.${s}`) }}</option>
+          </select>
+        </div>
         <ul class="grid grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] gap-3" data-testid="trs-capes">
-          <li v-for="cape in capes" :key="cape.id">
+          <li v-for="cape in shown" :key="cape.id">
             <button
               class="card card-hover flex h-full w-full flex-col items-center gap-2 p-3"
               :class="{
@@ -289,6 +312,9 @@ function lockClass(cape: TrsCape) {
         </ul>
         <p v-if="!capes.length" class="card px-4 py-6 text-center text-sm text-base-400">
           {{ t('capes.empty') }}
+        </p>
+        <p v-else-if="!shown.length" class="card px-4 py-6 text-center text-sm text-base-400">
+          {{ t('capes.filter.none') }}
         </p>
 
         <!-- Aktionen für den angeprobten Umhang -->
@@ -377,6 +403,9 @@ function lockClass(cape: TrsCape) {
           >
             {{ t('common.actions.delete') }}
           </button>
+          <button class="btn btn-ghost px-3 py-1.5 text-xs" data-testid="trs-cape-info" @click="infoCape = selected">
+            {{ t('capes.actions.info') }}
+          </button>
           <button class="btn btn-ghost px-3 py-1.5 text-xs" @click="emit('preview', null)">{{ t('capes.actions.endPreview') }}</button>
         </div>
         <p v-if="pendingCount" class="mt-2 text-[11px] text-base-600">
@@ -385,7 +414,38 @@ function lockClass(cape: TrsCape) {
       </template>
     </TrsGate>
 
-    <BaseDialog v-if="hatOffer" :title="t('capes.hatDialog.title', { name: hatOffer.name })" @close="hatOffer = null">
+    <BaseDialog v-if="infoCape" :title="infoCape.name" @close="infoCape = null">
+      <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm" data-testid="trs-cape-info-card">
+        <dt class="text-base-400">{{ t('capes.info.source') }}</dt>
+        <dd>{{ t(`capes.info.origin.${capeOrigin(infoCape)}`) }}</dd>
+        <template v-if="infoCape.shared">
+          <dt class="text-base-400">{{ t('capes.info.from') }}</dt>
+          <dd>{{ infoCape.shared.from.name }} ({{ t('capes.info.creator', { name: infoCape.shared.creator.name }) }})</dd>
+        </template>
+        <dt class="text-base-400">{{ t('capes.info.animated') }}</dt>
+        <dd>{{ infoCape.frames > 1 ? t('capes.info.framesYes', { n: infoCape.frames }) : t('capes.info.no') }}</dd>
+        <dt class="text-base-400">{{ t('capes.info.size') }}</dt>
+        <dd>{{ infoCape.width }} × {{ infoCape.height }}</dd>
+        <dt class="text-base-400">{{ t('capes.info.status') }}</dt>
+        <dd>{{ infoCape.owned ? t('capes.info.owned') : t('capes.info.notOwned') }}</dd>
+        <template v-if="infoCape.shareable || infoCape.holders">
+          <dt class="text-base-400">{{ t('capes.info.holders') }}</dt>
+          <dd>{{ infoCape.holders }}</dd>
+        </template>
+        <dt class="text-base-400">{{ t('capes.info.how') }}</dt>
+        <dd>
+          <template v-if="infoCape.kind === 'upload' && infoCape.status === 'pending'">{{ t('capes.selected.pending') }}</template>
+          <template v-else-if="infoCape.owned">{{ t('capes.info.howOwned') }}</template>
+          <template v-else-if="infoCape.unlock === 'code'">{{ t('capes.selected.lockedCode') }}</template>
+          <template v-else-if="infoCape.unlock === 'event'">{{ t('capes.selected.event') }}</template>
+          <template v-else>{{ t('capes.selected.lockedTeam') }}</template>
+        </dd>
+      </dl>
+      <template #actions>
+        <button class="btn btn-primary" @click="infoCape = null">{{ t('common.actions.close') }}</button>
+      </template>
+    </BaseDialog>
+    <BaseDialog v-if="hatOffer":title="t('capes.hatDialog.title', { name: hatOffer.name })" @close="hatOffer = null">
       <p class="text-sm text-base-300">{{ t('capes.hatDialog.text') }}</p>
       <template #actions>
         <button class="btn btn-ghost" @click="hatOffer = null">{{ t('capes.hatDialog.later') }}</button>

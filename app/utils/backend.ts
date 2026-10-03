@@ -110,6 +110,7 @@ import {
   type PrepareProgress,
 } from './hosting'
 import type {
+  BedrockInfo,
   FpsMode,
   Account,
   AdoptResult,
@@ -332,8 +333,17 @@ export const backend = {
     taskId: string | null = null,
     joinAddress: string | null = null,
     joinWorld: HostedWorld | null = null,
-  ) => call<number>('launch_instance', { id, joinServer, joinAddress, joinWorld, onProgress: channel(onProgress), taskId }),
-  stopInstance: (id: string) => call<boolean>('stop_instance', { id }),
+    /** Instanz noch einmal starten, obwohl sie läuft (eigener Prozess) */
+    extra = false,
+    /** Konto für diesen Start (sonst das aktive) */
+    accountId: string | null = null,
+  ) =>
+    call<number>('launch_instance', { id, joinServer, joinAddress, joinWorld, onProgress: channel(onProgress), taskId, extra, accountId }),
+  /** Ohne `key` werden alle Prozesse der Instanz beendet, sonst genau der eine. */
+  stopInstance: (id: string, key: string | null = null) => call<boolean>('stop_instance', { id, key }),
+  /** Ist Minecraft Bedrock (Microsoft Store) installiert? Nur Windows. */
+  bedrockInfo: () => call<BedrockInfo>('bedrock_info'),
+  launchBedrock: () => call<void>('launch_bedrock'),
   runningGames: () => call<RunningGame[]>('running_games'),
   getGameLogs: (id: string) => call<LogLine[]>('get_game_logs', { id }),
   repairInstance: (id: string, onProgress: (p: StageProgress) => void, taskId: string | null = null) =>

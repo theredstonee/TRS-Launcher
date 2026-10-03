@@ -287,6 +287,8 @@ pub fn run() {
             commands::games::launch_instance,
             commands::games::stop_instance,
             commands::games::running_games,
+            commands::games::bedrock_info,
+            commands::games::launch_bedrock,
             commands::games::get_game_logs,
             commands::games::repair_instance,
             commands::games::share_log,

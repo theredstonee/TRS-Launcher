@@ -193,6 +193,11 @@ pub fn os_description() -> String {
 
 // --- Arbeitsspeicher --------------------------------------------------------------------------
 
+/// Store-Pakete gibt es unter Linux nicht.
+pub fn appx_package_installed(_matches: impl Fn(&str) -> bool) -> bool {
+    false
+}
+
 /// Eingebauter Arbeitsspeicher in MB (`MemTotal` aus `/proc/meminfo`).
 pub fn total_memory_mb() -> Option<u32> {
     std::fs::read_to_string("/proc/meminfo").ok().as_deref().and_then(super::parse_meminfo)

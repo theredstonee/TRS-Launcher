@@ -427,7 +427,8 @@
       "signInFirst": "Lütfen önce “Hesaplar” bölümünden Microsoft hesabınla giriş yap.",
       "stopAllGamesFirst": "Lütfen önce çalışan tüm oyunları kapat.",
       "syncAfterExitFailed": "Ayarlar diğer kurulumlarla eşitlenemedi.",
-      "dependenciesAdded": "Eksik bağımlılıklar eklendi: {list} ({mods} için gerekli)."
+      "dependenciesAdded": "Eksik bağımlılıklar eklendi: {list} ({mods} için gerekli).",
+      "accountMissing": "Seçilen hesap artık yok."
     },
     "loaders": {
       "invalidGameVersion": "Geçersiz Minecraft sürümü",
@@ -800,6 +801,10 @@
       "invalidCode": "Bu geçerli bir kod değil (biçim: XXX-XXX).",
       "expired": "Bu oturum açma isteği yok (artık) – web sitesinde oturum açmayı yeniden başlat.",
       "used": "Bu oturum açma isteği zaten yanıtlandı."
+    },
+    "bedrock": {
+      "notInstalled": "Minecraft Bedrock bu bilgisayarda yüklü değil.",
+      "startFailed": "Minecraft Bedrock başlatılamadı."
     }
   },
   "browse": {
@@ -2040,7 +2045,9 @@
       "showSnapshotsTitle": "Snapshot'ları göster",
       "showSnapshotsDescription": "Sürüm seçicide snapshot'ları ve eski sürümleri varsayılan olarak dahil et.",
       "restartOnboardingTitle": "Başlangıç sihirbazını tekrar çalıştır",
-      "restartOnboardingDescription": "Giriş yapma ve ilk kurulum adımlarında sana bir kez daha rehberlik eder."
+      "restartOnboardingDescription": "Giriş yapma ve ilk kurulum adımlarında sana bir kez daha rehberlik eder.",
+      "showBedrockTitle": "Minecraft Bedrock’ı kitaplıkta göster",
+      "showBedrockDescription": "Microsoft Store sürümü yüklüyse bir kart onu buradan başlatır."
     },
     "profile": {
       "title": "Minecraft hesapları",
@@ -2763,7 +2770,30 @@
     "starting": "Başlatılıyor …",
     "startingShort": "Başlatılıyor",
     "runningNow": "Şu an çalışıyor",
-    "preparing": "Hazırlanıyor …"
+    "preparing": "Hazırlanıyor …",
+    "again": {
+      "menu": "Tekrar başlat",
+      "title": "{name} tekrar başlat",
+      "taskTitle": "{name} (ikinci başlatma)",
+      "intro": "Profil zaten çalışıyor. İkinci oyun kendi işlemi olarak başlar, örneğin başka bir hesapla oynamak için.",
+      "account": "Bu başlatma için hesap",
+      "active": "etkin",
+      "noAccounts": "Hesap yok – demo modu",
+      "sameAccount": "Bu hesapla zaten oynanıyor. Sunucular genellikle aynı hesabı iki kez kabul etmez.",
+      "worldHint": "İki oyun da aynı kayıt klasörünü kullanır. Aynı tek kişilik dünyayı ikisinde birden açma – dünya bozulabilir.",
+      "noLink": "İkinci oyun TRS Link özellikleri olmadan çalışır (hesap değiştirme, klipler, çevrimiçi durum) – bunlar ilkinde kalır.",
+      "start": "Başlat",
+      "unknownAccount": "Bilinmeyen hesap"
+    },
+    "stopChoice": {
+      "title": "{name} durdur",
+      "intro": "Bu profilin birden fazla oyunu çalışıyor. Hangisi durdurulsun?",
+      "process": "Oyun {n}",
+      "since": "{time} saatinde başladı",
+      "all": "Hepsini durdur"
+    },
+    "stopMany": "Durdur ({n})",
+    "logProcess": "Günlük:"
   },
   "instanceCard": {
     "installing": "Yükleniyor",
@@ -3048,7 +3078,8 @@
       "remove": "Çıkar",
       "claim": "Ücretsiz al",
       "claiming": "Alınıyor …",
-      "endPreview": "Önizlemeyi bitir"
+      "endPreview": "Önizlemeyi bitir",
+      "info": "Ayrıntılar"
     },
     "pendingCount": "{n} pelerin onay bekliyor. | {n} pelerin onay bekliyor.",
     "redeemDialog": {
@@ -3139,6 +3170,49 @@
       "text": "Şimdi takmak ister misin? TRS Client’ta başında görürsün (üçüncü şahıs), diğer TRS oyuncuları da görür.",
       "wear": "Tak",
       "later": "Sonra"
+    },
+    "filter": {
+      "search": "Pelerinleri ada göre ara",
+      "label": "Filtre",
+      "all": "Tüm pelerinler",
+      "animated": "Animasyonlu",
+      "owned": "Açılmış",
+      "available": "Henüz açılmamış",
+      "friends": "Arkadaşlardan",
+      "own": "Yüklediklerim",
+      "none": "Aramanla eşleşen pelerin yok."
+    },
+    "sort": {
+      "label": "Sırala",
+      "default": "Varsayılan sıra",
+      "name": "Ad A–Z",
+      "nameDesc": "Ad Z–A",
+      "ownedFirst": "Önce açılmışlar",
+      "animatedFirst": "Önce animasyonlular"
+    },
+    "info": {
+      "source": "Kaynak",
+      "from": "Paylaşan",
+      "creator": "{name} yapmış",
+      "animated": "Animasyonlu",
+      "framesYes": "Evet, {n} kare",
+      "no": "Hayır",
+      "size": "Boyut (piksel)",
+      "status": "Durum",
+      "owned": "Senin için açık",
+      "notOwned": "Henüz açılmadı",
+      "holders": "Paylaşılan",
+      "how": "Nasıl alınır",
+      "howOwned": "Zaten sende – başkalarının görmesi için tak.",
+      "origin": {
+        "friend": "Bir arkadaş paylaştı",
+        "upload": "Oyuncu yüklemesi",
+        "event": "Etkinlik pelerini",
+        "code": "Kodlu pelerin (çekilişler, ortaklar)",
+        "team": "TRS ekibi pelerini",
+        "free": "Herkes için TRS pelerini",
+        "other": "TRS pelerini"
+      }
     }
   },
   "headCosmetics": {
@@ -5414,5 +5488,13 @@
     "logs": "Günlükler hakkında yardım",
     "java": "Java rehberi",
     "linux": "Linux rehberi"
+  },
+  "bedrock": {
+    "label": "Bedrock",
+    "title": "Minecraft Bedrock",
+    "subtitle": "Microsoft Store / Xbox uygulaması",
+    "hint": "Yüklü oyunu başlatır – profil ve mod yok",
+    "playLabel": "Minecraft Bedrock’ı başlat",
+    "started": "Minecraft Bedrock başlıyor …"
   }
 }

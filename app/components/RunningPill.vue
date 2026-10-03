@@ -48,7 +48,7 @@ function uptime(startedAt: number): string {
 async function stop(id: string) {
   stopping.value = new Set([...stopping.value, id])
   try {
-    await games.stop(id)
+    games.requestStop(id)
   } finally {
     const next = new Set(stopping.value)
     next.delete(id)

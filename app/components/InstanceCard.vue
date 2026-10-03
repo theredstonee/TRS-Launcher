@@ -22,7 +22,7 @@ const percent = computed(() =>
 
 function play() {
   if (game.value.phase === 'idle') games.launch(props.instance.id)
-  else if (game.value.phase === 'running') games.stop(props.instance.id)
+  else if (game.value.phase === 'running') games.requestStop(props.instance.id)
 }
 
 function openFolder() {
@@ -124,6 +124,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
         </button>
         <div v-if="menu === 'main'" class="menu right-0 bottom-8" role="menu">
           <button class="menu-item" role="menuitem" :disabled="game.phase !== 'idle' || !!install" @click="menu = null; games.launch(instance.id)">{{ t('common.actions.play') }}</button>
+          <button v-if="game.phase === 'running'" class="menu-item" role="menuitem" :disabled="games.extraBusy.has(instance.id)" data-testid="card-play-again" @click="menu = null; games.extraPrompt = instance.id">{{ t('play.again.menu') }}</button>
           <NuxtLink :to="{ path: `/instances/${instance.id}`, query: { settings: 'general' } }" class="menu-item" role="menuitem">{{ t('instanceCard.settings') }}</NuxtLink>
           <button class="menu-item justify-between" role="menuitem" @click="menu = 'groups'">
             {{ t('instanceCard.moveToGroup') }}

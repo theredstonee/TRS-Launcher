@@ -427,7 +427,8 @@
       "signInFirst": "Najpierw zaloguj się kontem Microsoft w sekcji „Konta”.",
       "stopAllGamesFirst": "Najpierw zamknij wszystkie uruchomione gry.",
       "syncAfterExitFailed": "Nie udało się zsynchronizować ustawień z innymi instancjami.",
-      "dependenciesAdded": "Dodano brakujące zależności: {list} (potrzebne dla {mods})."
+      "dependenciesAdded": "Dodano brakujące zależności: {list} (potrzebne dla {mods}).",
+      "accountMissing": "Wybrane konto już nie istnieje."
     },
     "loaders": {
       "invalidGameVersion": "Nieprawidłowa wersja Minecrafta",
@@ -800,6 +801,10 @@
       "invalidCode": "To nie jest prawidłowy kod (format: XXX-XXX).",
       "expired": "To żądanie logowania nie istnieje (już) – zacznij logowanie na stronie od nowa.",
       "used": "Na to żądanie logowania już odpowiedziano."
+    },
+    "bedrock": {
+      "notInstalled": "Minecraft Bedrock nie jest zainstalowany na tym komputerze.",
+      "startFailed": "Nie udało się uruchomić Minecraft Bedrock."
     }
   },
   "browse": {
@@ -2040,7 +2045,9 @@
       "showSnapshotsTitle": "Pokazuj snapshoty",
       "showSnapshotsDescription": "Domyślnie uwzględniaj snapshoty i stare wersje w wyborze wersji.",
       "restartOnboardingTitle": "Uruchom konfigurację ponownie",
-      "restartOnboardingDescription": "Jeszcze raz przeprowadzi cię przez logowanie i pierwszą instancję."
+      "restartOnboardingDescription": "Jeszcze raz przeprowadzi cię przez logowanie i pierwszą instancję.",
+      "showBedrockTitle": "Pokaż Minecraft Bedrock w bibliotece",
+      "showBedrockDescription": "Jeśli zainstalowana jest wersja z Microsoft Store, karta uruchamia ją stąd."
     },
     "profile": {
       "title": "Konta Minecraft",
@@ -2763,7 +2770,30 @@
     "starting": "Uruchamianie …",
     "startingShort": "Uruchamianie",
     "runningNow": "Uruchomiona",
-    "preparing": "Przygotowywanie …"
+    "preparing": "Przygotowywanie …",
+    "again": {
+      "menu": "Uruchom ponownie",
+      "title": "Uruchom {name} ponownie",
+      "taskTitle": "{name} (drugie uruchomienie)",
+      "intro": "Instancja już działa. Druga gra startuje jako osobny proces, na przykład aby grać z innym kontem.",
+      "account": "Konto do tego uruchomienia",
+      "active": "aktywne",
+      "noAccounts": "Brak kont – tryb demo",
+      "sameAccount": "To konto już gra. Serwery zwykle nie przyjmują tego samego konta dwa razy.",
+      "worldHint": "Obie gry używają tego samego folderu zapisów. Nie otwieraj tego samego świata jednoosobowego w obu – może to go uszkodzić.",
+      "noLink": "Druga gra działa bez funkcji TRS Link (zmiana konta, klipy, status online) – zostają przy pierwszej.",
+      "start": "Uruchom",
+      "unknownAccount": "Nieznane konto"
+    },
+    "stopChoice": {
+      "title": "Zatrzymaj {name}",
+      "intro": "Działa kilka gier tej instancji. Którą zatrzymać?",
+      "process": "Gra {n}",
+      "since": "Uruchomiona o {time}",
+      "all": "Zatrzymaj wszystkie"
+    },
+    "stopMany": "Zatrzymaj ({n})",
+    "logProcess": "Log z"
   },
   "instanceCard": {
     "installing": "Instalowanie",
@@ -3048,7 +3078,8 @@
       "remove": "Zdejmij",
       "claim": "Weź za darmo",
       "claiming": "Pobieranie …",
-      "endPreview": "Zakończ podgląd"
+      "endPreview": "Zakończ podgląd",
+      "info": "Szczegóły"
     },
     "pendingCount": "{n} peleryna czeka na zatwierdzenie. | {n} peleryny czekają na zatwierdzenie. | {n} peleryn czeka na zatwierdzenie.",
     "redeemDialog": {
@@ -3139,6 +3170,49 @@
       "text": "Założyć teraz? Zobaczysz go na głowie w TRS Client (trzecia osoba), podobnie jak inni gracze TRS.",
       "wear": "Załóż",
       "later": "Później"
+    },
+    "filter": {
+      "search": "Szukaj peleryn po nazwie",
+      "label": "Filtr",
+      "all": "Wszystkie peleryny",
+      "animated": "Animowane",
+      "owned": "Odblokowane",
+      "available": "Jeszcze nieodblokowane",
+      "friends": "Od znajomych",
+      "own": "Moje przesłane",
+      "none": "Żadna peleryna nie pasuje do wyszukiwania."
+    },
+    "sort": {
+      "label": "Sortuj",
+      "default": "Kolejność domyślna",
+      "name": "Nazwa A–Z",
+      "nameDesc": "Nazwa Z–A",
+      "ownedFirst": "Najpierw odblokowane",
+      "animatedFirst": "Najpierw animowane"
+    },
+    "info": {
+      "source": "Pochodzenie",
+      "from": "Udostępnione przez",
+      "creator": "stworzona przez {name}",
+      "animated": "Animowana",
+      "framesYes": "Tak, {n} klatek",
+      "no": "Nie",
+      "size": "Rozmiar (piksele)",
+      "status": "Stan",
+      "owned": "Odblokowana dla ciebie",
+      "notOwned": "Jeszcze nieodblokowana",
+      "holders": "Udostępniona",
+      "how": "Jak zdobyć",
+      "howOwned": "Już ją masz – załóż ją, aby inni ją widzieli.",
+      "origin": {
+        "friend": "Udostępniona przez znajomego",
+        "upload": "Przesłana przez gracza",
+        "event": "Peleryna eventowa",
+        "code": "Peleryna z kodem (akcje, partnerzy)",
+        "team": "Peleryna zespołu TRS",
+        "free": "Peleryna TRS dla wszystkich",
+        "other": "Peleryna TRS"
+      }
     }
   },
   "headCosmetics": {
@@ -5414,5 +5488,13 @@
     "logs": "Pomoc dotycząca logów",
     "java": "Poradnik Java",
     "linux": "Poradnik dla Linuksa"
+  },
+  "bedrock": {
+    "label": "Bedrock",
+    "title": "Minecraft Bedrock",
+    "subtitle": "Microsoft Store / aplikacja Xbox",
+    "hint": "Uruchamia zainstalowaną grę – bez instancji i modów",
+    "playLabel": "Uruchom Minecraft Bedrock",
+    "started": "Minecraft Bedrock się uruchamia …"
   }
 }

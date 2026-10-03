@@ -10,6 +10,7 @@ const meta = useMetaStore()
 const toasts = useToasts()
 const shell = useUiStore()
 const packs = usePacksStore()
+const bedrock = useBedrockStore()
 
 const newGroupFor = ref<{ preselect: string | null } | null>(null)
 const toDelete = ref<Instance | null>(null)
@@ -48,6 +49,7 @@ const collapsed = ref<Set<string>>(new Set())
 
 onMounted(() => {
   void packs.checkUpdates()
+  void bedrock.load()
   instances.load()
   if (!settings.current) settings.load().catch(() => {})
   meta.loadManifest().catch(() => {})
@@ -65,6 +67,11 @@ const activeFilters = computed(() => prefs.loaders.length + prefs.versions.lengt
 const visible = computed(() =>
   sortInstances(filterInstances(instances.items, { query: search.value, loaders: prefs.loaders, versions: prefs.versions }), prefs.sort, versionOrder.value),
 )
+// Bedrock-Karte: bei einer Suche nur, wenn der Suchtext dazu passt.
+const showBedrock = computed(() => {
+  const q = search.value.trim().toLowerCase()
+  return bedrock.visible && (!q || 'minecraft bedrock'.includes(q))
+})
 const grouped = computed(() => groupInstances(visible.value, prefs.groupBy, versionOrder.value))
 
 function toggleIn<T>(list: T[], value: T) {
@@ -175,6 +182,12 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeFilter))
         </div>
       </div>
     </div>
+
+    <section v-if="showBedrock" class="mb-6" :aria-label="t('bedrock.title')">
+      <div class="grid gap-4" :class="ui?.compactLibrary ? 'grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))]' : 'grid-cols-[repeat(auto-fill,minmax(13rem,1fr))]'">
+        <BedrockCard />
+      </div>
+    </section>
 
     <div v-if="instances.loading && !instances.items.length" class="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-4">
       <div v-for="i in 5" :key="i" class="skeleton h-44 rounded-xl" />

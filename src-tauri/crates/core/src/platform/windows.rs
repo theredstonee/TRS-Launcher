@@ -118,6 +118,44 @@ pub fn dedicated_gpu_env(_program: &Path) -> Vec<(String, String)> {
     Vec::new()
 }
 
+// --- Microsoft Store: installierte Pakete --------------------------------------------------
+
+/// Gibt es für den aktuellen Benutzer ein installiertes Store-Paket, dessen Vollname (`Name_Version_Arch__Herausgeber`)
+/// `matches` erfüllt? Liest nur den Registry-Zweig der Paketverwaltung (HKCU) – ohne Adminrechte.
+pub fn appx_package_installed(matches: impl Fn(&str) -> bool) -> bool {
+    use windows::Win32::Foundation::ERROR_SUCCESS;
+    use windows::Win32::System::Registry::{HKEY, HKEY_CURRENT_USER, KEY_READ, RegCloseKey, RegEnumKeyExW, RegOpenKeyExW};
+    use windows::core::{HSTRING, PCWSTR, PWSTR};
+
+    let path = HSTRING::from("Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages");
+    let mut key = HKEY::default();
+    // SAFETY: Pfad ist nullterminiert, `key` wird unten wieder geschlossen.
+    if unsafe { RegOpenKeyExW(HKEY_CURRENT_USER, PCWSTR(path.as_ptr()), None, KEY_READ, &mut key) } != ERROR_SUCCESS {
+        return false;
+    }
+    let mut found = false;
+    let mut index = 0u32;
+    loop {
+        let mut buf = [0u16; 256];
+        let mut len = buf.len() as u32;
+        // SAFETY: Puffer und Länge (in Zeichen) passen zusammen; die übrigen Ausgaben sind optional.
+        let status = unsafe { RegEnumKeyExW(key, index, Some(PWSTR(buf.as_mut_ptr())), &mut len, None, None, None, None) };
+        if status != ERROR_SUCCESS {
+            break;
+        }
+        index += 1;
+        if matches(&String::from_utf16_lossy(&buf[..(len as usize).min(buf.len())])) {
+            found = true;
+            break;
+        }
+    }
+    // SAFETY: `key` wurde oben geöffnet.
+    unsafe {
+        let _ = RegCloseKey(key);
+    }
+    found
+}
+
 // --- Systemname ------------------------------------------------------------------------
 
 fn read_version_string(name: &str) -> Option<String> {

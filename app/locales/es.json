@@ -427,7 +427,8 @@
       "signInFirst": "Primero inicia sesión con tu cuenta de Microsoft en «Cuentas».",
       "stopAllGamesFirst": "Cierra primero todos los juegos en ejecución.",
       "syncAfterExitFailed": "No se han podido sincronizar los ajustes con las demás instancias.",
-      "dependenciesAdded": "Dependencias que faltaban añadidas: {list} (las necesita {mods})."
+      "dependenciesAdded": "Dependencias que faltaban añadidas: {list} (las necesita {mods}).",
+      "accountMissing": "La cuenta elegida ya no existe."
     },
     "loaders": {
       "invalidGameVersion": "Versión de Minecraft no válida",
@@ -800,6 +801,10 @@
       "invalidCode": "No es un código válido (formato: XXX-XXX).",
       "expired": "Esta solicitud de inicio de sesión no existe (ya): vuelve a empezar en la web.",
       "used": "Esta solicitud de inicio de sesión ya se respondió."
+    },
+    "bedrock": {
+      "notInstalled": "Minecraft Bedrock no está instalado en este PC.",
+      "startFailed": "No se pudo iniciar Minecraft Bedrock."
     }
   },
   "browse": {
@@ -2040,7 +2045,9 @@
       "showSnapshotsTitle": "Mostrar snapshots",
       "showSnapshotsDescription": "Snapshots y versiones antiguas en el selector de versiones de forma predeterminada.",
       "restartOnboardingTitle": "Repetir la configuración inicial",
-      "restartOnboardingDescription": "Te guía de nuevo por el inicio de sesión y la primera instancia."
+      "restartOnboardingDescription": "Te guía de nuevo por el inicio de sesión y la primera instancia.",
+      "showBedrockTitle": "Mostrar Minecraft Bedrock en la biblioteca",
+      "showBedrockDescription": "Si la versión de Microsoft Store está instalada, una tarjeta la inicia desde aquí."
     },
     "profile": {
       "title": "Cuentas de Minecraft",
@@ -2763,7 +2770,30 @@
     "starting": "Iniciando …",
     "startingShort": "Iniciando",
     "runningNow": "En ejecución",
-    "preparing": "Preparando …"
+    "preparing": "Preparando …",
+    "again": {
+      "menu": "Iniciar de nuevo",
+      "title": "Iniciar {name} de nuevo",
+      "taskTitle": "{name} (segundo inicio)",
+      "intro": "La instancia ya se está ejecutando. Un segundo juego arranca como proceso propio, por ejemplo para jugar con otra cuenta.",
+      "account": "Cuenta para este inicio",
+      "active": "activa",
+      "noAccounts": "Sin cuentas – modo demo",
+      "sameAccount": "Esta cuenta ya está jugando. Los servidores suelen no aceptar la misma cuenta dos veces.",
+      "worldHint": "Ambos juegos usan la misma carpeta de partidas. No abras el mismo mundo de un jugador en los dos: puede dañar el mundo.",
+      "noLink": "El segundo juego funciona sin las funciones de TRS Link (cambio de cuenta, clips, estado en línea): se quedan con el primero.",
+      "start": "Iniciar",
+      "unknownAccount": "Cuenta desconocida"
+    },
+    "stopChoice": {
+      "title": "Detener {name}",
+      "intro": "Hay varios juegos de esta instancia en ejecución. ¿Cuál quieres detener?",
+      "process": "Juego {n}",
+      "since": "Iniciado a las {time}",
+      "all": "Detener todos"
+    },
+    "stopMany": "Detener ({n})",
+    "logProcess": "Registro de"
   },
   "instanceCard": {
     "installing": "Instalando",
@@ -3048,7 +3078,8 @@
       "remove": "Quitársela",
       "claim": "Conseguir gratis",
       "claiming": "Consiguiendo …",
-      "endPreview": "Terminar vista previa"
+      "endPreview": "Terminar vista previa",
+      "info": "Detalles"
     },
     "pendingCount": "{n} capa pendiente de aprobación. | {n} capas pendientes de aprobación.",
     "redeemDialog": {
@@ -3139,6 +3170,49 @@
       "text": "¿Ponértelo ahora? Lo verás en tu cabeza en el TRS Client (tercera persona), igual que otros jugadores de TRS.",
       "wear": "Ponerse",
       "later": "Más tarde"
+    },
+    "filter": {
+      "search": "Buscar capas por nombre",
+      "label": "Filtro",
+      "all": "Todas las capas",
+      "animated": "Animadas",
+      "owned": "Desbloqueadas",
+      "available": "Aún sin desbloquear",
+      "friends": "De amigos",
+      "own": "Mis subidas",
+      "none": "Ninguna capa coincide con tu búsqueda."
+    },
+    "sort": {
+      "label": "Ordenar",
+      "default": "Orden predeterminado",
+      "name": "Nombre A–Z",
+      "nameDesc": "Nombre Z–A",
+      "ownedFirst": "Desbloqueadas primero",
+      "animatedFirst": "Animadas primero"
+    },
+    "info": {
+      "source": "Origen",
+      "from": "Compartida por",
+      "creator": "creada por {name}",
+      "animated": "Animada",
+      "framesYes": "Sí, {n} fotogramas",
+      "no": "No",
+      "size": "Tamaño (píxeles)",
+      "status": "Estado",
+      "owned": "Desbloqueada para ti",
+      "notOwned": "Aún sin desbloquear",
+      "holders": "Compartida con",
+      "how": "Cómo conseguirla",
+      "howOwned": "Ya la tienes: póntela para que otros la vean.",
+      "origin": {
+        "friend": "Compartida por un amigo",
+        "upload": "Subida de un jugador",
+        "event": "Capa de evento",
+        "code": "Capa por código (sorteos, socios)",
+        "team": "Capa del equipo TRS",
+        "free": "Capa TRS para todos",
+        "other": "Capa TRS"
+      }
     }
   },
   "headCosmetics": {
@@ -5414,5 +5488,13 @@
     "logs": "Ayuda con los registros",
     "java": "Guía de Java",
     "linux": "Guía para Linux"
+  },
+  "bedrock": {
+    "label": "Bedrock",
+    "title": "Minecraft Bedrock",
+    "subtitle": "Microsoft Store / app de Xbox",
+    "hint": "Inicia el juego instalado: sin instancia ni mods",
+    "playLabel": "Iniciar Minecraft Bedrock",
+    "started": "Minecraft Bedrock se está iniciando …"
   }
 }

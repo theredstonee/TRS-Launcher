@@ -201,6 +201,7 @@ export const settingsSchema = z
     trsSync: z.boolean().default(true),
     social: socialSettingsSchema,
     modpackTrsClient: z.enum(['ask', 'always', 'never']).default('ask'),
+    showBedrock: z.boolean().default(true),
   })
   .passthrough()
   .refine((s) => s.minMemoryMb <= s.maxMemoryMb, {

@@ -81,6 +81,8 @@ pub struct Settings {
     /// (Standard) oder immer mit bzw. ohne.
     #[serde(deserialize_with = "crate::trs_choice::lenient_policy")]
     pub modpack_trs_client: crate::trs_choice::ModpackTrsPolicy,
+    /// „Minecraft Bedrock“ in der Bibliothek zeigen, wenn es installiert ist (nur Windows) – ab Werk an.
+    pub show_bedrock: bool,
 }
 
 /// Ecken für Benachrichtigungen.
@@ -350,6 +352,7 @@ impl Default for Settings {
             trs_sync: true,
             social: SocialSettings::default(),
             modpack_trs_client: crate::trs_choice::ModpackTrsPolicy::Ask,
+            show_bedrock: true,
         }
     }
 }
@@ -594,6 +597,10 @@ mod tests {
         assert!(old.discord_presence);
         let off: Settings = serde_json::from_str(r#"{"discordPresence":false}"#).unwrap();
         assert!(!off.discord_presence);
+        // Bedrock-Karte: ohne Feld an, abschaltbar.
+        assert!(old.show_bedrock);
+        let off: Settings = serde_json::from_str(r#"{"showBedrock":false}"#).unwrap();
+        assert!(!off.show_bedrock);
         // TRS-Synchronisation: ohne Feld (ältere Versionen) an, abschaltbar.
         assert!(old.trs_sync && Settings::default().trs_sync);
         let off: Settings = serde_json::from_str(r#"{"trsSync":false}"#).unwrap();

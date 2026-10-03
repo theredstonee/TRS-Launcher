@@ -427,7 +427,8 @@
       "signInFirst": "Please sign in with your Microsoft account under “Accounts” first.",
       "stopAllGamesFirst": "Please close all running games first.",
       "syncAfterExitFailed": "The settings couldn't be synced with the other instances.",
-      "dependenciesAdded": "Added missing dependencies: {list} (needed by {mods})."
+      "dependenciesAdded": "Added missing dependencies: {list} (needed by {mods}).",
+      "accountMissing": "The chosen account no longer exists."
     },
     "loaders": {
       "invalidGameVersion": "Invalid Minecraft version",
@@ -800,6 +801,10 @@
       "invalidCode": "That is not a valid code (format: XXX-XXX).",
       "expired": "This sign-in request doesn’t exist (anymore) – start the sign-in on the website again.",
       "used": "This sign-in request was already answered."
+    },
+    "bedrock": {
+      "notInstalled": "Minecraft Bedrock isn’t installed on this PC.",
+      "startFailed": "Minecraft Bedrock couldn’t be started."
     }
   },
   "browse": {
@@ -2040,7 +2045,9 @@
       "showSnapshotsTitle": "Show snapshots",
       "showSnapshotsDescription": "Include snapshots and old versions in the version picker by default.",
       "restartOnboardingTitle": "Run setup again",
-      "restartOnboardingDescription": "Walks you through signing in and your first instance once more."
+      "restartOnboardingDescription": "Walks you through signing in and your first instance once more.",
+      "showBedrockTitle": "Show Minecraft Bedrock in the library",
+      "showBedrockDescription": "If the Microsoft Store version is installed, a card starts it from here."
     },
     "profile": {
       "title": "Minecraft accounts",
@@ -2763,7 +2770,30 @@
     "starting": "Starting …",
     "startingShort": "Starting",
     "runningNow": "Running now",
-    "preparing": "Preparing …"
+    "preparing": "Preparing …",
+    "again": {
+      "menu": "Start again",
+      "title": "Start {name} again",
+      "taskTitle": "{name} (second start)",
+      "intro": "The instance is already running. A second game starts as its own process, for example to play with another account.",
+      "account": "Account for this start",
+      "active": "active",
+      "noAccounts": "No accounts – demo mode",
+      "sameAccount": "This account is already playing. Servers usually don’t accept the same account twice.",
+      "worldHint": "Both games use the same saves folder. Don’t open the same singleplayer world in both – it can corrupt the world.",
+      "noLink": "The second game runs without TRS Link features (account switching, clips, online status) – those stay with the first.",
+      "start": "Start",
+      "unknownAccount": "Unknown account"
+    },
+    "stopChoice": {
+      "title": "Stop {name}",
+      "intro": "Several games of this instance are running. Which one should be stopped?",
+      "process": "Game {n}",
+      "since": "Started at {time}",
+      "all": "Stop all"
+    },
+    "stopMany": "Stop ({n})",
+    "logProcess": "Log of"
   },
   "instanceCard": {
     "installing": "Installing",
@@ -3048,7 +3078,8 @@
       "remove": "Take off",
       "claim": "Get it free",
       "claiming": "Claiming …",
-      "endPreview": "End preview"
+      "endPreview": "End preview",
+      "info": "Details"
     },
     "pendingCount": "{n} cape is awaiting approval. | {n} capes are awaiting approval.",
     "redeemDialog": {
@@ -3139,6 +3170,49 @@
       "text": "Put it on now? You will see it on your head in the TRS Client (third person), and so will other TRS players.",
       "wear": "Put on",
       "later": "Later"
+    },
+    "filter": {
+      "search": "Search capes by name",
+      "label": "Filter",
+      "all": "All capes",
+      "animated": "Animated",
+      "owned": "Owned",
+      "available": "Not yet unlocked",
+      "friends": "From friends",
+      "own": "My uploads",
+      "none": "No cape matches your search."
+    },
+    "sort": {
+      "label": "Sort",
+      "default": "Default order",
+      "name": "Name A–Z",
+      "nameDesc": "Name Z–A",
+      "ownedFirst": "Unlocked first",
+      "animatedFirst": "Animated first"
+    },
+    "info": {
+      "source": "Source",
+      "from": "Shared by",
+      "creator": "made by {name}",
+      "animated": "Animated",
+      "framesYes": "Yes, {n} frames",
+      "no": "No",
+      "size": "Size (pixels)",
+      "status": "Status",
+      "owned": "Unlocked for you",
+      "notOwned": "Not unlocked yet",
+      "holders": "Shared with",
+      "how": "How to get it",
+      "howOwned": "You already have it – put it on so others can see it.",
+      "origin": {
+        "friend": "Shared by a friend",
+        "upload": "Player upload",
+        "event": "Event cape",
+        "code": "Code cape (giveaways, partners)",
+        "team": "TRS team cape",
+        "free": "TRS cape for everyone",
+        "other": "TRS cape"
+      }
     }
   },
   "headCosmetics": {
@@ -5414,5 +5488,13 @@
     "logs": "Help with logs",
     "java": "Java guide",
     "linux": "Linux guide"
+  },
+  "bedrock": {
+    "label": "Bedrock",
+    "title": "Minecraft Bedrock",
+    "subtitle": "Microsoft Store / Xbox app",
+    "hint": "Starts the installed game – no instance, no mods",
+    "playLabel": "Start Minecraft Bedrock",
+    "started": "Minecraft Bedrock is starting …"
   }
 }

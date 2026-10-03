@@ -28,6 +28,32 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Search, filter and details for TRS capes.** The cape list on the Skins page has a search field, filters
+  (animated, unlocked, not yet unlocked, from friends, my uploads) and sorting. "Details" shows where a cape comes
+  from, whether it is animated, its size and how to get it.
+- **Start an instance twice.** While an instance is running, "Start again" (card menu and instance page) starts a
+  second game of it – for example with another account. You pick the account (another one than the running game by
+  default) and get a hint not to open the same singleplayer world in both. Each game has its own log and play time;
+  "Stop" asks which one to stop, or stops all. The second game runs without TRS Link features.
+- **Start Minecraft Bedrock.** On Windows, a "Minecraft Bedrock" card appears in the library when the Microsoft
+  Store version is installed and starts it. You can hide it under Settings → Behavior. Not shown on Linux.
+
+### Deutsch
+- **Suche, Filter und Details für TRS-Umhänge.** Die Umhang-Liste auf der Skins-Seite hat ein Suchfeld, Filter
+  (animiert, freigeschaltet, noch nicht freigeschaltet, von Freunden, meine Uploads) und eine Sortierung. „Details“
+  zeigt, woher ein Umhang kommt, ob er animiert ist, seine Größe und wie man ihn bekommt.
+- **Instanz zweimal starten.** Läuft eine Instanz, startet „Nochmal starten“ (Kachel-Menü und Instanz-Seite) ein
+  zweites Spiel davon – zum Beispiel mit einem anderen Konto. Du wählst das Konto (standardmäßig ein anderes als beim
+  laufenden Spiel) und bekommst den Hinweis, dieselbe Einzelspieler-Welt nicht in beiden zu öffnen. Jedes Spiel hat
+  sein eigenes Log und seine eigene Spielzeit; „Beenden“ fragt, welches beendet werden soll, oder beendet alle. Das
+  zweite Spiel läuft ohne TRS-Link-Funktionen.
+- **Minecraft Bedrock starten.** Unter Windows erscheint in der Bibliothek eine Karte „Minecraft Bedrock“, wenn die
+  Version aus dem Microsoft Store installiert ist, und startet sie. Ausblenden geht unter Einstellungen → Verhalten.
+  Unter Linux wird sie nicht angezeigt.
+
 ## 0.17.0 – 2026-10-03 – Light Luggage | Leichtes Gepäck
 <!-- banner: accent=#ff3b30 motif=/news/0.17.0/banner.png -->
 <!-- shots:

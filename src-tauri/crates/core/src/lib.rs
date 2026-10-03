@@ -5,6 +5,7 @@
 //! Spielstart. Die Tauri-App ist nur eine dünne Command-Schicht darüber.
 
 pub mod auth;
+pub mod bedrock;
 pub mod boost;
 pub mod client_mod;
 pub mod clips;
@@ -225,20 +226,30 @@ impl Launcher {
         let paths = launcher.paths.clone();
         let sink = launcher.games.sink();
         let presence = Arc::clone(&launcher.trs.presence);
-        launcher.games.recover(|id| {
+        launcher.games.recover(|id, extra| {
             // Mit welchem Account das Spiel lief, ist nach dem Neustart unbekannt.
-            presence.game_started(id, None, None);
+            // Zusätzliche Prozesse derselben Instanz melden sich nirgends an (siehe `launch_inner`).
+            if !extra {
+                presence.game_started(id, None, None);
+            }
             let (paths, id, sink, presence, clips, discord, link) =
                 (paths.clone(), id.to_owned(), sink.clone(), presence.clone(), clips.clone(), discord.clone(), link.clone());
+            let still_running = launcher.games.running_probe();
             Box::new(move |seconds| {
-                presence.game_exited(&id);
-                clips.game_exited(&id);
-                discord.game_exited(&id);
-                link_game_exited(&link, &paths, &id);
+                if !extra {
+                    presence.game_exited(&id);
+                    clips.game_exited(&id);
+                    discord.game_exited(&id);
+                    link_game_exited(&link, &paths, &id);
+                }
                 tokio::spawn(async move {
                     let store = InstanceStore::new(paths.clone());
                     if let Err(e) = store.add_play_time(&id, seconds).await {
                         tracing::warn!("Spielzeit für '{id}' konnte nicht gespeichert werden: {e}");
+                    }
+                    // Nach-Beenden-Hook und Synchronisieren erst, wenn der letzte Prozess der Instanz zu ist.
+                    if still_running(&id) {
+                        return;
                     }
                     let Ok(instance) = store.get(&id).await else { return };
                     let settings = Settings::load(&paths.settings_file()).await.unwrap_or_default();
@@ -740,11 +751,28 @@ impl Launcher {
         join: Option<Join<'_>>,
         on_progress: &ProgressFn,
     ) -> Result<u32> {
+        self.launch_with(instance_id, join, LaunchOptions::default(), on_progress).await
+    }
+
+    /// Wie [`Self::launch`], aber mit Optionen: `extra` startet die Instanz noch einmal, obwohl sie
+    /// schon läuft (eigener Prozess, eigene Log-Dateien, kein TRS-Link/Clips/Discord/Online-Status –
+    /// die gehören dem ersten Prozess); `account_id` startet mit einem anderen Konto als dem aktiven.
+    pub async fn launch_with(
+        self: &Arc<Self>,
+        instance_id: &str,
+        join: Option<Join<'_>>,
+        options: LaunchOptions,
+        on_progress: &ProgressFn,
+    ) -> Result<u32> {
         let instance = self.instances.get(instance_id).await?;
         if let Some(Join::World(world)) = join {
             check_world_instance(&instance, world)?;
         }
-        if self.games.is_running(&instance.id) {
+        let extra = options.extra && self.games.is_running(&instance.id);
+        if extra && matches!(join, Some(Join::World(_))) {
+            return Err(Error::launch(crate::msg!("launcher.alreadyRunning", "Diese Instanz läuft bereits.")));
+        }
+        if !extra && self.games.is_running(&instance.id) {
             // Welt beitreten, während das Spiel schon läuft: die Anweisung geht direkt ans Spiel.
             if let Some(Join::World(world)) = join {
                 return self.hand_world_to_running_game(&instance.id, world);
@@ -758,7 +786,7 @@ impl Launcher {
             }
         }
 
-        let result = self.launch_inner(&instance, join, on_progress).await;
+        let result = self.launch_inner(&instance, join, extra, options.account_id.as_deref(), on_progress).await;
         self.preparing.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(&instance.id);
         result
     }
@@ -767,6 +795,8 @@ impl Launcher {
         self: &Arc<Self>,
         instance: &Instance,
         join_request: Option<Join<'_>>,
+        extra: bool,
+        account_id: Option<&str>,
         on_progress: &ProgressFn,
     ) -> Result<u32> {
         let world = match join_request {
@@ -788,9 +818,16 @@ impl Launcher {
             }
             None => (None, None),
         };
-        let session = match self.accounts.active_session().await? {
-            Some(session) => session,
-            None => demo_session()?,
+        let session = match account_id {
+            Some(id) => self
+                .accounts
+                .session_for(id, false)
+                .await?
+                .ok_or_else(|| Error::launch(crate::msg!("launcher.accountMissing", "Das gewählte Konto gibt es nicht mehr.")))?,
+            None => match self.accounts.active_session().await? {
+                Some(session) => session,
+                None => demo_session()?,
+            },
         };
         let settings = self.settings().await;
         // Für Discord zählt, was der Nutzer gewählt hat (Vanilla bleibt Vanilla,
@@ -888,7 +925,8 @@ impl Launcher {
         }
         // Gemeinsame options.txt & Co. holen. Scheitert das, startet das Spiel
         // mit den eigenen Dateien – dann wird auch nichts zurückkopiert.
-        if let Err(e) = sync::pull(&exit_plan.sync_dirs, &exit_plan.sync_items).await {
+        // (Nicht bei einem weiteren Prozess: Die Dateien gehören dem laufenden Spiel.)
+        if !extra && let Err(e) = sync::pull(&exit_plan.sync_dirs, &exit_plan.sync_items).await {
             tracing::warn!("Synchronisierung vor dem Start fehlgeschlagen: {e}");
         }
         // Noch keine options.txt (erster Start, auch nach Import/Modpack ohne Optionen):
@@ -928,17 +966,24 @@ impl Launcher {
         let id = instance.id.clone();
         let sink = self.games.sink();
         let plan = exit_plan.clone();
+        let still_running = self.games.running_probe();
         let on_exit = Box::new(move |play_seconds: u64| {
-            // Spiel zu: Der Launcher meldet sofort wieder „online“.
-            launcher.trs.presence.game_exited(&id);
-            launcher.clips.game_exited(&id);
-            launcher.discord.game_exited(&id);
-            link_game_exited(&launcher.link, &launcher.paths, &id);
+            if !extra {
+                // Spiel zu: Der Launcher meldet sofort wieder „online“.
+                launcher.trs.presence.game_exited(&id);
+                launcher.clips.game_exited(&id);
+                launcher.discord.game_exited(&id);
+                link_game_exited(&launcher.link, &launcher.paths, &id);
+            }
             tokio::spawn(async move {
+                // Jeder Prozess verbucht seine eigene Spielzeit.
                 if let Err(e) = launcher.instances.add_play_time(&id, play_seconds).await {
                     tracing::warn!("Spielzeit für '{id}' konnte nicht gespeichert werden: {e}");
                 }
-                plan.run(sink).await;
+                // Nach-Beenden-Hook und Synchronisieren erst nach dem letzten Prozess der Instanz.
+                if !still_running(&id) {
+                    plan.run(sink).await;
+                }
             });
         });
 
@@ -967,48 +1012,45 @@ impl Launcher {
             return Err(Error::launch(client_too_old()));
         }
         let mut secrets = vec![session.access_token.clone()];
-        match self.link.open_session(&instance.id, legacy_mod).await {
-            Ok(handoff) => {
-                command.env.retain(|(k, _)| k != link::ENV_VAR);
-                command.env.push(handoff.env());
-                secrets.push(handoff.secret().to_owned());
-                // Welt-Beitritt vormerken: Das Spiel bekommt ihn gleich nach der Link-Anmeldung.
-                if let Some(world) = world {
-                    self.link.queue_hosting_join(&instance.id, world.clone());
-                }
-            }
-            Err(e) if world.is_some() => return Err(e),
-            Err(e) => tracing::warn!("TRS-Link startet nicht: {e}"),
+        // Ein weiterer Prozess läuft ohne TRS-Link: Die Sitzung gehört dem ersten (Schlüssel = Instanz-ID).
+        if extra {
+            command.env.retain(|(k, _)| k != link::ENV_VAR);
+        } else {
+            self.link_open_for(&instance.id, legacy_mod, world, &mut command, &mut secrets).await?;
+            // Clips: Port (bzw. altes Token für Mods ≤ 0.5.0) und Status für die Mod.
+            self.clips.prepare(&instance.id, &game_dir, &settings.clips).await;
+            // Vor dem Start eintragen: Der Launcher meldet für dieses Konto ab jetzt `in-game`
+            // statt `online` (Live-TRS-Abzeichen), bis das Spiel beendet ist.
+            let presence_game = serde_json::to_value(instance.loader.kind)
+                .ok()
+                .and_then(|v| v.as_str().and_then(|loader| trs_api::PresenceGame::checked(&instance.game_version, loader)));
+            self.trs.presence.game_started(&instance.id, Some(&session.uuid), presence_game);
+            self.discord.game_started(discord::GameInfo { started_at: chrono::Utc::now().timestamp(), ..discord_game });
         }
-        // Clips: Port (bzw. altes Token für Mods ≤ 0.5.0) und Status für die Mod.
-        self.clips.prepare(&instance.id, &game_dir, &settings.clips).await;
-        // Vor dem Start eintragen: Der Launcher meldet für dieses Konto ab jetzt `in-game`
-        // statt `online` (Live-TRS-Abzeichen), bis das Spiel beendet ist.
-        let presence_game = serde_json::to_value(instance.loader.kind)
-            .ok()
-            .and_then(|v| v.as_str().and_then(|loader| trs_api::PresenceGame::checked(&instance.game_version, loader)));
-        self.trs.presence.game_started(&instance.id, Some(&session.uuid), presence_game);
-        self.discord.game_started(discord::GameInfo { started_at: chrono::Utc::now().timestamp(), ..discord_game });
-        let pid = match self.games.spawn(&instance.id, command, &log_dir, secrets, on_exit) {
+        let pid = match self.games.spawn(&instance.id, command, &log_dir, secrets, on_exit, extra) {
             Ok(pid) => pid,
             Err(e) => {
-                self.trs.presence.game_exited(&instance.id);
-                self.clips.game_exited(&instance.id);
-                self.discord.game_exited(&instance.id);
-                link_game_exited(&self.link, &self.paths, &instance.id);
+                if !extra {
+                    self.trs.presence.game_exited(&instance.id);
+                    self.clips.game_exited(&instance.id);
+                    self.discord.game_exited(&instance.id);
+                    link_game_exited(&self.link, &self.paths, &instance.id);
+                }
                 return Err(e);
             }
         };
-        self.link.set_pid(&instance.id, pid);
-        self.clips.game_started(
-            clips::RunningGame {
-                instance_id: instance.id.clone(),
-                instance_name: instance.name.clone(),
-                pid,
-                game_dir: game_dir.clone(),
-            },
-            &settings.clips,
-        );
+        if !extra {
+            self.link.set_pid(&instance.id, pid);
+            self.clips.game_started(
+                clips::RunningGame {
+                    instance_id: instance.id.clone(),
+                    instance_name: instance.name.clone(),
+                    pid,
+                    game_dir: game_dir.clone(),
+                },
+                &settings.clips,
+            );
+        }
         self.instances.touch_last_played(&instance.id).await?;
         let mut entry = HistoryEntry::new(HistoryKind::Launched);
         if let Some(label) = &join_label {
@@ -1018,6 +1060,31 @@ impl Launcher {
         // Erfolge: Spielstart mit lokaler Stunde (gesendet wird gesammelt im Hintergrund).
         self.trs.achievements.push(&session.uuid, trs_api::achievements::ReportKind::launch_now());
         Ok(pid)
+    }
+
+    /// TRS-Link-Sitzung für den ersten Prozess: Schlüssel nur über die Umgebung des Spielprozesses
+    /// (nie auf die Platte); ein Welt-Beitritt wird vorgemerkt und geht gleich nach der Anmeldung ans Spiel.
+    async fn link_open_for(
+        &self,
+        instance_id: &str,
+        legacy_mod: bool,
+        world: Option<&trs_api::hosting::HostedWorld>,
+        command: &mut launch::Command,
+        secrets: &mut Vec<String>,
+    ) -> Result<()> {
+        match self.link.open_session(instance_id, legacy_mod).await {
+            Ok(handoff) => {
+                command.env.retain(|(k, _)| k != link::ENV_VAR);
+                command.env.push(handoff.env());
+                secrets.push(handoff.secret().to_owned());
+                if let Some(world) = world {
+                    self.link.queue_hosting_join(instance_id, world.clone());
+                }
+            }
+            Err(e) if world.is_some() => return Err(e),
+            Err(e) => tracing::warn!("TRS-Link startet nicht: {e}"),
+        }
+        Ok(())
     }
 }
 
@@ -1111,6 +1178,15 @@ impl Launcher {
         let concurrency = usize::from(self.settings().await.concurrent_downloads);
         java::ensure_runtime(&self.http, &self.paths, component, concurrency, on_progress).await
     }
+}
+
+/// Optionen für [`Launcher::launch_with`].
+#[derive(Debug, Clone, Default)]
+pub struct LaunchOptions {
+    /// Instanz noch einmal starten, obwohl sie läuft (nur wirksam, wenn sie wirklich läuft).
+    pub extra: bool,
+    /// Konto für diesen Start (sonst das aktive).
+    pub account_id: Option<String>,
 }
 
 /// Direkt beitreten: Server aus der Launcher-Liste (ID), freie Adresse oder

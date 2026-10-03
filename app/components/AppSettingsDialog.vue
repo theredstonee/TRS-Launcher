@@ -405,6 +405,9 @@ async function allowFirewall() {
       <SettingRow :title="t('settings.behavior.closeOnLaunchTitle')" :description="t('settings.behavior.closeOnLaunchDescription')">
         <ToggleSwitch v-model="form.closeOnLaunch" :label="t('settings.behavior.closeOnLaunchTitle')" />
       </SettingRow>
+      <SettingRow v-if="caps.platform === 'windows'" :title="t('settings.behavior.showBedrockTitle')" :description="t('settings.behavior.showBedrockDescription')">
+        <ToggleSwitch v-model="form.showBedrock" :label="t('settings.behavior.showBedrockTitle')" />
+      </SettingRow>
       <SettingRow :title="t('settings.behavior.compactLibraryTitle')" :description="t('settings.behavior.compactLibraryDescription')">
         <ToggleSwitch v-model="form.ui.compactLibrary" :label="t('settings.behavior.compactLibraryTitle')" />
       </SettingRow>
