@@ -184,7 +184,7 @@ Beim Start spielt die API den Katalog in die DB ein und kopiert die PNGs nach `/
 
 Alles liegt in `assets/cosmetics/`:
 
-- `templates.json`: die festen 3D-Vorlagen. Das sind Voxel-Würfel mit UV-Netz oder Partikel-Definitionen. Das genaue Format mit Koordinatensystem und UV-Layout steht in API.md §11.
+- `templates.json`: die öffentlichen 3D-Vorlagen. Das sind Voxel-Würfel mit UV-Netz oder Partikel-Definitionen. Das genaue Format mit Koordinatensystem und UV-Layout steht in API.md §11. Die proprietäre Vorlage `duck` liegt nicht hier, sondern in `PRIVATE_ASSETS_DIR/cosmetics/templates.private.json` und wird beim Start angehängt.
 - `catalog.json` + PNGs: die mitgelieferten Teile.
 
 Regeln:

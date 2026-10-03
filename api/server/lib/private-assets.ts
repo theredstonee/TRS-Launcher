@@ -6,10 +6,12 @@ import { assertBuiltinCosmeticV1, assertBuiltinCosmeticV2, type AnyBuiltinCosmet
 import { buildV2Cosmetic } from './cosmetics-v2'
 import type { AppContext } from './context'
 import { MAX_UPLOAD_BYTES } from './png'
+import { parseTemplateEntry, type Template } from './templates'
 
 /**
  * Proprietäre Built-ins liegen außerhalb des Repos (GPL deckt sie nicht). Dieser Loader liest nur
- * bekannte Namen unter `PRIVATE_ASSETS_DIR`, warnt einmal je fehlendem Teil und wirft nie:
+ * bekannte Namen unter `PRIVATE_ASSETS_DIR`, warnt einmal je fehlendem Teil und wirft nie.
+ * Vorlagen: `cosmetics/templates.private.json` (gleiches Schema wie die öffentliche `templates.json`).
  * ein fehlender Ordner oder eine fehlende Datei darf den Start nicht abbrechen und keine
  * Besitz-Zeilen löschen. Die öffentlichen Kataloge bleiben streng (die werfen weiterhin).
  */
@@ -233,6 +235,59 @@ export function loadPrivateCapes(root: string, warn: Warn): PrivateLoad<BuiltinC
     loaded.push({ item, at })
   }
   return { loaded, reserved }
+}
+
+/** Liste aus `{ version: 1, templates: [...] }` oder einem nackten Array. Sonst `null` (Datei ungültig). */
+function templateEntries(json: unknown): unknown[] | null {
+  if (Array.isArray(json)) return json.length <= 64 ? json : null
+  if (!json || typeof json !== 'object') return null
+  const o = json as Record<string, unknown>
+  if (Object.keys(o).length !== 2 || o.version !== 1 || !Array.isArray(o.templates) || o.templates.length > 64) return null
+  return o.templates
+}
+
+/**
+ * Private Vorlagen aus `<root>/cosmetics/templates.private.json`. Eine fehlende Datei oder ein
+ * ungültiger Eintrag wird übersprungen (eine Warnung). Wirft nie.
+ */
+export function loadPrivateTemplates(root: string, warn: Warn): Template[] {
+  const file = readCapped(root, ['cosmetics', 'templates.private.json'], MAX_UPLOAD_BYTES)
+  if (file.kind === 'missing') {
+    warn('private template file missing – private templates skipped')
+    return []
+  }
+  if (file.kind !== 'ok') {
+    warn(`private templates ${fileProblem(file.kind, 'templates.private.json')} – private templates skipped`)
+    return []
+  }
+  let json: unknown
+  try {
+    json = JSON.parse(file.buf.toString('utf8'))
+  } catch {
+    warn('private template file invalid – private templates skipped')
+    return []
+  }
+  const list = templateEntries(json)
+  if (!list) {
+    warn('private template file invalid – private templates skipped')
+    return []
+  }
+  const out: Template[] = []
+  const seen = new Set<string>()
+  for (const raw of list) {
+    const parsed = parseTemplateEntry(raw)
+    if (!parsed.ok) {
+      warn(`private template ${parsed.id} skipped: ${parsed.reason}`)
+      continue
+    }
+    if (seen.has(parsed.template.id)) {
+      warn(`private template ${parsed.template.id} skipped: duplicate id`)
+      continue
+    }
+    seen.add(parsed.template.id)
+    out.push(parsed.template)
+  }
+  return out
 }
 
 /** Private Kosmetik aus `<root>/cosmetics/catalog.private.json` (v1-PNG und v2-Dateien). Wirft nie. */

@@ -482,6 +482,7 @@ export function buildRobots(siteUrl: string): string {
     // Kosmetik-Seite: Karten, Texturen und Modelle der 3D-Vorschau (öffentlich, zum Rendern der Seite)
     'Allow: /v1/cosmetics/*.png',
     'Allow: /v1/cosmetics/*/model.json',
+    'Allow: /v1/cosmetics/*/template.json',
     'Disallow: /v1/',
     'Disallow: /admin',
     'Disallow: /auth/',

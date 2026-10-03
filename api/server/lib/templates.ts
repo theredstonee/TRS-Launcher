@@ -3,8 +3,9 @@ import { sha256Hex } from './ids'
 import { encodeRgba } from './png'
 
 /**
- * Kosmetik-Vorlagen (feste 3D-Form + Texturmaße). Quelle: `assets/cosmetics/templates.json`.
- * Launcher (three.js) und Mod rendern beide aus genau diesen Daten – Koordinaten
+ * Kosmetik-Vorlagen (feste 3D-Form + Texturmaße). Öffentliche Quelle: `assets/cosmetics/templates.json`.
+ * Proprietäre Vorlagen (die Ente) kommen aus `PRIVATE_ASSETS_DIR/cosmetics/templates.private.json`
+ * und werden beim Start angehängt. Launcher und Mod rendern aus genau diesen Daten – Koordinaten
  * und UV-Netz sind in API.md §11 beschrieben.
  */
 
@@ -213,18 +214,56 @@ export const templatesFileSchema = z
 
 export type TemplatesFile = z.infer<typeof templatesFileSchema>
 
+/** Höchstzahl Vorlagen (öffentlich + privat), gleich dem Schema. */
+const MAX_TEMPLATES = 64
+
+/** Eine Vorlage prüfen (Schema + Layout). Wirft nie. */
+export function parseTemplateEntry(raw: unknown): { ok: true, template: Template } | { ok: false, id: string, reason: string } {
+  const id = raw && typeof raw === 'object' && 'id' in raw && typeof (raw as { id: unknown }).id === 'string'
+    ? ((raw as { id: string }).id.length > 0 && (raw as { id: string }).id.length <= 40 ? (raw as { id: string }).id : '?')
+    : '?'
+  const parsed = templateSchema.safeParse(raw)
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0]
+    const where = issue && issue.path.length > 0 ? `${issue.path.join('.')}: ` : ''
+    const reason = issue ? `${where}${issue.message}` : 'invalid entry'
+    return { ok: false, id, reason: reason.length > 180 ? `${reason.slice(0, 177)}...` : reason }
+  }
+  const t = parsed.data
+  if (t.kind === 'model' && !t.rig && t.cubes.some((c) => c.anim === 'look' || c.anim === 'quack' || c.anim === 'blink' || c.anim === 'wing')) {
+    return { ok: false, id: t.id, reason: 'look/quack/blink/wing need a rig' }
+  }
+  let reason = ''
+  checkLayout(t, (message) => { if (!reason) reason = message })
+  if (reason) return { ok: false, id: t.id, reason }
+  return { ok: true, template: t }
+}
+
+/** JSON-Körper von `GET /v1/cosmetics/{id}/template.json` und sein sha256. */
+export interface ServedTemplate {
+  json: string
+  sha256: string
+}
+
 /** Geladene Vorlagen + fertig serialisierte Antwort (mit ETag) für `GET /v1/cosmetics/templates`. */
 export class TemplateSet {
   readonly byId: ReadonlyMap<string, Template>
   readonly list: readonly Template[]
   readonly json: string
   readonly etag: string
+  private readonly servedById: ReadonlyMap<string, ServedTemplate>
 
   constructor(file: TemplatesFile) {
     this.list = file.templates
     this.byId = new Map(file.templates.map((t) => [t.id, t]))
     this.json = JSON.stringify({ version: file.version, templates: file.templates })
     this.etag = `"${sha256Hex(this.json).slice(0, 32)}"`
+    const served = new Map<string, ServedTemplate>()
+    for (const t of file.templates) {
+      const json = JSON.stringify(t)
+      served.set(t.id, { json, sha256: sha256Hex(json) })
+    }
+    this.servedById = served
   }
 
   static empty(): TemplateSet {
@@ -233,12 +272,42 @@ export class TemplateSet {
       list: [],
       json: JSON.stringify({ version: 1, templates: [] }),
       etag: '"empty"',
+      servedById: new Map(),
     })
   }
 
   get(id: string): Template | undefined {
     return this.byId.get(id)
   }
+
+  /** Einzelne Vorlage, wie die Route sie ausliefert. */
+  jsonOf(id: string): ServedTemplate | undefined {
+    return this.servedById.get(id)
+  }
+}
+
+/**
+ * Hängt private Vorlagen an die öffentlichen. Eine Id, die es schon gibt, wird übersprungen (Warnung).
+ * Die öffentlichen bleiben vorn und unverändert. Wirft nie.
+ */
+export function mergeTemplates(base: TemplateSet, extra: readonly Template[], warn: (message: string) => void): TemplateSet {
+  if (extra.length === 0) return base
+  const have = new Set(base.list.map((t) => t.id))
+  const add: Template[] = []
+  for (const t of extra) {
+    if (have.has(t.id)) {
+      warn(`private template ${t.id} skipped: id already public`)
+      continue
+    }
+    if (base.list.length + add.length >= MAX_TEMPLATES) {
+      warn(`private template ${t.id} skipped: too many templates`)
+      continue
+    }
+    have.add(t.id)
+    add.push(t)
+  }
+  if (add.length === 0) return base
+  return new TemplateSet({ version: 1, templates: [...base.list, ...add] })
 }
 
 export function parseTemplates(raw: unknown): TemplateSet {

@@ -77,6 +77,11 @@ export interface CosmeticView extends Partial<CosmeticV2Fields> {
   status: CosmeticStatus
   /** Vorlagen-ID (`null` bei Emotes und bei Format v2). */
   template: string | null
+  /**
+   * Pfad der v1-Vorlage (`/v1/cosmetics/<id>/template.json?v=<12 Hex>`). Fehlt bei Emotes und Format v2.
+   * Relativ, ohne Host – ältere Clients ignorieren das Feld.
+   */
+  templateUrl?: string
   texture: CosmeticTexture | null
   /** Ohne Weltlicht rendern (volle Helligkeit). Nur mitgelieferte Designs (v1). */
   emissive: boolean
@@ -149,9 +154,18 @@ export function slotOf(ctx: AppContext, c: Pick<CosmeticRow, 'id' | 'slot' | 'fo
   return v2Assets(ctx, c)?.model.slot ?? c.slot
 }
 
+/** Relativer Pfad der v1-Vorlage, sonst `undefined` (Emote, v2, unbekannte Vorlage). */
+function v1TemplateUrl(ctx: AppContext, c: CosmeticRow): string | undefined {
+  if (c.format === 2 || c.slot === 'emote' || !c.template || c.template === V2_TEMPLATE) return undefined
+  const served = ctx.templates.jsonOf(c.template)
+  if (!served) return undefined
+  return `/v1/cosmetics/${c.id}/template.json?v=${shortHash(served.sha256)}`
+}
+
 export function cosmeticView(ctx: AppContext, c: CosmeticRow): CosmeticView {
   const emote = c.slot === 'emote' ? EMOTE_BY_ID.get(c.id) : undefined
   const v2 = v2Assets(ctx, c)
+  const templateUrl = v1TemplateUrl(ctx, c)
   return {
     id: c.id,
     name: c.name,
@@ -162,6 +176,7 @@ export function cosmeticView(ctx: AppContext, c: CosmeticRow): CosmeticView {
     status: c.status,
     // v2: keine Vorlage – alte Clients (nur Vorlagen) lassen das Teil so einfach weg.
     template: c.format === 2 ? null : c.template,
+    ...(templateUrl ? { templateUrl } : {}),
     texture:
       c.sha256 && c.width && c.height && c.scale
         ? {
@@ -610,6 +625,17 @@ export function readCosmeticTexture(
     throw notFound('cosmetic_not_found', 'Cosmetic not found')
   }
   return { png, sha256: c.sha256, public: c.status === 'approved' }
+}
+
+/**
+ * v1-Vorlage eines Teils (das JSON der Vorlagen-Id). Immer öffentlich, auch versteckt: die Adresse steht nur
+ * im Katalog und im Lookup. Unbekannt, Emote oder Format v2 → 404.
+ */
+export function readCosmeticTemplate(ctx: AppContext, id: string): { body: Buffer, sha256: string, public: true } {
+  const c = getCosmetic(ctx, id)
+  const served = c && c.format !== 2 && c.slot !== 'emote' && c.template ? ctx.templates.jsonOf(c.template) : undefined
+  if (!served) throw notFound('cosmetic_not_found', 'Cosmetic not found')
+  return { body: Buffer.from(served.json, 'utf8'), sha256: served.sha256, public: true }
 }
 
 /**

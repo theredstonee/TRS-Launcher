@@ -327,6 +327,7 @@ describe('robots.txt', () => {
     expect(lines).toContain('Allow: /v1/capes/*.png')
     expect(lines).toContain('Allow: /v1/cosmetics/*.png')
     expect(lines).toContain('Allow: /v1/cosmetics/*/model.json')
+    expect(lines).toContain('Allow: /v1/cosmetics/*/template.json')
     expect(lines).toContain(`Sitemap: ${SITE}/sitemap.xml`)
   })
 })

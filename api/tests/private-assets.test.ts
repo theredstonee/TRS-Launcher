@@ -1,20 +1,29 @@
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { createServer, type Server } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { createApp, createRouter, send, setResponseStatus, toNodeListener } from 'h3'
 import { afterEach, describe, expect, it } from 'vitest'
 import { assertBuiltinCape, canUse, getCape, grantCape, seedBuiltins, type BuiltinCape } from '../server/lib/capes'
-import { canUseCosmetic, getCosmetic, grantCosmetic, seedBuiltinCosmetics } from '../server/lib/cosmetics'
+import { setContext } from '../server/lib/context'
+import { canUseCosmetic, cosmeticCatalog, equipCosmetics, getCosmetic, grantCosmetic, readCosmeticTemplate, seedBuiltinCosmetics } from '../server/lib/cosmetics'
+import { run, one } from '../server/lib/db'
+import { isApiError } from '../server/lib/errors'
+import { lookupPlayers } from '../server/lib/lookup'
 import { MAX_UPLOAD_BYTES } from '../server/lib/png'
 import {
   loadPrivateCapes,
   loadPrivateCosmetics,
+  loadPrivateTemplates,
   mergeBuiltins,
   privateAssetsAvailable,
   resolveInside,
   type PrivatePiece,
 } from '../server/lib/private-assets'
-import { one } from '../server/lib/db'
-import { login, makeEnv, solidPng, templatePng } from './helpers'
+import { mergeTemplates } from '../server/lib/templates'
+import { updateSettings } from '../server/lib/users'
+import templateRoute from '../server/routes/v1/cosmetics/[id]/template.json.get'
+import { login, makeEnv, seedCosmeticFixtures, solidPng, templatePng } from './helpers'
 
 const CAPE_PUBLIC = ['redstone', 'lamp', 'deepslate', 'lapis', 'emerald', 'amethyst', 'phoenix', 'nether', 'ender', 'ozean', 'wald', 'frost', 'kirschbluete', 'drache', 'sonne', 'halloween']
 const CAPE_PRIVATE: [string, number][] = [['trs', 6], ['team', 7], ['tester', 8], ['content-team', 18], ['veteran', 19], ['ideengeber', 20]]
@@ -209,7 +218,7 @@ describe('ownership survives a missing private item', () => {
   it('retires the cosmetic without deleting the grant, then gives it back', async () => {
     const env = makeEnv()
     const pub = { id: 'free_crown', name: 'Krone', template: 'crown', unlock: 'free' as const, sort: 0, scale: 1, frames: 1, frameTimeMs: null, emissive: false, png: templatePng(env, 'crown', 1) }
-    const priv = { id: 'priv_duck', name: 'Ente', template: 'duck', unlock: 'code' as const, hidden: true, sort: 1, scale: 1, frames: 1, frameTimeMs: null, emissive: false, png: templatePng(env, 'duck', 1) }
+    const priv = { id: 'priv_duck', name: 'Ente', template: 'crown', unlock: 'code' as const, hidden: true, sort: 1, scale: 1, frames: 1, frameTimeMs: null, emissive: false, png: templatePng(env, 'crown', 1) }
     seedBuiltinCosmetics(env.ctx, [pub, priv])
     const u = (await login(env, 'Steve')).user.uuid
     expect(grantCosmetic(env.ctx, u, 'priv_duck', 'code')).toBe(true)
@@ -225,3 +234,162 @@ describe('ownership survives a missing private item', () => {
     expect(canUseCosmetic(env.ctx, u, getCosmetic(env.ctx, 'priv_duck')!)).toBe(true)
   })
 })
+
+const privHat = {
+  id: 'priv_hat',
+  name: 'Priv',
+  kind: 'model',
+  slot: 'hat',
+  textureWidth: 16,
+  textureHeight: 8,
+  cubes: [{ from: [-2, 8, -2], to: [2, 10, 2], uv: [0, 0], attach: 'head' }],
+}
+
+describe('private templates', () => {
+  const dirs: string[] = []
+  const open: { close: () => Promise<void> }[] = []
+  afterEach(async () => {
+    for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true })
+    for (const s of open.splice(0)) await s.close()
+    setContext(undefined)
+  })
+  const scratch = () => {
+    const d = mkdtempSync(join(tmpdir(), 'trs-private-'))
+    dirs.push(d)
+    return d
+  }
+
+  it('warns once and loads nothing when the private template file is missing or invalid', () => {
+    const root = scratch()
+    const warnings: string[] = []
+    expect(loadPrivateTemplates(root, (m) => warnings.push(m))).toEqual([])
+    mkdirSync(join(root, 'cosmetics'))
+    writeFileSync(join(root, 'cosmetics', 'templates.private.json'), '{')
+    expect(loadPrivateTemplates(root, (m) => warnings.push(m))).toEqual([])
+    writeFileSync(join(root, 'cosmetics', 'templates.private.json'), JSON.stringify({ version: 2, templates: [privHat] }))
+    expect(loadPrivateTemplates(root, (m) => warnings.push(m))).toEqual([])
+    writeFileSync(join(root, 'cosmetics', 'templates.private.json'), Buffer.alloc(MAX_UPLOAD_BYTES + 1))
+    expect(loadPrivateTemplates(root, (m) => warnings.push(m))).toEqual([])
+    expect(warnings).toEqual([
+      'private template file missing – private templates skipped',
+      'private template file invalid – private templates skipped',
+      'private template file invalid – private templates skipped',
+      'private templates file too large (templates.private.json) – private templates skipped',
+    ])
+  })
+
+  it('merges a valid private template and skips a broken entry and a public id', () => {
+    const root = scratch()
+    mkdirSync(join(root, 'cosmetics'))
+    writeFileSync(join(root, 'cosmetics', 'templates.private.json'), JSON.stringify({
+      version: 1,
+      templates: [
+        privHat,
+        { ...privHat, id: 'priv_hat' },
+        { ...privHat, id: 'crown' },
+        { ...privHat, id: 'priv_wide', textureWidth: 8 },
+        { id: 'nope', name: 'X' },
+      ],
+    }))
+    const warnings: string[] = []
+    const loaded = loadPrivateTemplates(root, (m) => warnings.push(m))
+    expect(loaded.map((t) => t.id)).toEqual(['priv_hat', 'crown'])
+    expect(warnings[0]).toBe('private template priv_hat skipped: duplicate id')
+    expect(warnings.some((w) => w.startsWith('private template priv_wide skipped:') && w.includes('exceeds'))).toBe(true)
+    expect(warnings.some((w) => w.startsWith('private template nope skipped:'))).toBe(true)
+    const env = makeEnv()
+    const publicCrown = env.ctx.templates.get('crown')!
+    const merged = mergeTemplates(env.ctx.templates, loaded, (m) => warnings.push(m))
+    expect(merged.get('priv_hat')).toMatchObject({ slot: 'hat', textureWidth: 16 })
+    expect(merged.get('crown')).toBe(publicCrown)
+    expect(merged.list[0]!.id).toBe(env.ctx.templates.list[0]!.id)
+    expect(merged.list.at(-1)!.id).toBe('priv_hat')
+    expect(merged.get('duck')).toBeUndefined()
+    expect(warnings.at(-1)).toBe('private template crown skipped: id already public')
+    writeFileSync(join(root, 'cosmetics', 'templates.private.json'), JSON.stringify([privHat]))
+    expect(loadPrivateTemplates(root, () => { throw new Error('unexpected warning') }).map((t) => t.id)).toEqual(['priv_hat'])
+  })
+
+  it('puts templateUrl on catalog and lookup, hashed over the template JSON', async () => {
+    const env = makeEnv()
+    seedCosmeticFixtures(env)
+    const served = env.ctx.templates.jsonOf('crown')!
+    expect(served.sha256).toHaveLength(64)
+    expect(served.json).toBe(JSON.stringify(env.ctx.templates.get('crown')))
+    const u = (await login(env, 'Steve')).user.uuid
+    const cat = cosmeticCatalog(env.ctx, u)
+    const crown = cat.find((c) => c.id === 'free_crown')!
+    const v = served.sha256.slice(0, 12)
+    expect(crown.template).toBe('crown')
+    expect(crown.templateUrl).toBe(`/v1/cosmetics/free_crown/template.json?v=${v}`)
+    expect(cat.find((c) => c.id === 'winken')!.templateUrl).toBeUndefined()
+    equipCosmetics(env.ctx, u, { hat: 'free_crown' })
+    updateSettings(env.ctx, u, { showCosmeticsToOthers: true })
+    const other = (await login(env, 'Alex')).user.uuid
+    expect(lookupPlayers(env.ctx, other, [u]).players[0]!.cosmetics.hat).toMatchObject({
+      id: 'free_crown', template: 'crown', templateUrl: crown.templateUrl,
+    })
+    const file = readCosmeticTemplate(env.ctx, 'free_crown')
+    expect(file.sha256).toBe(served.sha256)
+    expect(file.body.toString('utf8')).toBe(served.json)
+    expect(file.public).toBe(true)
+    run(env.ctx.db,
+      `INSERT INTO cosmetics (id, kind, slot, template, name, status, unlock, sha256, width, height, scale, frames, emissive, sort, retired, created_at, format)
+       VALUES ('v2_hat', 'builtin', 'hat', '@v2', 'V2', 'approved', 'free', 'abc', 16, 16, 1, 1, 0, 0, 0, 0, 2)`)
+    expect(thrown(() => readCosmeticTemplate(env.ctx, 'v2_hat'))).toMatchObject({ status: 404, code: 'cosmetic_not_found' })
+    expect(thrown(() => readCosmeticTemplate(env.ctx, 'winken'))).toMatchObject({ code: 'cosmetic_not_found' })
+    expect(thrown(() => readCosmeticTemplate(env.ctx, 'nope'))).toMatchObject({ code: 'cosmetic_not_found' })
+  })
+
+  it('serves template.json with ETag, immutable cache and 404', async () => {
+    const env = makeEnv()
+    seedCosmeticFixtures(env)
+    run(env.ctx.db,
+      `INSERT INTO cosmetics (id, kind, slot, template, name, status, unlock, sha256, width, height, scale, frames, emissive, sort, retired, created_at, format)
+       VALUES ('v2_hat', 'builtin', 'hat', '@v2', 'V2', 'approved', 'free', 'abc', 16, 16, 1, 1, 0, 0, 0, 0, 2)`)
+    const app = createApp({
+      onError: async (error, event) => {
+        const cause: unknown = (error as { cause?: unknown }).cause
+        const api = isApiError(error) ? error : isApiError(cause) ? cause : null
+        setResponseStatus(event, (api as { status?: number } | null)?.status ?? 500)
+        await send(event, JSON.stringify({ error: { code: (api as { code?: string } | null)?.code ?? 'internal_error' } }), 'application/json')
+      },
+    })
+    const router = createRouter()
+    router.get('/v1/cosmetics/:id/template.json', templateRoute)
+    app.use(router)
+    const server: Server = createServer(toNodeListener(app))
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', r))
+    open.push({ close: () => new Promise<void>((r) => server.close(() => r())) })
+    setContext(env.ctx)
+    const base = `http://127.0.0.1:${(server.address() as { port: number }).port}`
+    const served = env.ctx.templates.jsonOf('crown')!
+    const v = served.sha256.slice(0, 12)
+
+    const res = await fetch(`${base}/v1/cosmetics/free_crown/template.json?v=${v}`)
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toContain('application/json')
+    expect(res.headers.get('etag')).toBe(`"${served.sha256}"`)
+    expect(res.headers.get('cache-control')).toBe('public, max-age=31536000, immutable')
+    expect(await res.text()).toBe(served.json)
+
+    const stale = await fetch(`${base}/v1/cosmetics/free_crown/template.json?v=000000000000`)
+    expect(stale.headers.get('cache-control')).toBe('public, max-age=300')
+    const again = await fetch(`${base}/v1/cosmetics/free_crown/template.json`, { headers: { 'if-none-match': `"${served.sha256}"` } })
+    expect(again.status).toBe(304)
+
+    expect((await fetch(`${base}/v1/cosmetics/nope/template.json`)).status).toBe(404)
+    expect((await fetch(`${base}/v1/cosmetics/winken/template.json`)).status).toBe(404)
+    expect((await fetch(`${base}/v1/cosmetics/v2_hat/template.json`)).status).toBe(404)
+    expect((await fetch(`${base}/v1/cosmetics/..%2Fx/template.json`)).status).toBe(404)
+  })
+})
+
+function thrown(fn: () => unknown): unknown {
+  try {
+    fn()
+  } catch (e) {
+    return e
+  }
+  return undefined
+}

@@ -46,9 +46,22 @@ function privateDir() {
 const PRIV = privateDir()
 const PRIVATE_V1_SORT = { redstone_wings: 9, rubber_duck: 14 }
 const PRIVATE_V2 = new Set(['redstone_crown', 'team_crown', 'halo'])
-const TEMPLATES = Object.fromEntries(
-  JSON.parse(readFileSync(join(OUT, 'templates.json'), 'utf8')).templates.map((t) => [t.id, t]),
-)
+
+function loadTemplates() {
+  const map = Object.fromEntries(
+    JSON.parse(readFileSync(join(OUT, 'templates.json'), 'utf8')).templates.map((t) => [t.id, t]),
+  )
+  // Die Ente ist proprietär und steht nur in der privaten Vorlagen-Datei.
+  const file = join(PRIV, 'cosmetics', 'templates.private.json')
+  if (existsSync(file)) {
+    const raw = JSON.parse(readFileSync(file, 'utf8'))
+    const list = Array.isArray(raw) ? raw : raw && Array.isArray(raw.templates) ? raw.templates : []
+    for (const t of list) if (t && typeof t.id === 'string' && !map[t.id]) map[t.id] = t
+  }
+  return map
+}
+
+const TEMPLATES = loadTemplates()
 
 /** Auflösung der mitgelieferten Designs (Texel je Modell-Einheit). */
 const SCALE = 2
@@ -558,6 +571,7 @@ function footprints() {
  */
 function rubberDuck() {
   const tpl = TEMPLATES.duck
+  if (!tpl) throw new Error('private template "duck" missing (cosmetics/templates.private.json)')
   const Y = hex('#ffd431')
   const Y_HI = hex('#fff08a')
   const Y_LO = hex('#e9a90c')

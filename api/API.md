@@ -363,7 +363,7 @@ Auth required. Send 1–100 UUIDs, dashed or not. Duplicates are ignored.
 
 Only players who **use TRS and show something** (badge, cape or at least one cosmetic) appear in the list. A missing UUID means "no badge, no cape, no cosmetics": render vanilla.
 
-`cosmetics` always has the four keys `hat`, `wings`, `back` and `aura`. Each is `null` or a **LookupCosmetic**. A format-1 item has `template`: render it with that template from `GET /v1/cosmetics/templates` (§11). A **format-2** item (`"format": 2`, 3D model, §11.9) has **no** `template` and no `emissive`, but `model`, `glow`, `glowFrames`, `glowFrameTimeMs` and `hash`. The texture and frame fields work exactly like the cape fields. Clients that only know templates must skip items without a known `template` (older TRS Clients do).
+`cosmetics` always has the four keys `hat`, `wings`, `back` and `aura`. Each is `null` or a **LookupCosmetic**. A format-1 item has `template`: render it with that template from `GET /v1/cosmetics/templates` (§11). It also has `templateUrl` (`/v1/cosmetics/<id>/template.json?v=<hash>`, §11.1) so a client can load that one template when it is not bundled. Older clients ignore `templateUrl` and keep using `template` with the copy they already have. A **format-2** item (`"format": 2`, 3D model, §11.9) has **no** `template`, no `templateUrl` and no `emissive`, but `model`, `glow`, `glowFrames`, `glowFrameTimeMs` and `hash`. The texture and frame fields work exactly like the cape fields. Clients that only know templates must skip items without a known `template` (older TRS Clients do).
 
 Privacy rules, enforced server-side:
 
@@ -982,7 +982,7 @@ Unlocking works exactly like capes:
 
 ### 11.1 Template JSON
 
-`GET /v1/cosmetics/templates` returns this. The source is `api/assets/cosmetics/templates.json`.
+`GET /v1/cosmetics/templates` returns this. The public source is `api/assets/cosmetics/templates.json`. Proprietary templates are not in the repository. They live in `<PRIVATE_ASSETS_DIR>/cosmetics/templates.private.json` with the same schema (`{ "version": 1, "templates": [ … ] }`; a bare array of templates is accepted too). At startup the server appends them to the public list. A missing file logs one warning and skips every private template. One invalid entry logs one warning and is skipped. Startup does not crash, and a broken **public** file still stops startup. An id that the public file already has is skipped. The merged list is what `GET /v1/cosmetics/templates` returns.
 
 ```json
 {
@@ -1028,6 +1028,8 @@ Templates **never change** after release. A new shape gets a new id, so uploaded
 `GET /v1/cosmetics/templates` needs no auth. It sends `ETag` and `Cache-Control: public, max-age=300`. Send `If-None-Match` to get `304`.
 
 `GET /v1/cosmetics/templates/{id}` returns `{ "template": { … } }` for one template.
+
+`GET /v1/cosmetics/{id}/template.json` returns the same template object (not wrapped) for one **format-1** cosmetic. The id is the cosmetic id; the server resolves it through the item's `template`. No auth. `ETag` is the full sha256 of the body. `templateUrl` uses the first 12 hex digits of that hash as `?v=`. With a matching `?v=` (the 12 digits, or any longer prefix of the hash) the response is `Cache-Control: public, max-age=31536000, immutable`; a wrong `?v=` is cached for 5 minutes. `If-None-Match` returns `304`. Unknown ids, emotes and format-2 items return `404 cosmetic_not_found`. The route is public, including hidden items: the URL is only handed out in the catalog and the lookup.
 
 `GET /v1/cosmetics/templates/{id}.png?scale=1..4` returns a **paint guide** PNG (no auth). It is exactly the texture size at that scale. Every used face is filled with a colour (top light blue, bottom dark blue, right orange, front red, left green, back purple, particle sprites yellow) and has a darker 1-pixel border. Everything transparent in the guide is never rendered.
 
@@ -1217,6 +1219,7 @@ Animated particle textures use the same frame formula as models. All particles o
   "unlock": "code",
   "status": "approved",
   "template": "wings",
+  "templateUrl": "/v1/cosmetics/redstone_wings/template.json?v=1c0ffee0dead",
   "texture": {
     "url": "https://api.theredstonee.de/v1/cosmetics/redstone_wings.png?v=1c0ffee0dead",
     "width": 128, "height": 64, "scale": 2,
@@ -1233,11 +1236,12 @@ Animated particle textures use the same frame formula as models. All particles o
 | `slot` | `hat` \| `wings` \| `back` \| `aura` \| `companion` \| `emote`. `companion` (since Halloween 2026, format 2 only) is worn **in addition to** a hat. |
 | `kind`, `unlock`, `status` | As for capes (§5.1). Emotes are always `builtin`. `unlock` can also be `event` (§32): free to claim while the event is active for you; then the extra field `event` holds the event id (e.g. `"halloween"`). |
 | `template` | Template id, or `null` for emotes. |
+| `templateUrl` | Format 1 only. Path (no host) `/v1/cosmetics/<id>/template.json?v=<hash>`. `hash` is 12 hex digits of the sha256 over that template's JSON, the body of the route in §11.1. Absent on emotes and format 2. Older clients ignore it. |
 | `texture` | `null` for emotes. `width`/`height` are the size of **one frame** in pixels (`textureWidth·scale` × `textureHeight·scale`). `url` works like a cape URL (§5.4). |
 | `emissive` | Render at full brightness (§11.3). |
 | `emote` | `{ "durationMs", "loop" }` for emotes, otherwise `null`. |
 
-**LookupCosmetic** is the flat form used in the lookup and in events (`cosmetics` has the keys `hat`, `wings`, `back`, `aura` and `companion`, each an item or `null`): `{ id, template, url, scale, animated, frames, frameTimeMs, emissive }` for format 1, `{ id, format: 2, model, url, scale, animated, frames, frameTimeMs, glow, glowFrames, glowFrameTimeMs, hash }` for format 2 (§11.9).
+**LookupCosmetic** is the flat form used in the lookup and in events (`cosmetics` has the keys `hat`, `wings`, `back`, `aura` and `companion`, each an item or `null`): `{ id, template, templateUrl, url, scale, animated, frames, frameTimeMs, emissive }` for format 1, `{ id, format: 2, model, url, scale, animated, frames, frameTimeMs, glow, glowFrames, glowFrameTimeMs, hash }` for format 2 (§11.9). `templateUrl` is the same path as on CosmeticView.
 
 A **format-2** CosmeticView has `template: null`, `emissive: false` and these extra fields (all absent on format-1 items):
 
@@ -1261,6 +1265,7 @@ A **format-2** CosmeticView has `template: null`, `emissive: false` and these ex
 | `POST /v1/me/cosmetics/{id}/claim` | yes | Claims an **event item** (`unlock: "event"`) for free. **200** `{ "owned": true }`; idempotent (owners keep it after the event). `403 event_inactive` if the event isn't active for you, `400 not_claimable` for other items, `404 cosmetic_not_found`. See §32. |
 | `GET /v1/cosmetics/templates` | no | See §11.1. |
 | `GET /v1/cosmetics/templates/{id}` / `{id}.png?scale=k` | no | One template, or its paint guide (§11.1). `404 template_not_found`. |
+| `GET /v1/cosmetics/{id}/template.json` | no | Format 1 only (§11.1): that cosmetic's template JSON. `ETag` = full sha256; with the matching `?v=` `Cache-Control: public, max-age=31536000, immutable`, otherwise 5 min. `If-None-Match` → `304`. Unknown ids, emotes and format 2 → `404 cosmetic_not_found`. |
 | `GET /v1/me/cosmetics` | yes | `{ equipped: { hat, wings, back, aura, companion }, emotes: [emoteId] }`. Each slot is a CosmeticView or `null`, as you see it (including your pending uploads). `emotes` lists the emotes you may play, in list order. |
 | `PUT /v1/me/cosmetics` | yes | Body `{ "hat"?: id\|null, "wings"?: id\|null, "back"?: id\|null, "aura"?: id\|null, "companion"?: id\|null }`, with at least one key. An id equips, `null` takes the item off, and a missing key leaves the slot unchanged. Format-2 items are equipped the same way (each one in the slot given by its `slot`: `hat` or `companion`; `companion` takes only format-2 items with `slot: "companion"` and only items you own). **200** has the same shape as `GET /v1/me/cosmetics`. All changes are checked first and then applied together. |
 | `GET /v1/cosmetics/{id}.png` | optional | The texture (format 2: the v2 base texture, `ETag` = v2 hash). Caching, `ETag`/`304` and the pending/private rules are the same as §5.4. Otherwise `404 cosmetic_not_found`. |
@@ -1326,7 +1331,7 @@ A **format-2** CosmeticView has `template: null`, `emissive: false` and these ex
 
 Templates without a built-in item (`ring`, and since format 2 also `crown`, `cap`, `lamp_helmet`, `tophat`, `halo`) are available for uploads. The six format-2 items kept their ids, so owners and codes still work; a `halo` equipped in `aura` moved to `hat` at the first start with format 2 (taken off if `hat` was already in use).
 
-**Proprietary built-ins.** Items with unlock `code` or `admin` are not in this repository: capes `trs`, `team`, `tester`, `content-team`, `veteran`, `ideengeber` and cosmetics `redstone_crown`, `team_crown`, `halo`, `redstone_wings`, `rubber_duck`. Their textures, models, glow maps and cards live only on the server in `PRIVATE_ASSETS_DIR` (default `<DATA_DIR>/private-assets`). Layout: `capes/`, `cosmetics/`, `cosmetics/v2/`, plus `capes/catalog.private.json` and `cosmetics/catalog.private.json` (same entry schema as the public catalogs, with the original `sort` index). At startup the server merges them with the public built-ins. Ids, hashes, routes, cards, models, glow maps, lookup, codes and ownership stay the same. If the directory is missing, it logs one warning and skips every private item. If one item's files are missing or invalid, it logs one warning and skips that item. Startup does not crash, and `user_capes` / `user_cosmetics` rows are not deleted: the item is usable again on the next start once the files exist. A broken **public** catalog still stops startup. `node api/scripts/import-cosmetics-v2.mjs [--private <dir>]` (or `PRIVATE_ASSETS_DIR`, default `E:/ai/trs-private-assets`) writes the proprietary models there and the free/event models to `api/assets`. `generate-capes.mjs` and `generate-cosmetics.mjs` take the same `--private` flag.
+**Proprietary built-ins.** Items with unlock `code` or `admin` are not in this repository: capes `trs`, `team`, `tester`, `content-team`, `veteran`, `ideengeber` and cosmetics `redstone_crown`, `team_crown`, `halo`, `redstone_wings`, `rubber_duck`. Their textures, models, glow maps and cards live only on the server in `PRIVATE_ASSETS_DIR` (default `<DATA_DIR>/private-assets`). Layout: `capes/`, `cosmetics/`, `cosmetics/v2/`, plus `capes/catalog.private.json`, `cosmetics/catalog.private.json` (same entry schema as the public catalogs, with the original `sort` index) and `cosmetics/templates.private.json` (same schema as `templates.json`; the `duck` rig lives only there). At startup the server merges the private catalogs and `templates.private.json` with the public built-ins. Ids, hashes, routes, cards, models, glow maps, lookup, codes and ownership stay the same. If the directory is missing, it logs one warning and skips every private item. If one item's files are missing or invalid, it logs one warning and skips that item. Startup does not crash, and `user_capes` / `user_cosmetics` rows are not deleted: the item is usable again on the next start once the files exist. A broken **public** catalog still stops startup. `node api/scripts/import-cosmetics-v2.mjs [--private <dir>]` (or `PRIVATE_ASSETS_DIR`, default `E:/ai/trs-private-assets`) writes the proprietary models there and the free/event models to `api/assets`. `generate-capes.mjs` and `generate-cosmetics.mjs` take the same `--private` flag.
 
 **Hidden items** (`hidden: true` in `catalog.json`, only together with `unlock: "code"`) never appear in `GET /v1/cosmetics` for anyone who has not unlocked them – not even as locked, and not for admins. Once redeemed, they are listed and wearable like any other item, and others see them on the wearer through the lookup. Admins find them for code creation under `GET /v1/admin/cosmetics/builtin` (staff): every built-in item and emote that is not `free`, with `hidden`.
 

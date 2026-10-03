@@ -24,7 +24,7 @@ import { block } from '../server/lib/friends'
 import { normalizeRedeemCode } from '../server/lib/ids'
 import { lookupPlayers } from '../server/lib/lookup'
 import { deleteUser, getUser, updateSettings } from '../server/lib/users'
-import { cubeFaces, parseTemplates, usedMask } from '../server/lib/templates'
+import { cubeFaces, mergeTemplates, parseTemplateEntry, parseTemplates, usedMask } from '../server/lib/templates'
 import { ADMIN, bundledTemplates, fixtureCosmetics, login, makeEnv, seedCosmeticFixtures, solidPng, templatePng, type TestEnv } from './helpers'
 
 function code(fn: () => unknown): string {
@@ -50,6 +50,7 @@ describe('templates', () => {
     expect(set.get('backpack')!.slot).toBe('back')
     expect(set.get('halo')).toMatchObject({ slot: 'aura', kind: 'model', textureWidth: 32, textureHeight: 8 })
     for (const id of ['ring', 'orbit', 'trail']) expect(set.get(id)).toMatchObject({ slot: 'aura', kind: 'particles' })
+    expect(set.get('duck')).toBeUndefined()
     expect(JSON.parse(set.json).templates).toHaveLength(set.list.length)
     expect(set.etag).toMatch(/^"[0-9a-f]{32}"$/)
   })
@@ -395,11 +396,28 @@ describe('codes for cosmetics and emotes', () => {
   })
 })
 
+/** Synthetische Ente (kein proprietäres Modell): nur damit versteckte Code-Teile eine Vorlage haben. */
+function withSyntheticDuck(env: TestEnv): void {
+  const parsed = parseTemplateEntry({
+    id: 'duck',
+    name: 'Ente',
+    kind: 'model',
+    slot: 'hat',
+    textureWidth: 64,
+    textureHeight: 32,
+    rig: { type: 'duck', neck: [0, 12, 2] },
+    cubes: [{ from: [-4, 8, -4], to: [4, 12, 4], uv: [0, 0], attach: 'head' }],
+  })
+  if (!parsed.ok) throw new Error(parsed.reason)
+  env.ctx.templates = mergeTemplates(env.ctx.templates, [parsed.template], () => { throw new Error('unexpected warning') })
+}
+
 describe('hidden cosmetics (rubber duck)', () => {
-  it('duck template stays public; the proprietary duck is not in the catalog', async () => {
+  it('duck template is not in the public file; a hidden code item still seeds', async () => {
     const env = makeEnv()
-    const duck = bundledTemplates().get('duck')!
-    expect(duck).toMatchObject({ kind: 'model', slot: 'hat', rig: { type: 'duck', neck: [0, 12, 2] } })
+    expect(bundledTemplates().get('duck')).toBeUndefined()
+    expect(rawTemplates().templates.some((t: { id: string }) => t.id === 'duck')).toBe(false)
+    withSyntheticDuck(env)
     const list = await loadBuiltinCosmetics(
       async () => JSON.parse(readFileSync(join(ASSETS, 'catalog.json'), 'utf8')),
       async (name) => readFileSync(join(ASSETS, name)),
@@ -414,6 +432,7 @@ describe('hidden cosmetics (rubber duck)', () => {
 
   it('stays out of every catalog until redeemed, then shows up and can be worn', async () => {
     const env = makeEnv()
+    withSyntheticDuck(env)
     seedBuiltinCosmetics(env.ctx, [
       ...fixtureCosmetics(env),
       { id: 'secret_duck', name: 'Ente', template: 'duck', unlock: 'code', hidden: true, sort: 9, scale: 2, frames: 1, frameTimeMs: null, emissive: false, png: templatePng(env, 'duck', 2) },

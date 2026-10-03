@@ -15,13 +15,15 @@ export interface LookupCape {
 }
 
 /**
- * Flache Form für Lookup und Ereignisse. Format 1: `template` + Textur. Format 2 (§11.9): kein `template`/`emissive`
+ * Flache Form für Lookup und Ereignisse. Format 1: `template` + `templateUrl` + Textur. Format 2 (§11.9): kein `template`/`templateUrl`/`emissive`
  * (ältere Mods kennen nur Vorlagen und lassen das Teil dann weg), dafür `format`, `model`, `glow`, `glowFrames`,
  * `glowFrameTimeMs`, `hash`; `url`/`scale`/`frames`/`frameTimeMs` beschreiben die Grundtextur.
  */
 export interface LookupCosmetic {
   id: string
   template?: string
+  /** Pfad der v1-Vorlage (`/v1/cosmetics/<id>/template.json?v=<hash>`). Fehlt bei Format 2. */
+  templateUrl?: string
   url: string
   scale: number
   animated: boolean
@@ -171,6 +173,7 @@ function collect(ctx: AppContext, viewer: string, uuids: string[]): LookupEntry[
           cosmetics[c.eq_slot] = {
             id: c.id,
             template: c.template,
+            ...(view.templateUrl ? { templateUrl: view.templateUrl } : {}),
             url: tex.url,
             scale: tex.scale,
             animated: tex.animated,

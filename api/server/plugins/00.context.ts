@@ -6,7 +6,7 @@ import { sweepExpired } from '../lib/auth'
 import { loadBuiltinCosmetics, loadBuiltins } from '../lib/builtin'
 import { seedBuiltins, type BuiltinCape } from '../lib/capes'
 import { seedBuiltinCosmetics, seedEmotes, type AnyBuiltinCosmetic } from '../lib/cosmetics'
-import { loadPrivateCapes, loadPrivateCosmetics, mergeBuiltins, privateAssetsAvailable } from '../lib/private-assets'
+import { loadPrivateCapes, loadPrivateCosmetics, loadPrivateTemplates, mergeBuiltins, privateAssetsAvailable } from '../lib/private-assets'
 import { ConfigError, loadConfig, type Config } from '../lib/config'
 import { createContext, setContext, setReady } from '../lib/context'
 import { rotateMessageKeys, sweepTyping } from '../lib/chat'
@@ -21,7 +21,7 @@ import { sweepExpiredPacks, sweepOrphanPackFiles } from '../lib/packs'
 import { sweepExpiredShares, sweepOrphanShareFiles } from '../lib/shares'
 import { createMojangClient } from '../lib/mojang'
 import { afterPresenceChange } from '../lib/playerevents'
-import { parseTemplates } from '../lib/templates'
+import { mergeTemplates, parseTemplates } from '../lib/templates'
 
 /** Startet die App: Konfiguration prüfen, DB öffnen + migrieren, Katalog einspielen, Aufräum-Timer. */
 export default defineNitroPlugin((nitroApp) => {
@@ -109,6 +109,13 @@ export default defineNitroPlugin((nitroApp) => {
       console.warn('[trs-api] assets/cosmetics/templates.json not found – cosmetics disabled, built-ins unchanged')
     } else {
       ctx.templates = parseTemplates(templates)
+      if (privateReady) {
+        try {
+          ctx.templates = mergeTemplates(ctx.templates, loadPrivateTemplates(config.privateAssetsDir, warn), warn)
+        } catch {
+          warn('private templates failed to load – private templates skipped')
+        }
+      }
       const cosmeticRaw = await cosmeticAssets.json('catalog.json')
       if (cosmeticRaw == null) console.warn('[trs-api] assets/cosmetics/catalog.json not found – built-in cosmetics unchanged')
       else {

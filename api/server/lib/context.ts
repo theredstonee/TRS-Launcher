@@ -25,7 +25,7 @@ export interface AppContext {
   watch: PlayerWatchHub
   limiter: RateLimiter
   skins: SkinService
-  /** Kosmetik-Vorlagen (beim Start aus assets/cosmetics/templates.json). */
+  /** Kosmetik-Vorlagen (öffentlich aus templates.json, privat aus templates.private.json). */
   templates: TemplateSet
   /** Mitgelieferte Kosmetik im Format v2 (§11.9): Modell, Textur, Leucht-Streifen, Karten – beim Start eingespielt. */
   cosmeticsV2: Map<string, CosmeticV2Assets>
