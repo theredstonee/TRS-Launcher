@@ -45,6 +45,10 @@ pub enum DialogText {
     Mp4Video,
     /// Bilder für eine Chat-Nachricht wählen.
     PickChatImages,
+    /// Server-Export als ZIP speichern.
+    SaveServer,
+    /// Filtername für `.zip`.
+    ZipArchive,
 }
 
 impl DialogText {
@@ -56,7 +60,7 @@ impl DialogText {
 
 /// Je Text eine Zeile in der Reihenfolge von [`Language::ALL`]:
 /// en, de, es, fr, pl, pt-BR, tr, nl.
-const TEXTS: [[&str; 8]; 24] = [
+const TEXTS: [[&str; 8]; 26] = [
     [
         "Save modpack",
         "Modpack speichern",
@@ -270,6 +274,17 @@ const TEXTS: [[&str; 8]; 24] = [
         "Gönderilecek resimleri seç",
         "Afbeeldingen kiezen om te versturen",
     ],
+    [
+        "Save server",
+        "Server speichern",
+        "Guardar servidor",
+        "Enregistrer le serveur",
+        "Zapisz serwer",
+        "Salvar servidor",
+        "Sunucuyu kaydet",
+        "Server opslaan",
+    ],
+    ["ZIP archive", "ZIP-Archiv", "Archivo ZIP", "Archive ZIP", "Archiwum ZIP", "Arquivo ZIP", "ZIP arşivi", "ZIP-archief"],
 ];
 
 impl DialogText {
@@ -290,7 +305,7 @@ pub async fn language(launcher: &LauncherState) -> Language {
 mod tests {
     use super::*;
 
-    const ALL: [DialogText; 24] = [
+    const ALL: [DialogText; 26] = [
         DialogText::SaveModpack,
         DialogText::PickModpack,
         DialogText::ModrinthModpack,
@@ -315,6 +330,8 @@ mod tests {
         DialogText::SaveClip,
         DialogText::Mp4Video,
         DialogText::PickChatImages,
+        DialogText::SaveServer,
+        DialogText::ZipArchive,
     ];
 
     #[test]

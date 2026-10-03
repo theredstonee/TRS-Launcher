@@ -21,6 +21,7 @@ pub mod news;
 pub mod packs;
 pub mod presets;
 pub mod screenshots;
+pub mod server_export;
 pub mod servers;
 pub mod settings;
 pub mod skins;

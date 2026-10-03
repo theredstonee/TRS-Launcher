@@ -800,6 +800,28 @@
       "invalidCode": "Esse não é um código válido (formato: XXX-XXX).",
       "expired": "Este pedido de entrada não existe (mais) – comece a entrada no site de novo.",
       "used": "Este pedido de entrada já foi respondido."
+    },
+    "serverExport": {
+      "nameRequired": "Digite um nome para o servidor.",
+      "noTarget": "Escolha: salvar como ZIP e/ou criar aqui.",
+      "eulaRequired": "Para iniciar o servidor aqui, você precisa aceitar o EULA do Minecraft.",
+      "invalidPort": "A porta deve ficar entre 1024 e 65535.",
+      "invalidMaxPlayers": "O número de jogadores deve ficar entre 1 e 1000.",
+      "invalidMods": "A seleção de mods é inválida – abra a janela de novo.",
+      "invalidWorld": "Este mundo não existe (mais).",
+      "noServerJar": "Não existe servidor oficial para o Minecraft {version}.",
+      "loaderUnavailable": "Este mod loader não existe como servidor para o Minecraft {version}.",
+      "installerFailed": "O instalador do mod loader falhou. Verifique sua conexão com a internet e tente de novo."
+    },
+    "localServer": {
+      "notFound": "Este servidor não existe (mais).",
+      "eulaMissing": "O servidor só inicia depois que o EULA do Minecraft for aceito.",
+      "portInUse": "A porta {port} já está em uso – outro servidor ainda está rodando nela?",
+      "startFailed": "Não foi possível iniciar o servidor.",
+      "invalidCommand": "O comando está vazio, é longo demais ou contém caracteres inválidos.",
+      "notRunning": "O servidor não está em execução.",
+      "stopTimeout": "O servidor não parou a tempo.",
+      "stillRunning": "Pare o servidor primeiro."
     }
   },
   "browse": {
@@ -2572,7 +2594,8 @@
     "clips": "Clipes",
     "social": "Social",
     "socialBadge": "{messages} não lidas · {requests} pedidos",
-    "achievements": "Conquistas"
+    "achievements": "Conquistas",
+    "localServers": "Meus servidores"
   },
   "accountMenu": {
     "menuLabel": "Contas",
@@ -2710,7 +2733,8 @@
       "versionChange": "Versão alterada",
       "launch": "Inicialização do jogo",
       "presets": "Predefinições instaladas",
-      "ffmpeg": "Gravador instalado"
+      "ffmpeg": "Gravador instalado",
+      "serverExport": "Servidor de Minecraft"
     },
     "stage": {
       "preparing": "Preparando",
@@ -2773,7 +2797,8 @@
     "settings": "Configurações",
     "moveToGroup": "Mover para grupo",
     "removeFromGroup": "Remover do grupo",
-    "newGroup": "+ Novo grupo …"
+    "newGroup": "+ Novo grupo …",
+    "exportServer": "Exportar como servidor …"
   },
   "home": {
     "greeting": {
@@ -4104,6 +4129,11 @@
       "textShared": "Compartilhado como {code}. Envie uma nova versão – quem instalou recebe uma atualização.",
       "action": "Compartilhar …",
       "actionUpdate": "Nova versão …"
+    },
+    "server": {
+      "title": "Exportar como servidor",
+      "text": "Monta um servidor de Minecraft com o loader certo e só os mods de que um servidor precisa – como ZIP para amigos ou uma hospedagem, ou criado e iniciado aqui mesmo.",
+      "action": "Exportar …"
     }
   },
   "social": {
@@ -5414,5 +5444,114 @@
     "logs": "Ajuda com os logs",
     "java": "Guia do Java",
     "linux": "Guia para Linux"
+  },
+  "serverExport": {
+    "title": "Exportar como servidor",
+    "analyzing": "Verificando quais mods vão para um servidor …",
+    "unsupported": "Não existe servidor oficial para o Minecraft {version}.",
+    "offline": "Não foi possível acessar o Modrinth e o CurseForge – os mods foram classificados só pelo que dizem os próprios arquivos. Confira a lista antes de exportar.",
+    "defaultMotd": "{name} – um servidor do TRS Launcher",
+    "mods": {
+      "title": "Mods",
+      "summary": "{on} no servidor · {off} deixados de fora",
+      "none": "Esta instância não tem mods – o servidor roda como está.",
+      "hint": "Mods só de cliente (gráficos, minimapas, HUD) não funcionam em servidor e ficam de fora. Os jogadores continuam com eles no próprio jogo. Clique em um mod para movê-lo.",
+      "filter": "Filtrar mods …",
+      "server": "No servidor ({count})",
+      "leftOut": "Deixados de fora ({count})",
+      "empty": "Nenhum",
+      "trsLocked": "O TRS Client só roda no jogo e nunca vai para um servidor.",
+      "unknownHint": "{count} mods não dizem onde rodam (marcados com \"?\"). Eles entram por segurança – remova-os se o servidor não iniciar."
+    },
+    "side": {
+      "client": "Cliente",
+      "server": "Servidor",
+      "both": "Ambos",
+      "unknown": "?"
+    },
+    "source": {
+      "trs": "Gerenciado pelo launcher",
+      "list": "Mod conhecido só de cliente",
+      "jar": "Pelo arquivo do mod",
+      "modrinth": "Pelo Modrinth",
+      "curseforge": "Pelo CurseForge",
+      "none": "Sem informação – incluído por segurança"
+    },
+    "world": "Mundo",
+    "newWorld": "Mundo novo (o servidor cria um)",
+    "configs": "Incluir configs",
+    "port": "Porta",
+    "maxPlayers": "Máx. de jogadores",
+    "motd": "Descrição do servidor (MOTD)",
+    "onlineMode": "Modo online",
+    "onlineModeOn": "Só jogadores com uma conta real de Minecraft podem entrar (recomendado).",
+    "onlineModeOff": "Qualquer um pode entrar com qualquer nome – não recomendado.",
+    "ram": "RAM",
+    "ramValue": "{gb} GB",
+    "ramRange": "A RAM deve ficar entre 512 MB e 128 GB.",
+    "javaHint": "O servidor precisa do Java {major}. Os scripts de inicialização usam \"java\" – o README explica como escolher outro.",
+    "eula": "Li e aceito o EULA do Minecraft.",
+    "eulaLink": "Ler o EULA",
+    "eulaAccepted": "O eula.txt será criado com o seu consentimento.",
+    "eulaNotAccepted": "Sem o seu consentimento não há eula.txt – o servidor para na primeira inicialização até você aceitar o EULA lá.",
+    "asZip": "Salvar como ZIP",
+    "local": "Criar aqui e iniciar",
+    "localHint": "O servidor fica na pasta de dados do launcher e inicia na hora. Você o controla em \"Meus servidores\".",
+    "actions": {
+      "zip": "Salvar ZIP …",
+      "local": "Criar e iniciar",
+      "both": "Salvar ZIP e iniciar …"
+    },
+    "pickLocation": "Escolha onde salvar …",
+    "phase": {
+      "java": "Preparando o Java",
+      "server": "Baixando servidor e loader",
+      "files": "Copiando mods, configs e mundo",
+      "zip": "Gravando ZIP",
+      "start": "Iniciando o servidor"
+    },
+    "runsInBackground": "{stage} – continua mesmo se você fechar esta janela.",
+    "exporting": "Exportando …",
+    "doneZip": "Servidor salvo: {file} ({size})",
+    "doneLocal": "Servidor \"{name}\" criado",
+    "localCreated": "Servidor \"{name}\" criado.",
+    "openConsole": "Abrir console"
+  },
+  "localServers": {
+    "title": "Meus servidores",
+    "subtitle": "Servidores de Minecraft neste PC – log, comandos e jogadores",
+    "runningCount": "{count} em execução",
+    "stopped": "Parado",
+    "players": "{now}/{max} jogadores",
+    "state": {
+      "starting": "iniciando …",
+      "running": "em execução",
+      "stopping": "parando …",
+      "stopped": "parado"
+    },
+    "meta": "Minecraft {version} · {loader} · porta {port} · {ram} MB de RAM · Java {java}",
+    "exitCode": "A última execução terminou com erro (código {code}) – veja o log.",
+    "start": "Iniciar",
+    "starting": "Iniciando …",
+    "stop": "Parar",
+    "restart": "Reiniciar",
+    "kill": "Forçar parada",
+    "killHint": "Encerra o servidor na hora, sem salvar o mundo.",
+    "delete": "Excluir servidor",
+    "deleteConfirm": "Mover para a lixeira?",
+    "eulaMissing": "O EULA do Minecraft não foi aceito para este servidor – coloque eula=true no eula.txt da pasta dele se você concordar.",
+    "network": "Jogadores da sua rede entram com o endereço IP deste PC e a porta {port}. O Windows pode perguntar uma vez se o Java pode usar a rede – permita. Para amigos pela internet, redirecione a porta {port} no seu roteador.",
+    "allowFirewall": "Permitir o Java no firewall",
+    "log": "Log do servidor",
+    "hiddenLines": "{count} linhas antigas ocultas",
+    "noLog": "Ainda não há log – inicie o servidor.",
+    "commandPlaceholder": "Comando, p. ex. say Olá ou op <nome>",
+    "command": "Comando do servidor",
+    "send": "Enviar",
+    "empty": {
+      "title": "Ainda não há servidores",
+      "text": "Abra uma instância, vá em \"Compartilhar\" e escolha \"Exportar como servidor\" com \"Criar aqui e iniciar\".",
+      "action": "Ir para a biblioteca"
+    }
   }
 }

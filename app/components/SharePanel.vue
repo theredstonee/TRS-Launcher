@@ -2,7 +2,7 @@
 import type { Instance } from '~/types'
 
 // Tab „Teilen“: alles, womit sich eine Instanz weitergeben lässt – als
-// Modpack-Datei, als Log-Link (Hilfe bei Problemen), Welten und Screenshots.
+// Modpack-Datei, als Server, als Log-Link (Hilfe bei Problemen), Welten und Screenshots.
 const props = defineProps<{ instance: Instance }>()
 const emit = defineEmits<{ navigate: [tab: 'worlds' | 'screenshots' | 'logs' | 'files'] }>()
 
@@ -17,6 +17,8 @@ const sharedLink = computed(() => {
 onMounted(() => void packs.loadLinks())
 const sharingLog = ref(false)
 const exportTask = computed(() => tasks.get(taskKey('export', props.instance.id)))
+const exportingServer = ref(false)
+const serverTask = computed(() => tasks.get(taskKey('server-export', props.instance.id)))
 
 interface Card {
   key: string
@@ -47,6 +49,16 @@ const cards = computed<Card[]>(() => [
     action: exportTask.value?.status === 'running' ? `${exportTask.value.percent ?? 0} %` : t('share.modpack.action'),
     busy: exportTask.value?.status === 'running',
     run: () => (exporting.value = true),
+  },
+  {
+    key: 'server',
+    title: t('share.server.title'),
+    text: t('share.server.text'),
+    icon: 'M4 4h16v6H4zM4 14h16v6H4zM8 7h.01M8 17h.01M12 7h4M12 17h4',
+    tone: 'text-redstone-400',
+    action: serverTask.value?.status === 'running' ? `${Math.floor(serverTask.value.percent ?? 0)} %` : t('share.server.action'),
+    busy: serverTask.value?.status === 'running',
+    run: () => (exportingServer.value = true),
   },
   {
     key: 'log',
@@ -99,6 +111,7 @@ const cards = computed<Card[]>(() => [
 
     <SharePackDialog v-if="sharingPack" :instance="instance" @close="sharingPack = false" />
     <ExportPackDialog v-if="exporting" :instance="instance" @close="exporting = false" />
+    <ServerExportDialog v-if="exportingServer" :instance="instance" @close="exportingServer = false" />
     <LogShareDialog v-if="sharingLog" :instance-id="instance.id" source="live" :label="t('logViewer.latest')" @close="sharingLog = false" />
   </div>
 </template>

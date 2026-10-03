@@ -1328,6 +1328,7 @@ export type TaskKind =
   | 'reinstall'
   | 'version-change'
   | 'launch'
+  | 'server-export'
   | 'ffmpeg'
 
 /** Eintrag im Verlauf fertiger Aufgaben (`task-history.json`, neueste zuerst). */

@@ -19,6 +19,7 @@ const taskKindKeys: Record<TaskKind, MessageKey> = {
   reinstall: 'tasks.kind.reinstall',
   'version-change': 'tasks.kind.versionChange',
   launch: 'tasks.kind.launch',
+  'server-export': 'tasks.kind.serverExport',
   ffmpeg: 'tasks.kind.ffmpeg',
 }
 

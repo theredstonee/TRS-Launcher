@@ -12,6 +12,8 @@ const game = computed(() => games.state(props.instance.id))
 /** Neue Version des geteilten Modpacks, aus dem die Instanz stammt. */
 const packUpdate = computed(() => usePacksStore().updateOf(props.instance.id))
 const menu = ref<'main' | 'groups' | null>(null)
+/** „Als Server exportieren“ aus dem Menü. */
+const exportingServer = ref(false)
 
 /** Modpack wird noch installiert (Instanz ist schon angelegt): Fortschritt statt „Spielen“. */
 const install = computed(() => useTasksStore().installingInstance(props.instance.id))
@@ -130,6 +132,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
             <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 5 7 7-7 7" /></svg>
           </button>
           <button class="menu-item" role="menuitem" @click="openFolder">{{ t('common.actions.openFolder') }}</button>
+          <button class="menu-item" role="menuitem" @click="menu = null; exportingServer = true">{{ t('instanceCard.exportServer') }}</button>
           <div class="my-1 border-t border-base-700" />
           <button class="menu-item text-redstone-300" role="menuitem" :disabled="game.phase !== 'idle'" @click="menu = null; emit('delete', instance)">{{ t('common.actions.delete') }}</button>
         </div>
@@ -147,5 +150,9 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
         </div>
       </div>
     </div>
+    <!-- Außerhalb der Karte, sonst hängt der Dialog an ihrem Hover-Effekt. -->
+    <Teleport to="body">
+      <ServerExportDialog v-if="exportingServer" :instance="instance" @close="exportingServer = false" />
+    </Teleport>
   </article>
 </template>

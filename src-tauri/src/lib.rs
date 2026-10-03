@@ -138,6 +138,13 @@ pub fn run() {
                     log::warn!("trs-live konnte nicht gesendet werden: {e}");
                 }
             }));
+            // Lokale Server: Log-Zeilen und Zustand (Start, Spieler, Ende) ans Frontend.
+            let handle = app.handle().clone();
+            launcher.local_servers().set_sink(Arc::new(move |event| {
+                if let Err(e) = handle.emit("local-server", &event) {
+                    log::warn!("local-server konnte nicht gesendet werden: {e}");
+                }
+            }));
             let launcher = Arc::new(launcher);
             // Spiele, die beim letzten Schließen noch liefen, wieder aufnehmen.
             tauri::async_runtime::spawn(Arc::clone(&launcher).resume_clips());
@@ -594,6 +601,17 @@ pub fn run() {
             commands::hosting::hosting_room_content,
             commands::hosting::hosting_instance_mods,
             commands::hosting::hosting_prepare,
+            commands::server_export::server_export_plan,
+            commands::server_export::export_server,
+            commands::server_export::local_servers_list,
+            commands::server_export::local_server_start,
+            commands::server_export::local_server_stop,
+            commands::server_export::local_server_kill,
+            commands::server_export::local_server_restart,
+            commands::server_export::local_server_command,
+            commands::server_export::local_server_logs,
+            commands::server_export::local_server_open_folder,
+            commands::server_export::local_server_delete,
         ])
         .build(tauri::generate_context!())
         .expect("TRS Launcher konnte nicht gestartet werden")
@@ -606,12 +624,17 @@ pub fn run() {
                 // Laufende Aufnahmen sichern (höchstens ~5 s), dann die TRS-Präsenz
                 // (trs_shutdown hat eigene kurze Timeouts, höchstens ~3 s) und den
                 // Discord-Status (höchstens ~1,5 s, parallel dazu).
+                // Lokale Server bekommen `stop` (Welt speichern) und werden nach höchstens
+                // ~20 s hart beendet – parallel zum Rest.
                 tauri::async_runtime::block_on(async move {
                     let discord = Arc::clone(&launcher);
                     let discord = tauri::async_runtime::spawn(async move { discord.discord_shutdown().await });
+                    let servers = Arc::clone(&launcher);
+                    let servers = tauri::async_runtime::spawn(async move { servers.local_servers_shutdown().await });
                     launcher.clips_shutdown().await;
                     launcher.trs_shutdown().await;
                     let _ = discord.await;
+                    let _ = servers.await;
                 });
             }
         });

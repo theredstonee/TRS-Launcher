@@ -35,6 +35,7 @@ pub mod java;
 pub mod launch;
 pub mod link;
 pub mod loaders;
+pub mod local_servers;
 pub mod logfiles;
 pub mod meta;
 pub mod modcompat;
@@ -50,6 +51,7 @@ pub mod prepare;
 pub mod presets;
 pub mod process;
 pub mod screenshots;
+pub mod server_export;
 pub mod servers;
 pub mod settings;
 pub mod skin_import;
@@ -98,6 +100,8 @@ pub struct Launcher {
     accounts: AccountStore,
     games: GameManager,
     servers: ServerStore,
+    /// Lokale Minecraft-Server (Server-Export „lokal anlegen und starten“).
+    local_servers: Arc<local_servers::LocalServers>,
     /// Von Hand gewählte Import-Ordner (nur für diese Sitzung).
     import_folders: Mutex<Vec<PathBuf>>,
     /// Mitgelieferte TRS-Client-Jars (Tauri-Ressourcen).
@@ -207,6 +211,7 @@ impl Launcher {
             accounts: AccountStore::new(paths.clone(), http.clone()),
             games: GameManager::new(events, paths.root().join("running.json")),
             servers: ServerStore::new(paths.clone()),
+            local_servers: Arc::default(),
             import_folders: Mutex::default(),
             client_mod_dir: std::sync::RwLock::default(),
             client_mod_updates: client_mod_update::ClientModUpdater::new(&paths)?,

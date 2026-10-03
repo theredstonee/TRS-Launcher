@@ -80,6 +80,14 @@ import { teamErrorText } from './teamAccess'
 import { sharedImageSchema, sharesPageSchema } from './share'
 import { webLoginAccountSchema, webLoginRequestSchema } from './webLogin'
 import {
+  localServerSchema,
+  serverExportPlanSchema,
+  serverExportResultSchema,
+  serverStatusSchema,
+  type ServerExportOptions,
+  type ServerExportProgress,
+} from './serverExport'
+import {
   appealEnvelopeSchema,
   appealPageSchema,
   bulkResultSchema,
@@ -548,6 +556,23 @@ export const backend = {
   /** Fragt nach dem Speicherort und schreibt das .mrpack; `null` = abgebrochen. */
   exportModpack: (id: string, options: ExportOptions, onProgress: (p: ExportProgress) => void) =>
     call<ExportSummary | null>('export_modpack', { id, options, onProgress: channel(onProgress) }),
+  /** Als Server exportieren: Mods (eingeordnet), Welten und Configs für den Dialog. */
+  serverExportPlan: (id: string) => checked(serverExportPlanSchema, 'server_export_plan', { id }),
+  /** Baut den Server (mit ZIP fragt Rust nach dem Speicherort); `null` = Speichern abgebrochen. */
+  exportServer: (id: string, options: ServerExportOptions, onProgress: (p: ServerExportProgress) => void, taskId: string) =>
+    checked(serverExportResultSchema.nullable(), 'export_server', { id, options, onProgress: channel(onProgress), taskId }),
+  /** Lokale Server unter `servers/` (Server-Export „lokal anlegen“). */
+  localServers: {
+    list: () => checked(z.array(localServerSchema), 'local_servers_list'),
+    start: (id: string, taskId: string | null = null) => checked(serverStatusSchema, 'local_server_start', { id, taskId }),
+    stop: (id: string) => call<void>('local_server_stop', { id }),
+    kill: (id: string) => call<void>('local_server_kill', { id }),
+    restart: (id: string) => checked(serverStatusSchema, 'local_server_restart', { id }),
+    command: (id: string, command: string) => call<void>('local_server_command', { id, command }),
+    logs: (id: string) => checked(z.array(z.string().max(5000)).max(10000), 'local_server_logs', { id }),
+    openFolder: (id: string) => call<void>('local_server_open_folder', { id }),
+    remove: (id: string) => call<void>('local_server_delete', { id }),
+  },
   /** Öffnet den Dateidialog und liest das Pack (Vorschau); `null` = abgebrochen. */
   pickModpackFile: () => call<PickedPack | null>('pick_modpack_file'),
   /** Legt aus der gewählten Pack-Datei eine Instanz an (ID der Instanz). */
