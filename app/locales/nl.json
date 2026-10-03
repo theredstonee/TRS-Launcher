@@ -880,6 +880,14 @@
       "notRunning": "De server draait niet.",
       "stopTimeout": "De server stopte niet op tijd.",
       "stillRunning": "Stop eerst de server."
+    },
+    "game": {
+      "engineFailed": "De game-engine kon niet worden gestart.",
+      "runtimeBroken": "De gedownloade Java-runtime is beschadigd. Probeer het opnieuw.",
+      "runtimeDownloadFailed": "Java voor het spel kon niet worden gedownload. Controleer je internetverbinding.",
+      "runtimeMissing": "Java voor het spel ontbreekt nog. Start opnieuw.",
+      "unsupportedPlatform": "Het spel wordt op dit apparaat niet ondersteund.",
+      "worldJoinUnsupported": "Gehoste werelden zijn op dit apparaat nog niet beschikbaar."
     }
   },
   "browse": {

@@ -209,6 +209,7 @@ async fn install_forge(input: &InstallInput<'_>, report: &(dyn Fn(f64) + Sync)) 
         java,
         java_major: input.java_major,
         concurrency: input.concurrency,
+        runner: None,
     };
     let (cached, version) = forge::server_installer(&ctx, &|p| report(p * 0.15)).await?;
     let installer_jar = input.dir.join("installer.jar");

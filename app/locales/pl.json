@@ -880,6 +880,14 @@
       "notRunning": "Serwer nie działa.",
       "stopTimeout": "Serwer nie zatrzymał się na czas.",
       "stillRunning": "Najpierw zatrzymaj serwer."
+    },
+    "game": {
+      "engineFailed": "Nie udało się uruchomić silnika gry.",
+      "runtimeBroken": "Pobrane środowisko Java jest uszkodzone. Spróbuj ponownie.",
+      "runtimeDownloadFailed": "Nie udało się pobrać Javy dla gry. Sprawdź połączenie z internetem.",
+      "runtimeMissing": "Wciąż brakuje Javy dla gry. Uruchom ponownie.",
+      "unsupportedPlatform": "Gra nie jest obsługiwana na tym urządzeniu.",
+      "worldJoinUnsupported": "Hostowane światy nie są jeszcze dostępne na tym urządzeniu."
     }
   },
   "browse": {

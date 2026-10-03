@@ -27,7 +27,6 @@ pub async fn launch_instance(
     extra: Option<bool>,
     account_id: Option<String>,
 ) -> CommandResult<u32> {
-    trs_core::platform::desktop_only()?;
     // Konto-ID: nur eine UUID-artige Kennung, nie beliebiger Text.
     if account_id.as_deref().is_some_and(|a| a.len() > 64 || !a.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')) {
         return Err(trs_core::Error::validation(trs_core::msg!("launcher.accountMissing", "Das gewählte Konto gibt es nicht mehr.")).into());
@@ -45,6 +44,10 @@ pub async fn launch_instance(
         let _ = on_progress.send(progress);
     };
     let options = trs_core::LaunchOptions { extra: extra.unwrap_or(false), account_id };
+    // Android/iOS: eingebettete JVM statt eigenem Java-Prozess.
+    #[cfg(mobile)]
+    let work = crate::mobile_game::launch(&app, &launcher, &id, join, options, &report);
+    #[cfg(not(mobile))]
     let work = launcher.launch_with(&id, join, options, &report);
     let pid = tracked(&app, task_id, work).await?;
 

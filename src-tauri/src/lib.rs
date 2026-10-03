@@ -3,6 +3,8 @@ mod deeplink;
 mod dialog_text;
 mod error;
 mod mobile;
+#[cfg(mobile)]
+mod mobile_game;
 mod open;
 
 use std::sync::Arc;
@@ -68,6 +70,9 @@ pub fn run() {
     let builder = builder.plugin(mobile::init());
     builder
         .setup(|app| {
+            // Spiel-Engine (eingebettete JVM) – nur Android/iOS.
+            #[cfg(mobile)]
+            app.handle().plugin(tauri_plugin_trs_game::init())?;
             let location = data_location(app)?;
             let root = location.root.clone();
             log::info!("Datenverzeichnis: {} ({:?})", root.display(), location.source);

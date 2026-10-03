@@ -18,6 +18,22 @@ Third-party parts
   header; the license text is in client-mod/licenses/chat-heads-MPL-2.0.txt.
 - AppleSkin by squeek502 (The Unlicense): idea for the TRS Client hunger overlay; resource packs
   that ship AppleSkin textures are supported.
+- Mobile game engine (src-tauri/plugins/tauri-plugin-trs-game, Android; details and pinned
+  commits/hashes in android/vendor/*/UPSTREAM.md and android/prebuilt.lock):
+  - Amethyst-Android by AngelAuraMC, a fork of PojavLauncher by PojavLauncherTeam
+    (LGPL-3.0-or-later): JNI engine (JVM launcher, EGL/GL bridge, GLFW input bridge, exit and
+    dlopen hooks), Android glue classes and the GLFW stub for LWJGL 3.3.3/3.4.1 – vendored in
+    android/vendor/amethyst (license in that folder). jre_launcher.c contains code from OpenJDK
+    (GPL-2.0 with Classpath Exception, Oracle).
+  - androidnsbypass by alexytomi (MIT), partly based on liblinkernsbypass by Billy Laws
+    (BSD-2-Clause) – vendored in android/vendor/androidnsbypass.
+  - Downloaded at build time (SHA-256 pinned, not in the repository): MobileGlues by MobileGL-Dev
+    (LGPL-2.1), NG-GL4ES / Krypton Wrapper by BZLZHH (MIT, based on gl4es by ptitSeb, MIT),
+    OpenAL Soft (LGPL-2.0-or-later), LWJGL 3 and its Android fork by PojavLauncherTeam
+    (BSD-3-Clause) with FreeType (FreeType License), JSR-305 annotations (BSD-3-Clause),
+    bytehook by ByteDance (MIT), JNA (Apache-2.0 / LGPL-2.1).
+  - Downloaded at runtime (SHA-256 pinned, never bundled): OpenJDK 8/17/21/25 runtimes for
+    Android built by AngelAuraMC (angelauramc-openjdk-build), GPL-2.0 with Classpath Exception.
 - Further libraries and bundled mods are listed with their licenses in README.md and
   client-mod/README.md.
 

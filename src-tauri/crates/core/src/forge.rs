@@ -74,6 +74,33 @@ pub struct InstallContext<'a> {
     /// Java-Hauptversion laut Version-JSON (`javaVersion.majorVersion`, sonst 8).
     pub java_major: u32,
     pub concurrency: usize,
+    /// Eingebettete JVM (Android/iOS): Processors laufen über diesen Runner statt
+    /// als eigener `java`-Prozess. `None` = Desktop.
+    pub runner: Option<&'a dyn ProcessorRunner>,
+}
+
+/// Ein Processor-Aufruf (`java -cp … Main args`), ausgeführt von einem [`ProcessorRunner`].
+#[derive(Debug, Clone)]
+pub struct ProcessorCall {
+    pub classpath: Vec<PathBuf>,
+    pub main_class: String,
+    pub args: Vec<String>,
+    pub cwd: PathBuf,
+    /// Java für die Processors (mindestens [`PROCESSOR_MIN_JAVA`]).
+    pub java_major: u32,
+}
+
+/// Ergebnis eines Processor-Laufs.
+#[derive(Debug, Clone, Default)]
+pub struct ProcessorOutput {
+    pub success: bool,
+    /// Letzte Ausgabezeilen (für das Fehler-Log).
+    pub lines: Vec<String>,
+}
+
+/// Führt Processors ohne eigenen Prozess-Start aus (eingebettete JVM auf Mobilgeräten).
+pub trait ProcessorRunner: Send + Sync {
+    fn run(&self, call: ProcessorCall) -> futures::future::BoxFuture<'_, Result<ProcessorOutput>>;
 }
 
 /// Runtime für die Processors, wenn das Spiel mit Java 8 läuft.
@@ -902,14 +929,20 @@ async fn install_modern(
     if !processors.is_empty() {
         let work_dir = paths.meta_dir().join("loader-install").join(&profile.id);
         let data = build_data_map(ctx, installer_jar, &install.data, &work_dir, &mut tracked).await?;
-        let java = console_java(&processor_java(ctx, report).await);
+        let java = match ctx.runner {
+            Some(_) => PathBuf::new(),
+            None => console_java(&processor_java(ctx, report).await),
+        };
 
         let total = processors.len() as u64;
         for (index, processor) in processors.iter().enumerate() {
             let done = index as u64;
             report(PERCENT_LIBRARIES + (100.0 - PERCENT_LIBRARIES) * done as f64 / total as f64, done, total);
             crate::task::checkpoint().await?;
-            run_processor(paths, &java, &work_dir, processor, &data).await?;
+            match ctx.runner {
+                Some(runner) => run_processor_embedded(paths, runner, ctx.java_major, &work_dir, processor, &data).await?,
+                None => run_processor(paths, &java, &work_dir, processor, &data).await?,
+            }
         }
         report(100.0, total, total);
         let _ = tokio::fs::remove_dir_all(&work_dir).await;
@@ -1062,6 +1095,63 @@ async fn run_processor(
         tracing::error!("Processor {} endete mit {}", processor.jar, output.status);
         let lines: Vec<&str> = stdout.lines().chain(stderr.lines()).collect();
         for line in lines.iter().skip(lines.len().saturating_sub(40)) {
+            tracing::error!("[{}] {line}", processor.jar);
+        }
+        return Err(failed);
+    }
+    if !outputs.is_empty() && !outputs_up_to_date(&outputs).await {
+        tracing::error!("Processor {} hat unerwartete Ausgaben erzeugt (SHA1 stimmt nicht)", processor.jar);
+        return Err(failed);
+    }
+    Ok(())
+}
+
+/// Wie [`run_processor`], aber über die eingebettete JVM (eigener Engine-Prozess).
+async fn run_processor_embedded(
+    paths: &Paths,
+    runner: &dyn ProcessorRunner,
+    game_java: u32,
+    work_dir: &Path,
+    processor: &Processor,
+    data: &HashMap<String, String>,
+) -> Result<()> {
+    let outputs = resolve_outputs(&processor.outputs, data, paths)?;
+    if outputs_up_to_date(&outputs).await {
+        tracing::debug!("Processor {} übersprungen – Ausgaben sind aktuell", processor.jar);
+        return Ok(());
+    }
+    let jar = library_file(paths, &MavenCoord::parse(&processor.jar)?.path());
+    let mut classpath = vec![jar.clone()];
+    for coord in &processor.classpath {
+        classpath.push(library_file(paths, &MavenCoord::parse(coord)?.path()));
+    }
+    if let Some(missing) = classpath.iter().find(|p| !p.is_file()) {
+        tracing::error!("Processor-Library fehlt: {}", missing.display());
+        return Err(Error::launch(crate::msg!("forge.installIncomplete", "Die Modloader-Installation ist unvollständig. Bitte erneut versuchen.")));
+    }
+    let main_class = {
+        let jar = jar.clone();
+        blocking(move || read_jar_main_class(&jar)).await?
+    }
+    .ok_or_else(|| {
+        tracing::error!("Processor {} hat keine Main-Class", processor.jar);
+        corrupt_installer()
+    })?;
+    let args = processor.args.iter().map(|a| resolve_arg(a, data, paths)).collect::<Result<Vec<_>>>()?;
+    fsutil::ensure_dir(work_dir).await?;
+    tracing::info!("Starte Processor {} ({main_class}) in der eingebetteten JVM", processor.jar);
+    let call = ProcessorCall {
+        classpath,
+        main_class,
+        args,
+        cwd: work_dir.to_owned(),
+        java_major: game_java.max(PROCESSOR_MIN_JAVA),
+    };
+    let output = crate::task::or_cancel(runner.run(call)).await??;
+    let failed = Error::launch(crate::msg!("forge.installFailed", "Die Modloader-Installation ist fehlgeschlagen. Details stehen im Launcher-Log."));
+    if !output.success {
+        tracing::error!("Processor {} fehlgeschlagen", processor.jar);
+        for line in &output.lines {
             tracing::error!("[{}] {line}", processor.jar);
         }
         return Err(failed);

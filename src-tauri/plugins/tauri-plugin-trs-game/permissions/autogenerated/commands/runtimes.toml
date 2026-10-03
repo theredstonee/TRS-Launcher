@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-runtimes"
+description = "Enables the runtimes command without any pre-configured scope."
+commands.allow = ["runtimes"]
+
+[[permission]]
+identifier = "deny-runtimes"
+description = "Denies the runtimes command without any pre-configured scope."
+commands.deny = ["runtimes"]

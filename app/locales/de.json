@@ -880,6 +880,14 @@
       "notRunning": "Der Server läuft nicht.",
       "stopTimeout": "Der Server hat sich nicht rechtzeitig beendet.",
       "stillRunning": "Bitte den Server zuerst stoppen."
+    },
+    "game": {
+      "engineFailed": "Die Spiel-Engine konnte nicht gestartet werden.",
+      "runtimeBroken": "Die geladene Java-Laufzeit ist beschädigt. Bitte erneut versuchen.",
+      "runtimeDownloadFailed": "Java für das Spiel konnte nicht geladen werden. Bitte Internetverbindung prüfen.",
+      "runtimeMissing": "Java für das Spiel fehlt noch. Bitte erneut starten.",
+      "unsupportedPlatform": "Dieses Gerät wird für das Spiel nicht unterstützt.",
+      "worldJoinUnsupported": "Gehostete Welten gibt es auf diesem Gerät noch nicht."
     }
   },
   "browse": {

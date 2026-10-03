@@ -1,5 +1,5 @@
 [workspace]
-members = [".", "crates/core"]
+members = [".", "crates/core", "plugins/tauri-plugin-trs-game"]
 resolver = "3"
 
 [workspace.package]
@@ -52,6 +52,10 @@ tauri-plugin-process = "2.3.1"
 tauri-plugin-single-instance = { version = "2.4.4", features = ["deep-link"] }
 tauri-plugin-updater = "2.12.0"
 tauri-plugin-window-state = "2.4.1"
+
+# Spiel-Engine (eingebettete JVM) nur auf Android/iOS.
+[target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
+tauri-plugin-trs-game = { path = "plugins/tauri-plugin-trs-game" }
 
 [build-dependencies]
 tauri-build = { version = "2.6.3", features = [] }

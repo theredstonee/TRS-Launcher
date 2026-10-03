@@ -1,0 +1,5 @@
+"$schema" = "schemas/schema.json"
+
+[default]
+description = "Runtime vorbereiten, Spiel starten und installierte Runtimes auflisten."
+permissions = ["allow-prepare-runtime", "allow-launch", "allow-runtimes"]

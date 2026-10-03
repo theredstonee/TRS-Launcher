@@ -880,6 +880,14 @@
       "notRunning": "Sunucu çalışmıyor.",
       "stopTimeout": "Sunucu zamanında durmadı.",
       "stillRunning": "Lütfen önce sunucuyu durdur."
+    },
+    "game": {
+      "engineFailed": "Oyun motoru başlatılamadı.",
+      "runtimeBroken": "İndirilen Java ortamı bozuk. Lütfen tekrar dene.",
+      "runtimeDownloadFailed": "Oyun için Java indirilemedi. Lütfen internet bağlantını kontrol et.",
+      "runtimeMissing": "Oyun için Java hâlâ eksik. Lütfen yeniden başlat.",
+      "unsupportedPlatform": "Oyun bu cihazda desteklenmiyor.",
+      "worldJoinUnsupported": "Barındırılan dünyalar bu cihazda henüz kullanılamıyor."
     }
   },
   "browse": {

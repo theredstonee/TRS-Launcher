@@ -880,6 +880,14 @@
       "notRunning": "O servidor não está em execução.",
       "stopTimeout": "O servidor não parou a tempo.",
       "stillRunning": "Pare o servidor primeiro."
+    },
+    "game": {
+      "engineFailed": "Não foi possível iniciar o motor do jogo.",
+      "runtimeBroken": "O ambiente Java baixado está danificado. Tente novamente.",
+      "runtimeDownloadFailed": "Não foi possível baixar o Java para o jogo. Verifique sua conexão com a internet.",
+      "runtimeMissing": "O Java para o jogo ainda está faltando. Inicie novamente.",
+      "unsupportedPlatform": "O jogo não é compatível com este dispositivo.",
+      "worldJoinUnsupported": "Mundos hospedados ainda não estão disponíveis neste dispositivo."
     }
   },
   "browse": {

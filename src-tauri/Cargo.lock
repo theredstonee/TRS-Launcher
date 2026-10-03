@@ -5103,6 +5103,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "tauri-plugin-trs-game"
+version = "0.17.1"
+dependencies = [
+ "log",
+ "lzma-rust2",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2 0.11.0",
+ "tar",
+ "tauri",
+ "tauri-plugin",
+ "tempfile",
+ "thiserror 2.0.20",
+ "tokio",
+]
+
+[[package]]
 name = "tauri-plugin-updater"
 version = "2.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5738,6 +5756,7 @@ dependencies = [
  "tauri-plugin-opener",
  "tauri-plugin-process",
  "tauri-plugin-single-instance",
+ "tauri-plugin-trs-game",
  "tauri-plugin-updater",
  "tauri-plugin-window-state",
  "thiserror 2.0.20",

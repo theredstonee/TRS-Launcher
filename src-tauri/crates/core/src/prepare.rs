@@ -83,6 +83,17 @@ struct AssetObject {
     size: u64,
 }
 
+/// Woher die Java für Spiel und Modloader-Processors kommt.
+#[derive(Clone, Copy, Default)]
+pub enum JavaChoice<'a> {
+    /// Desktop: eigener Pfad oder von Mojang verwaltete Runtime, Processors als Prozess.
+    #[default]
+    Managed,
+    /// Android/iOS: eingebettete JVM der Spiel-Engine. Kein Java-Download hier,
+    /// keine Mojang-Natives; Processors laufen über `runner`.
+    Embedded { runner: Option<&'a dyn forge::ProcessorRunner> },
+}
+
 pub async fn prepare(
     http: &reqwest::Client,
     paths: &Paths,
@@ -90,6 +101,20 @@ pub async fn prepare(
     instance: &Instance,
     features: &Features,
     verify: bool,
+    on_progress: &ProgressFn,
+) -> Result<Prepared> {
+    prepare_with(http, paths, settings, instance, features, verify, JavaChoice::Managed, on_progress).await
+}
+
+#[allow(clippy::too_many_arguments)]
+pub async fn prepare_with(
+    http: &reqwest::Client,
+    paths: &Paths,
+    settings: &Settings,
+    instance: &Instance,
+    features: &Features,
+    verify: bool,
+    java_choice: JavaChoice<'_>,
     on_progress: &ProgressFn,
 ) -> Result<Prepared> {
     let concurrency = usize::from(settings.concurrent_downloads);
@@ -103,13 +128,20 @@ pub async fn prepare(
     on_progress(StageProgress::begin(Stage::Java));
     // Reihenfolge: Instanz → Java je Hauptversion → globaler Pfad → automatisch.
     let required_major = version.java_version.as_ref().map_or(8, |j| j.major_version);
+    let (runner, embedded) = match java_choice {
+        JavaChoice::Managed => (None, false),
+        JavaChoice::Embedded { runner } => (runner, true),
+    };
     let custom_java = instance
         .overrides
         .java_path
         .clone()
         .or_else(|| settings.java.get(required_major).map(str::to_owned))
-        .or_else(|| settings.java_path.clone());
+        .or_else(|| settings.java_path.clone())
+        .filter(|_| !embedded);
     let java = match custom_java {
+        // Die Engine bringt ihre Runtime selbst mit (siehe tauri-plugin-trs-game).
+        _ if embedded => PathBuf::new(),
         Some(path) => {
             let path = PathBuf::from(path);
             if !path.is_file() {
@@ -158,6 +190,7 @@ pub async fn prepare(
             java: &java,
             java_major: version.java_version.as_ref().map_or(8, |j| j.major_version),
             concurrency,
+            runner,
         };
         let profile = forge::ensure_installed(&ctx, &|p| {
             let rest = 100.0 - LOADER_CLIENT_JAR_PERCENT;
@@ -217,7 +250,10 @@ pub async fn prepare(
     .await?;
 
     let natives_dir = paths.natives_dir(&jar_id);
-    extract_natives(paths, &libraries, &natives_dir).await?;
+    // Eingebettet: Die Natives kommen aus der Engine (LWJGL-Fork für Android/iOS).
+    if !embedded {
+        extract_natives(paths, &libraries, &natives_dir).await?;
+    }
 
     on_progress(StageProgress::begin(Stage::Assets));
     let game_assets = install_assets(http, paths, &version, instance, concurrency, verify, on_progress).await?;
@@ -232,7 +268,7 @@ pub async fn prepare(
     classpath.push(if uses_installer { link_profile_jar(paths, &client_jar, &version.id).await? } else { client_jar });
 
     // Die Flags richten sich nach der Java, die wirklich startet (eigene Pfade inklusive).
-    let java_major = java::inspect(&java).map(|(major, _)| major);
+    let java_major = if embedded { Some(required_major) } else { java::inspect(&java).map(|(major, _)| major) };
     Ok(Prepared { version, java, java_major, classpath, natives_dir, game_assets, log_config })
 }
 
