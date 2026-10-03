@@ -207,10 +207,8 @@ watch(
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.phone" /></svg>
             </span>
             <div class="min-w-0 flex-1">
-              <p class="truncate text-sm font-medium text-base-50">
-                {{ d.deviceName }}
-                <span v-if="d.thisDevice" class="ml-1 rounded bg-redstone-900/50 px-1.5 py-0.5 text-[11px] text-redstone-200">{{ t('settings.push.thisDevice') }}</span>
-              </p>
+              <p class="truncate text-sm font-medium text-base-50">{{ d.deviceName }}</p>
+              <p v-if="d.thisDevice" class="mt-0.5"><span class="rounded bg-redstone-900/50 px-1.5 py-0.5 text-[11px] text-redstone-200">{{ t('settings.push.thisDevice') }}</span></p>
               <p class="text-xs text-base-400">
                 {{ d.kind === 'unifiedpush' ? t('settings.push.kindUnifiedpush', { host: d.endpointHost ?? '?' }) : t('settings.push.kindPoll') }}
                 <template v-if="d.lastSeenAt"> · {{ t('settings.push.lastSeen', { date: dateTime(d.lastSeenAt) }) }}</template>

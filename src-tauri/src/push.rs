@@ -332,6 +332,7 @@ async fn sync(app: &AppHandle, launcher: &LauncherState, opts: Options) -> PushS
 #[cfg_attr(not(mobile), allow(dead_code))]
 pub fn on_foreground(app: &AppHandle, foreground: bool) {
     let Some(launcher) = app.try_state::<LauncherState>().map(|s| s.inner().clone()) else { return };
+    log::debug!("App {}", if foreground { "wieder vorn" } else { "im Hintergrund – Echtzeit-Kanal zu" });
     launcher.trs_live_pause(!foreground);
     if !foreground {
         return;
