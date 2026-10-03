@@ -800,6 +800,21 @@
       "invalidCode": "Ce n’est pas un code valide (format : XXX-XXX).",
       "expired": "Cette demande de connexion n’existe pas (plus) – relance la connexion sur le site.",
       "used": "Cette demande de connexion a déjà reçu une réponse."
+    },
+    "bisect": {
+      "tooFewMods": "La recherche nécessite au moins deux mods activés (en plus du TRS Client et des bibliothèques).",
+      "notRunning": "Aucune recherche n’est en cours pour cette instance.",
+      "staleRound": "Ce tour a déjà reçu une réponse – veuillez recharger.",
+      "applyFailed": "{count} mods n’ont pas pu être modifiés. Le jeu est-il encore ouvert ?",
+      "alreadyRunning": "Une recherche est déjà en cours pour cette instance.",
+      "tooManyMods": "Trop de mods pour la recherche (au maximum {max}).",
+      "gameRunning": "Fermez d’abord le jeu."
+    },
+    "contentGroups": {
+      "invalidName": "Le nom du groupe doit comporter 1 à 40 caractères.",
+      "unknownGroup": "Ce groupe n’existe plus.",
+      "tooMany": "Au maximum {max} groupes par instance",
+      "tooManyEntries": "Trop d’entrées dans les groupes."
     }
   },
   "browse": {
@@ -5414,5 +5429,113 @@
     "logs": "Aide sur les journaux",
     "java": "Guide Java",
     "linux": "Guide Linux"
+  },
+  "contentGroups": {
+    "newGroup": "Nouveau groupe",
+    "assign": "Groupe",
+    "dragHandle": "Glisser {name} dans un groupe",
+    "dragging": "{n} élément | {n} éléments",
+    "dragInto": "{n} élément → {name} | {n} éléments → {name}",
+    "dialog": {
+      "createTitle": "Nouveau groupe",
+      "editTitle": "Modifier le groupe",
+      "placeholder": "p. ex. Performance",
+      "color": "Couleur",
+      "assignHint": "L'élément sélectionné ira dans le nouveau groupe. | Les {n} éléments sélectionnés iront dans le nouveau groupe.",
+      "nameInvalid": "Le nom doit comporter 1 à {max} caractères.",
+      "create": "Créer le groupe"
+    },
+    "header": {
+      "ungrouped": "Sans groupe",
+      "expand": "Déplier {name}",
+      "collapse": "Replier {name}",
+      "count": "{on}/{total} activés",
+      "toggle": "Activer ou désactiver tout le groupe {name}",
+      "menu": "Plus d’actions pour le groupe {name}"
+    },
+    "menu": {
+      "moveTo": "Déplacer vers le groupe",
+      "removeFromGroup": "Retirer du groupe",
+      "edit": "Renommer / changer la couleur",
+      "delete": "Supprimer le groupe"
+    },
+    "filter": {
+      "label": "Filtrer par groupe",
+      "all": "Tous les groupes"
+    },
+    "origin": {
+      "label": "Filtrer par origine",
+      "all": "Toute origine",
+      "pack": "Du modpack",
+      "manual": "Ajouté par vous",
+      "packBadge": "Modpack",
+      "manualBadge": "Ajouté par vous",
+      "packTitle": "Fourni avec le modpack",
+      "manualTitle": "Vous l’avez ajouté vous-même – ne fait pas partie du modpack"
+    },
+    "toasts": {
+      "created": "Groupe {name} créé",
+      "moved": "{n} élément déplacé vers {name} | {n} éléments déplacés vers {name}",
+      "removed": "{n} élément retiré de son groupe | {n} éléments retirés de leurs groupes"
+    },
+    "deleteDialog": {
+      "title": "Supprimer le groupe ?",
+      "text": "Le groupe {name} sera supprimé. Son contenu reste installé, simplement sans groupe."
+    },
+    "colors": {
+      "red": "Rouge",
+      "orange": "Orange",
+      "yellow": "Jaune",
+      "green": "Vert",
+      "cyan": "Turquoise",
+      "blue": "Bleu",
+      "purple": "Violet",
+      "pink": "Rose",
+      "gray": "Gris"
+    }
+  },
+  "bisect": {
+    "title": "Trouver le mod fautif",
+    "button": "Trouver le mod fautif",
+    "buttonTitle": "Désactive tour à tour la moitié de vos mods jusqu’à trouver le mod à l’origine du problème",
+    "round": "Tour {round} sur ~{total}",
+    "progress": "Encore suspects : {suspects} · désactivés en ce moment : {off}",
+    "hintIdle": "Lancez le jeu et vérifiez si le problème est toujours là. Un plantage est détecté automatiquement.",
+    "hintPreparing": "Le jeu démarre …",
+    "hintRunning": "Le jeu tourne. Le problème est-il toujours là ?",
+    "showSuspects": "Afficher le mod suspect | Afficher les {n} mods suspects",
+    "launch": "Lancer le jeu",
+    "stillBroken": "Problème toujours là",
+    "worksFine": "Fonctionne sans problème",
+    "stopFirst": "Fermez d’abord le jeu",
+    "cancelTitle": "Annuler et restaurer tous les mods exactement comme avant",
+    "foundOne": "Trouvé ! Ce mod cause le problème :",
+    "foundSet": "Ce mod cause le problème : | Ces {n} mods ne peuvent être testés qu’ensemble – l’un d’eux cause le problème :",
+    "openPage": "Ouvrir la page",
+    "restoredNote": "Tous les mods sont revenus comme avant. Il a fallu {rounds} tour. | Tous les mods sont revenus comme avant. Il a fallu {rounds} tours.",
+    "disableResult": "Le désactiver | Les désactiver",
+    "keepSearching": "Continuer la recherche",
+    "done": "Terminé",
+    "notFound": "Sans les mods suspects, le problème n’est pas revenu – ce n’est donc sans doute pas un seul mod (peut-être un réglage, le monde ou un pack de ressources). Tous les mods sont revenus comme avant.",
+    "openContent": "Ouvrir le contenu",
+    "crashDetected": "Plantage détecté – compté comme « problème toujours là ».",
+    "banner": "Recherche du mod fautif : certains mods sont désactivés pour l’instant. À la fin ou en cas d’annulation, tout est restauré exactement comme avant.",
+    "showWindow": "Afficher la fenêtre",
+    "lockedTitle": "Verrouillé pendant la recherche du mod fautif",
+    "minimize": "Réduire",
+    "expand": "Déplier",
+    "start": {
+      "title": "Trouver le mod fautif",
+      "intro": "Le launcher cherche dans {name} le mod à l’origine de votre problème :",
+      "stepHalf": "À chaque tour, environ la moitié des mods suspects est désactivée. Les mods et les bibliothèques dont ils ont besoin restent ensemble ; le TRS Client et les bibliothèques du loader ne sont jamais touchés.",
+      "stepAsk": "Vous lancez le jeu et indiquez si le problème est toujours là. Un plantage est détecté automatiquement.",
+      "stepKeep": "Après quelques tours, il reste un mod – vous pouvez le désactiver ou continuer la recherche.",
+      "stepRestore": "À la fin ou en cas d’annulation, tous les mods sont restaurés exactement comme avant – même si le launcher se ferme entre-temps.",
+      "submit": "Lancer la recherche"
+    },
+    "toasts": {
+      "restored": "Tous les mods restaurés",
+      "disabled": "Mods restaurés, fautif désactivé"
+    }
   }
 }

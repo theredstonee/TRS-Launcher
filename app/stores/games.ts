@@ -48,8 +48,9 @@ export const useGamesStore = defineStore('games', () => {
       return
     }
     // Absturz-Helfer fertig: Dialog öffnet sich.
+    // Während „Schuldige Mod finden“ wertet die Suche den Absturz selbst – der Dialog bleibt zu.
     if (event.type === 'crashAnalyzed') {
-      useCrashHelperStore().received(event.crash)
+      useCrashHelperStore().received(event.crash, !useBisectStore().isActive(event.crash.instanceId))
       return
     }
     const s = state(event.instanceId)
@@ -66,7 +67,8 @@ export const useGamesStore = defineStore('games', () => {
       s.phase = 'idle'
       s.startedAt = null
       s.lastExit = { exitCode: event.exitCode, crashed: event.crashed, diagnosis: event.diagnosis, crashId: event.crashId ?? null }
-      if (event.crashed) {
+      const bisecting = useBisectStore().gameExited(event.instanceId, event.crashed)
+      if (event.crashed && !bisecting) {
         const toast = () => useToasts().error(event.diagnosis ? userErrorText(event.diagnosis) : t('game.crashed'))
         // Der Absturz-Helfer meldet sich gleich mit einem Dialog – nur wenn er
         // ausbleibt, gibt es den kurzen Hinweis.

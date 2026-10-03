@@ -800,6 +800,21 @@
       "invalidCode": "Bu geçerli bir kod değil (biçim: XXX-XXX).",
       "expired": "Bu oturum açma isteği yok (artık) – web sitesinde oturum açmayı yeniden başlat.",
       "used": "Bu oturum açma isteği zaten yanıtlandı."
+    },
+    "bisect": {
+      "tooFewMods": "Arama için en az iki etkin mod gerekir (TRS Client ve kütüphaneler hariç).",
+      "notRunning": "Bu kurulum için çalışan bir arama yok.",
+      "staleRound": "Bu tur zaten yanıtlandı – lütfen yenile.",
+      "applyFailed": "{count} mod değiştirilemedi. Oyun hâlâ çalışıyor mu?",
+      "alreadyRunning": "Bu kurulum için zaten bir arama çalışıyor.",
+      "tooManyMods": "Arama için çok fazla mod var (en fazla {max}).",
+      "gameRunning": "Lütfen önce oyunu kapat."
+    },
+    "contentGroups": {
+      "invalidName": "Grup adı 1–40 karakter olmalı.",
+      "unknownGroup": "Bu grup artık yok.",
+      "tooMany": "Kurulum başına en fazla {max} grup",
+      "tooManyEntries": "Gruplarda çok fazla kayıt var."
     }
   },
   "browse": {
@@ -5414,5 +5429,113 @@
     "logs": "Günlükler hakkında yardım",
     "java": "Java rehberi",
     "linux": "Linux rehberi"
+  },
+  "contentGroups": {
+    "newGroup": "Yeni grup",
+    "assign": "Grup",
+    "dragHandle": "{name} öğesini bir gruba sürükle",
+    "dragging": "{n} öğe | {n} öğe",
+    "dragInto": "{n} öğe → {name} | {n} öğe → {name}",
+    "dialog": {
+      "createTitle": "Yeni grup",
+      "editTitle": "Grubu düzenle",
+      "placeholder": "örn. Performans",
+      "color": "Renk",
+      "assignHint": "Seçilen öğe yeni gruba eklenir. | Seçilen {n} öğe yeni gruba eklenir.",
+      "nameInvalid": "Ad 1–{max} karakter olmalı.",
+      "create": "Grup oluştur"
+    },
+    "header": {
+      "ungrouped": "Grupsuz",
+      "expand": "{name} grubunu aç",
+      "collapse": "{name} grubunu kapat",
+      "count": "{on}/{total} açık",
+      "toggle": "{name} grubunun tamamını aç veya kapat",
+      "menu": "{name} grubu için diğer işlemler"
+    },
+    "menu": {
+      "moveTo": "Gruba taşı",
+      "removeFromGroup": "Gruptan çıkar",
+      "edit": "Yeniden adlandır / rengi değiştir",
+      "delete": "Grubu sil"
+    },
+    "filter": {
+      "label": "Gruba göre filtrele",
+      "all": "Tüm gruplar"
+    },
+    "origin": {
+      "label": "Kaynağa göre filtrele",
+      "all": "Her kaynak",
+      "pack": "Mod paketinden",
+      "manual": "Senin eklediklerin",
+      "packBadge": "Mod paketi",
+      "manualBadge": "Sen ekledin",
+      "packTitle": "Mod paketiyle geldi",
+      "manualTitle": "Bunu kendin ekledin – mod paketinin parçası değil"
+    },
+    "toasts": {
+      "created": "{name} grubu oluşturuldu",
+      "moved": "{n} öğe {name} grubuna taşındı | {n} öğe {name} grubuna taşındı",
+      "removed": "{n} öğe gruptan çıkarıldı | {n} öğe gruplarından çıkarıldı"
+    },
+    "deleteDialog": {
+      "title": "Grup silinsin mi?",
+      "text": "{name} grubu silinecek. İçerik yüklü kalır – sadece grupsuz."
+    },
+    "colors": {
+      "red": "Kırmızı",
+      "orange": "Turuncu",
+      "yellow": "Sarı",
+      "green": "Yeşil",
+      "cyan": "Turkuaz",
+      "blue": "Mavi",
+      "purple": "Mor",
+      "pink": "Pembe",
+      "gray": "Gri"
+    }
+  },
+  "bisect": {
+    "title": "Suçlu modu bul",
+    "button": "Suçlu modu bul",
+    "buttonTitle": "Sorunun arkasındaki mod bulunana kadar modlarının yarısını sırayla kapatır",
+    "round": "Tur {round} / ~{total}",
+    "progress": "Hâlâ şüpheli: {suspects} · şu an kapalı: {off}",
+    "hintIdle": "Oyunu başlat ve sorunun hâlâ olup olmadığını kontrol et. Çökme otomatik algılanır.",
+    "hintPreparing": "Oyun başlıyor …",
+    "hintRunning": "Oyun çalışıyor. Sorun hâlâ var mı?",
+    "showSuspects": "Şüpheli modu göster | {n} şüpheli modu göster",
+    "launch": "Oyunu başlat",
+    "stillBroken": "Sorun hâlâ var",
+    "worksFine": "Sorunsuz çalışıyor",
+    "stopFirst": "Önce oyunu kapat",
+    "cancelTitle": "İptal et ve tüm modları tam olarak eski haline getir",
+    "foundOne": "Bulundu! Sorunu bu mod çıkarıyor:",
+    "foundSet": "Sorunu bu mod çıkarıyor: | Bu {n} mod yalnızca birlikte test edilebilir – sorunu bunlardan biri çıkarıyor:",
+    "openPage": "Sayfayı aç",
+    "restoredNote": "Tüm modlar eski haline döndü. {rounds} tur sürdü. | Tüm modlar eski haline döndü. {rounds} tur sürdü.",
+    "disableResult": "Kapat | Hepsini kapat",
+    "keepSearching": "Aramaya devam et",
+    "done": "Bitti",
+    "notFound": "Şüpheli modlar olmadan sorun geri gelmedi – yani muhtemelen tek bir mod değil (belki bir ayar, dünya ya da bir kaynak paketi). Tüm modlar eski haline döndü.",
+    "openContent": "İçeriği aç",
+    "crashDetected": "Çökme algılandı – “sorun hâlâ var” olarak sayıldı.",
+    "banner": "Suçlu mod aranıyor: bazı modlar şimdilik kapalı. Arama bittiğinde veya iptal edildiğinde her şey tam olarak eski haline getirilir.",
+    "showWindow": "Pencereyi göster",
+    "lockedTitle": "Suçlu mod araması sürerken kilitli",
+    "minimize": "Küçült",
+    "expand": "Genişlet",
+    "start": {
+      "title": "Suçlu modu bul",
+      "intro": "Başlatıcı {name} içinde sorununun arkasındaki modu arar:",
+      "stepHalf": "Her turda şüpheli modların yaklaşık yarısı kapatılır. Modlar ve ihtiyaç duydukları kütüphaneler birlikte kalır; TRS Client ve yükleyici kütüphanelerine hiç dokunulmaz.",
+      "stepAsk": "Oyunu başlatır ve sorunun hâlâ olup olmadığını söylersin. Çökme otomatik algılanır.",
+      "stepKeep": "Birkaç turdan sonra tek bir mod kalır – onu kapatabilir veya aramaya devam edebilirsin.",
+      "stepRestore": "Sonunda veya iptal edince tüm modlar tam olarak eski haline getirilir – başlatıcı arada kapansa bile.",
+      "submit": "Aramayı başlat"
+    },
+    "toasts": {
+      "restored": "Tüm modlar geri yüklendi",
+      "disabled": "Modlar geri yüklendi, suçlu kapatıldı"
+    }
   }
 }

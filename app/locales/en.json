@@ -800,6 +800,21 @@
       "invalidCode": "That is not a valid code (format: XXX-XXX).",
       "expired": "This sign-in request doesn’t exist (anymore) – start the sign-in on the website again.",
       "used": "This sign-in request was already answered."
+    },
+    "bisect": {
+      "tooFewMods": "The search needs at least two enabled mods (besides the TRS Client and libraries).",
+      "notRunning": "No culprit search is running for this instance.",
+      "staleRound": "This round has already been answered – please reload.",
+      "applyFailed": "{count} mods couldn't be switched. Is the game still running?",
+      "alreadyRunning": "A culprit search is already running for this instance.",
+      "tooManyMods": "Too many mods for the search (at most {max}).",
+      "gameRunning": "Please stop the game first."
+    },
+    "contentGroups": {
+      "invalidName": "The group name must be 1–40 characters.",
+      "unknownGroup": "This group doesn't exist anymore.",
+      "tooMany": "At most {max} groups per instance",
+      "tooManyEntries": "Too many entries in groups."
     }
   },
   "browse": {
@@ -5414,5 +5429,113 @@
     "logs": "Help with logs",
     "java": "Java guide",
     "linux": "Linux guide"
+  },
+  "contentGroups": {
+    "newGroup": "New group",
+    "assign": "Group",
+    "dragHandle": "Drag {name} into a group",
+    "dragging": "{n} item | {n} items",
+    "dragInto": "{n} item → {name} | {n} items → {name}",
+    "dialog": {
+      "createTitle": "New group",
+      "editTitle": "Edit group",
+      "placeholder": "e.g. Performance",
+      "color": "Color",
+      "assignHint": "The selected item goes into the new group. | The {n} selected items go into the new group.",
+      "nameInvalid": "The name must be 1–{max} characters.",
+      "create": "Create group"
+    },
+    "header": {
+      "ungrouped": "Not in a group",
+      "expand": "Expand {name}",
+      "collapse": "Collapse {name}",
+      "count": "{on}/{total} on",
+      "toggle": "Turn the whole group {name} on or off",
+      "menu": "More actions for group {name}"
+    },
+    "menu": {
+      "moveTo": "Move to group",
+      "removeFromGroup": "Remove from group",
+      "edit": "Rename / change color",
+      "delete": "Delete group"
+    },
+    "filter": {
+      "label": "Filter by group",
+      "all": "All groups"
+    },
+    "origin": {
+      "label": "Filter by origin",
+      "all": "Any origin",
+      "pack": "From the modpack",
+      "manual": "Added by you",
+      "packBadge": "Modpack",
+      "manualBadge": "Added by you",
+      "packTitle": "Came with the modpack",
+      "manualTitle": "You added this yourself – not part of the modpack"
+    },
+    "toasts": {
+      "created": "Group {name} created",
+      "moved": "{n} item moved to {name} | {n} items moved to {name}",
+      "removed": "{n} item removed from its group | {n} items removed from their groups"
+    },
+    "deleteDialog": {
+      "title": "Delete group?",
+      "text": "The group {name} will be deleted. Its content stays installed – just without a group."
+    },
+    "colors": {
+      "red": "Red",
+      "orange": "Orange",
+      "yellow": "Yellow",
+      "green": "Green",
+      "cyan": "Cyan",
+      "blue": "Blue",
+      "purple": "Purple",
+      "pink": "Pink",
+      "gray": "Gray"
+    }
+  },
+  "bisect": {
+    "title": "Find the culprit mod",
+    "button": "Find culprit mod",
+    "buttonTitle": "Switches half of your mods off at a time until the mod behind the problem is found",
+    "round": "Round {round} of ~{total}",
+    "progress": "Still suspected: {suspects} · switched off right now: {off}",
+    "hintIdle": "Start the game and check whether the problem still happens. A crash is detected automatically.",
+    "hintPreparing": "The game is starting …",
+    "hintRunning": "The game is running. Does the problem still happen?",
+    "showSuspects": "Show the suspected mod | Show the {n} suspected mods",
+    "launch": "Start game",
+    "stillBroken": "Problem still there",
+    "worksFine": "Runs without problems",
+    "stopFirst": "Stop the game first",
+    "cancelTitle": "Cancel and restore all mods exactly as they were",
+    "foundOne": "Found it! This mod causes the problem:",
+    "foundSet": "This mod causes the problem: | These {n} mods can only be tested together – one of them causes the problem:",
+    "openPage": "Open page",
+    "restoredNote": "All mods are back to how they were. It took {rounds} round. | All mods are back to how they were. It took {rounds} rounds.",
+    "disableResult": "Disable it | Disable them",
+    "keepSearching": "Keep searching",
+    "done": "Done",
+    "notFound": "Without the suspected mods the problem didn't come back – so it's probably not a single mod (maybe a setting, the world or a resource pack). All mods are back to how they were.",
+    "openContent": "Open content",
+    "crashDetected": "Crash detected – counted as “problem still there”.",
+    "banner": "Finding the culprit mod: some mods are switched off for now. When the search ends or is cancelled, everything is restored exactly as it was.",
+    "showWindow": "Show window",
+    "lockedTitle": "Locked while the culprit search is running",
+    "minimize": "Minimize",
+    "expand": "Expand",
+    "start": {
+      "title": "Find the culprit mod",
+      "intro": "The launcher searches {name} for the mod behind your problem:",
+      "stepHalf": "Each round, about half of the suspected mods are switched off. Mods and the libraries they need stay together; the TRS Client and loader libraries are never touched.",
+      "stepAsk": "You start the game and say whether the problem is still there. A crash is detected automatically.",
+      "stepKeep": "After a few rounds one mod is left – you can disable it or keep searching.",
+      "stepRestore": "At the end or when you cancel, all mods are restored exactly as they were – even if the launcher closes in between.",
+      "submit": "Start search"
+    },
+    "toasts": {
+      "restored": "All mods restored",
+      "disabled": "Mods restored, culprit disabled"
+    }
   }
 }

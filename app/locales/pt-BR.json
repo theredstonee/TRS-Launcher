@@ -800,6 +800,21 @@
       "invalidCode": "Esse não é um código válido (formato: XXX-XXX).",
       "expired": "Este pedido de entrada não existe (mais) – comece a entrada no site de novo.",
       "used": "Este pedido de entrada já foi respondido."
+    },
+    "bisect": {
+      "tooFewMods": "A busca precisa de pelo menos dois mods ativados (além do TRS Client e das bibliotecas).",
+      "notRunning": "Nenhuma busca está rodando para esta instância.",
+      "staleRound": "Esta rodada já foi respondida – recarregue.",
+      "applyFailed": "Não foi possível alternar {count} mods. O jogo ainda está rodando?",
+      "alreadyRunning": "Já existe uma busca rodando para esta instância.",
+      "tooManyMods": "Mods demais para a busca (no máximo {max}).",
+      "gameRunning": "Feche o jogo primeiro."
+    },
+    "contentGroups": {
+      "invalidName": "O nome do grupo deve ter de 1 a 40 caracteres.",
+      "unknownGroup": "Este grupo não existe mais.",
+      "tooMany": "No máximo {max} grupos por instância",
+      "tooManyEntries": "Entradas demais em grupos."
     }
   },
   "browse": {
@@ -5414,5 +5429,113 @@
     "logs": "Ajuda com os logs",
     "java": "Guia do Java",
     "linux": "Guia para Linux"
+  },
+  "contentGroups": {
+    "newGroup": "Novo grupo",
+    "assign": "Grupo",
+    "dragHandle": "Arraste {name} para um grupo",
+    "dragging": "{n} item | {n} itens",
+    "dragInto": "{n} item → {name} | {n} itens → {name}",
+    "dialog": {
+      "createTitle": "Novo grupo",
+      "editTitle": "Editar grupo",
+      "placeholder": "ex.: Desempenho",
+      "color": "Cor",
+      "assignHint": "O item selecionado vai para o novo grupo. | Os {n} itens selecionados vão para o novo grupo.",
+      "nameInvalid": "O nome deve ter de 1 a {max} caracteres.",
+      "create": "Criar grupo"
+    },
+    "header": {
+      "ungrouped": "Sem grupo",
+      "expand": "Expandir {name}",
+      "collapse": "Recolher {name}",
+      "count": "{on}/{total} ativos",
+      "toggle": "Ativar ou desativar o grupo {name} inteiro",
+      "menu": "Mais ações para o grupo {name}"
+    },
+    "menu": {
+      "moveTo": "Mover para o grupo",
+      "removeFromGroup": "Tirar do grupo",
+      "edit": "Renomear / mudar a cor",
+      "delete": "Excluir grupo"
+    },
+    "filter": {
+      "label": "Filtrar por grupo",
+      "all": "Todos os grupos"
+    },
+    "origin": {
+      "label": "Filtrar por origem",
+      "all": "Qualquer origem",
+      "pack": "Do modpack",
+      "manual": "Adicionado por você",
+      "packBadge": "Modpack",
+      "manualBadge": "Adicionado por você",
+      "packTitle": "Veio com o modpack",
+      "manualTitle": "Você mesmo adicionou – não faz parte do modpack"
+    },
+    "toasts": {
+      "created": "Grupo {name} criado",
+      "moved": "{n} item movido para {name} | {n} itens movidos para {name}",
+      "removed": "{n} item tirado do grupo | {n} itens tirados dos grupos"
+    },
+    "deleteDialog": {
+      "title": "Excluir grupo?",
+      "text": "O grupo {name} será excluído. O conteúdo continua instalado – só que sem grupo."
+    },
+    "colors": {
+      "red": "Vermelho",
+      "orange": "Laranja",
+      "yellow": "Amarelo",
+      "green": "Verde",
+      "cyan": "Turquesa",
+      "blue": "Azul",
+      "purple": "Roxo",
+      "pink": "Rosa",
+      "gray": "Cinza"
+    }
+  },
+  "bisect": {
+    "title": "Encontrar o mod culpado",
+    "button": "Encontrar mod culpado",
+    "buttonTitle": "Desativa metade dos seus mods de cada vez até encontrar o mod por trás do problema",
+    "round": "Rodada {round} de ~{total}",
+    "progress": "Ainda suspeitos: {suspects} · desativados agora: {off}",
+    "hintIdle": "Inicie o jogo e veja se o problema ainda acontece. Um travamento é detectado automaticamente.",
+    "hintPreparing": "O jogo está iniciando …",
+    "hintRunning": "O jogo está rodando. O problema ainda acontece?",
+    "showSuspects": "Mostrar o mod suspeito | Mostrar os {n} mods suspeitos",
+    "launch": "Iniciar jogo",
+    "stillBroken": "Problema continua",
+    "worksFine": "Funciona sem problemas",
+    "stopFirst": "Feche o jogo primeiro",
+    "cancelTitle": "Cancelar e restaurar todos os mods exatamente como estavam",
+    "foundOne": "Encontrado! Este mod causa o problema:",
+    "foundSet": "Este mod causa o problema: | Estes {n} mods só podem ser testados juntos – um deles causa o problema:",
+    "openPage": "Abrir página",
+    "restoredNote": "Todos os mods estão como antes. Levou {rounds} rodada. | Todos os mods estão como antes. Levou {rounds} rodadas.",
+    "disableResult": "Desativá-lo | Desativá-los",
+    "keepSearching": "Continuar procurando",
+    "done": "Concluir",
+    "notFound": "Sem os mods suspeitos o problema não voltou – então provavelmente não é um único mod (talvez uma configuração, o mundo ou um pacote de recursos). Todos os mods estão como antes.",
+    "openContent": "Abrir conteúdo",
+    "crashDetected": "Travamento detectado – conta como “problema continua”.",
+    "banner": "Procurando o mod culpado: alguns mods estão desativados por enquanto. Ao terminar ou cancelar, tudo é restaurado exatamente como estava.",
+    "showWindow": "Mostrar janela",
+    "lockedTitle": "Bloqueado enquanto a busca pelo culpado está rodando",
+    "minimize": "Recolher",
+    "expand": "Expandir",
+    "start": {
+      "title": "Encontrar o mod culpado",
+      "intro": "O launcher procura em {name} o mod por trás do seu problema:",
+      "stepHalf": "A cada rodada, cerca de metade dos mods suspeitos é desativada. Os mods e as bibliotecas de que precisam ficam juntos; o TRS Client e as bibliotecas do loader nunca são tocados.",
+      "stepAsk": "Você inicia o jogo e diz se o problema continua. Um travamento é detectado automaticamente.",
+      "stepKeep": "Depois de algumas rodadas sobra um mod – você pode desativá-lo ou continuar procurando.",
+      "stepRestore": "No fim ou ao cancelar, todos os mods são restaurados exatamente como estavam – mesmo que o launcher feche no meio.",
+      "submit": "Iniciar busca"
+    },
+    "toasts": {
+      "restored": "Todos os mods restaurados",
+      "disabled": "Mods restaurados, culpado desativado"
+    }
   }
 }

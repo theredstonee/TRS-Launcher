@@ -1,6 +1,7 @@
 use tauri::ipc::Channel;
 use tauri::{AppHandle, State};
 use trs_core::content::{self, ContentItem, ContentKind, Platform};
+use trs_core::content_groups;
 use trs_core::duplicates::{self, DuplicateModGroup};
 use trs_core::depcheck::{self, DependencyFix};
 use trs_core::modcompat::{self, CompatReport};
@@ -75,6 +76,56 @@ pub async fn bulk_content(
 ) -> CommandResult<content::BulkResult> {
     let instance = launcher.instances().get(&id).await?;
     Ok(content::bulk(launcher.paths(), &instance.id, action, &targets).await?)
+}
+
+/// Eigene Gruppen und Herkunft (Modpack / selbst hinzugefügt) für den Inhalte-Tab.
+#[tauri::command]
+pub async fn content_organization(
+    launcher: State<'_, LauncherState>,
+    id: String,
+) -> CommandResult<content_groups::ContentOrganization> {
+    let instance = launcher.instances().get(&id).await?;
+    Ok(content_groups::organization(launcher.paths(), &instance.id).await?)
+}
+
+#[tauri::command]
+pub async fn create_content_group(
+    launcher: State<'_, LauncherState>,
+    id: String,
+    name: String,
+    color: content_groups::GroupColor,
+) -> CommandResult<content_groups::ContentGroup> {
+    let instance = launcher.instances().get(&id).await?;
+    Ok(content_groups::create_group(launcher.paths(), &instance.id, &name, color).await?)
+}
+
+#[tauri::command]
+pub async fn update_content_group(
+    launcher: State<'_, LauncherState>,
+    id: String,
+    group_id: String,
+    patch: content_groups::GroupPatch,
+) -> CommandResult<content_groups::ContentGroup> {
+    let instance = launcher.instances().get(&id).await?;
+    Ok(content_groups::update_group(launcher.paths(), &instance.id, &group_id, patch).await?)
+}
+
+#[tauri::command]
+pub async fn delete_content_group(launcher: State<'_, LauncherState>, id: String, group_id: String) -> CommandResult<()> {
+    let instance = launcher.instances().get(&id).await?;
+    Ok(content_groups::delete_group(launcher.paths(), &instance.id, &group_id).await?)
+}
+
+/// Inhalte einer Gruppe zuordnen; `group_id: null` nimmt sie aus ihrer Gruppe.
+#[tauri::command]
+pub async fn assign_content_group(
+    launcher: State<'_, LauncherState>,
+    id: String,
+    targets: Vec<content::BulkTarget>,
+    group_id: Option<String>,
+) -> CommandResult<usize> {
+    let instance = launcher.instances().get(&id).await?;
+    Ok(content_groups::assign(launcher.paths(), &instance.id, &targets, group_id.as_deref()).await?)
 }
 
 #[tauri::command]

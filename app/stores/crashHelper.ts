@@ -19,9 +19,10 @@ export const useCrashHelperStore = defineStore('crashHelper', () => {
   const done = ref<Set<string>>(new Set())
   const loading = ref(false)
 
-  function received(crash: CrashAnalysis) {
+  /** `open = false`: nur merken (z. B. während „Schuldige Mod finden“ läuft). */
+  function received(crash: CrashAnalysis, open = true) {
     latest.value = { ...latest.value, [crash.instanceId]: crash }
-    current.value = crash
+    if (open) current.value = crash
   }
 
   function show(crash: CrashAnalysis) {

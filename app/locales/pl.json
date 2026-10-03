@@ -800,6 +800,21 @@
       "invalidCode": "To nie jest prawidłowy kod (format: XXX-XXX).",
       "expired": "To żądanie logowania nie istnieje (już) – zacznij logowanie na stronie od nowa.",
       "used": "Na to żądanie logowania już odpowiedziano."
+    },
+    "bisect": {
+      "tooFewMods": "Szukanie wymaga co najmniej dwóch włączonych modów (poza TRS Client i bibliotekami).",
+      "notRunning": "Dla tej instancji nie trwa żadne szukanie.",
+      "staleRound": "Ta runda ma już odpowiedź – odśwież.",
+      "applyFailed": "Nie udało się przełączyć {count} modów. Czy gra nadal działa?",
+      "alreadyRunning": "Dla tej instancji szukanie już trwa.",
+      "tooManyMods": "Za dużo modów do szukania (najwyżej {max}).",
+      "gameRunning": "Najpierw zamknij grę."
+    },
+    "contentGroups": {
+      "invalidName": "Nazwa grupy musi mieć od 1 do 40 znaków.",
+      "unknownGroup": "Ta grupa już nie istnieje.",
+      "tooMany": "Najwyżej {max} grup na instancję",
+      "tooManyEntries": "Za dużo wpisów w grupach."
     }
   },
   "browse": {
@@ -5414,5 +5429,113 @@
     "logs": "Pomoc dotycząca logów",
     "java": "Poradnik Java",
     "linux": "Poradnik dla Linuksa"
+  },
+  "contentGroups": {
+    "newGroup": "Nowa grupa",
+    "assign": "Grupa",
+    "dragHandle": "Przeciągnij {name} do grupy",
+    "dragging": "{n} element | {n} elementy | {n} elementów",
+    "dragInto": "{n} element → {name} | {n} elementy → {name} | {n} elementów → {name}",
+    "dialog": {
+      "createTitle": "Nowa grupa",
+      "editTitle": "Edytuj grupę",
+      "placeholder": "np. Wydajność",
+      "color": "Kolor",
+      "assignHint": "Zaznaczony element trafi do nowej grupy. | {n} zaznaczone elementy trafią do nowej grupy. | {n} zaznaczonych elementów trafi do nowej grupy.",
+      "nameInvalid": "Nazwa musi mieć od 1 do {max} znaków.",
+      "create": "Utwórz grupę"
+    },
+    "header": {
+      "ungrouped": "Bez grupy",
+      "expand": "Rozwiń {name}",
+      "collapse": "Zwiń {name}",
+      "count": "{on}/{total} włączone",
+      "toggle": "Włącz lub wyłącz całą grupę {name}",
+      "menu": "Więcej akcji dla grupy {name}"
+    },
+    "menu": {
+      "moveTo": "Przenieś do grupy",
+      "removeFromGroup": "Usuń z grupy",
+      "edit": "Zmień nazwę / kolor",
+      "delete": "Usuń grupę"
+    },
+    "filter": {
+      "label": "Filtruj według grupy",
+      "all": "Wszystkie grupy"
+    },
+    "origin": {
+      "label": "Filtruj według pochodzenia",
+      "all": "Dowolne pochodzenie",
+      "pack": "Z modpacka",
+      "manual": "Dodane przez ciebie",
+      "packBadge": "Modpack",
+      "manualBadge": "Dodane przez ciebie",
+      "packTitle": "Przyszło z modpackiem",
+      "manualTitle": "Dodałeś to sam – nie należy do modpacka"
+    },
+    "toasts": {
+      "created": "Utworzono grupę {name}",
+      "moved": "Przeniesiono {n} element do {name} | Przeniesiono {n} elementy do {name} | Przeniesiono {n} elementów do {name}",
+      "removed": "Usunięto {n} element z grupy | Usunięto {n} elementy z grup | Usunięto {n} elementów z grup"
+    },
+    "deleteDialog": {
+      "title": "Usunąć grupę?",
+      "text": "Grupa {name} zostanie usunięta. Jej zawartość pozostanie zainstalowana – tylko bez grupy."
+    },
+    "colors": {
+      "red": "Czerwony",
+      "orange": "Pomarańczowy",
+      "yellow": "Żółty",
+      "green": "Zielony",
+      "cyan": "Turkusowy",
+      "blue": "Niebieski",
+      "purple": "Fioletowy",
+      "pink": "Różowy",
+      "gray": "Szary"
+    }
+  },
+  "bisect": {
+    "title": "Znajdź winnego moda",
+    "button": "Znajdź winnego moda",
+    "buttonTitle": "Wyłącza po kolei połowę twoich modów, aż znajdzie moda odpowiedzialnego za problem",
+    "round": "Runda {round} z ~{total}",
+    "progress": "Wciąż podejrzane: {suspects} · teraz wyłączone: {off}",
+    "hintIdle": "Uruchom grę i sprawdź, czy problem nadal występuje. Awaria jest wykrywana automatycznie.",
+    "hintPreparing": "Gra się uruchamia …",
+    "hintRunning": "Gra działa. Czy problem nadal występuje?",
+    "showSuspects": "Pokaż podejrzanego moda | Pokaż {n} podejrzane mody | Pokaż {n} podejrzanych modów",
+    "launch": "Uruchom grę",
+    "stillBroken": "Problem nadal jest",
+    "worksFine": "Działa bez problemów",
+    "stopFirst": "Najpierw zamknij grę",
+    "cancelTitle": "Anuluj i przywróć wszystkie mody dokładnie tak, jak były",
+    "foundOne": "Znaleziono! Ten mod powoduje problem:",
+    "foundSet": "Ten mod powoduje problem: | Te {n} mody da się sprawdzić tylko razem – jeden z nich powoduje problem: | Tych {n} modów da się sprawdzić tylko razem – jeden z nich powoduje problem:",
+    "openPage": "Otwórz stronę",
+    "restoredNote": "Wszystkie mody są jak wcześniej. Potrzebna była {rounds} runda. | Wszystkie mody są jak wcześniej. Potrzebne były {rounds} rundy. | Wszystkie mody są jak wcześniej. Potrzebnych było {rounds} rund.",
+    "disableResult": "Wyłącz go | Wyłącz je | Wyłącz je",
+    "keepSearching": "Szukaj dalej",
+    "done": "Gotowe",
+    "notFound": "Bez podejrzanych modów problem nie wrócił – to raczej nie wina pojedynczego moda (może ustawienia, świata albo paczki zasobów). Wszystkie mody są jak wcześniej.",
+    "openContent": "Otwórz zawartość",
+    "crashDetected": "Wykryto awarię – liczy się jako „problem nadal jest”.",
+    "banner": "Szukanie winnego moda: niektóre mody są na razie wyłączone. Po zakończeniu lub anulowaniu wszystko zostanie przywrócone dokładnie tak, jak było.",
+    "showWindow": "Pokaż okno",
+    "lockedTitle": "Zablokowane podczas szukania winnego moda",
+    "minimize": "Zwiń",
+    "expand": "Rozwiń",
+    "start": {
+      "title": "Znajdź winnego moda",
+      "intro": "Launcher szuka w {name} moda odpowiedzialnego za twój problem:",
+      "stepHalf": "W każdej rundzie wyłączana jest mniej więcej połowa podejrzanych modów. Mody i biblioteki, których potrzebują, zostają razem; TRS Client i biblioteki loadera nigdy nie są ruszane.",
+      "stepAsk": "Uruchamiasz grę i mówisz, czy problem nadal jest. Awaria jest wykrywana automatycznie.",
+      "stepKeep": "Po kilku rundach zostaje jeden mod – możesz go wyłączyć albo szukać dalej.",
+      "stepRestore": "Na koniec lub po anulowaniu wszystkie mody wracają dokładnie do poprzedniego stanu – nawet jeśli launcher w międzyczasie się zamknie.",
+      "submit": "Rozpocznij szukanie"
+    },
+    "toasts": {
+      "restored": "Przywrócono wszystkie mody",
+      "disabled": "Mody przywrócone, winny wyłączony"
+    }
   }
 }
