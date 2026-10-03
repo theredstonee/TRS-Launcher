@@ -80,6 +80,10 @@ export interface UiSettings {
   compactLibrary: boolean
   showPlayTime: boolean
   language: Locale
+  /** Beim Start gleich im Big-Picture-Modus öffnen. */
+  bigPictureOnStart: boolean
+  /** Auf Steam Deck/SteamOS/gamescope von selbst im Big-Picture-Modus starten (ab Werk an). */
+  bigPictureAuto: boolean
 }
 
 export interface JavaPaths {
@@ -368,6 +372,8 @@ export interface PlatformCapabilities {
   clips: boolean
   /** `auto` = eingebauter Updater, `package` = Paketverwaltung (.deb/.rpm/AUR), `flatpak`. */
   updates: 'auto' | 'package' | 'flatpak'
+  /** Steam Deck, SteamOS oder gamescope (nur Linux): Big-Picture-Modus startet von selbst. */
+  consoleSession: boolean
 }
 
 export interface AppInfo {

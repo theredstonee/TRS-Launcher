@@ -2270,6 +2270,16 @@
       "preview": "Pokaż powiadomienie testowe",
       "previewTitle": "TRS Launcher",
       "previewBody": "Tak wyglądają powiadomienia."
+    },
+    "bigPicture": {
+      "title": "Tryb Big Picture",
+      "openTitle": "Otwórz Big Picture",
+      "openDescription": "Pełny ekran z dużymi kafelkami na telewizor, Steam Deck i kontrolery. Skrót: F11.",
+      "open": "Otwórz",
+      "onStartTitle": "Otwieraj w Big Picture przy starcie",
+      "onStartDescription": "Launcher uruchamia się od razu w trybie Big Picture.",
+      "autoTitle": "Big Picture na Steam Deck",
+      "autoDescription": "Sam uruchamia się w trybie Big Picture na Steam Deck, SteamOS i w gamescope (tryb gry Steam)."
     }
   },
   "settingsShell": {
@@ -2566,7 +2576,8 @@
       "uptime": "działa od {time}",
       "openLogs": "Otwórz logi",
       "openLogsNamed": "Otwórz logi {name}"
-    }
+    },
+    "bigPicture": "Tryb Big Picture (F11)"
   },
   "nav": {
     "mainLabel": "Nawigacja główna",
@@ -2652,7 +2663,8 @@
       "websiteLogin": "strona logowanie login kod potwierdź launcher microsoft przeglądarka zespół",
       "myApplications": "zgłoszenia aplikuj zespół stanowisko status",
       "achievements": "osiągnięcia trofea punkty nagrody odznaki odblokuj achievements",
-      "docs": "pomoc docs dokumentacja poradnik wiki faq instrukcja wsparcie pytania help"
+      "docs": "pomoc docs dokumentacja poradnik wiki faq instrukcja wsparcie pytania help",
+      "bigPicture": "big picture telewizor tv kontroler pad gamepad steam deck pełny ekran kanapa konsola"
     },
     "actions": {
       "newInstance": {
@@ -2676,6 +2688,10 @@
       },
       "myApplications": {
         "subtitle": "Status i odpowiedzi na twoje zgłoszenia do zespołu"
+      },
+      "bigPicture": {
+        "title": "Tryb Big Picture",
+        "subtitle": "Widok pełnoekranowy na telewizor, Steam Deck i kontrolery"
       }
     }
   },
@@ -5618,6 +5634,70 @@
     "toasts": {
       "restored": "Przywrócono wszystkie mody",
       "disabled": "Mody przywrócone, winny wyłączony"
+    }
+  },
+  "bigPicture": {
+    "title": "Big Picture",
+    "sectionsLabel": "Sekcje",
+    "exit": "Wyjdź z Big Picture",
+    "quit": "Zamknij launcher",
+    "sections": {
+      "home": "Start",
+      "instances": "Biblioteka",
+      "servers": "Serwery",
+      "friends": "Znajomi",
+      "settings": "Ustawienia"
+    },
+    "hints": {
+      "select": "Wybierz",
+      "back": "Wstecz",
+      "options": "Opcje",
+      "menu": "Menu"
+    },
+    "menu": {
+      "title": "Menu",
+      "resume": "Wróć"
+    },
+    "home": {
+      "continue": "Graj dalej",
+      "recent": "Ostatnio grane",
+      "emptyTitle": "Brak instancji",
+      "emptyText": "Utwórz lub zaimportuj instancję w zwykłym widoku i wróć tutaj."
+    },
+    "instance": {
+      "options": "Opcje",
+      "openDesktop": "Otwórz w zwykłym widoku"
+    },
+    "memory": {
+      "title": "Pamięć (RAM)",
+      "less": "Mniej pamięci",
+      "more": "Więcej pamięci",
+      "hint": "Działa od następnego uruchomienia gry."
+    },
+    "servers": {
+      "joinWith": "Dołącza z {name}",
+      "joinNamed": "Dołącz do {name}",
+      "chooseInstance": "Z którą instancją dołączyć?",
+      "emptyText": "Dodaj serwery w zwykłym widoku."
+    },
+    "friends": {
+      "title": "Znajomi online",
+      "offline": "{count} znajomy offline | {count} znajomych offline | {count} znajomych offline",
+      "offTitle": "Usługi TRS są wyłączone",
+      "offText": "Włącz usługi TRS w zwykłym widoku, aby widzieć tu znajomych.",
+      "noneOnline": "Żaden z twoich znajomych nie jest teraz online.",
+      "joinNamed": "Dołącz do {name} na {server}"
+    },
+    "settings": {
+      "accounts": "Konto",
+      "activeAccount": "Aktywne",
+      "useAccount": "Przełącz na to konto",
+      "switching": "Przełączanie…",
+      "noAccounts": "Dodaj konto Microsoft w zwykłym widoku.",
+      "memory": "Pamięć dla instancji",
+      "previousInstance": "Poprzednia instancja",
+      "nextInstance": "Następna instancja",
+      "mode": "Big Picture"
     }
   }
 }

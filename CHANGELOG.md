@@ -51,6 +51,13 @@ How to write an entry:
   fine" – a crash is detected automatically. After a few rounds the culprit is left; disable it, open its page or keep
   searching. At the end or when you cancel, every mod is restored exactly as it was – even if the launcher closes in
   between.
+- **Big Picture mode.** A fullscreen launcher view for the TV, the Steam Deck and controllers: large tiles for
+  "Continue playing", your library, servers, friends who are online and a few settings (switch account, memory per
+  instance). Play with an Xbox, PlayStation, Switch or Steam Deck controller – the button hints on screen match your
+  controller – or with mouse, touch and keyboard. Open it with the controller button in the title bar, the search
+  (Ctrl+K), in the settings under Behavior, or with F11. Optionally the launcher starts in Big Picture right away; on
+  the Steam Deck and in Steam's game mode it does so by itself (can be switched off). After playing, the launcher
+  comes back in Big Picture.
 
 ### Deutsch
 - **Suche, Filter und Details für TRS-Umhänge.** Die Umhang-Liste auf der Skins-Seite hat ein Suchfeld, Filter
@@ -75,6 +82,13 @@ How to write an entry:
   und sagst „Fehler noch da“ oder „läuft ohne Fehler“ – ein Absturz wird automatisch erkannt. Nach ein paar Runden
   bleibt die Schuldige übrig: deaktivieren, ihre Seite öffnen oder weitersuchen. Am Ende oder beim Abbrechen wird
   jede Mod genau wie vorher wiederhergestellt – auch wenn der Launcher zwischendurch zugeht.
+- **Big-Picture-Modus.** Eine Vollbild-Ansicht des Launchers für Fernseher, Steam Deck und Controller: große Kacheln
+  für „Weiterspielen“, deine Bibliothek, Server, Freunde, die gerade online sind, und ein paar Einstellungen (Konto
+  wechseln, Arbeitsspeicher je Instanz). Bedienen lässt er sich mit Xbox-, PlayStation-, Switch- oder Steam-Deck-
+  Controller – die Knopf-Hinweise passen sich deinem Controller an – oder mit Maus, Touch und Tastatur. Öffnen über
+  den Controller-Knopf in der Titelleiste, die Suche (Strg+K), die Einstellungen unter Verhalten oder mit F11. Auf
+  Wunsch startet der Launcher gleich im Big-Picture-Modus; auf dem Steam Deck und im Spielmodus von Steam tut er das
+  von selbst (abschaltbar). Nach dem Spielen kommt der Launcher im Big-Picture-Modus zurück.
 
 ## 0.17.0 – 2026-10-03 – Light Luggage | Leichtes Gepäck
 <!-- banner: accent=#ff3b30 motif=/news/0.17.0/banner.png -->

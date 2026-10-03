@@ -10,6 +10,7 @@ const win = isTauri() ? getCurrentWindow() : null
 const router = useRouter()
 const ui = useUiStore()
 const openDocs = useDocs()
+const bigPicture = useBigPictureStore()
 const maximized = ref(false)
 const events = useEventsStore()
 
@@ -82,6 +83,11 @@ async function toggleMaximize() {
       <svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path :d="icons.search" /></svg>
       {{ t('common.actions.search') }}
       <kbd class="rounded border border-base-700 px-1 font-mono text-[10px]">{{ t('titleBar.ctrl') }} K</kbd>
+    </button>
+
+    <!-- Big-Picture-Modus (Fernseher, Steam Deck, Controller). -->
+    <button class="nav-btn mr-1" :aria-label="t('titleBar.bigPicture')" :title="t('titleBar.bigPicture')" data-testid="titlebar-big-picture" @click="bigPicture.open()">
+      <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.gamepad" /></svg>
     </button>
 
     <!-- Hilfe: Dokumentation auf der Website in der Launcher-Sprache. -->

@@ -219,6 +219,18 @@ const commands = computed<Command[]>(() => [
       ]
     : []),
   {
+    id: 'action:big-picture',
+    group: 'actions',
+    title: t('palette.actions.bigPicture.title'),
+    subtitle: t('palette.actions.bigPicture.subtitle'),
+    keywords: t('palette.keywords.bigPicture'),
+    icon: 'gamepad',
+    run: () => {
+      close()
+      useBigPictureStore().open()
+    },
+  },
+  {
     id: 'action:docs',
     group: 'actions',
     title: t('docs.open'),

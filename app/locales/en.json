@@ -2270,6 +2270,16 @@
       "preview": "Show a test notification",
       "previewTitle": "TRS Launcher",
       "previewBody": "This is how notifications look."
+    },
+    "bigPicture": {
+      "title": "Big Picture mode",
+      "openTitle": "Open Big Picture",
+      "openDescription": "Fullscreen view with large tiles for TV, Steam Deck and controllers. Shortcut: F11.",
+      "open": "Open",
+      "onStartTitle": "Open in Big Picture on start",
+      "onStartDescription": "The launcher starts directly in Big Picture mode.",
+      "autoTitle": "Big Picture on Steam Deck",
+      "autoDescription": "Starts in Big Picture mode by itself on Steam Deck, SteamOS and in gamescope (Steam game mode)."
     }
   },
   "settingsShell": {
@@ -2566,7 +2576,8 @@
       "uptime": "running for {time}",
       "openLogs": "Open logs",
       "openLogsNamed": "Open logs for {name}"
-    }
+    },
+    "bigPicture": "Big Picture mode (F11)"
   },
   "nav": {
     "mainLabel": "Main navigation",
@@ -2652,7 +2663,8 @@
       "websiteLogin": "website sign in login code confirm launcher microsoft browser team",
       "myApplications": "applications apply team job position status",
       "achievements": "achievements trophies points rewards badges unlock",
-      "docs": "help docs documentation guide wiki faq manual support questions"
+      "docs": "help docs documentation guide wiki faq manual support questions",
+      "bigPicture": "big picture tv controller gamepad steam deck fullscreen couch console"
     },
     "actions": {
       "newInstance": {
@@ -2676,6 +2688,10 @@
       },
       "myApplications": {
         "subtitle": "Status and answers of your team applications"
+      },
+      "bigPicture": {
+        "title": "Big Picture mode",
+        "subtitle": "Fullscreen view for TV, Steam Deck and controllers"
       }
     }
   },
@@ -5618,6 +5634,70 @@
     "toasts": {
       "restored": "All mods restored",
       "disabled": "Mods restored, culprit disabled"
+    }
+  },
+  "bigPicture": {
+    "title": "Big Picture",
+    "sectionsLabel": "Sections",
+    "exit": "Exit Big Picture",
+    "quit": "Quit launcher",
+    "sections": {
+      "home": "Home",
+      "instances": "Library",
+      "servers": "Servers",
+      "friends": "Friends",
+      "settings": "Settings"
+    },
+    "hints": {
+      "select": "Select",
+      "back": "Back",
+      "options": "Options",
+      "menu": "Menu"
+    },
+    "menu": {
+      "title": "Menu",
+      "resume": "Resume"
+    },
+    "home": {
+      "continue": "Continue playing",
+      "recent": "Recently played",
+      "emptyTitle": "No instances yet",
+      "emptyText": "Create or import an instance in the normal view, then come back here."
+    },
+    "instance": {
+      "options": "Options",
+      "openDesktop": "Open in normal view"
+    },
+    "memory": {
+      "title": "Memory (RAM)",
+      "less": "Less memory",
+      "more": "More memory",
+      "hint": "Applies the next time the game starts."
+    },
+    "servers": {
+      "joinWith": "Joins with {name}",
+      "joinNamed": "Join {name}",
+      "chooseInstance": "Join with which instance?",
+      "emptyText": "Add servers in the normal view."
+    },
+    "friends": {
+      "title": "Friends online",
+      "offline": "{count} friend offline | {count} friends offline",
+      "offTitle": "TRS services are off",
+      "offText": "Turn on the TRS services in the normal view to see your friends here.",
+      "noneOnline": "None of your friends are online right now.",
+      "joinNamed": "Join {name} on {server}"
+    },
+    "settings": {
+      "accounts": "Account",
+      "activeAccount": "Active",
+      "useAccount": "Switch to this account",
+      "switching": "Switching…",
+      "noAccounts": "Add a Microsoft account in the normal view.",
+      "memory": "Memory per instance",
+      "previousInstance": "Previous instance",
+      "nextInstance": "Next instance",
+      "mode": "Big Picture"
     }
   }
 }

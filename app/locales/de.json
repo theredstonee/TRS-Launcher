@@ -2270,6 +2270,16 @@
       "preview": "Test-Benachrichtigung zeigen",
       "previewTitle": "TRS Launcher",
       "previewBody": "So sehen Benachrichtigungen aus."
+    },
+    "bigPicture": {
+      "title": "Big-Picture-Modus",
+      "openTitle": "Big Picture öffnen",
+      "openDescription": "Vollbild mit großen Kacheln für Fernseher, Steam Deck und Controller. Kürzel: F11.",
+      "open": "Öffnen",
+      "onStartTitle": "Beim Start im Big-Picture-Modus öffnen",
+      "onStartDescription": "Der Launcher startet direkt im Big-Picture-Modus.",
+      "autoTitle": "Big Picture auf dem Steam Deck",
+      "autoDescription": "Startet auf Steam Deck, SteamOS und in gamescope (Steam-Spielmodus) von selbst im Big-Picture-Modus."
     }
   },
   "settingsShell": {
@@ -2566,7 +2576,8 @@
       "uptime": "läuft seit {time}",
       "openLogs": "Logs öffnen",
       "openLogsNamed": "Logs von {name} öffnen"
-    }
+    },
+    "bigPicture": "Big-Picture-Modus (F11)"
   },
   "nav": {
     "mainLabel": "Hauptnavigation",
@@ -2652,7 +2663,8 @@
       "websiteLogin": "website anmelden login code bestätigen launcher microsoft browser team",
       "myApplications": "bewerbungen bewerben team stelle status",
       "achievements": "erfolge trophäen punkte belohnungen abzeichen freischalten achievements",
-      "docs": "hilfe docs dokumentation anleitung wiki faq handbuch support fragen help"
+      "docs": "hilfe docs dokumentation anleitung wiki faq handbuch support fragen help",
+      "bigPicture": "big picture fernseher tv controller gamepad steam deck vollbild sofa konsole"
     },
     "actions": {
       "newInstance": {
@@ -2676,6 +2688,10 @@
       },
       "myApplications": {
         "subtitle": "Status und Antworten deiner Team-Bewerbungen"
+      },
+      "bigPicture": {
+        "title": "Big-Picture-Modus",
+        "subtitle": "Vollbild für Fernseher, Steam Deck und Controller"
       }
     }
   },
@@ -5618,6 +5634,70 @@
     "toasts": {
       "restored": "Alle Mods wiederhergestellt",
       "disabled": "Mods wiederhergestellt, Schuldige deaktiviert"
+    }
+  },
+  "bigPicture": {
+    "title": "Big Picture",
+    "sectionsLabel": "Bereiche",
+    "exit": "Big Picture verlassen",
+    "quit": "Launcher beenden",
+    "sections": {
+      "home": "Start",
+      "instances": "Bibliothek",
+      "servers": "Server",
+      "friends": "Freunde",
+      "settings": "Einstellungen"
+    },
+    "hints": {
+      "select": "Auswählen",
+      "back": "Zurück",
+      "options": "Optionen",
+      "menu": "Menü"
+    },
+    "menu": {
+      "title": "Menü",
+      "resume": "Weiter"
+    },
+    "home": {
+      "continue": "Weiterspielen",
+      "recent": "Zuletzt gespielt",
+      "emptyTitle": "Noch keine Instanzen",
+      "emptyText": "Lege in der normalen Ansicht eine Instanz an oder importiere eine, dann geht es hier weiter."
+    },
+    "instance": {
+      "options": "Optionen",
+      "openDesktop": "In der normalen Ansicht öffnen"
+    },
+    "memory": {
+      "title": "Arbeitsspeicher (RAM)",
+      "less": "Weniger Arbeitsspeicher",
+      "more": "Mehr Arbeitsspeicher",
+      "hint": "Gilt ab dem nächsten Spielstart."
+    },
+    "servers": {
+      "joinWith": "Tritt mit {name} bei",
+      "joinNamed": "{name} beitreten",
+      "chooseInstance": "Mit welcher Instanz beitreten?",
+      "emptyText": "Füge Server in der normalen Ansicht hinzu."
+    },
+    "friends": {
+      "title": "Freunde online",
+      "offline": "{count} Freund offline | {count} Freunde offline",
+      "offTitle": "TRS-Dienste sind aus",
+      "offText": "Schalte die TRS-Dienste in der normalen Ansicht ein, um deine Freunde hier zu sehen.",
+      "noneOnline": "Gerade ist keiner deiner Freunde online.",
+      "joinNamed": "{name} auf {server} beitreten"
+    },
+    "settings": {
+      "accounts": "Konto",
+      "activeAccount": "Aktiv",
+      "useAccount": "Zu diesem Konto wechseln",
+      "switching": "Wechsle…",
+      "noAccounts": "Füge in der normalen Ansicht ein Microsoft-Konto hinzu.",
+      "memory": "Arbeitsspeicher je Instanz",
+      "previousInstance": "Vorherige Instanz",
+      "nextInstance": "Nächste Instanz",
+      "mode": "Big Picture"
     }
   }
 }

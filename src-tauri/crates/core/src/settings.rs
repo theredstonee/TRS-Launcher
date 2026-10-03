@@ -260,6 +260,10 @@ pub struct UiSettings {
     pub compact_library: bool,
     pub show_play_time: bool,
     pub language: Language,
+    /// Beim Start gleich im Big-Picture-Modus (Fernseher/Controller) öffnen.
+    pub big_picture_on_start: bool,
+    /// Auf Steam Deck, SteamOS und in gamescope von selbst im Big-Picture-Modus starten.
+    pub big_picture_auto: bool,
 }
 
 impl Default for UiSettings {
@@ -279,6 +283,8 @@ impl Default for UiSettings {
             compact_library: false,
             show_play_time: true,
             language: Language::En,
+            big_picture_on_start: false,
+            big_picture_auto: true,
         }
     }
 }
@@ -707,6 +713,18 @@ mod tests {
         let s = Settings { ui: UiSettings { motion: Motion::Reduced, ..Default::default() }, ..Default::default() };
         s.save(&file).await.unwrap();
         assert_eq!(Settings::load(&file).await.unwrap().ui.motion, Motion::Reduced);
+    }
+
+    #[test]
+    fn big_picture_defaults() {
+        // Ältere Dateien ohne Felder: nicht von selbst, aber auf Steam Deck/gamescope schon.
+        let old: Settings = serde_json::from_str(r#"{"ui":{"theme":"light"}}"#).unwrap();
+        assert!(!old.ui.big_picture_on_start);
+        assert!(old.ui.big_picture_auto);
+        let ui: UiSettings = serde_json::from_value(serde_json::json!({ "bigPictureOnStart": true, "bigPictureAuto": false })).unwrap();
+        assert!(ui.big_picture_on_start && !ui.big_picture_auto);
+        let json = serde_json::to_value(&ui).unwrap();
+        assert_eq!((json["bigPictureOnStart"].as_bool(), json["bigPictureAuto"].as_bool()), (Some(true), Some(false)));
     }
 
     #[tokio::test]
