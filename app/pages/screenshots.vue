@@ -25,15 +25,29 @@ const shareQueue = new ShareQueue()
 
 const key = (shot: GalleryShot) => `${shot.instanceId}/${shot.fileName}`
 
+/** Instanzen, die den gemeinsamen Screenshot-Ordner nutzen – dessen Bilder gehören allen. */
+const sharingInstances = computed(() => instances.items.filter((i) => i.overrides.sharedFolders?.includes('screenshots')))
+
 const usedInstances = computed(() => {
   const seen = new Map<string, string>()
-  for (const shot of shots.value) seen.set(shot.instanceId, shot.instanceName)
+  for (const shot of shots.value) {
+    if (!shot.shared) seen.set(shot.instanceId, shot.instanceName)
+    else for (const i of sharingInstances.value) seen.set(i.id, i.name)
+  }
   return [...seen].map(([id, name]) => ({ id, name })).sort((a, b) => compareText(a.name, b.name))
 })
 
-const visible = computed(() =>
-  instanceFilter.value === 'all' ? shots.value : shots.value.filter((s) => s.instanceId === instanceFilter.value),
-)
+const visible = computed(() => {
+  const filter = instanceFilter.value
+  if (filter === 'all') return shots.value
+  const sharing = sharingInstances.value.some((i) => i.id === filter)
+  return shots.value.filter((s) => s.instanceId === filter || (s.shared && sharing))
+})
+
+/** Unter dem Bild: Instanz bzw. „Gemeinsamer Ordner“. */
+function origin(shot: GalleryShot): string {
+  return shot.shared ? t('screenshots.sharedFolder') : shot.instanceName
+}
 
 /** Nach Aufnahmetag gruppiert – so liest sich die Galerie wie ein Tagebuch. */
 const groups = computed(() => {
@@ -272,7 +286,7 @@ async function confirmDelete() {
             </button>
             <div class="flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs">
               <div class="min-w-0">
-                <p class="truncate text-base-200">{{ shot.instanceName }}</p>
+                <p class="truncate text-base-200">{{ origin(shot) }}</p>
                 <p class="truncate text-[11px] text-base-600">{{ formatDate(shot.takenAt) }} · {{ formatBytes(shot.size) }}</p>
               </div>
               <div class="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
@@ -315,7 +329,7 @@ async function confirmDelete() {
       <header class="flex items-center gap-3 px-2 pb-3 text-sm text-base-200">
         <div class="min-w-0">
           <p class="truncate font-medium">{{ current.fileName }}</p>
-          <p class="truncate text-xs text-base-400">{{ current.instanceName }} · {{ formatDate(current.takenAt) }}</p>
+          <p class="truncate text-xs text-base-400">{{ origin(current) }} · {{ formatDate(current.takenAt) }}</p>
         </div>
         <div class="ml-auto flex shrink-0 items-center gap-1.5">
           <button class="btn btn-ghost py-1.5 text-xs" @click="copy(current)">{{ t('common.actions.copy') }}</button>

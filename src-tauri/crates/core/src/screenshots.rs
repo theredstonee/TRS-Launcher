@@ -29,14 +29,25 @@ pub struct GalleryShot {
     pub file_name: String,
     pub size: u64,
     pub taken_at: Option<DateTime<Utc>>,
+    /// Liegt im gemeinsamen Screenshot-Ordner (mehrere Instanzen sehen ihn).
+    pub shared: bool,
 }
 
 impl Launcher {
-    /// Alle Screenshots über alle Instanzen, neueste zuerst.
+    /// Alle Screenshots über alle Instanzen, neueste zuerst. Ordner, die mehrere
+    /// Instanzen teilen (gemeinsamer Ordner), erscheinen nur einmal.
     pub async fn all_screenshots(&self) -> Result<Vec<GalleryShot>> {
         let instances = self.instances().list().await?;
         let mut shots = Vec::new();
+        let mut seen_dirs = std::collections::HashSet::new();
         for instance in instances {
+            let dir = extras::screenshots_dir(self.paths(), &instance.id);
+            if let Ok(canonical) = std::fs::canonicalize(&dir)
+                && !seen_dirs.insert(canonical)
+            {
+                continue;
+            }
+            let shared = std::fs::symlink_metadata(&dir).is_ok_and(|m| m.file_type().is_symlink());
             let list = match extras::list_screenshots(self.paths(), &instance.id).await {
                 Ok(list) => list,
                 Err(e) => {
@@ -51,6 +62,7 @@ impl Launcher {
                     file_name: shot.file_name,
                     size: shot.size,
                     taken_at: shot.taken_at,
+                    shared,
                 });
             }
         }
@@ -224,6 +236,20 @@ mod tests {
         assert!(shots.iter().all(|s| ids.contains(&s.instance_id)));
         assert!(shots.iter().any(|s| s.instance_name == "Alpha"));
         assert!(shots.iter().all(|s| s.size > 0));
+    }
+
+    #[tokio::test]
+    async fn shared_screenshots_are_listed_once() {
+        use crate::shared_folders::SharedFolder;
+        let (_dir, launcher, ids) = launcher_with_shots().await;
+        for id in &ids {
+            launcher.set_shared_folder(id, SharedFolder::Screenshots, true, false, |_| {}).await.unwrap();
+        }
+        let shots = launcher.all_screenshots().await.unwrap();
+        assert_eq!(shots.len(), 2, "beide Bilder im gemeinsamen Ordner, jedes nur einmal");
+        assert!(shots.iter().all(|s| s.shared));
+        // Über jede der Instanzen erreichbar.
+        assert!(launcher.screenshot_thumbnail(&ids[1], "Alpha-1.png").await.is_ok());
     }
 
     #[tokio::test]

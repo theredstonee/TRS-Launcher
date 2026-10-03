@@ -55,6 +55,7 @@ pub mod process;
 pub mod screenshots;
 pub mod servers;
 pub mod settings;
+pub mod shared_folders;
 pub mod skin_import;
 pub mod skin_packs;
 pub mod skin_sync;
@@ -133,6 +134,8 @@ pub struct Launcher {
     clip_open_sink: std::sync::RwLock<Option<clips::api::ClipOpenSink>>,
     /// Welt mit Mods aus dem Spiel im Launcher öffnen (Tauri: `hosting-open`).
     hosting_open_sink: std::sync::RwLock<Option<HostingOpenSink>>,
+    /// Gemeinsame Ordner: Zusammenführen/Lösen nie gleichzeitig (siehe [`shared_folders`]).
+    shared_folders_lock: tokio::sync::Mutex<()>,
 }
 
 /// „Im Launcher öffnen“ einer gehosteten Welt mit Mods (Raum-ID) – die App holt das Fenster nach vorn.
@@ -208,6 +211,7 @@ impl Launcher {
             accounts_sink: std::sync::RwLock::default(),
             clip_open_sink: std::sync::RwLock::default(),
             hosting_open_sink: std::sync::RwLock::default(),
+            shared_folders_lock: tokio::sync::Mutex::default(),
             instances: InstanceStore::new(paths.clone()),
             accounts: AccountStore::new(paths.clone(), http.clone()),
             games: GameManager::new(events, paths.root().join("running.json")),
@@ -641,6 +645,9 @@ impl Launcher {
         if let Err(e) = instance::seed_game_options(&self.paths.instance_game_dir(&instance.id), None).await {
             tracing::warn!("Standard-Optionen für '{}' nicht geschrieben: {e}", instance.id);
         }
+        // Leere Instanz: gemeinsame Ordner gleich verlinken (Import/Modpack: beim ersten Start,
+        // dann werden ihre mitgebrachten Dateien vorher zusammengeführt).
+        self.ensure_shared_folders(&instance).await;
         Ok(instance)
     }
 
@@ -662,7 +669,9 @@ impl Launcher {
         if manifest.find(&new.game_version).is_none() {
             return Err(Error::UnknownGameVersion(new.game_version));
         }
-        let overrides = instance::InstanceOverrides { trs_client, ..Default::default() };
+        // Neue Instanzen teilen die in den Einstellungen gewählten Ordner.
+        let shared_folders = self.settings().await.shared_folders;
+        let overrides = instance::InstanceOverrides { trs_client, shared_folders, ..Default::default() };
         let instance = self.instances.create_with(new, overrides).await?;
         let first = first.to(describe_version(&instance.game_version, &instance.loader));
         history::record(&self.paths, &instance.id, first).await;
@@ -927,6 +936,20 @@ impl Launcher {
         let exit_plan = ExitPlan::new(&self.paths, instance, &settings, Some(prepared.java.clone()));
         if let Some(pre) = &exit_plan.hooks.pre_launch {
             hooks::run(HookKind::PreLaunch, pre, &exit_plan.context, &exit_plan.env, hooks::HOOK_TIMEOUT).await?;
+        }
+        // Gemeinsame Ordner: fehlende/kaputte Links neu setzen, neue Dateien zusammenführen.
+        let broken = self.ensure_shared_folders(instance).await;
+        if !broken.is_empty() {
+            let sink = self.games.sink();
+            let list = broken.iter().map(|k| k.key()).collect::<Vec<_>>().join(", ");
+            sink(GameEvent::notice(
+                instance.id.clone(),
+                &crate::msg!(
+                    "sharedFolders.repairFailed",
+                    "Gemeinsame Ordner konnten nicht eingerichtet werden ({list}) – das Spiel nutzt dafür eigene Ordner.",
+                    list = list
+                ),
+            ));
         }
         // Gemeinsame options.txt & Co. holen. Scheitert das, startet das Spiel
         // mit den eigenen Dateien – dann wird auch nichts zurückkopiert.
@@ -1352,7 +1375,7 @@ impl ExitPlan {
                 java,
             },
             sync_dirs: sync::SyncDirs { shared: paths.shared_dir(), instance: instance_dir, game: game_dir },
-            sync_items: sync::active_items(&settings.sync, &instance.overrides.sync_separate),
+            sync_items: sync_items(settings, instance),
         }
     }
 
@@ -1375,6 +1398,16 @@ impl ExitPlan {
             sink(GameEvent::notice_error(id, &e));
         }
     }
+}
+
+/// Was kopiert synchronisiert wird. Teilt die Instanz den Ordner für
+/// Ressourcenpakete, ist er schon gemeinsam – dann nicht noch zusätzlich kopieren.
+fn sync_items(settings: &Settings, instance: &Instance) -> Vec<sync::SyncItem> {
+    let shared = instance.overrides.shared_folders.contains(&shared_folders::SharedFolder::Resourcepacks);
+    sync::active_items(&settings.sync, &instance.overrides.sync_separate)
+        .into_iter()
+        .filter(|item| !(shared && *item == sync::SyncItem::ResourcePacks))
+        .collect()
 }
 
 /// Spielende: Link-Sitzung schließen und `clips.json` leeren (kein Port, kein Token).
@@ -1430,5 +1463,25 @@ fn demo_session() -> Result<Session> {
         })
     } else {
         Err(Error::auth(crate::msg!("launcher.signInFirst", "Bitte melde dich zuerst unter „Accounts“ mit deinem Microsoft-Konto an.")))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn linked_resource_packs_skip_the_copy_sync() {
+        let mut settings = Settings::default();
+        settings.sync.resource_packs = true;
+        settings.sync.options = true;
+        let mut instance: Instance = serde_json::from_value(serde_json::json!({
+            "id": "a", "name": "A", "gameVersion": "1.21.1", "loader": { "kind": "vanilla", "version": null },
+            "createdAt": "2026-01-01T00:00:00Z", "lastPlayed": null
+        }))
+        .unwrap();
+        assert_eq!(sync_items(&settings, &instance), [sync::SyncItem::Options, sync::SyncItem::ResourcePacks]);
+        instance.overrides.shared_folders = vec![shared_folders::SharedFolder::Resourcepacks];
+        assert_eq!(sync_items(&settings, &instance), [sync::SyncItem::Options]);
     }
 }

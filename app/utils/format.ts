@@ -1,4 +1,4 @@
-import type { Instance, ContentKind, ImportSource, LaunchStage, LoaderKind, SyncItem } from '~/types'
+import type { Instance, ContentKind, ImportSource, LaunchStage, LoaderKind, SharedFolder, SyncItem } from '~/types'
 // Relativ importiert, damit Tests die Helfer ohne Nuxt laden können.
 import { intlLocale, t } from './i18n'
 
@@ -185,6 +185,18 @@ export function syncItemList(): { key: SyncItem; label: string; description: str
     label: t(`syncItem.${key}.label`),
     description: t(`syncItem.${key}.description`),
   }))
+}
+
+export const sharedFolderKeys: SharedFolder[] = ['shaderpacks', 'resourcepacks', 'screenshots', 'saves', 'schematics']
+
+/** Name eines gemeinsamen Ordners in der eingestellten Sprache. */
+export function sharedFolderLabel(kind: SharedFolder): string {
+  return t(`sharedFolder.${kind}.label`)
+}
+
+/** Was im gemeinsamen Ordner liegt (Kurzbeschreibung). */
+export function sharedFolderDescription(kind: SharedFolder): string {
+  return t(`sharedFolder.${kind}.description`)
 }
 
 /**

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EnvVar, FpsMode, Instance, InstanceOverrides, SyncItem, UpdateChannel } from '~/types'
+import type { EnvVar, FpsMode, Instance, InstanceOverrides, SharedFolder, SharedFolderStatus, SyncItem, UpdateChannel } from '~/types'
 import type { ShellSection } from '~/components/SettingsShell.vue'
 
 // Instanz-Einstellungen: Modal mit Bereichen links,
@@ -307,6 +307,67 @@ function toggleSync(item: SyncItem, synced: boolean) {
   syncSeparate.value = synced ? syncSeparate.value.filter((i) => i !== item) : [...syncSeparate.value, item]
 }
 
+// --- Gemeinsame Ordner ----------------------------------------------------------------
+const sharedStatus = ref<SharedFolderStatus[] | null>(null)
+async function loadShared() {
+  try {
+    sharedStatus.value = await backend.instanceSharedFolders(inst.value.id)
+  } catch (e) {
+    toasts.error(e)
+  }
+}
+watch(active, (a) => a === 'shared' && loadShared(), { immediate: true })
+/** Ressourcenpakete als gemeinsamer Ordner: die kopierende Synchronisierung fällt dafür weg. */
+const resourcePacksShared = computed(() => inst.value.overrides.sharedFolders.includes('resourcepacks'))
+const sharedBusy = computed(() => sharedFolderKeys.some((k) => tasks.isRunning(taskKey('shared-folders', inst.value.id, k))))
+/** Rückfrage: Welten-Warnung beim Einschalten bzw. „Kopie oder leer“ beim Ausschalten. */
+const sharedConfirm = ref<{ kind: SharedFolder; enable: boolean } | null>(null)
+const keepCopy = ref(true)
+
+function toggleShared(status: SharedFolderStatus, on: boolean) {
+  if (on && status.kind !== 'saves') {
+    applyShared(status.kind, true, false)
+    return
+  }
+  keepCopy.value = true
+  sharedConfirm.value = { kind: status.kind, enable: on }
+}
+
+async function applyShared(kind: SharedFolder, enable: boolean, copy: boolean) {
+  sharedConfirm.value = null
+  const id = inst.value.id
+  const label = sharedFolderLabel(kind)
+  const result = await tasks.run(
+    {
+      key: taskKey('shared-folders', id, kind),
+      kind: 'shared-folders',
+      title: label,
+      stage: enable ? t('instanceSettings.shared.linking') : copy ? t('instanceSettings.shared.copying') : t('instanceSettings.shared.unlinking'),
+      instanceId: id,
+      // Zusammenführen verschiebt nur; Kopieren kann dauern und lässt sich abbrechen.
+      cancellable: !enable && copy,
+      doneText: enable ? t('instanceSettings.shared.linkedDone', { folder: label }) : t('instanceSettings.shared.unlinkedDone', { folder: label }),
+    },
+    (ctx) => backend.setInstanceSharedFolder(id, kind, enable, copy, (p) => ctx.progress(p), ctx.taskId),
+  )
+  if (result.ok) {
+    // Nur dieses Feld übernehmen – ausstehende Änderungen im Formular bleiben.
+    const clean = JSON.stringify(payload.value) === lastSaved
+    inst.value = { ...inst.value, overrides: { ...inst.value.overrides, sharedFolders: result.value.overrides.sharedFolders } }
+    if (clean) lastSaved = JSON.stringify(payload.value)
+    emit('updated', inst.value)
+    instances.load()
+  }
+  await loadShared()
+}
+
+function sharedHint(status: SharedFolderStatus): string {
+  if (status.blocked) return t('instanceSettings.shared.blocked')
+  if (status.enabled && !status.linked) return t('instanceSettings.shared.pending')
+  if (status.enabled && status.instances > 1) return t('instanceSettings.shared.sharedWith', { n: status.instances - 1 }, status.instances - 1)
+  return sharedFolderDescription(status.kind)
+}
+
 const loaderLine = computed(() => {
   const { kind, version } = inst.value.loader
   return `${loaderLabels[kind]}${version ? ` ${version}` : ''}`
@@ -549,14 +610,46 @@ const loaderLine = computed(() => {
     <div v-else-if="active === 'sync'">
       <h3 class="section-heading">{{ t('instanceSettings.sections.sync') }}</h3>
       <p class="mb-2 text-xs leading-relaxed text-base-400">{{ t('instanceSettings.sync.intro') }}</p>
-      <SettingRow v-for="item in syncItemList()" :key="item.key" :title="item.label" :description="g?.sync[item.key] ? item.description : t('instanceSettings.sync.globallyOff')">
+      <SettingRow
+        v-for="item in syncItemList()"
+        :key="item.key"
+        :title="item.label"
+        :description="item.key === 'resourcePacks' && resourcePacksShared ? t('instanceSettings.sync.resourcePacksShared') : g?.sync[item.key] ? item.description : t('instanceSettings.sync.globallyOff')"
+      >
         <ToggleSwitch
-          :model-value="!!g?.sync[item.key] && !syncSeparate.includes(item.key)"
+          :model-value="!!g?.sync[item.key] && !syncSeparate.includes(item.key) && !(item.key === 'resourcePacks' && resourcePacksShared)"
           :label="t('instanceSettings.sync.toggleLabel', { item: item.label })"
-          :disabled="!g?.sync[item.key]"
+          :disabled="!g?.sync[item.key] || (item.key === 'resourcePacks' && resourcePacksShared)"
           @update:model-value="toggleSync(item.key, $event)"
         />
       </SettingRow>
+    </div>
+
+    <!-- Gemeinsame Ordner ---------------------------------------------------------------- -->
+    <div v-else-if="active === 'shared'">
+      <h3 class="section-heading">{{ t('instanceSettings.sections.shared') }}</h3>
+      <p class="mb-2 text-xs leading-relaxed text-base-400">{{ t('instanceSettings.shared.intro') }}</p>
+      <p v-if="running" class="mb-2 rounded-lg border border-lamp-700/50 bg-lamp-900/20 px-3 py-2 text-xs text-lamp-200">{{ t('instanceSettings.shared.stopFirst') }}</p>
+      <div v-if="!sharedStatus" class="py-6 text-center text-sm text-base-400">{{ t('instanceSettings.shared.loading') }}</div>
+      <template v-else>
+        <SettingRow
+          v-for="status in sharedStatus"
+          :key="status.kind"
+          :title="sharedFolderLabel(status.kind)"
+          :description="sharedHint(status)"
+        >
+          <div class="flex items-center gap-3">
+            <span v-if="status.enabled && status.linked" class="rounded-full bg-redstone-900/50 px-2 py-0.5 text-[11px] font-medium text-redstone-200">{{ t('instanceSettings.shared.linkedBadge') }}</span>
+            <ToggleSwitch
+              :model-value="status.enabled"
+              :label="t('instanceSettings.shared.toggleLabel', { folder: sharedFolderLabel(status.kind) })"
+              :disabled="running || sharedBusy || (status.blocked && !status.enabled)"
+              @update:model-value="toggleShared(status, $event)"
+            />
+          </div>
+        </SettingRow>
+        <p class="mt-3 text-xs leading-relaxed text-base-400">{{ t('instanceSettings.shared.resourcePacksNote') }}</p>
+      </template>
     </div>
   </SettingsShell>
 
@@ -569,6 +662,40 @@ const loaderLine = computed(() => {
     <template #actions>
       <button class="btn btn-ghost" @click="confirmReinstall = false">{{ t('common.actions.cancel') }}</button>
       <button class="btn btn-primary" @click="repair('reinstall')">{{ t('instanceSettings.installation.reinstallTitle') }}</button>
+    </template>
+  </BaseDialog>
+
+  <BaseDialog
+    v-if="sharedConfirm"
+    :title="sharedConfirm.enable ? t('instanceSettings.shared.savesWarningTitle') : t('instanceSettings.shared.disableTitle', { folder: sharedFolderLabel(sharedConfirm.kind) })"
+    @close="sharedConfirm = null"
+  >
+    <template v-if="sharedConfirm.enable">
+      <p class="text-sm leading-relaxed text-base-200">{{ t('instanceSettings.shared.savesWarningText') }}</p>
+      <p class="mt-2 text-xs leading-relaxed text-base-400">{{ t('instanceSettings.shared.savesWarningHint') }}</p>
+    </template>
+    <template v-else>
+      <p class="mb-3 text-sm leading-relaxed text-base-200">{{ t('instanceSettings.shared.disableText') }}</p>
+      <label class="flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5" :class="keepCopy ? 'border-redstone-500 bg-redstone-900/30' : 'border-base-700'">
+        <input v-model="keepCopy" type="radio" class="mt-1 accent-redstone-500" :value="true" />
+        <span>
+          <span class="block text-sm font-semibold">{{ t('instanceSettings.shared.disableCopy') }}</span>
+          <span class="block text-xs text-base-400">{{ t('instanceSettings.shared.disableCopyHint') }}</span>
+        </span>
+      </label>
+      <label class="mt-2 flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5" :class="!keepCopy ? 'border-redstone-500 bg-redstone-900/30' : 'border-base-700'">
+        <input v-model="keepCopy" type="radio" class="mt-1 accent-redstone-500" :value="false" />
+        <span>
+          <span class="block text-sm font-semibold">{{ t('instanceSettings.shared.disableEmpty') }}</span>
+          <span class="block text-xs text-base-400">{{ t('instanceSettings.shared.disableEmptyHint') }}</span>
+        </span>
+      </label>
+    </template>
+    <template #actions>
+      <button class="btn btn-ghost" @click="sharedConfirm = null">{{ t('common.actions.cancel') }}</button>
+      <button class="btn btn-primary" @click="applyShared(sharedConfirm.kind, sharedConfirm.enable, sharedConfirm.enable ? false : keepCopy)">
+        {{ sharedConfirm.enable ? t('instanceSettings.shared.savesWarningConfirm') : t('instanceSettings.shared.disableConfirm') }}
+      </button>
     </template>
   </BaseDialog>
 

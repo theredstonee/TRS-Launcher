@@ -360,6 +360,8 @@ pub fn run() {
             commands::extras::open_screenshot,
             commands::extras::delete_screenshot,
             commands::extras::duplicate_instance,
+            commands::instances::instance_shared_folders,
+            commands::instances::set_instance_shared_folder,
             commands::files::list_instance_files,
             commands::files::create_instance_folder,
             commands::files::create_instance_file,

@@ -827,6 +827,12 @@
       "unknownGroup": "Este grupo não existe mais.",
       "tooMany": "No máximo {max} grupos por instância",
       "tooManyEntries": "Entradas demais em grupos."
+    },
+    "sharedFolders": {
+      "foreignLink": "“{folder}” já está vinculada a outro lugar nesta instância – remova esse link você mesmo primeiro.",
+      "notAFolder": "Há um arquivo onde deveria estar “{folder}” – renomeie ou remova-o.",
+      "inUse": "Outro jogo está usando esta pasta compartilhada agora – feche-o primeiro.",
+      "repairFailed": "Não foi possível configurar as pastas compartilhadas ({list}) – o jogo usa pastas próprias para elas."
     }
   },
   "browse": {
@@ -1230,7 +1236,8 @@
       "title": "Excluir captura de tela?",
       "text": "{name} vai para a Lixeira do Windows – você pode restaurá-la de lá.",
       "textLinux": "{name} vai para a lixeira – você pode restaurá-la de lá no gerenciador de arquivos."
-    }
+    },
+    "sharedFolder": "Pasta compartilhada"
   },
   "servers": {
     "title": "Servidores",
@@ -1356,7 +1363,8 @@
       "window": "Janela",
       "java": "Java e memória",
       "hooks": "Hooks de inicialização",
-      "sync": "Sincronização"
+      "sync": "Sincronização",
+      "shared": "Pastas compartilhadas"
     },
     "general": {
       "changeImage": "Alterar imagem",
@@ -1475,7 +1483,35 @@
     "sync": {
       "intro": "Itens ativados globalmente são buscados do armazenamento compartilhado antes de iniciar e gravados de volta depois que o jogo fecha. Aqui você pode mantê-los separados para esta instância. Arquivos sobrescritos recebem backup antes.",
       "globallyOff": "Desativado globalmente – ative em Configurações, em Instâncias.",
-      "toggleLabel": "Sincronizar {item}"
+      "toggleLabel": "Sincronizar {item}",
+      "resourcePacksShared": "Nesta instância os pacotes de recursos são uma pasta compartilhada – não é preciso copiá-los."
+    },
+    "shared": {
+      "intro": "Como no Prism: uma pasta compartilhada existe uma vez só no launcher e toda instância que a compartilha vê os mesmos arquivos. Ao ativar, os arquivos desta instância são movidos para lá – nada é sobrescrito; com nomes iguais, os dois são mantidos.",
+      "stopFirst": "A instância está em execução – feche-a primeiro para mudar as pastas compartilhadas.",
+      "loading": "Carregando …",
+      "linkedBadge": "Compartilhada",
+      "toggleLabel": "Compartilhar {folder}",
+      "blocked": "Já existe outro link ou um arquivo aqui – remova ou renomeie primeiro.",
+      "pending": "Ativada – será configurada na próxima inicialização (os arquivos são mesclados antes).",
+      "sharedWith": "Compartilhada com mais {n} instância | Compartilhada com mais {n} instâncias",
+      "resourcePacksNote": "Enquanto os pacotes de recursos forem uma pasta compartilhada, a sincronização não os copia para esta instância – a pasta compartilhada já faz isso.",
+      "linking": "Movendo arquivos para a pasta compartilhada …",
+      "copying": "Copiando a pasta compartilhada …",
+      "unlinking": "Removendo o link …",
+      "linkedDone": "{folder} agora é compartilhada",
+      "unlinkedDone": "{folder} voltou a ser separada",
+      "savesWarningTitle": "Compartilhar mundos?",
+      "savesWarningText": "Toda instância que compartilha abre os mundos compartilhados. Outra versão do Minecraft ou outros mods podem danificar um mundo ou remover seus blocos e itens para sempre.",
+      "savesWarningHint": "Só compartilhe mundos entre instâncias com a mesma versão e os mesmos mods – e faça antes um backup dos mundos importantes.",
+      "savesWarningConfirm": "Compartilhar mundos",
+      "disableTitle": "Parar de compartilhar {folder}?",
+      "disableText": "A pasta compartilhada continua igual para as outras instâncias. O que esta instância deve manter?",
+      "disableCopy": "Manter uma cópia",
+      "disableCopyHint": "Copia tudo da pasta compartilhada para a instância (com mundos grandes pode demorar).",
+      "disableEmpty": "Começar vazia",
+      "disableEmptyHint": "A instância recebe uma pasta nova e vazia.",
+      "disableConfirm": "Parar de compartilhar"
     }
   },
   "createInstance": {
@@ -2174,7 +2210,8 @@
       "credentialsKeyring": "A chave dos seus logins da Microsoft fica no chaveiro do sistema (ex.: GNOME Keyring ou KWallet).",
       "credentialsFile": "Nenhum chaveiro do sistema foi encontrado, então seus logins são protegidos apenas por permissões de arquivo (só o seu usuário pode lê-los). Para mais proteção, instale e desbloqueie um chaveiro como GNOME Keyring ou KWallet.",
       "credentialsKeyringShort": "Chaveiro",
-      "credentialsFileShort": "Só permissões de arquivo"
+      "credentialsFileShort": "Só permissões de arquivo",
+      "sharedFolders": "Pastas compartilhadas"
     },
     "network": {
       "title": "Rede",
@@ -2287,6 +2324,11 @@
       "onStartDescription": "O launcher inicia direto no modo Big Picture.",
       "autoTitle": "Big Picture no Steam Deck",
       "autoDescription": "Inicia sozinho no modo Big Picture no Steam Deck, SteamOS e no gamescope (modo de jogo do Steam)."
+    },
+    "sharedFolders": {
+      "title": "Pastas compartilhadas",
+      "description": "Novas instâncias compartilham estas pastas desde o início com todas as outras que as compartilham. Instâncias existentes mantêm sua configuração (altere nas configurações da instância).",
+      "toggleLabel": "Novas instâncias compartilham {folder}"
     }
   },
   "settingsShell": {
@@ -2755,7 +2797,8 @@
       "versionChange": "Versão alterada",
       "launch": "Inicialização do jogo",
       "presets": "Predefinições instaladas",
-      "ffmpeg": "Gravador instalado"
+      "ffmpeg": "Gravador instalado",
+      "sharedFolders": "Pasta compartilhada"
     },
     "stage": {
       "preparing": "Preparando",
@@ -2935,7 +2978,8 @@
       "window": "Janela",
       "java": "Java e memória",
       "hooks": "Hooks de inicialização",
-      "sync": "Sincronização"
+      "sync": "Sincronização",
+      "shared": "Pastas compartilhadas"
     }
   },
   "trs": {
@@ -5768,6 +5812,28 @@
       "previousInstance": "Instância anterior",
       "nextInstance": "Próxima instância",
       "mode": "Big Picture"
+    }
+  },
+  "sharedFolder": {
+    "shaderpacks": {
+      "label": "Shaders",
+      "description": "Os shaders ficam guardados uma vez só e toda instância que compartilha vê os mesmos."
+    },
+    "resourcepacks": {
+      "label": "Pacotes de recursos",
+      "description": "Uma pasta de pacotes de recursos para todas as instâncias que compartilham."
+    },
+    "screenshots": {
+      "label": "Capturas de tela",
+      "description": "Todas as capturas vão para uma pasta – a galeria mostra cada uma só uma vez."
+    },
+    "saves": {
+      "label": "Mundos",
+      "description": "Os mundos de um jogador são compartilhados – abra o mesmo mundo em várias instâncias."
+    },
+    "schematics": {
+      "label": "Schematics",
+      "description": "Litematica (schematics) e WorldEdit (config/worldedit/schematics) compartilham uma pasta."
     }
   }
 }

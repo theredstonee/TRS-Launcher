@@ -77,8 +77,10 @@ pub fn shot_path(paths: &Paths, instance_id: &str, file_name: &str) -> Result<Pa
         None => root.clone(),
     };
     let path = dir.join(name);
-    // Keine Verknüpfungen – weder der Ordner noch die Datei selbst.
-    if !path.is_file() || is_link(&path) || (sub.is_some() && is_link(&dir)) || is_link(&root) {
+    // Keine Verknüpfungen – weder der Ordner noch die Datei selbst. Einzige Ausnahme:
+    // der Screenshot-Ordner als Link auf den gemeinsamen Ordner.
+    let shared_root = || crate::shared_folders::SharedLinks::new(paths).is_link(Path::new("screenshots"), &root);
+    if !path.is_file() || is_link(&path) || (sub.is_some() && is_link(&dir)) || (is_link(&root) && !shared_root()) {
         return Err(gone());
     }
     let (Ok(real), Ok(real_root)) = (path.canonicalize(), root.canonicalize()) else { return Err(gone()) };

@@ -827,6 +827,12 @@
       "unknownGroup": "Ce groupe n’existe plus.",
       "tooMany": "Au maximum {max} groupes par instance",
       "tooManyEntries": "Trop d’entrées dans les groupes."
+    },
+    "sharedFolders": {
+      "foreignLink": "« {folder} » est déjà lié à un autre emplacement dans cette instance – supprime d’abord ce lien toi-même.",
+      "notAFolder": "Un fichier se trouve à la place de « {folder} » – renomme-le ou supprime-le.",
+      "inUse": "Un autre jeu utilise ce dossier partagé en ce moment – arrête-le d’abord.",
+      "repairFailed": "Impossible de mettre en place les dossiers partagés ({list}) – le jeu utilise ses propres dossiers."
     }
   },
   "browse": {
@@ -1230,7 +1236,8 @@
       "title": "Supprimer la capture d'écran ?",
       "text": "{name} va dans la corbeille de Windows – tu peux l'y restaurer.",
       "textLinux": "{name} va dans la corbeille – tu peux l’y restaurer depuis ton gestionnaire de fichiers."
-    }
+    },
+    "sharedFolder": "Dossier partagé"
   },
   "servers": {
     "title": "Serveurs",
@@ -1356,7 +1363,8 @@
       "window": "Fenêtre",
       "java": "Java et mémoire",
       "hooks": "Hooks de lancement",
-      "sync": "Synchro"
+      "sync": "Synchro",
+      "shared": "Dossiers partagés"
     },
     "general": {
       "changeImage": "Changer l'image",
@@ -1475,7 +1483,35 @@
     "sync": {
       "intro": "Les éléments activés globalement sont récupérés depuis le stockage partagé avant le lancement et réécrits après la fermeture du jeu. Ici, tu peux les garder séparés pour cette instance. Les fichiers écrasés sont d'abord sauvegardés.",
       "globallyOff": "Désactivé globalement – active-le dans Paramètres, section Instances.",
-      "toggleLabel": "Synchroniser {item}"
+      "toggleLabel": "Synchroniser {item}",
+      "resourcePacksShared": "Dans cette instance, les packs de ressources sont un dossier partagé – inutile de les copier."
+    },
+    "shared": {
+      "intro": "Comme dans Prism : un dossier partagé n’existe qu’une fois dans le launcher et chaque instance qui le partage voit les mêmes fichiers. À l’activation, les fichiers de cette instance y sont déplacés – rien n’est écrasé, en cas de nom identique les deux sont conservés.",
+      "stopFirst": "L’instance est lancée – arrête-la d’abord pour modifier les dossiers partagés.",
+      "loading": "Chargement …",
+      "linkedBadge": "Partagé",
+      "toggleLabel": "Partager {folder}",
+      "blocked": "Un autre lien ou un fichier gêne ici – supprime-le ou renomme-le d’abord.",
+      "pending": "Activé – sera mis en place au prochain lancement (les fichiers sont fusionnés avant).",
+      "sharedWith": "Partagé avec {n} autre instance | Partagé avec {n} autres instances",
+      "resourcePacksNote": "Tant que les packs de ressources sont un dossier partagé, la synchronisation ne les copie pas pour cette instance – le dossier partagé s’en charge déjà.",
+      "linking": "Transfert des fichiers vers le dossier partagé …",
+      "copying": "Copie du dossier partagé …",
+      "unlinking": "Suppression du lien …",
+      "linkedDone": "{folder} est maintenant partagé",
+      "unlinkedDone": "{folder} est de nouveau séparé",
+      "savesWarningTitle": "Partager les mondes ?",
+      "savesWarningText": "Chaque instance qui partage ouvre les mondes partagés. Une autre version de Minecraft ou d’autres mods peuvent endommager un monde ou supprimer définitivement ses blocs et objets.",
+      "savesWarningHint": "Ne partage les mondes qu’entre instances de même version avec les mêmes mods – et sauvegarde d’abord les mondes importants.",
+      "savesWarningConfirm": "Partager les mondes",
+      "disableTitle": "Ne plus partager {folder} ?",
+      "disableText": "Le dossier partagé reste tel quel pour les autres instances. Que doit garder cette instance ?",
+      "disableCopy": "Garder une copie",
+      "disableCopyHint": "Copie tout le contenu du dossier partagé dans l’instance (peut prendre du temps pour de grands mondes).",
+      "disableEmpty": "Repartir de zéro",
+      "disableEmptyHint": "L’instance reçoit un nouveau dossier vide.",
+      "disableConfirm": "Ne plus partager"
     }
   },
   "createInstance": {
@@ -2174,7 +2210,8 @@
       "credentialsKeyring": "La clé de tes connexions Microsoft est conservée dans le trousseau du système (p. ex. GNOME Keyring ou KWallet).",
       "credentialsFile": "Aucun trousseau système trouvé : tes connexions ne sont protégées que par les droits de fichier (seul ton utilisateur peut les lire). Pour une meilleure protection, installe et déverrouille un trousseau comme GNOME Keyring ou KWallet.",
       "credentialsKeyringShort": "Trousseau",
-      "credentialsFileShort": "Droits de fichier uniquement"
+      "credentialsFileShort": "Droits de fichier uniquement",
+      "sharedFolders": "Dossiers partagés"
     },
     "network": {
       "title": "Réseau",
@@ -2287,6 +2324,11 @@
       "onStartDescription": "Le launcher démarre directement en mode Big Picture.",
       "autoTitle": "Big Picture sur Steam Deck",
       "autoDescription": "Démarre de lui-même en mode Big Picture sur Steam Deck, SteamOS et dans gamescope (mode jeu de Steam)."
+    },
+    "sharedFolders": {
+      "title": "Dossiers partagés",
+      "description": "Les nouvelles instances partagent dès le départ ces dossiers avec toutes les autres instances qui les partagent. Les instances existantes gardent leur réglage (modifiable dans les paramètres de l’instance).",
+      "toggleLabel": "Les nouvelles instances partagent {folder}"
     }
   },
   "settingsShell": {
@@ -2755,7 +2797,8 @@
       "versionChange": "Version changée",
       "launch": "Lancement du jeu",
       "presets": "Préréglages installés",
-      "ffmpeg": "Enregistreur installé"
+      "ffmpeg": "Enregistreur installé",
+      "sharedFolders": "Dossier partagé"
     },
     "stage": {
       "preparing": "Préparation",
@@ -2935,7 +2978,8 @@
       "window": "Fenêtre",
       "java": "Java et mémoire",
       "hooks": "Hooks de lancement",
-      "sync": "Synchro"
+      "sync": "Synchro",
+      "shared": "Dossiers partagés"
     }
   },
   "trs": {
@@ -5768,6 +5812,28 @@
       "previousInstance": "Instance précédente",
       "nextInstance": "Instance suivante",
       "mode": "Big Picture"
+    }
+  },
+  "sharedFolder": {
+    "shaderpacks": {
+      "label": "Shaders",
+      "description": "Les shaders sont stockés une seule fois et chaque instance qui partage voit les mêmes."
+    },
+    "resourcepacks": {
+      "label": "Packs de ressources",
+      "description": "Un seul dossier de packs de ressources pour toutes les instances qui partagent."
+    },
+    "screenshots": {
+      "label": "Captures d’écran",
+      "description": "Toutes les captures arrivent dans un dossier – la galerie ne les montre qu’une fois."
+    },
+    "saves": {
+      "label": "Mondes",
+      "description": "Les mondes solo sont partagés – ouvre le même monde depuis plusieurs instances."
+    },
+    "schematics": {
+      "label": "Schematics",
+      "description": "Litematica (schematics) et WorldEdit (config/worldedit/schematics) partagent un dossier."
     }
   }
 }

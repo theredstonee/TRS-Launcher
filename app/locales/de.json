@@ -827,6 +827,12 @@
       "unknownGroup": "Diese Gruppe gibt es nicht mehr.",
       "tooMany": "Höchstens {max} Gruppen je Instanz",
       "tooManyEntries": "Zu viele Einträge in Gruppen."
+    },
+    "sharedFolders": {
+      "foreignLink": "„{folder}“ ist in dieser Instanz schon mit einem anderen Ort verknüpft – bitte erst selbst lösen.",
+      "notAFolder": "An der Stelle von „{folder}“ liegt eine Datei – bitte umbenennen oder entfernen.",
+      "inUse": "Ein anderes Spiel nutzt diesen gemeinsamen Ordner gerade – bitte erst beenden.",
+      "repairFailed": "Gemeinsame Ordner konnten nicht eingerichtet werden ({list}) – das Spiel nutzt dafür eigene Ordner."
     }
   },
   "browse": {
@@ -1230,7 +1236,8 @@
       "title": "Screenshot löschen?",
       "text": "{name} wandert in den Papierkorb von Windows – von dort lässt er sich zurückholen.",
       "textLinux": "{name} wandert in den Papierkorb – im Dateimanager lässt er sich von dort zurückholen."
-    }
+    },
+    "sharedFolder": "Gemeinsamer Ordner"
   },
   "servers": {
     "title": "Server",
@@ -1356,7 +1363,8 @@
       "window": "Fenster",
       "java": "Java & Arbeitsspeicher",
       "hooks": "Start-Hooks",
-      "sync": "Synchronisierung"
+      "sync": "Synchronisierung",
+      "shared": "Gemeinsame Ordner"
     },
     "general": {
       "changeImage": "Bild ändern",
@@ -1475,7 +1483,35 @@
     "sync": {
       "intro": "Global eingeschaltete Dinge werden vor dem Start aus dem gemeinsamen Speicher geholt und nach dem Beenden zurückgeschrieben. Hier kannst du sie für diese Instanz separat halten. Überschriebene Dateien werden vorher gesichert.",
       "globallyOff": "Global ausgeschaltet – in den Einstellungen unter Instanzen einschalten.",
-      "toggleLabel": "{item} synchronisieren"
+      "toggleLabel": "{item} synchronisieren",
+      "resourcePacksShared": "Ressourcenpakete sind in dieser Instanz ein gemeinsamer Ordner – kopieren ist nicht nötig."
+    },
+    "shared": {
+      "intro": "Wie bei Prism: Ein gemeinsamer Ordner liegt einmal im Launcher, und jede Instanz, die ihn teilt, sieht dieselben Dateien. Beim Einschalten wandern die Dateien dieser Instanz dorthin – nichts wird überschrieben, bei gleichem Namen bleiben beide.",
+      "stopFirst": "Die Instanz läuft – zum Ändern der gemeinsamen Ordner bitte erst beenden.",
+      "loading": "Wird geladen …",
+      "linkedBadge": "Geteilt",
+      "toggleLabel": "{folder} teilen",
+      "blocked": "Hier steht schon ein anderer Link oder eine Datei im Weg – bitte erst entfernen oder umbenennen.",
+      "pending": "Eingeschaltet – wird beim nächsten Start eingerichtet (die Dateien werden vorher zusammengeführt).",
+      "sharedWith": "Geteilt mit {n} weiteren Instanz | Geteilt mit {n} weiteren Instanzen",
+      "resourcePacksNote": "Solange Ressourcenpakete ein gemeinsamer Ordner sind, kopiert die Synchronisierung sie für diese Instanz nicht – das erledigt schon der gemeinsame Ordner.",
+      "linking": "Dateien werden in den gemeinsamen Ordner übernommen …",
+      "copying": "Gemeinsamer Ordner wird kopiert …",
+      "unlinking": "Link wird entfernt …",
+      "linkedDone": "{folder} ist jetzt gemeinsam",
+      "unlinkedDone": "{folder} ist wieder eigenständig",
+      "savesWarningTitle": "Welten teilen?",
+      "savesWarningText": "Geteilte Welten öffnet jede teilende Instanz. Eine andere Minecraft-Version oder andere Mods können eine Welt beschädigen oder ihre Blöcke und Gegenstände endgültig entfernen.",
+      "savesWarningHint": "Welten nur zwischen Instanzen mit gleicher Version und gleichen Mods teilen – und wichtige Welten vorher sichern.",
+      "savesWarningConfirm": "Welten teilen",
+      "disableTitle": "{folder} nicht mehr teilen?",
+      "disableText": "Für die anderen Instanzen bleibt der gemeinsame Ordner, wie er ist. Was soll diese Instanz behalten?",
+      "disableCopy": "Kopie behalten",
+      "disableCopyHint": "Kopiert alles aus dem gemeinsamen Ordner in die Instanz (bei großen Welten kann das dauern).",
+      "disableEmpty": "Leer starten",
+      "disableEmptyHint": "Die Instanz bekommt einen neuen, leeren Ordner.",
+      "disableConfirm": "Nicht mehr teilen"
     }
   },
   "createInstance": {
@@ -2174,7 +2210,8 @@
       "credentialsKeyring": "Der Schlüssel für deine Microsoft-Anmeldungen liegt im Schlüsselbund deines Systems (z. B. GNOME Keyring oder KWallet).",
       "credentialsFile": "Es wurde kein Schlüsselbund gefunden – deine Anmeldungen sind deshalb nur durch Dateirechte geschützt (nur dein Benutzer kann sie lesen). Für besseren Schutz einen Schlüsselbund wie GNOME Keyring oder KWallet einrichten und entsperren.",
       "credentialsKeyringShort": "Schlüsselbund",
-      "credentialsFileShort": "Nur Dateirechte"
+      "credentialsFileShort": "Nur Dateirechte",
+      "sharedFolders": "Gemeinsame Ordner"
     },
     "network": {
       "title": "Netzwerk",
@@ -2287,6 +2324,11 @@
       "onStartDescription": "Der Launcher startet direkt im Big-Picture-Modus.",
       "autoTitle": "Big Picture auf dem Steam Deck",
       "autoDescription": "Startet auf Steam Deck, SteamOS und in gamescope (Steam-Spielmodus) von selbst im Big-Picture-Modus."
+    },
+    "sharedFolders": {
+      "title": "Gemeinsame Ordner",
+      "description": "Neue Instanzen teilen diese Ordner von Anfang an mit allen anderen teilenden Instanzen. Bestehende Instanzen behalten ihre Einstellung (in den Instanz-Einstellungen änderbar).",
+      "toggleLabel": "Neue Instanzen teilen {folder}"
     }
   },
   "settingsShell": {
@@ -2755,7 +2797,8 @@
       "versionChange": "Version gewechselt",
       "launch": "Spielstart",
       "presets": "Presets installiert",
-      "ffmpeg": "Aufnahme-Komponente installiert"
+      "ffmpeg": "Aufnahme-Komponente installiert",
+      "sharedFolders": "Gemeinsamer Ordner"
     },
     "stage": {
       "preparing": "Wird vorbereitet",
@@ -2935,7 +2978,8 @@
       "window": "Fenster",
       "java": "Java & Arbeitsspeicher",
       "hooks": "Start-Hooks",
-      "sync": "Synchronisierung"
+      "sync": "Synchronisierung",
+      "shared": "Gemeinsame Ordner"
     }
   },
   "trs": {
@@ -5768,6 +5812,28 @@
       "previousInstance": "Vorherige Instanz",
       "nextInstance": "Nächste Instanz",
       "mode": "Big Picture"
+    }
+  },
+  "sharedFolder": {
+    "shaderpacks": {
+      "label": "Shader",
+      "description": "Shader liegen einmal im Launcher – jede teilende Instanz sieht dieselben."
+    },
+    "resourcepacks": {
+      "label": "Ressourcenpakete",
+      "description": "Ein Ordner mit Ressourcenpaketen für alle teilenden Instanzen."
+    },
+    "screenshots": {
+      "label": "Screenshots",
+      "description": "Alle Screenshots landen in einem Ordner – die Galerie zeigt sie nur einmal."
+    },
+    "saves": {
+      "label": "Welten",
+      "description": "Einzelspieler-Welten werden geteilt – dieselbe Welt aus mehreren Instanzen öffnen."
+    },
+    "schematics": {
+      "label": "Schematics",
+      "description": "Litematica (schematics) und WorldEdit (config/worldedit/schematics) teilen sich einen Ordner."
     }
   }
 }

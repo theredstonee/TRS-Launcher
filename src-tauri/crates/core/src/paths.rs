@@ -14,6 +14,7 @@ use crate::{Result, fsutil};
 ///   java/<component>/     von uns installierte Runtimes
 ///   accounts.json         Accounts (Tokens DPAPI-verschlüsselt)
 ///   client-mod/           TRS-Client-Updates (signiertes Manifest + <version>/*.jar)
+///   shared-folders/<art>/ gemeinsame Ordner (Instanzen zeigen per Link darauf)
 ///   instances/<id>/
 ///     instance.json
 ///     minecraft/          Game-Directory (.minecraft-Äquivalent)
@@ -91,6 +92,16 @@ impl Paths {
     /// Gemeinsame Dateien für die Synchronisierung (siehe [`crate::sync`]).
     pub fn shared_dir(&self) -> PathBuf {
         self.root.join("shared")
+    }
+
+    /// Gemeinsame Ordner (Shader, Welten …), auf die Instanzen per Link zeigen
+    /// (siehe [`crate::shared_folders`]).
+    pub fn shared_folders_dir(&self) -> PathBuf {
+        self.root.join("shared-folders")
+    }
+
+    pub fn shared_folder(&self, kind: crate::shared_folders::SharedFolder) -> PathBuf {
+        self.shared_folders_dir().join(kind.key())
     }
 
     /// Aus dem Update-Kanal geladene TRS-Client-Versionen (siehe [`crate::client_mod_update`]).

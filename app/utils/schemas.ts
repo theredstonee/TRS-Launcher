@@ -86,6 +86,19 @@ export const syncSettingsSchema = z.object({
   hotbar: z.boolean(),
 })
 
+/** Gemeinsame Ordner zwischen Instanzen (Rust: `shared_folders::SharedFolder`). */
+export const sharedFolderKinds = ['shaderpacks', 'resourcepacks', 'screenshots', 'saves', 'schematics'] as const
+
+export const sharedFolderStatusSchema = z.array(
+  z.object({
+    kind: z.enum(sharedFolderKinds),
+    enabled: z.boolean(),
+    linked: z.boolean(),
+    blocked: z.boolean(),
+    instances: z.number().int().min(0),
+  }),
+)
+
 export const updateInstanceSchema = z.object({
   name: z.string().trim().min(1, msg('validation.nameRequired')).max(64, msg('validation.maxChars', { max: 64 })),
   overrides: z.object({
@@ -101,6 +114,8 @@ export const updateInstanceSchema = z.object({
     hooks: hooksSchema.nullable(),
     env: envSchema.nullable(),
     syncSeparate: z.array(z.enum(syncItems)).max(syncItems.length),
+    // Ändert der Kern nur über set_instance_shared_folder – hier nur durchgereicht.
+    sharedFolders: z.array(z.enum(sharedFolderKinds)).max(sharedFolderKinds.length).default([]),
   }),
 })
 
@@ -204,6 +219,7 @@ export const settingsSchema = z
     social: socialSettingsSchema,
     modpackTrsClient: z.enum(['ask', 'always', 'never']).default('ask'),
     showBedrock: z.boolean().default(true),
+    sharedFolders: z.array(z.enum(sharedFolderKinds)).max(sharedFolderKinds.length).default([]),
   })
   .passthrough()
   .refine((s) => s.minMemoryMb <= s.maxMemoryMb, {

@@ -64,6 +64,14 @@ How to write an entry:
   "undo" per setting; "Advanced" shows the whole file with colours, line numbers and live error checking. Saving
   only changes the values you edited – comments, order and formatting stay exactly as they were – and keeps the
   previous version so you can restore it. "Open externally" is still in the right-click menu.
+- **Shared folders between instances.** Like in Prism, instances can now share their shader packs, resource
+  packs, screenshots, worlds and schematics (Litematica and WorldEdit): the files live once in the launcher and
+  every sharing instance sees the same ones. Switch it on per folder in the instance settings under "Shared
+  folders" – the instance's own files move over without loss (same name: both are kept). Switching it off asks
+  whether the instance keeps a copy or starts empty. Worlds show a warning first, because other versions or mods
+  can damage a shared world. New instances can share folders right away (Settings → Default settings), deleting an
+  instance never touches the shared files, the screenshot gallery shows shared shots only once, and storage counts
+  them once. While resource packs are shared, Sync no longer copies them for that instance.
 
 ### Deutsch
 - **Suche, Filter und Details für TRS-Umhänge.** Die Umhang-Liste auf der Skins-Seite hat ein Suchfeld, Filter
@@ -102,6 +110,15 @@ How to write an entry:
   ganze Datei mit Farben, Zeilennummern und Fehlerprüfung beim Tippen. Beim Speichern ändern sich nur die
   bearbeiteten Werte – Kommentare, Reihenfolge und Formatierung bleiben genau erhalten – und die vorherige Fassung
   wird aufbewahrt, damit du sie wiederherstellen kannst. „Extern öffnen“ gibt es weiter im Rechtsklick-Menü.
+- **Gemeinsame Ordner zwischen Instanzen.** Wie bei Prism können Instanzen jetzt Shader, Ressourcenpakete,
+  Screenshots, Welten und Schematics (Litematica und WorldEdit) teilen: Die Dateien liegen einmal im Launcher, und
+  jede teilende Instanz sieht dieselben. Einschalten je Ordner in den Instanz-Einstellungen unter „Gemeinsame
+  Ordner“ – die eigenen Dateien der Instanz wandern verlustfrei hinüber (gleicher Name: beide bleiben). Beim
+  Ausschalten fragt der Launcher, ob die Instanz eine Kopie behält oder leer startet. Bei Welten kommt vorher eine
+  Warnung, denn andere Versionen oder Mods können eine geteilte Welt beschädigen. Neue Instanzen können Ordner
+  gleich teilen (Einstellungen → Standard-Einstellungen), Löschen einer Instanz rührt die gemeinsamen Dateien nie an,
+  die Screenshot-Galerie zeigt geteilte Bilder nur einmal und der Speicher zählt sie einmal. Solange
+  Ressourcenpakete geteilt sind, kopiert die Synchronisierung sie für diese Instanz nicht mehr.
 
 ## 0.17.1 – 2026-10-03 – Light Luggage Fix | Leichtes Gepäck – Fix
 <!-- banner: accent=#ffb02e motif=/news/0.17.0/banner.png -->

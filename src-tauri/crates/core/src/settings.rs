@@ -83,6 +83,10 @@ pub struct Settings {
     pub modpack_trs_client: crate::trs_choice::ModpackTrsPolicy,
     /// „Minecraft Bedrock“ in der Bibliothek zeigen, wenn es installiert ist (nur Windows) – ab Werk an.
     pub show_bedrock: bool,
+    /// Ordner, die neue Instanzen von Anfang an mit den anderen teilen
+    /// (siehe [`crate::shared_folders`]). Ab Werk keine.
+    #[serde(deserialize_with = "crate::shared_folders::lenient")]
+    pub shared_folders: Vec<crate::shared_folders::SharedFolder>,
 }
 
 /// Ecken für Benachrichtigungen.
@@ -359,6 +363,7 @@ impl Default for Settings {
             social: SocialSettings::default(),
             modpack_trs_client: crate::trs_choice::ModpackTrsPolicy::Ask,
             show_bedrock: true,
+            shared_folders: Vec::new(),
         }
     }
 }
@@ -429,6 +434,7 @@ impl Settings {
         self.env = hooks::normalize_env(self.env);
         self.clips = self.clips.normalized();
         self.social = self.social.normalized();
+        self.shared_folders = crate::shared_folders::normalize(&self.shared_folders);
         self
     }
 

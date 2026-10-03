@@ -26,6 +26,9 @@ pub struct StorageStats {
     pub java: u64,
     /// Gemeinsam synchronisierte Dateien (`shared/`).
     pub shared: u64,
+    /// Gemeinsame Ordner (`shared-folders/`) – einmal gezählt, auch wenn viele
+    /// Instanzen darauf verlinken (Links zählen bei den Instanzen nicht mit).
+    pub shared_folders: u64,
     /// Davon löschbar: Spielversionen, die keine Instanz mehr braucht.
     pub unused: u64,
     pub unused_versions: usize,
@@ -91,6 +94,7 @@ pub async fn stats(paths: &Paths, instances: Vec<Instance>) -> Result<StorageSta
             versions: dir_size(&paths.versions_dir()),
             java: dir_size(&paths.java_dir()),
             shared: dir_size(&paths.shared_dir()),
+            shared_folders: dir_size(&paths.shared_folders_dir()),
             unused: unused_dirs.iter().map(|d| dir_size(d)).sum(),
             unused_versions: unused_dirs.len(),
         }
@@ -211,9 +215,18 @@ mod tests {
         write(paths.version_jar("1.8.9"), &[0; 50]);
         write(paths.instance_game_dir("a").join("options.txt"), &[0; 10]);
 
+        // Ein gemeinsamer Ordner, auf den zwei Instanzen zeigen, zählt nur einmal.
+        write(paths.shared_folder(crate::shared_folders::SharedFolder::Saves).join("w/level.dat"), &[0; 30]);
+        for id in ["a", "b"] {
+            let game = paths.instance_game_dir(id);
+            std::fs::create_dir_all(&game).unwrap();
+            crate::platform::create_dir_link(&paths.shared_folder(crate::shared_folders::SharedFolder::Saves), &game.join("saves")).unwrap();
+        }
+
         let list = vec![inst("1.21.1", LoaderKind::Vanilla)];
         let s = stats(&paths, list.clone()).await.unwrap();
         assert_eq!((s.versions, s.unused, s.unused_versions, s.instances), (150, 50, 1, 10));
+        assert_eq!(s.shared_folders, 30);
         assert_eq!(clean_unused(&paths, list.clone()).await.unwrap(), 50);
         assert!(paths.version_jar("1.21.1").is_file());
         assert!(!paths.version_dir("1.8.9").exists());
