@@ -1,0 +1,15 @@
+// Mod config (JSON5)
+{
+  // Enables the feature
+  enabled: true,
+  /* Maximum distance
+     in blocks */
+  maxDistance: 64,
+  name: 'Steve',
+  tags: ['a', 'b',],
+  ratio: .5,
+  hex: 0xFF,
+  nested: {
+    deep: "x", // trailing comment
+  },
+}

@@ -148,6 +148,112 @@ fn to_utc(time: std::io::Result<std::time::SystemTime>) -> Option<DateTime<Utc>>
     time.ok().map(DateTime::<Utc>::from)
 }
 
+/// Größte Datei, die der Config-Editor liest oder schreibt.
+pub const MAX_TEXT_BYTES: u64 = 2 * 1024 * 1024;
+/// Ordner neben dem Spielordner (`instances/<id>/file-backups`) mit je einer
+/// Vorversion bearbeiteter Dateien – außerhalb des Spielordners, damit weder
+/// das Spiel noch Exporte oder der Dateibrowser darüber stolpern.
+pub const BACKUP_DIR: &str = "file-backups";
+const UTF8_BOM: &[u8] = b"\xEF\xBB\xBF";
+
+/// Endungen, die der Config-Editor öffnen und speichern darf.
+pub fn is_editable_text(name: &str) -> bool {
+    const TEXT: [&str; 9] = ["toml", "json", "jsonc", "json5", "properties", "cfg", "yml", "yaml", "txt"];
+    let lower = name.to_ascii_lowercase();
+    lower.rsplit_once('.').is_some_and(|(stem, ext)| !stem.is_empty() && TEXT.contains(&ext))
+}
+
+/// Inhalt einer Textdatei für den Config-Editor.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct TextFile {
+    pub text: String,
+    /// SHA-256 der Bytes auf der Platte – Schutz vor dem Überschreiben fremder Änderungen.
+    pub version: String,
+    /// Datei begann mit einem UTF-8-BOM (bleibt beim Speichern erhalten).
+    pub bom: bool,
+    /// Es gibt eine Vorversion von einem früheren Speichern.
+    pub has_backup: bool,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct SavedText {
+    pub version: String,
+    pub has_backup: bool,
+}
+
+fn text_too_large() -> Error {
+    Error::validation(crate::msg!(
+        "files.textTooLarge",
+        "Die Datei ist zu groß für den Editor (höchstens {mb} MB).",
+        mb = MAX_TEXT_BYTES >> 20
+    ))
+}
+
+fn not_text() -> Error {
+    Error::validation(crate::msg!("files.notText", "Das ist keine Textdatei in UTF-8 – bitte extern öffnen."))
+}
+
+fn not_editable() -> Error {
+    Error::validation(crate::msg!("files.notEditable", "Dieser Dateityp lässt sich im Launcher nicht bearbeiten."))
+}
+
+fn changed_on_disk() -> Error {
+    Error::validation(crate::msg!(
+        "files.changedOnDisk",
+        "Die Datei wurde inzwischen außerhalb des Editors geändert."
+    ))
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    use sha2::Digest as _;
+    sha2::Sha256::digest(bytes).iter().map(|b| format!("{b:02x}")).collect()
+}
+
+/// Höchstens [`MAX_TEXT_BYTES`] lesen – größere Dateien werden abgelehnt.
+fn read_limited(path: &Path) -> Result<Vec<u8>> {
+    use std::io::Read as _;
+    let file = std::fs::File::open(path).map_err(|e| Error::io(path, e))?;
+    let mut bytes = Vec::new();
+    file.take(MAX_TEXT_BYTES + 1).read_to_end(&mut bytes).map_err(|e| Error::io(path, e))?;
+    if bytes.len() as u64 > MAX_TEXT_BYTES {
+        return Err(text_too_large());
+    }
+    Ok(bytes)
+}
+
+/// UTF-8 ohne NUL-Bytes (sonst binär oder UTF-16); BOM wird abgetrennt.
+fn decode_text(bytes: &[u8]) -> Result<(String, bool)> {
+    let (body, bom) = match bytes.strip_prefix(UTF8_BOM) {
+        Some(rest) => (rest, true),
+        None => (bytes, false),
+    };
+    if body.contains(&0) {
+        return Err(not_text());
+    }
+    let text = std::str::from_utf8(body).map_err(|_| not_text())?;
+    Ok((text.to_owned(), bom))
+}
+
+/// Erst in eine Temp-Datei im selben Ordner, dann umbenennen (ersetzt atomar).
+fn write_atomic_sync(path: &Path, bytes: &[u8]) -> Result<()> {
+    use std::io::Write as _;
+    let dir = path.parent().ok_or_else(denied)?;
+    std::fs::create_dir_all(dir).map_err(|e| Error::io(dir, e))?;
+    let tmp = dir.join(format!(".trs-{}.tmp", uuid::Uuid::new_v4().simple()));
+    let written = (|| {
+        let mut file = std::fs::OpenOptions::new().write(true).create_new(true).open(&tmp)?;
+        file.write_all(bytes)?;
+        file.sync_all()
+    })();
+    if let Err(e) = written.and_then(|()| std::fs::rename(&tmp, path)) {
+        let _ = std::fs::remove_file(&tmp);
+        return Err(Error::io(path, e));
+    }
+    Ok(())
+}
+
 /// Der Spielordner einer Instanz als „Gefängnis“ für alle Dateioperationen.
 #[derive(Debug, Clone)]
 pub struct Jail {
@@ -156,12 +262,20 @@ pub struct Jail {
     root: PathBuf,
     /// Kanonisch – nur für die Prüfung „liegt noch darin“.
     canonical: PathBuf,
+    /// Ablage für Vorversionen bearbeiteter Textdateien (außerhalb von `root`).
+    backups: Option<PathBuf>,
 }
 
 impl Jail {
     pub fn for_instance(paths: &Paths, instance_id: &str) -> Result<Self> {
         validate_id(instance_id)?;
-        Self::new(&paths.instance_game_dir(instance_id))
+        Ok(Self::new(&paths.instance_game_dir(instance_id))?.with_backups(paths.instance_dir(instance_id).join(BACKUP_DIR)))
+    }
+
+    /// Vorversionen gespeicherter Textdateien hier ablegen (gleicher relativer Pfad).
+    pub fn with_backups(mut self, dir: PathBuf) -> Self {
+        self.backups = Some(dir);
+        self
     }
 
     /// Legt den Ordner bei Bedarf an; der Wurzelpfad wird kanonisiert.
@@ -174,7 +288,7 @@ impl Jail {
             tracing::debug!("Spielordner ist ein Link: {}", dir.display());
         }
         let canonical = dir.canonicalize().map_err(|e| Error::io(dir, e))?;
-        Ok(Self { root: dir.to_path_buf(), canonical })
+        Ok(Self { root: dir.to_path_buf(), canonical, backups: None })
     }
 
     pub fn root(&self) -> &Path {
@@ -398,6 +512,80 @@ impl Jail {
     /// Geprüfter absoluter Pfad (zum Öffnen oder Zeigen im Explorer).
     pub fn existing_path(&self, rel: &str) -> Result<PathBuf> {
         Ok(self.resolve(rel)?.0)
+    }
+
+    /// Vorhandene, bearbeitbare Textdatei (keine Geheimnisse, kein Ordner, passende Endung).
+    fn resolve_text(&self, rel: &str) -> Result<(PathBuf, Vec<String>)> {
+        let (path, parts) = self.resolve(rel)?;
+        let Some(name) = parts.last() else { return Err(denied()) };
+        // `split_rel` prüft das schon – hier noch einmal ausdrücklich für Lesen UND Schreiben.
+        if is_sensitive(&parts) {
+            return Err(denied());
+        }
+        if !is_editable_text(name) {
+            return Err(not_editable());
+        }
+        if !path.is_file() {
+            return Err(not_found());
+        }
+        Ok((path, parts))
+    }
+
+    fn backup_path(&self, parts: &[String]) -> Option<PathBuf> {
+        let mut path = self.backups.clone()?;
+        path.extend(parts);
+        Some(path)
+    }
+
+    /// Textdatei für den Config-Editor lesen (UTF-8, höchstens [`MAX_TEXT_BYTES`]).
+    pub fn read_text(&self, rel: &str) -> Result<TextFile> {
+        let (path, parts) = self.resolve_text(rel)?;
+        let bytes = read_limited(&path)?;
+        let (text, bom) = decode_text(&bytes)?;
+        let has_backup = self.backup_path(&parts).is_some_and(|p| p.is_file());
+        Ok(TextFile { text, version: sha256_hex(&bytes), bom, has_backup })
+    }
+
+    /// Vorversion vom letzten Speichern (oder `None`).
+    pub fn read_text_backup(&self, rel: &str) -> Result<Option<TextFile>> {
+        let (_, parts) = self.resolve_text(rel)?;
+        let Some(backup) = self.backup_path(&parts) else { return Ok(None) };
+        if !backup.is_file() {
+            return Ok(None);
+        }
+        let bytes = read_limited(&backup)?;
+        let (text, bom) = decode_text(&bytes)?;
+        Ok(Some(TextFile { text, version: sha256_hex(&bytes), bom, has_backup: true }))
+    }
+
+    /// Textdatei atomar ersetzen. `expected` = Version beim Lesen; hat sich die Datei
+    /// inzwischen geändert, wird nichts geschrieben. Die bisherige Fassung wird vorher
+    /// als Vorversion abgelegt (genau eine je Datei).
+    pub fn write_text(&self, rel: &str, text: &str, expected: Option<&str>, bom: bool) -> Result<SavedText> {
+        if text.len() as u64 + if bom { 3 } else { 0 } > MAX_TEXT_BYTES {
+            return Err(text_too_large());
+        }
+        if text.contains('\0') {
+            return Err(not_text());
+        }
+        let (path, parts) = self.resolve_text(rel)?;
+        let current = read_limited(&path)?;
+        if expected.is_some_and(|v| v != sha256_hex(&current)) {
+            return Err(changed_on_disk());
+        }
+        let mut bytes = Vec::with_capacity(text.len() + 3);
+        if bom {
+            bytes.extend_from_slice(UTF8_BOM);
+        }
+        bytes.extend_from_slice(text.as_bytes());
+        let backup = self.backup_path(&parts);
+        if bytes != current {
+            if let Some(backup) = &backup {
+                write_atomic_sync(backup, &current)?;
+            }
+            write_atomic_sync(&path, &bytes)?;
+        }
+        Ok(SavedText { version: sha256_hex(&bytes), has_backup: backup.is_some_and(|p| p.is_file()) })
     }
 }
 
@@ -643,6 +831,81 @@ mod tests {
         assert!(opens_directly("screenshot.png"));
         for name in ["mod.jar", "run.bat", "x.exe", "script.ps1", "start.sh", "noext", ".txt", "a.lnk", "b.vbs"] {
             assert!(!opens_directly(name), "{name} darf nicht direkt geöffnet werden");
+        }
+    }
+
+    #[test]
+    fn text_editor_reads_and_writes_with_backup() {
+        let (dir, jail) = jail();
+        let jail = jail.with_backups(dir.path().join(BACKUP_DIR));
+        std::fs::write(jail.root().join("config/mod.toml"), b"\xEF\xBB\xBFa = 1\r\n").unwrap();
+
+        let file = jail.read_text("config/mod.toml").unwrap();
+        assert_eq!(file.text, "a = 1\r\n");
+        assert!(file.bom && !file.has_backup);
+        assert_eq!(file.version.len(), 64);
+        assert!(jail.read_text_backup("config/mod.toml").unwrap().is_none());
+
+        let saved = jail.write_text("config/mod.toml", "a = 2\r\n", Some(&file.version), true).unwrap();
+        assert!(saved.has_backup);
+        assert_eq!(std::fs::read(jail.root().join("config/mod.toml")).unwrap(), b"\xEF\xBB\xBFa = 2\r\n");
+        // Vorversion liegt außerhalb des Spielordners unter demselben relativen Pfad.
+        assert_eq!(std::fs::read(dir.path().join("file-backups/config/mod.toml")).unwrap(), b"\xEF\xBB\xBFa = 1\r\n");
+        assert_eq!(jail.read_text_backup("config/mod.toml").unwrap().unwrap().text, "a = 1\r\n");
+        assert!(!jail.list("config").unwrap().entries.iter().any(|e| e.name.contains("tmp") || e.name.contains("bak")));
+
+        // Veraltete Version → nichts wird geschrieben.
+        assert!(jail.write_text("config/mod.toml", "a = 3", Some(&file.version), false).is_err());
+        assert_eq!(jail.read_text("config/mod.toml").unwrap().text, "a = 2\r\n");
+        // Ohne Version (bewusst überschreiben) geht es; die Vorversion ist dann Fassung 2.
+        let again = jail.write_text("config/mod.toml", "a = 3", None, false).unwrap();
+        assert_eq!(again.version, jail.read_text("config/mod.toml").unwrap().version);
+        assert_eq!(jail.read_text_backup("config/mod.toml").unwrap().unwrap().text, "a = 2\r\n");
+    }
+
+    #[test]
+    fn text_editor_refuses_secrets_binaries_and_big_files() {
+        let (dir, jail) = jail();
+        let jail = jail.with_backups(dir.path().join(BACKUP_DIR));
+        let root = jail.root().to_path_buf();
+        // Geheimnisse: weder lesen noch schreiben (auch bei anderer Schreibweise).
+        assert!(jail.read_text("config/trsclient/clips.json").is_err());
+        assert!(jail.read_text("config\\TRSCLIENT\\Clips.json").is_err());
+        assert!(jail.write_text("config/trsclient/clips.json", "{}", None, false).is_err());
+        assert_eq!(std::fs::read(root.join("config/trsclient/clips.json")).unwrap(), b"{\"token\":\"x\"}");
+        std::fs::write(root.join("my_accounts.json"), b"{}").unwrap();
+        assert!(jail.read_text("my_accounts.json").is_err());
+        // Ausbruch, Ordner und fremde Endungen.
+        assert!(jail.read_text("../outside.txt").is_err());
+        assert!(jail.write_text("../outside.txt", "x", None, false).is_err());
+        assert!(jail.read_text("config").is_err());
+        assert!(jail.read_text("mods/a.jar").is_err());
+        assert!(jail.write_text("mods/a.jar", "x", None, false).is_err());
+        assert!(jail.read_text("fehlt.json").is_err());
+        // Binär, UTF-16, kaputtes UTF-8.
+        std::fs::write(root.join("bin.json"), b"{\0}").unwrap();
+        std::fs::write(root.join("utf16.txt"), b"\xFF\xFEa\0").unwrap();
+        std::fs::write(root.join("latin1.properties"), b"motd=Gr\xFC\xDFe").unwrap();
+        for name in ["bin.json", "utf16.txt", "latin1.properties"] {
+            assert!(jail.read_text(name).is_err(), "{name} darf nicht als Text gelten");
+        }
+        assert!(jail.write_text("options.txt", "a\0b", None, false).is_err());
+        // Größe: Lesen und Schreiben begrenzt.
+        std::fs::write(root.join("big.json"), vec![b' '; MAX_TEXT_BYTES as usize + 1]).unwrap();
+        assert!(jail.read_text("big.json").is_err());
+        let big = " ".repeat(MAX_TEXT_BYTES as usize + 1);
+        assert!(jail.write_text("options.txt", &big, None, false).is_err());
+        assert_eq!(jail.read_text("options.txt").unwrap().text, "fov:70");
+        assert!(!dir.path().join(BACKUP_DIR).exists());
+    }
+
+    #[test]
+    fn editable_text_extensions() {
+        for name in ["a.toml", "B.JSON", "c.json5", "server.properties", "x.cfg", "y.yml", "z.yaml", "options.txt"] {
+            assert!(is_editable_text(name), "{name}");
+        }
+        for name in ["a.jar", "b.exe", ".toml", "noext", "c.dat", "d.nbt"] {
+            assert!(!is_editable_text(name), "{name}");
         }
     }
 

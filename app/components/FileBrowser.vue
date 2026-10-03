@@ -2,6 +2,7 @@
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import type { DirListing, DropEvent, FileEntry, ImportReport, Instance } from '~/types'
 import type { FileKind, FileSort, FileSortKey } from '~/utils/files'
+import { MAX_EDITOR_BYTES, editorSupports } from '~/utils/config/editor'
 
 // Tab „Dateien“: Spielordner der Instanz durchsuchen und verwalten. Alle
 // Pfade sind relativ; geprüft wird im Kern (kein Ausbruch aus der Instanz).
@@ -96,9 +97,21 @@ function toggleAll() {
   selected.value = allChecked.value ? new Set() : new Set(names.value)
 }
 
+// Config-Dateien öffnen im eigenen Editor, alles andere extern.
+const editing = ref<string | null>(null)
+const running = computed(() => useGamesStore().state(props.instance.id).phase !== 'idle')
+function editable(entry: FileEntry): boolean {
+  return !entry.dir && editorSupports(entry.name) && entry.size <= MAX_EDITOR_BYTES
+}
+
 function activate(entry: FileEntry) {
   if (entry.dir) go(joinPath(cwd.value, entry.name))
-  else backend.openInstanceFile(props.instance.id, joinPath(cwd.value, entry.name)).catch((e) => toasts.error(e))
+  else if (editable(entry)) editing.value = joinPath(cwd.value, entry.name)
+  else openExternally(entry)
+}
+function openExternally(entry: FileEntry) {
+  menu.value = null
+  backend.openInstanceFile(props.instance.id, joinPath(cwd.value, entry.name)).catch((e) => toasts.error(e))
 }
 
 const list = ref<HTMLElement | null>(null)
@@ -492,6 +505,7 @@ const nameDialogTitle = computed(() => {
     <div v-if="menu" data-file-menu class="menu" :style="{ left: `${menu.x}px`, top: `${menu.y}px` }" role="menu">
       <template v-if="menu.entry">
         <button class="menu-item" role="menuitem" @click="openSelected">{{ menu.entry.dir ? t('files.openFolder') : t('common.actions.open') }}</button>
+        <button v-if="editable(menu.entry)" class="menu-item" role="menuitem" @click="openExternally(menu.entry)">{{ t('files.openExternally') }}</button>
         <button class="menu-item" role="menuitem" @click="reveal(menu.entry)">{{ t('files.reveal') }}</button>
         <button class="menu-item" role="menuitem" :disabled="selection.length !== 1" @click="startRename(menu.entry)">{{ t('files.rename') }}</button>
         <button class="menu-item" role="menuitem" @click="copyPath">{{ t('files.copyPath') }}</button>
@@ -519,6 +533,8 @@ const nameDialogTitle = computed(() => {
         <button type="submit" form="file-name-form" class="btn btn-primary" :disabled="busy">{{ nameDialog.mode === 'rename' ? t('files.rename') : t('common.actions.create') }}</button>
       </template>
     </BaseDialog>
+
+    <ConfigEditorDialog v-if="editing" :instance-id="instance.id" :path="editing" :running="running" @close="editing = null" @saved="load(cwd, true)" />
 
     <BaseDialog v-if="confirmTrash" :title="t('files.trashTitle', selection.length)" @close="confirmTrash = false">
       <p class="text-sm text-base-200">{{ isLinux ? t('files.trashTextLinux') : t('files.trashText') }}</p>
