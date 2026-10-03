@@ -28,7 +28,12 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.17.0 – 2026-10-03 – Light Luggage | Leichtes Gepäck
+<!-- banner: accent=#ff3b30 motif=/news/0.17.0/banner.png -->
+<!-- shots:
+/news/0.17.0/pack-share-upload.png | Sharing a modpack: mods go in as links, only your own files are uploaded | Modpack teilen: Mods als Link, hochgeladen werden nur deine eigenen Dateien
+/news/0.17.0/chat-heads.png | Chat Heads: the sender's head in front of every message | Chat-Köpfe: der Kopf des Absenders vor jeder Nachricht
+-->
 
 ### English
 - **Borderless fullscreen in the TRS Client.** F11 now fills your monitor with a borderless window instead of
