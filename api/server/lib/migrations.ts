@@ -782,6 +782,14 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 23,
     run: migratePush,
   },
+  {
+    // PC-Fernbedienung (§34): Geräte (PC/Handy, nur SHA-256 des Geheimnisses, letzter Status des PCs), Kopplungen,
+    // Kopplungs-Codes (2 min) und Befehle (Idempotenz je Handy, 60 s gültig). Alles per ON DELETE CASCADE am Konto
+    // bzw. Gerät. Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 24,
+    run: migrateRemote,
+  },
 ]
 
 /** Migration 23 (siehe oben). Exportiert für den Idempotenz-Test. */
@@ -823,6 +831,62 @@ CREATE TABLE IF NOT EXISTS push_pending (
 );
 CREATE INDEX IF NOT EXISTS push_pending_device ON push_pending(device_id, id);
 CREATE INDEX IF NOT EXISTS push_pending_expires ON push_pending(expires_at);
+`)
+}
+
+/** Migration 24 (siehe oben). Exportiert für den Idempotenz-Test. */
+export function migrateRemote(db: DatabaseSync): void {
+  db.exec(`
+CREATE TABLE IF NOT EXISTS remote_devices (
+  id TEXT PRIMARY KEY CHECK (length(id) = 22),
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('desktop', 'phone')),
+  name TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 200),
+  secret_hash TEXT NOT NULL CHECK (length(secret_hash) = 64),
+  created_at INTEGER NOT NULL,
+  last_seen_at INTEGER NOT NULL,
+  -- letzter Stand eines PCs (JSON, gesäubert) + Zeitpunkt
+  status TEXT,
+  status_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS remote_devices_user ON remote_devices(uuid, kind, last_seen_at);
+
+CREATE TABLE IF NOT EXISTS remote_pairings (
+  desktop_id TEXT NOT NULL REFERENCES remote_devices(id) ON DELETE CASCADE,
+  phone_id TEXT NOT NULL REFERENCES remote_devices(id) ON DELETE CASCADE,
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (desktop_id, phone_id)
+);
+CREATE INDEX IF NOT EXISTS remote_pairings_phone ON remote_pairings(phone_id);
+
+CREATE TABLE IF NOT EXISTS remote_pair_codes (
+  code TEXT PRIMARY KEY CHECK (length(code) = 6),
+  desktop_id TEXT NOT NULL REFERENCES remote_devices(id) ON DELETE CASCADE,
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS remote_pair_codes_desktop ON remote_pair_codes(desktop_id);
+CREATE INDEX IF NOT EXISTS remote_pair_codes_expires ON remote_pair_codes(expires_at);
+
+CREATE TABLE IF NOT EXISTS remote_commands (
+  id TEXT PRIMARY KEY CHECK (length(id) = 22),
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  desktop_id TEXT NOT NULL REFERENCES remote_devices(id) ON DELETE CASCADE,
+  phone_id TEXT NOT NULL REFERENCES remote_devices(id) ON DELETE CASCADE,
+  idem_key TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('launch_instance', 'stop_instance', 'install_pack_code', 'ping')),
+  args TEXT NOT NULL,
+  state TEXT NOT NULL DEFAULT 'pending' CHECK (state IN ('pending', 'running', 'done', 'failed')),
+  error TEXT,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL,
+  claimed_at INTEGER,
+  UNIQUE (phone_id, idem_key)
+);
+CREATE INDEX IF NOT EXISTS remote_commands_created ON remote_commands(created_at);
+CREATE INDEX IF NOT EXISTS remote_commands_desktop ON remote_commands(desktop_id);
 `)
 }
 

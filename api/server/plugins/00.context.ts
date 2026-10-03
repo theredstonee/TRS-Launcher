@@ -20,6 +20,7 @@ import { rotateReportKeys, sweepModeration } from '../lib/moderation'
 import { sweepExpiredPacks, sweepOrphanPackFiles } from '../lib/packs'
 import { sweepPush } from '../lib/push'
 import { sweepExpiredShares, sweepOrphanShareFiles } from '../lib/shares'
+import { sweepRemote } from '../lib/remote'
 import { createMojangClient } from '../lib/mojang'
 import { afterPresenceChange } from '../lib/playerevents'
 import { mergeTemplates, parseTemplates } from '../lib/templates'
@@ -191,6 +192,8 @@ export default defineNitroPlugin((nitroApp) => {
       sweepIssues(ctx)
       // Erfolge (§31): nachgereichte Belohnungen (billig: nur offene Freischaltungen mit vorhandenem Teil).
       grantPendingRewards(ctx)
+      // Fernbedienung (§34): abgelaufene Kopplungs-Codes, alte Befehle.
+      sweepRemote(ctx)
     }),
     // Chat: Tipp-Status, Wiederaufnahme-Puffer, Spam-Bremse, nicht verwendete Bilder.
     // Welt-Hosting: Räume ohne Herzschlag schließen.

@@ -9,6 +9,7 @@ import type { MyAppealView, MySanctionView } from './sanctions'
 import type { Settings } from './users'
 import type { IssueUpdatedEvent } from './issues'
 import type { PackView } from './packs'
+import type { CommandType, PeerView, RemoteStatus } from './remote'
 
 export interface PlayerRef {
   uuid: string
@@ -124,6 +125,23 @@ export type ApiEvent =
   // ---------------------------------------------------------------- Events (§32, nur /v1/events/me)
   /** Ein Event wurde ein-/ausgeschaltet oder du wurdest freigegeben/entfernt: `events` = für DICH aktive Events. */
   | { type: 'events_changed', events: string[] }
+  // ---------------------------------------------------------------- PC-Fernbedienung (§34, nur /v1/events/me)
+  /** An den Ziel-PC: Befehl vom Handy. `payload` = signierter JSON-String, `sig` = HMAC (nur der PC kann prüfen). */
+  | { type: 'remote_command', desktopId: string, payload: string, sig: string }
+  /** Befehl wurde abgeholt (`running`), ist fertig (`done`) oder gescheitert (`failed`, `error` = Code). */
+  | {
+    type: 'remote_command_update'
+    commandId: string
+    desktopId: string
+    phoneId: string
+    commandType: CommandType
+    state: 'pending' | 'running' | 'done' | 'failed'
+    error: string | null
+  }
+  /** Flüchtig: neuer Stand eines PCs (Instanzen, laufende Aufgaben, erlaubte Befehle). */
+  | { type: 'remote_status', desktopId: string, online: boolean, status: RemoteStatus, at: string }
+  /** Handy und PC gekoppelt (`added`, mit beiden Geräten) oder getrennt (`removed`). */
+  | { type: 'remote_pairing', action: 'added' | 'removed', desktopId: string, phoneId: string, desktop?: PeerView, phone?: PeerView }
 
 export type ApiEventType = ApiEvent['type']
 

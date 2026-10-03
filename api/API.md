@@ -1997,6 +1997,7 @@ data: {"type":"chat_message","conversationId":"c…","message":{…}}
 | `achievement_unlocked` | `{achievement: AchievementView, at, reward: {kind, id}\|null}` – you unlocked an achievement (§31.6) |
 | `notes_changed` | `{cursor}` – your synced notes changed (§17.5); fetch `GET /v1/me/sync/notes?since=<your cursor>` |
 | `events_changed` | `{events}` – the events active for you changed (§32); `events` is the full list (`[]` = none) |
+| `remote_*` | PC remote control: `remote_command`, `remote_command_update`, `remote_status` (no id, not replayed), `remote_pairing` – see §34.6 |
 
 `?pushDevice={id}` (optional, §33): set by the mobile app on its push device. While such a stream is open (and 60 s after), that device gets no push notifications. Streams without it count as desktop (§33.6).
 
@@ -3850,3 +3851,135 @@ The launcher merely running in the background does **not** suppress notification
 Tables `push_devices` (bound to `users` and `sessions` with `ON DELETE CASCADE`; endpoint unique) and `push_pending` (poll entries, payload encrypted with the chat key, AAD `push:<device id>`, `ON DELETE CASCADE` with the device). Idempotent. When merging: renumber if a parallel branch also added a migration 23.
 
 Why no `web-push` library: `node:crypto` has everything (ECDH P-256, HKDF, AES-128-GCM, ES256 with `ieee-p1363`), the code is about 150 lines and tested against the RFC 8291 appendix A vector, and the SSRF guard needs our own HTTPS request anyway (checked DNS lookup per connection). No new dependency.
+
+## 34. PC remote control
+
+The TRS Launcher on a **phone** controls the TRS Launcher on a **PC** of the **same TRS account**: start or stop an
+instance, install a shared modpack by code (§27), see the instances and running tasks. Nothing runs without the player:
+the feature is **off by default** on the PC, each command type has its own switch there, and the server only relays
+commands between paired devices of one account.
+
+```
+PC (Bearer + X-TRS-Device)              Server                                 Phone (Bearer + X-TRS-Device)
+POST /v1/remote/pair  ───────────────▶  code K7Q-2MX (2 min, once)
+shows QR trs-launcher://remote-pair/K7Q2MX  ──── scanned / typed ───────▶  POST /v1/remote/pair/confirm {code}
+◀── remote_pairing (added) ──────────  pairing (same account only)  ──────▶ { desktop }
+POST /v1/remote/status (≤ 60 s) ─────▶  stored ─── remote_status ─────────▶ list of instances, tasks
+◀── remote_command {payload, sig} ───  ◀── POST /v1/remote/{pcId}/commands {type, args, idempotencyKey}
+POST …/commands/{id}/claim ──────────▶  once, before expiry ─ remote_command_update (running) ─▶
+POST …/commands/{id}/result ─────────▶  ─────────────── remote_command_update (done/failed) ─▶
+```
+
+### 34.1 Devices
+
+Every remote request carries the normal `Authorization: Bearer …` **and** `X-TRS-Device: <deviceId>.<secret>`. The device
+must belong to the account of the token, otherwise `403 remote_wrong_account`; an unknown device or a wrong secret gives
+`403 remote_device_invalid` (deliberately **not** 401, which would mean "TRS token expired"). Routes for one side only
+answer `403 remote_wrong_device` to the other side.
+
+- `POST /v1/remote/devices` `{ "kind": "desktop" | "phone", "name": "Gaming PC" }` → **201**
+  `{ "device": { id, kind, name, createdAt }, "secret": "<43 chars>" }`. `id`: 22 chars base64url; `secret`: 32 random bytes
+  base64url – **only in this response**, store it encrypted. `name` is cleaned (no control/bidi characters, max 48);
+  empty → `400 invalid_name`. At most 10 devices per kind and account: registering an 11th drops the one that was silent
+  the longest (with its pairings). Limit: 10 per hour and account.
+- `DELETE /v1/remote/devices/me` → `204`: unregister this device; all its pairings end (`remote_pairing` `removed`).
+
+The server stores only SHA-256 of the secret.
+
+### 34.2 Pairing
+
+- `POST /v1/remote/pair` (PC) → **201** `{ "code": "K7Q-2MX", "link": "trs-launcher://remote-pair/K7Q2MX", "expiresAt", "expiresIn": 120 }`.
+  6 characters from `23456789ABCDEFGHJKMNPQRSTVWXYZ`, valid **2 minutes**, **once**; a new code replaces the PC's open
+  one. The PC shows the code and the link as QR code. At most 10 phones per PC (`409 remote_pairing_limit`).
+  20 per 10 min and account (shared with confirm).
+- `DELETE /v1/remote/pair` (PC) → `204`: withdraw the open code (dialog closed).
+- `POST /v1/remote/pair/confirm` (phone) `{ "code": "k7q 2mx" | "trs-launcher://remote-pair/K7Q2MX" }` → `{ "desktop": PeerView }`.
+  Errors: `400 invalid_code` (malformed), `404 remote_code_expired` (unknown, expired or used), `403 remote_wrong_account`
+  (the code belongs to a PC of **another** TRS account – sign in with the same account on both). Wrong codes count
+  strictly: 5 per 10 min and account, 20 per 10 min and IP (`429` with `Retry-After`).
+
+### 34.3 Paired devices
+
+- `GET /v1/remote/pairings` (either side) → `{ "self": DeviceView, "peers": [PeerView] }` – on the PC its phones, on the
+  phone its PCs.
+- `DELETE /v1/remote/pairings/{peerId}` (either side) → `204`, `404 remote_peer_not_found`.
+
+```json
+PeerView = { "id", "kind", "name", "createdAt", "pairedAt", "lastSeenAt",
+             // only for PCs:
+             "online": true, "status": RemoteStatus | null, "statusAt": "…" | null }
+```
+
+`online` = the PC reported `online: true` within the last **150 s**.
+
+### 34.4 Status (PC → phones)
+
+`POST /v1/remote/status` (PC, body ≤ 64 KB) → `204`:
+
+```json
+{
+  "online": true,
+  "allow": { "launch": true, "install": false },
+  "instances": [ { "id": "fabric-1-21", "name": "Fabric 1.21", "version": "1.21.11", "loader": "fabric", "iconHash": "ab12cd34", "running": false } ],
+  "tasks": [ { "title": "Fabric 1.21", "progress": 0.42, "instanceId": "fabric-1-21" } ]
+}
+```
+
+- Sent debounced on changes and at least every **60 s** while remote control is on; `online: false` when it is switched
+  off or the launcher quits. `allow` mirrors the per-command switches on the PC.
+- Cleaned by the server: instance ids must match `[a-z0-9-]` (1–64, no dash at the ends; others and duplicates are
+  dropped), texts lose control/bidi characters and are cut (name 64, version 32, loader 16, task title 80),
+  `iconHash` is hex (8–64) or `null`, `progress` 0–1 or `null`. At most 200 instances and 10 tasks.
+- Limit: 40 per minute and PC. Paired phones get `remote_status`.
+
+### 34.5 Commands (phone → PC)
+
+`POST /v1/remote/{pcId}/commands` (phone) `{ "type", "args", "idempotencyKey" }` → **202** `{ "command": CommandView, "duplicate": false }`
+
+| `type` | `args` | PC switch |
+|---|---|---|
+| `launch_instance` | `{ "instanceId" }` | starting games |
+| `stop_instance` | `{ "instanceId" }` | starting games |
+| `install_pack_code` | `{ "code": "TRS-XXXX-XXXX" }` (any spelling, normalized) | installing packs |
+| `ping` | – | always |
+
+- `CommandView = { id, desktopId, type, state: "pending"|"running"|"done"|"failed", createdAt, expiresAt }`.
+- `idempotencyKey`: `[A-Za-z0-9_-]{8,64}`, unique per phone. The same key again → **200** with the same command and
+  `duplicate: true`, nothing is sent twice; same key for a different PC or type → `409 idempotency_conflict`.
+- Errors: `400 invalid_args` (e.g. instance id not `[a-z0-9-]`, malformed pack code), `400 invalid_request` (unknown type),
+  `404 remote_peer_not_found` (not paired), `409 remote_offline` (PC offline or remote control off; not for `ping`),
+  `403 remote_command_disabled` (switched off on the PC according to its last status).
+- Limits: per phone 30 per minute and 5 per 5 s, per PC 60 per minute (`429`).
+- A command is valid for **60 s**.
+
+The PC receives `remote_command` (§34.6) and then:
+
+- `POST /v1/remote/commands/{id}/claim` (PC) → `{ "command": { "type", "args" } }` – **before** running it. Exactly once
+  (`409 remote_command_claimed`), only before expiry (`410 remote_command_expired`), only the target PC
+  (`404 remote_command_not_found`). The server decides about expiry, not the PC clock. The returned args are the
+  validated ones.
+- `POST /v1/remote/commands/{id}/result` (PC) `{ "ok": boolean, "error"?: "instance_not_found" }` → `204`, within 2 h
+  after the claim; `error` is a code `[a-z][a-z0-9_]{0,63}`. `409 remote_command_not_running` if not claimed or already
+  finished.
+
+Limit for claim/result: 120 per minute and PC.
+
+### 34.6 Events (`/v1/events/me`)
+
+All four go to **every** stream of the account; clients filter by their own device id.
+
+| event | data |
+|---|---|
+| `remote_command` | `{ desktopId, payload: string, sig: string }` – `payload` is a JSON **string** `{"v":1,"id","desktopId","phoneId","phoneName","type","args","issuedAt","expiresAt"}` (times in ms). `sig` = base64url HMAC-SHA256 over the exact payload bytes with the key **SHA-256(secret of the PC)** (32 raw bytes) – only the target PC can verify it. Ignore it unless `desktopId` is your device id and the signature matches; then claim it. |
+| `remote_command_update` | `{ commandId, desktopId, phoneId, commandType, state: "running"\|"done"\|"failed", error: string\|null }` |
+| `remote_status` | `{ desktopId, online, status: RemoteStatus, at }` – **no id, not replayed**; after a reconnect read `GET /v1/remote/pairings` |
+| `remote_pairing` | `{ action: "added"\|"removed", desktopId, phoneId, desktop?: PeerView, phone?: PeerView }` |
+
+### 34.7 Data, migration 24
+
+Tables `remote_devices (id, uuid, kind, name, secret_hash, created_at, last_seen_at, status, status_at)`,
+`remote_pairings (desktop_id, phone_id, uuid, created_at)`, `remote_pair_codes (code, desktop_id, uuid, created_at,
+expires_at)` and `remote_commands (id, uuid, desktop_id, phone_id, idem_key, type, args, state, error, created_at,
+expires_at, claimed_at)`. Everything hangs on the account and the device via `ON DELETE CASCADE`. Expired codes are swept;
+commands are deleted 3 h after creation. No IP addresses are stored. Idempotent. When merging: renumber if a parallel
+branch also added a migration 24.

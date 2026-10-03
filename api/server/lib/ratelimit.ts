@@ -263,4 +263,18 @@ export const RULES = {
   pushManageUser: { limit: 60, windowMs: MIN },
   /** Abruf der wartenden Benachrichtigungen (iOS-Hintergrundabruf). */
   pushPendingUser: { limit: 30, windowMs: MIN },
+  // PC-Fernbedienung (§34)
+  remoteRegisterUser: { limit: 10, windowMs: HOUR },
+  remotePairUser: { limit: 20, windowMs: 10 * MIN },
+  remotePairFailUser: { limit: 5, windowMs: 10 * MIN },
+  remotePairFailIp: { limit: 20, windowMs: 10 * MIN },
+  remoteManageUser: { limit: 60, windowMs: MIN },
+  /** Befehle je Handy: 30 je Minute, höchstens 5 in 5 s. */
+  remoteCommandPhone: { limit: 30, windowMs: MIN },
+  remoteCommandBurst: { limit: 5, windowMs: 5000 },
+  /** Befehle je Ziel-PC (alle Handys zusammen). */
+  remoteCommandDesktop: { limit: 60, windowMs: MIN },
+  /** Status-Meldungen je PC (entprellt etwa alle 2 s, Herzschlag 60 s). */
+  remoteStatusDesktop: { limit: 40, windowMs: MIN },
+  remoteClaimDesktop: { limit: 120, windowMs: MIN },
 } satisfies Record<string, Rule>
