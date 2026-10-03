@@ -800,6 +800,14 @@
       "invalidCode": "To nie jest prawidłowy kod (format: XXX-XXX).",
       "expired": "To żądanie logowania nie istnieje (już) – zacznij logowanie na stronie od nowa.",
       "used": "Na to żądanie logowania już odpowiedziano."
+    },
+    "game": {
+      "engineFailed": "Nie udało się uruchomić silnika gry.",
+      "runtimeBroken": "Pobrane środowisko Java jest uszkodzone. Spróbuj ponownie.",
+      "runtimeDownloadFailed": "Nie udało się pobrać Javy dla gry. Sprawdź połączenie z internetem.",
+      "runtimeMissing": "Wciąż brakuje Javy dla gry. Uruchom ponownie.",
+      "unsupportedPlatform": "Gra nie jest obsługiwana na tym urządzeniu.",
+      "worldJoinUnsupported": "Hostowane światy nie są jeszcze dostępne na tym urządzeniu."
     }
   },
   "browse": {

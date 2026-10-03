@@ -800,6 +800,14 @@
       "invalidCode": "Ce n’est pas un code valide (format : XXX-XXX).",
       "expired": "Cette demande de connexion n’existe pas (plus) – relance la connexion sur le site.",
       "used": "Cette demande de connexion a déjà reçu une réponse."
+    },
+    "game": {
+      "engineFailed": "Le moteur du jeu n’a pas pu être démarré.",
+      "runtimeBroken": "L’environnement Java téléchargé est endommagé. Veuillez réessayer.",
+      "runtimeDownloadFailed": "Java pour le jeu n’a pas pu être téléchargé. Vérifie ta connexion internet.",
+      "runtimeMissing": "Java pour le jeu manque encore. Relance le jeu.",
+      "unsupportedPlatform": "Le jeu n’est pas pris en charge sur cet appareil.",
+      "worldJoinUnsupported": "Les mondes hébergés ne sont pas encore disponibles sur cet appareil."
     }
   },
   "browse": {

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-feature android:glEsVersion="0x00030000" android:required="false" />
+
+    <application>
+        <!-- Spiel in eigenem Prozess: System.exit() des Spiels beendet nicht den Launcher. -->
+        <activity
+            android:name=".engine.GameActivity"
+            android:process=":trsgame"
+            android:exported="false"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|navigation|uiMode|density|fontScale|touchscreen"
+            android:windowSoftInputMode="adjustNothing|stateHidden"
+            android:resizeableActivity="true"
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
+
+        <!-- Kopflose JVM (Modloader-Processors, java -version): ebenfalls eigener Prozess. -->
+        <service
+            android:name=".engine.JavaRunService"
+            android:process=":trsjava"
+            android:exported="false" />
+    </application>
+</manifest>

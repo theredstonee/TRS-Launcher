@@ -35,6 +35,10 @@ pub async fn launch_instance(
     let report = move |progress| {
         let _ = on_progress.send(progress);
     };
+    // Android/iOS: eingebettete JVM statt eigenem Java-Prozess.
+    #[cfg(mobile)]
+    let work = crate::mobile_game::launch(&app, &launcher, &id, join, &report);
+    #[cfg(not(mobile))]
     let work = launcher.launch(&id, join, &report);
     let pid = tracked(&app, task_id, work).await?;
 

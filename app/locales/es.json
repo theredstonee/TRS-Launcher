@@ -800,6 +800,14 @@
       "invalidCode": "No es un código válido (formato: XXX-XXX).",
       "expired": "Esta solicitud de inicio de sesión no existe (ya): vuelve a empezar en la web.",
       "used": "Esta solicitud de inicio de sesión ya se respondió."
+    },
+    "game": {
+      "engineFailed": "No se pudo iniciar el motor del juego.",
+      "runtimeBroken": "El entorno de Java descargado está dañado. Inténtalo de nuevo.",
+      "runtimeDownloadFailed": "No se pudo descargar Java para el juego. Comprueba tu conexión a internet.",
+      "runtimeMissing": "Todavía falta Java para el juego. Vuelve a iniciarlo.",
+      "unsupportedPlatform": "El juego no es compatible con este dispositivo.",
+      "worldJoinUnsupported": "Los mundos alojados aún no están disponibles en este dispositivo."
     }
   },
   "browse": {

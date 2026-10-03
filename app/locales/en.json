@@ -800,6 +800,14 @@
       "invalidCode": "That is not a valid code (format: XXX-XXX).",
       "expired": "This sign-in request doesn’t exist (anymore) – start the sign-in on the website again.",
       "used": "This sign-in request was already answered."
+    },
+    "game": {
+      "engineFailed": "The game engine could not be started.",
+      "runtimeBroken": "The downloaded Java runtime is damaged. Please try again.",
+      "runtimeDownloadFailed": "Java for the game could not be downloaded. Please check your internet connection.",
+      "runtimeMissing": "Java for the game is still missing. Please start again.",
+      "unsupportedPlatform": "The game is not supported on this device.",
+      "worldJoinUnsupported": "Hosted worlds are not available on this device yet."
     }
   },
   "browse": {

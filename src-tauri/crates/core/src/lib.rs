@@ -37,6 +37,7 @@ pub mod link;
 pub mod loaders;
 pub mod logfiles;
 pub mod meta;
+pub mod mobile_launch;
 pub mod modcompat;
 pub mod modpack;
 pub mod modpack_export;

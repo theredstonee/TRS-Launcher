@@ -800,6 +800,14 @@
       "invalidCode": "Dat is geen geldige code (vorm: XXX-XXX).",
       "expired": "Dit inlogverzoek bestaat niet (meer) – start het inloggen op de website opnieuw.",
       "used": "Dit inlogverzoek is al beantwoord."
+    },
+    "game": {
+      "engineFailed": "De game-engine kon niet worden gestart.",
+      "runtimeBroken": "De gedownloade Java-runtime is beschadigd. Probeer het opnieuw.",
+      "runtimeDownloadFailed": "Java voor het spel kon niet worden gedownload. Controleer je internetverbinding.",
+      "runtimeMissing": "Java voor het spel ontbreekt nog. Start opnieuw.",
+      "unsupportedPlatform": "Het spel wordt op dit apparaat niet ondersteund.",
+      "worldJoinUnsupported": "Gehoste werelden zijn op dit apparaat nog niet beschikbaar."
     }
   },
   "browse": {

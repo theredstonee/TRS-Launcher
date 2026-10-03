@@ -2,6 +2,8 @@ mod commands;
 mod deeplink;
 mod dialog_text;
 mod error;
+#[cfg(mobile)]
+mod mobile_game;
 mod open;
 
 use std::path::PathBuf;
@@ -51,6 +53,9 @@ pub fn run() {
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
+            // Spiel-Engine (eingebettete JVM) – nur Android/iOS.
+            #[cfg(mobile)]
+            app.handle().plugin(tauri_plugin_trs_game::init())?;
             let root = data_root(app)?;
             log::info!("Datenverzeichnis: {}", root.display());
             // Spielstart, Logs und Spielende gehen als Event ans Frontend.

@@ -800,6 +800,14 @@
       "invalidCode": "Bu geçerli bir kod değil (biçim: XXX-XXX).",
       "expired": "Bu oturum açma isteği yok (artık) – web sitesinde oturum açmayı yeniden başlat.",
       "used": "Bu oturum açma isteği zaten yanıtlandı."
+    },
+    "game": {
+      "engineFailed": "Oyun motoru başlatılamadı.",
+      "runtimeBroken": "İndirilen Java ortamı bozuk. Lütfen tekrar dene.",
+      "runtimeDownloadFailed": "Oyun için Java indirilemedi. Lütfen internet bağlantını kontrol et.",
+      "runtimeMissing": "Oyun için Java hâlâ eksik. Lütfen yeniden başlat.",
+      "unsupportedPlatform": "Oyun bu cihazda desteklenmiyor.",
+      "worldJoinUnsupported": "Barındırılan dünyalar bu cihazda henüz kullanılamıyor."
     }
   },
   "browse": {
