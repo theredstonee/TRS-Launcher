@@ -29,6 +29,7 @@ pub async fn hosting_room(launcher: State<'_, LauncherState>, id: String) -> Com
 
 #[tauri::command]
 pub async fn hosting_join(launcher: State<'_, LauncherState>, target: JoinTarget) -> CommandResult<HostingJoinResult> {
+    trs_core::platform::desktop_only()?;
     Ok(launcher.hosting_join(&target).await?)
 }
 
@@ -56,6 +57,7 @@ pub async fn hosting_prepare(
     plan: PreparePlan,
     on_progress: Channel<PrepareProgress>,
 ) -> CommandResult<PrepareResult> {
+    trs_core::platform::desktop_only()?;
     let launcher = launcher.inner().clone();
     Ok(launcher
         .hosting_prepare(plan, move |p| {

@@ -154,6 +154,14 @@
     "instanceNotFound": "Nie znaleziono instancji „{id}”",
     "unknownVersion": "Wersja Minecrafta „{version}” jest nieznana",
     "authNotApproved": "Logowanie przez Microsoft nie jest jeszcze włączone: rejestracja aplikacji czeka na zatwierdzenie przez Mojang.",
+    "unsupportedOnMobile": "Niedostępne na tym urządzeniu – tylko w wersji na komputer.",
+    "mobileUpdate": {
+      "notChecked": "Najpierw sprawdź dostępność aktualizacji.",
+      "noUpdate": "Nie ma nowszej wersji.",
+      "manifestUnreadable": "Nie można odczytać manifestu aktualizacji",
+      "androidOnly": "Aplikacja sama instaluje aktualizacje tylko na Androidzie.",
+      "installFailed": "Nie udało się rozpocząć instalacji."
+    },
     "settings": {
       "resolutionRange": "Rozdzielczość jest poza dozwolonym zakresem",
       "minMemoryRange": "Minimalna pamięć musi wynosić od 128 MB do wartości maksymalnej",

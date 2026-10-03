@@ -154,6 +154,14 @@
     "instanceNotFound": "Instantie “{id}” is niet gevonden",
     "unknownVersion": "Minecraft-versie “{version}” is onbekend",
     "authNotApproved": "Inloggen met Microsoft is nog niet ingeschakeld: de app-registratie wacht op goedkeuring door Mojang.",
+    "unsupportedOnMobile": "Niet beschikbaar op dit apparaat – alleen in de desktopversie.",
+    "mobileUpdate": {
+      "notChecked": "Zoek eerst naar updates.",
+      "noUpdate": "Er is geen nieuwere versie.",
+      "manifestUnreadable": "Het updatemanifest is onleesbaar",
+      "androidOnly": "De app installeert updates alleen op Android zelf.",
+      "installFailed": "De installatie kon niet worden gestart."
+    },
     "settings": {
       "resolutionRange": "De resolutie valt buiten het toegestane bereik",
       "minMemoryRange": "Het minimale geheugen moet tussen 128 MB en het maximum liggen",

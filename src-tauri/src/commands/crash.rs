@@ -42,6 +42,7 @@ pub async fn switch_instance_java(
     on_progress: Channel<f64>,
     task_id: Option<String>,
 ) -> CommandResult<Option<u32>> {
+    trs_core::platform::desktop_only()?;
     let report = move |p: Progress| {
         let _ = on_progress.send(p.percent().floor());
     };
@@ -51,5 +52,6 @@ pub async fn switch_instance_java(
 
 #[tauri::command]
 pub async fn update_trs_client_now(launcher: State<'_, LauncherState>, id: String) -> CommandResult<Option<String>> {
+    trs_core::platform::desktop_only()?;
     Ok(launcher.update_trs_client_now(&id).await?)
 }

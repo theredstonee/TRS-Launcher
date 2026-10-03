@@ -52,7 +52,14 @@ pub async fn copy_screenshot(
     id: String,
     file_name: String,
 ) -> CommandResult<()> {
+    // Android/iOS: keine Bitmap-Zwischenablage über arboard.
+    trs_core::platform::desktop_only()?;
     let image = launcher.screenshot_rgba(&id, &file_name).await?;
+    write_clipboard(image).await
+}
+
+#[cfg(desktop)]
+async fn write_clipboard(image: trs_core::screenshots::RgbaImage) -> CommandResult<()> {
     tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
         let mut clipboard = arboard::Clipboard::new().map_err(|e| e.to_string())?;
         clipboard
@@ -73,6 +80,11 @@ pub async fn copy_screenshot(
         trs_core::Error::Internal(e)
     })?;
     Ok(())
+}
+
+#[cfg(mobile)]
+async fn write_clipboard(_image: trs_core::screenshots::RgbaImage) -> CommandResult<()> {
+    Err(trs_core::Error::UnsupportedOnMobile.into())
 }
 
 /// Öffnet den Ordner und markiert das Bild darin.

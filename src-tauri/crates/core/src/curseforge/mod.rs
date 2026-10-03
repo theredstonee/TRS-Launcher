@@ -767,13 +767,13 @@ impl CurseForge {
     pub fn with_endpoint(base: &str, key: &str) -> Result<Self> {
         let mut key = HeaderValue::from_str(key).map_err(|_| Error::Internal("ungültiger CurseForge-Schlüssel".into()))?;
         key.set_sensitive(true);
-        let api = reqwest::Client::builder()
+        let api = crate::net::client_builder()
             .user_agent(USER_AGENT)
             .connect_timeout(Duration::from_secs(15))
             .timeout(Duration::from_secs(30))
             .redirect(reqwest::redirect::Policy::none())
             .build()?;
-        let downloads = reqwest::Client::builder()
+        let downloads = crate::net::client_builder()
             .user_agent(USER_AGENT)
             .connect_timeout(Duration::from_secs(15))
             .timeout(Duration::from_secs(60))

@@ -59,6 +59,18 @@ impl DropState {
     }
 }
 
+/// Ordnerdialog (blockierend – nur aus `spawn_blocking`). `None` = abgebrochen.
+#[cfg(desktop)]
+pub(crate) fn blocking_pick_folder(app: &AppHandle, title: &str) -> Option<PathBuf> {
+    app.dialog().file().set_title(title).blocking_pick_folder().and_then(|p| p.into_path().ok())
+}
+
+/// Android/iOS haben keinen Ordnerdialog.
+#[cfg(mobile)]
+pub(crate) fn blocking_pick_folder(_app: &AppHandle, _title: &str) -> Option<PathBuf> {
+    None
+}
+
 /// Übernimmt die zuletzt ins Fenster gezogenen Dateien in die Instanz.
 #[tauri::command]
 pub async fn add_dropped_files(
@@ -105,6 +117,7 @@ pub async fn pick_content_files(
 /// Wählt `java.exe`/`javaw.exe` (Linux: `bin/java`) im nativen Dialog. `None` = abgebrochen.
 #[tauri::command]
 pub async fn pick_java_path(app: AppHandle, launcher: State<'_, LauncherState>) -> CommandResult<Option<String>> {
+    trs_core::platform::desktop_only()?;
     let lang = dialog_text::language(&launcher).await;
     let picked = tauri::async_runtime::spawn_blocking(move || {
         let dialog = app.dialog().file().set_title(DialogText::pick_java().text(lang));
@@ -132,6 +145,7 @@ pub struct JavaCheck {
 /// Prüft einen Java-Pfad (existiert, Hauptversion laut `release`-Datei).
 #[tauri::command]
 pub fn check_java(path: String) -> CommandResult<JavaCheck> {
+    trs_core::platform::desktop_only()?;
     validate_java_path(&path)?;
     let exe = PathBuf::from(&path);
     if !exe.is_file() {
@@ -146,6 +160,7 @@ pub fn check_java(path: String) -> CommandResult<JavaCheck> {
 
 #[tauri::command]
 pub async fn detect_java(launcher: State<'_, LauncherState>) -> CommandResult<Vec<JavaInstall>> {
+    trs_core::platform::desktop_only()?;
     Ok(launcher.detect_java().await)
 }
 
@@ -157,6 +172,7 @@ pub async fn install_java(
     on_progress: Channel<f64>,
     task_id: Option<String>,
 ) -> CommandResult<String> {
+    trs_core::platform::desktop_only()?;
     let report = move |p: Progress| {
         let _ = on_progress.send(p.percent().floor());
     };

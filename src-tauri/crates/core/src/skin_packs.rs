@@ -269,7 +269,7 @@ fn client() -> Result<reqwest::Client> {
             attempt.follow()
         }
     });
-    Ok(reqwest::Client::builder()
+    Ok(crate::net::client_builder()
         .user_agent(crate::USER_AGENT)
         .redirect(policy)
         .https_only(true)

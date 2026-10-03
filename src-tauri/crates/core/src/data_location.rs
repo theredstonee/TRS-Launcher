@@ -58,7 +58,7 @@ pub struct DataLocation {
 impl DataLocation {
     /// Nur Standard- oder eigener Ordner lassen sich verschieben (nicht portabel, nicht per Umgebungsvariable).
     pub fn movable(&self) -> bool {
-        matches!(self.source, RootSource::Default | RootSource::Custom)
+        !crate::platform::MOBILE && matches!(self.source, RootSource::Default | RootSource::Custom)
     }
 }
 
@@ -113,6 +113,17 @@ pub fn write_pointer(file: &Path, pointer: &Pointer) -> Result<()> {
     }
     let bytes = serde_json::to_vec_pretty(pointer).map_err(|e| Error::json(file.display().to_string(), e))?;
     fsutil::write_atomic_sync(file, &bytes)
+}
+
+/// Android/iOS: fester Ordner in der App-Sandbox (nicht verschiebbar).
+pub fn sandbox(root: PathBuf) -> DataLocation {
+    DataLocation {
+        pointer_file: root.join(POINTER_FILE),
+        default_root: root.clone(),
+        root,
+        source: RootSource::Default,
+        missing_custom: None,
+    }
 }
 
 /// Bestimmt den Datenordner. `app_data`: App-Datenordner des Systems

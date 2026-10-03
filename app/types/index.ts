@@ -386,7 +386,7 @@ export interface VersionManifest {
 
 /** Was es auf diesem System gibt (aus `trs_core::platform::capabilities`). */
 export interface PlatformCapabilities {
-  platform: 'windows' | 'linux' | 'macos'
+  platform: 'windows' | 'linux' | 'macos' | 'android' | 'ios'
   /** Windows-Firewall-Freigabe für die Java-Runtimes. */
   firewall: boolean
   trash: boolean
@@ -394,11 +394,22 @@ export interface PlatformCapabilities {
   clips: boolean
   /**
    * `auto` = eingebauter Updater, `package` = Paketverwaltung (.deb/.rpm/AUR), `flatpak`,
-   * `portable` = ZIP-Version (neue Version von Hand von der Download-Seite).
+   * `portable` = ZIP-Version (neue Version von Hand von der Download-Seite),
+   * `mobile` = eigener Kanal (Android: APK über `mobileUpdateInstall`, iOS: AltStore/SideStore).
    */
-  updates: 'auto' | 'package' | 'flatpak' | 'portable'
+  updates: 'auto' | 'package' | 'flatpak' | 'portable' | 'mobile'
   /** Steam Deck, SteamOS oder gamescope (nur Linux): Big-Picture-Modus startet von selbst. */
   consoleSession: boolean
+  /** Minecraft starten (Desktop über Java; mobil erst mit der Spiel-Engine). */
+  gameLaunch: boolean
+  /** Java suchen, installieren und wählen. */
+  java: boolean
+  /** Eigene Fensterknöpfe/Titelleiste (Minimieren, Maximieren, Schließen, Ziehen). */
+  windowControls: boolean
+  /** Push-Benachrichtigungen des Systems (mobil, noch ohne Server-Anbindung). */
+  pushSupported: boolean
+  /** Eingebaute Spiel-Engine als natives Plugin (mobil, folgt später). */
+  gameEngine: boolean
 }
 
 /** Woher der Datenordner kommt. */
@@ -428,6 +439,24 @@ export interface InstanceLocation {
 export interface UnavailableInstance {
   id: string
   path: string
+}
+
+/** Stand des mobilen Update-Kanals (`mobile_update_check`). */
+export interface MobileUpdateStatus {
+  current: string
+  latest: string | null
+  available: boolean
+  notes: string
+  pubDate: string | null
+  /** Größe der APK in Bytes (Android). */
+  size: number | null
+  /** AltStore-/SideStore-Quelle (iOS). */
+  altstoreSource: string | null
+}
+
+/** `started`: Installationsdialog des Systems offen; `permissionRequired`: erst „Unbekannte Apps installieren“ erlauben. */
+export interface MobileInstallOutcome {
+  status: 'started' | 'permissionRequired'
 }
 
 export interface AppInfo {

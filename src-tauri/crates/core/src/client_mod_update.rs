@@ -85,7 +85,7 @@ impl ClientModUpdater {
     }
 
     fn build(dir: PathBuf, base_url: &str, public_key: &str, https_only: bool) -> Result<Self> {
-        let http = reqwest::Client::builder()
+        let http = crate::net::client_builder()
             .user_agent(crate::USER_AGENT)
             .https_only(https_only)
             .redirect(reqwest::redirect::Policy::custom(move |attempt| {

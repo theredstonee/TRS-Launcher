@@ -394,6 +394,7 @@ pub fn social_notify_native(app: AppHandle, title: String, body: String) {
     if let Err(e) = app.notification().builder().title(title).body(body).show() {
         log::debug!("Benachrichtigung nicht gezeigt: {e}");
     }
+    #[cfg(desktop)]
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.request_user_attention(Some(tauri::UserAttentionType::Informational));
     }
@@ -411,6 +412,7 @@ pub async fn social_game_clients(launcher: State<'_, LauncherState>) -> CommandR
 pub fn social_focus_window(app: AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.show();
+        #[cfg(desktop)]
         let _ = window.unminimize();
         let _ = window.set_focus();
     }

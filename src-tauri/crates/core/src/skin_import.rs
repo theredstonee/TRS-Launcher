@@ -371,7 +371,7 @@ async fn fetch_skin_url(raw: &str) -> Result<(Vec<u8>, reqwest::Url)> {
     let mut url = check_import_url(raw)?;
     for _ in 0..=MAX_REDIRECTS {
         let (host, addrs) = resolve_public(&url).await?;
-        let client = reqwest::Client::builder()
+        let client = crate::net::client_builder()
             .user_agent(crate::USER_AGENT)
             .redirect(reqwest::redirect::Policy::none())
             .no_proxy()

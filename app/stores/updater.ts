@@ -112,7 +112,8 @@ export const useUpdaterStore = defineStore('updater', () => {
       .catch(() => {})
       .finally(() => {
         // Flatpak: Updates kommen über Flathub bzw. die Softwareverwaltung – hier nichts prüfen.
-        if (mode.value === 'flatpak') return
+        // Android/iOS: eigener Kanal `mobile` (mobileUpdateCheck), kein Tauri-Updater.
+        if (mode.value === 'flatpak' || mode.value === 'mobile') return
         // Kurz warten, damit der Start des Launchers nicht mit dem Download konkurriert.
         schedule(5000)
       })
