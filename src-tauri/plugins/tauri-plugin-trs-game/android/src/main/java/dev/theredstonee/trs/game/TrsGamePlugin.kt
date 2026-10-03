@@ -17,12 +17,14 @@ import app.tauri.plugin.Invoke
 import app.tauri.plugin.JSArray
 import app.tauri.plugin.JSObject
 import app.tauri.plugin.Plugin
+import dev.theredstonee.trs.game.engine.CrashInfo
 import dev.theredstonee.trs.game.engine.EngineEvents
 import dev.theredstonee.trs.game.engine.GameActivity
 import dev.theredstonee.trs.game.engine.JavaRunService
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 @InvokeArg
 class LaunchArgs {
@@ -45,7 +47,17 @@ class TrsGamePlugin(private val activity: Activity) : Plugin(activity) {
         private const val TAG = "TrsGamePlugin"
         private const val GAME_PROCESS = ":trsgame"
         private const val JAVA_PROCESS = ":trsjava"
+        /** Zeilen aus der Log-Datei, wenn der Prozess ohne Ende-Meldung starb. */
+        private const val FILE_TAIL = 80
     }
+
+    /** Laufende Spielsitzung: Startzeit (für Androids Ende-Gründe) und ob der Prozess schon lief. */
+    private class Running(val session: String, val since: Long) {
+        @Volatile var seen = false
+    }
+
+    @Volatile private var running: Running? = null
+    private val watchdog = Executors.newSingleThreadScheduledExecutor()
 
     /** Sitzung → Kanal für state/log. */
     private val channels = ConcurrentHashMap<String, Channel>()
@@ -68,9 +80,19 @@ class TrsGamePlugin(private val activity: Activity) : Plugin(activity) {
                     if (intent.hasExtra(EngineEvents.EXTRA_EXIT_CODE)) {
                         payload.put("exitCode", intent.getIntExtra(EngineEvents.EXTRA_EXIT_CODE, 0))
                     }
+                    if (state == "crashed") {
+                        // Androids Ende-Grund (Signal, Stack) liegt erst kurz nach dem Tod vor.
+                        val run = running?.takeIf { it.session == session }
+                        running = null
+                        watchdog.schedule({ finishCrash(session, run?.since ?: 0L, lines, payload) }, 1500, TimeUnit.MILLISECONDS)
+                        return
+                    }
                     payload.put("logTail", JSArray(lines))
                     send(session, payload)
-                    if (state == "exited" || state == "crashed") channels.remove(session)
+                    if (state == "exited") {
+                        if (running?.session == session) running = null
+                        channels.remove(session)
+                    }
                 }
                 "log" -> {
                     val payload = JSObject()
@@ -96,6 +118,45 @@ class TrsGamePlugin(private val activity: Activity) : Plugin(activity) {
         } catch (e: Exception) {
             Log.w(TAG, "Kanal für $session nicht erreichbar", e)
         }
+    }
+
+    /** Absturz melden – ergänzt um den Ende-Grund des Spielprozesses (nativer Stack). */
+    private fun finishCrash(session: String, since: Long, lines: List<String>, payload: JSObject) {
+        val tail = ArrayList(lines)
+        if (tail.isEmpty()) tail += CrashInfo.tail(File(activity.cacheDir, "game-$session.log"), FILE_TAIL)
+        tail += CrashInfo.lastExit(activity.applicationContext, GAME_PROCESS, since)
+        Log.i(TAG, "Absturz gemeldet: ${tail.size} Zeilen")
+        payload.put("logTail", JSArray(tail))
+        send(session, payload)
+        channels.remove(session)
+    }
+
+    /**
+     * Stirbt der Spielprozess ohne Ende-Meldung (z. B. nativer Absturz vor dem Start der JVM,
+     * vom System beendet), meldet der Wächter das Ende selbst.
+     */
+    private fun watch(run: Running) {
+        watchdog.schedule({
+            if (running !== run) return@schedule
+            val alive = isRunning(GAME_PROCESS)
+            if (alive) run.seen = true
+            val gone = !alive && (run.seen || System.currentTimeMillis() - run.since > 30_000)
+            if (!gone) {
+                watch(run)
+                return@schedule
+            }
+            // Spätere Meldungen aus dem Prozess abwarten (Broadcast unterwegs).
+            Thread.sleep(1500)
+            if (running !== run) return@schedule
+            running = null
+            Log.w(TAG, "Spielprozess ohne Ende-Meldung beendet")
+            val payload = JSObject()
+            payload.put("type", "state")
+            payload.put("session", run.session)
+            payload.put("state", "crashed")
+            payload.put("exitCode", -1)
+            finishCrash(run.session, run.since, emptyList(), payload)
+        }, 2, TimeUnit.SECONDS)
     }
 
     private fun ensureReceiver() {
@@ -131,6 +192,10 @@ class TrsGamePlugin(private val activity: Activity) : Plugin(activity) {
             val file = File(activity.cacheDir, "trs-launch-${args.session}.json")
             file.writeText(raw.toString())
             channels[args.session] = args.onEvent
+            // Androids Ende-Gründe haben Millisekunden-Zeitstempel – etwas Luft nach hinten.
+            val run = Running(args.session, System.currentTimeMillis() - 1000)
+            running = run
+            watch(run)
             // Eigene Aufgabe: Zurück zum Launcher (Symbol, Übersicht) beendet das Spiel nicht.
             val intent = Intent(activity, GameActivity::class.java)
                 .putExtra(GameActivity.EXTRA_CONFIG, file.absolutePath)
@@ -180,6 +245,7 @@ class TrsGamePlugin(private val activity: Activity) : Plugin(activity) {
             payload.put("state", "exited")
             payload.put("exitCode", 0)
             payload.put("logTail", JSArray())
+            running = null
             send(args.session, payload)
             channels.remove(args.session)
         }

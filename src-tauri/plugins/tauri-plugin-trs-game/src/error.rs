@@ -30,6 +30,9 @@ pub enum Error {
     RestartRequired,
     #[error("zu wenig Arbeitsspeicher für das Spiel")]
     NotEnoughMemory,
+    /// iOS: SDL3-Spiele (Minecraft 26.3+) – die iOS-Engine hat noch keine SDL-Anbindung.
+    #[error("SDL3-Spiel auf dieser Plattform nicht unterstützt")]
+    SdlUnsupported,
     #[error(transparent)]
     Tauri(#[from] tauri::Error),
     #[cfg(mobile)]
@@ -54,6 +57,7 @@ impl Error {
             Error::EngineMissing => "game.engineMissing",
             Error::RestartRequired => "game.restartRequired",
             Error::NotEnoughMemory => "game.notEnoughMemory",
+            Error::SdlUnsupported => "game.sdlUnsupported",
             #[cfg(mobile)]
             Error::PluginInvoke(_) => "game.engine",
         }

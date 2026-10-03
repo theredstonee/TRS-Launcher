@@ -99,6 +99,13 @@ How to write an entry:
   start downloads the matching Java once. Running games show up like on the PC, with play time, logs and the crash
   helper. Signing in keeps waiting while you enter the code in the browser (Android cuts the app's network
   while it is in the background) instead of failing with a network error.
+- **Minecraft 26.x on Android.** The game engine now brings what Minecraft 26.2 and 26.3 load at start (shader tools
+  and, for 26.3, the new SDL3 game window), so these versions no longer crash right away with "Failed to locate
+  library". 26.3 prefers Vulkan graphics on the phone (you can still switch it in the game's video settings); phones
+  without the needed Vulkan features fall back to OpenGL. Still a preview: on some devices 26.x can hang on the
+  loading screen.
+- **Better crash reports on the phone.** If the game closes before writing a log, the launcher now shows why: Android's
+  reason, and for native crashes the signal and the crashing code – so "Unknown error" with an empty log is gone.
 - **Touch controls.** On the phone you play with on-screen controls: ready-made layouts for PvP, building and redstone,
   your own layouts on the new "Touch controls" page (move, resize, change buttons, share them as a code or file) and a
   layout per instance. In a game menu, "Edit controls" opens the editor right in the game. With the TRS Client, the
@@ -195,6 +202,14 @@ How to write an entry:
   ersten Start lädt die App einmal das passende Java. Laufende Spiele erscheinen wie am PC, mit Spielzeit, Logs und
   Absturz-Helfer. Die Anmeldung wartet weiter, während du den Code im Browser eingibst (Android trennt die App im
   Hintergrund vom Netz), statt mit einem Netzwerkfehler abzubrechen.
+- **Minecraft 26.x auf Android.** Die Spiel-Engine bringt jetzt mit, was Minecraft 26.2 und 26.3 beim Start laden
+  (Shader-Werkzeuge und für 26.3 das neue SDL3-Spielfenster) – diese Versionen stürzen nicht mehr sofort mit „Failed
+  to locate library“ ab. 26.3 nutzt am Handy bevorzugt Vulkan-Grafik (umstellbar in den Grafik-Einstellungen des
+  Spiels); Handys ohne die nötigen Vulkan-Funktionen fallen auf OpenGL zurück. Noch Vorschau: auf manchen Geräten
+  kann 26.x im Ladebildschirm hängen bleiben.
+- **Bessere Absturzberichte am Handy.** Schließt sich das Spiel, bevor es ein Log schreibt, zeigt der Launcher jetzt
+  den Grund: Androids Begründung und bei nativen Abstürzen das Signal und die abgestürzte Stelle – kein „Unbekannter
+  Fehler“ mit leerem Log mehr.
 - **Touch-Steuerung.** Am Handy spielst du mit Knöpfen auf dem Bildschirm: fertige Layouts für PvP, Bauen und
   Redstone, eigene Layouts auf der neuen Seite „Touch-Steuerung“ (verschieben, Größe ändern, Knöpfe tauschen, als Code
   oder Datei teilen) und ein Layout je Instanz. In einem Spielmenü öffnet „Steuerung bearbeiten“ den Editor direkt im

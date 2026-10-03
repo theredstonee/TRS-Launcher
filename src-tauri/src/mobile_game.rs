@@ -43,6 +43,7 @@ pub fn engine_error(err: tauri_plugin_trs_game::Error) -> trs_core::Error {
         E::EngineMissing => trs_core::msg!("game.engineMissing", "Diese Version der App enthält die Spiel-Engine nicht."),
         E::RestartRequired => trs_core::msg!("game.restartRequired", "Bitte die App neu starten, um wieder zu spielen."),
         E::NotEnoughMemory => trs_core::msg!("game.notEnoughMemory", "Zu wenig Arbeitsspeicher für das Spiel."),
+        E::SdlUnsupported => trs_core::msg!("game.sdlUnsupported", "Minecraft 26.3 und neuer läuft auf iPhone und iPad noch nicht – wähle 26.2 oder älter."),
         _ => trs_core::msg!("game.engineFailed", "Die Spiel-Engine konnte nicht gestartet werden."),
     };
     trs_core::Error::launch(msg)

@@ -49,6 +49,7 @@ class GameActivity : Activity() {
     private lateinit var input: EngineGameInput
     private lateinit var overlay: OverlayProvider
     private lateinit var surfaceView: TextureView
+    private lateinit var root: FrameLayout
     private lateinit var keyboardSink: KeyboardSink
     private var overlayView: View? = null
     private var surface: Surface? = null
@@ -71,8 +72,9 @@ class GameActivity : Activity() {
             finish()
             return
         }
-        JvmLauncher.loadNatives()
         EngineEvents.init(this, config.session)
+        reportUncaught()
+        JvmLauncher.loadNatives()
         ExitBridge.install(ExitBridge.Mode.GAME)
         EngineEvents.state("starting")
 
@@ -84,7 +86,7 @@ class GameActivity : Activity() {
         input = EngineGameInput { show -> main.post { setKeyboard(show) } }
         overlay = OverlayProviders.load(this)
 
-        val root = FrameLayout(this)
+        root = FrameLayout(this)
         surfaceView = TextureView(this).apply { isOpaque = true }
         root.addView(surfaceView, FrameLayout.LayoutParams(-1, -1))
         keyboardSink = KeyboardSink(this, input)
@@ -110,6 +112,11 @@ class GameActivity : Activity() {
             override fun onClipboard(type: Int, text: String?): String? = clipboard(type, text)
 
             override fun androidDpi(): Float = resources.displayMetrics.density
+
+            // SDL_Init im Spiel (Minecraft 26.3+): SDL im Dalvik-VM laden und verbinden.
+            override fun onNotifyLauncher(type: Int, action: IntArray?): Boolean =
+                type == CallbackBridge.NOTIF_TYPE_SDL && action?.firstOrNull() == CallbackBridge.ACTION_INIT_LAUNCHER_INTEGRATION &&
+                    SdlHost.enable()
         })
 
         surfaceView.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
@@ -118,6 +125,8 @@ class GameActivity : Activity() {
                 surface = s
                 val (w, h) = resize(st, width, height)
                 JREUtils.setupBridgeWindow(s)
+                // Minecraft 26.3+: Fläche auch für SDL bereithalten.
+                if (config.sdl) SdlHost.prepare(this@GameActivity, root, s, w, h)
                 startJvm(w, h)
             }
 
@@ -129,6 +138,20 @@ class GameActivity : Activity() {
             override fun onSurfaceTextureDestroyed(st: SurfaceTexture): Boolean = false
 
             override fun onSurfaceTextureUpdated(st: SurfaceTexture) {}
+        }
+    }
+
+    /** Java-Fehler im Spielprozess (z. B. Engine-Bibliothek nicht ladbar) ins Spiel-Log und als Absturz melden. */
+    private fun reportUncaught() {
+        val previous = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, error ->
+            try {
+                EngineEvents.log("[TRS] Engine-Fehler im Thread ${thread.name}:")
+                Log.getStackTraceString(error).lineSequence().filter { it.isNotBlank() }.take(40).forEach { EngineEvents.log(it) }
+                ExitBridge.report(1, false)
+            } catch (_: Throwable) {
+            }
+            previous?.uncaughtException(thread, error)
         }
     }
 
@@ -154,6 +177,7 @@ class GameActivity : Activity() {
         input.scaleX = w.toFloat() / width
         input.scaleY = h.toFloat() / height
         CallbackBridge.sendUpdateWindowSize(w, h)
+        if (config.sdl) SdlHost.size(w, h)
         return w to h
     }
 

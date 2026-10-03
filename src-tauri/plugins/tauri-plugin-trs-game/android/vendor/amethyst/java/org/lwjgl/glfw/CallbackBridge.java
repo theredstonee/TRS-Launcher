@@ -1,8 +1,10 @@
 // Adapted from Amethyst-Android (LGPL-3.0-or-later), app_pojavlauncher/.../org/lwjgl/glfw/CallbackBridge.java
-// at commit 330c6eae3164df64bdc4828e946a9e62cc5169e4. TRS patch: SDL integration, custom-controls
-// and launcher-activity references removed; the JVM-side callbacks (grab state, clipboard,
-// launcher notifications) are forwarded to a single Listener set by the TRS engine. The native
-// method names/signatures are unchanged (input_bridge_v3.c registers them).
+// at commit 330c6eae3164df64bdc4828e946a9e62cc5169e4. TRS patch: custom-controls and
+// launcher-activity references removed; the JVM-side callbacks (grab state, clipboard, launcher
+// notifications such as SDL_Init) are forwarded to a single Listener set by the TRS engine, which
+// also drives SDL input (dev.theredstonee.trs.game.engine.SdlHost). The native method
+// names/signatures are unchanged (input_bridge_v3.c registers them); nativeSdlKey is new
+// (jni/trs_sdl_input.c).
 package org.lwjgl.glfw;
 
 import android.util.DisplayMetrics;
@@ -27,7 +29,13 @@ public class CallbackBridge {
         void onGrabStateChanged(boolean grabbing);
         @Nullable String onClipboard(int type, @Nullable String text);
         float androidDpi();
+        /** Launcher notification from the game JVM (type 0 = SDL, see NOTIF_TYPE_SDL). */
+        boolean onNotifyLauncher(int type, int[] action);
     }
+
+    // Notification types/actions (same values as Amethyst and the LWJGL stub)
+    public static final int NOTIF_TYPE_SDL = 0;
+    public static final int ACTION_INIT_LAUNCHER_INTEGRATION = 0;
 
     private static volatile boolean isGrabbing = false;
     private static volatile @Nullable Listener listener;
@@ -81,10 +89,16 @@ public class CallbackBridge {
         return l == null ? null : l.onClipboard(type, copy);
     }
 
-    // Called from JRE side via jni (SDL integration is not used by TRS).
+    // Called from JRE side via jni (e.g. SDL_Init in Minecraft 26.3+).
     @Keep
     public static boolean notifyLauncher(int type, int... action) {
-        return false;
+        Listener l = listener;
+        return l != null && l.onNotifyLauncher(type, action);
+    }
+
+    // Called from org.libsdl.app.SDLActivity.setRelativeMouseEnabled (SDL games grab the mouse there)
+    public static void onSdlRelativeMouse(boolean enabled) {
+        onGrabStateChanged(enabled);
     }
 
     // Called from JRE side
@@ -124,6 +138,8 @@ public class CallbackBridge {
     @Keep @CriticalNative private static native void nativeSendScroll(double xoffset, double yoffset);
     @Keep @CriticalNative private static native void nativeSendScreenSize(int width, int height);
     public static native void nativeSetWindowAttrib(int attrib, int value);
+    /** Key without an Android key code (F13+) as SDL event, scancode = SDL_Scancode. */
+    public static native void nativeSdlKey(int scancode, boolean down);
     private static native ByteBuffer nativeCreateGamepadButtonBuffer();
     private static native ByteBuffer nativeCreateGamepadAxisBuffer();
 

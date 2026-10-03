@@ -94,6 +94,8 @@ pub type StopFn = Arc<dyn Fn() -> bool + Send + Sync>;
 
 /// Höchstens so viele Engine-Sitzungen merkt sich der Launcher (eine läuft, ältere sind Reste).
 const MAX_ENGINE_RECORDS: usize = 8;
+/// Beginn des Ende-Berichts der Android-Engine (Grund + nativer Stack, `CrashInfo.kt`).
+const ENGINE_EXIT_MARKER: &str = "[TRS] Spielprozess beendet";
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -832,15 +834,23 @@ impl GameManager {
     /// Ende einer Engine-Sitzung: Spielzeit verbuchen, Absturz auswerten, `exited` melden.
     /// `tail`: letzte Zeilen der Engine (falls unterwegs keine Zeilen ankamen).
     pub fn engine_exited(&self, session: &str, exit_code: Option<i32>, crashed: bool, tail: &[String]) {
+        // Leeres Log: das Log-Ende der Engine. Sonst nur ihr Ende-Bericht (Androids Grund, nativer Stack).
+        let has_logs = {
+            let state = self.lock();
+            state.engine.get(session).is_some_and(|e| state.logs.get(&e.key).is_some_and(|l| !l.is_empty()))
+        };
+        let new = if has_logs {
+            tail.iter().position(|l| l.starts_with(ENGINE_EXIT_MARKER)).map_or(&[][..], |i| &tail[i..])
+        } else {
+            tail
+        };
+        if !new.is_empty() {
+            self.engine_logs(session, new);
+        }
         let (event, on_exit, play_seconds) = {
             let mut state = self.lock();
             let Some(mut engine) = state.engine.remove(session) else { return };
             let killed = state.running.remove(&engine.key).is_some_and(|r| r.killed.load(Ordering::Relaxed));
-            if state.logs.get(&engine.key).is_none_or(VecDeque::is_empty) && !tail.is_empty() {
-                let now = Utc::now().timestamp_millis();
-                let lines: Vec<LogLine> = tail.iter().filter_map(|l| engine.parser.feed(l, now)).collect();
-                state.logs.entry(engine.key.clone()).or_default().extend(lines);
-            }
             let play_seconds = (Utc::now() - engine.started_at).num_seconds().max(0) as u64;
             let crashed = crashed && !killed;
             let event = exit_event(&state, engine.instance_id.clone(), engine.key.clone(), engine.started_at, exit_code, crashed, play_seconds);
@@ -1453,6 +1463,18 @@ More details:
         manager.engine_exited("s1", Some(-1), true, &["java.lang.OutOfMemoryError: Java heap space".into()]);
         assert!(!manager.logs("a").is_empty());
         assert!(matches!(events.lock().unwrap().last(), Some(GameEvent::Exited { crashed: true, crash_id: Some(_), .. })));
+
+        // Log schon da: nur der Ende-Bericht der Engine kommt dazu, keine doppelten Zeilen.
+        manager.attach_engine("c", "s3", vec![], Arc::new(|| true), Box::new(|_| {})).unwrap();
+        manager.engine_logs("s3", &["[12:00:00] [Render thread/INFO]: hello".into()]);
+        let before = manager.logs("c").len();
+        let tail: Vec<String> = vec![
+            "[12:00:00] [Render thread/INFO]: hello".into(),
+            format!("{ENGINE_EXIT_MARKER}: nativer Absturz (Status 11)"),
+            "[TRS] signal 11 (SIGSEGV)".into(),
+        ];
+        manager.engine_exited("s3", Some(-1), true, &tail);
+        assert_eq!(manager.logs("c").len(), before + 2);
 
         // iOS: Spiel endete ohne laufenden Launcher – beim nächsten Start nachtragen.
         manager.attach_engine("b", "s2", vec![], Arc::new(|| true), Box::new(|_| {})).unwrap();

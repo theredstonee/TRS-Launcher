@@ -39,6 +39,42 @@ Touch overlay (Android): the engine loads the overlay named in the manifest meta
 (the built-in `FallbackOverlay` is only used if it is missing). In game menus the overlay shows "Edit controls". The
 TRS Client's keyboard requests come from `config/trsclient/touch-state.json` (polled) and its `[TRS-Touch]` log lines.
 
+### Minecraft 26.x (SDL3, SPIRV-Cross, shaderc)
+
+26.2 loads SPIRV-Cross and shaderc at start, 26.3 additionally replaces GLFW with SDL3
+(`NativeLibrariesBootstrap`: spvc, SDL, OpenGL, shaderc …). The engine ships `libSDL3.so` and
+`libspirv-cross-c-shared.so` (prebuilt.lock, same builds as Amethyst/FCL/Zalith) and `libshaderc.so`
+in the LWJGL 3.4.1 natives, and points LWJGL at them (`-Dorg.lwjgl.spvc|shaderc|sdl.libname`).
+The core marks SDL versions (`usesSdl`, version has `org.lwjgl:lwjgl-sdl`); for those the game activity
+registers its surface with the SDL Java glue (`SdlHost`, `org.libsdl.app` from Amethyst). `SDL_Init`
+in the game reaches the engine through the LWJGL stub (`notifyLauncher`), which loads SDL3 into the
+Android VM. Input goes to the GLFW bridge and to SDL; the mouse grab comes from
+`SDLActivity.setRelativeMouseEnabled`. Android allows one SDL window: `jni/trs_sdl.c` hands
+Minecraft's second window (GL context probe) the first one and sizes it to the game surface.
+26.3 gets `preferredGraphicsBackend:"vulkan"` in `options.txt` unless the player chose a backend:
+MobileGlues cannot translate the 26.3 shaders to GLSL ES (FCL/Zalith also limit their GL renderers
+to 26.3-snapshot-3), and Minecraft falls back to OpenGL when Vulkan lacks
+`VK_KHR_dynamic_rendering` / `VK_KHR_push_descriptor`.
+Emulator limits: the emulator's Vulkan (gfxstream, also with lavapipe/SwiftShader) lacks those
+extensions, and 26.x on OpenGL hangs in `glGenTextures` on gfxstream – 26.x cannot be played in the
+emulator, test on a phone.
+
+iOS: Amethyst-iOS (9212a189) has no SDL3 glue, only GLFW. 26.3 on iOS needs an SDL3 UIKit build
+whose window wraps the engine's view, the same `notifyLauncher`/window reuse and the Vulkan path via
+MoltenVK; the Java-side flags (`-Dorg.lwjgl.spvc|shaderc.libname`, `preferredGraphicsBackend`) are
+the same. Until then 26.3 does not start on iOS (26.2 and older use GLFW as before).
+
+### 16 KB memory pages
+
+Our own engine libraries are built 16 KB-aligned (`APP_SUPPORT_FLEXIBLE_PAGE_SIZES`). The prebuilt
+renderers, LWJGL natives, SDL3/SPIRV-Cross, bytehook (1.1.x needs shadowhook, no x86_64) and the Java
+runtimes are 4 KB-aligned – on 16 KB devices Android runs the app in page size compatibility mode
+(`pageSizeCompat`, shows a one-time notice), like FCL and Zalith. Verified on the Android 16 16 KB
+emulator with the minified release build (1.21.11 reaches a world).
+
+If the game process dies without a game log, the launcher adds Android's exit reason and, for native
+crashes, the signal and the crashing thread's stack (tombstone, Android 12+) to the log (`CrashInfo`).
+
 Platform differences in the Rust core:
 
 - **TLS:** desktop keeps `native-tls`. Android/iOS use rustls with *ring*; Android checks certificates against the

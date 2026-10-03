@@ -85,6 +85,9 @@ pub struct GameLaunchSpec {
     /// LWJGL-Version laut Version-JSON (`2.9.4`, `3.3.3` …) – wählt den passenden Fork.
     #[serde(default)]
     pub lwjgl_version: Option<String>,
+    /// Spiel nutzt SDL3 statt GLFW (Minecraft 26.3+): Engine bindet SDL an und bevorzugt Vulkan.
+    #[serde(default)]
+    pub uses_sdl: bool,
 }
 
 impl GameLaunchSpec {

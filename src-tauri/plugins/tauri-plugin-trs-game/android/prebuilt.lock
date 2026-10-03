@@ -9,6 +9,9 @@
 # Renderer
 aar-jni 08e901726be96558c3193ec61aad1d0543c7fb237fcbe5a553e4ac8e07f17612 https://raw.githubusercontent.com/AngelAuraMC/Amethyst-Android/330c6eae3164df64bdc4828e946a9e62cc5169e4/app_pojavlauncher/libs/MobileGlues-release.aar
 aar-jni 810b4f7205510832ce456b265b6e96aacfc6831eaef6fb4c226cedab640174f8 https://raw.githubusercontent.com/AngelAuraMC/Amethyst-Android/474cbae769828d77551d4ecf73b79025b5157259/app_pojavlauncher/libs/krypton_wrapper-release.aar
+# SDL3 (Minecraft 26.3+) und SPIRV-Cross (26.2+); dieselben Builds nutzen FCL und Zalith Launcher
+aar-jni 5527d2e59e76b7a58eef0d54bb8ae0ca153593a9dfc0ed73ac84fb829520298b https://raw.githubusercontent.com/AngelAuraMC/Amethyst-Android/330c6eae3164df64bdc4828e946a9e62cc5169e4/app_pojavlauncher/libs/SDL-release.aar
+aar-jni 7d3614880b8ae3019a21706045743af692d05711394f9cdaea58437bf07eeaee https://raw.githubusercontent.com/AngelAuraMC/Amethyst-Android/330c6eae3164df64bdc4828e946a9e62cc5169e4/app_pojavlauncher/libs/spirv-cross-natives.aar
 # Ton
 aar-jni 45e630695b6b4c6506704330bf4da80a605b445ea5d187d7b71a370aab5494ea https://raw.githubusercontent.com/AngelAuraMC/Amethyst-Android/330c6eae3164df64bdc4828e946a9e62cc5169e4/app_pojavlauncher/libs/openal-soft-release.aar
 # LWJGL-Natives (Android-Builds des PojavLauncherTeam/lwjgl3-Forks)

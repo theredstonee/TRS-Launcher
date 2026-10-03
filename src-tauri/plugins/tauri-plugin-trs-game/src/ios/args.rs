@@ -193,6 +193,10 @@ pub struct BuildInput<'a> {
 
 pub fn build(input: BuildInput<'_>) -> Result<EngineLaunch> {
     let BuildInput { spec, probe, layout, java_home, java_major, heap, session, wait_for_jit, jit_help } = input;
+    // Minecraft 26.3+ öffnet sein Fenster über SDL3 – Amethyst-iOS kennt nur GLFW (docs/mobile.md).
+    if spec.uses_sdl {
+        return Err(Error::SdlUnsupported);
+    }
     let game_dir = spec.game_dir.to_string_lossy().into_owned();
     check_abs_path(&game_dir, "gameDir")?;
     check_abs_path(java_home, "javaHome")?;
@@ -236,6 +240,10 @@ pub fn build(input: BuildInput<'_>) -> Result<EngineLaunch> {
     // Wie Amethyst: bei "auto" erst ANGLE, das GLFW-Fenster wählt dann je nach GL-Version.
     let gl_lib = if renderer == "auto" { "libtinygl4angle.dylib" } else { renderer };
     a.push(format!("-Dorg.lwjgl.opengl.libname={gl_lib}"));
+    if spec.engine_lwjgl() == "3.4.1" {
+        // Minecraft 26.2 lädt SPIRV-Cross beim Start; die App bringt es mit (wie Amethyst-iOS).
+        a.push("-Dorg.lwjgl.spvc.libname=libspirv-cross-c-shared.0.dylib".into());
+    }
     a.push(format!("-javaagent:{libs}/patchjna_agent.jar="));
     a.push("-XX:+UnlockExperimentalVMOptions".into());
     a.push("-XX:+DisablePrimordialThreadGuardPages".into());
@@ -438,6 +446,17 @@ mod tests {
         assert!(launch.argv.contains(&"-Dawt.toolkit=net.java.openjdk.cacio.ctc.CTCToolkit".to_string()));
         assert!(!launch.argv.iter().any(|a| a.starts_with("--add-exports")));
         assert!(launch.argv.contains(&"-Dorg.lwjgl.opengl.libname=libgl4es_114.dylib".to_string()));
+    }
+
+    #[test]
+    fn minecraft_26_needs_spvc_and_rejects_sdl() {
+        let (mut spec, probe, layout) = (spec(), probe(), layout());
+        spec.lwjgl_version = Some("3.4.1".into());
+        let launch = build(input(&spec, &probe, &layout, 25)).unwrap();
+        assert!(launch.argv.contains(&"-Dorg.lwjgl.spvc.libname=libspirv-cross-c-shared.0.dylib".to_string()));
+        spec.lwjgl_version = Some("3.4.3".into());
+        spec.uses_sdl = true;
+        assert!(matches!(build(input(&spec, &probe, &layout, 25)), Err(Error::SdlUnsupported)));
     }
 
     #[test]

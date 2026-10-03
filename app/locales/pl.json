@@ -890,7 +890,8 @@
       "worldJoinUnsupported": "Hostowane światy nie są jeszcze dostępne na tym urządzeniu.",
       "engineMissing": "Ta wersja aplikacji nie zawiera silnika gry.",
       "notEnoughMemory": "Za mało pamięci dla gry. Zamknij inne aplikacje lub zmniejsz pamięć w ustawieniach instancji.",
-      "restartRequired": "Gra była już uruchomiona w tej sesji. Zamknij aplikację całkowicie i otwórz ją ponownie."
+      "restartRequired": "Gra była już uruchomiona w tej sesji. Zamknij aplikację całkowicie i otwórz ją ponownie.",
+      "sdlUnsupported": "Minecraft 26.3 i nowsze nie działa jeszcze na iPhonie i iPadzie – wybierz 26.2 lub starszą."
     },
     "controls": {
       "invalidLayout": "Układ jest nieprawidłowy ({reason}).",

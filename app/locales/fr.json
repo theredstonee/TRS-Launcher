@@ -890,7 +890,8 @@
       "worldJoinUnsupported": "Les mondes hébergés ne sont pas encore disponibles sur cet appareil.",
       "engineMissing": "Cette version de l'app ne contient pas le moteur de jeu.",
       "notEnoughMemory": "Pas assez de mémoire pour le jeu. Ferme d'autres apps ou réduis la mémoire dans les paramètres de l'instance.",
-      "restartRequired": "Le jeu a déjà tourné pendant cette session. Ferme complètement l'app et rouvre-la."
+      "restartRequired": "Le jeu a déjà tourné pendant cette session. Ferme complètement l'app et rouvre-la.",
+      "sdlUnsupported": "Minecraft 26.3 et plus récent ne fonctionne pas encore sur iPhone et iPad – choisis la 26.2 ou une version plus ancienne."
     },
     "controls": {
       "invalidLayout": "La disposition n’est pas valide ({reason}).",

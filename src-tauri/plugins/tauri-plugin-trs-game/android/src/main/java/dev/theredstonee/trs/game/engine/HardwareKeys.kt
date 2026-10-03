@@ -44,6 +44,21 @@ internal object HardwareKeys {
         else -> 0
     }
 
+    /** GLFW → Android-Tastencode (Eingaben an SDL, Minecraft 26.3+); 0 = keiner. */
+    fun toAndroid(glfwKey: Int): Int = reverse[glfwKey] ?: 0
+
+    private val reverse: Map<Int, Int> by lazy {
+        val map = HashMap<Int, Int>()
+        for (code in 1..KeyEvent.getMaxKeyCode()) {
+            val glfw = toGlfw(code)
+            if (glfw != 0 && glfw !in map) map[glfw] = code
+        }
+        map
+    }
+
+    /** GLFW F13–F24 (ohne Android-Code, z. B. TRS-Menü F13) → SDL-Scancode; 0 = keiner. */
+    fun sdlScancode(glfwKey: Int): Int = if (glfwKey in 302..313) 104 + (glfwKey - 302) else 0
+
     fun mods(event: KeyEvent): Int {
         var mods = 0
         if (event.isShiftPressed) mods = mods or Glfw.MOD_SHIFT

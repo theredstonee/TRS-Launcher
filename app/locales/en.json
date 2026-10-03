@@ -890,7 +890,8 @@
       "worldJoinUnsupported": "Hosted worlds are not available on this device yet.",
       "engineMissing": "This build of the app doesn't contain the game engine.",
       "notEnoughMemory": "There isn't enough memory for the game. Close other apps or lower the memory in the instance settings.",
-      "restartRequired": "The game already ran in this session. Close the app completely and open it again."
+      "restartRequired": "The game already ran in this session. Close the app completely and open it again.",
+      "sdlUnsupported": "Minecraft 26.3 and newer can't run on iPhone and iPad yet – choose 26.2 or older."
     },
     "controls": {
       "invalidLayout": "The layout is invalid ({reason}).",

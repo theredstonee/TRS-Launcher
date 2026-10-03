@@ -31,7 +31,11 @@ Third-party parts
     (LGPL-2.1), NG-GL4ES / Krypton Wrapper by BZLZHH (MIT, based on gl4es by ptitSeb, MIT),
     OpenAL Soft (LGPL-2.0-or-later), LWJGL 3 and its Android fork by PojavLauncherTeam
     (BSD-3-Clause) with FreeType (FreeType License), JSR-305 annotations (BSD-3-Clause),
-    bytehook by ByteDance (MIT), JNA (Apache-2.0 / LGPL-2.1).
+    bytehook by ByteDance (MIT), JNA (Apache-2.0 / LGPL-2.1), SDL3 by the SDL developers (zlib;
+    Android build from Amethyst-Android), SPIRV-Cross by Khronos/Arm (Apache-2.0) and shaderc by
+    Google (Apache-2.0, part of the LWJGL 3.4.1 Android natives).
+  - The SDL3 Android Java glue (org.libsdl.app, zlib, with Amethyst-Android changes, LGPL-3.0-or-later)
+    is vendored in android/vendor/amethyst/java/org/libsdl/app.
   - Downloaded at runtime (SHA-256 pinned, never bundled): OpenJDK 8/17/21/25 runtimes for
     Android built by AngelAuraMC (angelauramc-openjdk-build), GPL-2.0 with Classpath Exception.
 - Amethyst-iOS by Tran Hoang Khanh Duy and the PojavLauncher/Amethyst contributors (GPL-3.0):

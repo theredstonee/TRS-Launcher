@@ -24,7 +24,7 @@ internal object JvmLauncher {
         "-Xms", "-Xmx", "-d32", "-d64", "-Xint", "-XX:+UseTransparentHugePages",
         "-XX:+UseLargePagesInMetaspace", "-XX:+UseLargePages", "-Dorg.lwjgl.opengl.libname",
         "-Dorg.lwjgl.freetype.libname", "-XX:ActiveProcessorCount", "-Djava.library.path",
-        "-Dorg.lwjgl.librarypath",
+        "-Dorg.lwjgl.librarypath", "-Dorg.lwjgl.spvc.libname", "-Dorg.lwjgl.shaderc.libname", "-Dorg.lwjgl.sdl.libname",
     )
 
     data class Window(val width: Int, val height: Int, val insets: IntArray)
@@ -65,6 +65,17 @@ internal object JvmLauncher {
             env["POJAVEXEC_EGL"] = renderLib
             env["MG_DIR_PATH"] = File(EngineFiles.root(context), "MobileGlues").apply { mkdirs() }.absolutePath
         }
+        if (config.sdl) {
+            // SDL3 (Minecraft 26.3+) erstellt Fenster/GL-Kontext selbst – mit dem Renderer der Engine.
+            env["SDL_OPENGL_LIBRARY"] = renderLib
+            if (renderLib == "libmobileglues.so") {
+                env["SDL_EGL_LIBRARY"] = "$nativeDir/$renderLib"
+                // MobileGlues reicht die sRGB-EGL-Attribute nicht korrekt durch (wie Amethyst).
+                env["SDL_OPENGL_FORCE_SRGB_FRAMEBUFFER"] = "0"
+            }
+            env["SDL_RETURN_KEY_HIDES_IME"] = "1"
+            McOptions.preferVulkan(File(config.gameDir, "options.txt"))
+        }
         env["AWTSTUB_WIDTH"] = window.width.toString()
         env["AWTSTUB_HEIGHT"] = window.height.toString()
         env["DALVIK_APPLICATION"] = Tools.jObjectToString(context.applicationContext)
@@ -101,6 +112,12 @@ internal object JvmLauncher {
             "-Dtrs.overlay.version=1",
             "-Dtrs.safeInsets=${window.insets.joinToString(",")}",
         )
+        if (config.lwjgl == "3.4.1") {
+            // Minecraft 26.x lädt SPIRV-Cross, shaderc (26.2+) und SDL3 (26.3+) vorab.
+            args += "-Dorg.lwjgl.spvc.libname=$nativeDir/libspirv-cross-c-shared.so"
+            args += "-Dorg.lwjgl.shaderc.libname=$lwjglNatives/libshaderc.so"
+            args += "-Dorg.lwjgl.sdl.libname=$nativeDir/libSDL3.so"
+        }
         val libraryPath = listOfNotNull(lwjglNatives, nativeDir, config.nativesDir.takeIf { File(it).isDirectory })
         args += "-Djava.library.path=${libraryPath.joinToString(":")}"
         args += "-Dorg.lwjgl.librarypath=$lwjglNatives"

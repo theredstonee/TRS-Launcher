@@ -890,7 +890,8 @@
       "worldJoinUnsupported": "Barındırılan dünyalar bu cihazda henüz kullanılamıyor.",
       "engineMissing": "Uygulamanın bu sürümü oyun motorunu içermiyor.",
       "notEnoughMemory": "Oyun için yeterli bellek yok. Diğer uygulamaları kapat ya da kurulum ayarlarında belleği azalt.",
-      "restartRequired": "Oyun bu oturumda zaten çalıştı. Uygulamayı tamamen kapatıp yeniden aç."
+      "restartRequired": "Oyun bu oturumda zaten çalıştı. Uygulamayı tamamen kapatıp yeniden aç.",
+      "sdlUnsupported": "Minecraft 26.3 ve sonrası henüz iPhone ve iPad'de çalışmıyor – 26.2 veya daha eskisini seç."
     },
     "controls": {
       "invalidLayout": "Düzen geçersiz ({reason}).",

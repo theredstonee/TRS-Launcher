@@ -61,6 +61,7 @@ jint JNI_OnLoad(JavaVM* vm, __attribute__((unused)) void* reserved) {
         (*pojav_environ->runtimeJavaVMPtr)->GetEnv(pojav_environ->runtimeJavaVMPtr, (void**) &vmEnv, JNI_VERSION_1_4);
         hookExec(vmEnv);
         installLwjglDlopenHook(vmEnv);
+        installTrsSdlWindowHook(vmEnv); // TRS
         installEMUIIteratorMititgation(vmEnv);
     }
 

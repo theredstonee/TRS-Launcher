@@ -2,6 +2,7 @@
 # - androidnsbypass wird aus ../../androidnsbypass mitgebaut statt per Prefab
 # - ohne AWT-Brücke (pojavexec_awt/awt_xawt), glxshim und linkerhook (nur Zink/Turnip)
 # - kein `rm` in ../jniLibs
+# - trs_sdl.c (TRS): SDL3-Hilfen für Minecraft 26.3+ (ein Fenster unter Android, Tasten F13+)
 LOCAL_PATH := $(call my-dir)
 HERE_PATH := $(LOCAL_PATH)
 
@@ -47,7 +48,8 @@ LOCAL_SRC_FILES := \
     input_bridge_v3.c \
     jre_launcher.c \
     utils.c \
-    stdio_is.c
+    stdio_is.c \
+    trs_sdl.c
 
 ifeq ($(TARGET_ARCH_ABI),arm64-v8a)
 LOCAL_CFLAGS += -DADRENO_POSSIBLE

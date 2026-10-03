@@ -27,6 +27,8 @@ internal data class LaunchConfig(
     /** LWJGL-Fork der Engine: `3.3.3` oder `3.4.1`. */
     val lwjgl: String,
     val lwjglx: Boolean,
+    /** Spiel nutzt SDL3 statt GLFW (Minecraft 26.3+). */
+    val sdl: Boolean = false,
 ) {
     companion object {
         fun parse(json: JSONObject): LaunchConfig {
@@ -50,6 +52,7 @@ internal data class LaunchConfig(
                 trsClient = spec.optBoolean("trsClient", false),
                 lwjgl = json.optString("lwjgl", "3.3.3").takeIf { it == "3.4.1" } ?: "3.3.3",
                 lwjglx = json.optBoolean("lwjglx", false),
+                sdl = spec.optBoolean("usesSdl", false),
             )
         }
 

@@ -44,6 +44,9 @@ pub struct GameLaunchSpec {
     pub trs_client: bool,
     pub game_version: Option<String>,
     pub lwjgl_version: Option<String>,
+    /// Spiel nutzt SDL3 statt GLFW (Minecraft 26.3+, `org.lwjgl:lwjgl-sdl`).
+    #[serde(default)]
+    pub uses_sdl: bool,
 }
 
 /// Engine-Java für die Java-Version des Spiels (16 → 17, 22–24 → 25 …).
@@ -62,6 +65,14 @@ pub fn lwjgl_version(version: &VersionInfo) -> Option<String> {
         let mut parts = lib.name.split(':');
         let (group, artifact, ver) = (parts.next()?, parts.next()?, parts.next()?);
         ((group == "org.lwjgl" || group == "org.lwjgl.lwjgl") && artifact == "lwjgl").then(|| ver.to_owned())
+    })
+}
+
+/// SDL3-Fenster statt GLFW (Minecraft 26.3+): Die Version lädt `org.lwjgl:lwjgl-sdl`.
+pub fn uses_sdl(version: &VersionInfo) -> bool {
+    version.libraries.iter().any(|lib| {
+        let mut parts = lib.name.split(':');
+        parts.next() == Some("org.lwjgl") && parts.next() == Some("lwjgl-sdl")
     })
 }
 
@@ -159,6 +170,7 @@ pub fn spec_from_command(
         trs_client,
         game_version: Some(instance.game_version.clone()),
         lwjgl_version: lwjgl_version(version),
+        uses_sdl: uses_sdl(version),
     })
 }
 
@@ -414,6 +426,9 @@ mod tests {
             Some("2.9.4-nightly-20150209")
         );
         assert!(lwjgl_version(&version(&["org.lwjgl:lwjgl-glfw:3.3.3"])).is_none());
+        // 26.3 lädt SDL3 statt GLFW, 26.2 noch GLFW (shaderc/spvc gibt es dort schon).
+        assert!(uses_sdl(&version(&["org.lwjgl:lwjgl:3.4.3", "org.lwjgl:lwjgl-sdl:3.4.3", "org.lwjgl:lwjgl-sdl:3.4.3:natives-linux"])));
+        assert!(!uses_sdl(&version(&["org.lwjgl:lwjgl:3.4.1", "org.lwjgl:lwjgl-glfw:3.4.1", "org.lwjgl:lwjgl-spvc:3.4.1"])));
     }
 
     #[test]

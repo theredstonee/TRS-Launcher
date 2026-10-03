@@ -9,8 +9,10 @@ plugins {
 
 // Nur 64 Bit: Telefone/Tablets (arm64) und der Emulator (x86_64).
 val engineAbis = listOf("arm64-v8a", "x86_64")
-// Nicht für Vanilla nötig und sehr groß (8,6 MB je ABI): Shader-Compiler für Vulkan-Mods.
-val skippedNatives = setOf("libshaderc.so")
+// SDL2 (sdl2-compat) braucht kein unterstütztes Spiel. shaderc (8,6 MB je ABI) nur für LWJGL 3.4
+// (Minecraft 26.2+ lädt es beim Start), nicht für 3.3.3.
+val skippedNatives = setOf("libSDL2.so")
+fun skipNative(target: String?, so: String) = so in skippedNatives || (so == "libshaderc.so" && target != "lwjgl-3.4.1-natives")
 
 android {
     namespace = "dev.theredstonee.trs.game"
@@ -105,13 +107,13 @@ val fetchEnginePrebuilt by tasks.registering {
                     "aar-jni" -> extractZip(file, out) { name ->
                         val m = Regex("^jni/([^/]+)/([^/]+\\.so)$").find(name) ?: return@extractZip null
                         val (abi, so) = m.destructured
-                        if (abi in engineAbis && so !in skippedNatives) "jniLibs/$abi/$so" else null
+                        if (abi in engineAbis && !skipNative(null, so)) "jniLibs/$abi/$so" else null
                     }
                     "aar-assets" -> extractZip(file, out) { name ->
                         val m = Regex("^assets/components/${Regex.escape(target!!)}/([^/]+)/([^/]+\\.so)$").find(name)
                             ?: return@extractZip null
                         val (abi, so) = m.destructured
-                        if (abi in engineAbis && so !in skippedNatives) "assets/trs-engine/$target/$abi/$so" else null
+                        if (abi in engineAbis && !skipNative(target, so)) "assets/trs-engine/$target/$abi/$so" else null
                     }
                     "file" -> {
                         require(target != null && !target.contains("..")) { "prebuilt.lock: Ziel fehlt: $line" }
