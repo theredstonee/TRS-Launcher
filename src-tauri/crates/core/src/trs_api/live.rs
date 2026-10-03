@@ -661,6 +661,8 @@ struct Inner {
 pub(crate) struct LiveState {
     notify: Notify,
     inner: StdMutex<Inner>,
+    /// Handy-App im Hintergrund: Kanal zu, damit der Server Push-Nachrichten schickt (§33.6).
+    paused: std::sync::atomic::AtomicBool,
 }
 
 impl LiveState {
@@ -671,6 +673,17 @@ impl LiveState {
     /// Schleife wecken (Account-Wechsel, Einwilligung, „jetzt neu verbinden“).
     pub fn kick(&self) {
         self.notify.notify_one();
+    }
+
+    /// App im Hintergrund (`true`) bzw. wieder vorn (`false`).
+    pub fn set_paused(&self, paused: bool) {
+        if self.paused.swap(paused, std::sync::atomic::Ordering::SeqCst) != paused {
+            self.kick();
+        }
+    }
+
+    fn paused(&self) -> bool {
+        self.paused.load(std::sync::atomic::Ordering::SeqCst)
     }
 
     pub fn set_sink(&self, sink: LiveSink) {
@@ -746,7 +759,7 @@ impl TrsApi {
 
     /// Account, für den gerade verbunden sein sollte (`None` = aus).
     async fn live_target(&self, active: &dyn ActiveAccount) -> Option<String> {
-        if !self.enabled().await {
+        if self.live.paused() || !self.enabled().await {
             return None;
         }
         active.active().await
@@ -799,6 +812,8 @@ impl TrsApi {
         cfg: &LiveConfig,
     ) -> Ended {
         let mut relogged = false;
+        // Handy: Stream dieses Push-Geräts – solange er offen ist, schickt der Server keine Push-Nachrichten.
+        let mut push_device: Option<String>;
         let response = loop {
             let token = match self.store.token(account).await {
                 Some(t) => t,
@@ -811,9 +826,14 @@ impl TrsApi {
                     }
                 }
             };
+            push_device = self.push_live_device(account).await;
+            let url = match &push_device {
+                Some(id) => format!("{}/v1/events/me?pushDevice={id}", self.base),
+                None => format!("{}/v1/events/me", self.base),
+            };
             let mut req = self
                 .stream_http
-                .get(format!("{}/v1/events/me", self.base))
+                .get(url)
                 .header("Accept", "text/event-stream")
                 .header("Cache-Control", "no-cache")
                 .bearer_auth(&token);
@@ -896,7 +916,7 @@ impl TrsApi {
                     return Ended::Retry { at_least: Duration::ZERO, was_live };
                 }
                 () = self.live.notify.notified() => {
-                    if self.live_target(active).await.as_deref() != Some(account) {
+                    if self.live_target(active).await.as_deref() != Some(account) || self.push_live_device(account).await != push_device {
                         return Ended::Switch;
                     }
                 }
@@ -934,6 +954,11 @@ impl crate::Launcher {
     /// „Jetzt neu verbinden“ (z. B. nach dem Aufwachen aus dem Standby).
     pub fn trs_live_kick(&self) {
         self.trs.live.kick();
+    }
+
+    /// Handy: App im Hintergrund → Kanal schließen (Push übernimmt), wieder vorn → neu verbinden.
+    pub fn trs_live_pause(&self, paused: bool) {
+        self.trs.live.set_paused(paused);
     }
 }
 

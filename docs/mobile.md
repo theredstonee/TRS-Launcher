@@ -18,7 +18,7 @@ with the touch overlay (`docs/touch-mode.md` for the TRS Client side).
 | `windowControls` | `true`                         | `false`                               |
 | `trash`          | `true`                         | `false`                               |
 | `updates`        | `auto` / `package` / `flatpak` | `mobile`                              |
-| `pushSupported`  | `false`                        | `false` (no server push yet)          |
+| `pushSupported`  | `false`                        | `true` (UnifiedPush / poll, see below) |
 
 Desktop-only commands (Java, repair, clips, firewall, TRS Client/FPS mode, hosting join, moving the data folder or
 an instance) return the error kind `unsupported_on_mobile` (code `unsupportedOnMobile`) on the phone.
@@ -50,6 +50,29 @@ Platform differences in the Rust core:
 - **Data:** the app's private data directory (`app_data_dir`), not `TRS-Launcher` in the user profile.
 - **Not running on mobile:** clips, TRS Link, Discord, TRS presence, firewall, TRS Client channel.
 - **Links:** `trs-launcher://pack/<code>` and `trs-launcher://web-login/<token>` (custom scheme on both platforms).
+
+## Push notifications (API §33)
+
+Plugin `src-tauri/plugins/tauri-plugin-trs-push` (no webview permissions – only Rust calls it), core
+`trs_core::trs_api::push`, app glue `src-tauri/src/push.rs`, settings page Settings → Notifications
+(`MobilePushSettings.vue`).
+
+- **Android: UnifiedPush** via `org.unifiedpush.android:connector` (Apache-2.0, Codeberg). The connector creates the
+  Web Push key pair (P-256 + 16-byte auth secret; private key sealed with an Android Keystore AES key) and decrypts
+  messages (RFC 8291, `aes128gcm`). `TrsPushService` (Java) receives endpoints and messages even when the app is
+  closed and shows them with one notification channel per category; a tap opens `trs-launcher://notify/<route>`,
+  which the app maps to its page. The connector is built with Kotlin 2.2 while the app uses 1.9: its kotlin-stdlib is
+  excluded (the app's 2.0 stdlib covers its bytecode) and only Java classes call it.
+- **No distributor installed:** the settings explain ntfy (F-Droid / Play) or offer polling: a `poll` device plus
+  `PushPollWorker` (WorkManager, every 15 min) that loads the Rust core via JNI (`nativePoll`) and shows new entries.
+- **iOS:** `poll` device; `BGAppRefreshTask` (`dev.theredstonee.trslauncher.push-poll`, `UIBackgroundModes: fetch`)
+  calls `trs_push_poll_json()` from the Rust library and posts local notifications.
+- **Lifecycle:** registered after sign-in/consent and re-synced on every start and resume (new app version, language,
+  settings, new session = new device); logout deletes the device first. While the app is in the background the
+  realtime stream is closed (`trs_live_pause`), otherwise the server would think the app is open; in the foreground
+  the stream carries `?pushDevice=<id>`.
+- `trs-push.json` holds the switches and, per account, the device id plus a SHA-256 fingerprint of what the server
+  knows – the endpoint itself (a secret) only lives in the plugin's private preferences.
 
 ## Building locally (Android, Windows)
 

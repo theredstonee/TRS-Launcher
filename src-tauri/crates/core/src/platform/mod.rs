@@ -117,7 +117,7 @@ pub struct Capabilities {
     pub java: bool,
     /// Eigene Fensterknöpfe (Minimieren, Maximieren, Schließen, Ziehen).
     pub window_controls: bool,
-    /// Push-Benachrichtigungen des Systems (nur mobil, derzeit noch ohne Server-Anbindung).
+    /// Push-Benachrichtigungen des Systems (nur mobil: Android über UnifiedPush oder Abholen, iOS über Abholen).
     pub push_supported: bool,
     /// Eingebaute Spiel-Engine als natives Plugin (Android/iOS).
     pub game_engine: bool,
@@ -145,7 +145,7 @@ pub fn capabilities() -> Capabilities {
         game_launch: true,
         java: !MOBILE,
         window_controls: !MOBILE,
-        push_supported: false,
+        push_supported: MOBILE,
         game_engine: MOBILE,
     }
 }
@@ -266,7 +266,7 @@ MemFree: 1 kB"), Some(15931));
         }
         assert_eq!(json["gameLaunch"], true);
         assert_eq!(json["gameEngine"], MOBILE);
-        assert_eq!(json["pushSupported"], false);
+        assert_eq!(json["pushSupported"], MOBILE);
         assert!(desktop_only().is_ok());
     }
 

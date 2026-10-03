@@ -306,7 +306,12 @@
       "rank_too_low": "Ekipteki rütben bunun için çok düşük.",
       "application_closed": "Bu başvuru zaten kapandı.",
       "application_not_found": "Bu başvuru (artık) yok.",
-      "event_inactive": "Bu etkinlik şu anda senin için açık değil."
+      "event_inactive": "Bu etkinlik şu anda senin için açık değil.",
+      "push_unavailable": "TRS sunucusu şu anda anlık bildirim gönderemiyor.",
+      "too_many_devices": "Hesabın için zaten 10 cihaz bildirim alıyor – önce birini kaldır.",
+      "endpoint_not_allowed": "Push uygulamanın adresi kabul edilmiyor – push uygulamasında herkese açık bir sunucu seç.",
+      "invalid_keys": "Bildirim anahtarları geçersiz – bildirimleri yeniden aç.",
+      "device_not_found": "Bu cihaz kayıtlı değil (artık)."
     },
     "auth": {
       "accountMismatch": "Bu giriş başka bir hesaba ait – lütfen tekrar giriş yap.",
@@ -2424,6 +2429,59 @@
       "title": "Ortak klasörler",
       "description": "Yeni kurulumlar bu klasörleri en baştan paylaşan diğer tüm kurulumlarla paylaşır. Mevcut kurulumlar ayarlarını korur (kurulum ayarlarından değiştirilebilir).",
       "toggleLabel": "Yeni kurulumlar {folder} paylaşır"
+    },
+    "push": {
+      "title": "Anlık bildirimler",
+      "intro": "Sohbet mesajları, arkadaşlık istekleri ve davetler uygulama kapalıyken de bu telefona ulaşır. Bu cihaz için şifrelenirler; yalnızca burada izin verdiklerin gönderilir.",
+      "enabled": "Bu telefonda bildirimler",
+      "enabledHint": "Uygulama açıkken her şeyi doğrudan uygulamada görürsün.",
+      "allow": "Bildirimlere izin ver",
+      "permissionHint": "Bir soru çıkmazsa sistem ayarlarından TRS Launcher bildirimlerine izin ver.",
+      "ntfyFdroid": "ntfy'yi F-Droid'den al",
+      "ntfyPlay": "ntfy'yi Google Play'den al",
+      "afterInstall": "Kurduktan sonra bu sayfayı tekrar aç – uygulama ntfy'ye kendisi bağlanır.",
+      "retry": "Tekrar kontrol et",
+      "pollInstead": "Bunun yerine 15 dakikada bir kontrol et",
+      "pollInsteadHint": "Ek uygulama gerekmez, ama bildirimler 15 dakikaya kadar gecikebilir.",
+      "useDistributor": "{name} kullan",
+      "state": {
+        "off": "Bu telefonda bildirimler kapalı.",
+        "signedOut": "Bildirim almak için Minecraft hesabınla giriş yap ve TRS hizmetlerini aç.",
+        "permission": "TRS Launcher'ın henüz bildirim gösterme izni yok.",
+        "noDistributor": "Google hizmetleri olmadan Android, anlık bildirimleri ntfy gibi bir UnifiedPush uygulamasıyla iletir. Bir tane kur – bir dakika sürer ve başka uygulamalara da yarar.",
+        "chooseDistributor": "Birden fazla push uygulaman var. TRS bildirimlerini iletecek olanı seç:",
+        "waiting": "Push uygulaması bekleniyor …",
+        "waitingFor": "{name} bekleniyor …",
+        "registered": "Etkin – {name} üzerinden iletiliyor.",
+        "registeredPlain": "Etkin.",
+        "pollingAndroid": "Etkin – uygulama yaklaşık 15 dakikada bir yeni bildirimlere bakar.",
+        "pollingIos": "Etkin – iOS, uygulamanın arka planda ara sıra yeni bildirimlere bakmasına izin verir (Düşük Güç Modu'nda daha seyrek).",
+        "error": "Bildirimler ayarlanamadı.",
+        "errorWith": "Bildirimler ayarlanamadı: {error}"
+      },
+      "categoriesTitle": "Şunlar için bildir",
+      "categories": {
+        "chat": "Sohbet mesajları",
+        "friends": "Arkadaşlık istekleri",
+        "friend_online": "Çevrimiçi olan arkadaşlar",
+        "invites": "Dünya davetleri ve pelerin teklifleri",
+        "hosting": "Barındırdığın veya katıldığın dünyalar",
+        "packs": "Sana gönderilen mod paketleri",
+        "team": "Ekip, moderasyon ve bildirimler",
+        "achievements": "Başarımlar"
+      },
+      "previewTitle": "Mesaj metnini göster",
+      "previewHint": "Sohbet bildirimleri mesajın başını ve grup adını gösterir. Kapalı: yalnızca gönderen ve “Yeni mesaj”.",
+      "whilePlayingTitle": "PC'de oynarken de",
+      "whilePlayingHint": "Kapalı: PC'de TRS Client ile oynarken telefonda bildirim yok – orada oyun gösterir.",
+      "devicesTitle": "Bildirim alan cihazlar",
+      "thisDevice": "Bu telefon",
+      "kindUnifiedpush": "{host} üzerinden push",
+      "kindPoll": "Bildirimleri kontrol eder",
+      "lastSeen": "etkin {date}",
+      "failing": "Son iletim başarısız oldu.",
+      "remove": "Kaldır",
+      "noDevices": "Henüz hiçbir cihaz bildirim almıyor."
     }
   },
   "settingsShell": {

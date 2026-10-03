@@ -306,7 +306,12 @@
       "rank_too_low": "Je rang in het team is hiervoor te laag.",
       "application_closed": "Deze sollicitatie is al afgesloten.",
       "application_not_found": "Deze sollicitatie bestaat niet (meer).",
-      "event_inactive": "Dit evenement staat nu niet voor je aan."
+      "event_inactive": "Dit evenement staat nu niet voor je aan.",
+      "push_unavailable": "De TRS-server kan op dit moment geen pushmeldingen versturen.",
+      "too_many_devices": "Er krijgen al 10 apparaten meldingen voor je account – verwijder er eerst een.",
+      "endpoint_not_allowed": "Het adres van je push-app wordt niet geaccepteerd – kies in de push-app een openbare server.",
+      "invalid_keys": "De sleutels voor meldingen zijn ongeldig – zet meldingen opnieuw aan.",
+      "device_not_found": "Dit apparaat is niet (meer) aangemeld."
     },
     "auth": {
       "accountMismatch": "Deze login hoort bij een ander account – log opnieuw in.",
@@ -2424,6 +2429,59 @@
       "title": "Gedeelde mappen",
       "description": "Nieuwe instanties delen deze mappen meteen met alle andere delende instanties. Bestaande instanties houden hun instelling (te wijzigen in de instantie-instellingen).",
       "toggleLabel": "Nieuwe instanties delen {folder}"
+    },
+    "push": {
+      "title": "Pushmeldingen",
+      "intro": "Chatberichten, vriendschapsverzoeken en uitnodigingen bereiken deze telefoon ook als de app gesloten is. Ze zijn versleuteld voor dit apparaat; alleen wat je hier toestaat wordt verstuurd.",
+      "enabled": "Meldingen op deze telefoon",
+      "enabledHint": "Zolang de app open is, zie je alles direct in de app.",
+      "allow": "Meldingen toestaan",
+      "permissionHint": "Verschijnt er geen vraag, sta dan meldingen voor TRS Launcher toe in de systeeminstellingen.",
+      "ntfyFdroid": "ntfy downloaden via F-Droid",
+      "ntfyPlay": "ntfy downloaden via Google Play",
+      "afterInstall": "Open deze pagina na de installatie opnieuw – de app maakt dan zelf verbinding met ntfy.",
+      "retry": "Opnieuw controleren",
+      "pollInstead": "In plaats daarvan elke 15 minuten ophalen",
+      "pollInsteadHint": "Werkt zonder extra app, maar meldingen kunnen tot 15 minuten later komen.",
+      "useDistributor": "{name} gebruiken",
+      "state": {
+        "off": "Meldingen staan uit op deze telefoon.",
+        "signedOut": "Log in met je Minecraft-account en zet de TRS-diensten aan om meldingen te krijgen.",
+        "permission": "TRS Launcher mag nog geen meldingen tonen.",
+        "noDistributor": "Zonder Google-diensten bezorgt Android pushmeldingen via een UnifiedPush-app zoals ntfy. Installeer er een – dat duurt een minuut en helpt ook andere apps.",
+        "chooseDistributor": "Je hebt meerdere push-apps. Kies welke de TRS-meldingen moet bezorgen:",
+        "waiting": "Wachten op de push-app …",
+        "waitingFor": "Wachten op {name} …",
+        "registered": "Actief – bezorgd via {name}.",
+        "registeredPlain": "Actief.",
+        "pollingAndroid": "Actief – de app kijkt ongeveer elke 15 minuten naar nieuwe meldingen.",
+        "pollingIos": "Actief – iOS laat de app af en toe op de achtergrond naar nieuwe meldingen kijken (minder vaak in de energiebesparingsmodus).",
+        "error": "Meldingen konden niet worden ingesteld.",
+        "errorWith": "Meldingen konden niet worden ingesteld: {error}"
+      },
+      "categoriesTitle": "Meld me bij",
+      "categories": {
+        "chat": "Chatberichten",
+        "friends": "Vriendschapsverzoeken",
+        "friend_online": "Vrienden die online komen",
+        "invites": "Wereld-uitnodigingen en cape-aanbiedingen",
+        "hosting": "Werelden die je host of joint",
+        "packs": "Modpacks die naar je gestuurd worden",
+        "team": "Team, moderatie en meldingen",
+        "achievements": "Prestaties"
+      },
+      "previewTitle": "Berichttekst tonen",
+      "previewHint": "Chatmeldingen tonen het begin van het bericht en de groepsnaam. Uit: alleen de afzender en „Nieuw bericht”.",
+      "whilePlayingTitle": "Ook tijdens het spelen op de pc",
+      "whilePlayingHint": "Uit: geen meldingen op de telefoon terwijl je met de TRS Client op je pc speelt – daar toont het spel ze.",
+      "devicesTitle": "Apparaten met meldingen",
+      "thisDevice": "Deze telefoon",
+      "kindUnifiedpush": "Push via {host}",
+      "kindPoll": "Haalt meldingen op",
+      "lastSeen": "actief {date}",
+      "failing": "De laatste bezorging is mislukt.",
+      "remove": "Verwijderen",
+      "noDevices": "Nog geen apparaat krijgt meldingen."
     }
   },
   "settingsShell": {

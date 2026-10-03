@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Statusleisten-Symbol: Redstone-Staub (einfarbig, Android färbt es selbst). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M10,3h4v4h-4zM3,10h4v4h-4zM17,10h4v4h-4zM10,17h4v4h-4zM9,9h6v6h-6zM5,5h3v3h-3zM16,16h3v3h-3zM16,5h3v3h-3zM5,16h3v3h-3z" />
+</vector>

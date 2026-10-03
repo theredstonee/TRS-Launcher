@@ -25,6 +25,12 @@ class InstallApkArgs {
     lateinit var path: String
 }
 
+@InvokeArg
+class PushPollArgs {
+    var enabled: Boolean = false
+    var root: String = ""
+}
+
 /**
  * Update-Installation fuer den Kanal `mobile`: Der Rust-Kern laedt und prueft die APK
  * (signiertes Manifest, SHA-256, Groesse) und gibt nur den Pfad im App-Ordner hierher.
@@ -67,6 +73,14 @@ class TrsMobilePlugin(private val activity: Activity) : Plugin(activity) {
     fun exitApp(invoke: Invoke) {
         invoke.resolve()
         activity.runOnUiThread { activity.finish() }
+    }
+
+    /** Push ohne Verteiler: Abholen im Hintergrund planen bzw. abbestellen (WorkManager). */
+    @Command
+    fun pushPoll(invoke: Invoke) {
+        val args = invoke.parseArgs(PushPollArgs::class.java)
+        PushPollWorker.schedule(activity, args.enabled, args.root)
+        invoke.resolve()
     }
 
     @Command

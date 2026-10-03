@@ -6,6 +6,7 @@ mod mobile;
 #[cfg(mobile)]
 mod mobile_game;
 mod open;
+mod push;
 
 use std::sync::Arc;
 
@@ -82,7 +83,10 @@ pub fn run() {
         .plugin(qr_scanner());
     // Android: APK-Installation (PackageInstaller) für Updates aus dem Kanal `mobile`.
     #[cfg(mobile)]
-    let builder = builder.plugin(mobile::init());
+    let builder = builder
+        .plugin(mobile::init())
+        // Push-Benachrichtigungen: UnifiedPush (Android) bzw. Abholen im Hintergrund (iOS).
+        .plugin(tauri_plugin_trs_push::init());
     builder
         .setup(|app| {
             // Spiel-Engine (eingebettete JVM) – nur Android/iOS.
@@ -250,6 +254,8 @@ pub fn run() {
             app.manage(commands::export::PackPickState::default());
             app.manage(commands::tasks::TaskRegistry::default());
             deeplink::setup(app);
+            // Push: Gerät beim Start abgleichen (neue Version, Sprache, Sitzung) – nur am Handy.
+            push::start(app.handle());
             Ok(())
         })
         // Clips abspielen: `trsclip://localhost/<art>/<instanz>/<datei>` – nur Dateien im
@@ -303,6 +309,13 @@ pub fn run() {
         // das Webview bekommt nur Namen und eine Marke.
         .on_window_event(|window, event| {
             use commands::system::{DropEvent, DropState};
+            // Handy: App im Hintergrund → Echtzeit-Kanal zu (der Server schickt dann Push), vorn → wieder auf.
+            #[cfg(mobile)]
+            match event {
+                tauri::WindowEvent::Suspended => return push::on_foreground(window.app_handle(), false),
+                tauri::WindowEvent::Resumed => return push::on_foreground(window.app_handle(), true),
+                _ => {}
+            }
             let payload = match event {
                 tauri::WindowEvent::DragDrop(tauri::DragDropEvent::Enter { .. }) => DropEvent::Enter,
                 tauri::WindowEvent::DragDrop(tauri::DragDropEvent::Leave) => DropEvent::Leave,
@@ -366,6 +379,11 @@ pub fn run() {
             mobile::mobile_update_check,
             mobile::mobile_update_install,
             mobile::mobile_exit_app,
+            push::push_status,
+            push::push_set_settings,
+            push::push_choose_distributor,
+            push::push_devices,
+            push::push_remove_device,
             commands::settings::get_settings,
             commands::settings::update_settings,
             commands::instances::list_instances,
@@ -557,6 +575,7 @@ pub fn run() {
             deeplink::take_pending_pack_link,
             deeplink::take_pending_web_login,
             deeplink::take_pending_remote_pair,
+            deeplink::take_pending_push_target,
             commands::remote::remote_pair_start,
             commands::remote::remote_pair_cancel,
             commands::remote::remote_publish_status,

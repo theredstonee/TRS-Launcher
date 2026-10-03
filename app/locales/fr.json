@@ -306,7 +306,12 @@
       "rank_too_low": "Ton rang dans l’équipe est trop bas pour cela.",
       "application_closed": "Cette candidature est déjà clôturée.",
       "application_not_found": "Cette candidature n’existe pas (ou plus).",
-      "event_inactive": "Cet événement n’est pas actif pour toi en ce moment."
+      "event_inactive": "Cet événement n’est pas actif pour toi en ce moment.",
+      "push_unavailable": "Le serveur TRS ne peut pas envoyer de notifications push pour le moment.",
+      "too_many_devices": "10 appareils reçoivent déjà des notifications pour ton compte – retire-en un d’abord.",
+      "endpoint_not_allowed": "L’adresse de ton app push n’est pas acceptée – choisis un serveur public dans l’app push.",
+      "invalid_keys": "Les clés des notifications ne sont pas valides – réactive les notifications.",
+      "device_not_found": "Cet appareil n’est pas (ou plus) enregistré."
     },
     "auth": {
       "accountMismatch": "Cette connexion appartient à un autre compte – reconnecte-toi.",
@@ -2424,6 +2429,59 @@
       "title": "Dossiers partagés",
       "description": "Les nouvelles instances partagent dès le départ ces dossiers avec toutes les autres instances qui les partagent. Les instances existantes gardent leur réglage (modifiable dans les paramètres de l’instance).",
       "toggleLabel": "Les nouvelles instances partagent {folder}"
+    },
+    "push": {
+      "title": "Notifications push",
+      "intro": "Les messages, demandes d’ami et invitations arrivent sur ce téléphone même quand l’app est fermée. Ils sont chiffrés pour cet appareil ; seul ce que tu autorises ici est envoyé.",
+      "enabled": "Notifications sur ce téléphone",
+      "enabledHint": "Tant que l’app est ouverte, tu vois tout directement dans l’app.",
+      "allow": "Autoriser les notifications",
+      "permissionHint": "Si aucune question n’apparaît, autorise les notifications de TRS Launcher dans les réglages du système.",
+      "ntfyFdroid": "Obtenir ntfy sur F-Droid",
+      "ntfyPlay": "Obtenir ntfy sur Google Play",
+      "afterInstall": "Après l’installation, rouvre cette page : l’app se connecte alors toute seule à ntfy.",
+      "retry": "Vérifier à nouveau",
+      "pollInstead": "Vérifier toutes les 15 minutes à la place",
+      "pollInsteadHint": "Fonctionne sans autre app, mais les notifications peuvent arriver jusqu’à 15 minutes plus tard.",
+      "useDistributor": "Utiliser {name}",
+      "state": {
+        "off": "Les notifications sont désactivées sur ce téléphone.",
+        "signedOut": "Connecte-toi avec ton compte Minecraft et active les services TRS pour recevoir des notifications.",
+        "permission": "TRS Launcher n’a pas encore le droit d’afficher des notifications.",
+        "noDistributor": "Sans les services Google, Android livre les notifications push via une app UnifiedPush comme ntfy. Installe-en une : ça prend une minute et ça sert aussi à d’autres apps.",
+        "chooseDistributor": "Tu as plusieurs apps push. Choisis celle qui doit livrer les notifications TRS :",
+        "waiting": "En attente de l’app push …",
+        "waitingFor": "En attente de {name} …",
+        "registered": "Actif – livré via {name}.",
+        "registeredPlain": "Actif.",
+        "pollingAndroid": "Actif – l’app vérifie les nouvelles notifications environ toutes les 15 minutes.",
+        "pollingIos": "Actif – iOS laisse l’app vérifier de temps en temps les nouvelles notifications en arrière-plan (moins souvent en mode économie d’énergie).",
+        "error": "Impossible de configurer les notifications.",
+        "errorWith": "Impossible de configurer les notifications : {error}"
+      },
+      "categoriesTitle": "Me prévenir pour",
+      "categories": {
+        "chat": "Messages de chat",
+        "friends": "Demandes d’ami",
+        "friend_online": "Amis qui se connectent",
+        "invites": "Invitations dans un monde et offres de capes",
+        "hosting": "Mondes que tu héberges ou rejoins",
+        "packs": "Modpacks qu’on t’envoie",
+        "team": "Équipe, modération et signalements",
+        "achievements": "Succès"
+      },
+      "previewTitle": "Afficher le texte du message",
+      "previewHint": "Les notifications de chat montrent le début du message et le nom du groupe. Désactivé : seulement l’expéditeur et « Nouveau message ».",
+      "whilePlayingTitle": "Aussi pendant que tu joues sur PC",
+      "whilePlayingHint": "Désactivé : pas de notifications sur le téléphone pendant que tu joues avec le TRS Client sur ton PC – le jeu les affiche là-bas.",
+      "devicesTitle": "Appareils avec notifications",
+      "thisDevice": "Ce téléphone",
+      "kindUnifiedpush": "Push via {host}",
+      "kindPoll": "Vérifie les notifications",
+      "lastSeen": "actif {date}",
+      "failing": "La dernière livraison a échoué.",
+      "remove": "Retirer",
+      "noDevices": "Aucun appareil ne reçoit encore de notifications."
     }
   },
   "settingsShell": {

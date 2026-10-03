@@ -23,6 +23,10 @@
 # Update-Installation (Kanal mobile): Rust meldet das Plugin per Klassennamen an.
 -keep class dev.theredstonee.trslauncher.TrsMobilePlugin { *; }
 -keep class dev.theredstonee.trslauncher.InstallApkArgs { *; }
+-keep class dev.theredstonee.trslauncher.PushPollArgs { *; }
+# Push ohne Verteiler: WorkManager legt den Worker per Name an, nativePoll kommt aus libtrs_launcher_lib.so.
+-keep class dev.theredstonee.trslauncher.PushPollWorker { *; }
+-keep class dev.theredstonee.trslauncher.PushPollWorker$Companion { *; }
 # JNI-Funktion von android-native-keyring-store (Token-Schluessel im Keystore).
 -keep class io.crates.keyring.Keyring { *; }
 -keep class io.crates.keyring.Keyring$Companion { *; }

@@ -5136,6 +5136,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "tauri-plugin-trs-push"
+version = "0.17.1"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-plugin",
+]
+
+[[package]]
 name = "tauri-plugin-updater"
 version = "2.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5758,6 +5768,7 @@ version = "0.17.1"
 dependencies = [
  "arboard",
  "chrono",
+ "jni 0.21.1",
  "log",
  "qrcode",
  "serde",
@@ -5773,6 +5784,7 @@ dependencies = [
  "tauri-plugin-process",
  "tauri-plugin-single-instance",
  "tauri-plugin-trs-game",
+ "tauri-plugin-trs-push",
  "tauri-plugin-updater",
  "tauri-plugin-window-state",
  "thiserror 2.0.20",

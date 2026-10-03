@@ -31,6 +31,7 @@ pub mod media;
 mod ops;
 pub mod png;
 mod presence;
+pub mod push;
 pub mod remote;
 pub mod sanctions;
 pub mod share;
@@ -264,6 +265,8 @@ pub(crate) fn api_error(status: u16, code: &str, retry_after: Option<u64>) -> Er
         ),
         // Welt-Hosting ohne Relay auf dem Server (503) ist kein „offline“.
         (_, "hosting_unavailable") => ("trs_api", message_for(code)),
+        // Server ohne VAPID-Schlüssel (§33.2): nur Abholen geht.
+        (_, "push_unavailable") => ("trs_api", message_for(code)),
         (500..=599, _) => ("trs_offline", crate::msg!("trs.offline", "Der TRS-Server ist gerade nicht erreichbar.")),
         (_, code) => ("trs_api", message_for(code)),
     };
@@ -405,6 +408,14 @@ fn message_for(code: &str) -> Msg {
         "rank_too_low" => msg!("trsApi.rank_too_low", "Dafür ist dein Rang im Team zu niedrig."),
         "application_closed" => msg!("trsApi.application_closed", "Diese Bewerbung ist schon abgeschlossen."),
         "application_not_found" => msg!("trsApi.application_not_found", "Diese Bewerbung gibt es nicht (mehr)."),
+        "push_unavailable" => msg!("trsApi.push_unavailable", "Der TRS-Server kann gerade keine Push-Benachrichtigungen senden."),
+        "too_many_devices" => msg!("trsApi.too_many_devices", "Für dein Konto sind schon 10 Geräte für Benachrichtigungen angemeldet – entferne zuerst eins."),
+        "endpoint_invalid" | "endpoint_not_allowed" | "endpoint_unresolvable" => msg!(
+            "trsApi.endpoint_not_allowed",
+            "Die Adresse deines Push-Dienstes wird nicht angenommen – wähle in der Verteiler-App einen öffentlichen Server."
+        ),
+        "invalid_keys" => msg!("trsApi.invalid_keys", "Die Schlüssel für Benachrichtigungen sind ungültig – bitte erneut einschalten."),
+        "device_not_found" => msg!("trsApi.device_not_found", "Dieses Gerät ist nicht (mehr) angemeldet."),
         "invalid_request" | "invalid_json" => msg!("trsApi.invalid_request", "Die Anfrage war ungültig."),
         "not_found" => msg!("trsApi.not_found", "Nicht gefunden."),
         _ => msg!("trsApi.rejected", "Die TRS API hat die Anfrage abgelehnt."),
@@ -441,6 +452,8 @@ pub struct TrsApi {
     events: std::sync::Mutex<Vec<String>>,
     /// PC-Fernbedienung: Geräte-Zugang je Konto (§33).
     pub(crate) remote: remote::RemoteStore,
+    /// Push-Benachrichtigungen der Handy-Apps: Schalter und angemeldetes Gerät je Konto (§33).
+    pub(crate) push: push::PushStore,
 }
 
 impl TrsApi {
@@ -486,6 +499,7 @@ impl TrsApi {
             store: Store::new(paths.root().join("trs-api.json")),
             sync_store: sync::SyncStore::new(paths.root().join("trs-sync.json")),
             remote: remote::RemoteStore::new(paths.root().join("trs-remote.json")),
+            push: push::PushStore::new(paths.root().join("trs-push.json")),
             sync: Arc::default(),
             paths,
             login_lock: tokio::sync::Mutex::new(()),
@@ -819,6 +833,8 @@ impl TrsApi {
     /// vergisst ihn lokal. Fehler sind egal – der Token läuft sonst von selbst ab.
     pub(crate) async fn logout(&self, account: &str) {
         let Some(token) = self.store.take_token(account).await else { return };
+        // Push-Gerät dieser Sitzung zuerst abmelden (der Server löscht es sonst mit der Sitzung).
+        self.push_forget(account, &token).await;
         let req = Req::post_empty("/v1/auth/logout");
         let _ = tokio::time::timeout(Duration::from_secs(5), self.send_once(&req, Some(&token))).await;
     }

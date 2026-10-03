@@ -119,6 +119,12 @@ How to write an entry:
   same TRS account. Off by default: switch it on under Settings → Remote control, choose what your phone may do, and
   pair your phone by scanning the QR code (or typing the code). The PC shows a notice whenever your phone starts
   something, and you can remove paired phones at any time.
+- **Push notifications in the mobile app.** Chat messages, friend requests, invitations and other news now reach
+  your phone even when the app is closed. On Android they come through a UnifiedPush app such as ntfy (no Google
+  services needed – the app explains how to get one, or checks every 15 minutes instead); on iPhone and iPad the app
+  checks for news in the background. Messages are encrypted for your device. Under Settings → Notifications you
+  choose what you want to hear about, whether chat notifications show the message text (off by default), and which
+  of your devices get notifications. Tapping a notification opens the right page.
 
 ### Deutsch
 - **Suche, Filter und Details für TRS-Umhänge.** Die Umhang-Liste auf der Skins-Seite hat ein Suchfeld, Filter
@@ -216,6 +222,13 @@ How to write an entry:
   solange beide dasselbe TRS-Konto nutzen. Ab Werk aus: unter Einstellungen → Fernbedienung einschalten, festlegen,
   was das Handy darf, und das Handy per QR-Code (oder Code eintippen) koppeln. Der PC zeigt jedes Mal einen Hinweis,
   wenn das Handy etwas startet, und gekoppelte Handys lassen sich jederzeit entfernen.
+- **Push-Benachrichtigungen in der Handy-App.** Chat-Nachrichten, Freundschaftsanfragen, Einladungen und andere
+  Neuigkeiten erreichen dein Handy jetzt auch bei geschlossener App. Unter Android kommen sie über eine
+  UnifiedPush-App wie ntfy (ohne Google-Dienste – die App erklärt, wie du eine bekommst, oder sieht stattdessen alle
+  15 Minuten nach); auf iPhone und iPad sieht die App im Hintergrund nach. Die Nachrichten sind für dein Gerät
+  verschlüsselt. Unter Einstellungen → Benachrichtigungen wählst du, worüber du Bescheid bekommen willst, ob
+  Chat-Hinweise den Nachrichtentext zeigen (ab Werk aus) und welche deiner Geräte Benachrichtigungen bekommen. Ein
+  Tipp auf eine Benachrichtigung öffnet die passende Seite.
 
 ## 0.17.1 – 2026-10-03 – Light Luggage Fix | Leichtes Gepäck – Fix
 <!-- banner: accent=#ffb02e motif=/news/0.17.0/banner.png -->
