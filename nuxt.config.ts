@@ -13,6 +13,9 @@ export default defineNuxtConfig({
     head: {
       title: 'TRS Launcher',
       htmlAttrs: { lang: 'en' },
+      // Handy: bis unter Notch/Gestenleiste zeichnen (Ränder über env(safe-area-inset-*)),
+      // die Tastatur verkleinert die Seite – das Eingabefeld im Chat bleibt sichtbar.
+      viewport: 'width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content',
     },
   },
   devServer: { port: 3000 },

@@ -47,6 +47,10 @@ const mods = ref<{ instance: Instance; item: ContentItem }[]>([])
 function close() {
   emit('close')
 }
+// Handy: Vollbild mit Schließen-Knopf statt „Esc“; die Zurück-Taste schließt.
+const mobile = mobileUi
+useOverlay(close)
+const settingsSections = useAppSettingsSections()
 
 function go(path: string) {
   router.push(path)
@@ -80,7 +84,7 @@ const pages = computed<Command[]>(() => {
   ]
   return list
     // Clips (Spielaufnahme) gibt es vorerst nur unter Windows.
-    .filter((p) => router.resolve(p.to).matched.length > 0 && (p.to !== '/clips' || !isLinux))
+    .filter((p) => router.resolve(p.to).matched.length > 0 && (p.to !== '/clips' || platformCaps.value.clips))
     .map((p) => ({
       id: `page:${p.to}`,
       group: 'pages' as const,
@@ -104,11 +108,14 @@ const commands = computed<Command[]>(() => [
     keywords: `${i.gameVersion} ${loaderLabels[i.loader.kind]} ${i.group ?? ''}`,
     instance: i,
     run: () => go(`/instances/${i.id}`),
-    second: {
-      label: games.state(i.id).phase === 'idle' ? t('common.actions.play') : t('common.status.running'),
-      run: () => launch(i),
-      disabled: games.state(i.id).phase !== 'idle',
-    },
+    // Spielen nur, wo das Spiel startet (am Handy noch nicht).
+    second: platformCaps.value.gameLaunch
+      ? {
+          label: games.state(i.id).phase === 'idle' ? t('common.actions.play') : t('common.status.running'),
+          run: () => launch(i),
+          disabled: games.state(i.id).phase !== 'idle',
+        }
+      : undefined,
   })),
   ...mods.value.map<Command>(({ instance, item }) => ({
     id: `mod:${instance.id}:${item.kind}:${item.fileName}`,
@@ -130,7 +137,7 @@ const commands = computed<Command[]>(() => [
     keywords: s.address,
     icon: 'server',
     run: () => go('/servers'),
-    second: joinTarget.value
+    second: joinTarget.value && platformCaps.value.gameLaunch
       ? {
           label: t('palette.joinWith', { name: joinTarget.value.name }),
           disabled: games.state(joinTarget.value.id).phase !== 'idle',
@@ -143,7 +150,7 @@ const commands = computed<Command[]>(() => [
         }
       : undefined,
   })),
-  ...appSettingsSections.map<Command>((s) => ({
+  ...settingsSections.value.map<Command>((s) => ({
     id: `settings:${s.key}`,
     group: 'settings',
     title: s.label,
@@ -230,7 +237,8 @@ const commands = computed<Command[]>(() => [
       close()
     },
   },
-  {
+  // Ordner im Datei-Explorer gibt es am Handy nicht.
+  ...(isMobileOs(platformCaps.value.platform) ? [] : [{
     id: 'action:data-dir',
     group: 'actions',
     title: t('palette.actions.dataDir.title'),
@@ -241,7 +249,7 @@ const commands = computed<Command[]>(() => [
       backend.openDataDir().catch((e) => toasts.error(e))
       close()
     },
-  },
+  } satisfies Command]),
 ])
 
 const results = computed(() => {
@@ -339,9 +347,9 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="fixed inset-0 z-[70] flex justify-center bg-black/60 p-6 pt-[12vh] backdrop-blur-[2px]" @mousedown.self="close">
+  <div class="fixed inset-0 z-[70] flex justify-center bg-black/60 p-6 pt-[12vh] backdrop-blur-[2px] mobile:p-0" @mousedown.self="close">
     <div
-      class="flex max-h-[70vh] w-full max-w-2xl animate-pop flex-col overflow-hidden rounded-2xl border border-base-700 bg-base-850 shadow-2xl shadow-black/60"
+      class="flex max-h-[70vh] w-full max-w-2xl animate-pop flex-col overflow-hidden rounded-2xl border border-base-700 bg-base-850 shadow-2xl shadow-black/60 mobile:max-h-none mobile:max-w-none mobile:rounded-none mobile:border-0 mobile:pt-[var(--safe-top)] mobile:pb-[var(--safe-bottom)]"
       role="dialog"
       aria-modal="true"
       :aria-label="t('palette.dialogLabel')"
@@ -350,7 +358,7 @@ onMounted(async () => {
         <svg viewBox="0 0 24 24" class="size-4 shrink-0 text-base-600" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path :d="icons.search" /></svg>
         <input
           v-model="query"
-          class="min-w-0 flex-1 bg-transparent py-3.5 text-sm text-base-50 outline-none placeholder:text-base-600"
+          class="min-w-0 flex-1 bg-transparent py-3.5 text-sm text-base-50 outline-none placeholder:text-base-600 mobile:text-base"
           :placeholder="t('palette.placeholder')"
           :aria-label="t('common.actions.search')"
           role="combobox"
@@ -361,7 +369,10 @@ onMounted(async () => {
           autofocus
           @keydown="onKey"
         />
-        <kbd class="shrink-0 rounded border border-base-700 px-1.5 py-0.5 font-mono text-[10px] text-base-400">Esc</kbd>
+        <button v-if="mobile" class="btn-icon -mr-2 shrink-0 bg-transparent" :aria-label="t('common.actions.close')" data-testid="palette-close" @click="close">
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path :d="icons.close" /></svg>
+        </button>
+        <kbd v-else class="shrink-0 rounded border border-base-700 px-1.5 py-0.5 font-mono text-[10px] text-base-400">Esc</kbd>
       </div>
 
       <div v-if="results.length" id="palette-list" ref="listEl" class="min-h-0 flex-1 overflow-y-auto p-2" role="listbox" :aria-label="t('palette.resultsLabel')">
@@ -371,7 +382,7 @@ onMounted(async () => {
           </p>
           <div
             :id="`palette-item-${index}`"
-            class="group flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 transition-colors"
+            class="group flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 transition-colors mobile:min-h-12"
             :class="index === activeIndex ? 'bg-base-800' : 'hover:bg-base-800/60'"
             :data-active="index === activeIndex"
             role="option"
@@ -397,7 +408,7 @@ onMounted(async () => {
             <button
               v-if="entry.item.second"
               class="btn btn-ghost shrink-0 px-2 py-1 text-xs"
-              :class="index === activeIndex ? 'inline-flex' : 'hidden group-hover:inline-flex'"
+              :class="index === activeIndex ? 'inline-flex' : 'hidden group-hover:inline-flex mobile:inline-flex'"
               :disabled="entry.item.second.disabled"
               @click.stop="runCommand(entry.item, true)"
             >
@@ -409,7 +420,7 @@ onMounted(async () => {
 
       <p v-else class="flex-1 px-4 py-10 text-center text-sm text-base-400">{{ t('palette.noResults') }}</p>
 
-      <div class="flex items-center gap-4 border-t border-base-800 px-4 py-2 text-[11px] text-base-600">
+      <div class="flex items-center gap-4 border-t border-base-800 px-4 py-2 text-[11px] text-base-600 mobile:hidden">
         <span><kbd class="kbd">↑</kbd><kbd class="kbd">↓</kbd> {{ t('palette.hints.select') }}</span>
         <span><kbd class="kbd">↵</kbd> {{ t('palette.hints.open') }}</span>
         <span><kbd class="kbd">{{ t('titleBar.ctrl') }}</kbd>+<kbd class="kbd">↵</kbd> {{ t('palette.hints.second') }}</span>

@@ -5414,5 +5414,19 @@
     "logs": "Günlükler hakkında yardım",
     "java": "Java rehberi",
     "linux": "Linux rehberi"
+  },
+  "mobile": {
+    "more": "Daha fazla",
+    "accounts": "Hesaplar",
+    "import": "İçe aktar",
+    "help": "Yardım",
+    "pullToRefresh": "Yenilemek için çekin",
+    "accountsPage": {
+      "browser": "Tarayıcı ile giriş yap",
+      "openPage": "Kodu kopyala ve giriş sayfasını aç"
+    },
+    "browse": {
+      "showResults": "{count} sonucu göster | {count} sonucu göster"
+    }
   }
 }

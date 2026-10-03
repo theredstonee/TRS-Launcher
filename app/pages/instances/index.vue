@@ -120,7 +120,8 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeFilter))
 </script>
 
 <template>
-  <div class="p-6">
+  <div class="p-6 mobile:p-4">
+    <PullToRefresh :refresh="() => instances.load()" />
     <PageHeader :title="t('library.title')" :subtitle="t('library.subtitle')">
       <button class="btn btn-ghost" @click="packs.openCode()">{{ t('packs.code.open') }}</button>
       <button class="btn btn-ghost" @click="shell.importing = true">{{ t('common.actions.import') }}</button>
@@ -135,38 +136,38 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeFilter))
 
     <p v-if="instances.error" role="alert" class="card mb-4 border-redstone-600/50 px-4 py-3 text-sm text-redstone-300">{{ instances.error }}</p>
 
-    <div v-if="instances.items.length" class="mb-5 flex flex-wrap items-center gap-2">
-      <div class="relative min-w-56 flex-1">
+    <div v-if="instances.items.length" class="mb-5 flex flex-wrap items-center gap-2 mobile:mb-4">
+      <div class="relative min-w-56 flex-1 mobile:min-w-0 mobile:basis-full">
         <svg viewBox="0 0 24 24" class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-base-600" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5" /></svg>
-        <input v-model="search" class="field h-9 rounded-full py-0 pl-9" maxlength="64" :placeholder="t('library.searchPlaceholder', instances.items.length)" spellcheck="false" :aria-label="t('library.searchLabel')" />
+        <input v-model="search" class="field h-9 rounded-full py-0 pl-9 mobile:h-11" maxlength="64" :placeholder="t('library.searchPlaceholder', instances.items.length)" spellcheck="false" :aria-label="t('library.searchLabel')" />
       </div>
-      <label class="flex items-center gap-2 text-xs text-base-400">
-        {{ t('library.sortLabel') }}
-        <select v-model="prefs.sort" class="field h-9 w-auto py-0 text-xs text-base-50">
+      <label class="flex items-center gap-2 text-xs text-base-400 mobile:min-w-0 mobile:flex-1">
+        <span class="mobile:sr-only">{{ t('library.sortLabel') }}</span>
+        <select v-model="prefs.sort" class="field h-9 w-auto py-0 text-xs text-base-50 mobile:w-full mobile:text-sm">
           <option v-for="key in librarySorts" :key="key" :value="key">{{ t(`library.sort.${key}`) }}</option>
         </select>
       </label>
-      <label class="flex items-center gap-2 text-xs text-base-400">
-        {{ t('library.groupLabel') }}
-        <select v-model="prefs.groupBy" class="field h-9 w-auto py-0 text-xs text-base-50">
+      <label class="flex items-center gap-2 text-xs text-base-400 mobile:min-w-0 mobile:flex-1">
+        <span class="mobile:sr-only">{{ t('library.groupLabel') }}</span>
+        <select v-model="prefs.groupBy" class="field h-9 w-auto py-0 text-xs text-base-50 mobile:w-full mobile:text-sm">
           <option v-for="key in libraryGroupBys" :key="key" :value="key">{{ t(`library.groupBy.${key}`) }}</option>
         </select>
       </label>
       <div class="relative" data-filter-menu>
-        <button class="btn btn-ghost h-9 py-0 text-xs" :aria-expanded="filterOpen" @click="filterOpen = !filterOpen">
+        <button class="btn btn-ghost h-9 py-0 text-xs mobile:h-11" :aria-expanded="filterOpen" :aria-label="t('library.filter')" @click="filterOpen = !filterOpen">
           <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 5h16l-6 8v5l-4 2v-7z" /></svg>
-          {{ t('library.filter') }}
+          <span class="mobile:sr-only">{{ t('library.filter') }}</span>
           <span v-if="activeFilters" class="badge bg-redstone-500 text-white">{{ activeFilters }}</span>
         </button>
-        <div v-if="filterOpen" class="menu top-10 right-0 w-64 p-3">
+        <div v-if="filterOpen" class="menu top-10 right-0 w-64 p-3 mobile:top-12 mobile:max-w-[calc(100vw-2rem)]">
           <p class="mb-1.5 text-[11px] font-semibold tracking-wider text-base-600 uppercase">{{ t('common.labels.loader') }}</p>
-          <label v-for="k in availableLoaders" :key="k" class="flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1 text-sm hover:bg-base-700">
+          <label v-for="k in availableLoaders" :key="k" class="flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1 text-sm hover:bg-base-700 mobile:min-h-11">
             <input type="checkbox" class="size-4 accent-redstone-500" :checked="prefs.loaders.includes(k)" @change="toggleIn(prefs.loaders, k)" />
             <span class="size-2 rounded-full" :style="{ background: loaderColors[k] }" />{{ loaderLabels[k] }}
           </label>
           <p class="mt-3 mb-1.5 text-[11px] font-semibold tracking-wider text-base-600 uppercase">{{ t('common.labels.version') }}</p>
           <div class="max-h-40 overflow-y-auto">
-            <label v-for="v in availableVersions" :key="v" class="flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1 text-sm hover:bg-base-700">
+            <label v-for="v in availableVersions" :key="v" class="flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1 text-sm hover:bg-base-700 mobile:min-h-11">
               <input type="checkbox" class="size-4 accent-redstone-500" :checked="prefs.versions.includes(v)" @change="toggleIn(prefs.versions, v)" />
               <span class="font-mono">{{ v }}</span>
             </label>
@@ -182,14 +183,14 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeFilter))
 
     <template v-else-if="visible.length">
       <section v-for="g in grouped" :key="g.key" class="mb-6">
-        <button v-if="prefs.groupBy !== 'none'" class="mb-3 flex items-center gap-2 text-sm font-semibold text-base-50" :aria-expanded="!collapsed.has(g.key)" @click="toggleCollapsed(g.key)">
+        <button v-if="prefs.groupBy !== 'none'" class="mb-3 flex items-center gap-2 text-sm font-semibold text-base-50 mobile:mb-1 mobile:min-h-11" :aria-expanded="!collapsed.has(g.key)" @click="toggleCollapsed(g.key)">
           <svg viewBox="0 0 24 24" class="size-4 text-base-400 transition-transform" :class="{ '-rotate-90': collapsed.has(g.key) }" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6" /></svg>
           {{ g.label }}
           <span class="text-xs font-normal text-base-600">{{ g.items.length }}</span>
         </button>
         <div
           v-if="!collapsed.has(g.key)"
-          class="grid gap-4"
+          class="grid gap-4 mobile:grid-cols-2 mobile:gap-3"
           :class="ui?.compactLibrary ? 'grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))]' : 'grid-cols-[repeat(auto-fill,minmax(13rem,1fr))]'"
         >
           <InstanceCard

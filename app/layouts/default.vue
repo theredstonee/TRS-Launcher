@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { isTauri } from '@tauri-apps/api/core'
+import { onBackButtonPress } from '@tauri-apps/api/app'
+import { invoke, isTauri } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 // Spiel-Events, Accounts und Instanzen einmal zentral laden – unabhängig von der Seite.
 const games = useGamesStore()
@@ -119,15 +120,33 @@ watch(
 let consentAsked = false
 
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
+
+// Handy: Tab-Leiste unten statt Seitenleiste, Kopfzeile statt Titelleiste.
+const mobile = mobileUi
+// Android-Zurück-Taste: erst Dialoge/Sheets schließen, dann eine Seite zurück, im Bereich zur
+// Startseite – auf der Startseite die App beenden (wie andere Android-Apps).
+let backListener: { unregister: () => Promise<void> } | null = null
+onMounted(async () => {
+  if (!isTauri() || hostOs !== 'android') return
+  backListener = await onBackButtonPress(({ canGoBack }) => {
+    const action = backAction({ overlays: overlayCount(), path: route.path, canGoBack })
+    if (action === 'close') closeTopOverlay()
+    else if (action === 'back') router.back()
+    else if (action === 'home') void router.push('/')
+    else void invoke('plugin:app|exit').catch(() => {})
+  }).catch(() => null)
+})
+onBeforeUnmount(() => void backListener?.unregister())
 </script>
 
 <template>
   <div class="flex h-full flex-col">
-    <TitleBar />
+    <TitleBar v-if="!mobile" />
+    <MobileTopBar v-else />
     <!-- Der Assistent überdeckt alles unter der Titelleiste; die Fenstersteuerung bleibt bedienbar. -->
     <div class="relative flex min-h-0 flex-1 flex-col">
       <div class="flex min-h-0 flex-1">
-        <SideNav />
+        <SideNav v-if="!mobile" />
         <!-- Redstone-Schaltung hinter allen Seiten (die Startseite hat ihre eigene im Kopfbereich). -->
         <div class="relative flex min-w-0 flex-1 flex-col">
           <div v-if="appBackground" class="app-bg" aria-hidden="true">
@@ -139,11 +158,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
         <div v-if="sanctions.banner.length" class="deepslate relative shrink-0" :class="{ 'deepslate-over-scene': appBackground }">
           <SanctionBanner />
         </div>
-        <main ref="main" class="deepslate relative min-h-0 min-w-0 flex-1 overflow-y-auto" :class="{ 'deepslate-over-scene': appBackground }">
+        <main ref="main" class="deepslate relative min-h-0 min-w-0 flex-1 overflow-y-auto mobile:overscroll-y-contain mobile:pr-[var(--safe-right)] mobile:pl-[var(--safe-left)]" :class="{ 'deepslate-over-scene': appBackground }">
           <slot />
         </main>
         </div>
       </div>
+      <MobileTabBar v-if="mobile" />
       <Transition name="onboarding" appear>
         <OnboardingWizard v-if="onboarding.open" />
       </Transition>

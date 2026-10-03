@@ -60,19 +60,32 @@ onMounted(async () => {
   if (focus) void nextTick(() => document.querySelector(`[data-application="${focus}"]`)?.scrollIntoView({ block: 'center' }))
 })
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
+// Handy: Bottom-Sheet (nach unten wegwischen), Zurück-Taste schließt.
+const mobile = mobileUi
+useOverlay(close)
+const swipe = useSheetSwipe(close)
+/** Wischen nur am Kopf selbst, nicht auf seinen Knöpfen (sonst kommt deren Klick nicht an). */
+const swipeOn = {
+  ...swipe.handlers,
+  pointerdown: (e: PointerEvent) => {
+    if (!(e.target as HTMLElement | null)?.closest('button')) swipe.handlers.pointerdown(e)
+  },
+}
 </script>
 
 <template>
   <Teleport to="body">
-    <div class="fixed inset-0 z-[55] flex items-center justify-center bg-black/60 p-6" @mousedown.self="close">
+    <div class="fixed inset-0 z-[55] flex items-center justify-center bg-black/60 p-6 mobile:items-end mobile:p-0 mobile:pt-[calc(var(--safe-top)+1.5rem)]" @mousedown.self="close">
       <section
         role="dialog"
         aria-modal="true"
         :aria-label="t('applications.dialog.title')"
-        class="card flex max-h-full w-full max-w-2xl flex-col bg-base-850 shadow-2xl"
+        class="card flex max-h-full w-full max-w-2xl flex-col bg-base-850 shadow-2xl mobile:max-w-none mobile:animate-sheet mobile:rounded-t-2xl mobile:rounded-b-none mobile:transition-transform"
+        :style="swipe.style.value"
         data-testid="my-applications"
       >
-        <header class="flex items-center gap-3 border-b border-base-800 px-5 py-3.5">
+        <header class="flex items-center gap-3 border-b border-base-800 px-5 py-3.5 mobile:relative mobile:touch-none mobile:pt-5" v-on="mobile ? swipeOn : {}">
+          <span v-if="mobile" class="absolute top-2 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-base-700" aria-hidden="true" />
           <SocialIcon name="mailUnread" class="size-5 text-redstone-300" />
           <div class="min-w-0 flex-1">
             <h2 class="font-semibold">{{ t('applications.dialog.title') }}</h2>
@@ -122,7 +135,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
           </ul>
         </div>
 
-        <footer class="flex flex-wrap items-center gap-2 border-t border-base-800 px-5 py-3">
+        <footer class="mobile:pb-[calc(0.75rem+var(--safe-bottom))] flex flex-wrap items-center gap-2 border-t border-base-800 px-5 py-3">
           <p class="mr-auto text-[11px] text-base-400">{{ t('applications.dialog.footer') }}</p>
           <button class="btn btn-ghost px-3 py-1.5 text-xs" @click="openSite(TEAM_PAGE_URL)">
             {{ t('applications.dialog.jobs') }} <SocialIcon name="external" class="size-3.5" />

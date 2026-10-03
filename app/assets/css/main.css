@@ -38,6 +38,7 @@
   --animate-shimmer: shimmer 1.4s linear infinite;
   --animate-pop: pop 0.18s ease-out;
   --animate-lamp: lamp 2.4s ease-in-out infinite;
+  --animate-sheet: sheet-up 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
 
   @keyframes shimmer {
     from { background-position: 200% 0; }
@@ -51,6 +52,10 @@
     0%, 100% { opacity: 1; }
     50% { opacity: 0.55; }
   }
+  @keyframes sheet-up {
+    from { transform: translateY(40%); opacity: 0.4; }
+    to { transform: none; opacity: 1; }
+  }
 }
 
 /*
@@ -63,6 +68,21 @@
  */
 @custom-variant motion-reduce (:root[data-reduced-motion] &);
 @custom-variant motion-safe (:root:not([data-reduced-motion]) &);
+
+/*
+ * Handy-Oberfläche (Android/iOS, `is-mobile` setzt plugins/os.client.ts): `mobile:…`
+ * greift nur dort – der Desktop-Launcher bleibt Pixel für Pixel unverändert.
+ * Ränder für Notch/Gestenleiste: `--safe-top/-bottom/-left/-right`.
+ */
+@custom-variant mobile (:root.is-mobile &);
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  /* Höhe der Tab-Leiste unten (ohne Gestenleiste) – Sheets und Toasts halten Abstand. */
+  --mobile-tabbar: 3.5rem;
+}
 
 /*
  * Themes: überschreiben nur die Deepslate-Skala. „Dunkel“ ist der Standard
@@ -613,4 +633,53 @@ html.os-linux input[type="checkbox"]:focus-visible {
 html.os-linux input[type="checkbox"]:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/*
+ * Handy-Oberfläche: Fingerbedienung statt Maus. Mindestens 44 px große Ziele,
+ * 16-px-Felder (iOS zoomt sonst beim Tippen hinein), kein Hover – was am Desktop
+ * erst beim Überfahren erscheint, ist hier immer sichtbar.
+ */
+:root.is-mobile {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+:root.is-mobile body {
+  overscroll-behavior: none;
+}
+:root.is-mobile .btn {
+  min-height: 44px;
+}
+:root.is-mobile .btn-icon {
+  width: 44px;
+  height: 44px;
+}
+:root.is-mobile .field {
+  min-height: 44px;
+  font-size: 16px;
+}
+:root.is-mobile .menu-item {
+  min-height: 44px;
+}
+:root.is-mobile .tab {
+  min-height: 40px;
+  white-space: nowrap;
+}
+:root.is-mobile .group .group-hover\:opacity-100 {
+  opacity: 1;
+}
+:root.is-mobile .group .group-hover\:pointer-events-auto {
+  pointer-events: auto;
+}
+:root.is-mobile .group .group-hover\:translate-y-0 {
+  --tw-translate-y: 0;
+}
+/* Waagerecht wischbare Leisten (Reiter, Filter-Chips) ohne sichtbaren Balken. */
+:root.is-mobile .mobile-scroll-x {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+:root.is-mobile .mobile-scroll-x::-webkit-scrollbar {
+  display: none;
 }

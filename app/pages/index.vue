@@ -16,6 +16,15 @@ const events = useEventsStore()
 const addingServer = ref(false)
 const ready = ref(false)
 const lamp = ref<HTMLElement | null>(null)
+// Am Handy (noch) kein Spielstart: Spielen/Beitreten verschwinden, die Instanz bleibt erreichbar.
+const canLaunch = computed(() => platformCaps.value.gameLaunch)
+const mobile = mobileUi
+const news = ref<{ refresh: () => Promise<void> } | null>(null)
+
+/** Handy: „Zum Aktualisieren ziehen“ – Neuigkeiten, Instanzen und Server-Status neu laden. */
+async function refreshAll() {
+  await Promise.allSettled([news.value?.refresh(), instances.load(), servers.load()])
+}
 
 // Die Instanzliste ist nach „zuletzt gespielt“ sortiert.
 const featured = computed<Instance | null>(() => instances.items[0] ?? null)
@@ -29,6 +38,8 @@ const CARD_MIN = 240
 const ADD_TILE = 176
 const GAP = 12
 const shownQuick = computed(() => {
+  // Handy: alle als wischbare Reihe.
+  if (mobile.value) return quick.value
   if (!stripWidth.value) return quick.value.slice(0, 3)
   const fit = Math.floor((stripWidth.value - ADD_TILE) / (CARD_MIN + GAP))
   return quick.value.slice(0, Math.max(1, fit))
@@ -91,6 +102,7 @@ function play(instance: Instance) {
 
 <template>
   <div class="pb-10">
+    <PullToRefresh :refresh="refreshAll" />
     <!-- Bühne: Redstone-Schaltung, darüber die zuletzt gespielte Instanz. -->
     <section
       class="hero relative isolate overflow-hidden"
@@ -103,7 +115,7 @@ function play(instance: Instance) {
       </RedstoneScene>
       <div v-if="events.halloween" class="scrim" />
 
-      <div class="relative flex h-full flex-col justify-between gap-6 px-8 pt-7 pb-8">
+      <div class="relative flex h-full flex-col justify-between gap-6 px-8 pt-7 pb-8 mobile:gap-5 mobile:px-4 mobile:pt-5 mobile:pb-6">
         <div class="flex items-start justify-between gap-4">
           <p class="display text-base text-base-200">{{ greeting }}</p>
           <span v-if="game?.phase === 'running'" class="badge bg-lamp-400 text-base-950">
@@ -111,30 +123,30 @@ function play(instance: Instance) {
           </span>
         </div>
 
-        <div v-if="!ready" class="flex items-end gap-6">
-          <div class="skeleton size-24 rounded-xl" />
-          <div class="flex-1 space-y-3"><div class="skeleton h-12 w-96" /><div class="skeleton h-4 w-72" /></div>
-          <div class="skeleton h-14 w-72" />
+        <div v-if="!ready" class="flex items-end gap-6 mobile:flex-wrap mobile:gap-4">
+          <div class="skeleton size-24 rounded-xl mobile:size-16" />
+          <div class="flex-1 space-y-3"><div class="skeleton h-12 w-96 mobile:h-8 mobile:w-full" /><div class="skeleton h-4 w-72 mobile:w-40" /></div>
+          <div class="skeleton h-14 w-72 mobile:w-full" />
         </div>
 
-        <div v-else-if="featured" class="flex flex-wrap items-end gap-x-6 gap-y-5">
+        <div v-else-if="featured" class="flex flex-wrap items-end gap-x-6 gap-y-5 mobile:items-center mobile:gap-x-4 mobile:gap-y-4">
           <NuxtLink
             :to="`/instances/${featured.id}`"
             class="icon-frame shrink-0 outline-none"
             tabindex="-1"
             aria-hidden="true"
           >
-            <InstanceIcon :instance="featured" :size="96" />
+            <InstanceIcon :instance="featured" :size="mobile ? 64 : 96" />
           </NuxtLink>
 
-          <div class="min-w-64 flex-1">
+          <div class="min-w-64 flex-1 mobile:min-w-0">
             <NuxtLink
               :to="`/instances/${featured.id}`"
-              class="hero-title display block truncate text-6xl leading-[1.05] text-base-50 transition-colors hover:text-redstone-300"
+              class="hero-title display block truncate text-6xl leading-[1.05] text-base-50 transition-colors hover:text-redstone-300 mobile:line-clamp-2 mobile:text-3xl mobile:whitespace-normal"
             >
               {{ featured.name }}
             </NuxtLink>
-            <p class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-base-200">
+            <p class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-base-200 mobile:mt-2 mobile:gap-x-3 mobile:text-xs">
               <span class="flex items-center gap-2">
                 <span class="size-2.5" :style="{ background: loaderColors[featured.loader.kind] }" />
                 <span><span class="font-mono text-base-50">{{ featured.gameVersion }}</span> {{ loaderLabels[featured.loader.kind] }}</span>
@@ -144,9 +156,18 @@ function play(instance: Instance) {
             </p>
           </div>
 
-          <div ref="lamp" class="flex w-full items-center gap-2 sm:w-80">
+          <div ref="lamp" class="flex w-full items-center gap-2 sm:w-80 mobile:w-full">
             <PlayButton :instance-id="featured.id" large />
             <NuxtLink
+              v-if="!canLaunch"
+              :to="`/instances/${featured.id}`"
+              class="btn btn-ghost h-12 flex-1 bg-base-900/85 text-base backdrop-blur"
+            >
+              {{ t('home.openInstance') }}
+              <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </NuxtLink>
+            <NuxtLink
+              v-else
               :to="`/instances/${featured.id}`"
               class="btn-icon pixel-corners size-14 bg-base-900/85 backdrop-blur"
               style="--notch: 3px"
@@ -161,12 +182,12 @@ function play(instance: Instance) {
 
         <div v-else class="flex flex-wrap items-end gap-x-8 gap-y-5">
           <div class="min-w-0 flex-1">
-            <h1 class="display text-6xl leading-[1.05] text-base-50">{{ t('home.empty.title') }}</h1>
+            <h1 class="display text-6xl leading-[1.05] text-base-50 mobile:text-4xl">{{ t('home.empty.title') }}</h1>
             <p class="mt-3 max-w-md text-sm text-base-200">
               {{ t('home.empty.text') }}
             </p>
           </div>
-          <div ref="lamp" class="flex shrink-0 flex-wrap gap-3">
+          <div ref="lamp" class="flex shrink-0 flex-wrap gap-3 mobile:w-full mobile:[&>*]:flex-1">
             <button class="btn btn-primary h-12 px-6 text-base" @click="ui.creating = true">{{ t('home.empty.create') }}</button>
             <NuxtLink :to="{ path: '/browse', query: { kind: 'modpack' } }" class="btn btn-ghost h-12 px-6 text-base">{{ t('home.empty.modpacks') }}</NuxtLink>
           </div>
@@ -174,21 +195,21 @@ function play(instance: Instance) {
       </div>
     </section>
 
-    <div class="space-y-10 px-8">
+    <div class="space-y-10 px-8 mobile:space-y-8 mobile:px-4">
       <!-- Neuestes Update als Blog-Karte (Banner aus der Redstone-Szene). -->
       <UpdateNewsCard />
 
       <!-- Weiterspielen: breite Banner-Kacheln, am Ende die Kachel für Neues. -->
       <section v-if="ready && featured" aria-labelledby="continue-heading">
-        <div class="mb-3 flex items-end justify-between gap-4">
+        <div class="mb-3 flex items-end justify-between gap-4 mobile:items-center">
           <h2 id="continue-heading" class="heading">{{ t('home.continue.title') }}</h2>
           <div class="flex items-center gap-4 text-xs text-base-400">
-            <span v-if="showPlayTime && totalSeconds >= 60">{{ t('home.continue.totalPlayed', { time: formatPlayTime(totalSeconds) }) }}</span>
-            <NuxtLink to="/instances" class="hover:text-base-50">{{ t('home.continue.toLibrary') }}</NuxtLink>
+            <span v-if="showPlayTime && totalSeconds >= 60" class="mobile:hidden">{{ t('home.continue.totalPlayed', { time: formatPlayTime(totalSeconds) }) }}</span>
+            <NuxtLink to="/instances" class="hover:text-base-50 mobile:-my-3 mobile:py-3">{{ t('home.continue.toLibrary') }}</NuxtLink>
           </div>
         </div>
 
-        <ul ref="strip" class="strip">
+        <ul ref="strip" class="strip mobile:-mx-4 mobile:snap-x mobile:snap-mandatory mobile:overflow-x-auto mobile:px-4 mobile:pb-1 mobile-scroll-x">
           <li v-for="i in shownQuick" :key="i.id" class="strip-card">
             <article class="tile group card relative h-full overflow-hidden" :class="{ 'tile-live': games.state(i.id).phase !== 'idle' }">
               <NuxtLink :to="`/instances/${i.id}`" class="block outline-none" :aria-label="t('nav.openNamed', { name: i.name })">
@@ -204,6 +225,7 @@ function play(instance: Instance) {
                 </div>
               </NuxtLink>
               <button
+                v-if="canLaunch"
                 class="tile-play pixel-corners"
                 style="--notch: 3px"
                 :class="{ 'tile-play-on': games.state(i.id).phase !== 'idle' }"
@@ -261,18 +283,18 @@ function play(instance: Instance) {
                 <span class="block truncate text-xs text-base-400">{{ games.state(i.id).phase === 'preparing' ? t('play.preparing') : t('common.status.running') }}</span>
               </span>
             </NuxtLink>
-            <div class="w-36 shrink-0"><PlayButton :instance-id="i.id" /></div>
+            <div v-if="canLaunch" class="w-36 shrink-0"><PlayButton :instance-id="i.id" /></div>
           </li>
         </ul>
       </section>
 
       <div class="lower">
-        <component :is="NewsFeed" v-if="NewsFeed" class="@container" />
+        <component :is="NewsFeed" v-if="NewsFeed" ref="news" class="@container" />
 
         <section aria-labelledby="servers-heading">
           <div class="mb-3 flex items-end justify-between gap-4">
             <h2 id="servers-heading" class="heading">{{ t('nav.servers') }}</h2>
-            <NuxtLink v-if="servers.items.length" to="/servers" class="text-xs text-base-400 hover:text-base-50">{{ t('home.servers.manageAll') }}</NuxtLink>
+            <NuxtLink v-if="servers.items.length" to="/servers" class="text-xs text-base-400 hover:text-base-50 mobile:-my-3 mobile:py-3">{{ t('home.servers.manageAll') }}</NuxtLink>
           </div>
 
           <div v-if="!ready" class="servers">
@@ -404,6 +426,29 @@ function play(instance: Instance) {
   display: grid;
   gap: 0.5rem;
   grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
+}
+/*
+ * Handy: Bühne so hoch wie ihr Inhalt, „Weiterspielen“ als wischbare Reihe fester
+ * Kacheln, Server untereinander; Spielen-Knopf ohne Hover immer sichtbar.
+ */
+:root.is-mobile .hero {
+  height: auto;
+  margin-bottom: 1rem;
+}
+:root.is-mobile .strip-card,
+:root.is-mobile .strip-add {
+  flex: 0 0 15rem;
+  scroll-snap-align: start;
+}
+:root.is-mobile .strip-add,
+:root.is-mobile .strip-card:has(.add-tile) {
+  flex-basis: 10.5rem;
+}
+:root.is-mobile .servers {
+  grid-template-columns: minmax(0, 1fr);
+}
+:root.is-mobile .tile-play {
+  opacity: 1;
 }
 @media (min-width: 1500px) {
   .lower {

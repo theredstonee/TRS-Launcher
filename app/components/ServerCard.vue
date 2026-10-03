@@ -5,6 +5,8 @@ const props = defineProps<{ server: Server; joinDisabled?: boolean; joinHint?: s
 const emit = defineEmits<{ join: [server: Server]; edit: [server: Server] }>()
 
 const servers = useServersStore()
+// Beitreten startet das Spiel – am Handy (noch) nicht.
+const canLaunch = computed(() => platformCaps.value.gameLaunch)
 const status = computed(() => servers.statuses[props.server.id])
 
 // Das Backend lässt nur geprüfte PNG-Data-URLs durch; hier zur Sicherheit noch einmal.
@@ -36,7 +38,7 @@ const pingClass = computed(() => {
     <div class="min-w-0 flex-1">
       <div class="flex items-baseline gap-2">
         <h3 class="truncate text-sm font-medium">{{ server.name }}</h3>
-        <span v-if="!compact" class="truncate font-mono text-[11px] text-base-600">{{ server.address }}</span>
+        <span v-if="!compact" class="truncate font-mono text-[11px] text-base-600 mobile:hidden">{{ server.address }}</span>
       </div>
       <template v-if="status === undefined">
         <div class="skeleton mt-1.5 h-3 w-40" />
@@ -53,10 +55,10 @@ const pingClass = computed(() => {
     </div>
 
     <div class="flex shrink-0 items-center gap-1.5">
-      <button class="btn btn-primary px-3 py-1.5 text-xs" :disabled="joinDisabled" :title="joinHint" @click="emit('join', server)">
+      <button v-if="canLaunch" class="btn btn-primary px-3 py-1.5 text-xs" :disabled="joinDisabled" :title="joinHint" @click="emit('join', server)">
         {{ t('servers.card.join') }}
       </button>
-      <button v-if="!compact" class="btn btn-ghost px-2 py-1.5" :title="t('common.actions.edit')" :aria-label="t('common.actions.edit')" @click="emit('edit', server)">
+      <button v-if="!compact" class="btn btn-ghost px-2 py-1.5 mobile:w-11" :title="t('common.actions.edit')" :aria-label="t('common.actions.edit')" @click="emit('edit', server)">
         <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4" /></svg>
       </button>
     </div>

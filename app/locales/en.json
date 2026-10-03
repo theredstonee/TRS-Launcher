@@ -5414,5 +5414,19 @@
     "logs": "Help with logs",
     "java": "Java guide",
     "linux": "Linux guide"
+  },
+  "mobile": {
+    "more": "More",
+    "accounts": "Accounts",
+    "import": "Import",
+    "help": "Help",
+    "pullToRefresh": "Pull to refresh",
+    "accountsPage": {
+      "browser": "Sign in via browser",
+      "openPage": "Copy code & open sign-in page"
+    },
+    "browse": {
+      "showResults": "Show {count} result | Show {count} results"
+    }
   }
 }

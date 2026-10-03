@@ -26,7 +26,21 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('pointerdown', onDocPointer)
   document.removeEventListener('keydown', onDocKey)
+  if (overlayId !== null) removeOverlay(overlayId)
 })
+
+// Handy: Zurück-Taste schließt das offene Panel.
+let overlayId: number | null = null
+watch(
+  () => tasks.panelOpen,
+  (open) => {
+    if (open && overlayId === null) overlayId = pushOverlay(() => close(false))
+    else if (!open && overlayId !== null) {
+      removeOverlay(overlayId)
+      overlayId = null
+    }
+  },
+)
 
 /** Launcher-Update zählt als Aufgabe, gehört aber dem Updater-Store. */
 const updating = computed(() => updater.phase === 'downloading')
@@ -175,7 +189,7 @@ function open(id: string) {
 
     <button
       ref="trigger"
-      class="tasks-btn"
+      class="tasks-btn mobile:size-11"
       :class="{ 'tasks-btn-open': tasks.panelOpen, 'text-redstone-300': count > 0 }"
       :aria-expanded="tasks.panelOpen"
       aria-controls="tasks-panel"
@@ -191,7 +205,7 @@ function open(id: string) {
       v-if="tasks.panelOpen"
       id="tasks-panel"
       ref="panel"
-      class="menu top-full right-0 mt-1.5 flex max-h-[min(34rem,calc(100vh-4rem))] w-[23rem] animate-pop flex-col p-0 outline-none"
+      class="menu top-full right-0 mt-1.5 flex max-h-[min(34rem,calc(100vh-4rem))] w-[23rem] animate-pop flex-col p-0 outline-none mobile:fixed mobile:top-[calc(var(--safe-top)+3.25rem)] mobile:right-2 mobile:left-2 mobile:mt-0 mobile:max-h-[calc(100dvh-var(--safe-top)-var(--safe-bottom)-8rem)] mobile:w-auto"
       role="dialog"
       :aria-label="t('tasks.title')"
       tabindex="-1"
@@ -388,7 +402,7 @@ function open(id: string) {
   @apply bg-base-800 ring-1 ring-redstone-600/60;
 }
 .row-btn {
-  @apply grid size-6 shrink-0 place-items-center rounded-md text-base-400 transition-colors hover:bg-base-700 hover:text-base-50 disabled:opacity-40;
+  @apply grid size-6 shrink-0 place-items-center rounded-md text-base-400 transition-colors hover:bg-base-700 hover:text-base-50 disabled:opacity-40 mobile:size-10;
 }
 .kind-icon {
   @apply grid size-9 shrink-0 place-items-center rounded-lg bg-base-800 text-base-200 ring-1 ring-white/5;

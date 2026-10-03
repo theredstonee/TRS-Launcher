@@ -358,14 +358,22 @@ export interface VersionManifest {
 
 /** Was es auf diesem System gibt (aus `trs_core::platform::capabilities`). */
 export interface PlatformCapabilities {
-  platform: 'windows' | 'linux' | 'macos'
+  platform: 'windows' | 'linux' | 'macos' | 'android' | 'ios'
   /** Windows-Firewall-Freigabe für die Java-Runtimes. */
   firewall: boolean
   trash: boolean
   /** Spiel-Clips aufnehmen (derzeit nur Windows). */
   clips: boolean
-  /** `auto` = eingebauter Updater, `package` = Paketverwaltung (.deb/.rpm/AUR), `flatpak`. */
-  updates: 'auto' | 'package' | 'flatpak'
+  /** `auto` = eingebauter Updater, `package` = Paketverwaltung (.deb/.rpm/AUR), `flatpak`, `mobile` = App-Update am Handy. */
+  updates: 'auto' | 'package' | 'flatpak' | 'mobile'
+  /** Minecraft starten (am Handy noch nicht). */
+  gameLaunch: boolean
+  /** Java suchen/herunterladen und einstellen. */
+  java: boolean
+  /** Eigene Fenstersteuerung (Titelleiste mit Minimieren/Schließen). */
+  windowControls: boolean
+  /** Push-Benachrichtigungen, wenn die App geschlossen ist. */
+  pushSupported: boolean
 }
 
 export interface AppInfo {

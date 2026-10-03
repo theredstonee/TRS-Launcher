@@ -14,7 +14,7 @@ import {
 // Eine Nachricht im Verlauf: Blase (eigene rechts in Akzentfarbe), Antwort-
 // Zitat, Text mit sicheren Links, Bilder, Server-Einladung, Reaktionen,
 // „bearbeitet“, gelöscht/ausgeblendet und der Sendestatus eigener Nachrichten.
-// Aktionen (Antworten, Reagieren, Menü) erscheinen beim Drüberfahren.
+// Aktionen (Antworten, Reagieren, Menü) erscheinen beim Drüberfahren, am Handy per langem Druck.
 const props = defineProps<{
   message: LocalMessage
   conversation: ChatConversation
@@ -83,12 +83,18 @@ function nameColor(uuid: string | undefined): string {
 }
 
 const images = computed(() => (m.value.local ? m.value.local.previews : m.value.attachments.map((a) => attachmentUrl(a.id, true))))
-/** Feste Spalten (Kacheln 7,5 rem), damit die Blase genau so breit wird wie das Raster. */
+const mobile = mobileUi
+/** Feste Spalten (Kacheln 7,5 rem, am Handy 5,5 rem), damit die Blase genau so breit wird wie das Raster. */
 const gridStyle = computed(() => {
   const n = images.value.length
   if (n <= 1) return {}
   const cols = n === 2 || n === 4 ? 2 : 3
-  return { gridTemplateColumns: `repeat(${cols}, 7.5rem)` }
+  return { gridTemplateColumns: `repeat(${cols}, ${mobile.value ? 5.5 : 7.5}rem)` }
+})
+// Handy: kein Hover – langer Druck auf die Nachricht öffnet das Aktions-Sheet (auch mit Reaktionen).
+const longPress = useLongPress((e) => {
+  if (m.value.local || m.value.kind === 'system') return
+  emit('menu', e)
 })
 </script>
 
@@ -104,6 +110,11 @@ const gridStyle = computed(() => {
     :class="[mine ? 'flex-row-reverse' : '', first ? 'mt-3' : 'mt-0.5', highlighted ? 'msg-highlight' : '']"
     :data-message-id="m.id"
     @contextmenu.prevent="emit('menu', $event)"
+    @pointerdown="longPress.pointerdown"
+    @pointermove="longPress.pointermove"
+    @pointerup="longPress.pointerup"
+    @pointercancel="longPress.pointercancel"
+    @click.capture="longPress.click"
   >
     <!-- Gesicht in Gruppen (nur am Anfang einer Gruppe) -->
     <div v-if="group && !mine" class="w-7 shrink-0">
@@ -112,7 +123,7 @@ const gridStyle = computed(() => {
       </span>
     </div>
 
-    <div class="flex max-w-[72%] min-w-0 flex-col" :class="mine ? 'items-end' : 'items-start'">
+    <div class="flex max-w-[72%] min-w-0 flex-col mobile:max-w-[84%]" :class="mine ? 'items-end' : 'items-start'">
       <p v-if="first" class="mb-1 flex items-baseline gap-2 px-1 text-[11px] text-base-400" :class="mine ? 'flex-row-reverse' : ''">
         <span v-if="group && !mine && m.sender" class="font-semibold" :class="nameColor(m.sender.uuid)">{{ m.sender.name }}</span>
         <span>{{ messageTime(m.createdAt) }}</span>
@@ -172,7 +183,7 @@ const gridStyle = computed(() => {
         </div>
 
         <!-- Aktionen beim Drüberfahren -->
-        <div v-if="canAct" class="msg-tools flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover/msg:opacity-100 focus-within:opacity-100">
+        <div v-if="canAct" class="msg-tools flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover/msg:opacity-100 focus-within:opacity-100 mobile:hidden">
           <div class="relative">
             <button class="tool" :aria-label="t('social.message.react')" :title="t('social.message.react')" @click="pickerOpen = !pickerOpen">
               <SocialIcon name="smile" class="size-4" />

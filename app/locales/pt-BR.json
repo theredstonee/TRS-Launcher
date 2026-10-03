@@ -5414,5 +5414,19 @@
     "logs": "Ajuda com os logs",
     "java": "Guia do Java",
     "linux": "Guia para Linux"
+  },
+  "mobile": {
+    "more": "Mais",
+    "accounts": "Contas",
+    "import": "Importar",
+    "help": "Ajuda",
+    "pullToRefresh": "Puxe para atualizar",
+    "accountsPage": {
+      "browser": "Entrar pelo navegador",
+      "openPage": "Copiar código e abrir a página de login"
+    },
+    "browse": {
+      "showResults": "Mostrar {count} resultado | Mostrar {count} resultados"
+    }
   }
 }

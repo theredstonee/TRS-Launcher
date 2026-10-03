@@ -5414,5 +5414,19 @@
     "logs": "Aide sur les journaux",
     "java": "Guide Java",
     "linux": "Guide Linux"
+  },
+  "mobile": {
+    "more": "Plus",
+    "accounts": "Comptes",
+    "import": "Importer",
+    "help": "Aide",
+    "pullToRefresh": "Tirer pour actualiser",
+    "accountsPage": {
+      "browser": "Se connecter via le navigateur",
+      "openPage": "Copier le code et ouvrir la page de connexion"
+    },
+    "browse": {
+      "showResults": "Afficher {count} résultat | Afficher {count} résultats"
+    }
   }
 }

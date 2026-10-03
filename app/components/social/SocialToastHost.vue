@@ -70,12 +70,13 @@ function cancelReply(toast: SocialToast) {
 </script>
 
 <template>
-  <div class="pointer-events-none fixed z-[65] flex w-80 flex-col gap-2" :class="cornerClasses(toasts.prefs.corner)" aria-live="polite" data-testid="social-toasts">
+  <!-- Handy: immer oben unter der Kopfzeile, über die ganze Breite (die Ecke gilt nur am Desktop). -->
+  <div class="pointer-events-none fixed z-[65] flex w-80 flex-col gap-2 mobile:top-[calc(var(--safe-top)+3.25rem)] mobile:right-2 mobile:bottom-auto mobile:left-2 mobile:w-auto mobile:flex-col mobile:items-stretch" :class="cornerClasses(toasts.prefs.corner)" aria-live="polite" data-testid="social-toasts">
     <TransitionGroup name="social-toast">
       <div
         v-for="toast in toasts.items"
         :key="toast.id"
-        class="social-toast pointer-events-auto w-80 overflow-hidden rounded-xl"
+        class="social-toast pointer-events-auto w-80 overflow-hidden rounded-xl mobile:w-auto"
         role="status"
         @mouseenter="toasts.hold(toast.id, true)"
         @mouseleave="replying !== toast.id && toasts.hold(toast.id, false)"

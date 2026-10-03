@@ -12,16 +12,21 @@ const toasts = useToasts()
 const openDocs = useDocs()
 
 // Namen und Gruppen sind Getter in sections.ts – sie folgen der eingestellten Sprache.
-const sections: ShellSection[] = appSettingsSections
+// Was es auf diesem System nicht gibt (Clips, Java, Spiel-Standards am Handy), fehlt auch hier.
+const sectionList = useAppSettingsSections()
+const sections = computed<ShellSection[]>(() => sectionList.value)
 const active = computed({
-  get: () => (appSettingsSections.some((s) => s.key === store.dialog) ? store.dialog! : 'appearance'),
+  get: () => (sections.value.some((s) => s.key === store.dialog) ? store.dialog! : 'appearance'),
   set: (v: string) => (store.dialog = v),
 })
 
 const form = ref<Settings | null>(null)
 const info = ref<AppInfo | null>(null)
 /** Was es auf diesem System gibt – bis `appInfo` da ist, aus dem User-Agent geschätzt. */
-const caps = computed(() => info.value?.capabilities ?? defaultCapabilities())
+const caps = computed(() => info.value?.capabilities ?? platformCaps.value)
+/** Handy: Seitenleiste und Ordner im Datei-Explorer gibt es dort nicht. */
+const mobile = mobileUi
+const mobileOs = computed(() => isMobileOs(caps.value.platform))
 const updatesLine = computed(() => {
   if (caps.value.updates === 'package') return t('settings.footer.updatesPackage')
   if (caps.value.updates === 'flatpak') return t('settings.footer.updatesFlatpak')
@@ -326,7 +331,7 @@ async function allowFirewall() {
     <!-- Aussehen --------------------------------------------------------------- -->
     <div v-else-if="active === 'appearance'">
       <h3 class="section-heading">{{ t('settings.appearance.colorScheme') }}</h3>
-      <div class="grid grid-cols-4 gap-3 border-b border-base-800 pb-5">
+      <div class="grid grid-cols-4 gap-3 border-b border-base-800 pb-5 mobile:grid-cols-2">
         <button
           v-for="theme in themes"
           :key="theme.key"
@@ -351,11 +356,11 @@ async function allowFirewall() {
       </div>
 
       <SettingRow :title="t('settings.appearance.accentTitle')" :description="t('settings.appearance.accentDescription')">
-        <div class="flex gap-2">
+        <div class="flex gap-2 mobile:flex-wrap">
           <button
             v-for="a in accents"
             :key="a.key"
-            class="size-7 rounded-full ring-offset-2 ring-offset-base-900 transition-transform hover:scale-110"
+            class="size-7 rounded-full ring-offset-2 ring-offset-base-900 transition-transform hover:scale-110 mobile:size-9"
             :class="form.ui.accent === a.key ? 'ring-2 ring-base-50' : ''"
             :style="{ background: a.color }"
             :title="t(`settings.appearance.accents.${a.key}`)"
@@ -372,7 +377,7 @@ async function allowFirewall() {
         <ToggleSwitch v-model="form.ui.animatedBackground" :label="t('settings.appearance.animatedBackgroundTitle')" />
       </SettingRow>
       <SettingRow :title="t('settings.appearance.motionTitle')" :description="t('settings.appearance.motionDescription')">
-        <select v-model="form.ui.motion" class="field w-52 py-1.5" :aria-label="t('settings.appearance.motionTitle')">
+        <select v-model="form.ui.motion" class="field w-52 py-1.5 mobile:w-40" :aria-label="t('settings.appearance.motionTitle')">
           <option v-for="mode in motionModes" :key="mode" :value="mode">{{ t(`settings.appearance.motionModes.${mode}`) }}</option>
         </select>
       </SettingRow>
@@ -390,19 +395,21 @@ async function allowFirewall() {
       <SettingRow :title="t('settings.features.worldsTabTitle')" :description="t('settings.features.worldsTabDescription')">
         <ToggleSwitch v-model="form.ui.worldsTab" :label="t('settings.features.worldsTabTitle')" />
       </SettingRow>
-      <h3 class="section-heading mt-6">{{ t('settings.features.sidebar') }}</h3>
-      <SettingRow :title="t('settings.features.sidebarRecentTitle')" :description="t('settings.features.sidebarRecentDescription')">
-        <ToggleSwitch v-model="form.ui.sidebarRecent" :label="t('settings.features.sidebarRecentTitle')" />
-      </SettingRow>
-      <SettingRow :title="t('settings.features.sidebarAccountTitle')" :description="t('settings.features.sidebarAccountDescription')">
-        <ToggleSwitch v-model="form.ui.sidebarAccount" :label="t('settings.features.sidebarAccountTitle')" />
-      </SettingRow>
+      <template v-if="!mobile">
+        <h3 class="section-heading mt-6">{{ t('settings.features.sidebar') }}</h3>
+        <SettingRow :title="t('settings.features.sidebarRecentTitle')" :description="t('settings.features.sidebarRecentDescription')">
+          <ToggleSwitch v-model="form.ui.sidebarRecent" :label="t('settings.features.sidebarRecentTitle')" />
+        </SettingRow>
+        <SettingRow :title="t('settings.features.sidebarAccountTitle')" :description="t('settings.features.sidebarAccountDescription')">
+          <ToggleSwitch v-model="form.ui.sidebarAccount" :label="t('settings.features.sidebarAccountTitle')" />
+        </SettingRow>
+      </template>
     </div>
 
     <!-- Verhalten -------------------------------------------------------------- -->
     <div v-else-if="active === 'behavior'">
       <h3 class="section-heading">{{ t('settings.behavior.title') }}</h3>
-      <SettingRow :title="t('settings.behavior.closeOnLaunchTitle')" :description="t('settings.behavior.closeOnLaunchDescription')">
+      <SettingRow v-if="caps.gameLaunch" :title="t('settings.behavior.closeOnLaunchTitle')" :description="t('settings.behavior.closeOnLaunchDescription')">
         <ToggleSwitch v-model="form.closeOnLaunch" :label="t('settings.behavior.closeOnLaunchTitle')" />
       </SettingRow>
       <SettingRow :title="t('settings.behavior.compactLibraryTitle')" :description="t('settings.behavior.compactLibraryDescription')">
@@ -455,7 +462,7 @@ async function allowFirewall() {
       <SettingRow :title="t('settings.privacy.logUploadTitle')" :description="t('settings.privacy.logUploadDescription')">
         <ToggleSwitch v-model="form.allowLogUpload" :label="t('settings.privacy.logUploadTitle')" />
       </SettingRow>
-      <SettingRow :title="t('settings.privacy.discordTitle')" :description="t('settings.privacy.discordDescription')">
+      <SettingRow v-if="caps.gameLaunch" :title="t('settings.privacy.discordTitle')" :description="t('settings.privacy.discordDescription')">
         <ToggleSwitch v-model="form.discordPresence" :label="t('settings.privacy.discordTitle')" />
       </SettingRow>
       <SettingRow :title="t('settings.privacy.telemetryTitle')" :description="t('settings.privacy.telemetryDescription')">
@@ -610,17 +617,18 @@ async function allowFirewall() {
         <div class="flex h-3 overflow-hidden rounded-full bg-base-800">
           <div v-for="b in bars" :key="b.key" :class="b.color" :style="{ width: `${b.share}%` }" />
         </div>
-        <ul class="mt-3 grid grid-cols-3 gap-3 text-xs">
+        <ul class="mt-3 grid grid-cols-3 gap-3 text-xs mobile:grid-cols-2">
           <li v-for="b in bars" :key="b.key" class="flex items-start gap-2">
             <span class="mt-1 size-2.5 shrink-0 rounded-full" :class="b.color" />
             <span><span class="block text-base-400">{{ b.label }}</span><span class="font-mono text-sm text-base-50">{{ formatBytes(b.bytes) }}</span></span>
           </li>
         </ul>
       </div>
-      <SettingRow :title="t('settings.storage.verifyTitle')" :description="t('settings.storage.verifyDescription')">
+      <SettingRow v-if="caps.gameLaunch" :title="t('settings.storage.verifyTitle')" :description="t('settings.storage.verifyDescription')">
         <button class="btn btn-ghost" :disabled="verifying" @click="verify">{{ verifying ? t('settings.storage.verifying') : t('settings.storage.verifyTitle') }}</button>
       </SettingRow>
       <SettingRow
+        v-if="caps.gameLaunch"
         :title="t('settings.storage.cleanTitle')"
         :description="stats ? t('settings.storage.cleanDescription', { size: formatBytes(stats.unused) }, stats.unusedVersions) : t('settings.storage.cleanDescriptionEmpty')"
         danger
@@ -633,11 +641,11 @@ async function allowFirewall() {
         <template #description>
           <p class="mt-0.5 truncate font-mono text-xs text-base-400" :title="info?.dataDir">{{ info?.dataDir }}</p>
         </template>
-        <button class="btn btn-ghost" @click="openDataDir">{{ t('common.actions.openFolder') }}</button>
+        <button v-if="!mobileOs" class="btn btn-ghost" @click="openDataDir">{{ t('common.actions.openFolder') }}</button>
       </SettingRow>
       <!-- Linux: Anmeldedaten im Schlüsselbund oder – ohne Schlüsselbund – nur per Dateirechte geschützt. -->
       <SettingRow
-        v-if="info && (info.tokenProtection === 'keyring' || info.tokenProtection === 'file')"
+        v-if="info && !mobileOs && (info.tokenProtection === 'keyring' || info.tokenProtection === 'file')"
         :title="t('settings.storage.credentialsTitle')"
         :description="info.tokenProtection === 'keyring' ? t('settings.storage.credentialsKeyring') : t('settings.storage.credentialsFile')"
       >

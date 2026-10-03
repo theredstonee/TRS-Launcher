@@ -150,6 +150,11 @@ async function sendCapeReport() {
   })
 }
 
+/** Handy: Zum Aktualisieren ziehen. */
+function refreshAll() {
+  return Promise.allSettled([trs.loadFriends(), trs.loadBlocked()])
+}
+
 function join(f: TrsFriend) {
   const server = f.presence?.game?.server
   if (server) void useJoinStore().request(server, f.presence?.game?.version ?? null)
@@ -157,14 +162,16 @@ function join(f: TrsFriend) {
 </script>
 
 <template>
-  <div class="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto lg:grid-cols-3 lg:overflow-hidden" data-testid="friends-panel">
+  <div class="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto lg:grid-cols-3 lg:overflow-hidden mobile:auto-rows-max mobile:gap-2" data-testid="friends-panel">
+    <!-- Handy: „Zum Aktualisieren ziehen“ lädt Freunde, Anfragen und Blockierte neu. -->
+    <PullToRefresh class="-mb-2" :refresh="refreshAll" />
     <!-- Freundesliste -->
     <section class="card flex min-h-0 flex-col">
       <h2 class="display flex items-center gap-2 border-b border-base-800 px-4 py-3 text-base text-base-50">
         {{ t('social.friends.list') }}
         <span v-if="trs.friends?.friends.length" class="text-xs text-base-400">{{ onlineCount }}/{{ trs.friends.friends.length }}</span>
       </h2>
-      <ul v-if="friends.length" class="min-h-0 flex-1 space-y-1.5 overflow-y-auto p-2" data-testid="friends-list">
+      <ul v-if="friends.length" class="min-h-0 flex-1 space-y-1.5 overflow-y-auto p-2 mobile:overflow-visible" data-testid="friends-list">
         <li v-for="f in friends" :key="f.uuid" class="rounded-lg bg-base-850 px-3 py-2">
           <div class="flex items-center gap-3">
             <button

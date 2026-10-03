@@ -92,12 +92,12 @@ async function submit() {
 
       <div>
         <span class="label">{{ t('common.labels.loader') }}</span>
-        <div class="grid grid-cols-5 gap-1.5">
+        <div class="grid grid-cols-5 gap-1.5 mobile:grid-cols-3">
           <button
             v-for="kind in loaderKinds"
             :key="kind"
             type="button"
-            class="rounded-md border px-1 py-2 text-xs font-medium transition-colors"
+            class="rounded-md border px-1 py-2 text-xs font-medium transition-colors mobile:min-h-11"
             :class="loaderKind === kind
               ? 'border-redstone-500 bg-redstone-900 text-base-50'
               : 'border-base-700 bg-base-900 text-base-400 hover:border-base-600 hover:text-base-50'"

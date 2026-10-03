@@ -80,7 +80,41 @@ function go(path: string) {
 }
 
 // --- Auswahl & Tastatur ---------------------------------------------------------
+// Handy: Tippen öffnet (bei laufender Auswahl: an-/abwählen), langer Druck zeigt die Aktionen als Sheet.
+const mobile = mobileUi
+let pressTimer: ReturnType<typeof setTimeout> | null = null
+let pressStart: { x: number; y: number } | null = null
+let pressFired = false
+function pressDown(entry: FileEntry, e: PointerEvent) {
+  if (!mobile.value || e.pointerType === 'mouse') return
+  pressFired = false
+  pressStart = { x: e.clientX, y: e.clientY }
+  pressTimer = setTimeout(() => {
+    pressFired = true
+    pressTimer = null
+    openMenu(e, entry)
+  }, LONG_PRESS_MS)
+}
+function pressMove(e: PointerEvent) {
+  if (pressStart && longPressCancelled(e.clientX - pressStart.x, e.clientY - pressStart.y)) pressEnd()
+}
+function pressEnd() {
+  if (pressTimer) clearTimeout(pressTimer)
+  pressTimer = null
+  pressStart = null
+}
+/** Nach langem Druck keine nachgeahmten Maus-Ereignisse – sie schlössen das gerade geöffnete Sheet. */
+function pressTouchEnd(e: TouchEvent) {
+  if (pressFired && e.cancelable) e.preventDefault()
+}
+
 function click(entry: FileEntry, e: MouseEvent) {
+  if (mobile.value) {
+    if (pressFired) pressFired = false
+    else if (selected.value.size) toggleCheck(entry)
+    else activate(entry)
+    return
+  }
   selected.value = nextSelection(selected.value, names.value, entry.name, anchor.value, { shift: e.shiftKey, toggle: e.ctrlKey || e.metaKey })
   if (!e.shiftKey) anchor.value = entry.name
   focused.value = entry.name
@@ -146,10 +180,16 @@ function openMenu(e: MouseEvent, entry: FileEntry | null) {
     selected.value = new Set([entry.name])
     anchor.value = entry.name
   }
+  // Am Handy kommt das Menü als Sheet – ohne Position.
+  if (mobile.value) {
+    menu.value = { x: 0, y: 0, entry }
+    return
+  }
   const box = (e.currentTarget as HTMLElement).closest('.file-browser')?.getBoundingClientRect()
   menu.value = { x: e.clientX - (box?.left ?? 0), y: e.clientY - (box?.top ?? 0), entry }
 }
 function closeMenu(e: MouseEvent) {
+  if (mobile.value) return
   if (!(e.target as HTMLElement | null)?.closest('[data-file-menu]')) menu.value = null
 }
 
@@ -355,7 +395,7 @@ const nameDialogTitle = computed(() => {
   <section class="file-browser card relative flex min-h-0 flex-1 flex-col overflow-hidden" :aria-label="t('files.title')" @contextmenu.self.prevent="openMenu($event, null)">
     <!-- Werkzeugleiste -->
     <div class="flex flex-wrap items-center gap-2 border-b border-base-800 px-3 py-2">
-      <nav class="flex min-w-0 flex-1 items-center gap-0.5 text-sm" :aria-label="t('files.breadcrumbs')">
+      <nav class="flex min-w-0 flex-1 items-center gap-0.5 text-sm mobile-scroll-x mobile:basis-full" :aria-label="t('files.breadcrumbs')">
         <button class="crumb" :class="{ 'crumb-on': atRoot }" :title="t('files.root')" @click="go('')">
           <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path :d="icons.home" /></svg>
           <span class="max-w-40 truncate">{{ instance.name }}</span>
@@ -368,9 +408,9 @@ const nameDialogTitle = computed(() => {
         </template>
       </nav>
 
-      <div class="relative w-44">
+      <div class="relative w-44 mobile:w-auto mobile:min-w-0 mobile:flex-1">
         <svg viewBox="0 0 24 24" class="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-base-400" fill="none" stroke="currentColor" stroke-width="2"><path :d="icons.search" /></svg>
-        <input v-model="query" class="field h-8 py-0 pl-8 text-xs" maxlength="100" :placeholder="t('files.filter')" :aria-label="t('files.filter')" spellcheck="false" @keydown.esc="query = ''" />
+        <input v-model="query" class="field h-8 py-0 pl-8 text-xs mobile:pl-9" maxlength="100" :placeholder="t('files.filter')" :aria-label="t('files.filter')" spellcheck="false" @keydown.esc="query = ''" />
       </div>
       <div class="flex items-center gap-1">
         <button class="btn-icon size-8" :title="t('common.actions.refresh')" :aria-label="t('common.actions.refresh')" :disabled="loading" @click="load(cwd, true)">
@@ -382,12 +422,12 @@ const nameDialogTitle = computed(() => {
         <button class="btn-icon size-8" :title="t('files.newFile')" :aria-label="t('files.newFile')" @click="startCreate('file')">
           <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6zM14 3v5h5M12 11v6M9 14h6" /></svg>
         </button>
-        <button class="btn-icon size-8" :title="t('common.actions.openFolder')" :aria-label="t('common.actions.openFolder')" @click="openCurrentDir">
+        <button v-if="!mobile" class="btn-icon size-8" :title="t('common.actions.openFolder')" :aria-label="t('common.actions.openFolder')" @click="openCurrentDir">
           <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-8 8M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>
         </button>
-        <button class="btn btn-primary h-8 px-3 py-0 text-xs" :disabled="busy" @click="upload">
-          <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 16V4m0 0L7 9m5-5 5 5M4 17v3h16v-3" /></svg>
-          {{ t('files.upload') }}
+        <button class="btn btn-primary h-8 px-3 py-0 text-xs mobile:w-11 mobile:px-0" :disabled="busy" :aria-label="t('files.upload')" @click="upload">
+          <svg viewBox="0 0 24 24" class="size-3.5 mobile:size-4" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 16V4m0 0L7 9m5-5 5 5M4 17v3h16v-3" /></svg>
+          <span class="mobile:hidden">{{ t('files.upload') }}</span>
         </button>
       </div>
     </div>
@@ -404,7 +444,7 @@ const nameDialogTitle = computed(() => {
     <div v-if="selection.length" class="flex flex-wrap items-center gap-2 border-b border-redstone-600/30 bg-redstone-900/25 px-3 py-1.5 text-xs">
       <span class="font-medium text-base-50">{{ t('files.selected', selection.length) }}</span>
       <button class="sel-btn" @click="openSelected">{{ t('common.actions.open') }}</button>
-      <button class="sel-btn" @click="reveal()">{{ t('files.reveal') }}</button>
+      <button v-if="!mobile" class="sel-btn" @click="reveal()">{{ t('files.reveal') }}</button>
       <button class="sel-btn" :disabled="selection.length !== 1" @click="startRename(selection[0]!)">{{ t('files.rename') }}</button>
       <button class="sel-btn text-redstone-300 hover:text-redstone-300" @click="confirmTrash = true">{{ t('files.trash') }}</button>
       <button class="ml-auto text-base-400 hover:text-base-50" @click="selected = new Set()">{{ t('files.clearSelection') }}</button>
@@ -421,13 +461,13 @@ const nameDialogTitle = computed(() => {
             <th class="border-b border-base-800 py-2" :aria-sort="ariaSort('name')">
               <button class="th-btn" @click="setSort('name')">{{ t('common.labels.name') }} {{ sortIcon('name') }}</button>
             </th>
-            <th class="w-28 border-b border-base-800 py-2 pr-6 text-right" :aria-sort="ariaSort('size')">
+            <th class="w-28 border-b border-base-800 py-2 pr-6 text-right mobile:w-20 mobile:pr-3" :aria-sort="ariaSort('size')">
               <button class="th-btn ml-auto" @click="setSort('size')">{{ t('files.size') }} {{ sortIcon('size') }}</button>
             </th>
             <th class="hidden w-36 border-b border-base-800 py-2 lg:table-cell" :aria-sort="ariaSort('created')">
               <button class="th-btn" @click="setSort('created')">{{ t('files.created') }} {{ sortIcon('created') }}</button>
             </th>
-            <th class="w-36 border-b border-base-800 py-2 pr-3" :aria-sort="ariaSort('modified')">
+            <th class="w-36 border-b border-base-800 py-2 pr-3 mobile:hidden" :aria-sort="ariaSort('modified')">
               <button class="th-btn" @click="setSort('modified')">{{ t('files.modified') }} {{ sortIcon('modified') }}</button>
             </th>
           </tr>
@@ -447,10 +487,15 @@ const nameDialogTitle = computed(() => {
             :class="{ 'file-row-on': selected.has(entry.name) }"
             @click="click(entry, $event)"
             @dblclick="activate(entry)"
+            @pointerdown="pressDown(entry, $event)"
+            @pointermove="pressMove"
+            @pointerup="pressEnd"
+            @pointercancel="pressEnd"
+            @touchend="pressTouchEnd"
             @focus="focused = entry.name"
             @contextmenu.prevent.stop="openMenu($event, entry)"
           >
-            <td class="py-1 pl-3" @click.stop>
+            <td class="py-1 pl-3 mobile:py-2.5" @click.stop>
               <input type="checkbox" class="fcheck" tabindex="-1" :checked="selected.has(entry.name)" :aria-label="t('files.selectOne', { name: entry.name })" @change="toggleCheck(entry)" />
             </td>
             <td class="py-1">
@@ -462,9 +507,9 @@ const nameDialogTitle = computed(() => {
                 <span v-if="knownLabel(kindOf(entry))" class="hidden shrink-0 truncate text-[11px] text-base-600 md:inline">{{ knownLabel(kindOf(entry)) }}</span>
               </div>
             </td>
-            <td class="py-1 pr-6 text-right font-mono text-xs whitespace-nowrap text-base-400 tabular-nums">{{ entry.dir ? '–' : formatBytes(entry.size) }}</td>
+            <td class="py-1 pr-6 text-right font-mono text-xs whitespace-nowrap text-base-400 tabular-nums mobile:pr-3">{{ entry.dir ? '–' : formatBytes(entry.size) }}</td>
             <td class="hidden py-1 text-xs whitespace-nowrap text-base-400 tabular-nums lg:table-cell">{{ when(entry.created) }}</td>
-            <td class="py-1 pr-3 text-xs whitespace-nowrap text-base-400 tabular-nums">{{ when(entry.modified) }}</td>
+            <td class="py-1 pr-3 text-xs whitespace-nowrap text-base-400 tabular-nums mobile:hidden">{{ when(entry.modified) }}</td>
           </tr>
         </tbody>
       </table>
@@ -489,7 +534,23 @@ const nameDialogTitle = computed(() => {
     </div>
 
     <!-- Kontextmenü -->
-    <div v-if="menu" data-file-menu class="menu" :style="{ left: `${menu.x}px`, top: `${menu.y}px` }" role="menu">
+    <MobileSheet v-if="mobile && menu" :title="menu.entry?.name ?? instance.name" @close="menu = null">
+      <div class="space-y-0.5">
+        <template v-if="menu.entry">
+          <button class="menu-item" @click="openSelected">{{ menu.entry.dir ? t('files.openFolder') : t('common.actions.open') }}</button>
+          <button class="menu-item" :disabled="selection.length !== 1" @click="startRename(menu.entry)">{{ t('files.rename') }}</button>
+          <button class="menu-item" @click="copyPath">{{ t('files.copyPath') }}</button>
+          <div class="my-1 border-t border-base-700" />
+          <button class="menu-item text-redstone-300" @click="menu = null; confirmTrash = true">{{ t('files.trash') }}</button>
+        </template>
+        <template v-else>
+          <button class="menu-item" @click="startCreate('folder')">{{ t('files.newFolder') }}</button>
+          <button class="menu-item" @click="startCreate('file')">{{ t('files.newFile') }}</button>
+          <button class="menu-item" @click="upload">{{ t('files.upload') }}</button>
+        </template>
+      </div>
+    </MobileSheet>
+    <div v-else-if="menu" data-file-menu class="menu" :style="{ left: `${menu.x}px`, top: `${menu.y}px` }" role="menu">
       <template v-if="menu.entry">
         <button class="menu-item" role="menuitem" @click="openSelected">{{ menu.entry.dir ? t('files.openFolder') : t('common.actions.open') }}</button>
         <button class="menu-item" role="menuitem" @click="reveal(menu.entry)">{{ t('files.reveal') }}</button>
@@ -548,6 +609,13 @@ const nameDialogTitle = computed(() => {
 }
 .th-btn {
   @apply flex items-center gap-1 font-semibold hover:text-base-50;
+}
+:root.is-mobile .sel-btn {
+  min-height: 2.25rem;
+  padding-inline: 0.625rem;
+}
+:root.is-mobile .crumb {
+  min-height: 2.5rem;
 }
 .sel-btn {
   @apply rounded px-2 py-0.5 text-base-200 transition-colors hover:bg-base-800 hover:text-base-50 disabled:opacity-40;

@@ -10,7 +10,8 @@ function act(toast: Toast) {
 </script>
 
 <template>
-  <TransitionGroup name="toast" tag="div" class="pointer-events-none fixed right-4 bottom-4 z-[60] flex w-80 flex-col gap-2" aria-live="polite">
+  <!-- Handy: über der Tab-Leiste und der Gestenleiste, über die ganze Breite. -->
+  <TransitionGroup name="toast" tag="div" class="pointer-events-none fixed right-4 bottom-4 z-[60] flex w-80 flex-col gap-2 mobile:right-3 mobile:bottom-[calc(var(--mobile-tabbar)+var(--safe-bottom)+0.75rem)] mobile:left-3 mobile:w-auto" aria-live="polite">
     <div
       v-for="toast in toasts.items"
       :key="toast.id"
@@ -38,7 +39,7 @@ function act(toast: Toast) {
         class="mt-px shrink-0 rounded bg-base-800 px-1.5 text-[11px] font-semibold tabular-nums text-base-200"
         :aria-label="t('toasts.times', { count: toast.count })"
       >×{{ toast.count }}</span>
-      <button class="shrink-0 text-base-400 hover:text-base-50" :aria-label="t('common.actions.close')" @click="toasts.dismiss(toast.id)">
+      <button class="shrink-0 text-base-400 hover:text-base-50 mobile:-my-2 mobile:-mr-2 mobile:grid mobile:size-10 mobile:place-items-center" :aria-label="t('common.actions.close')" @click="toasts.dismiss(toast.id)">
         <svg viewBox="0 0 10 10" class="size-2.5"><path d="M0 0l10 10M10 0L0 10" stroke="currentColor" stroke-width="1.5" /></svg>
       </button>
     </div>

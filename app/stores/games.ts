@@ -4,6 +4,7 @@ import { defineStore } from 'pinia'
 import type { Diagnosis, GameEvent, LogLine, StageProgress } from '~/types'
 import type { HostedWorld } from '~/utils/hosting'
 import { askDuplicateMods } from '~/utils/duplicateMods'
+import { platformCaps } from '~/utils/system'
 
 export type GamePhase = 'idle' | 'preparing' | 'running'
 
@@ -113,6 +114,8 @@ export const useGamesStore = defineStore('games', () => {
     joinAddress: string | null = null,
     joinWorld: HostedWorld | null = null,
   ): Promise<boolean> {
+    // Am Handy gibt es (noch) kein Spiel zu starten.
+    if (!platformCaps.value.gameLaunch) return false
     const s = state(id)
     if (s.phase !== 'idle') return false
     // Modpack lädt noch Dateien: nicht halb installiert starten.

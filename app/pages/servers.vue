@@ -6,6 +6,9 @@ const instances = useInstancesStore()
 const games = useGamesStore()
 
 const editing = ref<Server | null>(null)
+// Handy: ohne Spielstart keine Auswahl „Beitreten mit“; Ziehen lädt den Status neu.
+const canLaunch = computed(() => platformCaps.value.gameLaunch)
+const mobile = mobileUi
 const adding = ref(false)
 const instanceId = ref('')
 const refreshing = ref(false)
@@ -35,9 +38,10 @@ function join(server: Server) {
 </script>
 
 <template>
-  <div class="mx-auto max-w-3xl p-6">
+  <div class="mx-auto max-w-3xl p-6 mobile:p-4">
+    <PullToRefresh :refresh="refresh" />
     <PageHeader :title="t('servers.title')" :subtitle="t('servers.subtitle')">
-      <button class="btn btn-ghost" :disabled="refreshing || !servers.items.length" :title="t('servers.ping.hint')" @click="refresh">
+      <button v-if="!mobile" class="btn btn-ghost" :disabled="refreshing || !servers.items.length" :title="t('servers.ping.hint')" @click="refresh">
         <svg viewBox="0 0 24 24" class="size-4" :class="{ 'animate-spin': refreshing }" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path :d="icons.sync" /></svg>
         {{ refreshing ? t('servers.ping.running') : t('servers.ping.test') }}
       </button>
@@ -48,14 +52,14 @@ function join(server: Server) {
     </PageHeader>
 
     <div v-if="servers.items.length && (instances.items.length > 1 || servers.items.length > 1)" class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-base-400">
-      <label v-if="instances.items.length > 1" class="flex items-center gap-2">
+      <label v-if="instances.items.length > 1 && canLaunch" class="flex items-center gap-2 mobile:basis-full">
         {{ t('servers.joinWith') }}
-        <select v-model="instanceId" class="field w-64 py-1.5">
+        <select v-model="instanceId" class="field w-64 py-1.5 mobile:w-auto mobile:min-w-0 mobile:flex-1">
           <option value="">{{ t('servers.lastPlayed', { name: instances.items[0]?.name ?? '' }) }}</option>
           <option v-for="i in instances.items.slice(1)" :key="i.id" :value="i.id">{{ i.name }} ({{ i.gameVersion }})</option>
         </select>
       </label>
-      <label v-if="servers.items.length > 1" class="ml-auto flex cursor-pointer items-center gap-2" :title="t('servers.ping.sortHint')">
+      <label v-if="servers.items.length > 1" class="ml-auto flex cursor-pointer items-center gap-2 mobile:min-h-11" :title="t('servers.ping.sortHint')">
         <input v-model="sortByPingOn" type="checkbox" class="size-4 accent-redstone-500" />
         {{ t('servers.ping.sort') }}
       </label>

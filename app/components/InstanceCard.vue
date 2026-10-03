@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Instance } from '~/types'
+import MobileSheet from '~/components/MobileSheet.vue'
 
 // Bibliothekskachel: Banner oben, darüber das Instanz-Bild, darunter Name,
 // Loader und Version. Beim Überfahren erscheint der Spielen-Knopf auf dem
@@ -12,6 +13,10 @@ const game = computed(() => games.state(props.instance.id))
 /** Neue Version des geteilten Modpacks, aus dem die Instanz stammt. */
 const packUpdate = computed(() => usePacksStore().updateOf(props.instance.id))
 const menu = ref<'main' | 'groups' | null>(null)
+// Handy: kein Hover – Menü als Bottom-Sheet (Tippen auf ⋮ oder lange drücken), Spielen nur mit Spielstart.
+const mobile = mobileUi
+const canLaunch = computed(() => platformCaps.value.gameLaunch)
+const longPress = useLongPress(() => (menu.value = 'main'))
 
 /** Modpack wird noch installiert (Instanz ist schon angelegt): Fortschritt statt „Spielen“. */
 const install = computed(() => useTasksStore().installingInstance(props.instance.id))
@@ -31,6 +36,8 @@ function openFolder() {
 }
 
 function closeMenu(e: MouseEvent) {
+  // Das Sheet am Handy schließt sich selbst (Hintergrund, Wischen, Zurück).
+  if (mobile.value) return
   if (!(e.target as HTMLElement | null)?.closest(`[data-card-menu="${props.instance.id}"]`)) menu.value = null
 }
 onMounted(() => document.addEventListener('mousedown', closeMenu))
@@ -41,6 +48,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
   <article
     class="card group relative flex flex-col transition-[border-color,background-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-base-700 hover:bg-base-850"
     :class="{ 'border-lamp-400/50 shadow-[0_0_26px_-8px_var(--color-lamp-400)]': game.phase === 'running' }"
+    v-on="longPress"
   >
     <div class="relative">
       <NuxtLink
@@ -69,7 +77,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
         <RedstoneWire :percent="install.percent ?? 0" :segments="16" class="mt-1" />
       </button>
       <button
-        v-else-if="game.phase !== 'preparing'"
+        v-else-if="game.phase !== 'preparing' && canLaunch"
         class="absolute right-2 -bottom-4 grid place-items-center rounded-full shadow-lg shadow-black/50 transition-all"
         :class="[
           compact ? 'size-9' : 'size-11',
@@ -84,7 +92,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
         <svg v-if="game.phase === 'running'" viewBox="0 0 24 24" class="size-4" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="1" /></svg>
         <svg v-else viewBox="0 0 24 24" class="ml-0.5 size-5" fill="currentColor"><path d="M7 4v16l13-8z" /></svg>
       </button>
-      <div v-else class="absolute inset-x-2 bottom-2 rounded-lg bg-base-950/85 px-2.5 py-1.5 backdrop-blur" role="progressbar" :aria-valuenow="percent" aria-valuemin="0" aria-valuemax="100">
+      <div v-else-if="game.phase === 'preparing'" class="absolute inset-x-2 bottom-2 rounded-lg bg-base-950/85 px-2.5 py-1.5 backdrop-blur" role="progressbar" :aria-valuenow="percent" aria-valuemin="0" aria-valuemax="100">
         <div class="flex justify-between text-[11px]"><span class="text-base-200">{{ t('play.starting') }}</span><span class="display text-redstone-300">{{ t('tasks.percent', { percent }) }}</span></div>
         <RedstoneWire :percent="percent" :segments="16" class="mt-1" />
       </div>
@@ -104,7 +112,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
       />
     </div>
 
-    <div class="flex items-start gap-1 px-2.5 pt-5 pb-2.5">
+    <div class="flex items-start gap-1 px-2.5 pt-5 pb-2.5 mobile:items-center mobile:pr-1">
       <div class="min-w-0 flex-1">
         <NuxtLink :to="`/instances/${instance.id}`" class="block truncate font-semibold text-base-50 hover:text-redstone-300" :class="compact ? 'text-sm' : ''" :title="instance.name">
           {{ instance.name }}
@@ -122,18 +130,28 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
         <button class="btn-icon size-7 bg-transparent text-base-400 opacity-0 group-hover:opacity-100 focus-visible:opacity-100" :class="{ 'opacity-100': menu }" :aria-label="t('instanceCard.actionsFor', { name: instance.name })" :aria-expanded="!!menu" @click="menu = menu ? null : 'main'">
           <svg viewBox="0 0 24 24" class="size-4" fill="currentColor"><circle cx="12" cy="5.5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="18.5" r="1.7" /></svg>
         </button>
-        <div v-if="menu === 'main'" class="menu right-0 bottom-8" role="menu">
-          <button class="menu-item" role="menuitem" :disabled="game.phase !== 'idle' || !!install" @click="menu = null; games.launch(instance.id)">{{ t('common.actions.play') }}</button>
+        <component
+          :is="mobile ? MobileSheet : 'div'"
+          v-if="menu === 'main'"
+          v-bind="mobile ? { title: instance.name } : { class: 'menu right-0 bottom-8', role: 'menu' }"
+          @close="menu = null"
+        >
+          <button v-if="canLaunch" class="menu-item" role="menuitem" :disabled="game.phase !== 'idle' || !!install" @click="menu = null; games.launch(instance.id)">{{ t('common.actions.play') }}</button>
           <NuxtLink :to="{ path: `/instances/${instance.id}`, query: { settings: 'general' } }" class="menu-item" role="menuitem">{{ t('instanceCard.settings') }}</NuxtLink>
           <button class="menu-item justify-between" role="menuitem" @click="menu = 'groups'">
             {{ t('instanceCard.moveToGroup') }}
             <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 5 7 7-7 7" /></svg>
           </button>
-          <button class="menu-item" role="menuitem" @click="openFolder">{{ t('common.actions.openFolder') }}</button>
+          <button v-if="!mobile" class="menu-item" role="menuitem" @click="openFolder">{{ t('common.actions.openFolder') }}</button>
           <div class="my-1 border-t border-base-700" />
           <button class="menu-item text-redstone-300" role="menuitem" :disabled="game.phase !== 'idle'" @click="menu = null; emit('delete', instance)">{{ t('common.actions.delete') }}</button>
-        </div>
-        <div v-else-if="menu === 'groups'" class="menu right-0 bottom-8 max-h-72 overflow-y-auto" role="menu" :aria-label="t('instanceCard.moveToGroup')">
+        </component>
+        <component
+          :is="mobile ? MobileSheet : 'div'"
+          v-else-if="menu === 'groups'"
+          v-bind="mobile ? { title: t('instanceCard.moveToGroup') } : { class: 'menu right-0 bottom-8 max-h-72 overflow-y-auto', role: 'menu', 'aria-label': t('instanceCard.moveToGroup') }"
+          @close="menu = null"
+        >
           <button class="menu-item text-base-400" role="menuitem" @click="menu = 'main'">
             <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 5-7 7 7 7" /></svg>
             {{ t('common.actions.back') }}
@@ -144,7 +162,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
           <button v-if="instance.group" class="menu-item" role="menuitem" @click="menu = null; emit('move', null)">{{ t('instanceCard.removeFromGroup') }}</button>
           <div class="my-1 border-t border-base-700" />
           <button class="menu-item" role="menuitem" @click="menu = null; emit('newGroup', instance)">{{ t('instanceCard.newGroup') }}</button>
-        </div>
+        </component>
       </div>
     </div>
   </article>

@@ -311,7 +311,11 @@ onBeforeUnmount(() => unlisten?.())
 function projectLink(item: ContentItem) {
   return item.source?.projectId ? projectRoute(sourcePlatform(item.source), item.source.projectId, props.instance.id) : null
 }
+/** Handy: Zeilen-Aktionen als Bottom-Sheet (Version wechseln, Löschen und das Menü). */
+const mobile = mobileUi
+const menuItem = computed(() => (mobile.value && menuFor.value ? visible.value.find((i) => keyOf(i) === menuFor.value) ?? null : null))
 function closeMenu(e: MouseEvent) {
+  if (mobile.value) return
   if (!(e.target as HTMLElement | null)?.closest('[data-row-menu]')) menuFor.value = null
 }
 onMounted(() => document.addEventListener('mousedown', closeMenu))
@@ -325,11 +329,11 @@ const pendingUpdates = computed(() => updates.value ?? [])
   <div class="relative flex min-h-0 flex-1 flex-col">
     <!-- Werkzeugleiste -->
     <div class="mb-3 flex flex-wrap items-center gap-2">
-      <div class="relative min-w-52 flex-1">
+      <div class="relative min-w-52 flex-1 mobile:min-w-0 mobile:basis-full">
         <svg viewBox="0 0 24 24" class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-base-600" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5" /></svg>
-        <input v-model="search" class="field h-9 rounded-full py-0 pl-9 text-sm" maxlength="100" :placeholder="t('content.toolbar.searchPlaceholder', items.length)" spellcheck="false" :aria-label="t('content.toolbar.searchLabel')" />
+        <input v-model="search" class="field h-9 rounded-full py-0 pl-9 text-sm mobile:h-11" maxlength="100" :placeholder="t('content.toolbar.searchPlaceholder', items.length)" spellcheck="false" :aria-label="t('content.toolbar.searchLabel')" />
       </div>
-      <select v-model="sort" class="field h-9 w-auto py-0 text-xs" :aria-label="t('content.toolbar.sortLabel')">
+      <select v-model="sort" class="field h-9 w-auto py-0 text-xs mobile:min-w-0 mobile:flex-1 mobile:text-sm" :aria-label="t('content.toolbar.sortLabel')">
         <option value="name">{{ t('content.sort.name') }}</option>
         <option value="enabled">{{ t('content.sort.enabled') }}</option>
         <option value="updates">{{ t('content.sort.updates') }}</option>
@@ -341,11 +345,11 @@ const pendingUpdates = computed(() => updates.value ?? [])
       <button v-if="pendingUpdates.length" class="btn h-9 bg-lamp-900 py-0 text-xs text-lamp-300 ring-1 ring-lamp-400/40 hover:bg-base-800" :disabled="!!bulkBusy" @click="applyUpdates([...pendingUpdates])">
         {{ bulkBusy === 'update' ? t('content.toolbar.updating') : t('content.toolbar.updateAll', { n: pendingUpdates.length }) }}
       </button>
-      <button class="btn btn-ghost h-9 py-0 text-xs" @click="pickFiles">
-        <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 3H6v18h12V7zM14 3v4h4M12 11v6m-3-3h6" /></svg>
-        {{ t('content.toolbar.addFiles') }}
+      <button class="btn btn-ghost h-9 py-0 text-xs mobile:w-11 mobile:px-0" :aria-label="t('content.toolbar.addFiles')" @click="pickFiles">
+        <svg viewBox="0 0 24 24" class="size-3.5 mobile:size-4" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 3H6v18h12V7zM14 3v4h4M12 11v6m-3-3h6" /></svg>
+        <span class="mobile:hidden">{{ t('content.toolbar.addFiles') }}</span>
       </button>
-      <NuxtLink :to="{ path: '/browse', query: { instance: instance.id, kind: browseKind } }" class="btn btn-primary h-9 py-0 text-xs">
+      <NuxtLink :to="{ path: '/browse', query: { instance: instance.id, kind: browseKind } }" class="btn btn-primary h-9 py-0 text-xs mobile:basis-full mobile:text-sm">
         <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" /></svg>
         {{ t('content.toolbar.browse') }}
       </NuxtLink>
@@ -388,7 +392,7 @@ const pendingUpdates = computed(() => updates.value ?? [])
 
     <div v-else-if="visible.length" class="card min-h-0 flex-1 overflow-y-auto">
       <!-- Kopfzeile bzw. Sammelaktionen -->
-      <div class="sticky top-0 z-10 grid min-h-11 grid-cols-[1.5rem_minmax(0,1fr)_11rem_10.5rem] items-center gap-3 border-b border-base-800 bg-base-900/95 px-3 py-1.5 text-[11px] font-medium text-base-600 backdrop-blur">
+      <div class="sticky top-0 z-10 grid min-h-11 grid-cols-[1.5rem_minmax(0,1fr)_11rem_10.5rem] items-center gap-3 mobile:grid-cols-[1.5rem_minmax(0,1fr)] border-b border-base-800 bg-base-900/95 px-3 py-1.5 text-[11px] font-medium text-base-600 backdrop-blur">
         <input
           type="checkbox"
           class="size-4 accent-redstone-500"
@@ -398,7 +402,7 @@ const pendingUpdates = computed(() => updates.value ?? [])
           @change="toggleAll"
         />
         <template v-if="selectedItems.length">
-          <div class="col-span-3 flex flex-wrap items-center gap-1.5 text-xs">
+          <div class="col-span-3 flex flex-wrap items-center gap-1.5 text-xs mobile:col-span-1">
             <span class="mr-1 font-semibold text-base-50">{{ t('content.selection.selected', selectedItems.length) }}</span>
             <button class="bulk-btn" :disabled="!!bulkBusy" @click="bulk('enable', selectedItems)">{{ t('common.actions.enable') }}</button>
             <button class="bulk-btn" :disabled="!!bulkBusy" @click="bulk('disable', selectedItems)">{{ t('common.actions.disable') }}</button>
@@ -409,8 +413,8 @@ const pendingUpdates = computed(() => updates.value ?? [])
         </template>
         <template v-else>
           <span>{{ t('content.columns.project') }}</span>
-          <span>{{ t('common.labels.version') }}</span>
-          <span class="text-right">{{ t('content.columns.actions') }}</span>
+          <span class="mobile:hidden">{{ t('common.labels.version') }}</span>
+          <span class="text-right mobile:hidden">{{ t('content.columns.actions') }}</span>
         </template>
       </div>
 
@@ -418,13 +422,13 @@ const pendingUpdates = computed(() => updates.value ?? [])
         <li
           v-for="item in visible"
           :key="keyOf(item)"
-          class="group grid grid-cols-[1.5rem_minmax(0,1fr)_11rem_10.5rem] items-center gap-3 px-3 py-2 transition-colors hover:bg-base-850"
+          class="group grid grid-cols-[1.5rem_minmax(0,1fr)_11rem_10.5rem] items-center gap-3 px-3 py-2 transition-colors hover:bg-base-850 mobile:grid-cols-[1.5rem_minmax(0,1fr)_auto] mobile:gap-x-2 mobile:gap-y-0.5"
           :class="{ 'bg-redstone-900/15': selected.has(keyOf(item)) }"
         >
-          <input type="checkbox" class="size-4 accent-redstone-500" :checked="selected.has(keyOf(item))" :aria-label="t('content.row.select', { name: titleOf(item) })" @change="toggleOne(item)" />
+          <input type="checkbox" class="size-4 accent-redstone-500 mobile:row-span-2" :checked="selected.has(keyOf(item))" :aria-label="t('content.row.select', { name: titleOf(item) })" @change="toggleOne(item)" />
 
           <div class="flex min-w-0 items-center gap-3" :class="{ 'opacity-55': !item.enabled }">
-            <ModIcon :src="item.iconUrl" :name="titleOf(item)" :size="40" :class="{ grayscale: !item.enabled }" />
+            <ModIcon :src="item.iconUrl" :name="titleOf(item)" :size="mobile ? 36 : 40" :class="{ grayscale: !item.enabled }" />
             <div class="min-w-0">
               <NuxtLink v-if="projectLink(item)" :to="projectLink(item)!" class="block truncate text-sm font-semibold hover:text-redstone-300">{{ titleOf(item) }}</NuxtLink>
               <p v-else class="truncate text-sm font-semibold">{{ titleOf(item) }}</p>
@@ -437,7 +441,7 @@ const pendingUpdates = computed(() => updates.value ?? [])
             </div>
           </div>
 
-          <div class="min-w-0">
+          <div class="min-w-0 mobile:col-start-2 mobile:row-start-2 mobile:pl-12">
             <div class="flex items-center gap-1.5">
               <span class="truncate font-mono text-xs text-base-200" :title="displayVersion(item) ?? ''">{{ displayVersion(item) ?? '–' }}</span>
               <button
@@ -455,11 +459,12 @@ const pendingUpdates = computed(() => updates.value ?? [])
               </button>
             </div>
             <span v-if="isBusy(item)" class="mt-1 block w-24"><RedstoneWire :percent="60" :segments="8" /></span>
-            <p v-else class="truncate text-[11px] text-base-600" :title="item.fileName">{{ item.fileName }}</p>
+            <p v-else class="truncate text-[11px] text-base-600 mobile:hidden" :title="item.fileName">{{ item.fileName }}</p>
           </div>
 
-          <div class="flex items-center justify-end gap-1">
+          <div class="flex items-center justify-end gap-1 mobile:col-start-3 mobile:row-span-2 mobile:row-start-1 mobile:gap-0">
             <button
+              v-if="!mobile"
               class="btn-icon size-8 bg-transparent opacity-70 group-hover:opacity-100 disabled:opacity-25"
               :disabled="!item.source"
               :title="item.source ? t('content.row.switchVersion') : t('content.row.onlyModrinth')"
@@ -478,14 +483,14 @@ const pendingUpdates = computed(() => updates.value ?? [])
             >
               <span class="absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform" :class="{ 'translate-x-4': item.enabled }" />
             </button>
-            <button class="btn-icon size-8 bg-transparent opacity-70 group-hover:opacity-100 hover:text-redstone-300" :aria-label="t('content.row.delete', { name: titleOf(item) })" :title="t('common.actions.delete')" @click="toDelete = [item]">
+            <button v-if="!mobile" class="btn-icon size-8 bg-transparent opacity-70 group-hover:opacity-100 hover:text-redstone-300" :aria-label="t('content.row.delete', { name: titleOf(item) })" :title="t('common.actions.delete')" @click="toDelete = [item]">
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
             </button>
             <div class="relative" data-row-menu>
               <button class="btn-icon size-8 bg-transparent opacity-70 group-hover:opacity-100" :aria-label="t('content.row.moreActions', { name: titleOf(item) })" :aria-expanded="menuFor === keyOf(item)" @click="menuFor = menuFor === keyOf(item) ? null : keyOf(item)">
                 <svg viewBox="0 0 24 24" class="size-4" fill="currentColor"><circle cx="12" cy="5.5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="18.5" r="1.7" /></svg>
               </button>
-              <div v-if="menuFor === keyOf(item)" class="menu top-9 right-0" role="menu">
+              <div v-if="!mobile && menuFor === keyOf(item)" class="menu top-9 right-0" role="menu">
                 <button v-if="updateFor(item)" class="menu-item text-lamp-300" role="menuitem" @click="menuFor = null; applyUpdates([updateFor(item)!])">
                   {{ t('content.menu.updateTo', { version: updateFor(item)!.versionNumber }) }}
                 </button>
@@ -511,6 +516,20 @@ const pendingUpdates = computed(() => updates.value ?? [])
         <button class="btn btn-ghost" @click="pickFiles">{{ t('content.toolbar.addFiles') }}</button>
       </template>
     </RedstoneEmpty>
+
+    <MobileSheet v-if="menuItem" :title="titleOf(menuItem)" @close="menuFor = null">
+      <div class="space-y-0.5">
+        <button v-if="updateFor(menuItem)" class="menu-item text-lamp-300" @click="menuFor = null; applyUpdates([updateFor(menuItem)!])">
+          {{ t('content.menu.updateTo', { version: updateFor(menuItem)!.versionNumber }) }}
+        </button>
+        <button v-if="menuItem.source" class="menu-item" @click="switching = menuItem; menuFor = null">{{ t('content.row.switchVersion') }}</button>
+        <button v-if="menuItem.source" class="menu-item" @click="changelogFor = menuItem; menuFor = null">{{ t('content.menu.changelog') }}</button>
+        <NuxtLink v-if="projectLink(menuItem)" :to="projectLink(menuItem)!" class="menu-item">{{ t('content.menu.projectPage') }}</NuxtLink>
+        <p v-if="!menuItem.source" class="px-2.5 py-1.5 text-xs text-base-400">{{ t('content.menu.notModrinth') }}</p>
+        <div class="my-1 border-t border-base-700" />
+        <button class="menu-item text-redstone-300" @click="toDelete = [menuItem]; menuFor = null">{{ t('common.actions.delete') }}</button>
+      </div>
+    </MobileSheet>
 
     <!-- Drag & Drop -->
     <Transition name="toast">
@@ -563,6 +582,10 @@ const pendingUpdates = computed(() => updates.value ?? [])
 }
 .filter-chip-on {
   @apply bg-redstone-500 text-white ring-redstone-500 hover:text-white;
+}
+:root.is-mobile .filter-chip {
+  min-height: 2.5rem;
+  padding-inline: 0.875rem;
 }
 .bulk-btn {
   @apply rounded-md bg-base-800 px-2.5 py-1 font-medium text-base-200 transition-colors hover:bg-base-700 hover:text-base-50 disabled:opacity-50;

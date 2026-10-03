@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Locale } from '~/utils/i18n'
 import type { TrsBulkState } from '~/utils/trsChoice'
-import type { ImportCandidate, Instance, LoaderKind } from '~/types'
+import type { DeviceCode, ImportCandidate, Instance, LoaderKind } from '~/types'
 
 // Einrichtung beim ersten Start: anmelden, andere Launcher übernehmen, erste Instanz.
 // Jeder Schritt ist überspringbar; Escape beendet den Assistenten.
@@ -10,8 +10,12 @@ type StepKey = 'language' | 'welcome' | 'login' | 'import' | 'instance' | 'done'
 type Preset = 'vanilla' | 'fabric' | 'custom'
 
 /** Reihenfolge der Schritte; die Beschriftung kommt aus `onboarding.steps.<key>`. */
-const stepOrder: StepKey[] = ['language', 'welcome', 'login', 'import', 'instance', 'done']
-const steps = computed(() => stepOrder.map((key) => ({ key, label: t(`onboarding.steps.${key}`) })))
+const allSteps: StepKey[] = ['language', 'welcome', 'login', 'import', 'instance', 'done']
+/** Ohne Spielstart (Handy): kein Import aus anderen Launchern und keine erste Instanz. */
+const stepOrder = computed<StepKey[]>(() =>
+  platformCaps.value.gameLaunch ? allSteps : allSteps.filter((k) => k !== 'import' && k !== 'instance'),
+)
+const steps = computed(() => stepOrder.value.map((key) => ({ key, label: t(`onboarding.steps.${key}`) })))
 
 const onboarding = useOnboardingStore()
 const accounts = useAccountsStore()
@@ -22,7 +26,11 @@ const toasts = useToasts()
 
 const root = ref<HTMLElement | null>(null)
 const step = ref<StepKey>('language')
-const stepIndex = computed(() => stepOrder.indexOf(step.value))
+const stepIndex = computed(() => stepOrder.value.indexOf(step.value))
+// Handy: Anmeldung per Code (der Rückruf an localhost klappt dort nicht zuverlässig).
+const mobile = mobileUi
+const deviceCode = ref<DeviceCode | null>(null)
+const codeCopied = ref(false)
 
 // --- Anmelden ---------------------------------------------------------------
 const loggingIn = ref(false)
@@ -33,8 +41,10 @@ async function login() {
   loginError.value = null
   notApproved.value = false
   loggingIn.value = true
+  deviceCode.value = null
   try {
-    await accounts.loginBrowser()
+    if (mobile.value) await accounts.loginDeviceCode((code) => (deviceCode.value = code))
+    else await accounts.loginBrowser()
   } catch (e) {
     if (!isCancelled(e)) {
       loginError.value = errorMessage(e)
@@ -42,11 +52,25 @@ async function login() {
     }
   } finally {
     loggingIn.value = false
+    deviceCode.value = null
   }
 }
 
 function cancelLogin() {
   backend.cancelLogin().catch(() => {})
+}
+
+/** Handy: Code kopieren und die Microsoft-Seite öffnen. */
+async function openCodePage() {
+  const code = deviceCode.value
+  if (!code) return
+  try {
+    await navigator.clipboard.writeText(code.userCode)
+    codeCopied.value = true
+  } catch {
+    // Dann wird der Code eben abgetippt.
+  }
+  backend.openExternalUrl(code.verificationUri).catch((e) => (loginError.value = errorMessage(e)))
 }
 
 // --- Importieren ------------------------------------------------------------
@@ -247,7 +271,7 @@ function goTo(key: StepKey) {
 function next() {
   if (step.value === 'language') goTo('welcome')
   else if (step.value === 'welcome') goTo('login')
-  else if (step.value === 'login') goTo('import')
+  else if (step.value === 'login') goTo(stepOrder.value.includes('import') ? 'import' : 'done')
   // Wer schon eine Instanz hat (z. B. gerade importiert), braucht keine neue.
   else if (step.value === 'import') goTo(instances.items.length ? 'done' : 'instance')
   else if (step.value === 'instance') goTo('done')
@@ -316,10 +340,10 @@ onBeforeUnmount(() => {
     role="dialog"
     aria-modal="true"
     aria-labelledby="onboarding-title"
-    class="onboarding absolute inset-0 z-40 flex flex-col overflow-y-auto"
+    class="onboarding absolute inset-0 z-40 flex flex-col overflow-y-auto mobile:pb-[var(--safe-bottom)]"
   >
     <!-- Schrittanzeige: echte Reihenfolge, die Leitung lädt pro Schritt auf. -->
-    <header class="mx-auto w-full max-w-2xl px-6 pt-8">
+    <header class="mx-auto w-full max-w-2xl px-6 pt-8 mobile:px-4 mobile:pt-4">
       <div class="flex items-center justify-between gap-4">
         <ol class="flex flex-wrap gap-x-4 gap-y-1 text-xs">
           <li
@@ -332,18 +356,18 @@ onBeforeUnmount(() => {
             {{ s.label }}
           </li>
         </ol>
-        <button v-if="step !== 'language' && step !== 'welcome' && step !== 'done'" class="shrink-0 text-xs text-base-400 hover:text-base-50" @click="skip">
+        <button v-if="step !== 'language' && step !== 'welcome' && step !== 'done'" class="shrink-0 text-xs text-base-400 hover:text-base-50 mobile:min-h-11" @click="skip">
           {{ t('onboarding.skipSetup') }}
         </button>
       </div>
       <RedstoneWire class="mt-3" :segments="30" :percent="((stepIndex + 1) / stepOrder.length) * 100" />
     </header>
 
-    <div class="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-6 py-10">
+    <div class="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-6 py-10 mobile:justify-start mobile:px-4 mobile:py-6">
       <Transition name="step" mode="out-in" @after-enter="focusPrimary">
         <!-- 1 · Sprache -->
         <div v-if="step === 'language'" key="language">
-          <h1 id="onboarding-title" class="display text-4xl leading-tight">{{ t('language.onboardingTitle') }}</h1>
+          <h1 id="onboarding-title" class="display text-4xl leading-tight mobile:text-3xl">{{ t('language.onboardingTitle') }}</h1>
           <p class="mt-2 max-w-lg text-sm text-base-400">{{ t('language.onboardingText') }}</p>
           <p v-if="detected" class="mt-1 text-xs text-base-600">{{ isLinux ? t('language.detectedSystem') : t('language.detected') }}</p>
           <div class="onboarding-languages mt-6">
@@ -357,7 +381,7 @@ onBeforeUnmount(() => {
 
         <!-- 2 · Willkommen -->
         <div v-else-if="step === 'welcome'" key="welcome">
-          <h1 id="onboarding-title" class="display text-6xl leading-tight text-base-50">TRS Launcher</h1>
+          <h1 id="onboarding-title" class="display text-6xl leading-tight text-base-50 mobile:text-5xl">TRS Launcher</h1>
           <p class="mt-3 max-w-lg text-base-200">{{ t('onboarding.welcome.text') }}</p>
           <div class="mt-8 flex gap-3">
             <button data-primary class="btn btn-primary h-11 px-6 text-base" @click="next">{{ t('onboarding.welcome.start') }}</button>
@@ -367,7 +391,7 @@ onBeforeUnmount(() => {
 
         <!-- 3 · Anmelden -->
         <div v-else-if="step === 'login'" key="login">
-          <h1 id="onboarding-title" class="display text-4xl leading-tight">{{ t('onboarding.login.title') }}</h1>
+          <h1 id="onboarding-title" class="display text-4xl leading-tight mobile:text-3xl">{{ t('onboarding.login.title') }}</h1>
           <p class="mt-2 max-w-lg text-sm text-base-400">{{ t('onboarding.login.text') }}</p>
 
           <div v-if="accounts.active" class="card mt-6 flex items-center gap-3 p-4">
@@ -379,7 +403,14 @@ onBeforeUnmount(() => {
           </div>
 
           <div v-else-if="loggingIn" class="card mt-6 p-4">
-            <p class="text-sm text-base-200">{{ t('accounts.login.browserOpened') }}</p>
+            <template v-if="mobile">
+              <p class="text-sm text-base-200">{{ deviceCode ? t('accounts.login.enterCode') : t('accounts.login.requestingCode') }}</p>
+              <template v-if="deviceCode">
+                <p class="mt-3 w-full rounded-md border border-base-700 bg-base-950 py-3 text-center font-mono text-2xl font-bold tracking-[0.3em] text-base-50 select-text" data-testid="onboarding-code">{{ deviceCode.userCode }}</p>
+                <button class="btn btn-primary mt-3 w-full" @click="openCodePage">{{ codeCopied ? t('common.status.copied') : t('mobile.accountsPage.openPage') }}</button>
+              </template>
+            </template>
+            <p v-else class="text-sm text-base-200">{{ t('accounts.login.browserOpened') }}</p>
             <p class="mt-3 flex items-center gap-2 text-xs text-base-400">
               <span class="size-2 animate-pulse rounded-full bg-redstone-400" /> {{ t('accounts.login.waiting') }}
             </p>
@@ -411,7 +442,7 @@ onBeforeUnmount(() => {
 
         <!-- 3 · Importieren -->
         <div v-else-if="step === 'import'" key="import">
-          <h1 id="onboarding-title" class="display text-4xl leading-tight">{{ t('onboarding.import.title') }}</h1>
+          <h1 id="onboarding-title" class="display text-4xl leading-tight mobile:text-3xl">{{ t('onboarding.import.title') }}</h1>
           <p class="mt-2 max-w-lg text-sm text-base-400">{{ t('onboarding.import.text') }}</p>
 
           <div v-if="scanning" class="mt-6 space-y-2">
@@ -461,7 +492,7 @@ onBeforeUnmount(() => {
 
         <!-- 4 · Erste Instanz -->
         <div v-else-if="step === 'instance'" key="instance">
-          <h1 id="onboarding-title" class="display text-4xl leading-tight">{{ t('onboarding.instance.title') }}</h1>
+          <h1 id="onboarding-title" class="display text-4xl leading-tight mobile:text-3xl">{{ t('onboarding.instance.title') }}</h1>
           <p class="mt-2 max-w-lg text-sm text-base-400">{{ t('onboarding.instance.text') }}</p>
 
           <div role="radiogroup" :aria-label="t('onboarding.instance.presetLabel')" class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -513,7 +544,7 @@ onBeforeUnmount(() => {
 
         <!-- 5 · Fertig -->
         <div v-else key="done">
-          <h1 id="onboarding-title" class="display text-5xl leading-tight">{{ t('onboarding.done.title') }}</h1>
+          <h1 id="onboarding-title" class="display text-5xl leading-tight mobile:text-4xl">{{ t('onboarding.done.title') }}</h1>
           <p class="mt-2 text-sm text-base-400">{{ t('onboarding.done.text') }}</p>
 
           <ul class="mt-6 space-y-2">

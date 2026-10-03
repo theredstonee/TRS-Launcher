@@ -5,7 +5,8 @@ import { conversationPreview, conversationTitle, isMuted, listTime, matchesSearc
 // Nachricht oder „Klicke, um zu schreiben“, Datum, Ungelesen-Zähler und
 // Stumm-Symbol. Freunde ohne Unterhaltung stehen darunter – ein Klick öffnet
 // die Direktnachricht.
-const props = defineProps<{ search: string }>()
+// `refresh`: Handy – „Zum Aktualisieren ziehen“ über der Liste.
+const props = defineProps<{ search: string; refresh?: () => unknown }>()
 const emit = defineEmits<{ open: [id: string]; openFriend: [uuid: string] }>()
 
 const chat = useChatStore()
@@ -29,6 +30,7 @@ const presenceOf = (uuid: string | undefined) => trs.friends?.friends.find((f) =
       <div v-for="i in 5" :key="i" class="skeleton h-14" />
     </div>
     <ul v-else class="min-h-0 flex-1 space-y-0.5 overflow-y-auto p-1.5" role="listbox" :aria-label="t('social.chat.listLabel')" data-testid="chat-list">
+      <PullToRefresh v-if="refresh" :refresh="refresh" />
       <li v-for="c in conversations" :key="c.id">
         <button
           class="group flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors"

@@ -10,6 +10,9 @@ const instances = useInstancesStore()
 const settings = useSettingsStore()
 const game = computed(() => games.state(id.value))
 const ui = computed(() => settings.current?.ui)
+// Handy: Seite scrollt als Ganzes, Tabs als wischbare Leiste; ohne Spielstart keine Logs/Spielen.
+const mobile = mobileUi
+const canLaunch = computed(() => platformCaps.value.gameLaunch)
 
 const instance = ref<Instance | null>(null)
 const loadError = ref<string | null>(null)
@@ -22,9 +25,11 @@ const tabs = computed<Tab[]>(() => {
   if (ui.value?.worldsTab !== false) list.push('worlds')
   if (ui.value?.screenshotsTab !== false) list.push('screenshots')
   // Clips gibt es nur unter Windows (Aufnahme per Windows Graphics Capture).
-  if (!isLinux) list.push('clips')
+  if (platformCaps.value.clips) list.push('clips')
   if (ui.value?.historyTab !== false) list.push('history')
-  list.push('logs', 'share')
+  // Logs gibt es erst, wenn hier ein Spiel laufen kann.
+  if (platformCaps.value.gameLaunch) list.push('logs')
+  list.push('share')
   return list
 })
 const TAB_ICONS: Record<Tab, string> = {
@@ -60,6 +65,8 @@ function selectTab(next: Tab, focus = false) {
     // Kein Speicher – egal.
   }
   if (focus) nextTick(() => document.getElementById(`instance-tab-${next}`)?.focus())
+  // Handy: gewählten Tab in der wischbaren Leiste sichtbar machen.
+  if (mobile.value) nextTick(() => document.getElementById(`instance-tab-${next}`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' }))
 }
 // Ausgeblendeter Tab aktiv? Zurück zu den Inhalten.
 watch(tabs, (list) => {
@@ -88,7 +95,7 @@ const historyKey = ref(0)
 watch(
   () => game.value.phase,
   (phase, before) => {
-    if (before === 'idle' && phase !== 'idle') tab.value = 'logs'
+    if (before === 'idle' && phase !== 'idle' && tabs.value.includes('logs')) tab.value = 'logs'
   },
 )
 
@@ -106,7 +113,7 @@ onMounted(() => {
   // Die Befehlspalette springt direkt in einen Bereich (z. B. ?tab=content).
   const wanted = route.query.tab ? String(route.query.tab) : null
   if (wanted && tabs.value.includes(wanted as Tab)) tab.value = wanted as Tab
-  else if (game.value.phase !== 'idle') tab.value = 'logs'
+  else if (game.value.phase !== 'idle' && tabs.value.includes('logs')) tab.value = 'logs'
   else tab.value = rememberedTab() ?? 'content'
 })
 
@@ -158,31 +165,31 @@ function openFolder() {
 </script>
 
 <template>
-  <div class="flex h-full">
-    <div class="flex min-w-0 flex-1 flex-col p-6">
-      <NuxtLink to="/instances" class="mb-3 inline-flex w-fit items-center gap-1 text-xs text-base-400 hover:text-base-50">
+  <div class="flex h-full mobile:h-auto mobile:min-h-full">
+    <div class="flex min-w-0 flex-1 flex-col p-6 mobile:p-4">
+      <NuxtLink to="/instances" class="mb-3 inline-flex w-fit items-center gap-1 text-xs text-base-400 hover:text-base-50 mobile:hidden">
         <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 5l-7 7 7 7" /></svg>
         {{ t('library.title') }}
       </NuxtLink>
 
       <p v-if="loadError" role="alert" class="card border-redstone-600/50 px-4 py-3 text-sm text-redstone-300">{{ loadError }}</p>
 
-      <div v-else-if="!instance" class="mb-5 flex items-center gap-5">
-        <div class="skeleton size-[88px] rounded-xl" />
-        <div class="flex-1 space-y-2.5"><div class="skeleton h-8 w-64" /><div class="skeleton h-4 w-80" /></div>
-        <div class="skeleton h-10 w-72" />
+      <div v-else-if="!instance" class="mb-5 flex items-center gap-5 mobile:gap-4">
+        <div class="skeleton size-[88px] rounded-xl mobile:size-16" />
+        <div class="flex-1 space-y-2.5"><div class="skeleton h-8 w-64 mobile:w-full" /><div class="skeleton h-4 w-80 mobile:w-2/3" /></div>
+        <div class="skeleton h-10 w-72 mobile:hidden" />
       </div>
 
       <template v-else>
         <!-- Banner als Kopf: Bild der Instanz, darüber Icon, Name und Spielen. -->
         <InstanceBanner :instance="instance" class="mb-4 shrink-0 rounded-2xl border border-base-800">
-          <header class="flex flex-wrap items-center gap-5 p-5">
+          <header class="flex flex-wrap items-center gap-5 p-5 mobile:gap-x-3 mobile:gap-y-4 mobile:p-4">
             <button class="shrink-0 rounded-xl outline-none transition-transform duration-150 hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-redstone-500" :aria-label="t('instance.settingsGeneral')" @click="settingsOpen = 'general'">
-              <InstanceIcon :instance="instance" :size="88" class="shadow-xl shadow-black/50" />
+              <InstanceIcon :instance="instance" :size="mobile ? 60 : 88" class="shadow-xl shadow-black/50" />
             </button>
 
-            <div class="min-w-56 flex-1">
-              <h1 class="display truncate text-3xl leading-tight text-white drop-shadow">{{ instance.name }}</h1>
+            <div class="min-w-56 flex-1 mobile:min-w-0">
+              <h1 class="display truncate text-3xl leading-tight text-white drop-shadow mobile:text-2xl">{{ instance.name }}</h1>
               <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-white/75">
                 <button
                   class="chip gap-1.5 ring-1 ring-base-700 transition-colors hover:bg-base-700 hover:text-base-50 disabled:opacity-60"
@@ -210,12 +217,12 @@ function openFolder() {
               </div>
             </div>
 
-            <div class="flex w-80 shrink-0 items-center gap-2">
+            <div class="flex w-80 shrink-0 items-center gap-2" :class="canLaunch ? 'mobile:w-full' : 'mobile:w-auto'">
               <PlayButton :instance-id="instance.id" large />
               <button class="btn-icon size-12 bg-base-900/80 backdrop-blur" :title="t('instance.settings')" :aria-label="t('instance.settings')" @click="settingsOpen = 'general'">
                 <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.gear" /></svg>
               </button>
-              <button class="btn-icon size-12 bg-base-900/80 backdrop-blur" :title="t('common.actions.openFolder')" :aria-label="t('common.actions.openFolder')" @click="openFolder">
+              <button v-if="!mobile" class="btn-icon size-12 bg-base-900/80 backdrop-blur" :title="t('common.actions.openFolder')" :aria-label="t('common.actions.openFolder')" @click="openFolder">
                 <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
                 </svg>
@@ -229,13 +236,13 @@ function openFolder() {
         <FpsBoostHint :instance="instance" />
 
         <!-- Tab-Leiste: Redstone-Leitung, der aktive Tab „leuchtet“. -->
-        <div class="tabbar mb-4 shrink-0" role="tablist" :aria-label="t('instance.tabsLabel')" @keydown="onTabKey">
+        <div class="tabbar mb-4 shrink-0 mobile-scroll-x mobile:-mx-4 mobile:px-4" role="tablist" :aria-label="t('instance.tabsLabel')" @keydown="onTabKey">
           <button
             v-for="key in tabs"
             :id="`instance-tab-${key}`"
             :key="key"
             role="tab"
-            class="itab"
+            class="itab mobile:min-h-11 mobile:shrink-0 mobile:whitespace-nowrap"
             :class="{ 'itab-on': tab === key }"
             :aria-selected="tab === key"
             :aria-controls="`instance-panel-${key}`"
@@ -260,7 +267,7 @@ function openFolder() {
           @deleted="onDeleted"
         />
 
-        <div :id="`instance-panel-${tab}`" role="tabpanel" :aria-labelledby="`instance-tab-${tab}`" class="flex min-h-0 flex-1 flex-col">
+        <div :id="`instance-panel-${tab}`" role="tabpanel" :aria-labelledby="`instance-tab-${tab}`" class="flex min-h-0 flex-1 flex-col" :class="{ 'mobile:h-[70dvh] mobile:flex-none': tab === 'logs' }">
           <ContentList v-if="tab === 'content'" :key="`${instance.gameVersion}-${instance.loader.kind}-${instance.overrides.boost}`" :instance="instance" />
           <FileBrowser v-else-if="tab === 'files'" :instance="instance" />
           <WorldsPanel v-else-if="tab === 'worlds'" :instance="instance" />
@@ -280,6 +287,10 @@ function openFolder() {
 
 .tabbar {
   @apply relative flex flex-wrap gap-0.5 border-b border-base-800;
+}
+/* Handy: eine wischbare Zeile statt Umbruch. */
+:root.is-mobile .tabbar {
+  flex-wrap: nowrap;
 }
 .itab {
   @apply relative -mb-px inline-flex items-center gap-2 rounded-t-lg px-3.5 py-2 text-sm font-medium text-base-400 transition-colors outline-none hover:bg-base-900 hover:text-base-50 focus-visible:bg-base-900 focus-visible:text-base-50;

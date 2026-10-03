@@ -20,6 +20,8 @@ const canCancel = computed(() => {
 })
 /** Modpack lädt noch Dateien in diese Instanz: statt „Spielen“ der Installationsstand. */
 const install = computed(() => (game.value.phase === 'idle' ? tasks.installingInstance(props.instanceId) : null))
+/** Am Handy (noch) kein Spielstart: dann nur der Installationsstand, sonst nichts. */
+const hidden = computed(() => !platformCaps.value.gameLaunch && !install.value)
 const files = computed(() => {
   const p = game.value.progress
   return p && p.totalFiles > 1 ? `${p.doneFiles} / ${p.totalFiles}` : ''
@@ -28,7 +30,8 @@ const files = computed(() => {
 
 <template>
   <!-- Groß, während Halloween: Starten und Installieren als Hexen-Balken statt Lampenfüllung. -->
-  <div v-if="large && events.halloween && (install || game.phase === 'preparing')" class="relative min-w-0 flex-1">
+  <template v-if="hidden" />
+  <div v-else-if="large && events.halloween && (install || game.phase === 'preparing')" class="relative min-w-0 flex-1">
     <div
       class="rounded-md bg-base-900/80 px-3 py-2"
       role="progressbar"

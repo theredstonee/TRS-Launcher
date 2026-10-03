@@ -88,12 +88,14 @@ function kindsText(p: Preset): string {
   return [...counts].map(([label, n]) => `${n}× ${label}`).join(' · ')
 }
 
+// Handy: Reihenfolge-Knöpfe im aufgeklappten Bereich statt in der engen Zeile.
+const mobile = mobileUi
 const isFirst = (p: Preset) => list.value[0]?.id === p.id
 const isLast = (p: Preset) => list.value.at(-1)?.id === p.id
 </script>
 
 <template>
-  <div class="mx-auto max-w-3xl p-6">
+  <div class="mx-auto max-w-3xl p-6 mobile:p-4">
     <PageHeader :title="t('presets.page.title')" :subtitle="t('presets.page.subtitle')">
       <button class="btn btn-ghost" @click="importPreset">{{ t('common.actions.import') }}</button>
       <button class="btn btn-primary" @click="creating = true">
@@ -110,7 +112,7 @@ const isLast = (p: Preset) => list.value.at(-1)?.id === p.id
 
     <ul v-else class="space-y-2">
       <li v-for="p in list" :key="p.id" class="card card-hover">
-        <div class="flex items-center gap-3 px-4 py-3">
+        <div class="flex items-center gap-3 px-4 py-3 mobile:px-3">
           <!-- Symbol: TRS-Blitz für fertige Presets, sonst die ersten Icons -->
           <div class="relative size-10 shrink-0">
             <span v-if="p.builtin" class="grid size-10 place-items-center rounded-lg bg-redstone-900 text-redstone-300 ring-1 ring-redstone-600/40">
@@ -123,17 +125,17 @@ const isLast = (p: Preset) => list.value.at(-1)?.id === p.id
             <span class="flex items-center gap-1.5">
               <span class="truncate font-medium text-base-50">{{ presetName(p) }}</span>
               <span v-if="p.builtin" class="badge bg-base-800 text-base-400">TRS</span>
-              <span class="text-xs text-base-600">{{ t('presets.itemCount', p.items.length) }}</span>
+              <span class="text-xs text-base-600 mobile:hidden">{{ t('presets.itemCount', p.items.length) }}</span>
             </span>
             <span class="block truncate text-xs text-base-400">{{ kindsText(p) }}</span>
           </button>
 
           <label class="flex shrink-0 items-center gap-2 text-xs text-base-400" :title="t('presets.autoHint')">
-            {{ t('presets.auto') }}
+            <span class="mobile:sr-only">{{ t('presets.auto') }}</span>
             <ToggleSwitch :model-value="p.auto" :label="t('presets.autoLabel')" :disabled="busy === p.id" @update:model-value="setAuto(p, $event)" />
           </label>
 
-          <div class="flex shrink-0 items-center gap-1">
+          <div v-if="!mobile" class="flex shrink-0 items-center gap-1">
             <button class="btn-icon size-8" :disabled="isFirst(p) || busy === p.id" :aria-label="t('presets.page.moveUp')" :title="t('presets.page.moveUp')" @click="move(p, -1)">
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 15 6-6 6 6" /></svg>
             </button>
@@ -143,7 +145,15 @@ const isLast = (p: Preset) => list.value.at(-1)?.id === p.id
           </div>
         </div>
 
-        <div v-if="expanded.has(p.id)" class="border-t border-base-800 px-4 py-3">
+        <div v-if="expanded.has(p.id)" class="border-t border-base-800 px-4 py-3 mobile:px-3">
+          <div v-if="mobile" class="mb-3 flex gap-2">
+            <button class="btn btn-ghost flex-1 text-xs" :disabled="isFirst(p) || busy === p.id" @click="move(p, -1)">
+              <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 15 6-6 6 6" /></svg>{{ t('presets.page.moveUp') }}
+            </button>
+            <button class="btn btn-ghost flex-1 text-xs" :disabled="isLast(p) || busy === p.id" @click="move(p, 1)">
+              <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 9 6 6 6-6" /></svg>{{ t('presets.page.moveDown') }}
+            </button>
+          </div>
           <ul v-if="p.items.length" class="flex flex-wrap gap-1.5">
             <li v-for="item in p.items" :key="item.projectId" class="chip gap-1.5 py-0.5 pl-0.5">
               <ModIcon :src="item.iconUrl" :name="item.title" :size="20" />
