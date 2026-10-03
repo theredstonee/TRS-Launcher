@@ -43,6 +43,15 @@ import {
   type SharePackOptions,
 } from './packs'
 import {
+  claimedCommandSchema,
+  pairCodeSchema,
+  remotePairingsSchema,
+  remotePeerSchema,
+  sentCommandSchema,
+  type RemoteCommandType,
+  type StatusInput,
+} from './remote'
+import {
   chatAttachmentSchema,
   chatConversationSchema,
   chatMessageSchema,
@@ -800,6 +809,33 @@ export const backend = {
       call<void>('trs_web_login_decide', { account, id, code, approve }),
     /** Link-Token aus einem `trs-launcher://web-login/…`-Link beim Start (einmalig abholen). */
     takePending: () => call<string | null>('take_pending_web_login'),
+  },
+
+  /** PC-Fernbedienung (API §33): Geräte-Geheimnisse und Signaturprüfung bleiben im Kern. */
+  remote: {
+    /** PC: Kopplungs-Code + Link für den QR-Code (nur mit eingeschalteter Fernbedienung). */
+    pairStart: () => checked(pairCodeSchema, 'remote_pair_start'),
+    pairCancel: () => call<void>('remote_pair_cancel'),
+    /** PC: eigenen Stand melden (`online`/`allow` ergänzt der Kern aus den Einstellungen). */
+    publishStatus: (status: StatusInput) => call<void>('remote_publish_status', { status }),
+    /** PC: Befehl abholen – erst danach ausführen. */
+    claim: (id: string) => checked(claimedCommandSchema, 'remote_claim', { id }),
+    result: (id: string, ok: boolean, error: string | null = null) => call<void>('remote_result', { id, ok, error }),
+    /** Handy: Code des PCs einlösen (eingetippt oder aus dem QR-Code). */
+    pairConfirm: (code: string) => checked(remotePeerSchema, 'remote_pair_confirm', { code }),
+    send: (desktopId: string, commandType: RemoteCommandType, args: { instanceId?: string; code?: string }, idempotencyKey: string) =>
+      checked(sentCommandSchema, 'remote_send', {
+        desktopId,
+        commandType,
+        instanceId: args.instanceId ?? null,
+        code: args.code ?? null,
+        idempotencyKey,
+      }),
+    /** Gekoppelte Geräte – `kind` = eigene Rolle. */
+    pairings: (kind: 'desktop' | 'phone') => checked(remotePairingsSchema, 'remote_pairings', { kind }),
+    unpair: (kind: 'desktop' | 'phone', peerId: string) => call<void>('remote_unpair', { kind, peerId }),
+    /** Code aus einem `trs-launcher://remote-pair/…`-Link beim Start (einmalig abholen). */
+    takePendingPair: () => call<string | null>('take_pending_remote_pair'),
   },
 
   /** Sozial: Chat, Bilder, Meldungen, Moderation – alles über den Kern, ohne Token im Webview. */

@@ -742,6 +742,8 @@ impl Launcher {
         for account in accounts {
             self.trs.send_offline(&account).await;
         }
+        // Fernbedienung: gekoppelte Handys sehen den PC sofort als offline.
+        self.remote_shutdown().await;
     }
 }
 

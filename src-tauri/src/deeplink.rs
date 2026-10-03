@@ -1,10 +1,12 @@
 //! Link-Protokoll `trs-launcher://` (Knöpfe auf der Website).
 //!
-//! Angenommen werden nur zwei Formen, beide streng geprüft:
+//! Angenommen werden nur diese Formen, alle streng geprüft:
 //! - `trs-launcher://pack/<Code>` ([`trs_core::pack_share::pack_code_from_link`]) → Dialog „Modpack per Code“ mit
 //!   Vorschau – installiert wird erst nach einem Klick.
 //! - `trs-launcher://web-login/<Token>` ([`trs_core::trs_api::web_login::web_login_token_from_link`]) → Dialog
 //!   „Auf der Website anmelden“ – bestätigt wird erst nach einem Klick, nie automatisch.
+//! - `trs-launcher://remote-pair/<Code>` ([`trs_core::trs_api::remote::pair_code_from_link`], QR-Code der
+//!   PC-Fernbedienung) → am Handy die Seite „PC“ mit dem Code – gekoppelt wird erst nach einem Klick.
 //!
 //! Läuft der Launcher schon, reicht das Single-Instance-Plugin den Link an das offene Fenster weiter.
 
@@ -21,14 +23,22 @@ pub struct PendingPackLink(Mutex<Option<String>>);
 #[derive(Default)]
 pub struct PendingWebLogin(Mutex<Option<String>>);
 
+/// Kopplungs-Code der Fernbedienung beim Start, bis die Oberfläche ihn abholt.
+#[derive(Default)]
+pub struct PendingRemotePair(Mutex<Option<String>>);
+
 enum Link {
     Pack(String),
     WebLogin(String),
+    RemotePair(String),
 }
 
 fn parse(url: &str) -> Option<Link> {
     if let Some(code) = trs_core::pack_share::pack_code_from_link(url) {
         return Some(Link::Pack(code));
+    }
+    if let Some(code) = trs_core::trs_api::remote::pair_code_from_link(url) {
+        return Some(Link::RemotePair(code));
     }
     trs_core::trs_api::web_login::web_login_token_from_link(url).map(Link::WebLogin)
 }
@@ -52,6 +62,13 @@ fn handle(app: &AppHandle, urls: impl IntoIterator<Item = String>) {
             }
             let _ = app.emit("open-web-login", token);
         }
+        Link::RemotePair(code) => {
+            log::info!("Link geöffnet: Fernbedienung koppeln");
+            if let Some(state) = app.try_state::<PendingRemotePair>() {
+                *state.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(code.clone());
+            }
+            let _ = app.emit("open-remote-pair", code);
+        }
     }
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.unminimize();
@@ -64,6 +81,7 @@ fn handle(app: &AppHandle, urls: impl IntoIterator<Item = String>) {
 pub fn setup(app: &tauri::App) {
     app.manage(PendingPackLink::default());
     app.manage(PendingWebLogin::default());
+    app.manage(PendingRemotePair::default());
     // Installer melden das Protokoll an; zusätzlich beim Start (nur für den eigenen Benutzer), damit es auch nach
     // Updates über ältere Installer, im AppImage und in Entwicklungs-Builds zum laufenden Programm zeigt.
     #[cfg(any(target_os = "linux", windows))]
@@ -88,5 +106,11 @@ pub fn take_pending_pack_link(state: State<'_, PendingPackLink>) -> Option<Strin
 /// Wie [`take_pending_pack_link`], für `trs-launcher://web-login/<Token>`.
 #[tauri::command]
 pub fn take_pending_web_login(state: State<'_, PendingWebLogin>) -> Option<String> {
+    state.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take()
+}
+
+/// Wie [`take_pending_pack_link`], für `trs-launcher://remote-pair/<Code>`.
+#[tauri::command]
+pub fn take_pending_remote_pair(state: State<'_, PendingRemotePair>) -> Option<String> {
     state.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take()
 }

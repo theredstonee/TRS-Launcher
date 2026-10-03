@@ -201,6 +201,10 @@ export const settingsSchema = z
     trsSync: z.boolean().default(true),
     social: socialSettingsSchema,
     modpackTrsClient: z.enum(['ask', 'always', 'never']).default('ask'),
+    /** PC-Fernbedienung – fehlt das Feld (älterer Kern), ist sie aus. */
+    remote: z
+      .object({ enabled: z.boolean().default(false), allowLaunch: z.boolean().default(false), allowInstall: z.boolean().default(false) })
+      .prefault({}),
   })
   .passthrough()
   .refine((s) => s.minMemoryMb <= s.maxMemoryMb, {

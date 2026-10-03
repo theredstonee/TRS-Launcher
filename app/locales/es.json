@@ -800,6 +800,21 @@
       "invalidCode": "No es un código válido (formato: XXX-XXX).",
       "expired": "Esta solicitud de inicio de sesión no existe (ya): vuelve a empezar en la web.",
       "used": "Esta solicitud de inicio de sesión ya se respondió."
+    },
+    "remote": {
+      "disabled": "El control remoto está desactivado en los ajustes.",
+      "notAllowed": "El control remoto no puede hacer esto (Ajustes → Control remoto).",
+      "invalidCode": "Ese no es un código de vinculación válido (formato: XXX-XXX).",
+      "invalidCommand": "Esta orden no es válida.",
+      "deviceInvalid": "Este dispositivo ya no está registrado para el control remoto: vuelve a vincularlo.",
+      "wrongAccount": "El PC tiene sesión iniciada con otra cuenta de TRS: usa la misma cuenta en ambos dispositivos.",
+      "codeExpired": "Este código de vinculación no existe (o ya no existe): muestra uno nuevo en el PC.",
+      "pairingLimit": "Ya hay 10 móviles vinculados a este PC: elimina uno primero.",
+      "peerNotFound": "Este dispositivo no está vinculado (o ya no lo está).",
+      "offline": "El PC está desconectado o el control remoto está desactivado allí.",
+      "commandDisabled": "Esto está desactivado en el launcher del PC.",
+      "commandExpired": "La orden ha caducado.",
+      "commandHandled": "La orden ya se ha procesado."
     }
   },
   "browse": {
@@ -2572,7 +2587,8 @@
     "clips": "Clips",
     "social": "Social",
     "socialBadge": "{messages} sin leer · {requests} solicitudes",
-    "achievements": "Logros"
+    "achievements": "Logros",
+    "pc": "PC"
   },
   "accountMenu": {
     "menuLabel": "Cuentas",
@@ -2859,7 +2875,8 @@
       "storage": "Almacenamiento",
       "network": "Red",
       "clips": "Clips y grabación",
-      "notifications": "Notificaciones"
+      "notifications": "Notificaciones",
+      "remote": "Control remoto"
     },
     "instance": {
       "general": "General",
@@ -2919,7 +2936,8 @@
       "button": "Más información y activar",
       "shares": "Para compartir capturas como enlace, el launcher inicia sesión en el servidor TRS. Eso solo ocurre cuando aceptas.",
       "achievements": "Para mostrar tus logros, el launcher inicia sesión en el servidor TRS. Eso solo ocurre cuando aceptas.",
-      "cosmetics": "Para los cosméticos de cabeza de TRS, el launcher inicia sesión en el servidor de TRS. Solo ocurre si das tu consentimiento."
+      "cosmetics": "Para los cosméticos de cabeza de TRS, el launcher inicia sesión en el servidor de TRS. Solo ocurre si das tu consentimiento.",
+      "remote": "Para controlar tu PC desde este móvil, el launcher inicia sesión en el servidor de TRS. Eso solo ocurre cuando aceptas."
     },
     "account": {
       "title": "No has iniciado sesión",
@@ -5414,5 +5432,89 @@
     "logs": "Ayuda con los registros",
     "java": "Guía de Java",
     "linux": "Guía para Linux"
+  },
+  "remote": {
+    "settings": {
+      "title": "Control remoto desde el móvil",
+      "intro": "Inicia juegos en este PC, mira qué se está ejecutando e instala modpacks por código, desde el TRS Launcher de tu móvil. Ambos dispositivos deben usar la misma cuenta de TRS. No pasa nada si no lo activas aquí.",
+      "needsTrs": "El control remoto usa los servicios de TRS. Actívalos primero.",
+      "enabled": "Permitir control remoto",
+      "enabledHint": "Desactivado por defecto. Mientras esté activado, este PC informa de sus instancias y tareas en curso a tus móviles vinculados.",
+      "allowLaunch": "Iniciar y cerrar juegos",
+      "allowLaunchHint": "Tu móvil puede iniciar y cerrar instancias. Cada vez aparece un aviso en este PC.",
+      "allowInstall": "Instalar modpacks por código",
+      "allowInstallHint": "Tu móvil puede instalar un modpack compartido (TRS-XXXX-XXXX). Los packs con archivos de mods propios siguen necesitando tu confirmación aquí.",
+      "pairTitle": "Vincular un móvil",
+      "pairSteps": "En tu móvil, abre el TRS Launcher → «PC» y escanea este código QR o escribe el código.",
+      "expiresIn": "Válido durante {time}",
+      "expired": "El código ha caducado.",
+      "newCode": "Nuevo código",
+      "pairWarning": "Vincula solo tu propio móvil. Nunca envíes este código a nadie.",
+      "creating": "Creando código…",
+      "pair": "Vincular móvil",
+      "phones": "Móviles vinculados",
+      "pairedAt": "Vinculado el {date}",
+      "lastSeen": "visto por última vez {date}",
+      "remove": "Eliminar",
+      "noPhones": "Aún no hay ningún móvil vinculado.",
+      "paired": "Móvil vinculado",
+      "notSaved": "El ajuste todavía se está guardando: inténtalo de nuevo en un momento."
+    },
+    "pc": {
+      "title": "PC",
+      "subtitle": "Controla el TRS Launcher de tu PC",
+      "pairAnother": "Vincular otro PC",
+      "pairTitle": "Vincular un PC",
+      "pairIntro": "En tu PC, abre Ajustes → Control remoto y elige «Vincular móvil». Luego escanea el código QR o escribe el código.",
+      "scan": "Escanear código QR",
+      "scanning": "Abriendo la cámara…",
+      "codeLabel": "Código del PC",
+      "pairing": "Vinculando…",
+      "pair": "Vincular",
+      "sameAccount": "El móvil y el PC deben tener sesión iniciada con la misma cuenta de TRS.",
+      "invalidCode": "Escribe el código de 6 caracteres del PC (p. ej. K7Q-2MX).",
+      "paired": "Vinculado con {name}",
+      "cameraDenied": "Sin acceso a la cámara: permítelo en los ajustes del móvil o escribe el código.",
+      "notAPairCode": "Ese código QR no es un código de vinculación del TRS Launcher.",
+      "scanFailed": "No se pudo escanear: escribe el código.",
+      "launchSent": "Iniciando {name} en {pc}…",
+      "stopSent": "Cerrando {name} en {pc}…",
+      "installSent": "Instalando {code} en {pc}…",
+      "online": "En línea",
+      "offline": "Desconectado",
+      "remove": "Eliminar",
+      "offlineHint": "El PC está desconectado, el launcher está cerrado o el control remoto está desactivado allí.",
+      "instances": "Instancias",
+      "launchOff": "Iniciar juegos está desactivado en este PC.",
+      "running": "en ejecución",
+      "stopNamed": "Cerrar {name}",
+      "stop": "Cerrar",
+      "playNamed": "Jugar a {name}",
+      "sending": "Enviando…",
+      "play": "Jugar",
+      "noInstances": "Aún no hay instancias en este PC.",
+      "installTitle": "Instalar un modpack en el PC",
+      "installOff": "Instalar modpacks está desactivado en este PC.",
+      "install": "Instalar",
+      "installHint": "Los packs con archivos de mods propios necesitan confirmación en el PC.",
+      "noStatus": "Esperando al PC…",
+      "emptyTitle": "Aún no hay ningún PC vinculado",
+      "emptyText": "Vincula tu PC para iniciar juegos desde el móvil."
+    },
+    "toast": {
+      "launched": "Iniciado desde el móvil: {name} ({phone})",
+      "stopped": "Cerrado desde el móvil: {name} ({phone})",
+      "installing": "Instalando desde el móvil: {name} ({phone})",
+      "packNeedsPc": "{phone} quiere instalar {name}: confírmalo aquí."
+    },
+    "result": {
+      "instance_not_found": "Esta instancia no existe en el PC (o ya no existe).",
+      "already_running": "Esta instancia ya se está ejecutando.",
+      "not_running": "Esta instancia no se está ejecutando.",
+      "busy": "El PC todavía está instalando esta instancia.",
+      "needs_pc": "Este pack trae archivos de mods propios: confirma la instalación en el PC.",
+      "disabled": "Esto está desactivado en el launcher del PC.",
+      "failed": "No funcionó en el PC."
+    }
   }
 }

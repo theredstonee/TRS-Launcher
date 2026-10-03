@@ -31,6 +31,7 @@ pub mod media;
 mod ops;
 pub mod png;
 mod presence;
+pub mod remote;
 pub mod sanctions;
 pub mod share;
 pub mod store;
@@ -438,6 +439,8 @@ pub struct TrsApi {
     head_sources: std::sync::Mutex<std::collections::HashMap<String, head_cosmetics::V2Source>>,
     /// Aktive Events des Spielers (aus `GET /v1/me` und `events_changed`, §31) – nur im Speicher.
     events: std::sync::Mutex<Vec<String>>,
+    /// PC-Fernbedienung: Geräte-Zugang je Konto (§33).
+    pub(crate) remote: remote::RemoteStore,
 }
 
 impl TrsApi {
@@ -482,6 +485,7 @@ impl TrsApi {
             mojang_api: mojang_api.trim_end_matches('/').to_owned(),
             store: Store::new(paths.root().join("trs-api.json")),
             sync_store: sync::SyncStore::new(paths.root().join("trs-sync.json")),
+            remote: remote::RemoteStore::new(paths.root().join("trs-remote.json")),
             sync: Arc::default(),
             paths,
             login_lock: tokio::sync::Mutex::new(()),

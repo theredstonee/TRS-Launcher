@@ -28,6 +28,7 @@ const allAppSettingsSections: ShellSection[] = [
   section('notifications', 'settingsSections.app.notifications', 'bell', 'settingsSections.groups.interface'),
   section('profile', 'settingsSections.app.profile', 'user', 'settingsSections.groups.account'),
   section('privacy', 'settingsSections.app.privacy', 'shield', 'settingsSections.groups.account'),
+  section('remote', 'settingsSections.app.remote', 'phone', 'settingsSections.groups.account'),
   section('defaults', 'settingsSections.app.defaults', 'defaults', 'settingsSections.groups.instances'),
   section('java', 'settingsSections.app.java', 'java', 'settingsSections.groups.instances'),
   section('clips', 'settingsSections.app.clips', 'clips', 'settingsSections.groups.instances'),
@@ -35,8 +36,10 @@ const allAppSettingsSections: ShellSection[] = [
   section('network', 'settingsSections.app.network', 'network', 'settingsSections.groups.instances'),
 ]
 
-/** Clips (Spielaufnahme) gibt es vorerst nur unter Windows. */
-export const appSettingsSections: ShellSection[] = allAppSettingsSections.filter((s) => s.key !== 'clips' || !isLinux)
+/** Clips (Spielaufnahme) gibt es vorerst nur unter Windows; die Fernbedienung stellt man am PC ein (nicht am Handy). */
+export const appSettingsSections: ShellSection[] = allAppSettingsSections.filter(
+  (s) => (s.key !== 'clips' || !isLinux) && (s.key !== 'remote' || detectRemoteRole() === 'desktop'),
+)
 
 /** Bereiche der Instanz-Einstellungen. */
 export const instanceSettingsSections: ShellSection[] = [

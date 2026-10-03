@@ -195,6 +195,17 @@ export interface Settings {
   social: SocialSettings
   /** TRS Client bei Modpacks/Importen mit Mods: fragen (Standard) oder immer mit/ohne */
   modpackTrsClient: ModpackTrsPolicy
+  /** PC-Fernbedienung vom Handy (ab Werk aus) */
+  remote: RemoteSettings
+}
+
+/** PC-Fernbedienung (Rust: `RemoteSettings`): an/aus und je Befehlsart erlaubt. */
+export interface RemoteSettings {
+  enabled: boolean
+  /** Spiele starten und beenden */
+  allowLaunch: boolean
+  /** Modpacks per Code installieren */
+  allowInstall: boolean
 }
 
 /** Benachrichtigungen aus „Sozial“ (Rust: `SocialSettings`). */

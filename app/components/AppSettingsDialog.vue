@@ -449,6 +449,11 @@ async function allowFirewall() {
       <SocialNotificationSettings v-if="form.social" v-model="form.social" />
     </div>
 
+    <!-- Fernbedienung (vom Handy) ------------------------------------------------ -->
+    <div v-else-if="active === 'remote'">
+      <RemoteControlSettings v-if="form.remote" v-model="form.remote" />
+    </div>
+
     <!-- Datenschutz -------------------------------------------------------------- -->
     <div v-else-if="active === 'privacy'">
       <h3 class="section-heading">{{ t('settings.privacy.title') }}</h3>

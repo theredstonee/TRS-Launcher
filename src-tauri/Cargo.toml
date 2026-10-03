@@ -49,5 +49,9 @@ tauri-plugin-window-state = "2.4.1"
 thiserror = "2.0.20"
 trs-core = { path = "crates/core" }
 
+# PC-Fernbedienung: QR-Code des PCs am Handy scannen (nur Android/iOS).
+[target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
+tauri-plugin-barcode-scanner = "2.4.6"
+
 [build-dependencies]
 tauri-build = { version = "2.6.3", features = [] }

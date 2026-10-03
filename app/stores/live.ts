@@ -78,6 +78,7 @@ export const useLiveStore = defineStore('live', () => {
       useApplicationsStore().loaded ? useApplicationsStore().load() : Promise.resolve(),
       usePacksStore().inboxLoaded ? usePacksStore().loadInbox() : Promise.resolve(),
       useAchievementsStore().data ? useAchievementsStore().load(true) : Promise.resolve(),
+      useRemoteStore().pcsLoaded ? useRemoteStore().loadPcs() : Promise.resolve(),
     ])
   }
 
@@ -207,6 +208,13 @@ export const useLiveStore = defineStore('live', () => {
         return
       case 'achievement_unlocked':
         void useAchievementsStore().onLiveEvent(e)
+        return
+      case 'remote_command':
+      case 'remote_command_update':
+      case 'remote_status':
+      case 'remote_pairing':
+        // PC-Fernbedienung (§33): Befehle (am PC), Status und Kopplungen.
+        useRemoteStore().onLiveEvent(e)
         return
       case 'issue_updated': {
         // Issue auf der Website (§28): nur Hinweis, „Ansehen“ öffnet es im Browser.

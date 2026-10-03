@@ -800,6 +800,21 @@
       "invalidCode": "Das ist kein gültiger Code (Form: XXX-XXX).",
       "expired": "Diese Anmelde-Anfrage gibt es nicht (mehr) – starte die Anmeldung auf der Website neu.",
       "used": "Diese Anmelde-Anfrage wurde schon beantwortet."
+    },
+    "remote": {
+      "disabled": "Die Fernbedienung ist in den Einstellungen ausgeschaltet.",
+      "notAllowed": "Diese Aktion ist für die Fernbedienung nicht erlaubt (Einstellungen → Fernbedienung).",
+      "invalidCode": "Das ist kein gültiger Kopplungs-Code (Form: XXX-XXX).",
+      "invalidCommand": "Dieser Befehl ist ungültig.",
+      "deviceInvalid": "Dieses Gerät ist für die Fernbedienung nicht (mehr) angemeldet – bitte neu koppeln.",
+      "wrongAccount": "Der PC ist mit einem anderen TRS-Konto angemeldet – nutze auf beiden Geräten dasselbe Konto.",
+      "codeExpired": "Diesen Kopplungs-Code gibt es nicht (mehr) – lass am PC einen neuen anzeigen.",
+      "pairingLimit": "An diesem PC sind schon 10 Handys gekoppelt – entferne zuerst eins.",
+      "peerNotFound": "Dieses Gerät ist nicht (mehr) gekoppelt.",
+      "offline": "Der PC ist offline oder die Fernbedienung ist dort ausgeschaltet.",
+      "commandDisabled": "Das ist im Launcher am PC ausgeschaltet.",
+      "commandExpired": "Der Befehl ist abgelaufen.",
+      "commandHandled": "Der Befehl wurde schon bearbeitet."
     }
   },
   "browse": {
@@ -2572,7 +2587,8 @@
     "clips": "Clips",
     "social": "Sozial",
     "socialBadge": "{messages} ungelesen · {requests} Anfragen",
-    "achievements": "Erfolge"
+    "achievements": "Erfolge",
+    "pc": "PC"
   },
   "accountMenu": {
     "menuLabel": "Konten",
@@ -2859,7 +2875,8 @@
       "storage": "Speicherverwaltung",
       "network": "Netzwerk",
       "clips": "Clips & Aufnahme",
-      "notifications": "Benachrichtigungen"
+      "notifications": "Benachrichtigungen",
+      "remote": "Fernbedienung"
     },
     "instance": {
       "general": "Allgemein",
@@ -2919,7 +2936,8 @@
       "button": "Mehr erfahren & einschalten",
       "shares": "Um Screenshots als Link zu teilen, meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
       "achievements": "Um deine Erfolge zu zeigen, meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
-      "cosmetics": "Für TRS-Kopf-Kosmetik meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst."
+      "cosmetics": "Für TRS-Kopf-Kosmetik meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
+      "remote": "Um deinen PC vom Handy aus zu steuern, meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst."
     },
     "account": {
       "title": "Kein Account angemeldet",
@@ -5414,5 +5432,89 @@
     "logs": "Hilfe zu Logs",
     "java": "Anleitung zu Java",
     "linux": "Anleitung für Linux"
+  },
+  "remote": {
+    "settings": {
+      "title": "Fernbedienung vom Handy",
+      "intro": "Starte Spiele auf diesem PC, sieh, was gerade läuft, und installiere Modpacks per Code – mit dem TRS Launcher auf deinem Handy. Beide Geräte müssen dasselbe TRS-Konto nutzen. Ohne deine Zustimmung hier passiert nichts.",
+      "needsTrs": "Die Fernbedienung nutzt die TRS-Dienste. Schalte sie zuerst ein.",
+      "enabled": "Fernbedienung erlauben",
+      "enabledHint": "Ab Werk aus. Solange sie an ist, meldet dieser PC seine Instanzen und laufenden Aufgaben an deine gekoppelten Handys.",
+      "allowLaunch": "Spiele starten und beenden",
+      "allowLaunchHint": "Dein Handy darf Instanzen starten und beenden. Auf diesem PC erscheint dann jedes Mal ein Hinweis.",
+      "allowInstall": "Modpacks per Code installieren",
+      "allowInstallHint": "Dein Handy darf ein geteiltes Modpack (TRS-XXXX-XXXX) installieren. Packs mit eigenen Mod-Dateien musst du trotzdem hier bestätigen.",
+      "pairTitle": "Handy koppeln",
+      "pairSteps": "Öffne am Handy den TRS Launcher → „PC“ und scanne diesen QR-Code oder tippe den Code ein.",
+      "expiresIn": "Gültig noch {time}",
+      "expired": "Der Code ist abgelaufen.",
+      "newCode": "Neuer Code",
+      "pairWarning": "Koppel nur dein eigenes Handy. Schick diesen Code niemals an andere.",
+      "creating": "Code wird erstellt …",
+      "pair": "Handy koppeln",
+      "phones": "Gekoppelte Handys",
+      "pairedAt": "Gekoppelt am {date}",
+      "lastSeen": "zuletzt gesehen {date}",
+      "remove": "Entfernen",
+      "noPhones": "Noch kein Handy gekoppelt.",
+      "paired": "Handy gekoppelt",
+      "notSaved": "Die Einstellung wird noch gespeichert – bitte gleich noch einmal versuchen."
+    },
+    "pc": {
+      "title": "PC",
+      "subtitle": "Steuere den TRS Launcher auf deinem PC",
+      "pairAnother": "Weiteren PC koppeln",
+      "pairTitle": "PC koppeln",
+      "pairIntro": "Öffne am PC Einstellungen → Fernbedienung und wähle „Handy koppeln“. Scanne dann den QR-Code oder tippe den Code ein.",
+      "scan": "QR-Code scannen",
+      "scanning": "Kamera wird geöffnet …",
+      "codeLabel": "Code vom PC",
+      "pairing": "Wird gekoppelt …",
+      "pair": "Koppeln",
+      "sameAccount": "Handy und PC müssen mit demselben TRS-Konto angemeldet sein.",
+      "invalidCode": "Gib den 6-stelligen Code vom PC ein (z. B. K7Q-2MX).",
+      "paired": "Mit {name} gekoppelt",
+      "cameraDenied": "Kein Zugriff auf die Kamera – erlaube ihn in den Einstellungen des Handys oder tippe den Code ein.",
+      "notAPairCode": "Dieser QR-Code ist kein Kopplungs-Code des TRS Launchers.",
+      "scanFailed": "Scannen hat nicht geklappt – tippe den Code stattdessen ein.",
+      "launchSent": "{name} wird auf {pc} gestartet …",
+      "stopSent": "{name} wird auf {pc} beendet …",
+      "installSent": "{code} wird auf {pc} installiert …",
+      "online": "Online",
+      "offline": "Offline",
+      "remove": "Entfernen",
+      "offlineHint": "Der PC ist offline, der Launcher ist geschlossen oder die Fernbedienung ist dort ausgeschaltet.",
+      "instances": "Instanzen",
+      "launchOff": "Spiele starten ist an diesem PC ausgeschaltet.",
+      "running": "läuft",
+      "stopNamed": "{name} beenden",
+      "stop": "Beenden",
+      "playNamed": "{name} spielen",
+      "sending": "Wird gesendet …",
+      "play": "Spielen",
+      "noInstances": "Auf diesem PC gibt es noch keine Instanzen.",
+      "installTitle": "Modpack auf dem PC installieren",
+      "installOff": "Modpacks installieren ist an diesem PC ausgeschaltet.",
+      "install": "Installieren",
+      "installHint": "Packs mit eigenen Mod-Dateien müssen am PC bestätigt werden.",
+      "noStatus": "Warte auf den PC …",
+      "emptyTitle": "Noch kein PC gekoppelt",
+      "emptyText": "Kopple deinen PC, um Spiele vom Handy aus zu starten."
+    },
+    "toast": {
+      "launched": "Vom Handy gestartet: {name} ({phone})",
+      "stopped": "Vom Handy beendet: {name} ({phone})",
+      "installing": "Vom Handy: {name} wird installiert ({phone})",
+      "packNeedsPc": "{phone} möchte {name} installieren – bitte hier bestätigen."
+    },
+    "result": {
+      "instance_not_found": "Diese Instanz gibt es auf dem PC nicht (mehr).",
+      "already_running": "Diese Instanz läuft schon.",
+      "not_running": "Diese Instanz läuft nicht.",
+      "busy": "Der PC installiert diese Instanz noch.",
+      "needs_pc": "Dieses Pack bringt eigene Mod-Dateien mit – bitte die Installation am PC bestätigen.",
+      "disabled": "Das ist im Launcher am PC ausgeschaltet.",
+      "failed": "Das hat am PC nicht geklappt."
+    }
   }
 }

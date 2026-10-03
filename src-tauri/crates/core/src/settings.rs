@@ -81,6 +81,20 @@ pub struct Settings {
     /// (Standard) oder immer mit bzw. ohne.
     #[serde(deserialize_with = "crate::trs_choice::lenient_policy")]
     pub modpack_trs_client: crate::trs_choice::ModpackTrsPolicy,
+    /// PC-Fernbedienung vom Handy (ab Werk aus).
+    pub remote: RemoteSettings,
+}
+
+/// PC-Fernbedienung (API §33): das Handy desselben TRS-Kontos darf diesen PC steuern.
+/// Ab Werk aus; jede Befehlsart hat ihren eigenen Schalter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct RemoteSettings {
+    pub enabled: bool,
+    /// Spiele starten und beenden.
+    pub allow_launch: bool,
+    /// Modpacks per Code installieren.
+    pub allow_install: bool,
 }
 
 /// Ecken für Benachrichtigungen.
@@ -350,6 +364,7 @@ impl Default for Settings {
             trs_sync: true,
             social: SocialSettings::default(),
             modpack_trs_client: crate::trs_choice::ModpackTrsPolicy::Ask,
+            remote: RemoteSettings::default(),
         }
     }
 }

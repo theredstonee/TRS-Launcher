@@ -82,6 +82,11 @@ export const icons = {
   lightbulb: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z',
   /** Erfolge: Pokal. */
   trophy: 'M8 4h8v6a4 4 0 0 1-8 0zM8 6H4.5v1.5A3.5 3.5 0 0 0 8 11M16 6h3.5v1.5A3.5 3.5 0 0 1 16 11M12 14v4M8.5 21h7M9.5 18h5v3h-5z',
+  /** Fernbedienung: Handy, PC, Stopp, QR-Code. */
+  phone: 'M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM11 18h2',
+  monitor: 'M3 4h18v12H3zM8 20h8M12 16v4',
+  stop: 'M7 7h10v10H7z',
+  qr: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 18h2v2h-2zM18 14h2M14 18h2',
 } as const
 
 export type IconName = keyof typeof icons

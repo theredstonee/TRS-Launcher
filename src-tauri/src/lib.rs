@@ -22,6 +22,18 @@ fn data_root(app: &tauri::App) -> Result<PathBuf, Box<dyn std::error::Error>> {
     Ok(app.path().data_dir()?.join(trs_core::LAUNCHER_NAME))
 }
 
+/// QR-Scanner der Fernbedienung (Kamera) – nur auf Android/iOS.
+#[cfg(mobile)]
+fn qr_scanner<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
+    tauri_plugin_barcode_scanner::init()
+}
+
+/// Am PC gibt es nichts zu scannen.
+#[cfg(not(mobile))]
+fn qr_scanner<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
+    tauri::plugin::Builder::new("trs-no-scanner").build()
+}
+
 pub fn run() {
     if let Ok(exe) = std::env::current_exe() {
         trs_core::firewall::set_helper_exe(exe);
@@ -50,6 +62,8 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_notification::init())
+        // Fernbedienung: QR-Code des PCs scannen – nur am Handy (am PC ein leeres Plugin).
+        .plugin(qr_scanner())
         .setup(|app| {
             let root = data_root(app)?;
             log::info!("Datenverzeichnis: {}", root.display());
@@ -434,6 +448,16 @@ pub fn run() {
             commands::packs::discard_share_pack,
             deeplink::take_pending_pack_link,
             deeplink::take_pending_web_login,
+            deeplink::take_pending_remote_pair,
+            commands::remote::remote_pair_start,
+            commands::remote::remote_pair_cancel,
+            commands::remote::remote_publish_status,
+            commands::remote::remote_claim,
+            commands::remote::remote_result,
+            commands::remote::remote_pair_confirm,
+            commands::remote::remote_send,
+            commands::remote::remote_pairings,
+            commands::remote::remote_unpair,
             commands::packs::packs_mine,
             commands::packs::pack_set_duration,
             commands::packs::pack_delete,

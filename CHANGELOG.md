@@ -28,6 +28,22 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **PC remote control from your phone.** With the TRS Launcher on your phone you can start and quit games on your PC,
+  see what's running and how far an installation is, and install a shared modpack by code – as long as both use the
+  same TRS account. Off by default: switch it on under Settings → Remote control, choose what your phone may do, and
+  pair your phone by scanning the QR code (or typing the code). The PC shows a notice whenever your phone starts
+  something, and you can remove paired phones at any time.
+
+### Deutsch
+- **PC-Fernbedienung vom Handy.** Mit dem TRS Launcher auf dem Handy startest und beendest du Spiele auf deinem PC,
+  siehst, was gerade läuft und wie weit eine Installation ist, und installierst ein geteiltes Modpack per Code –
+  solange beide dasselbe TRS-Konto nutzen. Ab Werk aus: unter Einstellungen → Fernbedienung einschalten, festlegen,
+  was das Handy darf, und das Handy per QR-Code (oder Code eintippen) koppeln. Der PC zeigt jedes Mal einen Hinweis,
+  wenn das Handy etwas startet, und gekoppelte Handys lassen sich jederzeit entfernen.
+
 ## 0.17.0 – 2026-10-03 – Light Luggage | Leichtes Gepäck
 <!-- banner: accent=#ff3b30 motif=/news/0.17.0/banner.png -->
 <!-- shots:

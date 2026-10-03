@@ -800,6 +800,21 @@
       "invalidCode": "That is not a valid code (format: XXX-XXX).",
       "expired": "This sign-in request doesn’t exist (anymore) – start the sign-in on the website again.",
       "used": "This sign-in request was already answered."
+    },
+    "remote": {
+      "disabled": "Remote control is switched off in the settings.",
+      "notAllowed": "Remote control isn’t allowed to do this (Settings → Remote control).",
+      "invalidCode": "That is not a valid pairing code (format: XXX-XXX).",
+      "invalidCommand": "This command is invalid.",
+      "deviceInvalid": "This device is no longer registered for remote control – please pair again.",
+      "wrongAccount": "The PC is signed in with a different TRS account – use the same account on both devices.",
+      "codeExpired": "This pairing code doesn’t exist (anymore) – show a new one on the PC.",
+      "pairingLimit": "10 phones are already paired with this PC – remove one first.",
+      "peerNotFound": "This device isn’t paired (anymore).",
+      "offline": "The PC is offline or remote control is switched off there.",
+      "commandDisabled": "This is switched off in the launcher on the PC.",
+      "commandExpired": "The command expired.",
+      "commandHandled": "The command was already handled."
     }
   },
   "browse": {
@@ -2572,7 +2587,8 @@
     "clips": "Clips",
     "social": "Social",
     "socialBadge": "{messages} unread · {requests} requests",
-    "achievements": "Achievements"
+    "achievements": "Achievements",
+    "pc": "PC"
   },
   "accountMenu": {
     "menuLabel": "Accounts",
@@ -2859,7 +2875,8 @@
       "storage": "Storage",
       "network": "Network",
       "clips": "Clips & recording",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "remote": "Remote control"
     },
     "instance": {
       "general": "General",
@@ -2919,7 +2936,8 @@
       "button": "Learn more & turn on",
       "shares": "To share screenshots as links, the launcher signs in to the TRS server. That only happens once you agree.",
       "achievements": "To show your achievements, the launcher signs in to the TRS server. That only happens once you agree.",
-      "cosmetics": "To show TRS head cosmetics, the launcher signs in to the TRS server. That only happens once you agree."
+      "cosmetics": "To show TRS head cosmetics, the launcher signs in to the TRS server. That only happens once you agree.",
+      "remote": "To control your PC from this phone, the launcher signs in to the TRS server. That only happens once you agree."
     },
     "account": {
       "title": "No account signed in",
@@ -5414,5 +5432,89 @@
     "logs": "Help with logs",
     "java": "Java guide",
     "linux": "Linux guide"
+  },
+  "remote": {
+    "settings": {
+      "title": "Remote control from your phone",
+      "intro": "Start games on this PC, see what’s running and install modpacks by code – from the TRS Launcher on your phone. Both devices must use the same TRS account. Nothing happens unless you switch it on here.",
+      "needsTrs": "Remote control uses the TRS services. Switch them on first.",
+      "enabled": "Allow remote control",
+      "enabledHint": "Off by default. While it’s on, this PC reports its instances and running tasks to your paired phones.",
+      "allowLaunch": "Start and stop games",
+      "allowLaunchHint": "Your phone may start and quit instances. A notice appears on this PC each time.",
+      "allowInstall": "Install modpacks by code",
+      "allowInstallHint": "Your phone may install a shared modpack (TRS-XXXX-XXXX). Packs with their own mod files still need your confirmation here.",
+      "pairTitle": "Pair a phone",
+      "pairSteps": "On your phone, open the TRS Launcher → “PC” and scan this QR code, or type the code.",
+      "expiresIn": "Valid for {time}",
+      "expired": "The code expired.",
+      "newCode": "New code",
+      "pairWarning": "Only pair your own phone. Never send this code to anyone.",
+      "creating": "Creating code…",
+      "pair": "Pair phone",
+      "phones": "Paired phones",
+      "pairedAt": "Paired {date}",
+      "lastSeen": "last seen {date}",
+      "remove": "Remove",
+      "noPhones": "No phone paired yet.",
+      "paired": "Phone paired",
+      "notSaved": "The setting is still being saved – please try again in a moment."
+    },
+    "pc": {
+      "title": "PC",
+      "subtitle": "Control the TRS Launcher on your PC",
+      "pairAnother": "Pair another PC",
+      "pairTitle": "Pair a PC",
+      "pairIntro": "On your PC, open Settings → Remote control and choose “Pair phone”. Then scan the QR code or type the code.",
+      "scan": "Scan QR code",
+      "scanning": "Opening camera…",
+      "codeLabel": "Code from the PC",
+      "pairing": "Pairing…",
+      "pair": "Pair",
+      "sameAccount": "Phone and PC must be signed in with the same TRS account.",
+      "invalidCode": "Enter the 6-character code from the PC (e.g. K7Q-2MX).",
+      "paired": "Paired with {name}",
+      "cameraDenied": "No camera access – allow it in your phone’s settings or type the code.",
+      "notAPairCode": "That QR code isn’t a pairing code from the TRS Launcher.",
+      "scanFailed": "Scanning didn’t work – type the code instead.",
+      "launchSent": "Starting {name} on {pc}…",
+      "stopSent": "Stopping {name} on {pc}…",
+      "installSent": "Installing {code} on {pc}…",
+      "online": "Online",
+      "offline": "Offline",
+      "remove": "Remove",
+      "offlineHint": "The PC is offline, the launcher is closed or remote control is switched off there.",
+      "instances": "Instances",
+      "launchOff": "Starting games is switched off on this PC.",
+      "running": "running",
+      "stopNamed": "Stop {name}",
+      "stop": "Stop",
+      "playNamed": "Play {name}",
+      "sending": "Sending…",
+      "play": "Play",
+      "noInstances": "No instances on this PC yet.",
+      "installTitle": "Install a modpack on the PC",
+      "installOff": "Installing modpacks is switched off on this PC.",
+      "install": "Install",
+      "installHint": "Packs with their own mod files need a confirmation on the PC.",
+      "noStatus": "Waiting for the PC…",
+      "emptyTitle": "No PC paired yet",
+      "emptyText": "Pair your PC to start games from your phone."
+    },
+    "toast": {
+      "launched": "Started from your phone: {name} ({phone})",
+      "stopped": "Stopped from your phone: {name} ({phone})",
+      "installing": "Installing from your phone: {name} ({phone})",
+      "packNeedsPc": "{phone} wants to install {name} – please confirm it here."
+    },
+    "result": {
+      "instance_not_found": "This instance doesn’t exist on the PC (anymore).",
+      "already_running": "This instance is already running.",
+      "not_running": "This instance isn’t running.",
+      "busy": "The PC is still installing this instance.",
+      "needs_pc": "This pack has its own mod files – please confirm the installation on the PC.",
+      "disabled": "This is switched off in the launcher on the PC.",
+      "failed": "That didn’t work on the PC."
+    }
   }
 }

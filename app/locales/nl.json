@@ -800,6 +800,21 @@
       "invalidCode": "Dat is geen geldige code (vorm: XXX-XXX).",
       "expired": "Dit inlogverzoek bestaat niet (meer) – start het inloggen op de website opnieuw.",
       "used": "Dit inlogverzoek is al beantwoord."
+    },
+    "remote": {
+      "disabled": "De afstandsbediening staat uit in de instellingen.",
+      "notAllowed": "De afstandsbediening mag dit niet doen (Instellingen → Afstandsbediening).",
+      "invalidCode": "Dat is geen geldige koppelcode (vorm: XXX-XXX).",
+      "invalidCommand": "Deze opdracht is ongeldig.",
+      "deviceInvalid": "Dit apparaat is niet (meer) aangemeld voor de afstandsbediening – koppel opnieuw.",
+      "wrongAccount": "De pc is aangemeld met een ander TRS-account – gebruik op beide apparaten hetzelfde account.",
+      "codeExpired": "Deze koppelcode bestaat niet (meer) – laat op de pc een nieuwe zien.",
+      "pairingLimit": "Er zijn al 10 telefoons aan deze pc gekoppeld – verwijder er eerst een.",
+      "peerNotFound": "Dit apparaat is niet (meer) gekoppeld.",
+      "offline": "De pc is offline of de afstandsbediening staat daar uit.",
+      "commandDisabled": "Dit staat uit in de launcher op de pc.",
+      "commandExpired": "De opdracht is verlopen.",
+      "commandHandled": "De opdracht is al verwerkt."
     }
   },
   "browse": {
@@ -2572,7 +2587,8 @@
     "clips": "Clips",
     "social": "Sociaal",
     "socialBadge": "{messages} ongelezen · {requests} verzoeken",
-    "achievements": "Prestaties"
+    "achievements": "Prestaties",
+    "pc": "PC"
   },
   "accountMenu": {
     "menuLabel": "Accounts",
@@ -2859,7 +2875,8 @@
       "storage": "Opslag",
       "network": "Netwerk",
       "clips": "Clips en opnemen",
-      "notifications": "Meldingen"
+      "notifications": "Meldingen",
+      "remote": "Afstandsbediening"
     },
     "instance": {
       "general": "Algemeen",
@@ -2919,7 +2936,8 @@
       "button": "Meer info & inschakelen",
       "shares": "Om screenshots als link te delen, meldt de launcher zich aan bij de TRS-server. Dat gebeurt pas als je toestemming geeft.",
       "achievements": "Om je prestaties te tonen, meldt de launcher zich aan bij de TRS-server. Dat gebeurt pas als je akkoord gaat.",
-      "cosmetics": "Om TRS-hoofdcosmetica te tonen, logt de launcher in bij de TRS-server. Dat gebeurt pas als je akkoord gaat."
+      "cosmetics": "Om TRS-hoofdcosmetica te tonen, logt de launcher in bij de TRS-server. Dat gebeurt pas als je akkoord gaat.",
+      "remote": "Om je pc vanaf deze telefoon te bedienen, meldt de launcher zich aan bij de TRS-server. Dat gebeurt pas als je toestemming geeft."
     },
     "account": {
       "title": "Geen account ingelogd",
@@ -5414,5 +5432,89 @@
     "logs": "Hulp bij logs",
     "java": "Java-handleiding",
     "linux": "Linux-handleiding"
+  },
+  "remote": {
+    "settings": {
+      "title": "Afstandsbediening vanaf je telefoon",
+      "intro": "Start games op deze pc, zie wat er draait en installeer modpacks met een code – vanuit de TRS Launcher op je telefoon. Beide apparaten moeten hetzelfde TRS-account gebruiken. Er gebeurt niets zolang je het hier niet aanzet.",
+      "needsTrs": "De afstandsbediening gebruikt de TRS-diensten. Zet die eerst aan.",
+      "enabled": "Afstandsbediening toestaan",
+      "enabledHint": "Standaard uit. Zolang ze aanstaat, meldt deze pc zijn instanties en lopende taken aan je gekoppelde telefoons.",
+      "allowLaunch": "Games starten en stoppen",
+      "allowLaunchHint": "Je telefoon mag instanties starten en afsluiten. Op deze pc verschijnt dan telkens een melding.",
+      "allowInstall": "Modpacks met een code installeren",
+      "allowInstallHint": "Je telefoon mag een gedeeld modpack (TRS-XXXX-XXXX) installeren. Packs met eigen modbestanden moet je hier toch bevestigen.",
+      "pairTitle": "Telefoon koppelen",
+      "pairSteps": "Open op je telefoon de TRS Launcher → „PC” en scan deze QR-code, of typ de code in.",
+      "expiresIn": "Nog {time} geldig",
+      "expired": "De code is verlopen.",
+      "newCode": "Nieuwe code",
+      "pairWarning": "Koppel alleen je eigen telefoon. Stuur deze code nooit naar iemand anders.",
+      "creating": "Code wordt gemaakt…",
+      "pair": "Telefoon koppelen",
+      "phones": "Gekoppelde telefoons",
+      "pairedAt": "Gekoppeld op {date}",
+      "lastSeen": "laatst gezien {date}",
+      "remove": "Verwijderen",
+      "noPhones": "Nog geen telefoon gekoppeld.",
+      "paired": "Telefoon gekoppeld",
+      "notSaved": "De instelling wordt nog opgeslagen – probeer het zo nog eens."
+    },
+    "pc": {
+      "title": "PC",
+      "subtitle": "Bedien de TRS Launcher op je pc",
+      "pairAnother": "Nog een pc koppelen",
+      "pairTitle": "PC koppelen",
+      "pairIntro": "Open op je pc Instellingen → Afstandsbediening en kies „Telefoon koppelen”. Scan dan de QR-code of typ de code in.",
+      "scan": "QR-code scannen",
+      "scanning": "Camera wordt geopend…",
+      "codeLabel": "Code van de pc",
+      "pairing": "Bezig met koppelen…",
+      "pair": "Koppelen",
+      "sameAccount": "Telefoon en pc moeten met hetzelfde TRS-account aangemeld zijn.",
+      "invalidCode": "Voer de code van 6 tekens van de pc in (bijv. K7Q-2MX).",
+      "paired": "Gekoppeld met {name}",
+      "cameraDenied": "Geen toegang tot de camera – sta die toe in de instellingen van je telefoon of typ de code in.",
+      "notAPairCode": "Deze QR-code is geen koppelcode van de TRS Launcher.",
+      "scanFailed": "Scannen is niet gelukt – typ de code in.",
+      "launchSent": "{name} wordt gestart op {pc}…",
+      "stopSent": "{name} wordt gestopt op {pc}…",
+      "installSent": "{code} wordt geïnstalleerd op {pc}…",
+      "online": "Online",
+      "offline": "Offline",
+      "remove": "Verwijderen",
+      "offlineHint": "De pc is offline, de launcher is gesloten of de afstandsbediening staat daar uit.",
+      "instances": "Instanties",
+      "launchOff": "Games starten staat uit op deze pc.",
+      "running": "actief",
+      "stopNamed": "{name} stoppen",
+      "stop": "Stoppen",
+      "playNamed": "{name} spelen",
+      "sending": "Bezig met verzenden…",
+      "play": "Spelen",
+      "noInstances": "Nog geen instanties op deze pc.",
+      "installTitle": "Modpack op de pc installeren",
+      "installOff": "Modpacks installeren staat uit op deze pc.",
+      "install": "Installeren",
+      "installHint": "Packs met eigen modbestanden moeten op de pc bevestigd worden.",
+      "noStatus": "Wachten op de pc…",
+      "emptyTitle": "Nog geen pc gekoppeld",
+      "emptyText": "Koppel je pc om games vanaf je telefoon te starten."
+    },
+    "toast": {
+      "launched": "Gestart vanaf je telefoon: {name} ({phone})",
+      "stopped": "Gestopt vanaf je telefoon: {name} ({phone})",
+      "installing": "Installatie vanaf je telefoon: {name} ({phone})",
+      "packNeedsPc": "{phone} wil {name} installeren – bevestig dat hier."
+    },
+    "result": {
+      "instance_not_found": "Deze instantie bestaat niet (meer) op de pc.",
+      "already_running": "Deze instantie draait al.",
+      "not_running": "Deze instantie draait niet.",
+      "busy": "De pc installeert deze instantie nog.",
+      "needs_pc": "Dit pack bevat eigen modbestanden – bevestig de installatie op de pc.",
+      "disabled": "Dit staat uit in de launcher op de pc.",
+      "failed": "Dat is op de pc niet gelukt."
+    }
   }
 }

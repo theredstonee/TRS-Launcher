@@ -15,6 +15,8 @@ interface NavItem {
   admin?: boolean
   /** Nur unter Windows (z. B. Clips). */
   windowsOnly?: boolean
+  /** Nur am Handy (PC-Fernbedienung). */
+  phoneOnly?: boolean
 }
 
 const items: NavItem[] = [
@@ -27,6 +29,7 @@ const items: NavItem[] = [
   { to: '/clips', label: 'nav.clips', icon: 'clips', optional: true, windowsOnly: true },
   { to: '/skins', label: 'nav.skins', icon: 'skins', optional: true },
   { to: '/social', label: 'nav.social', icon: 'chat' },
+  { to: '/pc', label: 'nav.pc', icon: 'monitor', phoneOnly: true },
   { to: '/admin', label: 'nav.admin', icon: 'admin', admin: true },
 ]
 
@@ -58,7 +61,9 @@ const visibleItems = computed(() =>
       (!item.optional || router.resolve(item.to).matched.length > 0) &&
       (!item.admin || trs.isStaff) &&
       // Clips (Spielaufnahme) gibt es vorerst nur unter Windows.
-      (!item.windowsOnly || !isLinux),
+      (!item.windowsOnly || !isLinux) &&
+      // Die PC-Fernbedienung bedient man vom Handy aus.
+      (!item.phoneOnly || detectRemoteRole() === 'phone'),
   ),
 )
 
