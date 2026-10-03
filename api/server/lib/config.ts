@@ -2,6 +2,7 @@ import { hkdfSync } from 'node:crypto'
 import { join } from 'node:path'
 import { z } from 'zod'
 import { normalizeUuid } from './ids'
+import { parseVapidKeys, type VapidKeys } from './push-crypto'
 import type { MicrosoftConfig } from './microsoft'
 
 /** Laufzeit-Konfiguration – ausschließlich aus Umgebungsvariablen (.env). */
@@ -47,6 +48,8 @@ export interface Config {
   hosting: HostingConfig | null
   /** Website-Anmeldung mit Microsoft (§24.1). `null` = aus (MS_CLIENT_ID/MS_CLIENT_SECRET fehlen). */
   microsoft: MicrosoftConfig | null
+  /** Push für die Apps (§33): VAPID-Schlüssel. `null` = UnifiedPush aus (Abruf-Geräte gehen trotzdem). */
+  vapid: VapidKeys | null
   limits: Limits
 }
 
@@ -141,6 +144,19 @@ export interface Limits {
   maxPackUploadsPerDay: number
   /** Ungelesene an dich geschickte Packs (danach lehnt der Server weitere ab). */
   maxPackInbox: number
+  // ------------------------------------------------ Push (§33)
+  /** Push-Geräte je Konto. */
+  maxPushDevices: number
+  /** Stream der App/des Desktops gilt noch so lange nach dem Schließen als „aktiv“ (keine doppelte Benachrichtigung). */
+  pushActiveWindowMs: number
+  /** Abruf-Liste (iOS): Einträge höchstens so lange … */
+  pushPendingTtlMs: number
+  /** … und höchstens so viele je Gerät. */
+  maxPushPendingPerDevice: number
+  /** Wartende Sendungen insgesamt (darüber wird verworfen). */
+  pushQueueMax: number
+  /** Gleichzeitige Sendungen an Push-Dienste. */
+  pushConcurrency: number
 }
 
 export const DEFAULT_LIMITS: Limits = {
@@ -190,6 +206,12 @@ export const DEFAULT_LIMITS: Limits = {
   maxSharedPacks: 10,
   maxPackUploadsPerDay: 30,
   maxPackInbox: 100,
+  maxPushDevices: 10,
+  pushActiveWindowMs: 60 * 1000,
+  pushPendingTtlMs: 72 * 60 * 60 * 1000,
+  maxPushPendingPerDevice: 200,
+  pushQueueMax: 5000,
+  pushConcurrency: 8,
 }
 
 const bool = z
@@ -292,6 +314,10 @@ const envSchema = z.object({
   XBOX_XSTS_URL: z.url({ protocol: /^https?$/ }).default('https://xsts.auth.xboxlive.com/xsts/authorize'),
   MINECRAFT_SERVICES_URL: z.url({ protocol: /^https?$/ }).default('https://api.minecraftservices.com').transform((s) => s.replace(/\/+$/, '')),
   ALLOW_INSECURE_MS_URLS: bool.default(false),
+  // Push für die Apps (§33): VAPID-Schlüsselpaar (base64url, `node scripts/vapid-keys.mjs`) + Kontakt. Alle drei oder keiner.
+  VAPID_PUBLIC_KEY: z.string().trim().default(''),
+  VAPID_PRIVATE_KEY: z.string().trim().default(''),
+  VAPID_SUBJECT: z.string().trim().max(256).default(''),
 })
 
 const HOST_PORT = /^[A-Za-z0-9.-]{1,253}:(\d{1,5})$/
@@ -343,6 +369,19 @@ function parseMicrosoft(e: z.output<typeof envSchema>): MicrosoftConfig | null {
     xboxXstsUrl: e.XBOX_XSTS_URL,
     minecraftServicesUrl: e.MINECRAFT_SERVICES_URL,
   }
+}
+
+/** VAPID lesen; alle drei leer → `null` (UnifiedPush aus). Teilweise gesetzt oder unpassend → Fehler. */
+function parseVapid(e: z.output<typeof envSchema>): VapidKeys | null {
+  const set = [e.VAPID_PUBLIC_KEY, e.VAPID_PRIVATE_KEY, e.VAPID_SUBJECT].filter((v) => v !== '').length
+  if (set === 0) return null
+  if (set !== 3) throw new ConfigError('Invalid configuration: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY and VAPID_SUBJECT must be set together')
+  const keys = parseVapidKeys(e.VAPID_PUBLIC_KEY, e.VAPID_PRIVATE_KEY)
+  if (!keys) throw new ConfigError('Invalid configuration: VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY (expected a matching P-256 key pair, base64url)')
+  if (!/^mailto:[^\s@]+@[^\s@]+$/.test(e.VAPID_SUBJECT) && !/^https:\/\/[^\s]+$/.test(e.VAPID_SUBJECT)) {
+    throw new ConfigError('Invalid configuration: VAPID_SUBJECT (expected mailto:… or https://…)')
+  }
+  return { ...keys, subject: e.VAPID_SUBJECT }
 }
 
 /** `CHAT_KEYS` lesen; leer → ein Schlüssel aus SECRET_KEY (HKDF, Kennung `s1`). */
@@ -405,6 +444,7 @@ export function loadConfig(env: Record<string, string | undefined>, limits: Part
     serverPing: e.SERVER_PING,
     hosting: parseHosting(e),
     microsoft: parseMicrosoft(e),
+    vapid: parseVapid(e),
     limits: { ...DEFAULT_LIMITS, ...limits },
   }
 }

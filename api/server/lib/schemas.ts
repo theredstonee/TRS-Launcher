@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { CAPE_ID, COSMETIC_ID, SERVER_ID, normalizeRedeemCode, normalizeUuid } from './ids'
+import { DEVICE_ID, MAX_ENDPOINT_LENGTH, PUSH_CATEGORIES } from './push'
 import { MAX_CUSTOM_MINUTES, REASON_CODES, SANCTION_KINDS } from './sanctions'
 import { TEMPLATE_ID, WEARABLE_SLOTS } from './templates'
 
@@ -561,7 +562,11 @@ export const bulkCosmeticsBody = z.strictObject({
 })
 export const closeRoomBody = z.strictObject({ reason: plainText(200).optional() }).optional()
 
-export const eventsMeQuery = z.strictObject({ lastEventId: z.string().max(64).optional() })
+export const eventsMeQuery = z.strictObject({
+  lastEventId: z.string().max(64).optional(),
+  /** Stream der App auf diesem Push-Gerät (§33): solange offen, keine Push-Nachrichten an dieses Gerät. */
+  pushDevice: z.string().regex(/^d[0-9a-f]{20}$/, 'invalid device id').optional(),
+})
 
 // ---------------------------------------------------------------- Welt-Hosting (§21)
 
@@ -717,3 +722,63 @@ export const hostingContentBody = z
   })
 
 export type HostingContentInput = z.output<typeof hostingContentBody>
+
+// ---------------------------------------------------------------- Push (§33)
+
+export const pushDeviceIdSchema = z.string().regex(DEVICE_ID, 'invalid device id')
+
+const b64url = (min: number, max: number) => z.string().min(min).max(max).regex(/^[A-Za-z0-9_-]+={0,2}$/, 'must be base64url')
+
+const pushKeys = z.strictObject({
+  /** P-256-Schlüssel des Geräts (65 Byte unkomprimiert, base64url ≈ 87 Zeichen). */
+  p256dh: b64url(80, 96),
+  /** Auth-Geheimnis (16 Byte, base64url ≈ 22 Zeichen). */
+  auth: b64url(20, 26),
+})
+
+const pushCategoriesPatch = z.strictObject(
+  Object.fromEntries(PUSH_CATEGORIES.map((c) => [c, z.boolean().optional()])) as Record<(typeof PUSH_CATEGORIES)[number], z.ZodOptional<z.ZodBoolean>>,
+)
+
+const pushEndpoint = z.string().min(12).max(MAX_ENDPOINT_LENGTH).regex(/^https:\/\//, 'must be an https URL')
+const deviceName = plainText(64)
+const appVersion = z.string().regex(/^[0-9A-Za-z.+_-]{1,32}$/, 'invalid app version')
+const pushLocale = z.string().regex(/^[A-Za-z]{2,3}(?:[-_][A-Za-z0-9]{2,8}){0,2}$/, 'must be a locale like en, de-DE, es-419').max(20)
+
+export const pushDeviceBody = z
+  .strictObject({
+    platform: z.enum(['android', 'ios']),
+    kind: z.enum(['unifiedpush', 'poll']),
+    endpoint: pushEndpoint.optional(),
+    keys: pushKeys.optional(),
+    deviceName,
+    appVersion,
+    locale: pushLocale,
+    categories: pushCategoriesPatch.optional(),
+    preview: z.boolean().optional(),
+    pushWhilePlaying: z.boolean().optional(),
+  })
+  .superRefine((b, ctx) => {
+    if (b.kind === 'unifiedpush' && (!b.endpoint || !b.keys)) ctx.addIssue({ code: 'custom', message: 'unifiedpush needs endpoint and keys' })
+    if (b.kind === 'poll' && (b.endpoint !== undefined || b.keys !== undefined)) ctx.addIssue({ code: 'custom', message: 'poll devices have no endpoint or keys' })
+  })
+
+export const pushDevicePatch = z
+  .strictObject({
+    endpoint: pushEndpoint.optional(),
+    keys: pushKeys.optional(),
+    deviceName: deviceName.optional(),
+    appVersion: appVersion.optional(),
+    locale: pushLocale.optional(),
+    categories: pushCategoriesPatch.optional(),
+    preview: z.boolean().optional(),
+    pushWhilePlaying: z.boolean().optional(),
+  })
+  .refine((b) => (b.endpoint === undefined) === (b.keys === undefined), 'endpoint and keys go together')
+  .refine((b) => Object.keys(b).length > 0, 'nothing to change')
+
+export const pushPendingQuery = z.strictObject({
+  device: pushDeviceIdSchema,
+  since: z.string().regex(/^\d{1,15}$/, 'must be the cursor from the last response').default('0').transform(Number),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+})

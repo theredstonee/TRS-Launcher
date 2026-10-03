@@ -1998,6 +1998,8 @@ data: {"type":"chat_message","conversationId":"c…","message":{…}}
 | `notes_changed` | `{cursor}` – your synced notes changed (§17.5); fetch `GET /v1/me/sync/notes?since=<your cursor>` |
 | `events_changed` | `{events}` – the events active for you changed (§32); `events` is the full list (`[]` = none) |
 
+`?pushDevice={id}` (optional, §33): set by the mobile app on its push device. While such a stream is open (and 60 s after), that device gets no push notifications. Streams without it count as desktop (§33.6).
+
 **Rules**
 
 - At most **5** `events/me` streams per account (`503 too_many_streams`), connects limited to 20 / min. A stream lasts at most **1 hour**, then reconnect (with `Last-Event-ID`, so nothing is lost).
@@ -3661,3 +3663,190 @@ Missing permission → `403 missing_permission`.
 ### 32.5 Data, migration 21
 
 Tables `events (id, enabled, updated_at, updated_by)` (seeded: `halloween`, off) and `event_players (event_id, player_uuid, player_name, added_at, added_by)`; columns `cosmetics.event` and `capes.event` (event items are stored with `unlock = admin` and the event id); `user_cosmetics`/`user_capes` accept `source = 'event'`, `equipped_cosmetics` accepts the slot `companion` (these three leaf tables are rebuilt, data is kept). The website lists (`GET /v1/site/cosmetics` -> `hats` + `companions`, `GET /v1/site/capes`) show event items only while the event is **globally** on, with `unlock: "event"`, `event`, and (cosmetics) `slot`. Idempotent. When merging: renumber if a parallel branch also added a migration 21.
+
+## 33. Push notifications for the mobile apps
+
+The TRS apps get notifications while they are closed:
+
+- **Android: UnifiedPush** (self-hosted friendly, no Google). The app gets an endpoint URL from the user's distributor app (ntfy, NextPush, …) and registers it here. The server encrypts every message (RFC 8291, `aes128gcm`) and signs with VAPID (RFC 8292), so the push server never sees the content. Operations, ntfy: [docs/push.md](docs/push.md).
+- **iOS (sideloaded, no APNs): poll.** The app registers a `poll` device and fetches waiting notifications in its background fetch (§33.4).
+
+Notifications come from the same events as `GET /v1/events/me` (§19). A device belongs to the **session** that registered it: logout, logout everywhere, session expiry (30 days) or a ban remove it; the app registers again after signing in.
+
+All routes need `Authorization: Bearer …` (full scope). Bodies are strict (§1).
+
+### 33.1 `GET /v1/push/config`
+
+```json
+{
+  "unifiedPush": true,
+  "vapidPublicKey": "BOr…(base64url, 65 bytes uncompressed P-256)",
+  "categories": ["chat", "friends", "friend_online", "invites", "hosting", "packs", "team", "achievements"],
+  "defaults": { "chat": true, "friends": true, "friend_online": false, "invites": true, "hosting": true, "packs": true, "team": true, "achievements": true },
+  "maxDevices": 10
+}
+```
+
+`unifiedPush: false` / `vapidPublicKey: null` = the server has no VAPID keys: only `poll` devices work. Pass `vapidPublicKey` to the distributor when asking for an endpoint (UnifiedPush "VAPID" registration).
+
+### 33.2 Devices
+
+**`POST /v1/push/devices`** (limit 10 / 10 min)
+
+```json
+{
+  "platform": "android",
+  "kind": "unifiedpush",
+  "endpoint": "https://ntfy.sh/upAbC123…?up=1",
+  "keys": { "p256dh": "<base64url P-256 public key, 65 bytes>", "auth": "<base64url, 16 bytes>" },
+  "deviceName": "Pixel 8",
+  "appVersion": "1.0.0",
+  "locale": "de-DE",
+  "categories": { "friend_online": true },
+  "preview": false,
+  "pushWhilePlaying": false
+}
+```
+
+| Field | Rule |
+|---|---|
+| `platform` | `android` \| `ios` |
+| `kind` | `unifiedpush` (needs `endpoint` + `keys`) \| `poll` (must not have them) |
+| `endpoint` | `https://` only, ≤ 2048 characters, no `user:pass@`, no `#fragment`, port 443 or ≥ 1024. The host must be public: IP literals in private/loopback/link-local/CGNAT/multicast/reserved/IPv4-mapped ranges, `localhost`, single-label names, `.local`, `.internal`, `.lan`, `.home.arpa`, … and the TRS hosts themselves are refused (`400 endpoint_not_allowed`). The name is resolved and **every** address must be public (`400 endpoint_unresolvable` if DNS fails). The check runs again on every connection (no DNS rebinding). |
+| `keys.p256dh` | uncompressed P-256 point (on the curve), base64url, else `400 invalid_keys` |
+| `keys.auth` | exactly 16 bytes, base64url, else `400 invalid_keys` |
+| `deviceName` | 1–64 characters, no control characters |
+| `appVersion` | `^[0-9A-Za-z.+_-]{1,32}$` |
+| `locale` | e.g. `en`, `de-DE`, `es-419`. Texts exist in `en`, `de`, `es`; anything else gets English. |
+| `categories` | optional, any subset of §33.3 with booleans; missing ones use `defaults` |
+| `preview` | default `false`: chat notifications show **only the sender and "New message"**. `true`: also the start of the text (≤ 120 characters) and the group name. |
+| `pushWhilePlaying` | default `false`: no notifications while you play on the PC (§33.6). |
+
+Responses: **201** + `PushDeviceView` (new) or **200** + `PushDeviceView` when the same `endpoint` is already registered for you (updated, same `id`). An endpoint registered by **another** account moves to you (whoever holds the endpoint is the device). Errors: `400 invalid_request`, `endpoint_invalid`, `endpoint_not_allowed`, `endpoint_unresolvable`, `invalid_keys`; `409 too_many_devices` (10 per account); `503 push_unavailable` (UnifiedPush without VAPID keys).
+
+```json
+{
+  "id": "d3f9a0c1e2b4d5a6f7e8c",
+  "platform": "android",
+  "kind": "unifiedpush",
+  "endpointHost": "ntfy.sh",
+  "deviceName": "Pixel 8",
+  "appVersion": "1.0.0",
+  "locale": "de-DE",
+  "categories": { "chat": true, "friends": true, "friend_online": true, "invites": true, "hosting": true, "packs": true, "team": true, "achievements": true },
+  "preview": false,
+  "pushWhilePlaying": false,
+  "current": true,
+  "createdAt": "…", "updatedAt": "…", "lastSeenAt": "…",
+  "lastSuccessAt": null,
+  "failing": false
+}
+```
+
+`id` matches `^d[0-9a-f]{20}$`. `endpointHost` is only the host (the full URL is the device's secret and is never returned). `current` = registered with the session of this request. `failing` = the last delivery failed.
+
+| Request | Body | Response |
+|---|---|---|
+| `GET /v1/push/devices` | – | `{ "devices": [PushDeviceView] }` (all your devices, oldest first) |
+| `PATCH /v1/push/devices/{id}` | any of `deviceName`, `appVersion`, `locale`, `categories` (partial, merged), `preview`, `pushWhilePlaying`, and `endpoint` + `keys` **together** (new distributor endpoint, UnifiedPush only, same checks as above) | `PushDeviceView`. `404 device_not_found` (not yours), `400 not_unifiedpush`, `400 invalid_request` (empty body, endpoint without keys) |
+| `DELETE /v1/push/devices/{id}` | – | `204`. `404 device_not_found` |
+
+Limit 60 / min for PATCH/DELETE.
+
+### 33.3 Categories and what is sent
+
+| Category | Events (§19) | Notes |
+|---|---|---|
+| `chat` | `chat_message` | not your own, not in muted conversations, not from blocked players, no system messages |
+| `friends` | `friend_request`, `friend_added` | `friend_added` only when the **other** player accepted (not your own accept on another device) |
+| `friend_online` | `friend_online` | **off by default** |
+| `invites` | `hosting_invite`, `cape_offer` | |
+| `hosting` | `hosting_join_request` (you host), `hosting_join_accepted`, `hosting_kicked` | |
+| `packs` | `pack_shared` | |
+| `team` | `sanction_added`, `appeal_decided`, `report_update` (only `resolved`), `application_updated` (only team decisions, not `new`/`withdrawn`), `circuit_submission_updated` (only `approved`/`rejected`), `issue_updated` | |
+| `achievements` | `achievement_unlocked` | |
+
+Every other event type produces no notification. New event types may be added to a category later.
+
+### 33.4 Poll devices: `GET /v1/push/pending?device={id}&since={cursor}&limit={1-100}`
+
+For `kind: "poll"` devices (else `400 not_poll_device`; not yours: `404 device_not_found`). Limit 30 / min. `limit` defaults to 50.
+
+```json
+{ "notifications": [PushPayload], "cursor": "1842", "more": false }
+```
+
+- `since` = `cursor` of the previous response (`0` at first). Everything up to and including `since` counts as **delivered and is deleted**.
+- `more: true`: call again right away with the new `cursor`.
+- Entries are kept at most **72 hours** (less for short-lived kinds, see `TTL` in §33.5) and at most **200** per device (oldest dropped). They are stored encrypted like chat messages.
+- Each call updates `lastSeenAt`.
+
+### 33.5 Payload
+
+The UnifiedPush message body (after decryption) and each `notifications[]` entry:
+
+```json
+{
+  "v": 1,
+  "id": "mfz2k1a3b4c.1842",
+  "type": "chat_message",
+  "category": "chat",
+  "title": "Alice",
+  "body": "Neue Nachricht",
+  "target": "/chat/c0123456789abcdef0123",
+  "collapse": "chat:c0123456789abcdef0123",
+  "at": "2026-10-03T12:00:00.000Z"
+}
+```
+
+- `id` = the event id from §19 (`<epoch>.<n>`), unique; use it to drop duplicates.
+- `title` ≤ 80, `body` ≤ 200 characters, already in the device's language. Names are cut to 32 characters.
+- `collapse`: same value = replace/group the visible notification (one per conversation, world, friend …).
+- Ignore unknown `type`s and fields; `v` changes only on breaking changes.
+
+| `type` | `target` |
+|---|---|
+| `chat_message` | `/chat/{conversationId}` |
+| `friend_request` | `/friends/requests` |
+| `friend_added`, `friend_online` | `/friends` |
+| `cape_offer` | `/capes/offers` |
+| `hosting_invite`, `hosting_join_accepted` | `/worlds/{roomId}` |
+| `hosting_join_request` | `/worlds/{roomId}/requests` |
+| `hosting_kicked` | `/worlds` |
+| `pack_shared` | `/packs/{packId}` |
+| `sanction_added`, `appeal_decided` | `/moderation/sanctions/{sanctionId}` |
+| `report_update` | `/moderation/reports` |
+| `application_updated` | `/team/applications/{applicationId}` |
+| `circuit_submission_updated` | `/circuits/submissions/{submissionId}` |
+| `issue_updated` | `/issues/{number}` |
+| `achievement_unlocked` | `/achievements/{achievementId}` |
+
+**Sending (UnifiedPush):** `POST <endpoint>` with `Content-Encoding: aes128gcm`, `Content-Type: application/octet-stream`, `TTL`, `Urgency` and `Authorization: vapid t=<ES256 JWT: aud = endpoint origin, exp ≤ 12 h, sub = VAPID_SUBJECT>, k=<vapidPublicKey>`. One record (record size 4096), padded to 64-byte blocks, at most 4096 bytes in total.
+
+| Kind | `Urgency` | `TTL` |
+|---|---|---|
+| chat | `high` | 1 day |
+| world invite / join request, join accepted | `high` | 30 min / 10 min |
+| friend online | `low` | 5 min |
+| achievements, issues, circuits, reports | `low` | 1 day / 3 days |
+| everything else | `normal` | 1 hour to 3 days |
+
+Delivery: at most 8 requests at once, queue of 5000 (more is dropped). Network errors, `408`, `425`, `429` and `5xx` are retried after 5 s, 30 s, 2 min (or `Retry-After`, ≤ 10 min). `404`/`410` remove the device at once; other failures count, 25 in a row remove the device. Responses are read up to 8 KiB and discarded, redirects are not followed, timeout 10 s.
+
+### 33.6 No duplicates
+
+A notification is **not** sent to a device when:
+
+1. its category is off for that device, or
+2. **the app itself is open on that device**: it has a `GET /v1/events/me?pushDevice={id}` stream open, or closed less than 60 s ago (the app shows it in-app), or
+3. **you are playing on the PC**: a desktop stream (`GET /v1/events/me` without `pushDevice`, i.e. launcher or TRS Client) is open or closed < 60 s ago **and** your presence is `in-game` (the TRS Client shows the toast), unless `pushWhilePlaying: true`.
+
+The launcher merely running in the background does **not** suppress notifications. `pushDevice` with an id that is not yours is ignored (the stream counts neither as app nor as desktop).
+
+### 33.7 Server configuration and data (migration 23)
+
+`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (base64url key pair from `node scripts/vapid-keys.mjs`) and `VAPID_SUBJECT` (`mailto:…` or `https://…`): all three or none. A broken or mismatched pair stops the server at start. Keep the pair stable: apps must register again after a change.
+
+Tables `push_devices` (bound to `users` and `sessions` with `ON DELETE CASCADE`; endpoint unique) and `push_pending` (poll entries, payload encrypted with the chat key, AAD `push:<device id>`, `ON DELETE CASCADE` with the device). Idempotent. When merging: renumber if a parallel branch also added a migration 23.
+
+Why no `web-push` library: `node:crypto` has everything (ECDH P-256, HKDF, AES-128-GCM, ES256 with `ieee-p1363`), the code is about 150 lines and tested against the RFC 8291 appendix A vector, and the SSRF guard needs our own HTTPS request anyway (checked DNS lookup per connection). No new dependency.

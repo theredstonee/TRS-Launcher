@@ -122,6 +122,7 @@ Erwartet: `{"status":"ok",…}`
 | `RELAY_HOST` | für Welt-Hosting | Öffentlicher Name oder IP des Relays, z. B. `relay.theredstonee.de` (DNS-A-Record auf 135.125.185.232, **ohne** Cloudflare-Proxy). |
 | `RELAY_TCP_PORT` / `RELAY_UDP_PORT` | nein | Standard `25503` / `25504`. |
 | `HOSTING_STUN` | nein | STUN-Server `host:port`, kommagetrennt. Leer = nur das Relay (`RELAY_HOST:RELAY_UDP_PORT`). Fremde STUN-Server (z. B. Google) sehen die IP der Spieler – deshalb ab Werk keine. |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | für Push an die Apps | Schlüsselpaar für Web Push/UnifiedPush (RFC 8292), erzeugen mit `node scripts/vapid-keys.mjs` (base64url). `VAPID_SUBJECT` = `mailto:…` oder `https://…` (Kontakt für die Push-Dienste). Alle drei oder keiner; leer = UnifiedPush aus (`503 push_unavailable`), Abruf-Geräte (iOS) gehen trotzdem. **Nicht tauschen**, solange Geräte angemeldet sind. API.md §33, Betrieb eines eigenen ntfy: `docs/push.md`. |
 
 `.env` ist in `.gitignore` und darf **nie** ins Repo.
 
@@ -349,6 +350,7 @@ Empfehlung:
   - der Skin-Cache (öffentliche Mojang-Profildaten, höchstens 10 Minuten)
 - Emotes werden nicht gespeichert, nur weitergeleitet.
 - **Welt-Hosting:** Räume (Name, Version, Einstellungen, Code, Mitglieder mit Status) liegen nur so lange in der Datenbank, wie die Welt offen ist (ohne Herzschlag nach 90 s weg); dauerhaft bleibt nur die Sperrliste des Hosts. Signale (ICE-Kandidaten, enthalten IP-Adressen der Spieler) werden nur weitergereicht und liegen höchstens 10 Minuten im RAM-Puffer von `/v1/events/me`. Spieldaten laufen nie über die API; das Relay speichert nichts auf Platte und protokolliert keine Inhalte.
+- **Push an die Apps (§33):** je Gerät Name, App-Version, Sprache, Kategorien, Endpunkt-URL des Push-Verteilers und dessen Web-Push-Schlüssel; das Gerät hängt an der Sitzung (Abmelden/Ablauf löscht es). Inhalte gehen Ende-zu-Ende-verschlüsselt (RFC 8291) an den Verteiler (z. B. ntfy.sh), der nur Zeitpunkt und Größe sieht. Chat-Texte nur mit eingeschalteter Vorschau, sonst nur Absender + „Neue Nachricht“. Abruf-Einträge (iOS) liegen verschlüsselt höchstens 72 h. Der gewählte Push-Dienst (ntfy.sh o. Ä.) gehört in `PRIVACY.md`, sobald die Apps erscheinen.
 - **Im Log** steht keine IP.
 - **Löschung:** `DELETE /v1/me` entfernt sofort alle Daten des Kontos (Art. 17). Nur ein bestehender Sperr-Eintrag bleibt; das ist ein berechtigtes Interesse, damit Sperren nicht per Neuanmeldung umgangen werden.
 - **Cloudflare ist Auftragsverarbeiter:** Sämtlicher Verkehr läuft über Cloudflare, einschließlich IP-Adressen und TLS-Terminierung. Deshalb musst du im Cloudflare-Dashboard unter **Manage Account → Configurations → Privacy** (bzw. im Rahmen der Self-Serve Subscription Agreement) das **Data Processing Addendum (DPA / AVV)** von Cloudflare **akzeptieren**. Außerdem gehört Cloudflare in die Datenschutzerklärung (`PRIVACY.md` im Repo-Root): Zweck, Empfänger, Drittlandübermittlung (EU-US Data Privacy Framework / Standardvertragsklauseln).
