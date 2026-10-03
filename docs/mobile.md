@@ -71,6 +71,15 @@ Plugin `src-tauri/plugins/tauri-plugin-trs-push` (no webview permissions – onl
   settings, new session = new device); logout deletes the device first. While the app is in the background the
   realtime stream is closed (`trs_live_pause`), otherwise the server would think the app is open; in the foreground
   the stream carries `?pushDevice=<id>`.
+- **No double hints:** a push payload's `id` is the event id of the realtime stream. When the app comes back to the
+  foreground it hands the ids already shown as system notifications (Android: plugin, iOS: polled ids) to the core
+  before reconnecting; replayed events with those ids arrive as `trs-live` with `quiet: true` – the UI updates its
+  state but shows no toast. Live events while the app is open keep their toasts.
+- **ntfy not connected yet:** ntfy hands out an endpoint even before its app was opened once, but its server refuses
+  messages (`507`). After registering, the app sends one small probe to the endpoint (undecryptable, dropped by the
+  app); on `507` the settings show "open ntfy once" with a button, and the next sync after returning re-checks.
+- **iOS tap:** local notifications carry the route in `userInfo`; a small delegate (forwarding everything else to the
+  notification plugin) opens `trs-launcher://notify/<route>`.
 - `trs-push.json` holds the switches and, per account, the device id plus a SHA-256 fingerprint of what the server
   knows – the endpoint itself (a secret) only lives in the plugin's private preferences.
 

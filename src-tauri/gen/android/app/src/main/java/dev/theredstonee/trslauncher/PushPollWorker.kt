@@ -49,8 +49,12 @@ class PushPollWorker(context: Context, params: WorkerParameters) : Worker(contex
         val root = inputData.getString(KEY_ROOT) ?: return Result.failure()
         val dataDir = File(applicationContext.applicationInfo.dataDir).canonicalFile
         val rootDir = File(root).canonicalFile
-        // Nur der eigene Datenordner der App.
-        if (!rootDir.path.startsWith(dataDir.path + File.separator) || !rootDir.isDirectory) return Result.failure()
+        // Nur der eigene Datenordner der App (Tauri nimmt ihn direkt, Unterordner sind auch in Ordnung).
+        val own = rootDir == dataDir || rootDir.path.startsWith(dataDir.path + File.separator)
+        if (!own || !rootDir.isDirectory) {
+            Log.w(TAG, "Datenordner für das Abholen ungültig: $rootDir (App: $dataDir)")
+            return Result.failure()
+        }
         return try {
             System.loadLibrary("trs_launcher_lib")
             Keyring.initializeNdkContext(applicationContext)
