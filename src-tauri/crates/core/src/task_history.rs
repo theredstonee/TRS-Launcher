@@ -50,6 +50,8 @@ pub enum TaskKind {
     Ffmpeg,
     /// Gemeinsamer Ordner ein-/ausgeschaltet (Zusammenführen bzw. Kopieren).
     SharedFolders,
+    /// Datenordner oder Instanz verschoben.
+    Move,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

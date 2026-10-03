@@ -88,7 +88,9 @@ pub async fn stats(paths: &Paths, instances: Vec<Instance>) -> Result<StorageSta
     tokio::task::spawn_blocking(move || {
         let unused_dirs = unused_version_dirs(&paths, &instances);
         StorageStats {
-            instances: dir_size(&paths.instances_dir()),
+            // Instanzen an eigenem Ort zählen mit (fehlende Laufwerke ergeben 0).
+            instances: dir_size(&paths.instances_dir())
+                + paths.custom_locations().iter().map(|(_, dir)| dir_size(dir)).sum::<u64>(),
             libraries: dir_size(&paths.libraries_dir()),
             assets: dir_size(&paths.assets_dir()),
             versions: dir_size(&paths.versions_dir()),

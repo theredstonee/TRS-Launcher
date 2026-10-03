@@ -74,6 +74,14 @@ const showBedrock = computed(() => {
 })
 const grouped = computed(() => groupInstances(visible.value, prefs.groupBy, versionOrder.value))
 
+async function forgetUnavailable(id: string) {
+  try {
+    await instances.forget(id)
+  } catch (e) {
+    toasts.error(e)
+  }
+}
+
 function toggleIn<T>(list: T[], value: T) {
   const i = list.indexOf(value)
   if (i >= 0) list.splice(i, 1)
@@ -139,6 +147,18 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeFilter))
     </PageHeader>
 
     <PackInbox />
+
+    <!-- Instanzen an eigenem Ort, deren Ordner fehlt (z. B. Laufwerk getrennt) -->
+    <ul v-if="instances.unavailable.length" class="mb-4 space-y-2" data-testid="unavailable-instances">
+      <li v-for="u in instances.unavailable" :key="u.id" class="card flex flex-wrap items-center gap-3 border-warn/40 px-4 py-3">
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold">{{ t('relocate.unavailable.title', { name: u.id }) }}</p>
+          <p class="truncate font-mono text-xs text-base-400" :title="u.path">{{ t('relocate.unavailable.text', { path: u.path }) }}</p>
+        </div>
+        <button class="btn btn-ghost py-1.5 text-xs" @click="instances.load()">{{ t('relocate.unavailable.retry') }}</button>
+        <button class="btn btn-ghost py-1.5 text-xs hover:text-redstone-300" @click="forgetUnavailable(u.id)">{{ t('relocate.unavailable.forget') }}</button>
+      </li>
+    </ul>
 
     <p v-if="instances.error" role="alert" class="card mb-4 border-redstone-600/50 px-4 py-3 text-sm text-redstone-300">{{ instances.error }}</p>
 

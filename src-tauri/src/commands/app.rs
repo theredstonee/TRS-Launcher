@@ -1,5 +1,6 @@
 use serde::Serialize;
 use tauri::{AppHandle, State};
+use trs_core::data_location::{DataLocation, RootSource};
 
 use crate::LauncherState;
 use crate::error::CommandResult;
@@ -15,16 +16,25 @@ pub struct AppInfo {
     capabilities: trs_core::platform::Capabilities,
     /// Schutz der gespeicherten Anmeldedaten: `dpapi`, `keyring`, `file` oder `none`.
     token_protection: &'static str,
+    /// Woher der Datenordner kommt: `default`, `custom`, `portable` oder `env`.
+    data_source: RootSource,
+    /// Lässt sich der Datenordner verschieben (nicht portabel, nicht per Umgebungsvariable)?
+    data_movable: bool,
+    /// Gewählter eigener Datenordner, der beim Start fehlte (dann gilt der Standard).
+    missing_data_dir: Option<String>,
 }
 
 #[tauri::command]
-pub fn app_info(launcher: State<'_, LauncherState>) -> AppInfo {
+pub fn app_info(launcher: State<'_, LauncherState>, location: State<'_, DataLocation>) -> AppInfo {
     AppInfo {
         version: trs_core::LAUNCHER_VERSION,
         data_dir: launcher.paths().root().display().to_string(),
         os: trs_core::system::os_description(),
         capabilities: trs_core::platform::capabilities(),
         token_protection: trs_core::auth::crypto::protection(),
+        data_source: location.source,
+        data_movable: location.movable(),
+        missing_data_dir: location.missing_custom.as_ref().map(|p| p.display().to_string()),
     }
 }
 

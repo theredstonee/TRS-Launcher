@@ -14,6 +14,7 @@ pub mod bisect;
 pub mod content;
 pub mod content_groups;
 pub mod crash;
+pub mod data_location;
 pub mod duplicates;
 pub mod curseforge;
 mod default_skin;
@@ -50,6 +51,7 @@ pub mod nbt;
 pub mod paths;
 pub mod platform;
 pub mod prepare;
+pub mod relocate;
 pub mod presets;
 pub mod process;
 pub mod screenshots;
@@ -792,6 +794,10 @@ impl Launcher {
                 return self.hand_world_to_running_game(&instance.id, world);
             }
             return Err(Error::launch(crate::msg!("launcher.alreadyRunning", "Diese Instanz läuft bereits.")));
+        }
+        // Datenordner verschoben: bis zum Neustart startet nichts mehr aus dem alten Ordner.
+        if self.is_preparing(relocate::DATA_MOVE_GUARD) {
+            return Err(relocate::data_moving());
         }
         {
             let mut preparing = self.preparing.lock().unwrap_or_else(std::sync::PoisonError::into_inner);

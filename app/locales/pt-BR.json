@@ -833,6 +833,23 @@
       "notAFolder": "Há um arquivo onde deveria estar “{folder}” – renomeie ou remova-o.",
       "inUse": "Outro jogo está usando esta pasta compartilhada agora – feche-o primeiro.",
       "repairFailed": "Não foi possível configurar as pastas compartilhadas ({list}) – o jogo usa pastas próprias para elas."
+    },
+    "relocate": {
+      "invalidPath": "Esta pasta não pode ser usada.",
+      "network": "Caminhos de rede não são suportados.",
+      "notAbsolute": "Escolha um caminho de pasta completo.",
+      "notADirectory": "No destino há um arquivo com esse nome.",
+      "notEmpty": "A pasta de destino não está vazia.",
+      "protected": "Pastas do sistema não podem ser usadas.",
+      "overlap": "O destino e a pasta atual não podem estar um dentro do outro.",
+      "insideLauncher": "O destino não pode ficar na pasta de dados do launcher nem dentro de outra instância.",
+      "notWritable": "Não é possível gravar nesta pasta.",
+      "verifyFailed": "A cópia está incompleta – nada foi trocado.",
+      "notEnoughSpace": "Não há espaço livre suficiente na unidade de destino.",
+      "dataMoving": "A pasta de dados foi movida – reinicie o launcher.",
+      "notMovable": "No modo portátil não é possível mover a pasta de dados.",
+      "noMove": "Nada foi movido.",
+      "alreadyDefault": "A instância já está no local padrão."
     }
   },
   "browse": {
@@ -2046,7 +2063,8 @@
       "clientModUpdate": "TRS Client: atualização para {version} baixada",
       "clientModCurrent": "TRS Client: versão {version} (atualizado)",
       "updatesPackage": "As atualizações chegam pelo seu gerenciador de pacotes",
-      "updatesFlatpak": "As atualizações chegam pelo Flatpak"
+      "updatesFlatpak": "As atualizações chegam pelo Flatpak",
+      "updatesPortable": "Versão portátil – as atualizações estão na página de downloads"
     },
     "appearance": {
       "colorScheme": "Tema de cores",
@@ -2211,7 +2229,16 @@
       "credentialsFile": "Nenhum chaveiro do sistema foi encontrado, então seus logins são protegidos apenas por permissões de arquivo (só o seu usuário pode lê-los). Para mais proteção, instale e desbloqueie um chaveiro como GNOME Keyring ou KWallet.",
       "credentialsKeyringShort": "Chaveiro",
       "credentialsFileShort": "Só permissões de arquivo",
-      "sharedFolders": "Pastas compartilhadas"
+      "sharedFolders": "Pastas compartilhadas",
+      "sourceDefault": "Pasta padrão",
+      "sourceCustom": "Pasta própria",
+      "sourcePortable": "Portátil",
+      "sourceEnv": "Definida por TRS_LAUNCHER_HOME",
+      "missingDataDir": "A pasta de dados escolhida {path} não foi encontrada (unidade desconectada?). Enquanto isso, o launcher usa a pasta padrão.",
+      "portableHint": "Modo portátil: os dados ficam ao lado do launcher, na pasta “data”.",
+      "envHint": "A pasta de dados é definida pela variável de ambiente TRS_LAUNCHER_HOME.",
+      "moveDataDir": "Mover pasta de dados…",
+      "downloadPage": "Página de downloads"
     },
     "network": {
       "title": "Rede",
@@ -2798,7 +2825,8 @@
       "launch": "Inicialização do jogo",
       "presets": "Predefinições instaladas",
       "ffmpeg": "Gravador instalado",
-      "sharedFolders": "Pasta compartilhada"
+      "sharedFolders": "Pasta compartilhada",
+      "move": "Movido"
     },
     "stage": {
       "preparing": "Preparando",
@@ -2840,7 +2868,8 @@
     "downloadInstaller": "Baixar instalador",
     "splash": "Atualizando – reiniciando em instantes …",
     "availableExternal": "Atualização {version} disponível",
-    "externalHint": "Instale pelo seu gerenciador de pacotes (ex.: yay/paru para o AUR, apt ou dnf) – ou baixe do GitHub."
+    "externalHint": "Instale pelo seu gerenciador de pacotes (ex.: yay/paru para o AUR, apt ou dnf) – ou baixe do GitHub.",
+    "portableHint": "Versão portátil: baixe o novo ZIP na página da versão e substitua os arquivos antigos – mantenha a pasta “data”."
   },
   "play": {
     "stopGame": "Parar jogo",
@@ -5834,6 +5863,63 @@
     "schematics": {
       "label": "Schematics",
       "description": "Litematica (schematics) e WorldEdit (config/worldedit/schematics) compartilham uma pasta."
+    }
+  },
+  "relocate": {
+    "pickFirst": "Escolha uma pasta primeiro.",
+    "currentFolder": "Pasta atual",
+    "newFolder": "Nova pasta",
+    "newFolderPlaceholder": "ex.: D:\\Jogos\\TRS-Launcher",
+    "browse": "Procurar…",
+    "emptyHint": "Escolha uma pasta vazia ou nova. Se ela já tiver arquivos, uma subpasta será criada dentro dela.",
+    "size": "Tamanho",
+    "files": "{count} arquivo | {count} arquivos",
+    "free": "Livre na unidade",
+    "freeUnknown": "desconhecido",
+    "sameDrive": "mesma unidade – apenas renomeada",
+    "linksSkipped": "{count} pasta vinculada (symlink/junction) não será copiada. | {count} pastas vinculadas (symlinks/junctions) não serão copiadas.",
+    "checking": "Verificando…",
+    "next": "Avançar",
+    "back": "Voltar",
+    "startCopy": "Copiar e trocar",
+    "stageCopying": "Copiando arquivos …",
+    "stageVerifying": "Verificando a cópia …",
+    "keepOpen": "Deixe o launcher aberto. Não é possível iniciar jogos durante a mudança.",
+    "cancelled": "Cancelado – nada foi alterado.",
+    "blockedGames": "Feche primeiro todos os jogos em execução.",
+    "blockedSpace": "Não há espaço livre suficiente na unidade de destino.",
+    "hide": "Ocultar",
+    "data": {
+      "title": "Mover pasta de dados",
+      "intro": "Move todos os dados do launcher (instâncias, Java, versões do jogo, contas, configurações) para outra pasta, por exemplo um disco maior. Depois o launcher reinicia.",
+      "taskTitle": "Pasta de dados",
+      "restartHint": "Depois de copiar, cada arquivo é verificado. Só então o launcher troca e reinicia – suas contas continuam conectadas.",
+      "verified": "Cópia concluída e verificada. A partir de agora o launcher usa:",
+      "oldQuestion": "O que fazer com a pasta antiga? Ela só é excluída depois de reiniciar.",
+      "keepOld": "Manter pasta antiga e reiniciar",
+      "deleteOld": "Excluir pasta antiga e reiniciar"
+    },
+    "instance": {
+      "rowTitle": "Local",
+      "rowDefault": "Na pasta de dados do launcher (padrão).",
+      "rowCustom": "Em uma pasta escolhida por você.",
+      "move": "Mover…",
+      "moving": "Movendo…",
+      "back": "Voltar ao padrão",
+      "title": "Mover instância",
+      "backTitle": "Mover a instância de volta para o local padrão",
+      "intro": "Move esta instância com mundos, mods e configurações para uma pasta à sua escolha, por exemplo em outro disco.",
+      "placeholder": "ex.: D:\\Minecraft\\Modpack",
+      "hint": "Na mesma unidade a pasta é apenas renomeada. Caso contrário, ela é copiada e verificada, e só depois a pasta antiga é excluída.",
+      "blockedRunning": "Feche a instância primeiro.",
+      "start": "Mover",
+      "done": "“{name}” foi movida."
+    },
+    "unavailable": {
+      "title": "“{name}” não está disponível",
+      "text": "Pasta não encontrada: {path} – a unidade está conectada?",
+      "retry": "Verificar de novo",
+      "forget": "Remover da lista"
     }
   }
 }

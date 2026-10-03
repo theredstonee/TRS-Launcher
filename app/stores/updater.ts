@@ -44,8 +44,9 @@ export const useUpdaterStore = defineStore('updater', () => {
       }
       update = found
       version.value = found.version
-      // .deb/.rpm/AUR: nur Bescheid geben – ersetzen darf die Paketverwaltung.
-      if (mode.value === 'package') {
+      // .deb/.rpm/AUR bzw. portable ZIP: nur Bescheid geben – ersetzen darf die
+      // Paketverwaltung bzw. der Nutzer (neue ZIP von der Download-Seite).
+      if (mode.value === 'package' || mode.value === 'portable') {
         phase.value = 'external'
         return
       }

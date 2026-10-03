@@ -221,7 +221,25 @@ pub fn free_space(path: &Path) -> Option<u64> {
     Some(free)
 }
 
-#[cfg(not(windows))]
+#[cfg(unix)]
+pub fn free_space(path: &Path) -> Option<u64> {
+    use std::os::unix::ffi::OsStrExt;
+
+    let existing = path.ancestors().find(|p| p.exists())?;
+    let c_path = std::ffi::CString::new(existing.as_os_str().as_bytes()).ok()?;
+    // SAFETY: `statvfs` ist reine Daten (Nullen sind gültig) und wird von der Funktion befüllt.
+    let mut stat: libc::statvfs = unsafe { std::mem::zeroed() };
+    // SAFETY: `c_path` ist nullterminiert, `stat` ein gültiger Zeiger.
+    if unsafe { libc::statvfs(c_path.as_ptr(), &raw mut stat) } != 0 {
+        return None;
+    }
+    // Feldtypen unterscheiden sich je nach Plattform.
+    #[allow(clippy::unnecessary_cast)]
+    let free = (stat.f_bavail as u64).saturating_mul(stat.f_frsize as u64);
+    Some(free)
+}
+
+#[cfg(not(any(windows, unix)))]
 pub fn free_space(_path: &Path) -> Option<u64> {
     None
 }

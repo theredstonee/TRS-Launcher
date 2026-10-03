@@ -833,6 +833,23 @@
       "notAFolder": "Un fichier se trouve à la place de « {folder} » – renomme-le ou supprime-le.",
       "inUse": "Un autre jeu utilise ce dossier partagé en ce moment – arrête-le d’abord.",
       "repairFailed": "Impossible de mettre en place les dossiers partagés ({list}) – le jeu utilise ses propres dossiers."
+    },
+    "relocate": {
+      "invalidPath": "Ce dossier ne peut pas être utilisé.",
+      "network": "Les chemins réseau ne sont pas pris en charge.",
+      "notAbsolute": "Choisis un chemin de dossier complet.",
+      "notADirectory": "Un fichier porte déjà ce nom à la destination.",
+      "notEmpty": "Le dossier cible n’est pas vide.",
+      "protected": "Les dossiers système ne peuvent pas être utilisés.",
+      "overlap": "La cible et le dossier actuel ne peuvent pas être l’un dans l’autre.",
+      "insideLauncher": "La cible ne peut pas se trouver dans le dossier de données du launcher ni dans une autre instance.",
+      "notWritable": "Impossible d’écrire dans ce dossier.",
+      "verifyFailed": "La copie est incomplète – rien n’a été basculé.",
+      "notEnoughSpace": "Il n’y a pas assez d’espace libre sur le disque cible.",
+      "dataMoving": "Le dossier de données a été déplacé – redémarre le launcher.",
+      "notMovable": "Le dossier de données ne peut pas être déplacé en mode portable.",
+      "noMove": "Rien n’a été déplacé.",
+      "alreadyDefault": "L’instance est déjà à l’emplacement par défaut."
     }
   },
   "browse": {
@@ -2046,7 +2063,8 @@
       "clientModUpdate": "TRS Client : mise à jour {version} téléchargée",
       "clientModCurrent": "TRS Client : version {version} (à jour)",
       "updatesPackage": "Les mises à jour passent par ton gestionnaire de paquets",
-      "updatesFlatpak": "Les mises à jour passent par Flatpak"
+      "updatesFlatpak": "Les mises à jour passent par Flatpak",
+      "updatesPortable": "Version portable – les mises à jour sont sur la page de téléchargement"
     },
     "appearance": {
       "colorScheme": "Thème de couleurs",
@@ -2211,7 +2229,16 @@
       "credentialsFile": "Aucun trousseau système trouvé : tes connexions ne sont protégées que par les droits de fichier (seul ton utilisateur peut les lire). Pour une meilleure protection, installe et déverrouille un trousseau comme GNOME Keyring ou KWallet.",
       "credentialsKeyringShort": "Trousseau",
       "credentialsFileShort": "Droits de fichier uniquement",
-      "sharedFolders": "Dossiers partagés"
+      "sharedFolders": "Dossiers partagés",
+      "sourceDefault": "Dossier par défaut",
+      "sourceCustom": "Dossier personnalisé",
+      "sourcePortable": "Portable",
+      "sourceEnv": "Défini par TRS_LAUNCHER_HOME",
+      "missingDataDir": "Le dossier de données choisi {path} est introuvable (disque débranché ?). En attendant, le launcher utilise le dossier par défaut.",
+      "portableHint": "Mode portable : les données restent à côté du launcher, dans le dossier « data ».",
+      "envHint": "Le dossier de données est défini par la variable d’environnement TRS_LAUNCHER_HOME.",
+      "moveDataDir": "Déplacer le dossier de données…",
+      "downloadPage": "Page de téléchargement"
     },
     "network": {
       "title": "Réseau",
@@ -2798,7 +2825,8 @@
       "launch": "Lancement du jeu",
       "presets": "Préréglages installés",
       "ffmpeg": "Enregistreur installé",
-      "sharedFolders": "Dossier partagé"
+      "sharedFolders": "Dossier partagé",
+      "move": "Déplacé"
     },
     "stage": {
       "preparing": "Préparation",
@@ -2840,7 +2868,8 @@
     "downloadInstaller": "Télécharger l'installateur",
     "splash": "Mise à jour – redémarrage dans un instant…",
     "availableExternal": "Mise à jour {version} disponible",
-    "externalHint": "Installe-la avec ton gestionnaire de paquets (p. ex. yay/paru pour l’AUR, apt ou dnf) – ou télécharge-la sur GitHub."
+    "externalHint": "Installe-la avec ton gestionnaire de paquets (p. ex. yay/paru pour l’AUR, apt ou dnf) – ou télécharge-la sur GitHub.",
+    "portableHint": "Version portable : télécharge le nouveau ZIP sur la page de la version et remplace les anciens fichiers – garde le dossier « data »."
   },
   "play": {
     "stopGame": "Arrêter le jeu",
@@ -5834,6 +5863,63 @@
     "schematics": {
       "label": "Schematics",
       "description": "Litematica (schematics) et WorldEdit (config/worldedit/schematics) partagent un dossier."
+    }
+  },
+  "relocate": {
+    "pickFirst": "Choisis d’abord un dossier.",
+    "currentFolder": "Dossier actuel",
+    "newFolder": "Nouveau dossier",
+    "newFolderPlaceholder": "p. ex. D:\\Jeux\\TRS-Launcher",
+    "browse": "Parcourir…",
+    "emptyHint": "Choisis un dossier vide ou nouveau. S’il contient déjà des fichiers, un sous-dossier y est créé.",
+    "size": "Taille",
+    "files": "{count} fichier | {count} fichiers",
+    "free": "Libre sur le disque",
+    "freeUnknown": "inconnu",
+    "sameDrive": "même disque – simplement renommé",
+    "linksSkipped": "{count} dossier lié (symlink/jonction) ne sera pas copié. | {count} dossiers liés (symlinks/jonctions) ne seront pas copiés.",
+    "checking": "Vérification…",
+    "next": "Suivant",
+    "back": "Retour",
+    "startCopy": "Copier et basculer",
+    "stageCopying": "Copie des fichiers …",
+    "stageVerifying": "Vérification de la copie …",
+    "keepOpen": "Laisse le launcher ouvert. Aucun jeu ne peut être lancé pendant le déplacement.",
+    "cancelled": "Annulé – rien n’a été modifié.",
+    "blockedGames": "Ferme d’abord tous les jeux en cours.",
+    "blockedSpace": "Il n’y a pas assez d’espace libre sur le disque cible.",
+    "hide": "Masquer",
+    "data": {
+      "title": "Déplacer le dossier de données",
+      "intro": "Déplace toutes les données du launcher (instances, Java, versions du jeu, comptes, paramètres) vers un autre dossier, p. ex. sur un disque plus grand. Le launcher redémarre ensuite.",
+      "taskTitle": "Dossier de données",
+      "restartHint": "Chaque fichier est vérifié après la copie. Ce n’est qu’ensuite que le launcher bascule et redémarre – tes comptes restent connectés.",
+      "verified": "Copie terminée et vérifiée. Désormais, le launcher utilise :",
+      "oldQuestion": "Que faire de l’ancien dossier ? Il n’est supprimé qu’après le redémarrage.",
+      "keepOld": "Garder l’ancien dossier et redémarrer",
+      "deleteOld": "Supprimer l’ancien dossier et redémarrer"
+    },
+    "instance": {
+      "rowTitle": "Emplacement",
+      "rowDefault": "Dans le dossier de données du launcher (par défaut).",
+      "rowCustom": "Dans un dossier de ton choix.",
+      "move": "Déplacer…",
+      "moving": "Déplacement…",
+      "back": "Revenir à l’emplacement par défaut",
+      "title": "Déplacer l’instance",
+      "backTitle": "Remettre l’instance à l’emplacement par défaut",
+      "intro": "Déplace cette instance avec ses mondes, mods et paramètres vers le dossier de ton choix, p. ex. sur un autre disque.",
+      "placeholder": "p. ex. D:\\Minecraft\\Modpack",
+      "hint": "Sur le même disque, le dossier est simplement renommé. Sinon, il est copié et vérifié, puis l’ancien dossier est supprimé.",
+      "blockedRunning": "Ferme d’abord l’instance.",
+      "start": "Déplacer",
+      "done": "« {name} » a été déplacée."
+    },
+    "unavailable": {
+      "title": "« {name} » n’est pas disponible",
+      "text": "Dossier introuvable : {path} – le disque est-il branché ?",
+      "retry": "Vérifier à nouveau",
+      "forget": "Retirer de la liste"
     }
   }
 }

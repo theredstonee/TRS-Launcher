@@ -58,6 +58,7 @@ const kindIcons: Partial<Record<TaskKind, string>> = {
   'version-change': icons.sync,
   ffmpeg: icons.clips,
   'shared-folders': icons.link,
+  move: icons.storage,
 }
 function kindIcon(kind: TaskKind): string {
   return kindIcons[kind] ?? icons.install

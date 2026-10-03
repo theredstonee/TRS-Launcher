@@ -833,6 +833,23 @@
       "notAFolder": "There is a file where “{folder}” should be – please rename or remove it.",
       "inUse": "Another game is using this shared folder right now – please stop it first.",
       "repairFailed": "Shared folders couldn’t be set up ({list}) – the game uses its own folders for them."
+    },
+    "relocate": {
+      "invalidPath": "This folder can't be used.",
+      "network": "Network paths aren't supported.",
+      "notAbsolute": "Choose a full folder path.",
+      "notADirectory": "There is a file with this name at the target.",
+      "notEmpty": "The target folder isn't empty.",
+      "protected": "System folders can't be used.",
+      "overlap": "The target and the current folder can't be inside each other.",
+      "insideLauncher": "The target can't be inside the launcher's data folder or inside another instance.",
+      "notWritable": "This folder isn't writable.",
+      "verifyFailed": "The copy is incomplete – nothing was switched.",
+      "notEnoughSpace": "There isn't enough free space on the target drive.",
+      "dataMoving": "The data folder has been moved – please restart the launcher.",
+      "notMovable": "The data folder can't be moved in portable mode.",
+      "noMove": "Nothing has been moved.",
+      "alreadyDefault": "The instance is already in the default location."
     }
   },
   "browse": {
@@ -2046,7 +2063,8 @@
       "clientModUpdate": "TRS Client: update to {version} downloaded",
       "clientModCurrent": "TRS Client: version {version} (up to date)",
       "updatesPackage": "Updates come through your package manager",
-      "updatesFlatpak": "Updates come through Flatpak"
+      "updatesFlatpak": "Updates come through Flatpak",
+      "updatesPortable": "Portable version – updates come from the download page"
     },
     "appearance": {
       "colorScheme": "Color theme",
@@ -2211,7 +2229,16 @@
       "credentialsFile": "No system keyring was found, so your sign-ins are only protected by file permissions (only your user can read them). Install and unlock a keyring such as GNOME Keyring or KWallet for better protection.",
       "credentialsKeyringShort": "Keyring",
       "credentialsFileShort": "File permissions only",
-      "sharedFolders": "Shared folders"
+      "sharedFolders": "Shared folders",
+      "sourceDefault": "Default folder",
+      "sourceCustom": "Custom folder",
+      "sourcePortable": "Portable",
+      "sourceEnv": "Set by TRS_LAUNCHER_HOME",
+      "missingDataDir": "The chosen data folder {path} wasn't found (drive disconnected?). The launcher is using the default folder for now.",
+      "portableHint": "Portable mode: the data stays next to the launcher in the “data” folder.",
+      "envHint": "The data folder is set by the TRS_LAUNCHER_HOME environment variable.",
+      "moveDataDir": "Move data folder…",
+      "downloadPage": "Download page"
     },
     "network": {
       "title": "Network",
@@ -2798,7 +2825,8 @@
       "launch": "Game launch",
       "presets": "Presets installed",
       "ffmpeg": "Recorder installed",
-      "sharedFolders": "Shared folder"
+      "sharedFolders": "Shared folder",
+      "move": "Moved"
     },
     "stage": {
       "preparing": "Preparing",
@@ -2840,7 +2868,8 @@
     "downloadInstaller": "Download installer",
     "splash": "Updating – restarting in a moment …",
     "availableExternal": "Update {version} available",
-    "externalHint": "Install it with your package manager (e.g. yay/paru for the AUR, apt or dnf) – or download it from GitHub."
+    "externalHint": "Install it with your package manager (e.g. yay/paru for the AUR, apt or dnf) – or download it from GitHub.",
+    "portableHint": "Portable version: download the new ZIP from the release page and replace the old files – keep the “data” folder."
   },
   "play": {
     "stopGame": "Stop game",
@@ -5834,6 +5863,63 @@
     "schematics": {
       "label": "Schematics",
       "description": "Litematica (schematics) and WorldEdit (config/worldedit/schematics) share one folder."
+    }
+  },
+  "relocate": {
+    "pickFirst": "Choose a folder first.",
+    "currentFolder": "Current folder",
+    "newFolder": "New folder",
+    "newFolderPlaceholder": "e.g. D:\\Games\\TRS-Launcher",
+    "browse": "Browse…",
+    "emptyHint": "Choose an empty or new folder. If it already contains files, a subfolder is created inside it.",
+    "size": "Size",
+    "files": "{count} file | {count} files",
+    "free": "Free on the drive",
+    "freeUnknown": "unknown",
+    "sameDrive": "same drive – only renamed",
+    "linksSkipped": "{count} linked folder (symlink/junction) won't be copied. | {count} linked folders (symlinks/junctions) won't be copied.",
+    "checking": "Checking…",
+    "next": "Next",
+    "back": "Back",
+    "startCopy": "Copy and switch",
+    "stageCopying": "Copying files …",
+    "stageVerifying": "Checking the copy …",
+    "keepOpen": "Keep the launcher open. Games can't be started while the data is being moved.",
+    "cancelled": "Cancelled – nothing was changed.",
+    "blockedGames": "Close all running games first.",
+    "blockedSpace": "There isn't enough free space on the target drive.",
+    "hide": "Hide",
+    "data": {
+      "title": "Move data folder",
+      "intro": "Moves all launcher data (instances, Java, game versions, accounts, settings) to another folder, e.g. a bigger drive. The launcher restarts afterwards.",
+      "taskTitle": "Data folder",
+      "restartHint": "Every file is checked after copying. Only then does the launcher switch over and restart – your accounts stay signed in.",
+      "verified": "Copy complete and verified. From now on the launcher uses:",
+      "oldQuestion": "What should happen to the old folder? It is only deleted after the restart.",
+      "keepOld": "Keep old folder & restart",
+      "deleteOld": "Delete old folder & restart"
+    },
+    "instance": {
+      "rowTitle": "Location",
+      "rowDefault": "In the launcher's data folder (default).",
+      "rowCustom": "In a folder of your choice.",
+      "move": "Move…",
+      "moving": "Moving…",
+      "back": "Back to default",
+      "title": "Move instance",
+      "backTitle": "Move instance back to the default location",
+      "intro": "Moves this instance with its worlds, mods and settings to a folder of your choice, e.g. on another drive.",
+      "placeholder": "e.g. D:\\Minecraft\\Modpack",
+      "hint": "On the same drive the folder is just renamed. Otherwise it is copied and checked, and only then is the old folder deleted.",
+      "blockedRunning": "Close the instance first.",
+      "start": "Move",
+      "done": "“{name}” has been moved."
+    },
+    "unavailable": {
+      "title": "“{name}” is not available",
+      "text": "Folder not found: {path} – is the drive connected?",
+      "retry": "Check again",
+      "forget": "Remove from list"
     }
   }
 }

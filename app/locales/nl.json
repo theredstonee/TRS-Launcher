@@ -833,6 +833,23 @@
       "notAFolder": "Op de plek van ‘{folder}’ staat een bestand – hernoem of verwijder het.",
       "inUse": "Een ander spel gebruikt deze gedeelde map nu – stop het eerst.",
       "repairFailed": "Gedeelde mappen konden niet worden ingericht ({list}) – het spel gebruikt er eigen mappen voor."
+    },
+    "relocate": {
+      "invalidPath": "Deze map kan niet worden gebruikt.",
+      "network": "Netwerkpaden worden niet ondersteund.",
+      "notAbsolute": "Kies een volledig mappad.",
+      "notADirectory": "Op de doellocatie staat een bestand met deze naam.",
+      "notEmpty": "De doelmap is niet leeg.",
+      "protected": "Systeemmappen kunnen niet worden gebruikt.",
+      "overlap": "Doel en huidige map mogen niet in elkaar liggen.",
+      "insideLauncher": "Het doel mag niet in de datamap van de launcher of in een andere instantie liggen.",
+      "notWritable": "In deze map kan niet worden geschreven.",
+      "verifyFailed": "De kopie is onvolledig – er is niets omgeschakeld.",
+      "notEnoughSpace": "Er is niet genoeg vrije ruimte op de doelschijf.",
+      "dataMoving": "De datamap is verplaatst – start de launcher opnieuw.",
+      "notMovable": "In de draagbare modus kan de datamap niet worden verplaatst.",
+      "noMove": "Er is niets verplaatst.",
+      "alreadyDefault": "De instantie staat al op de standaardlocatie."
     }
   },
   "browse": {
@@ -2046,7 +2063,8 @@
       "clientModUpdate": "TRS Client: update naar {version} gedownload",
       "clientModCurrent": "TRS Client: versie {version} (up-to-date)",
       "updatesPackage": "Updates komen via je pakketbeheerder",
-      "updatesFlatpak": "Updates komen via Flatpak"
+      "updatesFlatpak": "Updates komen via Flatpak",
+      "updatesPortable": "Draagbare versie – updates staan op de downloadpagina"
     },
     "appearance": {
       "colorScheme": "Kleurthema",
@@ -2211,7 +2229,16 @@
       "credentialsFile": "Er is geen sleutelbos gevonden, dus je aanmeldingen zijn alleen beschermd door bestandsrechten (alleen jouw gebruiker kan ze lezen). Installeer en ontgrendel voor betere bescherming een sleutelbos zoals GNOME Keyring of KWallet.",
       "credentialsKeyringShort": "Sleutelbos",
       "credentialsFileShort": "Alleen bestandsrechten",
-      "sharedFolders": "Gedeelde mappen"
+      "sharedFolders": "Gedeelde mappen",
+      "sourceDefault": "Standaardmap",
+      "sourceCustom": "Eigen map",
+      "sourcePortable": "Draagbaar",
+      "sourceEnv": "Ingesteld via TRS_LAUNCHER_HOME",
+      "missingDataDir": "De gekozen datamap {path} is niet gevonden (schijf losgekoppeld?). De launcher gebruikt zolang de standaardmap.",
+      "portableHint": "Draagbare modus: de gegevens staan naast de launcher in de map ‘data’.",
+      "envHint": "De datamap is ingesteld via de omgevingsvariabele TRS_LAUNCHER_HOME.",
+      "moveDataDir": "Datamap verplaatsen…",
+      "downloadPage": "Downloadpagina"
     },
     "network": {
       "title": "Netwerk",
@@ -2798,7 +2825,8 @@
       "launch": "Spelstart",
       "presets": "Presets geïnstalleerd",
       "ffmpeg": "Recorder geïnstalleerd",
-      "sharedFolders": "Gedeelde map"
+      "sharedFolders": "Gedeelde map",
+      "move": "Verplaatst"
     },
     "stage": {
       "preparing": "Voorbereiden",
@@ -2840,7 +2868,8 @@
     "downloadInstaller": "Installatieprogramma downloaden",
     "splash": "Bijwerken – zo meteen herstarten …",
     "availableExternal": "Update {version} beschikbaar",
-    "externalHint": "Installeer het met je pakketbeheerder (bijv. yay/paru voor de AUR, apt of dnf) – of download het van GitHub."
+    "externalHint": "Installeer het met je pakketbeheerder (bijv. yay/paru voor de AUR, apt of dnf) – of download het van GitHub.",
+    "portableHint": "Draagbare versie: download de nieuwe ZIP van de releasepagina en vervang de oude bestanden – houd de map ‘data’."
   },
   "play": {
     "stopGame": "Spel stoppen",
@@ -5834,6 +5863,63 @@
     "schematics": {
       "label": "Schematics",
       "description": "Litematica (schematics) en WorldEdit (config/worldedit/schematics) delen één map."
+    }
+  },
+  "relocate": {
+    "pickFirst": "Kies eerst een map.",
+    "currentFolder": "Huidige map",
+    "newFolder": "Nieuwe map",
+    "newFolderPlaceholder": "bijv. D:\\Games\\TRS-Launcher",
+    "browse": "Bladeren…",
+    "emptyHint": "Kies een lege of nieuwe map. Staan er al bestanden in, dan wordt er een submap in aangemaakt.",
+    "size": "Grootte",
+    "files": "{count} bestand | {count} bestanden",
+    "free": "Vrij op de schijf",
+    "freeUnknown": "onbekend",
+    "sameDrive": "zelfde schijf – alleen hernoemd",
+    "linksSkipped": "{count} gekoppelde map (symlink/junction) wordt niet gekopieerd. | {count} gekoppelde mappen (symlinks/junctions) worden niet gekopieerd.",
+    "checking": "Controleren…",
+    "next": "Volgende",
+    "back": "Terug",
+    "startCopy": "Kopiëren en omschakelen",
+    "stageCopying": "Bestanden kopiëren …",
+    "stageVerifying": "Kopie controleren …",
+    "keepOpen": "Laat de launcher open. Tijdens het verplaatsen kunnen geen games starten.",
+    "cancelled": "Geannuleerd – er is niets gewijzigd.",
+    "blockedGames": "Sluit eerst alle draaiende games.",
+    "blockedSpace": "Er is niet genoeg vrije ruimte op de doelschijf.",
+    "hide": "Verbergen",
+    "data": {
+      "title": "Datamap verplaatsen",
+      "intro": "Verplaatst alle gegevens van de launcher (instanties, Java, gameversies, accounts, instellingen) naar een andere map, bijv. op een grotere schijf. Daarna start de launcher opnieuw.",
+      "taskTitle": "Datamap",
+      "restartHint": "Na het kopiëren wordt elk bestand gecontroleerd. Pas dan schakelt de launcher om en start opnieuw – je accounts blijven ingelogd.",
+      "verified": "Kopie klaar en gecontroleerd. Vanaf nu gebruikt de launcher:",
+      "oldQuestion": "Wat moet er met de oude map gebeuren? Die wordt pas na de herstart verwijderd.",
+      "keepOld": "Oude map houden & herstarten",
+      "deleteOld": "Oude map verwijderen & herstarten"
+    },
+    "instance": {
+      "rowTitle": "Locatie",
+      "rowDefault": "In de datamap van de launcher (standaard).",
+      "rowCustom": "In een zelfgekozen map.",
+      "move": "Verplaatsen…",
+      "moving": "Bezig met verplaatsen…",
+      "back": "Terug naar standaard",
+      "title": "Instantie verplaatsen",
+      "backTitle": "Instantie terug naar de standaardlocatie",
+      "intro": "Verplaatst deze instantie met werelden, mods en instellingen naar een map naar keuze, bijv. op een andere schijf.",
+      "placeholder": "bijv. D:\\Minecraft\\Modpack",
+      "hint": "Op dezelfde schijf wordt de map alleen hernoemd. Anders wordt er gekopieerd en gecontroleerd, en pas daarna verdwijnt de oude map.",
+      "blockedRunning": "Sluit eerst de instantie.",
+      "start": "Verplaatsen",
+      "done": "‘{name}’ is verplaatst."
+    },
+    "unavailable": {
+      "title": "‘{name}’ is niet beschikbaar",
+      "text": "Map niet gevonden: {path} – is de schijf aangesloten?",
+      "retry": "Opnieuw controleren",
+      "forget": "Uit lijst verwijderen"
     }
   }
 }

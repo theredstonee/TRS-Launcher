@@ -21,6 +21,7 @@ const taskKindKeys: Record<TaskKind, MessageKey> = {
   launch: 'tasks.kind.launch',
   ffmpeg: 'tasks.kind.ffmpeg',
   'shared-folders': 'tasks.kind.sharedFolders',
+  move: 'tasks.kind.move',
 }
 
 /** Beschriftung im Verlauf („vor 2 Monaten · Modpack“) in der eingestellten Sprache. */

@@ -2,6 +2,7 @@ import { Channel, invoke, isTauri } from '@tauri-apps/api/core'
 import { hasKey, t, tKey } from './i18n'
 import { z } from 'zod'
 import { savedTextSchema, textFileSchema } from './config/types'
+import { instanceLocationSchema, movePlanSchema, pickedFolderSchema, unavailableInstancesSchema } from './relocate'
 import {
   trsAdminCapeSchema,
   trsAdminStatsSchema,
@@ -273,6 +274,23 @@ export const backend = {
   /** TRS Client: mitgelieferte Version und ein schon geladenes Update aus dem Kanal. */
   clientModStatus: () => call<ClientModStatus>('client_mod_status'),
   openDataDir: () => call<void>('open_data_dir'),
+
+  // --- Umziehen (Datenordner, Speicherort einer Instanz) ---
+  /** Nativer Ordner-Dialog; `null` = abgebrochen. Geprüft wird erst im Plan. */
+  pickTargetFolder: () => checked(pickedFolderSchema, 'pick_target_folder'),
+  dataMovePlan: (target: string) => checked(movePlanSchema, 'data_move_plan', { target }),
+  /** Kopiert + prüft den Datenordner und stellt um (wirksam nach dem Neustart); liefert den neuen Ordner. */
+  moveDataDir: (target: string, onProgress: (percent: number) => void, taskId: string | null = null) =>
+    checked(z.string().min(1).max(4096), 'move_data_dir', { target, onProgress: channel(onProgress), taskId }),
+  /** Alten Ordner beim nächsten Start löschen (`true`) oder behalten. */
+  confirmDataMove: (deleteOld: boolean) => call<void>('confirm_data_move', { deleteOld }),
+  instanceLocation: (id: string) => checked(instanceLocationSchema, 'instance_location', { id }),
+  /** `target: null` = zurück an den Standardort. */
+  instanceMovePlan: (id: string, target: string | null) => checked(movePlanSchema, 'instance_move_plan', { id, target }),
+  moveInstance: (id: string, target: string | null, onProgress: (percent: number) => void, taskId: string | null = null) =>
+    checked(instanceLocationSchema, 'move_instance', { id, target, onProgress: channel(onProgress), taskId }),
+  unavailableInstances: () => checked(unavailableInstancesSchema, 'unavailable_instances'),
+  forgetUnavailableInstance: (id: string) => call<void>('forget_unavailable_instance', { id }),
   firewallStatus: () => call<{ total: number; missing: number }>('firewall_status'),
   /** Eine Windows-Admin-Abfrage; danach fragt Windows bei keiner Instanz mehr nach dem Netzwerk. */
   firewallAllowAll: () => call<number>('firewall_allow_all'),

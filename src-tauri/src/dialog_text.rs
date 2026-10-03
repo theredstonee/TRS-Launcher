@@ -45,6 +45,8 @@ pub enum DialogText {
     Mp4Video,
     /// Bilder für eine Chat-Nachricht wählen.
     PickChatImages,
+    /// Zielordner für den Datenordner bzw. eine Instanz (Umzug).
+    PickTargetFolder,
 }
 
 impl DialogText {
@@ -56,7 +58,7 @@ impl DialogText {
 
 /// Je Text eine Zeile in der Reihenfolge von [`Language::ALL`]:
 /// en, de, es, fr, pl, pt-BR, tr, nl.
-const TEXTS: [[&str; 8]; 24] = [
+const TEXTS: [[&str; 8]; 25] = [
     [
         "Save modpack",
         "Modpack speichern",
@@ -270,6 +272,16 @@ const TEXTS: [[&str; 8]; 24] = [
         "Gönderilecek resimleri seç",
         "Afbeeldingen kiezen om te versturen",
     ],
+    [
+        "Choose the new location",
+        "Neuen Speicherort wählen",
+        "Elige la nueva ubicación",
+        "Choisir le nouvel emplacement",
+        "Wybierz nową lokalizację",
+        "Escolher o novo local",
+        "Yeni konumu seç",
+        "Nieuwe locatie kiezen",
+    ],
 ];
 
 impl DialogText {
@@ -290,7 +302,7 @@ pub async fn language(launcher: &LauncherState) -> Language {
 mod tests {
     use super::*;
 
-    const ALL: [DialogText; 24] = [
+    const ALL: [DialogText; 25] = [
         DialogText::SaveModpack,
         DialogText::PickModpack,
         DialogText::ModrinthModpack,
@@ -315,6 +327,7 @@ mod tests {
         DialogText::SaveClip,
         DialogText::Mp4Video,
         DialogText::PickChatImages,
+        DialogText::PickTargetFolder,
     ];
 
     #[test]

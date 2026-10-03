@@ -833,6 +833,23 @@
       "notAFolder": "An der Stelle von „{folder}“ liegt eine Datei – bitte umbenennen oder entfernen.",
       "inUse": "Ein anderes Spiel nutzt diesen gemeinsamen Ordner gerade – bitte erst beenden.",
       "repairFailed": "Gemeinsame Ordner konnten nicht eingerichtet werden ({list}) – das Spiel nutzt dafür eigene Ordner."
+    },
+    "relocate": {
+      "invalidPath": "Dieser Ordner kann nicht verwendet werden.",
+      "network": "Netzwerkpfade werden nicht unterstützt.",
+      "notAbsolute": "Bitte einen vollständigen Ordnerpfad wählen.",
+      "notADirectory": "Am Ziel liegt eine Datei mit diesem Namen.",
+      "notEmpty": "Der Zielordner ist nicht leer.",
+      "protected": "Systemordner können nicht verwendet werden.",
+      "overlap": "Ziel und aktueller Ordner dürfen nicht ineinander liegen.",
+      "insideLauncher": "Das Ziel darf nicht im Datenordner des Launchers oder in einer anderen Instanz liegen.",
+      "notWritable": "In diesen Ordner kann nicht geschrieben werden.",
+      "verifyFailed": "Die Kopie ist unvollständig – es wurde nichts umgestellt.",
+      "notEnoughSpace": "Auf dem Ziel-Laufwerk ist nicht genug Platz frei.",
+      "dataMoving": "Der Datenordner wurde verschoben – bitte den Launcher neu starten.",
+      "notMovable": "Im portablen Modus lässt sich der Datenordner nicht verschieben.",
+      "noMove": "Es wurde nichts verschoben.",
+      "alreadyDefault": "Die Instanz liegt bereits am Standardort."
     }
   },
   "browse": {
@@ -2046,7 +2063,8 @@
       "clientModUpdate": "TRS Client: Update auf {version} geladen",
       "clientModCurrent": "TRS Client: Version {version} (aktuell)",
       "updatesPackage": "Updates kommen über deine Paketverwaltung",
-      "updatesFlatpak": "Updates kommen über Flatpak"
+      "updatesFlatpak": "Updates kommen über Flatpak",
+      "updatesPortable": "Portable Version – Updates gibt es auf der Download-Seite"
     },
     "appearance": {
       "colorScheme": "Farbschema",
@@ -2211,7 +2229,16 @@
       "credentialsFile": "Es wurde kein Schlüsselbund gefunden – deine Anmeldungen sind deshalb nur durch Dateirechte geschützt (nur dein Benutzer kann sie lesen). Für besseren Schutz einen Schlüsselbund wie GNOME Keyring oder KWallet einrichten und entsperren.",
       "credentialsKeyringShort": "Schlüsselbund",
       "credentialsFileShort": "Nur Dateirechte",
-      "sharedFolders": "Gemeinsame Ordner"
+      "sharedFolders": "Gemeinsame Ordner",
+      "sourceDefault": "Standardordner",
+      "sourceCustom": "Eigener Ordner",
+      "sourcePortable": "Portabel",
+      "sourceEnv": "Über TRS_LAUNCHER_HOME festgelegt",
+      "missingDataDir": "Der gewählte Datenordner {path} wurde nicht gefunden (Laufwerk getrennt?). Der Launcher nutzt so lange den Standardordner.",
+      "portableHint": "Portabler Modus: Die Daten liegen neben dem Launcher im Ordner „data“.",
+      "envHint": "Der Datenordner ist über die Umgebungsvariable TRS_LAUNCHER_HOME festgelegt.",
+      "moveDataDir": "Datenordner verschieben…",
+      "downloadPage": "Download-Seite"
     },
     "network": {
       "title": "Netzwerk",
@@ -2798,7 +2825,8 @@
       "launch": "Spielstart",
       "presets": "Presets installiert",
       "ffmpeg": "Aufnahme-Komponente installiert",
-      "sharedFolders": "Gemeinsamer Ordner"
+      "sharedFolders": "Gemeinsamer Ordner",
+      "move": "Verschoben"
     },
     "stage": {
       "preparing": "Wird vorbereitet",
@@ -2840,7 +2868,8 @@
     "downloadInstaller": "Installer laden",
     "splash": "Wird aktualisiert – startet gleich neu …",
     "availableExternal": "Update {version} verfügbar",
-    "externalHint": "Installiere es über deine Paketverwaltung (z. B. yay/paru für das AUR, apt oder dnf) – oder lade es von GitHub."
+    "externalHint": "Installiere es über deine Paketverwaltung (z. B. yay/paru für das AUR, apt oder dnf) – oder lade es von GitHub.",
+    "portableHint": "Portable Version: Lade die neue ZIP von der Release-Seite und ersetze die alten Dateien – den Ordner „data“ behalten."
   },
   "play": {
     "stopGame": "Spiel beenden",
@@ -5834,6 +5863,63 @@
     "schematics": {
       "label": "Schematics",
       "description": "Litematica (schematics) und WorldEdit (config/worldedit/schematics) teilen sich einen Ordner."
+    }
+  },
+  "relocate": {
+    "pickFirst": "Bitte zuerst einen Ordner wählen.",
+    "currentFolder": "Aktueller Ordner",
+    "newFolder": "Neuer Ordner",
+    "newFolderPlaceholder": "z. B. D:\\Spiele\\TRS-Launcher",
+    "browse": "Durchsuchen…",
+    "emptyHint": "Wähle einen leeren oder neuen Ordner. Liegen schon Dateien darin, wird ein Unterordner angelegt.",
+    "size": "Größe",
+    "files": "{count} Datei | {count} Dateien",
+    "free": "Frei auf dem Laufwerk",
+    "freeUnknown": "unbekannt",
+    "sameDrive": "gleiches Laufwerk – wird nur umbenannt",
+    "linksSkipped": "{count} verknüpfter Ordner (Symlink/Junction) wird nicht mitkopiert. | {count} verknüpfte Ordner (Symlinks/Junctions) werden nicht mitkopiert.",
+    "checking": "Prüfe…",
+    "next": "Weiter",
+    "back": "Zurück",
+    "startCopy": "Kopieren und umstellen",
+    "stageCopying": "Dateien werden kopiert …",
+    "stageVerifying": "Kopie wird geprüft …",
+    "keepOpen": "Lass den Launcher offen. Während des Umzugs lassen sich keine Spiele starten.",
+    "cancelled": "Abgebrochen – es wurde nichts geändert.",
+    "blockedGames": "Bitte erst alle laufenden Spiele beenden.",
+    "blockedSpace": "Auf dem Ziel-Laufwerk ist nicht genug Platz frei.",
+    "hide": "Ausblenden",
+    "data": {
+      "title": "Datenordner verschieben",
+      "intro": "Verschiebt alle Daten des Launchers (Instanzen, Java, Spielversionen, Konten, Einstellungen) in einen anderen Ordner, z. B. auf ein größeres Laufwerk. Danach startet der Launcher neu.",
+      "taskTitle": "Datenordner",
+      "restartHint": "Nach dem Kopieren wird jede Datei geprüft. Erst dann stellt der Launcher um und startet neu – deine Konten bleiben angemeldet.",
+      "verified": "Kopie fertig und geprüft. Ab jetzt nutzt der Launcher:",
+      "oldQuestion": "Was soll mit dem alten Ordner passieren? Gelöscht wird er erst nach dem Neustart.",
+      "keepOld": "Alten Ordner behalten & neu starten",
+      "deleteOld": "Alten Ordner löschen & neu starten"
+    },
+    "instance": {
+      "rowTitle": "Speicherort",
+      "rowDefault": "Im Datenordner des Launchers (Standard).",
+      "rowCustom": "In einem selbst gewählten Ordner.",
+      "move": "Verschieben…",
+      "moving": "Wird verschoben…",
+      "back": "Zurück zum Standard",
+      "title": "Instanz verschieben",
+      "backTitle": "Instanz zurück an den Standardort",
+      "intro": "Verschiebt diese Instanz mit Welten, Mods und Einstellungen in einen Ordner deiner Wahl, z. B. auf ein anderes Laufwerk.",
+      "placeholder": "z. B. D:\\Minecraft\\Modpack",
+      "hint": "Auf demselben Laufwerk wird der Ordner nur umbenannt. Sonst wird kopiert und geprüft – erst danach verschwindet der alte Ordner.",
+      "blockedRunning": "Bitte erst die Instanz beenden.",
+      "start": "Verschieben",
+      "done": "„{name}“ wurde verschoben."
+    },
+    "unavailable": {
+      "title": "„{name}“ ist nicht verfügbar",
+      "text": "Ordner nicht gefunden: {path} – ist das Laufwerk verbunden?",
+      "retry": "Erneut prüfen",
+      "forget": "Aus Liste entfernen"
     }
   }
 }
