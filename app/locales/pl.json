@@ -800,6 +800,12 @@
       "invalidCode": "To nie jest prawidłowy kod (format: XXX-XXX).",
       "expired": "To żądanie logowania nie istnieje (już) – zacznij logowanie na stronie od nowa.",
       "used": "Na to żądanie logowania już odpowiedziano."
+    },
+    "sharedFolders": {
+      "foreignLink": "„{folder}” jest w tej instancji już połączony z innym miejscem – najpierw sam usuń ten link.",
+      "notAFolder": "W miejscu „{folder}” leży plik – zmień jego nazwę lub go usuń.",
+      "inUse": "Inna gra używa teraz tego wspólnego folderu – najpierw ją zamknij.",
+      "repairFailed": "Nie udało się skonfigurować wspólnych folderów ({list}) – gra używa dla nich własnych folderów."
     }
   },
   "browse": {
@@ -1203,7 +1209,8 @@
       "title": "Usunąć zrzut ekranu?",
       "text": "{name} trafi do Kosza systemu Windows – możesz go stamtąd przywrócić.",
       "textLinux": "{name} trafi do kosza – możesz go stamtąd przywrócić w menedżerze plików."
-    }
+    },
+    "sharedFolder": "Wspólny folder"
   },
   "servers": {
     "title": "Serwery",
@@ -1329,7 +1336,8 @@
       "window": "Okno",
       "java": "Java i pamięć",
       "hooks": "Hooki uruchamiania",
-      "sync": "Synchronizacja"
+      "sync": "Synchronizacja",
+      "shared": "Wspólne foldery"
     },
     "general": {
       "changeImage": "Zmień obraz",
@@ -1448,7 +1456,35 @@
     "sync": {
       "intro": "Elementy włączone globalnie są pobierane ze wspólnego magazynu przed uruchomieniem i zapisywane z powrotem po zamknięciu gry. Tutaj możesz je oddzielić dla tej instancji. Nadpisywane pliki są najpierw archiwizowane.",
       "globallyOff": "Wyłączone globalnie – włącz w Ustawieniach w sekcji Instancje.",
-      "toggleLabel": "Synchronizuj {item}"
+      "toggleLabel": "Synchronizuj {item}",
+      "resourcePacksShared": "W tej instancji paczki zasobów są wspólnym folderem – kopiowanie nie jest potrzebne."
+    },
+    "shared": {
+      "intro": "Jak w Prism: wspólny folder istnieje w launcherze tylko raz, a każda instancja, która go współdzieli, widzi te same pliki. Po włączeniu pliki tej instancji są tam przenoszone – nic nie jest nadpisywane, przy tej samej nazwie zostają oba.",
+      "stopFirst": "Instancja jest uruchomiona – najpierw ją zamknij, aby zmienić wspólne foldery.",
+      "loading": "Ładowanie …",
+      "linkedBadge": "Wspólny",
+      "toggleLabel": "Współdziel {folder}",
+      "blocked": "Tu jest już inny link albo plik – najpierw go usuń lub zmień jego nazwę.",
+      "pending": "Włączone – zostanie skonfigurowane przy następnym uruchomieniu (najpierw pliki zostaną scalone).",
+      "sharedWith": "Współdzielony z {n} inną instancją | Współdzielony z {n} innymi instancjami | Współdzielony z {n} innymi instancjami",
+      "resourcePacksNote": "Dopóki paczki zasobów są wspólnym folderem, synchronizacja nie kopiuje ich dla tej instancji – robi to już wspólny folder.",
+      "linking": "Przenoszenie plików do wspólnego folderu …",
+      "copying": "Kopiowanie wspólnego folderu …",
+      "unlinking": "Usuwanie linku …",
+      "linkedDone": "{folder} jest teraz wspólny",
+      "unlinkedDone": "{folder} jest znów osobny",
+      "savesWarningTitle": "Współdzielić światy?",
+      "savesWarningText": "Każda współdzieląca instancja otwiera wspólne światy. Inna wersja Minecrafta lub inne mody mogą uszkodzić świat albo na zawsze usunąć jego bloki i przedmioty.",
+      "savesWarningHint": "Współdziel światy tylko między instancjami z tą samą wersją i tymi samymi modami – i najpierw zrób kopię ważnych światów.",
+      "savesWarningConfirm": "Współdziel światy",
+      "disableTitle": "Przestać współdzielić {folder}?",
+      "disableText": "Dla pozostałych instancji wspólny folder zostaje bez zmian. Co ma zachować ta instancja?",
+      "disableCopy": "Zachowaj kopię",
+      "disableCopyHint": "Kopiuje całą zawartość wspólnego folderu do instancji (przy dużych światach może to potrwać).",
+      "disableEmpty": "Zacznij od pustego",
+      "disableEmptyHint": "Instancja dostaje nowy, pusty folder.",
+      "disableConfirm": "Przestań współdzielić"
     }
   },
   "createInstance": {
@@ -2145,7 +2181,8 @@
       "credentialsKeyring": "Klucz do logowań Microsoft jest przechowywany w pęku kluczy systemu (np. GNOME Keyring lub KWallet).",
       "credentialsFile": "Nie znaleziono pęku kluczy, więc logowania są chronione tylko uprawnieniami plików (odczytać je może tylko twój użytkownik). Dla lepszej ochrony zainstaluj i odblokuj pęk kluczy, np. GNOME Keyring lub KWallet.",
       "credentialsKeyringShort": "Pęk kluczy",
-      "credentialsFileShort": "Tylko uprawnienia plików"
+      "credentialsFileShort": "Tylko uprawnienia plików",
+      "sharedFolders": "Wspólne foldery"
     },
     "network": {
       "title": "Sieć",
@@ -2248,6 +2285,11 @@
       "preview": "Pokaż powiadomienie testowe",
       "previewTitle": "TRS Launcher",
       "previewBody": "Tak wyglądają powiadomienia."
+    },
+    "sharedFolders": {
+      "title": "Wspólne foldery",
+      "description": "Nowe instancje od początku współdzielą te foldery ze wszystkimi innymi współdzielącymi instancjami. Istniejące instancje zachowują swoje ustawienie (zmienisz je w ustawieniach instancji).",
+      "toggleLabel": "Nowe instancje współdzielą {folder}"
     }
   },
   "settingsShell": {
@@ -2710,7 +2752,8 @@
       "versionChange": "Zmieniono wersję",
       "launch": "Uruchomienie gry",
       "presets": "Zainstalowano presety",
-      "ffmpeg": "Nagrywarka zainstalowana"
+      "ffmpeg": "Nagrywarka zainstalowana",
+      "sharedFolders": "Wspólny folder"
     },
     "stage": {
       "preparing": "Przygotowywanie",
@@ -2867,7 +2910,8 @@
       "window": "Okno",
       "java": "Java i pamięć",
       "hooks": "Hooki uruchamiania",
-      "sync": "Synchronizacja"
+      "sync": "Synchronizacja",
+      "shared": "Wspólne foldery"
     }
   },
   "trs": {
@@ -5414,5 +5458,27 @@
     "logs": "Pomoc dotycząca logów",
     "java": "Poradnik Java",
     "linux": "Poradnik dla Linuksa"
+  },
+  "sharedFolder": {
+    "shaderpacks": {
+      "label": "Shadery",
+      "description": "Shadery są zapisane raz, a każda współdzieląca instancja widzi te same."
+    },
+    "resourcepacks": {
+      "label": "Paczki zasobów",
+      "description": "Jeden folder paczek zasobów dla wszystkich współdzielących instancji."
+    },
+    "screenshots": {
+      "label": "Zrzuty ekranu",
+      "description": "Wszystkie zrzuty trafiają do jednego folderu – galeria pokazuje je tylko raz."
+    },
+    "saves": {
+      "label": "Światy",
+      "description": "Światy jednoosobowe są współdzielone – otwieraj ten sam świat z kilku instancji."
+    },
+    "schematics": {
+      "label": "Schematy",
+      "description": "Litematica (schematics) i WorldEdit (config/worldedit/schematics) dzielą jeden folder."
+    }
   }
 }

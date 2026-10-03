@@ -6,6 +6,7 @@ use tokio::sync::Mutex;
 use crate::hooks::{self, EnvVar, LaunchHooks};
 use crate::paths::Paths;
 use crate::settings::{self, Resolution};
+use crate::shared_folders::{self, SharedFolder};
 use crate::sync::SyncItem;
 use crate::{Error, Result, fsutil};
 
@@ -74,6 +75,11 @@ pub struct InstanceOverrides {
     pub env: Option<Vec<EnvVar>>,
     /// Diese Dinge werden in dieser Instanz nicht synchronisiert.
     pub sync_separate: Vec<SyncItem>,
+    /// Ordner, die diese Instanz mit anderen teilt (per Link, siehe
+    /// [`crate::shared_folders`]). Ändert sich nur über
+    /// [`InstanceStore::set_shared_folders`] – nie über das normale Speichern.
+    #[serde(deserialize_with = "crate::shared_folders::lenient")]
+    pub shared_folders: Vec<SharedFolder>,
 }
 
 /// Update-Kanal für Inhalte (Modrinth-Versionstypen).
@@ -116,6 +122,7 @@ impl InstanceOverrides {
             seen.push(*i);
             new
         });
+        self.shared_folders = shared_folders::normalize(&self.shared_folders);
         self
     }
 
@@ -126,7 +133,7 @@ impl InstanceOverrides {
         if let Some(env) = &self.env {
             hooks::validate_env(env)?;
         }
-        if self.sync_separate.len() > SyncItem::ALL.len() {
+        if self.sync_separate.len() > SyncItem::ALL.len() || self.shared_folders.len() > SharedFolder::ALL.len() {
             return Err(Error::validation(crate::msg!("instance.invalidSyncSettings", "Ungültige Synchronisierungs-Einstellungen")));
         }
         if let Some(mb) = self.max_memory_mb {
@@ -308,7 +315,18 @@ impl InstanceStore {
         let _guard = self.write_lock.lock().await;
         let mut instance = self.get(id).await?;
         instance.name = name;
-        instance.overrides = overrides;
+        // Gemeinsame Ordner hängen an Links auf der Platte – die setzt nur set_shared_folders.
+        let shared = std::mem::take(&mut instance.overrides.shared_folders);
+        instance.overrides = InstanceOverrides { shared_folders: shared, ..overrides };
+        fsutil::write_json(&self.paths.instance_file(id), &instance).await?;
+        Ok(instance)
+    }
+
+    /// Merkt, welche Ordner die Instanz teilt (die Links legt [`crate::shared_folders`] an).
+    pub async fn set_shared_folders(&self, id: &str, list: &[SharedFolder]) -> Result<Instance> {
+        let _guard = self.write_lock.lock().await;
+        let mut instance = self.get(id).await?;
+        instance.overrides.shared_folders = shared_folders::normalize(list);
         fsutil::write_json(&self.paths.instance_file(id), &instance).await?;
         Ok(instance)
     }
@@ -327,12 +345,20 @@ impl InstanceStore {
         fsutil::write_json(&self.paths.instance_file(id), &instance).await
     }
 
-    /// Löscht die Instanz inklusive Welten, Mods und Screenshots.
+    /// Löscht die Instanz inklusive Welten, Mods und Screenshots. Links auf
+    /// gemeinsame Ordner verschwinden nur als Link – deren Inhalt bleibt.
     pub async fn delete(&self, id: &str) -> Result<()> {
         let _guard = self.write_lock.lock().await;
         self.get(id).await?;
+        let game_dir = self.paths.instance_game_dir(id);
         let dir = self.paths.instance_dir(id);
-        fs::remove_dir_all(&dir).await.map_err(|e| Error::io(&dir, e))
+        tokio::task::spawn_blocking(move || {
+            // Erst die Links entfernen; remove_dir_all folgt Links ohnehin nicht (zweite Sicherung).
+            shared_folders::remove_links(&game_dir).map_err(|e| Error::io(&game_dir, e))?;
+            std::fs::remove_dir_all(&dir).map_err(|e| Error::io(&dir, e))
+        })
+        .await
+        .map_err(|e| Error::Internal(e.to_string()))?
     }
 
     async fn unique_id(&self, name: &str) -> String {

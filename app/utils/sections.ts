@@ -46,4 +46,5 @@ export const instanceSettingsSections: ShellSection[] = [
   section('java', 'settingsSections.instance.java', 'java'),
   section('hooks', 'settingsSections.instance.hooks', 'hooks'),
   section('sync', 'settingsSections.instance.sync', 'sync'),
+  section('shared', 'settingsSections.instance.shared', 'link'),
 ]

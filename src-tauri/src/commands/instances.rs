@@ -1,15 +1,18 @@
 use std::path::PathBuf;
 
 use serde::Serialize;
+use tauri::ipc::Channel;
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 use trs_core::Launcher;
 use trs_core::history::HistoryEntry;
 use trs_core::instance::{Instance, Loader, LoaderKind, NewInstance, UpdateInstance};
 use trs_core::loaders::LoaderVersionInfo;
+use trs_core::shared_folders::{SharedFolder, SharedFolderStatus};
 
 use crate::LauncherState;
 use crate::commands::extras::allow;
+use crate::commands::tasks::tracked;
 use crate::dialog_text::{self, DialogText};
 use crate::error::CommandResult;
 
@@ -237,4 +240,31 @@ pub async fn change_instance_version(
 #[tauri::command]
 pub async fn instance_history(launcher: State<'_, LauncherState>, id: String) -> CommandResult<Vec<HistoryEntry>> {
     Ok(launcher.instance_history(&id).await?)
+}
+
+/// Gemeinsame Ordner einer Instanz (Shader, Ressourcenpakete, Screenshots, Welten, Schematics).
+#[tauri::command]
+pub async fn instance_shared_folders(launcher: State<'_, LauncherState>, id: String) -> CommandResult<Vec<SharedFolderStatus>> {
+    Ok(launcher.shared_folders(&id).await?)
+}
+
+/// Gemeinsamen Ordner ein- oder ausschalten. Beim Ausschalten wählt `copy`, ob der
+/// Inhalt mitgenommen wird (sonst startet der Ordner leer). Fortschritt 0–100.
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub async fn set_instance_shared_folder(
+    app: AppHandle,
+    launcher: State<'_, LauncherState>,
+    id: String,
+    kind: SharedFolder,
+    enabled: bool,
+    copy: bool,
+    on_progress: Channel<u8>,
+    task_id: Option<String>,
+) -> CommandResult<InstanceView> {
+    let work = launcher.set_shared_folder(&id, kind, enabled, copy, move |p| {
+        let _ = on_progress.send(p);
+    });
+    let updated = tracked(&app, task_id, work).await?;
+    Ok(view(&app, &launcher, updated))
 }

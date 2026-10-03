@@ -48,6 +48,8 @@ pub enum TaskKind {
     Launch,
     /// FFmpeg für Clips & Aufnahme geladen.
     Ffmpeg,
+    /// Gemeinsamer Ordner ein-/ausgeschaltet (Zusammenführen bzw. Kopieren).
+    SharedFolders,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

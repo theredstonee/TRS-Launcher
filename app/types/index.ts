@@ -35,6 +35,24 @@ export interface InstanceOverrides {
   env: EnvVar[] | null
   /** Diese Dinge bleiben in dieser Instanz separat. */
   syncSeparate: SyncItem[]
+  /** Ordner, die diese Instanz per Link mit anderen teilt (nur über `setInstanceSharedFolder` änderbar). */
+  sharedFolders: SharedFolder[]
+}
+
+/** Gemeinsame Ordner zwischen Instanzen (Rust: `shared_folders::SharedFolder`). */
+export type SharedFolder = 'shaderpacks' | 'resourcepacks' | 'screenshots' | 'saves' | 'schematics'
+
+/** Zustand eines gemeinsamen Ordners in einer Instanz. */
+export interface SharedFolderStatus {
+  kind: SharedFolder
+  /** In dieser Instanz eingeschaltet. */
+  enabled: boolean
+  /** Der Link steht (sonst: wird beim nächsten Start eingerichtet). */
+  linked: boolean
+  /** Ein fremder Link oder eine Datei steht im Weg. */
+  blocked: boolean
+  /** So viele Instanzen teilen diesen Ordner (diese mitgezählt). */
+  instances: number
 }
 
 export type UpdateChannel = 'release' | 'beta' | 'alpha'
@@ -108,6 +126,8 @@ export interface StorageStats {
   versions: number
   java: number
   shared: number
+  /** Gemeinsame Ordner – einmal gezählt, egal wie viele Instanzen sie nutzen. */
+  sharedFolders: number
   unused: number
   unusedVersions: number
 }
@@ -195,6 +215,8 @@ export interface Settings {
   social: SocialSettings
   /** TRS Client bei Modpacks/Importen mit Mods: fragen (Standard) oder immer mit/ohne */
   modpackTrsClient: ModpackTrsPolicy
+  /** Ordner, die neue Instanzen von Anfang an teilen */
+  sharedFolders: SharedFolder[]
 }
 
 /** Benachrichtigungen aus „Sozial“ (Rust: `SocialSettings`). */
@@ -1307,6 +1329,8 @@ export interface GalleryShot {
   fileName: string
   size: number
   takenAt: string | null
+  /** Liegt im gemeinsamen Screenshot-Ordner (wird nur einmal gezeigt). */
+  shared: boolean
 }
 
 // --- Hintergrund-Aufgaben ------------------------------------------------------------
@@ -1329,6 +1353,7 @@ export type TaskKind =
   | 'version-change'
   | 'launch'
   | 'ffmpeg'
+  | 'shared-folders'
 
 /** Eintrag im Verlauf fertiger Aufgaben (`task-history.json`, neueste zuerst). */
 export interface TaskRecord {

@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::instance::{Instance, LoaderKind, validate_id};
 use crate::paths::Paths;
+use crate::shared_folders::SharedLinks;
 use crate::{Error, Launcher, Result, loaders, modrinth};
 
 /// Ordner/Dateien, die standardmäßig angehakt sind.
@@ -130,6 +131,7 @@ fn is_offered(name: &str) -> bool {
 pub async fn export_candidates(paths: &Paths, instance_id: &str) -> Result<Vec<ExportEntry>> {
     validate_id(instance_id)?;
     let game_dir = paths.instance_game_dir(instance_id);
+    let links = SharedLinks::new(paths);
     let entries = tokio::task::spawn_blocking(move || -> Vec<ExportEntry> {
         let Ok(read) = std::fs::read_dir(&game_dir) else { return Vec::new() };
         let mut list = Vec::new();
@@ -139,13 +141,16 @@ pub async fn export_candidates(paths: &Paths, instance_id: &str) -> Result<Vec<E
                 continue;
             }
             let Ok(kind) = entry.file_type() else { continue };
-            if kind.is_symlink() {
+            // Links nur, wenn sie auf einen gemeinsamen Ordner zeigen – dann zählt ihr Inhalt.
+            let shared = kind.is_symlink() && links.is_link(Path::new(&name), &entry.path());
+            if kind.is_symlink() && !shared {
                 continue;
             }
-            let (size, files) = if kind.is_dir() {
+            let is_dir = kind.is_dir() || shared;
+            let (size, files) = if is_dir {
                 let mut size = 0;
                 let mut files = 0;
-                collect_dir(&entry.path(), &PathBuf::from(&name), &mut |_, len| {
+                collect_dir(&entry.path(), &PathBuf::from(&name), &links, &mut |_, len| {
                     size += len;
                     files += 1;
                 });
@@ -156,7 +161,7 @@ pub async fn export_candidates(paths: &Paths, instance_id: &str) -> Result<Vec<E
             list.push(ExportEntry {
                 recommended: RECOMMENDED.iter().any(|r| r.eq_ignore_ascii_case(&name)),
                 name,
-                is_dir: kind.is_dir(),
+                is_dir,
                 size,
                 files,
             });
@@ -170,8 +175,9 @@ pub async fn export_candidates(paths: &Paths, instance_id: &str) -> Result<Vec<E
 }
 
 /// Läuft rekursiv durch einen Ordner; `visit` bekommt den Pfad relativ zum
-/// Spielordner und die Dateigröße. Verknüpfungen werden ausgelassen.
-fn collect_dir(dir: &Path, rel: &Path, visit: &mut impl FnMut(PathBuf, u64)) {
+/// Spielordner und die Dateigröße. Verknüpfungen werden ausgelassen – außer
+/// Links auf gemeinsame Ordner (z. B. `config/worldedit/schematics`).
+fn collect_dir(dir: &Path, rel: &Path, links: &SharedLinks, visit: &mut impl FnMut(PathBuf, u64)) {
     let Ok(read) = std::fs::read_dir(dir) else { return };
     for entry in read.flatten() {
         let Ok(name) = entry.file_name().into_string() else { continue };
@@ -180,8 +186,8 @@ fn collect_dir(dir: &Path, rel: &Path, visit: &mut impl FnMut(PathBuf, u64)) {
         }
         let Ok(kind) = entry.file_type() else { continue };
         let child = rel.join(&name);
-        if kind.is_dir() {
-            collect_dir(&entry.path(), &child, visit);
+        if kind.is_dir() || (kind.is_symlink() && links.is_link(&child, &entry.path())) {
+            collect_dir(&entry.path(), &child, links, visit);
         } else if kind.is_file() {
             let len = entry.metadata().map(|m| m.len()).unwrap_or(0);
             visit(child, len);
@@ -190,7 +196,7 @@ fn collect_dir(dir: &Path, rel: &Path, visit: &mut impl FnMut(PathBuf, u64)) {
 }
 
 /// Sammelt alle Dateien der gewählten Einträge (relativ zum Spielordner).
-fn plan_files(game_dir: &Path, include: &[String]) -> Result<Vec<(PathBuf, u64)>> {
+fn plan_files(game_dir: &Path, include: &[String], links: &SharedLinks) -> Result<Vec<(PathBuf, u64)>> {
     let mut files = Vec::new();
     let mut total = 0u64;
     for name in include {
@@ -202,11 +208,12 @@ fn plan_files(game_dir: &Path, include: &[String]) -> Result<Vec<(PathBuf, u64)>
         }
         let path = game_dir.join(name);
         let Ok(meta) = std::fs::symlink_metadata(&path) else { continue };
-        if meta.is_symlink() {
+        let shared = meta.is_symlink() && links.is_link(Path::new(name), &path);
+        if meta.is_symlink() && !shared {
             continue;
         }
-        if meta.is_dir() {
-            collect_dir(&path, &PathBuf::from(name), &mut |rel, len| {
+        if meta.is_dir() || shared {
+            collect_dir(&path, &PathBuf::from(name), links, &mut |rel, len| {
                 if is_private_file(&rel) {
                     return;
                 }
@@ -525,7 +532,8 @@ impl Launcher {
 
         let include = options.include.clone();
         let dir = game_dir.clone();
-        let files = tokio::task::spawn_blocking(move || plan_files(&dir, &include))
+        let links = SharedLinks::new(self.paths());
+        let files = tokio::task::spawn_blocking(move || plan_files(&dir, &include, &links))
             .await
             .map_err(|e| Error::Internal(e.to_string()))??;
         if files.is_empty() {
@@ -651,7 +659,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let game = game_dir_with_files(dir.path());
 
-        let files = plan_files(&game, &["mods".into(), "config".into(), "options.txt".into()]).unwrap();
+        let files = plan_files(&game, &["mods".into(), "config".into(), "options.txt".into()], &SharedLinks::default()).unwrap();
         let names: Vec<String> = files.iter().map(|(p, _)| pack_path(p)).collect();
         assert!(names.contains(&"mods/bekannt.jar".to_owned()));
         assert!(names.contains(&"config/sub/a.toml".to_owned()));
@@ -659,9 +667,9 @@ mod tests {
         assert!(!names.iter().any(|n| n.contains("latest.log")));
 
         // Logs & Co. lassen sich nicht über die Auswahl hineinschmuggeln.
-        assert!(plan_files(&game, &["logs".into()]).is_err());
-        assert!(plan_files(&game, &["../../geheim".into()]).is_err());
-        assert!(plan_files(&game, &["mods/../logs".into()]).is_err());
+        assert!(plan_files(&game, &["logs".into()], &SharedLinks::default()).is_err());
+        assert!(plan_files(&game, &["../../geheim".into()], &SharedLinks::default()).is_err());
+        assert!(plan_files(&game, &["mods/../logs".into()], &SharedLinks::default()).is_err());
     }
 
     #[test]
@@ -674,7 +682,7 @@ mod tests {
         {
             std::fs::write(game.join(f), b"x").unwrap();
         }
-        let files = plan_files(&game, &["mods".into(), "config".into()]).unwrap();
+        let files = plan_files(&game, &["mods".into(), "config".into()], &SharedLinks::default()).unwrap();
         let names: Vec<String> = files.iter().map(|(p, _)| pack_path(p)).collect();
         assert!(names.contains(&"config/sodium.json".to_owned()));
         assert!(names.contains(&"mods/bekannt.jar".to_owned()));
@@ -707,7 +715,7 @@ mod tests {
     fn round_trip_through_the_importer() {
         let dir = tempfile::tempdir().unwrap();
         let game = game_dir_with_files(dir.path());
-        let files = plan_files(&game, &["mods".into(), "config".into(), "options.txt".into()]).unwrap();
+        let files = plan_files(&game, &["mods".into(), "config".into(), "options.txt".into()], &SharedLinks::default()).unwrap();
 
         // „bekannt.jar“ tut so, als käme es von Modrinth.
         let (sha1, sha512) = hash_file(&game.join("mods/bekannt.jar")).unwrap();
@@ -774,6 +782,42 @@ mod tests {
         assert!(names.contains(&"mods"));
         assert!(!names.contains(&"logs"));
         assert!(entries.iter().find(|e| e.name == "mods").unwrap().recommended);
+    }
+
+    #[tokio::test]
+    async fn shared_folders_are_exported_with_their_content() {
+        use crate::shared_folders::SharedFolder;
+        let dir = tempfile::tempdir().unwrap();
+        let launcher = Launcher::init(dir.path(), Arc::new(|_| {})).await.unwrap();
+        let instance = launcher
+            .instances()
+            .create(crate::instance::NewInstance {
+                name: "Geteilt".into(),
+                game_version: "1.21.1".into(),
+                loader: crate::instance::Loader::vanilla(),
+            })
+            .await
+            .unwrap();
+        let game = launcher.paths().instance_game_dir(&instance.id);
+        std::fs::create_dir_all(game.join("shaderpacks")).unwrap();
+        std::fs::write(game.join("shaderpacks/bsl.zip"), b"bsl").unwrap();
+        std::fs::create_dir_all(game.join("config/worldedit/schematics")).unwrap();
+        std::fs::write(game.join("config/worldedit/schematics/tor.schem"), b"tor").unwrap();
+        for kind in [SharedFolder::Shaderpacks, SharedFolder::Schematics] {
+            launcher.set_shared_folder(&instance.id, kind, true, false, |_| {}).await.unwrap();
+        }
+
+        let entries = export_candidates(launcher.paths(), &instance.id).await.unwrap();
+        let shaders = entries.iter().find(|e| e.name == "shaderpacks").expect("gemeinsamer Ordner wird angeboten");
+        assert!(shaders.is_dir);
+        assert_eq!(shaders.files, 1);
+
+        let links = SharedLinks::new(launcher.paths());
+        let files = plan_files(&game, &["shaderpacks".into(), "config".into(), "schematics".into()], &links).unwrap();
+        let names: Vec<String> = files.iter().map(|(p, _)| pack_path(p)).collect();
+        assert!(names.contains(&"shaderpacks/bsl.zip".to_owned()));
+        assert!(names.contains(&"config/worldedit/schematics/tor.schem".to_owned()));
+        assert!(names.contains(&"schematics/tor.schem".to_owned()));
     }
 
     #[test]

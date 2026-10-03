@@ -205,10 +205,12 @@ import type {
   ServerInput,
   ServerStatus,
   Settings,
+  SharedFolder,
   StageProgress,
   TaskRecord,
   VersionManifest,
 } from '~/types'
+import { sharedFolderStatusSchema } from './schemas'
 
 export class BackendError extends Error {
   constructor(
@@ -281,6 +283,17 @@ export const backend = {
     call<Instance>('update_instance', { id, update }),
   deleteInstance: (id: string) => call<void>('delete_instance', { id }),
   duplicateInstance: (id: string, name: string) => call<Instance>('duplicate_instance', { id, name }),
+  /** Gemeinsame Ordner einer Instanz (Shader, Ressourcenpakete, Screenshots, Welten, Schematics). */
+  instanceSharedFolders: (id: string) => checked(sharedFolderStatusSchema, 'instance_shared_folders', { id }),
+  /** Ein-/Ausschalten; `copy` (nur beim Ausschalten): Inhalt mitnehmen statt leer starten. */
+  setInstanceSharedFolder: (
+    id: string,
+    kind: SharedFolder,
+    enabled: boolean,
+    copy: boolean,
+    onProgress: (percent: number) => void,
+    taskId?: string,
+  ) => call<Instance>('set_instance_shared_folder', { id, kind, enabled, copy, onProgress: channel(onProgress), taskId }),
   openInstanceDir: (id: string) => call<void>('open_instance_dir', { id }),
   /** Öffnet den Bilddialog; `null` = abgebrochen. */
   pickInstanceIcon: (id: string) => call<Instance | null>('pick_instance_icon', { id }),

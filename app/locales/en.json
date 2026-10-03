@@ -800,6 +800,12 @@
       "invalidCode": "That is not a valid code (format: XXX-XXX).",
       "expired": "This sign-in request doesn’t exist (anymore) – start the sign-in on the website again.",
       "used": "This sign-in request was already answered."
+    },
+    "sharedFolders": {
+      "foreignLink": "“{folder}” in this instance is already linked to another place – please remove that link yourself first.",
+      "notAFolder": "There is a file where “{folder}” should be – please rename or remove it.",
+      "inUse": "Another game is using this shared folder right now – please stop it first.",
+      "repairFailed": "Shared folders couldn’t be set up ({list}) – the game uses its own folders for them."
     }
   },
   "browse": {
@@ -1203,7 +1209,8 @@
       "title": "Delete screenshot?",
       "text": "{name} goes to the Windows Recycle Bin – you can restore it from there.",
       "textLinux": "{name} goes to the trash – you can restore it from there in your file manager."
-    }
+    },
+    "sharedFolder": "Shared folder"
   },
   "servers": {
     "title": "Servers",
@@ -1329,7 +1336,8 @@
       "window": "Window",
       "java": "Java & memory",
       "hooks": "Launch hooks",
-      "sync": "Sync"
+      "sync": "Sync",
+      "shared": "Shared folders"
     },
     "general": {
       "changeImage": "Change image",
@@ -1448,7 +1456,35 @@
     "sync": {
       "intro": "Items turned on globally are fetched from shared storage before launch and written back after the game closes. Here you can keep them separate for this instance. Overwritten files are backed up first.",
       "globallyOff": "Turned off globally – turn it on in Settings under Instances.",
-      "toggleLabel": "Sync {item}"
+      "toggleLabel": "Sync {item}",
+      "resourcePacksShared": "Resource packs are a shared folder in this instance – they don’t need to be copied."
+    },
+    "shared": {
+      "intro": "Like in Prism: a shared folder lives once in the launcher and every instance that shares it sees the same files. Turning it on moves this instance’s files there – nothing is overwritten, files with the same name are both kept.",
+      "stopFirst": "The instance is running – stop it first to change shared folders.",
+      "loading": "Loading …",
+      "linkedBadge": "Shared",
+      "toggleLabel": "Share {folder}",
+      "blocked": "Another link or a file is in the way here – remove or rename it first.",
+      "pending": "Turned on – will be set up on the next launch (files are merged first).",
+      "sharedWith": "Shared with {n} other instance | Shared with {n} other instances",
+      "resourcePacksNote": "While resource packs are a shared folder, they are not copied by Sync for this instance – the shared folder already does that.",
+      "linking": "Merging files into the shared folder …",
+      "copying": "Copying the shared folder …",
+      "unlinking": "Removing the link …",
+      "linkedDone": "{folder} is now shared",
+      "unlinkedDone": "{folder} is separate again",
+      "savesWarningTitle": "Share worlds?",
+      "savesWarningText": "Shared worlds are opened by every sharing instance. A different Minecraft version or other mods can damage a world or remove its blocks and items for good.",
+      "savesWarningHint": "Only share worlds between instances with the same version and the same mods – and back up important worlds first.",
+      "savesWarningConfirm": "Share worlds",
+      "disableTitle": "Stop sharing {folder}?",
+      "disableText": "The shared folder stays as it is for the other instances. What should this instance keep?",
+      "disableCopy": "Keep a copy",
+      "disableCopyHint": "Copies everything from the shared folder into the instance (may take a while for big worlds).",
+      "disableEmpty": "Start empty",
+      "disableEmptyHint": "The instance gets a new, empty folder.",
+      "disableConfirm": "Stop sharing"
     }
   },
   "createInstance": {
@@ -2145,7 +2181,8 @@
       "credentialsKeyring": "The key for your Microsoft sign-ins is kept in your system keyring (e.g. GNOME Keyring or KWallet).",
       "credentialsFile": "No system keyring was found, so your sign-ins are only protected by file permissions (only your user can read them). Install and unlock a keyring such as GNOME Keyring or KWallet for better protection.",
       "credentialsKeyringShort": "Keyring",
-      "credentialsFileShort": "File permissions only"
+      "credentialsFileShort": "File permissions only",
+      "sharedFolders": "Shared folders"
     },
     "network": {
       "title": "Network",
@@ -2248,6 +2285,11 @@
       "preview": "Show a test notification",
       "previewTitle": "TRS Launcher",
       "previewBody": "This is how notifications look."
+    },
+    "sharedFolders": {
+      "title": "Shared folders",
+      "description": "New instances share these folders with all other sharing instances from the start. Existing instances keep their setting (change it in the instance settings).",
+      "toggleLabel": "New instances share {folder}"
     }
   },
   "settingsShell": {
@@ -2710,7 +2752,8 @@
       "versionChange": "Version changed",
       "launch": "Game launch",
       "presets": "Presets installed",
-      "ffmpeg": "Recorder installed"
+      "ffmpeg": "Recorder installed",
+      "sharedFolders": "Shared folder"
     },
     "stage": {
       "preparing": "Preparing",
@@ -2867,7 +2910,8 @@
       "window": "Window",
       "java": "Java & memory",
       "hooks": "Launch hooks",
-      "sync": "Sync"
+      "sync": "Sync",
+      "shared": "Shared folders"
     }
   },
   "trs": {
@@ -5414,5 +5458,27 @@
     "logs": "Help with logs",
     "java": "Java guide",
     "linux": "Linux guide"
+  },
+  "sharedFolder": {
+    "shaderpacks": {
+      "label": "Shader packs",
+      "description": "Shaders are stored once and every sharing instance sees the same ones."
+    },
+    "resourcepacks": {
+      "label": "Resource packs",
+      "description": "One folder of resource packs for all sharing instances."
+    },
+    "screenshots": {
+      "label": "Screenshots",
+      "description": "All screenshots land in one folder – the gallery shows them only once."
+    },
+    "saves": {
+      "label": "Worlds",
+      "description": "Single-player worlds are shared – open the same world from several instances."
+    },
+    "schematics": {
+      "label": "Schematics",
+      "description": "Litematica (schematics) and WorldEdit (config/worldedit/schematics) share one folder."
+    }
   }
 }

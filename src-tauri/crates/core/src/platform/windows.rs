@@ -202,6 +202,115 @@ pub fn move_to_trash(path: &Path) -> Result<()> {
     }
 }
 
+// --- Ordner-Links (gemeinsame Ordner) ----------------------------------------------------
+
+/// Legt `link` als Junction auf den Ordner `target` an. Junctions brauchen –
+/// anders als Symlinks – keine Adminrechte und keinen Entwicklermodus.
+/// `target` muss ein lokaler, existierender Ordner sein.
+pub fn create_dir_link(target: &Path, link: &Path) -> std::io::Result<()> {
+    use std::os::windows::ffi::OsStrExt;
+
+    use windows::Win32::Foundation::GENERIC_WRITE;
+    use windows::Win32::Storage::FileSystem::{
+        CreateFileW, FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT, FILE_SHARE_MODE, OPEN_EXISTING,
+    };
+    use windows::Win32::System::IO::DeviceIoControl;
+    use windows::core::PCWSTR;
+
+    // Aus winnt.h/winioctl.h – feste Werte der Windows-ABI.
+    const IO_REPARSE_TAG_MOUNT_POINT: u32 = 0xA000_0003;
+    const FSCTL_SET_REPARSE_POINT: u32 = 0x0009_00A4;
+
+    let invalid = |text: &str| std::io::Error::new(std::io::ErrorKind::InvalidInput, text.to_owned());
+    let target = std::fs::canonicalize(target)?;
+    // Kanonisch heißt unter Windows `\\?\C:\…` – die Junction will `\??\C:\…`.
+    let mut print: Vec<u16> = target.as_os_str().encode_wide().collect();
+    let verbatim: Vec<u16> = r"\\?\".encode_utf16().collect();
+    if print.starts_with(&verbatim) {
+        print.drain(..verbatim.len());
+    }
+    let unc: Vec<u16> = r"UNC\".encode_utf16().collect();
+    if print.starts_with(&unc) || print.starts_with(&[u16::from(b'\\'), u16::from(b'\\')]) || print.contains(&0) {
+        return Err(invalid("junction target must be a local folder"));
+    }
+    while print.len() > 3 && print.last() == Some(&u16::from(b'\\')) {
+        print.pop();
+    }
+    let substitute: Vec<u16> = r"\??\".encode_utf16().chain(print.iter().copied()).collect();
+
+    let sub_bytes = substitute.len() * 2;
+    let print_bytes = print.len() * 2;
+    // 8 Bytes Kopf des Mount-Point-Puffers + beide Namen mit Nullzeichen.
+    let data_len = 8 + sub_bytes + 2 + print_bytes + 2;
+    let (Ok(data_len), Ok(sub_len), Ok(print_len)) =
+        (u16::try_from(data_len), u16::try_from(sub_bytes), u16::try_from(print_bytes))
+    else {
+        return Err(invalid("junction target path too long"));
+    };
+    let mut buf: Vec<u8> = Vec::with_capacity(8 + usize::from(data_len));
+    buf.extend(IO_REPARSE_TAG_MOUNT_POINT.to_le_bytes());
+    buf.extend(data_len.to_le_bytes());
+    buf.extend(0u16.to_le_bytes()); // Reserved
+    buf.extend(0u16.to_le_bytes()); // SubstituteNameOffset
+    buf.extend(sub_len.to_le_bytes());
+    buf.extend((sub_len + 2).to_le_bytes()); // PrintNameOffset
+    buf.extend(print_len.to_le_bytes());
+    for unit in substitute.iter().chain(&[0]).chain(&print).chain(&[0]) {
+        buf.extend(unit.to_le_bytes());
+    }
+
+    std::fs::create_dir(link)?;
+    let wide: Vec<u16> = link.as_os_str().encode_wide().chain(Some(0)).collect();
+    let result = (|| -> std::io::Result<()> {
+        // SAFETY: `wide` ist nullterminiert und lebt während des Aufrufs.
+        let handle = unsafe {
+            CreateFileW(
+                PCWSTR(wide.as_ptr()),
+                GENERIC_WRITE.0,
+                FILE_SHARE_MODE(0),
+                None,
+                OPEN_EXISTING,
+                FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS,
+                None,
+            )
+        }?;
+        let mut returned = 0u32;
+        // SAFETY: `buf` ist ein vollständiger REPARSE_DATA_BUFFER und lebt während des Aufrufs;
+        // das Handle ist gültig und wird gleich danach geschlossen.
+        let set = unsafe {
+            DeviceIoControl(
+                handle,
+                FSCTL_SET_REPARSE_POINT,
+                Some(buf.as_ptr().cast()),
+                buf.len() as u32,
+                None,
+                0,
+                Some(&raw mut returned),
+                None,
+            )
+        };
+        // SAFETY: Handle stammt aus CreateFileW und wird genau einmal geschlossen.
+        unsafe {
+            let _ = CloseHandle(handle);
+        }
+        set.map_err(std::io::Error::from)
+    })();
+    if result.is_err() {
+        let _ = std::fs::remove_dir(link);
+    }
+    result
+}
+
+/// Entfernt nur den Link (Junction oder Symlink) – nie das, worauf er zeigt.
+pub fn remove_dir_link(link: &Path) -> std::io::Result<()> {
+    let meta = std::fs::symlink_metadata(link)?;
+    if !meta.file_type().is_symlink() {
+        return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "not a link"));
+    }
+    // Junctions und Ordner-Symlinks sind Verzeichnis-Einträge, Datei-Symlinks Dateien.
+    std::fs::remove_dir(link).or_else(|_| std::fs::remove_file(link))
+}
+
 // --- Java-Installationen -----------------------------------------------------------------
 
 /// Ordner, in denen Java-Installationen (je ein Unterordner) liegen: Program

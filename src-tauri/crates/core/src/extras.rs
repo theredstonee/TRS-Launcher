@@ -137,6 +137,7 @@ impl Launcher {
         }
 
         // Einstellungen übernehmen, Spielzeit nicht.
+        let shared = source.overrides.shared_folders.clone();
         let updated = self
             .instances()
             .update(&copy.id, crate::instance::UpdateInstance { name: copy.name.clone(), overrides: source.overrides })
@@ -152,6 +153,14 @@ impl Launcher {
             _ => updated,
         };
         fsutil::ensure_dir(&self.paths().instance_game_dir(&updated.id)).await?;
+        // Gemeinsame Ordner: Die Kopie teilt dieselben (Links werden nicht mitkopiert, sondern neu gesetzt).
+        let updated = if shared.is_empty() {
+            updated
+        } else {
+            let updated = self.instances().set_shared_folders(&updated.id, &shared).await?;
+            self.ensure_shared_folders(&updated).await;
+            updated
+        };
         crate::history::record(
             self.paths(),
             &updated.id,
@@ -218,5 +227,34 @@ mod tests {
         assert_eq!(copy.overrides.max_memory_mb, Some(6144));
         assert_eq!(copy.total_play_seconds, 0);
         assert!(launcher.paths().instance_game_dir(&copy.id).join("mods/a.jar").is_file());
+    }
+
+    #[tokio::test]
+    async fn duplicate_keeps_shared_folders_as_links() {
+        use crate::shared_folders::{LinkState, SharedFolder, link_state};
+        let dir = tempfile::tempdir().unwrap();
+        let launcher = Launcher::init(dir.path(), Arc::new(|_| {})).await.unwrap();
+        let original = launcher
+            .instances()
+            .create(NewInstance { name: "Teilt".into(), game_version: "1.21.1".into(), loader: Loader::vanilla() })
+            .await
+            .unwrap();
+        let game = launcher.paths().instance_game_dir(&original.id);
+        tokio::fs::create_dir_all(game.join("saves/Welt")).await.unwrap();
+        tokio::fs::write(game.join("saves/Welt/level.dat"), b"w").await.unwrap();
+        launcher.set_shared_folder(&original.id, SharedFolder::Saves, true, false, |_| {}).await.unwrap();
+
+        let copy = launcher.duplicate_instance(&original.id, "Kopie").await.unwrap();
+        assert_eq!(copy.overrides.shared_folders, [SharedFolder::Saves]);
+        let pool = launcher.paths().shared_folder(SharedFolder::Saves);
+        let copy_saves = launcher.paths().instance_game_dir(&copy.id).join("saves");
+        assert_eq!(link_state(&copy_saves, &pool), LinkState::Linked);
+        // Nur ein Exemplar der Welt – im gemeinsamen Ordner.
+        assert_eq!(std::fs::read_dir(&pool).unwrap().count(), 1);
+
+        // Löschen der Kopie und des Originals lässt die gemeinsame Welt stehen.
+        launcher.delete_instance(&copy.id).await.unwrap();
+        launcher.delete_instance(&original.id).await.unwrap();
+        assert_eq!(std::fs::read(pool.join("Welt/level.dat")).unwrap(), b"w");
     }
 }

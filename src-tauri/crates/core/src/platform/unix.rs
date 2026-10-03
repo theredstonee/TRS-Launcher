@@ -244,6 +244,21 @@ fn trash_path_encode(path: &Path) -> String {
     out
 }
 
+/// Legt `link` als Symlink auf den Ordner `target` an (absoluter Pfad).
+pub fn create_dir_link(target: &Path, link: &Path) -> std::io::Result<()> {
+    let target = std::fs::canonicalize(target)?;
+    std::os::unix::fs::symlink(target, link)
+}
+
+/// Entfernt nur den Symlink – nie das, worauf er zeigt.
+pub fn remove_dir_link(link: &Path) -> std::io::Result<()> {
+    let meta = std::fs::symlink_metadata(link)?;
+    if !meta.file_type().is_symlink() {
+        return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "not a link"));
+    }
+    std::fs::remove_file(link)
+}
+
 /// Verschiebt eine Datei in den Papierkorb des Benutzers
 /// (`~/.local/share/Trash`), so dass Dateimanager sie wiederherstellen können.
 pub fn move_to_trash(path: &Path) -> Result<()> {

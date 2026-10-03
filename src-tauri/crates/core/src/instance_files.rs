@@ -5,8 +5,10 @@
 //! jede Komponente wird einzeln geprüft (kein `..`, keine Laufwerke, keine
 //! reservierten Windows-Namen), Symlinks und Junctions werden nie betreten,
 //! und am Ende muss der kanonische Pfad noch im kanonischen Wurzelordner
-//! liegen. Dateien mit Geheimnissen (z. B. der Clip-Schlüssel des TRS
-//! Clients) sind weder sichtbar noch bearbeitbar.
+//! liegen. Einzige Ausnahme: die Links auf gemeinsame Ordner an ihren festen
+//! Stellen (`saves`, `screenshots` …, siehe [`crate::shared_folders`]) – darin
+//! bleibt alles im gemeinsamen Ordner eingesperrt. Dateien mit Geheimnissen
+//! (z. B. der Clip-Schlüssel des TRS Clients) sind weder sichtbar noch bearbeitbar.
 
 use std::path::{Path, PathBuf};
 
@@ -15,6 +17,7 @@ use serde::Serialize;
 
 use crate::instance::validate_id;
 use crate::paths::Paths;
+use crate::shared_folders::SharedLinks;
 use crate::{Error, Result};
 
 /// Höchstens so viele Einträge je Ordner (Rest wird abgeschnitten).
@@ -156,12 +159,16 @@ pub struct Jail {
     root: PathBuf,
     /// Kanonisch – nur für die Prüfung „liegt noch darin“.
     canonical: PathBuf,
+    /// Links auf gemeinsame Ordner, die betreten werden dürfen.
+    links: SharedLinks,
 }
 
 impl Jail {
     pub fn for_instance(paths: &Paths, instance_id: &str) -> Result<Self> {
         validate_id(instance_id)?;
-        Self::new(&paths.instance_game_dir(instance_id))
+        let mut jail = Self::new(&paths.instance_game_dir(instance_id))?;
+        jail.links = SharedLinks::new(paths);
+        Ok(jail)
     }
 
     /// Legt den Ordner bei Bedarf an; der Wurzelpfad wird kanonisiert.
@@ -174,7 +181,7 @@ impl Jail {
             tracing::debug!("Spielordner ist ein Link: {}", dir.display());
         }
         let canonical = dir.canonicalize().map_err(|e| Error::io(dir, e))?;
-        Ok(Self { root: dir.to_path_buf(), canonical })
+        Ok(Self { root: dir.to_path_buf(), canonical, links: SharedLinks::default() })
     }
 
     pub fn root(&self) -> &Path {
@@ -185,21 +192,36 @@ impl Jail {
     pub fn resolve(&self, rel: &str) -> Result<(PathBuf, Vec<String>)> {
         let parts = split_rel(rel)?;
         let mut path = self.root.clone();
-        for part in &parts {
+        // Durch einen Link auf einen gemeinsamen Ordner: ab da gilt dieser als Grenze.
+        let mut pool: Option<PathBuf> = None;
+        for (i, part) in parts.iter().enumerate() {
             path.push(part);
             match std::fs::symlink_metadata(&path) {
                 // Unter Windows gelten auch Junctions als Symlink (Reparse-Punkt).
-                Ok(meta) if meta.file_type().is_symlink() => return Err(denied()),
+                Ok(meta) if meta.file_type().is_symlink() => match self.links.target(&parts[..=i], &path) {
+                    Some(target) if pool.is_none() => pool = Some(target),
+                    _ => return Err(denied()),
+                },
                 Ok(_) => {}
                 Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Err(not_found()),
                 Err(e) => return Err(Error::io(&path, e)),
             }
         }
         let canonical = path.canonicalize().map_err(|e| Error::io(&path, e))?;
-        if !canonical.starts_with(&self.canonical) {
+        let inside = match &pool {
+            Some(pool) => canonical.starts_with(pool),
+            None => canonical.starts_with(&self.canonical),
+        };
+        if !inside {
             return Err(denied());
         }
         Ok((path, parts))
+    }
+
+    /// Steht hier ein Link auf einen gemeinsamen Ordner? Der Link selbst darf
+    /// weder umbenannt noch gelöscht werden (nur sein Inhalt).
+    fn is_shared_link(path: &Path) -> bool {
+        std::fs::symlink_metadata(path).is_ok_and(|m| m.file_type().is_symlink())
     }
 
     /// Existierender Ordner.
@@ -236,19 +258,21 @@ impl Jail {
             let Some(name) = entry.file_name().to_str().map(str::to_owned) else { continue };
             // Symlinks/Junctions werden nicht gezeigt – sie könnten aus der Instanz herausführen.
             let Ok(kind) = entry.file_type() else { continue };
-            if kind.is_symlink() || validate_name(&name).is_err() {
+            if validate_name(&name).is_err() {
                 continue;
             }
             let mut child = parts.clone();
             child.push(name.clone());
-            if is_sensitive(&child) {
+            if is_sensitive(&child) || (kind.is_symlink() && self.links.target(&child, &entry.path()).is_none()) {
                 continue;
             }
             if entries.len() >= MAX_LISTED {
                 truncated = true;
                 break;
             }
-            let Ok(meta) = entry.metadata() else { continue };
+            // Bei Links (gemeinsame Ordner) zählt das Ziel – DirEntry::metadata folgt ihnen nicht.
+            let meta = if kind.is_symlink() { std::fs::metadata(entry.path()) } else { entry.metadata() };
+            let Ok(meta) = meta else { continue };
             entries.push(FileEntry {
                 name,
                 dir: meta.is_dir(),
@@ -277,7 +301,7 @@ impl Jail {
     pub fn rename(&self, rel: &str, new_name: &str) -> Result<String> {
         validate_name(new_name)?;
         let (path, mut parts) = self.resolve(rel)?;
-        if parts.is_empty() {
+        if parts.is_empty() || Self::is_shared_link(&path) {
             return Err(denied());
         }
         let old = parts.pop().unwrap_or_default();
@@ -307,7 +331,7 @@ impl Jail {
         let mut targets = Vec::new();
         for rel in rels {
             let (path, parts) = self.resolve(rel)?;
-            if parts.is_empty() {
+            if parts.is_empty() || Self::is_shared_link(&path) {
                 return Err(denied());
             }
             targets.push(path);
@@ -634,6 +658,35 @@ mod tests {
         // Aufräumen: nur die Junction entfernen, nie ihr Ziel.
         std::fs::remove_dir(&link).unwrap();
         assert!(dir.path().join("outside.txt").is_file());
+    }
+
+    #[test]
+    fn shared_folder_links_can_be_entered_but_not_removed() {
+        use crate::shared_folders::{SharedFolder, Work, link_blocking};
+        let dir = tempfile::tempdir().unwrap();
+        let paths = Paths::new(dir.path());
+        let game = paths.instance_game_dir("test");
+        std::fs::create_dir_all(game.join("saves/Welt")).unwrap();
+        std::fs::write(game.join("saves/Welt/level.dat"), b"w").unwrap();
+        let pool = paths.shared_folder(SharedFolder::Saves);
+        link_blocking(&game, &pool, SharedFolder::Saves, &Work { progress: &|_| {}, control: None }).unwrap();
+        // Derselbe gemeinsame Ordner an fremder Stelle bleibt verborgen.
+        crate::platform::create_dir_link(&pool, &game.join("mods")).unwrap();
+
+        let jail = Jail::for_instance(&paths, "test").unwrap();
+        let names: Vec<_> = jail.list("").unwrap().entries.into_iter().map(|e| (e.name, e.dir)).collect();
+        assert_eq!(names, [("saves".to_owned(), true)]);
+        assert_eq!(jail.list("saves").unwrap().entries[0].name, "Welt");
+        assert!(jail.resolve("saves/Welt/level.dat").is_ok());
+        assert!(jail.resolve("mods").is_err());
+        assert_eq!(jail.create_file("saves", "neu.txt").unwrap(), "saves/neu.txt");
+        assert!(pool.join("neu.txt").is_file());
+        // Der Link selbst bleibt – nur sein Inhalt ist bearbeitbar.
+        assert!(jail.rename("saves", "x").is_err());
+        assert!(jail.trash(&["saves".into()]).is_err());
+        assert!(jail.rename("saves/neu.txt", "umbenannt.txt").is_ok());
+        // Ohne Instanz-Kontext gibt es keine Ausnahme.
+        assert!(Jail::new(&game).unwrap().resolve("saves").is_err());
     }
 
     #[test]

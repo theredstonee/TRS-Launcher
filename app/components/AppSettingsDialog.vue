@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Accent, AppInfo, ClientModStatus, Settings, StorageStats, Theme } from '~/types'
+import type { Accent, AppInfo, ClientModStatus, Settings, SharedFolder, StorageStats, Theme } from '~/types'
 import type { ShellSection } from '~/components/SettingsShell.vue'
 import type { Locale } from '~/utils/i18n'
 
@@ -221,6 +221,13 @@ function installJava(slot: (typeof javaSlots)[number]) {
   )
 }
 
+/** Gemeinsame Ordner, die neue Instanzen von Anfang an teilen. */
+function toggleDefaultShared(kind: SharedFolder, on: boolean) {
+  if (!form.value) return
+  const list = (form.value.sharedFolders ?? []).filter((k) => k !== kind)
+  form.value.sharedFolders = on ? sharedFolderKeys.filter((k) => k === kind || list.includes(k)) : list
+}
+
 // --- Speicher -----------------------------------------------------------------
 const stats = ref<StorageStats | null>(null)
 const statsBusy = ref(false)
@@ -245,6 +252,7 @@ const bars = computed(() => {
   const parts = [
     { key: 'instances', label: t('settings.storage.instances'), bytes: s.instances, color: 'bg-redstone-500' },
     { key: 'shared', label: t('settings.storage.sharedFiles'), bytes: shared, color: 'bg-lamp-400' },
+    { key: 'sharedFolders', label: t('settings.storage.sharedFolders'), bytes: s.sharedFolders ?? 0, color: 'bg-sky-400' },
     { key: 'unused', label: t('settings.storage.unused'), bytes: s.unused, color: 'bg-base-600' },
   ]
   const total = parts.reduce((sum, p) => sum + p.bytes, 0) || 1
@@ -562,6 +570,16 @@ async function allowFirewall() {
       <SettingRow v-for="item in syncItemList()" :key="item.key" :title="item.label" :description="item.description">
         <ToggleSwitch v-model="form.sync[item.key]" :label="t('settings.sync.toggleLabel', { item: item.label })" />
       </SettingRow>
+
+      <h3 class="section-heading mt-6">{{ t('settings.sharedFolders.title') }}</h3>
+      <p class="mb-1 text-xs leading-relaxed text-base-400">{{ t('settings.sharedFolders.description') }}</p>
+      <SettingRow v-for="kind in sharedFolderKeys" :key="kind" :title="sharedFolderLabel(kind)" :description="sharedFolderDescription(kind)">
+        <ToggleSwitch
+          :model-value="(form.sharedFolders ?? []).includes(kind)"
+          :label="t('settings.sharedFolders.toggleLabel', { folder: sharedFolderLabel(kind) })"
+          @update:model-value="toggleDefaultShared(kind, $event)"
+        />
+      </SettingRow>
     </div>
 
     <!-- Java-Installationen ------------------------------------------------------------ -->
@@ -610,7 +628,7 @@ async function allowFirewall() {
         <div class="flex h-3 overflow-hidden rounded-full bg-base-800">
           <div v-for="b in bars" :key="b.key" :class="b.color" :style="{ width: `${b.share}%` }" />
         </div>
-        <ul class="mt-3 grid grid-cols-3 gap-3 text-xs">
+        <ul class="mt-3 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
           <li v-for="b in bars" :key="b.key" class="flex items-start gap-2">
             <span class="mt-1 size-2.5 shrink-0 rounded-full" :class="b.color" />
             <span><span class="block text-base-400">{{ b.label }}</span><span class="font-mono text-sm text-base-50">{{ formatBytes(b.bytes) }}</span></span>

@@ -800,6 +800,12 @@
       "invalidCode": "Bu geçerli bir kod değil (biçim: XXX-XXX).",
       "expired": "Bu oturum açma isteği yok (artık) – web sitesinde oturum açmayı yeniden başlat.",
       "used": "Bu oturum açma isteği zaten yanıtlandı."
+    },
+    "sharedFolders": {
+      "foreignLink": "“{folder}” bu kurulumda zaten başka bir yere bağlı – önce o bağlantıyı kendin kaldır.",
+      "notAFolder": "“{folder}” olması gereken yerde bir dosya var – yeniden adlandır veya kaldır.",
+      "inUse": "Başka bir oyun şu anda bu ortak klasörü kullanıyor – önce kapat.",
+      "repairFailed": "Ortak klasörler kurulamadı ({list}) – oyun bunlar için kendi klasörlerini kullanıyor."
     }
   },
   "browse": {
@@ -1203,7 +1209,8 @@
       "title": "Ekran görüntüsü silinsin mi?",
       "text": "{name} Windows Geri Dönüşüm Kutusu'na gider – oradan geri yükleyebilirsin.",
       "textLinux": "{name} çöp kutusuna gider – dosya yöneticinden oradan geri yükleyebilirsin."
-    }
+    },
+    "sharedFolder": "Ortak klasör"
   },
   "servers": {
     "title": "Sunucular",
@@ -1329,7 +1336,8 @@
       "window": "Pencere",
       "java": "Java ve bellek",
       "hooks": "Başlatma kancaları",
-      "sync": "Eşitleme"
+      "sync": "Eşitleme",
+      "shared": "Ortak klasörler"
     },
     "general": {
       "changeImage": "Görseli değiştir",
@@ -1448,7 +1456,35 @@
     "sync": {
       "intro": "Genel olarak açılan öğeler başlatmadan önce ortak depodan alınır ve oyun kapandıktan sonra geri yazılır. Burada bunları bu kurulum için ayrı tutabilirsin. Üzerine yazılan dosyalar önce yedeklenir.",
       "globallyOff": "Genel olarak kapalı – Ayarlar'da Kurulumlar altından aç.",
-      "toggleLabel": "Eşitle: {item}"
+      "toggleLabel": "Eşitle: {item}",
+      "resourcePacksShared": "Bu kurulumda kaynak paketleri ortak klasördür – kopyalamaya gerek yok."
+    },
+    "shared": {
+      "intro": "Prism’deki gibi: ortak bir klasör başlatıcıda yalnızca bir kez bulunur ve onu paylaşan her kurulum aynı dosyaları görür. Açınca bu kurulumun dosyaları oraya taşınır – hiçbir şeyin üzerine yazılmaz, aynı adda olanların ikisi de kalır.",
+      "stopFirst": "Kurulum çalışıyor – ortak klasörleri değiştirmek için önce kapat.",
+      "loading": "Yükleniyor …",
+      "linkedBadge": "Ortak",
+      "toggleLabel": "{folder} paylaş",
+      "blocked": "Burada zaten başka bir bağlantı veya dosya var – önce kaldır ya da yeniden adlandır.",
+      "pending": "Açık – bir sonraki başlatmada kurulacak (dosyalar önce birleştirilir).",
+      "sharedWith": "{n} başka kurulumla paylaşılıyor | {n} başka kurulumla paylaşılıyor",
+      "resourcePacksNote": "Kaynak paketleri ortak klasör olduğu sürece eşitleme onları bu kurulum için kopyalamaz – bunu zaten ortak klasör yapar.",
+      "linking": "Dosyalar ortak klasöre aktarılıyor …",
+      "copying": "Ortak klasör kopyalanıyor …",
+      "unlinking": "Bağlantı kaldırılıyor …",
+      "linkedDone": "{folder} artık ortak",
+      "unlinkedDone": "{folder} yeniden ayrı",
+      "savesWarningTitle": "Dünyalar paylaşılsın mı?",
+      "savesWarningText": "Paylaşan her kurulum ortak dünyaları açar. Başka bir Minecraft sürümü veya başka modlar bir dünyaya zarar verebilir ya da bloklarını ve eşyalarını kalıcı olarak silebilir.",
+      "savesWarningHint": "Dünyaları yalnızca aynı sürüm ve aynı modlara sahip kurulumlar arasında paylaş – önemli dünyaları önce yedekle.",
+      "savesWarningConfirm": "Dünyaları paylaş",
+      "disableTitle": "{folder} paylaşımı durdurulsun mu?",
+      "disableText": "Ortak klasör diğer kurulumlar için olduğu gibi kalır. Bu kurulum neyi tutsun?",
+      "disableCopy": "Bir kopyasını tut",
+      "disableCopyHint": "Ortak klasördeki her şeyi kuruluma kopyalar (büyük dünyalarda zaman alabilir).",
+      "disableEmpty": "Boş başla",
+      "disableEmptyHint": "Kurulum yeni ve boş bir klasör alır.",
+      "disableConfirm": "Paylaşımı durdur"
     }
   },
   "createInstance": {
@@ -2145,7 +2181,8 @@
       "credentialsKeyring": "Microsoft oturumlarının anahtarı sistem anahtarlığında tutulur (ör. GNOME Keyring veya KWallet).",
       "credentialsFile": "Sistem anahtarlığı bulunamadı; oturumların yalnızca dosya izinleriyle korunuyor (yalnızca kullanıcın okuyabilir). Daha iyi koruma için GNOME Keyring veya KWallet gibi bir anahtarlık kurup kilidini aç.",
       "credentialsKeyringShort": "Anahtarlık",
-      "credentialsFileShort": "Yalnızca dosya izinleri"
+      "credentialsFileShort": "Yalnızca dosya izinleri",
+      "sharedFolders": "Ortak klasörler"
     },
     "network": {
       "title": "Ağ",
@@ -2248,6 +2285,11 @@
       "preview": "Test bildirimi göster",
       "previewTitle": "TRS Launcher",
       "previewBody": "Bildirimler böyle görünür."
+    },
+    "sharedFolders": {
+      "title": "Ortak klasörler",
+      "description": "Yeni kurulumlar bu klasörleri en baştan paylaşan diğer tüm kurulumlarla paylaşır. Mevcut kurulumlar ayarlarını korur (kurulum ayarlarından değiştirilebilir).",
+      "toggleLabel": "Yeni kurulumlar {folder} paylaşır"
     }
   },
   "settingsShell": {
@@ -2710,7 +2752,8 @@
       "versionChange": "Sürüm değiştirildi",
       "launch": "Oyun başlatma",
       "presets": "Ön ayarlar yüklendi",
-      "ffmpeg": "Kaydedici kuruldu"
+      "ffmpeg": "Kaydedici kuruldu",
+      "sharedFolders": "Ortak klasör"
     },
     "stage": {
       "preparing": "Hazırlanıyor",
@@ -2867,7 +2910,8 @@
       "window": "Pencere",
       "java": "Java ve bellek",
       "hooks": "Başlatma kancaları",
-      "sync": "Eşitleme"
+      "sync": "Eşitleme",
+      "shared": "Ortak klasörler"
     }
   },
   "trs": {
@@ -5414,5 +5458,27 @@
     "logs": "Günlükler hakkında yardım",
     "java": "Java rehberi",
     "linux": "Linux rehberi"
+  },
+  "sharedFolder": {
+    "shaderpacks": {
+      "label": "Gölgelendiriciler",
+      "description": "Gölgelendiriciler bir kez saklanır, paylaşan her kurulum aynılarını görür."
+    },
+    "resourcepacks": {
+      "label": "Kaynak paketleri",
+      "description": "Paylaşan tüm kurulumlar için tek bir kaynak paketi klasörü."
+    },
+    "screenshots": {
+      "label": "Ekran görüntüleri",
+      "description": "Tüm ekran görüntüleri tek klasöre gider – galeri her birini yalnızca bir kez gösterir."
+    },
+    "saves": {
+      "label": "Dünyalar",
+      "description": "Tek oyunculu dünyalar paylaşılır – aynı dünyayı birden çok kurulumdan aç."
+    },
+    "schematics": {
+      "label": "Şemalar",
+      "description": "Litematica (schematics) ve WorldEdit (config/worldedit/schematics) tek bir klasörü paylaşır."
+    }
   }
 }

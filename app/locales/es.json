@@ -800,6 +800,12 @@
       "invalidCode": "No es un código válido (formato: XXX-XXX).",
       "expired": "Esta solicitud de inicio de sesión no existe (ya): vuelve a empezar en la web.",
       "used": "Esta solicitud de inicio de sesión ya se respondió."
+    },
+    "sharedFolders": {
+      "foreignLink": "«{folder}» ya está enlazada con otro lugar en esta instancia: quita ese enlace tú primero.",
+      "notAFolder": "Donde debería estar «{folder}» hay un archivo: cámbiale el nombre o quítalo.",
+      "inUse": "Otro juego está usando esta carpeta compartida ahora mismo: ciérralo primero.",
+      "repairFailed": "No se pudieron configurar las carpetas compartidas ({list}): el juego usa sus propias carpetas."
     }
   },
   "browse": {
@@ -1203,7 +1209,8 @@
       "title": "¿Eliminar captura?",
       "text": "{name} irá a la papelera de reciclaje de Windows; desde allí puedes recuperarla.",
       "textLinux": "{name} irá a la papelera; desde allí puedes recuperarla con tu gestor de archivos."
-    }
+    },
+    "sharedFolder": "Carpeta compartida"
   },
   "servers": {
     "title": "Servidores",
@@ -1329,7 +1336,8 @@
       "window": "Ventana",
       "java": "Java y memoria",
       "hooks": "Hooks de inicio",
-      "sync": "Sincronización"
+      "sync": "Sincronización",
+      "shared": "Carpetas compartidas"
     },
     "general": {
       "changeImage": "Cambiar imagen",
@@ -1448,7 +1456,35 @@
     "sync": {
       "intro": "Lo que esté activado globalmente se toma del almacenamiento compartido antes de iniciar y se vuelve a guardar al cerrar. Aquí puedes mantenerlo separado para esta instancia. Los archivos sobrescritos se guardan antes como copia.",
       "globallyOff": "Desactivado globalmente: actívalo en Ajustes, en Instancias.",
-      "toggleLabel": "Sincronizar {item}"
+      "toggleLabel": "Sincronizar {item}",
+      "resourcePacksShared": "En esta instancia los paquetes de recursos son una carpeta compartida: no hace falta copiarlos."
+    },
+    "shared": {
+      "intro": "Como en Prism: una carpeta compartida existe una sola vez en el launcher y cada instancia que la comparte ve los mismos archivos. Al activarla, los archivos de esta instancia se mueven allí: nada se sobrescribe y, si coinciden los nombres, se conservan ambos.",
+      "stopFirst": "La instancia está en ejecución: ciérrala primero para cambiar las carpetas compartidas.",
+      "loading": "Cargando …",
+      "linkedBadge": "Compartida",
+      "toggleLabel": "Compartir {folder}",
+      "blocked": "Aquí ya hay otro enlace o un archivo: quítalo o cámbiale el nombre primero.",
+      "pending": "Activada: se configurará en el próximo inicio (antes se combinan los archivos).",
+      "sharedWith": "Compartida con {n} instancia más | Compartida con {n} instancias más",
+      "resourcePacksNote": "Mientras los paquetes de recursos sean una carpeta compartida, la sincronización no los copia en esta instancia: ya lo hace la carpeta compartida.",
+      "linking": "Pasando archivos a la carpeta compartida …",
+      "copying": "Copiando la carpeta compartida …",
+      "unlinking": "Quitando el enlace …",
+      "linkedDone": "{folder} ahora se comparte",
+      "unlinkedDone": "{folder} vuelve a ser independiente",
+      "savesWarningTitle": "¿Compartir mundos?",
+      "savesWarningText": "Cada instancia que comparte abre los mundos compartidos. Otra versión de Minecraft u otros mods pueden dañar un mundo o eliminar sus bloques y objetos para siempre.",
+      "savesWarningHint": "Comparte mundos solo entre instancias con la misma versión y los mismos mods, y haz antes una copia de seguridad de los mundos importantes.",
+      "savesWarningConfirm": "Compartir mundos",
+      "disableTitle": "¿Dejar de compartir {folder}?",
+      "disableText": "La carpeta compartida se queda igual para las demás instancias. ¿Qué debe conservar esta instancia?",
+      "disableCopy": "Conservar una copia",
+      "disableCopyHint": "Copia todo lo de la carpeta compartida en la instancia (con mundos grandes puede tardar).",
+      "disableEmpty": "Empezar vacía",
+      "disableEmptyHint": "La instancia recibe una carpeta nueva y vacía.",
+      "disableConfirm": "Dejar de compartir"
     }
   },
   "createInstance": {
@@ -2145,7 +2181,8 @@
       "credentialsKeyring": "La clave de tus inicios de sesión de Microsoft se guarda en el llavero del sistema (p. ej. GNOME Keyring o KWallet).",
       "credentialsFile": "No se encontró ningún llavero del sistema, así que tus inicios de sesión solo están protegidos por permisos de archivo (solo tu usuario puede leerlos). Para más protección, instala y desbloquea un llavero como GNOME Keyring o KWallet.",
       "credentialsKeyringShort": "Llavero",
-      "credentialsFileShort": "Solo permisos de archivo"
+      "credentialsFileShort": "Solo permisos de archivo",
+      "sharedFolders": "Carpetas compartidas"
     },
     "network": {
       "title": "Red",
@@ -2248,6 +2285,11 @@
       "preview": "Mostrar una notificación de prueba",
       "previewTitle": "TRS Launcher",
       "previewBody": "Así se ven las notificaciones."
+    },
+    "sharedFolders": {
+      "title": "Carpetas compartidas",
+      "description": "Las instancias nuevas comparten estas carpetas desde el principio con todas las demás que las comparten. Las instancias existentes mantienen su ajuste (se cambia en los ajustes de la instancia).",
+      "toggleLabel": "Las instancias nuevas comparten {folder}"
     }
   },
   "settingsShell": {
@@ -2710,7 +2752,8 @@
       "versionChange": "Versión cambiada",
       "launch": "Inicio del juego",
       "presets": "Presets instalados",
-      "ffmpeg": "Grabador instalado"
+      "ffmpeg": "Grabador instalado",
+      "sharedFolders": "Carpeta compartida"
     },
     "stage": {
       "preparing": "Preparando",
@@ -2867,7 +2910,8 @@
       "window": "Ventana",
       "java": "Java y memoria",
       "hooks": "Hooks de inicio",
-      "sync": "Sincronización"
+      "sync": "Sincronización",
+      "shared": "Carpetas compartidas"
     }
   },
   "trs": {
@@ -5414,5 +5458,27 @@
     "logs": "Ayuda con los registros",
     "java": "Guía de Java",
     "linux": "Guía para Linux"
+  },
+  "sharedFolder": {
+    "shaderpacks": {
+      "label": "Shaders",
+      "description": "Los shaders se guardan una sola vez y todas las instancias que comparten ven los mismos."
+    },
+    "resourcepacks": {
+      "label": "Paquetes de recursos",
+      "description": "Una carpeta de paquetes de recursos para todas las instancias que comparten."
+    },
+    "screenshots": {
+      "label": "Capturas",
+      "description": "Todas las capturas van a una carpeta: la galería las muestra una sola vez."
+    },
+    "saves": {
+      "label": "Mundos",
+      "description": "Los mundos de un jugador se comparten: abre el mismo mundo desde varias instancias."
+    },
+    "schematics": {
+      "label": "Schematics",
+      "description": "Litematica (schematics) y WorldEdit (config/worldedit/schematics) comparten una carpeta."
+    }
   }
 }

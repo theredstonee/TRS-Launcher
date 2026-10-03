@@ -800,6 +800,12 @@
       "invalidCode": "Dat is geen geldige code (vorm: XXX-XXX).",
       "expired": "Dit inlogverzoek bestaat niet (meer) – start het inloggen op de website opnieuw.",
       "used": "Dit inlogverzoek is al beantwoord."
+    },
+    "sharedFolders": {
+      "foreignLink": "‘{folder}’ is in deze instantie al aan een andere plek gekoppeld – verwijder die link eerst zelf.",
+      "notAFolder": "Op de plek van ‘{folder}’ staat een bestand – hernoem of verwijder het.",
+      "inUse": "Een ander spel gebruikt deze gedeelde map nu – stop het eerst.",
+      "repairFailed": "Gedeelde mappen konden niet worden ingericht ({list}) – het spel gebruikt er eigen mappen voor."
     }
   },
   "browse": {
@@ -1203,7 +1209,8 @@
       "title": "Screenshot verwijderen?",
       "text": "{name} gaat naar de Windows-Prullenbak – daar kun je het terugzetten.",
       "textLinux": "{name} gaat naar de prullenbak – daar kun je het terugzetten via je bestandsbeheerder."
-    }
+    },
+    "sharedFolder": "Gedeelde map"
   },
   "servers": {
     "title": "Servers",
@@ -1329,7 +1336,8 @@
       "window": "Venster",
       "java": "Java & geheugen",
       "hooks": "Starthooks",
-      "sync": "Synchronisatie"
+      "sync": "Synchronisatie",
+      "shared": "Gedeelde mappen"
     },
     "general": {
       "changeImage": "Afbeelding wijzigen",
@@ -1448,7 +1456,35 @@
     "sync": {
       "intro": "Globaal ingeschakelde onderdelen worden voor het starten uit de gedeelde opslag gehaald en na het sluiten van het spel teruggeschreven. Hier kun je ze voor deze instantie apart houden. Overschreven bestanden worden eerst geback-upt.",
       "globallyOff": "Globaal uitgeschakeld – zet het aan in Instellingen onder Instanties.",
-      "toggleLabel": "{item} synchroniseren"
+      "toggleLabel": "{item} synchroniseren",
+      "resourcePacksShared": "Resourcepacks zijn in deze instantie een gedeelde map – kopiëren is niet nodig."
+    },
+    "shared": {
+      "intro": "Zoals in Prism: een gedeelde map staat één keer in de launcher en elke instantie die hem deelt ziet dezelfde bestanden. Bij inschakelen verhuizen de bestanden van deze instantie daarheen – niets wordt overschreven, bij dezelfde naam blijven beide bewaard.",
+      "stopFirst": "De instantie draait – stop haar eerst om gedeelde mappen te wijzigen.",
+      "loading": "Laden …",
+      "linkedBadge": "Gedeeld",
+      "toggleLabel": "{folder} delen",
+      "blocked": "Hier staat al een andere link of een bestand in de weg – verwijder of hernoem het eerst.",
+      "pending": "Ingeschakeld – wordt bij de volgende start ingericht (bestanden worden eerst samengevoegd).",
+      "sharedWith": "Gedeeld met {n} andere instantie | Gedeeld met {n} andere instanties",
+      "resourcePacksNote": "Zolang resourcepacks een gedeelde map zijn, kopieert de synchronisatie ze niet voor deze instantie – dat doet de gedeelde map al.",
+      "linking": "Bestanden worden naar de gedeelde map verplaatst …",
+      "copying": "Gedeelde map wordt gekopieerd …",
+      "unlinking": "Link wordt verwijderd …",
+      "linkedDone": "{folder} wordt nu gedeeld",
+      "unlinkedDone": "{folder} is weer zelfstandig",
+      "savesWarningTitle": "Werelden delen?",
+      "savesWarningText": "Elke delende instantie opent de gedeelde werelden. Een andere Minecraft-versie of andere mods kunnen een wereld beschadigen of blokken en voorwerpen voorgoed verwijderen.",
+      "savesWarningHint": "Deel werelden alleen tussen instanties met dezelfde versie en dezelfde mods – en maak eerst een back-up van belangrijke werelden.",
+      "savesWarningConfirm": "Werelden delen",
+      "disableTitle": "{folder} niet meer delen?",
+      "disableText": "Voor de andere instanties blijft de gedeelde map zoals hij is. Wat moet deze instantie houden?",
+      "disableCopy": "Kopie houden",
+      "disableCopyHint": "Kopieert alles uit de gedeelde map naar de instantie (bij grote werelden kan dat even duren).",
+      "disableEmpty": "Leeg beginnen",
+      "disableEmptyHint": "De instantie krijgt een nieuwe, lege map.",
+      "disableConfirm": "Niet meer delen"
     }
   },
   "createInstance": {
@@ -2145,7 +2181,8 @@
       "credentialsKeyring": "De sleutel voor je Microsoft-aanmeldingen staat in de sleutelbos van je systeem (bijv. GNOME Keyring of KWallet).",
       "credentialsFile": "Er is geen sleutelbos gevonden, dus je aanmeldingen zijn alleen beschermd door bestandsrechten (alleen jouw gebruiker kan ze lezen). Installeer en ontgrendel voor betere bescherming een sleutelbos zoals GNOME Keyring of KWallet.",
       "credentialsKeyringShort": "Sleutelbos",
-      "credentialsFileShort": "Alleen bestandsrechten"
+      "credentialsFileShort": "Alleen bestandsrechten",
+      "sharedFolders": "Gedeelde mappen"
     },
     "network": {
       "title": "Netwerk",
@@ -2248,6 +2285,11 @@
       "preview": "Testmelding tonen",
       "previewTitle": "TRS Launcher",
       "previewBody": "Zo zien meldingen eruit."
+    },
+    "sharedFolders": {
+      "title": "Gedeelde mappen",
+      "description": "Nieuwe instanties delen deze mappen meteen met alle andere delende instanties. Bestaande instanties houden hun instelling (te wijzigen in de instantie-instellingen).",
+      "toggleLabel": "Nieuwe instanties delen {folder}"
     }
   },
   "settingsShell": {
@@ -2710,7 +2752,8 @@
       "versionChange": "Versie gewijzigd",
       "launch": "Spelstart",
       "presets": "Presets geïnstalleerd",
-      "ffmpeg": "Recorder geïnstalleerd"
+      "ffmpeg": "Recorder geïnstalleerd",
+      "sharedFolders": "Gedeelde map"
     },
     "stage": {
       "preparing": "Voorbereiden",
@@ -2867,7 +2910,8 @@
       "window": "Venster",
       "java": "Java & geheugen",
       "hooks": "Starthooks",
-      "sync": "Synchronisatie"
+      "sync": "Synchronisatie",
+      "shared": "Gedeelde mappen"
     }
   },
   "trs": {
@@ -5414,5 +5458,27 @@
     "logs": "Hulp bij logs",
     "java": "Java-handleiding",
     "linux": "Linux-handleiding"
+  },
+  "sharedFolder": {
+    "shaderpacks": {
+      "label": "Shaders",
+      "description": "Shaders staan één keer in de launcher en elke delende instantie ziet dezelfde."
+    },
+    "resourcepacks": {
+      "label": "Resourcepacks",
+      "description": "Eén map met resourcepacks voor alle delende instanties."
+    },
+    "screenshots": {
+      "label": "Screenshots",
+      "description": "Alle screenshots komen in één map – de galerij toont ze maar één keer."
+    },
+    "saves": {
+      "label": "Werelden",
+      "description": "Singleplayer-werelden worden gedeeld – open dezelfde wereld vanuit meerdere instanties."
+    },
+    "schematics": {
+      "label": "Schematics",
+      "description": "Litematica (schematics) en WorldEdit (config/worldedit/schematics) delen één map."
+    }
   }
 }
