@@ -1,0 +1,30 @@
+diff --git a/JavaApp/src/launcher/net/kdt/pojavlaunch/uikit/UIKit.java b/JavaApp/src/launcher/net/kdt/pojavlaunch/uikit/UIKit.java
+index c8b0632..5ab4004 100644
+--- a/JavaApp/src/launcher/net/kdt/pojavlaunch/uikit/UIKit.java
++++ b/JavaApp/src/launcher/net/kdt/pojavlaunch/uikit/UIKit.java
+@@ -46,7 +46,9 @@ public class UIKit {
+     }
+ 
+     static {
+-        System.load(System.getenv("BUNDLE_PATH") + "/AngelAuraAmethyst");
++        // TRS: Engine-Bibliothek kommt aus TRS_ENGINE_LIB (libtrsengine.dylib).
++        String trsEngine = System.getenv("TRS_ENGINE_LIB");
++        System.load(trsEngine != null ? trsEngine : System.getenv("BUNDLE_PATH") + "/AngelAuraAmethyst");
+     }
+ 
+ 
+diff --git a/JavaApp/src/lwjgl/org/lwjgl/glfw/GLFW.java b/JavaApp/src/lwjgl/org/lwjgl/glfw/GLFW.java
+index 859247e..29ab4d5 100644
+--- a/JavaApp/src/lwjgl/org/lwjgl/glfw/GLFW.java
++++ b/JavaApp/src/lwjgl/org/lwjgl/glfw/GLFW.java
+@@ -514,7 +514,9 @@ public class GLFW
+ 
+     static {
+         try {
+-            System.load(System.getenv("BUNDLE_PATH") + "/AngelAuraAmethyst");
++            // TRS: Engine-Bibliothek kommt aus TRS_ENGINE_LIB (libtrsengine.dylib).
++            String trsEngine = System.getenv("TRS_ENGINE_LIB");
++            System.load(trsEngine != null ? trsEngine : System.getenv("BUNDLE_PATH") + "/AngelAuraAmethyst");
+         } catch (UnsatisfiedLinkError e) {
+             e.printStackTrace();
+         }

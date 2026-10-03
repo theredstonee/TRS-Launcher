@@ -800,6 +800,11 @@
       "invalidCode": "Das ist kein gültiger Code (Form: XXX-XXX).",
       "expired": "Diese Anmelde-Anfrage gibt es nicht (mehr) – starte die Anmeldung auf der Website neu.",
       "used": "Diese Anmelde-Anfrage wurde schon beantwortet."
+    },
+    "game": {
+      "engineMissing": "Diese Version der App enthält die Spiel-Engine nicht.",
+      "notEnoughMemory": "Für das Spiel ist nicht genug Arbeitsspeicher frei. Schließe andere Apps oder stelle in der Instanz weniger Speicher ein.",
+      "restartRequired": "Das Spiel lief in dieser Sitzung schon. Schließe die App komplett und öffne sie neu."
     }
   },
   "browse": {

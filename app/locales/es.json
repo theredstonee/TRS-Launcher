@@ -800,6 +800,11 @@
       "invalidCode": "No es un código válido (formato: XXX-XXX).",
       "expired": "Esta solicitud de inicio de sesión no existe (ya): vuelve a empezar en la web.",
       "used": "Esta solicitud de inicio de sesión ya se respondió."
+    },
+    "game": {
+      "engineMissing": "Esta versión de la app no incluye el motor del juego.",
+      "notEnoughMemory": "No hay suficiente memoria para el juego. Cierra otras apps o reduce la memoria en los ajustes de la instancia.",
+      "restartRequired": "El juego ya se ejecutó en esta sesión. Cierra la app por completo y vuelve a abrirla."
     }
   },
   "browse": {

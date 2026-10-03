@@ -800,6 +800,11 @@
       "invalidCode": "That is not a valid code (format: XXX-XXX).",
       "expired": "This sign-in request doesn’t exist (anymore) – start the sign-in on the website again.",
       "used": "This sign-in request was already answered."
+    },
+    "game": {
+      "engineMissing": "This build of the app doesn't contain the game engine.",
+      "notEnoughMemory": "There isn't enough memory for the game. Close other apps or lower the memory in the instance settings.",
+      "restartRequired": "The game already ran in this session. Close the app completely and open it again."
     }
   },
   "browse": {

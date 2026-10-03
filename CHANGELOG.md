@@ -28,6 +28,22 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Minecraft Java on iPhone and iPad (sideload, preview).** The iOS app (installed via AltStore or SideStore)
+  can start Minecraft Java Edition itself, based on the Amethyst engine. It needs JIT: if JIT is off, the app
+  explains step by step how to turn it on (SideStore + StikDebug, AltServer, TrollStore) and starts the game as
+  soon as it is enabled. The Java runtime is downloaded and checked on first start, and the memory for the game
+  is chosen to fit your device.
+
+### Deutsch
+- **Minecraft Java auf iPhone und iPad (Sideload, Vorschau).** Die iOS-App (installiert über AltStore oder
+  SideStore) kann Minecraft Java Edition selbst starten, auf Basis der Amethyst-Engine. Dafür braucht es JIT: Ist
+  JIT aus, erklärt die App Schritt für Schritt, wie du es einschaltest (SideStore + StikDebug, AltServer,
+  TrollStore), und startet das Spiel, sobald es an ist. Die Java-Laufzeit wird beim ersten Start geladen und
+  geprüft, und der Arbeitsspeicher für das Spiel wird passend zu deinem Gerät gewählt.
+
 ## 0.17.0 – 2026-10-03 – Light Luggage | Leichtes Gepäck
 <!-- banner: accent=#ff3b30 motif=/news/0.17.0/banner.png -->
 <!-- shots:

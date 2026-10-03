@@ -800,6 +800,11 @@
       "invalidCode": "Dat is geen geldige code (vorm: XXX-XXX).",
       "expired": "Dit inlogverzoek bestaat niet (meer) – start het inloggen op de website opnieuw.",
       "used": "Dit inlogverzoek is al beantwoord."
+    },
+    "game": {
+      "engineMissing": "Deze versie van de app bevat de game-engine niet.",
+      "notEnoughMemory": "Er is niet genoeg geheugen voor het spel. Sluit andere apps of verlaag het geheugen in de instellingen van de instantie.",
+      "restartRequired": "Het spel draaide al in deze sessie. Sluit de app volledig en open hem opnieuw."
     }
   },
   "browse": {

@@ -800,6 +800,11 @@
       "invalidCode": "To nie jest prawidłowy kod (format: XXX-XXX).",
       "expired": "To żądanie logowania nie istnieje (już) – zacznij logowanie na stronie od nowa.",
       "used": "Na to żądanie logowania już odpowiedziano."
+    },
+    "game": {
+      "engineMissing": "Ta wersja aplikacji nie zawiera silnika gry.",
+      "notEnoughMemory": "Za mało pamięci dla gry. Zamknij inne aplikacje lub zmniejsz pamięć w ustawieniach instancji.",
+      "restartRequired": "Gra była już uruchomiona w tej sesji. Zamknij aplikację całkowicie i otwórz ją ponownie."
     }
   },
   "browse": {

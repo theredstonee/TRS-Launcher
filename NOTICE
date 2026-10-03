@@ -18,6 +18,16 @@ Third-party parts
   header; the license text is in client-mod/licenses/chat-heads-MPL-2.0.txt.
 - AppleSkin by squeek502 (The Unlicense): idea for the TRS Client hunger overlay; resource packs
   that ship AppleSkin textures are supported.
+- Amethyst-iOS by Tran Hoang Khanh Duy and the PojavLauncher/Amethyst contributors (GPL-3.0):
+  the iOS game engine (JVM start, GL/EGL and input bridge, JIT detection and dyld helpers) is based
+  on https://github.com/AngelAuraMC/Amethyst-iOS at commit 9212a1894865e7ac0466029e25ddb0d895544c76.
+  Vendored files, local patches and the parts taken at build time are listed in
+  src-tauri/plugins/tauri-plugin-trs-game/ios/Engine/vendor/amethyst-ios/UPSTREAM.md. The iOS app
+  additionally ships, unchanged from that commit: MobileGlues (LGPL-2.1), ANGLE (BSD-3-Clause),
+  gl4es (MIT), Mesa OSMesa (MIT), MoltenVK (Apache-2.0), LWJGL (BSD-3-Clause), OpenAL Soft
+  (LGPL-2.0), FreeType (FTL), shaderc (Apache-2.0), Caciocavallo (GPL-2.0 with Classpath
+  Exception), fishhook (BSD-3-Clause), Gson (Apache-2.0). Java runtimes (OpenJDK, GPL-2.0 with
+  Classpath Exception) are downloaded by the app at runtime and are not part of it.
 - Further libraries and bundled mods are listed with their licenses in README.md and
   client-mod/README.md.
 

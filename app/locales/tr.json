@@ -800,6 +800,11 @@
       "invalidCode": "Bu geçerli bir kod değil (biçim: XXX-XXX).",
       "expired": "Bu oturum açma isteği yok (artık) – web sitesinde oturum açmayı yeniden başlat.",
       "used": "Bu oturum açma isteği zaten yanıtlandı."
+    },
+    "game": {
+      "engineMissing": "Uygulamanın bu sürümü oyun motorunu içermiyor.",
+      "notEnoughMemory": "Oyun için yeterli bellek yok. Diğer uygulamaları kapat ya da kurulum ayarlarında belleği azalt.",
+      "restartRequired": "Oyun bu oturumda zaten çalıştı. Uygulamayı tamamen kapatıp yeniden aç."
     }
   },
   "browse": {
