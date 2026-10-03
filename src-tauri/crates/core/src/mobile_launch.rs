@@ -12,10 +12,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::history::{HistoryEntry, HistoryKind};
 use crate::instance::{Instance, LoaderKind};
-use crate::launch::{self, JoinTarget, LaunchDirs, Session};
+use crate::launch::{self, JoinTarget, LaunchDirs};
 use crate::meta::version::VersionInfo;
 use crate::prepare::{self, JavaChoice, Prepared, ProgressFn, Stage, StageProgress};
-use crate::settings::Settings;
 use crate::{Error, Join, Launcher, Result, boost, client_mod, depcheck, forge, fsutil, history, instance, servers, task};
 
 /// Java-Hauptversionen der Engine (Runtimes zum Herunterladen).
@@ -284,8 +283,8 @@ impl Launcher {
 
 /// Session ohne Token für Tests (nicht öffentlich nutzbar).
 #[cfg(test)]
-fn test_session() -> Session {
-    Session { player_name: "Steve".into(), uuid: "0".repeat(32), access_token: "token".into(), xuid: String::new(), demo: false }
+fn test_session() -> launch::Session {
+    launch::Session { player_name: "Steve".into(), uuid: "0".repeat(32), access_token: "token".into(), xuid: String::new(), demo: false }
 }
 
 #[cfg(test)]
@@ -368,7 +367,7 @@ mod tests {
             group: None,
             overrides: crate::instance::InstanceOverrides::default(),
         };
-        let settings = Settings::default();
+        let settings = crate::settings::Settings::default();
         let game = dir.path().join("game");
         let assets = dir.path().join("assets");
         let command = launch::build_command(

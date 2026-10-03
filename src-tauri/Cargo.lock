@@ -5716,6 +5716,7 @@ dependencies = [
  "tauri-plugin-opener",
  "tauri-plugin-process",
  "tauri-plugin-single-instance",
+ "tauri-plugin-trs-game",
  "tauri-plugin-updater",
  "tauri-plugin-window-state",
  "thiserror 2.0.20",

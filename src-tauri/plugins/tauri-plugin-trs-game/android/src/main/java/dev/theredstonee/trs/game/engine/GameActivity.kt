@@ -115,9 +115,9 @@ class GameActivity : Activity() {
             override fun onSurfaceTextureAvailable(st: SurfaceTexture, width: Int, height: Int) {
                 val s = Surface(st)
                 surface = s
-                resize(st, width, height)
+                val (w, h) = resize(st, width, height)
                 JREUtils.setupBridgeWindow(s)
-                startJvm(width, height)
+                startJvm(w, h)
             }
 
             override fun onSurfaceTextureSizeChanged(st: SurfaceTexture, width: Int, height: Int) {
@@ -136,16 +136,24 @@ class GameActivity : Activity() {
         return path.startsWith(cacheDir.canonicalPath + File.separator) || path.startsWith(filesDir.canonicalPath + File.separator)
     }
 
-    private fun resize(st: SurfaceTexture, width: Int, height: Int) {
-        if (width < 1 || height < 1) return
-        st.setDefaultBufferSize(width, height)
-        CallbackBridge.windowWidth = width
-        CallbackBridge.windowHeight = height
+    /**
+     * Spielauflösung = View-Größe × Skalierung (`TRS_RESOLUTION_SCALE` in `extraEnv`,
+     * 0.25–1.0; schwache Geräte rendern kleiner, die Fläche skaliert hoch).
+     */
+    private fun resize(st: SurfaceTexture, width: Int, height: Int): Pair<Int, Int> {
+        if (width < 1 || height < 1) return width to height
+        val scale = config.extraEnv["TRS_RESOLUTION_SCALE"]?.toFloatOrNull()?.coerceIn(0.25f, 1f) ?: 1f
+        val w = maxOf(1, (width * scale).toInt())
+        val h = maxOf(1, (height * scale).toInt())
+        st.setDefaultBufferSize(w, h)
+        CallbackBridge.windowWidth = w
+        CallbackBridge.windowHeight = h
         CallbackBridge.physicalWidth = width
         CallbackBridge.physicalHeight = height
-        input.scaleX = 1f
-        input.scaleY = 1f
-        CallbackBridge.sendUpdateWindowSize(width, height)
+        input.scaleX = w.toFloat() / width
+        input.scaleY = h.toFloat() / height
+        CallbackBridge.sendUpdateWindowSize(w, h)
+        return w to h
     }
 
     private fun startJvm(width: Int, height: Int) {
