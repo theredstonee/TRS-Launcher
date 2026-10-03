@@ -9,8 +9,8 @@ use crate::LauncherState;
 use crate::commands::tasks::tracked;
 use crate::error::CommandResult;
 
-/// LÃ¤dt alles NÃ¶tige und startet das Spiel. Fortschritt kommt Ã¼ber den
-/// Channel, Logs und Spielende Ã¼ber das Event `game-event`.
+/// Lädt alles Nötige und startet das Spiel. Fortschritt kommt über den
+/// Channel, Logs und Spielende über das Event `game-event`.
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
 pub async fn launch_instance(
@@ -27,11 +27,11 @@ pub async fn launch_instance(
 ) -> CommandResult<u32> {
     // Konto-ID: nur eine UUID-artige Kennung, nie beliebiger Text.
     if account_id.as_deref().is_some_and(|a| a.len() > 64 || !a.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')) {
-        return Err(trs_core::Error::validation(trs_core::msg!("launcher.accountMissing", "Das gewÃ¤hlte Konto gibt es nicht mehr.")).into());
+        return Err(trs_core::Error::validation(trs_core::msg!("launcher.accountMissing", "Das gewählte Konto gibt es nicht mehr.")).into());
     }
-    // Gehostete Welt: nur Raum-ID, Code und Eckdaten â€“ geprÃ¼ft, bevor sie ans Spiel gehen.
+    // Gehostete Welt: nur Raum-ID, Code und Eckdaten – geprüft, bevor sie ans Spiel gehen.
     let world = join_world.map(HostedWorld::validated).transpose()?;
-    // Eine freie Adresse (Server eines Freundes) prÃ¼ft der Kern wie jede Server-Adresse.
+    // Eine freie Adresse (Server eines Freundes) prüft der Kern wie jede Server-Adresse.
     let join = match (join_server.as_deref(), join_address.as_deref(), world.as_ref()) {
         (_, _, Some(world)) => Some(trs_core::Join::World(world)),
         (Some(id), _, None) => Some(trs_core::Join::Server(id)),
@@ -62,14 +62,14 @@ pub fn stop_instance(launcher: State<'_, LauncherState>, id: String, key: Option
     }
 }
 
-/// Ist Minecraft Bedrock (Microsoft Store) installiert? Nur Windows â€“ sonst immer `installed: false`.
+/// Ist Minecraft Bedrock (Microsoft Store) installiert? Nur Windows – sonst immer `installed: false`.
 #[tauri::command]
 pub async fn bedrock_info() -> trs_core::bedrock::BedrockInfo {
     // Registry-Zugriff: nicht auf dem UI-Thread.
     tauri::async_runtime::spawn_blocking(trs_core::bedrock::info).await.unwrap_or(trs_core::bedrock::BedrockInfo { installed: false })
 }
 
-/// Startet Minecraft Bedrock Ã¼ber die App-VerknÃ¼pfung (feste Ziel-Adresse, keine Eingabe).
+/// Startet Minecraft Bedrock über die App-Verknüpfung (feste Ziel-Adresse, keine Eingabe).
 #[tauri::command]
 pub async fn launch_bedrock() -> CommandResult<()> {
     Ok(tauri::async_runtime::spawn_blocking(trs_core::bedrock::launch)
@@ -87,7 +87,7 @@ pub fn get_game_logs(launcher: State<'_, LauncherState>, id: String) -> Vec<LogL
     launcher.games().logs(&id)
 }
 
-/// PrÃ¼ft alle Spieldateien per PrÃ¼fsumme und lÃ¤dt beschÃ¤digte neu.
+/// Prüft alle Spieldateien per Prüfsumme und lädt beschädigte neu.
 #[tauri::command]
 pub async fn repair_instance(
     app: AppHandle,
@@ -103,7 +103,7 @@ pub async fn repair_instance(
     Ok(tracked(&app, task_id, work).await?)
 }
 
-/// LÃ¤dt Spielversion und Bibliotheken der Instanz komplett neu.
+/// Lädt Spielversion und Bibliotheken der Instanz komplett neu.
 #[tauri::command]
 pub async fn reinstall_instance(
     app: AppHandle,
@@ -119,7 +119,7 @@ pub async fn reinstall_instance(
     Ok(tracked(&app, task_id, work).await?)
 }
 
-/// LÃ¤dt den neuesten Log (Tokens und Benutzername geschwÃ¤rzt) auf mclo.gs hoch
+/// Lädt den neuesten Log (Tokens und Benutzername geschwärzt) auf mclo.gs hoch
 /// und liefert den Link.
 #[tauri::command]
 pub async fn share_log(launcher: State<'_, LauncherState>, id: String) -> CommandResult<String> {

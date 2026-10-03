@@ -28,11 +28,11 @@ function entry(doc: ConfigDoc, ...p: (string | number)[]): ConfigEntry {
   return found
 }
 
-/** Einen Wert Ã¤ndern; erwartet, dass sich genau `from` â†’ `to` im Text Ã¤ndert. */
+/** Einen Wert ändern; erwartet, dass sich genau `from` → `to` im Text ändert. */
 function expectEdit(format: ConfigFormat, text: string, p: (string | number)[], value: ConfigValue, from: string, to: string, reread: ConfigValue = value) {
   const doc = parseConfig(format, text)
   const out = applyChanges(doc, text, { [entryId(p)]: value })
-  expect(text.split(from).length, `â€ž${from}â€œ muss eindeutig sein`).toBe(2)
+  expect(text.split(from).length, `„${from}“ muss eindeutig sein`).toBe(2)
   expect(out).toBe(text.replace(from, to))
   // Danach ist der neue Wert gelesen.
   const again = parseConfig(format, out)
@@ -41,7 +41,7 @@ function expectEdit(format: ConfigFormat, text: string, p: (string | number)[], 
 }
 
 describe('Formate', () => {
-  it('erkennt unterstÃ¼tzte Dateien am Namen', () => {
+  it('erkennt unterstützte Dateien am Namen', () => {
     for (const name of ['a.toml', 'sodium-options.json', 'x.JSON5', 'server.properties', 'options.txt', 'optionsof.txt', 'optionsshaders.txt', 'x.cfg', 'config.yml', 'b.yaml', 'c.jsonc']) {
       expect(editorSupports(name), name).toBe(true)
     }
@@ -69,7 +69,7 @@ describe('JSON (Sodium)', () => {
     expect(entry(doc, 'seen')).toMatchObject({ kind: 'list', value: ['intro', 'news'], style: { list: 'multiline', indent: '    ', closeIndent: '  ' } })
   })
 
-  it('Ã¤ndert nur den einen Wert', () => {
+  it('ändert nur den einen Wert', () => {
     expectEdit('json', text, ['advanced', 'cpu_render_ahead_limit'], 5, '"cpu_render_ahead_limit": 3', '"cpu_render_ahead_limit": 5')
     expectEdit('json', text, ['quality', 'enable_vignette'], false, '"enable_vignette": true', '"enable_vignette": false')
     expectEdit('json', text, ['quality', 'leaves_quality'], 'FAST "x"', '"leaves_quality": "DEFAULT"', '"leaves_quality": "FAST \\"x\\""')
@@ -81,7 +81,7 @@ describe('JSON (Sodium)', () => {
     expectEdit('json', text, ['ignored_shader_packs'], ['BSL'], '"ignored_shader_packs": []', '"ignored_shader_packs": ["BSL"]')
   })
 
-  it('ohne Ã„nderung bleibt der Text gleich, auch mit CRLF', () => {
+  it('ohne Änderung bleibt der Text gleich, auch mit CRLF', () => {
     expect(applyChanges(doc, text, { [entryId(['brightness'])]: 0.5 })).toBe(text)
     const crlf = text.replace(/\n/g, '\r\n')
     const out = applyChanges(parseConfig('json', crlf), crlf, { [entryId(['seen'])]: ['a'] })
@@ -109,18 +109,18 @@ describe('JSON5', () => {
     expect(entry(doc, 'tags')).toMatchObject({ kind: 'list', value: ['a', 'b'] })
     expect(entry(doc, 'ratio')).toMatchObject({ kind: 'number', value: 0.5 })
     expect(entry(doc, 'hex')).toMatchObject({ kind: 'raw', value: '0xFF' })
-    // Kommentar hinter einem Wert gehÃ¶rt nicht zum nÃ¤chsten SchlÃ¼ssel.
+    // Kommentar hinter einem Wert gehört nicht zum nächsten Schlüssel.
     expect(entry(doc, 'nested', 'deep').help).toBeUndefined()
   })
 
-  it('Ã¤ndert nur den einen Wert und behÃ¤lt AnfÃ¼hrungszeichen', () => {
+  it('ändert nur den einen Wert und behält Anführungszeichen', () => {
     expectEdit('json5', text, ['name'], "Alex's", "name: 'Steve'", "name: 'Alex\\'s'")
     expectEdit('json5', text, ['nested', 'deep'], 'y', 'deep: "x"', 'deep: "y"')
     expectEdit('json5', text, ['tags'], ['a'], "tags: ['a', 'b',]", "tags: ['a']")
     expectEdit('json5', text, ['hex'], '0x10', 'hex: 0xFF', 'hex: 0x10')
   })
 
-  it('ungÃ¼ltiger Rohtext wird nicht gespeichert', () => {
+  it('ungültiger Rohtext wird nicht gespeichert', () => {
     expect(() => applyChanges(doc, text, { [entryId(['hex'])]: '0x10,,' })).toThrow(ConfigEditError)
   })
 })
@@ -149,7 +149,7 @@ describe('TOML (Forge)', () => {
     expect(general?.type === 'group' && general.group.help).toBe('General settings')
   })
 
-  it('Ã¤ndert nur den einen Wert', () => {
+  it('ändert nur den einen Wert', () => {
     expectEdit('toml', text, ['general', 'maxEntities'], 300, 'maxEntities = 200', 'maxEntities = 300')
     expectEdit('toml', text, ['general', 'renderScale'], 2, 'renderScale = 1.0', 'renderScale = 2.0')
     expectEdit('toml', text, ['general', 'notificationMode'], 'CHAT', 'notificationMode = "TOAST"', 'notificationMode = "CHAT"')
@@ -182,7 +182,7 @@ describe('TOML (Forge)', () => {
   })
 })
 
-describe('Forge-cfg (1.7.10â€“1.12)', () => {
+describe('Forge-cfg (1.7.10–1.12)', () => {
   const text = fixture('jetpacks.cfg')
   const doc = parseConfig('forgecfg', text)
 
@@ -199,14 +199,14 @@ describe('Forge-cfg (1.7.10â€“1.12)', () => {
     expect(entry(doc, 'general', 'client', 'Show Particles')).toMatchObject({ kind: 'bool', groups: ['general', 'client'] })
   })
 
-  it('Ã¤ndert nur den einen Wert', () => {
+  it('ändert nur den einen Wert', () => {
     expectEdit('forgecfg', text, ['general', 'updateInterval'], 40, 'I:updateInterval=20', 'I:updateInterval=40')
     expectEdit('forgecfg', text, ['general', 'renderMultiplier'], 2, 'D:renderMultiplier=1.0', 'D:renderMultiplier=2.0')
     expectEdit('forgecfg', text, ['general', 'client', 'Show Particles'], false, 'B:"Show Particles"=true', 'B:"Show Particles"=false')
     expectEdit('forgecfg', text, ['general', 'displayMode'], 'OFF', 'S:displayMode=SIMPLE', 'S:displayMode=OFF')
   })
 
-  it('Listen Zeile fÃ¼r Zeile', () => {
+  it('Listen Zeile für Zeile', () => {
     expectEdit(
       'forgecfg',
       text,
@@ -241,7 +241,7 @@ describe('options.txt', () => {
     expect(entry(doc, 'resourcePacks')).toMatchObject({ kind: 'list', value: ['vanilla', 'fabric', 'file/Faithful.zip'] })
   })
 
-  it('Ã¤ndert nur den einen Wert', () => {
+  it('ändert nur den einen Wert', () => {
     expectEdit('options', text, ['renderDistance'], 16, 'renderDistance:12', 'renderDistance:16')
     expectEdit('options', text, ['fov'], 0.25, 'fov:0.0', 'fov:0.25')
     expectEdit('options', text, ['soundCategory_master'], 0, 'soundCategory_master:1.0', 'soundCategory_master:0.0')
@@ -265,7 +265,7 @@ describe('YAML (Plugin-Config)', () => {
   const text = fixture('plugin-config.yml')
   const doc = parseConfig('yaml', text)
 
-  it('liest Mappings, Listen und SonderfÃ¤lle', () => {
+  it('liest Mappings, Listen und Sonderfälle', () => {
     expect(entry(doc, 'settings', 'allow-end')).toMatchObject({ kind: 'bool', value: true, help: 'Allow players to enter the End', groups: ['settings'] })
     expect(entry(doc, 'settings', 'warn-on-overload')).toMatchObject({ kind: 'bool', value: true, style: { boolWords: ['yes', 'no'] } })
     expect(entry(doc, 'settings', 'connection-throttle')).toMatchObject({ kind: 'number', value: 4000 })
@@ -280,7 +280,7 @@ describe('YAML (Plugin-Config)', () => {
     expect(entry(doc, 'version')).toMatchObject({ kind: 'string', value: '1.2' })
   })
 
-  it('Ã¤ndert nur den einen Wert', () => {
+  it('ändert nur den einen Wert', () => {
     expectEdit('yaml', text, ['settings', 'allow-end'], false, 'allow-end: true', 'allow-end: false')
     expectEdit('yaml', text, ['settings', 'warn-on-overload'], false, 'warn-on-overload: yes', 'warn-on-overload: no')
     expectEdit('yaml', text, ['spawn-limits', 'monsters'], 50, 'monsters: 70', 'monsters: 50')
@@ -396,7 +396,7 @@ describe('Syntaxfarben', () => {
     }
   })
 
-  it('fÃ¤rbt SchlÃ¼ssel, Werte und Kommentare', () => {
+  it('färbt Schlüssel, Werte und Kommentare', () => {
     expect(highlightLine('toml', '\tmaxEntities = 200 # x')).toEqual([
       { text: '\t', cls: 'text' },
       { text: 'maxEntities', cls: 'key' },
@@ -413,7 +413,7 @@ describe('Syntaxfarben', () => {
   })
 })
 
-it('ConfigParseError trÃ¤gt Code und Zeile', () => {
+it('ConfigParseError trägt Code und Zeile', () => {
   const e = new ConfigParseError('tab', 3)
   expect(e.code).toBe('tab')
   expect(e.line).toBe(3)

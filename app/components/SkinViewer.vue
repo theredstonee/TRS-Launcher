@@ -3,10 +3,10 @@ import type { SkinVariant } from '~/types'
 import type { CosmeticInstance } from '~/utils/cosmetic-v2/view'
 import { modelTop, validateModel, type CosmeticModel, type ViewerCosmetic } from '~/utils/cosmetic-v2/format'
 
-// 3D-Vorschau des Skins (skinview3d, mitgeliefert â€“ kein CDN, damit die CSP
+// 3D-Vorschau des Skins (skinview3d, mitgeliefert – kein CDN, damit die CSP
 // eng bleibt). Texturen kommen als Data-URL aus dem Kern; dadurch darf WebGL
-// sie ohne CORS-Ausnahme lesen. Kopf-Kosmetik (v2) hÃ¤ngt in DERSELBEN Szene am
-// Kopf des Spielers â€“ eine WebGL-Szene fÃ¼r Skin, Umhang und Kosmetik.
+// sie ohne CORS-Ausnahme lesen. Kopf-Kosmetik (v2) hängt in DERSELBEN Szene am
+// Kopf des Spielers – eine WebGL-Szene für Skin, Umhang und Kosmetik.
 const props = withDefaults(
   defineProps<{
     skin: string | null
@@ -26,7 +26,7 @@ const props = withDefaults(
     companion?: ViewerCosmetic | null
     /** Nacht: Licht gedimmt, Leuchten bleibt voll hell. */
     night?: boolean
-    /** Kamera: ganzer Spieler oder Kopf + Schultern (fÃ¼r Kopf-Kosmetik). */
+    /** Kamera: ganzer Spieler oder Kopf + Schultern (für Kopf-Kosmetik). */
     focus?: 'body' | 'head'
     /** Hochzählen setzt die Kamera auf die Standardansicht zurück. */
     resetTick?: number
@@ -87,7 +87,7 @@ async function build() {
     })
     viewer.controls.enablePan = false
     viewer.controls.enableZoom = true
-    // Vor jedem Bild: Kosmetik zur Wanduhr stellen (Pose, Streifen, HÃ¶fe) und Kamera nachfÃ¼hren.
+    // Vor jedem Bild: Kosmetik zur Wanduhr stellen (Pose, Streifen, Höfe) und Kamera nachführen.
     const render = viewer.render.bind(viewer)
     viewer.render = () => {
       beforeRender()
@@ -99,7 +99,7 @@ async function build() {
     applyCosmetics()
     applyFocus(true)
   } catch (e) {
-    console.error('3D-Vorschau nicht verfÃ¼gbar', e)
+    console.error('3D-Vorschau nicht verfügbar', e)
     failed.value = true
   }
 }
@@ -142,7 +142,7 @@ async function applyAnimatedCape(src: string, frames: number, frameTime: number)
     void viewer.loadCape(frame)
   }
   draw()
-  // KÃ¼rzer als die Frame-Dauer abtasten, damit der Wechsel zur Wanduhr passt.
+  // Kürzer als die Frame-Dauer abtasten, damit der Wechsel zur Wanduhr passt.
   capeTimer = setInterval(draw, Math.max(20, Math.min(frameTime / 2, 250)))
 }
 
@@ -238,10 +238,10 @@ function applyLight() {
 // --- Kamera ------------------------------------------------------------------------------------
 
 type Vec = { x: number; y: number; z: number }
-/** Laufender Kamera-Schwenk (Ziel + Position), weich Ã¼ber `CAMERA_MS`. */
+/** Laufender Kamera-Schwenk (Ziel + Position), weich über `CAMERA_MS`. */
 let tween: { from: [Vec, Vec]; to: [Vec, Vec]; start: number } | null = null
 const CAMERA_MS = 450
-/** SchrÃ¤g von vorne-oben wie die Karten der Studio-Werkbank (â€žthreeâ€œ). */
+/** Schräg von vorne-oben wie die Karten der Studio-Werkbank („three“). */
 const HEAD_DIR = normalize({ x: 0.78, y: 0.5, z: 0.95 })
 
 function normalize(v: Vec): Vec {
@@ -250,13 +250,13 @@ function normalize(v: Vec): Vec {
 }
 
 /**
- * Kamera-Ziel fÃ¼r den Fokus: Kopf + Schultern (mit Platz nach oben fÃ¼r hohe Teile) oder ganzer Spieler
+ * Kamera-Ziel für den Fokus: Kopf + Schultern (mit Platz nach oben für hohe Teile) oder ganzer Spieler
  * samt Kopf-Kosmetik. `dir` = Blickrichtung (vom Ziel zur Kamera), damit die Drehung des Nutzers bleibt.
  */
 function focusGoal(dir: Vec): [Vec, Vec] | null {
   if (!viewer) return null
   const fov = (viewer.camera.fov * Math.PI) / 180
-  // skinview3d: Spieler-Mitte y = 0, FÃ¼ÃŸe âˆ’16, Nacken +8; Kosmetik-Koordinaten beginnen am Nacken.
+  // skinview3d: Spieler-Mitte y = 0, Füße −16, Nacken +8; Kosmetik-Koordinaten beginnen am Nacken.
   const neck = 8
   let target: Vec
   let distance: number
@@ -266,7 +266,7 @@ function focusGoal(dir: Vec): [Vec, Vec] | null {
     target = { x: 0, y: (bottom + top) / 2, z: 0 }
     distance = ((top - bottom) / 2 / Math.tan(fov / 2)) * 1.4
   } else {
-    // Standard von skinview3d (passt fÃ¼r 16 + 16 Einheiten), bei hohen Teilen entsprechend weiter weg.
+    // Standard von skinview3d (passt für 16 + 16 Einheiten), bei hohen Teilen entsprechend weiter weg.
     const bottom = -16
     const top = Math.max(16, neck + cameraTop() + 1)
     target = { x: 0, y: (bottom + top) / 2, z: 0 }
@@ -276,7 +276,7 @@ function focusGoal(dir: Vec): [Vec, Vec] | null {
 }
 
 let lastFocus: string | null = null
-/** Kamera zum Fokus schwenken â€“ nur wenn sich Fokus oder ModellhÃ¶he geÃ¤ndert haben (sonst bleibt alles, wie der Nutzer es gedreht hat). */
+/** Kamera zum Fokus schwenken – nur wenn sich Fokus oder Modellhöhe geändert haben (sonst bleibt alles, wie der Nutzer es gedreht hat). */
 function applyFocus(instant = false) {
   if (!viewer) return
   const key = `${props.focus}:${cameraTop()}`
@@ -285,8 +285,8 @@ function applyFocus(instant = false) {
   lastFocus = key
   const target = viewer.controls.target
   const position = viewer.camera.position
-  // Beim Wechsel auf den Kopf schrÃ¤g von vorne-oben wie die Karten, sonst die aktuelle Blickrichtung
-  // (wÃ¤hrend eines Schwenks die, auf die er zulÃ¤uft).
+  // Beim Wechsel auf den Kopf schräg von vorne-oben wie die Karten, sonst die aktuelle Blickrichtung
+  // (während eines Schwenks die, auf die er zuläuft).
   const [aim, eye] = tween ? tween.to : [target, position]
   const dir = enteringHead ? HEAD_DIR : normalize({ x: eye.x - aim.x, y: eye.y - aim.y, z: eye.z - aim.z })
   const goal = focusGoal(dir)
