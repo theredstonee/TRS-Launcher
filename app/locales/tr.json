@@ -55,7 +55,8 @@
       "version": "Sürüm",
       "gameVersion": "Oyun sürümü",
       "loader": "Mod yükleyici"
-    }
+    },
+    "memoryHigh": "Minecraft nadiren 8–12 GB'tan fazlasına ihtiyaç duyar. Çok fazla RAM çöp toplamayı yavaşlatır ve diğer programlar bellek kullanırken Java'nın başlamasını engelleyebilir."
   },
   "language": {
     "title": "Dil",
@@ -428,7 +429,9 @@
       "stopAllGamesFirst": "Lütfen önce çalışan tüm oyunları kapat.",
       "syncAfterExitFailed": "Ayarlar diğer kurulumlarla eşitlenemedi.",
       "dependenciesAdded": "Eksik bağımlılıklar eklendi: {list} ({mods} için gerekli).",
-      "accountMissing": "Seçilen hesap artık yok."
+      "accountMissing": "Seçilen hesap artık yok.",
+      "memorySafeStart": "Boş bellek az: oyun küçük başlar ve ihtiyaç duydukça daha fazla bellek alır.",
+      "notEnoughMemory": "Java için yeterli boş bellek yok. Diğer programları kapat veya örneğe daha az RAM ver."
     },
     "loaders": {
       "invalidGameVersion": "Geçersiz Minecraft sürümü",

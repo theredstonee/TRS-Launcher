@@ -497,6 +497,7 @@ async function allowFirewall() {
           </div>
         </div>
         <p class="mt-1 text-xs text-base-600">{{ formatMemory(form.maxMemoryMb) }}</p>
+        <p v-if="form.maxMemoryMb >= 16384" class="mt-1 text-xs text-amber-300">{{ t('common.memoryHigh') }}</p>
       </SettingRow>
       <SettingRow :title="t('settings.defaults.minMemoryTitle')" :description="t('settings.defaults.minMemoryDescription')">
         <input v-model.number="form.minMemoryMb" type="number" min="128" step="128" class="field w-28 font-mono" :aria-label="t('settings.defaults.minMemoryTitle')" />

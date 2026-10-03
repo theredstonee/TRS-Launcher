@@ -103,6 +103,29 @@ How to write an entry:
   bearbeiteten Werte – Kommentare, Reihenfolge und Formatierung bleiben genau erhalten – und die vorherige Fassung
   wird aufbewahrt, damit du sie wiederherstellen kannst. „Extern öffnen“ gibt es weiter im Rechtsklick-Menü.
 
+## 0.17.1 – 2026-10-03 – Light Luggage Fix | Leichtes Gepäck – Fix
+<!-- banner: accent=#ffb02e motif=/news/0.17.0/banner.png -->
+<!-- shots:
+/news/0.17.1/memory-warning.png | A hint when an instance gets a lot of RAM | Ein Hinweis, wenn eine Instanz sehr viel RAM bekommt
+-->
+
+### English
+- **Fix: "Could not create the Java Virtual Machine" with a lot of RAM.** With a large memory setting (e.g. 24 GB)
+  the launcher reserved all of it at the start – if other programs were using memory, Java refused to start. Now at
+  most 8 GB are reserved up front, and only what is actually free; the rest grows as the game needs it. Before every
+  start the launcher checks that Java gets the memory, and if Java still fails it restarts the game right away with
+  safe values instead of showing the Java error window.
+- **Hint for very large RAM settings.** From 16 GB the RAM slider explains that Minecraft rarely needs more than
+  8–12 GB.
+
+### Deutsch
+- **Behoben: „Could not create the Java Virtual Machine“ bei viel RAM.** Mit einer großen Speichereinstellung (z. B.
+  24 GB) hat der Launcher beim Start alles auf einmal reserviert – belegten andere Programme Speicher, startete Java
+  nicht. Jetzt werden höchstens 8 GB vorab reserviert, und nur so viel, wie gerade frei ist; der Rest wächst nach
+  Bedarf. Vor jedem Start prüft der Launcher, ob Java den Speicher bekommt, und scheitert Java trotzdem, startet er das
+  Spiel sofort mit sicheren Werten neu statt das Java-Fehlerfenster zu zeigen.
+- **Hinweis bei sehr viel RAM.** Ab 16 GB erklärt der RAM-Regler, dass Minecraft selten mehr als 8–12 GB braucht.
+
 ## 0.17.0 – 2026-10-03 – Light Luggage | Leichtes Gepäck
 <!-- banner: accent=#ff3b30 motif=/news/0.17.0/banner.png -->
 <!-- shots:

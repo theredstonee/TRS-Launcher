@@ -507,6 +507,7 @@ const loaderLine = computed(() => {
           </div>
         </div>
         <p class="mt-1 text-xs text-base-600">{{ formatMemory(memory) }}</p>
+        <p v-if="memory >= 16384" class="mt-1 text-xs text-amber-300">{{ t('common.memoryHigh') }}</p>
       </SettingRow>
       <SettingRow :title="t('instanceSettings.java.jvmArgsTitle')" :description="t('instanceSettings.java.jvmArgsDescription')" stacked>
         <div class="flex gap-2">

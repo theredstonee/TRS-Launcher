@@ -205,6 +205,17 @@ pub fn total_memory_mb() -> Option<u32> {
     u32::try_from(status.ullTotalPhys / (1024 * 1024)).ok().filter(|mb| *mb > 0)
 }
 
+/// Gerade freier Arbeitsspeicher in MB: das Kleinere aus freiem RAM und noch
+/// zusagbarem Speicher (RAM + Auslagerungsdatei) – Java scheitert sonst mit 1455.
+pub fn available_memory_mb() -> Option<u32> {
+    use windows::Win32::System::SystemInformation::{GlobalMemoryStatusEx, MEMORYSTATUSEX};
+    let mut status = MEMORYSTATUSEX { dwLength: std::mem::size_of::<MEMORYSTATUSEX>() as u32, ..Default::default() };
+    // SAFETY: `status` ist initialisiert und `dwLength` gesetzt, wie die API es verlangt.
+    unsafe { GlobalMemoryStatusEx(&mut status) }.ok()?;
+    let free = status.ullAvailPhys.min(status.ullAvailPageFile);
+    u32::try_from(free / (1024 * 1024)).ok()
+}
+
 // --- Papierkorb ----------------------------------------------------------------------------
 
 /// Datei in den Windows-Papierkorb verschieben (`SHFileOperationW`).

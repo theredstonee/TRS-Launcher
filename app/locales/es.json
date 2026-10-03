@@ -55,7 +55,8 @@
       "version": "Versión",
       "gameVersion": "Versión del juego",
       "loader": "Cargador de mods"
-    }
+    },
+    "memoryHigh": "Minecraft rara vez necesita más de 8–12 GB. Demasiada RAM hace más lenta la recolección de basura y puede impedir que Java arranque si otros programas usan memoria."
   },
   "language": {
     "title": "Idioma",
@@ -428,7 +429,9 @@
       "stopAllGamesFirst": "Cierra primero todos los juegos en ejecución.",
       "syncAfterExitFailed": "No se han podido sincronizar los ajustes con las demás instancias.",
       "dependenciesAdded": "Dependencias que faltaban añadidas: {list} (las necesita {mods}).",
-      "accountMissing": "La cuenta elegida ya no existe."
+      "accountMissing": "La cuenta elegida ya no existe.",
+      "memorySafeStart": "Poca memoria libre: el juego empieza con poca memoria y toma más cuando la necesita.",
+      "notEnoughMemory": "No hay suficiente memoria libre para Java. Cierra otros programas o asigna menos RAM a la instancia."
     },
     "loaders": {
       "invalidGameVersion": "Versión de Minecraft no válida",
