@@ -153,6 +153,14 @@
     "instanceNotFound": "No se encontró la instancia «{id}»",
     "unknownVersion": "La versión de Minecraft «{version}» es desconocida",
     "authNotApproved": "El inicio de sesión de Microsoft aún no está habilitado: el registro de la aplicación está pendiente de aprobación por parte de Mojang.",
+    "unsupportedOnMobile": "No disponible en este dispositivo: solo en la versión de escritorio.",
+    "mobileUpdate": {
+      "notChecked": "Primero busca actualizaciones.",
+      "noUpdate": "No hay ninguna versión más reciente.",
+      "manifestUnreadable": "No se puede leer el manifiesto de actualización",
+      "androidOnly": "La aplicación solo instala actualizaciones por sí misma en Android.",
+      "installFailed": "No se pudo iniciar la instalación."
+    },
     "settings": {
       "resolutionRange": "La resolución está fuera del rango permitido",
       "minMemoryRange": "La memoria mínima debe estar entre 128 MB y el máximo",

@@ -1,5 +1,7 @@
 use tauri::ipc::Channel;
-use tauri::{AppHandle, Manager, State};
+#[cfg(desktop)]
+use tauri::Manager;
+use tauri::{AppHandle, State};
 use trs_core::gamelog::LogLine;
 use trs_core::launch::RunningGame;
 use trs_core::prepare::StageProgress;
@@ -23,6 +25,7 @@ pub async fn launch_instance(
     on_progress: Channel<StageProgress>,
     task_id: Option<String>,
 ) -> CommandResult<u32> {
+    trs_core::platform::desktop_only()?;
     // Gehostete Welt: nur Raum-ID, Code und Eckdaten – geprüft, bevor sie ans Spiel gehen.
     let world = join_world.map(HostedWorld::validated).transpose()?;
     // Eine freie Adresse (Server eines Freundes) prüft der Kern wie jede Server-Adresse.
@@ -38,6 +41,7 @@ pub async fn launch_instance(
     let work = launcher.launch(&id, join, &report);
     let pid = tracked(&app, task_id, work).await?;
 
+    #[cfg(desktop)]
     if launcher.settings().await.close_on_launch
         && let Some(window) = app.get_webview_window("main")
     {
@@ -70,6 +74,7 @@ pub async fn repair_instance(
     on_progress: Channel<StageProgress>,
     task_id: Option<String>,
 ) -> CommandResult<()> {
+    trs_core::platform::desktop_only()?;
     let report = move |progress| {
         let _ = on_progress.send(progress);
     };
@@ -86,6 +91,7 @@ pub async fn reinstall_instance(
     on_progress: Channel<StageProgress>,
     task_id: Option<String>,
 ) -> CommandResult<()> {
+    trs_core::platform::desktop_only()?;
     let report = move |progress| {
         let _ = on_progress.send(progress);
     };

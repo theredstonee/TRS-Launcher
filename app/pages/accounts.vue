@@ -21,7 +21,7 @@ watch(
   (add) => {
     if (add !== 'browser') return
     router.replace({ query: {} })
-    if (!login.value) start('browser')
+    if (!login.value) start(defaultLoginMode)
   },
   { immediate: true },
 )

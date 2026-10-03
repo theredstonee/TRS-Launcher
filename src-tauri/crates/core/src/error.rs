@@ -115,6 +115,10 @@ pub enum Error {
     #[error("Vorgang abgebrochen")]
     Cancelled,
 
+    /// Gibt es auf Android/iOS nicht (Spielstart, Java, Clips, TRS Client …).
+    #[error("Auf diesem Gerät nicht verfügbar – nur in der Desktop-Version.")]
+    UnsupportedOnMobile,
+
     /// Fehler der TRS API. `kind` ist stabil (`trs_offline`, `trs_banned`, …),
     /// `code` der Fehlercode der API (z. B. `cape_locked`), `msg` die
     /// Meldung für den Nutzer (mit eigenem Übersetzungs-Code).
@@ -203,6 +207,7 @@ impl Error {
             Self::Auth(_) => "auth",
             Self::AuthNotApproved => "auth_not_approved",
             Self::Cancelled => "cancelled",
+            Self::UnsupportedOnMobile => "unsupported_on_mobile",
             Self::TrsApi { kind, .. } => kind,
             Self::Internal(_) => "internal",
         }
@@ -227,6 +232,7 @@ impl Error {
             Self::UnknownGameVersion(_) => "unknownVersion",
             Self::AuthNotApproved => "authNotApproved",
             Self::Cancelled => "cancelled",
+            Self::UnsupportedOnMobile => "unsupportedOnMobile",
             Self::Internal(_) => "internal",
             Self::Validation(m) | Self::Launch(m) | Self::Auth(m) | Self::TrsApi { msg: m, .. } => m.code,
         }
@@ -265,7 +271,8 @@ impl Error {
             | Self::Launch(_)
             | Self::Auth(_)
             | Self::TrsApi { .. }
-            | Self::Cancelled => self.to_string(),
+            | Self::Cancelled
+            | Self::UnsupportedOnMobile => self.to_string(),
         }
     }
 
@@ -327,6 +334,8 @@ mod tests {
         assert_eq!(missing.params["id"], "abc");
         assert_eq!(Error::Cancelled.to_user().code, "cancelled");
         assert_eq!(Error::AuthNotApproved.to_user().code, "authNotApproved");
+        let mobile = Error::UnsupportedOnMobile.to_user();
+        assert_eq!((mobile.kind, mobile.code.as_str()), ("unsupported_on_mobile", "unsupportedOnMobile"));
     }
 
     #[test]

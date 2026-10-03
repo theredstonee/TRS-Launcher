@@ -153,6 +153,14 @@
     "instanceNotFound": "L'instance « {id} » est introuvable",
     "unknownVersion": "La version de Minecraft « {version} » est inconnue",
     "authNotApproved": "La connexion Microsoft n'est pas encore activée : l'enregistrement de l'application attend l'approbation de Mojang.",
+    "unsupportedOnMobile": "Indisponible sur cet appareil – uniquement dans la version de bureau.",
+    "mobileUpdate": {
+      "notChecked": "Recherche d'abord les mises à jour.",
+      "noUpdate": "Il n'y a pas de version plus récente.",
+      "manifestUnreadable": "Le manifeste de mise à jour est illisible",
+      "androidOnly": "L'application n'installe elle-même les mises à jour que sur Android.",
+      "installFailed": "L'installation n'a pas pu être lancée."
+    },
     "settings": {
       "resolutionRange": "La résolution est en dehors de la plage autorisée",
       "minMemoryRange": "La mémoire minimale doit être comprise entre 128 Mo et le maximum",

@@ -153,6 +153,14 @@
     "instanceNotFound": "Instance “{id}” was not found",
     "unknownVersion": "Minecraft version “{version}” is unknown",
     "authNotApproved": "Microsoft login is not enabled yet: the app registration is waiting for approval by Mojang.",
+    "unsupportedOnMobile": "Not available on this device – only in the desktop version.",
+    "mobileUpdate": {
+      "notChecked": "Please check for updates first.",
+      "noUpdate": "There is no newer version.",
+      "manifestUnreadable": "The update manifest can't be read",
+      "androidOnly": "The app only installs updates by itself on Android.",
+      "installFailed": "The installation couldn't be started."
+    },
     "settings": {
       "resolutionRange": "The resolution is outside the allowed range",
       "minMemoryRange": "Minimum memory must be between 128 MB and the maximum",

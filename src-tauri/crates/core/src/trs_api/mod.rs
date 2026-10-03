@@ -463,12 +463,12 @@ impl TrsApi {
 
     /// Wie [`Self::new`], mit eigenen Endpunkten (Tests).
     pub fn with_endpoints(paths: Paths, base: &str, session_base: &str, mojang_api: &str) -> Result<Self> {
-        let http = reqwest::Client::builder()
+        let http = crate::net::client_builder()
             .user_agent(USER_AGENT)
             .connect_timeout(Duration::from_secs(8))
             .timeout(Duration::from_secs(20))
             .build()?;
-        let stream_http = reqwest::Client::builder()
+        let stream_http = crate::net::client_builder()
             .user_agent(USER_AGENT)
             .connect_timeout(Duration::from_secs(8))
             .build()?;

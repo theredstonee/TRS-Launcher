@@ -2,6 +2,7 @@ mod commands;
 mod deeplink;
 mod dialog_text;
 mod error;
+mod mobile;
 mod open;
 
 use std::path::PathBuf;
@@ -10,11 +11,13 @@ use std::sync::Arc;
 use tauri::{Emitter, Manager};
 use trs_core::Launcher;
 
-/// Überschreibt das Datenverzeichnis – praktisch für Entwicklung und Tests.
+/// Überschreibt das Datenverzeichnis – praktisch für Entwicklung und Tests (nur Desktop).
+#[cfg(desktop)]
 const HOME_ENV: &str = "TRS_LAUNCHER_HOME";
 
 pub type LauncherState = Arc<Launcher>;
 
+#[cfg(desktop)]
 fn data_root(app: &tauri::App) -> Result<PathBuf, Box<dyn std::error::Error>> {
     if let Some(custom) = std::env::var_os(HOME_ENV).filter(|v| !v.is_empty()) {
         return Ok(PathBuf::from(custom));
@@ -22,18 +25,29 @@ fn data_root(app: &tauri::App) -> Result<PathBuf, Box<dyn std::error::Error>> {
     Ok(app.path().data_dir()?.join(trs_core::LAUNCHER_NAME))
 }
 
+/// Android/iOS: privater Datenordner der App (Sandbox).
+#[cfg(mobile)]
+fn data_root(app: &tauri::App) -> Result<PathBuf, Box<dyn std::error::Error>> {
+    Ok(app.path().app_data_dir()?)
+}
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(desktop)]
     if let Ok(exe) = std::env::current_exe() {
         trs_core::firewall::set_helper_exe(exe);
     }
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    #[cfg(desktop)]
+    let builder = builder
         // Muss als erstes Plugin registriert werden.
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.unminimize();
                 let _ = window.set_focus();
             }
-        }))
+        }));
+    let builder = builder
         // Nach Single-Instance: `trs-launcher://`-Links (auch an ein schon offenes Fenster).
         .plugin(tauri_plugin_deep_link::init())
         .plugin(
@@ -45,11 +59,18 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_dialog::init());
+    // Desktop: eingebauter Updater (+ Neustart danach) und Fenstergröße/-position merken.
+    #[cfg(desktop)]
+    let builder = builder
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
-        .plugin(tauri_plugin_window_state::Builder::default().build())
-        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_window_state::Builder::default().build());
+    let builder = builder.plugin(tauri_plugin_notification::init());
+    // Android: APK-Installation (PackageInstaller) für Updates aus dem Kanal `mobile`.
+    #[cfg(mobile)]
+    let builder = builder.plugin(mobile::init());
+    builder
         .setup(|app| {
             let root = data_root(app)?;
             log::info!("Datenverzeichnis: {}", root.display());
@@ -61,12 +82,16 @@ pub fn run() {
                 }
             });
             let launcher = tauri::async_runtime::block_on(Launcher::init(root, events))?;
+            // Android/iOS: kein TRS Client, keine Clips (dort gibt es keinen Java-Spielstart).
+            #[cfg(desktop)]
             match app.path().resource_dir() {
                 Ok(dir) => launcher.set_client_mod_dir(dir.join("client-mod")),
                 Err(e) => log::warn!("Ressourcen-Ordner nicht gefunden: {e}"),
             }
             // Clips: Status, gespeicherte Clips und Fehler gehen als Event ans Frontend.
+            #[cfg(desktop)]
             let handle = app.handle().clone();
+            #[cfg(desktop)]
             launcher.clips().set_sink(Arc::new(move |event| {
                 // Erfolge: gespeicherter Clip bzw. gespeicherte Aufnahme (gesendet wird gesammelt im Hintergrund).
                 if matches!(event, trs_core::clips::ClipEvent::Saved { .. })
@@ -103,7 +128,9 @@ pub fn run() {
                 }
             }));
             // „Im Launcher öffnen“ aus dem Spiel: Fenster nach vorn, Player mit dem Clip.
+            #[cfg(desktop)]
             let handle = app.handle().clone();
+            #[cfg(desktop)]
             launcher.set_clip_open_sink(Arc::new(move |request| {
                 if let Some(window) = handle.get_webview_window("main") {
                     let _ = window.show();
@@ -119,6 +146,7 @@ pub fn run() {
             launcher.set_hosting_open_sink(Arc::new(move |room_id| {
                 if let Some(window) = handle.get_webview_window("main") {
                     let _ = window.show();
+                    #[cfg(desktop)]
                     let _ = window.unminimize();
                     let _ = window.set_focus();
                 }
@@ -139,30 +167,39 @@ pub fn run() {
                 }
             }));
             let launcher = Arc::new(launcher);
-            // Spiele, die beim letzten Schließen noch liefen, wieder aufnehmen.
-            tauri::async_runtime::spawn(Arc::clone(&launcher).resume_clips());
-            // Neuer TRS Client im Update-Kanal? Läuft im Hintergrund, offline egal.
-            let updates = Arc::clone(&launcher);
-            tauri::async_runtime::spawn(async move {
-                updates.check_client_mod_updates().await;
-            });
-            // TRS-Präsenz im 60-s-Takt (ohne Einwilligung passiert nichts).
-            tauri::async_runtime::spawn(Arc::clone(&launcher).run_trs_presence());
+            app.manage(mobile::UpdateState::new(&launcher)?);
+            // Desktop: Clips wieder aufnehmen, TRS-Client-Kanal prüfen, Präsenz senden.
+            // Android/iOS: nichts davon (kein Spiel auf dem Gerät).
+            #[cfg(desktop)]
+            {
+                // Spiele, die beim letzten Schließen noch liefen, wieder aufnehmen.
+                tauri::async_runtime::spawn(Arc::clone(&launcher).resume_clips());
+                // Neuer TRS Client im Update-Kanal? Läuft im Hintergrund, offline egal.
+                let updates = Arc::clone(&launcher);
+                tauri::async_runtime::spawn(async move {
+                    updates.check_client_mod_updates().await;
+                });
+                // TRS-Präsenz im 60-s-Takt (ohne Einwilligung passiert nichts).
+                tauri::async_runtime::spawn(Arc::clone(&launcher).run_trs_presence());
+            }
             // Skins/Presets/Theme/Sprache mit dem TRS-Konto abgleichen (nur mit Einwilligung + Schalter).
             tauri::async_runtime::spawn(Arc::clone(&launcher).run_trs_sync());
             // Echtzeit-Kanal `/v1/events/me` (nur mit Einwilligung und Account).
             tauri::async_runtime::spawn(Arc::clone(&launcher).run_trs_live());
             // Erfolge: gesammelte Meldungen (Spielstart, Mods, Modpacks, Clips) im Hintergrund senden.
             tauri::async_runtime::spawn(Arc::clone(&launcher).run_achievement_reports());
-            // Spiele mit verbundenem TRS Client: Der Launcher schweigt dann zu Sozial-Hinweisen.
-            let handle = app.handle().clone();
-            tauri::async_runtime::spawn(Arc::clone(&launcher).run_social_game_clients(Arc::new(move |clients| {
-                if let Err(e) = handle.emit("trs-client-linked", &clients) {
-                    log::warn!("trs-client-linked konnte nicht gesendet werden: {e}");
-                }
-            })));
-            // Discord-Status (nur lokal mit der Discord-App; läuft Discord nicht, passiert nichts).
-            tauri::async_runtime::spawn(Arc::clone(&launcher).run_discord());
+            #[cfg(desktop)]
+            {
+                // Spiele mit verbundenem TRS Client: Der Launcher schweigt dann zu Sozial-Hinweisen.
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(Arc::clone(&launcher).run_social_game_clients(Arc::new(move |clients| {
+                    if let Err(e) = handle.emit("trs-client-linked", &clients) {
+                        log::warn!("trs-client-linked konnte nicht gesendet werden: {e}");
+                    }
+                })));
+                // Discord-Status (nur lokal mit der Discord-App; läuft Discord nicht, passiert nichts).
+                tauri::async_runtime::spawn(Arc::clone(&launcher).run_discord());
+            }
             app.manage::<LauncherState>(launcher);
             app.manage(commands::system::DropState::default());
             app.manage(commands::export::PackPickState::default());
@@ -261,6 +298,8 @@ pub fn run() {
             commands::app::open_data_dir,
             commands::app::firewall_status,
             commands::app::firewall_allow_all,
+            mobile::mobile_update_check,
+            mobile::mobile_update_install,
             commands::settings::get_settings,
             commands::settings::update_settings,
             commands::instances::list_instances,

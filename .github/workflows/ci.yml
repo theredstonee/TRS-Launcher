@@ -32,6 +32,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       launcher: ${{ steps.filter.outputs.launcher }}
+      mobile: ${{ steps.filter.outputs.mobile }}
       client-mod: ${{ steps.filter.outputs.client-mod }}
     steps:
       # PR: Merge-Commit + seine erste Eltern-Revision (= Ziel-Branch) → genau die Änderungen des PRs.
@@ -46,7 +47,7 @@ jobs:
           set -euo pipefail
           if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
             echo "Push to main: run everything."
-            { echo "launcher=true"; echo "client-mod=true"; } >> "$GITHUB_OUTPUT"
+            { echo "launcher=true"; echo "mobile=true"; echo "client-mod=true"; } >> "$GITHUB_OUTPUT"
             exit 0
           fi
           files=$(git diff --name-only HEAD^1 HEAD)
@@ -54,9 +55,12 @@ jobs:
           # Änderungen an diesem Workflow prüfen alles.
           all='^\.github/workflows/ci\.yml$'
           launcher='^(app/|src-tauri/|public/|scripts/|packaging/|tests/|package\.json$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|nuxt\.config\.ts$|tsconfig\.json$|\.npmrc$)'
+          # Android/iOS: dieselbe Rust-/Frontend-Basis plus die Projekte in src-tauri/gen und die Kanal-Skripte.
+          mobile='^(app/|src-tauri/|public/|scripts/mobile-channel\.mjs$|package\.json$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|nuxt\.config\.ts$|tsconfig\.json$|\.npmrc$)'
           client='^(client-mod/|data/)'
           has() { grep -qE "$1" <<<"$files"; }
           if has "$all" || has "$launcher"; then echo "launcher=true" >> "$GITHUB_OUTPUT"; else echo "launcher=false" >> "$GITHUB_OUTPUT"; fi
+          if has "$all" || has "$mobile"; then echo "mobile=true" >> "$GITHUB_OUTPUT"; else echo "mobile=false" >> "$GITHUB_OUTPUT"; fi
           if has "$all" || has "$client"; then echo "client-mod=true" >> "$GITHUB_OUTPUT"; else echo "client-mod=false" >> "$GITHUB_OUTPUT"; fi
           cat "$GITHUB_OUTPUT"
 
@@ -163,6 +167,131 @@ jobs:
             node scripts/aur.mjs --srcinfo packaging/aur/$p/PKGBUILD | diff - packaging/aur/$p/.SRCINFO
           done
 
+  # Android: Clippy für das Gerät (arm64) und eine Debug-APK (arm64, nicht signiert für den Store) als Artefakt.
+  # Das Gradle-Projekt liegt eingecheckt in src-tauri/gen/android; Rust baut Gradle über `pnpm tauri android …`.
+  launcher-android:
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      NDK_VERSION: 28.2.13676358
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Android NDK
+        run: |
+          set -euo pipefail
+          sdkmanager --install "ndk;$NDK_VERSION" > /dev/null
+          ndk="$ANDROID_HOME/ndk/$NDK_VERSION"
+          bin="$ndk/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          {
+            echo "NDK_HOME=$ndk"
+            # Für Clippy außerhalb von `tauri android build` (C-Teile: SQLite, ring).
+            echo "CC_aarch64_linux_android=$bin/aarch64-linux-android26-clang"
+            echo "AR_aarch64_linux_android=$bin/llvm-ar"
+            echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$bin/aarch64-linux-android26-clang"
+          } >> "$GITHUB_ENV"
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          shared-key: android
+          cache-on-failure: true
+
+      - run: pnpm install --frozen-lockfile
+
+      # generate_context! braucht ein gebautes Frontend.
+      - name: Frontend build
+        run: pnpm generate
+
+      - name: Clippy (Android)
+        working-directory: src-tauri
+        run: cargo clippy --workspace --target aarch64-linux-android -- -D warnings
+
+      # beforeBuildCommand (pnpm generate) lief schon.
+      - name: Debug APK (arm64)
+        run: pnpm tauri android build --apk --debug --target aarch64 --ci -c '{"build":{"beforeBuildCommand":""}}'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  # iOS: Clippy für das Gerät und ein unsigniertes IPA (Archiv ohne Code-Signatur). Das Xcode-Projekt entsteht hier
+  # mit `tauri ios init` (unter Windows nicht erzeugbar); signiert wird später von AltStore/SideStore beim Installieren.
+  launcher-ios:
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          shared-key: ios
+          cache-on-failure: true
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Frontend build
+        run: pnpm generate
+
+      - name: Clippy (iOS)
+        working-directory: src-tauri
+        run: cargo clippy --workspace --target aarch64-apple-ios -- -D warnings
+
+      - name: Xcode project
+        run: bash scripts/ios-project.sh
+
+      - name: Unsigned IPA
+        run: bash scripts/ios-unsigned-ipa.sh debug "$RUNNER_TEMP/TRS-Launcher-ci.ipa"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-unsigned-ipa
+          path: ${{ runner.temp }}/TRS-Launcher-ci.ipa
+          if-no-files-found: error
+          retention-days: 7
   # TRS Client: Unit-Tests von common + Kompilieren ausgewählter Bäume (älteste, mittlere und neueste Ära).
   # Nur kompilieren – kein Spielstart, keine Autotests. -PtrsVersions richtet nur die genannten Minecraft-Versionen
   # ein (plus die eingecheckte Stonecutter-Version), statt alle 39 Fabric- bzw. 6 Legacy-Versionen.
@@ -240,7 +369,7 @@ jobs:
   # Der Pflicht-Check für das Ruleset. Übersprungen (Pfad nicht geändert, Label no-changelog, Push) zählt als ok.
   ci-ok:
     name: ${{ ((github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'no-changelog') && 'ci-ok (label change, nothing to do)' || 'ci-ok' }}
-    needs: [changes, launcher-windows, launcher-linux, client-mod, changelog]
+    needs: [changes, launcher-windows, launcher-linux, launcher-android, launcher-ios, client-mod, changelog]
     if: ${{ always() && !((github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'no-changelog') }}
     runs-on: ubuntu-latest
     timeout-minutes: 5

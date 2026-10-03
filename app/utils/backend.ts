@@ -125,6 +125,8 @@ import type {
   JavaInstall,
   LoaderKind,
   LoaderVersionInfo,
+  MobileInstallOutcome,
+  MobileUpdateStatus,
   StorageStats,
   UploadResult,
   VerifyReport,
@@ -255,6 +257,19 @@ async function checked<S extends z.ZodType>(schema: S, command: string, args?: R
   return trsParse(schema, await call<unknown>(command, args))
 }
 
+/** Mobiler Update-Kanal (`mobile_update_check`). */
+const mobileUpdateStatusSchema = z.object({
+  current: z.string().max(64),
+  latest: z.string().max(64).nullable(),
+  available: z.boolean(),
+  notes: z.string().max(20_000),
+  pubDate: z.string().max(64).nullable(),
+  size: z.number().int().nonnegative().nullable(),
+  altstoreSource: z.string().max(512).nullable(),
+})
+
+const mobileInstallOutcomeSchema = z.object({ status: z.enum(['started', 'permissionRequired']) })
+
 function channel<T>(onMessage: (message: T) => void): Channel<T> {
   const ch = new Channel<T>()
   ch.onmessage = onMessage
@@ -270,6 +285,11 @@ export const backend = {
   firewallStatus: () => call<{ total: number; missing: number }>('firewall_status'),
   /** Eine Windows-Admin-Abfrage; danach fragt Windows bei keiner Instanz mehr nach dem Netzwerk. */
   firewallAllowAll: () => call<number>('firewall_allow_all'),
+  /** Android/iOS: neue Version im Kanal `mobile`? */
+  mobileUpdateCheck: (): Promise<MobileUpdateStatus> => checked(mobileUpdateStatusSchema, 'mobile_update_check'),
+  /** Android: APK laden (Aufgabe mit Fortschritt) und den Installationsdialog des Systems öffnen. */
+  mobileUpdateInstall: (taskId: string | null = null): Promise<MobileInstallOutcome> =>
+    checked(mobileInstallOutcomeSchema, 'mobile_update_install', { taskId }),
 
   getSettings: () => call<Settings>('get_settings'),
   updateSettings: (settings: Settings) => call<Settings>('update_settings', { settings }),

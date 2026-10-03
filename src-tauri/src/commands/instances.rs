@@ -70,6 +70,7 @@ pub async fn get_fps_mode(
     launcher: State<'_, LauncherState>,
     id: String,
 ) -> CommandResult<Option<trs_core::client_mod::FpsMode>> {
+    trs_core::platform::desktop_only()?;
     Ok(launcher.fps_mode(&id).await?)
 }
 
@@ -79,6 +80,7 @@ pub async fn set_fps_mode(
     id: String,
     mode: trs_core::client_mod::FpsMode,
 ) -> CommandResult<()> {
+    trs_core::platform::desktop_only()?;
     Ok(launcher.set_fps_mode(&id, mode).await?)
 }
 

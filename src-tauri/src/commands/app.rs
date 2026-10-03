@@ -31,6 +31,7 @@ pub fn app_info(launcher: State<'_, LauncherState>) -> AppInfo {
 /// TRS Client: mitgelieferte Version und ein bereits geladenes Update.
 #[tauri::command]
 pub async fn client_mod_status(launcher: State<'_, LauncherState>) -> CommandResult<trs_core::client_mod::ClientModStatus> {
+    trs_core::platform::desktop_only()?;
     Ok(launcher.client_mod_status().await)
 }
 
@@ -50,6 +51,7 @@ pub struct FirewallStatus {
 
 #[tauri::command]
 pub async fn firewall_status(launcher: State<'_, LauncherState>) -> CommandResult<FirewallStatus> {
+    trs_core::platform::desktop_only()?;
     Ok(FirewallStatus {
         total: trs_core::firewall::runtime_programs(launcher.paths()).len(),
         missing: trs_core::firewall::missing(launcher.paths()).await.len(),
@@ -60,6 +62,7 @@ pub async fn firewall_status(launcher: State<'_, LauncherState>) -> CommandResul
 /// (eine Windows-Admin-Abfrage).
 #[tauri::command]
 pub async fn firewall_allow_all(launcher: State<'_, LauncherState>) -> CommandResult<usize> {
+    trs_core::platform::desktop_only()?;
     let programs = trs_core::firewall::runtime_programs(launcher.paths());
     Ok(trs_core::firewall::allow(launcher.paths(), programs).await?)
 }

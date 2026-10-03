@@ -153,6 +153,14 @@
     "instanceNotFound": "Kurulum bulunamadı: “{id}”",
     "unknownVersion": "Bilinmeyen Minecraft sürümü: “{version}”",
     "authNotApproved": "Microsoft girişi henüz etkin değil: uygulama kaydı Mojang onayını bekliyor.",
+    "unsupportedOnMobile": "Bu cihazda kullanılamaz – yalnızca masaüstü sürümünde.",
+    "mobileUpdate": {
+      "notChecked": "Lütfen önce güncellemeleri kontrol et.",
+      "noUpdate": "Daha yeni bir sürüm yok.",
+      "manifestUnreadable": "Güncelleme bildirimi okunamıyor",
+      "androidOnly": "Uygulama güncellemeleri yalnızca Android’de kendisi yükler.",
+      "installFailed": "Kurulum başlatılamadı."
+    },
     "settings": {
       "resolutionRange": "Çözünürlük izin verilen aralığın dışında",
       "minMemoryRange": "Minimum bellek 128 MB ile maksimum arasında olmalı",

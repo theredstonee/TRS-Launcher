@@ -81,12 +81,22 @@ pub fn natives_classifier() -> &'static str {
     }
 }
 
+/// Android oder iOS: Begleit-App ohne Java-Spielstart (Clips, Firewall,
+/// Discord, TRS-Link und Präsenz laufen dort nicht).
+pub const MOBILE: bool = cfg!(any(target_os = "android", target_os = "ios"));
+
+/// Für Funktionen, die es nur auf dem Desktop gibt: mobil ein klarer Fehler
+/// (`unsupported_on_mobile`) statt eines halben Versuchs.
+pub fn desktop_only() -> crate::Result<()> {
+    if MOBILE { Err(crate::Error::UnsupportedOnMobile) } else { Ok(()) }
+}
+
 /// Welche Funktionen es auf diesem System gibt – das Frontend blendet den
 /// Rest aus.
 #[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Capabilities {
-    /// `windows` | `linux` | `macos`
+    /// `windows` | `linux` | `macos` | `android` | `ios`
     pub platform: &'static str,
     /// Windows-Firewall-Freigabe für die Java-Runtimes.
     pub firewall: bool,
@@ -95,8 +105,19 @@ pub struct Capabilities {
     /// Spiel-Clips aufnehmen (derzeit nur Windows).
     pub clips: bool,
     /// Wie der Launcher sich aktualisiert: `auto` (eingebauter Updater),
-    /// `package` (Paketverwaltung: .deb/.rpm/AUR) oder `flatpak`.
+    /// `package` (Paketverwaltung: .deb/.rpm/AUR), `flatpak` oder `mobile`
+    /// (eigener Kanal: APK-Installation bzw. AltStore/SideStore).
     pub updates: &'static str,
+    /// Minecraft starten (Desktop über Java).
+    pub game_launch: bool,
+    /// Java suchen, installieren und wählen.
+    pub java: bool,
+    /// Eigene Fensterknöpfe (Minimieren, Maximieren, Schließen, Ziehen).
+    pub window_controls: bool,
+    /// Push-Benachrichtigungen des Systems (nur mobil, derzeit noch ohne Server-Anbindung).
+    pub push_supported: bool,
+    /// Eingebaute Spiel-Engine als natives Plugin (mobil, folgt später).
+    pub game_engine: bool,
 }
 
 pub fn capabilities() -> Capabilities {
@@ -105,19 +126,31 @@ pub fn capabilities() -> Capabilities {
             "windows"
         } else if cfg!(target_os = "macos") {
             "macos"
+        } else if cfg!(target_os = "android") {
+            "android"
+        } else if cfg!(target_os = "ios") {
+            "ios"
         } else {
             "linux"
         },
         firewall: cfg!(windows),
-        trash: true,
+        trash: !MOBILE,
         clips: cfg!(windows),
         updates: update_mode(),
+        game_launch: !MOBILE,
+        java: !MOBILE,
+        window_controls: !MOBILE,
+        push_supported: false,
+        game_engine: false,
     }
 }
 
 /// Unter Linux kann sich nur das AppImage selbst ersetzen; Pakete aus
 /// .deb/.rpm/AUR/Flatpak aktualisiert die Paketverwaltung.
 fn update_mode() -> &'static str {
+    if MOBILE {
+        return "mobile";
+    }
     if cfg!(windows) {
         return "auto";
     }
@@ -177,5 +210,13 @@ MemFree: 1 kB"), Some(15931));
         let caps = capabilities();
         assert_eq!(caps.firewall, cfg!(windows));
         assert!(matches!(caps.updates, "auto" | "package" | "flatpak"));
+        // Vertrag mit dem Frontend (PlatformCapabilities): Desktop kann starten, mobil nicht.
+        let json = serde_json::to_value(caps).unwrap();
+        for key in ["gameLaunch", "java", "windowControls"] {
+            assert_eq!(json[key], !MOBILE, "{key}");
+        }
+        assert_eq!(json["gameEngine"], false);
+        assert_eq!(json["pushSupported"], false);
+        assert!(desktop_only().is_ok());
     }
 }

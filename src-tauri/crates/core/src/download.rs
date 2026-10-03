@@ -59,7 +59,7 @@ pub(crate) fn allowed_pack_url(url: &str) -> bool {
 fn pack_http() -> &'static reqwest::Client {
     static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
     CLIENT.get_or_init(|| {
-        reqwest::Client::builder()
+        crate::net::client_builder()
             .user_agent(crate::USER_AGENT)
             .connect_timeout(Duration::from_secs(15))
             .redirect(reqwest::redirect::Policy::custom(|attempt| {

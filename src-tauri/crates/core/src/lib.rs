@@ -39,7 +39,9 @@ pub mod logfiles;
 pub mod meta;
 pub mod modcompat;
 pub mod modpack;
+pub mod mobile_update;
 pub mod modpack_export;
+pub mod net;
 pub mod pack_share;
 pub mod modrinth;
 pub mod news;
@@ -151,7 +153,7 @@ impl Launcher {
             .await
             .map_err(|e| Error::Internal(e.to_string()))?;
 
-        let http = reqwest::Client::builder()
+        let http = crate::net::client_builder()
             .user_agent(USER_AGENT)
             .connect_timeout(Duration::from_secs(15))
             .timeout(Duration::from_secs(60))
@@ -247,7 +249,9 @@ impl Launcher {
                 });
             })
         });
-        launcher.discord_recovered_games().await;
+        if !platform::MOBILE {
+            launcher.discord_recovered_games().await;
+        }
         Ok(launcher)
     }
 
@@ -740,6 +744,8 @@ impl Launcher {
         join: Option<Join<'_>>,
         on_progress: &ProgressFn,
     ) -> Result<u32> {
+        // Android/iOS: kein Java-Spielstart (die Spiel-Engine kommt später als eigenes Plugin).
+        platform::desktop_only()?;
         let instance = self.instances.get(instance_id).await?;
         if let Some(Join::World(world)) = join {
             check_world_instance(&instance, world)?;
@@ -1025,6 +1031,7 @@ impl Launcher {
     /// Prüft alle Spieldateien der Instanz per Prüfsumme und lädt beschädigte
     /// neu (nach einem Absturz wegen kaputter Dateien).
     pub async fn repair_instance(&self, instance_id: &str, on_progress: &ProgressFn) -> Result<()> {
+        platform::desktop_only()?;
         let instance = self.instances.get(instance_id).await?;
         if self.games.is_running(&instance.id) {
             return Err(Error::launch(crate::msg!("launcher.instanceRunningStopFirst", "Die Instanz läuft gerade – bitte erst beenden.")));
@@ -1101,12 +1108,16 @@ impl Launcher {
     }
 
     pub async fn detect_java(&self) -> Vec<java::JavaInstall> {
+        if platform::MOBILE {
+            return Vec::new();
+        }
         let paths = self.paths.clone();
         tokio::task::spawn_blocking(move || java::detect(&paths)).await.unwrap_or_default()
     }
 
     /// Installiert die von Mojang empfohlene Runtime für eine Java-Hauptversion.
     pub async fn install_java(&self, major: u32, on_progress: &(dyn Fn(download::Progress) + Sync)) -> Result<PathBuf> {
+        platform::desktop_only()?;
         let component = java::component_for(major).ok_or_else(|| Error::validation(crate::msg!("launcher.javaVersionUnavailable", "Diese Java-Version gibt es nicht zum Installieren.")))?;
         let concurrency = usize::from(self.settings().await.concurrent_downloads);
         java::ensure_runtime(&self.http, &self.paths, component, concurrency, on_progress).await

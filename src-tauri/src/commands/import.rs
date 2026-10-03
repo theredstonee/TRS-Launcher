@@ -1,6 +1,5 @@
 use tauri::ipc::Channel;
 use tauri::{AppHandle, State};
-use tauri_plugin_dialog::DialogExt;
 use trs_core::import::{ImportCandidate, ImportOverview, ImportProgress, ImportResult};
 use trs_core::instance::Loader;
 use trs_core::trs_choice::TrsOffer;
@@ -31,12 +30,11 @@ pub async fn pick_import_folder(
 ) -> CommandResult<Option<Vec<ImportCandidate>>> {
     let lang = dialog_text::language(&launcher).await;
     let picked = tauri::async_runtime::spawn_blocking(move || {
-        app.dialog().file().set_title(DialogText::PickImportFolder.text(lang)).blocking_pick_folder()
+        crate::commands::system::blocking_pick_folder(&app, DialogText::PickImportFolder.text(lang))
     })
     .await
     .ok()
-    .flatten()
-    .and_then(|p| p.into_path().ok());
+    .flatten();
 
     match picked {
         Some(dir) => Ok(Some(launcher.add_import_folder(dir).await?)),
@@ -52,6 +50,7 @@ pub async fn trs_client_offer(
     game_version: String,
     loader: Loader,
 ) -> CommandResult<TrsOffer> {
+    trs_core::platform::desktop_only()?;
     loader.validate()?;
     Ok(launcher.trs_client_offer(&loader, &game_version, &[]).await)
 }

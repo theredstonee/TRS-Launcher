@@ -153,6 +153,14 @@
     "instanceNotFound": "Instanz „{id}“ wurde nicht gefunden",
     "unknownVersion": "Minecraft-Version „{version}“ ist unbekannt",
     "authNotApproved": "Der Microsoft-Login ist noch nicht freigeschaltet: Die App-Registrierung wartet auf die Freigabe durch Mojang.",
+    "unsupportedOnMobile": "Auf diesem Gerät nicht verfügbar – nur in der Desktop-Version.",
+    "mobileUpdate": {
+      "notChecked": "Bitte zuerst nach Updates suchen.",
+      "noUpdate": "Es gibt keine neuere Version.",
+      "manifestUnreadable": "Update-Manifest unlesbar",
+      "androidOnly": "Updates installiert die App nur unter Android selbst.",
+      "installFailed": "Die Installation konnte nicht gestartet werden."
+    },
     "settings": {
       "resolutionRange": "Auflösung liegt außerhalb des erlaubten Bereichs",
       "minMemoryRange": "Minimaler Arbeitsspeicher muss zwischen 128 MB und dem Maximum liegen",

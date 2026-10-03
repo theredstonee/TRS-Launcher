@@ -7,6 +7,8 @@
 //!   „Auf der Website anmelden“ – bestätigt wird erst nach einem Klick, nie automatisch.
 //!
 //! Läuft der Launcher schon, reicht das Single-Instance-Plugin den Link an das offene Fenster weiter.
+//! Android/iOS: Das Schema steht im App-Manifest bzw. in der Info.plist (`plugins.deep-link.mobile`), das System
+//! reicht Links an die laufende App weiter.
 
 use std::sync::Mutex;
 
@@ -54,6 +56,7 @@ fn handle(app: &AppHandle, urls: impl IntoIterator<Item = String>) {
         }
     }
     if let Some(window) = app.get_webview_window("main") {
+        #[cfg(desktop)]
         let _ = window.unminimize();
         let _ = window.show();
         let _ = window.set_focus();

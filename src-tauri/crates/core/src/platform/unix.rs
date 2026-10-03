@@ -183,7 +183,16 @@ pub fn os_description() -> String {
     let name = ["/run/host/os-release", "/etc/os-release", "/usr/lib/os-release"]
         .iter()
         .find_map(|p| std::fs::read_to_string(p).ok().as_deref().and_then(pretty_name))
-        .unwrap_or_else(|| "Linux".to_owned());
+        .unwrap_or_else(|| {
+            let name = if cfg!(target_os = "android") {
+                "Android"
+            } else if cfg!(target_os = "ios") {
+                "iOS"
+            } else {
+                "Linux"
+            };
+            name.to_owned()
+        });
     let kernel = std::fs::read_to_string("/proc/sys/kernel/osrelease").ok().map(|k| k.trim().to_owned());
     match kernel.filter(|k| !k.is_empty() && k.len() <= 64 && k.chars().all(|c| c.is_ascii_graphic())) {
         Some(k) => format!("{name} (Kernel {k})"),
@@ -324,7 +333,8 @@ pub mod secret {
     //! im Schlüsselbund des Systems (Secret Service: GNOME Keyring, KWallet,
     //! KeePassXC …). Gibt es keinen, landet er in `<daten>/.token-key` mit
     //! Rechten 0600 – dann schützen nur die Dateirechte, und die Oberfläche
-    //! weist darauf hin.
+    //! weist darauf hin. Android nimmt den Android Keystore, iOS die Keychain
+    //! (beides meldet `keyring`); die Datei liegt dort im App-Sandbox-Ordner.
     //!
     //! Beim Entschlüsseln werden alle bekannten Schlüssel probiert: War der
     //! Schlüsselbund bei einem Start gesperrt, bleiben die damit (per Datei)
@@ -391,11 +401,30 @@ pub mod secret {
     }
 
     /// Schlüsselbund-Zugriff. `Err` = kein Secret Service erreichbar.
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
     fn keyring_entry() -> Result<keyring_core::Entry, String> {
         use keyring_core::api::CredentialStoreApi;
         let store = zbus_secret_service_keyring_store::Store::new().map_err(|e| e.to_string())?;
         let label = std::collections::HashMap::from([("label", "TRS Launcher – Anmeldeschlüssel")]);
         store.build(SERVICE, USER, Some(&label)).map_err(|e| e.to_string())
+    }
+
+    /// Android: SharedPreferences, verschlüsselt mit einem Schlüssel aus dem
+    /// Android Keystore (den Kontext liefert Tauri über ndk-context).
+    #[cfg(target_os = "android")]
+    fn keyring_entry() -> Result<keyring_core::Entry, String> {
+        use keyring_core::api::CredentialStoreApi;
+        let store = android_native_keyring_store::Store::new().map_err(|e| e.to_string())?;
+        store.build(SERVICE, USER, None).map_err(|e| e.to_string())
+    }
+
+    /// iOS: Data-Protection-Keychain der App (nur auf diesem Gerät, nach dem ersten Entsperren).
+    #[cfg(target_os = "ios")]
+    fn keyring_entry() -> Result<keyring_core::Entry, String> {
+        use keyring_core::api::CredentialStoreApi;
+        let store = apple_native_keyring_store::protected::Store::new().map_err(|e| e.to_string())?;
+        let policy = std::collections::HashMap::from([("access-policy", "after-first-unlock-this-device-only")]);
+        store.build(SERVICE, USER, Some(&policy)).map_err(|e| e.to_string())
     }
 
     enum Keyring {

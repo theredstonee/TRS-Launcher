@@ -1,0 +1,4 @@
+# Windows-Startskript von Gradle braucht CRLF, das Unix-Skript LF.
+*.bat text eol=crlf
+gradlew text eol=lf
+*.jar binary
