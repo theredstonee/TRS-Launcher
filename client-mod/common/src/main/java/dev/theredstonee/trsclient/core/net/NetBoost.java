@@ -75,6 +75,11 @@ public final class NetBoost {
 		return platform;
 	}
 
+	/** Log-Zugang des Loaders (oder null). */
+	public static Logger logger() {
+		return logger;
+	}
+
 	public static PingMeter ping() {
 		return PING;
 	}
@@ -89,7 +94,9 @@ public final class NetBoost {
 	 * Verbindungen (Einzelspieler) bekommen nichts.
 	 */
 	public static void attach(final Channel ch) {
-		if (ch == null || platform == null || isLocal(ch)) return;
+		if (ch == null) return;
+		dev.theredstonee.trsclient.core.connect.FastConnect.STATUS.connected();
+		if (platform == null || isLocal(ch)) return;
 		if (ch.eventLoop().inEventLoop()) {
 			install(ch);
 		} else {

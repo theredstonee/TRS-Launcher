@@ -19,7 +19,7 @@ El launcher solo se conecta a otros servicios cuando hace falta para algo que t�
 | Servidores maven/meta de Fabric, Quilt, Forge y NeoForge | Al instalar un cargador de mods | Solicitudes de descarga |
 | Modrinth (`api.modrinth.com`, `cdn.modrinth.com`) | Al explorar, instalar o actualizar contenido | Búsquedas y los hashes de los mods instalados (para buscar actualizaciones) |
 | CurseForge (`api.curseforge.com`; archivos e imágenes de `edge.forgecdn.net`, `mediafilez.forgecdn.net`, `media.forgecdn.net`) | Solo si eliges CurseForge como fuente, instalas un modpack de CurseForge, tienes instalado contenido de CurseForge o importas una instancia de CurseForge a la que le faltan archivos | Búsquedas y filtros, los ID de proyecto y de archivo del contenido instalado desde CurseForge (para los detalles y la búsqueda de actualizaciones) y solicitudes de descarga. Como en cualquier solicitud web, se incluye tu dirección IP. No necesitas una cuenta de CurseForge: el launcher se identifica con su propia clave de API, no con datos sobre ti. |
-| Servidores de Minecraft de tu lista | Para mostrar su estado en directo | Un ping estándar de lista de servidores |
+| Servidores de Minecraft de tu lista | Para mostrar su estado en directo; Conexión rápida (ver [más abajo](#conexión-rápida)) | Un ping estándar de lista de servidores; una consulta DNS de las direcciones del servidor y una breve prueba de conexión a cada una (se abre y se cierra enseguida, no se envía nada) |
 | mclo.gs | Solo cuando pulsas «Compartir registro» y lo confirmas | El registro que elijas (el más reciente, uno anterior o un informe de fallos), sin tokens de acceso ni tu nombre de usuario de Windows/Linux |
 | GitHub (`github.com`) | Al buscar actualizaciones del launcher | Una solicitud del manifiesto de actualización |
 | App de Discord en tu ordenador (solo local, sin internet) | Mientras el launcher está abierto y «Mostrar estado en Discord» está activado (por defecto), ver [más abajo](#discord) | Tu estado de Discord: «In the TRS Launcher» (en inglés), o la versión de Minecraft, el cargador de mods y el tiempo de juego de la partida en curso |
@@ -73,6 +73,22 @@ en él:
   una capa TRS guarda esa elección en tu cuenta TRS; tras aplicar una skin, el juego avisa a los servicios TRS para que
   otros jugadores TRS vean antes la skin nueva.
 - **Sin los servicios TRS**, todo se queda en tu PC en `config/trsclient/wardrobe/` de la carpeta del juego.
+
+## Conexión rápida
+
+La «Conexión rápida» (módulo del TRS Client, activado por defecto) y la página de servidores del launcher solo hablan
+con los servidores que usas y con tu DNS habitual, nunca con los servicios TRS:
+
+- **Resolver servidores por adelantado:** cuando seleccionas un servidor en la lista o inicias una partida con un
+  servidor, se consultan sus entradas DNS (SRV y direcciones IPv4 e IPv6) y se averigua la dirección más rápida
+  abriendo una conexión a cada una y cerrándola enseguida, sin enviar datos, como el ping habitual de la lista de
+  servidores. El launcher pasa el resultado al juego en `config/trsclient/connect-hints.json`; las entradas caducan
+  como máximo a los 10 minutos.
+- **Paquetes de recursos del servidor:** el TRS Client recuerda qué paquete de recursos (dirección y suma de
+  comprobación) envió un servidor, solo si lo aceptaste, en `config/trsclient/server-packs.json` de la carpeta del
+  juego. Cuando vuelves a seleccionar ese servidor, el paquete se descarga en segundo plano desde la dirección que dio
+  el servidor: la misma descarga que haría Minecraft al entrar, nunca desde direcciones de tu red local salvo que el
+  propio servidor esté en ella. Los paquetes que rechazaste se olvidan.
 
 ## Discord
 

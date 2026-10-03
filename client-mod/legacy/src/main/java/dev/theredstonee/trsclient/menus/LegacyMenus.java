@@ -341,7 +341,9 @@ public final class LegacyMenus {
 						bottom = Math.max(bottom, y(b) + height(b));
 					}
 				}
-				MenuSkin.loading(c, s.width, s.height, title, null, -1f, false, bottom < 0 ? -1 : top, bottom);
+				// Schnell verbinden: was gerade passiert, wenn es länger als 1 s dauert.
+				String detail = s instanceof GuiConnecting ? dev.theredstonee.trsclient.core.connect.FastConnect.STATUS.line() : null;
+				MenuSkin.loading(c, s.width, s.height, title, detail, -1f, false, bottom < 0 ? -1 : top, bottom);
 			} else if (listScreen(s)) {
 				// Die Liste (GuiSlot) übermalt alles mit Erde – Kopf- und Fußleiste im Stil neu zeichnen.
 				if (k == MenuStyle.Kind.MULTIPLAYER && s instanceof GuiMultiplayer) pingLabels((GuiMultiplayer) s, c);

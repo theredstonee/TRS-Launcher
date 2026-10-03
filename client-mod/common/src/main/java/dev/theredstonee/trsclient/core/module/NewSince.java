@@ -134,6 +134,11 @@ public final class NewSince {
 	public static final String BORDERLESS_FULLSCREEN = "0.15.2";
 	/** Chat-Köpfe (TRS Client 0.15.3): Spielerkopf vor Chat-Zeilen, nach Chat Heads von dzwdz (MPL-2.0). */
 	public static final String CHAT_HEADS = "0.15.3";
+	/**
+	 * Schnell verbinden (nächste Version nach TRS Client 0.15.5): DNS-Speicher, Vorab-Auflösen, Adressen-Rennen
+	 * (Happy Eyeballs), schnellerer Serverwechsel in Proxy-Netzwerken.
+	 */
+	public static final String FAST_CONNECT = "0.16.0";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
@@ -208,6 +213,7 @@ public final class NewSince {
 		add(BORDERLESS_FULLSCREEN, "borderlessFullscreen");
 		// Chat-Köpfe vor Spieler-Nachrichten.
 		add(CHAT_HEADS, "chatHeads", "chatHeads.hat");
+		add(FAST_CONNECT, "fastConnect");
 	}
 
 	private NewSince() {

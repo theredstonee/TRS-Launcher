@@ -175,6 +175,8 @@ public final class TrsClient {
 		// Netzwerk-Optimierung (TCP_NODELAY, schnellere Entschlüsselung) + Ping-Messung, siehe core.net.
 		dev.theredstonee.trsclient.net.NetHooks.init(modules, message -> LOGGER.info(message));
 		FMLCommonHandler.instance().bus().register(dev.theredstonee.trsclient.net.NetHooks.get());
+		// Bildschirm-Ereignisse (Schnell verbinden: Zeile auf „Verbinde …“) kommen in 1.7.10 über den Forge-Bus.
+		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.net.NetHooks.get());
 		AutoTest.installIfRequested();
 		// 1.7.10-Forge hat kein "Client stoppt"-Ereignis – beim Beenden trotzdem speichern.
 		Runtime.getRuntime().addShutdownHook(new Thread(this::saveConfig, "TRS Client config save"));

@@ -31,6 +31,12 @@ public final class DisconnectUi {
 	private static AbstractWidget status;
 	private static boolean busy;
 
+	/** Adresse der letzten Verbindung dieser Sitzung oder null (Schnell verbinden: vorab auflösen). */
+	public static String lastAddress() {
+		ServerData d = target;
+		return d == null ? null : d.ip;
+	}
+
 	/** Beim Start jeder Verbindung (Mixin am Verbindungsbildschirm). */
 	public static void target(ServerData data) {
 		if (data != null) target = data;

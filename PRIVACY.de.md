@@ -20,7 +20,7 @@ Zu anderen Diensten verbindet sich der Launcher nur, wenn das für etwas nötig 
 | Maven-/Meta-Server von Fabric, Quilt, Forge, NeoForge | Einen Modloader installieren | Download-Anfragen |
 | Modrinth (`api.modrinth.com`, `cdn.modrinth.com`) | Inhalte durchsuchen, installieren oder aktualisieren | Suchanfragen, Datei-Hashes installierter Mods (für die Update-Prüfung) |
 | CurseForge (`api.curseforge.com`; Dateien und Bilder von `edge.forgecdn.net`, `mediafilez.forgecdn.net`, `media.forgecdn.net`) | Nur wenn du CurseForge als Quelle wählst, ein CurseForge-Modpack installierst, Inhalte von CurseForge installiert hast oder eine CurseForge-Instanz mit fehlenden Dateien importierst | Suchanfragen und Filter, die Projekt- und Datei-IDs von CurseForge-Inhalten (für Details und die Update-Prüfung), Download-Anfragen. Wie bei jeder Anfrage im Internet gehört deine IP-Adresse dazu. Ein CurseForge-Konto brauchst du nicht – der Launcher weist sich mit seinem eigenen API-Schlüssel aus, nicht mit Daten über dich. |
-| Minecraft-Server in deiner Serverliste | Live-Status anzeigen | Ein üblicher Serverlisten-Ping |
+| Minecraft-Server in deiner Serverliste | Live-Status anzeigen; „Schnell verbinden“ (siehe [unten](#schnell-verbinden)) | Ein üblicher Serverlisten-Ping; eine DNS-Abfrage der Server-Adressen und ein kurzer Verbindungstest zu jeder (aufgebaut und gleich wieder geschlossen, es wird nichts gesendet) |
 | mclo.gs | Nur wenn du auf „Log teilen“ klickst und bestätigst | Der gewählte Log (neuester Log, ein älterer Log oder ein Absturzbericht), ohne Zugriffstokens und ohne deinen Windows-/Linux-Benutzernamen |
 | GitHub (`github.com`) | Nach Launcher-Updates suchen | Eine Anfrage nach dem Update-Manifest |
 | Discord-App auf deinem Computer (nur lokal, kein Internet) | Solange der Launcher offen ist und „Discord-Status zeigen“ an ist (Standard), siehe [unten](#discord) | Dein Discord-Status: „Im TRS Launcher“ bzw. Minecraft-Version, Modloader und Spielzeit des laufenden Spiels |
@@ -74,6 +74,22 @@ dort tust:
   sind. Die Wahl eines TRS-Umhangs wird in deinem TRS-Konto gespeichert; nach dem Anwenden eines Skins meldet das Spiel
   das den TRS-Diensten, damit andere TRS-Spieler den neuen Skin früher sehen.
 - **Ohne TRS-Dienste** bleibt alles auf deinem PC unter `config/trsclient/wardrobe/` im Spielordner.
+
+## Schnell verbinden
+
+„Schnell verbinden“ (Modul des TRS Clients, standardmäßig an) und die Server-Seite des Launchers sprechen nur mit den
+Servern, die du nutzt, und mit deinem normalen DNS – nie mit den TRS-Diensten:
+
+- **Server vorab auflösen:** Wenn du einen Server in der Liste auswählst oder ein Spiel mit einem Server startest,
+  werden seine DNS-Einträge (SRV, IPv4- und IPv6-Adressen) abgefragt, und die schnellste Adresse wird ermittelt, indem
+  zu jeder kurz eine Verbindung aufgebaut und sofort wieder geschlossen wird – ohne Daten zu senden, wie beim üblichen
+  Serverlisten-Ping. Der Launcher gibt das Ergebnis über `config/trsclient/connect-hints.json` ans Spiel; Einträge
+  laufen nach höchstens 10 Minuten ab.
+- **Server-Ressourcenpakete:** Der TRS Client merkt sich, welches Ressourcenpaket (Adresse und Prüfsumme) ein Server
+  geschickt hat – nur wenn du es angenommen hast – in `config/trsclient/server-packs.json` im Spielordner. Wählst du
+  den Server wieder aus, wird das Paket im Hintergrund von der Adresse geladen, die der Server genannt hat – derselbe
+  Download, den Minecraft beim Beitreten machen würde, nie von Adressen in deinem lokalen Netz, außer der Server
+  selbst steht dort. Abgelehnte Pakete werden vergessen.
 
 ## Discord
 

@@ -19,7 +19,7 @@ The launcher only connects to other services when that is needed for something y
 | Fabric, Quilt, Forge, NeoForge maven/meta servers | Installing a mod loader | Download requests |
 | Modrinth (`api.modrinth.com`, `cdn.modrinth.com`) | Browsing, installing or updating content | Search queries, file hashes of installed mods (for update checks) |
 | CurseForge (`api.curseforge.com`; files and images from `edge.forgecdn.net`, `mediafilez.forgecdn.net`, `media.forgecdn.net`) | Only when you pick CurseForge as the source, install a CurseForge modpack, have content from CurseForge installed or import a CurseForge instance whose files are missing | Search queries and filters, the project and file IDs of content installed from CurseForge (for details and update checks), download requests. Like every web request, this includes your IP address. You don't need a CurseForge account – the launcher identifies itself with its own API key, not with anything about you. |
-| Minecraft servers in your server list | Showing live status | A standard server-list ping |
+| Minecraft servers in your server list | Showing live status; Fast Connect (see [below](#fast-connect)) | A standard server-list ping; a DNS lookup of the server's addresses and a short connection test to each (opened and closed again, nothing is sent) |
 | mclo.gs | Only when you click "Share log" and confirm | The log you picked (latest log, an older log or a crash report), with access tokens and your Windows/Linux user name removed |
 | GitHub (`github.com`) | Checking for launcher updates | A request for the update manifest |
 | Discord app on your computer (local only, no internet) | While the launcher is open and "Show Discord status" is on (default), see [below](#discord) | Your Discord status: "In the TRS Launcher", or the Minecraft version, mod loader and play time of the running game |
@@ -71,6 +71,21 @@ there:
   "wardrobe" entry of your TRS account so they are the same on every PC. Choosing a TRS cape saves that choice in your
   TRS account; after applying a skin the game tells the TRS services, so other TRS players see the new skin sooner.
 - **Without the TRS services** everything stays on your PC in `config/trsclient/wardrobe/` of the game folder.
+
+## Fast Connect
+
+"Fast Connect" (module of the TRS Client, on by default) and the launcher's server page only talk to the servers you
+use and to your normal DNS resolver – never to the TRS services:
+
+- **Looking up servers in advance:** when you select a server in the list or start a game with a server, its DNS
+  entries (SRV, IPv4 and IPv6 addresses) are looked up, and the fastest address is found by opening a connection to
+  each and closing it again right away – without sending any data, like the usual server-list ping. The launcher
+  passes the result to the game in `config/trsclient/connect-hints.json`; entries expire after at most 10 minutes.
+- **Server resource packs:** the TRS Client remembers which resource pack (address and checksum) a server sent, only
+  if you accepted it, in `config/trsclient/server-packs.json` of the game folder. When you select that server again,
+  the pack is downloaded in the background from the address the server gave – the same download Minecraft would do
+  when you join, never from addresses in your local network unless the server itself is in it. Packs you declined
+  are forgotten.
 
 ## Discord
 

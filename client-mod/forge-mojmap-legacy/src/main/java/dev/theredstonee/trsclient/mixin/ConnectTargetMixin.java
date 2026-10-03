@@ -24,22 +24,26 @@ public abstract class ConnectTargetMixin {
 	private static void trsclient$target(Screen parent, Minecraft mc, ServerAddress address, ServerData data, boolean quickPlay,
 			net.minecraft.client.multiplayer.TransferState transfer, CallbackInfo ci) {
 		DisconnectUi.target(data);
+		dev.theredstonee.trsclient.core.connect.FastConnect.connectScreenOpened();
 	}
 	*///?} elif >=1.20 {
 	/*@Inject(method = "startConnecting", at = @At("HEAD"), require = 0)
 	private static void trsclient$target(Screen parent, Minecraft mc, ServerAddress address, ServerData data, boolean quickPlay, CallbackInfo ci) {
 		DisconnectUi.target(data);
+		dev.theredstonee.trsclient.core.connect.FastConnect.connectScreenOpened();
 	}
 	*///?} elif >=1.17 {
 	/*@Inject(method = "startConnecting", at = @At("HEAD"), require = 0)
 	private static void trsclient$target(Screen parent, Minecraft mc, ServerAddress address, ServerData data, CallbackInfo ci) {
 		DisconnectUi.target(data);
+		dev.theredstonee.trsclient.core.connect.FastConnect.connectScreenOpened();
 	}
 	*///?} else {
 	@Inject(method = "<init>(Lnet/minecraft/client/gui/screens/Screen;Lnet/minecraft/client/Minecraft;Lnet/minecraft/client/multiplayer/ServerData;)V",
 			at = @At("RETURN"), require = 0)
 	private void trsclient$target(Screen parent, Minecraft mc, ServerData data, CallbackInfo ci) {
 		DisconnectUi.target(data);
+		dev.theredstonee.trsclient.core.connect.FastConnect.connectScreenOpened();
 	}
 	//?}
 }

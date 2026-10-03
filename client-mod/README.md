@@ -38,6 +38,7 @@ All features can be toggled in the TRS menu. Settings are stored in `config/trsc
 | CPS | Left/right clicks within the last 1000 ms |
 | Keystrokes (Tastenanzeige) | W A S D, left/right mouse button (optional CPS), space bar – lit while pressed |
 | Ping | Latency to the current server from the player list (hidden in singleplayer) |
+| Schnell verbinden | Faster connecting and server switching (see "Schnell verbinden" below): DNS cache + look-up in advance, all addresses of a server raced (Happy Eyeballs), no reverse lookup for IP addresses, status line on the connect screen; *Schneller Serverwechsel* (same resource pack not reloaded, no 60 fps cap while switching, no 2-second wait on 1.18.2–1.19.2); *Server-Ressourcenpakete vorladen*. On by default |
 | Zoom | Hold the key (V; changeable under *Taste* in the TRS menu or in the controls) → FOV divided by the strength (×2–×10, default ×4), smooth zoom in/out (switchable), mouse wheel changes the zoom while held, mouse sensitivity drops proportionally to the zoom, optional *Filmische Kamera* only while zooming. The spyglass (1.17+) wins: the TRS zoom ends at once and the wheel stays with the game |
 | Fullbright | Maximum brightness; only overrides the gamma used for the lightmap, the vanilla brightness option is never changed |
 | Rüstung | Worn armor + held item with durability (number or percent, colored green→red) |
@@ -149,6 +150,60 @@ The logic is version independent in `common/core/emote` (definitions, playback, 
   channel), from 1.21.2 the render state is mapped to the player in `extractRenderState` (`EmoteStateMixin`).
   Forge 1.8.9–1.12.2 (no mixins) replaces the vanilla `ModelPlayer`/armor `ModelBiped` of the player renderers with
   subclasses whose `setRotationAngles` applies the pose (`LegacyEmotes`, fields found by type).
+
+## Schnell verbinden
+
+Module `fastConnect` (category Leistung, on by default; settings `preResolve`, `fastSwitch`, `prePacks`). The logic is
+version independent in `common/core/connect`:
+
+- **DNS cache** (`DnsCache`): SRV target and A/AAAA addresses per host name, TTL-aware (launcher hints carry the real
+  DNS TTL, own lookups 2 min), never longer than 10 min, plus the address that won last time (tried first). Keys are
+  lower case without trailing dot, but cached `InetAddress`es carry exactly the name vanilla used – Minecraft reads the
+  handshake host from it, so the handshake stays byte-identical (typed name or SRV target incl. trailing dot). IP
+  literals get the typed text as name (no reverse DNS lookup, which can take seconds).
+- **Look-up in advance** (`FastConnect.prefetch`): hovering/selecting a server in the list (Mojmap: `VanillaMenus`
+  via `ServerEntryMixin`; legacy: selected row of `GuiMultiplayer` by reflection), the last server, and the launcher's
+  `join` target resolve SRV (JNDI like vanilla) + all addresses on a daemon thread, at most every 20 s per server.
+- **Address race** (`AddressRacer`, RFC 8305): families interleaved, next attempt after 250 ms or right after a
+  failure, 3 s per attempt while others run, the last one may run until the 12 s cap. Real sockets: `NioDialer`
+  (non-blocking `SocketChannel` + `Selector`). Only in the "Server Connector" thread, only with ≥ 2 addresses, never
+  with a SOCKS/Java proxy. The winning socket is handed to Netty (`FastNioChannel`, swapped in at
+  `Bootstrap#channel`; `doConnect` only confirms) – the server sees exactly one connection. Epoll/KQueue: socket closed,
+  Netty connects to the winning address. A redirect by another mod (proxy handler) pauses Fast Connect for the session.
+- **Hooks** (Mojmap trees, identical files): `FastConnectMixin` (HEAD/`@ModifyArg` on `Connection#connect` resp.
+  `connectToServer`), `FastResolveMixin` (≥ 1.17 `ServerNameResolver#resolveAddress` – same logic incl. Mojang's block
+  list, only when something is cached; < 1.17 `ServerAddress#lookupSrv`). Java 8 versions without connect hook
+  (Forge 1.7.10–1.13.2, legacy) put the best address first into Java's own address cache (`JvmDnsCache`, both 8u
+  cache layouts); with several addresses a short probe race on selection finds it.
+- **Launcher hints** (`ConnectHints`, `config/trsclient/connect-hints.json`, contract in
+  `src-tauri/crates/core/src/connect_hints.rs`): only IP literals, ≤ 64 hosts, expiring; never names to connect to.
+- **Status line** (`FastConnect.STATUS`): after 1 s on the connect screen „Suche Server-Adresse …“ / „Verbinde über
+  IPv6 … (2/3)“ – in the TRS loading screen as detail line, otherwise under vanilla's text. The chosen address and
+  timing are logged ("Fast connect: host:port -> ip (IPv4) in … ms, attempts …").
+- **Server resource packs** (`ServerPacks`, `PackMemory`, `PackDownloader`): pushes are seen before vanilla's handler
+  (Mojmap `PackPushMixin`, status via `PackStatusMixin` on the packet constructor; legacy: Netty handler
+  `net/LegacyPacks` before `packet_handler`). A pack is remembered per server (as typed) only after `ACCEPTED`, with a
+  valid SHA-1; `DECLINED` forgets it. Selecting the server again (or the launcher's `join`) downloads it – throttled to
+  8 MB/s from the list, http/https only, ≤ vanilla's size limit, redirects checked, no private addresses unless the
+  server is private, SHA-1 verified before the move – into vanilla's own cache under vanilla's name
+  (`downloads/<id>/<sha1>` 1.20.3+, `server-resource-packs/<sha1(url)>` 1.14–1.20.2, `server-resource-packs/<sha1>`
+  1.8.9–1.12.2). Own files ≤ 512 MB (oldest deleted). A push of exactly the active pack (same id/URL + SHA-1) is answered
+  with the statuses vanilla would send after reloading (`ACCEPTED`, `DOWNLOADED`, `SUCCESSFULLY_LOADED`) – never for
+  1.20.2 (it drops packs on every switch itself), never for packs without hash.
+- **Server switch** (`FastSwitch`, `FastSwitchMixin`, `FrameCapMixin`, `PackOverlayMixin`, `TerrainScreenMixin`):
+  begin at the configuration phase (≥ 1.20.2) or a new world, end when level + no loading screen/overlay; while
+  switching no vanilla frame cap (60 fps in the config phase, AFK 30/10 fps from 1.21.2), the 1-s minimum of the pack
+  reload overlay is skipped (1.21.9+), 1.18.2–1.19.2 use the 1.19.3 rule for „Lade Gelände“ (MC-249059). The loading
+  screen never closes before vanilla's own condition.
+- Not everywhere: Forge 1.7.10 and 1.13.2 only get look-up in advance, the Java address cache and the status line (no
+  resource-pack or switch features); Forge 1.14.4 (no mixins) gets nothing; the chunk-batch warm start after a switch
+  is not done.
+- Tests: `common/src/test/.../core/connect` (racer with fake network and real sockets, SRV, cache TTL, hints incl. the
+  launcher's JSON, handover to Netty with exactly one connection, handshake name, packs with a local HTTP server).
+  Autotest `-PtrsAutotestOnly=fastconnect` (fabric 1.21.9–1.21.11, legacy 1.8.9) against local servers:
+  `-PtrsAutotestServer=<proxy>`, `-PtrsSys.trsclient.autotest.fc.broken=host:port` (host with a dead first address via
+  `connect-hints.json`), `-PtrsSys.trsclient.autotest.fc.pack=host:port`, `-PtrsSys.trsclient.autotest.fc.switches=N`,
+  `-PtrsSys.trsclient.autotest.fc.afk=true` (each switch after > 60 s without input).
 
 ## Clips & Aufnahme
 
