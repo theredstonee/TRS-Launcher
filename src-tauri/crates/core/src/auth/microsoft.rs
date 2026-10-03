@@ -68,6 +68,34 @@ pub struct MinecraftSession {
     pub xuid: String,
 }
 
+/// Wie lange Netzfehler beim Anmelden wiederholt werden: Android/iOS sperren das Netz für Apps im
+/// Hintergrund – während man im Browser den Code eingibt, scheitern Anfragen der App (DNS/Verbindung).
+const OFFLINE_RETRY: Duration = Duration::from_secs(120);
+const OFFLINE_PAUSE: Duration = Duration::from_secs(3);
+
+/// Verbindungs-/DNS-/Zeitfehler – lohnt einen neuen Versuch (anders als eine Ablehnung von Microsoft).
+pub(crate) fn is_transient(err: &Error) -> bool {
+    matches!(err, Error::Http(e) if e.is_connect() || e.is_timeout() || e.is_request())
+}
+
+/// `work` wiederholen, solange es an der Verbindung scheitert (höchstens `window` lang).
+pub(crate) async fn retry_offline<T, F, Fut>(window: Duration, pause: Duration, mut work: F) -> Result<T>
+where
+    F: FnMut() -> Fut,
+    Fut: std::future::Future<Output = Result<T>>,
+{
+    let deadline = tokio::time::Instant::now() + window;
+    loop {
+        match work().await {
+            Err(e) if is_transient(&e) && tokio::time::Instant::now() + pause < deadline => {
+                tracing::warn!("Anmeldung: kein Netz (App im Hintergrund?) – neuer Versuch: {e}");
+                tokio::time::sleep(pause).await;
+            }
+            result => return result,
+        }
+    }
+}
+
 async fn token_request(http: &reqwest::Client, form: &[(&str, &str)]) -> Result<std::result::Result<MsTokens, String>> {
     let response = http.post(TOKEN_URL).form(form).send().await?;
     if response.status().is_success() {
@@ -106,7 +134,15 @@ pub async fn device_code_poll(http: &reqwest::Client, code: &DeviceCode) -> Resu
             ("client_id", CLIENT_ID),
             ("device_code", code.device_code.as_str()),
         ];
-        match token_request(http, &form).await? {
+        // Kein Netz, solange die App im Hintergrund ist (Browser vorn): weiter abfragen bis zum Ablauf.
+        let answer = match token_request(http, &form).await {
+            Err(e) if is_transient(&e) => {
+                tracing::warn!("Device-Code-Abfrage ohne Netz – weiter warten: {e}");
+                continue;
+            }
+            other => other?,
+        };
+        match answer {
             Ok(tokens) => return Ok(tokens),
             Err(e) if e == "authorization_pending" => {}
             Err(e) if e == "slow_down" => interval += 5,
@@ -200,7 +236,8 @@ pub async fn browser_login(http: &reqwest::Client, open_url: &(dyn Fn(&str) + Sy
         ("code_verifier", verifier.as_str()),
         ("scope", SCOPE),
     ];
-    token_request(http, &form).await?.map_err(|e| {
+    // Die Weiterleitung kommt, während der Browser vorn ist – das Netz der App kann noch gesperrt sein.
+    retry_offline(OFFLINE_RETRY, OFFLINE_PAUSE, || token_request(http, &form)).await?.map_err(|e| {
         tracing::error!("Code-Einlösung fehlgeschlagen: {e}");
         Error::auth(crate::msg!("auth.microsoftRejected", "Microsoft hat die Anmeldung abgelehnt."))
     })
@@ -492,6 +529,40 @@ mod tests {
         assert!(safe_skin_url("https://evil.example/texture/abc").is_none());
         assert!(safe_skin_url("javascript:alert(1)").is_none());
         assert!(safe_skin_url("https://textures.minecraft.net/texture/a?x=<script>").is_none());
+    }
+
+    #[tokio::test]
+    async fn network_errors_are_retried_until_the_window_ends() {
+        // Verbindungsfehler (geschlossener Port) gilt als vorübergehend.
+        let err: Error = reqwest::Client::new().get("http://127.0.0.1:1/").send().await.unwrap_err().into();
+        assert!(is_transient(&err));
+        assert!(!is_transient(&Error::Cancelled));
+
+        let tries = std::sync::atomic::AtomicU32::new(0);
+        let result = retry_offline(Duration::from_secs(5), Duration::from_millis(1), || async {
+            if tries.fetch_add(1, std::sync::atomic::Ordering::Relaxed) < 2 {
+                Err(reqwest::Client::new().get("http://127.0.0.1:1/").send().await.unwrap_err().into())
+            } else {
+                Ok(7)
+            }
+        })
+        .await
+        .unwrap();
+        assert_eq!((result, tries.load(std::sync::atomic::Ordering::Relaxed)), (7, 3));
+
+        // Andere Fehler sofort, Netzfehler nach Ablauf des Fensters.
+        let tries = std::sync::atomic::AtomicU32::new(0);
+        let r: Result<()> = retry_offline(Duration::from_secs(5), Duration::from_millis(1), || async {
+            tries.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            Err(Error::Cancelled)
+        })
+        .await;
+        assert!(matches!(r, Err(Error::Cancelled)) && tries.load(std::sync::atomic::Ordering::Relaxed) == 1);
+        let r: Result<()> = retry_offline(Duration::from_millis(30), Duration::from_millis(10), || async {
+            Err(reqwest::Client::new().get("http://127.0.0.1:1/").send().await.unwrap_err().into())
+        })
+        .await;
+        assert!(r.is_err_and(|e| is_transient(&e)));
     }
 
     #[test]

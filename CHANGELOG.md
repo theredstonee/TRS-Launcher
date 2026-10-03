@@ -97,7 +97,8 @@ How to write an entry:
   layout made for touch with a tab bar, sign-in with a device code, friends and chat, skins, modpacks and news, and
   updates straight from the app. Minecraft Java starts right on the device with the built-in game engine – the first
   start downloads the matching Java once. Running games show up like on the PC, with play time, logs and the crash
-  helper.
+  helper. Signing in keeps waiting while you enter the code in the browser (Android cuts the app's network
+  while it is in the background) instead of failing with a network error.
 - **Touch controls.** On the phone you play with on-screen controls: ready-made layouts for PvP, building and redstone,
   your own layouts on the new "Touch controls" page (move, resize, change buttons, share them as a code or file) and a
   layout per instance. In a game menu, "Edit controls" opens the editor right in the game. With the TRS Client, the
@@ -192,7 +193,8 @@ How to write an entry:
   eine Oberfläche für Touch mit Tab-Leiste, Anmeldung per Gerätecode, Freunde und Chat, Skins, Modpacks und News sowie
   Updates direkt aus der App. Minecraft Java startet mit der eingebauten Spiel-Engine direkt auf dem Gerät – beim
   ersten Start lädt die App einmal das passende Java. Laufende Spiele erscheinen wie am PC, mit Spielzeit, Logs und
-  Absturz-Helfer.
+  Absturz-Helfer. Die Anmeldung wartet weiter, während du den Code im Browser eingibst (Android trennt die App im
+  Hintergrund vom Netz), statt mit einem Netzwerkfehler abzubrechen.
 - **Touch-Steuerung.** Am Handy spielst du mit Knöpfen auf dem Bildschirm: fertige Layouts für PvP, Bauen und
   Redstone, eigene Layouts auf der neuen Seite „Touch-Steuerung“ (verschieben, Größe ändern, Knöpfe tauschen, als Code
   oder Datei teilen) und ein Layout je Instanz. In einem Spielmenü öffnet „Steuerung bearbeiten“ den Editor direkt im

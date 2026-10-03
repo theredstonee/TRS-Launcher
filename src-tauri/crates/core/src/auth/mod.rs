@@ -184,7 +184,11 @@ impl AccountStore {
     }
 
     async fn finish_login(&self, tokens: MsTokens, make_active: bool) -> Result<Account> {
-        let session = microsoft::minecraft_login(&self.http, &tokens.access_token).await?;
+        // Xbox/Minecraft-Anmeldung kann noch in den Hintergrund fallen (Browser vorn): Netzfehler wiederholen.
+        let session = microsoft::retry_offline(std::time::Duration::from_secs(120), std::time::Duration::from_secs(3), || {
+            microsoft::minecraft_login(&self.http, &tokens.access_token)
+        })
+        .await?;
         let (stored, active) = self.upsert_as(&tokens, &session, make_active).await?;
         Ok(Account { id: stored.id, name: stored.name, skin_url: stored.skin_url, active, added_at: stored.added_at })
     }
