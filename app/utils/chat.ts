@@ -1,3 +1,4 @@
+import { convertFileSrc } from '@tauri-apps/api/core'
 import { z } from 'zod'
 // Relativ importiert, damit Tests die Datei ohne Nuxt laden können.
 import { intlLocale, t } from './i18n'
@@ -323,15 +324,21 @@ export type LocalMessage = ChatMessage & {
 
 let chatBase: string | null = null
 
-/** Basis des Protokolls `trschat:` (Windows: `http://trschat.localhost/`). Tests setzen sie selbst. */
+/** Basis des Protokolls `trschat:` (Windows/Android: `http://trschat.localhost/`). Tests setzen sie selbst. */
 export function setChatBase(base: string) {
   chatBase = base.endsWith('/') ? base : `${base}/`
 }
 
 function base(): string {
   if (chatBase) return chatBase
-  const windows = typeof navigator !== 'undefined' && /windows/i.test(navigator.userAgent)
-  return windows ? 'http://trschat.localhost/' : 'trschat://localhost/'
+  // Tauri kennt die Form je Plattform (Android wie Windows über http://…localhost).
+  try {
+    setChatBase(convertFileSrc('', 'trschat'))
+    return chatBase ?? 'trschat://localhost/'
+  } catch {
+    const windows = typeof navigator !== 'undefined' && /windows|android/i.test(navigator.userAgent)
+    return windows ? 'http://trschat.localhost/' : 'trschat://localhost/'
+  }
 }
 
 /** Bild einer Nachricht (`thumb` = Vorschau ≤ 400 px). Ohne Token – der Kern holt es. */
