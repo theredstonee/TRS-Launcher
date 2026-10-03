@@ -140,6 +140,15 @@ export interface Subscription {
   close: () => void
 }
 
+/**
+ * Abzweig für Ereignisse an Nutzer OHNE offenen Stream (Push-Benachrichtigungen, §33). `wants` muss billig sein;
+ * `deliver` bekommt jedes nicht-flüchtige Ereignis dieser Nutzer und darf nicht werfen.
+ */
+export interface EventTap {
+  wants: (uuid: string) => boolean
+  deliver: (uuid: string, e: ApiEvent, id: string, opts: { meOnly?: boolean }) => void
+}
+
 export type StreamKind = 'legacy' | 'me'
 
 interface Buffered {
@@ -188,6 +197,7 @@ export class EventHub {
   private readonly bufferSize: number
   private readonly windowMs: number
   private readonly now: () => number
+  private tap: EventTap | null = null
 
   constructor(
     private readonly maxPerUser: number,
@@ -199,6 +209,11 @@ export class EventHub {
     this.windowMs = opts.windowMs ?? 10 * 60_000
     this.now = opts.now ?? Date.now
     this.epoch = `${Date.now().toString(36)}${randomBytes(3).toString('hex')}`
+  }
+
+  /** Push-Abzweig setzen (einmal beim Start, `createContext`). */
+  setTap(tap: EventTap | null): void {
+    this.tap = tap
   }
 
   /** `null`, wenn die Grenzen erreicht sind. `onKick` wird aufgerufen, wenn der Server den Stream beendet. */
@@ -252,7 +267,8 @@ export class EventHub {
   publish(uuid: string, e: ApiEvent, opts: { ephemeral?: boolean, meOnly?: boolean } = {}): void {
     const m = this.listeners.get(uuid)
     const b = this.buffers.get(uuid)
-    if (!m && !b) return
+    const tap = !opts.ephemeral && this.tapWants(uuid) ? this.tap : null
+    if (!m && !b && !tap) return
     let id: string | null = null
     if (!opts.ephemeral) {
       const seq = ++this.counter
@@ -261,6 +277,13 @@ export class EventHub {
         const t = this.now()
         b.events.push({ seq, at: t, e })
         this.trim(b, t)
+      }
+    }
+    if (tap && id) {
+      try {
+        tap.deliver(uuid, e, id, { meOnly: opts.meOnly })
+      } catch {
+        // Push darf die Zustellung an Streams nie stören.
       }
     }
     if (!m) return
@@ -319,9 +342,18 @@ export class EventHub {
     return (this.listeners.get(uuid)?.size ?? 0) > 0
   }
 
-  /** Lohnt sich ein Ereignis (Stream offen oder Puffer für die Wiederaufnahme)? */
+  /** Lohnt sich ein Ereignis (Stream offen, Puffer für die Wiederaufnahme oder ein Push-Gerät)? */
   wants(uuid: string): boolean {
-    return this.isListening(uuid) || this.buffers.has(uuid)
+    return this.isListening(uuid) || this.buffers.has(uuid) || this.tapWants(uuid)
+  }
+
+  private tapWants(uuid: string): boolean {
+    if (!this.tap) return false
+    try {
+      return this.tap.wants(uuid)
+    } catch {
+      return false
+    }
   }
 
   /** Puffer ohne Stream, die länger als `windowMs` unberührt sind, verwerfen. */

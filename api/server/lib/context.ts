@@ -7,6 +7,7 @@ import { EventHub } from './events'
 import { OAuthStateStore } from './microsoft'
 import type { MojangClient } from './mojang'
 import { PresenceStore } from './presence'
+import { PushService } from './push'
 import { RateLimiter } from './ratelimit'
 import { SpamGuard } from './safety'
 import { ServerStatusService, type PingDeps } from './serverping'
@@ -51,6 +52,8 @@ export interface AppContext {
   typing: Map<string, number>
   /** Offene Microsoft-Anmeldungen (state + PKCE-Verifier, nur RAM, 10 min). */
   oauth: OAuthStateStore
+  /** Push-Benachrichtigungen für die Apps (§33): Geräte, Versand (UnifiedPush) und Abruf-Liste (iOS). */
+  push: PushService
   /** Für Tests: eigenes fetch für die Microsoft-/Xbox-/Minecraft-Kette. */
   msFetch?: typeof fetch
   /** Für Tests: eigenes fetch für Modrinth (Namen/Symbole der Pack-Inhalte, §27.6). */
@@ -71,7 +74,7 @@ export function createContext(opts: {
   const now = opts.now ?? Date.now
   const limiter = new RateLimiter(now)
   const lim = opts.config.limits
-  return {
+  const base: Omit<AppContext, 'push'> = {
     config: opts.config,
     db: opts.db,
     mojang: opts.mojang,
@@ -100,6 +103,10 @@ export function createContext(opts: {
     typing: new Map(),
     oauth: new OAuthStateStore(now),
   }
+  const ctx = base as AppContext
+  ctx.push = new PushService(ctx)
+  ctx.events.setTap(ctx.push)
+  return ctx
 }
 
 let current: AppContext | undefined

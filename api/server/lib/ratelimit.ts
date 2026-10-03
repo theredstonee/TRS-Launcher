@@ -256,4 +256,11 @@ export const RULES = {
   achievementReportUser: { limit: 30, windowMs: MIN },
   /** Erfolge eines Spielers (selbst/Freund) je Konto. */
   achievementViewUser: { limit: 60, windowMs: MIN },
+  // ------------------------------------------------ Push (§33)
+  /** Gerät anmelden (mit DNS-Prüfung des Endpunkts). */
+  pushRegisterUser: { limit: 10, windowMs: 10 * MIN },
+  /** Geräte ändern/löschen. */
+  pushManageUser: { limit: 60, windowMs: MIN },
+  /** Abruf der wartenden Benachrichtigungen (iOS-Hintergrundabruf). */
+  pushPendingUser: { limit: 30, windowMs: MIN },
 } satisfies Record<string, Rule>

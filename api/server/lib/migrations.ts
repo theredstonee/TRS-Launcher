@@ -774,7 +774,57 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 22,
     run: migratePackUploads,
   },
+  {
+    // Push für die Apps (§33): Geräte (UnifiedPush mit Endpunkt + Web-Push-Schlüsseln oder „poll“ für iOS), an die
+    // Sitzung gebunden (Abmelden/Ablauf/Sperre → Gerät weg), Kategorien als JSON. Abruf-Liste `push_pending` für
+    // poll-Geräte (Inhalt verschlüsselt wie Chat, AAD `push:<device>`). Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 23,
+    run: migratePush,
+  },
 ]
+
+/** Migration 23 (siehe oben). Exportiert für den Idempotenz-Test. */
+export function migratePush(db: DatabaseSync): void {
+  db.exec(`
+CREATE TABLE IF NOT EXISTS push_devices (
+  id TEXT PRIMARY KEY CHECK (length(id) = 21),
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  session_hash TEXT NOT NULL REFERENCES sessions(token_hash) ON DELETE CASCADE,
+  platform TEXT NOT NULL CHECK (platform IN ('android', 'ios')),
+  kind TEXT NOT NULL CHECK (kind IN ('unifiedpush', 'poll')),
+  endpoint TEXT UNIQUE,
+  p256dh TEXT,
+  auth TEXT,
+  device_name TEXT NOT NULL,
+  app_version TEXT NOT NULL,
+  locale TEXT NOT NULL,
+  categories TEXT NOT NULL,
+  preview INTEGER NOT NULL DEFAULT 0,
+  push_while_playing INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  last_seen_at INTEGER NOT NULL,
+  last_success_at INTEGER,
+  last_failure_at INTEGER,
+  failures INTEGER NOT NULL DEFAULT 0,
+  CHECK ((kind = 'unifiedpush') = (endpoint IS NOT NULL)),
+  CHECK ((endpoint IS NULL) = (p256dh IS NULL) AND (endpoint IS NULL) = (auth IS NULL))
+);
+CREATE INDEX IF NOT EXISTS push_devices_uuid ON push_devices(uuid);
+CREATE INDEX IF NOT EXISTS push_devices_session ON push_devices(session_hash);
+
+CREATE TABLE IF NOT EXISTS push_pending (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  device_id TEXT NOT NULL REFERENCES push_devices(id) ON DELETE CASCADE,
+  payload BLOB NOT NULL,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS push_pending_device ON push_pending(device_id, id);
+CREATE INDEX IF NOT EXISTS push_pending_expires ON push_pending(expires_at);
+`)
+}
 
 /** Migration 22 (siehe oben). Exportiert für den Idempotenz-Test. */
 export function migratePackUploads(db: DatabaseSync): void {

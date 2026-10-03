@@ -18,6 +18,7 @@ import { setWebpWasmLoader } from '../lib/images'
 import { sweepIssues, sweepOrphanIssueFiles } from '../lib/issues'
 import { rotateReportKeys, sweepModeration } from '../lib/moderation'
 import { sweepExpiredPacks, sweepOrphanPackFiles } from '../lib/packs'
+import { sweepPush } from '../lib/push'
 import { sweepExpiredShares, sweepOrphanShareFiles } from '../lib/shares'
 import { createMojangClient } from '../lib/mojang'
 import { afterPresenceChange } from '../lib/playerevents'
@@ -46,6 +47,7 @@ export default defineNitroPlugin((nitroApp) => {
   setContext(ctx)
   if (!config.microsoft) console.warn('[trs-api] MS_CLIENT_ID/MS_CLIENT_SECRET not set – website sign-in with Microsoft is disabled')
   if (!config.hosting) console.warn('[trs-api] RELAY_SECRET/RELAY_HOST not set – world hosting is disabled (503 hosting_unavailable)')
+  if (!config.vapid) console.warn('[trs-api] VAPID_* not set – UnifiedPush for the apps is disabled (poll devices still work, §33)')
   if (config.chatKeys.derived) {
     console.warn('[trs-api] CHAT_KEYS is not set – chat encryption key is derived from SECRET_KEY (see API.md §18.9)')
   }
@@ -196,6 +198,8 @@ export default defineNitroPlugin((nitroApp) => {
       sweepTyping(ctx)
       ctx.events.sweep()
       sweepHosting(ctx)
+      // Push (§33): abgelaufene Abruf-Einträge, alte Stream-Vermerke.
+      sweepPush(ctx)
     }),
     every(5 * 60_000, () => {
       ctx.spam.sweep()
@@ -224,6 +228,7 @@ export default defineNitroPlugin((nitroApp) => {
 
   nitroApp.hooks.hook('close', () => {
     for (const t of timers) clearInterval(t)
+    ctx.push.stop()
     db.close()
   })
 })
