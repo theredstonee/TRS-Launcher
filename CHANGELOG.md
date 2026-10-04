@@ -28,14 +28,6 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
-
-### English
-- **Fix: typing in the TRS menu on Minecraft 26.3.** The search box, chat and friends, names, codes and every other text field of the TRS Client take your keyboard input again on 26.3 (Fabric, NeoForge and Forge) – including typing straight into the search without clicking it first.
-
-### Deutsch
-- **Behoben: Tippen im TRS-Menü unter Minecraft 26.3.** Suchfeld, Chat und Freunde, Namen, Codes und alle anderen Textfelder des TRS Clients nehmen unter 26.3 (Fabric, NeoForge und Forge) wieder Tastatureingaben an – auch das direkte Lostippen in die Suche ohne vorheriges Anklicken.
-
 ## 0.18.1 – 2026-10-04 – Power Tools Fix | Profi-Werkzeuge – Fix
 <!-- banner: accent=#ffb02e motif=/news/0.18.0/banner.png -->
 <!-- shots:
@@ -49,6 +41,7 @@ How to write an entry:
 - **Java is picked automatically again.** After changing an instance to a Minecraft version that needs a different Java (for example 26.1 with Java 25), a Java downloaded by the launcher is switched to the right one by itself – no more "Java 21 – Java 25 is expected here".
 - **Mod conflict helper.** When mods don't fit together and the launch is stopped, a helper now explains each problem in plain words ("Better Advancements 0.4.8.54 doesn't support Minecraft 26.1 (needs 1.21.x)") and offers a fix per mod: find a matching version, disable, remove or open the mod page – plus "Disable all affected and launch" and "Launch anyway" for false alarms. It also opens from the instance page and from the crash helper.
 - **Mods made for older Minecraft versions on 26.1.** Since 26.1 Minecraft runs without obfuscation, so mods built for 1.21.x crash right at the start ("NoClassDefFoundError: net/minecraft/class_…") even if they claim to support newer versions. The launcher now spots them before the launch, swaps in a version made for your Minecraft version when there is one, and otherwise shows them in the conflict helper. The crash helper explains this crash too.
+- **Fix: typing in the TRS menu on Minecraft 26.3.** The search box, chat and friends, names, codes and every other text field of the TRS Client take your keyboard input again on 26.3 (Fabric, NeoForge and Forge) – including typing straight into the search without clicking it first.
 
 ### Deutsch
 - **Behoben: „Der Modloader-Installer konnte nicht heruntergeladen werden“ bei NeoForge/Forge.** Bei manchen Instanzen war eine Loader-Version gespeichert, die gar nicht zu NeoForge oder Forge gehört (zum Beispiel eine Fabric-Version). Der Launcher erkennt das jetzt und installiert die neueste passende NeoForge-/Forge-Version, statt abzubrechen.
@@ -57,6 +50,7 @@ How to write an entry:
 - **Java wird wieder automatisch gewählt.** Nach dem Wechsel einer Instanz auf eine Minecraft-Version, die eine andere Java braucht (zum Beispiel 26.1 mit Java 25), wird eine vom Launcher geladene Java von selbst auf die passende umgestellt – kein „Java 21 – Java 25 erwartet“ mehr.
 - **Mod-Konflikt-Helfer.** Passen Mods nicht zusammen und der Start wird angehalten, erklärt jetzt ein Helfer jedes Problem in einfachen Worten („Better Advancements 0.4.8.54 unterstützt Minecraft 26.1 nicht (braucht 1.21.x)“) und bietet je Mod eine Lösung an: passende Version suchen, deaktivieren, entfernen oder die Mod-Seite öffnen – dazu „Alle betroffenen deaktivieren und starten“ und „Trotzdem starten“ für Fehlalarme. Er lässt sich auch auf der Instanzseite und im Absturz-Helfer öffnen.
 - **Mods für ältere Minecraft-Versionen unter 26.1.** Seit 26.1 läuft Minecraft ohne Verschleierung – Mods, die für 1.21.x gebaut wurden, stürzen gleich beim Start ab („NoClassDefFoundError: net/minecraft/class_…“), auch wenn sie neuere Versionen erlauben. Der Launcher erkennt sie jetzt vor dem Start, tauscht sie gegen eine Version für deine Minecraft-Version, wenn es eine gibt, und zeigt sie sonst im Konflikt-Helfer. Auch der Absturz-Helfer erklärt diesen Absturz.
+- **Behoben: Tippen im TRS-Menü unter Minecraft 26.3.** Suchfeld, Chat und Freunde, Namen, Codes und alle anderen Textfelder des TRS Clients nehmen unter 26.3 (Fabric, NeoForge und Forge) wieder Tastatureingaben an – auch das direkte Lostippen in die Suche ohne vorheriges Anklicken.
 
 ## 0.18.0 – 2026-10-04 – Power Tools | Profi-Werkzeuge
 <!-- banner: accent=#ff3b30 motif=/news/0.18.0/banner.png -->
