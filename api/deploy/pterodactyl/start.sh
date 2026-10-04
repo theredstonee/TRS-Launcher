@@ -5,6 +5,8 @@ set -euo pipefail
 cd /home/container
 
 if [ -f .env ]; then set -a; . ./.env; set +a; fi
+# Push-Schlüssel (VAPID) liegen getrennt, damit .env beim Eintragen nicht angefasst werden muss.
+if [ -f vapid.env ]; then set -a; . ./vapid.env; set +a; fi
 export NODE_ENV=production
 export DATA_DIR="${DATA_DIR:-/home/container/data}"
 export HOST=127.0.0.1 NITRO_HOST=127.0.0.1
