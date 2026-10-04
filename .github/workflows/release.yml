@@ -416,7 +416,9 @@ jobs:
           tools=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           apk=$(echo "$apks" | grep -v -- '-unsigned' | head -1)
           [ -n "$apk" ] || { echo "Keine signierte APK gefunden" >&2; exit 1; }
-          "$tools/apksigner" verify --print-certs "$apk" | grep -E '^Signer #1 certificate (DN|SHA-256)'
+          # Ausgabe je nach build-tools-Version unterschiedlich formatiert – die Prüfung selbst entscheidet.
+          certs=$("$tools/apksigner" verify --print-certs "$apk")
+          echo "$certs" | grep -E 'certificate (DN|SHA-256)' || echo "$certs"
           cp "$apk" "out/TRS-Launcher_${version}.apk"
           echo "signed=true" >> "$GITHUB_OUTPUT"
 
