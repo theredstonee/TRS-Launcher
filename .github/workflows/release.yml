@@ -395,7 +395,8 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: pnpm tauri android build --apk --ci --target aarch64 --target x86_64
+        # Nur arm64: echte Handys (x86_64 braucht nur der Emulator).
+        run: pnpm tauri android build --apk --ci --target aarch64
 
       - name: Check signature
         id: sign
@@ -403,15 +404,18 @@ jobs:
           set -euo pipefail
           version="${TAG#v}"
           mkdir -p out
-          dir=src-tauri/gen/android/app/build/outputs/apk/universal/release
+          # Ausgabe je ABI (arm64/release) oder universal – Ordner nicht fest annehmen.
+          apks=$(find src-tauri/gen/android/app/build/outputs/apk -path '*release*' -name '*.apk' | sort)
+          echo "$apks"
           if [ -z "${ANDROID_KEYSTORE_PATH:-}" ]; then
-            cp "$(ls "$dir"/*-unsigned.apk | head -1)" "out/TRS-Launcher_${version}_unsigned.apk"
+            cp "$(echo "$apks" | grep -- '-unsigned' | head -1)" "out/TRS-Launcher_${version}_unsigned.apk"
             echo "signed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           shred -u "$ANDROID_KEYSTORE_PATH" 2> /dev/null || true
           tools=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
-          apk=$(ls "$dir"/*.apk | grep -v -- '-unsigned' | head -1)
+          apk=$(echo "$apks" | grep -v -- '-unsigned' | head -1)
+          [ -n "$apk" ] || { echo "Keine signierte APK gefunden" >&2; exit 1; }
           "$tools/apksigner" verify --print-certs "$apk" | grep -E '^Signer #1 certificate (DN|SHA-256)'
           cp "$apk" "out/TRS-Launcher_${version}.apk"
           echo "signed=true" >> "$GITHUB_OUTPUT"

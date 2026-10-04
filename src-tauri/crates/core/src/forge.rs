@@ -262,11 +262,33 @@ async fn installed_versions(paths: &Paths, make: fn(String) -> InstallerRef, pre
     found
 }
 
+/// Passt die gespeicherte Loader-Version überhaupt zu Loader und Spielversion? Eine falsche
+/// (z. B. die Fabric-Version „0.18.3“ nach einem Loader-Wechsel oder Import) gäbe beim Installer
+/// nur ein 404 – dann lieber die neueste passende nehmen.
+fn usable_loader_version<'a>(kind: LoaderKind, game_version: &str, version: Option<&'a str>) -> Option<&'a str> {
+    let v = version?;
+    let fits = match kind {
+        LoaderKind::Forge => {
+            // Voll (`1.20.1-47.4.10`) oder kurz (`47.4.10`); Forge-Versionen beginnen ab 1.7.10 bei 10.
+            v.starts_with(&format!("{game_version}-")) || v.split('.').next().and_then(|m| m.parse::<u32>().ok()).is_some_and(|m| m >= 10)
+        }
+        LoaderKind::NeoForge if game_version == NEOFORGE_LEGACY_GAME_VERSION => {
+            v.starts_with(&format!("{NEOFORGE_LEGACY_GAME_VERSION}-")) || v.starts_with("47.")
+        }
+        LoaderKind::NeoForge => neoforge_prefix(game_version).is_some_and(|p| v.starts_with(&p)),
+        _ => true,
+    };
+    if !fits {
+        tracing::warn!("Loader-Version '{v}' passt nicht zu {kind:?} für Minecraft {game_version} – nehme die neueste passende");
+    }
+    fits.then_some(v)
+}
+
 async fn resolve_forge(ctx: &InstallContext<'_>) -> Result<InstallerRef> {
     let mc = ctx.game_version;
     let prefix = format!("{mc}-");
 
-    let short = match ctx.loader.version.as_deref() {
+    let short = match usable_loader_version(LoaderKind::Forge, mc, ctx.loader.version.as_deref()) {
         Some(v) if v.starts_with(&prefix) => return Ok(InstallerRef::forge(v.to_owned())),
         Some(v) => v.to_owned(),
         None => match fetch_json::<ForgePromotions>(ctx.http, FORGE_PROMOTIONS_URL).await {
@@ -319,7 +341,7 @@ async fn resolve_neoforge(ctx: &InstallContext<'_>) -> Result<InstallerRef> {
     let legacy = mc == NEOFORGE_LEGACY_GAME_VERSION;
     let make: fn(String) -> InstallerRef = if legacy { InstallerRef::neoforge_legacy } else { InstallerRef::neoforge };
 
-    if let Some(v) = ctx.loader.version.as_deref() {
+    if let Some(v) = usable_loader_version(LoaderKind::NeoForge, mc, ctx.loader.version.as_deref()) {
         let prefix = format!("{NEOFORGE_LEGACY_GAME_VERSION}-");
         let version = if legacy && !v.starts_with(&prefix) { format!("{prefix}{v}") } else { v.to_owned() };
         return Ok(make(version));
@@ -1315,6 +1337,21 @@ async fn checksum_allowed(path: &Path, checksums: &[String]) -> bool {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn foreign_loader_versions_are_ignored() {
+        use super::{LoaderKind, usable_loader_version as u};
+        // Fabric-Version auf einer NeoForge-Instanz (Fehlerbild „neoforge-0.18.3-installer.jar“ → 404).
+        assert_eq!(u(LoaderKind::NeoForge, "1.21.1", Some("0.18.3")), None);
+        assert_eq!(u(LoaderKind::NeoForge, "1.21.1", Some("21.1.255")), Some("21.1.255"));
+        assert_eq!(u(LoaderKind::NeoForge, "1.21.1", Some("20.4.237")), None, "falsche Spielversion");
+        assert_eq!(u(LoaderKind::NeoForge, "26.1.2", Some("26.1.2.5")), Some("26.1.2.5"));
+        assert_eq!(u(LoaderKind::NeoForge, "1.20.1", Some("47.1.106")), Some("47.1.106"));
+        assert_eq!(u(LoaderKind::Forge, "1.20.1", Some("47.4.10")), Some("47.4.10"));
+        assert_eq!(u(LoaderKind::Forge, "1.20.1", Some("1.20.1-47.4.10")), Some("1.20.1-47.4.10"));
+        assert_eq!(u(LoaderKind::Forge, "1.20.1", Some("0.18.3")), None);
+        assert_eq!(u(LoaderKind::Forge, "1.20.1", None), None);
+    }
+
     use super::*;
 
     fn strings(items: &[&str]) -> Vec<String> {
