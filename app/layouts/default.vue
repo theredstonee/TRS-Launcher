@@ -250,6 +250,7 @@ onBeforeUnmount(() => void backListener?.unregister())
     <HostingJoinDialog />
     <HostingModsDialog />
     <CrashHelperDialog />
+    <ModConflictDialog />
     <ExtraLaunchDialog />
     <BisectPanel />
     <DuplicateModsDialog />

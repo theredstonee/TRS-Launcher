@@ -46,6 +46,7 @@ import {
 } from './packs'
 import { contentGroupSchema, contentOrganizationSchema, type GroupColor } from './contentGroups'
 import { bisectViewSchema } from './bisect'
+import { conflictReportSchema, fitResultSchema } from './modConflicts'
 import {
   claimedCommandSchema,
   pairCodeSchema,
@@ -411,8 +412,10 @@ export const backend = {
     extra = false,
     /** Konto für diesen Start (sonst das aktive) */
     accountId: string | null = null,
+    /** „Trotzdem starten“ (Konflikt-Helfer): Mod-Versionen diesmal nicht prüfen */
+    skipModCheck = false,
   ) =>
-    call<number>('launch_instance', { id, joinServer, joinAddress, joinWorld, onProgress: channel(onProgress), taskId, extra, accountId }),
+    call<number>('launch_instance', { id, joinServer, joinAddress, joinWorld, onProgress: channel(onProgress), taskId, extra, accountId, skipModCheck }),
   /** Ohne `key` werden alle Prozesse der Instanz beendet, sonst genau der eine. */
   stopInstance: (id: string, key: string | null = null) => call<boolean>('stop_instance', { id, key }),
   /** Ist Minecraft Bedrock (Microsoft Store) installiert? Nur Windows. */
@@ -472,6 +475,13 @@ export const backend = {
   /** Tauscht unverträgliche Mods gegen passende Versionen (`prefer` = Mod-ID aus der Absturz-Meldung). */
   fixModConflicts: (id: string, prefer: string | null, taskId: string | null = null) =>
     call<CompatReport>('fix_mod_conflicts', { id, prefer, taskId }),
+  /** Konflikt-Helfer: Mod-Versionen, die nicht zusammenpassen (nur lesen). */
+  modConflicts: (id: string) => checked(conflictReportSchema, 'mod_conflicts', { id }),
+  /** Konflikt-Helfer: passende Version einer Mod-Datei suchen und installieren. */
+  modConflictFit: (id: string, fileName: string, taskId: string | null = null) =>
+    checked(fitResultSchema, 'mod_conflict_fit', { id, fileName, taskId }),
+  /** Inhalt in den Papierkorb (am Handy: gelöscht). */
+  trashContent: (id: string, kind: ContentKind, fileName: string) => call<void>('trash_content', { id, kind, fileName }),
   /** Installiert Mods, die laut Absturz fehlen (`dependencies` = Mod-IDs, `declarer` = wer sie braucht). */
   installMissingDependencies: (id: string, declarer: string | null, dependencies: string[], taskId: string | null = null) =>
     call<DependencyFix>('install_missing_dependencies', { id, declarer, dependencies, taskId }),

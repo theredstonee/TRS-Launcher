@@ -12,6 +12,7 @@
 //! höchstens [`MAX_TRIES_PER_PROJECT`] Versionen angesehen.
 
 pub(crate) mod meta;
+pub(crate) mod obf;
 pub(crate) mod remote;
 pub mod version;
 
@@ -63,6 +64,11 @@ pub(crate) struct Entry {
     /// Eingebettete Mods samt Version (nur installierte) – zählen für
     /// Versions-Bedingungen anderer Mods mit (der Loader wählt unter allen Kopien).
     pub nested_mods: Vec<ModInfo>,
+    /// Für ein verschleiertes Minecraft gebaut (Intermediary-Namen), das Spiel
+    /// läuft aber ohne (ab 26.1) – siehe [`obf`]. Gilt für die gewählte Version.
+    pub old_build: bool,
+    /// Dasselbe für die installierte Version.
+    pub installed_old_build: bool,
 }
 
 impl Entry {
@@ -84,6 +90,8 @@ pub(crate) enum ConflictKind {
     Breaks,
     /// `depends`: Die andere Mod ist da, aber in keiner passenden Version.
     Depends,
+    /// Für ein älteres (verschleiertes) Minecraft gebaut – Ziel ist Minecraft.
+    OldBuild,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -96,6 +104,25 @@ pub(crate) struct Conflict {
     pub declarer_label: String,
     /// „Iris 1.10.7+mc1.21.11“
     pub target_label: String,
+    /// Die beiden Mods genau (für den Konflikt-Helfer).
+    pub declarer_mod: ModRef,
+    pub target_mod: ModRef,
+    /// Verlangte (`depends`) bzw. ausgeschlossene (`breaks`) Versionen.
+    pub ranges: Vec<String>,
+}
+
+/// Kurzangaben einer beteiligten Mod.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ModRef {
+    pub id: String,
+    pub name: String,
+    pub version: String,
+}
+
+impl ModRef {
+    fn of(m: &ModInfo) -> Self {
+        Self { id: m.id.clone(), name: m.display_name().to_owned(), version: m.version.clone() }
+    }
 }
 
 impl Conflict {
@@ -170,6 +197,9 @@ pub(crate) fn find_conflicts(entries: &[Entry], builtins: &[ModInfo]) -> Vec<Con
                             kind: ConflictKind::Breaks,
                             declarer_label: m.label(),
                             target_label: other.label(),
+                            declarer_mod: ModRef::of(m),
+                            target_mod: ModRef::of(other),
+                            ranges: c.any_of.clone(),
                         });
                     }
                 }
@@ -190,9 +220,28 @@ pub(crate) fn find_conflicts(entries: &[Entry], builtins: &[ModInfo]) -> Vec<Con
                         kind: ConflictKind::Depends,
                         declarer_label: m.label(),
                         target_label: other.label(),
+                        declarer_mod: ModRef::of(m),
+                        target_mod: ModRef::of(other),
+                        ranges: c.any_of.clone(),
                     });
                 }
             }
+        }
+    }
+    // Für ein verschleiertes Minecraft gebaut (siehe `obf`).
+    if let Some(game) = builtins.iter().position(|b| b.id == GAME_ID) {
+        for (i, e) in entries.iter().enumerate().filter(|(_, e)| e.old_build) {
+            let Some(m) = e.mods.first() else { continue };
+            push(Conflict {
+                declarer: i,
+                target: Party::Builtin(game),
+                kind: ConflictKind::OldBuild,
+                declarer_label: m.label(),
+                target_label: builtins[game].label(),
+                declarer_mod: ModRef::of(m),
+                target_mod: ModRef::of(&builtins[game]),
+                ranges: Vec::new(),
+            });
         }
     }
     out
@@ -293,6 +342,8 @@ enum Role {
     DeclarerNewer,
     /// Die Mod, an die die Bedingung geht: erst neuere Versionen.
     Target,
+    /// Nur neuere Versionen (für ein älteres Minecraft gebaut: ältere sind es auch).
+    NewerOnly,
 }
 
 /// Merkt sich Versionslisten und Versuche über mehrere Runden.
@@ -366,6 +417,7 @@ async fn alternative<L: VersionLookup>(
         Role::Declarer => [releases_first(older), releases_first(newer)].concat(),
         // Die andere (oder eine Mod für eine ältere Minecraft-Version): erst neuere, dann ältere.
         Role::Target | Role::DeclarerNewer => [releases_first(newer), releases_first(older)].concat(),
+        Role::NewerOnly => releases_first(newer),
     };
     // Erster Umweg-Kandidat – nur, wenn sich nichts ohne Umweg findet.
     let mut detour: Option<(Version, Vec<ModInfo>)> = None;
@@ -396,11 +448,15 @@ async fn alternative<L: VersionLookup>(
         }
         // Eingebettete Mods einer anderen Version kennen wir nicht.
         let nested = if is_installed { entries[idx].nested_mods.clone() } else { Vec::new() };
+        // Andere Versionen kommen aus der Liste für diese Spielversion – gebaut dafür.
+        let old_build = is_installed && entries[idx].installed_old_build;
         let before = std::mem::replace(&mut entries[idx].mods, mods);
         let nested_before = std::mem::replace(&mut entries[idx].nested_mods, nested);
+        let old_build_before = std::mem::replace(&mut entries[idx].old_build, old_build);
         let left: Vec<Conflict> = find_conflicts(entries, builtins).into_iter().filter(|c| c.involves(idx)).collect();
         let mods = std::mem::replace(&mut entries[idx].mods, before);
         entries[idx].nested_mods = nested_before;
+        entries[idx].old_build = old_build_before;
         if left.is_empty() {
             return Ok(Some((candidate, mods, false)));
         }
@@ -409,6 +465,35 @@ async fn alternative<L: VersionLookup>(
         }
     }
     Ok(detour.map(|(v, m)| (v, m, true)))
+}
+
+/// Konflikt-Helfer „Passende Version suchen“: eine andere Version von `idx`,
+/// mit der alle Konflikte dieser Mod verschwinden. Bricht die Mod selbst
+/// andere, erst ältere Versionen, sonst erst neuere. `None` = keine gefunden
+/// (oder nicht über Modrinth tauschbar, oder gar kein Konflikt).
+pub(crate) async fn fitting_version<L: VersionLookup>(
+    lookup: &L,
+    channel: UpdateChannel,
+    entries: &mut [Entry],
+    builtins: &[ModInfo],
+    idx: usize,
+) -> Result<Option<(Version, Vec<ModInfo>)>> {
+    if !entries.get(idx).is_some_and(|e| e.adjustable) {
+        return Ok(None);
+    }
+    let mine: Vec<Conflict> = find_conflicts(entries, builtins).into_iter().filter(|c| c.involves(idx)).collect();
+    if mine.is_empty() {
+        return Ok(None);
+    }
+    let role = if mine.iter().any(|c| c.kind == ConflictKind::OldBuild) {
+        Role::NewerOnly
+    } else if mine.iter().all(|c| c.declarer == idx && c.kind == ConflictKind::Breaks) {
+        Role::Declarer
+    } else {
+        Role::Target
+    };
+    let mut budget = Budget::default();
+    Ok(alternative(lookup, channel, entries, builtins, idx, role, false, &mut budget).await?.map(|(v, m, _)| (v, m)))
 }
 
 /// Tauscht Versionen, bis die Menge zusammenpasst (oder nichts mehr hilft).
@@ -457,6 +542,7 @@ async fn settle_pass<L: VersionLookup>(
         let Some(conflict) = conflicts.into_iter().find(|c| !given_up.contains(&c.key())) else { break };
         // Passt eine Mod nicht zur Minecraft-Version, hilft eher eine neuere.
         let declarer_role = match conflict.target {
+            _ if conflict.kind == ConflictKind::OldBuild => Role::NewerOnly,
             Party::Builtin(b) if conflict.kind == ConflictKind::Depends && builtins.get(b).is_some_and(|m| m.id == GAME_ID) => {
                 Role::DeclarerNewer
             }
@@ -500,6 +586,9 @@ async fn settle_pass<L: VersionLookup>(
                 entry.mods = mods;
                 if entry.installed.as_ref().is_none_or(|(id, _)| Some(id) != entry.version_id.as_ref()) {
                     entry.nested_mods.clear();
+                    entry.old_build = false;
+                } else {
+                    entry.old_build = entry.installed_old_build;
                 }
                 fixed = true;
                 break;
@@ -550,6 +639,8 @@ pub(crate) async fn installed_entries(paths: &Paths, instance_id: &str) -> Resul
             because: None,
             nested: meta::nested_ids(&nested_mods),
             nested_mods,
+            old_build: false,
+            installed_old_build: false,
         });
     }
     Ok(out)
@@ -586,7 +677,8 @@ pub async fn fix_instance(
     prefer: Option<&str>,
 ) -> Result<CompatReport> {
     modrinth::ensure_mods_allowed(ContentKind::Mod, instance)?;
-    let entries = installed_entries(paths, &instance.id).await?;
+    let mut entries = installed_entries(paths, &instance.id).await?;
+    obf::mark_old_builds(paths, instance, &mut entries).await;
     let builtins = loader_builtins(instance);
     let lookup = crate::presets::ModrinthLookup::new(http, paths, instance);
     let prefer = prefer.filter(|p| meta::is_mod_id(p));

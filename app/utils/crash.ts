@@ -44,6 +44,11 @@ export function findingText(f: CrashFinding): string {
   return tKey(`${findingKey(f)}.text`, findingParams(f))
 }
 
+/** Befunde, bei denen der Mod-Konflikt-Helfer weiterhilft (Mod-Versionen passen nicht). */
+export function isConflictKind(kind: CrashFinding['kind']): boolean {
+  return kind === 'incompatible_mod' || kind === 'wrong_game_version' || kind === 'wrong_loader_version'
+}
+
 /** Beteiligte Mods eines Befunds (in der Reihenfolge des Kerns). */
 export function findingMods(f: CrashFinding, crash: CrashAnalysis): CrashModRef[] {
   return f.mods.map((id) => crash.mods.find((m) => m.id === id)).filter((m): m is CrashModRef => !!m)

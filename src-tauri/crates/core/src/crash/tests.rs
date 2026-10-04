@@ -32,6 +32,7 @@ fn fixture(name: &str) -> &'static str {
         "17" => include_str!("fixtures/17-neoforge-two-minimaps.txt"),
         "18" => include_str!("fixtures/18-old-forge-java-too-new.log"),
         "19" => include_str!("fixtures/19-fabric-iris-needs-newer-sodium.log"),
+        "20" => include_str!("fixtures/20-fabric-26-1-mod-for-older-minecraft.txt"),
         _ => unreachable!(),
     }
 }
@@ -170,6 +171,35 @@ fn fabric_dependency_in_wrong_version_swaps_the_dependency() {
     assert_eq!(f.params["other"], "Iris 1.11.4+mc26.1.2");
     assert_eq!(f.actions[0], CrashAction::FixConflict { mod_id: "sodium".into() });
     assert!(has_disable(f, "iris.jar"));
+}
+
+/// Fehlerbericht 0.18.1 (mclo.gs uTBCO2i): Dynamic Crosshair 9.12 ist für 1.21.x
+/// gebaut (Intermediary), Minecraft 26.1 läuft ohne Verschleierung.
+#[test]
+fn mod_built_for_older_minecraft_on_26_1() {
+    let mods = [jar("dynamiccrosshair-9.12.jar", "dynamiccrosshair", "Dynamic Crosshair", "9.12", &["mod.crend.dynamiccrosshair"])];
+    let a = report(fixture("20"), &mods);
+    let f = a.primary();
+    assert_eq!(f.kind, CrashKind::WrongGameVersion);
+    assert_eq!(f.variant.as_deref(), Some("old_build"));
+    assert_eq!(f.params["name"], "Dynamic Crosshair 9.12");
+    assert_eq!(f.params["present"], "26.1");
+    assert_eq!(f.mods, ["dynamiccrosshair"]);
+    assert_eq!(f.actions[0], CrashAction::FixConflict { mod_id: "dynamiccrosshair".into() });
+    assert!(has_disable(f, "dynamiccrosshair-9.12.jar"));
+    assert!(f.evidence[0].contains("class_2769"), "{:?}", f.evidence);
+
+    // Dieselbe Meldung unter 1.21.x ist etwas anderes (dort gibt es Intermediary).
+    let old = fixture("20").replace("minecraft: Minecraft 26.1", "minecraft: Minecraft 1.21.11");
+    let a = analyze(&CrashInput { report: Some(&old), installed: &mods, game_version: Some("1.21.11"), ..Default::default() });
+    assert!(a.findings.iter().all(|f| f.variant.as_deref() != Some("old_build")), "{:?}", a.findings);
+}
+
+#[test]
+fn intermediary_names_in_lines() {
+    assert!(super::rules::tests_intermediary_name("java.lang.NoSuchMethodError: 'void net.minecraft.class_310.method_1507()'"));
+    assert!(super::rules::tests_intermediary_name("NoSuchFieldError: field_1724"));
+    assert!(!super::rules::tests_intermediary_name("NoSuchMethodError: method_name in foo"));
 }
 
 #[test]

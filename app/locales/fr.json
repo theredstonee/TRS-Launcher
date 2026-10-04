@@ -930,6 +930,9 @@
     },
     "push": {
       "noDistributorApp": "Impossible d’ouvrir l’app push."
+    },
+    "modConflicts": {
+      "modGone": "Ce mod n’est plus activé."
     }
   },
   "browse": {
@@ -1909,6 +1912,10 @@
         "default": {
           "title": "{name} est prévu pour une autre version de Minecraft",
           "text": "{name} a besoin de Minecraft {required}, mais cette instance utilise {present}. Désactive-le ou installe une version adaptée dans l’onglet Contenu."
+        },
+        "old_build": {
+          "title": "{name} est conçu pour une ancienne version de Minecraft",
+          "text": "Depuis la 26.1, Minecraft tourne sans obfuscation : les mods conçus pour la 1.21.x ou plus ancienne ne trouvent pas les classes du jeu et plantent – même s’ils annoncent prendre en charge les versions récentes. Installe une version de {name} pour Minecraft {present} ou désactive-le."
         }
       },
       "wrong_loader_version": {
@@ -6411,6 +6418,49 @@
       "needs_pc": "Ce pack contient ses propres fichiers de mods – confirme l’installation sur le PC.",
       "disabled": "C’est désactivé dans le launcher du PC.",
       "failed": "Ça n’a pas fonctionné sur le PC."
+    }
+  },
+  "modConflicts": {
+    "title": "Assistant de conflits de mods",
+    "intro": "Ces mods ne fonctionnent pas ensemble dans les versions installées. Choisis une solution pour chacun – le launcher vérifie à nouveau après chaque étape.",
+    "introLaunch": "Le lancement a été arrêté car ces mods ne fonctionnent pas ensemble dans les versions installées – sinon Fabric s’arrêterait avec une erreur. Choisis une solution pour chacun ; le launcher vérifie à nouveau après chaque étape.",
+    "checking": "Vérification des mods …",
+    "none": "Tous les mods sont maintenant compatibles.",
+    "or": " ou ",
+    "anyVersion": "toute version",
+    "inTrsClient": "{name} (fourni avec le TRS Client)",
+    "inBundle": "{name} (dans {bundle})",
+    "text": {
+      "game": "{name} {version} ne prend pas en charge Minecraft {present} (nécessite {required}).",
+      "loader": "{name} {version} nécessite {other} {required}, mais {present} est installé.",
+      "depends": "{name} {version} nécessite {other} {required}, mais {present} est installé.",
+      "breaks": "{name} {version} ne fonctionne pas avec {other} {present} (exclu : {required}).",
+      "oldBuild": "{name} {version} a été conçu pour une ancienne version de Minecraft et ne fonctionne pas avec Minecraft {present}."
+    },
+    "actions": {
+      "find": "Chercher une version compatible",
+      "findHint": "Cherche sur Modrinth une version adaptée à cette version de Minecraft, au loader et à tes autres mods",
+      "findUnsupported": "Pas installé depuis Modrinth – choisis une version à la main sur la page du mod",
+      "disable": "Désactiver",
+      "remove": "Supprimer",
+      "page": "Ouvrir la page du mod"
+    },
+    "working": "En cours …",
+    "removeTitle": "Supprimer le mod ?",
+    "removeText": "{name} sera déplacé vers la corbeille.",
+    "anywayHint": "« Lancer quand même » ignore cette vérification une fois – utile si elle se trompe. Le jeu peut planter.",
+    "anyway": "Lancer quand même",
+    "disableAll": "Désactiver tous les mods concernés et lancer",
+    "launch": "Lancer",
+    "openHelper": "Ouvrir l’assistant",
+    "resolved": "Conflits de mods résolus.",
+    "disabled": "Désactivé : {name}",
+    "removed": "Déplacé vers la corbeille : {name}",
+    "fit": {
+      "searching": "Recherche d’une version compatible de {name} …",
+      "installed": "{name} est passé de {from} à {to}.",
+      "none": "Il n’existe pas encore de version de {name} pour cette configuration.",
+      "unsupported": "{name} n’a pas été installé depuis Modrinth – choisis une version compatible sur la page du mod ou désactive-le."
     }
   }
 }

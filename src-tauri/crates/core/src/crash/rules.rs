@@ -22,6 +22,7 @@ pub(super) fn run(input: &CrashInput<'_>, text: &Text, index: &ModIndex<'_>) -> 
     known_issues(text, index, &mut out);
     duplicates(text, index, &mut out);
     requirements(text, index, &mut out);
+    old_builds(input, text, index, &mut out);
     missing_dependencies(text, index, &mut out);
     wrong_java(input, text, index, &mut out);
     memory(input, text, &mut out);
@@ -409,6 +410,57 @@ fn requirements(text: &Text, index: &ModIndex<'_>, out: &mut Vec<Finding>) {
         }
         out.push(finding);
     }
+}
+
+// --- Für ein älteres (verschleiertes) Minecraft gebaut ------------------------------------
+
+/// Verweist die Zeile auf einen Intermediary-Namen (`net/minecraft/class_2769`,
+/// `method_1234`, `field_1234`)?
+fn intermediary_name(line: &str) -> bool {
+    if line.contains("net/minecraft/class_") || line.contains("net.minecraft.class_") {
+        return true;
+    }
+    ["method_", "field_"].iter().any(|p| {
+        line.match_indices(p).any(|(at, _)| line[at + p.len()..].starts_with(|c: char| c.is_ascii_digit()))
+    })
+}
+
+#[cfg(test)]
+pub(super) fn tests_intermediary_name(line: &str) -> bool {
+    intermediary_name(line)
+}
+
+/// `… provided by 'dynamiccrosshair' at …` → `dynamiccrosshair`.
+fn provided_by(text: &Text) -> Option<String> {
+    let line = text.line_with(&["provided by '"])?;
+    let (_, rest) = line.split_once("provided by '")?;
+    let id = rest.split('\'').next()?;
+    (is_mod_id(id) && !is_platform_id(id)).then(|| id.to_owned())
+}
+
+/// Ab 26.1 läuft Minecraft ohne Verschleierung: Eine für 1.21.x gebaute Mod
+/// sucht `net/minecraft/class_2769` und stürzt ab (`NoClassDefFoundError`).
+fn old_builds(input: &CrashInput<'_>, text: &Text, index: &ModIndex<'_>, out: &mut Vec<Finding>) {
+    let game = input.game_version.map(str::to_owned).or_else(|| index.version_of("minecraft"));
+    let Some(game) = game.filter(|g| crate::modcompat::obf::is_unobfuscated(g)) else { return };
+    let errors = ["NoClassDefFoundError", "ClassNotFoundException", "NoSuchMethodError", "NoSuchFieldError"];
+    let Some(line) = text.lines_with(&errors).find(|l| intermediary_name(l)) else { return };
+    let culprit = provided_by(text).or_else(|| {
+        text.frames().filter(|f| f.is_own()).find_map(|f| f.handler_mod().or(f.module_mod.clone()).or_else(|| index.by_class(&f.class)))
+    });
+    let mut f = Finding::new(CrashKind::WrongGameVersion, 92).variant("old_build").param("present", game.clone());
+    if let Some(id) = &culprit {
+        let r = index.resolve(id);
+        let name = r.version.as_ref().map_or_else(|| r.name.clone(), |v| format!("{} {v}", r.name));
+        f = f.param("name", name).with_mods([id.clone()]);
+        if index.file_of(id).is_some() {
+            f = f.action(CrashAction::FixConflict { mod_id: id.clone() });
+        }
+        if let Some(action) = disable(index, &[id]) {
+            f = f.action(action);
+        }
+    }
+    out.push(f.evidence(line));
 }
 
 fn missing_dependencies(text: &Text, index: &ModIndex<'_>, out: &mut Vec<Finding>) {

@@ -390,7 +390,8 @@ pub async fn ensure_versions_before_launch(
     if !checks_versions(instance) {
         return Ok(modcompat::CompatReport::default());
     }
-    let entries = modcompat::installed_entries(paths, &instance.id).await?;
+    let mut entries = modcompat::installed_entries(paths, &instance.id).await?;
+    modcompat::obf::mark_old_builds(paths, instance, &mut entries).await;
     let builtins = builtins(paths, builds, instance).await;
     let conflicts = modcompat::find_conflicts(&entries, &builtins);
     if conflicts.is_empty() {
@@ -409,13 +410,21 @@ pub async fn ensure_versions_before_launch(
 /// wurde. Bleibt ein Konflikt, den Fabric/Quilt sicher ablehnen würde, startet
 /// das Spiel nicht – statt Fabrics Fehlerfenster ein klarer Hinweis. Offline
 /// oder bei anderen Fehlern startet es wie bisher.
+///
+/// `bypass`: „Trotzdem starten“ aus dem Konflikt-Helfer – für diesen einen
+/// Start wird weder geprüft noch getauscht (gegen Fehlalarme).
 pub async fn versions_for_launch(
     http: &reqwest::Client,
     paths: &Paths,
     builds: &[Build],
     instance: &Instance,
+    bypass: bool,
     progress: &(dyn Fn(ApplyProgress) + Sync),
 ) -> Result<Option<crate::error::Msg>> {
+    if bypass {
+        tracing::warn!("Mod-Versions-Prüfung für diesen Start von '{}' übersprungen (Trotzdem starten)", instance.id);
+        return Ok(None);
+    }
     let report = match ensure_versions_before_launch(http, paths, builds, instance, progress).await {
         Ok(report) => report,
         Err(Error::Cancelled) => return Err(Error::Cancelled),
@@ -454,6 +463,207 @@ pub async fn versions_for_launch(
             list = conflicts
         )),
     })
+}
+
+// --- Konflikt-Helfer ------------------------------------------------------------------
+
+/// Eine Seite eines Konflikts, wie der Konflikt-Helfer sie zeigt.
+#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ConflictParty {
+    /// `mod` (Datei der Instanz), `game` (Minecraft), `loader` oder `bundled`
+    /// (kommt mit dem TRS Client).
+    pub kind: &'static str,
+    pub mod_id: String,
+    pub name: String,
+    pub version: String,
+    /// Datei im Mods-Ordner (nur `mod`).
+    pub file_name: Option<String>,
+    /// Steckt nur eingebettet in dieser Mod (Jar-in-Jar), z. B. „Fabric API“.
+    pub bundled_in: Option<String>,
+    /// Herkunft (Modrinth-ID bzw. CurseForge-Zahl) – für „Mod-Seite öffnen“.
+    pub project_id: Option<String>,
+    pub platform: Option<content::Platform>,
+    pub slug: Option<String>,
+    pub icon_url: Option<String>,
+    pub enabled: bool,
+    /// Lässt sich über Modrinth gegen eine andere Version tauschen.
+    pub adjustable: bool,
+}
+
+/// Ein Versions-Konflikt: `declarer` verlangt (`depends`) bzw. schließt aus
+/// (`breaks`) `other` in den Versionen `ranges`.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ModConflict {
+    pub kind: &'static str,
+    pub declarer: ConflictParty,
+    pub other: ConflictParty,
+    pub ranges: Vec<String>,
+    /// „Better Advancements 0.4.8.54 ↔ Minecraft 26.1“ (wie im Hinweis/Log).
+    pub text: String,
+}
+
+#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ConflictReport {
+    pub conflicts: Vec<ModConflict>,
+    /// Lehnt der Loader den Start dabei sicher ab (Fabric/Quilt)?
+    pub blocks_launch: bool,
+}
+
+const LOADER_IDS: &[&str] = &["fabricloader", "fabric-loader", "quilt_loader", "forge", "neoforge"];
+
+fn entry_party(entry: &Entry, m: &modcompat::ModRef, items: &[content::ContentItem]) -> ConflictParty {
+    let item = entry.file_name.as_deref().and_then(|f| items.iter().find(|i| i.file_name == f));
+    // Nur eingebettet (z. B. ein Modul der Fabric API in einer anderen Mod)?
+    let bundled_in = if entry.mods.iter().any(|o| o.id == m.id) {
+        None
+    } else {
+        item.and_then(|i| i.title.clone()).or_else(|| entry.mods.first().map(|o| o.display_name().to_owned()))
+    };
+    let source = item.and_then(|i| i.source.as_ref());
+    ConflictParty {
+        kind: "mod",
+        mod_id: m.id.clone(),
+        name: m.name.clone(),
+        version: m.version.clone(),
+        file_name: entry.file_name.clone(),
+        bundled_in,
+        project_id: source.map(|s| s.project_id.clone()),
+        platform: source.map(|s| s.platform),
+        slug: item.and_then(|i| i.slug.clone()),
+        icon_url: item.and_then(|i| i.icon_url.clone()),
+        enabled: item.is_none_or(|i| i.enabled),
+        adjustable: entry.adjustable,
+    }
+}
+
+fn builtin_party(m: &modcompat::ModRef) -> ConflictParty {
+    let kind = if m.id == "minecraft" {
+        "game"
+    } else if LOADER_IDS.contains(&m.id.as_str()) {
+        "loader"
+    } else {
+        "bundled"
+    };
+    ConflictParty { kind, mod_id: m.id.clone(), name: m.name.clone(), version: m.version.clone(), enabled: true, ..Default::default() }
+}
+
+/// Konflikte als Daten für den Konflikt-Helfer. `items`: Inhalte der Instanz
+/// (Titel, Herkunft, Symbol).
+pub(crate) fn describe_conflicts(entries: &[Entry], items: &[content::ContentItem], conflicts: &[modcompat::Conflict]) -> Vec<ModConflict> {
+    conflicts
+        .iter()
+        .filter_map(|c| {
+            let declarer = entry_party(entries.get(c.declarer)?, &c.declarer_mod, items);
+            let other = match c.target {
+                modcompat::Party::Entry(t) => entry_party(entries.get(t)?, &c.target_mod, items),
+                modcompat::Party::Builtin(_) => builtin_party(&c.target_mod),
+            };
+            Some(ModConflict {
+                kind: match c.kind {
+                    modcompat::ConflictKind::Depends => "depends",
+                    modcompat::ConflictKind::Breaks => "breaks",
+                    modcompat::ConflictKind::OldBuild => "oldBuild",
+                },
+                declarer,
+                other,
+                ranges: c.ranges.iter().take(8).cloned().collect(),
+                text: c.describe(),
+            })
+        })
+        .collect()
+}
+
+/// Konflikt-Helfer: Welche eingeschalteten Mods passen in den installierten
+/// Versionen nicht zusammen? Nur lesen – nichts wird getauscht, nichts geladen.
+/// `instance` ist die Instanz, wie sie startet (siehe [`ensure_before_launch`]).
+pub async fn conflict_report(paths: &Paths, builds: &[Build], instance: &Instance) -> Result<ConflictReport> {
+    let blocks = blocks_launch(instance);
+    if !checks_versions(instance) {
+        return Ok(ConflictReport { conflicts: Vec::new(), blocks_launch: blocks });
+    }
+    let mut entries = modcompat::installed_entries(paths, &instance.id).await?;
+    modcompat::obf::mark_old_builds(paths, instance, &mut entries).await;
+    let builtins = builtins(paths, builds, instance).await;
+    let conflicts = modcompat::find_conflicts(&entries, &builtins);
+    if conflicts.is_empty() {
+        return Ok(ConflictReport { conflicts: Vec::new(), blocks_launch: blocks });
+    }
+    let items = content::list(paths, &instance.id, ContentKind::Mod).await?;
+    Ok(ConflictReport { conflicts: describe_conflicts(&entries, &items, &conflicts), blocks_launch: blocks })
+}
+
+/// Ergebnis von „Passende Version suchen“.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct FitResult {
+    /// `installed`, `none` (es gibt noch keine passende) oder `unsupported`
+    /// (nicht über Modrinth installiert – Versionen lassen sich nicht vergleichen).
+    pub status: &'static str,
+    pub title: String,
+    pub from: Option<String>,
+    pub to: Option<String>,
+}
+
+/// Was „Passende Version suchen“ tun würde (ohne zu installieren).
+#[derive(Debug)]
+pub(crate) enum Fit {
+    Unsupported { title: String },
+    None { title: String },
+    Found { version: Box<modrinth::Version>, change: modcompat::CompatChange },
+}
+
+pub(crate) async fn plan_fit<L: VersionLookup>(
+    lookup: &L,
+    channel: UpdateChannel,
+    mut entries: Vec<Entry>,
+    builtins: &[ModInfo],
+    file_name: &str,
+) -> Result<Fit> {
+    let Some(idx) = entries.iter().position(|e| e.file_name.as_deref() == Some(file_name)) else {
+        return Err(Error::validation(crate::msg!("modConflicts.modGone", "Diese Mod ist nicht (mehr) eingeschaltet.")));
+    };
+    let title = entries[idx].mods.first().map_or_else(|| file_name.to_owned(), |m| m.display_name().to_owned());
+    if !entries[idx].adjustable {
+        return Ok(Fit::Unsupported { title });
+    }
+    let from = entries[idx].mods.first().map(|m| m.version.clone());
+    match modcompat::fitting_version(lookup, channel, &mut entries, builtins, idx).await? {
+        Some((version, mods)) => {
+            let to = mods.first().map_or_else(|| version.version_number.clone(), |m| m.version.clone());
+            Ok(Fit::Found { version: Box::new(version), change: modcompat::CompatChange { title, from, to, because: String::new() } })
+        }
+        None => Ok(Fit::None { title }),
+    }
+}
+
+/// Konflikt-Helfer „Passende Version suchen“: tauscht die Mod `file_name`
+/// gegen eine Version, die zu Minecraft, Loader und den übrigen Mods passt
+/// (Modrinth). Gibt es keine, bleibt alles, wie es ist.
+pub async fn install_fitting_version(
+    http: &reqwest::Client,
+    paths: &Paths,
+    builds: &[Build],
+    instance: &Instance,
+    file_name: &str,
+) -> Result<FitResult> {
+    modrinth::ensure_mods_allowed(ContentKind::Mod, instance)?;
+    content::validate_file_name(ContentKind::Mod, file_name)?;
+    let mut entries = modcompat::installed_entries(paths, &instance.id).await?;
+    modcompat::obf::mark_old_builds(paths, instance, &mut entries).await;
+    let builtins = builtins(paths, builds, instance).await;
+    let lookup = presets::ModrinthLookup::new(http, paths, instance);
+    match plan_fit(&lookup, instance.overrides.channel(), entries, &builtins, file_name).await? {
+        Fit::Unsupported { title } => Ok(FitResult { status: "unsupported", title, from: None, to: None }),
+        Fit::None { title } => Ok(FitResult { status: "none", title, from: None, to: None }),
+        Fit::Found { version, change } => {
+            modrinth::install_with_dependencies(http, paths, instance, ContentKind::Mod, &version, Some(file_name)).await?;
+            tracing::info!("Konflikt-Helfer: {} {:?} → {}", change.title, change.from, change.to);
+            Ok(FitResult { status: "installed", title: change.title, from: change.from, to: Some(change.to) })
+        }
+    }
 }
 
 /// Absturz-Diagnose „… which is missing!“: installiert die genannten Mod-IDs

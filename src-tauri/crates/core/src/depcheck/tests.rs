@@ -230,7 +230,7 @@ async fn real_modrinth_versions_iris_needs_newer_sodium() {
     // Genau eine Sodium-Datei, Herkunft gemerkt; der nächste Start ändert nichts mehr.
     let mods = content::list(&paths, &inst.id, ContentKind::Mod).await.unwrap();
     assert_eq!(mods.iter().filter(|m| m.file_name.starts_with("sodium")).count(), 1, "{mods:#?}");
-    assert!(versions_for_launch(&http, &paths, &[], &inst, &|_| {}).await.unwrap().is_none());
+    assert!(versions_for_launch(&http, &paths, &[], &inst, false, &|_| {}).await.unwrap().is_none());
 }
 
 #[tokio::test]
@@ -295,4 +295,211 @@ async fn real_modrinth_versions_boost_pack_follows_the_game_version() {
         assert!(after.contains("0.9."), "Paket-Sodium für 26.1.2: {after}");
     }
     assert!(conflicts(&paths, &new).await.is_empty(), "{:?}", conflicts(&paths, &new).await);
+}
+
+// --- Konflikt-Helfer -----------------------------------------------------------------------
+
+const BETTER_ADV_JAR: &str = r#"{"id":"betteradvancements","name":"Better Advancements","version":"0.4.8.54",
+    "depends":{"minecraft":"1.21.x"}}"#;
+const SODIUM_JAR: &str = r#"{"id":"sodium","name":"Sodium","version":"0.8.14","breaks":{"iris":"<=1.10.7"}}"#;
+const IRIS_JAR: &str = r#"{"id":"iris","name":"Iris","version":"1.10.7"}"#;
+
+/// Legt Jars (ohne Modrinth-Herkunft) in den Mods-Ordner der Instanz `t`.
+fn put_jars(paths: &Paths, jars: &[(&str, &str)]) {
+    let dir = content::content_dir(paths, "t", ContentKind::Mod);
+    std::fs::create_dir_all(&dir).unwrap();
+    for (file, json) in jars {
+        std::fs::write(dir.join(file), crate::modcompat::meta::tests::jar(&[(crate::modcompat::meta::FABRIC, json)])).unwrap();
+    }
+}
+
+#[tokio::test]
+async fn conflict_report_describes_both_sides() {
+    let dir = tempfile::tempdir().unwrap();
+    let paths = Paths::new(dir.path());
+    let inst = real_instance(LoaderKind::Fabric, "26.1");
+    put_jars(&paths, &[("betteradv.jar", BETTER_ADV_JAR), ("sodium.jar", SODIUM_JAR), ("iris.jar", IRIS_JAR)]);
+    let report = conflict_report(&paths, &[], &inst).await.unwrap();
+    assert!(report.blocks_launch);
+    assert_eq!(report.conflicts.len(), 2, "{report:#?}");
+
+    let game = report.conflicts.iter().find(|c| c.declarer.mod_id == "betteradvancements").unwrap();
+    assert_eq!(game.kind, "depends");
+    assert_eq!(game.declarer.name, "Better Advancements");
+    assert_eq!(game.declarer.version, "0.4.8.54");
+    assert_eq!(game.declarer.file_name.as_deref(), Some("betteradv.jar"));
+    assert!(game.declarer.enabled);
+    assert!(!game.declarer.adjustable);
+    assert_eq!(game.other.kind, "game");
+    assert_eq!(game.other.version, "26.1");
+    assert_eq!(game.other.file_name, None);
+    assert_eq!(game.ranges, vec!["1.21.x".to_owned()]);
+    assert_eq!(game.text, "Better Advancements 0.4.8.54 ↔ Minecraft 26.1");
+
+    let mods = report.conflicts.iter().find(|c| c.declarer.mod_id == "sodium").unwrap();
+    assert_eq!(mods.kind, "breaks");
+    assert_eq!(mods.other.kind, "mod");
+    assert_eq!(mods.other.name, "Iris");
+    assert_eq!(mods.other.file_name.as_deref(), Some("iris.jar"));
+    assert_eq!(mods.ranges, vec!["<=1.10.7".to_owned()]);
+
+    // Als JSON für das Frontend.
+    let json = serde_json::to_value(&report).unwrap();
+    assert_eq!(json["blocksLaunch"], true);
+    assert!(json["conflicts"][0]["declarer"]["fileName"].is_string());
+}
+
+#[tokio::test]
+async fn conflict_report_is_empty_when_everything_fits() {
+    let dir = tempfile::tempdir().unwrap();
+    let paths = Paths::new(dir.path());
+    let inst = real_instance(LoaderKind::Fabric, "1.21.11");
+    put_jars(&paths, &[("betteradv.jar", BETTER_ADV_JAR), ("iris.jar", IRIS_JAR)]);
+    assert!(conflict_report(&paths, &[], &inst).await.unwrap().conflicts.is_empty());
+    // Forge stoppt den Start dabei nicht.
+    let forge = real_instance(LoaderKind::Forge, "1.21.11");
+    assert!(!conflict_report(&paths, &[], &forge).await.unwrap().blocks_launch);
+}
+
+#[tokio::test]
+async fn launch_stops_on_conflict_unless_bypassed() {
+    let dir = tempfile::tempdir().unwrap();
+    let paths = Paths::new(dir.path());
+    let http = reqwest::Client::new();
+    let inst = real_instance(LoaderKind::Fabric, "26.1");
+    // Ohne Modrinth-Herkunft lässt sich nichts tauschen (kein Netz nötig).
+    put_jars(&paths, &[("betteradv.jar", BETTER_ADV_JAR)]);
+    match versions_for_launch(&http, &paths, &[], &inst, false, &|_| {}).await {
+        Err(Error::Launch(m)) => {
+            assert_eq!(m.code, "launcher.modVersionsConflict");
+            assert!(m.text.contains("Better Advancements 0.4.8.54 ↔ Minecraft 26.1"), "{}", m.text);
+        }
+        other => panic!("Start hätte gestoppt werden müssen: {other:?}"),
+    }
+    // „Trotzdem starten“: einmal ohne Prüfung.
+    assert!(versions_for_launch(&http, &paths, &[], &inst, true, &|_| {}).await.unwrap().is_none());
+    // Die Dateien bleiben unangetastet.
+    assert_eq!(conflict_report(&paths, &[], &inst).await.unwrap().conflicts.len(), 1);
+}
+
+const DYN_JAR: &str = r#"{"id":"dynamiccrosshair","name":"Dynamic Crosshair","version":"9.12","depends":{"minecraft":">=1.21"}}"#;
+const DYN_NEW_JAR: &str = r#"{"id":"dynamiccrosshair","name":"Dynamic Crosshair","version":"10.0","depends":{"minecraft":">=26.1"}}"#;
+
+#[tokio::test]
+async fn mod_built_for_older_minecraft_is_a_conflict_on_26_1() {
+    let dir = tempfile::tempdir().unwrap();
+    let paths = Paths::new(dir.path());
+    let mods = content::content_dir(&paths, "t", ContentKind::Mod);
+    std::fs::create_dir_all(&mods).unwrap();
+    // Erlaubt „>=1.21“, verweist aber auf Intermediary-Namen (für 1.21.x gebaut).
+    let old = crate::modcompat::meta::tests::jar(&[
+        (crate::modcompat::meta::FABRIC, DYN_JAR),
+        ("mod/crend/dynamiccrosshair/DynamicCrosshairMod.class", "Lnet/minecraft/class_2769;"),
+    ]);
+    std::fs::write(mods.join("dynamiccrosshair-9.12.jar"), old).unwrap();
+    let new = crate::modcompat::meta::tests::jar(&[(crate::modcompat::meta::FABRIC, DYN_NEW_JAR), ("a/B.class", "Lnet/minecraft/world/Foo;")]);
+    std::fs::write(mods.join("other.jar"), new).unwrap();
+
+    let report = conflict_report(&paths, &[], &real_instance(LoaderKind::Fabric, "26.1")).await.unwrap();
+    assert_eq!(report.conflicts.len(), 1, "{report:#?}");
+    let c = &report.conflicts[0];
+    assert_eq!(c.kind, "oldBuild");
+    assert_eq!(c.declarer.name, "Dynamic Crosshair");
+    assert_eq!(c.declarer.file_name.as_deref(), Some("dynamiccrosshair-9.12.jar"));
+    assert_eq!((c.other.kind, c.other.version.as_str()), ("game", "26.1"));
+    // Der Start stoppt (nichts zu tauschen) – „Trotzdem starten“ geht.
+    let http = reqwest::Client::new();
+    assert!(versions_for_launch(&http, &paths, &[], &real_instance(LoaderKind::Fabric, "26.1"), false, &|_| {}).await.is_err());
+    assert!(versions_for_launch(&http, &paths, &[], &real_instance(LoaderKind::Fabric, "26.1"), true, &|_| {}).await.unwrap().is_none());
+    // Unter 1.21.11 ist das richtig so (dort passt nur die andere Mod nicht).
+    let older = conflict_report(&paths, &[], &real_instance(LoaderKind::Fabric, "1.21.11")).await.unwrap();
+    assert!(older.conflicts.iter().all(|c| c.kind != "oldBuild" && c.declarer.file_name.as_deref() == Some("other.jar")), "{older:#?}");
+}
+
+fn dyn_entry() -> Entry {
+    let mods = vec![parse_fabric(DYN_JAR).unwrap()];
+    Entry {
+        project_id: Some("DYNproj".into()),
+        version_id: Some("d1".into()),
+        installed: Some(("d1".into(), mods.clone())),
+        mods,
+        adjustable: true,
+        file_name: Some("dyn.jar".into()),
+        old_build: true,
+        installed_old_build: true,
+        ..Default::default()
+    }
+}
+
+#[tokio::test]
+async fn mod_built_for_older_minecraft_is_swapped_for_a_newer_version() {
+    let inst = real_instance(LoaderKind::Fabric, "26.1");
+    let builtins = modcompat::loader_builtins(&inst);
+    let fake = Fake::default()
+        .with("DYNproj", version("d2", "DYNproj", &[]), Some(DYN_NEW_JAR))
+        .with("DYNproj", version("d1", "DYNproj", &[]), Some(DYN_JAR));
+    let mut entries = vec![dyn_entry()];
+    let left = modcompat::settle(&fake, UpdateChannel::Release, &mut entries, &builtins, None).await.unwrap();
+    assert!(left.is_empty(), "{left:?}");
+    assert_eq!(entries[0].version_id.as_deref(), Some("d2"));
+    assert!(!entries[0].old_build);
+
+    // Nur ältere Versionen: die sind auch für ein älteres Minecraft – nichts tauschen.
+    let fake = Fake::default()
+        .with("DYNproj", version("d1", "DYNproj", &[]), Some(DYN_JAR))
+        .with("DYNproj", version("d0", "DYNproj", &[]), Some(DYN_JAR));
+    let mut entries = vec![dyn_entry()];
+    let left = modcompat::settle(&fake, UpdateChannel::Release, &mut entries, &builtins, None).await.unwrap();
+    assert_eq!(left.len(), 1);
+    assert_eq!(entries[0].version_id.as_deref(), Some("d1"));
+    // „Passende Version suchen“ findet dann auch nichts.
+    let fit = plan_fit(&fake, UpdateChannel::Release, vec![dyn_entry()], &builtins, "dyn.jar").await.unwrap();
+    assert!(matches!(fit, Fit::None { .. }), "{fit:?}");
+}
+
+fn better_adv_entry(adjustable: bool) -> Entry {
+    let mods = vec![parse_fabric(BETTER_ADV_JAR).unwrap()];
+    Entry {
+        project_id: adjustable.then(|| "BAproj".to_owned()),
+        version_id: adjustable.then(|| "ba1".to_owned()),
+        installed: adjustable.then(|| ("ba1".to_owned(), mods.clone())),
+        mods,
+        adjustable,
+        file_name: Some("betteradv.jar".into()),
+        ..Default::default()
+    }
+}
+
+#[tokio::test]
+async fn fitting_version_takes_one_for_the_game_version() {
+    let inst = real_instance(LoaderKind::Fabric, "26.1");
+    let builtins = modcompat::loader_builtins(&inst);
+    let newer = r#"{"id":"betteradvancements","name":"Better Advancements","version":"0.5.0","depends":{"minecraft":">=26.1"}}"#;
+    let fake = Fake::default()
+        .with("BAproj", version("ba2", "BAproj", &[]), Some(newer))
+        .with("BAproj", version("ba1", "BAproj", &[]), Some(BETTER_ADV_JAR));
+    match plan_fit(&fake, UpdateChannel::Release, vec![better_adv_entry(true)], &builtins, "betteradv.jar").await.unwrap() {
+        Fit::Found { version, change } => {
+            assert_eq!(version.id, "ba2");
+            assert_eq!(change.title, "Better Advancements");
+            assert_eq!(change.from.as_deref(), Some("0.4.8.54"));
+            assert_eq!(change.to, "0.5.0");
+        }
+        other => panic!("{other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn fitting_version_reports_none_or_unsupported() {
+    let inst = real_instance(LoaderKind::Fabric, "26.1");
+    let builtins = modcompat::loader_builtins(&inst);
+    // Noch keine Version für 26.1.
+    let fake = Fake::default().with("BAproj", version("ba1", "BAproj", &[]), Some(BETTER_ADV_JAR));
+    let fit = plan_fit(&fake, UpdateChannel::Release, vec![better_adv_entry(true)], &builtins, "betteradv.jar").await.unwrap();
+    assert!(matches!(fit, Fit::None { ref title } if title == "Better Advancements"), "{fit:?}");
+    // Von Hand hinzugefügt: kein Versionsvergleich möglich.
+    let fit = plan_fit(&fake, UpdateChannel::Release, vec![better_adv_entry(false)], &builtins, "betteradv.jar").await.unwrap();
+    assert!(matches!(fit, Fit::Unsupported { .. }), "{fit:?}");
+    // Unbekannte Datei.
+    assert!(plan_fit(&fake, UpdateChannel::Release, vec![better_adv_entry(true)], &builtins, "other.jar").await.is_err());
 }

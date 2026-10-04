@@ -189,6 +189,7 @@ async fn analyze_instance(paths: &Paths, instance_id: &str, log: &str, report: O
         memory_mb: Some(instance.overrides.max_memory_mb.unwrap_or(settings.max_memory_mb)),
         system_memory_mb: platform::total_memory_mb(),
         custom_java: instance.overrides.java_path.is_some(),
+        game_version: Some(&instance.game_version),
     };
     Ok(analyze(&input))
 }

@@ -930,6 +930,9 @@
     },
     "push": {
       "noDistributorApp": "Push uygulaması açılamıyor."
+    },
+    "modConflicts": {
+      "modGone": "Bu mod (artık) etkin değil."
     }
   },
   "browse": {
@@ -1909,6 +1912,10 @@
         "default": {
           "title": "{name} başka bir Minecraft sürümü için",
           "text": "{name} için Minecraft {required} gerekir, ama bu kurulum {present} kullanıyor. Devre dışı bırak ya da İçerik sekmesinden uygun bir sürüm kur."
+        },
+        "old_build": {
+          "title": "{name} daha eski bir Minecraft sürümü için yapılmış",
+          "text": "26.1’den beri Minecraft gizleme olmadan çalışıyor – 1.21.x veya daha eski sürümler için yapılmış modlar oyunun sınıflarını bulamaz ve çöker, daha yeni sürümleri desteklediklerini söyleseler bile. {name} modunun Minecraft {present} için yapılmış bir sürümünü yükle veya modu kapat."
         }
       },
       "wrong_loader_version": {
@@ -6411,6 +6418,49 @@
       "needs_pc": "Bu paket kendi mod dosyalarını getiriyor – lütfen kurulumu bilgisayarda onayla.",
       "disabled": "Bu, bilgisayardaki başlatıcıda kapalı.",
       "failed": "Bilgisayarda işe yaramadı."
+    }
+  },
+  "modConflicts": {
+    "title": "Mod çakışması yardımcısı",
+    "intro": "Bu modlar yüklü sürümlerinde birlikte çalışmıyor. Her biri için bir çözüm seç – başlatıcı her adımdan sonra yeniden kontrol eder.",
+    "introLaunch": "Bu modlar yüklü sürümlerinde birlikte çalışmadığı için başlatma durduruldu – aksi halde Fabric bir hatayla kapanırdı. Her biri için bir çözüm seç; başlatıcı her adımdan sonra yeniden kontrol eder.",
+    "checking": "Modlar kontrol ediliyor …",
+    "none": "Artık tüm modlar uyumlu.",
+    "or": " veya ",
+    "anyVersion": "herhangi bir sürüm",
+    "inTrsClient": "{name} (TRS Client ile gelir)",
+    "inBundle": "{name} ({bundle} içinde)",
+    "text": {
+      "game": "{name} {version}, Minecraft {present} sürümünü desteklemiyor ({required} gerekiyor).",
+      "loader": "{name} {version} için {other} {required} gerekiyor, ancak {present} yüklü.",
+      "depends": "{name} {version} için {other} {required} gerekiyor, ancak {present} yüklü.",
+      "breaks": "{name} {version}, {other} {present} ile çalışmıyor (hariç tutulan: {required}).",
+      "oldBuild": "{name} {version} daha eski bir Minecraft sürümü için yapılmış ve Minecraft {present} ile çalışmıyor."
+    },
+    "actions": {
+      "find": "Uyumlu sürüm ara",
+      "findHint": "Modrinth’te bu Minecraft sürümüne, yükleyiciye ve diğer modlarına uyan bir sürüm arar",
+      "findUnsupported": "Modrinth’ten yüklenmedi – sürümü mod sayfasından elle seç",
+      "disable": "Devre dışı bırak",
+      "remove": "Kaldır",
+      "page": "Mod sayfasını aç"
+    },
+    "working": "Çalışıyor …",
+    "removeTitle": "Mod kaldırılsın mı?",
+    "removeText": "{name} geri dönüşüm kutusuna taşınacak.",
+    "anywayHint": "“Yine de başlat” bu kontrolü bir kez atlar – kontrol yanılıyorsa işe yarar. Oyun çökebilir.",
+    "anyway": "Yine de başlat",
+    "disableAll": "Etkilenenlerin hepsini kapat ve başlat",
+    "launch": "Başlat",
+    "openHelper": "Yardımcıyı aç",
+    "resolved": "Mod çakışmaları çözüldü.",
+    "disabled": "Devre dışı: {name}",
+    "removed": "Geri dönüşüm kutusuna taşındı: {name}",
+    "fit": {
+      "searching": "{name} için uyumlu sürüm aranıyor …",
+      "installed": "{name}, {from} sürümünden {to} sürümüne geçirildi.",
+      "none": "{name} için bu kurulumda çalışan bir sürüm henüz yok.",
+      "unsupported": "{name} Modrinth’ten yüklenmedi – mod sayfasından uyumlu bir sürüm seç veya modu kapat."
     }
   }
 }

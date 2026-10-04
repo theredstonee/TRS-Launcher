@@ -219,6 +219,8 @@ pub struct CrashInput<'a> {
     pub system_memory_mb: Option<u32>,
     /// Die Instanz hat einen eigenen Java-Pfad.
     pub custom_java: bool,
+    /// Minecraft-Version der Instanz (sonst aus der Mod-Liste im Log).
+    pub game_version: Option<&'a str>,
 }
 
 /// Ergebnis der Engine (ohne Instanz-Daten).

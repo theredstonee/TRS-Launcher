@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Instance } from '~/types'
+import { MOD_CONFLICT_CODE } from '~/utils/modConflicts'
 
 const route = useRoute()
 const router = useRouter()
@@ -8,6 +9,7 @@ const id = computed(() => String(route.params.id))
 const games = useGamesStore()
 const instances = useInstancesStore()
 const settings = useSettingsStore()
+const modConflicts = useModConflictsStore()
 const game = computed(() => games.state(id.value))
 const ui = computed(() => settings.current?.ui)
 // Handy: Seite scrollt als Ganzes, Tabs als wischbare Leiste; ohne Spielstart keine Logs/Spielen.
@@ -254,7 +256,18 @@ function openFolder() {
           </header>
         </InstanceBanner>
 
-        <p v-if="game.error" role="alert" class="card mb-4 shrink-0 border-redstone-600/50 px-4 py-2.5 text-sm text-redstone-300">{{ game.error }}</p>
+        <div v-if="game.error" role="alert" class="card mb-4 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-redstone-600/50 px-4 py-2.5 text-sm text-redstone-300">
+          <p class="min-w-0 flex-1">{{ game.error }}</p>
+          <button
+            v-if="game.errorCode === MOD_CONFLICT_CODE"
+            type="button"
+            class="btn btn-primary shrink-0 px-3 py-1.5 text-xs"
+            data-testid="open-conflict-helper"
+            @click="modConflicts.open(instance.id, 'banner')"
+          >
+            {{ t('modConflicts.openHelper') }}
+          </button>
+        </div>
         <CrashPanel v-else-if="game.lastExit?.crashed" :instance-id="instance.id" :exit-code="game.lastExit.exitCode" :diagnosis="game.lastExit.diagnosis" :crash-id="game.lastExit.crashId" class="mb-4 shrink-0" />
         <FpsBoostHint :instance="instance" />
 
