@@ -190,6 +190,7 @@ impl Launcher {
         instance_id: &str,
         join: Option<Join<'_>>,
         account_id: Option<&str>,
+        skip_mod_check: bool,
         runner: Option<&dyn forge::ProcessorRunner>,
         on_progress: &ProgressFn,
     ) -> Result<MobileLaunch> {
@@ -204,7 +205,7 @@ impl Launcher {
                 return Err(Error::launch(crate::msg!("launcher.alreadyStarting", "Diese Instanz wird bereits gestartet.")));
             }
         }
-        let result = self.prepare_mobile_inner(&instance, join, account_id, runner, on_progress).await;
+        let result = self.prepare_mobile_inner(&instance, join, account_id, skip_mod_check, runner, on_progress).await;
         self.preparing.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(&instance.id);
         result
     }
@@ -214,6 +215,7 @@ impl Launcher {
         instance: &Instance,
         join_request: Option<Join<'_>>,
         account_id: Option<&str>,
+        skip_mod_check: bool,
         runner: Option<&dyn forge::ProcessorRunner>,
         on_progress: &ProgressFn,
     ) -> Result<MobileLaunch> {
@@ -267,7 +269,9 @@ impl Launcher {
         {
             tracing::warn!("TRS Client konnte nicht eingerichtet werden: {e}");
         }
-        if let Some(note) = depcheck::versions_for_launch(&self.http, &self.paths, catalog.builds(), instance, &mods_progress).await? {
+        if let Some(note) =
+            depcheck::versions_for_launch(&self.http, &self.paths, catalog.builds(), instance, skip_mod_check, &mods_progress).await?
+        {
             tracing::info!("{}", note.text);
         }
         match depcheck::ensure_before_launch(&self.http, &self.paths, catalog.builds(), instance, &mods_progress).await {

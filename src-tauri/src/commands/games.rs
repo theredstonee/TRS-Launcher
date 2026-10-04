@@ -26,6 +26,7 @@ pub async fn launch_instance(
     task_id: Option<String>,
     extra: Option<bool>,
     account_id: Option<String>,
+    skip_mod_check: Option<bool>,
 ) -> CommandResult<u32> {
     // Konto-ID: nur eine UUID-artige Kennung, nie beliebiger Text.
     if account_id.as_deref().is_some_and(|a| a.len() > 64 || !a.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')) {
@@ -43,7 +44,8 @@ pub async fn launch_instance(
     let report = move |progress| {
         let _ = on_progress.send(progress);
     };
-    let options = trs_core::LaunchOptions { extra: extra.unwrap_or(false), account_id };
+    let options =
+        trs_core::LaunchOptions { extra: extra.unwrap_or(false), account_id, skip_mod_check: skip_mod_check.unwrap_or(false) };
     // Android/iOS: eingebettete JVM statt eigenem Java-Prozess.
     #[cfg(mobile)]
     let work = crate::mobile_game::launch(&app, &launcher, &id, join, options, &report);

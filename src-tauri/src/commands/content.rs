@@ -253,6 +253,45 @@ pub async fn install_missing_dependencies(
     Ok(tracked(&app, task_id, work).await?)
 }
 
+/// Konflikt-Helfer: Mod-Versionen, die nicht zusammenpassen (nur lesen).
+#[tauri::command]
+pub async fn mod_conflicts(launcher: State<'_, LauncherState>, id: String) -> CommandResult<depcheck::ConflictReport> {
+    let instance = launcher.instances().get(&id).await?;
+    let builds = launcher.client_mod_builds().await;
+    // Vanilla mit TRS-Optimierung startet als Fabric – geprüft wird wie beim Start.
+    let effective = trs_core::boost::effective_instance(launcher.http(), launcher.paths(), &builds, &instance).await;
+    Ok(depcheck::conflict_report(launcher.paths(), &builds, &effective).await?)
+}
+
+/// Konflikt-Helfer „Passende Version suchen“ für eine Mod-Datei.
+#[tauri::command]
+pub async fn mod_conflict_fit(
+    app: AppHandle,
+    launcher: State<'_, LauncherState>,
+    id: String,
+    file_name: String,
+    task_id: Option<String>,
+) -> CommandResult<depcheck::FitResult> {
+    let instance = launcher.instances().get(&id).await?;
+    content::validate_file_name(ContentKind::Mod, &file_name)?;
+    let builds = launcher.client_mod_builds().await;
+    let effective = trs_core::boost::effective_instance(launcher.http(), launcher.paths(), &builds, &instance).await;
+    let work = depcheck::install_fitting_version(launcher.http(), launcher.paths(), &builds, &effective, &file_name);
+    Ok(tracked(&app, task_id, work).await?)
+}
+
+/// Inhalt in den Papierkorb legen (Konflikt-Helfer „Entfernen“).
+#[tauri::command]
+pub async fn trash_content(
+    launcher: State<'_, LauncherState>,
+    id: String,
+    kind: ContentKind,
+    file_name: String,
+) -> CommandResult<()> {
+    let instance = launcher.instances().get(&id).await?;
+    Ok(content::trash(launcher.paths(), &instance.id, kind, &file_name).await?)
+}
+
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
 pub async fn apply_content_update(

@@ -930,6 +930,9 @@
     },
     "push": {
       "noDistributorApp": "The push app can't be opened."
+    },
+    "modConflicts": {
+      "modGone": "This mod isn't enabled (anymore)."
     }
   },
   "browse": {
@@ -1909,6 +1912,10 @@
         "default": {
           "title": "{name} is made for another Minecraft version",
           "text": "{name} needs Minecraft {required}, but this instance runs {present}. Disable it or install a matching version in the Content tab."
+        },
+        "old_build": {
+          "title": "{name} is made for an older Minecraft version",
+          "text": "Since 26.1 Minecraft runs without obfuscation, so mods built for 1.21.x or older can't find the game's classes and crash – even if they claim to support newer versions. Install a version of {name} made for Minecraft {present} or disable it."
         }
       },
       "wrong_loader_version": {
@@ -6411,6 +6418,49 @@
       "needs_pc": "This pack has its own mod files – please confirm the installation on the PC.",
       "disabled": "This is switched off in the launcher on the PC.",
       "failed": "That didn’t work on the PC."
+    }
+  },
+  "modConflicts": {
+    "title": "Mod conflict helper",
+    "intro": "These mods don't work together in the installed versions. Pick a fix for each – the launcher checks again after every step.",
+    "introLaunch": "The launch was stopped because these mods don't work together in the installed versions – Fabric would otherwise quit with an error. Pick a fix for each; the launcher checks again after every step.",
+    "checking": "Checking mods …",
+    "none": "All mods fit together now.",
+    "or": " or ",
+    "anyVersion": "any version",
+    "inTrsClient": "{name} (comes with the TRS Client)",
+    "inBundle": "{name} (inside {bundle})",
+    "text": {
+      "game": "{name} {version} doesn't support Minecraft {present} (needs {required}).",
+      "loader": "{name} {version} needs {other} {required}, but {present} is installed.",
+      "depends": "{name} {version} needs {other} {required}, but {present} is installed.",
+      "breaks": "{name} {version} doesn't work with {other} {present} (excluded: {required}).",
+      "oldBuild": "{name} {version} was made for an older Minecraft version and doesn't run on Minecraft {present}."
+    },
+    "actions": {
+      "find": "Find a matching version",
+      "findHint": "Looks on Modrinth for a version that fits this Minecraft version, the loader and your other mods",
+      "findUnsupported": "Not installed from Modrinth – pick a version by hand on the mod page",
+      "disable": "Disable",
+      "remove": "Remove",
+      "page": "Open mod page"
+    },
+    "working": "Working …",
+    "removeTitle": "Remove mod?",
+    "removeText": "{name} is moved to the recycle bin.",
+    "anywayHint": "“Launch anyway” skips this check once – useful if the check is wrong. The game may crash.",
+    "anyway": "Launch anyway",
+    "disableAll": "Disable all affected and launch",
+    "launch": "Launch",
+    "openHelper": "Open helper",
+    "resolved": "Mod conflicts solved.",
+    "disabled": "Disabled: {name}",
+    "removed": "Moved to the recycle bin: {name}",
+    "fit": {
+      "searching": "Looking for a matching version of {name} …",
+      "installed": "{name} switched from {from} to {to}.",
+      "none": "There is no version of {name} for this setup yet.",
+      "unsupported": "{name} wasn't installed from Modrinth – pick a matching version on the mod page or disable it."
     }
   }
 }

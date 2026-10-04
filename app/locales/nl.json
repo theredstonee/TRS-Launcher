@@ -930,6 +930,9 @@
     },
     "push": {
       "noDistributorApp": "De push-app kan niet worden geopend."
+    },
+    "modConflicts": {
+      "modGone": "Deze mod is niet (meer) ingeschakeld."
     }
   },
   "browse": {
@@ -1909,6 +1912,10 @@
         "default": {
           "title": "{name} is voor een andere Minecraft-versie",
           "text": "{name} heeft Minecraft {required} nodig, maar deze instantie draait {present}. Schakel hem uit of installeer een passende versie in het tabblad Content."
+        },
+        "old_build": {
+          "title": "{name} is gemaakt voor een oudere Minecraft-versie",
+          "text": "Sinds 26.1 draait Minecraft zonder verhulling – mods die voor 1.21.x of ouder zijn gemaakt vinden de klassen van het spel niet en crashen, ook als ze nieuwere versies toestaan. Installeer een versie van {name} voor Minecraft {present} of schakel de mod uit."
         }
       },
       "wrong_loader_version": {
@@ -6411,6 +6418,49 @@
       "needs_pc": "Dit pack bevat eigen modbestanden – bevestig de installatie op de pc.",
       "disabled": "Dit staat uit in de launcher op de pc.",
       "failed": "Dat is op de pc niet gelukt."
+    }
+  },
+  "modConflicts": {
+    "title": "Modconflict-hulp",
+    "intro": "Deze mods werken in de geïnstalleerde versies niet samen. Kies voor elk een oplossing – de launcher controleert na elke stap opnieuw.",
+    "introLaunch": "Het starten is gestopt omdat deze mods in de geïnstalleerde versies niet samenwerken – anders zou Fabric met een fout afsluiten. Kies voor elk een oplossing; de launcher controleert na elke stap opnieuw.",
+    "checking": "Mods controleren …",
+    "none": "Alle mods passen nu bij elkaar.",
+    "or": " of ",
+    "anyVersion": "elke versie",
+    "inTrsClient": "{name} (komt met de TRS Client)",
+    "inBundle": "{name} (in {bundle})",
+    "text": {
+      "game": "{name} {version} ondersteunt Minecraft {present} niet (heeft {required} nodig).",
+      "loader": "{name} {version} heeft {other} {required} nodig, maar {present} is geïnstalleerd.",
+      "depends": "{name} {version} heeft {other} {required} nodig, maar {present} is geïnstalleerd.",
+      "breaks": "{name} {version} werkt niet met {other} {present} (uitgesloten: {required}).",
+      "oldBuild": "{name} {version} is gemaakt voor een oudere Minecraft-versie en werkt niet met Minecraft {present}."
+    },
+    "actions": {
+      "find": "Passende versie zoeken",
+      "findHint": "Zoekt op Modrinth een versie die past bij deze Minecraft-versie, de loader en je andere mods",
+      "findUnsupported": "Niet via Modrinth geïnstalleerd – kies zelf een versie op de modpagina",
+      "disable": "Uitschakelen",
+      "remove": "Verwijderen",
+      "page": "Modpagina openen"
+    },
+    "working": "Bezig …",
+    "removeTitle": "Mod verwijderen?",
+    "removeText": "{name} wordt naar de prullenbak verplaatst.",
+    "anywayHint": "„Toch starten” slaat deze controle één keer over – handig als ze zich vergist. Het spel kan dan crashen.",
+    "anyway": "Toch starten",
+    "disableAll": "Alle betrokken mods uitschakelen en starten",
+    "launch": "Starten",
+    "openHelper": "Hulp openen",
+    "resolved": "Modconflicten opgelost.",
+    "disabled": "Uitgeschakeld: {name}",
+    "removed": "Naar de prullenbak verplaatst: {name}",
+    "fit": {
+      "searching": "Passende versie van {name} zoeken …",
+      "installed": "{name} gewisseld van {from} naar {to}.",
+      "none": "Er is nog geen versie van {name} voor deze opstelling.",
+      "unsupported": "{name} is niet via Modrinth geïnstalleerd – kies een passende versie op de modpagina of schakel de mod uit."
     }
   }
 }

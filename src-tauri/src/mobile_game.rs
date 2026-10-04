@@ -93,7 +93,7 @@ pub async fn launch<R: Runtime>(
     let runner = EngineRunner { app: app.clone() };
     // Am Handy läuft immer nur ein Spiel – „noch einmal starten“ gibt es nicht.
     let MobileLaunch { spec, secrets } =
-        launcher.prepare_mobile_launch(id, join, options.account_id.as_deref(), Some(&runner), on_progress).await?;
+        launcher.prepare_mobile_launch(id, join, options.account_id.as_deref(), options.skip_mod_check, Some(&runner), on_progress).await?;
     let engine = app.trs_game();
     engine.prepare_runtime(spec.java_major).await.map_err(engine_error)?;
     // Gleiche JSON-Form auf beiden Seiten (Vertrag GameLaunchSpec).

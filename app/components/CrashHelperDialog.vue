@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { CrashAction, CrashFinding, CrashKind } from '~/types'
-import { actionConfirm, actionKey, actionLabel, findingMods, findingText, findingTitle } from '~/utils/crash'
+import { actionConfirm, actionKey, actionLabel, findingMods, findingText, findingTitle, isConflictKind } from '~/utils/crash'
 
 // Absturz-Helfer: erklärt in Spielersprache, was los ist, nennt die beteiligten
 // Mods und bietet Behebungen an. Jede Änderung wird vorher bestätigt und landet
@@ -11,6 +11,7 @@ const instances = useInstancesStore()
 const router = useRouter()
 const openDocs = useDocs()
 const bisect = useBisectStore()
+const conflicts = useModConflictsStore()
 
 const crash = computed(() => helper.current)
 const primary = computed(() => crash.value?.findings[0] ?? null)
@@ -90,6 +91,14 @@ function findCulprit() {
   bisect.askStart(id)
 }
 
+/** Unverträgliche Mod-Versionen: der Mod-Konflikt-Helfer zeigt alle auf einmal (mit Lösungen). */
+function openConflictHelper() {
+  const id = crash.value?.instanceId
+  if (!id) return
+  helper.close()
+  void conflicts.open(id, 'crash')
+}
+
 function openContent() {
   const id = crash.value?.instanceId
   if (!id) return
@@ -135,7 +144,7 @@ function openContent() {
           </li>
         </ul>
 
-        <div v-if="primary.actions.length || primary.kind === 'wrong_java'" class="mt-4 flex flex-wrap gap-2">
+        <div v-if="primary.actions.length || primary.kind === 'wrong_java' || isConflictKind(primary.kind)" class="mt-4 flex flex-wrap gap-2">
           <button
             v-for="(action, i) in primary.actions"
             :key="actionKey(action)"
@@ -150,6 +159,9 @@ function openContent() {
           </button>
           <button v-if="primary.kind === 'wrong_java'" type="button" class="btn btn-ghost px-3 py-1.5 text-xs" @click="openJavaSettings">
             {{ t('crashHelper.openJavaSettings') }}
+          </button>
+          <button v-if="isConflictKind(primary.kind)" type="button" class="btn btn-ghost px-3 py-1.5 text-xs" data-testid="crash-conflict-helper" @click="openConflictHelper">
+            {{ t('modConflicts.openHelper') }}
           </button>
         </div>
       </section>

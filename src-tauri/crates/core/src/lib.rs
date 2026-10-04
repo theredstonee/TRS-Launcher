@@ -820,7 +820,8 @@ impl Launcher {
             }
         }
 
-        let result = self.launch_inner(&instance, join, extra, options.account_id.as_deref(), on_progress).await;
+        let result =
+            self.launch_inner(&instance, join, extra, options.account_id.as_deref(), options.skip_mod_check, on_progress).await;
         self.preparing.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(&instance.id);
         result
     }
@@ -831,6 +832,7 @@ impl Launcher {
         join_request: Option<Join<'_>>,
         extra: bool,
         account_id: Option<&str>,
+        skip_mod_check: bool,
         on_progress: &ProgressFn,
     ) -> Result<u32> {
         let world = match join_request {
@@ -918,7 +920,9 @@ impl Launcher {
         }
         // Passen die Mod-Versionen nicht zusammen (Iris will Sodium 0.9.x, da liegt 0.8.9),
         // werden passende getauscht – sonst bricht Fabric mit „Incompatible mods“ ab.
-        if let Some(note) = depcheck::versions_for_launch(&self.http, &self.paths, catalog.builds(), instance, &mods_progress).await? {
+        if let Some(note) =
+            depcheck::versions_for_launch(&self.http, &self.paths, catalog.builds(), instance, skip_mod_check, &mods_progress).await?
+        {
             let sink = self.games.sink();
             sink(GameEvent::notice(instance.id.clone(), &note));
         }
@@ -1322,6 +1326,8 @@ pub struct LaunchOptions {
     pub extra: bool,
     /// Konto für diesen Start (sonst das aktive).
     pub account_id: Option<String>,
+    /// „Trotzdem starten“ (Konflikt-Helfer): Mod-Versionen diesmal nicht prüfen.
+    pub skip_mod_check: bool,
 }
 
 /// Direkt beitreten: Server aus der Launcher-Liste (ID), freie Adresse oder

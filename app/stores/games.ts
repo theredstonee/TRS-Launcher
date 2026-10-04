@@ -4,6 +4,7 @@ import { defineStore } from 'pinia'
 import type { Diagnosis, GameEvent, LogLine, StageProgress } from '~/types'
 import type { HostedWorld } from '~/utils/hosting'
 import { askDuplicateMods } from '~/utils/duplicateMods'
+import { MOD_CONFLICT_CODE, isModConflictError } from '~/utils/modConflicts'
 import { aggregatePhase, isExtraKey } from '~/utils/processes'
 import { platformCaps } from '~/utils/system'
 
@@ -22,6 +23,8 @@ export interface GameState {
   phase: GamePhase
   progress: StageProgress | null
   error: string | null
+  /** Übersetzungs-Code des Startfehlers (z. B. Mod-Konflikt → „Helfer öffnen“) */
+  errorCode?: string | null
   logs: LogLine[]
   /**
    * Wie viele Zeilen seit dem Start angekommen sind (auch bereits vorne
@@ -188,6 +191,7 @@ export const useGamesStore = defineStore('games', () => {
    * `joinAddress`: freie Adresse (Server eines Freundes); prüft der Kern.
    * `joinWorld`: gehostete Welt eines Freundes – geht über den TRS-Link ans Spiel.
    * Die Vorbereitung läuft als Aufgabe (Titelleiste: Fortschritt, Pause, Abbrechen).
+   * `skipModCheck`: „Trotzdem starten“ aus dem Mod-Konflikt-Helfer (einmal ohne Versions-Prüfung).
    * Liefert, ob das Spiel gestartet wurde.
    */
   async function launch(
@@ -195,6 +199,7 @@ export const useGamesStore = defineStore('games', () => {
     joinServer: string | null = null,
     joinAddress: string | null = null,
     joinWorld: HostedWorld | null = null,
+    options: { skipModCheck?: boolean } = {},
   ): Promise<boolean> {
     // Am Handy gibt es (noch) kein Spiel zu starten.
     if (!platformCaps.value.gameLaunch) return false
@@ -229,6 +234,7 @@ export const useGamesStore = defineStore('games', () => {
     s.phase = 'preparing'
     s.mainAccountId = useAccountsStore().active?.id ?? null
     s.error = null
+    s.errorCode = null
     s.lastExit = null
     s.logs = []
     s.logTotal = 0
@@ -260,6 +266,9 @@ export const useGamesStore = defineStore('games', () => {
           ctx.taskId,
           joinAddress,
           joinWorld,
+          false,
+          null,
+          options.skipModCheck ?? false,
         ),
     )
     s.progress = null
@@ -273,7 +282,13 @@ export const useGamesStore = defineStore('games', () => {
     refresh(id)
     if (!result.cancelled) {
       s.error = errorMessage(result.error)
-      useToasts().error(result.error)
+      // Mod-Konflikt: statt nur einer Meldung gleich der Helfer.
+      if (isModConflictError(result.error)) {
+        s.errorCode = MOD_CONFLICT_CODE
+        void useModConflictsStore().open(id, 'launch')
+      } else {
+        useToasts().error(result.error)
+      }
     }
     return false
   }

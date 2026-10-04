@@ -354,6 +354,26 @@ pub async fn delete(paths: &Paths, instance_id: &str, kind: ContentKind, file_na
     Ok(())
 }
 
+/// Wie [`delete`], aber in den Papierkorb (Konflikt-Helfer; am Handy gibt es keinen – dort gelöscht).
+pub async fn trash(paths: &Paths, instance_id: &str, kind: ContentKind, file_name: &str) -> Result<()> {
+    validate_id(instance_id)?;
+    validate_file_name(kind, file_name)?;
+    let name = display_name(paths, instance_id, kind, file_name).await;
+    let dir = content_dir(paths, instance_id, kind);
+    if let Some((path, _)) = existing_path(&dir, file_name) {
+        if crate::platform::MOBILE {
+            fs::remove_file(&path).await.map_err(|e| Error::io(&path, e))?;
+        } else {
+            tokio::task::spawn_blocking(move || crate::platform::move_to_trash(&path))
+                .await
+                .map_err(|e| Error::Internal(e.to_string()))??;
+        }
+    }
+    forget_source(paths, instance_id, kind, file_name).await?;
+    history::record(paths, instance_id, HistoryEntry::new(HistoryKind::ModRemoved).subject(name)).await;
+    Ok(())
+}
+
 pub const MAX_BULK_ITEMS: usize = 1000;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
