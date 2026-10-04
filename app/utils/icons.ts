@@ -92,6 +92,11 @@ export const icons = {
   monitor: 'M3 4h18v12H3zM8 20h8M12 16v4',
   stop: 'M7 7h10v10H7z',
   qr: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 18h2v2h-2zM18 14h2M14 18h2',
+  /** Preset-Symbole: Schwert, Blitz, Block, Blatt. */
+  sword: 'M20 4v4L9.5 18.5l-4-4L16 4zM7.5 16.5 4 20M5 13l6 6',
+  bolt: 'M13 3 5 13.5h6L10 21l8-10.5h-6z',
+  cube: 'M4 4h16v16H4zM8.5 8.5h.01M15.5 8.5h.01M12 12h.01M8.5 15.5h.01M15.5 15.5h.01',
+  leaf: 'M5 19C5 10 10 5 20 4c0 10-5 15-14 15M5 19l8-8',
 } as const
 
 export type IconName = keyof typeof icons

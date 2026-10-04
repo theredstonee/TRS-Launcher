@@ -682,7 +682,8 @@
       "invalidOrder": "Die Reihenfolge passt nicht zur Preset-Liste.",
       "invalidFile": "Das ist keine gültige Preset-Datei.",
       "fileTooLarge": "Die Preset-Datei ist zu groß.",
-      "noneSelected": "Kein Preset ausgewählt."
+      "noneSelected": "Kein Preset ausgewählt.",
+      "invalidLook": "Unbekanntes Symbol oder unbekannte Farbe."
     },
     "clips": {
       "bufferRange": "Die Clip-Länge muss zwischen {min} und {max} Sekunden liegen",
@@ -4018,15 +4019,32 @@
       "namePlaceholder": "z. B. Meine Basics",
       "contents": "Inhalt ({n}) | Inhalt ({n})",
       "remove": "{title} entfernen",
-      "empty": "Noch leer – füge Projekte aus der Suche hinzu.",
-      "searchPlaceholder": "Modrinth durchsuchen …",
+      "empty": "Noch leer – Projekte aus der Suche hinzufügen oder aus einem Modpack übernehmen.",
       "searchLabel": "Projekte suchen",
       "added": "Dabei",
       "add": "Hinzufügen",
       "noResults": "Keine Treffer",
       "hint": "Presets sind versionsunabhängig: Beim Installieren wird für jede Instanz die passende Version gewählt – was es nicht gibt, wird übersprungen.",
       "tooManyItems": "Höchstens {max} Einträge pro Preset",
-      "duplicate": "Jedes Projekt kann nur einmal in einem Preset stehen"
+      "duplicate": "Jedes Projekt kann nur einmal in einem Preset stehen",
+      "addTitle": "{title} zum Preset hinzufügen",
+      "checking": "Abhängigkeiten werden geprüft …",
+      "brings": "bringt mit",
+      "depOnly": "{title} wird automatisch installiert (nur {loaders})",
+      "depAlways": "{title} wird automatisch installiert",
+      "conflictsLabel": "Bekannte Konflikte",
+      "conflict": {
+        "renderer": "{a} und {b} ersetzen beide den Renderer – es funktioniert immer nur einer.",
+        "shaders": "{a} und {b} laden beide Shader – nur eines behalten.",
+        "minimap": "{a} und {b} sind beides Minimaps – zwei gleichzeitig kommen sich in die Quere.",
+        "zoom": "{a} und {b} zoomen beide auf derselben Taste.",
+        "nvidium": "{a} und {b} vertragen sich nicht – Nvidium geht nicht zusammen mit Shadern.",
+        "declared": "{a} verträgt sich laut eigener Angabe nicht mit {b}.",
+        "trsClient": "{a} verträgt sich nicht mit dem TRS Client."
+      },
+      "loadMore": "Mehr laden",
+      "saved": "„{name}“ gespeichert",
+      "missing": "Dieses Preset gibt es nicht (mehr)."
     },
     "page": {
       "title": "Presets",
@@ -4066,6 +4084,103 @@
       "text": "Hier ist noch kein Sodium oder Embeddium drin. Der FPS-Boost installiert passende Optimierungen – wähle eine Stufe:",
       "apply": "FPS-Boost anwenden",
       "dismiss": "Hinweis ausblenden"
+    },
+    "templates": {
+      "title": "Neues Preset",
+      "intro": "Leer anfangen oder mit einer Vorlage – danach lässt sich alles ändern.",
+      "empty": {
+        "name": "Leeres Preset",
+        "description": "Alles selbst auswählen"
+      },
+      "performance": {
+        "name": "Performance",
+        "description": "Sodium, Lithium, FerriteCore, Entity Culling & mehr – mehr FPS, flüssigeres Spiel"
+      },
+      "shader": {
+        "name": "Shader",
+        "description": "Iris + Sodium und Shaderpakete von sehr leicht bis wunderschön"
+      },
+      "pvp": {
+        "name": "PvP",
+        "description": "Flüssige FPS, AppleSkin, Ping-Anzeige, niedriges Feuer und PvP-Texturen"
+      },
+      "redstone": {
+        "name": "Redstone",
+        "description": "Litematica, MiniHUD, Tweakeroo, Carpet und WorldEdit zum Schaltungsbau"
+      }
+    },
+    "look": {
+      "title": "Symbol & Farbe",
+      "hint": "Erscheint in der Preset-Liste und bei der Preset-Auswahl",
+      "icon": "Symbol",
+      "color": "Farbe",
+      "colors": {
+        "redstone": "Redstone",
+        "amber": "Bernstein",
+        "lime": "Limette",
+        "emerald": "Smaragd",
+        "cyan": "Türkis",
+        "sky": "Blau",
+        "violet": "Violett",
+        "pink": "Pink",
+        "slate": "Schiefer"
+      },
+      "icons": {
+        "presets": "Stapel",
+        "bolt": "Blitz",
+        "flame": "Flamme",
+        "sword": "Schwert",
+        "shield": "Schild",
+        "cube": "Block",
+        "world": "Welt",
+        "compass": "Kompass",
+        "wrench": "Schraubenschlüssel",
+        "puzzle": "Puzzle",
+        "lightbulb": "Glühbirne",
+        "star": "Stern",
+        "crown": "Krone",
+        "trophy": "Pokal",
+        "gamepad": "Controller",
+        "image": "Bild",
+        "palette": "Palette",
+        "moon": "Mond",
+        "leaf": "Blatt",
+        "monitor": "Bildschirm"
+      }
+    },
+    "pick": {
+      "open": "Aus Modpack übernehmen",
+      "title": "Aus Modpack übernehmen",
+      "titleFrom": "Aus „{name}“ übernehmen",
+      "sourceLabel": "Quelle",
+      "source": {
+        "instance": "Meine Instanz",
+        "modpack": "Modpack",
+        "code": "TRS-Code"
+      },
+      "instanceHint": "Instanz wählen – ihre Mods, Resource Packs und Shader werden aufgelistet.",
+      "searchPack": "Modpacks suchen",
+      "packHint": "Gelesen wird nur die Mod-Liste der neuesten Version – installiert wird nichts.",
+      "codeHint": "Code eines mit dem TRS Launcher geteilten Packs eingeben.",
+      "codeLabel": "Pack-Code",
+      "read": "Lesen",
+      "reading": "Inhalt wird gelesen …",
+      "otherSource": "Andere Quelle",
+      "count": "{n} Eintrag | {n} Einträge",
+      "filterPlaceholder": "Nach Namen filtern …",
+      "kindLabel": "Art",
+      "allKinds": "Alle Arten",
+      "onlyPerformance": "Nur Performance",
+      "onlyClient": "Nur Client-seitig",
+      "all": "Alle",
+      "none": "Keine",
+      "withoutProject": "{n} ohne Modrinth-/CurseForge-Projekt lässt sich nicht übernehmen | {n} ohne Modrinth-/CurseForge-Projekt lassen sich nicht übernehmen",
+      "performance": "Performance",
+      "client": "Client",
+      "noProject": "Nicht auf Modrinth/CurseForge – nicht übernehmbar",
+      "alreadyIn": "Schon im Preset",
+      "apply": "{n} übernehmen | {n} übernehmen",
+      "done": "{added} übernommen, {skipped} schon drin | {added} übernommen, {skipped} schon drin"
     }
   },
   "updateNews": {

@@ -316,17 +316,39 @@ export function firstIssue(error: z.ZodError): string {
 export const PRESET_NAME_MAX = 48
 export const PRESET_ITEMS_MAX = 100
 
-export const presetItemSchema = z.object({
-  source: z.literal('modrinth'),
-  projectId: z.string().regex(/^[A-Za-z0-9_-]{1,64}$/),
-  title: z.string().trim().min(1).max(100),
-  iconUrl: z
-    .string()
-    .max(512)
-    .refine((u) => u.startsWith('https://cdn.modrinth.com/'))
-    .nullable(),
-  kind: z.enum(['mod', 'resourcepack', 'shaderpack', 'datapack']),
-})
+/** Symbole eigener Presets (Namen aus `icons`) – wie `PRESET_ICONS` im Kern. */
+export const PRESET_ICONS = [
+  'presets', 'bolt', 'flame', 'sword', 'shield', 'cube', 'world', 'compass', 'wrench', 'puzzle',
+  'lightbulb', 'star', 'crown', 'trophy', 'gamepad', 'image', 'palette', 'moon', 'leaf', 'monitor',
+] as const
+/** Akzentfarben eigener Presets – wie `PRESET_COLORS` im Kern. */
+export const PRESET_COLORS = ['redstone', 'amber', 'lime', 'emerald', 'cyan', 'sky', 'violet', 'pink', 'slate'] as const
+export type PresetIconName = (typeof PRESET_ICONS)[number]
+export type PresetColorName = (typeof PRESET_COLORS)[number]
+
+const presetSourceSchema = z.enum(['modrinth', 'curseforge'])
+/** Projekt-ID je Quelle: Modrinth-ID/Slug bzw. CurseForge-Zahl. */
+export function isPresetProjectId(source: 'modrinth' | 'curseforge', id: string): boolean {
+  return source === 'modrinth' ? /^[A-Za-z0-9_-]{1,64}$/.test(id) : /^[1-9][0-9]{0,11}$/.test(id)
+}
+/** Symbol-Adressen nur von den CDNs der beiden Quellen. */
+export function isPresetIconUrl(url: string): boolean {
+  return (
+    url.length <= 512 &&
+    ['https://cdn.modrinth.com/', 'https://media.forgecdn.net/'].some((cdn) => url.startsWith(cdn) && url.length > cdn.length) &&
+    !/[\s"'<>\\@]/.test(url)
+  )
+}
+
+export const presetItemSchema = z
+  .object({
+    source: presetSourceSchema,
+    projectId: z.string().max(64),
+    title: z.string().trim().min(1).max(100),
+    iconUrl: z.string().max(512).refine(isPresetIconUrl).nullable(),
+    kind: z.enum(['mod', 'resourcepack', 'shaderpack', 'datapack']),
+  })
+  .refine((i) => isPresetProjectId(i.source, i.projectId), { path: ['projectId'] })
 
 export const presetInputSchema = z.object({
   name: z
@@ -339,5 +361,71 @@ export const presetInputSchema = z.object({
   items: z
     .array(presetItemSchema)
     .max(PRESET_ITEMS_MAX, msg('presets.editor.tooManyItems', { max: PRESET_ITEMS_MAX }))
-    .refine((items) => new Set(items.map((i) => i.projectId)).size === items.length, msg('presets.editor.duplicate')),
+    .refine((items) => new Set(items.map((i) => `${i.source}:${i.projectId}`)).size === items.length, msg('presets.editor.duplicate')),
+  icon: z.enum(PRESET_ICONS).nullable().optional(),
+  color: z.enum(PRESET_COLORS).nullable().optional(),
+})
+
+// Antworten der Preset-Werkzeuge (Auswahl „Aus Modpack übernehmen“, Prüfung).
+const kindSchema = z.enum(['mod', 'resourcepack', 'shaderpack', 'datapack'])
+const loaderSchema = z.enum(['vanilla', 'fabric', 'quilt', 'forge', 'neoforge'])
+const shortText = (max: number) => z.string().max(max)
+const iconSchema = z
+  .string()
+  .max(512)
+  .nullable()
+  .transform((u) => (u && isPresetIconUrl(u) ? u : null))
+
+export const presetPickListSchema = z.object({
+  name: shortText(200),
+  gameVersion: shortText(64).nullable(),
+  loader: loaderSchema.nullable(),
+  items: z
+    .array(
+      z.object({
+        source: presetSourceSchema.nullable(),
+        projectId: shortText(64).nullable(),
+        title: shortText(200),
+        iconUrl: iconSchema,
+        kind: kindSchema,
+        categories: z.array(shortText(60)).max(20),
+        performance: z.boolean(),
+        clientOnly: z.boolean().nullable(),
+        fileName: shortText(260).nullable(),
+      }),
+    )
+    .max(2000),
+})
+
+const itemRefSchema = z.object({ source: presetSourceSchema, projectId: shortText(64), title: shortText(200) })
+
+export const presetCheckSchema = z.object({
+  deps: z
+    .array(
+      z.object({
+        source: presetSourceSchema,
+        projectId: shortText(64),
+        deps: z
+          .array(
+            z.object({
+              source: presetSourceSchema,
+              projectId: shortText(64),
+              title: shortText(200),
+              iconUrl: iconSchema,
+              loaders: z.array(shortText(20)).max(8),
+            }),
+          )
+          .max(100),
+      }),
+    )
+    .max(200),
+  conflicts: z
+    .array(
+      z.object({
+        a: itemRefSchema,
+        b: itemRefSchema.nullable(),
+        reason: z.enum(['renderer', 'shaders', 'minimap', 'zoom', 'nvidium', 'declared', 'trsClient']),
+      }),
+    )
+    .max(500),
 })

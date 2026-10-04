@@ -1517,8 +1517,8 @@ export interface TaskProgressEvent {
 
 // --- Mod-Presets -------------------------------------------------------------
 
-/** Woher ein Preset-Eintrag stammt (später auch CurseForge). */
-export type PresetSource = 'modrinth'
+/** Woher ein Preset-Eintrag stammt. */
+export type PresetSource = 'modrinth' | 'curseforge'
 
 export interface PresetItem {
   source: PresetSource
@@ -1547,12 +1547,76 @@ export interface Preset {
   /** Passt zu diesem PC (Nvidium nur mit passender NVIDIA-Karte). */
   available: boolean
   items: PresetItem[]
+  /** Symbol (`PRESET_ICONS`) – fertige Presets haben ein festes. */
+  icon: string
+  /** Akzentfarbe (`PRESET_COLORS`). */
+  color: string
 }
 
 export interface PresetInput {
   name: string
   auto: boolean
   items: PresetItem[]
+  icon?: string | null
+  color?: string | null
+}
+
+/** Ein Inhalt für „Aus Modpack übernehmen“ (ohne Projekt = nicht übernehmbar). */
+export interface PresetPickItem {
+  source: PresetSource | null
+  projectId: string | null
+  title: string
+  iconUrl: string | null
+  kind: ContentKind
+  /** Modrinth-Kategorien (Slugs) bzw. CurseForge-Namen. */
+  categories: string[]
+  performance: boolean
+  /** Nur im Client nötig; `null` = unbekannt. */
+  clientOnly: boolean | null
+  fileName: string | null
+}
+
+export interface PresetPickList {
+  name: string
+  gameVersion: string | null
+  loader: LoaderKind | null
+  items: PresetPickItem[]
+}
+
+/** Pflicht-Abhängigkeit, die beim Installieren automatisch mitkommt. */
+export interface PresetDepRef {
+  source: PresetSource
+  projectId: string
+  title: string
+  iconUrl: string | null
+  /** Nur bei diesen Loadern nötig; leer = immer. */
+  loaders: string[]
+}
+
+export interface PresetItemDeps {
+  source: PresetSource
+  projectId: string
+  deps: PresetDepRef[]
+}
+
+export type PresetConflictReason = 'renderer' | 'shaders' | 'minimap' | 'zoom' | 'nvidium' | 'declared' | 'trsClient'
+
+export interface PresetItemRef {
+  source: PresetSource
+  projectId: string
+  title: string
+}
+
+export interface PresetConflict {
+  a: PresetItemRef
+  /** `null` bei `trsClient`. */
+  b: PresetItemRef | null
+  reason: PresetConflictReason
+}
+
+export interface PresetCheck {
+  deps: PresetItemDeps[]
+  conflicts: PresetConflict[]
 }
 
 /** Grafik-Modus des TRS Clients: nur Leistungs-Schalter ohne Optik-Verlust oder „Max FPS“. */

@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import type { Preset } from '~/types'
+import type { PresetTemplateId } from '~/utils/presetTemplates'
 
 // Mod-Presets verwalten: fertige TRS-Presets (nur „immer automatisch“) und
-// eigene (bearbeiten, umbenennen, Reihenfolge, teilen, löschen).
+// eigene (bearbeiten im Editor, Reihenfolge, teilen, löschen).
 const presets = usePresetsStore()
 const toasts = useToasts()
+const router = useRouter()
 
 const error = ref<string | null>(null)
-const editing = ref<Preset | null>(null)
-const creating = ref(false)
+const choosingTemplate = ref(false)
 const confirmDelete = ref<string | null>(null)
 const expanded = ref<Set<string>>(new Set())
 const busy = ref<string | null>(null)
@@ -88,6 +89,15 @@ function kindsText(p: Preset): string {
   return [...counts].map(([label, n]) => `${n}× ${label}`).join(' · ')
 }
 
+function startNew(template: PresetTemplateId | null) {
+  choosingTemplate.value = false
+  router.push(template ? { path: '/presets/new', query: { template } } : '/presets/new')
+}
+
+function edit(p: Preset) {
+  router.push(`/presets/${p.id}/edit`)
+}
+
 // Handy: Reihenfolge-Knöpfe im aufgeklappten Bereich statt in der engen Zeile.
 const mobile = mobileUi
 const isFirst = (p: Preset) => list.value[0]?.id === p.id
@@ -98,7 +108,7 @@ const isLast = (p: Preset) => list.value.at(-1)?.id === p.id
   <div class="mx-auto max-w-3xl p-6 mobile:p-4">
     <PageHeader :title="t('presets.page.title')" :subtitle="t('presets.page.subtitle')">
       <button class="btn btn-ghost" @click="importPreset">{{ t('common.actions.import') }}</button>
-      <button class="btn btn-primary" @click="creating = true">
+      <button class="btn btn-primary" data-testid="preset-new" @click="choosingTemplate = true">
         <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path :d="icons.plus" /></svg>
         {{ t('presets.page.new') }}
       </button>
@@ -111,14 +121,14 @@ const isLast = (p: Preset) => list.value.at(-1)?.id === p.id
     </div>
 
     <ul v-else class="space-y-2">
-      <li v-for="p in list" :key="p.id" class="card card-hover">
+      <li v-for="p in list" :key="p.id" class="card card-hover overflow-hidden" :style="{ boxShadow: `inset 3px 0 0 ${presetColor(p.color)}` }">
         <div class="flex items-center gap-3 px-4 py-3 mobile:px-3">
-          <!-- Symbol: TRS-Blitz für fertige Presets, sonst die ersten Icons -->
-          <div class="relative size-10 shrink-0">
-            <span v-if="p.builtin" class="grid size-10 place-items-center rounded-lg bg-redstone-900 text-redstone-300 ring-1 ring-redstone-600/40">
-              <svg viewBox="0 0 24 24" class="size-5" fill="currentColor"><path :d="icons.trs" /></svg>
+          <!-- Symbol + Farbe des Presets, darunter die ersten Projekte -->
+          <div class="relative shrink-0">
+            <PresetBadge :icon="p.icon" :color="p.color" :size="40" />
+            <span v-if="!p.builtin && p.items.length" class="absolute -right-1.5 -bottom-1.5 flex -space-x-1">
+              <ModIcon v-for="item in p.items.slice(0, 2)" :key="item.projectId" :src="item.iconUrl" :name="item.title" :size="16" class="ring-2 ring-base-900" />
             </span>
-            <ModIcon v-else :src="p.items[0]?.iconUrl" :name="p.name" :size="40" />
           </div>
 
           <button type="button" class="min-w-0 flex-1 text-left" :aria-expanded="expanded.has(p.id)" @click="toggleExpanded(p.id)">
@@ -163,7 +173,7 @@ const isLast = (p: Preset) => list.value.at(-1)?.id === p.id
           <p v-else class="text-xs text-base-400">{{ t('presets.page.emptyPreset') }}</p>
           <p v-if="p.builtin" class="mt-2 text-xs text-base-600">{{ t('presets.page.builtinHint') }}</p>
           <div v-else class="mt-3 flex flex-wrap gap-2">
-            <button class="btn btn-ghost py-1.5 text-xs" :disabled="busy === p.id" @click="editing = p">{{ t('common.actions.edit') }}</button>
+            <button class="btn btn-ghost py-1.5 text-xs" :disabled="busy === p.id" @click="edit(p)">{{ t('common.actions.edit') }}</button>
             <button class="btn btn-ghost py-1.5 text-xs" :disabled="busy === p.id || !p.items.length" @click="exportPreset(p)">{{ t('common.actions.export') }}</button>
             <button class="btn btn-danger ml-auto py-1.5 text-xs" :disabled="busy === p.id" @click="remove(p)" @blur="confirmDelete = null">
               {{ confirmDelete === p.id ? t('presets.page.confirmDelete') : t('common.actions.delete') }}
@@ -175,7 +185,6 @@ const isLast = (p: Preset) => list.value.at(-1)?.id === p.id
 
     <p class="mt-4 text-xs leading-relaxed text-base-600">{{ t('presets.page.footer') }}</p>
 
-    <PresetEditorDialog v-if="creating" :preset="null" @close="creating = false" />
-    <PresetEditorDialog v-if="editing" :preset="editing" @close="editing = null" />
+    <PresetTemplateDialog v-if="choosingTemplate" @close="choosingTemplate = false" @pick="startNew" />
   </div>
 </template>

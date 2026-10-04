@@ -4,7 +4,9 @@
 use tauri::ipc::Channel;
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
-use trs_core::presets::{self, ApplyProgress, ApplyReport, Preset, PresetInput};
+use trs_core::content::Platform;
+use trs_core::preset_tools::{PickList, PresetCheck};
+use trs_core::presets::{self, ApplyProgress, ApplyReport, Preset, PresetInput, PresetItem};
 
 use crate::LauncherState;
 use crate::commands::tasks::tracked;
@@ -117,6 +119,36 @@ pub async fn apply_presets(
     };
     // Was der TRS Client in der Instanz schon eingebaut hat, lädt das Preset nicht noch einmal.
     let builds = launcher.client_mod_builds().await;
-    let work = presets::apply(launcher.http(), launcher.paths(), &instance, &builds, &preset_ids, &report);
+    // CurseForge-Einträge eigener Presets: nur mit eingebautem Schlüssel (sonst „nicht verfügbar“).
+    let curseforge = launcher.curseforge().ok();
+    let work = presets::apply(launcher.http(), launcher.paths(), &instance, &builds, curseforge, &preset_ids, &report);
     Ok(tracked(&app, task_id, work).await?)
+}
+
+/// Pflicht-Abhängigkeiten und bekannte Konflikte der Einträge (Preset-Editor).
+#[tauri::command]
+pub async fn preset_check(launcher: State<'_, LauncherState>, items: Vec<PresetItem>) -> CommandResult<PresetCheck> {
+    Ok(launcher.preset_check(&items).await?)
+}
+
+/// „Aus Modpack übernehmen“: Inhalte einer eigenen Instanz.
+#[tauri::command]
+pub async fn preset_pick_instance(launcher: State<'_, LauncherState>, id: String) -> CommandResult<PickList> {
+    Ok(launcher.preset_pick_instance(&id).await?)
+}
+
+/// „Aus Modpack übernehmen“: neueste Version eines Modrinth- oder CurseForge-Modpacks (nur lesen).
+#[tauri::command]
+pub async fn preset_pick_modpack(
+    launcher: State<'_, LauncherState>,
+    platform: Platform,
+    project_id: String,
+) -> CommandResult<PickList> {
+    Ok(launcher.preset_pick_modpack(platform, &project_id).await?)
+}
+
+/// „Aus Modpack übernehmen“: ein mit TRS geteiltes Pack (Code).
+#[tauri::command]
+pub async fn preset_pick_pack_code(launcher: State<'_, LauncherState>, code: String) -> CommandResult<PickList> {
+    Ok(launcher.preset_pick_pack_code(&code).await?)
 }

@@ -1,0 +1,19 @@
+[
+  {
+    "id": 238222, "gameId": 432, "name": "Just Enough Items (JEI)", "slug": "jei", "classId": 6,
+    "categories": [{ "id": 421, "name": "API and Library", "classId": 6 }, { "id": 6, "name": "Mods", "isClass": true }],
+    "logo": { "thumbnailUrl": "https://media.forgecdn.net/avatars/thumbnails/29/69/64/64/635838945588716414.jpeg" }
+  },
+  {
+    "id": 581495, "gameId": 432, "name": "Oculus", "slug": "oculus", "classId": 6,
+    "categories": [{ "id": 6814, "name": "Performance", "classId": 6 }],
+    "logo": { "thumbnailUrl": "https://evil.example/logo.png" }
+  },
+  {
+    "id": 457570, "gameId": 432, "name": "Stay True", "slug": "stay-true", "classId": 12,
+    "categories": [{ "id": 400, "name": "Photo Realistic", "classId": 12 }]
+  },
+  {
+    "id": 300000, "gameId": 432, "name": "A Bundled Modpack", "slug": "bundled", "classId": 4471
+  }
+]

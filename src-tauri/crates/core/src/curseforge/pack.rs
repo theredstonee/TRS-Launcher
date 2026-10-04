@@ -601,7 +601,7 @@ fn read_manifest_and_mods(pack: &Path) -> Result<(Manifest, Vec<String>)> {
 
 impl Launcher {
     /// Modpack-Datei auf CurseForge samt Download-Auftrag in den Pack-Zwischenspeicher.
-    async fn curseforge_pack_task(
+    pub(crate) async fn curseforge_pack_task(
         &self,
         cf: &CurseForge,
         project_id: &str,

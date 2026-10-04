@@ -35,7 +35,10 @@ use crate::modrinth::{
 use crate::{Error, Result, USER_AGENT};
 
 pub use install::InstallOutcome;
-pub(crate) use pack::is_curseforge_pack;
+pub(crate) use install::blocked_message;
+pub(crate) use pack::{is_curseforge_pack, read_manifest};
+#[cfg(test)]
+pub(crate) use pack::Manifest;
 pub use pack::{AdoptResult, BlockedFile, PackOutcome, adopt_downloads, blocked_files, dismiss_blocked, downloads_dir};
 
 pub const API_BASE: &str = "https://api.curseforge.com/v1";
@@ -420,7 +423,7 @@ pub(crate) fn release_type_name(release_type: u8) -> &'static str {
 }
 
 /// CurseForge-`modLoader`-Nummer → Modrinth-Schreibweise.
-fn loader_tag_of(mod_loader: u8) -> Option<&'static str> {
+pub(crate) fn loader_tag_of(mod_loader: u8) -> Option<&'static str> {
     match mod_loader {
         1 => Some("forge"),
         4 => Some("fabric"),

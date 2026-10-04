@@ -165,6 +165,7 @@ import type {
   CrashAnalysis,
   CrashSummary,
   Preset,
+  PresetItem,
   PresetApplyReport,
   PresetInput,
   PresetProgress,
@@ -240,7 +241,7 @@ import type {
   TaskRecord,
   VersionManifest,
 } from '~/types'
-import { sharedFolderStatusSchema } from './schemas'
+import { presetCheckSchema, presetPickListSchema, sharedFolderStatusSchema } from './schemas'
 import { pingStatusSchema } from './ping'
 
 export class BackendError extends Error {
@@ -625,6 +626,15 @@ export const backend = {
     onProgress: (p: PresetProgress) => void,
     taskId: string | null = null,
   ) => call<PresetApplyReport>('apply_presets', { id, presetIds, onProgress: channel(onProgress), taskId }),
+  /** Pflicht-Abhängigkeiten und bekannte Konflikte der Einträge (Preset-Editor). */
+  presetCheck: (items: PresetItem[]) => checked(presetCheckSchema, 'preset_check', { items }),
+  /** „Aus Modpack übernehmen“: Inhalte einer eigenen Instanz. */
+  presetPickInstance: (id: string) => checked(presetPickListSchema, 'preset_pick_instance', { id }),
+  /** „Aus Modpack übernehmen“: neueste Version eines Modpacks (nur gelesen, nicht installiert). */
+  presetPickModpack: (platform: Platform, projectId: string) =>
+    checked(presetPickListSchema, 'preset_pick_modpack', { platform, projectId }),
+  /** „Aus Modpack übernehmen“: mit TRS geteiltes Pack. */
+  presetPickPackCode: (code: string) => checked(presetPickListSchema, 'preset_pick_pack_code', { code }),
   /** Instanz mit Modloader ohne Sodium/Embeddium/OptiFine (kein Modpack) → „FPS-Boost anwenden“ anbieten. */
   fpsBoostSuggested: (id: string) => call<boolean>('fps_boost_suggested', { id }),
 

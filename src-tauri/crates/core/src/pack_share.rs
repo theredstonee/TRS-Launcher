@@ -746,7 +746,7 @@ impl Launcher {
 
     /// Pack herunterladen (mit `Range`, fortsetzbar) und gegen Größe und SHA-256 der API prüfen.
     /// Liegt es schon im Zwischenspeicher, wird es nicht neu geladen.
-    async fn fetch_pack(&self, code: &str, on_progress: &(dyn Fn(u64, u64) + Sync)) -> Result<(PathBuf, SharedPack)> {
+    pub(crate) async fn fetch_pack(&self, code: &str, on_progress: &(dyn Fn(u64, u64) + Sync)) -> Result<(PathBuf, SharedPack)> {
         let mut pack = self.trs_pack_by_code(code).await?;
         let dir = crate::modpack::pack_cache_dir(self.paths());
         fsutil::ensure_dir(&dir).await?;

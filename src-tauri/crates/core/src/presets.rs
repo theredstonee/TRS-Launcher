@@ -22,6 +22,7 @@ use tokio::sync::Mutex;
 
 use crate::client_mod::{self, BundledMod};
 use crate::content::{self, ContentKind};
+use crate::curseforge::CurseForge;
 use crate::error::UserError;
 use crate::icon::is_allowed_icon_url;
 use crate::instance::{Instance, LoaderKind, UpdateChannel};
@@ -37,7 +38,8 @@ const MAX_TITLE_CHARS: usize = 100;
 /// Export-Dateien sind klein – mehr wird beim Import nicht gelesen.
 pub const MAX_IMPORT_BYTES: u64 = 256 * 1024;
 const FILE_NAME: &str = "presets.json";
-const FILE_VERSION: u32 = 1;
+/// Version 2: Symbol + Farbe je Preset, CurseForge-Einträge (ältere Dateien werden einfach mitgelesen).
+const FILE_VERSION: u32 = 2;
 const EXPORT_FORMAT: &str = "trs-preset";
 const EXPORT_VERSION: u32 = 1;
 
@@ -45,11 +47,46 @@ static WRITE_LOCK: Mutex<()> = Mutex::const_new(());
 
 // --- Datenmodell -------------------------------------------------------------------
 
-/// Woher ein Projekt stammt. Später kommt CurseForge dazu.
+/// Woher ein Projekt stammt.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum PresetSource {
     Modrinth,
+    /// CurseForge-Projekt (ID als Zahl in Textform) – geladen über die CurseForge-API.
+    Curseforge,
+}
+
+impl PresetSource {
+    /// Gültige Projekt-ID für diese Quelle?
+    pub fn is_valid_id(self, id: &str) -> bool {
+        match self {
+            Self::Modrinth => modrinth::is_safe_project_id(id),
+            Self::Curseforge => id.len() <= 12 && id.parse::<u64>().is_ok_and(|n| n > 0) && !id.starts_with('0'),
+        }
+    }
+
+    /// Schlüssel der Instanz-Inhalte (`cf:123` bzw. die Modrinth-ID).
+    fn content_key(self, id: &str) -> String {
+        match self {
+            Self::Modrinth => id.to_owned(),
+            Self::Curseforge => content::project_key(content::Platform::CurseForge, id),
+        }
+    }
+}
+
+/// Symbole, die ein eigenes Preset haben kann (Namen wie im Frontend `icons`).
+pub const PRESET_ICONS: &[&str] = &[
+    "presets", "bolt", "flame", "sword", "shield", "cube", "world", "compass", "wrench", "puzzle", "lightbulb", "star",
+    "crown", "trophy", "gamepad", "image", "palette", "moon", "leaf", "monitor",
+];
+/// Akzentfarben eigener Presets (Schlüssel der Palette im Frontend).
+pub const PRESET_COLORS: &[&str] = &["redstone", "amber", "lime", "emerald", "cyan", "sky", "violet", "pink", "slate"];
+const DEFAULT_ICON: &str = "presets";
+const DEFAULT_COLOR: &str = "redstone";
+
+/// Nur bekannte Symbole/Farben – Unbekanntes (z. B. aus einer neueren Version) fällt auf den Standard.
+fn known(value: Option<&str>, allowed: &[&str]) -> Option<String> {
+    value.filter(|v| allowed.contains(v)).map(str::to_owned)
 }
 
 /// Ein Eintrag eines Presets.
@@ -117,6 +154,16 @@ impl Builtin {
     /// leicht mit dem, was der Packautor gewählt hat.
     pub fn modpack_safe(self) -> bool {
         matches!(self, Self::VoiceChat | Self::Replay)
+    }
+
+    /// Festes Symbol + Farbe der fertigen Presets.
+    fn look(self) -> (&'static str, &'static str) {
+        match self {
+            Self::FpsBoost | Self::FpsShaderLite | Self::FpsShader => ("bolt", "amber"),
+            Self::Nvidium => ("monitor", "lime"),
+            Self::VoiceChat => ("chat", "sky"),
+            Self::Replay => ("record", "violet"),
+        }
     }
 
     fn groups(self) -> Vec<&'static Group> {
@@ -280,10 +327,14 @@ pub struct Preset {
     /// Passt zu diesem PC (Nvidium nur mit passender NVIDIA-Karte).
     pub available: bool,
     pub items: Vec<PresetItem>,
+    /// Symbol (siehe [`PRESET_ICONS`]; fertige Presets haben eigene).
+    pub icon: String,
+    /// Akzentfarbe (siehe [`PRESET_COLORS`]).
+    pub color: String,
 }
 
 /// Eingabe beim Anlegen/Ändern eines eigenen Presets.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PresetInput {
     pub name: String,
@@ -291,9 +342,13 @@ pub struct PresetInput {
     pub auto: bool,
     #[serde(default)]
     pub items: Vec<PresetItem>,
+    #[serde(default)]
+    pub icon: Option<String>,
+    #[serde(default)]
+    pub color: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct StoredPreset {
     id: String,
@@ -303,6 +358,11 @@ struct StoredPreset {
     auto: bool,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     items: Vec<PresetItem>,
+    /// Ältere Dateien (Version 1) haben weder Symbol noch Farbe → Standard.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    icon: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    color: Option<String>,
     /// Letzte Änderung (nur eigene Presets) – für den Abgleich mit dem TRS-Konto.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     updated_at: Option<DateTime<Utc>>,
@@ -310,7 +370,7 @@ struct StoredPreset {
 
 impl StoredPreset {
     fn new(id: impl Into<String>, name: impl Into<String>, auto: bool, items: Vec<PresetItem>) -> Self {
-        Self { id: id.into(), name: name.into(), auto, items, updated_at: None }
+        Self { id: id.into(), name: name.into(), auto, items, ..Self::default() }
     }
 }
 
@@ -384,6 +444,10 @@ struct ExportFile<'a> {
     version: u32,
     name: &'a str,
     items: &'a [PresetItem],
+    #[serde(skip_serializing_if = "Option::is_none")]
+    icon: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    color: Option<&'a str>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -395,6 +459,19 @@ struct RawExportFile {
     name: String,
     #[serde(default)]
     items: Vec<serde_json::Value>,
+    #[serde(default)]
+    icon: Option<serde_json::Value>,
+    #[serde(default)]
+    color: Option<serde_json::Value>,
+}
+
+/// Inhalt einer gelesenen Preset-Datei.
+#[derive(Debug, Clone, PartialEq)]
+struct Imported {
+    name: String,
+    items: Vec<PresetItem>,
+    icon: Option<String>,
+    color: Option<String>,
 }
 
 // --- Prüfen ------------------------------------------------------------------------
@@ -418,7 +495,7 @@ fn validate_name(name: &str) -> Result<String> {
 
 /// Prüft einen Eintrag und bringt ihn in Form (Titel gekürzt, fremde Bilder weg).
 fn validate_item(item: PresetItem) -> Result<PresetItem> {
-    if !modrinth::is_safe_project_id(&item.project_id) {
+    if !item.source.is_valid_id(&item.project_id) {
         return Err(Error::validation(crate::msg!("presets.invalidProject", "Ungültiges Projekt im Preset.")));
     }
     let mut title: String = clean_text(&item.title).chars().take(MAX_TITLE_CHARS).collect();
@@ -534,7 +611,15 @@ fn normalize(stored: Vec<StoredPreset>) -> Vec<StoredPreset> {
             .take(MAX_ITEMS)
             .collect();
         own += 1;
-        out.push(StoredPreset { id: p.id, name, auto: p.auto, items, updated_at: p.updated_at });
+        out.push(StoredPreset {
+            id: p.id,
+            name,
+            auto: p.auto,
+            items,
+            icon: known(p.icon.as_deref(), PRESET_ICONS),
+            color: known(p.color.as_deref(), PRESET_COLORS),
+            updated_at: p.updated_at,
+        });
     }
     let is_builtin = |p: &StoredPreset, tier_only: bool| Builtin::from_id(&p.id).is_some_and(|b| !tier_only || b.is_fps_tier());
     for b in Builtin::ALL.into_iter().filter(|b| !ids.contains(b.id())) {
@@ -588,6 +673,8 @@ fn view(p: &StoredPreset, nvidium_ok: bool) -> Preset {
             modpack_safe: b.modpack_safe(),
             available: b != Builtin::Nvidium || nvidium_ok,
             items: builtin_items(b),
+            icon: b.look().0.to_owned(),
+            color: b.look().1.to_owned(),
         },
         None => Preset {
             id: p.id.clone(),
@@ -597,6 +684,8 @@ fn view(p: &StoredPreset, nvidium_ok: bool) -> Preset {
             modpack_safe: true,
             available: true,
             items: p.items.clone(),
+            icon: p.icon.clone().unwrap_or_else(|| DEFAULT_ICON.to_owned()),
+            color: p.color.clone().unwrap_or_else(|| DEFAULT_COLOR.to_owned()),
         },
     }
 }
@@ -632,8 +721,20 @@ fn too_many() -> Error {
     ))
 }
 
+/// Symbol + Farbe aus der Eingabe – nur bekannte Werte, sonst Fehler.
+fn validate_look(input: &PresetInput) -> Result<(Option<String>, Option<String>)> {
+    let icon = input.icon.as_deref().map(|i| known(Some(i), PRESET_ICONS).ok_or_else(invalid_look)).transpose()?;
+    let color = input.color.as_deref().map(|c| known(Some(c), PRESET_COLORS).ok_or_else(invalid_look)).transpose()?;
+    Ok((icon, color))
+}
+
+fn invalid_look() -> Error {
+    Error::validation(crate::msg!("presets.invalidLook", "Unbekanntes Symbol oder unbekannte Farbe."))
+}
+
 pub async fn create(paths: &Paths, input: PresetInput) -> Result<Preset> {
     let name = validate_name(&input.name)?;
+    let (icon, color) = validate_look(&input)?;
     let items = validate_items(input.items)?;
     let stored = modify(paths, |list, _| {
         if own_count(list) >= MAX_PRESETS {
@@ -644,6 +745,8 @@ pub async fn create(paths: &Paths, input: PresetInput) -> Result<Preset> {
             name,
             auto: input.auto,
             items,
+            icon,
+            color,
             updated_at: Some(Utc::now()),
         };
         list.push(preset.clone());
@@ -658,12 +761,15 @@ pub async fn update(paths: &Paths, id: &str, input: PresetInput) -> Result<Prese
         return Err(read_only());
     }
     let name = validate_name(&input.name)?;
+    let (icon, color) = validate_look(&input)?;
     let items = validate_items(input.items)?;
     let stored = modify(paths, |list, _| {
         let preset = list.iter_mut().find(|p| p.id == id).ok_or_else(not_found)?;
         preset.name = name;
         preset.auto = input.auto;
         preset.items = items;
+        preset.icon = icon;
+        preset.color = color;
         preset.updated_at = Some(Utc::now());
         Ok(preset.clone())
     })
@@ -760,6 +866,8 @@ pub async fn export(paths: &Paths, id: &str) -> Result<(String, Vec<u8>)> {
         version: EXPORT_VERSION,
         name: &preset.name,
         items: &preset.items,
+        icon: preset.icon.as_deref(),
+        color: preset.color.as_deref(),
     })
     .map_err(|e| Error::Internal(e.to_string()))?;
     Ok((export_file_name(&preset.name), bytes))
@@ -775,7 +883,7 @@ fn file_too_large() -> Error {
 
 /// Liest eine geteilte Preset-Datei. Unbekannte Einträge (z. B. aus einer
 /// neueren Launcher-Version) werden übersprungen.
-fn parse_export(bytes: &[u8]) -> Result<(String, Vec<PresetItem>)> {
+fn parse_export(bytes: &[u8]) -> Result<Imported> {
     if bytes.len() as u64 > MAX_IMPORT_BYTES {
         return Err(file_too_large());
     }
@@ -795,7 +903,9 @@ fn parse_export(bytes: &[u8]) -> Result<(String, Vec<PresetItem>)> {
     if items.is_empty() {
         return Err(invalid_file());
     }
-    Ok((name, items))
+    let icon = known(raw.icon.as_ref().and_then(|v| v.as_str()), PRESET_ICONS);
+    let color = known(raw.color.as_ref().and_then(|v| v.as_str()), PRESET_COLORS);
+    Ok(Imported { name, items, icon, color })
 }
 
 /// Gleicher Name schon vergeben? Dann „Name (2)“, „Name (3)“ …
@@ -815,7 +925,7 @@ fn unique_name(name: &str, taken: &[&str]) -> String {
 
 /// Legt aus einer geteilten Datei ein neues eigenes Preset an.
 pub async fn import(paths: &Paths, bytes: &[u8]) -> Result<Preset> {
-    let (name, items) = parse_export(bytes)?;
+    let Imported { name, items, icon, color } = parse_export(bytes)?;
     let stored = modify(paths, |list, _| {
         if own_count(list) >= MAX_PRESETS {
             return Err(too_many());
@@ -826,6 +936,8 @@ pub async fn import(paths: &Paths, bytes: &[u8]) -> Result<Preset> {
             name: unique_name(&name, &taken),
             auto: false,
             items,
+            icon,
+            color,
             updated_at: Some(Utc::now()),
         };
         list.push(preset.clone());
@@ -864,6 +976,10 @@ pub struct SyncPreset {
     pub name: String,
     pub auto: bool,
     pub items: Vec<PresetItem>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub icon: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub color: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<DateTime<Utc>>,
 }
@@ -922,6 +1038,8 @@ impl SyncData {
                 name,
                 auto: raw.get("auto").and_then(serde_json::Value::as_bool).unwrap_or(false),
                 items,
+                icon: known(raw.get("icon").and_then(|v| v.as_str()), PRESET_ICONS),
+                color: known(raw.get("color").and_then(|v| v.as_str()), PRESET_COLORS),
                 updated_at: parse_time(raw.get("updatedAt")),
             });
         }
@@ -986,6 +1104,8 @@ fn sync_view(list: &[StoredPreset], meta: &Meta) -> SyncData {
             name: p.name.clone(),
             auto: p.auto,
             items: p.items.clone(),
+            icon: p.icon.clone(),
+            color: p.color.clone(),
             updated_at: p.updated_at,
         })
         .collect();
@@ -1062,6 +1182,8 @@ fn from_sync(data: &SyncData) -> (Vec<StoredPreset>, Meta) {
                 name: p.name.clone(),
                 auto: p.auto,
                 items: p.items.clone(),
+                icon: p.icon.clone(),
+                color: p.color.clone(),
                 updated_at: p.updated_at,
             }),
         })
@@ -1153,9 +1275,11 @@ fn wanted_of(preset: &Preset) -> Vec<Wanted> {
                 optional: b.is_fps_tier(),
             })
             .collect(),
+        // CurseForge-Einträge laufen getrennt (siehe [`install_curseforge`]).
         None => preset
             .items
             .iter()
+            .filter(|i| i.source == PresetSource::Modrinth)
             .map(|i| Wanted {
                 preset_id: preset.id.clone(),
                 kind: i.kind,
@@ -2092,11 +2216,14 @@ pub(crate) async fn install_projects(
 /// Installiert die gewählten Presets in die Instanz – jede Mod nur, wenn es
 /// eine passende Version (samt Pflicht-Abhängigkeiten) gibt. `builds`: die
 /// TRS-Client-Builds (im TRS Client eingebaute Mods fallen weg).
+/// `curseforge`: für CurseForge-Einträge eigener Presets (`None` = kein Schlüssel im Build).
+#[allow(clippy::too_many_arguments)]
 pub async fn apply(
     http: &reqwest::Client,
     paths: &Paths,
     instance: &Instance,
     builds: &[client_mod::Build],
+    curseforge: Option<&CurseForge>,
     preset_ids: &[String],
     progress: &(dyn Fn(ApplyProgress) + Sync),
 ) -> Result<ApplyReport> {
@@ -2113,12 +2240,112 @@ pub async fn apply(
     let chosen: Vec<&Preset> = all.iter().filter(|p| preset_ids.contains(&p.id)).collect();
     let wanted = wanted_for(&chosen);
     let mut report = run(http, paths, instance, builds, &wanted, progress).await?;
+    let cf_items: Vec<(&str, &PresetItem)> = chosen
+        .iter()
+        .filter(|p| p.builtin.is_none())
+        .flat_map(|p| p.items.iter().filter(|i| i.source == PresetSource::Curseforge).map(|i| (p.id.as_str(), i)))
+        .collect();
+    if !cf_items.is_empty() {
+        install_curseforge(curseforge, paths, instance, &cf_items, &mut report, progress).await?;
+    }
     // Shader-Stufe: das Paket gleich in Iris einschalten.
     let tier = chosen.iter().filter_map(|p| p.builtin).find(|b| b.is_fps_tier());
     if let Some(shader_id) = tier.and_then(shader_project) {
         report.shader_pack = activate_shader(paths, instance, &report, shader_id).await;
     }
     Ok(report)
+}
+
+/// Ein CurseForge-Eintrag als Bericht-Zeile.
+fn cf_outcome(preset_id: &str, item: &PresetItem, status: ItemStatus) -> ItemOutcome {
+    ItemOutcome {
+        preset_id: preset_id.to_owned(),
+        project_id: Some(item.project_id.clone()),
+        title: item.title.clone(),
+        icon_url: item.icon_url.clone(),
+        kind: item.kind,
+        status,
+        optional: false,
+        version_number: None,
+        detail: None,
+        error: None,
+        compat_with: None,
+    }
+}
+
+/// Vereinfachter Name zum Vergleich über Quellen hinweg („Xaero's Minimap“ → „xaerosminimap“).
+pub(crate) fn simple_name(text: &str) -> String {
+    text.chars().filter(char::is_ascii_alphanumeric).flat_map(|c| c.to_lowercase()).collect()
+}
+
+/// Installiert die CurseForge-Einträge eigener Presets nach den Modrinth-Einträgen –
+/// jeweils die neueste passende Datei samt Pflicht-Abhängigkeiten. Liegt dasselbe
+/// Projekt schon (auch von Modrinth, gleicher Name) in der Instanz, bleibt es dabei.
+async fn install_curseforge(
+    curseforge: Option<&CurseForge>,
+    paths: &Paths,
+    instance: &Instance,
+    items: &[(&str, &PresetItem)],
+    report: &mut ApplyReport,
+    progress: &(dyn Fn(ApplyProgress) + Sync),
+) -> Result<()> {
+    let total = u32::try_from(items.len()).unwrap_or(u32::MAX);
+    for (n, (preset_id, item)) in items.iter().enumerate() {
+        task::checkpoint().await?;
+        progress(ApplyProgress {
+            phase: ApplyPhase::Install,
+            done: u32::try_from(n).unwrap_or(u32::MAX),
+            total,
+            title: Some(item.title.clone()),
+        });
+        let installed: HashSet<String> = content::installed_project_ids(paths, &instance.id).await?.into_iter().collect();
+        let names: HashSet<String> = content::read_index(paths, &instance.id)
+            .await
+            .projects
+            .values()
+            .flat_map(|p| [simple_name(&p.title), simple_name(&p.slug)])
+            .filter(|s| !s.is_empty())
+            .collect();
+        let status = if item.kind == ContentKind::Mod && instance.loader.kind == LoaderKind::Vanilla {
+            ItemStatus::NeedsLoader
+        } else if installed.contains(&PresetSource::Curseforge.content_key(&item.project_id)) {
+            ItemStatus::AlreadyInstalled
+        } else if names.contains(&simple_name(&item.title))
+            || report.items.iter().any(|o| {
+                o.kind == item.kind && simple_name(&o.title) == simple_name(&item.title) && !matches!(o.status, ItemStatus::Failed)
+            })
+        {
+            // Gleiches Projekt schon da (z. B. von Modrinth) oder im selben Durchgang dabei.
+            ItemStatus::Duplicate
+        } else {
+            let Some(cf) = curseforge else {
+                report.items.push(cf_outcome(preset_id, item, ItemStatus::NotAvailable));
+                continue;
+            };
+            match cf.install(paths, instance, &item.project_id, item.kind, None).await {
+                Ok(outcome) if outcome.files.is_empty() && !outcome.blocked.is_empty() => {
+                    let error = crate::curseforge::blocked_message(&item.title).to_user();
+                    report.items.push(ItemOutcome { error: Some(error), ..cf_outcome(preset_id, item, ItemStatus::Failed) });
+                    continue;
+                }
+                Ok(outcome) => {
+                    report.dependencies += u32::try_from(outcome.files.len().saturating_sub(1)).unwrap_or(0);
+                    report.files.extend(outcome.files);
+                    ItemStatus::Installed
+                }
+                Err(Error::Cancelled) => return Err(Error::Cancelled),
+                Err(e) if e.code() == Some("curseforge.noCompatibleFile") => ItemStatus::NotAvailable,
+                Err(e) => {
+                    tracing::warn!("CurseForge-Eintrag {} nicht installiert: {e}", item.project_id);
+                    report.items.push(ItemOutcome { error: Some(e.to_user()), ..cf_outcome(preset_id, item, ItemStatus::Failed) });
+                    continue;
+                }
+            }
+        };
+        report.items.push(cf_outcome(preset_id, item, status));
+    }
+    progress(ApplyProgress { phase: ApplyPhase::Install, done: total, total, title: None });
+    Ok(())
 }
 
 /// Was installiert werden soll – in der gespeicherten Reihenfolge der Presets.
@@ -3281,15 +3508,30 @@ mod tests {
     #[test]
     fn export_round_trip_and_bad_files() {
         let items = vec![validate_item(item("abc")).unwrap()];
-        let bytes = serde_json::to_vec(&ExportFile { format: EXPORT_FORMAT, version: 1, name: "Basics", items: &items }).unwrap();
-        let (name, parsed) = parse_export(&bytes).unwrap();
-        assert_eq!((name.as_str(), parsed), ("Basics", items));
+        let bytes = serde_json::to_vec(&ExportFile {
+            format: EXPORT_FORMAT,
+            version: 1,
+            name: "Basics",
+            items: &items,
+            icon: Some("sword"),
+            color: Some("sky"),
+        })
+        .unwrap();
+        let parsed = parse_export(&bytes).unwrap();
+        assert_eq!(
+            parsed,
+            Imported { name: "Basics".into(), items: items.clone(), icon: Some("sword".into()), color: Some("sky".into()) }
+        );
 
-        // Unbekannte Quelle (neuere Version) wird übersprungen, der Rest bleibt.
-        let mixed = br#"{"format":"trs-preset","version":2,"name":"X","items":[
-            {"source":"curseforge","projectId":"123","title":"CF","kind":"mod"},
+        // Unbekannte Quelle (neuere Version) wird übersprungen, der Rest bleibt; CurseForge kommt mit.
+        let mixed = br#"{"format":"trs-preset","version":2,"name":"X","icon":"rocket","color":7,"items":[
+            {"source":"hangar","projectId":"123","title":"Fremd","kind":"mod"},
+            {"source":"curseforge","projectId":"238222","title":"JEI","kind":"mod"},
             {"source":"modrinth","projectId":"AANobbMI","title":"Sodium","kind":"mod"}]}"#;
-        assert_eq!(parse_export(mixed).unwrap().1.len(), 1);
+        let parsed = parse_export(mixed).unwrap();
+        assert_eq!(parsed.items.len(), 2);
+        assert_eq!(parsed.items[0].source, PresetSource::Curseforge);
+        assert_eq!((parsed.icon, parsed.color), (None, None), "unbekanntes Symbol/Farbe → Standard");
 
         for bad in [&b"{}"[..], b"null", br#"{"format":"other","version":1,"name":"X","items":[]}"#,
             br#"{"format":"trs-preset","version":1,"name":"X","items":[]}"#] {
@@ -3305,7 +3547,15 @@ mod tests {
     }
 
     fn sp(id: &str, name: &str, at: Option<DateTime<Utc>>) -> SyncPreset {
-        SyncPreset { id: id.into(), name: name.into(), auto: false, items: vec![validate_item(item("abc")).unwrap()], updated_at: at }
+        SyncPreset {
+            id: id.into(),
+            name: name.into(),
+            auto: false,
+            items: vec![validate_item(item("abc")).unwrap()],
+            icon: None,
+            color: None,
+            updated_at: at,
+        }
     }
 
     fn data(presets: Vec<SyncPreset>, deleted: Vec<(&str, i64)>, order: &[&str], layout_at: Option<DateTime<Utc>>) -> SyncData {
@@ -3372,7 +3622,8 @@ mod tests {
             "presets": [
                 { "id": P1, "name": " Basics ", "auto": true, "updatedAt": "2026-09-25T10:00:00.000Z",
                   "items": [ { "source": "modrinth", "projectId": "AANobbMI", "title": "Sodium", "kind": "mod" },
-                             { "source": "curseforge", "projectId": "1", "title": "x", "kind": "mod" },
+                             { "source": "hangar", "projectId": "1", "title": "x", "kind": "mod" },
+                             { "source": "curseforge", "projectId": "../1", "title": "x", "kind": "mod" },
                              { "source": "modrinth", "projectId": "../böse", "title": "x", "kind": "mod" } ] },
                 { "id": "../x", "name": "kaputt" },
                 { "id": P2, "name": "" },
@@ -3402,7 +3653,7 @@ mod tests {
     async fn sync_merge_updates_the_store() {
         let dir = tempfile::tempdir().unwrap();
         let paths = Paths::new(dir.path());
-        let own = create(&paths, PresetInput { name: "Hier".into(), auto: false, items: vec![item("abc")] }).await.unwrap();
+        let own = create(&paths, PresetInput { name: "Hier".into(), items: vec![item("abc")], ..Default::default() }).await.unwrap();
         let local = sync_local(&paths).await;
         assert_eq!(local.presets.len(), 1);
         assert!(local.presets[0].updated_at.is_some());
@@ -3446,12 +3697,16 @@ mod tests {
         let listed = list(&paths).await.unwrap();
         assert_eq!(listed.len(), Builtin::ALL.len());
 
-        let created = create(&paths, PresetInput { name: "Basics".into(), auto: true, items: vec![item("abc")] }).await.unwrap();
+        let created = create(&paths, PresetInput { name: "Basics".into(), auto: true, items: vec![item("abc")], ..Default::default() }).await.unwrap();
         assert!(is_user_id(&created.id));
         let updated =
-            update(&paths, &created.id, PresetInput { name: "Neu".into(), auto: false, items: vec![item("def")] }).await.unwrap();
+            update(&paths, &created.id, PresetInput { name: "Neu".into(), items: vec![item("def")], icon: Some("cube".into()), color: Some("emerald".into()), ..Default::default() }).await.unwrap();
         assert_eq!((updated.name.as_str(), updated.items[0].project_id.as_str()), ("Neu", "def"));
-        assert!(update(&paths, "trs-replay", PresetInput { name: "x".into(), auto: false, items: vec![] }).await.is_err());
+        assert_eq!((created.icon.as_str(), created.color.as_str()), (DEFAULT_ICON, DEFAULT_COLOR));
+        assert_eq!((updated.icon.as_str(), updated.color.as_str()), ("cube", "emerald"));
+        let bad_look = PresetInput { name: "x".into(), icon: Some("<svg>".into()), ..Default::default() };
+        assert!(update(&paths, &created.id, bad_look).await.is_err());
+        assert!(update(&paths, "trs-replay", PresetInput { name: "x".into(), ..Default::default() }).await.is_err());
         assert!(delete(&paths, "trs-fps-boost").await.is_err());
         assert!(set_auto(&paths, "trs-voice-chat", true).await.unwrap().auto);
         // FPS-Stufen: eine automatisch schaltet die anderen ab.
@@ -3475,5 +3730,90 @@ mod tests {
         let after = list(&paths).await.unwrap();
         assert_eq!(after.len(), Builtin::ALL.len() + 1);
         assert!(after.iter().find(|p| p.id == "trs-voice-chat").unwrap().auto);
+    }
+
+    #[test]
+    fn curseforge_items_need_numeric_ids() {
+        let cf = |id: &str| PresetItem { source: PresetSource::Curseforge, ..item(id) };
+        assert!(validate_item(cf("238222")).is_ok());
+        for bad in ["0", "0123", "abc", "-5", "1234567890123", ""] {
+            assert!(validate_item(cf(bad)).is_err(), "{bad}");
+        }
+        // Gleiche ID auf beiden Plattformen sind zwei Projekte.
+        let mixed = validate_items(vec![cf("238222"), item("238222"), cf("238222")]).unwrap();
+        assert_eq!(mixed.len(), 2);
+        assert_eq!(PresetSource::Curseforge.content_key("238222"), "cf:238222");
+        assert_eq!(PresetSource::Modrinth.content_key("AANobbMI"), "AANobbMI");
+        assert_eq!(simple_name("Xaero's Minimap (Fair-Play)"), "xaerosminimapfairplay");
+    }
+
+    #[tokio::test]
+    async fn old_files_get_default_look_and_unknown_values_fall_back() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = Paths::new(dir.path());
+        // Version 1: weder Symbol noch Farbe; dazu ein Wert aus einer „neueren“ Version.
+        let v1 = r#"{"version":1,"presets":[
+            {"id":"trs-fps-boost","auto":true},
+            {"id":"11111111111111111111111111111111","name":"Alt","items":[{"source":"modrinth","projectId":"AANobbMI","title":"Sodium","kind":"mod"}]},
+            {"id":"22222222222222222222222222222222","name":"Neu","icon":"rocket","color":"sky",
+             "items":[{"source":"curseforge","projectId":"238222","title":"JEI","iconUrl":"https://media.forgecdn.net/a.png","kind":"mod"}]}
+        ]}"#;
+        std::fs::write(dir.path().join(FILE_NAME), v1).unwrap();
+        let all = list(&paths).await.unwrap();
+        let old = all.iter().find(|p| p.name == "Alt").unwrap();
+        assert_eq!((old.icon.as_str(), old.color.as_str()), (DEFAULT_ICON, DEFAULT_COLOR));
+        let newer = all.iter().find(|p| p.name == "Neu").unwrap();
+        assert_eq!((newer.icon.as_str(), newer.color.as_str()), (DEFAULT_ICON, "sky"));
+        assert_eq!(newer.items[0].source, PresetSource::Curseforge);
+        let fps = all.iter().find(|p| p.id == "trs-fps-boost").unwrap();
+        assert_eq!((fps.icon.as_str(), fps.color.as_str()), ("bolt", "amber"));
+
+        // Nach dem nächsten Schreiben: Version 2, Symbol/Farbe nur wenn gesetzt.
+        set_auto(&paths, "11111111111111111111111111111111", true).await.unwrap();
+        let written: serde_json::Value = serde_json::from_slice(&std::fs::read(dir.path().join(FILE_NAME)).unwrap()).unwrap();
+        assert_eq!(written["version"], 2);
+        let stored = written["presets"].as_array().unwrap();
+        let alt = stored.iter().find(|p| p["name"] == "Alt").unwrap();
+        assert!(alt.get("icon").is_none() && alt.get("color").is_none());
+        let neu = stored.iter().find(|p| p["name"] == "Neu").unwrap();
+        assert!(neu.get("icon").is_none());
+        assert_eq!(neu["color"], "sky");
+    }
+
+    #[test]
+    fn sync_carries_look_and_drops_unknown() {
+        let value = serde_json::json!({"presets":[
+            {"id":"11111111111111111111111111111111","name":"A","icon":"sword","color":"pink","items":[]},
+            {"id":"22222222222222222222222222222222","name":"B","icon":42,"color":"neon","items":[]}
+        ]});
+        let data = SyncData::from_value(&value);
+        assert_eq!((data.presets[0].icon.as_deref(), data.presets[0].color.as_deref()), (Some("sword"), Some("pink")));
+        assert_eq!((data.presets[1].icon.as_deref(), data.presets[1].color.as_deref()), (None, None));
+        let mut data = data;
+        data.layout.order = data.presets.iter().map(|p| p.id.clone()).collect();
+        let (list, _) = from_sync(&data);
+        let a = list.iter().find(|p| p.name == "A").unwrap();
+        assert_eq!(a.icon.as_deref(), Some("sword"));
+        let round = sync_view(&list, &Meta::default()).to_value();
+        assert_eq!(round["presets"][0]["icon"], "sword");
+        assert!(round["presets"][1].get("icon").is_none());
+    }
+
+    #[test]
+    fn user_presets_leave_curseforge_items_to_the_second_pass() {
+        let preset = Preset {
+            id: "11111111111111111111111111111111".into(),
+            name: "Mix".into(),
+            builtin: None,
+            auto: false,
+            modpack_safe: true,
+            available: true,
+            items: vec![item("AANobbMI"), PresetItem { source: PresetSource::Curseforge, ..item("238222") }],
+            icon: DEFAULT_ICON.into(),
+            color: DEFAULT_COLOR.into(),
+        };
+        let wanted = wanted_of(&preset);
+        assert_eq!(wanted.len(), 1);
+        assert_eq!(wanted[0].candidates[0].project_id, "AANobbMI");
     }
 }
