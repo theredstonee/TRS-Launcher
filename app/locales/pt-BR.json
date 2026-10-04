@@ -887,7 +887,8 @@
       "invalidCommand": "O comando está vazio, é longo demais ou contém caracteres inválidos.",
       "notRunning": "O servidor não está em execução.",
       "stopTimeout": "O servidor não parou a tempo.",
-      "stillRunning": "Pare o servidor primeiro."
+      "stillRunning": "Pare o servidor primeiro.",
+      "relayOff": "Ative primeiro “Via TRS Relay”."
     },
     "game": {
       "engineFailed": "Não foi possível iniciar o motor do jogo.",
@@ -6187,6 +6188,76 @@
       "title": "Ainda não há servidores",
       "text": "Abra uma instância, vá em \"Compartilhar\" e escolha \"Exportar como servidor\" com \"Criar aqui e iniciar\".",
       "action": "Ir para a biblioteca"
+    },
+    "share": {
+      "title": "Jogar com amigos",
+      "local": "Neste PC",
+      "lan": "Mesma rede",
+      "public": "Pela internet",
+      "unknown": "não encontrado",
+      "retry": "Procurar de novo",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "check": "Testar acesso",
+      "checking": "Testando …",
+      "reach": {
+        "reachable": "Acessível de fora",
+        "unreachable": "Não acessível de fora – falta o redirecionamento de porta?",
+        "failed": "Não foi possível testar"
+      },
+      "portHint": "O endereço público só funciona com redirecionamento de porta: redirecione a porta {port} (TCP) para este PC no roteador. Sem redirecionamento: TRS Relay ou e4mc.",
+      "relayTitle": "Via TRS Relay (sem redirecionar porta)",
+      "relayText": "Só amigos do TRS que você convidar podem entrar. O TRS Launcher deles inicia a versão certa com o TRS Client e conecta pelo TRS Relay. Um servidor por vez.",
+      "e4mcTitle": "Link público (e4mc)",
+      "e4mcText": "Um endereço como nome.e4mc.link pelo qual qualquer pessoa pode entrar – mesmo sem TRS. Funciona pelo serviço externo e4mc.",
+      "e4mcActive": "Qualquer pessoa com o link pode entrar.",
+      "state": {
+        "connecting": "Conectando …",
+        "online": "Ativo",
+        "reconnecting": "Interrompido – tentando de novo"
+      },
+      "e4mcWarnTitle": "Ativar o link público?",
+      "e4mcWarn": "Qualquer pessoa com o link pode entrar no seu servidor. Compartilhe só com quem você confia – ou ative a whitelist no servidor.",
+      "e4mcPrivacy": "O e4mc (e4mc.link) é um serviço externo: as conexões dos jogadores passam pelos servidores dele.",
+      "understood": "Entendi",
+      "enable": "Ativar",
+      "error": {
+        "room_closed": "A sala do relay foi fechada.",
+        "replaced": "Outro dispositivo ou jogo está hospedando com a sua conta agora.",
+        "hosting_unavailable": "O TRS Relay não está disponível no momento.",
+        "relay_unreachable": "Não foi possível acessar o TRS Relay.",
+        "relay_timeout": "O TRS Relay não responde.",
+        "broker": "O e4mc não está acessível no momento.",
+        "unreachable": "O servidor do e4mc não está acessível.",
+        "timeout": "Tempo esgotado.",
+        "tls": "Não foi possível estabelecer a conexão segura.",
+        "other": "Conexão interrompida."
+      }
+    },
+    "invite": {
+      "button": "Convidar amigos",
+      "title": "Convidar amigos para “{name}”",
+      "how": "Como?",
+      "method": {
+        "relay": "Via TRS Relay (recomendado)",
+        "e4mc": "Link e4mc {address}",
+        "public": "Endereço público {address}"
+      },
+      "relayHint": "Seus amigos recebem um convite com “Entrar”: o launcher deles inicia a versão certa (ou a cria) e conecta pelo relay – sem redirecionar porta. O relay é ativado para isso.",
+      "cardHint": "Seus amigos recebem no chat um cartão de servidor com este endereço.",
+      "noFriends": "Você ainda não tem amigos no TRS.",
+      "search": "Buscar amigos",
+      "sent": "Convidado",
+      "sending": "Convidando …",
+      "send": "Convidar {count} amigo | Convidar {count} amigos",
+      "done": "{count} amigo convidado | {count} amigos convidados",
+      "failed": "{name}: {reason}",
+      "error": {
+        "not_friends": "Vocês não são (mais) amigos.",
+        "player_banned": "Banido desta sala.",
+        "too_many_invites": "Convites em aberto demais.",
+        "other": "O convite falhou."
+      }
     }
   },
   "mobile": {

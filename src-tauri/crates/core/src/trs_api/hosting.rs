@@ -508,15 +508,12 @@ impl Launcher {
         raw.cleaned(id).ok_or_else(super::bad_response)
     }
 
-    /// Relay-Zugang für den Datei-Kanal (nur im Kern – Token nie ans Webview/Log).
+    /// Relay-Zugang für den Datei-Kanal bzw. als Host eines lokalen Servers (nur im Kern –
+    /// Token nie ans Webview/Log).
     pub(crate) async fn hosting_relay_grant(&self, id: &str) -> Result<crate::hosting_mods::relay::RelayGrant> {
         let id = room_arg(id)?;
         let info: ApiConnect = self.trs_get(Req::post_empty(format!("/v1/hosting/rooms/{id}/connect"))).await.map_err(hosting_error)?;
-        let relay = info.relay.ok_or_else(super::bad_response)?;
-        if !crate::hosting_mods::relay::valid_relay_host(&relay.host) || relay.token.len() > 512 || !relay.token.starts_with("trsr1.") {
-            return Err(super::bad_response());
-        }
-        Ok(crate::hosting_mods::relay::RelayGrant { host: relay.host, port: relay.tcp_port.unwrap_or(25503), token: relay.token })
+        relay_grant(info.relay)
     }
 
     /// Welt verlassen, Anfrage zurückziehen oder Einladung ablehnen.
@@ -527,6 +524,131 @@ impl Launcher {
             Err(Error::TrsApi { code, .. }) if code == "room_not_found" => Ok(()),
             other => other.map_err(hosting_error),
         }
+    }
+}
+
+// --- Lokaler Server als Raum (der Launcher ist der Host) -------------------------------
+
+/// Raum für einen lokalen Server: nur auf Einladung (`open: false`, `visibility: invited`),
+/// damit niemand per Code anfragt – Anfragen beantworten könnte nur das Spiel.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ServerRoomSpec {
+    pub name: String,
+    pub mc_version: String,
+    pub loader: String,
+    /// Plätze des Servers (ohne Host).
+    pub max_players: u32,
+}
+
+impl ServerRoomSpec {
+    /// Body für `POST /v1/hosting/rooms` (geprüft).
+    pub fn body(&self) -> Result<serde_json::Value> {
+        if !mc_version(&self.mc_version) || !loader(&self.loader) {
+            return Err(invalid_room());
+        }
+        let name = world_name(&self.name).unwrap_or_else(|| "Server".into());
+        // `maxPlayers` zählt den Host mit; das Relay lässt höchstens 10 zu.
+        let max = (self.max_players.saturating_add(1)).clamp(2, u32::from(MAX_PLAYERS));
+        Ok(json!({
+            "name": name, "mcVersion": self.mc_version, "loader": self.loader, "maxPlayers": max,
+            "gameMode": "survival", "pvp": true, "cheats": false, "open": false, "visibility": "invited"
+        }))
+    }
+}
+
+#[derive(Deserialize)]
+struct ApiCreated {
+    room: ApiRoom,
+    #[serde(default)]
+    relay: Option<ApiRelay>,
+}
+
+/// Ergebnis einer Einladung je Freund.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InviteOutcome {
+    pub uuid: String,
+    pub ok: bool,
+    /// API-Fehlercode (`not_friends`, `player_banned`, …), nur bei `ok == false`.
+    pub code: Option<String>,
+}
+
+fn relay_grant(relay: Option<ApiRelay>) -> Result<crate::hosting_mods::relay::RelayGrant> {
+    let relay = relay.ok_or_else(super::bad_response)?;
+    if !crate::hosting_mods::relay::valid_relay_host(&relay.host) || relay.token.len() > 512 || !relay.token.starts_with("trsr1.") {
+        return Err(super::bad_response());
+    }
+    Ok(crate::hosting_mods::relay::RelayGrant { host: relay.host, port: relay.tcp_port.unwrap_or(25503), token: relay.token })
+}
+
+/// Signal-ID (`^[A-Za-z0-9_-]{1,32}$`).
+pub fn signal_id(input: &str) -> bool {
+    (1..=32).contains(&input.len()) && input.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'_' | b'-'))
+}
+
+impl Launcher {
+    /// Raum für einen lokalen Server anlegen (ein eigener Raum schließt dabei, §21.2).
+    /// Liefert den Raum und den ersten Relay-Zugang (nur im Kern).
+    pub(crate) async fn hosting_create_server_room(
+        &self,
+        spec: &ServerRoomSpec,
+    ) -> Result<(HostingRoom, crate::hosting_mods::relay::RelayGrant)> {
+        let body = spec.body()?;
+        let created: ApiCreated = self.trs_get(Req::post("/v1/hosting/rooms", body)).await.map_err(hosting_error)?;
+        let room = created.room.cleaned().ok_or_else(super::bad_response)?;
+        Ok((room, relay_grant(created.relay)?))
+    }
+
+    /// Herzschlag (alle ~30 s); `players` = Spieler gerade auf dem Server (1–10).
+    pub(crate) async fn hosting_heartbeat(&self, id: &str, players: u32) -> Result<()> {
+        let id = room_arg(id)?;
+        let body = json!({ "players": players.clamp(1, u32::from(MAX_PLAYERS)) });
+        self.trs_do(Req::post(format!("/v1/hosting/rooms/{id}/heartbeat"), body)).await.map_err(hosting_error)
+    }
+
+    /// Raum schließen (alle Gäste bekommen `hosting_room_closed`).
+    pub(crate) async fn hosting_close_room(&self, id: &str) -> Result<()> {
+        let id = room_arg(id)?;
+        match self.trs_do(Req::delete(format!("/v1/hosting/rooms/{id}"))).await {
+            Err(Error::TrsApi { code, .. }) if code == "room_not_found" => Ok(()),
+            other => other.map_err(hosting_error),
+        }
+    }
+
+    /// Freunde in den eigenen Raum einladen – mit `chat` auch als Weltkarte im Chat (§21.2).
+    pub(crate) async fn hosting_invite(&self, id: &str, uuids: &[String], chat: bool) -> Result<Vec<InviteOutcome>> {
+        let id = room_arg(id)?;
+        let mut out = Vec::new();
+        for raw in uuids.iter().take(20) {
+            let Some(uuid) = validate::uuid(raw) else { continue };
+            if out.iter().any(|o: &InviteOutcome| o.uuid == uuid) {
+                continue;
+            }
+            let req = Req::post(format!("/v1/hosting/rooms/{id}/invites"), json!({ "uuid": uuid, "chat": chat }));
+            match self.trs_do(req).await {
+                Ok(()) => out.push(InviteOutcome { uuid, ok: true, code: None }),
+                // Der Raum ist weg: weitere Versuche sind sinnlos.
+                Err(e) if e.code() == Some("room_not_found") => return Err(e),
+                Err(Error::TrsApi { kind: "trs_api", code, .. }) => {
+                    let code = if code.is_empty() || code.len() > 40 { "error".into() } else { code };
+                    out.push(InviteOutcome { uuid, ok: false, code: Some(code) });
+                }
+                Err(e) => return Err(e),
+            }
+        }
+        Ok(out)
+    }
+
+    /// Direktverbindung ablehnen (`bye`): Der Launcher kann kein P2P – das Spiel des
+    /// Gasts nimmt dann sofort das Relay statt erst nach seiner Wartezeit.
+    pub(crate) async fn hosting_signal_bye(&self, id: &str, to: &str, sid: &str) -> Result<()> {
+        let id = room_arg(id)?;
+        let to = validate::uuid(to).ok_or_else(invalid_room)?;
+        if !signal_id(sid) {
+            return Err(invalid_room());
+        }
+        let body = json!({ "to": to, "kind": "bye", "sid": sid, "data": "" });
+        self.trs_do(Req::post(format!("/v1/hosting/rooms/{id}/signal"), body)).await.map_err(hosting_error)
     }
 }
 

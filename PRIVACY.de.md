@@ -430,6 +430,20 @@ den TRS-Server.
   kann den Namen des Hosts übernehmen), und wenn du einen Spieler entfernst oder sperrst, trennt das Spiel seine
   Verbindung sofort.
 
+#### Lokalen Server teilen („Meine Server“)
+
+- **Adressen:** Damit du siehst, wie Freunde einen Server auf deinem PC erreichen, fragt der Launcher deine öffentliche
+  IP-Adresse bei `api.ipify.org` ab (klappt das nicht, bei Cloudflare `1.1.1.1/cdn-cgi/trace`) – beide sehen deine
+  IP-Adresse. Das Ergebnis bleibt nur 10 Minuten im Arbeitsspeicher. „Erreichbarkeit prüfen“ lässt den TRS-Server diese
+  Adresse anpingen (wie bei Server-Karten im Chat).
+- **Über TRS Relay:** Der Launcher legt auf dem TRS-Server einen Welt-Raum an, den nur eingeladene Freunde sehen (gleiche
+  Daten und Löschregeln wie beim Welt-Hosting oben), und verbindet sich selbst mit dem TRS Relay; Spieler erreichen deinen
+  Server darüber, dein Server sieht sie als Verbindungen von deinem eigenen PC. Einladungen sind Welt-Einladungen mit
+  einer Karte in deinem Chat.
+- **Öffentlicher Link (e4mc):** ab Werk aus und nur nach einer Warnung; der Launcher verbindet sich dann mit Broker und
+  Relay von e4mc (`*.e4mc.link`), die deine IP-Adresse und die der Mitspieler sehen und die Spieldaten weiterleiten. Es
+  gilt die Datenschutzerklärung von e4mc. Ausschalten oder den Server stoppen beendet den Link.
+
 #### Mods und Resource Pack beim Welt-Hosting
 
 - **Ab Werk aus.** Nur wenn du für eine Welt „Mods teilen“ oder „Resource Pack teilen“ einschaltest, teilt der TRS

@@ -48,6 +48,9 @@ Third-party parts
   (LGPL-2.0), FreeType (FTL), shaderc (Apache-2.0), Caciocavallo (GPL-2.0 with Classpath
   Exception), fishhook (BSD-3-Clause), Gson (Apache-2.0). Java runtimes (OpenJDK, GPL-2.0 with
   Classpath Exception) are downloaded by the app at runtime and are not part of it.
+- e4mc by Skye (MIT, https://github.com/vgskye/e4mc-minecraft-architectury): the "public link" for local
+  servers in the launcher speaks e4mc's quiclime protocol (own Rust implementation over quinn) and uses e4mc's
+  public broker and relays (*.e4mc.link). The TRS Client's e4mc bridge ships the e4mc MIT licence text.
 - Further libraries and bundled mods are listed with their licenses in README.md and
   client-mod/README.md.
 

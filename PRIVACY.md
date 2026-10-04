@@ -400,6 +400,19 @@ the TRS server.
 - **Protection in the game:** a guest can only log in with the name the TRS server confirmed for them (nobody can take
   the host's name), and when you remove or ban a player the game closes their connection at once.
 
+#### Sharing a local server ("My servers")
+
+- **Addresses:** to show how friends reach a server running on your computer, the launcher looks up your public IP
+  address at `api.ipify.org` (or, if that fails, Cloudflare's `1.1.1.1/cdn-cgi/trace`) – both see your IP address. The
+  result is only kept in memory for 10 minutes. "Check reachability" asks the TRS server to ping that address (like the
+  server cards in chat).
+- **Via TRS relay:** the launcher opens a world room on the TRS server that only invited friends can see (same data and
+  deletion rules as hosting a world above) and connects to the TRS relay itself; players reach your server through it
+  and your server sees them as connections from your own computer. Invites are world invites with a card in your chat.
+- **Public link (e4mc):** off by default and only after a warning; the launcher then connects to e4mc's broker and relay
+  (`*.e4mc.link`), which see your IP address and the players' IP addresses and forward the game data. e4mc's own privacy
+  policy applies. Turning it off or stopping the server ends the link.
+
 #### Mods and resource pack when hosting a world
 
 - **Off by default.** Only if you turn on "Share mods" or "Share resource pack" for a world does the TRS Client share

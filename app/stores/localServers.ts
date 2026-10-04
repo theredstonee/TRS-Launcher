@@ -4,7 +4,15 @@ import { defineStore } from 'pinia'
 import { computed, ref, shallowRef } from 'vue'
 // Relativ importiert, damit Tests den Store ohne Nuxt laden können.
 import { backend } from '../utils/backend'
-import { type LocalServer, type LocalServerStatus, appendLog, localServerEventSchema } from '../utils/serverExport'
+import {
+  type LocalServer,
+  type LocalServerStatus,
+  type ShareStatus,
+  appendLog,
+  localServerEventSchema,
+  offShare,
+  shareUpdateSchema,
+} from '../utils/serverExport'
 import { taskKey } from '../utils/tasks'
 import { useTasksStore } from './tasks'
 import { useToasts } from './toasts'
@@ -24,6 +32,8 @@ export const useLocalServersStore = defineStore('localServers', () => {
   const logs = shallowRef<Record<string, string[]>>({})
   /** Server, deren Log schon vom Kern geholt wurde. */
   const logsLoaded = new Set<string>()
+  /** Teilen je Server (TRS Relay, e4mc) – aus dem Event `local-server-share`. */
+  const shares = ref<Record<string, ShareStatus>>({})
   let initialized = false
 
   const running = computed(() => items.value.filter((s) => s.status.state !== 'stopped'))
@@ -32,6 +42,10 @@ export const useLocalServersStore = defineStore('localServers', () => {
     if (initialized || !isTauri()) return
     initialized = true
     await listen<unknown>('local-server', (e) => onEvent(e.payload))
+    await listen<unknown>('local-server-share', (e) => {
+      const parsed = shareUpdateSchema.safeParse(e.payload)
+      if (parsed.success) shares.value = { ...shares.value, [parsed.data.id]: parsed.data.status }
+    })
     await refresh().catch(() => {})
   }
 
@@ -111,6 +125,31 @@ export const useLocalServersStore = defineStore('localServers', () => {
     }
   }
 
+  function shareOf(id: string): ShareStatus {
+    return shares.value[id] ?? offShare
+  }
+
+  async function loadShare(id: string) {
+    try {
+      shares.value = { ...shares.value, [id]: await backend.localServers.shareStatus(id) }
+    } catch {
+      // egal – der Stand kommt auch per Event
+    }
+  }
+
+  /** TRS Relay bzw. e4mc an/aus. `true` = geklappt. */
+  async function setShared(id: string, kind: 'relay' | 'e4mc', on: boolean): Promise<boolean> {
+    try {
+      const status = on ? await backend.localServers.share(id, kind) : await backend.localServers.unshare(id, kind)
+      shares.value = { ...shares.value, [id]: status }
+      return true
+    } catch (e) {
+      useToasts().error(e)
+      void loadShare(id)
+      return false
+    }
+  }
+
   const stop = (id: string) => act(() => backend.localServers.stop(id))
   const kill = (id: string) => act(() => backend.localServers.kill(id))
   const openFolder = (id: string) => act(() => backend.localServers.openFolder(id))
@@ -140,5 +179,26 @@ export const useLocalServersStore = defineStore('localServers', () => {
     })
   }
 
-  return { items, loaded, logs, running, init, refresh, onEvent, loadLogs, get, start, stop, kill, restart, command, remove, openFolder }
+  return {
+    items,
+    loaded,
+    logs,
+    shares,
+    running,
+    init,
+    refresh,
+    onEvent,
+    loadLogs,
+    get,
+    start,
+    stop,
+    kill,
+    restart,
+    command,
+    remove,
+    openFolder,
+    shareOf,
+    loadShare,
+    setShared,
+  }
 })

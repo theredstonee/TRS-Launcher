@@ -96,10 +96,13 @@ import { sharedImageSchema, sharesPageSchema } from './share'
 import { storedLayoutSchema, type ControlLayout } from './controls'
 import { webLoginAccountSchema, webLoginRequestSchema } from './webLogin'
 import {
+  inviteOutcomeSchema,
   localServerSchema,
+  serverAddressesSchema,
   serverExportPlanSchema,
   serverExportResultSchema,
   serverStatusSchema,
+  shareStatusSchema,
   type ServerExportOptions,
   type ServerExportProgress,
 } from './serverExport'
@@ -694,6 +697,14 @@ export const backend = {
     logs: (id: string) => checked(z.array(z.string().max(5000)).max(10000), 'local_server_logs', { id }),
     openFolder: (id: string) => call<void>('local_server_open_folder', { id }),
     remove: (id: string) => call<void>('local_server_delete', { id }),
+    /** Adressen (localhost, LAN, öffentlich); `refresh` fragt die öffentliche IP neu ab. */
+    addresses: (id: string, refresh = false) => checked(serverAddressesSchema, 'local_server_addresses', { id, refresh }),
+    shareStatus: (id: string) => checked(shareStatusSchema, 'local_server_share_status', { id }),
+    /** TRS Relay bzw. e4mc einschalten; der weitere Stand kommt per Event `local-server-share`. */
+    share: (id: string, kind: 'relay' | 'e4mc') => checked(shareStatusSchema, 'local_server_share', { id, kind }),
+    unshare: (id: string, kind: 'relay' | 'e4mc') => checked(shareStatusSchema, 'local_server_unshare', { id, kind }),
+    /** TRS-Freunde in den Relay-Raum einladen (mit Weltkarte im Chat). */
+    invite: (id: string, friends: string[]) => checked(z.array(inviteOutcomeSchema).max(20), 'local_server_invite', { id, friends }),
   },
   /** Öffnet den Dateidialog und liest das Pack (Vorschau); `null` = abgebrochen. */
   pickModpackFile: () => call<PickedPack | null>('pick_modpack_file'),

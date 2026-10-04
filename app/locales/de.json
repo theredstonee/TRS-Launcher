@@ -887,7 +887,8 @@
       "invalidCommand": "Der Befehl ist leer, zu lang oder enthält ungültige Zeichen.",
       "notRunning": "Der Server läuft nicht.",
       "stopTimeout": "Der Server hat sich nicht rechtzeitig beendet.",
-      "stillRunning": "Bitte den Server zuerst stoppen."
+      "stillRunning": "Bitte den Server zuerst stoppen.",
+      "relayOff": "Schalte zuerst „Über TRS Relay“ ein."
     },
     "game": {
       "engineFailed": "Die Spiel-Engine konnte nicht gestartet werden.",
@@ -6187,6 +6188,76 @@
       "title": "Noch keine Server",
       "text": "Öffne eine Instanz, geh zu „Teilen“ und wähle „Als Server exportieren“ mit „Hier anlegen und starten“.",
       "action": "Zur Bibliothek"
+    },
+    "share": {
+      "title": "Mit Freunden spielen",
+      "local": "Auf diesem PC",
+      "lan": "Im selben Netz",
+      "public": "Über das Internet",
+      "unknown": "nicht gefunden",
+      "retry": "Erneut suchen",
+      "copy": "Kopieren",
+      "copied": "Kopiert",
+      "check": "Erreichbarkeit prüfen",
+      "checking": "Prüfe …",
+      "reach": {
+        "reachable": "Von außen erreichbar",
+        "unreachable": "Von außen nicht erreichbar – fehlt die Portfreigabe?",
+        "failed": "Konnte nicht geprüft werden"
+      },
+      "portHint": "Die öffentliche Adresse klappt nur mit Portfreigabe: Leite im Router Port {port} (TCP) an diesen PC weiter. Ohne Portfreigabe: TRS Relay oder e4mc.",
+      "relayTitle": "Über TRS Relay (ohne Portfreigabe)",
+      "relayText": "Nur TRS-Freunde, die du einlädst, können beitreten. Ihr TRS Launcher startet die passende Version mit dem TRS Client und verbindet über das TRS Relay. Immer nur ein Server zur Zeit.",
+      "e4mcTitle": "Öffentlicher Link (e4mc)",
+      "e4mcText": "Eine Adresse wie name.e4mc.link, mit der jeder beitreten kann – auch ohne TRS. Läuft über den fremden Dienst e4mc.",
+      "e4mcActive": "Jeder mit dem Link kann beitreten.",
+      "state": {
+        "connecting": "Verbinde …",
+        "online": "Aktiv",
+        "reconnecting": "Unterbrochen – neuer Versuch läuft"
+      },
+      "e4mcWarnTitle": "Öffentlichen Link einschalten?",
+      "e4mcWarn": "Jeder mit dem Link kann deinem Server beitreten. Teile ihn nur mit Leuten, denen du vertraust – oder schalte auf dem Server die Whitelist ein.",
+      "e4mcPrivacy": "e4mc (e4mc.link) ist ein fremder Dienst: Die Verbindungen der Spieler laufen über dessen Server.",
+      "understood": "Ich habe verstanden",
+      "enable": "Einschalten",
+      "error": {
+        "room_closed": "Der Relay-Raum wurde geschlossen.",
+        "replaced": "Ein anderes Gerät oder Spiel hostet jetzt mit deinem Konto.",
+        "hosting_unavailable": "Das TRS Relay ist gerade nicht verfügbar.",
+        "relay_unreachable": "Das TRS Relay ist nicht erreichbar.",
+        "relay_timeout": "Das TRS Relay antwortet nicht.",
+        "broker": "e4mc ist gerade nicht erreichbar.",
+        "unreachable": "Der e4mc-Server ist nicht erreichbar.",
+        "timeout": "Zeitüberschreitung.",
+        "tls": "Die sichere Verbindung konnte nicht aufgebaut werden.",
+        "other": "Verbindung unterbrochen."
+      }
+    },
+    "invite": {
+      "button": "Freunde einladen",
+      "title": "Freunde zu „{name}“ einladen",
+      "how": "Wie?",
+      "method": {
+        "relay": "Über TRS Relay (empfohlen)",
+        "e4mc": "e4mc-Link {address}",
+        "public": "Öffentliche Adresse {address}"
+      },
+      "relayHint": "Deine Freunde bekommen eine Einladung mit „Beitreten“: Ihr Launcher startet die passende Version (oder legt sie an) und verbindet über das Relay – ohne Portfreigabe. Das Relay wird dafür eingeschaltet.",
+      "cardHint": "Deine Freunde bekommen eine Server-Karte mit dieser Adresse im Chat.",
+      "noFriends": "Du hast noch keine TRS-Freunde.",
+      "search": "Freunde suchen",
+      "sent": "Eingeladen",
+      "sending": "Lädt ein …",
+      "send": "{count} Freund einladen | {count} Freunde einladen",
+      "done": "{count} Freund eingeladen | {count} Freunde eingeladen",
+      "failed": "{name}: {reason}",
+      "error": {
+        "not_friends": "Ihr seid nicht (mehr) befreundet.",
+        "player_banned": "In diesem Raum gesperrt.",
+        "too_many_invites": "Zu viele offene Einladungen.",
+        "other": "Einladung fehlgeschlagen."
+      }
     }
   },
   "mobile": {

@@ -887,7 +887,8 @@
       "invalidCommand": "Komut boş, çok uzun veya geçersiz karakterler içeriyor.",
       "notRunning": "Sunucu çalışmıyor.",
       "stopTimeout": "Sunucu zamanında durmadı.",
-      "stillRunning": "Lütfen önce sunucuyu durdur."
+      "stillRunning": "Lütfen önce sunucuyu durdur.",
+      "relayOff": "Önce “TRS Relay üzerinden” seçeneğini aç."
     },
     "game": {
       "engineFailed": "Oyun motoru başlatılamadı.",
@@ -6187,6 +6188,76 @@
       "title": "Henüz sunucu yok",
       "text": "Bir örnek aç, \"Paylaş\" bölümüne git ve \"Burada kur ve başlat\" ile \"Sunucu olarak dışa aktar\"ı seç.",
       "action": "Kütüphaneye git"
+    },
+    "share": {
+      "title": "Arkadaşlarla oyna",
+      "local": "Bu bilgisayarda",
+      "lan": "Aynı ağda",
+      "public": "İnternet üzerinden",
+      "unknown": "bulunamadı",
+      "retry": "Yeniden ara",
+      "copy": "Kopyala",
+      "copied": "Kopyalandı",
+      "check": "Erişimi test et",
+      "checking": "Test ediliyor …",
+      "reach": {
+        "reachable": "Dışarıdan erişilebilir",
+        "unreachable": "Dışarıdan erişilemiyor – port yönlendirme eksik mi?",
+        "failed": "Test edilemedi"
+      },
+      "portHint": "Genel adres yalnızca port yönlendirme ile çalışır: Modemde {port} (TCP) portunu bu bilgisayara yönlendir. Port yönlendirme olmadan: TRS Relay veya e4mc.",
+      "relayTitle": "TRS Relay üzerinden (port yönlendirmesiz)",
+      "relayText": "Yalnızca davet ettiğin TRS arkadaşların katılabilir. Onların TRS Launcher’ı uygun sürümü TRS Client ile başlatır ve TRS Relay üzerinden bağlanır. Aynı anda tek sunucu.",
+      "e4mcTitle": "Herkese açık bağlantı (e4mc)",
+      "e4mcText": "isim.e4mc.link gibi, herkesin – TRS olmadan da – katılabileceği bir adres. Harici e4mc hizmeti üzerinden çalışır.",
+      "e4mcActive": "Bağlantıya sahip herkes katılabilir.",
+      "state": {
+        "connecting": "Bağlanıyor …",
+        "online": "Etkin",
+        "reconnecting": "Kesildi – yeniden deneniyor"
+      },
+      "e4mcWarnTitle": "Herkese açık bağlantı açılsın mı?",
+      "e4mcWarn": "Bağlantıya sahip herkes sunucuna katılabilir. Yalnızca güvendiğin kişilerle paylaş – ya da sunucuda beyaz listeyi aç.",
+      "e4mcPrivacy": "e4mc (e4mc.link) harici bir hizmettir: Oyuncuların bağlantıları onun sunucularından geçer.",
+      "understood": "Anladım",
+      "enable": "Aç",
+      "error": {
+        "room_closed": "Relay odası kapatıldı.",
+        "replaced": "Artık başka bir cihaz veya oyun hesabınla barındırıyor.",
+        "hosting_unavailable": "TRS Relay şu anda kullanılamıyor.",
+        "relay_unreachable": "TRS Relay’e ulaşılamıyor.",
+        "relay_timeout": "TRS Relay yanıt vermiyor.",
+        "broker": "e4mc’ye şu anda ulaşılamıyor.",
+        "unreachable": "e4mc sunucusuna ulaşılamıyor.",
+        "timeout": "Zaman aşımı.",
+        "tls": "Güvenli bağlantı kurulamadı.",
+        "other": "Bağlantı kesildi."
+      }
+    },
+    "invite": {
+      "button": "Arkadaş davet et",
+      "title": "Arkadaşları “{name}” sunucusuna davet et",
+      "how": "Nasıl?",
+      "method": {
+        "relay": "TRS Relay üzerinden (önerilen)",
+        "e4mc": "e4mc bağlantısı {address}",
+        "public": "Genel adres {address}"
+      },
+      "relayHint": "Arkadaşların “Katıl” düğmeli bir davet alır: Launcher’ları uygun sürümü başlatır (ya da oluşturur) ve relay üzerinden bağlanır – port yönlendirmesiz. Bunun için relay açılır.",
+      "cardHint": "Arkadaşların sohbette bu adresi içeren bir sunucu kartı alır.",
+      "noFriends": "Henüz TRS arkadaşın yok.",
+      "search": "Arkadaş ara",
+      "sent": "Davet edildi",
+      "sending": "Davet ediliyor …",
+      "send": "{count} arkadaşı davet et | {count} arkadaşı davet et",
+      "done": "{count} arkadaş davet edildi | {count} arkadaş davet edildi",
+      "failed": "{name}: {reason}",
+      "error": {
+        "not_friends": "Artık arkadaş değilsiniz.",
+        "player_banned": "Bu odadan yasaklı.",
+        "too_many_invites": "Çok fazla açık davet var.",
+        "other": "Davet başarısız oldu."
+      }
     }
   },
   "mobile": {

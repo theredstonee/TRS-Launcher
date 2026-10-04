@@ -212,6 +212,13 @@ pub fn run() {
                     log::warn!("local-server konnte nicht gesendet werden: {e}");
                 }
             }));
+            // Teilen lokaler Server: Stand von Relay und e4mc.
+            let handle = app.handle().clone();
+            launcher.server_shares().set_sink(Arc::new(move |update| {
+                if let Err(e) = handle.emit("local-server-share", &update) {
+                    log::warn!("local-server-share konnte nicht gesendet werden: {e}");
+                }
+            }));
             let launcher = Arc::new(launcher);
             app.manage(mobile::UpdateState::new(&launcher)?);
             // Spiel-Engine: HTTP des Launchers (TLS, Proxy) für Runtime-Downloads, Zustand und
@@ -772,6 +779,11 @@ pub fn run() {
             commands::server_export::local_server_logs,
             commands::server_export::local_server_open_folder,
             commands::server_export::local_server_delete,
+            commands::server_export::local_server_addresses,
+            commands::server_export::local_server_share_status,
+            commands::server_export::local_server_share,
+            commands::server_export::local_server_unshare,
+            commands::server_export::local_server_invite,
         ])
         .build(tauri::generate_context!())
         .expect("TRS Launcher konnte nicht gestartet werden")

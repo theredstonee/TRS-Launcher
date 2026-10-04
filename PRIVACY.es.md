@@ -425,6 +425,19 @@ servidor TRS.
   puede usar el nombre del anfitrión), y cuando expulsas o bloqueas a un jugador, el juego cierra su conexión al
   instante.
 
+#### Compartir un servidor local («Mis servidores»)
+
+- **Direcciones:** para mostrar cómo llegan tus amigos a un servidor en tu PC, el launcher consulta tu IP pública en
+  `api.ipify.org` (o, si falla, en `1.1.1.1/cdn-cgi/trace` de Cloudflare); ambos ven tu dirección IP. El resultado solo
+  se guarda 10 minutos en memoria. «Comprobar acceso» pide al servidor TRS que haga ping a esa dirección (como las
+  tarjetas de servidor del chat).
+- **Mediante TRS Relay:** el launcher abre en el servidor TRS una sala que solo ven los amigos invitados (mismos datos y
+  reglas de borrado que al alojar un mundo, arriba) y se conecta él mismo al TRS Relay; los jugadores llegan a tu
+  servidor a través de él y tu servidor los ve como conexiones desde tu propio PC.
+- **Enlace público (e4mc):** desactivado por defecto y solo tras un aviso; el launcher se conecta entonces al broker y al
+  relay de e4mc (`*.e4mc.link`), que ven tu IP y las de los jugadores y reenvían los datos del juego. Se aplica la
+  política de privacidad de e4mc. Desactivarlo o detener el servidor termina el enlace.
+
 #### Mods y paquete de recursos al alojar un mundo
 
 - **Desactivado por defecto.** Solo si activas «Compartir mods» o «Compartir paquete de recursos» para un mundo, el TRS

@@ -887,7 +887,8 @@
       "invalidCommand": "Komenda jest pusta, za długa lub zawiera nieprawidłowe znaki.",
       "notRunning": "Serwer nie działa.",
       "stopTimeout": "Serwer nie zatrzymał się na czas.",
-      "stillRunning": "Najpierw zatrzymaj serwer."
+      "stillRunning": "Najpierw zatrzymaj serwer.",
+      "relayOff": "Najpierw włącz „Przez TRS Relay”."
     },
     "game": {
       "engineFailed": "Nie udało się uruchomić silnika gry.",
@@ -6187,6 +6188,76 @@
       "title": "Brak serwerów",
       "text": "Otwórz instancję, przejdź do „Udostępnij” i wybierz „Eksportuj jako serwer” z opcją „Utwórz tutaj i uruchom”.",
       "action": "Do biblioteki"
+    },
+    "share": {
+      "title": "Graj ze znajomymi",
+      "local": "Na tym komputerze",
+      "lan": "Ta sama sieć",
+      "public": "Przez internet",
+      "unknown": "nie znaleziono",
+      "retry": "Szukaj ponownie",
+      "copy": "Kopiuj",
+      "copied": "Skopiowano",
+      "check": "Sprawdź dostępność",
+      "checking": "Sprawdzanie …",
+      "reach": {
+        "reachable": "Dostępny z zewnątrz",
+        "unreachable": "Niedostępny z zewnątrz – brak przekierowania portu?",
+        "failed": "Nie udało się sprawdzić"
+      },
+      "portHint": "Adres publiczny działa tylko z przekierowaniem portu: przekieruj w routerze port {port} (TCP) na ten komputer. Bez przekierowania: TRS Relay lub e4mc.",
+      "relayTitle": "Przez TRS Relay (bez przekierowania portu)",
+      "relayText": "Dołączyć mogą tylko zaproszeni znajomi z TRS. Ich TRS Launcher uruchamia pasującą wersję z TRS Client i łączy się przez TRS Relay. Jeden serwer naraz.",
+      "e4mcTitle": "Publiczny link (e4mc)",
+      "e4mcText": "Adres w stylu nazwa.e4mc.link, przez który każdy może dołączyć – także bez TRS. Działa przez zewnętrzną usługę e4mc.",
+      "e4mcActive": "Każdy z linkiem może dołączyć.",
+      "state": {
+        "connecting": "Łączenie …",
+        "online": "Aktywny",
+        "reconnecting": "Przerwano – trwa ponowna próba"
+      },
+      "e4mcWarnTitle": "Włączyć publiczny link?",
+      "e4mcWarn": "Każdy z linkiem może dołączyć do twojego serwera. Udostępniaj go tylko zaufanym osobom – albo włącz białą listę na serwerze.",
+      "e4mcPrivacy": "e4mc (e4mc.link) to zewnętrzna usługa: połączenia graczy przechodzą przez jej serwery.",
+      "understood": "Rozumiem",
+      "enable": "Włącz",
+      "error": {
+        "room_closed": "Pokój relaya został zamknięty.",
+        "replaced": "Inne urządzenie lub gra hostuje teraz z twojego konta.",
+        "hosting_unavailable": "TRS Relay jest teraz niedostępny.",
+        "relay_unreachable": "Nie można połączyć się z TRS Relay.",
+        "relay_timeout": "TRS Relay nie odpowiada.",
+        "broker": "e4mc jest teraz niedostępne.",
+        "unreachable": "Serwer e4mc jest niedostępny.",
+        "timeout": "Przekroczono czas.",
+        "tls": "Nie udało się nawiązać bezpiecznego połączenia.",
+        "other": "Połączenie przerwane."
+      }
+    },
+    "invite": {
+      "button": "Zaproś znajomych",
+      "title": "Zaproś znajomych na „{name}”",
+      "how": "Jak?",
+      "method": {
+        "relay": "Przez TRS Relay (zalecane)",
+        "e4mc": "Link e4mc {address}",
+        "public": "Adres publiczny {address}"
+      },
+      "relayHint": "Znajomi dostaną zaproszenie z „Dołącz”: ich launcher uruchomi pasującą wersję (lub ją utworzy) i połączy się przez relay – bez przekierowania portu. Relay zostanie w tym celu włączony.",
+      "cardHint": "Znajomi dostaną na czacie kartę serwera z tym adresem.",
+      "noFriends": "Nie masz jeszcze znajomych w TRS.",
+      "search": "Szukaj znajomych",
+      "sent": "Zaproszono",
+      "sending": "Zapraszanie …",
+      "send": "Zaproś {count} znajomego | Zaproś {count} znajomych | Zaproś {count} znajomych",
+      "done": "Zaproszono {count} znajomego | Zaproszono {count} znajomych | Zaproszono {count} znajomych",
+      "failed": "{name}: {reason}",
+      "error": {
+        "not_friends": "Nie jesteście (już) znajomymi.",
+        "player_banned": "Zbanowany w tym pokoju.",
+        "too_many_invites": "Za dużo otwartych zaproszeń.",
+        "other": "Zaproszenie nie powiodło się."
+      }
     }
   },
   "mobile": {

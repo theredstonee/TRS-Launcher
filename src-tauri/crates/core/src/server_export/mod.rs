@@ -838,6 +838,7 @@ impl Launcher {
 
     /// Beim Beenden des Launchers: lokale Server sauber stoppen.
     pub async fn local_servers_shutdown(&self) {
+        self.server_shares_shutdown().await;
         self.local_servers.shutdown_all(SHUTDOWN_GRACE).await;
     }
 }

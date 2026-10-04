@@ -62,6 +62,7 @@ pub mod presets;
 pub mod process;
 pub mod screenshots;
 pub mod server_export;
+pub mod server_share;
 pub mod servers;
 pub mod settings;
 pub mod shared_folders;
@@ -113,6 +114,8 @@ pub struct Launcher {
     servers: ServerStore,
     /// Lokale Minecraft-Server (Server-Export „lokal anlegen und starten“).
     local_servers: Arc<local_servers::LocalServers>,
+    /// Lokale Server teilen (TRS Relay, e4mc).
+    server_shares: Arc<server_share::ServerShares>,
     /// Von Hand gewählte Import-Ordner (nur für diese Sitzung).
     import_folders: Mutex<Vec<PathBuf>>,
     /// Mitgelieferte TRS-Client-Jars (Tauri-Ressourcen).
@@ -228,6 +231,7 @@ impl Launcher {
             games: GameManager::new(events, paths.root().join("running.json")),
             servers: ServerStore::new(paths.clone()),
             local_servers: Arc::default(),
+            server_shares: Arc::default(),
             import_folders: Mutex::default(),
             client_mod_dir: std::sync::RwLock::default(),
             client_mod_updates: client_mod_update::ClientModUpdater::new(&paths)?,

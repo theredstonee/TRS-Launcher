@@ -59,7 +59,7 @@ impl SessionSource for FakeSessions {
 }
 
 /// Handler für Challenge/Join/Verify; vergibt der Reihe nach `token(b'A')`, `token(b'B')`, …
-pub(super) fn auth_routes(req: &Request, issued: &AtomicUsize, accept_mc: &str) -> Option<Response> {
+pub(crate) fn auth_routes(req: &Request, issued: &AtomicUsize, accept_mc: &str) -> Option<Response> {
     let server_id = "ab".repeat(20);
     Some(match (req.method.as_str(), req.path.as_str()) {
         ("POST", "/v1/auth/challenge") => {

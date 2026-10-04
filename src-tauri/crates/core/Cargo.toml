@@ -35,6 +35,11 @@ windows = { version = "0.62.2", features = ["Win32_Foundation", "Win32_Graphics_
 # Desktop: TLS über das System (SChannel/OpenSSL) wie bisher.
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 reqwest = { version = "0.13.5", default-features = false, features = ["native-tls", "http2", "json", "stream", "gzip", "system-proxy", "form", "query", "multipart"] }
+# e4mc-Link für lokale Server: QUIC zum e4mc-Relay (rustls/ring und der System-Verifier
+# sind über den Updater ohnehin im Build).
+quinn = { version = "0.11.12", default-features = false, features = ["runtime-tokio", "rustls-ring"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+rustls-platform-verifier = "0.7"
 
 # Android/iOS: rustls mit ring (kein OpenSSL im NDK nötig, baut ohne CMake/NASM).
 [target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
