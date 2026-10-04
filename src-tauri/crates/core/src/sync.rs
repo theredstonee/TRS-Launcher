@@ -9,7 +9,10 @@
 //!   `shared/.backup/`).
 //! - Gibt es noch keine gemeinsame Fassung, wird sie aus der Instanz gesät,
 //!   die eine hat – der erste Start überschreibt also nichts.
-//! - Ressourcenpakete werden nur ergänzt (Vereinigung), nie entfernt.
+//! - Ressourcenpakete werden ergänzt (Vereinigung) – ohne Doppelte: gleicher
+//!   Inhalt unter anderem Namen kommt nicht noch einmal rein, von einem Paket
+//!   bleibt nur die neueste Fassung (die ältere landet in der Sicherung) und
+//!   `options.txt` zeigt danach auf die richtige Datei (siehe [`packs`]).
 //! - Wurde eine Sitzung nicht sauber abgeschlossen (Launcher zu, Spiel lief
 //!   weiter), übernimmt der nächste Start erst die neueren Dateien der
 //!   Instanz, bevor er die gemeinsame Fassung holt.
@@ -20,6 +23,8 @@ use std::time::SystemTime;
 use serde::{Deserialize, Serialize};
 
 use crate::{Error, Result};
+
+pub(crate) mod packs;
 
 const MARKER: &str = "sync-session.json";
 const INSTANCE_BACKUP_DIR: &str = "sync-backup";
@@ -136,14 +141,15 @@ fn pull_blocking(dirs: &SyncDirs, items: &[SyncItem]) -> std::io::Result<()> {
     }
     std::fs::create_dir_all(&dirs.shared)?;
     std::fs::create_dir_all(&dirs.game)?;
+    let known = known_projects(dirs, items);
     for &item in items {
         let shared = dirs.shared.join(item.name());
         let local = dirs.game.join(item.name());
         if item.is_dir() {
             if shared.is_dir() {
-                merge_dir(&shared, &local, &dirs.instance.join(INSTANCE_BACKUP_DIR).join(item.name()), true)?;
+                merge_packs(&shared, &local, &dirs.instance.join(INSTANCE_BACKUP_DIR).join(item.name()), &known)?;
             } else if local.is_dir() {
-                merge_dir(&local, &shared, &dirs.shared.join(SHARED_BACKUP_DIR).join(item.name()), true)?;
+                merge_packs(&local, &shared, &dirs.shared.join(SHARED_BACKUP_DIR).join(item.name()), &known)?;
             }
         } else if shared.is_file() {
             if !same_file(&shared, &local) {
@@ -163,12 +169,13 @@ fn pull_blocking(dirs: &SyncDirs, items: &[SyncItem]) -> std::io::Result<()> {
 /// (Aufräumen nach einer nicht abgeschlossenen Sitzung).
 fn push_items(dirs: &SyncDirs, items: &[SyncItem], only_newer: bool) -> std::io::Result<()> {
     std::fs::create_dir_all(&dirs.shared)?;
+    let known = known_projects(dirs, items);
     for &item in items {
         let shared = dirs.shared.join(item.name());
         let local = dirs.game.join(item.name());
         if item.is_dir() {
             if local.is_dir() {
-                merge_dir(&local, &shared, &dirs.shared.join(SHARED_BACKUP_DIR).join(item.name()), true)?;
+                merge_packs(&local, &shared, &dirs.shared.join(SHARED_BACKUP_DIR).join(item.name()), &known)?;
             }
         } else if local.is_file() && !same_file(&local, &shared) {
             if only_newer && modified(&shared) >= modified(&local) {
@@ -181,30 +188,23 @@ fn push_items(dirs: &SyncDirs, items: &[SyncItem], only_newer: bool) -> std::io:
     Ok(())
 }
 
-/// Ergänzt `to` um alles aus `from`. Vorhandene Dateien werden nur ersetzt,
-/// wenn `from` neuer ist und `replace_newer` gesetzt ist – dann vorher gesichert.
-/// Unterordner (entpackte Pakete) werden nur kopiert, wenn sie ganz fehlen.
-fn merge_dir(from: &Path, to: &Path, backup_dir: &Path, replace_newer: bool) -> std::io::Result<()> {
-    std::fs::create_dir_all(to)?;
-    for entry in std::fs::read_dir(from)? {
-        let entry = entry?;
-        let kind = entry.file_type()?;
-        if kind.is_symlink() {
-            continue;
-        }
-        let target = to.join(entry.file_name());
-        if kind.is_dir() {
-            if !target.exists() {
-                copy_dir(&entry.path(), &target)?;
-            }
-        } else if !target.exists() {
-            copy_atomic(&entry.path(), &target)?;
-        } else if replace_newer && target.is_file() && !same_file(&entry.path(), &target) && modified(&entry.path()) > modified(&target) {
-            backup(&target, backup_dir)?;
-            copy_atomic(&entry.path(), &target)?;
-        }
+/// Projekt-IDs der Ressourcenpakete aller Instanzen – nur, wenn sie gebraucht werden.
+fn known_projects(dirs: &SyncDirs, items: &[SyncItem]) -> packs::Known {
+    match dirs.instance.parent() {
+        Some(instances) if items.iter().any(|i| i.is_dir()) => packs::known_projects(instances),
+        _ => packs::Known::new(),
     }
-    Ok(())
+}
+
+/// Ergänzt `to` um die Ressourcenpakete aus `from` (ohne Doppelte, nur die
+/// neueste Fassung) und stellt die `options.txt` neben `to` auf die Dateien um,
+/// die geblieben sind.
+fn merge_packs(from: &Path, to: &Path, backup_dir: &Path, known: &packs::Known) -> std::io::Result<()> {
+    let renames = packs::merge(from, to, backup_dir, known)?;
+    match to.parent() {
+        Some(root) => packs::rewrite_options(&root.join(SyncItem::Options.name()), to, &renames),
+        None => Ok(()),
+    }
 }
 
 fn copy_dir(from: &Path, to: &Path) -> std::io::Result<()> {
@@ -356,6 +356,61 @@ mod tests {
         // B's eigenes Paket ist jetzt auch gemeinsam – A's Pakete sind noch da.
         assert!(b.shared.join("resourcepacks/nur-b.zip").is_file());
         assert!(b.shared.join("resourcepacks/faithful.zip").is_file());
+    }
+
+    #[tokio::test]
+    async fn resource_packs_keep_one_copy_in_the_newest_version() {
+        use packs::tests::write_pack;
+        let root = tempfile::tempdir().unwrap();
+        let a = dirs(root.path(), "a");
+        let b = dirs(root.path(), "b");
+        let rp = |d: &SyncDirs| d.game.join("resourcepacks");
+        let listed = |dir: &Path| {
+            let mut names: Vec<String> =
+                fs::read_dir(dir).unwrap().map(|e| e.unwrap().file_name().into_string().unwrap()).collect();
+            names.sort();
+            names
+        };
+        write_pack(&rp(&a).join("Faithful 32x - 1.21.4.zip"), "new");
+        write_pack(&rp(&a).join("Clear Glass.zip"), "glass");
+        write_pack(&rp(&b).join("Faithful 32x - 1.21.zip"), "old");
+        fs::copy(rp(&a).join("Clear Glass.zip"), rp(&b).join("glass-copy.zip")).unwrap();
+        write(
+            &b.game.join("options.txt"),
+            "resourcePacks:[\"vanilla\",\"file/Faithful 32x - 1.21.zip\",\"file/glass-copy.zip\"]
+",
+        );
+
+        pull(&a, &[SyncItem::ResourcePacks]).await.unwrap();
+        push(&a).await.unwrap();
+
+        // B hat die alte Fassung: sie wird ersetzt (Sicherung bleibt), die
+        // Kopie unter anderem Namen kommt nicht doppelt rein.
+        pull(&b, &[SyncItem::ResourcePacks]).await.unwrap();
+        assert_eq!(listed(&rp(&b)), ["Faithful 32x - 1.21.4.zip", "glass-copy.zip"]);
+        assert_eq!(listed(&b.instance.join(INSTANCE_BACKUP_DIR).join("resourcepacks")), ["Faithful 32x - 1.21.zip"]);
+        assert_eq!(
+            read(&b.game.join("options.txt")),
+            "resourcePacks:[\"vanilla\",\"file/Faithful 32x - 1.21.4.zip\",\"file/glass-copy.zip\"]
+"
+        );
+        push(&b).await.unwrap();
+        assert_eq!(listed(&b.shared.join("resourcepacks")), ["Clear Glass.zip", "Faithful 32x - 1.21.4.zip"]);
+
+        // Kommt die alte Fassung doch in die gemeinsame Ablage, räumt der
+        // nächste Abgleich sie in die Sicherung.
+        write_pack(&a.shared.join("resourcepacks/Faithful 32x - 1.21.zip"), "old");
+        write(&a.shared.join("options.txt"), "resourcePacks:[\"file/Faithful 32x - 1.21.zip\"]
+");
+        pull(&a, &[SyncItem::Options, SyncItem::ResourcePacks]).await.unwrap();
+        assert_eq!(read(&a.game.join("options.txt")), "resourcePacks:[\"file/Faithful 32x - 1.21.4.zip\"]
+");
+        assert_eq!(listed(&rp(&a)), ["Clear Glass.zip", "Faithful 32x - 1.21.4.zip"]);
+        push(&a).await.unwrap();
+        assert_eq!(listed(&a.shared.join("resourcepacks")), ["Clear Glass.zip", "Faithful 32x - 1.21.4.zip"]);
+        assert!(a.shared.join(SHARED_BACKUP_DIR).join("resourcepacks/Faithful 32x - 1.21.zip").is_file());
+        assert_eq!(read(&a.shared.join("options.txt")), "resourcePacks:[\"file/Faithful 32x - 1.21.4.zip\"]
+");
     }
 
     #[tokio::test]
