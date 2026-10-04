@@ -934,6 +934,12 @@
     },
     "modConflicts": {
       "modGone": "Deze mod is niet (meer) ingeschakeld."
+    },
+    "iconEditor": {
+      "invalidIcon": "Het pictogram is geen geldige PNG-afbeelding.",
+      "invalidSource": "De pictogramgegevens zijn ongeldig.",
+      "noClientJar": "Nog geen Minecraft gedownload – start één keer een instantie.",
+      "brokenImage": "De afbeelding is beschadigd of te groot (max. 4096×4096 pixels)."
     }
   },
   "browse": {
@@ -1510,7 +1516,8 @@
       "exportDescription": "Schrijft een .mrpack-bestand om te delen of als back-up. Mods van Modrinth worden gelinkt in plaats van gekopieerd.",
       "deleteTitle": "Instantie verwijderen",
       "deleteDescription": "Verwijdert de instantie definitief, met alle werelden, mods en screenshots.",
-      "deleted": "“{name}” verwijderd"
+      "deleted": "“{name}” verwijderd",
+      "imageFromFile": "Uit bestand …"
     },
     "installation": {
       "platform": "Platform",
@@ -1623,7 +1630,172 @@
     "gameVersion": "Minecraft-versie",
     "showSnapshots": "Snapshots & oude versies",
     "loadingVersions": "Versies laden …",
-    "creating": "Aanmaken …"
+    "creating": "Aanmaken …",
+    "icon": "Pictogram kiezen"
+  },
+  "iconEditor": {
+    "title": "Pictogram-editor",
+    "titleFor": "Pictogram voor {name}",
+    "open": "Pictogram bewerken",
+    "save": "Pictogram opslaan",
+    "saving": "Opslaan …",
+    "saved": "Pictogram opgeslagen.",
+    "replaceHint": "Opslaan vervangt de huidige afbeelding.",
+    "tabs": {
+      "pixel": "Pixel-editor",
+      "mc": "Items en blokken",
+      "trs": "TRS-pictogrammen",
+      "upload": "Eigen afbeelding"
+    },
+    "preview": {
+      "title": "Voorbeeld",
+      "sidebar": "Zijbalk",
+      "card": "Kaart",
+      "header": "Kop"
+    },
+    "pixel": {
+      "toolsLabel": "Gereedschap",
+      "tools": {
+        "pencil": "Potlood (B)",
+        "eraser": "Gum (E)",
+        "fill": "Vullen (G)",
+        "picker": "Kleur oppakken (I)",
+        "line": "Lijn (L)",
+        "rect": "Rechthoek (R)",
+        "rectFilled": "Gevulde rechthoek"
+      },
+      "undo": "Ongedaan maken (Ctrl+Z)",
+      "redo": "Opnieuw (Ctrl+Y)",
+      "canvasLabel": "Tekenvlak {size} × {size}",
+      "size": "Grootte",
+      "zoomIn": "Inzoomen",
+      "zoomOut": "Uitzoomen",
+      "grid": "Raster",
+      "mirror": {
+        "label": "Spiegelen",
+        "none": "Uit",
+        "x": "Links ↔ rechts",
+        "y": "Boven ↕ onder",
+        "xy": "Beide"
+      },
+      "flipX": "Horizontaal spiegelen",
+      "flipY": "Verticaal spiegelen",
+      "clear": "Wissen",
+      "export": "PNG exporteren",
+      "exported": "PNG opgeslagen.",
+      "palette": {
+        "custom": "Eigen kleur",
+        "trs": "TRS-kleuren",
+        "mc": "Minecraft-kleuren",
+        "recent": "Recent gebruikt"
+      },
+      "hint": "De rechtermuisknop gumt uit.",
+      "imageLayer": "Het motief is een afbeelding. Pixeleer het om het hier te bewerken.",
+      "pixelate": "Pixeleren (32 × 32)"
+    },
+    "mc": {
+      "search": "Items en blokken zoeken …",
+      "filter": {
+        "label": "Soort",
+        "all": "Alles",
+        "item": "Items",
+        "block": "Blokken"
+      },
+      "versionLabel": "Minecraft-versie",
+      "version": "Uit Minecraft {version}",
+      "noClient": "Start één keer een instantie – dan verschijnen hier alle items en blokken.",
+      "licence": "De afbeeldingen komen uit je eigen Minecraft – de launcher levert ze niet mee.",
+      "loading": "Texturen lezen …",
+      "empty": "Niets gevonden.",
+      "more": "Meer tonen ({n})"
+    },
+    "trs": {
+      "search": "TRS-pictogrammen zoeken …",
+      "names": {
+        "rocket": "Raket",
+        "castle": "Kasteel",
+        "redstone": "Redstonestof",
+        "comparator": "Comparator",
+        "repeater": "Versterker",
+        "torch": "Redstonefakkel",
+        "lamp": "Lamp",
+        "sun": "Shaderzon",
+        "sword": "Zwaard (PvP)",
+        "pickaxe": "Houweel",
+        "axe": "Bijl",
+        "bow": "Boog",
+        "shield": "Schild",
+        "map": "Kaart",
+        "flask": "Drankfles",
+        "heart": "Hart",
+        "crown": "Kroon",
+        "star": "Ster",
+        "lightning": "Bliksem",
+        "tree": "Boom",
+        "house": "Huis",
+        "gear": "Tandwiel",
+        "controller": "Controller",
+        "globe": "Wereldbol",
+        "book": "Boek",
+        "gem": "Edelsteen",
+        "cube": "Grasblok",
+        "chest": "Kist",
+        "mushroom": "Paddenstoel",
+        "flame": "Vlam",
+        "snowflake": "Sneeuwvlok",
+        "moon": "Maan",
+        "cloud": "Wolk",
+        "note": "Muziek",
+        "flag": "Vlag",
+        "trophy": "Trofee",
+        "key": "Sleutel",
+        "compass": "Kompas",
+        "wrench": "Moersleutel",
+        "robot": "Robot"
+      }
+    },
+    "upload": {
+      "pick": "Afbeelding kiezen …",
+      "other": "Andere afbeelding",
+      "hint": "PNG, JPEG of WebP, max. 5 MB.",
+      "dragHint": "Sleep om de vierkante uitsnede te verplaatsen.",
+      "zoom": "Zoom",
+      "pixelate": "Pixeleren (32 × 32)",
+      "colours": "Kleuren",
+      "palette": {
+        "auto16": "Automatisch (16 kleuren)",
+        "auto8": "Automatisch (8 kleuren)",
+        "trs": "TRS-kleuren",
+        "mc": "Minecraft-kleuren"
+      },
+      "apply": "Als motief gebruiken"
+    },
+    "bg": {
+      "title": "Achtergrond",
+      "preset": "Stijl {n}",
+      "fill": {
+        "label": "Vulling",
+        "none": "Geen",
+        "solid": "Effen",
+        "gradient": "Verloop"
+      },
+      "color": "Kleur",
+      "color2": "Tweede kleur",
+      "angle": "Hoek {angle}°",
+      "pattern": {
+        "label": "Patroon",
+        "none": "Geen",
+        "wire": "Redstonedraad",
+        "deepslate": "Diepleisteen",
+        "dots": "Stippen"
+      },
+      "patternColor": "Patroonkleur",
+      "border": "Rand",
+      "borderColor": "Randkleur",
+      "glow": "Gloed",
+      "glowColor": "Gloedkleur",
+      "scale": "Motiefgrootte {percent} %"
+    }
   },
   "changeVersion": {
     "title": "Versie wijzigen",
@@ -5661,7 +5833,9 @@
       "planLinks": "{n} mod als link | {n} mods als link",
       "planFiles": "{n} bestand geüpload | {n} bestanden geüpload",
       "upload": "Uploaden",
-      "uploading": "Uploaden …"
+      "uploading": "Uploaden …",
+      "icon": "Pack-pictogram",
+      "iconHint": "Reist mee met het pack en wordt de instantie-afbeelding bij iedereen die het installeert."
     },
     "mine": {
       "open": "Mijn modpacks",

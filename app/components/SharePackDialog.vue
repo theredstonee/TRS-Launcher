@@ -22,6 +22,13 @@ const link = computed(() => {
   return l?.role === 'shared' ? l : null
 })
 const asUpdate = ref(true)
+/** Instanz mit aktuellem Bild (der Symbol-Editor kann es hier ändern). */
+const packInstance = ref<Instance>({ ...props.instance })
+const iconOpen = ref(false)
+function onIconSaved(updated: Instance) {
+  packInstance.value = { ...packInstance.value, icon: updated.icon, iconPath: updated.iconPath }
+  void useInstancesStore().load()
+}
 const entries = ref<ExportEntry[]>([])
 const selected = ref<string[]>([])
 const loading = ref(true)
@@ -259,6 +266,16 @@ async function close() {
         </div>
       </div>
 
+      <!-- Pack-Symbol: reist im Pack mit und wird beim Installieren zum Instanz-Bild. -->
+      <div class="mt-3 flex items-center gap-3 rounded-md border border-base-800 bg-base-900 px-3 py-2">
+        <InstanceIcon :instance="packInstance" :size="40" />
+        <div class="min-w-0 flex-1">
+          <p class="text-sm text-base-100">{{ t('packs.share.icon') }}</p>
+          <p class="text-xs text-base-400">{{ t('packs.share.iconHint') }}</p>
+        </div>
+        <button type="button" class="btn btn-ghost shrink-0 py-1.5 text-xs" data-icon-editor :disabled="!!progress" @click="iconOpen = true">{{ t('iconEditor.open') }}</button>
+      </div>
+
       <p class="label mt-4">{{ t('packs.share.included') }}</p>
       <div v-if="loading" class="space-y-1.5">
         <div v-for="i in 4" :key="i" class="skeleton h-9" />
@@ -304,4 +321,5 @@ async function close() {
       </template>
     </template>
   </BaseDialog>
+  <IconInstanceEditor v-if="iconOpen" :instance="packInstance" @close="iconOpen = false" @saved="onIconSaved" />
 </template>

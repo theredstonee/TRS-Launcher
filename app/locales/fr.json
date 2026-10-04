@@ -934,6 +934,12 @@
     },
     "modConflicts": {
       "modGone": "Ce mod n’est plus activé."
+    },
+    "iconEditor": {
+      "invalidIcon": "L'icône n'est pas une image PNG valide.",
+      "invalidSource": "Les données de l'icône sont invalides.",
+      "noClientJar": "Minecraft n'est pas encore téléchargé – lance une instance une fois.",
+      "brokenImage": "L'image est endommagée ou trop grande (4096×4096 pixels max.)."
     }
   },
   "browse": {
@@ -1510,7 +1516,8 @@
       "exportDescription": "Crée un fichier .mrpack à partager ou à sauvegarder. Les mods de Modrinth sont liés au lieu d'être copiés.",
       "deleteTitle": "Supprimer l'instance",
       "deleteDescription": "Supprime définitivement l'instance avec tous ses mondes, mods et captures d'écran.",
-      "deleted": "« {name} » supprimée"
+      "deleted": "« {name} » supprimée",
+      "imageFromFile": "Depuis un fichier …"
     },
     "installation": {
       "platform": "Plateforme",
@@ -1623,7 +1630,172 @@
     "gameVersion": "Version de Minecraft",
     "showSnapshots": "Snapshots et anciennes versions",
     "loadingVersions": "Chargement des versions…",
-    "creating": "Création…"
+    "creating": "Création…",
+    "icon": "Choisir une icône"
+  },
+  "iconEditor": {
+    "title": "Éditeur d'icône",
+    "titleFor": "Icône de {name}",
+    "open": "Modifier l'icône",
+    "save": "Enregistrer l'icône",
+    "saving": "Enregistrement …",
+    "saved": "Icône enregistrée.",
+    "replaceHint": "L'enregistrement remplace l'image actuelle.",
+    "tabs": {
+      "pixel": "Éditeur de pixels",
+      "mc": "Objets et blocs",
+      "trs": "Icônes TRS",
+      "upload": "Image perso"
+    },
+    "preview": {
+      "title": "Aperçu",
+      "sidebar": "Barre latérale",
+      "card": "Carte",
+      "header": "En-tête"
+    },
+    "pixel": {
+      "toolsLabel": "Outils",
+      "tools": {
+        "pencil": "Crayon (B)",
+        "eraser": "Gomme (E)",
+        "fill": "Remplir (G)",
+        "picker": "Pipette (I)",
+        "line": "Ligne (L)",
+        "rect": "Rectangle (R)",
+        "rectFilled": "Rectangle plein"
+      },
+      "undo": "Annuler (Ctrl+Z)",
+      "redo": "Rétablir (Ctrl+Y)",
+      "canvasLabel": "Zone de dessin {size} × {size}",
+      "size": "Taille",
+      "zoomIn": "Zoomer",
+      "zoomOut": "Dézoomer",
+      "grid": "Grille",
+      "mirror": {
+        "label": "Miroir",
+        "none": "Non",
+        "x": "Gauche ↔ droite",
+        "y": "Haut ↕ bas",
+        "xy": "Les deux"
+      },
+      "flipX": "Retourner horizontalement",
+      "flipY": "Retourner verticalement",
+      "clear": "Effacer",
+      "export": "Exporter en PNG",
+      "exported": "PNG enregistré.",
+      "palette": {
+        "custom": "Couleur perso",
+        "trs": "Couleurs TRS",
+        "mc": "Couleurs façon Minecraft",
+        "recent": "Récemment utilisées"
+      },
+      "hint": "Le clic droit efface.",
+      "imageLayer": "Le motif est une image. Pixelise-la pour la modifier ici.",
+      "pixelate": "Pixeliser (32 × 32)"
+    },
+    "mc": {
+      "search": "Rechercher objets et blocs …",
+      "filter": {
+        "label": "Type",
+        "all": "Tout",
+        "item": "Objets",
+        "block": "Blocs"
+      },
+      "versionLabel": "Version de Minecraft",
+      "version": "De Minecraft {version}",
+      "noClient": "Lance une instance une fois – tous les objets et blocs apparaîtront ici.",
+      "licence": "Les images viennent de ton propre Minecraft – le launcher ne les fournit pas.",
+      "loading": "Lecture des textures …",
+      "empty": "Rien trouvé.",
+      "more": "Afficher plus ({n})"
+    },
+    "trs": {
+      "search": "Rechercher des icônes TRS …",
+      "names": {
+        "rocket": "Fusée",
+        "castle": "Château",
+        "redstone": "Poudre de redstone",
+        "comparator": "Comparateur",
+        "repeater": "Répéteur",
+        "torch": "Torche de redstone",
+        "lamp": "Lampe",
+        "sun": "Soleil shader",
+        "sword": "Épée (PvP)",
+        "pickaxe": "Pioche",
+        "axe": "Hache",
+        "bow": "Arc",
+        "shield": "Bouclier",
+        "map": "Carte",
+        "flask": "Fiole",
+        "heart": "Cœur",
+        "crown": "Couronne",
+        "star": "Étoile",
+        "lightning": "Éclair",
+        "tree": "Arbre",
+        "house": "Maison",
+        "gear": "Engrenage",
+        "controller": "Manette",
+        "globe": "Globe",
+        "book": "Livre",
+        "gem": "Gemme",
+        "cube": "Bloc d'herbe",
+        "chest": "Coffre",
+        "mushroom": "Champignon",
+        "flame": "Flamme",
+        "snowflake": "Flocon",
+        "moon": "Lune",
+        "cloud": "Nuage",
+        "note": "Musique",
+        "flag": "Drapeau",
+        "trophy": "Trophée",
+        "key": "Clé",
+        "compass": "Boussole",
+        "wrench": "Clé à molette",
+        "robot": "Robot"
+      }
+    },
+    "upload": {
+      "pick": "Choisir une image …",
+      "other": "Autre image",
+      "hint": "PNG, JPEG ou WebP, 5 Mo max.",
+      "dragHint": "Fais glisser pour déplacer le cadrage carré.",
+      "zoom": "Zoom",
+      "pixelate": "Pixeliser (32 × 32)",
+      "colours": "Couleurs",
+      "palette": {
+        "auto16": "Automatique (16 couleurs)",
+        "auto8": "Automatique (8 couleurs)",
+        "trs": "Couleurs TRS",
+        "mc": "Couleurs façon Minecraft"
+      },
+      "apply": "Utiliser comme motif"
+    },
+    "bg": {
+      "title": "Arrière-plan",
+      "preset": "Style {n}",
+      "fill": {
+        "label": "Remplissage",
+        "none": "Aucun",
+        "solid": "Uni",
+        "gradient": "Dégradé"
+      },
+      "color": "Couleur",
+      "color2": "Seconde couleur",
+      "angle": "Angle {angle}°",
+      "pattern": {
+        "label": "Motif de fond",
+        "none": "Aucun",
+        "wire": "Fil de redstone",
+        "deepslate": "Ardoise des abîmes",
+        "dots": "Points"
+      },
+      "patternColor": "Couleur du motif",
+      "border": "Bordure",
+      "borderColor": "Couleur de bordure",
+      "glow": "Lueur",
+      "glowColor": "Couleur de lueur",
+      "scale": "Taille du motif {percent} %"
+    }
   },
   "changeVersion": {
     "title": "Changer de version",
@@ -5661,7 +5833,9 @@
       "planLinks": "{n} mod en lien | {n} mods en lien",
       "planFiles": "{n} fichier envoyé | {n} fichiers envoyés",
       "upload": "Envoyer",
-      "uploading": "Envoi …"
+      "uploading": "Envoi …",
+      "icon": "Icône du pack",
+      "iconHint": "Voyage avec le pack et devient l'image d'instance chez tous ceux qui l'installent."
     },
     "mine": {
       "open": "Mes modpacks",

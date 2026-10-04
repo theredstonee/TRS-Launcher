@@ -381,11 +381,13 @@ fn build_index(
     }
 }
 
-/// Schreibt das `.mrpack`: Index + alle übrigen Dateien unter `overrides/`.
+/// Schreibt das `.mrpack`: Index + alle übrigen Dateien unter `overrides/`,
+/// dazu das Instanz-Bild als `icon.<ext>` im Wurzelordner (andere Launcher ignorieren es).
 fn write_pack(
     game_dir: &Path,
     index: &PackIndex,
     overrides: &[(PathBuf, u64)],
+    icon: Option<&(&'static str, Vec<u8>)>,
     dest: &Path,
     on_progress: &dyn Fn(ExportProgress),
 ) -> Result<u64> {
@@ -398,6 +400,10 @@ fn write_pack(
         let json = serde_json::to_vec_pretty(index).map_err(|e| Error::Internal(e.to_string()))?;
         zip.start_file("modrinth.index.json", options).map_err(|e| Error::Internal(e.to_string()))?;
         zip.write_all(&json).map_err(|e| Error::io(&tmp, e))?;
+        if let Some((name, bytes)) = icon {
+            zip.start_file(*name, options).map_err(|e| Error::Internal(e.to_string()))?;
+            zip.write_all(bytes).map_err(|e| Error::io(&tmp, e))?;
+        }
 
         for (done, (rel, _)) in overrides.iter().enumerate() {
             let source = game_dir.join(rel);
@@ -518,6 +524,22 @@ pub fn suggested_file_name(name: &str, version: &str) -> String {
 }
 
 impl Launcher {
+    /// Instanz-Bild fürs Pack: Name im Archiv + Inhalt (nur geprüfte Bilder).
+    async fn pack_icon(&self, instance: &Instance) -> Option<(&'static str, Vec<u8>)> {
+        let path = self.instance_icon_path(instance)?;
+        let meta = tokio::fs::metadata(&path).await.ok()?;
+        if meta.len() > crate::icon::MAX_ICON_BYTES {
+            return None;
+        }
+        let bytes = tokio::fs::read(&path).await.ok()?;
+        let name = match crate::icon::validate_image(&bytes).ok()? {
+            crate::icon::ImageFormat::Png => "icon.png",
+            crate::icon::ImageFormat::Jpeg => "icon.jpg",
+            crate::icon::ImageFormat::Webp => "icon.webp",
+        };
+        Some((name, bytes))
+    }
+
     /// Exportiert eine Instanz als `.mrpack` nach `dest`.
     pub async fn export_modpack(
         &self,
@@ -623,7 +645,8 @@ impl Launcher {
         let file_name = dest.file_name().and_then(|n| n.to_str()).unwrap_or("modpack.mrpack").to_owned();
         let progress = on_progress.clone();
         let dir = game_dir.clone();
-        let bytes = tokio::task::spawn_blocking(move || write_pack(&dir, &index, &overrides, &dest, &*progress))
+        let icon = self.pack_icon(&instance).await;
+        let bytes = tokio::task::spawn_blocking(move || write_pack(&dir, &index, &overrides, icon.as_ref(), &dest, &*progress))
             .await
             .map_err(|e| Error::Internal(e.to_string()))??;
         on_progress(ExportProgress { phase: ExportPhase::Writing, percent: 100.0 });
@@ -737,8 +760,11 @@ mod tests {
         let overrides: Vec<(PathBuf, u64)> =
             files.into_iter().filter(|(rel, _)| !resolved.contains_key(&pack_path(rel))).collect();
         let dest = dir.path().join("test.mrpack");
-        let size = write_pack(&game, &index, &overrides, &dest, &|_| {}).unwrap();
+        let icon = ("icon.png", b"\x89PNG\r\n\x1a\nicon".to_vec());
+        let size = write_pack(&game, &index, &overrides, Some(&icon), &dest, &|_| {}).unwrap();
         assert!(size > 0 && dest.is_file());
+        // Das Instanz-Bild liegt im Wurzelordner und wird beim Import erkannt.
+        assert_eq!(crate::icon_editor::read_pack_icon(&dest).as_deref(), Some(&icon.1[..]));
 
         // Jetzt mit dem Importer aus `modpack.rs` gegenlesen.
         let parsed = crate::modpack::read_index(&dest).unwrap();

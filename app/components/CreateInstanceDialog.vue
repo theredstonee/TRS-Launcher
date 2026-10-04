@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Instance, LoaderKind } from '~/types'
+import type { IconResult } from '~/utils/iconEditor'
 
 const emit = defineEmits<{ close: []; created: [instance: Instance] }>()
 
@@ -14,6 +15,16 @@ const showSnapshots = ref(settings.current?.showSnapshots ?? false)
 
 /** Presets, die nach dem Anlegen installiert werden (Hintergrund-Aufgabe). */
 const presetIds = ref<string[]>([])
+
+/** Symbol aus dem Symbol-Editor (wird nach dem Anlegen gespeichert). */
+const toasts = useToasts()
+const icon = ref<IconResult | null>(null)
+const iconOpen = ref(false)
+const iconSrc = computed(() => (icon.value ? `data:image/png;base64,${icon.value.png}` : null))
+function onIcon(result: IconResult) {
+  icon.value = result
+  iconOpen.value = false
+}
 
 const loadingVersions = ref(true)
 const submitting = ref(false)
@@ -56,7 +67,16 @@ async function submit() {
 
   submitting.value = true
   try {
-    const instance = await instances.create(parsed.data)
+    let instance = await instances.create(parsed.data)
+    // Im Symbol-Editor gebautes Symbol gleich mitspeichern (Fehler nur als Hinweis – die Instanz steht).
+    if (icon.value) {
+      try {
+        instance = await backend.saveInstanceIcon(instance.id, icon.value.png, JSON.stringify(icon.value.source))
+        void instances.load()
+      } catch (e) {
+        toasts.error(e)
+      }
+    }
     // Nur was es für Version + Loader gibt – der Rest steht im Bericht.
     if (presetIds.value.length) void applyPresetsTask(instance, [...presetIds.value])
     emit('created', instance)
@@ -71,9 +91,23 @@ async function submit() {
 <template>
   <BaseDialog :title="t('createInstance.title')" @close="emit('close')">
     <form id="create-instance" class="space-y-4" @submit.prevent="submit">
-      <div>
-        <label class="label" for="ci-name">{{ t('common.labels.name') }}</label>
-        <input id="ci-name" v-model="name" class="field" maxlength="64" :placeholder="t('createInstance.namePlaceholder')" autofocus />
+      <div class="flex items-end gap-3">
+        <button
+          type="button"
+          class="group relative size-[3.75rem] shrink-0 overflow-hidden rounded-lg bg-base-800 ring-1 ring-white/5 transition-shadow hover:ring-redstone-500"
+          :aria-label="t('createInstance.icon')"
+          :title="t('createInstance.icon')"
+          data-icon-editor
+          @click="iconOpen = true"
+        >
+          <img v-if="iconSrc" :src="iconSrc" alt="" class="size-full" draggable="false" />
+          <PixelIdenticon v-else :seed="name || 'trs'" :color="loaderColors[loaderKind]" :letter="(name.trim().charAt(0) || '?').toUpperCase()" />
+          <span class="absolute inset-0 grid place-items-center bg-black/55 text-[11px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">{{ t('common.actions.change') }}</span>
+        </button>
+        <div class="min-w-0 flex-1">
+          <label class="label" for="ci-name">{{ t('common.labels.name') }}</label>
+          <input id="ci-name" v-model="name" class="field" maxlength="64" :placeholder="t('createInstance.namePlaceholder')" autofocus />
+        </div>
       </div>
 
       <div>
@@ -120,4 +154,5 @@ async function submit() {
       </button>
     </template>
   </BaseDialog>
+  <IconEditorDialog v-if="iconOpen" :initial="icon?.source ?? null" :export-name="name || 'icon'" @close="iconOpen = false" @save="onIcon" />
 </template>

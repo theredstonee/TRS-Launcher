@@ -165,6 +165,7 @@ async function save() {
 
 // --- Allgemein ------------------------------------------------------------------
 const iconBusy = ref(false)
+const iconEditorOpen = ref(false)
 async function pickIcon() {
   iconBusy.value = true
   try {
@@ -413,7 +414,7 @@ const loaderLine = computed(() => {
       <div class="flex items-center gap-5 border-b border-base-800 pb-5">
         <div class="group relative">
           <InstanceIcon :instance="inst" :size="88" />
-          <button class="absolute inset-0 grid place-items-center rounded-xl bg-black/55 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100" :disabled="iconBusy" :aria-label="t('instanceSettings.general.changeImage')" @click="pickIcon">
+          <button class="absolute inset-0 grid place-items-center rounded-xl bg-black/55 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100" :disabled="iconBusy" :aria-label="t('instanceSettings.general.changeImage')" @click="iconEditorOpen = true">
             {{ iconBusy ? '…' : t('common.actions.change') }}
           </button>
         </div>
@@ -421,7 +422,8 @@ const loaderLine = computed(() => {
           <label class="label" for="is-name">{{ t('common.labels.name') }}</label>
           <input id="is-name" v-model="name" class="field" maxlength="64" />
           <div class="mt-2 flex gap-2">
-            <button class="btn btn-ghost py-1.5 text-xs" :disabled="iconBusy" @click="pickIcon">{{ t('instanceSettings.general.changeImage') }}</button>
+            <button class="btn btn-ghost py-1.5 text-xs" data-icon-editor @click="iconEditorOpen = true">{{ t('iconEditor.open') }}</button>
+            <button class="btn btn-ghost py-1.5 text-xs" :disabled="iconBusy" @click="pickIcon">{{ t('instanceSettings.general.imageFromFile') }}</button>
             <button v-if="inst.iconPath" class="btn btn-ghost py-1.5 text-xs hover:text-redstone-300" @click="removeIcon">{{ t('instanceSettings.general.removeImage') }}</button>
           </div>
         </div>
@@ -688,6 +690,7 @@ const loaderLine = computed(() => {
   </SettingsShell>
 
   <ChangeVersionDialog v-if="changingVersion" :instance="inst" @close="changingVersion = false" @changed="onVersionChanged" />
+  <IconInstanceEditor v-if="iconEditorOpen" :instance="inst" @close="iconEditorOpen = false" @saved="applyMeta" />
 
   <ExportPackDialog v-if="exporting" :instance="inst" @close="exporting = false" />
 

@@ -57,6 +57,8 @@ pub enum DialogText {
     PickControls,
     /// Filtername für Steuerungs-Dateien.
     ControlsFile,
+    /// Pixel-Symbol aus dem Symbol-Editor als PNG speichern.
+    SaveIcon,
 }
 
 impl DialogText {
@@ -68,7 +70,7 @@ impl DialogText {
 
 /// Je Text eine Zeile in der Reihenfolge von [`Language::ALL`]:
 /// en, de, es, fr, pl, pt-BR, tr, nl.
-const TEXTS: [[&str; 8]; 30] = [
+const TEXTS: [[&str; 8]; 31] = [
     [
         "Save modpack",
         "Modpack speichern",
@@ -333,6 +335,16 @@ const TEXTS: [[&str; 8]; 30] = [
         "TRS dokunmatik kontroller",
         "TRS-touchbediening",
     ],
+    [
+        "Save icon",
+        "Symbol speichern",
+        "Guardar icono",
+        "Enregistrer l'icône",
+        "Zapisz ikonę",
+        "Salvar ícone",
+        "Simgeyi kaydet",
+        "Pictogram opslaan",
+    ],
 ];
 
 impl DialogText {
@@ -353,7 +365,7 @@ pub async fn language(launcher: &LauncherState) -> Language {
 mod tests {
     use super::*;
 
-    const ALL: [DialogText; 30] = [
+    const ALL: [DialogText; 31] = [
         DialogText::SaveModpack,
         DialogText::PickModpack,
         DialogText::ModrinthModpack,
@@ -384,6 +396,7 @@ mod tests {
         DialogText::SaveControls,
         DialogText::PickControls,
         DialogText::ControlsFile,
+        DialogText::SaveIcon,
     ];
 
     #[test]
