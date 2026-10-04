@@ -28,7 +28,7 @@ clipboard/`showError` code from `Natives/ios_uikit_bridge.m`. Both keep the attr
 `scripts/ios/build-engine.sh` fetches the commit above and uses, unchanged:
 
 - headers `Natives/external/mesa` (Khronos/Mesa, MIT), `Natives/external/mach/mach_excServer.c/.h` (MIG output),
-  submodule `Natives/external/fishhook` (Facebook, BSD-3-Clause), `Natives/external/gl4es` (tinygl4angle),
+  `Natives/external/fishhook` – Amethysts Fork khanhduytran0/fishhook ist offline, stattdessen facebook/fishhook @aadc161a (BSD-3-Clause, gleiche API), `Natives/external/gl4es` (tinygl4angle),
 - submodule `Natives/external/MobileGlues` (LGPL-2.1) – built from source,
 - `JavaApp/` (LWJGL/GLFW shim, launcher classes, Caciocavallo jars, gson, jsr305) – built with JDK 8,
 - prebuilt libraries from `Natives/resources/Frameworks`: ANGLE (`libEGL`/`libGLESv2`, BSD-3-Clause),

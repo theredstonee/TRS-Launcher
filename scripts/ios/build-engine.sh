@@ -52,10 +52,22 @@ if [ ! -d "$UP/.git" ] || [ "$(git -C "$UP" rev-parse HEAD 2>/dev/null)" != "$AM
 fi
 [ "$(git -C "$UP" rev-parse HEAD)" = "$AMETHYST_COMMIT" ] || die "falscher Amethyst-Commit"
 git -C "$UP" checkout -q -- .
-for sub in Natives/external/fishhook Natives/external/MobileGlues; do
-  git -C "$UP" submodule update --init --recursive --depth 1 "$sub" \
-    || git -C "$UP" submodule update --init --recursive "$sub"
-done
+# fishhook: Amethysts Fork (khanhduytran0/fishhook) ist nicht mehr erreichbar – das Original von
+# Facebook (BSD-3-Clause, gleiche API) am festen Commit nehmen.
+FISHHOOK_REPO=https://github.com/facebook/fishhook.git
+FISHHOOK_COMMIT=aadc161ac3b80db07a9908851839a17ba63a9eb1
+FH="$UP/Natives/external/fishhook"
+if [ "$(git -C "$FH" rev-parse HEAD 2>/dev/null)" != "$FISHHOOK_COMMIT" ]; then
+  rm -rf "$FH"
+  mkdir -p "$FH"
+  git -C "$FH" init -q
+  git -C "$FH" remote add origin "$FISHHOOK_REPO"
+  git -C "$FH" fetch -q --depth 1 origin "$FISHHOOK_COMMIT"
+  git -C "$FH" -c advice.detachedHead=false checkout -q FETCH_HEAD
+fi
+[ "$(git -C "$FH" rev-parse HEAD)" = "$FISHHOOK_COMMIT" ] || die "falscher fishhook-Commit"
+git -C "$UP" submodule update --init --recursive --depth 1 Natives/external/MobileGlues \
+  || git -C "$UP" submodule update --init --recursive Natives/external/MobileGlues
 
 # --- 2. Vendored Dateien gegen Upstream prüfen (nur die in UPSTREAM.md genannten dürfen abweichen) ---
 log "Vendored Amethyst-Dateien prüfen"
