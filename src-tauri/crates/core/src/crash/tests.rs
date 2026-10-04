@@ -31,6 +31,7 @@ fn fixture(name: &str) -> &'static str {
         "16" => include_str!("fixtures/16-fabric-iris-without-sodium.log"),
         "17" => include_str!("fixtures/17-neoforge-two-minimaps.txt"),
         "18" => include_str!("fixtures/18-old-forge-java-too-new.log"),
+        "19" => include_str!("fixtures/19-fabric-iris-needs-newer-sodium.log"),
         _ => unreachable!(),
     }
 }
@@ -152,6 +153,23 @@ fn fabric_incompatible_versions() {
     assert_eq!(f.actions[0], CrashAction::FixConflict { mod_id: "sodium".into() });
     assert!(has_disable(f, "sodium.jar"));
     assert_eq!(f.mods, ["sodium", "iris"]);
+}
+
+/// Fehlerbericht 0.18.0: Iris 1.11.4 verlangt Sodium 0.9.x, da liegt 0.8.9 –
+/// getauscht wird Sodium (nicht Iris), Iris abschalten bleibt als Ausweg.
+#[test]
+fn fabric_dependency_in_wrong_version_swaps_the_dependency() {
+    let mods = [
+        jar("sodium.jar", "sodium", "Sodium", "0.8.9+mc26.1.1", &["net.caffeinemc.mods.sodium"]),
+        jar("iris.jar", "iris", "Iris", "1.11.4+mc26.1.2", &["net.irisshaders.iris"]),
+    ];
+    let a = log(fixture("19"), &mods);
+    let f = a.primary();
+    assert_eq!(f.kind, CrashKind::IncompatibleMod);
+    assert_eq!(f.params["name"], "Sodium 0.8.9+mc26.1.1");
+    assert_eq!(f.params["other"], "Iris 1.11.4+mc26.1.2");
+    assert_eq!(f.actions[0], CrashAction::FixConflict { mod_id: "sodium".into() });
+    assert!(has_disable(f, "iris.jar"));
 }
 
 #[test]

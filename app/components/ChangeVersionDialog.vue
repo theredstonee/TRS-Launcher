@@ -293,7 +293,10 @@ async function disableMissing() {
         <ul class="-mr-2 max-h-80 space-y-1 overflow-y-auto pr-2">
           <li v-for="p in [...missing, ...toUpdate, ...fine]" :key="`${p.kind}/${p.fileName}`" class="flex items-center gap-3 rounded-lg bg-base-900 px-2.5 py-2">
             <ModIcon :src="p.iconUrl" :name="p.title" :size="32" />
-            <span class="min-w-0 flex-1 truncate text-sm">{{ p.title }}</span>
+            <span class="min-w-0 flex-1 truncate text-sm">
+              {{ p.title }}
+              <span v-if="p.compatWith" class="ml-1.5 text-xs text-base-500">{{ t('changeVersion.compatWith', { name: p.compatWith }) }}</span>
+            </span>
             <i18n-t v-if="p.status === 'update'" keypath="changeVersion.itemChange" tag="span" scope="global" class="font-mono text-xs text-base-600">
               <template #from><span class="text-base-400">{{ p.currentVersion ?? '?' }}</span></template>
               <template #to><span class="text-lamp-300">{{ p.targetVersionNumber }}</span></template>

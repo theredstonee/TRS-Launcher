@@ -363,6 +363,99 @@ pub async fn ensure_before_launch(
     Ok(fix)
 }
 
+/// Hier prüfen wir Versions-Bedingungen (`depends`/`breaks` aus den Jars).
+fn checks_versions(instance: &Instance) -> bool {
+    matches!(instance.loader.kind, LoaderKind::Fabric | LoaderKind::Quilt | LoaderKind::Forge | LoaderKind::NeoForge)
+}
+
+/// Würde der Loader den Start bei diesem Konflikt sicher ablehnen (Fabric:
+/// „Incompatible mods found!“)? Dann starten wir gar nicht erst.
+pub fn blocks_launch(instance: &Instance) -> bool {
+    matches!(instance.loader.kind, LoaderKind::Fabric | LoaderKind::Quilt)
+}
+
+/// Vor dem Start: Passen die Versionen der eingeschalteten Mods nicht
+/// zusammen (Iris verlangt Sodium 0.9.x, da liegt 0.8.9; eine Mod für eine
+/// andere Minecraft-Version), werden passende Versionen von Modrinth
+/// getauscht – erst die verlangte Mod, sonst die, die sie verlangt. Zählt
+/// auch eingebettete Mods und die des TRS Clients (der selbst nie getauscht
+/// wird). Was sich nicht lösen lässt, steht in `unresolved`.
+pub async fn ensure_versions_before_launch(
+    http: &reqwest::Client,
+    paths: &Paths,
+    builds: &[Build],
+    instance: &Instance,
+    progress: &(dyn Fn(ApplyProgress) + Sync),
+) -> Result<modcompat::CompatReport> {
+    if !checks_versions(instance) {
+        return Ok(modcompat::CompatReport::default());
+    }
+    let entries = modcompat::installed_entries(paths, &instance.id).await?;
+    let builtins = builtins(paths, builds, instance).await;
+    let conflicts = modcompat::find_conflicts(&entries, &builtins);
+    if conflicts.is_empty() {
+        return Ok(modcompat::CompatReport::default());
+    }
+    tracing::info!(
+        "Mod-Versionen in '{}' passen nicht zusammen: {}",
+        instance.id,
+        conflicts.iter().map(modcompat::Conflict::describe).collect::<Vec<_>>().join(", ")
+    );
+    let lookup = presets::ModrinthLookup::new(http, paths, instance);
+    modcompat::resolve_and_apply(http, paths, &lookup, instance, entries, &builtins, None, progress).await
+}
+
+/// [`ensure_versions_before_launch`] für den Start: Hinweis, was getauscht
+/// wurde. Bleibt ein Konflikt, den Fabric/Quilt sicher ablehnen würde, startet
+/// das Spiel nicht – statt Fabrics Fehlerfenster ein klarer Hinweis. Offline
+/// oder bei anderen Fehlern startet es wie bisher.
+pub async fn versions_for_launch(
+    http: &reqwest::Client,
+    paths: &Paths,
+    builds: &[Build],
+    instance: &Instance,
+    progress: &(dyn Fn(ApplyProgress) + Sync),
+) -> Result<Option<crate::error::Msg>> {
+    let report = match ensure_versions_before_launch(http, paths, builds, instance, progress).await {
+        Ok(report) => report,
+        Err(Error::Cancelled) => return Err(Error::Cancelled),
+        Err(e) => {
+            tracing::warn!("Mod-Versionen konnten nicht abgeglichen werden: {e}");
+            return Ok(None);
+        }
+    };
+    let conflicts = report.unresolved.join(", ");
+    if !report.unresolved.is_empty() && blocks_launch(instance) {
+        return Err(Error::launch(crate::msg!(
+            "launcher.modVersionsConflict",
+            "Diese Mods passen in den installierten Versionen nicht zusammen, und es gibt keine passende Version: {list}. Deaktiviere oder aktualisiere eine davon in der Mod-Liste.",
+            list = conflicts
+        )));
+    }
+    let changed = report
+        .changes
+        .iter()
+        .map(|c| match &c.from {
+            Some(from) => format!("{} {from} → {}", c.title, c.to),
+            None => format!("{} → {}", c.title, c.to),
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
+    Ok(match (changed.is_empty(), conflicts.is_empty()) {
+        (true, true) => None,
+        (false, true) => Some(crate::msg!(
+            "launcher.modVersionsAdjusted",
+            "Mod-Versionen angepasst, damit alles zusammenpasst: {list}.",
+            list = changed
+        )),
+        (_, false) => Some(crate::msg!(
+            "launcher.modVersionsUnresolved",
+            "Diese Mods passen in den installierten Versionen vielleicht nicht zusammen: {list}.",
+            list = conflicts
+        )),
+    })
+}
+
 /// Absturz-Diagnose „… which is missing!“: installiert die genannten Mod-IDs
 /// (`dependencies`, z. B. `cloth-config`). `declarer`: Mod-ID der Mod, die sie
 /// verlangt (hilft beim Finden über deren Modrinth-Abhängigkeiten).

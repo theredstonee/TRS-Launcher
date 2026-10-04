@@ -442,6 +442,9 @@
       "stopAllGamesFirst": "Please close all running games first.",
       "syncAfterExitFailed": "The settings couldn't be synced with the other instances.",
       "dependenciesAdded": "Added missing dependencies: {list} (needed by {mods}).",
+      "modVersionsAdjusted": "Adjusted mod versions so everything fits together: {list}.",
+      "modVersionsConflict": "These mods don't work together in the installed versions, and there is no version that fits: {list}. Disable or update one of them in the mod list.",
+      "modVersionsUnresolved": "These mods may not work together in the installed versions: {list}.",
       "accountMissing": "The chosen account no longer exists.",
       "memorySafeStart": "Little free memory: the game starts small and takes more memory as it needs it.",
       "notEnoughMemory": "Not enough free memory for Java. Close other programs or give the instance less RAM."
@@ -1648,6 +1651,7 @@
     "itemChange": "{from} to {to}",
     "noMatch": "No compatible version",
     "fits": "Compatible",
+    "compatWith": "to fit {name}",
     "saving": "Switching …",
     "disableMissing": "Disable incompatible",
     "applyUpdates": "Update mods to compatible versions",

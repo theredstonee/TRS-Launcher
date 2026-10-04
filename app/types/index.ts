@@ -1213,6 +1213,8 @@ export interface MigrationItem {
   status: 'compatible' | 'update' | 'missing'
   targetVersionId: string | null
   targetVersionNumber: string | null
+  /** Version so gewählt, damit sie mit dieser Mod läuft („Iris 1.11.4+mc26.1.2“). */
+  compatWith?: string | null
 }
 
 // --- Skins & Umhänge ------------------------------------------------------------

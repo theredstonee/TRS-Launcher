@@ -286,3 +286,138 @@ fn missing_dependencies_are_found_once_and_nested_jars_count() {
     with_cloth.push(Entry { mods: vec![info("old", "Old", "1", &[("cloth-config2", "*")], &[])], ..Default::default() });
     assert!(missing_dependencies(&with_cloth, &bundled).is_empty());
 }
+
+fn sodium26(v: &str, mc: &str) -> ModInfo {
+    info("sodium", "Sodium", &format!("{v}+mc{mc}"), &[], &[])
+}
+
+fn iris26(v: &str, sodium: &str) -> ModInfo {
+    info("iris", "Iris", &format!("{v}+mc26.1.2"), &[("sodium", sodium)], &[])
+}
+
+/// Echte Lage für 26.1.2 (Stand 2026-10): Sodium 0.8.9 führt Modrinth auch für
+/// 26.1.2, Iris 1.11.4 verlangt aber 0.9.x; das ältere Iris 1.10.9 nähme 0.8.x.
+fn modrinth_26_1_2() -> Fake {
+    Fake::default()
+        .with("AANobbMI", "s-092", "release", sodium26("0.9.2", "26.1.2"))
+        .with("AANobbMI", "s-091", "release", sodium26("0.9.1", "26.1.2"))
+        .with("AANobbMI", "s-089", "release", sodium26("0.8.9", "26.1.1"))
+        .with("YL57xq9U", "i-1114", "release", iris26("1.11.4", "0.9.x"))
+        .with("YL57xq9U", "i-1109", "release", iris26("1.10.9", "0.8.x"))
+}
+
+fn fabric_26_1_2() -> Instance {
+    Instance { game_version: "26.1.2".into(), ..fabric_instance() }
+}
+
+#[tokio::test]
+async fn dependency_in_wrong_version_is_swapped_not_the_mod_that_needs_it() {
+    let fake = modrinth_26_1_2();
+    let builtins = loader_builtins(&fabric_26_1_2());
+    let mut entries = vec![installed(&fake, "AANobbMI", "s-089", "sodium.jar"), installed(&fake, "YL57xq9U", "i-1114", "iris.jar")];
+    let c = find_conflicts(&entries, &builtins);
+    assert_eq!((c.len(), c[0].declarer, c[0].target, c[0].kind), (1, 1, Party::Entry(0), ConflictKind::Depends));
+    assert_eq!(c[0].describe(), "Iris 1.11.4+mc26.1.2 ↔ Sodium 0.8.9+mc26.1.1");
+
+    let left = settle(&fake, UpdateChannel::Release, &mut entries, &builtins, None).await.unwrap();
+    assert!(left.is_empty(), "{left:?}");
+    // Sodium neu (nicht Iris zurück auf 1.10.9).
+    assert_eq!(entries[0].version_id.as_deref(), Some("s-092"));
+    assert_eq!(entries[0].because.as_deref(), Some("Iris 1.11.4+mc26.1.2"));
+    assert_eq!(entries[1].version_id.as_deref(), Some("i-1114"));
+    let changed = changed_entries(entries);
+    assert_eq!(changed.len(), 1);
+    let (change, version, file) = &changed[0];
+    assert_eq!((change.title.as_str(), change.from.as_deref(), change.to.as_str()), ("Sodium", Some("0.8.9+mc26.1.1"), "0.9.2+mc26.1.2"));
+    assert_eq!((version.id.as_str(), file.as_str()), ("s-092", "sodium.jar"));
+}
+
+#[tokio::test]
+async fn version_change_plan_pulls_the_dependency_along() {
+    // Nach 26.1.1 → 26.1.2 bietet Modrinth Iris 1.11.4 an; Sodium 0.8.9 gilt dort als „passt noch“.
+    let fake = modrinth_26_1_2();
+    let entries = vec![installed(&fake, "AANobbMI", "s-089", "sodium.jar"), installed(&fake, "YL57xq9U", "i-1109", "iris.jar")];
+    let i1114 = fake.versions["YL57xq9U"].iter().find(|v| v.id == "i-1114").unwrap().clone();
+    let out = vet_updates(&fake, &fabric_26_1_2(), entries, HashMap::from([("iris.jar".to_owned(), i1114)])).await.unwrap();
+    assert_eq!(out["iris.jar"].0.id, "i-1114");
+    assert_eq!(out["sodium.jar"].0.id, "s-092");
+    assert_eq!(out["sodium.jar"].1.as_deref(), Some("Iris 1.11.4+mc26.1.2"));
+}
+
+#[tokio::test]
+async fn no_fitting_dependency_then_the_requiring_mod_is_adjusted() {
+    // Sodium fest (nicht über Modrinth): dann Iris auf die Version, die 0.8.x nimmt.
+    let fake = modrinth_26_1_2();
+    let mut entries = vec![
+        Entry { adjustable: false, project_id: None, ..installed(&fake, "AANobbMI", "s-089", "sodium.jar") },
+        installed(&fake, "YL57xq9U", "i-1114", "iris.jar"),
+    ];
+    let left = settle(&fake, UpdateChannel::Release, &mut entries, &[], None).await.unwrap();
+    assert!(left.is_empty());
+    assert_eq!(entries[1].version_id.as_deref(), Some("i-1109"));
+    assert_eq!(entries[1].because.as_deref(), Some("Sodium 0.8.9+mc26.1.1"));
+
+    // Beides fest (z. B. von Hand eingelegt): bleibt als Konflikt für den Hinweis.
+    let mut entries = vec![
+        Entry { adjustable: false, ..installed(&fake, "AANobbMI", "s-089", "sodium.jar") },
+        Entry { adjustable: false, ..installed(&fake, "YL57xq9U", "i-1114", "iris.jar") },
+    ];
+    let left = settle(&fake, UpdateChannel::Release, &mut entries, &[], None).await.unwrap();
+    assert_eq!(left.iter().map(Conflict::describe).collect::<Vec<_>>(), ["Iris 1.11.4+mc26.1.2 ↔ Sodium 0.8.9+mc26.1.1"]);
+    assert!(changed_entries(entries).is_empty());
+}
+
+#[tokio::test]
+async fn chain_of_requirements_settles() {
+    // Iris will Sodium 0.9.x, Sodium Extra (alt) will 0.8.x – die neue Sodium Extra nimmt 0.9.x.
+    let extra = |v: &str, sodium: &str| info("sodium-extra", "Sodium Extra", v, &[("sodium", sodium)], &[]);
+    let fake = modrinth_26_1_2()
+        .with("PtjYWJkn", "e-070", "release", extra("0.7.0+mc26.1.2", "0.9.x"))
+        .with("PtjYWJkn", "e-061", "release", extra("0.6.1+mc26.1.1", "0.8.x"));
+    let mut entries = vec![
+        installed(&fake, "AANobbMI", "s-089", "sodium.jar"),
+        installed(&fake, "YL57xq9U", "i-1114", "iris.jar"),
+        installed(&fake, "PtjYWJkn", "e-061", "extra.jar"),
+    ];
+    let left = settle(&fake, UpdateChannel::Release, &mut entries, &loader_builtins(&fabric_26_1_2()), None).await.unwrap();
+    assert!(left.is_empty(), "{left:?}");
+    let ids: Vec<_> = entries.iter().map(|e| e.version_id.as_deref().unwrap()).collect();
+    assert_eq!(ids, ["s-092", "i-1114", "e-070"]);
+}
+
+#[tokio::test]
+async fn mod_for_another_minecraft_version_gets_a_newer_one() {
+    let lib = |v: &str, mc: &str| info("lib", "Lib", v, &[("minecraft", mc)], &[]);
+    let fake = Fake::default()
+        .with("lib", "l-3", "release", lib("3.0.0", ">=26.2"))
+        .with("lib", "l-2", "release", lib("2.0.0", "~26.1"))
+        .with("lib", "l-1", "release", lib("1.0.0", ">=26.1 <26.1.2"));
+    let builtins = loader_builtins(&fabric_26_1_2());
+    assert!(builtins.iter().any(|b| b.id == "minecraft" && b.version == "26.1.2"));
+    let mut entries = vec![installed(&fake, "lib", "l-1", "lib.jar")];
+    // Modrinth führt die installierte Version auch hier: trotzdem erst neuere probieren.
+    let left = settle(&fake, UpdateChannel::Release, &mut entries, &builtins, None).await.unwrap();
+    assert!(left.is_empty());
+    assert_eq!(entries[0].version_id.as_deref(), Some("l-2"));
+    assert_eq!(entries[0].because.as_deref(), Some("Minecraft 26.1.2"));
+    // Snapshots und Forge: keine Minecraft-Prüfung (andere Schreibweise im Loader).
+    assert!(!loader_builtins(&Instance { game_version: "26w14a".into(), ..fabric_26_1_2() }).iter().any(|b| b.id == "minecraft"));
+    let forge = Instance { loader: Loader { kind: LoaderKind::Forge, version: Some("1".into()) }, ..fabric_26_1_2() };
+    assert!(loader_builtins(&forge).is_empty());
+}
+
+#[test]
+fn embedded_mods_count_for_version_requirements() {
+    let fake = modrinth_26_1_2();
+    let sodium = Entry { adjustable: false, ..installed(&fake, "AANobbMI", "s-089", "sodium.jar") };
+    let iris = installed(&fake, "YL57xq9U", "i-1114", "iris.jar");
+    assert_eq!(find_conflicts(&[sodium.clone(), iris.clone()], &[]).len(), 1);
+    // Eine andere Mod bringt Sodium 0.9.1 eingebettet mit – der Loader nimmt die.
+    let bundle = |nested: ModInfo| Entry { mods: vec![info("bundle", "Bundle", "1.0.0", &[], &[])], nested_mods: vec![nested], ..Default::default() };
+    assert!(find_conflicts(&[sodium.clone(), iris.clone(), bundle(sodium26("0.9.1", "26.1.2"))], &[]).is_empty());
+    // Eingebettet auch zu alt: weiter ein Konflikt.
+    assert_eq!(find_conflicts(&[sodium.clone(), iris.clone(), bundle(sodium26("0.8.8", "26.1.1"))], &[]).len(), 1);
+    // Iris bringt die passende Sodium selbst eingebettet mit: auch das zählt.
+    let iris_with_own = Entry { nested_mods: vec![sodium26("0.9.2", "26.1.2")], ..iris };
+    assert!(find_conflicts(&[sodium, iris_with_own], &[]).is_empty());
+}

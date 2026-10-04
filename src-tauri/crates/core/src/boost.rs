@@ -58,6 +58,15 @@ pub async fn ensure_performance(
     if is_done(&marker_file, effective).await {
         return Ok(());
     }
+    // Versionswechsel: Was schon liegt, gilt sonst als „installiert“ und bliebe alt.
+    let previous: Marker = fsutil::read_json(&marker_file).await.ok().flatten().unwrap_or_default();
+    if !previous.game_version.is_empty() && previous.game_version != effective.game_version {
+        match refresh_pack(http, paths, effective).await {
+            Ok(n) => tracing::info!("TRS-Optimierung für '{}': {n} Mods auf {} gehoben", effective.id, effective.game_version),
+            Err(Error::Cancelled) => return Err(Error::Cancelled),
+            Err(e) => tracing::warn!("Performance-Mods konnten nicht aktualisiert werden: {e}"),
+        }
+    }
     match presets::install_fps_boost_report(http, paths, builds, effective, progress).await {
         Ok(report) => {
             tracing::info!("TRS-Optimierung für '{}': {} Dateien", effective.id, report.files.len());
@@ -78,6 +87,47 @@ pub async fn ensure_performance(
             Ok(())
         }
     }
+}
+
+/// Hebt die eingeschalteten Mods des Pakets auf die neueste Version für genau
+/// diese Minecraft-Version (im Update-Kanal). Sonst bliebe nach 26.1.1 → 26.1.2
+/// etwa Sodium 0.8.9 liegen (Modrinth führt es auch für 26.1.2), obwohl Iris
+/// dort 0.9.x verlangt. Liefert, wie viele getauscht wurden.
+async fn refresh_pack(http: &reqwest::Client, paths: &Paths, effective: &Instance) -> Result<usize> {
+    use crate::content::{self, ContentKind, Platform};
+    use crate::presets::VersionLookup;
+
+    let pack = presets::fps_boost_projects();
+    let lookup = presets::ModrinthLookup::new(http, paths, effective);
+    let mut changed = 0;
+    for item in content::list(paths, &effective.id, ContentKind::Mod).await? {
+        let Some(source) = item.source.as_ref().filter(|s| s.platform == Platform::Modrinth && pack.contains(&s.project_id.as_str()))
+        else {
+            continue;
+        };
+        if !item.enabled {
+            continue;
+        }
+        crate::task::checkpoint().await?;
+        let versions = match lookup.versions(&source.project_id, ContentKind::Mod).await {
+            Ok(v) => v,
+            Err(Error::Cancelled) => return Err(Error::Cancelled),
+            Err(e) => {
+                tracing::debug!("Versionen von {} nicht abrufbar: {e}", source.project_id);
+                continue;
+            }
+        };
+        let Some(newest) = crate::modrinth::newest_in_channel(versions, effective.overrides.channel()) else { continue };
+        if newest.id == source.version_id {
+            continue;
+        }
+        match crate::modrinth::install_with_dependencies(http, paths, effective, ContentKind::Mod, &newest, Some(&item.file_name)).await {
+            Ok(_) => changed += 1,
+            Err(Error::Cancelled) => return Err(Error::Cancelled),
+            Err(e) => tracing::warn!("{} nicht aktualisiert: {e}", item.file_name),
+        }
+    }
+    Ok(changed)
 }
 
 /// Wurde das Paket für diese Version schon vollständig ergänzt?

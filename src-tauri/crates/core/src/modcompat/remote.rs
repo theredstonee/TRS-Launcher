@@ -252,7 +252,7 @@ pub(crate) async fn mod_info(http: &reqwest::Client, cache_dir: &Path, file: &Ve
 }
 
 /// Eine gelesene Datei: Größe + Änderungszeit, Mod-Infos, IDs eingebetteter Jars.
-type LocalEntry = (u64, Option<std::time::SystemTime>, Vec<ModInfo>, Vec<String>);
+type LocalEntry = (u64, Option<std::time::SystemTime>, Vec<ModInfo>, Vec<ModInfo>);
 
 /// Schon gelesene Jars der Instanzen – gültig, solange Größe und Änderungszeit
 /// gleich bleiben (spart das Auspacken bei jedem Start).
@@ -262,6 +262,12 @@ const MAX_LOCAL_CACHE: usize = 5000;
 
 /// Mod-Infos einer Datei in der Instanz – dazu die Mod-IDs ihrer eingebetteten Jars.
 pub(crate) async fn local_mod_details(path: PathBuf) -> (Vec<ModInfo>, Vec<String>) {
+    let (mods, nested) = local_jar_details(path).await;
+    (mods, meta::nested_ids(&nested))
+}
+
+/// Mod-Infos einer Datei in der Instanz – dazu ihre eingebetteten Mods samt Version.
+pub(crate) async fn local_jar_details(path: PathBuf) -> (Vec<ModInfo>, Vec<ModInfo>) {
     tokio::task::spawn_blocking(move || {
         let Ok(file) = std::fs::File::open(&path) else { return (Vec::new(), Vec::new()) };
         let stamp = file.metadata().ok().map(|m| (m.len(), m.modified().ok()));
@@ -273,7 +279,7 @@ pub(crate) async fn local_mod_details(path: PathBuf) -> (Vec<ModInfo>, Vec<Strin
         {
             return (mods.clone(), nested.clone());
         }
-        let (mods, nested) = meta::read_jar_with_nested(std::io::BufReader::new(file));
+        let (mods, nested) = meta::read_jar_details(std::io::BufReader::new(file));
         if let Some((len, modified)) = stamp {
             let mut cache = cache();
             if cache.len() >= MAX_LOCAL_CACHE {

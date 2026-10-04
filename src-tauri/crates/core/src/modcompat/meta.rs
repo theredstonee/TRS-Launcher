@@ -87,14 +87,28 @@ const MAX_NESTED_DEPTH: u8 = 2;
 /// Wie [`read_jar`] – dazu die Mod-IDs (samt `provides`) der eingebetteten Jars
 /// (Jar-in-Jar, z. B. die Module der Fabric API oder Cloth Configs `basic-math`).
 /// Die zählen für Abhängigkeiten als vorhanden, ihre Bedingungen prüfen wir nicht.
+#[cfg(test)]
 pub(crate) fn read_jar_with_nested<R: Read + Seek>(reader: R) -> (Vec<ModInfo>, Vec<String>) {
+    let (mods, nested) = read_jar_details(reader);
+    (mods, nested_ids(&nested))
+}
+
+/// Wie [`read_jar_with_nested`], aber die eingebetteten Mods samt Version
+/// (für Versions-Bedingungen anderer Mods).
+pub(crate) fn read_jar_details<R: Read + Seek>(reader: R) -> (Vec<ModInfo>, Vec<ModInfo>) {
     let Ok(mut archive) = zip::ZipArchive::new(reader) else { return (Vec::new(), Vec::new()) };
     let mods = read_archive(&mut archive);
     let mut nested = Vec::new();
     collect_nested(&mut archive, 1, &mut nested);
-    nested.sort();
-    nested.dedup();
     (mods, nested)
+}
+
+/// Mod-IDs (samt `provides`) eingebetteter Mods, sortiert und ohne Doppelte.
+pub(crate) fn nested_ids(nested: &[ModInfo]) -> Vec<String> {
+    let mut ids: Vec<String> = nested.iter().flat_map(|m| std::iter::once(m.id.clone()).chain(m.provides.iter().cloned())).collect();
+    ids.sort();
+    ids.dedup();
+    ids
 }
 
 fn read_archive<R: Read + Seek>(archive: &mut zip::ZipArchive<R>) -> Vec<ModInfo> {
@@ -109,7 +123,7 @@ fn read_archive<R: Read + Seek>(archive: &mut zip::ZipArchive<R>) -> Vec<ModInfo
     })
 }
 
-fn collect_nested<R: Read + Seek>(archive: &mut zip::ZipArchive<R>, depth: u8, out: &mut Vec<String>) {
+fn collect_nested<R: Read + Seek>(archive: &mut zip::ZipArchive<R>, depth: u8, out: &mut Vec<ModInfo>) {
     let names: Vec<String> = archive
         .file_names()
         .filter(|n| NESTED_DIRS.iter().any(|d| n.starts_with(d)) && n.to_ascii_lowercase().ends_with(".jar"))
@@ -126,11 +140,8 @@ fn collect_nested<R: Read + Seek>(archive: &mut zip::ZipArchive<R>, depth: u8, o
             continue;
         }
         let Ok(mut inner) = zip::ZipArchive::new(std::io::Cursor::new(bytes)) else { continue };
-        for m in read_archive(&mut inner) {
-            out.extend(m.provides);
-            out.push(m.id);
-        }
-        if depth < MAX_NESTED_DEPTH && out.len() < MAX_NESTED_JARS * 4 {
+        out.extend(read_archive(&mut inner));
+        if depth < MAX_NESTED_DEPTH && out.len() < MAX_NESTED_JARS * 2 {
             collect_nested(&mut inner, depth + 1, out);
         }
     }

@@ -60,6 +60,9 @@ pub(crate) struct Entry {
     /// Mod-IDs eingebetteter Jars (Jar-in-Jar, nur installierte) – zählen für
     /// fehlende Abhängigkeiten als vorhanden.
     pub nested: Vec<String>,
+    /// Eingebettete Mods samt Version (nur installierte) – zählen für
+    /// Versions-Bedingungen anderer Mods mit (der Loader wählt unter allen Kopien).
+    pub nested_mods: Vec<ModInfo>,
 }
 
 impl Entry {
@@ -96,6 +99,11 @@ pub(crate) struct Conflict {
 }
 
 impl Conflict {
+    /// „Iris 1.11.4+mc26.1.2 ↔ Sodium 0.8.9+mc26.1.1“ – für Hinweise.
+    pub(crate) fn describe(&self) -> String {
+        format!("{} ↔ {}", self.declarer_label, self.target_label)
+    }
+
     fn key(&self) -> (usize, Party, ConflictKind) {
         (self.declarer, self.target, self.kind)
     }
@@ -131,7 +139,7 @@ pub(crate) fn find_conflicts(entries: &[Entry], builtins: &[ModInfo]) -> Vec<Con
     // Welche IDs sind da – und in welcher Version?
     let mut present: HashMap<&str, Vec<(Party, &ModInfo)>> = HashMap::new();
     for (i, e) in entries.iter().enumerate() {
-        for m in &e.mods {
+        for m in e.mods.iter().chain(&e.nested_mods) {
             present.entry(m.id.as_str()).or_default().push((Party::Entry(i), m));
             for p in &m.provides {
                 present.entry(p.as_str()).or_default().push((Party::Entry(i), m));
@@ -167,10 +175,14 @@ pub(crate) fn find_conflicts(entries: &[Entry], builtins: &[ModInfo]) -> Vec<Con
                 }
             }
             for c in &m.depends {
+                // Eigene eingebettete Kopien zählen mit (der Loader nimmt auch die).
+                let own = |p: &Party, o: &ModInfo| *p == Party::Entry(i) && e.mods.iter().any(|m| std::ptr::eq(m, o));
                 let candidates: Vec<&(Party, &ModInfo)> =
-                    present.get(c.id.as_str()).into_iter().flatten().filter(|(p, _)| *p != Party::Entry(i)).collect();
+                    present.get(c.id.as_str()).into_iter().flatten().filter(|(p, o)| !own(p, o)).collect();
                 // Fehlt die Mod ganz, kümmern sich Modrinths Abhängigkeiten darum.
-                let Some((party, other)) = candidates.first() else { continue };
+                let Some((party, other)) = candidates.iter().find(|(p, _)| *p != Party::Entry(i)).or(candidates.first()) else {
+                    continue;
+                };
                 if candidates.iter().all(|(_, o)| satisfies(m.scheme, c, &o.version) == Some(false)) {
                     push(Conflict {
                         declarer: i,
@@ -240,25 +252,46 @@ pub(crate) fn missing_dependencies(entries: &[Entry], builtins: &[ModInfo]) -> V
     out
 }
 
-/// Der Modloader als „Mod“, damit `depends: { fabricloader: ">=0.16" }` zählt.
+/// Der Modloader als „Mod“, damit `depends: { fabricloader: ">=0.16" }` zählt –
+/// bei Fabric/Quilt auch Minecraft selbst (nur Vollversionen wie `26.1.2`:
+/// Snapshots schreibt der Loader anders, da raten wir nicht).
 pub(crate) fn loader_builtins(instance: &Instance) -> Vec<ModInfo> {
-    match (instance.loader.kind, &instance.loader.version) {
-        (LoaderKind::Fabric, Some(version)) if !version.is_empty() => vec![ModInfo {
-            id: "fabricloader".into(),
-            name: "Fabric Loader".into(),
-            version: version.clone(),
-            scheme: Scheme::Fabric,
-            provides: Vec::new(),
-            depends: Vec::new(),
-            breaks: Vec::new(),
-        }],
-        _ => Vec::new(),
+    let builtin = |id: &str, name: &str, version: &str| ModInfo {
+        id: id.into(),
+        name: name.into(),
+        version: version.to_owned(),
+        scheme: Scheme::Fabric,
+        provides: Vec::new(),
+        depends: Vec::new(),
+        breaks: Vec::new(),
+    };
+    let mut out = Vec::new();
+    if let (LoaderKind::Fabric, Some(version)) = (instance.loader.kind, &instance.loader.version)
+        && !version.is_empty()
+    {
+        out.push(builtin("fabricloader", "Fabric Loader", version));
     }
+    if matches!(instance.loader.kind, LoaderKind::Fabric | LoaderKind::Quilt) && is_release_version(&instance.game_version) {
+        out.push(builtin(GAME_ID, "Minecraft", &instance.game_version));
+    }
+    out
+}
+
+const GAME_ID: &str = "minecraft";
+
+/// `1.21.11`, `26.1.2` – keine Snapshots/Vorabversionen.
+fn is_release_version(version: &str) -> bool {
+    let parts: Vec<&str> = version.split('.').collect();
+    (2..=4).contains(&parts.len()) && parts.iter().all(|p| !p.is_empty() && p.len() <= 4 && p.bytes().all(|b| b.is_ascii_digit()))
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Role {
+    /// Die Mod, die die Bedingung stellt: erst ältere Versionen.
     Declarer,
+    /// Wie `Declarer`, aber erst neuere (passt nicht zur Minecraft-Version).
+    DeclarerNewer,
+    /// Die Mod, an die die Bedingung geht: erst neuere Versionen.
     Target,
 }
 
@@ -267,6 +300,18 @@ enum Role {
 struct Budget {
     lists: HashMap<String, Vec<Version>>,
     tries: HashMap<String, usize>,
+    /// Gelesene Jar-Angaben je Version (auch über den zweiten Durchgang).
+    infos: HashMap<String, Vec<ModInfo>>,
+    /// Per Umweg getauscht – wird in diesem Durchgang nicht mehr angefasst.
+    locked: HashSet<usize>,
+}
+
+/// Lässt sich der Konflikt `c` von `idx` in einer späteren Runde lösen, indem
+/// die andere Mod getauscht wird (Iris 1.11 will Sodium 0.9.x, Sodium 0.9.x
+/// passt nicht zur alten Sodium Extra → die kommt als Nächstes dran)?
+fn fixable_later(c: &Conflict, idx: usize, entries: &[Entry], locked: &HashSet<usize>) -> bool {
+    let other = if c.declarer == idx { c.target } else { Party::Entry(c.declarer) };
+    c.kind == ConflictKind::Depends && matches!(other, Party::Entry(o) if o != idx && entries[o].adjustable && !locked.contains(&o))
 }
 
 /// Versionen im Kanal, neueste zuerst (keine im Kanal → alle).
@@ -292,7 +337,10 @@ fn releases_first(mut list: Vec<Version>) -> Vec<Version> {
     list
 }
 
-/// Sucht für `idx` eine Version ohne Konflikte. Liefert Version + Infos.
+/// Sucht für `idx` eine Version ohne Konflikte. Liefert Version + Infos und ob
+/// es ein Umweg ist (`lenient`: Es bleiben nur Konflikte, die sich durch Tausch
+/// einer anderen Mod lösen lassen – siehe [`fixable_later`]).
+#[allow(clippy::too_many_arguments)]
 async fn alternative<L: VersionLookup>(
     lookup: &L,
     channel: UpdateChannel,
@@ -300,8 +348,9 @@ async fn alternative<L: VersionLookup>(
     builtins: &[ModInfo],
     idx: usize,
     role: Role,
+    lenient: bool,
     budget: &mut Budget,
-) -> Result<Option<(Version, Vec<ModInfo>)>> {
+) -> Result<Option<(Version, Vec<ModInfo>, bool)>> {
     let Some(project) = entries[idx].project_id.clone() else { return Ok(None) };
     let list = channel_versions(lookup, channel, budget, &project).await?;
     let current_id = entries[idx].version_id.clone();
@@ -315,39 +364,60 @@ async fn alternative<L: VersionLookup>(
     let order = match role {
         // Die Mod, die den Bruch erklärt: erst ältere Versionen.
         Role::Declarer => [releases_first(older), releases_first(newer)].concat(),
-        // Die andere: erst neuere, dann ältere.
-        Role::Target => [releases_first(newer), releases_first(older)].concat(),
+        // Die andere (oder eine Mod für eine ältere Minecraft-Version): erst neuere, dann ältere.
+        Role::Target | Role::DeclarerNewer => [releases_first(newer), releases_first(older)].concat(),
     };
+    // Erster Umweg-Kandidat – nur, wenn sich nichts ohne Umweg findet.
+    let mut detour: Option<(Version, Vec<ModInfo>)> = None;
     for candidate in order {
         if Some(&candidate.id) == current_id.as_ref() {
             continue;
         }
         let used = budget.tries.entry(project.clone()).or_default();
         if *used >= MAX_TRIES_PER_PROJECT {
-            return Ok(None);
+            break;
         }
         *used += 1;
         task::checkpoint().await?;
+        let is_installed = matches!(&entries[idx].installed, Some((id, _)) if *id == candidate.id);
         let mods = match &entries[idx].installed {
             Some((id, mods)) if *id == candidate.id => mods.clone(),
-            _ => lookup.mod_info(&candidate).await,
+            _ => match budget.infos.get(&candidate.id) {
+                Some(mods) => mods.clone(),
+                None => {
+                    let mods = lookup.mod_info(&candidate).await;
+                    budget.infos.insert(candidate.id.clone(), mods.clone());
+                    mods
+                }
+            },
         };
         if mods.is_empty() {
             continue;
         }
+        // Eingebettete Mods einer anderen Version kennen wir nicht.
+        let nested = if is_installed { entries[idx].nested_mods.clone() } else { Vec::new() };
         let before = std::mem::replace(&mut entries[idx].mods, mods);
-        let ok = !find_conflicts(entries, builtins).iter().any(|c| c.involves(idx));
+        let nested_before = std::mem::replace(&mut entries[idx].nested_mods, nested);
+        let left: Vec<Conflict> = find_conflicts(entries, builtins).into_iter().filter(|c| c.involves(idx)).collect();
         let mods = std::mem::replace(&mut entries[idx].mods, before);
-        if ok {
-            return Ok(Some((candidate, mods)));
+        entries[idx].nested_mods = nested_before;
+        if left.is_empty() {
+            return Ok(Some((candidate, mods, false)));
+        }
+        if lenient && detour.is_none() && left.iter().all(|c| fixable_later(c, idx, entries, &budget.locked)) {
+            detour = Some((candidate, mods));
         }
     }
-    Ok(None)
+    Ok(detour.map(|(v, m)| (v, m, true)))
 }
 
 /// Tauscht Versionen, bis die Menge zusammenpasst (oder nichts mehr hilft).
 /// `prefer`: Mod-ID, die bevorzugt getauscht wird (aus der Absturz-Meldung).
 /// Liefert die Konflikte, die bleiben.
+///
+/// Erst mit Umwegen (Ketten wie Iris → Sodium → Sodium Extra: neuere
+/// Versionen ziehen weitere nach), bleibt dabei etwas offen, noch einmal ohne
+/// – das Ergebnis mit weniger offenen Konflikten zählt.
 pub(crate) async fn settle<L: VersionLookup>(
     lookup: &L,
     channel: UpdateChannel,
@@ -356,13 +426,51 @@ pub(crate) async fn settle<L: VersionLookup>(
     prefer: Option<&str>,
 ) -> Result<Vec<Conflict>> {
     let mut budget = Budget::default();
+    let original = entries.to_vec();
+    let left = settle_pass(lookup, channel, entries, builtins, prefer, true, &mut budget).await?;
+    if left.is_empty() {
+        return Ok(left);
+    }
+    let mut strict = original;
+    budget.tries.clear();
+    budget.locked.clear();
+    let strict_left = settle_pass(lookup, channel, &mut strict, builtins, prefer, false, &mut budget).await?;
+    if strict_left.len() < left.len() {
+        entries.clone_from_slice(&strict);
+        return Ok(strict_left);
+    }
+    Ok(left)
+}
+
+async fn settle_pass<L: VersionLookup>(
+    lookup: &L,
+    channel: UpdateChannel,
+    entries: &mut [Entry],
+    builtins: &[ModInfo],
+    prefer: Option<&str>,
+    lenient: bool,
+    budget: &mut Budget,
+) -> Result<Vec<Conflict>> {
     let mut given_up: HashSet<(usize, Party, ConflictKind)> = HashSet::new();
     for _ in 0..MAX_ROUNDS {
         let conflicts = find_conflicts(entries, builtins);
         let Some(conflict) = conflicts.into_iter().find(|c| !given_up.contains(&c.key())) else { break };
-        let mut order = vec![(conflict.declarer, Role::Declarer)];
+        // Passt eine Mod nicht zur Minecraft-Version, hilft eher eine neuere.
+        let declarer_role = match conflict.target {
+            Party::Builtin(b) if conflict.kind == ConflictKind::Depends && builtins.get(b).is_some_and(|m| m.id == GAME_ID) => {
+                Role::DeclarerNewer
+            }
+            _ => Role::Declarer,
+        };
+        let mut order = vec![(conflict.declarer, declarer_role)];
         if let Party::Entry(t) = conflict.target {
-            order.push((t, Role::Target));
+            // Falsche Version einer Abhängigkeit (Iris will Sodium 0.9.x, da ist 0.8.9):
+            // erst die Abhängigkeit tauschen, dann erst die Mod, die sie verlangt.
+            if conflict.kind == ConflictKind::Depends {
+                order.insert(0, (t, Role::Target));
+            } else {
+                order.push((t, Role::Target));
+            }
         }
         if let Some(id) = prefer {
             // Stabil: die bevorzugte Mod nach vorn.
@@ -370,11 +478,14 @@ pub(crate) async fn settle<L: VersionLookup>(
         }
         let mut fixed = false;
         for (idx, role) in order {
-            if !entries[idx].adjustable {
+            if !entries[idx].adjustable || budget.locked.contains(&idx) {
                 continue;
             }
-            if let Some((version, mods)) = alternative(lookup, channel, entries, builtins, idx, role, &mut budget).await? {
-                let because = if role == Role::Declarer { &conflict.target_label } else { &conflict.declarer_label };
+            if let Some((version, mods, detour)) = alternative(lookup, channel, entries, builtins, idx, role, lenient, budget).await? {
+                if detour {
+                    budget.locked.insert(idx);
+                }
+                let because = if role == Role::Target { &conflict.declarer_label } else { &conflict.target_label };
                 tracing::info!(
                     "Mod-Konflikt {} ↔ {}: {:?} → {}",
                     conflict.declarer_label,
@@ -387,6 +498,9 @@ pub(crate) async fn settle<L: VersionLookup>(
                 entry.version_id = Some(version.id.clone());
                 entry.version = Some(version);
                 entry.mods = mods;
+                if entry.installed.as_ref().is_none_or(|(id, _)| Some(id) != entry.version_id.as_ref()) {
+                    entry.nested_mods.clear();
+                }
                 fixed = true;
                 break;
             }
@@ -410,17 +524,20 @@ pub(crate) async fn installed_entries(paths: &Paths, instance_id: &str) -> Resul
         .collect();
     // Mehrere Jars gleichzeitig lesen (beim ersten Mal je Sitzung; danach aus dem Cache).
     let read: Vec<_> = futures::stream::iter(files.into_iter().map(|(item, path)| async move {
-        (item, remote::local_mod_details(path).await)
+        (item, remote::local_jar_details(path).await)
     }))
     .buffered(8)
     .collect()
     .await;
     let mut out = Vec::new();
-    for (item, (mods, nested)) in read {
+    for (item, (mods, nested_mods)) in read {
+        // Den TRS Client tauscht nur sein eigenes Update.
+        let own = crate::client_mod::is_client_mod_file(ContentKind::Mod, &item.file_name);
         let source = item
             .source
             .filter(|s| s.platform == Platform::Modrinth && modrinth::is_safe_project_id(&s.project_id))
-            .filter(|s| modrinth::is_safe_project_id(&s.version_id));
+            .filter(|s| modrinth::is_safe_project_id(&s.version_id))
+            .filter(|_| !own);
         let (project_id, version_id) = source.map(|s| (s.project_id, s.version_id)).unzip();
         out.push(Entry {
             adjustable: project_id.is_some() && !mods.is_empty(),
@@ -431,7 +548,8 @@ pub(crate) async fn installed_entries(paths: &Paths, instance_id: &str) -> Resul
             mods,
             file_name: Some(item.file_name),
             because: None,
-            nested,
+            nested: meta::nested_ids(&nested_mods),
+            nested_mods,
         });
     }
     Ok(out)
@@ -468,26 +586,62 @@ pub async fn fix_instance(
     prefer: Option<&str>,
 ) -> Result<CompatReport> {
     modrinth::ensure_mods_allowed(ContentKind::Mod, instance)?;
-    let mut entries = installed_entries(paths, &instance.id).await?;
+    let entries = installed_entries(paths, &instance.id).await?;
     let builtins = loader_builtins(instance);
     let lookup = crate::presets::ModrinthLookup::new(http, paths, instance);
     let prefer = prefer.filter(|p| meta::is_mod_id(p));
-    let unresolved = settle(&lookup, instance.overrides.channel(), &mut entries, &builtins, prefer).await?;
+    resolve_and_apply(http, paths, &lookup, instance, entries, &builtins, prefer, &|_| {}).await
+}
 
-    let mut report = CompatReport {
-        unresolved: unresolved.iter().map(|c| format!("{} ↔ {}", c.declarer_label, c.target_label)).collect(),
-        ..Default::default()
-    };
+/// Tauscht Versionen, bis `entries` zusammenpassen, und ersetzt die Dateien.
+/// Jede Datei für sich: Die alte bleibt liegen, bis die neue geladen und ihre
+/// Prüfsumme bestätigt ist (Schalter, Gruppen und Herkunft bleiben am Projekt).
+#[allow(clippy::too_many_arguments)]
+pub(crate) async fn resolve_and_apply<L: VersionLookup>(
+    http: &reqwest::Client,
+    paths: &Paths,
+    lookup: &L,
+    instance: &Instance,
+    mut entries: Vec<Entry>,
+    builtins: &[ModInfo],
+    prefer: Option<&str>,
+    progress: &(dyn Fn(crate::presets::ApplyProgress) + Sync),
+) -> Result<CompatReport> {
+    let unresolved = settle(lookup, instance.overrides.channel(), &mut entries, builtins, prefer).await?;
+    let mut report = CompatReport { unresolved: unresolved.iter().map(Conflict::describe).collect(), ..Default::default() };
+    let changed = changed_entries(entries);
+    let total = u32::try_from(changed.len()).unwrap_or(u32::MAX);
+    for (n, (change, version, file)) in changed.into_iter().enumerate() {
+        task::checkpoint().await?;
+        progress(crate::presets::ApplyProgress {
+            phase: crate::presets::ApplyPhase::Install,
+            done: u32::try_from(n).unwrap_or(u32::MAX),
+            total,
+            title: Some(change.title.clone()),
+        });
+        // Die getauschte Version kann andere Pflicht-Abhängigkeiten haben.
+        modrinth::install_with_dependencies(http, paths, instance, ContentKind::Mod, &version, Some(&file)).await?;
+        tracing::info!("Mod-Version getauscht: {} {:?} → {} (wegen {})", change.title, change.from, change.to, change.because);
+        report.changes.push(change);
+    }
+    Ok(report)
+}
+
+/// Was [`settle`] getauscht hat: Änderung, neue Version, bisherige Datei.
+pub(crate) fn changed_entries(entries: Vec<Entry>) -> Vec<(CompatChange, Version, String)> {
+    let mut out = Vec::new();
     for entry in entries {
         let (Some(because), Some(version), Some(file)) = (entry.because, entry.version, entry.file_name) else { continue };
+        // Am Ende doch wieder die installierte Version.
+        if entry.installed.as_ref().is_some_and(|(id, _)| *id == version.id) {
+            continue;
+        }
         let title = entry.mods.first().map(|m| m.display_name().to_owned()).unwrap_or_else(|| version.name.clone());
         let from = entry.installed.and_then(|(_, mods)| mods.first().map(|m| m.version.clone()));
         let to = entry.mods.first().map(|m| m.version.clone()).unwrap_or_else(|| version.version_number.clone());
-        // Die getauschte Version kann andere Pflicht-Abhängigkeiten haben.
-        modrinth::install_with_dependencies(http, paths, instance, ContentKind::Mod, &version, Some(&file)).await?;
-        report.changes.push(CompatChange { title, from, to, because });
+        out.push((CompatChange { title, from, to, because }, version, file));
     }
-    Ok(report)
+    out
 }
 
 // --- Update-Prüfung ------------------------------------------------------------------

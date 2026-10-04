@@ -54,6 +54,7 @@ How to write an entry:
 - **Start an instance twice** – for example with a second account.
 - **Cape search and details.** Search, filter and sort TRS capes and see where a cape comes from.
 - **Minecraft Bedrock.** If Bedrock is installed from the Microsoft Store, it gets its own card in the library.
+- **Mods that need each other in other versions are fixed before the start.** If a mod needs a different version of another one (like Iris 1.11 needing Sodium 0.9 while 0.8 is installed), the launcher swaps in a fitting version before starting instead of showing Fabric's "Incompatible mods" error – also after changing an instance's Minecraft version, where the optimisation mods now follow the new version too. If nothing fits, you get a clear note which mods clash, and the crash helper offers the right swap.
 
 ### Deutsch
 - **TRS Launcher für Android (Vorschau).** Minecraft Java auf dem Handy: anmelden, Instanzen anlegen oder teilen, Modpacks und Mods installieren – und mit Touch-Steuerung spielen. Am besten läuft Minecraft 1.21 und neuer (auch 26.x), ältere Versionen sind noch experimentell; TRS Client und Mod Menu kommen automatisch mit. Die APK gibt es im Release, danach aktualisiert sie sich selbst.
@@ -70,6 +71,7 @@ How to write an entry:
 - **Eine Instanz zweimal starten** – zum Beispiel mit einem zweiten Konto.
 - **Umhang-Suche und Details.** TRS-Umhänge suchen, filtern, sortieren und sehen, woher ein Umhang kommt.
 - **Minecraft Bedrock.** Ist Bedrock aus dem Microsoft Store installiert, bekommt es eine eigene Karte in der Bibliothek.
+- **Mods, die einander in anderen Versionen brauchen, werden vor dem Start repariert.** Braucht eine Mod eine andere Version einer anderen (etwa Iris 1.11 Sodium 0.9, installiert ist 0.8), tauscht der Launcher vor dem Start eine passende Version ein, statt Fabrics Fehler „Incompatible mods“ zu zeigen – auch nach einem Versionswechsel der Instanz, bei dem jetzt auch die Optimierungs-Mods mitziehen. Passt nichts, sagt ein klarer Hinweis, welche Mods sich beißen, und der Absturz-Helfer bietet den richtigen Tausch an.
 
 ## 0.17.1 – 2026-10-03 – Light Luggage Fix | Leichtes Gepäck – Fix
 <!-- banner: accent=#ffb02e motif=/news/0.17.0/banner.png -->
