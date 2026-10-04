@@ -38,11 +38,13 @@ How to write an entry:
 - **Fix: "The mod loader installer could not be downloaded" on NeoForge/Forge.** Some instances had a loader version saved that doesn't belong to NeoForge or Forge (for example a Fabric version). The launcher now notices this and installs the newest matching NeoForge/Forge version instead of failing.
 - **Android app and iPhone version in the release.** The mobile builds of 0.18.0 didn't make it into the release; the APK for Android and the AltStore/SideStore source for iPhone and iPad are now published.
 - **"Redeem code" right on the Skins page.** A big button at the top next to "Save skin" opens the code dialog for capes and cosmetics.
+- **Java is picked automatically again.** After changing an instance to a Minecraft version that needs a different Java (for example 26.1 with Java 25), a Java downloaded by the launcher is switched to the right one by itself – no more "Java 21 – Java 25 is expected here".
 
 ### Deutsch
 - **Behoben: „Der Modloader-Installer konnte nicht heruntergeladen werden“ bei NeoForge/Forge.** Bei manchen Instanzen war eine Loader-Version gespeichert, die gar nicht zu NeoForge oder Forge gehört (zum Beispiel eine Fabric-Version). Der Launcher erkennt das jetzt und installiert die neueste passende NeoForge-/Forge-Version, statt abzubrechen.
 - **Android-App und iPhone-Version im Release.** Die Handy-Builds von 0.18.0 haben es nicht ins Release geschafft; die APK für Android und die AltStore/SideStore-Quelle für iPhone und iPad sind jetzt veröffentlicht.
 - **„Code einlösen“ direkt auf der Skins-Seite.** Ein großer Knopf oben neben „Skin speichern“ öffnet den Code-Dialog für Umhänge und Kosmetik.
+- **Java wird wieder automatisch gewählt.** Nach dem Wechsel einer Instanz auf eine Minecraft-Version, die eine andere Java braucht (zum Beispiel 26.1 mit Java 25), wird eine vom Launcher geladene Java von selbst auf die passende umgestellt – kein „Java 21 – Java 25 erwartet“ mehr.
 
 ## 0.18.0 – 2026-10-04 – Power Tools | Profi-Werkzeuge
 <!-- banner: accent=#ff3b30 motif=/news/0.18.0/banner.png -->

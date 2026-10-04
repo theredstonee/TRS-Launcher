@@ -142,6 +142,17 @@ pub async fn prepare_with(
     let java = match custom_java {
         // Die Engine bringt ihre Runtime selbst mit (siehe tauri-plugin-trs-game).
         _ if embedded => PathBuf::new(),
+        Some(path) if !java_fits(paths, Path::new(&path), required_major) => {
+            // Falsche Hauptversion (z. B. Java 21 nach dem Wechsel auf 26.1, das 25 braucht):
+            // automatisch die passende Runtime nehmen statt mit einem Java-Fehler abzubrechen.
+            tracing::warn!("Java '{path}' passt nicht zu Java {required_major} – nehme die passende Runtime des Launchers");
+            let component =
+                version.java_version.as_ref().map_or(java::LEGACY_COMPONENT, |j| j.component.as_str());
+            java::ensure_runtime(http, paths, component, concurrency, &|p| {
+                on_progress(StageProgress::new(Stage::Java, p));
+            })
+            .await?
+        }
         Some(path) => {
             let path = PathBuf::from(path);
             if !path.is_file() {
@@ -473,6 +484,16 @@ async fn extract_natives(paths: &Paths, libraries: &[ResolvedLibrary], natives_d
         .map_err(|e| Error::Internal(e.to_string()))??;
     }
     Ok(())
+}
+
+/// Passt diese Java zur verlangten Hauptversion? Eine vom Launcher geladene Runtime muss genau
+/// passen; eine eigene darf neuer sein, aber nicht älter. Unbekannt (nicht lesbar) = passt.
+fn java_fits(paths: &Paths, java_exe: &Path, required_major: u32) -> bool {
+    if !java_exe.is_file() {
+        return true; // eigener Fehler „Pfad existiert nicht“ weiter unten
+    }
+    let Some((major, _)) = java::inspect(java_exe) else { return true };
+    if java::is_managed(paths, java_exe) { major == required_major } else { major >= required_major }
 }
 
 #[cfg(test)]

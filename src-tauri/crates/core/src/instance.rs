@@ -313,6 +313,11 @@ impl InstanceStore {
         let mut instance = self.get(id).await?;
         instance.game_version = game_version.to_owned();
         instance.loader = loader;
+        // Eine vom Launcher geladene Java gehört zur alten Version (z. B. 21 statt 25) –
+        // dann wieder automatisch wählen. Eigene Java-Pfade des Nutzers bleiben.
+        if instance.overrides.java_path.as_deref().is_some_and(|p| crate::java::is_managed(&self.paths, std::path::Path::new(p))) {
+            instance.overrides.java_path = None;
+        }
         fsutil::write_json(&self.paths.instance_file(id), &instance).await?;
         Ok(instance)
     }

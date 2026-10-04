@@ -265,6 +265,15 @@ pub struct JavaInstall {
 }
 
 /// Mojang-Runtime je Java-Hauptversion (für „Empfohlene installieren“).
+/// Liegt diese Java im Java-Ordner des Launchers (selbst geladene Runtime)?
+pub fn is_managed(paths: &Paths, java_exe: &Path) -> bool {
+    let root = paths.java_dir();
+    match (java_exe.canonicalize(), root.canonicalize()) {
+        (Ok(exe), Ok(root)) => exe.starts_with(root),
+        _ => java_exe.starts_with(&root),
+    }
+}
+
 pub fn component_for(major: u32) -> Option<&'static str> {
     match major {
         8 => Some(LEGACY_COMPONENT),
@@ -336,6 +345,20 @@ pub fn detect(paths: &Paths) -> Vec<JavaInstall> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn managed_java_is_recognised() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = crate::paths::Paths::new(dir.path().to_path_buf());
+        let bin = paths.java_dir().join("java-runtime-delta").join("bin");
+        std::fs::create_dir_all(&bin).unwrap();
+        std::fs::write(bin.join("java.exe"), b"x").unwrap();
+        assert!(super::is_managed(&paths, &bin.join("java.exe")));
+        let own = dir.path().join("jdk").join("bin").join("java.exe");
+        std::fs::create_dir_all(own.parent().unwrap()).unwrap();
+        std::fs::write(&own, b"x").unwrap();
+        assert!(!super::is_managed(&paths, &own));
+    }
+
     use super::*;
 
     #[test]
