@@ -19,6 +19,9 @@ archive="$work/trs-launcher.xcarchive"
 # Rust-Bibliothek für iOS (arm64) bauen und dort ablegen, wo das Xcode-Projekt sie erwartet.
 cargo_flags=()
 if [ "$config" = release ]; then cargo_flags+=(--release); fi
+# Wie `tauri build`: eingebettete Oberfläche statt Entwicklungsserver (sonst sucht die App localhost:3000
+# und schließt sich auf dem Gerät sofort wieder).
+cargo_flags+=(--features tauri/custom-protocol)
 # Die iOS-Überlagerung der Konfiguration mischt sonst der Tauri-Befehl ein.
 export TAURI_CONFIG="$(cat src-tauri/tauri.ios.conf.json)"
 cargo build --manifest-path src-tauri/Cargo.toml --lib --target aarch64-apple-ios ${cargo_flags[@]+"${cargo_flags[@]}"}
