@@ -291,6 +291,11 @@ impl LocalServers {
         self.get(id).map_or_else(|| ServerStatus::stopped(max_players), |r| r.status())
     }
 
+    /// Wird `true`, sobald der laufende Server beendet ist (`None` = läuft nicht).
+    pub fn exit_watch(&self, id: &str) -> Option<watch::Receiver<bool>> {
+        self.get(id).map(|r| r.exited.clone())
+    }
+
     /// Alle Server im Ordner `servers/` (mit gültiger Beschreibung).
     pub async fn list(&self, paths: &Paths) -> Result<Vec<LocalServerInfo>> {
         let base = servers_dir(paths);

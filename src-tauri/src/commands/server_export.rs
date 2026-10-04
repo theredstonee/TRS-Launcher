@@ -8,6 +8,8 @@ use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 use trs_core::local_servers::{self, LocalServerInfo, ServerStatus};
 use trs_core::server_export::{ServerExportOptions, ServerExportPlan, ServerExportProgress, ServerExportResult, suggested_zip_name};
+use trs_core::server_share::{ServerAddresses, ShareKind, ShareStatus};
+use trs_core::trs_api::hosting::InviteOutcome;
 
 use crate::LauncherState;
 use crate::commands::tasks::tracked;
@@ -118,4 +120,38 @@ pub async fn local_server_open_folder(app: AppHandle, launcher: State<'_, Launch
 #[tauri::command]
 pub async fn local_server_delete(launcher: State<'_, LauncherState>, id: String) -> CommandResult<()> {
     Ok(launcher.delete_local_server(&id).await?)
+}
+
+// --- Teilen (Adressen, TRS Relay, e4mc, Freunde einladen) ----------------------------
+
+/// Wie man den Server erreicht (`refresh` = öffentliche IP neu abfragen).
+#[tauri::command]
+pub async fn local_server_addresses(launcher: State<'_, LauncherState>, id: String, refresh: Option<bool>) -> CommandResult<ServerAddresses> {
+    Ok(launcher.local_server_addresses(&id, refresh.unwrap_or(false)).await?)
+}
+
+#[tauri::command]
+pub fn local_server_share_status(launcher: State<'_, LauncherState>, id: String) -> CommandResult<ShareStatus> {
+    Ok(launcher.local_server_share_status(&id)?)
+}
+
+/// Weg einschalten (Relay-Raum bzw. e4mc-Link); der Stand kommt danach per `local-server-share`.
+#[tauri::command]
+pub async fn local_server_share(launcher: State<'_, LauncherState>, id: String, kind: ShareKind) -> CommandResult<ShareStatus> {
+    let launcher = Arc::clone(&launcher);
+    Ok(match kind {
+        ShareKind::Relay => launcher.local_server_share_relay(&id).await?,
+        ShareKind::E4mc => launcher.local_server_share_e4mc(&id).await?,
+    })
+}
+
+#[tauri::command]
+pub async fn local_server_unshare(launcher: State<'_, LauncherState>, id: String, kind: ShareKind) -> CommandResult<ShareStatus> {
+    Ok(launcher.local_server_unshare(&id, kind).await?)
+}
+
+/// TRS-Freunde in den Relay-Raum einladen (höchstens 20 auf einmal).
+#[tauri::command]
+pub async fn local_server_invite(launcher: State<'_, LauncherState>, id: String, friends: Vec<String>) -> CommandResult<Vec<InviteOutcome>> {
+    Ok(launcher.local_server_invite(&id, &friends).await?)
 }

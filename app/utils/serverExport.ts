@@ -180,3 +180,90 @@ export function cleanCommand(input: string): string | null {
   if (!text || [...text].length > 256 || /[\u0000-\u001f\u007f]/.test(text)) return null
   return text
 }
+
+// --- Teilen: Adressen, TRS Relay, e4mc, Freunde einladen -----------------------------
+
+/** `host:port` (IPv4, Hostname oder `[IPv6]`). */
+const address = z.string().min(3).max(300)
+
+export const serverAddressesSchema = z.object({
+  port: z.number().int().min(1).max(65535),
+  local: address,
+  lan: address.nullable(),
+  public: address.nullable(),
+})
+export type ServerAddresses = z.infer<typeof serverAddressesSchema>
+
+const channelStatusSchema = z.object({
+  state: z.enum(['off', 'connecting', 'online', 'reconnecting']),
+  roomId: z
+    .string()
+    .regex(/^h[0-9a-f]{20}$/)
+    .nullable(),
+  address: z
+    .string()
+    .max(253)
+    .regex(/^[a-z0-9.-]+$/)
+    .nullable(),
+  error: z.string().max(64).nullable(),
+})
+export type ShareChannel = z.infer<typeof channelStatusSchema>
+
+export const shareStatusSchema = z.object({ relay: channelStatusSchema, e4mc: channelStatusSchema })
+export type ShareStatus = z.infer<typeof shareStatusSchema>
+
+/** Ereignis `local-server-share`. */
+export const shareUpdateSchema = z.object({ id: serverId, status: shareStatusSchema })
+
+export const inviteOutcomeSchema = z.object({
+  uuid: z.string().regex(/^[0-9a-f]{32}$/),
+  ok: z.boolean(),
+  code: z.string().max(40).nullable(),
+})
+export type InviteOutcome = z.infer<typeof inviteOutcomeSchema>
+
+export const offShare: ShareStatus = {
+  relay: { state: 'off', roomId: null, address: null, error: null },
+  e4mc: { state: 'off', roomId: null, address: null, error: null },
+}
+
+/** Wie eingeladen wird: über den Relay-Raum (TRS-Freunde, ohne Portfreigabe) oder als Server-Karte mit Adresse. */
+export type InviteMethod = 'relay' | 'e4mc' | 'public'
+
+/** Wege für Einladungen, der beste zuerst. Relay geht immer (wird bei Bedarf eingeschaltet). */
+export function inviteMethods(share: ShareStatus, addresses: ServerAddresses | null): InviteMethod[] {
+  const methods: InviteMethod[] = ['relay']
+  if (inviteAddress('e4mc', share, addresses)) methods.push('e4mc')
+  if (inviteAddress('public', share, addresses)) methods.push('public')
+  return methods
+}
+
+/** Adresse für eine Server-Karte (`null` = gibt es gerade nicht). Karten nehmen nur IPv4 oder Hostnamen. */
+export function inviteAddress(method: InviteMethod, share: ShareStatus, addresses: ServerAddresses | null): string | null {
+  if (method === 'e4mc') return share.e4mc.state === 'online' ? share.e4mc.address : null
+  if (method === 'public') return addresses?.public && !addresses.public.startsWith('[') ? addresses.public : null
+  return null
+}
+
+/** Chat-Nachricht mit Server-Karte (Name auf 32 Zeichen gekürzt, wie die API es will). */
+export function inviteCard(address: string, serverName: string, nonce: string) {
+  const name = [...serverName.replace(/\s+/g, ' ').trim()].slice(0, 32).join('') || null
+  return { invite: { address: address.toLowerCase(), name }, nonce }
+}
+
+const shareErrors = ['room_closed', 'replaced', 'hosting_unavailable', 'relay_unreachable', 'relay_timeout', 'broker', 'unreachable', 'timeout', 'tls'] as const
+
+/** Fehlercode eines Weges → Text (`null` = kein Fehler). */
+export function shareErrorText(code: string | null): string | null {
+  if (!code) return null
+  const known = (shareErrors as readonly string[]).includes(code)
+  return known ? t(`localServers.share.error.${code as (typeof shareErrors)[number]}`) : t('localServers.share.error.other')
+}
+
+const inviteErrors = ['not_friends', 'player_banned', 'too_many_invites'] as const
+
+/** Grund, warum eine Einladung nicht rausging. */
+export function inviteErrorText(code: string | null): string {
+  const known = !!code && (inviteErrors as readonly string[]).includes(code)
+  return known ? t(`localServers.invite.error.${code as (typeof inviteErrors)[number]}`) : t('localServers.invite.error.other')
+}

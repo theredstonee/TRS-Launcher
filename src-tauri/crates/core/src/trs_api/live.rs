@@ -656,6 +656,8 @@ pub enum LiveOut {
 const MAX_NOTIFIED: usize = 500;
 
 pub type LiveSink = Arc<dyn Fn(LiveOut) + Send + Sync>;
+/// Empfänger für rohe `hosting_signal`-Daten (nur im Kern: lokale Server als Host).
+pub type SignalHook = Arc<dyn Fn(&str) + Send + Sync>;
 
 #[derive(Default)]
 struct Inner {
@@ -673,6 +675,8 @@ pub(crate) struct LiveState {
     inner: StdMutex<Inner>,
     /// Handy-App im Hintergrund: Kanal zu, damit der Server Push-Nachrichten schickt (§33.6).
     paused: std::sync::atomic::AtomicBool,
+    /// `hosting_signal` geht nie ans Webview – nur hierhin (falls gesetzt).
+    signal_hook: StdMutex<Option<SignalHook>>,
 }
 
 impl LiveState {
@@ -713,6 +717,18 @@ impl LiveState {
 
     pub fn set_sink(&self, sink: LiveSink) {
         self.inner().sink = Some(sink);
+    }
+
+    /// `hosting_signal` an den Kern weiterreichen (`None` = verwerfen).
+    pub fn set_signal_hook(&self, hook: Option<SignalHook>) {
+        *self.signal_hook.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = hook;
+    }
+
+    fn signal(&self, data: &str) {
+        let hook = self.signal_hook.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
+        if let Some(hook) = hook {
+            hook(data);
+        }
     }
 
     pub fn status(&self) -> LiveStatus {
@@ -928,6 +944,8 @@ impl TrsApi {
                             if let Some(command) = self.remote_verify(account, &frame.data).await {
                                 self.live.emit(LiveOut::Event(LiveEvent::RemoteCommand { command: Box::new(command) }));
                             }
+                        } else if frame.event == "hosting_signal" {
+                            self.live.signal(&frame.data);
                         } else if let Some(event) = decode(&frame.event, &frame.data) {
                             if let LiveEvent::EventsChanged { events } = &event {
                                 self.set_active_events(events);

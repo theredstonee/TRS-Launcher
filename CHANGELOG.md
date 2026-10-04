@@ -38,11 +38,17 @@ How to write an entry:
 - **Fix: "The mod loader installer could not be downloaded" on NeoForge/Forge.** Some instances had a loader version saved that doesn't belong to NeoForge or Forge (for example a Fabric version). The launcher now notices this and installs the newest matching NeoForge/Forge version instead of failing.
 - **Android app and iPhone version in the release.** The mobile builds of 0.18.0 didn't make it into the release; the APK for Android and the AltStore/SideStore source for iPhone and iPad are now published.
 - **"Redeem code" right on the Skins page.** A big button at the top next to "Save skin" opens the code dialog for capes and cosmetics.
+- **Play on your own server with friends.** Under "My servers" a running server now shows how to connect: the address on this PC, in your home network and over the internet (with a copy button, a hint about port forwarding and a reachability check).
+- **Invite friends to your server – no port forwarding needed.** "Invite friends" sends your TRS friends an invite with "Join": their launcher starts the matching version (or creates it) and connects through the TRS relay, even straight into a game that's already running. Only invited friends get in.
+- **Public link for your server (e4mc).** Optionally get an address like name.e4mc.link that anyone can join, even without TRS – after a warning, and only while it's switched on.
 
 ### Deutsch
 - **Behoben: „Der Modloader-Installer konnte nicht heruntergeladen werden“ bei NeoForge/Forge.** Bei manchen Instanzen war eine Loader-Version gespeichert, die gar nicht zu NeoForge oder Forge gehört (zum Beispiel eine Fabric-Version). Der Launcher erkennt das jetzt und installiert die neueste passende NeoForge-/Forge-Version, statt abzubrechen.
 - **Android-App und iPhone-Version im Release.** Die Handy-Builds von 0.18.0 haben es nicht ins Release geschafft; die APK für Android und die AltStore/SideStore-Quelle für iPhone und iPad sind jetzt veröffentlicht.
 - **„Code einlösen“ direkt auf der Skins-Seite.** Ein großer Knopf oben neben „Skin speichern“ öffnet den Code-Dialog für Umhänge und Kosmetik.
+- **Mit Freunden auf deinem eigenen Server spielen.** Unter „Meine Server“ zeigt ein laufender Server jetzt, wie man sich verbindet: die Adresse auf diesem PC, im Heimnetz und über das Internet (mit Kopieren-Knopf, Hinweis zur Portfreigabe und Erreichbarkeits-Test).
+- **Freunde auf deinen Server einladen – ohne Portfreigabe.** „Freunde einladen“ schickt deinen TRS-Freunden eine Einladung mit „Beitreten“: Ihr Launcher startet die passende Version (oder legt sie an) und verbindet über das TRS Relay, auch direkt in ein schon laufendes Spiel. Nur eingeladene Freunde kommen rein.
+- **Öffentlicher Link für deinen Server (e4mc).** Auf Wunsch gibt es eine Adresse wie name.e4mc.link, mit der jeder beitreten kann, auch ohne TRS – nach einer Warnung und nur, solange er eingeschaltet ist.
 
 ## 0.18.0 – 2026-10-04 – Power Tools | Profi-Werkzeuge
 <!-- banner: accent=#ff3b30 motif=/news/0.18.0/banner.png -->

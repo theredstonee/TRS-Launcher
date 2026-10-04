@@ -179,7 +179,7 @@ async function allowFirewall() {
       </ul>
 
       <!-- Konsole -->
-      <section v-if="selected" class="card flex min-h-0 flex-col p-4">
+      <section v-if="selected" class="card flex min-h-0 flex-col overflow-y-auto p-4">
         <div class="flex flex-wrap items-start gap-3">
           <div class="min-w-0 flex-1">
             <h2 class="flex items-center gap-2 truncate font-semibold text-base-50">
@@ -236,6 +236,7 @@ async function allowFirewall() {
             {{ t('localServers.allowFirewall') }}
           </button>
         </div>
+        <LocalServerShare v-if="selected.status.state !== 'stopped'" :server="selected" />
 
         <div
           ref="logBox"

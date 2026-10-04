@@ -887,7 +887,8 @@
       "invalidCommand": "Het commando is leeg, te lang of bevat ongeldige tekens.",
       "notRunning": "De server draait niet.",
       "stopTimeout": "De server stopte niet op tijd.",
-      "stillRunning": "Stop eerst de server."
+      "stillRunning": "Stop eerst de server.",
+      "relayOff": "Zet eerst „Via TRS Relay” aan."
     },
     "game": {
       "engineFailed": "De game-engine kon niet worden gestart.",
@@ -6180,6 +6181,76 @@
       "title": "Nog geen servers",
       "text": "Open een instantie, ga naar \"Delen\" en kies \"Als server exporteren\" met \"Hier aanmaken en starten\".",
       "action": "Naar de bibliotheek"
+    },
+    "share": {
+      "title": "Met vrienden spelen",
+      "local": "Op deze pc",
+      "lan": "Zelfde netwerk",
+      "public": "Via internet",
+      "unknown": "niet gevonden",
+      "retry": "Opnieuw zoeken",
+      "copy": "Kopiëren",
+      "copied": "Gekopieerd",
+      "check": "Bereikbaarheid testen",
+      "checking": "Testen …",
+      "reach": {
+        "reachable": "Van buitenaf bereikbaar",
+        "unreachable": "Van buitenaf niet bereikbaar – ontbreekt port forwarding?",
+        "failed": "Kon niet worden getest"
+      },
+      "portHint": "Het openbare adres werkt alleen met port forwarding: stuur poort {port} (TCP) in je router door naar deze pc. Zonder port forwarding: TRS Relay of e4mc.",
+      "relayTitle": "Via TRS Relay (zonder port forwarding)",
+      "relayText": "Alleen TRS-vrienden die je uitnodigt kunnen meedoen. Hun TRS Launcher start de juiste versie met de TRS Client en verbindt via de TRS Relay. Eén server tegelijk.",
+      "e4mcTitle": "Openbare link (e4mc)",
+      "e4mcText": "Een adres zoals naam.e4mc.link waarmee iedereen kan meedoen – ook zonder TRS. Loopt via de externe dienst e4mc.",
+      "e4mcActive": "Iedereen met de link kan meedoen.",
+      "state": {
+        "connecting": "Verbinden …",
+        "online": "Actief",
+        "reconnecting": "Onderbroken – nieuwe poging loopt"
+      },
+      "e4mcWarnTitle": "Openbare link aanzetten?",
+      "e4mcWarn": "Iedereen met de link kan je server joinen. Deel hem alleen met mensen die je vertrouwt – of zet de whitelist op de server aan.",
+      "e4mcPrivacy": "e4mc (e4mc.link) is een externe dienst: de verbindingen van de spelers lopen via zijn servers.",
+      "understood": "Ik begrijp het",
+      "enable": "Aanzetten",
+      "error": {
+        "room_closed": "De relay-ruimte is gesloten.",
+        "replaced": "Een ander apparaat of spel host nu met je account.",
+        "hosting_unavailable": "De TRS Relay is nu niet beschikbaar.",
+        "relay_unreachable": "De TRS Relay is niet bereikbaar.",
+        "relay_timeout": "De TRS Relay antwoordt niet.",
+        "broker": "e4mc is nu niet bereikbaar.",
+        "unreachable": "De e4mc-server is niet bereikbaar.",
+        "timeout": "Time-out.",
+        "tls": "De beveiligde verbinding kon niet worden opgezet.",
+        "other": "Verbinding onderbroken."
+      }
+    },
+    "invite": {
+      "button": "Vrienden uitnodigen",
+      "title": "Vrienden uitnodigen voor „{name}”",
+      "how": "Hoe?",
+      "method": {
+        "relay": "Via TRS Relay (aanbevolen)",
+        "e4mc": "e4mc-link {address}",
+        "public": "Openbaar adres {address}"
+      },
+      "relayHint": "Je vrienden krijgen een uitnodiging met „Meedoen”: hun launcher start de juiste versie (of maakt die aan) en verbindt via de relay – zonder port forwarding. De relay wordt daarvoor aangezet.",
+      "cardHint": "Je vrienden krijgen een serverkaart met dit adres in de chat.",
+      "noFriends": "Je hebt nog geen TRS-vrienden.",
+      "search": "Vrienden zoeken",
+      "sent": "Uitgenodigd",
+      "sending": "Uitnodigen …",
+      "send": "{count} vriend uitnodigen | {count} vrienden uitnodigen",
+      "done": "{count} vriend uitgenodigd | {count} vrienden uitgenodigd",
+      "failed": "{name}: {reason}",
+      "error": {
+        "not_friends": "Jullie zijn geen vrienden (meer).",
+        "player_banned": "Verbannen uit deze ruimte.",
+        "too_many_invites": "Te veel openstaande uitnodigingen.",
+        "other": "Uitnodigen mislukt."
+      }
     }
   },
   "mobile": {

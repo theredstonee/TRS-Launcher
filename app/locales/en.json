@@ -887,7 +887,8 @@
       "invalidCommand": "The command is empty, too long or contains invalid characters.",
       "notRunning": "The server isn't running.",
       "stopTimeout": "The server didn't stop in time.",
-      "stillRunning": "Please stop the server first."
+      "stillRunning": "Please stop the server first.",
+      "relayOff": "Turn on “Via TRS Relay” first."
     },
     "game": {
       "engineFailed": "The game engine could not be started.",
@@ -6180,6 +6181,76 @@
       "title": "No servers yet",
       "text": "Open an instance, go to \"Share\" and choose \"Export as server\" with \"Set up here and start\".",
       "action": "To the library"
+    },
+    "share": {
+      "title": "Play with friends",
+      "local": "On this PC",
+      "lan": "Same network",
+      "public": "Over the internet",
+      "unknown": "not found",
+      "retry": "Look again",
+      "copy": "Copy",
+      "copied": "Copied",
+      "check": "Check reachability",
+      "checking": "Checking …",
+      "reach": {
+        "reachable": "Reachable from outside",
+        "unreachable": "Not reachable from outside – port forwarding missing?",
+        "failed": "Couldn’t be checked"
+      },
+      "portHint": "The public address only works with port forwarding: forward port {port} (TCP) to this PC in your router. Without port forwarding: TRS Relay or e4mc.",
+      "relayTitle": "Via TRS Relay (no port forwarding)",
+      "relayText": "Only TRS friends you invite can join. Their TRS Launcher starts the matching version with the TRS Client and connects through the TRS Relay. One server at a time.",
+      "e4mcTitle": "Public link (e4mc)",
+      "e4mcText": "An address like name.e4mc.link that anyone can join – even without TRS. Runs through the third-party service e4mc.",
+      "e4mcActive": "Anyone with the link can join.",
+      "state": {
+        "connecting": "Connecting …",
+        "online": "Active",
+        "reconnecting": "Interrupted – trying again"
+      },
+      "e4mcWarnTitle": "Turn on the public link?",
+      "e4mcWarn": "Anyone with the link can join your server. Only share it with people you trust – or turn on the whitelist on the server.",
+      "e4mcPrivacy": "e4mc (e4mc.link) is a third-party service: the players’ connections go through its servers.",
+      "understood": "I understand",
+      "enable": "Turn on",
+      "error": {
+        "room_closed": "The relay room was closed.",
+        "replaced": "Another device or game is now hosting with your account.",
+        "hosting_unavailable": "The TRS Relay isn’t available right now.",
+        "relay_unreachable": "The TRS Relay can’t be reached.",
+        "relay_timeout": "The TRS Relay isn’t answering.",
+        "broker": "e4mc can’t be reached right now.",
+        "unreachable": "The e4mc server can’t be reached.",
+        "timeout": "Timed out.",
+        "tls": "The secure connection couldn’t be set up.",
+        "other": "Connection interrupted."
+      }
+    },
+    "invite": {
+      "button": "Invite friends",
+      "title": "Invite friends to “{name}”",
+      "how": "How?",
+      "method": {
+        "relay": "Via TRS Relay (recommended)",
+        "e4mc": "e4mc link {address}",
+        "public": "Public address {address}"
+      },
+      "relayHint": "Your friends get an invite with “Join”: their launcher starts the matching version (or creates it) and connects through the relay – no port forwarding. The relay gets turned on for this.",
+      "cardHint": "Your friends get a server card with this address in the chat.",
+      "noFriends": "You don’t have any TRS friends yet.",
+      "search": "Search friends",
+      "sent": "Invited",
+      "sending": "Inviting …",
+      "send": "Invite {count} friend | Invite {count} friends",
+      "done": "Invited {count} friend | Invited {count} friends",
+      "failed": "{name}: {reason}",
+      "error": {
+        "not_friends": "You aren’t friends (anymore).",
+        "player_banned": "Banned from this room.",
+        "too_many_invites": "Too many open invites.",
+        "other": "Invite failed."
+      }
     }
   },
   "mobile": {
