@@ -2307,6 +2307,45 @@ pub async fn install_fps_boost_report(
     Ok(report)
 }
 
+/// Mod Menu (Modrinth) – die Mod-Liste im Spiel; der TRS Client verlinkt sie im Titelbildschirm.
+pub const MOD_MENU_ID: &str = "mOgUt4GM";
+/// Mod-ID im Jar (`fabric.mod.json`).
+const MOD_MENU_MOD_ID: &str = "modmenu";
+const MOD_MENU_PRESET: &str = "mod-menu";
+
+/// Eintrag „Mod Menu“: Eine Datei mit „modmenu“ im Namen (von Hand eingelegt oder
+/// abgeschaltet) zählt als vorhanden – dann kommt keine zweite dazu.
+fn mod_menu_wanted() -> Wanted {
+    Wanted {
+        preset_id: MOD_MENU_PRESET.to_owned(),
+        kind: ContentKind::Mod,
+        candidates: vec![Candidate { project_id: MOD_MENU_ID.to_owned(), title: "Mod Menu".to_owned(), icon_url: None, from_1_20: false }],
+        file_conflicts: vec!["modmenu".to_owned()],
+        project_conflicts: Vec::new(),
+        requires: Vec::new(),
+        blocked_by: None,
+        optional: true,
+    }
+}
+
+/// Installiert Mod Menu samt Pflicht-Abhängigkeiten (Fabric API) über denselben Weg wie die
+/// Optimierungs-Mods: passende Version von Modrinth, Prüfsumme, Herkunft gemerkt – in der
+/// Mod-Liste also normal aktualisier- und entfernbar. Andere Mods werden dafür nie getauscht.
+/// `None`: Eine Mod mit der ID `modmenu` liegt schon (unter anderem Namen) im Ordner.
+pub async fn install_mod_menu(
+    http: &reqwest::Client,
+    paths: &Paths,
+    builds: &[client_mod::Build],
+    instance: &Instance,
+    progress: &(dyn Fn(ApplyProgress) + Sync),
+) -> Result<Option<ApplyReport>> {
+    let entries = modcompat::installed_entries(paths, &instance.id).await?;
+    if entries.iter().any(|e| e.mods.iter().any(|m| m.id == MOD_MENU_MOD_ID)) {
+        return Ok(None);
+    }
+    run_with(http, paths, instance, builds, &[mod_menu_wanted()], progress, true).await.map(Some)
+}
+
 #[cfg(test)]
 mod tests {
     use std::sync::Mutex as StdMutex;
@@ -2609,6 +2648,37 @@ mod tests {
 
     fn step_ids(plan: &Plan) -> Vec<&str> {
         plan.steps.iter().map(|s| s.version.id.as_str()).collect()
+    }
+
+    /// Android/iOS: Mod Menu kommt mit Fabric API – aber nie doppelt und nur, wenn es eine passende Version gibt.
+    #[tokio::test]
+    async fn mod_menu_with_dependency_and_never_twice() {
+        const FABRIC_API: &str = "P7dR8mSH";
+        let mock = Mock::default()
+            .with(version("mm11", MOD_MENU_ID, &[("required", FABRIC_API, None)]))
+            .with(version("fapi", FABRIC_API, &[]));
+        let wanted = [mod_menu_wanted()];
+        let keep = Target { keep_existing: true, ..target("1.21.1") };
+        let plan = plan_for(&mock, &keep, &Existing::default(), &wanted).await;
+        assert_eq!(statuses(&plan), [ItemStatus::Installed]);
+        assert_eq!(install_order(plan.steps).iter().map(|s| s.version.id.as_str()).collect::<Vec<_>>(), ["fapi", "mm11"]);
+
+        // Fabric API schon da: nur Mod Menu.
+        let existing = Existing { projects: HashMap::from([(FABRIC_API.into(), Some("fapi".into()))]), ..Default::default() };
+        assert_eq!(step_ids(&plan_for(&mock, &keep, &existing, &wanted).await), ["mm11"]);
+
+        // Schon installiert (auch abgeschaltet) bzw. von Hand eingelegt: nichts Neues.
+        let existing = Existing { projects: HashMap::from([(MOD_MENU_ID.into(), Some("mm10".into()))]), ..Default::default() };
+        let plan = plan_for(&mock, &keep, &existing, &wanted).await;
+        assert_eq!((statuses(&plan), plan.steps.len()), (vec![ItemStatus::AlreadyInstalled], 0));
+        let existing = Existing { mod_files: vec!["modmenu-11.0.3.jar.disabled".into()], ..Default::default() };
+        let plan = plan_for(&mock, &keep, &existing, &wanted).await;
+        assert_eq!((statuses(&plan), plan.steps.len()), (vec![ItemStatus::Incompatible], 0));
+
+        // Keine Version für diese Spielversion: fällt weg, ohne Fehler.
+        let plan = plan_for(&Mock::default(), &keep, &Existing::default(), &wanted).await;
+        assert_eq!((statuses(&plan), plan.steps.len()), (vec![ItemStatus::NotAvailable], 0));
+        assert!(plan.items[0].optional);
     }
 
     #[tokio::test]

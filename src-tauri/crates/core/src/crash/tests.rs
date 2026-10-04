@@ -247,6 +247,29 @@ fn jvm_cannot_reserve_memory() {
 }
 
 #[test]
+fn android_engine_exit_report_is_shown_for_unknown_crashes() {
+    let log = "[12:00:00] [Render thread/INFO]: hi
+[TRS] Spielprozess beendet: nativer Absturz (Status 11)
+[TRS] signal 11 (SIGSEGV), SEGV_MAPERR
+[TRS]   #00 pc 1a2b libmobileglues.so (glDrawElements+12)
+";
+    let a = analyze(&CrashInput { log, ..Default::default() });
+    let f = a.primary();
+    assert_eq!(f.kind, CrashKind::Unknown);
+    assert!(f.evidence.iter().any(|l| l.contains("SIGSEGV")), "{:?}", f.evidence);
+    assert!(f.evidence.iter().any(|l| l.contains("libmobileglues.so")));
+}
+
+#[test]
+fn android_low_memory_kill_is_out_of_memory() {
+    let log = "[12:00:00] [Render thread/INFO]: Loading 70 mods
+[TRS] Spielprozess beendet: zu wenig Arbeitsspeicher (vom System beendet) (Status 9)
+";
+    let a = analyze(&CrashInput { log, memory_mb: Some(4096), system_memory_mb: Some(12_288), ..Default::default() });
+    assert_eq!((a.primary().kind, a.primary().variant.as_deref()), (CrashKind::OutOfMemory, Some("reserve")));
+}
+
+#[test]
 fn java_too_old_for_a_mod() {
     let mods = [jar("coolmod-1.0.0.jar", "coolmod", "Cool Mod", "1.0.0", &["com.example.coolmod"])];
     let a = log(fixture("09"), &mods);

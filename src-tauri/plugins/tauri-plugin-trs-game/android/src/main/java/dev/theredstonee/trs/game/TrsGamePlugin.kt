@@ -37,6 +37,12 @@ class StopArgs {
     lateinit var session: String
 }
 
+@InvokeArg
+class SessionEndArgs {
+    lateinit var session: String
+    var sinceMs: Long = 0
+}
+
 /**
  * Tauri-Seite der Engine (Launcher-Prozess). Startet Spiel-Activity bzw.
  * Java-Dienst in eigenen Prozessen und reicht deren Meldungen weiter.
@@ -250,6 +256,38 @@ class TrsGamePlugin(private val activity: Activity) : Plugin(activity) {
             channels.remove(args.session)
         }
         invoke.resolve()
+    }
+
+    /**
+     * Ende einer Sitzung, deren Meldung den Launcher nicht erreicht hat (Launcher-Prozess war
+     * beendet, z. B. vom System bei wenig Speicher): Läuft das Spiel noch? Sonst Grund + Log-Ende.
+     */
+    @Command
+    fun sessionEnd(invoke: Invoke) {
+        val args = invoke.parseArgs(SessionEndArgs::class.java)
+        if (!args.session.matches(Regex("^[A-Za-z0-9-]{1,64}$"))) {
+            invoke.reject("game.invalidSpec")
+            return
+        }
+        worker.execute {
+            val result = JSObject()
+            if (isRunning(GAME_PROCESS)) {
+                result.put("running", true)
+                invoke.resolve(result)
+                return@execute
+            }
+            val log = File(activity.cacheDir, "game-${args.session}.log")
+            val tail = ArrayList(CrashInfo.tail(log, FILE_TAIL))
+            val exit = CrashInfo.lastExitInfo(activity.applicationContext, GAME_PROCESS, args.sinceMs)
+            if (exit != null) tail += exit.lines
+            val endedAt = exit?.timestamp ?: log.lastModified().takeIf { it > 0 } ?: System.currentTimeMillis()
+            result.put("running", false)
+            // Ohne Ende-Grund (Android < 11) lieber kein Absturz behaupten.
+            result.put("crashed", exit?.crashed ?: false)
+            result.put("endedAtMs", endedAt)
+            result.put("logTail", JSArray(tail))
+            invoke.resolve(result)
+        }
     }
 
     private fun processPid(suffix: String): Int? {

@@ -173,3 +173,54 @@ pub fn finish_last_session<R: Runtime>(app: &AppHandle<R>, launcher: &Arc<Launch
         let _ = launcher.games().take_engine_records();
     }
 }
+
+/// Android: Wird der Launcher-Prozess beendet, während das Spiel läuft (z. B. vom System bei
+/// wenig Speicher), erreicht ihn das Spielende nie. Beim nächsten Start nachfragen: Läuft das Spiel
+/// noch, später erneut prüfen; sonst Ende mit Androids Grund und dem Log-Ende nachtragen.
+#[cfg(target_os = "android")]
+pub fn finish_android_sessions<R: Runtime>(app: &AppHandle<R>, launcher: &Arc<Launcher>) {
+    let records = launcher.games().take_engine_records();
+    if records.is_empty() {
+        return;
+    }
+    let app = app.clone();
+    let launcher = Arc::clone(launcher);
+    // Eigener Thread: wartet ggf. lange (Spiel läuft weiter), blockiert keine Laufzeit.
+    std::thread::spawn(move || {
+        let mut pending = records;
+        // Fehler (Plugin noch nicht bereit) begrenzt wiederholen.
+        let mut errors = 0;
+        std::thread::sleep(std::time::Duration::from_secs(3));
+        loop {
+            let mut running = Vec::new();
+            for record in pending {
+                let end = tauri::async_runtime::block_on(app.trs_game().session_end(&record.session, record.started_at.timestamp_millis()));
+                match end {
+                    Ok(end) if end.running => running.push(record),
+                    Ok(end) => {
+                        let ended_at = end.ended_at_ms.and_then(chrono::DateTime::from_timestamp_millis).unwrap_or_else(chrono::Utc::now);
+                        let exit_code = Some(if end.crashed { -1 } else { 0 });
+                        let session = record.session.clone();
+                        launcher.games().keep_engine_record(record);
+                        in_runtime(|| launcher.engine_session_ended_offline(&session, ended_at, exit_code, end.crashed, &end.log_tail));
+                    }
+                    Err(e) => {
+                        log::warn!("Ende der Spielsitzung {} unbekannt: {e}", record.session);
+                        errors += 1;
+                        if errors < 10 {
+                            running.push(record);
+                        }
+                    }
+                }
+            }
+            if running.is_empty() {
+                break;
+            }
+            for record in &running {
+                launcher.games().keep_engine_record(record.clone());
+            }
+            std::thread::sleep(std::time::Duration::from_secs(5));
+            pending = launcher.games().take_engine_records();
+        }
+    });
+}

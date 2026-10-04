@@ -264,6 +264,22 @@ impl JavaRunSpec {
     }
 }
 
+/// Android: Ende einer Sitzung, die der Launcher-Prozess nicht mehr mitbekommen hat.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionEnd {
+    /// Spielprozess läuft noch.
+    pub running: bool,
+    #[serde(default)]
+    pub crashed: bool,
+    /// Ende laut Android (ms seit 1970).
+    #[serde(default)]
+    pub ended_at_ms: Option<i64>,
+    /// Log-Ende der Sitzung plus Androids Ende-Grund / nativer Stack.
+    #[serde(default)]
+    pub log_tail: Vec<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct JavaRunResult {

@@ -80,8 +80,8 @@ class HeldInputs(private val sink: InputSink) {
 object GestureTiming {
     /** So lange ruhig halten = Halten-Aktion (benutzen/abbauen). */
     const val HOLD_MS = 300L
-    /** Im Menü: so lange halten = Rechtsklick. */
-    const val LONG_PRESS_MS = 450L
+    /** Im Menü: so lange ruhig halten = Rechtsklick bzw. danach Ziehen. */
+    const val LONG_PRESS_MS = 400L
     /** Bis zu diesem Weg zählt ein Finger als „ruhig“. */
     const val SLOP_DP = 8f
     /** Maus-Einheiten je dp Wischen bei Empfindlichkeit 1. */
@@ -91,22 +91,20 @@ object GestureTiming {
 }
 
 /**
- * Ein Finger auf der freien Fläche. Im Spiel: wischen = umsehen, tippen =
- * angreifen bzw. setzen, ruhig halten = benutzen bzw. abbauen. Im Menü:
- * Zeiger folgt dem Finger, tippen = Linksklick, ziehen = mit gedrückter
- * Taste ziehen, lange halten = Rechtsklick.
+ * Ein Finger auf der freien Fläche im Spiel (Maus gefangen): wischen =
+ * umsehen, tippen = angreifen bzw. setzen, ruhig halten = benutzen bzw.
+ * abbauen. Im Menü übernimmt [MenuGesture].
  */
 class CameraGesture(
     private val held: HeldInputs,
     private val sink: InputSink,
-    val grabbed: Boolean,
     private val gestures: Gestures,
     private val density: Float,
     x: Float,
     y: Float,
     private val start: Long,
 ) {
-    enum class State { PENDING, MOVED, HOLDING, DRAGGING, DONE }
+    enum class State { PENDING, MOVED, HOLDING, DONE }
 
     var state = State.PENDING
         private set
@@ -115,10 +113,6 @@ class CameraGesture(
     private var lastX = x
     private var lastY = y
     private val slopPx = GestureTiming.SLOP_DP * density
-
-    init {
-        if (!grabbed) sink.moveMouseAbsolute(x, y)
-    }
 
     private val holdButton get() = if (gestures.holdUse) Glfw.MOUSE_RIGHT else Glfw.MOUSE_LEFT
     private val tapButton get() = if (gestures.tapAttack) Glfw.MOUSE_LEFT else Glfw.MOUSE_RIGHT
@@ -130,56 +124,35 @@ class CameraGesture(
         val dy = y - lastY
         lastX = x
         lastY = y
-        if (grabbed) {
-            if (dx != 0f || dy != 0f) {
-                val k = GestureTiming.CAMERA_PER_DP * gestures.cameraSensitivity / density
-                sink.moveMouseRelative(dx * k, dy * k)
-            }
-            if (state == State.PENDING && beyondSlop(x, y)) state = State.MOVED
-        } else {
-            sink.moveMouseAbsolute(x, y)
-            if (state == State.PENDING && beyondSlop(x, y)) {
-                state = State.DRAGGING
-                held.mouseDown(Glfw.MOUSE_LEFT)
-            }
+        if (dx != 0f || dy != 0f) {
+            val k = GestureTiming.CAMERA_PER_DP * gestures.cameraSensitivity / density
+            sink.moveMouseRelative(dx * k, dy * k)
         }
+        if (state == State.PENDING && beyondSlop(x, y)) state = State.MOVED
     }
 
     /** Zeitgesteuerte Übergänge; `true` = weiter Ticks nötig. */
     fun tick(now: Long): Boolean {
         if (state != State.PENDING) return false
-        val elapsed = now - start
-        if (grabbed && elapsed >= GestureTiming.HOLD_MS) {
-            state = State.HOLDING
-            held.mouseDown(holdButton)
-            return false
-        }
-        if (!grabbed && elapsed >= GestureTiming.LONG_PRESS_MS) {
-            state = State.DONE
-            held.click(Glfw.MOUSE_RIGHT)
-            return false
-        }
-        return true
+        if (now - start < GestureTiming.HOLD_MS) return true
+        state = State.HOLDING
+        held.mouseDown(holdButton)
+        return false
     }
 
     fun up(now: Long) {
         tick(now)
         when (state) {
-            State.PENDING -> if (grabbed) held.click(tapButton) else held.click(Glfw.MOUSE_LEFT)
+            State.PENDING -> held.click(tapButton)
             State.HOLDING -> held.mouseUp(holdButton)
-            State.DRAGGING -> held.mouseUp(Glfw.MOUSE_LEFT)
             State.MOVED, State.DONE -> {}
         }
         state = State.DONE
     }
 
-    /** Abbrechen ohne Klick (z. B. zweiter Finger im Menü). */
+    /** Abbrechen ohne Klick (z. B. Menü öffnet sich, zweiter Finger). */
     fun cancel() {
-        when (state) {
-            State.HOLDING -> held.mouseUp(holdButton)
-            State.DRAGGING -> held.mouseUp(Glfw.MOUSE_LEFT)
-            else -> {}
-        }
+        if (state == State.HOLDING) held.mouseUp(holdButton)
         state = State.DONE
     }
 }

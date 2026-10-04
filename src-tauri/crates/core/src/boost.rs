@@ -91,6 +91,64 @@ pub async fn needs_performance(paths: &Paths, effective: &Instance) -> bool {
     !is_done(&paths.instance_dir(&effective.id).join(MARKER), effective).await
 }
 
+/// Merkt, für welche Spielversion Mod Menu schon ergänzt (oder bewusst weggelassen) wurde.
+const MOD_MENU_MARKER: &str = "trs-modmenu.json";
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ModMenuMarker {
+    game_version: String,
+}
+
+/// Mod Menu gibt es nur für Fabric – auch für Vanilla mit TRS-Optimierung (`effective`).
+/// Aufgerufen wird es nur beim Start über die Engine (Android/iOS).
+pub fn wants_mod_menu(effective: &Instance) -> bool {
+    effective.loader.kind == LoaderKind::Fabric
+}
+
+/// Steht Mod Menu für diese Version noch aus? Einmal ergänzt, bleibt die Entscheidung des
+/// Spielers: Entfernt er Mod Menu, kommt es erst nach einem Versionswechsel wieder.
+pub async fn needs_mod_menu(paths: &Paths, effective: &Instance) -> bool {
+    let marker: ModMenuMarker =
+        fsutil::read_json(&paths.instance_dir(&effective.id).join(MOD_MENU_MARKER)).await.ok().flatten().unwrap_or_default();
+    marker.game_version != effective.game_version
+}
+
+/// Ergänzt Mod Menu (mit Fabric API) wie die Performance-Mods. Offline oder bei Fehlern
+/// startet das Spiel trotzdem – der nächste Start versucht es erneut. Abbrechen bricht ab.
+pub async fn ensure_mod_menu(
+    http: &reqwest::Client,
+    paths: &Paths,
+    builds: &[Build],
+    effective: &Instance,
+    progress: &(dyn Fn(ApplyProgress) + Sync),
+) -> Result<()> {
+    if !wants_mod_menu(effective) || !needs_mod_menu(paths, effective).await {
+        return Ok(());
+    }
+    match presets::install_mod_menu(http, paths, builds, effective, progress).await {
+        Ok(Some(report)) if report.items.iter().any(|i| i.status == ItemStatus::Failed) => {
+            tracing::warn!("Mod Menu für '{}' unvollständig – nächster Start versucht es erneut", effective.id);
+            return Ok(());
+        }
+        Ok(report) => {
+            if let Some(item) = report.as_ref().and_then(|r| r.items.first()) {
+                tracing::info!("Mod Menu für '{}': {:?}", effective.id, item.status);
+            }
+        }
+        Err(Error::Cancelled) => return Err(Error::Cancelled),
+        Err(e) => {
+            tracing::warn!("Mod Menu konnte nicht installiert werden: {e}");
+            return Ok(());
+        }
+    }
+    fsutil::write_json(
+        &paths.instance_dir(&effective.id).join(MOD_MENU_MARKER),
+        &ModMenuMarker { game_version: effective.game_version.clone() },
+    )
+    .await
+}
+
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
@@ -174,6 +232,47 @@ mod tests {
         assert!(has_cloth() && fix.added.len() == 1, "{fix:?}");
         // Alles da: nichts zu tun.
         assert!(crate::depcheck::ensure_before_launch(&http, &paths, &builds, &effective, &|_| {}).await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn mod_menu_only_for_fabric_and_once_per_version() {
+        use crate::content::{self, ContentKind};
+        let dir = tempfile::tempdir().unwrap();
+        let paths = Paths::new(dir.path());
+        let fabric = instance(LoaderKind::Fabric, None);
+        assert!(wants_mod_menu(&fabric));
+        for kind in [LoaderKind::Vanilla, LoaderKind::Quilt, LoaderKind::Forge, LoaderKind::NeoForge] {
+            assert!(!wants_mod_menu(&instance(kind, None)), "{kind:?}");
+        }
+        // Forge: gar nichts, auch kein Merker.
+        let forge = instance(LoaderKind::Forge, None);
+        let offline = reqwest::Client::builder().proxy(reqwest::Proxy::all("http://127.0.0.1:9").unwrap()).build().unwrap();
+        ensure_mod_menu(&offline, &paths, &[], &forge, &|_| {}).await.unwrap();
+        assert!(!paths.instance_dir("t").join(MOD_MENU_MARKER).exists());
+
+        // Offline: Start läuft weiter, gemerkt wird nichts (nächster Start versucht es erneut).
+        assert!(needs_mod_menu(&paths, &fabric).await);
+        ensure_mod_menu(&offline, &paths, &[], &fabric, &|_| {}).await.unwrap();
+        assert!(needs_mod_menu(&paths, &fabric).await);
+
+        // Von Hand eingelegtes Mod Menu unter anderem Namen: an der Mod-ID erkannt, keine zweite Kopie.
+        let mods = content::content_dir(&paths, &fabric.id, ContentKind::Mod);
+        std::fs::create_dir_all(&mods).unwrap();
+        {
+            use std::io::Write;
+            let mut zip = zip::ZipWriter::new(std::fs::File::create(mods.join("eigenes-menue.jar")).unwrap());
+            zip.start_file("fabric.mod.json", zip::write::SimpleFileOptions::default()).unwrap();
+            zip.write_all(br#"{"schemaVersion":1,"id":"modmenu","version":"11.0.3"}"#).unwrap();
+            zip.finish().unwrap();
+        }
+        ensure_mod_menu(&offline, &paths, &[], &fabric, &|_| {}).await.unwrap();
+        assert!(!needs_mod_menu(&paths, &fabric).await, "für 1.21.1 erledigt");
+        let files: Vec<_> = std::fs::read_dir(&mods).unwrap().map(|e| e.unwrap().file_name()).collect();
+        assert_eq!(files, ["eigenes-menue.jar"]);
+
+        // Neue Spielversion: wird wieder geprüft.
+        let newer = Instance { game_version: "1.21.4".into(), ..fabric.clone() };
+        assert!(needs_mod_menu(&paths, &newer).await);
     }
 
     #[test]

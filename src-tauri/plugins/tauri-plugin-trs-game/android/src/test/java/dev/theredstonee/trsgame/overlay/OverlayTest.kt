@@ -271,21 +271,29 @@ class GestureTest {
     fun menuCursorTapDragAndLongPress() {
         val sink = FakeSink(grabbed = false)
         val c = controller(sink)
+        // Antippen: Zeiger springt hin, dann Linksklick.
         c.down(1, 500f, 400f, 0)
         c.up(1, 500f, 400f, 80)
-        assertEquals(listOf("abs 500 400", "abs 500 400", "mouse 0 down", "mouse 0 up"), sink.events)
+        assertEquals(listOf("abs 500 400", "mouse 0 down", "mouse 0 up"), sink.events)
+        assertEquals(500f, c.cursor.x)
 
+        // Halten, dann ziehen: linke Taste gedrückt, Zeiger folgt dem Finger.
         sink.events.clear()
         c.down(2, 500f, 400f, 1000)
-        c.move(2, 600f, 400f)
-        c.up(2, 650f, 400f, 1300)
-        assertEquals(listOf("mouse 0 down", "mouse 0 up"), sink.clicksAndKeys())
+        c.tick(1000 + GestureTiming.LONG_PRESS_MS)
+        assertTrue(c.cursorHeld())
+        c.move(2, 600f, 400f, 1500)
+        c.up(2, 650f, 400f, 1600)
+        assertEquals(listOf("abs 500 400", "mouse 0 down", "abs 600 400", "abs 650 400", "mouse 0 up"), sink.events)
 
+        // Halten ohne Bewegung: Rechtsklick beim Loslassen.
         sink.events.clear()
-        c.down(3, 500f, 400f, 2000)
+        c.down(3, 300f, 200f, 2000)
         c.tick(2000 + GestureTiming.LONG_PRESS_MS)
-        c.up(3, 500f, 400f, 2600)
-        assertEquals(listOf("mouse 1 down", "mouse 1 up"), sink.clicksAndKeys())
+        assertEquals(listOf("abs 300 200"), sink.events)
+        c.up(3, 302f, 200f, 2600)
+        assertEquals(listOf("abs 300 200", "mouse 1 down", "mouse 1 up"), sink.events)
+        assertFalse(c.cursorHeld())
     }
 
     @Test
@@ -516,5 +524,157 @@ class EditorAndStoreTest {
         assertEquals("Save", OverlayStrings.get("editor.save", "ja-JP"))
         for (p in ActionPresets.ALL) assertTrue(p.key, "preset.${p.key}" in OverlayStrings.KEYS)
         for (p in ActionPresets.ALL) assertTrue(p.key, p.icon == null || p.icon in Icons.NAMES)
+    }
+}
+
+class MenuGestureTest {
+    private fun controller(sink: FakeSink): OverlayController {
+        val l = Layout(
+            id = "t", name = "T", profile = "custom",
+            buttons = listOf(Button(id = "a", label = "A", x = 0f, y = 0f, w = 0.05f, h = 0.1f, action = Action.Key(65))),
+            gestures = Gestures(),
+        )
+        return OverlayController(sink, l).apply { setSize(W, H) }
+    }
+
+    @Test
+    fun cursorStartsCentredAndStaysInView() {
+        val cur = MenuCursor()
+        cur.setBounds(W, H)
+        assertEquals(1000f, cur.x)
+        assertEquals(500f, cur.y)
+        val sink = FakeSink(grabbed = false)
+        cur.moveBy(5000f, -5000f, sink)
+        assertEquals(W - 1f, cur.x)
+        assertEquals(0f, cur.y)
+        // Neue Größe: Position bleibt, nur eingeklemmt.
+        cur.setBounds(800f, 600f)
+        assertEquals(799f, cur.x)
+    }
+
+    @Test
+    fun tapTeleportsAndClicks() {
+        val sink = FakeSink(grabbed = false)
+        val c = controller(sink)
+        c.down(1, 1500f, 700f, 0)
+        assertEquals(emptyList<String>(), sink.events)
+        c.move(1, 1503f, 702f, 40)
+        c.up(1, 1503f, 702f, 120)
+        assertEquals(listOf("abs 1500 700", "mouse 0 down", "mouse 0 up"), sink.events)
+        assertEquals(1500f to 700f, c.cursor.x to c.cursor.y)
+    }
+
+    @Test
+    fun slowSwipeMovesOneToOne() {
+        val sink = FakeSink(grabbed = false)
+        val c = controller(sink)
+        // Zeiger in der Mitte (1000, 500); Finger ganz woanders.
+        c.down(1, 200f, 800f, 0)
+        c.move(1, 220f, 800f, 100) // über die Toleranz: 20 px 1:1
+        c.move(1, 240f, 790f, 200) // 0,22 dp/ms = langsam → 1:1
+        c.up(1, 240f, 790f, 300)
+        assertEquals(emptyList<String>(), sink.clicksAndKeys())
+        assertEquals(1040f, c.cursor.x, 0.01f)
+        assertEquals(490f, c.cursor.y, 0.01f)
+        assertEquals("abs 1040 490", sink.events.last())
+    }
+
+    @Test
+    fun fastSwipeIsAccelerated() {
+        val sink = FakeSink(grabbed = false)
+        val c = controller(sink)
+        c.down(1, 200f, 800f, 0)
+        c.move(1, 210f, 800f, 10)
+        // 100 px in 20 ms = 5 dp/ms → volle Verstärkung.
+        c.move(1, 310f, 800f, 30)
+        c.up(1, 310f, 800f, 40)
+        assertEquals(1000f + 10f + 100f * MenuGesture.MAX_GAIN, c.cursor.x, 0.01f)
+        assertEquals(emptyList<String>(), sink.clicksAndKeys())
+        // Verlauf der Verstärkung.
+        assertEquals(1f, MenuGesture.gain(0.1f), 0f)
+        assertEquals(MenuGesture.MAX_GAIN, MenuGesture.gain(9f), 0f)
+        val mid = MenuGesture.gain((MenuGesture.SLOW_DP_PER_MS + MenuGesture.FAST_DP_PER_MS) / 2)
+        assertTrue(mid > 1f && mid < MenuGesture.MAX_GAIN)
+    }
+
+    @Test
+    fun swipeAfterTapKeepsGoingFromCursor() {
+        val sink = FakeSink(grabbed = false)
+        val c = controller(sink)
+        c.down(1, 100f, 100f, 0)
+        c.up(1, 100f, 100f, 50)
+        c.down(2, 900f, 900f, 1000)
+        c.move(2, 900f, 870f, 1100)
+        c.up(2, 900f, 870f, 1200)
+        assertEquals(100f to 70f, c.cursor.x to c.cursor.y)
+    }
+
+    @Test
+    fun longPressRightClicksAndHoldDragHoldsLeft() {
+        val sink = FakeSink(grabbed = false)
+        val c = controller(sink)
+        c.down(1, 400f, 300f, 0)
+        assertTrue(c.tick(GestureTiming.LONG_PRESS_MS - 1))
+        assertFalse(c.tick(GestureTiming.LONG_PRESS_MS))
+        // Kleine Zitterbewegung bleibt Rechtsklick.
+        c.move(1, 404f, 303f, 600)
+        c.up(1, 404f, 303f, 700)
+        assertEquals(listOf("mouse 1 down", "mouse 1 up"), sink.clicksAndKeys())
+
+        // Loslassen nach der Haltezeit ohne Tick dazwischen zählt auch als Halten.
+        sink.events.clear()
+        c.down(2, 400f, 300f, 1000)
+        c.up(2, 400f, 300f, 1000 + GestureTiming.LONG_PRESS_MS + 50)
+        assertEquals(listOf("mouse 1 down", "mouse 1 up"), sink.clicksAndKeys())
+
+        sink.events.clear()
+        c.down(3, 400f, 300f, 2000)
+        c.tick(2000 + GestureTiming.LONG_PRESS_MS)
+        c.move(3, 450f, 300f, 2500)
+        c.move(3, 700f, 500f, 2510)
+        assertEquals(listOf("mouse 0 down"), sink.clicksAndKeys())
+        // Ziehen folgt dem Finger genau (keine Beschleunigung).
+        assertEquals(700f to 500f, c.cursor.x to c.cursor.y)
+        c.up(3, 710f, 500f, 2600)
+        assertEquals(listOf("mouse 0 down", "mouse 0 up"), sink.clicksAndKeys())
+        assertEquals("abs 710 500", sink.events[sink.events.size - 2])
+    }
+
+    @Test
+    fun twoFingersScrollAndCancelDrag() {
+        val sink = FakeSink(grabbed = false)
+        val c = controller(sink)
+        c.down(1, 400f, 300f, 0)
+        c.tick(GestureTiming.LONG_PRESS_MS)
+        c.move(1, 500f, 300f, 500)
+        assertEquals(listOf("mouse 0 down"), sink.clicksAndKeys())
+        // Zweiter Finger: Ziehen endet, Wischen nach oben scrollt runter.
+        c.down(2, 800f, 600f, 600)
+        assertEquals(listOf("mouse 0 down", "mouse 0 up"), sink.clicksAndKeys())
+        c.move(1, 600f, 300f, 610)
+        c.move(2, 800f, 600f - GestureTiming.SCROLL_STEP_DP * 3.2f, 620)
+        assertEquals(3, sink.events.count { it == "scroll -1" })
+        c.up(2, 800f, 500f, 700)
+        c.up(1, 600f, 300f, 710)
+        assertEquals(listOf("mouse 0 down", "mouse 0 up"), sink.clicksAndKeys())
+        // Der erste Finger bewegt den Zeiger nach dem Abbruch nicht mehr.
+        assertEquals(500f, c.cursor.x)
+    }
+
+    @Test
+    fun inGameKeepsCameraAndCursorSurvivesGrab() {
+        val sink = FakeSink(grabbed = false)
+        val c = controller(sink)
+        c.down(1, 300f, 300f, 0)
+        c.up(1, 300f, 300f, 50)
+        sink.grabbed = true
+        sink.events.clear()
+        c.down(2, 1000f, 500f, 100)
+        c.move(2, 1100f, 500f, 150)
+        c.up(2, 1100f, 500f, 200)
+        assertTrue(sink.dx > 0f)
+        assertTrue(sink.events.none { it.startsWith("abs") })
+        sink.grabbed = false
+        assertEquals(300f to 300f, c.cursor.x to c.cursor.y)
     }
 }

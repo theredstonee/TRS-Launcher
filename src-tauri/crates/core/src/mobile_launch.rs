@@ -239,6 +239,9 @@ impl Launcher {
         };
         let settings = self.settings().await;
 
+        // TRS Client: Am Handy gibt es kein Launcher-Paket, nur den Update-Kanal (signiertes
+        // Manifest, höchstens alle 30 Minuten; der Jar der Instanz wird erst in `sync` geladen).
+        self.check_client_mod_updates().await;
         let (client_mod_dir, catalog) = self.client_mod_catalog().await;
         let effective = boost::effective_instance(&self.http, &self.paths, catalog.builds(), instance).await;
         let mods_progress = |p: crate::presets::ApplyProgress| on_progress(crate::mods_stage(&p));
@@ -247,6 +250,13 @@ impl Launcher {
                 on_progress(StageProgress::begin(Stage::Mods));
             }
             boost::ensure_performance(&self.http, &self.paths, catalog.builds(), &effective, &mods_progress).await?;
+        }
+        // Nur hier (Engine-Start auf Android/iOS): Mod Menu für Fabric, die Mod-Liste im Spiel.
+        if boost::wants_mod_menu(&effective) {
+            if boost::needs_mod_menu(&self.paths, &effective).await {
+                on_progress(StageProgress::begin(Stage::Mods));
+            }
+            boost::ensure_mod_menu(&self.http, &self.paths, catalog.builds(), &effective, &mods_progress).await?;
         }
         let instance = &effective;
         let trs_enabled = self.trs.enabled().await;
@@ -297,8 +307,10 @@ impl Launcher {
             // Heap setzt `mobile_heap_mb` unten fest – hier keine Begrenzung nach PC-Speicher.
             launch::Memory::default(),
         )?;
+        // Nur, wenn er wirklich eingeschaltet im Mods-Ordner liegt (offline ohne Cache fehlt er).
         let trs_client = instance.overrides.trs_client != Some(false)
-            && client_mod::build_for(catalog.builds(), instance.loader.kind, &instance.game_version).is_some();
+            && client_mod::build_for(catalog.builds(), instance.loader.kind, &instance.game_version).is_some()
+            && client_mod::installed_jar(&self.paths, &instance.id).is_file();
         let configured = instance.overrides.max_memory_mb.unwrap_or(settings.max_memory_mb);
         let memory = mobile_heap_mb(configured, crate::platform::total_memory_mb());
         let mut spec = spec_from_command(&prepared, command, instance, memory, trs_client)?;

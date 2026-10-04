@@ -75,6 +75,10 @@ impl<R: Runtime> Engine<R> {
         let _: serde_json::Value = self.handle.run_mobile_plugin("stop", StopPayload { session: &session.0 })?;
         Ok(())
     }
+
+    pub async fn session_end(&self, session: &str, since_ms: i64) -> Result<SessionEnd> {
+        Ok(self.handle.run_mobile_plugin_async("sessionEnd", SessionEndPayload { session, since_ms }).await?)
+    }
 }
 
 #[derive(Serialize)]
@@ -100,6 +104,13 @@ struct JavaPayload<'a> {
 #[derive(Serialize)]
 struct StopPayload<'a> {
     session: &'a str,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SessionEndPayload<'a> {
+    session: &'a str,
+    since_ms: i64,
 }
 
 /// Nachricht der Engine über den Kanal.

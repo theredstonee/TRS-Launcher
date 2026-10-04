@@ -509,6 +509,8 @@ fn memory(input: &CrashInput<'_>, text: &Text, out: &mut Vec<Finding>) {
         "There is insufficient memory for the Java Runtime Environment",
         "Native memory allocation (mmap) failed",
         "Native memory allocation (malloc) failed",
+        // Android-Engine: vom System wegen Speichermangel beendet (CrashInfo.kt).
+        "[TRS] Spielprozess beendet: zu wenig Arbeitsspeicher",
     ]);
     let current = heap_mb(input, text);
     if let Some(line) = reserve {
@@ -774,6 +776,11 @@ pub(super) fn unknown(text: &Text, index: &ModIndex<'_>, frame: Option<&Frame>) 
     }
     if let Some(frame) = frame {
         f = f.evidence(&frame.line);
+    }
+    // Android-Engine: Ende-Bericht (Grund, Signal, oberste Stack-Zeilen) zeigen.
+    let engine = ["[TRS] Spielprozess beendet", "[TRS] signal ", "[TRS] Abbruch", "[TRS]   #0"];
+    for line in text.lines.iter().filter(|l| engine.iter().any(|m| l.trim_start().starts_with(m.trim_start()))).take(6) {
+        f = f.evidence(line);
     }
     if let Some(first) = ids.first() {
         f = f.variant("suspect").param("name", index.name(first));

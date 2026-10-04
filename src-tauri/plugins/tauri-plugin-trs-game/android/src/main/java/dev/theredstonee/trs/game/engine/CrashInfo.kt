@@ -18,19 +18,31 @@ internal object CrashInfo {
     private const val MAX_FRAMES = 24
 
     /** Letztes Ende des Spielprozesses nach [since] (ms, System-Uhr) als Log-Zeilen. */
-    fun lastExit(context: Context, processSuffix: String, since: Long): List<String> {
-        if (Build.VERSION.SDK_INT < 30) return emptyList()
+    fun lastExit(context: Context, processSuffix: String, since: Long): List<String> = lastExitInfo(context, processSuffix, since)?.lines ?: emptyList()
+
+    /** Ende des Spielprozesses: Log-Zeilen, Absturz ja/nein, Zeitpunkt (ms). */
+    class Exit(val lines: List<String>, val crashed: Boolean, val timestamp: Long)
+
+    fun lastExitInfo(context: Context, processSuffix: String, since: Long): Exit? {
+        if (Build.VERSION.SDK_INT < 30) return null
         return try {
             val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
             val name = context.packageName + processSuffix
-            val all = am.getHistoricalProcessExitReasons(context.packageName, 0, 8)
-            Log.i(TAG, "Ende-Gründe: ${all.joinToString { "${it.processName}@${it.timestamp}/${it.reason}" }} (seit $since)")
-            val info = all.firstOrNull { it.processName == name && it.timestamp >= since } ?: return emptyList()
-            describe(info)
+            val info = am.getHistoricalProcessExitReasons(context.packageName, 0, 8)
+                .firstOrNull { it.processName == name && it.timestamp >= since } ?: return null
+            Log.i(TAG, "Ende des Spielprozesses: Grund ${info.reason}, Status ${info.status}")
+            Exit(describe(info), crashed(info.reason, info.status), info.timestamp)
         } catch (e: Exception) {
             Log.w(TAG, "Ende-Grund nicht lesbar", e)
-            emptyList()
+            null
         }
+    }
+
+    /** Normales Ende: selbst mit Code 0 beendet oder vom Nutzer geschlossen. */
+    fun crashed(reason: Int, status: Int): Boolean = when (reason) {
+        ApplicationExitInfo.REASON_EXIT_SELF -> status != 0
+        ApplicationExitInfo.REASON_USER_REQUESTED, ApplicationExitInfo.REASON_USER_STOPPED -> false
+        else -> true
     }
 
     private fun describe(info: ApplicationExitInfo): List<String> {

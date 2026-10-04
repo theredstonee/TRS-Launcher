@@ -74,6 +74,12 @@ emulator with the minified release build (1.21.11 reaches a world).
 
 If the game process dies without a game log, the launcher adds Android's exit reason and, for native
 crashes, the signal and the crashing thread's stack (tombstone, Android 12+) to the log (`CrashInfo`).
+If the launcher process itself was gone (Android frees background apps when memory is low), the
+running session stays in `engine-sessions.json`; at the next start `finish_android_sessions` asks the
+plugin (`sessionEnd`): still running → check again every 5 s, otherwise the end is booked with the
+tail of `cache/game-<session>.log` plus Android's exit reason. A low-memory kill shows up in the crash
+helper as "out of memory". The heap is `min(wanted, RAM/2, 3/4 of the memory free at start)`
+(at least 1 GB, `-Xms` at most 512 MB), logged as `[TRS] Arbeitsspeicher: …`.
 
 Platform differences in the Rust core:
 

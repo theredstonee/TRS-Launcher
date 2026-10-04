@@ -105,7 +105,8 @@ pub fn run() {
                 }
             });
             let launcher = tauri::async_runtime::block_on(Launcher::init(root, events))?;
-            // Android/iOS: kein TRS Client, keine Clips (dort gibt es keinen Java-Spielstart).
+            // Android/iOS: kein mitgelieferter TRS Client (nur der Update-Kanal, je Instanz ein Jar)
+            // und keine Clips.
             #[cfg(desktop)]
             match app.path().resource_dir() {
                 Ok(dir) => launcher.set_client_mod_dir(dir.join("client-mod")),
@@ -208,21 +209,21 @@ pub fn run() {
                 // iOS: Das Spielende beendet die App – Ende der letzten Sitzung nachtragen.
                 #[cfg(target_os = "ios")]
                 mobile_game::finish_last_session(app.handle(), &launcher);
-                // Android: Sitzungen eines beendeten Launcher-Prozesses kommen nicht zurück.
+                // Android: Sitzungen eines beendeten Launcher-Prozesses nachtragen (Grund, Log-Ende).
                 #[cfg(target_os = "android")]
-                drop(launcher.games().take_engine_records());
+                mobile_game::finish_android_sessions(app.handle(), &launcher);
             }
-            // Desktop: Clips wieder aufnehmen, TRS-Client-Kanal prüfen, Präsenz senden.
-            // Android/iOS: nichts davon (kein Spiel auf dem Gerät).
+            // Neuer TRS Client im Update-Kanal? Läuft im Hintergrund, offline egal. Lädt nur das
+            // signierte Manifest – Jars erst beim Start einer Instanz, die sie braucht.
+            let updates = Arc::clone(&launcher);
+            tauri::async_runtime::spawn(async move {
+                updates.check_client_mod_updates().await;
+            });
+            // Desktop: Clips wieder aufnehmen, Präsenz senden. Android/iOS: nichts davon.
             #[cfg(desktop)]
             {
                 // Spiele, die beim letzten Schließen noch liefen, wieder aufnehmen.
                 tauri::async_runtime::spawn(Arc::clone(&launcher).resume_clips());
-                // Neuer TRS Client im Update-Kanal? Läuft im Hintergrund, offline egal.
-                let updates = Arc::clone(&launcher);
-                tauri::async_runtime::spawn(async move {
-                    updates.check_client_mod_updates().await;
-                });
                 // TRS-Präsenz im 60-s-Takt (ohne Einwilligung passiert nichts).
                 tauri::async_runtime::spawn(Arc::clone(&launcher).run_trs_presence());
             }

@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.DashPathEffect
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.os.Build
@@ -50,6 +51,17 @@ class TouchOverlayView(
     }
     private val dashed = DashPathEffect(floatArrayOf(8f * density / 2, 5f * density / 2), 0f)
     private val tmp = RectF()
+    /** Pfeil des Mauszeigers (Spitze bei 0,0), in dp. */
+    private val arrow = Path().apply {
+        moveTo(0f, 0f)
+        lineTo(0f, 17f)
+        lineTo(4f, 13.2f)
+        lineTo(7f, 20f)
+        lineTo(9.8f, 18.8f)
+        lineTo(6.9f, 12.2f)
+        lineTo(12f, 12.2f)
+        close()
+    }
 
     init {
         controller.density = density
@@ -152,7 +164,7 @@ class TouchOverlayView(
                 controller.down(event.getPointerId(i), event.getX(i), event.getY(i), now)
             }
             MotionEvent.ACTION_MOVE -> for (i in 0 until event.pointerCount) {
-                controller.move(event.getPointerId(i), event.getX(i), event.getY(i))
+                controller.move(event.getPointerId(i), event.getX(i), event.getY(i), now)
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
                 val i = event.actionIndex
@@ -231,6 +243,8 @@ class TouchOverlayView(
             val alpha = if (ed != null) maxOf(0.35f, b.opacity) else b.opacity
             drawButton(canvas, b, safe, alpha)
         }
+        // Im Menü eigener Zeiger (das Spiel zeigt auf dem Handy keinen); bei echter Maus ist das Overlay ganz aus.
+        if (ed == null && !grabbed) drawCursor(canvas)
         val sel = ed?.selected ?: return
         val r = Geometry.toPx(sel, safe)
         stroke.color = COLOR_ACCENT
@@ -242,6 +256,30 @@ class TouchOverlayView(
         val hb = ed.handleBox(sel, safe, HANDLE_DP * density)
         fill.color = COLOR_ACCENT
         canvas.drawRect(hb.x, hb.y, hb.x + hb.w, hb.y + hb.h, fill)
+    }
+
+    private fun drawCursor(canvas: Canvas) {
+        val c = controller.cursor
+        val s = density * CURSOR_SCALE
+        if (controller.cursorHeld()) {
+            // Halten erreicht (Rechtsklick/Ziehen): roter Ring um die Spitze.
+            stroke.pathEffect = null
+            stroke.color = COLOR_ACCENT
+            stroke.strokeWidth = 2.5f * density
+            canvas.drawCircle(c.x, c.y, 14f * density, stroke)
+        }
+        canvas.save()
+        canvas.translate(c.x, c.y)
+        canvas.scale(s, s)
+        fill.color = 0xFFFFFFFF.toInt()
+        canvas.drawPath(arrow, fill)
+        stroke.pathEffect = null
+        stroke.color = 0xFF111111.toInt()
+        stroke.strokeWidth = 1.6f
+        stroke.strokeJoin = Paint.Join.ROUND
+        canvas.drawPath(arrow, stroke)
+        stroke.strokeJoin = Paint.Join.MITER
+        canvas.restore()
     }
 
     private fun drawGrid(canvas: Canvas, safe: Box, on: Boolean) {
@@ -361,5 +399,7 @@ class TouchOverlayView(
         const val COLOR_KNOB = 0xFF252531.toInt()
         const val HANDLE_DP = 22f
         const val GRAB_POLL_MS = 200L
+        /** Zeigergröße: Pfeil 20 dp hoch × Faktor. */
+        const val CURSOR_SCALE = 1.2f
     }
 }

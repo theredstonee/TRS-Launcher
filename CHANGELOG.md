@@ -106,10 +106,18 @@ How to write an entry:
   loading screen.
 - **Better crash reports on the phone.** If the game closes before writing a log, the launcher now shows why: Android's
   reason, and for native crashes the signal and the crashing code – so "Unknown error" with an empty log is gone.
+- **Games that ended while the launcher was closed.** If Android closed the launcher in the background while you played
+  (or the game itself was closed for lack of memory), the end of the game, its log and the reason are now filled in
+  the next time you open the launcher. The game also takes only as much memory as the phone can spare, so it is less
+  likely to be closed by Android at all.
 - **Touch controls.** On the phone you play with on-screen controls: ready-made layouts for PvP, building and redstone,
   your own layouts on the new "Touch controls" page (move, resize, change buttons, share them as a code or file) and a
   layout per instance. In a game menu, "Edit controls" opens the editor right in the game. With the TRS Client, the
   keyboard opens by itself when you tap a text field, and the TRS menu and emote wheel have their own buttons.
+- **Visible mouse pointer in menus on the phone.** In inventories, the title screen and settings you now see a
+  clear mouse pointer. Swipe with one finger to move it like a touchpad (fast swipes go further, slow ones are
+  precise), tap to click right where you tap, hold still for a moment and let go for a right click, or hold and then
+  drag to carry items around. Two fingers scroll.
 - **Minecraft Java on iPhone and iPad (sideload, preview).** The iOS app (installed via AltStore or SideStore)
   can start Minecraft Java Edition itself, based on the Amethyst engine. It needs JIT: if JIT is off, the app
   explains step by step how to turn it on (SideStore + StikDebug, AltServer, TrollStore) and starts the game as
@@ -126,6 +134,14 @@ How to write an entry:
   same TRS account. Off by default: switch it on under Settings → Remote control, choose what your phone may do, and
   pair your phone by scanning the QR code (or typing the code). The PC shows a notice whenever your phone starts
   something, and you can remove paired phones at any time.
+- **TRS Client on Android and iPhone.** Games started on your phone now get the TRS Client too (in touch mode).
+  The app only downloads the one small file your instance needs, checks that it is genuine, keeps it for later
+  starts and swaps it when a newer TRS Client is out. Turning the TRS Client off for an instance works like on the PC.
+- **Mod Menu on your phone.** Fabric instances (and Vanilla instances with the TRS optimisation) get Mod Menu
+  automatically when started on your phone, so you can see and configure your mods in the game. If you already have
+  it, nothing is added twice; if you remove it, it stays removed.
+- **Your own mods on the phone.** Mods you install into an instance in the app are loaded when you start it on your
+  phone.
 
 ### Deutsch
 - **Suche, Filter und Details für TRS-Umhänge.** Die Umhang-Liste auf der Skins-Seite hat ein Suchfeld, Filter
@@ -210,11 +226,19 @@ How to write an entry:
 - **Bessere Absturzberichte am Handy.** Schließt sich das Spiel, bevor es ein Log schreibt, zeigt der Launcher jetzt
   den Grund: Androids Begründung und bei nativen Abstürzen das Signal und die abgestürzte Stelle – kein „Unbekannter
   Fehler“ mit leerem Log mehr.
+- **Spiele, die bei geschlossenem Launcher endeten.** Hat Android den Launcher im Hintergrund beendet, während du
+  gespielt hast (oder das Spiel selbst wegen Speichermangel geschlossen), werden das Spielende, sein Log und der Grund
+  jetzt beim nächsten Öffnen des Launchers nachgetragen. Das Spiel nimmt außerdem nur so viel Speicher, wie das Handy
+  übrig hat, und wird dadurch seltener von Android beendet.
 - **Touch-Steuerung.** Am Handy spielst du mit Knöpfen auf dem Bildschirm: fertige Layouts für PvP, Bauen und
   Redstone, eigene Layouts auf der neuen Seite „Touch-Steuerung“ (verschieben, Größe ändern, Knöpfe tauschen, als Code
   oder Datei teilen) und ein Layout je Instanz. In einem Spielmenü öffnet „Steuerung bearbeiten“ den Editor direkt im
   Spiel. Mit dem TRS Client erscheint die Tastatur von selbst, sobald du ein Textfeld antippst, und TRS-Menü und
   Emote-Rad haben eigene Knöpfe.
+- **Sichtbarer Mauszeiger in Menüs am Handy.** In Inventaren, im Titelbildschirm und in den Einstellungen siehst du
+  jetzt einen deutlichen Mauszeiger. Mit einem Finger wischen bewegt ihn wie ein Touchpad (schnell wischen geht weiter,
+  langsam ist genau), Antippen klickt genau dort, kurz ruhig halten und loslassen ist ein Rechtsklick, halten und dann
+  ziehen trägt Gegenstände mit. Zwei Finger scrollen.
 - **Minecraft Java auf iPhone und iPad (Sideload, Vorschau).** Die iOS-App (installiert über AltStore oder
   SideStore) kann Minecraft Java Edition selbst starten, auf Basis der Amethyst-Engine. Dafür braucht es JIT: Ist
   JIT aus, erklärt die App Schritt für Schritt, wie du es einschaltest (SideStore + StikDebug, AltServer,
@@ -231,6 +255,15 @@ How to write an entry:
   solange beide dasselbe TRS-Konto nutzen. Ab Werk aus: unter Einstellungen → Fernbedienung einschalten, festlegen,
   was das Handy darf, und das Handy per QR-Code (oder Code eintippen) koppeln. Der PC zeigt jedes Mal einen Hinweis,
   wenn das Handy etwas startet, und gekoppelte Handys lassen sich jederzeit entfernen.
+- **TRS Client auf Android und iPhone.** Spiele, die du am Handy startest, bekommen jetzt auch den TRS Client (im
+  Touch-Modus). Die App lädt nur die eine kleine Datei, die deine Instanz braucht, prüft, dass sie echt ist, behält sie
+  für spätere Starts und tauscht sie, sobald es einen neueren TRS Client gibt. Den TRS Client für eine Instanz
+  abschalten funktioniert wie am PC.
+- **Mod Menu am Handy.** Fabric-Instanzen (und Vanilla-Instanzen mit TRS-Optimierung) bekommen beim Start am Handy
+  automatisch Mod Menu – so siehst du deine Mods im Spiel und kannst sie einstellen. Hast du es schon, kommt nichts
+  doppelt dazu;
+  entfernst du es, bleibt es weg.
+- **Eigene Mods am Handy.** Mods, die du in der App in eine Instanz installierst, werden beim Start am Handy geladen.
 
 ## 0.17.1 – 2026-10-03 – Light Luggage Fix | Leichtes Gepäck – Fix
 <!-- banner: accent=#ffb02e motif=/news/0.17.0/banner.png -->

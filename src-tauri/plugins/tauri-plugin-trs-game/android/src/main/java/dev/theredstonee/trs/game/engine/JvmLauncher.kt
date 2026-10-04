@@ -90,9 +90,11 @@ internal object JvmLauncher {
 
         val args = ArrayList<String>()
         args += commonJvmArgs(context, config.javaHome, nativeDir, config.gameDir)
+        val heap = heapMb(context, config.memoryMb)
         args += listOf(
-            "-Xms${config.memoryMb}M",
-            "-Xmx${config.memoryMb}M",
+            // Klein anfangen (wächst bei Bedarf) statt den ganzen Heap sofort zu belegen.
+            "-Xms${minOf(heap, 512)}M",
+            "-Xmx${heap}M",
             "-Dorg.lwjgl.opengl.libname=$renderLib",
             "-Dorg.lwjgl.freetype.libname=$lwjglNatives/libfreetype.so",
             "-Dorg.lwjgl.system.allocator=system",
@@ -129,6 +131,28 @@ internal object JvmLauncher {
 
         return start(context, config.javaHome, config.gameDir, args)
     }
+
+    /**
+     * Heap: gewünschte Größe, aber höchstens die Hälfte des Geräte-RAMs und drei Viertel dessen, was
+     * gerade frei ist – sonst beendet Android das Spiel bei Speichermangel (ohne Log).
+     */
+    private fun heapMb(context: Context, wanted: Int): Int {
+        return try {
+            val am = context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+            val info = android.app.ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }
+            val mb = 1024L * 1024L
+            val heap = capHeap(wanted, (info.totalMem / mb).toInt(), (info.availMem / mb).toInt())
+            EngineEvents.log("[TRS] Arbeitsspeicher: Heap ${heap} MB (gewünscht $wanted MB, Gerät ${info.totalMem / mb} MB, frei ${info.availMem / mb} MB)")
+            heap
+        } catch (e: Exception) {
+            Log.w(TAG, "Speicher nicht lesbar", e)
+            wanted
+        }
+    }
+
+    /** Siehe [heapMb]; nie unter 1024 MB (darunter startet Minecraft nicht sinnvoll). */
+    fun capHeap(wanted: Int, totalMb: Int, availMb: Int): Int =
+        minOf(wanted, totalMb / 2, availMb * 3 / 4).coerceAtLeast(1024)
 
     /** Kopflose JVM (blockiert, Rückgabe = Exit-Code). */
     fun runHeadless(context: Context, config: JavaRunConfig): Int {

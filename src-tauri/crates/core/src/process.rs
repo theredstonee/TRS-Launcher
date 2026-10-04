@@ -870,6 +870,15 @@ impl GameManager {
         out
     }
 
+    /// Gemerkte Sitzung wieder ablegen (Android: Spiel läuft noch, Ende später nachtragen).
+    pub fn keep_engine_record(&self, record: EngineRecord) {
+        self.update_engine_records(|list| {
+            if !list.iter().any(|r| r.session == record.session) {
+                list.push(record);
+            }
+        });
+    }
+
     /// Sitzung, die ohne laufenden Launcher endete (iOS: Spielende beendet die App): wie ein
     /// normales Ende melden, Spielzeit bis `ended_at`.
     pub fn engine_recovered(&self, record: &EngineRecord, ended_at: DateTime<Utc>, exit_code: Option<i32>, crashed: bool, tail: &[String], on_exit: OnExit) {
@@ -1481,6 +1490,13 @@ More details:
         let records = manager.take_engine_records();
         assert_eq!(records.len(), 1);
         assert!(manager.take_engine_records().is_empty());
+        // Android: noch laufende Sitzung zurücklegen – einmal, nicht doppelt.
+        manager.keep_engine_record(records[0].clone());
+        manager.keep_engine_record(records[0].clone());
+        let kept = manager.take_engine_records();
+        assert_eq!(kept.len(), 1);
+        manager.keep_engine_record(kept[0].clone());
+        let records = manager.take_engine_records();
         let booked = Arc::new(Mutex::new(0));
         let booked_in = booked.clone();
         let ended = records[0].started_at + chrono::Duration::seconds(90);

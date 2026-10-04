@@ -111,6 +111,20 @@ impl<R: Runtime> TrsGame<R> {
         }
     }
 
+    /// Android: Was wurde aus einer Sitzung, deren Ende der Launcher nicht mitbekam?
+    /// `since_ms` = Startzeit (für Androids Ende-Gründe).
+    pub async fn session_end(&self, session: &str, since_ms: i64) -> Result<SessionEnd> {
+        #[cfg(target_os = "android")]
+        {
+            self.mobile.session_end(session, since_ms).await
+        }
+        #[cfg(not(target_os = "android"))]
+        {
+            let _ = (session, since_ms);
+            Err(Error::UnsupportedPlatform)
+        }
+    }
+
     /// Beendet eine laufende Sitzung (Spielprozess wird geschlossen).
     pub fn stop(&self, session: &SessionId) -> Result<()> {
         #[cfg(mobile)]

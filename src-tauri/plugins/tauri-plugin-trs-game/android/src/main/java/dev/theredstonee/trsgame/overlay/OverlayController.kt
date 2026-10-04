@@ -28,6 +28,8 @@ class OverlayController(private val sink: InputSink, layout: Layout) {
     val knobs = HashMap<String, Joystick.Vec>()
     var keyboardShown = false
         private set
+    /** Gezeichneter Mauszeiger im Menü (gleiche Position wie im Spiel). */
+    val cursor = MenuCursor()
     /** Wird bei jedem Knopfdruck gerufen (Vibration), wenn im Layout an. */
     var onHaptic: (() -> Unit)? = null
 
@@ -36,6 +38,8 @@ class OverlayController(private val sink: InputSink, layout: Layout) {
         class Stick(val button: Button, var keys: Set<Int>) : Target()
         class Hotbar(val button: Button, var slot: Int) : Target()
         class Camera(val gesture: CameraGesture) : Target()
+        /** Ein Finger im Menü: Touchpad, tippen, halten, ziehen. */
+        class Menu(val gesture: MenuGesture) : Target()
         /** Zweiter Finger im Menü: Mausrad. */
         class Scroll(var lastY: Float, var rest: Float) : Target()
         object Ignored : Target()
@@ -52,6 +56,7 @@ class OverlayController(private val sink: InputSink, layout: Layout) {
         height = h
         this.insets = insets
         safe = Geometry.safeRect(w, h, insets)
+        cursor.setBounds(w, h)
     }
 
     /** Neues Layout (Editor gespeichert, Profil gewechselt): alles loslassen. */
@@ -86,16 +91,31 @@ class OverlayController(private val sink: InputSink, layout: Layout) {
 
     private fun freeArea(x: Float, y: Float, now: Long, grabbed: Boolean): Target {
         val cameras = pointers.values.filterIsInstance<Target.Camera>()
-        if (!grabbed && cameras.isNotEmpty()) {
+        val menus = pointers.values.filterIsInstance<Target.Menu>()
+        if (!grabbed && (cameras.isNotEmpty() || menus.isNotEmpty())) {
             // Zweiter Finger im Menü: der erste klickt nicht mehr, beide scrollen nicht doppelt.
             cameras.forEach { it.gesture.cancel() }
+            menus.forEach { it.gesture.cancel() }
             return Target.Scroll(y, 0f)
         }
-        if (grabbed && cameras.any { it.gesture.grabbed }) return Target.Ignored
-        return Target.Camera(CameraGesture(held, sink, grabbed, layout.gestures, density, x, y, now))
+        if (!grabbed) {
+            return Target.Menu(MenuGesture(held, sink, cursor, density, x, y, now) {
+                if (layout.gestures.haptics) onHaptic?.invoke()
+            })
+        }
+        if (cameras.isNotEmpty()) return Target.Ignored
+        // Finger aus dem Menü (Spiel hat die Maus gefangen): loslassen, Kamera übernimmt nicht doppelt.
+        menus.forEach { it.gesture.cancel() }
+        return Target.Camera(CameraGesture(held, sink, layout.gestures, density, x, y, now))
     }
 
-    fun move(pointer: Int, x: Float, y: Float) {
+    /** Hält ein Finger im Menü gerade (scharf oder ziehend)? Für die Zeiger-Markierung. */
+    fun cursorHeld(): Boolean = pointers.values.any {
+        it is Target.Menu && (it.gesture.state == MenuGesture.State.ARMED || it.gesture.state == MenuGesture.State.DRAGGING)
+    }
+
+    /** [now] = Zeit des Ereignisses (ms) für die Touchpad-Beschleunigung; < 0 = unbekannt. */
+    fun move(pointer: Int, x: Float, y: Float, now: Long = -1L) {
         when (val t = pointers[pointer] ?: return) {
             is Target.Btn -> {
                 if (t.button.passThrough && sink.isGrabbed()) {
@@ -110,6 +130,7 @@ class OverlayController(private val sink: InputSink, layout: Layout) {
             is Target.Stick -> stickMove(t, x, y)
             is Target.Hotbar -> if (layout.gestures.swipeHotbar) hotbarAt(t, x, initial = false)
             is Target.Camera -> t.gesture.move(x, y)
+            is Target.Menu -> t.gesture.move(x, y, now)
             is Target.Scroll -> {
                 t.rest += y - t.lastY
                 t.lastY = y
@@ -141,6 +162,10 @@ class OverlayController(private val sink: InputSink, layout: Layout) {
                 t.gesture.move(x, y)
                 t.gesture.up(now)
             }
+            is Target.Menu -> {
+                t.gesture.move(x, y, now)
+                t.gesture.up(now)
+            }
             is Target.Scroll, Target.Ignored -> {}
         }
     }
@@ -152,6 +177,7 @@ class OverlayController(private val sink: InputSink, layout: Layout) {
                 is Target.Btn -> release(t.button, Long.MAX_VALUE)
                 is Target.Stick -> t.keys.forEach { held.keyUp(it) }
                 is Target.Camera -> t.gesture.cancel()
+                is Target.Menu -> t.gesture.cancel()
                 else -> {}
             }
         }
@@ -175,6 +201,7 @@ class OverlayController(private val sink: InputSink, layout: Layout) {
         for (t in pointers.values) {
             when (t) {
                 is Target.Camera -> more = t.gesture.tick(now) || more
+                is Target.Menu -> more = t.gesture.tick(now) || more
                 is Target.Stick -> if ((t.button.action as Action.Joystick).camera) {
                     val v = knobs[t.button.id]
                     if (v != null && v.raw >= Joystick.DEADZONE) {

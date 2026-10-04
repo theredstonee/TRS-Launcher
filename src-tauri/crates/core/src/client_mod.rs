@@ -89,6 +89,11 @@ pub fn parse_manifest(bytes: &[u8]) -> Option<Manifest> {
     Some(Manifest { version, builds })
 }
 
+/// Eingeschalteter TRS Client im Mods-Ordner der Instanz (fehlt er, lädt das Spiel ihn nicht).
+pub fn installed_jar(paths: &Paths, instance_id: &str) -> PathBuf {
+    content::content_dir(paths, instance_id, ContentKind::Mod).join(INSTALLED_NAME)
+}
+
 /// Ist das die Datei, die der Launcher selbst für den TRS Client verwaltet?
 pub fn is_client_mod_file(kind: ContentKind, file_name: &str) -> bool {
     kind == ContentKind::Mod && file_name == INSTALLED_NAME
@@ -146,9 +151,10 @@ impl Catalog {
     }
 
     pub fn status(&self) -> ClientModStatus {
-        ClientModStatus {
-            bundled: self.bundled_version().map(str::to_owned),
-            update: self.channel_version().map(str::to_owned),
+        match (self.bundled_version(), self.channel_version()) {
+            // Ohne mitgelieferten Client (Android/iOS) ist der Kanal der aktuelle Stand, kein Update.
+            (None, Some(channel)) => ClientModStatus { bundled: Some(channel.to_owned()), update: None },
+            (bundled, update) => ClientModStatus { bundled: bundled.map(str::to_owned), update: update.map(str::to_owned) },
         }
     }
 
@@ -1215,6 +1221,87 @@ mod tests {
         let other = instance("1.8.9", LoaderKind::Forge, None);
         sync(&http, &paths, Some(&res), Some(&offline), &other, &ui, true, &[]).await.unwrap();
         assert!(!mods.join(INSTALLED_NAME).exists(), "kein Build für 1.8.9: entfernt");
+    }
+
+    /// Android/iOS: kein Launcher-Paket, nur der Kanal – geladen wird genau der eine Jar,
+    /// den die Instanz braucht (nie der ganze Katalog), danach aus dem Cache.
+    #[tokio::test]
+    async fn mobile_loads_only_the_jar_of_the_instance() {
+        use crate::client_mod_update::tests::sha256_hex;
+        use crate::client_mod_update::{MANIFEST_FILE, SIGNATURE_FILE};
+        let key = TestKey::generate();
+        let (server, url) = TestServer::start().await;
+        let dir = tempfile::tempdir().unwrap();
+        let paths = Paths::new(dir.path().join("root"));
+        paths.ensure().await.unwrap();
+        let cache = paths.client_mod_cache_dir();
+        let updater = ClientModUpdater::for_tests(cache.clone(), &url, &key.public);
+        let (http, ui) = (offline_http(), UiSettings::default());
+        const FABRIC: &str = "trsclient-fabric-1.21.1.jar";
+        const FORGE: &str = "trsclient-forge-1.8.9.jar";
+        const NEO: &str = "trsclient-neoforge-1.21.1.jar";
+        let publish_all = |version: &str, tag: &str| {
+            let builds: Vec<serde_json::Value> = [("fabric", "1.21.1", FABRIC), ("forge", "1.8.9", FORGE), ("neoforge", "1.21.1", NEO)]
+                .iter()
+                .map(|(loader, mc, file)| {
+                    let data = format!("{file}-{tag}").into_bytes();
+                    let build = serde_json::json!({"loader": loader, "minecraft": [mc], "file": file, "sha256": sha256_hex(&data), "size": data.len()});
+                    server.put(file, data);
+                    build
+                })
+                .collect();
+            let manifest = serde_json::json!({ "version": version, "builds": builds }).to_string().into_bytes();
+            server.put(SIGNATURE_FILE, key.sign(&manifest, MANIFEST_FILE));
+            server.put(MANIFEST_FILE, manifest);
+        };
+        let inst = instance("1.21.1", LoaderKind::Fabric, None);
+        let jar = installed_jar(&paths, &inst.id);
+
+        // Kanal noch nie erreicht: nichts bekannt, nichts angefasst.
+        assert_eq!(updater.check_now(None).await, client_mod_update::CheckOutcome::Failed);
+        sync(&http, &paths, None, Some(&updater), &inst, &ui, true, &[]).await.unwrap();
+        assert!(!jar.exists());
+
+        publish_all("0.3.0", "a");
+        assert_eq!(updater.check_now(None).await, client_mod_update::CheckOutcome::Updated("0.3.0".into()));
+        let catalog = Catalog::load(None, Some(&updater)).await;
+        assert_eq!(catalog.status(), ClientModStatus { bundled: Some("0.3.0".into()), update: None }, "Kanal = aktueller Stand");
+        assert!(server.hits(FABRIC) + server.hits(FORGE) + server.hits(NEO) == 0, "Prüfen lädt keine Jars");
+
+        sync(&http, &paths, None, Some(&updater), &inst, &ui, true, &[]).await.unwrap();
+        assert_eq!(std::fs::read(&jar).unwrap(), b"trsclient-fabric-1.21.1.jar-a");
+        assert_eq!((server.hits(FABRIC), server.hits(FORGE), server.hits(NEO)), (1, 0, 0), "nur der Jar der Instanz");
+        let cached: Vec<_> = std::fs::read_dir(cache.join("0.3.0")).unwrap().map(|e| e.unwrap().file_name()).collect();
+        assert_eq!(cached, [FABRIC], "nur dieser Jar im Cache");
+        assert_eq!(installed_version(&paths, &inst.id).await.as_deref(), Some("0.3.0"));
+
+        // Nächster Start und eine zweite Instanz derselben Version: aus dem Cache.
+        sync(&http, &paths, None, Some(&updater), &inst, &ui, true, &[]).await.unwrap();
+        let second = Instance { id: "zwei".into(), ..inst.clone() };
+        sync(&http, &paths, None, Some(&updater), &second, &ui, true, &[]).await.unwrap();
+        assert_eq!(std::fs::read(installed_jar(&paths, "zwei")).unwrap(), b"trsclient-fabric-1.21.1.jar-a");
+        assert_eq!(server.hits(FABRIC), 1);
+
+        // In der Instanz abgeschaltet: nichts geladen, nichts installiert.
+        let off = Instance { id: "aus".into(), ..instance("1.8.9", LoaderKind::Forge, Some(false)) };
+        sync(&http, &paths, None, Some(&updater), &off, &ui, true, &[]).await.unwrap();
+        assert!(!installed_jar(&paths, "aus").exists());
+        assert_eq!(server.hits(FORGE), 0);
+
+        // Neuer Build im Kanal: ersetzt Cache und Kopie in der Instanz.
+        publish_all("0.4.0", "b");
+        assert_eq!(updater.check_now(None).await, client_mod_update::CheckOutcome::Updated("0.4.0".into()));
+        assert!(!cache.join("0.3.0").exists(), "alter Cache weg");
+        sync(&http, &paths, None, Some(&updater), &inst, &ui, true, &[]).await.unwrap();
+        assert_eq!(std::fs::read(&jar).unwrap(), b"trsclient-fabric-1.21.1.jar-b");
+        assert_eq!((server.hits(FABRIC), server.hits(FORGE), server.hits(NEO)), (2, 0, 0));
+
+        // Offline mit Cache: bleibt beim geprüften Jar.
+        let offline = ClientModUpdater::for_tests(cache.clone(), "http://127.0.0.1:9/", &key.public);
+        assert_eq!(offline.check_now(None).await, client_mod_update::CheckOutcome::Failed);
+        std::fs::remove_file(&jar).unwrap();
+        sync(&http, &paths, None, Some(&offline), &inst, &ui, true, &[]).await.unwrap();
+        assert_eq!(std::fs::read(&jar).unwrap(), b"trsclient-fabric-1.21.1.jar-b");
     }
 
     #[tokio::test]
