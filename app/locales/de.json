@@ -442,6 +442,9 @@
       "stopAllGamesFirst": "Bitte erst alle laufenden Spiele beenden.",
       "syncAfterExitFailed": "Die Einstellungen konnten nicht mit den anderen Instanzen synchronisiert werden.",
       "dependenciesAdded": "Fehlende Abhängigkeiten ergänzt: {list} (gebraucht von {mods}).",
+      "modVersionsAdjusted": "Mod-Versionen angepasst, damit alles zusammenpasst: {list}.",
+      "modVersionsConflict": "Diese Mods passen in den installierten Versionen nicht zusammen, und es gibt keine passende Version: {list}. Deaktiviere oder aktualisiere eine davon in der Mod-Liste.",
+      "modVersionsUnresolved": "Diese Mods passen in den installierten Versionen vielleicht nicht zusammen: {list}.",
       "accountMissing": "Das gewählte Konto gibt es nicht mehr.",
       "memorySafeStart": "Wenig freier Arbeitsspeicher: Das Spiel startet klein und holt sich den Speicher nach Bedarf.",
       "notEnoughMemory": "Nicht genug freier Arbeitsspeicher für Java. Schließe andere Programme oder stelle der Instanz weniger RAM ein."
@@ -1648,6 +1651,7 @@
     "itemChange": "{from} zu {to}",
     "noMatch": "Keine passende Version",
     "fits": "Passt",
+    "compatWith": "passend zu {name}",
     "saving": "Wechsle …",
     "disableMissing": "Nicht passende deaktivieren",
     "applyUpdates": "Mods auf passende Versionen aktualisieren",

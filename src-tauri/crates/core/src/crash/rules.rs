@@ -279,6 +279,9 @@ struct Requirement {
     line: String,
     /// Fabric (tauschbar über modcompat).
     fabric: bool,
+    /// „… requires … but only the wrong version is present“: Die verlangte Mod
+    /// ist zu alt/neu – sie wird getauscht, nicht die, die sie verlangt.
+    wrong_version: bool,
 }
 
 fn parse_requirement(line: &str) -> Option<Requirement> {
@@ -301,6 +304,7 @@ fn parse_requirement(line: &str) -> Option<Requirement> {
             present: Some(present.trim_end_matches(['!', '.']).to_owned()),
             line: t.to_owned(),
             fabric: true,
+            wrong_version: true,
         });
     }
     // (Neo)Forge: Mod ID: 'minecraft', Requested by: 'jei', Expected range: '[1.20,1.20.2)', Actual version: '1.21.1'
@@ -325,6 +329,7 @@ fn parse_requirement(line: &str) -> Option<Requirement> {
             present: Some(actual.to_owned()),
             line: t.to_owned(),
             fabric: false,
+            wrong_version: true,
         });
     }
     // Fabric: „is incompatible with …“ / „Replace mod … compatible with: …“
@@ -338,6 +343,7 @@ fn parse_requirement(line: &str) -> Option<Requirement> {
         present: c.other_version,
         line: t.to_owned(),
         fabric: true,
+        wrong_version: false,
     })
 }
 
@@ -381,12 +387,17 @@ fn requirements(text: &Text, index: &ModIndex<'_>, out: &mut Vec<Finding>) {
             continue;
         } else {
             let other = index.name(&r.target);
+            let declarer = r.mod_version.as_ref().map_or(name.clone(), |v| format!("{name} {v}"));
+            let target = if present.is_empty() { other } else { format!("{other} {present}") };
+            // Iris verlangt Sodium 0.9.x, da liegt 0.8.9: Sodium ist es, das nicht passt.
+            let (name, other, swap) =
+                if r.wrong_version { (target, declarer, r.target.clone()) } else { (declarer, target, r.mod_id.clone()) };
             let mut f = Finding::new(CrashKind::IncompatibleMod, 85)
-                .param("name", r.mod_version.as_ref().map_or(name.clone(), |v| format!("{name} {v}")))
-                .param("other", if present.is_empty() { other } else { format!("{other} {present}") })
+                .param("name", name)
+                .param("other", other)
                 .with_mods([r.mod_id.clone(), r.target.clone()]);
             if r.fabric {
-                f = f.action(CrashAction::FixConflict { mod_id: r.mod_id.clone() });
+                f = f.action(CrashAction::FixConflict { mod_id: swap });
             }
             f
         };

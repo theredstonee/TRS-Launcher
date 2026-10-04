@@ -216,6 +216,11 @@ const FPS_BOOST: &[Group] = &[
     single(&[m("YknNc5nN", "PolyPatcher", "YknNc5nN/28c08fdc63482c25735ec6a2ee965347dfdadd4d_96.webp")]),
 ];
 
+/// Modrinth-Projekte des Optimierungs-Pakets (für den Versionswechsel).
+pub(crate) fn fps_boost_projects() -> Vec<&'static str> {
+    FPS_BOOST.iter().filter(|g| g.kind == ContentKind::Mod).flat_map(|g| g.mods.iter().map(|m| m.id)).collect()
+}
+
 /// Iris lädt Shaderpakete (Fabric, Quilt, NeoForge) – zusammen mit Sodium.
 /// Nvidium ersetzt den Gelände-Renderer und verträgt sich nicht mit Shadern.
 const IRIS: Group = Group {

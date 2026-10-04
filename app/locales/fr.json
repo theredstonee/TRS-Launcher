@@ -442,6 +442,9 @@
       "stopAllGamesFirst": "Ferme d'abord tous les jeux en cours.",
       "syncAfterExitFailed": "Impossible de synchroniser les paramètres avec les autres instances.",
       "dependenciesAdded": "Dépendances manquantes ajoutées : {list} (requises par {mods}).",
+      "modVersionsAdjusted": "Versions des mods ajustées pour que tout fonctionne ensemble : {list}.",
+      "modVersionsConflict": "Ces mods ne fonctionnent pas ensemble dans les versions installées, et aucune version ne convient : {list}. Désactive ou mets à jour l’un d’eux dans la liste des mods.",
+      "modVersionsUnresolved": "Ces mods ne fonctionnent peut-être pas ensemble dans les versions installées : {list}.",
       "accountMissing": "Le compte choisi n’existe plus.",
       "memorySafeStart": "Peu de mémoire libre : le jeu démarre petit et prend plus de mémoire selon ses besoins.",
       "notEnoughMemory": "Pas assez de mémoire libre pour Java. Ferme d'autres programmes ou donne moins de RAM à l'instance."
@@ -1648,6 +1651,7 @@
     "itemChange": "{from} vers {to}",
     "noMatch": "Aucune version compatible",
     "fits": "Compatible",
+    "compatWith": "pour aller avec {name}",
     "saving": "Changement…",
     "disableMissing": "Désactiver les incompatibles",
     "applyUpdates": "Mettre à jour les mods vers des versions compatibles",

@@ -477,6 +477,23 @@ mod tests {
         assert_eq!(m("<custom", "custom"), None);
     }
 
+    /// Fehlerbericht 0.18.0 (Iris 1.11.4 auf 26.1.2) und typische Minecraft-Angaben.
+    #[test]
+    fn real_world_predicates() {
+        assert_eq!(m("0.9.x", "0.8.9+mc26.1.1"), Some(false));
+        assert_eq!(m("0.9.x", "0.9.2+mc26.1.2"), Some(true));
+        assert_eq!(m("0.9.x", "0.9.2-beta.1+mc26.1.2"), Some(true));
+        assert_eq!(m("~26.1.1", "26.1.2"), Some(true));
+        assert_eq!(m(">=26.1 <26.1.2", "26.1.2"), Some(false));
+        assert_eq!(m(">=1.21.2- <1.21.5-", "1.21.4"), Some(true));
+        assert_eq!(m(">=1.21.2- <1.21.5-", "1.21.5"), Some(false));
+        let any = |list: &[&str], v: &str| fabric_matches(&list.iter().map(|s| (*s).to_owned()).collect::<Vec<_>>(), v);
+        assert_eq!(any(&["26.1", "26.1.1"], "26.1.2"), Some(false));
+        assert_eq!(any(&["26.1", "26.1.1", "26.1.2"], "26.1.2"), Some(true));
+        assert_eq!(maven_matches("[0.9,0.10)", "0.8.9+mc26.1.1"), Some(false));
+        assert_eq!(maven_matches("[0.9,0.10)", "0.9.2+mc26.1.2"), Some(true));
+    }
+
     #[test]
     fn maven_ranges() {
         assert_eq!(maven_matches("[1.0,2.0)", "1.5"), Some(true));

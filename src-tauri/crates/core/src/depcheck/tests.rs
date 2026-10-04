@@ -158,3 +158,141 @@ async fn one_project_for_several_missing_ids() {
     assert_eq!(found.len(), 2);
     assert!(found.iter().all(|f| f.provider == Provider::Install { project_id: CLOTH.into(), title: format!("Titel {CLOTH}") }));
 }
+
+// --- Gegen das echte Modrinth (Fehlerbericht 0.18.0: Iris 1.11.4 + Sodium 0.8.9) ---------
+// `cargo test -p trs-core real_modrinth_versions -- --ignored --nocapture --test-threads=1`
+
+const SODIUM: &str = "AANobbMI";
+const IRIS: &str = "YL57xq9U";
+/// Sodium mc26.1.1-0.8.9 (Modrinth führt es für 26.1–26.1.2).
+const SODIUM_089: &str = "uGvVQBnw";
+/// Iris 1.11.4 (verlangt Sodium 0.9.x).
+const IRIS_1114: &str = "sZbVsl2Q";
+/// Iris 1.10.9 (für 26.1.1, nimmt Sodium 0.8.x).
+const IRIS_1109: &str = "MwcLS51S";
+
+fn real_http() -> reqwest::Client {
+    reqwest::Client::builder().user_agent("theredstonee/trs-launcher (depcheck test)").build().unwrap()
+}
+
+fn real_instance(kind: LoaderKind, game_version: &str) -> Instance {
+    Instance {
+        id: "t".into(),
+        name: "T".into(),
+        game_version: game_version.into(),
+        loader: crate::instance::Loader { kind, version: (kind == LoaderKind::Fabric).then(|| "0.19.5".into()) },
+        created_at: chrono::Utc::now(),
+        last_played: None,
+        total_play_seconds: 0,
+        icon: None,
+        group: None,
+        overrides: Default::default(),
+    }
+}
+
+/// Lädt genau diese Version (ohne Abhängigkeiten) – wie eine von Hand gewählte Version.
+async fn put(http: &reqwest::Client, paths: &Paths, instance: &Instance, version_id: &str) {
+    let v = modrinth::version_by_id(http, version_id).await.unwrap();
+    modrinth::install_version(http, paths, instance, ContentKind::Mod, &v, None, false).await.unwrap();
+}
+
+async fn version_of(paths: &Paths, instance: &Instance, project: &str) -> String {
+    content::source_of_project(paths, &instance.id, project).await.and_then(|s| s.version_number).unwrap_or_default()
+}
+
+async fn conflicts(paths: &Paths, instance: &Instance) -> Vec<String> {
+    let entries = modcompat::installed_entries(paths, &instance.id).await.unwrap();
+    modcompat::find_conflicts(&entries, &modcompat::loader_builtins(instance)).iter().map(modcompat::Conflict::describe).collect()
+}
+
+#[tokio::test]
+#[ignore = "braucht Internet (Modrinth)"]
+async fn real_modrinth_versions_iris_needs_newer_sodium() {
+    let dir = tempfile::tempdir().unwrap();
+    let paths = Paths::new(dir.path());
+    let http = real_http();
+    let inst = real_instance(LoaderKind::Fabric, "26.1.2");
+    put(&http, &paths, &inst, SODIUM_089).await;
+    put(&http, &paths, &inst, IRIS_1114).await;
+    let before = conflicts(&paths, &inst).await;
+    println!("vorher: {before:?}");
+    assert!(before.iter().any(|c| c.starts_with("Iris 1.11.4") && c.contains("Sodium 0.8.9")), "{before:?}");
+
+    let report = ensure_versions_before_launch(&http, &paths, &[], &inst, &|_| {}).await.unwrap();
+    println!("{report:#?}");
+    assert!(report.unresolved.is_empty());
+    assert!(report.changes.iter().any(|c| c.title == "Sodium" && c.to.starts_with("0.9.")), "{report:?}");
+    let sodium = version_of(&paths, &inst, SODIUM).await;
+    println!("Sodium jetzt: {sodium}");
+    assert!(sodium.contains("0.9."), "{sodium}");
+    assert!(version_of(&paths, &inst, IRIS).await.starts_with("1.11.4"));
+    assert!(conflicts(&paths, &inst).await.is_empty());
+    // Genau eine Sodium-Datei, Herkunft gemerkt; der nächste Start ändert nichts mehr.
+    let mods = content::list(&paths, &inst.id, ContentKind::Mod).await.unwrap();
+    assert_eq!(mods.iter().filter(|m| m.file_name.starts_with("sodium")).count(), 1, "{mods:#?}");
+    assert!(versions_for_launch(&http, &paths, &[], &inst, &|_| {}).await.unwrap().is_none());
+}
+
+#[tokio::test]
+#[ignore = "braucht Internet (Modrinth)"]
+async fn real_modrinth_versions_change_26_1_1_to_26_1_2() {
+    let dir = tempfile::tempdir().unwrap();
+    let paths = Paths::new(dir.path());
+    let http = real_http();
+    let old = real_instance(LoaderKind::Fabric, "26.1.1");
+    put(&http, &paths, &old, SODIUM_089).await;
+    put(&http, &paths, &old, IRIS_1109).await;
+    assert!(conflicts(&paths, &old).await.is_empty(), "26.1.1 passt");
+
+    // Versionswechsel: der Plan (wie im Dialog) und dann der Start-Abgleich.
+    let new = real_instance(LoaderKind::Fabric, "26.1.2");
+    let plan = modrinth::plan_migration(&http, &paths, &new).await.unwrap();
+    for p in &plan {
+        println!("{} {:?} {:?} → {:?} ({:?})", p.title, p.status, p.current_version, p.target_version_number, p.compat_with);
+    }
+    for p in plan.iter().filter(|p| p.status == modrinth::MigrationStatus::Update) {
+        modrinth::apply_update(&http, &paths, &new, p.kind, &p.file_name, p.target_version_id.as_deref().unwrap()).await.unwrap();
+    }
+    let report = ensure_versions_before_launch(&http, &paths, &[], &new, &|_| {}).await.unwrap();
+    println!("{report:#?}");
+    assert!(report.unresolved.is_empty());
+    let sodium = version_of(&paths, &new, SODIUM).await;
+    println!("Sodium {sodium}, Iris {}", version_of(&paths, &new, IRIS).await);
+    assert!(sodium.contains("0.9."), "{sodium}");
+    assert!(conflicts(&paths, &new).await.is_empty());
+
+    // Nur der Start-Abgleich (Spieler hat „Später“ gewählt, dann Iris 1.11.4 dazu).
+    let dir = tempfile::tempdir().unwrap();
+    let paths = Paths::new(dir.path());
+    put(&http, &paths, &old, SODIUM_089).await;
+    put(&http, &paths, &old, IRIS_1114).await;
+    let report = ensure_versions_before_launch(&http, &paths, &[], &new, &|_| {}).await.unwrap();
+    println!("{report:#?}");
+    assert!(version_of(&paths, &new, SODIUM).await.contains("0.9."));
+    assert!(conflicts(&paths, &new).await.is_empty());
+}
+
+#[tokio::test]
+#[ignore = "braucht Internet (Modrinth), lädt ~20 MB"]
+async fn real_modrinth_versions_boost_pack_follows_the_game_version() {
+    let dir = tempfile::tempdir().unwrap();
+    let paths = Paths::new(dir.path());
+    let http = real_http();
+    let builds = client_mod::load_builds(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../resources/client-mod"));
+    let vanilla = |v: &str| real_instance(LoaderKind::Vanilla, v);
+    let old = crate::boost::effective_instance(&http, &paths, &builds, &vanilla("26.1.1")).await;
+    assert_eq!(old.loader.kind, LoaderKind::Fabric);
+    crate::boost::ensure_performance(&http, &paths, &builds, &old, &|_| {}).await.unwrap();
+    let before = version_of(&paths, &old, SODIUM).await;
+    println!("26.1.1: Sodium {before}");
+
+    let new = crate::boost::effective_instance(&http, &paths, &builds, &vanilla("26.1.2")).await;
+    assert!(crate::boost::needs_performance(&paths, &new).await);
+    crate::boost::ensure_performance(&http, &paths, &builds, &new, &|_| {}).await.unwrap();
+    let after = version_of(&paths, &new, SODIUM).await;
+    println!("26.1.2: Sodium {after}");
+    if !before.is_empty() {
+        assert!(after.contains("0.9."), "Paket-Sodium für 26.1.2: {after}");
+    }
+    assert!(conflicts(&paths, &new).await.is_empty(), "{:?}", conflicts(&paths, &new).await);
+}

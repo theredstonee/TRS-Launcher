@@ -501,6 +501,7 @@ impl CurseForge {
                 status,
                 target_version_id: target.map(|ix| ix.file_id.to_string()),
                 target_version_number: target.map(index_label),
+                compat_with: None,
             });
         }
         Ok(plan)

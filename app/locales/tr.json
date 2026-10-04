@@ -442,6 +442,9 @@
       "stopAllGamesFirst": "Lütfen önce çalışan tüm oyunları kapat.",
       "syncAfterExitFailed": "Ayarlar diğer kurulumlarla eşitlenemedi.",
       "dependenciesAdded": "Eksik bağımlılıklar eklendi: {list} ({mods} için gerekli).",
+      "modVersionsAdjusted": "Mod sürümleri her şey uyumlu olacak şekilde ayarlandı: {list}.",
+      "modVersionsConflict": "Bu modlar yüklü sürümlerde birlikte çalışmıyor ve uygun bir sürüm yok: {list}. Mod listesinden birini devre dışı bırak veya güncelle.",
+      "modVersionsUnresolved": "Bu modlar yüklü sürümlerde birlikte çalışmayabilir: {list}.",
       "accountMissing": "Seçilen hesap artık yok.",
       "memorySafeStart": "Boş bellek az: oyun küçük başlar ve ihtiyaç duydukça daha fazla bellek alır.",
       "notEnoughMemory": "Java için yeterli boş bellek yok. Diğer programları kapat veya örneğe daha az RAM ver."
@@ -1648,6 +1651,7 @@
     "itemChange": "{from} → {to}",
     "noMatch": "Uyumlu sürüm yok",
     "fits": "Uyumlu",
+    "compatWith": "{name} ile uyumlu olsun diye",
     "saving": "Değiştiriliyor …",
     "disableMissing": "Uyumsuzları devre dışı bırak",
     "applyUpdates": "Modları uyumlu sürümlere güncelle",

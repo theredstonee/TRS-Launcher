@@ -1669,12 +1669,16 @@ pub struct MigrationItem {
     pub status: MigrationStatus,
     pub target_version_id: Option<String>,
     pub target_version_number: Option<String>,
+    /// Version bewusst so gewählt, damit es mit dieser Mod läuft („Iris 1.11.4+mc26.1.2“).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub compat_with: Option<String>,
 }
 
 /// Für alle über Modrinth installierten Inhalte: passt die Datei nach einem
 /// Versionswechsel noch, gibt es eine passende Version, oder gar keine?
 pub async fn plan_migration(http: &reqwest::Client, paths: &Paths, instance: &Instance) -> Result<Vec<MigrationItem>> {
     let mut plan = Vec::new();
+    let mut mod_targets: HashMap<String, Version> = HashMap::new();
     for kind in ContentKind::ALL {
         if kind == ContentKind::Mod && loader_tags(content_loader(instance)).is_empty() {
             continue;
@@ -1697,6 +1701,11 @@ pub async fn plan_migration(http: &reqwest::Client, paths: &Paths, instance: &In
         }
         // Beim Versionswechsel zählt jede passende Version, nicht nur der Kanal.
         let latest = latest_for_hashes(http, instance, kind, &by_hash.keys().collect::<Vec<_>>(), None).await?;
+        if kind == ContentKind::Mod {
+            mod_targets.extend(
+                by_hash.iter().filter_map(|(hash, item)| latest.get(hash).map(|v| (item.file_name.clone(), v.clone()))),
+            );
+        }
         for (hash, item) in by_hash {
             let Some(source) = item.source.clone() else { continue };
             let found = latest.get(&hash).filter(|v| is_safe_project_id(&v.id));
@@ -1718,11 +1727,42 @@ pub async fn plan_migration(http: &reqwest::Client, paths: &Paths, instance: &In
                 status,
                 target_version_id: target.map(|v| v.id.clone()),
                 target_version_number: target.map(|v| clip(v.version_number.clone(), 60)),
+                compat_with: None,
             });
         }
     }
+    vet_migration(http, paths, instance, &mut plan, mod_targets).await;
     plan.sort_by_key(|p| (p.status != MigrationStatus::Missing, p.title.to_lowercase()));
     Ok(plan)
+}
+
+/// Die neuen Mod-Versionen müssen auch untereinander passen (Iris 1.11.4 will
+/// Sodium 0.9.x): wie beim Update prüfen und, wo nötig, eine andere Version
+/// vorschlagen. Was sich so nicht lösen lässt, bleibt beim ersten Vorschlag.
+async fn vet_migration(
+    http: &reqwest::Client,
+    paths: &Paths,
+    instance: &Instance,
+    plan: &mut [MigrationItem],
+    targets: HashMap<String, Version>,
+) {
+    // Nur echte Wechsel prüfen; passende Dateien bleiben (außer der Abgleich tauscht sie).
+    let updates: HashMap<String, Version> = targets
+        .into_iter()
+        .filter(|(file, v)| {
+            plan.iter().any(|p| p.kind == ContentKind::Mod && p.file_name == *file && p.target_version_id.as_deref() == Some(v.id.as_str()))
+        })
+        .collect();
+    for (file, (version, because)) in vetted_mod_updates(http, paths, instance, updates).await {
+        let Some(item) = plan.iter_mut().find(|p| p.kind == ContentKind::Mod && p.file_name == file) else { continue };
+        if item.target_version_id.as_deref() == Some(version.id.as_str()) || !is_safe_project_id(&version.id) {
+            continue;
+        }
+        item.status = MigrationStatus::Update;
+        item.target_version_id = Some(version.id.clone());
+        item.target_version_number = Some(clip(version.version_number.clone(), 60));
+        item.compat_with = because.map(|b| clip(b, 120));
+    }
 }
 
 #[cfg(test)]

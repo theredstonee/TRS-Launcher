@@ -214,6 +214,18 @@ pub fn parse_mod_conflict(text: &str) -> Option<ModConflictInfo> {
         let Some((_, other)) = rest.split_once("of mod ") else { continue };
         let Some((other_name, other_id, after)) = mod_ref(other) else { continue };
         let other_version = after.rsplit_once(": ").map(|(_, v)| clip_part(v.trim_end_matches(['!', '.'])));
+        // Falsche Version einer Abhängigkeit: getauscht wird die Abhängigkeit
+        // (Sodium 0.8.9 → 0.9.x), nicht die Mod, die sie verlangt (Iris).
+        if wrong_version && let Some(present) = other_version {
+            return Some(ModConflictInfo {
+                mod_id: other_id.to_owned(),
+                mod_name: clip_part(other_name),
+                mod_version: present,
+                other_id: id.to_owned(),
+                other_name: clip_part(name),
+                other_version: Some(clip_part(version)),
+            });
+        }
         return Some(ModConflictInfo {
             mod_id: id.to_owned(),
             mod_name: clip_part(name),
@@ -1233,7 +1245,19 @@ More details:
             "Mod 'Sodium Extra' (sodium-extra) 0.6.0 requires version 0.9.0 or later of mod 'Sodium' (sodium), but only the wrong version is present: 0.8.14!",
         )
         .unwrap();
-        assert_eq!((c.mod_id.as_str(), c.other_id.as_str(), c.other_version.as_deref()), ("sodium-extra", "sodium", Some("0.8.14")));
+        // Getauscht wird die zu alte Abhängigkeit, nicht die Mod, die sie verlangt.
+        assert_eq!((c.mod_id.as_str(), c.mod_version.as_str()), ("sodium", "0.8.14"));
+        assert_eq!((c.other_id.as_str(), c.other_version.as_deref()), ("sodium-extra", Some("0.6.0")));
+        // Genau die Meldung aus dem Fehlerbericht (Fabric Loader 0.19.5, MC 26.1.2).
+        let d = diagnose(&[line(
+            "Incompatible mods found!\n\t - Replace mod 'Sodium' (sodium) 0.8.9+mc26.1.1 with any 0.9.x version.\n\
+             \t - Mod 'Iris' (iris) 1.11.4+mc26.1.2 requires any 0.9.x version of mod 'Sodium' (sodium), but only the wrong version is present: 0.8.9+mc26.1.1!",
+        )])
+        .unwrap();
+        assert_eq!(d.kind, DiagnosisKind::IncompatibleMod);
+        let c = d.conflict.unwrap();
+        assert_eq!((c.mod_id.as_str(), c.mod_name.as_str(), c.mod_version.as_str()), ("sodium", "Sodium", "0.8.9+mc26.1.1"));
+        assert_eq!((c.other_id.as_str(), c.other_version.as_deref()), ("iris", Some("1.11.4+mc26.1.2")));
         // Fehlende Mod bleibt „fehlende Abhängigkeit“, Mixin-Fehler bleibt „Konflikt“.
         assert_eq!(
             diagnose(&[line("Mod 'Sodium Extra' (sodium-extra) requires any version of sodium, which is missing!")]).unwrap().kind,

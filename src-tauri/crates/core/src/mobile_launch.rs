@@ -267,6 +267,9 @@ impl Launcher {
         {
             tracing::warn!("TRS Client konnte nicht eingerichtet werden: {e}");
         }
+        if let Some(note) = depcheck::versions_for_launch(&self.http, &self.paths, catalog.builds(), instance, &mods_progress).await? {
+            tracing::info!("{}", note.text);
+        }
         match depcheck::ensure_before_launch(&self.http, &self.paths, catalog.builds(), instance, &mods_progress).await {
             Ok(_) => {}
             Err(Error::Cancelled) => return Err(Error::Cancelled),
