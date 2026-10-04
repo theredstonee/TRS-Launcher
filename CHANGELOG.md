@@ -28,288 +28,48 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.18.0 – 2026-10-04 – Power Tools | Profi-Werkzeuge
+<!-- banner: accent=#ff3b30 motif=/news/0.18.0/banner.png -->
+<!-- shots:
+/news/0.18.0/mobile-app.png | TRS Launcher on Android – with Minecraft Java and touch controls | TRS Launcher auf Android – mit Minecraft Java und Touch-Steuerung
+/news/0.18.0/config-editor.png | Edit configs with switches and lists instead of text | Configs mit Schaltern und Listen statt Text bearbeiten
+/news/0.18.0/mod-groups.png | Mod groups and "Find the culprit mod" | Mod-Gruppen und „Schuldige Mod finden“
+/news/0.18.0/server-export.png | Export an instance as a ready-to-run server | Eine Instanz als fertigen Server exportieren
+/news/0.18.0/shared-folders.png | Share shaders, resource packs, worlds and more between instances | Shader, Resource Packs, Welten und mehr zwischen Instanzen teilen
+/news/0.18.0/big-picture.png | Big Picture mode for controllers, TVs and the Steam Deck | Big-Picture-Modus für Controller, Fernseher und Steam Deck
+-->
 
 ### English
-- **Search, filter and details for TRS capes.** The cape list on the Skins page has a search field, filters
-  (animated, unlocked, not yet unlocked, from friends, my uploads) and sorting. "Details" shows where a cape comes
-  from, whether it is animated, its size and how to get it.
-- **Start an instance twice.** While an instance is running, "Start again" (card menu and instance page) starts a
-  second game of it – for example with another account. You pick the account (another one than the running game by
-  default) and get a hint not to open the same singleplayer world in both. Each game has its own log and play time;
-  "Stop" asks which one to stop, or stops all. The second game runs without TRS Link features.
-- **Start Minecraft Bedrock.** On Windows, a "Minecraft Bedrock" card appears in the library when the Microsoft
-  Store version is installed and starts it. You can hide it under Settings → Behavior. Not shown on Linux.
-- **Mod groups.** Sort mods, resource packs and shaders in the Content tab into your own groups with a name and a
-  colour – via the menu, the selection bar or by dragging them onto a group. Groups can be collapsed and switched on
-  or off as a whole, the search also finds group names, and groups stay intact when a mod is updated.
-- **From the modpack or added by you.** Modpack instances now show which content came with the pack and what you
-  added yourself – as a small badge and as a filter.
-- **Find the culprit mod.** Something broken and no idea which mod is to blame? Start the search in the Content tab or
-  from the crash helper: the launcher switches off half of the suspected mods each round (mods stay together with the
-  libraries they need, the TRS Client is never touched), you start the game and say "problem still there" or "runs
-  fine" – a crash is detected automatically. After a few rounds the culprit is left; disable it, open its page or keep
-  searching. At the end or when you cancel, every mod is restored exactly as it was – even if the launcher closes in
-  between.
-- **Big Picture mode.** A fullscreen launcher view for the TV, the Steam Deck and controllers: large tiles for
-  "Continue playing", your library, servers, friends who are online and a few settings (switch account, memory per
-  instance). Play with an Xbox, PlayStation, Switch or Steam Deck controller – the button hints on screen match your
-  controller – or with mouse, touch and keyboard. Open it with the controller button in the title bar, the search
-  (Ctrl+K), in the settings under Behavior, or with F11. Optionally the launcher starts in Big Picture right away; on
-  the Steam Deck and in Steam's game mode it does so by itself (can be switched off). After playing, the launcher
-  comes back in Big Picture.
-- **Edit configs right in the launcher.** In an instance's Files tab, mod and game settings (TOML, JSON, JSON5,
-  YAML, .properties, options.txt and old Forge .cfg files) now open in a built-in editor. "Simple" shows them as a
-  form with switches, number fields with sliders, dropdowns, lists and the mod's own help texts, a search box and
-  "undo" per setting; "Advanced" shows the whole file with colours, line numbers and live error checking. Saving
-  only changes the values you edited – comments, order and formatting stay exactly as they were – and keeps the
-  previous version so you can restore it. "Open externally" is still in the right-click menu.
-- **Shared folders between instances.** Like in Prism, instances can now share their shader packs, resource
-  packs, screenshots, worlds and schematics (Litematica and WorldEdit): the files live once in the launcher and
-  every sharing instance sees the same ones. Switch it on per folder in the instance settings under "Shared
-  folders" – the instance's own files move over without loss (same name: both are kept). Switching it off asks
-  whether the instance keeps a copy or starts empty. Worlds show a warning first, because other versions or mods
-  can damage a shared world. New instances can share folders right away (Settings → Default settings), deleting an
-  instance never touches the shared files, the screenshot gallery shows shared shots only once, and storage counts
-  them once. While resource packs are shared, Sync no longer copies them for that instance.
-- **Move the data folder.** Settings → Storage → "Move data folder…" moves everything (instances, Java, game
-  versions, accounts, settings) to another folder or drive. Every file is checked after copying; only then does the
-  launcher switch over and restart. You decide whether the old folder is deleted or kept – your accounts stay signed
-  in.
-- **Instances anywhere.** In an instance's settings, "Location" moves it to a folder of your choice (e.g.
-  `D:\Minecraft\Modpack`) and back to the default with one click. If the drive is unplugged, the library shows the
-  instance as "not available" instead of breaking.
-- **Portable version.** A new ZIP download runs without installing: put it on a USB stick and all data stays in the
-  "data" folder next to it. It doesn't update itself – the launcher tells you when a new version is out.
-- **Export an instance as a Minecraft server.** In the "Share" tab (or the instance menu in the library) choose
-  "Export as server": the launcher picks the right server and mod loader (Vanilla, Fabric, Quilt, Forge, NeoForge)
-  and only the mods a server needs. Client-only mods like Sodium, Iris or minimaps are left out automatically – you
-  see why for every mod and can move each one yourself. Mods without any information are marked "?" and included to
-  be safe. Choose a world, configs, port, description, player limit, online mode and RAM. The Minecraft EULA is
-  never accepted for you: you tick it yourself, with a link to read it.
-- **As a ZIP or right here.** Save the server as a ZIP with start scripts for Windows and Linux and a short guide –
-  or tick "Set up here and start" and play on it straight away. Downloads are checked against their checksums where
-  the source provides one, and the whole export can be cancelled.
-- **"My servers" with a live console.** Servers set up in the launcher get their own page: live log, command line
-  (list, say, op …), start, stop, restart and the number of players online. When you close the launcher, running
-  servers are stopped cleanly so the world is saved.
-- **TRS Launcher for Android (preview).** The launcher now also runs as an app on Android phones and tablets: a
-  layout made for touch with a tab bar, sign-in with a device code, friends and chat, skins, modpacks and news, and
-  updates straight from the app. Minecraft Java starts right on the device with the built-in game engine – the first
-  start downloads the matching Java once. Running games show up like on the PC, with play time, logs and the crash
-  helper. Signing in keeps waiting while you enter the code in the browser (Android cuts the app's network
-  while it is in the background) instead of failing with a network error.
-- **Minecraft 26.x on Android.** The game engine now brings what Minecraft 26.2 and 26.3 load at start (shader tools
-  and, for 26.3, the new SDL3 game window), so these versions no longer crash right away with "Failed to locate
-  library". 26.3 prefers Vulkan graphics on the phone (you can still switch it in the game's video settings); phones
-  without the needed Vulkan features fall back to OpenGL. Still a preview: on some devices 26.x can hang on the
-  loading screen.
-- **Better crash reports on the phone.** If the game closes before writing a log, the launcher now shows why: Android's
-  reason, and for native crashes the signal and the crashing code – so "Unknown error" with an empty log is gone.
-- **Games that ended while the launcher was closed.** If Android closed the launcher in the background while you played
-  (or the game itself was closed for lack of memory), the end of the game, its log and the reason are now filled in
-  the next time you open the launcher. The game also takes only as much memory as the phone can spare, so it is less
-  likely to be closed by Android at all.
-- **Touch controls.** On the phone you play with on-screen controls: ready-made layouts for PvP, building and redstone,
-  your own layouts on the new "Touch controls" page (move, resize, change buttons, share them as a code or file) and a
-  layout per instance. In a game menu, "Edit controls" opens the editor right in the game. With the TRS Client, the
-  keyboard opens by itself when you tap a text field, and the TRS menu and emote wheel have their own buttons.
-- **Visible mouse pointer in menus on the phone.** In inventories, the title screen and settings you now see a
-  clear mouse pointer. Swipe with one finger to move it like a touchpad (fast swipes go further, slow ones are
-  precise), tap to click right where you tap, hold still for a moment and let go for a right click, or hold and then
-  drag to carry items around. Two fingers scroll.
-- **Minecraft Java on iPhone and iPad (sideload, preview).** The iOS app (installed via AltStore or SideStore)
-  can start Minecraft Java Edition itself, based on the Amethyst engine. It needs JIT: if JIT is off, the app
-  explains step by step how to turn it on (SideStore + StikDebug, AltServer, TrollStore) and starts the game as
-  soon as it is enabled. The Java runtime is downloaded and checked on first start, and the memory for the game
-  is chosen to fit your device.
-- **TRS Client: touch mode for phones and tablets.** When the game runs in the TRS mobile engine, the TRS menus get
-  bigger buttons and text, lists scroll by dragging with your finger (with momentum), a long press opens the context
-  menu or shows the tooltip, and the on-screen keyboard pops up when you tap a text field, the chat, a sign or an
-  anvil. In the HUD editor you drag elements with your finger, they stay clear of the notch, and the new
-  "Touch layout" moves your HUD away from the touch buttons. The emote wheel opens from a touch button – slide to an
-  emote and let go. Nothing changes on the desktop.
-- **PC remote control from your phone.** With the TRS Launcher on your phone you can start and quit games on your PC,
-  see what's running and how far an installation is, and install a shared modpack by code – as long as both use the
-  same TRS account. Off by default: switch it on under Settings → Remote control, choose what your phone may do, and
-  pair your phone by scanning the QR code (or typing the code). The PC shows a notice whenever your phone starts
-  something, and you can remove paired phones at any time.
-- **TRS Client on Android and iPhone.** Games started on your phone now get the TRS Client too (in touch mode).
-  The app only downloads the one small file your instance needs, checks that it is genuine, keeps it for later
-  starts and swaps it when a newer TRS Client is out. Turning the TRS Client off for an instance works like on the PC.
-- **Mod Menu on your phone.** Fabric instances (and Vanilla instances with the TRS optimisation) get Mod Menu
-  automatically when started on your phone, so you can see and configure your mods in the game. If you already have
-  it, nothing is added twice; if you remove it, it stays removed.
-- **Your own mods on the phone.** Mods you install into an instance in the app are loaded when you start it on your
-  phone.
-- **Push notifications in the mobile app.** Chat messages, friend requests, invitations and other news now reach
-  your phone even when the app is closed. On Android they come through a UnifiedPush app such as ntfy (no Google
-  services needed – the app explains how to get one, or checks every 15 minutes instead); on iPhone and iPad the app
-  checks for news in the background. Messages are encrypted for your device. Under Settings → Notifications you
-  choose what you want to hear about, whether chat notifications show the message text (off by default), and which
-  of your devices get notifications. Tapping a notification opens the right page. If ntfy hasn't connected yet,
-  the app tells you to open it once, and notifications you already saw don't pop up again inside the app.
-- **Fast Connect in the TRS Client.** "Connecting to the server …" no longer hangs on servers with a dead or broken
-  address: the TRS Client tries all addresses of a server at once (IPv4 and IPv6) and takes the first one that
-  answers – 0.3 s instead of up to 21 s in our test. Servers are looked up in advance when you select them in the list
-  or start them from the launcher, IP addresses skip the slow reverse lookup, and the connect screen shows what is
-  happening when it takes longer than a second. The server still receives exactly the address you entered. New module
-  "Fast Connect" (Performance), on by default.
-- **Faster server switches in networks.** On BungeeCord and Velocity networks a switch no longer reloads the same
-  resource pack again (in our test 3.2 s → 0.35 s on 1.21.11 and 13 s → 0.2 s on 1.8.9), Minecraft no longer slows
-  down to 60 fps while switching, and 1.18.2–1.19.2 skip their fixed 2-second "Loading terrain" wait.
-- **Server resource packs preloaded.** The TRS Client remembers the resource pack of servers where you accepted it and
-  downloads it quietly in the background when you select the server again or start it from the launcher – joining
-  then skips the download (20 MB pack in our test: 8.3 s → 3.2 s). Packs you declined are never preloaded.
-- **Servers looked up in advance.** The servers page and starting with a server let the launcher look up all
-  addresses and measure the fastest one; the server card shows it ("Pre-resolved · IPv4 · 23 ms") and the TRS Client
-  gets it for the join.
+- **TRS Launcher for Android (preview).** Play Minecraft Java on your phone: sign in, create or share instances, install modpacks and mods – then start the game with touch controls. Works best with Minecraft 1.21 and newer (including 26.x), older versions are still experimental; the TRS Client and Mod Menu come along automatically. Download the APK from the release; it updates itself.
+- **iPhone and iPad (preview, sideload).** The app is available through an AltStore/SideStore source. Playing needs JIT (SideStore + StikDebug, AltServer or TrollStore); the app explains how.
+- **Touch controls with an editor.** Layouts for PvP, building and redstone, buttons you can move and resize, a visible mouse pointer in menus (swipe to move, tap to click, hold for right-click and dragging items) and controller/mouse support. The TRS Client gets a touch mode with bigger menus and the on-screen keyboard.
+- **Push notifications and PC remote control.** The app tells you about messages, friend requests and invites (through ntfy or a 15-minute check), and you can pair it with your PC to start or stop games there and install modpacks.
+- **Edit configs right in the launcher.** In an instance's Files tab, .toml, .json, .properties, .cfg and .yml open in an editor: switches, numbers and lists in "Simple", the whole file with syntax colours in "Advanced". Comments and formatting stay as they are.
+- **Mod groups and "Find the culprit mod".** Sort content into coloured groups and switch whole groups on or off; see what came with a modpack and what you added. If something is broken, the launcher finds the responsible mod by switching half of them off each round – and restores everything afterwards.
+- **Shared folders.** Shaders, resource packs, screenshots, worlds and schematics can be shared between instances – merged without losing files.
+- **Move your data – or run portable.** Move the launcher's data folder or a single instance to another drive, or use the new portable ZIP that keeps everything next to the program.
+- **Export as a server.** Turn an instance into a server: only server mods, configs, an optional world, start scripts and RAM settings – as a ZIP or set up and started right here with a live console under "My servers".
+- **Fast Connect in the TRS Client.** No more waiting at "Connecting to the server": IPv4 and IPv6 are tried side by side, addresses are looked up in advance (also by the launcher), server switches in networks are much faster and server resource packs are preloaded.
+- **Big Picture mode.** A full-screen view with large tiles for controllers, TVs and the Steam Deck (F11).
+- **Start an instance twice** – for example with a second account.
+- **Cape search and details.** Search, filter and sort TRS capes and see where a cape comes from.
+- **Minecraft Bedrock.** If Bedrock is installed from the Microsoft Store, it gets its own card in the library.
 
 ### Deutsch
-- **Suche, Filter und Details für TRS-Umhänge.** Die Umhang-Liste auf der Skins-Seite hat ein Suchfeld, Filter
-  (animiert, freigeschaltet, noch nicht freigeschaltet, von Freunden, meine Uploads) und eine Sortierung. „Details“
-  zeigt, woher ein Umhang kommt, ob er animiert ist, seine Größe und wie man ihn bekommt.
-- **Instanz zweimal starten.** Läuft eine Instanz, startet „Nochmal starten“ (Kachel-Menü und Instanz-Seite) ein
-  zweites Spiel davon – zum Beispiel mit einem anderen Konto. Du wählst das Konto (standardmäßig ein anderes als beim
-  laufenden Spiel) und bekommst den Hinweis, dieselbe Einzelspieler-Welt nicht in beiden zu öffnen. Jedes Spiel hat
-  sein eigenes Log und seine eigene Spielzeit; „Beenden“ fragt, welches beendet werden soll, oder beendet alle. Das
-  zweite Spiel läuft ohne TRS-Link-Funktionen.
-- **Minecraft Bedrock starten.** Unter Windows erscheint in der Bibliothek eine Karte „Minecraft Bedrock“, wenn die
-  Version aus dem Microsoft Store installiert ist, und startet sie. Ausblenden geht unter Einstellungen → Verhalten.
-  Unter Linux wird sie nicht angezeigt.
-- **Mod-Gruppen.** Sortiere Mods, Ressourcenpakete und Shader im Inhalte-Tab in eigene Gruppen mit Namen und Farbe –
-  über das Menü, die Auswahlleiste oder per Ziehen auf eine Gruppe. Gruppen lassen sich einklappen und als Ganzes ein-
-  oder ausschalten, die Suche findet auch Gruppennamen, und Gruppen bleiben erhalten, wenn eine Mod aktualisiert wird.
-- **Vom Modpack oder selbst hinzugefügt.** Modpack-Instanzen zeigen jetzt, welche Inhalte mit dem Pack kamen und was
-  du selbst hinzugefügt hast – als kleines Abzeichen und als Filter.
-- **Schuldige Mod finden.** Etwas ist kaputt und du weißt nicht, welche Mod schuld ist? Starte die Suche im
-  Inhalte-Tab oder im Absturz-Helfer: Der Launcher schaltet jede Runde die Hälfte der verdächtigen Mods aus (Mods
-  bleiben mit den Bibliotheken zusammen, die sie brauchen, der TRS Client wird nie angefasst), du startest das Spiel
-  und sagst „Fehler noch da“ oder „läuft ohne Fehler“ – ein Absturz wird automatisch erkannt. Nach ein paar Runden
-  bleibt die Schuldige übrig: deaktivieren, ihre Seite öffnen oder weitersuchen. Am Ende oder beim Abbrechen wird
-  jede Mod genau wie vorher wiederhergestellt – auch wenn der Launcher zwischendurch zugeht.
-- **Big-Picture-Modus.** Eine Vollbild-Ansicht des Launchers für Fernseher, Steam Deck und Controller: große Kacheln
-  für „Weiterspielen“, deine Bibliothek, Server, Freunde, die gerade online sind, und ein paar Einstellungen (Konto
-  wechseln, Arbeitsspeicher je Instanz). Bedienen lässt er sich mit Xbox-, PlayStation-, Switch- oder Steam-Deck-
-  Controller – die Knopf-Hinweise passen sich deinem Controller an – oder mit Maus, Touch und Tastatur. Öffnen über
-  den Controller-Knopf in der Titelleiste, die Suche (Strg+K), die Einstellungen unter Verhalten oder mit F11. Auf
-  Wunsch startet der Launcher gleich im Big-Picture-Modus; auf dem Steam Deck und im Spielmodus von Steam tut er das
-  von selbst (abschaltbar). Nach dem Spielen kommt der Launcher im Big-Picture-Modus zurück.
-- **Configs direkt im Launcher bearbeiten.** Im Tab „Dateien“ einer Instanz öffnen sich Mod- und
-  Spieleinstellungen (TOML, JSON, JSON5, YAML, .properties, options.txt und alte Forge-.cfg-Dateien) jetzt in einem
-  eingebauten Editor. „Einfach“ zeigt sie als Formular mit Schaltern, Zahlenfeldern mit Reglern, Auswahllisten,
-  Listen und den Hilfetexten der Mod, dazu eine Suche und „Zurücksetzen“ je Einstellung; „Erweitert“ zeigt die
-  ganze Datei mit Farben, Zeilennummern und Fehlerprüfung beim Tippen. Beim Speichern ändern sich nur die
-  bearbeiteten Werte – Kommentare, Reihenfolge und Formatierung bleiben genau erhalten – und die vorherige Fassung
-  wird aufbewahrt, damit du sie wiederherstellen kannst. „Extern öffnen“ gibt es weiter im Rechtsklick-Menü.
-- **Gemeinsame Ordner zwischen Instanzen.** Wie bei Prism können Instanzen jetzt Shader, Ressourcenpakete,
-  Screenshots, Welten und Schematics (Litematica und WorldEdit) teilen: Die Dateien liegen einmal im Launcher, und
-  jede teilende Instanz sieht dieselben. Einschalten je Ordner in den Instanz-Einstellungen unter „Gemeinsame
-  Ordner“ – die eigenen Dateien der Instanz wandern verlustfrei hinüber (gleicher Name: beide bleiben). Beim
-  Ausschalten fragt der Launcher, ob die Instanz eine Kopie behält oder leer startet. Bei Welten kommt vorher eine
-  Warnung, denn andere Versionen oder Mods können eine geteilte Welt beschädigen. Neue Instanzen können Ordner
-  gleich teilen (Einstellungen → Standard-Einstellungen), Löschen einer Instanz rührt die gemeinsamen Dateien nie an,
-  die Screenshot-Galerie zeigt geteilte Bilder nur einmal und der Speicher zählt sie einmal. Solange
-  Ressourcenpakete geteilt sind, kopiert die Synchronisierung sie für diese Instanz nicht mehr.
-- **Datenordner verschieben.** Einstellungen → Speicher → „Datenordner verschieben…“ zieht alles (Instanzen, Java,
-  Spielversionen, Konten, Einstellungen) in einen anderen Ordner oder auf ein anderes Laufwerk. Nach dem Kopieren wird
-  jede Datei geprüft, erst dann stellt der Launcher um und startet neu. Ob der alte Ordner gelöscht oder behalten
-  wird, entscheidest du – deine Konten bleiben angemeldet.
-- **Instanzen, wo du willst.** In den Einstellungen einer Instanz verschiebt „Speicherort“ sie in einen Ordner deiner
-  Wahl (z. B. `D:\Minecraft\Modpack`) und mit einem Klick wieder zurück. Ist das Laufwerk abgesteckt, zeigt die
-  Bibliothek die Instanz als „nicht verfügbar“, statt kaputtzugehen.
-- **Portable Version.** Ein neuer ZIP-Download läuft ohne Installation: auf einen USB-Stick legen, alle Daten bleiben
-  im Ordner „data“ daneben. Sie aktualisiert sich nicht selbst – der Launcher sagt Bescheid, wenn es eine neue Version
-  gibt.
-- **Instanz als Minecraft-Server exportieren.** Im Tab „Teilen“ (oder im Instanz-Menü der Bibliothek) „Als Server
-  exportieren“ wählen: Der Launcher nimmt den passenden Server und Modloader (Vanilla, Fabric, Quilt, Forge,
-  NeoForge) und nur die Mods, die ein Server braucht. Reine Client-Mods wie Sodium, Iris oder Minimaps bleiben
-  automatisch weg – bei jeder Mod siehst du, warum, und kannst sie selbst verschieben. Mods ohne Angaben sind mit
-  „?“ markiert und kommen sicherheitshalber mit. Dazu Welt, Configs, Port, Beschreibung, Spielerzahl, Online-Modus
-  und Arbeitsspeicher wählen. Die Minecraft-EULA wird nie für dich akzeptiert: Du hakst sie selbst an, mit Link zum
-  Nachlesen.
-- **Als ZIP oder direkt hier.** Den Server als ZIP speichern – mit Startskripten für Windows und Linux und einer
-  kurzen Anleitung – oder „Hier anlegen und starten“ anhaken und sofort darauf spielen. Downloads werden gegen ihre
-  Prüfsummen geprüft, wo die Quelle eine nennt, und der ganze Export lässt sich abbrechen.
-- **„Meine Server“ mit Live-Konsole.** Im Launcher angelegte Server bekommen eine eigene Seite: Live-Log,
-  Befehlszeile (list, say, op …), Starten, Stoppen, Neustarten und die Zahl der Spieler online. Beim Schließen des
-  Launchers werden laufende Server sauber gestoppt, damit die Welt gespeichert wird.
-- **TRS Launcher für Android (Vorschau).** Den Launcher gibt es jetzt auch als App für Android-Handys und -Tablets:
-  eine Oberfläche für Touch mit Tab-Leiste, Anmeldung per Gerätecode, Freunde und Chat, Skins, Modpacks und News sowie
-  Updates direkt aus der App. Minecraft Java startet mit der eingebauten Spiel-Engine direkt auf dem Gerät – beim
-  ersten Start lädt die App einmal das passende Java. Laufende Spiele erscheinen wie am PC, mit Spielzeit, Logs und
-  Absturz-Helfer. Die Anmeldung wartet weiter, während du den Code im Browser eingibst (Android trennt die App im
-  Hintergrund vom Netz), statt mit einem Netzwerkfehler abzubrechen.
-- **Minecraft 26.x auf Android.** Die Spiel-Engine bringt jetzt mit, was Minecraft 26.2 und 26.3 beim Start laden
-  (Shader-Werkzeuge und für 26.3 das neue SDL3-Spielfenster) – diese Versionen stürzen nicht mehr sofort mit „Failed
-  to locate library“ ab. 26.3 nutzt am Handy bevorzugt Vulkan-Grafik (umstellbar in den Grafik-Einstellungen des
-  Spiels); Handys ohne die nötigen Vulkan-Funktionen fallen auf OpenGL zurück. Noch Vorschau: auf manchen Geräten
-  kann 26.x im Ladebildschirm hängen bleiben.
-- **Bessere Absturzberichte am Handy.** Schließt sich das Spiel, bevor es ein Log schreibt, zeigt der Launcher jetzt
-  den Grund: Androids Begründung und bei nativen Abstürzen das Signal und die abgestürzte Stelle – kein „Unbekannter
-  Fehler“ mit leerem Log mehr.
-- **Spiele, die bei geschlossenem Launcher endeten.** Hat Android den Launcher im Hintergrund beendet, während du
-  gespielt hast (oder das Spiel selbst wegen Speichermangel geschlossen), werden das Spielende, sein Log und der Grund
-  jetzt beim nächsten Öffnen des Launchers nachgetragen. Das Spiel nimmt außerdem nur so viel Speicher, wie das Handy
-  übrig hat, und wird dadurch seltener von Android beendet.
-- **Touch-Steuerung.** Am Handy spielst du mit Knöpfen auf dem Bildschirm: fertige Layouts für PvP, Bauen und
-  Redstone, eigene Layouts auf der neuen Seite „Touch-Steuerung“ (verschieben, Größe ändern, Knöpfe tauschen, als Code
-  oder Datei teilen) und ein Layout je Instanz. In einem Spielmenü öffnet „Steuerung bearbeiten“ den Editor direkt im
-  Spiel. Mit dem TRS Client erscheint die Tastatur von selbst, sobald du ein Textfeld antippst, und TRS-Menü und
-  Emote-Rad haben eigene Knöpfe.
-- **Sichtbarer Mauszeiger in Menüs am Handy.** In Inventaren, im Titelbildschirm und in den Einstellungen siehst du
-  jetzt einen deutlichen Mauszeiger. Mit einem Finger wischen bewegt ihn wie ein Touchpad (schnell wischen geht weiter,
-  langsam ist genau), Antippen klickt genau dort, kurz ruhig halten und loslassen ist ein Rechtsklick, halten und dann
-  ziehen trägt Gegenstände mit. Zwei Finger scrollen.
-- **Minecraft Java auf iPhone und iPad (Sideload, Vorschau).** Die iOS-App (installiert über AltStore oder
-  SideStore) kann Minecraft Java Edition selbst starten, auf Basis der Amethyst-Engine. Dafür braucht es JIT: Ist
-  JIT aus, erklärt die App Schritt für Schritt, wie du es einschaltest (SideStore + StikDebug, AltServer,
-  TrollStore), und startet das Spiel, sobald es an ist. Die Java-Laufzeit wird beim ersten Start geladen und
-  geprüft, und der Arbeitsspeicher für das Spiel wird passend zu deinem Gerät gewählt.
-- **TRS Client: Touch-Modus für Handys und Tablets.** Läuft das Spiel in der mobilen Engine von TRS, bekommen die
-  TRS-Menüs größere Knöpfe und Schrift, Listen scrollen per Fingerziehen (mit Schwung), langes Drücken öffnet das
-  Kontextmenü oder zeigt den Tooltip, und beim Antippen eines Textfelds, des Chats, eines Schilds oder Ambosses
-  erscheint die Bildschirmtastatur. Im HUD-Editor ziehst du Elemente mit dem Finger, sie halten Abstand zur Notch, und
-  das neue „Touch-Layout“ rückt dein HUD von den Touch-Knöpfen weg. Das Emote-Rad öffnet sich über einen Touch-Knopf –
-  zum Emote wischen und loslassen. Am Desktop ändert sich nichts.
-- **PC-Fernbedienung vom Handy.** Mit dem TRS Launcher auf dem Handy startest und beendest du Spiele auf deinem PC,
-  siehst, was gerade läuft und wie weit eine Installation ist, und installierst ein geteiltes Modpack per Code –
-  solange beide dasselbe TRS-Konto nutzen. Ab Werk aus: unter Einstellungen → Fernbedienung einschalten, festlegen,
-  was das Handy darf, und das Handy per QR-Code (oder Code eintippen) koppeln. Der PC zeigt jedes Mal einen Hinweis,
-  wenn das Handy etwas startet, und gekoppelte Handys lassen sich jederzeit entfernen.
-- **TRS Client auf Android und iPhone.** Spiele, die du am Handy startest, bekommen jetzt auch den TRS Client (im
-  Touch-Modus). Die App lädt nur die eine kleine Datei, die deine Instanz braucht, prüft, dass sie echt ist, behält sie
-  für spätere Starts und tauscht sie, sobald es einen neueren TRS Client gibt. Den TRS Client für eine Instanz
-  abschalten funktioniert wie am PC.
-- **Mod Menu am Handy.** Fabric-Instanzen (und Vanilla-Instanzen mit TRS-Optimierung) bekommen beim Start am Handy
-  automatisch Mod Menu – so siehst du deine Mods im Spiel und kannst sie einstellen. Hast du es schon, kommt nichts
-  doppelt dazu;
-  entfernst du es, bleibt es weg.
-- **Eigene Mods am Handy.** Mods, die du in der App in eine Instanz installierst, werden beim Start am Handy geladen.
-- **Push-Benachrichtigungen in der Handy-App.** Chat-Nachrichten, Freundschaftsanfragen, Einladungen und andere
-  Neuigkeiten erreichen dein Handy jetzt auch bei geschlossener App. Unter Android kommen sie über eine
-  UnifiedPush-App wie ntfy (ohne Google-Dienste – die App erklärt, wie du eine bekommst, oder sieht stattdessen alle
-  15 Minuten nach); auf iPhone und iPad sieht die App im Hintergrund nach. Die Nachrichten sind für dein Gerät
-  verschlüsselt. Unter Einstellungen → Benachrichtigungen wählst du, worüber du Bescheid bekommen willst, ob
-  Chat-Hinweise den Nachrichtentext zeigen (ab Werk aus) und welche deiner Geräte Benachrichtigungen bekommen. Ein
-  Tipp auf eine Benachrichtigung öffnet die passende Seite. Ist ntfy noch nicht verbunden, sagt dir die App, dass du
-  es einmal öffnen sollst, und schon gesehene Benachrichtigungen erscheinen in der App nicht noch einmal.
-- **Schnell verbinden im TRS Client.** „Verbinde mit dem Server …“ hängt nicht mehr bei Servern mit einer toten oder
-  kaputten Adresse: Der TRS Client probiert alle Adressen eines Servers gleichzeitig (IPv4 und IPv6) und nimmt die
-  erste, die antwortet – im Test 0,3 s statt bis zu 21 s. Server werden schon aufgelöst, wenn du sie in der Liste
-  auswählst oder aus dem Launcher startest, IP-Adressen sparen die langsame Rückwärts-Auflösung, und der
-  Verbinden-Bildschirm zeigt, was gerade passiert, wenn es länger als eine Sekunde dauert. Der Server bekommt weiter
-  genau die Adresse, die du eingegeben hast. Neues Modul „Schnell verbinden“ (Leistung), standardmäßig an.
-- **Schnellerer Serverwechsel in Netzwerken.** In BungeeCord- und Velocity-Netzwerken lädt ein Wechsel dasselbe
-  Ressourcenpaket nicht mehr neu (im Test 3,2 s → 0,35 s unter 1.21.11 und 13 s → 0,2 s unter 1.8.9), Minecraft bremst
-  beim Wechsel nicht mehr auf 60 FPS, und 1.18.2–1.19.2 sparen sich die feste 2-Sekunden-Wartezeit bei „Lade Gelände“.
-- **Server-Ressourcenpakete vorgeladen.** Der TRS Client merkt sich das Ressourcenpaket von Servern, auf denen du es
-  angenommen hast, und lädt es leise im Hintergrund, wenn du den Server wieder auswählst oder aus dem Launcher
-  startest – beim Beitreten entfällt dann der Download (20-MB-Paket im Test: 8,3 s → 3,2 s). Abgelehnte Pakete werden
-  nie vorgeladen.
-- **Server vorab aufgelöst.** Die Server-Seite und der Start mit einem Server lassen den Launcher alle Adressen
-  auflösen und die schnellste messen; die Server-Karte zeigt sie („Vorab aufgelöst · IPv4 · 23 ms“), und der TRS
-  Client bekommt sie für den Beitritt.
+- **TRS Launcher für Android (Vorschau).** Minecraft Java auf dem Handy: anmelden, Instanzen anlegen oder teilen, Modpacks und Mods installieren – und mit Touch-Steuerung spielen. Am besten läuft Minecraft 1.21 und neuer (auch 26.x), ältere Versionen sind noch experimentell; TRS Client und Mod Menu kommen automatisch mit. Die APK gibt es im Release, danach aktualisiert sie sich selbst.
+- **iPhone und iPad (Vorschau, Sideload).** Die App gibt es über eine AltStore/SideStore-Quelle. Zum Spielen braucht es JIT (SideStore + StikDebug, AltServer oder TrollStore); die App erklärt, wie.
+- **Touch-Steuerung mit Editor.** Layouts für PvP, Bauen und Redstone, Knöpfe frei verschieben und skalieren, ein sichtbarer Mauszeiger in Menüs (wischen zum Bewegen, tippen zum Klicken, halten für Rechtsklick und Items ziehen) sowie Controller und Maus. Der TRS Client bekommt einen Touch-Modus mit größeren Menüs und Bildschirmtastatur.
+- **Push-Benachrichtigungen und PC-Fernbedienung.** Die App meldet Nachrichten, Freundschaftsanfragen und Einladungen (über ntfy oder alle 15 Minuten), und gekoppelt mit deinem PC startest oder beendest du dort Spiele und installierst Modpacks.
+- **Configs direkt im Launcher bearbeiten.** Im Dateien-Tab einer Instanz öffnen sich .toml, .json, .properties, .cfg und .yml in einem Editor: Schalter, Zahlen und Listen unter „Einfach“, die ganze Datei mit Farben unter „Erweitert“. Kommentare und Formatierung bleiben erhalten.
+- **Mod-Gruppen und „Schuldige Mod finden“.** Inhalte in farbige Gruppen sortieren und ganze Gruppen ein- oder ausschalten; sehen, was vom Modpack kam und was du selbst hinzugefügt hast. Ist etwas kaputt, findet der Launcher die schuldige Mod, indem er jede Runde die Hälfte abschaltet – und stellt danach alles wieder her.
+- **Gemeinsame Ordner.** Shader, Resource Packs, Screenshots, Welten und Schematics lassen sich zwischen Instanzen teilen – zusammengeführt, ohne Dateien zu verlieren.
+- **Daten umziehen – oder portabel.** Den Datenordner des Launchers oder einzelne Instanzen auf ein anderes Laufwerk verschieben, oder die neue portable ZIP nutzen, die alles neben dem Programm speichert.
+- **Als Server exportieren.** Aus einer Instanz wird ein Server: nur Server-Mods, Configs, auf Wunsch eine Welt, Start-Skripte und RAM-Einstellung – als ZIP oder direkt hier eingerichtet und gestartet, mit Live-Konsole unter „Meine Server“.
+- **Schnell verbinden im TRS Client.** Kein Warten mehr bei „Verbinde mit Server“: IPv4 und IPv6 werden parallel probiert, Adressen vorab aufgelöst (auch vom Launcher), Serverwechsel in Netzwerken sind viel schneller und Server-Ressourcenpakete werden vorgeladen.
+- **Big-Picture-Modus.** Eine Vollbild-Ansicht mit großen Kacheln für Controller, Fernseher und das Steam Deck (F11).
+- **Eine Instanz zweimal starten** – zum Beispiel mit einem zweiten Konto.
+- **Umhang-Suche und Details.** TRS-Umhänge suchen, filtern, sortieren und sehen, woher ein Umhang kommt.
+- **Minecraft Bedrock.** Ist Bedrock aus dem Microsoft Store installiert, bekommt es eine eigene Karte in der Bibliothek.
 
 ## 0.17.1 – 2026-10-03 – Light Luggage Fix | Leichtes Gepäck – Fix
 <!-- banner: accent=#ffb02e motif=/news/0.17.0/banner.png -->
