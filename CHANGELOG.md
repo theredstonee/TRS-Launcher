@@ -39,12 +39,14 @@ How to write an entry:
 - **Android app and iPhone version in the release.** The mobile builds of 0.18.0 didn't make it into the release; the APK for Android and the AltStore/SideStore source for iPhone and iPad are now published.
 - **"Redeem code" right on the Skins page.** A big button at the top next to "Save skin" opens the code dialog for capes and cosmetics.
 - **Java is picked automatically again.** After changing an instance to a Minecraft version that needs a different Java (for example 26.1 with Java 25), a Java downloaded by the launcher is switched to the right one by itself – no more "Java 21 – Java 25 is expected here".
+- **No more duplicate resource packs with synced settings.** When resource packs are synced between instances, a pack that's already there (even under another file name) isn't copied again, and an updated pack replaces its older version instead of piling up next to it – the old one goes to the sync backup. Packs for different Minecraft versions (for example 1.8.9 and 1.21) stay side by side. Enabled packs stay enabled and point to the new file. Sharing the resource pack folder also keeps identical packs only once.
 
 ### Deutsch
 - **Behoben: „Der Modloader-Installer konnte nicht heruntergeladen werden“ bei NeoForge/Forge.** Bei manchen Instanzen war eine Loader-Version gespeichert, die gar nicht zu NeoForge oder Forge gehört (zum Beispiel eine Fabric-Version). Der Launcher erkennt das jetzt und installiert die neueste passende NeoForge-/Forge-Version, statt abzubrechen.
 - **Android-App und iPhone-Version im Release.** Die Handy-Builds von 0.18.0 haben es nicht ins Release geschafft; die APK für Android und die AltStore/SideStore-Quelle für iPhone und iPad sind jetzt veröffentlicht.
 - **„Code einlösen“ direkt auf der Skins-Seite.** Ein großer Knopf oben neben „Skin speichern“ öffnet den Code-Dialog für Umhänge und Kosmetik.
 - **Java wird wieder automatisch gewählt.** Nach dem Wechsel einer Instanz auf eine Minecraft-Version, die eine andere Java braucht (zum Beispiel 26.1 mit Java 25), wird eine vom Launcher geladene Java von selbst auf die passende umgestellt – kein „Java 21 – Java 25 erwartet“ mehr.
+- **Keine doppelten Resource Packs mehr beim Synchronisieren.** Werden Resource Packs zwischen Instanzen synchronisiert, wird ein Pack, das schon da ist (auch unter anderem Dateinamen), nicht noch einmal kopiert, und ein aktualisiertes Pack ersetzt seine ältere Version, statt sich daneben zu stapeln – die alte landet in der Sync-Sicherung. Packs für verschiedene Minecraft-Versionen (zum Beispiel 1.8.9 und 1.21) bleiben nebeneinander. Eingeschaltete Packs bleiben eingeschaltet und zeigen auf die neue Datei. Auch beim Teilen des Resource-Pack-Ordners werden gleiche Packs nur einmal behalten.
 
 ## 0.18.0 – 2026-10-04 – Power Tools | Profi-Werkzeuge
 <!-- banner: accent=#ff3b30 motif=/news/0.18.0/banner.png -->

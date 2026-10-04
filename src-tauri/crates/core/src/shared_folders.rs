@@ -21,6 +21,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::instance::Instance;
+use crate::sync::packs::{Pool, Renames};
 use crate::paths::Paths;
 use crate::task::TaskControl;
 use crate::{Error, Launcher, Result, platform};
@@ -212,21 +213,28 @@ pub fn link_blocking(game_dir: &Path, pool: &Path, kind: SharedFolder, work: &Wo
             let overall = (i as u64 * 100 + u64::from(p)) / locations.len() as u64;
             (work.progress)(overall as u8);
         };
-        link_one(&link, pool, rel, &Work { progress: &step, control: work.control })?;
+        let packs = kind == SharedFolder::Resourcepacks;
+        let renames = link_one(&link, pool, rel, packs, &Work { progress: &step, control: work.control })?;
+        if !renames.is_empty() {
+            // Doppelte Pakete sind weg – options.txt zeigt auf die Datei im gemeinsamen Ordner.
+            let options = game_dir.join("options.txt");
+            crate::sync::packs::rewrite_options(&options, pool, &renames).map_err(io(&options))?;
+        }
     }
     (work.progress)(100);
     Ok(())
 }
 
-fn link_one(link: &Path, pool: &Path, rel: &str, work: &Work<'_>) -> Result<()> {
+fn link_one(link: &Path, pool: &Path, rel: &str, packs: bool, work: &Work<'_>) -> Result<Renames> {
+    let mut renames = Renames::new();
     match link_state(link, pool) {
-        LinkState::Linked => return Ok(()),
+        LinkState::Linked => return Ok(renames),
         LinkState::Foreign => return Err(foreign_link(rel)),
         LinkState::NotADir => return Err(not_a_folder(rel)),
         // Ziel gibt es nicht mehr: am Link hängt nichts – nur ihn ersetzen.
         LinkState::Broken => platform::remove_dir_link(link).map_err(io(link))?,
         LinkState::RealDir => {
-            merge_into(link, pool, work)?;
+            renames = merge_into(link, pool, packs, work)?;
             // Nur ein leerer Ordner wird entfernt – nie etwas mit Inhalt.
             std::fs::remove_dir(link).map_err(io(link))?;
         }
@@ -235,32 +243,48 @@ fn link_one(link: &Path, pool: &Path, rel: &str, work: &Work<'_>) -> Result<()> 
     if let Some(parent) = link.parent() {
         std::fs::create_dir_all(parent).map_err(io(parent))?;
     }
-    platform::create_dir_link(pool, link).map_err(io(link))
+    platform::create_dir_link(pool, link).map_err(io(link))?;
+    Ok(renames)
 }
 
 /// Verschiebt alles aus `from` nach `pool`. Gleiche Namen: gleicher Inhalt →
 /// einmal behalten, sonst beide (freier Name). Nichts wird überschrieben.
-fn merge_into(from: &Path, pool: &Path, work: &Work<'_>) -> Result<()> {
+/// Ressourcenpakete (`packs`): liegt genau dieser Inhalt im Pool schon unter
+/// anderem Namen, wird er nicht doppelt abgelegt. Liefert, welcher Name jetzt
+/// für welchen gilt (für `options.txt`).
+fn merge_into(from: &Path, pool: &Path, packs: bool, work: &Work<'_>) -> Result<Renames> {
     let entries: Vec<std::fs::DirEntry> = std::fs::read_dir(from).map_err(io(from))?.filter_map(|e| e.ok()).collect();
     let total = entries.len() as u64;
+    let existing = packs.then(|| Pool::scan(pool));
+    let mut renames = Renames::new();
     for (done, entry) in entries.into_iter().enumerate() {
         let src = entry.path();
         let name = entry.file_name();
         let dst = pool.join(&name);
-        if std::fs::symlink_metadata(&dst).is_err() {
-            move_entry(&src, &dst)?;
-        } else if same_tree(&src, &dst) {
+        let taken = std::fs::symlink_metadata(&dst).is_ok();
+        if taken && same_tree(&src, &dst) {
             remove_entry(&src)?;
+        } else if let Some(name) = name.to_str()
+            && let Some(same) = existing.as_ref().and_then(|pool| pool.identical(&src))
+        {
+            remove_entry(&src)?;
+            renames.insert(name.to_owned(), same);
+        } else if !taken {
+            move_entry(&src, &dst)?;
         } else {
             let free = match name.to_str() {
                 Some(name) => crate::instance_files::free_name(pool, name),
                 None => format!("shared-{}", uuid::Uuid::new_v4().simple()),
             };
-            move_entry(&src, &pool.join(free))?;
+            move_entry(&src, &pool.join(&free))?;
+            if packs && let Some(name) = name.to_str() {
+                // Die eigene Fassung bleibt eingeschaltet, nicht die gleichnamige aus dem Pool.
+                renames.insert(name.to_owned(), free);
+            }
         }
         work.percent(done as u64 + 1, total);
     }
-    Ok(())
+    Ok(renames)
 }
 
 /// Umbenennen; klappt das nicht (anderes Laufwerk), kopieren und dann die Quelle entfernen.
@@ -674,6 +698,29 @@ mod tests {
         // Nochmal einschalten ändert nichts.
         link_blocking(&b, &pool, SharedFolder::Shaderpacks, &quiet()).unwrap();
         assert_eq!(fs::read_dir(&pool).unwrap().count(), 5);
+    }
+
+    #[test]
+    fn resource_packs_are_pooled_once_and_options_follow() {
+        let root = tempfile::tempdir().unwrap();
+        let pool = root.path().join("pool");
+        let a = root.path().join("a");
+        let b = root.path().join("b");
+        write(&a.join("resourcepacks/Faithful.zip"), "faithful");
+        write(&a.join("resourcepacks/Eigenes.zip"), "a");
+        link_blocking(&a, &pool, SharedFolder::Resourcepacks, &quiet()).unwrap();
+
+        write(&b.join("resourcepacks/faithful-kopie.zip"), "faithful");
+        write(&b.join("resourcepacks/Eigenes.zip"), "b");
+        write(&b.join("options.txt"), "resourcePacks:[\"vanilla\",\"file/faithful-kopie.zip\",\"file/Eigenes.zip\"]\n");
+        link_blocking(&b, &pool, SharedFolder::Resourcepacks, &quiet()).unwrap();
+        // Gleicher Inhalt unter anderem Namen nur einmal; B behält sein eigenes Paket.
+        assert!(!pool.join("faithful-kopie.zip").exists());
+        assert_eq!(read(&pool.join("Eigenes (2).zip")), "b");
+        assert_eq!(
+            read(&b.join("options.txt")),
+            "resourcePacks:[\"vanilla\",\"file/Faithful.zip\",\"file/Eigenes (2).zip\"]\n"
+        );
     }
 
     #[test]
