@@ -108,3 +108,34 @@ Five areas cover everything from the first start to the source code. Press :kbd{
     ::::
   :::
 ::
+
+::u-page-section
+#title
+On your phone
+
+#description
+Minecraft: Java Edition with touch controls, friends, chat and your wardrobe – on Android and on iPhone and iPad.
+
+#default
+  :::u-page-grid
+    ::::u-page-card
+    ---
+    title: "Android"
+    description: "Download the APK, allow the install once, sign in and play. Notifications via ntfy."
+    icon: i-lucide-smartphone
+    to: /en/getting-started/android
+    spotlight: true
+    ---
+    ::::
+
+    ::::u-page-card
+    ---
+    title: "iPhone & iPad"
+    description: "Sideload with AltStore or SideStore, enable JIT to play and refresh every 7 days."
+    icon: i-lucide-tablet-smartphone
+    to: /en/getting-started/iphone-ipad
+    spotlight: true
+    ---
+    ::::
+  :::
+::

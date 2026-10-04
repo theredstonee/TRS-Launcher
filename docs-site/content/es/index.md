@@ -108,3 +108,34 @@ Cinco áreas lo cubren todo, desde el primer inicio hasta el código fuente. Pul
     ::::
   :::
 ::
+
+::u-page-section
+#title
+En tu móvil
+
+#description
+Minecraft: Java Edition con controles táctiles, amigos, chat y tu guardarropa, en Android y en iPhone y iPad.
+
+#default
+  :::u-page-grid
+    ::::u-page-card
+    ---
+    title: "Android"
+    description: "Descarga el APK, permite la instalación una vez, inicia sesión y juega. Notificaciones con ntfy."
+    icon: i-lucide-smartphone
+    to: /es/getting-started/android
+    spotlight: true
+    ---
+    ::::
+
+    ::::u-page-card
+    ---
+    title: "iPhone y iPad"
+    description: "Instálalo con AltStore o SideStore, activa JIT para jugar y renuévalo cada 7 días."
+    icon: i-lucide-tablet-smartphone
+    to: /es/getting-started/iphone-ipad
+    spotlight: true
+    ---
+    ::::
+  :::
+::
