@@ -98,11 +98,11 @@ export const useLiveStore = defineStore('live', () => {
       return
     }
     await Promise.allSettled([chat.onEvent(e), trs.onLiveEvent(e), useHostingStore().onEvent(e)])
-    notifyFor(e)
+    await notifyFor(e)
   }
 
   /** Benachrichtigungen zu Ereignissen (Nachrichten, Einladungen, Anfragen …). */
-  function notifyFor(e: LiveEvent) {
+  function notifyFor(e: LiveEvent): Promise<unknown> | void {
     const chat = useChatStore()
     const toasts = useSocialToasts()
     const router = useRouter()
@@ -207,8 +207,7 @@ export const useLiveStore = defineStore('live', () => {
         usePacksStore().onLiveEvent(e)
         return
       case 'achievement_unlocked':
-        void useAchievementsStore().onLiveEvent(e)
-        return
+        return useAchievementsStore().onLiveEvent(e)
       case 'remote_command':
       case 'remote_command_update':
       case 'remote_status':
@@ -265,7 +264,10 @@ export const useLiveStore = defineStore('live', () => {
     unlisten.push(
       await listen('trs-live', (event) => {
         const parsed = liveEventSchema.safeParse(event.payload)
-        if (parsed.success) void dispatch(parsed.data)
+        if (!parsed.success) return
+        // Handy: nachgeholt und schon als Push-Benachrichtigung gezeigt → Zustand übernehmen, kein Hinweis.
+        const quiet = (event.payload as { quiet?: unknown } | null)?.quiet === true
+        void (quiet ? useSocialToasts().quietly(() => dispatch(parsed.data)) : dispatch(parsed.data))
       }),
     )
     try {

@@ -485,6 +485,8 @@ async function allowFirewall() {
 
     <!-- Benachrichtigungen ------------------------------------------------------ -->
     <div v-else-if="active === 'notifications'">
+      <!-- Handy: Push-Benachrichtigungen auch bei geschlossener App (§33). -->
+      <MobilePushSettings v-if="platformCaps.pushSupported" class="mb-6" />
       <SocialNotificationSettings v-if="form.social" v-model="form.social" />
     </div>
 

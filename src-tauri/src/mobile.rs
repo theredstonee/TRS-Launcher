@@ -103,6 +103,26 @@ pub fn mobile_exit_app(app: AppHandle) {
     let _ = app;
 }
 
+/// Android: Abholen der Push-Hinweise im Hintergrund (WorkManager, etwa alle 15 min) planen oder abbestellen.
+#[cfg(target_os = "android")]
+pub async fn schedule_push_poll(app: &AppHandle, enabled: bool, root: &str) -> Result<(), String> {
+    use tauri::Manager;
+
+    #[derive(Serialize)]
+    struct Args {
+        enabled: bool,
+        root: String,
+    }
+    let Some(plugin) = app.try_state::<android::Installer>() else { return Err("Plugin fehlt".into()) };
+    let handle = plugin.0.clone();
+    let args = Args { enabled, root: root.to_owned() };
+    tauri::async_runtime::spawn_blocking(move || handle.run_mobile_plugin::<serde_json::Value>("pushPoll", args))
+        .await
+        .map_err(|e| e.to_string())?
+        .map(|_| ())
+        .map_err(|e| e.to_string())
+}
+
 #[cfg(not(target_os = "android"))]
 async fn install(_app: &AppHandle, _path: std::path::PathBuf) -> CommandResult<InstallOutcome> {
     Err(trs_core::Error::UnsupportedOnMobile.into())

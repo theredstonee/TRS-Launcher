@@ -306,7 +306,12 @@
       "rank_too_low": "Dafür ist dein Rang im Team zu niedrig.",
       "application_closed": "Diese Bewerbung ist schon abgeschlossen.",
       "application_not_found": "Diese Bewerbung gibt es nicht (mehr).",
-      "event_inactive": "Dieses Event läuft für dich gerade nicht."
+      "event_inactive": "Dieses Event läuft für dich gerade nicht.",
+      "push_unavailable": "Der TRS-Server kann gerade keine Push-Benachrichtigungen senden.",
+      "too_many_devices": "Für dein Konto sind schon 10 Geräte für Benachrichtigungen angemeldet – entferne zuerst eins.",
+      "endpoint_not_allowed": "Die Adresse deines Push-Dienstes wird nicht angenommen – wähle in der Verteiler-App einen öffentlichen Server.",
+      "invalid_keys": "Die Schlüssel für Benachrichtigungen sind ungültig – bitte erneut einschalten.",
+      "device_not_found": "Dieses Gerät ist nicht (mehr) angemeldet."
     },
     "auth": {
       "accountMismatch": "Die Anmeldung gehört zu einem anderen Account – bitte erneut anmelden.",
@@ -919,6 +924,9 @@
       "commandDisabled": "Das ist im Launcher am PC ausgeschaltet.",
       "commandExpired": "Der Befehl ist abgelaufen.",
       "commandHandled": "Der Befehl wurde schon bearbeitet."
+    },
+    "push": {
+      "noDistributorApp": "Die Push-App lässt sich nicht öffnen."
     }
   },
   "browse": {
@@ -2425,6 +2433,61 @@
       "title": "Gemeinsame Ordner",
       "description": "Neue Instanzen teilen diese Ordner von Anfang an mit allen anderen teilenden Instanzen. Bestehende Instanzen behalten ihre Einstellung (in den Instanz-Einstellungen änderbar).",
       "toggleLabel": "Neue Instanzen teilen {folder}"
+    },
+    "push": {
+      "title": "Push-Benachrichtigungen",
+      "intro": "Chat-Nachrichten, Freundschaftsanfragen und Einladungen erreichen dieses Handy auch bei geschlossener App. Sie sind für dieses Gerät verschlüsselt; gesendet wird nur, was du hier erlaubst.",
+      "enabled": "Benachrichtigungen auf diesem Handy",
+      "enabledHint": "Solange die App offen ist, siehst du alles direkt in der App.",
+      "allow": "Benachrichtigungen erlauben",
+      "permissionHint": "Erscheint keine Frage, erlaube Benachrichtigungen für den TRS Launcher in den Systemeinstellungen.",
+      "ntfyFdroid": "ntfy bei F-Droid holen",
+      "ntfyPlay": "ntfy bei Google Play holen",
+      "afterInstall": "Öffne diese Seite nach der Installation noch einmal – die App verbindet sich dann selbst mit ntfy.",
+      "retry": "Erneut prüfen",
+      "pollInstead": "Stattdessen alle 15 Minuten abholen",
+      "pollInsteadHint": "Klappt ohne zusätzliche App, Hinweise kommen aber bis zu 15 Minuten später.",
+      "useDistributor": "{name} verwenden",
+      "state": {
+        "off": "Benachrichtigungen sind auf diesem Handy aus.",
+        "signedOut": "Melde dich mit deinem Minecraft-Konto an und schalte die TRS-Dienste ein, um Benachrichtigungen zu bekommen.",
+        "permission": "Der TRS Launcher darf noch keine Benachrichtigungen zeigen.",
+        "noDistributor": "Ohne Google-Dienste stellt Android Push-Benachrichtigungen über eine UnifiedPush-App wie ntfy zu. Installiere eine – das dauert eine Minute und hilft auch anderen Apps.",
+        "chooseDistributor": "Du hast mehrere Push-Apps. Wähle die, die TRS-Benachrichtigungen zustellen soll:",
+        "waiting": "Warte auf die Push-App …",
+        "waitingFor": "Warte auf {name} …",
+        "registered": "Aktiv – Zustellung über {name}.",
+        "registeredPlain": "Aktiv.",
+        "pollingAndroid": "Aktiv – die App sieht etwa alle 15 Minuten nach neuen Hinweisen.",
+        "pollingIos": "Aktiv – iOS lässt die App ab und zu im Hintergrund nach neuen Hinweisen sehen (im Stromsparmodus seltener).",
+        "error": "Benachrichtigungen konnten nicht eingerichtet werden.",
+        "errorWith": "Benachrichtigungen konnten nicht eingerichtet werden: {error}",
+        "distributorInactive": "{name} ist noch nicht verbunden. Öffne {name} einmal, damit es sich mit seinem Server verbindet – danach kommen Benachrichtigungen auch bei geschlossenen Apps."
+      },
+      "categoriesTitle": "Benachrichtigen bei",
+      "categories": {
+        "chat": "Chat-Nachrichten",
+        "friends": "Freundschaftsanfragen",
+        "friend_online": "Freunde kommen online",
+        "invites": "Welt-Einladungen und Umhang-Angebote",
+        "hosting": "Welten, die du hostest oder betrittst",
+        "packs": "Modpacks, die man dir schickt",
+        "team": "Team, Moderation und Meldungen",
+        "achievements": "Erfolge"
+      },
+      "previewTitle": "Nachrichtentext zeigen",
+      "previewHint": "Chat-Hinweise zeigen den Anfang der Nachricht und den Gruppennamen. Aus: nur Absender und „Neue Nachricht“.",
+      "whilePlayingTitle": "Auch beim Spielen am PC",
+      "whilePlayingHint": "Aus: keine Hinweise am Handy, während du am PC mit dem TRS Client spielst – dort zeigt sie das Spiel.",
+      "devicesTitle": "Geräte mit Benachrichtigungen",
+      "thisDevice": "Dieses Handy",
+      "kindUnifiedpush": "Push über {host}",
+      "kindPoll": "Holt Hinweise ab",
+      "lastSeen": "aktiv {date}",
+      "failing": "Die letzte Zustellung ist fehlgeschlagen.",
+      "remove": "Entfernen",
+      "noDevices": "Noch bekommt kein Gerät Benachrichtigungen.",
+      "openDistributor": "{name} öffnen"
     }
   },
   "settingsShell": {

@@ -38,7 +38,7 @@ describe('Betriebssystem', () => {
         gameLaunch: true,
         java: false,
         windowControls: false,
-        pushSupported: false,
+        pushSupported: true,
         gameEngine: true,
         consoleSession: false,
       })

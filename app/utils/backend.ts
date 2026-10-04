@@ -55,6 +55,7 @@ import {
   type RemoteCommandType,
   type StatusInput,
 } from './remote'
+import { pushDeviceSchema, pushStatusSchema, type PushSettings } from './push'
 import {
   chatAttachmentSchema,
   chatConversationSchema,
@@ -968,6 +969,24 @@ export const backend = {
     unpair: (kind: 'desktop' | 'phone', peerId: string) => call<void>('remote_unpair', { kind, peerId }),
     /** Code aus einem `trs-launcher://remote-pair/…`-Link beim Start (einmalig abholen). */
     takePendingPair: () => call<string | null>('take_pending_remote_pair'),
+  },
+
+  /**
+   * Push-Benachrichtigungen am Handy (API §33): Verteiler, Adresse und Schlüssel bleiben im Kern/Plugin.
+   * Jeder Aufruf gleicht das Gerät mit dem Server ab und liefert den neuen Stand.
+   */
+  push: {
+    status: () => checked(pushStatusSchema, 'push_status'),
+    /** Schalter speichern; Einschalten fragt nach dem Recht für Benachrichtigungen. */
+    setSettings: (settings: PushSettings) => checked(pushStatusSchema, 'push_set_settings', { settings }),
+    /** Android: Verteiler (Paketname) wählen oder `null` = ohne Verteiler abholen. */
+    chooseDistributor: (distributor: string | null) => checked(pushStatusSchema, 'push_choose_distributor', { distributor }),
+    devices: () => checked(z.array(pushDeviceSchema).max(50), 'push_devices'),
+    /** Android: Verteiler-App (ntfy …) öffnen – sie verbindet sich erst nach dem ersten Öffnen. */
+    openDistributor: () => call<void>('push_open_distributor'),
+    removeDevice: (id: string) => checked(pushStatusSchema, 'push_remove_device', { id }),
+    /** Route einer angetippten Benachrichtigung beim Start (einmalig abholen). */
+    takePendingTarget: () => call<string | null>('take_pending_push_target'),
   },
 
   /** Sozial: Chat, Bilder, Meldungen, Moderation – alles über den Kern, ohne Token im Webview. */

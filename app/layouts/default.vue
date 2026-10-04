@@ -121,6 +121,31 @@ onMounted(async () => {
 })
 onBeforeUnmount(() => unlistenRemotePair?.())
 
+// Tipp auf eine Push-Benachrichtigung (`trs-launcher://notify/<Route>`, §33.5): passende Seite bzw. Dialog öffnen.
+let unlistenPushTarget: (() => void) | null = null
+onMounted(async () => {
+  if (!isTauri() || !isMobile) return
+  const open = (target: unknown) => {
+    if (typeof target !== 'string') return
+    const action = pushTargetAction(target)
+    if (action.kind === 'route') void router.push({ path: action.path, query: action.query })
+    else if (action.kind === 'sanction') sanctions.open(action.id)
+    else if (action.kind === 'application') applications.show(action.id)
+    else void backend.openExternalUrl(action.url).catch(() => {})
+  }
+  unlistenPushTarget = await listen<string>('open-push-target', (e) => open(e.payload))
+  open(await backend.push.takePendingTarget().catch(() => null))
+})
+onBeforeUnmount(() => unlistenPushTarget?.())
+
+// Handy: nach Anmeldung, Kontowechsel oder Zustimmung das Push-Gerät beim Server abgleichen.
+watch(
+  () => [trs.enabled, accounts.active?.id] as const,
+  ([on, id]) => {
+    if (isMobile && isTauri() && on && id) void backend.push.status().catch(() => {})
+  },
+)
+
 // Geteilte Modpacks: Updates und „An dich geschickt“ laden, sobald die TRS-Dienste an sind.
 watch(
   () => trs.enabled,

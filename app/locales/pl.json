@@ -306,7 +306,12 @@
       "rank_too_low": "Twoja ranga w zespole jest do tego za niska.",
       "application_closed": "To zgłoszenie jest już zamknięte.",
       "application_not_found": "To zgłoszenie nie istnieje (już).",
-      "event_inactive": "To wydarzenie nie jest teraz dla ciebie włączone."
+      "event_inactive": "To wydarzenie nie jest teraz dla ciebie włączone.",
+      "push_unavailable": "Serwer TRS nie może teraz wysyłać powiadomień push.",
+      "too_many_devices": "Twoje konto ma już 10 urządzeń z powiadomieniami – najpierw usuń jedno.",
+      "endpoint_not_allowed": "Adres twojej aplikacji push nie jest akceptowany – wybierz w niej publiczny serwer.",
+      "invalid_keys": "Klucze powiadomień są nieprawidłowe – włącz powiadomienia ponownie.",
+      "device_not_found": "To urządzenie nie jest (już) zarejestrowane."
     },
     "auth": {
       "accountMismatch": "To logowanie należy do innego konta – zaloguj się ponownie.",
@@ -919,6 +924,9 @@
       "commandDisabled": "To jest wyłączone w launcherze na komputerze.",
       "commandExpired": "Polecenie wygasło.",
       "commandHandled": "Polecenie zostało już obsłużone."
+    },
+    "push": {
+      "noDistributorApp": "Nie można otworzyć aplikacji push."
     }
   },
   "browse": {
@@ -2425,6 +2433,61 @@
       "title": "Wspólne foldery",
       "description": "Nowe instancje od początku współdzielą te foldery ze wszystkimi innymi współdzielącymi instancjami. Istniejące instancje zachowują swoje ustawienie (zmienisz je w ustawieniach instancji).",
       "toggleLabel": "Nowe instancje współdzielą {folder}"
+    },
+    "push": {
+      "title": "Powiadomienia push",
+      "intro": "Wiadomości z czatu, zaproszenia do znajomych i zaproszenia do gry docierają na ten telefon nawet przy zamkniętej aplikacji. Są szyfrowane dla tego urządzenia; wysyłane jest tylko to, na co tu pozwolisz.",
+      "enabled": "Powiadomienia na tym telefonie",
+      "enabledHint": "Gdy aplikacja jest otwarta, widzisz wszystko bezpośrednio w niej.",
+      "allow": "Zezwól na powiadomienia",
+      "permissionHint": "Jeśli nie pojawi się pytanie, zezwól na powiadomienia TRS Launchera w ustawieniach systemu.",
+      "ntfyFdroid": "Pobierz ntfy z F-Droid",
+      "ntfyPlay": "Pobierz ntfy z Google Play",
+      "afterInstall": "Po instalacji otwórz tę stronę ponownie – aplikacja sama połączy się z ntfy.",
+      "retry": "Sprawdź ponownie",
+      "pollInstead": "Zamiast tego sprawdzaj co 15 minut",
+      "pollInsteadHint": "Działa bez dodatkowej aplikacji, ale powiadomienia mogą przychodzić do 15 minut później.",
+      "useDistributor": "Użyj {name}",
+      "state": {
+        "off": "Powiadomienia są wyłączone na tym telefonie.",
+        "signedOut": "Zaloguj się kontem Minecraft i włącz usługi TRS, aby dostawać powiadomienia.",
+        "permission": "TRS Launcher nie może jeszcze wyświetlać powiadomień.",
+        "noDistributor": "Bez usług Google Android dostarcza powiadomienia push przez aplikację UnifiedPush, np. ntfy. Zainstaluj ją – zajmie to minutę i pomoże też innym aplikacjom.",
+        "chooseDistributor": "Masz kilka aplikacji push. Wybierz tę, która ma dostarczać powiadomienia TRS:",
+        "waiting": "Czekam na aplikację push …",
+        "waitingFor": "Czekam na {name} …",
+        "registered": "Aktywne – dostarczane przez {name}.",
+        "registeredPlain": "Aktywne.",
+        "pollingAndroid": "Aktywne – aplikacja sprawdza nowe powiadomienia mniej więcej co 15 minut.",
+        "pollingIos": "Aktywne – iOS co jakiś czas pozwala aplikacji sprawdzić nowe powiadomienia w tle (rzadziej w trybie niskiego zużycia energii).",
+        "error": "Nie udało się skonfigurować powiadomień.",
+        "errorWith": "Nie udało się skonfigurować powiadomień: {error}",
+        "distributorInactive": "{name} nie jest jeszcze połączony. Otwórz {name} raz, aby połączył się ze swoim serwerem – potem powiadomienia dotrą nawet przy zamkniętych aplikacjach."
+      },
+      "categoriesTitle": "Powiadamiaj o",
+      "categories": {
+        "chat": "Wiadomości z czatu",
+        "friends": "Zaproszenia do znajomych",
+        "friend_online": "Znajomi wchodzący online",
+        "invites": "Zaproszenia do świata i oferty peleryn",
+        "hosting": "Światy, które hostujesz lub do których dołączasz",
+        "packs": "Modpacki wysłane do ciebie",
+        "team": "Zespół, moderacja i zgłoszenia",
+        "achievements": "Osiągnięcia"
+      },
+      "previewTitle": "Pokazuj treść wiadomości",
+      "previewHint": "Powiadomienia z czatu pokazują początek wiadomości i nazwę grupy. Wyłączone: tylko nadawca i „Nowa wiadomość”.",
+      "whilePlayingTitle": "Także podczas gry na PC",
+      "whilePlayingHint": "Wyłączone: brak powiadomień na telefonie, gdy grasz z TRS Clientem na PC – tam pokazuje je gra.",
+      "devicesTitle": "Urządzenia z powiadomieniami",
+      "thisDevice": "Ten telefon",
+      "kindUnifiedpush": "Push przez {host}",
+      "kindPoll": "Sprawdza powiadomienia",
+      "lastSeen": "aktywne {date}",
+      "failing": "Ostatnie dostarczenie nie powiodło się.",
+      "remove": "Usuń",
+      "noDevices": "Żadne urządzenie nie dostaje jeszcze powiadomień.",
+      "openDistributor": "Otwórz {name}"
     }
   },
   "settingsShell": {

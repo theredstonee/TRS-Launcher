@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Namen der Benachrichtigungskanäle (System-Einstellungen → Benachrichtigungen). -->
+<resources>
+    <string name="trs_push_channel_chat">Chat messages</string>
+    <string name="trs_push_channel_friends">Friend requests</string>
+    <string name="trs_push_channel_friend_online">Friends online</string>
+    <string name="trs_push_channel_invites">Invitations</string>
+    <string name="trs_push_channel_hosting">Worlds</string>
+    <string name="trs_push_channel_packs">Modpacks</string>
+    <string name="trs_push_channel_team">Team and moderation</string>
+    <string name="trs_push_channel_achievements">Achievements</string>
+    <string name="trs_push_channel_other">Other</string>
+</resources>

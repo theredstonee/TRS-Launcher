@@ -63,7 +63,7 @@ export function defaultCapabilities(os: OsName = hostOs): PlatformCapabilities {
     gameLaunch: true,
     java: !mobile,
     windowControls: !mobile,
-    pushSupported: false,
+    pushSupported: mobile,
     gameEngine: mobile,
   }
 }

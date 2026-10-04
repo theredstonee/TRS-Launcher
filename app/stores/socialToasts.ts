@@ -107,6 +107,19 @@ export const useSocialToasts = defineStore('socialToasts', () => {
     }
   }
 
+  /** > 0, solange schon per Push gezeigte Ereignisse nachgeholt werden – dann keine Hinweise. */
+  let quiet = 0
+
+  /** `run` ohne Hinweise ausführen (nachgeholte Ereignisse, die schon als System-Benachrichtigung kamen). */
+  async function quietly<T>(run: () => Promise<T>): Promise<T> {
+    quiet++
+    try {
+      return await run()
+    } finally {
+      quiet--
+    }
+  }
+
   /**
    * Benachrichtigung anbieten. `looking` = der Nutzer sieht die Unterhaltung
    * gerade, `muted` = Unterhaltung stummgeschaltet, `preview` = Vorschau aus den
@@ -117,6 +130,7 @@ export const useSocialToasts = defineStore('socialToasts', () => {
     toast: Omit<SocialToast, 'id' | 'count' | 'kind'>,
     context: { looking?: boolean; muted?: boolean; preview?: boolean } = {},
   ): Promise<boolean> {
+    if (quiet > 0 && !context.preview) return false
     const doc = typeof document === 'undefined' ? null : document
     const clientInGameNow = clientInGame.value && !context.preview
     const delivery = decide(kind, prefs.value, {
@@ -154,5 +168,5 @@ export const useSocialToasts = defineStore('socialToasts', () => {
     return true
   }
 
-  return { items, prefs, gameClients, clientInGame, setPrefs, setGameClients, watchGameClients, notify, notice, dismiss, clear, hold }
+  return { items, prefs, gameClients, clientInGame, setPrefs, setGameClients, watchGameClients, notify, quietly, notice, dismiss, clear, hold }
 })

@@ -4,5 +4,13 @@
 <dict>
 	<key>NSCameraUsageDescription</key>
 	<string>The camera scans the QR code of your PC to pair the TRS Launcher remote control.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>dev.theredstonee.trslauncher.push-poll</string>
+	</array>
 </dict>
 </plist>

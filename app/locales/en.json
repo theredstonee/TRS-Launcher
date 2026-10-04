@@ -306,7 +306,12 @@
       "rank_too_low": "Your rank in the team is too low for this.",
       "application_closed": "This application is already closed.",
       "application_not_found": "This application doesn’t exist (any more).",
-      "event_inactive": "This event isn't on for you right now."
+      "event_inactive": "This event isn't on for you right now.",
+      "push_unavailable": "The TRS server can't send push notifications right now.",
+      "too_many_devices": "10 devices already get notifications for your account – remove one first.",
+      "endpoint_not_allowed": "The address of your push app isn't accepted – choose a public server in the push app.",
+      "invalid_keys": "The keys for notifications are invalid – please turn notifications on again.",
+      "device_not_found": "This device isn't registered (anymore)."
     },
     "auth": {
       "accountMismatch": "This sign-in belongs to a different account – please sign in again.",
@@ -919,6 +924,9 @@
       "commandDisabled": "This is switched off in the launcher on the PC.",
       "commandExpired": "The command expired.",
       "commandHandled": "The command was already handled."
+    },
+    "push": {
+      "noDistributorApp": "The push app can't be opened."
     }
   },
   "browse": {
@@ -2425,6 +2433,61 @@
       "title": "Shared folders",
       "description": "New instances share these folders with all other sharing instances from the start. Existing instances keep their setting (change it in the instance settings).",
       "toggleLabel": "New instances share {folder}"
+    },
+    "push": {
+      "title": "Push notifications",
+      "intro": "Chat messages, friend requests and invitations reach this phone even when the app is closed. They are encrypted for this device; only what you allow here is sent.",
+      "enabled": "Notifications on this phone",
+      "enabledHint": "While the app is open, you see everything right in the app.",
+      "allow": "Allow notifications",
+      "permissionHint": "If no question appears, allow notifications for TRS Launcher in the system settings.",
+      "ntfyFdroid": "Get ntfy on F-Droid",
+      "ntfyPlay": "Get ntfy on Google Play",
+      "afterInstall": "After installing, open this page again – the app then connects to ntfy by itself.",
+      "retry": "Check again",
+      "pollInstead": "Check every 15 minutes instead",
+      "pollInsteadHint": "Works without an extra app, but notifications can arrive up to 15 minutes late.",
+      "useDistributor": "Use {name}",
+      "state": {
+        "off": "Notifications are off on this phone.",
+        "signedOut": "Sign in with your Minecraft account and turn on the TRS services to get notifications.",
+        "permission": "TRS Launcher isn't allowed to show notifications yet.",
+        "noDistributor": "Without Google services, Android delivers push notifications through a UnifiedPush app such as ntfy. Install one – it takes a minute and helps other apps too.",
+        "chooseDistributor": "You have several push apps. Choose the one that should deliver TRS notifications:",
+        "waiting": "Waiting for the push app …",
+        "waitingFor": "Waiting for {name} …",
+        "registered": "Active – delivered through {name}.",
+        "registeredPlain": "Active.",
+        "pollingAndroid": "Active – the app checks for new notifications about every 15 minutes.",
+        "pollingIos": "Active – iOS lets the app check for new notifications in the background now and then (less often in Low Power Mode).",
+        "error": "Notifications couldn't be set up.",
+        "errorWith": "Notifications couldn't be set up: {error}",
+        "distributorInactive": "{name} isn't connected yet. Open {name} once so it connects to its server – after that, notifications arrive even when both apps are closed."
+      },
+      "categoriesTitle": "Notify me about",
+      "categories": {
+        "chat": "Chat messages",
+        "friends": "Friend requests",
+        "friend_online": "Friends coming online",
+        "invites": "World invitations and cape offers",
+        "hosting": "Worlds you host or join",
+        "packs": "Modpacks sent to you",
+        "team": "Team, moderation and reports",
+        "achievements": "Achievements"
+      },
+      "previewTitle": "Show message text",
+      "previewHint": "Chat notifications show the start of the message and the group name. Off: only the sender and “New message”.",
+      "whilePlayingTitle": "Also while playing on the PC",
+      "whilePlayingHint": "Off: no notifications on the phone while you play with the TRS Client on your PC – the game shows them there.",
+      "devicesTitle": "Devices with notifications",
+      "thisDevice": "This phone",
+      "kindUnifiedpush": "Push via {host}",
+      "kindPoll": "Checks for notifications",
+      "lastSeen": "active {date}",
+      "failing": "The last delivery failed.",
+      "remove": "Remove",
+      "noDevices": "No device gets notifications yet.",
+      "openDistributor": "Open {name}"
     }
   },
   "settingsShell": {

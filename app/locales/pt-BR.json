@@ -306,7 +306,12 @@
       "rank_too_low": "Seu nível na equipe é baixo demais para isso.",
       "application_closed": "Esta candidatura já foi encerrada.",
       "application_not_found": "Esta candidatura não existe (mais).",
-      "event_inactive": "Este evento não está ativo para você agora."
+      "event_inactive": "Este evento não está ativo para você agora.",
+      "push_unavailable": "O servidor TRS não consegue enviar notificações push agora.",
+      "too_many_devices": "Já há 10 aparelhos com notificações na sua conta – remova um primeiro.",
+      "endpoint_not_allowed": "O endereço do seu app de push não é aceito – escolha um servidor público no app de push.",
+      "invalid_keys": "As chaves das notificações são inválidas – ative as notificações de novo.",
+      "device_not_found": "Este aparelho não está (mais) registrado."
     },
     "auth": {
       "accountMismatch": "Este login pertence a outra conta – entre novamente.",
@@ -919,6 +924,9 @@
       "commandDisabled": "Isso está desativado no launcher do PC.",
       "commandExpired": "O comando expirou.",
       "commandHandled": "O comando já foi processado."
+    },
+    "push": {
+      "noDistributorApp": "Não foi possível abrir o app de push."
     }
   },
   "browse": {
@@ -2425,6 +2433,61 @@
       "title": "Pastas compartilhadas",
       "description": "Novas instâncias compartilham estas pastas desde o início com todas as outras que as compartilham. Instâncias existentes mantêm sua configuração (altere nas configurações da instância).",
       "toggleLabel": "Novas instâncias compartilham {folder}"
+    },
+    "push": {
+      "title": "Notificações push",
+      "intro": "Mensagens do chat, pedidos de amizade e convites chegam a este celular mesmo com o app fechado. Elas são criptografadas para este aparelho; só é enviado o que você permitir aqui.",
+      "enabled": "Notificações neste celular",
+      "enabledHint": "Enquanto o app está aberto, você vê tudo direto no app.",
+      "allow": "Permitir notificações",
+      "permissionHint": "Se nenhuma pergunta aparecer, permita notificações do TRS Launcher nas configurações do sistema.",
+      "ntfyFdroid": "Baixar o ntfy no F-Droid",
+      "ntfyPlay": "Baixar o ntfy no Google Play",
+      "afterInstall": "Depois de instalar, abra esta página de novo – o app se conecta sozinho ao ntfy.",
+      "retry": "Verificar de novo",
+      "pollInstead": "Verificar a cada 15 minutos em vez disso",
+      "pollInsteadHint": "Funciona sem outro app, mas os avisos podem chegar até 15 minutos depois.",
+      "useDistributor": "Usar {name}",
+      "state": {
+        "off": "As notificações estão desativadas neste celular.",
+        "signedOut": "Entre com sua conta do Minecraft e ative os serviços TRS para receber notificações.",
+        "permission": "O TRS Launcher ainda não pode mostrar notificações.",
+        "noDistributor": "Sem os serviços do Google, o Android entrega notificações push por um app UnifiedPush como o ntfy. Instale um – leva um minuto e ajuda outros apps também.",
+        "chooseDistributor": "Você tem vários apps de push. Escolha o que deve entregar as notificações do TRS:",
+        "waiting": "Aguardando o app de push …",
+        "waitingFor": "Aguardando {name} …",
+        "registered": "Ativo – entregue pelo {name}.",
+        "registeredPlain": "Ativo.",
+        "pollingAndroid": "Ativo – o app procura novos avisos a cada 15 minutos, mais ou menos.",
+        "pollingIos": "Ativo – o iOS deixa o app procurar novos avisos em segundo plano de vez em quando (com menos frequência no Modo de Pouca Energia).",
+        "error": "Não foi possível configurar as notificações.",
+        "errorWith": "Não foi possível configurar as notificações: {error}",
+        "distributorInactive": "O {name} ainda não está conectado. Abra o {name} uma vez para ele se conectar ao servidor – depois disso, as notificações chegam mesmo com os dois apps fechados."
+      },
+      "categoriesTitle": "Avisar sobre",
+      "categories": {
+        "chat": "Mensagens do chat",
+        "friends": "Pedidos de amizade",
+        "friend_online": "Amigos ficando online",
+        "invites": "Convites para mundos e ofertas de capas",
+        "hosting": "Mundos que você hospeda ou entra",
+        "packs": "Modpacks enviados a você",
+        "team": "Equipe, moderação e denúncias",
+        "achievements": "Conquistas"
+      },
+      "previewTitle": "Mostrar o texto da mensagem",
+      "previewHint": "Avisos do chat mostram o início da mensagem e o nome do grupo. Desativado: só o remetente e “Nova mensagem”.",
+      "whilePlayingTitle": "Também enquanto joga no PC",
+      "whilePlayingHint": "Desativado: nenhum aviso no celular enquanto você joga com o TRS Client no PC – lá o jogo mostra os avisos.",
+      "devicesTitle": "Aparelhos com notificações",
+      "thisDevice": "Este celular",
+      "kindUnifiedpush": "Push via {host}",
+      "kindPoll": "Busca avisos",
+      "lastSeen": "ativo {date}",
+      "failing": "A última entrega falhou.",
+      "remove": "Remover",
+      "noDevices": "Nenhum aparelho recebe notificações ainda.",
+      "openDistributor": "Abrir {name}"
     }
   },
   "settingsShell": {

@@ -419,7 +419,7 @@ export interface PlatformCapabilities {
   java: boolean
   /** Eigene Fensterknöpfe/Titelleiste (Minimieren, Maximieren, Schließen, Ziehen). */
   windowControls: boolean
-  /** Push-Benachrichtigungen des Systems (mobil, noch ohne Server-Anbindung). */
+  /** Push-Benachrichtigungen des Systems (mobil: Android über UnifiedPush oder Abholen, iOS über Abholen). */
   pushSupported: boolean
   /** Eingebaute Spiel-Engine als natives Plugin (mobil, folgt später). */
   gameEngine: boolean
