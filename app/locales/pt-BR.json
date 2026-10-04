@@ -682,7 +682,8 @@
       "invalidOrder": "A ordem não corresponde à lista de predefinições.",
       "invalidFile": "Este não é um arquivo de predefinição válido.",
       "fileTooLarge": "O arquivo de predefinição é grande demais.",
-      "noneSelected": "Nenhuma predefinição selecionada."
+      "noneSelected": "Nenhuma predefinição selecionada.",
+      "invalidLook": "Ícone ou cor desconhecidos."
     },
     "clips": {
       "bufferRange": "A duração do clipe deve ficar entre {min} e {max} segundos",
@@ -4010,15 +4011,32 @@
       "namePlaceholder": "ex.: Meus básicos",
       "contents": "Conteúdo ({n}) | Conteúdo ({n})",
       "remove": "Remover {title}",
-      "empty": "Ainda vazia – adicione projetos pela busca.",
-      "searchPlaceholder": "Buscar no Modrinth …",
+      "empty": "Ainda vazio – adicione projetos pela busca ou traga-os de um modpack.",
       "searchLabel": "Buscar projetos",
       "added": "Adicionado",
       "add": "Adicionar",
       "noResults": "Nenhum resultado",
       "hint": "Predefinições não dependem da versão: ao instalar, a versão certa é escolhida para cada instância – o que não existir é ignorado.",
       "tooManyItems": "No máximo {max} itens por predefinição",
-      "duplicate": "Cada projeto só pode aparecer uma vez numa predefinição"
+      "duplicate": "Cada projeto só pode aparecer uma vez numa predefinição",
+      "addTitle": "Adicionar {title} à predefinição",
+      "checking": "Verificando dependências …",
+      "brings": "traz junto",
+      "depOnly": "{title} é instalado automaticamente (só {loaders})",
+      "depAlways": "{title} é instalado automaticamente",
+      "conflictsLabel": "Conflitos conhecidos",
+      "conflict": {
+        "renderer": "{a} e {b} substituem o renderizador – só um funciona por vez.",
+        "shaders": "{a} e {b} carregam shaders – mantenha só um.",
+        "minimap": "{a} e {b} são minimapas – dois ao mesmo tempo atrapalham um ao outro.",
+        "zoom": "{a} e {b} dão zoom na mesma tecla.",
+        "nvidium": "{a} e {b} não funcionam juntos – o Nvidium não funciona com shaders.",
+        "declared": "{a} não funciona junto com {b} (segundo o próprio mod).",
+        "trsClient": "{a} não funciona junto com o TRS Client."
+      },
+      "loadMore": "Carregar mais",
+      "saved": "“{name}” salvo",
+      "missing": "Este preset não existe (mais)."
     },
     "page": {
       "title": "Predefinições",
@@ -4058,6 +4076,103 @@
       "text": "Ainda não há Sodium nem Embeddium aqui. O aumento de FPS instala as otimizações certas – escolha um nível:",
       "apply": "Aplicar aumento de FPS",
       "dismiss": "Ocultar esta dica"
+    },
+    "templates": {
+      "title": "Nova predefinição",
+      "intro": "Comece vazio ou com um modelo – depois você pode mudar tudo.",
+      "empty": {
+        "name": "Predefinição vazia",
+        "description": "Escolha tudo você mesmo"
+      },
+      "performance": {
+        "name": "Desempenho",
+        "description": "Sodium, Lithium, FerriteCore, Entity Culling e mais – mais FPS, jogo mais fluido"
+      },
+      "shader": {
+        "name": "Shaders",
+        "description": "Iris + Sodium e pacotes de shaders de muito leves a lindos"
+      },
+      "pvp": {
+        "name": "PvP",
+        "description": "FPS fluido, AppleSkin, exibição de ping, fogo baixo e texturas de PvP"
+      },
+      "redstone": {
+        "name": "Redstone",
+        "description": "Litematica, MiniHUD, Tweakeroo, Carpet e WorldEdit para construir circuitos"
+      }
+    },
+    "look": {
+      "title": "Ícone e cor",
+      "hint": "Aparece na lista de predefinições e ao escolher predefinições",
+      "icon": "Ícone",
+      "color": "Cor",
+      "colors": {
+        "redstone": "Redstone",
+        "amber": "Âmbar",
+        "lime": "Lima",
+        "emerald": "Esmeralda",
+        "cyan": "Ciano",
+        "sky": "Azul",
+        "violet": "Violeta",
+        "pink": "Rosa",
+        "slate": "Ardósia"
+      },
+      "icons": {
+        "presets": "Pilha",
+        "bolt": "Raio",
+        "flame": "Chama",
+        "sword": "Espada",
+        "shield": "Escudo",
+        "cube": "Bloco",
+        "world": "Mundo",
+        "compass": "Bússola",
+        "wrench": "Chave inglesa",
+        "puzzle": "Quebra-cabeça",
+        "lightbulb": "Lâmpada",
+        "star": "Estrela",
+        "crown": "Coroa",
+        "trophy": "Troféu",
+        "gamepad": "Controle",
+        "image": "Imagem",
+        "palette": "Paleta",
+        "moon": "Lua",
+        "leaf": "Folha",
+        "monitor": "Tela"
+      }
+    },
+    "pick": {
+      "open": "Trazer de um modpack",
+      "title": "Trazer de um modpack",
+      "titleFrom": "Trazer de “{name}”",
+      "sourceLabel": "Origem",
+      "source": {
+        "instance": "Minha instância",
+        "modpack": "Modpack",
+        "code": "Código TRS"
+      },
+      "instanceHint": "Escolha uma instância – os mods, pacotes de recursos e shaders dela são listados.",
+      "searchPack": "Buscar modpacks",
+      "packHint": "Só a lista de mods da versão mais recente é lida – nada é instalado.",
+      "codeHint": "Digite o código de um pack compartilhado com o TRS Launcher.",
+      "codeLabel": "Código do pack",
+      "read": "Ler",
+      "reading": "Lendo conteúdo …",
+      "otherSource": "Outra origem",
+      "count": "{n} item | {n} itens",
+      "filterPlaceholder": "Filtrar por nome …",
+      "kindLabel": "Tipo",
+      "allKinds": "Todos os tipos",
+      "onlyPerformance": "Só desempenho",
+      "onlyClient": "Só do cliente",
+      "all": "Todos",
+      "none": "Nenhum",
+      "withoutProject": "{n} sem projeto no Modrinth/CurseForge não pode ser trazido | {n} sem projeto no Modrinth/CurseForge não podem ser trazidos",
+      "performance": "Desempenho",
+      "client": "Cliente",
+      "noProject": "Não está no Modrinth/CurseForge – não pode ser trazido",
+      "alreadyIn": "Já está na predefinição",
+      "apply": "Trazer {n} | Trazer {n}",
+      "done": "{added} trazido, {skipped} já estavam | {added} trazidos, {skipped} já estavam"
     }
   },
   "updateNews": {

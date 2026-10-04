@@ -58,6 +58,7 @@ pub mod paths;
 pub mod platform;
 pub mod prepare;
 pub mod relocate;
+pub mod preset_tools;
 pub mod presets;
 pub mod process;
 pub mod screenshots;

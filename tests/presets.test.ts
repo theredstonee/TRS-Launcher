@@ -27,7 +27,7 @@ import {
 import { presetInputSchema } from '../app/utils/schemas'
 
 function preset(id: string, patch: Partial<Preset> = {}): Preset {
-  return { id, name: id, builtin: null, auto: false, modpackSafe: true, available: true, items: [], ...patch }
+  return { id, name: id, builtin: null, auto: false, modpackSafe: true, available: true, items: [], icon: 'presets', color: 'redstone', ...patch }
 }
 
 const fps = preset('trs-fps-boost', { builtin: 'fpsBoost', auto: true, modpackSafe: false })

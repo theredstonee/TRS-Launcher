@@ -162,6 +162,7 @@ const needsLoader = computed(
           >
             <svg v-if="selected.includes(row.preset.id)" viewBox="0 0 24 24" class="size-3 text-base-950" fill="none" stroke="currentColor" stroke-width="3.5"><path :d="icons.check" /></svg>
           </span>
+          <PresetBadge :icon="row.preset.icon" :color="row.preset.color" :size="28" />
           <span class="min-w-0 flex-1">
             <span class="flex items-center gap-1.5">
               <span class="truncate text-sm font-medium text-base-50">{{ presetName(row.preset) }}</span>

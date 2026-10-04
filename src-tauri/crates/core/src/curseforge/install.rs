@@ -79,10 +79,15 @@ pub(super) fn cf_source(project_id: u64, file: &RawFile) -> Source {
 }
 
 pub(super) fn blocked_error(m: &RawMod) -> Error {
+    blocked_message(&m.title())
+}
+
+/// „Download nur auf CurseForge“ für ein Projekt mit diesem Namen.
+pub(crate) fn blocked_message(name: &str) -> Error {
     Error::validation(crate::msg!(
         "curseforge.downloadBlocked",
         "Der Autor von „{name}“ erlaubt keine Downloads über andere Apps – bitte die Datei auf CurseForge herunterladen.",
-        name = m.title()
+        name = name
     ))
 }
 

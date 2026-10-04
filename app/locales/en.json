@@ -682,7 +682,8 @@
       "invalidOrder": "The order doesn’t match the preset list.",
       "invalidFile": "This isn’t a valid preset file.",
       "fileTooLarge": "The preset file is too large.",
-      "noneSelected": "No preset selected."
+      "noneSelected": "No preset selected.",
+      "invalidLook": "Unknown icon or colour."
     },
     "clips": {
       "bufferRange": "Clip length must be between {min} and {max} seconds",
@@ -4010,15 +4011,32 @@
       "namePlaceholder": "e.g. My basics",
       "contents": "Contents ({n}) | Contents ({n})",
       "remove": "Remove {title}",
-      "empty": "Still empty – add projects from the search.",
-      "searchPlaceholder": "Search Modrinth …",
+      "empty": "Still empty – add projects from the search or take them over from a modpack.",
       "searchLabel": "Search projects",
       "added": "Added",
       "add": "Add",
       "noResults": "No results",
       "hint": "Presets are version-independent: when installing, the matching version is picked for each instance – anything not available is skipped.",
       "tooManyItems": "At most {max} entries per preset",
-      "duplicate": "Every project can only be in a preset once"
+      "duplicate": "Every project can only be in a preset once",
+      "addTitle": "Add {title} to the preset",
+      "checking": "Checking dependencies …",
+      "brings": "brings along",
+      "depOnly": "{title} is installed automatically ({loaders} only)",
+      "depAlways": "{title} is installed automatically",
+      "conflictsLabel": "Known conflicts",
+      "conflict": {
+        "renderer": "{a} and {b} both replace the renderer – only one of them works at a time.",
+        "shaders": "{a} and {b} both load shaders – keep only one.",
+        "minimap": "{a} and {b} are both minimaps – two at once get in each other's way.",
+        "zoom": "{a} and {b} both zoom on the same key.",
+        "nvidium": "{a} and {b} don't work together – Nvidium can't be used with shaders.",
+        "declared": "{a} doesn't work together with {b} (according to the mod itself).",
+        "trsClient": "{a} doesn't work together with the TRS Client."
+      },
+      "loadMore": "Load more",
+      "saved": "“{name}” saved",
+      "missing": "This preset doesn't exist (anymore)."
     },
     "page": {
       "title": "Presets",
@@ -4058,6 +4076,103 @@
       "text": "There's no Sodium or Embeddium here yet. The FPS boost installs matching optimisations – pick a level:",
       "apply": "Apply FPS boost",
       "dismiss": "Hide this hint"
+    },
+    "templates": {
+      "title": "New preset",
+      "intro": "Start empty or with a template – you can change everything afterwards.",
+      "empty": {
+        "name": "Empty preset",
+        "description": "Pick everything yourself"
+      },
+      "performance": {
+        "name": "Performance",
+        "description": "Sodium, Lithium, FerriteCore, Entity Culling & more – more FPS, smoother game"
+      },
+      "shader": {
+        "name": "Shaders",
+        "description": "Iris + Sodium and shader packs from very light to beautiful"
+      },
+      "pvp": {
+        "name": "PvP",
+        "description": "Smooth FPS, AppleSkin, ping display, low fire and PvP texture packs"
+      },
+      "redstone": {
+        "name": "Redstone",
+        "description": "Litematica, MiniHUD, Tweakeroo, Carpet and WorldEdit for building circuits"
+      }
+    },
+    "look": {
+      "title": "Icon & colour",
+      "hint": "Shown in the preset list and when picking presets",
+      "icon": "Icon",
+      "color": "Colour",
+      "colors": {
+        "redstone": "Redstone",
+        "amber": "Amber",
+        "lime": "Lime",
+        "emerald": "Emerald",
+        "cyan": "Cyan",
+        "sky": "Blue",
+        "violet": "Violet",
+        "pink": "Pink",
+        "slate": "Slate"
+      },
+      "icons": {
+        "presets": "Stack",
+        "bolt": "Lightning",
+        "flame": "Flame",
+        "sword": "Sword",
+        "shield": "Shield",
+        "cube": "Block",
+        "world": "World",
+        "compass": "Compass",
+        "wrench": "Wrench",
+        "puzzle": "Puzzle",
+        "lightbulb": "Light bulb",
+        "star": "Star",
+        "crown": "Crown",
+        "trophy": "Trophy",
+        "gamepad": "Controller",
+        "image": "Picture",
+        "palette": "Palette",
+        "moon": "Moon",
+        "leaf": "Leaf",
+        "monitor": "Screen"
+      }
+    },
+    "pick": {
+      "open": "Take over from modpack",
+      "title": "Take over from modpack",
+      "titleFrom": "Take over from “{name}”",
+      "sourceLabel": "Source",
+      "source": {
+        "instance": "My instance",
+        "modpack": "Modpack",
+        "code": "TRS code"
+      },
+      "instanceHint": "Pick an instance – its mods, resource packs and shaders are listed.",
+      "searchPack": "Search modpacks",
+      "packHint": "Only the mod list of the newest version is read – nothing is installed.",
+      "codeHint": "Enter the code of a pack shared with the TRS Launcher.",
+      "codeLabel": "Pack code",
+      "read": "Read",
+      "reading": "Reading contents …",
+      "otherSource": "Other source",
+      "count": "{n} entry | {n} entries",
+      "filterPlaceholder": "Filter by name …",
+      "kindLabel": "Type",
+      "allKinds": "All types",
+      "onlyPerformance": "Performance only",
+      "onlyClient": "Client-side only",
+      "all": "All",
+      "none": "None",
+      "withoutProject": "{n} without a Modrinth/CurseForge project can't be taken over | {n} without a Modrinth/CurseForge project can't be taken over",
+      "performance": "Performance",
+      "client": "Client",
+      "noProject": "Not on Modrinth/CurseForge – can't be taken over",
+      "alreadyIn": "Already in the preset",
+      "apply": "Take over {n} | Take over {n}",
+      "done": "{added} taken over, {skipped} already there | {added} taken over, {skipped} already there"
     }
   },
   "updateNews": {

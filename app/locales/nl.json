@@ -682,7 +682,8 @@
       "invalidOrder": "De volgorde past niet bij de presetlijst.",
       "invalidFile": "Dit is geen geldig presetbestand.",
       "fileTooLarge": "Het presetbestand is te groot.",
-      "noneSelected": "Geen preset geselecteerd."
+      "noneSelected": "Geen preset geselecteerd.",
+      "invalidLook": "Onbekend pictogram of onbekende kleur."
     },
     "clips": {
       "bufferRange": "De cliplengte moet tussen {min} en {max} seconden liggen",
@@ -4010,15 +4011,32 @@
       "namePlaceholder": "bijv. Mijn basis",
       "contents": "Inhoud ({n}) | Inhoud ({n})",
       "remove": "{title} verwijderen",
-      "empty": "Nog leeg – voeg projecten toe via het zoeken.",
-      "searchPlaceholder": "Modrinth doorzoeken …",
+      "empty": "Nog leeg – voeg projecten toe via de zoekfunctie of neem ze over uit een modpack.",
       "searchLabel": "Projecten zoeken",
       "added": "Toegevoegd",
       "add": "Toevoegen",
       "noResults": "Geen resultaten",
       "hint": "Presets zijn versie-onafhankelijk: bij het installeren wordt per instantie de passende versie gekozen – wat er niet is, wordt overgeslagen.",
       "tooManyItems": "Hoogstens {max} items per preset",
-      "duplicate": "Elk project kan maar één keer in een preset staan"
+      "duplicate": "Elk project kan maar één keer in een preset staan",
+      "addTitle": "{title} aan de preset toevoegen",
+      "checking": "Afhankelijkheden worden gecontroleerd …",
+      "brings": "neemt mee",
+      "depOnly": "{title} wordt automatisch geïnstalleerd (alleen {loaders})",
+      "depAlways": "{title} wordt automatisch geïnstalleerd",
+      "conflictsLabel": "Bekende conflicten",
+      "conflict": {
+        "renderer": "{a} en {b} vervangen allebei de renderer – er werkt er maar één tegelijk.",
+        "shaders": "{a} en {b} laden allebei shaders – houd er maar één.",
+        "minimap": "{a} en {b} zijn allebei minimaps – twee tegelijk zitten elkaar in de weg.",
+        "zoom": "{a} en {b} zoomen allebei met dezelfde toets.",
+        "nvidium": "{a} en {b} werken niet samen – Nvidium kan niet met shaders.",
+        "declared": "{a} werkt niet samen met {b} (volgens de mod zelf).",
+        "trsClient": "{a} werkt niet samen met de TRS Client."
+      },
+      "loadMore": "Meer laden",
+      "saved": "‘{name}’ opgeslagen",
+      "missing": "Deze preset bestaat niet (meer)."
     },
     "page": {
       "title": "Presets",
@@ -4058,6 +4076,103 @@
       "text": "Hier zit nog geen Sodium of Embeddium in. De FPS-boost installeert passende optimalisaties – kies een niveau:",
       "apply": "FPS-boost toepassen",
       "dismiss": "Deze tip verbergen"
+    },
+    "templates": {
+      "title": "Nieuwe preset",
+      "intro": "Begin leeg of met een sjabloon – daarna kun je alles aanpassen.",
+      "empty": {
+        "name": "Lege preset",
+        "description": "Alles zelf kiezen"
+      },
+      "performance": {
+        "name": "Prestaties",
+        "description": "Sodium, Lithium, FerriteCore, Entity Culling en meer – meer FPS, soepeler spel"
+      },
+      "shader": {
+        "name": "Shaders",
+        "description": "Iris + Sodium en shaderpacks van heel licht tot prachtig"
+      },
+      "pvp": {
+        "name": "PvP",
+        "description": "Soepele FPS, AppleSkin, ping-weergave, laag vuur en PvP-texturen"
+      },
+      "redstone": {
+        "name": "Redstone",
+        "description": "Litematica, MiniHUD, Tweakeroo, Carpet en WorldEdit om schakelingen te bouwen"
+      }
+    },
+    "look": {
+      "title": "Pictogram en kleur",
+      "hint": "Zichtbaar in de presetlijst en bij het kiezen van presets",
+      "icon": "Pictogram",
+      "color": "Kleur",
+      "colors": {
+        "redstone": "Redstone",
+        "amber": "Amber",
+        "lime": "Limoen",
+        "emerald": "Smaragd",
+        "cyan": "Cyaan",
+        "sky": "Blauw",
+        "violet": "Violet",
+        "pink": "Roze",
+        "slate": "Leisteen"
+      },
+      "icons": {
+        "presets": "Stapel",
+        "bolt": "Bliksem",
+        "flame": "Vlam",
+        "sword": "Zwaard",
+        "shield": "Schild",
+        "cube": "Blok",
+        "world": "Wereld",
+        "compass": "Kompas",
+        "wrench": "Moersleutel",
+        "puzzle": "Puzzel",
+        "lightbulb": "Gloeilamp",
+        "star": "Ster",
+        "crown": "Kroon",
+        "trophy": "Trofee",
+        "gamepad": "Controller",
+        "image": "Afbeelding",
+        "palette": "Palet",
+        "moon": "Maan",
+        "leaf": "Blad",
+        "monitor": "Scherm"
+      }
+    },
+    "pick": {
+      "open": "Uit modpack overnemen",
+      "title": "Uit modpack overnemen",
+      "titleFrom": "Overnemen uit ‘{name}’",
+      "sourceLabel": "Bron",
+      "source": {
+        "instance": "Mijn instantie",
+        "modpack": "Modpack",
+        "code": "TRS-code"
+      },
+      "instanceHint": "Kies een instantie – de mods, resourcepacks en shaders worden opgesomd.",
+      "searchPack": "Modpacks zoeken",
+      "packHint": "Alleen de modlijst van de nieuwste versie wordt gelezen – er wordt niets geïnstalleerd.",
+      "codeHint": "Voer de code in van een pack dat met de TRS Launcher is gedeeld.",
+      "codeLabel": "Packcode",
+      "read": "Lezen",
+      "reading": "Inhoud wordt gelezen …",
+      "otherSource": "Andere bron",
+      "count": "{n} item | {n} items",
+      "filterPlaceholder": "Filteren op naam …",
+      "kindLabel": "Soort",
+      "allKinds": "Alle soorten",
+      "onlyPerformance": "Alleen prestaties",
+      "onlyClient": "Alleen client-side",
+      "all": "Alles",
+      "none": "Geen",
+      "withoutProject": "{n} zonder Modrinth/CurseForge-project kan niet worden overgenomen | {n} zonder Modrinth/CurseForge-project kunnen niet worden overgenomen",
+      "performance": "Prestaties",
+      "client": "Client",
+      "noProject": "Niet op Modrinth/CurseForge – kan niet worden overgenomen",
+      "alreadyIn": "Al in de preset",
+      "apply": "{n} overnemen | {n} overnemen",
+      "done": "{added} overgenomen, {skipped} al aanwezig | {added} overgenomen, {skipped} al aanwezig"
     }
   },
   "updateNews": {

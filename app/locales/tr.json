@@ -682,7 +682,8 @@
       "invalidOrder": "Sıralama ön ayar listesiyle uyuşmuyor.",
       "invalidFile": "Bu geçerli bir ön ayar dosyası değil.",
       "fileTooLarge": "Ön ayar dosyası çok büyük.",
-      "noneSelected": "Hiçbir ön ayar seçilmedi."
+      "noneSelected": "Hiçbir ön ayar seçilmedi.",
+      "invalidLook": "Bilinmeyen simge veya renk."
     },
     "clips": {
       "bufferRange": "Klip uzunluğu {min} ile {max} saniye arasında olmalı",
@@ -4010,15 +4011,32 @@
       "namePlaceholder": "ör. Temel modlarım",
       "contents": "İçerik ({n}) | İçerik ({n})",
       "remove": "{title} kaldır",
-      "empty": "Henüz boş – aramadan proje ekle.",
-      "searchPlaceholder": "Modrinth’te ara …",
+      "empty": "Henüz boş – aramadan proje ekle ya da bir modpack'ten al.",
       "searchLabel": "Proje ara",
       "added": "Eklendi",
       "add": "Ekle",
       "noResults": "Sonuç yok",
       "hint": "Ön ayarlar sürümden bağımsızdır: yüklerken her örnek için uygun sürüm seçilir – olmayanlar atlanır.",
       "tooManyItems": "Ön ayar başına en fazla {max} öğe",
-      "duplicate": "Her proje bir ön ayarda yalnızca bir kez olabilir"
+      "duplicate": "Her proje bir ön ayarda yalnızca bir kez olabilir",
+      "addTitle": "{title} ön ayara ekle",
+      "checking": "Bağımlılıklar kontrol ediliyor …",
+      "brings": "beraberinde getirir",
+      "depOnly": "{title} otomatik olarak kurulur (yalnızca {loaders})",
+      "depAlways": "{title} otomatik olarak kurulur",
+      "conflictsLabel": "Bilinen çakışmalar",
+      "conflict": {
+        "renderer": "{a} ve {b} ikisi de oluşturucuyu değiştirir – aynı anda yalnızca biri çalışır.",
+        "shaders": "{a} ve {b} ikisi de gölgelendirici yükler – yalnızca birini tut.",
+        "minimap": "{a} ve {b} ikisi de mini harita – ikisi birden birbirini engeller.",
+        "zoom": "{a} ve {b} ikisi de aynı tuşla yakınlaştırır.",
+        "nvidium": "{a} ve {b} birlikte çalışmaz – Nvidium gölgelendiricilerle kullanılamaz.",
+        "declared": "{a}, {b} ile birlikte çalışmaz (modun kendi bilgisine göre).",
+        "trsClient": "{a}, TRS Client ile birlikte çalışmaz."
+      },
+      "loadMore": "Daha fazla yükle",
+      "saved": "“{name}” kaydedildi",
+      "missing": "Bu ön ayar (artık) yok."
     },
     "page": {
       "title": "Ön ayarlar",
@@ -4058,6 +4076,103 @@
       "text": "Burada henüz Sodium veya Embeddium yok. FPS artışı uygun optimizasyonları kurar – bir seviye seç:",
       "apply": "FPS artışını uygula",
       "dismiss": "Bu ipucunu gizle"
+    },
+    "templates": {
+      "title": "Yeni ön ayar",
+      "intro": "Boş başla ya da bir şablonla – sonra her şeyi değiştirebilirsin.",
+      "empty": {
+        "name": "Boş ön ayar",
+        "description": "Her şeyi kendin seç"
+      },
+      "performance": {
+        "name": "Performans",
+        "description": "Sodium, Lithium, FerriteCore, Entity Culling ve daha fazlası – daha çok FPS, daha akıcı oyun"
+      },
+      "shader": {
+        "name": "Gölgelendiriciler",
+        "description": "Iris + Sodium ve çok hafiften çok güzele gölgelendirici paketleri"
+      },
+      "pvp": {
+        "name": "PvP",
+        "description": "Akıcı FPS, AppleSkin, ping göstergesi, alçak ateş ve PvP dokuları"
+      },
+      "redstone": {
+        "name": "Redstone",
+        "description": "Devre kurmak için Litematica, MiniHUD, Tweakeroo, Carpet ve WorldEdit"
+      }
+    },
+    "look": {
+      "title": "Simge ve renk",
+      "hint": "Ön ayar listesinde ve ön ayar seçerken görünür",
+      "icon": "Simge",
+      "color": "Renk",
+      "colors": {
+        "redstone": "Redstone",
+        "amber": "Kehribar",
+        "lime": "Misket limonu",
+        "emerald": "Zümrüt",
+        "cyan": "Camgöbeği",
+        "sky": "Mavi",
+        "violet": "Mor",
+        "pink": "Pembe",
+        "slate": "Arduvaz"
+      },
+      "icons": {
+        "presets": "Yığın",
+        "bolt": "Şimşek",
+        "flame": "Alev",
+        "sword": "Kılıç",
+        "shield": "Kalkan",
+        "cube": "Blok",
+        "world": "Dünya",
+        "compass": "Pusula",
+        "wrench": "İngiliz anahtarı",
+        "puzzle": "Yapboz",
+        "lightbulb": "Ampul",
+        "star": "Yıldız",
+        "crown": "Taç",
+        "trophy": "Kupa",
+        "gamepad": "Oyun kumandası",
+        "image": "Resim",
+        "palette": "Palet",
+        "moon": "Ay",
+        "leaf": "Yaprak",
+        "monitor": "Ekran"
+      }
+    },
+    "pick": {
+      "open": "Modpack'ten al",
+      "title": "Modpack'ten al",
+      "titleFrom": "“{name}” içinden al",
+      "sourceLabel": "Kaynak",
+      "source": {
+        "instance": "Örneğim",
+        "modpack": "Modpack",
+        "code": "TRS kodu"
+      },
+      "instanceHint": "Bir örnek seç – modları, kaynak paketleri ve gölgelendiricileri listelenir.",
+      "searchPack": "Modpack ara",
+      "packHint": "Yalnızca en yeni sürümün mod listesi okunur – hiçbir şey kurulmaz.",
+      "codeHint": "TRS Launcher ile paylaşılan bir paketin kodunu gir.",
+      "codeLabel": "Paket kodu",
+      "read": "Oku",
+      "reading": "İçerik okunuyor …",
+      "otherSource": "Başka kaynak",
+      "count": "{n} öğe | {n} öğe",
+      "filterPlaceholder": "Ada göre filtrele …",
+      "kindLabel": "Tür",
+      "allKinds": "Tüm türler",
+      "onlyPerformance": "Yalnızca performans",
+      "onlyClient": "Yalnızca istemci tarafı",
+      "all": "Tümü",
+      "none": "Hiçbiri",
+      "withoutProject": "Modrinth/CurseForge projesi olmayan {n} öğe alınamaz | Modrinth/CurseForge projesi olmayan {n} öğe alınamaz",
+      "performance": "Performans",
+      "client": "İstemci",
+      "noProject": "Modrinth/CurseForge’da yok – alınamaz",
+      "alreadyIn": "Zaten ön ayarda",
+      "apply": "{n} öğeyi al | {n} öğeyi al",
+      "done": "{added} alındı, {skipped} zaten vardı | {added} alındı, {skipped} zaten vardı"
     }
   },
   "updateNews": {

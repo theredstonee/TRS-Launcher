@@ -1,0 +1,66 @@
+{
+  "formatVersion": 1,
+  "game": "minecraft",
+  "versionId": "1.0.0",
+  "name": "Test Pack",
+  "files": [
+    {
+      "path": "mods/sodium-fabric-0.6.0+mc1.21.1.jar",
+      "hashes": { "sha1": "0000000000000000000000000000000000000001", "sha512": "00" },
+      "env": { "client": "required", "server": "unsupported" },
+      "downloads": ["https://cdn.modrinth.com/data/AANobbMI/versions/abcdefgh/sodium-fabric-0.6.0%2Bmc1.21.1.jar"],
+      "fileSize": 100
+    },
+    {
+      "path": "mods/lithium-fabric-0.13.0.jar",
+      "hashes": { "sha1": "0000000000000000000000000000000000000002" },
+      "env": { "client": "required", "server": "required" },
+      "downloads": ["https://cdn.modrinth.com/data/gvQqBUqZ/versions/ijklmnop/lithium-fabric-0.13.0.jar"],
+      "fileSize": 100
+    },
+    {
+      "path": "mods/handmade-1.0.jar",
+      "hashes": { "sha1": "0000000000000000000000000000000000000003" },
+      "downloads": ["https://github.com/example/handmade/releases/download/1.0/handmade-1.0.jar"],
+      "fileSize": 100
+    },
+    {
+      "path": "mods/server-only-1.0.jar",
+      "hashes": { "sha1": "0000000000000000000000000000000000000004" },
+      "env": { "client": "unsupported", "server": "required" },
+      "downloads": ["https://cdn.modrinth.com/data/SRVRonly/versions/aaaaaaaa/server-only-1.0.jar"],
+      "fileSize": 100
+    },
+    {
+      "path": "resourcepacks/Faithful 32x.zip",
+      "hashes": { "sha1": "0000000000000000000000000000000000000005" },
+      "downloads": ["https://cdn.modrinth.com/data/BdYrfSSx/versions/bbbbbbbb/Faithful%2032x.zip"],
+      "fileSize": 100
+    },
+    {
+      "path": "shaderpacks/ComplementaryReimagined_r5.3.zip",
+      "hashes": { "sha1": "0000000000000000000000000000000000000006" },
+      "downloads": ["https://cdn.modrinth.com/data/HVnmMxH1/versions/cccccccc/ComplementaryReimagined_r5.3.zip"],
+      "fileSize": 100
+    },
+    {
+      "path": "config/sodium-options.json",
+      "hashes": { "sha1": "0000000000000000000000000000000000000007" },
+      "downloads": ["https://cdn.modrinth.com/data/AANobbMI/versions/dddddddd/sodium-options.json"],
+      "fileSize": 100
+    },
+    {
+      "path": "mods/nested/deep.jar",
+      "hashes": { "sha1": "0000000000000000000000000000000000000008" },
+      "downloads": ["https://cdn.modrinth.com/data/DEEPdeep/versions/eeeeeeee/deep.jar"],
+      "fileSize": 100
+    },
+    {
+      "path": "mods/sodium-again.jar",
+      "hashes": { "sha1": "0000000000000000000000000000000000000009" },
+      "downloads": ["https://cdn.modrinth.com/data/AANobbMI/versions/ffffffff/sodium-again.jar"],
+      "fileSize": 100
+    }
+  ],
+  "dependencies": { "minecraft": "1.21.1", "fabric-loader": "0.16.5" }
+}

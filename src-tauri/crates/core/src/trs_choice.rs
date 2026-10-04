@@ -91,7 +91,7 @@ impl ModHint {
 }
 
 /// Projekt-ID aus einem Modrinth-CDN-Link.
-fn modrinth_project_of(url: &str) -> Option<String> {
+pub(crate) fn modrinth_project_of(url: &str) -> Option<String> {
     let rest = url.strip_prefix("https://cdn.modrinth.com/data/")?;
     let id = rest.split('/').next()?;
     crate::modrinth::is_safe_project_id(id).then(|| id.to_owned())

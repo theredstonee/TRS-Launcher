@@ -682,7 +682,8 @@
       "invalidOrder": "El orden no coincide con la lista de presets.",
       "invalidFile": "Este no es un archivo de preset válido.",
       "fileTooLarge": "El archivo de preset es demasiado grande.",
-      "noneSelected": "No hay ningún preset seleccionado."
+      "noneSelected": "No hay ningún preset seleccionado.",
+      "invalidLook": "Icono o color desconocido."
     },
     "clips": {
       "bufferRange": "La duración del clip debe estar entre {min} y {max} segundos",
@@ -4010,15 +4011,32 @@
       "namePlaceholder": "p. ej. Mis básicos",
       "contents": "Contenido ({n}) | Contenido ({n})",
       "remove": "Quitar {title}",
-      "empty": "Aún vacío: añade proyectos desde la búsqueda.",
-      "searchPlaceholder": "Buscar en Modrinth …",
+      "empty": "Aún vacío: añade proyectos desde la búsqueda o tómalos de un modpack.",
       "searchLabel": "Buscar proyectos",
       "added": "Añadido",
       "add": "Añadir",
       "noResults": "Sin resultados",
       "hint": "Los presets no dependen de la versión: al instalar se elige la versión adecuada para cada instancia y lo que no exista se omite.",
       "tooManyItems": "Como máximo {max} entradas por preset",
-      "duplicate": "Cada proyecto solo puede estar una vez en un preset"
+      "duplicate": "Cada proyecto solo puede estar una vez en un preset",
+      "addTitle": "Añadir {title} al preset",
+      "checking": "Comprobando dependencias …",
+      "brings": "incluye",
+      "depOnly": "{title} se instala automáticamente (solo {loaders})",
+      "depAlways": "{title} se instala automáticamente",
+      "conflictsLabel": "Conflictos conocidos",
+      "conflict": {
+        "renderer": "{a} y {b} reemplazan ambos el renderizador: solo uno funciona a la vez.",
+        "shaders": "{a} y {b} cargan shaders los dos: quédate solo con uno.",
+        "minimap": "{a} y {b} son minimapas: dos a la vez se estorban.",
+        "zoom": "{a} y {b} hacen zoom con la misma tecla.",
+        "nvidium": "{a} y {b} no funcionan juntos: Nvidium no se puede usar con shaders.",
+        "declared": "{a} no funciona junto con {b} (según el propio mod).",
+        "trsClient": "{a} no funciona junto con el TRS Client."
+      },
+      "loadMore": "Cargar más",
+      "saved": "«{name}» guardado",
+      "missing": "Este preset ya no existe."
     },
     "page": {
       "title": "Presets",
@@ -4058,6 +4076,103 @@
       "text": "Aquí todavía no hay Sodium ni Embeddium. El impulso de FPS instala las optimizaciones adecuadas: elige un nivel:",
       "apply": "Aplicar impulso de FPS",
       "dismiss": "Ocultar este aviso"
+    },
+    "templates": {
+      "title": "Nuevo preset",
+      "intro": "Empieza vacío o con una plantilla: después puedes cambiarlo todo.",
+      "empty": {
+        "name": "Preset vacío",
+        "description": "Elige todo tú mismo"
+      },
+      "performance": {
+        "name": "Rendimiento",
+        "description": "Sodium, Lithium, FerriteCore, Entity Culling y más: más FPS, juego más fluido"
+      },
+      "shader": {
+        "name": "Shaders",
+        "description": "Iris + Sodium y paquetes de shaders, de muy ligeros a preciosos"
+      },
+      "pvp": {
+        "name": "PvP",
+        "description": "FPS fluidos, AppleSkin, indicador de ping, fuego bajo y texturas PvP"
+      },
+      "redstone": {
+        "name": "Redstone",
+        "description": "Litematica, MiniHUD, Tweakeroo, Carpet y WorldEdit para construir circuitos"
+      }
+    },
+    "look": {
+      "title": "Icono y color",
+      "hint": "Se muestra en la lista de presets y al elegir presets",
+      "icon": "Icono",
+      "color": "Color",
+      "colors": {
+        "redstone": "Redstone",
+        "amber": "Ámbar",
+        "lime": "Lima",
+        "emerald": "Esmeralda",
+        "cyan": "Cian",
+        "sky": "Azul",
+        "violet": "Violeta",
+        "pink": "Rosa",
+        "slate": "Pizarra"
+      },
+      "icons": {
+        "presets": "Pila",
+        "bolt": "Rayo",
+        "flame": "Llama",
+        "sword": "Espada",
+        "shield": "Escudo",
+        "cube": "Bloque",
+        "world": "Mundo",
+        "compass": "Brújula",
+        "wrench": "Llave inglesa",
+        "puzzle": "Puzle",
+        "lightbulb": "Bombilla",
+        "star": "Estrella",
+        "crown": "Corona",
+        "trophy": "Trofeo",
+        "gamepad": "Mando",
+        "image": "Imagen",
+        "palette": "Paleta",
+        "moon": "Luna",
+        "leaf": "Hoja",
+        "monitor": "Pantalla"
+      }
+    },
+    "pick": {
+      "open": "Tomar de un modpack",
+      "title": "Tomar de un modpack",
+      "titleFrom": "Tomar de «{name}»",
+      "sourceLabel": "Origen",
+      "source": {
+        "instance": "Mi instancia",
+        "modpack": "Modpack",
+        "code": "Código TRS"
+      },
+      "instanceHint": "Elige una instancia: se muestran sus mods, paquetes de recursos y shaders.",
+      "searchPack": "Buscar modpacks",
+      "packHint": "Solo se lee la lista de mods de la versión más reciente: no se instala nada.",
+      "codeHint": "Introduce el código de un pack compartido con el TRS Launcher.",
+      "codeLabel": "Código del pack",
+      "read": "Leer",
+      "reading": "Leyendo contenido …",
+      "otherSource": "Otro origen",
+      "count": "{n} entrada | {n} entradas",
+      "filterPlaceholder": "Filtrar por nombre …",
+      "kindLabel": "Tipo",
+      "allKinds": "Todos los tipos",
+      "onlyPerformance": "Solo rendimiento",
+      "onlyClient": "Solo del cliente",
+      "all": "Todos",
+      "none": "Ninguno",
+      "withoutProject": "{n} sin proyecto en Modrinth/CurseForge no se puede tomar | {n} sin proyecto en Modrinth/CurseForge no se pueden tomar",
+      "performance": "Rendimiento",
+      "client": "Cliente",
+      "noProject": "No está en Modrinth/CurseForge: no se puede tomar",
+      "alreadyIn": "Ya está en el preset",
+      "apply": "Tomar {n} | Tomar {n}",
+      "done": "{added} tomado, {skipped} ya estaban | {added} tomados, {skipped} ya estaban"
     }
   },
   "updateNews": {

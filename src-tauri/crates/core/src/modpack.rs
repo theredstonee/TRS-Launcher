@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
+use crate::content::ContentKind;
 use crate::download::{self, Task};
 use crate::instance::{Instance, Loader, LoaderKind, NewInstance};
 use crate::modrinth::{self, CDN_PREFIX};
@@ -106,6 +107,19 @@ fn hex_len(value: &str, len: usize) -> bool {
 #[derive(Debug, Deserialize)]
 struct PackEnv {
     client: Option<String>,
+    #[serde(default)]
+    server: Option<String>,
+}
+
+/// Ein Inhalt des Packs für den Preset-Editor („Aus Modpack übernehmen“).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct PackPick {
+    pub file_name: String,
+    pub kind: ContentKind,
+    /// Modrinth-Projekt aus dem Download-Link (`cdn.modrinth.com/data/<projekt>/…`).
+    pub modrinth: Option<String>,
+    /// Laut Index nur im Client (`env.server = unsupported`); `None` = keine Angabe.
+    pub client_only: Option<bool>,
 }
 
 impl PackIndex {
@@ -125,6 +139,32 @@ impl PackIndex {
             .filter(|f| f.env.as_ref().and_then(|e| e.client.as_deref()) != Some("unsupported"))
             .map(|f| (f.path.clone(), f.hashes.sha1.to_ascii_lowercase()))
             .collect()
+    }
+
+    /// Mods, Ressourcen- und Shaderpakete des Packs, die der Client bekommt (ohne Netz).
+    /// `bundled`: Jars, die das Pack direkt in seinen Zusatzordnern mitbringt (ohne Projekt).
+    pub(crate) fn picks(&self, bundled: Vec<String>) -> Vec<PackPick> {
+        let kind_of = |path: &str| {
+            [ContentKind::Mod, ContentKind::ResourcePack, ContentKind::ShaderPack]
+                .into_iter()
+                .find(|k| path.strip_prefix(k.dir_name()).is_some_and(|rest| rest.starts_with('/') && !rest[1..].contains('/')))
+        };
+        self.files
+            .iter()
+            .filter(|f| f.env.as_ref().and_then(|e| e.client.as_deref()) != Some("unsupported"))
+            .filter_map(|f| {
+                let kind = kind_of(&f.path)?;
+                let file_name = f.path.rsplit('/').next().filter(|n| !n.is_empty())?.to_owned();
+                let modrinth = f.downloads.iter().find_map(|u| trs_choice::modrinth_project_of(u));
+                let client_only = f.env.as_ref().and_then(|e| e.server.as_deref()).map(|s| s == "unsupported");
+                Some(PackPick { file_name, kind, modrinth, client_only })
+            })
+            .chain(bundled.into_iter().map(|file_name| PackPick { file_name, kind: ContentKind::Mod, modrinth: None, client_only: None }))
+            .collect()
+    }
+
+    pub(crate) fn name(&self) -> &str {
+        &self.name
     }
 
     pub(crate) fn game_version(&self) -> Result<&str> {
@@ -353,7 +393,7 @@ impl Launcher {
     /// Die Version eines Modrinth-Modpacks samt Download-Auftrag für die
     /// `.mrpack` (Ziel im Pack-Zwischenspeicher, damit Vorschau und
     /// Installation dieselbe Datei nehmen).
-    async fn modrinth_pack_task(&self, project_id: &str, version_id: Option<&str>) -> Result<(modrinth::Version, Task)> {
+    pub(crate) async fn modrinth_pack_task(&self, project_id: &str, version_id: Option<&str>) -> Result<(modrinth::Version, Task)> {
         if !modrinth::is_safe_project_id(project_id) {
             return Err(Error::validation(crate::msg!("modrinth.invalidProjectId", "Ungültige Projekt-ID")));
         }

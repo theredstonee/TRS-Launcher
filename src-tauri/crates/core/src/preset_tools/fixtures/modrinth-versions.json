@@ -1,0 +1,16 @@
+[
+  { "loaders": ["neoforge"], "version_type": "beta", "dependencies": [] },
+  { "loaders": ["fabric", "quilt"], "version_type": "release", "dependencies": [
+    { "project_id": "P7dR8mSH", "dependency_type": "required" },
+    { "project_id": "9s6osm5g", "dependency_type": "required" },
+    { "project_id": "mOgUt4GM", "dependency_type": "optional" },
+    { "project_id": "OptiFxxx", "dependency_type": "incompatible" }
+  ] },
+  { "loaders": ["fabric"], "version_type": "release", "dependencies": [
+    { "project_id": "OLDdepxx", "dependency_type": "required" }
+  ] },
+  { "loaders": ["forge"], "version_type": "release", "dependencies": [
+    { "project_id": "9s6osm5g", "dependency_type": "required" },
+    { "project_id": "../evil", "dependency_type": "required" }
+  ] }
+]

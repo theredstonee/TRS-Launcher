@@ -39,12 +39,24 @@ How to write an entry:
 - **Android app and iPhone version in the release.** The mobile builds of 0.18.0 didn't make it into the release; the APK for Android and the AltStore/SideStore source for iPhone and iPad are now published.
 - **"Redeem code" right on the Skins page.** A big button at the top next to "Save skin" opens the code dialog for capes and cosmetics.
 - **Java is picked automatically again.** After changing an instance to a Minecraft version that needs a different Java (for example 26.1 with Java 25), a Java downloaded by the launcher is switched to the right one by itself – no more "Java 21 – Java 25 is expected here".
+- **A full-page editor for presets.** Creating or editing a preset now opens a big page like Discover: mods, resource packs and shaders from Modrinth and CurseForge with search, sorting, filters and endless scrolling. The contents of the preset stay on the right, grouped by type, with name, "Always automatic" and Save always in view.
+- **Icon and colour for presets.** Every custom preset can get its own icon and accent colour – shown in the preset list and wherever you pick presets.
+- **Dependencies and conflicts at a glance.** For every project the editor shows which required mods come along automatically (for example Fabric API or Cloth Config) and warns about known conflicts, like Sodium together with Embeddium or OptiFine, or two minimaps.
+- **Preset templates.** A new preset can start from "Performance", "Shaders", "PvP" or "Redstone" and be changed afterwards.
+- **"Take over from modpack".** Copy mods, resource packs and shaders into a preset from one of your instances, from any Modrinth or CurseForge modpack (only its list is read, nothing is installed) or from a TRS pack code – as a checklist with search, filters like "Performance only" or "Client-side only", and "All"/"None". Projects that are already in the preset are skipped.
+- **CurseForge projects in presets.** Presets can now hold CurseForge projects too; they're installed with the matching file and their required dependencies.
 
 ### Deutsch
 - **Behoben: „Der Modloader-Installer konnte nicht heruntergeladen werden“ bei NeoForge/Forge.** Bei manchen Instanzen war eine Loader-Version gespeichert, die gar nicht zu NeoForge oder Forge gehört (zum Beispiel eine Fabric-Version). Der Launcher erkennt das jetzt und installiert die neueste passende NeoForge-/Forge-Version, statt abzubrechen.
 - **Android-App und iPhone-Version im Release.** Die Handy-Builds von 0.18.0 haben es nicht ins Release geschafft; die APK für Android und die AltStore/SideStore-Quelle für iPhone und iPad sind jetzt veröffentlicht.
 - **„Code einlösen“ direkt auf der Skins-Seite.** Ein großer Knopf oben neben „Skin speichern“ öffnet den Code-Dialog für Umhänge und Kosmetik.
 - **Java wird wieder automatisch gewählt.** Nach dem Wechsel einer Instanz auf eine Minecraft-Version, die eine andere Java braucht (zum Beispiel 26.1 mit Java 25), wird eine vom Launcher geladene Java von selbst auf die passende umgestellt – kein „Java 21 – Java 25 erwartet“ mehr.
+- **Preset-Editor als ganze Seite.** Ein Preset anlegen oder bearbeiten öffnet jetzt eine große Seite wie „Entdecken“: Mods, Resource Packs und Shader von Modrinth und CurseForge mit Suche, Sortierung, Filtern und endlosem Nachladen. Der Inhalt des Presets steht rechts, nach Art sortiert – Name, „Immer automatisch“ und Speichern bleiben immer sichtbar.
+- **Symbol und Farbe für Presets.** Jedes eigene Preset kann ein eigenes Symbol und eine Akzentfarbe bekommen – zu sehen in der Preset-Liste und überall, wo man Presets auswählt.
+- **Abhängigkeiten und Konflikte auf einen Blick.** Zu jedem Projekt zeigt der Editor, welche Pflicht-Mods automatisch mitkommen (zum Beispiel Fabric API oder Cloth Config), und warnt vor bekannten Konflikten wie Sodium zusammen mit Embeddium oder OptiFine oder zwei Minimaps.
+- **Preset-Vorlagen.** Ein neues Preset kann mit „Performance“, „Shader“, „PvP“ oder „Redstone“ starten und danach frei geändert werden.
+- **„Aus Modpack übernehmen“.** Mods, Resource Packs und Shader aus einer eigenen Instanz, aus jedem Modrinth- oder CurseForge-Modpack (nur die Liste wird gelesen, nichts installiert) oder aus einem TRS-Pack-Code ins Preset übernehmen – als Checkliste mit Suche, Filtern wie „Nur Performance“ oder „Nur Client-seitig“ und „Alle“/„Keine“. Was schon im Preset ist, wird übersprungen.
+- **CurseForge-Projekte in Presets.** Presets können jetzt auch CurseForge-Projekte enthalten; installiert wird jeweils die passende Datei samt Pflicht-Abhängigkeiten.
 
 ## 0.18.0 – 2026-10-04 – Power Tools | Profi-Werkzeuge
 <!-- banner: accent=#ff3b30 motif=/news/0.18.0/banner.png -->

@@ -682,7 +682,8 @@
       "invalidOrder": "L’ordre ne correspond pas à la liste des préréglages.",
       "invalidFile": "Ce n’est pas un fichier de préréglage valide.",
       "fileTooLarge": "Le fichier de préréglage est trop volumineux.",
-      "noneSelected": "Aucun préréglage sélectionné."
+      "noneSelected": "Aucun préréglage sélectionné.",
+      "invalidLook": "Icône ou couleur inconnue."
     },
     "clips": {
       "bufferRange": "La durée du clip doit être comprise entre {min} et {max} secondes",
@@ -4010,15 +4011,32 @@
       "namePlaceholder": "p. ex. Mes indispensables",
       "contents": "Contenu ({n}) | Contenu ({n})",
       "remove": "Retirer {title}",
-      "empty": "Encore vide – ajoutez des projets depuis la recherche.",
-      "searchPlaceholder": "Rechercher sur Modrinth …",
+      "empty": "Encore vide – ajoute des projets depuis la recherche ou reprends-les d’un modpack.",
       "searchLabel": "Rechercher des projets",
       "added": "Ajouté",
       "add": "Ajouter",
       "noResults": "Aucun résultat",
       "hint": "Les préréglages ne dépendent pas de la version : à l’installation, la bonne version est choisie pour chaque instance – ce qui n’existe pas est ignoré.",
       "tooManyItems": "Au maximum {max} entrées par préréglage",
-      "duplicate": "Chaque projet ne peut figurer qu’une fois dans un préréglage"
+      "duplicate": "Chaque projet ne peut figurer qu’une fois dans un préréglage",
+      "addTitle": "Ajouter {title} au préréglage",
+      "checking": "Vérification des dépendances …",
+      "brings": "apporte",
+      "depOnly": "{title} est installé automatiquement ({loaders} uniquement)",
+      "depAlways": "{title} est installé automatiquement",
+      "conflictsLabel": "Conflits connus",
+      "conflict": {
+        "renderer": "{a} et {b} remplacent tous deux le moteur de rendu – un seul fonctionne à la fois.",
+        "shaders": "{a} et {b} chargent tous deux des shaders – n’en garde qu’un.",
+        "minimap": "{a} et {b} sont deux minicartes – deux à la fois se gênent.",
+        "zoom": "{a} et {b} zooment tous deux avec la même touche.",
+        "nvidium": "{a} et {b} ne fonctionnent pas ensemble – Nvidium ne s’utilise pas avec des shaders.",
+        "declared": "{a} ne fonctionne pas avec {b} (selon le mod lui-même).",
+        "trsClient": "{a} ne fonctionne pas avec le TRS Client."
+      },
+      "loadMore": "Charger plus",
+      "saved": "« {name} » enregistré",
+      "missing": "Ce preset n’existe pas (ou plus)."
     },
     "page": {
       "title": "Préréglages",
@@ -4058,6 +4076,103 @@
       "text": "Il n'y a pas encore de Sodium ni d'Embeddium ici. Le boost FPS installe les optimisations adaptées – choisissez un niveau :",
       "apply": "Appliquer le boost FPS",
       "dismiss": "Masquer ce conseil"
+    },
+    "templates": {
+      "title": "Nouveau préréglage",
+      "intro": "Commence vide ou avec un modèle – tu peux tout modifier ensuite.",
+      "empty": {
+        "name": "Préréglage vide",
+        "description": "Tout choisir toi-même"
+      },
+      "performance": {
+        "name": "Performances",
+        "description": "Sodium, Lithium, FerriteCore, Entity Culling et plus – plus de FPS, jeu plus fluide"
+      },
+      "shader": {
+        "name": "Shaders",
+        "description": "Iris + Sodium et des packs de shaders, des plus légers aux plus beaux"
+      },
+      "pvp": {
+        "name": "PvP",
+        "description": "FPS fluides, AppleSkin, affichage du ping, feu bas et textures PvP"
+      },
+      "redstone": {
+        "name": "Redstone",
+        "description": "Litematica, MiniHUD, Tweakeroo, Carpet et WorldEdit pour construire des circuits"
+      }
+    },
+    "look": {
+      "title": "Icône et couleur",
+      "hint": "Affichées dans la liste des préréglages et lors du choix des préréglages",
+      "icon": "Icône",
+      "color": "Couleur",
+      "colors": {
+        "redstone": "Redstone",
+        "amber": "Ambre",
+        "lime": "Citron vert",
+        "emerald": "Émeraude",
+        "cyan": "Cyan",
+        "sky": "Bleu",
+        "violet": "Violet",
+        "pink": "Rose",
+        "slate": "Ardoise"
+      },
+      "icons": {
+        "presets": "Pile",
+        "bolt": "Éclair",
+        "flame": "Flamme",
+        "sword": "Épée",
+        "shield": "Bouclier",
+        "cube": "Bloc",
+        "world": "Monde",
+        "compass": "Boussole",
+        "wrench": "Clé",
+        "puzzle": "Puzzle",
+        "lightbulb": "Ampoule",
+        "star": "Étoile",
+        "crown": "Couronne",
+        "trophy": "Trophée",
+        "gamepad": "Manette",
+        "image": "Image",
+        "palette": "Palette",
+        "moon": "Lune",
+        "leaf": "Feuille",
+        "monitor": "Écran"
+      }
+    },
+    "pick": {
+      "open": "Reprendre d’un modpack",
+      "title": "Reprendre d’un modpack",
+      "titleFrom": "Reprendre de « {name} »",
+      "sourceLabel": "Source",
+      "source": {
+        "instance": "Mon instance",
+        "modpack": "Modpack",
+        "code": "Code TRS"
+      },
+      "instanceHint": "Choisis une instance – ses mods, packs de ressources et shaders sont listés.",
+      "searchPack": "Rechercher des modpacks",
+      "packHint": "Seule la liste des mods de la dernière version est lue – rien n’est installé.",
+      "codeHint": "Saisis le code d’un pack partagé avec le TRS Launcher.",
+      "codeLabel": "Code du pack",
+      "read": "Lire",
+      "reading": "Lecture du contenu …",
+      "otherSource": "Autre source",
+      "count": "{n} entrée | {n} entrées",
+      "filterPlaceholder": "Filtrer par nom …",
+      "kindLabel": "Type",
+      "allKinds": "Tous les types",
+      "onlyPerformance": "Performances uniquement",
+      "onlyClient": "Côté client uniquement",
+      "all": "Tout",
+      "none": "Aucun",
+      "withoutProject": "{n} sans projet Modrinth/CurseForge ne peut pas être repris | {n} sans projet Modrinth/CurseForge ne peuvent pas être repris",
+      "performance": "Performances",
+      "client": "Client",
+      "noProject": "Pas sur Modrinth/CurseForge – impossible à reprendre",
+      "alreadyIn": "Déjà dans le préréglage",
+      "apply": "Reprendre {n} | Reprendre {n}",
+      "done": "{added} repris, {skipped} déjà présents | {added} repris, {skipped} déjà présents"
     }
   },
   "updateNews": {

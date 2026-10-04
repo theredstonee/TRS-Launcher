@@ -682,7 +682,8 @@
       "invalidOrder": "Kolejność nie pasuje do listy presetów.",
       "invalidFile": "To nie jest prawidłowy plik presetu.",
       "fileTooLarge": "Plik presetu jest za duży.",
-      "noneSelected": "Nie wybrano żadnego presetu."
+      "noneSelected": "Nie wybrano żadnego presetu.",
+      "invalidLook": "Nieznana ikona lub kolor."
     },
     "clips": {
       "bufferRange": "Długość klipu musi wynosić od {min} do {max} sekund",
@@ -4010,15 +4011,32 @@
       "namePlaceholder": "np. Moje podstawy",
       "contents": "Zawartość ({n}) | Zawartość ({n}) | Zawartość ({n})",
       "remove": "Usuń {title}",
-      "empty": "Jeszcze pusto – dodaj projekty z wyszukiwarki.",
-      "searchPlaceholder": "Szukaj na Modrinth …",
+      "empty": "Jeszcze pusto – dodaj projekty z wyszukiwarki albo przejmij je z modpacka.",
       "searchLabel": "Szukaj projektów",
       "added": "Dodano",
       "add": "Dodaj",
       "noResults": "Brak wyników",
       "hint": "Presety nie zależą od wersji: przy instalacji dla każdej instancji wybierana jest pasująca wersja – czego nie ma, zostaje pominięte.",
       "tooManyItems": "Najwyżej {max} pozycji na preset",
-      "duplicate": "Każdy projekt może być w presecie tylko raz"
+      "duplicate": "Każdy projekt może być w presecie tylko raz",
+      "addTitle": "Dodaj {title} do presetu",
+      "checking": "Sprawdzanie zależności …",
+      "brings": "dodaje",
+      "depOnly": "{title} zostanie zainstalowany automatycznie (tylko {loaders})",
+      "depAlways": "{title} zostanie zainstalowany automatycznie",
+      "conflictsLabel": "Znane konflikty",
+      "conflict": {
+        "renderer": "{a} i {b} zastępują renderer – działa tylko jeden naraz.",
+        "shaders": "{a} i {b} wczytują shadery – zostaw tylko jeden.",
+        "minimap": "{a} i {b} to minimapy – dwie naraz sobie przeszkadzają.",
+        "zoom": "{a} i {b} przybliżają tym samym klawiszem.",
+        "nvidium": "{a} i {b} nie działają razem – Nvidium nie działa z shaderami.",
+        "declared": "{a} nie działa razem z {b} (według samego moda).",
+        "trsClient": "{a} nie działa razem z TRS Client."
+      },
+      "loadMore": "Wczytaj więcej",
+      "saved": "Zapisano „{name}”",
+      "missing": "Ten preset (już) nie istnieje."
     },
     "page": {
       "title": "Presety",
@@ -4058,6 +4076,103 @@
       "text": "Nie ma tu jeszcze Sodium ani Embeddium. Zwiększenie FPS instaluje pasujące optymalizacje – wybierz poziom:",
       "apply": "Zastosuj zwiększenie FPS",
       "dismiss": "Ukryj tę wskazówkę"
+    },
+    "templates": {
+      "title": "Nowy preset",
+      "intro": "Zacznij od zera lub od szablonu – potem możesz wszystko zmienić.",
+      "empty": {
+        "name": "Pusty preset",
+        "description": "Wybierz wszystko samodzielnie"
+      },
+      "performance": {
+        "name": "Wydajność",
+        "description": "Sodium, Lithium, FerriteCore, Entity Culling i więcej – więcej FPS, płynniejsza gra"
+      },
+      "shader": {
+        "name": "Shadery",
+        "description": "Iris + Sodium i paczki shaderów od bardzo lekkich po przepiękne"
+      },
+      "pvp": {
+        "name": "PvP",
+        "description": "Płynne FPS, AppleSkin, wyświetlanie pingu, niski ogień i tekstury PvP"
+      },
+      "redstone": {
+        "name": "Redstone",
+        "description": "Litematica, MiniHUD, Tweakeroo, Carpet i WorldEdit do budowania układów"
+      }
+    },
+    "look": {
+      "title": "Ikona i kolor",
+      "hint": "Widoczne na liście presetów i przy wyborze presetów",
+      "icon": "Ikona",
+      "color": "Kolor",
+      "colors": {
+        "redstone": "Redstone",
+        "amber": "Bursztynowy",
+        "lime": "Limonkowy",
+        "emerald": "Szmaragdowy",
+        "cyan": "Cyjan",
+        "sky": "Niebieski",
+        "violet": "Fioletowy",
+        "pink": "Różowy",
+        "slate": "Łupkowy"
+      },
+      "icons": {
+        "presets": "Stos",
+        "bolt": "Błyskawica",
+        "flame": "Płomień",
+        "sword": "Miecz",
+        "shield": "Tarcza",
+        "cube": "Blok",
+        "world": "Świat",
+        "compass": "Kompas",
+        "wrench": "Klucz",
+        "puzzle": "Puzzel",
+        "lightbulb": "Żarówka",
+        "star": "Gwiazda",
+        "crown": "Korona",
+        "trophy": "Puchar",
+        "gamepad": "Kontroler",
+        "image": "Obraz",
+        "palette": "Paleta",
+        "moon": "Księżyc",
+        "leaf": "Liść",
+        "monitor": "Ekran"
+      }
+    },
+    "pick": {
+      "open": "Przejmij z modpacka",
+      "title": "Przejmij z modpacka",
+      "titleFrom": "Przejmij z „{name}”",
+      "sourceLabel": "Źródło",
+      "source": {
+        "instance": "Moja instancja",
+        "modpack": "Modpack",
+        "code": "Kod TRS"
+      },
+      "instanceHint": "Wybierz instancję – zostaną wypisane jej mody, paczki zasobów i shadery.",
+      "searchPack": "Szukaj modpacków",
+      "packHint": "Odczytywana jest tylko lista modów najnowszej wersji – nic nie jest instalowane.",
+      "codeHint": "Wpisz kod paczki udostępnionej przez TRS Launcher.",
+      "codeLabel": "Kod paczki",
+      "read": "Odczytaj",
+      "reading": "Odczytywanie zawartości …",
+      "otherSource": "Inne źródło",
+      "count": "{n} pozycja | {n} pozycje | {n} pozycji",
+      "filterPlaceholder": "Filtruj po nazwie …",
+      "kindLabel": "Rodzaj",
+      "allKinds": "Wszystkie rodzaje",
+      "onlyPerformance": "Tylko wydajność",
+      "onlyClient": "Tylko po stronie klienta",
+      "all": "Wszystkie",
+      "none": "Żadne",
+      "withoutProject": "{n} pozycji bez projektu na Modrinth/CurseForge nie można przejąć | {n} pozycji bez projektu na Modrinth/CurseForge nie można przejąć | {n} pozycji bez projektu na Modrinth/CurseForge nie można przejąć",
+      "performance": "Wydajność",
+      "client": "Klient",
+      "noProject": "Brak na Modrinth/CurseForge – nie można przejąć",
+      "alreadyIn": "Już w presecie",
+      "apply": "Przejmij {n} | Przejmij {n} | Przejmij {n}",
+      "done": "Przejęto {added}, {skipped} już było | Przejęto {added}, {skipped} już było | Przejęto {added}, {skipped} już było"
     }
   },
   "updateNews": {
