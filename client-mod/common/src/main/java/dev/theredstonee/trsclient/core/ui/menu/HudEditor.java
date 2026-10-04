@@ -331,6 +331,12 @@ public final class HudEditor extends UiScreen {
 		return true;
 	}
 
+	/** Kein Textfeld – keine Texteingabe (IME bliebe sonst unnötig an). */
+	@Override
+	public boolean wantsTextInput() {
+		return false;
+	}
+
 	@Override
 	public boolean keyPressed(int rawKey, UiKey key, boolean shift) {
 		if (panel.captureKey(rawKey, key, host)) return true;

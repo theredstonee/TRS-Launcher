@@ -184,6 +184,12 @@ public final class EmoteWheel extends UiScreen {
 		return true;
 	}
 
+	/** Kein Textfeld – keine Texteingabe (IME bliebe sonst unnötig an). */
+	@Override
+	public boolean wantsTextInput() {
+		return false;
+	}
+
 	@Override
 	public boolean keyPressed(int rawKey, UiKey key, boolean shift) {
 		if (key == UiKey.ESCAPE) {

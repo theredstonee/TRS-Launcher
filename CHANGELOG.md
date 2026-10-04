@@ -28,6 +28,14 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Fix: typing in the TRS menu on Minecraft 26.3.** The search box, chat and friends, names, codes and every other text field of the TRS Client take your keyboard input again on 26.3 (Fabric, NeoForge and Forge) – including typing straight into the search without clicking it first.
+
+### Deutsch
+- **Behoben: Tippen im TRS-Menü unter Minecraft 26.3.** Suchfeld, Chat und Freunde, Namen, Codes und alle anderen Textfelder des TRS Clients nehmen unter 26.3 (Fabric, NeoForge und Forge) wieder Tastatureingaben an – auch das direkte Lostippen in die Suche ohne vorheriges Anklicken.
+
 ## 0.18.1 – 2026-10-04 – Power Tools Fix | Profi-Werkzeuge – Fix
 <!-- banner: accent=#ffb02e motif=/news/0.18.0/banner.png -->
 <!-- shots:
