@@ -56,6 +56,9 @@ add_library(trsengine SHARED
   "${TRS}/trs_shims.m"
 )
 target_include_directories(trsengine PRIVATE ${ENGINE_INCLUDES})
+# main_hook.m nutzt Mach-Funktionen ohne eigenes #include (bei Amethyst kam <mach/mach.h> über den
+# fishhook-Fork mit) – die Datei bleibt unverändert, der Header kommt per -include dazu.
+set_source_files_properties("${VENDOR}/main_hook.m" PROPERTIES COMPILE_OPTIONS "-include;mach/mach.h")
 target_link_libraries(trsengine PRIVATE
   "-framework Foundation"
   "-framework UIKit"
