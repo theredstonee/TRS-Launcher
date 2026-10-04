@@ -28,6 +28,22 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## 0.18.1 – 2026-10-04 – Power Tools Fix | Profi-Werkzeuge – Fix
+<!-- banner: accent=#ffb02e motif=/news/0.18.0/banner.png -->
+<!-- shots:
+/news/0.18.1/mobile-app.png | The TRS Launcher app for Android is now part of the release | Die TRS-Launcher-App für Android ist jetzt im Release
+-->
+
+### English
+- **Fix: "The mod loader installer could not be downloaded" on NeoForge/Forge.** Some instances had a loader version saved that doesn't belong to NeoForge or Forge (for example a Fabric version). The launcher now notices this and installs the newest matching NeoForge/Forge version instead of failing.
+- **Android app and iPhone version in the release.** The mobile builds of 0.18.0 didn't make it into the release; the APK for Android and the AltStore/SideStore source for iPhone and iPad are now published.
+- **"Redeem code" right on the Skins page.** A big button at the top next to "Save skin" opens the code dialog for capes and cosmetics.
+
+### Deutsch
+- **Behoben: „Der Modloader-Installer konnte nicht heruntergeladen werden“ bei NeoForge/Forge.** Bei manchen Instanzen war eine Loader-Version gespeichert, die gar nicht zu NeoForge oder Forge gehört (zum Beispiel eine Fabric-Version). Der Launcher erkennt das jetzt und installiert die neueste passende NeoForge-/Forge-Version, statt abzubrechen.
+- **Android-App und iPhone-Version im Release.** Die Handy-Builds von 0.18.0 haben es nicht ins Release geschafft; die APK für Android und die AltStore/SideStore-Quelle für iPhone und iPad sind jetzt veröffentlicht.
+- **„Code einlösen“ direkt auf der Skins-Seite.** Ein großer Knopf oben neben „Skin speichern“ öffnet den Code-Dialog für Umhänge und Kosmetik.
+
 ## 0.18.0 – 2026-10-04 – Power Tools | Profi-Werkzeuge
 <!-- banner: accent=#ff3b30 motif=/news/0.18.0/banner.png -->
 <!-- shots:

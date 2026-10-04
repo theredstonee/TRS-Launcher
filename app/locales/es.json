@@ -2743,7 +2743,8 @@
     "accountDefault": "Predeterminada de la cuenta",
     "defaultsFrom": "De Minecraft {version}",
     "defaultsMissing": "Instala cualquier versión de Minecraft para elegir entre todas las skins predeterminadas.",
-    "packsSource": "Skins gratis de minecraft.net"
+    "packsSource": "Skins gratis de minecraft.net",
+    "redeemNeedsTrs": "Canjear códigos requiere los servicios de TRS: actívalos en Ajustes → Privacidad."
   },
   "validation": {
     "invalidCharacters": "Contiene caracteres no válidos",

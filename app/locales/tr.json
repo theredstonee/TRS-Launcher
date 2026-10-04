@@ -2743,7 +2743,8 @@
     "accountDefault": "Hesap varsayılanı",
     "defaultsFrom": "Minecraft {version} sürümünden",
     "defaultsMissing": "Tüm varsayılan skinler arasından seçmek için herhangi bir Minecraft sürümü kur.",
-    "packsSource": "minecraft.net’ten ücretsiz skinler"
+    "packsSource": "minecraft.net’ten ücretsiz skinler",
+    "redeemNeedsTrs": "Kod kullanmak için TRS hizmetleri gerekir – Ayarlar → Gizlilik bölümünden aç."
   },
   "validation": {
     "invalidCharacters": "Geçersiz karakterler içeriyor",

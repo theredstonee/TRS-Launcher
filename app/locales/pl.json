@@ -2743,7 +2743,8 @@
     "accountDefault": "Domyślny dla konta",
     "defaultsFrom": "Z Minecrafta {version}",
     "defaultsMissing": "Zainstaluj dowolną wersję Minecrafta, aby wybierać spośród wszystkich domyślnych skinów.",
-    "packsSource": "Darmowe skiny z minecraft.net"
+    "packsSource": "Darmowe skiny z minecraft.net",
+    "redeemNeedsTrs": "Realizacja kodów wymaga usług TRS – włącz je w Ustawienia → Prywatność."
   },
   "validation": {
     "invalidCharacters": "Zawiera nieprawidłowe znaki",

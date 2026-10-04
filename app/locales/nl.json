@@ -2743,7 +2743,8 @@
     "accountDefault": "Standaard van het account",
     "defaultsFrom": "Uit Minecraft {version}",
     "defaultsMissing": "Installeer een willekeurige Minecraft-versie om uit alle standaardskins te kiezen.",
-    "packsSource": "Gratis skins van minecraft.net"
+    "packsSource": "Gratis skins van minecraft.net",
+    "redeemNeedsTrs": "Codes inwisselen vereist de TRS-diensten – zet ze aan bij Instellingen → Privacy."
   },
   "validation": {
     "invalidCharacters": "Bevat ongeldige tekens",

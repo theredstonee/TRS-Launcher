@@ -2743,7 +2743,8 @@
     "accountDefault": "Standard des Kontos",
     "defaultsFrom": "Aus Minecraft {version}",
     "defaultsMissing": "Installiere eine beliebige Minecraft-Version, um aus allen Standard-Skins zu wählen.",
-    "packsSource": "Kostenlose Skins von minecraft.net"
+    "packsSource": "Kostenlose Skins von minecraft.net",
+    "redeemNeedsTrs": "Codes einlösen braucht die TRS-Dienste – schalte sie unter Einstellungen → Datenschutz ein."
   },
   "validation": {
     "invalidCharacters": "Enthält ungültige Zeichen",

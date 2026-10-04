@@ -281,6 +281,13 @@ function previewCompanion(item: TrsHeadCosmetic | null) {
 
 const capesSection = useTemplateRef<{ startRedeem: () => void }>('capesSection')
 
+/** „Code einlösen“: Der Dialog gehört zum Umhang-Reiter – erst dorthin wechseln, sonst bleibt er unsichtbar. */
+async function openRedeem() {
+  if (tab.value !== 'capes') selectTab('capes')
+  await nextTick()
+  capesSection.value?.startRedeem()
+}
+
 const changes = computed(() => draftChanges(draft.value, profile.value))
 const working = computed(() => syncBusy(sync.value))
 /** Entwurf weicht vom Konto ab und ist auch noch nicht unterwegs. */
@@ -647,6 +654,16 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
 <template>
   <div class="flex h-full min-h-0 flex-col p-6 mobile:h-auto mobile:p-4">
     <PageHeader :title="t('skins.title')" :subtitle="t('skins.subtitle')">
+      <button
+        class="btn btn-primary gap-2"
+        :disabled="!trs.enabled"
+        :title="trs.enabled ? undefined : t('skins.redeemNeedsTrs')"
+        data-testid="skins-redeem"
+        @click="openRedeem"
+      >
+        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path :d="icons.ticket" /></svg>
+        {{ t('capes.redeem') }}
+      </button>
       <button class="btn btn-ghost" :disabled="!!busy || !profile" @click="saveActive">
         {{ busy === 'save' ? t('skins.savingCurrent') : t('skins.saveCurrent') }}
       </button>
@@ -1111,7 +1128,7 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
               :night="night"
               @preview="previewHead"
               @equipped="headEquipped = $event"
-              @redeem="capesSection?.startRedeem()"
+              @redeem="openRedeem"
             />
             <TrsHeadCosmetics
               class="mt-8"
@@ -1120,7 +1137,7 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
               :night="night"
               @preview="previewCompanion"
               @equipped="companionEquipped = $event"
-              @redeem="capesSection?.startRedeem()"
+              @redeem="openRedeem"
             />
           </div>
         </div>
