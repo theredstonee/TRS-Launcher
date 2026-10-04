@@ -238,6 +238,16 @@ public abstract class UiScreen {
 		return false;
 	}
 
+	/**
+	 * Braucht der Bildschirm Texteingabe (Zeichen)? Ab Minecraft 26.3 (SDL) kommen Zeichen nur an, solange die
+	 * Texteingabe des Fensters an ist – der Minecraft-Bildschirm schaltet sie danach. Standard: an, weil Tippen ohne
+	 * Fokus in vielen Seiten direkt ins Suchfeld/Eingabefeld geht. Im Touch-Modus nur mit fokussiertem Feld (sonst
+	 * käme die System-Tastatur bei jedem TRS-Bildschirm).
+	 */
+	public boolean wantsTextInput() {
+		return !TouchMode.enabled() || TouchKeyboard.fieldOf(this) != null;
+	}
+
 	/** Pausiert das Spiel nicht. */
 	public boolean pausesGame() {
 		return false;

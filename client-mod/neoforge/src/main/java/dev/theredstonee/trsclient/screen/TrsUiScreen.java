@@ -74,6 +74,11 @@ public class TrsUiScreen extends TrsScreen {
 	}
 
 	@Override
+	protected boolean wantsTextInput() {
+		return ui.wantsTextInput();
+	}
+
+	@Override
 	public void onClose() {
 		ui.requestClose();
 	}

@@ -1042,6 +1042,12 @@ public final class TitleUi extends UiScreen {
 		return super.mouseReleased(mouseX, mouseY, button);
 	}
 
+	/** Kein Textfeld – keine Texteingabe (IME bliebe sonst unnötig an). */
+	@Override
+	public boolean wantsTextInput() {
+		return false;
+	}
+
 	@Override
 	public boolean keyPressed(int rawKey, UiKey key, boolean shift) {
 		int count = linkIndex() + 1;

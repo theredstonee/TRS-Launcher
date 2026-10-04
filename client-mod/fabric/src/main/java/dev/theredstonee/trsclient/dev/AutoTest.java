@@ -107,6 +107,11 @@ public final class AutoTest {
 			MenusTest.installAddServer();
 			return;
 		}
+		// -PtrsAutotestOnly=typing: Tippen im TRS-Menü über echte Tastatur-Nachrichten (26.3: SDL-Texteingabe)
+		if ("typing".equals(System.getProperty("trsclient.autotest.only"))) {
+			TypingTest.install();
+			return;
+		}
 		if ("reload".equals(System.getProperty("trsclient.autotest.only"))) {
 			ReloadTest.install();
 			return;

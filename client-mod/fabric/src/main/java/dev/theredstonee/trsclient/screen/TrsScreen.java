@@ -97,6 +97,25 @@ public abstract class TrsScreen extends Screen {
 		TrsClient.get().saveConfig();
 	}
 
+	/** Braucht der Bildschirm Zeichen-Eingaben (siehe {@link #keepTextInput()})? Standard: ja. */
+	protected boolean wantsTextInput() {
+		return true;
+	}
+
+	/**
+	 * Ab 26.3 (SDL statt GLFW) schickt das Fenster Zeichen nur, solange die Texteingabe an ist – Vanilla schaltet sie
+	 * nur für fokussierte Vanilla-Textfelder ein. Die TRS-Oberflächen haben eigene Felder (und Tippen ohne Fokus),
+	 * darum je Frame: an, solange der Bildschirm Zeichen will (Besitzer = dieser Bildschirm). Ein Vanilla-Feld, das den
+	 * Fokus verliert, schaltet sie dann nicht mehr ab; Vanilla schaltet sie beim Bildschirmwechsel selbst aus.
+	 */
+	private void keepTextInput() {
+		//? if >=26.3 {
+		/*com.mojang.blaze3d.platform.TextInputManager input = minecraft.textInputManager();
+		if (wantsTextInput()) input.startTextInput(this);
+		else input.stopTextInput(this);
+		*///?}
+	}
+
 	// --- Versionsabhängige Einstiegspunkte ---
 
 	//? if >=26.1 {
@@ -109,6 +128,7 @@ public abstract class TrsScreen extends Screen {
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
 		super.extractRenderState(g, mouseX, mouseY, partialTick);
+		keepTextInput();
 		draw(Gfx.of(g), mouseX, mouseY, partialTick);
 	}
 	*///?} elif >=1.20 {

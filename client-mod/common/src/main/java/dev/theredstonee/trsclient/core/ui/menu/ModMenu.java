@@ -53,6 +53,8 @@ public final class ModMenu extends UiScreen {
 	private final MenuHost host;
 	private final SettingsPanel panel = new SettingsPanel();
 	private final TextInput search = new TextInput(32);
+	/** Suchfeld des letzten Frames (x, y, Breite, Höhe) – für den Selbsttest. */
+	private final int[] searchBox = new int[4];
 	private final TextInput nameInput = new TextInput(HudProfiles.MAX_NAME_LENGTH);
 	private final Map<String, Float> hover = new HashMap<String, Float>();
 
@@ -220,6 +222,21 @@ public final class ModMenu extends UiScreen {
 	public ModMenu showPacks() {
 		page = Page.PACKS;
 		return this;
+	}
+
+	/** Suchfeld (x, y, Breite, Höhe) des letzten Frames (Selbsttest: echter Klick). */
+	public int[] testSearchBox() {
+		return searchBox.clone();
+	}
+
+	/** Text im Suchfeld (Selbsttest). */
+	public String testSearchText() {
+		return search.text();
+	}
+
+	/** Hat das Suchfeld den Fokus? (Selbsttest) */
+	public boolean testSearchFocused() {
+		return search.focused();
 	}
 
 	/** Modul-Pakete-Seite (Selbsttest). */
@@ -419,6 +436,10 @@ public final class ModMenu extends UiScreen {
 			int caret = searchX + 16 + c.textWidth(search.text());
 			c.fill(Math.min(caret, searchX + searchW - 3), searchY + 4, Math.min(caret + 1, searchX + searchW - 2), searchY + 12, t.dustOn);
 		}
+		searchBox[0] = searchX;
+		searchBox[1] = searchY;
+		searchBox[2] = searchW;
+		searchBox[3] = searchH;
 		hits.add(searchX, searchY, searchW, searchH, new Runnable() {
 			@Override
 			public void run() {
