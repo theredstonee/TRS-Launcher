@@ -59,6 +59,31 @@ export function docsUrl(lang: Lang): string {
 }
 export const IMPRINT_URL = 'https://theredstonee.de/imprint/'
 
+export interface MobileFile {
+  url: string
+  name: string
+  sha256: string
+  size: number
+}
+
+/** Neueste Handy-Apps aus dem signierten Kanal `mobile` (vom Server geprüft, siehe server/lib/mobile.ts). */
+export interface MobileLatest {
+  version: string
+  publishedAt: string | null
+  android: MobileFile | null
+  ios: (MobileFile & { altstore: string }) | null
+}
+
+/** Fester Kanal: Release-Seite und AltStore-/SideStore-Quelle (die Adressen ändern sich nie). */
+export const MOBILE_RELEASE_PAGE = `${REPO_URL}/releases/tag/mobile`
+export const ALTSTORE_SOURCE = `${REPO_URL}/releases/download/mobile/altstore.json`
+/** SHA-256 des Zertifikats, mit dem die APK signiert ist (zum Nachprüfen, z. B. mit apksigner). */
+export const APK_CERT_SHA256 = '8a:aa:a3:d9:8b:06:a7:24:d1:c7:ee:d0:d0:de:f4:3a:27:75:de:f5:58:a4:51:2e:07:e7:81:61:63:1f:91:aa'
+
+export function useMobileRelease() {
+  return useApiFetch<{ mobile: MobileLatest | null }>('/v1/site/mobile-latest', { key: 'mobile-release', default: () => ({ mobile: null }) })
+}
+
 export function useRelease() {
   return useApiFetch<{ release: LatestRelease | null }>('/v1/site/releases', { key: 'release', default: () => ({ release: null }) })
 }
@@ -113,7 +138,9 @@ export function postGallery(post: BlogPostSummary, lang: Lang): PostShot[] {
 /** Betriebssystem des Besuchers (für den großen Download-Knopf). */
 export function useVisitorOs() {
   const ua = import.meta.server ? (useRequestHeaders(['user-agent'])['user-agent'] ?? '') : navigator.userAgent
-  const os = useState<'windows' | 'linux' | 'other'>('visitor-os', () => {
+  const os = useState<'windows' | 'linux' | 'android' | 'ios' | 'other'>('visitor-os', () => {
+    if (/Android/i.test(ua)) return 'android'
+    if (/iPhone|iPad|iPod/i.test(ua)) return 'ios'
     if (/Windows/i.test(ua)) return 'windows'
     if (/Linux|X11/i.test(ua) && !/Android/i.test(ua)) return 'linux'
     return 'other'

@@ -171,6 +171,8 @@ export function buildLlmsFullTxt(s: LlmsSource): string {
   out.push(`- Windows: ${line(m.download.windowsText)} ${line(m.download.smartText)}`)
   out.push(`- Linux: ${line(m.download.linuxText)} AppImage (${line(m.download.appimageText)}), ${m.download.deb}, ${m.download.rpm}, ${m.download.aur}: yay -S trs-launcher-bin. Flatpak: ${line(m.download.flatpakSoon)}`)
   out.push(`- ${m.download.requirementsTitle}: ${m.download.requirements.map(line).join('; ')}`)
+  out.push(`- ${m.download.mobile.android}: ${line(m.download.mobile.androidText)} Guide: ${u}/docs/en/getting-started/android`)
+  out.push(`- ${m.download.mobile.ios}: ${line(m.download.mobile.iosText)} ${line(m.download.mobile.jitText)} AltStore/SideStore source: ${REPO_URL}/releases/download/mobile/altstore.json. Guide: ${u}/docs/en/getting-started/iphone-ipad`)
   out.push(`- All files and checksums: ${REPO_URL}/releases`, '')
 
   out.push('## Frequently asked questions', '', `Page: ${u}/faq`, '')

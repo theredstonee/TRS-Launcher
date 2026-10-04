@@ -22,7 +22,7 @@ const cache = new Map<string, Cached<unknown>>()
 const inflight = new Map<string, Promise<unknown>>()
 
 /** Zwischenspeicher mit Ablaufzeit; bei Fehlern den alten Wert behalten (sonst Fehler weitergeben). */
-async function cached<T>(key: string, load: () => Promise<T>, now = Date.now()): Promise<T> {
+export async function cached<T>(key: string, load: () => Promise<T>, now = Date.now()): Promise<T> {
   const hit = cache.get(key) as Cached<T> | undefined
   if (hit && now - hit.at < TTL_MS) return hit.value
   const running = inflight.get(key) as Promise<T> | undefined

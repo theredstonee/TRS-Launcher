@@ -43,6 +43,9 @@ const primary = computed(() => {
     if (a) return { href: a.url, label: fill(m.value.home.download, { os: 'Windows' }), icon: 'windows', external: true }
   }
   if (os.value === 'linux') return { href: lp('/download#linux'), label: fill(m.value.home.download, { os: 'Linux' }), icon: 'linux', external: false }
+  // Handy: zur Karte mit Anleitung (APK bzw. AltStore-Quelle), nicht direkt die Datei.
+  if (os.value === 'android') return { href: lp('/download#android'), label: fill(m.value.home.download, { os: 'Android' }), icon: 'android', external: false }
+  if (os.value === 'ios') return { href: lp('/download#ios'), label: fill(m.value.home.download, { os: m.value.download.mobile.ios }), icon: 'apple', external: false }
   return { href: lp('/download'), label: m.value.home.downloadGeneric, icon: 'download', external: false }
 })
 
