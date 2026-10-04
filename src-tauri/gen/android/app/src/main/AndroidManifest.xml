@@ -9,7 +9,9 @@
     <!-- AndroidTV support -->
     <uses-feature android:name="android.software.leanback" android:required="false" />
 
+    <!-- Die eingebettete JVM schneidet Pointer-Tags ab (ARM64, Android 11+) → libc bricht sonst ab. -->
     <application
+        android:allowNativeHeapPointerTagging="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/Theme.trs_launcher"
