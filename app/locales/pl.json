@@ -935,6 +935,12 @@
     },
     "modConflicts": {
       "modGone": "Ten mod nie jest (już) włączony."
+    },
+    "iconEditor": {
+      "invalidIcon": "Ikona nie jest prawidłowym obrazem PNG.",
+      "invalidSource": "Dane ikony są nieprawidłowe.",
+      "noClientJar": "Minecraft nie jest jeszcze pobrany – uruchom raz instancję.",
+      "brokenImage": "Obraz jest uszkodzony lub za duży (maks. 4096×4096 pikseli)."
     }
   },
   "browse": {
@@ -1511,7 +1517,8 @@
       "exportDescription": "Zapisuje plik .mrpack do udostępnienia lub kopii zapasowej. Mody z Modrinth są linkowane, a nie kopiowane.",
       "deleteTitle": "Usuń instancję",
       "deleteDescription": "Trwale usuwa instancję ze wszystkimi światami, modami i zrzutami ekranu.",
-      "deleted": "Usunięto „{name}”"
+      "deleted": "Usunięto „{name}”",
+      "imageFromFile": "Z pliku …"
     },
     "installation": {
       "platform": "Platforma",
@@ -1624,7 +1631,172 @@
     "gameVersion": "Wersja Minecrafta",
     "showSnapshots": "Snapshoty i stare wersje",
     "loadingVersions": "Wczytywanie wersji …",
-    "creating": "Tworzenie …"
+    "creating": "Tworzenie …",
+    "icon": "Wybierz ikonę"
+  },
+  "iconEditor": {
+    "title": "Edytor ikon",
+    "titleFor": "Ikona dla {name}",
+    "open": "Edytuj ikonę",
+    "save": "Zapisz ikonę",
+    "saving": "Zapisywanie …",
+    "saved": "Ikona zapisana.",
+    "replaceHint": "Zapisanie zastąpi obecny obraz.",
+    "tabs": {
+      "pixel": "Edytor pikseli",
+      "mc": "Przedmioty i bloki",
+      "trs": "Ikony TRS",
+      "upload": "Własny obraz"
+    },
+    "preview": {
+      "title": "Podgląd",
+      "sidebar": "Pasek boczny",
+      "card": "Karta",
+      "header": "Nagłówek"
+    },
+    "pixel": {
+      "toolsLabel": "Narzędzia",
+      "tools": {
+        "pencil": "Ołówek (B)",
+        "eraser": "Gumka (E)",
+        "fill": "Wypełnij (G)",
+        "picker": "Pobierz kolor (I)",
+        "line": "Linia (L)",
+        "rect": "Prostokąt (R)",
+        "rectFilled": "Wypełniony prostokąt"
+      },
+      "undo": "Cofnij (Ctrl+Z)",
+      "redo": "Ponów (Ctrl+Y)",
+      "canvasLabel": "Obszar rysowania {size} × {size}",
+      "size": "Rozmiar",
+      "zoomIn": "Powiększ",
+      "zoomOut": "Pomniejsz",
+      "grid": "Siatka",
+      "mirror": {
+        "label": "Lustro",
+        "none": "Wył.",
+        "x": "Lewo ↔ prawo",
+        "y": "Góra ↕ dół",
+        "xy": "Oba"
+      },
+      "flipX": "Odbij poziomo",
+      "flipY": "Odbij pionowo",
+      "clear": "Wyczyść",
+      "export": "Eksportuj PNG",
+      "exported": "Zapisano PNG.",
+      "palette": {
+        "custom": "Własny kolor",
+        "trs": "Kolory TRS",
+        "mc": "Kolory w stylu Minecrafta",
+        "recent": "Ostatnio używane"
+      },
+      "hint": "Prawy przycisk myszy wymazuje.",
+      "imageLayer": "Motyw jest obrazem. Spikselizuj go, aby edytować go tutaj.",
+      "pixelate": "Pikselizuj (32 × 32)"
+    },
+    "mc": {
+      "search": "Szukaj przedmiotów i bloków …",
+      "filter": {
+        "label": "Rodzaj",
+        "all": "Wszystko",
+        "item": "Przedmioty",
+        "block": "Bloki"
+      },
+      "versionLabel": "Wersja Minecrafta",
+      "version": "Z Minecrafta {version}",
+      "noClient": "Uruchom raz dowolną instancję – wtedy pojawią się tu wszystkie przedmioty i bloki.",
+      "licence": "Obrazki pochodzą z Twojego Minecrafta – launcher ich nie dostarcza.",
+      "loading": "Wczytywanie tekstur …",
+      "empty": "Nic nie znaleziono.",
+      "more": "Pokaż więcej ({n})"
+    },
+    "trs": {
+      "search": "Szukaj ikon TRS …",
+      "names": {
+        "rocket": "Rakieta",
+        "castle": "Zamek",
+        "redstone": "Pył redstone",
+        "comparator": "Komparator",
+        "repeater": "Przekaźnik",
+        "torch": "Pochodnia redstone",
+        "lamp": "Lampa",
+        "sun": "Słońce shaderów",
+        "sword": "Miecz (PvP)",
+        "pickaxe": "Kilof",
+        "axe": "Siekiera",
+        "bow": "Łuk",
+        "shield": "Tarcza",
+        "map": "Mapa",
+        "flask": "Fiolka",
+        "heart": "Serce",
+        "crown": "Korona",
+        "star": "Gwiazda",
+        "lightning": "Błyskawica",
+        "tree": "Drzewo",
+        "house": "Dom",
+        "gear": "Zębatka",
+        "controller": "Kontroler",
+        "globe": "Globus",
+        "book": "Książka",
+        "gem": "Klejnot",
+        "cube": "Blok trawy",
+        "chest": "Skrzynia",
+        "mushroom": "Grzyb",
+        "flame": "Płomień",
+        "snowflake": "Płatek śniegu",
+        "moon": "Księżyc",
+        "cloud": "Chmura",
+        "note": "Muzyka",
+        "flag": "Flaga",
+        "trophy": "Puchar",
+        "key": "Klucz",
+        "compass": "Kompas",
+        "wrench": "Klucz francuski",
+        "robot": "Robot"
+      }
+    },
+    "upload": {
+      "pick": "Wybierz obraz …",
+      "other": "Inny obraz",
+      "hint": "PNG, JPEG lub WebP, do 5 MB.",
+      "dragHint": "Przeciągnij, aby przesunąć kwadratowy kadr.",
+      "zoom": "Powiększenie",
+      "pixelate": "Pikselizuj (32 × 32)",
+      "colours": "Kolory",
+      "palette": {
+        "auto16": "Automatycznie (16 kolorów)",
+        "auto8": "Automatycznie (8 kolorów)",
+        "trs": "Kolory TRS",
+        "mc": "Kolory w stylu Minecrafta"
+      },
+      "apply": "Użyj jako motywu"
+    },
+    "bg": {
+      "title": "Tło",
+      "preset": "Styl {n}",
+      "fill": {
+        "label": "Wypełnienie",
+        "none": "Brak",
+        "solid": "Jednolite",
+        "gradient": "Gradient"
+      },
+      "color": "Kolor",
+      "color2": "Drugi kolor",
+      "angle": "Kąt {angle}°",
+      "pattern": {
+        "label": "Wzór",
+        "none": "Brak",
+        "wire": "Przewód redstone",
+        "deepslate": "Łupek głębinowy",
+        "dots": "Kropki"
+      },
+      "patternColor": "Kolor wzoru",
+      "border": "Ramka",
+      "borderColor": "Kolor ramki",
+      "glow": "Poświata",
+      "glowColor": "Kolor poświaty",
+      "scale": "Rozmiar motywu {percent} %"
+    }
   },
   "changeVersion": {
     "title": "Zmień wersję",
@@ -5776,7 +5948,9 @@
       "planLinks": "{n} mod jako link | {n} mody jako link | {n} modów jako link",
       "planFiles": "{n} plik wysłany | {n} pliki wysłane | {n} plików wysłanych",
       "upload": "Wyślij",
-      "uploading": "Wysyłanie …"
+      "uploading": "Wysyłanie …",
+      "icon": "Ikona paczki",
+      "iconHint": "Trafia do paczki i staje się obrazem instancji u każdego, kto ją zainstaluje."
     },
     "mine": {
       "open": "Moje modpacki",

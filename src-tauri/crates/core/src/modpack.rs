@@ -613,7 +613,8 @@ impl Launcher {
             tracing::warn!("Modpack-Herkunft für '{}' nicht gespeichert: {e}", instance.id);
         }
         self.trs_achievement_event(crate::trs_api::achievements::ReportKind::ModpackInstalled, None).await;
-        Ok(instance)
+        // Symbol aus dem Pack (eigene Exporte, geteilte Packs) wird zum Instanz-Bild.
+        Ok(self.apply_pack_icon(instance, &pack_path).await)
     }
 }
 

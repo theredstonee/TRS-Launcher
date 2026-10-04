@@ -34,6 +34,7 @@ pub mod history;
 pub mod hooks;
 pub mod hosting_mods;
 pub mod icon;
+pub mod icon_editor;
 pub mod import;
 pub mod instance;
 pub mod instance_files;

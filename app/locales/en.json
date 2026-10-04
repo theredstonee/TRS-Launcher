@@ -935,6 +935,12 @@
     },
     "modConflicts": {
       "modGone": "This mod isn't enabled (anymore)."
+    },
+    "iconEditor": {
+      "invalidIcon": "The icon isn't a valid PNG image.",
+      "invalidSource": "The icon data is invalid.",
+      "noClientJar": "No Minecraft downloaded yet – start an instance once.",
+      "brokenImage": "The image is damaged or too large (at most 4096×4096 pixels)."
     }
   },
   "browse": {
@@ -1511,7 +1517,8 @@
       "exportDescription": "Writes an .mrpack file for sharing or backing up. Mods from Modrinth are linked instead of copied.",
       "deleteTitle": "Delete instance",
       "deleteDescription": "Permanently deletes the instance with all its worlds, mods and screenshots.",
-      "deleted": "Deleted “{name}”"
+      "deleted": "Deleted “{name}”",
+      "imageFromFile": "From file …"
     },
     "installation": {
       "platform": "Platform",
@@ -1624,7 +1631,172 @@
     "gameVersion": "Minecraft version",
     "showSnapshots": "Snapshots & old versions",
     "loadingVersions": "Loading versions …",
-    "creating": "Creating …"
+    "creating": "Creating …",
+    "icon": "Choose icon"
+  },
+  "iconEditor": {
+    "title": "Icon editor",
+    "titleFor": "Icon for {name}",
+    "open": "Edit icon",
+    "save": "Save icon",
+    "saving": "Saving …",
+    "saved": "Icon saved.",
+    "replaceHint": "Saving replaces the current image.",
+    "tabs": {
+      "pixel": "Pixel editor",
+      "mc": "Items & blocks",
+      "trs": "TRS icons",
+      "upload": "Own image"
+    },
+    "preview": {
+      "title": "Preview",
+      "sidebar": "Sidebar",
+      "card": "Card",
+      "header": "Header"
+    },
+    "pixel": {
+      "toolsLabel": "Tools",
+      "tools": {
+        "pencil": "Pencil (B)",
+        "eraser": "Eraser (E)",
+        "fill": "Fill (G)",
+        "picker": "Pick colour (I)",
+        "line": "Line (L)",
+        "rect": "Rectangle (R)",
+        "rectFilled": "Filled rectangle"
+      },
+      "undo": "Undo (Ctrl+Z)",
+      "redo": "Redo (Ctrl+Y)",
+      "canvasLabel": "Drawing area {size} × {size}",
+      "size": "Canvas size",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "grid": "Grid",
+      "mirror": {
+        "label": "Mirror",
+        "none": "Off",
+        "x": "Left ↔ right",
+        "y": "Top ↕ bottom",
+        "xy": "Both"
+      },
+      "flipX": "Flip horizontally",
+      "flipY": "Flip vertically",
+      "clear": "Clear",
+      "export": "Export PNG",
+      "exported": "PNG saved.",
+      "palette": {
+        "custom": "Custom colour",
+        "trs": "TRS colours",
+        "mc": "Minecraft-style colours",
+        "recent": "Recently used"
+      },
+      "hint": "The right mouse button erases.",
+      "imageLayer": "The motif is an image. Pixelate it to edit it here.",
+      "pixelate": "Pixelate (32 × 32)"
+    },
+    "mc": {
+      "search": "Search items and blocks …",
+      "filter": {
+        "label": "Kind",
+        "all": "All",
+        "item": "Items",
+        "block": "Blocks"
+      },
+      "versionLabel": "Minecraft version",
+      "version": "From Minecraft {version}",
+      "noClient": "Start an instance once – then every item and block shows up here.",
+      "licence": "The pictures come from your own Minecraft game – the launcher doesn't ship them.",
+      "loading": "Reading textures …",
+      "empty": "Nothing found.",
+      "more": "Show more ({n})"
+    },
+    "trs": {
+      "search": "Search TRS icons …",
+      "names": {
+        "rocket": "Rocket",
+        "castle": "Castle",
+        "redstone": "Redstone dust",
+        "comparator": "Comparator",
+        "repeater": "Repeater",
+        "torch": "Redstone torch",
+        "lamp": "Lamp",
+        "sun": "Shader sun",
+        "sword": "Sword (PvP)",
+        "pickaxe": "Pickaxe",
+        "axe": "Axe",
+        "bow": "Bow",
+        "shield": "Shield",
+        "map": "Map",
+        "flask": "Potion flask",
+        "heart": "Heart",
+        "crown": "Crown",
+        "star": "Star",
+        "lightning": "Lightning",
+        "tree": "Tree",
+        "house": "House",
+        "gear": "Gear",
+        "controller": "Controller",
+        "globe": "Globe",
+        "book": "Book",
+        "gem": "Gem",
+        "cube": "Grass block",
+        "chest": "Chest",
+        "mushroom": "Mushroom",
+        "flame": "Flame",
+        "snowflake": "Snowflake",
+        "moon": "Moon",
+        "cloud": "Cloud",
+        "note": "Music",
+        "flag": "Flag",
+        "trophy": "Trophy",
+        "key": "Key",
+        "compass": "Compass",
+        "wrench": "Wrench",
+        "robot": "Robot"
+      }
+    },
+    "upload": {
+      "pick": "Choose image …",
+      "other": "Other image",
+      "hint": "PNG, JPEG or WebP, up to 5 MB.",
+      "dragHint": "Drag to move the square crop.",
+      "zoom": "Zoom",
+      "pixelate": "Pixelate (32 × 32)",
+      "colours": "Colours",
+      "palette": {
+        "auto16": "Automatic (16 colours)",
+        "auto8": "Automatic (8 colours)",
+        "trs": "TRS colours",
+        "mc": "Minecraft-style colours"
+      },
+      "apply": "Use as motif"
+    },
+    "bg": {
+      "title": "Background",
+      "preset": "Style {n}",
+      "fill": {
+        "label": "Fill",
+        "none": "None",
+        "solid": "Solid",
+        "gradient": "Gradient"
+      },
+      "color": "Colour",
+      "color2": "Second colour",
+      "angle": "Angle {angle}°",
+      "pattern": {
+        "label": "Pattern",
+        "none": "None",
+        "wire": "Redstone wire",
+        "deepslate": "Deepslate",
+        "dots": "Dots"
+      },
+      "patternColor": "Pattern colour",
+      "border": "Border",
+      "borderColor": "Border colour",
+      "glow": "Glow",
+      "glowColor": "Glow colour",
+      "scale": "Motif size {percent} %"
+    }
   },
   "changeVersion": {
     "title": "Change version",
@@ -5776,7 +5948,9 @@
       "planLinks": "{n} mod as link | {n} mods as link",
       "planFiles": "{n} file uploaded | {n} files uploaded",
       "upload": "Upload",
-      "uploading": "Uploading …"
+      "uploading": "Uploading …",
+      "icon": "Pack icon",
+      "iconHint": "Travels with the pack and becomes the instance picture for everyone who installs it."
     },
     "mine": {
       "open": "My modpacks",

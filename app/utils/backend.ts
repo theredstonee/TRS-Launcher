@@ -289,6 +289,17 @@ async function checked<S extends z.ZodType>(schema: S, command: string, args?: R
   return trsParse(schema, await call<unknown>(command, args))
 }
 
+/** Antwort von `save_instance_icon`: Instanz mit neuem Bildpfad. */
+const instanceIconViewSchema = z
+  .object({ id: z.string().max(128), name: z.string().max(256), icon: z.string().max(64).nullable().optional(), iconPath: z.string().max(4096).nullable().optional() })
+  .passthrough()
+const pngDataUrl = z.string().startsWith('data:image/png;base64,').max(8 * 1024 * 1024)
+const mcTextureSetSchema = z.object({
+  version: z.string().max(128),
+  textures: z.array(z.object({ key: z.string().regex(/^(item|block)\/[a-z0-9_]{1,64}$/), dataUrl: pngDataUrl })).max(4000),
+})
+const pickedIconImageSchema = z.object({ dataUrl: pngDataUrl, width: z.number().int().min(1).max(512), height: z.number().int().min(1).max(512) })
+
 /** Mobiler Update-Kanal (`mobile_update_check`). */
 const mobileUpdateStatusSchema = z.object({
   current: z.string().max(64),
@@ -365,6 +376,18 @@ export const backend = {
   /** Öffnet den Bilddialog; `null` = abgebrochen. */
   pickInstanceIcon: (id: string) => call<Instance | null>('pick_instance_icon', { id }),
   removeInstanceIcon: (id: string) => call<Instance>('remove_instance_icon', { id }),
+  /** Symbol-Editor: fertiges PNG (Base64) + Quelle (JSON); der Kern prüft beides noch einmal. */
+  saveInstanceIcon: async (id: string, png: string, source: string | null) =>
+    (await checked(instanceIconViewSchema, 'save_instance_icon', { id, png, source })) as unknown as Instance,
+  /** Editor-Daten des aktuellen Symbols (`null` = Bild ohne Editor-Daten). */
+  instanceIconSource: (id: string) => checked(z.string().max(262_144).nullable(), 'instance_icon_source', { id }),
+  /** Spielversionen mit geladenem Client (Quelle der Item-/Block-Texturen), neueste zuerst. */
+  mcTextureVersions: () => checked(z.array(z.string().max(128)).max(500), 'mc_texture_versions'),
+  mcTextures: (version: string | null) => checked(mcTextureSetSchema, 'mc_textures', { version }),
+  /** Eigenes Bild über den nativen Dialog (geprüft, höchstens 512 px); `null` = abgebrochen. */
+  pickIconImage: () => checked(pickedIconImageSchema.nullable(), 'pick_icon_image'),
+  /** Pixel-Bild als PNG speichern; `false` = abgebrochen. */
+  saveIconPng: (png: string, name: string) => checked(z.boolean(), 'save_icon_png', { png, name }),
   /** Öffnet den Bilddialog für das Banner; `null` = abgebrochen. */
   pickInstanceBanner: (id: string) => call<Instance | null>('pick_instance_banner', { id }),
   /** Nimmt einen Screenshot der Instanz als Banner (Rust prüft den Dateinamen). */

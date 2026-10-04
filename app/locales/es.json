@@ -935,6 +935,12 @@
     },
     "modConflicts": {
       "modGone": "Este mod ya no está activado."
+    },
+    "iconEditor": {
+      "invalidIcon": "El icono no es una imagen PNG válida.",
+      "invalidSource": "Los datos del icono no son válidos.",
+      "noClientJar": "Aún no se ha descargado Minecraft: inicia una instancia una vez.",
+      "brokenImage": "La imagen está dañada o es demasiado grande (máximo 4096×4096 píxeles)."
     }
   },
   "browse": {
@@ -1511,7 +1517,8 @@
       "exportDescription": "Genera un archivo .mrpack para compartir o guardar como copia de seguridad. Los mods de Modrinth se enlazan en lugar de copiarse.",
       "deleteTitle": "Eliminar instancia",
       "deleteDescription": "Elimina de forma permanente la instancia con todos sus mundos, mods y capturas.",
-      "deleted": "«{name}» eliminada"
+      "deleted": "«{name}» eliminada",
+      "imageFromFile": "Desde archivo …"
     },
     "installation": {
       "platform": "Plataforma",
@@ -1624,7 +1631,172 @@
     "gameVersion": "Versión de Minecraft",
     "showSnapshots": "Snapshots y versiones antiguas",
     "loadingVersions": "Cargando versiones …",
-    "creating": "Creando …"
+    "creating": "Creando …",
+    "icon": "Elegir icono"
+  },
+  "iconEditor": {
+    "title": "Editor de iconos",
+    "titleFor": "Icono de {name}",
+    "open": "Editar icono",
+    "save": "Guardar icono",
+    "saving": "Guardando …",
+    "saved": "Icono guardado.",
+    "replaceHint": "Al guardar se reemplaza la imagen actual.",
+    "tabs": {
+      "pixel": "Editor de píxeles",
+      "mc": "Objetos y bloques",
+      "trs": "Iconos TRS",
+      "upload": "Imagen propia"
+    },
+    "preview": {
+      "title": "Vista previa",
+      "sidebar": "Barra lateral",
+      "card": "Tarjeta",
+      "header": "Cabecera"
+    },
+    "pixel": {
+      "toolsLabel": "Herramientas",
+      "tools": {
+        "pencil": "Lápiz (B)",
+        "eraser": "Borrador (E)",
+        "fill": "Rellenar (G)",
+        "picker": "Tomar color (I)",
+        "line": "Línea (L)",
+        "rect": "Rectángulo (R)",
+        "rectFilled": "Rectángulo relleno"
+      },
+      "undo": "Deshacer (Ctrl+Z)",
+      "redo": "Rehacer (Ctrl+Y)",
+      "canvasLabel": "Lienzo {size} × {size}",
+      "size": "Tamaño",
+      "zoomIn": "Acercar",
+      "zoomOut": "Alejar",
+      "grid": "Cuadrícula",
+      "mirror": {
+        "label": "Espejo",
+        "none": "No",
+        "x": "Izquierda ↔ derecha",
+        "y": "Arriba ↕ abajo",
+        "xy": "Ambos"
+      },
+      "flipX": "Voltear en horizontal",
+      "flipY": "Voltear en vertical",
+      "clear": "Vaciar",
+      "export": "Exportar PNG",
+      "exported": "PNG guardado.",
+      "palette": {
+        "custom": "Color propio",
+        "trs": "Colores TRS",
+        "mc": "Colores estilo Minecraft",
+        "recent": "Usados recientemente"
+      },
+      "hint": "El botón derecho del ratón borra.",
+      "imageLayer": "El motivo es una imagen. Pixélala para editarla aquí.",
+      "pixelate": "Pixelar (32 × 32)"
+    },
+    "mc": {
+      "search": "Buscar objetos y bloques …",
+      "filter": {
+        "label": "Tipo",
+        "all": "Todo",
+        "item": "Objetos",
+        "block": "Bloques"
+      },
+      "versionLabel": "Versión de Minecraft",
+      "version": "De Minecraft {version}",
+      "noClient": "Inicia una instancia una vez y aquí aparecerán todos los objetos y bloques.",
+      "licence": "Las imágenes vienen de tu propio Minecraft; el launcher no las incluye.",
+      "loading": "Leyendo texturas …",
+      "empty": "No se encontró nada.",
+      "more": "Mostrar más ({n})"
+    },
+    "trs": {
+      "search": "Buscar iconos TRS …",
+      "names": {
+        "rocket": "Cohete",
+        "castle": "Castillo",
+        "redstone": "Polvo de redstone",
+        "comparator": "Comparador",
+        "repeater": "Repetidor",
+        "torch": "Antorcha de redstone",
+        "lamp": "Lámpara",
+        "sun": "Sol de shader",
+        "sword": "Espada (PvP)",
+        "pickaxe": "Pico",
+        "axe": "Hacha",
+        "bow": "Arco",
+        "shield": "Escudo",
+        "map": "Mapa",
+        "flask": "Frasco de poción",
+        "heart": "Corazón",
+        "crown": "Corona",
+        "star": "Estrella",
+        "lightning": "Rayo",
+        "tree": "Árbol",
+        "house": "Casa",
+        "gear": "Engranaje",
+        "controller": "Mando",
+        "globe": "Globo",
+        "book": "Libro",
+        "gem": "Gema",
+        "cube": "Bloque de césped",
+        "chest": "Cofre",
+        "mushroom": "Champiñón",
+        "flame": "Llama",
+        "snowflake": "Copo de nieve",
+        "moon": "Luna",
+        "cloud": "Nube",
+        "note": "Música",
+        "flag": "Bandera",
+        "trophy": "Trofeo",
+        "key": "Llave",
+        "compass": "Brújula",
+        "wrench": "Llave inglesa",
+        "robot": "Robot"
+      }
+    },
+    "upload": {
+      "pick": "Elegir imagen …",
+      "other": "Otra imagen",
+      "hint": "PNG, JPEG o WebP, hasta 5 MB.",
+      "dragHint": "Arrastra para mover el recorte cuadrado.",
+      "zoom": "Zoom",
+      "pixelate": "Pixelar (32 × 32)",
+      "colours": "Colores",
+      "palette": {
+        "auto16": "Automático (16 colores)",
+        "auto8": "Automático (8 colores)",
+        "trs": "Colores TRS",
+        "mc": "Colores estilo Minecraft"
+      },
+      "apply": "Usar como motivo"
+    },
+    "bg": {
+      "title": "Fondo",
+      "preset": "Estilo {n}",
+      "fill": {
+        "label": "Relleno",
+        "none": "Ninguno",
+        "solid": "Sólido",
+        "gradient": "Degradado"
+      },
+      "color": "Color",
+      "color2": "Segundo color",
+      "angle": "Ángulo {angle}°",
+      "pattern": {
+        "label": "Patrón",
+        "none": "Ninguno",
+        "wire": "Cable de redstone",
+        "deepslate": "Pizarra profunda",
+        "dots": "Puntos"
+      },
+      "patternColor": "Color del patrón",
+      "border": "Borde",
+      "borderColor": "Color del borde",
+      "glow": "Brillo",
+      "glowColor": "Color del brillo",
+      "scale": "Tamaño del motivo {percent} %"
+    }
   },
   "changeVersion": {
     "title": "Cambiar versión",
@@ -5776,7 +5948,9 @@
       "planLinks": "{n} mod como enlace | {n} mods como enlace",
       "planFiles": "{n} archivo subido | {n} archivos subidos",
       "upload": "Subir",
-      "uploading": "Subiendo …"
+      "uploading": "Subiendo …",
+      "icon": "Icono del pack",
+      "iconHint": "Viaja con el pack y se convierte en la imagen de la instancia de quien lo instale."
     },
     "mine": {
       "open": "Mis modpacks",

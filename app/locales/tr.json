@@ -935,6 +935,12 @@
     },
     "modConflicts": {
       "modGone": "Bu mod (artık) etkin değil."
+    },
+    "iconEditor": {
+      "invalidIcon": "Simge geçerli bir PNG resmi değil.",
+      "invalidSource": "Simge verileri geçersiz.",
+      "noClientJar": "Henüz Minecraft indirilmedi – bir kez bir örnek başlat.",
+      "brokenImage": "Resim bozuk veya çok büyük (en fazla 4096×4096 piksel)."
     }
   },
   "browse": {
@@ -1511,7 +1517,8 @@
       "exportDescription": "Paylaşmak veya yedeklemek için bir .mrpack dosyası yazar. Modrinth'ten gelen modlar kopyalanmak yerine bağlantı olarak eklenir.",
       "deleteTitle": "Kurulumu sil",
       "deleteDescription": "Kurulumu tüm dünyaları, modları ve ekran görüntüleriyle kalıcı olarak siler.",
-      "deleted": "Silindi: “{name}”"
+      "deleted": "Silindi: “{name}”",
+      "imageFromFile": "Dosyadan …"
     },
     "installation": {
       "platform": "Platform",
@@ -1624,7 +1631,172 @@
     "gameVersion": "Minecraft sürümü",
     "showSnapshots": "Snapshot'lar ve eski sürümler",
     "loadingVersions": "Sürümler yükleniyor …",
-    "creating": "Oluşturuluyor …"
+    "creating": "Oluşturuluyor …",
+    "icon": "Simge seç"
+  },
+  "iconEditor": {
+    "title": "Simge düzenleyici",
+    "titleFor": "{name} için simge",
+    "open": "Simgeyi düzenle",
+    "save": "Simgeyi kaydet",
+    "saving": "Kaydediliyor …",
+    "saved": "Simge kaydedildi.",
+    "replaceHint": "Kaydetmek mevcut resmi değiştirir.",
+    "tabs": {
+      "pixel": "Piksel düzenleyici",
+      "mc": "Eşyalar ve bloklar",
+      "trs": "TRS simgeleri",
+      "upload": "Kendi resmin"
+    },
+    "preview": {
+      "title": "Önizleme",
+      "sidebar": "Kenar çubuğu",
+      "card": "Kart",
+      "header": "Başlık"
+    },
+    "pixel": {
+      "toolsLabel": "Araçlar",
+      "tools": {
+        "pencil": "Kalem (B)",
+        "eraser": "Silgi (E)",
+        "fill": "Doldur (G)",
+        "picker": "Renk seç (I)",
+        "line": "Çizgi (L)",
+        "rect": "Dikdörtgen (R)",
+        "rectFilled": "Dolu dikdörtgen"
+      },
+      "undo": "Geri al (Ctrl+Z)",
+      "redo": "Yinele (Ctrl+Y)",
+      "canvasLabel": "Çizim alanı {size} × {size}",
+      "size": "Boyut",
+      "zoomIn": "Yakınlaştır",
+      "zoomOut": "Uzaklaştır",
+      "grid": "Izgara",
+      "mirror": {
+        "label": "Ayna",
+        "none": "Kapalı",
+        "x": "Sol ↔ sağ",
+        "y": "Üst ↕ alt",
+        "xy": "Her ikisi"
+      },
+      "flipX": "Yatay çevir",
+      "flipY": "Dikey çevir",
+      "clear": "Temizle",
+      "export": "PNG olarak dışa aktar",
+      "exported": "PNG kaydedildi.",
+      "palette": {
+        "custom": "Özel renk",
+        "trs": "TRS renkleri",
+        "mc": "Minecraft tarzı renkler",
+        "recent": "Son kullanılanlar"
+      },
+      "hint": "Sağ fare tuşu siler.",
+      "imageLayer": "Motif bir resim. Burada düzenlemek için pikselleştir.",
+      "pixelate": "Pikselleştir (32 × 32)"
+    },
+    "mc": {
+      "search": "Eşya ve blok ara …",
+      "filter": {
+        "label": "Tür",
+        "all": "Tümü",
+        "item": "Eşyalar",
+        "block": "Bloklar"
+      },
+      "versionLabel": "Minecraft sürümü",
+      "version": "Minecraft {version} sürümünden",
+      "noClient": "Bir kez bir örnek başlat – sonra tüm eşya ve bloklar burada görünür.",
+      "licence": "Resimler kendi Minecraft oyunundan gelir – başlatıcı bunları içermez.",
+      "loading": "Dokular okunuyor …",
+      "empty": "Hiçbir şey bulunamadı.",
+      "more": "Daha fazla göster ({n})"
+    },
+    "trs": {
+      "search": "TRS simgelerinde ara …",
+      "names": {
+        "rocket": "Roket",
+        "castle": "Kale",
+        "redstone": "Kızıltaş tozu",
+        "comparator": "Karşılaştırıcı",
+        "repeater": "Yineleyici",
+        "torch": "Kızıltaş meşalesi",
+        "lamp": "Lamba",
+        "sun": "Gölgelendirici güneşi",
+        "sword": "Kılıç (PvP)",
+        "pickaxe": "Kazma",
+        "axe": "Balta",
+        "bow": "Yay",
+        "shield": "Kalkan",
+        "map": "Harita",
+        "flask": "İksir şişesi",
+        "heart": "Kalp",
+        "crown": "Taç",
+        "star": "Yıldız",
+        "lightning": "Şimşek",
+        "tree": "Ağaç",
+        "house": "Ev",
+        "gear": "Dişli",
+        "controller": "Oyun kumandası",
+        "globe": "Küre",
+        "book": "Kitap",
+        "gem": "Mücevher",
+        "cube": "Çimen bloğu",
+        "chest": "Sandık",
+        "mushroom": "Mantar",
+        "flame": "Alev",
+        "snowflake": "Kar tanesi",
+        "moon": "Ay",
+        "cloud": "Bulut",
+        "note": "Müzik",
+        "flag": "Bayrak",
+        "trophy": "Kupa",
+        "key": "Anahtar",
+        "compass": "Pusula",
+        "wrench": "İngiliz anahtarı",
+        "robot": "Robot"
+      }
+    },
+    "upload": {
+      "pick": "Resim seç …",
+      "other": "Başka resim",
+      "hint": "PNG, JPEG veya WebP, en fazla 5 MB.",
+      "dragHint": "Kare kırpmayı taşımak için sürükle.",
+      "zoom": "Yakınlaştırma",
+      "pixelate": "Pikselleştir (32 × 32)",
+      "colours": "Renkler",
+      "palette": {
+        "auto16": "Otomatik (16 renk)",
+        "auto8": "Otomatik (8 renk)",
+        "trs": "TRS renkleri",
+        "mc": "Minecraft tarzı renkler"
+      },
+      "apply": "Motif olarak kullan"
+    },
+    "bg": {
+      "title": "Arka plan",
+      "preset": "Stil {n}",
+      "fill": {
+        "label": "Dolgu",
+        "none": "Yok",
+        "solid": "Düz",
+        "gradient": "Geçiş"
+      },
+      "color": "Renk",
+      "color2": "İkinci renk",
+      "angle": "Açı {angle}°",
+      "pattern": {
+        "label": "Desen",
+        "none": "Yok",
+        "wire": "Kızıltaş kablosu",
+        "deepslate": "Derin arduvaz",
+        "dots": "Noktalar"
+      },
+      "patternColor": "Desen rengi",
+      "border": "Çerçeve",
+      "borderColor": "Çerçeve rengi",
+      "glow": "Parıltı",
+      "glowColor": "Parıltı rengi",
+      "scale": "Motif boyutu %{percent}"
+    }
   },
   "changeVersion": {
     "title": "Sürümü değiştir",
@@ -5776,7 +5948,9 @@
       "planLinks": "{n} mod bağlantı olarak | {n} mod bağlantı olarak",
       "planFiles": "{n} dosya yüklendi | {n} dosya yüklendi",
       "upload": "Yükle",
-      "uploading": "Yükleniyor …"
+      "uploading": "Yükleniyor …",
+      "icon": "Paket simgesi",
+      "iconHint": "Paketle birlikte gider ve yükleyen herkeste örneğin resmi olur."
     },
     "mine": {
       "open": "Modpacklerim",

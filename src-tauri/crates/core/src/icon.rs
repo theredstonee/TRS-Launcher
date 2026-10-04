@@ -154,7 +154,8 @@ impl Launcher {
         self.set_instance_icon_bytes(id, &bytes).await
     }
 
-    async fn set_instance_icon_bytes(&self, id: &str, bytes: &[u8]) -> Result<Instance> {
+    /// Neues Bild (geprüft) – alte Bilder und Editor-Daten (`icon-source.json`) gehen weg.
+    pub(crate) async fn set_instance_icon_bytes(&self, id: &str, bytes: &[u8]) -> Result<Instance> {
         let format = validate_image(bytes)?;
         let instance = self.instances().get(id).await?;
         let dir = self.paths().instance_dir(&instance.id);
@@ -163,6 +164,7 @@ impl Launcher {
 
         let updated = self.instances().set_icon(&instance.id, Some(name)).await?;
         remove_old_icons(&dir, updated.icon.as_deref()).await;
+        let _ = tokio::fs::remove_file(dir.join(crate::icon_editor::SOURCE_FILE)).await;
         history::record(self.paths(), &updated.id, HistoryEntry::new(HistoryKind::IconChanged)).await;
         Ok(updated)
     }
@@ -170,7 +172,9 @@ impl Launcher {
     pub async fn remove_instance_icon(&self, id: &str) -> Result<Instance> {
         let instance = self.instances().get(id).await?;
         let updated = self.instances().set_icon(&instance.id, None).await?;
-        remove_old_icons(&self.paths().instance_dir(&updated.id), None).await;
+        let dir = self.paths().instance_dir(&updated.id);
+        remove_old_icons(&dir, None).await;
+        let _ = tokio::fs::remove_file(dir.join(crate::icon_editor::SOURCE_FILE)).await;
         Ok(updated)
     }
 }
