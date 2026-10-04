@@ -15,9 +15,9 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AnvilScreen;
 import net.minecraft.client.gui.screens.inventory.BookEditScreen;
 //? if >=1.19.3 {
-import net.minecraft.client.gui.screens.inventory.AbstractSignEditScreen;
-//?} else
-/*import net.minecraft.client.gui.screens.inventory.SignEditScreen;*/
+/*import net.minecraft.client.gui.screens.inventory.AbstractSignEditScreen;
+*///?} else
+import net.minecraft.client.gui.screens.inventory.SignEditScreen;
 
 /**
  * Touch-Modus (mobile Engine, {@code -Dtrs.touch=true}) je Client-Tick: feste Overlay-Tasten und
@@ -80,9 +80,9 @@ public final class TouchHooks {
 		if (screen == null) return null;
 		if (screen instanceof ChatScreen) return TouchKeyboard.FIELD_CHAT;
 		//? if >=1.19.3 {
-		if (screen instanceof AbstractSignEditScreen) return TouchKeyboard.FIELD_SIGN;
-		//?} else
-		/*if (screen instanceof SignEditScreen) return TouchKeyboard.FIELD_SIGN;*/
+		/*if (screen instanceof AbstractSignEditScreen) return TouchKeyboard.FIELD_SIGN;
+		*///?} else
+		if (screen instanceof SignEditScreen) return TouchKeyboard.FIELD_SIGN;
 		if (screen instanceof BookEditScreen) return TouchKeyboard.FIELD_BOOK;
 		if (screen instanceof AnvilScreen) return TouchKeyboard.FIELD_ANVIL;
 		if (screen.getFocused() instanceof EditBox) return TouchKeyboard.FIELD_TEXT;

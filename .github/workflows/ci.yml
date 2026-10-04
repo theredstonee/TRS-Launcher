@@ -189,6 +189,9 @@ jobs:
           java-version: 21
 
       - uses: android-actions/setup-android@v3
+        with:
+          # Ohne das veraltete Paket „tools“ (gibt es mit cmdline-tools 16 nicht mehr).
+          packages: 'platform-tools'
 
       - name: Android NDK
         run: |
@@ -255,6 +258,9 @@ jobs:
     if: needs.changes.outputs.mobile == 'true'
     runs-on: macos-latest
     timeout-minutes: 90
+    env:
+      # Swift-Pakete der Plugins nutzen APIs ab iOS 14; die App verlangt iOS 15.
+      IPHONEOS_DEPLOYMENT_TARGET: '15.0'
     steps:
       - uses: actions/checkout@v4
         with:
