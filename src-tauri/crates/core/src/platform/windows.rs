@@ -385,11 +385,27 @@ pub fn java_search_dirs() -> Vec<PathBuf> {
 
 // --- DNS ---------------------------------------------------------------------------------------
 
-/// SRV-Abfrage über den Windows-Resolver (`DnsQuery_W`), blockierend.
+/// SRV-Abfrage über den Windows-Resolver (`DnsQuery_W`), blockierend. Gewählt
+/// wird wie im Spiel: kleinste Priorität, dann größtes Gewicht.
 pub fn lookup_srv(name: &str) -> Option<(String, u16)> {
-    use windows::Win32::NetworkManagement::Dns::{
-        DNS_QUERY_STANDARD, DNS_RECORDW, DNS_TYPE_SRV, DnsFree, DnsFreeRecordList, DnsQuery_W,
-    };
+    match lookup_srv_records(name) {
+        super::dns::SrvLookup::Found(records, _) => super::dns::pick_srv(&records).map(|r| (r.target.clone(), r.port)),
+        _ => None,
+    }
+}
+
+/// Höchstens so viele Einträge je Antwort werden gelesen.
+const MAX_DNS_RECORDS: usize = 32;
+
+/// Eine Abfrage über `DnsQuery_W`; `read` wertet jeden Eintrag vom Typ `kind`
+/// aus (`Some((ttl, wert))`). `Err(true)` = sicher kein Eintrag, `Err(false)` = unbekannt.
+fn dns_query<T>(
+    name: &str,
+    kind: windows::Win32::NetworkManagement::Dns::DNS_TYPE,
+    read: impl Fn(&windows::Win32::NetworkManagement::Dns::DNS_RECORDW) -> Option<T>,
+) -> std::result::Result<(Vec<T>, u32), bool> {
+    use windows::Win32::Foundation::{DNS_ERROR_RCODE_NAME_ERROR, DNS_INFO_NO_RECORDS};
+    use windows::Win32::NetworkManagement::Dns::{DNS_QUERY_STANDARD, DNS_RECORDW, DnsFree, DnsFreeRecordList, DnsQuery_W};
     use windows::core::HSTRING;
 
     let mut records: *mut DNS_RECORDW = std::ptr::null_mut();
@@ -399,27 +415,76 @@ pub fn lookup_srv(name: &str) -> Option<(String, u16)> {
         // Die Bindings deklarieren den Ausgabeparameter als ANSI-Variante; bei
         // DnsQuery_W liegen dort tatsächlich die (gleich aufgebauten) W-Records.
         let out = (&raw mut records).cast();
-        let status = DnsQuery_W(&HSTRING::from(name), DNS_TYPE_SRV, DNS_QUERY_STANDARD, None, out, None);
-        if status.is_err() || records.is_null() {
-            return None;
+        let status = DnsQuery_W(&HSTRING::from(name), kind, DNS_QUERY_STANDARD, None, out, None);
+        if status.is_err() {
+            if !records.is_null() {
+                DnsFree(Some(records.cast()), DnsFreeRecordList);
+            }
+            let definite = status == DNS_ERROR_RCODE_NAME_ERROR || status.0 == DNS_INFO_NO_RECORDS as u32;
+            return Err(definite);
         }
-        let mut found = None;
+        if records.is_null() {
+            return Err(true);
+        }
+        let mut found = Vec::new();
+        let mut ttl = u32::MAX;
         let mut current = records;
-        while !current.is_null() {
+        while !current.is_null() && found.len() < MAX_DNS_RECORDS {
             let record = &*current;
-            if record.wType == DNS_TYPE_SRV.0 {
-                let srv = record.Data.SRV;
-                if !srv.pNameTarget.is_null()
-                    && let Ok(target) = srv.pNameTarget.to_string()
-                {
-                    found = Some((target, srv.wPort));
-                    break;
-                }
+            if record.wType == kind.0
+                && let Some(value) = read(record)
+            {
+                ttl = ttl.min(record.dwTtl);
+                found.push(value);
             }
             current = record.pNext;
         }
         DnsFree(Some(records.cast()), DnsFreeRecordList);
-        found
+        if found.is_empty() { Err(true) } else { Ok((found, ttl)) }
+    }
+}
+
+/// Alle SRV-Einträge samt TTL (blockierend).
+pub fn lookup_srv_records(name: &str) -> super::dns::SrvLookup {
+    use windows::Win32::NetworkManagement::Dns::DNS_TYPE_SRV;
+    let result = dns_query(name, DNS_TYPE_SRV, |record| {
+        // SAFETY: Eintrag vom Typ SRV – die Union enthält SRV-Daten.
+        let srv = unsafe { record.Data.SRV };
+        if srv.pNameTarget.is_null() {
+            return None;
+        }
+        // SAFETY: nullterminierter String der API, lebt bis DnsFree.
+        let target = unsafe { srv.pNameTarget.to_string() }.ok()?;
+        Some(super::dns::SrvRecord { priority: srv.wPriority, weight: srv.wWeight, port: srv.wPort, target })
+    });
+    match result {
+        Ok((records, ttl)) => super::dns::SrvLookup::Found(records, ttl),
+        Err(true) => super::dns::SrvLookup::None,
+        Err(false) => super::dns::SrvLookup::Unknown,
+    }
+}
+
+/// A- (`v6 = false`) bzw. AAAA-Adressen samt TTL (blockierend).
+pub fn lookup_addrs(host: &str, v6: bool) -> super::dns::AddrLookup {
+    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+    use windows::Win32::NetworkManagement::Dns::{DNS_TYPE_A, DNS_TYPE_AAAA};
+    let result = if v6 {
+        dns_query(host, DNS_TYPE_AAAA, |record| {
+            // SAFETY: Eintrag vom Typ AAAA – 16 Bytes in Netzwerk-Reihenfolge.
+            let bytes = unsafe { record.Data.AAAA.Ip6Address.IP6Byte };
+            Some(IpAddr::V6(Ipv6Addr::from(bytes)))
+        })
+    } else {
+        dns_query(host, DNS_TYPE_A, |record| {
+            // SAFETY: Eintrag vom Typ A – die Adresse liegt in Netzwerk-Reihenfolge im Speicher.
+            let raw = unsafe { record.Data.A.IpAddress };
+            Some(IpAddr::V4(Ipv4Addr::from(raw.to_ne_bytes())))
+        })
+    };
+    match result {
+        Ok((ips, ttl)) => super::dns::AddrLookup::Found(ips, ttl),
+        Err(true) => super::dns::AddrLookup::None,
+        Err(false) => super::dns::AddrLookup::Unknown,
     }
 }
 

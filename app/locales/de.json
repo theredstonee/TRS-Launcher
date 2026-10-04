@@ -1348,7 +1348,9 @@
     "card": {
       "checking": "Wird abgefragt",
       "unreachable": "Nicht erreichbar",
-      "join": "Beitreten"
+      "join": "Beitreten",
+      "fastConnect": "Vorab aufgelöst · {family} · {ms} ms",
+      "fastConnectHint": "Schnell verbinden: Der Launcher hat diesen Server schon aufgelöst und die schnellste Verbindung gemessen (bekannte Adressen: {n}). Der TRS Client nutzt das beim Beitreten."
     },
     "ping": {
       "test": "Ping-Test",

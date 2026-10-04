@@ -946,6 +946,16 @@ export interface ServerStatus {
   version: string
   favicon: string | null
   latencyMs: number
+  /** „Schnell verbinden“: vorab aufgelöst und gemessen (nur Server-Seite). */
+  fastConnect?: FastConnect | undefined
+}
+
+export interface FastConnect {
+  family: 'ipv4' | 'ipv6'
+  /** TCP-Verbindungszeit der schnellsten Adresse. */
+  connectMs: number
+  /** Bekannte Adressen des Ziels. */
+  addresses: number
 }
 
 /** Screenshot; `path` ist fürs Webview freigegeben (convertFileSrc). */

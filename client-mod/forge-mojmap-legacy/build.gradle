@@ -116,6 +116,8 @@ def props = [
 		// Ab Forge 1.19 steht die Client-only-Kennzeichnung in mods.toml, davor per Extension-Point im Code.
 		displayTest: stonecutter.eval(mc, '>=1.19') ? 'displayTest = "IGNORE_ALL_VERSION"' : '',
 		chatSenderMixin: stonecutter.eval(mc, '>=1.19.1') ? ', "ChatSenderMixin"' : '',
+		// Schnell verbinden: 1.18.2–1.19.2 ohne 2-s-Wartezeit bei „Lade Gelände“.
+		terrainScreenMixin: stonecutter.eval(mc, '>=1.18.2') && stonecutter.eval(mc, '<1.19.3') ? ', "TerrainScreenMixin"' : '',
 ]
 processResources {
 	inputs.properties(props)

@@ -1,5 +1,5 @@
 use tauri::State;
-use trs_core::servers::{self, Server, ServerInput, ServerStatus};
+use trs_core::servers::{Server, ServerInput, ServerStatus};
 
 use crate::LauncherState;
 use crate::error::CommandResult;
@@ -33,5 +33,5 @@ pub async fn remove_server(launcher: State<'_, LauncherState>, id: String) -> Co
 #[tauri::command]
 pub async fn ping_server(launcher: State<'_, LauncherState>, id: String) -> CommandResult<ServerStatus> {
     let server = launcher.servers().get(&id).await?;
-    Ok(servers::ping(&server.address).await?)
+    Ok(launcher.servers().ping_with_hints(&server.address).await?)
 }

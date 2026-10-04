@@ -351,6 +351,17 @@ pub fn lookup_srv(name: &str) -> Option<(String, u16)> {
     super::dns::lookup_srv(name)
 }
 
+/// Alle SRV-Einträge samt TTL (blockierend).
+pub fn lookup_srv_records(name: &str) -> super::dns::SrvLookup {
+    super::dns::srv_lookup(super::dns::lookup(name, super::dns::TYPE_SRV))
+}
+
+/// A- (`v6 = false`) bzw. AAAA-Adressen samt TTL (blockierend).
+pub fn lookup_addrs(host: &str, v6: bool) -> super::dns::AddrLookup {
+    let qtype = if v6 { super::dns::TYPE_AAAA } else { super::dns::TYPE_A };
+    super::dns::addr_lookup(super::dns::lookup(host, qtype))
+}
+
 // --- Token-Verschlüsselung --------------------------------------------------------------------
 
 pub mod secret {

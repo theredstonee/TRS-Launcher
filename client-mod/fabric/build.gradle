@@ -62,6 +62,10 @@ loom {
 			if (project.hasProperty('trsAutotestServer')) {
 				vmArg "-Dtrsclient.autotest.server=${project.trsAutotestServer}"
 			}
+			// -PtrsSys.<name>=<wert> → -D<name>=<wert> (eigene Schalter einzelner Autotests, z. B. fastconnect)
+			project.properties.findAll { it.key.toString().startsWith('trsSys.') }.each { k, v ->
+				vmArg "-D${k.toString().substring(7)}=${v}"
+			}
 			// -PtrsApi=http://127.0.0.1:8787 → TRS API + Mojang-Join gegen eine lokale Attrappe (Umhang-/Abzeichen-Tests)
 			if (project.hasProperty('trsApi')) {
 				vmArg "-Dtrsclient.api.url=${project.trsApi}"
@@ -257,6 +261,15 @@ mixinClasses += ['FramePaceMixin', 'WindowMixin', 'ParticleLimitMixin', 'EntityC
 		'LivingNameTagCullMixin', 'TextureAnimationMixin', 'SkyMixin', 'StarsMixin']
 // Netzwerk-Optimierung + Ping (Handler an der Client-Verbindung), niedrige Eingabeverzögerung (spätes Lesen der Maus).
 mixinClasses += ['NetConnectionMixin', 'LatencyMixin']
+// Schnell verbinden: Adressen-Rennen am Verbindungsaufbau, DNS-Speicher im Resolver (bis 1.16 im SRV-Nachschlagen).
+mixinClasses += ['FastConnectMixin', 'FastResolveMixin']
+// Schnell verbinden: Server-Ressourcenpakete (merken, vorladen, gleiches Paket beim Wechsel nicht neu laden),
+// schneller Serverwechsel (Beginn/Ende, keine Bildraten-Drossel in der Konfigurationsphase, Ladeanzeige ohne 1-s-Minimum,
+// 1.18.2–1.19.2 ohne 2-s-Wartezeit bei „Lade Gelände“).
+mixinClasses += ['PackPushMixin', 'PackStatusMixin', 'FastSwitchMixin']
+if (stonecutter.eval(mc, '>=1.20.2')) mixinClasses << 'FrameCapMixin'
+if (stonecutter.eval(mc, '>=1.21.9')) mixinClasses << 'PackOverlayMixin'
+if (stonecutter.eval(mc, '>=1.18.2') && stonecutter.eval(mc, '<1.19.3')) mixinClasses << 'TerrainScreenMixin'
 // Regen/Schnee (1.14 im GameRenderer, sonst LevelRenderer); Nebel-Werte liegen ab 1.21.6 in einem GPU-Puffer.
 mixinClasses << 'WeatherMixin'
 if (stonecutter.eval(mc, '>=1.17') && stonecutter.eval(mc, '<1.21.6')) mixinClasses << 'FogMixin'

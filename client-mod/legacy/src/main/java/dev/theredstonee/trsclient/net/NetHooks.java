@@ -70,6 +70,14 @@ public final class NetHooks implements NetPlatform {
 			}
 		});
 		LatencyPanels.registerNetOnly(m.netOptimize);
+		dev.theredstonee.trsclient.core.connect.FastConnect.install(m, dev.theredstonee.trsclient.core.i18n.I18n.configDir(), NetBoost.logger());
+		// Server-Ressourcenpakete: server-resource-packs/<sha1>, höchstens 50 MB (wie Vanilla 1.8.9–1.12.2).
+		java.util.Map<String, String> headers = new java.util.HashMap<String, String>();
+		headers.put("User-Agent", "Minecraft Java/" + Mc.version());
+		dev.theredstonee.trsclient.core.connect.ServerPacks.setup(dev.theredstonee.trsclient.core.i18n.I18n.configDir(),
+				dev.theredstonee.trsclient.core.connect.ServerPacks.Era.HASH, 52428800L, headers,
+				dev.theredstonee.trsclient.core.connect.FastConnect.fastSwitchSwitch(m), dev.theredstonee.trsclient.core.connect.FastConnect.packsSwitch(m));
+		dev.theredstonee.trsclient.core.connect.FastConnect.startup();
 	}
 
 	@SubscribeEvent
@@ -79,16 +87,90 @@ public final class NetHooks implements NetPlatform {
 		NetHandlerPlayClient net = Mc.connection();
 		Channel ch = net == null || net.getNetworkManager() == null ? null : net.getNetworkManager().channel();
 		NetBoost.tick(ch, m.ping.isEnabled(), Math.round(m.pingInterval.get() * 1000), Math.round(m.pingSpikeThreshold.get()));
+		// Schnell verbinden: Paket-Beobachter an die Verbindung, Serverwechsel fertig, sobald „Lade Gelände“ zu ist.
+		LegacyPacks.attach(ch);
+		dev.theredstonee.trsclient.core.connect.FastSwitch.tick(Mc.world() != null && Mc.player() != null
+				&& !(Mc.screen() instanceof net.minecraft.client.gui.GuiDownloadTerrain));
 	}
+
+	/** Zuletzt gesehener „Verbinde …“-Bildschirm (Schnell verbinden: Anzeige einmal je Bildschirm vorbereiten). */
+	private static Object lastConnecting;
+	private static Field selectorField;
+	private static Field selectedField;
+	private static boolean selectorSearched;
 
 	/** Je Bild, solange „Verbinde …“ offen ist: Handler früh einhängen (vor der Verschlüsselung). */
 	@SubscribeEvent
 	public void onRenderTick(TickEvent.RenderTickEvent event) {
 		if (event.phase != TickEvent.Phase.START || modules == null) return;
 		Object screen = Minecraft.getMinecraft().currentScreen;
-		if (!(screen instanceof GuiConnecting)) return;
+		if (screen instanceof net.minecraft.client.gui.GuiMultiplayer) fastSelection((net.minecraft.client.gui.GuiMultiplayer) screen);
+		if (screen instanceof net.minecraft.client.gui.GuiMainMenu) dev.theredstonee.trsclient.core.connect.ServerPacks.cancelPreloads();
+		if (!(screen instanceof GuiConnecting)) {
+			lastConnecting = null;
+			return;
+		}
+		if (screen != lastConnecting) {
+			lastConnecting = screen;
+			net.minecraft.client.multiplayer.ServerData d = Minecraft.getMinecraft().getCurrentServerData();
+			dev.theredstonee.trsclient.core.connect.FastConnect.connectScreenOpened();
+			dev.theredstonee.trsclient.core.connect.FastConnect.STATUS.expect(d == null ? null : d.serverIP);
+		}
 		NetworkManager nm = connecting((GuiConnecting) screen);
-		if (nm != null && nm.channel() != null) NetBoost.attach(nm.channel());
+		if (nm != null && nm.channel() != null) {
+			NetBoost.attach(nm.channel());
+			LegacyPacks.attach(nm.channel());
+		}
+	}
+
+	/** „Verbinde …“ ohne Redstone-Stil: Zeile von „Schnell verbinden“ unter Vanillas Text, wenn es länger dauert. */
+	@SubscribeEvent
+	public void onScreenDrawn(net.minecraftforge.client.event.GuiScreenEvent.DrawScreenEvent.Post event) {
+		net.minecraft.client.gui.GuiScreen s = Mc.eventGui(event);
+		if (!(s instanceof GuiConnecting)) return;
+		if (dev.theredstonee.trsclient.core.menus.MenuStyle.enabled(dev.theredstonee.trsclient.core.menus.MenuStyle.Kind.LOADING)) return;
+		String line = dev.theredstonee.trsclient.core.connect.FastConnect.STATUS.line();
+		if (line == null) return;
+		net.minecraft.client.gui.FontRenderer font = Mc.font();
+		font.drawStringWithShadow(line, s.width / 2 - font.getStringWidth(line) / 2, s.height / 2 - 50 + 14, 0xA0A0A0);
+	}
+
+	/**
+	 * Mehrspieler-Liste: ausgewählten Server vorab auflösen, sein Ressourcenpaket vorladen und – Java 8 – Javas
+	 * Adress-Speicher füllen, damit der Klick ohne DNS und gleich zur besten Adresse verbindet.
+	 */
+	private static void fastSelection(net.minecraft.client.gui.GuiMultiplayer s) {
+		try {
+			if (!selectorSearched) {
+				selectorSearched = true;
+				for (Field f : net.minecraft.client.gui.GuiMultiplayer.class.getDeclaredFields()) {
+					if (f.getType() == net.minecraft.client.gui.ServerSelectionList.class) {
+						f.setAccessible(true);
+						selectorField = f;
+						break;
+					}
+				}
+				for (Field f : net.minecraft.client.gui.ServerSelectionList.class.getDeclaredFields()) {
+					if (!Modifier.isStatic(f.getModifiers()) && f.getType() == int.class) {
+						f.setAccessible(true);
+						selectedField = f;
+						break;
+					}
+				}
+			}
+			if (selectorField == null || selectedField == null) return;
+			Object list = selectorField.get(s);
+			if (list == null) return;
+			int index = selectedField.getInt(list);
+			net.minecraft.client.multiplayer.ServerList servers = s.getServerList();
+			if (servers == null || index < 0 || index >= servers.countServers()) return;
+			String ip = servers.getServerData(index).serverIP;
+			dev.theredstonee.trsclient.core.connect.FastConnect.prefetch(ip);
+			dev.theredstonee.trsclient.core.connect.FastConnect.primeJvm(ip);
+			dev.theredstonee.trsclient.core.connect.ServerPacks.preload(ip, true);
+		} catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
+			// nur ein Vorgriff
+		}
 	}
 
 	/** Verbindung des „Verbinde …“-Bildschirms (privates Feld, per Typ gesucht). */

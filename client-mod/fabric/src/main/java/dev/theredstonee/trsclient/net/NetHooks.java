@@ -53,6 +53,29 @@ public final class NetHooks implements NetPlatform {
 			}
 		});
 		LatencyPanels.registerNetOnly(m.netOptimize);
+		dev.theredstonee.trsclient.core.connect.FastConnect.install(m, dev.theredstonee.trsclient.core.i18n.I18n.configDir(), NetBoost.logger());
+		// Server-Ressourcenpakete: Speicher-Ort und Größengrenze von Vanilla in dieser Version.
+		java.util.Map<String, String> headers = new java.util.HashMap<String, String>();
+		headers.put("User-Agent", "Minecraft Java");
+		//? if >=1.20.3 {
+		dev.theredstonee.trsclient.core.connect.ServerPacks.Era era = dev.theredstonee.trsclient.core.connect.ServerPacks.Era.DOWNLOADS_UUID;
+		long maxPack = 262144000L;
+		//?} elif >=1.19 {
+		/*dev.theredstonee.trsclient.core.connect.ServerPacks.Era era = dev.theredstonee.trsclient.core.connect.ServerPacks.Era.URL_SHA1_URL;
+		long maxPack = 262144000L;
+		*///?} elif >=1.18 {
+		/*dev.theredstonee.trsclient.core.connect.ServerPacks.Era era = dev.theredstonee.trsclient.core.connect.ServerPacks.Era.URL_SHA1_RAW;
+		long maxPack = 262144000L;
+		*///?} elif >=1.16 {
+		/*dev.theredstonee.trsclient.core.connect.ServerPacks.Era era = dev.theredstonee.trsclient.core.connect.ServerPacks.Era.URL_SHA1_RAW;
+		long maxPack = 104857600L;
+		*///?} else {
+		/*dev.theredstonee.trsclient.core.connect.ServerPacks.Era era = dev.theredstonee.trsclient.core.connect.ServerPacks.Era.URL_SHA1_RAW;
+		long maxPack = 52428800L;
+		*///?}
+		dev.theredstonee.trsclient.core.connect.ServerPacks.setup(dev.theredstonee.trsclient.core.i18n.I18n.configDir(), era, maxPack, headers,
+				dev.theredstonee.trsclient.core.connect.FastConnect.fastSwitchSwitch(m), dev.theredstonee.trsclient.core.connect.FastConnect.packsSwitch(m));
+		dev.theredstonee.trsclient.core.connect.FastConnect.startup();
 	}
 
 	/** Je Client-Tick. */
@@ -62,6 +85,14 @@ public final class NetHooks implements NetPlatform {
 		ClientPacketListener listener = mc.getConnection();
 		NetBoost.tick(listener == null ? null : NetBoost.channelOf(listener.getConnection()), m.ping.isEnabled(),
 				Math.round(m.pingInterval.get() * 1000), Math.round(m.pingSpikeThreshold.get()));
+		// Schneller Serverwechsel: fertig, sobald die Welt da und kein Lade-/Paket-Bildschirm mehr offen ist.
+		net.minecraft.client.gui.screens.Screen screen = dev.theredstonee.trsclient.compat.Mc.screen();
+		//? if >=26.2 {
+		/*boolean overlay = mc.gui.overlay() != null;
+		*///?} else
+		boolean overlay = mc.getOverlay() != null;
+		dev.theredstonee.trsclient.core.connect.FastSwitch.tick(mc.level != null && mc.player != null && !overlay
+				&& (screen == null || !dev.theredstonee.trsclient.menus.VanillaMenus.isLoading(screen)));
 	}
 
 	/** Aus Connection#channelActive (Mixin): Client-Verbindung steht. */

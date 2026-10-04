@@ -1,19 +1,70 @@
-//! Minimaler DNS-Client nur für SRV-Einträge (`_minecraft._tcp.<host>`).
+//! Minimaler DNS-Client für SRV-Einträge (`_minecraft._tcp.<host>`) und – für
+//! „Schnell verbinden“ – A/AAAA samt TTL.
 //!
 //! Unter Windows fragt der Launcher den System-Resolver (`DnsQuery_W`); unter
 //! Linux gibt es dafür keine libc-Funktion ohne Zusatz-Bibliothek. Statt
 //! einer großen DNS-Crate reicht hier eine einzelne UDP-Anfrage an die
 //! Nameserver aus `/etc/resolv.conf` (bei systemd-resolved `127.0.0.53`).
 
-use std::net::IpAddr;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
-const TYPE_SRV: u16 = 33;
+pub const TYPE_A: u16 = 1;
+pub const TYPE_AAAA: u16 = 28;
+pub const TYPE_SRV: u16 = 33;
 const CLASS_IN: u16 = 1;
 /// Höchstens so viele Kompressions-Sprünge je Name (Schutz vor Schleifen).
 const MAX_POINTERS: usize = 16;
+/// Mehr Einträge je Antwort werden nicht ausgewertet.
+const MAX_RECORDS: usize = 32;
+
+/// Ein SRV-Eintrag, wie er aus dem DNS kommt (Ziel ohne Schlusspunkt).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SrvRecord {
+    pub priority: u16,
+    pub weight: u16,
+    pub port: u16,
+    pub target: String,
+}
+
+/// Ergebnis einer SRV-Abfrage.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SrvLookup {
+    /// Einträge samt kleinster TTL (Sekunden).
+    Found(Vec<SrvRecord>, u32),
+    /// Sicher keiner (NXDOMAIN oder Antwort ohne SRV).
+    None,
+    /// Nicht feststellbar (Zeitüberschreitung, Serverfehler …).
+    Unknown,
+}
+
+/// Ergebnis einer A- oder AAAA-Abfrage.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AddrLookup {
+    /// Adressen in Resolver-Reihenfolge, TTL = kleinste (Sekunden).
+    Found(Vec<IpAddr>, u32),
+    None,
+    Unknown,
+}
+
+/// Der Eintrag, den das Spiel nimmt: kleinste Priorität, darin das größte
+/// Gewicht, bei Gleichstand der erste (wie `SrvRecord.pick` im TRS Client).
+pub fn pick_srv(records: &[SrvRecord]) -> Option<&SrvRecord> {
+    let mut best: Option<&SrvRecord> = None;
+    for r in records.iter().filter(|r| r.port != 0 && !r.target.is_empty() && r.target != ".") {
+        if best.is_none_or(|b| r.priority < b.priority || (r.priority == b.priority && r.weight > b.weight)) {
+            best = Some(r);
+        }
+    }
+    best
+}
 
 /// Baut eine DNS-Anfrage (Rekursion erwünscht) für `name` vom Typ SRV.
 pub fn build_srv_query(id: u16, name: &str) -> Option<Vec<u8>> {
+    build_query(id, name, TYPE_SRV)
+}
+
+/// Baut eine DNS-Anfrage (Rekursion erwünscht) für `name` vom Typ `qtype`.
+pub fn build_query(id: u16, name: &str, qtype: u16) -> Option<Vec<u8>> {
     let name = name.trim_end_matches('.');
     if name.is_empty() || name.len() > 253 {
         return None;
@@ -34,7 +85,7 @@ pub fn build_srv_query(id: u16, name: &str) -> Option<Vec<u8>> {
         packet.extend_from_slice(label.as_bytes());
     }
     packet.push(0);
-    packet.extend_from_slice(&TYPE_SRV.to_be_bytes());
+    packet.extend_from_slice(&qtype.to_be_bytes());
     packet.extend_from_slice(&CLASS_IN.to_be_bytes());
     Some(packet)
 }
@@ -78,45 +129,133 @@ fn read_name(packet: &[u8], mut pos: usize) -> Option<(String, usize)> {
     }
 }
 
-/// Wertet eine Antwort aus: niedrigste Priorität gewinnt, bei Gleichstand das
-/// höchste Gewicht. `None` bei falscher ID, Fehlercode oder ohne SRV-Eintrag.
-pub fn parse_srv_response(id: u16, packet: &[u8]) -> Option<(String, u16)> {
+/// Datensatz aus einer Antwort.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RecordData {
+    Srv(SrvRecord),
+    Ip(IpAddr),
+}
+
+/// Ausgewertete Antwort: passende Einträge (mit TTL) oder sicher keine.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Answer {
+    Records(Vec<(u32, RecordData)>),
+    /// NXDOMAIN oder NOERROR ohne Eintrag dieses Typs.
+    Empty,
+}
+
+/// Wertet eine Antwort auf eine Anfrage vom Typ `qtype` aus. `None` bei
+/// falscher ID, Serverfehler, abgeschnittener oder kaputter Antwort.
+pub fn parse_response(id: u16, packet: &[u8], qtype: u16) -> Option<Answer> {
     if u16_at(packet, 0)? != id {
         return None;
     }
     let flags = u16_at(packet, 2)?;
-    // Muss eine Antwort sein (QR) und ohne Fehler (RCODE 0).
-    if flags & 0x8000 == 0 || flags & 0x000F != 0 {
+    // Muss eine Antwort sein (QR); NXDOMAIN (3) heißt sicher „gibt es nicht“.
+    if flags & 0x8000 == 0 {
         return None;
     }
+    match flags & 0x000F {
+        0 => {}
+        3 => return Some(Answer::Empty),
+        _ => return None,
+    }
+    let truncated = flags & 0x0200 != 0;
     let questions = u16_at(packet, 4)?;
     let answers = u16_at(packet, 6)?;
     let mut pos = 12;
     for _ in 0..questions {
         pos = read_name(packet, pos)?.1 + 4;
     }
-    let mut best: Option<(u16, u16, String, u16)> = None;
+    let mut out = Vec::new();
     for _ in 0..answers {
         let (_, after) = read_name(packet, pos)?;
         let kind = u16_at(packet, after)?;
+        let ttl = (u32::from(u16_at(packet, after + 4)?) << 16) | u32::from(u16_at(packet, after + 6)?);
         let rdlen = u16_at(packet, after + 8)? as usize;
         let data = after + 10;
         if data + rdlen > packet.len() {
             return None;
         }
-        if kind == TYPE_SRV && rdlen >= 7 {
-            let priority = u16_at(packet, data)?;
-            let weight = u16_at(packet, data + 2)?;
-            let port = u16_at(packet, data + 4)?;
-            let (target, _) = read_name(packet, data + 6)?;
-            let better = best.as_ref().is_none_or(|(p, w, _, _)| priority < *p || (priority == *p && weight > *w));
-            if !target.is_empty() && port != 0 && better {
-                best = Some((priority, weight, target, port));
+        if kind == qtype && out.len() < MAX_RECORDS {
+            let record = match kind {
+                TYPE_SRV if rdlen >= 7 => Some(RecordData::Srv(SrvRecord {
+                    priority: u16_at(packet, data)?,
+                    weight: u16_at(packet, data + 2)?,
+                    port: u16_at(packet, data + 4)?,
+                    target: read_name(packet, data + 6)?.0,
+                })),
+                TYPE_A if rdlen == 4 => {
+                    let b = packet.get(data..data + 4)?;
+                    Some(RecordData::Ip(IpAddr::V4(Ipv4Addr::new(b[0], b[1], b[2], b[3]))))
+                }
+                TYPE_AAAA if rdlen == 16 => {
+                    let b: [u8; 16] = packet.get(data..data + 16)?.try_into().ok()?;
+                    Some(RecordData::Ip(IpAddr::V6(Ipv6Addr::from(b))))
+                }
+                _ => None,
+            };
+            if let Some(record) = record {
+                out.push((ttl, record));
             }
         }
         pos = data + rdlen;
     }
-    best.map(|(_, _, target, port)| (target, port))
+    if out.is_empty() {
+        // Abgeschnitten ohne Einträge: über UDP nicht entscheidbar.
+        return if truncated { None } else { Some(Answer::Empty) };
+    }
+    Some(Answer::Records(out))
+}
+
+/// Wertet eine SRV-Antwort aus: niedrigste Priorität gewinnt, bei Gleichstand das
+/// höchste Gewicht. `None` bei falscher ID, Fehlercode oder ohne SRV-Eintrag.
+pub fn parse_srv_response(id: u16, packet: &[u8]) -> Option<(String, u16)> {
+    let records = srv_records(parse_response(id, packet, TYPE_SRV)?);
+    pick_srv(&records).map(|r| (r.target.clone(), r.port))
+}
+
+fn srv_records(answer: Answer) -> Vec<SrvRecord> {
+    match answer {
+        Answer::Records(records) => records
+            .into_iter()
+            .filter_map(|(_, r)| match r {
+                RecordData::Srv(srv) => Some(srv),
+                RecordData::Ip(_) => None,
+            })
+            .collect(),
+        Answer::Empty => Vec::new(),
+    }
+}
+
+/// Antwort → [`SrvLookup`].
+pub fn srv_lookup(answer: Option<Answer>) -> SrvLookup {
+    let Some(answer) = answer else { return SrvLookup::Unknown };
+    let ttl = match &answer {
+        Answer::Records(r) => r.iter().map(|(ttl, _)| *ttl).min().unwrap_or(0),
+        Answer::Empty => 0,
+    };
+    let records = srv_records(answer);
+    if records.is_empty() { SrvLookup::None } else { SrvLookup::Found(records, ttl) }
+}
+
+/// Antwort → [`AddrLookup`].
+pub fn addr_lookup(answer: Option<Answer>) -> AddrLookup {
+    match answer {
+        None => AddrLookup::Unknown,
+        Some(Answer::Empty) => AddrLookup::None,
+        Some(Answer::Records(records)) => {
+            let ttl = records.iter().map(|(ttl, _)| *ttl).min().unwrap_or(0);
+            let ips: Vec<IpAddr> = records
+                .into_iter()
+                .filter_map(|(_, r)| match r {
+                    RecordData::Ip(ip) => Some(ip),
+                    RecordData::Srv(_) => None,
+                })
+                .collect();
+            if ips.is_empty() { AddrLookup::None } else { AddrLookup::Found(ips, ttl) }
+        }
+    }
 }
 
 /// Nameserver aus dem Inhalt einer `resolv.conf` (höchstens drei, wie glibc).
@@ -134,6 +273,14 @@ pub fn nameservers(resolv_conf: &str) -> Vec<IpAddr> {
 /// Fragt die System-Nameserver per UDP (blockierend, je Server höchstens 2 s).
 #[cfg(unix)]
 pub fn lookup_srv(name: &str) -> Option<(String, u16)> {
+    let records = srv_records(lookup(name, TYPE_SRV)?);
+    pick_srv(&records).map(|r| (r.target.clone(), r.port))
+}
+
+/// Eine Anfrage vom Typ `qtype` an die System-Nameserver (blockierend, je Server
+/// höchstens 2 s). `None` = keine verwertbare Antwort.
+#[cfg(unix)]
+pub fn lookup(name: &str, qtype: u16) -> Option<Answer> {
     use std::net::{SocketAddr, UdpSocket};
     use std::time::Duration;
 
@@ -144,7 +291,7 @@ pub fn lookup_srv(name: &str) -> Option<(String, u16)> {
     }
     let random = uuid::Uuid::new_v4();
     let id = u16::from_be_bytes([random.as_bytes()[0], random.as_bytes()[1]]);
-    let query = build_srv_query(id, name)?;
+    let query = build_query(id, name, qtype)?;
     for server in servers {
         let bind: SocketAddr = if server.is_ipv4() { ([0, 0, 0, 0], 0).into() } else { (std::net::Ipv6Addr::UNSPECIFIED, 0).into() };
         let Ok(socket) = UdpSocket::bind(bind) else { continue };
@@ -157,7 +304,10 @@ pub fn lookup_srv(name: &str) -> Option<(String, u16)> {
         for _ in 0..3 {
             let Ok(len) = socket.recv(&mut buf) else { break };
             if u16_at(&buf[..len], 0) == Some(id) {
-                return parse_srv_response(id, &buf[..len]);
+                if let Some(answer) = parse_response(id, &buf[..len], qtype) {
+                    return Some(answer);
+                }
+                break;
             }
         }
     }
@@ -198,6 +348,7 @@ mod tests {
         assert_eq!(q[12], 10);
         assert_eq!(&q[13..23], b"_minecraft");
         assert!(q.ends_with(&[0, 0, 33, 0, 1]));
+        assert!(build_query(1, "example.org", TYPE_AAAA).unwrap().ends_with(&[0, 28, 0, 1]));
         for bad in ["", "a..b", "a b.c", &"x".repeat(64), "ä.de"] {
             assert!(build_srv_query(1, bad).is_none(), "{bad:?}");
         }
@@ -211,8 +362,49 @@ mod tests {
         let mut error = packet.clone();
         error[3] = 0x83; // NXDOMAIN
         assert_eq!(parse_srv_response(7, &error), None);
+        assert_eq!(srv_lookup(parse_response(7, &error, TYPE_SRV)), SrvLookup::None, "NXDOMAIN = sicher keiner");
+        let mut failure = packet.clone();
+        failure[3] = 0x82; // SERVFAIL
+        assert_eq!(srv_lookup(parse_response(7, &failure, TYPE_SRV)), SrvLookup::Unknown);
         // Abgeschnitten → kein Panik, kein Ergebnis.
         assert_eq!(parse_srv_response(7, &packet[..packet.len() - 3]), None);
+        let SrvLookup::Found(records, ttl) = srv_lookup(parse_response(7, &packet, TYPE_SRV)) else { panic!() };
+        assert_eq!((records.len(), ttl), (2, 300));
+    }
+
+    #[test]
+    fn srv_pick_rule() {
+        let r = |priority, weight, target: &str| SrvRecord { priority, weight, port: 25565, target: target.into() };
+        // Kleinste Priorität, darin größtes Gewicht, bei Gleichstand der erste.
+        let list = [r(10, 50, "a"), r(5, 1, "b"), r(5, 9, "c"), r(5, 9, "d"), r(0, 0, ".")];
+        assert_eq!(pick_srv(&list).unwrap().target, "c");
+        assert!(pick_srv(&[r(0, 0, ""), SrvRecord { port: 0, ..r(0, 0, "x") }]).is_none());
+        assert!(pick_srv(&[]).is_none());
+    }
+
+    #[test]
+    fn address_answers() {
+        let mut p = build_query(3, "example.org", TYPE_A).unwrap();
+        p[2] = 0x81;
+        p[3] = 0x80;
+        p[7] = 3;
+        let mut record = |kind: u16, ttl: u32, data: &[u8]| {
+            p.extend_from_slice(&[0xC0, 12]);
+            p.extend_from_slice(&kind.to_be_bytes());
+            p.extend_from_slice(&CLASS_IN.to_be_bytes());
+            p.extend_from_slice(&ttl.to_be_bytes());
+            p.extend_from_slice(&(data.len() as u16).to_be_bytes());
+            p.extend_from_slice(data);
+        };
+        record(TYPE_A, 90, &[203, 0, 113, 7]);
+        record(5, 10, &[0xC0, 12]); // CNAME wird übersprungen
+        record(TYPE_A, 60, &[203, 0, 113, 8]);
+        let AddrLookup::Found(ips, ttl) = addr_lookup(parse_response(3, &p, TYPE_A)) else { panic!() };
+        assert_eq!(ips, vec![IpAddr::from([203, 0, 113, 7]), IpAddr::from([203, 0, 113, 8])]);
+        assert_eq!(ttl, 60);
+        // Gleiche Antwort als AAAA gelesen: keine passenden Einträge.
+        assert_eq!(addr_lookup(parse_response(3, &p, TYPE_AAAA)), AddrLookup::None);
+        assert_eq!(addr_lookup(None), AddrLookup::Unknown);
     }
 
     #[test]

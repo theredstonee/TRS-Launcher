@@ -193,6 +193,11 @@ public final class VanillaMenus {
 		/*return s.getClass().getSimpleName().endsWith("SettingsScreen") || s instanceof net.minecraft.client.gui.screens.controls.ControlsScreen;*/
 	}
 
+	/** Ladebildschirm (Verbinden, Gelände, Konfiguration …)? */
+	public static boolean isLoading(Screen s) {
+		return loading(s);
+	}
+
 	static boolean loading(Screen s) {
 		if (s instanceof LevelLoadingScreen || s instanceof ConnectScreen || s instanceof ProgressScreen) return true;
 		//? if >=1.20.2 {
@@ -324,6 +329,7 @@ public final class VanillaMenus {
 	public static void afterRender(Screen s, Gfx g, int mouseX, int mouseY) {
 		KeySearchUi.poll();
 		afterRenderLoading(s, g, mouseX, mouseY);
+		connectStatus(s, g);
 		dev.theredstonee.trsclient.social.SocialHooks.overScreen(g);
 	}
 
@@ -397,6 +403,19 @@ public final class VanillaMenus {
 		host.trsclient$addWidget(b);
 	}
 
+	/** Verbinden-Bildschirm ohne Redstone-Stil: Zeile von „Schnell verbinden“ unter Vanillas Status. */
+	private static void connectStatus(Screen s, Gfx g) {
+		if (!(s instanceof ConnectScreen) || (MenuStyle.enabled(MenuStyle.Kind.LOADING) && loading(s))) return;
+		try {
+			String line = dev.theredstonee.trsclient.core.connect.FastConnect.STATUS.line();
+			if (line == null) return;
+			Canvas c = canvas(g);
+			c.text(line, s.width / 2 - c.textWidth(line) / 2, s.height / 2 - 50 + 14, 0xFFA0A0A0, true);
+		} catch (RuntimeException | LinkageError ignored) {
+			// nur Anzeige
+		}
+	}
+
 	private static void afterRenderLoading(Screen s, Gfx g, int mouseX, int mouseY) {
 		if (s == null || !loading(s) || !MenuStyle.enabled(MenuStyle.Kind.LOADING)) return;
 		try {
@@ -415,6 +434,9 @@ public final class VanillaMenus {
 			if (s instanceof ConnectScreen) {
 				ServerData data = Mc.mc().getCurrentServer();
 				if (data != null) detail = data.name;
+				// Schnell verbinden: was gerade passiert, wenn es länger als 1 s dauert.
+				String status = dev.theredstonee.trsclient.core.connect.FastConnect.STATUS.line();
+				if (status != null) detail = detail == null || detail.isEmpty() ? status : detail + " – " + status;
 			}
 			g.overlayLayer();
 			g.push();
@@ -551,6 +573,16 @@ public final class VanillaMenus {
 		}
 		KeySearchUi.afterInit(s, host);
 		DisconnectUi.afterInit(s, host);
+		if (s instanceof net.minecraft.client.gui.screens.TitleScreen) dev.theredstonee.trsclient.core.connect.ServerPacks.cancelPreloads();
+		if (s instanceof JoinMultiplayerScreen) {
+			// Schnell verbinden: zuletzt genutzten Server schon jetzt auflösen.
+			try {
+				dev.theredstonee.trsclient.core.connect.FastConnect.prefetch(DisconnectUi.lastAddress());
+				dev.theredstonee.trsclient.core.connect.FastConnect.prefetch(Mc.mc().options.lastMpIp);
+			} catch (RuntimeException | LinkageError ignored) {
+				// nur ein Vorgriff
+			}
+		}
 		MenuStyle.Kind k = kind(s);
 		if (k == null) return;
 		try {
@@ -851,7 +883,9 @@ public final class VanillaMenus {
 	/** Vor dem Vanilla-Eintrag: Karte (Fläche) zeichnen. */
 	public static void serverEntryBefore(Gfx g, Object entry, ServerData data, int x, int y, int w, int h, boolean hovered) {
 		Screen s = Mc.screen();
-		if (!(s instanceof JoinMultiplayerScreen) || !MenuStyle.enabled(MenuStyle.Kind.MULTIPLAYER)) return;
+		if (!(s instanceof JoinMultiplayerScreen)) return;
+		prefetch(s, entry, data, hovered);
+		if (!MenuStyle.enabled(MenuStyle.Kind.MULTIPLAYER)) return;
 		try {
 			ServerSelectionList list = serverList(s);
 			boolean selected = list != null && list.getSelected() == entry;
@@ -859,6 +893,26 @@ public final class VanillaMenus {
 			MenuSkin.card(canvas(g), x - 2, y - 2, w + 4, h + 4, selected, hovered, pinned);
 		} catch (RuntimeException | LinkageError ignored) {
 			// klassisch weiter
+		}
+	}
+
+	/**
+	 * Schnell verbinden: überfahrenen/ausgewählten Server im Hintergrund auflösen (einmal je 20 s), damit der Klick
+	 * sofort verbinden kann; bis 1.16 (Java 8) zusätzlich Javas Adress-Speicher füllen.
+	 */
+	private static void prefetch(Screen s, Object entry, ServerData data, boolean hovered) {
+		if (data == null || data.ip == null) return;
+		try {
+			ServerSelectionList list = serverList(s);
+			boolean selected = list != null && list.getSelected() == entry;
+			if (!hovered && !selected) return;
+			dev.theredstonee.trsclient.core.connect.FastConnect.prefetch(data.ip);
+			if (selected) dev.theredstonee.trsclient.core.connect.ServerPacks.preload(data.ip, true);
+			//? if <1.17 {
+			/*if (selected) dev.theredstonee.trsclient.core.connect.FastConnect.primeJvm(data.ip);
+			*///?}
+		} catch (RuntimeException | LinkageError ignored) {
+			// nur ein Vorgriff
 		}
 	}
 

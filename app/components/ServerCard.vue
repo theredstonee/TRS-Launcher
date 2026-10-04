@@ -52,6 +52,13 @@ const pingClass = computed(() => {
     <div v-if="status?.online" class="shrink-0 text-right text-xs">
       <p class="display tabular-nums text-base-50">{{ formatCount(status.playersOnline) }}<span class="text-base-600"> / {{ formatCount(status.playersMax) }}</span></p>
       <p class="tabular-nums" :class="pingClass">{{ status.latencyMs }} ms</p>
+      <p
+        v-if="status.fastConnect && !compact"
+        class="mt-0.5 text-[10px] whitespace-nowrap tabular-nums text-base-600"
+        :title="t('servers.card.fastConnectHint', { n: status.fastConnect.addresses })"
+      >
+        {{ t('servers.card.fastConnect', { family: familyLabel(status.fastConnect.family), ms: status.fastConnect.connectMs }) }}
+      </p>
     </div>
 
     <div class="flex shrink-0 items-center gap-1.5">

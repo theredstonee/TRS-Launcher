@@ -1348,7 +1348,9 @@
     "card": {
       "checking": "Sprawdzanie …",
       "unreachable": "Nieosiągalny",
-      "join": "Dołącz"
+      "join": "Dołącz",
+      "fastConnect": "Rozwiązano wcześniej · {family} · {ms} ms",
+      "fastConnectHint": "Szybkie łączenie: launcher już rozwiązał adres tego serwera i zmierzył najszybsze połączenie (znane adresy: {n}). TRS Client korzysta z tego przy dołączaniu."
     },
     "ping": {
       "test": "Test pingu",

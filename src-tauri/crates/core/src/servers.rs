@@ -58,6 +58,9 @@ pub struct ServerStatus {
     /// `data:image/png;base64,…` – geprüft, sonst `None`.
     pub favicon: Option<String>,
     pub latency_ms: u32,
+    /// „Schnell verbinden“: vorab aufgelöst und gemessen (nur Server-Seite).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fast_connect: Option<crate::connect_hints::FastConnect>,
 }
 
 impl ServerStatus {
@@ -70,6 +73,7 @@ impl ServerStatus {
             version: String::new(),
             favicon: None,
             latency_ms: 0,
+            fast_connect: None,
         }
     }
 }
@@ -123,11 +127,28 @@ fn validate_name(name: &str) -> Result<String> {
 pub struct ServerStore {
     paths: Paths,
     lock: Mutex<()>,
+    /// Vorab aufgelöste Adressen für „Schnell verbinden“ (nur im Speicher).
+    hints: std::sync::Arc<crate::connect_hints::HintStore>,
 }
 
 impl ServerStore {
     pub fn new(paths: Paths) -> Self {
-        Self { paths, lock: Mutex::new(()) }
+        Self { paths, lock: Mutex::new(()), hints: std::sync::Arc::default() }
+    }
+
+    pub fn hints(&self) -> &std::sync::Arc<crate::connect_hints::HintStore> {
+        &self.hints
+    }
+
+    /// Status eines Servers; misst nebenbei für „Schnell verbinden“ (verzögert den
+    /// Ping höchstens kurz, scheitert nie daran).
+    pub async fn ping_with_hints(&self, address: &str) -> Result<ServerStatus> {
+        let (status, fast) = self.hints.with_ping(address, ping(address)).await;
+        let mut status = status?;
+        if status.online {
+            status.fast_connect = fast;
+        }
+        Ok(status)
     }
 
     fn file(&self) -> std::path::PathBuf {
@@ -268,6 +289,8 @@ impl ServerStore {
     /// bzw. der Launcher-Liste – nie vom Webview vorgegeben).
     pub async fn ping_instance(&self, game_dir: &Path) -> Result<Vec<InstancePing>> {
         let list = self.list_instance(game_dir).await?;
+        // Gleichzeitig (im Hintergrund) für „Schnell verbinden“ vormessen.
+        self.hints.spawn_batch(list.iter().filter(|s| s.joinable).map(|s| s.address.clone()).collect());
         let statuses = ping_many(list.iter().map(|s| s.address.clone()).collect(), PING_PARALLEL).await;
         Ok(list
             .into_iter()
@@ -606,6 +629,7 @@ async fn ping_inner(handshake_host: &str, host: &str, port: u16) -> std::io::Res
         version: clean_text(&raw.version.map(|v| v.name).unwrap_or_default(), 60),
         favicon: raw.favicon.filter(|f| is_safe_favicon(f)),
         latency_ms: latency.as_millis().min(60_000) as u32,
+        fast_connect: None,
     })
 }
 

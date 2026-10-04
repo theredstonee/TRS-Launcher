@@ -149,6 +149,21 @@ How to write an entry:
   choose what you want to hear about, whether chat notifications show the message text (off by default), and which
   of your devices get notifications. Tapping a notification opens the right page. If ntfy hasn't connected yet,
   the app tells you to open it once, and notifications you already saw don't pop up again inside the app.
+- **Fast Connect in the TRS Client.** "Connecting to the server …" no longer hangs on servers with a dead or broken
+  address: the TRS Client tries all addresses of a server at once (IPv4 and IPv6) and takes the first one that
+  answers – 0.3 s instead of up to 21 s in our test. Servers are looked up in advance when you select them in the list
+  or start them from the launcher, IP addresses skip the slow reverse lookup, and the connect screen shows what is
+  happening when it takes longer than a second. The server still receives exactly the address you entered. New module
+  "Fast Connect" (Performance), on by default.
+- **Faster server switches in networks.** On BungeeCord and Velocity networks a switch no longer reloads the same
+  resource pack again (in our test 3.2 s → 0.35 s on 1.21.11 and 13 s → 0.2 s on 1.8.9), Minecraft no longer slows
+  down to 60 fps while switching, and 1.18.2–1.19.2 skip their fixed 2-second "Loading terrain" wait.
+- **Server resource packs preloaded.** The TRS Client remembers the resource pack of servers where you accepted it and
+  downloads it quietly in the background when you select the server again or start it from the launcher – joining
+  then skips the download (20 MB pack in our test: 8.3 s → 3.2 s). Packs you declined are never preloaded.
+- **Servers looked up in advance.** The servers page and starting with a server let the launcher look up all
+  addresses and measure the fastest one; the server card shows it ("Pre-resolved · IPv4 · 23 ms") and the TRS Client
+  gets it for the join.
 
 ### Deutsch
 - **Suche, Filter und Details für TRS-Umhänge.** Die Umhang-Liste auf der Skins-Seite hat ein Suchfeld, Filter
@@ -279,6 +294,22 @@ How to write an entry:
   Chat-Hinweise den Nachrichtentext zeigen (ab Werk aus) und welche deiner Geräte Benachrichtigungen bekommen. Ein
   Tipp auf eine Benachrichtigung öffnet die passende Seite. Ist ntfy noch nicht verbunden, sagt dir die App, dass du
   es einmal öffnen sollst, und schon gesehene Benachrichtigungen erscheinen in der App nicht noch einmal.
+- **Schnell verbinden im TRS Client.** „Verbinde mit dem Server …“ hängt nicht mehr bei Servern mit einer toten oder
+  kaputten Adresse: Der TRS Client probiert alle Adressen eines Servers gleichzeitig (IPv4 und IPv6) und nimmt die
+  erste, die antwortet – im Test 0,3 s statt bis zu 21 s. Server werden schon aufgelöst, wenn du sie in der Liste
+  auswählst oder aus dem Launcher startest, IP-Adressen sparen die langsame Rückwärts-Auflösung, und der
+  Verbinden-Bildschirm zeigt, was gerade passiert, wenn es länger als eine Sekunde dauert. Der Server bekommt weiter
+  genau die Adresse, die du eingegeben hast. Neues Modul „Schnell verbinden“ (Leistung), standardmäßig an.
+- **Schnellerer Serverwechsel in Netzwerken.** In BungeeCord- und Velocity-Netzwerken lädt ein Wechsel dasselbe
+  Ressourcenpaket nicht mehr neu (im Test 3,2 s → 0,35 s unter 1.21.11 und 13 s → 0,2 s unter 1.8.9), Minecraft bremst
+  beim Wechsel nicht mehr auf 60 FPS, und 1.18.2–1.19.2 sparen sich die feste 2-Sekunden-Wartezeit bei „Lade Gelände“.
+- **Server-Ressourcenpakete vorgeladen.** Der TRS Client merkt sich das Ressourcenpaket von Servern, auf denen du es
+  angenommen hast, und lädt es leise im Hintergrund, wenn du den Server wieder auswählst oder aus dem Launcher
+  startest – beim Beitreten entfällt dann der Download (20-MB-Paket im Test: 8,3 s → 3,2 s). Abgelehnte Pakete werden
+  nie vorgeladen.
+- **Server vorab aufgelöst.** Die Server-Seite und der Start mit einem Server lassen den Launcher alle Adressen
+  auflösen und die schnellste messen; die Server-Karte zeigt sie („Vorab aufgelöst · IPv4 · 23 ms“), und der TRS
+  Client bekommt sie für den Beitritt.
 
 ## 0.17.1 – 2026-10-03 – Light Luggage Fix | Leichtes Gepäck – Fix
 <!-- banner: accent=#ffb02e motif=/news/0.17.0/banner.png -->

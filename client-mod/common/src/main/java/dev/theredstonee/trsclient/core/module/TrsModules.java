@@ -114,6 +114,11 @@ public final class TrsModules {
 	public final Module netOptimize;
 	/** Niedrige Eingabeverzögerung: GPU-Warteschlange begrenzen, Eingaben direkt vor dem Bild lesen (core.perf.LowLatency). */
 	public final Module lowLatency;
+	/** Schnell verbinden: DNS-Speicher, Vorab-Auflösen, Adressen-Rennen (core.connect.FastConnect). */
+	public final Module fastConnect;
+	public final BoolSetting fastConnectPreResolve;
+	public final BoolSetting fastConnectSwitch;
+	public final BoolSetting fastConnectPacks;
 	/** Randloses Vollbild: F11 deckt den aktuellen Monitor ab, ohne den exklusiven Vollbildmodus. */
 	public final Module borderlessFullscreen;
 	public final ChoiceSetting<dev.theredstonee.trsclient.core.perf.LowLatency.Mode> lowLatencyMode;
@@ -673,6 +678,15 @@ public final class TrsModules {
 						+ "change your ping.", false));
 		netOptimize.icon("signal").category(Category.PERFORMANCE);
 		lowLatency.icon("mouse").category(Category.PERFORMANCE);
+		fastConnect = registry.register(new Module("fastConnect", "Fast Connect",
+				"Connects to servers faster: remembers server addresses (also looked up in advance when you select a "
+						+ "server), tries all addresses of a server at once instead of waiting for a dead one (e.g. broken "
+						+ "IPv6) and skips the slow reverse lookup for IP addresses. The server still receives exactly the "
+						+ "address you entered.", true));
+		fastConnect.icon("link").category(Category.PERFORMANCE);
+		fastConnectPreResolve = fastConnect.add(new BoolSetting("preResolve", "Look up servers in advance", true));
+		fastConnectSwitch = fastConnect.add(new BoolSetting("fastSwitch", "Faster server switch", true));
+		fastConnectPacks = fastConnect.add(new BoolSetting("prePacks", "Preload server resource packs", true));
 		builtinOptimizations.icon("chip").category(Category.PERFORMANCE).availableWhen(new java.util.concurrent.Callable<Boolean>() {
 			@Override
 			public Boolean call() {

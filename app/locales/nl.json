@@ -1348,7 +1348,9 @@
     "card": {
       "checking": "Controleren …",
       "unreachable": "Onbereikbaar",
-      "join": "Joinen"
+      "join": "Joinen",
+      "fastConnect": "Vooraf opgezocht · {family} · {ms} ms",
+      "fastConnectHint": "Snel verbinden: de launcher heeft deze server al opgezocht en de snelste verbinding gemeten (bekende adressen: {n}). TRS Client gebruikt dit wanneer je joint."
     },
     "ping": {
       "test": "Pingtest",

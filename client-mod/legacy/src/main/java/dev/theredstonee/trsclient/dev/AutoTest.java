@@ -141,6 +141,11 @@ public final class AutoTest {
 			HostingTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=fastconnect: Schnell verbinden – schnellste Adresse vorab, Paket vorladen, Serverwechsel
+		if ("fastconnect".equals(System.getProperty("trsclient.autotest.only"))) {
+			FastConnectTest.install();
+			return;
+		}
 		// -PtrsAutotestOnly=ping: Ping-Test der Serverliste, Ping-HUD, Entpacken vorher/nachher, Eingabeverzögerung
 		if ("ping".equals(System.getProperty("trsclient.autotest.only"))) {
 			PingTest.install();

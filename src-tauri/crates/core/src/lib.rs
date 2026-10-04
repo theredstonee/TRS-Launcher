@@ -9,6 +9,7 @@ pub mod bedrock;
 pub mod boost;
 pub mod client_mod;
 pub mod clips;
+pub mod connect_hints;
 pub mod client_mod_update;
 pub mod bisect;
 pub mod content;
@@ -836,15 +837,22 @@ impl Launcher {
             Some(Join::World(world)) => Some(world),
             _ => None,
         };
+        // „Schnell verbinden“: parallel zur Vorbereitung auflösen und messen (begrenzt, nie ein Startfehler).
+        let mut hints_join = None;
+        let mut hints_task = None;
         let (join, join_label) = match join_request {
             Some(Join::World(world)) => {
                 (None, Some(if world.name.is_empty() { world.room_id.clone() } else { world.name.clone() }))
             }
             Some(Join::Server(id)) => {
                 let server = self.servers.get(id).await?;
+                hints_join = connect_join(join_request, Some(&server.address));
+                hints_task = Some(self.servers.hints().spawn_launch(&server.address));
                 (Some(servers::join_target(&server.address).await?), Some(server.name))
             }
             Some(Join::Address(address)) => {
+                hints_join = connect_join(join_request, None);
+                hints_task = Some(self.servers.hints().spawn_launch(address));
                 let target = servers::join_target(address).await?;
                 let label = target.address.clone();
                 (Some(target), Some(label))
@@ -1009,12 +1017,14 @@ impl Launcher {
         }
 
         // Eingebaute Optimierungen des TRS Clients im Menü abgeschaltet: Fabric lässt sie weg.
-        if instance.overrides.trs_client != Some(false)
-            && let Some(build) = client_mod::build_for(catalog.builds(), instance.loader.kind, &instance.game_version)
-        {
+        let client_build = client_mod::build_for(catalog.builds(), instance.loader.kind, &instance.game_version)
+            .filter(|_| instance.overrides.trs_client != Some(false));
+        if let Some(build) = client_build {
             let extra = client_mod::bundled_jvm_args(&self.paths, build, instance).await;
             launch::insert_jvm_args(&mut command, &prepared, extra);
         }
+        // Vorab aufgelöste Server für den TRS Client (wie trs-api.json: nur mit TRS Client).
+        self.write_connect_hints(&instance.id, client_build.is_some(), hints_join.as_deref(), hints_task).await;
 
         let launcher = Arc::clone(self);
         let id = instance.id.clone();
@@ -1317,7 +1327,42 @@ pub enum Join<'a> {
     World(&'a trs_api::hosting::HostedWorld),
 }
 
+/// `join` in `connect-hints.json`: die Adresse wie gespeichert bzw. eingegeben –
+/// nur beim Server-Beitritt, nie bei gehosteten Welten.
+fn connect_join(join: Option<Join<'_>>, stored: Option<&str>) -> Option<String> {
+    match join {
+        Some(Join::Server(_)) => stored.map(|a| a.trim().to_owned()),
+        Some(Join::Address(address)) => Some(address.trim().to_owned()),
+        Some(Join::World(_)) | None => None,
+    }
+}
+
 impl Launcher {
+    /// `connect-hints.json` vor dem Start: wartet höchstens bis zum Ende der
+    /// (begrenzten) Messung; Fehler landen nur im Log.
+    async fn write_connect_hints(
+        &self,
+        instance_id: &str,
+        client: bool,
+        join: Option<&str>,
+        task: Option<tokio::task::JoinHandle<Option<connect_hints::FastConnect>>>,
+    ) {
+        let json = if client {
+            if let Some(task) = task {
+                let limit = connect_hints::Timing::LAUNCH.overall;
+                if tokio::time::timeout(limit, task).await.is_err() {
+                    tracing::debug!("Schnell verbinden: Messung für den Start nicht rechtzeitig fertig");
+                }
+            }
+            self.servers.hints().file_json(join)
+        } else {
+            None
+        };
+        if let Err(e) = client_mod::write_connect_hints(&self.paths, instance_id, json.as_deref()).await {
+            tracing::warn!("connect-hints.json konnte nicht geschrieben werden: {e}");
+        }
+    }
+
     /// Das Spiel läuft schon: Welt-Beitritt direkt über den Link übergeben.
     fn hand_world_to_running_game(&self, instance_id: &str, world: &trs_api::hosting::HostedWorld) -> Result<u32> {
         let pid = self.games.running().into_iter().find(|g| g.instance_id == instance_id).map(|g| g.pid);
@@ -1507,5 +1552,20 @@ mod tests {
         assert_eq!(sync_items(&settings, &instance), [sync::SyncItem::Options, sync::SyncItem::ResourcePacks]);
         instance.overrides.shared_folders = vec![shared_folders::SharedFolder::Resourcepacks];
         assert_eq!(sync_items(&settings, &instance), [sync::SyncItem::Options]);
+    }
+
+    #[test]
+    fn connect_hints_join_only_for_servers() {
+        let world: trs_api::hosting::HostedWorld = serde_json::from_value(serde_json::json!({
+            "roomId": "r1", "name": "Welt", "mcVersion": "1.21.1", "loader": "fabric"
+        }))
+        .unwrap();
+        // Gehostete Welt: kein `join` (die Verbindung läuft über den TRS-Link).
+        assert_eq!(connect_join(Some(Join::World(&world)), Some("play.example.net")), None);
+        assert_eq!(connect_join(None, None), None);
+        assert_eq!(connect_join(Some(Join::Server("id")), Some("play.example.net")).as_deref(), Some("play.example.net"));
+        assert_eq!(connect_join(Some(Join::Address(" Play.Example.net:25570 ")), None).as_deref(), Some("Play.Example.net:25570"));
+        let json = connect_hints::file_json(connect_join(Some(Join::World(&world)), None).as_deref(), &[]).unwrap();
+        assert!(!json.contains("\"join\""), "{json}");
     }
 }
