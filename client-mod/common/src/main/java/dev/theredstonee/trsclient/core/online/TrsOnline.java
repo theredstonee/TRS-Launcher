@@ -747,8 +747,9 @@ public final class TrsOnline {
 	}
 
 	/**
-	 * Lädt einen Umhang (Platte oder Netz) und dekodiert ihn direkt in Bilder (ggf. verkleinert, siehe
-	 * {@link CapeFrames#decode}) – im Textur-Thread. Genau einer der Rückrufe läuft danach im Spiel-Thread (nächster Tick).
+	 * Lädt einen Umhang (Platte oder Netz), dekodiert ihn direkt in Bilder (ggf. verkleinert, siehe
+	 * {@link CapeFrames#decode}) und erzeugt den Elytra-Look ({@link dev.theredstonee.trsclient.core.cape.ElytraArt}) –
+	 * im Textur-Thread. Genau einer der Rückrufe läuft danach im Spiel-Thread (nächster Tick).
 	 */
 	public void loadCape(CapeInfo cape, int downscale, java.util.function.Consumer<CapeFrames> done, Runnable failed) {
 		String t = token;
@@ -756,6 +757,8 @@ public final class TrsOnline {
 			try {
 				byte[] png = capeCache.load(cape, api, t);
 				CapeFrames frames = CapeFrames.decode(png, cape, downscale);
+				// Elytra-Bereich aus dem Umhang-Motiv neu erzeugen (je Bild, einmal hier statt pro Tick).
+				dev.theredstonee.trsclient.core.cape.ElytraArt.apply(frames);
 				results.add(() -> done.accept(frames));
 			} catch (IOException | ApiException | RuntimeException e) {
 				platform.log("TRS API: Umhang '" + cape.id + "' nicht ladbar (" + e.getMessage() + ")");

@@ -28,6 +28,14 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **TRS Client: capes look right on the elytra.** Wearing an elytra with a TRS cape (team, code, Studio or older capes) no longer shows red or broken wings – the wings now always show your cape's design, sharp in HD, darker on the inside, and animated capes animate on the elytra too.
+
+### Deutsch
+- **TRS Client: Umhänge sehen auf der Elytra richtig aus.** Mit einem TRS-Umhang (Team-, Code-, Studio- oder ältere Umhänge) zeigt die Elytra keine roten oder kaputten Flügel mehr – die Flügel zeigen jetzt immer das Motiv deines Umhangs, scharf in HD, innen dunkler, und animierte Umhänge bewegen sich auch auf der Elytra.
+
 ## 0.20.0 – 2026-10-13 – Penguin Lodge | Pinguin-Hütte
 <!-- banner: accent=#7fd3ff motif=/news/0.20.0/banner.png -->
 <!-- shots:

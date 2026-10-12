@@ -110,12 +110,35 @@ public final class CapeTest {
 			case 8:
 				actions.shot("trsclient-cape-sneak");
 				hold(sneakKey(mc), false);
+				// Elytra mit TRS-Umhang: Flügel aus dem Umhang-Motiv (ElytraArt), je Animationsbild.
+				//? if >=1.17 {
+				actions.command("item replace entity @p armor.chest with elytra");
+				//?} else
+				/*actions.command("replaceitem entity @p armor.chest elytra");*/
+				wait = 20;
+				return true;
+			case 9:
+				actions.shot("trsclient-cape-elytra");
+				wait = 3;
+				return true;
+			case 10:
+				actions.shot("trsclient-cape-elytra-frame");
+				cameraFront(mc);
+				wait = 5;
+				return true;
+			case 11:
+				actions.shot("trsclient-cape-elytra-front");
+				camera(mc, true);
+				//? if >=1.17 {
+				actions.command("item replace entity @p armor.chest with air");
+				//?} else
+				/*actions.command("replaceitem entity @p armor.chest air");*/
 				hud(mc, true);
 				TrsClient.get().setForceZoom(false);
 				hold(mc.options.keyPlayerList, true);
 				wait = 5;
 				return true;
-			case 9:
+			case 12:
 				actions.shot("trsclient-cape-tab");
 				hold(mc.options.keyPlayerList, false);
 				TrsClient.LOGGER.info("[Autotest] Abzeichen Tabliste={} Name={} → \"{}\"",
@@ -147,6 +170,14 @@ public final class CapeTest {
 		mc.options.setCameraType(thirdPerson ? CameraType.THIRD_PERSON_BACK : CameraType.FIRST_PERSON);
 		//?} else
 		/*mc.options.thirdPersonView = thirdPerson ? 1 : 0;*/
+	}
+
+	/** Third-Person von vorn (Innenseite der Flügel). */
+	private static void cameraFront(Minecraft mc) {
+		//? if >=1.16 {
+		mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT);
+		//?} else
+		/*mc.options.thirdPersonView = 2;*/
 	}
 
 	private static void hud(Minecraft mc, boolean visible) {
