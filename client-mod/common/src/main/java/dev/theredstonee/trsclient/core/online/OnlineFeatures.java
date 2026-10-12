@@ -173,11 +173,34 @@ public final class OnlineFeatures<T> {
 		PlayerInfo info = online.info(uuid);
 		if (info.cape == null) return null;
 		try {
-			return textures.texture(info.cape, System.currentTimeMillis());
+			return textures.texture(info.cape, System.currentTimeMillis(), isOwn(uuid));
 		} catch (RuntimeException e) {
 			online.reportError(e);
 			return null;
 		}
+	}
+
+	/** Zuletzt umgerechnete eigene UUID (32 Hex aus {@link TrsOnline#ownUuid()}) – keine Allokation je Bild. */
+	private String ownHex;
+	private UUID ownParsed;
+
+	/** Ist das der eigene Spieler (angemeldetes Konto)? Dessen Umhang bleibt beim Textur-Budget in voller Qualität. */
+	private boolean isOwn(UUID uuid) {
+		String hex = online.ownUuid();
+		if (hex == null || uuid == null) return false;
+		if (!hex.equals(ownHex)) {
+			ownHex = hex;
+			ownParsed = null;
+			String h = hex.replace("-", "");
+			if (h.length() == 32) {
+				try {
+					ownParsed = new UUID(Long.parseUnsignedLong(h.substring(0, 16), 16), Long.parseUnsignedLong(h.substring(16), 16));
+				} catch (NumberFormatException ignored) {
+					// keine gültige UUID → nie „eigener“ Umhang
+				}
+			}
+		}
+		return uuid.equals(ownParsed);
 	}
 
 	/**

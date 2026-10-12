@@ -2,7 +2,6 @@ package dev.theredstonee.trsclient.core.online;
 
 import dev.theredstonee.trsclient.core.cape.CapeDiskCache;
 import dev.theredstonee.trsclient.core.cape.CapeFrames;
-import dev.theredstonee.trsclient.core.cape.PngDecoder;
 import dev.theredstonee.trsclient.core.cosmetic.CosmeticModels;
 
 import java.io.IOException;
@@ -748,15 +747,15 @@ public final class TrsOnline {
 	}
 
 	/**
-	 * Lädt einen Umhang (Platte oder Netz) und zerlegt ihn in Bilder – im Textur-Thread. Genau einer der
-	 * Rückrufe läuft danach im Spiel-Thread (nächster Tick).
+	 * Lädt einen Umhang (Platte oder Netz) und dekodiert ihn direkt in Bilder (ggf. verkleinert, siehe
+	 * {@link CapeFrames#decode}) – im Textur-Thread. Genau einer der Rückrufe läuft danach im Spiel-Thread (nächster Tick).
 	 */
-	public void loadCape(CapeInfo cape, java.util.function.Consumer<CapeFrames> done, Runnable failed) {
+	public void loadCape(CapeInfo cape, int downscale, java.util.function.Consumer<CapeFrames> done, Runnable failed) {
 		String t = token;
 		if (!submit(capeWorker, () -> {
 			try {
 				byte[] png = capeCache.load(cape, api, t);
-				CapeFrames frames = CapeFrames.split(PngDecoder.decode(png), cape);
+				CapeFrames frames = CapeFrames.decode(png, cape, downscale);
 				results.add(() -> done.accept(frames));
 			} catch (IOException | ApiException | RuntimeException e) {
 				platform.log("TRS API: Umhang '" + cape.id + "' nicht ladbar (" + e.getMessage() + ")");

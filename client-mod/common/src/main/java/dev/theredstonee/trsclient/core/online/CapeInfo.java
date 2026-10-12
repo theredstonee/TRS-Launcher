@@ -7,8 +7,11 @@ package dev.theredstonee.trsclient.core.online;
 public final class CapeInfo {
 	public final String id;
 	public final String url;
-	/** Größter Faktor gegenüber 64×32 (mitgelieferte HD-Umhänge bis 512×256; Uploads der API bleiben bei 1–4). */
-	public static final int MAX_SCALE = 8;
+	/**
+	 * Größter Faktor gegenüber 64×32: HD-Umhänge bis 1024×512 je Bild (eigene Uploads bis 32 Bilder). Ältere Clients
+	 * kannten nur bis 8 und zeigen größere Umhänge nicht (dann Vanilla) – so ist es mit der API vereinbart.
+	 */
+	public static final int MAX_SCALE = 16;
 
 	public final int scale;
 	public final int frames;
