@@ -259,6 +259,11 @@ public final class AutoTest {
 					step = 22;
 					break;
 				}
+				// -PtrsAutotestOnly=cape: nur TRS-Umhang, Elytra und Abzeichen (braucht -PtrsApi mit Umhang-Attrappe)
+				if ("cape".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 21;
+					break;
+				}
 				// -PtrsAutotestOnly=capecolor: nur Umhang-Einstellungen/Vorschau und Farben
 				if ("capecolor".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 23;
@@ -479,6 +484,11 @@ public final class AutoTest {
 					}
 				};
 				if (capeTest.step(mc, modules, actions)) return;
+				if ("cape".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 24;
+					wait = 5;
+					break;
+				}
 				// Emote-Rad und Emotes (gleiche Attrappe)
 				if (emoteTest.step(mc, modules, actions)) return;
 				next(5);
