@@ -1,7 +1,7 @@
 package dev.theredstonee.trsclient.core.cape;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
@@ -10,10 +10,13 @@ import java.util.zip.Inflater;
  * RGB, Palette, Graustufen+Alpha, RGBA) in allen Bittiefen (1/2/4/8/16), durchsichtige Farbe (tRNS) und
  * Interlacing (Adam7). Das deckt die Umhänge der TRS API ab und auch Texturen aus Resource Packs (die Karte
  * mittelt Blocktexturen). Ergebnis: ARGB-Pixel.
+ *
+ * <p>Die Bilddaten werden Zeile für Zeile direkt aus der Datei entpackt (kein Rohdaten-Puffer in Bildgröße). Wer das
+ * ganze Bild nicht braucht (Umhänge: Einzelbilder, verkleinert, nur das erste Bild), dekodiert über einen {@link Sink}.
  */
 public final class PngDecoder {
-	/** Größter Umhang: Faktor 8 (512×256) mit 64 Bildern. */
-	private static final long MAX_PIXELS = 512L * 256 * 64;
+	/** Standardgrenze: größter Umhang, Faktor 16 (1024×512 je Bild) mit 32 Bildern = 16,8 MP. */
+	public static final long MAX_PIXELS = 1024L * 512 * 32;
 
 	private PngDecoder() {
 	}
@@ -32,15 +35,63 @@ public final class PngDecoder {
 		}
 	}
 
+	/**
+	 * Empfänger der Bildzeilen beim Dekodieren: So muss niemand das ganze Bild (oder die entpackten Rohdaten) auf einmal
+	 * im Speicher halten – Umhänge schreiben direkt in ihre Einzelbilder.
+	 */
+	public interface Sink {
+		/** Kopf gelesen und geprüft; kommt genau einmal vor der ersten Zeile. */
+		void begin(int width, int height, boolean interlaced) throws IOException;
+
+		/**
+		 * Pixel einer Zeile: {@code px[0..n)} gehören an {@code (x0 + i·dx, y)}. Ohne Interlacing kommen die Zeilen
+		 * vollständig ({@code x0 = 0, dx = 1}) und von oben nach unten. {@code px} wird danach wiederverwendet.
+		 *
+		 * @return false = der Rest wird nicht gebraucht, Dekodieren hier beenden
+		 */
+		boolean row(int y, int x0, int dx, int[] px, int n) throws IOException;
+	}
+
 	public static Image decode(byte[] png) throws IOException {
 		return decode(png, MAX_PIXELS);
 	}
 
 	/**
 	 * Wie {@link #decode(byte[])}, aber mit eigener Pixel-Grenze (große Bildschirmfotos: 5K/Ultrawide liegen über der
-	 * Standardgrenze von 8,4 MP).
+	 * Standardgrenze von 16,8 MP).
 	 */
 	public static Image decode(byte[] png, long maxPixels) throws IOException {
+		final Image[] result = new Image[1];
+		decode(png, maxPixels, new Sink() {
+			private int[] out;
+			private int width;
+
+			@Override
+			public void begin(int w, int h, boolean interlaced) {
+				width = w;
+				out = new int[w * h];
+				result[0] = new Image(w, h, out);
+			}
+
+			@Override
+			public boolean row(int y, int x0, int dx, int[] px, int n) {
+				int base = y * width + x0;
+				if (dx == 1) {
+					System.arraycopy(px, 0, out, base, n);
+				} else {
+					for (int i = 0; i < n; i++) out[base + i * dx] = px[i];
+				}
+				return true;
+			}
+		});
+		return result[0];
+	}
+
+	/**
+	 * Dekodiert zeilenweise in {@code sink}. Entpackt wird Zeile für Zeile – Speicher braucht nur, was der Empfänger
+	 * behält (plus zwei Zeilen).
+	 */
+	public static void decode(byte[] png, long maxPixels, Sink sink) throws IOException {
 		if (png == null || png.length < 33) throw new IOException("keine PNG");
 		byte[] sig = {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n'};
 		for (int i = 0; i < 8; i++) {
@@ -57,15 +108,17 @@ public final class PngDecoder {
 		// Durchsichtige Farbe bei Graustufen/RGB ohne Alpha (tRNS) in der Bittiefe der Datei; -1 = keine.
 		int transGray = -1;
 		long transRgb = -1;
-		ByteArrayOutputStream idat = new ByteArrayOutputStream();
+		// IDAT-Abschnitte nur merken (Start, Länge) – entpackt wird später direkt aus der Datei.
+		IdatStream idat = new IdatStream(png);
 		boolean end = false;
 		while (!end && pos + 8 <= png.length) {
 			int len = readInt(png, pos);
 			String type = new String(png, pos + 4, 4, java.nio.charset.StandardCharsets.US_ASCII);
 			int data = pos + 8;
-			if (len < 0 || data + len + 4 > png.length) throw new IOException("Chunk zu lang");
+			if (len < 0 || (long) data + len + 4 > png.length) throw new IOException("Chunk zu lang");
 			switch (type) {
 				case "IHDR":
+					if (len < 13) throw new IOException("IHDR zu kurz");
 					width = readInt(png, data);
 					height = readInt(png, data + 4);
 					depth = png[data + 8] & 0xFF;
@@ -99,7 +152,7 @@ public final class PngDecoder {
 					}
 					break;
 				case "IDAT":
-					idat.write(png, data, len);
+					idat.add(data, len);
 					break;
 				case "IEND":
 					end = true;
@@ -123,86 +176,95 @@ public final class PngDecoder {
 		if (colorType == 3 && depth == 16) throw new IOException("Palette mit 16 Bit");
 		if ((colorType == 2 || colorType == 4 || colorType == 6) && depth < 8) throw new IOException("Bittiefe " + depth);
 		int bitsPerPixel = channels * depth;
+		if (((long) width * bitsPerPixel + 7) / 8 > Integer.MAX_VALUE - 16) throw new IOException("Bild zu groß");
 		// Abstand für die Filter: ganze Bytes je Pixel, mindestens 1.
 		int bpp = Math.max(1, bitsPerPixel / 8);
 		// Durchgänge: ohne Interlacing einer, sonst Adam7 (Start x, Start y, Schritt x, Schritt y).
 		int[][] passes = interlace == 0 ? new int[][] {{0, 0, 1, 1}}
 				: new int[][] {{0, 0, 8, 8}, {4, 0, 8, 8}, {0, 4, 4, 8}, {2, 0, 4, 4}, {0, 2, 2, 4}, {1, 0, 2, 2}, {0, 1, 1, 2}};
-		long expected = 0;
-		for (int[] p : passes) {
-			long pw = passSize(width, p[0], p[2]), ph = passSize(height, p[1], p[3]);
-			if (pw == 0 || ph == 0) continue;
-			expected += ((pw * bitsPerPixel + 7) / 8 + 1) * ph;
-		}
-		if (expected > Integer.MAX_VALUE - 16) throw new IOException("Bild zu groß");
-		byte[] raw = inflate(idat.toByteArray(), (int) expected);
-		int[] out = new int[width * height];
+		sink.begin(width, height, interlace != 0);
 		int maxSample = (1 << depth) - 1;
-		int off = 0;
-		for (int[] p : passes) {
-			int pw = passSize(width, p[0], p[2]), ph = passSize(height, p[1], p[3]);
-			if (pw == 0 || ph == 0) continue;
-			int rowBytes = (pw * bitsPerPixel + 7) / 8;
-			byte[] prev = new byte[rowBytes];
-			byte[] line = new byte[rowBytes];
-			for (int row = 0; row < ph; row++) {
-				int filter = raw[off] & 0xFF;
-				System.arraycopy(raw, off + 1, line, 0, rowBytes);
-				off += rowBytes + 1;
-				unfilter(filter, line, prev, bpp);
-				int y = p[1] + row * p[3];
-				for (int col = 0; col < pw; col++) {
-					int x = p[0] + col * p[2];
-					int a;
-					int r;
-					int g;
-					int b;
-					switch (colorType) {
-						case 0: {
-							int v = sample(line, col, 0, 1, depth);
-							r = g = b = to8(v, depth, maxSample);
-							a = v == transGray ? 0 : 255;
-							break;
+		int[] px = new int[width];
+		byte[] filter = new byte[1];
+		try {
+			for (int[] p : passes) {
+				int pw = passSize(width, p[0], p[2]), ph = passSize(height, p[1], p[3]);
+				if (pw == 0 || ph == 0) continue;
+				int rowBytes = (int) (((long) pw * bitsPerPixel + 7) / 8);
+				byte[] prev = new byte[rowBytes];
+				byte[] line = new byte[rowBytes];
+				for (int row = 0; row < ph; row++) {
+					idat.read(filter, 1);
+					idat.read(line, rowBytes);
+					unfilter(filter[0] & 0xFF, line, prev, bpp);
+					if (colorType == 6 && depth == 8) {
+						// Häufigster Fall (RGBA, 8 Bit): ohne Umweg über die Abtastwerte.
+						for (int col = 0, o = 0; col < pw; col++, o += 4) {
+							px[col] = ((line[o + 3] & 0xFF) << 24) | ((line[o] & 0xFF) << 16) | ((line[o + 1] & 0xFF) << 8)
+									| (line[o + 2] & 0xFF);
 						}
-						case 2: {
-							int rv = sample(line, col, 0, 3, depth);
-							int gv = sample(line, col, 1, 3, depth);
-							int bv = sample(line, col, 2, 3, depth);
-							r = to8(rv, depth, maxSample);
-							g = to8(gv, depth, maxSample);
-							b = to8(bv, depth, maxSample);
-							long key = ((long) rv << 32) | ((long) gv << 16) | bv;
-							a = key == transRgb ? 0 : 255;
-							break;
+					} else {
+						for (int col = 0; col < pw; col++) {
+							px[col] = pixel(line, col, colorType, depth, maxSample, palette, paletteAlpha, transGray, transRgb);
 						}
-						case 3: {
-							int idx = sample(line, col, 0, 1, depth);
-							int rgb = idx < palette.length ? palette[idx] : 0;
-							r = (rgb >> 16) & 0xFF;
-							g = (rgb >> 8) & 0xFF;
-							b = rgb & 0xFF;
-							a = paletteAlpha != null && idx < paletteAlpha.length ? paletteAlpha[idx] : 255;
-							break;
-						}
-						case 4:
-							r = g = b = to8(sample(line, col, 0, 2, depth), depth, maxSample);
-							a = to8(sample(line, col, 1, 2, depth), depth, maxSample);
-							break;
-						default:
-							r = to8(sample(line, col, 0, 4, depth), depth, maxSample);
-							g = to8(sample(line, col, 1, 4, depth), depth, maxSample);
-							b = to8(sample(line, col, 2, 4, depth), depth, maxSample);
-							a = to8(sample(line, col, 3, 4, depth), depth, maxSample);
-							break;
 					}
-					out[y * width + x] = (a << 24) | (r << 16) | (g << 8) | b;
+					if (!sink.row(p[1] + row * p[3], p[0], p[2], px, pw)) return;
+					byte[] t = prev;
+					prev = line;
+					line = t;
 				}
-				byte[] t = prev;
-				prev = line;
-				line = t;
 			}
+		} finally {
+			idat.end();
 		}
-		return new Image(width, height, out);
+	}
+
+	/** Ein Pixel einer entfilterten Zeile als ARGB. */
+	private static int pixel(byte[] line, int col, int colorType, int depth, int maxSample, int[] palette,
+			int[] paletteAlpha, int transGray, long transRgb) {
+		int a;
+		int r;
+		int g;
+		int b;
+		switch (colorType) {
+			case 0: {
+				int v = sample(line, col, 0, 1, depth);
+				r = g = b = to8(v, depth, maxSample);
+				a = v == transGray ? 0 : 255;
+				break;
+			}
+			case 2: {
+				int rv = sample(line, col, 0, 3, depth);
+				int gv = sample(line, col, 1, 3, depth);
+				int bv = sample(line, col, 2, 3, depth);
+				r = to8(rv, depth, maxSample);
+				g = to8(gv, depth, maxSample);
+				b = to8(bv, depth, maxSample);
+				long key = ((long) rv << 32) | ((long) gv << 16) | bv;
+				a = key == transRgb ? 0 : 255;
+				break;
+			}
+			case 3: {
+				int idx = sample(line, col, 0, 1, depth);
+				int rgb = idx < palette.length ? palette[idx] : 0;
+				r = (rgb >> 16) & 0xFF;
+				g = (rgb >> 8) & 0xFF;
+				b = rgb & 0xFF;
+				a = paletteAlpha != null && idx < paletteAlpha.length ? paletteAlpha[idx] : 255;
+				break;
+			}
+			case 4:
+				r = g = b = to8(sample(line, col, 0, 2, depth), depth, maxSample);
+				a = to8(sample(line, col, 1, 2, depth), depth, maxSample);
+				break;
+			default:
+				r = to8(sample(line, col, 0, 4, depth), depth, maxSample);
+				g = to8(sample(line, col, 1, 4, depth), depth, maxSample);
+				b = to8(sample(line, col, 2, 4, depth), depth, maxSample);
+				a = to8(sample(line, col, 3, 4, depth), depth, maxSample);
+				break;
+		}
+		return (a << 24) | (r << 16) | (g << 8) | b;
 	}
 
 	/** Pixel eines Durchgangs in einer Richtung (Start, Schritt); 0 = Durchgang leer. */
@@ -266,23 +328,54 @@ public final class PngDecoder {
 		}
 	}
 
-	private static byte[] inflate(byte[] data, int expected) throws IOException {
-		Inflater inflater = new Inflater();
-		try {
-			inflater.setInput(data);
-			byte[] out = new byte[expected];
+	/** Entpackt die IDAT-Abschnitte direkt aus der Datei, Stück für Stück (ohne sie vorher zusammenzukopieren). */
+	private static final class IdatStream {
+		private final byte[] png;
+		private int[] offsets = new int[8];
+		private int[] lengths = new int[8];
+		private int count;
+		private int next;
+		private Inflater inflater;
+
+		IdatStream(byte[] png) {
+			this.png = png;
+		}
+
+		void add(int offset, int length) {
+			if (count == offsets.length) {
+				offsets = Arrays.copyOf(offsets, count * 2);
+				lengths = Arrays.copyOf(lengths, count * 2);
+			}
+			offsets[count] = offset;
+			lengths[count] = length;
+			count++;
+		}
+
+		/** Liest genau {@code len} entpackte Bytes; zu kurze Daten → IOException. */
+		void read(byte[] buf, int len) throws IOException {
+			if (inflater == null) inflater = new Inflater();
 			int total = 0;
-			while (total < expected && !inflater.finished()) {
-				int n = inflater.inflate(out, total, expected - total);
-				if (n == 0 && (inflater.needsInput() || inflater.needsDictionary())) break;
+			while (total < len) {
+				if (inflater.finished()) throw new IOException("Bilddaten unvollständig");
+				if (inflater.needsInput()) {
+					if (next >= count) throw new IOException("Bilddaten unvollständig");
+					inflater.setInput(png, offsets[next], lengths[next]);
+					next++;
+					continue;
+				}
+				int n;
+				try {
+					n = inflater.inflate(buf, total, len - total);
+				} catch (DataFormatException e) {
+					throw new IOException("Bilddaten kaputt", e);
+				}
+				if (n == 0 && !inflater.needsInput() && !inflater.finished()) throw new IOException("Bilddaten kaputt");
 				total += n;
 			}
-			if (total != expected) throw new IOException("Bilddaten unvollständig");
-			return out;
-		} catch (DataFormatException e) {
-			throw new IOException("Bilddaten kaputt", e);
-		} finally {
-			inflater.end();
+		}
+
+		void end() {
+			if (inflater != null) inflater.end();
 		}
 	}
 

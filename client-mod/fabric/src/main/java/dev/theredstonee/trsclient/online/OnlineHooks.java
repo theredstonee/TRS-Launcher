@@ -349,15 +349,24 @@ public final class OnlineHooks {
 		public Object upload(String name, int width, int height, int[] argb) {
 			try {
 				NativeImage img = new NativeImage(width, height, false);
-				for (int y = 0; y < height; y++) {
-					for (int x = 0; x < width; x++) {
-						int c = argb[y * width + x];
+				// HD-Umhänge: bis 1024×512 = 512 K Pixel je Bild – ARGB → ABGR (RGBA-Bytes) ohne Prüfungen je Pixel.
+				//? if >=1.21.5 {
+				/*long ptr = img.getPointer();
+				for (int i = 0, n = width * height; i < n; i++) {
+					int c = argb[i];
+					org.lwjgl.system.MemoryUtil.memPutInt(ptr + 4L * i, (c & 0xFF00FF00) | ((c >> 16) & 0xFF) | ((c & 0xFF) << 16));
+				}
+				*///?} else {
+				for (int y = 0, i = 0; y < height; y++) {
+					for (int x = 0; x < width; x++, i++) {
+						int c = argb[i];
 						//? if >=1.21.2 {
 						/*img.setPixel(x, y, c);
 						*///?} else
 						img.setPixelRGBA(x, y, (c & 0xFF00FF00) | ((c >> 16) & 0xFF) | ((c & 0xFF) << 16));
 					}
 				}
+				//?}
 				//? if >=1.21.5 {
 				/*DynamicTexture texture = new DynamicTexture(() -> "trsclient " + name, img);
 				*///?} else
