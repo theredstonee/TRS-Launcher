@@ -608,6 +608,7 @@ fn accent_name(accent: Accent) -> &'static str {
         Accent::Emerald => "emerald",
         Accent::Lapis => "lapis",
         Accent::Amethyst => "amethyst",
+        Accent::Ice => "ice",
     }
 }
 
@@ -619,6 +620,7 @@ fn accent_color(accent: Accent) -> &'static str {
         Accent::Emerald => "#17A34A",
         Accent::Lapis => "#3563E9",
         Accent::Amethyst => "#9B4DDF",
+        Accent::Ice => "#2B97D6",
     }
 }
 
@@ -1058,7 +1060,7 @@ mod tests {
 
     #[test]
     fn every_accent_has_a_colour() {
-        for accent in [Accent::Redstone, Accent::Lamp, Accent::Emerald, Accent::Lapis, Accent::Amethyst] {
+        for accent in [Accent::Redstone, Accent::Lamp, Accent::Emerald, Accent::Lapis, Accent::Amethyst, Accent::Ice] {
             let hex = accent_color(accent);
             assert!(hex.len() == 7 && hex.starts_with('#'), "{accent:?} → {hex}");
             assert!(hex[1..].chars().all(|c| c.is_ascii_hexdigit()), "{accent:?} → {hex}");

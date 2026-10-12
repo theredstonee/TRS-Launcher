@@ -2,10 +2,12 @@ import { defineStore } from 'pinia'
 import type { Settings, UiSettings } from '~/types'
 import type { Locale } from '~/utils/i18n'
 
-/** Theme, Akzentfarbe, Unschärfe und Animationen sofort auf das Dokument anwenden. */
-export function applyAppearance(ui: Pick<UiSettings, 'theme' | 'accent' | 'advancedRendering' | 'motion'> | undefined) {
+/** Design, Theme, Akzentfarbe, Unschärfe und Animationen sofort auf das Dokument anwenden. */
+export function applyAppearance(ui: Pick<UiSettings, 'theme' | 'accent' | 'design' | 'advancedRendering' | 'motion'> | undefined) {
   applyMotion(ui?.motion)
   if (typeof document === 'undefined') return
+  // Ohne Einstellungen (Fehler beim Laden) den Merker vom letzten Lauf nicht löschen.
+  if (ui) applyDesign(ui.design)
   const root = document.documentElement
   const theme = ui?.theme ?? 'dark'
   const prefersLight = typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: light)').matches

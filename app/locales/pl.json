@@ -2331,6 +2331,17 @@
       "updatesPortable": "Wersja przenośna – aktualizacje są na stronie pobierania"
     },
     "appearance": {
+      "designTitle": "Wygląd",
+      "designDescription": "Ogólny wygląd launchera: scena w tle, wzór i kolory. Kolor akcentu i motyw kolorów nadal wybierasz sam.",
+      "designs": {
+        "redstone": "Redstone",
+        "winter": "Zimowa noc"
+      },
+      "designHints": {
+        "redstone": "Łupek i żywy obwód z redstone",
+        "winter": "Ośnieżony pikselowy krajobraz, zorza polarna, lodowy błękit"
+      },
+      "designLabel": "Wygląd {name}",
       "colorScheme": "Motyw kolorów",
       "themes": {
         "dark": "Ciemny",
@@ -2343,17 +2354,18 @@
         "lamp": "Lampa",
         "emerald": "Szmaragd",
         "lapis": "Lazuryt",
-        "amethyst": "Ametyst"
+        "amethyst": "Ametyst",
+        "ice": "Lód"
       },
       "accentTitle": "Kolor akcentu",
-      "accentDescription": "Kolor przycisków, aktywnych elementów i przewodu z redstone.",
+      "accentDescription": "Kolor przycisków, aktywnych elementów i świateł w tle.",
       "accentLabel": "Kolor akcentu {name}",
       "advancedRenderingTitle": "Zaawansowane renderowanie",
       "advancedRenderingDescription": "Efekty rozmycia za oknami dialogowymi i paskami. Wyłączenie oszczędza trochę wydajności na słabszych komputerach.",
       "animatedBackgroundTitle": "Animowane tło",
-      "animatedBackgroundDescription": "Spokojny obwód z redstone za każdą stroną. Po wyłączeniu widoczny jest tylko wzór z łupka.",
+      "animatedBackgroundDescription": "Spokojna, animowana scena za każdą stroną – obwód z redstone albo zimowy krajobraz, zależnie od wyglądu. Po wyłączeniu widoczny jest tylko wzór tła.",
       "motionTitle": "Animacje",
-      "motionDescription": "Tło z redstone, biegnące światła, przejścia stron i okien oraz listy, które płynnie wskakują na swoje miejsce. „Ogranicz animacje” wyłącza wszystko; „Jak Windows/system” stosuje ustawienie animacji z Windows lub pulpitu – na zoptymalizowanych lub zdalnych komputerach jest ono często wyłączone.",
+      "motionDescription": "Animowane tło, biegnące światła, przejścia stron i okien oraz listy, które płynnie wskakują na swoje miejsce. „Ogranicz animacje” wyłącza wszystko; „Jak Windows/system” stosuje ustawienie animacji z Windows lub pulpitu – na zoptymalizowanych lub zdalnych komputerach jest ono często wyłączone.",
       "motionModes": {
         "full": "Zawsze włączone",
         "system": "Jak Windows/system",

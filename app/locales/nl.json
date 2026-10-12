@@ -2331,6 +2331,17 @@
       "updatesPortable": "Draagbare versie – updates staan op de downloadpagina"
     },
     "appearance": {
+      "designTitle": "Ontwerp",
+      "designDescription": "Het totale uiterlijk van de launcher: achtergrondscène, patroon en kleuren. Accentkleur en kleurthema kies je nog steeds zelf.",
+      "designs": {
+        "redstone": "Redstone",
+        "winter": "Winternacht"
+      },
+      "designHints": {
+        "redstone": "Deepslate en een levend redstonecircuit",
+        "winter": "Besneeuwd pixellandschap, noorderlicht, ijsblauw"
+      },
+      "designLabel": "Ontwerp {name}",
       "colorScheme": "Kleurthema",
       "themes": {
         "dark": "Donker",
@@ -2343,17 +2354,18 @@
         "lamp": "Lamp",
         "emerald": "Smaragd",
         "lapis": "Lapis",
-        "amethyst": "Amethist"
+        "amethyst": "Amethist",
+        "ice": "IJs"
       },
       "accentTitle": "Accentkleur",
-      "accentDescription": "Kleur voor knoppen, actieve items en de redstonedraad.",
+      "accentDescription": "Kleur voor knoppen, actieve items en lichtjes in de achtergrond.",
       "accentLabel": "Accentkleur {name}",
       "advancedRenderingTitle": "Geavanceerde weergave",
       "advancedRenderingDescription": "Vervagingseffecten achter dialogen en balken. Uitschakelen bespaart wat prestaties op tragere pc’s.",
       "animatedBackgroundTitle": "Geanimeerde achtergrond",
-      "animatedBackgroundDescription": "Een rustig redstonecircuit achter elke pagina. Als dit uit staat, wordt alleen het deepslate-patroon getoond.",
+      "animatedBackgroundDescription": "Een rustige, geanimeerde scène achter elke pagina – een redstonecircuit of een winterlandschap, afhankelijk van het ontwerp. Als dit uit staat, wordt alleen het achtergrondpatroon getoond.",
       "motionTitle": "Animaties",
-      "motionDescription": "Redstone-achtergrond, looplichten, overgangen van pagina’s en vensters, en lijsten die naar hun plek glijden. „Animaties beperken” zet alles uit; „Zoals Windows/systeem” volgt de animatie-instelling van Windows of het bureaublad – die staat op geoptimaliseerde of externe pc’s vaak uit.",
+      "motionDescription": "Geanimeerde achtergrond, looplichten, overgangen van pagina’s en vensters, en lijsten die naar hun plek glijden. „Animaties beperken” zet alles uit; „Zoals Windows/systeem” volgt de animatie-instelling van Windows of het bureaublad – die staat op geoptimaliseerde of externe pc’s vaak uit.",
       "motionModes": {
         "full": "Altijd aan",
         "system": "Zoals Windows/systeem",

@@ -81,13 +81,17 @@ export interface SyncSettings {
 }
 
 export type Theme = 'dark' | 'oled' | 'light' | 'system'
-export type Accent = 'redstone' | 'lamp' | 'emerald' | 'lapis' | 'amethyst'
+export type Accent = 'redstone' | 'lamp' | 'emerald' | 'lapis' | 'amethyst' | 'ice'
+/** Gesamtes Aussehen: Redstone (Standard) oder „Winternacht“. */
+export type Design = 'redstone' | 'winter'
 /** Animationen: immer, wie im System („Bewegung reduzieren“) oder reduziert. */
 export type Motion = 'full' | 'system' | 'reduced'
 
 export interface UiSettings {
   theme: Theme
   accent: Accent
+  /** Fehlt bei älteren Kernen → Redstone. */
+  design?: Design
   advancedRendering: boolean
   animatedBackground: boolean
   motion: Motion

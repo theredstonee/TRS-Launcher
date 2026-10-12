@@ -153,6 +153,56 @@
   --color-redstone-600: #7a2fc0;
   --color-redstone-900: #2b1442;
 }
+:root[data-accent="ice"] {
+  --color-redstone-300: #b8e7ff;
+  --color-redstone-400: #7fd3ff;
+  --color-redstone-500: #2b97d6;
+  --color-redstone-600: #1c74ad;
+  --color-redstone-900: #0b2638;
+}
+:root[data-accent="ice"][data-theme="light"] {
+  --color-redstone-300: #136a9f;
+  --color-redstone-900: #dcf1fc;
+}
+
+/*
+ * Design „Winternacht“ (`data-design="winter"`, utils/design.ts): Nachtblau statt
+ * Deepslate, dazu Schnee-/Eis-Fliesen. Die Akzentfarbe bleibt frei wählbar (ab Werk
+ * Eisblau); Halloween steht weiter unten und gewinnt, solange das Event läuft.
+ * Nacht #0d1424, Panel #15203a, Text #eaf4ff; OLED fast schwarz; Hell = Wintertag.
+ */
+:root[data-design="winter"] {
+  --color-base-950: #0d1424;
+  --color-base-900: #111a2f;
+  --color-base-850: #15203a;
+  --color-base-800: #1c2a48;
+  --color-base-700: #283a5e;
+  --color-base-600: #3d5381;
+  --color-base-400: #889bc2;
+  --color-base-200: #c6d5ee;
+  --color-base-50: #eaf4ff;
+  --deepslate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'><path d='M0 15h16v1H0zM15 0h1v15h-1z' fill='%23bfe3ff' fill-opacity='.035'/><path d='M0 0h15v1H0zM0 1h1v14H0z' fill='%23fff' fill-opacity='.022'/><path d='M3 3h1v1H3zM11 5h1v1h-1zM6 10h1v1H6zM13 12h1v1h-1zM8 7h1v1H8z' fill='%23fff' fill-opacity='.07'/><path d='M4 12h1v1H4zM10 2h1v1h-1zM12 9h1v1h-1zM2 7h1v1H2z' fill='%23bfe3ff' fill-opacity='.05'/><path d='M9 12h1v1H9zM8 13h3v1H8zM9 14h1v1H9z' fill='%23fff' fill-opacity='.03'/></svg>");
+}
+:root[data-design="winter"][data-theme="oled"] {
+  --color-base-950: #000000;
+  --color-base-900: #03060c;
+  --color-base-850: #070c17;
+  --color-base-800: #0e1626;
+  --color-base-700: #19243a;
+  --color-base-600: #2d3c5c;
+}
+:root[data-design="winter"][data-theme="light"] {
+  --color-base-950: #e8eff7;
+  --color-base-900: #ffffff;
+  --color-base-850: #f3f7fc;
+  --color-base-800: #e0e9f3;
+  --color-base-700: #cbd8e7;
+  --color-base-600: #a0b3cb;
+  --color-base-400: #55698b;
+  --color-base-200: #26344d;
+  --color-base-50: #0b1426;
+  --deepslate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'><path d='M0 15h16v1H0zM15 0h1v15h-1z' fill='%23527aa8' fill-opacity='.05'/><path d='M0 0h15v1H0zM0 1h1v14H0z' fill='%23fff' fill-opacity='.32'/><path d='M3 3h1v1H3zM11 5h1v1h-1zM6 10h1v1H6zM13 12h1v1h-1zM8 7h1v1H8z' fill='%23fff' fill-opacity='.6'/><path d='M4 12h1v1H4zM10 2h1v1h-1zM12 9h1v1h-1zM2 7h1v1H2z' fill='%23527aa8' fill-opacity='.06'/></svg>");
+}
 
 /*
  * Event „Halloween“ (`data-event` setzt stores/events.ts, nur solange das Event für den

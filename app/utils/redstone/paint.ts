@@ -8,8 +8,8 @@ import { DX, DY, type Cell, type Circuit, type Dir } from './sim'
 
 export const TEX = 16
 
-type Ctx = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
-type Surface = HTMLCanvasElement | OffscreenCanvas
+export type Ctx = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
+export type Surface = HTMLCanvasElement | OffscreenCanvas
 
 /**
  * Manche WebViews (ältere WebKitGTK) kennen `OffscreenCanvas`, liefern aber
@@ -27,7 +27,7 @@ function offscreenWorks(): boolean {
   return offscreen2d
 }
 
-function surface(w: number, h: number): Surface {
+export function surface(w: number, h: number): Surface {
   if (offscreenWorks()) return new OffscreenCanvas(w, h)
   const c = document.createElement('canvas')
   c.width = w
@@ -35,7 +35,7 @@ function surface(w: number, h: number): Surface {
   return c
 }
 
-function ctx2d(s: Surface): Ctx {
+export function ctx2d(s: Surface): Ctx {
   return s.getContext('2d') as Ctx
 }
 

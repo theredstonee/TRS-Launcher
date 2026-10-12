@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { supportedLocales, t, type MessageKey, type NamedParams } from './i18n'
 import { motionModes } from './motion'
+import { designs } from './design'
 
 // Spiegelt die Regeln aus `trs_core` – der Kern validiert trotzdem immer selbst.
 
@@ -128,7 +129,8 @@ export const groupSchema = z
 
 export const uiSettingsSchema = z.object({
   theme: z.enum(['dark', 'oled', 'light', 'system']),
-  accent: z.enum(['redstone', 'lamp', 'emerald', 'lapis', 'amethyst']),
+  accent: z.enum(['redstone', 'lamp', 'emerald', 'lapis', 'amethyst', 'ice']),
+  design: z.enum(designs).catch('redstone').default('redstone'),
   advancedRendering: z.boolean(),
   animatedBackground: z.boolean(),
   motion: z.enum(motionModes),

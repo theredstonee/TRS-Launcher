@@ -4,6 +4,7 @@
 //
 // Einstellbar über window.__MOCK_CFG (JSON, von cdp.mjs gesetzt):
 //   { version: '0.6.5', locale: 'de', seen: '0.6.4' }   seen = zuletzt gesehene Version → „Was ist neu“
+//   optional Aussehen: design ('redstone' | 'winter'), theme ('dark' | 'oled' | 'light'), accent, animatedBackground (true)
 // und window.__MOCK_RESPONSES (eigene Datei, cdp.mjs … --extra datei.js): { befehl: (args) => antwort }
 ;(() => {
   const cfg = window.__MOCK_CFG || {}
@@ -23,7 +24,8 @@
     highPriority: false, autoFirewall: true, fullscreen: false, hooks: { preLaunch: null, wrapper: null, postExit: null },
     sync: { options: true, servers: true, resourcePacks: true, commandHistory: false, hotbar: false },
     ui: {
-      theme: 'dark', accent: 'redstone', advancedRendering: true, animatedBackground: false, worldsTab: true, screenshotsTab: true,
+      theme: cfg.theme || 'dark', accent: cfg.accent || (cfg.design === 'winter' ? 'ice' : 'redstone'), design: cfg.design || 'redstone',
+      advancedRendering: true, animatedBackground: cfg.animatedBackground === true, worldsTab: true, screenshotsTab: true,
       historyTab: true, sidebarRecent: true, sidebarAccount: true, hideRightSidebar: false, compactLibrary: false, showPlayTime: true,
       language: locale, motion: 'full', bigPictureOnStart: false, bigPictureAuto: true,
     },
@@ -42,6 +44,7 @@
   const responses = {
     app_info: () => ({ version, os: 'windows', arch: 'x86_64' }),
     get_settings: () => settings,
+    update_settings: ({ settings: next }) => Object.assign(settings, next),
     list_instances: () => [instance],
     get_instance: () => instance,
     list_accounts: () => [],

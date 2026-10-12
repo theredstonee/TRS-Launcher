@@ -2331,6 +2331,17 @@
       "updatesPortable": "Versión portátil – las actualizaciones están en la página de descargas"
     },
     "appearance": {
+      "designTitle": "Diseño",
+      "designDescription": "El aspecto general del launcher: escena de fondo, patrón y colores. El color de acento y el tema de color siguen siendo tu elección.",
+      "designs": {
+        "redstone": "Redstone",
+        "winter": "Noche de invierno"
+      },
+      "designHints": {
+        "redstone": "Pizarra profunda y un circuito de redstone vivo",
+        "winter": "Paisaje nevado en píxeles, auroras boreales, azul hielo"
+      },
+      "designLabel": "Diseño {name}",
       "colorScheme": "Tema de color",
       "themes": {
         "dark": "Oscuro",
@@ -2343,17 +2354,18 @@
         "lamp": "Lámpara",
         "emerald": "Esmeralda",
         "lapis": "Lapislázuli",
-        "amethyst": "Amatista"
+        "amethyst": "Amatista",
+        "ice": "Hielo"
       },
       "accentTitle": "Color de acento",
-      "accentDescription": "Color de los botones, los elementos activos y el cable de redstone.",
+      "accentDescription": "Color de los botones, los elementos activos y las luces del fondo.",
       "accentLabel": "Color de acento {name}",
       "advancedRenderingTitle": "Renderizado avanzado",
       "advancedRenderingDescription": "Efectos de desenfoque detrás de diálogos y barras. Desactivarlo ahorra algo de rendimiento en equipos modestos.",
       "animatedBackgroundTitle": "Fondo animado",
-      "animatedBackgroundDescription": "Un circuito de redstone tranquilo detrás de todas las páginas. Desactivado, solo se ve el patrón de pizarra profunda.",
+      "animatedBackgroundDescription": "Una escena animada y tranquila detrás de todas las páginas: un circuito de redstone o un paisaje invernal, según el diseño. Desactivado, solo se ve el patrón de fondo.",
       "motionTitle": "Animaciones",
-      "motionDescription": "Fondo de redstone, luces en movimiento, transiciones de páginas y diálogos, y listas que se deslizan a su sitio. «Reducir animaciones» lo desactiva todo; «Como Windows/sistema» sigue el ajuste de animaciones de Windows o del escritorio, que suele estar desactivado en equipos optimizados o remotos.",
+      "motionDescription": "Fondo animado, luces en movimiento, transiciones de páginas y diálogos, y listas que se deslizan a su sitio. «Reducir animaciones» lo desactiva todo; «Como Windows/sistema» sigue el ajuste de animaciones de Windows o del escritorio, que suele estar desactivado en equipos optimizados o remotos.",
       "motionModes": {
         "full": "Siempre activadas",
         "system": "Como Windows/sistema",

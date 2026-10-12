@@ -12,6 +12,7 @@ const games = useGamesStore()
 const settings = useSettingsStore()
 const ui = useUiStore()
 const events = useEventsStore()
+const design = useDesign()
 
 const addingServer = ref(false)
 const ready = ref(false)
@@ -110,6 +111,9 @@ function play(instance: Instance) {
       :aria-label="featured ? t('home.lastPlayed', { name: featured.name }) : t('nav.home')"
     >
       <HalloweenScene v-if="events.halloween" />
+      <WinterScene v-else-if="design === 'winter'" :mode="sceneMode" :progress="sceneProgress" :anchor="lamp">
+        <div class="scrim" />
+      </WinterScene>
       <RedstoneScene v-else :mode="sceneMode" :progress="sceneProgress" :anchor="lamp">
         <div class="scrim" />
       </RedstoneScene>

@@ -189,6 +189,41 @@ pub enum Accent {
     Emerald,
     Lapis,
     Amethyst,
+    /// Eisblau – passt zum Design „Winternacht“.
+    Ice,
+}
+
+/// Unbekannte Akzentfarbe (neuere Version) → Redstone statt kaputter `settings.json`.
+fn lenient_accent<'de, D: serde::Deserializer<'de>>(deserializer: D) -> std::result::Result<Accent, D::Error> {
+    let value = serde_json::Value::deserialize(deserializer)?;
+    Ok(serde_json::from_value(value).unwrap_or_default())
+}
+
+/// Gesamtes Aussehen des Launchers: Hintergrund-Szene, Muster und Farben.
+/// Akzent und Farbschema bleiben eigene Einstellungen.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Design {
+    /// Deepslate und Redstone-Schaltung (Standard).
+    #[default]
+    Redstone,
+    /// „Winternacht“: verschneite Pixel-Landschaft, Eisblau.
+    Winter,
+}
+
+impl Design {
+    pub fn code(self) -> &'static str {
+        match self {
+            Self::Redstone => "redstone",
+            Self::Winter => "winter",
+        }
+    }
+}
+
+/// Unbekanntes Design (neuere Version) → Redstone, die übrigen Einstellungen bleiben.
+fn lenient_design<'de, D: serde::Deserializer<'de>>(deserializer: D) -> std::result::Result<Design, D::Error> {
+    let value = serde_json::Value::deserialize(deserializer)?;
+    Ok(serde_json::from_value(value).unwrap_or_default())
 }
 
 /// Animationen der Oberfläche (Redstone-Hintergrund, Lauflichter, Übergänge).
@@ -259,7 +294,11 @@ impl Language {
 #[serde(rename_all = "camelCase", default)]
 pub struct UiSettings {
     pub theme: Theme,
+    #[serde(deserialize_with = "lenient_accent")]
     pub accent: Accent,
+    /// Design „Redstone“ oder „Winternacht“.
+    #[serde(deserialize_with = "lenient_design")]
+    pub design: Design,
     /// Unschärfe-Effekte (Backdrop-Blur) – aus spart GPU auf schwachen Rechnern.
     pub advanced_rendering: bool,
     /// Animierte Redstone-Schaltung als Hintergrund aller Seiten.
@@ -289,6 +328,7 @@ impl Default for UiSettings {
         Self {
             theme: Theme::Dark,
             accent: Accent::Redstone,
+            design: Design::Redstone,
             advanced_rendering: true,
             animated_background: true,
             motion: Motion::Full,
@@ -734,6 +774,33 @@ mod tests {
         let s = Settings { ui: UiSettings { motion: Motion::Reduced, ..Default::default() }, ..Default::default() };
         s.save(&file).await.unwrap();
         assert_eq!(Settings::load(&file).await.unwrap().ui.motion, Motion::Reduced);
+    }
+
+    #[tokio::test]
+    async fn design_and_ice_accent_are_lenient() {
+        // Ältere Dateien ohne Feld: Redstone.
+        let old: Settings = serde_json::from_str(r#"{"ui":{"theme":"light"}}"#).unwrap();
+        assert_eq!((old.ui.design, old.ui.accent), (Design::Redstone, Accent::Redstone));
+        for design in [Design::Redstone, Design::Winter] {
+            assert_eq!(serde_json::to_value(design).unwrap(), design.code());
+        }
+        let ui: UiSettings = serde_json::from_value(serde_json::json!({ "design": "winter", "accent": "ice" })).unwrap();
+        assert_eq!((ui.design, ui.accent), (Design::Winter, Accent::Ice));
+        let json = serde_json::to_value(&ui).unwrap();
+        assert_eq!((json["design"].as_str(), json["accent"].as_str()), (Some("winter"), Some("ice")));
+
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("settings.json");
+        // Unbekanntes Design/Akzent (neuere Version) verwirft nicht die übrigen Einstellungen.
+        tokio::fs::write(&file, r#"{"maxMemoryMb":8192,"ui":{"design":"neon","accent":"sakura","theme":"oled","language":"de"}}"#)
+            .await
+            .unwrap();
+        let s = Settings::load(&file).await.unwrap();
+        assert_eq!((s.ui.design, s.ui.accent, s.ui.theme, s.max_memory_mb), (Design::Redstone, Accent::Redstone, Theme::Oled, 8192));
+        let s = Settings { ui: UiSettings { design: Design::Winter, accent: Accent::Ice, ..Default::default() }, ..Default::default() };
+        s.save(&file).await.unwrap();
+        let back = Settings::load(&file).await.unwrap();
+        assert_eq!((back.ui.design, back.ui.accent), (Design::Winter, Accent::Ice));
     }
 
     #[test]

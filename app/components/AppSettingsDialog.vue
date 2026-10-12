@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Accent, AppInfo, ClientModStatus, Settings, SharedFolder, StorageStats, Theme } from '~/types'
+import type { Accent, AppInfo, ClientModStatus, Design, Settings, SharedFolder, StorageStats, Theme } from '~/types'
 import type { ShellSection } from '~/components/SettingsShell.vue'
 import type { Locale } from '~/utils/i18n'
 
@@ -142,19 +142,44 @@ async function openBigPicture() {
 
 // --- Aussehen -----------------------------------------------------------------
 // Namen kommen beim Rendern aus settings.appearance.themes/accents.
-const themes: { key: Theme; bg: string; panel: string; line: string }[] = [
+const redstoneThemes: { key: Theme; bg: string; panel: string; line: string }[] = [
   { key: 'dark', bg: '#111116', panel: '#1d1d26', line: '#333343' },
   { key: 'oled', bg: '#000000', panel: '#0c0c10', line: '#24242e' },
   { key: 'light', bg: '#eeeef3', panel: '#ffffff', line: '#d4d4df' },
   { key: 'system', bg: 'linear-gradient(135deg,#111116 50%,#eeeef3 50%)', panel: '#1d1d26', line: '#333343' },
 ]
+// Winternacht: dieselben Schemata in Nachtblau bzw. als heller Wintertag (wie main.css).
+const winterThemes: typeof redstoneThemes = [
+  { key: 'dark', bg: '#0d1424', panel: '#15203a', line: '#283a5e' },
+  { key: 'oled', bg: '#000000', panel: '#070c17', line: '#19243a' },
+  { key: 'light', bg: '#e8eff7', panel: '#ffffff', line: '#cbd8e7' },
+  { key: 'system', bg: 'linear-gradient(135deg,#0d1424 50%,#e8eff7 50%)', panel: '#15203a', line: '#283a5e' },
+]
+const themes = computed(() => (normalizeDesign(form.value?.ui.design) === 'winter' ? winterThemes : redstoneThemes))
 const accents: { key: Accent; color: string }[] = [
   { key: 'redstone', color: '#e0281e' },
   { key: 'lamp', color: '#e0900c' },
   { key: 'emerald', color: '#17a34a' },
   { key: 'lapis', color: '#3563e9' },
   { key: 'amethyst', color: '#9b4ddf' },
+  { key: 'ice', color: '#7fd3ff' },
 ]
+
+// Design: Vorschau als echte Mini-Szene (hell/dunkel wie das gewählte Farbschema).
+const currentDesign = computed(() => normalizeDesign(form.value?.ui.design))
+const previewLight = ref(false)
+const previews = computed(() => Object.fromEntries(designs.map((d) => [d, designPreview(d, previewLight.value)])) as Record<Design, string | null>)
+watch(
+  () => form.value?.ui.theme,
+  () => nextTick(() => (previewLight.value = document.documentElement.dataset.theme === 'light')),
+  { immediate: true },
+)
+/** Winternacht bringt Eisblau mit, solange noch der Redstone-Akzent gewählt ist (und umgekehrt). */
+function setDesign(design: Design) {
+  if (!form.value) return
+  form.value.ui.design = design
+  form.value.ui.accent = accentForDesign(design, form.value.ui.accent)
+}
 
 // --- Sprache ------------------------------------------------------------------
 // Sofort umschalten und speichern (die Oberfläche wechselt ohne Neustart).
@@ -348,6 +373,43 @@ async function allowFirewall() {
 
     <!-- Aussehen --------------------------------------------------------------- -->
     <div v-else-if="active === 'appearance'">
+      <h3 class="section-heading">{{ t('settings.appearance.designTitle') }}</h3>
+      <p class="-mt-1 mb-3 text-xs text-base-400">{{ t('settings.appearance.designDescription') }}</p>
+      <div class="mb-5 grid grid-cols-2 gap-3 border-b border-base-800 pb-5 mobile:grid-cols-1" data-testid="design-picker">
+        <button
+          v-for="d in designs"
+          :key="d"
+          type="button"
+          class="design-card overflow-hidden rounded-xl border-2 text-left transition-colors"
+          :class="currentDesign === d ? 'border-redstone-500' : 'border-base-800 hover:border-base-700'"
+          :aria-pressed="currentDesign === d"
+          :aria-label="t('settings.appearance.designLabel', { name: t(`settings.appearance.designs.${d}`) })"
+          :data-design-option="d"
+          @click="setDesign(d)"
+        >
+          <!-- Feste 2 Pixel je Texel, mittig beschnitten – so bleiben die Pixel gleich groß. -->
+          <div class="relative overflow-hidden bg-base-950" :style="{ height: `${PREVIEW_ROWS * 2}px` }">
+            <img
+              v-if="previews[d]"
+              :src="previews[d]!"
+              alt=""
+              class="absolute top-0 left-1/2 max-w-none -translate-x-1/2 [image-rendering:pixelated]"
+              :style="{ width: `${PREVIEW_COLS * 2}px`, height: `${PREVIEW_ROWS * 2}px` }"
+              draggable="false"
+            />
+          </div>
+          <div class="flex items-center gap-2 bg-base-850 px-3 py-2">
+            <span class="grid size-4 shrink-0 place-items-center rounded-full border-2" :class="currentDesign === d ? 'border-redstone-500' : 'border-base-600'">
+              <span v-if="currentDesign === d" class="size-2 rounded-full bg-redstone-500" />
+            </span>
+            <span class="min-w-0">
+              <span class="block text-sm font-medium">{{ t(`settings.appearance.designs.${d}`) }}</span>
+              <span class="block truncate text-xs text-base-400">{{ t(`settings.appearance.designHints.${d}`) }}</span>
+            </span>
+          </div>
+        </button>
+      </div>
+
       <h3 class="section-heading">{{ t('settings.appearance.colorScheme') }}</h3>
       <div class="grid grid-cols-4 gap-3 border-b border-base-800 pb-5 mobile:grid-cols-2">
         <button
