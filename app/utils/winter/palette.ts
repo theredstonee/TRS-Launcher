@@ -46,8 +46,8 @@ export interface WinterPalette {
   lanternFrame: Rgb
   lanternOn: Rgb
   lanternCore: Rgb
-  /** Polarlicht: Unterkante, Körper, obere Fahne. */
-  aurora: [Rgb, Rgb, Rgb]
+  /** Polarlicht wie echt: helle Unterkante, grüner Körper, dunkleres Grün, violett-rosa Oberkante. */
+  aurora: [Rgb, Rgb, Rgb, Rgb]
   /** Weiches Licht (Glüh-Ebene). */
   glowAccent: Rgb
   glowWarm: Rgb
@@ -62,8 +62,8 @@ const FALLBACK: Record<string, string> = {
 
 const hex = (h: string): Rgb => parseHex(h)!
 
-const AURORA_GREEN = hex('#6dffc4')
-const AURORA_VIOLET = hex('#9a7bff')
+// Echte Polarlichter: Sauerstoff-Grün (557,7 nm) unten, oben Rot/Violett – unabhängig vom Akzent.
+const AURORA: [Rgb, Rgb, Rgb, Rgb] = [hex('#c8ffd9'), hex('#3dff86'), hex('#14c25a'), hex('#b45cff')]
 const WHITE: Rgb = [255, 255, 255]
 
 /** Feste Landschaftstöne je Farbschema. */
@@ -154,7 +154,7 @@ export function buildWinterPalette(read: (name: string) => string, variant: Wint
     lanternFrame: light ? hex('#3c4a60') : hex('#151d2c'),
     lanternOn: mix(a400, WHITE, 0.2),
     lanternCore: mix(accentHi, WHITE, 0.55),
-    aurora: [mix(accentHi, AURORA_GREEN, 0.35), mix(a400, AURORA_GREEN, 0.25), mix(a500, AURORA_VIOLET, 0.5)],
+    aurora: AURORA,
     glowAccent: a400,
     glowWarm: light ? l400 : mix(l400, l300, 0.3),
     glowMoon: b.halo,

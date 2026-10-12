@@ -622,7 +622,11 @@ const smoothstep = (a: number, b: number, v: number) => {
   return t * t * (3 - 2 * t)
 }
 
-/** Vorhänge des Polarlichts in `img` (Breite = Landschaft, Höhe = bis zum Horizont). */
+/**
+ * Polarlicht wie echt: Vorhänge mit scharfer, hellgrüner Unterkante, darüber grüne
+ * Strahlen, die nach oben ausbleichen und in Violett übergehen; Falten wandern langsam.
+ * `img`: Breite = Landschaft, Höhe = bis zum Horizont.
+ */
 export function paintAurora(img: ImageData, L: Landscape, P: WinterPalette, seconds: number, level: number) {
   const d = img.data
   d.fill(0)
@@ -630,33 +634,50 @@ export function paintAurora(img: ImageData, L: Landscape, P: WinterPalette, seco
   const W = img.width
   const H = img.height
   const sky = Math.max(10, L.horizon - L.mountainAmp * 0.45)
-  const maxA = P.variant === 'oled' ? 0.85 : 0.75
+  const maxA = P.variant === 'oled' ? 0.95 : 0.88
   const s = (L.seed & 0xffff) + 51
   const t = seconds
+  const [edge, core, deep, top] = P.aurora
+  // Zwei Vorhänge: vorn kräftig, hinten höher und blasser.
+  const curtains = [
+    { base: 0.74, height: 0.5, phase: 0, power: 1 },
+    { base: 0.5, height: 0.38, phase: 2.1, power: 0.55 },
+  ]
   for (let x = 0; x < W; x++) {
     const u = x / W
-    const yb = sky * (0.62 + 0.1 * Math.sin(x * 0.019 + t * 0.09) + 0.06 * Math.sin(x * 0.051 - t * 0.13 + 1.3))
-    const hc = sky * (0.36 + 0.1 * Math.sin(x * 0.012 + t * 0.05 + 2))
-    // Links (hinter dem Text) schwächer, über die Breite in Wellen.
-    const across = 0.25 + 0.75 * smoothstep(0.1, 0.45, u)
-    const wave = 0.5 + 0.5 * Math.sin(x * 0.023 + t * 0.2)
-    const rays = 0.35 + 0.65 * smooth(x * 0.3 + t * 0.7, s)
-    const I = level * across * (0.35 + 0.65 * wave) * rays
-    if (I < 0.04) continue
-    const y0 = Math.max(0, Math.floor(yb - hc))
-    const y1 = Math.min(H - 1, Math.ceil(yb + 3))
-    for (let y = y0; y <= y1; y++) {
-      const v = (y - (yb - hc)) / hc
-      const a = (v <= 1 ? Math.pow(Math.max(0, v), 1.25) : Math.max(0, 1 - ((v - 1) * hc) / 3)) * I
-      // Flächige Stufen statt Raster: die senkrechten Strahlen geben die Pixel-Struktur.
-      const q = Math.round(a * 5) / 5
-      if (q <= 0) continue
-      const c = v > 0.9 ? P.aurora[0] : v > 0.45 ? P.aurora[1] : P.aurora[2]
-      const i = (y * W + x) * 4
-      d[i] = c[0]
-      d[i + 1] = c[1]
-      d[i + 2] = c[2]
-      d[i + 3] = Math.round(Math.min(1, q) * maxA * 255)
+    // Links (hinter dem Text) schwächer.
+    const across = 0.3 + 0.7 * smoothstep(0.08, 0.4, u)
+    for (const c of curtains) {
+      // Gewundene Unterkante wie ein Band im Wind.
+      const yb = sky * (c.base + 0.07 * Math.sin(x * 0.016 + t * 0.07 + c.phase) + 0.04 * Math.sin(x * 0.047 - t * 0.12 + c.phase * 2))
+      const hc = sky * c.height * (0.75 + 0.35 * smooth(x * 0.02 + t * 0.03, s + c.phase * 10))
+      // Falten (hell, wo das Band umschlägt) und feine senkrechte Strahlen.
+      const fold = 0.55 + 0.45 * Math.pow(Math.abs(Math.sin(x * 0.034 + t * 0.11 + c.phase)), 0.6)
+      const ray = 0.25 + 0.75 * Math.pow(smooth(x * 0.42 + t * 0.6, s + 3), 1.6)
+      const shimmer = 0.85 + 0.15 * Math.sin(t * 2.3 + x * 0.9)
+      const I = level * across * fold * ray * shimmer * c.power
+      if (I < 0.05) continue
+      const y0 = Math.max(0, Math.floor(yb - hc))
+      const y1 = Math.min(H - 1, Math.ceil(yb + 2))
+      for (let y = y0; y <= y1; y++) {
+        // v = 0 an der Unterkante, 1 oben.
+        const v = (yb - y) / hc
+        let a: number
+        if (v < 0) a = Math.max(0, 1 + v * (hc / 2)) * 0.6
+        else a = Math.exp(-v * 2.4) * (v < 0.05 ? 1.15 : 1)
+        a *= I
+        // Pixel-Stufen statt weichem Verlauf.
+        const q = Math.round(a * 6) / 6
+        if (q <= 0) continue
+        const col = v < 0.06 ? edge : v < 0.42 ? core : v < 0.72 ? deep : top
+        const i = (y * W + x) * 4
+        const alpha = Math.round(Math.min(1, q) * maxA * 255)
+        if (alpha <= d[i + 3]!) continue
+        d[i] = col[0]
+        d[i + 1] = col[1]
+        d[i + 2] = col[2]
+        d[i + 3] = alpha
+      }
     }
   }
 }
