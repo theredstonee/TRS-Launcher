@@ -28,6 +28,18 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## 0.18.2 – 2026-10-12 – iPhone Fix | iPhone-Fix
+<!-- banner: accent=#ffb02e motif=/news/0.18.0/banner.png -->
+<!-- shots:
+/news/0.18.2/mobile-app.png | The TRS Launcher app now opens on iPhone and iPad | Die TRS-Launcher-App öffnet sich jetzt auf iPhone und iPad
+-->
+
+### English
+- **Fix: the iPhone/iPad app closed right after opening.** The app only showed a blurry window for a moment and then disappeared. It now starts normally – update it in AltStore/SideStore.
+
+### Deutsch
+- **Fix: Die iPhone-/iPad-App schloss sich direkt nach dem Öffnen.** Die App zeigte nur kurz ein trübes Fenster und verschwand dann. Sie startet jetzt normal – aktualisiere sie in AltStore/SideStore.
+
 ## 0.18.1 – 2026-10-04 – Power Tools Fix | Profi-Werkzeuge – Fix
 <!-- banner: accent=#ffb02e motif=/news/0.18.0/banner.png -->
 <!-- shots:
