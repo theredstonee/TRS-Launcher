@@ -273,6 +273,8 @@ export const syncSettingsBody = z.strictObject({
     theme: settingValue(32).optional(),
     accent: settingValue(32).optional(),
     language: settingValue(16).optional(),
+    /** Look of the app: absent = redstone. Only known values are stored. */
+    design: z.enum(['redstone', 'winter'], { error: 'design must be "redstone" or "winter"' }).optional(),
   }),
   updatedAt: syncUpdatedAt,
 })
