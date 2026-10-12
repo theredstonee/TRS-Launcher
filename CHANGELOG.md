@@ -28,7 +28,12 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.19.0 – 2026-10-12 – Smooth Moves | Flüssige Bewegung
+<!-- banner: accent=#ff4d3a motif=/news/0.19.0/banner.png -->
+<!-- shots:
+/news/0.19.0/library.png | Cards and lists now glide in smoothly | Karten und Listen gleiten jetzt weich herein
+/news/0.19.0/animations-setting.png | The new option Reduce animations | Die neue Option Animationen reduzieren
+-->
 
 ### English
 - **Smoother, more polished interface.** Dialogs and settings gently zoom in and fade out (on phones they slide up from the bottom), cards and lists glide in one after another, instances and mods slide to their new place when you filter, sort or move them into groups, toasts slide in and the rest move up smoothly, and the marker in the sidebar and the tab bar glides to the new page. Cards lift slightly under the mouse and buttons give way when pressed. Everything is short and quick, and nothing keeps moving while you play.
