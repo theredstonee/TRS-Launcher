@@ -746,6 +746,10 @@ public final class TrsModules {
 		hitColorColor = hitColor.add(new ColorSetting("color", "Color", 0xB07CFF));
 		hitColorOpacity = hitColor.add(new NumberSetting("opacity", "Opacity (%)", 70, 10, 100, 10, ""));
 		titleAnimated = titleScreen.add(new BoolSetting("animated", "Animated background", true));
+		// Aussehen (Design Redstone | Winternacht, Farbschema, Akzent) auf den Seiten „Startbildschirm“ und „Menü-Stil“.
+		dev.theredstonee.trsclient.core.intro.LookPanel look = new dev.theredstonee.trsclient.core.intro.LookPanel(this);
+		dev.theredstonee.trsclient.core.ui.menu.ModulePanel.Registry.set(titleScreen, look);
+		dev.theredstonee.trsclient.core.ui.menu.ModulePanel.Registry.set(menuStyle, look);
 		menuPause = menuStyle.add(new BoolSetting("pause", "Pause menu", true));
 		menuPauseButtons = menuStyle.add(new BoolSetting("pauseButtons", "TRS buttons in the pause menu", true));
 		menuMultiplayer = menuStyle.add(new BoolSetting("multiplayer", "Server list", true));

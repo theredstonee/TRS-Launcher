@@ -39,6 +39,7 @@ public final class ClientState implements ConfigPart {
 	private String lookTheme;
 	private String lookAccent;
 	private String lookLanguage;
+	private String lookDesign;
 	private long lookAt;
 	private String fpsMode;
 	private final NewMarkers news = new NewMarkers(NewSince.latest());
@@ -110,6 +111,16 @@ public final class ClientState implements ConfigPart {
 	}
 
 	public void chooseLook(String theme, String accent, String language, long at) {
+		chooseLook(theme, accent, language, lookDesign, at);
+	}
+
+	/** Design ("redstone"/"winter") der Wahl im Client oder null. */
+	public String lookDesign() {
+		return lookDesign;
+	}
+
+	public void chooseLook(String theme, String accent, String language, String design, long at) {
+		lookDesign = design;
 		lookTheme = theme;
 		lookAccent = accent;
 		lookLanguage = language;
@@ -154,7 +165,7 @@ public final class ClientState implements ConfigPart {
 			introAt = 0;
 			introPack = null;
 			welcomeShown = false;
-			lookTheme = lookAccent = lookLanguage = null;
+			lookTheme = lookAccent = lookLanguage = lookDesign = null;
 			lookAt = 0;
 			fpsMode = null;
 			news.set(upgrade ? NewSince.LEGACY_BASELINE : NewSince.latest(), null);
@@ -171,6 +182,7 @@ public final class ClientState implements ConfigPart {
 		lookTheme = clean(d.lookTheme, 32);
 		lookAccent = clean(d.lookAccent, 32);
 		lookLanguage = clean(d.lookLanguage, 16);
+		lookDesign = clean(d.lookDesign, 16);
 		lookAt = d.lookAt == null ? 0 : Math.max(0, d.lookAt);
 		fpsMode = clean(d.fpsMode, 16);
 		news.set(NewSince.valid(d.newBaseline) ? d.newBaseline : NewSince.LEGACY_BASELINE, d.newSeen);
@@ -188,6 +200,7 @@ public final class ClientState implements ConfigPart {
 		d.lookTheme = lookTheme;
 		d.lookAccent = lookAccent;
 		d.lookLanguage = lookLanguage;
+		d.lookDesign = lookDesign;
 		d.lookAt = lookAt == 0 ? null : lookAt;
 		d.fpsMode = fpsMode;
 		d.newBaseline = news.baseline();

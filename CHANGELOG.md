@@ -28,6 +28,18 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Winter Night in the game, too.** The TRS Client now follows the launcher's Winter Night design: the title screen shows the snowy pixel landscape with mountains, northern lights, falling snow and the cabin – the penguin in the Santa hat looks out of the window and now and then comes out to wave. Buttons become ice lanterns, the turntable under your character becomes an ice floe, and the logo wears a snow cap.
+- Pause menu, server list, options and loading screens get ice and snow slabs, frosty edges and an ice bar that freezes over while loading. The TRS menu, HUD accents and notifications use the night-blue palette; light theme shows a bright winter day.
+- You can switch the design inside the game: in the first-start guide and in the TRS menu (pages "Title Screen" and "Menu Style"), next to color theme and the new "Ice" accent.
+
+### Deutsch
+- **Winternacht jetzt auch im Spiel.** Der TRS Client übernimmt das Design Winternacht des Launchers: Der Startbildschirm zeigt die verschneite Pixel-Landschaft mit Bergen, Polarlicht, Schneefall und der Hütte – der Pinguin mit Weihnachtsmütze schaut aus dem Fenster und kommt ab und zu heraus, um zu winken. Knöpfe werden zu Eislaternen, die Drehscheibe unter deiner Figur zur Eisscholle, und auf dem Logo liegt Schnee.
+- Pausenmenü, Serverliste, Optionen und Ladebildschirme bekommen Eis- und Schneeplatten, Frostkanten und einen Eisbalken, der beim Laden zufriert. TRS-Menü, HUD-Akzente und Hinweise nutzen die nachtblauen Farben; das helle Farbschema zeigt einen hellen Wintertag.
+- Das Design lässt sich im Spiel umstellen: in der Einführung beim ersten Start und im TRS-Menü (Seiten „Startbildschirm“ und „Menü-Stil“), neben Farbschema und dem neuen Akzent „Eis“.
+
 ## 0.20.0 – 2026-10-13 – Penguin Lodge | Pinguin-Hütte
 <!-- banner: accent=#7fd3ff motif=/news/0.20.0/banner.png -->
 <!-- shots:

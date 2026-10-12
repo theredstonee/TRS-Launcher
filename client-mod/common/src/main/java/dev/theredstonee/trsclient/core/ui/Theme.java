@@ -26,12 +26,22 @@ public final class Theme {
 		String theme;
 		String accent;
 		String accentColor;
+		/** "redstone" oder "winter" (ab Launcher 0.20); fehlt/unbekannt = Redstone. */
+		String design;
 	}
 
-	private static Theme current = new Theme("dark", "redstone", 0xFFE0281E);
+	/** Design „Redstone“ (Standard) und „Winternacht“. */
+	public static final String REDSTONE = "redstone";
+	public static final String WINTER = "winter";
+
+	private static Theme current = new Theme("dark", "redstone", 0xFFE0281E, REDSTONE);
 
 	public final String themeName;
 	public final String accentName;
+	/** Design: {@link #REDSTONE} oder {@link #WINTER}. */
+	public final String designName;
+	/** Winternacht? (Nachtblau, Eis statt Stein, Eislaternen statt Redstone-Lampen, Frost statt Staub.) */
+	public final boolean winter;
 
 	/** Akzentfarbe (Knöpfe, aktive Elemente). */
 	public final int accent;
@@ -77,13 +87,60 @@ public final class Theme {
 	public final int lampText;
 	public final int lampTextLit;
 
-	private Theme(String themeName, String accentName, int accent) {
+	private Theme(String themeName, String accentName, int accent, String design) {
 		this.themeName = themeName;
 		this.accentName = accentName;
+		this.designName = WINTER.equals(design) ? WINTER : REDSTONE;
+		this.winter = WINTER.equals(designName);
 		this.accent = accent;
 		this.accentHover = ColorMath.lerp(accent, 0xFFFFFFFF, 0.22f);
 		this.light = "light".equals(themeName);
 		boolean oled = "oled".equals(themeName);
+		if (winter) {
+			// Winternacht (Launcher: [data-design="winter"]): Nachtblau, Eis statt Stein. Die Lampen sind Eislaternen –
+			// eisblau unabhängig vom Akzent, wie im Launcher; Frost-Linien statt Staub in Akzentfarbe.
+			this.dustOff = ColorMath.lerp(ColorMath.scaleRgb(accent, 0.42f), oled ? 0xFF070C17 : 0xFF101A2E, 0.3f);
+			this.dustOn = ColorMath.lerp(accent, 0xFFFFFFFF, 0.3f);
+			this.glow = accent;
+			this.lampOff = 0xFF172338;
+			this.lampOffEdge = 0xFF0A111F;
+			this.lampOn = 0xFF8FDCFF;
+			this.lampHot = 0xFFEAF9FF;
+			this.lampOnEdge = 0xFF2A6E9E;
+			this.lampGlow = 0xFF8FDCFF;
+			this.lampText = 0xFFDBE8F8;
+			this.lampTextLit = 0xFF06263B;
+			if (light) {
+				background = 0xFFE8EFF7;
+				surface = 0xFFFFFFFF;
+				surfaceHover = 0xFFE0E9F3;
+				surfaceHigh = 0xFFEAF1F8;
+				border = 0xFFC3D2E4;
+				text = 0xFF0B1426;
+				textDim = 0xFF55698B;
+				on = 0xFF1C74AD;
+				off = 0xFFCBD8E7;
+				scrim = 0x500B1426;
+				deep = 0xFFD5E1EE;
+				bevelLight = 0xFFFFFFFF;
+				bevelDark = 0xFFA6B9D0;
+			} else {
+				background = oled ? 0xFF000000 : 0xFF0D1424;
+				surface = oled ? 0xFF070C17 : 0xFF15203A;
+				surfaceHover = oled ? 0xFF0E1626 : 0xFF1C2A48;
+				surfaceHigh = oled ? 0xFF0A111E : 0xFF18253F;
+				border = oled ? 0xFF19243A : 0xFF283A5E;
+				text = 0xFFEAF4FF;
+				textDim = oled ? 0xFF7D8FB3 : 0xFF889BC2;
+				on = 0xFF8FDCFF;
+				off = oled ? 0xFF0E1626 : 0xFF1C2A48;
+				scrim = oled ? 0xB0000000 : 0xA8060A14;
+				deep = oled ? 0xFF02040A : 0xFF080D19;
+				bevelLight = oled ? 0xFF1F2C47 : 0xFF31476F;
+				bevelDark = oled ? 0xFF000000 : 0xFF070B15;
+			}
+			return;
+		}
 		// Staub: dunkles, entsättigtes Akzent-Rot ohne Signal – kräftig und etwas heller mit Signal.
 		this.dustOff = ColorMath.lerp(ColorMath.scaleRgb(accent, 0.34f), 0xFF1A1414, 0.25f);
 		this.dustOn = ColorMath.lerp(accent, 0xFFFFFFFF, 0.12f);
@@ -148,13 +205,34 @@ public final class Theme {
 		if (theme != null) current = theme;
 	}
 
-	/** Thema aus Namen bauen; unbekannte Namen → Standard. */
+	/** Thema aus Namen bauen (Design Redstone); unbekannte Namen → Standard. */
 	public static Theme of(String themeName, String accentName, String accentHex) {
+		return of(themeName, accentName, accentHex, REDSTONE);
+	}
+
+	/** Thema aus Namen bauen; unbekannte Namen → Standard, unbekanntes Design → Redstone. */
+	public static Theme of(String themeName, String accentName, String accentHex, String design) {
 		String t = normalize(themeName);
 		String a = normalize(accentName);
 		int accent = accentColor(a, accentHex);
 		if (!"dark".equals(t) && !"oled".equals(t) && !"light".equals(t)) t = "dark";
-		return new Theme(t, a.isEmpty() ? "redstone" : a, accent);
+		return new Theme(t, a.isEmpty() ? "redstone" : a, accent, normalizeDesign(design));
+	}
+
+	/** "winter" → Winternacht, alles andere (fehlt, ältere Launcher, Tippfehler) → Redstone. */
+	public static String normalizeDesign(String design) {
+		return WINTER.equals(normalize(design)) ? WINTER : REDSTONE;
+	}
+
+	/**
+	 * Akzent beim Wechsel des Designs (wie der Launcher): Winternacht mit dem Redstone-Akzent bekommt Eisblau, zurück
+	 * zu Redstone wird aus Eisblau wieder Redstone. Jede andere (selbst gewählte) Farbe bleibt.
+	 */
+	public static String accentForDesign(String design, String accent) {
+		String d = normalizeDesign(design);
+		if (WINTER.equals(d) && "redstone".equals(accent)) return "ice";
+		if (REDSTONE.equals(d) && "ice".equals(accent)) return "redstone";
+		return accent;
 	}
 
 	/**
@@ -170,7 +248,7 @@ public final class Theme {
 			try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
 				File parsed = new Gson().fromJson(reader, File.class);
 				if (parsed == null) return false;
-				set(of(parsed.theme, parsed.accent, parsed.accentColor));
+				set(of(parsed.theme, parsed.accent, parsed.accentColor, parsed.design));
 				return true;
 			}
 		} catch (IOException | RuntimeException e) {
@@ -185,6 +263,7 @@ public final class Theme {
 		if ("emerald".equals(name)) return 0xFF17A34A;
 		if ("lapis".equals(name)) return 0xFF3563E9;
 		if ("amethyst".equals(name)) return 0xFF9B4DDF;
+		if ("ice".equals(name)) return 0xFF2B97D6;
 		if ("redstone".equals(name)) return 0xFFE0281E;
 		int parsed = parseHex(hex);
 		return parsed != 0 ? parsed : 0xFFE0281E;

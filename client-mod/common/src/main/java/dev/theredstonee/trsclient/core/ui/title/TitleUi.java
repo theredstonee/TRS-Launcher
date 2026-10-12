@@ -19,6 +19,8 @@ import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.ui.UiKey;
 import dev.theredstonee.trsclient.core.ui.UiScreen;
 import dev.theredstonee.trsclient.core.ui.menu.NewBadge;
+import dev.theredstonee.trsclient.core.ui.winter.Frost;
+import dev.theredstonee.trsclient.core.ui.winter.WinterScene;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -419,11 +421,20 @@ public final class TitleUi extends UiScreen {
 		setReserved(2, panel);
 		setReserved(3, sb);
 
-		if (sceneEnabled) scene.draw(bg, width, height, time, reserved);
-		else bg.fill(0, 0, width, height, 0xFF18181C);
-		readingPlate(bg, colX - 26, top - 6, BTN_W + 52, rowsY + buttonsH + 6 - (top - 6));
-		if (panel != null) readingPlate(bg, panel[0], panel[1], panel[2] - panel[0], panel[3] - panel[1]);
-		if (sb != null && sideMode != SIDE_ROW) readingPlate(bg, sb[0], sb[1], sb[2] - sb[0], sb[3] - sb[1]);
+		if (t.winter) {
+			if (sceneEnabled) WinterScene.shared().draw(bg, width, height, animated);
+			else bg.fill(0, 0, width, height, t.background);
+		} else if (sceneEnabled) {
+			scene.draw(bg, width, height, time, reserved);
+		} else {
+			bg.fill(0, 0, width, height, 0xFF18181C);
+		}
+		int plate = plateColor(t);
+		readingPlate(bg, colX - 26, top - 6, BTN_W + 52, rowsY + buttonsH + 6 - (top - 6), plate);
+		if (panel != null) readingPlate(bg, panel[0], panel[1], panel[2] - panel[0], panel[3] - panel[1], plate);
+		if (sb != null && sideMode != SIDE_ROW) readingPlate(bg, sb[0], sb[1], sb[2] - sb[0], sb[3] - sb[1], plate);
+		// Winternacht: die Fußzeile steht auf dem Schnee – ein Schleier hält sie lesbar.
+		if (t.winter) bg.fill(0, height - 14, width, height, t.light ? 0x70FFFFFF : 0x90060A14);
 
 		Canvas c = FadeCanvas.of(raw, alpha());
 		update(dt, mouseX, mouseY);
@@ -581,7 +592,7 @@ public final class TitleUi extends UiScreen {
 			// Hinweis „Ziehen zum Drehen“ beim Überfahren – nur wenn er ganz hinpasst.
 			int hintW = c.textWidth(rotateHint);
 			if (!turntable.dragging() && hintW <= panel[2] - panel[0] + 16 && inside(mx, my, panelCx - fw / 2, panelFeetY - fh, fw, fh)) {
-				labels.add(new Label(rotateHint, panelCx - hintW / 2, Math.max(1, panel[1] - 4), 0xFF8F8B89, false));
+				labels.add(new Label(rotateHint, panelCx - hintW / 2, Math.max(1, panel[1] - 4), dimText(t), false));
 			}
 		}
 		// Name und Garderobe-Knopf
@@ -858,11 +869,23 @@ public final class TitleUi extends UiScreen {
 	}
 
 	/** Dunkle, weich auslaufende Fläche hinter Schriftzug und Knöpfen – die Schrift bleibt lesbar. */
-	private static void readingPlate(Canvas c, int x, int y, int w, int h) {
+	private static void readingPlate(Canvas c, int x, int y, int w, int h, int color) {
 		for (int i = 0; i < 5; i++) {
 			int d = (4 - i) * 7;
-			Redstone.block(c, x - d, y - d, w + 2 * d, h + 2 * d, 0x1E000000);
+			Redstone.block(c, x - d, y - d, w + 2 * d, h + 2 * d, color);
 		}
+	}
+
+	/** Farbe der Lese-Fläche: Schiefer-Schatten, im Winter Nachtblau bzw. am hellen Wintertag ein weißer Schleier. */
+	private static int plateColor(Theme t) {
+		if (!t.winter) return 0x1E000000;
+		return t.light ? 0x26FFFFFF : 0x22030814;
+	}
+
+	/** Gedämpfte Schrift (Hinweise, Fußzeile) passend zum Design. */
+	private static int dimText(Theme t) {
+		if (!t.winter) return 0xFF8F8B89;
+		return t.light ? 0xFF26344D : 0xFFB4C4E0;
 	}
 
 	/** Leitungen neben den Knöpfen: Fackel oben, Bus nach unten, Abzweig in jede Lampe. */
@@ -958,6 +981,7 @@ public final class TitleUi extends UiScreen {
 			int color = r[1] == 0 ? light : (r[1] == PixelFont.HEIGHT - 1 ? dark : face);
 			c.fill(x + r[0] * big, y + r[1] * big, x + r[2] * big, y + r[3] * big, color);
 		}
+		if (t.winter) snowCaps(c, rects, x, y, big);
 		// Glanzpunkt: ein heller Pixel oben links in jedem Buchstaben.
 		int sheen = ColorMath.withAlpha(0xFFFFFFFF, Math.round(90 * pulse));
 		c.fill(x, y, x + Math.max(1, big / 3), y + Math.max(1, big / 3), sheen);
@@ -966,11 +990,62 @@ public final class TitleUi extends UiScreen {
 		int subW = PixelFont.width("CLIENT") * small;
 		int sx = (width - subW) / 2;
 		int sy = top + logoH + gapA;
+		int sub = t.winter ? (t.light ? 0xFF26344D : 0xFFDCE8F8) : 0xFFDAD3CC;
 		for (int[] r : PixelFont.rects("CLIENT")) {
-			c.fill(sx + r[0] * small, sy + r[1] * small, sx + r[2] * small, sy + r[3] * small, 0xFFDAD3CC);
+			c.fill(sx + r[0] * small, sy + r[1] * small, sx + r[2] * small, sy + r[3] * small, sub);
+		}
+		if (t.winter) {
+			// Schneeflocke statt der Lampe (wie neben dem Logo im Launcher), die Spitzen glitzern ab und zu.
+			int px = Math.max(1, small * 2 / 3);
+			int size = 9 * px;
+			int fx = sx + subW + small * 3;
+			int fy = sy + (PixelFont.HEIGHT * small - size) / 2;
+			c.fill(fx - 1, fy - 1, fx + size + 1, fy + size + 1, ColorMath.withAlpha(t.glow, Math.round(28 * pulse)));
+			Frost.snowflake(c, fx, fy, px, t.light ? 0xFF2B97D6 : 0xFFB8E7FF, animated ? Frost.glint(time) : 0f);
+			return;
 		}
 		int pip = small * 3 + 1;
 		Redstone.pip(c, sx + subW + small * 3, sy + (PixelFont.HEIGHT * small - pip) / 2, pip, pulse);
+	}
+
+	/**
+	 * Winternacht: Schnee liegt auf dem Schriftzug – auf jeder nach oben offenen Pixelkante eine Schneehaube, an ein paar
+	 * Unterkanten kleine Eiszapfen.
+	 */
+	public static void snowCaps(Canvas c, List<int[]> rects, int x, int y, int px) {
+		int gw = 0;
+		for (int[] r : rects) gw = Math.max(gw, r[2]);
+		boolean[][] on = new boolean[PixelFont.HEIGHT][gw];
+		for (int[] r : rects) {
+			for (int col = r[0]; col < r[2]; col++) on[r[1]][col] = true;
+		}
+		int snow = 0xFFF2F8FF;
+		int shade = 0xFFC9DCF5;
+		int cap = Math.max(1, px / 3);
+		for (int row = 0; row < PixelFont.HEIGHT; row++) {
+			int start = -1;
+			for (int col = 0; col <= gw; col++) {
+				boolean edge = col < gw && on[row][col] && (row == 0 || !on[row - 1][col]);
+				if (edge && start < 0) start = col;
+				if (!edge && start >= 0) {
+					int x1 = x + start * px;
+					int x2 = x + col * px;
+					int top = y + row * px;
+					c.fill(x1, top - cap, x2, top + cap, snow);
+					c.fill(x1, top + cap, x2, top + cap + Math.max(1, cap / 2), shade);
+					if (col - start >= 3) c.fill(x1 + px, top - cap - Math.max(1, cap / 2), x2 - px, top - cap, snow);
+					start = -1;
+				}
+			}
+		}
+		// Eiszapfen unter einigen Pixeln der untersten Zeile.
+		int ice = 0xD0DDF3FF;
+		int last = PixelFont.HEIGHT - 1;
+		for (int col = 0; col < gw; col++) {
+			if (!on[last][col] || (col * 7) % 5 != 1) continue;
+			int ix = x + col * px + Math.max(0, px / 2 - cap / 2);
+			c.fill(ix, y + PixelFont.HEIGHT * px, ix + cap, y + PixelFont.HEIGHT * px + Math.max(2, px * 2 / 3), ice);
+		}
 	}
 
 	private void footer(Canvas c, Theme t, int width, int height, int mx, int my, float dt) {
@@ -980,12 +1055,12 @@ public final class TitleUi extends UiScreen {
 		String version = host.versionLine();
 		int room = lx - 18;
 		if (c.textWidth(version) > room) version = room > 20 ? c.clip(version, room - c.textWidth("…")) + "…" : "";
-		if (!version.isEmpty()) labels.add(new Label(version, 4, height - 10, 0xFF8F8B89, false));
+		if (!version.isEmpty()) labels.add(new Label(version, 4, height - 10, dimText(t), false));
 		boolean hover = inside(mx, my, lx - 10, height - 12, cw + 10, 12);
 		boolean on = hover || focus == linkIndex();
 		linkLit = on ? Math.min(1f, linkLit + dt / 0.08f) : Math.max(0f, linkLit - dt / 0.08f);
 		Redstone.pip(c, lx - 9, height - 9, 5, linkLit);
-		labels.add(new Label(classic, lx, height - 10, ColorMath.lerp(0xFF8F8B89, t.lampOn, linkLit), false));
+		labels.add(new Label(classic, lx, height - 10, ColorMath.lerp(dimText(t), t.light && t.winter ? t.on : t.lampOn, linkLit), false));
 		hits.add(lx - 10, height - 12, cw + 14, 12, new Runnable() {
 			@Override
 			public void run() {
