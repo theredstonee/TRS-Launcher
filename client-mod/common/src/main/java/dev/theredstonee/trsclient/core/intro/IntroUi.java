@@ -235,6 +235,7 @@ public final class IntroUi extends UiScreen {
 		int light = ColorMath.lerp(t.accent, 0xFFFFFFFF, 0.3f);
 		for (int[] r : rects) c.fill(lx + r[0] * 2, ly + r[1] * 2, lx + r[2] * 2, ly + r[3] * 2, r[1] == 0 ? light : t.accent);
 		int textX = lx + PixelFont.width("TRS") * 2 + 6;
+		if (t.winter) dev.theredstonee.trsclient.core.ui.title.TitleUi.snowCaps(c, rects, lx, ly, 2);
 		c.text(I18n.tr("intro.title"), textX, py + (HEADER_H - 8) / 2, t.textDim, false);
 		// Schritte als Lampen, verbunden durch Staub: erledigte und der aktuelle leuchten.
 		int lamp = 12;
