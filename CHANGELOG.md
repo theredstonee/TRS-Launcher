@@ -39,6 +39,9 @@ How to write an entry:
 - On phones and tablets you can import and upload capes; the pixel editor is available in the desktop launcher.
 - **Your design follows your account.** Redstone or Winter Night is now synced with your TRS account like color theme, accent and language – pick it once, and your other PCs and the TRS Client follow.
 - **TRS Client: capes look right on the elytra.** Wearing an elytra with a TRS cape (team, code, Studio or older capes) no longer shows red or broken wings – the wings now always show your cape's design, sharp in HD, darker on the inside, and animated capes animate on the elytra too.
+- **Winter Night in the game, too.** The TRS Client now follows the launcher's Winter Night design: the title screen shows the snowy pixel landscape with mountains, northern lights, falling snow and the cabin – the penguin in the Santa hat looks out of the window and now and then comes out to wave. Buttons become ice lanterns, the turntable under your character becomes an ice floe, and the logo wears a snow cap.
+- Pause menu, server list, options and loading screens get ice and snow slabs, frosty edges and an ice bar that freezes over while loading. The TRS menu, HUD accents and notifications use the night-blue palette; light theme shows a bright winter day.
+- You can switch the design inside the game: in the first-start guide and in the TRS menu (pages "Title Screen" and "Menu Style"), next to color theme and the new "Ice" accent.
 
 ### Deutsch
 - **HD-Umhänge.** Eigene Umhänge dürfen jetzt bis 1024×512 Pixel je Frame groß sein, mit bis zu 32 Frames und bis zu 20 MB – doppelt so scharf und doppelt so lang wie bisher.
@@ -49,6 +52,9 @@ How to write an entry:
 - Am Handy und Tablet lassen sich Umhänge importieren und hochladen; den Pixel-Editor gibt es im Desktop-Launcher.
 - **Dein Design folgt deinem Konto.** Redstone oder Winternacht wird jetzt wie Farbschema, Akzent und Sprache mit deinem TRS-Konto abgeglichen – einmal wählen, deine anderen PCs und der TRS Client ziehen mit.
 - **TRS Client: Umhänge sehen auf der Elytra richtig aus.** Mit einem TRS-Umhang (Team-, Code-, Studio- oder ältere Umhänge) zeigt die Elytra keine roten oder kaputten Flügel mehr – die Flügel zeigen jetzt immer das Motiv deines Umhangs, scharf in HD, innen dunkler, und animierte Umhänge bewegen sich auch auf der Elytra.
+- **Winternacht jetzt auch im Spiel.** Der TRS Client übernimmt das Design Winternacht des Launchers: Der Startbildschirm zeigt die verschneite Pixel-Landschaft mit Bergen, Polarlicht, Schneefall und der Hütte – der Pinguin mit Weihnachtsmütze schaut aus dem Fenster und kommt ab und zu heraus, um zu winken. Knöpfe werden zu Eislaternen, die Drehscheibe unter deiner Figur zur Eisscholle, und auf dem Logo liegt Schnee.
+- Pausenmenü, Serverliste, Optionen und Ladebildschirme bekommen Eis- und Schneeplatten, Frostkanten und einen Eisbalken, der beim Laden zufriert. TRS-Menü, HUD-Akzente und Hinweise nutzen die nachtblauen Farben; das helle Farbschema zeigt einen hellen Wintertag.
+- Das Design lässt sich im Spiel umstellen: in der Einführung beim ersten Start und im TRS-Menü (Seiten „Startbildschirm“ und „Menü-Stil“), neben Farbschema und dem neuen Akzent „Eis“.
 
 ## 0.20.0 – 2026-10-13 – Penguin Lodge | Pinguin-Hütte
 <!-- banner: accent=#7fd3ff motif=/news/0.20.0/banner.png -->

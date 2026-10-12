@@ -49,8 +49,8 @@ public final class IntroUi extends UiScreen {
 	private static final String[][] LANGUAGES = {
 			{"en", "English"}, {"de", "Deutsch"}, {"es", "Español"}, {"fr", "Français"},
 			{"pl", "Polski"}, {"pt-BR", "Português (BR)"}, {"tr", "Türkçe"}, {"nl", "Nederlands"}};
-	private static final String[] THEMES = {"dark", "oled", "light"};
-	private static final String[] ACCENTS = {"redstone", "lamp", "emerald", "lapis", "amethyst"};
+	private static final String[] THEMES = LookPicker.THEMES;
+	private static final String[] ACCENTS = LookPicker.ACCENTS;
 	/** TRS-Tasten des Schritts „Tastenbelegung“ (Reihenfolge der Anzeige). */
 	static final String[] TRS_KEYS = {"key.trsclient.menu", "key.trsclient.zoom", "key.trsclient.freelook",
 			"key.trsclient.emoteWheel", NewSince.KEY_WARDROBE, NewSince.KEY_SOCIAL, NewSince.KEY_QUICK_REPLY,
@@ -235,6 +235,7 @@ public final class IntroUi extends UiScreen {
 		int light = ColorMath.lerp(t.accent, 0xFFFFFFFF, 0.3f);
 		for (int[] r : rects) c.fill(lx + r[0] * 2, ly + r[1] * 2, lx + r[2] * 2, ly + r[3] * 2, r[1] == 0 ? light : t.accent);
 		int textX = lx + PixelFont.width("TRS") * 2 + 6;
+		if (t.winter) dev.theredstonee.trsclient.core.ui.title.TitleUi.snowCaps(c, rects, lx, ly, 2);
 		c.text(I18n.tr("intro.title"), textX, py + (HEADER_H - 8) / 2, t.textDim, false);
 		// Schritte als Lampen, verbunden durch Staub: erledigte und der aktuelle leuchten.
 		int lamp = 12;
@@ -358,6 +359,20 @@ public final class IntroUi extends UiScreen {
 				}
 			});
 		}
+		// Design (Redstone | Winternacht) neben den Akzenten, sonst in einer eigenen Zeile.
+		int dx = ax + ACCENTS.length * (size + 4) + 10;
+		int dw = x + w - dx;
+		if (dw < 150) {
+			ry += bh + gap + 4;
+			dx = x;
+			dw = Math.min(w, 304);
+		}
+		LookPicker.drawDesigns(c, hits, modules, dx, ry - 1, Math.min(dw, 304), mx, my, new Runnable() {
+			@Override
+			public void run() {
+				host.playClick();
+			}
+		});
 		ry += bh + 10;
 		if (ry + 20 < y + h) {
 			ClientSync sync = ClientSync.get();
@@ -367,17 +382,7 @@ public final class IntroUi extends UiScreen {
 	}
 
 	private void chooseLook(String theme, String accent, String language) {
-		Theme cur = Theme.get();
-		String th = theme != null ? theme : cur.themeName;
-		String ac = accent != null ? accent : cur.accentName;
-		String la = language != null ? language : I18n.code();
-		ClientSync sync = ClientSync.get();
-		if (sync != null) {
-			sync.chooseLook(th, ac, la, System.currentTimeMillis());
-		} else {
-			modules.clientState.chooseLook(th, ac, la, System.currentTimeMillis());
-			ClientSync.applyLook(th, ac, la);
-		}
+		LookPicker.choose(modules, theme, accent, language, null);
 	}
 
 	private void choice(Canvas c, int x, int y, int w, int h, String label, boolean selected, int mx, int my,

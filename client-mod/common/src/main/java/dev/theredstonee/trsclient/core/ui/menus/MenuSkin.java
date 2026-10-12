@@ -8,6 +8,9 @@ import dev.theredstonee.trsclient.core.ui.PixelFont;
 import dev.theredstonee.trsclient.core.ui.Redstone;
 import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.ui.title.CircuitScene;
+import dev.theredstonee.trsclient.core.ui.title.TitleUi;
+import dev.theredstonee.trsclient.core.ui.winter.Frost;
+import dev.theredstonee.trsclient.core.ui.winter.WinterScene;
 
 import java.util.List;
 
@@ -35,6 +38,20 @@ public final class MenuSkin {
 	private static final int EDGE = 0xFF0E0C0D;
 	private static final int BEVEL_LIGHT = 0xFF57504F;
 	private static final int BEVEL_DARK = 0xFF151213;
+
+	// Winternacht: Eis- und Schneeplatten statt Stein (immer dunkel – Vanilla schreibt weiß).
+	private static final int ICE = 0xFF1C2C48;
+	private static final int ICE_HOVER = 0xFF26406A;
+	private static final int ICE_OFF = 0xFF121B2D;
+	private static final int ICE_EDGE = 0xFF050A14;
+	private static final int FROST_LIGHT = 0xFF6F8FBF;
+	private static final int FROST_DARK = 0xFF0A1222;
+	private static final int ICE_FIELD = 0xFF060B16;
+	private static final int ICE_FIELD_EDGE = 0xFF2D4166;
+
+	private static boolean winter() {
+		return Theme.get().winter;
+	}
 
 	private MenuSkin() {
 	}
@@ -70,7 +87,16 @@ public final class MenuSkin {
 		long start = System.nanoTime();
 		Theme t = Theme.get();
 		float time = seconds();
-		if (inWorld) {
+		if (inWorld && t.winter) {
+			// Winternacht in der Welt: nachtblauer Schleier, unten Frostschein und eine Frostlinie.
+			c.fill(0, 0, width, height, 0x9A060B16);
+			for (int i = 0; i < 6; i++) {
+				int band = Math.max(4, height / 24);
+				int y2 = height - i * band;
+				c.fill(0, y2 - band, width, y2, ColorMath.withAlpha(t.lampGlow, Math.max(0, 18 - i * 3)));
+			}
+			Redstone.dustH(c, 0, width, height - 2, ColorMath.lerp(t.dustOff, t.dustOn, 0.55f + 0.2f * pulse(time)), 0.4f);
+		} else if (inWorld) {
 			c.fill(0, 0, width, height, 0x9A0A0708);
 			// Glimmen von unten wie bei einer Redstone-Leitung am Boden.
 			for (int i = 0; i < 6; i++) {
@@ -90,6 +116,10 @@ public final class MenuSkin {
 	/** Redstone-Schaltung des Startbildschirms (ruhig, wenn der animierte Hintergrund aus ist). */
 	private static void scene(Canvas c, int width, int height, float time) {
 		boolean animated = dev.theredstonee.trsclient.core.menus.MenuStyle.animated();
+		if (winter()) {
+			WinterScene.shared().draw(c, width, height, animated);
+			return;
+		}
 		if (sceneSimple == null || sceneSimple != !animated) {
 			// setSimple baut die Schaltung neu – nur beim Umschalten aufrufen.
 			sceneSimple = !animated;
@@ -107,8 +137,8 @@ public final class MenuSkin {
 	/** Kopfleiste mit kleinem TRS-Schriftzug links und Staubleitung unten. */
 	public static void header(Canvas c, int width, int h, boolean inWorld) {
 		Theme t = Theme.get();
-		c.fill(0, 0, width, h, inWorld ? 0x8C0C0A0B : 0xD8141113);
-		c.fill(0, 0, width, 1, ColorMath.withAlpha(BEVEL_LIGHT, 0x60));
+		c.fill(0, 0, width, h, t.winter ? (inWorld ? 0x8C060B16 : 0xD80B1222) : (inWorld ? 0x8C0C0A0B : 0xD8141113));
+		c.fill(0, 0, width, 1, ColorMath.withAlpha(t.winter ? FROST_LIGHT : BEVEL_LIGHT, 0x60));
 		Redstone.dustH(c, 0, width, h - 2, ColorMath.lerp(t.dustOff, t.dustOn, 0.8f), 0.7f);
 		logo(c, 8, (h - PixelFont.HEIGHT * 2) / 2, 2, 1f);
 	}
@@ -116,7 +146,7 @@ public final class MenuSkin {
 	/** Fußleiste (Knopfbereich unter einer Liste). */
 	public static void footer(Canvas c, int width, int top, int height, boolean inWorld) {
 		Theme t = Theme.get();
-		c.fill(0, top, width, height, inWorld ? 0x8C0C0A0B : 0xD8141113);
+		c.fill(0, top, width, height, t.winter ? (inWorld ? 0x8C060B16 : 0xD80B1222) : (inWorld ? 0x8C0C0A0B : 0xD8141113));
 		Redstone.dustH(c, 0, width, top, ColorMath.lerp(t.dustOff, t.dustOn, 0.8f), 0.7f);
 	}
 
@@ -131,14 +161,22 @@ public final class MenuSkin {
 			int col = r[1] == 0 ? light : t.accent;
 			c.fill(x + r[0] * scale, y + r[1] * scale, x + r[2] * scale, y + r[3] * scale, ColorMath.fade(col, alpha));
 		}
+		if (t.winter && alpha > 0.5f) {
+			// Schnee auf dem Schriftzug und die kleine Schneeflocke daneben (wie im Launcher).
+			TitleUi.snowCaps(c, rects, x, y, scale);
+			int fx = x + PixelFont.width("TRS") * scale + scale * 2;
+			int px = Math.max(1, scale / 2);
+			Frost.snowflake(c, fx, y + (PixelFont.HEIGHT * scale - 9 * px) / 2, px, 0xFFB8E7FF, Frost.glint(seconds()));
+		}
 	}
 
 	/** Eingelassene Mulde hinter einer Liste (Server, Welten, Optionen). */
 	public static void listWell(Canvas c, int x1, int y1, int x2, int y2, boolean inWorld) {
 		if (x2 - x1 < 4 || y2 - y1 < 4) return;
-		c.fill(x1, y1, x2, y2, inWorld ? 0x70000000 : 0xA8080607);
+		boolean w = winter();
+		c.fill(x1, y1, x2, y2, w ? (inWorld ? 0x70020610 : 0xA8050A16) : (inWorld ? 0x70000000 : 0xA8080607));
 		c.fill(x1, y1, x2, y1 + 1, 0x80000000);
-		c.fill(x1, y2 - 1, x2, y2, ColorMath.withAlpha(BEVEL_LIGHT, 0x50));
+		c.fill(x1, y2 - 1, x2, y2, ColorMath.withAlpha(w ? FROST_LIGHT : BEVEL_LIGHT, 0x50));
 	}
 
 	/** Trennlinien einer Liste (oben/unten) als Staubleitungen. */
@@ -159,6 +197,10 @@ public final class MenuSkin {
 		if (w < 3 || h < 3) return;
 		Theme t = Theme.get();
 		boolean hot = hover && active;
+		if (t.winter) {
+			iceButton(c, t, x, y, w, h, hot, active);
+			return;
+		}
 		int fill = !active ? STONE_OFF : (hot ? STONE_HOVER : STONE);
 		if (hot) Redstone.glow(c, x, y, w, h, t.glow, 0.55f);
 		Redstone.block(c, x, y, w, h, hot ? ColorMath.lerp(EDGE, t.accent, 0.55f) : EDGE);
@@ -175,6 +217,38 @@ public final class MenuSkin {
 	}
 
 	/**
+	 * Winternacht: Eisplatte mit Schneekante oben, Reif in der Ecke und frostiger Kante; beim Überfahren leuchtet das Eis
+	 * und eine Frostlinie glimmt unten auf.
+	 */
+	private static void iceButton(Canvas c, Theme t, int x, int y, int w, int h, boolean hot, boolean active) {
+		int fill = !active ? ICE_OFF : (hot ? ICE_HOVER : ICE);
+		if (hot) Redstone.glow(c, x, y, w, h, t.lampGlow, 0.55f);
+		Redstone.block(c, x, y, w, h, hot ? ColorMath.lerp(ICE_EDGE, t.lampGlow, 0.6f) : ICE_EDGE);
+		if (h < 5) return;
+		c.fill(x + 1, y + 1, x + w - 1, y + h - 1, fill);
+		// Schnee auf der Oberkante, an ein paar Stellen etwas dicker.
+		int snow = active ? (hot ? 0xFFF2FAFF : 0xFFB9CDE9) : 0xFF52617A;
+		c.fill(x + 1, y + 1, x + w - 1, y + 2, snow);
+		if (active && w > 12) {
+			int lump = ColorMath.withAlpha(snow, 0x90);
+			for (int sx = x + 4 + Math.floorMod(x * 5 + y, 7); sx < x + w - 6; sx += 13 + Math.floorMod(sx * 3, 9)) {
+				c.fill(sx, y + 2, sx + 3 + Math.floorMod(sx, 3), y + 3, lump);
+			}
+		}
+		c.fill(x + 1, y + h - 2, x + w - 1, y + h - 1, FROST_DARK);
+		if (active && w >= 10 && h >= 8) {
+			int rime = ColorMath.withAlpha(0xFFFFFFFF, hot ? 0x70 : 0x34);
+			c.fill(x + w - 4, y + h - 3, x + w - 2, y + h - 2, rime);
+			c.fill(x + w - 3, y + h - 5, x + w - 2, y + h - 3, rime);
+		}
+		if (hot) {
+			Redstone.dustH(c, x + 3, x + w - 3, y + h - 4, t.lampOn, 0f);
+		} else if (active && w > 12) {
+			c.fill(x + 3, y + h - 4, x + w - 3, y + h - 3, ColorMath.withAlpha(t.dustOff, 0x90));
+		}
+	}
+
+	/**
 	 * Fläche eines Vanilla-Textfelds (Text und Schreibmarke zeichnet Minecraft darüber): eingelassene Mulde wie
 	 * die TRS-Eingabefelder, mit Akzentkante und bestromter Staubleitung, solange das Feld den Fokus hat.
 	 * Wie bei den Knöpfen immer dunkel – Vanilla schreibt hellgrau.
@@ -183,13 +257,14 @@ public final class MenuSkin {
 		if (w < 3 || h < 3) return;
 		Theme t = Theme.get();
 		if (focused && active) Redstone.glow(c, x, y, w, h, t.glow, 0.45f);
-		int edge = focused && active ? t.accent : (hover && active ? ColorMath.lerp(FIELD_EDGE, t.accent, 0.4f) : FIELD_EDGE);
+		int fieldEdge = t.winter ? ICE_FIELD_EDGE : FIELD_EDGE;
+		int edge = focused && active ? t.accent : (hover && active ? ColorMath.lerp(fieldEdge, t.accent, 0.4f) : fieldEdge);
 		Redstone.block(c, x, y, w, h, edge);
 		if (h < 5) return;
-		int fill = active ? FIELD : STONE_OFF;
+		int fill = active ? (t.winter ? ICE_FIELD : FIELD) : (t.winter ? ICE_OFF : STONE_OFF);
 		c.fill(x + 1, y + 1, x + w - 1, y + h - 1, fill);
-		c.fill(x + 1, y + 1, x + w - 1, y + 2, BEVEL_DARK);
-		c.fill(x + 1, y + h - 2, x + w - 1, y + h - 1, ColorMath.lerp(fill, BEVEL_LIGHT, 0.35f));
+		c.fill(x + 1, y + 1, x + w - 1, y + 2, t.winter ? FROST_DARK : BEVEL_DARK);
+		c.fill(x + 1, y + h - 2, x + w - 1, y + h - 1, ColorMath.lerp(fill, t.winter ? FROST_LIGHT : BEVEL_LIGHT, 0.35f));
 		if (focused && active && w > 8) Redstone.dustH(c, x + 2, x + w - 2, y + h - 1, t.dustOn, 0f);
 	}
 
@@ -236,11 +311,17 @@ public final class MenuSkin {
 		Theme t = Theme.get();
 		if (w < 4 || h < 4) return;
 		if (selected) Redstone.glow(c, x, y, w, h, t.glow, 0.5f);
-		int edge = selected ? ColorMath.lerp(EDGE, t.accent, 0.8f) : (hover ? ColorMath.lerp(EDGE, t.accent, 0.35f) : EDGE);
+		int e0 = t.winter ? ICE_EDGE : EDGE;
+		int edge = selected ? ColorMath.lerp(e0, t.accent, 0.8f) : (hover ? ColorMath.lerp(e0, t.accent, 0.35f) : e0);
 		Redstone.block(c, x, y, w, h, edge);
 		int fill = cardFill(selected, hover);
 		c.fill(x + 1, y + 1, x + w - 1, y + h - 1, fill);
-		c.fill(x + 1, y + 1, x + w - 1, y + 2, ColorMath.withAlpha(BEVEL_LIGHT, 0x70));
+		c.fill(x + 1, y + 1, x + w - 1, y + 2, ColorMath.withAlpha(t.winter ? FROST_LIGHT : BEVEL_LIGHT, 0x70));
+		if (t.winter && w >= 12 && h >= 10) {
+			int rime = ColorMath.withAlpha(0xFFFFFFFF, selected ? 0x60 : 0x30);
+			c.fill(x + 1, y + 2, x + 4, y + 3, rime);
+			c.fill(x + 1, y + 3, x + 2, y + 5, rime);
+		}
 		if (pinned) {
 			// Angeheftet: Staubleitung an der linken Kante, bestromt.
 			Redstone.dustV(c, x + 1, y + 2, y + h - 2, t.dustOn, 0.8f);
@@ -249,6 +330,7 @@ public final class MenuSkin {
 
 	/** Füllfarbe einer Karte (deckend – die Ping-Anzeige deckt damit die Vanilla-Balken ab). */
 	public static int cardFill(boolean selected, boolean hover) {
+		if (winter()) return selected ? 0xFF1F3354 : (hover ? 0xFF18284A : 0xFF111B31);
 		return selected ? 0xFF33292B : (hover ? 0xFF2B2628 : 0xFF1F1C1E);
 	}
 
@@ -352,10 +434,10 @@ public final class MenuSkin {
 		Theme t = Theme.get();
 		float time = seconds();
 		if (inWorld) {
-			c.fill(0, 0, width, height, 0xE00A0708);
+			c.fill(0, 0, width, height, t.winter ? 0xE0060B16 : 0xE00A0708);
 		} else {
 			scene(c, width, height, time);
-			c.fill(0, 0, width, height, 0x60000000);
+			c.fill(0, 0, width, height, t.winter ? (t.light ? 0x30000000 : 0x50030814) : 0x60000000);
 		}
 		int cx = width / 2;
 		int[] layout = loadingLayout(height, avoidTop, avoidBottom);
@@ -389,6 +471,11 @@ public final class MenuSkin {
 	 */
 	public static void lamps(Canvas c, int cx, int y, int maxWidth, float progress, float time) {
 		Theme t = Theme.get();
+		if (t.winter) {
+			// Winternacht: ein Eisbalken, der von links zufriert, statt der Lampenreihe.
+			Frost.bar(c, cx, y + 3, maxWidth, progress, time);
+			return;
+		}
 		int n = 10;
 		int size = 12;
 		int gap = Math.max(2, Math.min(6, (maxWidth - n * size) / (n - 1)));
@@ -421,11 +508,25 @@ public final class MenuSkin {
 		if (alpha <= 0.004f) return;
 		Canvas c = FadeCanvas.of(raw, Math.min(1f, alpha));
 		Theme t = Theme.get();
-		c.fill(0, 0, width, height, 0xFF120D0E);
-		// Gitter aus unbestromtem Staub, sehr dezent.
 		int cell = 32;
-		for (int x = cell / 2; x < width; x += cell) c.fill(x, 0, x + 1, height, 0x10FF3020);
-		for (int y = cell / 2; y < height; y += cell) c.fill(0, y, width, y + 1, 0x10FF3020);
+		if (t.winter) {
+			// Winternacht: Nachtblau mit Eisfliesen und leise fallenden Schneeflocken.
+			c.fill(0, 0, width, height, 0xFF0D1424);
+			for (int x = cell / 2; x < width; x += cell) c.fill(x, 0, x + 1, height, 0x0CBFE3FF);
+			for (int y = cell / 2; y < height; y += cell) c.fill(0, y, width, y + 1, 0x0CBFE3FF);
+			float drift = seconds() * 6f;
+			for (int i = 0; i < 40; i++) {
+				int fx = Math.floorMod(i * 97 + (int) (drift * (0.4f + (i % 3) * 0.3f)), Math.max(1, width));
+				int fy = Math.floorMod(i * 57 + (int) (drift * (1f + (i % 3))), Math.max(1, height));
+				int size = i % 7 == 0 ? 2 : 1;
+				c.fill(fx, fy, fx + size, fy + size, i % 3 == 0 ? 0xC0F4F9FF : 0x709FB4D6);
+			}
+		} else {
+			c.fill(0, 0, width, height, 0xFF120D0E);
+			// Gitter aus unbestromtem Staub, sehr dezent.
+			for (int x = cell / 2; x < width; x += cell) c.fill(x, 0, x + 1, height, 0x10FF3020);
+			for (int y = cell / 2; y < height; y += cell) c.fill(0, y, width, y + 1, 0x10FF3020);
+		}
 		int scale = Math.max(2, Math.min(6, width / 110));
 		String word = "TRS CLIENT";
 		int w = PixelFont.width(word) * scale;
@@ -436,6 +537,7 @@ public final class MenuSkin {
 		for (int[] r : rects) c.fill(x + r[0] * scale - 1, y + r[1] * scale - 1, x + r[2] * scale + 1, y + r[3] * scale + 1, glow);
 		int light = ColorMath.lerp(t.accent, 0xFFFFFFFF, 0.3f);
 		for (int[] r : rects) c.fill(x + r[0] * scale, y + r[1] * scale, x + r[2] * scale, y + r[3] * scale, r[1] == 0 ? light : t.accent);
+		if (t.winter) TitleUi.snowCaps(c, rects, x, y, scale);
 		lamps(c, width / 2, height / 2 + 14, Math.min(width - 40, 220), progress, seconds());
 	}
 }

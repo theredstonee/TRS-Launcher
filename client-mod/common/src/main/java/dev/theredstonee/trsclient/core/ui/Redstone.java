@@ -41,6 +41,12 @@ public final class Redstone {
 		c.fill(x + 1, y + 1, x + w - 1, y + h - 1, fill);
 		c.fill(x + 1, y + 1, x + w - 1, y + 2, ColorMath.lerp(fill, t.bevelLight, 0.7f));
 		c.fill(x + 1, y + h - 2, x + w - 1, y + h - 1, ColorMath.lerp(fill, t.bevelDark, 0.7f));
+		if (t.winter && w >= 10 && h >= 8) {
+			// Winternacht: Eis statt Stein – Reif in der Ecke oben links.
+			int rime = ColorMath.withAlpha(0xFFFFFFFF, t.light ? 0xB0 : 0x38);
+			c.fill(x + 1, y + 1, x + 4, y + 2, rime);
+			c.fill(x + 1, y + 2, x + 2, y + 4, rime);
+		}
 	}
 
 	/** Mulde (eingelassene Fläche): Schatten oben, Licht unten – für Felder und Schalter-Schienen. */
@@ -91,6 +97,10 @@ public final class Redstone {
 	 */
 	public static void lamp(Canvas c, int x, int y, int w, int h, float lit, float flash) {
 		Theme t = Theme.get();
+		if (t.winter) {
+			dev.theredstonee.trsclient.core.ui.winter.Frost.lantern(c, x, y, w, h, lit, flash);
+			return;
+		}
 		float l = ColorMath.clamp01(lit);
 		if (l > 0.02f) glow(c, x, y, w, h, t.lampGlow, l);
 		block(c, x, y, w, h, ColorMath.lerp(t.lampOffEdge, t.lampOnEdge, l));
@@ -145,6 +155,10 @@ public final class Redstone {
 	/** Waagerechte Staubleitung (2 px) mit Leuchten bei Signal. */
 	public static void dustH(Canvas c, int x1, int x2, int y, int argb, float glow) {
 		if (x2 <= x1) return;
+		if (Theme.get().winter) {
+			dev.theredstonee.trsclient.core.ui.winter.Frost.lineH(c, x1, x2, y, argb, glow);
+			return;
+		}
 		c.fill(x1, y, x2, y + 2, argb);
 		if (glow > 0.02f) {
 			int g = ColorMath.withAlpha(Theme.get().glow, Math.round(40 * ColorMath.clamp01(glow)));
@@ -156,6 +170,10 @@ public final class Redstone {
 	/** Senkrechte Staubleitung (2 px) mit Leuchten bei Signal. */
 	public static void dustV(Canvas c, int x, int y1, int y2, int argb, float glow) {
 		if (y2 <= y1) return;
+		if (Theme.get().winter) {
+			dev.theredstonee.trsclient.core.ui.winter.Frost.lineV(c, x, y1, y2, argb, glow);
+			return;
+		}
 		c.fill(x, y1, x + 2, y2, argb);
 		if (glow > 0.02f) {
 			int g = ColorMath.withAlpha(Theme.get().glow, Math.round(40 * ColorMath.clamp01(glow)));
@@ -170,6 +188,10 @@ public final class Redstone {
 	 */
 	public static void torch(Canvas c, int x, int y, float lit, float flicker) {
 		Theme t = Theme.get();
+		if (t.winter) {
+			dev.theredstonee.trsclient.core.ui.winter.Frost.crystal(c, x, y, lit, flicker);
+			return;
+		}
 		float l = ColorMath.clamp01(lit);
 		c.fill(x - 1, y - 6, x + 1, y, 0xFF6B4A2B);
 		c.fill(x - 1, y - 6, x, y, 0xFF7E5A36);
@@ -195,14 +217,14 @@ public final class Redstone {
 		int k = Math.max(3, h - 4);
 		int kx = x + 2 + Math.round((w - k - 4) * p);
 		int ky = y + (h - k) / 2;
-		int knob = ColorMath.lerp(hover ? 0xFF8E8E96 : 0xFF7A7A82, t.lampOn, p);
+		int knob = ColorMath.lerp(t.winter ? (hover ? 0xFF9FB4D6 : 0xFF8197BC) : (hover ? 0xFF8E8E96 : 0xFF7A7A82), t.lampOn, p);
 		block(c, kx, ky, k, k, knob);
 		c.fill(kx + 1, ky + 1, kx + k - 1, ky + 2, ColorMath.lerp(knob, 0xFFFFFFFF, 0.3f));
 		c.fill(kx + 1, ky + k - 2, kx + k - 1, ky + k - 1, ColorMath.lerp(knob, 0xFF000000, 0.25f));
 		int core = Math.max(1, k / 3);
 		int cx = kx + (k - core) / 2;
 		int cy = ky + (k - core) / 2;
-		c.fill(cx, cy, cx + core, cy + core, ColorMath.lerp(0xFF3A1210, t.lampHot, p));
+		c.fill(cx, cy, cx + core, cy + core, ColorMath.lerp(t.winter ? 0xFF14243C : 0xFF3A1210, t.lampHot, p));
 	}
 
 	/**
@@ -232,7 +254,8 @@ public final class Redstone {
 		int kx = x + filled - kw / 2;
 		int ky = y + (h - kh) / 2;
 		if (hover) glow(c, kx, ky, kw, kh, t.glow, 0.8f);
-		stone(c, kx, ky, kw, kh, hover ? 0xFF9A9AA2 : 0xFF84848C, 0xFF2A2A30);
+		if (t.winter) stone(c, kx, ky, kw, kh, hover ? 0xFFB4C8E6 : 0xFF9AB0D2, 0xFF1A2740);
+		else stone(c, kx, ky, kw, kh, hover ? 0xFF9A9AA2 : 0xFF84848C, 0xFF2A2A30);
 		c.fill(kx + 2, ky + 2, kx + 4, ky + 4, hover ? t.lampHot : t.dustOn);
 	}
 

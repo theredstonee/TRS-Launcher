@@ -232,8 +232,16 @@ public final class ClientSync {
 	 * Kontos schreiben, damit Launcher und andere PCs folgen.
 	 */
 	public void chooseLook(String theme, String accent, String language, long now) {
-		modules.clientState.chooseLook(theme, accent, language, now);
-		applyLook(theme, accent, language);
+		chooseLook(theme, accent, language, modules.clientState.lookDesign(), now);
+	}
+
+	/**
+	 * Wie {@link #chooseLook(String, String, String, long)} mit Design ("redstone"/"winter"). Das Design bleibt lokal
+	 * (die Konto-Einstellungen kennen nur Thema, Akzent und Sprache); der Launcher setzt es beim Start selbst.
+	 */
+	public void chooseLook(String theme, String accent, String language, String design, long now) {
+		modules.clientState.chooseLook(theme, accent, language, design, now);
+		applyLook(theme, accent, language, design);
 		appliedLookAt = now;
 		SyncState.Look l = new SyncState.Look();
 		l.theme = theme;
@@ -252,25 +260,33 @@ public final class ClientSync {
 		String last = state.lastAccount();
 		SyncState.Look remote = last == null ? null : state.look(last);
 		if (cs.lookAt() > 0 && (remote == null || cs.lookAt() >= remote.at)) {
-			offerLook(cs.lookTheme(), cs.lookAccent(), cs.lookLanguage(), cs.lookAt());
+			offerLook(cs.lookTheme(), cs.lookAccent(), cs.lookLanguage(), cs.lookDesign(), cs.lookAt());
 		} else if (remote != null) {
-			offerLook(remote.theme, remote.accent, remote.language, remote.at);
+			offerLook(remote.theme, remote.accent, remote.language, remote.design, remote.at);
 		}
 	}
 
 	/** Übernimmt ein Aussehen, wenn es neuer ist als alles bisher Angewandte (inkl. Launcher-Datei). */
-	private void offerLook(String theme, String accent, String language, long at) {
+	private void offerLook(String theme, String accent, String language, String design, long at) {
 		if (at <= appliedLookAt) return;
 		appliedLookAt = at;
-		applyLook(theme, accent, language);
+		applyLook(theme, accent, language, design);
 	}
 
-	/** Setzt Thema/Akzent/Sprache sofort (null = unverändert). */
+	/** Setzt Thema/Akzent/Sprache sofort (null = unverändert); das Design bleibt. */
 	public static void applyLook(String theme, String accent, String language) {
+		applyLook(theme, accent, language, null);
+	}
+
+	/** Setzt Thema/Akzent/Sprache/Design sofort (null = unverändert). */
+	public static void applyLook(String theme, String accent, String language, String design) {
 		Theme current = Theme.get();
 		String t = theme != null ? theme : current.themeName;
 		String a = accent != null ? accent : current.accentName;
-		Theme.set(Theme.of(t, a, null));
+		String d = design != null ? design : current.designName;
+		// Eigene Akzentfarbe des Launchers (Hex) bleibt, solange der Name gleich ist.
+		String hex = a.equals(current.accentName) ? String.format("#%06X", current.accent & 0xFFFFFF) : null;
+		Theme.set(Theme.of(t, a, hex, d));
 		if (language != null && I18n.supported(language) != null) I18n.override(language);
 	}
 
@@ -438,6 +454,9 @@ public final class ClientSync {
 		l.theme = str(settings.data, "theme");
 		l.accent = str(settings.data, "accent");
 		l.language = str(settings.data, "language");
+		// Kennt das Konto (noch) kein Design, bleibt es unverändert.
+		String design = str(settings.data, "design");
+		l.design = design == null ? null : Theme.normalizeDesign(design);
 		l.at = settings.updatedAtMillis();
 		return l.at > 0 ? l : null;
 	}
@@ -493,7 +512,7 @@ public final class ClientSync {
 		forceRemote = false;
 		lastSyncAt = System.currentTimeMillis();
 		status = res.readOnly ? Status.NEWER_CLIENT : Status.SYNCED;
-		if (look != null) offerLook(look.theme, look.accent, look.language, look.at);
+		if (look != null) offerLook(look.theme, look.accent, look.language, look.design, look.at);
 		if (res.merged == null) return;
 		if (saveCount != savesAtSnapshot) {
 			// Während des Abgleichs lokal geändert: nicht darüberschreiben, gleich neu abgleichen.

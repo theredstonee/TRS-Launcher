@@ -51,6 +51,8 @@ public final class SyncState {
 		public String theme;
 		public String accent;
 		public String language;
+		/** Design ("redstone"/"winter") – nur, falls das Konto es kennt (sonst null = unverändert). */
+		public String design;
 		public long at;
 	}
 
@@ -171,6 +173,7 @@ public final class SyncState {
 		c.theme = l.theme;
 		c.accent = l.accent;
 		c.language = l.language;
+		c.design = l.design;
 		c.at = l.at;
 		return c;
 	}

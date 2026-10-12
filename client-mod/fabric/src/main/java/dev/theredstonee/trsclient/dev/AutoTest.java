@@ -102,6 +102,11 @@ public final class AutoTest {
 			MenusTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=winter: Design „Winternacht“ (Startbildschirm Nacht/Polarlicht/Pinguin/Tag, TRS-Menü, Laden, Pause)
+		if ("winter".equals(System.getProperty("trsclient.autotest.only"))) {
+			WinterTest.install();
+			return;
+		}
 		// -PtrsAutotestOnly=addserver: Formulare der Serverliste im breiten Fenster mit fremdem Eck-Knopf
 		if ("addserver".equals(System.getProperty("trsclient.autotest.only"))) {
 			MenusTest.installAddServer();
