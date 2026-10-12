@@ -479,6 +479,8 @@ const powered = ref(false)
 }
 
 .compare-wrap {
+  /* Bezug für die sr-only-Texte der Zellen, sonst ragen sie aus dem Scrollbereich und verbreitern die Seite am Handy */
+  position: relative;
   overflow-x: auto;
   border-radius: 0.75rem;
   border: 1px solid var(--color-base-800);
