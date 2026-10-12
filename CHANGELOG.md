@@ -28,7 +28,11 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.19.1 – 2026-10-12 – Smooth Moves Fix | Flüssige Bewegung – Fix
+<!-- banner: accent=#ff4d3a motif=/news/0.19.0/banner.png -->
+<!-- shots:
+/news/0.19.1/background.png | The redstone background stays clean | Der Redstone-Hintergrund bleibt sauber
+-->
 
 ### English
 - **Fix: red spots across the animated background.** On some PCs the redstone background behind the pages slowly filled with red spots (for example after sleep, minimizing or a graphics driver reset). The scene now clears itself every frame and redraws completely when the graphics card resets or the window comes back.
