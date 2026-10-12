@@ -119,13 +119,13 @@ describe('Winterlandschaft', () => {
     expect(right.cabin!.x + CABIN_W).toBeLessThanOrEqual(128 - 4)
   })
 
-  it('weite Ebene: niedrige, runde Kuppen ohne Zacken', () => {
+  it('weite Ebene: echte Berge mit Gipfeln, aber ohne Nadeln', () => {
     const l = buildLandscape({ cols: 420, rows: 250, seed: 11 })
     for (const line of [l.mountains, l.mountainsBack]) {
       for (let x = 0; x < l.w; x++) {
         // Höchstens 15 % der Höhe über dem Horizont, Horizont über der Mitte der Ebene.
         expect(l.horizon - line[x]!).toBeLessThanOrEqual(l.mountainAmp)
-        // Glatte Silhouette: höchstens ein, zwei Texel Sprung je Spalte.
+        // Keine Nadeln: höchstens ein, zwei Texel Sprung je Spalte.
         if (x > 0) expect(Math.abs(line[x]! - line[x - 1]!)).toBeLessThanOrEqual(2)
       }
     }

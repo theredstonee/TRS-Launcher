@@ -177,20 +177,24 @@ function paintDomes(R: Raster, L: Landscape, line: Int16Array, P: WinterPalette,
   const { w, horizon } = L
   const s = (L.seed & 0xffff) + Math.round(haze * 100)
   const at = (x: number) => line[clamp(x, 0, w - 1)]!
+  let peak = horizon
+  for (let x = 0; x < w; x++) peak = Math.min(peak, at(x))
   for (let x = 0; x < w; x++) {
     const top = at(x)
     if (top >= horizon) continue
-    const height = horizon - top
-    const slope = at(x + 3) + at(x + 1) - at(x - 1) - at(x - 3)
-    const lit = slope > 0 || (slope === 0 && at(x + 6) >= at(x - 6))
-    // Haube: über die halbe Höhe, unten weich gewellt.
-    const cap = Math.round(height * 0.55 + 1.5 * smooth(x / 4, s))
+    const slope = at(x + 2) - at(x - 2)
+    // Licht von rechts oben: die nach rechts abfallenden Flanken sind hell.
+    const lit = slope > 0 || (slope === 0 && at(x + 5) >= at(x - 5))
+    // Schneegrenze nach Höhe (nicht je Spalte), gezackt; darunter Rinnen mit Schnee.
+    const snowline = Math.round(horizon - (horizon - peak) * 0.45 + 2.5 * (smooth(x / 3, s) - 0.5))
+    const gully = smooth(x / 1.7, s + 3) > 0.72
     for (let y = top; y <= horizon + 2 && y < L.h; y++) {
       const depth = y - top
       let c: Rgb
       if (depth === 0) c = lit ? P.snowLit : P.snow
-      else if (depth < cap) c = lit ? P.snow : P.snowShade
-      else if (depth === cap && bayer(x, y) < 0.5) c = lit ? P.snowShade : P.snowDeep
+      else if (y < snowline) c = lit ? P.snow : P.snowShade
+      else if (y === snowline && bayer(x, y) < 0.5) c = lit ? P.snowShade : P.snowDeep
+      else if (gully && y < snowline + (horizon - snowline) * 0.6 && bayer(x, y) < 0.6) c = lit ? P.snowShade : P.snowDeep
       else c = lit ? P.rock : P.rockShade
       // Dunst: zum Fuß hin mehr (Tal im Nebel).
       const mist = banded((y - (horizon - L.mountainAmp * 0.5)) / (L.mountainAmp * 0.5), 2, x, y)

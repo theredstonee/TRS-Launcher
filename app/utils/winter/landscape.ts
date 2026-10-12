@@ -158,18 +158,42 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
  * Seiten weich auslaufend), höchstens `amp` hoch. Breite Glocken halten die
  * Steigung unter einem Texel je Spalte – so bleibt die Silhouette glatt.
  */
-function domes(w: number, amp: number, rand: () => number, spread: number): Float32Array {
+/**
+ * Bergkette wie echte Berge: Gipfel mit ungleich steilen Flanken, Nebengipfeln und
+ * gezackten Graten – aber ohne Nadeln (höchstens ein, zwei Texel Sprung je Spalte).
+ */
+function peaks(w: number, amp: number, rand: () => number, spread: number, seed: number): Float32Array {
   const out = new Float32Array(w)
-  let c = -rand() * amp * 3
-  while (c < w + amp * 4) {
-    const r = Math.max(6, amp * (2.6 + rand() * 2.2) * spread)
-    const top = amp * (0.5 + rand() * 0.5)
-    for (let x = Math.max(0, Math.floor(c - r)); x < Math.min(w, Math.ceil(c + r)); x++) {
-      const v = top * (0.5 + 0.5 * Math.cos((Math.PI * (x - c)) / r))
+  let c = -rand() * amp * 2
+  while (c < w + amp * 3) {
+    const top = amp * (0.55 + rand() * 0.45)
+    // Flanken: eine steiler, eine flacher – Steigung bleibt unter etwa 0,9 Texel je Spalte.
+    const left = Math.max(5, top * (1.2 + rand() * 0.9) * spread)
+    const right = Math.max(5, top * (1.2 + rand() * 0.9) * spread)
+    // Nebengipfel auf einer Flanke.
+    const sub = rand() < 0.7 ? { at: (rand() < 0.5 ? -1 : 1) * (0.35 + rand() * 0.25), h: 0.55 + rand() * 0.25 } : null
+    for (let x = Math.max(0, Math.floor(c - left)); x < Math.min(w, Math.ceil(c + right)); x++) {
+      const dx = x - c
+      const r = dx < 0 ? left : right
+      const u = Math.abs(dx) / r
+      // Leicht hohle Flanken wie bei Bergen, dazu grober und feiner Grat.
+      let v = top * Math.pow(1 - u, 1.12)
+      if (sub) {
+        const su = Math.abs(dx / r - sub.at) / 0.22
+        if (su < 1 && Math.sign(dx) === Math.sign(sub.at)) v = Math.max(v, top * sub.h * (1 - su))
+      }
+      const ridge = (smooth(x / 3.5, seed) - 0.5) * 0.09 + (smooth(x / 1.4, seed + 7) - 0.5) * 0.035
+      v += top * ridge * (1 - u * 0.6)
       if (v > out[x]!) out[x] = v
     }
-    c += r * (0.8 + rand() * 0.6)
+    c += (left + right) * (0.45 + rand() * 0.35)
   }
+  // Nadeln glätten: Sprung je Spalte begrenzen.
+  for (let pass = 0; pass < 2; pass++)
+    for (let x = 1; x < w; x++) {
+      if (out[x]! > out[x - 1]! + 1.6) out[x] = out[x - 1]! + 1.6
+      if (out[x - 1]! > out[x]! + 1.6) out[x - 1] = out[x]! + 1.6
+    }
   return out
 }
 
@@ -189,8 +213,8 @@ export function buildLandscape(o: LandscapeOptions): Landscape {
   const forestBase = horizon + Math.max(2, Math.round(h * 0.012))
   const hillBase = forestBase + Math.max(3, Math.round(h * 0.03))
 
-  const back = domes(w, mountainAmp, rand, 1.25)
-  const front = domes(w, mountainAmp * 0.62, rand, 1)
+  const back = peaks(w, mountainAmp, rand, 1.25, seed & 0xffff)
+  const front = peaks(w, mountainAmp * 0.62, rand, 1, (seed & 0xffff) + 13)
   const mountainsBack = new Int16Array(w)
   const mountains = new Int16Array(w)
   const forest = new Int16Array(w)
