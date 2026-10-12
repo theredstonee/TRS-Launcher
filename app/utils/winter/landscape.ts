@@ -67,6 +67,12 @@ export interface LandscapeOptions {
   anchorRow?: number
   /** Texel-Spalte, an der die Laternenreihe endet (linker Rand des Knopfs). */
   anchorEnd?: number
+  /** Hütte zeigen (Standard: wenn Platz ist); alse = nie. */
+  cabin?: boolean
+  /** Waagrechte Lage von Mond/Sonne, 0…1 (Standard rechts). */
+  moonX?: number
+  /** Hütte waagrecht, 0…1 (Standard rechts der Mitte). */
+  cabinX?: number
 }
 
 export const CABIN_W = 22
@@ -123,8 +129,10 @@ export function buildLandscape(o: LandscapeOptions): Landscape {
 
   // Hütte auf dem Hügel, rechts der Mitte (auf der Startseite vor dem Knopf).
   let cabin: Landscape['cabin'] = null
-  if (w >= 120 && h >= 50) {
-    const cx = Math.round(anchored ? Math.min(w - CABIN_W - 6, Math.max(anchorEnd + 18, w * 0.7)) : w * 0.64)
+  if (o.cabin !== false && w >= 100 && h >= 44) {
+    const cx = Math.round(
+      anchored ? Math.min(w - CABIN_W - 6, Math.max(anchorEnd + 18, w * 0.7)) : clamp(w * (o.cabinX ?? 0.64), 4, w - CABIN_W - 4),
+    )
     let top = h
     for (let x = cx; x < cx + CABIN_W; x++) top = Math.min(top, hills[x] ?? top)
     // Boden unter der Hütte einebnen.
@@ -169,7 +177,7 @@ export function buildLandscape(o: LandscapeOptions): Landscape {
 
   // Mond oben rechts, Sterne mehr nach oben hin.
   const r = Math.round(clamp(Math.min(w, h) * 0.035, 5, 10))
-  const moon = { x: Math.round(w * (anchored ? 0.84 : 0.8)), y: Math.round(clamp(h * 0.17, r + 3, horizon - mountainAmp - r)), r }
+  const moon = { x: Math.round(w * (o.moonX ?? (anchored ? 0.84 : 0.8))), y: Math.round(clamp(h * 0.17, r + 3, horizon - mountainAmp - r)), r }
   const stars: Star[] = []
   const skyBottom = horizon - Math.round(mountainAmp * 0.4)
   const count = Math.round((w * skyBottom) / 260)

@@ -92,6 +92,38 @@ const style = computed(() => ({ '--accent': props.accent && /^#[0-9a-f]{6}$/i.te
 .ub-wire-bottom {
   bottom: 8px;
 }
+/*
+ * Design „Winternacht“ (nur im Launcher, `data-design` auf <html>): Nachtblau und
+ * Frostlinien mit Eiskristallen statt der Redstone-Leitung. Motiv und Schrift bleiben.
+ */
+:root[data-design="winter"] .update-banner {
+  background-color: #0d1424;
+  background-image: var(--winter-tile, var(--deepslate));
+}
+:root[data-design="winter"] .ub-glow {
+  background:
+    radial-gradient(60% 90% at 78% 50%, color-mix(in srgb, var(--accent) 38%, transparent), transparent 70%),
+    linear-gradient(90deg, rgb(8 13 25 / 0.92) 0%, rgb(8 13 25 / 0.55) 45%, rgb(8 13 25 / 0.1) 75%);
+}
+:root[data-design="winter"] .ub-wire {
+  background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='22' height='6' shape-rendering='crispEdges'><path d='M0 2h22v2H0z' fill='%233f8fc4'/><path d='M0 2h22v1H0z' fill='%23b8e7ff'/><path d='M10 0h2v1h-2zM9 1h4v1H9zM8 2h6v2H8zM9 4h4v1H9zM10 5h2v1h-2z' fill='%23dff4ff'/><path d='M10 2h2v2h-2z' fill='%23fff'/></svg>") 0 50% / 22px 6px repeat-x;
+  filter: drop-shadow(0 0 5px rgb(127 211 255 / 0.7));
+}
+:root[data-design="winter"] .ub-wire::before,
+:root[data-design="winter"] .ub-wire::after {
+  top: -2px;
+  rotate: 45deg;
+  background: #eaf6ff;
+  box-shadow:
+    inset 0 0 0 2px #7fd3ff,
+    0 0 10px #7fd3ff;
+}
+:root[data-design="winter"] .ub-wire::after {
+  background: color-mix(in srgb, var(--accent) 55%, #eaf6ff);
+  box-shadow:
+    inset 0 0 0 2px var(--accent),
+    0 0 12px var(--accent);
+}
 .ub-motif {
   position: absolute;
   right: 4%;

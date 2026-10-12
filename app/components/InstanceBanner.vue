@@ -22,12 +22,13 @@ watch(banner, () => (failed.value = false))
 
 // Das Motiv folgt Theme und Akzent; erzeugt wird es erst im Browser.
 const settings = useSettingsStore()
+const design = useDesign()
 const generated = ref<string | null>(null)
 function regenerate() {
   generated.value = banner.value && !failed.value ? null : generatedBanner(props.instance.id)
 }
 onMounted(regenerate)
-watch([banner, failed, () => props.instance.id, () => settings.current?.ui.theme, () => settings.current?.ui.accent], () =>
+watch([banner, failed, () => props.instance.id, () => settings.current?.ui.theme, () => settings.current?.ui.accent, design], () =>
   nextTick(regenerate),
 )
 </script>

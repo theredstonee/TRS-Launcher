@@ -12,7 +12,6 @@ const games = useGamesStore()
 const settings = useSettingsStore()
 const ui = useUiStore()
 const events = useEventsStore()
-const design = useDesign()
 
 const addingServer = ref(false)
 const ready = ref(false)
@@ -111,12 +110,9 @@ function play(instance: Instance) {
       :aria-label="featured ? t('home.lastPlayed', { name: featured.name }) : t('nav.home')"
     >
       <HalloweenScene v-if="events.halloween" />
-      <WinterScene v-else-if="design === 'winter'" :mode="sceneMode" :progress="sceneProgress" :anchor="lamp">
+      <DesignScene v-else :mode="sceneMode" :progress="sceneProgress" :anchor="lamp">
         <div class="scrim" />
-      </WinterScene>
-      <RedstoneScene v-else :mode="sceneMode" :progress="sceneProgress" :anchor="lamp">
-        <div class="scrim" />
-      </RedstoneScene>
+      </DesignScene>
       <div v-if="events.halloween" class="scrim" />
 
       <div class="relative flex h-full flex-col justify-between gap-6 px-8 pt-7 pb-8 mobile:gap-5 mobile:px-4 mobile:pt-5 mobile:pb-6">
@@ -351,6 +347,12 @@ function play(instance: Instance) {
     linear-gradient(90deg, color-mix(in srgb, var(--color-base-950) 86%, transparent) 0%, color-mix(in srgb, var(--color-base-950) 58%, transparent) 30%, color-mix(in srgb, var(--color-base-950) 14%, transparent) 62%, transparent 85%),
     linear-gradient(0deg, var(--color-base-950) 0%, color-mix(in srgb, var(--color-base-950) 45%, transparent) 26%, transparent 55%),
     radial-gradient(140% 120% at 70% 40%, transparent 55%, color-mix(in srgb, var(--color-base-950) 70%, transparent) 100%);
+}
+/* Winternacht, heller Wintertag: weicherer Schleier, damit Berge und Wald sichtbar bleiben. */
+:root[data-design="winter"][data-theme="light"]:not([data-event="halloween"]) .scrim {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--color-base-950) 72%, transparent) 0%, color-mix(in srgb, var(--color-base-950) 38%, transparent) 30%, transparent 58%),
+    linear-gradient(0deg, var(--color-base-950) 0%, color-mix(in srgb, var(--color-base-950) 30%, transparent) 22%, transparent 45%);
 }
 .hero-title {
   text-shadow: 0 2px 0 color-mix(in srgb, var(--color-base-950) 80%, transparent);

@@ -28,6 +28,24 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **New design: Winter Night.** Settings → Appearance now has a "Design" choice with two looks: the familiar Redstone and the new Winter Night. You can switch at any time, all year round.
+- **A living winter landscape.** In Winter Night the circuit behind the pages and on the start page becomes a snowy pixel landscape: mountains, pine forests, a small cabin with a warm window and smoke from the chimney, the moon and stars, gentle snowfall and – every now and then – northern lights. With the light color theme it turns into a bright winter day with sun and clouds.
+- **Ice lanterns on the start page.** A row of ice lanterns leads to the play button. When you start a game they light up one after another, and while you play the northern lights shine.
+- **Frost everywhere.** In Winter Night, progress bars become ice bars that freeze over, the play button becomes an ice lantern, instance pictures show little winter scenes, and loading placeholders, menus and page changes get a frosty shimmer. Everything that shows a running game glows ice blue instead of amber.
+- **New accent color "Ice".** Ice blue can be picked with any design. If you choose Winter Night while the redstone color is set, the launcher switches to Ice for you – you can change it back.
+- The color theme still works with both designs: dark, OLED (almost black night) and light.
+
+### Deutsch
+- **Neues Design: Winternacht.** Unter Einstellungen → Aussehen gibt es jetzt „Design“ mit zwei Looks: das gewohnte Redstone und die neue Winternacht. Umschalten geht jederzeit, das ganze Jahr über.
+- **Eine lebendige Winterlandschaft.** In der Winternacht wird aus der Schaltung hinter den Seiten und auf der Startseite eine verschneite Pixel-Landschaft: Berge, Tannenwälder, eine kleine Hütte mit warmem Fenster und Rauch aus dem Schornstein, Mond und Sterne, leiser Schneefall und – ab und zu – Polarlicht. Mit dem hellen Farbschema wird daraus ein heller Wintertag mit Sonne und Wolken.
+- **Eislaternen auf der Startseite.** Eine Reihe Eislaternen führt zum Spielen-Knopf. Beim Spielstart gehen sie nacheinander an, und während du spielst, leuchtet das Polarlicht.
+- **Überall Frost.** In der Winternacht werden Fortschrittsbalken zu Eisbalken, die zufrieren, der Spielen-Knopf wird zur Eislaterne, Instanzbilder zeigen kleine Winterszenen, und Ladeplatzhalter, Menüs und Seitenwechsel bekommen einen frostigen Schimmer. Alles, was ein laufendes Spiel zeigt, leuchtet eisblau statt bernsteinfarben.
+- **Neue Akzentfarbe „Eis“.** Eisblau lässt sich mit jedem Design wählen. Wählst du die Winternacht, während die Redstone-Farbe eingestellt ist, stellt der Launcher auf Eis um – du kannst es wieder ändern.
+- Das Farbschema gilt weiter in beiden Designs: Dunkel, OLED (fast schwarze Nacht) und Hell.
+
 ## 0.19.1 – 2026-10-12 – Smooth Moves Fix | Flüssige Bewegung – Fix
 <!-- banner: accent=#ff4d3a motif=/news/0.19.0/banner.png -->
 <!-- shots:

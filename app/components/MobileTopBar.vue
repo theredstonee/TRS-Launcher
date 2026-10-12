@@ -5,6 +5,8 @@ const route = useRoute()
 const router = useRouter()
 const ui = useUiStore()
 const accounts = useAccountsStore()
+const events = useEventsStore()
+const design = useDesign()
 
 const isRoot = computed(() => (MOBILE_TAB_ROOTS as readonly string[]).includes(route.path))
 
@@ -22,6 +24,7 @@ function back() {
       </button>
       <NuxtLink v-else to="/" class="flex h-11 items-center gap-2 px-2 text-base-200" :aria-label="t('nav.home')">
         <img src="/icon.png" alt="" class="pointer-events-none size-5 [image-rendering:pixelated]" />
+        <PixelSnowflake v-if="design === 'winter' && !events.halloween" />
         <span class="display text-[15px] leading-none">TRS Launcher</span>
       </NuxtLink>
 
@@ -59,5 +62,15 @@ header::after {
   background: linear-gradient(90deg, var(--color-redstone-500), transparent);
   opacity: 0.7;
   pointer-events: none;
+}
+/* Winternacht: Frostlinie mit Eiskristallen. */
+:root[data-design="winter"]:not([data-event="halloween"]) header::after {
+  height: 2px;
+  background:
+    repeating-linear-gradient(90deg, #fff 0 2px, transparent 2px 14px),
+    linear-gradient(90deg, var(--color-redstone-400), color-mix(in srgb, var(--color-redstone-300) 50%, transparent) 50%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, #000 40%, transparent);
+  mask-image: linear-gradient(90deg, #000 40%, transparent);
+  opacity: 0.75;
 }
 </style>

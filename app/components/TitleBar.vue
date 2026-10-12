@@ -13,6 +13,7 @@ const openDocs = useDocs()
 const bigPicture = useBigPictureStore()
 const maximized = ref(false)
 const events = useEventsStore()
+const design = useDesign()
 
 let stop: (() => void) | undefined
 onMounted(async () => {
@@ -59,6 +60,7 @@ async function toggleMaximize() {
         <rect x="8" y="6" width="1" height="1" fill="#2a1008" />
         <rect x="5" y="8" width="2" height="1" fill="#2a1008" />
       </svg>
+      <PixelSnowflake v-else-if="design === 'winter'" />
       <span data-tauri-drag-region class="display text-[13px] leading-none">TRS Launcher</span>
     </div>
 
@@ -147,6 +149,17 @@ async function toggleMaximize() {
   background: linear-gradient(90deg, var(--color-redstone-500), transparent);
   opacity: 0.7;
   pointer-events: none;
+}
+/* Winternacht: eine Frostlinie mit kleinen Eiskristallen statt der Leitung. */
+:root[data-design="winter"]:not([data-event="halloween"]) .titlebar::after {
+  height: 2px;
+  bottom: -1px;
+  background:
+    repeating-linear-gradient(90deg, #fff 0 2px, transparent 2px 14px),
+    linear-gradient(90deg, var(--color-redstone-400), color-mix(in srgb, var(--color-redstone-300) 50%, transparent) 50%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, #000 40%, transparent);
+  mask-image: linear-gradient(90deg, #000 40%, transparent);
+  opacity: 0.75;
 }
 .ctl {
   @apply flex h-full w-11 items-center justify-center text-base-400 transition-colors hover:bg-base-700 hover:text-base-50;

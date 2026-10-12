@@ -17,7 +17,7 @@ withDefaults(
 <template>
   <div class="card relative flex flex-col items-center overflow-hidden px-6 text-center" :class="compact ? 'pb-8' : 'pb-12'">
     <div class="empty-scene relative w-full" :class="compact ? 'h-20' : 'h-32'">
-      <RedstoneScene fill :seed="seed" />
+      <DesignScene fill :seed="seed" />
     </div>
     <h2 class="heading relative mt-4 text-lg">{{ title }}</h2>
     <p v-if="text" class="relative mx-auto mt-1.5 max-w-md text-sm text-base-400">{{ text }}</p>

@@ -2,7 +2,7 @@ import { css, mix, parseHex, type Rgb } from '../redstone/palette'
 
 // Farben der Winterlandschaft. Die Landschaft selbst hat feste, abgestimmte
 // Töne je Farbschema (Nacht, OLED-Nacht, heller Wintertag) – nur Polarlicht und
-// Eislaternen folgen der Akzentfarbe, das Hüttenfenster dem Lampen-Bernstein.
+// Eislaternen folgen der Akzentfarbe, das Hüttenfenster bleibt warm.
 
 export type WinterVariant = 'dark' | 'oled' | 'light'
 
@@ -58,8 +58,6 @@ const FALLBACK: Record<string, string> = {
   '--color-redstone-300': '#b8e7ff',
   '--color-redstone-400': '#7fd3ff',
   '--color-redstone-500': '#2b97d6',
-  '--color-lamp-300': '#ffd48a',
-  '--color-lamp-400': '#ffb84d',
 }
 
 const hex = (h: string): Rgb => parseHex(h)!
@@ -141,8 +139,9 @@ export function buildWinterPalette(read: (name: string) => string, variant: Wint
   const a300 = v('--color-redstone-300')
   const a400 = v('--color-redstone-400')
   const a500 = v('--color-redstone-500')
-  const l300 = v('--color-lamp-300')
-  const l400 = v('--color-lamp-400')
+  // Feuerschein bleibt warm – im Winter-Design sind die Lampen-Variablen eisblau.
+  const l300 = hex('#ffd48a')
+  const l400 = hex('#ffb84d')
   const b = base(variant)
   const light = variant === 'light'
   // Im hellen Theme ist `redstone-300` dunkler Text – fürs Licht die helle Stufe nehmen.

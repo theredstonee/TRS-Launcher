@@ -81,7 +81,7 @@ export function paintSky(L: Landscape, P: WinterPalette): Raster {
 
   // Hof um Mond/Sonne: zwei gerasterte Ringe.
   const { x: mx, y: my, r } = L.moon
-  const reach = r * (light ? 4.2 : 3.2)
+  const reach = Math.round(r * (light ? 4.2 : 3.2))
   for (let y = Math.max(0, my - reach); y < Math.min(L.h, my + reach); y++) {
     for (let x = Math.max(0, mx - reach); x < Math.min(L.w, mx + reach); x++) {
       const d = Math.hypot(x - mx, y - my)

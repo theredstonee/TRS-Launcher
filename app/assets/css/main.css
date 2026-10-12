@@ -181,7 +181,12 @@
   --color-base-400: #889bc2;
   --color-base-200: #c6d5ee;
   --color-base-50: #eaf4ff;
-  --deepslate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'><path d='M0 15h16v1H0zM15 0h1v15h-1z' fill='%23bfe3ff' fill-opacity='.035'/><path d='M0 0h15v1H0zM0 1h1v14H0z' fill='%23fff' fill-opacity='.022'/><path d='M3 3h1v1H3zM11 5h1v1h-1zM6 10h1v1H6zM13 12h1v1h-1zM8 7h1v1H8z' fill='%23fff' fill-opacity='.07'/><path d='M4 12h1v1H4zM10 2h1v1h-1zM12 9h1v1h-1zM2 7h1v1H2z' fill='%23bfe3ff' fill-opacity='.05'/><path d='M9 12h1v1H9zM8 13h3v1H8zM9 14h1v1H9z' fill='%23fff' fill-opacity='.03'/></svg>");
+  /* Was sonst Lampen-Bernstein ist (Spiel läuft, Leitung unter Strom), ist hier Eis. */
+  --color-lamp-300: #c9eeff;
+  --color-lamp-400: #8fdcff;
+  --color-lamp-900: #0c2638;
+  --winter-tile: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'><path d='M0 15h16v1H0zM15 0h1v15h-1z' fill='%23bfe3ff' fill-opacity='.035'/><path d='M0 0h15v1H0zM0 1h1v14H0z' fill='%23fff' fill-opacity='.022'/><path d='M3 3h1v1H3zM11 5h1v1h-1zM6 10h1v1H6zM13 12h1v1h-1zM8 7h1v1H8z' fill='%23fff' fill-opacity='.07'/><path d='M4 12h1v1H4zM10 2h1v1h-1zM12 9h1v1h-1zM2 7h1v1H2z' fill='%23bfe3ff' fill-opacity='.05'/><path d='M9 12h1v1H9zM8 13h3v1H8zM9 14h1v1H9z' fill='%23fff' fill-opacity='.03'/></svg>");
+  --deepslate: var(--winter-tile);
 }
 :root[data-design="winter"][data-theme="oled"] {
   --color-base-950: #000000;
@@ -201,6 +206,8 @@
   --color-base-400: #55698b;
   --color-base-200: #26344d;
   --color-base-50: #0b1426;
+  --color-lamp-300: #136a9f;
+  --color-lamp-900: #dcf1fc;
   --deepslate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'><path d='M0 15h16v1H0zM15 0h1v15h-1z' fill='%23527aa8' fill-opacity='.05'/><path d='M0 0h15v1H0zM0 1h1v14H0z' fill='%23fff' fill-opacity='.32'/><path d='M3 3h1v1H3zM11 5h1v1h-1zM6 10h1v1H6zM13 12h1v1h-1zM8 7h1v1H8z' fill='%23fff' fill-opacity='.6'/><path d='M4 12h1v1H4zM10 2h1v1h-1zM12 9h1v1h-1zM2 7h1v1H2z' fill='%23527aa8' fill-opacity='.06'/></svg>");
 }
 
@@ -216,6 +223,10 @@
   --color-redstone-400: #ff9340;
   --color-redstone-500: #ff7a1a;
   --color-redstone-600: #c95a0a;
+  /* Auch im Design Winternacht: Bernstein für „läuft“. */
+  --color-lamp-300: #ffd48a;
+  --color-lamp-400: #ffb84d;
+  --color-lamp-900: #3d2a0c;
 }
 :root[data-event="halloween"]:not([data-theme="light"]) {
   --color-base-950: #120a1c;
@@ -233,6 +244,8 @@
 :root[data-event="halloween"][data-theme="light"] {
   --color-redstone-300: #b34a00;
   --color-redstone-900: #ffe9d6;
+  --color-lamp-300: #9a5a00;
+  --color-lamp-900: #fdf0d8;
 }
 
 /* „Erweitertes Rendering“ aus: keine Unschärfe-Effekte. */
@@ -633,6 +646,99 @@ textarea {
   box-shadow: 0 0 8px var(--color-redstone-500);
   animation: signal-run 0.7s steps(18) 1 forwards;
 }
+
+/* --- Winternacht: Frost statt Redstone-Signal --------------------------------------- */
+/* Ladeplatzhalter: ein kalter Glanz zieht schräg über die Platte, unten eine Reifkante. */
+:root[data-design="winter"]:not([data-event="halloween"]) .skeleton {
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--color-redstone-300) 22%, transparent);
+}
+:root[data-design="winter"]:not([data-event="halloween"]) .skeleton::after {
+  inset: 0;
+  width: 60%;
+  height: auto;
+  background: linear-gradient(
+    105deg,
+    transparent 15%,
+    color-mix(in srgb, var(--color-redstone-300) 10%, transparent) 40%,
+    color-mix(in srgb, #fff 16%, transparent) 50%,
+    color-mix(in srgb, var(--color-redstone-300) 10%, transparent) 60%,
+    transparent 85%
+  );
+  box-shadow: none;
+  animation: frost-sweep 2.2s ease-in-out infinite;
+}
+/* Karten: beim Drüberfahren legt sich Reif von den Ecken her auf den Rand. */
+:root[data-design="winter"]:not([data-event="halloween"]) .card-hover::before {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, #fff 75%, var(--color-redstone-300)) 0, transparent 22%) top left / 100% 100% no-repeat,
+    linear-gradient(315deg, color-mix(in srgb, var(--color-redstone-300) 80%, transparent) 0, transparent 26%) bottom right / 100% 100% no-repeat,
+    linear-gradient(90deg, color-mix(in srgb, var(--color-redstone-400) 35%, transparent), color-mix(in srgb, #fff 30%, transparent), color-mix(in srgb, var(--color-redstone-400) 35%, transparent)) 0 0 / 200% 100%;
+}
+:root[data-design="winter"]:not([data-event="halloween"]) .card-hover:hover::before {
+  animation: frost-glint 3s linear infinite;
+}
+/* Menüs frieren beim Öffnen kurz an: heller Reif, der gleich wieder klar wird. */
+:root[data-design="winter"]:not([data-event="halloween"]) .menu {
+  animation: frost-on 0.4s ease-out;
+}
+/* Seitenwechsel: ein Frostschimmer statt des Redstone-Impulses. */
+:root[data-design="winter"]:not([data-event="halloween"]) .route-signal::after {
+  width: 40%;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-redstone-400) 70%, transparent), #fff, color-mix(in srgb, var(--color-redstone-300) 80%, transparent), transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-redstone-400) 80%, transparent);
+  animation: frost-run 0.8s cubic-bezier(0.3, 0.6, 0.4, 1) 1 forwards;
+}
+@keyframes frost-sweep {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(190%);
+  }
+}
+@keyframes frost-glint {
+  from {
+    background-position: 0 0, 0 0, 0 0;
+  }
+  to {
+    background-position: 0 0, 0 0, -200% 0;
+  }
+}
+@keyframes frost-run {
+  from {
+    transform: translateX(-100%);
+    opacity: 0.4;
+  }
+  40% {
+    opacity: 1;
+  }
+  to {
+    transform: translateX(260%);
+    opacity: 0;
+  }
+}
+@keyframes frost-on {
+  0% {
+    opacity: 0;
+    transform: translateY(-3px);
+    filter: brightness(1.35) saturate(0.6) drop-shadow(0 0 0 transparent);
+  }
+  45% {
+    opacity: 1;
+    filter: brightness(1.12) saturate(0.85) drop-shadow(0 0 10px color-mix(in srgb, var(--color-redstone-300) 55%, transparent));
+  }
+  100% {
+    transform: none;
+    filter: none;
+  }
+}
+:root[data-reduced-motion][data-design="winter"] .skeleton::after,
+:root[data-reduced-motion][data-design="winter"] .route-signal::after,
+:root[data-reduced-motion][data-design="winter"] .card-hover:hover::before,
+:root[data-reduced-motion][data-design="winter"] .menu {
+  animation: none;
+}
+
 :root[data-reduced-motion] .skeleton::after,
 :root[data-reduced-motion] .route-signal::after,
 :root[data-reduced-motion] .card-hover:hover::before,

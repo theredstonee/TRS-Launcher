@@ -18,8 +18,6 @@ const curseforge = useCurseForgeStore()
 const router = useRouter()
 // Event-Theme (Halloween) früh anwenden, auch bevor eine Seite den Store anfasst.
 const events = useEventsStore()
-// Design „Winternacht“ tauscht die Hintergrund-Szene.
-const design = useDesign()
 
 const bigPicture = useBigPictureStore()
 
@@ -211,8 +209,7 @@ onBeforeUnmount(() => void backListener?.unregister())
         <!-- Redstone-Schaltung hinter allen Seiten (die Startseite hat ihre eigene im Kopfbereich). -->
         <div class="relative flex min-w-0 flex-1 flex-col">
           <div v-if="appBackground" class="app-bg" aria-hidden="true">
-            <WinterScene v-if="design === 'winter'" fill />
-            <RedstoneScene v-else fill />
+            <DesignScene fill />
           </div>
         <!-- Seitenwechsel: ein kurzer Redstone-Impuls läuft oben entlang. -->
         <div :key="route.path" class="route-signal" aria-hidden="true" />

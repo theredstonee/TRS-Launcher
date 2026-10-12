@@ -9,7 +9,7 @@ const animated = computed(() => settings.current?.ui.animatedBackground !== fals
 <template>
   <div class="big-root relative h-full min-h-0 flex-1 overflow-hidden bg-base-950">
     <div v-if="animated" class="big-scene" aria-hidden="true">
-      <RedstoneScene fill />
+      <DesignScene fill />
     </div>
     <div class="big-shade" aria-hidden="true" />
     <slot />

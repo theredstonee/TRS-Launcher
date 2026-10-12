@@ -279,6 +279,35 @@ button.lamp:active {
   filter: drop-shadow(0 0 22px color-mix(in srgb, var(--color-lamp-400) 70%, transparent));
 }
 
+/*
+ * Winternacht: aus der Redstone-Lampe wird eine Eislaterne. Gefrorenes Glas mit
+ * Rissen, Reif in den Ecken; beim Start kriecht der Frost vom Rand nach innen,
+ * läuft das Spiel, leuchtet sie eisblau (die Lampen-Farben sind dort Eis).
+ */
+:root[data-design="winter"]:not([data-event="halloween"]) .lamp-glass {
+  background:
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'><path d='M0 0h8v1H0zM0 1h6v1H0zM0 2h4v1H0zM0 3h3v1H0zM0 4h2v2H0zM0 6h1v2H0zM9 0h1v1H9zM5 2h1v1H5zM2 5h1v1H2z' fill='%23fff' fill-opacity='.5'/></svg>") top left / 24px 24px no-repeat,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'><g transform='rotate(180 6 6)'><path d='M0 0h8v1H0zM0 1h6v1H0zM0 2h4v1H0zM0 3h3v1H0zM0 4h2v2H0zM0 6h1v2H0zM9 0h1v1H9zM5 2h1v1H5zM2 5h1v1H2z' fill='%23fff' fill-opacity='.5'/></g></svg>") bottom right / 24px 24px no-repeat,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='56' height='20' shape-rendering='crispEdges'><path d='M6 17h1v1H6zM7 16h1v1H7zM8 15h1v1H8zM9 14h2v1H9zM11 13h1v1h-1zM12 12h1v1h-1zM13 11h1v1h-1zM10 15h1v2h-1zM14 10h2v1h-2zM34 3h1v1h-1zM35 4h1v1h-1zM36 5h2v1h-2zM38 6h1v1h-1zM39 7h1v1h-1zM37 6h1v2h-1zM40 8h1v1h-1z' fill='%23fff' fill-opacity='.3'/><path d='M24 15h1v1h-1zM49 13h1v1h-1zM2 5h1v1H2zM45 2h1v1h-1z' fill='%23fff' fill-opacity='.7'/></svg>") 0 0 / 112px 40px;
+  opacity: 0.6;
+}
+:root[data-design="winter"]:not([data-event="halloween"]) .lamp-light {
+  background: radial-gradient(90% 140% at 50% 50%, #fff, var(--color-lamp-300) 30%, var(--color-lamp-400) 70%, color-mix(in srgb, var(--color-lamp-400) 70%, var(--color-redstone-600)));
+}
+:root[data-design="winter"]:not([data-event="halloween"]) .lamp-preparing .lamp-glass {
+  opacity: 0.85;
+  box-shadow: inset 0 0 calc(4px + var(--charge) * 26px) color-mix(in srgb, #fff 55%, transparent);
+}
+:root[data-design="winter"]:not([data-event="halloween"]) .lamp-running .lamp {
+  color: #06263b;
+  box-shadow:
+    inset 0 0 0 3px var(--color-lamp-300),
+    inset 0 0 0 5px color-mix(in srgb, var(--color-lamp-400) 60%, #0b3a5c);
+}
+:root[data-design="winter"]:not([data-event="halloween"]) .lamp-running .lamp-glass {
+  opacity: 0.9;
+}
+
 @keyframes flicker {
   0%,
   100% {

@@ -3,6 +3,7 @@ import { accentForDesign, applyDesign, DESIGN_STORAGE_KEY, designs, normalizeDes
 import { uiSettingsSchema } from '../app/utils/schemas'
 import { rng } from '../app/utils/redstone/scene'
 import { AURORA_PERIOD, auroraEnvelope, buildLandscape, CABIN_W } from '../app/utils/winter/landscape'
+import { paintSky } from '../app/utils/winter/paint'
 import { buildWinterPalette } from '../app/utils/winter/palette'
 import { Smoke, Snowfall } from '../app/utils/winter/snow'
 
@@ -107,6 +108,16 @@ describe('Winterlandschaft', () => {
     expect(l.cabin!.x + CABIN_W).toBeLessThanOrEqual(l.w)
   })
 
+  it('Banner-Varianten: Hütte abschaltbar, Mond und Hütte verschiebbar', () => {
+    const without = buildLandscape({ cols: 128, rows: 48, seed: 9, cabin: false, moonX: 0.2 })
+    expect(without.cabin).toBeNull()
+    expect(without.moon.x).toBe(Math.round(128 * 0.2))
+    const left = buildLandscape({ cols: 128, rows: 48, seed: 9, cabinX: 0 })
+    expect(left.cabin!.x).toBeGreaterThanOrEqual(4)
+    const right = buildLandscape({ cols: 128, rows: 48, seed: 9, cabinX: 1 })
+    expect(right.cabin!.x + CABIN_W).toBeLessThanOrEqual(128 - 4)
+  })
+
   it('kommt mit winzigen Flächen zurecht', () => {
     const l = buildLandscape({ cols: 3, rows: 2, seed: 1 })
     expect(l.w).toBeGreaterThanOrEqual(8)
@@ -154,6 +165,29 @@ describe('Schnee und Rauch', () => {
     for (const p of smoke.puffs) expect(p.y).toBeLessThanOrEqual(50)
     for (let t = 400; t < 600; t++) smoke.step(null, t)
     expect(smoke.puffs).toEqual([])
+  })
+})
+
+describe('Himmel malen', () => {
+  it('Hof um Mond und Sonne hat keine schwarzen Löcher', () => {
+    for (const variant of ['dark', 'light'] as const) {
+      for (const [cols, rows] of [[404, 255], [333, 117], [128, 48]] as const) {
+        const land = buildLandscape({ cols, rows, seed: 3 })
+        const sky = paintSky(land, buildWinterPalette(() => '', variant))
+        const { x, y, r } = land.moon
+        for (let dy = -r * 5; dy <= r * 5; dy++) {
+          for (let dx = -r * 5; dx <= r * 5; dx++) {
+            const px = x + dx
+            const py = y + dy
+            if (px < 0 || py < 0 || px >= land.w || py >= land.h) continue
+            const i = (py * land.w + px) * 4
+            const d = sky.data
+            expect(d[i + 3]).toBe(255)
+            expect(d[i]! + d[i + 1]! + d[i + 2]!, `${variant} ${cols}x${rows} @${px},${py}`).toBeGreaterThan(0)
+          }
+        }
+      }
+    }
   })
 })
 
