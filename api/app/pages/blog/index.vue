@@ -80,7 +80,7 @@ useHead({ link: [{ rel: 'preconnect', href: 'https://raw.githubusercontent.com' 
         <BlogCard v-if="visible[0]!.kind === 'update'" :post="visible[0]!.post as BlogPostSummary" featured />
         <NewsCard v-else :post="visible[0]!.post as NewsSummary" featured />
       </div>
-      <div v-if="visible.length > 1" class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div v-if="visible.length > 1" class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" data-fx="stagger">
         <template v-for="i in visible.slice(1)" :key="i.key">
           <BlogCard v-if="i.kind === 'update'" :post="i.post" />
           <NewsCard v-else :post="i.post" />

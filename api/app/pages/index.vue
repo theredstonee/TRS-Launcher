@@ -49,6 +49,20 @@ const primary = computed(() => {
   return { href: lp('/download'), label: m.value.home.downloadGeneric, icon: 'download', external: false }
 })
 
+/** „Ein Blick hinein“: Bildunterschrift + Text des passenden Abschnitts von /features. */
+const LOOK_SECTIONS: Record<string, string> = {
+  'emote-wheel.png': 'emotes',
+  'redstone-overlay.png': 'redstone',
+  'cape-physics.png': 'capes',
+  'zoom.png': 'client',
+}
+const look = computed(() =>
+  m.value.home.shots.flatMap((shot) => {
+    const s = m.value.features.sections.find((x) => x.id === LOOK_SECTIONS[shot.src])
+    return s ? [{ src: shot.src, caption: shot.caption, id: s.id, short: s.short, text: s.text, alt: s.alt || shot.caption }] : []
+  }),
+)
+
 // Die Hauptleitung der Szene endet am Download-Knopf; beim Zeigen darauf leuchtet die Lampe.
 const lamp = shallowRef<HTMLElement | null>(null)
 const powered = ref(false)
@@ -56,7 +70,7 @@ const powered = ref(false)
 
 <template>
   <div>
-    <section class="hero relative isolate overflow-hidden" :class="{ 'hero-on': powered }">
+    <section class="hero relative isolate overflow-hidden" :class="{ 'hero-on': powered }" data-fx-hero>
       <ClientOnly>
         <HalloweenScene v-if="halloween">
           <div class="scrim" />
@@ -66,7 +80,7 @@ const powered = ref(false)
         </RedstoneScene>
       </ClientOnly>
 
-      <div class="relative mx-auto flex h-full max-w-6xl flex-col justify-end gap-8 px-4 pt-16 pb-12 sm:px-6">
+      <div class="relative mx-auto flex h-full max-w-6xl flex-col justify-end gap-8 px-4 pt-16 pb-12 sm:px-6" data-fx-hero-content>
         <NuxtLink v-if="halloween" :to="lp('/cosmetics')" class="hw-banner">{{ m.home.halloweenBanner }}</NuxtLink>
         <!-- Die Zeile darüber gehört zur Überschrift (sichtbar, gleiche Optik wie vorher) – so steht „Minecraft-Launcher“ in der h1. -->
         <h1>
@@ -115,7 +129,7 @@ const powered = ref(false)
 
     <!-- Große Bild-Kacheln: echter Screenshot, kleine Zeile, riesiges Wort -->
     <section class="relative z-10 mx-auto -mt-6 max-w-6xl px-4 sm:px-6" aria-label="Highlights">
-      <ul class="tiles">
+      <ul class="tiles" data-fx="stagger">
         <li v-for="tile in m.home.tiles" :key="tile.title">
           <NuxtLink :to="lp(tile.to)" class="tile">
             <img :src="`/shots/${tile.img}`" alt="" loading="lazy" class="tile-img" />
@@ -131,7 +145,7 @@ const powered = ref(false)
     <!-- Funktionen -->
     <section id="features" class="mx-auto max-w-6xl px-4 pt-16 sm:px-6" aria-labelledby="features-title">
       <h2 id="features-title" class="heading text-3xl">{{ m.home.featuresTitle }}</h2>
-      <ul class="mt-8 grid gap-x-8 gap-y-9 sm:grid-cols-2 lg:grid-cols-4">
+      <ul class="mt-8 grid gap-x-8 gap-y-9 sm:grid-cols-2 lg:grid-cols-4" data-fx="stagger">
         <li v-for="f in m.home.features" :key="f.title" class="feature">
           <span class="feature-icon"><SiteIcon :name="f.icon" class="size-5" /></span>
           <h3 class="mt-4 font-semibold text-base-50">{{ f.title }}</h3>
@@ -141,6 +155,33 @@ const powered = ref(false)
       <NuxtLink :to="lp('/features')" class="btn btn-ghost mt-8">
         {{ m.home.featuresCta }} <SiteIcon name="arrow" class="size-4" />
       </NuxtLink>
+    </section>
+
+    <!-- Ein Blick hinein: untereinander; am Desktop angeheftet, Bilder blenden beim Scrollen ineinander (utils/scroll-fx) -->
+    <section class="mx-auto max-w-6xl px-4 pt-20 sm:px-6" data-fx-showcase aria-labelledby="look-title">
+      <div class="look" data-fx-pin>
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <h2 id="look-title" class="heading text-3xl">{{ m.home.shotsTitle }}</h2>
+          <ol class="look-steps" aria-hidden="true">
+            <li v-for="p in look" :key="p.src" data-fx-step />
+          </ol>
+        </div>
+        <div class="look-panels mt-8" data-fx="stagger">
+          <div v-for="p in look" :key="p.src" class="look-panel" data-fx-panel>
+            <div class="look-text" data-fx-panel-text>
+              <p class="text-xs font-semibold tracking-[0.2em] text-lamp-300 uppercase">{{ p.short }}</p>
+              <h3 class="display mt-3 text-3xl leading-tight text-base-50">{{ p.caption }}</h3>
+              <p class="mt-3 leading-relaxed text-base-300">{{ p.text }}</p>
+              <NuxtLink :to="lp(`/features#${p.id}`)" class="btn btn-ghost mt-6">
+                {{ p.short }} <SiteIcon name="arrow" class="size-4" />
+              </NuxtLink>
+            </div>
+            <figure class="look-shot m-0" data-fx-panel-shot>
+              <img :src="`/shots/${p.src}`" :alt="p.alt" width="854" height="480" loading="lazy" decoding="async" class="size-full object-cover" />
+            </figure>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- Was ist der TRS Launcher? Namensvarianten im Fließtext + Links zu den Themen-Seiten -->
@@ -154,7 +195,7 @@ const powered = ref(false)
     <section class="mx-auto max-w-6xl px-4 pt-20 sm:px-6" aria-labelledby="compare-title">
       <h2 id="compare-title" class="heading text-3xl">{{ m.home.compare.title }}</h2>
       <p class="mt-3 max-w-2xl text-base-400">{{ m.home.compare.lead }}</p>
-      <div class="compare-wrap mt-8">
+      <div class="compare-wrap mt-8" data-fx="rise">
         <table class="compare">
           <thead>
             <tr>
@@ -187,7 +228,7 @@ const powered = ref(false)
 
     <!-- Umhänge -->
     <section v-if="capes.length" class="mx-auto max-w-6xl px-4 pt-20 sm:px-6" aria-labelledby="capes-title">
-      <div class="capes-band card overflow-hidden">
+      <div class="capes-band card overflow-hidden" data-fx="rise">
         <div class="grid items-center gap-6 md:grid-cols-[1fr_20rem]">
           <div class="p-6 sm:p-8">
             <h2 id="capes-title" class="heading text-3xl">{{ m.home.capesTitle }}</h2>
@@ -227,7 +268,7 @@ const powered = ref(false)
         <h2 id="blog-title" class="heading text-3xl">{{ m.home.blogTitle }}</h2>
         <NuxtLink :to="lp('/blog')" class="text-sm text-base-400 hover:text-base-50">{{ m.home.blogCta }}</NuxtLink>
       </div>
-      <div class="mt-8 grid gap-5" :class="{ 'md:grid-cols-2': posts.length === 2, 'md:grid-cols-3': posts.length > 2 }">
+      <div class="mt-8 grid gap-5" :class="{ 'md:grid-cols-2': posts.length === 2, 'md:grid-cols-3': posts.length > 2 }" data-fx="stagger">
         <BlogCard v-for="p in posts" :key="p.version" :post="p" :featured="posts.length === 1" />
       </div>
     </section>
@@ -261,6 +302,10 @@ const powered = ref(false)
     linear-gradient(90deg, color-mix(in srgb, var(--color-base-950) 88%, transparent) 0%, color-mix(in srgb, var(--color-base-950) 60%, transparent) 35%, color-mix(in srgb, var(--color-base-950) 18%, transparent) 70%, transparent 90%),
     linear-gradient(0deg, var(--color-base-950) 0%, color-mix(in srgb, var(--color-base-950) 45%, transparent) 25%, transparent 55%),
     radial-gradient(140% 120% at 70% 40%, transparent 55%, color-mix(in srgb, var(--color-base-950) 70%, transparent) 100%);
+}
+/* Beim Wegscrollen gleiten Szene und Inhalt gemeinsam langsamer mit – die Leitung bleibt am Knopf (utils/scroll-fx). */
+.hero > * {
+  transform: translate3d(0, var(--hero-shift, 0px), 0);
 }
 .hero-title {
   text-shadow: 0 3px 0 color-mix(in srgb, var(--color-base-950) 80%, transparent);
@@ -368,6 +413,69 @@ const powered = ref(false)
   text-transform: uppercase;
   color: var(--color-base-50);
   text-shadow: 0 3px 0 rgb(12 11 14 / 0.7);
+}
+
+/* „Ein Blick hinein“: ohne Skript und am Handy untereinander … */
+.look-panels {
+  display: grid;
+  gap: 3rem;
+}
+.look-panel {
+  display: grid;
+  gap: 1.5rem;
+  align-items: center;
+}
+@media (min-width: 768px) {
+  .look-panel {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: 2.5rem;
+  }
+}
+.look-shot {
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-base-800);
+  background: var(--color-base-900);
+  box-shadow: 0 24px 48px -28px rgb(0 0 0 / 0.8);
+}
+@media (max-width: 767px) {
+  .look-shot {
+    order: -1;
+  }
+}
+.look-steps {
+  display: none;
+  gap: 0.375rem;
+}
+.look-steps li {
+  width: 1.75rem;
+  height: 4px;
+  background: var(--color-redstone-500);
+  box-shadow: 0 0 10px -2px var(--color-redstone-500);
+}
+/* … am Desktop angeheftet: alle Texte in einer Zelle, alle Bilder in der anderen (übereinander). */
+[data-fx-pinned] .look-steps {
+  display: flex;
+}
+[data-fx-pinned] .look-panels {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 3rem;
+  align-items: center;
+}
+[data-fx-pinned] .look-panel {
+  display: contents;
+}
+[data-fx-pinned] .look-text {
+  grid-area: 1 / 1;
+  pointer-events: none;
+}
+[data-fx-pinned] .look-text[data-active] {
+  pointer-events: auto;
+}
+[data-fx-pinned] .look-shot {
+  grid-area: 1 / 2;
+  will-change: opacity, transform;
 }
 
 .compare-wrap {

@@ -83,7 +83,7 @@ useHead({ link: [{ rel: 'preconnect', href: 'https://raw.githubusercontent.com' 
         :class="{ 'has-img': s.shot, flip: s.flip }"
         :aria-labelledby="`${s.id}-title`"
       >
-        <div class="max-w-2xl">
+        <div class="max-w-2xl" data-fx="rise">
           <h2 :id="`${s.id}-title`" class="heading text-3xl">{{ s.title }}</h2>
           <p v-for="(t, i) in s.text" :key="i" class="mt-3 leading-relaxed text-base-300">{{ t }}</p>
           <ul v-if="s.points?.length" class="mt-5 flex flex-col gap-2.5">
@@ -96,7 +96,7 @@ useHead({ link: [{ rel: 'preconnect', href: 'https://raw.githubusercontent.com' 
             {{ s.link.label }} <SiteIcon name="arrow" class="size-4" />
           </NuxtLink>
         </div>
-        <figure v-if="s.shot" class="m-0">
+        <figure v-if="s.shot" class="m-0" data-fx="rise">
           <div class="shot">
             <img
               :src="shotUrl(s.shot.file)"
@@ -115,7 +115,7 @@ useHead({ link: [{ rel: 'preconnect', href: 'https://raw.githubusercontent.com' 
 
     <section id="faq" class="mt-20 max-w-3xl scroll-mt-24" aria-labelledby="faq-title">
       <h2 id="faq-title" class="heading text-3xl">{{ L.common.faqTitle }}</h2>
-      <div class="mt-6 divide-y divide-base-800 border-y border-base-800">
+      <div class="mt-6 divide-y divide-base-800 border-y border-base-800" data-fx="stagger">
         <details v-for="(item, i) in p.faq" :key="item.q" class="faq group" :open="i === 0">
           <summary class="flex cursor-pointer list-none items-center gap-4 py-5 text-left">
             <h3 class="flex-1 text-base font-semibold text-base-50">{{ item.q }}</h3>
@@ -131,7 +131,7 @@ useHead({ link: [{ rel: 'preconnect', href: 'https://raw.githubusercontent.com' 
 
     <LandingLinks class="mt-20" :exclude="page" heading-id="related-title" />
 
-    <section class="cta card mt-16 flex flex-wrap items-center justify-between gap-6 p-6 sm:p-8" aria-labelledby="cta-title">
+    <section class="cta card mt-16 flex flex-wrap items-center justify-between gap-6 p-6 sm:p-8" aria-labelledby="cta-title" data-fx="rise">
       <div>
         <h2 id="cta-title" class="heading text-2xl">{{ p.cta.title }}</h2>
         <p class="mt-2 text-base-400">{{ p.cta.text }}</p>

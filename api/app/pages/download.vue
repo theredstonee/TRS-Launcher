@@ -84,7 +84,7 @@ async function copyAur() {
     </header>
 
     <div class="mt-10 flex flex-col gap-14">
-    <div class="grid gap-5 lg:grid-cols-2">
+    <div class="grid gap-5 lg:grid-cols-2" data-fx="stagger">
       <!-- Windows -->
       <section id="windows" class="card flex flex-col p-6 sm:p-8" aria-labelledby="win-title">
         <div class="flex items-center gap-3">
@@ -154,7 +154,7 @@ async function copyAur() {
         <p v-else class="mt-3 text-sm text-lamp-300">{{ mm.unavailable }}</p>
       </div>
 
-      <div class="mt-6 grid gap-5 lg:grid-cols-2">
+      <div class="mt-6 grid gap-5 lg:grid-cols-2" data-fx="stagger">
         <!-- Android -->
         <section id="android" class="card flex min-w-0 flex-col p-6 sm:p-8" aria-labelledby="android-title">
           <div class="flex items-center gap-3">

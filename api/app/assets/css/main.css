@@ -556,6 +556,33 @@ html {
 }
 
 /*
+ * Scroll-Effekte (plugins/scroll-fx.client.ts, utils/scroll-fx/engine.ts): versteckt wird erst, wenn das Skript
+ * läuft (html.fx-ready) – ohne JS, für Suchmaschinen und bei „Bewegung reduzieren“ bleibt alles sichtbar.
+ */
+html.fx-ready [data-fx="rise"]:not([data-fx-in]),
+html.fx-ready [data-fx="stagger"] > :not([data-fx-in]),
+html.fx-ready [data-fx-h]:not([data-fx-in]) {
+  opacity: 0;
+}
+/* Lenis (sanftes Scrollen) – natives Smooth-Scrolling darf nicht dazwischenfunken. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+html.lenis {
+  scroll-behavior: auto;
+}
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+.lenis [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+/*
  * Halloween auf jeder Seite (nur html.theme-halloween).
  * Orange/Lila für Knöpfe, Links, Fokus, Kopfzeile und Fußzeile.
  * Redstone-Rot bleibt für Fehler und Redstone-Elemente.

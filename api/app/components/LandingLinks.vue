@@ -26,7 +26,7 @@ const cards = computed(() =>
 <template>
   <section :aria-labelledby="title === '' ? undefined : headingId">
     <h2 v-if="title !== ''" :id="headingId" class="heading text-2xl">{{ title ?? texts.common.related }}</h2>
-    <ul class="mt-6 grid gap-4" :class="narrow ? 'sm:grid-cols-2' : cards.length > 3 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-3'">
+    <ul class="mt-6 grid gap-4" data-fx="stagger" :class="narrow ? 'sm:grid-cols-2' : cards.length > 3 ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-3'">
       <li v-for="c in cards" :key="c.id">
         <NuxtLink :to="c.to" class="card card-hover flex h-full flex-col p-5">
           <span class="font-semibold text-base-50">{{ c.name }}</span>

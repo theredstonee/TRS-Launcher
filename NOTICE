@@ -20,6 +20,8 @@ Third-party parts
   header; the license text is in client-mod/licenses/chat-heads-MPL-2.0.txt.
 - AppleSkin by squeek502 (The Unlicense): idea for the TRS Client hunger overlay; resource packs
   that ship AppleSkin textures are supported.
+- GSAP by GreenSock/Webflow (GSAP Standard License, https://gsap.com/standard-license) and Lenis by
+  darkroom.engineering (MIT): scroll animations and smooth scrolling on the website (api/).
 - Further libraries and bundled mods are listed with their licenses in README.md and
   client-mod/README.md.
 

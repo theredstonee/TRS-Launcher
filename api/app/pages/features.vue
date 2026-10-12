@@ -58,7 +58,7 @@ usePageSeo(() => ({
         :class="{ 'has-img': s.img, flip: s.flip }"
         :aria-labelledby="`${s.id}-title`"
       >
-        <div class="max-w-2xl">
+        <div class="max-w-2xl" data-fx="rise">
           <h2 :id="`${s.id}-title`" class="heading text-3xl">{{ s.title }}</h2>
           <p class="mt-3 leading-relaxed text-base-300">{{ s.text }}</p>
           <ul class="mt-5 flex flex-col gap-2.5">
@@ -71,7 +71,7 @@ usePageSeo(() => ({
             {{ s.link.label }} <SiteIcon name="arrow" class="size-4" />
           </NuxtLink>
         </div>
-        <figure v-if="s.img" class="shot">
+        <figure v-if="s.img" class="shot" data-fx="rise">
           <img
             :src="`/shots/${s.img}`"
             :alt="s.alt"
@@ -87,7 +87,7 @@ usePageSeo(() => ({
 
     <LandingLinks class="mt-20" heading-id="related-title" />
 
-    <section class="cta card mt-16 flex flex-wrap items-center justify-between gap-6 p-6 sm:p-8" aria-labelledby="cta-title">
+    <section class="cta card mt-16 flex flex-wrap items-center justify-between gap-6 p-6 sm:p-8" aria-labelledby="cta-title" data-fx="rise">
       <div>
         <h2 id="cta-title" class="heading text-2xl">{{ m.features.ctaTitle }}</h2>
         <p class="mt-2 text-base-400">{{ m.features.ctaText }}</p>

@@ -26,7 +26,7 @@ usePageSeo(() => ({
       <p class="mt-3 text-lg text-base-400">{{ m.faq.lead }}</p>
     </header>
 
-    <div class="mt-10 divide-y divide-base-800 border-y border-base-800">
+    <div class="mt-10 divide-y divide-base-800 border-y border-base-800" data-fx="stagger">
       <details v-for="(item, i) in m.faq.items" :key="item.q" class="faq group" :open="i === 0">
         <summary class="flex cursor-pointer list-none items-center gap-4 py-5 text-left">
           <span class="flex-1 font-semibold text-base-50">{{ item.q }}</span>
