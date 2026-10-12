@@ -185,7 +185,7 @@ export function buildLandscape(o: LandscapeOptions): Landscape {
   const groundBase = anchored ? clamp((o.anchorRow ?? 0) + 6, Math.round(h * 0.55), h - 3) : Math.round(h * 0.86)
   // Weite Ebene: Horizont knapp über der Mitte, die Kuppen dahinter bleiben niedrig.
   const horizon = Math.max(4, anchored ? Math.min(Math.round(h * 0.5), groundBase - Math.max(14, Math.round(h * 0.24))) : Math.round(h * 0.56))
-  const mountainAmp = Math.max(4, Math.round(h * (anchored ? 0.13 : 0.1)))
+  const mountainAmp = Math.max(4, Math.round(h * (anchored ? 0.19 : 0.15)))
   const forestBase = horizon + Math.max(2, Math.round(h * 0.012))
   const hillBase = forestBase + Math.max(3, Math.round(h * 0.03))
 

@@ -123,13 +123,13 @@ describe('Winterlandschaft', () => {
     const l = buildLandscape({ cols: 420, rows: 250, seed: 11 })
     for (const line of [l.mountains, l.mountainsBack]) {
       for (let x = 0; x < l.w; x++) {
-        // Höchstens 10 % der Höhe über dem Horizont, Horizont über der Mitte der Ebene.
+        // Höchstens 15 % der Höhe über dem Horizont, Horizont über der Mitte der Ebene.
         expect(l.horizon - line[x]!).toBeLessThanOrEqual(l.mountainAmp)
         // Glatte Silhouette: höchstens ein, zwei Texel Sprung je Spalte.
         if (x > 0) expect(Math.abs(line[x]! - line[x - 1]!)).toBeLessThanOrEqual(2)
       }
     }
-    expect(l.mountainAmp).toBeLessThanOrEqual(Math.round(l.h * 0.1))
+    expect(l.mountainAmp).toBeLessThanOrEqual(Math.round(l.h * 0.15))
     // Die Ebene nimmt das untere Drittel und mehr ein.
     expect(l.h - Math.max(...l.hills)).toBeGreaterThan(l.h * 0.3)
   })
