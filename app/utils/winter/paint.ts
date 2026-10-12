@@ -1,6 +1,7 @@
 import { ctx2d, noise, surface, type Ctx, type Surface } from '../redstone/paint'
 import type { Rgb } from '../redstone/palette'
-import { CABIN_H, CABIN_W, smooth, type Cloud, type Landscape, type Pine } from './landscape'
+import { CABINS, smooth, type CabinRect, type Cloud, type Landscape, type Pine } from './landscape'
+import { PENGUIN_COLORS, PENGUIN_H, penguinPixels, TINY_PENGUIN, type PenguinView } from './penguin'
 import { css, mix, type WinterPalette } from './palette'
 import type { Flake, Puff } from './snow'
 
@@ -30,6 +31,9 @@ function banded(t: number, steps: number, x: number, y: number): number {
   const f = clamp((q - i - 0.5) * 4 + 0.5, 0, 1)
   return Math.min(steps, i + (f > bayer(x, y) ? 1 : 0)) / steps
 }
+
+/** Ziel für einzelne Pixel (Raster beim Aufbau, Canvas je Takt). */
+type Pixels = { set(x: number, y: number, c: Rgb): void }
 
 /** RGBA-Puffer in Texeln. */
 export class Raster {
@@ -142,44 +146,55 @@ function paintMoon(R: Raster, L: Landscape, P: WinterPalette) {
 
 export function paintLand(L: Landscape, P: WinterPalette): Raster {
   const R = new Raster(L.w, L.h)
-  paintMountains(R, L, P)
+  paintDomes(R, L, L.mountainsBack, P, 0.62)
+  paintDomes(R, L, L.mountains, P, 0.42)
   paintForest(R, L, P)
   for (const t of L.pines) if (t.layer === 0) paintPine(R, t, P, 0.48)
-  paintSnowfield(R, L, L.hills, P, 0.2, 22)
-  for (const t of L.pines) if (t.layer === 1) paintShadow(R, t, L.hills, P, 0.2)
-  for (const t of L.pines) if (t.layer === 1) paintPine(R, t, P, 0.2)
-  if (L.cabin) paintCabin(R, L.cabin.x, L.cabin.y, P, 0.12)
+  paintSnowfield(R, L, L.hills, P, 0.16, Math.max(22, Math.round(L.h * 0.45)))
+  for (const t of L.pines) if (t.layer === 1) paintShadow(R, t, P, 0.16)
+  for (const t of L.pines) if (t.layer === 1) paintPine(R, t, P, 0.16)
   paintSnowfield(R, L, L.ground, P, 0, 34)
   for (const t of L.tufts) paintTuft(R, t.x, t.y, t.h, P)
-  for (const t of L.pines) if (t.layer === 2) paintShadow(R, t, L.ground, P, 0)
-  paintLanternFrames(R, L, P)
+  for (const t of L.pines) if (t.layer === 2) paintShadow(R, t, P, 0)
   for (const t of L.pines) if (t.layer === 2) paintPine(R, t, P, 0)
+  if (L.cabin) {
+    const spec = CABINS[L.cabin.size]
+    const x0 = L.cabin.x
+    const oy = L.cabin.y - spec.h + 1
+    paintPath(R, x0 + Math.round((spec.door.x0 + spec.door.x1) / 2), L.cabin.y + 1, L.pathEnd, P)
+    if (L.cabin.size === 'large') paintCabinLarge(R, x0, oy, P)
+    else paintCabinSmall(R, x0, oy, P, L.cabin.penguin)
+  }
+  paintLanternFrames(R, L, P)
   return R
 }
 
-function paintMountains(R: Raster, L: Landscape, P: WinterPalette) {
-  const { w, horizon, mountainAmp: amp } = L
-  const s = L.seed & 0xffff
-  const at = (x: number) => L.mountains[clamp(x, 0, w - 1)]!
+/**
+ * Runde Schneekuppen: oben eine Schneehaube, die der Kuppe folgt, darunter Fels.
+ * Licht von rechts oben – nach rechts abfallende Flanken sind hell.
+ */
+function paintDomes(R: Raster, L: Landscape, line: Int16Array, P: WinterPalette, haze: number) {
+  const { w, horizon } = L
+  const s = (L.seed & 0xffff) + Math.round(haze * 100)
+  const at = (x: number) => line[clamp(x, 0, w - 1)]!
   for (let x = 0; x < w; x++) {
     const top = at(x)
-    // Fällt der Hang nach rechts ab, scheint der Mond (rechts oben) darauf.
-    const slope = at(x + 2) + at(x + 1) - at(x - 1) - at(x - 2)
-    const lit = slope > 0 || (slope === 0 && at(x + 3) >= at(x - 3))
-    const snowline = horizon - amp * 0.45 + Math.round(5 * smooth(x / 5, s + 21)) + (lit ? 4 : 0)
-    for (let y = top; y <= horizon + 4 && y < L.h; y++) {
+    if (top >= horizon) continue
+    const height = horizon - top
+    const slope = at(x + 3) + at(x + 1) - at(x - 1) - at(x - 3)
+    const lit = slope > 0 || (slope === 0 && at(x + 6) >= at(x - 6))
+    // Haube: über die halbe Höhe, unten weich gewellt.
+    const cap = Math.round(height * 0.55 + 1.5 * smooth(x / 4, s))
+    for (let y = top; y <= horizon + 2 && y < L.h; y++) {
       const depth = y - top
-      let snow = y < snowline || depth === 0
-      // Unter der Schneegrenze: Rinnen mit Schnee, nach unten seltener.
-      if (!snow && noise(x, y >> 1, 23) < 0.32 * (1 - (y - snowline) / 14)) snow = true
       let c: Rgb
-      if (snow) {
-        c = depth === 0 ? (lit ? P.snowLit : P.snow) : lit ? P.snow : P.snowShade
-        if (!lit && depth > 1 && noise(x >> 1, y >> 2, 29) < 0.14) c = P.snowDeep
-      } else c = lit ? P.rock : P.rockShade
-      // Dunst: oben schon etwas, zum Fuß hin mehr (Tal im Nebel).
-      const mist = banded((y - (horizon - amp * 0.4)) / (amp * 0.4), 3, x, y)
-      R.set(x, y, hazed(c, P.haze, (0.4 + 0.36 * mist) * P.hazeScale))
+      if (depth === 0) c = lit ? P.snowLit : P.snow
+      else if (depth < cap) c = lit ? P.snow : P.snowShade
+      else if (depth === cap && bayer(x, y) < 0.5) c = lit ? P.snowShade : P.snowDeep
+      else c = lit ? P.rock : P.rockShade
+      // Dunst: zum Fuß hin mehr (Tal im Nebel).
+      const mist = banded((y - (horizon - L.mountainAmp * 0.5)) / (L.mountainAmp * 0.5), 2, x, y)
+      R.set(x, y, hazed(c, P.haze, (haze + 0.22 * mist) * P.hazeScale))
     }
   }
 }
@@ -229,12 +244,13 @@ function paintSnowfield(R: Raster, L: Landscape, line: Int16Array, P: WinterPale
 }
 
 /** Schatten einer Tanne auf dem Schnee, nach links (Licht von rechts oben). */
-function paintShadow(R: Raster, t: Pine, line: Int16Array, P: WinterPalette, haze: number) {
+function paintShadow(R: Raster, t: Pine, P: WinterPalette, haze: number) {
   const len = Math.round(t.h * 0.45)
+  // Flach auf der Ebene, auf der die Tanne steht.
+  const y = t.base - 1
   for (let k = 0; k < len; k++) {
     const x = t.x - k
     if (x < 0 || x >= R.w) continue
-    const y = line[x]!
     const fade = k / len
     if (fade > 0.5 && fade - 0.5 > bayer(x, y) * 0.5) continue
     R.set(x, y, hazed(P.snowShade, P.haze, haze, x, y))
@@ -310,12 +326,12 @@ export function paintPine(R: Raster, t: Pine, P: WinterPalette, haze: number) {
   }
 }
 
-/** Kleine Blockhütte: verschneites Dach, Schornstein, warm erleuchtetes Fenster. */
-export function paintCabin(R: Raster, x0: number, ground: number, P: WinterPalette, haze: number) {
-  const oy = ground - CABIN_H + 1
-  const put = (rx: number, ry: number, c: Rgb) => R.set(x0 + rx, oy + ry, haze > 0 ? hazed(c, P.haze, haze, x0 + rx, oy + ry) : c)
+/** Kleine Blockhütte (Banner, Vorschau): verschneites Dach, Schornstein, warmes Fenster. */
+export function paintCabinSmall(R: Raster, x0: number, oy: number, P: WinterPalette, penguin: boolean) {
+  const H = CABINS.small.h
+  const put = (rx: number, ry: number, c: Rgb) => R.set(x0 + rx, oy + ry, c)
   // Wände aus Stämmen.
-  for (let ry = 9; ry < CABIN_H; ry++) {
+  for (let ry = 9; ry < H; ry++) {
     for (let rx = 3; rx <= 18; rx++) {
       const end = rx === 3 || rx === 18
       let c = ry % 2 === 0 ? P.wood : P.woodDark
@@ -332,7 +348,7 @@ export function paintCabin(R: Raster, x0: number, ground: number, P: WinterPalet
   }
   for (let rx = 4; rx <= 12; rx++) put(rx, 15, rx === 4 || rx === 12 ? P.snow : P.snowLit)
   // Tür.
-  for (let ry = 11; ry < CABIN_H; ry++) {
+  for (let ry = 11; ry < H; ry++) {
     for (let rx = 13; rx <= 16; rx++) put(rx, ry, rx === 13 || ry === 11 ? P.windowFrame : P.woodDark)
   }
   put(15, 14, P.windowOn)
@@ -359,8 +375,199 @@ export function paintCabin(R: Raster, x0: number, ground: number, P: WinterPalet
   // Schneewehe an der Wand.
   for (let rx = 1; rx <= 20; rx++) {
     if (rx > 4 && rx < 18) continue
-    put(rx, CABIN_H - 1, P.snowLit)
-    if (rx < 3 || rx > 19) put(rx, CABIN_H - 2, P.snow)
+    put(rx, H - 1, P.snowLit)
+    if (rx < 3 || rx > 19) put(rx, H - 2, P.snow)
+  }
+  // Ganz klein: der Pinguin steht neben der Tür.
+  if (penguin) {
+    TINY_PENGUIN.forEach((row, y) => {
+      for (let x = 0; x < row.length; x++) {
+        const c = row[x]!
+        if (c !== '.') put(18 + x, H - TINY_PENGUIN.length + y, PENGUIN_COLORS[c]!)
+      }
+    })
+  }
+}
+
+/**
+ * Große Blockhütte vorn: dickes Schneedach mit Eiszapfen, Schornstein, Stammwände
+ * mit Balkenköpfen, zwei warm erleuchtete Fenster, Tür und eine Laterne am Weg.
+ * Maße siehe `CABINS.large` (46 × 36). Fenster und Tür malt der Takt darüber neu,
+ * wenn der Pinguin hinausschaut oder die Tür öffnet.
+ */
+export function paintCabinLarge(R: Raster, x0: number, oy: number, P: WinterPalette) {
+  const spec = CABINS.large
+  const H = spec.h
+  const put = (rx: number, ry: number, c: Rgb) => R.set(x0 + rx, oy + ry, c)
+  const woodHi = mix(P.wood, P.snowLit, 0.18)
+  const logEnd = mix(P.wood, P.snowLit, 0.32)
+
+  // Schornstein aus Feldsteinen (hinter dem Dach).
+  for (let ry = 1; ry <= 10; ry++) {
+    for (let rx = 31; rx <= 35; rx++) {
+      const mortar = ry % 3 === 0 || (rx + (ry % 6 < 3 ? 0 : 2)) % 4 === 0
+      put(rx, ry, mortar ? P.rockShade : rx === 35 ? P.rockShade : P.rock)
+    }
+  }
+  for (let rx = 30; rx <= 36; rx++) put(rx, 0, rx === 30 || rx === 36 ? P.snow : P.snowLit)
+
+  // Wände: Stämme zu je drei Zeilen (Licht oben, Schatten unten), Balkenköpfe an den Ecken.
+  for (let ry = 16; ry < H; ry++) {
+    const k = (ry - 16) % 3
+    for (let rx = 4; rx <= 41; rx++) put(rx, ry, k === 0 ? woodHi : k === 1 ? P.wood : P.woodDark)
+    if (k === 1) {
+      for (const rx of [3, 42]) put(rx, ry, logEnd)
+      for (const rx of [2, 43]) put(rx, ry, P.woodDark)
+    }
+  }
+
+  // Fenster links (groß) mit Kreuz, Glanz oben und verschneitem Sims.
+  for (let ry = 20; ry <= 28; ry++) {
+    for (let rx = 8; rx <= 18; rx++) {
+      const frame = ry === 20 || ry === 28 || rx === 8 || rx === 18
+      put(rx, ry, frame ? P.windowFrame : P.windowOn)
+    }
+  }
+  paintWindowLight(R, x0, oy, spec.windows[0]!, P)
+  for (let rx = 7; rx <= 19; rx++) {
+    put(rx, 29, rx === 7 || rx === 19 ? P.snow : P.snowLit)
+    put(rx, 30, P.woodDark)
+  }
+  // Fenster rechts (klein).
+  for (let ry = 20; ry <= 25; ry++) {
+    for (let rx = 37; rx <= 41; rx++) put(rx, ry, ry === 20 || ry === 25 || rx === 37 || rx === 41 ? P.windowFrame : P.windowOn)
+  }
+  paintWindowLight(R, x0, oy, spec.windows[1]!, P)
+  for (let rx = 36; rx <= 42; rx++) put(rx, 26, P.snowLit)
+
+  paintDoor(R, x0, oy, P, 0)
+
+  // Dach: dicker Schnee, rechts im Licht; die Kante hängt über die Wände.
+  const ridge = new Uint8Array(spec.w)
+  for (let ry = 3; ry <= 15; ry++) {
+    const inset = Math.round((15 - ry) * 1.75)
+    for (let rx = inset; rx <= 45 - inset; rx++) {
+      let c: Rgb = rx > 23 ? P.snowLit : P.snow
+      if (rx === inset || rx === inset + 1) c = P.snowShade
+      if (ry >= 14) c = ry === 15 ? P.snowDeep : P.snowShade
+      // Oberkante (erste Zeile dieser Spalte): heller Grat.
+      if (!ridge[rx] && ry < 13) c = rx > 22 ? P.sparkle : P.snowLit
+      ridge[rx] = 1
+      put(rx, ry, c)
+    }
+  }
+  // Traufe, dann Eiszapfen in verschiedenen Längen.
+  for (let rx = 2; rx <= 43; rx++) put(rx, 16, P.woodDark)
+  for (const [rx, len] of [[2, 3], [5, 1], [9, 2], [14, 1], [20, 3], [25, 1], [30, 2], [36, 1], [40, 3], [43, 2]] as const) {
+    for (let k = 0; k < len; k++) put(rx, 16 + k, k === len - 1 ? P.snowShade : P.snowLit)
+  }
+
+  // Laterne am Weg (warmes Licht) auf einem Pfosten.
+  const l = spec.lantern!
+  for (let ry = l.y + 3; ry < H; ry++) put(l.x, ry, P.woodDark)
+  for (let rx = l.x - 2; rx <= l.x + 2; rx++) put(rx, l.y - 2, P.windowFrame)
+  for (let rx = l.x - 1; rx <= l.x + 1; rx++) {
+    put(rx, l.y - 3, P.snowLit)
+    put(rx, l.y + 2, P.windowFrame)
+  }
+  for (let ry = l.y - 1; ry <= l.y + 1; ry++) {
+    put(l.x - 2, ry, P.windowFrame)
+    put(l.x + 2, ry, P.windowFrame)
+    for (let rx = l.x - 1; rx <= l.x + 1; rx++) put(rx, ry, rx === l.x && ry === l.y ? mix(P.windowOn, [255, 255, 255], 0.6) : P.windowOn)
+  }
+
+  // Schneewehen an den Ecken und vor der Wand.
+  for (let rx = 0; rx <= 45; rx++) {
+    const corner = rx < 6 || rx > 39
+    if (corner) {
+      const hgt = rx < 6 ? 6 - rx : rx - 39
+      for (let k = 0; k < Math.min(4, hgt); k++) put(rx, H - 1 - k, k === Math.min(4, hgt) - 1 ? P.snowLit : P.snow)
+    } else if (rx < spec.door.x0 || rx > spec.door.x1) put(rx, H - 1, P.snowLit)
+  }
+}
+
+/** Fensterglas (ohne Sprossen, damit man den Pinguin sieht) mit Glanz oben links. */
+function paintWindowLight(R: Pixels, x0: number, oy: number, g: CabinRect, P: WinterPalette) {
+  const hi = mix(P.windowOn, [255, 255, 255], 0.35)
+  const mx = Math.round((g.x0 + g.x1) / 2)
+  for (let ry = g.y0; ry <= g.y1; ry++) {
+    for (let rx = g.x0; rx <= g.x1; rx++) {
+      let c = P.windowOn
+      if (ry === g.y0 && rx < mx) c = hi
+      R.set(x0 + rx, oy + ry, c)
+    }
+  }
+}
+
+/** Tür: 0 zu, 1 halb, 2 offen (dann warmes Licht von innen). */
+function paintDoor(R: Pixels, x0: number, oy: number, P: WinterPalette, open: 0 | 1 | 2) {
+  const d = CABINS.large.door
+  const put = (rx: number, ry: number, c: Rgb) => R.set(x0 + rx, oy + ry, c)
+  for (let ry = d.y0; ry <= d.y1; ry++) {
+    for (let rx = d.x0; rx <= d.x1; rx++) {
+      const frame = rx === d.x0 || rx === d.x1 || ry === d.y0
+      if (frame) {
+        put(rx, ry, P.windowFrame)
+        continue
+      }
+      const leaf = rx - d.x0 - 1
+      const width = d.x1 - d.x0 - 1
+      const inside = mix(P.windowOn, P.woodDark, ry > d.y1 - 2 ? 0.6 : 0.35)
+      if (open === 0) put(rx, ry, leaf % 2 === 0 ? P.wood : P.woodDark)
+      else if (open === 1) put(rx, ry, leaf < width / 2 ? inside : leaf % 2 === 0 ? P.wood : P.woodDark)
+      else put(rx, ry, leaf >= width - 1 ? P.woodDark : inside)
+    }
+  }
+  if (open === 0) {
+    // Kleines Fenster in der Tür und Klinke.
+    put(d.x0 + 3, d.y0 + 2, P.windowOn)
+    put(d.x0 + 4, d.y0 + 2, P.windowOn)
+    put(d.x0 + 3, d.y0 + 3, P.windowOn)
+    put(d.x0 + 4, d.y0 + 3, P.windowOn)
+    put(d.x1 - 2, d.y0 + 7, mix(P.windowOn, [255, 255, 255], 0.3))
+  }
+}
+
+/** Trampelpfad von der Tür nach vorn, mit kleinen Fußspuren. */
+function paintPath(R: Raster, cx: number, from: number, to: number, P: WinterPalette) {
+  for (let y = from; y < Math.min(R.h, to); y++) {
+    const half = 2 + Math.floor((y - from) * 0.22)
+    for (let x = cx - half - 1; x <= cx + half + 1; x++) {
+      const edge = Math.abs(x - cx) > half
+      if (edge && bayer(x, y) > 0.5) continue
+      R.set(x, y, edge ? P.snow : P.snowShade)
+    }
+    // Pinguin-Spuren: kleine Punkte, abwechselnd links und rechts.
+    if ((y - from) % 3 === 1) R.set(cx + (((y - from) / 3) % 2 < 1 ? -1 : 1), y, P.snowDeep)
+  }
+}
+
+/** Was je Takt an der Hütte neu gemalt wird: Fenster (mit Pinguin), Tür, Pinguin draußen. */
+export function paintCabinLive(g: Ctx, x0: number, oy: number, P: WinterPalette, v: PenguinView) {
+  const spec = CABINS.large
+  const px = (rx: number, ry: number, c: Rgb) => {
+    g.fillStyle = css(c)
+    g.fillRect(x0 + rx, oy + ry, 1, 1)
+  }
+  const target = { set: (x: number, y: number, c: Rgb) => {
+    g.fillStyle = css(c)
+    g.fillRect(x, y, 1, 1)
+  } }
+  const win = spec.windows[0]!
+  if (v.phase === 'window') {
+    // Fenster neu, dann Kopf mit Mütze hinter der Scheibe, Kreuz wieder darüber.
+    paintWindowLight(target, x0, oy, win, P)
+    for (const [x, y, c] of penguinPixels({ step: 0, wave: null })) {
+      const rx = v.x + x
+      const ry = win.y0 + y + v.dip
+      if (ry > win.y1 || rx < win.x0 || rx > win.x1) continue
+      px(rx, ry, PENGUIN_COLORS[c]!)
+    }
+  }
+  if (v.door !== 0) paintDoor(target, x0, oy, P, v.door)
+  if (v.phase !== 'window' && v.phase !== 'opening' && v.phase !== 'closing') {
+    const bob = v.step === 1 ? 1 : 0
+    for (const [x, y, c] of penguinPixels(v)) px(v.x + x, spec.h - PENGUIN_H + y - (v.phase === 'walkOut' || v.phase === 'walkIn' ? bob : 0), PENGUIN_COLORS[c]!)
   }
 }
 
@@ -478,6 +685,8 @@ export interface WinterFrameState {
   flicker: boolean
   flakes: readonly Flake[]
   smoke: readonly Puff[]
+  /** Pinguin an der großen Hütte (sonst weggelassen). */
+  penguin?: PenguinView | null
 }
 
 /** Hält die fertigen Ebenen einer Landschaft und setzt daraus jedes Bild zusammen. */
@@ -554,6 +763,11 @@ export class WinterPainter {
 
     g.drawImage(this.land, 0, 0)
 
+    // Der Pinguin: im Fenster, in der Tür oder draußen.
+    if (s.penguin && L.cabin?.size === 'large') {
+      paintCabinLive(g, L.cabin.x, L.cabin.y - CABINS.large.h + 1, P, s.penguin)
+    }
+
     // Laternenglas.
     L.lanterns.forEach((l, i) => {
       const on = i < s.lit
@@ -603,7 +817,7 @@ export class WinterPainter {
   }
 
   /** Weiches Licht auf der groben Ebene (`scale` Texel je Pixel). */
-  glow(g: Ctx, s: Pick<WinterFrameState, 'aurora' | 'lit' | 'flicker' | 'tick'>, scale: number) {
+  glow(g: Ctx, s: Pick<WinterFrameState, 'aurora' | 'lit' | 'flicker' | 'tick' | 'penguin'>, scale: number) {
     const { L, P } = this
     g.clearRect(0, 0, g.canvas.width, g.canvas.height)
     const light = (x: number, y: number, r: number, c: Rgb, a: number) => {
@@ -618,7 +832,18 @@ export class WinterPainter {
     }
     const dayFactor = P.variant === 'light' ? 0.5 : 1
     light(L.moon.x, L.moon.y, L.moon.r * 6, P.glowMoon, 0.3 * dayFactor)
-    if (L.cabin) light(L.cabin.x + 8, L.cabin.y - 4, 16, P.glowWarm, 0.55)
+    if (L.cabin) {
+      // Warmes Licht aus Fenstern, Laterne und offener Tür.
+      const spec = CABINS[L.cabin.size]
+      const oy = L.cabin.y - spec.h + 1
+      const big = L.cabin.size === 'large'
+      for (const w of spec.windows) light(L.cabin.x + (w.x0 + w.x1) / 2, oy + (w.y0 + w.y1) / 2, big ? 14 : 12, P.glowWarm, big ? 0.5 : 0.55)
+      if (spec.lantern) light(L.cabin.x + spec.lantern.x, oy + spec.lantern.y, 12, P.glowWarm, 0.6)
+      if (big && s.penguin && s.penguin.door > 0) {
+        const d = spec.door
+        light(L.cabin.x + (d.x0 + d.x1) / 2, oy + d.y1 - 3, 16, P.glowWarm, s.penguin.door === 2 ? 0.6 : 0.35)
+      }
+    }
     L.lanterns.forEach((l, i) => {
       if (i >= s.lit) return
       const a = s.flicker && noise(i, s.tick >> 1, 67) < 0.12 ? 0.5 : 0.85

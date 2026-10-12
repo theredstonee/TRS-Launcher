@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { SceneLoop } from '~/utils/redstone/loop'
 import { rng } from '~/utils/redstone/scene'
-import { auroraEnvelope, buildLandscape, type Landscape } from '~/utils/winter/landscape'
+import { auroraEnvelope, buildLandscape, CABINS, type Landscape } from '~/utils/winter/landscape'
+import { Penguin } from '~/utils/winter/penguin'
 import { WinterPainter } from '~/utils/winter/paint'
 import { documentWinterPalette } from '~/utils/winter/palette'
 import { Smoke, Snowfall } from '~/utils/winter/snow'
@@ -44,6 +45,7 @@ let land: Landscape | null = null
 let painter: WinterPainter | null = null
 let snow: Snowfall | null = null
 let smoke: Smoke | null = null
+let penguin: Penguin | null = null
 let layoutKey = ''
 let tickCount = 0
 let started = performance.now()
@@ -88,22 +90,29 @@ function layout() {
 
   let anchorRow = -1
   let anchorEnd = 0
+  let anchorTop: number | undefined
+  let anchorRight: number | undefined
   const anchor = props.anchor
   if (anchor) {
     const a = anchor.getBoundingClientRect()
     anchorRow = Math.floor((a.top + a.height / 2 - rect.top) / texel)
     anchorEnd = Math.max(0, Math.floor((a.left - rect.left) / texel))
+    anchorTop = Math.floor((a.top - rect.top) / texel)
+    anchorRight = Math.floor((a.right - rect.left) / texel)
   }
   const cols = Math.ceil(rect.width / texel)
   const rows = Math.ceil(rect.height / texel)
   box.value = { width: cols * texel, height: rows * texel }
 
-  const key = `${cols}x${rows}:${anchorRow}:${anchorEnd}`
+  const key = `${cols}x${rows}:${anchorRow}:${anchorEnd}:${anchorTop}:${anchorRight}`
   if (key === layoutKey && land) return
   layoutKey = key
-  land = buildLandscape({ cols, rows, seed: props.seed, anchorRow, anchorEnd: anchor ? anchorEnd : 0 })
+  land = buildLandscape({ cols, rows, seed: props.seed, anchorRow, anchorEnd: anchor ? anchorEnd : 0, anchorTop, anchorRight })
   snow = new Snowfall(land.w, land.h, rand, props.fill ? 1 : 0.8)
   smoke = new Smoke(rand)
+  // Der Pinguin bleibt bei Größenänderungen derselbe (seine Lage ist relativ zur Hütte).
+  if (land.cabin?.size !== 'large') penguin = null
+  else if (!penguin) penguin = new Penguin(rand, { day: isDay(), still: reduced.value })
   // Etwas Rauch schon da, damit er nicht erst aus dem Nichts aufsteigt.
   for (let i = 0; i < 60; i++) smoke.step(chimney(), i)
   const c = pix.value
@@ -118,7 +127,14 @@ function layout() {
 }
 
 function chimney() {
-  return land?.cabin ? { x: land.cabin.x + 16, y: land.cabin.y - 17 } : null
+  if (!land?.cabin) return null
+  const spec = CABINS[land.cabin.size]
+  return { x: land.cabin.x + spec.chimney.x, y: land.cabin.y - spec.h + spec.chimney.y }
+}
+
+/** Heller Wintertag (Farbschema Hell): der Pinguin ist öfter draußen. */
+function isDay() {
+  return document.documentElement.dataset.theme === 'light'
 }
 
 /** Aufbau außerhalb des Takts (Mount, Größe, Theme): ein Fehler darf die Seite nicht stören. */
@@ -133,6 +149,7 @@ function safely(fn: () => void) {
 function repaintStatic() {
   if (!land) return
   painter = new WinterPainter(land, documentWinterPalette())
+  penguin?.setDay(isDay())
   draw(true)
 }
 
@@ -140,7 +157,7 @@ function draw(withGlow: boolean) {
   const c = pix.value?.getContext('2d')
   if (!c || !land) return
   if (!painter) painter = new WinterPainter(land, documentWinterPalette())
-  const s = state()
+  const s = { ...state(), penguin: penguin?.view() ?? null }
   painter.frame(c, { tick: tickCount, seconds: seconds(), ...s, flakes: snow?.flakes ?? [], smoke: smoke?.puffs ?? [] })
   if (withGlow) {
     const g = glowCanvas.value?.getContext('2d')
@@ -154,9 +171,10 @@ function tick() {
   tickCount++
   snow?.step(tickCount)
   smoke?.step(chimney(), tickCount)
+  penguin?.step()
   const s = state()
-  // Licht nur neu, wenn sich etwas ändert (Laternen, Polarlicht, Flackern).
-  const glowKey = `${s.lit}:${s.aurora.toFixed(2)}:${s.flicker ? tickCount >> 1 : 0}`
+  // Licht nur neu, wenn sich etwas ändert (Laternen, Polarlicht, Flackern, Hüttentür).
+  const glowKey = `${s.lit}:${s.aurora.toFixed(2)}:${s.flicker ? tickCount >> 1 : 0}:${penguin?.view().door ?? 0}`
   draw(glowKey !== lastGlow)
   lastGlow = glowKey
 }
@@ -177,8 +195,17 @@ watch(
 )
 watch(reduced, (on) => {
   loop.set('motion', on)
+  penguin?.setStill(on)
   if (on) safely(() => draw(true))
 })
+
+/** Strg+Alt+P: der Pinguin kommt sofort heraus (auch `window.__trsPenguin()` im Entwicklungsmodus). */
+function penguinOut() {
+  penguin?.trigger()
+}
+function onShortcut(e: KeyboardEvent) {
+  if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'p') penguinOut()
+}
 
 let layoutTimer: ReturnType<typeof setTimeout> | undefined
 function scheduleLayout() {
@@ -204,6 +231,11 @@ function onContextRestored() {
 }
 
 onMounted(() => {
+  window.addEventListener('keydown', onShortcut)
+  if (import.meta.dev) {
+    ;(window as unknown as { __trsPenguin?: () => void }).__trsPenguin = () =>
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, altKey: true }))
+  }
   started = performance.now()
   loop.set('motion', reduced.value)
   syncHidden()
@@ -227,6 +259,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onShortcut)
   loop.dispose()
   clearTimeout(layoutTimer)
   resize?.disconnect()

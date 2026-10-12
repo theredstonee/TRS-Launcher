@@ -39,7 +39,7 @@ export function designPreview(design: Design, light: boolean): string | null {
     const g = canvas.getContext('2d')
     if (!g) return null
     if (design === 'winter') {
-      const land = buildLandscape({ cols: PREVIEW_COLS, rows: PREVIEW_ROWS, seed: 0x5a0 })
+      const land = buildLandscape({ cols: PREVIEW_COLS, rows: PREVIEW_ROWS, seed: 0x5a0, penguin: true, cabinX: 0.66 })
       canvas.width = land.w
       canvas.height = land.h
       const painter = new WinterPainter(land, buildWinterPalette(() => '', light ? 'light' : 'dark'))

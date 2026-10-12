@@ -1,17 +1,19 @@
 import { noise } from '../redstone/paint'
 import { rng } from '../redstone/scene'
 
-// Aufbau der Winterlandschaft (nur Daten, ohne Canvas – testbar): Höhenlinien
-// der Ebenen von hinten nach vorn, Bäume, Sterne, Mond, Hütte und – auf der
-// Startseite – die Eislaternen bis zum Spielen-Knopf. Alles in Texeln
-// (1 Texel = 3 Gerätepixel wie in der Redstone-Szene), aus dem Seed stabil.
+// Aufbau der Winterlandschaft (nur Daten, ohne Canvas – testbar): eine weite
+// verschneite Ebene, hinten am Horizont eine niedrige Kette runder Schneekuppen
+// mit einem schmalen Waldstreifen davor, vorn rechts die Blockhütte (mit dem
+// Pinguin), Sterne und Mond – und auf der Startseite die Eislaternen bis zum
+// Spielen-Knopf. Alles in Texeln (1 Texel = 3 Gerätepixel wie in der
+// Redstone-Szene), aus dem Seed stabil. Links bleibt Platz für die Schrift.
 
 export interface Pine {
   x: number
   /** Unterkante (Boden, auf dem der Stamm steht). */
   base: number
   h: number
-  /** 0 = fern (Silhouette), 1 = Hügel, 2 = vorn. */
+  /** 0 = fern (Silhouette), 1 = Ebene, 2 = vorn. */
   layer: 0 | 1 | 2
   seed: number
 }
@@ -34,22 +36,76 @@ export interface Cloud {
   speed: number
 }
 
+/** Rechteck in Hütten-Koordinaten (inklusive Ränder). */
+export interface CabinRect {
+  x0: number
+  y0: number
+  x1: number
+  y1: number
+}
+
+/** Maße einer Hütte; alle Angaben relativ zur linken oberen Ecke, `h - 1` = Bodenzeile. */
+export interface CabinSpec {
+  w: number
+  h: number
+  /** Oberkante des Schornsteins (Rauch steigt darüber auf). */
+  chimney: { x: number; y: number }
+  /** Tür: Rahmen von x0 bis x1, Türblatt darin, Oberkante y0. */
+  door: CabinRect
+  /** Glasflächen der Fenster (warm erleuchtet). */
+  windows: CabinRect[]
+  /** Laterne am Weg (Mitte des Glases), falls vorhanden. */
+  lantern: { x: number; y: number } | null
+}
+
+export type CabinSize = 'large' | 'small'
+
+/** Große Hütte vorn (Startseite, Hintergrund) und kleine (Banner, Vorschau). */
+export const CABINS: Record<CabinSize, CabinSpec> = {
+  large: {
+    w: 46,
+    h: 36,
+    chimney: { x: 33, y: 0 },
+    door: { x0: 27, y0: 22, x1: 34, y1: 35 },
+    windows: [
+      { x0: 9, y0: 21, x1: 17, y1: 27 },
+      { x0: 38, y0: 21, x1: 40, y1: 24 },
+    ],
+    lantern: { x: 22, y: 22 },
+  },
+  small: {
+    w: 22,
+    h: 17,
+    chimney: { x: 16, y: 0 },
+    door: { x0: 13, y0: 11, x1: 16, y1: 16 },
+    windows: [{ x0: 6, y0: 11, x1: 10, y1: 14 }],
+    lantern: null,
+  },
+}
+
 export interface Landscape {
   w: number
   h: number
   seed: number
-  /** Fuß der fernen Berge. */
+  /** Fuß der fernen Kuppen. */
   horizon: number
-  /** Ausschlag der Berge (Texel). */
+  /** Höhe der höchsten Kuppe über dem Horizont (Texel). */
   mountainAmp: number
+  /** Hintere (höhere, blassere) und vordere Kuppenkette. */
+  mountainsBack: Int16Array
   mountains: Int16Array
   forest: Int16Array
+  /** Oberkante der weiten Ebene. */
   hills: Int16Array
+  /** Vordere Schneewehe (Laternen, Hütte stehen darauf). */
   ground: Int16Array
   pines: Pine[]
   stars: Star[]
   moon: { x: number; y: number; r: number }
-  cabin: { x: number; y: number } | null
+  /** `y` = Bodenzeile der Hütte; `penguin` = kleiner Pinguin vor der Tür (nur Banner). */
+  cabin: { x: number; y: number; size: CabinSize; penguin: boolean } | null
+  /** Trampelpfad von der Tür nach vorn (bis zu dieser Zeile). */
+  pathEnd: number
   /** Eislaternen (Mitte des Glases) – nur mit Anker. */
   lanterns: { x: number; y: number }[]
   /** Glitzernde Schneepunkte. */
@@ -63,20 +119,26 @@ export interface LandscapeOptions {
   cols: number
   rows: number
   seed: number
-  /** Texel-Zeile des Ankers (Spielen-Knopf), -1 = keiner. */
+  /** Texel-Zeile der Mitte des Ankers (Spielen-Knopf), -1 = keiner. */
   anchorRow?: number
   /** Texel-Spalte, an der die Laternenreihe endet (linker Rand des Knopfs). */
   anchorEnd?: number
-  /** Hütte zeigen (Standard: wenn Platz ist); alse = nie. */
+  /** Oberkante und rechter Rand des Ankers – die Hütte steht darüber. */
+  anchorTop?: number
+  anchorRight?: number
+  /** Hütte zeigen (Standard: wenn Platz ist); `false` = nie. */
   cabin?: boolean
+  /** Kleiner Pinguin vor der Tür der kleinen Hütte (Banner). */
+  penguin?: boolean
   /** Waagrechte Lage von Mond/Sonne, 0…1 (Standard rechts). */
   moonX?: number
-  /** Hütte waagrecht, 0…1 (Standard rechts der Mitte). */
+  /** Hütte waagrecht, 0…1 (Standard ganz rechts). */
   cabinX?: number
 }
 
-export const CABIN_W = 22
-export const CABIN_H = 17
+/** Kleine Hütte (für ältere Aufrufer/Tests). */
+export const CABIN_W = CABINS.small.w
+export const CABIN_H = CABINS.small.h
 export const LANTERN_GAP = 13
 
 /** Glattes 1D-Rauschen 0…1. */
@@ -89,12 +151,27 @@ export function smooth(x: number, seed: number): number {
   return a + (b - a) * t
 }
 
-/** Grat-Rauschen: spitze Gipfel statt runder Hügel. */
-function ridge(x: number, seed: number): number {
-  return 1 - Math.abs(2 * smooth(x, seed) - 1)
-}
-
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
+
+/**
+ * Kette runder Kuppen: nebeneinander gesetzte Kosinus-Glocken (oben rund, zu den
+ * Seiten weich auslaufend), höchstens `amp` hoch. Breite Glocken halten die
+ * Steigung unter einem Texel je Spalte – so bleibt die Silhouette glatt.
+ */
+function domes(w: number, amp: number, rand: () => number, spread: number): Float32Array {
+  const out = new Float32Array(w)
+  let c = -rand() * amp * 3
+  while (c < w + amp * 4) {
+    const r = Math.max(6, amp * (2.6 + rand() * 2.2) * spread)
+    const top = amp * (0.5 + rand() * 0.5)
+    for (let x = Math.max(0, Math.floor(c - r)); x < Math.min(w, Math.ceil(c + r)); x++) {
+      const v = top * (0.5 + 0.5 * Math.cos((Math.PI * (x - c)) / r))
+      if (v > out[x]!) out[x] = v
+    }
+    c += r * (0.8 + rand() * 0.6)
+  }
+  return out
+}
 
 export function buildLandscape(o: LandscapeOptions): Landscape {
   const w = Math.max(8, Math.floor(o.cols))
@@ -104,83 +181,96 @@ export function buildLandscape(o: LandscapeOptions): Landscape {
   const anchored = (o.anchorRow ?? -1) >= 0
   const anchorEnd = clamp(Math.floor(o.anchorEnd ?? 0), 0, w)
 
-  // Vorderster Boden: mit Anker knapp unter dem Knopf (Laternen stehen darauf).
-  const groundBase = anchored ? clamp((o.anchorRow ?? 0) + 6, Math.round(h * 0.55), h - 3) : Math.round(h * 0.9)
-  const hillBase = Math.min(Math.round(h * 0.76), groundBase - Math.max(6, Math.round(h * 0.1)))
-  const forestBase = Math.min(Math.round(h * 0.66), hillBase - Math.max(4, Math.round(h * 0.07)))
-  const horizon = forestBase + 1
-  const mountainAmp = Math.max(10, Math.round(Math.min(horizon * 0.62, h * 0.3)))
+  // Vordere Wehe: mit Anker knapp unter dem Knopf (Laternen stehen darauf).
+  const groundBase = anchored ? clamp((o.anchorRow ?? 0) + 6, Math.round(h * 0.55), h - 3) : Math.round(h * 0.86)
+  // Weite Ebene: Horizont knapp über der Mitte, die Kuppen dahinter bleiben niedrig.
+  const horizon = Math.max(4, anchored ? Math.min(Math.round(h * 0.5), groundBase - Math.max(14, Math.round(h * 0.24))) : Math.round(h * 0.56))
+  const mountainAmp = Math.max(4, Math.round(h * (anchored ? 0.13 : 0.1)))
+  const forestBase = horizon + Math.max(2, Math.round(h * 0.012))
+  const hillBase = forestBase + Math.max(3, Math.round(h * 0.03))
 
+  const back = domes(w, mountainAmp, rand, 1.25)
+  const front = domes(w, mountainAmp * 0.62, rand, 1)
+  const mountainsBack = new Int16Array(w)
   const mountains = new Int16Array(w)
   const forest = new Int16Array(w)
   const hills = new Int16Array(w)
   const ground = new Int16Array(w)
   const s = seed & 0xffff
   for (let x = 0; x < w; x++) {
-    const m = 0.62 * ridge(x / 46 + 3.1, s + 1) + 0.28 * ridge(x / 19 + 7.7, s + 2) + 0.1 * smooth(x / 6, s + 3)
-    mountains[x] = Math.round(horizon - mountainAmp * Math.pow(m, 1.35))
-    forest[x] = Math.round(forestBase - h * 0.035 * smooth(x / 38, s + 4) - 1.5 * smooth(x / 9, s + 5))
-    hills[x] = Math.round(hillBase - h * 0.06 * smooth(x / 64 + 2, s + 6) - h * 0.02 * smooth(x / 21, s + 7))
+    mountainsBack[x] = horizon - Math.round(back[x]!)
+    mountains[x] = horizon - Math.round(front[x]!)
+    forest[x] = Math.round(forestBase - 1.4 * smooth(x / 7, s + 5))
+    hills[x] = Math.round(hillBase - h * 0.012 * smooth(x / 80 + 2, s + 6))
     // Unter den Laternen fast eben, sonst sanfte Verwehungen.
     const flat = anchored && x < anchorEnd + 4
-    const drift = flat ? 1.2 * smooth(x / 12, s + 8) : h * 0.035 * smooth(x / 52, s + 9) + 2.2 * smooth(x / 14, s + 10)
+    const drift = flat ? 1.2 * smooth(x / 12, s + 8) : h * 0.02 * smooth(x / 60, s + 9) + 1.6 * smooth(x / 16, s + 10)
     ground[x] = Math.round(groundBase - drift)
   }
 
-  // Hütte auf dem Hügel, rechts der Mitte (auf der Startseite vor dem Knopf).
+  // Blockhütte vorn rechts. Startseite: über dem Spielen-Knopf (sonst verdeckt er sie).
   let cabin: Landscape['cabin'] = null
-  if (o.cabin !== false && w >= 100 && h >= 44) {
-    const cx = Math.round(
-      anchored ? Math.min(w - CABIN_W - 6, Math.max(anchorEnd + 18, w * 0.7)) : clamp(w * (o.cabinX ?? 0.64), 4, w - CABIN_W - 4),
-    )
-    let top = h
-    for (let x = cx; x < cx + CABIN_W; x++) top = Math.min(top, hills[x] ?? top)
-    // Boden unter der Hütte einebnen.
-    for (let x = cx - 2; x < cx + CABIN_W + 2; x++) if (x >= 0 && x < w) hills[x] = top + 1
-    cabin = { x: cx, y: top + 1 }
+  let pathEnd = h
+  const size: CabinSize | null = w >= 160 && h >= 90 ? 'large' : w >= 100 && h >= 44 ? 'small' : null
+  if (o.cabin !== false && size) {
+    const spec = CABINS[size]
+    const margin = Math.max(4, Math.round(w * 0.05))
+    let x: number
+    let base: number
+    if (anchored && o.anchorTop != null && o.anchorRight != null && o.anchorRight > spec.w) {
+      x = clamp(Math.round(o.anchorRight) - spec.w - 2, 4, w - spec.w - 2)
+      base = clamp(Math.round(o.anchorTop) - 2, hillBase + 3, h - 1)
+      pathEnd = Math.min(h, base + 8)
+    } else {
+      x = o.cabinX == null ? w - spec.w - margin : Math.round(clamp(w * o.cabinX, 4, w - spec.w - 4))
+      let top = h
+      for (let k = x; k < x + spec.w; k++) top = Math.min(top, ground[clamp(k, 0, w - 1)]!)
+      base = top + 1
+      // Boden unter der Hütte einebnen.
+      for (let k = x - 2; k < x + spec.w + 2; k++) if (k >= 0 && k < w) ground[k] = top
+    }
+    cabin = { x, y: base, size, penguin: size === 'small' && !!o.penguin }
   }
 
   const pines: Pine[] = []
-  const nearCabin = (x: number, pad: number) => cabin && x > cabin.x - pad && x < cabin.x + CABIN_W + pad
-  // Ferne Wälder auf dem Rücken: dicht, in Gruppen.
+  const nearCabin = (x: number, pad: number) => !!cabin && x > cabin.x - pad && x < cabin.x + CABINS[cabin.size].w + pad
+  const pineSeed = () => (rand() * 1e9) | 0
+  // Schmaler Waldstreifen vor den Kuppen: kleine Tannen in Gruppen.
+  const tiny = Math.max(3, Math.round(h * 0.022))
   for (let x = 0; x < w; ) {
-    const patch = smooth(x / 30, s + 11)
-    if (patch > 0.32) pines.push({ x, base: forest[x]! + 1, h: 4 + Math.round(rand() * 6 + patch * 3), layer: 0, seed: (rand() * 1e9) | 0 })
+    const patch = smooth(x / 26, s + 11)
+    if (patch > 0.3) pines.push({ x, base: forest[x]! + 1, h: tiny + Math.round(rand() * tiny * 0.9 + patch * 2), layer: 0, seed: pineSeed() })
     x += 2 + Math.floor(rand() * 3)
   }
-  // Tannen auf dem Hügel, in lockeren Gruppen.
-  for (let x = 2; x < w; ) {
-    const patch = smooth(x / 44 + 5, s + 12)
-    if (patch > 0.5 && !nearCabin(x, 8)) {
-      pines.push({ x, base: hills[x]! + 1, h: Math.round(clamp(h * (0.09 + rand() * 0.06), 9, 30)), layer: 1, seed: (rand() * 1e9) | 0 })
+  // Ein paar Tannengruppen in der Ebene, eher rechts (links steht die Schrift).
+  const groups = Math.max(1, Math.round(w / 140))
+  for (let g = 0; g < groups; g++) {
+    const gx = Math.round(w * (0.38 + rand() * 0.55))
+    const depth = Math.round(rand() * Math.max(1, h * 0.04))
+    for (let k = 0, n = 2 + Math.floor(rand() * 3); k < n; k++) {
+      const x = gx + Math.round((k - n / 2) * (4 + rand() * 4))
+      if (x < 0 || x >= w || nearCabin(x, 6)) continue
+      pines.push({ x, base: hills[x]! + 1 + depth, h: Math.round(clamp(h * (0.05 + rand() * 0.04), 6, 22)), layer: 1, seed: pineSeed() })
     }
-    x += 5 + Math.floor(rand() * 6)
   }
-  // Hütte bekommt zwei Tannen daneben.
+  // Große Tannen an der Hütte (dahinter/daneben) und eine am linken Rand.
   if (cabin) {
-    for (const dx of [-7, CABIN_W + 5]) {
-      const x = cabin.x + dx
-      if (x > 0 && x < w) pines.push({ x, base: hills[x]! + 1, h: Math.round(clamp(h * 0.12, 12, 26)), layer: 1, seed: (rand() * 1e9) | 0 })
-    }
+    const spec = CABINS[cabin.size]
+    const big = Math.round(clamp(spec.h * 1.35, 14, h * 0.55))
+    const right = cabin.x + spec.w + 3
+    if (right < w + 4) pines.push({ x: right, base: cabin.y + 1, h: big, layer: 2, seed: pineSeed() })
+    pines.push({ x: cabin.x - 4, base: cabin.y - Math.round(spec.h * 0.1), h: Math.round(big * 0.8), layer: 2, seed: pineSeed() })
   }
-  // Große Tannen vorn als Rahmen: links und rechts am Rand.
-  const nearMax = anchored ? Math.min(h * 0.62, groundBase - 4) : h * 0.55
-  const nearMin = anchored ? h * 0.38 : h * 0.32
-  const edges: number[] = [-3 - Math.floor(rand() * 4), Math.round(w * 0.06 + rand() * w * 0.04)]
-  edges.push(w - Math.round(w * 0.05 + rand() * 6), w + 2)
-  if (!anchored && w > 260) edges.push(Math.round(w * 0.88 + rand() * 10))
-  for (const x of edges) {
-    const gx = clamp(x, 0, w - 1)
-    pines.push({ x, base: ground[gx]! + 1, h: Math.round(nearMin + rand() * (nearMax - nearMin)), layer: 2, seed: (rand() * 1e9) | 0 })
-  }
+  if (!anchored && w > 200) pines.push({ x: -2, base: ground[0]! + 1, h: Math.round(h * 0.42), layer: 2, seed: pineSeed() })
   pines.sort((a, b) => a.layer - b.layer || a.base - b.base)
 
   // Mond oben rechts, Sterne mehr nach oben hin.
   const r = Math.round(clamp(Math.min(w, h) * 0.035, 5, 10))
-  const moon = { x: Math.round(w * (o.moonX ?? (anchored ? 0.84 : 0.8))), y: Math.round(clamp(h * 0.17, r + 3, horizon - mountainAmp - r)), r }
+  const skyTop = horizon - mountainAmp
+  const moon = { x: Math.round(w * (o.moonX ?? (anchored ? 0.84 : 0.8))), y: Math.round(clamp(h * 0.15, r + 3, skyTop - r - 2)), r }
   const stars: Star[] = []
-  const skyBottom = horizon - Math.round(mountainAmp * 0.4)
-  const count = Math.round((w * skyBottom) / 260)
+  const skyBottom = horizon - Math.round(mountainAmp * 0.6)
+  const count = Math.max(0, Math.round((w * skyBottom) / 260))
   for (let i = 0; i < count; i++) {
     const x = Math.floor(rand() * w)
     const y = Math.floor(Math.pow(rand(), 1.5) * skyBottom)
@@ -196,17 +286,18 @@ export function buildLandscape(o: LandscapeOptions): Landscape {
   }
 
   const sparkles: Landscape['sparkles'] = []
-  for (let i = 0, n = Math.round(w * 0.35); i < n; i++) {
+  for (let i = 0, n = Math.round(w * 0.4); i < n; i++) {
     const x = Math.floor(rand() * w)
-    const onGround = rand() < 0.6
-    const top = onGround ? ground[x]! : hills[x]!
-    const y = top + 1 + Math.floor(rand() * (onGround ? Math.max(1, h - top - 2) : 6))
+    const top = hills[x]!
+    const y = top + 1 + Math.floor(rand() * Math.max(1, h - top - 2))
     if (y < h) sparkles.push({ x, y })
   }
 
   const tufts: Landscape['tufts'] = []
   for (let x = 3; x < w; x += 4 + Math.floor(rand() * 9)) {
-    if (smooth(x / 18, s + 13) > 0.62 && !lanterns.some((l) => Math.abs(l.x - x) < 3)) tufts.push({ x, y: ground[x]!, h: 2 + Math.floor(rand() * 3) })
+    if (smooth(x / 18, s + 13) > 0.62 && !lanterns.some((l) => Math.abs(l.x - x) < 3) && !nearCabin(x, 2)) {
+      tufts.push({ x, y: ground[x]!, h: 2 + Math.floor(rand() * 3) })
+    }
   }
 
   const clouds: Cloud[] = []
@@ -214,15 +305,15 @@ export function buildLandscape(o: LandscapeOptions): Landscape {
     const cw = Math.round(22 + rand() * 30)
     clouds.push({
       x: Math.round(rand() * (w + cw)) - cw,
-      y: Math.round(h * 0.05 + rand() * Math.max(4, horizon - mountainAmp - h * 0.12)),
+      y: Math.round(h * 0.05 + rand() * Math.max(4, skyTop - h * 0.14)),
       w: cw,
       h: Math.round(6 + rand() * 5),
-      seed: (rand() * 1e9) | 0,
+      seed: pineSeed(),
       speed: 0.02 + rand() * 0.03,
     })
   }
 
-  return { w, h, seed, horizon, mountainAmp, mountains, forest, hills, ground, pines, stars, moon, cabin, lanterns, sparkles, tufts, clouds }
+  return { w, h, seed, horizon, mountainAmp, mountainsBack, mountains, forest, hills, ground, pines, stars, moon, cabin, pathEnd, lanterns, sparkles, tufts, clouds }
 }
 
 /** Polarlicht-Stärke 0…1 über die Zeit: hin und wieder ein paar Minuten, sanft ein- und ausgeblendet. */

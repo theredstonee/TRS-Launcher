@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { accentForDesign, applyDesign, DESIGN_STORAGE_KEY, designs, normalizeDesign } from '../app/utils/design'
 import { uiSettingsSchema } from '../app/utils/schemas'
 import { rng } from '../app/utils/redstone/scene'
-import { AURORA_PERIOD, auroraEnvelope, buildLandscape, CABIN_W } from '../app/utils/winter/landscape'
+import { AURORA_PERIOD, auroraEnvelope, buildLandscape, CABIN_W, CABINS } from '../app/utils/winter/landscape'
+import { DOOR_X, Penguin, PENGUIN_H, PENGUIN_W, penguinPixels, TARGET_X } from '../app/utils/winter/penguin'
 import { paintSky } from '../app/utils/winter/paint'
 import { buildWinterPalette } from '../app/utils/winter/palette'
 import { Smoke, Snowfall } from '../app/utils/winter/snow'
@@ -118,6 +119,37 @@ describe('Winterlandschaft', () => {
     expect(right.cabin!.x + CABIN_W).toBeLessThanOrEqual(128 - 4)
   })
 
+  it('weite Ebene: niedrige, runde Kuppen ohne Zacken', () => {
+    const l = buildLandscape({ cols: 420, rows: 250, seed: 11 })
+    for (const line of [l.mountains, l.mountainsBack]) {
+      for (let x = 0; x < l.w; x++) {
+        // Höchstens 10 % der Höhe über dem Horizont, Horizont über der Mitte der Ebene.
+        expect(l.horizon - line[x]!).toBeLessThanOrEqual(l.mountainAmp)
+        // Glatte Silhouette: höchstens ein, zwei Texel Sprung je Spalte.
+        if (x > 0) expect(Math.abs(line[x]! - line[x - 1]!)).toBeLessThanOrEqual(2)
+      }
+    }
+    expect(l.mountainAmp).toBeLessThanOrEqual(Math.round(l.h * 0.1))
+    // Die Ebene nimmt das untere Drittel und mehr ein.
+    expect(l.h - Math.max(...l.hills)).toBeGreaterThan(l.h * 0.3)
+  })
+
+  it('große Hütte vorn rechts, auf der Startseite über dem Knopf', () => {
+    const bg = buildLandscape({ cols: 420, rows: 250, seed: 4 })
+    expect(bg.cabin?.size).toBe('large')
+    expect(bg.cabin!.x).toBeGreaterThan(bg.w * 0.7)
+    expect(bg.cabin!.x + CABINS.large.w).toBeLessThanOrEqual(bg.w)
+    // Steht auf der vorderen Wehe.
+    expect(bg.cabin!.y).toBeGreaterThanOrEqual(bg.ground[bg.cabin!.x]!)
+
+    // Knopf: Zeilen 88–106, Spalten 279–386 (Hero 396 × 118).
+    const hero = buildLandscape({ cols: 396, rows: 118, seed: 4, anchorRow: 97, anchorEnd: 279, anchorTop: 88, anchorRight: 386 })
+    expect(hero.cabin?.size).toBe('large')
+    expect(hero.cabin!.y).toBeLessThan(88)
+    expect(hero.cabin!.x).toBeGreaterThanOrEqual(279)
+    expect(hero.cabin!.x + CABINS.large.w).toBeLessThanOrEqual(386)
+  })
+
   it('kommt mit winzigen Flächen zurecht', () => {
     const l = buildLandscape({ cols: 3, rows: 2, seed: 1 })
     expect(l.w).toBeGreaterThanOrEqual(8)
@@ -165,6 +197,74 @@ describe('Schnee und Rauch', () => {
     for (const p of smoke.puffs) expect(p.y).toBeLessThanOrEqual(50)
     for (let t = 400; t < 600; t++) smoke.step(null, t)
     expect(smoke.puffs).toEqual([])
+  })
+})
+
+describe('Pinguin', () => {
+  it('schaut aus dem Fenster, kommt hinaus, winkt und geht wieder hinein', () => {
+    const p = new Penguin(rng(1), { day: false, still: false })
+    expect(p.view().phase).toBe('window')
+    expect(p.view().door).toBe(0)
+    p.trigger()
+    const seen = new Set<string>()
+    let minX = Infinity
+    let waved = false
+    for (let t = 0; t < 400; t++) {
+      p.step()
+      const v = p.view()
+      seen.add(v.phase)
+      if (['walkOut', 'wave', 'linger', 'walkIn'].includes(v.phase)) minX = Math.min(minX, v.x)
+      if (v.wave !== null) waved = true
+      if (v.phase === 'walkOut' || v.phase === 'wave') expect(v.door).toBe(2)
+    }
+    for (const phase of ['opening', 'walkOut', 'wave', 'walkIn', 'closing', 'window']) expect(seen.has(phase)).toBe(true)
+    expect(waved).toBe(true)
+    expect(minX).toBe(TARGET_X)
+    expect(p.view().phase).toBe('window')
+    expect(p.view().door).toBe(0)
+  })
+
+  it('kommt von selbst alle ein bis zwei Minuten (am Tag öfter)', () => {
+    const outings = (day: boolean) => {
+      const p = new Penguin(rng(5), { day, still: false })
+      let n = 0
+      let last = 'window'
+      // 10 Minuten à 80 ms.
+      for (let t = 0; t < 7500; t++) {
+        p.step()
+        const phase = p.view().phase
+        if (phase === 'opening' && last !== 'opening') n++
+        last = phase
+      }
+      return n
+    }
+    const night = outings(false)
+    expect(night).toBeGreaterThanOrEqual(4)
+    expect(night).toBeLessThanOrEqual(11)
+    expect(outings(true)).toBeGreaterThan(night)
+  })
+
+  it('bei reduzierter Bewegung steht er still neben der Tür', () => {
+    const p = new Penguin(rng(1), { day: false, still: true })
+    const before = p.view()
+    for (let t = 0; t < 2000; t++) p.step()
+    expect(p.view()).toEqual(before)
+    expect(before.phase).toBe('still')
+    expect(before.door).toBe(0)
+    expect(before.x).toBeGreaterThan(DOOR_X)
+    p.setStill(false)
+    expect(p.view().phase).toBe('window')
+  })
+
+  it('Figur passt in 7 × 11, winkend mit erhobener Flosse', () => {
+    for (const v of [{ step: 0, wave: null }, { step: 1, wave: 1 }] as const) {
+      for (const [x, y] of penguinPixels(v)) {
+        expect(x).toBeGreaterThanOrEqual(0)
+        expect(x).toBeLessThan(PENGUIN_W)
+        expect(y).toBeLessThan(PENGUIN_H)
+      }
+    }
+    expect(penguinPixels({ step: 0, wave: 1 }).some(([x, y]) => x === 6 && y === 4)).toBe(true)
   })
 })
 
