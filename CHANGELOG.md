@@ -28,6 +28,14 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Fix: red spots across the animated background.** On some PCs the redstone background behind the pages slowly filled with red spots (for example after sleep, minimizing or a graphics driver reset). The scene now clears itself every frame and redraws completely when the graphics card resets or the window comes back.
+
+### Deutsch
+- **Fix: rote Flecken im animierten Hintergrund.** Auf manchen PCs füllte sich der Redstone-Hintergrund hinter den Seiten nach und nach mit roten Flecken (z. B. nach Ruhezustand, Minimieren oder einem Neustart des Grafiktreibers). Die Szene leert sich jetzt bei jedem Bild und zeichnet sich vollständig neu, wenn die Grafikkarte zurückgesetzt wird oder das Fenster wieder erscheint.
+
 ## 0.19.0 – 2026-10-12 – Smooth Moves | Flüssige Bewegung
 <!-- banner: accent=#ff4d3a motif=/news/0.19.0/banner.png -->
 <!-- shots:

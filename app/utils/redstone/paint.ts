@@ -491,6 +491,9 @@ export function paintFrame(
   particles: Particle[],
   flicker: (i: number) => boolean,
 ) {
+  // Erst leeren: Geht der Boden verloren (GPU-Reset in WebView2), sammelten sich sonst
+  // alte Bilder und Funken Bild für Bild als rote Flecken an.
+  g.clearRect(0, 0, g.canvas.width, g.canvas.height)
   g.drawImage(floor, 0, 0)
   const { w } = circuit
   for (let i = 0; i < circuit.cells.length; i++) {

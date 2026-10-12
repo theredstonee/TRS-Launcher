@@ -247,6 +247,7 @@ function scheduleLayout() {
 let resize: ResizeObserver | undefined
 let intersect: IntersectionObserver | undefined
 let themeWatch: MutationObserver | undefined
+let wasHidden = false
 
 /**
  * Fenster verdeckt/minimiert? `visibilitychange` kommt in WebView2/WebKitGTK
@@ -255,7 +256,17 @@ let themeWatch: MutationObserver | undefined
  * immer als sichtbar.
  */
 function syncHidden() {
-  loop.set('hidden', document.hidden && !document.hasFocus())
+  const hidden = document.hidden && !document.hasFocus()
+  // Nach Minimieren/Ruhezustand kann die GPU die zwischengespeicherten Bilder
+  // (Boden, Sprites) verworfen haben – beim Zurückkommen frisch zeichnen.
+  if (wasHidden && !hidden) safely(repaintStatic)
+  wasHidden = hidden
+  loop.set('hidden', hidden)
+}
+
+/** Grafik-Reset (Treiber, Ruhezustand, Monitorwechsel): Inhalte sind weg, alles neu zeichnen. */
+function onContextRestored() {
+  safely(repaintStatic)
 }
 
 /** Strg+Alt+R: sofort einen Umbau auslösen (zum Ausprobieren). */
@@ -285,6 +296,8 @@ onMounted(() => {
   // Theme oder Akzent geändert → Farben neu lesen.
   themeWatch = new MutationObserver(() => requestAnimationFrame(() => safely(repaintStatic)))
   themeWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-accent'] })
+  pix.value?.addEventListener('contextrestored', onContextRestored)
+  glowCanvas.value?.addEventListener('contextrestored', onContextRestored)
 
   safely(layout)
 })
@@ -299,6 +312,8 @@ onBeforeUnmount(() => {
   document.removeEventListener('visibilitychange', syncHidden)
   window.removeEventListener('focus', syncHidden)
   window.removeEventListener('pageshow', syncHidden)
+  pix.value?.removeEventListener('contextrestored', onContextRestored)
+  glowCanvas.value?.removeEventListener('contextrestored', onContextRestored)
 })
 </script>
 
