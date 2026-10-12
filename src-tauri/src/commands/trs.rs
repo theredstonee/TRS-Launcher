@@ -3,10 +3,12 @@
 
 use std::path::PathBuf;
 
+use tauri::ipc::Channel;
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 use trs_core::trs_api::achievements::{MyAchievements, PlayerAchievements, ReportKind};
 use trs_core::trs_api::cape_import::{self, CapeSource};
+use trs_core::trs_api::cape_video::{self, VideoInfo, VideoPicks, VideoRequest};
 use trs_core::trs_api::sync::SyncStatus;
 use trs_core::trs_api::types::{
     AdminCape, AdminStats, AdminUser, BlockedUser, CapeHolders, CapeItem, CapeOffers, CodeView, Friend,
@@ -114,6 +116,71 @@ pub async fn trs_pick_cape_sources(
         return Ok(None);
     }
     Ok(Some(cape_import::read_sources(files).await?))
+}
+
+/// Video als Umhang-Quelle wählen (nur mit geladenem FFmpeg, wie Clips nur unter
+/// Windows). Der Kern liest Dauer und Größe; das Webview bekommt nur eine Kennung.
+/// `None` = abgebrochen.
+#[tauri::command]
+pub async fn trs_pick_cape_video(
+    app: AppHandle,
+    launcher: State<'_, LauncherState>,
+    picks: State<'_, VideoPicks>,
+) -> CommandResult<Option<VideoInfo>> {
+    trs_core::platform::desktop_only()?;
+    cape_video::supported()?;
+    let Some(exe) = launcher.clips().ffmpeg().ready().await else { return Err(cape_video::ffmpeg_missing().into()) };
+    let lang = dialog_text::language(&launcher).await;
+    let picked = tauri::async_runtime::spawn_blocking(move || {
+        app.dialog()
+            .file()
+            .set_title(DialogText::PickCapeVideo.text(lang))
+            .add_filter(DialogText::Videos.text(lang), &cape_video::VIDEO_EXTENSIONS)
+            .blocking_pick_file()
+    })
+    .await
+    .ok()
+    .flatten()
+    .and_then(|p| p.into_path().ok());
+    let Some(path) = picked else { return Ok(None) };
+    if !std::fs::metadata(&path).is_ok_and(|m| m.is_file()) {
+        return Ok(None);
+    }
+    let stem = path.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
+    let name = trs_core::trs_api::validate::text(stem.trim(), 64);
+    let (duration_ms, width, height) = cape_video::probe(&exe, &path, &name).await?;
+    Ok(Some(picks.insert(path, name, duration_ms, width, height)))
+}
+
+/// Bereich eines gewählten Videos in Frames zerlegen – als Aufgabe mit
+/// Fortschritt (0–100) und Abbrechen (beendet FFmpeg).
+#[tauri::command]
+pub async fn trs_cape_video_frames(
+    app: AppHandle,
+    launcher: State<'_, LauncherState>,
+    picks: State<'_, VideoPicks>,
+    token: String,
+    request: VideoRequest,
+    on_progress: Channel<f64>,
+    task_id: Option<String>,
+) -> CommandResult<CapeSource> {
+    trs_core::platform::desktop_only()?;
+    cape_video::supported()?;
+    let (path, info) = picks.get(&token)?;
+    let Some(exe) = launcher.clips().ffmpeg().ready().await else { return Err(cape_video::ffmpeg_missing().into()) };
+    let span_us = request.end_ms.min(info.duration_ms).saturating_sub(request.start_ms).max(1) * 1000;
+    let last = std::sync::atomic::AtomicI32::new(-1);
+    let progress: trs_core::clips::edit::Progress = std::sync::Arc::new(move |us: u64| {
+        #[allow(clippy::cast_possible_truncation)]
+        let percent = (us.min(span_us) * 100 / span_us) as i32;
+        if last.swap(percent, std::sync::atomic::Ordering::Relaxed) != percent {
+            let _ = on_progress.send(f64::from(percent));
+        }
+    });
+    let dir = cape_video::work_dir(launcher.paths().root());
+    let runner = cape_video::KillableRunner { exe };
+    let work = cape_video::extract(&runner, &path, &dir, &info, &request, Some(progress));
+    Ok(crate::commands::tasks::tracked(&app, task_id, work).await?)
 }
 
 /// Lädt den fertigen Streifen aus dem Zuschneide-Dialog hoch (PNG als Base64,

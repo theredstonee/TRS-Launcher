@@ -59,6 +59,10 @@ pub enum DialogText {
     ControlsFile,
     /// Pixel-Symbol aus dem Symbol-Editor als PNG speichern.
     SaveIcon,
+    /// Video als Quelle für einen Umhang wählen.
+    PickCapeVideo,
+    /// Filtername für Videos (MP4, WebM …).
+    Videos,
 }
 
 impl DialogText {
@@ -70,7 +74,7 @@ impl DialogText {
 
 /// Je Text eine Zeile in der Reihenfolge von [`Language::ALL`]:
 /// en, de, es, fr, pl, pt-BR, tr, nl.
-const TEXTS: [[&str; 8]; 31] = [
+const TEXTS: [[&str; 8]; 33] = [
     [
         "Save modpack",
         "Modpack speichern",
@@ -174,14 +178,14 @@ const TEXTS: [[&str; 8]; 31] = [
         "java.exe of javaw.exe kiezen",
     ],
     [
-        "Choose images for your cape (PNG, JPEG, WebP, GIF – several = frames)",
-        "Bilder für den Umhang wählen (PNG, JPEG, WebP, GIF – mehrere = Frames)",
-        "Elige imágenes para tu capa (PNG, JPEG, WebP, GIF – varias = fotogramas)",
-        "Choisir des images pour la cape (PNG, JPEG, WebP, GIF – plusieurs = images)",
-        "Wybierz obrazy peleryny (PNG, JPEG, WebP, GIF – kilka = klatki)",
-        "Escolher imagens para a capa (PNG, JPEG, WebP, GIF – várias = quadros)",
-        "Pelerin için resim seç (PNG, JPEG, WebP, GIF – birden çok = kareler)",
-        "Afbeeldingen voor de cape kiezen (PNG, JPEG, WebP, GIF – meerdere = frames)",
+        "Choose images for your cape (PNG, APNG, JPEG, WebP, GIF – several = frames)",
+        "Bilder für den Umhang wählen (PNG, APNG, JPEG, WebP, GIF – mehrere = Frames)",
+        "Elige imágenes para tu capa (PNG, APNG, JPEG, WebP, GIF – varias = fotogramas)",
+        "Choisir des images pour la cape (PNG, APNG, JPEG, WebP, GIF – plusieurs = images)",
+        "Wybierz obrazy peleryny (PNG, APNG, JPEG, WebP, GIF – kilka = klatki)",
+        "Escolher imagens para a capa (PNG, APNG, JPEG, WebP, GIF – várias = quadros)",
+        "Pelerin için resim seç (PNG, APNG, JPEG, WebP, GIF – birden çok = kareler)",
+        "Afbeeldingen voor de cape kiezen (PNG, APNG, JPEG, WebP, GIF – meerdere = frames)",
     ],
     [
         "Cape images",
@@ -345,6 +349,17 @@ const TEXTS: [[&str; 8]; 31] = [
         "Simgeyi kaydet",
         "Pictogram opslaan",
     ],
+    [
+        "Choose a video for your cape (a section becomes up to 32 frames)",
+        "Video für den Umhang wählen (ein Ausschnitt wird zu bis zu 32 Frames)",
+        "Elige un vídeo para tu capa (un fragmento se convierte en hasta 32 fotogramas)",
+        "Choisir une vidéo pour la cape (un extrait devient jusqu'à 32 images)",
+        "Wybierz wideo dla peleryny (fragment staje się maks. 32 klatkami)",
+        "Escolher um vídeo para a capa (um trecho vira até 32 quadros)",
+        "Pelerin için video seç (bir bölüm en fazla 32 kare olur)",
+        "Video voor de cape kiezen (een fragment wordt tot 32 frames)",
+    ],
+    ["Videos", "Videos", "Vídeos", "Vidéos", "Wideo", "Vídeos", "Videolar", "Video's"],
 ];
 
 impl DialogText {
@@ -365,7 +380,7 @@ pub async fn language(launcher: &LauncherState) -> Language {
 mod tests {
     use super::*;
 
-    const ALL: [DialogText; 31] = [
+    const ALL: [DialogText; 33] = [
         DialogText::SaveModpack,
         DialogText::PickModpack,
         DialogText::ModrinthModpack,
@@ -397,6 +412,8 @@ mod tests {
         DialogText::PickControls,
         DialogText::ControlsFile,
         DialogText::SaveIcon,
+        DialogText::PickCapeVideo,
+        DialogText::Videos,
     ];
 
     #[test]

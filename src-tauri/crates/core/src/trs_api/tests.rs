@@ -726,7 +726,7 @@ async fn opting_out_and_deleting_data() {
 }
 
 #[test]
-fn hd_builtin_capes_up_to_scale_8_are_shown() {
+fn hd_capes_up_to_scale_16_are_shown() {
     let cape = |scale: u32, width: u32| -> types::ApiCape {
         serde_json::from_value(json!({
             "id": "nether", "name": "Nether", "kind": "builtin", "unlock": "free", "status": "approved",
@@ -737,6 +737,8 @@ fn hd_builtin_capes_up_to_scale_8_are_shown() {
     };
     assert!(cape(4, 256).is_valid());
     assert!(cape(8, 512).is_valid());
+    assert!(cape(12, 768).is_valid());
+    assert!(cape(16, 1024).is_valid(), "HD-Umhänge bis 1024×512 je Frame");
     assert!(!cape(8, 256).is_valid(), "Breite muss zum Faktor passen");
-    assert!(!cape(9, 576).is_valid(), "mehr als Faktor 8 wird nicht angezeigt");
+    assert!(!cape(17, 1088).is_valid(), "mehr als Faktor 16 wird nicht angezeigt");
 }

@@ -2,11 +2,12 @@
 //!
 //! Der Nutzer wählt die Dateien im Dateidialog (der Pfad verlässt Rust nie). Hier
 //! wird das Format an den Magic Bytes erkannt (nicht an der Endung), die Maße
-//! werden aus dem Dateikopf geprüft, BEVOR irgendwer dekodiert, und GIFs werden
-//! direkt im Kern in Einzelbilder zerlegt – mit der `image`-Crate (gif-Feature,
-//! gepflegt vom image-rs-Projekt, schon Abhängigkeit des Kerns, Speichergrenzen
-//! über `Limits`). Das Webview bekommt nur geprüfte Data-URLs; der fertige
-//! Streifen wird vor dem Hochladen noch einmal von `png::validate_upload` geprüft.
+//! werden aus dem Dateikopf geprüft, BEVOR irgendwer dekodiert, und GIFs/APNGs
+//! werden direkt im Kern in Einzelbilder zerlegt – mit der `image`-Crate
+//! (gif-/png-Feature, gepflegt vom image-rs-Projekt, schon Abhängigkeit des
+//! Kerns, Speichergrenzen über `Limits`). Videos zerlegt `cape_video` mit FFmpeg.
+//! Das Webview bekommt nur geprüfte Data-URLs; der fertige Streifen wird vor dem
+//! Hochladen noch einmal von `png::validate_upload` geprüft.
 
 use std::io::Cursor;
 use std::path::PathBuf;
@@ -28,13 +29,22 @@ pub const MAX_TOTAL_BYTES: u64 = 64 * 1024 * 1024;
 /// Größte Kante / Pixelzahl eines Bildes, das ans Webview geht.
 const MAX_SIDE: u32 = 8192;
 const MAX_IMAGE_PIXELS: u64 = 4096 * 4096;
-/// GIFs: größte Leinwand, größte Kante der gelieferten Frames, Frame- und Pixel-Budget.
+/// GIF/APNG: größte Leinwand, größte Kante der gelieferten Frames, Frame- und Pixel-Budget.
 const MAX_GIF_SIDE: u32 = 2048;
-const GIF_OUTPUT_SIDE: u32 = 1024;
+pub(crate) const ANIMATION_OUTPUT_SIDE: u32 = 1024;
 const MAX_GIF_FRAMES: usize = 256;
 const MAX_GIF_WORK_PIXELS: u64 = 256 * 1024 * 1024;
 /// Studio-Exporte beschreiben nur Frames + Faktor – mehr als ein paar KB sind es nie.
 const MAX_JSON_BYTES: usize = 64 * 1024;
+
+/// Woher eine zerlegte Animation stammt (nur für die Anzeige).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AnimationFormat {
+    Gif,
+    Apng,
+    Video,
+}
 
 /// Eine gewählte Datei, fertig fürs Webview.
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -42,8 +52,18 @@ const MAX_JSON_BYTES: usize = 64 * 1024;
 pub enum CapeSource {
     /// PNG/JPEG/WebP – das Webview dekodiert die (geprüfte) Datei selbst.
     Image { name: String, data_url: String, width: u32, height: u32 },
-    /// GIF, im Kern zerlegt: höchstens 16 gleichmäßig verteilte Frames als PNG.
-    Gif { name: String, width: u32, height: u32, frames: Vec<String>, duration_ms: u32, source_frames: u32 },
+    /// GIF, APNG oder Video, im Kern zerlegt: höchstens 32 gleichmäßig verteilte
+    /// Frames als PNG; `delays_ms` = wie lange jeder gelieferte Frame steht.
+    Animation {
+        name: String,
+        format: AnimationFormat,
+        width: u32,
+        height: u32,
+        frames: Vec<String>,
+        delays_ms: Vec<u32>,
+        duration_ms: u32,
+        source_frames: u32,
+    },
     /// JSON eines TRS-Studio-Exports (Frames + Faktor des zugehörigen PNG-Streifens).
     Studio { name: String, frames: u32, scale: u32 },
 }
@@ -51,16 +71,36 @@ pub enum CapeSource {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Kind {
     Png,
+    Apng,
     Jpeg,
     Webp,
     Gif,
     Json,
 }
 
+/// Hat das PNG einen `acTL`-Chunk vor den Bilddaten (= APNG)? Liest nur die Chunk-Köpfe.
+fn is_apng(bytes: &[u8]) -> bool {
+    let mut off = 8usize;
+    for _ in 0..64 {
+        let Some(head) = bytes.get(off..off + 8) else { return false };
+        let len = u32::from_be_bytes([head[0], head[1], head[2], head[3]]) as usize;
+        match &head[4..8] {
+            b"acTL" => return true,
+            b"IDAT" | b"IEND" => return false,
+            _ => {}
+        }
+        off = match off.checked_add(12 + len) {
+            Some(next) => next,
+            None => return false,
+        };
+    }
+    false
+}
+
 /// Format an den ersten Bytes erkennen. JSON nur mit passender Endung und `{` am Anfang.
 fn sniff(bytes: &[u8], json_ext: bool) -> Option<Kind> {
     if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
-        Some(Kind::Png)
+        Some(if is_apng(bytes) { Kind::Apng } else { Kind::Png })
     } else if bytes.starts_with(&[0xFF, 0xD8, 0xFF]) {
         Some(Kind::Jpeg)
     } else if bytes.len() >= 12 && &bytes[..4] == b"RIFF" && &bytes[8..12] == b"WEBP" {
@@ -77,7 +117,7 @@ fn sniff(bytes: &[u8], json_ext: bool) -> Option<Kind> {
 fn unsupported(name: &str) -> Error {
     Error::validation(crate::msg!(
         "trsCapeImport.unsupported",
-        "„{name}“ ist kein unterstütztes Bild (PNG, JPEG, WebP, GIF oder TRS-Studio-JSON).",
+        "„{name}“ ist kein unterstütztes Bild (PNG, APNG, JPEG, WebP, GIF oder TRS-Studio-JSON).",
         name = name
     ))
 }
@@ -85,7 +125,7 @@ fn unsupported(name: &str) -> Error {
 fn too_big(name: &str) -> Error {
     Error::validation(crate::msg!(
         "trsCapeImport.imageTooLarge",
-        "„{name}“ ist zu groß (höchstens 4096×4096 Pixel, als GIF 2048×2048).",
+        "„{name}“ ist zu groß (höchstens 4096×4096 Pixel, animiert 2048×2048).",
         name = name
     ))
 }
@@ -146,7 +186,8 @@ fn display_name(path: &std::path::Path) -> String {
 pub fn source_from_bytes(name: String, json_ext: bool, bytes: &[u8]) -> Result<CapeSource> {
     match sniff(bytes, json_ext).ok_or_else(|| unsupported(&name))? {
         Kind::Json => studio_meta(name, bytes),
-        Kind::Gif => decode_gif(name, bytes),
+        Kind::Gif => decode_animation(name, bytes, AnimationFormat::Gif),
+        Kind::Apng => decode_animation(name, bytes, AnimationFormat::Apng),
         kind @ (Kind::Png | Kind::Jpeg | Kind::Webp) => {
             let (format, mime) = match kind {
                 Kind::Png => (image::ImageFormat::Png, "image/png"),
@@ -202,7 +243,7 @@ fn studio_meta(name: String, bytes: &[u8]) -> Result<CapeSource> {
 /// Dekodieren geprüft; den Inhalt prüft danach `png::validate_upload`.
 pub fn decode_upload(encoded: &str) -> Result<Vec<u8>> {
     if encoded.len() > png::MAX_UPLOAD_BYTES.div_ceil(3) * 4 {
-        return Err(Error::validation(crate::msg!("trsPng.fileTooLarge", "Die Datei ist zu groß (höchstens 5 MB).")));
+        return Err(Error::validation(crate::msg!("trsPng.fileTooLarge", "Die Datei ist zu groß (höchstens 20 MB).")));
     }
     STANDARD
         .decode(encoded.trim())
@@ -217,19 +258,30 @@ pub fn sample_frames(total: usize, keep: usize) -> Vec<usize> {
     (0..keep).map(|i| i * total / keep).collect()
 }
 
-fn gif_decoder(bytes: &[u8]) -> image::ImageResult<image::codecs::gif::GifDecoder<Cursor<&[u8]>>> {
-    let mut decoder = image::codecs::gif::GifDecoder::new(Cursor::new(bytes))?;
+fn animation_limits() -> image::Limits {
     let mut limits = image::Limits::default();
     limits.max_image_width = Some(MAX_GIF_SIDE);
     limits.max_image_height = Some(MAX_GIF_SIDE);
     limits.max_alloc = Some(128 * 1024 * 1024);
-    decoder.set_limits(limits)?;
-    Ok(decoder)
+    limits
 }
 
-/// GIF zerlegen: 1. Durchgang zählt Frames und Dauer, 2. behält höchstens 16
+/// Maße + Frames einer Animation (GIF bzw. APNG), mit festen Speichergrenzen.
+fn animation_frames(bytes: &[u8], format: AnimationFormat) -> image::ImageResult<((u32, u32), image::Frames<'_>)> {
+    if format == AnimationFormat::Apng {
+        let decoder = image::codecs::png::PngDecoder::with_limits(Cursor::new(bytes), animation_limits())?;
+        let size = decoder.dimensions();
+        return Ok((size, decoder.apng()?.into_frames()));
+    }
+    let mut decoder = image::codecs::gif::GifDecoder::new(Cursor::new(bytes))?;
+    decoder.set_limits(animation_limits())?;
+    let size = decoder.dimensions();
+    Ok((size, decoder.into_frames()))
+}
+
+/// GIF/APNG zerlegen: 1. Durchgang zählt Frames und Dauer, 2. behält höchstens 32
 /// gleichmäßig verteilte (fertig zusammengesetzte) Frames als PNG.
-fn decode_gif(name: String, bytes: &[u8]) -> Result<CapeSource> {
+fn decode_animation(name: String, bytes: &[u8], format: AnimationFormat) -> Result<CapeSource> {
     let too_long = |name: &str| {
         Error::validation(crate::msg!(
             "trsCapeImport.gifTooLong",
@@ -238,33 +290,31 @@ fn decode_gif(name: String, bytes: &[u8]) -> Result<CapeSource> {
             max = MAX_GIF_FRAMES
         ))
     };
-    let first = gif_decoder(bytes).map_err(|e| match e {
+    let ((width, height), first) = animation_frames(bytes, format).map_err(|e| match e {
         image::ImageError::Limits(_) => too_big(&name),
         _ => broken(&name),
     })?;
-    let (width, height) = first.dimensions();
     if width == 0 || height == 0 {
         return Err(broken(&name));
     }
     let per_frame = u64::from(width) * u64::from(height);
-    let mut total = 0usize;
-    let mut duration_ms = 0u32;
-    for frame in first.into_frames() {
+    let mut delays = Vec::new();
+    for frame in first {
         let frame = frame.map_err(|_| broken(&name))?;
-        total += 1;
-        if total > MAX_GIF_FRAMES || per_frame * total as u64 > MAX_GIF_WORK_PIXELS {
+        if delays.len() >= MAX_GIF_FRAMES || per_frame * (delays.len() as u64 + 1) > MAX_GIF_WORK_PIXELS {
             return Err(too_long(&name));
         }
-        duration_ms = duration_ms.saturating_add(delay_ms(&frame));
+        delays.push(delay_ms(&frame));
     }
+    let total = delays.len();
     if total == 0 {
         return Err(broken(&name));
     }
     let keep = sample_frames(total, png::MAX_UPLOAD_FRAMES as usize);
-    let (out_w, out_h) = fit(width, height, GIF_OUTPUT_SIDE);
+    let (out_w, out_h) = fit(width, height, ANIMATION_OUTPUT_SIDE);
     let mut frames = Vec::with_capacity(keep.len());
-    let decoder = gif_decoder(bytes).map_err(|_| broken(&name))?;
-    for (index, frame) in decoder.into_frames().enumerate() {
+    let (_, decoder) = animation_frames(bytes, format).map_err(|_| broken(&name))?;
+    for (index, frame) in decoder.enumerate() {
         if frames.len() == keep.len() {
             break;
         }
@@ -272,20 +322,44 @@ fn decode_gif(name: String, bytes: &[u8]) -> Result<CapeSource> {
         if !keep.contains(&index) {
             continue;
         }
-        let mut buffer = frame.into_buffer();
-        if (out_w, out_h) != (width, height) {
-            buffer = image::imageops::resize(&buffer, out_w, out_h, image::imageops::FilterType::Triangle);
-        }
-        let mut out = Cursor::new(Vec::new());
-        image::DynamicImage::ImageRgba8(buffer)
-            .write_to(&mut out, image::ImageFormat::Png)
-            .map_err(|_| broken(&name))?;
-        frames.push(format!("data:image/png;base64,{}", STANDARD.encode(out.into_inner())));
+        let buffer = frame.into_buffer();
+        frames.push(png_data_url(buffer, out_w, out_h).ok_or_else(|| broken(&name))?);
     }
     if frames.len() != keep.len() {
         return Err(broken(&name));
     }
-    Ok(CapeSource::Gif { name, width: out_w, height: out_h, frames, duration_ms, source_frames: total as u32 })
+    let duration_ms = delays.iter().fold(0u32, |sum, d| sum.saturating_add(*d));
+    Ok(CapeSource::Animation {
+        name,
+        format,
+        width: out_w,
+        height: out_h,
+        frames,
+        delays_ms: kept_delays(&delays, &keep),
+        duration_ms,
+        source_frames: total as u32,
+    })
+}
+
+/// Frame (RGBA) auf `width`×`height` bringen und als PNG-Data-URL ausgeben.
+pub(crate) fn png_data_url(mut buffer: image::RgbaImage, width: u32, height: u32) -> Option<String> {
+    if buffer.dimensions() != (width, height) {
+        buffer = image::imageops::resize(&buffer, width, height, image::imageops::FilterType::Triangle);
+    }
+    let mut out = Cursor::new(Vec::new());
+    image::DynamicImage::ImageRgba8(buffer).write_to(&mut out, image::ImageFormat::Png).ok()?;
+    Some(format!("data:image/png;base64,{}", STANDARD.encode(out.into_inner())))
+}
+
+/// Standzeit je behaltenem Frame: seine Dauer plus die der ausgelassenen bis zum nächsten.
+fn kept_delays(delays: &[u32], keep: &[usize]) -> Vec<u32> {
+    keep.iter()
+        .enumerate()
+        .map(|(i, &start)| {
+            let end = keep.get(i + 1).copied().unwrap_or(delays.len());
+            delays[start..end].iter().fold(0u32, |sum, d| sum.saturating_add(*d))
+        })
+        .collect()
 }
 
 /// Frame-Dauer wie Browser: unter 20 ms gilt als 100 ms.
@@ -296,7 +370,7 @@ fn delay_ms(frame: &image::Frame) -> u32 {
 }
 
 /// Maße so verkleinern, dass die längere Kante höchstens `max` ist.
-fn fit(width: u32, height: u32, max: u32) -> (u32, u32) {
+pub(crate) fn fit(width: u32, height: u32, max: u32) -> (u32, u32) {
     if width <= max && height <= max {
         return (width, height);
     }
@@ -371,26 +445,107 @@ mod tests {
         assert_eq!(err.message_code(), "trsCapeImport.unsupported");
     }
 
+    /// Echtes APNG: `frames` einfarbige Frames (`delay_ms` je Frame), von Hand aus Chunks gebaut.
+    fn apng(frames: u32, width: u32, height: u32, delay_ms: u16) -> Vec<u8> {
+        use std::io::Write;
+        let chunk = super::png::tests::chunk;
+        let mut out = b"\x89PNG\r\n\x1a\n".to_vec();
+        let mut ihdr = width.to_be_bytes().to_vec();
+        ihdr.extend_from_slice(&height.to_be_bytes());
+        ihdr.extend_from_slice(&[8, 6, 0, 0, 0]);
+        out.extend(chunk(b"IHDR", &ihdr));
+        let mut actl = frames.to_be_bytes().to_vec();
+        actl.extend_from_slice(&0u32.to_be_bytes());
+        out.extend(chunk(b"acTL", &actl));
+        let mut seq = 0u32;
+        for f in 0..frames {
+            let mut fctl = seq.to_be_bytes().to_vec();
+            seq += 1;
+            for v in [width, height, 0, 0] {
+                fctl.extend_from_slice(&v.to_be_bytes());
+            }
+            fctl.extend_from_slice(&delay_ms.to_be_bytes());
+            fctl.extend_from_slice(&1000u16.to_be_bytes());
+            fctl.extend_from_slice(&[0, 0]);
+            out.extend(chunk(b"fcTL", &fctl));
+            // Zeile = Filterbyte 0 + Pixel; alle Zeilen gleich.
+            let pixel = [(f * 20) as u8, 10, 10, 255];
+            let mut row = vec![0u8];
+            row.extend(pixel.iter().cycle().take(width as usize * 4));
+            let raw = row.repeat(height as usize);
+            let mut z = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::fast());
+            z.write_all(&raw).unwrap();
+            let data = z.finish().unwrap();
+            if f == 0 {
+                out.extend(chunk(b"IDAT", &data));
+            } else {
+                let mut fdat = seq.to_be_bytes().to_vec();
+                seq += 1;
+                fdat.extend_from_slice(&data);
+                out.extend(chunk(b"fdAT", &fdat));
+            }
+        }
+        out.extend(chunk(b"IEND", &[]));
+        out
+    }
+
     #[test]
     fn gif_frames_are_sampled() {
         let src = source_from_bytes("anim".into(), false, &gif(40, 20, 32, 50)).unwrap();
-        let CapeSource::Gif { frames, duration_ms, source_frames, width, height, .. } = src else { panic!() };
+        let CapeSource::Animation { frames, delays_ms, duration_ms, source_frames, width, height, format, .. } = src else {
+            panic!()
+        };
+        assert_eq!(format, AnimationFormat::Gif);
         assert_eq!(source_frames, 40);
-        assert_eq!(frames.len(), 16);
+        assert_eq!(frames.len(), 32, "bis zu 32 Frames bleiben");
+        assert_eq!(delays_ms.len(), 32);
+        assert_eq!(delays_ms.iter().sum::<u32>(), 40 * 50, "Standzeiten decken die ganze Dauer");
         assert_eq!(duration_ms, 40 * 50);
         assert_eq!((width, height), (20, 32));
         assert!(frames.iter().all(|f| f.starts_with("data:image/png;base64,")));
 
+        let exact = source_from_bytes("genau".into(), false, &gif(32, 8, 8, 50)).unwrap();
+        let CapeSource::Animation { frames, source_frames, .. } = exact else { panic!() };
+        assert_eq!((frames.len(), source_frames), (32, 32), "32 Frames werden nicht ausgedünnt");
+
         let short = source_from_bytes("kurz".into(), false, &gif(3, 8, 8, 0)).unwrap();
-        let CapeSource::Gif { frames, duration_ms, .. } = short else { panic!() };
+        let CapeSource::Animation { frames, duration_ms, delays_ms, .. } = short else { panic!() };
         assert_eq!(frames.len(), 3);
+        assert_eq!(delays_ms, vec![100, 100, 100]);
         assert_eq!(duration_ms, 300, "0 ms gilt wie im Browser als 100 ms");
+    }
+
+    #[test]
+    fn apng_is_split_like_a_gif() {
+        let bytes = apng(3, 6, 4, 80);
+        assert_eq!(sniff(&bytes, false), Some(Kind::Apng));
+        let src = source_from_bytes("ani".into(), false, &bytes).unwrap();
+        let CapeSource::Animation { frames, format, delays_ms, width, height, source_frames, .. } = src else {
+            panic!()
+        };
+        assert_eq!(format, AnimationFormat::Apng);
+        assert_eq!((width, height, source_frames), (6, 4, 3));
+        assert_eq!(frames.len(), 3);
+        assert_eq!(delays_ms, vec![80, 80, 80]);
+
+        let long = source_from_bytes("lang".into(), false, &apng(40, 4, 4, 50)).unwrap();
+        let CapeSource::Animation { frames, source_frames, .. } = long else { panic!() };
+        assert_eq!((frames.len(), source_frames), (32, 40), "über 32 Frames wird gleichmäßig ausgedünnt");
+        // Ein normales PNG bleibt ein Bild.
+        assert_eq!(sniff(&png_bytes(4, 4), false), Some(Kind::Png));
+    }
+
+    #[test]
+    fn kept_delays_cover_skipped_frames() {
+        assert_eq!(kept_delays(&[10, 20, 30, 40], &[0, 2]), vec![30, 70]);
+        assert_eq!(kept_delays(&[10, 20], &[0, 1]), vec![10, 20]);
+        assert!(!is_apng(b"\x89PNG\r\n\x1a\n\0\0"), "abgeschnittener Kopf");
     }
 
     #[test]
     fn big_gifs_are_scaled_down() {
         let src = source_from_bytes("gross".into(), false, &gif(1, 1500, 300, 100)).unwrap();
-        let CapeSource::Gif { width, height, .. } = src else { panic!() };
+        let CapeSource::Animation { width, height, .. } = src else { panic!() };
         assert_eq!((width, height), (1024, 204));
         assert_eq!(fit(100, 3000, 1000), (33, 1000));
     }
@@ -419,16 +574,21 @@ mod tests {
     fn serializes_for_the_webview() {
         let json = serde_json::to_value(CapeSource::Studio { name: "a".into(), frames: 2, scale: 8 }).unwrap();
         assert_eq!(json, serde_json::json!({ "kind": "studio", "name": "a", "frames": 2, "scale": 8 }));
-        let json = serde_json::to_value(CapeSource::Gif {
+        let json = serde_json::to_value(CapeSource::Animation {
             name: "g".into(),
+            format: AnimationFormat::Apng,
             width: 1,
             height: 1,
             frames: vec![],
+            delays_ms: vec![5],
             duration_ms: 5,
             source_frames: 1,
         })
         .unwrap();
+        assert_eq!(json["kind"], "animation");
+        assert_eq!(json["format"], "apng");
         assert_eq!(json["durationMs"], 5);
+        assert_eq!(json["delaysMs"], serde_json::json!([5]));
         assert_eq!(json["sourceFrames"], 1);
     }
 

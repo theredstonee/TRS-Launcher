@@ -272,6 +272,7 @@ pub fn run() {
             app.manage(commands::system::DropState::default());
             app.manage(commands::export::PackPickState::default());
             app.manage(commands::tasks::TaskRegistry::default());
+            app.manage(trs_core::trs_api::cape_video::VideoPicks::default());
             deeplink::setup(app);
             // Push: Gerät beim Start abgleichen (neue Version, Sprache, Sitzung) – nur am Handy.
             push::start(app.handle());
@@ -647,6 +648,8 @@ pub fn run() {
             commands::trs::trs_capes,
             commands::trs::trs_set_cape,
             commands::trs::trs_pick_cape_sources,
+            commands::trs::trs_pick_cape_video,
+            commands::trs::trs_cape_video_frames,
             commands::trs::trs_upload_cape,
             commands::trs::trs_delete_cape,
             commands::trs::trs_report_cape,

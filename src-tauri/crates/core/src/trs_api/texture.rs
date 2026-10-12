@@ -12,8 +12,10 @@ use super::types::{ApiCape, CapeStatus};
 use super::{TrsApi, png, validate};
 use crate::fsutil;
 
-/// Animierte HD-Umhänge können groß werden (256 × 128·64 px).
-const MAX_TEXTURE_BYTES: usize = 8 * 1024 * 1024;
+/// Animierte HD-Umhänge können groß werden (bis 1024 × 512·32 px, Upload ≤ 20 MiB).
+const MAX_TEXTURE_BYTES: usize = 24 * 1024 * 1024;
+/// Große Texturen brauchen auf langsamen Leitungen länger als der Standard-Timeout.
+const TEXTURE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
 
 /// Was an einer Textur-URL erlaubt ist: `<base>/v1/capes/<id>.png[?v=<token>]`
 /// mit einer der vertrauenswürdigen Adressen (neue und alte API-Adresse).
@@ -87,7 +89,7 @@ impl TrsApi {
             return Some(data_url(&bytes));
         }
 
-        let mut request = self.http.get(spec.url).header("Accept", "image/png");
+        let mut request = self.http.get(spec.url).header("Accept", "image/png").timeout(TEXTURE_TIMEOUT);
         if let Some(token) = token.filter(|_| !spec.cacheable) {
             request = request.bearer_auth(token);
         }

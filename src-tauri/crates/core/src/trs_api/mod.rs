@@ -20,6 +20,7 @@ pub mod access;
 pub mod achievements;
 pub mod applications;
 pub mod cape_import;
+pub mod cape_video;
 pub mod chat;
 pub mod events;
 mod head_cosmetics;

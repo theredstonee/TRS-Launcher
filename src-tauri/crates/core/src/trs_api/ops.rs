@@ -297,7 +297,9 @@ impl Launcher {
             path.push_str(&format!("&name={}", encode_query(n)));
         }
         let account = self.trs_account().await?;
-        let req = Req::with(reqwest::Method::POST, path, super::Body::Png(bytes), super::MAX_JSON_BYTES);
+        // HD-Streifen bis 20 MiB: mehr Zeit als der Standard-Timeout (langsame Uploads).
+        let req = Req::with(reqwest::Method::POST, path, super::Body::Png(bytes), super::MAX_JSON_BYTES)
+            .timeout(std::time::Duration::from_secs(300));
         let result: ApiCapeEnvelope = self.trs.call(self.accounts(), &account, &req).await?;
         if !result.cape.is_valid() {
             return Err(bad_response());

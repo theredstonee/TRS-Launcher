@@ -11,9 +11,9 @@ use serde::{Deserialize, Serialize};
 
 use super::validate;
 
-/// Größter Umhang-Faktor, den der Launcher anzeigt (HD-Umhänge bis 512×256 je Frame –
+/// Größter Umhang-Faktor, den der Launcher anzeigt (HD-Umhänge bis 1024×512 je Frame –
 /// mitgelieferte wie eigene Uploads, siehe `png::upload_layout`).
-pub(crate) const MAX_CAPE_SCALE: u32 = 8;
+pub(crate) const MAX_CAPE_SCALE: u32 = super::png::MAX_SCALE;
 
 // --- Profil -------------------------------------------------------------------------
 
