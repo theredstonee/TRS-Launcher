@@ -49,7 +49,7 @@ export interface CapeView {
   /** Maße EINES Frames (64·scale × 32·scale). */
   width: number
   height: number
-  /** Auflösungsfaktor gegenüber dem Vanilla-Layout 64×32 (1–8, Uploads wie mitgelieferte). UVs = Vanilla-UV × scale. */
+  /** Auflösungsfaktor gegenüber dem Vanilla-Layout 64×32 (1–16, Uploads wie mitgelieferte). UVs = Vanilla-UV × scale. */
   scale: number
   animated: boolean
   frames: number

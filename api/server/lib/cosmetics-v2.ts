@@ -3,7 +3,7 @@ import { getRouterParam, type H3Event } from 'h3'
 import { validateModel, type CosmeticModel } from '../../app/utils/cosmetic-v2/format'
 import { notFound } from './errors'
 import { COSMETIC_ID, sha256Hex } from './ids'
-import { BUILTIN_MAX_SCALE, inspectPng } from './png'
+import { COSMETIC_MAX_SCALE, inspectPng } from './png'
 
 /**
  * Kosmetik-Format v2 (§11.9): mitgelieferte 3D-Modelle aus dem TRS Studio. Die Dateien liegen fest unter
@@ -94,7 +94,7 @@ export function buildV2Cosmetic(e: V2EntryInput): BuiltinCosmeticV2 {
   const model = json as CosmeticModel
   if (model.id !== e.id) fail(`model id "${model.id}" does not match the catalog id`)
   if ((model.slot !== 'hat' && model.slot !== 'companion') || model.attach !== 'head') fail('only slot hat or companion / attach head are supported')
-  if (model.texture.scale > BUILTIN_MAX_SCALE) fail(`texture scale ${model.texture.scale} > ${BUILTIN_MAX_SCALE} (needs a DB migration)`)
+  if (model.texture.scale > COSMETIC_MAX_SCALE) fail(`texture scale ${model.texture.scale} > ${COSMETIC_MAX_SCALE} (needs a DB migration)`)
   const texFrames = model.texture.frames ?? 1
   if (texFrames !== e.frames) fail(`catalog frames ${e.frames} ≠ model texture.frames ${texFrames}`)
   if (texFrames > 1 && (e.frameTimeMs ?? null) !== (model.texture.frameTimeMs ?? null)) fail('catalog frameTimeMs ≠ model texture.frameTimeMs')

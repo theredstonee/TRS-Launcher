@@ -7,8 +7,8 @@ import { RULES } from '../../../lib/ratelimit'
 import { uploadQuery } from '../../../lib/schemas'
 
 /**
- * Eigener Umhang: Body = PNG (Content-Type image/png, ≤ 5 MB), Name optional per `?name=`.
- * Animiert = senkrechter Streifen (≤ 16 Frames) mit `?frameTimeMs=`; `?frames=` optional zur Kontrolle.
+ * Eigener Umhang: Body = PNG (Content-Type image/png, ≤ 20 MiB), Name optional per `?name=`.
+ * Animiert = senkrechter Streifen (≤ 32 Frames) mit `?frameTimeMs=`; `?frames=` optional zur Kontrolle.
  * Status danach `pending`.
  */
 export default defineEventHandler(async (event) => {

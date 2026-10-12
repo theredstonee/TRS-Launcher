@@ -31,7 +31,24 @@ describe('cape upload sanitizing', () => {
     expect(sanitizeCapeUpload(solidPng(192, 96)).width).toBe(192)
     expect(sanitizeCapeUpload(solidPng(256, 128)).width).toBe(256)
     expect(sanitizeCapeUpload(solidPng(512, 256))).toMatchObject({ width: 512, height: 256, frames: 1, scale: 8, source: 'full' })
-    expect(code(() => sanitizeCapeUpload(solidPng(576, 288)))).toBe('invalid_dimensions')
+    expect(code(() => sanitizeCapeUpload(solidPng(1088, 544)))).toBe('invalid_dimensions')
+  })
+
+  it('accepts scale 16 (1024x512) and rejects scale 17', () => {
+    expect(sanitizeCapeUpload(solidPng(1024, 512))).toMatchObject({ width: 1024, height: 512, frames: 1, scale: 16, source: 'full' })
+    expect(sanitizeCapeUpload(solidPng(352, 272))).toMatchObject({ width: 1024, height: 512, scale: 16, source: 'cape-only' })
+    expect(code(() => sanitizeCapeUpload(solidPng(64 * 17, 32 * 17)))).toBe('invalid_dimensions')
+    expect(code(() => sanitizeCapeUpload(solidPng(22 * 17, 17 * 17)))).toBe('invalid_dimensions')
+  })
+
+  it('accepts a 1024x512x32 strip (the pixel maximum)', () => {
+    const out = sanitizeCapeUpload(solidPng(1024, 512 * 32), { frames: 32 })
+    expect(out).toMatchObject({ width: 1024, height: 512, frames: 32, scale: 16, source: 'full' })
+  })
+
+  it('rejects 33 frames', () => {
+    expect(code(() => sanitizeCapeUpload(solidPng(64, 32 * 33)))).toBe('invalid_dimensions')
+    expect(code(() => sanitizeCapeUpload(solidPng(1024, 512 * 33)))).toBe('invalid_dimensions')
   })
 
   it('accepts vertical strips with up to 16 frames and keeps every frame', () => {
@@ -67,9 +84,9 @@ describe('cape upload sanitizing', () => {
     }
   })
 
-  it('rejects more than 16 frames and a frames value that does not match', () => {
-    expect(code(() => sanitizeCapeUpload(solidPng(64, 32 * 17)))).toBe('invalid_dimensions')
-    expect(code(() => sanitizeCapeUpload(solidPng(22, 17 * 17)))).toBe('invalid_dimensions')
+  it('rejects more than 32 frames and a frames value that does not match', () => {
+    expect(code(() => sanitizeCapeUpload(solidPng(64, 32 * 33)))).toBe('invalid_dimensions')
+    expect(code(() => sanitizeCapeUpload(solidPng(22, 17 * 33)))).toBe('invalid_dimensions')
     expect(code(() => sanitizeCapeUpload(solidPng(64, 32 * 4), { frames: 3 }))).toBe('invalid_dimensions')
     expect(code(() => sanitizeCapeUpload(solidPng(64, 32), { frames: 2 }))).toBe('invalid_dimensions')
     expect(sanitizeCapeUpload(solidPng(64, 32 * 4), { frames: 4 }).frames).toBe(4)
@@ -113,9 +130,9 @@ describe('cape upload sanitizing', () => {
     expect(code(() => sanitizeCapeUpload(solidPng(22, 32)))).toBe('invalid_dimensions')
   })
 
-  it('rejects files over 5 MB before decoding', () => {
+  it('rejects files over 20 MB before decoding', () => {
     const big = withChunks(solidPng(64, 32), [text('pad', 'x'.repeat(MAX_UPLOAD_BYTES))])
-    expect(MAX_UPLOAD_BYTES).toBe(5 * 1024 * 1024)
+    expect(MAX_UPLOAD_BYTES).toBe(20 * 1024 * 1024)
     expect(code(() => sanitizeCapeUpload(big))).toBe('payload_too_large')
     // Knapp darunter geht (Metadaten werden verworfen).
     const ok = withChunks(solidPng(64, 32), [text('pad', 'x'.repeat(MAX_UPLOAD_BYTES - 2048))])

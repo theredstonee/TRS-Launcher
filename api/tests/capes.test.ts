@@ -4,6 +4,7 @@ import { Socket } from 'node:net'
 import { join } from 'node:path'
 import { createEvent } from 'h3'
 import { describe, expect, it } from 'vitest'
+import { uploadQuery } from '../server/lib/schemas'
 import { approveCape, banUser, deleteCapeAdmin, listCapesForReview, rejectCape, stats } from '../server/lib/admin'
 import { loadBuiltins } from '../server/lib/builtin'
 import {
@@ -236,12 +237,21 @@ describe('HD and animated uploads', () => {
     expect(small).toMatchObject({ width: 64, height: 32, scale: 1, frames: 4, frameTimeMs: 50 })
   })
 
+  it('stores a 1024x512x32 strip and the schema rejects frames=33', async () => {
+    const env = makeEnv()
+    const u = await login(env, 'Maxer')
+    const strip = uploadCape(env.ctx, u.user.uuid, solidPng(1024, 512 * 32, [9, 9, 9, 255]), 'Max', { frames: 32, frameTimeMs: 100 })
+    expect(strip).toMatchObject({ width: 1024, height: 512, scale: 16, animated: true, frames: 32, frameTimeMs: 100 })
+    expect(uploadQuery.safeParse({ frames: '32', frameTimeMs: '100' }).success).toBe(true)
+    expect(uploadQuery.safeParse({ frames: '33', frameTimeMs: '100' }).success).toBe(false)
+  })
+
   it('animated uploads need frameTimeMs; frames must match; nothing is stored on errors', async () => {
     const env = makeEnv()
     const u = await login(env, 'Animator')
     expect(code(() => uploadCape(env.ctx, u.user.uuid, solidPng(64, 128), undefined))).toBe('frame_time_required')
     expect(code(() => uploadCape(env.ctx, u.user.uuid, solidPng(64, 128), undefined, { frames: 3, frameTimeMs: 100 }))).toBe('invalid_dimensions')
-    expect(code(() => uploadCape(env.ctx, u.user.uuid, solidPng(64, 32 * 17), undefined, { frameTimeMs: 100 }))).toBe('invalid_dimensions')
+    expect(code(() => uploadCape(env.ctx, u.user.uuid, solidPng(64, 32 * 33), undefined, { frameTimeMs: 100 }))).toBe('invalid_dimensions')
     expect(listCapesForReview(env.ctx, 'pending')).toEqual([])
   })
 })

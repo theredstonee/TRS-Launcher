@@ -3,7 +3,7 @@ import type { BuiltinCape } from './capes'
 import type { AnyBuiltinCosmetic, BuiltinCosmetic } from './cosmetics'
 import { buildV2Cosmetic } from './cosmetics-v2'
 import { CAPE_ID, COSMETIC_ID } from './ids'
-import { BUILTIN_MAX_SCALE } from './png'
+import { BUILTIN_MAX_SCALE, COSMETIC_MAX_SCALE } from './png'
 import { TEMPLATE_ID } from './templates'
 
 /**
@@ -75,7 +75,7 @@ const cosmeticV1Entry = z
     template: z.string().regex(TEMPLATE_ID),
     unlock: z.enum(['free', 'code', 'admin']),
     file: z.string().regex(/^[a-z0-9_-]+\.png$/),
-    scale: z.int().min(1).max(BUILTIN_MAX_SCALE).default(1),
+    scale: z.int().min(1).max(COSMETIC_MAX_SCALE).default(1),
     animated: z.boolean().optional(),
     frames: z.int().min(1).max(64).default(1),
     frameTimeMs: z.int().min(20).max(10_000).nullish(),

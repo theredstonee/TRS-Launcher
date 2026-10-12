@@ -15,7 +15,7 @@ The German deployment guide is in [README.md](README.md).
 | Topic | Rule |
 |---|---|
 | Body format | JSON (`Content-Type: application/json`, UTF-8). The only exceptions are the cape and cosmetic uploads, which send raw `image/png`, chat images (§18.7) and shared screenshots (§23), which send raw `image/png`, `image/jpeg` or `image/webp`, and circuit files (§25.6), which send the raw file as `application/octet-stream`. |
-| Body size | JSON bodies can be at most **16 KiB**. A cape upload can be at most **5 MiB**, a cosmetic upload at most **512 KiB**, a chat image at most **5 MiB**, a shared screenshot at most **10 MiB**. Sync bodies are larger (§17): a skin upload at most **192 KiB**, presets at most **96 KiB**, notes (§17.5) at most **512 KiB**. Circuit bodies (§25) at most **300 KiB**, circuit files at most **2 MiB**. Anything larger gets `413`. |
+| Body size | JSON bodies can be at most **16 KiB**. A cape upload can be at most **20 MiB**, a cosmetic upload at most **512 KiB**, a chat image at most **5 MiB**, a shared screenshot at most **10 MiB**. Sync bodies are larger (§17): a skin upload at most **192 KiB**, presets at most **96 KiB**, notes (§17.5) at most **512 KiB**. Circuit bodies (§25) at most **300 KiB**, circuit files at most **2 MiB**. Anything larger gets `413`. |
 | Unknown fields | They are **rejected** with `400 invalid_request`. All request objects are strict. |
 | UUIDs | Requests accept 32 hex digits with or without dashes, in any case. **Responses always use 32 lowercase hex digits without dashes**, for example `75c1a6f3112240abbdb57b9d21c64232`. |
 | Minecraft names | `^[A-Za-z0-9_]{1,16}$` |
@@ -461,7 +461,7 @@ This object is used everywhere a cape is returned.
 | `status` | `approved` \| `pending` \| `rejected`. Built-in capes are always `approved`. |
 | `url` | Absolute texture URL. `?v=` changes whenever the content changes. **Use the URL as given.** |
 | `width`, `height` | Size of **one frame** in pixels. Always `64·scale × 32·scale`. |
-| `scale` | The resolution factor relative to the vanilla 64×32 layout: 1–8 (uploads and built-in capes). |
+| `scale` | The resolution factor relative to the vanilla 64×32 layout: 1–16 (uploads and built-in capes). |
 | `animated` | `frames > 1` |
 | `frames` | 1–64 |
 | `frameTimeMs` | Duration of each frame (20–10000), or `null` for a static cape. |
@@ -550,7 +550,7 @@ Returns the metadata without the texture. The visibility rules are the same as �
 
 ### 5.6 `POST /v1/capes/upload?name=<optional>&frames=<optional>&frameTimeMs=<optional>`
 
-Auth required. Headers: `Content-Type: image/png`. The body is the raw PNG bytes, at most **5 MiB** (5 242 880 bytes).
+Auth required. Headers: `Content-Type: image/png`. The body is the raw PNG bytes, at most **20 MiB** (20 971 520 bytes).
 
 Query parameters:
 
@@ -562,7 +562,7 @@ Query parameters:
 
 Invalid parameter values (not an integer, out of range, unknown parameters) return `400 invalid_request`.
 
-**Sizes.** One frame is **64k×32k** (k = 1–8, so 64×32 up to 512×256) **or** the cape-only format **22k×17k** (22×17 up to 176×136). Animated capes stack **1–16 frames vertically**, like built-in capes: the image is `frameWidth × (frameHeight · frames)`, so at most 512×4096. The **width decides the layout** (64k and 22k never collide for k ≤ 8); the height must be a whole number of frames. Anything else returns `400 invalid_dimensions`.
+**Sizes.** One frame is **64k×32k** (k = 1–16, so 64×32 up to 1024×512) **or** the cape-only format **22k×17k** (22×17 up to 352×272). Animated capes stack **1–32 frames vertically**, like built-in capes: the image is `frameWidth × (frameHeight · frames)`, so at most 16 777 216 pixels in total (1024×512×32). The **width decides the layout** (64k and 22k never collide for k ≤ 16); the height must be a whole number of frames. Anything else returns `400 invalid_dimensions`.
 
 **201**
 ```json
@@ -578,7 +578,7 @@ What the server checks:
 - A chunk whitelist.
 - **No APNG** (`animated_png`). Animation only works as a vertical frame strip.
 - **No bytes after `IEND`** (polyglot protection).
-- The image size (rules above) and at most 512 × 4096 pixels in total. Both are checked on the `IHDR` header **before** anything is decompressed.
+- The image size (rules above) and at most 16 777 216 (1024 × 512 × 32) pixels in total. Both are checked on the `IHDR` header **before** anything is decompressed.
 - It checks the decompressed size (bomb protection).
 - It decodes the image and **re-encodes** it as an RGBA PNG strip of `64k × 32k·frames`. A 22k×17k frame is placed at the top left of its own 64k×32k area; the rest stays transparent. All metadata is dropped and fully transparent pixels are zeroed.
 - At least one pixel in the cape area (22k×17k of some frame) must be visible, otherwise `400 empty_cape`.
@@ -588,7 +588,7 @@ What the server checks:
 |---|---|
 | 400 | `invalid_png`, `animated_png`, `invalid_dimensions`, `frame_time_required`, `empty_cape`, `invalid_request` |
 | 409 | `too_many_pending` (at most 3 pending), `upload_limit` (at most 10 non-rejected), `duplicate_cape` |
-| 413 | `payload_too_large` (more than 5 MiB) |
+| 413 | `payload_too_large` (more than 20 MiB) |
 | 415 | `unsupported_media_type` |
 | 429 | `rate_limited` (at most 5 uploads per 24 hours) |
 
@@ -1126,7 +1126,7 @@ Here `(x0, y0, z0) = from` and `(x1, y1, z1) = to`. The bundled textures are pai
 
 - The file is `textureWidth·scale` × `textureHeight·scale·frames` pixels.
 - Animated textures are a vertical strip, with frame 0 at the top.
-- `scale` is 1–8 for built-ins and 1–2 for uploads.
+- `scale` is 1–8 for cosmetics (built-in) and 1–2 for uploads. (Capes, §5: 1–16.)
 - **Normalised UV** of a net coordinate `(u, v)` (scale-1 units) in frame `f`:
   - `u' = u / textureWidth`
   - `v' = (f·textureHeight + v) / (textureHeight·frames)`

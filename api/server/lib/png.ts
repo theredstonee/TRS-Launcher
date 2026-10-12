@@ -2,16 +2,18 @@ import { crc32, inflateSync } from 'node:zlib'
 import { PNG } from 'pngjs'
 import { ApiError } from './errors'
 
-/** Größte Upload-Datei (Streifen mit bis zu 16 Frames in 512×256). */
-export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024
-/** Größter Faktor gegenüber 64×32 für Uploads (→ 512×256 je Frame). */
-export const MAX_SCALE = 8
+/** Größte Upload-Datei (Streifen mit bis zu 32 Frames in 1024×512). */
+export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024
+/** Größter Faktor gegenüber 64×32 für Uploads (→ 1024×512 je Frame). */
+export const MAX_SCALE = 16
 /** Höchstens so viele Frames hat ein hochgeladener Streifen. */
-export const MAX_UPLOAD_FRAMES = 16
-/** Höchstens so viele Pixel hat ein Upload (512 × 256 × 16 Frames) – geprüft am IHDR, vor dem Entpacken. */
-export const MAX_UPLOAD_PIXELS = 512 * 4096
-/** Größter Faktor für mitgelieferte Designs (HD-Pixel-Art, → 512×256 beim Umhang). */
-export const BUILTIN_MAX_SCALE = 8
+export const MAX_UPLOAD_FRAMES = 32
+/** Höchstens so viele Pixel hat ein Upload (1024 × 512 × 32 Frames = 16 777 216) – geprüft am IHDR, vor dem Entpacken. */
+export const MAX_UPLOAD_PIXELS = 1024 * 512 * 32
+/** Größter Faktor für mitgelieferte Designs (HD-Pixel-Art, → 1024×512 beim Umhang). */
+export const BUILTIN_MAX_SCALE = 16
+/** Größter Faktor für Kosmetik-Texturen (DB-CHECK `cosmetics.scale` ≤ 8, siehe Migration). */
+export const COSMETIC_MAX_SCALE = 8
 
 const SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 
@@ -175,7 +177,7 @@ export interface UploadLayout extends CapeLayout {
 /**
  * Maße eines Uploads: Breite 64k (Frame-Höhe 32k) oder 22k (Frame-Höhe 17k), k = 1…MAX_SCALE,
  * Höhe = Frame-Höhe × Frames (1…MAX_UPLOAD_FRAMES). Die Breite entscheidet – 64k und 22k
- * treffen sich für k ≤ 8 nie.
+ * treffen sich nie: 64k = 22j heißt 11j = 32k, also j ein Vielfaches von 32 – mit j ≤ 16 gibt es keine Überschneidung.
  */
 export function uploadLayout(width: number, height: number): UploadLayout | null {
   let k: number
@@ -203,8 +205,8 @@ export interface CleanCape {
   source: CapeLayout['source']
 }
 
-const DIMENSION_RULE = 'Cape must be 64k x 32k pixels per frame (k = 1-8, e.g. 64x32 up to 512x256) or the cape-only format '
-  + `22k x 17k (22x17 up to 176x136); animated capes stack up to ${MAX_UPLOAD_FRAMES} frames vertically`
+const DIMENSION_RULE = 'Cape must be 64k x 32k pixels per frame (k = 1-16, e.g. 64x32 up to 1024x512) or the cape-only format '
+  + `22k x 17k (22x17 up to 352x272); animated capes stack up to ${MAX_UPLOAD_FRAMES} frames vertically`
 
 /**
  * Umhang-Upload säubern: prüfen, dekodieren, jeden Frame auf 64k×32k bringen (Streifen bleibt
@@ -212,7 +214,7 @@ const DIMENSION_RULE = 'Cape must be 64k x 32k pixels per frame (k = 1-8, e.g. 6
  * `frames` (optional) muss zur erkannten Frame-Zahl passen.
  */
 export function sanitizeCapeUpload(buf: Buffer, opts: { frames?: number } = {}): CleanCape {
-  if (buf.length > MAX_UPLOAD_BYTES) throw new ApiError(413, 'payload_too_large', 'Cape PNG must be at most 5 MB')
+  if (buf.length > MAX_UPLOAD_BYTES) throw new ApiError(413, 'payload_too_large', 'Cape PNG must be at most 20 MB')
   const { header } = inspectPng(buf)
   // Maße zuerst am IHDR prüfen – vor jedem Entpacken (Dekompressionsbomben).
   if (header.width * header.height > MAX_UPLOAD_PIXELS) throw bad('invalid_dimensions', DIMENSION_RULE)
