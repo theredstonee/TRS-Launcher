@@ -530,7 +530,7 @@ public final class TrsModules {
 		titleScreen = registry.register(new Module("titleScreen", "Title Screen",
 				"TRS title screen instead of the vanilla one", true));
 		menuStyle = registry.register(new Module("menuStyle", "Menu Style",
-				"Redstone look for the pause menu, server list, loading screens, options and world list. All buttons "
+				"TRS look (Redstone or Winter Night) for the pause menu, server list, loading screens, options and world list. All buttons "
 						+ "(also those of other mods) keep working; turn single menus back to the classic look.", true));
 		oldAnimations = registry.register(new Module("oldAnimations", "1.7 Animations",
 				"Old hand movements: the hand does not dip during the attack cooldown, "
