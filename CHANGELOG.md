@@ -28,11 +28,17 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.20.0 – 2026-10-13 – Penguin Lodge | Pinguin-Hütte
+<!-- banner: accent=#7fd3ff motif=/news/0.20.0/banner.png -->
+<!-- shots:
+/news/0.20.0/winter-home.png | The new Winter Night design with northern lights and the penguin's cabin | Das neue Design Winternacht mit Polarlicht und der Pinguin-Hütte
+/news/0.20.0/winter-library.png | Winter scenes for every instance | Winterbilder für jede Instanz
+/news/0.20.0/design-setting.png | Pick your design in Settings → Appearance | Das Design wählst du unter Einstellungen → Aussehen
+-->
 
 ### English
 - **New design: Winter Night.** Settings → Appearance now has a "Design" choice with two looks: the familiar Redstone and the new Winter Night. You can switch at any time, all year round.
-- **A living winter landscape.** In Winter Night the circuit behind the pages and on the start page becomes a snowy pixel landscape: a wide snowy plain, soft round hills far away on the horizon, pine trees, a cosy log cabin with warm windows, a lantern and smoke from the chimney, the moon and stars, gentle snowfall and – every now and then – northern lights. With the light color theme it turns into a bright winter day with sun and clouds.
+- **A living winter landscape.** In Winter Night the circuit behind the pages and on the start page becomes a snowy pixel landscape: a wide snowy plain, snowy mountains far away on the horizon, pine trees, a cosy log cabin with warm windows, a lantern and smoke from the chimney, the moon and stars, gentle snowfall and – every now and then – green northern lights that ripple across the sky like real ones. With the light color theme it turns into a bright winter day with sun and clouds.
 - **Someone lives in the cabin.** A little penguin with a Santa hat peeks out of the window – and every minute or two he opens the door, waddles out, waves and goes back inside. On a winter day he likes to stay outside a bit longer.
 - **Ice lanterns on the start page.** A row of ice lanterns leads to the play button. When you start a game they light up one after another, and while you play the northern lights shine.
 - **Frost everywhere.** In Winter Night, progress bars become ice bars that freeze over, the play button becomes an ice lantern, instance pictures show little winter scenes, and loading placeholders, menus and page changes get a frosty shimmer. Everything that shows a running game glows ice blue instead of amber.
@@ -41,7 +47,7 @@ How to write an entry:
 
 ### Deutsch
 - **Neues Design: Winternacht.** Unter Einstellungen → Aussehen gibt es jetzt „Design“ mit zwei Looks: das gewohnte Redstone und die neue Winternacht. Umschalten geht jederzeit, das ganze Jahr über.
-- **Eine lebendige Winterlandschaft.** In der Winternacht wird aus der Schaltung hinter den Seiten und auf der Startseite eine verschneite Pixel-Landschaft: eine weite Schneeebene, sanfte runde Hügel weit hinten am Horizont, Tannen, eine gemütliche Blockhütte mit warmen Fenstern, einer Laterne und Rauch aus dem Schornstein, Mond und Sterne, leiser Schneefall und – ab und zu – Polarlicht. Mit dem hellen Farbschema wird daraus ein heller Wintertag mit Sonne und Wolken.
+- **Eine lebendige Winterlandschaft.** In der Winternacht wird aus der Schaltung hinter den Seiten und auf der Startseite eine verschneite Pixel-Landschaft: eine weite Schneeebene, verschneite Berge weit hinten am Horizont, Tannen, eine gemütliche Blockhütte mit warmen Fenstern, einer Laterne und Rauch aus dem Schornstein, Mond und Sterne, leiser Schneefall und – ab und zu – grünes Polarlicht, das wie echtes über den Himmel zieht. Mit dem hellen Farbschema wird daraus ein heller Wintertag mit Sonne und Wolken.
 - **In der Hütte wohnt jemand.** Ein kleiner Pinguin mit Weihnachtsmütze schaut aus dem Fenster – und alle ein, zwei Minuten öffnet er die Tür, watschelt hinaus, winkt und geht wieder hinein. An einem Wintertag bleibt er gern etwas länger draußen.
 - **Eislaternen auf der Startseite.** Eine Reihe Eislaternen führt zum Spielen-Knopf. Beim Spielstart gehen sie nacheinander an, und während du spielst, leuchtet das Polarlicht.
 - **Überall Frost.** In der Winternacht werden Fortschrittsbalken zu Eisbalken, die zufrieren, der Spielen-Knopf wird zur Eislaterne, Instanzbilder zeigen kleine Winterszenen, und Ladeplatzhalter, Menüs und Seitenwechsel bekommen einen frostigen Schimmer. Alles, was ein laufendes Spiel zeigt, leuchtet eisblau statt bernsteinfarben.
