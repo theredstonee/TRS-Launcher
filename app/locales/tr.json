@@ -623,10 +623,10 @@
       "invalidEvent": "Geçersiz etkinlik."
     },
     "trsPng": {
-      "fileTooLarge": "Dosya çok büyük (en fazla 5 MB).",
+      "fileTooLarge": "Dosya çok büyük (en fazla 20 MB).",
       "invalidPng": "Dosya geçerli bir PNG görseli değil.",
       "animated": "Hareketli PNG’ler (APNG) desteklenmiyor – animasyonları şerit olarak yükle.",
-      "invalidSize": "Pelerin 64×32 piksel (veya 512×256’ya kadar katları) ya da pelerin biçiminde 22×17 (176×136’ya kadar) olmalı; hareketliyse en fazla 16 kare alt alta.",
+      "invalidSize": "Pelerin 64×32 piksel (veya 1024×512’ye kadar katı) ya da pelerin biçiminde 22×17 (352×272’ye kadar) olmalı; animasyonlu pelerinlerde en fazla 32 kare alt alta olur.",
       "frameTime": "Hız kare başına 50 ile 1000 ms arasında olmalı.",
       "emptyCape": "Pelerin tamamen saydam."
     },
@@ -703,8 +703,8 @@
       "clipboardFailed": "Klip panoya kopyalanamadı."
     },
     "trsCapeImport": {
-      "unsupported": "“{name}” desteklenen bir görsel değil (PNG, JPEG, WebP, GIF veya TRS Studio JSON).",
-      "imageTooLarge": "“{name}” çok büyük (en fazla 4096×4096 piksel, GIF olarak 2048×2048).",
+      "unsupported": "“{name}” desteklenen bir resim değil (PNG, APNG, JPEG, WebP, GIF veya TRS Studio JSON).",
+      "imageTooLarge": "“{name}” çok büyük (en fazla 4096×4096 piksel, animasyonlu 2048×2048).",
       "broken": "“{name}” okunamadı.",
       "tooManyFiles": "Tek seferde en fazla {max} dosya seç.",
       "fileTooLarge": "“{name}” çok büyük (dosya başına en fazla 20 MB).",
@@ -941,6 +941,13 @@
       "invalidSource": "Simge verileri geçersiz.",
       "noClientJar": "Henüz Minecraft indirilmedi – bir kez bir örnek başlat.",
       "brokenImage": "Resim bozuk veya çok büyük (en fazla 4096×4096 piksel)."
+    },
+    "trsCapeVideo": {
+      "expired": "Video artık seçili değil – lütfen yeniden seç.",
+      "unsupported": "Videolar burada pelerin olarak kullanılamaz.",
+      "ffmpegMissing": "Videolar için önce FFmpeg indirilmelidir.",
+      "unreadable": "“{name}” video olarak okunamıyor.",
+      "badRange": "Lütfen videoda geçerli bir bölüm seç."
     }
   },
   "browse": {
@@ -2853,7 +2860,10 @@
       "night": "Gece",
       "showHead": "Kafaya yakınlaştır",
       "showBody": "Tüm vücudu göster",
-      "resetCamera": "Kamerayı sıfırla"
+      "resetCamera": "Kamerayı sıfırla",
+      "equipment": "Sırtta",
+      "cape": "Pelerin",
+      "elytra": "Elytra"
     },
     "trsCape": "TRS pelerini",
     "headCosmetic": "Kafa kozmetiği",
@@ -3558,7 +3568,7 @@
       "pick": {
         "lead": "Bir veya birden çok görsel seç. Pelerine gelecek kısmı sen seçersin ve oyuncunun üzerinde hemen görürsün.",
         "image": "Herhangi bir görsel (PNG, JPEG, WebP) – kırpmayı sen seçersin",
-        "gif": "Hareketli GIF – kareleri alınır",
+        "gif": "Animasyonlu GIF veya APNG – kareleri alınır",
         "frames": "Aynı anda birden çok görsel – ad sırasına göre kare olur",
         "sheet": "Hazır bir pelerin dokusu veya sprite sayfası (kareler alt alta)",
         "studio": "TRS Studio dışa aktarımları – PNG’yi .json dosyasıyla birlikte seç",
@@ -3566,7 +3576,7 @@
         "loading": "Yükleniyor …"
       },
       "rules": {
-        "size": "Kare başına 512×256 piksele kadar, 16 kareye kadar, en fazla 5 MB.",
+        "size": "Kare başına 1024×512 piksele kadar, 32 kareye kadar, en fazla 20 MB.",
         "review": "Ekip her pelerini inceler; o zamana kadar yalnızca sen görebilirsin.",
         "rights": "Yalnızca kendi görsellerin veya kullanma iznin olanlar – rahatsız edici hiçbir şey olmasın."
       },
@@ -3585,7 +3595,7 @@
       },
       "sheet": {
         "label": "Görseldeki kareler",
-        "hint": "Sprite sayfaları için: kareler alt alta."
+        "hint": "Sprite sayfası: sütun × satır ve kaç hücrenin kare olduğu."
       },
       "scale": {
         "label": "Çözünürlük",
@@ -3596,24 +3606,141 @@
         "value": "Kare başına {ms} ms · {fps} kare/sn"
       },
       "sampled": "{total} kare – eşit aralıklarla seçilen {max} kare kullanılır.",
-      "preview": {
-        "texture": "Pelerin dokusu"
-      },
       "sizeLabel": "Dosya boyutu",
-      "size": "{size} / en fazla 5 MB",
+      "size": "{size} / en fazla 20 MB",
       "nameLabel": "Ad (isteğe bağlı)",
       "placeholder": "ör. Pelerinim",
       "errors": {
         "noImage": "En az bir görsel seç – tek başına bir .json yetmez.",
-        "mixed": "Ya bir GIF ya da görseller seç – ikisini birden değil.",
+        "mixed": "Ya bir animasyon (GIF/APNG) ya da resimler seç – ikisi birden olmaz.",
         "sizeMismatch": "Tüm kareler aynı boyutta olmalı.",
         "frameTooLarge": "Birden çok karede her görsel en fazla 2048×2048 piksel olabilir.",
         "readFailed": "Görsel okunamadı.",
-        "tooLarge": "Pelerin çok büyük ({size}, en fazla 5 MB) – daha düşük bir çözünürlük veya daha az kare seç.",
         "empty": "Pelerin tamamen saydam."
       },
       "upload": "Yükle",
       "uploading": "Yükleniyor …"
+    },
+    "studio": {
+      "pick": {
+        "video": "Bir video (MP4, WebM …) – bir bölüm seçersin, en fazla 32 kare",
+        "chooseVideo": "Video seç",
+        "mobileHint": "Piksel düzenleyici masaüstü başlatıcıda – burada içe aktarıp yükleyebilirsin."
+      },
+      "order": {
+        "label": "Kare sırası",
+        "reverse": "Ters çevir",
+        "earlier": "Öne al",
+        "later": "Sona al",
+        "hint": "Sırayı değiştirmek için resimleri sürükle (önce dosya adına göre sıralanır)."
+      },
+      "sheet": {
+        "cols": "Sütunlar",
+        "rows": "Satırlar",
+        "count": "Kareler"
+      },
+      "detail": {
+        "label": "Düzenleme çözünürlüğü",
+        "auto": "Otomatik ({w}×{h})",
+        "hint": "Bu çözünürlükte düzenlersin; yüklerken otomatik olarak büyütülür."
+      },
+      "importSummary": "Kareler: {n} · {w}×{h} olarak düzenlenir",
+      "preparing": "Kareler hazırlanıyor … {done}/{total}",
+      "video": {
+        "length": "{s} sn uzunluğunda",
+        "start": "Başlangıç",
+        "end": "Bitiş",
+        "fps": "Kare hızı",
+        "fpsOption": "Saniyede {fps} kare",
+        "result": "→ {frames} kare (videonun {s} sn’si)",
+        "capped": "Yalnızca ilk 32 kare sığar – tamamı için bölümü kısalt veya kare hızını düşür.",
+        "extracting": "Kareler çıkarılıyor … %{percent}",
+        "extract": "Kareleri çıkar",
+        "back": "Geri",
+        "hintRange": "Kısa bir bölüm seç: bir pelerin en fazla 32 kareden oluşur.",
+        "hintLocal": "Video bilgisayarında FFmpeg ile işlenir – hiçbir şey yüklenmez.",
+        "ffmpegLead": "Videolar FFmpeg ile karelere ayrılır ({size}, bir kez indirilir – kliplerle aynısı).",
+        "taskTitle": "{name} içinden pelerin kareleri",
+        "taskStage": "Kareler çıkarılıyor"
+      },
+      "canvasLabel": "Pelerin dokusu {w}×{h} – seçili araçla çiz",
+      "regions": {
+        "capeTop": "Pelerin üst kenarı",
+        "capeBottom": "Pelerin alt kenarı",
+        "capeLeft": "Pelerin sol yanı",
+        "capeOuter": "Dış yüz",
+        "capeRight": "Pelerin sağ yanı",
+        "capeInner": "İç yüz",
+        "elytraTop": "Elytra üst",
+        "elytraBottom": "Elytra alt",
+        "elytraLeft": "Elytra sol yan",
+        "elytraOuter": "Elytra dış yüz",
+        "elytraRight": "Elytra sağ yan",
+        "elytraInner": "Elytra iç yüz"
+      },
+      "tools": {
+        "pencil": "Kalem",
+        "eraser": "Silgi",
+        "picker": "Renk seç",
+        "fill": "Doldur (parçanın içinde)",
+        "line": "Çizgi",
+        "move": "Parçayı taşı (hizala)"
+      },
+      "guides": "Şablon",
+      "onion": "Soğan kabuğu",
+      "brush": "Fırça",
+      "copyOuter": "Dış → iç",
+      "clearFrame": "Kareyi temizle",
+      "backdrop": {
+        "light": "Açık arka plan",
+        "dark": "Koyu arka plan"
+      },
+      "legend": "Şablon açıklaması",
+      "legendFaces": "Pelerin dış ve iç yüz",
+      "legendEdges": "Kenarlar ve yanlar",
+      "legendElytra": "Elytra – dış yüzden otomatik oluşturulur",
+      "shortcuts": "Tuşlar: B kalem · E silgi · I renk seç · G doldur · L çizgi · M taşı · [ ] fırça · O soğan kabuğu · Boşluk oynat · ←/→ kare · Ctrl+Z / Ctrl+Y · sağ tık siler",
+      "timeline": {
+        "label": "Zaman çizelgesi",
+        "play": "Oynat",
+        "pause": "Duraklat",
+        "used": "Pelerinde {used}/{max} kare",
+        "frames": "Kareler",
+        "frame": "Kare {n}, {hold}× gösterilir",
+        "selected": "Kare {n}:",
+        "hold": "Süre",
+        "holdHint": "Bu karenin kaç vuruş kaldığı – yüklerken karenin kopyalarına dönüşür",
+        "holdLess": "Daha kısa",
+        "holdMore": "Daha uzun",
+        "earlier": "← Öne",
+        "later": "Sona →",
+        "duplicate": "Çoğalt",
+        "remove": "Sil"
+      },
+      "steps": {
+        "label": "Adımlar",
+        "import": "Kaynak",
+        "edit": "Düzenle",
+        "upload": "Yükle",
+        "back": "Geri",
+        "toEditor": "Düzenleyiciye geç",
+        "toUpload": "Yüklemeye geç"
+      },
+      "export": {
+        "exact": "piksel hassas",
+        "scaleHint": "{w}×{h} olarak düzenlendi; daha büyük çözünürlükler otomatik büyütülür.",
+        "smooth": "Yumuşat",
+        "smoothHint": "Büyütürken basamaklı kenarları yuvarlar (xBRZ, bilgisayarında hesaplanır).",
+        "smoothOff": "Yumuşatmak için en az iki kat düzenleme çözünürlüğü seç.",
+        "frameSize": "Kare başına",
+        "frames": "Kareler",
+        "computing": "Pelerin hesaplanıyor …",
+        "tooLarge": "Pelerin {size} olurdu – en fazla 20 MB’a izin var. Daha küçük bir sürüm seç:",
+        "useScale": "{w}×{h} (≈ {size})",
+        "useFrames": "{n} kare (≈ {size})",
+        "final": "Tam olarak yükleneceği gibi.",
+        "failed": "Pelerin oluşturulamadı."
+      }
     },
     "hatDialog": {
       "title": "“{name}” açıldı!",

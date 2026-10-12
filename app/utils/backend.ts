@@ -12,6 +12,7 @@ import {
   trsCapeOffersSchema,
   trsCapeSchema,
   trsCapeSourceSchema,
+  trsCapeVideoSchema,
   trsCodeSchema,
   trsFriendRequestResultSchema,
   trsFriendSchema,
@@ -890,6 +891,15 @@ export const backend = {
     setCape: (capeId: string | null) => checked(z.string().nullable(), 'trs_set_cape', { capeId }),
     /** Dateidialog im Kern (auch mehrere Bilder = Frames); `null` = abgebrochen. */
     pickCapeSources: () => checked(z.array(trsCapeSourceSchema).nullable(), 'trs_pick_cape_sources'),
+    /** Video wählen (nur mit FFmpeg, Windows): Kennung + Dauer/Größe; `null` = abgebrochen. */
+    pickCapeVideo: () => checked(trsCapeVideoSchema.nullable(), 'trs_pick_cape_video'),
+    /** Bereich des Videos als Frames (Aufgabe mit Fortschritt 0–100 und Abbrechen). */
+    capeVideoFrames: (
+      token: string,
+      request: { startMs: number; endMs: number; fps: number },
+      onProgress: (percent: number) => void,
+      taskId: string | null = null,
+    ) => checked(trsCapeSourceSchema, 'trs_cape_video_frames', { token, request, onProgress: channel(onProgress), taskId }),
     /** Fertiger Streifen aus dem Zuschneide-Dialog (PNG als Base64); der Kern prüft ihn erneut. */
     uploadCape: (upload: { png: string; frames: number; frameTimeMs: number | null; name: string | null }) =>
       checked(trsCapeSchema, 'trs_upload_cape', upload),

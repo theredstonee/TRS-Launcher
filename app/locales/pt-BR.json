@@ -623,10 +623,10 @@
       "invalidEvent": "Evento inválido."
     },
     "trsPng": {
-      "fileTooLarge": "O arquivo é grande demais (máx. 5 MB).",
+      "fileTooLarge": "O arquivo é grande demais (máx. 20 MB).",
       "invalidPng": "O arquivo não é uma imagem PNG válida.",
       "animated": "PNGs animados (APNG) não são suportados – envie animações como tira.",
-      "invalidSize": "A capa precisa ter 64×32 pixels (ou um múltiplo até 512×256) ou 22×17 no formato de capa (até 176×136); animada, no máximo 16 quadros empilhados na vertical.",
+      "invalidSize": "A capa deve ter 64×32 pixels (ou um múltiplo até 1024×512), ou 22×17 no formato de capa (até 352×272); capas animadas têm no máximo 32 quadros empilhados.",
       "frameTime": "A velocidade precisa ficar entre 50 e 1000 ms por quadro.",
       "emptyCape": "A capa é totalmente transparente."
     },
@@ -703,8 +703,8 @@
       "clipboardFailed": "Não foi possível copiar o clipe para a área de transferência."
     },
     "trsCapeImport": {
-      "unsupported": "“{name}” não é uma imagem suportada (PNG, JPEG, WebP, GIF ou JSON do TRS Studio).",
-      "imageTooLarge": "“{name}” é grande demais (máx. 4096×4096 pixels, como GIF 2048×2048).",
+      "unsupported": "“{name}” não é uma imagem compatível (PNG, APNG, JPEG, WebP, GIF ou JSON do TRS Studio).",
+      "imageTooLarge": "“{name}” é grande demais (no máximo 4096×4096 pixels, animado 2048×2048).",
       "broken": "Não foi possível ler “{name}”.",
       "tooManyFiles": "Escolha no máximo {max} arquivos de uma vez.",
       "fileTooLarge": "“{name}” é grande demais (máx. 20 MB por arquivo).",
@@ -941,6 +941,13 @@
       "invalidSource": "Os dados do ícone são inválidos.",
       "noClientJar": "Nenhum Minecraft baixado ainda – inicie uma instância uma vez.",
       "brokenImage": "A imagem está danificada ou é grande demais (no máximo 4096×4096 pixels)."
+    },
+    "trsCapeVideo": {
+      "expired": "O vídeo não está mais selecionado – escolha-o de novo.",
+      "unsupported": "Vídeos não podem ser usados como capa aqui.",
+      "ffmpegMissing": "Para vídeos, o FFmpeg precisa ser baixado primeiro.",
+      "unreadable": "“{name}” não pode ser lido como vídeo.",
+      "badRange": "Escolha um trecho válido do vídeo."
     }
   },
   "browse": {
@@ -2853,7 +2860,10 @@
       "night": "Noite",
       "showHead": "Aproximar da cabeça",
       "showBody": "Mostrar corpo inteiro",
-      "resetCamera": "Redefinir câmera"
+      "resetCamera": "Redefinir câmera",
+      "equipment": "Nas costas",
+      "cape": "Capa",
+      "elytra": "Élitros"
     },
     "trsCape": "Capa TRS",
     "headCosmetic": "Cosmético de cabeça",
@@ -3558,7 +3568,7 @@
       "pick": {
         "lead": "Escolha uma ou mais imagens. Você escolhe a parte que vai para a capa e a vê na hora no jogador.",
         "image": "Qualquer imagem (PNG, JPEG, WebP) – você escolhe o recorte",
-        "gif": "GIF animado – os quadros são aproveitados",
+        "gif": "GIF ou APNG animado – os quadros são aproveitados",
         "frames": "Várias imagens de uma vez – viram os quadros, em ordem de nome",
         "sheet": "Uma textura de capa pronta ou sprite sheet (quadros empilhados na vertical)",
         "studio": "Exportações do TRS Studio – escolha o PNG junto com o .json",
@@ -3566,7 +3576,7 @@
         "loading": "Carregando …"
       },
       "rules": {
-        "size": "Até 512×256 pixels por quadro, até 16 quadros, no máximo 5 MB.",
+        "size": "Até 1024×512 pixels por quadro, até 32 quadros, no máximo 20 MB.",
         "review": "A equipe analisa cada capa; até lá, só você pode vê-la.",
         "rights": "Só imagens suas ou que você tem permissão para usar – nada ofensivo."
       },
@@ -3585,7 +3595,7 @@
       },
       "sheet": {
         "label": "Quadros na imagem",
-        "hint": "Para sprite sheets: quadros empilhados na vertical."
+        "hint": "Sprite sheet: colunas × linhas e quantas células são quadros."
       },
       "scale": {
         "label": "Resolução",
@@ -3596,24 +3606,141 @@
         "value": "{ms} ms por quadro · {fps} qps"
       },
       "sampled": "{total} quadros – {max} escolhidos de forma uniforme são usados.",
-      "preview": {
-        "texture": "Textura da capa"
-      },
       "sizeLabel": "Tamanho do arquivo",
-      "size": "{size} de no máx. 5 MB",
+      "size": "{size} de no máx. 20 MB",
       "nameLabel": "Nome (opcional)",
       "placeholder": "ex.: Minha capa",
       "errors": {
         "noImage": "Escolha pelo menos uma imagem – um .json sozinho não basta.",
-        "mixed": "Escolha um GIF ou imagens – não os dois.",
+        "mixed": "Escolha uma animação (GIF/APNG) ou imagens – não os dois.",
         "sizeMismatch": "Todos os quadros precisam ter o mesmo tamanho.",
         "frameTooLarge": "Com vários quadros, cada imagem pode ter no máximo 2048×2048 pixels.",
         "readFailed": "Não foi possível ler a imagem.",
-        "tooLarge": "A capa é grande demais ({size}, máx. 5 MB) – escolha uma resolução menor ou menos quadros.",
         "empty": "A capa é totalmente transparente."
       },
       "upload": "Enviar",
       "uploading": "Enviando …"
+    },
+    "studio": {
+      "pick": {
+        "video": "Um vídeo (MP4, WebM …) – você escolhe um trecho, até 32 quadros",
+        "chooseVideo": "Escolher vídeo",
+        "mobileHint": "O editor de pixels está no launcher para computador – aqui você pode importar e enviar."
+      },
+      "order": {
+        "label": "Ordem dos quadros",
+        "reverse": "Inverter",
+        "earlier": "Antes",
+        "later": "Depois",
+        "hint": "Arraste as imagens para mudar a ordem (de início, pelo nome do arquivo)."
+      },
+      "sheet": {
+        "cols": "Colunas",
+        "rows": "Linhas",
+        "count": "Quadros"
+      },
+      "detail": {
+        "label": "Resolução de edição",
+        "auto": "Automática ({w}×{h})",
+        "hint": "Você edita nesta resolução; ao enviar, ela é ampliada automaticamente."
+      },
+      "importSummary": "Quadros: {n} · edição em {w}×{h}",
+      "preparing": "Preparando quadros … {done}/{total}",
+      "video": {
+        "length": "{s} s de duração",
+        "start": "Início",
+        "end": "Fim",
+        "fps": "Taxa de quadros",
+        "fpsOption": "{fps} quadros por segundo",
+        "result": "→ {frames} quadros ({s} s do vídeo)",
+        "capped": "Só cabem os primeiros 32 quadros – encurte o trecho ou reduza a taxa de quadros.",
+        "extracting": "Extraindo quadros … {percent} %",
+        "extract": "Extrair quadros",
+        "back": "Voltar",
+        "hintRange": "Escolha um trecho curto: uma capa tem no máximo 32 quadros.",
+        "hintLocal": "O vídeo é processado no seu computador com o FFmpeg – nada é enviado.",
+        "ffmpegLead": "Os vídeos são divididos em quadros com o FFmpeg ({size}, baixado uma vez – o mesmo dos clipes).",
+        "taskTitle": "Quadros de capa de {name}",
+        "taskStage": "Extraindo quadros"
+      },
+      "canvasLabel": "Textura da capa {w}×{h} – desenhe com a ferramenta escolhida",
+      "regions": {
+        "capeTop": "Borda superior",
+        "capeBottom": "Borda inferior",
+        "capeLeft": "Lado esquerdo",
+        "capeOuter": "Lado de fora",
+        "capeRight": "Lado direito",
+        "capeInner": "Lado de dentro",
+        "elytraTop": "Élitros em cima",
+        "elytraBottom": "Élitros embaixo",
+        "elytraLeft": "Élitros lado esquerdo",
+        "elytraOuter": "Élitros fora",
+        "elytraRight": "Élitros lado direito",
+        "elytraInner": "Élitros dentro"
+      },
+      "tools": {
+        "pencil": "Lápis",
+        "eraser": "Borracha",
+        "picker": "Conta-gotas",
+        "fill": "Preencher (dentro da parte)",
+        "line": "Linha",
+        "move": "Mover parte (alinhar)"
+      },
+      "guides": "Modelo",
+      "onion": "Papel vegetal",
+      "brush": "Pincel",
+      "copyOuter": "Fora → dentro",
+      "clearFrame": "Limpar quadro",
+      "backdrop": {
+        "light": "Fundo claro",
+        "dark": "Fundo escuro"
+      },
+      "legend": "Legenda do modelo",
+      "legendFaces": "Capa fora e dentro",
+      "legendEdges": "Bordas e lados",
+      "legendElytra": "Élitros – feitos automaticamente a partir do lado de fora",
+      "shortcuts": "Teclas: B lápis · E borracha · I conta-gotas · G preencher · L linha · M mover · [ ] pincel · O papel vegetal · Espaço reproduzir · ←/→ quadro · Ctrl+Z / Ctrl+Y · clique direito apaga",
+      "timeline": {
+        "label": "Linha do tempo",
+        "play": "Reproduzir",
+        "pause": "Pausar",
+        "used": "{used}/{max} quadros na capa",
+        "frames": "Quadros",
+        "frame": "Quadro {n}, exibido {hold}×",
+        "selected": "Quadro {n}:",
+        "hold": "Duração",
+        "holdHint": "Quantos tempos este quadro fica – vira cópias do quadro ao enviar",
+        "holdLess": "Mais curto",
+        "holdMore": "Mais longo",
+        "earlier": "← Antes",
+        "later": "Depois →",
+        "duplicate": "Duplicar",
+        "remove": "Excluir"
+      },
+      "steps": {
+        "label": "Etapas",
+        "import": "Origem",
+        "edit": "Editar",
+        "upload": "Enviar",
+        "back": "Voltar",
+        "toEditor": "Ir para o editor",
+        "toUpload": "Ir para o envio"
+      },
+      "export": {
+        "exact": "pixel exato",
+        "scaleHint": "Editado em {w}×{h}; resoluções maiores são ampliadas automaticamente.",
+        "smooth": "Suavizar",
+        "smoothHint": "Arredonda bordas em escada ao ampliar (xBRZ, calculado no seu computador).",
+        "smoothOff": "Para suavizar, escolha pelo menos o dobro da resolução de edição.",
+        "frameSize": "Por quadro",
+        "frames": "Quadros",
+        "computing": "Calculando a capa …",
+        "tooLarge": "A capa teria {size} – são permitidos no máximo 20 MB. Escolha uma versão menor:",
+        "useScale": "{w}×{h} (≈ {size})",
+        "useFrames": "{n} quadros (≈ {size})",
+        "final": "Exatamente como será enviada.",
+        "failed": "Não foi possível criar a capa."
+      }
     },
     "hatDialog": {
       "title": "“{name}” desbloqueado!",

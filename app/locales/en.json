@@ -623,10 +623,10 @@
       "invalidEvent": "Invalid event."
     },
     "trsPng": {
-      "fileTooLarge": "The file is too large (max. 5 MB).",
+      "fileTooLarge": "The file is too large (max. 20 MB).",
       "invalidPng": "The file isn't a valid PNG image.",
       "animated": "Animated PNGs (APNG) aren't supported – upload animations as a strip.",
-      "invalidSize": "The cape must be 64×32 pixels (or a multiple up to 512×256), or 22×17 in cape format (up to 176×136); animated capes have at most 16 frames stacked vertically.",
+      "invalidSize": "The cape must be 64×32 pixels (or a multiple up to 1024×512), or 22×17 in cape format (up to 352×272); animated capes have at most 32 frames stacked vertically.",
       "frameTime": "The speed must be between 50 and 1000 ms per frame.",
       "emptyCape": "The cape is completely transparent."
     },
@@ -703,8 +703,8 @@
       "clipboardFailed": "The clip could not be copied to the clipboard."
     },
     "trsCapeImport": {
-      "unsupported": "“{name}” isn't a supported image (PNG, JPEG, WebP, GIF or TRS Studio JSON).",
-      "imageTooLarge": "“{name}” is too large (at most 4096×4096 pixels, as a GIF 2048×2048).",
+      "unsupported": "“{name}” isn’t a supported image (PNG, APNG, JPEG, WebP, GIF or TRS Studio JSON).",
+      "imageTooLarge": "“{name}” is too large (at most 4096×4096 pixels, animated 2048×2048).",
       "broken": "“{name}” couldn't be read.",
       "tooManyFiles": "Please choose at most {max} files at once.",
       "fileTooLarge": "“{name}” is too large (at most 20 MB per file).",
@@ -941,6 +941,13 @@
       "invalidSource": "The icon data is invalid.",
       "noClientJar": "No Minecraft downloaded yet – start an instance once.",
       "brokenImage": "The image is damaged or too large (at most 4096×4096 pixels)."
+    },
+    "trsCapeVideo": {
+      "expired": "The video is no longer selected – please choose it again.",
+      "unsupported": "Videos can’t be used as a cape here.",
+      "ffmpegMissing": "FFmpeg has to be downloaded first for videos.",
+      "unreadable": "“{name}” can’t be read as a video.",
+      "badRange": "Please choose a valid section of the video."
     }
   },
   "browse": {
@@ -2853,7 +2860,10 @@
       "night": "Night",
       "showHead": "Zoom to head",
       "showBody": "Show whole body",
-      "resetCamera": "Reset camera"
+      "resetCamera": "Reset camera",
+      "equipment": "On the back",
+      "cape": "Cape",
+      "elytra": "Elytra"
     },
     "trsCape": "TRS cape",
     "headCosmetic": "Head cosmetic",
@@ -3558,7 +3568,7 @@
       "pick": {
         "lead": "Choose one or more images. You pick the part that ends up on the cape and see it live on the player right away.",
         "image": "Any image (PNG, JPEG, WebP) – you choose the section",
-        "gif": "Animated GIF – its frames are taken over",
+        "gif": "Animated GIF or APNG – its frames are taken over",
         "frames": "Several images at once – they become the frames, in name order",
         "sheet": "A finished cape texture or sprite sheet (frames stacked vertically)",
         "studio": "TRS Studio exports – choose the PNG together with its .json",
@@ -3566,7 +3576,7 @@
         "loading": "Loading …"
       },
       "rules": {
-        "size": "Up to 512×256 pixels per frame, up to 16 frames, at most 5 MB.",
+        "size": "Up to 1024×512 pixels per frame, up to 32 frames, at most 20 MB.",
         "review": "The team reviews every cape; until then, only you can see it.",
         "rights": "Only your own images or ones you're allowed to use – nothing offensive."
       },
@@ -3585,7 +3595,7 @@
       },
       "sheet": {
         "label": "Frames in the image",
-        "hint": "For sprite sheets: frames stacked vertically."
+        "hint": "Sprite sheet: columns × rows, and how many cells are frames."
       },
       "scale": {
         "label": "Resolution",
@@ -3596,24 +3606,141 @@
         "value": "{ms} ms per frame · {fps} fps"
       },
       "sampled": "{total} frames – {max} evenly chosen ones are used.",
-      "preview": {
-        "texture": "Cape texture"
-      },
       "sizeLabel": "File size",
-      "size": "{size} of max. 5 MB",
+      "size": "{size} of max. 20 MB",
       "nameLabel": "Name (optional)",
       "placeholder": "e.g. My cape",
       "errors": {
         "noImage": "Please choose at least one image – a .json alone isn't enough.",
-        "mixed": "Choose either one GIF or images – not both.",
+        "mixed": "Choose either one animation (GIF/APNG) or images – not both.",
         "sizeMismatch": "All frames must be the same size.",
         "frameTooLarge": "With several frames, each image may be at most 2048×2048 pixels.",
         "readFailed": "The image couldn't be read.",
-        "tooLarge": "The cape is too large ({size}, at most 5 MB) – choose a lower resolution or fewer frames.",
         "empty": "The cape is completely transparent."
       },
       "upload": "Upload",
       "uploading": "Uploading …"
+    },
+    "studio": {
+      "pick": {
+        "video": "A video (MP4, WebM …) – you pick a section, up to 32 frames",
+        "chooseVideo": "Choose video",
+        "mobileHint": "The pixel editor is available in the desktop launcher – here you can import and upload."
+      },
+      "order": {
+        "label": "Frame order",
+        "reverse": "Reverse",
+        "earlier": "Earlier",
+        "later": "Later",
+        "hint": "Drag the images to change the order (sorted by file name at first)."
+      },
+      "sheet": {
+        "cols": "Columns",
+        "rows": "Rows",
+        "count": "Frames"
+      },
+      "detail": {
+        "label": "Editing resolution",
+        "auto": "Automatic ({w}×{h})",
+        "hint": "You edit in this resolution; it’s scaled up automatically when uploading."
+      },
+      "importSummary": "Frames: {n} · editing at {w}×{h}",
+      "preparing": "Preparing frames … {done}/{total}",
+      "video": {
+        "length": "{s} s long",
+        "start": "Start",
+        "end": "End",
+        "fps": "Frame rate",
+        "fpsOption": "{fps} frames per second",
+        "result": "→ {frames} frames ({s} s of the video)",
+        "capped": "Only the first 32 frames fit – shorten the section or lower the frame rate to cover all of it.",
+        "extracting": "Extracting frames … {percent} %",
+        "extract": "Extract frames",
+        "back": "Back",
+        "hintRange": "Pick a short section: a cape has at most 32 frames.",
+        "hintLocal": "The video is processed on your computer with FFmpeg – nothing is uploaded.",
+        "ffmpegLead": "Videos are split into frames with FFmpeg ({size}, downloaded once – the same one clips use).",
+        "taskTitle": "Cape frames from {name}",
+        "taskStage": "Extracting frames"
+      },
+      "canvasLabel": "Cape texture {w}×{h} – draw with the selected tool",
+      "regions": {
+        "capeTop": "Cape top edge",
+        "capeBottom": "Cape bottom edge",
+        "capeLeft": "Cape left side",
+        "capeOuter": "Outside",
+        "capeRight": "Cape right side",
+        "capeInner": "Inside",
+        "elytraTop": "Elytra top",
+        "elytraBottom": "Elytra bottom",
+        "elytraLeft": "Elytra left side",
+        "elytraOuter": "Elytra outside",
+        "elytraRight": "Elytra right side",
+        "elytraInner": "Elytra inside"
+      },
+      "tools": {
+        "pencil": "Pencil",
+        "eraser": "Eraser",
+        "picker": "Pick color",
+        "fill": "Fill (within the part)",
+        "line": "Line",
+        "move": "Move part (align)"
+      },
+      "guides": "Template",
+      "onion": "Onion skin",
+      "brush": "Brush",
+      "copyOuter": "Outside → inside",
+      "clearFrame": "Clear frame",
+      "backdrop": {
+        "light": "Light background",
+        "dark": "Dark background"
+      },
+      "legend": "Template legend",
+      "legendFaces": "Cape outside & inside",
+      "legendEdges": "Edges and sides",
+      "legendElytra": "Elytra – made from the outside automatically",
+      "shortcuts": "Keys: B pencil · E eraser · I pick · G fill · L line · M move · [ ] brush · O onion skin · Space play · ←/→ frame · Ctrl+Z / Ctrl+Y · right click erases",
+      "timeline": {
+        "label": "Timeline",
+        "play": "Play",
+        "pause": "Pause",
+        "used": "{used}/{max} frames in the cape",
+        "frames": "Frames",
+        "frame": "Frame {n}, shown {hold}×",
+        "selected": "Frame {n}:",
+        "hold": "Duration",
+        "holdHint": "How many beats this frame stays – becomes copies of the frame when uploading",
+        "holdLess": "Shorter",
+        "holdMore": "Longer",
+        "earlier": "← Earlier",
+        "later": "Later →",
+        "duplicate": "Duplicate",
+        "remove": "Delete"
+      },
+      "steps": {
+        "label": "Steps",
+        "import": "Source",
+        "edit": "Edit",
+        "upload": "Upload",
+        "back": "Back",
+        "toEditor": "Continue to editor",
+        "toUpload": "Continue to upload"
+      },
+      "export": {
+        "exact": "pixel-exact",
+        "scaleHint": "Edited at {w}×{h}; larger resolutions are scaled up automatically.",
+        "smooth": "Smooth",
+        "smoothHint": "Rounds staircase edges when scaling up (xBRZ, calculated on your computer).",
+        "smoothOff": "Choose at least twice the editing resolution to smooth.",
+        "frameSize": "Per frame",
+        "frames": "Frames",
+        "computing": "Calculating the cape …",
+        "tooLarge": "The cape would be {size} – at most 20 MB are allowed. Choose a smaller version:",
+        "useScale": "{w}×{h} (≈ {size})",
+        "useFrames": "{n} frames (≈ {size})",
+        "final": "Exactly as it will be uploaded.",
+        "failed": "The cape couldn’t be built."
+      }
     },
     "hatDialog": {
       "title": "“{name}” unlocked!",

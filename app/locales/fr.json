@@ -623,10 +623,10 @@
       "invalidEvent": "Événement invalide."
     },
     "trsPng": {
-      "fileTooLarge": "Le fichier est trop volumineux (5 Mo max.).",
+      "fileTooLarge": "Le fichier est trop volumineux (20 Mo max.).",
       "invalidPng": "Le fichier n'est pas une image PNG valide.",
       "animated": "Les PNG animés (APNG) ne sont pas pris en charge – envoie les animations sous forme de bande.",
-      "invalidSize": "La cape doit faire 64×32 pixels (ou un multiple jusqu’à 512×256), ou 22×17 au format cape (jusqu’à 176×136) ; animée, 16 images au plus empilées verticalement.",
+      "invalidSize": "La cape doit faire 64×32 pixels (ou un multiple jusqu’à 1024×512), ou 22×17 au format cape (jusqu’à 352×272) ; une cape animée a au plus 32 images empilées verticalement.",
       "frameTime": "La vitesse doit être comprise entre 50 et 1000 ms par image.",
       "emptyCape": "La cape est entièrement transparente."
     },
@@ -703,8 +703,8 @@
       "clipboardFailed": "Le clip n'a pas pu être copié dans le presse-papiers."
     },
     "trsCapeImport": {
-      "unsupported": "« {name} » n’est pas une image prise en charge (PNG, JPEG, WebP, GIF ou JSON de TRS Studio).",
-      "imageTooLarge": "« {name} » est trop grande (4096×4096 pixels max., en GIF 2048×2048).",
+      "unsupported": "« {name} » n’est pas une image prise en charge (PNG, APNG, JPEG, WebP, GIF ou JSON TRS Studio).",
+      "imageTooLarge": "« {name} » est trop grand (4096×4096 pixels max., animé 2048×2048).",
       "broken": "Impossible de lire « {name} ».",
       "tooManyFiles": "Choisis au plus {max} fichiers à la fois.",
       "fileTooLarge": "« {name} » est trop volumineux (20 Mo max. par fichier).",
@@ -941,6 +941,13 @@
       "invalidSource": "Les données de l'icône sont invalides.",
       "noClientJar": "Minecraft n'est pas encore téléchargé – lance une instance une fois.",
       "brokenImage": "L'image est endommagée ou trop grande (4096×4096 pixels max.)."
+    },
+    "trsCapeVideo": {
+      "expired": "La vidéo n’est plus sélectionnée – choisis-la à nouveau.",
+      "unsupported": "Les vidéos ne peuvent pas servir de cape ici.",
+      "ffmpegMissing": "Pour les vidéos, FFmpeg doit d’abord être téléchargé.",
+      "unreadable": "« {name} » ne peut pas être lu comme vidéo.",
+      "badRange": "Choisis un extrait valide de la vidéo."
     }
   },
   "browse": {
@@ -2853,7 +2860,10 @@
       "night": "Nuit",
       "showHead": "Zoomer sur la tête",
       "showBody": "Afficher tout le corps",
-      "resetCamera": "Réinitialiser la caméra"
+      "resetCamera": "Réinitialiser la caméra",
+      "equipment": "Dans le dos",
+      "cape": "Cape",
+      "elytra": "Élytres"
     },
     "trsCape": "Cape TRS",
     "headCosmetic": "Cosmétique de tête",
@@ -3558,7 +3568,7 @@
       "pick": {
         "lead": "Choisis une ou plusieurs images. Tu choisis la partie qui va sur la cape et tu la vois tout de suite sur le joueur.",
         "image": "N’importe quelle image (PNG, JPEG, WebP) – tu choisis le cadrage",
-        "gif": "GIF animé – ses images sont reprises",
+        "gif": "GIF ou APNG animé – ses images sont reprises",
         "frames": "Plusieurs images à la fois – elles deviennent les images de l’animation, par ordre de nom",
         "sheet": "Une texture de cape finie ou une planche de sprites (images empilées verticalement)",
         "studio": "Exports TRS Studio – choisis le PNG avec son .json",
@@ -3566,7 +3576,7 @@
         "loading": "Chargement …"
       },
       "rules": {
-        "size": "Jusqu’à 512×256 pixels par image, jusqu’à 16 images, 5 Mo max.",
+        "size": "Jusqu’à 1024×512 pixels par image, jusqu’à 32 images, 20 Mo maximum.",
         "review": "L’équipe vérifie chaque cape ; en attendant, toi seul peux la voir.",
         "rights": "Uniquement tes propres images ou celles que tu as le droit d’utiliser – rien d’offensant."
       },
@@ -3585,7 +3595,7 @@
       },
       "sheet": {
         "label": "Images dans le fichier",
-        "hint": "Pour les planches de sprites : images empilées verticalement."
+        "hint": "Planche de sprites : colonnes × lignes et combien de cases sont des images."
       },
       "scale": {
         "label": "Résolution",
@@ -3596,24 +3606,141 @@
         "value": "{ms} ms par image · {fps} img/s"
       },
       "sampled": "{total} images – {max} choisies régulièrement sont utilisées.",
-      "preview": {
-        "texture": "Texture de la cape"
-      },
       "sizeLabel": "Taille du fichier",
-      "size": "{size} sur 5 Mo max.",
+      "size": "{size} sur 20 Mo max.",
       "nameLabel": "Nom (facultatif)",
       "placeholder": "p. ex. Ma cape",
       "errors": {
         "noImage": "Choisis au moins une image – un .json seul ne suffit pas.",
-        "mixed": "Choisis soit un GIF, soit des images – pas les deux.",
+        "mixed": "Choisis soit une animation (GIF/APNG), soit des images – pas les deux.",
         "sizeMismatch": "Toutes les images doivent avoir la même taille.",
         "frameTooLarge": "Avec plusieurs images, chacune peut faire au plus 2048×2048 pixels.",
         "readFailed": "Impossible de lire l’image.",
-        "tooLarge": "La cape est trop volumineuse ({size}, 5 Mo max.) – choisis une résolution plus basse ou moins d’images.",
         "empty": "La cape est entièrement transparente."
       },
       "upload": "Envoyer",
       "uploading": "Envoi …"
+    },
+    "studio": {
+      "pick": {
+        "video": "Une vidéo (MP4, WebM …) – tu choisis un extrait, jusqu’à 32 images",
+        "chooseVideo": "Choisir une vidéo",
+        "mobileHint": "L’éditeur de pixels est disponible dans le launcher pour ordinateur – ici, tu peux importer et téléverser."
+      },
+      "order": {
+        "label": "Ordre des images",
+        "reverse": "Inverser",
+        "earlier": "Plus tôt",
+        "later": "Plus tard",
+        "hint": "Fais glisser les images pour changer l’ordre (trié d’abord par nom de fichier)."
+      },
+      "sheet": {
+        "cols": "Colonnes",
+        "rows": "Lignes",
+        "count": "Images"
+      },
+      "detail": {
+        "label": "Résolution d’édition",
+        "auto": "Automatique ({w}×{h})",
+        "hint": "Tu modifies dans cette résolution ; elle est agrandie automatiquement lors de l’envoi."
+      },
+      "importSummary": "Images : {n} · édition en {w}×{h}",
+      "preparing": "Préparation des images … {done}/{total}",
+      "video": {
+        "length": "durée {s} s",
+        "start": "Début",
+        "end": "Fin",
+        "fps": "Images par seconde",
+        "fpsOption": "{fps} images par seconde",
+        "result": "→ {frames} images ({s} s de la vidéo)",
+        "capped": "Seules les 32 premières images tiennent – raccourcis l’extrait ou baisse le nombre d’images par seconde.",
+        "extracting": "Extraction des images … {percent} %",
+        "extract": "Extraire les images",
+        "back": "Retour",
+        "hintRange": "Choisis un court extrait : une cape a au plus 32 images.",
+        "hintLocal": "La vidéo est traitée sur ton ordinateur avec FFmpeg – rien n’est envoyé.",
+        "ffmpegLead": "Les vidéos sont découpées en images avec FFmpeg ({size}, téléchargé une seule fois – le même que pour les clips).",
+        "taskTitle": "Images de cape depuis {name}",
+        "taskStage": "Extraction des images"
+      },
+      "canvasLabel": "Texture de cape {w}×{h} – dessine avec l’outil choisi",
+      "regions": {
+        "capeTop": "Bord supérieur",
+        "capeBottom": "Bord inférieur",
+        "capeLeft": "Côté gauche",
+        "capeOuter": "Extérieur",
+        "capeRight": "Côté droit",
+        "capeInner": "Intérieur",
+        "elytraTop": "Élytres haut",
+        "elytraBottom": "Élytres bas",
+        "elytraLeft": "Élytres côté gauche",
+        "elytraOuter": "Élytres extérieur",
+        "elytraRight": "Élytres côté droit",
+        "elytraInner": "Élytres intérieur"
+      },
+      "tools": {
+        "pencil": "Crayon",
+        "eraser": "Gomme",
+        "picker": "Pipette",
+        "fill": "Remplir (dans la partie)",
+        "line": "Ligne",
+        "move": "Déplacer la partie (aligner)"
+      },
+      "guides": "Gabarit",
+      "onion": "Pelure d’oignon",
+      "brush": "Pinceau",
+      "copyOuter": "Extérieur → intérieur",
+      "clearFrame": "Vider l’image",
+      "backdrop": {
+        "light": "Fond clair",
+        "dark": "Fond sombre"
+      },
+      "legend": "Légende du gabarit",
+      "legendFaces": "Cape extérieur et intérieur",
+      "legendEdges": "Bords et côtés",
+      "legendElytra": "Élytres – créés automatiquement à partir de l’extérieur",
+      "shortcuts": "Touches : B crayon · E gomme · I pipette · G remplir · L ligne · M déplacer · [ ] pinceau · O pelure d’oignon · Espace lecture · ←/→ image · Ctrl+Z / Ctrl+Y · clic droit efface",
+      "timeline": {
+        "label": "Chronologie",
+        "play": "Lire",
+        "pause": "Pause",
+        "used": "{used}/{max} images dans la cape",
+        "frames": "Images",
+        "frame": "Image {n}, affichée {hold}×",
+        "selected": "Image {n} :",
+        "hold": "Durée",
+        "holdHint": "Combien de temps cette image reste – devient des copies de l’image lors de l’envoi",
+        "holdLess": "Plus court",
+        "holdMore": "Plus long",
+        "earlier": "← Plus tôt",
+        "later": "Plus tard →",
+        "duplicate": "Dupliquer",
+        "remove": "Supprimer"
+      },
+      "steps": {
+        "label": "Étapes",
+        "import": "Source",
+        "edit": "Modifier",
+        "upload": "Envoyer",
+        "back": "Retour",
+        "toEditor": "Continuer vers l’éditeur",
+        "toUpload": "Continuer vers l’envoi"
+      },
+      "export": {
+        "exact": "pixel près",
+        "scaleHint": "Modifié en {w}×{h} ; les résolutions supérieures sont agrandies automatiquement.",
+        "smooth": "Lisser",
+        "smoothHint": "Arrondit les bords en escalier lors de l’agrandissement (xBRZ, calculé sur ton ordinateur).",
+        "smoothOff": "Pour lisser, choisis au moins le double de la résolution d’édition.",
+        "frameSize": "Par image",
+        "frames": "Images",
+        "computing": "Calcul de la cape …",
+        "tooLarge": "La cape ferait {size} – 20 Mo maximum sont autorisés. Choisis une version plus petite :",
+        "useScale": "{w}×{h} (≈ {size})",
+        "useFrames": "{n} images (≈ {size})",
+        "final": "Exactement comme elle sera envoyée.",
+        "failed": "La cape n’a pas pu être créée."
+      }
     },
     "hatDialog": {
       "title": "« {name} » débloqué !",

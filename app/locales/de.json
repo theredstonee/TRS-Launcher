@@ -623,10 +623,10 @@
       "invalidEvent": "Ungültiges Event."
     },
     "trsPng": {
-      "fileTooLarge": "Die Datei ist zu groß (höchstens 5 MB).",
+      "fileTooLarge": "Die Datei ist zu groß (höchstens 20 MB).",
       "invalidPng": "Die Datei ist kein gültiges PNG-Bild.",
       "animated": "Animierte PNGs (APNG) werden nicht unterstützt – Animationen als Streifen hochladen.",
-      "invalidSize": "Der Umhang muss 64×32 Pixel groß sein (oder ein Vielfaches bis 512×256) bzw. im Umhang-Format 22×17 (bis 176×136); animiert höchstens 16 Frames untereinander.",
+      "invalidSize": "Der Umhang muss 64×32 Pixel groß sein (oder ein Vielfaches bis 1024×512) bzw. im Umhang-Format 22×17 (bis 352×272); animiert höchstens 32 Frames untereinander.",
       "frameTime": "Das Bildtempo muss zwischen 50 und 1000 ms je Frame liegen.",
       "emptyCape": "Der Umhang ist komplett durchsichtig."
     },
@@ -703,8 +703,8 @@
       "clipboardFailed": "Der Clip konnte nicht in die Zwischenablage kopiert werden."
     },
     "trsCapeImport": {
-      "unsupported": "„{name}“ ist kein unterstütztes Bild (PNG, JPEG, WebP, GIF oder TRS-Studio-JSON).",
-      "imageTooLarge": "„{name}“ ist zu groß (höchstens 4096×4096 Pixel, als GIF 2048×2048).",
+      "unsupported": "„{name}“ ist kein unterstütztes Bild (PNG, APNG, JPEG, WebP, GIF oder TRS-Studio-JSON).",
+      "imageTooLarge": "„{name}“ ist zu groß (höchstens 4096×4096 Pixel, animiert 2048×2048).",
       "broken": "„{name}“ konnte nicht gelesen werden.",
       "tooManyFiles": "Bitte höchstens {max} Dateien auf einmal wählen.",
       "fileTooLarge": "„{name}“ ist zu groß (höchstens 20 MB je Datei).",
@@ -941,6 +941,13 @@
       "invalidSource": "Die Daten des Symbols sind ungültig.",
       "noClientJar": "Noch kein Minecraft geladen – starte einmal eine Instanz.",
       "brokenImage": "Das Bild ist beschädigt oder zu groß (höchstens 4096×4096 Pixel)."
+    },
+    "trsCapeVideo": {
+      "expired": "Das Video ist nicht mehr gewählt – bitte erneut auswählen.",
+      "unsupported": "Videos lassen sich hier nicht als Umhang verwenden.",
+      "ffmpegMissing": "Für Videos wird zuerst FFmpeg geladen.",
+      "unreadable": "„{name}“ lässt sich nicht als Video lesen.",
+      "badRange": "Bitte einen gültigen Bereich im Video wählen."
     }
   },
   "browse": {
@@ -2853,7 +2860,10 @@
       "night": "Nacht",
       "showHead": "Auf den Kopf zoomen",
       "showBody": "Ganzen Körper zeigen",
-      "resetCamera": "Kamera zurücksetzen"
+      "resetCamera": "Kamera zurücksetzen",
+      "equipment": "Am Rücken",
+      "cape": "Umhang",
+      "elytra": "Elytra"
     },
     "trsCape": "TRS-Umhang",
     "headCosmetic": "Kopf-Kosmetik",
@@ -3558,7 +3568,7 @@
       "pick": {
         "lead": "Wähle ein oder mehrere Bilder. Du bestimmst den Ausschnitt, der auf den Umhang kommt, und siehst ihn sofort am Spieler.",
         "image": "Beliebiges Bild (PNG, JPEG, WebP) – du wählst den Ausschnitt",
-        "gif": "Animiertes GIF – die Frames werden übernommen",
+        "gif": "Animiertes GIF oder APNG – die Frames werden übernommen",
         "frames": "Mehrere Bilder auf einmal – werden in Namensreihenfolge zu Frames",
         "sheet": "Fertige Umhang-Textur oder Sprite-Sheet (Frames untereinander)",
         "studio": "TRS-Studio-Exporte – PNG zusammen mit der .json wählen",
@@ -3566,7 +3576,7 @@
         "loading": "Wird geladen …"
       },
       "rules": {
-        "size": "Bis 512×256 Pixel je Frame, bis zu 16 Frames, höchstens 5 MB.",
+        "size": "Bis 1024×512 Pixel je Frame, bis 32 Frames, höchstens 20 MB.",
         "review": "Das Team prüft jeden Umhang; bis dahin siehst nur du ihn.",
         "rights": "Nur eigene Bilder oder solche, die du verwenden darfst – nichts Anstößiges."
       },
@@ -3585,7 +3595,7 @@
       },
       "sheet": {
         "label": "Frames im Bild",
-        "hint": "Für Sprite-Sheets: Frames untereinander."
+        "hint": "Sprite-Sheet: Spalten × Zeilen und wie viele Zellen Frames sind."
       },
       "scale": {
         "label": "Auflösung",
@@ -3596,24 +3606,141 @@
         "value": "{ms} ms je Frame · {fps} Bilder/s"
       },
       "sampled": "{total} Frames – {max} gleichmäßig ausgewählte werden verwendet.",
-      "preview": {
-        "texture": "Umhang-Textur"
-      },
       "sizeLabel": "Dateigröße",
-      "size": "{size} von höchstens 5 MB",
+      "size": "{size} von max. 20 MB",
       "nameLabel": "Name (optional)",
       "placeholder": "z. B. Mein Umhang",
       "errors": {
         "noImage": "Bitte mindestens ein Bild wählen – eine .json allein reicht nicht.",
-        "mixed": "Bitte entweder ein GIF oder Bilder wählen – nicht beides.",
+        "mixed": "Entweder eine Animation (GIF/APNG) oder Bilder wählen – nicht beides.",
         "sizeMismatch": "Alle Frames müssen gleich groß sein.",
         "frameTooLarge": "Bei mehreren Frames darf jedes Bild höchstens 2048×2048 Pixel groß sein.",
         "readFailed": "Das Bild konnte nicht gelesen werden.",
-        "tooLarge": "Der Umhang ist zu groß ({size}, höchstens 5 MB) – wähle eine kleinere Auflösung oder weniger Frames.",
         "empty": "Der Umhang ist komplett durchsichtig."
       },
       "upload": "Hochladen",
       "uploading": "Wird hochgeladen …"
+    },
+    "studio": {
+      "pick": {
+        "video": "Ein Video (MP4, WebM …) – du wählst einen Ausschnitt, bis zu 32 Frames",
+        "chooseVideo": "Video wählen",
+        "mobileHint": "Den Pixel-Editor gibt es im Desktop-Launcher – hier kannst du importieren und hochladen."
+      },
+      "order": {
+        "label": "Reihenfolge der Frames",
+        "reverse": "Umdrehen",
+        "earlier": "Früher",
+        "later": "Später",
+        "hint": "Bilder ziehen, um die Reihenfolge zu ändern (zuerst nach Dateiname sortiert)."
+      },
+      "sheet": {
+        "cols": "Spalten",
+        "rows": "Zeilen",
+        "count": "Frames"
+      },
+      "detail": {
+        "label": "Bearbeitungs-Auflösung",
+        "auto": "Automatisch ({w}×{h})",
+        "hint": "In dieser Auflösung bearbeitest du; beim Hochladen wird automatisch hochskaliert."
+      },
+      "importSummary": "Frames: {n} · bearbeitet in {w}×{h}",
+      "preparing": "Frames werden vorbereitet … {done}/{total}",
+      "video": {
+        "length": "{s} s lang",
+        "start": "Anfang",
+        "end": "Ende",
+        "fps": "Bildrate",
+        "fpsOption": "{fps} Bilder pro Sekunde",
+        "result": "→ {frames} Frames ({s} s des Videos)",
+        "capped": "Nur die ersten 32 Frames passen – Bereich kürzen oder Bildrate senken, um alles abzudecken.",
+        "extracting": "Frames werden herausgelöst … {percent} %",
+        "extract": "Frames herauslösen",
+        "back": "Zurück",
+        "hintRange": "Wähle einen kurzen Ausschnitt: Ein Umhang hat höchstens 32 Frames.",
+        "hintLocal": "Das Video wird auf deinem Rechner mit FFmpeg verarbeitet – nichts wird hochgeladen.",
+        "ffmpegLead": "Videos werden mit FFmpeg in Frames zerlegt ({size}, wird einmal geladen – dasselbe wie für Clips).",
+        "taskTitle": "Umhang-Frames aus {name}",
+        "taskStage": "Frames werden herausgelöst"
+      },
+      "canvasLabel": "Umhang-Textur {w}×{h} – mit dem gewählten Werkzeug zeichnen",
+      "regions": {
+        "capeTop": "Umhang oben",
+        "capeBottom": "Umhang unten",
+        "capeLeft": "Umhang links",
+        "capeOuter": "Außenseite",
+        "capeRight": "Umhang rechts",
+        "capeInner": "Innenseite",
+        "elytraTop": "Elytra oben",
+        "elytraBottom": "Elytra unten",
+        "elytraLeft": "Elytra links",
+        "elytraOuter": "Elytra außen",
+        "elytraRight": "Elytra rechts",
+        "elytraInner": "Elytra innen"
+      },
+      "tools": {
+        "pencil": "Stift",
+        "eraser": "Radierer",
+        "picker": "Farbe aufnehmen",
+        "fill": "Füllen (im Teil)",
+        "line": "Linie",
+        "move": "Teil verschieben (ausrichten)"
+      },
+      "guides": "Vorlage",
+      "onion": "Zwiebelhaut",
+      "brush": "Pinsel",
+      "copyOuter": "Außen → innen",
+      "clearFrame": "Frame leeren",
+      "backdrop": {
+        "light": "Heller Hintergrund",
+        "dark": "Dunkler Hintergrund"
+      },
+      "legend": "Legende der Vorlage",
+      "legendFaces": "Umhang außen & innen",
+      "legendEdges": "Kanten und Seiten",
+      "legendElytra": "Elytra – automatisch aus der Außenseite",
+      "shortcuts": "Tasten: B Stift · E Radierer · I Pipette · G Füllen · L Linie · M Verschieben · [ ] Pinsel · O Zwiebelhaut · Leertaste Abspielen · ←/→ Frame · Strg+Z / Strg+Y · Rechtsklick radiert",
+      "timeline": {
+        "label": "Zeitleiste",
+        "play": "Abspielen",
+        "pause": "Anhalten",
+        "used": "{used}/{max} Frames im Umhang",
+        "frames": "Frames",
+        "frame": "Frame {n}, {hold}× zu sehen",
+        "selected": "Frame {n}:",
+        "hold": "Dauer",
+        "holdHint": "Wie viele Takte dieser Frame steht – wird beim Hochladen zu Kopien des Frames",
+        "holdLess": "Kürzer",
+        "holdMore": "Länger",
+        "earlier": "← Früher",
+        "later": "Später →",
+        "duplicate": "Duplizieren",
+        "remove": "Löschen"
+      },
+      "steps": {
+        "label": "Schritte",
+        "import": "Quelle",
+        "edit": "Bearbeiten",
+        "upload": "Hochladen",
+        "back": "Zurück",
+        "toEditor": "Weiter zum Editor",
+        "toUpload": "Weiter zum Hochladen"
+      },
+      "export": {
+        "exact": "pixelgenau",
+        "scaleHint": "Bearbeitet in {w}×{h}; größere Auflösungen werden automatisch hochskaliert.",
+        "smooth": "Glätten",
+        "smoothHint": "Rundet Treppenkanten beim Hochskalieren ab (xBRZ, auf deinem Rechner berechnet).",
+        "smoothOff": "Zum Glätten mindestens die doppelte Bearbeitungs-Auflösung wählen.",
+        "frameSize": "Je Frame",
+        "frames": "Frames",
+        "computing": "Umhang wird berechnet …",
+        "tooLarge": "Der Umhang wäre {size} groß – erlaubt sind höchstens 20 MB. Wähle eine kleinere Fassung:",
+        "useScale": "{w}×{h} (≈ {size})",
+        "useFrames": "{n} Frames (≈ {size})",
+        "final": "Genau so, wie er hochgeladen wird.",
+        "failed": "Der Umhang konnte nicht erstellt werden."
+      }
     },
     "hatDialog": {
       "title": "„{name}“ freigeschaltet!",

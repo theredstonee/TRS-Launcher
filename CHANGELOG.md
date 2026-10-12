@@ -28,6 +28,24 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **HD capes.** Your own capes can now be up to 1024×512 pixels per frame, with up to 32 frames and up to 20 MB – twice as sharp and twice as long as before.
+- **Cape workshop with editor.** Uploading a cape now has three steps: choose the source, edit, upload. The editor has a frame timeline (drag to reorder, duplicate, delete, play, speed, and a duration per frame), a pixel editor with pencil, eraser, color picker, fill, line, moving a part, brush sizes, mirroring within a part and onion skin of the previous frame, undo/redo, and a template that shows where the outside, inside, edges and elytra are. A live 3D preview on the player shows every change right away – rotatable, animated and with a light or dark background.
+- **More sources.** Besides images, GIFs, sprite sheets and TRS Studio exports you can now use animated PNGs (APNG), choose the order of several images by dragging, split sprite sheets in rows and columns, and turn a section of a video (MP4, WebM …) into frames – with your own start, end and frame rate, as a task you can cancel. Videos use the same FFmpeg as clips (downloaded once).
+- **Automatic upscaling.** You edit at a small resolution, and the cape is scaled up on upload – pixel-exact, or optionally "Smooth", which rounds staircase edges right on your computer. Before uploading you see the final size, the number of frames and the file size; if the cape would be too large, the launcher suggests a smaller resolution or fewer frames.
+- **Cape or elytra.** The 3D preview on the Skins page and in the cape workshop has a switch between cape and elytra – animated capes move on the elytra too. The elytra design is always made from the front of the cape (also for older capes), so every cape gets matching wings.
+- On phones and tablets you can import and upload capes; the pixel editor is available in the desktop launcher.
+
+### Deutsch
+- **HD-Umhänge.** Eigene Umhänge dürfen jetzt bis 1024×512 Pixel je Frame groß sein, mit bis zu 32 Frames und bis zu 20 MB – doppelt so scharf und doppelt so lang wie bisher.
+- **Umhang-Werkstatt mit Editor.** Das Hochladen geht jetzt in drei Schritten: Quelle wählen, bearbeiten, hochladen. Der Editor hat eine Zeitleiste für die Frames (ziehen zum Umsortieren, duplizieren, löschen, abspielen, Tempo und eine Dauer je Frame), einen Pixel-Editor mit Stift, Radierer, Pipette, Füllen, Linie, Teil verschieben, Pinselgrößen, Spiegeln innerhalb eines Teils und Zwiebelhaut des vorigen Frames, Rückgängig/Wiederholen und eine Vorlage, die zeigt, wo Außenseite, Innenseite, Kanten und Elytra liegen. Eine Live-3D-Vorschau am Spieler zeigt jede Änderung sofort – drehbar, animiert und mit hellem oder dunklem Hintergrund.
+- **Mehr Quellen.** Neben Bildern, GIFs, Sprite-Sheets und TRS-Studio-Exporten gehen jetzt auch animierte PNGs (APNG), die Reihenfolge mehrerer Bilder lässt sich per Ziehen festlegen, Sprite-Sheets lassen sich in Zeilen und Spalten teilen, und ein Ausschnitt aus einem Video (MP4, WebM …) wird zu Frames – mit eigenem Anfang, Ende und eigener Bildrate, als Aufgabe, die du abbrechen kannst. Videos nutzen dasselbe FFmpeg wie Clips (einmal geladen).
+- **Automatisches Hochskalieren.** Du bearbeitest in kleiner Auflösung, beim Hochladen wird der Umhang hochskaliert – pixelgenau oder wahlweise „Glätten“, das Treppenkanten direkt auf deinem Rechner abrundet. Vor dem Hochladen siehst du die fertige Größe, die Zahl der Frames und die Dateigröße; wäre der Umhang zu groß, schlägt der Launcher eine kleinere Auflösung oder weniger Frames vor.
+- **Umhang oder Elytra.** Die 3D-Vorschau auf der Skins-Seite und in der Umhang-Werkstatt hat einen Umschalter zwischen Umhang und Elytra – animierte Umhänge bewegen sich auch auf den Elytren. Das Elytra-Muster entsteht immer aus der Vorderseite des Umhangs (auch bei älteren Umhängen), so bekommt jeder Umhang passende Flügel.
+- Am Handy und Tablet lassen sich Umhänge importieren und hochladen; den Pixel-Editor gibt es im Desktop-Launcher.
+
 ## 0.20.0 – 2026-10-13 – Penguin Lodge | Pinguin-Hütte
 <!-- banner: accent=#7fd3ff motif=/news/0.20.0/banner.png -->
 <!-- shots:

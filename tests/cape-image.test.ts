@@ -1,16 +1,23 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CAPE_MAX_BYTES,
+  CAPE_MAX_FRAMES,
+  CAPE_MAX_SCALE,
   buildStrip,
   capeVisible,
   clampFrameTime,
   cropFor,
   dataUrlBytes,
   detectTexture,
+  fillElytraFromFront,
   frameTimeFor,
+  guessSheet,
   naturalCompare,
   resample,
   rgba,
   sampleFrames,
+  sheetCell,
+  splitSheet,
   splitStrip,
   stack,
   textureFromFace,
@@ -44,7 +51,9 @@ describe('Umhang-Werkstatt', () => {
 
   it('verteilt Frames gleichmäßig und rechnet das Bildtempo um', () => {
     expect(sampleFrames(4)).toEqual([0, 1, 2, 3])
-    expect(sampleFrames(32)).toEqual(Array.from({ length: 16 }, (_, i) => i * 2))
+    expect(sampleFrames(32)).toEqual(Array.from({ length: 32 }, (_, i) => i), '32 Frames bleiben alle')
+    expect(sampleFrames(64)).toEqual(Array.from({ length: 32 }, (_, i) => i * 2))
+    expect(sampleFrames(40)).toHaveLength(CAPE_MAX_FRAMES)
     expect(frameTimeFor(40 * 50, 16)).toBe(130)
     expect(clampFrameTime(3)).toBe(50)
     expect(clampFrameTime(99_999)).toBe(1000)
@@ -114,13 +123,119 @@ describe('Umhang-Werkstatt', () => {
     expect(pixel(capeOnly, 22, 0)[3]).toBe(0)
   })
 
-  it('baut den Upload-Streifen mit höchstens 16 Frames', () => {
-    const frames = Array.from({ length: 20 }, () => filled(100, 160, [9, 9, 9, 255]))
+  it('baut den Streifen mit höchstens 32 Frames und Faktor bis 16', () => {
+    const frames = Array.from({ length: 40 }, () => filled(100, 160, [9, 9, 9, 255]))
     const strip = buildStrip({ frames, mode: 'crop', scale: 1 })
-    expect([strip.width, strip.height]).toEqual([64, 32 * 16])
-    const hd = buildStrip({ frames: frames.slice(0, 2), mode: 'crop', scale: 12 })
-    expect([hd.width, hd.height]).toEqual([512, 512])
+    expect([strip.width, strip.height]).toEqual([64, 32 * 32])
+    const hd = buildStrip({ frames: frames.slice(0, 2), mode: 'crop', scale: 16 })
+    expect([hd.width, hd.height]).toEqual([1024, 1024])
+    const capped = buildStrip({ frames: frames.slice(0, 1), mode: 'crop', scale: 40 })
+    expect(capped.width).toBe(64 * CAPE_MAX_SCALE)
     expect(capeVisible(rgba(64, 32), 1, 1)).toBe(false)
+  })
+
+  describe('Elytra aus der Außenseite', () => {
+    /** Textur mit Außenseite: Zeile y bekommt Farbe (y·10, x·20, 100); Elytra-Bereich rot gefüllt. */
+    function cape(s: number): Rgba {
+      const tex = rgba(64 * s, 32 * s)
+      for (let y = 0; y < 22 * s; y++) for (let x = 22 * s; x < 46 * s; x++) tex.data.set([255, 0, 0, 255], (y * tex.width + x) * 4)
+      for (let y = 0; y < 16 * s; y++) for (let x = 0; x < 10 * s; x++) tex.data.set([y * 10, x * 20, 100, 255], ((s + y) * tex.width + s + x) * 4)
+      return tex
+    }
+
+    it('dehnt die Außenseite auf 10×20 (Zeilen gleichmäßig verdoppelt) und ersetzt alte Flügel', () => {
+      const out = fillElytraFromFront(cape(1), 1)
+      const rows = Array.from({ length: 20 }, (_, y) => pixel(out, 24, 2 + y)[0]! / 10)
+      expect(rows).toEqual([0, 0, 1, 2, 3, 4, 4, 5, 6, 7, 8, 8, 9, 10, 11, 12, 12, 13, 14, 15])
+      expect(pixel(out, 24 + 9, 2)).toEqual([0, 180, 100, 255])
+      // Kein Rot mehr im Elytra-Bereich, die Ecken neben den Kanten sind leer.
+      for (let y = 0; y < 22; y++) for (let x = 22; x < 46; x++) expect(pixel(out, x, y).join()).not.toBe('255,0,0,255')
+      expect(pixel(out, 22, 0)).toEqual([0, 0, 0, 0])
+      expect(pixel(out, 45, 1)).toEqual([0, 0, 0, 0])
+      // Umhang selbst bleibt unverändert.
+      expect(pixel(out, 1, 1)).toEqual([0, 0, 100, 255])
+    })
+
+    it('Innenseite gespiegelt und dunkler, Kanten aus den Randfarben', () => {
+      for (const s of [1, 2]) {
+        const out = fillElytraFromFront(cape(s), s)
+        const fw = 10 * s
+        for (let y = 0; y < 20 * s; y++) {
+          for (let x = 0; x < fw; x++) {
+            const o = pixel(out, 24 * s + x, 2 * s + y)
+            const mirrored = pixel(out, 24 * s + fw - 1 - x, 2 * s + y)
+            expect(pixel(out, 36 * s + x, 2 * s + y)).toEqual([...mirrored.slice(0, 3).map((c) => Math.floor((c * 3) / 5)), 255])
+            expect(o[3]).toBe(255)
+          }
+          const left = pixel(out, 24 * s, 2 * s + y)
+          const right = pixel(out, 24 * s + fw - 1, 2 * s + y)
+          for (let k = 0; k < 2 * s; k++) {
+            expect(pixel(out, 22 * s + k, 2 * s + y)).toEqual([...left.slice(0, 3).map((c) => Math.floor((c * 4) / 5)), 255])
+            expect(pixel(out, 34 * s + k, 2 * s + y)).toEqual([...right.slice(0, 3).map((c) => Math.floor((c * 4) / 5)), 255])
+          }
+        }
+        const top = pixel(out, 24 * s + 3, 2 * s)
+        const bottom = pixel(out, 24 * s + 3, 2 * s + 20 * s - 1)
+        expect(pixel(out, 24 * s + 3, 0)).toEqual([...top.slice(0, 3).map((c) => Math.floor((c * 4) / 5)), 255])
+        expect(pixel(out, 34 * s + 3, 2 * s - 1)).toEqual([...bottom.slice(0, 3).map((c) => Math.floor((c * 4) / 5)), 255])
+      }
+    })
+
+    it('füllt Löcher (keine durchsichtigen Stellen an sichtbaren Flächen)', () => {
+      const tex = cape(1)
+      // Außenseite zur Hälfte durchsichtig.
+      for (let y = 1; y < 9; y++) for (let x = 1; x < 11; x++) tex.data.set([0, 0, 0, 0], (y * 64 + x) * 4)
+      const out = fillElytraFromFront(tex, 1)
+      for (const [x0, y0, w, h] of [
+        [24, 2, 10, 20],
+        [36, 2, 10, 20],
+        [22, 2, 2, 20],
+        [34, 2, 2, 20],
+        [24, 0, 10, 2],
+        [34, 0, 10, 2],
+      ]) {
+        for (let y = y0!; y < y0! + h!; y++) for (let x = x0!; x < x0! + w!; x++) expect(pixel(out, x, y)[3]).toBe(255)
+      }
+      // Ganz leere Außenseite: neutrales Grau.
+      const empty = fillElytraFromFront(rgba(64, 32), 1)
+      expect(pixel(empty, 30, 10)).toEqual([64, 64, 64, 255])
+    })
+  })
+
+  it('kennt die Grenzen aus dem Vertrag', () => {
+    expect(CAPE_MAX_SCALE).toBe(16)
+    expect(CAPE_MAX_FRAMES).toBe(32)
+    expect(CAPE_MAX_BYTES).toBe(20 * 1024 * 1024)
+  })
+
+  it('erkennt Sprite-Sheets: untereinander und nebeneinander', () => {
+    expect(guessSheet(64, 32 * 4)).toEqual({ cols: 1, rows: 4, count: 4 })
+    expect(guessSheet(64 * 3, 32)).toEqual({ cols: 3, rows: 1, count: 3 })
+    // Raster nur von Hand (mehrdeutig, Fotos sähen sonst wie Raster aus).
+    expect(guessSheet(64 * 3, 32 * 2)).toEqual({ cols: 1, rows: 1, count: 1 })
+    expect(guessSheet(22 * 2, 17)).toEqual({ cols: 2, rows: 1, count: 2 })
+    // Motive (10:16) nur untereinander – ein 5:4-Foto bleibt ein Bild.
+    expect(guessSheet(100, 160 * 3)).toEqual({ cols: 1, rows: 3, count: 3 })
+    expect(guessSheet(1280, 1024)).toEqual({ cols: 1, rows: 1, count: 1 })
+    expect(guessSheet(1920, 1080)).toEqual({ cols: 1, rows: 1, count: 1 })
+    expect(guessSheet(640, 320)).toEqual({ cols: 1, rows: 1, count: 1 }, 'eine Textur')
+    // Studio-JSON gibt die Frame-Zahl vor.
+    expect(guessSheet(64, 32 * 4, 4).count).toBe(4)
+    expect(guessSheet(64 * 3, 32, 4).count).toBe(1)
+  })
+
+  it('zerlegt Sprite-Sheets zeilenweise in Zellen', () => {
+    const sheet = rgba(6, 4)
+    // Zelle (Spalte 2, Zeile 1) markieren: Pixel (4, 2).
+    sheet.data.set([7, 7, 7, 255], (2 * 6 + 4) * 4)
+    const cells = splitSheet(sheet, { cols: 3, rows: 2, count: 6 })
+    expect(cells).toHaveLength(6)
+    expect(cells.every((c) => c.width === 2 && c.height === 2)).toBe(true)
+    expect(pixel(cells[5]!, 0, 0)).toEqual([7, 7, 7, 255])
+    expect(pixel(sheetCell(sheet, 3, 2, 5), 0, 0)).toEqual([7, 7, 7, 255])
+    expect(splitSheet(sheet, { cols: 3, rows: 2, count: 4 })).toHaveLength(4)
+    expect(splitSheet(sheet, { cols: 1, rows: 1, count: 1 })[0]).toBe(sheet)
+    expect(splitSheet(sheet, { cols: 99, rows: 1, count: 99 })).toEqual([sheet])
   })
 
   it('schätzt die Dateigröße einer Data-URL', () => {

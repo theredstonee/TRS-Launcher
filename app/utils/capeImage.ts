@@ -1,6 +1,6 @@
 // Umhang-Werkstatt: reine Pixel-Funktionen für den Zuschneide-Dialog (ohne DOM,
 // daher testbar). Ergebnis ist immer ein senkrechter Streifen aus Frames im
-// Vanilla-Layout 64·s × 32·s (s = 1…8) – dasselbe Format wie die mitgelieferten
+// Vanilla-Layout 64·s × 32·s (s = 1…16) – dasselbe Format wie die mitgelieferten
 // Umhänge. Der Kern und der Server prüfen den fertigen Streifen noch einmal.
 
 export interface Rgba {
@@ -17,9 +17,10 @@ export interface Crop {
   h: number
 }
 
-export const CAPE_MAX_SCALE = 8
-export const CAPE_MAX_FRAMES = 16
-export const CAPE_MAX_BYTES = 5 * 1024 * 1024
+/** Wie der Vertrag mit API und TRS Client: bis 1024×512 je Frame, bis 32 Frames, bis 20 MiB. */
+export const CAPE_MAX_SCALE = 16
+export const CAPE_MAX_FRAMES = 32
+export const CAPE_MAX_BYTES = 20 * 1024 * 1024
 export const FRAME_TIME_MIN = 50
 export const FRAME_TIME_MAX = 1000
 export const FRAME_TIME_DEFAULT = 100
@@ -58,7 +59,7 @@ export interface TextureLayout {
   kind: 'full' | 'cape-only'
   frames: number
   frameHeight: number
-  /** Faktor der Quelle gegenüber 64×32 bzw. 22×17 (kann über 8 liegen – wird dann verkleinert). */
+  /** Faktor der Quelle gegenüber 64×32 bzw. 22×17 (kann über 16 liegen – wird dann verkleinert). */
   scale: number
 }
 
@@ -97,6 +98,71 @@ export function splitStrip(src: Rgba, frames: number): Rgba[] {
   const h = Math.floor(src.height / n)
   if (h < 1) return [src]
   return Array.from({ length: n }, (_, i) => extractFrame(src, i, h))
+}
+
+/** Aufteilung eines Sprite-Sheets: Spalten × Zeilen, davon `count` Zellen (zeilenweise). */
+export interface SheetGrid {
+  cols: number
+  rows: number
+  count: number
+}
+
+/**
+ * Sprite-Sheet automatisch erkennen: Umhang-Texturen (64:32, 22:17) oder Motive
+ * im Seitenverhältnis der Außenseite (10:16) – untereinander oder nebeneinander.
+ * Raster (mehrere Spalten UND Zeilen) nur von Hand: sonst sähe z. B. ein 1280×1024-
+ * Foto wie 5×8 Texturen aus. `frames` (z. B. aus dem TRS-Studio-JSON) muss passen. Sonst 1×1.
+ */
+export function guessSheet(width: number, height: number, frames?: number): SheetGrid {
+  const single: SheetGrid = { cols: 1, rows: 1, count: 1 }
+  if (width < 1 || height < 1) return single
+  const fits = (g: SheetGrid) => g.count >= 2 && g.count <= 64 && (frames === undefined || g.count === frames)
+  // 1. Senkrechter Streifen aus Umhang-Texturen (wie bisher).
+  const strip = detectTexture(width, height, frames)
+  if (strip && strip.frames > 1) return { cols: 1, rows: strip.frames, count: strip.frames }
+  if (strip) return single
+  // 2. Zellen mit bekanntem Seitenverhältnis in einer Zeile oder Spalte.
+  //    Motive (10:16) nur untereinander – nebeneinander sähe jedes 5:4-Foto wie ein Sheet aus.
+  for (const [cw, ch, maxCols] of [
+    [64, 32, 64],
+    [22, 17, 64],
+    [10, 16, 1],
+  ] as const) {
+    for (let cols = 1; cols <= maxCols; cols++) {
+      const cellW = width / cols
+      const cellH = (cellW * ch) / cw
+      if (!Number.isInteger(cellW) || !Number.isInteger(cellH) || cellH < 1) continue
+      const rows = height / cellH
+      if (!Number.isInteger(rows) || (cols > 1 && rows > 1)) continue
+      const grid = { cols, rows, count: cols * rows }
+      if (fits(grid)) return grid
+    }
+  }
+  return single
+}
+
+/** Zelle `index` (zeilenweise) eines Sheets mit `cols` × `rows` gleich großen Zellen. */
+export function sheetCell(src: Rgba, cols: number, rows: number, index: number): Rgba {
+  const w = Math.max(1, Math.floor(src.width / cols))
+  const h = Math.max(1, Math.floor(src.height / rows))
+  const out = rgba(w, h)
+  const cx = (index % cols) * w
+  const cy = Math.floor(index / cols) * h
+  for (let y = 0; y < h; y++) {
+    const from = ((cy + y) * src.width + cx) * 4
+    out.data.set(src.data.subarray(from, from + w * 4), y * w * 4)
+  }
+  return out
+}
+
+/** Sprite-Sheet in Frames zerlegen (Spalten/Zeilen 1–64, höchstens `count` Zellen, Rest fällt weg). */
+export function splitSheet(src: Rgba, grid: SheetGrid): Rgba[] {
+  const cols = Math.max(1, Math.min(64, Math.floor(grid.cols)))
+  const rows = Math.max(1, Math.min(64, Math.floor(grid.rows)))
+  if (src.width < cols || src.height < rows) return [src]
+  const count = Math.max(1, Math.min(cols * rows, 64, Math.floor(grid.count)))
+  if (cols === 1 && rows === 1) return [src]
+  return Array.from({ length: count }, (_, i) => sheetCell(src, cols, rows, i))
 }
 
 /**
@@ -209,15 +275,87 @@ export function textureFromFace(face: Rgba, s: number): Rgba {
   blit(face, w - s, 0, s, h, tex, 11 * s, s)
   blit(face, 0, 0, w, s, tex, s, 0)
   blit(face, 0, h - s, w, s, tex, 11 * s, 0)
-  // Elytra (22,0): oben (24,0) 10×2, unten (34,0), Seiten (22,2)/(34,2) 2×20, außen (24,2), innen (36,2).
-  const wing = resample(face, { x: 0, y: 0, w: face.width, h: face.height }, w, 20 * s)
-  blit(wing, 0, 0, w, 20 * s, tex, 24 * s, 2 * s)
-  blit(inner(wing), 0, 0, w, 20 * s, tex, 36 * s, 2 * s)
-  blit(wing, 0, 0, 2 * s, 20 * s, tex, 22 * s, 2 * s)
-  blit(wing, w - 2 * s, 0, 2 * s, 20 * s, tex, 34 * s, 2 * s)
-  blit(wing, 0, 0, w, 2 * s, tex, 24 * s, 0)
-  blit(wing, 0, 20 * s - 2 * s, w, 2 * s, tex, 34 * s, 0)
-  return tex
+  return fillElytraFromFront(tex, s)
+}
+
+/**
+ * Elytra immer aus der Außenseite des Umhangs erzeugen (Launcher und TRS Client
+ * rechnen genau gleich – Faktor `s`, alle Koordinaten in Pixeln der Textur):
+ *
+ * 1. Quelle F = Außenseite (s, s) mit 10s × 16s. Pixel mit Alpha < 128 sind Löcher und
+ *    werden durch die Durchschnittsfarbe aller Pixel mit Alpha ≥ 128 ersetzt (ganzzahlig
+ *    abgerundet; gibt es keine, durch (64, 64, 64)). Danach ist jedes Pixel deckend (Alpha 255).
+ * 2. Außen O (10s × 20s): Zeile y nimmt Zeile ⌊y · 16 / 20⌋ von F (gleichmäßiges Verdoppeln,
+ *    nächster Nachbar), Spalte x = Spalte x. Beide Flügel nutzen dieselbe Fläche (das Modell
+ *    spiegelt den zweiten Flügel selbst).
+ * 3. Elytra-Bereich (22s, 0) bis (46s, 22s) erst ganz leeren (RGBA 0), dann nach der UV des
+ *    Flügels `texOffs(22, 0)`, Box 10 × 20 × 2:
+ *    - außen (24s, 2s), 10s × 20s: O
+ *    - innen (36s, 2s), 10s × 20s: O waagerecht gespiegelt, Farbe ⌊c · 3 / 5⌋ (wie die Umhang-Innenseite)
+ *    - Seite links (22s, 2s), 2s × 20s: je Zeile die linke Randfarbe O(0, y), Farbe ⌊c · 4 / 5⌋
+ *    - Seite rechts (34s, 2s), 2s × 20s: je Zeile die rechte Randfarbe O(10s − 1, y), ⌊c · 4 / 5⌋
+ *    - oben (24s, 0), 10s × 2s: je Spalte die obere Randfarbe O(x, 0), ⌊c · 4 / 5⌋
+ *    - unten (34s, 0), 10s × 2s: je Spalte die untere Randfarbe O(x, 20s − 1), ⌊c · 4 / 5⌋
+ *    Alle gesetzten Pixel sind deckend.
+ */
+export function fillElytraFromFront(tex: Rgba, s: number): Rgba {
+  const out: Rgba = { width: tex.width, height: tex.height, data: tex.data.slice() }
+  const fw = 10 * s
+  const fh = 16 * s
+  const oh = 20 * s
+  if (tex.width < 64 * s || tex.height < 32 * s || s < 1) return out
+  // 1. Außenseite holen, Löcher füllen.
+  const face = new Uint8ClampedArray(fw * fh * 4)
+  let sr = 0
+  let sg = 0
+  let sb = 0
+  let n = 0
+  for (let y = 0; y < fh; y++) {
+    for (let x = 0; x < fw; x++) {
+      const i = ((s + y) * tex.width + s + x) * 4
+      const o = (y * fw + x) * 4
+      face.set(tex.data.subarray(i, i + 4), o)
+      if (tex.data[i + 3]! >= 128) {
+        sr += tex.data[i]!
+        sg += tex.data[i + 1]!
+        sb += tex.data[i + 2]!
+        n++
+      }
+    }
+  }
+  const fill = n ? [Math.floor(sr / n), Math.floor(sg / n), Math.floor(sb / n)] : [64, 64, 64]
+  for (let o = 0; o < face.length; o += 4) {
+    if (face[o + 3]! < 128) face.set(fill, o)
+    face[o + 3] = 255
+  }
+  // 2. Außen 10s × 20s (Zeilen gleichmäßig verdoppelt).
+  const outer = (x: number, y: number) => ((Math.floor((y * 16) / 20) * fw + x) * 4)
+  const put = (x: number, y: number, src: number, num: number, den: number) => {
+    const o = (y * out.width + x) * 4
+    out.data[o] = Math.floor((face[src]! * num) / den)
+    out.data[o + 1] = Math.floor((face[src + 1]! * num) / den)
+    out.data[o + 2] = Math.floor((face[src + 2]! * num) / den)
+    out.data[o + 3] = 255
+  }
+  // 3. Bereich leeren, dann die sechs Flächen.
+  for (let y = 0; y < 22 * s; y++) out.data.fill(0, (y * out.width + 22 * s) * 4, (y * out.width + 46 * s) * 4)
+  for (let y = 0; y < oh; y++) {
+    for (let x = 0; x < fw; x++) {
+      put(24 * s + x, 2 * s + y, outer(x, y), 1, 1)
+      put(36 * s + x, 2 * s + y, outer(fw - 1 - x, y), 3, 5)
+    }
+    for (let x = 0; x < 2 * s; x++) {
+      put(22 * s + x, 2 * s + y, outer(0, y), 4, 5)
+      put(34 * s + x, 2 * s + y, outer(fw - 1, y), 4, 5)
+    }
+  }
+  for (let y = 0; y < 2 * s; y++) {
+    for (let x = 0; x < fw; x++) {
+      put(24 * s + x, y, outer(x, 0), 4, 5)
+      put(34 * s + x, y, outer(x, oh - 1), 4, 5)
+    }
+  }
+  return out
 }
 
 /** Vorhandene Umhang-Textur (ein Frame) auf Faktor `s` bringen; 22:17 landet oben links. */
@@ -266,7 +404,7 @@ export interface StripInput {
   scale: number
 }
 
-/** Fertiger Streifen für den Upload (Frames in dieser Reihenfolge, höchstens 16). */
+/** Fertiger Streifen (Frames in dieser Reihenfolge, höchstens 32). */
 export function buildStrip(input: StripInput): Rgba {
   const s = Math.max(1, Math.min(CAPE_MAX_SCALE, Math.round(input.scale)))
   const frames = input.frames.slice(0, CAPE_MAX_FRAMES).map((frame) => {

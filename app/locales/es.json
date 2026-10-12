@@ -623,10 +623,10 @@
       "invalidEvent": "Evento no válido."
     },
     "trsPng": {
-      "fileTooLarge": "El archivo es demasiado grande (máx. 5 MB).",
+      "fileTooLarge": "El archivo es demasiado grande (máx. 20 MB).",
       "invalidPng": "El archivo no es una imagen PNG válida.",
       "animated": "Los PNG animados (APNG) no son compatibles: sube las animaciones como tira.",
-      "invalidSize": "La capa debe medir 64×32 píxeles (o un múltiplo hasta 512×256), o 22×17 en formato de capa (hasta 176×136); animada, como máximo 16 fotogramas en vertical.",
+      "invalidSize": "La capa debe medir 64×32 píxeles (o un múltiplo hasta 1024×512), o 22×17 en formato de capa (hasta 352×272); las capas animadas tienen como máximo 32 fotogramas en vertical.",
       "frameTime": "La velocidad debe estar entre 50 y 1000 ms por fotograma.",
       "emptyCape": "La capa es completamente transparente."
     },
@@ -703,8 +703,8 @@
       "clipboardFailed": "No se pudo copiar el clip al portapapeles."
     },
     "trsCapeImport": {
-      "unsupported": "«{name}» no es una imagen compatible (PNG, JPEG, WebP, GIF o JSON de TRS Studio).",
-      "imageTooLarge": "«{name}» es demasiado grande (máx. 4096×4096 píxeles, como GIF 2048×2048).",
+      "unsupported": "«{name}» no es una imagen compatible (PNG, APNG, JPEG, WebP, GIF o JSON de TRS Studio).",
+      "imageTooLarge": "«{name}» es demasiado grande (máx. 4096×4096 píxeles, animado 2048×2048).",
       "broken": "No se pudo leer «{name}».",
       "tooManyFiles": "Elige como máximo {max} archivos a la vez.",
       "fileTooLarge": "«{name}» es demasiado grande (máx. 20 MB por archivo).",
@@ -941,6 +941,13 @@
       "invalidSource": "Los datos del icono no son válidos.",
       "noClientJar": "Aún no se ha descargado Minecraft: inicia una instancia una vez.",
       "brokenImage": "La imagen está dañada o es demasiado grande (máximo 4096×4096 píxeles)."
+    },
+    "trsCapeVideo": {
+      "expired": "El vídeo ya no está seleccionado: vuelve a elegirlo.",
+      "unsupported": "Aquí no se pueden usar vídeos como capa.",
+      "ffmpegMissing": "Para los vídeos primero hay que descargar FFmpeg.",
+      "unreadable": "«{name}» no se puede leer como vídeo.",
+      "badRange": "Elige un fragmento válido del vídeo."
     }
   },
   "browse": {
@@ -2853,7 +2860,10 @@
       "night": "Noche",
       "showHead": "Acercar a la cabeza",
       "showBody": "Mostrar cuerpo entero",
-      "resetCamera": "Restablecer cámara"
+      "resetCamera": "Restablecer cámara",
+      "equipment": "En la espalda",
+      "cape": "Capa",
+      "elytra": "Élitros"
     },
     "trsCape": "Capa TRS",
     "headCosmetic": "Cosmético de cabeza",
@@ -3558,7 +3568,7 @@
       "pick": {
         "lead": "Elige una o varias imágenes. Tú decides qué parte va en la capa y la ves al instante en el jugador.",
         "image": "Cualquier imagen (PNG, JPEG, WebP): tú eliges el recorte",
-        "gif": "GIF animado: se usan sus fotogramas",
+        "gif": "GIF o APNG animado: se usan sus fotogramas",
         "frames": "Varias imágenes a la vez: se convierten en fotogramas por orden de nombre",
         "sheet": "Una textura de capa lista o una hoja de sprites (fotogramas en vertical)",
         "studio": "Exportaciones de TRS Studio: elige el PNG junto con su .json",
@@ -3566,7 +3576,7 @@
         "loading": "Cargando …"
       },
       "rules": {
-        "size": "Hasta 512×256 píxeles por fotograma, hasta 16 fotogramas, máx. 5 MB.",
+        "size": "Hasta 1024×512 píxeles por fotograma, hasta 32 fotogramas, como máximo 20 MB.",
         "review": "El equipo revisa cada capa; hasta entonces, solo tú puedes verla.",
         "rights": "Solo imágenes propias o que tengas permiso para usar; nada ofensivo."
       },
@@ -3585,7 +3595,7 @@
       },
       "sheet": {
         "label": "Fotogramas en la imagen",
-        "hint": "Para hojas de sprites: fotogramas en vertical."
+        "hint": "Hoja de sprites: columnas × filas y cuántas celdas son fotogramas."
       },
       "scale": {
         "label": "Resolución",
@@ -3596,24 +3606,141 @@
         "value": "{ms} ms por fotograma · {fps} fps"
       },
       "sampled": "{total} fotogramas: se usan {max} elegidos de forma uniforme.",
-      "preview": {
-        "texture": "Textura de la capa"
-      },
       "sizeLabel": "Tamaño del archivo",
-      "size": "{size} de máx. 5 MB",
+      "size": "{size} de máx. 20 MB",
       "nameLabel": "Nombre (opcional)",
       "placeholder": "p. ej. Mi capa",
       "errors": {
         "noImage": "Elige al menos una imagen: un .json solo no basta.",
-        "mixed": "Elige un GIF o imágenes, no ambos.",
+        "mixed": "Elige una animación (GIF/APNG) o imágenes, no ambas cosas.",
         "sizeMismatch": "Todos los fotogramas deben tener el mismo tamaño.",
         "frameTooLarge": "Con varios fotogramas, cada imagen puede medir como máximo 2048×2048 píxeles.",
         "readFailed": "No se pudo leer la imagen.",
-        "tooLarge": "La capa es demasiado grande ({size}, máx. 5 MB): elige una resolución menor o menos fotogramas.",
         "empty": "La capa es completamente transparente."
       },
       "upload": "Subir",
       "uploading": "Subiendo …"
+    },
+    "studio": {
+      "pick": {
+        "video": "Un vídeo (MP4, WebM…): eliges un fragmento, hasta 32 fotogramas",
+        "chooseVideo": "Elegir vídeo",
+        "mobileHint": "El editor de píxeles está en el launcher de escritorio; aquí puedes importar y subir."
+      },
+      "order": {
+        "label": "Orden de los fotogramas",
+        "reverse": "Invertir",
+        "earlier": "Antes",
+        "later": "Después",
+        "hint": "Arrastra las imágenes para cambiar el orden (al principio, por nombre de archivo)."
+      },
+      "sheet": {
+        "cols": "Columnas",
+        "rows": "Filas",
+        "count": "Fotogramas"
+      },
+      "detail": {
+        "label": "Resolución de edición",
+        "auto": "Automática ({w}×{h})",
+        "hint": "Editas en esta resolución; al subir se amplía automáticamente."
+      },
+      "importSummary": "Fotogramas: {n} · edición en {w}×{h}",
+      "preparing": "Preparando fotogramas… {done}/{total}",
+      "video": {
+        "length": "{s} s de duración",
+        "start": "Inicio",
+        "end": "Fin",
+        "fps": "Fotogramas por segundo",
+        "fpsOption": "{fps} fotogramas por segundo",
+        "result": "→ {frames} fotogramas ({s} s del vídeo)",
+        "capped": "Solo caben los primeros 32 fotogramas: acorta el fragmento o baja los fotogramas por segundo.",
+        "extracting": "Extrayendo fotogramas… {percent} %",
+        "extract": "Extraer fotogramas",
+        "back": "Atrás",
+        "hintRange": "Elige un fragmento corto: una capa tiene como máximo 32 fotogramas.",
+        "hintLocal": "El vídeo se procesa en tu ordenador con FFmpeg; no se sube nada.",
+        "ffmpegLead": "Los vídeos se dividen en fotogramas con FFmpeg ({size}, se descarga una vez; el mismo que usan los clips).",
+        "taskTitle": "Fotogramas de capa de {name}",
+        "taskStage": "Extrayendo fotogramas"
+      },
+      "canvasLabel": "Textura de capa {w}×{h}: dibuja con la herramienta elegida",
+      "regions": {
+        "capeTop": "Borde superior",
+        "capeBottom": "Borde inferior",
+        "capeLeft": "Lado izquierdo",
+        "capeOuter": "Exterior",
+        "capeRight": "Lado derecho",
+        "capeInner": "Interior",
+        "elytraTop": "Élitros arriba",
+        "elytraBottom": "Élitros abajo",
+        "elytraLeft": "Élitros lado izquierdo",
+        "elytraOuter": "Élitros exterior",
+        "elytraRight": "Élitros lado derecho",
+        "elytraInner": "Élitros interior"
+      },
+      "tools": {
+        "pencil": "Lápiz",
+        "eraser": "Borrador",
+        "picker": "Cuentagotas",
+        "fill": "Rellenar (dentro de la parte)",
+        "line": "Línea",
+        "move": "Mover parte (alinear)"
+      },
+      "guides": "Plantilla",
+      "onion": "Papel cebolla",
+      "brush": "Pincel",
+      "copyOuter": "Exterior → interior",
+      "clearFrame": "Vaciar fotograma",
+      "backdrop": {
+        "light": "Fondo claro",
+        "dark": "Fondo oscuro"
+      },
+      "legend": "Leyenda de la plantilla",
+      "legendFaces": "Capa exterior e interior",
+      "legendEdges": "Bordes y lados",
+      "legendElytra": "Élitros: se crean automáticamente a partir del exterior",
+      "shortcuts": "Teclas: B lápiz · E borrador · I cuentagotas · G rellenar · L línea · M mover · [ ] pincel · O papel cebolla · Espacio reproducir · ←/→ fotograma · Ctrl+Z / Ctrl+Y · clic derecho borra",
+      "timeline": {
+        "label": "Línea de tiempo",
+        "play": "Reproducir",
+        "pause": "Pausa",
+        "used": "{used}/{max} fotogramas en la capa",
+        "frames": "Fotogramas",
+        "frame": "Fotograma {n}, se muestra {hold}×",
+        "selected": "Fotograma {n}:",
+        "hold": "Duración",
+        "holdHint": "Cuántos tiempos dura este fotograma; al subir se convierte en copias del fotograma",
+        "holdLess": "Más corto",
+        "holdMore": "Más largo",
+        "earlier": "← Antes",
+        "later": "Después →",
+        "duplicate": "Duplicar",
+        "remove": "Eliminar"
+      },
+      "steps": {
+        "label": "Pasos",
+        "import": "Origen",
+        "edit": "Editar",
+        "upload": "Subir",
+        "back": "Atrás",
+        "toEditor": "Ir al editor",
+        "toUpload": "Ir a subir"
+      },
+      "export": {
+        "exact": "píxel exacto",
+        "scaleHint": "Editado en {w}×{h}; las resoluciones mayores se amplían automáticamente.",
+        "smooth": "Suavizar",
+        "smoothHint": "Redondea los bordes escalonados al ampliar (xBRZ, calculado en tu ordenador).",
+        "smoothOff": "Para suavizar, elige al menos el doble de la resolución de edición.",
+        "frameSize": "Por fotograma",
+        "frames": "Fotogramas",
+        "computing": "Calculando la capa…",
+        "tooLarge": "La capa ocuparía {size}; se permiten como máximo 20 MB. Elige una versión más pequeña:",
+        "useScale": "{w}×{h} (≈ {size})",
+        "useFrames": "{n} fotogramas (≈ {size})",
+        "final": "Tal como se subirá.",
+        "failed": "No se pudo crear la capa."
+      }
     },
     "hatDialog": {
       "title": "¡«{name}» desbloqueado!",

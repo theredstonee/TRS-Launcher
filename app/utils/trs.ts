@@ -12,8 +12,8 @@ const uuid = z.string().regex(/^[0-9a-f]{32}$/)
 const capeId = z.string().regex(/^[a-z0-9][a-z0-9_-]{0,39}$/)
 const text = (max: number) => z.string().max(max)
 const pngDataUrl = z.string().startsWith('data:image/png;base64,').nullable()
-/** Umhang-Faktor 1–8 (bis 512×256 je Frame), mitgelieferte wie eigene – wie `MAX_CAPE_SCALE` im Kern. */
-const capeScale = z.number().int().min(1).max(8)
+/** Umhang-Faktor 1–16 (bis 1024×512 je Frame), mitgelieferte wie eigene – wie `MAX_CAPE_SCALE` im Kern. */
+const capeScale = z.number().int().min(1).max(16)
 /** Event-ID (`halloween`) – wie `event_id` im Kern. */
 export const eventId = z.string().regex(/^[a-z][a-z0-9_-]{0,31}$/)
 
@@ -241,16 +241,30 @@ const sourceSide = z.number().int().min(1).max(8192)
 export const trsCapeSourceSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('image'), name: sourceName, dataUrl: imageDataUrl, width: sourceSide, height: sourceSide }),
   z.object({
-    kind: z.literal('gif'),
+    kind: z.literal('animation'),
     name: sourceName,
+    /** Herkunft (nur Anzeige). */
+    format: z.enum(['gif', 'apng', 'video']),
     width: sourceSide,
     height: sourceSide,
-    frames: z.array(imageDataUrl).min(1).max(16),
+    frames: z.array(imageDataUrl).min(1).max(32),
+    /** Standzeit je gelieferter Frame (ms). */
+    delaysMs: z.array(count).max(32),
     durationMs: count,
     sourceFrames: z.number().int().min(1),
   }),
   z.object({ kind: z.literal('studio'), name: sourceName, frames: z.number().int().min(1).max(64), scale: z.number().int().min(1).max(16) }),
 ])
+
+/** Gewähltes Video (Pfad bleibt im Kern, hier nur Kennung + Eckdaten). */
+export const trsCapeVideoSchema = z.object({
+  token: z.string().regex(/^[0-9a-f]{32}$/),
+  name: sourceName,
+  durationMs: z.number().int().min(1),
+  width: z.number().int().min(1).max(16_384),
+  height: z.number().int().min(1).max(16_384),
+})
+export type TrsCapeVideo = z.infer<typeof trsCapeVideoSchema>
 
 export const trsCodeSchema = z.object({
   id: z.number().int().positive(),

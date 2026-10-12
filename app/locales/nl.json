@@ -623,10 +623,10 @@
       "invalidEvent": "Ongeldig evenement."
     },
     "trsPng": {
-      "fileTooLarge": "Het bestand is te groot (max. 5 MB).",
+      "fileTooLarge": "Het bestand is te groot (max. 20 MB).",
       "invalidPng": "Het bestand is geen geldige PNG-afbeelding.",
       "animated": "Geanimeerde PNG’s (APNG) worden niet ondersteund – upload animaties als strook.",
-      "invalidSize": "De cape moet 64×32 pixels zijn (of een veelvoud tot 512×256), of 22×17 in capeformaat (tot 176×136); geanimeerd maximaal 16 frames onder elkaar.",
+      "invalidSize": "De cape moet 64×32 pixels zijn (of een veelvoud tot 1024×512), of 22×17 in capeformaat (tot 352×272); geanimeerde capes hebben maximaal 32 frames onder elkaar.",
       "frameTime": "De snelheid moet tussen 50 en 1000 ms per frame liggen.",
       "emptyCape": "De cape is volledig doorzichtig."
     },
@@ -703,8 +703,8 @@
       "clipboardFailed": "De clip kon niet naar het klembord worden gekopieerd."
     },
     "trsCapeImport": {
-      "unsupported": "“{name}” is geen ondersteunde afbeelding (PNG, JPEG, WebP, GIF of TRS Studio-JSON).",
-      "imageTooLarge": "“{name}” is te groot (max. 4096×4096 pixels, als GIF 2048×2048).",
+      "unsupported": "‘{name}’ is geen ondersteunde afbeelding (PNG, APNG, JPEG, WebP, GIF of TRS Studio-JSON).",
+      "imageTooLarge": "‘{name}’ is te groot (max. 4096×4096 pixels, geanimeerd 2048×2048).",
       "broken": "“{name}” kon niet worden gelezen.",
       "tooManyFiles": "Kies maximaal {max} bestanden tegelijk.",
       "fileTooLarge": "“{name}” is te groot (max. 20 MB per bestand).",
@@ -941,6 +941,13 @@
       "invalidSource": "De pictogramgegevens zijn ongeldig.",
       "noClientJar": "Nog geen Minecraft gedownload – start één keer een instantie.",
       "brokenImage": "De afbeelding is beschadigd of te groot (max. 4096×4096 pixels)."
+    },
+    "trsCapeVideo": {
+      "expired": "De video is niet meer gekozen – kies hem opnieuw.",
+      "unsupported": "Video’s kunnen hier niet als cape worden gebruikt.",
+      "ffmpegMissing": "Voor video’s moet eerst FFmpeg worden gedownload.",
+      "unreadable": "‘{name}’ kan niet als video worden gelezen.",
+      "badRange": "Kies een geldig fragment van de video."
     }
   },
   "browse": {
@@ -2853,7 +2860,10 @@
       "night": "Nacht",
       "showHead": "Inzoomen op het hoofd",
       "showBody": "Hele lichaam tonen",
-      "resetCamera": "Camera resetten"
+      "resetCamera": "Camera resetten",
+      "equipment": "Op de rug",
+      "cape": "Cape",
+      "elytra": "Elytra"
     },
     "trsCape": "TRS-cape",
     "headCosmetic": "Hoofdcosmetica",
@@ -3558,7 +3568,7 @@
       "pick": {
         "lead": "Kies een of meer afbeeldingen. Jij kiest het deel dat op de cape komt en ziet het meteen op de speler.",
         "image": "Elke afbeelding (PNG, JPEG, WebP) – jij kiest de uitsnede",
-        "gif": "Geanimeerde GIF – de frames worden overgenomen",
+        "gif": "Geanimeerde GIF of APNG – de frames worden overgenomen",
         "frames": "Meerdere afbeeldingen tegelijk – worden frames, op volgorde van naam",
         "sheet": "Een kant-en-klare cape-textuur of spritesheet (frames onder elkaar)",
         "studio": "TRS Studio-exports – kies de PNG samen met de .json",
@@ -3566,7 +3576,7 @@
         "loading": "Laden …"
       },
       "rules": {
-        "size": "Tot 512×256 pixels per frame, tot 16 frames, max. 5 MB.",
+        "size": "Tot 1024×512 pixels per frame, tot 32 frames, maximaal 20 MB.",
         "review": "Het team beoordeelt elke cape; tot die tijd zie alleen jij hem.",
         "rights": "Alleen je eigen afbeeldingen of afbeeldingen die je mag gebruiken – niets aanstootgevends."
       },
@@ -3585,7 +3595,7 @@
       },
       "sheet": {
         "label": "Frames in de afbeelding",
-        "hint": "Voor spritesheets: frames onder elkaar."
+        "hint": "Spritesheet: kolommen × rijen en hoeveel vakken frames zijn."
       },
       "scale": {
         "label": "Resolutie",
@@ -3596,24 +3606,141 @@
         "value": "{ms} ms per frame · {fps} fps"
       },
       "sampled": "{total} frames – er worden {max} gelijkmatig gekozen frames gebruikt.",
-      "preview": {
-        "texture": "Cape-textuur"
-      },
       "sizeLabel": "Bestandsgrootte",
-      "size": "{size} van max. 5 MB",
+      "size": "{size} van max. 20 MB",
       "nameLabel": "Naam (optioneel)",
       "placeholder": "bijv. Mijn cape",
       "errors": {
         "noImage": "Kies minstens één afbeelding – alleen een .json is niet genoeg.",
-        "mixed": "Kies óf één GIF óf afbeeldingen – niet allebei.",
+        "mixed": "Kies één animatie (GIF/APNG) of afbeeldingen – niet allebei.",
         "sizeMismatch": "Alle frames moeten even groot zijn.",
         "frameTooLarge": "Bij meerdere frames mag elke afbeelding maximaal 2048×2048 pixels zijn.",
         "readFailed": "De afbeelding kon niet worden gelezen.",
-        "tooLarge": "De cape is te groot ({size}, max. 5 MB) – kies een lagere resolutie of minder frames.",
         "empty": "De cape is volledig doorzichtig."
       },
       "upload": "Uploaden",
       "uploading": "Uploaden …"
+    },
+    "studio": {
+      "pick": {
+        "video": "Een video (MP4, WebM …) – je kiest een fragment, tot 32 frames",
+        "chooseVideo": "Video kiezen",
+        "mobileHint": "De pixeleditor zit in de desktoplauncher – hier kun je importeren en uploaden."
+      },
+      "order": {
+        "label": "Volgorde van de frames",
+        "reverse": "Omdraaien",
+        "earlier": "Eerder",
+        "later": "Later",
+        "hint": "Sleep de afbeeldingen om de volgorde te wijzigen (eerst op bestandsnaam)."
+      },
+      "sheet": {
+        "cols": "Kolommen",
+        "rows": "Rijen",
+        "count": "Frames"
+      },
+      "detail": {
+        "label": "Bewerkingsresolutie",
+        "auto": "Automatisch ({w}×{h})",
+        "hint": "Je bewerkt in deze resolutie; bij het uploaden wordt automatisch opgeschaald."
+      },
+      "importSummary": "Frames: {n} · bewerken in {w}×{h}",
+      "preparing": "Frames voorbereiden … {done}/{total}",
+      "video": {
+        "length": "{s} s lang",
+        "start": "Begin",
+        "end": "Einde",
+        "fps": "Framesnelheid",
+        "fpsOption": "{fps} frames per seconde",
+        "result": "→ {frames} frames ({s} s van de video)",
+        "capped": "Alleen de eerste 32 frames passen – maak het fragment korter of verlaag de framesnelheid.",
+        "extracting": "Frames worden uitgepakt … {percent} %",
+        "extract": "Frames uitpakken",
+        "back": "Terug",
+        "hintRange": "Kies een kort fragment: een cape heeft maximaal 32 frames.",
+        "hintLocal": "De video wordt op je computer met FFmpeg verwerkt – er wordt niets geüpload.",
+        "ffmpegLead": "Video’s worden met FFmpeg in frames opgesplitst ({size}, eenmalig gedownload – dezelfde als voor clips).",
+        "taskTitle": "Capeframes uit {name}",
+        "taskStage": "Frames uitpakken"
+      },
+      "canvasLabel": "Capetextuur {w}×{h} – teken met het gekozen gereedschap",
+      "regions": {
+        "capeTop": "Bovenrand cape",
+        "capeBottom": "Onderrand cape",
+        "capeLeft": "Linkerzijde cape",
+        "capeOuter": "Buitenkant",
+        "capeRight": "Rechterzijde cape",
+        "capeInner": "Binnenkant",
+        "elytraTop": "Elytra boven",
+        "elytraBottom": "Elytra onder",
+        "elytraLeft": "Elytra links",
+        "elytraOuter": "Elytra buitenkant",
+        "elytraRight": "Elytra rechts",
+        "elytraInner": "Elytra binnenkant"
+      },
+      "tools": {
+        "pencil": "Potlood",
+        "eraser": "Gum",
+        "picker": "Kleur oppikken",
+        "fill": "Vullen (binnen het deel)",
+        "line": "Lijn",
+        "move": "Deel verschuiven (uitlijnen)"
+      },
+      "guides": "Sjabloon",
+      "onion": "Uienschil",
+      "brush": "Penseel",
+      "copyOuter": "Buiten → binnen",
+      "clearFrame": "Frame leegmaken",
+      "backdrop": {
+        "light": "Lichte achtergrond",
+        "dark": "Donkere achtergrond"
+      },
+      "legend": "Legenda van het sjabloon",
+      "legendFaces": "Cape buiten- en binnenkant",
+      "legendEdges": "Randen en zijkanten",
+      "legendElytra": "Elytra – automatisch gemaakt van de buitenkant",
+      "shortcuts": "Toetsen: B potlood · E gum · I kleur oppikken · G vullen · L lijn · M verschuiven · [ ] penseel · O uienschil · Spatie afspelen · ←/→ frame · Ctrl+Z / Ctrl+Y · rechtsklik gumt",
+      "timeline": {
+        "label": "Tijdlijn",
+        "play": "Afspelen",
+        "pause": "Pauzeren",
+        "used": "{used}/{max} frames in de cape",
+        "frames": "Frames",
+        "frame": "Frame {n}, {hold}× te zien",
+        "selected": "Frame {n}:",
+        "hold": "Duur",
+        "holdHint": "Hoeveel tellen dit frame blijft staan – wordt bij het uploaden kopieën van het frame",
+        "holdLess": "Korter",
+        "holdMore": "Langer",
+        "earlier": "← Eerder",
+        "later": "Later →",
+        "duplicate": "Dupliceren",
+        "remove": "Verwijderen"
+      },
+      "steps": {
+        "label": "Stappen",
+        "import": "Bron",
+        "edit": "Bewerken",
+        "upload": "Uploaden",
+        "back": "Terug",
+        "toEditor": "Verder naar de editor",
+        "toUpload": "Verder naar uploaden"
+      },
+      "export": {
+        "exact": "pixelexact",
+        "scaleHint": "Bewerkt in {w}×{h}; grotere resoluties worden automatisch opgeschaald.",
+        "smooth": "Gladmaken",
+        "smoothHint": "Rondt trapranden af bij het opschalen (xBRZ, berekend op je computer).",
+        "smoothOff": "Kies minstens twee keer de bewerkingsresolutie om glad te maken.",
+        "frameSize": "Per frame",
+        "frames": "Frames",
+        "computing": "Cape wordt berekend …",
+        "tooLarge": "De cape zou {size} zijn – maximaal 20 MB is toegestaan. Kies een kleinere versie:",
+        "useScale": "{w}×{h} (≈ {size})",
+        "useFrames": "{n} frames (≈ {size})",
+        "final": "Precies zoals hij wordt geüpload.",
+        "failed": "De cape kon niet worden gemaakt."
+      }
     },
     "hatDialog": {
       "title": "„{name}” vrijgespeeld!",

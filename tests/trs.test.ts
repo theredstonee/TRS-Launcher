@@ -7,6 +7,7 @@ import {
   trsCapeOffersSchema,
   trsCapeSchema,
   trsCapeSourceSchema,
+  trsCapeVideoSchema,
   trsDate,
   trsFrameIndex,
   trsFriendsSchema,
@@ -66,9 +67,10 @@ describe('TRS-Daten aus dem Kern', () => {
     expect(trsCapeSchema.safeParse({ ...cape, texture: 'https://evil.example/x.png' }).success).toBe(false)
     expect(trsCapeSchema.safeParse({ ...cape, id: '../x' }).success).toBe(false)
     expect(() => trsParse(trsCapeSchema, { ...cape, frames: 0 })).toThrow('ungültig')
-    // HD-Umhänge bis Faktor 8 (512×256) – darüber nicht.
+    // HD-Umhänge bis Faktor 16 (1024×512) – darüber nicht.
     expect(trsCapeSchema.safeParse({ ...cape, width: 512, height: 256, scale: 8 }).success).toBe(true)
-    expect(trsCapeSchema.safeParse({ ...cape, width: 576, height: 288, scale: 9 }).success).toBe(false)
+    expect(trsCapeSchema.safeParse({ ...cape, width: 1024, height: 512, scale: 16, frames: 32 }).success).toBe(true)
+    expect(trsCapeSchema.safeParse({ ...cape, width: 1088, height: 544, scale: 17 }).success).toBe(false)
   })
 
   it('prüft Umhänge in der Prüfliste (Größe, Hochlader)', () => {
@@ -98,9 +100,14 @@ describe('TRS-Daten aus dem Kern', () => {
     // Nur Bild-Data-URLs – kein SVG, keine fremden Adressen.
     expect(trsCapeSourceSchema.safeParse({ kind: 'image', name: 'a', dataUrl: 'data:image/svg+xml;base64,PHN2Zz4=', width: 1, height: 1 }).success).toBe(false)
     expect(trsCapeSourceSchema.safeParse({ kind: 'image', name: 'a', dataUrl: 'https://evil.example/x.png', width: 1, height: 1 }).success).toBe(false)
-    const gif = { kind: 'gif', name: 'g', width: 20, height: 32, frames: [png, png], durationMs: 200, sourceFrames: 40 }
+    const gif = { kind: 'animation', format: 'gif', name: 'g', width: 20, height: 32, frames: [png, png], delaysMs: [100, 100], durationMs: 200, sourceFrames: 40 }
     expect(trsCapeSourceSchema.safeParse(gif).success).toBe(true)
-    expect(trsCapeSourceSchema.safeParse({ ...gif, frames: Array(17).fill(png) }).success).toBe(false)
+    expect(trsCapeSourceSchema.safeParse({ ...gif, format: 'apng' }).success).toBe(true)
+    expect(trsCapeSourceSchema.safeParse({ ...gif, format: 'video', frames: Array(32).fill(png) }).success).toBe(true)
+    expect(trsCapeSourceSchema.safeParse({ ...gif, frames: Array(33).fill(png) }).success).toBe(false)
+    expect(trsCapeSourceSchema.safeParse({ ...gif, format: 'flash' }).success).toBe(false)
+    expect(trsCapeVideoSchema.safeParse({ token: 'a'.repeat(32), name: 'clip', durationMs: 5000, width: 1920, height: 1080 }).success).toBe(true)
+    expect(trsCapeVideoSchema.safeParse({ token: '../etc', name: 'clip', durationMs: 5000, width: 1920, height: 1080 }).success).toBe(false)
     expect(trsCapeSourceSchema.safeParse({ kind: 'studio', name: 'ender', frames: 4, scale: 8 }).success).toBe(true)
     expect(trsCapeSourceSchema.safeParse({ kind: 'studio', name: 'x', frames: 4, scale: 99 }).success).toBe(false)
   })

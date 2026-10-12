@@ -20,6 +20,14 @@ const props = withDefaults(
      */
     capeFrames?: number
     capeFrameTime?: number | null
+    /**
+     * Umhang als fertige Leinwände (Editor): je Takt eine, mit `capeFrameTime`
+     * animiert, sonst steht `capeFrame`. Spart das Kodieren als PNG bei jeder Änderung.
+     */
+    capeCanvases?: HTMLCanvasElement[] | null
+    capeFrame?: number
+    /** Umschalter „Umhang | Elytra“ im Bild zeigen. */
+    equipmentToggle?: boolean
     /** Kopf-Kosmetik (v2) am Kopf; Animation und Leuchten laufen zur Wanduhr wie im Spiel. */
     cosmetic?: ViewerCosmetic | null
     /** Begleiter (slot companion), zusätzlich zum Hut, dieselbe Pipeline. */
@@ -38,6 +46,9 @@ const props = withDefaults(
     height: 340,
     capeFrames: 1,
     capeFrameTime: null,
+    capeCanvases: null,
+    capeFrame: 0,
+    equipmentToggle: false,
     cosmetic: null,
     companion: null,
     night: false,
@@ -51,6 +62,9 @@ type Viewer = import('skinview3d').SkinViewer
 const canvas = ref<HTMLCanvasElement | null>(null)
 const box = ref<HTMLElement | null>(null)
 const failed = ref(false)
+/** Am Rücken: Umhang oder Elytra (Flügel aus der Außenseite des Umhangs). */
+const equipment = ref<'cape' | 'elytra'>('cape')
+const hasCape = computed(() => !!props.cape || !!props.capeCanvases?.length)
 let viewer: Viewer | null = null
 let observer: ResizeObserver | null = null
 let capeTimer: ReturnType<typeof setInterval> | null = null
@@ -118,49 +132,90 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   })
 }
 
-/** Streifen-Textur: aktuellen Frame auf eine eigene Leinwand kopieren und als Umhang setzen. */
-async function applyAnimatedCape(src: string, frames: number, frameTime: number) {
-  const token = ++capeToken
+/** Streifen-Textur in Leinwände je Frame zerlegen (einmal, danach nur noch umschalten). */
+async function splitCape(src: string, frames: number): Promise<HTMLCanvasElement[]> {
   const img = await loadImage(src)
-  if (token !== capeToken || !viewer) return
   const width = img.naturalWidth
-  const frameHeight = Math.floor(img.naturalHeight / frames)
-  if (!width || !frameHeight) return
-  const frame = document.createElement('canvas')
-  frame.width = width
-  frame.height = frameHeight
-  const ctx = frame.getContext('2d')
-  if (!ctx) return
-  let shown = -1
+  const frameHeight = Math.floor(img.naturalHeight / Math.max(1, frames))
+  if (!width || !frameHeight) return []
+  return Array.from({ length: Math.max(1, frames) }, (_, f) => {
+    const c = document.createElement('canvas')
+    c.width = width
+    c.height = frameHeight
+    c.getContext('2d')?.drawImage(img, 0, f * frameHeight, width, frameHeight, 0, 0, width, frameHeight)
+    return c
+  })
+}
+
+/** Elytra: Flügel immer aus der Außenseite erzeugen (wie im TRS Client); je Leinwand einmal. */
+const elytraCache = new WeakMap<HTMLCanvasElement, HTMLCanvasElement>()
+function withElytra(canvas: HTMLCanvasElement): HTMLCanvasElement {
+  const cached = elytraCache.get(canvas)
+  if (cached) return cached
+  const s = canvas.width / 64
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  if (!Number.isInteger(s) || s < 1 || canvas.height !== 32 * s || !ctx) return canvas
+  const data = ctx.getImageData(0, 0, canvas.width, canvas.height)
+  const filled = fillElytraFromFront({ width: data.width, height: data.height, data: data.data }, s)
+  const out = document.createElement('canvas')
+  out.width = canvas.width
+  out.height = canvas.height
+  out.getContext('2d')?.putImageData(new ImageData(new Uint8ClampedArray(filled.data), filled.width, filled.height), 0, 0)
+  elytraCache.set(canvas, out)
+  return out
+}
+
+/** Leinwand je Frame als Umhang bzw. Elytra (animiert zur Wanduhr oder fester Frame). */
+function applyCanvasCape(canvases: HTMLCanvasElement[], frameTime: number | null) {
+  const token = capeToken
+  const back = equipment.value
+  let shown: HTMLCanvasElement | null = null
   const draw = () => {
     if (!viewer || token !== capeToken) return
-    const f = trsFrameIndex(Date.now(), frames, frameTime)
-    if (f === shown) return
-    shown = f
-    ctx.clearRect(0, 0, width, frameHeight)
-    ctx.drawImage(img, 0, f * frameHeight, width, frameHeight, 0, 0, width, frameHeight)
-    void viewer.loadCape(frame)
+    const f = frameTime && canvases.length > 1 ? trsFrameIndex(Date.now(), canvases.length, frameTime) : Math.min(props.capeFrame, canvases.length - 1)
+    const canvas = canvases[Math.max(0, f)]
+    if (!canvas || canvas === shown) return
+    shown = canvas
+    viewer.loadCape(back === 'elytra' ? withElytra(canvas) : canvas, { backEquipment: back })
   }
   draw()
   // Kürzer als die Frame-Dauer abtasten, damit der Wechsel zur Wanduhr passt.
-  capeTimer = setInterval(draw, Math.max(20, Math.min(frameTime / 2, 250)))
+  if (frameTime && canvases.length > 1) capeTimer = setInterval(draw, Math.max(20, Math.min(frameTime / 2, 250)))
+}
+
+async function applyCape() {
+  if (!viewer) return
+  stopCapeAnimation()
+  const token = ++capeToken
+  if (props.capeCanvases?.length) {
+    applyCanvasCape(props.capeCanvases, props.capeFrameTime)
+    return
+  }
+  if (!props.cape) {
+    viewer.resetCape()
+    return
+  }
+  const animated = props.capeFrames > 1 && !!props.capeFrameTime
+  if (!animated && equipment.value === 'cape') {
+    await viewer.loadCape(props.cape, { backEquipment: 'cape' })
+    return
+  }
+  try {
+    const canvases = await splitCape(props.cape, animated ? props.capeFrames : 1)
+    if (token !== capeToken || !viewer) return
+    if (canvases.length) applyCanvasCape(canvases, animated ? props.capeFrameTime : null)
+    else viewer.resetCape()
+  } catch (e) {
+    console.warn(e)
+    viewer?.resetCape()
+  }
 }
 
 async function applySkin() {
   if (!viewer) return
   if (props.skin) await viewer.loadSkin(props.skin, { model: model.value })
   else viewer.resetSkin()
-  stopCapeAnimation()
-  capeToken++
-  if (props.cape && props.capeFrames > 1 && props.capeFrameTime) {
-    try {
-      await applyAnimatedCape(props.cape, props.capeFrames, props.capeFrameTime)
-    } catch (e) {
-      console.warn(e)
-      viewer.resetCape()
-    }
-  } else if (props.cape) await viewer.loadCape(props.cape)
-  else viewer.resetCape()
+  await applyCape()
 }
 
 // --- Kopf-Kosmetik (v2) + Begleiter -----------------------------------------------------------
@@ -364,7 +419,8 @@ onBeforeUnmount(() => {
   viewer = null
 })
 
-watch(() => [props.skin, props.cape, props.variant, props.capeFrames, props.capeFrameTime], () => void applySkin())
+watch(() => [props.skin, props.variant], () => void applySkin())
+watch(() => [props.cape, props.capeFrames, props.capeFrameTime, props.capeCanvases, props.capeFrame, equipment.value], () => void applyCape())
 watch(() => props.animation, (kind) => void setAnimation(kind))
 watch(() => props.height, resize)
 watch(() => props.cosmetic, () => void applySlot(hatSlot, props.cosmetic))
@@ -380,6 +436,26 @@ watch(
 <template>
   <div ref="box" class="relative w-full" :style="{ height: `${height}px` }">
     <canvas ref="canvas" class="size-full cursor-grab active:cursor-grabbing" :aria-label="t('skins.viewer.label')" />
+    <div
+      v-if="equipmentToggle && hasCape && !failed"
+      class="absolute bottom-2 left-2 flex gap-0.5 rounded-md bg-black/45 p-0.5 text-[11px]"
+      role="radiogroup"
+      :aria-label="t('skins.viewer.equipment')"
+      data-testid="viewer-equipment"
+    >
+      <button
+        v-for="kind in (['cape', 'elytra'] as const)"
+        :key="kind"
+        type="button"
+        class="rounded px-2 py-0.5 transition-colors"
+        :class="equipment === kind ? 'bg-white/90 text-black' : 'text-white hover:bg-white/15'"
+        role="radio"
+        :aria-checked="equipment === kind"
+        @click="equipment = kind"
+      >
+        {{ t(`skins.viewer.${kind}`) }}
+      </button>
+    </div>
     <div v-if="failed" class="absolute inset-0 grid place-items-center px-4 text-center text-sm text-base-400">
       {{ t('skins.viewer.failed') }}
     </div>
