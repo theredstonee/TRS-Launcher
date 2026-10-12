@@ -104,8 +104,6 @@ export interface Landscape {
   moon: { x: number; y: number; r: number }
   /** `y` = Bodenzeile der Hütte; `penguin` = kleiner Pinguin vor der Tür (nur Banner). */
   cabin: { x: number; y: number; size: CabinSize; penguin: boolean } | null
-  /** Trampelpfad von der Tür nach vorn (bis zu dieser Zeile). */
-  pathEnd: number
   /** Eislaternen (Mitte des Glases) – nur mit Anker. */
   lanterns: { x: number; y: number }[]
   /** Glitzernde Schneepunkte. */
@@ -234,7 +232,6 @@ export function buildLandscape(o: LandscapeOptions): Landscape {
 
   // Blockhütte vorn rechts. Startseite: über dem Spielen-Knopf (sonst verdeckt er sie).
   let cabin: Landscape['cabin'] = null
-  let pathEnd = h
   const size: CabinSize | null = w >= 160 && h >= 90 ? 'large' : w >= 100 && h >= 44 ? 'small' : null
   if (o.cabin !== false && size) {
     const spec = CABINS[size]
@@ -244,7 +241,6 @@ export function buildLandscape(o: LandscapeOptions): Landscape {
     if (anchored && o.anchorTop != null && o.anchorRight != null && o.anchorRight > spec.w) {
       x = clamp(Math.round(o.anchorRight) - spec.w - 2, 4, w - spec.w - 2)
       base = clamp(Math.round(o.anchorTop) - 2, hillBase + 3, h - 1)
-      pathEnd = Math.min(h, base + 8)
     } else {
       x = o.cabinX == null ? w - spec.w - margin : Math.round(clamp(w * o.cabinX, 4, w - spec.w - 4))
       let top = h
@@ -337,7 +333,7 @@ export function buildLandscape(o: LandscapeOptions): Landscape {
     })
   }
 
-  return { w, h, seed, horizon, mountainAmp, mountainsBack, mountains, forest, hills, ground, pines, stars, moon, cabin, pathEnd, lanterns, sparkles, tufts, clouds }
+  return { w, h, seed, horizon, mountainAmp, mountainsBack, mountains, forest, hills, ground, pines, stars, moon, cabin, lanterns, sparkles, tufts, clouds }
 }
 
 /** Polarlicht-Stärke 0…1 über die Zeit: hin und wieder ein paar Minuten, sanft ein- und ausgeblendet. */

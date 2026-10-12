@@ -161,7 +161,6 @@ export function paintLand(L: Landscape, P: WinterPalette): Raster {
     const spec = CABINS[L.cabin.size]
     const x0 = L.cabin.x
     const oy = L.cabin.y - spec.h + 1
-    paintPath(R, x0 + Math.round((spec.door.x0 + spec.door.x1) / 2), L.cabin.y + 1, L.pathEnd, P)
     if (L.cabin.size === 'large') paintCabinLarge(R, x0, oy, P)
     else paintCabinSmall(R, x0, oy, P, L.cabin.penguin)
   }
@@ -529,20 +528,6 @@ function paintDoor(R: Pixels, x0: number, oy: number, P: WinterPalette, open: 0 
     put(d.x0 + 3, d.y0 + 3, P.windowOn)
     put(d.x0 + 4, d.y0 + 3, P.windowOn)
     put(d.x1 - 2, d.y0 + 7, mix(P.windowOn, [255, 255, 255], 0.3))
-  }
-}
-
-/** Trampelpfad von der Tür nach vorn, mit kleinen Fußspuren. */
-function paintPath(R: Raster, cx: number, from: number, to: number, P: WinterPalette) {
-  for (let y = from; y < Math.min(R.h, to); y++) {
-    const half = 2 + Math.floor((y - from) * 0.22)
-    for (let x = cx - half - 1; x <= cx + half + 1; x++) {
-      const edge = Math.abs(x - cx) > half
-      if (edge && bayer(x, y) > 0.5) continue
-      R.set(x, y, edge ? P.snow : P.snowShade)
-    }
-    // Pinguin-Spuren: kleine Punkte, abwechselnd links und rechts.
-    if ((y - from) % 3 === 1) R.set(cx + (((y - from) / 3) % 2 < 1 ? -1 : 1), y, P.snowDeep)
   }
 }
 
