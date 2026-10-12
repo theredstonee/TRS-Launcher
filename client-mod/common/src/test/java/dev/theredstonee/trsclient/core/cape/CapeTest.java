@@ -93,14 +93,16 @@ class CapeTest {
 	}
 
 	@Test
-	void hdCapesUpToScale8AreAccepted() throws IOException {
+	void hdCapesUpToScale16AreAccepted() throws IOException {
 		CapeInfo nether = CapeInfo.of("nether", "https://trs-launcher.theredstonee.de/v1/capes/nether.png?v=1", 8, 4, 150, CONFIG);
 		assertNotNull(nether);
 		CapeFrames frames = CapeFrames.split(PngDecoder.decode(png(strip(8, 4, BufferedImage.TYPE_INT_ARGB))), nether);
 		assertEquals(512, frames.width);
 		assertEquals(4, frames.count());
-		assertNull(CapeInfo.of("big", "https://trs-launcher.theredstonee.de/v1/capes/big.png?v=1", 9, 1, null, CONFIG));
-		assertThrows(IOException.class, () -> CapeFrames.split(new PngDecoder.Image(576, 288, new int[576 * 288]), nether));
+		assertNotNull(CapeInfo.of("hd", "https://trs-launcher.theredstonee.de/v1/capes/hd.png?v=1", 16, 32, 100, CONFIG));
+		assertNull(CapeInfo.of("big", "https://trs-launcher.theredstonee.de/v1/capes/big.png?v=1", 17, 1, null, CONFIG));
+		assertNull(CapeInfo.of("many", "https://trs-launcher.theredstonee.de/v1/capes/many.png?v=1", 1, 65, 100, CONFIG));
+		assertThrows(IOException.class, () -> CapeFrames.split(new PngDecoder.Image(1088, 544, new int[1088 * 544]), nether));
 	}
 
 	@Test
@@ -152,7 +154,7 @@ class CapeTest {
 		CapeFrames frames = CapeFrames.split(PngDecoder.decode(png(strip(1, 12, BufferedImage.TYPE_INT_ARGB))), team);
 		List<Consumer<CapeFrames>> pending = new ArrayList<>();
 		Backend backend = new Backend();
-		CapeTextures<String> tex = new CapeTextures<>(backend, (cape, done, failed) -> pending.add(done));
+		CapeTextures<String> tex = new CapeTextures<>(backend, (cape, k, done, failed) -> pending.add(done));
 		assertNull(tex.texture(team, 0), "noch nicht geladen");
 		assertNull(tex.texture(team, 10));
 		assertEquals(1, pending.size(), "nur eine Ladeanfrage");
@@ -178,7 +180,7 @@ class CapeTest {
 	void failedLoadsAreRetriedLater() {
 		CapeInfo red = CapeInfo.of("red", "https://trs-launcher.theredstonee.de/v1/capes/red.png?v=1", 1, 1, null, CONFIG);
 		List<Runnable> fails = new ArrayList<>();
-		CapeTextures<String> tex = new CapeTextures<>(new Backend(), (cape, done, failed) -> fails.add(failed));
+		CapeTextures<String> tex = new CapeTextures<>(new Backend(), (cape, k, done, failed) -> fails.add(failed));
 		assertNull(tex.texture(red, 0));
 		fails.get(0).run();
 		assertNull(tex.texture(red, 10));

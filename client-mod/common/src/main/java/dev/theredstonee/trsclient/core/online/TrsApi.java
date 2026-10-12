@@ -22,10 +22,10 @@ public final class TrsApi {
 	private static final String JSON = "application/json";
 
 	/**
-	 * Größte Umhang-Textur: eigene Uploads bis 5 MB (512×256 je Frame, bis 16 Frames),
+	 * Größte Umhang-Textur: eigene Uploads bis 20 MiB (1024×512 je Frame, bis 32 Frames),
 	 * mitgelieferte HD-Streifen ähnlich groß – passend zum {@code CapeDiskCache}.
 	 */
-	public static final int MAX_TEXTURE_BYTES = 8 * 1024 * 1024;
+	public static final int MAX_TEXTURE_BYTES = 24 * 1024 * 1024;
 
 	private final Http http;
 	private final OnlineConfig config;

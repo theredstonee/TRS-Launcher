@@ -38,6 +38,7 @@ How to write an entry:
 - **Cape or elytra.** The 3D preview on the Skins page and in the cape workshop has a switch between cape and elytra – animated capes move on the elytra too. The elytra design is always made from the front of the cape (also for older capes), so every cape gets matching wings.
 - On phones and tablets you can import and upload capes; the pixel editor is available in the desktop launcher.
 - **Your design follows your account.** Redstone or Winter Night is now synced with your TRS account like color theme, accent and language – pick it once, and your other PCs and the TRS Client follow.
+- **TRS Client: capes look right on the elytra.** Wearing an elytra with a TRS cape (team, code, Studio or older capes) no longer shows red or broken wings – the wings now always show your cape's design, sharp in HD, darker on the inside, and animated capes animate on the elytra too.
 
 ### Deutsch
 - **HD-Umhänge.** Eigene Umhänge dürfen jetzt bis 1024×512 Pixel je Frame groß sein, mit bis zu 32 Frames und bis zu 20 MB – doppelt so scharf und doppelt so lang wie bisher.
@@ -47,6 +48,7 @@ How to write an entry:
 - **Umhang oder Elytra.** Die 3D-Vorschau auf der Skins-Seite und in der Umhang-Werkstatt hat einen Umschalter zwischen Umhang und Elytra – animierte Umhänge bewegen sich auch auf den Elytren. Das Elytra-Muster entsteht immer aus der Vorderseite des Umhangs (auch bei älteren Umhängen), so bekommt jeder Umhang passende Flügel.
 - Am Handy und Tablet lassen sich Umhänge importieren und hochladen; den Pixel-Editor gibt es im Desktop-Launcher.
 - **Dein Design folgt deinem Konto.** Redstone oder Winternacht wird jetzt wie Farbschema, Akzent und Sprache mit deinem TRS-Konto abgeglichen – einmal wählen, deine anderen PCs und der TRS Client ziehen mit.
+- **TRS Client: Umhänge sehen auf der Elytra richtig aus.** Mit einem TRS-Umhang (Team-, Code-, Studio- oder ältere Umhänge) zeigt die Elytra keine roten oder kaputten Flügel mehr – die Flügel zeigen jetzt immer das Motiv deines Umhangs, scharf in HD, innen dunkler, und animierte Umhänge bewegen sich auch auf der Elytra.
 
 ## 0.20.0 – 2026-10-13 – Penguin Lodge | Pinguin-Hütte
 <!-- banner: accent=#7fd3ff motif=/news/0.20.0/banner.png -->

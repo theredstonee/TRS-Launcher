@@ -22,6 +22,12 @@ public final class CapeTest {
 		void command(String command);
 	}
 
+	/** Elytra gibt es ab 1.9 (Screenshots mit Elytra nur dort). */
+	//? if >=1.9 {
+	/*private static final boolean ELYTRA = true;
+	*///?} else
+	private static final boolean ELYTRA = false;
+
 	private int phase;
 	private int wait;
 	private int tries;
@@ -108,12 +114,35 @@ public final class CapeTest {
 			case 8:
 				actions.shot("cape-sneak");
 				hold(mc.gameSettings.keyBindSneak, false);
+				if (ELYTRA) {
+					// Elytra mit TRS-Umhang: Flügel aus dem Umhang-Motiv (ElytraArt), je Animationsbild.
+					actions.command("replaceitem entity @p slot.armor.chest minecraft:elytra");
+					wait = 20;
+				} else {
+					phase = 11;
+				}
+				return true;
+			case 9:
+				actions.shot("cape-elytra");
+				wait = 3;
+				return true;
+			case 10:
+				actions.shot("cape-elytra-frame");
+				mc.gameSettings.thirdPersonView = 2;
+				wait = 5;
+				return true;
+			case 11:
+				if (ELYTRA) {
+					actions.shot("cape-elytra-front");
+					mc.gameSettings.thirdPersonView = 1;
+					actions.command("replaceitem entity @p slot.armor.chest air");
+				}
 				mc.gameSettings.hideGUI = false;
 				TrsClient.get().setForceZoom(false);
 				hold(mc.gameSettings.keyBindPlayerList, true);
 				wait = 5;
 				return true;
-			case 9: {
+			case 12: {
 				actions.shot("cape-tab");
 				hold(mc.gameSettings.keyBindPlayerList, false);
 				NetworkPlayerInfo info = Mc.connection() == null ? null : Mc.connection().getPlayerInfo(player.getUniqueID());

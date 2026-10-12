@@ -396,14 +396,29 @@ public final class LegacyOnline {
 
 	// --- Texturen / Konto ---
 
-	/** Umhang-Bilder als dynamische Texturen ({@code trsclient:capes/<id>_<n>/<bild>}). */
+	/**
+	 * Ein Umhang-Bild als GL-Textur, ohne die Pixel danach im Arbeitsspeicher zu behalten ({@link DynamicTexture} hielte
+	 * eine Kopie: bei HD-Umhängen bis 2 MB je Bild, 64 MB je Umhang mit 32 Bildern). Hochgeladen wird wie bei
+	 * DynamicTexture (gleiche Aufrufe); neu Laden der Ressourcen lässt die Textur unverändert.
+	 */
+	static final class CapeTexture extends net.minecraft.client.renderer.texture.AbstractTexture {
+		CapeTexture(int width, int height, int[] argb) {
+			net.minecraft.client.renderer.texture.TextureUtil.allocateTexture(getGlTextureId(), width, height);
+			net.minecraft.client.renderer.texture.TextureUtil.uploadTexture(getGlTextureId(), argb, width, height);
+		}
+
+		@Override
+		public void loadTexture(net.minecraft.client.resources.IResourceManager manager) {
+			// schon hochgeladen
+		}
+	}
+
+	/** Umhang-Bilder als Texturen ({@code trsclient:capes/<id>_<n>/<k>/<bild>}). */
 	static final class Textures implements CapeTextures.Backend<Object> {
 		@Override
 		public Object upload(String name, int width, int height, int[] argb) {
 			try {
-				DynamicTexture texture = new DynamicTexture(width, height);
-				System.arraycopy(argb, 0, texture.getTextureData(), 0, width * height);
-				texture.updateDynamicTexture();
+				CapeTexture texture = new CapeTexture(width, height, argb);
 				ResourceLocation id = new ResourceLocation("trsclient", name);
 				Minecraft.getMinecraft().getTextureManager().loadTexture(id, texture);
 				return id;

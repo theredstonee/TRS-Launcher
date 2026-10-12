@@ -1187,12 +1187,12 @@ public final class WardrobeService {
 	private void loadCapeArt(String key, String url, int width, int height, String token) {
 		try {
 			Http.Response r = trsTexture(url, token);
-			PngDecoder.Image img = PngDecoder.decode(r.body);
-			int fw = width > 0 ? width : img.width;
-			int fh = height > 0 ? height : fw / 2;
-			if (fw == img.width && fh <= img.height && CapeImage.width(fw, fh) == fw) {
-				int[] frame = Arrays.copyOf(img.argb, fw * fh);
-				capeArt.put(key, new CapeArt(frame, fw, fh));
+			// Nur das erste Bild entpacken – HD-Streifen (bis 32 × 1024×512) nie ganz in den Speicher.
+			dev.theredstonee.trsclient.core.cape.CapeFrames f = dev.theredstonee.trsclient.core.cape.CapeFrames.decode(r.body, 0, 1, 1);
+			int fw = f.width;
+			int fh = f.height;
+			if ((width <= 0 || width == fw) && (height <= 0 || height == fh) && CapeImage.width(fw, fh) == fw) {
+				capeArt.put(key, new CapeArt(f.frames[0], fw, fh));
 			}
 		} catch (Exception ignored) {
 			// ohne Vorschau
