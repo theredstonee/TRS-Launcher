@@ -310,7 +310,7 @@ async fn the_newer_change_wins() {
     launcher.update_settings(settings).await.unwrap();
     sync(&launcher).await;
     let stored = cloud.lock().unwrap().settings.clone().unwrap().0;
-    assert_eq!(stored, json!({ "theme": "light", "accent": "emerald", "language": "fr" }));
+    assert_eq!(stored, json!({ "theme": "light", "accent": "emerald", "language": "fr", "design": "redstone" }));
     let ui = launcher.settings().await.ui;
     assert_eq!((ui.theme, ui.accent, ui.language), (Theme::Light, Accent::Emerald, Language::Fr));
     // Echte Zeit, nicht in der Zukunft.

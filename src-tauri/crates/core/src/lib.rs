@@ -458,12 +458,14 @@ impl Launcher {
         theme: settings::Theme,
         accent: settings::Accent,
         language: settings::Language,
+        design: settings::Design,
     ) -> Result<()> {
         let mut guard = self.settings.write().await;
         let mut new = guard.clone();
         new.ui.theme = theme;
         new.ui.accent = accent;
         new.ui.language = language;
+        new.ui.design = design;
         if new == *guard {
             return Ok(());
         }

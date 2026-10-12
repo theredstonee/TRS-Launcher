@@ -108,7 +108,7 @@ describe('Umhang-Werkstatt', () => {
     expect(pixel(tex, 1 * s, 1 * s)).toEqual([200, 100, 50, 255])
     // Innenseite dunkler, Elytra-Außenseite gefüllt, Rest durchsichtig.
     expect(pixel(tex, 12 * s, 1 * s)).toEqual([120, 60, 30, 255])
-    expect(pixel(tex, 24 * s, 2 * s)).toEqual([200, 100, 50, 255])
+    expect(pixel(tex, 36 * s, 2 * s)).toEqual([200, 100, 50, 255])
     expect(pixel(tex, 60 * s, 30 * s)[3]).toBe(0)
     expect(capeVisible(tex, s, 1)).toBe(true)
   })
@@ -145,9 +145,10 @@ describe('Umhang-Werkstatt', () => {
 
     it('dehnt die Außenseite auf 10×20 (Zeilen gleichmäßig verdoppelt) und ersetzt alte Flügel', () => {
       const out = fillElytraFromFront(cape(1), 1)
-      const rows = Array.from({ length: 20 }, (_, y) => pixel(out, 24, 2 + y)[0]! / 10)
+      // Außenseite (+z, vom Rücken weg) liegt bei u 36 – wie im TRS Client und bei Mojang.
+      const rows = Array.from({ length: 20 }, (_, y) => pixel(out, 36, 2 + y)[0]! / 10)
       expect(rows).toEqual([0, 0, 1, 2, 3, 4, 4, 5, 6, 7, 8, 8, 9, 10, 11, 12, 12, 13, 14, 15])
-      expect(pixel(out, 24 + 9, 2)).toEqual([0, 180, 100, 255])
+      expect(pixel(out, 36 + 9, 2)).toEqual([0, 180, 100, 255])
       // Kein Rot mehr im Elytra-Bereich, die Ecken neben den Kanten sind leer.
       for (let y = 0; y < 22; y++) for (let x = 22; x < 46; x++) expect(pixel(out, x, y).join()).not.toBe('255,0,0,255')
       expect(pixel(out, 22, 0)).toEqual([0, 0, 0, 0])
@@ -162,20 +163,22 @@ describe('Umhang-Werkstatt', () => {
         const fw = 10 * s
         for (let y = 0; y < 20 * s; y++) {
           for (let x = 0; x < fw; x++) {
-            const o = pixel(out, 24 * s + x, 2 * s + y)
-            const mirrored = pixel(out, 24 * s + fw - 1 - x, 2 * s + y)
-            expect(pixel(out, 36 * s + x, 2 * s + y)).toEqual([...mirrored.slice(0, 3).map((c) => Math.floor((c * 3) / 5)), 255])
+            const o = pixel(out, 36 * s + x, 2 * s + y)
+            const mirrored = pixel(out, 36 * s + fw - 1 - x, 2 * s + y)
+            expect(pixel(out, 24 * s + x, 2 * s + y)).toEqual([...mirrored.slice(0, 3).map((c) => Math.floor((c * 3) / 5)), 255])
             expect(o[3]).toBe(255)
           }
-          const left = pixel(out, 24 * s, 2 * s + y)
-          const right = pixel(out, 24 * s + fw - 1, 2 * s + y)
+          // Schulterkante (u 34) = erste, Flügelende (u 22) = letzte Spalte der Außenseite.
+          const first = pixel(out, 36 * s, 2 * s + y)
+          const last = pixel(out, 36 * s + fw - 1, 2 * s + y)
           for (let k = 0; k < 2 * s; k++) {
-            expect(pixel(out, 22 * s + k, 2 * s + y)).toEqual([...left.slice(0, 3).map((c) => Math.floor((c * 4) / 5)), 255])
-            expect(pixel(out, 34 * s + k, 2 * s + y)).toEqual([...right.slice(0, 3).map((c) => Math.floor((c * 4) / 5)), 255])
+            expect(pixel(out, 34 * s + k, 2 * s + y)).toEqual([...first.slice(0, 3).map((c) => Math.floor((c * 4) / 5)), 255])
+            expect(pixel(out, 22 * s + k, 2 * s + y)).toEqual([...last.slice(0, 3).map((c) => Math.floor((c * 4) / 5)), 255])
           }
         }
-        const top = pixel(out, 24 * s + 3, 2 * s)
-        const bottom = pixel(out, 24 * s + 3, 2 * s + 20 * s - 1)
+        // Oben/unten: gespiegelte Spalten der obersten/untersten Zeile der Außenseite.
+        const top = pixel(out, 36 * s + fw - 1 - 3, 2 * s)
+        const bottom = pixel(out, 36 * s + fw - 1 - 3, 2 * s + 20 * s - 1)
         expect(pixel(out, 24 * s + 3, 0)).toEqual([...top.slice(0, 3).map((c) => Math.floor((c * 4) / 5)), 255])
         expect(pixel(out, 34 * s + 3, 2 * s - 1)).toEqual([...bottom.slice(0, 3).map((c) => Math.floor((c * 4) / 5)), 255])
       }
@@ -198,7 +201,7 @@ describe('Umhang-Werkstatt', () => {
       }
       // Ganz leere Außenseite: neutrales Grau.
       const empty = fillElytraFromFront(rgba(64, 32), 1)
-      expect(pixel(empty, 30, 10)).toEqual([64, 64, 64, 255])
+      expect(pixel(empty, 40, 10)).toEqual([64, 64, 64, 255])
     })
   })
 

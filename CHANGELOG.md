@@ -37,6 +37,7 @@ How to write an entry:
 - **Automatic upscaling.** You edit at a small resolution, and the cape is scaled up on upload – pixel-exact, or optionally "Smooth", which rounds staircase edges right on your computer. Before uploading you see the final size, the number of frames and the file size; if the cape would be too large, the launcher suggests a smaller resolution or fewer frames.
 - **Cape or elytra.** The 3D preview on the Skins page and in the cape workshop has a switch between cape and elytra – animated capes move on the elytra too. The elytra design is always made from the front of the cape (also for older capes), so every cape gets matching wings.
 - On phones and tablets you can import and upload capes; the pixel editor is available in the desktop launcher.
+- **Your design follows your account.** Redstone or Winter Night is now synced with your TRS account like color theme, accent and language – pick it once, and your other PCs and the TRS Client follow.
 
 ### Deutsch
 - **HD-Umhänge.** Eigene Umhänge dürfen jetzt bis 1024×512 Pixel je Frame groß sein, mit bis zu 32 Frames und bis zu 20 MB – doppelt so scharf und doppelt so lang wie bisher.
@@ -45,6 +46,7 @@ How to write an entry:
 - **Automatisches Hochskalieren.** Du bearbeitest in kleiner Auflösung, beim Hochladen wird der Umhang hochskaliert – pixelgenau oder wahlweise „Glätten“, das Treppenkanten direkt auf deinem Rechner abrundet. Vor dem Hochladen siehst du die fertige Größe, die Zahl der Frames und die Dateigröße; wäre der Umhang zu groß, schlägt der Launcher eine kleinere Auflösung oder weniger Frames vor.
 - **Umhang oder Elytra.** Die 3D-Vorschau auf der Skins-Seite und in der Umhang-Werkstatt hat einen Umschalter zwischen Umhang und Elytra – animierte Umhänge bewegen sich auch auf den Elytren. Das Elytra-Muster entsteht immer aus der Vorderseite des Umhangs (auch bei älteren Umhängen), so bekommt jeder Umhang passende Flügel.
 - Am Handy und Tablet lassen sich Umhänge importieren und hochladen; den Pixel-Editor gibt es im Desktop-Launcher.
+- **Dein Design folgt deinem Konto.** Redstone oder Winternacht wird jetzt wie Farbschema, Akzent und Sprache mit deinem TRS-Konto abgeglichen – einmal wählen, deine anderen PCs und der TRS Client ziehen mit.
 
 ## 0.20.0 – 2026-10-13 – Penguin Lodge | Pinguin-Hütte
 <!-- banner: accent=#7fd3ff motif=/news/0.20.0/banner.png -->

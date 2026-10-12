@@ -37,7 +37,7 @@ use tokio::sync::{Mutex, Notify};
 
 use super::{Outcome, Req};
 use crate::presets::{self, SyncData as PresetData};
-use crate::settings::{Accent, Language, Theme, UiSettings};
+use crate::settings::{Accent, Design, Language, Theme, UiSettings};
 use crate::skins::{self, LibrarySnapshot, SkinTombstone, SkinVariant};
 use crate::{Error, Launcher, Result, fsutil};
 
@@ -223,7 +223,7 @@ fn backoff(failures: u32) -> Duration {
 
 // --- Gespeicherter Zustand (`<daten>/trs-sync.json`) -----------------------------------
 
-/// Wann Theme/Akzentfarbe/Sprache hier zuletzt von Hand geändert wurden.
+/// Wann Theme/Akzentfarbe/Sprache/Design hier zuletzt von Hand geändert wurden.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct UiTimes {
@@ -233,6 +233,8 @@ pub(crate) struct UiTimes {
     pub accent: Option<DateTime<Utc>>,
     #[serde(default)]
     pub language: Option<DateTime<Utc>>,
+    #[serde(default)]
+    pub design: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -296,8 +298,8 @@ impl SyncStore {
         self.with(|f| (f.ui_changed, false)).await
     }
 
-    /// Theme/Akzent/Sprache wurden hier geändert.
-    pub async fn ui_changed(&self, theme: bool, accent: bool, language: bool, at: DateTime<Utc>) {
+    /// Theme/Akzent/Sprache/Design wurden hier geändert.
+    pub async fn ui_changed(&self, theme: bool, accent: bool, language: bool, design: bool, at: DateTime<Utc>) {
         self.with(|f| {
             if theme {
                 f.ui_changed.theme = Some(at);
@@ -308,7 +310,10 @@ impl SyncStore {
             if language {
                 f.ui_changed.language = Some(at);
             }
-            ((), theme || accent || language)
+            if design {
+                f.ui_changed.design = Some(at);
+            }
+            ((), theme || accent || language || design)
         })
         .await;
     }
@@ -582,11 +587,12 @@ pub(crate) struct UiValues {
     pub theme: Theme,
     pub accent: Accent,
     pub language: Language,
+    pub design: Design,
 }
 
 impl UiValues {
     pub fn of(ui: &UiSettings) -> Self {
-        Self { theme: ui.theme, accent: ui.accent, language: ui.language }
+        Self { theme: ui.theme, accent: ui.accent, language: ui.language, design: ui.design }
     }
 }
 
@@ -641,17 +647,23 @@ pub(crate) fn merge_ui(local: UiValues, times: UiTimes, remote: Option<(&Value, 
     let Some((data, at)) = remote else {
         return MergedUi {
             values: local,
-            data: json!({ "theme": local.theme, "accent": local.accent, "language": local.language }),
+            data: json!({ "theme": local.theme, "accent": local.accent, "language": local.language, "design": local.design }),
             push: true,
         };
     };
     let (theme, theme_json, p1) = merge_key(local.theme, times.theme, key(data, "theme"), at);
     let (accent, accent_json, p2) = merge_key(local.accent, times.accent, key(data, "accent"), at);
     let (language, language_json, p3) = merge_key(local.language, times.language, key(data, "language"), at);
+    // Konten von älteren Launchern kennen kein Design – das heißt Redstone, kein Grund hochzuladen.
+    let remote_design = match key(data, "design") {
+        Key::Missing => Key::Known(Design::Redstone),
+        other => other,
+    };
+    let (design, design_json, p4) = merge_key(local.design, times.design, remote_design, at);
     MergedUi {
-        values: UiValues { theme, accent, language },
-        data: json!({ "theme": theme_json, "accent": accent_json, "language": language_json }),
-        push: p1 || p2 || p3,
+        values: UiValues { theme, accent, language, design },
+        data: json!({ "theme": theme_json, "accent": accent_json, "language": language_json, "design": design_json }),
+        push: p1 || p2 || p3 || p4,
     }
 }
 
@@ -717,11 +729,12 @@ impl Launcher {
         }
     }
 
-    /// Theme/Akzent/Sprache wurden in den Einstellungen geändert.
+    /// Theme/Akzent/Sprache/Design wurden in den Einstellungen geändert.
     pub(crate) async fn trs_ui_changed(&self, old: &UiSettings, new: &UiSettings) {
         let (theme, accent, language) = (old.theme != new.theme, old.accent != new.accent, old.language != new.language);
-        if theme || accent || language {
-            self.trs.sync_store.ui_changed(theme, accent, language, Utc::now()).await;
+        let design = old.design != new.design;
+        if theme || accent || language || design {
+            self.trs.sync_store.ui_changed(theme, accent, language, design, Utc::now()).await;
             self.trs.sync.touch();
         }
     }
@@ -934,7 +947,7 @@ impl Launcher {
             let local = UiValues::of(&self.settings().await.ui);
             let merged = merge_ui(local, times, remote.as_ref().map(|b| (&b.data, b.updated_at)));
             if merged.values != local {
-                self.apply_synced_ui(merged.values.theme, merged.values.accent, merged.values.language).await?;
+                self.apply_synced_ui(merged.values.theme, merged.values.accent, merged.values.language, merged.values.design).await?;
                 changes.settings = true;
             }
             if !merged.push {
@@ -1036,7 +1049,7 @@ mod tests {
     }
 
     fn values(theme: Theme, language: Language) -> UiValues {
-        UiValues { theme, accent: Accent::Redstone, language }
+        UiValues { theme, accent: Accent::Redstone, language, design: Design::Redstone }
     }
 
     #[test]
@@ -1045,20 +1058,20 @@ mod tests {
         // Nichts auf dem Konto → hochladen.
         let merged = merge_ui(local, UiTimes::default(), None);
         assert!(merged.push);
-        assert_eq!(merged.data, json!({ "theme": "light", "accent": "redstone", "language": "de" }));
+        assert_eq!(merged.data, json!({ "theme": "light", "accent": "redstone", "language": "de", "design": "redstone" }));
 
         // Neuer PC (hier nie geändert) → das Konto gewinnt, nichts hochladen.
         let remote = json!({ "theme": "oled", "accent": "lapis", "language": "es" });
         let merged = merge_ui(local, UiTimes::default(), Some((&remote, Some(at(0)))));
-        assert_eq!(merged.values, UiValues { theme: Theme::Oled, accent: Accent::Lapis, language: Language::Es });
+        assert_eq!(merged.values, UiValues { theme: Theme::Oled, accent: Accent::Lapis, language: Language::Es, design: Design::Redstone });
         assert!(!merged.push);
 
         // Sprache hier nach dem Stand des Kontos geändert → die gewinnt, der Rest vom Konto.
         let times = UiTimes { language: Some(at(5)), theme: Some(at(-5)), ..Default::default() };
         let merged = merge_ui(local, times, Some((&remote, Some(at(0)))));
-        assert_eq!(merged.values, UiValues { theme: Theme::Oled, accent: Accent::Lapis, language: Language::De });
+        assert_eq!(merged.values, UiValues { theme: Theme::Oled, accent: Accent::Lapis, language: Language::De, design: Design::Redstone });
         assert!(merged.push);
-        assert_eq!(merged.data, json!({ "theme": "oled", "accent": "lapis", "language": "de" }));
+        assert_eq!(merged.data, json!({ "theme": "oled", "accent": "lapis", "language": "de", "design": "redstone" }));
 
         // Unbekannter Wert (neuere Version) bleibt auf dem Konto erhalten.
         let remote = json!({ "theme": "neon", "accent": "lapis", "language": "de" });
@@ -1066,6 +1079,28 @@ mod tests {
         assert_eq!(merged.values.theme, Theme::Light);
         assert!(!merged.push);
         assert_eq!(merged.data["theme"], "neon");
+    }
+
+    #[test]
+    fn design_syncs_like_the_other_keys() {
+        let local = values(Theme::Dark, Language::De);
+        // Konto hat Winternacht, hier nichts geändert → übernehmen.
+        let remote = json!({ "theme": "dark", "accent": "ice", "language": "de", "design": "winter" });
+        let merged = merge_ui(local, UiTimes::default(), Some((&remote, Some(at(0)))));
+        assert_eq!(merged.values.design, Design::Winter);
+        // Hier später auf Redstone gestellt → lokal gewinnt und geht aufs Konto.
+        let times = UiTimes { design: Some(at(5)), ..Default::default() };
+        let merged = merge_ui(local, times, Some((&remote, Some(at(0)))));
+        assert_eq!(merged.values.design, Design::Redstone);
+        assert_eq!(merged.data["design"], "redstone");
+        assert!(merged.push);
+        // Älteres Konto ohne Design = Redstone, kein Hochladen; unbekanntes Design bleibt erhalten.
+        let merged = merge_ui(local, UiTimes::default(), Some((&json!({ "theme": "dark", "accent": "redstone", "language": "de" }), Some(at(0)))));
+        assert!(!merged.push);
+        assert_eq!(merged.values.design, Design::Redstone);
+        let merged = merge_ui(local, UiTimes::default(), Some((&json!({ "theme": "dark", "accent": "redstone", "language": "de", "design": "summer" }), Some(at(0)))));
+        assert_eq!(merged.data["design"], "summer");
+        assert_eq!(merged.values.design, Design::Redstone);
     }
 
     #[test]
