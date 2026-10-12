@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { motion } from 'motion-v'
 import type { MobileNavItem } from '~/utils/mobileNav'
 
 // Handy: Tab-Leiste unten statt Seitenleiste. „Mehr“ öffnet ein Sheet mit den übrigen Seiten.
@@ -54,6 +55,8 @@ function isOn(item: MobileNavItem) {
       :class="{ 'tabbar-on': active === tab.to }"
       :aria-current="active === tab.to ? 'page' : undefined"
     >
+      <!-- Aktiver Tab: das Redstone-Stück an der Oberkante gleitet zum neuen Tab. -->
+      <motion.span v-if="active === tab.to" layout-id="tab-signal" class="tab-signal" :transition="NAV_SIGNAL_TRANSITION" aria-hidden="true" />
       <span class="relative">
         <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="icons[tab.icon]" /></svg>
         <span v-if="tab.to === '/instances' && games.runningCount" class="absolute -top-0.5 -right-1 size-2 animate-lamp rounded-full bg-lamp-400" />
@@ -68,6 +71,8 @@ function isOn(item: MobileNavItem) {
       <span class="max-w-full truncate">{{ t(tab.label) }}</span>
     </NuxtLink>
     <button class="tabbar-btn" :class="{ 'tabbar-on': active === 'more' || moreOpen }" :aria-expanded="moreOpen" data-testid="mobile-more" @click="moreOpen = !moreOpen">
+      <motion.span v-if="active === 'more'" layout-id="tab-signal" class="tab-signal" :transition="NAV_SIGNAL_TRANSITION" aria-hidden="true" />
+      <span v-else-if="moreOpen" class="tab-signal" aria-hidden="true" />
       <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.menu" /></svg>
       <span class="max-w-full truncate">{{ t('mobile.more') }}</span>
     </button>
@@ -99,9 +104,9 @@ function isOn(item: MobileNavItem) {
   @apply text-base-50;
 }
 /* Aktiver Tab: ein geladenes Stück Redstone an der Oberkante. */
-.tabbar-on::before {
-  content: "";
-  @apply absolute top-0 left-1/2 h-0.5 w-8 -translate-x-1/2 bg-redstone-400;
+.tab-signal {
+  @apply pointer-events-none absolute top-0 h-0.5 w-8 bg-redstone-400;
+  left: calc(50% - 1rem);
   box-shadow: 0 0 8px 1px color-mix(in srgb, var(--color-redstone-500) 70%, transparent);
 }
 .tabbar-on svg {

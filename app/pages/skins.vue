@@ -938,7 +938,7 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
               <div v-if="loading" class="skin-grid">
                 <div v-for="i in 5" :key="i" class="skeleton aspect-[3/4] rounded-xl" />
               </div>
-              <ul v-else class="skin-grid" data-testid="skin-library">
+              <ul v-else v-stagger class="skin-grid" data-testid="skin-library">
                 <!-- Hinzufügen: Klick = Dateien wählen, Ziehen ins Fenster geht immer -->
                 <li>
                   <button
@@ -1011,7 +1011,7 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
                 <div v-for="i in 6" :key="i" class="skeleton aspect-[3/4] rounded-xl" />
               </div>
               <template v-else>
-                <ul class="skin-grid" data-testid="skin-defaults">
+                <ul v-stagger class="skin-grid" data-testid="skin-defaults">
                   <!-- Zurück zum Standard des Kontos (Mojang wählt selbst) -->
                   <li v-if="profile">
                     <SkinCard
@@ -1077,10 +1077,10 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
           <div v-show="tab === 'capes'" id="skins-panel-capes" role="tabpanel" aria-labelledby="skins-tab-capes">
             <section v-if="profile">
               <h2 class="section-title mb-2">{{ t('skins.mojangCapes') }}</h2>
-              <ul v-if="profile.capes.length" class="grid grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] gap-3" data-testid="mojang-capes">
+              <ul v-if="profile.capes.length" v-stagger class="grid grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] gap-3" data-testid="mojang-capes">
                 <li>
                   <button
-                    class="card card-hover flex h-full w-full flex-col items-center gap-2 p-3"
+                    class="card card-hover card-lift flex h-full w-full flex-col items-center gap-2 p-3"
                     :class="{ 'border-redstone-600/60 bg-redstone-900/20': draft.cape === null }"
                     :aria-pressed="draft.cape === null"
                     @click="selectCape(null)"
@@ -1091,7 +1091,7 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
                 </li>
                 <li v-for="cape in profile.capes" :key="cape.id" :data-cape="cape.id">
                   <button
-                    class="card card-hover flex h-full w-full flex-col items-center gap-2 p-3"
+                    class="card card-hover card-lift flex h-full w-full flex-col items-center gap-2 p-3"
                     :class="{ 'border-redstone-600/60 bg-redstone-900/20': draft.cape === cape.id }"
                     :aria-pressed="draft.cape === cape.id"
                     @click="selectCape(cape)"

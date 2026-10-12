@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { AnimatePresence, motion } from 'motion-v'
 import type { SocialToast } from '~/utils/socialToasts'
 import { cornerClasses } from '~/utils/socialToasts'
 
@@ -13,6 +14,10 @@ watch(
   (social) => toasts.setPrefs(social ?? null),
   { immediate: true, deep: true },
 )
+
+// Herein von der eigenen Ecke (Handy: von oben); die übrigen rücken weich nach.
+const fromLeft = computed(() => !mobileUi.value && toasts.prefs.corner.endsWith('left'))
+const fx = computed(() => toastMotion(mobileUi.value ? 'top' : fromLeft.value ? 'left' : 'right'))
 
 const replying = ref<number | null>(null)
 const replyText = ref('')
@@ -72,10 +77,15 @@ function cancelReply(toast: SocialToast) {
 <template>
   <!-- Handy: immer oben unter der Kopfzeile, über die ganze Breite (die Ecke gilt nur am Desktop). -->
   <div class="pointer-events-none fixed z-[65] flex w-80 flex-col gap-2 mobile:top-[calc(var(--safe-top)+3.25rem)] mobile:right-2 mobile:bottom-auto mobile:left-2 mobile:w-auto mobile:flex-col mobile:items-stretch" :class="cornerClasses(toasts.prefs.corner)" aria-live="polite" data-testid="social-toasts">
-    <TransitionGroup name="social-toast">
-      <div
+    <AnimatePresence mode="popLayout" :anchor-x="fromLeft ? 'left' : 'right'">
+      <motion.div
         v-for="toast in toasts.items"
         :key="toast.id"
+        layout="position"
+        :initial="fx.initial"
+        :animate="fx.animate"
+        :exit="fx.exit"
+        :transition="fx.transition"
         class="social-toast pointer-events-auto w-80 overflow-hidden rounded-xl mobile:w-auto"
         role="status"
         @mouseenter="toasts.hold(toast.id, true)"
@@ -131,8 +141,8 @@ function cancelReply(toast: SocialToast) {
             </button>
           </template>
         </div>
-      </div>
-    </TransitionGroup>
+      </motion.div>
+    </AnimatePresence>
   </div>
 </template>
 
@@ -145,16 +155,5 @@ function cancelReply(toast: SocialToast) {
     inset 0 1px 0 rgb(255 255 255 / 0.03),
     inset 3px 0 0 var(--color-redstone-500);
   backdrop-filter: blur(6px);
-}
-.social-toast-enter-active,
-.social-toast-leave-active {
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
-}
-.social-toast-enter-from,
-.social-toast-leave-to {
-  opacity: 0;
-  transform: translateX(12px);
 }
 </style>

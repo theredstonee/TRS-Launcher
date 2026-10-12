@@ -23,6 +23,7 @@
     "@tauri-apps/plugin-updater": "^2.12.0",
     "dompurify": "^3.4.16",
     "marked": "^18.0.13",
+    "motion-v": "2.6.0",
     "nuxt": "^4.5.2",
     "pinia": "^4.0.3",
     "skinview3d": "3.4.2",

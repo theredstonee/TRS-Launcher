@@ -599,7 +599,7 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
           <li v-for="i in 6" :key="i" class="skeleton h-[124px] rounded-xl" />
         </ul>
 
-        <ul v-else class="flex flex-col gap-2.5 transition-opacity" :class="{ 'opacity-60': loading }">
+        <ul v-else v-stagger="visibleHits[0]?.projectId" class="flex flex-col gap-2.5 transition-opacity" :class="{ 'opacity-60': loading }">
           <li v-for="hit in visibleHits" :key="hit.projectId" class="card card-hover group flex gap-4 p-4 mobile:flex-col mobile:gap-3 mobile:p-3">
             <NuxtLink :to="detailLink(hit)" class="flex min-w-0 flex-1 gap-4 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-redstone-500 mobile:gap-3">
               <ModIcon :src="hit.iconUrl" :name="hit.title" :size="mobile ? 56 : 80" />

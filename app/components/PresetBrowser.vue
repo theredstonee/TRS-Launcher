@@ -299,7 +299,7 @@ function resetFilters() {
 
     <p v-if="error" role="alert" class="card mb-3 border-redstone-600/50 px-4 py-2.5 text-sm text-redstone-300">{{ error }}</p>
 
-    <ul class="grid gap-3" :class="full ? 'grid-cols-[repeat(auto-fill,minmax(340px,1fr))]' : 'grid-cols-[repeat(auto-fill,minmax(300px,1fr))]'" :aria-busy="loading">
+    <ul class="grid gap-3" :class="full ? 'grid-cols-[repeat(auto-fill,minmax(340px,1fr))]' : 'grid-cols-[repeat(auto-fill,minmax(300px,1fr))]'" :aria-busy="loading" v-stagger="hits[0]?.projectId">
       <li
         v-for="hit in hits"
         :key="hit.projectId"

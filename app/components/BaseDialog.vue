@@ -13,15 +13,19 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 useOverlay(() => emit('close'))
 const swipe = useSheetSwipe(() => emit('close'))
 const mobile = mobileUi
+// Auftritt/Abtritt: Desktop leicht heranzoomen, Handy als Sheet von unten.
+const backdrop = useTemplateRef<HTMLElement>('backdrop')
+useOverlayMotion(backdrop, () => (mobile.value ? 'sheet' : 'dialog'))
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6 mobile:items-end mobile:p-0 mobile:pt-[calc(var(--safe-top)+1.5rem)]" data-dialog-over-settings @mousedown.self="emit('close')">
+  <div ref="backdrop" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6 mobile:items-end mobile:p-0 mobile:pt-[calc(var(--safe-top)+1.5rem)]" data-dialog-over-settings @mousedown.self="emit('close')">
     <section
       role="dialog"
       aria-modal="true"
       :aria-label="title"
-      class="card w-full bg-base-850 shadow-2xl mobile:flex mobile:max-h-full mobile:max-w-none mobile:flex-col mobile:rounded-b-none mobile:rounded-t-2xl mobile:animate-sheet mobile:transition-transform"
+      data-motion-panel
+      class="card w-full bg-base-850 shadow-2xl mobile:flex mobile:max-h-full mobile:max-w-none mobile:flex-col mobile:rounded-b-none mobile:rounded-t-2xl mobile:transition-transform"
       :class="huge ? 'flex max-h-full max-w-5xl flex-col' : wide ? 'max-w-2xl' : 'max-w-md'"
       :style="swipe.style.value"
     >

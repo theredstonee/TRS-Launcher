@@ -10,7 +10,7 @@ const emit = defineEmits<{ close: []; pick: [template: PresetTemplateId | null] 
     <p class="mb-3 text-sm text-base-400">{{ t('presets.templates.intro') }}</p>
     <ul class="grid gap-2 sm:grid-cols-2">
       <li>
-        <button type="button" class="card card-hover flex h-full w-full items-start gap-3 p-3 text-left" data-testid="preset-template-empty" @click="emit('pick', null)">
+        <button type="button" class="card card-hover card-lift flex h-full w-full items-start gap-3 p-3 text-left" data-testid="preset-template-empty" @click="emit('pick', null)">
           <span class="grid size-11 shrink-0 place-items-center rounded-lg border border-dashed border-base-600 text-base-400">
             <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.2"><path :d="icons.plus" /></svg>
           </span>
@@ -21,7 +21,7 @@ const emit = defineEmits<{ close: []; pick: [template: PresetTemplateId | null] 
         </button>
       </li>
       <li v-for="id in presetTemplateIds" :key="id">
-        <button type="button" class="card card-hover flex h-full w-full items-start gap-3 p-3 text-left" :data-testid="`preset-template-${id}`" @click="emit('pick', id)">
+        <button type="button" class="card card-hover card-lift flex h-full w-full items-start gap-3 p-3 text-left" :data-testid="`preset-template-${id}`" @click="emit('pick', id)">
           <PresetBadge :icon="presetTemplates[id].icon" :color="presetTemplates[id].color" :size="44" />
           <span class="min-w-0 flex-1">
             <span class="block font-medium">{{ t(`presets.templates.${id}.name`) }}</span>

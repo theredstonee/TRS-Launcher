@@ -213,6 +213,11 @@ const rows = computed<Row[]>(() => {
   }
   return out
 })
+// Gruppen zuordnen, Sortieren, Suchen, Auf-/Zuklappen: Zeilen gleiten an ihren Platz
+// (nur sichtbare; sehr lange Listen bleiben ruhig, siehe useFlip).
+const rowList = useTemplateRef<HTMLElement>('rowList')
+const rowKeys = computed(() => rows.value.map((r) => r.key).join('|'))
+useFlip(rowList, rowKeys, { enter: 'fade', clip: () => rowList.value?.parentElement })
 const originCounts = computed(() => {
   const pack = items.value.filter(isFromPack).length
   return { pack, manual: items.value.length - pack }
@@ -630,7 +635,7 @@ const pendingUpdates = computed(() => updates.value ?? [])
         </template>
       </div>
 
-      <ul class="divide-y divide-base-800/70">
+      <ul ref="rowList" class="divide-y divide-base-800/70">
         <template v-for="row in rows" :key="row.key">
           <!-- Gruppen-Kopf: klappen, ganze Gruppe schalten, Menü; Ziel beim Ziehen -->
           <li

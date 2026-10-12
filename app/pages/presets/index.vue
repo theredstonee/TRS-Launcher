@@ -24,6 +24,9 @@ onMounted(async () => {
 
 // Nvidium ohne passende Grafikkarte gar nicht erst anbieten.
 const list = computed(() => presets.items.filter((p) => p.available))
+// Neu, gelöscht, umsortiert: die übrigen Presets rücken weich nach.
+const listEl = useTemplateRef<HTMLElement>('listEl')
+useFlip(listEl, () => list.value.map((p) => p.id).join('|'), { enter: 'fade' })
 
 function toggleExpanded(id: string) {
   const next = new Set(expanded.value)
@@ -120,7 +123,7 @@ const isLast = (p: Preset) => list.value.at(-1)?.id === p.id
       <div v-for="i in 4" :key="i" class="skeleton h-[74px]" />
     </div>
 
-    <ul v-else class="space-y-2">
+    <ul v-else ref="listEl" v-stagger class="space-y-2">
       <li v-for="p in list" :key="p.id" class="card card-hover overflow-hidden" :style="{ boxShadow: `inset 3px 0 0 ${presetColor(p.color)}` }">
         <div class="flex items-center gap-3 px-4 py-3 mobile:px-3">
           <!-- Symbol + Farbe des Presets, darunter die ersten Projekte -->

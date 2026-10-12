@@ -74,6 +74,15 @@ const showBedrock = computed(() => {
 })
 const grouped = computed(() => groupInstances(visible.value, prefs.groupBy, versionOrder.value))
 
+// Filtern, Sortieren, Gruppieren, Auf-/Zuklappen: Karten gleiten an ihren neuen Platz.
+const gridArea = useTemplateRef<HTMLElement>('gridArea')
+const layoutKey = computed(
+  () =>
+    `${ui.value?.compactLibrary ? 'c' : 'n'}|` +
+    grouped.value.map((g) => (collapsed.value.has(g.key) ? `${g.key}:-` : `${g.key}:${g.items.map((i) => i.id).join(',')}`)).join('|'),
+)
+useFlip(gridArea, layoutKey, { selector: '[data-flip]', enter: 'pop' })
+
 async function forgetUnavailable(id: string) {
   try {
     await instances.forget(id)
@@ -214,7 +223,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeFilter))
       <div v-for="i in 5" :key="i" class="skeleton h-44 rounded-xl" />
     </div>
 
-    <template v-else-if="visible.length">
+    <div v-else-if="visible.length" ref="gridArea" v-stagger data-stagger-items="[data-flip]">
       <section v-for="g in grouped" :key="g.key" class="mb-6">
         <button v-if="prefs.groupBy !== 'none'" class="mb-3 flex items-center gap-2 text-sm font-semibold text-base-50 mobile:mb-1 mobile:min-h-11" :aria-expanded="!collapsed.has(g.key)" @click="toggleCollapsed(g.key)">
           <svg viewBox="0 0 24 24" class="size-4 text-base-400 transition-transform" :class="{ '-rotate-90': collapsed.has(g.key) }" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6" /></svg>
@@ -236,10 +245,11 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeFilter))
             @delete="toDelete = $event"
             @move="move(i, $event)"
             @new-group="newGroupFor = { preselect: $event.id }"
+            data-flip
           />
         </div>
       </section>
-    </template>
+    </div>
     <RedstoneEmpty
       v-else-if="instances.items.length"
       compact

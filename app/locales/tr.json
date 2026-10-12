@@ -2353,11 +2353,11 @@
       "animatedBackgroundTitle": "Animasyonlu arka plan",
       "animatedBackgroundDescription": "Her sayfanın arkasında sakin bir redstone devresi. Kapalıyken yalnızca derin kayrak deseni gösterilir.",
       "motionTitle": "Animasyonlar",
-      "motionDescription": "Redstone arka planı, akan ışıklar ve geçişler. “Windows/sisteme göre”, Windows’un veya masaüstünün animasyon ayarını izler; bu ayar optimize edilmiş veya uzak bilgisayarlarda genellikle kapalıdır.",
+      "motionDescription": "Redstone arka planı, akan ışıklar, sayfa ve pencere geçişleri ve yerine kayan listeler. “Animasyonları azalt” hepsini kapatır; “Windows/sisteme göre”, Windows’un veya masaüstünün animasyon ayarını izler; bu ayar optimize edilmiş veya uzak bilgisayarlarda genellikle kapalıdır.",
       "motionModes": {
         "full": "Her zaman açık",
         "system": "Windows/sisteme göre",
-        "reduced": "Azaltılmış"
+        "reduced": "Animasyonları azalt"
       }
     },
     "features": {

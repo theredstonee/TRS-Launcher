@@ -2353,11 +2353,11 @@
       "animatedBackgroundTitle": "Fondo animado",
       "animatedBackgroundDescription": "Un circuito de redstone tranquilo detrás de todas las páginas. Desactivado, solo se ve el patrón de pizarra profunda.",
       "motionTitle": "Animaciones",
-      "motionDescription": "Fondo de redstone, luces en movimiento y transiciones. «Como Windows/sistema» sigue el ajuste de animaciones de Windows o del escritorio, que suele estar desactivado en equipos optimizados o remotos.",
+      "motionDescription": "Fondo de redstone, luces en movimiento, transiciones de páginas y diálogos, y listas que se deslizan a su sitio. «Reducir animaciones» lo desactiva todo; «Como Windows/sistema» sigue el ajuste de animaciones de Windows o del escritorio, que suele estar desactivado en equipos optimizados o remotos.",
       "motionModes": {
         "full": "Siempre activadas",
         "system": "Como Windows/sistema",
-        "reduced": "Reducidas"
+        "reduced": "Reducir animaciones"
       }
     },
     "features": {

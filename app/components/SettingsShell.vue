@@ -35,6 +35,10 @@ function revealActive() {
 watch(active, () => {
   content.value?.scrollTo({ top: 0 })
   void nextTick(revealActive)
+  // Neuer Abschnitt: Inhalt blendet kurz ein (nur transform/opacity).
+  void nextTick(() => {
+    if (content.value && motionAllowed()) void motionPlay(content.value, { opacity: [0, 1], transform: ['translateY(4px)', 'translateY(0px)'] }, { duration: MOTION_DURATION.fast })
+  })
 })
 onMounted(() => void nextTick(revealActive))
 
@@ -46,15 +50,19 @@ onMounted(() => window.addEventListener('keydown', onKey))
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 // Am Handy: Vollbild, die Abschnitte als wischbare Leiste oben; Zurück-Taste schließt.
 useOverlay(() => emit('close'))
+// Auftritt/Abtritt wie bei Dialogen (am Handy füllt die Ansicht den Bildschirm).
+const backdrop = useTemplateRef<HTMLElement>('backdrop')
+useOverlayMotion(backdrop, () => 'dialog')
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6 backdrop-blur-[2px] mobile:p-0" @mousedown.self="emit('close')">
+  <div ref="backdrop" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6 backdrop-blur-[2px] mobile:p-0" @mousedown.self="emit('close')">
     <section
       role="dialog"
       aria-modal="true"
       :aria-label="title"
-      class="flex h-[min(720px,90vh)] w-[min(1000px,94vw)] animate-pop flex-col overflow-hidden rounded-2xl border border-base-800 bg-base-900 shadow-2xl shadow-black/50 mobile:h-full mobile:w-full mobile:rounded-none mobile:border-0 mobile:pt-[var(--safe-top)]"
+      data-motion-panel
+      class="flex h-[min(720px,90vh)] w-[min(1000px,94vw)] flex-col overflow-hidden rounded-2xl border border-base-800 bg-base-900 shadow-2xl shadow-black/50 mobile:h-full mobile:w-full mobile:rounded-none mobile:border-0 mobile:pt-[var(--safe-top)]"
     >
       <header class="flex items-center gap-3 border-b border-base-800 px-6 py-4 mobile:px-4 mobile:py-2.5">
         <slot name="title-icon" />

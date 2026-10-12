@@ -6,16 +6,19 @@ const emit = defineEmits<{ close: [] }>()
 
 useOverlay(() => emit('close'))
 const swipe = useSheetSwipe(() => emit('close'))
+const backdrop = useTemplateRef<HTMLElement>('backdrop')
+useOverlayMotion(backdrop, () => 'sheet')
 </script>
 
 <template>
   <Teleport to="body">
-    <div class="fixed inset-0 z-50 flex items-end bg-black/60 pt-[calc(var(--safe-top)+1.5rem)]" @mousedown.self="emit('close')">
+    <div ref="backdrop" class="fixed inset-0 z-50 flex items-end bg-black/60 pt-[calc(var(--safe-top)+1.5rem)]" @mousedown.self="emit('close')">
       <section
         role="dialog"
         aria-modal="true"
         :aria-label="title || undefined"
-        class="flex max-h-full w-full animate-sheet flex-col rounded-t-2xl border border-b-0 border-base-800 bg-base-850 shadow-2xl transition-transform"
+        data-motion-panel
+        class="flex max-h-full w-full flex-col rounded-t-2xl border border-b-0 border-base-800 bg-base-850 shadow-2xl transition-transform"
         :class="{ 'h-full': full }"
         :style="swipe.style.value"
       >

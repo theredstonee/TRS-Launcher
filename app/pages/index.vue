@@ -209,7 +209,7 @@ function play(instance: Instance) {
           </div>
         </div>
 
-        <ul ref="strip" class="strip mobile:-mx-4 mobile:snap-x mobile:snap-mandatory mobile:overflow-x-auto mobile:px-4 mobile:pb-1 mobile-scroll-x">
+        <ul ref="strip" v-stagger class="strip mobile:-mx-4 mobile:snap-x mobile:snap-mandatory mobile:overflow-x-auto mobile:px-4 mobile:pb-1 mobile-scroll-x">
           <li v-for="i in shownQuick" :key="i.id" class="strip-card">
             <article class="tile group card relative h-full overflow-hidden" :class="{ 'tile-live': games.state(i.id).phase !== 'idle' }">
               <NuxtLink :to="`/instances/${i.id}`" class="block outline-none" :aria-label="t('nav.openNamed', { name: i.name })">
@@ -300,7 +300,7 @@ function play(instance: Instance) {
           <div v-if="!ready" class="servers">
             <div v-for="i in 2" :key="i" class="skeleton h-[74px] rounded-xl" />
           </div>
-          <div v-else class="servers">
+          <div v-else v-stagger class="servers">
             <ServerCard
               v-for="s in servers.items.slice(0, 4)"
               :key="s.id"

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { motion } from 'motion-v'
 import type { IconName } from '~/utils/icons'
 import type { MessageKey } from '~/utils/i18n'
 
@@ -112,6 +113,8 @@ function play(id: string) {
       :aria-label="t(item.label)"
       :aria-current="isActive(item.to) ? 'page' : undefined"
     >
+      <!-- Aktiver Bereich: das Redstone-Stück gleitet beim Wechsel zum neuen Eintrag. -->
+      <motion.span v-if="isActive(item.to)" layout-id="rail-signal" class="rail-signal" :transition="NAV_SIGNAL_TRANSITION" aria-hidden="true" />
       <svg viewBox="0 0 24 24" class="size-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path :d="icons[item.icon]" />
       </svg>
@@ -201,6 +204,7 @@ function play(id: string) {
     </button>
 
     <button class="rail group" :class="[expanded ? 'rail-wide' : '', { 'rail-on': settings.dialog !== null }]" :aria-label="t('nav.settings')" @click="settings.open()">
+      <span v-if="settings.dialog !== null" class="rail-signal" aria-hidden="true" />
       <svg viewBox="0 0 24 24" class="size-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="icons.gear" /></svg>
       <span v-if="expanded" class="truncate text-sm">{{ t('nav.settings') }}</span>
       <span v-else class="tip">{{ t('nav.settings') }}</span>
@@ -213,6 +217,7 @@ function play(id: string) {
       :class="[expanded ? 'rail-wide' : '', { 'rail-on': isActive('/accounts') }]"
       :aria-label="accounts.active ? t('nav.accountNamed', { name: accounts.active.name }) : t('nav.signIn')"
     >
+      <motion.span v-if="isActive('/accounts')" layout-id="rail-signal" class="rail-signal" :transition="NAV_SIGNAL_TRANSITION" aria-hidden="true" />
       <SkinHead :skin-url="accounts.active?.skinUrl ?? null" :name="accounts.active?.name ?? '?'" :size="26" class="shrink-0" />
       <span v-if="expanded" class="min-w-0 flex-1 truncate text-sm">{{ accounts.active?.name ?? t('nav.signIn') }}</span>
       <span v-else class="tip">{{ accounts.active?.name ?? t('nav.signIn') }}</span>
@@ -250,9 +255,9 @@ function play(id: string) {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-redstone-500) 28%, transparent);
 }
 /* Aktiver Bereich: ein geladenes Stück Redstone am linken Rand, das leicht glüht. */
-.rail-on::before {
-  content: "";
-  @apply absolute top-1/2 -left-2 h-6 w-1 -translate-y-1/2 bg-redstone-400;
+.rail-signal {
+  @apply pointer-events-none absolute -left-2 h-6 w-1 bg-redstone-400;
+  top: calc(50% - 0.75rem);
   box-shadow: 0 0 8px 1px color-mix(in srgb, var(--color-redstone-500) 70%, transparent);
 }
 .tip {

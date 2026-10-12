@@ -304,8 +304,16 @@ textarea {
   .card-hover {
     @apply relative transition-[border-color,background-color] duration-150 hover:border-base-700 hover:bg-base-850;
   }
+  /*
+   * Klickbare Karten (Knöpfe/Links) heben sich beim Drüberfahren leicht an und
+   * geben beim Drücken nach. Nur für Elemente ohne Dialoge darin – `translate`
+   * macht das Element zum Bezugsrahmen für `position: fixed`.
+   */
+  .card-lift {
+    @apply transition-[border-color,background-color,translate,scale] duration-150 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98];
+  }
   .btn-icon {
-    @apply inline-flex size-9 shrink-0 items-center justify-center rounded-md bg-base-800 text-base-200 transition-colors hover:bg-base-700 hover:text-base-50 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex size-9 shrink-0 items-center justify-center rounded-md bg-base-800 text-base-200 transition-[background-color,border-color,color,fill,stroke,scale] hover:bg-base-700 hover:text-base-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
   }
   .badge {
     @apply inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] leading-4 font-medium whitespace-nowrap;

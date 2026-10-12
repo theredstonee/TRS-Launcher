@@ -240,10 +240,10 @@ async function showPatchNotes(item: NewsItem) {
       </article>
 
       <!-- Weitere Beiträge als Blog-Karten mit Titelbild. -->
-      <ul v-if="list.length" class="blog-grid">
+      <ul v-if="list.length" v-stagger class="blog-grid">
         <li v-for="item in list" :key="item.id" class="min-w-0">
           <button
-            class="card card-hover group flex h-full w-full flex-col overflow-hidden text-left"
+            class="card card-hover card-lift group flex h-full w-full flex-col overflow-hidden text-left"
             :class="{ 'launcher-item': item.source === 'launcher', 'trs-item': item.source === 'trs' }"
             :title="actionLabel(item)"
             @click="open(item)"

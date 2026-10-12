@@ -49,6 +49,8 @@ function close() {
 }
 // Handy: Vollbild mit Schließen-Knopf statt „Esc“; die Zurück-Taste schließt.
 const mobile = mobileUi
+const backdrop = useTemplateRef<HTMLElement>('backdrop')
+useOverlayMotion(backdrop, () => 'dialog')
 useOverlay(close)
 const settingsSections = useAppSettingsSections()
 
@@ -359,9 +361,10 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="fixed inset-0 z-[70] flex justify-center bg-black/60 p-6 pt-[12vh] backdrop-blur-[2px] mobile:p-0" @mousedown.self="close">
+  <div ref="backdrop" class="fixed inset-0 z-[70] flex justify-center bg-black/60 p-6 pt-[12vh] backdrop-blur-[2px] mobile:p-0" @mousedown.self="close">
     <div
-      class="flex max-h-[70vh] w-full max-w-2xl animate-pop flex-col overflow-hidden rounded-2xl border border-base-700 bg-base-850 shadow-2xl shadow-black/60 mobile:max-h-none mobile:max-w-none mobile:rounded-none mobile:border-0 mobile:pt-[var(--safe-top)] mobile:pb-[var(--safe-bottom)]"
+      data-motion-panel
+      class="flex max-h-[70vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-base-700 bg-base-850 shadow-2xl shadow-black/60 mobile:max-h-none mobile:max-w-none mobile:rounded-none mobile:border-0 mobile:pt-[var(--safe-top)] mobile:pb-[var(--safe-bottom)]"
       role="dialog"
       aria-modal="true"
       :aria-label="t('palette.dialogLabel')"

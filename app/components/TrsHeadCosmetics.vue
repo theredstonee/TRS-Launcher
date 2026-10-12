@@ -185,10 +185,10 @@ const howText = computed(() => {
         <div v-for="i in 6" :key="i" class="skeleton aspect-[4/5]" />
       </div>
       <template v-else-if="items">
-        <ul class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3" :data-testid="companion ? 'trs-companion-list' : 'trs-head-list'">
+        <ul v-stagger class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3" :data-testid="companion ? 'trs-companion-list' : 'trs-head-list'">
           <li v-for="item in listed" :key="item.id">
             <button
-              class="card card-hover group flex h-full w-full flex-col items-center gap-2 p-2 pb-3"
+              class="card card-hover card-lift group flex h-full w-full flex-col items-center gap-2 p-2 pb-3"
               :class="{ 'border-redstone-600/60 bg-redstone-900/20': previewId === item.id }"
               :aria-pressed="previewId === item.id"
               :title="item.owned ? t('headCosmetics.tryOn', { name: item.name }) : t('headCosmetics.tryOnLocked', { name: item.name })"

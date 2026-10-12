@@ -260,10 +260,10 @@ function lockClass(cape: TrsCape) {
             <option v-for="s in capeSorts" :key="s" :value="s">{{ t(`capes.sort.${s}`) }}</option>
           </select>
         </div>
-        <ul class="grid grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] gap-3" data-testid="trs-capes">
+        <ul v-stagger class="grid grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] gap-3" data-testid="trs-capes">
           <li v-for="cape in shown" :key="cape.id">
             <button
-              class="card card-hover flex h-full w-full flex-col items-center gap-2 p-3"
+              class="card card-hover card-lift flex h-full w-full flex-col items-center gap-2 p-3"
               :class="{
                 'border-redstone-600/60 bg-redstone-900/20': previewId === cape.id,
                 'opacity-60': !cape.owned && cape.kind !== 'upload',

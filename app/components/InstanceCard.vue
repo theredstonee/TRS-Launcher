@@ -50,7 +50,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
 
 <template>
   <article
-    class="card group relative flex flex-col transition-[border-color,background-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-base-700 hover:bg-base-850"
+    class="card group relative flex flex-col transition-[border-color,background-color,box-shadow,translate] hover:-translate-y-0.5 active:translate-y-0 hover:border-base-700 hover:bg-base-850"
     :class="{ 'border-lamp-400/50 shadow-[0_0_26px_-8px_var(--color-lamp-400)]': game.phase === 'running' }"
     v-on="longPress"
   >

@@ -334,7 +334,7 @@ async function confirmDelete() {
     <div v-else class="min-h-0 flex-1 overflow-y-auto pr-1 mobile:overflow-visible mobile:pr-0">
       <section v-for="group in groups" :key="group.day" class="mb-6">
         <h2 class="mb-2 text-xs font-medium text-base-400">{{ group.day }} · {{ group.items.length }}</h2>
-        <ul class="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-3 mobile:grid-cols-2 mobile:gap-2">
+        <ul v-stagger class="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-3 mobile:grid-cols-2 mobile:gap-2">
           <li
             v-for="shot in group.items"
             :key="key(shot)"

@@ -28,6 +28,16 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Smoother, more polished interface.** Dialogs and settings gently zoom in and fade out (on phones they slide up from the bottom), cards and lists glide in one after another, instances and mods slide to their new place when you filter, sort or move them into groups, toasts slide in and the rest move up smoothly, and the marker in the sidebar and the tab bar glides to the new page. Cards lift slightly under the mouse and buttons give way when pressed. Everything is short and quick, and nothing keeps moving while you play.
+- **New option "Reduce animations".** In Settings → Appearance → Animations you can now pick "Reduce animations" to turn all of these effects off (pages, dialogs and lists then appear instantly).
+
+### Deutsch
+- **Flüssigere, feinere Oberfläche.** Dialoge und Einstellungen zoomen sanft auf und blenden weich aus (am Handy fahren sie von unten hoch), Karten und Listen laufen nacheinander ein, Instanzen und Mods gleiten an ihren neuen Platz, wenn du filterst, sortierst oder sie in Gruppen verschiebst, Benachrichtigungen gleiten herein und die übrigen rücken weich nach, und die Markierung in der Seitenleiste und der Tab-Leiste gleitet zur neuen Seite. Karten heben sich unter der Maus leicht an, Knöpfe geben beim Drücken nach. Alles ist kurz und schnell, und während du spielst, bewegt sich nichts dauerhaft.
+- **Neue Option „Animationen reduzieren“.** Unter Einstellungen → Darstellung → Animationen kannst du jetzt „Animationen reduzieren“ wählen und damit alle diese Effekte abschalten (Seiten, Dialoge und Listen erscheinen dann sofort).
+
 ## 0.18.2 – 2026-10-12 – iPhone Fix | iPhone-Fix
 <!-- banner: accent=#ffb02e motif=/news/0.18.0/banner.png -->
 <!-- shots:

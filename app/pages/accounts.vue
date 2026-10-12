@@ -109,7 +109,7 @@ async function confirmRemove() {
       <p v-if="notApproved" class="mt-1 text-xs text-base-400">{{ t('accounts.login.notApprovedHint') }}</p>
     </div>
 
-    <ul v-if="accounts.items.length" class="space-y-2">
+    <ul v-if="accounts.items.length" v-stagger class="space-y-2">
       <li v-for="a in accounts.items" :key="a.id" class="card flex items-center gap-3 p-3" :class="{ 'border-redstone-600/60': a.active }">
         <SkinHead :skin-url="a.skinUrl" :name="a.name" :size="40" />
         <div class="min-w-0 flex-1">

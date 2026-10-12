@@ -241,7 +241,7 @@ function reveal(clip: Clip) {
     <div v-else class="min-h-0 flex-1 overflow-y-auto pr-1">
       <section v-for="group in groups" :key="group.day ?? 'all'" class="mb-6">
         <h2 v-if="group.day" class="mb-2 text-xs font-medium text-base-400">{{ group.day }} · {{ group.items.length }}</h2>
-        <ul class="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-3">
+        <ul v-stagger class="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-3">
           <li
             v-for="clip in group.items"
             :key="clipKey(clip)"

@@ -2353,11 +2353,11 @@
       "animatedBackgroundTitle": "Arrière-plan animé",
       "animatedBackgroundDescription": "Un circuit de redstone paisible derrière chaque page. Désactivé, seul le motif d'ardoise des abîmes s'affiche.",
       "motionTitle": "Animations",
-      "motionDescription": "Arrière-plan de redstone, lumières défilantes et transitions. « Comme Windows/système » suit le réglage des animations de Windows ou du bureau, souvent désactivé sur les PC optimisés ou à distance.",
+      "motionDescription": "Arrière-plan de redstone, lumières défilantes, transitions des pages et des fenêtres, et listes qui glissent à leur place. « Réduire les animations » désactive tout ; « Comme Windows/système » suit le réglage des animations de Windows ou du bureau, souvent désactivé sur les PC optimisés ou à distance.",
       "motionModes": {
         "full": "Toujours activées",
         "system": "Comme Windows/système",
-        "reduced": "Réduites"
+        "reduced": "Réduire les animations"
       }
     },
     "features": {
