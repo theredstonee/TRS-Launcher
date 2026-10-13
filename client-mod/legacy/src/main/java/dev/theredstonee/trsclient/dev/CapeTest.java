@@ -115,7 +115,7 @@ public final class CapeTest {
 				actions.shot("cape-sneak");
 				hold(mc.gameSettings.keyBindSneak, false);
 				if (ELYTRA) {
-					// Elytra mit TRS-Umhang: Flügel aus dem Umhang-Motiv (ElytraArt), je Animationsbild.
+					// Elytra mit TRS-Umhang: immer die Vanilla-Elytra (der TRS-Umhang wird nie als Elytra-Textur genutzt).
 					actions.command("replaceitem entity @p slot.armor.chest minecraft:elytra");
 					wait = 20;
 				} else {

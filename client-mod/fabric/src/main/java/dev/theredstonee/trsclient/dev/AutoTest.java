@@ -259,7 +259,7 @@ public final class AutoTest {
 					step = 22;
 					break;
 				}
-				// -PtrsAutotestOnly=cape: nur TRS-Umhang, Elytra und Abzeichen (braucht -PtrsApi mit Umhang-Attrappe)
+				// -PtrsAutotestOnly=cape: nur TRS-Umhang, Vanilla-Elytra (trotz TRS-Umhang) und Abzeichen (braucht -PtrsApi mit Umhang-Attrappe)
 				if ("cape".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 21;
 					break;

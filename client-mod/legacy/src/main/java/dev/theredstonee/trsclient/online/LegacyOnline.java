@@ -50,7 +50,8 @@ import java.util.function.Consumer;
 /**
  * TRS-Online-Funktionen für Forge 1.8.9–1.12.2 (ohne Mixins): Anmeldung/Lookup/Presence laufen wie überall in
  * {@code core.online}. Der TRS-Umhang wird in die Textur-Einträge des Tablisten-Eintrags ({@link NetworkPlayerInfo})
- * geschrieben (Umhang und – ab 1.9 – Elytra nehmen ihn dann von selbst), die Abzeichen kommen über den
+ * geschrieben (der Umhang nimmt ihn dann von selbst; ab 1.9 bekommt der Elytra-Eintrag die Vanilla-Elytra, sonst
+ * nähme die Elytra den TRS-Umhang), die Abzeichen kommen über den
  * Anzeigenamen der Tabliste und {@code PlayerEvent.NameFormat}, und die Umhang-Physik ersetzt den Vanilla-
  * {@link LayerCape} durch {@link ClothCapeLayer}. Private Felder werden über ihren Typ gefunden (keine Namen –
  * die sind im fertigen Spiel SRG-Namen).
@@ -166,6 +167,12 @@ public final class LegacyOnline {
 
 	// --- TRS-Umhang: Textur in den Tablisten-Eintrag schreiben ---
 
+	/**
+	 * Vanilla-Elytra-Textur (ab 1.9): ohne Elytra-Eintrag nähme {@code LayerElytra} den Umhang – TRS-Umhänge sollen aber
+	 * nie auf der Elytra landen, also steht hier ausdrücklich die Vanilla-Elytra (Ressourcenpakete wirken weiter).
+	 */
+	private static final ResourceLocation VANILLA_ELYTRA = new ResourceLocation("minecraft", "textures/entity/elytra.png");
+
 	private static final class CapeOverride {
 		ResourceLocation ours;
 		ResourceLocation originalCape;
@@ -180,21 +187,28 @@ public final class LegacyOnline {
 		if (state != null && current != state.ours) {
 			// Vanilla hat inzwischen seinen eigenen Umhang geladen → das ist das neue Original.
 			state.originalCape = current;
-			state.originalElytra = readElytra(info);
+			state.originalElytra = originalElytra(info);
 		}
 		if (tex instanceof ResourceLocation) {
 			if (state == null) {
 				state = new CapeOverride();
 				state.originalCape = current;
-				state.originalElytra = readElytra(info);
+				state.originalElytra = originalElytra(info);
 				capes.put(info, state);
 			}
 			state.ours = (ResourceLocation) tex;
-			writeCape(info, state.ours, state.ours);
+			// Elytra: eigene Elytra-Textur des Spielers behalten, sonst Vanilla – nie den TRS-Umhang.
+			writeCape(info, state.ours, state.originalElytra != null ? state.originalElytra : VANILLA_ELYTRA);
 		} else if (state != null) {
 			writeCape(info, state.originalCape, state.originalElytra);
 			capes.remove(info);
 		}
+	}
+
+	/** Elytra-Eintrag ohne unseren eigenen Vanilla-Ersatz (der ist kein Original). */
+	private static ResourceLocation originalElytra(NetworkPlayerInfo info) throws IllegalAccessException {
+		ResourceLocation elytra = readElytra(info);
+		return elytra == VANILLA_ELYTRA ? null : elytra;
 	}
 
 	//? if >=1.9 {

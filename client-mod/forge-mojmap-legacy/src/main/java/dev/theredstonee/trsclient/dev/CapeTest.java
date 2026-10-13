@@ -110,7 +110,7 @@ public final class CapeTest {
 			case 8:
 				actions.shot("trsclient-cape-sneak");
 				hold(sneakKey(mc), false);
-				// Elytra mit TRS-Umhang: Flügel aus dem Umhang-Motiv (ElytraArt), je Animationsbild.
+				// Elytra mit TRS-Umhang: immer die Vanilla-Elytra (der TRS-Umhang wird nie als Elytra-Textur genutzt).
 				//? if >=1.17 {
 				/*actions.command("item replace entity @p armor.chest with elytra");
 				*///?} else

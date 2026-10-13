@@ -343,6 +343,25 @@ public final class OnlineHooks {
 	}
 	*///?}
 
+	/**
+	 * Vanilla-Elytra-Textur für Spieler mit TRS-Umhang: ohne eigene Elytra-Textur nimmt Vanilla sonst den Umhang als
+	 * Elytra – TRS-Umhänge sollen aber nie auf der Elytra landen (bis 1.21.1 die Textur der ElytraLayer, ab 1.21.2 die
+	 * der Equipment-Flügel; Ressourcenpakete, die sie ersetzen, wirken weiter).
+	 */
+	//? if >=1.21.11 {
+	/*public static final net.minecraft.resources.Identifier VANILLA_ELYTRA =
+			net.minecraft.resources.Identifier.fromNamespaceAndPath("minecraft", "textures/entity/equipment/wings/elytra.png");
+	*///?} elif >=1.21.2 {
+	/*public static final net.minecraft.resources.ResourceLocation VANILLA_ELYTRA =
+			net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", "textures/entity/equipment/wings/elytra.png");
+	*///?} elif >=1.21 {
+	public static final net.minecraft.resources.ResourceLocation VANILLA_ELYTRA =
+			net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", "textures/entity/elytra.png");
+	//?} else {
+	/*public static final net.minecraft.resources.ResourceLocation VANILLA_ELYTRA =
+			new net.minecraft.resources.ResourceLocation("minecraft", "textures/entity/elytra.png");
+	*///?}
+
 	/** Umhang-Bilder als dynamische Texturen ({@code trsclient:capes/<id>_<n>/<bild>}). */
 	static final class Textures implements CapeTextures.Backend<Object> {
 		@Override

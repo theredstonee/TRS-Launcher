@@ -99,7 +99,8 @@ accepted (`OnlineConfig.isApiUrl`), every other host is refused. The logic is ve
 - **Capes:** the PNG is downloaded once per URL (the API's `?v=` changes with the content) into
   `config/trsclient/capes/<id>.png` with its `.etag`; a changed URL asks with `If-None-Match`. Only URLs of the API
   host are loaded, the PNG is decoded without AWT (`PngDecoder`), split into its vertical frames (64·scale × 32·scale
-  each, scale 1–4) and every frame becomes its own texture, so cape **and elytra** use the vanilla UVs; the frame shown
+  each, scale 1–4) and every frame becomes its own texture, so the cape uses the vanilla UVs (a TRS cape is never used as elytra texture –
+  elytras always show the vanilla elytra); the frame shown
   is `floor(now / frameTimeMs) % frames` (wall clock – every player sees the same frame). A TRS cape replaces the
   Mojang/OptiFine cape only when one is set; unused textures are released after 3 minutes.
 - Networking runs in two daemon threads; the game thread only hands over work and reads results. Nothing in these
@@ -113,7 +114,8 @@ until 1.20.1, `getSkin()` → `PlayerSkin` from 1.20.2, `ClientAsset.ResourceTex
 `extractRenderState` → `nameTag` from 1.21.2). The badge is a glyph of the mod's own bitmap font `trsclient:badge`
 (a private-use character, so no resource pack can collide); before 1.16 (no fonts per text style) it is a dark red
 `■`. Forge 1.8.9–1.12.2 has no mixins: `online/LegacyOnline` writes the TRS cape into the player's tab list entry
-(cape and, from 1.9, elytra read it from there), prefixes the tab list display name and the name tag
+(the cape reads it from there; from 1.9 the elytra entry is set to the vanilla elytra texture, so the TRS
+cape never ends up on the elytra), prefixes the tab list display name and the name tag
 (`PlayerEvent.NameFormat`) and replaces the vanilla `LayerCape` of both player renderers with `ClothCapeLayer`.
 Private fields are found by type there, so the SRG-named release jars need no field names.
 

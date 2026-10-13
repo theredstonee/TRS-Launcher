@@ -9,7 +9,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * TRS-Umhang statt Mojang-/OptiFine-Umhang – nur wenn der Lookup für diesen Spieler einen TRS-Umhang
- * liefert (und seine Textur geladen ist). Die Elytra nimmt dieselbe Textur, wie bei Vanilla-Umhängen.
+ * liefert (und seine Textur geladen ist). Die Elytra bleibt dabei immer die Vanilla-Elytra: Vanilla nähme sonst den
+ * Umhang als Elytra-Textur (Rückfall, wenn keine eigene Elytra-Textur da ist) – deshalb bekommt der Spieler dann
+ * ausdrücklich die Vanilla-Elytra-Textur ({@link OnlineHooks#VANILLA_ELYTRA}). Spieler ohne TRS-Umhang bleiben unberührt.
  * Bis 1.20.1 über die Textur-Getter, ab 1.20.2 über den PlayerSkin (ab 1.21.9 mit ClientAsset-Texturen).
  * require = 0: fehlt eine Stelle, bleibt einfach der Vanilla-Umhang.
  */
@@ -35,7 +37,9 @@ public abstract class CapeTextureMixin {
 		if (skin != trsclient$skinIn || tex != trsclient$texIn) {
 			net.minecraft.core.ClientAsset.ResourceTexture asset = new net.minecraft.core.ClientAsset.ResourceTexture(
 					(net.minecraft.resources.Identifier) tex, (net.minecraft.resources.Identifier) tex);
-			trsclient$skinOut = new net.minecraft.world.entity.player.PlayerSkin(skin.body(), asset, asset, skin.model(), skin.secure());
+			net.minecraft.core.ClientAsset.Texture elytra = skin.elytra() != null ? skin.elytra()
+					: new net.minecraft.core.ClientAsset.ResourceTexture(OnlineHooks.VANILLA_ELYTRA, OnlineHooks.VANILLA_ELYTRA);
+			trsclient$skinOut = new net.minecraft.world.entity.player.PlayerSkin(skin.body(), asset, elytra, skin.model(), skin.secure());
 			trsclient$skinIn = skin;
 			trsclient$texIn = tex;
 		}
@@ -50,7 +54,9 @@ public abstract class CapeTextureMixin {
 		if (skin != trsclient$skinIn || tex != trsclient$texIn) {
 			net.minecraft.core.ClientAsset.ResourceTexture asset = new net.minecraft.core.ClientAsset.ResourceTexture(
 					(net.minecraft.resources.ResourceLocation) tex, (net.minecraft.resources.ResourceLocation) tex);
-			trsclient$skinOut = new net.minecraft.world.entity.player.PlayerSkin(skin.body(), asset, asset, skin.model(), skin.secure());
+			net.minecraft.core.ClientAsset.Texture elytra = skin.elytra() != null ? skin.elytra()
+					: new net.minecraft.core.ClientAsset.ResourceTexture(OnlineHooks.VANILLA_ELYTRA, OnlineHooks.VANILLA_ELYTRA);
+			trsclient$skinOut = new net.minecraft.world.entity.player.PlayerSkin(skin.body(), asset, elytra, skin.model(), skin.secure());
 			trsclient$skinIn = skin;
 			trsclient$texIn = tex;
 		}
@@ -64,7 +70,9 @@ public abstract class CapeTextureMixin {
 		if (tex == null || skin == null) return;
 		if (skin != trsclient$skinIn || tex != trsclient$texIn) {
 			net.minecraft.resources.ResourceLocation id = (net.minecraft.resources.ResourceLocation) tex;
-			trsclient$skinOut = new net.minecraft.client.resources.PlayerSkin(skin.texture(), skin.textureUrl(), id, id,
+			net.minecraft.resources.ResourceLocation elytra = skin.elytraTexture() != null ? skin.elytraTexture()
+					: OnlineHooks.VANILLA_ELYTRA;
+			trsclient$skinOut = new net.minecraft.client.resources.PlayerSkin(skin.texture(), skin.textureUrl(), id, elytra,
 					skin.model(), skin.secure());
 			trsclient$skinIn = skin;
 			trsclient$texIn = tex;
@@ -79,11 +87,13 @@ public abstract class CapeTextureMixin {
 		if (tex != null) cir.setReturnValue((net.minecraft.resources.ResourceLocation) tex);
 	}
 
-	@Inject(method = "getElytraTextureLocation()Lnet/minecraft/resources/ResourceLocation;", at = @At("HEAD"),
+	@Inject(method = "getElytraTextureLocation()Lnet/minecraft/resources/ResourceLocation;", at = @At("RETURN"),
 			cancellable = true, require = 0)
-	private void trsclient$trsElytra(CallbackInfoReturnable<net.minecraft.resources.ResourceLocation> cir) {
-		Object tex = OnlineHooks.capeTexture((AbstractClientPlayer) (Object) this);
-		if (tex != null) cir.setReturnValue((net.minecraft.resources.ResourceLocation) tex);
+	private void trsclient$vanillaElytra(CallbackInfoReturnable<net.minecraft.resources.ResourceLocation> cir) {
+		// Ohne eigene Elytra-Textur nähme Vanilla den (TRS-)Umhang – stattdessen die Vanilla-Elytra.
+		if (cir.getReturnValue() == null && OnlineHooks.capeTexture((AbstractClientPlayer) (Object) this) != null) {
+			cir.setReturnValue(OnlineHooks.VANILLA_ELYTRA);
+		}
 	}
 
 	@Inject(method = "isCapeLoaded()Z", at = @At("HEAD"), cancellable = true, require = 0)
@@ -92,7 +102,7 @@ public abstract class CapeTextureMixin {
 	}
 
 	@Inject(method = "isElytraLoaded()Z", at = @At("HEAD"), cancellable = true, require = 0)
-	private void trsclient$trsElytraLoaded(CallbackInfoReturnable<Boolean> cir) {
+	private void trsclient$vanillaElytraLoaded(CallbackInfoReturnable<Boolean> cir) {
 		if (OnlineHooks.capeTexture((AbstractClientPlayer) (Object) this) != null) cir.setReturnValue(true);
 	}
 	//?}

@@ -6,7 +6,8 @@ import java.io.IOException;
 
 /**
  * Ein Umhang, zerlegt in seine Einzelbilder (je {@code 64·scale × 32·scale}, ARGB). Jedes Bild wird eine
- * eigene Textur – so passen die Vanilla-UVs (Umhang wie Elytra) unverändert, egal wie viele Bilder.
+ * eigene Textur – so passen die Vanilla-UVs des Umhangs unverändert, egal wie viele Bilder. Die Elytra bleibt immer
+ * Vanilla (TRS-Umhänge werden nie als Elytra-Textur genutzt).
  *
  * <p>{@link #decode} schreibt beim Dekodieren direkt in die Einzelbilder (der ganze Streifen liegt nie am Stück im
  * Speicher) und kann dabei verkleinern ({@link #downscale}, Kastenfilter) – für das Textur-Budget von
