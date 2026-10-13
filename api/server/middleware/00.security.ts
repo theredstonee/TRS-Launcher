@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { defineEventHandler, getCookie, getHeader, getRequestHost, sendRedirect, setResponseHeader, setResponseHeaders } from 'h3'
-import { docsHome, isDocsPath, isDocsRoot, pickDocsLang } from '../../shared/docs'
+import { docsHome, isDocsRoot, legacyDocsTarget, pickDocsLang } from '../../shared/docs'
 import { MOVED_PAGES } from '../../shared/seo'
 import { useCtx, whenReady } from '../lib/context'
 import { forbidden } from '../lib/errors'
@@ -37,17 +37,17 @@ export default defineEventHandler(async (event) => {
     // Umgezogene Seiten: dauerhaft weiterleiten, Abfrage (z. B. `?lang=de`) bleibt erhalten.
     const moved = MOVED_PAGES[pathname.replace(/(?<=.)\/$/, '')]
     if (moved) return sendRedirect(event, `${moved}${event.path.slice(pathname.length)}`, 301)
-    // Dokumentation (/docs): vorhandene Dateien liefert der Static-Handler schon vor dieser Middleware aus (Header dafür:
-    // Route-Regeln aus modules/docs.ts). Hier landen nur /docs selbst (Sprachwahl) und fehlende Dateien (→ 404-Seite).
-    if (isDocsPath(pathname)) {
+    // Dokumentation: liegt auf eigener Domain (WIKI_URL, server/lib/wiki.ts). Alte Adressen /docs/<rest> → 301 auf
+    // <wiki>/<rest> (Query bleibt). /docs selbst: Sprache hier wählen – das Cookie trs_lang gibt es nur auf dieser Domain.
+    const docsTarget = legacyDocsTarget(event.node.req.originalUrl || event.node.req.url || event.path, ctx.config.wikiUrl)
+    if (docsTarget) {
       limit(`ip:${clientIp(event)}`, RULES.globalIp)
       if (isDocsRoot(pathname)) {
-        // /docs → Sprache wie auf der Website gewählt (Cookie) oder nach Accept-Language, sonst Englisch.
         setResponseHeaders(event, { 'Vary': 'Accept-Language, Cookie', 'Cache-Control': 'private, no-store' })
-        return sendRedirect(event, docsHome(pickDocsLang(getHeader(event, 'accept-language'), getCookie(event, 'trs_lang'))), 302)
+        const lang = pickDocsLang(getHeader(event, 'accept-language'), getCookie(event, 'trs_lang'))
+        return sendRedirect(event, `${ctx.config.wikiUrl}${docsHome(lang)}`, 302)
       }
-      event.context.siteUrl = ctx.config.siteUrl
-      return
+      return sendRedirect(event, docsTarget, 301)
     }
     if (!STATIC.test(event.path)) {
       limit(`ip:${clientIp(event)}`, RULES.globalIp)

@@ -1,4 +1,5 @@
 import type { PostShot } from '~/utils/changelog'
+import { docsPageUrl } from '#shared/docs'
 
 // Daten der Website aus der eigenen API (/v1/site/…); serverseitig gerendert und im Browser weiterverwendet.
 
@@ -51,11 +52,11 @@ export const REPO_URL = 'https://github.com/theredstonee/TRS-Launcher'
 export const RELEASES_URL = `${REPO_URL}/releases`
 export const DISCORD_URL = 'https://dc.theredstonee.de'
 /**
- * Dokumentation (docs-site, statisch unter /docs mit eigener App) – Startseite in der Sprache der Website. Außerhalb
- * dieser Nuxt-App: als normalen Link öffnen (`<a href>` bzw. NuxtLink mit `external`), nicht über den Router.
+ * Dokumentation (docs-site, eigene Domain https://trs-launcher.wiki) – Startseite in der Sprache der Website.
+ * Außerhalb dieser Nuxt-App: als normalen Link öffnen (`<a href>` bzw. NuxtLink mit `external`), nicht über den Router.
  */
 export function docsUrl(lang: Lang): string {
-  return `/docs/${lang}`
+  return docsPageUrl(lang)
 }
 export const IMPRINT_URL = 'https://theredstonee.de/imprint/'
 

@@ -1,9 +1,24 @@
 import { describe, expect, it } from 'vitest'
 import { messages } from '../app/utils/messages'
-import { buildDocsCsp, docsHome, docsPath, groupDocsRoutes, isDocsPath, isDocsRoot, isDocsRoute, pickDocsLang, type DocsRoute } from '../shared/docs'
-import { buildRobots, buildSitemap, COMPETITOR_PATTERN, docsSitemapEntries } from '../shared/seo'
+import {
+  buildDocsCsp,
+  docsHome,
+  docsPageUrl,
+  docsPath,
+  groupDocsRoutes,
+  isDocsPath,
+  isDocsRoot,
+  isDocsRoute,
+  legacyDocsTarget,
+  pickDocsLang,
+  WIKI_URL,
+  type DocsRoute,
+} from '../shared/docs'
+import { buildRobots, buildSitemap, COMPETITOR_PATTERN } from '../shared/seo'
+import { buildWikiRobots, buildWikiSitemap, docsSitemapEntries } from '../server/lib/wiki'
 
 const SITE = 'https://trs-launcher.theredstonee.de'
+const WIKI = 'https://trs-launcher.wiki'
 
 const ROUTES: DocsRoute[] = [
   { path: '/en', lang: 'en', key: '/', lastmod: '2026-09-29T10:00:00+02:00' },
@@ -16,19 +31,34 @@ const ROUTES: DocsRoute[] = [
 ]
 
 describe('Doku: Pfade und Sprache', () => {
-  it('Startseite und Seiten je Sprache', () => {
-    expect(docsHome('en')).toBe('/docs/en')
-    expect(docsPath('/', 'de')).toBe('/docs/de')
-    expect(docsPath('/launcher/instances', 'es')).toBe('/docs/es/launcher/instances')
+  it('Startseite und Seiten je Sprache – an der Wurzel der Doku-Domain', () => {
+    expect(WIKI_URL).toBe(WIKI)
+    expect(docsHome('en')).toBe('/en')
+    expect(docsPath('/', 'de')).toBe('/de')
+    expect(docsPath('/launcher/instances', 'es')).toBe('/es/launcher/instances')
+    expect(docsPageUrl('de')).toBe(`${WIKI}/de`)
+    expect(docsPageUrl('en', '/getting-started/android')).toBe(`${WIKI}/en/getting-started/android`)
   })
 
-  it('erkennt /docs, /docs/ und Unterpfade – aber nicht /docsx', () => {
+  it('erkennt alte Adressen /docs, /docs/ und Unterpfade – aber nicht /docsx', () => {
     expect(isDocsRoot('/docs')).toBe(true)
     expect(isDocsRoot('/docs/')).toBe(true)
     expect(isDocsRoot('/docs/en')).toBe(false)
     expect(isDocsPath('/docs/en/help')).toBe(true)
     expect(isDocsPath('/docsx')).toBe(false)
     expect(isDocsPath('/download')).toBe(false)
+  })
+
+  it('alte Adressen /docs/<rest> → Doku-Domain, Query bleibt', () => {
+    expect(legacyDocsTarget('/docs/de/getting-started')).toBe(`${WIKI}/de/getting-started`)
+    expect(legacyDocsTarget('/docs/en/help?x=1&lang=de')).toBe(`${WIKI}/en/help?x=1&lang=de`)
+    expect(legacyDocsTarget('/docs/llms.txt')).toBe(`${WIKI}/llms.txt`)
+    expect(legacyDocsTarget('/docs')).toBe(`${WIKI}/`)
+    expect(legacyDocsTarget('/docs/?a=b')).toBe(`${WIKI}/?a=b`)
+    expect(legacyDocsTarget('/docs/en', 'https://wiki.example/')).toBe('https://wiki.example/en')
+    expect(legacyDocsTarget('/docsx')).toBeNull()
+    expect(legacyDocsTarget('/download?docs=1')).toBeNull()
+    expect(legacyDocsTarget('/download?x=/docs/en')).toBeNull()
   })
 
   it('Sprache: Cookie der Website, dann Accept-Language nach Gewicht, sonst Englisch', () => {
@@ -86,35 +116,41 @@ describe('Doku: Routenliste und Sitemap', () => {
     expect(groups.get('/')!.map((r) => r.lang)).toEqual(['en', 'de', 'es'])
   })
 
-  it('Sitemap-Einträge: je Sprache eine URL, hreflang nur zu vorhandenen Sprachen, x-default Englisch', () => {
-    const entries = docsSitemapEntries(`${SITE}/`, ROUTES)
+  it('Sitemap-Einträge: je Sprache eine URL auf der Doku-Domain, hreflang nur zu vorhandenen Sprachen, x-default Englisch', () => {
+    const entries = docsSitemapEntries(`${WIKI}/`, ROUTES)
     expect(entries).toHaveLength(6)
-    const inst = entries.find((e) => e.includes(`<loc>${SITE}/docs/de/launcher/instances</loc>`))!
-    expect(inst).toContain(`hreflang="en" href="${SITE}/docs/en/launcher/instances"`)
-    expect(inst).toContain(`hreflang="de" href="${SITE}/docs/de/launcher/instances"`)
+    const inst = entries.find((e) => e.includes(`<loc>${WIKI}/de/launcher/instances</loc>`))!
+    expect(inst).toContain(`hreflang="en" href="${WIKI}/en/launcher/instances"`)
+    expect(inst).toContain(`hreflang="de" href="${WIKI}/de/launcher/instances"`)
     expect(inst).not.toContain('hreflang="es"')
-    expect(inst).toContain(`hreflang="x-default" href="${SITE}/docs/en/launcher/instances"`)
+    expect(inst).toContain(`hreflang="x-default" href="${WIKI}/en/launcher/instances"`)
     expect(inst).toContain('<lastmod>2026-09-28T12:00:00Z</lastmod>')
     const onlyDe = entries.find((e) => e.includes('/help/crash'))!
-    expect(onlyDe).toContain(`hreflang="x-default" href="${SITE}/docs/de/help/crash"`)
-    const esHome = entries.find((e) => e.includes(`<loc>${SITE}/docs/es</loc>`))!
+    expect(onlyDe).toContain(`hreflang="x-default" href="${WIKI}/de/help/crash"`)
+    const esHome = entries.find((e) => e.includes(`<loc>${WIKI}/es</loc>`))!
     expect(esHome).not.toContain('<lastmod>')
     expect(esHome).toContain('<priority>0.8</priority>')
   })
 
-  it('die Website-Sitemap enthält die Doku-Seiten', () => {
-    const xml = buildSitemap(SITE, [], '2026-09-20T08:00:00.000Z', [], [], [], ROUTES)
-    for (const r of ROUTES) expect(xml).toContain(`<loc>${SITE}/docs${r.path}</loc>`)
-    expect(xml).toContain(`<loc>${SITE}/</loc>`)
-    // ohne Doku-Build: keine Doku-Einträge
-    expect(buildSitemap(SITE, [], null)).not.toContain('/docs/')
+  it('eigene Sitemap der Doku-Domain; die Website-Sitemap führt keine Doku-Seiten mehr', () => {
+    const xml = buildWikiSitemap(WIKI, ROUTES)
+    for (const r of ROUTES) expect(xml).toContain(`<loc>${WIKI}${r.path}</loc>`)
+    expect(xml).not.toContain('theredstonee.de')
+    expect(xml).not.toContain('/docs')
+    const site = buildSitemap(SITE, [], '2026-09-20T08:00:00.000Z')
+    expect(site).toContain(`<loc>${SITE}/</loc>`)
+    expect(site).not.toContain('/docs')
+    expect(site).not.toContain('trs-launcher.wiki')
   })
 
-  it('robots.txt: Doku crawlbar, Such-Datenbank nicht', () => {
-    const lines = buildRobots(SITE).split('\n')
-    expect(lines).toContain('Disallow: /docs/__nuxt_content/')
-    expect(lines).toContain('Allow: /docs/llms.txt')
-    expect(lines.some((l) => l === 'Disallow: /docs/' || l === 'Disallow: /docs')).toBe(false)
+  it('robots.txt: Doku-Domain crawlbar (Such-Datenbank nicht), Website ohne /docs-Regeln', () => {
+    const wiki = buildWikiRobots(`${WIKI}/`).split('\n')
+    expect(wiki).toContain('Disallow: /__nuxt_content/')
+    expect(wiki).toContain('Disallow: /_i18n/')
+    expect(wiki).toContain('Allow: /llms.txt')
+    expect(wiki).toContain(`Sitemap: ${WIKI}/sitemap.xml`)
+    expect(wiki.some((l) => l === 'Disallow: /' || l.startsWith('Disallow: /_docs'))).toBe(false)
+    expect(buildRobots(SITE)).not.toContain('/docs')
   })
 })
 

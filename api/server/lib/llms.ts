@@ -6,6 +6,7 @@
 import type { Messages } from '../../app/utils/messages'
 import { LANDING_IDS, landingPath, type LandingTexts } from '../../shared/landing'
 import { AUTHOR_NAME, COMPETITOR_PATTERN, DISCORD_URL, LAUNCHER_ALT_NAMES, REPO_URL, SITE_NAME } from '../../shared/seo'
+import { docsPageUrl, WIKI_URL } from '../../shared/docs'
 
 export interface LlmsLatest {
   version: string
@@ -46,15 +47,16 @@ function latestLine(r: LlmsLatest | undefined): string | null {
   return `Latest version: ${r.version}${r.name ? ` – “${r.name}”` : ''}${r.date ? ` (released ${r.date})` : ''}.`
 }
 
-/** Abschnitt „Documentation“: die Doku unter /docs mit eigener llms.txt (docs-site, Docus). */
-function documentationSection(u: string): string[] {
+/** Abschnitt „Documentation“: die Doku auf eigener Domain mit eigener llms.txt (docs-site, Docus). */
+function documentationSection(): string[] {
+  const d = WIKI_URL
   return [
     '## Documentation',
     '',
-    `- [Documentation](${u}/docs/en): guides for installing and using TRS Launcher and the TRS Client mod, help with problems and developer notes`,
-    `- [Documentation index for LLMs](${u}/docs/llms.txt): every documentation page as a Markdown link list`,
-    `- [Full documentation text](${u}/docs/llms-full.txt): all English documentation pages in one Markdown text`,
-    `- Also in [German](${u}/docs/de) and [Spanish](${u}/docs/es)`,
+    `- [Documentation](${d}/en): guides for installing and using TRS Launcher and the TRS Client mod, help with problems and developer notes`,
+    `- [Documentation index for LLMs](${d}/llms.txt): every documentation page as a Markdown link list`,
+    `- [Full documentation text](${d}/llms-full.txt): all English documentation pages in one Markdown text`,
+    `- Also in [German](${d}/de) and [Spanish](${d}/es)`,
   ]
 }
 
@@ -84,7 +86,7 @@ export function buildLlmsTxt(s: LlmsSource): string {
     '',
     ...LANDING_IDS.map((id) => `- [${landing.pages[id].name}](${u}${landingPath(id)}): ${line(landing.pages[id].seo.description)}`),
     '',
-    ...documentationSection(u),
+    ...documentationSection(),
     '',
     '## Community',
     '',
@@ -171,8 +173,8 @@ export function buildLlmsFullTxt(s: LlmsSource): string {
   out.push(`- Windows: ${line(m.download.windowsText)} ${line(m.download.smartText)}`)
   out.push(`- Linux: ${line(m.download.linuxText)} AppImage (${line(m.download.appimageText)}), ${m.download.deb}, ${m.download.rpm}, ${m.download.aur}: yay -S trs-launcher-bin. Flatpak: ${line(m.download.flatpakSoon)}`)
   out.push(`- ${m.download.requirementsTitle}: ${m.download.requirements.map(line).join('; ')}`)
-  out.push(`- ${m.download.mobile.android}: ${line(m.download.mobile.androidText)} Guide: ${u}/docs/en/getting-started/android`)
-  out.push(`- ${m.download.mobile.ios}: ${line(m.download.mobile.iosText)} ${line(m.download.mobile.jitText)} AltStore/SideStore source: ${REPO_URL}/releases/download/mobile/altstore.json. Guide: ${u}/docs/en/getting-started/iphone-ipad`)
+  out.push(`- ${m.download.mobile.android}: ${line(m.download.mobile.androidText)} Guide: ${docsPageUrl('en', '/getting-started/android')}`)
+  out.push(`- ${m.download.mobile.ios}: ${line(m.download.mobile.iosText)} ${line(m.download.mobile.jitText)} AltStore/SideStore source: ${REPO_URL}/releases/download/mobile/altstore.json. Guide: ${docsPageUrl('en', '/getting-started/iphone-ipad')}`)
   out.push(`- All files and checksums: ${REPO_URL}/releases`, '')
 
   out.push('## Frequently asked questions', '', `Page: ${u}/faq`, '')
@@ -187,7 +189,7 @@ export function buildLlmsFullTxt(s: LlmsSource): string {
     `- Features: ${u}/features`,
     ...LANDING_IDS.map((id) => `- ${landing.pages[id].name}: ${u}${landingPath(id)}`),
     `- Download: ${u}/download`,
-    `- Documentation: ${u}/docs/en (LLM index: ${u}/docs/llms.txt, full text: ${u}/docs/llms-full.txt)`,
+    `- Documentation: ${WIKI_URL}/en (LLM index: ${WIKI_URL}/llms.txt, full text: ${WIKI_URL}/llms-full.txt)`,
     `- FAQ: ${u}/faq`,
     `- Blog: ${u}/blog`,
     `- Issue tracker: ${u}/issues`,

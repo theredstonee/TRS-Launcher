@@ -88,27 +88,39 @@ the newest six versions from the changelog – they stay in sync without extra w
 `text/plain; charset=utf-8`, cached for an hour; allowed explicitly in robots.txt. Changelog headlines that name other
 clients are left out. Tests: `tests/llms.test.ts`.
 
-## Documentation (/docs)
+## Documentation (https://trs-launcher.wiki)
 
-The docs are a separate Docus project in `../docs-site` (static, `nuxt generate`, baseURL `/docs/`), bundled into this
-app by `modules/docs.ts` during `nuxt build` (it regenerates the docs when their sources changed; `TRS_DOCS_BUILD=skip`
-or `force`). Details: `docs-site/README.md`, writing rules: `docs-site/CONTENT.md`.
+The docs are a separate Docus project in `../docs-site` (static, `nuxt generate`, baseURL `/`, build assets under
+`/_docs/`), served by this same app on its own domain **trs-launcher.wiki** (at the root, no `/docs` prefix).
+`modules/docs.ts` builds them during `nuxt build` when their sources changed (`TRS_DOCS_BUILD=skip` or `force`) and
+copies them to `.output/docs-wiki` – deliberately not as public assets (Nitro would serve those on every host, and
+both sites have `/icon.png`, `/shots/`, `/llms.txt`). Details: `docs-site/README.md`, writing rules:
+`docs-site/CONTENT.md`.
 
-- URLs: `/docs/en/…`, `/docs/de/…`, `/docs/es/…` (own paths per language, not `?lang=`). `/docs` and `/docs/` redirect
-  (302, `Vary: Accept-Language, Cookie`) to `/docs/<lang>` chosen from the `trs_lang` cookie, then `Accept-Language`.
-- The docs pages set their own canonical, hreflang (only languages that exist), Open Graph (pre-rendered image per page)
-  and JSON-LD (Article, BreadcrumbList, WebSite).
-- `sitemap.xml` includes every docs page (`docsSitemapEntries()` in `shared/seo.ts`, list from the docs build's
-  `routes.json`), each language with its hreflang alternates, `lastmod` = last git commit of the Markdown file.
-- `robots.txt` disallows only `/docs/__nuxt_content/` (search database) and `/docs/_i18n/`; `/docs/raw/*.md` is
-  reachable but sends `X-Robots-Tag: noindex`.
-- `/docs/llms.txt` and `/docs/llms-full.txt` (English only) are linked from this site's `/llms.txt` ("Documentation") and
-  `/llms-full.txt` ("Links").
-- Security headers: static files bypass nuxt-security's page CSP, so `modules/docs.ts` sets a route rule for `/docs/**`
-  with a hash-based CSP (`buildDocsCsp()` in `shared/docs.ts`, no `'unsafe-inline'` for scripts) plus
-  Permissions-Policy/CORP/COOP; HSTS, X-Frame-Options, nosniff and Referrer-Policy come from the global `/**` rule.
-- Menu and footer link "Docs"/"Doku"/"Documentación" to `/docs/<lang>` (plain links – it is not a route of this app); the
-  former wiki link is gone.
+- Host routing (`server/lib/wiki.ts`, installed as the FIRST h3 layer by `server/plugins/02.wiki.ts`, before Nitro's
+  route rules, the website's static handler and all middleware). The host comes from the `Host` header only
+  (`X-Forwarded-Host` is ignored – any client could set it and poison the Cloudflare cache). On the wiki host:
+  - `/` → 302 to `/<lang>` (`trs_lang` cookie, then `Accept-Language`, else `en`; `Vary: Accept-Language, Cookie`).
+  - existing files (`<path>/index.html` for pages) → 200 with the docs CSP; `/en|de|es/…` without a file → 404 with
+    the docs' `404.html`; other docs folders (`/_docs/`, `/raw/`, …) without a file → plain 404.
+  - `/robots.txt`, `/sitemap.xml` → generated for the wiki from the docs build's `routes.json`.
+  - `/v1/…` → 404 JSON in the API error format (no redirect: API clients must not be moved silently and credentials
+    never follow a cross-host redirect). Other methods than GET/HEAD → 405.
+  - `/docs/…` → 301 to the same path without `/docs`; everything else → 301 to `SITE_URL` + same path and query.
+- On the website: `/docs/<rest>` → 301 to `https://trs-launcher.wiki/<rest>` (query kept); `/docs` and `/docs/`
+  → 302 to `https://trs-launcher.wiki/<lang>` chosen here (the `trs_lang` cookie only exists on this domain).
+- The docs pages set their own canonical, hreflang (only languages that exist), `og:url` and Open Graph images on
+  `https://trs-launcher.wiki`, plus JSON-LD (Article, BreadcrumbList, WebSite).
+- The website's `sitemap.xml` no longer lists docs pages, its `robots.txt` has no docs rules. The wiki has its own
+  `sitemap.xml` (each language with hreflang alternates, `lastmod` = last git commit of the Markdown file) and
+  `robots.txt` (disallows only `/__nuxt_content/` and `/_i18n/`; `/raw/*.md` sends `X-Robots-Tag: noindex`).
+  Add `trs-launcher.wiki` as its own Search Console property and submit that sitemap there.
+- `https://trs-launcher.wiki/llms.txt` and `/llms-full.txt` (English only) are linked from this site's `/llms.txt`
+  ("Documentation") and `/llms-full.txt` ("Links").
+- Security headers on the wiki host (all set by `server/lib/wiki.ts`, nuxt-security does not run there): hash-based CSP
+  (`buildDocsCsp()` in `shared/docs.ts`, no `'unsafe-inline'` for scripts, `frame-ancestors 'none'`), HSTS,
+  `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, Permissions-Policy, COOP/CORP.
+- Menu, footer, FAQ and download page link to `https://trs-launcher.wiki/<lang>` (`docsPageUrl()` in `shared/docs.ts`).
 
 ## Crawling
 

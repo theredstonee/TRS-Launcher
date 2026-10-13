@@ -18,6 +18,12 @@ export interface Config {
   siteUrl: string
   /** Hosts, die nur die API bedienen (Seiten dort → 301 zur Website), klein geschrieben. */
   apiOnlyHosts: ReadonlySet<string>
+  /** Adresse der Doku-Domain (`https://trs-launcher.wiki`, ohne `/` am Ende) – Ziel von /docs/… der Website. */
+  wikiUrl: string
+  /** Hosts der Doku-Domain (klein, ohne Port): dort liefert server/lib/wiki.ts die Doku an der Wurzel aus. */
+  wikiHosts: ReadonlySet<string>
+  /** Ordner mit dem Docs-Build. Leer = automatisch (`.output/docs-wiki` neben dem Server bzw. docs-site/.output/public). */
+  docsDir: string
   adminUuids: ReadonlySet<string>
   adminApiKey: string | null
   secretKey: string
@@ -265,6 +271,17 @@ const envSchema = z.object({
     .string()
     .default('api.theredstonee.de')
     .transform((raw) => new Set(raw.split(',').map((h) => h.trim().toLowerCase()).filter(Boolean))),
+  // Doku auf eigener Domain (server/lib/wiki.ts). Der Host-Name dieser Adresse bedient nur die Doku.
+  WIKI_URL: z
+    .url({ protocol: /^https?$/ })
+    .default('https://trs-launcher.wiki')
+    .transform((s) => s.replace(/\/+$/, '')),
+  DOCS_DIR: z
+    .string()
+    .max(4096)
+    .default('')
+    .refine((s) => !s.includes('\0'), 'invalid path')
+    .transform((s) => s.trim()),
   ADMIN_UUIDS: listOf(normalizeUuid, 'uuid').default(new Set<string>()),
   ADMIN_API_KEY: z
     .string()
@@ -427,6 +444,9 @@ export function loadConfig(env: Record<string, string | undefined>, limits: Part
     publicBaseUrl: e.PUBLIC_BASE_URL,
     siteUrl: e.SITE_URL,
     apiOnlyHosts: e.API_ONLY_HOSTS,
+    wikiUrl: e.WIKI_URL,
+    wikiHosts: new Set([new URL(e.WIKI_URL).hostname.toLowerCase()]),
+    docsDir: e.DOCS_DIR,
     adminUuids: e.ADMIN_UUIDS,
     adminApiKey: e.ADMIN_API_KEY === '' ? null : e.ADMIN_API_KEY,
     secretKey: e.SECRET_KEY,

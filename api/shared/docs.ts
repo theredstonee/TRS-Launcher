@@ -1,34 +1,60 @@
-// Dokumentation unter /docs (statisch erzeugt in ../docs-site, beim Build als Public-Assets eingebunden, siehe
-// modules/docs.ts). Reine Funktionen für Server (Weiterleitung, Header, Sitemap) und Tests.
+// Dokumentation auf eigener Domain https://trs-launcher.wiki (statisch erzeugt in ../docs-site, beim Build nach
+// .output/docs-wiki kopiert, siehe modules/docs.ts; ausgeliefert von server/lib/wiki.ts). Reine Funktionen für Server
+// (Weiterleitungen, Header, Sitemap) und Tests.
 
 import type { SeoLang } from './seo'
 
-export const DOCS_BASE = '/docs'
+/**
+ * Kanonische Adresse der Doku (ohne `/` am Ende). Steht so auch im Docs-Build (docs-site/nuxt.config.ts: canonical,
+ * hreflang, og:url, llms.txt) – bei einem Umzug beide Stellen ändern. Der Server nimmt `WIKI_URL` aus der Umgebung
+ * (Standard = dieser Wert) für Host-Erkennung und Weiterleitungen.
+ */
+export const WIKI_URL = 'https://trs-launcher.wiki'
+/** Alter Pfad der Doku auf der Website – leitet dauerhaft auf die Doku-Domain um. */
+export const LEGACY_DOCS_BASE = '/docs'
 export const DOCS_LANGS: readonly SeoLang[] = ['en', 'de', 'es']
 
-/** Startseite der Doku in einer Sprache – so wie die Doku selbst ihre kanonischen Adressen schreibt (ohne `/` am Ende). */
+/** Startseite der Doku in einer Sprache – Pfad auf der Doku-Domain, so wie die Doku ihre Adressen schreibt (ohne `/` am Ende). */
 export function docsHome(lang: SeoLang): string {
-  return `${DOCS_BASE}/${lang}`
+  return `/${lang}`
 }
 
-/** Seite der Doku ohne Sprache → Adresse (`/launcher/instances`, `de` → `/docs/de/launcher/instances`). */
+/** Seite der Doku ohne Sprache → Pfad auf der Doku-Domain (`/launcher/instances`, `de` → `/de/launcher/instances`). */
 export function docsPath(key: string, lang: SeoLang): string {
   const k = key === '/' ? '' : key.startsWith('/') ? key : `/${key}`
-  return `${DOCS_BASE}/${lang}${k}`
+  return `/${lang}${k}`
 }
 
-/** `/docs` oder `/docs/` (auch mit Query) – hier entscheidet der Server über die Sprache. */
+/** Absolute Adresse einer Doku-Seite (`docsPageUrl('de', '/getting-started/android')`). */
+export function docsPageUrl(lang: SeoLang, key = '/', wikiUrl: string = WIKI_URL): string {
+  return `${trimSlash(wikiUrl)}${docsPath(key, lang)}`
+}
+
+/** `/docs` oder `/docs/` – hier entscheidet die Website über die Sprache (Cookie der Website). */
 export function isDocsRoot(pathname: string): boolean {
-  return pathname === DOCS_BASE || pathname === `${DOCS_BASE}/`
+  return pathname === LEGACY_DOCS_BASE || pathname === `${LEGACY_DOCS_BASE}/`
 }
 
+/** Alter Doku-Pfad auf der Website (`/docs`, `/docs/…`) – aber nicht `/docsx`. */
 export function isDocsPath(pathname: string): boolean {
-  return pathname === DOCS_BASE || pathname.startsWith(`${DOCS_BASE}/`)
+  return pathname === LEGACY_DOCS_BASE || pathname.startsWith(`${LEGACY_DOCS_BASE}/`)
 }
 
 /**
- * Sprache für `/docs`: zuerst die auf der Website gewählte (Cookie `trs_lang`), dann `Accept-Language` nach Gewicht,
- * sonst Englisch.
+ * Ziel für einen alten Doku-Pfad (`/docs/<rest>?<query>`) auf der Website: `https://trs-launcher.wiki/<rest>?<query>`.
+ * `rawUrl` ist Pfad + Query so, wie der Client sie geschickt hat (bleibt kodiert). `null` = kein Doku-Pfad.
+ */
+export function legacyDocsTarget(rawUrl: string, wikiUrl: string = WIKI_URL): string | null {
+  const q = rawUrl.indexOf('?')
+  const pathname = q < 0 ? rawUrl : rawUrl.slice(0, q)
+  if (!isDocsPath(pathname)) return null
+  const rest = pathname.slice(LEGACY_DOCS_BASE.length) || '/'
+  return `${trimSlash(wikiUrl)}${rest}${q < 0 ? '' : rawUrl.slice(q)}`
+}
+
+/**
+ * Sprache für die Doku-Startseite: zuerst die auf der Website gewählte (Cookie `trs_lang`), dann `Accept-Language` nach
+ * Gewicht, sonst Englisch.
  */
 export function pickDocsLang(acceptLanguage: string | null | undefined, cookieLang?: string | null): SeoLang {
   if (cookieLang && (DOCS_LANGS as readonly string[]).includes(cookieLang)) return cookieLang as SeoLang
@@ -46,10 +72,9 @@ export function pickDocsLang(acceptLanguage: string | null | undefined, cookieLa
 }
 
 /**
- * CSP der Doku-Dateien (als Route-Regel beim Build gesetzt, modules/docs.ts). Wie die Website, aber statt Nonce die
- * SHA-256-Hashes der Inline-Skripte aus dem Docs-Build (docs-site/scripts/finalize.mjs) plus `'self'` für die gebauten
- * Skripte unter /docs/_nuxt. `'wasm-unsafe-eval'` braucht die Suche (SQLite als WebAssembly im Browser) – kein
- * `'unsafe-inline'`, kein `'unsafe-eval'`.
+ * CSP der Doku (server/lib/wiki.ts). Wie die Website, aber statt Nonce die SHA-256-Hashes der Inline-Skripte aus dem
+ * Docs-Build (docs-site/scripts/finalize.mjs) plus `'self'` für die gebauten Skripte unter /_docs.
+ * `'wasm-unsafe-eval'` braucht die Suche (SQLite als WebAssembly im Browser) – kein `'unsafe-inline'`, kein `'unsafe-eval'`.
  */
 export function buildDocsCsp(scriptHashes: readonly string[]): string {
   const hashes = scriptHashes.filter((h) => /^'sha(256|384|512)-[A-Za-z0-9+/=]+'$/.test(h))
@@ -72,7 +97,7 @@ export function buildDocsCsp(scriptHashes: readonly string[]): string {
 
 /** Eine Seite der Doku aus der Routenliste des Docs-Builds (`.output/docs-meta/routes.json`). */
 export interface DocsRoute {
-  /** Pfad ohne /docs, z. B. `/en/launcher/instances`. */
+  /** Pfad auf der Doku-Domain, z. B. `/en/launcher/instances`. */
   path: string
   lang: SeoLang
   /** Pfad ohne Sprache, gleich in allen Sprachen (`/launcher/instances`, Startseite `/`). */
@@ -102,4 +127,8 @@ export function groupDocsRoutes(routes: readonly DocsRoute[]): Map<string, DocsR
   }
   for (const list of byKey.values()) list.sort((a, b) => DOCS_LANGS.indexOf(a.lang) - DOCS_LANGS.indexOf(b.lang))
   return byKey
+}
+
+function trimSlash(url: string): string {
+  return url.replace(/\/+$/, '')
 }

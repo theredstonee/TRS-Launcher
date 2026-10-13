@@ -113,6 +113,8 @@ Erwartet: `{"status":"ok",…}`
 | `PUBLIC_BASE_URL` | nein | Standard `https://api.theredstonee.de`. Wird für die Umhang-URLs in Antworten verwendet (ältere Mods akzeptieren nur diesen Host). |
 | `SITE_URL` | nein | Standard `https://trs-launcher.theredstonee.de`. Adresse der Website (Sitemap, RSS, Weiterleitungen). |
 | `API_ONLY_HOSTS` | nein | Standard `api.theredstonee.de`. Hosts, die nur noch die API sind; alle anderen Pfade leiten dort per 301 auf `SITE_URL` um. |
+| `WIKI_URL` | nein | Standard `https://trs-launcher.wiki`. Doku-Domain: Anfragen mit diesem Host bekommen nur die Doku (an der Wurzel, `server/lib/wiki.ts`), `/docs/…` der Website leitet dorthin um. Der Cloudflare-Tunnel braucht dafür einen eigenen Public Hostname `trs-launcher.wiki` **ohne Pfad** auf dasselbe Ziel. |
+| `DOCS_DIR` | nein | Ordner mit dem Docs-Build. Leer (Standard) = `.output/docs-wiki` neben dem Server. |
 | `CORS_ORIGINS` | nein | Nur nötig, falls eine Webseite die API im Browser aufruft. Exakte `https://`-Origins, kein `*`. |
 | `TRUST_PROXY` | nein | `cloudflare` (Standard): Die Client-IP kommt aus `CF-Connecting-IP`. Das ist sicher, weil nur cloudflared die API erreicht. |
 | `LOG_REQUESTS` | nein | `true` schreibt ein Zugriffslog ohne IPs und Tokens. |

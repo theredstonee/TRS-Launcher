@@ -44,11 +44,13 @@ describe('llms.txt', () => {
   })
 
   it('Abschnitt Documentation verlinkt die Doku und deren llms.txt/llms-full.txt', () => {
-    expect(txt).toContain(`](${SITE}/docs/en)`)
-    expect(txt).toContain(`](${SITE}/docs/llms.txt)`)
-    expect(txt).toContain(`](${SITE}/docs/llms-full.txt)`)
-    expect(txt).toContain(`](${SITE}/docs/de)`)
-    expect(txt).toContain(`](${SITE}/docs/es)`)
+    const WIKI = 'https://trs-launcher.wiki'
+    expect(txt).toContain(`](${WIKI}/en)`)
+    expect(txt).toContain(`](${WIKI}/llms.txt)`)
+    expect(txt).toContain(`](${WIKI}/llms-full.txt)`)
+    expect(txt).toContain(`](${WIKI}/de)`)
+    expect(txt).toContain(`](${WIKI}/es)`)
+    expect(txt).not.toContain('/docs/')
   })
 
   it('Namensvarianten und keine anderen Launcher/Clients', () => {
@@ -91,7 +93,10 @@ describe('llms-full.txt', () => {
   })
 
   it('verweist in den Links auf die Doku und deren Volltext', () => {
-    expect(full).toContain(`- Documentation: ${SITE}/docs/en (LLM index: ${SITE}/docs/llms.txt, full text: ${SITE}/docs/llms-full.txt)`)
+    const WIKI = 'https://trs-launcher.wiki'
+    expect(full).toContain(`- Documentation: ${WIKI}/en (LLM index: ${WIKI}/llms.txt, full text: ${WIKI}/llms-full.txt)`)
+    expect(full).toContain(`Guide: ${WIKI}/en/getting-started/android`)
+    expect(full).not.toContain('/docs/')
   })
 
   it('keine anderen Launcher oder Clients mit Namen', () => {

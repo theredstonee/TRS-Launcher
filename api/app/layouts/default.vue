@@ -15,7 +15,7 @@ const menuPanel = shallowRef<HTMLElement | null>(null)
 const links = computed<{ to: string, label: string, icon: string, external?: boolean }[]>(() => [
   { to: lp('/features'), label: m.value.nav.features, icon: 'bolt' },
   { to: lp('/download'), label: m.value.nav.download, icon: 'download' },
-  // Doku: eigene statische App unter /docs – normaler Seitenwechsel statt Router.
+  // Doku: eigene Domain (trs-launcher.wiki) – normaler Seitenwechsel statt Router.
   { to: docsUrl(lang.value), label: m.value.nav.docs, icon: 'docs', external: true },
   { to: lp('/blog'), label: m.value.nav.blog, icon: 'book' },
   { to: lp('/cosmetics'), label: m.value.nav.cosmetics, icon: 'cape' },
