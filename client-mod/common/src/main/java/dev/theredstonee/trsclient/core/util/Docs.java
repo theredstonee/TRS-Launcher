@@ -8,12 +8,12 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Links in die Dokumentation auf der Website ({@code /docs/<sprache>/<bereich>/<seite>}, ersetzt das GitHub-Wiki) –
+ * Links in die Dokumentation auf eigener Domain ({@code trs-launcher.wiki/<sprache>/<bereich>/<seite>}, ersetzt das GitHub-Wiki) –
  * in der Sprache des Clients, sofern es die Docs darin gibt (en, de, es), sonst Englisch.
  */
 public final class Docs {
 	/** Wurzel der Docs. */
-	public static final String BASE = "https://trs-launcher.theredstonee.de/docs";
+	public static final String BASE = "https://trs-launcher.wiki";
 	/** Sprachen, in denen es die Docs gibt. */
 	public static final List<String> LANGUAGES = Collections.unmodifiableList(Arrays.asList("en", "de", "es"));
 
@@ -35,7 +35,7 @@ public final class Docs {
 
 	/**
 	 * Adresse einer Seite ({@code "client/overview"}); {@code null} oder eine ungültige Seite = Startseite der Sprache
-	 * ({@code /docs/de/}). Erlaubt sind nur Kleinbuchstaben, Ziffern, Bindestriche und einzelne {@code /}.
+	 * ({@code /de/}). Erlaubt sind nur Kleinbuchstaben, Ziffern, Bindestriche und einzelne {@code /}.
 	 */
 	public static String url(String page, String languageCode) {
 		String lang = language(languageCode);

@@ -24,7 +24,7 @@
 
 [**Website**](https://trs-launcher.theredstonee.de/?lang=de) ·
 [Download](https://github.com/theredstonee/TRS-Launcher/releases) ·
-[**Docs**](https://trs-launcher.theredstonee.de/docs/de/) ·
+[**Docs**](https://trs-launcher.wiki/de/) ·
 [Funktionen](#funktionen) ·
 [Selbst bauen](#selbst-bauen) ·
 [Aufbau](#aufbau)
@@ -91,7 +91,7 @@
 > [!TIP]
 > Der Installer ist noch nicht code-signiert, deshalb zeigt Windows SmartScreen eventuell „Der Computer wurde durch Windows geschützt“. Wähle **Weitere Informationen → Trotzdem ausführen**.
 
-Deine Daten liegen in `%APPDATA%\TRS-Launcher`. Schritt-für-Schritt-Anleitungen findest du in den [Docs](https://trs-launcher.theredstonee.de/docs/de/) – zum Beispiel [Erste Schritte](https://trs-launcher.theredstonee.de/docs/de/getting-started/installation) und [Häufige Probleme](https://trs-launcher.theredstonee.de/docs/de/help/common-problems).
+Deine Daten liegen in `%APPDATA%\TRS-Launcher`. Schritt-für-Schritt-Anleitungen findest du in den [Docs](https://trs-launcher.wiki/de/) – zum Beispiel [Erste Schritte](https://trs-launcher.wiki/de/getting-started/installation) und [Häufige Probleme](https://trs-launcher.wiki/de/help/common-problems).
 
 ### Linux
 
@@ -112,7 +112,7 @@ Zu jedem Release gibt es ein **AppImage**, ein **.deb** und ein **.rpm** für x8
 - Läuft unter Wayland und X11 (das Spiel selbst über XWayland). Mit dem proprietären NVIDIA-Treiber schaltet der Launcher den DMA-BUF-Renderer von WebKit ab, damit das Fenster nicht leer bleibt.
 - Das AppImage braucht FUSE 2 (`libfuse2`/`fuse2`); ohne FUSE mit `--appimage-extract-and-run` starten.
 - Unter Linux (noch) nicht vorhanden: die Windows-Firewall-Freigabe (nicht nötig) und Clip-Aufnahmen. Für ARM64 gibt es keine Mojang-Java-Runtime – dort in den Einstellungen ein eigenes Java angeben.
-- Mehr Tipps und Hilfe bei Problemen: [Linux-Anleitung](https://trs-launcher.theredstonee.de/docs/de/help/linux).
+- Mehr Tipps und Hilfe bei Problemen: [Linux-Anleitung](https://trs-launcher.wiki/de/help/linux).
 
 ## Fair Play
 
@@ -123,11 +123,11 @@ Zu jedem Release gibt es ein **AppImage**, ein **.deb** und ein **.rpm** für x8
 
 ## Mitmachen
 
-Beiträge sind willkommen – Code, Übersetzungen und Docs. Lies [CONTRIBUTING.md](CONTRIBUTING.md) (Englisch) und die Anleitung [Mitmachen](https://trs-launcher.theredstonee.de/docs/de/developers/contributing) in den Docs. Fehler und Ideen meldest du im [Issue-Tracker auf der Website](https://trs-launcher.theredstonee.de/issues) (nicht in GitHub-Issues), Fragen gehen in die [Discussions](https://github.com/theredstonee/TRS-Launcher/discussions) oder auf [Discord](https://dc.theredstonee.de), Sicherheitslücken bitte nur privat melden (siehe [SECURITY.md](SECURITY.md)). Alle, die an einem Release mitgearbeitet haben, werden in den Release-Hinweisen und im Launcher namentlich erwähnt.
+Beiträge sind willkommen – Code, Übersetzungen und Docs. Lies [CONTRIBUTING.md](CONTRIBUTING.md) (Englisch) und die Anleitung [Mitmachen](https://trs-launcher.wiki/de/developers/contributing) in den Docs. Fehler und Ideen meldest du im [Issue-Tracker auf der Website](https://trs-launcher.theredstonee.de/issues) (nicht in GitHub-Issues), Fragen gehen in die [Discussions](https://github.com/theredstonee/TRS-Launcher/discussions) oder auf [Discord](https://dc.theredstonee.de), Sicherheitslücken bitte nur privat melden (siehe [SECURITY.md](SECURITY.md)). Alle, die an einem Release mitgearbeitet haben, werden in den Release-Hinweisen und im Launcher namentlich erwähnt.
 
 ## Selbst bauen
 
-Die ausführliche Anleitung steht in den Docs: [Selbst bauen](https://trs-launcher.theredstonee.de/docs/de/developers/build-from-source) · [Mitmachen](https://trs-launcher.theredstonee.de/docs/de/developers/contributing) · [Übersetzen](https://trs-launcher.theredstonee.de/docs/de/developers/translating).
+Die ausführliche Anleitung steht in den Docs: [Selbst bauen](https://trs-launcher.wiki/de/developers/build-from-source) · [Mitmachen](https://trs-launcher.wiki/de/developers/contributing) · [Übersetzen](https://trs-launcher.wiki/de/developers/translating).
 
 **Voraussetzungen:** Node.js 22+ mit pnpm, Rust (stable, MSVC-Toolchain), die Visual Studio Build Tools („Desktopentwicklung mit C++“) und WebView2 (unter Windows 10/11 vorinstalliert).
 

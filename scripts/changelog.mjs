@@ -44,7 +44,7 @@ if (command === 'pr') {
         '  - **Log-Suche.** Die Log-Ansicht findet Text jetzt auch in eingeklappten Stacktraces.',
         '',
         'Nothing players notice (CI, refactoring, docs)? Ask for the label "no-changelog".',
-        'More: CONTRIBUTING.md and https://trs-launcher.theredstonee.de/docs/en/developers/contributing',
+        'More: CONTRIBUTING.md and https://trs-launcher.wiki/en/developers/contributing',
       ].join('\n'),
     )
     process.exit(1)

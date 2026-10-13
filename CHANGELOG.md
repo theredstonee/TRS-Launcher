@@ -37,6 +37,7 @@ How to write an entry:
   desktop and Start menu shortcuts (and your own app shortcut on Linux), and on the home screen of the Android and
   iPhone apps. When the event ends, the normal icon comes back by itself. You can turn this off under
   Settings → Appearance → Event icons.
+- Help links now open the new documentation at trs-launcher.wiki.
 
 ### Deutsch
 - **Elytren sehen wieder wie normale Minecraft-Elytren aus.** TRS-Umhänge werden nicht mehr auf die Elytra gemalt – mit einem TRS-Umhang siehst du jetzt die ganz normale Vanilla-Elytra (in allen Minecraft-Versionen). Der Umhang selbst wird wie gewohnt angezeigt, wenn du keine Elytra trägst.
@@ -45,6 +46,7 @@ How to write an entry:
   auf den Verknüpfungen auf dem Desktop und im Startmenü (unter Linux auf deiner eigenen App-Verknüpfung) und auf
   dem Startbildschirm der Android- und iPhone-App. Nach dem Event kommt das normale Symbol von selbst zurück.
   Abschalten kannst du das unter Einstellungen → Aussehen → Event-Symbole.
+- Hilfe-Links öffnen jetzt die neue Dokumentation unter trs-launcher.wiki.
 
 ## 0.21.0 – 2026-10-13 – Cape Workshop | Umhang-Werkstatt
 <!-- banner: accent=#ff5a3c motif=/news/0.21.0/banner.png -->

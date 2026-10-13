@@ -4,8 +4,8 @@ import { currentLocale } from './i18n'
 // Links in die Dokumentation auf der Website (Docus, ersetzt das GitHub-Wiki). Reine Hilfen ohne Tauri,
 // damit die Tests sie direkt prüfen können – geöffnet wird wie jeder externe Link über `backend.openExternalUrl`.
 
-/** Wurzel der Docs; Seiten liegen unter `/docs/<sprache>/<bereich>/<seite>`. */
-export const DOCS_BASE_URL = 'https://trs-launcher.theredstonee.de/docs'
+/** Wurzel der Docs; Seiten liegen unter `/<sprache>/<bereich>/<seite>`. */
+export const DOCS_BASE_URL = 'https://trs-launcher.wiki'
 
 /** Sprachen der Docs; alle anderen Launcher-Sprachen landen auf Englisch. */
 export const DOCS_LANGS = ['en', 'de', 'es'] as const
@@ -44,7 +44,7 @@ export function docsLang(locale: string): DocsLang {
 }
 
 /**
- * Adresse einer Docs-Seite in der Launcher-Sprache; ohne Seite die Startseite der Sprache (`/docs/de/`).
+ * Adresse einer Docs-Seite in der Launcher-Sprache; ohne Seite die Startseite der Sprache (`/de/`).
  * Nur Kleinbuchstaben, Ziffern, Bindestriche und `/` – alles andere führt auf die Startseite.
  */
 export function docsUrl(page?: DocsPage, locale: string = currentLocale.value): string {

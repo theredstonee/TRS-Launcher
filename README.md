@@ -24,7 +24,7 @@
 
 [**Website**](https://trs-launcher.theredstonee.de) ·
 [Download](https://github.com/theredstonee/TRS-Launcher/releases) ·
-[**Docs**](https://trs-launcher.theredstonee.de/docs/en/) ·
+[**Docs**](https://trs-launcher.wiki/en/) ·
 [Features](#features) ·
 [Building](#building-from-source) ·
 [Architecture](#architecture)
@@ -92,7 +92,7 @@
 > [!TIP]
 > The installer isn't code-signed yet, so Windows SmartScreen may show "Windows protected your PC". Choose **More info → Run anyway**.
 
-Your data lives in `%APPDATA%\TRS-Launcher`. Step-by-step guides are in the [docs](https://trs-launcher.theredstonee.de/docs/en/) – for example [getting started](https://trs-launcher.theredstonee.de/docs/en/getting-started/installation) and [common problems](https://trs-launcher.theredstonee.de/docs/en/help/common-problems).
+Your data lives in `%APPDATA%\TRS-Launcher`. Step-by-step guides are in the [docs](https://trs-launcher.wiki/en/) – for example [getting started](https://trs-launcher.wiki/en/getting-started/installation) and [common problems](https://trs-launcher.wiki/en/help/common-problems).
 
 ### Linux
 
@@ -113,7 +113,7 @@ Every release has an **AppImage**, a **.deb** and an **.rpm** for x86_64 (built 
 - Works on Wayland and X11 (the game itself runs through XWayland). With the proprietary NVIDIA driver the launcher turns off WebKit's DMA-BUF renderer to avoid a blank window.
 - The AppImage needs FUSE 2 (`libfuse2`/`fuse2`); without it, run it with `--appimage-extract-and-run`.
 - Not available on Linux yet: the Windows firewall helper (not needed) and clip recording. ARM64 has no Mojang Java runtime — set your own Java in the settings.
-- More tips and troubleshooting: [Linux guide](https://trs-launcher.theredstonee.de/docs/en/help/linux).
+- More tips and troubleshooting: [Linux guide](https://trs-launcher.wiki/en/help/linux).
 
 ## Fair play
 
@@ -124,11 +124,11 @@ Every release has an **AppImage**, a **.deb** and an **.rpm** for x86_64 (built 
 
 ## Contributing
 
-Contributions are welcome – code, translations and docs. Read [CONTRIBUTING.md](CONTRIBUTING.md) and the [contributing guide](https://trs-launcher.theredstonee.de/docs/en/developers/contributing) in the docs. Report bugs and ideas in the [issue tracker on the website](https://trs-launcher.theredstonee.de/issues) (not in GitHub issues), ask questions in [Discussions](https://github.com/theredstonee/TRS-Launcher/discussions) or on [Discord](https://dc.theredstonee.de), and report security problems privately (see [SECURITY.md](SECURITY.md)). Everyone who contributes to a release is thanked by name in its release notes and in the launcher.
+Contributions are welcome – code, translations and docs. Read [CONTRIBUTING.md](CONTRIBUTING.md) and the [contributing guide](https://trs-launcher.wiki/en/developers/contributing) in the docs. Report bugs and ideas in the [issue tracker on the website](https://trs-launcher.theredstonee.de/issues) (not in GitHub issues), ask questions in [Discussions](https://github.com/theredstonee/TRS-Launcher/discussions) or on [Discord](https://dc.theredstonee.de), and report security problems privately (see [SECURITY.md](SECURITY.md)). Everyone who contributes to a release is thanked by name in its release notes and in the launcher.
 
 ## Building from source
 
-The full guide is in the docs: [Build from source](https://trs-launcher.theredstonee.de/docs/en/developers/build-from-source) · [Contributing](https://trs-launcher.theredstonee.de/docs/en/developers/contributing) · [Translating](https://trs-launcher.theredstonee.de/docs/en/developers/translating).
+The full guide is in the docs: [Build from source](https://trs-launcher.wiki/en/developers/build-from-source) · [Contributing](https://trs-launcher.wiki/en/developers/contributing) · [Translating](https://trs-launcher.wiki/en/developers/translating).
 
 **Requirements:** Node.js 22+ with pnpm, Rust (stable, MSVC toolchain), the Visual Studio Build Tools ("Desktop development with C++") and WebView2 (preinstalled on Windows 10/11).
 

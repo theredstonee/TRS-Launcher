@@ -9,7 +9,7 @@ contact_links:
     url: https://dc.theredstonee.de
     about: Quick help and chat with the TRS community.
   - name: Read the docs
-    url: https://trs-launcher.theredstonee.de/docs/en/
+    url: https://trs-launcher.wiki/en/
     about: Guides for the launcher, the TRS Client and for developers.
   - name: Ask a question in Discussions
     url: https://github.com/theredstonee/TRS-Launcher/discussions
