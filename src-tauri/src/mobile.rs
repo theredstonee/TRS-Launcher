@@ -123,6 +123,30 @@ pub async fn schedule_push_poll(app: &AppHandle, enabled: bool, root: &str) -> R
         .map_err(|e| e.to_string())
 }
 
+/// Android: Startsymbol (activity-alias) auf `icon` stellen (`"default"`, `"halloween"`); `true`, wenn gewechselt.
+#[cfg(target_os = "android")]
+pub async fn set_launcher_icon(app: &AppHandle, icon: &str) -> Result<bool, String> {
+    use tauri::Manager;
+
+    #[derive(Serialize)]
+    struct Args {
+        icon: String,
+    }
+    #[derive(Deserialize)]
+    struct Changed {
+        #[serde(default)]
+        changed: bool,
+    }
+    let Some(plugin) = app.try_state::<android::Installer>() else { return Err("Plugin fehlt".into()) };
+    let handle = plugin.0.clone();
+    let args = Args { icon: icon.to_owned() };
+    tauri::async_runtime::spawn_blocking(move || handle.run_mobile_plugin::<Changed>("setLauncherIcon", args))
+        .await
+        .map_err(|e| e.to_string())?
+        .map(|r| r.changed)
+        .map_err(|e| e.to_string())
+}
+
 #[cfg(not(target_os = "android"))]
 async fn install(_app: &AppHandle, _path: std::path::PathBuf) -> CommandResult<InstallOutcome> {
     Err(trs_core::Error::UnsupportedOnMobile.into())

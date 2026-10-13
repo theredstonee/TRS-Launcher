@@ -2371,6 +2371,8 @@
       "advancedRenderingDescription": "Vervagingseffecten achter dialogen en balken. Uitschakelen bespaart wat prestaties op tragere pc’s.",
       "animatedBackgroundTitle": "Geanimeerde achtergrond",
       "animatedBackgroundDescription": "Een rustige, geanimeerde scène achter elke pagina – een redstonecircuit of een winterlandschap, afhankelijk van het ontwerp. Als dit uit staat, wordt alleen het achtergrondpatroon getoond.",
+      "eventIconsTitle": "Evenementpictogrammen",
+      "eventIconsDescription": "Tijdens evenementen zoals Halloween verandert ook het app-pictogram – venster, taakbalk, snelkoppelingen op het bureaublad en in het startmenu en het startscherm van je telefoon. Na het evenement komt het gewone pictogram vanzelf terug.",
       "motionTitle": "Animaties",
       "motionDescription": "Geanimeerde achtergrond, looplichten, overgangen van pagina’s en vensters, en lijsten die naar hun plek glijden. „Animaties beperken” zet alles uit; „Zoals Windows/systeem” volgt de animatie-instelling van Windows of het bureaublad – die staat op geoptimaliseerde of externe pc’s vaak uit.",
       "motionModes": {

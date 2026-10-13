@@ -2371,6 +2371,8 @@
       "advancedRenderingDescription": "Efekty rozmycia za oknami dialogowymi i paskami. Wyłączenie oszczędza trochę wydajności na słabszych komputerach.",
       "animatedBackgroundTitle": "Animowane tło",
       "animatedBackgroundDescription": "Spokojna, animowana scena za każdą stroną – obwód z redstone albo zimowy krajobraz, zależnie od wyglądu. Po wyłączeniu widoczny jest tylko wzór tła.",
+      "eventIconsTitle": "Ikony wydarzeń",
+      "eventIconsDescription": "Podczas wydarzeń takich jak Halloween zmienia się też ikona aplikacji – okno, pasek zadań, skróty na pulpicie i w menu Start oraz ekran główny telefonu. Po zakończeniu wydarzenia zwykła ikona wraca sama.",
       "motionTitle": "Animacje",
       "motionDescription": "Animowane tło, biegnące światła, przejścia stron i okien oraz listy, które płynnie wskakują na swoje miejsce. „Ogranicz animacje” wyłącza wszystko; „Jak Windows/system” stosuje ustawienie animacji z Windows lub pulpitu – na zoptymalizowanych lub zdalnych komputerach jest ono często wyłączone.",
       "motionModes": {

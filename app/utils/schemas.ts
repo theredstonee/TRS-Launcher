@@ -145,6 +145,7 @@ export const uiSettingsSchema = z.object({
   language: z.enum(supportedLocales),
   bigPictureOnStart: z.boolean().default(false),
   bigPictureAuto: z.boolean().default(true),
+  eventIcons: z.boolean().default(true),
 })
 
 /** Clips & Aufnahme – gleiche Grenzen wie `trs_core::clips::settings`. */

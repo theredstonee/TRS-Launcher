@@ -456,6 +456,9 @@ async function allowFirewall() {
       <SettingRow :title="t('settings.appearance.animatedBackgroundTitle')" :description="t('settings.appearance.animatedBackgroundDescription')">
         <ToggleSwitch v-model="form.ui.animatedBackground" :label="t('settings.appearance.animatedBackgroundTitle')" />
       </SettingRow>
+      <SettingRow :title="t('settings.appearance.eventIconsTitle')" :description="t('settings.appearance.eventIconsDescription')">
+        <ToggleSwitch v-model="form.ui.eventIcons" :label="t('settings.appearance.eventIconsTitle')" />
+      </SettingRow>
       <SettingRow :title="t('settings.appearance.motionTitle')" :description="t('settings.appearance.motionDescription')">
         <select v-model="form.ui.motion" class="field w-52 py-1.5 mobile:w-40" :aria-label="t('settings.appearance.motionTitle')">
           <option v-for="mode in motionModes" :key="mode" :value="mode">{{ t(`settings.appearance.motionModes.${mode}`) }}</option>

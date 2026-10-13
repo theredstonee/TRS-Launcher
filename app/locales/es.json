@@ -2371,6 +2371,8 @@
       "advancedRenderingDescription": "Efectos de desenfoque detrás de diálogos y barras. Desactivarlo ahorra algo de rendimiento en equipos modestos.",
       "animatedBackgroundTitle": "Fondo animado",
       "animatedBackgroundDescription": "Una escena animada y tranquila detrás de todas las páginas: un circuito de redstone o un paisaje invernal, según el diseño. Desactivado, solo se ve el patrón de fondo.",
+      "eventIconsTitle": "Iconos de eventos",
+      "eventIconsDescription": "Durante eventos como Halloween también cambia el icono de la app: ventana, barra de tareas, accesos directos del escritorio y del menú Inicio, y la pantalla de inicio del móvil. Al terminar el evento vuelve solo el icono normal.",
       "motionTitle": "Animaciones",
       "motionDescription": "Fondo animado, luces en movimiento, transiciones de páginas y diálogos, y listas que se deslizan a su sitio. «Reducir animaciones» lo desactiva todo; «Como Windows/sistema» sigue el ajuste de animaciones de Windows o del escritorio, que suele estar desactivado en equipos optimizados o remotos.",
       "motionModes": {

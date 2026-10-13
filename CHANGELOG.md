@@ -33,10 +33,18 @@ How to write an entry:
 ### English
 - **Elytras look like normal Minecraft elytras again.** TRS capes are no longer painted onto the elytra – with a TRS cape you now see the plain vanilla elytra (in all Minecraft versions). The cape itself still shows as usual when you don't wear an elytra.
 - The cape/elytra switch in the 3D preview (Skins page and cape workshop) was removed, and the cape workshop template no longer shows an elytra area.
+- Event icons: during events like Halloween the launcher wears its event icon – in the window and taskbar, on the
+  desktop and Start menu shortcuts (and your own app shortcut on Linux), and on the home screen of the Android and
+  iPhone apps. When the event ends, the normal icon comes back by itself. You can turn this off under
+  Settings → Appearance → Event icons.
 
 ### Deutsch
 - **Elytren sehen wieder wie normale Minecraft-Elytren aus.** TRS-Umhänge werden nicht mehr auf die Elytra gemalt – mit einem TRS-Umhang siehst du jetzt die ganz normale Vanilla-Elytra (in allen Minecraft-Versionen). Der Umhang selbst wird wie gewohnt angezeigt, wenn du keine Elytra trägst.
 - Der Umschalter Umhang/Elytra in der 3D-Vorschau (Skins-Seite und Umhang-Werkstatt) wurde entfernt, und die Vorlage der Umhang-Werkstatt zeigt keinen Elytra-Bereich mehr.
+- Event-Symbole: Bei Events wie Halloween trägt der Launcher sein Event-Symbol – im Fenster und in der Taskleiste,
+  auf den Verknüpfungen auf dem Desktop und im Startmenü (unter Linux auf deiner eigenen App-Verknüpfung) und auf
+  dem Startbildschirm der Android- und iPhone-App. Nach dem Event kommt das normale Symbol von selbst zurück.
+  Abschalten kannst du das unter Einstellungen → Aussehen → Event-Symbole.
 
 ## 0.21.0 – 2026-10-13 – Cape Workshop | Umhang-Werkstatt
 <!-- banner: accent=#ff5a3c motif=/news/0.21.0/banner.png -->

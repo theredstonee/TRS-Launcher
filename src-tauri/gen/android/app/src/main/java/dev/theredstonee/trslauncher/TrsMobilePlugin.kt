@@ -3,10 +3,12 @@ package dev.theredstonee.trslauncher
 import android.app.Activity
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageInstaller
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
@@ -26,6 +28,11 @@ class InstallApkArgs {
 }
 
 @InvokeArg
+class LauncherIconArgs {
+    var icon: String = "default"
+}
+
+@InvokeArg
 class PushPollArgs {
     var enabled: Boolean = false
     var root: String = ""
@@ -42,6 +49,12 @@ class TrsMobilePlugin(private val activity: Activity) : Plugin(activity) {
     companion object {
         private const val TAG = "TrsMobile"
         private const val ACTION_STATUS = "dev.theredstonee.trslauncher.INSTALL_STATUS"
+
+        /** Startsymbole (activity-alias im Manifest) und ob sie ab Werk aktiv sind. */
+        private val LAUNCHER_ICONS = linkedMapOf(
+            "default" to Pair("dev.theredstonee.trslauncher.LauncherDefault", true),
+            "halloween" to Pair("dev.theredstonee.trslauncher.LauncherHalloween", false),
+        )
     }
 
     private var receiverRegistered = false
@@ -73,6 +86,58 @@ class TrsMobilePlugin(private val activity: Activity) : Plugin(activity) {
     fun exitApp(invoke: Invoke) {
         invoke.resolve()
         activity.runOnUiThread { activity.finish() }
+    }
+
+    /**
+     * Event-Symbol auf dem Startbildschirm: genau einen Alias einschalten, alle anderen aus.
+     * Erst das neue Symbol an, dann die alten aus – so gibt es nie null Startsymbole.
+     * Schon richtig: nichts anfassen (`changed: false`).
+     */
+    @Command
+    fun setLauncherIcon(invoke: Invoke) {
+        try {
+            val args = invoke.parseArgs(LauncherIconArgs::class.java)
+            val want = LAUNCHER_ICONS[args.icon]
+            if (want == null) {
+                invoke.reject("invalid_icon")
+                return
+            }
+            val pm = activity.packageManager
+            val pkg = activity.packageName
+            fun enabled(alias: String, byDefault: Boolean): Boolean =
+                when (pm.getComponentEnabledSetting(ComponentName(pkg, alias))) {
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED -> true
+                    PackageManager.COMPONENT_ENABLED_STATE_DEFAULT -> byDefault
+                    else -> false
+                }
+            val others = LAUNCHER_ICONS.values.filter { it.first != want.first }
+            if (enabled(want.first, want.second) && others.none { enabled(it.first, it.second) }) {
+                invoke.resolve(changed(false))
+                return
+            }
+            val on = PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+            val off = PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+            val flags = PackageManager.DONT_KILL_APP
+            if (Build.VERSION.SDK_INT >= 33) {
+                // Ab Android 13 in einem Schritt.
+                val settings = listOf(PackageManager.ComponentEnabledSetting(ComponentName(pkg, want.first), on, flags)) +
+                    others.map { PackageManager.ComponentEnabledSetting(ComponentName(pkg, it.first), off, flags) }
+                pm.setComponentEnabledSettings(settings)
+            } else {
+                pm.setComponentEnabledSetting(ComponentName(pkg, want.first), on, flags)
+                for (other in others) pm.setComponentEnabledSetting(ComponentName(pkg, other.first), off, flags)
+            }
+            invoke.resolve(changed(true))
+        } catch (e: Exception) {
+            Log.e(TAG, "Startsymbol konnte nicht gewechselt werden", e)
+            invoke.reject("icon_failed")
+        }
+    }
+
+    private fun changed(value: Boolean): JSObject {
+        val result = JSObject()
+        result.put("changed", value)
+        return result
     }
 
     /** Push ohne Verteiler: Abholen im Hintergrund planen bzw. abbestellen (WorkManager). */
