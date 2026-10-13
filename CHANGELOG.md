@@ -28,7 +28,12 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.21.1 – 2026-10-13 – Cape Workshop Fix | Umhang-Werkstatt – Fix
+<!-- banner: accent=#ff5a3c motif=/news/0.21.0/banner.png -->
+<!-- shots:
+/news/0.21.1/vanilla-elytra.png | The elytra looks like the normal Minecraft elytra again | Die Elytra sieht wieder aus wie die normale Minecraft-Elytra
+/news/0.21.1/halloween-icon.png | The Halloween app icon during the event | Das Halloween-App-Symbol während des Events
+-->
 
 ### English
 - **Elytras look like normal Minecraft elytras again.** TRS capes are no longer painted onto the elytra – with a TRS cape you now see the plain vanilla elytra (in all Minecraft versions). The cape itself still shows as usual when you don't wear an elytra.
