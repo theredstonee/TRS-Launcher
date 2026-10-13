@@ -28,7 +28,16 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.21.0 – 2026-10-13 – Cape Workshop | Umhang-Werkstatt
+<!-- banner: accent=#ff5a3c motif=/news/0.21.0/banner.png -->
+<!-- shots:
+/news/0.21.0/cape-editor.png | The new cape workshop: timeline, pixel editor and template | Die neue Umhang-Werkstatt: Zeitleiste, Pixel-Editor und Vorlage
+/news/0.21.0/cape-elytra-preview.png | Switch the 3D preview between cape and elytra | Die 3D-Vorschau zwischen Umhang und Elytra umschalten
+/news/0.21.0/cape-upload.png | Upload in HD up to 1024×512 with 32 frames | Hochladen in HD bis 1024×512 mit 32 Frames
+/news/0.21.0/ingame-elytra.png | TRS capes now look right on the elytra | TRS-Umhänge sehen jetzt auf der Elytra richtig aus
+/news/0.21.0/ingame-winter-title.png | Winter Night in the TRS Client title screen | Winternacht auf dem Titelbildschirm des TRS Clients
+/news/0.21.0/ingame-winter-menu.png | Ice and snow menus in the game | Menüs aus Eis und Schnee im Spiel
+-->
 
 ### English
 - **HD capes.** Your own capes can now be up to 1024×512 pixels per frame, with up to 32 frames and up to 20 MB – twice as sharp and twice as long as before.
