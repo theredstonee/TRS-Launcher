@@ -226,7 +226,7 @@ defineExpose({ upload, canUpload, uploading })
     <!-- Fertiges Ergebnis am Spieler -->
     <div class="space-y-3">
       <div class="rounded-lg bg-base-900">
-        <SkinViewer :skin="null" :cape="result?.url ?? null" :cape-frames="result?.frames ?? 1" :cape-frame-time="animated ? frameTime : null" animation="walk" :height="260" equipment-toggle />
+        <SkinViewer :skin="null" :cape="result?.url ?? null" :cape-frames="result?.frames ?? 1" :cape-frame-time="animated ? frameTime : null" animation="walk" :height="260" />
       </div>
       <div class="flex items-center gap-3">
         <div class="rounded-lg bg-base-900 p-2">

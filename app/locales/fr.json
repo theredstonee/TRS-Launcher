@@ -2860,10 +2860,7 @@
       "night": "Nuit",
       "showHead": "Zoomer sur la tête",
       "showBody": "Afficher tout le corps",
-      "resetCamera": "Réinitialiser la caméra",
-      "equipment": "Dans le dos",
-      "cape": "Cape",
-      "elytra": "Élytres"
+      "resetCamera": "Réinitialiser la caméra"
     },
     "trsCape": "Cape TRS",
     "headCosmetic": "Cosmétique de tête",
@@ -3670,13 +3667,7 @@
         "capeLeft": "Côté gauche",
         "capeOuter": "Extérieur",
         "capeRight": "Côté droit",
-        "capeInner": "Intérieur",
-        "elytraTop": "Élytres haut",
-        "elytraBottom": "Élytres bas",
-        "elytraLeft": "Élytres côté gauche",
-        "elytraOuter": "Élytres extérieur",
-        "elytraRight": "Élytres côté droit",
-        "elytraInner": "Élytres intérieur"
+        "capeInner": "Intérieur"
       },
       "tools": {
         "pencil": "Crayon",
@@ -3698,7 +3689,6 @@
       "legend": "Légende du gabarit",
       "legendFaces": "Cape extérieur et intérieur",
       "legendEdges": "Bords et côtés",
-      "legendElytra": "Élytres – créés automatiquement à partir de l’extérieur",
       "shortcuts": "Touches : B crayon · E gomme · I pipette · G remplir · L ligne · M déplacer · [ ] pinceau · O pelure d’oignon · Espace lecture · ←/→ image · Ctrl+Z / Ctrl+Y · clic droit efface",
       "timeline": {
         "label": "Chronologie",

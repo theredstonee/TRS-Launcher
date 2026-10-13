@@ -262,7 +262,8 @@ function inner(face: Rgba, shade = 0.6): Rgba {
 /**
  * Ganze Umhang-Textur (64·s × 32·s) aus einem Motiv für die Außenseite
  * (10·s × 16·s): Innenseite gespiegelt und dunkler, Kanten aus den Rändern des
- * Motivs, dazu passende Elytra-Flügel (gleiche Aufteilung wie Vanilla).
+ * Motivs. Der Elytra-Bereich bleibt durchsichtig (TRS-Umhänge werden nie als
+ * Elytra genutzt).
  */
 export function textureFromFace(face: Rgba, s: number): Rgba {
   const tex = rgba(64 * s, 32 * s)
@@ -275,124 +276,7 @@ export function textureFromFace(face: Rgba, s: number): Rgba {
   blit(face, w - s, 0, s, h, tex, 11 * s, s)
   blit(face, 0, 0, w, s, tex, s, 0)
   blit(face, 0, h - s, w, s, tex, 11 * s, 0)
-  return fillElytraFromFront(tex, s)
-}
-
-/**
- * Elytra immer aus der Außenseite des Umhangs erzeugen – rechnet exakt wie der TRS Client
- * (`ElytraArt.java`), damit Vorschau und Spiel gleich aussehen. Vanilla-Elytra: Flügel =
- * Quader `texOffs(22, 0)`, 10 × 20 × 2, beide Flügel nutzen denselben Bereich (das Modell
- * spiegelt den rechten selbst). Koordinaten in 64er-Einheiten, Pixel = ⌊(u · w + 32) / 64⌋:
- *
- * - Motiv F = Umhang-Außenseite (1, 1)–(11, 17). Löcher (Alpha < 128) bekommen die Farbe des
- *   nächsten deckenden Pixels (Breitensuche, 4er-Nachbarschaft), alles wird deckend; ohne
- *   deckendes Pixel grau (64, 64, 64).
- * - Außenseite O = F auf 10 × 20 gestreckt: Zeile y ← ⌊y · fh / oh⌋ (jede vierte Zeile doppelt).
- * - Bereich (22, 0)–(46, 22) leeren, dann:
- *   außen (36, 2) 10 × 20 = O (+z, vom Rücken weg; dort malt auch Mojang);
- *   innen (24, 2) 10 × 20 = O gespiegelt, ⌊c · 3/5⌋;
- *   Schulterkante (34, 2) 2 × 20 = O(0, y) · 4/5; Endkante (22, 2) 2 × 20 = O(letzte, y) · 4/5;
- *   oben (24, 0) 10 × 2 = O(gespiegelt, 0) · 4/5; unten (34, 0) 10 × 2 = O(gespiegelt, letzte) · 4/5.
- */
-export function fillElytraFromFront(tex: Rgba, s: number): Rgba {
-  const out: Rgba = { width: tex.width, height: tex.height, data: tex.data.slice() }
-  const w = tex.width
-  if (s < 1 || w < 64 || tex.height * 2 !== w) return out
-  const px = (u: number) => Math.floor((u * w + 32) / 64)
-  const d = out.data
-  // Motiv holen (als ARGB-Zahlen wie im Client), Löcher füllen.
-  const sx0 = px(1)
-  const fw = px(11) - sx0
-  const fh = px(17) - sx0
-  const face = new Uint32Array(fw * fh)
-  for (let y = 0; y < fh; y++) {
-    for (let x = 0; x < fw; x++) {
-      const i = ((sx0 + y) * w + sx0 + x) * 4
-      face[y * fw + x] = ((d[i + 3]! << 24) | (d[i]! << 16) | (d[i + 1]! << 8) | d[i + 2]!) >>> 0
-    }
-  }
-  if (!fillHoles(face, fw, fh)) face.fill(0xff404040)
-  // Außenseite O.
-  const ox0 = px(36)
-  const oy0 = px(2)
-  const ow = px(46) - ox0
-  const oh = px(22) - oy0
-  const outer = new Uint32Array(ow * oh)
-  for (let y = 0; y < oh; y++) {
-    const sy = Math.floor((y * fh) / oh)
-    for (let x = 0; x < ow; x++) outer[y * ow + x] = face[sy * fw + Math.floor((x * fw) / ow)]!
-  }
-  const put = (x: number, y: number, c: number) => {
-    const o = (y * w + x) * 4
-    d[o] = (c >>> 16) & 255
-    d[o + 1] = (c >>> 8) & 255
-    d[o + 2] = c & 255
-    d[o + 3] = c >>> 24
-  }
-  const shade = (c: number, num: number, den: number) =>
-    (0xff000000 | ((Math.floor((((c >>> 16) & 255) * num) / den)) << 16) | ((Math.floor((((c >>> 8) & 255) * num) / den)) << 8) | Math.floor(((c & 255) * num) / den)) >>> 0
-  const mirror = (x: number, n: number) => ow - 1 - Math.min(ow - 1, Math.floor((x * ow) / n))
-  // Bereich leeren.
-  for (let y = 0; y < oy0 + oh; y++) d.fill(0, (y * w + px(22)) * 4, (y * w + px(46)) * 4)
-  for (let y = 0; y < oh; y++) for (let x = 0; x < ow; x++) put(ox0 + x, oy0 + y, outer[y * ow + x]!)
-  // Innenseite: gespiegelt und dunkler.
-  const ix0 = px(24)
-  const iw = px(34) - ix0
-  for (let y = 0; y < oh; y++) for (let x = 0; x < iw; x++) put(ix0 + x, oy0 + y, shade(outer[y * ow + mirror(x, iw)]!, 3, 5))
-  // Kanten: Schulter = erste, Flügelende = letzte Spalte der Außenseite.
-  const ex0 = px(34)
-  const ew = px(36) - ex0
-  const wx0 = px(22)
-  const ww = px(24) - wx0
-  for (let y = 0; y < oh; y++) {
-    const shoulder = shade(outer[y * ow]!, 4, 5)
-    const end = shade(outer[y * ow + ow - 1]!, 4, 5)
-    for (let x = 0; x < ew; x++) put(ex0 + x, oy0 + y, shoulder)
-    for (let x = 0; x < ww; x++) put(wx0 + x, oy0 + y, end)
-  }
-  // Oben/unten: oberste bzw. unterste Zeile der Außenseite, gespiegelt.
-  const tx0 = px(24)
-  const tw = px(34) - tx0
-  const bx0 = px(34)
-  const bw = px(44) - bx0
-  for (let y = 0; y < oy0; y++) {
-    for (let x = 0; x < tw; x++) put(tx0 + x, y, shade(outer[mirror(x, tw)]!, 4, 5))
-    for (let x = 0; x < bw; x++) put(bx0 + x, y, shade(outer[(oh - 1) * ow + mirror(x, bw)]!, 4, 5))
-  }
-  return out
-}
-
-/** Löcher (Alpha < 128) mit der Farbe des nächsten deckenden Pixels füllen, alles deckend; false = nichts Deckendes. */
-function fillHoles(face: Uint32Array, w: number, h: number): boolean {
-  const n = w * h
-  if (!n) return false
-  const queue = new Int32Array(n)
-  const done = new Uint8Array(n)
-  let tail = 0
-  for (let i = 0; i < n; i++) {
-    if (face[i]! >>> 24 >= 128) {
-      done[i] = 1
-      queue[tail++] = i
-    }
-  }
-  if (!tail) return false
-  for (let head = 0; head < tail; head++) {
-    const i = queue[head]!
-    const c = face[i]!
-    const x = i % w
-    const visit = (j: number) => {
-      if (done[j]) return
-      done[j] = 1
-      face[j] = c
-      queue[tail++] = j
-    }
-    if (x > 0) visit(i - 1)
-    if (x < w - 1) visit(i + 1)
-    if (i >= w) visit(i - w)
-    if (i + w < n) visit(i + w)
-  }
-  for (let i = 0; i < n; i++) face[i] = (face[i]! | 0xff000000) >>> 0
-  return true
+  return tex
 }
 
 /** Vorhandene Umhang-Textur (ein Frame) auf Faktor `s` bringen; 22:17 landet oben links. */

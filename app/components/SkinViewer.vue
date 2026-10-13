@@ -26,8 +26,6 @@ const props = withDefaults(
      */
     capeCanvases?: HTMLCanvasElement[] | null
     capeFrame?: number
-    /** Umschalter „Umhang | Elytra“ im Bild zeigen. */
-    equipmentToggle?: boolean
     /** Kopf-Kosmetik (v2) am Kopf; Animation und Leuchten laufen zur Wanduhr wie im Spiel. */
     cosmetic?: ViewerCosmetic | null
     /** Begleiter (slot companion), zusätzlich zum Hut, dieselbe Pipeline. */
@@ -48,7 +46,6 @@ const props = withDefaults(
     capeFrameTime: null,
     capeCanvases: null,
     capeFrame: 0,
-    equipmentToggle: false,
     cosmetic: null,
     companion: null,
     night: false,
@@ -62,9 +59,6 @@ type Viewer = import('skinview3d').SkinViewer
 const canvas = ref<HTMLCanvasElement | null>(null)
 const box = ref<HTMLElement | null>(null)
 const failed = ref(false)
-/** Am Rücken: Umhang oder Elytra (Flügel aus der Außenseite des Umhangs). */
-const equipment = ref<'cape' | 'elytra'>('cape')
-const hasCape = computed(() => !!props.cape || !!props.capeCanvases?.length)
 let viewer: Viewer | null = null
 let observer: ResizeObserver | null = null
 let capeTimer: ReturnType<typeof setInterval> | null = null
@@ -147,28 +141,9 @@ async function splitCape(src: string, frames: number): Promise<HTMLCanvasElement
   })
 }
 
-/** Elytra: Flügel immer aus der Außenseite erzeugen (wie im TRS Client); je Leinwand einmal. */
-const elytraCache = new WeakMap<HTMLCanvasElement, HTMLCanvasElement>()
-function withElytra(canvas: HTMLCanvasElement): HTMLCanvasElement {
-  const cached = elytraCache.get(canvas)
-  if (cached) return cached
-  const s = canvas.width / 64
-  const ctx = canvas.getContext('2d', { willReadFrequently: true })
-  if (!Number.isInteger(s) || s < 1 || canvas.height !== 32 * s || !ctx) return canvas
-  const data = ctx.getImageData(0, 0, canvas.width, canvas.height)
-  const filled = fillElytraFromFront({ width: data.width, height: data.height, data: data.data }, s)
-  const out = document.createElement('canvas')
-  out.width = canvas.width
-  out.height = canvas.height
-  out.getContext('2d')?.putImageData(new ImageData(new Uint8ClampedArray(filled.data), filled.width, filled.height), 0, 0)
-  elytraCache.set(canvas, out)
-  return out
-}
-
-/** Leinwand je Frame als Umhang bzw. Elytra (animiert zur Wanduhr oder fester Frame). */
+/** Leinwand je Frame als Umhang (animiert zur Wanduhr oder fester Frame). */
 function applyCanvasCape(canvases: HTMLCanvasElement[], frameTime: number | null) {
   const token = capeToken
-  const back = equipment.value
   let shown: HTMLCanvasElement | null = null
   const draw = () => {
     if (!viewer || token !== capeToken) return
@@ -176,7 +151,7 @@ function applyCanvasCape(canvases: HTMLCanvasElement[], frameTime: number | null
     const canvas = canvases[Math.max(0, f)]
     if (!canvas || canvas === shown) return
     shown = canvas
-    viewer.loadCape(back === 'elytra' ? withElytra(canvas) : canvas, { backEquipment: back })
+    viewer.loadCape(canvas, { backEquipment: 'cape' })
   }
   draw()
   // Kürzer als die Frame-Dauer abtasten, damit der Wechsel zur Wanduhr passt.
@@ -196,7 +171,7 @@ async function applyCape() {
     return
   }
   const animated = props.capeFrames > 1 && !!props.capeFrameTime
-  if (!animated && equipment.value === 'cape') {
+  if (!animated) {
     await viewer.loadCape(props.cape, { backEquipment: 'cape' })
     return
   }
@@ -420,7 +395,7 @@ onBeforeUnmount(() => {
 })
 
 watch(() => [props.skin, props.variant], () => void applySkin())
-watch(() => [props.cape, props.capeFrames, props.capeFrameTime, props.capeCanvases, props.capeFrame, equipment.value], () => void applyCape())
+watch(() => [props.cape, props.capeFrames, props.capeFrameTime, props.capeCanvases, props.capeFrame], () => void applyCape())
 watch(() => props.animation, (kind) => void setAnimation(kind))
 watch(() => props.height, resize)
 watch(() => props.cosmetic, () => void applySlot(hatSlot, props.cosmetic))
@@ -436,26 +411,6 @@ watch(
 <template>
   <div ref="box" class="relative w-full" :style="{ height: `${height}px` }">
     <canvas ref="canvas" class="size-full cursor-grab active:cursor-grabbing" :aria-label="t('skins.viewer.label')" />
-    <div
-      v-if="equipmentToggle && hasCape && !failed"
-      class="absolute bottom-2 left-2 flex gap-0.5 rounded-md bg-black/45 p-0.5 text-[11px]"
-      role="radiogroup"
-      :aria-label="t('skins.viewer.equipment')"
-      data-testid="viewer-equipment"
-    >
-      <button
-        v-for="kind in (['cape', 'elytra'] as const)"
-        :key="kind"
-        type="button"
-        class="rounded px-2 py-0.5 transition-colors"
-        :class="equipment === kind ? 'bg-white/90 text-black' : 'text-white hover:bg-white/15'"
-        role="radio"
-        :aria-checked="equipment === kind"
-        @click="equipment = kind"
-      >
-        {{ t(`skins.viewer.${kind}`) }}
-      </button>
-    </div>
     <div v-if="failed" class="absolute inset-0 grid place-items-center px-4 text-center text-sm text-base-400">
       {{ t('skins.viewer.failed') }}
     </div>

@@ -10,12 +10,6 @@ export type CapeRegionId =
   | 'capeOuter'
   | 'capeRight'
   | 'capeInner'
-  | 'elytraTop'
-  | 'elytraBottom'
-  | 'elytraLeft'
-  | 'elytraOuter'
-  | 'elytraRight'
-  | 'elytraInner'
 
 export interface CapeRect {
   x: number
@@ -26,28 +20,22 @@ export interface CapeRect {
 
 export interface CapeRegion extends CapeRect {
   id: CapeRegionId
-  group: 'cape' | 'elytra'
   /** `face` = große Fläche (außen/innen), `edge` = Kante/Seite. */
   kind: 'face' | 'edge'
 }
 
 /**
- * Würfel-UV wie in Minecraft: Umhang `texOffs(0, 0)` mit 10×16×1, Elytra
- * `texOffs(22, 0)` mit 10×20×2. Außen = die Seite, die man von hinten sieht.
+ * Würfel-UV wie in Minecraft: Umhang `texOffs(0, 0)` mit 10×16×1. Außen = die
+ * Seite, die man von hinten sieht. Der Elytra-Bereich gehört nicht dazu: TRS-Umhänge
+ * werden nie als Elytra genutzt (im Spiel bleibt immer die Vanilla-Elytra).
  */
 export const CAPE_REGIONS: readonly CapeRegion[] = [
-  { id: 'capeTop', group: 'cape', kind: 'edge', x: 1, y: 0, w: 10, h: 1 },
-  { id: 'capeBottom', group: 'cape', kind: 'edge', x: 11, y: 0, w: 10, h: 1 },
-  { id: 'capeLeft', group: 'cape', kind: 'edge', x: 0, y: 1, w: 1, h: 16 },
-  { id: 'capeOuter', group: 'cape', kind: 'face', x: 1, y: 1, w: 10, h: 16 },
-  { id: 'capeRight', group: 'cape', kind: 'edge', x: 11, y: 1, w: 1, h: 16 },
-  { id: 'capeInner', group: 'cape', kind: 'face', x: 12, y: 1, w: 10, h: 16 },
-  { id: 'elytraTop', group: 'elytra', kind: 'edge', x: 24, y: 0, w: 10, h: 2 },
-  { id: 'elytraBottom', group: 'elytra', kind: 'edge', x: 34, y: 0, w: 10, h: 2 },
-  { id: 'elytraLeft', group: 'elytra', kind: 'edge', x: 22, y: 2, w: 2, h: 20 },
-  { id: 'elytraOuter', group: 'elytra', kind: 'face', x: 24, y: 2, w: 10, h: 20 },
-  { id: 'elytraRight', group: 'elytra', kind: 'edge', x: 34, y: 2, w: 2, h: 20 },
-  { id: 'elytraInner', group: 'elytra', kind: 'face', x: 36, y: 2, w: 10, h: 20 },
+  { id: 'capeTop', kind: 'edge', x: 1, y: 0, w: 10, h: 1 },
+  { id: 'capeBottom', kind: 'edge', x: 11, y: 0, w: 10, h: 1 },
+  { id: 'capeLeft', kind: 'edge', x: 0, y: 1, w: 1, h: 16 },
+  { id: 'capeOuter', kind: 'face', x: 1, y: 1, w: 10, h: 16 },
+  { id: 'capeRight', kind: 'edge', x: 11, y: 1, w: 1, h: 16 },
+  { id: 'capeInner', kind: 'face', x: 12, y: 1, w: 10, h: 16 },
 ]
 
 /** Fläche im Raster mit Faktor `s` (Pixel der Textur). */

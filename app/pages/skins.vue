@@ -713,7 +713,6 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
                   :night="night"
                   :focus="focus"
                   :reset-tick="cameraReset"
-                  equipment-toggle
                   @cosmetic-error="toasts.error(t('headCosmetics.previewFailed'))"
                 />
               </ClientOnly>

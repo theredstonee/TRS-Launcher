@@ -746,7 +746,7 @@ defineExpose({ finish, ready })
     <!-- Vorschau -->
     <div class="space-y-3">
       <div class="rounded-lg bg-base-900">
-        <SkinViewer :skin="null" :cape-canvases="previewCanvases" :cape-frame-time="previewCanvases.length > 1 ? timing.frameTime : null" animation="walk" :height="250" equipment-toggle />
+        <SkinViewer :skin="null" :cape-canvases="previewCanvases" :cape-frame-time="previewCanvases.length > 1 ? timing.frameTime : null" animation="walk" :height="250" />
       </div>
       <p class="text-[11px] text-base-400">
         {{ t('capes.studio.importSummary', { n: frames.length, w: 64 * detail, h: 32 * detail }) }}

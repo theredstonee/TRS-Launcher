@@ -2860,10 +2860,7 @@
       "night": "Noc",
       "showHead": "Przybliż głowę",
       "showBody": "Pokaż całe ciało",
-      "resetCamera": "Resetuj kamerę",
-      "equipment": "Na plecach",
-      "cape": "Peleryna",
-      "elytra": "Elytra"
+      "resetCamera": "Resetuj kamerę"
     },
     "trsCape": "Peleryna TRS",
     "headCosmetic": "Kosmetyk na głowę",
@@ -3670,13 +3667,7 @@
         "capeLeft": "Lewy bok",
         "capeOuter": "Zewnętrzna strona",
         "capeRight": "Prawy bok",
-        "capeInner": "Wewnętrzna strona",
-        "elytraTop": "Elytra góra",
-        "elytraBottom": "Elytra dół",
-        "elytraLeft": "Elytra lewy bok",
-        "elytraOuter": "Elytra zewnątrz",
-        "elytraRight": "Elytra prawy bok",
-        "elytraInner": "Elytra wewnątrz"
+        "capeInner": "Wewnętrzna strona"
       },
       "tools": {
         "pencil": "Ołówek",
@@ -3698,7 +3689,6 @@
       "legend": "Legenda szablonu",
       "legendFaces": "Peleryna z zewnątrz i od środka",
       "legendEdges": "Krawędzie i boki",
-      "legendElytra": "Elytra – tworzone automatycznie ze strony zewnętrznej",
       "shortcuts": "Klawisze: B ołówek · E gumka · I pobierz kolor · G wypełnij · L linia · M przesuń · [ ] pędzel · O kalka · Spacja odtwarzaj · ←/→ klatka · Ctrl+Z / Ctrl+Y · prawy przycisk ściera",
       "timeline": {
         "label": "Oś czasu",

@@ -2860,10 +2860,7 @@
       "night": "Nacht",
       "showHead": "Auf den Kopf zoomen",
       "showBody": "Ganzen Körper zeigen",
-      "resetCamera": "Kamera zurücksetzen",
-      "equipment": "Am Rücken",
-      "cape": "Umhang",
-      "elytra": "Elytra"
+      "resetCamera": "Kamera zurücksetzen"
     },
     "trsCape": "TRS-Umhang",
     "headCosmetic": "Kopf-Kosmetik",
@@ -3670,13 +3667,7 @@
         "capeLeft": "Umhang links",
         "capeOuter": "Außenseite",
         "capeRight": "Umhang rechts",
-        "capeInner": "Innenseite",
-        "elytraTop": "Elytra oben",
-        "elytraBottom": "Elytra unten",
-        "elytraLeft": "Elytra links",
-        "elytraOuter": "Elytra außen",
-        "elytraRight": "Elytra rechts",
-        "elytraInner": "Elytra innen"
+        "capeInner": "Innenseite"
       },
       "tools": {
         "pencil": "Stift",
@@ -3698,7 +3689,6 @@
       "legend": "Legende der Vorlage",
       "legendFaces": "Umhang außen & innen",
       "legendEdges": "Kanten und Seiten",
-      "legendElytra": "Elytra – automatisch aus der Außenseite",
       "shortcuts": "Tasten: B Stift · E Radierer · I Pipette · G Füllen · L Linie · M Verschieben · [ ] Pinsel · O Zwiebelhaut · Leertaste Abspielen · ←/→ Frame · Strg+Z / Strg+Y · Rechtsklick radiert",
       "timeline": {
         "label": "Zeitleiste",

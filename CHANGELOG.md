@@ -28,6 +28,16 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Elytras look like normal Minecraft elytras again.** TRS capes are no longer painted onto the elytra – with a TRS cape you now see the plain vanilla elytra (in all Minecraft versions). The cape itself still shows as usual when you don't wear an elytra.
+- The cape/elytra switch in the 3D preview (Skins page and cape workshop) was removed, and the cape workshop template no longer shows an elytra area.
+
+### Deutsch
+- **Elytren sehen wieder wie normale Minecraft-Elytren aus.** TRS-Umhänge werden nicht mehr auf die Elytra gemalt – mit einem TRS-Umhang siehst du jetzt die ganz normale Vanilla-Elytra (in allen Minecraft-Versionen). Der Umhang selbst wird wie gewohnt angezeigt, wenn du keine Elytra trägst.
+- Der Umschalter Umhang/Elytra in der 3D-Vorschau (Skins-Seite und Umhang-Werkstatt) wurde entfernt, und die Vorlage der Umhang-Werkstatt zeigt keinen Elytra-Bereich mehr.
+
 ## 0.21.0 – 2026-10-13 – Cape Workshop | Umhang-Werkstatt
 <!-- banner: accent=#ff5a3c motif=/news/0.21.0/banner.png -->
 <!-- shots:

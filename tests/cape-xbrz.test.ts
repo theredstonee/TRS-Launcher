@@ -163,7 +163,8 @@ describe('Hochskalieren von Umhang-Texturen', () => {
   it('kennt die Teile des Umhangs', () => {
     expect(capeRegionAt(5, 5, 1)?.id).toBe('capeOuter')
     expect(capeRegionAt(15, 5, 1)?.id).toBe('capeInner')
-    expect(capeRegionAt(30, 10, 1)?.id).toBe('elytraOuter')
+    // Elytra-Bereich gehört nicht mehr zum Umhang.
+    expect(capeRegionAt(30, 10, 1)).toBeNull()
     expect(capeRegionAt(80, 80, 8)?.id).toBe('capeOuter')
     expect(isCapePixel(60, 30, 1)).toBe(false)
     expect(capeRegionAt(0, 0, 1)).toBeNull()

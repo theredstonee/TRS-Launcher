@@ -1,9 +1,9 @@
-import { CAPE_MAX_BYTES, CAPE_MAX_SCALE, fillElytraFromFront, rgba, type Rgba } from './capeImage'
+import { CAPE_MAX_BYTES, CAPE_MAX_SCALE, rgba, type Rgba } from './capeImage'
 import { upscaleTexture } from './capeUpscale'
 
 // Fertiger Upload-Streifen aus der Zeitleiste: jedes Bild einmal hochskalieren
-// (Standzeiten teilen sich das Ergebnis), Elytra aus der Außenseite erzeugen,
-// untereinander legen, als PNG kodieren.
+// (Standzeiten teilen sich das Ergebnis), untereinander legen, als PNG kodieren.
+// Einen Elytra-Bereich gibt es nicht mehr (im Spiel bleibt die Vanilla-Elytra).
 // Läuft Frame für Frame mit Pausen dazwischen, damit die Oberfläche flüssig bleibt;
 // das PNG kodiert der Browser abseits des Haupt-Threads (OffscreenCanvas).
 
@@ -51,8 +51,7 @@ export async function buildUploadStrip(frames: readonly Rgba[], options: ExportO
     if (!up) {
       await pause()
       if (options.stale?.()) throw new StaleExport()
-      // Elytra immer aus der Außenseite (gleiche Regel wie im TRS Client).
-      up = fillElytraFromFront(upscaleTexture(frame, options.base, s, options.smooth), s)
+      up = upscaleTexture(frame, options.base, s, options.smooth)
       cache.set(frame, up)
       options.onProgress?.(cache.size, distinct)
     }

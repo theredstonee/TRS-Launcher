@@ -4,7 +4,7 @@ import { xbrzScale, type XbrzFactor } from './xbrz'
 
 // Umhang-Textur von Faktor `from` (Bearbeitung) auf Faktor `to` (Upload) bringen:
 // pixelgenau (nächster Nachbar) oder geglättet mit xBRZ. Geglättet wird jeder Teil
-// des Umhangs für sich (Außen, Innen, Kanten, Elytra), damit keine Farben über die
+// des Umhangs für sich (Außen, Innen, Kanten), damit keine Farben über die
 // Kanten der UV-Inseln laufen; Alpha bleibt sauber (kein Saum an durchsichtigen Rändern).
 
 /** Ganzzahlig vergrößern, jeder Pixel wird ein k×k-Block. */

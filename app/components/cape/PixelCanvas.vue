@@ -27,7 +27,7 @@ const canvas = ref<HTMLCanvasElement | null>(null)
 const working = shallowRef<Rgba | null>(null)
 const shown = computed(() => working.value ?? props.image)
 
-const GUIDE = { face: 'rgba(255, 90, 69, 0.95)', edge: 'rgba(242, 194, 48, 0.9)', elytra: 'rgba(160, 110, 230, 0.95)' }
+const GUIDE = { face: 'rgba(255, 90, 69, 0.95)', edge: 'rgba(242, 194, 48, 0.9)' }
 
 let source: HTMLCanvasElement | null = null
 const onionCanvases = new WeakMap<Rgba, HTMLCanvasElement>()
@@ -108,7 +108,7 @@ function drawGuides(ctx: CanvasRenderingContext2D, z: number) {
   ctx.textBaseline = 'top'
   for (const r of CAPE_REGIONS) {
     const p = scaleRect(r, s * z)
-    ctx.strokeStyle = r.group === 'elytra' ? GUIDE.elytra : r.kind === 'face' ? GUIDE.face : GUIDE.edge
+    ctx.strokeStyle = r.kind === 'face' ? GUIDE.face : GUIDE.edge
     ctx.setLineDash(r.kind === 'edge' ? [3, 3] : [])
     ctx.strokeRect(p.x + 0.5, p.y + 0.5, p.w - 1, p.h - 1)
     if (r.kind === 'face' && p.w >= 64) {

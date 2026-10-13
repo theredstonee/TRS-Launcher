@@ -335,7 +335,6 @@ onBeforeUnmount(() => listen(false))
             :cape-frame="playing ? 0 : firstTick"
             animation="walk"
             :height="230"
-            equipment-toggle
           />
           <button
             type="button"
@@ -374,7 +373,6 @@ onBeforeUnmount(() => listen(false))
         <ul v-if="guides" class="space-y-1 text-[11px] text-base-400" :aria-label="t('capes.studio.legend')">
           <li class="flex items-center gap-2"><span class="h-2.5 w-4 rounded-sm border-2 border-[#ff5a45]" />{{ t('capes.studio.legendFaces') }}</li>
           <li class="flex items-center gap-2"><span class="h-2.5 w-4 rounded-sm border-2 border-dashed border-[#f2c230]" />{{ t('capes.studio.legendEdges') }}</li>
-          <li class="flex items-center gap-2"><span class="h-2.5 w-4 rounded-sm border-2 border-[#a06ee6]" />{{ t('capes.studio.legendElytra') }}</li>
         </ul>
       </div>
     </div>

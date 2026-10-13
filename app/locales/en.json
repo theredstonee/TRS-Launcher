@@ -2860,10 +2860,7 @@
       "night": "Night",
       "showHead": "Zoom to head",
       "showBody": "Show whole body",
-      "resetCamera": "Reset camera",
-      "equipment": "On the back",
-      "cape": "Cape",
-      "elytra": "Elytra"
+      "resetCamera": "Reset camera"
     },
     "trsCape": "TRS cape",
     "headCosmetic": "Head cosmetic",
@@ -3670,13 +3667,7 @@
         "capeLeft": "Cape left side",
         "capeOuter": "Outside",
         "capeRight": "Cape right side",
-        "capeInner": "Inside",
-        "elytraTop": "Elytra top",
-        "elytraBottom": "Elytra bottom",
-        "elytraLeft": "Elytra left side",
-        "elytraOuter": "Elytra outside",
-        "elytraRight": "Elytra right side",
-        "elytraInner": "Elytra inside"
+        "capeInner": "Inside"
       },
       "tools": {
         "pencil": "Pencil",
@@ -3698,7 +3689,6 @@
       "legend": "Template legend",
       "legendFaces": "Cape outside & inside",
       "legendEdges": "Edges and sides",
-      "legendElytra": "Elytra – made from the outside automatically",
       "shortcuts": "Keys: B pencil · E eraser · I pick · G fill · L line · M move · [ ] brush · O onion skin · Space play · ←/→ frame · Ctrl+Z / Ctrl+Y · right click erases",
       "timeline": {
         "label": "Timeline",

@@ -2860,10 +2860,7 @@
       "night": "Gece",
       "showHead": "Kafaya yakınlaştır",
       "showBody": "Tüm vücudu göster",
-      "resetCamera": "Kamerayı sıfırla",
-      "equipment": "Sırtta",
-      "cape": "Pelerin",
-      "elytra": "Elytra"
+      "resetCamera": "Kamerayı sıfırla"
     },
     "trsCape": "TRS pelerini",
     "headCosmetic": "Kafa kozmetiği",
@@ -3670,13 +3667,7 @@
         "capeLeft": "Pelerin sol yanı",
         "capeOuter": "Dış yüz",
         "capeRight": "Pelerin sağ yanı",
-        "capeInner": "İç yüz",
-        "elytraTop": "Elytra üst",
-        "elytraBottom": "Elytra alt",
-        "elytraLeft": "Elytra sol yan",
-        "elytraOuter": "Elytra dış yüz",
-        "elytraRight": "Elytra sağ yan",
-        "elytraInner": "Elytra iç yüz"
+        "capeInner": "İç yüz"
       },
       "tools": {
         "pencil": "Kalem",
@@ -3698,7 +3689,6 @@
       "legend": "Şablon açıklaması",
       "legendFaces": "Pelerin dış ve iç yüz",
       "legendEdges": "Kenarlar ve yanlar",
-      "legendElytra": "Elytra – dış yüzden otomatik oluşturulur",
       "shortcuts": "Tuşlar: B kalem · E silgi · I renk seç · G doldur · L çizgi · M taşı · [ ] fırça · O soğan kabuğu · Boşluk oynat · ←/→ kare · Ctrl+Z / Ctrl+Y · sağ tık siler",
       "timeline": {
         "label": "Zaman çizelgesi",

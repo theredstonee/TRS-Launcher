@@ -2860,10 +2860,7 @@
       "night": "Nacht",
       "showHead": "Inzoomen op het hoofd",
       "showBody": "Hele lichaam tonen",
-      "resetCamera": "Camera resetten",
-      "equipment": "Op de rug",
-      "cape": "Cape",
-      "elytra": "Elytra"
+      "resetCamera": "Camera resetten"
     },
     "trsCape": "TRS-cape",
     "headCosmetic": "Hoofdcosmetica",
@@ -3670,13 +3667,7 @@
         "capeLeft": "Linkerzijde cape",
         "capeOuter": "Buitenkant",
         "capeRight": "Rechterzijde cape",
-        "capeInner": "Binnenkant",
-        "elytraTop": "Elytra boven",
-        "elytraBottom": "Elytra onder",
-        "elytraLeft": "Elytra links",
-        "elytraOuter": "Elytra buitenkant",
-        "elytraRight": "Elytra rechts",
-        "elytraInner": "Elytra binnenkant"
+        "capeInner": "Binnenkant"
       },
       "tools": {
         "pencil": "Potlood",
@@ -3698,7 +3689,6 @@
       "legend": "Legenda van het sjabloon",
       "legendFaces": "Cape buiten- en binnenkant",
       "legendEdges": "Randen en zijkanten",
-      "legendElytra": "Elytra – automatisch gemaakt van de buitenkant",
       "shortcuts": "Toetsen: B potlood · E gum · I kleur oppikken · G vullen · L lijn · M verschuiven · [ ] penseel · O uienschil · Spatie afspelen · ←/→ frame · Ctrl+Z / Ctrl+Y · rechtsklik gumt",
       "timeline": {
         "label": "Tijdlijn",

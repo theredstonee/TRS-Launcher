@@ -2860,10 +2860,7 @@
       "night": "Noche",
       "showHead": "Acercar a la cabeza",
       "showBody": "Mostrar cuerpo entero",
-      "resetCamera": "Restablecer cámara",
-      "equipment": "En la espalda",
-      "cape": "Capa",
-      "elytra": "Élitros"
+      "resetCamera": "Restablecer cámara"
     },
     "trsCape": "Capa TRS",
     "headCosmetic": "Cosmético de cabeza",
@@ -3670,13 +3667,7 @@
         "capeLeft": "Lado izquierdo",
         "capeOuter": "Exterior",
         "capeRight": "Lado derecho",
-        "capeInner": "Interior",
-        "elytraTop": "Élitros arriba",
-        "elytraBottom": "Élitros abajo",
-        "elytraLeft": "Élitros lado izquierdo",
-        "elytraOuter": "Élitros exterior",
-        "elytraRight": "Élitros lado derecho",
-        "elytraInner": "Élitros interior"
+        "capeInner": "Interior"
       },
       "tools": {
         "pencil": "Lápiz",
@@ -3698,7 +3689,6 @@
       "legend": "Leyenda de la plantilla",
       "legendFaces": "Capa exterior e interior",
       "legendEdges": "Bordes y lados",
-      "legendElytra": "Élitros: se crean automáticamente a partir del exterior",
       "shortcuts": "Teclas: B lápiz · E borrador · I cuentagotas · G rellenar · L línea · M mover · [ ] pincel · O papel cebolla · Espacio reproducir · ←/→ fotograma · Ctrl+Z / Ctrl+Y · clic derecho borra",
       "timeline": {
         "label": "Línea de tiempo",
