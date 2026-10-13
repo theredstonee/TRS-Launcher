@@ -34,10 +34,22 @@ cp "$lib" "src-tauri/gen/apple/Externals/arm64/$config/libapp.a"
 # Build-Phase „Build Rust Code“ abschalten (die Bibliothek liegt schon da).
 python3 scripts/ios/disable-rust-phase.py "$proj/project.pbxproj"
 
+# Event-Symbole (src-tauri/icons/events/*/ios, von scripts/ios-project.sh in den Katalog kopiert):
+# actool trägt sie als alternative App-Symbole (CFBundleAlternateIcons) in die Info.plist ein.
+alt_icons=$(find src-tauri/gen/apple -type d -name 'AppIcon-*.appiconset' -exec basename {} .appiconset \; | sort | tr '\n' ' ' | sed 's/ $//')
+
 xcodebuild -project "$proj" -scheme "$scheme" -configuration "$config" \
   -sdk iphoneos -destination 'generic/platform=iOS' -archivePath "$archive" \
   ARCHS=arm64 CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM="" \
+  ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES="$alt_icons" \
   archive
+
+# Prüfen, dass die Event-Symbole wirklich in der App gelandet sind (sonst schlägt der Wechsel still fehl).
+app_plist=$(ls -d "$archive"/Products/Applications/*.app | head -1)/Info.plist
+for name in $alt_icons; do
+  /usr/libexec/PlistBuddy -c "Print :CFBundleIcons:CFBundleAlternateIcons:$name" "$app_plist" > /dev/null \
+    || echo "::warning::Alternatives App-Symbol $name fehlt in der Info.plist."
+done
 
 app=$(ls -d "$archive"/Products/Applications/*.app | head -1)
 mkdir -p "$work/Payload"

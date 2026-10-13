@@ -2371,6 +2371,8 @@
       "advancedRenderingDescription": "Blur effects behind dialogs and bars. Turning it off saves a little performance on slower PCs.",
       "animatedBackgroundTitle": "Animated background",
       "animatedBackgroundDescription": "A calm animated scene behind every page – a redstone circuit or a winter landscape, depending on the design. When off, only the background pattern is shown.",
+      "eventIconsTitle": "Event icons",
+      "eventIconsDescription": "During events like Halloween, the app icon changes too – window, taskbar, desktop and Start menu shortcuts, and the home screen on phones. The normal icon comes back by itself when the event ends.",
       "motionTitle": "Animations",
       "motionDescription": "Animated background, running lights, page and dialog transitions, and lists that glide into place. “Reduce animations” turns them all off; “Follow Windows/system” uses the animation setting of Windows or your desktop – it is often off on tuned or remote PCs.",
       "motionModes": {

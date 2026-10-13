@@ -351,6 +351,12 @@ export const backend = {
   /** Android: APK laden (Aufgabe mit Fortschritt) und den Installationsdialog des Systems öffnen. */
   mobileUpdateInstall: (taskId: string | null = null): Promise<MobileInstallOutcome> =>
     checked(mobileInstallOutcomeSchema, 'mobile_update_install', { taskId }),
+  /**
+   * Laufende Events melden → App-Symbol (Fenster, Verknüpfungen, Startsymbol am Handy). Der Kern
+   * beachtet den Schalter „Event-Symbole“; Antwort: geltendes Event-Symbol oder `null`.
+   */
+  eventIconSync: (events: string[]) =>
+    checked(z.string().regex(/^[a-z][a-z0-9_-]{0,31}$/).nullable(), 'event_icon_sync', { events }),
 
   getSettings: () => call<Settings>('get_settings'),
   updateSettings: (settings: Settings) => call<Settings>('update_settings', { settings }),

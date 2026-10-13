@@ -28,6 +28,22 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+
+- Event icons: during events like Halloween the launcher wears its event icon – in the window and taskbar, on the
+  desktop and Start menu shortcuts (and your own app shortcut on Linux), and on the home screen of the Android and
+  iPhone apps. When the event ends, the normal icon comes back by itself. You can turn this off under
+  Settings → Appearance → Event icons.
+
+### Deutsch
+
+- Event-Symbole: Bei Events wie Halloween trägt der Launcher sein Event-Symbol – im Fenster und in der Taskleiste,
+  auf den Verknüpfungen auf dem Desktop und im Startmenü (unter Linux auf deiner eigenen App-Verknüpfung) und auf
+  dem Startbildschirm der Android- und iPhone-App. Nach dem Event kommt das normale Symbol von selbst zurück.
+  Abschalten kannst du das unter Einstellungen → Aussehen → Event-Symbole.
+
 ## 0.21.0 – 2026-10-13 – Cape Workshop | Umhang-Werkstatt
 <!-- banner: accent=#ff5a3c motif=/news/0.21.0/banner.png -->
 <!-- shots:

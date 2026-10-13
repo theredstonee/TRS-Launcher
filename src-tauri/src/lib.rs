@@ -2,6 +2,7 @@ mod commands;
 mod deeplink;
 mod dialog_text;
 mod error;
+mod event_icon;
 mod mobile;
 #[cfg(mobile)]
 mod mobile_game;
@@ -221,6 +222,10 @@ pub fn run() {
             }));
             let launcher = Arc::new(launcher);
             app.manage(mobile::UpdateState::new(&launcher)?);
+            // Event-Symbol vom letzten Lauf gleich ins Fenster; danach entscheidet die Oberfläche (event_icon_sync).
+            let event_icons = event_icon::EventIconState::new(&launcher);
+            event_icons.restore_window(app.handle());
+            app.manage(event_icons);
             // Spiel-Engine: HTTP des Launchers (TLS, Proxy) für Runtime-Downloads, Zustand und
             // Logs der Engine in den Spiele-Manager (game-event, Spielzeit, Logs).
             #[cfg(mobile)]
@@ -399,6 +404,7 @@ pub fn run() {
             mobile::mobile_update_check,
             mobile::mobile_update_install,
             mobile::mobile_exit_app,
+            event_icon::event_icon_sync,
             push::push_status,
             push::push_set_settings,
             push::push_choose_distributor,

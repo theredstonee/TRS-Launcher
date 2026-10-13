@@ -30,6 +30,13 @@ fi
 icons=$(find src-tauri/gen/apple -type d -name 'AppIcon.appiconset' | head -1)
 if [ -n "$icons" ]; then
   cp src-tauri/icons/ios/*.png "$icons/"
+  # Event-Symbole als alternative App-Symbole (gleicher Katalog); eingeschaltet über
+  # ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES in scripts/ios-unsigned-ipa.sh.
+  for set in src-tauri/icons/events/*/ios/*.appiconset; do
+    [ -d "$set" ] || continue
+    rm -rf "$(dirname "$icons")/$(basename "$set")"
+    cp -R "$set" "$(dirname "$icons")/"
+  done
 else
   echo "::warning::AppIcon.appiconset not found – the IPA keeps the default icon."
 fi

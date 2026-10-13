@@ -321,6 +321,8 @@ pub struct UiSettings {
     pub big_picture_on_start: bool,
     /// Auf Steam Deck, SteamOS und in gamescope von selbst im Big-Picture-Modus starten.
     pub big_picture_auto: bool,
+    /// Event-Symbole: Während eines Events (z. B. Halloween) zeigt die App ihr Event-Symbol.
+    pub event_icons: bool,
 }
 
 impl Default for UiSettings {
@@ -343,6 +345,7 @@ impl Default for UiSettings {
             language: Language::En,
             big_picture_on_start: false,
             big_picture_auto: true,
+            event_icons: true,
         }
     }
 }
@@ -813,6 +816,16 @@ mod tests {
         assert!(ui.big_picture_on_start && !ui.big_picture_auto);
         let json = serde_json::to_value(&ui).unwrap();
         assert_eq!((json["bigPictureOnStart"].as_bool(), json["bigPictureAuto"].as_bool()), (Some(true), Some(false)));
+    }
+
+    #[test]
+    fn event_icons_default_on() {
+        // Ältere Dateien ohne Feld: Event-Symbole an.
+        let old: Settings = serde_json::from_str(r#"{"ui":{"theme":"light"}}"#).unwrap();
+        assert!(old.ui.event_icons);
+        let ui: UiSettings = serde_json::from_value(serde_json::json!({ "eventIcons": false })).unwrap();
+        assert!(!ui.event_icons);
+        assert_eq!(serde_json::to_value(&ui).unwrap()["eventIcons"].as_bool(), Some(false));
     }
 
     #[tokio::test]

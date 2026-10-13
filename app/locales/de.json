@@ -2371,6 +2371,8 @@
       "advancedRenderingDescription": "Unschärfe-Effekte hinter Dialogen und Leisten. Aus spart auf schwachen Rechnern etwas Leistung.",
       "animatedBackgroundTitle": "Animierter Hintergrund",
       "animatedBackgroundDescription": "Eine ruhige, animierte Szene hinter allen Seiten – je nach Design eine Redstone-Schaltung oder eine Winterlandschaft. Aus zeigt nur das Hintergrundmuster.",
+      "eventIconsTitle": "Event-Symbole",
+      "eventIconsDescription": "Bei Events wie Halloween wechselt auch das App-Symbol – Fenster, Taskleiste, Verknüpfungen auf dem Desktop und im Startmenü sowie der Startbildschirm am Handy. Nach dem Event kommt das normale Symbol von selbst zurück.",
       "motionTitle": "Animationen",
       "motionDescription": "Animierter Hintergrund, Lauflichter, Seiten- und Dialog-Übergänge und Listen, die an ihren Platz gleiten. „Animationen reduzieren“ schaltet alles ab; „Wie Windows/System“ folgt der Animations-Einstellung von Windows bzw. des Desktops – auf optimierten oder Remote-PCs ist sie oft aus.",
       "motionModes": {

@@ -108,6 +108,8 @@ export interface UiSettings {
   bigPictureOnStart: boolean
   /** Auf Steam Deck/SteamOS/gamescope von selbst im Big-Picture-Modus starten (ab Werk an). */
   bigPictureAuto: boolean
+  /** Event-Symbole: während eines Events (z. B. Halloween) das Event-Symbol der App (ab Werk an). */
+  eventIcons: boolean
 }
 
 export interface JavaPaths {

@@ -24,6 +24,7 @@ pub mod depcheck;
 pub mod discord;
 pub mod download;
 pub mod error;
+pub mod event_icon;
 pub mod extras;
 pub mod firewall;
 pub mod forge;

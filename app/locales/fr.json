@@ -2371,6 +2371,8 @@
       "advancedRenderingDescription": "Effets de flou derrière les boîtes de dialogue et les barres. Les désactiver économise un peu de performances sur les PC lents.",
       "animatedBackgroundTitle": "Arrière-plan animé",
       "animatedBackgroundDescription": "Une scène animée et paisible derrière chaque page – un circuit de redstone ou un paysage d'hiver, selon le design. Désactivé, seul le motif d'arrière-plan s'affiche.",
+      "eventIconsTitle": "Icônes d'événement",
+      "eventIconsDescription": "Pendant des événements comme Halloween, l'icône de l'application change aussi : fenêtre, barre des tâches, raccourcis du bureau et du menu Démarrer, et l'écran d'accueil du téléphone. L'icône habituelle revient d'elle-même à la fin de l'événement.",
       "motionTitle": "Animations",
       "motionDescription": "Arrière-plan animé, lumières défilantes, transitions des pages et des fenêtres, et listes qui glissent à leur place. « Réduire les animations » désactive tout ; « Comme Windows/système » suit le réglage des animations de Windows ou du bureau, souvent désactivé sur les PC optimisés ou à distance.",
       "motionModes": {

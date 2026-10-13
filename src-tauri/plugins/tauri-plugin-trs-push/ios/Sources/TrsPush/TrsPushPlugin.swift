@@ -28,6 +28,10 @@ class PollArgs: Decodable {
   let enabled: Bool
 }
 
+class AppIconArgs: Decodable {
+  let icon: String
+}
+
 class NotifyArgs: Decodable {
   let notifications: [PushNotification]
 }
@@ -172,6 +176,45 @@ class TrsPushPlugin: Plugin {
       invoke.resolve()
     } catch {
       invoke.reject("invalid_args", code: "invalid_args")
+    }
+  }
+
+  /// Event-Symbol auf dem Home-Bildschirm (alternatives App-Symbol aus dem Asset-Katalog, siehe
+  /// scripts/ios-project.sh). iOS zeigt beim Wechsel selbst einen Hinweis. Schon richtig: nichts tun.
+  @objc public func setAppIcon(_ invoke: Invoke) {
+    let args: AppIconArgs
+    do {
+      args = try invoke.parseArgs(AppIconArgs.self)
+    } catch {
+      invoke.reject("invalid_args", code: "invalid_args")
+      return
+    }
+    let name: String?
+    switch args.icon {
+    case "default": name = nil
+    case "halloween": name = "AppIcon-Halloween"
+    default:
+      invoke.reject("invalid_icon", code: "invalid_icon")
+      return
+    }
+    DispatchQueue.main.async {
+      let app = UIApplication.shared
+      guard app.supportsAlternateIcons else {
+        invoke.reject("unsupported", code: "unsupported")
+        return
+      }
+      if app.alternateIconName == name {
+        invoke.resolve(["changed": false])
+        return
+      }
+      app.setAlternateIconName(name) { error in
+        if let error = error {
+          NSLog("TrsPush: App-Symbol nicht gewechselt: \(error)")
+          invoke.reject("icon_failed", code: "icon_failed")
+        } else {
+          invoke.resolve(["changed": true])
+        }
+      }
     }
   }
 

@@ -96,6 +96,12 @@ struct PollArgs<'a> {
     root: &'a str,
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AppIconArgs<'a> {
+    icon: &'a str,
+}
+
 /// Zugriff auf den nativen Teil.
 pub struct TrsPush<R: Runtime> {
     #[cfg(mobile)]
@@ -166,6 +172,24 @@ impl<R: Runtime> TrsPush<R> {
         return self.mobile.call::<serde_json::Value, _>("openDistributor", ()).map(|_| ());
         #[cfg(not(mobile))]
         Err(Error("unsupported".into()))
+    }
+
+    /// iOS: Event-Symbol auf dem Home-Bildschirm (`"default"` oder `"halloween"`); `true`, wenn
+    /// gewechselt wurde. Steht hier, weil dieses Plugin ohnehin das Swift-Paket der App mitbringt –
+    /// Android schaltet das Startsymbol im App-Plugin (`TrsMobilePlugin`).
+    pub fn set_app_icon(&self, icon: &str) -> Result<bool> {
+        #[derive(Deserialize)]
+        struct Changed {
+            #[serde(default)]
+            changed: bool,
+        }
+        #[cfg(target_os = "ios")]
+        return self.mobile.call::<Changed, _>("setAppIcon", AppIconArgs { icon }).map(|r| r.changed);
+        #[cfg(not(target_os = "ios"))]
+        {
+            let _ = (AppIconArgs { icon }, Changed { changed: false }.changed);
+            Err(Error("unsupported".into()))
+        }
     }
 
     /// iOS: Hintergrundabruf planen (`enabled`) oder abbestellen. Android macht das die App selbst.
