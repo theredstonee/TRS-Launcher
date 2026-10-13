@@ -1,14 +1,14 @@
 # Contributing to the TRS Launcher
 
 > **Deutsch:** Diese Anleitung gibt es ausführlicher auf Deutsch in den Docs:
-> [Mitmachen](https://trs-launcher.theredstonee.de/docs/de/developers/contributing).
+> [Mitmachen](https://trs-launcher.wiki/de/developers/contributing).
 
 Thanks for helping! Bug fixes, features, translations and docs are all welcome. This file is the short version; the
 full guides are in the docs:
 
-- [Build from source](https://trs-launcher.theredstonee.de/docs/en/developers/build-from-source)
-- [Contributing](https://trs-launcher.theredstonee.de/docs/en/developers/contributing)
-- [Translating](https://trs-launcher.theredstonee.de/docs/en/developers/translating)
+- [Build from source](https://trs-launcher.wiki/en/developers/build-from-source)
+- [Contributing](https://trs-launcher.wiki/en/developers/contributing)
+- [Translating](https://trs-launcher.wiki/en/developers/translating)
 
 ## Report bugs and ideas – not in GitHub issues
 
@@ -111,7 +111,7 @@ Everyone whose commits end up in a release is thanked by their GitHub name in th
 
 The launcher texts are in `app/locales/<language>.json` (English is the source), the TRS Client texts in
 `client-mod/common/src/main/resources/assets/trsclient/i18n/`. The
-[translation guide](https://trs-launcher.theredstonee.de/docs/en/developers/translating) explains placeholders, plural
+[translation guide](https://trs-launcher.wiki/en/developers/translating) explains placeholders, plural
 forms and how to add a new language.
 
 ## License

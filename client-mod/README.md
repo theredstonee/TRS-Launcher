@@ -6,7 +6,7 @@ License: GPL-3.0-only, author: theredstonee.
 
 Chat Heads by dzwdz ([github.com/dzwdz/chat_heads](https://github.com/dzwdz/chat_heads), MPL-2.0): parts of the code reused in `core/chatheads`. The full license is `licenses/chat-heads-MPL-2.0.txt` (also inside the built jars).
 
-Player guide: [TRS Client docs](https://trs-launcher.theredstonee.de/docs/en/client/overview) (also reachable in game
+Player guide: [TRS Client docs](https://trs-launcher.wiki/en/client/overview) (also reachable in game
 under TRS menu → Help).
 
 ## Projects

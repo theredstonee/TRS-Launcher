@@ -28,6 +28,16 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+
+- Help links now open the new documentation at trs-launcher.wiki.
+
+### Deutsch
+
+- Hilfe-Links öffnen jetzt die neue Dokumentation unter trs-launcher.wiki.
+
 ## 0.21.0 – 2026-10-13 – Cape Workshop | Umhang-Werkstatt
 <!-- banner: accent=#ff5a3c motif=/news/0.21.0/banner.png -->
 <!-- shots:

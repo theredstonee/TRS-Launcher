@@ -16,10 +16,10 @@ class DocsTest {
 
 	@Test
 	void buildsLanguageAndPage() {
-		assertEquals("https://trs-launcher.theredstonee.de/docs/de/client/overview", Docs.url(Docs.CLIENT_OVERVIEW, "de"));
-		assertEquals("https://trs-launcher.theredstonee.de/docs/es/help/crash-helper", Docs.url("help/crash-helper", "es"));
-		assertEquals("https://trs-launcher.theredstonee.de/docs/en/client/overview", Docs.url(Docs.CLIENT_OVERVIEW, "en"));
-		assertEquals("https://trs-launcher.theredstonee.de/docs/de/", Docs.url(null, "de"));
+		assertEquals("https://trs-launcher.wiki/de/client/overview", Docs.url(Docs.CLIENT_OVERVIEW, "de"));
+		assertEquals("https://trs-launcher.wiki/es/help/crash-helper", Docs.url("help/crash-helper", "es"));
+		assertEquals("https://trs-launcher.wiki/en/client/overview", Docs.url(Docs.CLIENT_OVERVIEW, "en"));
+		assertEquals("https://trs-launcher.wiki/de/", Docs.url(null, "de"));
 	}
 
 	@Test

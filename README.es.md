@@ -24,7 +24,7 @@
 
 [**Website**](https://trs-launcher.theredstonee.de/?lang=es) ·
 [Descarga](https://github.com/theredstonee/TRS-Launcher/releases) ·
-[**Docs**](https://trs-launcher.theredstonee.de/docs/es/) ·
+[**Docs**](https://trs-launcher.wiki/es/) ·
 [Funciones](#funciones) ·
 [Compilar](#compilar-desde-el-código-fuente) ·
 [Arquitectura](#arquitectura)
@@ -91,7 +91,7 @@
 > [!TIP]
 > El instalador todavía no está firmado, así que Windows SmartScreen puede mostrar «Windows protegió su PC». Elige **Más información → Ejecutar de todas formas**.
 
-Tus datos se guardan en `%APPDATA%\TRS-Launcher`. Encontrarás guías paso a paso en la [documentación](https://trs-launcher.theredstonee.de/docs/es/), por ejemplo [primeros pasos](https://trs-launcher.theredstonee.de/docs/es/getting-started/installation) y [problemas frecuentes](https://trs-launcher.theredstonee.de/docs/es/help/common-problems).
+Tus datos se guardan en `%APPDATA%\TRS-Launcher`. Encontrarás guías paso a paso en la [documentación](https://trs-launcher.wiki/es/), por ejemplo [primeros pasos](https://trs-launcher.wiki/es/getting-started/installation) y [problemas frecuentes](https://trs-launcher.wiki/es/help/common-problems).
 
 ### Linux
 
@@ -112,7 +112,7 @@ Cada versión incluye un **AppImage**, un **.deb** y un **.rpm** para x86_64 (co
 - Funciona en Wayland y X11 (el juego se ejecuta mediante XWayland). Con el driver propietario de NVIDIA, el launcher desactiva el renderizador DMA-BUF de WebKit para evitar una ventana en blanco.
 - El AppImage necesita FUSE 2 (`libfuse2`/`fuse2`); sin él, ejecútalo con `--appimage-extract-and-run`.
 - Todavía no disponible en Linux: el asistente del firewall de Windows (no hace falta) y la grabación de clips. Para ARM64 no hay runtime de Java de Mojang: indica tu propio Java en los ajustes.
-- Más consejos y solución de problemas: [guía para Linux](https://trs-launcher.theredstonee.de/docs/es/help/linux).
+- Más consejos y solución de problemas: [guía para Linux](https://trs-launcher.wiki/es/help/linux).
 
 ## Juego limpio
 
@@ -123,11 +123,11 @@ Cada versión incluye un **AppImage**, un **.deb** y un **.rpm** para x86_64 (co
 
 ## Contribuir
 
-Las contribuciones son bienvenidas: código, traducciones y documentación. Lee [CONTRIBUTING.md](CONTRIBUTING.md) (en inglés) y la guía [Contribuir](https://trs-launcher.theredstonee.de/docs/es/developers/contributing) de la documentación. Los errores y las ideas se reportan en el [gestor de incidencias de la web](https://trs-launcher.theredstonee.de/issues) (no en GitHub Issues), las preguntas van a [Discussions](https://github.com/theredstonee/TRS-Launcher/discussions) o a [Discord](https://dc.theredstonee.de), y los problemas de seguridad se reportan solo en privado (ver [SECURITY.md](SECURITY.md)). Todas las personas que contribuyen a una versión aparecen por su nombre en las notas de la versión y en el launcher.
+Las contribuciones son bienvenidas: código, traducciones y documentación. Lee [CONTRIBUTING.md](CONTRIBUTING.md) (en inglés) y la guía [Contribuir](https://trs-launcher.wiki/es/developers/contributing) de la documentación. Los errores y las ideas se reportan en el [gestor de incidencias de la web](https://trs-launcher.theredstonee.de/issues) (no en GitHub Issues), las preguntas van a [Discussions](https://github.com/theredstonee/TRS-Launcher/discussions) o a [Discord](https://dc.theredstonee.de), y los problemas de seguridad se reportan solo en privado (ver [SECURITY.md](SECURITY.md)). Todas las personas que contribuyen a una versión aparecen por su nombre en las notas de la versión y en el launcher.
 
 ## Compilar desde el código fuente
 
-La guía completa está en la documentación: [Compilar desde el código fuente](https://trs-launcher.theredstonee.de/docs/es/developers/build-from-source) · [Contribuir](https://trs-launcher.theredstonee.de/docs/es/developers/contributing) · [Traducir](https://trs-launcher.theredstonee.de/docs/es/developers/translating).
+La guía completa está en la documentación: [Compilar desde el código fuente](https://trs-launcher.wiki/es/developers/build-from-source) · [Contribuir](https://trs-launcher.wiki/es/developers/contributing) · [Traducir](https://trs-launcher.wiki/es/developers/translating).
 
 **Requisitos:** Node.js 22+ con pnpm, Rust (stable, toolchain MSVC), Visual Studio Build Tools («Desarrollo para el escritorio con C++») y WebView2 (preinstalado en Windows 10/11).
 

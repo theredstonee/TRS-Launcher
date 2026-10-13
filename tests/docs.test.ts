@@ -8,13 +8,13 @@ describe('docsUrl', () => {
   })
 
   it('zeigt auf die Startseite der Sprache, wenn keine Seite genannt ist', () => {
-    expect(docsUrl(undefined, 'en')).toBe('https://trs-launcher.theredstonee.de/docs/en/')
-    expect(docsUrl(undefined, 'de')).toBe('https://trs-launcher.theredstonee.de/docs/de/')
-    expect(docsUrl(undefined, 'es')).toBe('https://trs-launcher.theredstonee.de/docs/es/')
+    expect(docsUrl(undefined, 'en')).toBe('https://trs-launcher.wiki/en/')
+    expect(docsUrl(undefined, 'de')).toBe('https://trs-launcher.wiki/de/')
+    expect(docsUrl(undefined, 'es')).toBe('https://trs-launcher.wiki/es/')
   })
 
   it('baut /docs/<sprache>/<bereich>/<seite>', () => {
-    expect(docsUrl('help/crash-helper', 'de')).toBe('https://trs-launcher.theredstonee.de/docs/de/help/crash-helper')
+    expect(docsUrl('help/crash-helper', 'de')).toBe('https://trs-launcher.wiki/de/help/crash-helper')
     expect(docsUrl('help/logs', 'es')).toBe(`${DOCS_BASE_URL}/es/help/logs`)
     expect(docsUrl('client/overview', 'en')).toBe(`${DOCS_BASE_URL}/en/client/overview`)
   })
