@@ -1,6 +1,6 @@
 import { joinURL } from 'ufo'
 
-// Docus verlinkt `/favicon.ico` ohne Basis-Pfad (die Website hat keins). Stattdessen das TRS-Logo aus /docs/.
+// Docus verlinkt `/favicon.ico` (gibt es nicht). Stattdessen das TRS-Logo aus public/icon.png.
 export default defineNuxtPlugin(() => {
   const head = injectHead()
   const icon = joinURL(useRuntimeConfig().app.baseURL, 'icon.png')

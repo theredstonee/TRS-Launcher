@@ -8,19 +8,19 @@ Aufbau, Build und Sicherheit: [README.md](README.md).
 
 ```
 content/
-├─ en/                        Englisch  → https://trs-launcher.theredstonee.de/docs/en/…
+├─ en/                        Englisch  → https://trs-launcher.wiki/en/…
 │  ├─ index.md                Startseite der Sprache (Hero + Karten) – nicht ändern ohne Absprache
 │  ├─ 1.getting-started/
 │  │  ├─ .navigation.yml      Titel + Icon des Bereichs (schon angelegt)
 │  │  ├─ index.md             Übersicht des Bereichs (Karten entstehen automatisch) – nicht ändern
-│  │  ├─ 1.installation.md    → /docs/en/getting-started/installation
-│  │  └─ 2.first-start.md     → /docs/en/getting-started/first-start
+│  │  ├─ 1.installation.md    → /en/getting-started/installation
+│  │  └─ 2.first-start.md     → /en/getting-started/first-start
 │  ├─ 2.launcher/
 │  ├─ 3.client/
 │  ├─ 4.help/
 │  └─ 5.developers/
-├─ de/                        Deutsch   → /docs/de/…   (gleiche Ordner und Dateinamen!)
-└─ es/                        Spanisch  → /docs/es/…
+├─ de/                        Deutsch   → /de/…   (gleiche Ordner und Dateinamen!)
+└─ es/                        Spanisch  → /es/…
 ```
 
 - Seiten heißen `NN.slug.md` mit **zweistelliger** Nummer (`01.`, `02.` … `13.`): Nuxt Content sortiert die Pfade als Text, `10.` landet sonst vor `2.`. Die Nummer bestimmt nur die Reihenfolge und fällt in der Adresse weg. Slugs: klein,
@@ -54,8 +54,8 @@ navigation:
 
 ## Links
 
-- Andere Doku-Seiten: `[Instanzen](/en/launcher/instances)` – **ohne** `/docs` davor (kommt automatisch dazu), mit
-  Sprachkürzel, ohne `.md`, ohne Nummern. In der deutschen Fassung `/de/…`.
+- Andere Doku-Seiten: `[Instanzen](/en/launcher/instances)` – **ohne** `/docs` davor (die Doku liegt an der Wurzel von
+  trs-launcher.wiki), mit Sprachkürzel, ohne `.md`, ohne Nummern. In der deutschen Fassung `/de/…`.
 - Anker: `[Speicher](/en/help/performance#memory)` – Anker = Überschrift klein mit Bindestrichen.
 - Website: volle Adresse, z. B. `[Download](https://trs-launcher.theredstonee.de/download)` (Deutsch mit `?lang=de`).
 - Extern: volle `https://`-Adresse; öffnet automatisch in neuem Tab.
@@ -64,8 +64,7 @@ navigation:
 
 - Dateien unter `docs-site/public/shots/<bereich>/<name>.png` (Bereich = `getting-started`, `launcher`, `client`,
   `help`, `developers`). Kleine Dateinamen mit Bindestrichen. PNG oder WebP, max. ca. 1600 px breit, < 500 KB.
-- Im Markdown **mit Alt-Text**: `![Die Bibliothek mit drei Instanzen](/shots/launcher/library.png)` – ohne `/docs`;
-  der Basis-Pfad wird automatisch ergänzt. Bilder lassen sich per Klick vergrößern.
+- Im Markdown **mit Alt-Text**: `![Die Bibliothek mit drei Instanzen](/shots/launcher/library.png)` – ohne `/docs`. Bilder lassen sich per Klick vergrößern.
 - Sprachabhängige Screenshots: `library.de.png` neben `library.png` und im deutschen Text darauf verweisen.
 - Noch kein Bild da? `![Kommt bald](/shots/placeholder.png)`. Fehlende Bilder brechen den Build nicht, stehen aber als
   Warnung im Log (`[docs] Warnung: Bild fehlt …`).
@@ -196,12 +195,12 @@ Name muss auf lucide.dev existieren.
   Funktionen, keine Versprechen.
 - Name: „TRS Launcher“, „TRS Client“, Entwickler „TheRedstonee“. Hinweis „kein offizielles Minecraft-Produkt“ steht
   schon in der Fußzeile.
-- Die englischen Seiten landen automatisch in `/docs/llms.txt` und `/docs/llms-full.txt` (für Sprachmodelle).
+- Die englischen Seiten landen automatisch in `https://trs-launcher.wiki/llms.txt` und `/llms-full.txt` (für Sprachmodelle).
 
 ## Prüfen
 
 ```bash
 cd docs-site
-npm run dev        # http://127.0.0.1:3000/docs/en – Änderungen live
+npm run dev        # http://127.0.0.1:3000/en – Änderungen live
 npm run generate   # muss grün sein; Warnungen zu fehlenden Bildern lesen
 ```

@@ -1,6 +1,6 @@
 import { joinURL } from 'ufo'
 
-// Links zur Website (gleiche Domain) und nach außen – für Kopf- und Fußzeile.
+// Links zur Website (eigene Domain, die Doku liegt auf trs-launcher.wiki) und nach außen – für Kopf- und Fußzeile.
 
 export const WEBSITE_URL = 'https://trs-launcher.theredstonee.de'
 export const REPO_URL = 'https://github.com/theredstonee/TRS-Launcher'
@@ -57,7 +57,7 @@ export function useTrsLinks() {
   }
 }
 
-/** Datei aus public/ mit Basis-Pfad (/docs/…). */
+/** Datei aus public/ mit Basis-Pfad der App (an der Wurzel der Doku-Domain). */
 export function useBaseUrl(path: string): string {
   return joinURL(useRuntimeConfig().app.baseURL, path)
 }

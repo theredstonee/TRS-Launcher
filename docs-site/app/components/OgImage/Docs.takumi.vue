@@ -35,7 +35,7 @@ const short = computed(() => {
     </div>
 
     <div class="flex text-[20px] text-[#8b8ba2]">
-      trs-launcher.theredstonee.de/docs
+      trs-launcher.wiki
     </div>
   </div>
 </template>

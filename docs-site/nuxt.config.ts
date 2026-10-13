@@ -2,10 +2,14 @@ import { contentRoutes } from './build/content-routes.mjs'
 import { iconsToBundle } from './build/icons'
 
 // TRS Launcher – Dokumentation (Docus-Layer, Nuxt 4). Wird statisch erzeugt (`npm run generate`) und von der
-// Website-App (api/) unter https://trs-launcher.theredstonee.de/docs ausgeliefert – es gibt keinen eigenen Server.
+// Website-App (api/) auf eigener Domain https://trs-launcher.wiki ausgeliefert (Wurzel, ohne /docs) – es gibt keinen
+// eigenen Server.
 // Aufbau, Build und Sicherheit: README.md; Regeln für Inhalte: CONTENT.md.
 
-const SITE_URL = 'https://trs-launcher.theredstonee.de'
+/** Kanonische Adresse der Doku (eigene Domain, gleiche Website-App, siehe api/server/lib/wiki.ts). */
+const SITE_URL = 'https://trs-launcher.wiki'
+/** Die Website (Download, Datenschutz, llms.txt der Website). */
+const WEBSITE_URL = 'https://trs-launcher.theredstonee.de'
 
 /** Die fünf Bereiche (Ordner `content/<lang>/<N>.<slug>/`) – Reihenfolge wie in der Navigation. */
 const DOC_SECTIONS = [
@@ -24,8 +28,11 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
 
   app: {
-    // Alles liegt unter /docs/ – Links, Assets, Payloads und die Such-Datenbank.
-    baseURL: '/docs/',
+    // Eigene Domain: alles liegt an der Wurzel – Links, Payloads und die Such-Datenbank.
+    baseURL: '/',
+    // Gebaute Skripte/Stile unter /_docs/ statt /_nuxt/: die Website (gleiche App) hat ihr eigenes /_nuxt –
+    // getrennte Pfade schließen jede Verwechslung (auch in Caches) aus.
+    buildAssetsDir: '/_docs/',
     head: {
       meta: [{ name: 'theme-color', content: '#111116' }],
     },
@@ -40,8 +47,7 @@ export default defineNuxtConfig({
     fallback: 'dark',
   },
 
-  // Site-Adresse ohne Pfad (nuxt-site-config verlangt das); den Basis-Pfad /docs ergänzt app/plugins/seo-base.ts in
-  // canonical, hreflang, og:url und JSON-LD.
+  // Site-Adresse ohne Pfad (nuxt-site-config verlangt das) = kanonische Adresse für canonical, hreflang, og:url, JSON-LD.
   site: {
     url: SITE_URL,
     name: 'TRS Launcher Docs',
@@ -55,9 +61,9 @@ export default defineNuxtConfig({
       { code: 'de', name: 'Deutsch', language: 'de-DE' },
       { code: 'es', name: 'Español', language: 'es-ES' },
     ],
-    // Docus erzwingt ohnehin „prefix“: /docs/en/…, /docs/de/…, /docs/es/…
+    // Docus erzwingt ohnehin „prefix“: /en/…, /de/…, /es/…
     strategy: 'prefix',
-    // Die Sprachwahl für /docs macht der Website-Server (Accept-Language), nicht die Seite.
+    // Die Sprachwahl für / macht der Website-Server (Cookie trs_lang, Accept-Language), nicht die Seite.
     detectBrowserLanguage: false,
   },
 
@@ -99,7 +105,7 @@ export default defineNuxtConfig({
   },
 
   llms: {
-    domain: `${SITE_URL}/docs`,
+    domain: SITE_URL,
     title: 'TRS Launcher Documentation',
     description:
       'Documentation for TRS Launcher (the redstone Minecraft launcher by TheRedstonee) and the TRS Client mod: installation, launcher features, client modules, help and developer notes.',
@@ -120,14 +126,14 @@ export default defineNuxtConfig({
       })),
     ],
     notes: [
-      'Website: https://trs-launcher.theredstonee.de/ (overview of the website: https://trs-launcher.theredstonee.de/llms.txt)',
-      'The documentation also exists in German (/docs/de/) and Spanish (/docs/es/).',
+      `Website: ${WEBSITE_URL}/ (overview of the website: ${WEBSITE_URL}/llms.txt)`,
+      `The documentation also exists in German (${SITE_URL}/de) and Spanish (${SITE_URL}/es).`,
       'TRS Launcher is not an official Minecraft product and is not approved by or associated with Mojang or Microsoft.',
     ],
   },
 
   robots: {
-    // robots.txt der Website gilt (api/); hier keine eigene Datei, Seiten bleiben indexierbar.
+    // robots.txt und sitemap.xml der Doku-Domain erzeugt der Server (api/server/lib/wiki.ts); hier keine eigenen Dateien.
     robotsTxt: false,
   },
 
@@ -135,7 +141,7 @@ export default defineNuxtConfig({
     prerender: {
       crawlLinks: true,
       failOnError: false,
-      // …/install/index.html statt …/install.html: der Static-Handler der Website (Nitro) sucht `<pfad>/index.html`.
+      // …/install/index.html statt …/install.html: so sucht der Datei-Handler der Doku-Domain (api/server/lib/wiki.ts).
       autoSubfolderIndex: true,
       // Jede Seite aus content/ vorrendern – auch ohne Link dorthin (Suche, Sitemap).
       routes: contentRoutes().map((r) => r.path),

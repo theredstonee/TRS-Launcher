@@ -1,13 +1,14 @@
 // Nach `nuxt generate`: Ausgabe für die Website vorbereiten und prüfen.
 //
-// 1. Aufräumen: SPA-Fallbacks (200.html, 404.html) und Docus' eigene sitemap.xml (falsche Adressen ohne /docs)
-//    entfernen – die Website liefert 404 selbst und führt die Doku in ihrer Sitemap.
+// 1. Aufräumen: SPA-Fallback 200.html, die Startseite / (Sprachwahl macht der Server) und Docus' eigene sitemap.xml
+//    entfernen – sitemap.xml und robots.txt der Doku-Domain erzeugt der Server aus routes.json. 404.html bleibt: der
+//    Server zeigt sie für fehlende Doku-Seiten (Status 404).
 // 2. Keine Symlinks/Hardlinks in der Ausgabe (der Deploy-Tar bricht sonst, siehe api/README).
 // 3. CSP: SHA-256 aller Inline-Skripte (Nuxt-Konfiguration, Farbschema, Import-Map …) → .output/docs-meta/csp.json.
-//    Die Website setzt daraus für /docs/** eine strenge CSP ohne 'unsafe-inline' für Skripte.
-// 4. Routenliste für die Website-Sitemap → .output/docs-meta/routes.json (je Seite Sprache, Schlüssel, lastmod).
+//    Der Server setzt daraus auf trs-launcher.wiki eine strenge CSP ohne 'unsafe-inline' für Skripte.
+// 4. Routenliste für die Sitemap der Doku-Domain → .output/docs-meta/routes.json (je Seite Sprache, Schlüssel, lastmod).
 // 5. Prüfen: jede Seite aus content/ wurde erzeugt, keine Verweise auf fremde Hosts (Iconify-API, Google Fonts),
-//    llms.txt vorhanden. Fehlende Bilder sind nur eine Warnung.
+//    keine Verweise auf den alten Basis-Pfad /docs/, llms.txt + 404.html vorhanden. Fehlende Bilder: nur Warnung.
 
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
@@ -17,7 +18,8 @@ import { contentRoutes, ROOT } from '../build/content-routes.mjs'
 
 const OUT = join(ROOT, '.output', 'public')
 const META = join(ROOT, '.output', 'docs-meta')
-const BASE = '/docs'
+/** Basis-Pfad der Doku: eigene Domain (https://trs-launcher.wiki), alles an der Wurzel. */
+const BASE = '/'
 
 const errors = []
 const warnings = []
@@ -28,7 +30,7 @@ if (!existsSync(OUT)) {
 }
 
 // 1. Aufräumen
-for (const name of ['200.html', '404.html', 'sitemap.xml', 'index.html']) {
+for (const name of ['200.html', 'sitemap.xml', 'index.html', 'robots.txt']) {
   rmSync(join(OUT, name), { force: true })
 }
 
@@ -58,7 +60,7 @@ const pagePaths = new Set(pageRoutes.map((r) => r.path))
 // - Docus verlinkt hreflang-Fassungen in jeder Sprache, auch wenn es die Seite dort (noch) nicht gibt – solche
 //   Einträge entfernen, damit Suchmaschinen keine 404-Alternativen sehen.
 const NUXT_IMG_ONERROR = / onerror="this\.setAttribute\(&#39;data-error&#39;, ?1\)"/g
-const ALTERNATE = /<link rel="alternate" hreflang="([a-zA-Z-]+)" href="https:\/\/[^"/]+\/docs(\/[^"]*)">/g
+const ALTERNATE = /<link rel="alternate" hreflang="([a-zA-Z-]+)" href="https:\/\/[^"/]+(\/[^"]*)">/g
 for (const file of htmlFiles) {
   const before = readFileSync(file, 'utf8')
   const after = before
@@ -88,6 +90,8 @@ for (const file of htmlFiles) {
   }
   // Inline-Event-Handler würden trotz Hashes blockiert – dürfen nicht vorkommen.
   if (/<[a-z][^>]*\son[a-z]+\s*=/i.test(html.replace(SCRIPT, ''))) errors.push(`Inline-Event-Handler in ${rel(file)} (CSP)`)
+  // Alter Basis-Pfad: auf trs-launcher.wiki gibt es kein /docs/ (der Server leitet dort zur Website weiter).
+  if (/\s(?:href|src)="\/docs\//.test(html)) errors.push(`Verweis auf /docs/… in ${rel(file)} (Doku liegt an der Wurzel)`)
 }
 if (hashes.size > 40) warnings.push(`${hashes.size} verschiedene Inline-Skripte – CSP-Header wird lang, Ursache prüfen`)
 
@@ -119,7 +123,7 @@ for (const file of files.filter((f) => /\.(?:html|js|css|json)$/.test(f))) {
     else errors.push(`Fremder Host ${hit[0]} in ${rel(file)}`)
   }
 }
-for (const need of ['/llms.txt', '/llms-full.txt']) {
+for (const need of ['/llms.txt', '/llms-full.txt', '/404.html']) {
   if (!existsSync(join(OUT, need))) errors.push(`${need} fehlt`)
 }
 
