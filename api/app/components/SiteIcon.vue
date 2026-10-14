@@ -81,6 +81,7 @@ const PATHS: Record<string, string> = {
   tag: 'M4 4h7l9 9-7 7-9-9zM8 8h.01',
   merge: 'M7 4v4a7 7 0 0 0 7 7h4M15 12l3 3-3 3M7 20v-4',
   unlock: 'M6 11h12v9H6zM8 11V8a4 4 0 0 1 7.7-1.5',
+  hand: 'M8 12V5.5a1.5 1.5 0 0 1 3 0V11M11 10.5V4a1.5 1.5 0 0 1 3 0v6.5M14 10.5V5.5a1.5 1.5 0 0 1 3 0V12M17 9.5a1.5 1.5 0 0 1 3 0V14a7 7 0 0 1-7 7h-1.4a6 6 0 0 1-4.5-2.1l-2.9-3.4a1.5 1.5 0 0 1 2.2-2L8 15.2V12',
 }
 
 // Marken als ausgefüllte Formen.

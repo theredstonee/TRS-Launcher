@@ -1,11 +1,13 @@
 <script setup lang="ts">
 // Karte auf dem Roadmap-Board (§28): Art, Bereich, Priorität, Nummer, Titel, Score, Kommentare, Zuständige(r).
-// Klick auf die ganze Karte öffnet das Issue (Seite oder Fenster, entscheidet der Explorer). Team (issues.manage): ziehen zwischen Spalten oder Status-Menü (Tastatur).
-import { ISSUE_STATUSES, type IssueStatus, type IssueView } from '#shared/issues'
+// Klick auf die ganze Karte öffnet das Issue (Seite oder Fenster, entscheidet der Explorer). Team (issues.manage): ziehen
+// zwischen Spalten (am Handy gedrückt halten, das macht das Board) und mit der Hand claimen bzw. den eigenen Claim lösen.
+import type { IssueView } from '#shared/issues'
 
-const props = withDefaults(defineProps<{ issue: IssueView, canMove?: boolean, dragging?: boolean }>(), { canMove: false, dragging: false })
-const emit = defineEmits<{ open: [nr: number], move: [nr: number, status: IssueStatus], dragstart: [nr: number], dragend: [] }>()
+const props = withDefaults(defineProps<{ issue: IssueView, canMove?: boolean, dragging?: boolean, me?: string | null, claiming?: boolean }>(), { canMove: false, dragging: false, me: null, claiming: false })
+const emit = defineEmits<{ open: [nr: number], claim: [nr: number, claim: boolean], dragstart: [nr: number], dragend: [] }>()
 const { it, fill } = useIssueText()
+const mine = computed(() => !!props.me && props.issue.assignee?.uuid === props.me)
 const lp = useLocalePath()
 
 function onDragStart(e: DragEvent) {
@@ -14,10 +16,6 @@ function onDragStart(e: DragEvent) {
   e.dataTransfer.setData('text/x-trs-issue', String(props.issue.number))
   e.dataTransfer.setData('text/plain', `#${props.issue.number}`)
   emit('dragstart', props.issue.number)
-}
-function onSelect(e: Event) {
-  const v = (e.target as HTMLSelectElement).value as IssueStatus
-  if (v && v !== props.issue.status) emit('move', props.issue.number, v)
 }
 function open(e: MouseEvent) {
   // Neuer Tab/Fenster: normaler Link.
@@ -62,10 +60,32 @@ function onBlock(e: MouseEvent, nr: number) {
       <span v-if="issue.fixedIn" class="fixed-in"><SiteIcon name="check" class="size-3" />{{ issue.fixedIn }}</span>
       <span v-if="issue.locked" class="stat" :title="it.common.locked"><SiteIcon name="lock" class="size-3.5" /></span>
       <span class="ml-auto flex items-center gap-1.5">
-        <select v-if="canMove" class="move" :value="issue.status" :aria-label="`${it.board.moveTo} #${issue.number}`" :title="it.board.moveTo" @click.stop @change="onSelect">
-          <option v-for="s in ISSUE_STATUSES.filter((x) => x !== 'duplicate')" :key="s" :value="s">{{ it.statuses[s] }}</option>
-        </select>
-        <PlayerHead v-if="issue.assignee" :uuid="issue.assignee.uuid" :name="issue.assignee.name" :skin="issue.assignee.skin ?? null" :fetch="false" :size="20" :title="`${it.detail.sidebar.assignee}: ${issue.assignee.name}`" />
+        <button
+          v-if="canMove && !issue.assignee"
+          type="button"
+          class="claim"
+          :disabled="claiming"
+          :aria-label="fill(it.board.claim, { n: issue.number })"
+          :title="fill(it.board.claim, { n: issue.number })"
+          data-testid="claim"
+          @click.stop="emit('claim', issue.number, true)"
+        >
+          <SiteIcon name="hand" class="size-4" />
+        </button>
+        <button
+          v-else-if="canMove && mine && issue.assignee"
+          type="button"
+          class="claim mine"
+          :disabled="claiming"
+          :aria-label="fill(it.board.unclaim, { n: issue.number })"
+          :title="it.board.claimedByMe"
+          data-testid="unclaim"
+          @click.stop="emit('claim', issue.number, false)"
+        >
+          <PlayerHead :uuid="issue.assignee.uuid" :name="issue.assignee.name" :skin="issue.assignee.skin ?? null" :fetch="false" :size="20" />
+          <SiteIcon name="hand" class="badge size-3" />
+        </button>
+        <PlayerHead v-else-if="issue.assignee" :uuid="issue.assignee.uuid" :name="issue.assignee.name" :skin="issue.assignee.skin ?? null" :fetch="false" :size="20" :title="`${it.detail.sidebar.assignee}: ${issue.assignee.name}`" />
       </span>
     </div>
   </article>
@@ -159,24 +179,66 @@ function onBlock(e: MouseEvent, nr: number) {
   font-weight: 600;
   color: var(--color-ok);
 }
-.move {
-  max-width: 6.5rem;
-  padding: 0.1rem 0.25rem;
-  border-radius: 0.35rem;
-  border: 1px solid var(--color-base-700);
-  background: var(--color-base-950);
-  font-size: 11px;
-  color: var(--color-base-200);
+.claim {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 0.45rem;
+  border: 1px dashed var(--color-base-700);
+  color: var(--color-base-400);
+  transition: color 0.12s, border-color 0.12s, background-color 0.12s, opacity 0.12s;
 }
-.move {
-  opacity: 0;
-  transition: opacity 0.12s;
+.claim:not(.mine) {
+  opacity: 0.55;
 }
-.card-i:hover .move,
-.card-i:focus-within .move {
+.card-i:hover .claim,
+.claim:focus-visible {
   opacity: 1;
 }
-.move:focus-visible {
+.claim:hover:not(:disabled) {
+  border-style: solid;
+  border-color: var(--color-lamp-400);
+  background: color-mix(in srgb, var(--color-lamp-400) 12%, transparent);
+  color: var(--color-lamp-300);
+}
+.claim:focus-visible {
   outline: 2px solid var(--color-redstone-400);
+}
+.claim:disabled {
+  cursor: progress;
+  opacity: 0.4;
+}
+.claim.mine {
+  width: auto;
+  height: auto;
+  padding: 0.1rem;
+  border: 1px solid color-mix(in srgb, var(--color-lamp-400) 55%, transparent);
+}
+.claim.mine .badge {
+  position: absolute;
+  right: -0.4rem;
+  bottom: -0.4rem;
+  padding: 1px;
+  border-radius: 999px;
+  background: var(--color-base-900);
+  color: var(--color-lamp-300);
+}
+.claim.mine:hover:not(:disabled) {
+  border-color: var(--color-redstone-400);
+  background: color-mix(in srgb, var(--color-redstone-500) 14%, transparent);
+}
+.claim.mine:hover:not(:disabled) .badge {
+  color: var(--color-redstone-300);
+}
+@media (pointer: coarse) {
+  .card-i.movable {
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+  .claim:not(.mine) {
+    opacity: 1;
+  }
 }
 </style>

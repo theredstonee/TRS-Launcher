@@ -12,6 +12,7 @@ import {
   adminDeleteIssue,
   adminRestoreIssue,
   adminUpdateIssue,
+  claimIssue,
   createIssue,
   deleteOwnComment,
   editComment,
@@ -317,6 +318,26 @@ describe('issues: team', () => {
     expect(issuePage(env.ctx, i.number, viewer(env, bea)).issue.notes).toBeUndefined()
     expect(issuePage(env.ctx, i.number, viewer(env, sup)).issue.notes).toHaveLength(1)
     expect(one(env.ctx.db, "SELECT COUNT(*) AS n FROM admin_log WHERE action LIKE 'issue.%'")).toEqual({ n: 2 })
+  })
+
+  it('claims and releases only for yourself, the status stays', async () => {
+    const { env, alex, carl, sup, mod } = await setup()
+    setMemberRoles(env.ctx, OWNER, carl.uuid, ['supporter'])
+    const i = newIssue(env, alex)
+    const s = staffOf(env, sup)
+    const c = staffOf(env, carl)
+    expect(code(() => claimIssue(env.ctx, staffOf(env, mod), i.number, true))).toBe('missing_permission')
+    const r = claimIssue(env.ctx, s, i.number, true)
+    expect(r.issue).toMatchObject({ status: 'open', assignee: { uuid: sup.uuid } })
+    expect(r.history.at(-1)).toMatchObject({ action: 'assignee', from: null, to: 'Sup' })
+    // zweimal claimen ändert nichts, ein anderer Dev kann weder übernehmen noch lösen
+    expect(claimIssue(env.ctx, s, i.number, true).history).toHaveLength(1)
+    expect(code(() => claimIssue(env.ctx, c, i.number, true))).toBe('issue_claimed')
+    expect(code(() => claimIssue(env.ctx, c, i.number, false))).toBe('not_your_claim')
+    const freed = claimIssue(env.ctx, s, i.number, false)
+    expect(freed.issue.assignee).toBeNull()
+    expect(freed.issue.status).toBe('open')
+    expect(claimIssue(env.ctx, c, i.number, true).issue.assignee).toMatchObject({ name: 'Carl' })
   })
 
   it('merges duplicates: votes and followers move, the old issue points to the new one', async () => {

@@ -1124,6 +1124,20 @@ export function adminUpdateIssue(ctx: AppContext, staff: Staff, number: number, 
   return { issue: detailOf(ctx, after, viewer), history: historyViews(ctx, r.id) }
 }
 
+/**
+ * Claimen per Hand auf dem Board: nur sich selbst eintragen, wenn noch niemand zuständig ist, und nur den eigenen
+ * Claim wieder lösen. Den Claim eines anderen übernimmt man hier nicht (dafür gibt es das Zuständig-Feld). Der Status
+ * bleibt, wie er ist.
+ */
+export function claimIssue(ctx: AppContext, staff: Staff, number: number, claim: boolean): { issue: IssueDetail, history: IssueHistoryEntry[] } {
+  if (!can(staff, 'issues.manage')) throw new ApiError(403, 'missing_permission', 'Your role is missing the permission issues.manage', { permission: 'issues.manage' })
+  const r = issueOr404(ctx, number, true)
+  if (r.assignee_uuid !== null && r.assignee_uuid !== staff.uuid) {
+    throw conflict(claim ? 'issue_claimed' : 'not_your_claim', claim ? 'Someone else already claimed this issue' : 'Only the person who claimed this issue can release it')
+  }
+  return adminUpdateIssue(ctx, staff, number, { assignee: claim ? staff.uuid : null })
+}
+
 /** Duplikat zusammenführen: Stimmen + Folgende wandern zum Ziel, die Quelle wird `duplicate` und verweist darauf. */
 export function mergeIssue(ctx: AppContext, staff: Staff, number: number, into: number): IssueDetail {
   const src = issueOr404(ctx, number)

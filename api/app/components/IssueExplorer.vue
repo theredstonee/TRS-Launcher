@@ -98,6 +98,29 @@ async function move(nr: number, from: IssueStatus, to: IssueStatus) {
     void from
   }
 }
+/** Hand an der Karte: sich selbst eintragen bzw. den eigenen Claim lösen – sofort sichtbar, bei Fehler zurück. */
+const claiming = ref<number | null>(null)
+async function claim(nr: number, take: boolean) {
+  const found = takeCard(nr)
+  const me = account.value
+  if (!found || !me || claiming.value !== null) return
+  const before = found.card.assignee
+  found.card.assignee = take ? { uuid: me.uuid, name: me.name, skin: me.skin } : null
+  claiming.value = nr
+  try {
+    const r = await api<{ issue: IssueDetail }>(`/v1/admin/issues/${nr}/claim`, { method: take ? 'PUT' : 'DELETE' })
+    found.card.assignee = r.issue.assignee
+    say('ok', fill(take ? it.value.board.claimed : it.value.board.unclaimed, { n: nr }))
+    void refreshNuxtData('issue-summary')
+  } catch (e) {
+    found.card.assignee = before
+    // Jemand war schneller: Board neu laden, damit der echte Kopf erscheint.
+    void refresh()
+    say('error', fill(it.value.board.claimFailed, { n: nr, error: errorText(e) }))
+  } finally {
+    claiming.value = null
+  }
+}
 const loadingMore = ref<string | null>(null)
 async function more(statusKey: IssueStatus) {
   const col = board.value.find((c) => c.status === statusKey)
@@ -212,9 +235,12 @@ const pageLink = (p: number) => ({ query: { ...route.query, page: p > 1 ? String
       :columns="board"
       :can-move="canMove"
       :loading-more="loadingMore"
+      :me="account?.uuid ?? null"
+      :claiming="claiming"
       @open="openIssue"
       @move="move"
       @more="more"
+      @claim="claim"
     />
     <template v-else-if="list">
       <div v-if="!list.issues.length" class="card mt-5 px-6 py-12 text-center">

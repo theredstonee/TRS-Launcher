@@ -1,11 +1,12 @@
 <script setup lang="ts">
 // Roadmap-Board (§28): sechs Spalten Offen → Geplant → In Arbeit → In Prüfung → Erledigt → Abgelehnt mit Zähler.
 // Waagerecht scrollbar; auf dem Handy eine Spalte je Reiter. Team (issues.manage) zieht Karten zwischen den
-// Spalten – optimistisch verschoben, bei Fehler zurück. Weitere Karten je Spalte mit „Mehr laden“.
+// Spalten – optimistisch verschoben, bei Fehler zurück. Am Handy (kein HTML-Drag & Drop): Karte gedrückt halten,
+// dann auf einen Spalten-Reiter oder die Leiste unten ziehen. Weitere Karten je Spalte mit „Mehr laden“.
 import type { IssueStatus, IssueView, RoadmapColumnView } from '#shared/issues'
 
-const props = withDefaults(defineProps<{ columns: RoadmapColumnView[], canMove?: boolean, loadingMore?: string | null }>(), { canMove: false, loadingMore: null })
-const emit = defineEmits<{ open: [nr: number], move: [nr: number, from: IssueStatus, to: IssueStatus], more: [status: IssueStatus] }>()
+const props = withDefaults(defineProps<{ columns: RoadmapColumnView[], canMove?: boolean, loadingMore?: string | null, me?: string | null, claiming?: number | null }>(), { canMove: false, loadingMore: null, me: null, claiming: null })
+const emit = defineEmits<{ open: [nr: number], move: [nr: number, from: IssueStatus, to: IssueStatus], more: [status: IssueStatus], claim: [nr: number, claim: boolean] }>()
 const { it } = useIssueText()
 
 const dragNr = ref<number | null>(null)
@@ -30,16 +31,91 @@ function onDrop(e: DragEvent, status: IssueStatus) {
   const from = Number.isSafeInteger(nr) ? findStatus(nr) : null
   if (from && from !== status) emit('move', nr, from, status)
 }
-function onMoveMenu(nr: number, to: IssueStatus) {
-  const from = findStatus(nr)
-  if (from && from !== to) emit('move', nr, from, to)
+
+// --- Handy: lange drücken + ziehen ------------------------------------------------------------------------
+const HOLD_MS = 380
+const touch = { timer: 0, x: 0, y: 0, active: false }
+const ghost = ref<{ nr: number, title: string, from: IssueStatus, x: number, y: number, dx: number, w: number } | null>(null)
+
+function cancelTouch() {
+  if (touch.timer) window.clearTimeout(touch.timer)
+  touch.timer = 0
+  touch.active = false
+  ghost.value = null
+  dragNr.value = null
+  over.value = null
 }
+function onTouchStart(e: TouchEvent) {
+  if (!props.canMove || e.touches.length !== 1) return cancelTouch()
+  const target = e.target as HTMLElement
+  if (target.closest('button, select, input, textarea')) return
+  const card = target.closest<HTMLElement>('[data-nr]')
+  const nr = Number(card?.dataset.nr)
+  const from = Number.isSafeInteger(nr) ? findStatus(nr) : null
+  if (!card || !from) return
+  cancelTouch()
+  touch.x = e.touches[0]!.clientX
+  touch.y = e.touches[0]!.clientY
+  touch.timer = window.setTimeout(() => {
+    touch.timer = 0
+    touch.active = true
+    const r = card.getBoundingClientRect()
+    const issue = props.columns.find((c) => c.status === from)?.issues.find((i) => i.number === nr)
+    ghost.value = { nr, title: issue?.title ?? `#${nr}`, from, x: touch.x, y: touch.y, dx: touch.x - r.left, w: r.width }
+    dragNr.value = nr
+    navigator.vibrate?.(12)
+  }, HOLD_MS)
+}
+function dropTarget(x: number, y: number): IssueStatus | null {
+  const el = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-drop]')
+  return (el?.dataset.drop as IssueStatus | undefined) ?? null
+}
+function onTouchMove(e: TouchEvent) {
+  const p = e.touches[0]
+  if (!p) return
+  if (!touch.active) {
+    // Vor Ablauf der Haltezeit bewegt = scrollen, kein Ziehen.
+    if (touch.timer && Math.hypot(p.clientX - touch.x, p.clientY - touch.y) > 8) cancelTouch()
+    return
+  }
+  e.preventDefault()
+  if (ghost.value) {
+    ghost.value.x = p.clientX
+    ghost.value.y = p.clientY
+  }
+  over.value = dropTarget(p.clientX, p.clientY)
+}
+function onTouchEnd(e: TouchEvent) {
+  if (!touch.active || !ghost.value) return cancelTouch()
+  e.preventDefault()
+  const { nr, from } = ghost.value
+  const to = over.value
+  cancelTouch()
+  if (to && to !== from) {
+    mobileCol.value = to
+    emit('move', nr, from, to)
+  }
+}
+function onContextMenu(e: Event) {
+  // Langes Drücken öffnet sonst das Link-Menü des Browsers.
+  if (touch.timer || touch.active) e.preventDefault()
+}
+/** Die schwebende Karte bleibt ganz im Bild. */
+const ghostMaxLeft = computed(() => (ghost.value ? window.innerWidth - ghost.value.w - 8 : 0))
+onBeforeUnmount(cancelTouch)
 const colOf = (s: IssueStatus) => props.columns.find((c) => c.status === s)
 const cardOf = (c: RoadmapColumnView): IssueView[] => c.issues
 </script>
 
 <template>
-  <div class="board-wrap">
+  <div
+    class="board-wrap"
+    @touchstart="onTouchStart"
+    @touchmove="onTouchMove"
+    @touchend="onTouchEnd"
+    @touchcancel="cancelTouch"
+    @contextmenu="onContextMenu"
+  >
     <div class="tabs" role="tablist" :aria-label="it.board.columns">
       <button
         v-for="c in columns"
@@ -47,7 +123,9 @@ const cardOf = (c: RoadmapColumnView): IssueView[] => c.issues
         type="button"
         role="tab"
         class="tab"
+        :class="{ over: ghost && over === c.status }"
         :aria-selected="mobileCol === c.status"
+        :data-drop="c.status"
         @click="mobileCol = c.status"
       >
         <span class="cdot" :data-s="c.status" aria-hidden="true" />{{ it.statuses[c.status] }}<span class="cnt">{{ c.total }}</span>
@@ -61,6 +139,7 @@ const cardOf = (c: RoadmapColumnView): IssueView[] => c.issues
         :class="{ over: over === c.status, 'mobile-hidden': mobileCol !== c.status }"
         :data-s="c.status"
         :aria-label="it.statuses[c.status]"
+        :data-drop="c.status"
         @dragover="onDragOver($event, c.status)"
         @dragleave="over === c.status && (over = null)"
         @drop="onDrop($event, c.status)"
@@ -76,8 +155,10 @@ const cardOf = (c: RoadmapColumnView): IssueView[] => c.issues
               :issue="i"
               :can-move="canMove"
               :dragging="dragNr === i.number"
+              :me="me"
+              :claiming="claiming === i.number"
               @open="emit('open', $event)"
-              @move="onMoveMenu"
+              @claim="(nr, claim) => emit('claim', nr, claim)"
               @dragstart="dragNr = $event"
               @dragend="dragNr = null; over = null"
             />
@@ -90,6 +171,24 @@ const cardOf = (c: RoadmapColumnView): IssueView[] => c.issues
       </section>
     </div>
     <span class="sr-only">{{ colOf(mobileCol)?.total }}</span>
+    <Teleport to="body">
+      <template v-if="ghost">
+        <div class="touch-ghost" :style="{ left: `${Math.max(8, Math.min(ghost.x - ghost.dx, ghostMaxLeft))}px`, top: `${ghost.y - 28}px`, width: `${ghost.w}px` }" aria-hidden="true">
+          <span class="nr">#{{ ghost.nr }}</span>{{ ghost.title }}
+        </div>
+        <div class="touch-drop" aria-hidden="true">
+          <span
+            v-for="c in columns.filter((x) => x.status !== ghost!.from)"
+            :key="c.status"
+            class="drop-chip"
+            :class="{ over: over === c.status }"
+            :data-drop="c.status"
+          >
+            <span class="cdot" :data-s="c.status" />{{ it.statuses[c.status] }}
+          </span>
+        </div>
+      </template>
+    </Teleport>
   </div>
 </template>
 
@@ -197,6 +296,62 @@ const cardOf = (c: RoadmapColumnView): IssueView[] => c.issues
 }
 .tabs {
   display: none;
+}
+.touch-ghost {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  padding: 0.7rem 0.8rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--color-lamp-400);
+  background: var(--color-base-850);
+  box-shadow: 0 18px 40px -12px rgb(0 0 0 / 0.85);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-base-50);
+  /* über dem Finger, damit das Ziel sichtbar bleibt */
+  transform: translateY(-100%) rotate(-2deg);
+}
+.touch-ghost .nr {
+  margin-right: 0.4rem;
+  font-size: 11px;
+  color: var(--color-base-400);
+}
+.touch-drop {
+  position: fixed;
+  z-index: 59;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.75rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--color-base-700);
+  background: color-mix(in srgb, var(--color-base-950) 92%, transparent);
+  backdrop-filter: blur(8px);
+}
+.drop-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--color-base-700);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-base-200);
+}
+.drop-chip.over,
+.tab.over {
+  border-color: var(--color-lamp-400);
+  background: color-mix(in srgb, var(--color-lamp-400) 16%, transparent);
+  color: var(--color-base-50);
 }
 @media (max-width: 719px) {
   .tabs {
