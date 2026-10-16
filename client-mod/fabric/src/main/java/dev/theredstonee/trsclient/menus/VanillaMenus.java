@@ -331,6 +331,7 @@ public final class VanillaMenus {
 		afterRenderLoading(s, g, mouseX, mouseY);
 		connectStatus(s, g);
 		dev.theredstonee.trsclient.social.SocialHooks.overScreen(g);
+		dev.theredstonee.trsclient.halloween.HalloweenHooks.overScreen(g);
 	}
 
 	// --- Welt-Hosting: Pausemenü + Mehrspieler ---

@@ -791,6 +791,8 @@ public final class LegacyQol {
 
 	/** Aus PvpFeatures: Treffer bestätigt (Ziel zeigt die Schadens-Animation). */
 	public static void onHitConfirmed(Entity target) {
+		// Halloween: Fledermäuse am Ziel (nur Optik), Pause für Jumpscares.
+		dev.theredstonee.trsclient.halloween.LegacyHalloween.onHit(target);
 		LegacyQol q = instance;
 		if (q == null) return;
 		long now = System.currentTimeMillis();

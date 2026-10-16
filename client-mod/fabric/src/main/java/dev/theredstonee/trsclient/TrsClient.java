@@ -327,6 +327,7 @@ public final class TrsClient implements ClientModInitializer {
 		waypoints.tick(mc);
 		chat.tick(mc);
 		dev.theredstonee.trsclient.qol.QolHooks.tick(mc);
+		dev.theredstonee.trsclient.halloween.HalloweenHooks.tick(mc);
 		if (dev.theredstonee.trsclient.comfort.ComfortHooks.tick(mc)) saveConfig();
 		dev.theredstonee.trsclient.screenshot.ScreenshotHooks.tick();
 		hud.tick();

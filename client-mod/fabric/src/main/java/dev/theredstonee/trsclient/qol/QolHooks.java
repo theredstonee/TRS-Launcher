@@ -444,6 +444,8 @@ public final class QolHooks {
 
 	/** Aus PvpFeatures: eigener Schlag hat getroffen (Ziel zeigt die Schadens-Animation). */
 	public static void onHitConfirmed(Object target) {
+		// Halloween: Fledermäuse am Ziel (nur Optik), Pause für Jumpscares.
+		dev.theredstonee.trsclient.halloween.HalloweenHooks.onHit(target);
 		if (qol == null) return;
 		try {
 			Minecraft mc = Minecraft.getInstance();
