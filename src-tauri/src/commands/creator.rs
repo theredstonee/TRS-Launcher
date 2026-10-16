@@ -59,13 +59,17 @@ pub async fn creator_packs(
 // --- Creator-Dashboard ----------------------------------------------------------------------
 
 #[tauri::command]
-pub async fn creator_dashboard(launcher: State<'_, LauncherState>) -> CommandResult<CreatorSelf> {
-    Ok(launcher.creator_dashboard().await?)
+pub async fn creator_dashboard(launcher: State<'_, LauncherState>, as_creator: Option<String>) -> CommandResult<CreatorSelf> {
+    Ok(launcher.creator_dashboard(as_creator.as_deref()).await?)
 }
 
 #[tauri::command]
-pub async fn creator_create_code(launcher: State<'_, LauncherState>, code: NewCreatorCode) -> CommandResult<Vec<CreatorCode>> {
-    Ok(launcher.creator_create_code(&code).await?)
+pub async fn creator_create_code(
+    launcher: State<'_, LauncherState>,
+    code: NewCreatorCode,
+    as_creator: Option<String>,
+) -> CommandResult<Vec<CreatorCode>> {
+    Ok(launcher.creator_create_code(&code, as_creator.as_deref()).await?)
 }
 
 #[tauri::command]
@@ -73,8 +77,9 @@ pub async fn creator_update_code(
     launcher: State<'_, LauncherState>,
     code: String,
     patch: CodePatch,
+    as_creator: Option<String>,
 ) -> CommandResult<Vec<CreatorCode>> {
-    Ok(launcher.creator_update_code(&code, &patch).await?)
+    Ok(launcher.creator_update_code(&code, &patch, as_creator.as_deref()).await?)
 }
 
 /// Fertiger Symbol-Streifen (PNG als Base64) – der Kern prüft ihn erneut.
@@ -84,14 +89,15 @@ pub async fn creator_upload_symbol(
     png: String,
     frame_ms: Option<u32>,
     max_frames: u32,
+    as_creator: Option<String>,
 ) -> CommandResult<()> {
     let bytes = cape_import::decode_upload(&png)?;
-    Ok(launcher.creator_upload_symbol(bytes, frame_ms, max_frames).await?)
+    Ok(launcher.creator_upload_symbol(bytes, frame_ms, max_frames, as_creator.as_deref()).await?)
 }
 
 #[tauri::command]
-pub async fn creator_withdraw_symbol(launcher: State<'_, LauncherState>) -> CommandResult<()> {
-    Ok(launcher.creator_withdraw_symbol().await?)
+pub async fn creator_withdraw_symbol(launcher: State<'_, LauncherState>, as_creator: Option<String>) -> CommandResult<()> {
+    Ok(launcher.creator_withdraw_symbol(as_creator.as_deref()).await?)
 }
 
 /// Fan-Umhang aus der Umhang-Werkstatt (PNG-Streifen als Base64).
@@ -102,14 +108,15 @@ pub async fn creator_upload_fan_cape(
     frames: u32,
     frame_time_ms: Option<u32>,
     name: String,
+    as_creator: Option<String>,
 ) -> CommandResult<()> {
     let bytes = cape_import::decode_upload(&png)?;
-    Ok(launcher.creator_upload_fan_cape(bytes, frames, frame_time_ms, &name).await?)
+    Ok(launcher.creator_upload_fan_cape(bytes, frames, frame_time_ms, &name, as_creator.as_deref()).await?)
 }
 
 #[tauri::command]
-pub async fn creator_withdraw_fan_cape(launcher: State<'_, LauncherState>) -> CommandResult<()> {
-    Ok(launcher.creator_withdraw_fan_cape().await?)
+pub async fn creator_withdraw_fan_cape(launcher: State<'_, LauncherState>, as_creator: Option<String>) -> CommandResult<()> {
+    Ok(launcher.creator_withdraw_fan_cape(as_creator.as_deref()).await?)
 }
 
 #[tauri::command]
@@ -123,8 +130,40 @@ pub async fn creator_previews(launcher: State<'_, LauncherState>) -> CommandResu
 }
 
 #[tauri::command]
-pub async fn creator_set_pack_listed(launcher: State<'_, LauncherState>, code: String, listed: bool) -> CommandResult<()> {
-    Ok(launcher.creator_set_pack_listed(&code, listed).await?)
+pub async fn creator_set_pack_listed(
+    launcher: State<'_, LauncherState>,
+    code: String,
+    listed: bool,
+    as_creator: Option<String>,
+) -> CommandResult<()> {
+    Ok(launcher.creator_set_pack_listed(&code, listed, as_creator.as_deref()).await?)
+}
+
+// --- Helfer (§35.9) -------------------------------------------------------------------------
+
+#[tauri::command]
+pub async fn creator_invite_helper(launcher: State<'_, LauncherState>, uuid: String, rights: Vec<String>) -> CommandResult<()> {
+    Ok(launcher.creator_invite_helper(&uuid, &rights).await?)
+}
+
+#[tauri::command]
+pub async fn creator_update_helper(launcher: State<'_, LauncherState>, uuid: String, rights: Vec<String>) -> CommandResult<()> {
+    Ok(launcher.creator_update_helper(&uuid, &rights).await?)
+}
+
+#[tauri::command]
+pub async fn creator_remove_helper(launcher: State<'_, LauncherState>, uuid: String) -> CommandResult<()> {
+    Ok(launcher.creator_remove_helper(&uuid).await?)
+}
+
+#[tauri::command]
+pub async fn creator_answer_helper_invite(launcher: State<'_, LauncherState>, creator: String, accept: bool) -> CommandResult<()> {
+    Ok(launcher.creator_answer_helper_invite(&creator, accept).await?)
+}
+
+#[tauri::command]
+pub async fn creator_leave_helping(launcher: State<'_, LauncherState>, creator: String) -> CommandResult<()> {
+    Ok(launcher.creator_leave_helping(&creator).await?)
 }
 
 // --- Team -----------------------------------------------------------------------------------

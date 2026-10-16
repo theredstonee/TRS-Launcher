@@ -105,6 +105,17 @@ async fn server(symbol_hits: std::sync::Arc<AtomicUsize>) -> MockServer {
             ] })),
             ("POST", p) if p == format!("/v1/admin/creators/{CREATOR}/revoke") => Response::empty(204),
             ("POST", "/v1/admin/creators") => Response::error(409, "already_creator"),
+            ("GET", "/v1/creator/dashboard") => {
+                let mut d = dashboard();
+                if req.path.ends_with(&format!("?as={CREATOR}")) {
+                    d["uuid"] = json!(CREATOR);
+                    d["viewer"] = json!({ "helper": true, "rights": ["codes", "stats"] });
+                }
+                Response::json(200, d)
+            }
+            ("POST", "/v1/creator/helpers") => Response::error(403, "creator_helper_limit"),
+            ("POST", p) if p == format!("/v1/me/creator/helper-invites/{CREATOR}") => Response::empty(204),
+            ("DELETE", p) if p == format!("/v1/me/creator/helping/{CREATOR}") => Response::empty(204),
             _ => Response::error(404, "not_found"),
         }
     })
@@ -176,27 +187,27 @@ async fn dashboard_uploads_and_previews() {
     let (_dir, launcher) = launcher(&server, &[ACC]).await;
 
     // Starter: nur ein Bild; der Kern prüft vor dem Senden.
-    let err = launcher.creator_upload_symbol(real_png(16, 32), Some(150), 1).await.unwrap_err();
+    let err = launcher.creator_upload_symbol(real_png(16, 32), Some(150), 1, None).await.unwrap_err();
     assert_eq!(err.message_code(), "trsPng.symbolSize");
     assert!(server.hits("PUT", "/v1/creator/symbol").is_empty());
-    launcher.creator_upload_symbol(real_png(16, 32), Some(120), 8).await.unwrap();
+    launcher.creator_upload_symbol(real_png(16, 32), Some(120), 8, None).await.unwrap();
     let sent = &server.hits("PUT", "/v1/creator/symbol")[0];
     assert!(sent.path.ends_with("?frameMs=120"));
     assert_eq!(sent.header("content-type"), Some("image/png"));
 
-    let cape = launcher.creator_upload_fan_cape(real_png(512, 256), 1, None, "Pixels Drache").await.unwrap_err();
+    let cape = launcher.creator_upload_fan_cape(real_png(512, 256), 1, None, "Pixels Drache", None).await.unwrap_err();
     assert_eq!(cape.message_code(), "trsApi.creator_tier");
     assert!(server.hits("PUT", "/v1/creator/fan-cape")[0].path.contains("name=Pixels%20Drache"));
 
-    let limit = launcher.creator_create_code(&creator::NewCreatorCode { code: "pixel-yt".into(), ..Default::default() }).await.unwrap_err();
+    let limit = launcher.creator_create_code(&creator::NewCreatorCode { code: "pixel-yt".into(), ..Default::default() }, None).await.unwrap_err();
     assert_eq!(limit.message_code(), "trsApi.creator_code_limit");
-    let codes = launcher.creator_update_code("trs-theredstonee", &creator::CodePatch { active: Some(true), ..Default::default() }).await.unwrap();
+    let codes = launcher.creator_update_code("trs-theredstonee", &creator::CodePatch { active: Some(true), ..Default::default() }, None).await.unwrap();
     assert_eq!(codes[0].kind, "main");
 
     let previews = launcher.creator_previews().await.unwrap();
     assert_eq!(previews.iter().map(|p| p.version.as_str()).collect::<Vec<_>>(), ["0.18.0-preview.1", "0.22.0-preview.1"], "neueste zuerst, file:// fällt weg");
 
-    launcher.creator_set_pack_listed("trsab12cd34", true).await.unwrap();
+    launcher.creator_set_pack_listed("trsab12cd34", true, None).await.unwrap();
     assert_eq!(server.hits("PUT", "/v1/creator/packs/TRS-AB12-CD34")[0].json(), json!({ "listed": true }));
     let packs = launcher.creator_packs(Some("Red stone"), 0, 20).await.unwrap();
     assert_eq!((packs.total, packs.packs.len()), (1, 1));
@@ -261,4 +272,29 @@ async fn creator_events_arrive_over_the_stream() {
     let all = events(&log);
     assert!(all.iter().any(|e| matches!(e, LiveEvent::CreatorUpdated { kind, reason: Some(r), .. } if kind == "cape_rejected" && r == "Unscharf")));
     assert!(all.iter().any(|e| matches!(e, LiveEvent::CreatorMilestone { milestone, creator } if milestone == "silver" && creator.name == "Pixelmaus")));
+}
+
+#[tokio::test]
+async fn helpers_act_for_their_creator() {
+    let server = server(Default::default()).await;
+    let (_dir, launcher) = launcher(&server, &[ACC]).await;
+
+    let own = launcher.creator_dashboard(None).await.unwrap();
+    assert!(own.viewer.is_none());
+    let helping = launcher.creator_dashboard(Some(CREATOR)).await.unwrap();
+    assert_eq!(helping.viewer.unwrap().rights, ["stats", "codes"]);
+
+    let err = launcher.creator_invite_helper(CREATOR, &["stats".into()]).await.unwrap_err();
+    assert_eq!(err.message_code(), "trsApi.creator_helper_limit");
+    assert_eq!(server.hits("POST", "/v1/creator/helpers")[0].json(), json!({ "uuid": CREATOR, "rights": ["stats"] }));
+    assert!(launcher.creator_invite_helper(CREATOR, &[]).await.is_err(), "ohne Rechte geht nichts raus");
+    assert_eq!(server.hits("POST", "/v1/creator/helpers").len(), 1);
+
+    launcher.creator_answer_helper_invite(CREATOR, true).await.unwrap();
+    assert_eq!(server.hits("POST", &format!("/v1/me/creator/helper-invites/{CREATOR}"))[0].json(), json!({ "accept": true }));
+    launcher.creator_leave_helping(CREATOR).await.unwrap();
+
+    // Uploads als Helfer tragen `?as=`.
+    launcher.creator_upload_symbol(real_png(16, 16), None, 1, Some(CREATOR)).await.unwrap();
+    assert!(server.hits("PUT", "/v1/creator/symbol")[0].path.ends_with(&format!("?frameMs=150&as={CREATOR}")));
 }

@@ -236,9 +236,13 @@ pub enum LiveEvent {
     /// Die aktiven Events dieses Spielers haben sich geändert (§31, z. B. Halloween an/aus).
     EventsChanged { events: Vec<String> },
     /// Creator-Programm (§35.7): eigenes Symbol/Umhang geprüft, Stufe geändert, entzogen, Antrag beantwortet …
-    CreatorUpdated { kind: String, reason: Option<String>, tier: Option<String>, milestone: Option<String> },
+    CreatorUpdated { kind: String, reason: Option<String>, tier: Option<String>, milestone: Option<String>, helper: Option<UserRef> },
     /// Der unterstützte Creator hat einen neuen Meilenstein erreicht (an alle Fans).
     CreatorMilestone { creator: UserRef, milestone: String },
+    /// Einladung, Helfer eines Creators zu werden (§35.9).
+    CreatorHelperInvite { creator: UserRef, rights: Vec<String> },
+    /// Der Creator hat dich als Helfer entfernt.
+    CreatorHelperRemoved { creator: Option<UserRef> },
     /// Fernbedienung (§33): geprüfter Befehl vom Handy an DIESEN PC (Signatur, Ziel und Argumente geprüft).
     RemoteCommand { command: Box<super::remote::RemoteCommand> },
     /// Ein Befehl wurde am PC abgeholt (`running`), ist fertig (`done`) oder gescheitert (`failed`).

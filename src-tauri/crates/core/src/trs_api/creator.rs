@@ -27,7 +27,7 @@ pub const TIERS: [&str; 3] = ["starter", "partner", "top"];
 pub const STATES: [&str; 3] = ["active", "revoked", "banned"];
 pub const MILESTONES: [&str; 4] = ["bronze", "silver", "gold", "diamond"];
 /// Arten von `creator_updated` (§35.7).
-pub const UPDATE_KINDS: [&str; 10] = [
+pub const UPDATE_KINDS: [&str; 12] = [
     "symbol_approved",
     "symbol_rejected",
     "cape_approved",
@@ -38,7 +38,11 @@ pub const UPDATE_KINDS: [&str; 10] = [
     "request_answered",
     "milestone",
     "became_creator",
+    "helper_joined",
+    "helper_left",
 ];
+/// Rechte eines Helfers (§35.9). Stufe, Anträge, Helfer und Vorschau-Builds bleiben beim Creator.
+pub const HELPER_RIGHTS: [&str; 4] = ["stats", "codes", "uploads", "packs"];
 /// Bildtempo eines animierten Fan-Symbols (ms je Bild).
 pub const SYMBOL_FRAME_MS: std::ops::RangeInclusive<u32> = 50..=1000;
 pub const SYMBOL_FRAME_MS_DEFAULT: u32 = 150;
@@ -441,6 +445,46 @@ pub struct CreatorSelf {
     pub fan_cape: FanCapeState,
     pub requests: Vec<CreatorRequest>,
     pub packs: Vec<CreatorPackRef>,
+    /// Helfer (nur für den Creator selbst).
+    pub helpers: Vec<Helper>,
+    /// Wer gerade schaut: `Some` = ein Helfer mit diesen Rechten (`?as=`).
+    pub viewer: Option<Viewer>,
+}
+
+/// Helfer eines Creators (§35.9).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Helper {
+    pub uuid: String,
+    pub name: String,
+    pub rights: Vec<String>,
+    /// `pending` (eingeladen) oder `active`.
+    pub status: String,
+    pub created_at: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Viewer {
+    pub helper: bool,
+    pub rights: Vec<String>,
+}
+
+/// Creator, bei dem der Spieler hilft.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Helping {
+    pub creator: CreatorRef,
+    pub rights: Vec<String>,
+}
+
+/// Offene Einladung, Helfer eines Creators zu werden.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HelperInvite {
+    pub creator: UserRef,
+    pub rights: Vec<String>,
+    pub created_at: Option<String>,
 }
 
 /// Was der Creator-Seite des Launchers gehört (`GET /v1/me/creator`).
@@ -453,6 +497,9 @@ pub struct MyCreator {
     pub show_fan_symbols: bool,
     pub creator: Option<CreatorSelf>,
     pub application: Option<CreatorApplication>,
+    /// Creator, bei denen der Spieler hilft (§35.9).
+    pub helping: Vec<Helping>,
+    pub helper_invites: Vec<HelperInvite>,
 }
 
 /// Ergebnis von „Code einlösen“.
@@ -690,6 +737,22 @@ fn clean_pack_ref(v: &Value) -> Option<CreatorPackRef> {
     })
 }
 
+/// Rechte: nur bekannte, ohne Doppelte, in fester Reihenfolge.
+fn clean_rights(v: Option<&Value>) -> Vec<String> {
+    let list: Vec<&str> = v.and_then(Value::as_array).into_iter().flatten().filter_map(Value::as_str).collect();
+    HELPER_RIGHTS.iter().filter(|r| list.contains(r)).map(|r| (*r).to_owned()).collect()
+}
+
+fn clean_helper(v: &Value) -> Option<Helper> {
+    Some(Helper {
+        uuid: validate::uuid(v.get("uuid")?.as_str()?)?,
+        name: validate::display_name(v.get("name").and_then(Value::as_str).unwrap_or_default()),
+        rights: clean_rights(v.get("rights")),
+        status: pick(str_of(v, "status"), &["pending", "active"])?,
+        created_at: time(str_of(v, "createdAt")),
+    })
+}
+
 fn clean_self(v: &Value) -> Option<CreatorSelf> {
     let tier = pick(str_of(v, "tier"), &TIERS)?;
     let symbol = v.get("symbol");
@@ -722,6 +785,11 @@ fn clean_self(v: &Value) -> Option<CreatorSelf> {
         },
         requests: v.get("requests").and_then(Value::as_array).into_iter().flatten().take(50).filter_map(clean_request).collect(),
         packs: v.get("packs").and_then(Value::as_array).into_iter().flatten().take(200).filter_map(clean_pack_ref).collect(),
+        helpers: v.get("helpers").and_then(Value::as_array).into_iter().flatten().take(50).filter_map(clean_helper).collect(),
+        viewer: v.get("viewer").filter(|w| w.is_object()).map(|w| Viewer {
+            helper: w.get("helper").and_then(Value::as_bool).unwrap_or(false),
+            rights: clean_rights(w.get("rights")),
+        }),
     })
 }
 
@@ -763,6 +831,24 @@ fn clean_me(v: &Value) -> Option<MyCreator> {
         show_fan_symbols: v.get("showFanSymbols").and_then(Value::as_bool).unwrap_or(true),
         creator: v.get("creator").filter(|c| c.is_object()).and_then(clean_self),
         application,
+        helping: v
+            .get("helping")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .take(50)
+            .filter_map(|h| Some(Helping { creator: creator_ref(h.get("creator"))?, rights: clean_rights(h.get("rights")) }))
+            .collect(),
+        helper_invites: v
+            .get("helperInvites")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .take(50)
+            .filter_map(|i| {
+                Some(HelperInvite { creator: user_ref(i.get("creator"))?, rights: clean_rights(i.get("rights")), created_at: time(str_of(i, "createdAt")) })
+            })
+            .collect(),
     })
 }
 
@@ -942,6 +1028,26 @@ impl NewRequest {
     }
 }
 
+/// Rechte für einen Helfer: mindestens eins, nur bekannte.
+fn rights_arg(rights: &[String]) -> Result<Vec<String>> {
+    if rights.is_empty() || rights.iter().any(|r| !HELPER_RIGHTS.contains(&r.as_str())) {
+        return Err(invalid(crate::msg!("creator.invalidRights", "Bitte mindestens ein Recht für den Helfer wählen.")));
+    }
+    Ok(HELPER_RIGHTS.iter().filter(|r| rights.iter().any(|x| x == *r)).map(|r| (*r).to_owned()).collect())
+}
+
+/// Dashboard-Anfrage für einen anderen Creator (Helfer, `?as=<uuid>`, §35.9).
+fn acting(path: String, as_creator: Option<&str>) -> Result<String> {
+    match as_creator.filter(|a| !a.is_empty()) {
+        None => Ok(path),
+        Some(a) => {
+            let uuid = uuid_arg(a)?;
+            let sep = if path.contains('?') { '&' } else { '?' };
+            Ok(format!("{path}{sep}as={uuid}"))
+        }
+    }
+}
+
 /// Creator hinzufügen (Team, `creators.manage`).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -1042,9 +1148,13 @@ struct LiveData {
     creator: Option<Value>,
     #[serde(default)]
     milestone: Option<String>,
+    #[serde(default)]
+    rights: Option<Value>,
+    #[serde(default)]
+    helper: Option<Value>,
 }
 
-/// `creator_updated` / `creator_milestone` → gesäubertes Ereignis (kaputt → `None`).
+/// Helfer-Ereignisse und `creator_updated` / `creator_milestone` → gesäubertes Ereignis (kaputt → `None`).
 pub(crate) fn decode_live(event: &str, data: &str) -> Option<LiveEvent> {
     let d: LiveData = serde_json::from_str(data).ok()?;
     match event {
@@ -1053,7 +1163,13 @@ pub(crate) fn decode_live(event: &str, data: &str) -> Option<LiveEvent> {
             reason: reason_text(d.reason),
             tier: pick(d.tier, &TIERS),
             milestone: pick(d.milestone, &MILESTONES),
+            helper: user_ref(d.helper.as_ref()),
         }),
+        "creator_helper_invite" => Some(LiveEvent::CreatorHelperInvite {
+            creator: user_ref(d.creator.as_ref())?,
+            rights: clean_rights(d.rights.as_ref()),
+        }),
+        "creator_helper_removed" => Some(LiveEvent::CreatorHelperRemoved { creator: user_ref(d.creator.as_ref()) }),
         "creator_milestone" => Some(LiveEvent::CreatorMilestone {
             creator: user_ref(d.creator.as_ref())?,
             milestone: pick(d.milestone, &MILESTONES)?,
@@ -1252,42 +1368,51 @@ impl Launcher {
 
     // --- Dashboard ---
 
-    pub async fn creator_dashboard(&self) -> Result<CreatorSelf> {
-        let raw: Value = self.trs_get(Req::get("/v1/creator/dashboard")).await?;
+    /// Dashboard – eigenes oder (`as_creator`) das eines Creators, dem man hilft.
+    pub async fn creator_dashboard(&self, as_creator: Option<&str>) -> Result<CreatorSelf> {
+        let raw: Value = self.trs_get(Req::get(acting("/v1/creator/dashboard".into(), as_creator)?)).await?;
         let mut me = clean_self(&raw).ok_or_else(super::bad_response)?;
         self.self_images(&mut me).await;
         Ok(me)
     }
 
-    pub async fn creator_create_code(&self, new: &NewCreatorCode) -> Result<Vec<CreatorCode>> {
-        let raw: Value = self.trs_get(Req::post("/v1/creator/codes", new.body()?)).await?;
+    pub async fn creator_create_code(&self, new: &NewCreatorCode, as_creator: Option<&str>) -> Result<Vec<CreatorCode>> {
+        let raw: Value = self.trs_get(Req::post(acting("/v1/creator/codes".into(), as_creator)?, new.body()?)).await?;
         Ok(clean_codes(raw.get("codes")))
     }
 
-    pub async fn creator_update_code(&self, code: &str, patch: &CodePatch) -> Result<Vec<CreatorCode>> {
+    pub async fn creator_update_code(&self, code: &str, patch: &CodePatch, as_creator: Option<&str>) -> Result<Vec<CreatorCode>> {
         let code = code_arg(code)?;
-        let raw: Value = self.trs_get(Req::patch(format!("/v1/creator/codes/{code}"), patch.body()?)).await?;
+        let raw: Value = self.trs_get(Req::patch(acting(format!("/v1/creator/codes/{code}"), as_creator)?, patch.body()?)).await?;
         Ok(clean_codes(raw.get("codes")))
     }
 
     /// Fan-Symbol hochladen (PNG-Streifen, geht in die Prüfung). `max_frames`: 1 (Starter) oder 8.
-    pub async fn creator_upload_symbol(&self, bytes: Vec<u8>, frame_ms: Option<u32>, max_frames: u32) -> Result<()> {
+    pub async fn creator_upload_symbol(&self, bytes: Vec<u8>, frame_ms: Option<u32>, max_frames: u32, as_creator: Option<&str>) -> Result<()> {
         let layout = png::validate_symbol(&bytes, max_frames)?;
         let ms = frame_ms.unwrap_or(SYMBOL_FRAME_MS_DEFAULT);
         if layout.frames > 1 && !SYMBOL_FRAME_MS.contains(&ms) {
             return Err(invalid(crate::msg!("trsPng.frameTime", "Das Bildtempo muss zwischen 50 und 1000 ms je Frame liegen.")));
         }
         let ms = ms.clamp(*SYMBOL_FRAME_MS.start(), *SYMBOL_FRAME_MS.end());
-        let req = Req::with(reqwest::Method::PUT, format!("/v1/creator/symbol?frameMs={ms}"), super::Body::Png(bytes), super::MAX_JSON_BYTES);
+        let path = acting(format!("/v1/creator/symbol?frameMs={ms}"), as_creator)?;
+        let req = Req::with(reqwest::Method::PUT, path, super::Body::Png(bytes), super::MAX_JSON_BYTES);
         self.trs_do(req).await
     }
 
-    pub async fn creator_withdraw_symbol(&self) -> Result<()> {
-        self.trs_do(Req::delete("/v1/creator/symbol/pending")).await
+    pub async fn creator_withdraw_symbol(&self, as_creator: Option<&str>) -> Result<()> {
+        self.trs_do(Req::delete(acting("/v1/creator/symbol/pending".into(), as_creator)?)).await
     }
 
     /// Fan-Umhang einreichen (gleiche Prüfung wie eigene Umhänge, dazu ein Name).
-    pub async fn creator_upload_fan_cape(&self, bytes: Vec<u8>, frames: u32, frame_time_ms: Option<u32>, name: &str) -> Result<()> {
+    pub async fn creator_upload_fan_cape(
+        &self,
+        bytes: Vec<u8>,
+        frames: u32,
+        frame_time_ms: Option<u32>,
+        name: &str,
+        as_creator: Option<&str>,
+    ) -> Result<()> {
         let name = validate::upload_name(name)?;
         let layout = png::validate_upload(&bytes, frames, frame_time_ms)?;
         let mut path = format!("/v1/creator/fan-cape?frames={}&name={}", layout.frames, encode_query(&name));
@@ -1296,13 +1421,13 @@ impl Launcher {
         {
             path.push_str(&format!("&frameTimeMs={ms}"));
         }
-        let req = Req::with(reqwest::Method::PUT, path, super::Body::Png(bytes), super::MAX_JSON_BYTES)
+        let req = Req::with(reqwest::Method::PUT, acting(path, as_creator)?, super::Body::Png(bytes), super::MAX_JSON_BYTES)
             .timeout(std::time::Duration::from_secs(300));
         self.trs_do(req).await
     }
 
-    pub async fn creator_withdraw_fan_cape(&self) -> Result<()> {
-        self.trs_do(Req::delete("/v1/creator/fan-cape/pending")).await
+    pub async fn creator_withdraw_fan_cape(&self, as_creator: Option<&str>) -> Result<()> {
+        self.trs_do(Req::delete(acting("/v1/creator/fan-cape/pending".into(), as_creator)?)).await
     }
 
     pub async fn creator_request(&self, request: &NewRequest) -> Result<Vec<CreatorRequest>> {
@@ -1319,11 +1444,41 @@ impl Launcher {
     }
 
     /// Eigenes geteiltes Pack als Creator-Pack listen bzw. zurückziehen.
-    pub async fn creator_set_pack_listed(&self, code: &str, listed: bool) -> Result<()> {
+    pub async fn creator_set_pack_listed(&self, code: &str, listed: bool, as_creator: Option<&str>) -> Result<()> {
         let code = super::packs::normalize_code(code).ok_or_else(|| {
             invalid(crate::msg!("packShare.invalidCode", "Das ist kein gültiger Modpack-Code (Form: TRS-XXXX-XXXX)."))
         })?;
-        self.trs_do(Req::put(format!("/v1/creator/packs/{code}"), json!({ "listed": listed }))).await
+        self.trs_do(Req::put(acting(format!("/v1/creator/packs/{code}"), as_creator)?, json!({ "listed": listed }))).await
+    }
+
+    // --- Helfer (§35.9) ---
+
+    /// Freund als Helfer einladen.
+    pub async fn creator_invite_helper(&self, uuid: &str, rights: &[String]) -> Result<()> {
+        let uuid = uuid_arg(uuid)?;
+        self.trs_do(Req::post("/v1/creator/helpers", json!({ "uuid": uuid, "rights": rights_arg(rights)? }))).await
+    }
+
+    pub async fn creator_update_helper(&self, uuid: &str, rights: &[String]) -> Result<()> {
+        let uuid = uuid_arg(uuid)?;
+        self.trs_do(Req::patch(format!("/v1/creator/helpers/{uuid}"), json!({ "rights": rights_arg(rights)? }))).await
+    }
+
+    pub async fn creator_remove_helper(&self, uuid: &str) -> Result<()> {
+        let uuid = uuid_arg(uuid)?;
+        self.trs_do(Req::delete(format!("/v1/creator/helpers/{uuid}"))).await
+    }
+
+    /// Einladung als Helfer annehmen oder ablehnen.
+    pub async fn creator_answer_helper_invite(&self, creator: &str, accept: bool) -> Result<()> {
+        let creator = uuid_arg(creator)?;
+        self.trs_do(Req::post(format!("/v1/me/creator/helper-invites/{creator}"), json!({ "accept": accept }))).await
+    }
+
+    /// Nicht mehr helfen.
+    pub async fn creator_leave_helping(&self, creator: &str) -> Result<()> {
+        let creator = uuid_arg(creator)?;
+        self.trs_do(Req::delete(format!("/v1/me/creator/helping/{creator}"))).await
     }
 
     /// Gelistete Creator-Modpacks (§35.4), nach Installationen sortiert.
@@ -1576,12 +1731,43 @@ mod tests {
     #[test]
     fn live_events_are_cleaned() {
         let e = decode_live("creator_updated", &json!({ "type": "creator_updated", "kind": "symbol_rejected", "reason": "Fremdes\u{202E} Logo" }).to_string()).unwrap();
-        assert_eq!(e, LiveEvent::CreatorUpdated { kind: "symbol_rejected".into(), reason: Some("Fremdes Logo".into()), tier: None, milestone: None });
+        assert_eq!(e, LiveEvent::CreatorUpdated { kind: "symbol_rejected".into(), reason: Some("Fremdes Logo".into()), tier: None, milestone: None, helper: None });
         let t = decode_live("creator_updated", r#"{"kind":"tier_changed","tier":"top"}"#).unwrap();
         assert!(matches!(t, LiveEvent::CreatorUpdated { tier: Some(ref t), .. } if t == "top"));
         assert!(decode_live("creator_updated", r#"{"kind":"nuke"}"#).is_none());
         let m = decode_live("creator_milestone", r#"{"creator":{"uuid":"b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0","name":"Pixelmaus"},"milestone":"gold"}"#).unwrap();
         assert_eq!(serde_json::to_value(&m).unwrap(), json!({ "type": "creator_milestone", "creator": { "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0", "name": "Pixelmaus" }, "milestone": "gold" }));
         assert!(decode_live("creator_milestone", r#"{"creator":{"uuid":"x","name":"y"},"milestone":"gold"}"#).is_none());
+        let invite = decode_live(
+            "creator_helper_invite",
+            r#"{"creator":{"uuid":"b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0","name":"Pixelmaus"},"rights":["packs","stats","root"]}"#,
+        )
+        .unwrap();
+        assert!(matches!(invite, LiveEvent::CreatorHelperInvite { ref rights, .. } if rights == &["stats", "packs"]));
+        let joined =
+            decode_live("creator_updated", r#"{"kind":"helper_joined","helper":{"uuid":"c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0","name":"Cutter"}}"#).unwrap();
+        assert!(matches!(joined, LiveEvent::CreatorUpdated { helper: Some(ref h), .. } if h.name == "Cutter"));
+        assert!(matches!(decode_live("creator_helper_removed", "{}").unwrap(), LiveEvent::CreatorHelperRemoved { creator: None }));
+    }
+
+    #[test]
+    fn helpers_are_cleaned_and_checked() {
+        let me = clean_me(&json!({
+            "support": null, "fanCapes": [], "blocked": [], "showFanSymbols": true, "creator": null, "application": null,
+            "helping": [{ "creator": { "uuid": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0", "name": "Pixelmaus", "tier": "top" }, "rights": ["codes", "codes", "admin"] }],
+            "helperInvites": [{ "creator": { "uuid": "c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0", "name": "Redfox" }, "rights": ["uploads"], "createdAt": "2026-10-16T10:00:00.000Z" },
+                { "creator": { "uuid": "x", "name": "y" }, "rights": [] }]
+        }))
+        .unwrap();
+        assert_eq!(me.helping[0].rights, ["codes"]);
+        assert_eq!(me.helper_invites.len(), 1);
+        assert_eq!(rights_arg(&["packs".into(), "stats".into()]).unwrap(), ["stats", "packs"]);
+        assert!(rights_arg(&[]).is_err() && rights_arg(&["tier".into()]).is_err());
+        assert_eq!(acting("/v1/creator/dashboard".into(), None).unwrap(), "/v1/creator/dashboard");
+        assert_eq!(
+            acting("/v1/creator/symbol?frameMs=150".into(), Some("B0B0B0B0-B0B0-B0B0-B0B0-B0B0B0B0B0B0")).unwrap(),
+            "/v1/creator/symbol?frameMs=150&as=b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"
+        );
+        assert!(acting("/v1/creator/dashboard".into(), Some("../x")).is_err());
     }
 }
