@@ -429,21 +429,23 @@ export const QUEUE_ID = /^(s\d{1,12}|cu[0-9a-f]{20})$/
 /** Eingabe → Code (groß, ohne Leerzeichen am Rand) oder `null`, wenn das Format nicht passt. */
 export function normalizeCreatorCode(input: string): string | null {
   const s = input.trim().toUpperCase()
+  // 20 Zeichen ohne Bindestrich sehen aus wie ein Umhang-Code (§5.9) – die bleiben dafür frei.
+  if (s.length === 20 && !s.includes('-')) return null
   return CREATOR_CODE.test(s) ? s : null
 }
 
-/** Standard-Haupt-Code: `TRS-<NAME>` groß, ohne Sonderzeichen (bei zu kurzen Namen aus der UUID). */
+/** Standard-Haupt-Code: der Name groß, ohne Sonderzeichen (kein Präfix nötig); zu kurz → mit UUID-Zeichen aufgefüllt. */
 export function defaultMainCode(name: string, uuid: string): string {
-  const clean = name.toUpperCase().replace(/[^A-Z0-9]/g, '')
-  const base = `TRS-${clean || uuid.slice(0, 8).toUpperCase()}`.slice(0, 20)
-  return CREATOR_CODE.test(base) ? base : `TRS-${uuid.slice(0, 8).toUpperCase()}`
+  const clean = name.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 19)
+  const base = clean.length >= 5 ? clean : `${clean}${uuid.slice(0, 8).toUpperCase()}`.slice(0, 8)
+  return CREATOR_CODE.test(base) ? base : uuid.slice(0, 8).toUpperCase()
 }
 
 function codeTaken(ctx: AppContext, code: string): boolean {
   return one(ctx.db, 'SELECT 1 AS x FROM creator_codes WHERE code = ?', code) !== undefined
 }
 
-/** Freier Code ab `base`; belegt → Zahl anhängen (`TRS-PIXEL2`, `TRS-PIXEL3`, …). */
+/** Freier Code ab `base`; belegt → Zahl anhängen (`PIXEL2`, `PIXEL3`, …). */
 function freeCode(ctx: AppContext, base: string): string {
   if (!codeTaken(ctx, base)) return base
   for (let n = 2; n < 10_000; n++) {

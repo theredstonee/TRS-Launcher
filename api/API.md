@@ -4011,7 +4011,7 @@ cape. All JSON is camelCase, times are ISO strings, UUIDs are 32 hex digits with
 
 - **Creator codes**: public, human-readable, unique, `^[A-Z0-9][A-Z0-9-]{3,18}[A-Z0-9]$` (5–20 characters), stored upper
   case and compared case-insensitively. Their own namespace – **not** the hashed cape codes of §5.9 (`POST /v1/redeem`
-  stays for those). Every creator has exactly one `main` code, set and changed only by the team (default `TRS-<NAME>`,
+  stays for those). Every creator has exactly one `main` code, set and changed only by the team (default: the player name upper-cased without special characters, no prefix needed; 20 characters without a dash are not allowed because they look like cape codes (§5.9);
   upper case, non-alphanumerics removed; if taken a number is appended: `TRS-PIXEL2`). `extra` codes are made by the
   creator: optional `maxUses` (default and maximum = tier cap), optional `expiresAt` (future, ≤ 2 years), `active` flag.
   Only **active** extra codes count against the tier limit. The main code has no limit. The launcher's redeem field calls

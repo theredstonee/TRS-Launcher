@@ -16,6 +16,7 @@ import {
   creatorPreviews,
   decideQueueItem,
   defaultMainCode,
+  normalizeCreatorCode,
   endSupport,
   listCreatorPacks,
   myCreatorState,
@@ -97,25 +98,27 @@ function watch(env: TestEnv, viewer: string, uuids: string[]): PlayerEvent[] {
 describe('creator codes and redeeming', () => {
   it('default main code, support, idempotent uses per fan and code', async () => {
     const env = makeEnv()
-    expect(defaultMainCode('Pixel_Maus', 'a'.repeat(32))).toBe('TRS-PIXELMAUS')
+    expect(defaultMainCode('Pixel_Maus', 'a'.repeat(32))).toBe('PIXELMAUS')
     const pix = await creator(env, 'Pixelmaus')
-    expect(pix.code).toBe('TRS-PIXELMAUS')
+    expect(pix.code).toBe('PIXELMAUS')
     const fan = await player(env, 'Steve')
-    const r = redeem(env, fan, 'trs-pixelmaus')
+    const r = redeem(env, fan, 'pixelmaus')
     expect(r.supportChanged).toBe(true)
     expect(r.creator).toMatchObject({ uuid: pix.uuid, name: 'Pixelmaus', tier: 'starter', symbol: null, fanCape: null })
     expect(r.fanCapeGranted).toBe(false)
     expect(r.switchAvailableAt).toBe(new Date(env.clock.t + SWITCH_LOCK_MS).toISOString())
     // Gleicher Code nochmal: keine zweite Einlösung.
-    const again = redeem(env, fan, 'TRS-PIXELMAUS')
+    const again = redeem(env, fan, 'PIXELMAUS')
     expect(again.supportChanged).toBe(false)
     const dash = creatorDashboard(env.ctx, pix.uuid)
-    expect(dash.codes[0]).toMatchObject({ code: 'TRS-PIXELMAUS', kind: 'main', uses: 1 })
+    expect(dash.codes[0]).toMatchObject({ code: 'PIXELMAUS', kind: 'main', uses: 1 })
     expect(dash.stats).toMatchObject({ activeFans: 1, redemptions: 1, newPlayers: 1 })
     expect(dash.stats.daily).toHaveLength(30)
     expect(dash.stats.daily[29]).toMatchObject({ newFans: 1, redemptions: 1 })
     // Unbekannt, falsches Format, eigener Code.
     expect(code(() => redeem(env, fan, 'TRS-NOPE'))).toBe('creator_code_not_found')
+    expect(normalizeCreatorCode('ABCDEFGHJKMNPQRSTVWX')).toBeNull()
+    expect(normalizeCreatorCode('pixel-maus')).toBe('PIXEL-MAUS')
     expect(code(() => redeem(env, fan, 'x'))).toBe('creator_code_not_found')
     expect(code(() => redeem(env, pix.uuid, pix.code))).toBe('creator_self')
   })
@@ -410,7 +413,7 @@ describe('team actions', () => {
     }).creator
     expect(upd).toMatchObject({ tier: 'top', mainCode: 'PIXEL', channels: [{ platform: 'youtube' }] })
     expect(ce.of('creator_updated').at(-1)).toEqual({ type: 'creator_updated', kind: 'tier_changed', tier: 'top' })
-    expect(code(() => redeem(env, f1, 'TRS-PIXELMAUS'))).toBe('creator_code_not_found')
+    expect(code(() => redeem(env, f1, 'PIXELMAUS'))).toBe('creator_code_not_found')
     expect(code(() => adminUpdateCreator(env.ctx, OWNER, c.uuid, { channels: [{ platform: 'youtube', url: 'javascript:alert(1)', followers: 1 }] }))).toBe('invalid_request')
     const other = await player(env, 'Other')
     adminCreateCreator(env.ctx, OWNER, { player: other, tier: 'starter' })
@@ -506,7 +509,7 @@ describe('applications', () => {
     expect(code(() => createJob(env.ctx, OWNER, { status: 'open', purpose: 'creator', roleId: 'moderator', texts: { en: { title: 'X', summary: 'y', description: 'z', tasks: [], requirements: [] } } }))).toBe('invalid_role')
     // Haupt-Code belegt → Zahl anhängen.
     const taken = await player(env, 'Pixel')
-    adminCreateCreator(env.ctx, OWNER, { player: taken, tier: 'starter', mainCode: 'TRS-PIXELMAUS' })
+    adminCreateCreator(env.ctx, OWNER, { player: taken, tier: 'starter', mainCode: 'PIXELMAUS' })
     const uuid = await player(env, 'Pixel_Maus')
     const ev = listen(env, uuid)
     const app = submitApplication(env.ctx, { uuid, name: 'Pixel_Maus' }, job.id, { discord: 'pixel.maus', ageGroup: '18+', lang: 'de', answers: {} })
@@ -514,7 +517,7 @@ describe('applications', () => {
     expect(code(() => setApplicationStatus(env.ctx, OWNER, app.id, { status: 'accepted', grantRole: true }))).toBe('invalid_request')
     setApplicationStatus(env.ctx, OWNER, app.id, { status: 'accepted' })
     const me = myCreatorState(env.ctx, uuid)
-    expect(me.creator).toMatchObject({ tier: 'starter', state: 'active', codes: [{ code: 'TRS-PIXELMAUS2', kind: 'main' }] })
+    expect(me.creator).toMatchObject({ tier: 'starter', state: 'active', codes: [{ code: 'PIXELMAUS2', kind: 'main' }] })
     expect(me.application?.status).toBe('accepted')
     expect(ev.of('creator_updated')).toEqual([{ type: 'creator_updated', kind: 'became_creator', tier: 'starter' }])
     expect(eligibility(env.ctx, uuid, job.id).reason).toBe('already_creator')
