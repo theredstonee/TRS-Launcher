@@ -21,6 +21,7 @@ export const PUSH_TEXTS = {
   chatServerInvite: { en: 'Sent a server invite', de: 'Hat eine Server-Einladung geschickt', es: 'Ha enviado una invitación a un servidor' },
   chatWorldInvite: { en: 'Sent a world invite', de: 'Hat eine Welt-Einladung geschickt', es: 'Ha enviado una invitación a un mundo' },
   chatWaypoint: { en: 'Shared a waypoint', de: 'Hat einen Wegpunkt geteilt', es: 'Ha compartido un punto de ruta' },
+  chatSticker: { en: 'Sent a sticker', de: 'Hat einen Sticker geschickt', es: 'Ha enviado un sticker' },
   friendRequestTitle: { en: 'Friend request', de: 'Freundschaftsanfrage', es: 'Solicitud de amistad' },
   friendRequestBody: { en: '{name} wants to be your friend.', de: '{name} möchte mit dir befreundet sein.', es: '{name} quiere ser tu amigo.' },
   friendAddedTitle: { en: 'New friend', de: 'Neuer Freund', es: 'Nuevo amigo' },

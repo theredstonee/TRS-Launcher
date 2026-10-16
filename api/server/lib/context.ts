@@ -30,6 +30,8 @@ export interface AppContext {
   templates: TemplateSet
   /** Mitgelieferte Kosmetik im Format v2 (§11.9): Modell, Textur, Leucht-Streifen, Karten – beim Start eingespielt. */
   cosmeticsV2: Map<string, CosmeticV2Assets>
+  /** Halloween-Bilder (§36): `stickers/<id>.png`, `badges/<id>.png` aus assets/halloween – beim Start geladen. */
+  halloweenArt: Map<string, { png: Buffer, sha256: string }>
   now: () => number
   /** Ordner für Umhang-PNGs (`<DATA_DIR>/capes`). */
   capeDir: string
@@ -90,6 +92,7 @@ export function createContext(opts: {
     skins: new SkinService(opts.mojang, limiter, now, (p) => rememberSkin(opts.db, p, now())),
     templates: opts.templates ?? TemplateSet.empty(),
     cosmeticsV2: new Map(),
+    halloweenArt: new Map(),
     now,
     capeDir: opts.capeDir,
     cosmeticDir: opts.cosmeticDir,

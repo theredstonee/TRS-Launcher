@@ -78,6 +78,7 @@ export function emitCleared(ctx: AppContext, subject: string): number {
       w.send({ type: 'badge', uuid: subject, badge: false })
       w.send({ type: 'cape', uuid: subject, cape: null })
       w.send({ type: 'cosmetics', uuid: subject, cosmetics: emptyCosmetics() })
+      w.send({ type: 'badges', uuid: subject, badges: [], fx: [] })
       sent++
     } catch {
       // Ein kaputter Stream darf die anderen nicht stören.

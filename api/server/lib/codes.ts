@@ -71,11 +71,13 @@ export function createCodes(
     const cape = getCape(ctx, opts.capeId)
     if (!cape || cape.kind !== 'builtin' || cape.retired) throw notFound('cape_not_found', 'Cape not found')
     if (cape.unlock === 'free') throw badRequest('cape_is_free', 'This cape is free for everyone; no code needed')
+    if (cape.reward) throw badRequest('not_code_redeemable', 'This cape is a reward and cannot be given out with codes')
     capeId = cape.id
   } else {
     const c = getCosmetic(ctx, opts.cosmeticId)
     if (!c || c.kind !== 'builtin' || c.retired) throw notFound('cosmetic_not_found', 'Cosmetic not found')
     if (c.unlock === 'free') throw badRequest('cosmetic_is_free', 'This cosmetic is free for everyone; no code needed')
+    if (c.reward) throw badRequest('not_code_redeemable', 'This item is a reward and cannot be given out with codes')
     cosmeticId = c.id
   }
   const expires = opts.expiresAt ? Date.parse(opts.expiresAt) : null

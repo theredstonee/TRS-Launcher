@@ -11,9 +11,15 @@ import { TEMPLATE_ID } from './templates'
  * (Event-Teile: gratis abholbar, solange das Event für den Spieler aktiv ist). In der DB steht dann `admin` + Spalte `event`.
  */
 const eventUnlock = z.strictObject({ type: z.literal('event'), event: z.string().regex(/^[a-z][a-z0-9_]{0,31}$/) })
-const unlockField = z.union([z.enum(['free', 'code', 'admin']), eventUnlock])
-export function splitUnlock(u: z.output<typeof unlockField>): { unlock: 'free' | 'code' | 'admin', event?: string } {
-  return typeof u === 'string' ? { unlock: u } : { unlock: 'admin', event: u.event }
+/**
+ * Belohnung (§36): `{ "type": "reward", "reward": "halloween2026" }` – nur der Server vergibt sie (Kürbis-Suche, Süßes oder
+ * Saures), nicht abholbar, nicht per Code. In der DB steht `admin` + Spalte `reward`.
+ */
+const rewardUnlock = z.strictObject({ type: z.literal('reward'), reward: z.string().regex(/^[a-z][a-z0-9_]{0,31}$/) })
+const unlockField = z.union([z.enum(['free', 'code', 'admin']), eventUnlock, rewardUnlock])
+export function splitUnlock(u: z.output<typeof unlockField>): { unlock: 'free' | 'code' | 'admin', event?: string, reward?: string } {
+  if (typeof u === 'string') return { unlock: u }
+  return u.type === 'event' ? { unlock: 'admin', event: u.event } : { unlock: 'admin', reward: u.reward }
 }
 
 /** Original-Index aus dem gemeinsamen Katalog. Nur private Kataloge setzen ihn; öffentliche bleiben ohne. */

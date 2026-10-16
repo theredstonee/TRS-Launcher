@@ -1,6 +1,7 @@
 import { defineEventHandler } from 'h3'
 import { useCtx } from '../../../lib/context'
 import { broadcastPresence } from '../../../lib/friends'
+import { emitBadges } from '../../../lib/halloween'
 import { readJson, requireUser } from '../../../lib/http'
 import { emitBadge, emitCape, emitCosmetics } from '../../../lib/playerevents'
 import { settingsPatch } from '../../../lib/schemas'
@@ -16,7 +17,11 @@ export default defineEventHandler(async (event) => {
   if (before.presence_visibility !== user.presence_visibility || before.share_server !== user.share_server) {
     broadcastPresence(ctx, auth.uuid)
   }
-  if (before.show_badge !== user.show_badge) emitBadge(ctx, auth.uuid)
+  if (before.show_badge !== user.show_badge) {
+    emitBadge(ctx, auth.uuid)
+    // Profil-Abzeichen (§36) folgen derselben Einstellung.
+    emitBadges(ctx, auth.uuid)
+  }
   if (before.show_cape !== user.show_cape) emitCape(ctx, auth.uuid)
   if (before.show_cosmetics !== user.show_cosmetics) emitCosmetics(ctx, auth.uuid)
   // Eigene andere Geräte (Launcher ↔ Mod) sofort angleichen.

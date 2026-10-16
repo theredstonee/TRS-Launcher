@@ -6,6 +6,9 @@ import { sweepExpired } from '../lib/auth'
 import { loadBuiltinCosmetics, loadBuiltins } from '../lib/builtin'
 import { seedBuiltins, type BuiltinCape } from '../lib/capes'
 import { seedBuiltinCosmetics, seedEmotes, type AnyBuiltinCosmetic } from '../lib/cosmetics'
+import { sha256Hex } from '../lib/ids'
+import { artKey, grantPendingHalloweenRewards } from '../lib/halloween'
+import { BADGE_IDS, STICKER_IDS } from '../../shared/halloween'
 import { loadPrivateCapes, loadPrivateCosmetics, loadPrivateTemplates, mergeBuiltins, privateAssetsAvailable } from '../lib/private-assets'
 import { ConfigError, loadConfig, type Config } from '../lib/config'
 import { createContext, setContext, setReady } from '../lib/context'
@@ -65,6 +68,8 @@ export default defineNitroPlugin((nitroApp) => {
   const capeAssets = assets('capes')
   const cosmeticAssets = assets('cosmetics')
   const circuitAssets = assets('circuits')
+  // Halloween 2026 (§36): Sticker- und Abzeichen-Bilder (vom Generator, scripts/generate-halloween.mjs).
+  const halloweenAssets = assets('halloween')
   // WebP-Dekoder (libwebp als Wasm) aus den Server-Assets – im Bundle, ohne node_modules-Pfade.
   const codecAssets = assets('codecs')
   setWebpWasmLoader(async () => {
@@ -152,6 +157,17 @@ export default defineNitroPlugin((nitroApp) => {
       if (r.invalid.length) console.warn(`[trs-api] invalid built-in circuits skipped: ${r.invalid.join(', ')}`)
       circuits = r.inserted + r.updated + r.skipped
     }
+    // Halloween 2026 (§36): Bilder laden, Kürbisjäger-Umhang nachreichen (falls er beim 13. Fund fehlte).
+    for (const [kind, ids] of [['stickers', STICKER_IDS], ['badges', BADGE_IDS]] as const) {
+      for (const id of ids) {
+        const key = artKey(kind, id)
+        const png = await halloweenAssets.file(key)
+        if (png) ctx.halloweenArt.set(key, { png, sha256: sha256Hex(png) })
+        else warn(`assets/halloween/${key} not found`)
+      }
+    }
+    const hunters = grantPendingHalloweenRewards(ctx)
+    if (hunters > 0) console.info(`[trs-api] granted ${hunters} pending halloween hunter capes`)
     // Erfolge (§31): Belohnungen nachreichen, deren Teil es jetzt gibt (z. B. neu im Katalog).
     const rewards = grantPendingRewards(ctx)
     if (rewards > 0) console.info(`[trs-api] granted ${rewards} pending achievement rewards`)

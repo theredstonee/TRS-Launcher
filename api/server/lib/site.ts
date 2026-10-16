@@ -1,3 +1,4 @@
+import { REWARD_EVENTS } from '../../shared/halloween'
 import type { AppContext } from './context'
 import { ACHIEVEMENTS } from './achievement-catalog'
 import { v2Assets, v2Fields, type CosmeticV2Fields } from './cosmetics'
@@ -213,9 +214,11 @@ export interface PublicCape {
   name: string
   /** Titel des Erfolgs, der diesen Umhang als Belohnung vergibt (§31), sonst `null`. */
   achievement: { en: string, de: string, es: string } | null
-  unlock: 'free' | 'code' | 'admin' | 'event'
+  unlock: 'free' | 'code' | 'admin' | 'event' | 'reward'
   /** Nur bei Event-Umhängen (`unlock` = `event`): das Event. */
   event: string | null
+  /** Nur bei Belohnungen (`unlock` = `reward`, §36): wofür, z. B. `halloween2026`. */
+  rewardOf: string | null
   /** Relativ zur Website – gleiche App, gleiche Herkunft. */
   url: string
   scale: number
@@ -227,18 +230,20 @@ export interface PublicCape {
 export function publicCapes(ctx: AppContext): PublicCape[] {
   // Event-Umhänge erscheinen nur, solange das Event global an ist (die Website ist anonym).
   const live = new Set(globalEvents(ctx))
-  const rows = all<{ id: string, name: string, unlock: 'free' | 'code' | 'admin', event: string | null, sha256: string, width: number, frames: number, frame_time_ms: number | null }>(
+  const rows = all<{ id: string, name: string, unlock: 'free' | 'code' | 'admin', event: string | null, reward: string | null, sha256: string, width: number, frames: number, frame_time_ms: number | null }>(
     ctx.db,
-    `SELECT id, name, unlock, event, sha256, width, frames, frame_time_ms FROM capes
+    `SELECT id, name, unlock, event, reward, sha256, width, frames, frame_time_ms FROM capes
      WHERE kind = 'builtin' AND status = 'approved' AND retired = 0 ORDER BY sort, id`,
   )
   // Umhänge, die ein Erfolg als Belohnung vergibt (§31): Titel des Erfolgs statt „Nur Team“.
   const byReward = new Map(ACHIEVEMENTS.filter((a) => a.reward?.kind === 'cape').map((a) => [a.reward!.id, a.title]))
-  return rows.filter((c) => !c.event || live.has(c.event)).map((c) => ({
+  // Belohnungen (§36) ebenso nur, solange das zugehörige Event global an ist.
+  return rows.filter((c) => (!c.event || live.has(c.event)) && (!c.reward || live.has(REWARD_EVENTS[c.reward] ?? ''))).map((c) => ({
     id: c.id,
     name: c.name,
-    unlock: c.event ? 'event' as const : c.unlock,
+    unlock: c.reward ? 'reward' as const : c.event ? 'event' as const : c.unlock,
     event: c.event,
+    rewardOf: c.reward,
     achievement: byReward.get(c.id) ?? null,
     url: `/v1/capes/${c.id}.png?v=${c.sha256.slice(0, 12)}`,
     scale: Math.round(c.width / 64),

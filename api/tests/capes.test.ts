@@ -108,7 +108,7 @@ describe('uploads and moderation', () => {
 
     // Lookup: der Besitzer sieht seinen wartenden Umhang, andere nicht.
     expect(lookupPlayers(env.ctx, owner.user.uuid, [owner.user.uuid]).players[0]!.cape?.id).toBe(cape.id)
-    expect(lookupPlayers(env.ctx, other.user.uuid, [owner.user.uuid]).players[0]).toEqual({ uuid: owner.user.uuid, badge: true, cape: null, cosmetics: NO_COSMETICS })
+    expect(lookupPlayers(env.ctx, other.user.uuid, [owner.user.uuid]).players[0]).toEqual({ uuid: owner.user.uuid, badge: true, cape: null, cosmetics: NO_COSMETICS, badges: [], fx: [] })
 
     expect(listCapesForReview(env.ctx, 'pending').map((c) => c.id)).toEqual([cape.id])
     approveCape(env.ctx, ADMIN, cape.id)
@@ -176,7 +176,7 @@ describe('player lookup privacy', () => {
     const r = lookupPlayers(env.ctx, viewer.user.uuid, [a.user.uuid, b.user.uuid, c.user.uuid, notTrs, a.user.uuid])
     const by = Object.fromEntries(r.players.map((p) => [p.uuid, p]))
     expect(by[a.user.uuid]).toMatchObject({ badge: true, cape: { id: 'redstone', scale: 2, animated: false, frames: 1, frameTimeMs: null } })
-    expect(by[b.user.uuid]).toEqual({ uuid: b.user.uuid, badge: true, cape: null, cosmetics: NO_COSMETICS })
+    expect(by[b.user.uuid]).toEqual({ uuid: b.user.uuid, badge: true, cape: null, cosmetics: NO_COSMETICS, badges: [], fx: [] })
     expect(by[c.user.uuid]).toBeUndefined() // kein Abzeichen, kein Umhang
     expect(by[notTrs]).toBeUndefined()
     expect(r.players).toHaveLength(2)

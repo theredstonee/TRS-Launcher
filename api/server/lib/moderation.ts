@@ -234,6 +234,8 @@ export interface EvidenceMessage {
   world?: { roomId: string, name: string } | null
   /** Wegpunkt-Karte (§18.10). Fehlt in älteren Beweisen. */
   waypoint?: WaypointView | null
+  /** Chat-Sticker (§36). Fehlt in älteren Beweisen. */
+  sticker?: string | null
   system: { event: string, target: string | null, name: string | null } | null
   attachments: { id: string, width: number, height: number, mime: string }[]
   replyTo: string | null
@@ -329,6 +331,7 @@ function snapshotMessages(ctx: AppContext, rows: MessageRow[]): EvidenceMessage[
       invite: c.invite,
       world: c.world,
       waypoint: c.waypoint,
+      sticker: c.sticker,
       system: c.system ? { event: c.system.e, target: c.system.tg ?? null, name: c.system.n ?? null } : null,
       attachments: (atts.get(r.id) ?? []).map((a) => ({ id: a.id, width: a.width, height: a.height, mime: a.mime })),
       replyTo: r.reply_to,
@@ -778,7 +781,7 @@ export function redactDetail(d: AdminReportDetail): AdminReportDetail & { conten
     evidence: d.evidence
       ? {
           ...d.evidence,
-          messages: d.evidence.messages.map((m) => ({ ...m, text: null, invite: null, world: null, waypoint: null, attachments: [], hidden: true })),
+          messages: d.evidence.messages.map((m) => ({ ...m, text: null, invite: null, world: null, waypoint: null, sticker: null, attachments: [], hidden: true })),
           images: [],
           issue: d.evidence.issue ? { ...d.evidence.issue, description: '' } : d.evidence.issue,
           issueComment: d.evidence.issueComment ? { ...d.evidence.issueComment, body: '' } : d.evidence.issueComment,

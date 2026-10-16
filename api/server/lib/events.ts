@@ -11,6 +11,7 @@ import type { IssueUpdatedEvent } from './issues'
 import type { PackView } from './packs'
 import type { CommandType, PeerView, RemoteStatus } from './remote'
 import type { CreatorTier, CreatorUpdateKind, HelperRight, Milestone } from './creators'
+import type { HalloweenView } from './halloween'
 
 export interface PlayerRef {
   uuid: string
@@ -152,6 +153,9 @@ export type ApiEvent =
   | { type: 'creator_helper_removed', creator: PlayerRef }
   /** An alle aktuellen Fans: ihr Creator hat einen neuen Meilenstein erreicht. */
   | { type: 'creator_milestone', creator: PlayerRef, milestone: Milestone }
+  // ---------------------------------------------------------------- Halloween 2026 (§36, nur /v1/events/me)
+  /** Kürbis gefunden, angeklopft, Abzeichen bekommen oder Effekte geändert: Daten = Antwort von `GET /v1/me/halloween`. */
+  | ({ type: 'halloween_updated' } & HalloweenView)
 
 export type ApiEventType = ApiEvent['type']
 

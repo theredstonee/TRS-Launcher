@@ -200,7 +200,8 @@ describe('equip and unlock rules', () => {
     expect(cat.find((c) => c.id === 'free_crown')).toMatchObject({ owned: true, equipped: true, kind: 'builtin' })
     expect(cat.find((c) => c.id === 'code_wings')).toMatchObject({ owned: false, equipped: false })
     const emotes = cat.filter((c) => c.slot === 'emote')
-    expect(emotes).toHaveLength(EMOTES.length)
+    // Belohnungs-Emotes (§36) erscheinen nur, solange Halloween aktiv ist (oder für Besitzer).
+    expect(emotes).toHaveLength(EMOTES.filter((e) => !e.reward).length)
     expect(emotes.find((e) => e.id === 'winken')).toMatchObject({ owned: true, texture: null, template: null, emote: { durationMs: 2000, loop: false } })
     expect(emotes.find((e) => e.id === 'tanzen')).toMatchObject({ owned: false, unlock: 'code', emote: { loop: true } })
     expect(ownedEmotes(env.ctx, u)).toEqual(EMOTES.filter((e) => e.unlock === 'free').map((e) => e.id))

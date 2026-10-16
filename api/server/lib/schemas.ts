@@ -320,6 +320,8 @@ export const sendMessageBody = z.strictObject({
   /** Weltkarte (§21): nur der Host des Raums. */
   world: z.strictObject({ roomId: z.string().regex(/^h[0-9a-f]{20}$/, 'invalid world id') }).optional(),
   waypoint: waypointSchema.optional(),
+  /** Chat-Sticker (§36) statt Text/Bildern – nur freigeschaltete (`403 sticker_locked`). */
+  sticker: z.string().regex(/^[a-z][a-z0-9_]{0,31}$/, 'invalid sticker id').optional(),
   /** Idempotenz: vom Client erzeugt (z. B. UUID), gleiche nonce = gleiche Nachricht. */
   nonce: z.string().regex(/^[A-Za-z0-9_-]{8,64}$/, 'nonce must be 8-64 characters of A-Z, a-z, 0-9, _ or -').optional(),
 })
@@ -784,3 +786,8 @@ export const pushPendingQuery = z.strictObject({
   since: z.string().regex(/^\d{1,15}$/, 'must be the cursor from the last response').default('0').transform(Number),
   limit: z.coerce.number().int().min(1).max(100).default(50),
 })
+
+// ---------------------------------------------------------------- Halloween 2026 (§36)
+
+/** `PUT /v1/me/halloween/effects`: dürfen andere TRS-Spieler meine Spuk-Effekte sehen? */
+export const halloweenEffectsBody = z.strictObject({ hits: z.boolean(), trail: z.boolean() })

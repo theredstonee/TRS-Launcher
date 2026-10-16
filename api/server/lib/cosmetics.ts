@@ -11,10 +11,11 @@ import { emitCosmetics } from './playerevents'
 import { decodeRgba, encodeRgba, inspectPng } from './png'
 import { usedMask, WEARABLE_SLOTS, type CosmeticSlot, type Template, type WearableSlot } from './templates'
 import { assertNotSanctioned } from './sanctions'
+import { REWARD_EVENTS } from '../../shared/halloween'
 import { activeEventsFor, eventActiveFor } from './liveevents'
 import { isAdmin } from './users'
 
-export type CosmeticUnlock = 'free' | 'code' | 'admin' | 'owner' | 'event'
+export type CosmeticUnlock = 'free' | 'code' | 'admin' | 'owner' | 'event' | 'reward'
 export type CosmeticStatus = 'approved' | 'pending' | 'rejected'
 
 /** Größte Upload-Datei (Streifen mit bis zu 16 Frames in scale 2). */
@@ -35,6 +36,8 @@ export interface CosmeticRow {
   unlock: CosmeticUnlock
   /** Event-Teil (z. B. `halloween`): in der DB `unlock = 'admin'` + dieses Feld; die Sicht zeigt `unlock: 'event'`. */
   event: string | null
+  /** Belohnung (§36, z. B. `halloween2026`): in der DB `unlock = 'admin'` + dieses Feld; die Sicht zeigt `unlock: 'reward'`. */
+  reward?: string | null
   sha256: string | null
   width: number | null
   height: number | null
@@ -74,6 +77,8 @@ export interface CosmeticView extends Partial<CosmeticV2Fields> {
   unlock: CosmeticUnlock
   /** Nur bei Event-Teilen: das Event (`unlock` ist dann `event`). */
   event?: string
+  /** Nur bei Belohnungen (§36): wofür es sie gibt, z. B. `halloween2026` (`unlock` ist dann `reward`). */
+  rewardOf?: string
   status: CosmeticStatus
   /** Vorlagen-ID (`null` bei Emotes und bei Format v2). */
   template: string | null
@@ -171,8 +176,9 @@ export function cosmeticView(ctx: AppContext, c: CosmeticRow): CosmeticView {
     name: c.name,
     slot: slotOf(ctx, c),
     kind: c.kind,
-    unlock: c.event ? 'event' : c.unlock,
+    unlock: c.reward ? 'reward' : c.event ? 'event' : c.unlock,
     ...(c.event ? { event: c.event } : {}),
+    ...(c.reward ? { rewardOf: c.reward } : {}),
     status: c.status,
     // v2: keine Vorlage – alte Clients (nur Vorlagen) lassen das Teil so einfach weg.
     template: c.format === 2 ? null : c.template,
@@ -337,11 +343,11 @@ export function seedEmotes(ctx: AppContext): void {
     assertNoSlotClash(ctx, e.id, 'emote')
     run(
       ctx.db,
-      `INSERT INTO cosmetics (id, kind, slot, template, name, owner_uuid, status, unlock, frames, emissive, sort, retired, created_at)
-       VALUES (?, 'builtin', 'emote', NULL, ?, NULL, 'approved', ?, 1, 0, ?, 0, ?)
-       ON CONFLICT(id) DO UPDATE SET name = excluded.name, unlock = excluded.unlock, sort = excluded.sort, retired = 0
+      `INSERT INTO cosmetics (id, kind, slot, template, name, owner_uuid, status, unlock, reward, frames, emissive, sort, retired, created_at)
+       VALUES (?, 'builtin', 'emote', NULL, ?, NULL, 'approved', ?, ?, 1, 0, ?, 0, ?)
+       ON CONFLICT(id) DO UPDATE SET name = excluded.name, unlock = excluded.unlock, reward = excluded.reward, sort = excluded.sort, retired = 0
        WHERE cosmetics.kind = 'builtin'`,
-      e.id, e.name, e.unlock, 1000 + sort, t,
+      e.id, e.name, e.unlock, e.reward ?? null, 1000 + sort, t,
     )
   })
   for (const row of all<{ id: string }>(ctx.db, "SELECT id FROM cosmetics WHERE slot = 'emote' AND retired = 0")) {
@@ -405,6 +411,8 @@ export function cosmeticCatalog(ctx: AppContext, uuid: string): CosmeticCatalogE
     .filter((c) => !c.hidden || ownsCosmetic(ctx, uuid, c.id) || equipped.has(c.id))
     // Event-Teile sieht man, solange das Event für einen aktiv ist – oder wenn man sie schon hat (bzw. trägt).
     .filter((c) => !c.event || events.includes(c.event) || ownsCosmetic(ctx, uuid, c.id) || equipped.has(c.id))
+    // Belohnungen (§36) ebenso: solange das zugehörige Event aktiv ist oder wenn man sie hat.
+    .filter((c) => !c.reward || events.includes(REWARD_EVENTS[c.reward] ?? '') || ownsCosmetic(ctx, uuid, c.id))
     .map((c) => ({
       ...cosmeticView(ctx, c),
       owned: canUseCosmetic(ctx, uuid, c),
@@ -652,7 +660,7 @@ export function readCosmeticV2File(ctx: AppContext, id: string, which: V2File): 
 
 // ---------------------------------------------------------------- Zuteilung (Admin, Codes)
 
-export function grantCosmetic(ctx: AppContext, uuid: string, id: string, source: 'code' | 'admin' | 'event'): boolean {
+export function grantCosmetic(ctx: AppContext, uuid: string, id: string, source: 'code' | 'admin' | 'event' | 'reward'): boolean {
   return (
     run(
       ctx.db,

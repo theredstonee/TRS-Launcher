@@ -102,6 +102,8 @@ export default defineNuxtConfig({
       { baseName: 'cosmetics', dir: '../assets/cosmetics' },
       // Mitgelieferte Schaltungen (index.json + <id>.json), beim Start eingespielt (§25)
       { baseName: 'circuits', dir: '../assets/circuits', pattern: '*.json' },
+      // Halloween 2026 (§36): Sticker- und Abzeichen-Bilder (stickers/<id>.png, badges/<id>.png)
+      { baseName: 'halloween', dir: '../assets/halloween' },
       // WebP-Dekoder für Chat-Bilder (libwebp als Wasm, Apache-2.0)
       { baseName: 'codecs', dir: '../node_modules/@jsquash/webp/codec/dec', pattern: '*.wasm' },
     ],

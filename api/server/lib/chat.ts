@@ -9,6 +9,7 @@ import {
 import type { AppContext } from './context'
 import { ChatCipher } from './crypto'
 import { all, one, placeholders, run, tx } from './db'
+import { assertStickerUsable } from './halloween'
 import { ApiError, badRequest, conflict, forbidden, notFound } from './errors'
 import type { ApiEvent, PlayerRef } from './events'
 import { areFriends, hasBlocked } from './friends'
@@ -103,6 +104,8 @@ interface Body {
   w?: WorldCardBody
   /** Wegpunkt-Karte (§18.10): Name, Koordinaten, Dimension, Server-Adresse ODER Welt-Hash, Farbe. */
   p?: WaypointBody
+  /** Chat-Sticker (§36): ID, nie zusammen mit Text/Bildern/Karten. */
+  k?: string
   s?: { e: SystemEvent, tg?: string, n?: string }
 }
 
@@ -175,6 +178,8 @@ export interface ReplyView {
   world: boolean
   /** Antwort auf eine Wegpunkt-Karte. */
   waypoint: boolean
+  /** Antwort auf einen Sticker (§36): seine ID, sonst `null`. */
+  sticker: string | null
   deleted: boolean
 }
 
@@ -205,6 +210,8 @@ export interface MessageView {
   world: WorldCardView | null
   /** Geteilter Wegpunkt (§18.10). */
   waypoint: WaypointView | null
+  /** Chat-Sticker (§36): ID (Bild unter `GET /v1/stickers/{id}.png`), sonst `null`. */
+  sticker: string | null
   attachments: AttachmentView[]
   replyTo: ReplyView | null
   system: SystemView | null
@@ -410,10 +417,11 @@ export function messageViews(ctx: AppContext, rows: MessageRow[], hideFrom: Set<
           invite: !repHidden && !!rb?.i,
           world: !repHidden && !!rb?.w,
           waypoint: !repHidden && !!rb?.p,
+          sticker: !repHidden && rb?.k ? rb.k : null,
           deleted: rep.deleted_at !== null,
         }
       } else {
-        replyTo = { id: r.reply_to, seq: 0, sender: null, preview: null, attachments: 0, invite: false, world: false, waypoint: false, deleted: true }
+        replyTo = { id: r.reply_to, seq: 0, sender: null, preview: null, attachments: 0, invite: false, world: false, waypoint: false, sticker: null, deleted: true }
       }
     }
     const show = !deleted && !hidden
@@ -427,6 +435,7 @@ export function messageViews(ctx: AppContext, rows: MessageRow[], hideFrom: Set<
       invite: show && body?.i ? { address: body.i.a, name: body.i.n ?? null } : null,
       world: show && body?.w && r.sender_uuid ? worldCardView(body.w, ref(r.sender_uuid)!) : null,
       waypoint: show && body?.p ? waypointView(body.p) : null,
+      sticker: show && body?.k ? body.k : null,
       attachments: show ? (atts.get(r.id) ?? []).map(attachmentView) : [],
       replyTo: show ? replyTo : null,
       system: r.kind === 'system' && body?.s
@@ -881,6 +890,8 @@ export interface SendInput {
   world?: { roomId: string }
   /** Wegpunkt-Karte (§18.10). Nicht zusammen mit Einladung/Weltkarte. */
   waypoint?: WaypointInput
+  /** Chat-Sticker (§36): nur freigeschaltete, nie zusammen mit Text, Bildern oder Karten. */
+  sticker?: string
   nonce?: string
 }
 
@@ -949,7 +960,12 @@ export function sendMessage(ctx: AppContext, me: string, conversationId: string,
   const text = checkContent(ctx, conv, me, input.text, !!input.invite || !!world || waypoint?.a !== undefined)
   const attIds = [...new Set(input.attachments ?? [])]
   if (attIds.length > lim.maxAttachmentsPerMessage) throw badRequest('too_many_attachments', `At most ${lim.maxAttachmentsPerMessage} images per message`)
-  if (!text && attIds.length === 0 && !input.invite && !world && !waypoint) throw badRequest('empty_message', 'A message needs text, an image or an invite')
+  if (input.sticker !== undefined) {
+    // Sticker statt Text/Bildern/Karten (§36).
+    if (text || attIds.length > 0 || input.invite || world || waypoint) throw badRequest('sticker_conflict', 'A sticker is sent on its own, without text, images or cards')
+    assertStickerUsable(ctx, me, input.sticker)
+  }
+  if (!text && attIds.length === 0 && !input.invite && !world && !waypoint && !input.sticker) throw badRequest('empty_message', 'A message needs text, an image or an invite')
   for (const id of attIds) {
     const a = getAttachment(ctx, id)
     if (!a || a.uploader_uuid !== me || a.message_id !== null) throw notFound('attachment_not_found', 'Unknown or already used image')
@@ -969,6 +985,7 @@ export function sendMessage(ctx: AppContext, me: string, conversationId: string,
     ...(input.invite ? { i: { a: input.invite.address.toLowerCase(), ...(inviteName ? { n: inviteName } : {}) } } : {}),
     ...(world ? { w: world } : {}),
     ...(waypoint ? { p: waypoint } : {}),
+    ...(input.sticker ? { k: input.sticker } : {}),
   }
   const t = ctx.now()
   const id = newMessageId()
@@ -1004,6 +1021,7 @@ export function editMessage(ctx: AppContext, me: string, messageId: string, rawT
   if (msg.deleted_at !== null) throw conflict('message_deleted', 'This message was deleted')
   assertCanWrite(ctx, conv, me)
   const old = decBody(ctx, msg) ?? {}
+  if (old.k) throw conflict('sticker_not_editable', 'Sticker messages cannot be edited')
   const text = checkContent(ctx, conv, me, rawText, false)
   const atts = attachmentsOf(ctx, [msg.id]).get(msg.id)?.length ?? 0
   if (!text && atts === 0 && !old.i && !old.w && !old.p) throw badRequest('empty_message', 'A message needs text, an image or an invite')
@@ -1279,6 +1297,7 @@ export function decryptForEvidence(ctx: AppContext, row: MessageRow): {
   invite: InviteView | null
   world: { roomId: string, name: string } | null
   waypoint: WaypointView | null
+  sticker: string | null
   system: Body['s'] | null
 } {
   const b = decBody(ctx, row)
@@ -1287,6 +1306,7 @@ export function decryptForEvidence(ctx: AppContext, row: MessageRow): {
     invite: b?.i ? { address: b.i.a, name: b.i.n ?? null } : null,
     world: b?.w ? { roomId: b.w.r, name: b.w.n } : null,
     waypoint: b?.p ? waypointView(b.p) : null,
+    sticker: b?.k ?? null,
     system: b?.s ?? null,
   }
 }

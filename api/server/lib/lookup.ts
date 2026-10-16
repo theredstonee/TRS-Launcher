@@ -1,6 +1,7 @@
 import type { AppContext } from './context'
 import { all, placeholders } from './db'
 import { capeView, type CapeRow } from './capes'
+import { badgeFxFor, type FxKind } from './badge-lookup'
 import { creatorLookupData, type LookupCreator, type LookupFan } from './creator-lookup'
 import { cosmeticView, renderable, type CosmeticRow } from './cosmetics'
 import { WEARABLE_SLOTS, type WearableSlot } from './templates'
@@ -50,6 +51,10 @@ export interface LookupEntry {
   creator?: LookupCreator
   /** Der Spieler ist Fan eines aktiven Creators mit freigegebenem Symbol (für den Fragenden sichtbar); fehlt sonst. */
   fan?: LookupFan
+  /** Profil-Abzeichen (§36, z. B. `halloween2026`), älteste zuerst; leer bei `showBadge` aus (außer für einen selbst). */
+  badges: string[]
+  /** Spuk-Effekte, die der Spieler anderen zeigt (`hits`, `trail`) – nur solange Halloween für ihn läuft. */
+  fx: FxKind[]
 }
 
 interface Row {
@@ -132,6 +137,7 @@ function collect(ctx: AppContext, viewer: string, uuids: string[]): LookupEntry[
 
   const viewerLive = seesLiveBadges(ctx, viewer)
   const extra = creatorLookupData(ctx, viewer, rows.map((r) => r.uuid))
+  const badgeFx = badgeFxFor(ctx, viewer, rows)
   const players: LookupEntry[] = []
   for (const r of rows) {
     const self = r.uuid === viewer
@@ -194,9 +200,10 @@ function collect(ctx: AppContext, viewer: string, uuids: string[]): LookupEntry[
     const badge = liveBadge(ctx, r.show_badge === 1, r.uuid, self || viewerLive)
     const creator = extra.creators.get(r.uuid)
     const fan = extra.fans.get(r.uuid)
-    // Nur Creator-/Fan-Daten reichen auch (§35.5).
-    if (!badge && !cape && !any && !creator && !fan) continue
-    players.push({ uuid: r.uuid, badge, cape, cosmetics, ...(creator ? { creator } : {}), ...(fan ? { fan } : {}) })
+    const { badges, fx } = badgeFx.get(r.uuid) ?? { badges: [], fx: [] }
+    // Nur Creator-/Fan-Daten (§35.5) bzw. Abzeichen/Effekte (§36) reichen auch.
+    if (!badge && !cape && !any && !creator && !fan && badges.length === 0 && fx.length === 0) continue
+    players.push({ uuid: r.uuid, badge, cape, cosmetics, ...(creator ? { creator } : {}), ...(fan ? { fan } : {}), badges, fx })
   }
   return players
 }
@@ -213,5 +220,5 @@ export function lookupPlayers(ctx: AppContext, viewer: string, uuids: string[]):
 
 /** Sicht auf einen einzelnen Spieler – `self` = der Spieler selbst, sonst „ein anderer“ (ohne Blockadeprüfung). */
 export function visualsOf(ctx: AppContext, subject: string, self: boolean): LookupEntry {
-  return collect(ctx, self ? subject : '', [subject])[0] ?? { uuid: subject, badge: false, cape: null, cosmetics: emptyCosmetics() }
+  return collect(ctx, self ? subject : '', [subject])[0] ?? { uuid: subject, badge: false, cape: null, cosmetics: emptyCosmetics(), badges: [], fx: [] }
 }

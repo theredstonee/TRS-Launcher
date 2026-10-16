@@ -11,6 +11,8 @@ export type PlayerEvent =
   | { type: 'fan', uuid: string }
   /** Symbol/Meilenstein/Status eines Creators geändert: alle Spieler mit `fan.creator` = `creator` neu nachschlagen. */
   | { type: 'fan_creator', creator: string }
+  /** Profil-Abzeichen bzw. erlaubte Spuk-Effekte dieses Spielers haben sich geändert (§36), gefiltert wie im Lookup. */
+  | { type: 'badges', uuid: string, badges: string[], fx: string[] }
 
 export interface Watcher {
   /** Wer zuschaut (Konto des Streams). */

@@ -149,6 +149,7 @@ function chatPreview(m: MessageEvent['message'], lang: PushLang): string {
   if (m.invite) return pushText('chatServerInvite', lang)
   if (m.world) return pushText('chatWorldInvite', lang)
   if (m.waypoint) return pushText('chatWaypoint', lang)
+  if (m.sticker) return pushText('chatSticker', lang)
   return pushText('chatNew', lang)
 }
 

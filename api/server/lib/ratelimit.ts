@@ -288,4 +288,13 @@ export const RULES = {
   creatorFanUser: { limit: 30, windowMs: MIN },
   /** Team: Creator-Verwaltung (Prüfung, Status, Anfragen, Vorschau-Builds). */
   adminCreators: { limit: 120, windowMs: MIN },
+  // ------------------------------------------------ Halloween 2026 (§36)
+  /** Kürbis melden: höchstens einer je 2 s und Konto. */
+  halloweenPumpkinUser: { limit: 1, windowMs: 2000 },
+  /** Anklopfen (einmal je Tag zählt ohnehin; das hier bremst nur Wiederholungen). */
+  halloweenTrickUser: { limit: 10, windowMs: MIN },
+  /** Spuk-Effekt-Freigaben ändern. */
+  halloweenEffectsUser: { limit: 20, windowMs: MIN },
+  /** Öffentliche Sticker-/Abzeichen-Bilder und -Listen je IP – zusätzlich zur globalen IP-Grenze. */
+  halloweenPublicIp: { limit: 600, windowMs: MIN },
 } satisfies Record<string, Rule>

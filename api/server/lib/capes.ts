@@ -4,6 +4,7 @@ import type { AppContext } from './context'
 import { all, one, run, tx } from './db'
 import { badRequest, conflict, forbidden, notFound } from './errors'
 import { newUploadCapeId, sha256Hex } from './ids'
+import { REWARD_EVENTS } from '../../shared/halloween'
 import { activeEventsFor, eventActiveFor } from './liveevents'
 import { holdsCape, notifyShareRemoved, shareHolders, shareRole, visibleHolderCount } from './capeshares'
 import { emitCape } from './playerevents'
@@ -11,7 +12,7 @@ import { BUILTIN_MAX_SCALE, capeLayout, inspectPng, sanitizeCapeUpload } from '.
 import { assertNotSanctioned } from './sanctions'
 import { isAdmin } from './users'
 
-export type CapeUnlock = 'free' | 'code' | 'admin' | 'owner' | 'event'
+export type CapeUnlock = 'free' | 'code' | 'admin' | 'owner' | 'event' | 'reward'
 export type CapeStatus = 'approved' | 'pending' | 'rejected'
 
 export interface CapeRow {
@@ -23,6 +24,8 @@ export interface CapeRow {
   unlock: CapeUnlock
   /** Event-Umhang (z. B. `halloween`): in der DB `unlock = 'admin'` + dieses Feld; die Sicht zeigt `unlock: 'event'`. */
   event?: string | null
+  /** Belohnungs-Umhang (§36, z. B. `halloween2026`): in der DB `unlock = 'admin'` + dieses Feld; die Sicht zeigt `unlock: 'reward'`. */
+  reward?: string | null
   sha256: string
   width: number
   height: number
@@ -45,6 +48,8 @@ export interface CapeView {
   unlock: CapeUnlock
   /** Nur bei Event-Umhängen: das Event (`unlock` ist dann `event`). */
   event?: string
+  /** Nur bei Belohnungs-Umhängen (§36): wofür es sie gibt, z. B. `halloween2026` (`unlock` ist dann `reward`). */
+  rewardOf?: string
   status: CapeStatus
   /** Absolute URL der Textur (animierte Umhänge: senkrechter Frame-Streifen). Ändert sich mit dem Inhalt. */
   url: string
@@ -79,8 +84,9 @@ export function capeView(ctx: AppContext, c: CapeRow): CapeView {
     id: c.id,
     name: c.name,
     kind: c.kind,
-    unlock: c.event ? 'event' : c.unlock,
+    unlock: c.reward ? 'reward' : c.event ? 'event' : c.unlock,
     ...(c.event ? { event: c.event } : {}),
+    ...(c.reward ? { rewardOf: c.reward } : {}),
     status: c.status,
     url: capeUrl(ctx, c),
     width: c.width,
@@ -111,6 +117,8 @@ export interface BuiltinCape {
   unlock: 'free' | 'code' | 'admin'
   /** Event-Umhang (siehe `CapeRow.event`). */
   event?: string
+  /** Belohnungs-Umhang (siehe `CapeRow.reward`). */
+  reward?: string
   sort: number
   scale: number
   frames: number
@@ -148,13 +156,13 @@ export function seedBuiltins(ctx: AppContext, capes: BuiltinCape[]): void {
     if (!existsSync(file) || sha256Hex(readFileSync(file)) !== sha) writeAtomic(ctx.capeDir, `${c.id}.png`, c.png)
     run(
       ctx.db,
-      `INSERT INTO capes (id, kind, name, owner_uuid, status, unlock, event, sha256, width, height, frames, frame_time_ms, sort, retired, created_at)
-       VALUES (?, 'builtin', ?, NULL, 'approved', ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
-       ON CONFLICT(id) DO UPDATE SET name = excluded.name, unlock = excluded.unlock, event = excluded.event, sha256 = excluded.sha256,
+      `INSERT INTO capes (id, kind, name, owner_uuid, status, unlock, event, reward, sha256, width, height, frames, frame_time_ms, sort, retired, created_at)
+       VALUES (?, 'builtin', ?, NULL, 'approved', ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+       ON CONFLICT(id) DO UPDATE SET name = excluded.name, unlock = excluded.unlock, event = excluded.event, reward = excluded.reward, sha256 = excluded.sha256,
          width = excluded.width, height = excluded.height, frames = excluded.frames,
          frame_time_ms = excluded.frame_time_ms, sort = excluded.sort, retired = 0
        WHERE capes.kind = 'builtin'`,
-      c.id, c.name, c.unlock, c.event ?? null, sha, header.width, frameH, frames, frames > 1 ? c.frameTimeMs : null, c.sort, t,
+      c.id, c.name, c.unlock, c.event ?? null, c.reward ?? null, sha, header.width, frameH, frames, frames > 1 ? c.frameTimeMs : null, c.sort, t,
     )
     ids.add(c.id)
   }
@@ -205,6 +213,8 @@ export function catalog(ctx: AppContext, uuid: string): CatalogEntry[] {
   return rows
     // Event-Umhänge sieht man, solange das Event für einen aktiv ist – oder wenn man sie schon hat.
     .filter((c) => !c.event || activeEvents.includes(c.event) || canUse(ctx, uuid, c))
+    // Belohnungen (§36) ebenso: solange das zugehörige Event aktiv ist (als „Halloween-Belohnung“) oder wenn man sie hat.
+    .filter((c) => !c.reward || activeEvents.includes(REWARD_EVENTS[c.reward] ?? '') || canUse(ctx, uuid, c))
     .map((c) => {
     const sharedWithMe = c.kind === 'upload' && c.owner_uuid !== uuid && c.s_from !== null
     const shareable = shareRole(ctx, uuid, c) !== null
@@ -374,7 +384,7 @@ export function readTexture(ctx: AppContext, capeId: string, viewer: { uuid: str
 
 // ---------------------------------------------------------------- Zuteilung (Admin, Codes)
 
-export function grantCape(ctx: AppContext, uuid: string, capeId: string, source: 'code' | 'admin' | 'event' | 'creator'): boolean {
+export function grantCape(ctx: AppContext, uuid: string, capeId: string, source: 'code' | 'admin' | 'event' | 'creator' | 'reward'): boolean {
   return (
     run(
       ctx.db,

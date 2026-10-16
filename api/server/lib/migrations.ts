@@ -800,7 +800,110 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 25,
     run: migrateCreators,
   },
+  {
+    // Halloween 2026 (§36): Profil-Abzeichen (`user_badges`), Kürbis-Funde, „Süßes oder Saures“ je Berliner Tag,
+    // Spuk-Effekt-Freigaben, Chat-Sticker (`stickers` + Besitz `user_stickers`); Spalte `reward` an capes/cosmetics
+    // (Belohnungs-Teile: in der DB `unlock = admin` + Belohnungs-Schlüssel, nicht abholbar, nicht per Code);
+    // `user_capes`/`user_cosmetics` erlauben `source = 'reward'` (Blätter-Tabellen neu angelegt, Daten bleiben). Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 26,
+    run: migrateHalloween2026,
+  },
 ]
+
+/** Migration 26 (siehe oben). Exportiert für den Idempotenz-Test. */
+export function migrateHalloween2026(db: DatabaseSync): void {
+  db.exec(`
+-- Profil-Abzeichen (nicht das Live-Abzeichen aus §4.1): bleiben für immer.
+CREATE TABLE IF NOT EXISTS user_badges (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  badge TEXT NOT NULL CHECK (length(badge) BETWEEN 1 AND 32),
+  granted_at INTEGER NOT NULL,
+  PRIMARY KEY (uuid, badge)
+);
+CREATE INDEX IF NOT EXISTS user_badges_badge ON user_badges(badge);
+
+CREATE TABLE IF NOT EXISTS halloween_pumpkins (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  pumpkin TEXT NOT NULL CHECK (length(pumpkin) BETWEEN 1 AND 32),
+  found_at INTEGER NOT NULL,
+  PRIMARY KEY (uuid, pumpkin)
+);
+
+-- Ein Wurf je Konto und Kalendertag in Europe/Berlin (day = YYYY-MM-DD).
+CREATE TABLE IF NOT EXISTS halloween_tricks (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  day TEXT NOT NULL CHECK (length(day) = 10),
+  result TEXT NOT NULL CHECK (result IN ('sweet', 'sour')),
+  reward_kind TEXT CHECK (reward_kind IS NULL OR reward_kind IN ('cape', 'emote', 'sticker')),
+  reward_id TEXT,
+  rolled_at INTEGER NOT NULL,
+  PRIMARY KEY (uuid, day),
+  CHECK ((result = 'sweet') = (reward_id IS NOT NULL) AND (reward_id IS NULL) = (reward_kind IS NULL))
+);
+
+-- Dürfen ANDERE TRS-Spieler meine Spuk-Effekte sehen? Keine Zeile = beides an.
+CREATE TABLE IF NOT EXISTS halloween_effects (
+  uuid TEXT PRIMARY KEY REFERENCES users(uuid) ON DELETE CASCADE,
+  hits INTEGER NOT NULL DEFAULT 1 CHECK (hits IN (0, 1)),
+  trail INTEGER NOT NULL DEFAULT 1 CHECK (trail IN (0, 1)),
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS stickers (
+  id TEXT PRIMARY KEY CHECK (length(id) BETWEEN 1 AND 32),
+  reward TEXT,
+  sort INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS user_stickers (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  sticker TEXT NOT NULL REFERENCES stickers(id) ON DELETE CASCADE,
+  source TEXT NOT NULL CHECK (source IN ('reward', 'admin')),
+  granted_at INTEGER NOT NULL,
+  PRIMARY KEY (uuid, sticker)
+);
+INSERT OR IGNORE INTO stickers (id, reward, sort) VALUES
+  ('pumpkin_hihi', 'halloween2026', 0),
+  ('ghost_boo', 'halloween2026', 1),
+  ('bat_flutter', 'halloween2026', 2),
+  ('moon_goodnight', 'halloween2026', 3),
+  ('cauldron_blubb', 'halloween2026', 4),
+  ('grave_riplag', 'halloween2026', 5);
+`)
+  if (hasTable(db, 'capes') && !hasColumn(db, 'capes', 'reward')) db.exec('ALTER TABLE capes ADD COLUMN reward TEXT')
+  if (hasTable(db, 'cosmetics') && !hasColumn(db, 'cosmetics', 'reward')) db.exec('ALTER TABLE cosmetics ADD COLUMN reward TEXT')
+  // Blätter-Tabellen: Quelle `reward` erlauben (SQLite kann CHECKs nicht ändern; niemand verweist auf diese Tabellen).
+  const sqlOf = (name: string) => (db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?").get(name) as { sql: string } | undefined)?.sql ?? ''
+  if (hasTable(db, 'user_capes') && !sqlOf('user_capes').includes("'reward'")) {
+    db.exec(`
+CREATE TABLE user_capes_v26 (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  cape_id TEXT NOT NULL REFERENCES capes(id) ON DELETE CASCADE,
+  source TEXT NOT NULL CHECK (source IN ('code', 'admin', 'event', 'creator', 'reward')),
+  granted_at INTEGER NOT NULL,
+  PRIMARY KEY (uuid, cape_id)
+);
+INSERT INTO user_capes_v26 (uuid, cape_id, source, granted_at) SELECT uuid, cape_id, source, granted_at FROM user_capes;
+DROP TABLE user_capes;
+ALTER TABLE user_capes_v26 RENAME TO user_capes;
+CREATE INDEX IF NOT EXISTS user_capes_cape ON user_capes(cape_id);
+`)
+  }
+  if (hasTable(db, 'user_cosmetics') && !sqlOf('user_cosmetics').includes("'reward'")) {
+    db.exec(`
+CREATE TABLE user_cosmetics_v26 (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  cosmetic_id TEXT NOT NULL REFERENCES cosmetics(id) ON DELETE CASCADE,
+  source TEXT NOT NULL CHECK (source IN ('code', 'admin', 'event', 'reward')),
+  granted_at INTEGER NOT NULL,
+  PRIMARY KEY (uuid, cosmetic_id)
+);
+INSERT INTO user_cosmetics_v26 (uuid, cosmetic_id, source, granted_at) SELECT uuid, cosmetic_id, source, granted_at FROM user_cosmetics;
+DROP TABLE user_cosmetics;
+ALTER TABLE user_cosmetics_v26 RENAME TO user_cosmetics;
+`)
+  }
+}
 
 /** Migration 23 (siehe oben). Exportiert für den Idempotenz-Test. */
 export function migratePush(db: DatabaseSync): void {
