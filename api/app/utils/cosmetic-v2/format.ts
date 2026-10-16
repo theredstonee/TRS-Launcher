@@ -468,6 +468,8 @@ export function validateModel(m: any, images: { texture?: ImageSize | null, glow
   if (typeof m.name !== 'string' || !m.name.trim() || m.name.length > 60) err('name', '1–60 Zeichen')
   if (!(SLOTS as readonly string[]).includes(m.slot)) err('slot', `eins von ${SLOTS.join(', ')}`)
   if (!(ATTACH as readonly string[]).includes(m.attach)) err('attach', `eins von ${ATTACH.join(', ')}`)
+  else if (m.slot === 'wings' && m.attach !== 'body') err('attach', 'slot wings braucht attach body')
+  else if ((m.slot === 'hat' || m.slot === 'companion') && m.attach !== 'head') err('attach', 'slot hat/companion braucht attach head')
 
   // Textur
   const tex = m.texture ?? {}
