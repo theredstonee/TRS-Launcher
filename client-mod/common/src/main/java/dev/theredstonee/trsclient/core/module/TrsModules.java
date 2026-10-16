@@ -100,6 +100,8 @@ public final class TrsModules {
 	public final NotesModules notes;
 	/** Kamera-Fahrten (Keyframes, Abspielen, Vorschau). */
 	public final CinematicModules cinematic;
+	/** Halloween 2026 (nur während des Events sichtbar). */
+	public final HalloweenModules halloween;
 	/** Server-Profile (automatischer Wechsel je Server; nach den HUD-Profilen gelesen/geschrieben). */
 	public final dev.theredstonee.trsclient.core.profile.ServerProfiles serverProfiles;
 
@@ -943,6 +945,7 @@ public final class TrsModules {
 		circuits = new CircuitModules(registry);
 		notes = new NotesModules(registry);
 		cinematic = new CinematicModules(registry);
+		halloween = new HalloweenModules(registry);
 
 		registry.addPart(keyDefaults);
 		registry.addPart(perfUndo);

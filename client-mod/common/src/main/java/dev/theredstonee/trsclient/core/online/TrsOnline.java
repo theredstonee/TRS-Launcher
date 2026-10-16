@@ -184,6 +184,12 @@ public final class TrsOnline {
 					public boolean wantsStream() {
 						return hosting.wantsStream();
 					}
+
+					@Override
+					public void profileStale() {
+						// Nach einem Stream-Resync das Profil neu lesen (events kann sich geändert haben).
+						lastMe = 0L;
+					}
 				});
 		this.hosting = new dev.theredstonee.trsclient.core.hosting.Hosting(
 				new dev.theredstonee.trsclient.core.hosting.HostingApi(http, config.apiBase()),
@@ -244,6 +250,7 @@ public final class TrsOnline {
 		String userAgent = "TRS-Client/" + modVersion + " (Minecraft " + platform.minecraftVersion() + "; "
 				+ platform.loader() + ")";
 		Http http = new Http.UrlConnection(userAgent);
+		dev.theredstonee.trsclient.core.halloween.HalloweenService.get().http(http);
 		TrsOnline online = new TrsOnline(config, platform, http, configDir.resolve("trsclient").resolve("capes"),
 				new PlayerEventStream.UrlOpener(userAgent));
 		current = online;
@@ -538,7 +545,8 @@ public final class TrsOnline {
 					loginFailures = 0;
 					token = s.token;
 					applyMe(s.me);
-					lastMe = System.currentTimeMillis();
+					// Verify alter APIs hat kein events – dann gleich GET /v1/me (vergibt auch das Halloween-Abzeichen).
+					lastMe = s.me != null && s.me.events != null ? System.currentTimeMillis() : 0L;
 					lastPresence = Long.MIN_VALUE / 2;
 					lastEmoteFetch = Long.MIN_VALUE / 2;
 					directory.invalidate(session.uuid);
@@ -732,7 +740,10 @@ public final class TrsOnline {
 	}
 
 	private void applyMe(TrsApi.Me me) {
-		if (me == null || me.settings == null) return;
+		if (me == null) return;
+		// events auch ohne settings (null = Feld fehlt, alte API: Launcher-Datei behalten).
+		dev.theredstonee.trsclient.core.halloween.Halloween.fromApi(me.events);
+		if (me.settings == null) return;
 		shareServer = me.settings.shareServer;
 	}
 

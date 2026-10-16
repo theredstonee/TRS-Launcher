@@ -208,6 +208,8 @@ public final class ChatJson {
 		String until;
 		OfferDto offer;
 		String capeId;
+		/** {@code events_changed}: gerade aktive Event-IDs. */
+		List<String> events;
 	}
 
 	// --- Umwandlung ---

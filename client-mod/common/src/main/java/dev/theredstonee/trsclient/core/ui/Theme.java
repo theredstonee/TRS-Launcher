@@ -28,6 +28,10 @@ public final class Theme {
 		String accentColor;
 		/** "redstone" oder "winter" (ab Launcher 0.20); fehlt/unbekannt = Redstone. */
 		String design;
+		/** Aktives TRS-Event für dieses Konto ({@code "halloween"}) – fehlt sonst. */
+		String event;
+		/** Halloween: „Flackern &amp; Rauschen“ im Launcher (fehlt = Standard an). */
+		Boolean halloweenFlicker;
 	}
 
 	/** Design „Redstone“ (Standard) und „Winternacht“. */
@@ -249,6 +253,8 @@ public final class Theme {
 				File parsed = new Gson().fromJson(reader, File.class);
 				if (parsed == null) return false;
 				set(of(parsed.theme, parsed.accent, parsed.accentColor, parsed.design));
+				dev.theredstonee.trsclient.core.halloween.Halloween.fromLauncher(parsed.event);
+				dev.theredstonee.trsclient.core.halloween.Halloween.flickerFromLauncher(parsed.halloweenFlicker);
 				return true;
 			}
 		} catch (IOException | RuntimeException e) {

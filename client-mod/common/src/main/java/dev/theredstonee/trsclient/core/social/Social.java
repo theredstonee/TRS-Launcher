@@ -75,6 +75,10 @@ public final class Social {
 		default boolean wantsStream() {
 			return false;
 		}
+
+		/** Stream-Lücke ({@code resync}): Profil ({@code GET /v1/me}, inkl. Events) neu holen. */
+		default void profileStale() {
+		}
 	}
 
 	/** Ergebnis einer Aktion im Spiel-Thread; {@code error} = i18n-Schlüssel oder null. */
@@ -398,6 +402,7 @@ public final class Social {
 		if (resyncWanted && !listInFlight) {
 			resyncWanted = false;
 			resync(now);
+			backend.profileStale();
 		} else if (!store.listLoaded() && !listInFlight && now >= listNotBefore) {
 			loadList(now);
 		}
@@ -511,6 +516,16 @@ public final class Social {
 		if (t.equals("resync")) {
 			resyncWanted = true;
 			notesChanged();
+			return;
+		}
+		if (t.equals("events_changed")) {
+			// Aktive Events (z. B. Halloween). null = Feld fehlt, nicht als leere Liste werten.
+			dev.theredstonee.trsclient.core.halloween.Halloween.fromApi(e.events);
+			return;
+		}
+		if (t.equals("halloween_updated")) {
+			// Kürbis gefunden, Süßes oder Saures, Abzeichen vergeben (API.md §36) – neuer Zustand kommt gleich mit.
+			dev.theredstonee.trsclient.core.halloween.HalloweenService.get().fromEvent(e.halloweenData);
 			return;
 		}
 		if (t.equals("notes_changed")) {
