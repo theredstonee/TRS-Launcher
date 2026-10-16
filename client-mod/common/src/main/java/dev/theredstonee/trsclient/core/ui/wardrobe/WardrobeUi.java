@@ -97,6 +97,16 @@ public final class WardrobeUi extends UiScreen {
 	private final CosmeticPreview cosmeticPreview;
 	/** Das andere getragene Teil (Hut neben Begleiter und umgekehrt). */
 	private final CosmeticPreview wornPreview;
+	/** Garderoben-Spiegel (Jumpscare): Kopf-Teil, das sonst gezeichnet würde, darüber das Grinsen. */
+	private SkinModel.HeadAttachment grinBase;
+	private final SkinModel.HeadAttachment grinHead = new SkinModel.HeadAttachment() {
+		@Override
+		public void draw(Canvas c, SkinModel.HeadView view, boolean front) {
+			if (grinBase != null) grinBase.draw(c, view, front);
+			if (front) grin(c, view);
+		}
+	};
+	private final float[] grinPoint = new float[6];
 	private final SkinModel.HeadAttachment cosmeticHead = new SkinModel.HeadAttachment() {
 		@Override
 		public void draw(Canvas c, SkinModel.HeadView view, boolean front) {
@@ -1166,6 +1176,37 @@ public final class WardrobeUi extends UiScreen {
 
 	// --- Vorschau ---
 
+	/**
+	 * Grinsen über dem Gesicht (Gesicht = Kopf-Vorderseite z = +4, Skin-Pixel 0..7): breiter dunkler Mund mit Zähnen und
+	 * rote Augenpunkte. Nur, wenn das Gesicht zur Kamera zeigt.
+	 */
+	private void grin(Canvas c, SkinModel.HeadView view) {
+		view.project(0, 4, 4, grinPoint, 0);
+		view.project(0, 4, 0, grinPoint, 3);
+		if (grinPoint[2] <= grinPoint[5]) return;
+		float px = Math.max(1f, view.scale);
+		// Mund: Zeilen 5–6 (von oben), Spalten 1–6; Zähne in Zeile 5 auf geraden Spalten; Augen Zeile 4, Spalten 2 und 5.
+		for (int row = 4; row <= 6; row++) {
+			for (int col = 1; col <= 6; col++) {
+				int color;
+				if (row == 4) {
+					if (col != 2 && col != 5) continue;
+					color = 0xFFFF2A1A;
+				} else if (row == 5) {
+					color = col % 2 == 0 ? 0xFFE8E1CF : 0xFF0A0204;
+				} else {
+					if (col == 1 || col == 6) continue;
+					color = 0xFF0A0204;
+				}
+				view.project(-4 + col + 0.5, 8 - row - 0.5, 4.05, grinPoint, 0);
+				int gx = Math.round(grinPoint[0] - px / 2);
+				int gy = Math.round(grinPoint[1] - px / 2);
+				int size = Math.max(1, Math.round(px));
+				c.fill(gx, gy, gx + size, gy + size, color);
+			}
+		}
+	}
+
 	private void preview(Canvas c, WardrobeService.State s, int x, int y, int w, int h, int mx, int my, float dt) {
 		Theme t = Theme.get();
 		previewRect[0] = x;
@@ -1334,6 +1375,16 @@ public final class WardrobeUi extends UiScreen {
 		if (bust) {
 			if (cosmeticNight) spec.tint = NIGHT_TINT;
 			if (prepareCosmetic(now)) spec.head = cosmeticHead;
+		}
+		// Halloween: Kürbis „hinter dir, wenn du dich umziehst“ (vor der Figur gezeichnet, sie verdeckt ihn halb).
+		if (!editing && figBottom - figTop > 30) {
+			dev.theredstonee.trsclient.core.halloween.Pumpkins.draw(c, hits,
+					dev.theredstonee.trsclient.core.halloween.Pumpkins.CLIENT_WARDROBE, x + w / 2 + 13, figBottom - 9, mx, my);
+		}
+		// Halloween-Jumpscare „Der Spiegel“: der Skin grinst kurz zurück.
+		if (dev.theredstonee.trsclient.core.halloween.Jumpscares.get().mirrorGrin(now)) {
+			grinBase = spec.head;
+			spec.head = grinHead;
 		}
 		if (skin != null && figBottom - figTop > 30) {
 			c.scissor(x + 1, figTop - 4, x + w - 1, figBottom + 2);
