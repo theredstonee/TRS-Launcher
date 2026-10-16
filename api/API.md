@@ -355,13 +355,15 @@ Auth required. Send 1–100 UUIDs, dashed or not. Duplicates are ignored.
         "wings": null,
         "back": null,
         "aura": null
-      }
+      },
+      "badges": ["halloween2026"],
+      "fx": ["hits", "trail"]
     }
   ]
 }
 ```
 
-Only players who **use TRS and show something** (badge, cape, at least one cosmetic, or creator/fan data of §35.5) appear in the list. A missing UUID means "no badge, no cape, no cosmetics": render vanilla.
+Only players who **use TRS and show something** (badge, cape, at least one cosmetic, creator/fan data of §35.5, or profile badges / spooky effects of §36) appear in the list. A missing UUID means "no badge, no cape, no cosmetics": render vanilla.
 
 `cosmetics` always has the four keys `hat`, `wings`, `back` and `aura`. Each is `null` or a **LookupCosmetic**. A format-1 item has `template`: render it with that template from `GET /v1/cosmetics/templates` (§11). It also has `templateUrl` (`/v1/cosmetics/<id>/template.json?v=<hash>`, §11.1) so a client can load that one template when it is not bundled. Older clients ignore `templateUrl` and keep using `template` with the copy they already have. A **format-2** item (`"format": 2`, 3D model, §11.9) has **no** `template`, no `templateUrl` and no `emissive`, but `model`, `glow`, `glowFrames`, `glowFrameTimeMs` and `hash`. The texture and frame fields work exactly like the cape fields. Clients that only know templates must skip items without a known `template` (older TRS Clients do).
 
@@ -373,6 +375,7 @@ Privacy rules, enforced server-side:
 - `cape` is set only when the player has an active cape **and** `showCapeToOthers` is on **and** the cape is `approved`.
 - For your **own** UUID you also get your own `pending` upload, and your cape even with `showCapeToOthers=false`.
 - Cosmetics follow the same rules: others get a slot only if the player has `showCosmeticsToOthers` on **and** the item is `approved`. You always see your own equipped items, including `pending` uploads.
+- Profile badges and spooky effects (§36): every entry has `badges` (profile badge ids, oldest first, e.g. `["halloween2026", "pumpkinhunter2026"]`; images `GET /v1/badges/{id}.png`) and `fx` (`"hits"`, `"trail"`: the spooky effects this player lets others see, only while Halloween runs for that player, else `[]`). `badges` is `[]` for others when the player has `showBadge` off (you always get your own). Not to be confused with the live `badge` boolean.
 - Creator programme (§35.5): an entry may also carry `creator: { tier }` (the player is an active creator) and `fan: { creator, name, symbol, milestone }` (fan symbol before the name). Both are filtered **per requester**: creators the requester blocked are hidden, and with the requester's `showFanSymbols` off only the requester's own `fan` is returned. The keys are omitted when not set.
 
 **Live badge.** The badge means "plays with TRS right now". `badge` is `true` only if **all** of these hold:
@@ -457,8 +460,9 @@ This object is used everywhere a cape is returned.
 |---|---|
 | `id` | `^[a-z0-9][a-z0-9_-]{0,39}$`. Built-in capes have readable ids such as `redstone` or `team`. Uploads use `u` followed by 20 hex digits. |
 | `kind` | `builtin` \| `upload` |
-| `unlock` | `free` \| `code` (unlockable with a code or an admin grant) \| `admin` (admin grant or code only) \| `owner` (an upload, only for its uploader) \| `event` (free to claim while an event is active for you, §32; the event id is in `event`) |
+| `unlock` | `free` \| `code` (unlockable with a code or an admin grant) \| `admin` (admin grant or code only) \| `owner` (an upload, only for its uploader) \| `event` (free to claim while an event is active for you, §32; the event id is in `event`) \| `reward` (only the server gives it, e.g. trick or treat, §36; not claimable, no codes; show as "Halloween reward") |
 | `event` | Only on event capes (`unlock: "event"`), e.g. `"halloween"`. |
+| `rewardOf` | Only on reward capes (`unlock: "reward"`), e.g. `"halloween2026"`. Listed in `GET /v1/capes` while that event is active for you or once you own one. |
 | `status` | `approved` \| `pending` \| `rejected`. Built-in capes are always `approved`. |
 | `url` | Absolute texture URL. `?v=` changes whenever the content changes. **Use the URL as given.** |
 | `width`, `height` | Size of **one frame** in pixels. Always `64·scale × 32·scale`. |
@@ -1235,7 +1239,7 @@ Animated particle textures use the same frame formula as models. All particles o
 |---|---|
 | `id` | `^[a-z0-9][a-z0-9_-]{0,39}$`. Uploads use `c` followed by 20 hex digits. Emotes use their emote id (§12). |
 | `slot` | `hat` \| `wings` \| `back` \| `aura` \| `companion` \| `emote`. `companion` (since Halloween 2026, format 2 only) is worn **in addition to** a hat. |
-| `kind`, `unlock`, `status` | As for capes (§5.1). Emotes are always `builtin`. `unlock` can also be `event` (§32): free to claim while the event is active for you; then the extra field `event` holds the event id (e.g. `"halloween"`). |
+| `kind`, `unlock`, `status` | As for capes (§5.1). Emotes are always `builtin`. `unlock` can also be `event` (§32): free to claim while the event is active for you; then the extra field `event` holds the event id (e.g. `"halloween"`). Or `reward` (§36): only the server grants it; then `rewardOf` holds the reward key (e.g. `"halloween2026"`), not claimable, no codes. |
 | `template` | Template id, or `null` for emotes. |
 | `templateUrl` | Format 1 only. Path (no host) `/v1/cosmetics/<id>/template.json?v=<hash>`. `hash` is 12 hex digits of the sha256 over that template's JSON, the body of the route in §11.1. Absent on emotes and format 2. Older clients ignore it. |
 | `texture` | `null` for emotes. `width`/`height` are the size of **one frame** in pixels (`textureWidth·scale` × `textureHeight·scale`). `url` works like a cape URL (§5.4). |
@@ -1267,7 +1271,7 @@ A **format-2** CosmeticView has `template: null`, `emissive: false` and these ex
 | `GET /v1/cosmetics/templates` | no | See §11.1. |
 | `GET /v1/cosmetics/templates/{id}` / `{id}.png?scale=k` | no | One template, or its paint guide (§11.1). `404 template_not_found`. |
 | `GET /v1/cosmetics/{id}/template.json` | no | Format 1 only (§11.1): that cosmetic's template JSON. `ETag` = full sha256; with the matching `?v=` `Cache-Control: public, max-age=31536000, immutable`, otherwise 5 min. `If-None-Match` → `304`. Unknown ids, emotes and format 2 → `404 cosmetic_not_found`. |
-| `GET /v1/me/cosmetics` | yes | `{ equipped: { hat, wings, back, aura, companion }, emotes: [emoteId] }`. Each slot is a CosmeticView or `null`, as you see it (including your pending uploads). `emotes` lists the emotes you may play, in list order. |
+| `GET /v1/me/cosmetics` | yes | `{ equipped: { hat, wings, back, aura, companion }, emotes: [emoteId], stickers: [stickerId] }`. Each slot is a CosmeticView or `null`, as you see it (including your pending uploads). `emotes` lists the emotes you may play, in list order. `stickers` lists the chat stickers you own (§36). |
 | `PUT /v1/me/cosmetics` | yes | Body `{ "hat"?: id\|null, "wings"?: id\|null, "back"?: id\|null, "aura"?: id\|null, "companion"?: id\|null }`, with at least one key. An id equips, `null` takes the item off, and a missing key leaves the slot unchanged. Format-2 items are equipped the same way (each one in the slot given by its `slot`: `hat` or `companion`; `companion` takes only format-2 items with `slot: "companion"` and only items you own). **200** has the same shape as `GET /v1/me/cosmetics`. All changes are checked first and then applied together. |
 | `GET /v1/cosmetics/{id}.png` | optional | The texture (format 2: the v2 base texture, `ETag` = v2 hash). Caching, `ETag`/`304` and the pending/private rules are the same as §5.4. Otherwise `404 cosmetic_not_found`. |
 | `GET /v1/cosmetics/{id}` | optional | `{ cosmetic: CosmeticView }`. Same visibility as the texture. |
@@ -1373,8 +1377,12 @@ Emotes are a **fixed list**. Launcher and mod contain the animations; the server
 | `luftgitarre` | Luftgitarre | code | 5000 | yes |
 | `redstone_tanz` | Redstone-Tanz | admin | 6000 | yes |
 | `party` | Party | admin (reward for `friends_10`, §31) | 6000 | yes |
+| `count_bow` | Graf-Verbeugung | reward (`halloween2026`, §36) | 2500 | no |
+| `ghost_float` | Spuk-Schweben | reward (`halloween2026`, §36) | 4000 | yes |
+| `zombie_walk` | Zombie-Gang | reward (`halloween2026`, §36) | 5000 | yes |
+| `moon_howl` | Mondheulen | reward (`halloween2026`, §36) | 3000 | no |
 
-Emotes appear in `GET /v1/cosmetics` with `slot: "emote"` and in `GET /v1/me/cosmetics` → `emotes`. They are unlocked with codes (`cosmeticId` = emote id) or admin grants, like other cosmetics.
+Emotes appear in `GET /v1/cosmetics` with `slot: "emote"` and in `GET /v1/me/cosmetics` → `emotes`. They are unlocked with codes (`cosmeticId` = emote id) or admin grants, like other cosmetics. The four Halloween emotes have `unlock: "reward"` (§36): only trick or treat (or an admin grant) gives them, no codes; they are listed while Halloween is active for you or once you own them.
 
 ### 12.1 `POST /v1/emotes/play`
 
@@ -1428,6 +1436,7 @@ The response is `Content-Type: text/event-stream`, in the same frame format as �
 | `cosmetics` | `{"type":"cosmetics","uuid":"…","cosmetics":{"hat":…,"wings":…,"back":…,"aura":…}}`. All four slots as **you** may see them. |
 | `badge` | `{"type":"badge","uuid":"…","badge":true\|false}`. The live badge (§4.1) turned on or off: the player started or stopped playing with TRS, or changed `showBadge`. `true` is sent only to viewers who are in game themselves; `false` goes to every viewer. |
 | `fan`, `fan_creator` | Creator programme: fan/creator data changed – look the player (or all fans of that creator) up again, see §35.5. |
+| `badges` | `{"type":"badges","uuid":"…","badges":["halloween2026"],"fx":["hits","trail"]}` – profile badges or allowed spooky effects changed (§36), filtered for **you** like the lookup. Also sent with `[]` when the player gets banned. |
 
 Rules:
 
@@ -1767,8 +1776,9 @@ Chat between TRS users. **Who may write:** friends (direct messages, "DM") and m
   "invite": { "address": "play.example.net:25566", "name": "Survival" },
   "world": null,
   "waypoint": null,
+  "sticker": null,
   "attachments": [ …AttachmentView… ],
-  "replyTo": { "id": "m…", "seq": 40, "sender": { "uuid": "…", "name": "…" }, "preview": "first 120 characters", "attachments": 0, "invite": false, "deleted": false },
+  "replyTo": { "id": "m…", "seq": 40, "sender": { "uuid": "…", "name": "…" }, "preview": "first 120 characters", "attachments": 0, "invite": false, "sticker": null, "deleted": false },
   "system": null,
   "reactions": [ { "emoji": "fire", "count": 2, "users": ["b0b0…", "75c1…"] } ],
   "createdAt": "…",
@@ -1785,6 +1795,7 @@ Chat between TRS users. **Who may write:** friends (direct messages, "DM") and m
 - `invite`: a server invite card, see §18.6. `null` if none.
 - `world`: a world card (hosted singleplayer world), see §21.8. `null` if none. `replyTo.world` is `true` when the reply target is a world card.
 - `waypoint`: a shared waypoint, see §18.10. `null` if none. `replyTo.waypoint` is `true` when the reply target is a waypoint card.
+- `sticker`: a chat sticker id (§36), image at `GET /v1/stickers/{id}.png`. `null` if none. A sticker message has no text, images or cards. `replyTo.sticker` is the sticker id when the reply target is a sticker message, else `null`.
 - `replyTo.preview` is `null` if the target was deleted or its sender is hidden for you; `deleted: true` then.
 - `kind: "system"`: group events. `sender` is the actor (`null` for automatic ones), `text` is `null`, and
   `system = { "event": "group_created"|"member_added"|"member_removed"|"member_left"|"renamed"|"owner_changed", "actor": {uuid,name}|null, "target": {uuid,name}|null, "name": "new name"|null }`. Render them as a centred line, e.g. "Bob added Carl".
@@ -1833,7 +1844,7 @@ Group names: 1–32 characters after sanitising (no control characters, one line
 | `GET /v1/chat/conversations/{id}/messages?limit=50` | – | `{ messages: [MessageView], hasMore }` – the newest `limit` (1–100) messages, **ascending by `seq`**. `hasMore` = older ones exist. |
 | `…/messages?before=<seq>&limit=50` | – | Older page: messages with `seq < before`, ascending. `hasMore` = even older ones exist. |
 | `…/messages?after=<seq>&limit=100` | – | Catch-up: messages with `seq > after`, ascending. `hasMore` = newer ones exist (call again). `before` and `after` together → `400`. |
-| `POST /v1/chat/conversations/{id}/messages` | `{ "text"?, "replyTo"?, "attachments"?, "invite"?, "world"?, "nonce"? }` | **201** `{ message }`; **200** `{ message }` if the `nonce` was already used (same message, nothing new sent). |
+| `POST /v1/chat/conversations/{id}/messages` | `{ "text"?, "replyTo"?, "attachments"?, "invite"?, "world"?, "waypoint"?, "sticker"?, "nonce"? }` | **201** `{ message }`; **200** `{ message }` if the `nonce` was already used (same message, nothing new sent). |
 | `PATCH /v1/chat/messages/{id}` | `{ "text": "…" }` | `{ message }` with `editedAt`. Own text messages only (`403 not_sender`); deleted → `409 message_deleted`. The text may become empty only if the message has images or an invite. Images and invite can't be edited. |
 | `DELETE /v1/chat/messages/{id}` | – | `{ message }` (the tombstone). Own messages; in groups the owner may also delete others' (`deletedBy: "owner"`). Otherwise `403 not_sender`. Images are deleted with it. Idempotent. |
 | `PUT /v1/chat/messages/{id}/reactions/{emoji}` | – | `{ reactions: [ReactionView] }` (all of the message). Idempotent. Unknown emoji id → `404`. |
@@ -1847,7 +1858,8 @@ Group names: 1–32 characters after sanitising (no control characters, one line
 - `invite`: `{ "address": "host[:port]", "name"?: "≤32 chars" }` (§18.6).
 - `world`: `{ "roomId": "h…" }` – a world card of **your** hosted world (§21.8). Not together with `invite` (`400 invite_conflict`).
 - `waypoint`: a waypoint card (§18.10). Only one card per message: invite, world or waypoint (`400 invite_conflict`).
-- At least one of text / attachments / invite / world / waypoint, else `400 empty_message`.
+- `sticker`: a sticker id you own (§36) – unknown or not unlocked → `403 sticker_locked`. Sent **alone**: together with text, attachments or a card → `400 sticker_conflict`. Sticker messages can't be edited (`409 sticker_not_editable`); `replyTo` is allowed.
+- At least one of text / attachments / invite / world / waypoint / sticker, else `400 empty_message`.
 - `nonce`: optional `^[A-Za-z0-9_-]{8,64}$`, generated by the client per message (e.g. a UUID). Retrying with the same nonce returns the stored message instead of a duplicate. A nonce used in another conversation → `409 nonce_reused`.
 
 **Content errors (send and edit):** `422 message_blocked` (admin word filter, block mode), `422 spam_detected` (§20.4), `422 links_not_allowed` (groups), `403 not_friends`, `403 chat_muted`.
@@ -2000,6 +2012,7 @@ data: {"type":"chat_message","conversationId":"c…","message":{…}}
 | `achievement_unlocked` | `{achievement: AchievementView, at, reward: {kind, id}\|null}` – you unlocked an achievement (§31.6) |
 | `notes_changed` | `{cursor}` – your synced notes changed (§17.5); fetch `GET /v1/me/sync/notes?since=<your cursor>` |
 | `events_changed` | `{events}` – the events active for you changed (§32); `events` is the full list (`[]` = none) |
+| `halloween_updated` | the same fields as `GET /v1/me/halloween` (`active, endsAt, pumpkins, trick, badges, effects`) next to `type` – after a pumpkin find, a trick-or-treat roll, a badge grant or an effects change (§36) |
 | `remote_*` | PC remote control: `remote_command`, `remote_command_update`, `remote_status` (no id, not replayed), `remote_pairing` – see §34.6 |
 | `creator_*` | Creator programme: `creator_updated`, `creator_milestone`, `creator_helper_invite`, `creator_helper_removed` – see §35.7 |
 
@@ -4249,3 +4262,106 @@ redemptions), `creator_helpers`; new columns `users.show_fan_symbols`, `capes.cr
 `shared_packs.creator_listed`; `user_capes.source` allows `creator`; permissions `creators.review`/`creators.manage`
 granted to the default roles. Everything hangs on the accounts via `ON DELETE CASCADE`. Idempotent. When merging: renumber
 if a parallel branch also added a migration 25.
+
+## 36. Halloween 2026 ("Nacht der langen Schatten")
+
+Everything hangs on the event `halloween` (§32). The **features** – badge grant, pumpkin finds, trick or treat – work only
+while the event is active for the player (globally on or the player is on the list) **and** before
+`2026-11-02T23:00:00Z` (= 3 Nov 00:00 Europe/Berlin). Everything won stays forever. All routes in §36.2 accept a Bearer
+token (launcher, TRS Client) **or** the website session (cookie + `X-CSRF-Token` for changes, §24.1).
+
+### 36.1 Ids
+
+| what | ids |
+|---|---|
+| Profile badges | `halloween2026` ("Halloween 2026", icon `moonbat`), `pumpkinhunter2026` ("Kürbisjäger 2026" / "Pumpkin Hunter 2026" / "Cazador de calabazas 2026", icon `pk8`) |
+| Pumpkins (hint order) | `launcher-titlebar`, `launcher-settings`, `launcher-skins`, `launcher-social`, `launcher-logs`, `web-home`, `web-features`, `web-roadmap`, `web-creator`, `client-title`, `client-wardrobe`, `client-hud`, `client-modules` |
+| "Mondnacht" capes (6 colours, **one per player**) | `halloween_night_violet`, `halloween_moon_silver`, `halloween_ghost_white`, `halloween_poison_green`, `halloween_blood_moon`, `halloween_pumpkin_glow` |
+| Pumpkin Hunter cape | `halloween_hunter_2026` (13 pumpkins) |
+| Emotes (§12) | `count_bow`, `ghost_float`, `zombie_walk`, `moon_howl` |
+| Stickers | `pumpkin_hihi` (Hihi/Hehe/Jiji), `ghost_boo` (Buh!/Boo!/¡Bu!), `bat_flutter` (Flatter/Flutter/Aleteo), `moon_goodnight` (Gute Nacht/Good night/Buenas noches), `cauldron_blubb` (Blubb/Blub/Glu glu), `grave_riplag` (RIP Lag) |
+
+All 7 capes and 4 emotes are **reward items**: `unlock: "reward"`, `rewardOf: "halloween2026"` in CapeView/CosmeticView
+(§5.1, §11.6). They are not claimable (`claim` → `400 not_claimable`) and codes can't be made for them
+(`400 not_code_redeemable`). Catalogs list them while Halloween is active for you, or once you own them; the website lists
+the capes while the event is globally on (`GET /v1/site/capes`: `unlock: "reward"`, `rewardOf`). Clients that don't know
+`reward` show them as "other". Capes are HD (scale 8 = 512×256 per frame), 24 frames of 250 ms, seamless loop.
+
+**One Mondnacht cape per player:** granting a second colour is refused on every path (reward, team grant, code) with
+`409 mondnacht_owned`; granting the same colour again is a no-op.
+
+### 36.2 Player routes
+
+| route | answer |
+|---|---|
+| `GET /v1/me/halloween` | `HalloweenView` (below). Also grants `halloween2026` like `GET /v1/me`. |
+| `POST /v1/me/halloween/pumpkins/{id}` | `{ found: string[], count, complete, reward?: { badge: "pumpkinhunter2026", cape: "halloween_hunter_2026" } }` – `404 pumpkin_unknown`, `403 event_inactive`, `429` (one per 2 s and account). Idempotent: a found pumpkin doesn't count twice; `reward` is only in the answer to the find that completes the hunt. |
+| `POST /v1/me/halloween/trick` | `{ result: "sweet", reward: Reward, next }` or `{ result: "sour", next }` – `403 event_inactive`; `409 trick_used` with `next` in the error body (`{ "error": { "code": "trick_used", "message": "…", "next": "…" } }`). |
+| `PUT /v1/me/halloween/effects` | body `{ hits: boolean, trail: boolean }` → `{ effects: { hits, trail } }`. Whether **other** TRS players may see my spooky effects (default both `true`). Works outside the event too. |
+
+```json
+HalloweenView = {
+  "active": true,
+  "endsAt": "2026-11-02T23:00:00.000Z",
+  "pumpkins": { "total": 13, "found": ["launcher-titlebar"], "nextHint": { "de": "…", "en": "…", "es": "…" } },
+  "trick": { "usedToday": true, "result": "sweet", "reward": Reward, "next": "2026-10-21T22:00:00.000Z" },
+  "badges": ["halloween2026"],
+  "effects": { "hits": true, "trail": true }
+}
+Reward = { "kind": "cape" | "emote" | "sticker", "id": "halloween_blood_moon", "name": { "de": "…", "en": "…", "es": "…" } }
+```
+
+- `pumpkins.found` is in hint order; `nextHint` is the riddle of the **first** pumpkin not found yet (`null` when all 13 are found).
+- `trick.result`/`trick.reward` only when you rolled today; `next` = next midnight Europe/Berlin (UTC ISO).
+- **Badge `halloween2026`:** granted on any authenticated `GET /v1/me` (and `GET /v1/me/halloween`) while the features
+  work – never afterwards.
+- **13 pumpkins** → badge `pumpkinhunter2026` + cape `halloween_hunter_2026` (source `reward`). If the cape is missing in the
+  catalog at that moment, it is granted on the next start.
+- **Trick or treat:** one roll per account and Europe/Berlin calendar day, server side with crypto random. Pool = 11 items:
+  **one** "Mondnacht cape" item + 4 emotes + 6 stickers. 1 in 4 rolls is sour; otherwise a random item you don't own yet.
+  When the Mondnacht item is won, the colour is rolled too (one of the 6, `reward.id` = that colour); once you own any
+  colour, the Mondnacht item is out of the pool. All 11 owned → always sour.
+
+### 36.3 Stickers, badges, cosmetics
+
+| route | answer |
+|---|---|
+| `GET /v1/stickers` | public, `Cache-Control: public, max-age=3600`: `{ stickers: [{ id, name: {de,en,es}, url }] }` (absolute `url` with `?v=`) |
+| `GET /v1/stickers/{id}.png` | 96×96 pixel PNG (12×12 ×8, nearest neighbour), one year `immutable` with a matching `?v=`. `404 sticker_not_found` |
+| `GET /v1/badges` | public, cached 1 h: `{ badges: [{ id, name: {de,en,es}, url }] }` |
+| `GET /v1/badges/{id}.png` | pixel PNG ×8 (`halloween2026` 72×64, `pumpkinhunter2026` 64×64). `404 badge_not_found` |
+| `GET /v1/me/cosmetics` | gains `stickers: string[]` (owned sticker ids, §11.7) |
+
+Chat (§18): a message may carry `sticker: id` instead of text/images (`403 sticker_locked` if not owned or unknown,
+`400 sticker_conflict` with text/images/cards, `409 sticker_not_editable` on edit); MessageView has `sticker`,
+ReplyView `sticker`. Push previews say "Sent a sticker".
+
+### 36.4 Lookup and player events
+
+- `POST /v1/players/lookup` (§4.1): every entry has `badges: string[]` (profile badges, `[]` for others with `showBadge`
+  off) and `fx: ("hits" | "trail")[]` (only while the features work for that player, and only what he allows).
+- Player stream (§13): `{ "type": "badges", "uuid", "badges", "fx" }` after a badge grant, an effects change or a
+  `showBadge` change (filtered per viewer like the lookup). Clients update their lookup cache with it.
+- `GET /v1/events/me` (§19): `halloween_updated` with the fields of `GET /v1/me/halloween` after a find, a roll, a badge
+  grant or an effects change.
+
+### 36.5 Error codes
+
+`pumpkin_unknown` 404, `event_inactive` 403, `trick_used` 409 (+ `next`), `sticker_locked` 403, `sticker_conflict` 400,
+`sticker_not_editable` 409, `sticker_not_found` 404, `badge_not_found` 404, `not_claimable` 400,
+`not_code_redeemable` 400, `mondnacht_owned` 409.
+
+### 36.6 Data, migration 26
+
+Tables `user_badges (uuid, badge, granted_at)`, `halloween_pumpkins (uuid, pumpkin, found_at)`,
+`halloween_tricks (uuid, day, result, reward_kind, reward_id, rolled_at)` (one row per Berlin day), `halloween_effects
+(uuid, hits, trail, updated_at)` (no row = both on), `stickers (id, reward, sort)` (seeded with the 6 stickers) and
+`user_stickers (uuid, sticker, source, granted_at)`; columns `capes.reward` and `cosmetics.reward` (reward items are stored
+with `unlock = admin` plus the reward key); `user_capes`/`user_cosmetics` accept `source = 'reward'` (leaf tables rebuilt,
+data kept). Everything hangs on the account via `ON DELETE CASCADE`. Idempotent. When merging: renumber if a parallel
+branch also added a migration 26.
+
+Assets: `node api/scripts/generate-halloween.mjs` builds the capes (`assets/capes/halloween_*.png`, entries in
+`studio.json` + `catalog.json` with `unlock: { "type": "reward", "reward": "halloween2026" }`), the stickers
+(`assets/halloween/stickers/<id>.png`) and badges (`assets/halloween/badges/<id>.png`) from the pixel art in
+`shared/halloween-art.ts`; ids, names and riddles live in `shared/halloween.ts`.
