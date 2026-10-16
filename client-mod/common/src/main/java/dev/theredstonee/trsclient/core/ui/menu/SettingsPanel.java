@@ -103,6 +103,9 @@ public final class SettingsPanel {
 		// Textzeilen haben rechts ein breites Eingabefeld – dann den Namen früher abschneiden.
 		// Schalter sind schmal (24 px) – dort bekommt der Name fast die ganze Zeile.
 		int labelWidth = s instanceof TextSetting ? w - textFieldWidth(c, s, w) - 8 : s instanceof BoolSetting ? w - 34 : w - 90;
+		if (s instanceof BoolSetting && ((BoolSetting) s).locked()) {
+			labelWidth -= c.textWidth(dev.theredstonee.trsclient.core.i18n.I18n.tr("settings.serverLocked")) + 6;
+		}
 		boolean isNew = badge != null && badge.isNew(s);
 		int badgeW = isNew ? NewBadge.width(c) + 4 : 0;
 		Paint.textClipped(c, s.label(), x + 2, y + 6, labelWidth - badgeW, t.text, false);
@@ -111,9 +114,16 @@ public final class SettingsPanel {
 			BoolSetting b = (BoolSetting) s;
 			int bw = 24;
 			int bx = right - bw;
-			boolean hover = inside(mx, my, bx - 4, y, bw + 4, 18);
-			Paint.toggle(c, bx, y + 4, bw, 12, b.get() ? 1f : 0f, hover);
-			hits.add(bx - 4, y, bw + 4, 18, new Toggle(b));
+			if (b.locked()) {
+				// Vom Server erzwungen: ausgegraut, nicht klickbar, kurzer Hinweis davor.
+				Paint.toggle(c, bx, y + 4, bw, 12, b.get() ? 1f : 0f, false);
+				c.fill(bx, y + 4, bx + bw, y + 16, ColorMath.withAlpha(t.surface, 150));
+				Paint.textRight(c, dev.theredstonee.trsclient.core.i18n.I18n.tr("settings.serverLocked"), bx - 4, y + 6, t.textDim, false);
+			} else {
+				boolean hover = inside(mx, my, bx - 4, y, bw + 4, 18);
+				Paint.toggle(c, bx, y + 4, bw, 12, b.get() ? 1f : 0f, hover);
+				hits.add(bx - 4, y, bw + 4, 18, new Toggle(b));
+			}
 		} else if (s instanceof NumberSetting) {
 			number(c, hits, (NumberSetting) s, x, y, w, mx, my);
 		} else if (s instanceof ColorSetting) {

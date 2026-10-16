@@ -2372,7 +2372,7 @@
   "setting.trsOnline.fanSymbolNametag": "Symbole fanów i gwiazdki twórców nad nickami",
   "setting.trsOnline.fanSymbolTab": "Symbole fanów i gwiazdki twórców na liście graczy",
   "module.cinematic": "Ścieżki kamery",
-  "module.cinematic.desc": "Filmowe przeloty kamery do filmów i zrzutów ekranu: ustaw klatki kluczowe w bieżącej kamerze (pozycja, kierunek patrzenia i pole widzenia) i odtwórz ścieżkę płynnie. Podczas odtwarzania kamera odłącza się od postaci, HUD znika, a launcher może nagrywać. Ścieżki są zapisywane dla każdego świata i serwera. Klawisze przypiszesz w Sterowanie → TRS Client.",
+  "module.cinematic.desc": "Filmowe przeloty kamery do filmów i zrzutów ekranu: ustaw klatki kluczowe w bieżącej kamerze (pozycja, kierunek patrzenia i pole widzenia) i odtwórz ścieżkę płynnie. Podczas odtwarzania kamera odłącza się od postaci, HUD znika, a launcher może nagrywać. Ścieżki są zapisywane dla każdego świata i serwera. Wolna kamera lata swobodnie (WASD, spacja, skradanie, kółko myszy zmienia prędkość), a postać zostaje w miejscu – stamtąd ustawiasz klatki kluczowe. Z Fair Play kamera zatrzymuje się na pełnych blokach i przechodzi tylko przez przezroczyste bloki i przejścia. Klawisze przypiszesz w Sterowanie → TRS Client.",
   "setting.cinematic.addKey": "Dodaj klatkę kluczową",
   "setting.cinematic.playKey": "Odtwórz / zatrzymaj",
   "setting.cinematic.removeKey": "Usuń ostatnią klatkę kluczową",
@@ -2397,5 +2397,14 @@
   "key.trsclient.cinematicAdd": "Ścieżka kamery: dodaj klatkę kluczową",
   "key.trsclient.cinematicPlay": "Ścieżka kamery: odtwórz / zatrzymaj",
   "key.trsclient.cinematicRemove": "Ścieżka kamery: usuń ostatnią klatkę kluczową",
-  "key.trsclient.cinematicClear": "Ścieżka kamery: wyczyść"
+  "key.trsclient.cinematicClear": "Ścieżka kamery: wyczyść",
+  "setting.cinematic.freecamKey": "Wolna kamera wł. / wył.",
+  "setting.cinematic.freecamSpeed": "Prędkość wolnej kamery",
+  "setting.cinematic.freecamFairPlay": "Fair Play (kamera zatrzymuje się na pełnych blokach, także podczas odtwarzania)",
+  "cinematic.msg.freecamOn": "Wolna kamera włączona – {0} (kółko myszy zmienia)",
+  "cinematic.msg.freecamOff": "Wolna kamera wyłączona",
+  "cinematic.msg.freecamBlocked": "Wolna kamera jest wyłączona na tym serwerze",
+  "cinematic.msg.speed": "Prędkość wolnej kamery: {0}",
+  "key.trsclient.cinematicFreecam": "Wolna kamera wł. / wył.",
+  "settings.serverLocked": "Ustawia serwer"
 }

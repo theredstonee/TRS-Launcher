@@ -2372,7 +2372,7 @@
   "setting.trsOnline.fanSymbolNametag": "Symboles de fan et étoiles de créateur au-dessus des noms",
   "setting.trsOnline.fanSymbolTab": "Symboles de fan et étoiles de créateur dans la liste des joueurs",
   "module.cinematic": "Trajets de caméra",
-  "module.cinematic.desc": "Vols de caméra cinématiques pour vidéos et captures : place des images clés à ta caméra actuelle (position, vue et champ de vision) et rejoue le trajet en douceur. Pendant la lecture, la caméra quitte ton personnage, le HUD se masque et le launcher peut enregistrer. Les trajets sont enregistrés par monde et par serveur. Assigne les touches dans Commandes → TRS Client.",
+  "module.cinematic.desc": "Vols de caméra cinématiques pour vidéos et captures : place des images clés à ta caméra actuelle (position, vue et champ de vision) et rejoue le trajet en douceur. Pendant la lecture, la caméra quitte ton personnage, le HUD se masque et le launcher peut enregistrer. Les trajets sont enregistrés par monde et par serveur. Avec la caméra libre, la caméra vole librement (ZQSD, espace, s’accroupir, molette pour la vitesse) pendant que ton personnage reste sur place – place tes images clés depuis là. Avec Fair Play, la caméra s’arrête aux blocs pleins et ne traverse que les blocs transparents et les passages. Assigne les touches dans Commandes → TRS Client.",
   "setting.cinematic.addKey": "Ajouter une image clé",
   "setting.cinematic.playKey": "Lire / arrêter",
   "setting.cinematic.removeKey": "Retirer la dernière image clé",
@@ -2397,5 +2397,14 @@
   "key.trsclient.cinematicAdd": "Trajet de caméra : ajouter une image clé",
   "key.trsclient.cinematicPlay": "Trajet de caméra : lire / arrêter",
   "key.trsclient.cinematicRemove": "Trajet de caméra : retirer la dernière image clé",
-  "key.trsclient.cinematicClear": "Trajet de caméra : effacer"
+  "key.trsclient.cinematicClear": "Trajet de caméra : effacer",
+  "setting.cinematic.freecamKey": "Caméra libre oui / non",
+  "setting.cinematic.freecamSpeed": "Vitesse de la caméra libre",
+  "setting.cinematic.freecamFairPlay": "Fair Play (la caméra s’arrête aux blocs pleins, aussi pendant la lecture)",
+  "cinematic.msg.freecamOn": "Caméra libre activée – {0} (molette pour changer)",
+  "cinematic.msg.freecamOff": "Caméra libre désactivée",
+  "cinematic.msg.freecamBlocked": "La caméra libre est désactivée sur ce serveur",
+  "cinematic.msg.speed": "Vitesse de la caméra libre : {0}",
+  "key.trsclient.cinematicFreecam": "Caméra libre oui / non",
+  "settings.serverLocked": "Imposé par le serveur"
 }

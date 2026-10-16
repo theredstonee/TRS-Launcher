@@ -2372,7 +2372,7 @@
   "setting.trsOnline.fanSymbolNametag": "İsimlerin üstünde hayran sembolleri ve içerik üretici yıldızları",
   "setting.trsOnline.fanSymbolTab": "Oyuncu listesinde hayran sembolleri ve içerik üretici yıldızları",
   "module.cinematic": "Kamera Yolları",
-  "module.cinematic.desc": "Videolar ve ekran görüntüleri için sinematik kamera uçuşları: mevcut kameranda (konum, bakış ve görüş alanı) anahtar kareler koy ve yolu yumuşakça oynat. Oynatılırken kamera karakterinden ayrılır, HUD gizlenir ve başlatıcı kayıt yapabilir. Yollar her dünya ve sunucu için kaydedilir. Tuşları Kontroller → TRS Client altında ata.",
+  "module.cinematic.desc": "Videolar ve ekran görüntüleri için sinematik kamera uçuşları: mevcut kameranda (konum, bakış ve görüş alanı) anahtar kareler koy ve yolu yumuşakça oynat. Oynatılırken kamera karakterinden ayrılır, HUD gizlenir ve başlatıcı kayıt yapabilir. Yollar her dünya ve sunucu için kaydedilir. Serbest kamera ile kamera serbestçe uçar (WASD, boşluk, eğilme, hız için fare tekerleği), karakterin ise yerinde kalır – anahtar kareleri oradan koyarsın. Fair Play açıkken kamera katı bloklarda durur ve yalnızca saydam bloklardan ve geçitlerden geçer. Tuşları Kontroller → TRS Client altında ata.",
   "setting.cinematic.addKey": "Anahtar kare ekle",
   "setting.cinematic.playKey": "Oynat / durdur",
   "setting.cinematic.removeKey": "Son anahtar kareyi kaldır",
@@ -2397,5 +2397,14 @@
   "key.trsclient.cinematicAdd": "Kamera yolu: anahtar kare ekle",
   "key.trsclient.cinematicPlay": "Kamera yolu: oynat / durdur",
   "key.trsclient.cinematicRemove": "Kamera yolu: son anahtar kareyi kaldır",
-  "key.trsclient.cinematicClear": "Kamera yolu: temizle"
+  "key.trsclient.cinematicClear": "Kamera yolu: temizle",
+  "setting.cinematic.freecamKey": "Serbest kamera aç / kapat",
+  "setting.cinematic.freecamSpeed": "Serbest kamera hızı",
+  "setting.cinematic.freecamFairPlay": "Fair Play (kamera katı bloklarda durur, oynatırken de)",
+  "cinematic.msg.freecamOn": "Serbest kamera açık – {0} (değiştirmek için tekerlek)",
+  "cinematic.msg.freecamOff": "Serbest kamera kapalı",
+  "cinematic.msg.freecamBlocked": "Serbest kamera bu sunucuda kapalı",
+  "cinematic.msg.speed": "Serbest kamera hızı: {0}",
+  "key.trsclient.cinematicFreecam": "Serbest kamera aç / kapat",
+  "settings.serverLocked": "Sunucu belirler"
 }

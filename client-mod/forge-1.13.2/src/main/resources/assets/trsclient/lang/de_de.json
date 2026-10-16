@@ -19,5 +19,6 @@
 	"key.trsclient.cinematicAdd": "Kamera-Fahrt: Keyframe setzen",
 	"key.trsclient.cinematicPlay": "Kamera-Fahrt: abspielen / anhalten",
 	"key.trsclient.cinematicRemove": "Kamera-Fahrt: letzten Keyframe entfernen",
-	"key.trsclient.cinematicClear": "Kamera-Fahrt: löschen"
+	"key.trsclient.cinematicClear": "Kamera-Fahrt: löschen",
+	"key.trsclient.cinematicFreecam": "Freecam an / aus"
 }

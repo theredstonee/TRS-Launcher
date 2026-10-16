@@ -19,3 +19,4 @@ key.trsclient.cinematicAdd=Camera path: add keyframe
 key.trsclient.cinematicPlay=Camera path: play / stop
 key.trsclient.cinematicRemove=Camera path: remove last keyframe
 key.trsclient.cinematicClear=Camera path: clear
+key.trsclient.cinematicFreecam=Freecam on / off

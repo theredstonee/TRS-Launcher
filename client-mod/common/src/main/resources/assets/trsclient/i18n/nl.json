@@ -2372,7 +2372,7 @@
   "setting.trsOnline.fanSymbolNametag": "Fan-symbolen en creatorsterren boven namen",
   "setting.trsOnline.fanSymbolTab": "Fan-symbolen en creatorsterren in de spelerslijst",
   "module.cinematic": "Camerapaden",
-  "module.cinematic.desc": "Filmische camerabewegingen voor video's en screenshots: zet keyframes op je huidige camera (positie, kijkrichting en gezichtsveld) en speel het pad vloeiend af. Tijdens het afspelen maakt de camera zich los van je personage, verdwijnt de HUD en kan de launcher opnemen. Paden worden per wereld en server opgeslagen. Stel de toetsen in onder Besturing → TRS Client.",
+  "module.cinematic.desc": "Filmische camerabewegingen voor video's en screenshots: zet keyframes op je huidige camera (positie, kijkrichting en gezichtsveld) en speel het pad vloeiend af. Tijdens het afspelen maakt de camera zich los van je personage, verdwijnt de HUD en kan de launcher opnemen. Paden worden per wereld en server opgeslagen. Met de vrije camera vliegt de camera vrij rond (WASD, spatie, sluipen, scrollwiel voor de snelheid) terwijl je personage blijft staan – zet van daaruit keyframes. Met Fair Play stopt de camera bij massieve blokken en gaat alleen door doorzichtige blokken en doorgangen. Stel de toetsen in onder Besturing → TRS Client.",
   "setting.cinematic.addKey": "Keyframe toevoegen",
   "setting.cinematic.playKey": "Afspelen / stoppen",
   "setting.cinematic.removeKey": "Laatste keyframe verwijderen",
@@ -2397,5 +2397,14 @@
   "key.trsclient.cinematicAdd": "Camerapad: keyframe toevoegen",
   "key.trsclient.cinematicPlay": "Camerapad: afspelen / stoppen",
   "key.trsclient.cinematicRemove": "Camerapad: laatste keyframe verwijderen",
-  "key.trsclient.cinematicClear": "Camerapad: wissen"
+  "key.trsclient.cinematicClear": "Camerapad: wissen",
+  "setting.cinematic.freecamKey": "Vrije camera aan / uit",
+  "setting.cinematic.freecamSpeed": "Snelheid vrije camera",
+  "setting.cinematic.freecamFairPlay": "Fair Play (de camera stopt bij massieve blokken, ook tijdens het afspelen)",
+  "cinematic.msg.freecamOn": "Vrije camera aan – {0} (scroll om te wijzigen)",
+  "cinematic.msg.freecamOff": "Vrije camera uit",
+  "cinematic.msg.freecamBlocked": "De vrije camera is uitgeschakeld op deze server",
+  "cinematic.msg.speed": "Snelheid vrije camera: {0}",
+  "key.trsclient.cinematicFreecam": "Vrije camera aan / uit",
+  "settings.serverLocked": "Door server"
 }

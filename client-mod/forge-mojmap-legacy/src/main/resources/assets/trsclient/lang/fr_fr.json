@@ -19,5 +19,6 @@
 	"key.trsclient.cinematicAdd": "Trajet de caméra : ajouter une image clé",
 	"key.trsclient.cinematicPlay": "Trajet de caméra : lire / arrêter",
 	"key.trsclient.cinematicRemove": "Trajet de caméra : retirer la dernière image clé",
-	"key.trsclient.cinematicClear": "Trajet de caméra : effacer"
+	"key.trsclient.cinematicClear": "Trajet de caméra : effacer",
+	"key.trsclient.cinematicFreecam": "Caméra libre oui / non"
 }

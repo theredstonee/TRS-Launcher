@@ -19,5 +19,6 @@
 	"key.trsclient.cinematicAdd": "Recorrido de cámara: añadir fotograma clave",
 	"key.trsclient.cinematicPlay": "Recorrido de cámara: reproducir / detener",
 	"key.trsclient.cinematicRemove": "Recorrido de cámara: quitar el último fotograma clave",
-	"key.trsclient.cinematicClear": "Recorrido de cámara: borrar"
+	"key.trsclient.cinematicClear": "Recorrido de cámara: borrar",
+	"key.trsclient.cinematicFreecam": "Cámara libre sí / no"
 }

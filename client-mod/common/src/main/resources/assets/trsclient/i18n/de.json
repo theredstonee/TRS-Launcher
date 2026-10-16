@@ -2372,7 +2372,7 @@
   "setting.trsOnline.fanSymbolNametag": "Fan-Symbole und Creator-Sterne über Namen",
   "setting.trsOnline.fanSymbolTab": "Fan-Symbole und Creator-Sterne in der Tabliste",
   "module.cinematic": "Kamera-Fahrten",
-  "module.cinematic.desc": "Filmreife Kamera-Fahrten für Videos und Screenshots: Setze Keyframes an deiner aktuellen Kamera (Position, Blick und Sichtfeld) und spiele die Fahrt weich ab. Währenddessen löst sich die Kamera von deiner Figur, das HUD verschwindet und der Launcher kann aufnehmen. Fahrten werden je Welt und Server gespeichert. Die Tasten belegst du unter Steuerung → TRS Client.",
+  "module.cinematic.desc": "Filmreife Kamera-Fahrten für Videos und Screenshots: Setze Keyframes an deiner aktuellen Kamera (Position, Blick und Sichtfeld) und spiele die Fahrt weich ab. Währenddessen löst sich die Kamera von deiner Figur, das HUD verschwindet und der Launcher kann aufnehmen. Fahrten werden je Welt und Server gespeichert. Mit der Freecam fliegt die Kamera frei (WASD, Leertaste, Schleichen, Mausrad für das Tempo), während deine Figur stehen bleibt – von dort setzt du Keyframes. Mit Fair Play hält die Kamera an massiven Blöcken an und kommt nur durch Durchsichtiges und Durchgänge. Die Tasten belegst du unter Steuerung → TRS Client.",
   "setting.cinematic.addKey": "Keyframe setzen",
   "setting.cinematic.playKey": "Abspielen / anhalten",
   "setting.cinematic.removeKey": "Letzten Keyframe entfernen",
@@ -2397,5 +2397,14 @@
   "key.trsclient.cinematicAdd": "Kamera-Fahrt: Keyframe setzen",
   "key.trsclient.cinematicPlay": "Kamera-Fahrt: abspielen / anhalten",
   "key.trsclient.cinematicRemove": "Kamera-Fahrt: letzten Keyframe entfernen",
-  "key.trsclient.cinematicClear": "Kamera-Fahrt: löschen"
+  "key.trsclient.cinematicClear": "Kamera-Fahrt: löschen",
+  "setting.cinematic.freecamKey": "Freecam an / aus",
+  "setting.cinematic.freecamSpeed": "Freecam-Tempo",
+  "setting.cinematic.freecamFairPlay": "Fair Play (Kamera hält an massiven Blöcken, auch beim Abspielen)",
+  "cinematic.msg.freecamOn": "Freecam an – {0} (Mausrad ändert das Tempo)",
+  "cinematic.msg.freecamOff": "Freecam aus",
+  "cinematic.msg.freecamBlocked": "Freecam ist auf diesem Server abgeschaltet",
+  "cinematic.msg.speed": "Freecam-Tempo: {0}",
+  "key.trsclient.cinematicFreecam": "Freecam an / aus",
+  "settings.serverLocked": "Vom Server"
 }

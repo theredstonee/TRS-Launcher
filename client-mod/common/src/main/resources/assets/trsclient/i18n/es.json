@@ -2372,7 +2372,7 @@
   "setting.trsOnline.fanSymbolNametag": "Símbolos de fan y estrellas de creador sobre los nombres",
   "setting.trsOnline.fanSymbolTab": "Símbolos de fan y estrellas de creador en la lista de jugadores",
   "module.cinematic": "Recorridos de cámara",
-  "module.cinematic.desc": "Vuelos de cámara cinematográficos para vídeos y capturas: coloca fotogramas clave en tu cámara actual (posición, vista y campo de visión) y reproduce el recorrido con suavidad. Mientras se reproduce, la cámara se separa de tu personaje, el HUD se oculta y el launcher puede grabar. Los recorridos se guardan por mundo y servidor. Asigna las teclas en Controles → TRS Client.",
+  "module.cinematic.desc": "Vuelos de cámara cinematográficos para vídeos y capturas: coloca fotogramas clave en tu cámara actual (posición, vista y campo de visión) y reproduce el recorrido con suavidad. Mientras se reproduce, la cámara se separa de tu personaje, el HUD se oculta y el launcher puede grabar. Los recorridos se guardan por mundo y servidor. Con la cámara libre la cámara vuela libremente (WASD, espacio, agacharse, rueda para la velocidad) mientras tu personaje se queda quieto; desde ahí colocas fotogramas clave. Con Fair Play la cámara se detiene en bloques sólidos y solo atraviesa bloques transparentes y pasos. Asigna las teclas en Controles → TRS Client.",
   "setting.cinematic.addKey": "Añadir fotograma clave",
   "setting.cinematic.playKey": "Reproducir / detener",
   "setting.cinematic.removeKey": "Quitar el último fotograma clave",
@@ -2397,5 +2397,14 @@
   "key.trsclient.cinematicAdd": "Recorrido de cámara: añadir fotograma clave",
   "key.trsclient.cinematicPlay": "Recorrido de cámara: reproducir / detener",
   "key.trsclient.cinematicRemove": "Recorrido de cámara: quitar el último fotograma clave",
-  "key.trsclient.cinematicClear": "Recorrido de cámara: borrar"
+  "key.trsclient.cinematicClear": "Recorrido de cámara: borrar",
+  "setting.cinematic.freecamKey": "Cámara libre sí / no",
+  "setting.cinematic.freecamSpeed": "Velocidad de la cámara libre",
+  "setting.cinematic.freecamFairPlay": "Fair Play (la cámara se detiene en bloques sólidos, también al reproducir)",
+  "cinematic.msg.freecamOn": "Cámara libre activada – {0} (rueda para cambiar)",
+  "cinematic.msg.freecamOff": "Cámara libre desactivada",
+  "cinematic.msg.freecamBlocked": "La cámara libre está desactivada en este servidor",
+  "cinematic.msg.speed": "Velocidad de la cámara libre: {0}",
+  "key.trsclient.cinematicFreecam": "Cámara libre sí / no",
+  "settings.serverLocked": "Del servidor"
 }
