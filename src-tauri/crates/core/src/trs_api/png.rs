@@ -137,7 +137,7 @@ pub fn validate_symbol(bytes: &[u8], max_frames: u32) -> Result<SymbolLayout> {
         ))
     })?;
     let pixels = decode_rgba(bytes, w, h).ok_or_else(invalid_png)?;
-    if !pixels.chunks_exact(4).any(|p| p[3] > 0) {
+    if !pixels.as_chunks::<4>().0.iter().any(|p| p[3] > 0) {
         return Err(Error::validation(crate::msg!("trsPng.emptySymbol", "Das Fan-Symbol ist komplett durchsichtig.")));
     }
     Ok(layout)
