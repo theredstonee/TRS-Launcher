@@ -2,21 +2,31 @@ package dev.theredstonee.trsclient.cinematic;
 
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.TrsKeys;
+import dev.theredstonee.trsclient.compat.Keys;
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.cinematic.CameraPose;
 import dev.theredstonee.trsclient.core.cinematic.Cinematic;
+import dev.theredstonee.trsclient.core.cinematic.Freecam;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.waypoint.WaypointStore;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LeavesBlock;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.nio.file.Path;
 
 /**
- * Kamera-Fahrten im Spiel (Logik in {@code core.cinematic}): Tasten, Welt-/Kamera-Zugriff und Partikel. Kamera und
- * Sichtfeld übernehmen {@code CameraMixin}/{@code FovMixin} über {@link #frame()}, die Maus {@code MouseHandlerMixin}
- * über {@link #playing()}.
+ * Kamera-Fahrten und freie Kamera im Spiel (Logik in {@code core.cinematic}): Tasten, Welt-/Kamera-Zugriff, Blöcke
+ * und Partikel. Kamera und Sichtfeld übernehmen {@code CameraMixin}/{@code FovMixin} über {@link #frame()}, die Maus
+ * {@code MouseHandlerMixin} über {@link #turn}, das Mausrad {@code TrsClient#onScroll} über {@link #scroll}.
+ *
+ * <p>Freie Kamera: die Spielfigur bekommt eine leere Bewegungs-Eingabe (sie steht wie ein stehender Spieler), die
+ * Kamera liest die echten Tasten; Angreifen/Benutzen wirken nicht.
  */
 public final class CinematicHooks implements Cinematic.Host {
 	private static final CinematicHooks HOST = new CinematicHooks();
@@ -34,7 +44,8 @@ public final class CinematicHooks implements Cinematic.Host {
 
 	/**
 	 * Am Anfang jedes Client-Ticks (vor der Bewegung des Spielers): Tasten, Ende/Weltwechsel, Vorschau. Läuft eine
-	 * Fahrt, werden danach alle Tasten losgelassen – die Figur bleibt stehen, Eingaben wirken nicht.
+	 * Fahrt, werden danach alle Tasten losgelassen – die Figur bleibt stehen, Eingaben wirken nicht. In der freien
+	 * Kamera werden nur Angreifen/Benutzen/Auswählen verworfen (die Bewegungstasten braucht die Kamera).
 	 */
 	public static void tick(Minecraft mc) {
 		Cinematic c = Cinematic.get();
@@ -43,6 +54,9 @@ public final class CinematicHooks implements Cinematic.Host {
 			if (TrsKeys.cinematicPlay != null) {
 				while (TrsKeys.cinematicPlay.consumeClick()) {
 					if (c.playing() || Mc.screen() == null) c.togglePlay(HOST);
+				}
+				while (TrsKeys.cinematicFreecam.consumeClick()) {
+					if (!c.playing() && (c.freecam() || (Mc.screen() == null && mc.player != null))) c.toggleFreecam(HOST);
 				}
 				boolean free = !c.playing() && Mc.screen() == null && mc.player != null;
 				while (TrsKeys.cinematicAdd.consumeClick()) {
@@ -57,6 +71,7 @@ public final class CinematicHooks implements Cinematic.Host {
 			}
 			c.tick(HOST, Mc.screen() != null);
 			if (c.playing()) KeyMapping.releaseAll();
+			else if (c.freecam()) blockInteraction(mc);
 		} catch (RuntimeException e) {
 			TrsClient.LOGGER.warn("Kamera-Fahrt: Fehler ignoriert", e);
 			try {
@@ -67,21 +82,56 @@ public final class CinematicHooks implements Cinematic.Host {
 		}
 	}
 
-	/** Kamera für dieses Bild (Position, Blick, Sichtfeld) oder null, wenn keine Fahrt läuft. */
+	/** Freie Kamera: Klicks verwerfen und Tasten loslassen – die Figur baut nichts ab und benutzt nichts. */
+	private static void blockInteraction(Minecraft mc) {
+		KeyMapping[] keys = {mc.options.keyAttack, mc.options.keyUse, mc.options.keyPickItem};
+		for (KeyMapping k : keys) {
+			while (k.consumeClick()) {
+				// verwerfen
+			}
+			//? if >=1.15 {
+			k.setDown(false);
+			//?} else
+			/*((dev.theredstonee.trsclient.mixin.KeyMappingAccessor) k).trsclient$setDown(false);*/
+		}
+	}
+
+	/** Kamera für dieses Bild (Position, Blick, Sichtfeld; Sichtfeld 0 = unverändert) oder null. */
 	public static CameraPose frame() {
 		Cinematic c = Cinematic.get();
 		if (c == null) return null;
 		try {
-			return c.frame();
+			return c.frame(HOST);
 		} catch (RuntimeException e) {
 			return null;
 		}
 	}
 
-	/** Läuft eine Fahrt? (Maus dreht dann nicht die Figur.) */
+	/** Läuft eine Fahrt? */
 	public static boolean playing() {
 		Cinematic c = Cinematic.get();
 		return c != null && c.playing();
+	}
+
+	/**
+	 * Mausbewegung (Werte für {@code LocalPlayer#turn}): dreht die freie Kamera bzw. wirkt während einer Fahrt nicht.
+	 *
+	 * @return true = verbraucht (die Figur dreht sich nicht)
+	 */
+	public static boolean turn(double yaw, double pitch) {
+		Cinematic c = Cinematic.get();
+		return c != null && c.turn(yaw, pitch);
+	}
+
+	/** Mausrad in der freien Kamera: Geschwindigkeit. true = verbraucht. */
+	public static boolean scroll(double amount) {
+		Cinematic c = Cinematic.get();
+		if (c == null || Mc.screen() != null) return false;
+		try {
+			return c.scroll(HOST, amount);
+		} catch (RuntimeException e) {
+			return false;
+		}
 	}
 
 	/** Für Selbsttests: die Steuerung mit der Spiel-Anbindung. */
@@ -133,6 +183,9 @@ public final class CinematicHooks implements Cinematic.Host {
 
 	/** Kamera-Ansicht vor der Fahrt (wird danach wiederhergestellt). */
 	private Object viewBefore;
+	/** Bewegungs-Eingabe der Figur vor dem Lösen und die leere, die sie stattdessen bekommt. */
+	private Object inputBefore;
+	private Object emptyInput;
 
 	@Override
 	public void detachView(boolean detached) {
@@ -154,6 +207,90 @@ public final class CinematicHooks implements Cinematic.Host {
 			viewBefore = null;
 		}
 		*///?}
+		if (detached) {
+			holdInput(mc);
+		} else {
+			if (mc.player != null && inputBefore != null && mc.player.input == emptyInput) {
+				//? if >=1.21.2 {
+				/*mc.player.input = (net.minecraft.client.player.ClientInput) inputBefore;
+				*///?} else
+				mc.player.input = (net.minecraft.client.player.Input) inputBefore;
+			}
+			inputBefore = null;
+			emptyInput = null;
+		}
+	}
+
+	@Override
+	public void holdView() {
+		Minecraft mc = Minecraft.getInstance();
+		holdInput(mc);
+		// F5 in der ersten Person zeigte Hand und Innenseite der Figur – zurück in die gelöste Ansicht.
+		//? if >=1.16 {
+		if (mc.options.getCameraType().isFirstPerson()) mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_BACK);
+		//?} else
+		/*if (mc.options.thirdPersonView == 0) mc.options.thirdPersonView = 1;*/
+	}
+
+	/** Die (ggf. neue, z. B. nach Respawn) Figur bekommt die leere Eingabe: sie steht. */
+	private void holdInput(Minecraft mc) {
+		if (mc.player == null || (emptyInput != null && mc.player.input == emptyInput)) return;
+		inputBefore = mc.player.input;
+		//? if >=1.21.2 {
+		/*net.minecraft.client.player.ClientInput empty = new net.minecraft.client.player.ClientInput();
+		*///?} else
+		net.minecraft.client.player.Input empty = new net.minecraft.client.player.Input();
+		emptyInput = empty;
+		mc.player.input = empty;
+	}
+
+	@Override
+	public boolean solid(int x, int y, int z) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.level == null) return false;
+		BlockPos pos = new BlockPos(x, y, z);
+		BlockState state = mc.level.getBlockState(pos);
+		// Durchsichtiges (Glas, Scheiben, Gitter, Türen, Pflanzen, Flüssigkeiten …) lässt keine Sicht verbergen.
+		if (!state.canOcclude()) return false;
+		Block block = state.getBlock();
+		if (block instanceof LeavesBlock || block == Blocks.ICE) return false;
+		// Volle Würfel (Kollision oder Umriss, z. B. Seelensand): Stein, Erde, Holz, Erze … = Wand.
+		return Block.isShapeFullBlock(state.getCollisionShape(mc.level, pos)) || Block.isShapeFullBlock(state.getShape(mc.level, pos));
+	}
+
+	@Override
+	public void freecamInput(Freecam.Input in) {
+		Minecraft mc = Minecraft.getInstance();
+		if (Mc.screen() != null) return;
+		in.forward = held(mc.options.keyUp);
+		in.back = held(mc.options.keyDown);
+		in.left = held(mc.options.keyLeft);
+		in.right = held(mc.options.keyRight);
+		in.up = held(mc.options.keyJump);
+		in.down = held(Mc.sneakKey());
+		in.boost = held(mc.options.keySprint);
+	}
+
+	/** Echte Taste (Umschalt-Sprinten/-Schleichen halten die Belegung sonst dauerhaft gedrückt). */
+	private static boolean held(KeyMapping key) {
+		String name = key.saveString();
+		if (name != null && name.startsWith("key.keyboard.")) return !name.equals("key.keyboard.unknown") && Keys.isDown(name);
+		return key.isDown();
+	}
+
+	@Override
+	public String serverAddress() {
+		return Mc.serverAddress();
+	}
+
+	@Override
+	public String serverMotd() {
+		net.minecraft.client.multiplayer.ServerData data = Minecraft.getInstance().getCurrentServer();
+		if (data == null || data.motd == null) return null;
+		//? if >=1.16 {
+		return data.motd.getString();
+		//?} else
+		/*return data.motd;*/
 	}
 
 	@Override

@@ -206,6 +206,7 @@ public final class TrsClient {
 		modules.cinematic.playKey.link(TrsKeys.link(TrsKeys.cinematicPlay));
 		modules.cinematic.removeKey.link(TrsKeys.link(TrsKeys.cinematicRemove));
 		modules.cinematic.clearKey.link(TrsKeys.link(TrsKeys.cinematicClear));
+		modules.cinematic.freecamKey.link(TrsKeys.link(TrsKeys.cinematicFreecam));
 		installSocialOverlay();
 		// Komfort-/PvP-Paket (Erwähnungen, Filter, Auto-Reconnect, Warnungen, Zähler, Streamer-Modus …).
 		dev.theredstonee.trsclient.qol.LegacyQol.init(modules);
@@ -610,6 +611,9 @@ public final class TrsClient {
 		if (button == -1 && wheel != 0 && zoom.isActive() && modules.zoomScroll.get()) {
 			HookStats.scroll++;
 			zoom.scroll(wheel);
+			event.setCanceled(true);
+		} else if (button == -1 && wheel != 0 && dev.theredstonee.trsclient.cinematic.LegacyCinematic.scroll(wheel > 0 ? 1 : -1)) {
+			// Freie Kamera: Mausrad ändert ihre Geschwindigkeit (statt der Hotbar).
 			event.setCanceled(true);
 		}
 	}

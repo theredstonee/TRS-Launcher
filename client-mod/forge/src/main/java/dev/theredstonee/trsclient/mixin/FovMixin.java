@@ -26,7 +26,7 @@ public abstract class FovMixin {
 	private void trsclient$applyZoom(CallbackInfoReturnable<Float> cir) {
 		HookStats.fov++;
 		dev.theredstonee.trsclient.core.cinematic.CameraPose cinematic = dev.theredstonee.trsclient.cinematic.CinematicHooks.frame();
-		if (cinematic != null) {
+		if (cinematic != null && cinematic.fov > 0) {
 			cir.setReturnValue(cinematic.fov);
 			return;
 		}
@@ -41,7 +41,7 @@ public abstract class FovMixin {
 		HookStats.fov++;
 		if (!useFovSetting) return;
 		dev.theredstonee.trsclient.core.cinematic.CameraPose cinematic = dev.theredstonee.trsclient.cinematic.CinematicHooks.frame();
-		if (cinematic != null) {
+		if (cinematic != null && cinematic.fov > 0) {
 			cir.setReturnValue(cinematic.fov);
 			return;
 		}
@@ -58,7 +58,7 @@ public abstract class FovMixin {
 		if (!useFovSetting) return;
 		// Kamera-Fahrt: Sichtfeld der Fahrt (ohne Zoom).
 		dev.theredstonee.trsclient.core.cinematic.CameraPose cinematic = dev.theredstonee.trsclient.cinematic.CinematicHooks.frame();
-		if (cinematic != null) {
+		if (cinematic != null && cinematic.fov > 0) {
 			cir.setReturnValue((double) cinematic.fov);
 			return;
 		}

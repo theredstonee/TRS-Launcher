@@ -141,6 +141,7 @@ public final class TrsClient {
 		modules.cinematic.playKey.link(TrsKeys.link(() -> TrsKeys.cinematicPlay));
 		modules.cinematic.removeKey.link(TrsKeys.link(() -> TrsKeys.cinematicRemove));
 		modules.cinematic.clearKey.link(TrsKeys.link(() -> TrsKeys.cinematicClear));
+		modules.cinematic.freecamKey.link(TrsKeys.link(() -> TrsKeys.cinematicFreecam));
 		// Kamera-Fahrten (config/trsclient-cinematic.json).
 		dev.theredstonee.trsclient.cinematic.CinematicHooks.init(modules, FMLPaths.CONFIGDIR.get());
 		// Karten (Minimap + Weltkarte): Kartenspeicher unter config/trsclient/maps.
@@ -530,7 +531,10 @@ public final class TrsClient {
 
 	/** Mausrad während des Zooms; true = Ereignis verbraucht (Hotbar bleibt). */
 	public boolean onScroll(double amount) {
-		if (!zoom.isActive() || !modules.zoomScroll.get() || Mc.screen() != null) return false;
+		if (!zoom.isActive() || !modules.zoomScroll.get() || Mc.screen() != null) {
+			// Freie Kamera: Mausrad ändert ihre Geschwindigkeit (statt der Hotbar).
+			return dev.theredstonee.trsclient.cinematic.CinematicHooks.scroll(amount);
+		}
 		zoom.scroll(amount);
 		return true;
 	}

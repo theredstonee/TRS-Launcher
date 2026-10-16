@@ -48,6 +48,8 @@ public final class ChatFeatures {
 		// Fair-Play-Codes der Karten-Mods (Server erzwingt Fair Play).
 		dev.theredstonee.trsclient.core.map.MapEngine maps = dev.theredstonee.trsclient.core.map.MapEngine.get();
 		if (maps != null) maps.onServerText(ChatCompat.formatted(event));
+		// Server-Codes der freien Kamera (sperren bzw. Fair Play erzwingen).
+		dev.theredstonee.trsclient.core.cinematic.Cinematic.serverText(ChatCompat.formatted(event));
 		long now = System.currentTimeMillis();
 		// Koordinaten anklickbar machen („Als Wegpunkt speichern“, nur lokal).
 		if (modules.chat.isEnabled() && modules.chatCoordLinks.get() && !ChatCoords.find(plain).isEmpty()) {

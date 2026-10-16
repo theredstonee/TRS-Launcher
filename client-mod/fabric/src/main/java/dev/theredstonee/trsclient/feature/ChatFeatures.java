@@ -52,6 +52,8 @@ public final class ChatFeatures {
 		// Fair-Play-Codes der Karten-Mods (Server erzwingt Fair Play).
 		dev.theredstonee.trsclient.core.map.MapEngine maps = dev.theredstonee.trsclient.core.map.MapEngine.get();
 		if (maps != null) maps.onServerText(plain);
+		// Server-Codes der freien Kamera (sperren bzw. Fair Play erzwingen).
+		dev.theredstonee.trsclient.core.cinematic.Cinematic.serverText(plain);
 		Component result = message;
 		if (modules.chat.isEnabled()) {
 			long now = System.currentTimeMillis();

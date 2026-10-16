@@ -56,6 +56,7 @@ public final class AutoTest {
 	private final CapeTest capeTest = new CapeTest();
 	private final CreatorTest creatorTest = new CreatorTest();
 	private final CinematicTest cinematicTest = new CinematicTest();
+	private final FreecamTest freecamTest = new FreecamTest();
 	private final EmoteTest emoteTest = new EmoteTest();
 	private final RedstoneTest redstoneTest = new RedstoneTest();
 	private final PerfTest perfTest = new PerfTest();
@@ -278,6 +279,11 @@ public final class AutoTest {
 					step = 26;
 					break;
 				}
+				// -PtrsAutotestOnly=freecam: freie Kamera (Fair Play an Stein, durch Glas/Tür, ohne Fair Play durch Stein)
+				if ("freecam".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 27;
+					break;
+				}
 				// -PtrsAutotestOnly=cosmetics2: Kopf-Kosmetik v2 (braucht -PtrsApi mit scratchpad/cos2mod/mock-api.mjs)
 				if ("cosmetics2".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 24;
@@ -484,7 +490,8 @@ public final class AutoTest {
 				wait = 5;
 				break;
 			case 25:
-			case 26: {
+			case 26:
+			case 27: {
 				// Creator-Programm bzw. Kamera-Fahrten: Screenshots trsclient-<mc>-creator-*.png / -cinematic-*.png
 				CapeTest.Actions creatorActions = new CapeTest.Actions() {
 					@Override
@@ -497,7 +504,8 @@ public final class AutoTest {
 						AutoTest.command(mc, command);
 					}
 				};
-				if (step == 25 ? creatorTest.step(mc, modules, creatorActions) : cinematicTest.step(mc, modules, creatorActions)) return;
+				if (step == 25 ? creatorTest.step(mc, modules, creatorActions)
+						: step == 26 ? cinematicTest.step(mc, modules, creatorActions) : freecamTest.step(mc, modules, creatorActions)) return;
 				step = 20;
 				wait = 5;
 				break;

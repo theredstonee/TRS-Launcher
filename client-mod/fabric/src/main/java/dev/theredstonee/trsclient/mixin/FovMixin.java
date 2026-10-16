@@ -24,7 +24,7 @@ public abstract class FovMixin {
 	private float trsclient$applyZoom(float fov) {
 		HookStats.fov++;
 		dev.theredstonee.trsclient.core.cinematic.CameraPose cinematic = dev.theredstonee.trsclient.cinematic.CinematicHooks.frame();
-		if (cinematic != null) return cinematic.fov;
+		if (cinematic != null && cinematic.fov > 0) return cinematic.fov;
 		double factor = TrsClient.get().updateZoom();
 		float result = factor == 1.0 ? fov : (float) (fov / factor);
 		TrsClient.get().setWorldFov(result);
@@ -36,7 +36,7 @@ public abstract class FovMixin {
 		HookStats.fov++;
 		if (!useFovSetting) return fov;
 		dev.theredstonee.trsclient.core.cinematic.CameraPose cinematic = dev.theredstonee.trsclient.cinematic.CinematicHooks.frame();
-		if (cinematic != null) return cinematic.fov;
+		if (cinematic != null && cinematic.fov > 0) return cinematic.fov;
 		double factor = TrsClient.get().updateZoom();
 		float result = factor == 1.0 ? fov : (float) (fov / factor);
 		TrsClient.get().setWorldFov(result);
@@ -50,7 +50,7 @@ public abstract class FovMixin {
 		if (!useFovSetting) return fov;
 		// Kamera-Fahrt: Sichtfeld der Fahrt (ohne Zoom).
 		dev.theredstonee.trsclient.core.cinematic.CameraPose cinematic = dev.theredstonee.trsclient.cinematic.CinematicHooks.frame();
-		if (cinematic != null) return cinematic.fov;
+		if (cinematic != null && cinematic.fov > 0) return cinematic.fov;
 		double factor = TrsClient.get().updateZoom();
 		double result = factor == 1.0 ? fov : fov / factor;
 		TrsClient.get().setWorldFov(result);
