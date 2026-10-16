@@ -158,6 +158,58 @@ public final class Emotes {
 				.key(L_LEG_X, 0, 0, 400, 0, 600, -22)
 				.build());
 
+		// --- Halloween 2026 (Belohnungen aus „Süßes oder Saures“) ---
+
+		// Graf-Verbeugung: rechter Arm schwingt den Umhang weit zur Seite, dann tiefe Verbeugung, linke Hand auf dem Rücken.
+		all.add(EmoteDef.builder("count_bow", 2500, false, 0, "countBow")
+				.key(R_ARM_X, 0, 0, 450, -100, 900, -60, 1500, -60, 2200, 0)
+				.key(R_ARM_Z, 0, 0, 450, 70, 900, 25, 1500, 25, 2200, 0)
+				.key(TORSO_LEAN, 0, 0, 500, -4, 1000, 62, 1700, 62, 2300, 0)
+				.key(L_ARM_X, 0, 0, 900, 40, 1700, 40, 2300, 0)
+				.key(L_ARM_Y, 0, 0, 900, -35, 1700, -35, 2300, 0)
+				.key(HEAD_X, 0, 0, 500, -10, 1000, 22, 1700, 22, 2300, 0)
+				.key(R_LEG_X, 0, 0, 900, -12, 1700, -12, 2300, 0)
+				.build());
+
+		// Spuk-Schweben (Schleife 2 s): langsam aufsteigen und auf und ab schweben, Arme nach vorn, leichtes Wiegen.
+		all.add(EmoteDef.builder("ghost_float", 4000, true, 2000, "float")
+				.key(ROOT_Y, 0, 2.2f, 1000, 4f)
+				.hold(R_ARM_X, -88)
+				.hold(L_ARM_X, -88)
+				.key(R_ARM_Z, 0, 4, 1000, 9)
+				.key(L_ARM_Z, 0, -4, 1000, -9)
+				.key(TORSO_ROLL, 0, -3, 1000, 3)
+				.hold(R_LEG_X, 8)
+				.hold(L_LEG_X, 14)
+				.key(HEAD_Z, 0, -5, 1000, 5)
+				.build());
+
+		// Zombie-Gang (Schleife 1 s): Arme steif nach vorn, schlurfende Beine, Kopf schief, Oberkörper schwankt.
+		all.add(EmoteDef.builder("zombie_walk", 5000, true, 1000, "zombie")
+				.key(R_ARM_X, 0, -92, 500, -84)
+				.key(L_ARM_X, 0, -84, 500, -92)
+				.hold(R_ARM_Z, 3)
+				.hold(L_ARM_Z, -3)
+				.key(R_LEG_X, 0, 18, 500, -14)
+				.key(L_LEG_X, 0, -14, 500, 18)
+				.key(TORSO_ROLL, 0, -5, 500, 5)
+				.hold(TORSO_LEAN, 6)
+				.hold(HEAD_X, 12)
+				.key(HEAD_Z, 0, 10, 500, 4)
+				.key(ROOT_Y, 0, 0, 250, -0.6f, 500, 0, 750, -0.6f)
+				.build());
+
+		// Mondheulen: Kopf in den Nacken, Arme leicht nach hinten, heulen (Kopf zittert), dann zurück.
+		all.add(EmoteDef.builder("moon_howl", 3000, false, 0, "howl")
+				.key(HEAD_X, 0, 0, 600, -48, 900, -44, 1200, -50, 1500, -44, 1800, -50, 2100, -46, 2500, -46, 2900, 0)
+				.key(TORSO_LEAN, 0, 0, 600, -12, 2500, -12, 2900, 0)
+				.key(R_ARM_X, 0, 0, 600, 20, 2500, 20, 2900, 0)
+				.key(L_ARM_X, 0, 0, 600, 20, 2500, 20, 2900, 0)
+				.key(R_ARM_Z, 0, 0, 600, 14, 2500, 14, 2900, 0)
+				.key(L_ARM_Z, 0, 0, 600, -14, 2500, -14, 2900, 0)
+				.key(ROOT_Y, 0, 0, 600, 0.6f, 2500, 0.6f, 2900, 0)
+				.build());
+
 		for (EmoteDef d : all) BY_ID.put(d.id(), d);
 		ALL = Collections.unmodifiableList(all);
 	}

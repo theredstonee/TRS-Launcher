@@ -32,7 +32,9 @@ class EmoteTest {
 				{"winken", "2000", "false"}, {"klatschen", "2500", "false"}, {"jubeln", "2500", "false"},
 				{"verbeugen", "2000", "false"}, {"facepalm", "2000", "false"}, {"schulterzucken", "1500", "false"},
 				{"daumen_hoch", "1500", "false"}, {"tanzen", "6000", "true"}, {"salutieren", "2000", "false"},
-				{"luftgitarre", "5000", "true"}, {"redstone_tanz", "6000", "true"}, {"party", "6000", "true"}};
+				{"luftgitarre", "5000", "true"}, {"redstone_tanz", "6000", "true"}, {"party", "6000", "true"},
+				{"count_bow", "2500", "false"}, {"ghost_float", "4000", "true"}, {"zombie_walk", "5000", "true"},
+				{"moon_howl", "3000", "false"}};
 		assertEquals(api.length, Emotes.ALL.size());
 		for (int i = 0; i < api.length; i++) {
 			EmoteDef d = Emotes.ALL.get(i);
