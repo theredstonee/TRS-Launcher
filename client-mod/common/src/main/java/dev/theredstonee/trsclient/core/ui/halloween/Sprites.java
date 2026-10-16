@@ -49,6 +49,8 @@ public final class Sprites {
 	}
 
 	private static final Map<String, Sprite> ALL = new HashMap<String, Sprite>();
+	/** Muss vor den Sprites stehen (das Gesicht nutzt es in der Initialisierung). */
+	private static final int[] BAYER = {0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5};
 
 	public static final Sprite PUMPKIN = add("pumpkin", pal('o', 0xFF8A3F16, 'O', 0xFFD9772F, 'g', 0xFF4D7A45, 'y', 0xFFFFD27A),
 			"............", ".....gg.....", "..ooOgOoo...", ".oOOOoOOOo..", "oOyOOoOOyOo.", "oOyyOoOyyOo.",
@@ -172,7 +174,6 @@ public final class Sprites {
 		return BAYER[(y & 3) * 4 + (x & 3)] / 16.0;
 	}
 
-	private static final int[] BAYER = {0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5};
 
 	private static Sprite add(String id, Map<Character, Integer> pal, String... rows) {
 		return register(new Sprite(id, rows, pal));

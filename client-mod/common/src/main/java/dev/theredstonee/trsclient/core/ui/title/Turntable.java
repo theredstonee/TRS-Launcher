@@ -101,6 +101,10 @@ public final class Turntable {
 		Theme t = Theme.get();
 		int ry = Math.max(px, Math.round(radius * squash));
 		int thick = Math.max(2 * px, Math.round(radius * 0.22f / px) * px);
+		if (t.halloween) {
+			graveBack(c, cx, cy, radius, ry, thick, px, time);
+			return;
+		}
 		if (t.winter) {
 			floeBack(c, t, cx, cy, radius, ry, thick, squash, px, time);
 			return;
@@ -131,6 +135,10 @@ public final class Turntable {
 	/** Vorderer Teil (nach der Figur): vordere Hälfte des Staubrings und die vorderen Verstärker. */
 	public void drawFront(Canvas c, int cx, int cy, int radius, float squash, int px, float time) {
 		Theme t = Theme.get();
+		if (t.halloween) {
+			graveFront(c, cx, cy, radius, Math.max(px, Math.round(radius * squash)), px, time);
+			return;
+		}
 		if (t.winter) {
 			frostRing(c, t, cx, cy, radius, squash, px, time, false);
 			mounds(c, t, cx, cy, radius, squash, px, time, false);
@@ -138,6 +146,72 @@ public final class Turntable {
 		}
 		dustRing(c, t, cx, cy, radius, squash, px, time, false);
 		repeaters(c, t, cx, cy, radius, squash, px, time, false);
+	}
+
+	/**
+	 * Halloween: Grabhügel aus dunkler Erde mit Moos und Grasbüscheln, ein schiefer Grabstein dahinter, zwei Kerzen
+	 * (Licht flackert), violetter Mondschein darunter. Die Lage der Büschel hängt am Winkel – die Drehung bleibt sichtbar.
+	 */
+	private void graveBack(Canvas c, int cx, int cy, int rx, int ry, int thick, int px, float time) {
+		for (int i = 3; i >= 1; i--) {
+			ellipse(c, cx, cy + thick, rx + i * 3 * px, ry + i * px, px, ColorMath.withAlpha(0xFFB9A2EA, 8 + (3 - i) * 6));
+		}
+		// Grabstein hinter der Figur (leicht schief, Kreuz eingeritzt)
+		int sw = Math.max(4 * px, Math.round(rx * 0.42f / px) * px);
+		int sh = Math.max(6 * px, Math.round(rx * 0.7f / px) * px);
+		int sx = cx + rx / 3 - sw / 2;
+		int sy = cy - ry / 2 - sh;
+		c.fill(sx, sy + px, sx + sw, sy + sh, 0xFF1C1730);
+		c.fill(sx + px, sy, sx + sw - px, sy + px, 0xFF1C1730);
+		c.fill(sx + sw - px, sy + px, sx + sw, sy + sh, 0xFF2D2648);
+		int kx = sx + sw / 2 - px / 2;
+		c.fill(kx, sy + 2 * px, kx + px, sy + 2 * px + Math.max(3 * px, sh / 3), 0xFF3B3851);
+		c.fill(kx - px, sy + 3 * px, kx + 2 * px, sy + 4 * px, 0xFF3B3851);
+		// Erdband (Seite) und Oberfläche
+		for (int y = 0; y < ry + thick; y += px) {
+			int hw;
+			if (y < thick) {
+				hw = rx;
+			} else {
+				float fy = (y - thick + px / 2f) / (float) ry;
+				float f = 1f - fy * fy;
+				if (f <= 0f) continue;
+				hw = Math.round(rx * (float) Math.sqrt(f) / px) * px;
+			}
+			if (hw <= 0) continue;
+			c.fill(cx - hw, cy + y, cx + hw, cy + y + px, y < thick / 2 ? 0xFF1A1426 : 0xFF120E1C);
+		}
+		ellipse(c, cx, cy, rx, ry, px, 0xFF1E1832);
+		ellipse(c, cx, cy, rx - px, Math.max(px, ry - px), px, 0xFF262040);
+		ellipse(c, cx, cy, rx - 3 * px, Math.max(px, ry - 2 * px), px, 0xFF2B2348);
+		// Moos/Grasbüschel auf der Oberfläche, wandern mit der Drehung
+		float spin = -(float) Math.toRadians(angle);
+		for (int i = 0; i < 14; i++) {
+			double a = spin + i * (Math.PI * 2 / 14);
+			int x = cx + (int) Math.round(Math.cos(a) * rx * 0.78 / px) * px;
+			int y = cy + (int) Math.round(Math.sin(a) * ry * 0.78 / px) * px;
+			int col = (i % 3 == 0) ? 0xFF2F4A35 : 0xFF3F5A3A;
+			c.fill(x, y - px, x + px, y + px, col);
+			if (i % 2 == 0) c.fill(x + px, y - 2 * px, x + 2 * px, y, col);
+		}
+		// Kerzen links und rechts
+		float f1 = 0.6f + 0.4f * (float) (Math.sin(time * 9) * Math.sin(time * 5.3));
+		float f2 = 0.6f + 0.4f * (float) (Math.sin(time * 8.1 + 2) * Math.sin(time * 4.7 + 1));
+		dev.theredstonee.trsclient.core.ui.halloween.HalloweenLook.candle(c, cx - rx * 2 / 3, cy - ry / 3, 1f, f1);
+		dev.theredstonee.trsclient.core.ui.halloween.HalloweenLook.candle(c, cx + rx * 2 / 3, cy - ry / 4, 1f, f2);
+	}
+
+	/** Halloween vorn: Nebel, der langsam über den vorderen Rand zieht. */
+	private static void graveFront(Canvas c, int cx, int cy, int rx, int ry, int px, float time) {
+		for (int band = 0; band < 3; band++) {
+			int y = cy + ry / 2 + band * px * 2;
+			for (int x = cx - rx - 6 * px; x < cx + rx + 6 * px; x += px) {
+				double v = 0.5 + 0.5 * Math.sin((x * 0.11) + time * (0.8 + band * 0.3) + band * 1.7) * Math.sin(x * 0.05 - time * 0.4);
+				int a = (int) Math.round(Math.max(0, v) * (26 - band * 6));
+				if (a <= 2) continue;
+				c.fill(x, y, x + px, y + px * 2, (a << 24) | 0x9690B6);
+			}
+		}
 	}
 
 	/** Gefüllte Ellipse aus waagerechten Streifen im Pixelraster. */

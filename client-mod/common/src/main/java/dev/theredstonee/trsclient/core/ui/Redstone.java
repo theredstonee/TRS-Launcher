@@ -97,6 +97,10 @@ public final class Redstone {
 	 */
 	public static void lamp(Canvas c, int x, int y, int w, int h, float lit, float flash) {
 		Theme t = Theme.get();
+		if (t.halloween) {
+			dev.theredstonee.trsclient.core.ui.halloween.HalloweenLook.lamp(c, x, y, w, h, lit, flash);
+			return;
+		}
 		if (t.winter) {
 			dev.theredstonee.trsclient.core.ui.winter.Frost.lantern(c, x, y, w, h, lit, flash);
 			return;
@@ -155,6 +159,10 @@ public final class Redstone {
 	/** Waagerechte Staubleitung (2 px) mit Leuchten bei Signal. */
 	public static void dustH(Canvas c, int x1, int x2, int y, int argb, float glow) {
 		if (x2 <= x1) return;
+		if (Theme.get().halloween) {
+			dev.theredstonee.trsclient.core.ui.halloween.HalloweenLook.lineH(c, x1, x2, y, argb, glow);
+			return;
+		}
 		if (Theme.get().winter) {
 			dev.theredstonee.trsclient.core.ui.winter.Frost.lineH(c, x1, x2, y, argb, glow);
 			return;
@@ -170,6 +178,10 @@ public final class Redstone {
 	/** Senkrechte Staubleitung (2 px) mit Leuchten bei Signal. */
 	public static void dustV(Canvas c, int x, int y1, int y2, int argb, float glow) {
 		if (y2 <= y1) return;
+		if (Theme.get().halloween) {
+			dev.theredstonee.trsclient.core.ui.halloween.HalloweenLook.lineV(c, x, y1, y2, argb, glow);
+			return;
+		}
 		if (Theme.get().winter) {
 			dev.theredstonee.trsclient.core.ui.winter.Frost.lineV(c, x, y1, y2, argb, glow);
 			return;
@@ -188,6 +200,10 @@ public final class Redstone {
 	 */
 	public static void torch(Canvas c, int x, int y, float lit, float flicker) {
 		Theme t = Theme.get();
+		if (t.halloween) {
+			dev.theredstonee.trsclient.core.ui.halloween.HalloweenLook.candle(c, x, y, lit, flicker);
+			return;
+		}
 		if (t.winter) {
 			dev.theredstonee.trsclient.core.ui.winter.Frost.crystal(c, x, y, lit, flicker);
 			return;
@@ -209,6 +225,10 @@ public final class Redstone {
 	/** Schalter im Redstone-Stil: Mulde mit Staub, der Knopf ist eine kleine Lampe. */
 	public static void toggle(Canvas c, int x, int y, int w, int h, float progress, boolean hover) {
 		Theme t = Theme.get();
+		if (t.halloween) {
+			dev.theredstonee.trsclient.core.ui.halloween.HalloweenLook.toggle(c, x, y, w, h, progress, hover);
+			return;
+		}
 		float p = ColorMath.clamp01(progress);
 		well(c, x, y, w, h, hover ? ColorMath.lerp(t.border, t.textDim, 0.6f) : t.border);
 		int mid = y + h / 2 - 1;
@@ -254,7 +274,8 @@ public final class Redstone {
 		int kx = x + filled - kw / 2;
 		int ky = y + (h - kh) / 2;
 		if (hover) glow(c, kx, ky, kw, kh, t.glow, 0.8f);
-		if (t.winter) stone(c, kx, ky, kw, kh, hover ? 0xFFB4C8E6 : 0xFF9AB0D2, 0xFF1A2740);
+		if (t.halloween) stone(c, kx, ky, kw, kh, hover ? 0xFFF3F5FB : 0xFFCFD5E3, 0xFF2A2440);
+		else if (t.winter) stone(c, kx, ky, kw, kh, hover ? 0xFFB4C8E6 : 0xFF9AB0D2, 0xFF1A2740);
 		else stone(c, kx, ky, kw, kh, hover ? 0xFF9A9AA2 : 0xFF84848C, 0xFF2A2A30);
 		c.fill(kx + 2, ky + 2, kx + 4, ky + 4, hover ? t.lampHot : t.dustOn);
 	}

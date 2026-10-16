@@ -19,6 +19,10 @@ import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.ui.UiKey;
 import dev.theredstonee.trsclient.core.ui.UiScreen;
 import dev.theredstonee.trsclient.core.ui.menu.NewBadge;
+import dev.theredstonee.trsclient.core.ui.halloween.HalloweenLook;
+import dev.theredstonee.trsclient.core.ui.halloween.HalloweenPalette;
+import dev.theredstonee.trsclient.core.ui.halloween.NightScene;
+import dev.theredstonee.trsclient.core.ui.halloween.Sprites;
 import dev.theredstonee.trsclient.core.ui.winter.Frost;
 import dev.theredstonee.trsclient.core.ui.winter.WinterScene;
 
@@ -391,6 +395,7 @@ public final class TitleUi extends UiScreen {
 		boolean animated = host.animated();
 		float time = animated ? (System.nanoTime() - EPOCH) / 1_000_000_000f : 1.35f;
 		boolean compact = height < 300;
+		lastHeight = height;
 
 		// Maße: Schriftzug, Untertitel, vier Knopfzeilen – als Block senkrecht zentriert.
 		int big = compact ? 5 : (height >= 440 ? 9 : 8);
@@ -421,7 +426,11 @@ public final class TitleUi extends UiScreen {
 		setReserved(2, panel);
 		setReserved(3, sb);
 
-		if (t.winter) {
+		if (t.halloween) {
+			// Halloween: die Mondnacht (Standbild ohne Animation), leichter Schleier zu den Rändern wie .veil.
+			if (sceneEnabled) NightScene.shared().draw(bg, width, height, animated);
+			else bg.fill(0, 0, width, height, HalloweenPalette.NIGHT);
+		} else if (t.winter) {
 			if (sceneEnabled) WinterScene.shared().draw(bg, width, height, animated);
 			else bg.fill(0, 0, width, height, t.background);
 		} else if (sceneEnabled) {
@@ -435,11 +444,13 @@ public final class TitleUi extends UiScreen {
 		if (sb != null && sideMode != SIDE_ROW) readingPlate(bg, sb[0], sb[1], sb[2] - sb[0], sb[3] - sb[1], plate);
 		// Winternacht: die Fußzeile steht auf dem Schnee – ein Schleier hält sie lesbar.
 		if (t.winter) bg.fill(0, height - 14, width, height, t.light ? 0x70FFFFFF : 0x90060A14);
+		if (t.halloween) bg.fill(0, height - 14, width, height, 0x9007060C);
 
 		Canvas c = FadeCanvas.of(raw, alpha());
 		update(dt, mouseX, mouseY);
 		turntable.tick(dt, animated);
-		circuitry(c, t, colX, top, rowsY, time);
+		if (t.halloween) spider(c, width, top, time, animated);
+		else circuitry(c, t, colX, top, rowsY, time);
 		for (int i = 0; i < lamps.size(); i++) {
 			Lamp l = lamps.get(i);
 			float lit = lampLit(l);
@@ -878,12 +889,14 @@ public final class TitleUi extends UiScreen {
 
 	/** Farbe der Lese-Fläche: Schiefer-Schatten, im Winter Nachtblau bzw. am hellen Wintertag ein weißer Schleier. */
 	private static int plateColor(Theme t) {
+		if (t.halloween) return 0x2407060C;
 		if (!t.winter) return 0x1E000000;
 		return t.light ? 0x26FFFFFF : 0x22030814;
 	}
 
 	/** Gedämpfte Schrift (Hinweise, Fußzeile) passend zum Design. */
 	private static int dimText(Theme t) {
+		if (t.halloween) return HalloweenPalette.MUTED_LIGHT;
 		if (!t.winter) return 0xFF8F8B89;
 		return t.light ? 0xFF26344D : 0xFFB4C4E0;
 	}
@@ -951,7 +964,65 @@ public final class TitleUi extends UiScreen {
 		return ColorMath.clamp01((float) (0.5 + a * 0.5));
 	}
 
+	/** Halloween: hängende Spinne bei ~12 % von links (wie im Entwurf), Faden schwankt langsam. */
+	private static void spider(Canvas c, int width, int top, float time, boolean animated) {
+		int len = Math.max(20, top + 18);
+		HalloweenLook.spider(c, width * 22 / 100, 0, len, 2, animated ? time : 1f);
+	}
+
+	/**
+	 * Halloween-Schriftzug: „TRS“ groß in Mondsilber mit Pflaumen-Schatten, „CLIENT“ in Silber mit kleiner Kürbislaterne,
+	 * darunter der Untertitel in Violett und schräg der pulsierende Splash.
+	 */
+	private void halloweenLogo(Canvas c, int width, int top, int big, int small, int logoH, int gapA, float time, boolean animated) {
+		float pulse = animated ? 0.7f + 0.3f * (float) (0.5 + 0.5 * Math.sin(time * Math.PI * 2 / 3.4)) : 0.85f;
+		int logoW = PixelFont.width("TRS") * big;
+		int x = (width - logoW) / 2;
+		HalloweenLook.silverWord(c, "TRS", x, top, big, 1f, pulse);
+		int subW = PixelFont.width("CLIENT") * small;
+		int sx = (width - subW) / 2;
+		int sy = top + logoH + gapA;
+		for (int[] r : PixelFont.rects("CLIENT")) {
+			c.fill(sx + r[0] * small, sy + r[1] * small + Math.max(1, small / 2), sx + r[2] * small, sy + r[3] * small + Math.max(1, small / 2), HalloweenPalette.PLUM);
+		}
+		for (int[] r : PixelFont.rects("CLIENT")) {
+			c.fill(sx + r[0] * small, sy + r[1] * small, sx + r[2] * small, sy + r[3] * small, HalloweenPalette.SILVER);
+		}
+		// Kürbislaterne neben „CLIENT“ (Kürbislicht flackert)
+		float fl = animated ? 0.75f + 0.25f * (float) (Math.sin(time * 9) * Math.sin(time * 3.7)) : 0.9f;
+		int jx = sx + subW + small * 3;
+		int jy = sy + (PixelFont.HEIGHT * small - Sprites.JACK.h) / 2;
+		c.fill(jx - 1, jy, jx + Sprites.JACK.w + 1, jy + Sprites.JACK.h, ColorMath.withAlpha(HalloweenPalette.PUMPKIN_LIGHT, Math.round(26 * fl)));
+		c.fill(jx + 1, jy - 2, jx + Sprites.JACK.w - 1, jy + Sprites.JACK.h + 2, ColorMath.withAlpha(HalloweenPalette.PUMPKIN_LIGHT, Math.round(18 * fl)));
+		Sprites.draw(c, Sprites.JACK, jx, jy, 1, 1f);
+		// Untertitel (Schrift des Spiels) zwischen Schriftzug und Knöpfen
+		String subtitle = I18n.tr("halloween.title.subtitle");
+		int ty = sy + PixelFont.HEIGHT * small + 3;
+		if (ty + 8 < top + logoH + gapA + PixelFont.HEIGHT * small + (height() < 300 ? 12 : 20)) {
+			c.text(subtitle, (width - c.textWidth(subtitle)) / 2, ty, HalloweenPalette.VIOLET_LIGHT, true);
+		}
+		// Splash: schräg rechts vom Schriftzug, pulsiert wie bei Minecraft
+		String splash = I18n.tr("halloween.title.splash");
+		float s = animated ? 1f + 0.06f * (float) Math.abs(Math.sin(time * Math.PI / 0.9)) : 1f;
+		c.push();
+		c.translate(x + logoW + big * 4 + c.textWidth(splash) / 3f, top + logoH * 0.9f);
+		c.rotate((float) Math.toRadians(-18));
+		c.scale(s);
+		c.text(splash, -c.textWidth(splash) / 2, -4, HalloweenPalette.SPLASH, true);
+		c.pop();
+	}
+
+	private int lastHeight;
+
+	private int height() {
+		return lastHeight;
+	}
+
 	private void logo(Canvas c, Theme t, int width, int top, int big, int small, int logoH, int gapA, float time, boolean animated) {
+		if (t.halloween) {
+			halloweenLogo(c, width, top, big, small, logoH, gapA, time, animated);
+			return;
+		}
 		int logoW = PixelFont.width("TRS") * big;
 		int x = (width - logoW) / 2;
 		int y = top;
@@ -1056,11 +1127,16 @@ public final class TitleUi extends UiScreen {
 		int room = lx - 18;
 		if (c.textWidth(version) > room) version = room > 20 ? c.clip(version, room - c.textWidth("…")) + "…" : "";
 		if (!version.isEmpty()) labels.add(new Label(version, 4, height - 10, dimText(t), false));
+		// Halloween: Kürbis „client-title“ gleich neben der Versionszeile (Kürbis-Suche).
+		if (t.halloween) {
+			dev.theredstonee.trsclient.core.halloween.Pumpkins.draw(c, hits, dev.theredstonee.trsclient.core.halloween.Pumpkins.CLIENT_TITLE,
+					4 + c.textWidth(version) + 10, height - 7, mx, my);
+		}
 		boolean hover = inside(mx, my, lx - 10, height - 12, cw + 10, 12);
 		boolean on = hover || focus == linkIndex();
 		linkLit = on ? Math.min(1f, linkLit + dt / 0.08f) : Math.max(0f, linkLit - dt / 0.08f);
 		Redstone.pip(c, lx - 9, height - 9, 5, linkLit);
-		labels.add(new Label(classic, lx, height - 10, ColorMath.lerp(dimText(t), t.light && t.winter ? t.on : t.lampOn, linkLit), false));
+		labels.add(new Label(classic, lx, height - 10, ColorMath.lerp(dimText(t), t.halloween ? HalloweenPalette.SILVER_LIGHT : (t.light && t.winter ? t.on : t.lampOn), linkLit), false));
 		hits.add(lx - 10, height - 12, cw + 14, 12, new Runnable() {
 			@Override
 			public void run() {
