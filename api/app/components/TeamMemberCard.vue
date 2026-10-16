@@ -43,6 +43,14 @@ const host = (url: string) => {
       <h3 class="heading truncate text-lg text-base-50" :class="{ 'text-2xl': big }">{{ member.name }}</h3>
       <div class="mt-1.5 flex flex-wrap items-center justify-center gap-1.5">
         <RoleBadge :role="role" :small="!big" />
+        <img
+          v-for="b in member.badges ?? []"
+          :key="b"
+          :src="`/v1/badges/${b}.png`"
+          :alt="b"
+          :title="b === 'pumpkinhunter2026' ? 'Pumpkin Hunter 2026' : b === 'halloween2026' ? 'Halloween 2026' : b"
+          class="h-4 [image-rendering:pixelated]"
+        />
       </div>
       <p v-if="title" class="mt-2 text-sm font-semibold text-base-200">{{ title }}</p>
       <div v-if="member.discord || safeLinks.length" class="mt-3 flex flex-wrap items-center justify-center gap-1.5">

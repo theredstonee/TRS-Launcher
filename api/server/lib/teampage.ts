@@ -1,7 +1,8 @@
 import { z } from 'zod'
 import { audit } from './audit'
 import type { AppContext } from './context'
-import { all, one, run, tx } from './db'
+import { badgeFxFor } from './badge-lookup'
+import { all, one, placeholders, run, tx } from './db'
 import { badRequest, conflict, notFound } from './errors'
 import { plainText } from './schemas'
 import { storedSkins } from './skins'
@@ -181,6 +182,8 @@ export interface PublicTeamMember {
   titles: TeamPageTitles
   discord: string | null
   links: TeamPageLink[]
+  /** Profil-Abzeichen (§36, z. B. `halloween2026`), nur wenn die Person `showBadge` an hat. Bild: `/v1/badges/{id}.png`. */
+  badges: string[]
 }
 
 export interface PublicTeamPage {
@@ -210,6 +213,10 @@ export async function publicTeamPage(ctx: AppContext): Promise<PublicTeamPage> {
     skins = storedSkins(ctx.db, uuids)
   }
   const capes = capesOf(ctx, uuids)
+  const showBadge = new Map(uuids.length === 0 ? [] : all<{ uuid: string, show_badge: number }>(
+    ctx.db, `SELECT uuid, show_badge FROM users WHERE uuid IN (${placeholders(uuids.length)})`, ...uuids,
+  ).map((u) => [u.uuid, u.show_badge]))
+  const badges = badgeFxFor(ctx, '', uuids.map((uuid) => ({ uuid, show_badge: showBadge.get(uuid) ?? 0 })))
   const groups: PublicTeamPage['groups'] = []
   for (const r of roles) {
     const members = list.filter((m) => m.role_id === r.id).map((m): PublicTeamMember => {
@@ -222,6 +229,7 @@ export async function publicTeamPage(ctx: AppContext): Promise<PublicTeamPage> {
         titles: parseTitles(m.titles),
         discord: m.discord,
         links: parseLinks(m.links),
+        badges: badges.get(m.uuid)?.badges ?? [],
       }
     })
     if (members.length) groups.push({ id: r.id, name: r.name, color: r.color, builtin: r.builtin === 1, members })

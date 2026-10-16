@@ -4356,6 +4356,7 @@ ReplyView `sticker`. Push previews say "Sent a sticker".
   `showBadge` change (filtered per viewer like the lookup). Clients update their lookup cache with it.
 - `GET /v1/events/me` (§19): `halloween_updated` with the fields of `GET /v1/me/halloween` after a find, a roll, a badge
   grant or an effects change.
+- Website team page (`GET /v1/site/team`, §26): each member has `badges` (same privacy rule as the lookup).
 
 ### 36.7 Wings slot
 

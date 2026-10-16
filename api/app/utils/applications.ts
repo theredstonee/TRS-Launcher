@@ -71,6 +71,8 @@ export interface PublicTeamMember {
   titles: TeamTitles
   discord: string | null
   links: TeamLink[]
+  /** Profil-Abzeichen (Halloween 2026), fehlt bei älteren Servern. */
+  badges?: string[]
 }
 
 export interface PublicTeam {
