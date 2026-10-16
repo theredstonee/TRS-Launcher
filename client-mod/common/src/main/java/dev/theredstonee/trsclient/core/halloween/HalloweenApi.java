@@ -40,6 +40,8 @@ public final class HalloweenApi {
 		public Trick trick;
 		public List<String> badges;
 		public Effects effects;
+		/** Flügel-Wahl nach allen 13 Kürbissen (Nachtrag „Wings“); fehlt bei älteren APIs. */
+		public Wings wings;
 	}
 
 	public static final class Pumpkins {
@@ -63,6 +65,27 @@ public final class HalloweenApi {
 		public String kind;
 		public String id;
 		public Map<String, String> name;
+	}
+
+	/** {@code wings} im Zustand: gewählte Flügel (oder null), ob gewählt werden darf, die vier Möglichkeiten. */
+	public static final class Wings {
+		public String choice;
+		public Boolean canChoose;
+		public List<String> options;
+	}
+
+	/** Fehler der Flügel-Wahl: {@code wings_chosen} (409), {@code hunt_incomplete} (403) oder anderer Code. */
+	public static final class WingsRefused extends Exception {
+		public final String code;
+
+		WingsRefused(String code) {
+			super(code);
+			this.code = code;
+		}
+	}
+
+	static final class WingsPost {
+		String id;
 	}
 
 	public static final class Effects {
@@ -143,6 +166,21 @@ public final class HalloweenApi {
 		Http.Request request = request("PUT", "/v1/me/halloween/effects", GSON.toJson(body), token);
 		Http.Response r = http.send(request);
 		if (r.status != 200 && r.status != 204) throw new ApiException(r.status, errorCode(r), 0);
+	}
+
+	/**
+	 * {@code POST /v1/me/halloween/wings {id}}: eine der vier Halloween-Flügel endgültig wählen (nur nach allen 13
+	 * Kürbissen, nur einmal). Antwort = neuer Zustand (oder leer). 409 {@code wings_chosen} / 403 {@code hunt_incomplete}
+	 * → {@link WingsRefused}.
+	 */
+	public State chooseWings(String token, String id) throws IOException, ApiException, WingsRefused {
+		if (id == null || !id.matches("[a-z][a-z0-9_]{0,39}")) throw new WingsRefused("invalid_request");
+		WingsPost body = new WingsPost();
+		body.id = id;
+		Http.Response r = http.send(request("POST", "/v1/me/halloween/wings", GSON.toJson(body), token));
+		if (r.status == 409 || r.status == 403 || r.status == 404) throw new WingsRefused(errorCode(r));
+		if (r.status != 200 && r.status != 201 && r.status != 204) throw new ApiException(r.status, errorCode(r), retryAfter(r), r.text());
+		return r.status == 204 ? null : parseState(r.text());
 	}
 
 	public List<Sticker> stickers(String token) throws IOException, ApiException {

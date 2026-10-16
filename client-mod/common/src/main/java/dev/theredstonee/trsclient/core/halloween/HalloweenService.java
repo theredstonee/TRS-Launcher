@@ -79,6 +79,9 @@ public final class HalloweenService {
 	private volatile long trickStarted;
 	/** Steigt mit jeder Änderung des Zustands (Oberflächen bauen damit neu). */
 	private volatile int revision;
+	/** Flügel-Wahl: läuft gerade, Fehler (i18n-Schlüssel) oder null. */
+	private volatile boolean wingsBusy;
+	private volatile String wingsError;
 
 	private HalloweenService() {
 	}
@@ -360,6 +363,86 @@ public final class HalloweenService {
 	}
 
 	/** Eigene Spuk-Effekte für andere sichtbar ({@code PUT /v1/me/halloween/effects}). */
+	// --- Flügel-Wahl (Nachtrag „Wings“) ---
+
+	/** Gewählte Halloween-Flügel (ID) oder null. */
+	public String wingsChoice() {
+		HalloweenApi.State s = state;
+		return s == null || s.wings == null ? null : s.wings.choice;
+	}
+
+	/** Darf jetzt gewählt werden (alle 13 Kürbisse, noch keine Wahl)? */
+	public boolean canChooseWings() {
+		HalloweenApi.State s = state;
+		return s != null && s.wings != null && Boolean.TRUE.equals(s.wings.canChoose) && s.wings.choice == null;
+	}
+
+	/** Die vier Halloween-Flügel (IDs) laut API; leer, solange unbekannt. */
+	public List<String> wingsOptions() {
+		HalloweenApi.State s = state;
+		if (s == null || s.wings == null || s.wings.options == null) return Collections.emptyList();
+		return Collections.unmodifiableList(s.wings.options);
+	}
+
+	public boolean wingsBusy() {
+		return wingsBusy;
+	}
+
+	/** Fehler der letzten Wahl (i18n-Schlüssel {@code halloween.wings.error.*}) oder null. */
+	public String wingsError() {
+		return wingsError;
+	}
+
+	/** Flügel endgültig wählen ({@code POST /v1/me/halloween/wings}); Erfolg → Toast, neuer Zustand. */
+	public void chooseWings(final String id) {
+		if (wingsBusy) return;
+		final String token = token();
+		final HalloweenApi api = api();
+		if (token == null || api == null) {
+			wingsError = "halloween.error.offline";
+			return;
+		}
+		wingsBusy = true;
+		wingsError = null;
+		revision++;
+		if (!submit(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					HalloweenApi.State s = api.chooseWings(token, id);
+					if (s != null) {
+						setState(s);
+					} else {
+						HalloweenApi.State next = copy(state);
+						if (next.wings == null) next.wings = new HalloweenApi.Wings();
+						next.wings.choice = id;
+						next.wings.canChoose = Boolean.FALSE;
+						setState(next);
+					}
+					HalloweenToast.show(HalloweenToast.HUNTER, I18n.tr("halloween.wings.toast.title"), I18n.tr("halloween.wings.toast.text"));
+					stateAt = 0;
+					retryAt = 0;
+				} catch (HalloweenApi.WingsRefused e) {
+					wingsError = "wings_chosen".equals(e.code) ? "halloween.wings.error.chosen"
+							: "hunt_incomplete".equals(e.code) ? "halloween.wings.error.incomplete" : "halloween.error.network";
+					stateAt = 0;
+					retryAt = 0;
+				} catch (ApiException e) {
+					if (e.unauthorized()) rejected(token);
+					wingsError = "event_inactive".equals(e.code()) ? "halloween.toast.over.text" : "halloween.error.network";
+				} catch (IOException | RuntimeException e) {
+					wingsError = "halloween.error.network";
+				} finally {
+					wingsBusy = false;
+					revision++;
+				}
+			}
+		})) {
+			wingsBusy = false;
+			wingsError = "halloween.error.network";
+		}
+	}
+
 	public void shareEffects(final boolean hits, final boolean trail) {
 		final String token = token();
 		final HalloweenApi api = api();
@@ -400,6 +483,7 @@ public final class HalloweenService {
 		n.trick = s.trick;
 		n.badges = s.badges;
 		n.effects = s.effects;
+		n.wings = s.wings;
 		if (s.pumpkins != null) {
 			n.pumpkins = new HalloweenApi.Pumpkins();
 			n.pumpkins.total = s.pumpkins.total;
