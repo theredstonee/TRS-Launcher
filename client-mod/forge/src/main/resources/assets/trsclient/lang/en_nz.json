@@ -15,5 +15,9 @@
 	"key.trsclient.social": "Open social",
 	"key.trsclient.quickReply": "Quick reply / join",
 	"key.trsclient.panorama": "Take panorama",
-	"key.trsclient.notes": "Open notes"
+	"key.trsclient.notes": "Open notes",
+	"key.trsclient.cinematicAdd": "Camera path: add keyframe",
+	"key.trsclient.cinematicPlay": "Camera path: play / stop",
+	"key.trsclient.cinematicRemove": "Camera path: remove last keyframe",
+	"key.trsclient.cinematicClear": "Camera path: clear"
 }

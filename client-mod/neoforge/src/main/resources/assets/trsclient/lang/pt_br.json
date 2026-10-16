@@ -15,5 +15,9 @@
 	"key.trsclient.social": "Abrir social",
 	"key.trsclient.quickReply": "Resposta rápida / entrar",
 	"key.trsclient.panorama": "Capturar panorama",
-	"key.trsclient.notes": "Abrir notas"
+	"key.trsclient.notes": "Abrir notas",
+	"key.trsclient.cinematicAdd": "Trajeto de câmera: adicionar quadro-chave",
+	"key.trsclient.cinematicPlay": "Trajeto de câmera: reproduzir / parar",
+	"key.trsclient.cinematicRemove": "Trajeto de câmera: remover o último quadro-chave",
+	"key.trsclient.cinematicClear": "Trajeto de câmera: apagar"
 }

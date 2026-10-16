@@ -25,6 +25,11 @@ public abstract class FovMixin {
 	/*@Inject(method = "calculateFov", at = @At("RETURN"), cancellable = true, require = 1)
 	private void trsclient$applyZoom(CallbackInfoReturnable<Float> cir) {
 		HookStats.fov++;
+		dev.theredstonee.trsclient.core.cinematic.CameraPose cinematic = dev.theredstonee.trsclient.cinematic.CinematicHooks.frame();
+		if (cinematic != null) {
+			cir.setReturnValue(cinematic.fov);
+			return;
+		}
 		double factor = TrsClient.get().updateZoom();
 		float result = factor == 1.0 ? cir.getReturnValueF() : (float) (cir.getReturnValueF() / factor);
 		if (factor != 1.0) cir.setReturnValue(result);
@@ -35,6 +40,11 @@ public abstract class FovMixin {
 	private void trsclient$applyZoom(Camera camera, float partialTick, boolean useFovSetting, CallbackInfoReturnable<Float> cir) {
 		HookStats.fov++;
 		if (!useFovSetting) return;
+		dev.theredstonee.trsclient.core.cinematic.CameraPose cinematic = dev.theredstonee.trsclient.cinematic.CinematicHooks.frame();
+		if (cinematic != null) {
+			cir.setReturnValue(cinematic.fov);
+			return;
+		}
 		double factor = TrsClient.get().updateZoom();
 		float result = factor == 1.0 ? cir.getReturnValueF() : (float) (cir.getReturnValueF() / factor);
 		if (factor != 1.0) cir.setReturnValue(result);
@@ -46,6 +56,12 @@ public abstract class FovMixin {
 		HookStats.fov++;
 		// Nur das Welt-Sichtfeld zoomen, nicht die Hand.
 		if (!useFovSetting) return;
+		// Kamera-Fahrt: Sichtfeld der Fahrt (ohne Zoom).
+		dev.theredstonee.trsclient.core.cinematic.CameraPose cinematic = dev.theredstonee.trsclient.cinematic.CinematicHooks.frame();
+		if (cinematic != null) {
+			cir.setReturnValue((double) cinematic.fov);
+			return;
+		}
 		double factor = TrsClient.get().updateZoom();
 		double result = factor == 1.0 ? cir.getReturnValueD() : cir.getReturnValueD() / factor;
 		if (factor != 1.0) cir.setReturnValue(result);

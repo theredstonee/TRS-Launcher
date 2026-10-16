@@ -59,6 +59,8 @@
 		"StreamerServerEntryMixin",
 		"OverlayTextureAccessor",
 		"TabBadgeMixin",
+		"FanTextMixin",
+		"FanGuiMixin",
 		"MenuScreenMixin",
 		"KeySearchListInvoker",
 		"ConnectTargetMixin",

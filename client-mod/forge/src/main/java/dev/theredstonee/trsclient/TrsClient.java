@@ -100,6 +100,12 @@ public final class TrsClient {
 		modules.freelookKey.link(TrsKeys.link(() -> TrsKeys.freelook));
 		modules.worldMapKey.link(TrsKeys.link(() -> TrsKeys.worldMap));
 		modules.notes.openKey.link(TrsKeys.link(() -> TrsKeys.notes));
+		modules.cinematic.addKey.link(TrsKeys.link(() -> TrsKeys.cinematicAdd));
+		modules.cinematic.playKey.link(TrsKeys.link(() -> TrsKeys.cinematicPlay));
+		modules.cinematic.removeKey.link(TrsKeys.link(() -> TrsKeys.cinematicRemove));
+		modules.cinematic.clearKey.link(TrsKeys.link(() -> TrsKeys.cinematicClear));
+		// Kamera-Fahrten (config/trsclient-cinematic.json).
+		dev.theredstonee.trsclient.cinematic.CinematicHooks.init(modules, Platform.configDir());
 		// Karten (Minimap + Weltkarte): Kartenspeicher unter config/trsclient/maps.
 		// Komfort-/PvP-Paket (Erwähnungen, Filter, Auto-Reconnect, Warnungen, Zähler, Streamer-Modus …).
 		dev.theredstonee.trsclient.qol.QolHooks.init(modules);
@@ -177,6 +183,8 @@ public final class TrsClient {
 	/** Anfang des Client-Ticks: vor der Spieler-Bewegung (Toggle-Tasten, Freelook, Treffer-Farbe). */
 	public void onStartTick(Minecraft mc) {
 		pvp.tick(mc);
+		// Kamera-Fahrten: Tasten, Ende der Fahrt, Vorschau – und während der Fahrt alle Eingaben loslassen.
+		dev.theredstonee.trsclient.cinematic.CinematicHooks.tick(mc);
 	}
 
 	/** Ende des Client-Ticks. */

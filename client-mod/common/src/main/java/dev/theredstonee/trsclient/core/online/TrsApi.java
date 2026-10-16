@@ -83,6 +83,28 @@ public final class TrsApi {
 		Boolean badge;
 		LookupCape cape;
 		LookupCosmetics cosmetics;
+		/** Creator-Programm (API.md §35.5, fehlt bei älteren APIs): der Spieler ist Creator / trägt ein Fan-Symbol. */
+		LookupCreator creator;
+		LookupFan fan;
+	}
+
+	static final class LookupCreator {
+		String tier;
+	}
+
+	static final class LookupFan {
+		String creator;
+		String name;
+		LookupSymbol symbol;
+		String milestone;
+	}
+
+	static final class LookupSymbol {
+		String url;
+		Integer size;
+		Integer frames;
+		Integer frameMs;
+		String sha256;
 	}
 
 	static final class LookupCosmetics {
@@ -317,7 +339,15 @@ public final class TrsApi {
 						? HatInfo.v2(h.id, h.model, h.url, h.glow, h.hash, h.frames, h.glowFrames, config)
 						: HatInfo.of(h.id, h.template, h.url, h.scale, h.frames, h.frameTimeMs, h.templateUrl, config);
 			}
-			out.put(uuid, new PlayerInfo(Boolean.TRUE.equals(p.badge), cape, hat));
+			dev.theredstonee.trsclient.core.creator.CreatorTier tier = p.creator == null ? null
+					: dev.theredstonee.trsclient.core.creator.CreatorTier.parse(p.creator.tier);
+			FanInfo fan = null;
+			if (p.fan != null && p.fan.symbol != null) {
+				LookupSymbol sy = p.fan.symbol;
+				fan = FanInfo.of(p.fan.creator, p.fan.name,
+						SymbolInfo.of(sy.url, sy.size, sy.frames, sy.frameMs, sy.sha256, config), p.fan.milestone);
+			}
+			out.put(uuid, new PlayerInfo(Boolean.TRUE.equals(p.badge), cape, hat, tier, fan));
 		}
 		return out;
 	}

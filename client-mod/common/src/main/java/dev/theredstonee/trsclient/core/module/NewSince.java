@@ -139,6 +139,9 @@ public final class NewSince {
 	 * (Happy Eyeballs), schnellerer Serverwechsel in Proxy-Netzwerken.
 	 */
 	public static final String FAST_CONNECT = "0.16.0";
+	/** Kamera-Fahrten und Fan-Symbole/Creator-Sterne (Creator-Programm). */
+	public static final String CINEMATIC = "0.18.0";
+	public static final String KEY_CINEMATIC = "key.trsclient.cinematicPlay";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
@@ -214,6 +217,8 @@ public final class NewSince {
 		// Chat-Köpfe vor Spieler-Nachrichten.
 		add(CHAT_HEADS, "chatHeads", "chatHeads.hat");
 		add(FAST_CONNECT, "fastConnect");
+		// Kamera-Fahrten; Fan-Symbole und Creator-Sterne vor Namen.
+		add(CINEMATIC, "cinematic", KEY_CINEMATIC, "trsOnline.fanSymbolNametag", "trsOnline.fanSymbolTab");
 	}
 
 	private NewSince() {

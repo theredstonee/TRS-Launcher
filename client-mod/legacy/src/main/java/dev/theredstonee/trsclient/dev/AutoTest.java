@@ -54,6 +54,8 @@ public final class AutoTest {
 	private TrsConfig before;
 
 	private final CapeTest capeTest = new CapeTest();
+	private final CreatorTest creatorTest = new CreatorTest();
+	private final CinematicTest cinematicTest = new CinematicTest();
 	private final EmoteTest emoteTest = new EmoteTest();
 	private final RedstoneTest redstoneTest = new RedstoneTest();
 	private final PerfTest perfTest = new PerfTest();
@@ -266,6 +268,16 @@ public final class AutoTest {
 					step = 19;
 					break;
 				}
+				// -PtrsAutotestOnly=creator: Fan-Symbole + Creator-Sterne (braucht -PtrsApi mit scripts/mock-creator-api.mjs)
+				if ("creator".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 25;
+					break;
+				}
+				// -PtrsAutotestOnly=cinematic: Kamera-Fahrt (Keyframes, Abspielen, HUD, Kamera)
+				if ("cinematic".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 26;
+					break;
+				}
 				// -PtrsAutotestOnly=cosmetics2: Kopf-Kosmetik v2 (braucht -PtrsApi mit scratchpad/cos2mod/mock-api.mjs)
 				if ("cosmetics2".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 24;
@@ -471,6 +483,25 @@ public final class AutoTest {
 				step = 20;
 				wait = 5;
 				break;
+			case 25:
+			case 26: {
+				// Creator-Programm bzw. Kamera-Fahrten: Screenshots trsclient-<mc>-creator-*.png / -cinematic-*.png
+				CapeTest.Actions creatorActions = new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.this.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				};
+				if (step == 25 ? creatorTest.step(mc, modules, creatorActions) : cinematicTest.step(mc, modules, creatorActions)) return;
+				step = 20;
+				wait = 5;
+				break;
+			}
 			case 20:
 				TrsClient.LOGGER.info("[Autotest] Hook-Aufrufe: {}", HookStats.summary());
 				TrsClient.LOGGER.info("[Autotest] Leistungs-Hooks: {}", dev.theredstonee.trsclient.perf.LegacyPerf.get().stats());

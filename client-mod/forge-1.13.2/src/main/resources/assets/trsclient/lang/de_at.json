@@ -15,5 +15,9 @@
 	"key.trsclient.social": "Sozial öffnen",
 	"key.trsclient.quickReply": "Schnellantwort / Beitreten",
 	"key.trsclient.panorama": "Panorama aufnehmen",
-	"key.trsclient.notes": "Notizen öffnen"
+	"key.trsclient.notes": "Notizen öffnen",
+	"key.trsclient.cinematicAdd": "Kamera-Fahrt: Keyframe setzen",
+	"key.trsclient.cinematicPlay": "Kamera-Fahrt: abspielen / anhalten",
+	"key.trsclient.cinematicRemove": "Kamera-Fahrt: letzten Keyframe entfernen",
+	"key.trsclient.cinematicClear": "Kamera-Fahrt: löschen"
 }

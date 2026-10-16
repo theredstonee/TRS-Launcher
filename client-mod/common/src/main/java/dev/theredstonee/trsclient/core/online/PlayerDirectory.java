@@ -184,7 +184,34 @@ public final class PlayerDirectory {
 		if (e == null || e.info.badge == badge) return;
 		// Bleibt auch ohne Abzeichen ein Eintrag (nicht NONE): So bleibt der Spieler im Ereignis-Stream und
 		// taucht sein Abzeichen wieder auf, kommt das sofort an.
-		e.info = new PlayerInfo(badge, e.info.cape, e.info.hat);
+		e.info = e.info.withBadge(badge);
+	}
+
+	/**
+	 * Ein Creator hat sein Fan-Symbol geändert ({@code fan_creator}, API.md §35.5): alle bekannten Spieler, die dessen
+	 * Symbol tragen, beim nächsten Stapel neu nachschlagen. Liefert die Zahl der betroffenen Spieler.
+	 */
+	public int invalidateFansOf(String creator) {
+		String c = Uuids.normalize(creator);
+		if (c == null) return 0;
+		int n = 0;
+		for (Entry e : entries.values()) {
+			FanInfo fan = e.info.fan;
+			if (fan != null && fan.creator.equals(c)) {
+				e.stale = true;
+				n++;
+			}
+		}
+		return n;
+	}
+
+	/** Alle aktuell bekannten Fan-Symbole (für das Vorladen der Texturen). */
+	public Set<FanInfo> fans() {
+		Set<FanInfo> out = new LinkedHashSet<>();
+		for (Entry e : entries.values()) {
+			if (e.info.fan != null) out.add(e.info.fan);
+		}
+		return out;
 	}
 
 	/** Alles vergessen (Konto gewechselt, API abgeschaltet). */

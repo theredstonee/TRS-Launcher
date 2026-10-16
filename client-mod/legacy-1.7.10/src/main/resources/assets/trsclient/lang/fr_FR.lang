@@ -15,3 +15,7 @@ key.trsclient.social=Ouvrir Social
 key.trsclient.quickReply=Réponse rapide / rejoindre
 key.trsclient.panorama=Prendre un panorama
 key.trsclient.notes=Ouvrir les notes
+key.trsclient.cinematicAdd=Trajet de caméra : ajouter une image clé
+key.trsclient.cinematicPlay=Trajet de caméra : lire / arrêter
+key.trsclient.cinematicRemove=Trajet de caméra : retirer la dernière image clé
+key.trsclient.cinematicClear=Trajet de caméra : effacer

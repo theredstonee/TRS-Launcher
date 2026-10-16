@@ -34,6 +34,11 @@ public final class TrsKeys {
 	public static KeyBinding panorama;
 	/** Öffnet die Notizen der aktuellen Welt im TRS-Menü (standardmäßig unbelegt). */
 	public static KeyBinding notes;
+	/** Kamera-Fahrten: Keyframe setzen, abspielen/anhalten, letzten entfernen, löschen (alle standardmäßig unbelegt). */
+	public static KeyBinding cinematicAdd;
+	public static KeyBinding cinematicPlay;
+	public static KeyBinding cinematicRemove;
+	public static KeyBinding cinematicClear;
 
 	private TrsKeys() {
 	}
@@ -60,6 +65,10 @@ public final class TrsKeys {
 		quickReply = register(new KeyBinding("key.trsclient.quickReply", Keyboard.KEY_Y, CATEGORY));
 		panorama = register(new KeyBinding("key.trsclient.panorama", Keyboard.KEY_NONE, CATEGORY));
 		notes = register(new KeyBinding("key.trsclient.notes", Keyboard.KEY_NONE, CATEGORY));
+		cinematicAdd = register(new KeyBinding("key.trsclient.cinematicAdd", Keyboard.KEY_NONE, CATEGORY));
+		cinematicPlay = register(new KeyBinding("key.trsclient.cinematicPlay", Keyboard.KEY_NONE, CATEGORY));
+		cinematicRemove = register(new KeyBinding("key.trsclient.cinematicRemove", Keyboard.KEY_NONE, CATEGORY));
+		cinematicClear = register(new KeyBinding("key.trsclient.cinematicClear", Keyboard.KEY_NONE, CATEGORY));
 	}
 
 	/**

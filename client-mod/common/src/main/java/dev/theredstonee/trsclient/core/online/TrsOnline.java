@@ -65,6 +65,8 @@ public final class TrsOnline {
 	private final CapeDiskCache capeCache;
 	/** Kopf-Kosmetik im Format 2 (Modell + Texturen, Cache nach Inhalts-Kennung). */
 	private final dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2Cache cosmeticCache;
+	/** Fan-Symbole (API.md §35.4), unveränderlich je Prüfsumme. */
+	private final dev.theredstonee.trsclient.core.creator.SymbolCache symbolCache;
 	private final PlayerDirectory directory = new PlayerDirectory();
 	private final ThreadPoolExecutor apiWorker;
 	private final ThreadPoolExecutor capeWorker;
@@ -131,6 +133,8 @@ public final class TrsOnline {
 		this.capeCache = new CapeDiskCache(capeDir);
 		Path cosmeticDir = capeDir.getParent() != null ? capeDir.getParent().resolve("cosmetics") : capeDir.resolve("cosmetics");
 		this.cosmeticCache = new dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2Cache(cosmeticDir);
+		this.symbolCache = new dev.theredstonee.trsclient.core.creator.SymbolCache(
+				capeDir.getParent() != null ? capeDir.getParent().resolve("symbols") : capeDir.resolve("symbols"));
 		CosmeticModels.install(cosmeticDir.resolve("templates"), config, url -> {
 			try {
 				return api.asset(url, "application/json", CosmeticModels.MAX_BYTES, token);
@@ -403,8 +407,11 @@ public final class TrsOnline {
 			} else if (e.type.equals("badge")) {
 				// Spielt gerade (nicht mehr) mit TRS → Abzeichen sofort, ohne neue Anfrage.
 				directory.applyBadge(e.uuid, e.badge);
+			} else if (e.type.equals("fan_creator")) {
+				// Ein Creator hat ein neues Symbol: alle seine sichtbaren Fans neu nachschlagen.
+				directory.invalidateFansOf(e.uuid);
 			} else if (e.uuid != null) {
-				// Umhang/Kosmetik/Skin geändert → beim nächsten Stapel neu nachschlagen.
+				// Umhang/Kosmetik/Skin/Fan-Symbol geändert → beim nächsten Stapel neu nachschlagen.
 				directory.invalidate(e.uuid);
 			}
 		}
@@ -777,6 +784,32 @@ public final class TrsOnline {
 				results.add(() -> done.accept(loaded));
 			} catch (IOException | ApiException | RuntimeException e) {
 				platform.log("TRS API: Kosmetik '" + hat.id + "' nicht ladbar (" + e.getMessage() + ")");
+				results.add(failed);
+			}
+		})) failed.run();
+	}
+
+	/**
+	 * Lädt ein Fan-Symbol (Platte oder Netz) und zerlegt es in Bilder – im Textur-Thread. Genau einer der Rückrufe läuft
+	 * danach im Spiel-Thread (nächster Tick).
+	 */
+	public void loadSymbol(final SymbolInfo symbol,
+			final java.util.function.Consumer<dev.theredstonee.trsclient.core.creator.SymbolFrames> done, final Runnable failed) {
+		final String t = token;
+		if (!submit(capeWorker, () -> {
+			try {
+				byte[] png = symbolCache.load(symbol.sha256, symbol.url, url -> {
+					try {
+						return api.asset(url, "image/png", dev.theredstonee.trsclient.core.creator.SymbolCache.MAX_BYTES, t);
+					} catch (ApiException e) {
+						throw new IOException("HTTP " + e.status() + " " + e.code());
+					}
+				});
+				dev.theredstonee.trsclient.core.creator.SymbolFrames frames =
+						dev.theredstonee.trsclient.core.creator.SymbolFrames.decode(png, symbol);
+				results.add(() -> done.accept(frames));
+			} catch (IOException | RuntimeException e) {
+				platform.log("TRS API: Fan-Symbol " + symbol.sha256.substring(0, 12) + " nicht ladbar (" + e.getMessage() + ")");
 				results.add(failed);
 			}
 		})) failed.run();

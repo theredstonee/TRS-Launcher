@@ -124,6 +124,8 @@ public final class TrsClient {
 				client.modules.colors));
 		// Sozial (Chat, Toasts) braucht die TRS-Online-Funktionen – hier ausgeblendet.
 		UNSUPPORTED.add(client.modules.social);
+		// Kamera-Fahrten (eigene Kamera) sind für 1.13.2 nicht umgesetzt.
+		UNSUPPORTED.add(client.modules.cinematic.cinematic);
 		// Screenshot-Werkzeuge ohne eigene Chatzeile; Essential gibt es für 1.13.2 nicht.
 		UNSUPPORTED.addAll(Arrays.<Object>asList(client.modules.comfort.shotChatActions, client.modules.comfort.shotReplaceEssential));
 		// Notiz-Sync braucht die TRS-Online-Funktionen – Notizen bleiben hier lokal.

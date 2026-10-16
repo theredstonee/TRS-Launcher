@@ -119,6 +119,10 @@ def mixinClasses = ['CameraMixin', 'CrosshairMixin', 'FovMixin', 'GuiMixin', 'Li
 		// Farben: Farb-Durchgang direkt nach GameRenderer#renderLevel (vor HUD und Menüs).
 		'ColorGradeMixin']
 if (stonecutter.eval(mc, '>=1.21.2')) mixinClasses << 'EmoteStateMixin'
+// Creator-Programm: Fan-Symbol als Bild vor erweiterten Namen (Schrift-Aufrufe bis 26.1, ab 26.2 beim Einreichen).
+if (stonecutter.eval(mc, '<26.2')) mixinClasses << 'FanTextMixin'
+mixinClasses << 'FanGuiMixin'
+if (stonecutter.eval(mc, '>=26.2')) mixinClasses << 'FanNameTagMixin'
 // Menü-Stil (Pause, Serverliste, Laden, Optionen, Welten): Hintergrund, Knöpfe, Karten, Ladebildschirme.
 mixinClasses += ['MenuScreenMixin', 'MenuButtonMixin', 'MenuEditBoxMixin', 'ServerEntryMixin', 'WorldEntryMixin', 'LoadingOverlayMixin',
 		'JoinMultiplayerAccessor']

@@ -15,5 +15,9 @@
 	"key.trsclient.social": "Sociaal openen",
 	"key.trsclient.quickReply": "Snel antwoorden / meedoen",
 	"key.trsclient.panorama": "Panorama opnemen",
-	"key.trsclient.notes": "Notities openen"
+	"key.trsclient.notes": "Notities openen",
+	"key.trsclient.cinematicAdd": "Camerapad: keyframe toevoegen",
+	"key.trsclient.cinematicPlay": "Camerapad: afspelen / stoppen",
+	"key.trsclient.cinematicRemove": "Camerapad: laatste keyframe verwijderen",
+	"key.trsclient.cinematicClear": "Camerapad: wissen"
 }

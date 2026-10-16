@@ -98,6 +98,8 @@ public final class TrsModules {
 	public final CircuitModules circuits;
 	/** Notizen je Welt (Notizbuch, Checklisten, Koordinaten-Links, angeheftete Notiz im HUD). */
 	public final NotesModules notes;
+	/** Kamera-Fahrten (Keyframes, Abspielen, Vorschau). */
+	public final CinematicModules cinematic;
 	/** Server-Profile (automatischer Wechsel je Server; nach den HUD-Profilen gelesen/geschrieben). */
 	public final dev.theredstonee.trsclient.core.profile.ServerProfiles serverProfiles;
 
@@ -297,6 +299,10 @@ public final class TrsModules {
 	// --- TRS-Online / Umhänge ---
 	public final BoolSetting badgeTab;
 	public final BoolSetting badgeNametag;
+	/** Fan-Symbole und Creator-Sterne über Namen (Creator-Programm). */
+	public final BoolSetting fanSymbolNametag;
+	/** Fan-Symbole und Creator-Sterne in der Tabliste. */
+	public final BoolSetting fanSymbolTab;
 	public final BoolSetting trsCapes;
 	/** TRS-Kosmetik auf dem Kopf (z. B. die Quietscheente) bei allen Spielern zeigen. */
 	public final BoolSetting trsCosmetics;
@@ -849,6 +855,8 @@ public final class TrsModules {
 		worldMapExportSize = worldMap.add(new NumberSetting("exportSize", "Largest image when exporting", 8192, 1024, 16384, 1024, "", " px"));
 		badgeTab = trsOnline.add(new BoolSetting("badgeTab", "Badge in the tab list", true));
 		badgeNametag = trsOnline.add(new BoolSetting("badgeNametag", "Badge above names", true));
+		fanSymbolNametag = trsOnline.add(new BoolSetting("fanSymbolNametag", "Fan symbols and creator stars above names", true));
+		fanSymbolTab = trsOnline.add(new BoolSetting("fanSymbolTab", "Fan symbols and creator stars in the tab list", true));
 		trsCapes = trsOnline.add(new BoolSetting("capes", "Show TRS capes", true));
 		trsCosmetics = trsOnline.add(new BoolSetting("cosmetics", "Show TRS cosmetics (hats)", true));
 		syncClient = trsOnline.add(new BoolSetting("sync", "Sync with TRS account", true));
@@ -934,6 +942,7 @@ public final class TrsModules {
 		comfort = new ComfortModules(registry);
 		circuits = new CircuitModules(registry);
 		notes = new NotesModules(registry);
+		cinematic = new CinematicModules(registry);
 
 		registry.addPart(keyDefaults);
 		registry.addPart(perfUndo);
