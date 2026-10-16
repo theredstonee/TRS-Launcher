@@ -126,6 +126,11 @@ public final class AutoTest {
 			MenusTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=halloween: Halloween 2026 (Startbildschirm, Seite Halloween, Mondlauf, Spuk-Effekte, Jumpscares)
+		if ("halloween".equals(System.getProperty("trsclient.autotest.only"))) {
+			HalloweenTest.install();
+			return;
+		}
 		// -PtrsAutotestOnly=winter: Design „Winternacht“ (Startbildschirm Nacht/Polarlicht/Pinguin/Tag, TRS-Menü, Laden, Pause)
 		if ("winter".equals(System.getProperty("trsclient.autotest.only"))) {
 			WinterTest.install();
