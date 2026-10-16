@@ -18,6 +18,11 @@ import {
   samplePoses,
   transformPoint,
   validateModel,
+  blendPoses,
+  createStateMixer,
+  resolveDriver,
+  stateAnimations,
+  wingState,
   type CosmeticModel,
   type Vec3,
 } from '../app/utils/cosmetic-v2/format'
@@ -176,5 +181,56 @@ describe.skipIf(!hasStudio)('Kosmetik v2 – gleich wie die Studio-Referenz', ()
         expect(frameAt(t, m.glow?.frames, m.glow?.frameTimeMs)).toBe(ref.frameAt(t, m.glow?.frames, m.glow?.frameTimeMs))
       }
     }
+  })
+})
+
+describe('Kosmetik v2 – Flügel (attach body, Zustände)', () => {
+  const wings = (): CosmeticModel => {
+    const m = tiny()
+    m.slot = 'wings'
+    m.attach = 'body'
+    m.animations = [
+      { id: 'idle', driver: 'idle', lengthMs: 1000, tracks: [{ bone: 'root', channel: 'rotation', interpolation: 'linear', keys: [{ t: 0, v: [0, 0, 0] }, { t: 1000, v: [0, 0, 0] }] }] },
+      { id: 'air', driver: 'air', lengthMs: 1000, tracks: [{ bone: 'root', channel: 'rotation', interpolation: 'step', keys: [{ t: 0, v: [0, 40, 0] }] }] },
+    ]
+    return m
+  }
+  const slotErrors = (m: unknown) => validateModel(m).errors.filter((e) => e.startsWith('slot') || e.startsWith('attach'))
+
+  it('Flügel hängen am Rumpf, Hüte am Kopf', () => {
+    expect(slotErrors(wings())).toEqual([])
+    expect(slotErrors({ ...wings(), attach: 'head' })).toHaveLength(1)
+    expect(slotErrors({ ...tiny(), attach: 'body' })).toHaveLength(1)
+    expect(slotErrors({ ...tiny(), slot: 'back' })).toHaveLength(1)
+  })
+
+  it('Zustand: sneak vor air vor idle', () => {
+    expect(wingState({ crouching: true, onGround: true })).toBe('sneak')
+    expect(wingState({ crouching: true, flying: true, onGround: false })).toBe('air')
+    expect(wingState({ onGround: false })).toBe('air')
+    expect(wingState({ onGround: false, inLiquid: true })).toBe('idle')
+    expect(wingState({ onGround: true })).toBe('idle')
+  })
+
+  it('Rückfall auf idle und exklusive Zustands-Animationen', () => {
+    const m = wings()
+    expect(resolveDriver(m, 'air')).toBe('air')
+    expect(resolveDriver(m, 'sneak')).toBe('idle')
+    expect(stateAnimations(m, 0, 'air').get('root')!.rotation[1]).toBe(40)
+    expect(stateAnimations(m, 0, 'idle').get('root')!.rotation[1]).toBe(0)
+  })
+
+  it('blendet 250 ms weich über', () => {
+    const m = wings()
+    const mix = createStateMixer()
+    expect(mix.pose(m, 0, 'idle').get('root')!.rotation[1]).toBe(0)
+    mix.pose(m, 1000, 'air')
+    expect(mix.state).toBe('air')
+    const half = mix.pose(m, 1125, 'air').get('root')!.rotation[1]
+    expect(half).toBeCloseTo(20)
+    expect(mix.pose(m, 1300, 'air').get('root')!.rotation[1]).toBe(40)
+    // Fehlende Knochen zählen als Ruhe.
+    const b = blendPoses(new Map(), new Map([['x', { position: [2, 0, 0], rotation: [0, 0, 0], scale: [3, 1, 1] }]]), 0.5)
+    expect(b.get('x')).toEqual({ position: [1, 0, 0], rotation: [0, 0, 0], scale: [2, 1, 1] })
   })
 })

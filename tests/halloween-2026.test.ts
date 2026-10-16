@@ -48,6 +48,8 @@ describe('Halloween 2026 – Regeln', () => {
     expect(odd.effects).toEqual({ hits: true, trail: true })
     expect(pumpkinFoundSchema.parse({ found: ['launcher-logs'], count: 1, complete: false, reward: null }).count).toBe(1)
     expect(trickOutcomeSchema.parse({ result: 'sour', reward: null, next: null }).result).toBe('sour')
+    expect(s.wings).toEqual({ choice: null, canChoose: false, options: [] })
+    expect(halloweenStateSchema.parse({ ...sample, wings: { choice: null, canChoose: true, options: ['bat_wings', 'ghost_wings'] } }).wings.canChoose).toBe(true)
     expect(stickerSchema.safeParse({ id: '../x', name: { de: '', en: '', es: '' }, image: null, owned: false }).success).toBe(false)
   })
 

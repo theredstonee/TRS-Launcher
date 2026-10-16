@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { SkinVariant } from '~/types'
 import type { CosmeticInstance } from '~/utils/cosmetic-v2/view'
-import { modelTop, validateModel, type CosmeticModel, type ViewerCosmetic } from '~/utils/cosmetic-v2/format'
+import { modelTop, validateModel, type CosmeticModel, type ViewerCosmetic, type WingState } from '~/utils/cosmetic-v2/format'
 
 // 3D-Vorschau des Skins (skinview3d, mitgeliefert – kein CDN, damit die CSP
 // eng bleibt). Texturen kommen als Data-URL aus dem Kern; dadurch darf WebGL
@@ -30,6 +30,10 @@ const props = withDefaults(
     cosmetic?: ViewerCosmetic | null
     /** Begleiter (slot companion), zusätzlich zum Hut, dieselbe Pipeline. */
     companion?: ViewerCosmetic | null
+    /** Flügel (slot wings, `attach: body`): hängen am Rumpf, Ursprung am Nacken. */
+    wings?: ViewerCosmetic | null
+    /** Zustand für die Zustands-Animationen der Flügel (idle/air/sneak); sneak neigt den Rumpf. */
+    wingState?: WingState
     /** Nacht: Licht gedimmt, Leuchten bleibt voll hell. */
     night?: boolean
     /** Kamera: ganzer Spieler oder Kopf + Schultern (für Kopf-Kosmetik). */
@@ -48,6 +52,8 @@ const props = withDefaults(
     capeFrame: 0,
     cosmetic: null,
     companion: null,
+    wings: null,
+    wingState: 'idle',
     night: false,
     focus: 'body',
     resetTick: 0,
@@ -205,12 +211,15 @@ interface CosmeticSlot {
 
 const hatSlot: CosmeticSlot = { inst: null, top: 8, token: 0, emptyTop: 8 }
 const companionSlot: CosmeticSlot = { inst: null, top: 0, token: 0, emptyTop: 0 }
+/** Flügel am Rumpf (Kamera: zählen nur, wenn sie über den Nacken ragen). */
+const wingsSlot: CosmeticSlot = { inst: null, top: 0, token: 0, emptyTop: 0 }
 
 /** Oberkante für die Kamera: Hut und Begleiter zusammen, mindestens der Nacken. */
 function cameraTop(): number {
   const hat = hatSlot.inst ? hatSlot.top : hatSlot.emptyTop
   const buddy = companionSlot.inst ? companionSlot.top : companionSlot.emptyTop
-  return Math.max(hat, buddy)
+  const wings = wingsSlot.inst ? wingsSlot.top : wingsSlot.emptyTop
+  return Math.max(hat, buddy, wings)
 }
 
 async function applySlot(slot: CosmeticSlot, data: ViewerCosmetic | null | undefined) {
@@ -238,7 +247,12 @@ async function applySlot(slot: CosmeticSlot, data: ViewerCosmetic | null | undef
     slot.inst?.dispose()
     slot.inst = next
     slot.top = modelTop(data.model as unknown as CosmeticModel)
-    viewer.playerObject.skin.head.add(next.root)
+    if (slot === wingsSlot) {
+      // Rumpf von skinview3d: Mitte bei y = −6, also Nacken (Ursprung von attach: body) bei +6 im Rumpf.
+      slot.top = Math.max(0, ...(data.model as unknown as CosmeticModel).cubes.map((c) => c.to[1]))
+      next.root.position.y = 6
+      viewer.playerObject.skin.body.add(next.root)
+    } else viewer.playerObject.skin.head.add(next.root)
     applyLight()
     next.update(Date.now(), { camera: viewer.camera })
     applyFocus()
@@ -254,6 +268,7 @@ async function applySlot(slot: CosmeticSlot, data: ViewerCosmetic | null | undef
 function applyCosmetics() {
   void applySlot(hatSlot, props.cosmetic)
   void applySlot(companionSlot, props.companion)
+  void applySlot(wingsSlot, props.wings)
 }
 
 function applyLight() {
@@ -263,6 +278,7 @@ function applyLight() {
   const light = props.night ? NIGHT.cosmetic : 1
   hatSlot.inst?.setLight(light)
   companionSlot.inst?.setLight(light)
+  wingsSlot.inst?.setLight(light)
 }
 
 // --- Kamera ------------------------------------------------------------------------------------
@@ -363,7 +379,21 @@ function beforeRender() {
     const now = Date.now()
     hatSlot.inst?.update(now, { camera: viewer.camera })
     companionSlot.inst?.update(now, { camera: viewer.camera })
+    wingsSlot.inst?.update(now, { camera: viewer.camera, state: props.wingState })
+    leanForSneak()
   }
+}
+
+/** Schleich-Vorschau: Rumpf 0,5 rad um den Nacken nach vorn neigen (wie Vanilla, §7). */
+const SNEAK_LEAN = 0.5
+function leanForSneak() {
+  const body = viewer?.playerObject.skin.body
+  if (!body) return
+  const lean = props.wingState === 'sneak' && !!wingsSlot.inst ? SNEAK_LEAN : 0
+  if (lean === 0 && body.rotation.x === 0) return
+  body.rotation.x = lean
+  body.position.y = -6 * Math.cos(lean)
+  body.position.z = -6 * Math.sin(lean)
 }
 
 function resize() {
@@ -385,10 +415,13 @@ onBeforeUnmount(() => {
   capeToken++
   hatSlot.token++
   companionSlot.token++
+  wingsSlot.token++
   hatSlot.inst?.dispose()
   companionSlot.inst?.dispose()
+  wingsSlot.inst?.dispose()
   hatSlot.inst = null
   companionSlot.inst = null
+  wingsSlot.inst = null
   observer?.disconnect()
   viewer?.dispose()
   viewer = null
@@ -400,6 +433,7 @@ watch(() => props.animation, (kind) => void setAnimation(kind))
 watch(() => props.height, resize)
 watch(() => props.cosmetic, () => void applySlot(hatSlot, props.cosmetic))
 watch(() => props.companion, () => void applySlot(companionSlot, props.companion))
+watch(() => props.wings, () => void applySlot(wingsSlot, props.wings))
 watch(() => props.night, applyLight)
 watch(() => props.focus, () => applyFocus())
 watch(

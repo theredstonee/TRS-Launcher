@@ -334,7 +334,9 @@
       "helper_invite_not_found": "Esta invitación ya no existe.",
       "pumpkin_unknown": "Esta calabaza no existe.",
       "trick_used": "Ya llamaste hoy, ¡vuelve mañana!",
-      "sticker_locked": "Aún no tienes este sticker."
+      "sticker_locked": "Aún no tienes este sticker.",
+      "wings_chosen": "Ya elegiste tus alas de Halloween.",
+      "hunt_incomplete": "Primero encuentra las 13 calabazas; después podrás elegir alas."
     },
     "auth": {
       "accountMismatch": "El inicio de sesión pertenece a otra cuenta: vuelve a iniciar sesión.",
@@ -3853,7 +3855,8 @@
       "team": "Solo para el equipo de TRS.",
       "event": "Gratis mientras el evento esté activo para ti. Después te lo quedas.",
       "eventEnded": "El evento ha terminado: ahora este objeto no es gratis.",
-      "other": "No disponible por ahora."
+      "other": "No disponible por ahora.",
+      "reward": "Solo como recompensa (caza de calabazas de Halloween o truco o trato)."
     },
     "selected": {
       "owned": "Desbloqueado: póntelo para que los demás lo vean en el juego.",
@@ -3881,6 +3884,23 @@
       "toasts": {
         "on": "«{name}» vuela contigo",
         "off": "Compañero quitado"
+      }
+    },
+    "wings": {
+      "title": "Alas",
+      "intro": "Van en tu espalda además del sombrero y el acompañante. La vista previa las muestra en el suelo, en el aire y agachado.",
+      "empty": "Aún no hay alas.",
+      "wearing": "Alas: {name}",
+      "selectedWorn": "En tu espalda: todos con TRS Client las ven.",
+      "toasts": {
+        "on": "«{name}» van en tu espalda",
+        "off": "Alas quitadas"
+      },
+      "states": "Alas:",
+      "state": {
+        "idle": "En el suelo",
+        "air": "En el aire",
+        "sneak": "Agachado"
       }
     }
   },
@@ -7589,7 +7609,7 @@
       "complete": "¡Las 13! Insignia «Cazador de calabazas 2026» y capa desbloqueadas.",
       "pumpkinLabel": "Una calabaza escondida",
       "rewardLabel": "Recompensa por las 13:",
-      "rewardCape": "+ capa «Cazador de calabazas»",
+      "rewardCape": "+ capa «Cazador de calabazas» y unas de 4 alas de Halloween a elegir",
       "logLine": "[🎃] Algo sonríe entre estas líneas …"
     },
     "badges": {
@@ -7603,6 +7623,16 @@
       "locked": "{name} – aún no es tuyo",
       "howTo": "Consigue stickers con truco o trato en la página de inicio.",
       "open": "Stickers"
+    },
+    "wings": {
+      "title": "Elige tus alas de Halloween",
+      "text": "¡Encontraste las 13 calabazas! Elige UNAS de las cuatro alas de Halloween; la elección es definitiva.",
+      "yours": "Tus alas de Halloween: {name}",
+      "tryOn": "Pruébalas antes en Skins → Cosméticos → Alas.",
+      "confirmTitle": "¿Elegir estas alas?",
+      "confirmText": "«{name}» serán tuyas para siempre. Solo puedes elegir una vez; las otras tres alas quedan bloqueadas.",
+      "confirm": "Elegir definitivamente",
+      "chosen": "¡«{name}» ya son tuyas!"
     }
   }
 }

@@ -30,6 +30,7 @@ function demoState(): HalloweenState {
     trick: { usedToday: false, result: null, reward: null, next: null },
     badges: ['halloween2026'],
     effects: { hits: true, trail: true },
+    wings: { choice: null, canChoose: true, options: ['bat_wings', 'demon_wings', 'raven_wings', 'ghost_wings'] },
   }
 }
 
@@ -129,6 +130,16 @@ export const useHalloweenStore = defineStore('halloween', () => {
       useTrsStore().capesRevision++
     }
     return outcome
+  }
+
+  /** Flügel wählen (nach allen 13 Kürbissen, endgültig). */
+  async function chooseWings(id: string) {
+    if (demo) {
+      if (state.value) state.value = { ...state.value, wings: { ...state.value.wings, choice: id, canChoose: false } }
+      return
+    }
+    state.value = await backend.halloween.chooseWings(id)
+    useTrsStore().capesRevision++
   }
 
   async function setEffects(effects: { hits: boolean; trail: boolean }) {
@@ -236,6 +247,7 @@ export const useHalloweenStore = defineStore('halloween', () => {
     load,
     find,
     trick,
+    chooseWings,
     setEffects,
     loadStickers,
     ensureBadges,

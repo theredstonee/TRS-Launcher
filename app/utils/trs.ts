@@ -115,7 +115,7 @@ export const trsRedeemSchema = z.object({
 
 /** Eigene Kopf-Kosmetik (nur Teile, die der TRS Client zeichnen kann). */
 /** Kopf-Kosmetik: `hat` (Kopf) oder `companion` (Begleiter, z. B. Fledermaus). */
-export const trsCosmeticSlotSchema = z.enum(['hat', 'companion']).catch('hat').default('hat')
+export const trsCosmeticSlotSchema = z.enum(['hat', 'companion', 'wings']).catch('hat').default('hat')
 export const trsHatSchema = z.object({ id: capeId, name: text(48), slot: trsCosmeticSlotSchema, template: text(32), equipped: z.boolean() })
 export type TrsHat = z.infer<typeof trsHatSchema>
 

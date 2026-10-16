@@ -938,6 +938,8 @@ export const backend = {
     setHat: (id: string | null) => call<void>('trs_set_hat', { id }),
     /** Begleiter (Fledermaus …) auf-/absetzen, unabhängig vom Hut. */
     setCompanion: (id: string | null) => call<void>('trs_set_companion', { id }),
+    /** Flügel (slot wings, am Rumpf) anlegen oder ablegen. */
+    setWings: (id: string | null) => call<void>('trs_set_wings', { id }),
     /** Event-Kosmetik bzw. -Umhang gratis holen (nur solange das Event für dich läuft). */
     claimCosmetic: (id: string) => call<void>('trs_claim_cosmetic', { id }),
     claimCape: (id: string) => call<void>('trs_claim_cape', { id }),
@@ -1202,6 +1204,8 @@ export const backend = {
     setEffects: (effects: { hits: boolean; trail: boolean }) => call<void>('halloween_set_effects', { effects }),
     stickers: () => checked(z.array(stickerSchema), 'halloween_stickers'),
     badgeImages: (ids: string[]) => checked(z.array(badgeImageSchema), 'trs_badge_images', { ids }),
+    /** Flügel nach allen 13 Kürbissen wählen (endgültig) – liefert den neuen Stand. */
+    chooseWings: (id: string) => checked(halloweenStateSchema, 'halloween_choose_wings', { id }),
   },
 
   /**

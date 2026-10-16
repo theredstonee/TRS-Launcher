@@ -92,6 +92,11 @@ export const halloweenStateSchema = z.object({
   }),
   badges: z.array(itemId).max(16).catch([]),
   effects: z.object({ hits: z.boolean(), trail: z.boolean() }).catch({ hits: true, trail: true }),
+  /** Flügel-Wahl nach allen 13 Kürbissen (genau einer, endgültig); ältere Kerne: nichts. */
+  wings: z
+    .object({ choice: itemId.nullable(), canChoose: z.boolean(), options: z.array(itemId).max(8) })
+    .catch({ choice: null, canChoose: false, options: [] })
+    .default({ choice: null, canChoose: false, options: [] }),
 })
 export type HalloweenState = z.infer<typeof halloweenStateSchema>
 

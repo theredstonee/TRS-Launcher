@@ -14,10 +14,11 @@ import {
   haloFacing,
   haloFalloff,
   haloIntensity,
-  samplePoses,
+  createStateMixer,
   type CosmeticHalo,
   type CosmeticModel,
   type Vec3,
+  type WingState,
 } from './format'
 
 const MAT_INDEX = { cutout: 0, emissive: 1, translucent: 2 } as const
@@ -25,10 +26,13 @@ const MAT_INDEX = { cutout: 0, emissive: 1, translucent: 2 } as const
 export type CosmeticImage = HTMLImageElement | HTMLCanvasElement | ImageBitmap
 
 export interface CosmeticInstance {
-  /** An den Kopf hängen (Ursprung = Nacken, wie ModelPart head). */
+  /** An den Kopf hängen (`attach: head`) bzw. an den Rumpf (`attach: body`) – beide Ursprünge am Nacken. */
   root: THREE.Group
-  /** Pose, Streifen-Bilder und Höfe zur Wanduhr `timeMs` setzen. */
-  update(timeMs: number, opts?: { animate?: boolean; glow?: boolean; camera?: THREE.Camera | null }): void
+  /**
+   * Pose, Streifen-Bilder und Höfe zur Wanduhr `timeMs` setzen. `state` = Zustand für
+   * Zustands-Animationen (idle/air/sneak, §7) mit 250 ms Überblenden; ohne Angabe idle.
+   */
+  update(timeMs: number, opts?: { animate?: boolean; glow?: boolean; camera?: THREE.Camera | null; state?: WingState }): void
   /** Umgebungslicht 0…1 (nur cutout/translucent; emissive und Leuchten bleiben voll hell). */
   setLight(f: number): void
   dispose(): void
@@ -203,11 +207,12 @@ export function createCosmetic(model: CosmeticModel, images: { texture: Cosmetic
   const scl = new THREE.Vector3()
   const worldScale = (o: THREE.Object3D) => o.getWorldScale(scl).x
   let glowOn = true
+  const mixer = createStateMixer()
 
   return {
     root,
-    update(timeMs, { animate = true, glow = true, camera = null } = {}) {
-      const poses = animate ? samplePoses(model, timeMs) : null
+    update(timeMs, { animate = true, glow = true, camera = null, state = 'idle' } = {}) {
+      const poses = animate ? mixer.pose(model, timeMs, state) : null
       for (const b of model.bones) bones.get(b.id)!.matrix.fromArray(boneLocal(b, poses?.get(b.id)))
       root.updateMatrixWorld(true)
       if (glow !== glowOn) {

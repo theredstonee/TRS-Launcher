@@ -5,7 +5,7 @@ import type { TrsHeadCosmetic } from '~/utils/trs'
 // gesperrt – versteckte nur, wenn man sie hat). Klick = in der großen 3D-Vorschau
 // der Seite anprobieren (per `preview`), Aufsetzen/Absetzen, und bei gesperrten
 // Teilen steht dabei, wie man sie bekommt (Code, Erfolg, nur Team).
-const props = withDefaults(defineProps<{ previewId: string | null; night: boolean; cosmeticSlot?: 'hat' | 'companion' }>(), {
+const props = withDefaults(defineProps<{ previewId: string | null; night: boolean; cosmeticSlot?: 'hat' | 'companion' | 'wings' }>(), {
   cosmeticSlot: 'hat',
 })
 const emit = defineEmits<{
@@ -25,14 +25,17 @@ const loading = ref(false)
 const offline = ref(false)
 const busy = ref(false)
 
-const listed = computed(() =>
-  (items.value ?? []).filter((c) => (props.cosmeticSlot === 'companion' ? c.slot === 'companion' : c.slot === 'hat')),
-)
+const listed = computed(() => (items.value ?? []).filter((c) => c.slot === props.cosmeticSlot))
 const equipped = computed(() => listed.value.find((c) => c.equipped) ?? null)
 // Die Seite zeigt das getragene Teil in der Vorschau – so wie andere es im Spiel sehen.
 watch(equipped, (item) => emit('equipped', item), { immediate: true })
 const selected = computed(() => listed.value.find((c) => c.id === props.previewId) ?? null)
 const companion = computed(() => props.cosmeticSlot === 'companion')
+const wings = computed(() => props.cosmeticSlot === 'wings')
+/** Text je Fach: Hut, Begleiter oder Flügel. */
+function pick(hat: string, buddy: string, wing: string): string {
+  return wings.value ? wing : companion.value ? buddy : hat
+}
 
 async function load() {
   if (!trs.enabled || !accounts.active) {
@@ -86,12 +89,13 @@ async function wear(item: TrsHeadCosmetic | null) {
   if (busy.value) return
   busy.value = true
   try {
-    if (companion.value) await backend.trs.setCompanion(item?.id ?? null)
+    if (wings.value) await backend.trs.setWings(item?.id ?? null)
+    else if (companion.value) await backend.trs.setCompanion(item?.id ?? null)
     else await backend.trs.setHat(item?.id ?? null)
     toasts.ok(
       item
-        ? t(companion.value ? 'headCosmetics.companion.toasts.on' : 'capes.toasts.hatOn', { name: item.name })
-        : t(companion.value ? 'headCosmetics.companion.toasts.off' : 'capes.toasts.hatOff'),
+        ? tKey(pick('capes.toasts.hatOn', 'headCosmetics.companion.toasts.on', 'headCosmetics.wings.toasts.on'), { name: item.name })
+        : tKey(pick('capes.toasts.hatOff', 'headCosmetics.companion.toasts.off', 'headCosmetics.wings.toasts.off')),
     )
     await load()
   } catch (e) {
@@ -132,6 +136,7 @@ function lockClass(item: TrsHeadCosmetic) {
   if (item.unlock === 'code') return 'bg-lamp-900/60 text-lamp-300'
   if (item.unlock === 'achievement') return 'bg-base-800 text-lamp-200'
   if (item.unlock === 'event') return 'bg-lamp-900/60 text-lamp-300'
+  if (item.unlock === 'reward') return 'bg-[#3a1f5c]/60 text-[#e8a866]'
   return 'bg-redstone-900/50 text-redstone-300'
 }
 
@@ -159,6 +164,8 @@ const howText = computed(() => {
       return t('headCosmetics.how.team')
     case 'event':
       return item.unlockEvent && events.has(item.unlockEvent) ? t('headCosmetics.how.event') : t('headCosmetics.how.eventEnded')
+    case 'reward':
+      return t('headCosmetics.how.reward')
     default:
       return t('headCosmetics.how.other')
   }
@@ -166,16 +173,16 @@ const howText = computed(() => {
 </script>
 
 <template>
-  <section :aria-labelledby="companion ? 'trs-companion-title' : 'trs-head-title'" :data-testid="companion ? 'trs-companions' : 'trs-head-cosmetics'">
+  <section :aria-labelledby="pick('trs-head-title', 'trs-companion-title', 'trs-wings-title')" :data-testid="pick('trs-head-cosmetics', 'trs-companions', 'trs-wings')">
     <div class="mb-2 flex flex-wrap items-center gap-2">
-      <h2 :id="companion ? 'trs-companion-title' : 'trs-head-title'" class="section-title">
-        {{ t(companion ? 'headCosmetics.companion.title' : 'headCosmetics.title') }}
+      <h2 :id="pick('trs-head-title', 'trs-companion-title', 'trs-wings-title')" class="section-title">
+        {{ tKey(pick('headCosmetics.title', 'headCosmetics.companion.title', 'headCosmetics.wings.title')) }}
       </h2>
       <span v-if="equipped" class="badge bg-ok/10 text-ok">
-        {{ t(companion ? 'headCosmetics.companion.wearing' : 'headCosmetics.wearing', { name: equipped.name }) }}
+        {{ tKey(pick('headCosmetics.wearing', 'headCosmetics.companion.wearing', 'headCosmetics.wings.wearing'), { name: equipped.name }) }}
       </span>
     </div>
-    <p class="mb-3 text-xs text-base-400">{{ t(companion ? 'headCosmetics.companion.intro' : 'headCosmetics.intro') }}</p>
+    <p class="mb-3 text-xs text-base-400">{{ tKey(pick('headCosmetics.intro', 'headCosmetics.companion.intro', 'headCosmetics.wings.intro')) }}</p>
 
     <TrsGate what="cosmetics">
       <div v-if="offline" class="card flex items-center gap-3 px-4 py-3 text-sm text-base-400">
@@ -187,7 +194,7 @@ const howText = computed(() => {
         <div v-for="i in 6" :key="i" class="skeleton aspect-[4/5]" />
       </div>
       <template v-else-if="items">
-        <ul v-stagger class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3" :data-testid="companion ? 'trs-companion-list' : 'trs-head-list'">
+        <ul v-stagger class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3" :data-testid="pick('trs-head-list', 'trs-companion-list', 'trs-wings-list')">
           <li v-for="item in listed" :key="item.id">
             <button
               class="card card-hover card-lift group flex h-full w-full flex-col items-center gap-2 p-2 pb-3"
@@ -239,7 +246,7 @@ const howText = computed(() => {
           </li>
         </ul>
         <p v-if="!listed.length" class="card px-4 py-6 text-center text-sm text-base-400">
-          {{ t(companion ? 'headCosmetics.companion.empty' : 'headCosmetics.empty') }}
+          {{ tKey(pick('headCosmetics.empty', 'headCosmetics.companion.empty', 'headCosmetics.wings.empty')) }}
         </p>
 
         <!-- Aktionen für das angeprobte Teil -->
@@ -252,7 +259,7 @@ const howText = computed(() => {
             <p v-else class="text-xs text-base-400">
               {{
                 selected.equipped
-                  ? t(companion ? 'headCosmetics.companion.selectedWorn' : 'headCosmetics.selected.worn')
+                  ? tKey(pick('headCosmetics.selected.worn', 'headCosmetics.companion.selectedWorn', 'headCosmetics.wings.selectedWorn'))
                   : t('headCosmetics.selected.owned')
               }}
             </p>

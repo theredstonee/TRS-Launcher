@@ -334,7 +334,9 @@
       "helper_invite_not_found": "Diese Einladung gibt es nicht mehr.",
       "pumpkin_unknown": "Diesen Kürbis gibt es nicht.",
       "trick_used": "Heute hast du schon angeklopft – morgen wieder!",
-      "sticker_locked": "Diesen Sticker hast du noch nicht."
+      "sticker_locked": "Diesen Sticker hast du noch nicht.",
+      "wings_chosen": "Du hast deine Halloween-Flügel schon gewählt.",
+      "hunt_incomplete": "Erst alle 13 Kürbisse finden – dann darfst du Flügel wählen."
     },
     "auth": {
       "accountMismatch": "Die Anmeldung gehört zu einem anderen Account – bitte erneut anmelden.",
@@ -3853,7 +3855,8 @@
       "team": "Nur für das TRS-Team.",
       "event": "Gratis, solange das Event für dich läuft. Danach behältst du es.",
       "eventEnded": "Das Event ist vorbei – dieses Teil gibt es gerade nicht gratis.",
-      "other": "Zurzeit nicht erhältlich."
+      "other": "Zurzeit nicht erhältlich.",
+      "reward": "Nur als Belohnung (Halloween-Kürbis-Suche oder Süßes oder Saures)."
     },
     "selected": {
       "owned": "Freigeschaltet – setz es auf, damit andere es im Spiel sehen.",
@@ -3881,6 +3884,23 @@
       "toasts": {
         "on": "„{name}“ fliegt mit",
         "off": "Begleiter abgesetzt"
+      }
+    },
+    "wings": {
+      "title": "Flügel",
+      "intro": "Sitzen zusätzlich zu Hut und Begleiter auf deinem Rücken. Die Vorschau zeigt sie am Boden, in der Luft und beim Schleichen.",
+      "empty": "Noch keine Flügel.",
+      "wearing": "Flügel: {name}",
+      "selectedWorn": "Auf deinem Rücken – alle mit TRS Client sehen sie.",
+      "toasts": {
+        "on": "„{name}“ sitzen auf deinem Rücken",
+        "off": "Flügel abgelegt"
+      },
+      "states": "Flügel:",
+      "state": {
+        "idle": "Am Boden",
+        "air": "In der Luft",
+        "sneak": "Schleichen"
       }
     }
   },
@@ -7589,7 +7609,7 @@
       "complete": "Alle 13! Abzeichen „Kürbisjäger 2026“ und Umhang freigeschaltet.",
       "pumpkinLabel": "Ein versteckter Kürbis",
       "rewardLabel": "Belohnung für alle 13:",
-      "rewardCape": "+ Umhang „Kürbisjäger“",
+      "rewardCape": "+ Umhang „Kürbisjäger“ und eine von 4 Halloween-Flügeln zur Wahl",
       "logLine": "[🎃] Zwischen diesen Zeilen grinst etwas …"
     },
     "badges": {
@@ -7603,6 +7623,16 @@
       "locked": "{name} – noch nicht deiner",
       "howTo": "Sticker gibt es bei „Süßes oder Saures“ auf der Startseite.",
       "open": "Sticker"
+    },
+    "wings": {
+      "title": "Wähle deine Halloween-Flügel",
+      "text": "Alle 13 Kürbisse gefunden! Such dir EINE der vier Halloween-Flügel aus – die Wahl ist endgültig.",
+      "yours": "Deine Halloween-Flügel: {name}",
+      "tryOn": "Vorher anprobieren unter Skins → Kosmetik → Flügel.",
+      "confirmTitle": "Diese Flügel wählen?",
+      "confirmText": "„{name}“ gehören dann für immer dir. Du kannst nur einmal wählen – die anderen drei Flügel bleiben gesperrt.",
+      "confirm": "Endgültig wählen",
+      "chosen": "„{name}“ gehören jetzt dir!"
     }
   }
 }

@@ -19,6 +19,17 @@ export const INTERPOLATIONS = ['linear', 'smooth', 'step'] as const
 export type Interpolation = (typeof INTERPOLATIONS)[number]
 export const DRIVERS = ['idle', 'walk', 'sneak', 'jump', 'air'] as const
 export type Driver = (typeof DRIVERS)[number]
+/** Fächer und ihr Anhängepunkt (§3): Hut/Begleiter am Kopf, Flügel am Rumpf (seit 2026-10-16). */
+export const SLOTS = ['hat', 'companion', 'wings'] as const
+export type CosmeticSlot = (typeof SLOTS)[number]
+export const ATTACH = ['head', 'body'] as const
+export type Attach = (typeof ATTACH)[number]
+export const SLOT_ATTACH: Record<CosmeticSlot, Attach> = { hat: 'head', companion: 'head', wings: 'body' }
+/** Zustände für Zustands-Animationen (§7): Vorrang sneak > air > idle. */
+export const STATES = ['idle', 'air', 'sneak'] as const
+export type WingState = (typeof STATES)[number]
+/** Überblenden zwischen Zuständen (§7). */
+export const STATE_FADE_MS = 250
 
 export const FACE_NORMAL: Record<Face, Vec3> = {
   north: [0, 0, -1],
@@ -118,9 +129,9 @@ export interface CosmeticModel {
   format: 2
   id: string
   name: string
-  /** `hat` = Kopf-Kosmetik, `companion` = Begleiter (zusätzlich zum Hut, seit Halloween 2026). */
-  slot: 'hat' | 'companion'
-  attach: 'head'
+  /** `hat` = Kopf-Kosmetik, `companion` = Begleiter (zusätzlich zum Hut), `wings` = Flügel am Rumpf. */
+  slot: CosmeticSlot
+  attach: Attach
   texture: CosmeticStrip & { width: number; height: number; scale: number }
   glow?: (CosmeticStrip & { blend?: 'additive' }) | null
   bones: CosmeticBone[]
@@ -313,6 +324,76 @@ export function samplePoses(model: Pick<CosmeticModel, 'animations'>, timeMs: nu
   return poses
 }
 
+/** Zustand eines Spielers (§7), Vorrang sneak > air > idle. */
+export function wingState(p: { crouching?: boolean; flying?: boolean; onGround?: boolean; riding?: boolean; inLiquid?: boolean; climbing?: boolean }): WingState {
+  if (p.crouching && !p.flying) return 'sneak'
+  if (!p.onGround && !p.riding && !p.inLiquid && !p.climbing) return 'air'
+  return 'idle'
+}
+
+/** Welcher Treiber für einen Zustand läuft: der Zustand selbst, sonst Rückfall idle (§7). */
+export function resolveDriver(model: Pick<CosmeticModel, 'animations'>, state: WingState = 'idle'): Driver {
+  return (model.animations ?? []).some((a) => (a.driver ?? 'idle') === state) ? state : 'idle'
+}
+
+/** Pose der Zustands-Animationen (exklusiv, mit Rückfall auf idle). */
+export function stateAnimations(model: Pick<CosmeticModel, 'animations'>, timeMs: number, state: WingState = 'idle'): Map<string, BonePose> {
+  return samplePoses(model, timeMs, [resolveDriver(model, state)])
+}
+
+const REST: BonePose = { position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] }
+
+/** Zwei Posen mischen (w = 0 → a, 1 → b); fehlende Knochen zählen als Ruhe. */
+export function blendPoses(a: Map<string, BonePose>, b: Map<string, BonePose>, w: number): Map<string, BonePose> {
+  const out = new Map<string, BonePose>()
+  const mix = (x: Vec3, y: Vec3) => x.map((v, j) => v + (y[j]! - v) * w) as Vec3
+  for (const id of new Set([...a.keys(), ...b.keys()])) {
+    const pa = a.get(id) ?? REST
+    const pb = b.get(id) ?? REST
+    out.set(id, { position: mix(pa.position, pb.position), rotation: mix(pa.rotation, pb.rotation), scale: mix(pa.scale, pb.scale) })
+  }
+  return out
+}
+
+export interface StateMixer {
+  pose(model: Pick<CosmeticModel, 'animations'>, timeMs: number, state?: WingState): Map<string, BonePose>
+  readonly state: WingState | null
+}
+
+/**
+ * Zustands-Mischer je Spieler: Pose mit 250-ms-Überblenden. Beim Wechsel wird die aktuelle
+ * Pose als Schnappschuss eingefroren und zur neuen Zustands-Pose geblendet (§7).
+ */
+export function createStateMixer(fadeMs = STATE_FADE_MS): StateMixer {
+  let cur: WingState | null = null
+  let since = 0
+  let snap: Map<string, BonePose> | null = null
+  let last = new Map<string, BonePose>()
+  const smoothstep = (u: number) => u * u * (3 - 2 * u)
+  return {
+    pose(model, timeMs, state = 'idle') {
+      if (cur === null) cur = state
+      if (state !== cur) {
+        snap = last
+        since = timeMs
+        cur = state
+      }
+      const target = stateAnimations(model, timeMs, state)
+      let out = target
+      if (snap) {
+        const u = Math.max(0, Math.min(1, (timeMs - since) / fadeMs))
+        if (u >= 1) snap = null
+        else out = blendPoses(snap, target, smoothstep(u))
+      }
+      last = out
+      return out
+    },
+    get state() {
+      return cur
+    },
+  }
+}
+
 /** Bild eines Streifens zur Wanduhr (wie bei Umhängen). */
 export function frameAt(timeMs: number, frames: number | undefined, frameTimeMs: number | undefined): number {
   if (!frames || frames <= 1 || !frameTimeMs) return 0
@@ -364,8 +445,11 @@ export function validateModel(m: unknown, images: { texture?: ImageSize | null; 
   if (m.format !== FORMAT) err('format', `muss ${FORMAT} sein`)
   if (!ID.test(String(m.id ?? ''))) err('id', 'a–z, 0–9, _ (Anfang Buchstabe), max. 40')
   if (typeof m.name !== 'string' || !m.name.trim() || m.name.length > 60) err('name', '1–60 Zeichen')
-  if (m.slot !== 'hat' && m.slot !== 'companion') err('slot', 'hat oder companion')
-  if (m.attach !== 'head') err('attach', 'head')
+  if (!(SLOTS as readonly unknown[]).includes(m.slot)) err('slot', `eins von ${SLOTS.join(', ')}`)
+  if (!(ATTACH as readonly unknown[]).includes(m.attach)) err('attach', `eins von ${ATTACH.join(', ')}`)
+  else if ((SLOTS as readonly unknown[]).includes(m.slot) && SLOT_ATTACH[m.slot as CosmeticSlot] !== m.attach) {
+    err('attach', `slot ${String(m.slot)} braucht attach ${SLOT_ATTACH[m.slot as CosmeticSlot]}`)
+  }
 
   const tex = (isObject(m.texture) ? m.texture : {}) as Record<string, number | string | undefined>
   const texOk = checkImage('texture', tex, err, true)

@@ -334,7 +334,9 @@
       "helper_invite_not_found": "This invitation doesn't exist anymore.",
       "pumpkin_unknown": "This pumpkin doesn’t exist.",
       "trick_used": "You already knocked today – come back tomorrow!",
-      "sticker_locked": "You don’t have this sticker yet."
+      "sticker_locked": "You don’t have this sticker yet.",
+      "wings_chosen": "You already chose your Halloween wings.",
+      "hunt_incomplete": "Find all 13 pumpkins first – then you can choose wings."
     },
     "auth": {
       "accountMismatch": "This sign-in belongs to a different account – please sign in again.",
@@ -3853,7 +3855,8 @@
       "team": "Only for the TRS team.",
       "event": "Free while this event is on for you. You keep it afterwards.",
       "eventEnded": "The event is over, so this item is not free to claim right now.",
-      "other": "Not available right now."
+      "other": "Not available right now.",
+      "reward": "Only as a reward (Halloween pumpkin hunt or trick or treat)."
     },
     "selected": {
       "owned": "Unlocked – put it on so others see it in-game.",
@@ -3881,6 +3884,23 @@
       "toasts": {
         "on": "“{name}” is flying with you",
         "off": "Companion taken off"
+      }
+    },
+    "wings": {
+      "title": "Wings",
+      "intro": "Sit on your back in addition to hat and companion. Preview them standing, in the air and sneaking.",
+      "empty": "No wings yet.",
+      "wearing": "Wings: {name}",
+      "selectedWorn": "On your back – everyone with the TRS Client sees them.",
+      "toasts": {
+        "on": "“{name}” are on your back",
+        "off": "Wings taken off"
+      },
+      "states": "Wings:",
+      "state": {
+        "idle": "Standing",
+        "air": "In the air",
+        "sneak": "Sneaking"
       }
     }
   },
@@ -7589,7 +7609,7 @@
       "complete": "All 13! Badge “Pumpkin Hunter 2026” and cape unlocked.",
       "pumpkinLabel": "A hidden pumpkin",
       "rewardLabel": "Reward for all 13:",
-      "rewardCape": "+ cape “Pumpkin Hunter”",
+      "rewardCape": "+ cape “Pumpkin Hunter” and one of 4 Halloween wings of your choice",
       "logLine": "[🎃] Something is grinning between these lines …"
     },
     "badges": {
@@ -7603,6 +7623,16 @@
       "locked": "{name} – not yours yet",
       "howTo": "Get stickers from trick or treat on the home page.",
       "open": "Stickers"
+    },
+    "wings": {
+      "title": "Choose your Halloween wings",
+      "text": "All 13 pumpkins found! Pick ONE of the four Halloween wings – the choice is final.",
+      "yours": "Your Halloween wings: {name}",
+      "tryOn": "Try them on first under Skins → Cosmetics → Wings.",
+      "confirmTitle": "Choose these wings?",
+      "confirmText": "“{name}” will be yours forever. You can only choose once – the other three wings stay locked.",
+      "confirm": "Choose for good",
+      "chosen": "“{name}” are yours!"
     }
   }
 }

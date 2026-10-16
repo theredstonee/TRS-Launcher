@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { BuiltinSkins, Cape, LibrarySkin, SelectableSkin, SkinPack, SkinProfile, SkinSyncStatus, SkinVariant } from '~/types'
 import type { TrsCape, TrsHeadCosmetic } from '~/utils/trs'
-import type { ViewerCosmetic } from '~/utils/cosmetic-v2/format'
+import type { ViewerCosmetic, WingState } from '~/utils/cosmetic-v2/format'
 import type { ThumbRequest } from '~/utils/skinThumbs'
 import {
   baseDraft,
@@ -223,9 +223,16 @@ const shownHead = computed(() => headPreview.value ?? headEquipped.value)
 const companionPreview = ref<TrsHeadCosmetic | null>(null)
 const companionEquipped = ref<TrsHeadCosmetic | null>(null)
 const shownCompanion = computed(() => companionPreview.value ?? companionEquipped.value)
+/** Flügel am Rumpf (seit Halloween 2026), unabhängig von Hut und Begleiter. */
+const wingsPreview = ref<TrsHeadCosmetic | null>(null)
+const wingsEquipped = ref<TrsHeadCosmetic | null>(null)
+const shownWings = computed(() => wingsPreview.value ?? wingsEquipped.value)
+/** Vorschau der Flügel-Zustände: am Boden, in der Luft, beim Schleichen. */
+const wingState = ref<WingState>('idle')
 /** Modell + Texturen für die Vorschau (null = nichts am Kopf bzw. noch am Laden). */
 const viewerCosmetic = shallowRef<ViewerCosmetic | null>(null)
 const viewerCompanion = shallowRef<ViewerCosmetic | null>(null)
+const viewerWings = shallowRef<ViewerCosmetic | null>(null)
 /** Tag/Nacht in der Vorschau (nachts leuchten Lampen und Kristalle). */
 const night = ref(false)
 /** Kamera: ganzer Spieler oder Kopf + Schultern. */
@@ -267,6 +274,7 @@ function bindCosmetic(pick: () => TrsHeadCosmetic | null, target: typeof viewerC
 
 bindCosmetic(() => shownHead.value, viewerCosmetic)
 bindCosmetic(() => shownCompanion.value, viewerCompanion)
+bindCosmetic(() => shownWings.value, viewerWings)
 
 function previewHead(item: TrsHeadCosmetic | null) {
   headPreview.value = item
@@ -277,6 +285,12 @@ function previewHead(item: TrsHeadCosmetic | null) {
 function previewCompanion(item: TrsHeadCosmetic | null) {
   companionPreview.value = item
   if (item) focus.value = 'head'
+}
+
+function previewWings(item: TrsHeadCosmetic | null) {
+  wingsPreview.value = item
+  // Flügel sieht man am ganzen Spieler.
+  if (item) focus.value = 'body'
 }
 
 const capesSection = useTemplateRef<{ startRedeem: () => void }>('capesSection')
@@ -710,6 +724,8 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
                   :cape-frame-time="shownTrs?.frameTimeMs ?? null"
                   :cosmetic="viewerCosmetic"
                   :companion="viewerCompanion"
+                  :wings="viewerWings"
+                  :wing-state="wingState"
                   :night="night"
                   :focus="focus"
                   :reset-tick="cameraReset"
@@ -737,6 +753,15 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
                   {{ headPreview.name }} ✕
                 </button>
                 <button
+                  v-if="wingsPreview"
+                  class="badge max-w-full truncate bg-lamp-900/70 text-lamp-200 hover:text-base-50"
+                  :title="t('skins.endHeadPreview')"
+                  data-testid="wings-preview-badge"
+                  @click="previewWings(null)"
+                >
+                  {{ wingsPreview.name }} ✕
+                </button>
+                <button
                   v-if="companionPreview"
                   class="badge max-w-full truncate bg-lamp-900/70 text-lamp-200 hover:text-base-50"
                   :title="t('skins.endHeadPreview')"
@@ -744,6 +769,20 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
                   @click="previewCompanion(null)"
                 >
                   {{ companionPreview.name }} ✕
+                </button>
+              </div>
+              <!-- Flügel: Zustände vorführen (am Boden, in der Luft, Schleichen). -->
+              <div v-if="viewerWings" class="flex items-center gap-1 border-t border-base-800/80 bg-base-950/60 p-1 text-[11px] backdrop-blur-sm" data-testid="wings-states">
+                <span class="px-1 text-base-400">{{ t('headCosmetics.wings.states') }}</span>
+                <button
+                  v-for="key in (['idle', 'air', 'sneak'] as const)"
+                  :key="key"
+                  class="seg flex-1 rounded px-2 py-1 mobile:min-h-10"
+                  :class="{ 'seg-on': wingState === key }"
+                  :aria-pressed="wingState === key"
+                  @click="wingState = key"
+                >
+                  {{ t(`headCosmetics.wings.state.${key}`) }}
                 </button>
               </div>
               <div class="flex flex-col gap-1 border-t border-base-800/80 bg-base-950/60 p-1 text-[11px] backdrop-blur-sm mobile:flex-row mobile:items-center">
@@ -1130,6 +1169,15 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
               :night="night"
               @preview="previewHead"
               @equipped="headEquipped = $event"
+              @redeem="openRedeem"
+            />
+            <TrsHeadCosmetics
+              class="mt-8"
+              cosmetic-slot="wings"
+              :preview-id="wingsPreview?.id ?? null"
+              :night="night"
+              @preview="previewWings"
+              @equipped="wingsEquipped = $event"
               @redeem="openRedeem"
             />
             <TrsHeadCosmetics

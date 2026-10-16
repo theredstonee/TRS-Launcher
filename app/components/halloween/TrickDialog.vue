@@ -124,6 +124,8 @@ async function knock() {
           <span>{{ t('halloween.hunt.rewardCape') }}</span>
         </div>
       </section>
+
+      <HalloweenWingsChoice />
     </div>
     <template #actions>
       <button type="button" class="btn btn-ghost" @click="emit('close')">{{ t('common.actions.close') }}</button>
