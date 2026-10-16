@@ -279,6 +279,7 @@ export const useChatStore = defineStore('chat', () => {
       invite: draft.invite ? { address: draft.invite.address, name: draft.invite.name } : null,
       world: null,
       waypoint: null,
+      sticker: draft.sticker ?? null,
       attachments: [],
       replyTo: reply
         ? {
@@ -290,6 +291,7 @@ export const useChatStore = defineStore('chat', () => {
             invite: !!reply.invite,
             world: !!reply.world,
             waypoint: !!reply.waypoint,
+            sticker: reply.sticker ?? null,
             deleted: reply.deleted,
           }
         : null,
@@ -356,6 +358,17 @@ export const useChatStore = defineStore('chat', () => {
       if (e instanceof BackendError && e.apiCode === 'chat_muted') void loadModeration()
       return false
     }
+  }
+
+  /** Chat-Sticker senden (Halloween 2026, nur eigene Sticker – der Server prüft das). */
+  async function sendSticker(id: string, sticker: string, replyTo: ChatMessage | null = null): Promise<boolean> {
+    const nonce = newNonce()
+    const outgoing: OutgoingMessage = { nonce, sticker }
+    if (replyTo) outgoing.replyTo = replyTo.id
+    const t = thread(id)
+    t.items = upsertMessage(t.items, localMessage(id, nonce, outgoing, [], replyTo))
+    void stopTyping(id, true)
+    return deliver(id, nonce, outgoing, [])
   }
 
   /** Fehlgeschlagene Nachricht erneut senden (gleiche Nonce → keine Doppelten). */
@@ -618,6 +631,7 @@ export const useChatStore = defineStore('chat', () => {
     setWatching,
     openDm,
     send,
+    sendSticker,
     retry,
     discard,
     edit,

@@ -12,6 +12,7 @@ import { issueEventSchemas } from './issues'
 import { achievementEventSchemas } from './achievements'
 import { remoteEventSchemas } from './remote'
 import { creatorEventSchemas } from './creator'
+import { halloweenEventSchemas } from './halloween'
 
 // Chat (Sozial): Schemas für alles, was der Kern liefert (wird beim Empfang
 // geprüft), und reine Funktionen für Zeitleiste, Vorschauen, Reaktionen,
@@ -76,6 +77,8 @@ export const chatReplySchema = z.object({
   world: z.boolean().default(false),
   /** Antwort auf eine Wegpunkt-Karte (API §18.10). */
   waypoint: z.boolean().default(false),
+  /** Antwort auf einen Sticker (API §36). */
+  sticker: z.string().regex(/^[a-z0-9][a-z0-9_-]{0,39}$/).nullable().catch(null).default(null),
   deleted: z.boolean(),
 })
 
@@ -98,6 +101,8 @@ export const chatMessageSchema = z.object({
   world: chatWorldSchema.nullable().default(null),
   /** Wegpunkt-Karte aus dem TRS Client (API §18.10). */
   waypoint: chatWaypointSchema.nullable().default(null),
+  /** Chat-Sticker (API §36), statt Text und Bildern. */
+  sticker: z.string().regex(/^[a-z0-9][a-z0-9_-]{0,39}$/).nullable().catch(null).default(null),
   attachments: z.array(chatAttachmentSchema).max(MAX_IMAGES),
   replyTo: chatReplySchema.nullable(),
   system: chatSystemSchema.nullable(),
@@ -263,6 +268,7 @@ export const liveEventSchema = z.discriminatedUnion('type', [
   ...achievementEventSchemas,
   ...remoteEventSchemas,
   ...creatorEventSchemas,
+  ...halloweenEventSchemas,
 ])
 
 export type ChatReaction = z.infer<typeof chatReactionSchema>
@@ -290,6 +296,8 @@ export interface OutgoingMessage {
   replyTo?: string
   attachments?: string[]
   invite?: { address: string; name: string | null }
+  /** Chat-Sticker (API §36) – allein, ohne Text oder Bilder. */
+  sticker?: string
   nonce?: string
 }
 
@@ -566,6 +574,7 @@ export function messageSummary(
   m: Pick<ChatMessage, 'kind' | 'text' | 'attachments' | 'invite' | 'deleted' | 'hidden' | 'system'> & {
     world?: ChatMessage['world']
     waypoint?: ChatMessage['waypoint']
+    sticker?: ChatMessage['sticker']
   },
 ): string {
   if (m.deleted) return t('social.chat.deleted')
@@ -577,6 +586,7 @@ export function messageSummary(
   if (m.invite) return t('social.chat.inviteTo', { address: m.invite.address })
   if (m.world) return t('social.hosting.cardSummary', { name: m.world.name })
   if (m.waypoint) return t('social.waypoint.summary', { name: m.waypoint.name })
+  if (m.sticker) return t('halloween.stickers.summary')
   return ''
 }
 

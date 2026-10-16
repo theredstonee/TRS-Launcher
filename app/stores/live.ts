@@ -80,6 +80,7 @@ export const useLiveStore = defineStore('live', () => {
       useAchievementsStore().data ? useAchievementsStore().load(true) : Promise.resolve(),
       useRemoteStore().pcsLoaded ? useRemoteStore().loadPcs() : Promise.resolve(),
       useCreatorStore().me ? useCreatorStore().load() : Promise.resolve(),
+      useHalloweenStore().state ? useHalloweenStore().load() : Promise.resolve(),
     ])
   }
 
@@ -209,6 +210,9 @@ export const useLiveStore = defineStore('live', () => {
         return
       case 'achievement_unlocked':
         return useAchievementsStore().onLiveEvent(e)
+      case 'halloween_updated':
+        useHalloweenStore().onLiveEvent(e)
+        return
       case 'creator_updated':
       case 'creator_milestone':
       case 'creator_helper_invite':

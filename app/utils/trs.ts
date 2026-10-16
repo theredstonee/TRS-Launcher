@@ -58,9 +58,11 @@ export const trsCapeSchema = z.object({
   id: capeId,
   name: text(48),
   kind: z.enum(['builtin', 'upload', 'other']),
-  unlock: z.enum(['free', 'code', 'admin', 'owner', 'event', 'other']),
+  unlock: z.enum(['free', 'code', 'admin', 'owner', 'event', 'reward', 'other']).catch('other'),
   /** Bei `event`: welches Event den Umhang gratis macht. */
   unlockEvent: eventId.nullable().catch(null).default(null),
+  /** Bei `reward`: wofür (`halloween2026`) – nur als Belohnung, nicht einlösbar. */
+  rewardOf: capeId.nullable().catch(null).default(null),
   status: z.enum(['approved', 'pending', 'rejected', 'other']),
   width: z.number().int().positive(),
   height: z.number().int().positive(),
@@ -118,7 +120,7 @@ export const trsHatSchema = z.object({ id: capeId, name: text(48), slot: trsCosm
 export type TrsHat = z.infer<typeof trsHatSchema>
 
 /** Wie man an ein Kosmetik-Teil kommt (unbekannte Arten → `other`). */
-export const trsCosmeticUnlockSchema = z.enum(['free', 'code', 'admin', 'achievement', 'owner', 'event', 'other']).catch('other')
+export const trsCosmeticUnlockSchema = z.enum(['free', 'code', 'admin', 'achievement', 'owner', 'event', 'reward', 'other']).catch('other')
 export type TrsCosmeticUnlock = z.infer<typeof trsCosmeticUnlockSchema>
 
 /** Kopf-Kosmetik für die Skins-Seite: besessen oder gesperrt, v2 = 3D-Modell mit Vorschau. */
@@ -162,6 +164,10 @@ export const trsPlayerCapeSchema = z.object({
   frames: z.number().int().min(1).max(64),
   frameTimeMs: z.number().int().nullable(),
   texture: pngDataUrl,
+  /** Profil-Abzeichen (`halloween2026`, `pumpkinhunter2026` …); ältere Kerne: leer. */
+  badges: z.array(capeId).max(16).catch([]).default([]),
+  /** Sichtbare Spuk-Effekte (`hits`, `trail`), nur während Halloween. */
+  fx: z.array(z.string().max(16)).max(4).catch([]).default([]),
 })
 
 export const trsGameSchema = z.object({
@@ -444,7 +450,7 @@ export function trsFrameIndex(now: number, frames: number, frameTimeMs: number |
 }
 
 /** Kurzlabel, wie man an den Umhang kommt. */
-export function trsUnlockLabel(cape: Pick<TrsCape, 'unlock' | 'kind'> & { shared?: TrsCape['shared'] }): string {
+export function trsUnlockLabel(cape: Pick<TrsCape, 'unlock' | 'kind'> & { shared?: TrsCape['shared']; rewardOf?: string | null }): string {
   if (cape.shared) return t('trs.unlock.shared')
   if (cape.kind === 'upload') return t('trs.unlock.own')
   switch (cape.unlock) {
@@ -456,6 +462,8 @@ export function trsUnlockLabel(cape: Pick<TrsCape, 'unlock' | 'kind'> & { shared
       return t('trs.unlock.team')
     case 'event':
       return t('trs.unlock.event')
+    case 'reward':
+      return cape.rewardOf && !cape.rewardOf.startsWith('halloween') ? t('trs.unlock.reward') : t('trs.unlock.halloweenReward')
     default:
       return t('trs.unlock.locked')
   }

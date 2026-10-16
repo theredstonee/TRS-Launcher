@@ -259,6 +259,7 @@ import type {
 } from '~/types'
 import { presetCheckSchema, presetPickListSchema, sharedFolderStatusSchema } from './schemas'
 import { pingStatusSchema } from './ping'
+import { badgeImageSchema, halloweenStateSchema, pumpkinFoundSchema, stickerSchema, trickOutcomeSchema, type LauncherPumpkin } from './halloween'
 
 export class BackendError extends Error {
   constructor(
@@ -1188,6 +1189,19 @@ export const backend = {
     capes: (query: UploadQuery) => checked(z.array(trsAdminCapeSchema), 'admin_capes', { query }),
     cosmetics: (query: UploadQuery) => checked(cosmeticPageSchema, 'admin_cosmetics', { query }),
     deleteCosmetic: (id: string) => call<void>('admin_delete_cosmetic', { id }),
+  },
+
+  /**
+   * Halloween 2026 (API §36): Kürbis-Suche, Süßes oder Saures, Spuk-Effekte, Sticker und
+   * Abzeichen-Bilder (als Data-URL aus dem Kern). Ältere API ohne §36: `state()` → inaktiv.
+   */
+  halloween: {
+    state: () => checked(halloweenStateSchema, 'halloween_state'),
+    findPumpkin: (id: LauncherPumpkin) => checked(pumpkinFoundSchema, 'halloween_find_pumpkin', { id }),
+    trick: () => checked(trickOutcomeSchema, 'halloween_trick'),
+    setEffects: (effects: { hits: boolean; trail: boolean }) => call<void>('halloween_set_effects', { effects }),
+    stickers: () => checked(z.array(stickerSchema), 'halloween_stickers'),
+    badgeImages: (ids: string[]) => checked(z.array(badgeImageSchema), 'trs_badge_images', { ids }),
   },
 
   /**

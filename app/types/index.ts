@@ -110,6 +110,10 @@ export interface UiSettings {
   bigPictureAuto: boolean
   /** Event-Symbole: während eines Events (z. B. Halloween) das Event-Symbol der App (ab Werk an). */
   eventIcons: boolean
+  /** Halloween: Filmkorn-Rauschen + Aufflackern bei Blitzen (ab Werk an). */
+  halloweenFlicker: boolean
+  /** Erst-Hinweis zu „Flackern & Rauschen“ schon gezeigt. */
+  halloweenFlickerHintSeen: boolean
 }
 
 export interface JavaPaths {

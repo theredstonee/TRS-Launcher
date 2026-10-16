@@ -8,7 +8,7 @@ export type CapeFilter = (typeof capeFilters)[number]
 export const capeSorts = ['default', 'name', 'nameDesc', 'ownedFirst', 'animatedFirst'] as const
 export type CapeSort = (typeof capeSorts)[number]
 /** Woher ein Umhang kommt. */
-export type CapeOrigin = 'friend' | 'upload' | 'event' | 'code' | 'team' | 'free' | 'other'
+export type CapeOrigin = 'friend' | 'upload' | 'event' | 'reward' | 'code' | 'team' | 'free' | 'other'
 
 export function capeOrigin(cape: Pick<TrsCape, 'kind' | 'unlock' | 'shared'>): CapeOrigin {
   if (cape.shared) return 'friend'
@@ -16,6 +16,8 @@ export function capeOrigin(cape: Pick<TrsCape, 'kind' | 'unlock' | 'shared'>): C
   switch (cape.unlock) {
     case 'event':
       return 'event'
+    case 'reward':
+      return 'reward'
     case 'code':
       return 'code'
     case 'admin':
