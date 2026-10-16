@@ -65,6 +65,8 @@ public final class TrsOnline {
 	private final CapeDiskCache capeCache;
 	/** Kopf-Kosmetik im Format 2 (Modell + Texturen, Cache nach Inhalts-Kennung). */
 	private final dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2Cache cosmeticCache;
+	/** Platten-Cache der v2-Kosmetik ({@code config/trsclient/cosmetics}). */
+	private final Path cosmeticDir;
 	/** Fan-Symbole (API.md §35.4), unveränderlich je Prüfsumme. */
 	private final dev.theredstonee.trsclient.core.creator.SymbolCache symbolCache;
 	private final PlayerDirectory directory = new PlayerDirectory();
@@ -133,6 +135,7 @@ public final class TrsOnline {
 		this.capeCache = new CapeDiskCache(capeDir);
 		Path cosmeticDir = capeDir.getParent() != null ? capeDir.getParent().resolve("cosmetics") : capeDir.resolve("cosmetics");
 		this.cosmeticCache = new dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2Cache(cosmeticDir);
+		this.cosmeticDir = cosmeticDir;
 		this.symbolCache = new dev.theredstonee.trsclient.core.creator.SymbolCache(
 				capeDir.getParent() != null ? capeDir.getParent().resolve("symbols") : capeDir.resolve("symbols"));
 		CosmeticModels.install(cosmeticDir.resolve("templates"), config, url -> {
@@ -901,6 +904,11 @@ public final class TrsOnline {
 		return config.apiBase();
 	}
 
+	/** Platten-Cache der v2-Kosmetik (Selbsttest-Flügel legen dort ihre Dateien ab). */
+	public Path cosmeticDir() {
+		return cosmeticDir;
+	}
+
 	/** Eigenen Eintrag (Umhang/Abzeichen) beim nächsten Stapel neu nachschlagen (z. B. nach Umhangwechsel). */
 	public void refreshSelf() {
 		results.add(() -> {
@@ -909,7 +917,8 @@ public final class TrsOnline {
 		});
 	}
 
-	OnlineConfig config() {
+	/** Einstellungen der TRS API (Adressen prüfen). */
+	public OnlineConfig config() {
 		return config;
 	}
 

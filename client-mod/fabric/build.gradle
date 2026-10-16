@@ -282,6 +282,8 @@ if (stonecutter.eval(mc, '>=1.17') && stonecutter.eval(mc, '<1.21.6')) mixinClas
 if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'CapeLayerMixin'
 // TRS-Kopf-Kosmetik (Quietscheente) am Umhang-Layer – dieselbe Grenze.
 if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'HatLayerMixin'
+// Flügel (v2, attach body) am Körper – wie die Kopf-Kosmetik am Umhang-Layer.
+if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'WingsLayerMixin'
 if (stonecutter.eval(mc, '<1.15')) mixinClasses << 'HatGlMixin'
 if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'OverlayTextureAccessor'
 if (stonecutter.eval(mc, '<1.15')) mixinClasses += ['HudMixin', 'KeyMappingAccessor']

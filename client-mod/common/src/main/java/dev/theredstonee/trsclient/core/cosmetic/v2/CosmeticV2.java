@@ -28,6 +28,10 @@ public final class CosmeticV2 {
 	public static final int FORMAT = 2;
 	/** Fächer: Kopf-Kosmetik und (seit Halloween 2026) Begleiter – beide am Kopf, unabhängig voneinander getragen. */
 	public static final String SLOT_HAT = "hat", SLOT_COMPANION = "companion";
+	/** Flügel am Rücken (Halloween 2026): {@code attach: "body"} – Ursprung = Körper-Drehpunkt (Nacken, Oberkante Torso). */
+	public static final String SLOT_WINGS = "wings";
+	/** Anhängepunkte: Kopf (Hut, Begleiter) bzw. Körper (Flügel). */
+	public static final String ATTACH_HEAD = "head", ATTACH_BODY = "body";
 
 	/** Flächen in fester Reihenfolge (wie {@code FACES} der Referenz). */
 	public static final String[] FACES = { "north", "south", "east", "west", "up", "down" };
@@ -248,6 +252,19 @@ public final class CosmeticV2 {
 		return (materials & (1 << material)) != 0;
 	}
 
+	/** Treiber-Index ({@code idle} = 0, {@code walk} 1, {@code sneak} 2, {@code jump} 3, {@code air} 4) eines Namens, sonst -1. */
+	public static int driverIndex(String name) {
+		return index(DRIVERS, name);
+	}
+
+	/** Hat das Modell mindestens eine Animation mit diesem Treiber? */
+	public boolean hasDriver(int driver) {
+		for (Animation a : animations) {
+			if (a.driver == driver) return true;
+		}
+		return false;
+	}
+
 	// =====================================================================================================
 	// Lesen + Prüfen
 	// =====================================================================================================
@@ -306,8 +323,14 @@ public final class CosmeticV2 {
 		String name = str(m.get("name"));
 		if (name == null || name.trim().isEmpty() || name.length() > 60) out.err("name", "1–60 Zeichen");
 		String slot = str(m.get("slot"));
-		if (!SLOT_HAT.equals(slot) && !SLOT_COMPANION.equals(slot)) out.err("slot", "eins von hat, companion");
-		if (!"head".equals(str(m.get("attach")))) out.err("attach", "eins von head");
+		if (!SLOT_HAT.equals(slot) && !SLOT_COMPANION.equals(slot) && !SLOT_WINGS.equals(slot)) {
+			out.err("slot", "eins von hat, companion, wings");
+		}
+		// Flügel hängen am Körper, alles andere am Kopf.
+		String attach = str(m.get("attach"));
+		if (SLOT_WINGS.equals(slot) ? !ATTACH_BODY.equals(attach) : !ATTACH_HEAD.equals(attach)) {
+			out.err("attach", SLOT_WINGS.equals(slot) ? "eins von body" : "eins von head");
+		}
 
 		// Textur
 		JsonObject tex = obj(m.get("texture"));

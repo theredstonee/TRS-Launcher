@@ -156,7 +156,7 @@ public final class HatHooks {
 		drawV2(f, f.companionV2(id, helm), pose, collector, light, head);
 	}
 
-	private static void drawV2(final OnlineFeatures<Object> f, final V2Hat<Object> hat, PoseStack pose,
+	static void drawV2(final OnlineFeatures<Object> f, final V2Hat<Object> hat, PoseStack pose,
 			net.minecraft.client.renderer.SubmitNodeCollector collector, final int light, ModelPart head) {
 		if (hat == null) return;
 		pose.pushPose();
@@ -200,7 +200,7 @@ public final class HatHooks {
 	}
 
 	/** Ein Format-2-Teil (Hut oder Begleiter) im schon bekannten Kopf-Raum. */
-	private static void drawV2(OnlineFeatures<Object> f, V2Hat<Object> hat, PoseStack pose,
+	static void drawV2(OnlineFeatures<Object> f, V2Hat<Object> hat, PoseStack pose,
 			net.minecraft.client.renderer.MultiBufferSource buffers, int light, ModelPart head) {
 		if (hat == null) return;
 		pose.pushPose();

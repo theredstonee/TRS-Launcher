@@ -10,6 +10,7 @@
 		"CapeLayerMixin",
 		"CapeTextureMixin",
 		"HatLayerMixin",
+		"WingsLayerMixin",
 		"ChatComponentAccessor",
 		"ChatMixin",
 		"ChatHeadMixin",

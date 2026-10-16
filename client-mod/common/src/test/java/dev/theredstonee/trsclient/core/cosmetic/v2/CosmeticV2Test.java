@@ -198,7 +198,9 @@ class CosmeticV2Test {
 		String good = res("top_hat.json");
 		assertTrue(CosmeticV2.check(good, -1, -1, -1, -1).ok());
 		assertInvalid(good.replaceFirst("\"format\": 2", "\"format\": 1"), "format");
-		assertInvalid(good.replaceFirst("\"slot\": \"hat\"", "\"slot\": \"wings\""), "slot");
+		assertInvalid(good.replaceFirst("\"slot\": \"hat\"", "\"slot\": \"back\""), "slot");
+		// Flügel nur am Körper
+		assertInvalid(good.replaceFirst("\"slot\": \"hat\"", "\"slot\": \"wings\""), "attach");
 		assertInvalid(good.replaceFirst("\"scale\": 8", "\"scale\": 3"), "texture.scale");
 		assertInvalid(good.replaceFirst("\"frames\": 12", "\"frames\": 17"), "glow.frames");
 		assertInvalid("[]", "Modell ist kein Objekt");

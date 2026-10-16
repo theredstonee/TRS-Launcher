@@ -270,6 +270,26 @@ public final class OnlineFeatures<T> {
 		return v2(online.info(uuid).companion, helmet);
 	}
 
+	/** Zustand der Flügel je Spieler (idle/air/sneak mit Überblendung). */
+	private final dev.theredstonee.trsclient.core.cosmetic.v2.WingState wingStates = new dev.theredstonee.trsclient.core.cosmetic.v2.WingState();
+
+	/**
+	 * Flügel (Slot {@code wings}, Format 2, {@code attach: "body"}) für dieses Bild oder null: nichts getragen, Module
+	 * aus, noch nicht geladen, oder der Spieler trägt eine Elytra ({@code elytra}). {@code state} = {@code WingState}
+	 * IDLE/AIR/SNEAK aus der Bewegung (überblendet 250 ms). {@code self} = eigener Spieler (für die Selbsttest-Flügel
+	 * {@code -Dtrsclient.devWings}). Nur im Spiel-/Render-Thread wirksam.
+	 */
+	public dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> wingsV2(UUID uuid, boolean self, boolean elytra, int state) {
+		if (Thread.currentThread() != gameThread || elytra) return null;
+		if (!modules.trsOnline.isEnabled() || !modules.trsCosmetics.get()) return null;
+		HatInfo piece = online.info(uuid).wings;
+		if (piece == null && self) piece = dev.theredstonee.trsclient.core.cosmetic.v2.DevWings.info(online);
+		dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> hat = v2(piece, false);
+		if (hat == null) return null;
+		dev.theredstonee.trsclient.core.cosmetic.v2.WingState.Snapshot s = wingStates.update(uuid, state, hat.now);
+		return hat.withState(s.driver, s.prevDriver, s.blend);
+	}
+
 	private dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> v2(HatInfo piece, boolean helmet) {
 		if (piece == null || !piece.v2()) return null;
 		try {
@@ -302,7 +322,7 @@ public final class OnlineFeatures<T> {
 		java.util.function.BiConsumer<dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<?>, Integer> trace = v2Trace;
 		if (trace != null) trace.accept(hat, pass);
 		try {
-			v2Renderer.pose(hat.model, hat.now, true, hat.helmet);
+			v2Renderer.pose(hat.model, hat.now, true, hat.helmet, hat.driver, hat.prevDriver, hat.blend);
 			v2Renderer.emit(hat.model, pass, hat.now, eye, sink);
 		} catch (RuntimeException e) {
 			online.reportError(e);
