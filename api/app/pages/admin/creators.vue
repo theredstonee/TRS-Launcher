@@ -348,7 +348,7 @@ onMounted(() => {
           <div class="min-w-0 flex-1">
             <p class="font-semibold text-base-50">{{ item.kind === 'symbol' ? t.queue.symbol : t.queue.fanCape }}<span v-if="item.cape"> · {{ item.cape.name }}</span></p>
             <p class="text-xs text-base-400">
-              {{ fill(t.queue.by, { name: item.creator.name || item.creator.uuid, tier: t.roster.tiers[item.creator.tier] }) }} ·
+              {{ fill(t.queue.by, { name: item.creator.name || item.creator.uuid, tier: t.roster.tiers[item.creator.tier] ?? item.creator.tier }) }} ·
               {{ fill(t.queue.submitted, { date: rel(item.createdAt) }) }}
               <template v-if="item.symbol"> · {{ item.symbol.size }}×{{ item.symbol.size }} · {{ fill(t.queue.frames, { n: item.symbol.frames, ms: item.symbol.frameMs }) }}</template>
             </p>
