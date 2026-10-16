@@ -294,6 +294,8 @@ export interface DashboardData {
   circuits?: { pendingSubmissions: number, published: number, total: number } | null
   /** Issues (§28), nur mit issues.manage: neu ohne Zuständige, mir zugewiesen. */
   issues?: { new: number, mine: number } | null
+  /** Creator-Programm (§35): Prüf-Warteschlange und offene Anfragen. */
+  creators?: { queue: number, requests: number } | null
 }
 
 export interface SearchResult {

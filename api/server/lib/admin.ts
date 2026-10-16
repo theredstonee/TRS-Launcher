@@ -77,6 +77,8 @@ function reviewWhere(table: 'cape' | 'cosmetic', q: ReviewListQuery): { where: s
   } else {
     where.push('c.status = ?')
     params.push(q.status)
+    // Wartende Fan-Umhänge (§35) prüft das Team unter „Creator“, nicht hier.
+    if (table === 'cape' && q.status === 'pending') where.push('c.creator_uuid IS NULL')
   }
   if (q.owner) {
     where.push('c.owner_uuid = ?')
@@ -176,6 +178,7 @@ export function listCapesPage(ctx: AppContext, q: ReviewListQuery): { capes: Adm
 function uploadOr404(ctx: AppContext, id: string): CapeRow {
   const c = getCape(ctx, id)
   if (!c || c.kind !== 'upload') throw notFound('cape_not_found', 'Cape not found')
+  if (c.creator_uuid && c.status === 'pending') throw conflict('fan_cape_pending', 'Pending fan capes are reviewed under Creators (§35.6)')
   return c
 }
 
@@ -235,7 +238,7 @@ export function bulkReviewCapes(ctx: AppContext, actor: string, ids: string[], a
   if (unique.length === 0 || unique.length > BULK_MAX) throw badRequest('bulk_too_large', `Between 1 and ${BULK_MAX} items per request`)
   const rows = all<CapeRow>(ctx.db, `SELECT * FROM capes WHERE kind = 'upload' AND id IN (${placeholders(unique.length)})`, ...unique)
   const target = action === 'approve' ? 'approved' : 'rejected'
-  const todo = rows.filter((c) => c.status !== target)
+  const todo = rows.filter((c) => c.status !== target && !(c.creator_uuid && c.status === 'pending'))
   const after = tx(ctx.db, () => todo.map((c) => reviewCapeInTx(ctx, actor, c, action === 'approve', reason)))
   for (const f of after) f()
   const done = new Set(todo.map((c) => c.id))

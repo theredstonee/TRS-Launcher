@@ -83,7 +83,8 @@ export function holdsCape(ctx: AppContext, uuid: string, capeId: string): boolea
 
 /** Rolle von `uuid` beim Teilen dieses Umhangs: Ersteller, Inhaber (angenommen) oder keine. */
 export function shareRole(ctx: AppContext, uuid: string, c: CapeRow): 'creator' | 'holder' | null {
-  if (c.kind !== 'upload' || c.status !== 'approved') return null
+  // Fan-Umhänge (§35) bekommt man nur per Creator-Code, nicht geteilt.
+  if (c.kind !== 'upload' || c.status !== 'approved' || c.creator_uuid) return null
   if (c.owner_uuid === uuid) return 'creator'
   return holdsCape(ctx, uuid, c.id) ? 'holder' : null
 }

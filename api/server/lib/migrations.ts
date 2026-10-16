@@ -790,6 +790,16 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 24,
     run: migrateRemote,
   },
+  {
+    // Creator-Programm (§35): Creator mit Stufe/Status, Creator-Codes (eigener Namensraum, nicht gehasht) + Einlösungen,
+    // Unterstützung (ein Creator je Fan, 30-Tage-Regel), Blockaden, Fan-Symbole (Dateien unter
+    // `<DATA_DIR>/creator-symbols/<sha256>.png`), Anfragen, Vorschau-Builds, Tageswerte; Fan-Umhänge = normale Zeilen in
+    // `capes` mit `creator_uuid` + Besitz in `user_capes` (Quelle `creator`); Helfer-Konten (§35.9); `users.show_fan_symbols`,
+    // `team_jobs.purpose`, `shared_packs.creator_listed`; Rechte `creators.review`/`creators.manage`. Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 25,
+    run: migrateCreators,
+  },
 ]
 
 /** Migration 23 (siehe oben). Exportiert für den Idempotenz-Test. */
@@ -1946,4 +1956,168 @@ CREATE TABLE IF NOT EXISTS blog_media (
 CREATE INDEX IF NOT EXISTS blog_media_post ON blog_media(post_id, created_at);
 `)
   grantBuiltin(db, { owner: ['blog.write', 'blog.publish'], admin: ['blog.write', 'blog.publish'], content: ['blog.write'] })
+}
+
+/** Migration 25 (siehe oben). Exportiert für den Idempotenz-Test. */
+export function migrateCreators(db: DatabaseSync): void {
+  db.exec(`
+-- Creator (§35.1). Die Zeile bleibt bei Entzug/Sperre (state + reason), damit Fans, Statistik und Sperre erhalten bleiben.
+CREATE TABLE IF NOT EXISTS creators (
+  uuid TEXT PRIMARY KEY REFERENCES users(uuid) ON DELETE CASCADE,
+  tier TEXT NOT NULL CHECK (tier IN ('starter', 'partner', 'top')),
+  state TEXT NOT NULL DEFAULT 'active' CHECK (state IN ('active', 'revoked', 'banned')),
+  reason TEXT,
+  -- JSON: [{platform, url, followers}]
+  channels TEXT NOT NULL DEFAULT '[]',
+  -- aktuelles freigegebenes Fan-Symbol (creator_symbols.id) bzw. aktueller Fan-Umhang
+  symbol_id INTEGER,
+  fan_cape_id TEXT REFERENCES capes(id) ON DELETE SET NULL,
+  -- höchster je erreichter Meilenstein (sinkt nie)
+  milestone TEXT CHECK (milestone IS NULL OR milestone IN ('bronze', 'silver', 'gold', 'diamond')),
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS creators_state ON creators(state);
+
+-- Creator-Codes: öffentlich, groß geschrieben, eindeutig. Genau ein Haupt-Code je Creator.
+CREATE TABLE IF NOT EXISTS creator_codes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  creator_uuid TEXT NOT NULL REFERENCES creators(uuid) ON DELETE CASCADE,
+  code TEXT NOT NULL UNIQUE CHECK (length(code) BETWEEN 5 AND 20),
+  kind TEXT NOT NULL CHECK (kind IN ('main', 'extra')),
+  uses INTEGER NOT NULL DEFAULT 0,
+  max_uses INTEGER CHECK (max_uses IS NULL OR max_uses >= 1),
+  expires_at INTEGER,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS creator_codes_main ON creator_codes(creator_uuid) WHERE kind = 'main';
+CREATE INDEX IF NOT EXISTS creator_codes_creator ON creator_codes(creator_uuid);
+
+-- Einlösungen: je Fan und Code höchstens eine (zählt einmal).
+CREATE TABLE IF NOT EXISTS creator_code_redemptions (
+  code_id INTEGER NOT NULL REFERENCES creator_codes(id) ON DELETE CASCADE,
+  fan_uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  redeemed_at INTEGER NOT NULL,
+  PRIMARY KEY (code_id, fan_uuid)
+);
+CREATE INDEX IF NOT EXISTS creator_code_redemptions_fan ON creator_code_redemptions(fan_uuid);
+
+-- Unterstützung: ein Creator je Fan (creator_uuid NULL = beendet). last_* = zuletzt BEGONNENE Unterstützung (30-Tage-Regel).
+CREATE TABLE IF NOT EXISTS creator_supports (
+  fan_uuid TEXT PRIMARY KEY REFERENCES users(uuid) ON DELETE CASCADE,
+  creator_uuid TEXT REFERENCES creators(uuid) ON DELETE SET NULL,
+  last_creator_uuid TEXT,
+  last_started_at INTEGER,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS creator_supports_creator ON creator_supports(creator_uuid);
+
+CREATE TABLE IF NOT EXISTS creator_blocks (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  creator_uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (uuid, creator_uuid)
+);
+
+-- Fan-Symbole (senkrechter Streifen, je Frame size×size). Freigegebene bleiben (auch frühere) – die URLs sind unveränderlich.
+CREATE TABLE IF NOT EXISTS creator_symbols (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  creator_uuid TEXT NOT NULL REFERENCES creators(uuid) ON DELETE CASCADE,
+  sha256 TEXT NOT NULL CHECK (length(sha256) = 64),
+  size INTEGER NOT NULL CHECK (size BETWEEN 16 AND 64),
+  frames INTEGER NOT NULL CHECK (frames BETWEEN 1 AND 8),
+  frame_ms INTEGER NOT NULL CHECK (frame_ms BETWEEN 50 AND 1000),
+  status TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')),
+  reason TEXT,
+  created_at INTEGER NOT NULL,
+  reviewed_at INTEGER,
+  reviewed_by TEXT
+);
+CREATE INDEX IF NOT EXISTS creator_symbols_creator ON creator_symbols(creator_uuid, status);
+CREATE INDEX IF NOT EXISTS creator_symbols_sha ON creator_symbols(sha256);
+CREATE INDEX IF NOT EXISTS creator_symbols_status ON creator_symbols(status, created_at);
+
+-- Anfragen an das Team (Stufen-Aufstieg, Team-Umhang). data = JSON mit den Feldern der Anfrage.
+CREATE TABLE IF NOT EXISTS creator_requests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  creator_uuid TEXT NOT NULL REFERENCES creators(uuid) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('upgrade', 'team_cape')),
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'accepted', 'declined')),
+  data TEXT NOT NULL DEFAULT '{}',
+  reason TEXT,
+  created_at INTEGER NOT NULL,
+  decided_at INTEGER,
+  decided_by TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS creator_requests_open ON creator_requests(creator_uuid, kind) WHERE status = 'open';
+CREATE INDEX IF NOT EXISTS creator_requests_status ON creator_requests(status, created_at);
+
+-- Vorschau-Builds für Partner+ (nur Einträge mit Link + Prüfsumme, keine Dateien).
+CREATE TABLE IF NOT EXISTS creator_previews (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  product TEXT NOT NULL CHECK (product IN ('launcher', 'client')),
+  version TEXT NOT NULL,
+  notes TEXT NOT NULL DEFAULT '',
+  url TEXT NOT NULL,
+  sha256 TEXT NOT NULL CHECK (length(sha256) = 64),
+  published_at INTEGER NOT NULL,
+  created_by TEXT NOT NULL
+);
+
+-- Tageswerte je Creator (UTC-Tag YYYY-MM-DD): neue Fans, Einlösungen. Nur Zahlen, nie Namen.
+CREATE TABLE IF NOT EXISTS creator_daily (
+  creator_uuid TEXT NOT NULL REFERENCES creators(uuid) ON DELETE CASCADE,
+  day TEXT NOT NULL CHECK (length(day) = 10),
+  new_fans INTEGER NOT NULL DEFAULT 0,
+  redemptions INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (creator_uuid, day)
+);
+
+-- Helfer-Konten (§35.9): nur Freunde, Einladung (pending) → angenommen (active). rights = JSON-Liste aus
+-- stats/codes/uploads/packs. Löschen des Creators oder Helfers löscht die Zeile.
+CREATE TABLE IF NOT EXISTS creator_helpers (
+  creator_uuid TEXT NOT NULL REFERENCES creators(uuid) ON DELETE CASCADE,
+  helper_uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  rights TEXT NOT NULL DEFAULT '[]',
+  status TEXT NOT NULL CHECK (status IN ('pending', 'active')),
+  created_at INTEGER NOT NULL,
+  accepted_at INTEGER,
+  PRIMARY KEY (creator_uuid, helper_uuid),
+  CHECK (creator_uuid <> helper_uuid)
+);
+CREATE INDEX IF NOT EXISTS creator_helpers_helper ON creator_helpers(helper_uuid, status);
+`)
+  if (!hasColumn(db, 'users', 'show_fan_symbols')) db.exec('ALTER TABLE users ADD COLUMN show_fan_symbols INTEGER NOT NULL DEFAULT 1')
+  if (hasTable(db, 'capes') && !hasColumn(db, 'capes', 'creator_uuid')) db.exec('ALTER TABLE capes ADD COLUMN creator_uuid TEXT')
+  if (hasTable(db, 'capes')) db.exec('CREATE INDEX IF NOT EXISTS capes_creator ON capes(creator_uuid)')
+  if (hasTable(db, 'team_jobs') && !hasColumn(db, 'team_jobs', 'purpose')) {
+    db.exec("ALTER TABLE team_jobs ADD COLUMN purpose TEXT NOT NULL DEFAULT 'team' CHECK (purpose IN ('team', 'creator'))")
+  }
+  if (hasTable(db, 'shared_packs') && !hasColumn(db, 'shared_packs', 'creator_listed')) {
+    db.exec('ALTER TABLE shared_packs ADD COLUMN creator_listed INTEGER NOT NULL DEFAULT 0')
+  }
+  // user_capes: Quelle `creator` erlauben (SQLite kann CHECKs nicht ändern; niemand verweist auf diese Tabelle).
+  const sqlOf = (name: string) => (db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?").get(name) as { sql: string } | undefined)?.sql ?? ''
+  if (hasTable(db, 'user_capes') && !sqlOf('user_capes').includes("'creator'")) {
+    db.exec(`
+CREATE TABLE user_capes_v25 (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  cape_id TEXT NOT NULL REFERENCES capes(id) ON DELETE CASCADE,
+  source TEXT NOT NULL CHECK (source IN ('code', 'admin', 'event', 'creator')),
+  granted_at INTEGER NOT NULL,
+  PRIMARY KEY (uuid, cape_id)
+);
+INSERT INTO user_capes_v25 (uuid, cape_id, source, granted_at) SELECT uuid, cape_id, source, granted_at FROM user_capes;
+DROP TABLE user_capes;
+ALTER TABLE user_capes_v25 RENAME TO user_capes;
+`)
+  }
+  if (hasTable(db, 'user_capes')) db.exec('CREATE INDEX IF NOT EXISTS user_capes_cape ON user_capes(cape_id)')
+  grantBuiltin(db, {
+    owner: ['creators.review', 'creators.manage'],
+    admin: ['creators.review', 'creators.manage'],
+    content: ['creators.review', 'creators.manage'],
+    senior_moderator: ['creators.review'],
+  })
 }

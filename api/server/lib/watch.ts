@@ -7,6 +7,10 @@ export type PlayerEvent =
   | { type: 'cosmetics', uuid: string, cosmetics: LookupCosmetics }
   | { type: 'cape', uuid: string, cape: LookupCape | null }
   | { type: 'badge', uuid: string, badge: boolean }
+  /** Fan-/Creator-Daten dieses Spielers haben sich geändert (§35.5): neu nachschlagen. */
+  | { type: 'fan', uuid: string }
+  /** Symbol/Meilenstein/Status eines Creators geändert: alle Spieler mit `fan.creator` = `creator` neu nachschlagen. */
+  | { type: 'fan_creator', creator: string }
 
 export interface Watcher {
   /** Wer zuschaut (Konto des Streams). */

@@ -277,4 +277,15 @@ export const RULES = {
   /** Status-Meldungen je PC (entprellt etwa alle 2 s, Herzschlag 60 s). */
   remoteStatusDesktop: { limit: 40, windowMs: MIN },
   remoteClaimDesktop: { limit: 120, windowMs: MIN },
+  // ------------------------------------------------ Creator-Programm (§35)
+  /** Creator: Codes, Packs, Löschen wartender Uploads. */
+  creatorManageUser: { limit: 60, windowMs: MIN },
+  /** Creator: Symbol- bzw. Fan-Umhang-Uploads (je eigener Topf). */
+  creatorUploadUser: { limit: 5, windowMs: 24 * HOUR },
+  /** Creator: Anfragen ans Team. */
+  creatorRequestUser: { limit: 10, windowMs: HOUR },
+  /** Fans: Blockieren/Entblocken, Einstellung, Unterstützung beenden. */
+  creatorFanUser: { limit: 30, windowMs: MIN },
+  /** Team: Creator-Verwaltung (Prüfung, Status, Anfragen, Vorschau-Builds). */
+  adminCreators: { limit: 120, windowMs: MIN },
 } satisfies Record<string, Rule>

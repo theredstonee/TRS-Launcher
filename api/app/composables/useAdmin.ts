@@ -45,6 +45,8 @@ export interface AdminCounts {
   circuits: number
   /** Neue Issues ohne Zuständige (§28). */
   issues?: number
+  /** Creator-Programm (§35): zu prüfen + offene Anfragen. */
+  creators?: number
 }
 
 export const ADMIN_RANK = 900

@@ -361,7 +361,7 @@ Auth required. Send 1–100 UUIDs, dashed or not. Duplicates are ignored.
 }
 ```
 
-Only players who **use TRS and show something** (badge, cape or at least one cosmetic) appear in the list. A missing UUID means "no badge, no cape, no cosmetics": render vanilla.
+Only players who **use TRS and show something** (badge, cape, at least one cosmetic, or creator/fan data of §35.5) appear in the list. A missing UUID means "no badge, no cape, no cosmetics": render vanilla.
 
 `cosmetics` always has the four keys `hat`, `wings`, `back` and `aura`. Each is `null` or a **LookupCosmetic**. A format-1 item has `template`: render it with that template from `GET /v1/cosmetics/templates` (§11). It also has `templateUrl` (`/v1/cosmetics/<id>/template.json?v=<hash>`, §11.1) so a client can load that one template when it is not bundled. Older clients ignore `templateUrl` and keep using `template` with the copy they already have. A **format-2** item (`"format": 2`, 3D model, §11.9) has **no** `template`, no `templateUrl` and no `emissive`, but `model`, `glow`, `glowFrames`, `glowFrameTimeMs` and `hash`. The texture and frame fields work exactly like the cape fields. Clients that only know templates must skip items without a known `template` (older TRS Clients do).
 
@@ -373,6 +373,7 @@ Privacy rules, enforced server-side:
 - `cape` is set only when the player has an active cape **and** `showCapeToOthers` is on **and** the cape is `approved`.
 - For your **own** UUID you also get your own `pending` upload, and your cape even with `showCapeToOthers=false`.
 - Cosmetics follow the same rules: others get a slot only if the player has `showCosmeticsToOthers` on **and** the item is `approved`. You always see your own equipped items, including `pending` uploads.
+- Creator programme (§35.5): an entry may also carry `creator: { tier }` (the player is an active creator) and `fan: { creator, name, symbol, milestone }` (fan symbol before the name). Both are filtered **per requester**: creators the requester blocked are hidden, and with the requester's `showFanSymbols` off only the requester's own `fan` is returned. The keys are omitted when not set.
 
 **Live badge.** The badge means "plays with TRS right now". `badge` is `true` only if **all** of these hold:
 
@@ -1426,6 +1427,7 @@ The response is `Content-Type: text/event-stream`, in the same frame format as �
 | `cape` | `{"type":"cape","uuid":"…","cape":LookupCape\|null}`. The cape as **you** may see it (§4.1 rules). |
 | `cosmetics` | `{"type":"cosmetics","uuid":"…","cosmetics":{"hat":…,"wings":…,"back":…,"aura":…}}`. All four slots as **you** may see them. |
 | `badge` | `{"type":"badge","uuid":"…","badge":true\|false}`. The live badge (§4.1) turned on or off: the player started or stopped playing with TRS, or changed `showBadge`. `true` is sent only to viewers who are in game themselves; `false` goes to every viewer. |
+| `fan`, `fan_creator` | Creator programme: fan/creator data changed – look the player (or all fans of that creator) up again, see §35.5. |
 
 Rules:
 
@@ -1999,6 +2001,7 @@ data: {"type":"chat_message","conversationId":"c…","message":{…}}
 | `notes_changed` | `{cursor}` – your synced notes changed (§17.5); fetch `GET /v1/me/sync/notes?since=<your cursor>` |
 | `events_changed` | `{events}` – the events active for you changed (§32); `events` is the full list (`[]` = none) |
 | `remote_*` | PC remote control: `remote_command`, `remote_command_update`, `remote_status` (no id, not replayed), `remote_pairing` – see §34.6 |
+| `creator_*` | Creator programme: `creator_updated`, `creator_milestone`, `creator_helper_invite`, `creator_helper_removed` – see §35.7 |
 
 `?pushDevice={id}` (optional, §33): set by the mobile app on its push device. While such a stream is open (and 60 s after), that device gets no push notifications. Streams without it count as desktop (§33.6).
 
@@ -3985,3 +3988,263 @@ expires_at)` and `remote_commands (id, uuid, desktop_id, phone_id, idem_key, typ
 expires_at, claimed_at)`. Everything hangs on the account and the device via `ON DELETE CASCADE`. Expired codes are swept;
 commands are deleted 3 h after creation. No IP addresses are stored. Idempotent. When merging: renumber if a parallel
 branch also added a migration 24.
+
+## 35. Creator programme
+
+Content creators get a public **creator code**, a **fan symbol** shown before their fans' names in game, optionally a
+**fan cape** their fans unlock with the code, statistics and **helper accounts**. The team reviews every symbol and fan
+cape. All JSON is camelCase, times are ISO strings, UUIDs are 32 hex digits without dashes, errors use the usual
+`{ error: { code, message, details? } }` shape (§1).
+
+### 35.1 Concepts
+
+- **Creator**: a TRS player with `tier` ∈ `starter | partner | top` and `state` ∈ `active | revoked | banned`. Only
+  **active** creators have working codes, symbols, fan capes, badges and creator packs. Revoked/banned creators keep their
+  row (with `reason`); a revoked creator may apply again, a banned one may not.
+- **Limits per tier** (`limits` in the dashboard):
+
+  | tier | extra codes | uses per extra code | symbol frames | fan cape | helpers |
+  |---|---|---|---|---|---|
+  | starter | 1 | 100 | 1 | – | 1 |
+  | partner | 5 | 1000 | 1–8 | standard: up to 512×256, 1 frame | 3 |
+  | top | unlimited | unlimited | 1–8 | HD: up to 1024×512, up to 32 frames | 10 |
+
+- **Creator codes**: public, human-readable, unique, `^[A-Z0-9][A-Z0-9-]{3,18}[A-Z0-9]$` (5–20 characters), stored upper
+  case and compared case-insensitively. Their own namespace – **not** the hashed cape codes of §5.9 (`POST /v1/redeem`
+  stays for those). Every creator has exactly one `main` code, set and changed only by the team (default `TRS-<NAME>`,
+  upper case, non-alphanumerics removed; if taken a number is appended: `TRS-PIXEL2`). `extra` codes are made by the
+  creator: optional `maxUses` (default and maximum = tier cap), optional `expiresAt` (future, ≤ 2 years), `active` flag.
+  Only **active** extra codes count against the tier limit. The main code has no limit. The launcher's redeem field calls
+  §35.2 first when the input matches the creator pattern and contains a `-`, otherwise §5.9.
+- **Support**: a fan supports **one** creator at a time. Redeeming a code of creator C:
+  1. unknown code, wrong format, creator not active, code switched off → `404 creator_code_not_found` (one code for all,
+     no oracle);
+  2. own code → `409 creator_self`; C blocked by the fan → `409 creator_blocked`;
+  3. extra code expired or used up → `410 creator_code_expired` (a fan who already redeemed this code may redeem it again);
+  4. the fan's **last started** support was a different, still active creator and started less than **30 days** ago →
+     support does not change (`supportChanged: false`, `switchAvailableAt` = when switching is possible), but the fan
+     still gets C's fan cape (if C is partner+ and has an approved one);
+  5. otherwise support switches to C (`supportChanged: true`). The start time is reset only if C differs from the last
+     started creator – re-supporting the same creator (e.g. after ending) keeps the original start.
+  Each code counts at most **one use per fan** (re-redeeming is idempotent). A revoked/banned creator never holds a fan in
+  the 30-day lock.
+- **Ending support** (`DELETE /v1/me/creator/support`): badge gone, no longer counted as fan; fan capes stay. The same
+  creator can be supported again any time, a different one only 30 days after the last start.
+- **Fan capes**: normal rows in the cape catalogue (§5) owned through `user_capes` with source `creator`. They appear in
+  `GET /v1/capes` with `unlock: "code"`, `owned: true`, `shareable: false`, can be worn with `PUT /v1/me/cape` and show in
+  the lookup like any approved cape. They cannot be shared (§5.10) or deleted via `DELETE /v1/capes/{id}`. A creator has
+  at most one **current** approved fan cape; redeeming any of the creator's codes grants the current one. Older fan capes
+  stay with the fans who have them. Fans keep fan capes when they end support or switch, unless the team removes them
+  (35.6). The creator also owns his own fan cape once it is approved.
+- **Fan symbol**: an image before the fan's name (nametag and tab list) for TRS players. Upload: PNG only, square frames of
+  `s` × `s` pixels with `s` ∈ 16..64 stacked vertically (`width = s`, `height = s × n`), `n = 1` for starter, `1..8` for
+  partner/top, frame time `frameMs` 50..1000 (default 150). The launcher converts GIF/APNG to this strip itself. The server
+  checks the PNG byte by byte (no APNG chunks, CRC, chunk whitelist, decompression-bomb guard), clears invisible pixels,
+  rejects fully transparent images and **re-encodes** it. Max 256 KiB. Every upload is `pending` (a new upload replaces a
+  pending one); fans keep seeing the previous approved symbol until the new one is approved. Rejections carry a reason.
+- **Milestones** by active fans: 100 → `bronze`, 500 → `silver`, 1000 → `gold`, 5000 → `diamond`. The highest milestone
+  ever reached is stored and **never goes down**; it is drawn as a coloured frame around the fan symbol for all fans.
+  A new milestone sends `creator_updated {kind:"milestone"}` to the creator and `creator_milestone` to every current fan.
+- **Blocks**: a player can block creators (by code). Their symbols and creator badges are hidden for that player everywhere
+  (the server filters the lookup per requester), their codes cannot be redeemed and their creator packs are not listed.
+  You cannot block the creator you currently support (`409 creator_supported`) or yourself (`409 creator_self`).
+- **`showFanSymbols`** (player setting, default `true`): when `false`, the lookup returns no `fan` data for **other** players
+  to this requester (your own entry keeps it).
+- **Creator badge**: active creators get `creator: { tier }` in the lookup – always (independent of `showBadge` and
+  presence) unless the requester blocked that creator.
+
+### 35.2 Player routes (Bearer)
+
+`GET /v1/me/creator` → state for the launcher's creator page:
+```json
+{
+  "support": { "creator": CreatorCard | null, "startedAt": "…" | null, "lastCreatorUuid": "…" | null, "switchAvailableAt": "…" | null },
+  "fanCapes": [ { "capeId": "…", "name": "Drache", "creator": { "uuid": "…", "name": "Pixelmaus" } } ],
+  "blocked": [ { "uuid": "…", "name": "…" } ],
+  "showFanSymbols": true,
+  "creator": CreatorSelf | null,
+  "application": { "id": "a…", "status": "new", "createdAt": "…" } | null,
+  "helping": [ { "creator": { "uuid", "name", "tier" }, "rights": ["codes"] } ],
+  "helperInvites": [ { "creator": { "uuid", "name" }, "rights": ["stats"], "createdAt": "…" } ]
+}
+```
+`support.creator` is `null` when you support nobody or your creator is no longer active. `switchAvailableAt` is set while
+the 30-day lock is running. `creator` is present if you are or were a creator (also revoked/banned, with `state` and
+`reason`). `application` is your latest application to a creator position (§24.3, `purpose: "creator"`).
+
+`CreatorCard = { uuid, name, skin, tier, channels: [{ platform, url, followers }], symbol: Symbol | null, fanCape: { capeId, name, url } | null, milestone }`
+– `skin` is the last seen Mojang skin URL or `null`; `fanCape` only for partner+ with an approved current fan cape.
+`Symbol = { url, size, frames, frameMs, sha256 }`, `url` = `/v1/creator-symbols/{sha256}.png` (path on the API host,
+immutable).
+
+| route | body | answer |
+|---|---|---|
+| `POST /v1/me/creator/redeem` | `{ code }` | `{ creator: CreatorCard, supportChanged, switchAvailableAt, fanCapeGranted }` – `fanCapeGranted` = you own the creator's current fan cape after this call. Errors see 35.1. Brute-force lock shared with §5.9: after 5 failed attempts per account or 20 per IP in 15 min → `429` (failed = `400`/`404`). |
+| `DELETE /v1/me/creator/support` | – | `204` |
+| `POST /v1/me/creator/blocks` | `{ code }` | `{ blocked }` – `404 creator_code_not_found`, `409 creator_supported`, `409 creator_self` |
+| `DELETE /v1/me/creator/blocks/{uuid}` | – | `{ blocked }` |
+| `PATCH /v1/me/creator/settings` | `{ showFanSymbols }` | `{ showFanSymbols }` |
+| `GET /v1/me/creator/helper-invites` | – | `{ helping, helperInvites }` (35.9) |
+| `POST /v1/me/creator/helper-invites/{creatorUuid}` | `{ accept: boolean }` | `{ helping, helperInvites }` – `404 helper_invite_not_found` |
+| `DELETE /v1/me/creator/helping/{creatorUuid}` | – | `204` – `404 helper_not_found` |
+
+Limits: blocks/settings/support/helper answers 30 per minute.
+
+### 35.3 Creator dashboard (Bearer; active creators or their helpers)
+
+The caller must be an **active** creator (not a creator, revoked or banned → `403 creator_inactive`), or a helper acting
+for one with `?as=<creatorUuid>` or header `X-Creator-As: <creatorUuid>` (35.9; missing right → `403 creator_helper_right`).
+
+`GET /v1/creator/dashboard` → `CreatorSelf`:
+```json
+{
+  "uuid": "…", "name": "Pixelmaus", "tier": "partner", "state": "active", "reason": null, "since": "…",
+  "channels": [{ "platform": "youtube", "url": "https://…", "followers": 12000 }],
+  "codes": [{ "code": "TRS-PIXELMAUS", "kind": "main", "uses": 1284, "maxUses": null, "expiresAt": null, "active": true, "createdAt": "…" }],
+  "limits": { "extraCodes": 5, "maxUsesPerCode": 1000, "symbolFrames": 8, "fanCape": "standard" },
+  "stats": { "activeFans": 812, "redemptions": 1596, "fanCapeHolders": 640, "newPlayers": 211, "packInstalls": 90,
+             "daily": [{ "day": "2026-10-16", "newFans": 12, "redemptions": 15 }] },
+  "milestone": "silver", "nextMilestone": { "name": "gold", "at": 1000 },
+  "symbol": { "current": Symbol | null, "pending": Symbol | null, "rejected": { "reason": "…", "at": "…" } | null },
+  "fanCape": { "current": { "capeId", "name", "url" } | null, "pending": {…} | null, "rejected": { "reason", "at" } | null },
+  "requests": [{ "id": 3, "kind": "upgrade", "status": "open", "createdAt": "…", "reason": null }],
+  "packs": [{ "code": "TRS-ABCD-2345", "name": "Pixel Pack", "installs": 40, "listed": true }],
+  "helpers": [{ "uuid", "name", "skin", "rights": ["codes"], "status": "pending" | "active", "createdAt" }]
+}
+```
+- `stats.daily` = the last 30 UTC days, oldest first. `newPlayers` = fans whose TRS account was created at most 24 h before
+  their first redemption of this creator's codes. `packInstalls` = installs of the listed creator packs. Numbers only,
+  never fan names.
+- `rejected` is set only when the latest decision was a rejection.
+- `helpers` only for the creator. A helper gets `viewer: { helper: true, rights }` instead, `stats: null` without the
+  `stats` right, `requests: []` and `packs: []` without the `packs` right.
+
+| route | right | body | answer / errors |
+|---|---|---|---|
+| `POST /v1/creator/codes` | `codes` | `{ code, maxUses?, expiresAt? }` | `201 { codes }` – `400 invalid_code`, `403 creator_code_limit` (too many active extras or `maxUses` above the tier cap), `409 creator_code_taken` |
+| `PATCH /v1/creator/codes/{code}` | `codes` | `{ active?, maxUses?: n\|null, expiresAt?: iso\|null }` | `{ codes }` – main code → `400 invalid_request`; re-activating over the limit → `403 creator_code_limit` |
+| `PUT /v1/creator/symbol?frameMs=` | `uploads` | raw PNG, `Content-Type: image/png` | `{ symbol }` (pending) – `400 invalid_symbol` with `details.reason` ∈ `invalid_png`, `animated_png`, `invalid_dimensions`, `too_many_frames`, `empty`; `403 creator_symbol_frames` (animation for starter); `413 payload_too_large`; `415`; 5 uploads / 24 h per creator → `429` |
+| `DELETE /v1/creator/symbol/pending` | `uploads` | – | `204` |
+| `PUT /v1/creator/fan-cape?name=&frames=&frameTimeMs=` | `uploads` | raw PNG as `POST /v1/capes/upload` (§5.6) | `{ fanCape: { capeId, name, url } }` (pending, replaces a pending one) – `403 creator_tier` (starter; partner with HD or animation), cape upload errors of §5.6; 5 uploads / 24 h per creator |
+| `DELETE /v1/creator/fan-cape/pending` | `uploads` | – | `204` |
+| `POST /v1/creator/requests` | creator only | `{ kind: "upgrade", channelUrl, followers, note? }` or `{ kind: "team_cape", text, attachmentUploadId? }` | `201 { requests }` – one open request per kind (`409 creator_request_open`); upgrade at top → `403 creator_tier` |
+| `GET /v1/creator/previews` | creator only, partner+ | – | `{ previews: [{ id, product: "launcher"\|"client", version, notes, url, sha256, publishedAt }] }` – starter → `403 creator_tier` |
+| `PUT /v1/creator/packs/{packCode}` | `packs` | `{ listed: boolean }` | `{ packs }` – lists/unlists one of the **creator's** own shared packs (§27) as creator pack. A listed pack never expires; unlisting restarts its chosen duration from now. Not the creator's → `403 not_your_pack`; unknown → `404 pack_not_found` |
+| `POST /v1/creator/helpers` | creator only | `{ uuid, rights }` | `201 { helpers }` (35.9) |
+| `PATCH /v1/creator/helpers/{uuid}` | creator only | `{ rights }` | `{ helpers }` |
+| `DELETE /v1/creator/helpers/{uuid}` | creator only | – | `204` |
+
+Other writes: 60 per minute; requests 10 per hour. `channelUrl`/channel URLs must be `https://`. Texts are plain text
+(control characters refused).
+
+### 35.4 Public routes
+
+`GET /v1/creator-symbols/{sha256}.png` → the PNG strip with `Cache-Control: public, max-age=31536000, immutable` and an
+ETag. Only approved symbols (current or formerly current). Pending ones are served only to the uploading creator and to
+team members with `creators.review` (`private, no-store`); otherwise `404 symbol_not_found`.
+
+`GET /v1/creators/packs?q=&offset=&limit=` (no auth needed; with a Bearer token the requester's blocks apply) →
+```json
+{ "packs": [{ "code": "TRS-ABCD-2345", "name": "Pixel Pack", "summary": "…", "mcVersion": "1.21.11", "loader": "fabric", "installs": 40,
+              "creator": { "uuid": "…", "name": "Pixelmaus", "tier": "partner" } }], "total": 1 }
+```
+Listed packs of **active** creators, most installs first. `q` matches pack or creator name; `limit` 1–50 (default 20),
+`offset` ≤ 10000. Rate limit as the pack lookup (§27).
+
+### 35.5 Lookup and player events
+
+Each entry of `POST /v1/players/lookup` (§4.1) may additionally have:
+```json
+"creator": { "tier": "partner" },
+"fan": { "creator": "<uuid>", "name": "Pixelmaus", "symbol": Symbol, "milestone": "gold" | null }
+```
+Both keys are **omitted** when not set. `creator` = the player is an active creator (hidden if the requester blocked
+them). `fan` only if the player currently supports an active creator with an approved symbol, the requester has not
+blocked that creator, and (requester = player or the requester has `showFanSymbols`). Players with only `creator`/`fan`
+data are listed too.
+
+Player stream (`GET /v1/events/players`, §13):
+
+| event | data |
+|---|---|
+| `fan` | `{"type":"fan","uuid":"…"}` – fan or creator data of this player changed (support started/ended, became/stopped being a creator, tier changed). Look this player up again. |
+| `fan_creator` | `{"type":"fan_creator","creator":"<uuid>"}` – a creator's symbol was approved, a milestone reached, or the creator was revoked/restored. Sent once to every stream that watches the creator or one of their fans. Look up again all players whose cached `fan.creator` is this uuid. |
+
+### 35.6 Team routes
+
+Website session (cookie + CSRF) or Bearer of a team member (§24.2). `creators.review` for the review queue,
+`creators.manage` for everything else (`GET /v1/admin/creators` also works with `creators.review`, read-only). Every
+action is written to the audit log (`creator.*`). Default grants: owner, admin and content both; senior moderator
+`creators.review`.
+
+| route | body | answer |
+|---|---|---|
+| `GET /v1/admin/creators/queue` | – | `{ items: [{ id, kind: "symbol"\|"fan_cape", creator: { uuid, name, tier }, symbol?: Symbol, cape?: { capeId, url, name, frames, scale, frameTimeMs }, createdAt }] }` – oldest first; ids are `s<n>` (symbol) and `c<capeId>` (fan cape) |
+| `POST /v1/admin/creators/queue/{id}/approve` | – | `204` – symbol becomes the current one / fan cape becomes the current one (the creator owns it too); `creator_updated` to the creator |
+| `POST /v1/admin/creators/queue/{id}/reject` | `{ reason }` (1–300) | `204`; `creator_updated` with `reason` |
+| `GET /v1/admin/creators?q=&state=` | – | `{ creators: [AdminCreator] }` – `q` matches name, UUID or a code |
+| `POST /v1/admin/creators` | `{ player: name or uuid, tier, mainCode? }` | `201 { creator: AdminCreator }` – `404 player_not_found` (never used TRS), `409 already_creator`, `409 creator_code_taken`, `400 invalid_code` |
+| `PATCH /v1/admin/creators/{uuid}` | `{ tier?, mainCode?, channels? }` | `{ creator }` – `channels` ≤ 10 × `{ platform: youtube\|twitch\|tiktok\|instagram\|x\|kick\|other, url (https), followers }` |
+| `POST /v1/admin/creators/{uuid}/revoke` | `{ reason, ban: boolean, removeFanCapes: boolean }` | `{ creator }` – state `revoked` or `banned`: codes, symbol, badge, helpers and creator packs stop (packs are unlisted), open requests are declined, fans' support rows stay but are hidden. `removeFanCapes` removes every ownership of this creator's fan capes (worn ones are taken off) |
+| `POST /v1/admin/creators/{uuid}/restore` | – | `{ creator }` – active again (fan capes removed before do not come back) |
+| `GET /v1/admin/creators/requests?status=` | – | `{ requests: [{ id, kind, status, createdAt, reason, creator: { uuid, name, tier }, data, decidedAt }] }` (open first) |
+| `POST /v1/admin/creators/requests/{id}` | `{ status: "accepted"\|"declined", reason? }` | `{ requests }` – accepting an upgrade raises the tier by one; `409 request_closed` |
+| `GET /v1/admin/creators/previews` | – | `{ previews }` |
+| `POST /v1/admin/creators/previews` | `{ product, version, notes?, url (https), sha256, publishedAt? }` | `201 { preview }` |
+| `DELETE /v1/admin/creators/previews/{id}` | – | `204` |
+
+`AdminCreator = { uuid, name, tier, state, reason, fans, mainCode, since, channels, symbol, fanCape, milestone, helpers }`.
+Pending fan capes do **not** appear in the normal upload review (`GET /v1/admin/capes?status=pending`); approving them
+there gives `409 fan_cape_pending`. `GET /v1/admin/dashboard` has `creators: { queue, requests }` (or `null`).
+
+**Applications** (§24.3): positions get `purpose: "team" | "creator"` (default `team`). A creator position has no role
+(`400 invalid_role`). Accepting an application to it makes the applicant a creator (starter, default main code; a
+revoked creator becomes active again as starter) instead of granting a role (`grantRole` → `400 invalid_request`).
+Eligibility/submit for creator positions: active creators get `409 already_creator`, banned ones `403 creator_banned`
+(eligibility reasons `already_creator` / `creator_banned`).
+
+### 35.7 Events (`GET /v1/events/me`)
+
+| event | data |
+|---|---|
+| `creator_updated` | `{ kind, reason?, tier?, helper? }` to the creator; `kind` ∈ `symbol_approved`, `symbol_rejected`, `cape_approved`, `cape_rejected`, `tier_changed` (+`tier`), `revoked` (+`reason`, also for bans), `restored`, `request_answered` (+`reason`), `milestone`, `became_creator` (+`tier`), `helper_joined`, `helper_left` (+`helper: { uuid, name }`). Reload `GET /v1/creator/dashboard`. |
+| `creator_milestone` | `{ creator: { uuid, name }, milestone }` to every current fan |
+| `creator_helper_invite` | `{ creator: { uuid, name }, rights, createdAt }` to the invited player |
+| `creator_helper_removed` | `{ creator: { uuid, name } }` to a helper whom the creator removed (or whose invitation was withdrawn) |
+
+### 35.8 Error codes
+
+`creator_code_not_found` 404, `creator_code_expired` 410, `creator_blocked` 409, `creator_supported` 409,
+`creator_self` 409, `creator_inactive` 403, `creator_tier` 403, `creator_code_limit` 403, `creator_code_taken` 409,
+`invalid_code` 400, `invalid_symbol` 400, `creator_symbol_frames` 403, `creator_request_open` 409, `already_creator` 409,
+`creator_banned` 403/409, `not_your_pack` 403, `creator_helper_limit` 403, `creator_helper_exists` 409,
+`creator_helper_right` 403, `not_friends` 400, `helper_not_found` 404, `helper_invite_not_found` 404,
+`symbol_not_found` 404, `queue_item_not_found` 404, `request_closed` 409, `fan_cape_pending` 409.
+
+### 35.9 Helper accounts
+
+A creator gives helpers (editor, moderator, …) access to parts of the dashboard without sharing the account.
+
+- Only TRS **friends** (§6) can be invited: `POST /v1/creator/helpers { uuid, rights }` (not a friend → `400 not_friends`).
+  The player accepts or declines in the launcher (`POST /v1/me/creator/helper-invites/{creatorUuid}`) and can leave later
+  (`DELETE /v1/me/creator/helping/{creatorUuid}`). The creator changes rights with `PATCH /v1/creator/helpers/{uuid}` and
+  removes a helper or withdraws an invitation with `DELETE /v1/creator/helpers/{uuid}`.
+- Limits (invited + active): starter 1, partner 3, top 10 → `403 creator_helper_limit`; inviting twice → `409 creator_helper_exists`.
+- Rights: `stats` (see statistics), `codes` (create/toggle extra codes – never the main code), `uploads` (fan symbol and fan
+  cape submissions), `packs` (list/unlist the **creator's** packs; helpers cannot list their own packs). Always creator
+  only: requests, team-cape wish, helper management, preview builds.
+- Acting: dashboard routes accept `?as=<creatorUuid>` or `X-Creator-As` (allowed by CORS). Every route checks its right
+  (`403 creator_helper_right`; a pending invitation gives no access). The upload limit is per creator (shared with helpers).
+- Revoking or banning the creator suspends helper access (`403 creator_inactive`) and hides it from `helping`.
+- Actions of helpers are written to the audit log as `creator.helper.<action>` with the **helper's** uuid as actor and the
+  creator as target.
+
+### 35.10 Data, migration 25
+
+Tables `creators`, `creator_codes`, `creator_code_redemptions` (one row per code and fan), `creator_supports` (one row per
+fan: current creator + last started creator/time), `creator_blocks`, `creator_symbols` (files under
+`<DATA_DIR>/creator-symbols/<sha256>.png`), `creator_requests`, `creator_previews`, `creator_daily` (per UTC day: new fans,
+redemptions), `creator_helpers`; new columns `users.show_fan_symbols`, `capes.creator_uuid` (fan capes), `team_jobs.purpose`,
+`shared_packs.creator_listed`; `user_capes.source` allows `creator`; permissions `creators.review`/`creators.manage`
+granted to the default roles. Everything hangs on the accounts via `ON DELETE CASCADE`. Idempotent. When merging: renumber
+if a parallel branch also added a migration 25.

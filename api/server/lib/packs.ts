@@ -58,6 +58,8 @@ export interface PackRow {
   created_at: number
   updated_at: number
   expires_at: number | null
+  /** Als Creator-Pack gelistet (§35.3): läuft dann nicht ab (`expires_at` NULL). */
+  creator_listed?: number
 }
 
 /** Öffentliche Sicht (Website, Code-Eingabe, Update-Prüfung). */
@@ -239,6 +241,15 @@ function assertCanUpload(ctx: AppContext, uuid: string, bytes: number, newPack: 
 function expiry(ctx: AppContext, duration: PackDuration): number | null {
   const ms = DURATION_MS[duration]
   return ms === null ? null : ctx.now() + ms
+}
+
+/**
+ * Creator-Pack (§35.3) listen oder entfernen: gelistet läuft es nicht ab; beim Entfernen beginnt die gewählte Laufzeit
+ * ab jetzt neu. Nichts tun, wenn sich nichts ändert.
+ */
+export function setPackCreatorListed(ctx: AppContext, r: PackRow, listed: boolean): void {
+  if (!!r.creator_listed === listed) return
+  run(ctx.db, 'UPDATE shared_packs SET creator_listed = ?, expires_at = ? WHERE id = ?', listed ? 1 : 0, listed ? null : expiry(ctx, r.duration), r.id)
 }
 
 /** Neues Pack teilen. */
@@ -480,7 +491,8 @@ export function updatePackFromToken(ctx: AppContext, uuid: string, id: string, t
 /** Laufzeit ändern – zählt ab jetzt neu. */
 export function setPackDuration(ctx: AppContext, uuid: string, id: string, duration: PackDuration): OwnPackView {
   const r = ownPack(ctx, uuid, id)
-  const expires = expiry(ctx, duration)
+  // Gelistete Creator-Packs laufen nicht ab; die Laufzeit gilt erst nach dem Entfernen aus der Liste.
+  const expires = r.creator_listed ? null : expiry(ctx, duration)
   run(ctx.db, 'UPDATE shared_packs SET duration = ?, expires_at = ? WHERE id = ?', duration, expires, r.id)
   return ownView(ctx, { ...r, duration, expires_at: expires })
 }

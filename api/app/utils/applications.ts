@@ -39,6 +39,8 @@ export interface TeamRole {
 export interface JobView {
   id: string
   status: 'draft' | 'open' | 'closed'
+  /** `creator` = Creator-Programm (§35): Annehmen macht den Bewerber zum Creator. */
+  purpose?: 'team' | 'creator'
   texts: JobTexts
   form: FormField[]
   cooldownDays: number
@@ -95,7 +97,7 @@ export interface TeamPageAdmin {
 
 export interface Eligibility {
   canApply: boolean
-  reason: null | 'closed' | 'open_application' | 'cooldown' | 'member' | 'too_many_open'
+  reason: null | 'closed' | 'open_application' | 'cooldown' | 'member' | 'too_many_open' | 'already_creator' | 'creator_banned'
   retryAt: string | null
   applicationId: string | null
 }

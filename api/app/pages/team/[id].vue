@@ -113,7 +113,7 @@ async function submit() {
     sent.value = true
   } catch (err) {
     const data = (err as { data?: { error?: { code?: string, retryAt?: string | null, fields?: { id: string, error: string }[] } } }).data?.error
-    const blocked: Record<string, string> = { application_open: 'open_application', job_closed: 'closed', already_member: 'member', cooldown: 'cooldown', too_many_open: 'too_many_open' }
+    const blocked: Record<string, string> = { application_open: 'open_application', job_closed: 'closed', already_member: 'member', cooldown: 'cooldown', too_many_open: 'too_many_open', already_creator: 'already_creator', creator_banned: 'creator_banned' }
     const key = data?.code ? blocked[data.code] : undefined
     if (data?.code === 'invalid_answers' && data.fields) {
       const e: Record<string, string> = {}

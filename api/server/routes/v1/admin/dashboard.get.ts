@@ -4,6 +4,7 @@ import { dashboard } from '../../../lib/dashboard'
 import { requireStaff } from '../../../lib/http'
 import { applicationCounts } from '../../../lib/applications'
 import { circuitCounts } from '../../../lib/circuits'
+import { creatorCounts } from '../../../lib/creators'
 import { issueCounts } from '../../../lib/issues'
 import { can } from '../../../lib/team'
 
@@ -31,5 +32,12 @@ export default defineEventHandler((event) => {
     applications: can(staff, 'applications.view') ? applicationCounts(useCtx(), staff.uuid) : null,
     circuits: can(staff, 'circuits.manage') ? circuitCounts(useCtx()) : null,
     issues: can(staff, 'issues.manage') ? issueCounts(useCtx(), staff.uuid) : null,
+    // Creator-Programm (§35): Prüf-Warteschlange (creators.review) und offene Anfragen (creators.manage).
+    creators: can(staff, 'creators.review') || can(staff, 'creators.manage')
+      ? (() => {
+          const c = creatorCounts(useCtx())
+          return { queue: can(staff, 'creators.review') ? c.queue : 0, requests: can(staff, 'creators.manage') ? c.requests : 0 }
+        })()
+      : null,
   }
 })
