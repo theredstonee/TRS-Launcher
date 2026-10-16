@@ -77,7 +77,80 @@ pub fn validate_upload(bytes: &[u8], frames: u32, frame_time_ms: Option<u32>) ->
     if bytes.len() > MAX_UPLOAD_BYTES {
         return Err(Error::validation(crate::msg!("trsPng.fileTooLarge", "Die Datei ist zu groß (höchstens 20 MB).")));
     }
-    let invalid = || Error::validation(crate::msg!("trsPng.invalidPng", "Die Datei ist kein gültiges PNG-Bild."));
+    let invalid = invalid_png;
+    let (w, h) = structure(bytes)?;
+    // Maße VOR dem Dekodieren prüfen (Schutz vor Dekompressionsbomben).
+    if u64::from(w) * u64::from(h) > MAX_PIXELS {
+        return Err(invalid_size());
+    }
+    let layout = upload_layout(w, h).ok_or_else(invalid_size)?;
+    if layout.frames != frames {
+        return Err(invalid_size());
+    }
+    if frames > 1 && !frame_time_ms.is_some_and(|t| (MIN_FRAME_TIME_MS..=MAX_FRAME_TIME_MS).contains(&t)) {
+        return Err(Error::validation(crate::msg!(
+            "trsPng.frameTime",
+            "Das Bildtempo muss zwischen 50 und 1000 ms je Frame liegen."
+        )));
+    }
+    let pixels = decode_rgba(bytes, w, h).ok_or_else(invalid)?;
+    if !cape_visible(&pixels, w, layout) {
+        return Err(Error::validation(crate::msg!("trsPng.emptyCape", "Der Umhang ist komplett durchsichtig.")));
+    }
+    Ok(layout)
+}
+
+/// Fan-Symbol (Creator-Programm, §35.1): quadratische Frames `s` × `s` (s = 16…64)
+/// senkrecht untereinander, höchstens 8 Frames, höchstens 256 KiB.
+pub const SYMBOL_MAX_BYTES: usize = 256 * 1024;
+pub const SYMBOL_MIN_SIZE: u32 = 16;
+pub const SYMBOL_MAX_SIZE: u32 = 64;
+pub const SYMBOL_MAX_FRAMES: u32 = 8;
+
+/// Aufbau eines Fan-Symbols: Kantenlänge eines Frames und Zahl der Frames.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SymbolLayout {
+    pub size: u32,
+    pub frames: u32,
+}
+
+/// Erlaubte Maße eines Fan-Symbol-Streifens (`max_frames` je nach Stufe: 1 oder 8).
+pub fn symbol_layout(width: u32, height: u32, max_frames: u32) -> Option<SymbolLayout> {
+    if !(SYMBOL_MIN_SIZE..=SYMBOL_MAX_SIZE).contains(&width) || height == 0 || !height.is_multiple_of(width) {
+        return None;
+    }
+    let frames = height / width;
+    (1..=max_frames.min(SYMBOL_MAX_FRAMES)).contains(&frames).then_some(SymbolLayout { size: width, frames })
+}
+
+/// Prüft ein Fan-Symbol vollständig (Aufbau, Maße, Frames, Pixel) wie der Server.
+pub fn validate_symbol(bytes: &[u8], max_frames: u32) -> Result<SymbolLayout> {
+    if bytes.len() > SYMBOL_MAX_BYTES {
+        return Err(Error::validation(crate::msg!("trsPng.symbolTooLarge", "Das Fan-Symbol ist zu groß (höchstens 256 KB).")));
+    }
+    let (w, h) = structure(bytes)?;
+    let layout = symbol_layout(w, h, max_frames).ok_or_else(|| {
+        Error::validation(crate::msg!(
+            "trsPng.symbolSize",
+            "Das Fan-Symbol muss quadratisch sein (16×16 bis 64×64), animiert höchstens {frames} Bilder untereinander.",
+            frames = max_frames.clamp(1, SYMBOL_MAX_FRAMES)
+        ))
+    })?;
+    let pixels = decode_rgba(bytes, w, h).ok_or_else(invalid_png)?;
+    if !pixels.chunks_exact(4).any(|p| p[3] > 0) {
+        return Err(Error::validation(crate::msg!("trsPng.emptySymbol", "Das Fan-Symbol ist komplett durchsichtig.")));
+    }
+    Ok(layout)
+}
+
+fn invalid_png() -> Error {
+    Error::validation(crate::msg!("trsPng.invalidPng", "Die Datei ist kein gültiges PNG-Bild."))
+}
+
+/// Prüft den Aufbau (Signatur, Chunk-CRCs, Whitelist, keine APNG, nichts nach `IEND`)
+/// und liefert Breite × Höhe aus dem IHDR – ohne zu dekodieren.
+fn structure(bytes: &[u8]) -> Result<(u32, u32)> {
+    let invalid = invalid_png;
     if bytes.len() < 8 + 25 + 12 || &bytes[..8] != SIGNATURE {
         return Err(invalid());
     }
@@ -130,26 +203,7 @@ pub fn validate_upload(bytes: &[u8], frames: u32, frame_time_ms: Option<u32>) ->
         }
         off += 12 + len;
     }
-    let (w, h) = header.filter(|_| saw_end).ok_or_else(invalid)?;
-    // Maße VOR dem Dekodieren prüfen (Schutz vor Dekompressionsbomben).
-    if u64::from(w) * u64::from(h) > MAX_PIXELS {
-        return Err(invalid_size());
-    }
-    let layout = upload_layout(w, h).ok_or_else(invalid_size)?;
-    if layout.frames != frames {
-        return Err(invalid_size());
-    }
-    if frames > 1 && !frame_time_ms.is_some_and(|t| (MIN_FRAME_TIME_MS..=MAX_FRAME_TIME_MS).contains(&t)) {
-        return Err(Error::validation(crate::msg!(
-            "trsPng.frameTime",
-            "Das Bildtempo muss zwischen 50 und 1000 ms je Frame liegen."
-        )));
-    }
-    let pixels = decode_rgba(bytes, w, h).ok_or_else(invalid)?;
-    if !cape_visible(&pixels, w, layout) {
-        return Err(Error::validation(crate::msg!("trsPng.emptyCape", "Der Umhang ist komplett durchsichtig.")));
-    }
-    Ok(layout)
+    header.filter(|_| saw_end).ok_or_else(invalid)
 }
 
 /// Dekodiert mit festen Grenzen (Maße sind vorher geprüft) zu RGBA8.
@@ -323,5 +377,29 @@ pub(crate) mod tests {
         assert_eq!(err.message_code(), "trsPng.fileTooLarge");
         assert!(err.to_string().contains("20 MB"));
         assert_eq!(MAX_UPLOAD_BYTES, 20 * 1024 * 1024);
+    }
+
+    #[test]
+    fn symbols_are_square_strips() {
+        assert_eq!(symbol_layout(16, 16, 1), Some(SymbolLayout { size: 16, frames: 1 }));
+        assert_eq!(symbol_layout(64, 64 * 8, 8), Some(SymbolLayout { size: 64, frames: 8 }));
+        assert_eq!(symbol_layout(24, 48, 8).map(|l| l.frames), Some(2));
+        assert!(symbol_layout(24, 48, 1).is_none(), "Starter: nur ein Bild");
+        assert!(symbol_layout(32, 32 * 9, 8).is_none(), "höchstens 8 Bilder");
+        assert!(symbol_layout(15, 15, 1).is_none() && symbol_layout(65, 65, 1).is_none());
+        assert!(symbol_layout(32, 40, 8).is_none(), "nicht quadratisch");
+
+        let ok = validate_symbol(&real_png(32, 64), 8).unwrap();
+        assert_eq!((ok.size, ok.frames), (32, 2));
+        let starter = validate_symbol(&real_png(32, 64), 1).unwrap_err();
+        assert_eq!(starter.message_code(), "trsPng.symbolSize");
+        assert_eq!(starter.message_params()["frames"], "1");
+        let clear = encode(image::RgbaImage::new(16, 16));
+        assert_eq!(validate_symbol(&clear, 1).unwrap_err().message_code(), "trsPng.emptySymbol");
+        let apng = png_with(16, 16, &[(b"acTL", &[0, 0, 0, 2, 0, 0, 0, 0])]);
+        assert_eq!(validate_symbol(&apng, 8).unwrap_err().message_code(), "trsPng.animated");
+        let mut big = real_png(16, 16);
+        big.resize(SYMBOL_MAX_BYTES + 1, 0);
+        assert_eq!(validate_symbol(&big, 1).unwrap_err().message_code(), "trsPng.symbolTooLarge");
     }
 }

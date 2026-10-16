@@ -22,6 +22,7 @@ pub mod applications;
 pub mod cape_import;
 pub mod cape_video;
 pub mod chat;
+pub mod creator;
 pub mod events;
 mod head_cosmetics;
 pub mod hosting;
@@ -417,6 +418,23 @@ fn message_for(code: &str) -> Msg {
         ),
         "invalid_keys" => msg!("trsApi.invalid_keys", "Die Schlüssel für Benachrichtigungen sind ungültig – bitte erneut einschalten."),
         "device_not_found" => msg!("trsApi.device_not_found", "Dieses Gerät ist nicht (mehr) angemeldet."),
+        // --- Creator-Programm (§35) ---
+        "creator_code_not_found" => msg!("trsApi.creator_code_not_found", "Diesen Creator-Code gibt es nicht."),
+        "creator_code_expired" => msg!("trsApi.creator_code_expired", "Dieser Creator-Code ist abgelaufen oder aufgebraucht."),
+        "creator_blocked" => msg!("trsApi.creator_blocked", "Du hast diesen Creator blockiert – hebe die Blockierung zuerst auf."),
+        "creator_supported" => msg!(
+            "trsApi.creator_supported",
+            "Du unterstützt diesen Creator gerade – erst „Nicht mehr unterstützen“, dann blockieren."
+        ),
+        "creator_inactive" => msg!("trsApi.creator_inactive", "Dein Creator-Status ist gerade nicht aktiv."),
+        "creator_tier" => msg!("trsApi.creator_tier", "Das gibt es erst in einer höheren Creator-Stufe."),
+        "creator_code_limit" => msg!("trsApi.creator_code_limit", "Du hast schon so viele Zusatz-Codes, wie deine Stufe erlaubt."),
+        "creator_code_taken" => msg!("trsApi.creator_code_taken", "Diesen Code gibt es schon – bitte einen anderen wählen."),
+        "invalid_symbol" => msg!("trsApi.invalid_symbol", "Das Fan-Symbol passt nicht: quadratisch, 16×16 bis 64×64, als PNG."),
+        "creator_symbol_frames" => msg!("trsApi.creator_symbol_frames", "Animierte Fan-Symbole gibt es erst ab der Stufe Partner."),
+        "creator_request_open" => msg!("trsApi.creator_request_open", "Du hast schon einen offenen Antrag dieser Art."),
+        "already_creator" => msg!("trsApi.already_creator", "Dieser Spieler ist schon Creator."),
+        "not_your_pack" => msg!("trsApi.not_your_pack", "Das ist nicht dein Modpack."),
         "invalid_request" | "invalid_json" => msg!("trsApi.invalid_request", "Die Anfrage war ungültig."),
         "not_found" => msg!("trsApi.not_found", "Nicht gefunden."),
         _ => msg!("trsApi.rejected", "Die TRS API hat die Anfrage abgelehnt."),
@@ -917,3 +935,5 @@ mod share_tests;
 mod team_tests;
 #[cfg(test)]
 mod achievements_tests;
+#[cfg(test)]
+mod creator_tests;
