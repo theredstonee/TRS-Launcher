@@ -37,6 +37,8 @@ How to write an entry:
 - **Helpers.** Creators can invite TRS friends as helpers and choose what they may do (see statistics, manage codes, upload symbol/cape, list packs). Helpers accept the invitation on the Creator page and switch to "Dashboard of …" there.
 - **Creator modpacks.** Creators can list their shared modpacks; they show up under Discover → Modpacks with the creator's badge and install with one click.
 - **Milestones.** At 100, 500, 1,000 and 5,000 active fans a creator reaches Bronze, Silver, Gold and Diamond – all fans then get a coloured frame around the fan symbol and a notification.
+- **TRS Client: fan symbols and creator stars in game.** Fans show their creator's symbol in front of their name above the head and in the tab list, creators get a coloured star. Both can be turned off under TRS Online Features.
+- **TRS Client: camera paths.** The new module "Camera Paths" lets you set keyframes at your camera and play smooth cinematic flights (curve or straight, duration per segment or in total). The HUD hides while playing, the TRS Launcher can record the flight automatically, and paths are saved per world and server.
 
 ### Deutsch
 - **Creator-Programm.** Auf der neuen Seite **Creator** löst du den Creator-Code deines Lieblings-YouTubers oder -Streamers ein und unterstützt ihn damit. Du unterstützt immer einen Creator (wechseln geht alle 30 Tage), kannst jederzeit aufhören und behältst alle freigeschalteten Fan-Umhänge. Creator, die du nicht sehen willst, blockierst du per Code.
@@ -45,6 +47,8 @@ How to write an entry:
 - **Helfer.** Creator laden TRS-Freunde als Helfer ein und legen fest, was sie dürfen (Statistik sehen, Codes verwalten, Symbol/Umhang hochladen, Packs listen). Helfer nehmen die Einladung auf der Creator-Seite an und wechseln dort zu „Dashboard von …“.
 - **Creator-Modpacks.** Creator können ihre geteilten Modpacks listen; sie erscheinen unter Entdecken → Modpacks mit dem Creator-Abzeichen und lassen sich mit einem Klick installieren.
 - **Meilensteine.** Bei 100, 500, 1.000 und 5.000 aktiven Fans erreicht ein Creator Bronze, Silber, Gold und Diamant – alle Fans bekommen dann einen farbigen Rahmen um das Fan-Symbol und eine Benachrichtigung.
+- **TRS Client: Fan-Symbole und Creator-Sterne im Spiel.** Fans zeigen das Symbol ihres Creators vor ihrem Namen über dem Kopf und in der Tab-Liste, Creator bekommen einen farbigen Stern. Beides lässt sich unter TRS-Online-Funktionen abschalten.
+- **TRS Client: Kamera-Fahrten.** Mit dem neuen Modul „Kamera-Fahrten“ setzt du Punkte an deiner Kamera und spielst weiche Kamerafahrten ab (Kurve oder gerade, Dauer je Abschnitt oder gesamt). Das HUD verschwindet dabei, der TRS Launcher kann die Fahrt automatisch aufnehmen, und Fahrten werden je Welt und Server gespeichert.
 
 ## 0.21.1 – 2026-10-13 – Cape Workshop Fix | Umhang-Werkstatt – Fix
 <!-- banner: accent=#ff5a3c motif=/news/0.21.0/banner.png -->
