@@ -2372,7 +2372,7 @@
   "setting.trsOnline.fanSymbolNametag": "Símbolos de fã e estrelas de criador acima dos nomes",
   "setting.trsOnline.fanSymbolTab": "Símbolos de fã e estrelas de criador na lista de jogadores",
   "module.cinematic": "Trajetos de câmera",
-  "module.cinematic.desc": "Voos de câmera cinematográficos para vídeos e capturas: defina quadros-chave na sua câmera atual (posição, visão e campo de visão) e reproduza o trajeto suavemente. Durante a reprodução, a câmera se separa do personagem, o HUD some e o launcher pode gravar. Os trajetos são salvos por mundo e servidor. Defina as teclas em Controles → TRS Client.",
+  "module.cinematic.desc": "Voos de câmera cinematográficos para vídeos e capturas: defina quadros-chave na sua câmera atual (posição, visão e campo de visão) e reproduza o trajeto suavemente. Durante a reprodução, a câmera se separa do personagem, o HUD some e o launcher pode gravar. Os trajetos são salvos por mundo e servidor. Com a câmera livre, a câmera voa livremente (WASD, espaço, agachar, roda do mouse para a velocidade) enquanto seu personagem fica parado – defina quadros-chave a partir dali. Com Fair Play a câmera para em blocos sólidos e só atravessa blocos transparentes e passagens. Defina as teclas em Controles → TRS Client.",
   "setting.cinematic.addKey": "Adicionar quadro-chave",
   "setting.cinematic.playKey": "Reproduzir / parar",
   "setting.cinematic.removeKey": "Remover o último quadro-chave",
@@ -2397,5 +2397,14 @@
   "key.trsclient.cinematicAdd": "Trajeto de câmera: adicionar quadro-chave",
   "key.trsclient.cinematicPlay": "Trajeto de câmera: reproduzir / parar",
   "key.trsclient.cinematicRemove": "Trajeto de câmera: remover o último quadro-chave",
-  "key.trsclient.cinematicClear": "Trajeto de câmera: apagar"
+  "key.trsclient.cinematicClear": "Trajeto de câmera: apagar",
+  "setting.cinematic.freecamKey": "Câmera livre liga / desliga",
+  "setting.cinematic.freecamSpeed": "Velocidade da câmera livre",
+  "setting.cinematic.freecamFairPlay": "Fair Play (a câmera para em blocos sólidos, também durante a reprodução)",
+  "cinematic.msg.freecamOn": "Câmera livre ligada – {0} (roda do mouse para mudar)",
+  "cinematic.msg.freecamOff": "Câmera livre desligada",
+  "cinematic.msg.freecamBlocked": "A câmera livre está desligada neste servidor",
+  "cinematic.msg.speed": "Velocidade da câmera livre: {0}",
+  "key.trsclient.cinematicFreecam": "Câmera livre liga / desliga",
+  "settings.serverLocked": "Pelo servidor"
 }

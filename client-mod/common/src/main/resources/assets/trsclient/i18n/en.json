@@ -2372,7 +2372,7 @@
   "setting.trsOnline.fanSymbolNametag": "Fan symbols and creator stars above names",
   "setting.trsOnline.fanSymbolTab": "Fan symbols and creator stars in the tab list",
   "module.cinematic": "Camera Paths",
-  "module.cinematic.desc": "Cinematic camera flights for videos and screenshots: set keyframes at your current camera (position, view and field of view) and play the path back smoothly. While it plays, the camera leaves your character, the HUD hides and the launcher can record. Paths are saved per world and server. Bind the keys under Controls → TRS Client.",
+  "module.cinematic.desc": "Cinematic camera flights for videos and screenshots: set keyframes at your current camera (position, view and field of view) and play the path back smoothly. While it plays, the camera leaves your character, the HUD hides and the launcher can record. Paths are saved per world and server. Freecam lets the camera fly freely (WASD, space, sneak, scroll for speed) while your character stays put – set keyframes from there. With Fair Play the camera stops at solid blocks and only passes through see-through blocks and passages. Bind the keys under Controls → TRS Client.",
   "setting.cinematic.addKey": "Add keyframe",
   "setting.cinematic.playKey": "Play / stop",
   "setting.cinematic.removeKey": "Remove last keyframe",
@@ -2397,5 +2397,14 @@
   "key.trsclient.cinematicAdd": "Camera path: add keyframe",
   "key.trsclient.cinematicPlay": "Camera path: play / stop",
   "key.trsclient.cinematicRemove": "Camera path: remove last keyframe",
-  "key.trsclient.cinematicClear": "Camera path: clear"
+  "key.trsclient.cinematicClear": "Camera path: clear",
+  "setting.cinematic.freecamKey": "Freecam on / off",
+  "setting.cinematic.freecamSpeed": "Freecam speed",
+  "setting.cinematic.freecamFairPlay": "Fair Play (the camera stops at solid blocks, also while a path plays)",
+  "cinematic.msg.freecamOn": "Freecam on – {0} (scroll to change)",
+  "cinematic.msg.freecamOff": "Freecam off",
+  "cinematic.msg.freecamBlocked": "Freecam is turned off on this server",
+  "cinematic.msg.speed": "Freecam speed: {0}",
+  "key.trsclient.cinematicFreecam": "Freecam on / off",
+  "settings.serverLocked": "Set by server"
 }

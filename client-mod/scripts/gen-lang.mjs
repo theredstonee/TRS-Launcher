@@ -49,6 +49,7 @@ const KEYS = [
   ['key.trsclient.cinematicPlay', 'key.trsclient.cinematicPlay'],
   ['key.trsclient.cinematicRemove', 'key.trsclient.cinematicRemove'],
   ['key.trsclient.cinematicClear', 'key.trsclient.cinematicClear'],
+  ['key.trsclient.cinematicFreecam', 'key.trsclient.cinematicFreecam'],
 ];
 
 const load = (code) => JSON.parse(readFileSync(join(i18nDir, `${code}.json`), 'utf8'));

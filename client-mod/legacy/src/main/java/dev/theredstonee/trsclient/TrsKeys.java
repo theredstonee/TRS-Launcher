@@ -39,6 +39,8 @@ public final class TrsKeys {
 	public static KeyBinding cinematicPlay;
 	public static KeyBinding cinematicRemove;
 	public static KeyBinding cinematicClear;
+	/** Freie Kamera an/aus (standardmäßig unbelegt). */
+	public static KeyBinding cinematicFreecam;
 
 	private TrsKeys() {
 	}
@@ -69,6 +71,7 @@ public final class TrsKeys {
 		cinematicPlay = register(new KeyBinding("key.trsclient.cinematicPlay", Keyboard.KEY_NONE, CATEGORY));
 		cinematicRemove = register(new KeyBinding("key.trsclient.cinematicRemove", Keyboard.KEY_NONE, CATEGORY));
 		cinematicClear = register(new KeyBinding("key.trsclient.cinematicClear", Keyboard.KEY_NONE, CATEGORY));
+		cinematicFreecam = register(new KeyBinding("key.trsclient.cinematicFreecam", Keyboard.KEY_NONE, CATEGORY));
 	}
 
 	/**

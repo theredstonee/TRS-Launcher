@@ -73,9 +73,12 @@ public final class TrsKeys {
 			new KeyMapping("key.trsclient.cinematicRemove", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
 	public static final KeyMapping cinematicClear =
 			new KeyMapping("key.trsclient.cinematicClear", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
+	/** Freie Kamera an/aus (standardmäßig unbelegt). */
+	public static final KeyMapping cinematicFreecam =
+			new KeyMapping("key.trsclient.cinematicFreecam", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
 	private static final KeyMapping[] ALL = {menu, zoom, fullbright, freelook, hudProfile, emoteWheel, redstoneOverlay,
 			saveClip, toggleRecording, wardrobe, worldMap, social, quickReply, panorama, notes, cinematicAdd, cinematicPlay,
-			cinematicRemove, cinematicClear};
+			cinematicRemove, cinematicClear, cinematicFreecam};
 
 	private TrsKeys() {
 	}

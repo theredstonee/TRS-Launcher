@@ -19,5 +19,6 @@
 	"key.trsclient.cinematicAdd": "Trajeto de câmera: adicionar quadro-chave",
 	"key.trsclient.cinematicPlay": "Trajeto de câmera: reproduzir / parar",
 	"key.trsclient.cinematicRemove": "Trajeto de câmera: remover o último quadro-chave",
-	"key.trsclient.cinematicClear": "Trajeto de câmera: apagar"
+	"key.trsclient.cinematicClear": "Trajeto de câmera: apagar",
+	"key.trsclient.cinematicFreecam": "Câmera livre liga / desliga"
 }

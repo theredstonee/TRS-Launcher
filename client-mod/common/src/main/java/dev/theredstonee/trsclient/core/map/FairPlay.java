@@ -14,7 +14,7 @@ import java.util.Locale;
  */
 public final class FairPlay {
 	/** Das Paragraphenzeichen der Minecraft-Farbcodes (als Zahl, damit die Quelltext-Kodierung egal ist). */
-	static final char SECTION = (char) 0xA7;
+	public static final char SECTION = (char) 0xA7;
 	static final String FAIR = "fairxaero";
 	static final String NO_MINIMAP = "nominimap";
 	static final String RESET = "resetxaero";
@@ -95,7 +95,7 @@ public final class FairPlay {
 	}
 
 	/** Die Zeichen hinter jedem §, hintereinander ("§f§a§i§r" → "fair"). */
-	static String codes(String text) {
+	public static String codes(String text) {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i + 1 < text.length(); i++) {
 			if (text.charAt(i) == SECTION) {

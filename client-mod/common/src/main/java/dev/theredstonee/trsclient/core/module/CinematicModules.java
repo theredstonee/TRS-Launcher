@@ -5,6 +5,7 @@ import dev.theredstonee.trsclient.core.cinematic.CameraPath;
 /**
  * Kamera-Fahrten (TRS Client {@link NewSince#CINEMATIC}): Keyframes an der aktuellen Kamera setzen, die Fahrt abspielen
  * (Kamera löst sich von der Spielfigur, HUD aus, optional Aufnahme im TRS Launcher) – je Welt/Server gespeichert.
+ * Dazu die freie Kamera (Freecam), aus der heraus man Keyframes setzen kann.
  *
  * <p>Logik in {@code core.cinematic}; die Bäume liefern nur Tasten, Kamera-/Sichtfeld-Hooks und Partikel.
  */
@@ -18,6 +19,15 @@ public final class CinematicModules {
 	public final KeySetting removeKey;
 	/** Alle Keyframes dieser Welt löschen. */
 	public final KeySetting clearKey;
+	/** Freie Kamera an/aus (standardmäßig unbelegt). */
+	public final KeySetting freecamKey;
+	/** Geschwindigkeit der freien Kamera (Blöcke je Sekunde; Mausrad ändert sie in der freien Kamera). */
+	public final NumberSetting freecamSpeed;
+	/**
+	 * Fair Play: freie Kamera und Fahrten halten an massiven, undurchsichtigen Blöcken an (nur durch Durchsichtiges
+	 * und Durchgänge). Der Server kann es erzwingen ({@code core.cinematic.FreecamRules}).
+	 */
+	public final BoolSetting freecamFairPlay;
 	public final ChoiceSetting<Timing> timing;
 	public final NumberSetting seconds;
 	public final ChoiceSetting<Smoothing> smoothing;
@@ -69,11 +79,16 @@ public final class CinematicModules {
 				"Cinematic camera flights for videos and screenshots: set keyframes at your current camera (position, "
 						+ "view and field of view) and play the path back smoothly. While it plays, the camera leaves your "
 						+ "character, the HUD hides and the launcher can record. Paths are saved per world and server. "
-						+ "Bind the keys under Controls → TRS Client.", true));
+						+ "Freecam lets the camera fly freely (WASD, space, sneak, scroll for speed) while your character "
+						+ "stays put – set keyframes from there. Bind the keys under Controls → TRS Client.", true));
 		addKey = cinematic.add(new KeySetting("addKey", "Add keyframe"));
 		playKey = cinematic.add(new KeySetting("playKey", "Play / stop"));
 		removeKey = cinematic.add(new KeySetting("removeKey", "Remove last keyframe"));
 		clearKey = cinematic.add(new KeySetting("clearKey", "Clear path"));
+		freecamKey = cinematic.add(new KeySetting("freecamKey", "Freecam on / off"));
+		freecamSpeed = cinematic.add(new NumberSetting("freecamSpeed", "Freecam speed", 10, 0.5, 100, 0.5, "", " m/s"));
+		freecamFairPlay = cinematic.add(new BoolSetting("freecamFairPlay",
+				"Fair Play (the camera stops at solid blocks, also while a path plays)", true));
 		timing = cinematic.add(new ChoiceSetting<>("timing", "Timing", Timing.class, Timing.PER_SEGMENT));
 		seconds = cinematic.add(new NumberSetting("seconds", "Seconds", 5, 0.5, 120, 0.5, "", " s"));
 		smoothing = cinematic.add(new ChoiceSetting<>("smoothing", "Curve", Smoothing.class, Smoothing.SMOOTH));

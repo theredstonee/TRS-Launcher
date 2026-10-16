@@ -331,6 +331,11 @@ public final class AutoTest {
 					step = 41;
 					break;
 				}
+				// -PtrsAutotestOnly=freecam: freie Kamera (Fair Play an Stein, durch Glas/Tür, ohne Fair Play durch Stein)
+				if ("freecam".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 42;
+					break;
+				}
 				// -PtrsAutotestOnly=chatheads: Köpfe vor ein paar Chat-Zeilen
 				if ("chatheads".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 39;
@@ -764,7 +769,8 @@ public final class AutoTest {
 				wait = 5;
 				break;
 			case 40:
-			case 41: {
+			case 41:
+			case 42: {
 				// Creator-Programm bzw. Kamera-Fahrten: Screenshots trsclient-<mc>-creator-*.png / -cinematic-*.png
 				CapeTest.Actions creatorActions = new CapeTest.Actions() {
 					@Override
@@ -777,7 +783,8 @@ public final class AutoTest {
 						AutoTest.command(mc, command);
 					}
 				};
-				if (step == 40 ? creatorTest.step(mc, modules, creatorActions) : cinematicTest.step(mc, modules, creatorActions)) return;
+				if (step == 40 ? creatorTest.step(mc, modules, creatorActions)
+						: step == 41 ? cinematicTest.step(mc, modules, creatorActions) : freecamTest.step(mc, modules, creatorActions)) return;
 				step = 24;
 				wait = 5;
 				break;
@@ -808,6 +815,7 @@ public final class AutoTest {
 	private final CapeTest capeTest = new CapeTest();
 	private final CreatorTest creatorTest = new CreatorTest();
 	private final CinematicTest cinematicTest = new CinematicTest();
+	private final FreecamTest freecamTest = new FreecamTest();
 	private final EmoteTest emoteTest = new EmoteTest();
 	private final RedstoneTest redstoneTest = new RedstoneTest();
 	private final CapeColorTest capeColorTest = new CapeColorTest();

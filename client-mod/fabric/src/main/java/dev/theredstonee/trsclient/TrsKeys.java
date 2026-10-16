@@ -48,6 +48,8 @@ public final class TrsKeys {
 	public static KeyMapping cinematicPlay;
 	public static KeyMapping cinematicRemove;
 	public static KeyMapping cinematicClear;
+	/** Freie Kamera an/aus (standardmäßig unbelegt). */
+	public static KeyMapping cinematicFreecam;
 
 	private TrsKeys() {
 	}
@@ -81,6 +83,7 @@ public final class TrsKeys {
 		cinematicPlay = register(new KeyMapping("key.trsclient.cinematicPlay", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
 		cinematicRemove = register(new KeyMapping("key.trsclient.cinematicRemove", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
 		cinematicClear = register(new KeyMapping("key.trsclient.cinematicClear", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
+		cinematicFreecam = register(new KeyMapping("key.trsclient.cinematicFreecam", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
 	}
 
 	/**

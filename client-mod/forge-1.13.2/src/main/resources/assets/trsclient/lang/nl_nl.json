@@ -19,5 +19,6 @@
 	"key.trsclient.cinematicAdd": "Camerapad: keyframe toevoegen",
 	"key.trsclient.cinematicPlay": "Camerapad: afspelen / stoppen",
 	"key.trsclient.cinematicRemove": "Camerapad: laatste keyframe verwijderen",
-	"key.trsclient.cinematicClear": "Camerapad: wissen"
+	"key.trsclient.cinematicClear": "Camerapad: wissen",
+	"key.trsclient.cinematicFreecam": "Vrije camera aan / uit"
 }
