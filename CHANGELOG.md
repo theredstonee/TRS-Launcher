@@ -28,6 +28,26 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Halloween 2026 – Night of Long Shadows.** When the TRS team switches on the Halloween event, the launcher wears a brand-new look: a pixel moon night with a blood moon, lightning, fog, graves, glowing pumpkins and things that watch you from the dark. Progress bars become a little moon that waxes from new moon to full moon.
+- **Flicker & grain.** The film grain and the lightning flicker are on by default; the first time you see them a hint shows how to switch them off (Settings → Appearance → Flicker & grain). With animations off everything stands still.
+- **Pumpkin hunt.** 13 pumpkins hide in the launcher, on the website and in the TRS Client. A riddle points you to the next one. Find all 13 for the "Pumpkin Hunter 2026" badge, the Pumpkin Hunter cape and a pair of Halloween wings of your choice (bat, demon, raven or ghost – one pair per player).
+- **Trick or treat.** Knock once a day: a sweet gives you a Moon Night cape (random colour, only one per player), a Halloween emote or a chat sticker – and sometimes it's just sour.
+- **Halloween 2026 badge.** Everyone who logs in during the event gets the badge – it can never be earned again afterwards. Badges show next to names in friends and chat.
+- **Chat stickers.** Send the stickers you won in chats.
+- **Wings.** Wings are a new cosmetic on your back. The Skins page previews them standing, in the air and sneaking.
+
+### Deutsch
+- **Halloween 2026 – Nacht der langen Schatten.** Schaltet das TRS-Team das Halloween-Event ein, trägt der Launcher einen ganz neuen Look: eine Pixel-Mondnacht mit Blutmond, Blitzen, Nebel, Gräbern, leuchtenden Kürbissen und Dingen, die dich aus dem Dunkeln beobachten. Fortschrittsbalken werden zu einem kleinen Mond, der von Neumond zu Vollmond wächst.
+- **Flackern & Rauschen.** Filmkorn und Blitz-Flackern sind ab Werk an; beim ersten Mal zeigt ein Hinweis, wie du sie ausschaltest (Einstellungen → Darstellung → Flackern & Rauschen). Mit ausgeschalteten Animationen steht alles still.
+- **Kürbis-Suche.** 13 Kürbisse verstecken sich im Launcher, auf der Website und im TRS Client. Ein Rätsel verrät jeweils das nächste Versteck. Wer alle 13 findet, bekommt das Abzeichen „Kürbisjäger 2026“, den Kürbisjäger-Umhang und ein Paar Halloween-Flügel nach Wahl (Fledermaus, Dämon, Rabe oder Geist – jeder nur ein Paar).
+- **Süßes oder Saures.** Einmal am Tag anklopfen: Süßes bringt einen Mondnacht-Umhang (zufällige Farbe, jeder nur einen), ein Halloween-Emote oder einen Chat-Sticker – und manchmal gibt es nur Saures.
+- **Abzeichen „Halloween 2026“.** Alle, die sich während des Events anmelden, bekommen es – danach nie wieder. Abzeichen stehen bei Freunden und im Chat neben dem Namen.
+- **Chat-Sticker.** Gewonnene Sticker kannst du in Chats verschicken.
+- **Flügel.** Flügel sind eine neue Kosmetik für den Rücken. Die Skins-Seite zeigt sie im Stand, in der Luft und beim Schleichen.
+
 ## 0.22.0 – 2026-10-16 – Spotlight | Rampenlicht
 <!-- banner: accent=#a66bff motif=/news/0.22.0/banner.png -->
 <!-- shots:
