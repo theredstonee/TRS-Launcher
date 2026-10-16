@@ -111,6 +111,10 @@ public final class HudEditor extends UiScreen {
 			// Klickflächen für die Elemente gibt es nicht: ein Klick zieht sie (siehe mouseClicked).
 		}
 
+		// Halloween: ein versteckter Kürbis in der linken unteren Ecke des Rasters (bis er gefunden ist).
+		dev.theredstonee.trsclient.core.halloween.Pumpkins.draw(c, hits, dev.theredstonee.trsclient.core.halloween.Pumpkins.CLIENT_HUD,
+				10, height - 10, mouseX, mouseY);
+
 		// Leiste und Feld liegen über den Vorschauen (Text hat in Minecraft eine eigene Tiefe).
 		c.flush();
 		c.push();
