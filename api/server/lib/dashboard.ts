@@ -86,7 +86,7 @@ export function dashboard(ctx: AppContext): Dashboard {
     },
     sanctions: activeCounts(ctx),
     uploads: {
-      capesPending: n("SELECT COUNT(*) AS n FROM capes WHERE kind = 'upload' AND status = 'pending'"),
+      capesPending: n("SELECT COUNT(*) AS n FROM capes WHERE kind = 'upload' AND status = 'pending' AND creator_uuid IS NULL"),
       capesReported: n('SELECT COUNT(DISTINCT cape_id) AS n FROM cape_reports'),
       cosmeticsPending: n("SELECT COUNT(*) AS n FROM cosmetics WHERE kind = 'upload' AND status = 'pending'"),
       cosmeticsReported: n('SELECT COUNT(DISTINCT cosmetic_id) AS n FROM cosmetic_reports'),

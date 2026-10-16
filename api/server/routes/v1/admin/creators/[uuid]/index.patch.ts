@@ -1,0 +1,15 @@
+import { defineEventHandler } from 'h3'
+import { z } from 'zod'
+import { useCtx } from '../../../../../lib/context'
+import { adminUpdateCreator } from '../../../../../lib/creators'
+import { limit, paramWith, readJson, requireStaff } from '../../../../../lib/http'
+import { RULES } from '../../../../../lib/ratelimit'
+import { uuidSchema } from '../../../../../lib/schemas'
+
+/** Stufe, Haupt-Code oder Kanäle ändern (§35.6). → `{ creator }` */
+export default defineEventHandler(async (event) => {
+  const staff = requireStaff(event, 'creators.manage')
+  limit(`admin-creators:${staff.uuid}`, RULES.adminCreators)
+  const uuid = paramWith(event, 'uuid', uuidSchema)
+  return adminUpdateCreator(useCtx(), staff, uuid, await readJson(event, z.unknown()))
+})

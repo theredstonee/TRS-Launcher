@@ -34,6 +34,8 @@ export interface CapeRow {
   reviewed_at: number | null
   reviewed_by: string | null
   reject_reason: string | null
+  /** Fan-Umhang eines Creators (§35): dessen UUID; Besitz dann nur über `user_capes` (Quelle `creator`). */
+  creator_uuid?: string | null
 }
 
 export interface CapeView {
@@ -164,6 +166,10 @@ export function seedBuiltins(ctx: AppContext, capes: BuiltinCape[]): void {
 /** Darf `uuid` diesen Umhang tragen? */
 export function canUse(ctx: AppContext, uuid: string, c: CapeRow): boolean {
   if (c.kind === 'upload') {
+    // Fan-Umhang (§35): wie ein freigeschaltetes Design – nur freigegeben und mit Besitz-Zeile (auch für den Creator selbst).
+    if (c.creator_uuid) {
+      return c.status === 'approved' && one(ctx.db, 'SELECT 1 AS x FROM user_capes WHERE uuid = ? AND cape_id = ?', uuid, c.id) !== undefined
+    }
     if (c.owner_uuid === uuid) return c.status !== 'rejected'
     // Geteilt: nur angenommen und solange der Umhang freigegeben ist.
     return c.status === 'approved' && holdsCape(ctx, uuid, c.id)
@@ -188,10 +194,12 @@ export function catalog(ctx: AppContext, uuid: string): CatalogEntry[] {
      LEFT JOIN users f ON f.uuid = s.granted_by
      LEFT JOIN users o ON o.uuid = c.owner_uuid
      WHERE (c.kind = 'builtin' AND (c.retired = 0 OR c.id = ?))
-        OR (c.kind = 'upload' AND c.owner_uuid = ?)
+        OR (c.kind = 'upload' AND c.owner_uuid = ? AND c.creator_uuid IS NULL)
         OR (c.kind = 'upload' AND c.status = 'approved' AND s.holder_uuid IS NOT NULL)
-     ORDER BY CASE WHEN c.kind = 'builtin' THEN 0 WHEN c.owner_uuid = ? THEN 1 ELSE 2 END, c.sort, c.created_at`,
-    uuid, active, uuid, uuid,
+        OR (c.kind = 'upload' AND c.creator_uuid IS NOT NULL AND c.status = 'approved'
+            AND EXISTS (SELECT 1 FROM user_capes g WHERE g.uuid = ? AND g.cape_id = c.id))
+     ORDER BY CASE WHEN c.kind = 'builtin' THEN 0 WHEN c.creator_uuid IS NOT NULL THEN 1 WHEN c.owner_uuid = ? THEN 2 ELSE 3 END, c.sort, c.created_at`,
+    uuid, active, uuid, uuid, uuid,
   )
   const activeEvents = activeEventsFor(ctx, uuid)
   return rows
@@ -225,7 +233,8 @@ export function setActiveCape(ctx: AppContext, uuid: string, capeId: string | nu
     return null
   }
   const c = getCape(ctx, capeId)
-  if (!c || (c.kind === 'upload' && c.owner_uuid !== uuid && !holdsCape(ctx, uuid, c.id))) {
+  const visible = c && (c.kind !== 'upload' || c.owner_uuid === uuid || (c.creator_uuid ? canUse(ctx, uuid, c) : holdsCape(ctx, uuid, c.id)))
+  if (!c || !visible) {
     throw notFound('cape_not_found', 'Cape not found')
   }
   if (!canUse(ctx, uuid, c)) throw forbidden('cape_locked', 'You have not unlocked this cape')
@@ -260,7 +269,7 @@ export function uploadCape(
   const counts = one<{ total: number, pending: number }>(
     ctx.db,
     `SELECT COUNT(*) AS total, COALESCE(SUM(status = 'pending'), 0) AS pending
-     FROM capes WHERE kind = 'upload' AND owner_uuid = ? AND status <> 'rejected'`,
+     FROM capes WHERE kind = 'upload' AND owner_uuid = ? AND status <> 'rejected' AND creator_uuid IS NULL`,
     uuid,
   )!
   if (counts.pending >= ctx.config.limits.maxPendingUploadsPerUser) {
@@ -277,7 +286,7 @@ export function uploadCape(
   const sha = sha256Hex(clean.png)
   const dup = one<{ id: string }>(
     ctx.db,
-    "SELECT id FROM capes WHERE kind = 'upload' AND owner_uuid = ? AND sha256 = ? AND status <> 'rejected'",
+    "SELECT id FROM capes WHERE kind = 'upload' AND owner_uuid = ? AND sha256 = ? AND status <> 'rejected' AND creator_uuid IS NULL",
     uuid, sha,
   )
   if (dup) throw conflict('duplicate_cape', 'You already uploaded this cape')
@@ -299,7 +308,8 @@ export function uploadCape(
 
 export function deleteOwnUpload(ctx: AppContext, uuid: string, capeId: string): void {
   const c = getCape(ctx, capeId)
-  if (!c || c.kind !== 'upload' || c.owner_uuid !== uuid) throw notFound('cape_not_found', 'Cape not found')
+  // Fan-Umhänge (§35) verwaltet der Creator über /v1/creator/fan-cape, nicht hier.
+  if (!c || c.kind !== 'upload' || c.owner_uuid !== uuid || c.creator_uuid) throw notFound('cape_not_found', 'Cape not found')
   removeCape(ctx, c.id)
 }
 
@@ -364,7 +374,7 @@ export function readTexture(ctx: AppContext, capeId: string, viewer: { uuid: str
 
 // ---------------------------------------------------------------- Zuteilung (Admin, Codes)
 
-export function grantCape(ctx: AppContext, uuid: string, capeId: string, source: 'code' | 'admin' | 'event'): boolean {
+export function grantCape(ctx: AppContext, uuid: string, capeId: string, source: 'code' | 'admin' | 'event' | 'creator'): boolean {
   return (
     run(
       ctx.db,

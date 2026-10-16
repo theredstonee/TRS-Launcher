@@ -176,20 +176,20 @@ export function requireWebOrUser(event: H3Event, kind: 'read' | 'write' = 'read'
 
 /**
  * Wer schaut eine Textur an? Bearer-Nutzer wie bei `optionalUser`, sonst ein Team-Mitglied mit Website-Sitzung und
- * `uploads.review` (nur lesend, damit die Admin-Seite wartende Uploads zeigen kann).
+ * `uploads.review` oder `creators.review` (nur lesend, damit die Admin-Seite wartende Uploads/Fan-Umhänge zeigen kann).
  */
 export function textureViewer(event: H3Event): { uuid: string, admin: boolean } | null {
   const user = optionalUser(event)
   if (user) {
     const staff = teamOf(useCtx(), user.uuid)
-    return { uuid: user.uuid, admin: !!staff && can(staff, 'uploads.review') }
+    return { uuid: user.uuid, admin: !!staff && (can(staff, 'uploads.review') || can(staff, 'creators.review')) }
   }
   const cookie = getCookie(event, WEB_SESSION_COOKIE)
   if (!cookie || getHeader(event, 'authorization') !== undefined) return null
   try {
     const session = webSession(useCtx(), cookie, undefined, false)
     const staff = teamOf(useCtx(), session.uuid)
-    return { uuid: session.uuid, admin: !!staff && can(staff, 'uploads.review') }
+    return { uuid: session.uuid, admin: !!staff && (can(staff, 'uploads.review') || can(staff, 'creators.review')) }
   } catch {
     return null
   }

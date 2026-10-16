@@ -1,6 +1,7 @@
 import type { AppContext } from './context'
 import { all, placeholders } from './db'
 import { capeView, type CapeRow } from './capes'
+import { creatorLookupData, type LookupCreator, type LookupFan } from './creator-lookup'
 import { cosmeticView, renderable, type CosmeticRow } from './cosmetics'
 import { WEARABLE_SLOTS, type WearableSlot } from './templates'
 import { ACTIVE_BANS } from './users'
@@ -45,6 +46,10 @@ export interface LookupEntry {
   badge: boolean
   cape: LookupCape | null
   cosmetics: LookupCosmetics
+  /** Der Spieler ist ein aktiver Creator (§35.5); fehlt sonst. */
+  creator?: LookupCreator
+  /** Der Spieler ist Fan eines aktiven Creators mit freigegebenem Symbol (für den Fragenden sichtbar); fehlt sonst. */
+  fan?: LookupFan
 }
 
 interface Row {
@@ -126,6 +131,7 @@ function collect(ctx: AppContext, viewer: string, uuids: string[]): LookupEntry[
   }
 
   const viewerLive = seesLiveBadges(ctx, viewer)
+  const extra = creatorLookupData(ctx, viewer, rows.map((r) => r.uuid))
   const players: LookupEntry[] = []
   for (const r of rows) {
     const self = r.uuid === viewer
@@ -186,8 +192,11 @@ function collect(ctx: AppContext, viewer: string, uuids: string[]): LookupEntry[
       }
     }
     const badge = liveBadge(ctx, r.show_badge === 1, r.uuid, self || viewerLive)
-    if (!badge && !cape && !any) continue
-    players.push({ uuid: r.uuid, badge, cape, cosmetics })
+    const creator = extra.creators.get(r.uuid)
+    const fan = extra.fans.get(r.uuid)
+    // Nur Creator-/Fan-Daten reichen auch (§35.5).
+    if (!badge && !cape && !any && !creator && !fan) continue
+    players.push({ uuid: r.uuid, badge, cape, cosmetics, ...(creator ? { creator } : {}), ...(fan ? { fan } : {}) })
   }
   return players
 }

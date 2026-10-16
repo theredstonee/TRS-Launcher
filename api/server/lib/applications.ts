@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type { AppContext } from './context'
 import { all, one, placeholders, run, tx } from './db'
 import { ApiError, badRequest, conflict, forbidden, notFound } from './errors'
+import { creatorFromApplicationInTx, creatorStateOf } from './creators'
 import { adminSanctionViews, sanctionsOf, type AdminSanctionView } from './sanctions'
 import { sanitizeText, textLength } from './safety'
 import { addMemberRole, assertCan, can, getRole, rankOf, type Staff } from './team'
@@ -107,6 +108,8 @@ export const JOB_ID = /^[a-z0-9](?:[a-z0-9-]{1,46}[a-z0-9])$/
 export const jobInputSchema = z.strictObject({
   id: z.string().regex(JOB_ID, 'lowercase letters, digits and dashes (3–48)').optional(),
   status: z.enum(['draft', 'open', 'closed']).default('draft'),
+  /** `creator` = Bewerbung fürs Creator-Programm (§35): Annehmen macht den Bewerber zum Creator statt eine Rolle zu geben. */
+  purpose: z.enum(['team', 'creator']).default('team'),
   roleId: z.string().min(1).max(40).nullable().default(null),
   sort: z.number().int().min(-1000).max(1000).default(0),
   cooldownDays: z.number().int().min(0).max(365).default(30),
@@ -120,6 +123,7 @@ export type JobInput = z.input<typeof jobInputSchema>
 interface JobRow {
   id: string
   status: 'draft' | 'open' | 'closed'
+  purpose: 'team' | 'creator'
   role_id: string | null
   sort: number
   cooldown_days: number
@@ -133,6 +137,7 @@ interface JobRow {
 export interface JobView {
   id: string
   status: 'draft' | 'open' | 'closed'
+  purpose: 'team' | 'creator'
   texts: JobTexts
   form: FormField[]
   cooldownDays: number
@@ -157,6 +162,7 @@ function jobView(ctx: AppContext, j: JobRow): JobView {
   return {
     id: j.id,
     status: j.status,
+    purpose: j.purpose ?? 'team',
     texts: parseJson<JobTexts>(j.texts, {}),
     form: parseJson<FormField[]>(j.form, []),
     cooldownDays: j.cooldown_days,
@@ -208,8 +214,9 @@ function slugFrom(texts: JobTexts): string {
   return base.length >= 3 ? base : `job-${randomBytes(3).toString('hex')}`
 }
 
-function checkRole(ctx: AppContext, roleId: string | null): void {
+function checkRole(ctx: AppContext, roleId: string | null, purpose: 'team' | 'creator' = 'team'): void {
   if (roleId === null) return
+  if (purpose === 'creator') throw badRequest('invalid_role', 'Creator positions have no role (accepting makes the applicant a creator)')
   const r = getRole(ctx, roleId)
   if (!r) throw notFound('role_not_found', 'Role not found')
   if (r.id === 'owner') throw badRequest('invalid_role', 'The owner role cannot be linked to a job')
@@ -218,7 +225,7 @@ function checkRole(ctx: AppContext, roleId: string | null): void {
 export function createJob(ctx: AppContext, actor: Staff, raw: unknown): JobView {
   assertCan(actor, 'applications.manage')
   const input = parse(jobInputSchema, raw)
-  checkRole(ctx, input.roleId)
+  checkRole(ctx, input.roleId, input.purpose)
   if (one<{ n: number }>(ctx.db, 'SELECT COUNT(*) AS n FROM team_jobs')!.n >= MAX_JOBS) throw conflict('job_limit', `At most ${MAX_JOBS} jobs`)
   let id = input.id ?? slugFrom(input.texts)
   if (jobRow(ctx, id)) {
@@ -228,9 +235,9 @@ export function createJob(ctx: AppContext, actor: Staff, raw: unknown): JobView 
   const t = ctx.now()
   run(
     ctx.db,
-    `INSERT INTO team_jobs (id, status, role_id, sort, cooldown_days, texts, form, created_at, created_by, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    id, input.status, input.roleId, input.sort, input.cooldownDays, JSON.stringify(input.texts), JSON.stringify(input.form), t, actor.uuid, t,
+    `INSERT INTO team_jobs (id, status, purpose, role_id, sort, cooldown_days, texts, form, created_at, created_by, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    id, input.status, input.purpose, input.roleId, input.sort, input.cooldownDays, JSON.stringify(input.texts), JSON.stringify(input.form), t, actor.uuid, t,
   )
   logAudit(ctx, actor.uuid, 'job.create', null, id)
   return jobView(ctx, jobRow(ctx, id)!)
@@ -241,11 +248,11 @@ export function updateJob(ctx: AppContext, actor: Staff, id: string, raw: unknow
   const j = jobRow(ctx, id)
   if (!j) throw notFound('job_not_found', 'Job not found')
   const input = parse(jobInputSchema.omit({ id: true }), raw)
-  checkRole(ctx, input.roleId)
+  checkRole(ctx, input.roleId, input.purpose)
   run(
     ctx.db,
-    'UPDATE team_jobs SET status = ?, role_id = ?, sort = ?, cooldown_days = ?, texts = ?, form = ?, updated_at = ? WHERE id = ?',
-    input.status, input.roleId, input.sort, input.cooldownDays, JSON.stringify(input.texts), JSON.stringify(input.form), ctx.now(), id,
+    'UPDATE team_jobs SET status = ?, purpose = ?, role_id = ?, sort = ?, cooldown_days = ?, texts = ?, form = ?, updated_at = ? WHERE id = ?',
+    input.status, input.purpose, input.roleId, input.sort, input.cooldownDays, JSON.stringify(input.texts), JSON.stringify(input.form), ctx.now(), id,
   )
   logAudit(ctx, actor.uuid, 'job.update', null, `${id}: ${input.status}`)
   return jobView(ctx, jobRow(ctx, id)!)
@@ -403,7 +410,7 @@ interface ApplicationRow {
 
 export interface Eligibility {
   canApply: boolean
-  reason: null | 'closed' | 'open_application' | 'cooldown' | 'member' | 'too_many_open'
+  reason: null | 'closed' | 'open_application' | 'cooldown' | 'member' | 'too_many_open' | 'already_creator' | 'creator_banned'
   retryAt: string | null
   applicationId: string | null
 }
@@ -419,6 +426,12 @@ export function eligibility(ctx: AppContext, uuid: string, jobId: string): Eligi
   if (open) return no('open_application', null, open.id)
   if (j.status !== 'open') return no('closed')
   if (j.role_id && one(ctx.db, 'SELECT 1 AS x FROM team_members WHERE uuid = ? AND role_id = ?', uuid, j.role_id)) return no('member')
+  if (j.purpose === 'creator') {
+    // Creator-Stellen (§35): aktive Creator brauchen keine Bewerbung, gesperrte dürfen sich nicht neu bewerben.
+    const state = creatorStateOf(ctx, uuid)
+    if (state === 'active') return no('already_creator')
+    if (state === 'banned') return no('creator_banned')
+  }
   const last = one<{ status: ApplicationStatus, decided_at: number | null, updated_at: number }>(
     ctx.db,
     "SELECT status, decided_at, updated_at FROM team_applications WHERE job_id = ? AND uuid = ? AND status IN ('rejected', 'withdrawn') ORDER BY updated_at DESC LIMIT 1",
@@ -445,6 +458,8 @@ export function submitApplication(ctx: AppContext, applicant: { uuid: string, na
       cooldown: [409, 'cooldown', 'You can apply for this job again later'],
       member: [409, 'already_member', 'You already have this role'],
       too_many_open: [409, 'too_many_open', `At most ${MAX_OPEN_PER_USER} open applications at a time`],
+      already_creator: [409, 'already_creator', 'You are already a creator'],
+      creator_banned: [403, 'creator_banned', 'You cannot apply for the creator programme'],
     }
     const [status, code, message] = codes[el.reason!]
     throw new ApiError(status, code, message, { retryAt: el.retryAt, applicationId: el.applicationId })
@@ -736,7 +751,9 @@ export function setApplicationStatus(ctx: AppContext, actor: Staff, id: string, 
   if (body.grantRole && body.status !== 'accepted') throw badRequest('invalid_request', 'grantRole needs status=accepted')
   const j = jobRow(ctx, a.job_id)
   let grant: string | null = null
+  const makesCreator = body.status === 'accepted' && a.status !== 'accepted' && j?.purpose === 'creator'
   if (body.grantRole) {
+    if (j?.purpose === 'creator') throw badRequest('invalid_request', 'Creator positions grant no role; accepting makes the applicant a creator')
     if (!j?.role_id) throw conflict('job_without_role', 'This job has no linked role')
     const role = getRole(ctx, j.role_id)!
     if (!actor.owner && role.rank >= actor.rank) throw forbidden('rank_too_low', 'You can only give roles below your own rank')
@@ -746,7 +763,12 @@ export function setApplicationStatus(ctx: AppContext, actor: Staff, id: string, 
   const responseChanged = body.response !== undefined && body.response !== (a.response ?? '')
   if (!changed && !responseChanged && !grant) return adminApplicationDetail(ctx, actor, id)
   const t = ctx.now()
-  tx(ctx.db, () => {
+  const after = tx(ctx.db, () => {
+    let creatorDone: (() => void) | null = null
+    if (makesCreator) {
+      creatorDone = creatorFromApplicationInTx(ctx, a.uuid)
+      history(ctx, id, actor.uuid, 'creator', null)
+    }
     if (changed) {
       run(
         ctx.db,
@@ -764,8 +786,10 @@ export function setApplicationStatus(ctx: AppContext, actor: Staff, id: string, 
       run(ctx.db, 'UPDATE team_applications SET role_granted = ? WHERE id = ?', grant, id)
       history(ctx, id, actor.uuid, 'role', grant)
     }
-    logAudit(ctx, actor.uuid, `application.${changed ? body.status : 'response'}`, a.uuid, `${a.job_id}${grant ? ` + role ${grant}` : ''}`, `app:${id}`)
+    logAudit(ctx, actor.uuid, `application.${changed ? body.status : 'response'}`, a.uuid, `${a.job_id}${grant ? ` + role ${grant}` : ''}${makesCreator ? ' + creator' : ''}`, `app:${id}`)
+    return creatorDone
   })
+  after?.()
   ctx.events.publish(a.uuid, { type: 'application_updated', application: myApplicationView(ctx, appRow(ctx, id)!) }, { meOnly: true })
   return adminApplicationDetail(ctx, actor, id)
 }

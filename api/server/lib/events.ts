@@ -10,6 +10,7 @@ import type { Settings } from './users'
 import type { IssueUpdatedEvent } from './issues'
 import type { PackView } from './packs'
 import type { CommandType, PeerView, RemoteStatus } from './remote'
+import type { CreatorTier, CreatorUpdateKind, Milestone } from './creators'
 
 export interface PlayerRef {
   uuid: string
@@ -142,6 +143,11 @@ export type ApiEvent =
   | { type: 'remote_status', desktopId: string, online: boolean, status: RemoteStatus, at: string }
   /** Handy und PC gekoppelt (`added`, mit beiden Geräten) oder getrennt (`removed`). */
   | { type: 'remote_pairing', action: 'added' | 'removed', desktopId: string, phoneId: string, desktop?: PeerView, phone?: PeerView }
+  // ---------------------------------------------------------------- Creator-Programm (§35, nur /v1/events/me)
+  /** An den Creator: Symbol/Fan-Umhang geprüft, Stufe geändert, Status entzogen/wiederhergestellt, Anfrage beantwortet, Meilenstein, neu Creator. */
+  | { type: 'creator_updated', kind: CreatorUpdateKind, reason?: string, tier?: CreatorTier }
+  /** An alle aktuellen Fans: ihr Creator hat einen neuen Meilenstein erreicht. */
+  | { type: 'creator_milestone', creator: PlayerRef, milestone: Milestone }
 
 export type ApiEventType = ApiEvent['type']
 
