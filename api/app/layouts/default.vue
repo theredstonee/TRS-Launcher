@@ -69,6 +69,9 @@ onBeforeUnmount(() => {
 })
 watch(() => route.fullPath, () => closeMenu())
 const year = new Date().getFullYear()
+// Halloween 2026: Blut-Tropfen unter der Kopfzeile, Schalter „Flackern & Rauschen“ in der Fußzeile.
+const hw = useHalloween()
+onMounted(() => hw.loadPrefs())
 </script>
 
 <template>
@@ -109,6 +112,7 @@ const year = new Date().getFullYear()
           </NuxtLink>
         </div>
 
+        <HalloweenDrips v-if="hw.on.value" class="hw-header-drips" :count="18" :seed="3" />
         <Transition name="menu">
           <nav v-if="menuOpen" id="site-menu" ref="menuPanel" class="menu-panel" :aria-label="m.nav.menu">
             <ul class="grid gap-1 sm:grid-cols-2">
@@ -178,6 +182,12 @@ const year = new Date().getFullYear()
       <div class="border-t border-base-800">
         <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-xs text-base-600 sm:px-6">
           <span>© {{ year }} Theredstonee · GPL-3.0</span>
+          <ClientOnly>
+            <label v-if="hw.on.value" class="hw-switch">
+              <input type="checkbox" :checked="hw.flicker.value" @change="hw.setFlicker(($event.target as HTMLInputElement).checked)" />
+              <span>{{ hw.t.value.flickerSwitch }}</span>
+            </label>
+          </ClientOnly>
           <NuxtLink to="/admin" rel="nofollow" class="hover:text-base-400">{{ m.nav.admin }}</NuxtLink>
         </div>
       </div>
@@ -186,6 +196,20 @@ const year = new Date().getFullYear()
 </template>
 
 <style scoped>
+.hw-header-drips {
+  top: 100%;
+}
+.hw-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: #9a94b4;
+}
+.hw-switch input {
+  accent-color: #8e6cc9;
+}
+
 .site-header {
   background: color-mix(in srgb, var(--color-base-950) 82%, transparent);
   backdrop-filter: blur(12px);

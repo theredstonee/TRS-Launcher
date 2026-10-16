@@ -14,7 +14,7 @@ useHead({
 </script>
 
 <template>
-  <HalloweenSky v-if="halloween" />
+  <HalloweenOverlay v-if="halloween" />
   <NuxtLayout>
     <div class="relative isolate mx-auto grid max-w-3xl place-items-center overflow-hidden px-4 py-28 text-center sm:px-6">
       <p class="display text-8xl text-redstone-500 drop-shadow">{{ error.statusCode || 500 }}</p>

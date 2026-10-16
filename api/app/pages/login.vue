@@ -141,6 +141,7 @@ async function copyCode() {
     // Kein Zugriff auf die Zwischenablage – der Code ist markierbar.
   }
 }
+const { on: hwOn } = useHalloween()
 </script>
 
 <template>
@@ -216,7 +217,9 @@ async function copyCode() {
         <span class="flex-1">{{ step === 'done' ? l.wait.signedIn : l.wait.waiting }}</span>
         <span class="font-mono text-xs text-base-400 tabular-nums">{{ fill(l.wait.expires, { time: leftText }) }}</span>
       </div>
-      <div class="timebar mt-2" aria-hidden="true"><span :style="{ transform: `scaleX(${leftShare})` }" /></div>
+      <!-- Halloween 2026: Mondlauf statt Zeitbalken -->
+      <MoonBar v-if="hwOn" class="mt-2" :progress="leftShare" />
+      <div v-else class="timebar mt-2" aria-hidden="true"><span :style="{ transform: `scaleX(${leftShare})` }" /></div>
 
       <div class="mt-6 flex flex-wrap gap-2">
         <button type="button" class="btn btn-primary" @click="openLauncher"><SiteIcon name="external" class="size-4" />{{ l.wait.reopen }}</button>

@@ -139,6 +139,8 @@ async function submit() {
         <div class="flex flex-wrap items-center gap-3">
           <h1 class="display text-5xl leading-tight text-base-50">{{ texts?.title }}</h1>
           <RoleBadge v-if="job.role" :role="job.role" />
+          <!-- Halloween-Kürbis-Suche: „Bei denen, die Videos machen.“ (Creator-Stelle) -->
+          <HalloweenHunt v-if="job.purpose === 'creator'" id="web-creator" />
         </div>
         <p v-if="texts?.summary" class="mt-3 text-lg text-base-300">{{ texts.summary }}</p>
         <p v-if="job.status !== 'open'" class="mt-5 rounded-md border border-lamp-900 bg-lamp-900/20 px-3 py-2 text-sm text-lamp-300">{{ t.job.closed }}</p>

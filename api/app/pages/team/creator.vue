@@ -23,7 +23,10 @@ usePageSeo(() => ({ path: '/team/creator', title: tx.value.title, description: t
 
 <template>
   <div class="mx-auto max-w-3xl px-4 pt-14 sm:px-6">
-    <h1 class="display text-5xl leading-tight text-base-50">{{ tx.title }}</h1>
+    <div class="flex items-center gap-3">
+      <h1 class="display text-5xl leading-tight text-base-50">{{ tx.title }}</h1>
+      <HalloweenHunt id="web-creator" />
+    </div>
     <p class="mt-4 text-lg text-base-400">{{ tx.none }}</p>
     <NuxtLink :to="lp('/team')" class="btn btn-ghost mt-6">{{ tx.back }}</NuxtLink>
   </div>

@@ -27,11 +27,11 @@ usePageSeo(() => ({
   ],
 }))
 
-type Unlockable = { unlock: 'free' | 'code' | 'admin' | 'event', achievement?: { en: string, de: string, es: string } | null }
+type Unlockable = { unlock: 'free' | 'code' | 'admin' | 'event' | 'reward', achievement?: { en: string, de: string, es: string } | null }
 const unlockLabel = (c: Unlockable) =>
-  c.unlock === 'event' ? m.value.cosmetics.halloween : c.achievement ? fill(m.value.capes.achievement, { name: c.achievement[lang.value] ?? c.achievement.en }) : c.unlock === 'free' ? m.value.capes.free : c.unlock === 'code' ? m.value.capes.code : m.value.capes.admin
+  c.unlock === 'reward' ? m.value.cosmetics.halloweenReward : c.unlock === 'event' ? m.value.cosmetics.halloween : c.achievement ? fill(m.value.capes.achievement, { name: c.achievement[lang.value] ?? c.achievement.en }) : c.unlock === 'free' ? m.value.capes.free : c.unlock === 'code' ? m.value.capes.code : m.value.capes.admin
 const unlockClass = (c: Unlockable) =>
-  c.unlock === 'event' ? 'badge-hw' : c.achievement ? 'bg-[#2a1f4a] text-[#c4a5ff]' : c.unlock === 'free' ? 'bg-ok/15 text-ok' : c.unlock === 'code' ? 'bg-lamp-900 text-lamp-300' : 'bg-redstone-900 text-redstone-300'
+  c.unlock === 'event' || c.unlock === 'reward' ? 'badge-hw' : c.achievement ? 'bg-[#2a1f4a] text-[#c4a5ff]' : c.unlock === 'free' ? 'bg-ok/15 text-ok' : c.unlock === 'code' ? 'bg-lamp-900 text-lamp-300' : 'bg-redstone-900 text-redstone-300'
 
 // Kopf-Kosmetik: Klick wählt aus, Überfahren (nur mit Maus) zeigt kurz in der Vorschau.
 const hatId = ref<string | null>(null)

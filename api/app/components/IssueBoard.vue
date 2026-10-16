@@ -133,7 +133,7 @@ const cardOf = (c: RoadmapColumnView): IssueView[] => c.issues
     </div>
     <div class="board" data-testid="issue-board">
       <section
-        v-for="c in columns"
+        v-for="(c, ci) in columns"
         :key="c.status"
         class="col"
         :class="{ over: over === c.status, 'mobile-hidden': mobileCol !== c.status }"
@@ -147,6 +147,8 @@ const cardOf = (c: RoadmapColumnView): IssueView[] => c.issues
         <header class="col-head">
           <span class="cdot" :data-s="c.status" aria-hidden="true" />
           <h2 class="col-title">{{ it.statuses[c.status] }}</h2>
+          <!-- Halloween-Kürbis-Suche: „Auf dem Weg in die Zukunft, über einer Spalte.“ -->
+          <HalloweenHunt v-if="ci === 1" id="web-roadmap" />
           <span class="cnt">{{ c.total }}</span>
         </header>
         <ul class="cards">

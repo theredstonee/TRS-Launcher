@@ -15,7 +15,7 @@ useHead({
   },
   titleTemplate: (title) => title || m.value.meta.title,
   link: [{ rel: 'alternate', type: 'application/rss+xml', title: 'TRS Launcher', href: '/feed.xml' }],
-  meta: () => (halloween.value ? [{ key: 'theme-color', name: 'theme-color', content: '#120a1c' }] : []),
+  meta: () => (halloween.value ? [{ key: 'theme-color', name: 'theme-color', content: '#07060c' }] : []),
 })
 useSeoMeta({
   description: () => m.value.meta.description,
@@ -35,7 +35,7 @@ watch(
 </script>
 
 <template>
-  <HalloweenSky v-if="halloween" />
+  <HalloweenOverlay v-if="halloween" />
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>

@@ -96,6 +96,8 @@ usePageSeo(() => ({
         <SiteIcon name="download" class="size-5" />{{ m.nav.download }}
       </NuxtLink>
     </section>
+    <!-- Halloween-Kürbis-Suche: „Wo alle Funktionen enden.“ -->
+    <div class="mt-6 flex justify-end pr-2"><HalloweenHunt id="web-features" /></div>
   </div>
 </template>
 

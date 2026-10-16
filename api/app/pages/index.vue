@@ -11,6 +11,12 @@ const { data: capeData } = await useCapes()
 const { data: eventsData } = await usePublicEvents()
 /** Halloween-Hero nur, wenn das Event global an ist (dieselbe Abfrage wie die Klasse am html). */
 const halloween = computed(() => eventsData.value?.events.some((e) => e.id === 'halloween' && e.active) ?? false)
+const hwText = computed(() => HALLOWEEN_TEXTS[lang.value] ?? HALLOWEEN_TEXTS.en)
+/** Bildschirm-Position zwischen den Gräbern der Szene (für den Kürbis `web-home`). */
+const graveSpot = ref<{ left: number, top: number } | null>(null)
+function onAnchor(p: { left: number, top: number }) {
+  graveSpot.value = p
+}
 
 const release = computed(() => releaseData.value?.release ?? null)
 const posts = computed(() => (blogData.value?.posts ?? []).slice(0, 3))
@@ -70,9 +76,9 @@ const powered = ref(false)
 
 <template>
   <div>
-    <section class="hero relative isolate overflow-hidden" :class="{ 'hero-on': powered }" data-fx-hero>
+    <section class="hero relative isolate overflow-hidden" :class="{ 'hero-on': powered, 'hero-hw': halloween }" :data-hw-frame="halloween ? '' : undefined" data-fx-hero>
       <ClientOnly>
-        <HalloweenScene v-if="halloween">
+        <HalloweenScene v-if="halloween" @anchor="onAnchor">
           <div class="scrim" />
         </HalloweenScene>
         <RedstoneScene v-else :mode="powered ? 'running' : 'idle'" :anchor="lamp">
@@ -80,8 +86,16 @@ const powered = ref(false)
         </RedstoneScene>
       </ClientOnly>
 
+      <template v-if="halloween">
+        <HalloweenDrips :count="16" :seed="21" />
+        <!-- Kürbis-Suche: „Auf der Startseite, zwischen den Gräbern.“ -->
+        <HalloweenHunt v-if="graveSpot" id="web-home" class="absolute z-20 -translate-x-1/2 -translate-y-full" :style="{ left: `${graveSpot.left}px`, top: `${graveSpot.top}px` }" />
+      </template>
       <div class="relative mx-auto flex h-full max-w-6xl flex-col justify-end gap-8 px-4 pt-16 pb-12 sm:px-6" data-fx-hero-content>
-        <NuxtLink v-if="halloween" :to="lp('/cosmetics')" class="hw-banner">{{ m.home.halloweenBanner }}</NuxtLink>
+        <div v-if="halloween" class="hw-hero-top">
+          <ClientOnly><HalloweenPanel /></ClientOnly>
+        </div>
+        <p v-if="halloween" class="hw-eyebrow">{{ hwText.eyebrow }} · {{ hwText.until }}</p>
         <!-- Die Zeile darüber gehört zur Überschrift (sichtbar, gleiche Optik wie vorher) – so steht „Minecraft-Launcher“ in der h1. -->
         <h1>
           <span class="block text-xs font-semibold tracking-[0.2em] text-lamp-300 uppercase">{{ m.home.kicker }}</span>
@@ -126,6 +140,11 @@ const powered = ref(false)
         </div>
       </div>
     </section>
+
+    <!-- Halloween-Karte auf schmalen Bildschirmen unter der Szene (breit: oben rechts in der Szene) -->
+    <div v-if="halloween" class="hw-hero-below relative z-10 mx-auto max-w-6xl px-4 pt-6 pb-12 sm:px-6">
+      <ClientOnly><HalloweenPanel /></ClientOnly>
+    </div>
 
     <!-- Große Bild-Kacheln: echter Screenshot, kleine Zeile, riesiges Wort -->
     <section class="relative z-10 mx-auto -mt-6 max-w-6xl px-4 sm:px-6" aria-label="Highlights">
@@ -280,19 +299,36 @@ const powered = ref(false)
   min-height: 34rem;
   height: min(78vh, 44rem);
 }
-.hw-banner {
-  align-self: flex-start;
-  max-width: 36rem;
-  padding: 0.4rem 0.75rem;
-  border: 1px solid #6b2fa8;
-  background: color-mix(in srgb, #1d1428 88%, transparent);
-  color: #efe6ff;
-  font-size: 0.8rem;
-  line-height: 1.4;
+.hero-hw {
+  min-height: 38rem;
 }
-.hw-banner:hover {
-  border-color: #ff7a1a;
-  color: #ffc48a;
+/* Halloween-Karte: breit oben rechts in der Szene, schmal darunter (eigener Block nach der Szene). */
+.hw-hero-top {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .hw-hero-top {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 2;
+    display: block;
+    width: 21rem;
+    /* Nie über die Knöpfe unten: höchstens bis über die Download-Zeile, sonst scrollt die Karte. */
+    max-height: calc(100% - 11rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  .hw-hero-below {
+    display: none;
+  }
+}
+.hw-eyebrow {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-style: italic;
+  font-size: 1.25rem;
+  color: #b9a2ea;
 }
 .scrim {
   position: absolute;
