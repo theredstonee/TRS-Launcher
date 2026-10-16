@@ -79,7 +79,7 @@ public final class HalloweenTest {
 		TrsMenuScreen screen = new TrsMenuScreen(parent);
 		try {
 			Object ui = screen.ui();
-			ui.getClass().getMethod("halloweenPage").invoke(ui);
+			ui.getClass().getMethod("showHalloween").invoke(ui);
 		} catch (ReflectiveOperationException | RuntimeException e) {
 			TrsClient.LOGGER.info("[Autotest] Halloween: halloweenPage() fehlt – Modulseite ({})", e.toString());
 			screen.select(modules.halloween.halloween);
@@ -138,6 +138,8 @@ public final class HalloweenTest {
 			case 1:
 				shot(mc, "title");
 				modules.halloween.local.markFlickerHintShown();
+				// Kürbis am Titel „finden“ (gegen die Attrappe: Toast „Kürbis gefunden!“).
+				dev.theredstonee.trsclient.core.halloween.HalloweenService.get().findPumpkin("client-title");
 				phase++;
 				wait = 10;
 				return;
@@ -199,8 +201,36 @@ public final class HalloweenTest {
 				return;
 			case 11:
 				shot(mc, "behind-you");
-				mc.gameSettings.thirdPersonView = 0;
+				// Flügel (Rücken): Ansicht von hinten, Zustände Ruhe / Luft / Schleichen.
+				mc.gameSettings.thirdPersonView = 1;
+				dev.theredstonee.trsclient.core.cosmetic.v2.WingState.forced = dev.theredstonee.trsclient.core.cosmetic.v2.WingState.IDLE;
+				phase = 100;
+				wait = 20;
+				return;
+			case 100:
+				shot(mc, "wings-idle");
+				dev.theredstonee.trsclient.core.cosmetic.v2.WingState.forced = dev.theredstonee.trsclient.core.cosmetic.v2.WingState.AIR;
 				phase++;
+				wait = 20;
+				return;
+			case 101:
+				shot(mc, "wings-air");
+				dev.theredstonee.trsclient.core.cosmetic.v2.WingState.forced = dev.theredstonee.trsclient.core.cosmetic.v2.WingState.SNEAK;
+				phase++;
+				wait = 20;
+				return;
+			case 102:
+				shot(mc, "wings-sneak");
+				dev.theredstonee.trsclient.core.cosmetic.v2.WingState.forced = -1;
+				mc.gameSettings.thirdPersonView = 0;
+				net.minecraft.client.settings.KeyBinding.setKeyBindState(mc.gameSettings.keyBindPlayerList.getKeyCode(), true);
+				phase++;
+				wait = 10;
+				return;
+			case 103:
+				shot(mc, "tablist");
+				net.minecraft.client.settings.KeyBinding.setKeyBindState(mc.gameSettings.keyBindPlayerList.getKeyCode(), false);
+				phase = 12;
 				wait = 10;
 				return;
 			case 12:

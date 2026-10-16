@@ -71,7 +71,7 @@ public final class HalloweenTest {
 		TrsMenuScreen screen = new TrsMenuScreen(parent);
 		try {
 			Object ui = screen.ui();
-			ui.getClass().getMethod("halloweenPage").invoke(ui);
+			ui.getClass().getMethod("showHalloween").invoke(ui);
 		} catch (ReflectiveOperationException | RuntimeException e) {
 			log("halloweenPage() fehlt – Modulseite: " + e);
 			screen.select(modules.halloween.halloween);
@@ -109,8 +109,10 @@ public final class HalloweenTest {
 				return;
 			case 1:
 				shot(mc, "title");
-				// Hinweis „Flackern & Rauschen“ als gesehen markieren – zweites Bild ohne.
+				// Hinweis „Flackern & Rauschen“ als gesehen markieren – zweites Bild ohne; Kürbis am Titel „finden“
+				// (gegen die Attrappe: Toast „Kürbis gefunden!“).
 				modules.halloween.local.markFlickerHintShown();
+				HalloweenService.get().findPumpkin("client-title");
 				phase++;
 				wait = 10;
 				return;
@@ -164,8 +166,42 @@ public final class HalloweenTest {
 				return;
 			case 10:
 				shot(mc, "behind-you");
-				Mc.setCameraMode(0);
+				// Flügel (Rücken): Ansicht von hinten, Zustände Ruhe / Luft / Schleichen.
+				Mc.setCameraMode(1);
+				dev.theredstonee.trsclient.core.cosmetic.v2.WingState.forced = dev.theredstonee.trsclient.core.cosmetic.v2.WingState.IDLE;
+				phase = 100;
+				wait = 20;
+				return;
+			case 100:
+				shot(mc, "wings-idle");
+				dev.theredstonee.trsclient.core.cosmetic.v2.WingState.forced = dev.theredstonee.trsclient.core.cosmetic.v2.WingState.AIR;
 				phase++;
+				wait = 20;
+				return;
+			case 101:
+				shot(mc, "wings-air");
+				dev.theredstonee.trsclient.core.cosmetic.v2.WingState.forced = dev.theredstonee.trsclient.core.cosmetic.v2.WingState.SNEAK;
+				phase++;
+				wait = 20;
+				return;
+			case 102:
+				shot(mc, "wings-sneak");
+				dev.theredstonee.trsclient.core.cosmetic.v2.WingState.forced = -1;
+				Mc.setCameraMode(0);
+				//? if >=1.15 {
+				mc.options.keyPlayerList.setDown(true);
+				//?} else
+				/*((dev.theredstonee.trsclient.mixin.KeyMappingAccessor) mc.options.keyPlayerList).trsclient$setDown(true);*/
+				phase++;
+				wait = 10;
+				return;
+			case 103:
+				shot(mc, "tablist");
+				//? if >=1.15 {
+				mc.options.keyPlayerList.setDown(false);
+				//?} else
+				/*((dev.theredstonee.trsclient.mixin.KeyMappingAccessor) mc.options.keyPlayerList).trsclient$setDown(false);*/
+				phase = 11;
 				wait = 10;
 				return;
 			case 11:
