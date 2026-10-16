@@ -38,6 +38,9 @@ How to write an entry:
 - **Halloween 2026 badge.** Everyone who logs in during the event gets the badge – it can never be earned again afterwards. Badges show next to names in friends and chat.
 - **Chat stickers.** Send the stickers you won in chats.
 - **Wings.** Wings are a new cosmetic on your back. The Skins page previews them standing, in the air and sneaking.
+- **TRS Client: Halloween in game.** The title screen, TRS menus and loading screens get the moon night look, the TRS menu gets a Halloween page (pumpkin hunt, trick or treat, switches) and 4 pumpkins hide in the client.
+- **TRS Client: jumpscares and spooky effects.** Jumpscares are on by default during Halloween (you get a heads-up once; switch them off in TRS menu → Halloween) – never in a fight, never at low health, at most one every 20 minutes. Bats burst out of your hits and a ghost trail follows you when sprinting; other players' effects only if you switch them on.
+- **TRS Client: wings, badges, stickers, emotes.** Wings show on your back in game (they flap in the air, fold when sneaking and hide with an elytra), Halloween badges appear on name tags and in the tab list, stickers in the in-game chat, plus 4 new Halloween emotes and the bat companion.
 
 ### Deutsch
 - **Halloween 2026 – Nacht der langen Schatten.** Schaltet das TRS-Team das Halloween-Event ein, trägt der Launcher einen ganz neuen Look: eine Pixel-Mondnacht mit Blutmond, Blitzen, Nebel, Gräbern, leuchtenden Kürbissen und Dingen, die dich aus dem Dunkeln beobachten. Fortschrittsbalken werden zu einem kleinen Mond, der von Neumond zu Vollmond wächst.
@@ -47,6 +50,9 @@ How to write an entry:
 - **Abzeichen „Halloween 2026“.** Alle, die sich während des Events anmelden, bekommen es – danach nie wieder. Abzeichen stehen bei Freunden und im Chat neben dem Namen.
 - **Chat-Sticker.** Gewonnene Sticker kannst du in Chats verschicken.
 - **Flügel.** Flügel sind eine neue Kosmetik für den Rücken. Die Skins-Seite zeigt sie im Stand, in der Luft und beim Schleichen.
+- **TRS Client: Halloween im Spiel.** Titelbildschirm, TRS-Menüs und Ladebildschirme tragen den Mondnacht-Look, das TRS-Menü bekommt eine Halloween-Seite (Kürbis-Suche, Süßes oder Saures, Schalter) und 4 Kürbisse verstecken sich im Client.
+- **TRS Client: Jumpscares und Spuk-Effekte.** Jumpscares sind zu Halloween ab Werk an (einmaliger Hinweis; ausschalten unter TRS-Menü → Halloween) – nie im Kampf, nie bei wenig Herzen, höchstens einer alle 20 Minuten. Aus deinen Treffern flattern Fledermäuse, beim Sprinten folgt dir eine Geister-Spur; Effekte anderer Spieler nur, wenn du sie einschaltest.
+- **TRS Client: Flügel, Abzeichen, Sticker, Emotes.** Flügel sitzen im Spiel auf deinem Rücken (in der Luft schlagen sie, beim Schleichen liegen sie an, mit Elytra sind sie weg), Halloween-Abzeichen erscheinen am Namensschild und in der Tab-Liste, Sticker im Spiel-Chat, dazu 4 neue Halloween-Emotes und der Fledermaus-Begleiter.
 
 ## 0.22.0 – 2026-10-16 – Spotlight | Rampenlicht
 <!-- banner: accent=#a66bff motif=/news/0.22.0/banner.png -->
