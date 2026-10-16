@@ -235,6 +235,14 @@ pub enum LiveEvent {
     AchievementUnlocked { achievement: Box<Achievement>, at: Option<String>, reward: Option<Reward> },
     /// Die aktiven Events dieses Spielers haben sich geändert (§31, z. B. Halloween an/aus).
     EventsChanged { events: Vec<String> },
+    /// Creator-Programm (§35.7): eigenes Symbol/Umhang geprüft, Stufe geändert, entzogen, Antrag beantwortet …
+    CreatorUpdated { kind: String, reason: Option<String>, tier: Option<String>, milestone: Option<String>, helper: Option<UserRef> },
+    /// Der unterstützte Creator hat einen neuen Meilenstein erreicht (an alle Fans).
+    CreatorMilestone { creator: UserRef, milestone: String },
+    /// Einladung, Helfer eines Creators zu werden (§35.9).
+    CreatorHelperInvite { creator: UserRef, rights: Vec<String> },
+    /// Der Creator hat dich als Helfer entfernt.
+    CreatorHelperRemoved { creator: Option<UserRef> },
     /// Fernbedienung (§33): geprüfter Befehl vom Handy an DIESEN PC (Signatur, Ziel und Argumente geprüft).
     RemoteCommand { command: Box<super::remote::RemoteCommand> },
     /// Ein Befehl wurde am PC abgeholt (`running`), ist fertig (`done`) oder gescheitert (`failed`).
@@ -478,6 +486,10 @@ pub fn decode(event: &str, data: &str) -> Option<LiveEvent> {
     // Fernbedienung (§33) hat eigene Felder (`status` ist dort ein Objekt).
     if event.starts_with("remote_") {
         return super::remote::decode_live(event, data);
+    }
+    // Creator-Programm (§35.7): eigene Felder (`kind`, `tier`, `milestone`).
+    if event.starts_with("creator_") {
+        return super::creator::decode_live(event, data);
     }
     let d: D = serde_json::from_str(data).ok()?;
     let message = |d: D| -> Option<(String, Box<ChatMessage>)> {

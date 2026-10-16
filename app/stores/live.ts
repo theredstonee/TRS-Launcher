@@ -79,6 +79,7 @@ export const useLiveStore = defineStore('live', () => {
       usePacksStore().inboxLoaded ? usePacksStore().loadInbox() : Promise.resolve(),
       useAchievementsStore().data ? useAchievementsStore().load(true) : Promise.resolve(),
       useRemoteStore().pcsLoaded ? useRemoteStore().loadPcs() : Promise.resolve(),
+      useCreatorStore().me ? useCreatorStore().load() : Promise.resolve(),
     ])
   }
 
@@ -208,6 +209,13 @@ export const useLiveStore = defineStore('live', () => {
         return
       case 'achievement_unlocked':
         return useAchievementsStore().onLiveEvent(e)
+      case 'creator_updated':
+      case 'creator_milestone':
+      case 'creator_helper_invite':
+      case 'creator_helper_removed':
+        // Creator-Programm (§35.7/§35.9): Symbol/Umhang geprüft, Stufe, Status, Meilensteine, Helfer.
+        useCreatorStore().onLiveEvent(e)
+        return
       case 'remote_command':
       case 'remote_command_update':
       case 'remote_status':

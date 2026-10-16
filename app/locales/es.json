@@ -311,7 +311,27 @@
       "too_many_devices": "Ya hay 10 dispositivos con notificaciones en tu cuenta: quita uno primero.",
       "endpoint_not_allowed": "No se acepta la dirección de tu app push: elige un servidor público en la app push.",
       "invalid_keys": "Las claves de las notificaciones no son válidas: vuelve a activar las notificaciones.",
-      "device_not_found": "Este dispositivo no está (o ya no está) registrado."
+      "device_not_found": "Este dispositivo no está (o ya no está) registrado.",
+      "creator_code_not_found": "Este código de creador no existe.",
+      "creator_code_expired": "Este código de creador ha caducado o se ha agotado.",
+      "creator_blocked": "Has bloqueado a este creador: desbloquéalo primero.",
+      "creator_supported": "Estás apoyando a este creador: primero deja de apoyarlo y luego bloquéalo.",
+      "creator_inactive": "Tu estado de creador no está activo ahora mismo.",
+      "creator_tier": "Esto requiere un nivel de creador superior.",
+      "creator_code_limit": "Ya tienes tantos códigos extra como permite tu nivel.",
+      "creator_code_taken": "Este código ya existe: elige otro.",
+      "invalid_symbol": "El símbolo de fan no es válido: cuadrado, de 16×16 a 64×64, en PNG.",
+      "creator_symbol_frames": "Los símbolos de fan animados están disponibles desde el nivel Partner.",
+      "creator_request_open": "Ya tienes una solicitud abierta de este tipo.",
+      "already_creator": "Este jugador ya es creador.",
+      "not_your_pack": "Este modpack no es tuyo.",
+      "creator_helper_limit": "Ya tienes tantos ayudantes como permite tu nivel.",
+      "creator_helper_exists": "Este jugador ya es tu ayudante o está invitado.",
+      "creator_helper_right": "El creador no te ha dado permiso para eso.",
+      "creator_self": "Ese es tu propio código de creador.",
+      "pack_not_found": "Este modpack ya no existe.",
+      "helper_not_found": "Este jugador ya no es ayudante.",
+      "helper_invite_not_found": "Esta invitación ya no existe."
     },
     "auth": {
       "accountMismatch": "El inicio de sesión pertenece a otra cuenta: vuelve a iniciar sesión.",
@@ -628,7 +648,10 @@
       "animated": "Los PNG animados (APNG) no son compatibles: sube las animaciones como tira.",
       "invalidSize": "La capa debe medir 64×32 píxeles (o un múltiplo hasta 1024×512), o 22×17 en formato de capa (hasta 352×272); las capas animadas tienen como máximo 32 fotogramas en vertical.",
       "frameTime": "La velocidad debe estar entre 50 y 1000 ms por fotograma.",
-      "emptyCape": "La capa es completamente transparente."
+      "emptyCape": "La capa es completamente transparente.",
+      "symbolTooLarge": "El símbolo de fan es demasiado grande (máx. 256 KB).",
+      "symbolSize": "El símbolo de fan debe ser cuadrado (de 16×16 a 64×64); animado, como máximo {frames} fotogramas apilados en vertical.",
+      "emptySymbol": "El símbolo de fan es totalmente transparente."
     },
     "trsValidate": {
       "invalidName": "Introduce un nombre de Minecraft (1–16 caracteres: A–Z, 0–9, _).",
@@ -948,6 +971,19 @@
       "ffmpegMissing": "Para los vídeos primero hay que descargar FFmpeg.",
       "unreadable": "«{name}» no se puede leer como vídeo.",
       "badRange": "Elige un fragmento válido del vídeo."
+    },
+    "creator": {
+      "invalidCode": "Los códigos de creador tienen de 5 a 20 caracteres: letras, cifras y guiones (p. ej. TRS-PIXEL).",
+      "invalidTier": "Nivel de creador desconocido.",
+      "invalidId": "Entrada no válida.",
+      "textLength": "Texto: de 1 a {max} caracteres.",
+      "textInvalidChars": "El texto contiene caracteres no válidos.",
+      "invalidMaxUses": "Número máximo de canjes: al menos 1.",
+      "expiryPast": "La fecha de caducidad debe estar en el futuro.",
+      "nothingToChange": "No hay nada que cambiar.",
+      "invalidChannelUrl": "Indica el enlace a tu canal (https://…).",
+      "invalidFollowers": "Número de seguidores no válido.",
+      "invalidRights": "Elige al menos un permiso para el ayudante."
     }
   },
   "browse": {
@@ -3025,7 +3061,8 @@
     "achievements": "Logros",
     "localServers": "Mis servidores",
     "controls": "Controles",
-    "pc": "PC"
+    "pc": "PC",
+    "creator": "Creadores"
   },
   "accountMenu": {
     "menuLabel": "Cuentas",
@@ -3084,7 +3121,8 @@
       "myApplications": "solicitudes solicitar equipo puesto estado",
       "achievements": "logros trofeos puntos recompensas insignias desbloquear achievements",
       "docs": "ayuda docs documentación guía wiki faq manual soporte preguntas help",
-      "bigPicture": "big picture tv mando gamepad steam deck pantalla completa sofá consola"
+      "bigPicture": "big picture tv mando gamepad steam deck pantalla completa sofá consola",
+      "creator": "creador código fans apoyar youtuber streamer símbolo de fan capa de fan"
     },
     "actions": {
       "newInstance": {
@@ -3408,7 +3446,8 @@
       "shares": "Para compartir capturas como enlace, el launcher inicia sesión en el servidor TRS. Eso solo ocurre cuando aceptas.",
       "achievements": "Para mostrar tus logros, el launcher inicia sesión en el servidor TRS. Eso solo ocurre cuando aceptas.",
       "cosmetics": "Para los cosméticos de cabeza de TRS, el launcher inicia sesión en el servidor de TRS. Solo ocurre si das tu consentimiento.",
-      "remote": "Para controlar tu PC desde este móvil, el launcher inicia sesión en el servidor de TRS. Eso solo ocurre cuando aceptas."
+      "remote": "Para controlar tu PC desde este móvil, el launcher inicia sesión en el servidor de TRS. Eso solo ocurre cuando aceptas.",
+      "creator": "El programa de creadores (códigos, símbolos de fan, capas de fan) necesita los servicios TRS."
     },
     "account": {
       "title": "No has iniciado sesión",
@@ -5473,7 +5512,8 @@
       "jobs": "Puestos",
       "website": "En la web",
       "websiteHint": "Abre la web en tu navegador (inicio de sesión con Microsoft).",
-      "blog": "Blog"
+      "blog": "Blog",
+      "creators": "Creadores"
     },
     "search": {
       "placeholder": "Buscar jugadores, UUID, ID de reportes, #sanciones, capas …",
@@ -5874,7 +5914,87 @@
       "applications_decide": "Decidir solicitudes",
       "blog_write": "Escribir entradas del blog (borradores, imágenes)",
       "blog_publish": "Publicar, programar y retirar entradas del blog",
-      "events_manage": "Gestionar eventos"
+      "events_manage": "Gestionar eventos",
+      "creators_review": "Revisar símbolos y capas de fan de creadores",
+      "creators_manage": "Gestionar creadores"
+    },
+    "creators": {
+      "intro": "Revisa símbolos y capas de fan, gestiona creadores y responde a sus solicitudes. Las candidaturas se gestionan en la web.",
+      "tabs": {
+        "queue": "Revisión",
+        "roster": "Creadores",
+        "requests": "Solicitudes"
+      },
+      "queue": {
+        "empty": "Nada que revisar.",
+        "symbol": "Símbolo de fan",
+        "cape": "Capa de fan",
+        "symbolInfo": "{size}×{size} px · {frames} fotograma(s)",
+        "frames": "{n} fotograma(s)",
+        "approve": "Aprobar",
+        "reject": "Rechazar",
+        "approved": "Aprobado: los fans de {name} lo ven al instante.",
+        "rejected": "Rechazado: {name} recibe el motivo.",
+        "rejectTitle": "Rechazar envío de {name}",
+        "reason": "Motivo (lo ve el creador)",
+        "message": "Mensaje (opcional)",
+        "reasonMissing": "Indica un motivo.",
+        "reasons": {
+          "logo": "Contiene un logo o marca ajena",
+          "unreadable": "No se lee en el juego: usa formas más claras",
+          "inappropriate": "Contenido inapropiado",
+          "other": "Otro motivo"
+        }
+      },
+      "roster": {
+        "player": "Jugador (nombre o UUID)",
+        "playerPlaceholder": "p. ej. Pixelmaus",
+        "tier": "Nivel",
+        "mainCodeOptional": "Código principal (opcional)",
+        "add": "Añadir creador",
+        "added": "{name} ahora es creador.",
+        "search": "Buscar creadores",
+        "state": "Estado",
+        "states": {
+          "all": "Todos",
+          "active": "activo",
+          "revoked": "retirado",
+          "banned": "bloqueado"
+        },
+        "empty": "No se encontraron creadores.",
+        "creator": "Creador",
+        "fans": "Fans",
+        "mainCode": "Código principal",
+        "editCode": "Cambiar código principal",
+        "editCodeTitle": "Código principal de {name}",
+        "editCodeHint": "Los vídeos antiguos con el código anterior dejarán de funcionar: cámbialo solo si es necesario.",
+        "save": "Guardar",
+        "tierChanged": "{name} ahora es {tier}.",
+        "revoke": "Retirar estado",
+        "ban": "Bloquear",
+        "restore": "Restaurar",
+        "revokeTitle": "Retirar el estado de creador de {name}",
+        "banTitle": "Bloquear a {name} como creador",
+        "reason": "Motivo (lo ve el creador)",
+        "reasonPlaceholder": "p. ej. spam de códigos en otros chats",
+        "removeCapes": "Quitar también las capas de fan a los fans",
+        "revokeText": "Se desactivan los códigos, el símbolo de fan y la insignia de creador. Puede volver a presentar su candidatura más adelante.",
+        "banText": "Se desactivan los códigos, el símbolo de fan y la insignia de creador, y no podrá volver a presentar su candidatura.",
+        "revokedToast": "{name}: estado retirado; los códigos y el símbolo están desactivados.",
+        "bannedToast": "{name} está bloqueado como creador.",
+        "restoredToast": "{name} vuelve a ser creador.",
+        "note": "Retirar desactiva códigos, símbolo e insignia; bloquear además impide nuevas candidaturas. Los fans conservan las capas de fan desbloqueadas salvo que las quites también."
+      },
+      "requests": {
+        "empty": "No hay solicitudes.",
+        "followers": "{n} seguidores",
+        "accept": "Aceptar",
+        "decline": "Rechazar",
+        "acceptTitle": "Aceptar solicitud",
+        "declineTitle": "Rechazar solicitud",
+        "reason": "Respuesta al creador (opcional)",
+        "upgradeHint": "Aceptar sube al creador un nivel."
+      }
     }
   },
   "trsChoice": {
@@ -6952,6 +7072,463 @@
       "installed": "{name} cambiado de {from} a {to}.",
       "none": "Todavía no hay una versión de {name} para esta configuración.",
       "unsupported": "{name} no se instaló desde Modrinth: elige una versión compatible en la página del mod o desactívalo."
+    }
+  },
+  "creator": {
+    "title": "Creadores",
+    "subtitle": "Apoya a tu creador favorito con su código: recibes su símbolo de fan y, si tiene, su capa de fan.",
+    "refresh": "Actualizar",
+    "error": "No se pudo cargar el programa de creadores.",
+    "copy": "Copiar",
+    "copied": "{code} copiado",
+    "channel": "{platform} · {n} seguidores",
+    "views": {
+      "label": "Vista",
+      "fan": "Como fan",
+      "own": "Mi panel"
+    },
+    "milestones": {
+      "bronze": "Bronce",
+      "silver": "Plata",
+      "gold": "Oro",
+      "diamond": "Diamante"
+    },
+    "symbol": {
+      "label": "Símbolo de fan",
+      "withMilestone": "Símbolo de fan con marco de {milestone}",
+      "title": "Tu símbolo de fan",
+      "approved": "Aprobado",
+      "pending": "Nuevo símbolo en revisión",
+      "rejected": "Rechazado",
+      "none": "Aún no hay símbolo",
+      "rejectedReason": "Rechazado: {reason}",
+      "rejectedNoReason": "Tu último símbolo fue rechazado.",
+      "newInReview": "nuevo · en revisión",
+      "oldUntilReview": "Tus fans siguen viendo el símbolo anterior hasta que se apruebe el nuevo.",
+      "hint": "Tus fans llevan este símbolo delante de su nombre: sobre la cabeza y en la lista de jugadores.",
+      "uploadTitle": "Subir un símbolo nuevo",
+      "formatTitle": "Formato",
+      "formatAnimated": "PNG, GIF o APNG · cuadrado, de 16×16 a 64×64 píxeles · animado hasta 8 fotogramas · máx. 256 KB",
+      "formatStatic": "PNG, GIF o APNG · cuadrado, de 16×16 a 64×64 píxeles · un fotograma (animado desde Partner) · máx. 256 KB",
+      "smallTitle": "Legible en pequeño",
+      "smallText": "En el juego es tan grande como una letra. Funcionan mejor las formas claras y pocos colores; la vista previa muestra todos los tamaños.",
+      "reviewTitle": "Revisión del equipo",
+      "reviewText": "Sin logos ni marcas ajenas, nada ofensivo. Recibirás un aviso cuando se apruebe o rechace, con el motivo.",
+      "pick": "Elegir imagen …",
+      "withdraw": "Retirar",
+      "uploaded": "Subido: el equipo revisará tu símbolo.",
+      "animatedFromPartner": "Los símbolos animados están disponibles desde el nivel Partner.",
+      "dialog": {
+        "title": "Nuevo símbolo de fan",
+        "choose": "Elegir imagen",
+        "other": "Otra imagen",
+        "hintAnimated": "PNG, GIF o APNG. Se recorta a un cuadrado centrado; las animaciones conservan hasta {n} fotogramas.",
+        "hintStatic": "PNG, GIF o APNG. Se recorta a un cuadrado centrado; de las animaciones solo queda el primer fotograma.",
+        "size": "Tamaño",
+        "speed": "Velocidad",
+        "speedValue": "{ms} ms por fotograma",
+        "sampled": "La animación tiene {total} fotogramas; se conservan {max} repartidos uniformemente.",
+        "fileSize": "Archivo: {size}",
+        "empty": "El símbolo es totalmente transparente.",
+        "tooLarge": "El archivo supera los 256 KB: elige un tamaño menor o menos fotogramas.",
+        "unsupported": "Elige un PNG, GIF o APNG.",
+        "loadFailed": "No se pudo leer la imagen.",
+        "upload": "Enviar a revisión",
+        "uploading": "Subiendo …"
+      }
+    },
+    "preview": {
+      "title": "Así se ve en el juego",
+      "showOthers": "Mostrar los símbolos de fan de otros jugadores",
+      "hint": "El símbolo de tu creador aparece delante de tu nombre: sobre la cabeza y en la lista de jugadores. Solo lo ven los jugadores de TRS.",
+      "tabList": "Lista de jugadores",
+      "creatorBadge": "Insignia de creador"
+    },
+    "fan": {
+      "redeemTitle": "Canjear un código de creador",
+      "codeLabel": "Código de creador",
+      "codePlaceholder": "TRS-…",
+      "redeem": "Canjear",
+      "redeeming": "Comprobando …",
+      "redeemHint": "Encontrarás códigos en vídeos, directos y descripciones.",
+      "invalidCode": "Los códigos de creador tienen de 5 a 20 caracteres: letras, cifras y guiones.",
+      "switchIn": "Solo puedes apoyar a un creador a la vez. Podrás elegir otro en {days} día; conservas las capas de fan canjeadas. | Solo puedes apoyar a un creador a la vez. Podrás elegir otro en {days} días; conservas las capas de fan canjeadas.",
+      "switchNow": "Solo puedes apoyar a un creador a la vez. Ya puedes elegir otro; conservas las capas de fan canjeadas.",
+      "redeemed": {
+        "now": "Ahora apoyas a {name}.",
+        "nowWithCape": "Ahora apoyas a {name}: capa de fan «{cape}» desbloqueada.",
+        "capeOnly": "Capa de fan «{cape}» desbloqueada. Podrás apoyar a {name} en {days} día. | Capa de fan «{cape}» desbloqueada. Podrás apoyar a {name} en {days} días.",
+        "capeUnlocked": "Capa de fan «{cape}» desbloqueada.",
+        "already": "Ya apoyas a {name}.",
+        "locked": "Podrás elegir otro creador en {days} día. | Podrás elegir otro creador en {days} días."
+      },
+      "supportingTitle": "Apoyas a",
+      "nobody": "A nadie todavía. Canjea un código de creador.",
+      "since": "desde hace {days} día | desde hace {days} días",
+      "end": "Dejar de apoyar",
+      "endHint": "La insignia de fan desaparece; la capa de fan se queda.",
+      "endTitle": "¿Dejar de apoyar a {name}?",
+      "endText": "Tu insignia de fan con el símbolo de {name} desaparece y dejas de contar como fan.",
+      "endKeepCape": "Conservas la capa de fan «{cape}».",
+      "endSwitchIn": "Podrás elegir otro creador en {days} día; a {name} puedes volver cuando quieras. | Podrás elegir otro creador en {days} días; a {name} puedes volver cuando quieras.",
+      "endSwitchNow": "Puedes elegir otro creador ya; a {name} puedes volver cuando quieras.",
+      "ended": "Ya no apoyas a {name}.",
+      "blockTitle": "Creadores bloqueados",
+      "blockLabel": "Código del creador a bloquear",
+      "blockPlaceholder": "Código, p. ej. TRS-…",
+      "block": "Bloquear",
+      "blockHint": "Introduce el código de un creador para bloquearlo. Dejarás de ver las insignias y símbolos de fan de los creadores bloqueados (sobre las cabezas, en la lista de jugadores y en el launcher) y no podrás canjear sus códigos.",
+      "blocked": "Creador bloqueado.",
+      "unblock": "Desbloquear",
+      "unblocked": "{name} desbloqueado.",
+      "noneBlocked": "No has bloqueado a nadie.",
+      "capesTitle": "Tus capas de fan",
+      "capeBy": "de {name}",
+      "capesHint": "Están entre tus capas y se quedan aunque cambies de creador.",
+      "openSkins": "Abrir skins"
+    },
+    "become": {
+      "title": "Hazte creador",
+      "text": "¿Haces vídeos, directos o shorts de Minecraft? Preséntate: tres niveles según tu alcance.",
+      "apply": "Presentar candidatura en la web",
+      "view": "Ver candidatura",
+      "status": {
+        "new": "Candidatura enviada",
+        "review": "Candidatura en revisión",
+        "interview": "Entrevista",
+        "accepted": "Aceptada",
+        "rejected": "No aceptada",
+        "withdrawn": "Retirada"
+      }
+    },
+    "revoked": {
+      "title": "Se ha retirado tu estado de creador",
+      "bannedTitle": "Estás bloqueado como creador",
+      "reason": "Motivo: {reason}",
+      "text": "Los códigos, el símbolo de fan y la insignia están desactivados. Puedes volver a presentarte más adelante.",
+      "bannedText": "Los códigos, el símbolo de fan y la insignia están desactivados. No es posible una nueva candidatura."
+    },
+    "tiers": {
+      "yours": "· tu nivel",
+      "starter": {
+        "name": "Starter",
+        "need": "cualquiera: el equipo lo revisa",
+        "perk1": "Insignia de creador en el juego y en el launcher",
+        "perk2": "Tu propio código de creador (los fans reciben una insignia con tu símbolo, hasta 64×64)",
+        "perk3": "Estadísticas: fans y canjes",
+        "perk4": "1 código extra (hasta 100 canjes)"
+      },
+      "partner": {
+        "name": "Partner",
+        "need": "desde 1000 seguidores",
+        "perk1": "Todo lo de Starter",
+        "perk2": "Tu propia capa de fan (512×256): los fans la desbloquean con tu código",
+        "perk3": "Símbolo de fan animado (hasta 8 fotogramas)",
+        "perk4": "Versiones de prueba del launcher y del TRS Client",
+        "perk5": "5 códigos extra (hasta 1000 canjes cada uno)"
+      },
+      "top": {
+        "name": "Top",
+        "need": "desde 10 000 seguidores o por invitación",
+        "perk1": "Todo lo de Partner",
+        "perk2": "La capa animada «Content Team»",
+        "perk3": "Capa de fan en HD (1024×512) y animada (hasta 32 fotogramas)",
+        "perk4": "Códigos extra ilimitados"
+      }
+    },
+    "dashboard": {
+      "title": "Panel de creador",
+      "since": "creador desde {date}",
+      "yourCode": "Tu código",
+      "mainCode": "Código principal",
+      "tabsLabel": "Secciones del panel",
+      "tabs": {
+        "stats": "Estadísticas",
+        "codes": "Códigos",
+        "symbol": "Símbolo de fan",
+        "cape": "Capa de fan",
+        "previews": "Versiones de prueba",
+        "packs": "Packs",
+        "helpers": "Ayudantes",
+        "tier": "Nivel y ventajas"
+      }
+    },
+    "stats": {
+      "activeFans": "Fans activos",
+      "redemptions": "Canjes de códigos en total",
+      "capeHolders": "Capas de fan entregadas",
+      "capeShare": "El {n} % de tus fans la lleva",
+      "fromPartner": "desde Partner",
+      "newPlayers": "Nuevos jugadores del launcher con tu código",
+      "newPlayersHint": "iniciaron TRS por primera vez con tu código",
+      "week": "+{n} esta semana",
+      "milestoneTitle": "Hitos",
+      "nextMilestone": "Siguiente: {name} con {at} fans activos (ahora {n})",
+      "allMilestones": "Todos los hitos alcanzados",
+      "milestoneHint": "Los hitos ponen un marco de color alrededor del símbolo de todos tus fans, y nunca desaparece.",
+      "chartTitle": "Nuevos fans: últimos 30 días",
+      "noData": "Aún no hay datos.",
+      "byCode": "Por código",
+      "share": "Parte",
+      "privacyTitle": "Privacidad",
+      "privacy": "Solo ves cifras, nunca los nombres de tus fans. Los fans pueden ocultar su insignia o cambiar de creador cuando quieran."
+    },
+    "codes": {
+      "title": "Tus códigos",
+      "note": "Tu código principal siempre funciona. Los códigos extra se pueden limitar, p. ej. para un sorteo o un directo. Cada código desbloquea la insignia de fan.",
+      "notePartner": "Tu código principal siempre funciona. Los códigos extra se pueden limitar, p. ej. para un sorteo o un directo. Cada código desbloquea la insignia de fan y tu capa de fan.",
+      "extraCount": "Códigos extra: {n} / {max}",
+      "new": "Nuevo código",
+      "code": "Código",
+      "kind": "Tipo",
+      "uses": "Canjes",
+      "until": "Válido hasta",
+      "status": "Estado",
+      "main": "Código principal",
+      "extra": "Extra",
+      "state": {
+        "active": "activo",
+        "off": "desactivado",
+        "usedUp": "agotado",
+        "expired": "caducado"
+      },
+      "turnOff": "Desactivar",
+      "turnOn": "Activar",
+      "footer": "Solo el equipo cambia el código principal, así los vídeos antiguos siguen funcionando. Códigos extra: hasta {max} canjes cada uno.",
+      "footerUnlimited": "Solo el equipo cambia el código principal, así los vídeos antiguos siguen funcionando. Códigos extra: sin límite.",
+      "newTitle": "Nuevo código extra",
+      "codeLabel": "Código (mayúsculas, cifras, -)",
+      "maxLabel": "Canjes como máximo (hasta {max})",
+      "maxLabelOptional": "Canjes como máximo (vacío = ilimitado)",
+      "untilLabel": "Válido hasta (vacío = ilimitado)",
+      "invalid": "Los códigos tienen de 5 a 20 caracteres: letras, cifras y guiones, sin guion al principio ni al final.",
+      "maxInvalid": "Introduce un número de 1 a {max}.",
+      "maxRequired": "Indica cuántas veces se puede canjear el código (hasta {max}).",
+      "untilInvalid": "La fecha debe estar en el futuro.",
+      "create": "Crear",
+      "creating": "Creando …",
+      "created": "{code} creado."
+    },
+    "cape": {
+      "title": "Capa de fan",
+      "locked": "La capa de fan propia está disponible desde el nivel Partner. Mientras tanto, tus fans reciben la insignia de fan.",
+      "seeTiers": "Ver niveles y ventajas",
+      "yours": "Tu capa de fan",
+      "approved": "Aprobada · los fans la reciben con tu código",
+      "pending": "En revisión por el equipo",
+      "none": "Aún no hay capa",
+      "rejectedReason": "Rechazada: {reason}",
+      "rejectedNoReason": "Tu última capa fue rechazada.",
+      "newInReview": "nueva · en revisión",
+      "name": "Nombre",
+      "size": "Tamaño",
+      "sizeStandard": "512×256, un fotograma",
+      "sizeHd": "hasta 1024×512, animada hasta 32 fotogramas",
+      "holders": "Portadores",
+      "reviewNote": "Los cambios solo se publican tras una nueva revisión. Hasta entonces los fans ven la capa anterior.",
+      "makeTitle": "Crear una capa nueva",
+      "selfTitle": "Diséñala tú",
+      "selfText": "En el taller de capas: importa una imagen, GIF o vídeo y recórtalo. Después envíala a revisión.",
+      "selfTextHd": "En el taller de capas: importa una imagen, GIF o vídeo y recórtalo, en HD y animado. Después envíala a revisión.",
+      "openWorkshop": "Abrir taller",
+      "withdraw": "Retirar capa nueva",
+      "teamTitle": "Que la diseñe el equipo",
+      "teamText": "Describe tu idea (colores, motivo, logo). El equipo hace bocetos con TRS Studio y tú eliges.",
+      "sendWish": "Enviar idea",
+      "wishOpen": "Idea enviada · el equipo te escribirá en el chat social",
+      "wishTitle": "Que el equipo diseñe tu capa",
+      "wishLabel": "¿Qué debe aparecer? (motivo, colores, estilo)",
+      "wishPlaceholder": "p. ej. dragón morado sobre piedra oscura, mi logo abajo, con un ligero brillo",
+      "wishEmpty": "Describe tu idea.",
+      "wishSent": "Idea enviada.",
+      "send": "Enviar",
+      "rules": "Sin logos ni marcas ajenas sin permiso. El equipo revisa cada capa antes de que la vean los fans.",
+      "workshopTitle": "Taller de capas de fan",
+      "workshopStandard": "Capa de fan (Partner): 512×256 o menos, un fotograma. Pasa a revisión del equipo; hasta entonces los fans conservan la capa anterior.",
+      "workshopHd": "Capa de fan (Top): hasta 1024×512, animada hasta 32 fotogramas. Pasa a revisión del equipo; hasta entonces los fans conservan la capa anterior.",
+      "partnerLimit": "Como Partner, tu capa de fan debe medir 512×256 o menos y no estar animada.",
+      "nameRequired": "Ponle un nombre a la capa de fan.",
+      "submitFan": "Enviar como capa de fan",
+      "submitted": "Capa de fan enviada: el equipo la revisará."
+    },
+    "previews": {
+      "title": "Versiones de prueba",
+      "locked": "Desde el nivel Partner puedes probar versiones nuevas antes que nadie, ideal para vídeos sobre novedades.",
+      "note": "Descargas tú mismo las versiones de prueba. Tu launcher normal no cambia. No publiques nada antes de la fecha de lanzamiento salvo que el equipo lo permita.",
+      "empty": "Ahora mismo no hay versiones de prueba.",
+      "launcher": "Launcher",
+      "client": "TRS Client",
+      "download": "Descargar",
+      "outdated": "obsoleta",
+      "bugs": "¿Has encontrado un error? Repórtalo en la versión de prueba y llegará directamente al equipo."
+    },
+    "packs": {
+      "title": "Tus modpacks",
+      "note": "Publica tus modpacks compartidos como packs de creador: aparecen en Explorar → Modpacks con tu insignia de creador y no caducan mientras estén publicados.",
+      "installs": "{n} instalaciones en total",
+      "myPacks": "Mis modpacks",
+      "empty": "Aún no has compartido ningún modpack. Comparte primero uno desde una instancia.",
+      "installCount": "{n} instalaciones",
+      "listed": "publicado",
+      "notListed": "no publicado",
+      "list": "Publicar",
+      "unlist": "Retirar",
+      "listedToast": "«{name}» ya está publicado.",
+      "unlistedToast": "«{name}» ya no está publicado."
+    },
+    "packsBrowse": {
+      "title": "Packs de creadores",
+      "subtitle": "Modpacks de creadores de TRS",
+      "installs": "{n} instalaciones",
+      "install": "Instalar",
+      "more": "Mostrar más"
+    },
+    "helpers": {
+      "title": "Ayudantes",
+      "note": "Da a tus ayudantes (p. ej. tu editor o moderador) acceso a partes de tu panel sin compartir tu cuenta. Solo puedes invitar a amigos de TRS.",
+      "count": "{n} / {max} ayudantes",
+      "invite": "Invitar ayudante",
+      "empty": "Aún no hay ayudantes.",
+      "active": "activo",
+      "pending": "invitado",
+      "rights": {
+        "stats": "Ver estadísticas",
+        "codes": "Gestionar códigos",
+        "uploads": "Subir símbolo/capa",
+        "packs": "Publicar packs"
+      },
+      "save": "Guardar",
+      "saved": "Permisos de {name} guardados.",
+      "remove": "Quitar",
+      "removed": "{name} ya no es tu ayudante.",
+      "removeTitle": "¿Quitar a {name} como ayudante?",
+      "removeText": "{name} pierde al instante el acceso a tu panel.",
+      "creatorOnly": "El nivel, las solicitudes, los ayudantes y las versiones de prueba siempre quedan para ti.",
+      "needRight": "Elige al menos un permiso.",
+      "inviteTitle": "Invitar a un ayudante",
+      "searchFriends": "Buscar amigos",
+      "friends": "Amigos",
+      "noFriends": "No hay amigos para invitar.",
+      "rightsLabel": "Permisos",
+      "pickFriend": "Elige un amigo.",
+      "send": "Enviar invitación",
+      "invited": "{name} ha sido invitado.",
+      "inviteFrom": "{name} te quiere como ayudante",
+      "inviteRights": "Permisos: {rights}",
+      "accept": "Aceptar",
+      "decline": "Rechazar",
+      "acceptedToast": "Ahora eres ayudante.",
+      "declinedToast": "Invitación rechazada.",
+      "dashboardOf": "Panel de {name}",
+      "youHelp": "Ayudas como ayudante. Tus permisos: {rights}",
+      "noRights": "No tienes permisos en este panel.",
+      "leave": "Dejar de ayudar",
+      "leaveTitle": "¿Dejar de ayudar a {name}?",
+      "leaveText": "Pierdes el acceso al panel de {name}. {name} puede volver a invitarte más adelante.",
+      "leftToast": "Ya no ayudas a {name}."
+    },
+    "tier": {
+      "yours": "Tu nivel:",
+      "request": "Solicitar subir a {tier}",
+      "pending": "Solicitud de {tier} en revisión",
+      "highest": "Nivel máximo",
+      "progress": "Hasta {tier}: {n} / {need} seguidores (según la última revisión)",
+      "perksTitle": "Tus ventajas",
+      "active": "activa",
+      "requests": "Tus solicitudes",
+      "kind": {
+        "upgrade": "Subida de nivel",
+        "team_cape": "Capa de fan del equipo"
+      },
+      "status": {
+        "open": "abierta",
+        "accepted": "aceptada",
+        "declined": "rechazada"
+      },
+      "dialogTitle": "Subir a {tier}",
+      "dialogText": "Requisito: {need}. El equipo revisa tus canales.",
+      "channelUrl": "Enlace del canal",
+      "followers": "Seguidores/suscriptores actuales",
+      "note": "Vídeo/directo con TRS (opcional)",
+      "urlInvalid": "Indica el enlace a tu canal (https://…).",
+      "followersInvalid": "Introduce un número entero.",
+      "send": "Solicitar",
+      "sent": "Solicitud enviada."
+    },
+    "perks": {
+      "badge": "Insignia de creador",
+      "badgeText": "En el juego y en el launcher, con el color de tu nivel.",
+      "code": "Código de creador con insignia de fan",
+      "codeText": "Los fans muestran tu símbolo delante de su nombre.",
+      "fanCape": "Capa de fan propia",
+      "fanCapeText": "Los fans la desbloquean con tu código.",
+      "previews": "Versiones de prueba",
+      "previewsText": "Prueba versiones nuevas antes que nadie.",
+      "teamCape": "Capa «Content Team»",
+      "teamCapeText": "La capa animada del equipo para ti.",
+      "hdCape": "Capa de fan HD y animada",
+      "hdCapeText": "Hasta 1024×512 y 32 fotogramas."
+    },
+    "toast": {
+      "open": "Abrir",
+      "reason": "Motivo: {reason}",
+      "fanMilestoneTitle": "¡{name} ha alcanzado {milestone}!",
+      "fanMilestoneBody": "Tu símbolo de fan ahora tiene un marco de {milestone}.",
+      "helperInviteTitle": "{name} te invita como ayudante",
+      "helperInviteBody": "Abre la página de creadores para responder.",
+      "helperRemovedTitle": "{name} te ha quitado como ayudante",
+      "helperRemovedGeneric": "Te han quitado como ayudante",
+      "helperRemovedBody": "Ya no tienes acceso al panel.",
+      "updated": {
+        "symbol_approved": {
+          "title": "Símbolo de fan aprobado",
+          "body": "Tus fans ya ven tu nuevo símbolo."
+        },
+        "symbol_rejected": {
+          "title": "Símbolo de fan rechazado",
+          "body": "Sube un símbolo nuevo cuando quieras."
+        },
+        "cape_approved": {
+          "title": "Capa de fan aprobada",
+          "body": "Los fans reciben tu nueva capa con tu código."
+        },
+        "cape_rejected": {
+          "title": "Capa de fan rechazada",
+          "body": "Envía una capa de fan nueva cuando quieras."
+        },
+        "tier_changed": {
+          "title": "Nuevo nivel de creador: {tier}",
+          "body": "Tus nuevas ventajas se aplican al instante."
+        },
+        "revoked": {
+          "title": "Estado de creador retirado",
+          "body": "Los códigos, el símbolo y la insignia están desactivados."
+        },
+        "restored": {
+          "title": "Estado de creador restaurado",
+          "body": "Tus códigos vuelven a funcionar."
+        },
+        "request_answered": {
+          "title": "Tu solicitud ha sido respondida",
+          "body": "Detalles en Nivel y ventajas."
+        },
+        "milestone": {
+          "title": "Hito alcanzado: {milestone}",
+          "body": "Todos tus fans reciben ahora un marco de {milestone}."
+        },
+        "became_creator": {
+          "title": "¡Bienvenido al programa de creadores!",
+          "body": "Tu panel y tu código están listos."
+        },
+        "helper_joined": {
+          "title": "{name} ahora es tu ayudante",
+          "body": "Gestiona sus permisos en Ayudantes."
+        },
+        "helper_left": {
+          "title": "{name} ha dejado de ayudar",
+          "body": "Puedes invitar a un nuevo ayudante."
+        }
+      }
     }
   }
 }

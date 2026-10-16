@@ -28,6 +28,24 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Creator programme.** The new **Creator** page lets you redeem a creator code to support your favourite YouTuber or streamer. You support one creator at a time (switching to another one is possible every 30 days), can stop supporting at any time, and keep every fan cape you unlocked. Creators you don't want to see can be blocked by their code.
+- **Fan symbols.** Fans wear the symbol of their creator in front of their name – above the head and in the tab list, animated for Partner and Top creators. The Creator page shows exactly how it looks in game, and you can hide other players' fan symbols.
+- **Creator dashboard.** Creators get statistics with a 30-day chart, their own codes (extra codes with a limit and expiry date), a fan symbol upload that turns PNG, GIF or APNG into the right format with a live preview, fan cape submission straight from the cape workshop, preview builds for Partner and Top, and the tiers Starter, Partner and Top with an upgrade request.
+- **Helpers.** Creators can invite TRS friends as helpers and choose what they may do (see statistics, manage codes, upload symbol/cape, list packs). Helpers accept the invitation on the Creator page and switch to "Dashboard of …" there.
+- **Creator modpacks.** Creators can list their shared modpacks; they show up under Discover → Modpacks with the creator's badge and install with one click.
+- **Milestones.** At 100, 500, 1,000 and 5,000 active fans a creator reaches Bronze, Silver, Gold and Diamond – all fans then get a coloured frame around the fan symbol and a notification.
+
+### Deutsch
+- **Creator-Programm.** Auf der neuen Seite **Creator** löst du den Creator-Code deines Lieblings-YouTubers oder -Streamers ein und unterstützt ihn damit. Du unterstützt immer einen Creator (wechseln geht alle 30 Tage), kannst jederzeit aufhören und behältst alle freigeschalteten Fan-Umhänge. Creator, die du nicht sehen willst, blockierst du per Code.
+- **Fan-Symbole.** Fans tragen das Symbol ihres Creators vor ihrem Namen – über dem Kopf und in der Tab-Liste, bei Partner- und Top-Creatorn auch animiert. Die Creator-Seite zeigt genau, wie es im Spiel aussieht, und du kannst die Fan-Symbole anderer Spieler ausblenden.
+- **Creator-Dashboard.** Creator bekommen eine Statistik mit 30-Tage-Verlauf, eigene Codes (Zusatz-Codes mit Grenze und Ablaufdatum), das Hochladen des Fan-Symbols aus PNG, GIF oder APNG mit Live-Vorschau, das Einreichen des Fan-Umhangs direkt aus der Umhang-Werkstatt, Vorschau-Builds für Partner und Top sowie die Stufen Starter, Partner und Top mit Aufstiegs-Antrag.
+- **Helfer.** Creator laden TRS-Freunde als Helfer ein und legen fest, was sie dürfen (Statistik sehen, Codes verwalten, Symbol/Umhang hochladen, Packs listen). Helfer nehmen die Einladung auf der Creator-Seite an und wechseln dort zu „Dashboard von …“.
+- **Creator-Modpacks.** Creator können ihre geteilten Modpacks listen; sie erscheinen unter Entdecken → Modpacks mit dem Creator-Abzeichen und lassen sich mit einem Klick installieren.
+- **Meilensteine.** Bei 100, 500, 1.000 und 5.000 aktiven Fans erreicht ein Creator Bronze, Silber, Gold und Diamant – alle Fans bekommen dann einen farbigen Rahmen um das Fan-Symbol und eine Benachrichtigung.
+
 ## 0.21.1 – 2026-10-13 – Cape Workshop Fix | Umhang-Werkstatt – Fix
 <!-- banner: accent=#ff5a3c motif=/news/0.21.0/banner.png -->
 <!-- shots:

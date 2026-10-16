@@ -35,6 +35,9 @@ function icon(toast: SocialToast) {
       return 'invite' as const
     case 'achievement':
       return 'trophy' as const
+    case 'creator':
+    case 'milestone':
+      return 'star' as const
     default:
       return 'chat' as const
   }

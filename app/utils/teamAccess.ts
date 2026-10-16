@@ -44,6 +44,9 @@ export const permissions = [
   'blog.publish',
   // Events (API §31): Halloween & Co. schalten, Spieler-Allowlist.
   'events.manage',
+  // Creator-Programm (API §35.6): Symbole/Umhänge prüfen bzw. Creator verwalten.
+  'creators.review',
+  'creators.manage',
 ] as const
 export type Permission = (typeof permissions)[number]
 const permissionSet: ReadonlySet<string> = new Set(permissions)
@@ -148,6 +151,7 @@ export const teamSections: readonly TeamSection[] = [
   { to: '/admin/codes', label: 'team.nav.codes', icon: 'ticket', perms: ['codes'] },
   { to: '/admin/word-filter', label: 'team.nav.wordFilter', icon: 'filter', perms: ['wordfilter'] },
   { to: '/admin/events', label: 'team.nav.events', icon: 'star', perms: ['events.manage'] },
+  { to: '/admin/creators', label: 'team.nav.creators', icon: 'crown', perms: ['creators.review', 'creators.manage'] },
   { to: '/admin/audit', label: 'team.nav.audit', icon: 'list', perms: ['audit.view'] },
 ]
 

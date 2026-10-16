@@ -11,6 +11,7 @@ import { packEventSchemas } from './packs'
 import { issueEventSchemas } from './issues'
 import { achievementEventSchemas } from './achievements'
 import { remoteEventSchemas } from './remote'
+import { creatorEventSchemas } from './creator'
 
 // Chat (Sozial): Schemas für alles, was der Kern liefert (wird beim Empfang
 // geprüft), und reine Funktionen für Zeitleiste, Vorschauen, Reaktionen,
@@ -261,6 +262,7 @@ export const liveEventSchema = z.discriminatedUnion('type', [
   ...issueEventSchemas,
   ...achievementEventSchemas,
   ...remoteEventSchemas,
+  ...creatorEventSchemas,
 ])
 
 export type ChatReaction = z.infer<typeof chatReactionSchema>

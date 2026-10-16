@@ -127,6 +127,28 @@ function startRedeem() {
 defineExpose({ startRedeem })
 
 async function redeem() {
+  // Creator-Codes (Muster mit Bindestrich, §35.1) gehen ans Creator-Programm, alles andere ist ein Umhang-Code.
+  if (isCreatorCode(code.value)) {
+    codeError.value = null
+    await run('redeem', async () => {
+      try {
+        const result = await useCreatorStore().redeem(code.value.trim().toUpperCase())
+        redeeming.value = false
+        await load()
+        toasts.ok(
+          result.supportChanged
+            ? t('creator.fan.redeemed.now', { name: result.creator.name })
+            : result.fanCapeGranted
+              ? t('creator.fan.redeemed.capeUnlocked', { cape: result.creator.fanCape?.name ?? '' })
+              : t('creator.fan.redeemed.already', { name: result.creator.name }),
+          { label: t('creator.toast.open'), run: () => void navigateTo('/creator') },
+        )
+      } catch (e) {
+        codeError.value = errorMessage(e)
+      }
+    })
+    return
+  }
   const parsed = trsRedeemCodeSchema.safeParse(code.value)
   if (!parsed.success) {
     codeError.value = firstIssue(parsed.error)
@@ -166,6 +188,9 @@ const uploading = ref(false)
 
 function startUpload() {
   uploading.value = true
+  // Creator ab Partner: die Werkstatt bietet „Als Fan-Umhang einreichen“ an.
+  const creator = useCreatorStore()
+  if (!creator.me && !creator.loading) void creator.load()
 }
 
 async function uploaded(cape: TrsCape) {
@@ -475,7 +500,7 @@ function lockClass(cape: TrsCape) {
       </template>
     </BaseDialog>
 
-    <CapeUploadDialog v-if="uploading" @close="uploading = false" @uploaded="uploaded" />
+    <CapeUploadDialog v-if="uploading" @close="uploading = false" @uploaded="uploaded" @fan-uploaded="uploading = false" />
 
     <CapeShareDialog v-if="sharing" :cape="sharing" @close="closeShare" @changed="trs.loadCapeOffers()" />
 

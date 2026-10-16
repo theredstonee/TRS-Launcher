@@ -17,12 +17,14 @@ import {
 // geglättet), Tempo und Name wählen; zeigt das echte Ergebnis (Größe, Frames, Datei) und
 // bietet Verkleinerungen an, wenn das PNG über 20 MB läge. Das Hochskalieren läuft
 // Frame für Frame, das PNG kodiert der Browser im Hintergrund.
-const props = defineProps<{ doc: CapeDoc; sourceFrames: number }>()
+// `fanCape`: aus dem Creator-Dashboard geöffnet – Hochladen reicht den Fan-Umhang ein (§35.3).
+const props = defineProps<{ doc: CapeDoc; sourceFrames: number; fanCape?: boolean }>()
 const frameTime = defineModel<number>('frameTime', { required: true })
 const name = defineModel<string>('name', { required: true })
-const emit = defineEmits<{ reduce: [frames: number]; uploaded: [cape: TrsCape] }>()
+const emit = defineEmits<{ reduce: [frames: number]; uploaded: [cape: TrsCape]; fanUploaded: [] }>()
 
 const toasts = useToasts()
+const creator = useCreatorStore()
 
 const scale = ref(defaultOutputScale(props.doc.scale))
 const smooth = ref(false)
@@ -135,7 +137,46 @@ async function upload() {
   }
 }
 
-defineExpose({ upload, canUpload, uploading })
+// --- Als Fan-Umhang einreichen (Creator ab Partner, §35.3) ------------------------------
+
+/** `standard` (Partner: 512×256 bzw. kleiner, ein Bild) oder `hd` (Top: bis 1024×512, animiert). */
+const fanMode = computed(() => creator.fanCapeMode)
+/** Warum der Streifen nicht als Fan-Umhang geht (`null` = passt). */
+const fanProblem = computed<string | null>(() => {
+  const r = result.value
+  if (!fanMode.value || !r) return null
+  if (fanMode.value === 'standard' && (r.frames > 1 || r.scale > 8)) return t('creator.cape.partnerLimit')
+  return null
+})
+const canUploadFan = computed(() => !!fanMode.value && canUpload.value && !fanProblem.value)
+
+async function uploadFan() {
+  const parsed = trsCapeNameSchema.safeParse(name.value)
+  if (!parsed.success || !parsed.data) {
+    nameError.value = parsed.success ? t('creator.cape.nameRequired') : firstIssue(parsed.error)
+    return
+  }
+  nameError.value = null
+  const r = result.value
+  if (!r || !canUploadFan.value) return
+  uploading.value = true
+  error.value = null
+  try {
+    await backend.creator.uploadFanCape(
+      { png: r.b64, frames: r.frames, frameTimeMs: r.frames > 1 ? frameTime.value : null, name: parsed.data },
+      creator.actingAs,
+    )
+    toasts.ok(t('creator.cape.submitted'))
+    void creator.loadDashboard()
+    emit('fanUploaded')
+  } catch (e) {
+    error.value = errorMessage(e)
+  } finally {
+    uploading.value = false
+  }
+}
+
+defineExpose({ upload, canUpload, uploading, uploadFan, canUploadFan, fanMode })
 </script>
 
 <template>
@@ -216,6 +257,10 @@ defineExpose({ upload, canUpload, uploading })
         <input v-model="name" class="field" maxlength="32" :placeholder="t('capes.editor.placeholder')" @keydown.enter="upload" />
       </label>
       <p v-if="nameError" role="alert" class="text-xs text-redstone-300">{{ nameError }}</p>
+      <p v-if="fanCape || fanMode" class="rounded-lg border-l-2 border-redstone-500 bg-base-900 px-3 py-2 text-[11px] text-base-400" data-testid="cape-export-fan">
+        {{ fanMode === 'hd' ? t('creator.cape.workshopHd') : t('creator.cape.workshopStandard') }}
+        <span v-if="fanProblem" class="mt-1 block text-redstone-300">{{ fanProblem }}</span>
+      </p>
       <ul class="list-disc space-y-1 pl-4 text-[11px] text-base-400">
         <li>{{ t('capes.editor.rules.review') }}</li>
         <li>{{ t('capes.editor.rules.rights') }}</li>

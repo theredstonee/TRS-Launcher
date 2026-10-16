@@ -16,7 +16,7 @@ use super::sanctions::SANCTION_KINDS;
 use super::validate;
 
 /// Alle Rechte der API (§24.2). Unbekannte Rechte einer neueren API fallen weg.
-pub const PERMISSIONS: [&str; 32] = [
+pub const PERMISSIONS: [&str; 34] = [
     "dashboard.view",
     "stats.view",
     "audit.view",
@@ -51,6 +51,9 @@ pub const PERMISSIONS: [&str; 32] = [
     "blog.publish",
     // Events (§31): Halloween & Co. schalten, Spieler-Allowlist.
     "events.manage",
+    // Creator-Programm (§35.6): Symbole/Umhänge prüfen bzw. Creator verwalten.
+    "creators.review",
+    "creators.manage",
 ];
 
 pub const OWNER_RANK: u32 = 1000;

@@ -22,6 +22,8 @@ interface NavItem {
   touchOnly?: boolean
   /** Nur am Handy (PC-Fernbedienung). */
   phoneOnly?: boolean
+  /** Nur mit eingeschalteten TRS-Diensten (Creator-Programm). */
+  trsOnly?: boolean
 }
 
 const items: NavItem[] = [
@@ -35,6 +37,7 @@ const items: NavItem[] = [
   { to: '/clips', label: 'nav.clips', icon: 'clips', optional: true, clipsOnly: true },
   { to: '/skins', label: 'nav.skins', icon: 'skins', optional: true },
   { to: '/social', label: 'nav.social', icon: 'chat' },
+  { to: '/creator', label: 'nav.creator', icon: 'star', trsOnly: true },
   { to: '/controls', label: 'nav.controls', icon: 'touch', touchOnly: true },
   { to: '/pc', label: 'nav.pc', icon: 'monitor', phoneOnly: true },
   { to: '/admin', label: 'nav.admin', icon: 'admin', admin: true },
@@ -68,6 +71,7 @@ const visibleItems = computed(() =>
     (item) =>
       (!item.optional || router.resolve(item.to).matched.length > 0) &&
       (!item.admin || trs.isStaff) &&
+      (!item.trsOnly || trs.enabled) &&
       // Clips (Spielaufnahme) gibt es vorerst nur unter Windows.
       (!item.clipsOnly || platformCaps.value.clips) &&
       // Lokale Server erst, wenn es einen gibt (Server-Export „lokal anlegen“).
