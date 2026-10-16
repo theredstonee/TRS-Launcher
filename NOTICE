@@ -18,6 +18,9 @@ Third-party parts
   header; the license text is in client-mod/licenses/chat-heads-MPL-2.0.txt.
 - AppleSkin by squeek502 (The Unlicense): idea for the TRS Client hunger overlay; resource packs
   that ship AppleSkin textures are supported.
+- Fonts for the Halloween look (SIL Open Font License 1.1, bundled in app/assets/fonts with their
+  license texts): IM Fell English SC by Igino Marini; Cormorant Garamond by The Cormorant Project
+  Authors (Christian Thalmann).
 - Mobile game engine (src-tauri/plugins/tauri-plugin-trs-game, Android; details and pinned
   commits/hashes in android/vendor/*/UPSTREAM.md and android/prebuilt.lock):
   - Amethyst-Android by AngelAuraMC, a fork of PojavLauncher by PojavLauncherTeam

@@ -212,40 +212,89 @@
 }
 
 /*
- * Event „Halloween“ (`data-event` setzt stores/events.ts, nur solange das Event für den
- * Spieler läuft): überlagert Akzent und Nacht-Palette zur Laufzeit. Die gespeicherte
- * Einstellung (data-accent) bleibt unberührt und gilt danach wieder.
- * Orange #ff7a1a, Lila #6b2fa8, Nacht #120a1c, Panel #1d1428, Text #efe6ff.
+ * Event „Halloween“ 2026 – „Nacht der langen Schatten“ (`data-event` setzt stores/events.ts,
+ * nur solange das Event für den Spieler läuft): überlagert Akzent und Palette zur Laufzeit.
+ * Die gespeicherte Einstellung (data-accent) bleibt unberührt und gilt danach wieder.
+ * Palette (Vertrag): Nacht #07060c, Nebelgrund #13101f, Pflaume #3a1f5c, Violett #8e6cc9/#b9a2ea,
+ * Mondsilber #cfd5e3/#f3f5fb, Kürbislicht #e08a3c (nur als Licht), Blut #7a0f18/#c9424a, Seelenblau #9fd6e6.
+ * Licht kommt vom Mond: Silber für Kanten, Glanz und Fortschritt; Orange nie für Flächen.
  */
+@font-face {
+  font-family: "IM Fell English SC";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/im-fell-english-sc-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/cormorant-garamond-latin-500-italic.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/cormorant-garamond-latin-ext-500-italic.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
 :root[data-event="halloween"] {
-  --halloween-orange: #ff7a1a;
-  --halloween-purple: #6b2fa8;
-  --color-redstone-400: #ff9340;
-  --color-redstone-500: #ff7a1a;
-  --color-redstone-600: #c95a0a;
-  /* Auch im Design Winternacht: Bernstein für „läuft“. */
-  --color-lamp-300: #ffd48a;
-  --color-lamp-400: #ffb84d;
-  --color-lamp-900: #3d2a0c;
+  --hw-night: #07060c;
+  --hw-fog: #13101f;
+  --hw-plum: #3a1f5c;
+  --hw-violet: #8e6cc9;
+  --hw-violet-2: #b9a2ea;
+  --hw-silver: #cfd5e3;
+  --hw-silver-2: #f3f5fb;
+  --hw-pumpkin: #e08a3c;
+  --hw-blood: #7a0f18;
+  --hw-blood-2: #c9424a;
+  --hw-soul: #9fd6e6;
+  --hw-serif: "IM Fell English SC", "Iowan Old Style", Georgia, serif;
+  --hw-italic: "Cormorant Garamond", Georgia, serif;
+  --font-display: var(--hw-serif);
+  --color-redstone-300: #b9a2ea;
+  --color-redstone-400: #a68ad8;
+  --color-redstone-500: #8e6cc9;
+  --color-redstone-600: #6c4ca6;
+  --color-redstone-900: #24163a;
+  /* „Unter Strom“ ist zu Halloween Mondlicht. */
+  --color-lamp-300: #f3f5fb;
+  --color-lamp-400: #cfd5e3;
+  --color-lamp-900: #1d1b2a;
 }
 :root[data-event="halloween"]:not([data-theme="light"]) {
-  --color-base-950: #120a1c;
-  --color-base-900: #170e22;
-  --color-base-850: #1d1428;
-  --color-base-800: #281a38;
-  --color-base-700: #38274d;
-  --color-base-600: #54406e;
-  --color-base-400: #9c8bb8;
-  --color-base-200: #d6c8ee;
-  --color-base-50: #efe6ff;
-  --color-redstone-300: #ffb680;
-  --color-redstone-900: #3d1b06;
+  --color-base-950: #07060c;
+  --color-base-900: #0c0a14;
+  --color-base-850: #13101f;
+  --color-base-800: #1b1629;
+  --color-base-700: #2a2440;
+  --color-base-600: #3b3358;
+  --color-base-400: #9a94b4;
+  --color-base-200: #c3bdd8;
+  --color-base-50: #ece9f5;
+}
+:root[data-event="halloween"][data-theme="oled"] {
+  --color-base-950: #000000;
+  --color-base-900: #050409;
+  --color-base-850: #0a0812;
 }
 :root[data-event="halloween"][data-theme="light"] {
-  --color-redstone-300: #b34a00;
-  --color-redstone-900: #ffe9d6;
-  --color-lamp-300: #9a5a00;
-  --color-lamp-900: #fdf0d8;
+  --color-redstone-300: #5b3b94;
+  --color-redstone-900: #ece4fa;
+  --color-lamp-300: #4a4f63;
+  --color-lamp-400: #6f7590;
+  --color-lamp-900: #eceef4;
+}
+/* Untertitel zu Halloween: Cormorant kursiv. */
+.hw-italic {
+  font-family: var(--hw-italic, Georgia, serif);
+  font-style: italic;
+  font-weight: 500;
 }
 
 /* „Erweitertes Rendering“ aus: keine Unschärfe-Effekte. */
@@ -363,6 +412,30 @@ textarea {
   .card {
     @apply rounded-xl border border-base-800 bg-base-900;
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.025);
+  }
+  /*
+   * Halloween 2026: Spinnweben in der rechten oberen Ecke jeder Karte (als Hintergrundbild,
+   * damit keine Karte ihre Position ändert; Verläufe aus Utilities gewinnen weiter).
+   */
+  :where(:root[data-event="halloween"]) .card {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 54 54'%3E%3Cg fill='none' stroke='%23cfd5e3' stroke-opacity='.5' stroke-width='.6'%3E%3Cpath d='M54 0 L10 54 M54 0 L30 54 M54 0 L0 30 M54 0 L0 8'/%3E%3Cpath d='M44 0 Q42 9 54 12 M34 0 Q30 18 54 22 M22 0 Q18 28 54 34 M12 0 Q8 38 54 46'/%3E%3C/g%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: top right;
+    background-size: 54px 54px;
+  }
+  /* Knöpfe im Mondnacht-Stil: Pflaume mit Silberkante, Glanz zieht beim Drüberfahren durch. */
+  :where(:root[data-event="halloween"]:not([data-theme="light"])) .btn-primary {
+    background-image: linear-gradient(180deg, rgba(58, 31, 92, 0.85), rgba(20, 16, 33, 0.95));
+    background-color: #2a1a44;
+    color: #f3f5fb;
+    box-shadow: inset 0 0 0 1px #5a4c80;
+  }
+  :where(:root[data-event="halloween"]:not([data-theme="light"])) .btn-primary:not(:disabled):hover {
+    background-color: #3a1f5c;
+    box-shadow: inset 0 0 0 1px #cfd5e3, 0 0 18px rgba(207, 213, 227, 0.18), 0 0 22px rgba(224, 138, 60, 0.18);
+  }
+  :where(:root[data-event="halloween"]:not([data-theme="light"])) .btn-primary:not(:disabled):active {
+    box-shadow: inset 0 0 0 1px #f3f5fb, inset 0 0 12px rgba(243, 245, 251, 0.3);
   }
   .card-hover {
     @apply relative transition-[border-color,background-color] duration-150 hover:border-base-700 hover:bg-base-850;

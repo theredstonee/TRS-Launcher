@@ -331,7 +331,10 @@
       "creator_self": "Ese es tu propio código de creador.",
       "pack_not_found": "Este modpack ya no existe.",
       "helper_not_found": "Este jugador ya no es ayudante.",
-      "helper_invite_not_found": "Esta invitación ya no existe."
+      "helper_invite_not_found": "Esta invitación ya no existe.",
+      "pumpkin_unknown": "Esta calabaza no existe.",
+      "trick_used": "Ya llamaste hoy, ¡vuelve mañana!",
+      "sticker_locked": "Aún no tienes este sticker."
     },
     "auth": {
       "accountMismatch": "El inicio de sesión pertenece a otra cuenta: vuelve a iniciar sesión.",
@@ -2415,7 +2418,9 @@
         "full": "Siempre activadas",
         "system": "Como Windows/sistema",
         "reduced": "Reducir animaciones"
-      }
+      },
+      "halloweenFlickerTitle": "Parpadeo y grano",
+      "halloweenFlickerDescription": "Grano de película en el fondo y un breve parpadeo con los rayos (solo durante Halloween). El TRS Client usa el mismo ajuste. Con las animaciones desactivadas nunca parpadea nada."
     },
     "features": {
       "instancePage": "Página de instancia",
@@ -3422,7 +3427,9 @@
       "locked": "Bloqueada",
       "shared": "Compartida",
       "achievement": "Logro",
-      "event": "Evento"
+      "event": "Evento",
+      "reward": "Recompensa",
+      "halloweenReward": "Recompensa de Halloween"
     },
     "status": {
       "pending": "Pendiente de aprobación",
@@ -3567,7 +3574,8 @@
       "event": "Gratis mientras Halloween esté activo para ti. Después te quedas la capa.",
       "active": "Llevas puesta esta capa.",
       "free": "Disponible gratis: póntela para que la vean los demás.",
-      "unlocked": "Desbloqueada para ti: póntela para que la vean los demás."
+      "unlocked": "Desbloqueada para ti: póntela para que la vean los demás.",
+      "reward": "Recompensa de Halloween: solo con truco o trato o la caza de calabazas."
     },
     "actions": {
       "wearing": "Poniendo …",
@@ -3819,7 +3827,8 @@
         "code": "Capa por código (sorteos, socios)",
         "team": "Capa del equipo TRS",
         "free": "Capa TRS para todos",
-        "other": "Capa TRS"
+        "other": "Capa TRS",
+        "reward": "Recompensa de Halloween"
       }
     }
   },
@@ -7529,6 +7538,71 @@
           "body": "Puedes invitar a un nuevo ayudante."
         }
       }
+    }
+  },
+  "halloween": {
+    "flickerHint": {
+      "title": "Parpadeo y grano",
+      "text": "En Halloween el fondo cruje como una película antigua y, con cada rayo, el launcher parpadea un momento. Si te molesta, desactívalo aquí. Más tarde encontrarás el interruptor en Ajustes → Apariencia → «Parpadeo y grano».",
+      "off": "Desactivar parpadeo",
+      "keep": "Mantener"
+    },
+    "card": {
+      "title": "Halloween 2026",
+      "until": "hasta el 2 de noviembre",
+      "hunt": "Caza de calabazas · {n}/{total}",
+      "noData": "La caza de calabazas y truco o trato necesitan los servicios TRS."
+    },
+    "trick": {
+      "button": "¿Truco o trato?",
+      "openToday": "aún disponible hoy",
+      "doneToday": "ya llamaste hoy",
+      "title": "¿Truco o trato?",
+      "sourBubble": "¡Truco!",
+      "knocking": "Toc, toc …",
+      "sweet": "Trato",
+      "sour": "Truco",
+      "yours": "Ahora es tuyo, también después de Halloween.",
+      "nothing": "Hoy no hay nada.",
+      "giggles": "La calabaza se ríe. Vuelve a intentarlo mañana a partir de medianoche.",
+      "intro": "Llama una vez al día. Casi siempre hay trato, pero a veces solo truco, y la calabaza te saca la lengua. ¡Vuelve mañana!",
+      "knock": "Llamar",
+      "nextAt": "Próxima llamada a partir de las {time}",
+      "tomorrow": "Próxima llamada mañana",
+      "kind": {
+        "cape": "Capa",
+        "emote": "Emote",
+        "sticker": "Sticker de chat",
+        "other": "Recompensa"
+      },
+      "pool": {
+        "cape": "Capa Mondnacht – color aleatorio, solo una por jugador",
+        "emotes": "4 emotes",
+        "stickers": "6 stickers de chat",
+        "sour": "Truco ≈ 1 de cada 4"
+      }
+    },
+    "hunt": {
+      "title": "Caza de calabazas",
+      "text": "13 calabazas escondidas en el launcher, la web y el TRS Client. Cada hallazgo cuenta para tu cuenta (el servidor comprueba cada calabaza, las repetidas no cuentan).",
+      "found": "¡Calabaza encontrada! {n}/{total}",
+      "complete": "¡Las 13! Insignia «Cazador de calabazas 2026» y capa desbloqueadas.",
+      "pumpkinLabel": "Una calabaza escondida",
+      "rewardLabel": "Recompensa por las 13:",
+      "rewardCape": "+ capa «Cazador de calabazas»",
+      "logLine": "[🎃] Algo sonríe entre estas líneas …"
+    },
+    "badges": {
+      "halloween2026": "Halloween 2026",
+      "pumpkinhunter2026": "Cazador de calabazas 2026"
+    },
+    "stickers": {
+      "summary": "Sticker",
+      "title": "Stickers de chat",
+      "none": "Aún no hay stickers.",
+      "locked": "{name} – aún no es tuyo",
+      "howTo": "Consigue stickers con truco o trato en la página de inicio.",
+      "open": "Stickers"
     }
   }
 }

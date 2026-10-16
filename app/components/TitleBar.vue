@@ -46,20 +46,10 @@ async function toggleMaximize() {
     </svg>
     <div data-tauri-drag-region class="relative z-[1] flex items-center gap-2 text-base-200">
       <img src="/icon.png" alt="" class="pointer-events-none size-4 [image-rendering:pixelated]" />
-      <svg v-if="events.halloween" class="pumpkin" viewBox="0 0 12 12" aria-hidden="true">
-        <rect x="5" y="0" width="2" height="2" fill="#3d7a32" />
-        <rect x="6" y="1" width="2" height="1" fill="#2a5c24" />
-        <rect x="3" y="3" width="6" height="1" fill="#ff7a1a" />
-        <rect x="2" y="4" width="8" height="1" fill="#ff7a1a" />
-        <rect x="1" y="5" width="10" height="3" fill="#ff7a1a" />
-        <rect x="2" y="8" width="8" height="1" fill="#e06512" />
-        <rect x="3" y="9" width="6" height="1" fill="#c95a0a" />
-        <rect x="4" y="3" width="1" height="7" fill="#d4550c" />
-        <rect x="7" y="3" width="1" height="7" fill="#d4550c" />
-        <rect x="3" y="6" width="1" height="1" fill="#2a1008" />
-        <rect x="8" y="6" width="1" height="1" fill="#2a1008" />
-        <rect x="5" y="8" width="2" height="1" fill="#2a1008" />
-      </svg>
+      <template v-if="events.halloween">
+        <HalloweenPixelSprite name="pumpkin" class="pumpkin" />
+        <HalloweenPixelSprite name="moonbat" class="moonbat" />
+      </template>
       <PixelSnowflake v-else-if="design === 'winter'" />
       <span data-tauri-drag-region class="display text-[13px] leading-none">TRS Launcher</span>
     </div>
@@ -100,6 +90,11 @@ async function toggleMaximize() {
     <AccountMenu />
     <div class="h-4 w-px bg-base-800" />
 
+    <!-- Halloween 2026: Spinnennetz neben den Fensterknöpfen, darin versteckt ein Kürbis (Kürbis-Suche 1/13). -->
+    <div v-if="events.halloween" class="web-corner">
+      <svg class="web" viewBox="0 0 46 36" aria-hidden="true"><g fill="none" stroke="#cfd5e3" stroke-width=".6"><path d="M46 0 L14 36 M46 0 L28 36 M46 0 L4 20 M46 0 L0 6" /><path d="M38 0 Q36 8 46 10 M28 0 Q26 14 46 18 M18 0 Q16 20 46 28" /></g></svg>
+      <HalloweenPumpkin id="launcher-titlebar" :size="11" class="web-pumpkin" />
+    </div>
     <div v-if="win" class="flex h-full">
       <button class="ctl" :aria-label="t('titleBar.minimize')" @click="win.minimize()">
         <svg viewBox="0 0 10 10" class="size-2.5"><path d="M0 5h10" stroke="currentColor" /></svg>
@@ -133,10 +128,36 @@ async function toggleMaximize() {
   opacity: 0.42;
 }
 .pumpkin {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
   pointer-events: none;
+  filter: drop-shadow(0 0 4px rgba(224, 138, 60, 0.6));
+}
+.moonbat {
+  width: 18px;
+  height: 16px;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+.web-corner {
+  position: relative;
+  width: 46px;
+  height: 100%;
+  flex-shrink: 0;
+}
+.web {
+  position: absolute;
+  inset: 0;
+  width: 46px;
+  height: 36px;
+  opacity: 0.55;
+  pointer-events: none;
+}
+.web-pumpkin {
+  position: absolute;
+  right: 9px;
+  top: 6px;
 }
 /* Eine Redstone-Leitung unter dem Logo, die nach rechts ausläuft. */
 .titlebar::after {

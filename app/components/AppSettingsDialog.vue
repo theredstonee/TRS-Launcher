@@ -20,6 +20,7 @@ const active = computed({
   set: (v: string) => (store.dialog = v),
 })
 
+const events = useEventsStore()
 const form = ref<Settings | null>(null)
 const info = ref<AppInfo | null>(null)
 /** Was es auf diesem System gibt – bis `appInfo` da ist, aus dem User-Agent geschätzt. */
@@ -356,7 +357,7 @@ async function allowFirewall() {
 <template>
   <SettingsShell v-model="active" :title="t('settings.title')" :sections="sections" :status="statusView" @close="close">
     <template #nav-footer>
-      <p v-if="info">TRS Launcher v{{ info.version }}</p>
+      <p v-if="info" class="flex items-center gap-1.5">TRS Launcher v{{ info.version }}<HalloweenPumpkin v-if="events.halloween" id="launcher-settings" :size="12" /></p>
       <p v-if="info">{{ info.os }}</p>
       <p v-if="clientModLine">{{ clientModLine }}</p>
       <p v-if="updatesLine">{{ updatesLine }}</p>
@@ -458,6 +459,9 @@ async function allowFirewall() {
       </SettingRow>
       <SettingRow :title="t('settings.appearance.eventIconsTitle')" :description="t('settings.appearance.eventIconsDescription')">
         <ToggleSwitch v-model="form.ui.eventIcons" :label="t('settings.appearance.eventIconsTitle')" />
+      </SettingRow>
+      <SettingRow v-if="events.halloween" :title="t('settings.appearance.halloweenFlickerTitle')" :description="t('settings.appearance.halloweenFlickerDescription')" data-testid="settings-halloween-flicker">
+        <ToggleSwitch v-model="form.ui.halloweenFlicker" :label="t('settings.appearance.halloweenFlickerTitle')" />
       </SettingRow>
       <SettingRow :title="t('settings.appearance.motionTitle')" :description="t('settings.appearance.motionDescription')">
         <select v-model="form.ui.motion" class="field w-52 py-1.5 mobile:w-40" :aria-label="t('settings.appearance.motionTitle')">

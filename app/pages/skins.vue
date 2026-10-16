@@ -716,6 +716,8 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
                   @cosmetic-error="toasts.error(t('headCosmetics.previewFailed'))"
                 />
               </ClientOnly>
+              <!-- Halloween 2026: Kürbis unten rechts auf der 3D-Bühne (Kürbis-Suche 3/13). -->
+              <HalloweenPumpkin v-if="!loading" id="launcher-skins" :size="13" class="absolute right-3 z-10" :style="{ top: `${viewerHeight - 22}px` }" />
               <div class="absolute top-12 right-3 flex max-w-[60%] flex-col items-end gap-1">
                 <button
                   v-if="trsPreview"

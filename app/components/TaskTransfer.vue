@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Fortschritt einer pausierbaren Aufgabe. Die Leitung wird bei Halloween von selbst zum Hexen-Balken.
+// Fortschritt einer pausierbaren Aufgabe. Die Leitung wird bei Halloween von selbst zum Mondlauf.
 const props = defineProps<{ taskKey: string }>()
 
 const tasks = useTasksStore()

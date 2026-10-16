@@ -36,6 +36,18 @@ const newSinceScroll = ref(0)
 const isLive = computed(() => source.value === 'live')
 const currentSource = computed(() => sources.value.find((s) => s.id === source.value) ?? null)
 
+// --- Halloween 2026: zwischen den Zeilen grinst ein Kürbis (Kürbis-Suche 5/13) --------
+const halloween = useHalloweenStore()
+const pumpkinEntries = new WeakSet<LogEntry>()
+let pumpkinIn = false
+function maybePumpkin() {
+  if (pumpkinIn || model.entries.length < 3 || !halloween.visible('launcher-logs')) return
+  model.appendLines([{ time: Date.now(), level: 'info', thread: null, message: t('halloween.hunt.logLine') }])
+  const entry = model.entries[model.entries.length - 1]
+  if (entry) pumpkinEntries.add(entry)
+  pumpkinIn = true
+}
+
 // --- Live-Log ------------------------------------------------------------------
 let seen = 0
 function syncLive() {
@@ -44,6 +56,7 @@ function syncLive() {
   // Neustart der Instanz: Zähler fängt bei 0 an.
   if (total < seen) {
     model.clear()
+    pumpkinIn = false
     seen = 0
     follow.value = true
   }
@@ -51,6 +64,7 @@ function syncLive() {
   if (fresh <= 0) return
   const lines = props.lines
   model.appendLines(lines.slice(Math.max(0, lines.length - fresh)))
+  maybePumpkin()
   seen = total
   if (!follow.value) newSinceScroll.value += fresh
   bump()
@@ -71,6 +85,7 @@ async function selectSource(id: string) {
   source.value = id
   const token = ++loadToken
   model.clear()
+  pumpkinIn = false
   truncated.value = false
   newSinceScroll.value = 0
   if (id === 'live') {
@@ -95,6 +110,7 @@ async function selectSource(id: string) {
       parser.feed(text.slice(at, at + CHUNK), out)
       if (at + CHUNK >= text.length) parser.flush(out)
       model.appendEntries(out)
+      if (at + CHUNK >= text.length) maybePumpkin()
       bump()
       await new Promise((resolve) => requestAnimationFrame(() => resolve(null)))
       if (token !== loadToken) return
@@ -263,6 +279,7 @@ const launcherSources = computed(() => sources.value.filter((s) => s.kind === 'l
 // --- Aktionen ------------------------------------------------------------------
 function clearView() {
   model.clear()
+  pumpkinIn = false
   newSinceScroll.value = 0
   follow.value = true
   bump()
@@ -537,6 +554,7 @@ const shareLabel = computed(() => (isLive.value ? t('logViewer.latest') : (curre
               <span class="log-level">{{ levelLabel[r.entry.level] }}</span>
               <span class="log-msg" :title="r.entry.thread ?? undefined">
                 <template v-for="(seg, i) in highlightMatches(r.text, needle)" :key="i"><mark v-if="seg.hit" class="log-hit">{{ seg.text }}</mark><template v-else>{{ seg.text }}</template></template>
+                <HalloweenPumpkin v-if="pumpkinEntries.has(r.entry)" id="launcher-logs" :size="12" class="mx-1 inline-block align-[-2px]" />
               </span>
               <button v-if="r.entry.detail.length && !r.open" class="log-more" @click="toggleRow(r.row.entry)">+{{ r.entry.detail.length }}</button>
             </template>

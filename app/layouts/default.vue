@@ -18,6 +18,8 @@ const curseforge = useCurseForgeStore()
 const router = useRouter()
 // Event-Theme (Halloween) früh anwenden, auch bevor eine Seite den Store anfasst.
 const events = useEventsStore()
+// Halloween 2026: Kürbis-Suche/Abzeichen laden, sobald das Event läuft (Store lädt selbst).
+useHalloweenStore()
 
 const bigPicture = useBigPictureStore()
 
@@ -242,8 +244,8 @@ onBeforeUnmount(() => void backListener?.unregister())
     <MyApplicationsDialog v-if="applications.dialogOpen && !trs.consentOpen" />
     <WhatsNewDialog v-if="whatsNew.open && !onboarding.open && !trs.consentOpen" />
     <CurseForgeBlockedDialog v-if="curseforge.blockedFor" :key="curseforge.blockedFor" :instance-id="curseforge.blockedFor" @close="curseforge.closeBlocked()" />
-    <!-- Hexe und Fledermäuse über jeder Seite, nur solange das Event läuft. -->
-    <HalloweenFly v-if="events.halloween" />
+    <!-- Halloween 2026: Mondnacht-Atmosphäre über jeder Seite, nur solange das Event läuft. -->
+    <HalloweenAtmosphere v-if="events.halloween && !isBig" />
     <ToastHost />
     <SocialToastHost />
     <JoinServerDialog />

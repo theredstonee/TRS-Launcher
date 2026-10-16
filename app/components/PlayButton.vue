@@ -30,7 +30,7 @@ const files = computed(() => {
 </script>
 
 <template>
-  <!-- Groß, während Halloween: Starten und Installieren als Hexen-Balken statt Lampenfüllung. -->
+  <!-- Groß, während Halloween: Starten und Installieren als Mondlauf statt Lampenfüllung. -->
   <template v-if="hidden" />
   <div v-else-if="large && events.halloween && (install || game.phase === 'preparing')" class="relative min-w-0 flex-1">
     <div
@@ -45,7 +45,7 @@ const files = computed(() => {
         <span class="min-w-0 truncate">{{ install ? (install.stage || t('instanceCard.installing')) : stage }}<span v-if="!install && files" class="ml-1.5 font-normal opacity-70">{{ files }}</span></span>
         <span class="display shrink-0 tabular-nums text-redstone-300">{{ t('tasks.percent', { percent: install ? (install.percent ?? 0) : percent }) }}</span>
       </div>
-      <WitchProgress :percent="install ? (install.percent ?? 0) : percent" :indeterminate="!!install && install.percent == null" />
+      <MoonProgress :percent="install ? (install.percent ?? 0) : percent" :indeterminate="!!install && install.percent == null" />
     </div>
     <button
       v-if="game.phase === 'preparing' && canCancel"

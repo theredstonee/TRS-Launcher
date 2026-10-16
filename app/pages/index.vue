@@ -109,14 +109,17 @@ function play(instance: Instance) {
       :class="`hero-${sceneMode}`"
       :aria-label="featured ? t('home.lastPlayed', { name: featured.name }) : t('nav.home')"
     >
-      <HalloweenScene v-if="events.halloween" />
+      <MoonnightScene v-if="events.halloween">
+        <div class="scrim scrim-moon" />
+      </MoonnightScene>
       <DesignScene v-else :mode="sceneMode" :progress="sceneProgress" :anchor="lamp">
         <div class="scrim" />
       </DesignScene>
-      <div v-if="events.halloween" class="scrim" />
+      <!-- Halloween 2026: Event-Karte oben rechts (Kürbis-Suche, Süßes oder Saures). -->
+      <HalloweenEventCard v-if="events.halloween" class="hw-card" />
 
       <div class="relative flex h-full flex-col justify-between gap-6 px-8 pt-7 pb-8 mobile:gap-5 mobile:px-4 mobile:pt-5 mobile:pb-6">
-        <div class="flex items-start justify-between gap-4">
+        <div class="flex items-start justify-between gap-4" :class="{ 'hw-room': events.halloween }">
           <p class="display text-base text-base-200">{{ greeting }}</p>
           <span v-if="game?.phase === 'running'" class="badge bg-lamp-400 text-base-950">
             <span class="size-1.5 animate-lamp bg-base-950" />{{ t('play.runningNow') }}
@@ -353,6 +356,32 @@ function play(instance: Instance) {
   background:
     linear-gradient(90deg, color-mix(in srgb, var(--color-base-950) 72%, transparent) 0%, color-mix(in srgb, var(--color-base-950) 38%, transparent) 30%, transparent 58%),
     linear-gradient(0deg, var(--color-base-950) 0%, color-mix(in srgb, var(--color-base-950) 30%, transparent) 22%, transparent 45%);
+}
+/* Halloween: Mondnacht – unten dunkel (Text), oben und rechts offen für Mond und Friedhof. */
+.scrim-moon {
+  background:
+    linear-gradient(180deg, transparent 40%, rgba(7, 6, 12, 0.85) 100%),
+    linear-gradient(90deg, rgba(7, 6, 12, 0.55) 0%, transparent 45%);
+}
+.hw-card {
+  position: absolute;
+  right: 22px;
+  top: 22px;
+  z-index: 2;
+  width: 296px;
+}
+.hw-room {
+  padding-right: 320px;
+}
+:root.is-mobile .hw-card {
+  position: relative;
+  right: auto;
+  top: auto;
+  width: auto;
+  margin: 12px 16px 0;
+}
+:root.is-mobile .hw-room {
+  padding-right: 0;
 }
 .hero-title {
   text-shadow: 0 2px 0 color-mix(in srgb, var(--color-base-950) 80%, transparent);

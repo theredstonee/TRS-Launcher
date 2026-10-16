@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyEventTheme, EVENT_STORAGE_KEY, HALLOWEEN_EVENT, isEventPlayer, witchMotion } from '../app/utils/halloween'
+import { applyEventTheme, EVENT_STORAGE_KEY, HALLOWEEN_EVENT, isEventPlayer } from '../app/utils/halloween'
 
 describe('Halloween-Theme', () => {
   function harness() {
@@ -41,18 +41,5 @@ describe('Halloween-Theme', () => {
     expect(isEventPlayer('')).toBe(false)
     expect(isEventPlayer('bad name')).toBe(false)
     expect(isEventPlayer('../x')).toBe(false)
-  })
-
-  it('füllt den Balken und schaltet die Lampe erst bei 100 % an', () => {
-    expect(witchMotion(0, 0, false, false).p).toBe(0)
-    expect(witchMotion(0, 40, false, false).lamp).toBe(false)
-    expect(witchMotion(0, 100, false, false)).toMatchObject({ p: 1, lamp: true })
-    expect(witchMotion(0, 0, false, true)).toMatchObject({ p: 1, lamp: true })
-    expect(witchMotion(0, 0, true, false)).toMatchObject({ p: 0, lamp: false })
-    expect(witchMotion(4000, 0, true, false)).toMatchObject({ p: 1, lamp: true })
-    expect(witchMotion(2000, 0, true, false)).toMatchObject({ p: 0.5, lamp: false })
-    expect(witchMotion(8000, 0, true, false).p).toBe(0)
-    expect(witchMotion(0, 0, false, false).frame).toBe(0)
-    expect(witchMotion(110, 0, false, false).frame).toBe(1)
   })
 })

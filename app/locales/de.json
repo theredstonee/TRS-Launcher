@@ -331,7 +331,10 @@
       "creator_self": "Das ist dein eigener Creator-Code.",
       "pack_not_found": "Dieses Modpack gibt es nicht (mehr).",
       "helper_not_found": "Dieser Spieler ist (nicht mehr) Helfer.",
-      "helper_invite_not_found": "Diese Einladung gibt es nicht mehr."
+      "helper_invite_not_found": "Diese Einladung gibt es nicht mehr.",
+      "pumpkin_unknown": "Diesen Kürbis gibt es nicht.",
+      "trick_used": "Heute hast du schon angeklopft – morgen wieder!",
+      "sticker_locked": "Diesen Sticker hast du noch nicht."
     },
     "auth": {
       "accountMismatch": "Die Anmeldung gehört zu einem anderen Account – bitte erneut anmelden.",
@@ -2415,7 +2418,9 @@
         "full": "Immer an",
         "system": "Wie Windows/System",
         "reduced": "Animationen reduzieren"
-      }
+      },
+      "halloweenFlickerTitle": "Flackern & Rauschen",
+      "halloweenFlickerDescription": "Filmkorn-Rauschen im Hintergrund und kurzes Aufflackern bei Blitzen (nur während Halloween). Der TRS Client nutzt dieselbe Einstellung. Bei „Animationen aus“ flackert nie etwas."
     },
     "features": {
       "instancePage": "Instanz-Seite",
@@ -3422,7 +3427,9 @@
       "locked": "Gesperrt",
       "shared": "Geteilt",
       "achievement": "Erfolg",
-      "event": "Event"
+      "event": "Event",
+      "reward": "Belohnung",
+      "halloweenReward": "Halloween-Belohnung"
     },
     "status": {
       "pending": "Wartet auf Freigabe",
@@ -3567,7 +3574,8 @@
       "event": "Gratis, solange Halloween für dich läuft. Danach behältst du den Umhang.",
       "active": "Du trägst diesen Umhang.",
       "free": "Frei verfügbar – anlegen, damit ihn andere sehen.",
-      "unlocked": "Für dich freigeschaltet – anlegen, damit ihn andere sehen."
+      "unlocked": "Für dich freigeschaltet – anlegen, damit ihn andere sehen.",
+      "reward": "Halloween-Belohnung – nur bei „Süßes oder Saures“ oder der Kürbis-Suche."
     },
     "actions": {
       "wearing": "Lege an …",
@@ -3819,7 +3827,8 @@
         "code": "Code-Umhang (Aktionen, Partner)",
         "team": "TRS-Team-Umhang",
         "free": "TRS-Umhang für alle",
-        "other": "TRS-Umhang"
+        "other": "TRS-Umhang",
+        "reward": "Halloween-Belohnung"
       }
     }
   },
@@ -7529,6 +7538,71 @@
           "body": "Du kannst einen neuen Helfer einladen."
         }
       }
+    }
+  },
+  "halloween": {
+    "flickerHint": {
+      "title": "Flackern & Rauschen",
+      "text": "Zu Halloween rauscht der Hintergrund wie ein alter Film, und bei Blitzen flackert der Launcher kurz auf. Wenn dich das stört, schalte es hier aus. Später findest du den Schalter unter Einstellungen → Darstellung → „Flackern & Rauschen“.",
+      "off": "Flackern ausschalten",
+      "keep": "Anlassen"
+    },
+    "card": {
+      "title": "Halloween 2026",
+      "until": "noch bis 2. November",
+      "hunt": "Kürbis-Suche · {n}/{total}",
+      "noData": "Kürbis-Suche und Süßes oder Saures brauchen die TRS-Dienste."
+    },
+    "trick": {
+      "button": "Süßes oder Saures?",
+      "openToday": "heute noch offen",
+      "doneToday": "heute schon geklopft",
+      "title": "Süßes oder Saures?",
+      "sourBubble": "Saures!",
+      "knocking": "Klopf, klopf …",
+      "sweet": "Süßes",
+      "sour": "Saures",
+      "yours": "Gehört jetzt dir – auch nach Halloween.",
+      "nothing": "Heute leider nichts.",
+      "giggles": "Der Kürbis kichert. Nächster Versuch morgen ab Mitternacht.",
+      "intro": "Einmal am Tag anklopfen. Meistens gibt’s Süßes – manchmal aber auch nur Saures, und der Kürbis streckt dir die Zunge raus. Morgen wieder!",
+      "knock": "Anklopfen",
+      "nextAt": "Nächstes Anklopfen ab {time}",
+      "tomorrow": "Nächstes Anklopfen morgen",
+      "kind": {
+        "cape": "Umhang",
+        "emote": "Emote",
+        "sticker": "Chat-Sticker",
+        "other": "Belohnung"
+      },
+      "pool": {
+        "cape": "Mondnacht-Umhang – zufällige Farbe, jeder nur einen",
+        "emotes": "4 Emotes",
+        "stickers": "6 Chat-Sticker",
+        "sour": "Saures ≈ 1 von 4"
+      }
+    },
+    "hunt": {
+      "title": "Kürbis-Suche",
+      "text": "13 Kürbisse, versteckt in Launcher, Website und TRS Client. Jeder Fund zählt fürs Konto (der Server prüft jeden Kürbis, doppelt zählt nicht).",
+      "found": "Kürbis gefunden! {n}/{total}",
+      "complete": "Alle 13! Abzeichen „Kürbisjäger 2026“ und Umhang freigeschaltet.",
+      "pumpkinLabel": "Ein versteckter Kürbis",
+      "rewardLabel": "Belohnung für alle 13:",
+      "rewardCape": "+ Umhang „Kürbisjäger“",
+      "logLine": "[🎃] Zwischen diesen Zeilen grinst etwas …"
+    },
+    "badges": {
+      "halloween2026": "Halloween 2026",
+      "pumpkinhunter2026": "Kürbisjäger 2026"
+    },
+    "stickers": {
+      "summary": "Sticker",
+      "title": "Chat-Sticker",
+      "none": "Noch keine Sticker.",
+      "locked": "{name} – noch nicht deiner",
+      "howTo": "Sticker gibt es bei „Süßes oder Saures“ auf der Startseite.",
+      "open": "Sticker"
     }
   }
 }

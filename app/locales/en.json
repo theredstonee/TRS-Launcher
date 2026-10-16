@@ -331,7 +331,10 @@
       "creator_self": "That's your own creator code.",
       "pack_not_found": "This modpack doesn't exist (anymore).",
       "helper_not_found": "This player isn't a helper (anymore).",
-      "helper_invite_not_found": "This invitation doesn't exist anymore."
+      "helper_invite_not_found": "This invitation doesn't exist anymore.",
+      "pumpkin_unknown": "This pumpkin doesn’t exist.",
+      "trick_used": "You already knocked today – come back tomorrow!",
+      "sticker_locked": "You don’t have this sticker yet."
     },
     "auth": {
       "accountMismatch": "This sign-in belongs to a different account – please sign in again.",
@@ -2415,7 +2418,9 @@
         "full": "Always on",
         "system": "Follow Windows/system",
         "reduced": "Reduce animations"
-      }
+      },
+      "halloweenFlickerTitle": "Flicker & grain",
+      "halloweenFlickerDescription": "Film grain in the background and a short flicker on lightning (only during Halloween). The TRS Client uses the same setting. With animations off nothing ever flickers."
     },
     "features": {
       "instancePage": "Instance page",
@@ -3422,7 +3427,9 @@
       "locked": "Locked",
       "shared": "Shared",
       "achievement": "Achievement",
-      "event": "Event"
+      "event": "Event",
+      "reward": "Reward",
+      "halloweenReward": "Halloween reward"
     },
     "status": {
       "pending": "Awaiting approval",
@@ -3567,7 +3574,8 @@
       "event": "Free while Halloween is on for you. You keep the cape afterwards.",
       "active": "You're wearing this cape.",
       "free": "Freely available – put it on so others can see it.",
-      "unlocked": "Unlocked for you – put it on so others can see it."
+      "unlocked": "Unlocked for you – put it on so others can see it.",
+      "reward": "Halloween reward – only from trick or treat or the pumpkin hunt."
     },
     "actions": {
       "wearing": "Putting on …",
@@ -3819,7 +3827,8 @@
         "code": "Code cape (giveaways, partners)",
         "team": "TRS team cape",
         "free": "TRS cape for everyone",
-        "other": "TRS cape"
+        "other": "TRS cape",
+        "reward": "Halloween reward"
       }
     }
   },
@@ -7529,6 +7538,71 @@
           "body": "You can invite a new helper."
         }
       }
+    }
+  },
+  "halloween": {
+    "flickerHint": {
+      "title": "Flicker & grain",
+      "text": "For Halloween the background crackles like an old film, and lightning makes the launcher flicker for a moment. If that bothers you, switch it off here. You can find the switch later under Settings → Appearance → “Flicker & grain”.",
+      "off": "Switch off flicker",
+      "keep": "Keep"
+    },
+    "card": {
+      "title": "Halloween 2026",
+      "until": "until 2 November",
+      "hunt": "Pumpkin hunt · {n}/{total}",
+      "noData": "Pumpkin hunt and trick or treat need the TRS services."
+    },
+    "trick": {
+      "button": "Trick or treat?",
+      "openToday": "still open today",
+      "doneToday": "done for today",
+      "title": "Trick or treat?",
+      "sourBubble": "Trick!",
+      "knocking": "Knock, knock …",
+      "sweet": "Treat",
+      "sour": "Trick",
+      "yours": "It’s yours now – even after Halloween.",
+      "nothing": "Nothing today, sorry.",
+      "giggles": "The pumpkin giggles. Try again tomorrow from midnight.",
+      "intro": "Knock once a day. Mostly you get a treat – but sometimes only a trick, and the pumpkin sticks its tongue out at you. Come back tomorrow!",
+      "knock": "Knock",
+      "nextAt": "Next knock from {time}",
+      "tomorrow": "Next knock tomorrow",
+      "kind": {
+        "cape": "Cape",
+        "emote": "Emote",
+        "sticker": "Chat sticker",
+        "other": "Reward"
+      },
+      "pool": {
+        "cape": "Mondnacht cape – random colour, only one each",
+        "emotes": "4 emotes",
+        "stickers": "6 chat stickers",
+        "sour": "Trick ≈ 1 in 4"
+      }
+    },
+    "hunt": {
+      "title": "Pumpkin hunt",
+      "text": "13 pumpkins are hidden in the launcher, on the website and in the TRS Client. Every find counts for your account (the server checks each pumpkin, doubles don’t count).",
+      "found": "Pumpkin found! {n}/{total}",
+      "complete": "All 13! Badge “Pumpkin Hunter 2026” and cape unlocked.",
+      "pumpkinLabel": "A hidden pumpkin",
+      "rewardLabel": "Reward for all 13:",
+      "rewardCape": "+ cape “Pumpkin Hunter”",
+      "logLine": "[🎃] Something is grinning between these lines …"
+    },
+    "badges": {
+      "halloween2026": "Halloween 2026",
+      "pumpkinhunter2026": "Pumpkin Hunter 2026"
+    },
+    "stickers": {
+      "summary": "Sticker",
+      "title": "Chat stickers",
+      "none": "No stickers yet.",
+      "locked": "{name} – not yours yet",
+      "howTo": "Get stickers from trick or treat on the home page.",
+      "open": "Stickers"
     }
   }
 }
