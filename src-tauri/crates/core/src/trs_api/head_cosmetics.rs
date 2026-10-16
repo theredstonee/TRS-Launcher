@@ -41,6 +41,8 @@ pub(crate) fn wearable_hat(c: &ApiCosmeticRef) -> bool {
         "hat" => c.is_v2() || c.template.as_deref().is_some_and(|t| WEARABLE_HAT_TEMPLATES.contains(&t)),
         // Begleiter (§11, Halloween): gibt es nur als v2-Modell.
         "companion" => c.is_v2(),
+        // Flügel (seit 2026-10-16, `attach: body`): nur v2.
+        "wings" => c.is_v2(),
         _ => false,
     }
 }
@@ -207,8 +209,10 @@ pub(crate) fn check_model(model: &Value, id: &str) -> Option<ModelInfo> {
     if uint(o, "format")? != 2 || o.get("id")?.as_str()? != id {
         return None;
     }
-    if !matches!(o.get("slot")?.as_str()?, "hat" | "companion") || o.get("attach")?.as_str()? != "head" {
-        return None;
+    // Hut/Begleiter hängen am Kopf, Flügel am Rumpf (§3 `SLOT_ATTACH`).
+    match (o.get("slot")?.as_str()?, o.get("attach")?.as_str()?) {
+        ("hat" | "companion", "head") | ("wings", "body") => {}
+        _ => return None,
     }
     let tex = o.get("texture")?.as_object()?;
     let (w, h, scale) = (uint(tex, "width")?, uint(tex, "height")?, uint(tex, "scale")?);

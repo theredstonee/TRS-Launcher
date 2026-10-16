@@ -779,6 +779,8 @@ pub fn run() {
             commands::halloween::halloween_trick,
             commands::halloween::halloween_set_effects,
             commands::halloween::halloween_stickers,
+            commands::halloween::halloween_choose_wings,
+            commands::halloween::trs_set_wings,
             commands::halloween::trs_badge_images,
             commands::creator::creator_me,
             commands::creator::creator_redeem,

@@ -134,6 +134,14 @@ impl Launcher {
         self.trs_do(Req::put("/v1/me/cosmetics", json!({ "companion": id }))).await
     }
 
+    /// Flügel anlegen (`Some(id)`) oder ablegen (`None`) – `PUT /v1/me/cosmetics {wings}`.
+    pub async fn trs_set_wings(&self, id: Option<String>) -> Result<()> {
+        if let Some(id) = &id {
+            cosmetic_arg(id)?;
+        }
+        self.trs_do(Req::put("/v1/me/cosmetics", json!({ "wings": id }))).await
+    }
+
     pub async fn trs_admin_events(&self) -> Result<Vec<AdminEvent>> {
         Ok(match self.trs_get::<ApiAdminEvents>(Req::get("/v1/admin/events")).await? {
             ApiAdminEvents::List(l) | ApiAdminEvents::Wrapped { events: l } => clean_list(l),

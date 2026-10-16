@@ -274,3 +274,18 @@ fn companion_models_pass_the_check() {
     m["slot"] = json!("back");
     assert!(check_model(&m, "bat_buddy").is_none());
 }
+
+#[test]
+fn wings_hang_on_the_body() {
+    let mut m = model("bat_wings", Some(12));
+    m["slot"] = json!("wings");
+    assert!(check_model(&m, "bat_wings").is_none(), "Flügel brauchen attach body");
+    m["attach"] = json!("body");
+    assert!(check_model(&m, "bat_wings").is_some());
+    m["slot"] = json!("hat");
+    assert!(check_model(&m, "bat_wings").is_none(), "Hüte bleiben am Kopf");
+    let wings = entry(json!({ "id": "bat_wings", "slot": "wings", "format": 2, "unlock": { "type": "reward", "rewardOf": "pumpkinhunter2026" } }));
+    assert!(wearable_hat(&wings) && listed(&wings));
+    assert_eq!(wings.unlock_kind(), Some(CosmeticUnlock::Reward));
+    assert!(!wearable_hat(&entry(json!({ "id": "w", "slot": "wings", "template": "duck" }))), "Flügel nur als v2");
+}

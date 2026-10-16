@@ -151,6 +151,23 @@ impl Default for SpookyEffects {
     }
 }
 
+/// Flügel-Wahl nach allen 13 Kürbissen (genau einer von vier, endgültig).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WingsChoice {
+    pub choice: Option<String>,
+    pub can_choose: bool,
+    pub options: Vec<String>,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(default, rename_all = "camelCase")]
+struct ApiWings {
+    choice: Option<String>,
+    can_choose: bool,
+    options: Vec<Value>,
+}
+
 /// Stand von `GET /v1/me/halloween` (auch Nutzlast von `halloween_updated`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -162,6 +179,8 @@ pub struct HalloweenState {
     pub trick: TrickState,
     pub badges: Vec<String>,
     pub effects: SpookyEffects,
+    /// Flügel-Belohnung der Kürbis-Suche (ältere API: nichts zu wählen).
+    pub wings: WingsChoice,
 }
 
 #[derive(Deserialize, Default)]
@@ -190,6 +209,7 @@ struct ApiState {
     trick: ApiTrick,
     badges: Vec<Value>,
     effects: Option<Value>,
+    wings: Option<Value>,
 }
 
 fn trick_result(v: Option<Value>) -> Option<TrickResult> {
@@ -224,6 +244,15 @@ impl HalloweenState {
             },
             badges: ids(raw.badges, MAX_BADGES),
             effects: raw.effects.and_then(|e| serde_json::from_value(e).ok()).unwrap_or_default(),
+            wings: raw
+                .wings
+                .and_then(|w| serde_json::from_value::<ApiWings>(w).ok())
+                .map(|w| {
+                    let options = ids(w.options, 8);
+                    let choice = w.choice.filter(|c| item_id(c));
+                    WingsChoice { can_choose: w.can_choose && choice.is_none() && !options.is_empty(), choice, options }
+                })
+                .unwrap_or_default(),
         })
     }
 
@@ -236,6 +265,7 @@ impl HalloweenState {
             trick: TrickState { used_today: false, result: None, reward: None, next: None },
             badges: Vec::new(),
             effects: SpookyEffects::default(),
+            wings: WingsChoice::default(),
         }
     }
 }
@@ -407,6 +437,15 @@ impl Launcher {
         TrickOutcome::from_value(v).ok_or_else(super::bad_response)
     }
 
+    /// Flügel nach allen 13 Kürbissen wählen – genau einmal, endgültig. Gibt den neuen Stand zurück.
+    pub async fn halloween_choose_wings(&self, id: &str) -> Result<HalloweenState> {
+        if !item_id(id) {
+            return Err(Error::validation(crate::msg!("trsOps.invalidCosmeticId", "Ungültige Kosmetik-ID.")));
+        }
+        self.trs_do(Req::post("/v1/me/halloween/wings", json!({ "id": id }))).await?;
+        self.halloween_state().await
+    }
+
     /// Ob andere TRS-Spieler meine Spuk-Effekte sehen dürfen.
     pub async fn halloween_set_effects(&self, effects: SpookyEffects) -> Result<()> {
         self.trs_do(Req::put("/v1/me/halloween/effects", json!({ "hits": effects.hits, "trail": effects.trail }))).await
@@ -492,6 +531,12 @@ mod tests {
         assert_eq!(s.trick.reward.as_ref().unwrap().kind, RewardKind::Cape);
         assert_eq!(s.badges, ["halloween2026"]);
         assert_eq!(s.effects, SpookyEffects { hits: false, trail: true });
+        assert_eq!(s.wings, WingsChoice::default(), "ohne Feld nichts zu wählen");
+        let w = HalloweenState::from_value(json!({ "wings": { "choice": null, "canChoose": true, "options": ["bat_wings", "demon_wings", "../x"] } })).unwrap();
+        assert!(w.wings.can_choose);
+        assert_eq!(w.wings.options, ["bat_wings", "demon_wings"]);
+        let chosen = HalloweenState::from_value(json!({ "wings": { "choice": "raven_wings", "canChoose": true, "options": ["raven_wings"] } })).unwrap();
+        assert!(!chosen.wings.can_choose, "schon gewählt = endgültig");
         let json = serde_json::to_value(&s).unwrap();
         assert_eq!(json["pumpkins"]["nextHint"]["de"], "Ganz unten …");
         assert_eq!(json["trick"]["usedToday"], true);

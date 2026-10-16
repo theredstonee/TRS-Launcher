@@ -28,6 +28,16 @@ pub async fn halloween_set_effects(launcher: State<'_, LauncherState>, effects: 
 }
 
 #[tauri::command]
+pub async fn halloween_choose_wings(launcher: State<'_, LauncherState>, id: String) -> CommandResult<HalloweenState> {
+    Ok(launcher.halloween_choose_wings(&id).await?)
+}
+
+#[tauri::command]
+pub async fn trs_set_wings(launcher: State<'_, LauncherState>, id: Option<String>) -> CommandResult<()> {
+    Ok(launcher.trs_set_wings(id).await?)
+}
+
+#[tauri::command]
 pub async fn halloween_stickers(launcher: State<'_, LauncherState>) -> CommandResult<Vec<Sticker>> {
     Ok(launcher.halloween_stickers().await?)
 }

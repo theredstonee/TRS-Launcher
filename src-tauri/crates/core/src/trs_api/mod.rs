@@ -447,6 +447,8 @@ fn message_for(code: &str) -> Msg {
         "pumpkin_unknown" => msg!("trsApi.pumpkin_unknown", "Diesen Kürbis gibt es nicht."),
         "trick_used" => msg!("trsApi.trick_used", "Heute hast du schon angeklopft – morgen wieder!"),
         "sticker_locked" => msg!("trsApi.sticker_locked", "Diesen Sticker hast du noch nicht."),
+        "wings_chosen" => msg!("trsApi.wings_chosen", "Du hast deine Halloween-Flügel schon gewählt."),
+        "hunt_incomplete" => msg!("trsApi.hunt_incomplete", "Erst alle 13 Kürbisse finden – dann darfst du Flügel wählen."),
         "invalid_request" | "invalid_json" => msg!("trsApi.invalid_request", "Die Anfrage war ungültig."),
         "not_found" => msg!("trsApi.not_found", "Nicht gefunden."),
         _ => msg!("trsApi.rejected", "Die TRS API hat die Anfrage abgelehnt."),

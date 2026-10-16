@@ -31,6 +31,9 @@ async fn server(with_halloween: bool) -> MockServer {
             }
             ("POST", "/v1/me/halloween/trick") => Response::error(409, "trick_used"),
             ("PUT", "/v1/me/halloween/effects") => Response::empty(204),
+            ("POST", "/v1/me/halloween/wings") if req.json()["id"] == "bat_wings" => Response::empty(204),
+            ("POST", "/v1/me/halloween/wings") => Response::error(409, "wings_chosen"),
+            ("PUT", "/v1/me/cosmetics") => Response::json(200, json!({ "equipped": {}, "emotes": [] })),
             ("GET", "/v1/stickers") => Response::json(200, json!({ "stickers": [
                 { "id": "ghost_boo", "name": { "de": "Buh!", "en": "Boo!", "es": "¡Bu!" }, "url": "/v1/stickers/ghost_boo.png" },
                 { "id": "grave_riplag", "name": { "de": "RIP Lag", "en": "RIP lag", "es": "RIP lag" }, "url": "https://evil.example/x.png" },
@@ -63,6 +66,14 @@ async fn hunt_trick_effects_and_stickers() {
 
     launcher.halloween_set_effects(halloween::SpookyEffects { hits: false, trail: true }).await.unwrap();
     assert_eq!(server.hits("PUT", "/v1/me/halloween/effects")[0].json(), json!({ "hits": false, "trail": true }));
+
+    launcher.halloween_choose_wings("bat_wings").await.unwrap();
+    assert_eq!(launcher.halloween_choose_wings("demon_wings").await.unwrap_err().message_code(), "trsApi.wings_chosen");
+    assert!(launcher.halloween_choose_wings("../x").await.is_err());
+    launcher.trs_set_wings(Some("bat_wings".into())).await.unwrap();
+    launcher.trs_set_wings(None).await.unwrap();
+    let puts = server.hits("PUT", "/v1/me/cosmetics");
+    assert_eq!((puts[0].json()["wings"].clone(), puts[1].json()["wings"].clone()), (json!("bat_wings"), json!(null)));
 
     let stickers = launcher.halloween_stickers().await.unwrap();
     assert_eq!(stickers.len(), 2, "kaputte IDs fallen weg");
