@@ -1,6 +1,6 @@
 package dev.theredstonee.trsclient.mixin;
 
-import dev.theredstonee.trsclient.online.OnlineHooks;
+import dev.theredstonee.trsclient.online.FanHooks;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -17,9 +17,9 @@ import net.minecraft.client.renderer.MultiBufferSource;
 //?}
 
 /**
- * TRS-Abzeichen vor dem Namensschild über dem Kopf. Ab 1.21.2 steht der Name im Render-State
+ * TRS-Abzeichen, Creator-Stern und Platz fürs Fan-Symbol ({@code FanHooks#decorate}) vor dem Namensschild über dem Kopf. Ab 1.21.2 steht der Name im Render-State
  * ({@code nameTag}, gesetzt in extractRenderState), davor wird renderNameTag einmal mit dem erweiterten Namen
- * erneut aufgerufen (Vanilla-Aufruf abgebrochen). Zeigt nur "nutzt TRS" – keine weiteren Infos.
+ * erneut aufgerufen (Vanilla-Aufruf abgebrochen). Das Fan-Symbol selbst zeichnen FanTextMixin/FanNameTagMixin.
  */
 //? if >=1.21.9 {
 /*@Mixin(net.minecraft.client.renderer.entity.player.AvatarRenderer.class)
@@ -31,18 +31,14 @@ public abstract class NameTagBadgeMixin {
 			at = @At("TAIL"), require = 0)
 	private void trsclient$badge(net.minecraft.world.entity.Avatar entity,
 			net.minecraft.client.renderer.entity.state.AvatarRenderState state, float partial, CallbackInfo ci) {
-		if (state.nameTag != null && OnlineHooks.badge(entity.getUUID(), false)) {
-			state.nameTag = OnlineHooks.badged(entity.getUUID(), state.nameTag);
-		}
+		if (state.nameTag != null) state.nameTag = FanHooks.decorate(entity.getUUID(), state.nameTag, false);
 	}
 	*///?} elif >=1.21.2 {
 	/*@Inject(method = "extractRenderState(Lnet/minecraft/client/player/AbstractClientPlayer;Lnet/minecraft/client/renderer/entity/state/PlayerRenderState;F)V",
 			at = @At("TAIL"), require = 0)
 	private void trsclient$badge(net.minecraft.client.player.AbstractClientPlayer entity,
 			net.minecraft.client.renderer.entity.state.PlayerRenderState state, float partial, CallbackInfo ci) {
-		if (state.nameTag != null && OnlineHooks.badge(entity.getUUID(), false)) {
-			state.nameTag = OnlineHooks.badged(entity.getUUID(), state.nameTag);
-		}
+		if (state.nameTag != null) state.nameTag = FanHooks.decorate(entity.getUUID(), state.nameTag, false);
 	}
 	*///?} elif >=1.20.5 {
 	/*@Unique
@@ -56,10 +52,12 @@ public abstract class NameTagBadgeMixin {
 			at = @At("HEAD"), cancellable = true, require = 0)
 	private void trsclient$badge(AbstractClientPlayer player, Component name, PoseStack pose, MultiBufferSource buffers,
 			int light, float partial, CallbackInfo ci) {
-		if (trsclient$inBadge || !OnlineHooks.badge(player.getUUID(), false)) return;
+		if (trsclient$inBadge) return;
+		Component decorated = FanHooks.decorate(player.getUUID(), name, false);
+		if (decorated == name) return;
 		trsclient$inBadge = true;
 		try {
-			renderNameTag(player, OnlineHooks.badged(player.getUUID(), name), pose, buffers, light, partial);
+			renderNameTag(player, decorated, pose, buffers, light, partial);
 		} finally {
 			trsclient$inBadge = false;
 		}
@@ -77,10 +75,12 @@ public abstract class NameTagBadgeMixin {
 			at = @At("HEAD"), cancellable = true, require = 0)
 	private void trsclient$badge(AbstractClientPlayer player, Component name, PoseStack pose, MultiBufferSource buffers,
 			int light, CallbackInfo ci) {
-		if (trsclient$inBadge || !OnlineHooks.badge(player.getUUID(), false)) return;
+		if (trsclient$inBadge) return;
+		Component decorated = FanHooks.decorate(player.getUUID(), name, false);
+		if (decorated == name) return;
 		trsclient$inBadge = true;
 		try {
-			renderNameTag(player, OnlineHooks.badged(player.getUUID(), name), pose, buffers, light);
+			renderNameTag(player, decorated, pose, buffers, light);
 		} finally {
 			trsclient$inBadge = false;
 		}
@@ -98,10 +98,12 @@ public abstract class NameTagBadgeMixin {
 			at = @At("HEAD"), cancellable = true, require = 0)
 	private void trsclient$badge(AbstractClientPlayer player, String name, PoseStack pose, MultiBufferSource buffers,
 			int light, CallbackInfo ci) {
-		if (trsclient$inBadge || !OnlineHooks.badge(player.getUUID(), false)) return;
+		if (trsclient$inBadge) return;
+		String decorated = FanHooks.decorate(player.getUUID(), name, false);
+		if (decorated == name) return;
 		trsclient$inBadge = true;
 		try {
-			renderNameTag(player, OnlineHooks.badged(name), pose, buffers, light);
+			renderNameTag(player, decorated, pose, buffers, light);
 		} finally {
 			trsclient$inBadge = false;
 		}
@@ -119,10 +121,12 @@ public abstract class NameTagBadgeMixin {
 			at = @At("HEAD"), cancellable = true, require = 0)
 	private void trsclient$badge(AbstractClientPlayer player, double x, double y, double z, String name, double distance,
 			CallbackInfo ci) {
-		if (trsclient$inBadge || !OnlineHooks.badge(player.getUUID(), false)) return;
+		if (trsclient$inBadge) return;
+		String decorated = FanHooks.decorate(player.getUUID(), name, false);
+		if (decorated == name) return;
 		trsclient$inBadge = true;
 		try {
-			renderNameTags(player, x, y, z, OnlineHooks.badged(name), distance);
+			renderNameTags(player, x, y, z, decorated, distance);
 		} finally {
 			trsclient$inBadge = false;
 		}

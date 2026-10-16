@@ -64,8 +64,18 @@ public final class TrsKeys {
 	/** Öffnet die Notizen der aktuellen Welt im TRS-Menü (standardmäßig unbelegt). */
 	public static final KeyMapping notes =
 			new KeyMapping("key.trsclient.notes", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
+	/** Kamera-Fahrten: Keyframe setzen, abspielen/anhalten, letzten entfernen, löschen (alle standardmäßig unbelegt). */
+	public static final KeyMapping cinematicAdd =
+			new KeyMapping("key.trsclient.cinematicAdd", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
+	public static final KeyMapping cinematicPlay =
+			new KeyMapping("key.trsclient.cinematicPlay", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
+	public static final KeyMapping cinematicRemove =
+			new KeyMapping("key.trsclient.cinematicRemove", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
+	public static final KeyMapping cinematicClear =
+			new KeyMapping("key.trsclient.cinematicClear", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
 	private static final KeyMapping[] ALL = {menu, zoom, fullbright, freelook, hudProfile, emoteWheel, redstoneOverlay,
-			saveClip, toggleRecording, wardrobe, worldMap, social, quickReply, panorama, notes};
+			saveClip, toggleRecording, wardrobe, worldMap, social, quickReply, panorama, notes, cinematicAdd, cinematicPlay,
+			cinematicRemove, cinematicClear};
 
 	private TrsKeys() {
 	}

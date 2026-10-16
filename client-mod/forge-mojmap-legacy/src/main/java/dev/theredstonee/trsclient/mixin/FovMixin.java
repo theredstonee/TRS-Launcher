@@ -21,6 +21,12 @@ public abstract class FovMixin {
 	private void trsclient$applyZoom(Camera camera, float partialTick, boolean useFovSetting, CallbackInfoReturnable<Double> cir) {
 		HookStats.fov++;
 		if (!useFovSetting) return;
+		// Kamera-Fahrt: Sichtfeld der Fahrt (ohne Zoom).
+		dev.theredstonee.trsclient.core.cinematic.CameraPose cinematic = dev.theredstonee.trsclient.cinematic.CinematicHooks.frame();
+		if (cinematic != null) {
+			cir.setReturnValue((double) cinematic.fov);
+			return;
+		}
 		double factor = TrsClient.get().updateZoom();
 		double result = factor == 1.0 ? cir.getReturnValue() : cir.getReturnValue() / factor;
 		TrsClient.get().setWorldFov(result);

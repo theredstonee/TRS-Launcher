@@ -137,6 +137,12 @@ public final class TrsClient {
 		modules.freelookKey.link(TrsKeys.link(() -> TrsKeys.freelook));
 		modules.worldMapKey.link(TrsKeys.link(() -> TrsKeys.worldMap));
 		modules.notes.openKey.link(TrsKeys.link(() -> TrsKeys.notes));
+		modules.cinematic.addKey.link(TrsKeys.link(() -> TrsKeys.cinematicAdd));
+		modules.cinematic.playKey.link(TrsKeys.link(() -> TrsKeys.cinematicPlay));
+		modules.cinematic.removeKey.link(TrsKeys.link(() -> TrsKeys.cinematicRemove));
+		modules.cinematic.clearKey.link(TrsKeys.link(() -> TrsKeys.cinematicClear));
+		// Kamera-Fahrten (config/trsclient-cinematic.json).
+		dev.theredstonee.trsclient.cinematic.CinematicHooks.init(modules, FMLPaths.CONFIGDIR.get());
 		// Karten (Minimap + Weltkarte): Kartenspeicher unter config/trsclient/maps.
 		// Komfort-/PvP-Paket (Erwähnungen, Filter, Auto-Reconnect, Warnungen, Zähler, Streamer-Modus …).
 		dev.theredstonee.trsclient.qol.QolHooks.init(modules);
@@ -163,7 +169,8 @@ public final class TrsClient {
 					|| m == modules.noHurtCam || m == modules.lowFire || m == modules.blockOutline || m == modules.shieldPosition
 					|| m == modules.capePhysics || m == modules.emotes || m == modules.colors
 					|| m == modules.entityCulling || m == modules.particles || m == modules.worldDetails
-					|| m == modules.menuStyle || m == modules.netOptimize || m == modules.lowLatency)) {
+					|| m == modules.menuStyle || m == modules.netOptimize || m == modules.lowLatency
+					|| m == modules.cinematic.cinematic)) {
 				continue;
 			}
 			visibleModules.add(m);
@@ -222,8 +229,13 @@ public final class TrsClient {
 
 		bus.addListener((TickEvent.ClientTickEvent e) -> {
 			// Vor der Spieler-Bewegung: Toggle-Tasten, Freelook, Treffer-Farbe; danach Menü-Tasten.
-			if (e.phase == TickEvent.Phase.START) pvp.tick(Minecraft.getInstance());
-			else onTick(Minecraft.getInstance());
+			if (e.phase == TickEvent.Phase.START) {
+				pvp.tick(Minecraft.getInstance());
+				// Kamera-Fahrten (Kamera-Hook nur mit Mixin, also nicht auf Forge 1.14.4).
+				if (PvpFeatures.mixinFeatures()) dev.theredstonee.trsclient.cinematic.CinematicHooks.tick(Minecraft.getInstance());
+			} else {
+				onTick(Minecraft.getInstance());
+			}
 		});
 		//? if <1.15
 		/*legacyHooks(bus);*/
