@@ -8,7 +8,7 @@ const { data } = await useApiFetch<{ team: PublicTeam, jobs: JobView[] }>('/v1/s
   key: 'site-team',
   default: () => ({ team: { groups: [] }, jobs: [] }),
 })
-const job = computed(() => data.value?.jobs.find((j) => j.purpose === 'creator' && j.status === 'open') ?? null)
+const job = computed(() => data.value?.jobs.find((j) => j.purpose === 'creator' && j.status === 'open' && j.id !== 'creator') ?? null)
 if (job.value) await navigateTo(lp(`/team/${job.value.id}`), { replace: true, redirectCode: 302 })
 
 const TEXT = {
