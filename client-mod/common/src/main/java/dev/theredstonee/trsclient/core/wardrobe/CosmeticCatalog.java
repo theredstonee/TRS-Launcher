@@ -136,6 +136,8 @@ public final class CosmeticCatalog {
 		public final String equipped;
 		/** Getragener Begleiter (ID) oder null. */
 		public final String equippedCompanion;
+		/** Getragene Flügel (ID) oder null. */
+		public final String equippedWings;
 		public final boolean loaded;
 		public final boolean loading;
 		/** Mit der TRS API verbunden (angemeldet)? */
@@ -154,9 +156,17 @@ public final class CosmeticCatalog {
 		State(List<Item> items, String equipped, String equippedCompanion, boolean loaded, boolean loading, boolean trs,
 				String busy, String message, boolean error, int version, Map<String, Art> cards, Map<String, Preview> previews,
 				Set<String> failed) {
+			this(items, equipped, equippedCompanion, null, loaded, loading, trs, busy, message, error, version, cards, previews,
+					failed);
+		}
+
+		State(List<Item> items, String equipped, String equippedCompanion, String equippedWings, boolean loaded,
+				boolean loading, boolean trs, String busy, String message, boolean error, int version, Map<String, Art> cards,
+				Map<String, Preview> previews, Set<String> failed) {
 			this.items = items;
 			this.equipped = equipped;
 			this.equippedCompanion = equippedCompanion;
+			this.equippedWings = equippedWings;
 			this.loaded = loaded;
 			this.loading = loading;
 			this.trs = trs;
@@ -167,6 +177,18 @@ public final class CosmeticCatalog {
 			this.cards = cards;
 			this.previews = previews;
 			this.failed = failed;
+		}
+
+		/** Getragenes Teil im Fach {@code slot} ({@code hat}, {@code companion}, {@code wings}) oder null. */
+		public String equipped(String slot) {
+			if ("companion".equals(slot)) return equippedCompanion;
+			if ("wings".equals(slot)) return equippedWings;
+			return equipped;
+		}
+
+		/** Trägt der Spieler dieses Teil gerade (im passenden Fach)? */
+		public boolean worn(Item it) {
+			return it != null && it.id.equals(equipped(it.slot));
 		}
 
 		public Item item(String id) {
@@ -193,6 +215,7 @@ public final class CosmeticCatalog {
 	private List<Item> items = Collections.emptyList();
 	private String equipped;
 	private String equippedCompanion;
+	private String equippedWings;
 	private boolean loaded;
 	private boolean loadingFlag;
 	private boolean trs;
@@ -337,6 +360,47 @@ public final class CosmeticCatalog {
 		});
 	}
 
+	/** Flügel anlegen ({@code id}) oder ablegen (null). Hut und Begleiter bleiben, wie sie sind. */
+	public void wearWings(final String id) {
+		State s = state.get();
+		if (s.busy != null) return;
+		submit(() -> {
+			String token = platform.trsToken();
+			if (token == null) {
+				fail("wardrobe.cosmetics.error.offline");
+				return;
+			}
+			busy = id == null ? "-" : id;
+			message = null;
+			publish();
+			try {
+				api().setWings(token, id);
+				equippedWings = id;
+				message = id == null ? "wardrobe.cosmetics.takenOff" : "wardrobe.cosmetics.putOn";
+				error = false;
+				platform.trsCapeChanged();
+			} catch (ApiException e) {
+				if (e.unauthorized()) platform.trsTokenRejected(token);
+				message = cosmeticError(e);
+				error = true;
+			} catch (IOException e) {
+				message = "wardrobe.cosmetics.error.offline";
+				error = true;
+			} finally {
+				busy = null;
+				version++;
+				publish();
+			}
+		});
+	}
+
+	/** Teil im passenden Fach anlegen bzw. das Fach leeren ({@code id} null). */
+	public void wearSlot(String slot, String id) {
+		if ("companion".equals(slot)) wearCompanion(id);
+		else if ("wings".equals(slot)) wearWings(id);
+		else wear(id);
+	}
+
 	/** Event-Teil abholen ({@code POST /v1/me/cosmetics/{id}/claim}) und den Katalog neu lesen. */
 	public void claim(final String id) {
 		if (id == null || !id.matches("[a-z0-9][a-z0-9_-]{0,39}")) return;
@@ -417,6 +481,7 @@ public final class CosmeticCatalog {
 		List<Item> parsed = new ArrayList<Item>();
 		String eq = null;
 		String eqCompanion = null;
+		String eqWings = null;
 		try {
 			JsonElement root = new JsonParser().parse(raw);
 			JsonArray list = root.isJsonObject() && root.getAsJsonObject().get("cosmetics") != null
@@ -430,6 +495,7 @@ public final class CosmeticCatalog {
 					parsed.add(it);
 					if (bool(e.getAsJsonObject(), "equipped")) {
 						if ("companion".equals(it.slot)) eqCompanion = it.id;
+						else if ("wings".equals(it.slot)) eqWings = it.id;
 						else eq = it.id;
 					}
 				}
@@ -441,6 +507,7 @@ public final class CosmeticCatalog {
 		items = Collections.unmodifiableList(parsed);
 		equipped = eq;
 		equippedCompanion = eqCompanion;
+		equippedWings = eqWings;
 		loaded = true;
 		publish();
 		// Kartenbilder nachladen (Tag + Nacht)
@@ -457,7 +524,7 @@ public final class CosmeticCatalog {
 		if (id == null || !id.matches("[a-z0-9][a-z0-9_-]{0,39}")) return null;
 		String slot = str(o, "slot");
 		if (slot == null) slot = "hat";
-		if (!"hat".equals(slot) && !"companion".equals(slot)) return null;
+		if (!"hat".equals(slot) && !"companion".equals(slot) && !"wings".equals(slot)) return null;
 		String name = SkinFiles.cleanName(str(o, "name"), id);
 		String unlock;
 		String event = null;
@@ -483,7 +550,7 @@ public final class CosmeticCatalog {
 		else if (tex != null && tex.isJsonObject()) textureUrl = str(tex.getAsJsonObject(), "url");
 		String card = resolve(str(o, "card"), cfg);
 		String cardNight = resolve(str(o, "cardNight"), cfg);
-		if ("companion".equals(slot) && format != 2) return null;
+		if (("companion".equals(slot) || "wings".equals(slot)) && format != 2) return null;
 		if (format == 2) {
 			HatInfo hat = HatInfo.v2(id, str(o, "model"), textureUrl, str(o, "glow"), str(o, "hash"),
 					integer(o, "frames"), integer(o, "glowFrames"), cfg);
@@ -596,7 +663,7 @@ public final class CosmeticCatalog {
 	}
 
 	private void publish() {
-		state.set(new State(items, equipped, equippedCompanion, loaded, loadingFlag, trs, busy, message, error, version,
+		state.set(new State(items, equipped, equippedCompanion, equippedWings, loaded, loadingFlag, trs, busy, message, error, version,
 				Collections.unmodifiableMap(new LinkedHashMap<String, Art>(cards)),
 				Collections.unmodifiableMap(new LinkedHashMap<String, Preview>(previews)),
 				Collections.unmodifiableSet(new HashSet<String>(failed))));

@@ -44,7 +44,12 @@ class CosmeticCatalogTest {
 
 	@Test
 	void skipsOtherSlotsForeignHostsAndHiddenUnowned() {
-		assertNull(CosmeticCatalog.parse(json("{\"id\":\"redstone_wings\",\"slot\":\"wings\",\"format\":2,\"model\":\"/v1/a\",\"texture\":\"/v1/b\"}"), CFG));
+		// Flügel (Halloween 2026): eigenes Fach, nur Format 2; unbekannte Fächer fallen weg.
+		CosmeticCatalog.Item wings = CosmeticCatalog.parse(json("{\"id\":\"redstone_wings\",\"slot\":\"wings\",\"format\":2,\"model\":\"/v1/a\",\"texture\":\"/v1/b\"}"), CFG);
+		assertNotNull(wings);
+		assertEquals("wings", wings.slot);
+		assertNull(CosmeticCatalog.parse(json("{\"id\":\"old_wings\",\"slot\":\"wings\",\"format\":1,\"template\":\"duck\",\"texture\":\"/v1/b\"}"), CFG));
+		assertNull(CosmeticCatalog.parse(json("{\"id\":\"tail\",\"slot\":\"tail\",\"format\":2,\"model\":\"/v1/a\",\"texture\":\"/v1/b\"}"), CFG));
 		assertNull(CosmeticCatalog.parse(json("{\"id\":\"evil\",\"slot\":\"hat\",\"format\":2,\"model\":\"https://evil.example/m.json\","
 				+ "\"texture\":\"/v1/b.png\"}"), CFG));
 		assertNull(CosmeticCatalog.parse(json("{\"id\":\"secret\",\"slot\":\"hat\",\"hidden\":true,\"owned\":false,\"format\":2,"

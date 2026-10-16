@@ -270,6 +270,14 @@ public final class WardrobeApi {
 		call("PUT", "/v1/me/cosmetics", body.toString(), token, 200, 256 * 1024);
 	}
 
+	/** {@code PUT /v1/me/cosmetics {wings}}: Flügel anlegen oder ablegen (JSON null, nicht weglassen). Hut/Begleiter bleiben. */
+	public void setWings(String token, String id) throws IOException, ApiException {
+		JsonObject body = new JsonObject();
+		if (id == null) body.add("wings", com.google.gson.JsonNull.INSTANCE);
+		else body.addProperty("wings", id);
+		call("PUT", "/v1/me/cosmetics", body.toString(), token, 200, 256 * 1024);
+	}
+
 	/** {@code POST /v1/me/cosmetics/{id}/claim}. Die ID wird vorher geprüft (kein Pfad aus Nutzereingabe). */
 	public void claimCosmetic(String token, String id) throws IOException, ApiException {
 		if (id == null || !id.matches("[a-z0-9][a-z0-9_-]{0,39}")) throw new ApiException(0, "invalid_id", 0);
