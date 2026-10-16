@@ -62,6 +62,8 @@ final class ConversationView {
 	private String lastNewest;
 	/** Bildauswahl. */
 	boolean pickerOpen;
+	/** Sticker-Auswahl (Halloween 2026) offen? */
+	boolean stickersOpen;
 	private final List<Path> pickerSelection = new ArrayList<Path>();
 	private int pickerScroll;
 	private int pickerMax;
@@ -154,6 +156,7 @@ final class ConversationView {
 		area[3] = areaH;
 		if (pickerOpen) picker(c, x, cy, w, areaH, mx, my);
 		else messages(c, s, conv, x, cy, w, areaH, mx, my, now);
+		if (stickersOpen && !pickerOpen) stickerPanel(c, s, conv, x, cy, w, areaH, mx, my);
 		composer(c, s, conv, x, y + h - composerH, w, composerH, mx, my, mod.active(now));
 	}
 
@@ -372,6 +375,10 @@ final class ConversationView {
 					ctx.popup(p);
 				});
 			}
+		}
+		// Sticker (Halloween 2026)
+		if (it.stickerY >= 0 && m.sticker != null) {
+			sticker(c, m.sticker, inner, baseY + it.stickerY);
 		}
 		// Einladung
 		if (it.inviteY >= 0 && m.invite != null) {
@@ -736,6 +743,16 @@ final class ConversationView {
 			kit.iconDisabled(c, bx, cy + 1, 16, "pin");
 		}
 		bx += 18;
+		// Chat-Sticker (Halloween 2026): nur, wenn das Konto welche hat oder Halloween läuft.
+		if (stickerButton()) {
+			kit.icon(c, bx, cy + 1, 16, "ghost", stickersOpen, mx, my, () -> {
+				seen(NewSince.SOCIAL_STICKERS);
+				stickersOpen = !stickersOpen;
+				if (stickersOpen) pickerOpen = false;
+			});
+			if (isNew(NewSince.SOCIAL_STICKERS)) NewBadge.dot(c, bx + 12, cy - 1);
+			bx += 18;
+		}
 		int fx = bx + 1;
 		int fw = x + w - fx - 20;
 		Redstone.well(c, fx, cy, fw, fieldH, composer.focused() ? t.accent : t.border);
@@ -867,6 +884,7 @@ final class ConversationView {
 	void togglePicker() {
 		pickerOpen = !pickerOpen;
 		if (pickerOpen) {
+			stickersOpen = false;
 			ensureLibrary();
 			library.refresh();
 			pickerSelection.clear();
@@ -1063,5 +1081,77 @@ final class ConversationView {
 	/** Mitte des Nachrichtenbereichs (für Menüs im Selbsttest). */
 	int[] area() {
 		return area;
+	}
+
+	/** Chat-Sticker {@code id} als 36×36-Bild (Bild der API, sonst eingebautes Pixel-Bild). */
+	static void sticker(Canvas c, String id, int x, int y) {
+		dev.theredstonee.trsclient.core.ui.TextureRef tex = c.images() ? dev.theredstonee.trsclient.core.social.Stickers.get().texture(id) : null;
+		if (tex != null) {
+			c.push();
+			c.translate(x, y);
+			c.scale(ChatLayout.STICKER / (float) Math.max(tex.width, tex.height));
+			c.image(tex, 0, 0, tex.width, tex.height, 0xFFFFFFFF);
+			c.pop();
+			return;
+		}
+		dev.theredstonee.trsclient.core.ui.halloween.Sprites.Sprite sp = dev.theredstonee.trsclient.core.ui.halloween.Sprites.forSticker(id);
+		if (sp != null) {
+			dev.theredstonee.trsclient.core.ui.halloween.Sprites.draw(c, sp, x, y, ChatLayout.STICKER / Math.max(sp.w, sp.h), 1f);
+		} else {
+			c.fill(x, y, x + ChatLayout.STICKER, y + ChatLayout.STICKER, 0x40FFFFFF);
+		}
+	}
+
+	// --- Sticker-Auswahl (Halloween 2026) ---
+
+	/** Sticker-Knopf zeigen? (eigene Sticker bekannt oder Halloween aktiv) */
+	private static boolean stickerButton() {
+		return dev.theredstonee.trsclient.core.halloween.Halloween.active()
+				|| !dev.theredstonee.trsclient.core.social.Stickers.get().owned().isEmpty();
+	}
+
+	/** Leiste unten im Nachrichtenbereich: eigene Sticker, Klick sendet. */
+	private void stickerPanel(Canvas c, final Social s, final Chat.Conversation conv, int x, int y, int w, int h, int mx, int my) {
+		dev.theredstonee.trsclient.core.ui.Theme t = dev.theredstonee.trsclient.core.ui.Theme.get();
+		final Kit kit = ctx.kit();
+		dev.theredstonee.trsclient.core.social.Stickers st = dev.theredstonee.trsclient.core.social.Stickers.get();
+		List<String> own = st.owned();
+		int cell = ChatLayout.STICKER + 6;
+		int perRow = Math.max(1, (w - 8) / cell);
+		int rows = own.isEmpty() ? 1 : Math.min(3, (own.size() + perRow - 1) / perRow);
+		int ph = 16 + (own.isEmpty() ? 14 : rows * cell) + 4;
+		int py = y + h - ph;
+		if (py < y) py = y;
+		c.push();
+		c.raise(60f);
+		Redstone.stone(c, x, py, w, ph, t.surface, t.border);
+		String title = I18n.tr("social.stickers.title");
+		c.text(title, x + 5, py + 4, t.text, false);
+		kit.icon(c, x + w - 14, py + 2, 12, "close", false, mx, my, () -> stickersOpen = false);
+		if (own.isEmpty()) {
+			Paint.textClipped(c, I18n.tr(st.loaded() ? "social.stickers.none" : "social.stickers.loading"), x + 5, py + 18, w - 10,
+					t.textDim, false);
+		} else {
+			String hovered = null;
+			for (int i = 0; i < own.size() && i < rows * perRow; i++) {
+				final String id = own.get(i);
+				int sx = x + 4 + (i % perRow) * cell;
+				int sy = py + 16 + (i / perRow) * cell;
+				boolean over = mx >= sx && mx < sx + cell && my >= sy && my < sy + cell;
+				if (over) {
+					c.fill(sx, sy, sx + cell - 2, sy + cell - 2, ColorMath.withAlpha(t.accent, 50));
+					hovered = id;
+				}
+				sticker(c, id, sx + 2, sy + 2);
+				kit.area(sx, sy, cell - 2, cell - 2, () -> {
+					if (s != null && conv != null && s.sendSticker(conv.id, id)) stickersOpen = false;
+				});
+			}
+			if (hovered != null) {
+				String name = st.name(hovered);
+				Paint.textRight(c, name, x + w - 18, py + 4, t.textDim, false);
+			}
+		}
+		c.pop();
 	}
 }

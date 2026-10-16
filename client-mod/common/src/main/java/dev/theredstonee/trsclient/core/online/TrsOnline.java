@@ -826,6 +826,29 @@ public final class TrsOnline {
 		})) failed.run();
 	}
 
+	/**
+	 * Lädt das Bild eines Profil-Abzeichens ({@code GET /v1/badges/{id}.png}, Pixel-PNG) und dekodiert es – im
+	 * Textur-Thread. Genau einer der Rückrufe läuft danach im Spiel-Thread.
+	 */
+	public void loadBadge(final String badgeId, final dev.theredstonee.trsclient.core.creator.EventBadges.Done done,
+			final Runnable failed) {
+		if (badgeId == null || !badgeId.matches("[a-z0-9_]{1,40}")) {
+			failed.run();
+			return;
+		}
+		final String t = token;
+		if (!submit(capeWorker, () -> {
+			try {
+				byte[] png = api.asset(config.apiBase() + "/v1/badges/" + badgeId + ".png", "image/png", 256 * 1024, t);
+				dev.theredstonee.trsclient.core.cape.PngDecoder.Image img =
+						dev.theredstonee.trsclient.core.cape.PngDecoder.decode(png, 256L * 256);
+				results.add(() -> done.image(img.width, img.height, img.argb));
+			} catch (IOException | ApiException | RuntimeException e) {
+				results.add(failed);
+			}
+		})) failed.run();
+	}
+
 	// --- Lesen (jeder Thread) ---
 
 	/** Lookup-Ergebnis eines Spielers ({@link PlayerInfo#NONE} = unbekannt/kein TRS). */

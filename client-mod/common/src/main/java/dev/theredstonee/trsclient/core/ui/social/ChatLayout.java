@@ -25,6 +25,8 @@ public final class ChatLayout {
 	public static final int FOOTER_H = 10;
 	public static final int FACE_COL = 22;
 	public static final int GAP = 3;
+	/** Chat-Sticker: 12×12 Pixel, dreifach. */
+	public static final int STICKER = 36;
 	/** Neue Kopfzeile (Name + Zeit), wenn mehr als so viel Zeit zwischen zwei Nachrichten liegt. */
 	public static final long GROUP_MS = 5 * 60_000L;
 
@@ -78,6 +80,8 @@ public final class ChatLayout {
 		public int cellW;
 		public int cellH;
 		public int inviteY = -1;
+		/** Sticker (statt Text) oder −1. */
+		public int stickerY = -1;
 		public int reactionsY = -1;
 		public int footerY = -1;
 		public String footer;
@@ -169,6 +173,7 @@ public final class ChatLayout {
 		if (it.textY >= 0) it.textY += y;
 		if (it.imagesY >= 0) it.imagesY += y;
 		if (it.inviteY >= 0) it.inviteY += y;
+		if (it.stickerY >= 0) it.stickerY += y;
 		if (it.reactionsY >= 0) it.reactionsY += y;
 		if (it.footerY >= 0) it.footerY += y;
 	}
@@ -247,6 +252,12 @@ public final class ChatLayout {
 				int gridW = it.imageCols * it.cellW + (it.imageCols - 1) * 2;
 				contentW = Math.max(contentW, gridW);
 				cy += rows * it.cellH + (rows - 1) * 2;
+			}
+			if (msg.sticker != null) {
+				if (cy > it.bubbleY + PAD) cy += 2;
+				it.stickerY = cy;
+				contentW = Math.max(contentW, STICKER);
+				cy += STICKER;
 			}
 			if (msg.invite != null) {
 				if (cy > it.bubbleY + PAD) cy += 2;

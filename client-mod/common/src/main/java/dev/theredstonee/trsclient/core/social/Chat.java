@@ -278,6 +278,11 @@ public final class Chat {
 		}
 	}
 
+	/** Sticker-ID der API ({@code [a-z0-9_]{1,40}})? */
+	public static boolean validSticker(String id) {
+		return id != null && id.length() <= 40 && id.matches("[a-z0-9_]+");
+	}
+
 	/** Eine Nachricht (auch Systemzeile). */
 	public static final class Message {
 		public final String id;
@@ -305,10 +310,20 @@ public final class Chat {
 		public final boolean pending;
 		/** Nur lokal: Senden fehlgeschlagen (i18n-Schlüssel) oder null. */
 		public final String failed;
+		/** Chat-Sticker statt Text (API.md §36, z. B. {@code ghost_boo}) oder null. */
+		public final String sticker;
 
 		public Message(String id, String conversationId, long seq, boolean system, User sender, String text, Invite invite,
 				List<Attachment> attachments, Reply reply, SystemInfo info, List<Reaction> reactions, long createdAt,
 				long editedAt, boolean deleted, String deletedBy, boolean hidden, String nonce, boolean pending, String failed) {
+			this(id, conversationId, seq, system, sender, text, invite, attachments, reply, info, reactions, createdAt, editedAt,
+					deleted, deletedBy, hidden, nonce, pending, failed, null);
+		}
+
+		public Message(String id, String conversationId, long seq, boolean system, User sender, String text, Invite invite,
+				List<Attachment> attachments, Reply reply, SystemInfo info, List<Reaction> reactions, long createdAt,
+				long editedAt, boolean deleted, String deletedBy, boolean hidden, String nonce, boolean pending, String failed,
+				String sticker) {
 			this.id = id;
 			this.conversationId = conversationId;
 			this.seq = seq;
@@ -330,16 +345,17 @@ public final class Chat {
 			this.nonce = nonce;
 			this.pending = pending;
 			this.failed = failed;
+			this.sticker = validSticker(sticker) ? sticker : null;
 		}
 
 		public Message withReactions(List<Reaction> r) {
 			return new Message(id, conversationId, seq, system, sender, text, invite, attachments, reply, info, r, createdAt,
-					editedAt, deleted, deletedBy, hidden, nonce, pending, failed);
+					editedAt, deleted, deletedBy, hidden, nonce, pending, failed, sticker);
 		}
 
 		public Message withFailed(String error) {
 			return new Message(id, conversationId, seq, system, sender, text, invite, attachments, reply, info, reactions,
-					createdAt, editedAt, deleted, deletedBy, hidden, nonce, error == null, error);
+					createdAt, editedAt, deleted, deletedBy, hidden, nonce, error == null, error, sticker);
 		}
 
 		/** Von diesem Spieler? */
@@ -355,6 +371,7 @@ public final class Chat {
 		/** Einzeilige Vorschau für Liste und Toasts. */
 		public String preview() {
 			if (text != null && !text.isEmpty()) return SafeText.line(text, 120);
+			if (sticker != null) return "[" + dev.theredstonee.trsclient.core.i18n.I18n.trOr("social.sticker", "Sticker") + "]";
 			return null;
 		}
 

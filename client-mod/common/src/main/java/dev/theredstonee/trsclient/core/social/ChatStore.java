@@ -311,10 +311,16 @@ public final class ChatStore {
 	/** Eigene Nachricht sofort zeigen (bis die Bestätigung mit derselben nonce kommt). */
 	public Chat.Message addPending(String conversationId, String nonce, Chat.User self, String text, Chat.Reply reply,
 			Chat.Invite invite, int attachments, long now) {
+		return addPending(conversationId, nonce, self, text, reply, invite, attachments, now, null);
+	}
+
+	/** Wie oben, mit Sticker statt Text. */
+	public Chat.Message addPending(String conversationId, String nonce, Chat.User self, String text, Chat.Reply reply,
+			Chat.Invite invite, int attachments, long now, String sticker) {
 		Thread t = thread(conversationId);
 		List<Chat.Attachment> none = Collections.emptyList();
 		Chat.Message m = new Chat.Message("local-" + nonce, conversationId, Long.MAX_VALUE / 2 + (pendingCounter++), false,
-				self, text, invite, none, reply, null, null, now, 0, false, null, false, nonce, true, null);
+				self, text, invite, none, reply, null, null, now, 0, false, null, false, nonce, true, null, sticker);
 		t.messages.add(m);
 		changed();
 		return m;

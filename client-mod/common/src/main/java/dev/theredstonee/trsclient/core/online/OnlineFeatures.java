@@ -38,6 +38,8 @@ public final class OnlineFeatures<T> {
 	private final dev.theredstonee.trsclient.core.emote.EmoteController emotes;
 	/** Fan-Symbole vor Namen (Creator-Programm, nur Render-Thread). */
 	private final dev.theredstonee.trsclient.core.creator.FanSymbols<T> fanSymbols;
+	/** Profil-Abzeichen vor dem Namen (Halloween 2026). */
+	private final dev.theredstonee.trsclient.core.creator.EventBadges<T> eventBadges;
 	private volatile Thread gameThread;
 	/** Wiederverwendet: Umhang-Einstellungen je Tick (keine Allokation). */
 	private final CapeSettings capeSettings = new CapeSettings();
@@ -58,6 +60,7 @@ public final class OnlineFeatures<T> {
 		this.cosmetics = new dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticAssets<>(backend, online::loadCosmetic);
 		this.emotes = new dev.theredstonee.trsclient.core.emote.EmoteController(modules, online);
 		this.fanSymbols = new dev.theredstonee.trsclient.core.creator.FanSymbols<>(backend, online::loadSymbol);
+		this.eventBadges = new dev.theredstonee.trsclient.core.creator.EventBadges<>(backend, online::loadBadge);
 		this.localSkin = localSkin;
 	}
 
@@ -311,6 +314,24 @@ public final class OnlineFeatures<T> {
 		if (!modules.trsOnline.isEnabled()) return false;
 		if (tab ? !modules.badgeTab.get() : !modules.badgeNametag.get()) return false;
 		return online.info(uuid).badge;
+	}
+
+	/**
+	 * Profil-Abzeichen vor dem Namen (Halloween 2026: Kürbisjäger vor Mond-Fledermaus) oder null: keins, Abzeichen-Schalter
+	 * aus, Modul aus. Gleiche Schalter wie das TRS-Abzeichen ({@code tab}: Tabliste, sonst Namensschild). Nur Spiel-Thread.
+	 */
+	public TextureRef eventBadge(UUID uuid, boolean tab) {
+		if (Thread.currentThread() != gameThread) return null;
+		if (!modules.trsOnline.isEnabled()) return null;
+		if (tab ? !modules.badgeTab.get() : !modules.badgeNametag.get()) return null;
+		String id = dev.theredstonee.trsclient.core.creator.EventBadges.pick(online.info(uuid).badges);
+		if (id == null) return null;
+		try {
+			return eventBadges.texture(id, System.currentTimeMillis());
+		} catch (RuntimeException e) {
+			online.reportError(e);
+			return null;
+		}
 	}
 
 	/**
