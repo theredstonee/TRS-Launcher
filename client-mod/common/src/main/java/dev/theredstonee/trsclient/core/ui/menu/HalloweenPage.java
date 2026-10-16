@@ -43,6 +43,7 @@ public final class HalloweenPage {
 	static final int CARD_EDGE = 0xFF3B3358;
 
 	private final Host host;
+	private final WingsChoiceCard wings = new WingsChoiceCard();
 	private final Map<String, Float> anim = new HashMap<String, Float>();
 	private int scroll;
 	private int maxScroll;
@@ -86,6 +87,14 @@ public final class HalloweenPage {
 
 		cy = huntCard(c, service, x, cy, w, found);
 		cy += 6;
+		// Alle 13 gefunden: eine der vier Halloween-Flügel wählen (endgültig).
+		int wingsEnd = wings.draw(c, hits, x, cy, w, mx, my, new Runnable() {
+			@Override
+			public void run() {
+				host.click();
+			}
+		});
+		if (wingsEnd > cy) cy = wingsEnd + 6;
 		cy = trickCard(c, hits, service, x, cy, w, mx, my, dt);
 		cy += 6;
 		cy = switches(c, hits, x, cy, w, mx, my, dt);

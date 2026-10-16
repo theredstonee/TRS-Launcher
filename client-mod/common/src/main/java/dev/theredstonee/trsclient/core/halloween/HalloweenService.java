@@ -330,6 +330,11 @@ public final class HalloweenService {
 				try {
 					HalloweenApi.TrickResult r = api.trick(token);
 					trickResult = outcome(r == null ? null : r.result, r == null ? null : r.reward);
+					// Neuer Sticker: Liste der eigenen Sticker gleich neu holen.
+					if (trickResult.sweet && "sticker".equals(trickResult.kind)) {
+						dev.theredstonee.trsclient.core.social.Stickers s = dev.theredstonee.trsclient.core.social.Stickers.get();
+						if (s != null) s.invalidate();
+					}
 					trickNext = r == null ? null : r.next;
 					phase = TrickPhase.DONE;
 				} catch (HalloweenApi.TrickUsed e) {

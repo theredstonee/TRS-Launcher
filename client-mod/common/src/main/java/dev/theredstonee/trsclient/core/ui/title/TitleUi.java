@@ -618,7 +618,8 @@ public final class TitleUi extends UiScreen {
 				on ? ColorMath.lerp(t.border, t.textDim, 0.5f) : t.border);
 		if (on) Redstone.dustH(c, accX + 3, accX + accW - 3, accY + dy + 13, t.dustOn, 0f);
 		Icons.draw(c, "shirt", accX + 5, accY + dy + 4, 1, on ? t.dustOn : t.textDim);
-		if (isNew(NewSince.MENU_WARDROBE) || isNew(NewSince.WARDROBE_COSMETICS) || unseenOffers()) NewBadge.dot(c, accX + accW - 7, accY + dy + 2);
+		if (isNew(NewSince.MENU_WARDROBE) || isNew(NewSince.WARDROBE_COSMETICS) || isNew(NewSince.WARDROBE_COMPANION)
+				|| unseenOffers()) NewBadge.dot(c, accX + accW - 7, accY + dy + 2);
 		String lbl = c.clip(accountLabel, accW - 20);
 		labels.add(new Label(lbl, accX + 16 + (accW - 18 - c.textWidth(lbl)) / 2, accY + dy + 4 - (on ? 1 : 0), t.text, false));
 		if (accFlash > 0.02f) c.fill(accX + 1, accY + 1, accX + accW - 1, accY + 15, ColorMath.withAlpha(0xFFFFF6DC, Math.round(120 * accFlash)));
@@ -752,7 +753,7 @@ public final class TitleUi extends UiScreen {
 			int iconColor = lit > 0.5f ? t.lampTextLit : t.lampText;
 			boolean isNew = isNew(l.newId)
 					|| ((NewSince.MENU_SOCIAL.equals(l.newId) || NewSince.MENU_WARDROBE.equals(l.newId)) && unseenOffers())
-					|| (NewSince.MENU_WARDROBE.equals(l.newId) && isNew(NewSince.WARDROBE_COSMETICS));
+					|| (NewSince.MENU_WARDROBE.equals(l.newId) && (isNew(NewSince.WARDROBE_COSMETICS) || isNew(NewSince.WARDROBE_COMPANION)));
 			if (sideMode == SIDE_FULL) {
 				Icons.draw(c, l.icon, l.x + 7, l.y + dy + (l.h - 8) / 2, 1, iconColor);
 				int room = l.w - 24;

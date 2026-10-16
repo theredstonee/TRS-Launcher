@@ -452,6 +452,12 @@ public final class ModMenu extends UiScreen {
 		String client = I18n.tr("menu.client");
 		int clientX = lx + PixelFont.width("TRS") * 2 + 5;
 		c.text(client, clientX, py + (HEADER_H - 8) / 2, t.textDim, false);
+		if (t.halloween) {
+			// Halloween: Spinnennetz in der Ecke, Blutstropfen an der Kopfkante, Kürbislaterne neben dem Schriftzug.
+			float sec = (System.nanoTime() / 1_000_000L % 100_000L) / 1000f;
+			dev.theredstonee.trsclient.core.ui.halloween.HalloweenLook.menuHeader(c, px + 1, py + 2, pw - 2, HEADER_H - 2,
+					clientX + c.textWidth(client) + 4, sec);
+		}
 		if (t.winter) {
 			// Schnee auf dem Schriftzug, eine Schneeflocke daneben und eine Frostlinie mit Eiskristallen unter dem Kopf.
 			dev.theredstonee.trsclient.core.ui.title.TitleUi.snowCaps(c, rects, lx, ly, 2);

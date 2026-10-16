@@ -151,6 +151,8 @@ public final class NewSince {
 	public static final String MENU_HALLOWEEN = "menu:halloween";
 	/** Garderobe → Kosmetik → Abschnitt „Begleiter“. */
 	public static final String WARDROBE_COMPANION = "wardrobe:companion";
+	/** Garderobe → Kosmetik → Abschnitt „Flügel“. */
+	public static final String WARDROBE_WINGS = "wardrobe:wings";
 	/** Sozial → Chat → Sticker-Auswahl. */
 	public static final String SOCIAL_STICKERS = "social:stickers";
 
@@ -232,7 +234,7 @@ public final class NewSince {
 		add(CINEMATIC, "cinematic", KEY_CINEMATIC, "trsOnline.fanSymbolNametag", "trsOnline.fanSymbolTab");
 		// Halloween 2026: Modul + Seite im TRS-Menü, Begleiter in der Garderobe, Sticker im Chat.
 		add(HALLOWEEN, "halloween", "halloween.hits", "halloween.trail", "halloween.others", "halloween.jumpscares",
-				"halloween.sounds", MENU_HALLOWEEN, WARDROBE_COMPANION, SOCIAL_STICKERS);
+				"halloween.sounds", MENU_HALLOWEEN, WARDROBE_COMPANION, WARDROBE_WINGS, SOCIAL_STICKERS);
 	}
 
 	private NewSince() {
