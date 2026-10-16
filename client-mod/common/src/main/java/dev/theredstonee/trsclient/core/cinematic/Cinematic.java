@@ -51,13 +51,20 @@ public final class Cinematic {
 		default void toggleRecording() {
 			dev.theredstonee.trsclient.core.clips.Clips.get().toggleRecording();
 		}
+
+		/**
+		 * Ansicht für die Fahrt lösen ({@code true}, z. B. dritte Person: keine Hand, keine Bildschirm-Effekte der Figur
+		 * wie „im Block“) bzw. wiederherstellen ({@code false}).
+		 */
+		default void detachView(boolean detached) {
+		}
 	}
 
 	/** Vorschau: alle so viele Ticks die Bahn neu zeichnen. */
-	static final int PREVIEW_TICKS = 10;
+	static final int PREVIEW_TICKS = 20;
 	/** Abstand der Vorschau-Punkte (Blöcke) und Höchstzahl je Durchgang. */
 	static final double PREVIEW_STEP = 0.75;
-	static final int PREVIEW_MAX = 160;
+	static final int PREVIEW_MAX = 120;
 	/** Sichtweite der Vorschau (Blöcke). */
 	static final double PREVIEW_RANGE = 96;
 
@@ -162,6 +169,7 @@ public final class Cinematic {
 		path = p;
 		playing = true;
 		startNanos = clock.getAsLong();
+		host.detachView(true);
 		changedHud = false;
 		if (settings.hideHud.get()) {
 			hudBefore = host.hudHidden();
@@ -188,6 +196,7 @@ public final class Cinematic {
 		if (!playing) return;
 		playing = false;
 		path = null;
+		host.detachView(false);
 		if (changedHud) {
 			host.setHudHidden(hudBefore);
 			changedHud = false;

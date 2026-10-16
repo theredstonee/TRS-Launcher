@@ -119,6 +119,10 @@ public final class TrsClient implements ClientModInitializer {
 		modules.freelookKey.link(TrsKeys.link(TrsKeys.freelook));
 		modules.worldMapKey.link(TrsKeys.link(TrsKeys.worldMap));
 		modules.notes.openKey.link(TrsKeys.link(TrsKeys.notes));
+		modules.cinematic.addKey.link(TrsKeys.link(TrsKeys.cinematicAdd));
+		modules.cinematic.playKey.link(TrsKeys.link(TrsKeys.cinematicPlay));
+		modules.cinematic.removeKey.link(TrsKeys.link(TrsKeys.cinematicRemove));
+		modules.cinematic.clearKey.link(TrsKeys.link(TrsKeys.cinematicClear));
 		// Karten (Minimap + Weltkarte): Kartenspeicher unter config/trsclient/maps.
 		// Komfort-/PvP-Paket (Erwähnungen, Filter, Auto-Reconnect, Warnungen, Zähler, Streamer-Modus …).
 		dev.theredstonee.trsclient.qol.QolHooks.init(modules);
@@ -129,6 +133,8 @@ public final class TrsClient implements ClientModInitializer {
 		dev.theredstonee.trsclient.core.map.MapEngine.init(modules, FabricLoader.getInstance().getConfigDir());
 		// Notizen je Welt (config/trsclient/notes): Seite im TRS-Menü, Taste, angeheftete Notiz im HUD.
 		dev.theredstonee.trsclient.core.notes.Notes.init(modules, FabricLoader.getInstance().getConfigDir(), message -> LOGGER.info(message));
+		// Kamera-Fahrten (config/trsclient-cinematic.json, Tasten in den Steuerungen).
+		dev.theredstonee.trsclient.cinematic.CinematicHooks.init(modules, FabricLoader.getInstance().getConfigDir());
 		waypoints = new dev.theredstonee.trsclient.feature.Waypoints(modules,
 				FabricLoader.getInstance().getConfigDir().resolve("trsclient-waypoints.json"));
 		hud = new HudManager(modules);
@@ -137,6 +143,8 @@ public final class TrsClient implements ClientModInitializer {
 		ClientTickEvents.END_CLIENT_TICK.register(this::onTick);
 		// Vor der Spieler-Bewegung: Toggle-Tasten, Freelook, Treffer-Farbe, PvP-Zähler.
 		ClientTickEvents.START_CLIENT_TICK.register(pvp::tick);
+		// Kamera-Fahrten: Tasten, Ende der Fahrt, Vorschau – und während der Fahrt alle Eingaben loslassen.
+		ClientTickEvents.START_CLIENT_TICK.register(dev.theredstonee.trsclient.cinematic.CinematicHooks::tick);
 		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
 			saveConfig();
 			waypoints.save();

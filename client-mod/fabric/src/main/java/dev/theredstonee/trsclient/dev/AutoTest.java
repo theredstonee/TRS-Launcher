@@ -321,6 +321,16 @@ public final class AutoTest {
 					step = 38;
 					break;
 				}
+				// -PtrsAutotestOnly=creator: Fan-Symbole + Creator-Sterne (braucht -PtrsApi mit scripts/mock-creator-api.mjs)
+				if ("creator".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 40;
+					break;
+				}
+				// -PtrsAutotestOnly=cinematic: Kamera-Fahrt (Keyframes, Abspielen, HUD, Kamera)
+				if ("cinematic".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 41;
+					break;
+				}
 				// -PtrsAutotestOnly=chatheads: Köpfe vor ein paar Chat-Zeilen
 				if ("chatheads".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 39;
@@ -753,6 +763,25 @@ public final class AutoTest {
 				step = 24;
 				wait = 5;
 				break;
+			case 40:
+			case 41: {
+				// Creator-Programm bzw. Kamera-Fahrten: Screenshots trsclient-<mc>-creator-*.png / -cinematic-*.png
+				CapeTest.Actions creatorActions = new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				};
+				if (step == 40 ? creatorTest.step(mc, modules, creatorActions) : cinematicTest.step(mc, modules, creatorActions)) return;
+				step = 24;
+				wait = 5;
+				break;
+			}
 			case 33:
 				// Suche in der Tastenbelegung: Screenshots trsclient-<mc>-keysearch-*.png
 				if (keySearchTest.step(mc, new CapeTest.Actions() {
@@ -777,6 +806,8 @@ public final class AutoTest {
 	}
 
 	private final CapeTest capeTest = new CapeTest();
+	private final CreatorTest creatorTest = new CreatorTest();
+	private final CinematicTest cinematicTest = new CinematicTest();
 	private final EmoteTest emoteTest = new EmoteTest();
 	private final RedstoneTest redstoneTest = new RedstoneTest();
 	private final CapeColorTest capeColorTest = new CapeColorTest();
