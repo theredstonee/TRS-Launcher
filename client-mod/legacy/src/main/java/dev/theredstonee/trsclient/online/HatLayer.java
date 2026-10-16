@@ -54,7 +54,9 @@ public final class HatLayer implements LayerRenderer<AbstractClientPlayer> {
 		Object tex = features.hatTexture(id);
 		if (tex == null) {
 			V2Hat<Object> hat = features.hatV2(id, helmet);
+			V2Hat<Object> buddy = features.companionV2(id, helmet);
 			if (hat != null) renderV2(features, hat, player);
+			if (buddy != null) renderV2(features, buddy, player);
 			return;
 		}
 		double dx = player.posX - player.prevPosX;
@@ -78,6 +80,8 @@ public final class HatLayer implements LayerRenderer<AbstractClientPlayer> {
 			GlStateManager.enableCull();
 			GlStateManager.popMatrix();
 		}
+		V2Hat<Object> buddy = features.companionV2(id, helmet);
+		if (buddy != null) renderV2(features, buddy, player);
 	}
 
 	private void renderV2(OnlineFeatures<Object> f, V2Hat<Object> hat, AbstractClientPlayer player) {

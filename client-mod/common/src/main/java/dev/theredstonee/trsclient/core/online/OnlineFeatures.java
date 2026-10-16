@@ -254,13 +254,26 @@ public final class OnlineFeatures<T> {
 	public dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> hatV2(UUID uuid, boolean helmet) {
 		if (Thread.currentThread() != gameThread) return null;
 		if (!modules.trsOnline.isEnabled() || !modules.trsCosmetics.get()) return null;
-		PlayerInfo info = online.info(uuid);
-		if (info.hat == null || !info.hat.v2()) return null;
+		return v2(online.info(uuid).hat, helmet);
+	}
+
+	/**
+	 * Begleiter (Slot {@code companion}, Format 2) neben dem Hut. Gleiche Regeln wie {@link #hatV2}: nur Spiel-Thread,
+	 * Module an, mit Helm auf den Helm gesetzt. null = nichts.
+	 */
+	public dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> companionV2(UUID uuid, boolean helmet) {
+		if (Thread.currentThread() != gameThread) return null;
+		if (!modules.trsOnline.isEnabled() || !modules.trsCosmetics.get()) return null;
+		return v2(online.info(uuid).companion, helmet);
+	}
+
+	private dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> v2(HatInfo piece, boolean helmet) {
+		if (piece == null || !piece.v2()) return null;
 		try {
 			java.util.function.LongSupplier clock = v2Clock;
 			long wall = System.currentTimeMillis();
 			long now = clock != null ? clock.getAsLong() : wall;
-			dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticAssets.Entry<T> e = cosmetics.get(info.hat, wall);
+			dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticAssets.Entry<T> e = cosmetics.get(piece, wall);
 			if (e == null) return null;
 			T halo = e.model.halos.isEmpty() ? null : cosmetics.halo();
 			return new dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T>(e.model, e.base(now), e.glow(now), halo, now, helmet, e);

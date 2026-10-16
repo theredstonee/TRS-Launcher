@@ -91,6 +91,7 @@ public final class HatHooks {
 		} finally {
 			pose.popPose();
 		}
+		drawV2(features, features.companionV2(id, helmet(p)), pose, collector, light, head);
 	}
 	*///?} elif >=1.21.9 {
 	/*public static void render(PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector, int light,
@@ -115,6 +116,7 @@ public final class HatHooks {
 		} finally {
 			pose.popPose();
 		}
+		drawV2(features, features.companionV2(id, helmet(p)), pose, collector, light, head);
 	}
 	*///?} else {
 	// Bis 1.21.8: sofort zeichnen.
@@ -139,6 +141,7 @@ public final class HatHooks {
 		} finally {
 			pose.popPose();
 		}
+		drawV2(features, features.companionV2(id, helmet(p)), pose, buffers, light, head);
 	}
 	//?}
 
@@ -147,7 +150,14 @@ public final class HatHooks {
 	//? if >=1.21.9 {
 	/*private static void renderV2(final OnlineFeatures<Object> f, AbstractClientPlayer p, PoseStack pose,
 			net.minecraft.client.renderer.SubmitNodeCollector collector, final int light, ModelPart head) {
-		final V2Hat<Object> hat = f.hatV2(p.getUUID(), helmet(p));
+		final UUID id = p.getUUID();
+		final boolean helm = helmet(p);
+		drawV2(f, f.hatV2(id, helm), pose, collector, light, head);
+		drawV2(f, f.companionV2(id, helm), pose, collector, light, head);
+	}
+
+	private static void drawV2(final OnlineFeatures<Object> f, final V2Hat<Object> hat, PoseStack pose,
+			net.minecraft.client.renderer.SubmitNodeCollector collector, final int light, ModelPart head) {
 		if (hat == null) return;
 		pose.pushPose();
 		try {
@@ -183,7 +193,15 @@ public final class HatHooks {
 	*///?} else {
 	private static void renderV2(OnlineFeatures<Object> f, AbstractClientPlayer p, PoseStack pose,
 			net.minecraft.client.renderer.MultiBufferSource buffers, int light, ModelPart head) {
-		V2Hat<Object> hat = f.hatV2(p.getUUID(), helmet(p));
+		UUID id = p.getUUID();
+		boolean helm = helmet(p);
+		drawV2(f, f.hatV2(id, helm), pose, buffers, light, head);
+		drawV2(f, f.companionV2(id, helm), pose, buffers, light, head);
+	}
+
+	/** Ein Format-2-Teil (Hut oder Begleiter) im schon bekannten Kopf-Raum. */
+	private static void drawV2(OnlineFeatures<Object> f, V2Hat<Object> hat, PoseStack pose,
+			net.minecraft.client.renderer.MultiBufferSource buffers, int light, ModelPart head) {
 		if (hat == null) return;
 		pose.pushPose();
 		try {
