@@ -120,6 +120,8 @@ function unlockLabel(item: TrsHeadCosmetic): string {
       return t('trs.unlock.own')
     case 'event':
       return t('trs.unlock.event')
+    case 'reward':
+      return t('trs.unlock.halloweenReward')
     default:
       return item.owned ? t('headCosmetics.unlocked') : t('trs.unlock.locked')
   }

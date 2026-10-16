@@ -119,6 +119,21 @@ async function submit() {
   await chat.send(id, draft)
 }
 
+// --- Chat-Sticker (Halloween 2026) ---------------------------------------------------
+const halloween = useHalloweenStore()
+const events = useEventsStore()
+const stickersOpen = ref(false)
+/** Während Halloween immer; danach nur, wenn man welche besitzt. */
+const stickersAvailable = computed(() => events.halloween || !!halloween.stickers?.some((s) => s.owned))
+async function sendSticker(sticker: string) {
+  stickersOpen.value = false
+  const id = props.conversation.id
+  const reply = props.replyTo ?? null
+  emit('update:replyTo', null)
+  emit('sent')
+  await chat.sendSticker(id, sticker, reply)
+}
+
 function cancel() {
   if (props.editing) {
     emit('update:editing', null)
@@ -244,6 +259,21 @@ onBeforeUnmount(() => {
         >
           <SocialIcon name="invite" class="size-4.5" />
         </button>
+        <!-- Halloween 2026: Chat-Sticker (eigene aus „Süßes oder Saures“). -->
+        <div v-if="!editing && stickersAvailable" class="relative">
+          <button
+            class="btn-icon size-9 mobile:size-11"
+            :class="{ 'bg-redstone-500 text-white hover:bg-redstone-400': stickersOpen }"
+            :aria-label="t('halloween.stickers.open')"
+            :title="t('halloween.stickers.open')"
+            :aria-pressed="stickersOpen"
+            data-testid="composer-stickers"
+            @click="stickersOpen = !stickersOpen"
+          >
+            <HalloweenPixelSprite name="pumpkin" class="size-4.5" />
+          </button>
+          <HalloweenStickerPicker v-if="stickersOpen" @pick="sendSticker" @close="stickersOpen = false" />
+        </div>
         <textarea
           ref="input"
           v-model="text"

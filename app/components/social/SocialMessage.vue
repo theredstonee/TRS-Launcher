@@ -42,6 +42,8 @@ const m = computed(() => props.message)
 const parts = computed(() => (m.value.text ? splitLinks(m.value.text) : []))
 /** Nur Bilder (ohne Text/Antwort/Einladung): ohne Blasen-Hintergrund. */
 const mediaOnly = computed(() => !m.value.text && !m.value.replyTo && !m.value.invite && !m.value.world && !m.value.waypoint && !m.value.deleted && !m.value.hidden && images.value.length > 0)
+/** Chat-Sticker (Halloween 2026): ohne Blase, groß. */
+const stickerOnly = computed(() => !!m.value.sticker && !m.value.deleted && !m.value.hidden)
 const big = computed(() => onlyEmoji(m.value.text) && !m.value.attachments.length && !m.value.replyTo && !m.value.invite && !m.value.world && !m.value.waypoint)
 const pickerOpen = ref(false)
 const canAct = computed(() => !m.value.local && !m.value.deleted && !m.value.hidden && m.value.kind === 'text')
@@ -69,6 +71,7 @@ function replyText(): string {
     if (r.invite) return t('social.chat.invite')
     if (r.world) return t('social.hosting.cardReply')
     if (r.waypoint) return t('social.waypoint.reply')
+    if (r.sticker) return t('halloween.stickers.summary')
   }
   return r.preview ?? ''
 }
@@ -125,7 +128,7 @@ const longPress = useLongPress((e) => {
 
     <div class="flex max-w-[72%] min-w-0 flex-col mobile:max-w-[84%]" :class="mine ? 'items-end' : 'items-start'">
       <p v-if="first" class="mb-1 flex items-baseline gap-2 px-1 text-[11px] text-base-400" :class="mine ? 'flex-row-reverse' : ''">
-        <span v-if="group && !mine && m.sender" class="font-semibold" :class="nameColor(m.sender.uuid)">{{ m.sender.name }}</span>
+        <span v-if="group && !mine && m.sender" class="inline-flex items-center gap-1 font-semibold" :class="nameColor(m.sender.uuid)">{{ m.sender.name }}<HalloweenBadges :uuid="m.sender.uuid" :size="12" /></span>
         <span>{{ messageTime(m.createdAt) }}</span>
       </p>
 
@@ -134,7 +137,7 @@ const longPress = useLongPress((e) => {
         <div
           class="bubble min-w-0"
           :class="[
-            big || mediaOnly ? 'bubble-emoji' : mine ? 'bubble-mine' : 'bubble-other',
+            big || mediaOnly || stickerOnly ? 'bubble-emoji' : mine ? 'bubble-mine' : 'bubble-other',
             m.deleted || m.hidden ? 'bubble-muted' : '',
             m.local?.state === 'sending' ? 'opacity-70' : '',
             m.local?.state === 'failed' ? 'ring-1 ring-redstone-400' : '',
@@ -168,6 +171,7 @@ const longPress = useLongPress((e) => {
               </button>
             </div>
 
+            <HalloweenSticker v-if="m.sticker" :id="m.sticker" :size="96" />
             <SocialInviteCard v-if="m.invite" :invite="m.invite" :class="m.text ? 'mb-1.5' : ''" />
             <SocialWorldCard v-if="m.world" :world="m.world" :class="m.text ? 'mb-1.5' : ''" />
             <SocialWaypointCard v-if="m.waypoint" :waypoint="m.waypoint" :class="m.text ? 'mb-1.5' : ''" />

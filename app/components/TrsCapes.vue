@@ -240,6 +240,7 @@ function lockClass(cape: TrsCape) {
   if (cape.kind === 'upload') return 'bg-base-800 text-base-200'
   if (cape.unlock === 'free') return 'bg-ok/10 text-ok'
   if (cape.unlock === 'code') return 'bg-lamp-900/60 text-lamp-300'
+  if (cape.unlock === 'reward') return 'bg-[#3a1f5c]/60 text-[#e8a866]'
   return 'bg-redstone-900/50 text-redstone-300'
 }
 </script>
@@ -359,6 +360,7 @@ function lockClass(cape: TrsCape) {
               </template>
               <template v-else-if="!selected.owned && selected.unlock === 'code'">{{ t('capes.selected.lockedCode') }}</template>
               <template v-else-if="!selected.owned && selected.unlock === 'event'">{{ t('capes.selected.event') }}</template>
+              <template v-else-if="!selected.owned && selected.unlock === 'reward'">{{ t('capes.selected.reward') }}</template>
               <template v-else-if="!selected.owned">{{ t('capes.selected.lockedTeam') }}</template>
               <template v-else-if="selected.active">{{ t('capes.selected.active') }}</template>
               <template v-else-if="selected.unlock === 'free'">{{ t('capes.selected.free') }}</template>
@@ -463,6 +465,7 @@ function lockClass(cape: TrsCape) {
           <template v-else-if="infoCape.owned">{{ t('capes.info.howOwned') }}</template>
           <template v-else-if="infoCape.unlock === 'code'">{{ t('capes.selected.lockedCode') }}</template>
           <template v-else-if="infoCape.unlock === 'event'">{{ t('capes.selected.event') }}</template>
+          <template v-else-if="infoCape.unlock === 'reward'">{{ t('capes.selected.reward') }}</template>
           <template v-else>{{ t('capes.selected.lockedTeam') }}</template>
         </dd>
       </dl>

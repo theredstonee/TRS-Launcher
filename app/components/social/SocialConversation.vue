@@ -385,6 +385,7 @@ onBeforeUnmount(() => {
       <div class="min-w-0 flex-1">
         <h2 class="display flex items-center gap-2 truncate text-lg leading-tight text-base-50">
           {{ title }}
+          <HalloweenBadges v-if="conversation.kind === 'dm' && conversation.peer" :uuid="conversation.peer.uuid" :size="16" />
           <SocialIcon v-if="isMuted(conversation)" name="bellOff" class="size-4 shrink-0 text-base-400" />
         </h2>
         <p class="truncate text-xs text-base-400">

@@ -31,6 +31,8 @@ async function loadCapes() {
   try {
     const list = await backend.trs.playerCapes(ids)
     capes.value = Object.fromEntries(list.map((c) => [c.uuid, c]))
+    // Profil-Abzeichen (Halloween 2026 …) für Chat und Freunde merken.
+    useHalloweenStore().rememberPlayers(list)
   } catch {
     // Ohne Umhänge geht es auch.
   }
@@ -170,6 +172,8 @@ function join(f: TrsFriend) {
       <h2 class="display flex items-center gap-2 border-b border-base-800 px-4 py-3 text-base text-base-50">
         {{ t('social.friends.list') }}
         <span v-if="trs.friends?.friends.length" class="text-xs text-base-400">{{ onlineCount }}/{{ trs.friends.friends.length }}</span>
+        <!-- Halloween 2026: Kürbis unter der Überschrift der Freundesliste (Kürbis-Suche 4/13). -->
+        <HalloweenPumpkin id="launcher-social" :size="12" class="ml-auto" />
       </h2>
       <ul v-if="friends.length" class="min-h-0 flex-1 space-y-1.5 overflow-y-auto p-2 mobile:overflow-visible" data-testid="friends-list">
         <li v-for="f in friends" :key="f.uuid" class="rounded-lg bg-base-850 px-3 py-2">
@@ -189,6 +193,7 @@ function join(f: TrsFriend) {
                 <span class="flex items-center gap-2 truncate text-sm font-semibold text-base-50">
                   {{ f.name }}
                   <span v-if="capes[f.uuid]?.badge" class="badge bg-redstone-900/50 px-1.5 py-0 text-[10px] text-redstone-300" :title="t('friends.list.usesTrs')">TRS</span>
+                  <HalloweenBadges :badges="capes[f.uuid]?.badges" :size="14" />
                 </span>
                 <span class="block truncate text-xs" :class="f.presence ? 'text-base-200' : 'text-base-400'">{{ statusLine(f) }}</span>
               </span>
@@ -235,6 +240,7 @@ function join(f: TrsFriend) {
               </div>
             </div>
           </div>
+          <div v-if="achievementsFor === f.uuid && capes[f.uuid]?.badges.length" class="mt-2"><HalloweenBadges :badges="capes[f.uuid]?.badges" chips /></div>
           <SocialFriendAchievements v-if="achievementsFor === f.uuid" :friend="{ uuid: f.uuid, name: f.name }" />
         </li>
       </ul>
