@@ -311,7 +311,27 @@
       "too_many_devices": "Für dein Konto sind schon 10 Geräte für Benachrichtigungen angemeldet – entferne zuerst eins.",
       "endpoint_not_allowed": "Die Adresse deines Push-Dienstes wird nicht angenommen – wähle in der Verteiler-App einen öffentlichen Server.",
       "invalid_keys": "Die Schlüssel für Benachrichtigungen sind ungültig – bitte erneut einschalten.",
-      "device_not_found": "Dieses Gerät ist nicht (mehr) angemeldet."
+      "device_not_found": "Dieses Gerät ist nicht (mehr) angemeldet.",
+      "creator_code_not_found": "Diesen Creator-Code gibt es nicht.",
+      "creator_code_expired": "Dieser Creator-Code ist abgelaufen oder aufgebraucht.",
+      "creator_blocked": "Du hast diesen Creator blockiert – hebe die Blockierung zuerst auf.",
+      "creator_supported": "Du unterstützt diesen Creator gerade – erst „Nicht mehr unterstützen“, dann blockieren.",
+      "creator_inactive": "Dein Creator-Status ist gerade nicht aktiv.",
+      "creator_tier": "Das gibt es erst in einer höheren Creator-Stufe.",
+      "creator_code_limit": "Du hast schon so viele Zusatz-Codes, wie deine Stufe erlaubt.",
+      "creator_code_taken": "Diesen Code gibt es schon – bitte einen anderen wählen.",
+      "invalid_symbol": "Das Fan-Symbol passt nicht: quadratisch, 16×16 bis 64×64, als PNG.",
+      "creator_symbol_frames": "Animierte Fan-Symbole gibt es erst ab der Stufe Partner.",
+      "creator_request_open": "Du hast schon einen offenen Antrag dieser Art.",
+      "already_creator": "Dieser Spieler ist schon Creator.",
+      "not_your_pack": "Das ist nicht dein Modpack.",
+      "creator_helper_limit": "Du hast schon so viele Helfer, wie deine Stufe erlaubt.",
+      "creator_helper_exists": "Dieser Spieler ist schon dein Helfer oder eingeladen.",
+      "creator_helper_right": "Dafür hat dir der Creator kein Recht gegeben.",
+      "creator_self": "Das ist dein eigener Creator-Code.",
+      "pack_not_found": "Dieses Modpack gibt es nicht (mehr).",
+      "helper_not_found": "Dieser Spieler ist (nicht mehr) Helfer.",
+      "helper_invite_not_found": "Diese Einladung gibt es nicht mehr."
     },
     "auth": {
       "accountMismatch": "Die Anmeldung gehört zu einem anderen Account – bitte erneut anmelden.",
@@ -628,7 +648,10 @@
       "animated": "Animierte PNGs (APNG) werden nicht unterstützt – Animationen als Streifen hochladen.",
       "invalidSize": "Der Umhang muss 64×32 Pixel groß sein (oder ein Vielfaches bis 1024×512) bzw. im Umhang-Format 22×17 (bis 352×272); animiert höchstens 32 Frames untereinander.",
       "frameTime": "Das Bildtempo muss zwischen 50 und 1000 ms je Frame liegen.",
-      "emptyCape": "Der Umhang ist komplett durchsichtig."
+      "emptyCape": "Der Umhang ist komplett durchsichtig.",
+      "symbolTooLarge": "Das Fan-Symbol ist zu groß (höchstens 256 KB).",
+      "symbolSize": "Das Fan-Symbol muss quadratisch sein (16×16 bis 64×64), animiert höchstens {frames} Bilder untereinander.",
+      "emptySymbol": "Das Fan-Symbol ist komplett durchsichtig."
     },
     "trsValidate": {
       "invalidName": "Bitte einen Minecraft-Namen (1–16 Zeichen: A–Z, 0–9, _) eingeben.",
@@ -948,6 +971,19 @@
       "ffmpegMissing": "Für Videos wird zuerst FFmpeg geladen.",
       "unreadable": "„{name}“ lässt sich nicht als Video lesen.",
       "badRange": "Bitte einen gültigen Bereich im Video wählen."
+    },
+    "creator": {
+      "invalidCode": "Creator-Codes haben 5 bis 20 Zeichen: Buchstaben, Ziffern und Bindestriche (z. B. TRS-PIXEL).",
+      "invalidTier": "Unbekannte Creator-Stufe.",
+      "invalidId": "Ungültiger Eintrag.",
+      "textLength": "Text: 1 bis {max} Zeichen.",
+      "textInvalidChars": "Der Text enthält ungültige Zeichen.",
+      "invalidMaxUses": "Höchstzahl der Einlösungen: mindestens 1.",
+      "expiryPast": "Das Ablaufdatum muss in der Zukunft liegen.",
+      "nothingToChange": "Es gibt nichts zu ändern.",
+      "invalidChannelUrl": "Bitte den Link zu deinem Kanal angeben (https://…).",
+      "invalidFollowers": "Ungültige Follower-Zahl.",
+      "invalidRights": "Bitte mindestens ein Recht für den Helfer wählen."
     }
   },
   "browse": {
@@ -3025,7 +3061,8 @@
     "achievements": "Erfolge",
     "localServers": "Meine Server",
     "controls": "Steuerung",
-    "pc": "PC"
+    "pc": "PC",
+    "creator": "Creator"
   },
   "accountMenu": {
     "menuLabel": "Konten",
@@ -3084,7 +3121,8 @@
       "myApplications": "bewerbungen bewerben team stelle status",
       "achievements": "erfolge trophäen punkte belohnungen abzeichen freischalten achievements",
       "docs": "hilfe docs dokumentation anleitung wiki faq handbuch support fragen help",
-      "bigPicture": "big picture fernseher tv controller gamepad steam deck vollbild sofa konsole"
+      "bigPicture": "big picture fernseher tv controller gamepad steam deck vollbild sofa konsole",
+      "creator": "creator code fans unterstützen youtuber streamer fan-symbol fan-umhang"
     },
     "actions": {
       "newInstance": {
@@ -3408,7 +3446,8 @@
       "shares": "Um Screenshots als Link zu teilen, meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
       "achievements": "Um deine Erfolge zu zeigen, meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
       "cosmetics": "Für TRS-Kopf-Kosmetik meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
-      "remote": "Um deinen PC vom Handy aus zu steuern, meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst."
+      "remote": "Um deinen PC vom Handy aus zu steuern, meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
+      "creator": "Das Creator-Programm (Codes, Fan-Symbole, Fan-Umhänge) braucht die TRS-Dienste."
     },
     "account": {
       "title": "Kein Account angemeldet",
@@ -5473,7 +5512,8 @@
       "jobs": "Stellen",
       "website": "Auf der Website",
       "websiteHint": "Öffnet die Website im Browser (Anmeldung mit Microsoft).",
-      "blog": "Blog"
+      "blog": "Blog",
+      "creators": "Creator"
     },
     "search": {
       "placeholder": "Spieler, UUIDs, Meldungs-IDs, #Strafen, Umhänge suchen …",
@@ -5874,7 +5914,87 @@
       "applications_decide": "Über Bewerbungen entscheiden",
       "blog_write": "Blog-Beiträge schreiben (Entwürfe, Bilder)",
       "blog_publish": "Blog-Beiträge veröffentlichen, planen und zurückziehen",
-      "events_manage": "Events verwalten"
+      "events_manage": "Events verwalten",
+      "creators_review": "Creator-Symbole und Fan-Umhänge prüfen",
+      "creators_manage": "Creator verwalten"
+    },
+    "creators": {
+      "intro": "Fan-Symbole und Fan-Umhänge prüfen, Creator verwalten und ihre Anträge beantworten. Bewerbungen laufen über die Website.",
+      "tabs": {
+        "queue": "Prüfung",
+        "roster": "Creator",
+        "requests": "Anträge"
+      },
+      "queue": {
+        "empty": "Nichts zu prüfen.",
+        "symbol": "Fan-Symbol",
+        "cape": "Fan-Umhang",
+        "symbolInfo": "{size}×{size} px · {frames} Bild(er)",
+        "frames": "{n} Bild(er)",
+        "approve": "Annehmen",
+        "reject": "Ablehnen",
+        "approved": "Angenommen – die Fans von {name} sehen es sofort.",
+        "rejected": "Abgelehnt – {name} bekommt den Grund.",
+        "rejectTitle": "Einreichung von {name} ablehnen",
+        "reason": "Grund (sieht der Creator)",
+        "message": "Nachricht (optional)",
+        "reasonMissing": "Bitte einen Grund angeben.",
+        "reasons": {
+          "logo": "Enthält ein fremdes Logo oder eine Marke",
+          "unreadable": "Im Spiel nicht lesbar – bitte klarere Formen",
+          "inappropriate": "Unangemessener Inhalt",
+          "other": "Anderer Grund"
+        }
+      },
+      "roster": {
+        "player": "Spieler (Name oder UUID)",
+        "playerPlaceholder": "z. B. Pixelmaus",
+        "tier": "Stufe",
+        "mainCodeOptional": "Haupt-Code (optional)",
+        "add": "Creator hinzufügen",
+        "added": "{name} ist jetzt Creator.",
+        "search": "Creator suchen",
+        "state": "Status",
+        "states": {
+          "all": "Alle",
+          "active": "aktiv",
+          "revoked": "entzogen",
+          "banned": "gesperrt"
+        },
+        "empty": "Keine Creator gefunden.",
+        "creator": "Creator",
+        "fans": "Fans",
+        "mainCode": "Haupt-Code",
+        "editCode": "Haupt-Code ändern",
+        "editCodeTitle": "Haupt-Code von {name}",
+        "editCodeHint": "Alte Videos mit dem bisherigen Code funktionieren dann nicht mehr – nur ändern, wenn es wirklich nötig ist.",
+        "save": "Speichern",
+        "tierChanged": "{name} ist jetzt {tier}.",
+        "revoke": "Status entziehen",
+        "ban": "Sperren",
+        "restore": "Wiederherstellen",
+        "revokeTitle": "{name}: Creator-Status entziehen",
+        "banTitle": "{name} als Creator sperren",
+        "reason": "Grund (sieht der Creator)",
+        "reasonPlaceholder": "z. B. Codes in fremden Chats gespammt",
+        "removeCapes": "Auch Fan-Umhänge bei den Fans entfernen",
+        "revokeText": "Codes, Fan-Symbol und Creator-Abzeichen werden abgeschaltet. Der Creator kann sich später neu bewerben.",
+        "banText": "Codes, Fan-Symbol und Creator-Abzeichen werden abgeschaltet, eine neue Bewerbung ist nicht möglich.",
+        "revokedToast": "{name}: Status entzogen – Codes und Fan-Symbol sind aus.",
+        "bannedToast": "{name} ist als Creator gesperrt.",
+        "restoredToast": "{name} ist wieder Creator.",
+        "note": "Entziehen: Codes, Fan-Symbol und Abzeichen werden abgeschaltet; Sperren verhindert zusätzlich neue Bewerbungen. Fans behalten freigeschaltete Fan-Umhänge, außer du entfernst sie mit."
+      },
+      "requests": {
+        "empty": "Keine Anträge.",
+        "followers": "{n} Follower",
+        "accept": "Annehmen",
+        "decline": "Ablehnen",
+        "acceptTitle": "Antrag annehmen",
+        "declineTitle": "Antrag ablehnen",
+        "reason": "Antwort an den Creator (optional)",
+        "upgradeHint": "Annehmen hebt den Creator eine Stufe höher."
+      }
     }
   },
   "trsChoice": {
@@ -6952,6 +7072,463 @@
       "installed": "{name} von {from} auf {to} getauscht.",
       "none": "Für {name} gibt es noch keine Version, die hier passt.",
       "unsupported": "{name} wurde nicht über Modrinth installiert – wähle auf der Mod-Seite eine passende Version oder deaktiviere die Mod."
+    }
+  },
+  "creator": {
+    "title": "Creator",
+    "subtitle": "Unterstütze deinen Lieblings-Creator mit seinem Code – du bekommst sein Fan-Symbol und, wenn er einen hat, seinen Fan-Umhang.",
+    "refresh": "Aktualisieren",
+    "error": "Das Creator-Programm konnte nicht geladen werden.",
+    "copy": "Kopieren",
+    "copied": "{code} kopiert",
+    "channel": "{platform} · {n} Follower",
+    "views": {
+      "label": "Ansicht",
+      "fan": "Als Fan",
+      "own": "Mein Dashboard"
+    },
+    "milestones": {
+      "bronze": "Bronze",
+      "silver": "Silber",
+      "gold": "Gold",
+      "diamond": "Diamant"
+    },
+    "symbol": {
+      "label": "Fan-Symbol",
+      "withMilestone": "Fan-Symbol mit {milestone}-Rahmen",
+      "title": "Dein Fan-Symbol",
+      "approved": "Freigegeben",
+      "pending": "Neues Symbol in Prüfung",
+      "rejected": "Abgelehnt",
+      "none": "Noch kein Symbol",
+      "rejectedReason": "Abgelehnt: {reason}",
+      "rejectedNoReason": "Dein letztes Symbol wurde abgelehnt.",
+      "newInReview": "neu · in Prüfung",
+      "oldUntilReview": "Deine Fans sehen das alte Symbol, bis das neue freigegeben ist.",
+      "hint": "Deine Fans tragen dieses Symbol vor ihrem Namen – über dem Kopf und in der Tab-Liste.",
+      "uploadTitle": "Neues Symbol hochladen",
+      "formatTitle": "Format",
+      "formatAnimated": "PNG, GIF oder APNG · quadratisch, 16×16 bis 64×64 Pixel · animiert bis 8 Bilder · höchstens 256 KB",
+      "formatStatic": "PNG, GIF oder APNG · quadratisch, 16×16 bis 64×64 Pixel · ein Bild (animiert ab Partner) · höchstens 256 KB",
+      "smallTitle": "Gut lesbar klein",
+      "smallText": "Im Spiel ist es so groß wie ein Buchstabe. Klare Formen und wenige Farben wirken am besten – die Vorschau zeigt alle Größen.",
+      "reviewTitle": "Prüfung durch das Team",
+      "reviewText": "Keine fremden Logos/Marken, nichts Anstößiges. Du bekommst eine Nachricht, wenn es angenommen oder abgelehnt wurde – mit Grund.",
+      "pick": "Bild auswählen …",
+      "withdraw": "Zurückziehen",
+      "uploaded": "Hochgeladen – das Team prüft dein Symbol.",
+      "animatedFromPartner": "Animierte Symbole gibt es ab der Stufe Partner.",
+      "dialog": {
+        "title": "Neues Fan-Symbol",
+        "choose": "Bild wählen",
+        "other": "Anderes Bild",
+        "hintAnimated": "PNG, GIF oder APNG. Wird mittig quadratisch zugeschnitten; Animationen behalten bis zu {n} Bilder.",
+        "hintStatic": "PNG, GIF oder APNG. Wird mittig quadratisch zugeschnitten; von Animationen bleibt nur das erste Bild.",
+        "size": "Größe",
+        "speed": "Tempo",
+        "speedValue": "{ms} ms je Bild",
+        "sampled": "Die Animation hat {total} Bilder – {max} gleichmäßig verteilte bleiben.",
+        "fileSize": "Datei: {size}",
+        "empty": "Das Symbol ist komplett durchsichtig.",
+        "tooLarge": "Die Datei ist größer als 256 KB – wähle eine kleinere Größe oder weniger Bilder.",
+        "unsupported": "Bitte ein PNG, GIF oder APNG wählen.",
+        "loadFailed": "Das Bild konnte nicht gelesen werden.",
+        "upload": "Zur Prüfung senden",
+        "uploading": "Lädt hoch …"
+      }
+    },
+    "preview": {
+      "title": "So sieht es im Spiel aus",
+      "showOthers": "Fan-Symbole anderer Spieler anzeigen",
+      "hint": "Das Symbol deines Creators steht vor deinem Namen – über dem Kopf und in der Tab-Liste. Nur TRS-Spieler sehen es.",
+      "tabList": "Tab-Liste",
+      "creatorBadge": "Creator-Abzeichen"
+    },
+    "fan": {
+      "redeemTitle": "Creator-Code einlösen",
+      "codeLabel": "Creator-Code",
+      "codePlaceholder": "TRS-…",
+      "redeem": "Einlösen",
+      "redeeming": "Prüfe …",
+      "redeemHint": "Codes gibt es in Videos, Streams und Beschreibungen.",
+      "invalidCode": "Creator-Codes haben 5 bis 20 Zeichen: Buchstaben, Ziffern und Bindestriche.",
+      "switchIn": "Du kannst immer nur einen Creator unterstützen. Einen anderen wählen geht wieder in {days} Tag – eingelöste Fan-Umhänge behältst du. | Du kannst immer nur einen Creator unterstützen. Einen anderen wählen geht wieder in {days} Tagen – eingelöste Fan-Umhänge behältst du.",
+      "switchNow": "Du kannst immer nur einen Creator unterstützen. Einen anderen wählen geht jetzt – eingelöste Fan-Umhänge behältst du.",
+      "redeemed": {
+        "now": "Du unterstützt jetzt {name}.",
+        "nowWithCape": "Du unterstützt jetzt {name} – Fan-Umhang „{cape}“ freigeschaltet.",
+        "capeOnly": "Fan-Umhang „{cape}“ freigeschaltet. Unterstützen kannst du {name} in {days} Tag. | Fan-Umhang „{cape}“ freigeschaltet. Unterstützen kannst du {name} in {days} Tagen.",
+        "capeUnlocked": "Fan-Umhang „{cape}“ freigeschaltet.",
+        "already": "Du unterstützt {name} schon.",
+        "locked": "Einen anderen Creator kannst du erst in {days} Tag wählen. | Einen anderen Creator kannst du erst in {days} Tagen wählen."
+      },
+      "supportingTitle": "Du unterstützt",
+      "nobody": "Noch niemand. Löse einen Creator-Code ein.",
+      "since": "seit {days} Tag | seit {days} Tagen",
+      "end": "Nicht mehr unterstützen",
+      "endHint": "Fan-Abzeichen verschwindet, Fan-Umhang bleibt.",
+      "endTitle": "{name} nicht mehr unterstützen?",
+      "endText": "Dein Fan-Abzeichen mit dem Symbol von {name} verschwindet, und du zählst nicht mehr als Fan.",
+      "endKeepCape": "Den Fan-Umhang „{cape}“ behältst du.",
+      "endSwitchIn": "Einen anderen Creator kannst du in {days} Tag wählen; {name} selbst jederzeit wieder. | Einen anderen Creator kannst du in {days} Tagen wählen; {name} selbst jederzeit wieder.",
+      "endSwitchNow": "Einen anderen Creator kannst du sofort wählen; {name} selbst jederzeit wieder.",
+      "ended": "Du unterstützt {name} nicht mehr.",
+      "blockTitle": "Blockierte Creator",
+      "blockLabel": "Code des Creators zum Blockieren",
+      "blockPlaceholder": "Code, z. B. TRS-…",
+      "block": "Blockieren",
+      "blockHint": "Gib den Code eines Creators ein, um ihn zu blockieren. Abzeichen und Fan-Symbole blockierter Creator siehst du nicht mehr – über Köpfen, in der Tab-Liste und im Launcher. Ihre Codes kannst du nicht einlösen.",
+      "blocked": "Creator blockiert.",
+      "unblock": "Aufheben",
+      "unblocked": "{name} nicht mehr blockiert.",
+      "noneBlocked": "Niemand blockiert.",
+      "capesTitle": "Deine Fan-Umhänge",
+      "capeBy": "von {name}",
+      "capesHint": "Liegen bei deinen Umhängen und bleiben, auch wenn du den Creator wechselst.",
+      "openSkins": "Skins öffnen"
+    },
+    "become": {
+      "title": "Selbst Creator werden",
+      "text": "Du machst Videos, Streams oder Shorts zu Minecraft? Bewirb dich – drei Stufen, je nach Reichweite.",
+      "apply": "Auf der Website bewerben",
+      "view": "Bewerbung ansehen",
+      "status": {
+        "new": "Bewerbung eingereicht",
+        "review": "Bewerbung in Prüfung",
+        "interview": "Gespräch",
+        "accepted": "Angenommen",
+        "rejected": "Nicht angenommen",
+        "withdrawn": "Zurückgezogen"
+      }
+    },
+    "revoked": {
+      "title": "Dein Creator-Status wurde entzogen",
+      "bannedTitle": "Du bist als Creator gesperrt",
+      "reason": "Grund: {reason}",
+      "text": "Codes, Fan-Symbol und Abzeichen sind abgeschaltet. Du kannst dich später neu bewerben.",
+      "bannedText": "Codes, Fan-Symbol und Abzeichen sind abgeschaltet. Eine neue Bewerbung ist nicht möglich."
+    },
+    "tiers": {
+      "yours": "· deine Stufe",
+      "starter": {
+        "name": "Starter",
+        "need": "jeder – das Team prüft",
+        "perk1": "Creator-Abzeichen im Spiel und im Launcher",
+        "perk2": "Eigener Creator-Code (Fans bekommen ein Fan-Abzeichen mit deinem Symbol, bis 64×64)",
+        "perk3": "Statistik: Fans und Einlösungen",
+        "perk4": "1 Zusatz-Code (bis 100 Einlösungen)"
+      },
+      "partner": {
+        "name": "Partner",
+        "need": "ab 1.000 Followern",
+        "perk1": "Alles aus Starter",
+        "perk2": "Eigener Fan-Umhang (512×256) – Fans schalten ihn mit deinem Code frei",
+        "perk3": "Animiertes Fan-Symbol (bis 8 Bilder)",
+        "perk4": "Vorschau-Builds von Launcher und TRS Client",
+        "perk5": "5 Zusatz-Codes (je bis 1.000 Einlösungen)"
+      },
+      "top": {
+        "name": "Top",
+        "need": "ab 10.000 Followern oder Einladung",
+        "perk1": "Alles aus Partner",
+        "perk2": "Umhang „Content Team“ (animiert)",
+        "perk3": "Fan-Umhang in HD (1024×512) und animiert (bis 32 Bilder)",
+        "perk4": "Unbegrenzt Zusatz-Codes"
+      }
+    },
+    "dashboard": {
+      "title": "Creator-Dashboard",
+      "since": "Creator seit {date}",
+      "yourCode": "Dein Code",
+      "mainCode": "Haupt-Code",
+      "tabsLabel": "Bereiche des Dashboards",
+      "tabs": {
+        "stats": "Statistik",
+        "codes": "Codes",
+        "symbol": "Fan-Symbol",
+        "cape": "Fan-Umhang",
+        "previews": "Vorschau-Builds",
+        "packs": "Packs",
+        "helpers": "Helfer",
+        "tier": "Stufe & Vorteile"
+      }
+    },
+    "stats": {
+      "activeFans": "Aktive Fans",
+      "redemptions": "Code-Einlösungen gesamt",
+      "capeHolders": "Fan-Umhänge vergeben",
+      "capeShare": "{n} % deiner Fans tragen ihn",
+      "fromPartner": "ab Partner",
+      "newPlayers": "Neue Launcher-Spieler über deinen Code",
+      "newPlayersHint": "haben TRS mit deinem Code zum ersten Mal gestartet",
+      "week": "+{n} diese Woche",
+      "milestoneTitle": "Meilensteine",
+      "nextMilestone": "Nächster: {name} bei {at} aktiven Fans (jetzt {n})",
+      "allMilestones": "Alle Meilensteine erreicht",
+      "milestoneHint": "Meilensteine legen einen farbigen Rahmen um das Fan-Symbol aller deiner Fans – er geht nie wieder weg.",
+      "chartTitle": "Neue Fans – letzte 30 Tage",
+      "noData": "Noch keine Daten.",
+      "byCode": "Nach Code",
+      "share": "Anteil",
+      "privacyTitle": "Datenschutz",
+      "privacy": "Du siehst nur Zahlen, keine Namen deiner Fans. Fans können ihr Abzeichen jederzeit ausblenden oder den Creator wechseln."
+    },
+    "codes": {
+      "title": "Deine Codes",
+      "note": "Dein Haupt-Code gilt immer. Zusatz-Codes kannst du begrenzen – z. B. für ein Gewinnspiel oder einen Stream. Jeder Code schaltet das Fan-Abzeichen frei.",
+      "notePartner": "Dein Haupt-Code gilt immer. Zusatz-Codes kannst du begrenzen – z. B. für ein Gewinnspiel oder einen Stream. Jeder Code schaltet Fan-Abzeichen und deinen Fan-Umhang frei.",
+      "extraCount": "Zusatz-Codes: {n} / {max}",
+      "new": "Neuer Code",
+      "code": "Code",
+      "kind": "Art",
+      "uses": "Einlösungen",
+      "until": "Gültig bis",
+      "status": "Status",
+      "main": "Haupt-Code",
+      "extra": "Zusatz",
+      "state": {
+        "active": "aktiv",
+        "off": "aus",
+        "usedUp": "aufgebraucht",
+        "expired": "abgelaufen"
+      },
+      "turnOff": "Abschalten",
+      "turnOn": "Einschalten",
+      "footer": "Den Haupt-Code ändert nur das Team – damit alte Videos weiter funktionieren. Zusatz-Codes: je bis {max} Einlösungen.",
+      "footerUnlimited": "Den Haupt-Code ändert nur das Team – damit alte Videos weiter funktionieren. Zusatz-Codes: ohne Obergrenze.",
+      "newTitle": "Neuer Zusatz-Code",
+      "codeLabel": "Code (Großbuchstaben, Zahlen, -)",
+      "maxLabel": "Höchstens so oft einlösbar (bis {max})",
+      "maxLabelOptional": "Höchstens so oft einlösbar (leer = unbegrenzt)",
+      "untilLabel": "Gültig bis (leer = unbegrenzt)",
+      "invalid": "Codes haben 5 bis 20 Zeichen: Buchstaben, Ziffern und Bindestriche, nicht am Anfang oder Ende.",
+      "maxInvalid": "Bitte eine Zahl von 1 bis {max} eingeben.",
+      "maxRequired": "Bitte angeben, wie oft der Code eingelöst werden kann (bis {max}).",
+      "untilInvalid": "Das Datum muss in der Zukunft liegen.",
+      "create": "Erstellen",
+      "creating": "Erstelle …",
+      "created": "{code} erstellt."
+    },
+    "cape": {
+      "title": "Fan-Umhang",
+      "locked": "Einen eigenen Fan-Umhang gibt es ab der Stufe Partner. Bis dahin bekommen deine Fans das Fan-Abzeichen.",
+      "seeTiers": "Stufe & Vorteile ansehen",
+      "yours": "Dein Fan-Umhang",
+      "approved": "Freigegeben · Fans bekommen ihn mit deinem Code",
+      "pending": "In Prüfung beim Team",
+      "none": "Noch kein Umhang",
+      "rejectedReason": "Abgelehnt: {reason}",
+      "rejectedNoReason": "Dein letzter Umhang wurde abgelehnt.",
+      "newInReview": "neu · in Prüfung",
+      "name": "Name",
+      "size": "Größe",
+      "sizeStandard": "512×256, ein Bild",
+      "sizeHd": "bis 1024×512, animiert bis 32 Bilder",
+      "holders": "Träger",
+      "reviewNote": "Änderungen gehen erst nach erneuter Prüfung live. Bis dahin sehen Fans den alten Umhang.",
+      "makeTitle": "Neuen Umhang machen",
+      "selfTitle": "Selbst gestalten",
+      "selfText": "In der Umhang-Werkstatt: Bild, GIF oder Video importieren und zuschneiden. Danach zur Prüfung senden.",
+      "selfTextHd": "In der Umhang-Werkstatt: Bild, GIF oder Video importieren und zuschneiden, in HD und animiert. Danach zur Prüfung senden.",
+      "openWorkshop": "Werkstatt öffnen",
+      "withdraw": "Neuen Umhang zurückziehen",
+      "teamTitle": "Vom Team gestalten lassen",
+      "teamText": "Beschreib deinen Wunsch (Farben, Motiv, Logo). Das Team macht Entwürfe mit TRS Studio, du suchst aus.",
+      "sendWish": "Wunsch senden",
+      "wishOpen": "Wunsch gesendet · das Team meldet sich im Sozial-Chat",
+      "wishTitle": "Umhang vom Team gestalten lassen",
+      "wishLabel": "Was soll drauf? (Motiv, Farben, Stil)",
+      "wishPlaceholder": "z. B. lila Drache auf dunklem Stein, mein Logo unten, leicht glühend",
+      "wishEmpty": "Bitte beschreib deinen Wunsch.",
+      "wishSent": "Wunsch gesendet.",
+      "send": "Senden",
+      "rules": "Kein fremdes Logo/Marken ohne Erlaubnis. Das Team prüft jeden Umhang, bevor Fans ihn sehen.",
+      "workshopTitle": "Fan-Umhang-Werkstatt",
+      "workshopStandard": "Fan-Umhang (Partner): 512×256 oder kleiner, ein Bild. Er geht zur Prüfung ans Team; bis dahin behalten Fans den alten Umhang.",
+      "workshopHd": "Fan-Umhang (Top): bis 1024×512, animiert bis 32 Bilder. Er geht zur Prüfung ans Team; bis dahin behalten Fans den alten Umhang.",
+      "partnerLimit": "Als Partner muss dein Fan-Umhang 512×256 oder kleiner und nicht animiert sein.",
+      "nameRequired": "Bitte gib dem Fan-Umhang einen Namen.",
+      "submitFan": "Als Fan-Umhang einreichen",
+      "submitted": "Fan-Umhang eingereicht – das Team prüft ihn."
+    },
+    "previews": {
+      "title": "Vorschau-Builds",
+      "locked": "Ab der Stufe Partner kannst du neue Versionen vor allen anderen testen – praktisch für Videos zu neuen Funktionen.",
+      "note": "Vorschau-Builds lädst du hier selbst herunter. Dein normaler Launcher bleibt, wie er ist. Bitte nichts davon vor dem Release-Termin veröffentlichen, außer das Team gibt es frei.",
+      "empty": "Gerade keine Vorschau-Builds.",
+      "launcher": "Launcher",
+      "client": "TRS Client",
+      "download": "Herunterladen",
+      "outdated": "veraltet",
+      "bugs": "Fehler gefunden? „Bug melden“ in der Vorschau schickt ihn direkt ans Team."
+    },
+    "packs": {
+      "title": "Deine Modpacks",
+      "note": "Liste deine geteilten Modpacks als Creator-Packs – sie erscheinen unter Entdecken → Modpacks mit deinem Creator-Abzeichen und laufen nicht ab, solange sie gelistet sind.",
+      "installs": "{n} Installationen gesamt",
+      "myPacks": "Meine Modpacks",
+      "empty": "Du hast noch kein Modpack geteilt. Teile zuerst eins aus einer Instanz.",
+      "installCount": "{n} Installationen",
+      "listed": "gelistet",
+      "notListed": "nicht gelistet",
+      "list": "Listen",
+      "unlist": "Zurückziehen",
+      "listedToast": "„{name}“ ist jetzt gelistet.",
+      "unlistedToast": "„{name}“ ist nicht mehr gelistet."
+    },
+    "packsBrowse": {
+      "title": "Packs von Creatorn",
+      "subtitle": "Modpacks von TRS-Creatorn",
+      "installs": "{n} Installationen",
+      "install": "Installieren",
+      "more": "Mehr anzeigen"
+    },
+    "helpers": {
+      "title": "Helfer",
+      "note": "Gib Helfern (z. B. deinem Cutter oder Moderator) Zugriff auf Teile deines Dashboards – ohne dein Konto zu teilen. Einladen kannst du nur TRS-Freunde.",
+      "count": "{n} / {max} Helfer",
+      "invite": "Helfer einladen",
+      "empty": "Noch keine Helfer.",
+      "active": "aktiv",
+      "pending": "eingeladen",
+      "rights": {
+        "stats": "Statistik sehen",
+        "codes": "Codes verwalten",
+        "uploads": "Symbol/Umhang hochladen",
+        "packs": "Packs listen"
+      },
+      "save": "Speichern",
+      "saved": "Rechte von {name} gespeichert.",
+      "remove": "Entfernen",
+      "removed": "{name} ist nicht mehr dein Helfer.",
+      "removeTitle": "{name} als Helfer entfernen?",
+      "removeText": "{name} verliert sofort den Zugriff auf dein Dashboard.",
+      "creatorOnly": "Stufe, Anträge, Helfer und Vorschau-Builds bleiben immer bei dir.",
+      "needRight": "Bitte mindestens ein Recht wählen.",
+      "inviteTitle": "Helfer einladen",
+      "searchFriends": "Freunde suchen",
+      "friends": "Freunde",
+      "noFriends": "Keine Freunde zum Einladen.",
+      "rightsLabel": "Rechte",
+      "pickFriend": "Bitte einen Freund wählen.",
+      "send": "Einladung senden",
+      "invited": "{name} wurde eingeladen.",
+      "inviteFrom": "{name} möchte dich als Helfer",
+      "inviteRights": "Rechte: {rights}",
+      "accept": "Annehmen",
+      "decline": "Ablehnen",
+      "acceptedToast": "Du bist jetzt Helfer.",
+      "declinedToast": "Einladung abgelehnt.",
+      "dashboardOf": "Dashboard von {name}",
+      "youHelp": "Du hilfst als Helfer. Deine Rechte: {rights}",
+      "noRights": "Du hast in diesem Dashboard keine Rechte.",
+      "leave": "Nicht mehr helfen",
+      "leaveTitle": "{name} nicht mehr helfen?",
+      "leaveText": "Du verlierst den Zugriff auf das Dashboard von {name}. {name} kann dich später wieder einladen.",
+      "leftToast": "Du hilfst {name} nicht mehr."
+    },
+    "tier": {
+      "yours": "Deine Stufe:",
+      "request": "Aufstieg zu {tier} beantragen",
+      "pending": "Antrag auf {tier} in Prüfung",
+      "highest": "Höchste Stufe",
+      "progress": "Bis {tier}: {n} / {need} Follower (laut letzter Prüfung)",
+      "perksTitle": "Deine Vorteile",
+      "active": "aktiv",
+      "requests": "Deine Anträge",
+      "kind": {
+        "upgrade": "Aufstieg",
+        "team_cape": "Fan-Umhang vom Team"
+      },
+      "status": {
+        "open": "offen",
+        "accepted": "angenommen",
+        "declined": "abgelehnt"
+      },
+      "dialogTitle": "Aufstieg zu {tier}",
+      "dialogText": "Voraussetzung: {need}. Das Team prüft deine Kanäle.",
+      "channelUrl": "Kanal-Link",
+      "followers": "Follower/Abos aktuell",
+      "note": "Video/Stream mit TRS (optional)",
+      "urlInvalid": "Bitte den Link zu deinem Kanal angeben (https://…).",
+      "followersInvalid": "Bitte eine ganze Zahl eingeben.",
+      "send": "Beantragen",
+      "sent": "Antrag gesendet."
+    },
+    "perks": {
+      "badge": "Creator-Abzeichen",
+      "badgeText": "Im Spiel und im Launcher, Farbe nach Stufe.",
+      "code": "Creator-Code mit Fan-Abzeichen",
+      "codeText": "Fans zeigen dein Symbol vor ihrem Namen.",
+      "fanCape": "Eigener Fan-Umhang",
+      "fanCapeText": "Fans schalten ihn mit deinem Code frei.",
+      "previews": "Vorschau-Builds",
+      "previewsText": "Neue Versionen vor allen anderen testen.",
+      "teamCape": "Umhang „Content Team“",
+      "teamCapeText": "Der animierte Team-Umhang für dich selbst.",
+      "hdCape": "HD- und animierter Fan-Umhang",
+      "hdCapeText": "Bis 1024×512 und 32 Bilder."
+    },
+    "toast": {
+      "open": "Öffnen",
+      "reason": "Grund: {reason}",
+      "fanMilestoneTitle": "{name} hat {milestone} erreicht!",
+      "fanMilestoneBody": "Dein Fan-Symbol hat jetzt einen {milestone}-Rahmen.",
+      "helperInviteTitle": "{name} lädt dich als Helfer ein",
+      "helperInviteBody": "Öffne die Creator-Seite, um zu antworten.",
+      "helperRemovedTitle": "{name} hat dich als Helfer entfernt",
+      "helperRemovedGeneric": "Du wurdest als Helfer entfernt",
+      "helperRemovedBody": "Du hast keinen Zugriff mehr auf das Dashboard.",
+      "updated": {
+        "symbol_approved": {
+          "title": "Fan-Symbol freigegeben",
+          "body": "Deine Fans sehen jetzt dein neues Symbol."
+        },
+        "symbol_rejected": {
+          "title": "Fan-Symbol abgelehnt",
+          "body": "Lade jederzeit ein neues Symbol hoch."
+        },
+        "cape_approved": {
+          "title": "Fan-Umhang freigegeben",
+          "body": "Fans bekommen deinen neuen Fan-Umhang mit deinem Code."
+        },
+        "cape_rejected": {
+          "title": "Fan-Umhang abgelehnt",
+          "body": "Reiche jederzeit einen neuen Fan-Umhang ein."
+        },
+        "tier_changed": {
+          "title": "Neue Creator-Stufe: {tier}",
+          "body": "Deine neuen Vorteile gelten sofort."
+        },
+        "revoked": {
+          "title": "Creator-Status entzogen",
+          "body": "Codes, Fan-Symbol und Abzeichen sind abgeschaltet."
+        },
+        "restored": {
+          "title": "Creator-Status wiederhergestellt",
+          "body": "Deine Codes funktionieren wieder."
+        },
+        "request_answered": {
+          "title": "Dein Antrag wurde beantwortet",
+          "body": "Details unter Stufe & Vorteile."
+        },
+        "milestone": {
+          "title": "Meilenstein erreicht: {milestone}",
+          "body": "Alle deine Fans bekommen jetzt einen {milestone}-Rahmen."
+        },
+        "became_creator": {
+          "title": "Willkommen im Creator-Programm!",
+          "body": "Dein Dashboard und dein Code sind bereit."
+        },
+        "helper_joined": {
+          "title": "{name} ist jetzt dein Helfer",
+          "body": "Rechte verwaltest du unter Helfer."
+        },
+        "helper_left": {
+          "title": "{name} hilft nicht mehr",
+          "body": "Du kannst einen neuen Helfer einladen."
+        }
+      }
     }
   }
 }

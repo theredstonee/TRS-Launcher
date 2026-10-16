@@ -595,6 +595,9 @@ function install(hit: ModrinthHit, version: ModrinthVersion | null = null) {
           <template #worldFolder><span class="font-mono text-base-200">saves/&lt;{{ t('browse.datapackHint.world') }}&gt;/datapacks</span></template>
         </i18n-t>
 
+        <!-- Modpacks von Creatorn (TRS, API §35.4) über den Treffern der ersten Seite. -->
+        <CreatorPackSection v-if="isPack && page === 1" :query="debouncedQuery" />
+
         <ul v-if="loading && !hits.length" class="flex flex-col gap-2.5">
           <li v-for="i in 6" :key="i" class="skeleton h-[124px] rounded-xl" />
         </ul>

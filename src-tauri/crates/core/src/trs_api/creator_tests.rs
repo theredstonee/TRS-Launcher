@@ -67,6 +67,7 @@ async fn server(symbol_hits: std::sync::Arc<AtomicUsize>) -> MockServer {
                 Some("TRS-PIXEL") => Response::json(200, json!({ "creator": card(), "supportChanged": false, "switchAvailableAt": "2026-10-31T00:00:00.000Z", "fanCapeGranted": true })),
                 Some("TRS-OLD") => Response::error(410, "creator_code_expired"),
                 Some("TRS-BLOCKED") => Response::error(409, "creator_blocked"),
+                Some("TRS-THEREDSTONEE") => Response::error(409, "creator_self"),
                 _ => Response::error(404, "creator_code_not_found"),
             },
             ("POST", "/v1/me/creator/blocks") => match req.json()["code"].as_str() {
@@ -105,6 +106,11 @@ async fn server(symbol_hits: std::sync::Arc<AtomicUsize>) -> MockServer {
             ] })),
             ("POST", p) if p == format!("/v1/admin/creators/{CREATOR}/revoke") => Response::empty(204),
             ("POST", "/v1/admin/creators") => Response::error(409, "already_creator"),
+            ("GET", "/v1/admin/creators/requests") => Response::json(200, json!({ "requests": [
+                { "id": 4, "kind": "upgrade", "status": "open", "createdAt": "2026-10-16T08:00:00.000Z", "reason": null,
+                  "creator": { "uuid": CREATOR, "name": "Pixelmaus", "tier": "starter" },
+                  "data": { "channelUrl": "https://youtube.com/@pixelmaus", "followers": 18400, "note": "Neues Video" }, "decidedAt": null }
+            ] })),
             ("GET", "/v1/creator/dashboard") => {
                 let mut d = dashboard();
                 if req.path.ends_with(&format!("?as={CREATOR}")) {
@@ -162,13 +168,14 @@ async fn redeeming_blocking_and_settings() {
     for (code, expected) in [
         ("TRS-OLD", "trsApi.creator_code_expired"),
         ("TRS-BLOCKED", "trsApi.creator_blocked"),
+        ("TRS-THEREDSTONEE", "trsApi.creator_self"),
         ("TRS-NOPE", "trsApi.creator_code_not_found"),
     ] {
         assert_eq!(launcher.creator_redeem(code).await.unwrap_err().message_code(), expected, "{code}");
     }
     let bad = launcher.creator_redeem("x y").await.unwrap_err();
     assert_eq!(bad.message_code(), "creator.invalidCode");
-    assert_eq!(server.hits("POST", "/v1/me/creator/redeem").len(), 4, "ungültige Codes gehen nicht raus");
+    assert_eq!(server.hits("POST", "/v1/me/creator/redeem").len(), 5, "ungültige Codes gehen nicht raus");
 
     assert_eq!(launcher.creator_block("TRS-PIXEL").await.unwrap_err().message_code(), "trsApi.creator_supported");
     let blocked = launcher.creator_block("trs-spam").await.unwrap();
@@ -243,6 +250,10 @@ async fn team_queue_and_roster() {
         server.hits("POST", &format!("/v1/admin/creators/{CREATOR}/revoke"))[0].json(),
         json!({ "reason": "Codes gespammt", "ban": true, "removeFanCapes": false })
     );
+    let requests = launcher.admin_creator_requests().await.unwrap();
+    assert_eq!(requests[0].channel_url.as_deref(), Some("https://youtube.com/@pixelmaus"), "Angaben aus `data`");
+    assert_eq!(requests[0].followers, Some(18400));
+
     let add = creator::NewCreator { player: "Pixelmaus".into(), tier: "starter".into(), main_code: None };
     assert_eq!(launcher.admin_creator_add(&add).await.unwrap_err().message_code(), "trsApi.already_creator");
 }

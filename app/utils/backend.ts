@@ -46,6 +46,21 @@ import {
   type SharePackOptions,
 } from './packs'
 import { contentGroupSchema, contentOrganizationSchema, type GroupColor } from './contentGroups'
+import {
+  adminCreatorRequestSchema,
+  adminCreatorSchema,
+  creatorCodeSchema,
+  creatorQueueItemSchema,
+  creatorRedeemSchema,
+  creatorRequestSchema,
+  creatorSelfSchema,
+  creatorUserRefSchema,
+  listedPacksSchema,
+  myCreatorSchema,
+  previewBuildSchema,
+  type CreatorTier,
+  type HelperRight,
+} from './creator'
 import { bisectViewSchema } from './bisect'
 import { conflictReportSchema, fitResultSchema } from './modConflicts'
 import {
@@ -1173,6 +1188,57 @@ export const backend = {
     capes: (query: UploadQuery) => checked(z.array(trsAdminCapeSchema), 'admin_capes', { query }),
     cosmetics: (query: UploadQuery) => checked(cosmeticPageSchema, 'admin_cosmetics', { query }),
     deleteCosmetic: (id: string) => call<void>('admin_delete_cosmetic', { id }),
+  },
+
+  /**
+   * Creator-Programm (API §35): Codes einlösen, unterstützen, blockieren, Dashboard und
+   * Team-Verwaltung. Bilder (Symbol-Streifen, Fan-Umhänge) kommen als Data-URL aus dem Kern.
+   */
+  creator: {
+    me: () => checked(myCreatorSchema, 'creator_me'),
+    redeem: (code: string) => checked(creatorRedeemSchema, 'creator_redeem', { code }),
+    endSupport: () => call<void>('creator_end_support'),
+    block: (code: string) => checked(z.array(creatorUserRefSchema), 'creator_block', { code }),
+    unblock: (uuid: string) => checked(z.array(creatorUserRefSchema), 'creator_unblock', { uuid }),
+    setShowSymbols: (show: boolean) => checked(z.boolean(), 'creator_set_show_symbols', { show }),
+    /** Gelistete Creator-Modpacks (Entdecken), nach Installationen sortiert. */
+    packs: (q: string | null, offset = 0, limit = 20) => checked(listedPacksSchema, 'creator_packs', { q, offset, limit }),
+    // `asCreator`: als Helfer für diesen Creator (`?as=`, §35.9); `null` = eigenes Dashboard.
+    dashboard: (asCreator: string | null = null) => checked(creatorSelfSchema, 'creator_dashboard', { asCreator }),
+    createCode: (code: { code: string; maxUses?: number; expiresAt?: string }, asCreator: string | null = null) =>
+      checked(z.array(creatorCodeSchema), 'creator_create_code', { code, asCreator }),
+    updateCode: (code: string, patch: { active?: boolean; maxUses?: number | null; expiresAt?: string | null }, asCreator: string | null = null) =>
+      checked(z.array(creatorCodeSchema), 'creator_update_code', { code, patch, asCreator }),
+    /** Fertiger Symbol-Streifen (PNG als Base64); `maxFrames` nach Stufe – der Kern prüft erneut. */
+    uploadSymbol: (png: string, frameMs: number | null, maxFrames: number, asCreator: string | null = null) =>
+      call<void>('creator_upload_symbol', { png, frameMs, maxFrames, asCreator }),
+    withdrawSymbol: (asCreator: string | null = null) => call<void>('creator_withdraw_symbol', { asCreator }),
+    /** Fan-Umhang aus der Umhang-Werkstatt (gleiche Prüfung wie eigene Umhänge). */
+    uploadFanCape: (upload: { png: string; frames: number; frameTimeMs: number | null; name: string }, asCreator: string | null = null) =>
+      call<void>('creator_upload_fan_cape', { ...upload, asCreator }),
+    withdrawFanCape: (asCreator: string | null = null) => call<void>('creator_withdraw_fan_cape', { asCreator }),
+    request: (request: { kind: 'upgrade'; channelUrl: string; followers: number; note?: string } | { kind: 'team_cape'; text: string }) =>
+      checked(z.array(creatorRequestSchema), 'creator_request', { request }),
+    previews: () => checked(z.array(previewBuildSchema), 'creator_previews'),
+    setPackListed: (code: string, listed: boolean, asCreator: string | null = null) =>
+      call<void>('creator_set_pack_listed', { code, listed, asCreator }),
+    /** Helfer (§35.9): Freunde einladen, Rechte ändern, entfernen; Einladungen annehmen, aufhören. */
+    inviteHelper: (uuid: string, rights: HelperRight[]) => call<void>('creator_invite_helper', { uuid, rights }),
+    updateHelper: (uuid: string, rights: HelperRight[]) => call<void>('creator_update_helper', { uuid, rights }),
+    removeHelper: (uuid: string) => call<void>('creator_remove_helper', { uuid }),
+    answerHelperInvite: (creator: string, accept: boolean) => call<void>('creator_answer_helper_invite', { creator, accept }),
+    leaveHelping: (creator: string) => call<void>('creator_leave_helping', { creator }),
+
+    adminQueue: () => checked(z.array(creatorQueueItemSchema), 'admin_creator_queue'),
+    adminDecide: (id: string, approve: boolean, reason: string | null = null) => call<void>('admin_creator_decide', { id, approve, reason }),
+    adminList: (query: { q?: string; state?: string }) => checked(z.array(adminCreatorSchema), 'admin_creators', { query }),
+    adminAdd: (creator: { player: string; tier: CreatorTier; mainCode?: string }) => call<void>('admin_creator_add', { creator }),
+    adminUpdate: (uuid: string, patch: { tier?: CreatorTier; mainCode?: string }) => call<void>('admin_creator_update', { uuid, patch }),
+    adminRevoke: (uuid: string, revoke: { reason: string; ban: boolean; removeFanCapes: boolean }) =>
+      call<void>('admin_creator_revoke', { uuid, revoke }),
+    adminRestore: (uuid: string) => call<void>('admin_creator_restore', { uuid }),
+    adminRequests: () => checked(z.array(adminCreatorRequestSchema), 'admin_creator_requests'),
+    adminAnswer: (id: string, accept: boolean, reason: string | null = null) => call<void>('admin_creator_answer', { id, accept, reason }),
   },
 
   /** Welt-Hosting (§21): Beitreten/Anfragen und Listen – Verbindungsdaten bleiben im Kern bzw. im Spiel. */

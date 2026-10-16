@@ -311,7 +311,27 @@
       "too_many_devices": "10 devices already get notifications for your account – remove one first.",
       "endpoint_not_allowed": "The address of your push app isn't accepted – choose a public server in the push app.",
       "invalid_keys": "The keys for notifications are invalid – please turn notifications on again.",
-      "device_not_found": "This device isn't registered (anymore)."
+      "device_not_found": "This device isn't registered (anymore).",
+      "creator_code_not_found": "This creator code doesn't exist.",
+      "creator_code_expired": "This creator code has expired or is used up.",
+      "creator_blocked": "You blocked this creator – unblock them first.",
+      "creator_supported": "You're currently supporting this creator – stop supporting first, then block.",
+      "creator_inactive": "Your creator status isn't active right now.",
+      "creator_tier": "This needs a higher creator tier.",
+      "creator_code_limit": "You already have as many extra codes as your tier allows.",
+      "creator_code_taken": "This code already exists – please pick another one.",
+      "invalid_symbol": "The fan symbol doesn't fit: square, 16×16 to 64×64, as PNG.",
+      "creator_symbol_frames": "Animated fan symbols are available from the Partner tier.",
+      "creator_request_open": "You already have an open request of this kind.",
+      "already_creator": "This player is already a creator.",
+      "not_your_pack": "This isn't your modpack.",
+      "creator_helper_limit": "You already have as many helpers as your tier allows.",
+      "creator_helper_exists": "This player is already your helper or invited.",
+      "creator_helper_right": "The creator didn't give you the right to do that.",
+      "creator_self": "That's your own creator code.",
+      "pack_not_found": "This modpack doesn't exist (anymore).",
+      "helper_not_found": "This player isn't a helper (anymore).",
+      "helper_invite_not_found": "This invitation doesn't exist anymore."
     },
     "auth": {
       "accountMismatch": "This sign-in belongs to a different account – please sign in again.",
@@ -628,7 +648,10 @@
       "animated": "Animated PNGs (APNG) aren't supported – upload animations as a strip.",
       "invalidSize": "The cape must be 64×32 pixels (or a multiple up to 1024×512), or 22×17 in cape format (up to 352×272); animated capes have at most 32 frames stacked vertically.",
       "frameTime": "The speed must be between 50 and 1000 ms per frame.",
-      "emptyCape": "The cape is completely transparent."
+      "emptyCape": "The cape is completely transparent.",
+      "symbolTooLarge": "The fan symbol is too large (max. 256 KB).",
+      "symbolSize": "The fan symbol must be square (16×16 to 64×64); animated at most {frames} frames stacked vertically.",
+      "emptySymbol": "The fan symbol is completely transparent."
     },
     "trsValidate": {
       "invalidName": "Please enter a Minecraft name (1–16 characters: A–Z, 0–9, _).",
@@ -948,6 +971,19 @@
       "ffmpegMissing": "FFmpeg has to be downloaded first for videos.",
       "unreadable": "“{name}” can’t be read as a video.",
       "badRange": "Please choose a valid section of the video."
+    },
+    "creator": {
+      "invalidCode": "Creator codes have 5 to 20 characters: letters, digits and dashes (e.g. TRS-PIXEL).",
+      "invalidTier": "Unknown creator tier.",
+      "invalidId": "Invalid entry.",
+      "textLength": "Text: 1 to {max} characters.",
+      "textInvalidChars": "The text contains invalid characters.",
+      "invalidMaxUses": "Maximum number of uses: at least 1.",
+      "expiryPast": "The expiry date must be in the future.",
+      "nothingToChange": "There is nothing to change.",
+      "invalidChannelUrl": "Please enter the link to your channel (https://…).",
+      "invalidFollowers": "Invalid follower count.",
+      "invalidRights": "Please choose at least one right for the helper."
     }
   },
   "browse": {
@@ -3025,7 +3061,8 @@
     "achievements": "Achievements",
     "localServers": "My servers",
     "controls": "Controls",
-    "pc": "PC"
+    "pc": "PC",
+    "creator": "Creator"
   },
   "accountMenu": {
     "menuLabel": "Accounts",
@@ -3084,7 +3121,8 @@
       "myApplications": "applications apply team job position status",
       "achievements": "achievements trophies points rewards badges unlock",
       "docs": "help docs documentation guide wiki faq manual support questions",
-      "bigPicture": "big picture tv controller gamepad steam deck fullscreen couch console"
+      "bigPicture": "big picture tv controller gamepad steam deck fullscreen couch console",
+      "creator": "creator code fans support youtuber streamer fan symbol fan cape"
     },
     "actions": {
       "newInstance": {
@@ -3408,7 +3446,8 @@
       "shares": "To share screenshots as links, the launcher signs in to the TRS server. That only happens once you agree.",
       "achievements": "To show your achievements, the launcher signs in to the TRS server. That only happens once you agree.",
       "cosmetics": "To show TRS head cosmetics, the launcher signs in to the TRS server. That only happens once you agree.",
-      "remote": "To control your PC from this phone, the launcher signs in to the TRS server. That only happens once you agree."
+      "remote": "To control your PC from this phone, the launcher signs in to the TRS server. That only happens once you agree.",
+      "creator": "The creator programme (codes, fan symbols, fan capes) needs the TRS services."
     },
     "account": {
       "title": "No account signed in",
@@ -5473,7 +5512,8 @@
       "jobs": "Positions",
       "website": "On the website",
       "websiteHint": "Opens the website in your browser (sign in with Microsoft).",
-      "blog": "Blog"
+      "blog": "Blog",
+      "creators": "Creators"
     },
     "search": {
       "placeholder": "Search players, UUIDs, report IDs, #sanctions, capes …",
@@ -5874,7 +5914,87 @@
       "applications_decide": "Decide applications",
       "blog_write": "Write blog posts (drafts, images)",
       "blog_publish": "Publish, schedule and unpublish blog posts",
-      "events_manage": "Manage events"
+      "events_manage": "Manage events",
+      "creators_review": "Review creator symbols and fan capes",
+      "creators_manage": "Manage creators"
+    },
+    "creators": {
+      "intro": "Review fan symbols and fan capes, manage creators and answer their requests. Applications are handled on the website.",
+      "tabs": {
+        "queue": "Review",
+        "roster": "Creators",
+        "requests": "Requests"
+      },
+      "queue": {
+        "empty": "Nothing to review.",
+        "symbol": "Fan symbol",
+        "cape": "Fan cape",
+        "symbolInfo": "{size}×{size} px · {frames} frame(s)",
+        "frames": "{n} frame(s)",
+        "approve": "Approve",
+        "reject": "Reject",
+        "approved": "Approved – {name}'s fans see it right away.",
+        "rejected": "Rejected – {name} gets the reason.",
+        "rejectTitle": "Reject submission from {name}",
+        "reason": "Reason (the creator sees it)",
+        "message": "Message (optional)",
+        "reasonMissing": "Please give a reason.",
+        "reasons": {
+          "logo": "Contains someone else's logo or brand",
+          "unreadable": "Not readable in game – please use clearer shapes",
+          "inappropriate": "Inappropriate content",
+          "other": "Other reason"
+        }
+      },
+      "roster": {
+        "player": "Player (name or UUID)",
+        "playerPlaceholder": "e.g. Pixelmaus",
+        "tier": "Tier",
+        "mainCodeOptional": "Main code (optional)",
+        "add": "Add creator",
+        "added": "{name} is now a creator.",
+        "search": "Search creators",
+        "state": "Status",
+        "states": {
+          "all": "All",
+          "active": "Active",
+          "revoked": "Revoked",
+          "banned": "Banned"
+        },
+        "empty": "No creators found.",
+        "creator": "Creator",
+        "fans": "Fans",
+        "mainCode": "Main code",
+        "editCode": "Change main code",
+        "editCodeTitle": "Main code of {name}",
+        "editCodeHint": "Old videos with the previous code stop working – only change it when really needed.",
+        "save": "Save",
+        "tierChanged": "{name} is now {tier}.",
+        "revoke": "Revoke status",
+        "ban": "Ban",
+        "restore": "Restore",
+        "revokeTitle": "Revoke creator status of {name}",
+        "banTitle": "Ban {name} as creator",
+        "reason": "Reason (the creator sees it)",
+        "reasonPlaceholder": "e.g. spammed codes in other chats",
+        "removeCapes": "Also remove fan capes from fans",
+        "revokeText": "Codes, fan symbol and creator badge are switched off. The creator can apply again later.",
+        "banText": "Codes, fan symbol and creator badge are switched off, and no new application is possible.",
+        "revokedToast": "{name}: creator status revoked – codes and fan symbol are off.",
+        "bannedToast": "{name} is banned as creator.",
+        "restoredToast": "{name} is a creator again.",
+        "note": "Revoking switches off codes, fan symbol and badge; banning also blocks new applications. Fans keep fan capes they already unlocked unless you remove them too."
+      },
+      "requests": {
+        "empty": "No requests.",
+        "followers": "{n} followers",
+        "accept": "Accept",
+        "decline": "Decline",
+        "acceptTitle": "Accept request",
+        "declineTitle": "Decline request",
+        "reason": "Answer to the creator (optional)",
+        "upgradeHint": "Accepting raises the creator one tier."
+      }
     }
   },
   "trsChoice": {
@@ -6952,6 +7072,463 @@
       "installed": "{name} switched from {from} to {to}.",
       "none": "There is no version of {name} for this setup yet.",
       "unsupported": "{name} wasn't installed from Modrinth – pick a matching version on the mod page or disable it."
+    }
+  },
+  "creator": {
+    "title": "Creator",
+    "subtitle": "Support your favourite creator with their code – you get their fan symbol and, if they have one, their fan cape.",
+    "refresh": "Refresh",
+    "error": "The creator programme couldn't be loaded.",
+    "copy": "Copy",
+    "copied": "{code} copied",
+    "channel": "{platform} · {n} followers",
+    "views": {
+      "label": "View",
+      "fan": "As fan",
+      "own": "My dashboard"
+    },
+    "milestones": {
+      "bronze": "Bronze",
+      "silver": "Silver",
+      "gold": "Gold",
+      "diamond": "Diamond"
+    },
+    "symbol": {
+      "label": "Fan symbol",
+      "withMilestone": "Fan symbol with {milestone} frame",
+      "title": "Your fan symbol",
+      "approved": "Approved",
+      "pending": "New symbol in review",
+      "rejected": "Rejected",
+      "none": "No symbol yet",
+      "rejectedReason": "Rejected: {reason}",
+      "rejectedNoReason": "Your last symbol was rejected.",
+      "newInReview": "new · in review",
+      "oldUntilReview": "Your fans keep seeing the old symbol until the new one is approved.",
+      "hint": "Your fans wear this symbol in front of their name – above their head and in the tab list.",
+      "uploadTitle": "Upload a new symbol",
+      "formatTitle": "Format",
+      "formatAnimated": "PNG, GIF or APNG · square, 16×16 to 64×64 pixels · animated up to 8 frames · max. 256 KB",
+      "formatStatic": "PNG, GIF or APNG · square, 16×16 to 64×64 pixels · one frame (animated from Partner) · max. 256 KB",
+      "smallTitle": "Readable when small",
+      "smallText": "In game it's as big as a letter. Clear shapes and few colours work best – the preview shows every size.",
+      "reviewTitle": "Reviewed by the team",
+      "reviewText": "No logos or brands of others, nothing offensive. You get a notification when it's approved or rejected – with a reason.",
+      "pick": "Choose image …",
+      "withdraw": "Withdraw",
+      "uploaded": "Uploaded – the team reviews your symbol.",
+      "animatedFromPartner": "Animated symbols are available from the Partner tier.",
+      "dialog": {
+        "title": "New fan symbol",
+        "choose": "Choose image",
+        "other": "Other image",
+        "hintAnimated": "PNG, GIF or APNG. Cropped to a centred square; animations keep up to {n} frames.",
+        "hintStatic": "PNG, GIF or APNG. Cropped to a centred square; animations keep only the first frame.",
+        "size": "Size",
+        "speed": "Speed",
+        "speedValue": "{ms} ms per frame",
+        "sampled": "The animation has {total} frames – {max} evenly spaced ones are kept.",
+        "fileSize": "File: {size}",
+        "empty": "The symbol is completely transparent.",
+        "tooLarge": "The file is larger than 256 KB – choose a smaller size or fewer frames.",
+        "unsupported": "Please choose a PNG, GIF or APNG.",
+        "loadFailed": "The image couldn't be read.",
+        "upload": "Submit for review",
+        "uploading": "Uploading …"
+      }
+    },
+    "preview": {
+      "title": "How it looks in game",
+      "showOthers": "Show other players' fan symbols",
+      "hint": "Your creator's symbol is shown in front of your name – above your head and in the tab list. Only TRS players see it.",
+      "tabList": "Tab list",
+      "creatorBadge": "Creator badge"
+    },
+    "fan": {
+      "redeemTitle": "Redeem a creator code",
+      "codeLabel": "Creator code",
+      "codePlaceholder": "TRS-…",
+      "redeem": "Redeem",
+      "redeeming": "Checking …",
+      "redeemHint": "Codes are in videos, streams and descriptions.",
+      "invalidCode": "Creator codes have 5 to 20 characters: letters, digits and dashes.",
+      "switchIn": "You can only support one creator at a time. You can pick another one in {days} day – fan capes you unlocked stay. | You can only support one creator at a time. You can pick another one in {days} days – fan capes you unlocked stay.",
+      "switchNow": "You can only support one creator at a time. You can pick another one now – fan capes you unlocked stay.",
+      "redeemed": {
+        "now": "You now support {name}.",
+        "nowWithCape": "You now support {name} – fan cape “{cape}” unlocked.",
+        "capeOnly": "Fan cape “{cape}” unlocked. You can support {name} in {days} day. | Fan cape “{cape}” unlocked. You can support {name} in {days} days.",
+        "capeUnlocked": "Fan cape “{cape}” unlocked.",
+        "already": "You already support {name}.",
+        "locked": "You can pick another creator in {days} day. | You can pick another creator in {days} days."
+      },
+      "supportingTitle": "You support",
+      "nobody": "Nobody yet. Redeem a creator code.",
+      "since": "for {days} day | for {days} days",
+      "end": "Stop supporting",
+      "endHint": "Your fan badge disappears, your fan cape stays.",
+      "endTitle": "Stop supporting {name}?",
+      "endText": "Your fan badge with {name}'s symbol disappears and you no longer count as a fan.",
+      "endKeepCape": "You keep the fan cape “{cape}”.",
+      "endSwitchIn": "You can pick another creator in {days} day; {name} again at any time. | You can pick another creator in {days} days; {name} again at any time.",
+      "endSwitchNow": "You can pick another creator right away; {name} again at any time.",
+      "ended": "You no longer support {name}.",
+      "blockTitle": "Blocked creators",
+      "blockLabel": "Code of the creator to block",
+      "blockPlaceholder": "Code, e.g. TRS-…",
+      "block": "Block",
+      "blockHint": "Enter a creator's code to block them. You no longer see badges and fan symbols of blocked creators – above heads, in the tab list and in the launcher. You can't redeem their codes.",
+      "blocked": "Creator blocked.",
+      "unblock": "Unblock",
+      "unblocked": "{name} unblocked.",
+      "noneBlocked": "Nobody blocked.",
+      "capesTitle": "Your fan capes",
+      "capeBy": "by {name}",
+      "capesHint": "They're in your capes and stay when you switch creators.",
+      "openSkins": "Open skins"
+    },
+    "become": {
+      "title": "Become a creator",
+      "text": "You make videos, streams or shorts about Minecraft? Apply – three tiers, depending on your reach.",
+      "apply": "Apply on the website",
+      "view": "View application",
+      "status": {
+        "new": "Application submitted",
+        "review": "Application in review",
+        "interview": "Interview",
+        "accepted": "Accepted",
+        "rejected": "Not accepted",
+        "withdrawn": "Withdrawn"
+      }
+    },
+    "revoked": {
+      "title": "Your creator status was revoked",
+      "bannedTitle": "You are banned as a creator",
+      "reason": "Reason: {reason}",
+      "text": "Codes, fan symbol and badge are switched off. You can apply again later.",
+      "bannedText": "Codes, fan symbol and badge are switched off. A new application isn't possible."
+    },
+    "tiers": {
+      "yours": "· your tier",
+      "starter": {
+        "name": "Starter",
+        "need": "everyone – the team reviews",
+        "perk1": "Creator badge in game and in the launcher",
+        "perk2": "Your own creator code (fans get a fan badge with your symbol, up to 64×64)",
+        "perk3": "Statistics: fans and redemptions",
+        "perk4": "1 extra code (up to 100 redemptions)"
+      },
+      "partner": {
+        "name": "Partner",
+        "need": "from 1,000 followers",
+        "perk1": "Everything from Starter",
+        "perk2": "Your own fan cape (512×256) – fans unlock it with your code",
+        "perk3": "Animated fan symbol (up to 8 frames)",
+        "perk4": "Preview builds of the launcher and TRS Client",
+        "perk5": "5 extra codes (up to 1,000 redemptions each)"
+      },
+      "top": {
+        "name": "Top",
+        "need": "from 10,000 followers or by invitation",
+        "perk1": "Everything from Partner",
+        "perk2": "The animated “Content Team” cape",
+        "perk3": "Fan cape in HD (1024×512) and animated (up to 32 frames)",
+        "perk4": "Unlimited extra codes"
+      }
+    },
+    "dashboard": {
+      "title": "Creator dashboard",
+      "since": "creator since {date}",
+      "yourCode": "Your code",
+      "mainCode": "Main code",
+      "tabsLabel": "Dashboard sections",
+      "tabs": {
+        "stats": "Statistics",
+        "codes": "Codes",
+        "symbol": "Fan symbol",
+        "cape": "Fan cape",
+        "previews": "Preview builds",
+        "packs": "Packs",
+        "helpers": "Helpers",
+        "tier": "Tier & perks"
+      }
+    },
+    "stats": {
+      "activeFans": "Active fans",
+      "redemptions": "Code redemptions in total",
+      "capeHolders": "Fan capes handed out",
+      "capeShare": "{n} % of your fans have it",
+      "fromPartner": "from Partner",
+      "newPlayers": "New launcher players via your code",
+      "newPlayersHint": "started TRS for the first time with your code",
+      "week": "+{n} this week",
+      "milestoneTitle": "Milestones",
+      "nextMilestone": "Next: {name} at {at} active fans (now {n})",
+      "allMilestones": "All milestones reached",
+      "milestoneHint": "Milestones put a coloured frame around the fan symbol of all your fans – it never goes away again.",
+      "chartTitle": "New fans – last 30 days",
+      "noData": "No data yet.",
+      "byCode": "By code",
+      "share": "Share",
+      "privacyTitle": "Privacy",
+      "privacy": "You only see numbers, never the names of your fans. Fans can hide their badge or switch creators at any time."
+    },
+    "codes": {
+      "title": "Your codes",
+      "note": "Your main code always works. Extra codes can be limited – e.g. for a giveaway or a stream. Every code unlocks the fan badge.",
+      "notePartner": "Your main code always works. Extra codes can be limited – e.g. for a giveaway or a stream. Every code unlocks the fan badge and your fan cape.",
+      "extraCount": "Extra codes: {n} / {max}",
+      "new": "New code",
+      "code": "Code",
+      "kind": "Kind",
+      "uses": "Redemptions",
+      "until": "Valid until",
+      "status": "Status",
+      "main": "Main code",
+      "extra": "Extra",
+      "state": {
+        "active": "active",
+        "off": "off",
+        "usedUp": "used up",
+        "expired": "expired"
+      },
+      "turnOff": "Turn off",
+      "turnOn": "Turn on",
+      "footer": "Only the team changes the main code – so old videos keep working. Extra codes: up to {max} redemptions each.",
+      "footerUnlimited": "Only the team changes the main code – so old videos keep working. Extra codes: no upper limit.",
+      "newTitle": "New extra code",
+      "codeLabel": "Code (capital letters, digits, -)",
+      "maxLabel": "Can be redeemed at most (up to {max})",
+      "maxLabelOptional": "Can be redeemed at most (empty = unlimited)",
+      "untilLabel": "Valid until (empty = unlimited)",
+      "invalid": "Codes have 5 to 20 characters: letters, digits and dashes, not starting or ending with a dash.",
+      "maxInvalid": "Please enter a number from 1 to {max}.",
+      "maxRequired": "Please enter how often the code can be redeemed (up to {max}).",
+      "untilInvalid": "The date must be in the future.",
+      "create": "Create",
+      "creating": "Creating …",
+      "created": "{code} created."
+    },
+    "cape": {
+      "title": "Fan cape",
+      "locked": "Your own fan cape is available from the Partner tier. Until then your fans get the fan badge.",
+      "seeTiers": "See tiers & perks",
+      "yours": "Your fan cape",
+      "approved": "Approved · fans get it with your code",
+      "pending": "In review by the team",
+      "none": "No cape yet",
+      "rejectedReason": "Rejected: {reason}",
+      "rejectedNoReason": "Your last cape was rejected.",
+      "newInReview": "new · in review",
+      "name": "Name",
+      "size": "Size",
+      "sizeStandard": "512×256, one frame",
+      "sizeHd": "up to 1024×512, animated up to 32 frames",
+      "holders": "Wearers",
+      "reviewNote": "Changes only go live after a new review. Until then fans see the old cape.",
+      "makeTitle": "Make a new cape",
+      "selfTitle": "Design it yourself",
+      "selfText": "In the cape workshop: import an image, GIF or video and crop it. Then submit it for review.",
+      "selfTextHd": "In the cape workshop: import an image, GIF or video and crop it, in HD and animated. Then submit it for review.",
+      "openWorkshop": "Open workshop",
+      "withdraw": "Withdraw new cape",
+      "teamTitle": "Let the team design it",
+      "teamText": "Describe your wish (colours, motif, logo). The team makes drafts with TRS Studio and you pick one.",
+      "sendWish": "Send wish",
+      "wishOpen": "Wish sent · the team gets in touch in the social chat",
+      "wishTitle": "Let the team design your cape",
+      "wishLabel": "What should be on it? (motif, colours, style)",
+      "wishPlaceholder": "e.g. purple dragon on dark stone, my logo at the bottom, slightly glowing",
+      "wishEmpty": "Please describe your wish.",
+      "wishSent": "Wish sent.",
+      "send": "Send",
+      "rules": "No logos or brands of others without permission. The team reviews every cape before fans see it.",
+      "workshopTitle": "Fan cape workshop",
+      "workshopStandard": "Fan cape (Partner): 512×256 or smaller, one frame. It goes to the team for review; fans keep the old cape until then.",
+      "workshopHd": "Fan cape (Top): up to 1024×512, animated up to 32 frames. It goes to the team for review; fans keep the old cape until then.",
+      "partnerLimit": "As a Partner your fan cape must be 512×256 or smaller and not animated.",
+      "nameRequired": "Please give the fan cape a name.",
+      "submitFan": "Submit as fan cape",
+      "submitted": "Fan cape submitted – the team reviews it."
+    },
+    "previews": {
+      "title": "Preview builds",
+      "locked": "From the Partner tier you can test new versions before everyone else – handy for videos about new features.",
+      "note": "You download preview builds yourself. Your normal launcher stays as it is. Please don't publish anything before the release date unless the team allows it.",
+      "empty": "No preview builds right now.",
+      "launcher": "Launcher",
+      "client": "TRS Client",
+      "download": "Download",
+      "outdated": "outdated",
+      "bugs": "Found a bug? Report it in the preview – it reaches the team directly."
+    },
+    "packs": {
+      "title": "Your modpacks",
+      "note": "List your shared modpacks as creator packs – they appear under Discover → Modpacks with your creator badge and don't expire while listed.",
+      "installs": "{n} installs in total",
+      "myPacks": "My modpacks",
+      "empty": "You haven't shared a modpack yet. Share one from an instance first.",
+      "installCount": "{n} installs",
+      "listed": "listed",
+      "notListed": "not listed",
+      "list": "List",
+      "unlist": "Unlist",
+      "listedToast": "“{name}” is now listed.",
+      "unlistedToast": "“{name}” is no longer listed."
+    },
+    "packsBrowse": {
+      "title": "Packs by creators",
+      "subtitle": "Modpacks from TRS creators",
+      "installs": "{n} installs",
+      "install": "Install",
+      "more": "Show more"
+    },
+    "helpers": {
+      "title": "Helpers",
+      "note": "Give helpers (e.g. your editor or moderator) access to parts of your dashboard – without sharing your account. Only TRS friends can be invited.",
+      "count": "{n} / {max} helpers",
+      "invite": "Invite helper",
+      "empty": "No helpers yet.",
+      "active": "active",
+      "pending": "invited",
+      "rights": {
+        "stats": "See statistics",
+        "codes": "Manage codes",
+        "uploads": "Upload symbol/cape",
+        "packs": "List packs"
+      },
+      "save": "Save",
+      "saved": "Rights of {name} saved.",
+      "remove": "Remove",
+      "removed": "{name} is no longer your helper.",
+      "removeTitle": "Remove {name} as helper?",
+      "removeText": "{name} loses access to your dashboard right away.",
+      "creatorOnly": "Tier, requests, helpers and preview builds always stay with you.",
+      "needRight": "Please choose at least one right.",
+      "inviteTitle": "Invite a helper",
+      "searchFriends": "Search friends",
+      "friends": "Friends",
+      "noFriends": "No friends to invite.",
+      "rightsLabel": "Rights",
+      "pickFriend": "Please choose a friend.",
+      "send": "Send invitation",
+      "invited": "{name} was invited.",
+      "inviteFrom": "{name} wants you as a helper",
+      "inviteRights": "Rights: {rights}",
+      "accept": "Accept",
+      "decline": "Decline",
+      "acceptedToast": "You're now a helper.",
+      "declinedToast": "Invitation declined.",
+      "dashboardOf": "Dashboard of {name}",
+      "youHelp": "You're helping as a helper. Your rights: {rights}",
+      "noRights": "You don't have any rights in this dashboard.",
+      "leave": "Stop helping",
+      "leaveTitle": "Stop helping {name}?",
+      "leaveText": "You lose access to {name}'s dashboard. {name} can invite you again later.",
+      "leftToast": "You no longer help {name}."
+    },
+    "tier": {
+      "yours": "Your tier:",
+      "request": "Request upgrade to {tier}",
+      "pending": "Request for {tier} in review",
+      "highest": "Highest tier",
+      "progress": "To {tier}: {n} / {need} followers (as of the last review)",
+      "perksTitle": "Your perks",
+      "active": "active",
+      "requests": "Your requests",
+      "kind": {
+        "upgrade": "Tier upgrade",
+        "team_cape": "Fan cape by the team"
+      },
+      "status": {
+        "open": "open",
+        "accepted": "accepted",
+        "declined": "declined"
+      },
+      "dialogTitle": "Upgrade to {tier}",
+      "dialogText": "Requirement: {need}. The team checks your channels.",
+      "channelUrl": "Channel link",
+      "followers": "Current followers/subscribers",
+      "note": "Video/stream with TRS (optional)",
+      "urlInvalid": "Please enter the link to your channel (https://…).",
+      "followersInvalid": "Please enter a whole number.",
+      "send": "Request",
+      "sent": "Request sent."
+    },
+    "perks": {
+      "badge": "Creator badge",
+      "badgeText": "In game and in the launcher, coloured by tier.",
+      "code": "Creator code with fan badge",
+      "codeText": "Fans show your symbol in front of their name.",
+      "fanCape": "Your own fan cape",
+      "fanCapeText": "Fans unlock it with your code.",
+      "previews": "Preview builds",
+      "previewsText": "Test new versions before everyone else.",
+      "teamCape": "“Content Team” cape",
+      "teamCapeText": "The animated team cape for yourself.",
+      "hdCape": "HD and animated fan cape",
+      "hdCapeText": "Up to 1024×512 and 32 frames."
+    },
+    "toast": {
+      "open": "Open",
+      "reason": "Reason: {reason}",
+      "fanMilestoneTitle": "{name} reached {milestone}!",
+      "fanMilestoneBody": "Your fan symbol now has a {milestone} frame.",
+      "helperInviteTitle": "{name} invites you as a helper",
+      "helperInviteBody": "Open the creator page to answer.",
+      "helperRemovedTitle": "{name} removed you as a helper",
+      "helperRemovedGeneric": "You were removed as a helper",
+      "helperRemovedBody": "You no longer have access to the dashboard.",
+      "updated": {
+        "symbol_approved": {
+          "title": "Fan symbol approved",
+          "body": "Your fans see your new symbol now."
+        },
+        "symbol_rejected": {
+          "title": "Fan symbol rejected",
+          "body": "Upload a new symbol whenever you like."
+        },
+        "cape_approved": {
+          "title": "Fan cape approved",
+          "body": "Fans get your new fan cape with your code."
+        },
+        "cape_rejected": {
+          "title": "Fan cape rejected",
+          "body": "Submit a new fan cape whenever you like."
+        },
+        "tier_changed": {
+          "title": "New creator tier: {tier}",
+          "body": "Your new perks are active right away."
+        },
+        "revoked": {
+          "title": "Creator status revoked",
+          "body": "Codes, fan symbol and badge are switched off."
+        },
+        "restored": {
+          "title": "Creator status restored",
+          "body": "Your codes work again."
+        },
+        "request_answered": {
+          "title": "Your request was answered",
+          "body": "See Tier & perks for details."
+        },
+        "milestone": {
+          "title": "Milestone reached: {milestone}",
+          "body": "All your fans now get a {milestone} frame."
+        },
+        "became_creator": {
+          "title": "Welcome to the creator programme!",
+          "body": "Your dashboard and your code are ready."
+        },
+        "helper_joined": {
+          "title": "{name} is now your helper",
+          "body": "Manage rights under Helpers."
+        },
+        "helper_left": {
+          "title": "{name} stopped helping",
+          "body": "You can invite a new helper."
+        }
+      }
     }
   }
 }

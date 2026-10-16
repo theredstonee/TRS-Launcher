@@ -24,6 +24,7 @@ const moreAll: MobileNavItem[] = [
   { to: '/skins', label: 'nav.skins', icon: 'skins' },
   { to: '/screenshots', label: 'nav.screenshots', icon: 'screenshots' },
   { to: '/achievements', label: 'nav.achievements', icon: 'trophy' },
+  { to: '/creator', label: 'nav.creator', icon: 'star' },
   { to: '/presets', label: 'nav.presets', icon: 'presets' },
   { to: '/servers', label: 'nav.servers', icon: 'server' },
   { to: '/clips', label: 'nav.clips', icon: 'clips', needs: 'clips' },

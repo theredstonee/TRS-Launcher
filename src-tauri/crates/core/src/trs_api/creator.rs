@@ -895,6 +895,8 @@ fn clean_admin_creator(v: &Value) -> Option<AdminCreator> {
 
 fn clean_admin_request(v: &Value) -> Option<AdminRequest> {
     let r = clean_request(v)?;
+    // Angaben des Antrags stehen in `data` (API §35.6), ältere Antworten hatten sie oben.
+    let d = v.get("data").filter(|d| d.is_object()).unwrap_or(v);
     Some(AdminRequest {
         id: r.id,
         kind: r.kind,
@@ -902,10 +904,10 @@ fn clean_admin_request(v: &Value) -> Option<AdminRequest> {
         created_at: r.created_at,
         reason: r.reason,
         creator: creator_ref(v.get("creator")),
-        channel_url: str_of(v, "channelUrl").and_then(|u| https_url(&u)),
-        followers: opt_u64(v, "followers"),
-        note: str_of(v, "note").map(|n| chat_text(&n, 1000)).filter(|n| !n.trim().is_empty()),
-        text: str_of(v, "text").map(|n| chat_text(&n, 2000)).filter(|n| !n.trim().is_empty()),
+        channel_url: str_of(d, "channelUrl").and_then(|u| https_url(&u)),
+        followers: opt_u64(d, "followers"),
+        note: str_of(d, "note").map(|n| chat_text(&n, 1000)).filter(|n| !n.trim().is_empty()),
+        text: str_of(d, "text").map(|n| chat_text(&n, 2000)).filter(|n| !n.trim().is_empty()),
     })
 }
 

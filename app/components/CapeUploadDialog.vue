@@ -7,7 +7,9 @@ import { reduceTimeline, type CapeDoc, type CapeImportResult } from '~/utils/cap
 // Sprite-Sheet, Video, TRS-Studio) zuschneiden, 2. im Editor bearbeiten (Zeitleiste,
 // Pixel-Werkzeuge, Live-3D-Vorschau), 3. Auflösung wählen und hochladen (bis 1024×512
 // je Frame, bis 32 Frames, bis 20 MB). Am Handy geht es vom Import direkt zum Hochladen.
-const emit = defineEmits<{ close: []; uploaded: [cape: TrsCape] }>()
+// `fanCape`: aus dem Creator-Dashboard – „Hochladen“ reicht den Fan-Umhang ein (§35.3).
+const props = defineProps<{ fanCape?: boolean }>()
+const emit = defineEmits<{ close: []; uploaded: [cape: TrsCape]; fanUploaded: [] }>()
 
 type Step = 'import' | 'edit' | 'upload'
 const step = ref<Step>('import')
@@ -21,7 +23,14 @@ const editorAvailable = computed(() => !mobileUi.value)
 const steps = computed<Step[]>(() => (editorAvailable.value ? ['import', 'edit', 'upload'] : ['import', 'upload']))
 
 const importer = ref<{ finish: () => Promise<void>; ready: boolean } | null>(null)
-const exporter = ref<{ upload: () => Promise<void>; canUpload: boolean; uploading: boolean } | null>(null)
+const exporter = ref<{
+  upload: () => Promise<void>
+  canUpload: boolean
+  uploading: boolean
+  uploadFan: () => Promise<void>
+  canUploadFan: boolean
+  fanMode: 'standard' | 'hd' | null
+} | null>(null)
 
 function imported(result: CapeImportResult) {
   doc.value = result.doc
@@ -46,7 +55,7 @@ const back = computed<Step | null>(() => steps.value[stepIndex.value - 1] ?? nul
 </script>
 
 <template>
-  <BaseDialog :title="t('capes.editor.title')" :huge="step !== 'edit'" :giant="step === 'edit'" @close="emit('close')">
+  <BaseDialog :title="props.fanCape ? t('creator.cape.workshopTitle') : t('capes.editor.title')" :huge="step !== 'edit'" :giant="step === 'edit'" @close="emit('close')">
     <!-- Schritte -->
     <ol class="mb-4 flex flex-wrap items-center gap-1.5 text-xs" :aria-label="t('capes.studio.steps.label')">
       <li v-for="(s, i) in steps" :key="s" class="flex items-center gap-1.5">
@@ -78,8 +87,10 @@ const back = computed<Step | null>(() => steps.value[stepIndex.value - 1] ?? nul
       v-model:name="name"
       :doc="doc"
       :source-frames="sourceFrames"
+      :fan-cape="props.fanCape"
       @reduce="reduce"
       @uploaded="emit('uploaded', $event)"
+      @fan-uploaded="emit('fanUploaded')"
     />
 
     <template #actions>
@@ -89,9 +100,18 @@ const back = computed<Step | null>(() => steps.value[stepIndex.value - 1] ?? nul
         {{ editorAvailable ? t('capes.studio.steps.toEditor') : t('capes.studio.steps.toUpload') }}
       </button>
       <button v-else-if="step === 'edit'" class="btn btn-primary" data-testid="cape-studio-next" @click="go('upload')">{{ t('capes.studio.steps.toUpload') }}</button>
-      <button v-else class="btn btn-primary" :disabled="!exporter?.canUpload" data-testid="cape-editor-upload" @click="exporter?.upload()">
-        {{ exporter?.uploading ? t('capes.editor.uploading') : t('capes.editor.upload') }}
+      <button v-else-if="props.fanCape" class="btn btn-primary" :disabled="!exporter?.canUploadFan" data-testid="cape-editor-upload-fan" @click="exporter?.uploadFan()">
+        {{ exporter?.uploading ? t('capes.editor.uploading') : t('creator.cape.submitFan') }}
       </button>
+      <template v-else>
+        <!-- Creator ab Partner: denselben Umhang auch als Fan-Umhang einreichen. -->
+        <button v-if="exporter?.fanMode" class="btn btn-ghost" :disabled="!exporter?.canUploadFan" data-testid="cape-editor-upload-fan" @click="exporter?.uploadFan()">
+          {{ t('creator.cape.submitFan') }}
+        </button>
+        <button class="btn btn-primary" :disabled="!exporter?.canUpload" data-testid="cape-editor-upload" @click="exporter?.upload()">
+          {{ exporter?.uploading ? t('capes.editor.uploading') : t('capes.editor.upload') }}
+        </button>
+      </template>
     </template>
   </BaseDialog>
 </template>
