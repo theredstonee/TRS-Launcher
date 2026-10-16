@@ -123,7 +123,7 @@ describe('bundled cosmetics', () => {
     }
     expect(list.find((c) => c.id === 'trs_cap')!.unlock).toBe('free')
     // Öffentliche Hüte sind Format v2; Code- und Team-Teile liegen nicht im Repository.
-    expect(list.filter((c) => c.format === 2).map((c) => c.id).sort()).toEqual(['bat_buddy', 'lamp_helmet', 'pumpkin_head', 'top_hat', 'trs_cap', 'witch_hat'])
+    expect(list.filter((c) => c.format === 2).map((c) => c.id).sort()).toEqual(['bat_buddy', 'bat_wings', 'demon_wings', 'ghost_wings', 'lamp_helmet', 'pumpkin_head', 'raven_wings', 'top_hat', 'trs_cap', 'witch_hat'])
     expect(list.filter((c) => c.format !== 2 && c.frames > 1).map((c) => c.id)).toEqual(['redstone_aura'])
     const u = await login(env, 'Steve')
     const cat = cosmeticCatalog(env.ctx, u.user.uuid)

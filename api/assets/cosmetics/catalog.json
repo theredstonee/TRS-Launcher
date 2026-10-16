@@ -106,5 +106,51 @@
     "animated": false,
     "frames": 1,
     "emissive": false
+  },
+  {
+    "id": "bat_wings",
+    "name": "Fledermausflügel",
+    "format": 2,
+    "unlock": {
+      "type": "reward",
+      "reward": "pumpkinhunter2026"
+    },
+    "frames": 1,
+    "glowFrames": 0
+  },
+  {
+    "id": "demon_wings",
+    "name": "Dämonenflügel",
+    "format": 2,
+    "unlock": {
+      "type": "reward",
+      "reward": "pumpkinhunter2026"
+    },
+    "frames": 1,
+    "glowFrames": 12,
+    "glowFrameTimeMs": 110
+  },
+  {
+    "id": "raven_wings",
+    "name": "Rabenflügel",
+    "format": 2,
+    "unlock": {
+      "type": "reward",
+      "reward": "pumpkinhunter2026"
+    },
+    "frames": 1,
+    "glowFrames": 0
+  },
+  {
+    "id": "ghost_wings",
+    "name": "Geisterflügel",
+    "format": 2,
+    "unlock": {
+      "type": "reward",
+      "reward": "pumpkinhunter2026"
+    },
+    "frames": 1,
+    "glowFrames": 12,
+    "glowFrameTimeMs": 260
   }
 ]

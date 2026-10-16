@@ -31,7 +31,7 @@ const ASSETS = join(__dirname, '..', 'assets', 'cosmetics')
 /** Öffentliche Hüte ohne Event (Event aus → nicht in der Website-Liste). */
 const V2_IDS = ['trs_cap', 'lamp_helmet', 'top_hat']
 /** Alle öffentlichen Format-2-Teile, in Katalogreihenfolge. */
-const V2_ALL = [...V2_IDS, 'witch_hat', 'pumpkin_head', 'bat_buddy']
+const V2_ALL = [...V2_IDS, 'witch_hat', 'pumpkin_head', 'bat_buddy', 'bat_wings', 'demon_wings', 'raven_wings', 'ghost_wings']
 const readCatalog = async () => JSON.parse(readFileSync(join(ASSETS, 'catalog.json'), 'utf8'))
 const readAsset = async (name: string) => {
   try {
