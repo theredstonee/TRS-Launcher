@@ -45,6 +45,9 @@ public final class LegacyFans {
 	public static final String MARK = "\u00a7r\u00a7k\u00a7r";
 	/** Platz fürs Symbol: 3 Leerzeichen = 12 px (Symbol 8 px, 1 px davor, 3 px danach). */
 	public static final String SLOT = MARK + "   ";
+	/** Unsichtbare Marke + Platz fürs Profil-Abzeichen (Halloween 2026), steht vor dem Fan-Symbol. */
+	public static final String BADGE_MARK = "\u00a7r\u00a7m\u00a7r";
+	public static final String BADGE_SLOT = BADGE_MARK + "   ";
 	/** Farbcodes der Stern-Stufen: Starter hellblau, Partner violett, Top gold. */
 	private static final String[] STAR = {"\u00a7b", "\u00a7d", "\u00a76"};
 
@@ -75,15 +78,31 @@ public final class LegacyFans {
 		if (f.badge(id, tab)) sb.append(LegacyOnline.BADGE).append("\u00a7r ");
 		CreatorTier tier = f.creatorStar(id, tab);
 		if (tier != null) sb.append(STAR[tier.ordinal()]).append("\u2605\u00a7r ");
+		if (f.eventBadge(id, tab) != null) sb.append(BADGE_SLOT);
 		if (f.fanSymbol(id, tab) != null) sb.append(SLOT);
 		return sb.toString();
 	}
 
 	/** Breite des Texts vor dem Platzhalter in {@code text} (Schrift-Pixel) oder −1 ohne Platzhalter. */
 	static int offset(FontRenderer font, String text) {
+		return offset(font, text, MARK);
+	}
+
+	/** Wie {@link #offset(FontRenderer, String)} für eine bestimmte Marke. */
+	static int offset(FontRenderer font, String text, String mark) {
 		if (text == null) return -1;
-		int i = text.indexOf(MARK);
+		int i = text.indexOf(mark);
 		return i < 0 ? -1 : font.getStringWidth(text.substring(0, i)) + 1;
+	}
+
+	/** Bild {@code k} (0 = Profil-Abzeichen, 1 = Fan-Symbol) eines Spielers oder null. */
+	private static TextureRef image(OnlineFeatures<Object> f, UUID id, boolean tab, int k) {
+		return k == 0 ? f.eventBadge(id, tab) : f.fanSymbol(id, tab);
+	}
+
+	/** Breite in Schrift-Pixeln (Symbol 8, Abzeichen nach Seitenverhältnis). */
+	private static int width(TextureRef tex, int k) {
+		return k == 0 ? dev.theredstonee.trsclient.core.creator.EventBadges.widthFor(tex, 8) : 8;
 	}
 
 	// --- Über dem Kopf ---
@@ -143,10 +162,12 @@ public final class LegacyFans {
 		RenderManager rm = mc.getRenderManager();
 		String text = p.getDisplayName().getFormattedText();
 		FontRenderer font = rm.getFontRenderer();
-		int offset = offset(font, text);
-		if (offset < 0) return;
-		TextureRef tex = f.fanSymbol(p.getUniqueID(), false);
-		if (tex == null || !nameVisible(mc, p, rm)) return;
+		int fanAt = offset(font, text, MARK);
+		int badgeAt = offset(font, text, BADGE_MARK);
+		if (fanAt < 0 && badgeAt < 0) return;
+		TextureRef fanTex = fanAt < 0 ? null : f.fanSymbol(p.getUniqueID(), false);
+		TextureRef badgeTex = badgeAt < 0 ? null : f.eventBadge(p.getUniqueID(), false);
+		if ((fanTex == null && badgeTex == null) || !nameVisible(mc, p, rm)) return;
 		//? if >=1.12 {
 		/*double d0 = p.getDistanceSq(rm.renderViewEntity);
 		*///?} elif >=1.9 {
@@ -156,7 +177,7 @@ public final class LegacyFans {
 		boolean sneak = p.isSneaking();
 		float range = sneak ? 32f : 64f;
 		if (d0 >= range * range) return;
-		float x0 = -font.getStringWidth(text) / 2 + offset;
+		float left = -font.getStringWidth(text) / 2;
 		Scoreboard board = p.getWorldScoreboard();
 		ScoreObjective below = d0 < 100.0 && board != null ? board.getObjectiveInDisplaySlot(2) : null;
 		GlStateManager.pushMatrix();
@@ -181,17 +202,23 @@ public final class LegacyFans {
 		GlStateManager.enableBlend();
 		GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
 		GlStateManager.enableTexture2D();
-		mc.getTextureManager().bindTexture((ResourceLocation) tex.id);
-		if (!sneak) {
-			// Wie die Schrift: erst schwach durch Wände, dann normal.
-			GlStateManager.depthMask(false);
-			GlStateManager.disableDepth();
-			quad(x0, 0, 0x20);
-			GlStateManager.enableDepth();
-			GlStateManager.depthMask(true);
-			quad(x0, 0, 0xFF);
-		} else {
-			quad(x0, 0, 0x20);
+		for (int k = 0; k < 2; k++) {
+			TextureRef tex = k == 0 ? badgeTex : fanTex;
+			if (tex == null) continue;
+			float x0 = left + (k == 0 ? badgeAt : fanAt);
+			int w = width(tex, k);
+			mc.getTextureManager().bindTexture((ResourceLocation) tex.id);
+			if (!sneak) {
+				// Wie die Schrift: erst schwach durch Wände, dann normal.
+				GlStateManager.depthMask(false);
+				GlStateManager.disableDepth();
+				quad(x0, 0, w, 0x20);
+				GlStateManager.enableDepth();
+				GlStateManager.depthMask(true);
+				quad(x0, 0, w, 0xFF);
+			} else {
+				quad(x0, 0, w, 0x20);
+			}
 		}
 		GlStateManager.enableLighting();
 		GlStateManager.disableBlend();
@@ -200,8 +227,8 @@ public final class LegacyFans {
 		worldDraws++;
 	}
 
-	/** 8×8-Quadrat mit der gebundenen Textur bei (x, y), Deckkraft {@code alpha}. */
-	private static void quad(float x, float y, int alpha) {
+	/** {@code w}×8-Rechteck mit der gebundenen Textur bei (x, y), Deckkraft {@code alpha}. */
+	private static void quad(float x, float y, int w, int alpha) {
 		Tessellator tessellator = Tessellator.getInstance();
 		//? if >=1.12 {
 		/*BufferBuilder b = tessellator.getBuffer();
@@ -212,8 +239,8 @@ public final class LegacyFans {
 		b.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
 		b.pos(x, y, 0).tex(0, 0).color(255, 255, 255, alpha).endVertex();
 		b.pos(x, y + 8, 0).tex(0, 1).color(255, 255, 255, alpha).endVertex();
-		b.pos(x + 8, y + 8, 0).tex(1, 1).color(255, 255, 255, alpha).endVertex();
-		b.pos(x + 8, y, 0).tex(1, 0).color(255, 255, 255, alpha).endVertex();
+		b.pos(x + w, y + 8, 0).tex(1, 1).color(255, 255, 255, alpha).endVertex();
+		b.pos(x + w, y, 0).tex(1, 0).color(255, 255, 255, alpha).endVertex();
 		tessellator.draw();
 	}
 
@@ -315,18 +342,21 @@ public final class LegacyFans {
 		for (int i = 0; i < count; i++) {
 			NetworkPlayerInfo info = list.get(i);
 			String name = overlay.getPlayerName(info);
-			int offset = offset(font, name);
-			if (offset < 0) continue;
 			UUID id = info.getGameProfile().getId();
-			TextureRef tex = id == null ? null : f.fanSymbol(id, true);
-			if (tex == null) continue;
+			if (id == null) continue;
 			int column = i / rows;
 			int row = i % rows;
-			int x = left + column * colWidth + column * 5 + (heads ? 9 : 0) + offset;
 			int y = top + row * 9;
-			mc.getTextureManager().bindTexture((ResourceLocation) tex.id);
-			quad(x, y, 0xFF);
-			tabDraws++;
+			for (int k = 0; k < 2; k++) {
+				int offset = offset(font, name, k == 0 ? BADGE_MARK : MARK);
+				if (offset < 0) continue;
+				TextureRef tex = image(f, id, true, k);
+				if (tex == null) continue;
+				int x = left + column * colWidth + column * 5 + (heads ? 9 : 0) + offset;
+				mc.getTextureManager().bindTexture((ResourceLocation) tex.id);
+				quad(x, y, width(tex, k), 0xFF);
+				tabDraws++;
+			}
 		}
 		GlStateManager.disableBlend();
 	}
