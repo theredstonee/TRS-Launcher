@@ -4,6 +4,8 @@ import {
   HALLOWEEN_END_ISO,
   HALLOWEEN_REWARD,
   HUNTER_CAPE,
+  MONDNACHT_CAPE_IDS,
+  MONDNACHT_POOL_ID,
   PUMPKINS,
   PUMPKIN_TOTAL,
   RIDDLES,
@@ -284,6 +286,7 @@ export type TrickResult =
 
 /** Besitzt `uuid` dieses Teil des Topfs wirklich (Zeile, ohne Team-Sonderrecht)? */
 function ownsPoolItem(ctx: AppContext, uuid: string, kind: RewardKind, id: string): boolean {
+  if (kind === 'cape' && id === MONDNACHT_POOL_ID) return ownedMondnacht(ctx, uuid) !== null
   if (kind === 'cape') return one(ctx.db, 'SELECT 1 AS x FROM user_capes WHERE uuid = ? AND cape_id = ?', uuid, id) !== undefined
   if (kind === 'emote') return one(ctx.db, 'SELECT 1 AS x FROM user_cosmetics WHERE uuid = ? AND cosmetic_id = ?', uuid, id) !== undefined
   return ownsSticker(ctx, uuid, id)
@@ -291,6 +294,7 @@ function ownsPoolItem(ctx: AppContext, uuid: string, kind: RewardKind, id: strin
 
 /** Gibt es das Teil (Umhang/Emote eingespielt, Sticker angelegt)? Fehlende werden nie verlost. */
 function poolItemExists(ctx: AppContext, kind: RewardKind, id: string): boolean {
+  if (kind === 'cape' && id === MONDNACHT_POOL_ID) return existingMondnacht(ctx).length > 0
   if (kind === 'cape') return one(ctx.db, 'SELECT 1 AS x FROM capes WHERE id = ? AND retired = 0', id) !== undefined
   if (kind === 'emote') return one(ctx.db, "SELECT 1 AS x FROM cosmetics WHERE id = ? AND slot = 'emote' AND retired = 0", id) !== undefined
   return one(ctx.db, 'SELECT 1 AS x FROM stickers WHERE id = ?', id) !== undefined
@@ -301,10 +305,37 @@ export function unownedPool(ctx: AppContext, uuid: string): { kind: RewardKind, 
   return TRICK_POOL.filter((p) => poolItemExists(ctx, p.kind, p.id) && !ownsPoolItem(ctx, uuid, p.kind, p.id))
 }
 
-function grantPoolItem(ctx: AppContext, uuid: string, kind: RewardKind, id: string): void {
+/** Gibt das Teil und liefert, was es tatsächlich wurde (Mondnacht: die gewürfelte Farbe). */
+function grantPoolItem(ctx: AppContext, uuid: string, kind: RewardKind, id: string, roll: Roll): { kind: RewardKind, id: string } {
+  if (kind === 'cape' && id === MONDNACHT_POOL_ID) {
+    const colours = existingMondnacht(ctx)
+    const colour = colours[roll(colours.length)]!
+    grantCape(ctx, uuid, colour, 'reward')
+    return { kind, id: colour }
+  }
   if (kind === 'cape') grantCape(ctx, uuid, id, 'reward')
   else if (kind === 'emote') grantCosmetic(ctx, uuid, id, 'reward')
   else grantSticker(ctx, uuid, id, 'reward')
+  return { kind, id }
+}
+
+/** Eingespielte (nicht ausgemusterte) Mondnacht-Farben in fester Reihenfolge. */
+function existingMondnacht(ctx: AppContext): string[] {
+  const have = new Set(all<{ id: string }>(
+    ctx.db,
+    `SELECT id FROM capes WHERE retired = 0 AND id IN (${MONDNACHT_CAPE_IDS.map(() => '?').join(', ')})`,
+    ...MONDNACHT_CAPE_IDS,
+  ).map((r) => r.id))
+  return MONDNACHT_CAPE_IDS.filter((id) => have.has(id))
+}
+
+/** Die Mondnacht-Farbe, die `uuid` besitzt (höchstens eine), sonst `null`. */
+export function ownedMondnacht(ctx: AppContext, uuid: string): string | null {
+  return one<{ cape_id: string }>(
+    ctx.db,
+    `SELECT cape_id FROM user_capes WHERE uuid = ? AND cape_id IN (${MONDNACHT_CAPE_IDS.map(() => '?').join(', ')}) LIMIT 1`,
+    uuid, ...MONDNACHT_CAPE_IDS,
+  )?.cape_id ?? null
 }
 
 /** Zufall (krypto-sicher), in Tests ersetzbar: liefert eine ganze Zahl in [0, n). */
@@ -313,7 +344,8 @@ const cryptoRoll: Roll = (n) => randomInt(n)
 
 /**
  * Einmal anklopfen (`POST /v1/me/halloween/trick`): ein Wurf je Berliner Kalendertag (`409 trick_used` + `next`).
- * 1 von 4 = Saures; sonst ein zufälliges noch nicht besessenes Teil des Topfs (16). Alles schon da → Saures.
+ * 1 von 4 = Saures; sonst ein zufälliges noch nicht besessenes Teil des Topfs (11; der Mondnacht-Umhang zählt als eines,
+ * die Farbe wird dann gewürfelt, und wer schon eine Farbe hat, bekommt keine weitere). Alles schon da → Saures.
  */
 export function trickOrTreat(ctx: AppContext, uuid: string, roll: Roll = cryptoRoll): TrickResult {
   assertActive(ctx, uuid)
@@ -325,13 +357,13 @@ export function trickOrTreat(ctx: AppContext, uuid: string, roll: Roll = cryptoR
     if (one(ctx.db, 'SELECT 1 AS x FROM halloween_tricks WHERE uuid = ? AND day = ?', uuid, day) !== undefined) return undefined
     const pool = unownedPool(ctx, uuid)
     const sour = roll(SOUR_ONE_IN) === 0 || pool.length === 0
-    const won = sour ? null : pool[roll(pool.length)]!
+    const item = sour ? null : pool[roll(pool.length)]!
+    const won = item ? grantPoolItem(ctx, uuid, item.kind, item.id, roll) : null
     run(
       ctx.db,
       'INSERT INTO halloween_tricks (uuid, day, result, reward_kind, reward_id, rolled_at) VALUES (?, ?, ?, ?, ?, ?)',
       uuid, day, won ? 'sweet' : 'sour', won?.kind ?? null, won?.id ?? null, t,
     )
-    if (won) grantPoolItem(ctx, uuid, won.kind, won.id)
     return won
   })
   if (pick === undefined) throw new ApiError(409, 'trick_used', 'You already knocked today – come back tomorrow', { next })

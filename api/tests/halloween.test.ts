@@ -1,4 +1,8 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
+import { PNG } from 'pngjs'
+import { loadBuiltins } from '../server/lib/builtin'
 import { describe, expect, it } from 'vitest'
 import { HALLOWEEN_CAPES, HUNTER_CAPE, PUMPKINS, STICKERS, TRICK_POOL } from '../shared/halloween'
 import { catalog, claimCape, grantCape, seedBuiltins, type BuiltinCape } from '../server/lib/capes'
@@ -216,21 +220,26 @@ describe('trick or treat', () => {
 
     env.clock.t = Date.UTC(2026, 9, 20, 22, 0, 30)
     expect(halloweenView(env.ctx, p.user.uuid).trick.usedToday).toBe(false)
-    // roll(4) = 1 → Süßes, roll(n) = 1 → zweites nicht besessenes Teil.
-    const r2 = trickOrTreat(env.ctx, p.user.uuid, () => 1)
+    // Würfe der Reihe nach: Saures? 1 (nein) → Topf-Teil 0 (Mondnacht-Umhang) → Farbe 1 (Mondsilber).
+    const seq = [1, 0, 1]
+    const r2 = trickOrTreat(env.ctx, p.user.uuid, () => seq.shift()!)
     expect(r2.result).toBe('sweet')
     if (r2.result !== 'sweet') throw new Error('expected sweet')
     expect(r2.reward).toEqual({ kind: 'cape', id: 'halloween_moon_silver', name: HALLOWEEN_CAPES[1].name })
     expect(one(env.ctx.db, "SELECT source FROM user_capes WHERE uuid = ? AND cape_id = 'halloween_moon_silver'", p.user.uuid)).toEqual({ source: 'reward' })
     expect(halloweenView(env.ctx, p.user.uuid).trick).toMatchObject({ usedToday: true, result: 'sweet', reward: { kind: 'cape', id: 'halloween_moon_silver' } })
+    // Mit einer Farbe ist der Mondnacht-Umhang aus dem Topf.
+    expect(unownedPool(env.ctx, p.user.uuid).map((x) => x.id)).not.toContain('mondnacht')
+    expect(unownedPool(env.ctx, p.user.uuid)).toHaveLength(10)
   })
 
   it('is sour when all 16 items are owned, never gives an owned item, and needs the event', async () => {
     const env = eventEnv()
     const p = await login(env, 'Collector')
     const u = p.user.uuid
-    expect(unownedPool(env.ctx, u)).toHaveLength(TRICK_POOL.length)
-    for (const c of HALLOWEEN_CAPES) grantCape(env.ctx, u, c.id, 'reward')
+    expect(TRICK_POOL).toHaveLength(11)
+    expect(unownedPool(env.ctx, u)).toHaveLength(11)
+    grantCape(env.ctx, u, 'halloween_poison_green', 'reward')
     for (const e of ['count_bow', 'ghost_float', 'zombie_walk']) grantCosmetic(env.ctx, u, e, 'reward')
     for (const s of STICKERS) grantSticker(env.ctx, u, s.id, 'reward')
     expect(unownedPool(env.ctx, u)).toEqual([{ kind: 'emote', id: 'moon_howl', name: expect.anything() }])
@@ -257,6 +266,25 @@ describe('trick or treat', () => {
     }
     expect(sour).toBeGreaterThan(N * 0.12)
     expect(sour).toBeLessThan(N * 0.4)
+  })
+})
+
+describe('Mondnacht: one colour per player', () => {
+  it('refuses a second colour on every grant path, the same colour stays idempotent', async () => {
+    const env = eventEnv()
+    const p = await login(env, 'OneCape')
+    expect(grantCape(env.ctx, p.user.uuid, 'halloween_blood_moon', 'reward')).toBe(true)
+    expect(grantCape(env.ctx, p.user.uuid, 'halloween_blood_moon', 'admin')).toBe(false)
+    for (const src of ['reward', 'admin', 'code'] as const) {
+      expect(code(() => grantCape(env.ctx, p.user.uuid, 'halloween_ghost_white', src))).toBe('mondnacht_owned')
+    }
+    // Der Kürbisjäger-Umhang ist kein Mondnacht-Umhang.
+    expect(grantCape(env.ctx, p.user.uuid, 'halloween_hunter_2026', 'reward')).toBe(true)
+    // Würfeln gibt nie eine zweite Farbe: Topf-Teil 0 ist jetzt ein Emote.
+    const seq = [1, 0, 0]
+    const r = trickOrTreat(env.ctx, p.user.uuid, () => seq.shift() ?? 0)
+    expect(r).toMatchObject({ result: 'sweet', reward: { kind: 'emote', id: 'count_bow' } })
+    expect(all(env.ctx.db, "SELECT cape_id FROM user_capes WHERE uuid = ? AND cape_id LIKE 'halloween_%' AND cape_id <> 'halloween_hunter_2026'", p.user.uuid)).toHaveLength(1)
   })
 })
 
@@ -348,6 +376,32 @@ describe('lookup: badges and fx', () => {
     expect(ok.body).toEqual({ effects: { hits: false, trail: false } })
     const view = await callRoute(env, halloweenRoute, { url: '/v1/me/halloween', headers: auth(p.token) })
     expect(view.body).toMatchObject({ active: true, endsAt: '2026-11-02T23:00:00.000Z', effects: { hits: false, trail: false }, badges: ['halloween2026'] })
+  })
+})
+
+describe('bundled halloween assets', () => {
+  const ASSETS = join(__dirname, '..', 'assets')
+  it('catalog has the 7 reward capes (HD, animated) and they seed', async () => {
+    const list = await loadBuiltins(
+      async () => JSON.parse(readFileSync(join(ASSETS, 'capes', 'catalog.json'), 'utf8')),
+      async (n) => readFileSync(join(ASSETS, 'capes', n)),
+    )
+    const ours = list.filter((c) => c.reward === 'halloween2026')
+    expect(ours.map((c) => c.id).sort()).toEqual([...HALLOWEEN_CAPES.map((c) => c.id), HUNTER_CAPE.id].sort())
+    for (const c of ours) expect(c).toMatchObject({ unlock: 'admin', scale: 8, frames: 24, frameTimeMs: 250 })
+    const env = makeEnv()
+    seedBuiltins(env.ctx, list)
+    expect(one(env.ctx.db, "SELECT reward, unlock FROM capes WHERE id = 'halloween_blood_moon'")).toEqual({ reward: 'halloween2026', unlock: 'admin' })
+  })
+  it('sticker and badge PNGs are the sprites ×8', () => {
+    for (const s of STICKERS) {
+      const p = PNG.sync.read(readFileSync(join(ASSETS, 'halloween', 'stickers', `${s.id}.png`)))
+      expect([p.width, p.height]).toEqual([96, 96])
+    }
+    const mb = PNG.sync.read(readFileSync(join(ASSETS, 'halloween', 'badges', 'halloween2026.png')))
+    expect([mb.width, mb.height]).toEqual([72, 64])
+    const pk = PNG.sync.read(readFileSync(join(ASSETS, 'halloween', 'badges', 'pumpkinhunter2026.png')))
+    expect([pk.width, pk.height]).toEqual([64, 64])
   })
 })
 

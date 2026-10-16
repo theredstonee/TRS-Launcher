@@ -154,9 +154,22 @@ export const HALLOWEEN_EMOTES = [
 
 export type RewardKind = 'cape' | 'emote' | 'sticker'
 
-/** Topf für „Süßes oder Saures“ (16 Teile). */
+/** IDs der sechs Mondnacht-Farben. Jeder Spieler darf höchstens EINE davon besitzen. */
+export const MONDNACHT_CAPE_IDS: readonly string[] = HALLOWEEN_CAPES.map((c) => c.id)
+export function isMondnachtCape(id: string): boolean {
+  return MONDNACHT_CAPE_IDS.includes(id)
+}
+/** Topf-Eintrag „Mondnacht-Umhang“: zählt als EIN Teil, die Farbe würfelt der Server beim Gewinn. */
+export const MONDNACHT_POOL_ID = 'mondnacht'
+export const MONDNACHT_NAME: Lang3 = {
+  de: 'Mondnacht-Umhang – zufällige Farbe, jeder nur einen',
+  en: 'Moon Night cape – random colour, only one per player',
+  es: 'Capa Noche de luna – color aleatorio, solo una por jugador',
+}
+
+/** Topf für „Süßes oder Saures“ (11 Teile: 1 Mondnacht-Umhang + 4 Emotes + 6 Sticker). */
 export const TRICK_POOL: readonly { kind: RewardKind, id: string, name: Lang3 }[] = [
-  ...HALLOWEEN_CAPES.map((c) => ({ kind: 'cape' as const, id: c.id, name: c.name })),
+  { kind: 'cape', id: MONDNACHT_POOL_ID, name: MONDNACHT_NAME },
   ...HALLOWEEN_EMOTES.map((e) => ({ kind: 'emote' as const, id: e.id, name: e.name })),
   ...STICKERS.map((s) => ({ kind: 'sticker' as const, id: s.id, name: s.name })),
 ]
@@ -170,5 +183,9 @@ export const REWARD_EVENTS: Record<string, string> = { [HALLOWEEN_REWARD]: HALLO
 /** Name eines Belohnungs-Teils (für Antworten), sonst `null`. */
 export function rewardName(kind: RewardKind, id: string): Lang3 | null {
   if (kind === 'cape' && id === HUNTER_CAPE.id) return HUNTER_CAPE.name
+  if (kind === 'cape') {
+    const c = HALLOWEEN_CAPES.find((x) => x.id === id)
+    if (c) return c.name
+  }
   return TRICK_POOL.find((p) => p.kind === kind && p.id === id)?.name ?? null
 }

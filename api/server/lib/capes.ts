@@ -4,7 +4,7 @@ import type { AppContext } from './context'
 import { all, one, run, tx } from './db'
 import { badRequest, conflict, forbidden, notFound } from './errors'
 import { newUploadCapeId, sha256Hex } from './ids'
-import { REWARD_EVENTS } from '../../shared/halloween'
+import { MONDNACHT_CAPE_IDS, REWARD_EVENTS, isMondnachtCape } from '../../shared/halloween'
 import { activeEventsFor, eventActiveFor } from './liveevents'
 import { holdsCape, notifyShareRemoved, shareHolders, shareRole, visibleHolderCount } from './capeshares'
 import { emitCape } from './playerevents'
@@ -385,6 +385,15 @@ export function readTexture(ctx: AppContext, capeId: string, viewer: { uuid: str
 // ---------------------------------------------------------------- Zuteilung (Admin, Codes)
 
 export function grantCape(ctx: AppContext, uuid: string, capeId: string, source: 'code' | 'admin' | 'event' | 'creator' | 'reward'): boolean {
+  // Mondnacht (§36): höchstens EINE der sechs Farben je Spieler – gilt für jeden Weg (Belohnung, Team, Code).
+  if (isMondnachtCape(capeId)) {
+    const other = one<{ cape_id: string }>(
+      ctx.db,
+      `SELECT cape_id FROM user_capes WHERE uuid = ? AND cape_id IN (${MONDNACHT_CAPE_IDS.map(() => '?').join(', ')}) LIMIT 1`,
+      uuid, ...MONDNACHT_CAPE_IDS,
+    )
+    if (other && other.cape_id !== capeId) throw conflict('mondnacht_owned', 'This player already owns a Moon Night cape (only one colour per player)')
+  }
   return (
     run(
       ctx.db,
