@@ -28,7 +28,14 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.22.0 – 2026-10-16 – Spotlight | Rampenlicht
+<!-- banner: accent=#a66bff motif=/news/0.22.0/banner.png -->
+<!-- shots:
+/news/0.22.0/creator-fan.png | Redeem a creator code and see your fan symbol as it looks in game | Creator-Code einlösen und dein Fan-Symbol so sehen wie im Spiel
+/news/0.22.0/creator-dashboard.png | The creator dashboard with statistics, codes, fan symbol and helpers | Das Creator-Dashboard mit Statistik, Codes, Fan-Symbol und Helfern
+/news/0.22.0/fan-symbol-ingame.png | Creator star and fan symbol in front of the name in game | Creator-Stern und Fan-Symbol vor dem Namen im Spiel
+/news/0.22.0/freecam.png | Freecam with Fair Play: through glass, but not through solid blocks | Freecam mit Fair Play: durch Glas, aber nicht durch massive Blöcke
+-->
 
 ### English
 - **Creator programme.** The new **Creator** page lets you redeem a creator code to support your favourite YouTuber or streamer. You support one creator at a time (switching to another one is possible every 30 days), can stop supporting at any time, and keep every fan cape you unlocked. Creators you don't want to see can be blocked by their code.
@@ -39,6 +46,7 @@ How to write an entry:
 - **Milestones.** At 100, 500, 1,000 and 5,000 active fans a creator reaches Bronze, Silver, Gold and Diamond – all fans then get a coloured frame around the fan symbol and a notification.
 - **TRS Client: fan symbols and creator stars in game.** Fans show their creator's symbol in front of their name above the head and in the tab list, creators get a coloured star. Both can be turned off under TRS Online Features.
 - **TRS Client: camera paths.** The new module "Camera Paths" lets you set keyframes at your camera and play smooth cinematic flights (curve or straight, duration per segment or in total). The HUD hides while playing, the TRS Launcher can record the flight automatically, and paths are saved per world and server.
+- **TRS Client: freecam.** Camera Paths now has a freecam: fly the camera freely (WASD, space, sneak, scroll wheel for speed) while your character stays where it is, and set keyframes from there. Fair Play (on by default) stops the camera at solid blocks – it only passes see-through blocks and passages like glass, doors, leaves and water. Servers can turn the freecam off or force Fair Play.
 
 ### Deutsch
 - **Creator-Programm.** Auf der neuen Seite **Creator** löst du den Creator-Code deines Lieblings-YouTubers oder -Streamers ein und unterstützt ihn damit. Du unterstützt immer einen Creator (wechseln geht alle 30 Tage), kannst jederzeit aufhören und behältst alle freigeschalteten Fan-Umhänge. Creator, die du nicht sehen willst, blockierst du per Code.
@@ -49,6 +57,7 @@ How to write an entry:
 - **Meilensteine.** Bei 100, 500, 1.000 und 5.000 aktiven Fans erreicht ein Creator Bronze, Silber, Gold und Diamant – alle Fans bekommen dann einen farbigen Rahmen um das Fan-Symbol und eine Benachrichtigung.
 - **TRS Client: Fan-Symbole und Creator-Sterne im Spiel.** Fans zeigen das Symbol ihres Creators vor ihrem Namen über dem Kopf und in der Tab-Liste, Creator bekommen einen farbigen Stern. Beides lässt sich unter TRS-Online-Funktionen abschalten.
 - **TRS Client: Kamera-Fahrten.** Mit dem neuen Modul „Kamera-Fahrten“ setzt du Punkte an deiner Kamera und spielst weiche Kamerafahrten ab (Kurve oder gerade, Dauer je Abschnitt oder gesamt). Das HUD verschwindet dabei, der TRS Launcher kann die Fahrt automatisch aufnehmen, und Fahrten werden je Welt und Server gespeichert.
+- **TRS Client: Freecam.** Die Kamera-Fahrten haben jetzt eine Freecam: Die Kamera fliegt frei (WASD, Leertaste, Schleichen, Mausrad für das Tempo), während deine Figur stehen bleibt, und von dort setzt du Punkte für Fahrten. Fair Play (ab Werk an) hält die Kamera an massiven Blöcken an – sie kommt nur durch Durchsichtiges und Durchgänge wie Glas, Türen, Laub und Wasser. Server können die Freecam abschalten oder Fair Play erzwingen.
 
 ## 0.21.1 – 2026-10-13 – Cape Workshop Fix | Umhang-Werkstatt – Fix
 <!-- banner: accent=#ff5a3c motif=/news/0.21.0/banner.png -->
