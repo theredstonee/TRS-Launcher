@@ -36,6 +36,8 @@ public final class OnlineFeatures<T> {
 	private final dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2Renderer v2Renderer =
 			new dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2Renderer();
 	private final dev.theredstonee.trsclient.core.emote.EmoteController emotes;
+	/** Fan-Symbole vor Namen (Creator-Programm, nur Render-Thread). */
+	private final dev.theredstonee.trsclient.core.creator.FanSymbols<T> fanSymbols;
 	private volatile Thread gameThread;
 	/** Wiederverwendet: Umhang-Einstellungen je Tick (keine Allokation). */
 	private final CapeSettings capeSettings = new CapeSettings();
@@ -55,6 +57,7 @@ public final class OnlineFeatures<T> {
 		this.textures = new CapeTextures<>(backend, online::loadCape);
 		this.cosmetics = new dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticAssets<>(backend, online::loadCosmetic);
 		this.emotes = new dev.theredstonee.trsclient.core.emote.EmoteController(modules, online);
+		this.fanSymbols = new dev.theredstonee.trsclient.core.creator.FanSymbols<>(backend, online::loadSymbol);
 		this.localSkin = localSkin;
 	}
 
@@ -145,9 +148,11 @@ public final class OnlineFeatures<T> {
 		long now = System.currentTimeMillis();
 		// Nichts hiervon darf je das Spiel abstürzen lassen.
 		try {
-			online.wantBadges(modules.badgeTab.get() || modules.badgeNametag.get());
+			online.wantBadges(modules.badgeTab.get() || modules.badgeNametag.get() || modules.fanSymbolTab.get()
+					|| modules.fanSymbolNametag.get());
 			online.tick(now, visible, modules.trsOnline.isEnabled());
 			textures.cleanup(now);
+			fanSymbols.cleanup(now);
 			cosmetics.cleanup(now);
 			if (sync != null) sync.tick(now);
 			if (notesSync != null) notesSync.tick(now);
@@ -293,6 +298,32 @@ public final class OnlineFeatures<T> {
 		if (!modules.trsOnline.isEnabled()) return false;
 		if (tab ? !modules.badgeTab.get() : !modules.badgeNametag.get()) return false;
 		return online.info(uuid).badge;
+	}
+
+	/**
+	 * Fan-Symbol vor dem Namen (aktuelles Bild, Meilenstein-Rahmen eingezeichnet) oder null: kein Fan, Einstellung aus,
+	 * noch nicht geladen. {@code tab}: Tabliste, sonst Namensschild. Nur im Spiel-/Render-Thread wirksam.
+	 */
+	public TextureRef fanSymbol(UUID uuid, boolean tab) {
+		if (Thread.currentThread() != gameThread) return null;
+		if (!modules.trsOnline.isEnabled() || !(tab ? modules.fanSymbolTab.get() : modules.fanSymbolNametag.get())) return null;
+		FanInfo fan = online.info(uuid).fan;
+		if (fan == null) return null;
+		try {
+			return fanSymbols.texture(fan, System.currentTimeMillis());
+		} catch (RuntimeException e) {
+			online.reportError(e);
+			return null;
+		}
+	}
+
+	/**
+	 * Creator-Stern vor dem Namen (Stufe = Farbe) oder null. Hängt an denselben Schaltern wie die Fan-Symbole
+	 * ({@code tab}: Tabliste, sonst Namensschild).
+	 */
+	public dev.theredstonee.trsclient.core.creator.CreatorTier creatorStar(UUID uuid, boolean tab) {
+		if (!modules.trsOnline.isEnabled() || !(tab ? modules.fanSymbolTab.get() : modules.fanSymbolNametag.get())) return null;
+		return online.info(uuid).creator;
 	}
 
 	/** Umhang-Simulation einer Entity (null = starr/Vanilla zeichnen). */

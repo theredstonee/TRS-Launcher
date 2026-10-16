@@ -4,7 +4,8 @@ import com.google.gson.Gson;
 
 /**
  * Ein Ereignis aus {@code GET /v1/events/players} (API.md §13): {@code hello}, {@code emote}, {@code skin},
- * {@code cape}, {@code cosmetics}, {@code badge}. Nur die Felder, die der Mod braucht; alles wird streng geprüft.
+ * {@code cape}, {@code cosmetics}, {@code badge}, {@code fan} und {@code fan_creator} (§35.5; {@link #uuid} = der
+ * Creator). Nur die Felder, die der Mod braucht; alles wird streng geprüft.
  */
 public final class PlayerEvent {
 	private static final Gson GSON = new Gson();
@@ -37,6 +38,8 @@ public final class PlayerEvent {
 		String emote;
 		Double durationMs;
 		Boolean badge;
+		/** {@code fan_creator}: UUID des Creators, dessen Symbol sich geändert hat. */
+		String creator;
 	}
 
 	/**
@@ -57,6 +60,10 @@ public final class PlayerEvent {
 		if (type == null) return null;
 		if (type.equals("hello") || type.equals("ping")) return new PlayerEvent(type, null, null, 0);
 		if (d == null) return null;
+		if (type.equals("fan_creator")) {
+			String creator = Uuids.normalize(d.creator != null ? d.creator : d.uuid);
+			return creator == null ? null : new PlayerEvent(type, creator, null, 0);
+		}
 		String uuid = Uuids.normalize(d.uuid);
 		if (uuid == null) return null;
 		switch (type) {
@@ -71,6 +78,7 @@ public final class PlayerEvent {
 			case "skin":
 			case "cape":
 			case "cosmetics":
+			case "fan":
 				return new PlayerEvent(type, uuid, null, 0);
 			case "badge":
 				if (d.badge == null) return null;
