@@ -118,7 +118,7 @@ public final class HalloweenPage {
 		List<String> riddle = new ArrayList<String>();
 		String hint = service.nextHint();
 		boolean all = found >= service.total();
-		String text = all ? I18n.tr("halloween.page.huntDone") : (hint != null ? "„" + hint + "“" : I18n.tr("halloween.page.huntLoading"));
+		String text = all ? I18n.tr("halloween.page.huntDone") : (hint != null ? I18n.tr("halloween.page.riddle", hint) : I18n.tr("halloween.page.huntLoading"));
 		riddle.addAll(Paint.wrap(c, text, w - 16));
 		int slots = Pumpkins.TOTAL;
 		int slotW = Math.max(14, Math.min(20, (w - 16) / slots));

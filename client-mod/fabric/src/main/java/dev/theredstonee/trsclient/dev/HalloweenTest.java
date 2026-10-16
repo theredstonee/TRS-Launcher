@@ -188,19 +188,6 @@ public final class HalloweenTest {
 				shot(mc, "wings-sneak");
 				dev.theredstonee.trsclient.core.cosmetic.v2.WingState.forced = -1;
 				Mc.setCameraMode(0);
-				//? if >=1.15 {
-				mc.options.keyPlayerList.setDown(true);
-				//?} else
-				/*((dev.theredstonee.trsclient.mixin.KeyMappingAccessor) mc.options.keyPlayerList).trsclient$setDown(true);*/
-				phase++;
-				wait = 10;
-				return;
-			case 103:
-				shot(mc, "tablist");
-				//? if >=1.15 {
-				mc.options.keyPlayerList.setDown(false);
-				//?} else
-				/*((dev.theredstonee.trsclient.mixin.KeyMappingAccessor) mc.options.keyPlayerList).trsclient$setDown(false);*/
 				phase = 11;
 				wait = 10;
 				return;

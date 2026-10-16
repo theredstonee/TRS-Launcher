@@ -223,13 +223,6 @@ public final class HalloweenTest {
 				shot(mc, "wings-sneak");
 				dev.theredstonee.trsclient.core.cosmetic.v2.WingState.forced = -1;
 				mc.gameSettings.thirdPersonView = 0;
-				net.minecraft.client.settings.KeyBinding.setKeyBindState(mc.gameSettings.keyBindPlayerList.getKeyCode(), true);
-				phase++;
-				wait = 10;
-				return;
-			case 103:
-				shot(mc, "tablist");
-				net.minecraft.client.settings.KeyBinding.setKeyBindState(mc.gameSettings.keyBindPlayerList.getKeyCode(), false);
 				phase = 12;
 				wait = 10;
 				return;

@@ -20,6 +20,7 @@ public final class HalloweenToast {
 	static final long IN_MS = 220L;
 	static final long OUT_MS = 300L;
 	static final int WIDTH = 190;
+	static final int MAX_WIDTH = 240;
 	static final int HEIGHT = 34;
 
 	private static final class Toast {
@@ -81,16 +82,21 @@ public final class HalloweenToast {
 			float out = age > SHOW_MS ? 1f - Math.min(1f, (age - SHOW_MS) / (float) OUT_MS) : 1f;
 			float vis = Math.min(in, out);
 			int w = Math.min(Math.max(WIDTH, Math.max(c.textWidth(t.title), c.textWidth(t.text == null ? "" : t.text)) + 36),
-					Math.max(120, width - 12));
+					Math.min(MAX_WIDTH, Math.max(120, width - 12)));
+			java.util.List<String> lines = t.text == null ? java.util.Collections.<String>emptyList()
+					: dev.theredstonee.trsclient.core.ui.Paint.wrap(c, t.text, w - 32);
+			int h = lines.size() > 1 ? HEIGHT + 10 : HEIGHT;
 			int x = width - w - 6 + Math.round((1 - vis) * (w + 10));
-			panel(c, x, y, w, HEIGHT, vis);
+			panel(c, x, y, w, h, vis);
 			Sprites.Sprite s = Sprites.get(t.sprite);
-			if (s != null) Sprites.draw(c, s, x + 7, y + (HEIGHT - s.h) / 2, 1, vis);
+			if (s != null) Sprites.draw(c, s, x + 7, y + (h - s.h) / 2, 1, vis);
 			int tx = x + 26;
 			int tw = w - 32;
 			c.text(c.clip(t.title, tw), tx, y + 6, ColorMath.fade(0xFFF3F5FB, Math.max(0.05f, vis)), false);
-			if (t.text != null) c.text(c.clip(t.text, tw), tx, y + 19, ColorMath.fade(0xFF9A94B4, Math.max(0.05f, vis)), false);
-			y += HEIGHT + 4;
+			for (int i = 0; i < lines.size() && i < 2; i++) {
+				c.text(c.clip(lines.get(i), tw), tx, y + 19 + i * 10, ColorMath.fade(0xFF9A94B4, Math.max(0.05f, vis)), false);
+			}
+			y += h + 4;
 		}
 		c.pop();
 	}
