@@ -65,21 +65,24 @@ fn invalid_code() -> Error {
     ))
 }
 
-/// Creator-Code normalisieren: getrimmt, groß, `^[A-Z0-9][A-Z0-9-]{3,18}[A-Z0-9]$`.
+/// Creator-Code normalisieren: getrimmt, groß, `^[A-Z0-9][A-Z0-9-]{3,18}[A-Z0-9]$`, kein Präfix nötig.
+/// 20 Zeichen ohne Bindestrich sind ein Umhang-Code (§5.9) und deshalb nie ein Creator-Code.
 pub fn creator_code(input: &str) -> Option<String> {
     let s = input.trim().to_ascii_uppercase();
     let b = s.as_bytes();
     let inner = |c: &u8| c.is_ascii_uppercase() || c.is_ascii_digit();
-    ((5..=20).contains(&b.len())
+    let cape_like = b.len() == 20 && !b.contains(&b'-');
+    (!cape_like
+        && (5..=20).contains(&b.len())
         && inner(&b[0])
         && inner(&b[b.len() - 1])
         && b.iter().all(|c| inner(c) || *c == b'-'))
     .then_some(s)
 }
 
-/// Gehört die Eingabe ins Creator-Einlösen (Muster + Bindestrich, §35.1)? Sonst ist es ein Umhang-Code (§5.9).
+/// Gehört die Eingabe ins Creator-Einlösen (§35.1)? Sonst ist es ein Umhang-Code (§5.9).
 pub fn looks_like_creator_code(input: &str) -> bool {
-    creator_code(input).is_some_and(|c| c.contains('-'))
+    creator_code(input).is_some()
 }
 
 fn code_arg(input: &str) -> Result<String> {
@@ -1609,7 +1612,8 @@ mod tests {
         assert!(creator_code("-PIXEL").is_none() && creator_code("PIXEL-").is_none());
         assert!(creator_code("PIX EL").is_none() && creator_code("PIXÄL").is_none());
         assert!(looks_like_creator_code("trs-pixel"));
-        assert!(!looks_like_creator_code("PIXELMAUS"), "ohne Bindestrich → Umhang-Code");
+        assert!(looks_like_creator_code("PIXELMAUS"), "kein Präfix nötig");
+        assert!(!looks_like_creator_code("7K3QFM2XPA9RTVBC4HJN"), "20 Zeichen ohne Bindestrich = Umhang-Code");
         assert!(!looks_like_creator_code("7K3QF-M2XPA-9RTVB-C4HJN"), "Umhang-Codes sind länger");
     }
 

@@ -45,7 +45,7 @@ describe('Creator-Codes', () => {
 
   it('gehen nur mit Bindestrich ins Creator-Einlösen, sonst ist es ein Umhang-Code', () => {
     expect(isCreatorCode('trs-pixel')).toBe(true)
-    expect(isCreatorCode('PIXELMAUS')).toBe(false)
+    expect(isCreatorCode('PIXELMAUS')).toBe(true)
     expect(isCreatorCode('7K3QF-M2XPA-9RTVB-C4HJN')).toBe(false)
     expect(isCreatorCode('7K3QFM2XPA9RTVBC4HJN')).toBe(false)
   })

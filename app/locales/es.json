@@ -973,7 +973,7 @@
       "badRange": "Elige un fragmento válido del vídeo."
     },
     "creator": {
-      "invalidCode": "Los códigos de creador tienen de 5 a 20 caracteres: letras, cifras y guiones (p. ej. TRS-PIXEL).",
+      "invalidCode": "Los códigos de creador tienen de 5 a 20 caracteres: letras, cifras y guiones (p. ej. PIXELMAUS o PIXEL-YT).",
       "invalidTier": "Nivel de creador desconocido.",
       "invalidId": "Entrada no válida.",
       "textLength": "Texto: de 1 a {max} caracteres.",
@@ -7147,7 +7147,7 @@
     "fan": {
       "redeemTitle": "Canjear un código de creador",
       "codeLabel": "Código de creador",
-      "codePlaceholder": "TRS-…",
+      "codePlaceholder": "Código, p. ej. PIXELMAUS",
       "redeem": "Canjear",
       "redeeming": "Comprobando …",
       "redeemHint": "Encontrarás códigos en vídeos, directos y descripciones.",
@@ -7175,7 +7175,7 @@
       "ended": "Ya no apoyas a {name}.",
       "blockTitle": "Creadores bloqueados",
       "blockLabel": "Código del creador a bloquear",
-      "blockPlaceholder": "Código, p. ej. TRS-…",
+      "blockPlaceholder": "Código, p. ej. PIXELMAUS",
       "block": "Bloquear",
       "blockHint": "Introduce el código de un creador para bloquearlo. Dejarás de ver las insignias y símbolos de fan de los creadores bloqueados (sobre las cabezas, en la lista de jugadores y en el launcher) y no podrás canjear sus códigos.",
       "blocked": "Creador bloqueado.",

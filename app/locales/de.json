@@ -973,7 +973,7 @@
       "badRange": "Bitte einen gültigen Bereich im Video wählen."
     },
     "creator": {
-      "invalidCode": "Creator-Codes haben 5 bis 20 Zeichen: Buchstaben, Ziffern und Bindestriche (z. B. TRS-PIXEL).",
+      "invalidCode": "Creator-Codes haben 5 bis 20 Zeichen: Buchstaben, Ziffern und Bindestriche (z. B. PIXELMAUS oder PIXEL-YT).",
       "invalidTier": "Unbekannte Creator-Stufe.",
       "invalidId": "Ungültiger Eintrag.",
       "textLength": "Text: 1 bis {max} Zeichen.",
@@ -7147,7 +7147,7 @@
     "fan": {
       "redeemTitle": "Creator-Code einlösen",
       "codeLabel": "Creator-Code",
-      "codePlaceholder": "TRS-…",
+      "codePlaceholder": "Code, z. B. PIXELMAUS",
       "redeem": "Einlösen",
       "redeeming": "Prüfe …",
       "redeemHint": "Codes gibt es in Videos, Streams und Beschreibungen.",
@@ -7175,7 +7175,7 @@
       "ended": "Du unterstützt {name} nicht mehr.",
       "blockTitle": "Blockierte Creator",
       "blockLabel": "Code des Creators zum Blockieren",
-      "blockPlaceholder": "Code, z. B. TRS-…",
+      "blockPlaceholder": "Code, z. B. PIXELMAUS",
       "block": "Blockieren",
       "blockHint": "Gib den Code eines Creators ein, um ihn zu blockieren. Abzeichen und Fan-Symbole blockierter Creator siehst du nicht mehr – über Köpfen, in der Tab-Liste und im Launcher. Ihre Codes kannst du nicht einlösen.",
       "blocked": "Creator blockiert.",

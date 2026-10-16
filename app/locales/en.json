@@ -973,7 +973,7 @@
       "badRange": "Please choose a valid section of the video."
     },
     "creator": {
-      "invalidCode": "Creator codes have 5 to 20 characters: letters, digits and dashes (e.g. TRS-PIXEL).",
+      "invalidCode": "Creator codes have 5 to 20 characters: letters, digits and dashes (e.g. PIXELMAUS or PIXEL-YT).",
       "invalidTier": "Unknown creator tier.",
       "invalidId": "Invalid entry.",
       "textLength": "Text: 1 to {max} characters.",
@@ -7147,7 +7147,7 @@
     "fan": {
       "redeemTitle": "Redeem a creator code",
       "codeLabel": "Creator code",
-      "codePlaceholder": "TRS-…",
+      "codePlaceholder": "Code, e.g. PIXELMAUS",
       "redeem": "Redeem",
       "redeeming": "Checking …",
       "redeemHint": "Codes are in videos, streams and descriptions.",
@@ -7175,7 +7175,7 @@
       "ended": "You no longer support {name}.",
       "blockTitle": "Blocked creators",
       "blockLabel": "Code of the creator to block",
-      "blockPlaceholder": "Code, e.g. TRS-…",
+      "blockPlaceholder": "Code, e.g. PIXELMAUS",
       "block": "Block",
       "blockHint": "Enter a creator's code to block them. You no longer see badges and fan symbols of blocked creators – above heads, in the tab list and in the launcher. You can't redeem their codes.",
       "blocked": "Creator blocked.",

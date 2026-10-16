@@ -38,13 +38,15 @@ export const CREATOR_CODE_MAX = 20
 /** Eingabe → Creator-Code (groß) oder `null`. */
 export function normalizeCreatorCode(input: string): string | null {
   const s = input.trim().toUpperCase()
+  // 20 Zeichen ohne Bindestrich sind ein Umhang-Code (§5.9), kein Creator-Code (§35.1).
+  if (s.length === 20 && !s.includes('-')) return null
   return CREATOR_CODE_RE.test(s) ? s : null
 }
 
-/** Gehört die Eingabe ins Creator-Einlösen (Muster + Bindestrich)? Sonst ist es ein Umhang-Code (§5.9). */
+/** Gehört die Eingabe ins Creator-Einlösen? Creator-Codes brauchen kein Präfix (z. B. `PIXELMAUS`); Umhang-Codes
+ *  haben 20 Zeichen (auch in Fünfergruppen mit Bindestrich) und passen deshalb nicht ins Muster. */
 export function isCreatorCode(input: string): boolean {
-  const code = normalizeCreatorCode(input)
-  return !!code && code.includes('-')
+  return normalizeCreatorCode(input) !== null
 }
 
 /** Beim Tippen: groß, nur A–Z, 0–9 und `-`, höchstens 20 Zeichen. */
