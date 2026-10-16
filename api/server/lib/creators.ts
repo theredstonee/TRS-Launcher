@@ -1665,6 +1665,33 @@ export function adminRestoreCreator(ctx: AppContext, staff: Staff, uuid: string)
   return { creator: adminView(ctx, creatorRow(ctx, uuid)!) }
 }
 
+/**
+ * Creator endgültig löschen (§35.6): Creator-Eintrag samt Codes, Einlösungen, Symbolen, Anfragen, Statistik und
+ * Helfern (Fremdschlüssel mit CASCADE), Blockierungen dieses Creators, seine Fan-Umhänge (auch bei den Fans) und
+ * gelistete Packs. Fans verlieren die Unterstützung (SET NULL). Das Spielerkonto selbst bleibt.
+ */
+export function adminDeleteCreator(ctx: AppContext, staff: Staff, uuid: string): void {
+  assertCan(staff, 'creators.manage')
+  const c = adminRow(ctx, uuid)
+  const fanCapeIds = all<{ id: string }>(ctx.db, 'SELECT id FROM capes WHERE creator_uuid = ?', uuid).map((r) => r.id)
+  const shas = all<{ sha256: string }>(ctx.db, 'SELECT DISTINCT sha256 FROM creator_symbols WHERE creator_uuid = ?', uuid).map((r) => r.sha256)
+  const fans = all<{ fan_uuid: string }>(ctx.db, 'SELECT fan_uuid FROM creator_supports WHERE creator_uuid = ?', uuid).map((r) => r.fan_uuid)
+  tx(ctx.db, () => {
+    unlistPacks(ctx, uuid)
+    for (const id of fanCapeIds) removeCape(ctx, id)
+    run(ctx.db, 'DELETE FROM creator_blocks WHERE creator_uuid = ?', uuid)
+    run(ctx.db, 'DELETE FROM creators WHERE uuid = ?', uuid)
+    audit(ctx, staff.uuid, 'creator.delete', uuid, `${c.tier}/${c.state}, ${fans.length} fans, ${fanCapeIds.length} fan capes`)
+  })
+  // Symbol-Dateien nur löschen, wenn kein anderer Creator dasselbe Bild nutzt.
+  for (const sha of shas) {
+    if (!one(ctx.db, 'SELECT 1 AS x FROM creator_symbols WHERE sha256 = ?', sha)) rmSync(join(symbolDir(ctx), `${sha}.png`), { force: true })
+  }
+  for (const f of fans) emitFan(ctx, f)
+  emitFan(ctx, uuid)
+  emitFanCreator(ctx, uuid)
+}
+
 // ---------------------------------------------------------------- Team: Anfragen
 
 export interface AdminRequestView extends RequestView {

@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { describe, expect, it } from 'vitest'
 import { createJob, eligibility, setApplicationStatus, submitApplication } from '../server/lib/applications'
@@ -7,6 +9,7 @@ import {
   adminDecideRequest,
   adminListCreators,
   adminRestoreCreator,
+  adminDeleteCreator,
   adminRevokeCreator,
   adminUpdateCreator,
   blockCreator,
@@ -26,6 +29,7 @@ import {
   sanitizeSymbol,
   setCreatorPackListed,
   setCreatorSettings,
+  symbolDir,
   SWITCH_LOCK_MS,
   unblockCreator,
   updateCode,
@@ -609,5 +613,34 @@ describe('helper accounts (§35.9)', () => {
     removeHelper(env.ctx, c.uuid, mod2!.uuid)
     expect(me2.of('creator_helper_removed')).toEqual([{ type: 'creator_helper_removed', creator: { uuid: c.uuid, name: 'Pixelmaus' } }])
     expect(code(() => answerHelperInvite(env.ctx, mod2!.uuid, c.uuid, { accept: true }))).toBe('helper_invite_not_found')
+  })
+})
+
+describe('creator delete', () => {
+  it('removes the creator with codes, symbol, fan cape and blocks, keeps the accounts', async () => {
+    const env = makeEnv()
+    const c = await creator(env, 'Pixelmaus', 'partner')
+    const sym = approvedSymbol(env, c.uuid, solidPng(32, 32, [1, 2, 3, 255]))
+    const capeId = approvedFanCape(env, c.uuid)
+    const fan = await player(env, 'Steve')
+    const blocker = await player(env, 'Alex')
+    redeem(env, fan, c.code)
+    blockCreator(env.ctx, blocker, { code: c.code })
+    const file = join(symbolDir(env.ctx), `${sym.symbol!.sha256}.png`)
+    expect(existsSync(file)).toBe(true)
+    adminDeleteCreator(env.ctx, OWNER, c.uuid)
+    expect(one(env.ctx.db, 'SELECT 1 AS x FROM creators WHERE uuid = ?', c.uuid)).toBeUndefined()
+    expect(one(env.ctx.db, 'SELECT 1 AS x FROM creator_codes WHERE creator_uuid = ?', c.uuid)).toBeUndefined()
+    expect(one(env.ctx.db, 'SELECT 1 AS x FROM creator_blocks WHERE creator_uuid = ?', c.uuid)).toBeUndefined()
+    expect(one(env.ctx.db, 'SELECT 1 AS x FROM capes WHERE id = ?', capeId)).toBeUndefined()
+    expect(one(env.ctx.db, 'SELECT 1 AS x FROM user_capes WHERE cape_id = ?', capeId)).toBeUndefined()
+    expect(existsSync(file)).toBe(false)
+    expect(getUser(env.ctx, c.uuid)).toBeTruthy()
+    expect(myCreatorState(env.ctx, fan).support.creator).toBeNull()
+    expect(myCreatorState(env.ctx, c.uuid).creator).toBeNull()
+    expect(code(() => redeem(env, fan, c.code))).toBe('creator_code_not_found')
+    expect(code(() => adminDeleteCreator(env.ctx, OWNER, c.uuid))).toBe('creator_not_found')
+    // Danach kann er wieder Creator werden.
+    expect(adminCreateCreator(env.ctx, OWNER, { player: 'Pixelmaus', tier: 'starter' }).creator.mainCode).toBe('PIXELMAUS')
   })
 })

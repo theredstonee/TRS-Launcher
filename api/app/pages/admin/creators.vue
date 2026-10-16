@@ -219,6 +219,22 @@ async function restore(c: Creator) {
     busy.value = ''
   }
 }
+const deleting = ref<Creator | null>(null)
+async function removeCreator() {
+  const c = deleting.value
+  if (!c) return
+  busy.value = 'delete'
+  error.value = ''
+  try {
+    await api(`/v1/admin/creators/${c.uuid}`, { method: 'DELETE' })
+    deleting.value = null
+    await loadCreators()
+  } catch (e) {
+    fail(e)
+  } finally {
+    busy.value = ''
+  }
+}
 const stateTone = (s: State) => (s === 'active' ? 'tone-ok' : s === 'banned' ? 'tone-danger' : 'tone-muted')
 
 // --- Anfragen ------------------------------------------------------------------------------------
@@ -396,6 +412,7 @@ onMounted(() => {
                 <button type="button" class="btn btn-danger" @click="askRevoke(c, true)">{{ t.roster.ban }}</button>
               </template>
               <button v-else type="button" class="btn btn-ghost" :disabled="busy === `restore:${c.uuid}`" @click="restore(c)">{{ t.roster.restore }}</button>
+              <button type="button" class="btn btn-danger" :title="t.roster.deleteHint" @click="deleting = c">{{ t.roster.delete }}</button>
             </template>
           </div>
           <div class="mt-3 border-t border-base-800 pt-2 text-xs text-base-400">
@@ -571,6 +588,16 @@ onMounted(() => {
         </div>
       </form>
     </AdminDialog>
+
+    <AdminConfirm
+      v-if="deleting"
+      :title="fill(t.roster.deleteTitle, { name: deleting.name })"
+      :text="t.roster.deleteConfirm"
+      danger
+      :busy="busy === 'delete'"
+      @cancel="deleting = null"
+      @confirm="removeCreator"
+    />
 
     <AdminConfirm
       v-if="removingPreview"
