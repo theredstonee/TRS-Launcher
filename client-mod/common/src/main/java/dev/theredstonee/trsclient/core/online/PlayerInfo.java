@@ -33,6 +33,8 @@ public final class PlayerInfo {
 	public final List<String> badges;
 	/** Spuk-Effekte, die andere sehen dürfen ({@link #FX_HITS}, {@link #FX_TRAIL}). */
 	public final int fx;
+	/** Flügel am Rücken (Format 2, {@code attach: "body"}) oder null. */
+	public final HatInfo wings;
 
 	public PlayerInfo(boolean badge, CapeInfo cape) {
 		this(badge, cape, null);
@@ -48,6 +50,11 @@ public final class PlayerInfo {
 
 	public PlayerInfo(boolean badge, CapeInfo cape, HatInfo hat, CreatorTier creator, FanInfo fan, HatInfo companion,
 			List<String> badges, int fx) {
+		this(badge, cape, hat, creator, fan, companion, badges, fx, null);
+	}
+
+	public PlayerInfo(boolean badge, CapeInfo cape, HatInfo hat, CreatorTier creator, FanInfo fan, HatInfo companion,
+			List<String> badges, int fx, HatInfo wings) {
 		this.badge = badge;
 		this.cape = cape;
 		this.hat = hat;
@@ -56,11 +63,12 @@ public final class PlayerInfo {
 		this.companion = companion;
 		this.badges = badges == null || badges.isEmpty() ? Collections.<String>emptyList() : Collections.unmodifiableList(badges);
 		this.fx = fx;
+		this.wings = wings;
 	}
 
 	/** Gleiche Infos, anderes Live-Abzeichen. */
 	PlayerInfo withBadge(boolean badge) {
-		return new PlayerInfo(badge, cape, hat, creator, fan, companion, badges, fx);
+		return new PlayerInfo(badge, cape, hat, creator, fan, companion, badges, fx, wings);
 	}
 
 	/** Hat der Spieler das Profil-Abzeichen {@code id}? */

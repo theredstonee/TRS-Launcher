@@ -117,6 +117,8 @@ public final class TrsApi {
 		LookupCosmetic hat;
 		/** Begleiter neben dem Hut (Format 2, gleicher Aufbau wie {@link #hat}). */
 		LookupCosmetic companion;
+		/** Flügel am Rücken (Format 2, {@code attach: "body"}). */
+		LookupCosmetic wings;
 	}
 
 	static final class LookupCosmetic {
@@ -342,6 +344,7 @@ public final class TrsApi {
 			}
 			HatInfo hat = cosmetic(p.cosmetics == null ? null : p.cosmetics.hat, false);
 			HatInfo companion = cosmetic(p.cosmetics == null ? null : p.cosmetics.companion, true);
+			HatInfo wings = cosmetic(p.cosmetics == null ? null : p.cosmetics.wings, true);
 			dev.theredstonee.trsclient.core.creator.CreatorTier tier = p.creator == null ? null
 					: dev.theredstonee.trsclient.core.creator.CreatorTier.parse(p.creator.tier);
 			FanInfo fan = null;
@@ -351,7 +354,7 @@ public final class TrsApi {
 						SymbolInfo.of(sy.url, sy.size, sy.frames, sy.frameMs, sy.sha256, config), p.fan.milestone);
 			}
 			out.put(uuid, new PlayerInfo(Boolean.TRUE.equals(p.badge), cape, hat, tier, fan, companion, badgeIds(p.badges),
-					fxBits(p.fx)));
+					fxBits(p.fx), wings));
 		}
 		return out;
 	}
