@@ -11,12 +11,14 @@ import {
   type SymbolView,
 } from './creator-lookup'
 import { all, one, placeholders, run, tx } from './db'
-import { ApiError, badRequest, conflict, forbidden, notFound } from './errors'
+import { ApiError, badRequest, conflict, forbidden, notFound, tooMany } from './errors'
 import type { PlayerRef } from './events'
+import { areFriends } from './friends'
 import { newUploadCapeId, normalizeUuid, sha256Hex } from './ids'
 import { emitCape, emitToWatchers } from './playerevents'
 import { displayCode, normalizePackCode, setPackCreatorListed, type PackRow } from './packs'
 import { decodeRgba, encodeRgba, inspectPng, sanitizeCapeUpload } from './png'
+import { RULES } from './ratelimit'
 import { assertNotSanctioned } from './sanctions'
 import { capeNameSchema, plainText } from './schemas'
 import { SKIN_URL_RE } from './skins'
@@ -45,6 +47,14 @@ export type CreatorUpdateKind =
   | 'request_answered'
   | 'milestone'
   | 'became_creator'
+  | 'helper_joined'
+  | 'helper_left'
+
+/** Rechte eines Helfers (§35.9). Anfragen, Team-Umhang, Helfer und Vorschau-Builds bleiben immer beim Creator. */
+export const HELPER_RIGHTS = ['stats', 'codes', 'uploads', 'packs'] as const
+export type HelperRight = (typeof HELPER_RIGHTS)[number]
+/** Helfer je Stufe (angenommen + eingeladen). */
+export const HELPER_LIMITS: Record<CreatorTier, number> = { starter: 1, partner: 3, top: 10 }
 
 export const TIERS = ['starter', 'partner', 'top'] as const satisfies readonly CreatorTier[]
 export const CREATOR_STATES = ['active', 'revoked', 'banned'] as const satisfies readonly CreatorState[]
@@ -229,13 +239,47 @@ export interface CreatorSelf {
   channels: Channel[]
   codes: CodeView[]
   limits: TierLimits
-  stats: CreatorStats
+  /** `null` nur für Helfer ohne das Recht `stats`. */
+  stats: CreatorStats | null
   milestone: Milestone | null
   nextMilestone: { name: Milestone, at: number } | null
   symbol: { current: SymbolView | null, pending: SymbolView | null, rejected: { reason: string | null, at: string } | null }
   fanCape: { current: FanCapeRef | null, pending: FanCapeRef | null, rejected: { reason: string | null, at: string } | null }
   requests: RequestView[]
   packs: CreatorPackRef[]
+  /** Nur für den Creator selbst: seine Helfer (eingeladen und aktiv). */
+  helpers?: HelperView[]
+  /** Nur wenn ein Helfer die Sicht abruft (`?as=`). */
+  viewer?: { helper: true, rights: HelperRight[] }
+}
+
+export interface HelperView {
+  uuid: string
+  name: string
+  skin: string | null
+  rights: HelperRight[]
+  status: 'pending' | 'active'
+  createdAt: string
+}
+
+interface HelperRow {
+  creator_uuid: string
+  helper_uuid: string
+  rights: string
+  status: 'pending' | 'active'
+  created_at: number
+  accepted_at: number | null
+}
+
+/**
+ * Wer handelt im Dashboard: der Creator selbst (alle Rechte) oder ein aktiver Helfer mit `?as=<creator>` (§35.9).
+ * `user` = angemeldetes Konto, `creator` = der Creator, für den gehandelt wird.
+ */
+export interface CreatorActor {
+  user: string
+  creator: CreatorRow
+  helper: boolean
+  rights: ReadonlySet<HelperRight>
 }
 
 export interface PreviewView {
@@ -316,8 +360,9 @@ export const updateCodeBody = z
     expiresAt: isoTime.nullable().optional(),
   })
   .refine((o) => Object.keys(o).length > 0, 'at least one field is required')
-export const symbolQuery = z.strictObject({ frameMs: z.coerce.number().int().min(50).max(1000).optional() })
+export const symbolQuery = z.strictObject({ frameMs: z.coerce.number().int().min(50).max(1000).optional(), as: z.string().max(36).optional() })
 export const fanCapeQuery = z.strictObject({
+  as: z.string().max(36).optional(),
   name: capeNameSchema.optional(),
   frames: z.coerce.number().int().min(1).max(32).optional(),
   frameTimeMs: z.coerce.number().int().min(50).max(10_000).optional(),
@@ -469,12 +514,18 @@ export function creatorCard(ctx: AppContext, c: CreatorRow): CreatorCard {
 
 // ---------------------------------------------------------------- Ereignisse
 
-function notifyCreator(ctx: AppContext, uuid: string, kind: CreatorUpdateKind, extra: { reason?: string | null, tier?: CreatorTier } = {}): void {
+function notifyCreator(
+  ctx: AppContext,
+  uuid: string,
+  kind: CreatorUpdateKind,
+  extra: { reason?: string | null, tier?: CreatorTier, helper?: PlayerRef } = {},
+): void {
   ctx.events.publish(uuid, {
     type: 'creator_updated',
     kind,
     ...(extra.reason ? { reason: extra.reason } : {}),
     ...(extra.tier ? { tier: extra.tier } : {}),
+    ...(extra.helper ? { helper: extra.helper } : {}),
   }, { meOnly: true })
 }
 
@@ -695,6 +746,9 @@ export interface MyCreatorState {
   showFanSymbols: boolean
   creator: CreatorSelf | null
   application: { id: string, status: string, createdAt: string } | null
+  /** Creator, denen ich helfe (§35.9), und offene Einladungen. */
+  helping: HelpingView[]
+  helperInvites: HelperInviteView[]
 }
 
 /** `GET /v1/me/creator`: alles für die Creator-Seite im Launcher. */
@@ -729,6 +783,7 @@ export function myCreatorState(ctx: AppContext, uuid: string): MyCreatorState {
     showFanSymbols: (one<{ v: number }>(ctx.db, 'SELECT show_fan_symbols AS v FROM users WHERE uuid = ?', uuid)?.v ?? 1) === 1,
     creator: me ? creatorSelf(ctx, me) : null,
     application: app ? { id: app.id, status: app.status, createdAt: iso(app.created_at) } : null,
+    ...myHelping(ctx, uuid),
   }
 }
 
@@ -797,7 +852,9 @@ function lastRejection(rows: { status: string, reason: string | null, reviewed_a
   return decided && decided.status === 'rejected' ? { reason: decided.reason, at: iso(decided.reviewed_at!) } : null
 }
 
-export function creatorSelf(ctx: AppContext, c: CreatorRow): CreatorSelf {
+export function creatorSelf(ctx: AppContext, c: CreatorRow, viewer?: CreatorActor): CreatorSelf {
+  const helper = viewer?.helper === true
+  const may = (r: HelperRight) => !helper || viewer!.rights.has(r)
   const current = symbolRow(ctx, c.symbol_id)
   const pending = one<SymbolRow>(ctx.db, "SELECT * FROM creator_symbols WHERE creator_uuid = ? AND status = 'pending' ORDER BY id DESC LIMIT 1", c.uuid)
   const symbolDecisions = all<SymbolRow>(
@@ -817,7 +874,7 @@ export function creatorSelf(ctx: AppContext, c: CreatorRow): CreatorSelf {
     channels: parseChannels(c.channels),
     codes: codesOf(ctx, c.uuid),
     limits: TIER_LIMITS[c.tier],
-    stats: creatorStats(ctx, c.uuid),
+    stats: may('stats') ? creatorStats(ctx, c.uuid) : null,
     milestone: c.milestone,
     nextMilestone: next ? { name: next.name, at: next.at } : null,
     symbol: {
@@ -830,13 +887,168 @@ export function creatorSelf(ctx: AppContext, c: CreatorRow): CreatorSelf {
       pending: pendingCape ? capeRef(ctx, pendingCape) : null,
       rejected: lastRejection(capes.map((x) => ({ status: x.status, reason: x.reject_reason, reviewed_at: x.reviewed_at }))),
     },
-    requests: all<RequestRow>(ctx.db, 'SELECT * FROM creator_requests WHERE creator_uuid = ? ORDER BY created_at DESC, id DESC LIMIT 20', c.uuid).map(requestView),
-    packs: ownPacks(ctx, c.uuid),
+    requests: helper ? [] : all<RequestRow>(ctx.db, 'SELECT * FROM creator_requests WHERE creator_uuid = ? ORDER BY created_at DESC, id DESC LIMIT 20', c.uuid).map(requestView),
+    packs: may('packs') ? ownPacks(ctx, c.uuid) : [],
+    ...(helper ? { viewer: { helper: true as const, rights: HELPER_RIGHTS.filter((r) => viewer!.rights.has(r)) } } : { helpers: helpersOf(ctx, c.uuid) }),
   }
 }
 
-export function creatorDashboard(ctx: AppContext, uuid: string): CreatorSelf {
-  return creatorSelf(ctx, requireActive(ctx, uuid))
+/** Dashboard (§35.3); mit `as` sieht ein Helfer die Sicht seines Creators (Statistik nur mit `stats`). */
+export function creatorDashboard(ctx: AppContext, user: string, as?: string | null): CreatorSelf {
+  const a = actorFor(ctx, user, as, null)
+  return creatorSelf(ctx, a.creator, a)
+}
+
+// ---------------------------------------------------------------- Helfer (§35.9)
+
+function parseRights(raw: string): HelperRight[] {
+  try {
+    const v = JSON.parse(raw) as unknown
+    return Array.isArray(v) ? HELPER_RIGHTS.filter((r) => v.includes(r)) : []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Handelnder für eine Dashboard-Route. Ohne `as` (oder `as` = man selbst): der Creator, aktiv (sonst 403
+ * `creator_inactive`). Mit `as`: nur aktive Helfer eines aktiven Creators mit dem Recht `need` (`owner` = nur der
+ * Creator, `null` = irgendein Recht) – sonst 403 `creator_helper_right`.
+ */
+export function actorFor(ctx: AppContext, user: string, as: string | null | undefined, need: HelperRight | 'owner' | null): CreatorActor {
+  if (!as || as === user) return { user, creator: requireActive(ctx, user), helper: false, rights: new Set(HELPER_RIGHTS) }
+  const h = one<HelperRow>(ctx.db, "SELECT * FROM creator_helpers WHERE creator_uuid = ? AND helper_uuid = ? AND status = 'active'", as, user)
+  if (!h) throw forbidden('creator_helper_right', 'You are not a helper of this creator')
+  const creator = requireActive(ctx, as)
+  const rights = new Set(parseRights(h.rights))
+  if (need === 'owner' || (need !== null && !rights.has(need))) throw forbidden('creator_helper_right', 'You do not have this right as a helper')
+  return { user, creator, helper: true, rights }
+}
+
+/** Aktionen eines Helfers landen mit seiner UUID im Audit-Log (Ziel = Creator). */
+function auditHelper(ctx: AppContext, a: CreatorActor, action: string, detail: string): void {
+  if (a.helper) audit(ctx, a.user, `creator.helper.${action}`, a.creator.uuid, detail)
+}
+
+/** Upload-Grenze je CREATOR (Helfer teilen sich den Topf mit ihm). */
+function takeUpload(ctx: AppContext, kind: 'symbol' | 'cape', creator: string): void {
+  const r = ctx.limiter.take(`creator-${kind}:${creator}`, RULES.creatorUploadUser)
+  if (!r.ok) throw tooMany(r.retryAfter)
+}
+
+function helpersOf(ctx: AppContext, creator: string): HelperView[] {
+  return all<HelperRow & { name: string | null, skin_url: string | null }>(
+    ctx.db,
+    `SELECT h.*, u.name, u.skin_url FROM creator_helpers h LEFT JOIN users u ON u.uuid = h.helper_uuid
+     WHERE h.creator_uuid = ? ORDER BY h.created_at`,
+    creator,
+  ).map((h) => ({
+    uuid: h.helper_uuid,
+    name: h.name ?? '',
+    skin: h.skin_url && SKIN_URL_RE.test(h.skin_url) ? h.skin_url : null,
+    rights: parseRights(h.rights),
+    status: h.status,
+    createdAt: iso(h.created_at),
+  }))
+}
+
+export const helperInviteBody = z.strictObject({
+  uuid: z.string().max(36),
+  rights: z.array(z.enum(HELPER_RIGHTS)).min(1).max(HELPER_RIGHTS.length),
+})
+export const helperRightsBody = z.strictObject({ rights: z.array(z.enum(HELPER_RIGHTS)).min(1).max(HELPER_RIGHTS.length) })
+export const helperAnswerBody = z.strictObject({ accept: z.boolean() })
+
+const rightsJson = (rights: readonly HelperRight[]) => JSON.stringify(HELPER_RIGHTS.filter((r) => rights.includes(r)))
+
+/** Freund als Helfer einladen (nur der Creator). Grenze je Stufe: 1/3/10 (eingeladen + aktiv). */
+export function inviteHelper(ctx: AppContext, user: string, raw: unknown): { helpers: HelperView[] } {
+  const c = requireActive(ctx, user)
+  const input = parse(helperInviteBody, raw)
+  const target = normalizeUuid(input.uuid)
+  if (!target || target === user) throw badRequest('invalid_request', 'Invite a friend by UUID')
+  if (!getUser(ctx, target) || !areFriends(ctx, user, target)) throw badRequest('not_friends', 'Only TRS friends can be helpers')
+  if (one(ctx.db, 'SELECT 1 AS x FROM creator_helpers WHERE creator_uuid = ? AND helper_uuid = ?', user, target)) {
+    throw conflict('creator_helper_exists', 'This player is already a helper or invited')
+  }
+  const lim = HELPER_LIMITS[c.tier]
+  if (one<{ n: number }>(ctx.db, 'SELECT COUNT(*) AS n FROM creator_helpers WHERE creator_uuid = ?', user)!.n >= lim) {
+    throw forbidden('creator_helper_limit', `At most ${lim} helper(s) for your tier`)
+  }
+  const t = ctx.now()
+  run(ctx.db, "INSERT INTO creator_helpers (creator_uuid, helper_uuid, rights, status, created_at) VALUES (?, ?, ?, 'pending', ?)", user, target, rightsJson(input.rights), t)
+  ctx.events.publish(target, {
+    type: 'creator_helper_invite',
+    creator: { uuid: user, name: nameOf(ctx, user) },
+    rights: HELPER_RIGHTS.filter((r) => input.rights.includes(r)),
+    createdAt: iso(t),
+  }, { meOnly: true })
+  return { helpers: helpersOf(ctx, user) }
+}
+
+/** Rechte eines Helfers ändern (nur der Creator). */
+export function updateHelper(ctx: AppContext, user: string, helper: string, raw: unknown): { helpers: HelperView[] } {
+  requireActive(ctx, user)
+  const input = parse(helperRightsBody, raw)
+  if (run(ctx.db, 'UPDATE creator_helpers SET rights = ? WHERE creator_uuid = ? AND helper_uuid = ?', rightsJson(input.rights), user, helper) === 0) {
+    throw notFound('helper_not_found', 'Helper not found')
+  }
+  return { helpers: helpersOf(ctx, user) }
+}
+
+/** Helfer entfernen bzw. Einladung zurückziehen (nur der Creator). Der Helfer bekommt `creator_helper_removed`. */
+export function removeHelper(ctx: AppContext, user: string, helper: string): void {
+  const c = creatorRow(ctx, user)
+  if (!c) throw forbidden('creator_inactive', 'You are not an active creator')
+  if (run(ctx.db, 'DELETE FROM creator_helpers WHERE creator_uuid = ? AND helper_uuid = ?', user, helper) === 0) throw notFound('helper_not_found', 'Helper not found')
+  ctx.events.publish(helper, { type: 'creator_helper_removed', creator: { uuid: user, name: nameOf(ctx, user) } }, { meOnly: true })
+}
+
+export interface HelpingView {
+  creator: { uuid: string, name: string, tier: CreatorTier }
+  rights: HelperRight[]
+}
+
+export interface HelperInviteView {
+  creator: PlayerRef
+  rights: HelperRight[]
+  createdAt: string
+}
+
+/** Wo ich helfe (aktiv, Creator aktiv) und offene Einladungen an mich. */
+export function myHelping(ctx: AppContext, user: string): { helping: HelpingView[], helperInvites: HelperInviteView[] } {
+  const rows = all<HelperRow & { name: string | null, tier: CreatorTier }>(
+    ctx.db,
+    `SELECT h.*, u.name, c.tier FROM creator_helpers h JOIN creators c ON c.uuid = h.creator_uuid AND c.state = 'active'
+     LEFT JOIN users u ON u.uuid = h.creator_uuid WHERE h.helper_uuid = ? ORDER BY h.created_at`,
+    user,
+  )
+  return {
+    helping: rows.filter((r) => r.status === 'active').map((r) => ({ creator: { uuid: r.creator_uuid, name: r.name ?? '', tier: r.tier }, rights: parseRights(r.rights) })),
+    helperInvites: rows.filter((r) => r.status === 'pending').map((r) => ({ creator: { uuid: r.creator_uuid, name: r.name ?? '' }, rights: parseRights(r.rights), createdAt: iso(r.created_at) })),
+  }
+}
+
+/** Einladung annehmen oder ablehnen. Annehmen → `creator_updated {helper_joined}` an den Creator. */
+export function answerHelperInvite(ctx: AppContext, user: string, creator: string, raw: unknown): { helping: HelpingView[], helperInvites: HelperInviteView[] } {
+  const input = parse(helperAnswerBody, raw)
+  const h = one<HelperRow>(ctx.db, "SELECT * FROM creator_helpers WHERE creator_uuid = ? AND helper_uuid = ? AND status = 'pending'", creator, user)
+  if (!h || !isActiveCreator(ctx, creator)) throw notFound('helper_invite_not_found', 'Invitation not found')
+  if (input.accept) {
+    run(ctx.db, "UPDATE creator_helpers SET status = 'active', accepted_at = ? WHERE creator_uuid = ? AND helper_uuid = ?", ctx.now(), creator, user)
+    notifyCreator(ctx, creator, 'helper_joined', { helper: { uuid: user, name: nameOf(ctx, user) } })
+  } else {
+    run(ctx.db, 'DELETE FROM creator_helpers WHERE creator_uuid = ? AND helper_uuid = ?', creator, user)
+  }
+  return myHelping(ctx, user)
+}
+
+/** Als Helfer aufhören → `creator_updated {helper_left}` an den Creator. */
+export function leaveHelping(ctx: AppContext, user: string, creator: string): void {
+  if (run(ctx.db, "DELETE FROM creator_helpers WHERE creator_uuid = ? AND helper_uuid = ? AND status = 'active'", creator, user) === 0) {
+    throw notFound('helper_not_found', 'You are not a helper of this creator')
+  }
+  notifyCreator(ctx, creator, 'helper_left', { helper: { uuid: user, name: nameOf(ctx, user) } })
 }
 
 // ---------------------------------------------------------------- Codes
@@ -861,8 +1073,10 @@ function checkMaxUses(c: CreatorRow, maxUses: number | null | undefined): number
 }
 
 /** Zusatz-Code anlegen (§35.3): Grenzen je Stufe, Code öffentlich und eindeutig. */
-export function createExtraCode(ctx: AppContext, uuid: string, raw: unknown): { codes: CodeView[] } {
-  const c = requireActive(ctx, uuid)
+export function createExtraCode(ctx: AppContext, user: string, raw: unknown, as?: string | null): { codes: CodeView[] } {
+  const a = actorFor(ctx, user, as, 'codes')
+  const c = a.creator
+  const uuid = c.uuid
   const input = parse(createCodeBody, raw)
   const code = normalizeCreatorCode(input.code)
   if (!code) throw badRequest('invalid_code', 'Codes have 5–20 characters: A–Z, 0–9 and dashes (not at the start or end)')
@@ -876,12 +1090,15 @@ export function createExtraCode(ctx: AppContext, uuid: string, raw: unknown): { 
     "INSERT INTO creator_codes (creator_uuid, code, kind, uses, max_uses, expires_at, active, created_at) VALUES (?, ?, 'extra', 0, ?, ?, 1, ?)",
     uuid, code, maxUses, expires, ctx.now(),
   )
+  auditHelper(ctx, a, 'code.create', code)
   return { codes: codesOf(ctx, uuid) }
 }
 
 /** Zusatz-Code ändern (an/aus, Grenze, Ablauf). Der Haupt-Code ist fest (ändert nur das Team). */
-export function updateCode(ctx: AppContext, uuid: string, codeParam: string, raw: unknown): { codes: CodeView[] } {
-  const c = requireActive(ctx, uuid)
+export function updateCode(ctx: AppContext, user: string, codeParam: string, raw: unknown, as?: string | null): { codes: CodeView[] } {
+  const a = actorFor(ctx, user, as, 'codes')
+  const c = a.creator
+  const uuid = c.uuid
   const input = parse(updateCodeBody, raw)
   const code = normalizeCreatorCode(codeParam)
   const k = code ? one<CodeRow>(ctx.db, 'SELECT * FROM creator_codes WHERE code = ? AND creator_uuid = ?', code, uuid) : undefined
@@ -898,6 +1115,7 @@ export function updateCode(ctx: AppContext, uuid: string, codeParam: string, raw
   const maxUses = input.maxUses !== undefined ? checkMaxUses(c, input.maxUses) : k.max_uses
   const expires = input.expiresAt !== undefined ? checkExpiry(ctx, input.expiresAt) : k.expires_at
   run(ctx.db, 'UPDATE creator_codes SET active = ?, max_uses = ?, expires_at = ? WHERE id = ?', active, maxUses, expires, k.id)
+  auditHelper(ctx, a, 'code.update', k.code)
   return { codes: codesOf(ctx, uuid) }
 }
 
@@ -958,10 +1176,14 @@ function dropSymbolFile(ctx: AppContext, sha: string): void {
 }
 
 /** Neues Fan-Symbol (wartet auf Prüfung; ersetzt ein noch wartendes). Fans sehen bis zur Freigabe das alte. */
-export function uploadSymbol(ctx: AppContext, uuid: string, body: Buffer, rawQuery: unknown): { symbol: SymbolView } {
-  const c = requireActive(ctx, uuid)
+export function uploadSymbol(ctx: AppContext, user: string, body: Buffer, rawQuery: unknown, as?: string | null): { symbol: SymbolView } {
+  const a = actorFor(ctx, user, as, 'uploads')
+  const c = a.creator
+  const uuid = c.uuid
   assertNotSanctioned(ctx, uuid, 'upload_ban')
+  if (a.helper) assertNotSanctioned(ctx, user, 'upload_ban')
   const q = parse(symbolQuery, rawQuery)
+  takeUpload(ctx, 'symbol', uuid)
   const clean = sanitizeSymbol(body, TIER_LIMITS[c.tier].symbolFrames)
   const sha = sha256Hex(clean.png)
   writeAtomic(symbolDir(ctx), `${sha}.png`, clean.png)
@@ -976,11 +1198,14 @@ export function uploadSymbol(ctx: AppContext, uuid: string, body: Buffer, rawQue
     return one<{ id: number }>(ctx.db, 'SELECT last_insert_rowid() AS id')!.id
   })
   for (const o of old) if (o.sha256 !== sha) dropSymbolFile(ctx, o.sha256)
+  auditHelper(ctx, a, 'symbol.upload', sha)
   return { symbol: symbolView(symbolRow(ctx, id)!) }
 }
 
-export function deletePendingSymbol(ctx: AppContext, uuid: string): void {
-  requireActive(ctx, uuid)
+export function deletePendingSymbol(ctx: AppContext, user: string, as?: string | null): void {
+  const a = actorFor(ctx, user, as, 'uploads')
+  const uuid = a.creator.uuid
+  auditHelper(ctx, a, 'symbol.withdraw', '')
   const old = all<{ sha256: string }>(ctx.db, "SELECT sha256 FROM creator_symbols WHERE creator_uuid = ? AND status = 'pending'", uuid)
   run(ctx.db, "DELETE FROM creator_symbols WHERE creator_uuid = ? AND status = 'pending'", uuid)
   for (const o of old) dropSymbolFile(ctx, o.sha256)
@@ -1006,12 +1231,16 @@ export function readSymbol(ctx: AppContext, sha: string, viewer: { uuid: string,
 // ---------------------------------------------------------------- Fan-Umhang
 
 /** Neuer Fan-Umhang (Partner: Standard bis 512×256, 1 Frame; Top: HD bis 1024×512, bis 32 Frames). Ersetzt einen wartenden. */
-export function uploadFanCape(ctx: AppContext, uuid: string, body: Buffer, rawQuery: unknown): { fanCape: FanCapeRef } {
-  const c = requireActive(ctx, uuid)
+export function uploadFanCape(ctx: AppContext, user: string, body: Buffer, rawQuery: unknown, as?: string | null): { fanCape: FanCapeRef } {
+  const a = actorFor(ctx, user, as, 'uploads')
+  const c = a.creator
+  const uuid = c.uuid
   const kind = TIER_LIMITS[c.tier].fanCape
   if (!kind) throw forbidden('creator_tier', 'Fan capes need the Partner tier')
   assertNotSanctioned(ctx, uuid, 'upload_ban')
+  if (a.helper) assertNotSanctioned(ctx, user, 'upload_ban')
   const q = parse(fanCapeQuery, rawQuery)
+  takeUpload(ctx, 'cape', uuid)
   const clean = sanitizeCapeUpload(body, { frames: q.frames })
   if (kind === 'standard' && (clean.frames > 1 || clean.scale > STANDARD_CAPE_MAX_SCALE)) {
     throw forbidden('creator_tier', 'HD and animated fan capes need the Top tier (Partner: up to 512x256, one frame)')
@@ -1036,18 +1265,21 @@ export function uploadFanCape(ctx: AppContext, uuid: string, body: Buffer, rawQu
     rmSync(join(ctx.capeDir, `${id}.png`), { force: true })
     throw err
   }
+  auditHelper(ctx, a, 'cape.upload', id)
   return { fanCape: capeRef(ctx, getCape(ctx, id)!) }
 }
 
-export function deletePendingFanCape(ctx: AppContext, uuid: string): void {
-  requireActive(ctx, uuid)
+export function deletePendingFanCape(ctx: AppContext, user: string, as?: string | null): void {
+  const a = actorFor(ctx, user, as, 'uploads')
+  const uuid = a.creator.uuid
+  auditHelper(ctx, a, 'cape.withdraw', '')
   for (const o of all<{ id: string }>(ctx.db, "SELECT id FROM capes WHERE creator_uuid = ? AND status = 'pending'", uuid)) removeCape(ctx, o.id)
 }
 
 // ---------------------------------------------------------------- Anfragen, Vorschau-Builds, Packs (Creator)
 
-export function createRequest(ctx: AppContext, uuid: string, raw: unknown): { requests: RequestView[] } {
-  const c = requireActive(ctx, uuid)
+export function createRequest(ctx: AppContext, uuid: string, raw: unknown, as?: string | null): { requests: RequestView[] } {
+  const c = actorFor(ctx, uuid, as, 'owner').creator
   const input = parse(requestBody, raw)
   if (input.kind === 'upgrade' && c.tier === 'top') throw forbidden('creator_tier', 'You already have the highest tier')
   if (one(ctx.db, "SELECT 1 AS x FROM creator_requests WHERE creator_uuid = ? AND kind = ? AND status = 'open'", uuid, input.kind)) {
@@ -1067,15 +1299,17 @@ function allPreviews(ctx: AppContext): PreviewView[] {
 }
 
 /** Vorschau-Builds (Partner+). */
-export function creatorPreviews(ctx: AppContext, uuid: string): { previews: PreviewView[] } {
-  const c = requireActive(ctx, uuid)
+export function creatorPreviews(ctx: AppContext, uuid: string, as?: string | null): { previews: PreviewView[] } {
+  const c = actorFor(ctx, uuid, as, 'owner').creator
   if (c.tier === 'starter') throw forbidden('creator_tier', 'Preview builds need the Partner tier')
   return { previews: allPreviews(ctx) }
 }
 
 /** Eigenes geteiltes Pack (§27) als Creator-Pack listen oder entfernen. */
-export function setCreatorPackListed(ctx: AppContext, uuid: string, packCode: string, raw: unknown): { packs: CreatorPackRef[] } {
-  requireActive(ctx, uuid)
+export function setCreatorPackListed(ctx: AppContext, user: string, packCode: string, raw: unknown, as?: string | null): { packs: CreatorPackRef[] } {
+  const a = actorFor(ctx, user, as, 'packs')
+  // Nur Packs des CREATORS – Helfer können ihre eigenen Packs nicht als Creator-Packs listen.
+  const uuid = a.creator.uuid
   const input = parse(packListedBody, raw)
   const code = normalizePackCode(packCode)
   const p = code
@@ -1084,6 +1318,7 @@ export function setCreatorPackListed(ctx: AppContext, uuid: string, packCode: st
   if (!p) throw notFound('pack_not_found', 'Modpack not found')
   if (p.owner_uuid !== uuid) throw forbidden('not_your_pack', 'Only your own modpacks can be creator packs')
   setPackCreatorListed(ctx, p, input.listed)
+  auditHelper(ctx, a, input.listed ? 'pack.list' : 'pack.unlist', p.code)
   return { packs: ownPacks(ctx, uuid) }
 }
 
@@ -1251,6 +1486,8 @@ export interface AdminCreatorView {
   symbol: SymbolView | null
   fanCape: FanCapeRef | null
   milestone: Milestone | null
+  /** Helfer (nur lesend im Team-Bereich). */
+  helpers: HelperView[]
 }
 
 function adminView(ctx: AppContext, c: CreatorRow): AdminCreatorView {
@@ -1269,6 +1506,7 @@ function adminView(ctx: AppContext, c: CreatorRow): AdminCreatorView {
     symbol: sym && sym.status === 'approved' ? symbolView(sym) : null,
     fanCape: cape ? capeRef(ctx, cape) : null,
     milestone: c.milestone,
+    helpers: helpersOf(ctx, c.uuid),
   }
 }
 

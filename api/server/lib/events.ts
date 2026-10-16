@@ -10,7 +10,7 @@ import type { Settings } from './users'
 import type { IssueUpdatedEvent } from './issues'
 import type { PackView } from './packs'
 import type { CommandType, PeerView, RemoteStatus } from './remote'
-import type { CreatorTier, CreatorUpdateKind, Milestone } from './creators'
+import type { CreatorTier, CreatorUpdateKind, HelperRight, Milestone } from './creators'
 
 export interface PlayerRef {
   uuid: string
@@ -145,7 +145,11 @@ export type ApiEvent =
   | { type: 'remote_pairing', action: 'added' | 'removed', desktopId: string, phoneId: string, desktop?: PeerView, phone?: PeerView }
   // ---------------------------------------------------------------- Creator-Programm (§35, nur /v1/events/me)
   /** An den Creator: Symbol/Fan-Umhang geprüft, Stufe geändert, Status entzogen/wiederhergestellt, Anfrage beantwortet, Meilenstein, neu Creator. */
-  | { type: 'creator_updated', kind: CreatorUpdateKind, reason?: string, tier?: CreatorTier }
+  | { type: 'creator_updated', kind: CreatorUpdateKind, reason?: string, tier?: CreatorTier, helper?: PlayerRef }
+  /** An den Eingeladenen: ein Freund lädt dich als Helfer ein (§35.9). */
+  | { type: 'creator_helper_invite', creator: PlayerRef, rights: HelperRight[], createdAt: string }
+  /** An den Helfer: der Creator hat dich entfernt bzw. die Einladung zurückgezogen. */
+  | { type: 'creator_helper_removed', creator: PlayerRef }
   /** An alle aktuellen Fans: ihr Creator hat einen neuen Meilenstein erreicht. */
   | { type: 'creator_milestone', creator: PlayerRef, milestone: Milestone }
 

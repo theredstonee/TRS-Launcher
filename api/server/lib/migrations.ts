@@ -794,7 +794,7 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     // Creator-Programm (§35): Creator mit Stufe/Status, Creator-Codes (eigener Namensraum, nicht gehasht) + Einlösungen,
     // Unterstützung (ein Creator je Fan, 30-Tage-Regel), Blockaden, Fan-Symbole (Dateien unter
     // `<DATA_DIR>/creator-symbols/<sha256>.png`), Anfragen, Vorschau-Builds, Tageswerte; Fan-Umhänge = normale Zeilen in
-    // `capes` mit `creator_uuid` + Besitz in `user_capes` (Quelle `creator`); Einstellung `users.show_fan_symbols`,
+    // `capes` mit `creator_uuid` + Besitz in `user_capes` (Quelle `creator`); Helfer-Konten (§35.9); `users.show_fan_symbols`,
     // `team_jobs.purpose`, `shared_packs.creator_listed`; Rechte `creators.review`/`creators.manage`. Idempotent.
     // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
     version: 25,
@@ -2073,6 +2073,20 @@ CREATE TABLE IF NOT EXISTS creator_daily (
   redemptions INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (creator_uuid, day)
 );
+
+-- Helfer-Konten (§35.9): nur Freunde, Einladung (pending) → angenommen (active). rights = JSON-Liste aus
+-- stats/codes/uploads/packs. Löschen des Creators oder Helfers löscht die Zeile.
+CREATE TABLE IF NOT EXISTS creator_helpers (
+  creator_uuid TEXT NOT NULL REFERENCES creators(uuid) ON DELETE CASCADE,
+  helper_uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  rights TEXT NOT NULL DEFAULT '[]',
+  status TEXT NOT NULL CHECK (status IN ('pending', 'active')),
+  created_at INTEGER NOT NULL,
+  accepted_at INTEGER,
+  PRIMARY KEY (creator_uuid, helper_uuid),
+  CHECK (creator_uuid <> helper_uuid)
+);
+CREATE INDEX IF NOT EXISTS creator_helpers_helper ON creator_helpers(helper_uuid, status);
 `)
   if (!hasColumn(db, 'users', 'show_fan_symbols')) db.exec('ALTER TABLE users ADD COLUMN show_fan_symbols INTEGER NOT NULL DEFAULT 1')
   if (hasTable(db, 'capes') && !hasColumn(db, 'capes', 'creator_uuid')) db.exec('ALTER TABLE capes ADD COLUMN creator_uuid TEXT')

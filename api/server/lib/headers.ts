@@ -18,5 +18,5 @@ export function isApiPath(path: string | undefined): boolean {
 }
 
 export const CORS_ALLOWED_METHODS = 'GET, POST, PUT, PATCH, DELETE'
-export const CORS_ALLOWED_HEADERS = 'Authorization, Content-Type'
+export const CORS_ALLOWED_HEADERS = 'Authorization, Content-Type, X-Creator-As'
 export const CORS_EXPOSED_HEADERS = 'Retry-After, ETag, X-Request-Id'

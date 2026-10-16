@@ -173,7 +173,7 @@ describe('remote control: building blocks', () => {
     const versions = MIGRATIONS.map(m => m.version)
     expect(versions).toEqual([...versions].sort((a, b) => a - b))
     expect(new Set(versions).size).toBe(versions.length)
-    expect(versions.slice(-2)).toEqual([23, 24])
+    expect(versions.filter((v) => v >= 23).slice(0, 2)).toEqual([23, 24])
     const db = new DatabaseSync(':memory:')
     db.exec('PRAGMA foreign_keys = ON')
     expect(migrate(db)).toBe(MIGRATIONS.length)
@@ -182,12 +182,12 @@ describe('remote control: building blocks', () => {
     db.exec('DROP TABLE remote_commands; DROP TABLE remote_pair_codes; DROP TABLE remote_pairings; DROP TABLE remote_devices')
     db.exec('DROP TABLE push_pending; DROP TABLE push_devices')
     db.exec('DELETE FROM schema_migrations WHERE version > 22')
-    expect(migrate(db)).toBe(2)
+    expect(migrate(db)).toBe(MIGRATIONS.filter((m) => m.version > 22).length)
     const tables = ['push_devices', 'push_pending', 'remote_devices', 'remote_pairings', 'remote_pair_codes', 'remote_commands']
     for (const t of tables) {
       expect(db.prepare("SELECT 1 AS x FROM sqlite_master WHERE type = 'table' AND name = ?").get(t)).toBeTruthy()
     }
-    expect(db.prepare('SELECT MAX(version) AS v FROM schema_migrations').get()).toEqual({ v: 24 })
+    expect(db.prepare('SELECT MAX(version) AS v FROM schema_migrations').get()).toEqual({ v: MIGRATIONS.at(-1)!.version })
   })
 })
 

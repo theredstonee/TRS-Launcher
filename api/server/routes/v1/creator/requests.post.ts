@@ -1,6 +1,7 @@
 import { defineEventHandler } from 'h3'
 import { z } from 'zod'
 import { useCtx } from '../../../lib/context'
+import { actingAs } from '../../../lib/creator-http'
 import { createRequest } from '../../../lib/creators'
 import { created, limit, readJson, requireUser } from '../../../lib/http'
 import { RULES } from '../../../lib/ratelimit'
@@ -9,5 +10,5 @@ import { RULES } from '../../../lib/ratelimit'
 export default defineEventHandler(async (event) => {
   const auth = requireUser(event, 'write')
   limit(`creator-request:${auth.uuid}`, RULES.creatorRequestUser)
-  return created(event, createRequest(useCtx(), auth.uuid, await readJson(event, z.unknown())))
+  return created(event, createRequest(useCtx(), auth.uuid, await readJson(event, z.unknown()), actingAs(event)))
 })
