@@ -28,7 +28,16 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.23.0 – 2026-10-17 – Blood Moon | Blutmond
+<!-- banner: accent=#c9424a motif=/news/0.23.0/banner.png -->
+<!-- shots:
+/news/0.23.0/launcher-trick-or-treat.png | Trick or treat and the pumpkin hunt in the launcher's moon night | Süßes oder Saures und die Kürbis-Suche in der Mondnacht des Launchers
+/news/0.23.0/website-halloween.png | The website during Halloween – night of the long shadows | Die Website zu Halloween – Nacht der langen Schatten
+/news/0.23.0/client-title.png | The TRS Client title screen under the blood moon | Der Titelbildschirm des TRS Client unter dem Blutmond
+/news/0.23.0/client-halloween-page.png | Pumpkin hunt, riddle and trick or treat in the TRS menu | Kürbis-Suche, Rätsel und Süßes oder Saures im TRS-Menü
+/news/0.23.0/wings-ingame.png | Halloween wings in game | Halloween-Flügel im Spiel
+/news/0.23.0/jumpscare-behind-you.png | Don't turn around … | Dreh dich nicht um …
+-->
 
 ### English
 - **Halloween 2026 – Night of Long Shadows.** When the TRS team switches on the Halloween event, the launcher wears a brand-new look: a pixel moon night with a blood moon, lightning, fog, graves, glowing pumpkins and things that watch you from the dark. Progress bars become a little moon that waxes from new moon to full moon.
