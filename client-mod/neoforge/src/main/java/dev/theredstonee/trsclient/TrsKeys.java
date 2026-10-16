@@ -39,6 +39,11 @@ public final class TrsKeys {
 	public static KeyMapping panorama;
 	/** Öffnet die Notizen der aktuellen Welt im TRS-Menü (standardmäßig unbelegt). */
 	public static KeyMapping notes;
+	/** Kamera-Fahrten: Keyframe setzen, abspielen/anhalten, letzten entfernen, löschen (alle standardmäßig unbelegt). */
+	public static KeyMapping cinematicAdd;
+	public static KeyMapping cinematicPlay;
+	public static KeyMapping cinematicRemove;
+	public static KeyMapping cinematicClear;
 
 	private TrsKeys() {
 	}
@@ -70,6 +75,10 @@ public final class TrsKeys {
 		quickReply = register(event, new KeyMapping("key.trsclient.quickReply", KEYBOARD, InputConstants.KEY_Y, CATEGORY));
 		panorama = register(event, new KeyMapping("key.trsclient.panorama", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
 		notes = register(event, new KeyMapping("key.trsclient.notes", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
+		cinematicAdd = register(event, new KeyMapping("key.trsclient.cinematicAdd", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
+		cinematicPlay = register(event, new KeyMapping("key.trsclient.cinematicPlay", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
+		cinematicRemove = register(event, new KeyMapping("key.trsclient.cinematicRemove", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
+		cinematicClear = register(event, new KeyMapping("key.trsclient.cinematicClear", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
 	}
 
 	/**

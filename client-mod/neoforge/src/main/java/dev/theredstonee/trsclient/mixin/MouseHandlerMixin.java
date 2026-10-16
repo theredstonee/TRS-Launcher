@@ -79,6 +79,8 @@ public abstract class MouseHandlerMixin {
 	@WrapOperation(method = "turnPlayer",
 			at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;turn(DD)V"), require = 1)
 	private void trsclient$freelookTurn(LocalPlayer player, double yaw, double pitch, Operation<Void> original) {
+		// Kamera-Fahrt: die Figur bleibt stehen, die Maus wirkt nicht.
+		if (dev.theredstonee.trsclient.cinematic.CinematicHooks.playing()) return;
 		FreelookState freelook = TrsClient.get().pvp().freelook();
 		if (freelook.active()) freelook.turn(yaw, pitch);
 		else original.call(player, yaw, pitch);

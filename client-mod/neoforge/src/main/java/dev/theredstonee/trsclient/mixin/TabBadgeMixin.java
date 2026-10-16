@@ -1,6 +1,6 @@
 package dev.theredstonee.trsclient.mixin;
 
-import dev.theredstonee.trsclient.online.OnlineHooks;
+import dev.theredstonee.trsclient.online.FanHooks;
 import net.minecraft.client.gui.components.PlayerTabOverlay;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
@@ -12,8 +12,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.UUID;
 
 /**
- * TRS-Abzeichen vor dem Namen in der Tabliste (nur für Spieler, die laut Lookup TRS nutzen und das Abzeichen
- * zeigen). Die Breite rechnet Vanilla mit dem geänderten Namen – das Layout passt sich an.
+ * TRS-Abzeichen, Creator-Stern und Platz fürs Fan-Symbol vor dem Namen in der Tabliste ({@code FanHooks#decorate}).
+ * Die Breite rechnet Vanilla mit dem geänderten Namen – das Layout passt sich an; das Symbol zeichnet
+ * {@code FanGuiMixin}.
  */
 @Mixin(PlayerTabOverlay.class)
 public abstract class TabBadgeMixin {
@@ -24,6 +25,8 @@ public abstract class TabBadgeMixin {
 		/*UUID id = info.getProfile().id();
 		*///?} else
 		UUID id = info.getProfile().getId();
-		if (OnlineHooks.badge(id, true)) cir.setReturnValue(OnlineHooks.badged(id, cir.getReturnValue()));
+		Component name = cir.getReturnValue();
+		Component decorated = FanHooks.decorate(id, name, true);
+		if (decorated != name) cir.setReturnValue(decorated);
 	}
 }
