@@ -336,7 +336,7 @@ const multiline = (max: number) =>
     .trim()
     .max(max)
     .transform((s) => s.replace(/\r\n?/g, '\n'))
-    .refine((s) => !/[\u0000-\u0009\u000b-\u001f\u007f]|[\p{Cf}\p{Co}]/u.test(s), 'must not contain control characters')
+    .refine((s) => !/[\p{Cc}\p{Cf}\p{Co}]/u.test(s.replace(/\n/g, '')), 'must not contain control characters')
 
 export const PLATFORMS = ['youtube', 'twitch', 'tiktok', 'instagram', 'x', 'kick', 'other'] as const
 const channelSchema = z.strictObject({
@@ -1681,7 +1681,7 @@ export function adminListRequests(ctx: AppContext, rawQuery: unknown): { request
   )
   return {
     requests: rows.map((r) => {
-      let data: Record<string, unknown> = {}
+      let data: Record<string, unknown>
       try {
         data = JSON.parse(r.data) as Record<string, unknown>
       } catch {

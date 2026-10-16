@@ -42,6 +42,7 @@ interface JobDraft {
   id: string
   isNew: boolean
   status: 'draft' | 'open' | 'closed'
+  purpose: 'team' | 'creator'
   roleId: string
   cooldownDays: number
   sort: number
@@ -75,6 +76,7 @@ function edit(j?: AdminJob) {
     id: j?.id ?? '',
     isNew: !j,
     status: j?.status ?? 'draft',
+    purpose: j?.purpose ?? 'team',
     roleId: j?.role?.id ?? '',
     cooldownDays: j?.cooldownDays ?? 30,
     sort: 0,
@@ -165,7 +167,9 @@ function body(d: JobDraft) {
   return {
     ...(d.isNew && d.id.trim() ? { id: d.id.trim() } : {}),
     status: d.status,
-    roleId: d.roleId || null,
+    purpose: d.purpose,
+    // Creator-Stellen haben keine Rolle (§35.6).
+    roleId: d.purpose === 'creator' ? null : d.roleId || null,
     cooldownDays: Number(d.cooldownDays) || 0,
     sort: d.sort,
     texts,
@@ -320,6 +324,7 @@ const minMaxLabel = (f: FieldDraft) => (f.type === 'number' ? t.value.adm.jobs.m
               <span class="font-semibold text-base-50">{{ inLang(j.texts, lang)?.title ?? j.id }}</span>
               <span class="tone" :class="statusTone(j.status)">{{ t.adm.jobs.status[j.status] }}</span>
               <RoleBadge v-if="j.role" :role="j.role" small />
+              <span v-if="j.purpose === 'creator'" class="tone tone-info"><SiteIcon name="crown" class="size-3" />{{ t.adm.jobs.purposes.creator }}</span>
               <span v-for="l in LANG_LIST" :key="l" class="font-mono text-[10px] uppercase" :class="j.texts[l] ? 'text-base-300' : 'text-base-600 line-through'">{{ l }}</span>
             </p>
             <p class="mt-0.5 flex flex-wrap gap-x-3 text-xs text-base-400">
@@ -346,6 +351,12 @@ const minMaxLabel = (f: FieldDraft) => (f.type === 'number' ? t.value.adm.jobs.m
           </select>
         </div>
         <div>
+          <label class="label" for="job-purpose">{{ t.adm.jobs.purpose }}</label>
+          <select id="job-purpose" v-model="draft.purpose" class="field" :title="t.adm.jobs.purposeHint">
+            <option v-for="p in (['team', 'creator'] as const)" :key="p" :value="p">{{ t.adm.jobs.purposes[p] }}</option>
+          </select>
+        </div>
+        <div v-if="draft.purpose === 'team'">
           <label class="label" for="job-role">{{ t.adm.jobs.role }}</label>
           <select id="job-role" v-model="draft.roleId" class="field">
             <option value="">{{ t.adm.jobs.noRole }}</option>

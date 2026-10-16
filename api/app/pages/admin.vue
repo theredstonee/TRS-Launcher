@@ -33,6 +33,7 @@ async function refreshCounts() {
       applications: d.applications?.new ?? 0,
       circuits: d.circuits?.pendingSubmissions ?? 0,
       issues: d.issues?.new ?? 0,
+      creators: (d.creators?.queue ?? 0) + (d.creators?.requests ?? 0),
     }
   } catch {
     // Zähler sind nur Beiwerk.
@@ -79,6 +80,7 @@ const allNav = computed<NavItem[]>(() => [
   { to: '/admin/circuits', icon: 'blocks', label: ct.value.adm.nav, count: counts.value?.circuits, perm: ['circuits.manage'] },
   { to: '/admin/issues', icon: 'bug', label: iss.value.adm.nav, count: counts.value?.issues, perm: ['issues.manage', 'issues.moderate'] },
   { to: '/admin/blog', icon: 'book', label: bt.value.adm.nav, perm: ['blog.write', 'blog.publish'] },
+  { to: '/admin/creators', icon: 'crown', label: a.value.nav.creators, count: counts.value?.creators, perm: ['creators.review', 'creators.manage'] },
   { to: '/admin/events', icon: 'moon', label: a.value.nav.events, perm: ['events.manage'] },
   { to: '/admin/codes', icon: 'ticket', label: a.value.nav.codes, perm: ['codes'] },
   { to: '/admin/word-filter', icon: 'filter', label: a.value.nav.wordFilter, perm: ['wordfilter'] },
