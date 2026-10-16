@@ -28,10 +28,11 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Kopf-Kosmetik für die Garderobe (Reiter „Kosmetik“): Katalog {@code GET /v1/cosmetics} (nur Slot {@code hat}; Format 2
- * und – wenn besessen – die Quietscheente), Vorschaubilder der Karten (Tag/Nacht), Modell + Texturen zum Anprobieren
- * und Aufsetzen/Absetzen über {@code PUT /v1/me/cosmetics}. Alles im eigenen Hintergrund-Thread „TRS-Kosmetik“; die
- * Oberfläche liest nur den unveränderlichen {@link State}.
+ * Kopf-Kosmetik für die Garderobe (Reiter „Kosmetik“): Katalog {@code GET /v1/cosmetics} (Slots {@code hat} und
+ * {@code companion}; Format 2 und – wenn besessen – die Quietscheente), Vorschaubilder der Karten (Tag/Nacht), Modell +
+ * Texturen zum Anprobieren, Aufsetzen/Absetzen über {@code PUT /v1/me/cosmetics} und „Gratis holen“ über
+ * {@code POST /v1/me/cosmetics/{id}/claim}. Alles im eigenen Hintergrund-Thread „TRS-Kosmetik“; die Oberfläche liest nur
+ * den unveränderlichen {@link State}.
  */
 public final class CosmeticCatalog {
 	/** Kartenbilder werden auf höchstens diese Kante verkleinert (Speicher, Upload). */
@@ -45,10 +46,14 @@ public final class CosmeticCatalog {
 		public final String name;
 		/** 1 (Vorlage, z. B. Ente) oder 2 (Studio-Modell). */
 		public final int format;
-		/** {@code free}, {@code code}, {@code admin}, {@code achievement} … */
+		/** {@code free}, {@code code}, {@code admin}, {@code achievement}, {@code event} … */
 		public final String unlock;
 		public final boolean owned;
 		public final boolean hidden;
+		/** {@code hat} oder {@code companion}. */
+		public final String slot;
+		/** Event-ID, wenn {@link #unlock} {@code event} ist (z. B. {@code halloween}), sonst null. */
+		public final String event;
 		/** Format 2: Adressen für die Vorschau; Format 1: null. */
 		public final HatInfo hat;
 		/** Format 1: Vorlage + Textur. */
@@ -59,20 +64,32 @@ public final class CosmeticCatalog {
 		public final String cardUrl;
 		public final String cardNightUrl;
 
-		Item(String id, String name, int format, String unlock, boolean owned, boolean hidden, HatInfo hat, String template,
-				String textureUrl, String templateUrl, String cardUrl, String cardNightUrl) {
+		Item(String id, String name, int format, String unlock, boolean owned, boolean hidden, String slot, String event,
+				HatInfo hat, String template, String textureUrl, String templateUrl, String cardUrl, String cardNightUrl) {
 			this.id = id;
 			this.name = name;
 			this.format = format;
 			this.unlock = unlock;
 			this.owned = owned;
 			this.hidden = hidden;
+			this.slot = slot;
+			this.event = event;
 			this.hat = hat;
 			this.template = template;
 			this.textureUrl = textureUrl;
 			this.templateUrl = templateUrl;
 			this.cardUrl = cardUrl;
 			this.cardNightUrl = cardNightUrl;
+		}
+
+		/** Event-Teil, das man während dieses Events abholen kann? */
+		public boolean eventClaim() {
+			return "event".equals(unlock) && (event == null || "halloween".equals(event));
+		}
+
+		/** Belohnung aus „Süßes oder Saures“ ({@code unlock: "reward"}) – nicht abholbar, nicht per Code. */
+		public boolean reward() {
+			return "reward".equals(unlock);
 		}
 
 		/** Gesperrt (nicht besessen)? */
@@ -117,6 +134,8 @@ public final class CosmeticCatalog {
 		public final List<Item> items;
 		/** Getragene Kopf-Kosmetik (ID) oder null. */
 		public final String equipped;
+		/** Getragener Begleiter (ID) oder null. */
+		public final String equippedCompanion;
 		public final boolean loaded;
 		public final boolean loading;
 		/** Mit der TRS API verbunden (angemeldet)? */
@@ -132,10 +151,12 @@ public final class CosmeticCatalog {
 		/** IDs, deren Vorschau nicht ladbar war. */
 		public final Set<String> failed;
 
-		State(List<Item> items, String equipped, boolean loaded, boolean loading, boolean trs, String busy, String message,
-				boolean error, int version, Map<String, Art> cards, Map<String, Preview> previews, Set<String> failed) {
+		State(List<Item> items, String equipped, String equippedCompanion, boolean loaded, boolean loading, boolean trs,
+				String busy, String message, boolean error, int version, Map<String, Art> cards, Map<String, Preview> previews,
+				Set<String> failed) {
 			this.items = items;
 			this.equipped = equipped;
+			this.equippedCompanion = equippedCompanion;
 			this.loaded = loaded;
 			this.loading = loading;
 			this.trs = trs;
@@ -171,6 +192,7 @@ public final class CosmeticCatalog {
 	// --- nur Hintergrund-Thread ---
 	private List<Item> items = Collections.emptyList();
 	private String equipped;
+	private String equippedCompanion;
 	private boolean loaded;
 	private boolean loadingFlag;
 	private boolean trs;
@@ -268,9 +290,7 @@ public final class CosmeticCatalog {
 				platform.trsCapeChanged();
 			} catch (ApiException e) {
 				if (e.unauthorized()) platform.trsTokenRejected(token);
-				message = "cosmetic_locked".equals(e.code()) ? "wardrobe.cosmetics.error.locked"
-						: "cosmetic_not_found".equals(e.code()) ? "wardrobe.cosmetics.error.notFound"
-						: "wardrobe.cosmetics.error.generic";
+				message = cosmeticError(e);
 				error = true;
 			} catch (IOException e) {
 				message = "wardrobe.cosmetics.error.offline";
@@ -281,6 +301,83 @@ public final class CosmeticCatalog {
 				publish();
 			}
 		});
+	}
+
+	/** Begleiter aufsetzen ({@code id}) oder absetzen (null). Der Hut bleibt, wie er ist. */
+	public void wearCompanion(final String id) {
+		State s = state.get();
+		if (s.busy != null) return;
+		submit(() -> {
+			String token = platform.trsToken();
+			if (token == null) {
+				fail("wardrobe.cosmetics.error.offline");
+				return;
+			}
+			busy = id == null ? "-" : id;
+			message = null;
+			publish();
+			try {
+				api().setCompanion(token, id);
+				equippedCompanion = id;
+				message = id == null ? "wardrobe.cosmetics.takenOff" : "wardrobe.cosmetics.putOn";
+				error = false;
+				platform.trsCapeChanged();
+			} catch (ApiException e) {
+				if (e.unauthorized()) platform.trsTokenRejected(token);
+				message = cosmeticError(e);
+				error = true;
+			} catch (IOException e) {
+				message = "wardrobe.cosmetics.error.offline";
+				error = true;
+			} finally {
+				busy = null;
+				version++;
+				publish();
+			}
+		});
+	}
+
+	/** Event-Teil abholen ({@code POST /v1/me/cosmetics/{id}/claim}) und den Katalog neu lesen. */
+	public void claim(final String id) {
+		if (id == null || !id.matches("[a-z0-9][a-z0-9_-]{0,39}")) return;
+		State s = state.get();
+		if (s.busy != null) return;
+		submit(() -> {
+			String token = platform.trsToken();
+			if (token == null) {
+				fail("wardrobe.cosmetics.error.offline");
+				return;
+			}
+			busy = id;
+			message = null;
+			publish();
+			try {
+				api().claimCosmetic(token, id);
+				message = "wardrobe.cosmetics.claimed";
+				error = false;
+				load();
+			} catch (ApiException e) {
+				if (e.unauthorized()) platform.trsTokenRejected(token);
+				message = cosmeticError(e);
+				error = true;
+			} catch (IOException e) {
+				message = "wardrobe.cosmetics.error.offline";
+				error = true;
+			} finally {
+				busy = null;
+				version++;
+				publish();
+			}
+		});
+	}
+
+	private static String cosmeticError(ApiException e) {
+		String code = e.code();
+		if ("cosmetic_locked".equals(code)) return "wardrobe.cosmetics.error.locked";
+		if ("cosmetic_not_found".equals(code)) return "wardrobe.cosmetics.error.notFound";
+		if ("event_inactive".equals(code)) return "wardrobe.cosmetics.error.eventInactive";
+		if ("not_claimable".equals(code)) return "wardrobe.cosmetics.error.notClaimable";
+		return "wardrobe.cosmetics.error.generic";
 	}
 
 	// ====================================================================================================
@@ -319,6 +416,7 @@ public final class CosmeticCatalog {
 		}
 		List<Item> parsed = new ArrayList<Item>();
 		String eq = null;
+		String eqCompanion = null;
 		try {
 			JsonElement root = new JsonParser().parse(raw);
 			JsonArray list = root.isJsonObject() && root.getAsJsonObject().get("cosmetics") != null
@@ -330,7 +428,10 @@ public final class CosmeticCatalog {
 					Item it = parse(e.getAsJsonObject(), cfg);
 					if (it == null) continue;
 					parsed.add(it);
-					if (bool(e.getAsJsonObject(), "equipped")) eq = it.id;
+					if (bool(e.getAsJsonObject(), "equipped")) {
+						if ("companion".equals(it.slot)) eqCompanion = it.id;
+						else eq = it.id;
+					}
 				}
 			}
 		} catch (RuntimeException e) {
@@ -339,6 +440,7 @@ public final class CosmeticCatalog {
 		}
 		items = Collections.unmodifiableList(parsed);
 		equipped = eq;
+		equippedCompanion = eqCompanion;
 		loaded = true;
 		publish();
 		// Kartenbilder nachladen (Tag + Nacht)
@@ -349,14 +451,27 @@ public final class CosmeticCatalog {
 		}
 	}
 
-	/** Ein Katalog-Eintrag; nur Kopf-Kosmetik, die diese Mod zeichnen kann. */
+	/** Ein Katalog-Eintrag; nur Hut oder Begleiter, die diese Mod zeichnen kann. */
 	static Item parse(JsonObject o, OnlineConfig cfg) {
 		String id = str(o, "id");
 		if (id == null || !id.matches("[a-z0-9][a-z0-9_-]{0,39}")) return null;
-		if (!"hat".equals(str(o, "slot"))) return null;
+		String slot = str(o, "slot");
+		if (slot == null) slot = "hat";
+		if (!"hat".equals(slot) && !"companion".equals(slot)) return null;
 		String name = SkinFiles.cleanName(str(o, "name"), id);
-		String unlock = str(o, "unlock");
+		String unlock;
+		String event = null;
+		JsonElement rawUnlock = o.get("unlock");
+		if (rawUnlock != null && rawUnlock.isJsonObject()) {
+			JsonObject u = rawUnlock.getAsJsonObject();
+			unlock = str(u, "type");
+			event = str(u, "event");
+		} else {
+			unlock = str(o, "unlock");
+			event = str(o, "event");
+		}
 		if (unlock == null || !unlock.matches("[a-z_]{1,24}")) unlock = "code";
+		if (event != null && !event.matches("[a-z0-9_-]{1,32}")) event = null;
 		boolean owned = bool(o, "owned");
 		boolean hidden = bool(o, "hidden");
 		// Versteckte nur, wenn besessen (die API liefert sie sonst ohnehin nicht).
@@ -368,17 +483,18 @@ public final class CosmeticCatalog {
 		else if (tex != null && tex.isJsonObject()) textureUrl = str(tex.getAsJsonObject(), "url");
 		String card = resolve(str(o, "card"), cfg);
 		String cardNight = resolve(str(o, "cardNight"), cfg);
+		if ("companion".equals(slot) && format != 2) return null;
 		if (format == 2) {
 			HatInfo hat = HatInfo.v2(id, str(o, "model"), textureUrl, str(o, "glow"), str(o, "hash"),
 					integer(o, "frames"), integer(o, "glowFrames"), cfg);
 			if (hat == null) return null;
-			return new Item(id, name, 2, unlock, owned, hidden, hat, null, null, null, card, cardNight);
+			return new Item(id, name, 2, unlock, owned, hidden, slot, event, hat, null, null, null, card, cardNight);
 		}
 		String template = str(o, "template");
 		if (template == null || !CosmeticModels.supported(template) || !owned) return null;
 		String url = resolve(textureUrl, cfg);
 		if (url == null) return null;
-		return new Item(id, name, 1, unlock, owned, hidden, null, template, url, resolve(str(o, "templateUrl"), cfg), card,
+		return new Item(id, name, 1, unlock, owned, hidden, slot, event, null, template, url, resolve(str(o, "templateUrl"), cfg), card,
 				cardNight);
 	}
 
@@ -480,7 +596,7 @@ public final class CosmeticCatalog {
 	}
 
 	private void publish() {
-		state.set(new State(items, equipped, loaded, loadingFlag, trs, busy, message, error, version,
+		state.set(new State(items, equipped, equippedCompanion, loaded, loadingFlag, trs, busy, message, error, version,
 				Collections.unmodifiableMap(new LinkedHashMap<String, Art>(cards)),
 				Collections.unmodifiableMap(new LinkedHashMap<String, Preview>(previews)),
 				Collections.unmodifiableSet(new HashSet<String>(failed))));

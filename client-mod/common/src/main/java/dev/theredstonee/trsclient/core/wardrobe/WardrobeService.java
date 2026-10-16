@@ -136,13 +136,20 @@ public final class WardrobeService {
 		public final String sharedCreator;
 		/** Sichtbare Inhaber (0 = mit niemandem geteilt). */
 		public final int holders;
+		/** Event-Umhang, den man noch abholen muss (nicht besessen). */
+		public final boolean claimable;
 
 		Cape(String key, String name, boolean trs, boolean animated) {
-			this(key, name, trs, animated, false, false, false, null, null, 0);
+			this(key, name, trs, animated, false, false, false, null, null, 0, false);
 		}
 
 		Cape(String key, String name, boolean trs, boolean animated, boolean shareable, boolean own, boolean pending,
 				String sharedFrom, String sharedCreator, int holders) {
+			this(key, name, trs, animated, shareable, own, pending, sharedFrom, sharedCreator, holders, false);
+		}
+
+		Cape(String key, String name, boolean trs, boolean animated, boolean shareable, boolean own, boolean pending,
+				String sharedFrom, String sharedCreator, int holders, boolean claimable) {
 			this.key = key;
 			this.name = name;
 			this.trs = trs;
@@ -153,6 +160,7 @@ public final class WardrobeService {
 			this.sharedFrom = sharedFrom;
 			this.sharedCreator = sharedCreator;
 			this.holders = holders;
+			this.claimable = claimable;
 		}
 
 		/** TRS-ID ohne Präfix (nur bei {@link #trs}). */
@@ -612,6 +620,30 @@ public final class WardrobeService {
 			ensureAccount();
 			wear(key);
 			publish(Task.NONE, "wardrobe.msg.capeChanged", false, null);
+		});
+	}
+
+	/** Event-Umhang abholen ({@code POST /v1/me/capes/{id}/claim}) und die Liste neu lesen. */
+	public void claimCape(final String key) {
+		if (key == null || !key.startsWith("trs:")) return;
+		final String id = key.substring(4);
+		submit(Task.APPLYING, () -> {
+			String token = platform.trsToken();
+			if (token == null) {
+				fail("wardrobe.cosmetics.error.offline");
+				return;
+			}
+			try {
+				api().claimCape(token, id);
+				loadTrsCapes(api(), token);
+				publish(Task.NONE, "wardrobe.capes.claimed", false, null);
+			} catch (ApiException e) {
+				if (e.unauthorized()) platform.trsTokenRejected(token);
+				fail("event_inactive".equals(e.code()) ? "wardrobe.cosmetics.error.eventInactive"
+						: "wardrobe.cosmetics.error.generic");
+			} catch (IOException e) {
+				fail("wardrobe.cosmetics.error.offline");
+			}
 		});
 	}
 
@@ -1158,7 +1190,10 @@ public final class WardrobeService {
 			activeTrsCape = null;
 			for (WardrobeApi.Cape c : list) {
 				if (c == null || c.id == null || !c.id.matches("[a-z0-9][a-z0-9_-]{0,39}")) continue;
-				if (!Boolean.TRUE.equals(c.owned)) continue;
+				boolean owned = Boolean.TRUE.equals(c.owned);
+				String event = c.event != null && c.event.matches("[a-z0-9_-]{1,32}") ? c.event : null;
+				boolean eventCape = "event".equals(c.unlock) || event != null;
+				if (!owned && !eventCape) continue;
 				String key = "trs:" + c.id;
 				String from = null;
 				String creator = null;
@@ -1169,9 +1204,11 @@ public final class WardrobeService {
 				}
 				boolean upload = "upload".equals(c.kind);
 				int holders = c.holders == null ? 0 : Math.max(0, Math.min(1000, c.holders));
+				boolean claimable = !owned && eventCape;
 				out.add(new Cape(key, SkinFiles.cleanName(c.name, c.id), true, c.frames > 1, Boolean.TRUE.equals(c.shareable),
-						upload && from == null, upload && from == null && "pending".equals(c.status), from, creator, holders));
-				if (Boolean.TRUE.equals(c.active)) activeTrsCape = key;
+						upload && from == null, upload && from == null && "pending".equals(c.status), from, creator, holders,
+						claimable));
+				if (owned && Boolean.TRUE.equals(c.active)) activeTrsCape = key;
 				if (!capeArt.containsKey(key) && c.url != null) loadCapeArt(key, c.url, c.width, c.height, token);
 				if (out.size() >= 64) break;
 			}
