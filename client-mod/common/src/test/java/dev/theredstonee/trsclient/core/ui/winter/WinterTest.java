@@ -74,9 +74,13 @@ class WinterTest {
 		Files.write(file, ("{\"version\":1,\"theme\":\"oled\",\"accent\":\"ice\",\"accentColor\":\"#2B97D6\",\"language\":\"de\","
 				+ "\"design\":\"winter\",\"event\":\"halloween\"}").getBytes(StandardCharsets.UTF_8));
 		assertTrue(Theme.loadFrom(dir));
-		assertTrue(Theme.get().winter);
-		assertEquals("oled", Theme.get().themeName);
-		assertEquals(0xFF2B97D6, Theme.get().accent);
+		// Das Halloween-Event legt sich als eigener Look darüber – das eingestellte Thema bleibt Winternacht.
+		assertTrue(dev.theredstonee.trsclient.core.halloween.Halloween.active());
+		assertTrue(Theme.get().halloween);
+		assertTrue(Theme.plain().winter);
+		assertEquals("oled", Theme.plain().themeName);
+		assertEquals(0xFF2B97D6, Theme.plain().accent);
+		dev.theredstonee.trsclient.core.halloween.Halloween.reset();
 		// Ältere Launcher ohne Design-Feld → Redstone.
 		Files.write(file, "{\"version\":1,\"theme\":\"dark\",\"accent\":\"lapis\"}".getBytes(StandardCharsets.UTF_8));
 		assertTrue(Theme.loadFrom(dir));

@@ -48,7 +48,7 @@ public final class Social {
 
 	/** Bekannte API-Fehlercodes mit eigener Meldung ({@code social.error.<code>}). */
 	static final Set<String> KNOWN_ERRORS = new HashSet<String>(Arrays.asList(
-			"not_friends", "chat_muted", "message_too_long", "empty_message", "links_not_allowed", "spam_detected",
+			"sticker_locked", "not_friends", "chat_muted", "message_too_long", "empty_message", "links_not_allowed", "spam_detected",
 			"message_blocked", "rate_limited", "group_full", "group_limit", "target_group_limit", "invalid_name",
 			"not_owner", "member_not_found", "conversation_not_found", "message_not_found", "message_deleted",
 			"not_sender", "already_reported", "too_many_open_reports", "cannot_target_self", "not_reportable",
@@ -74,6 +74,10 @@ public final class Social {
 		/** Braucht jemand anderes (Welt-Hosting) gerade den Echtzeit-Stream? */
 		default boolean wantsStream() {
 			return false;
+		}
+
+		/** Stream-Lücke ({@code resync}): Profil ({@code GET /v1/me}, inkl. Events) neu holen. */
+		default void profileStale() {
 		}
 	}
 
@@ -115,6 +119,8 @@ public final class Social {
 		final String replyTo;
 		final List<Path> images;
 		final Chat.Invite invite;
+		/** Sticker statt Text oder null. */
+		String sticker;
 
 		SendJob(String conversationId, String nonce, String text, String replyTo, List<Path> images, Chat.Invite invite) {
 			this.conversationId = conversationId;
@@ -398,6 +404,7 @@ public final class Social {
 		if (resyncWanted && !listInFlight) {
 			resyncWanted = false;
 			resync(now);
+			backend.profileStale();
 		} else if (!store.listLoaded() && !listInFlight && now >= listNotBefore) {
 			loadList(now);
 		}
@@ -511,6 +518,16 @@ public final class Social {
 		if (t.equals("resync")) {
 			resyncWanted = true;
 			notesChanged();
+			return;
+		}
+		if (t.equals("events_changed")) {
+			// Aktive Events (z. B. Halloween). null = Feld fehlt, nicht als leere Liste werten.
+			dev.theredstonee.trsclient.core.halloween.Halloween.fromApi(e.events);
+			return;
+		}
+		if (t.equals("halloween_updated")) {
+			// Kürbis gefunden, Süßes oder Saures, Abzeichen vergeben (API.md §36) – neuer Zustand kommt gleich mit.
+			dev.theredstonee.trsclient.core.halloween.HalloweenService.get().fromEvent(e.halloweenData);
 			return;
 		}
 		if (t.equals("notes_changed")) {
@@ -1288,6 +1305,31 @@ public final class Social {
 		return true;
 	}
 
+	/**
+	 * Chat-Sticker senden (Halloween 2026, nur besessene – der Server prüft: 403 {@code sticker_locked}). Wie
+	 * {@link #send}: sofort als ausstehend zeigen, mit nonce.
+	 */
+	public boolean sendSticker(String conversationId, String stickerId) {
+		if (token == null || !Chat.validConversationId(conversationId)) {
+			note("social.error.offline", null, true);
+			return false;
+		}
+		if (!Chat.validSticker(stickerId)) return false;
+		long sentAt = System.currentTimeMillis();
+		if (moderation().active(sentAt)) {
+			note("social.error.chat_muted", null, true);
+			return false;
+		}
+		String nonce = UUID.randomUUID().toString().replace("-", "");
+		store.addPending(conversationId, nonce, new Chat.User(self, selfName == null ? "?" : selfName), "", null, null, 0,
+				sentAt, stickerId);
+		SendJob job = new SendJob(conversationId, nonce, "", null, Collections.<Path>emptyList(), null);
+		job.sticker = stickerId;
+		sendJobs.put(nonce, job);
+		run(job);
+		return true;
+	}
+
 	/** Fehlgeschlagene Nachricht erneut senden (gleiche nonce). */
 	public void retry(Chat.Message local) {
 		if (local == null || local.nonce == null) return;
@@ -1295,7 +1337,7 @@ public final class Social {
 		if (job == null) return;
 		store.dropLocal(local.conversationId, local.id);
 		store.addPending(job.conversationId, job.nonce, new Chat.User(self, selfName == null ? "?" : selfName), job.text,
-				local.reply, job.invite, job.images.size(), System.currentTimeMillis());
+				local.reply, job.invite, job.images.size(), System.currentTimeMillis(), job.sticker);
 		run(job);
 	}
 
@@ -1330,7 +1372,8 @@ public final class Social {
 						ids.add(api.upload(t, u.bytes, u.mime).id);
 						uploadProgress.put(job.nonce, new Upload(++i, job.images.size()));
 					}
-					final Chat.Message m = api.send(t, job.conversationId, job.text, job.replyTo, ids, job.invite, job.nonce);
+					final Chat.Message m = api.send(t, job.conversationId, job.text, job.replyTo, ids, job.invite, job.nonce,
+							job.sticker);
 					post(new Runnable() {
 						@Override
 						public void run() {

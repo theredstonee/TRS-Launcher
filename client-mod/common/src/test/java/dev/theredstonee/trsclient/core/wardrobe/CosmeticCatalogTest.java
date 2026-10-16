@@ -44,7 +44,12 @@ class CosmeticCatalogTest {
 
 	@Test
 	void skipsOtherSlotsForeignHostsAndHiddenUnowned() {
-		assertNull(CosmeticCatalog.parse(json("{\"id\":\"redstone_wings\",\"slot\":\"wings\",\"format\":2,\"model\":\"/v1/a\",\"texture\":\"/v1/b\"}"), CFG));
+		// Flügel (Halloween 2026): eigenes Fach, nur Format 2; unbekannte Fächer fallen weg.
+		CosmeticCatalog.Item wings = CosmeticCatalog.parse(json("{\"id\":\"redstone_wings\",\"slot\":\"wings\",\"format\":2,\"model\":\"/v1/a\",\"texture\":\"/v1/b\"}"), CFG);
+		assertNotNull(wings);
+		assertEquals("wings", wings.slot);
+		assertNull(CosmeticCatalog.parse(json("{\"id\":\"old_wings\",\"slot\":\"wings\",\"format\":1,\"template\":\"duck\",\"texture\":\"/v1/b\"}"), CFG));
+		assertNull(CosmeticCatalog.parse(json("{\"id\":\"tail\",\"slot\":\"tail\",\"format\":2,\"model\":\"/v1/a\",\"texture\":\"/v1/b\"}"), CFG));
 		assertNull(CosmeticCatalog.parse(json("{\"id\":\"evil\",\"slot\":\"hat\",\"format\":2,\"model\":\"https://evil.example/m.json\","
 				+ "\"texture\":\"/v1/b.png\"}"), CFG));
 		assertNull(CosmeticCatalog.parse(json("{\"id\":\"secret\",\"slot\":\"hat\",\"hidden\":true,\"owned\":false,\"format\":2,"
@@ -65,6 +70,36 @@ class CosmeticCatalogTest {
 		assertNull(plain.templateUrl);
 		assertNull(CosmeticCatalog.parse(json("{\"id\":\"rubber_duck\",\"slot\":\"hat\",\"template\":\"duck\",\"owned\":false,"
 				+ "\"texture\":{\"url\":\"/v1/cosmetics/rubber_duck.png?v=1\"}}"), CFG));
+		// Begleiter nur Format 2
+		assertNull(CosmeticCatalog.parse(json("{\"id\":\"bat_buddy\",\"slot\":\"companion\",\"template\":\"duck\",\"owned\":true,"
+				+ "\"texture\":{\"url\":\"/v1/cosmetics/bat_buddy.png\"}}"), CFG));
+	}
+
+	@Test
+	void readsCompanionAndEventUnlock() {
+		CosmeticCatalog.Item buddy = CosmeticCatalog.parse(json("{\"id\":\"bat_buddy\",\"name\":\"Fledermaus\",\"slot\":\"companion\","
+				+ "\"unlock\":{\"type\":\"event\",\"event\":\"halloween\"},\"owned\":false,\"format\":2,"
+				+ "\"model\":\"/v1/cosmetics/bat_buddy/model.json?v=abc123\",\"texture\":\"/v1/cosmetics/bat_buddy.png?v=abc123\","
+				+ "\"hash\":\"abc123\"}"), CFG);
+		assertNotNull(buddy);
+		assertEquals("companion", buddy.slot);
+		assertEquals("event", buddy.unlock);
+		assertEquals("halloween", buddy.event);
+		assertTrue(buddy.eventClaim());
+		assertTrue(buddy.locked());
+		CosmeticCatalog.Item hat = CosmeticCatalog.parse(json("{\"id\":\"witch_hat\",\"name\":\"Hexenhut\",\"slot\":\"hat\","
+				+ "\"unlock\":\"event\",\"event\":\"halloween\",\"owned\":true,\"equipped\":true,\"format\":2,"
+				+ "\"model\":\"/v1/cosmetics/witch_hat/model.json\",\"texture\":\"/v1/cosmetics/witch_hat.png\"}"), CFG);
+		assertNotNull(hat);
+		assertEquals("hat", hat.slot);
+		assertEquals("event", hat.unlock);
+		assertFalse(hat.locked());
+		CosmeticCatalog.Item reward = CosmeticCatalog.parse(json("{\"id\":\"spook_hat\",\"name\":\"Spuk\",\"slot\":\"hat\","
+				+ "\"unlock\":\"reward\",\"rewardOf\":\"halloween2026\",\"owned\":false,\"format\":2,"
+				+ "\"model\":\"/v1/cosmetics/spook_hat/model.json\",\"texture\":\"/v1/cosmetics/spook_hat.png\"}"), CFG);
+		assertNotNull(reward);
+		assertTrue(reward.reward());
+		assertFalse(reward.eventClaim());
 	}
 
 	@Test

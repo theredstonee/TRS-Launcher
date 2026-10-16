@@ -38,6 +38,8 @@ public final class OnlineFeatures<T> {
 	private final dev.theredstonee.trsclient.core.emote.EmoteController emotes;
 	/** Fan-Symbole vor Namen (Creator-Programm, nur Render-Thread). */
 	private final dev.theredstonee.trsclient.core.creator.FanSymbols<T> fanSymbols;
+	/** Profil-Abzeichen vor dem Namen (Halloween 2026). */
+	private final dev.theredstonee.trsclient.core.creator.EventBadges<T> eventBadges;
 	private volatile Thread gameThread;
 	/** Wiederverwendet: Umhang-Einstellungen je Tick (keine Allokation). */
 	private final CapeSettings capeSettings = new CapeSettings();
@@ -58,6 +60,7 @@ public final class OnlineFeatures<T> {
 		this.cosmetics = new dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticAssets<>(backend, online::loadCosmetic);
 		this.emotes = new dev.theredstonee.trsclient.core.emote.EmoteController(modules, online);
 		this.fanSymbols = new dev.theredstonee.trsclient.core.creator.FanSymbols<>(backend, online::loadSymbol);
+		this.eventBadges = new dev.theredstonee.trsclient.core.creator.EventBadges<>(backend, online::loadBadge);
 		this.localSkin = localSkin;
 	}
 
@@ -254,13 +257,46 @@ public final class OnlineFeatures<T> {
 	public dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> hatV2(UUID uuid, boolean helmet) {
 		if (Thread.currentThread() != gameThread) return null;
 		if (!modules.trsOnline.isEnabled() || !modules.trsCosmetics.get()) return null;
-		PlayerInfo info = online.info(uuid);
-		if (info.hat == null || !info.hat.v2()) return null;
+		return v2(online.info(uuid).hat, helmet);
+	}
+
+	/**
+	 * Begleiter (Slot {@code companion}, Format 2) neben dem Hut. Gleiche Regeln wie {@link #hatV2}: nur Spiel-Thread,
+	 * Module an, mit Helm auf den Helm gesetzt. null = nichts.
+	 */
+	public dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> companionV2(UUID uuid, boolean helmet) {
+		if (Thread.currentThread() != gameThread) return null;
+		if (!modules.trsOnline.isEnabled() || !modules.trsCosmetics.get()) return null;
+		return v2(online.info(uuid).companion, helmet);
+	}
+
+	/** Zustand der Flügel je Spieler (idle/air/sneak mit Überblendung). */
+	private final dev.theredstonee.trsclient.core.cosmetic.v2.WingState wingStates = new dev.theredstonee.trsclient.core.cosmetic.v2.WingState();
+
+	/**
+	 * Flügel (Slot {@code wings}, Format 2, {@code attach: "body"}) für dieses Bild oder null: nichts getragen, Module
+	 * aus, noch nicht geladen, oder der Spieler trägt eine Elytra ({@code elytra}). {@code state} = {@code WingState}
+	 * IDLE/AIR/SNEAK aus der Bewegung (überblendet 250 ms). {@code self} = eigener Spieler (für die Selbsttest-Flügel
+	 * {@code -Dtrsclient.devWings}). Nur im Spiel-/Render-Thread wirksam.
+	 */
+	public dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> wingsV2(UUID uuid, boolean self, boolean elytra, int state) {
+		if (Thread.currentThread() != gameThread || elytra) return null;
+		if (!modules.trsOnline.isEnabled() || !modules.trsCosmetics.get()) return null;
+		HatInfo piece = online.info(uuid).wings;
+		if (piece == null && self) piece = dev.theredstonee.trsclient.core.cosmetic.v2.DevWings.info(online);
+		dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> hat = v2(piece, false);
+		if (hat == null) return null;
+		dev.theredstonee.trsclient.core.cosmetic.v2.WingState.Snapshot s = wingStates.update(uuid, state, hat.now);
+		return hat.withState(s.driver, s.prevDriver, s.blend);
+	}
+
+	private dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> v2(HatInfo piece, boolean helmet) {
+		if (piece == null || !piece.v2()) return null;
 		try {
 			java.util.function.LongSupplier clock = v2Clock;
 			long wall = System.currentTimeMillis();
 			long now = clock != null ? clock.getAsLong() : wall;
-			dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticAssets.Entry<T> e = cosmetics.get(info.hat, wall);
+			dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticAssets.Entry<T> e = cosmetics.get(piece, wall);
 			if (e == null) return null;
 			T halo = e.model.halos.isEmpty() ? null : cosmetics.halo();
 			return new dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T>(e.model, e.base(now), e.glow(now), halo, now, helmet, e);
@@ -286,7 +322,7 @@ public final class OnlineFeatures<T> {
 		java.util.function.BiConsumer<dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<?>, Integer> trace = v2Trace;
 		if (trace != null) trace.accept(hat, pass);
 		try {
-			v2Renderer.pose(hat.model, hat.now, true, hat.helmet);
+			v2Renderer.pose(hat.model, hat.now, true, hat.helmet, hat.driver, hat.prevDriver, hat.blend);
 			v2Renderer.emit(hat.model, pass, hat.now, eye, sink);
 		} catch (RuntimeException e) {
 			online.reportError(e);
@@ -298,6 +334,24 @@ public final class OnlineFeatures<T> {
 		if (!modules.trsOnline.isEnabled()) return false;
 		if (tab ? !modules.badgeTab.get() : !modules.badgeNametag.get()) return false;
 		return online.info(uuid).badge;
+	}
+
+	/**
+	 * Profil-Abzeichen vor dem Namen (Halloween 2026: Kürbisjäger vor Mond-Fledermaus) oder null: keins, Abzeichen-Schalter
+	 * aus, Modul aus. Gleiche Schalter wie das TRS-Abzeichen ({@code tab}: Tabliste, sonst Namensschild). Nur Spiel-Thread.
+	 */
+	public TextureRef eventBadge(UUID uuid, boolean tab) {
+		if (Thread.currentThread() != gameThread) return null;
+		if (!modules.trsOnline.isEnabled()) return null;
+		if (tab ? !modules.badgeTab.get() : !modules.badgeNametag.get()) return null;
+		String id = dev.theredstonee.trsclient.core.creator.EventBadges.pick(online.info(uuid).badges);
+		if (id == null) return null;
+		try {
+			return eventBadges.texture(id, System.currentTimeMillis());
+		} catch (RuntimeException e) {
+			online.reportError(e);
+			return null;
+		}
 	}
 
 	/**

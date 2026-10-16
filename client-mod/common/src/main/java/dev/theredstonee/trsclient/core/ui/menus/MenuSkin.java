@@ -7,6 +7,11 @@ import dev.theredstonee.trsclient.core.ui.Icons;
 import dev.theredstonee.trsclient.core.ui.PixelFont;
 import dev.theredstonee.trsclient.core.ui.Redstone;
 import dev.theredstonee.trsclient.core.ui.Theme;
+import dev.theredstonee.trsclient.core.ui.halloween.HalloweenLook;
+import dev.theredstonee.trsclient.core.ui.halloween.HalloweenPalette;
+import dev.theredstonee.trsclient.core.ui.halloween.HorrorLayer;
+import dev.theredstonee.trsclient.core.ui.halloween.MoonBar;
+import dev.theredstonee.trsclient.core.ui.halloween.NightScene;
 import dev.theredstonee.trsclient.core.ui.title.CircuitScene;
 import dev.theredstonee.trsclient.core.ui.title.TitleUi;
 import dev.theredstonee.trsclient.core.ui.winter.Frost;
@@ -87,6 +92,11 @@ public final class MenuSkin {
 		long start = System.nanoTime();
 		Theme t = Theme.get();
 		float time = seconds();
+		if (t.halloween) {
+			halloweenBackground(c, width, height, inWorld, headerH, footerTop, time);
+			measure(start);
+			return;
+		}
 		if (inWorld && t.winter) {
 			// Winternacht in der Welt: nachtblauer Schleier, unten Frostschein und eine Frostlinie.
 			c.fill(0, 0, width, height, 0x9A060B16);
@@ -113,9 +123,35 @@ public final class MenuSkin {
 		measure(start);
 	}
 
+	/**
+	 * Halloween: ohne Welt die Mondnacht (gedämpft, damit Vanilla-Schrift lesbar bleibt), in der Welt ein Pflaumen-Schleier
+	 * mit Nebelschein von unten. Darüber Kopf-/Fußleiste und die Horror-Schicht (Vignette, Korn, Blitz).
+	 */
+	private static void halloweenBackground(Canvas c, int width, int height, boolean inWorld, int headerH, int footerTop, float time) {
+		if (inWorld) {
+			c.fill(0, 0, width, height, 0x9E07060C);
+			for (int i = 0; i < 6; i++) {
+				int band = Math.max(4, height / 24);
+				int y2 = height - i * band;
+				c.fill(0, y2 - band, width, y2, ColorMath.withAlpha(HalloweenPalette.VIOLET_LIGHT, Math.max(0, 16 - i * 3)));
+			}
+			c.fill(0, height - 1, width, height, 0x50CFD5E3);
+		} else {
+			NightScene.shared().draw(c, width, height, dev.theredstonee.trsclient.core.menus.MenuStyle.animated());
+			c.fill(0, 0, width, height, 0x6607060C);
+		}
+		if (headerH > 0) header(c, width, headerH, inWorld);
+		if (footerTop < height) footer(c, width, footerTop, height, inWorld);
+		HorrorLayer.draw(c, width, height, inWorld);
+	}
+
 	/** Redstone-Schaltung des Startbildschirms (ruhig, wenn der animierte Hintergrund aus ist). */
 	private static void scene(Canvas c, int width, int height, float time) {
 		boolean animated = dev.theredstonee.trsclient.core.menus.MenuStyle.animated();
+		if (Theme.get().halloween) {
+			NightScene.shared().draw(c, width, height, animated);
+			return;
+		}
 		if (winter()) {
 			WinterScene.shared().draw(c, width, height, animated);
 			return;
@@ -137,6 +173,16 @@ public final class MenuSkin {
 	/** Kopfleiste mit kleinem TRS-Schriftzug links und Staubleitung unten. */
 	public static void header(Canvas c, int width, int h, boolean inWorld) {
 		Theme t = Theme.get();
+		if (t.halloween) {
+			c.fill(0, 0, width, h, inWorld ? 0x8C07060C : 0xD80A0812);
+			c.fill(0, 0, width, 1, 0x40CFD5E3);
+			c.fill(0, h - 1, width, h, 0x803B3358);
+			int lx = 8;
+			int ly = (h - PixelFont.HEIGHT * 2) / 2;
+			logo(c, lx, ly, 2, 1f);
+			HalloweenLook.menuHeader(c, 0, 0, width, h, lx + PixelFont.width("TRS") * 2 + 2, seconds());
+			return;
+		}
 		c.fill(0, 0, width, h, t.winter ? (inWorld ? 0x8C060B16 : 0xD80B1222) : (inWorld ? 0x8C0C0A0B : 0xD8141113));
 		c.fill(0, 0, width, 1, ColorMath.withAlpha(t.winter ? FROST_LIGHT : BEVEL_LIGHT, 0x60));
 		Redstone.dustH(c, 0, width, h - 2, ColorMath.lerp(t.dustOff, t.dustOn, 0.8f), 0.7f);
@@ -146,6 +192,11 @@ public final class MenuSkin {
 	/** Fußleiste (Knopfbereich unter einer Liste). */
 	public static void footer(Canvas c, int width, int top, int height, boolean inWorld) {
 		Theme t = Theme.get();
+		if (t.halloween) {
+			c.fill(0, top, width, height, inWorld ? 0x8C07060C : 0xD80A0812);
+			c.fill(0, top, width, top + 1, 0x803B3358);
+			return;
+		}
 		c.fill(0, top, width, height, t.winter ? (inWorld ? 0x8C060B16 : 0xD80B1222) : (inWorld ? 0x8C0C0A0B : 0xD8141113));
 		Redstone.dustH(c, 0, width, top, ColorMath.lerp(t.dustOff, t.dustOn, 0.8f), 0.7f);
 	}
@@ -153,6 +204,10 @@ public final class MenuSkin {
 	/** „TRS“ in der Pixelschrift, glühend; {@code scale} = Pixel je Schriftpunkt. */
 	public static void logo(Canvas c, int x, int y, int scale, float alpha) {
 		Theme t = Theme.get();
+		if (t.halloween) {
+			HalloweenLook.silverWord(c, "TRS", x, y, scale, alpha, 1f);
+			return;
+		}
 		List<int[]> rects = PixelFont.rects("TRS");
 		int glow = ColorMath.withAlpha(t.glow, Math.round(40 * alpha));
 		for (int[] r : rects) c.fill(x + r[0] * scale - 1, y + r[1] * scale - 1, x + r[2] * scale + 1, y + r[3] * scale + 1, glow);
@@ -174,6 +229,12 @@ public final class MenuSkin {
 	public static void listWell(Canvas c, int x1, int y1, int x2, int y2, boolean inWorld) {
 		if (x2 - x1 < 4 || y2 - y1 < 4) return;
 		boolean w = winter();
+		if (Theme.get().halloween) {
+			c.fill(x1, y1, x2, y2, inWorld ? 0x7807060C : 0xB007060C);
+			c.fill(x1, y1, x2, y1 + 1, 0x80000000);
+			c.fill(x1, y2 - 1, x2, y2, 0x603B3358);
+			return;
+		}
 		c.fill(x1, y1, x2, y2, w ? (inWorld ? 0x70020610 : 0xA8050A16) : (inWorld ? 0x70000000 : 0xA8080607));
 		c.fill(x1, y1, x2, y1 + 1, 0x80000000);
 		c.fill(x1, y2 - 1, x2, y2, ColorMath.withAlpha(w ? FROST_LIGHT : BEVEL_LIGHT, 0x50));
@@ -197,6 +258,10 @@ public final class MenuSkin {
 		if (w < 3 || h < 3) return;
 		Theme t = Theme.get();
 		boolean hot = hover && active;
+		if (t.halloween) {
+			HalloweenLook.vanillaButton(c, x, y, w, h, hot, active);
+			return;
+		}
 		if (t.winter) {
 			iceButton(c, t, x, y, w, h, hot, active);
 			return;
@@ -257,11 +322,11 @@ public final class MenuSkin {
 		if (w < 3 || h < 3) return;
 		Theme t = Theme.get();
 		if (focused && active) Redstone.glow(c, x, y, w, h, t.glow, 0.45f);
-		int fieldEdge = t.winter ? ICE_FIELD_EDGE : FIELD_EDGE;
+		int fieldEdge = t.halloween ? HalloweenPalette.BUTTON_EDGE : (t.winter ? ICE_FIELD_EDGE : FIELD_EDGE);
 		int edge = focused && active ? t.accent : (hover && active ? ColorMath.lerp(fieldEdge, t.accent, 0.4f) : fieldEdge);
 		Redstone.block(c, x, y, w, h, edge);
 		if (h < 5) return;
-		int fill = active ? (t.winter ? ICE_FIELD : FIELD) : (t.winter ? ICE_OFF : STONE_OFF);
+		int fill = t.halloween ? (active ? HalloweenPalette.NIGHT : 0xFF0B0912) : (active ? (t.winter ? ICE_FIELD : FIELD) : (t.winter ? ICE_OFF : STONE_OFF));
 		c.fill(x + 1, y + 1, x + w - 1, y + h - 1, fill);
 		c.fill(x + 1, y + 1, x + w - 1, y + 2, t.winter ? FROST_DARK : BEVEL_DARK);
 		c.fill(x + 1, y + h - 2, x + w - 1, y + h - 1, ColorMath.lerp(fill, t.winter ? FROST_LIGHT : BEVEL_LIGHT, 0.35f));
@@ -311,12 +376,13 @@ public final class MenuSkin {
 		Theme t = Theme.get();
 		if (w < 4 || h < 4) return;
 		if (selected) Redstone.glow(c, x, y, w, h, t.glow, 0.5f);
-		int e0 = t.winter ? ICE_EDGE : EDGE;
+		int e0 = t.halloween ? HalloweenPalette.LINE : (t.winter ? ICE_EDGE : EDGE);
 		int edge = selected ? ColorMath.lerp(e0, t.accent, 0.8f) : (hover ? ColorMath.lerp(e0, t.accent, 0.35f) : e0);
 		Redstone.block(c, x, y, w, h, edge);
 		int fill = cardFill(selected, hover);
 		c.fill(x + 1, y + 1, x + w - 1, y + h - 1, fill);
-		c.fill(x + 1, y + 1, x + w - 1, y + 2, ColorMath.withAlpha(t.winter ? FROST_LIGHT : BEVEL_LIGHT, 0x70));
+		c.fill(x + 1, y + 1, x + w - 1, y + 2, ColorMath.withAlpha(t.halloween ? HalloweenPalette.SILVER : (t.winter ? FROST_LIGHT : BEVEL_LIGHT), t.halloween ? 0x18 : 0x70));
+		if (t.halloween && w >= 24 && h >= 16) HalloweenLook.cobweb(c, x + w - 2, y + 1, Math.min(9, h / 2), 1, 0x30CFD5E3);
 		if (t.winter && w >= 12 && h >= 10) {
 			int rime = ColorMath.withAlpha(0xFFFFFFFF, selected ? 0x60 : 0x30);
 			c.fill(x + 1, y + 2, x + 4, y + 3, rime);
@@ -330,6 +396,7 @@ public final class MenuSkin {
 
 	/** Füllfarbe einer Karte (deckend – die Ping-Anzeige deckt damit die Vanilla-Balken ab). */
 	public static int cardFill(boolean selected, boolean hover) {
+		if (Theme.get().halloween) return selected ? 0xFF261B3B : (hover ? 0xFF1C1630 : 0xFF13101F);
 		if (winter()) return selected ? 0xFF1F3354 : (hover ? 0xFF18284A : 0xFF111B31);
 		return selected ? 0xFF33292B : (hover ? 0xFF2B2628 : 0xFF1F1C1E);
 	}
@@ -433,7 +500,17 @@ public final class MenuSkin {
 		long start = System.nanoTime();
 		Theme t = Theme.get();
 		float time = seconds();
-		if (inWorld) {
+		dev.theredstonee.trsclient.core.halloween.Jumpscares.LoadingView scare = null;
+		if (t.halloween) {
+			scare = dev.theredstonee.trsclient.core.halloween.Jumpscares.get().loading(progress, System.currentTimeMillis());
+			if (scare != null) progress = scare.progress;
+		}
+		if (t.halloween && inWorld) {
+			c.fill(0, 0, width, height, 0xE007060C);
+		} else if (t.halloween) {
+			scene(c, width, height, time);
+			c.fill(0, 0, width, height, 0x8C07060C);
+		} else if (inWorld) {
 			c.fill(0, 0, width, height, t.winter ? 0xE0060B16 : 0xE00A0708);
 		} else {
 			scene(c, width, height, time);
@@ -462,6 +539,11 @@ public final class MenuSkin {
 			String s = c.clip(detail, pw - 16);
 			c.text(s, cx - c.textWidth(s) / 2, y, t.textDim, false);
 		}
+		if (t.halloween) {
+			HalloweenLook.drips(c, cx - pw / 2 + 2, cx + pw / 2 - 2, top - 10, 3, time);
+			HorrorLayer.draw(c, width, height, inWorld);
+			if (scare != null) loadingScare(c, width, height, scare);
+		}
 		measure(start);
 	}
 
@@ -471,6 +553,12 @@ public final class MenuSkin {
 	 */
 	public static void lamps(Canvas c, int cx, int y, int maxWidth, float progress, float time) {
 		Theme t = Theme.get();
+		if (t.halloween) {
+			// Halloween: „Mondlauf“ – der Mond nimmt mit dem Fortschritt zu.
+			int w = Math.max(40, maxWidth - 16);
+			MoonBar.draw(c, cx - w / 2, y - 1, w, progress, time, dev.theredstonee.trsclient.core.menus.MenuStyle.animated());
+			return;
+		}
 		if (t.winter) {
 			// Winternacht: ein Eisbalken, der von links zufriert, statt der Lampenreihe.
 			Frost.bar(c, cx, y + 3, maxWidth, progress, time);
@@ -501,6 +589,27 @@ public final class MenuSkin {
 	}
 
 	/**
+	 * Schreck am Ladebildschirm (Jumpscare „Ladebildschirm“): Licht geht aus, zwei rote Augen öffnen sich in der Mitte.
+	 */
+	private static void loadingScare(Canvas c, int width, int height, dev.theredstonee.trsclient.core.halloween.Jumpscares.LoadingView v) {
+		if (v.dark > 0.004f) c.fill(0, 0, width, height, ColorMath.withAlpha(0xFF000000, Math.round(255 * ColorMath.clamp01(v.dark))));
+		float e = ColorMath.clamp01(v.eyes);
+		if (e <= 0.01f) return;
+		int px = Math.max(2, Math.min(width, height) / 90);
+		int ew = 5 * px;
+		int gap = 6 * px;
+		int cy = height / 2;
+		int open = Math.max(1, Math.round(3 * px * e));
+		for (int side = -1; side <= 1; side += 2) {
+			int ex = width / 2 + side * (gap / 2 + ew / 2) - ew / 2;
+			c.fill(ex - px, cy - open - px, ex + ew + px, cy + open + px, ColorMath.withAlpha(0xFFFF2A1A, Math.round(50 * e)));
+			c.fill(ex, cy - open, ex + ew, cy + open, ColorMath.withAlpha(0xFFFF3B2F, Math.round(255 * e)));
+			int pupil = Math.max(1, px);
+			c.fill(ex + ew / 2 - pupil / 2, cy - Math.min(open, pupil), ex + ew / 2 + (pupil + 1) / 2, cy + Math.min(open, pupil), 0xFF1A0204);
+		}
+	}
+
+	/**
 	 * Überblendung beim Laden der Ressourcen (statt Mojang-Logo). Nur Rechtecke, keine Schrift – beim ersten
 	 * Start ist die Schrift noch nicht geladen. {@code alpha} = Deckkraft der Überblendung.
 	 */
@@ -509,6 +618,10 @@ public final class MenuSkin {
 		Canvas c = FadeCanvas.of(raw, Math.min(1f, alpha));
 		Theme t = Theme.get();
 		int cell = 32;
+		if (t.halloween) {
+			halloweenResources(c, width, height, progress);
+			return;
+		}
 		if (t.winter) {
 			// Winternacht: Nachtblau mit Eisfliesen und leise fallenden Schneeflocken.
 			c.fill(0, 0, width, height, 0xFF0D1424);
@@ -539,5 +652,52 @@ public final class MenuSkin {
 		for (int[] r : rects) c.fill(x + r[0] * scale, y + r[1] * scale, x + r[2] * scale, y + r[3] * scale, r[1] == 0 ? light : t.accent);
 		if (t.winter) TitleUi.snowCaps(c, rects, x, y, scale);
 		lamps(c, width / 2, height / 2 + 14, Math.min(width - 40, 220), progress, seconds());
+	}
+
+	/**
+	 * Halloween-Überblendung beim Laden der Ressourcen: nur Rechtecke (die Schrift ist beim ersten Start noch nicht da) –
+	 * Nachthimmel mit Sternen, Blutmond, Hügel, „TRS CLIENT“ in Mondsilber und der Mondlauf.
+	 */
+	private static void halloweenResources(Canvas c, int width, int height, float progress) {
+		int[] sky = {0xFF06050B, 0xFF0B0816, 0xFF110C20, 0xFF19122D, 0xFF21173A};
+		int horizon = height * 3 / 4;
+		for (int i = 0; i < sky.length; i++) c.fill(0, horizon * i / sky.length, width, horizon * (i + 1) / sky.length, sky[i]);
+		c.fill(0, horizon, width, height, sky[sky.length - 1]);
+		float time = seconds();
+		for (int i = 0; i < 70; i++) {
+			int sx = Math.floorMod(i * 977 + 31, Math.max(1, width));
+			int sy = Math.floorMod(i * 571 + 17, Math.max(1, horizon - 8));
+			float tw = 0.35f + 0.65f * (0.5f + 0.5f * (float) Math.sin(time * (0.6 + (i % 5) * 0.4) + i));
+			c.fill(sx, sy, sx + 1, sy + 1, ColorMath.withAlpha(0xFFE6E9F2, Math.round(200 * tw * ((i % 3) + 1) / 3f)));
+		}
+		int mr = Math.max(6, height / 11);
+		int mx = width * 82 / 100;
+		int my = height * 22 / 100;
+		for (int ring = 3; ring >= 1; ring--) disc(c, mx, my, mr + ring * mr / 3, ColorMath.withAlpha(0xFF962024, 22));
+		disc(c, mx, my, mr, 0xFFD8553B);
+		disc(c, mx + mr / 4, my + mr / 5, mr * 2 / 3, 0x40801E18);
+		for (int x = 0; x < width; x += 2) {
+			int g = horizon - height / 20 + (int) Math.round(Math.sin(x * 0.021) * height * 0.035 + Math.sin(x * 0.057) * height * 0.014);
+			c.fill(x, g, x + 2, height, 0xFF1E1638);
+			int m = height * 83 / 100 + (int) Math.round(Math.sin(x * 0.03 + 2) * height * 0.02);
+			c.fill(x, m, x + 2, height, 0xFF120E20);
+		}
+		c.fill(0, height * 93 / 100, width, height, 0xFF08070E);
+		int scale = Math.max(2, Math.min(6, width / 110));
+		String word = "TRS CLIENT";
+		int w = PixelFont.width(word) * scale;
+		int x = (width - w) / 2;
+		int y = height / 2 - PixelFont.HEIGHT * scale - 6;
+		HalloweenLook.silverWord(c, word, x, y, scale, 1f, 1f);
+		int bw = Math.min(width - 40, 220);
+		MoonBar.draw(c, width / 2 - bw / 2, height / 2 + 12, bw, progress, time, dev.theredstonee.trsclient.core.menus.MenuStyle.animated());
+		HorrorLayer.vignette(c, width, height, 0.45f);
+	}
+
+	private static void disc(Canvas c, int cx, int cy, int r, int argb) {
+		for (int y = -r; y < r; y++) {
+			int hw = (int) Math.round(Math.sqrt(Math.max(0, r * r - (y + 0.5) * (y + 0.5))));
+			if (hw > 0) c.fill(cx - hw, cy + y, cx + hw, cy + y + 1, argb);
+		}
 	}
 }

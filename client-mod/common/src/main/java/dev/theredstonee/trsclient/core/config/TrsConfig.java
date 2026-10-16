@@ -32,6 +32,18 @@ public final class TrsConfig {
 	public ClientStateData clientState;
 	/** Server-Profile (automatischer Wechsel je Server); optional, bleibt lokal (siehe {@code core.profile.ServerProfiles}). */
 	public ServerProfilesData serverProfiles;
+	/** Halloween 2026: lokaler Zustand (eigene Wahl „Flackern &amp; Rauschen“, Hinweise gesehen); optional, bleibt lokal. */
+	public HalloweenData halloween;
+
+	/** Siehe {@code core.halloween.HalloweenLocal}. */
+	public static final class HalloweenData {
+		/** Im Client selbst gewählt „Flackern &amp; Rauschen“ (null = noch nie umgeschaltet → Wert des Launchers). */
+		public Boolean flicker;
+		/** Hinweis „Jumpscares möglich“ schon gezeigt. */
+		public Boolean scareInfoShown;
+		/** Hinweis „Flackern &amp; Rauschen“ schon gezeigt. */
+		public Boolean flickerHintShown;
+	}
 
 	/** Server-Profile: Muster, optionales HUD-Profil und die vom Standard abweichenden Module. */
 	public static final class ServerProfilesData {

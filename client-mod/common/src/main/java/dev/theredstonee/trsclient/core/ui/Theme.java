@@ -28,6 +28,10 @@ public final class Theme {
 		String accentColor;
 		/** "redstone" oder "winter" (ab Launcher 0.20); fehlt/unbekannt = Redstone. */
 		String design;
+		/** Aktives TRS-Event für dieses Konto ({@code "halloween"}) – fehlt sonst. */
+		String event;
+		/** Halloween: „Flackern &amp; Rauschen“ im Launcher (fehlt = Standard an). */
+		Boolean halloweenFlicker;
 	}
 
 	/** Design „Redstone“ (Standard) und „Winternacht“. */
@@ -35,6 +39,8 @@ public final class Theme {
 	public static final String WINTER = "winter";
 
 	private static Theme current = new Theme("dark", "redstone", 0xFFE0281E, REDSTONE);
+	/** Halloween-Variante des aktuellen Themas (zwischengespeichert, solange {@link #current} gleich bleibt). */
+	private static volatile Theme spooky;
 
 	public final String themeName;
 	public final String accentName;
@@ -42,6 +48,13 @@ public final class Theme {
 	public final String designName;
 	/** Winternacht? (Nachtblau, Eis statt Stein, Eislaternen statt Redstone-Lampen, Frost statt Staub.) */
 	public final boolean winter;
+	/**
+	 * Halloween 2026 „Mondnacht“ (Event aktiv, siehe {@code core.halloween.Halloween}): Nacht, Pflaume, Violett und
+	 * Mondsilber – liegt über Redstone und Winternacht, immer dunkel.
+	 */
+	public final boolean halloween;
+	/** Thema, aus dem die Halloween-Variante entstand (sonst null). */
+	private final Theme base;
 
 	/** Akzentfarbe (Knöpfe, aktive Elemente). */
 	public final int accent;
@@ -88,6 +101,8 @@ public final class Theme {
 	public final int lampTextLit;
 
 	private Theme(String themeName, String accentName, int accent, String design) {
+		this.halloween = false;
+		this.base = null;
 		this.themeName = themeName;
 		this.accentName = accentName;
 		this.designName = WINTER.equals(design) ? WINTER : REDSTONE;
@@ -186,6 +201,48 @@ public final class Theme {
 	}
 
 	/**
+	 * Halloween-Variante von {@code base} (Vertrag „Look“): Nacht #07060c, Nebelgrund #13101f, Pflaume #3a1f5c,
+	 * Violett #8e6cc9/#b9a2ea, Mondsilber #cfd5e3/#f3f5fb. Lampen sind mondbeschienenes Pflaumenglas mit Silberkante,
+	 * „Staub“ ist ein dünner violett-silberner Faden. Kein Orange als Fläche.
+	 */
+	private Theme(Theme base) {
+		this.base = base;
+		this.halloween = true;
+		this.themeName = base.themeName;
+		this.accentName = base.accentName;
+		this.designName = base.designName;
+		this.winter = false;
+		this.light = false;
+		this.accent = 0xFF8E6CC9;
+		this.accentHover = 0xFFB9A2EA;
+		this.dustOff = 0xFF2E2648;
+		this.dustOn = 0xFFCFD5E3;
+		this.glow = 0xFFB9A2EA;
+		this.lampOff = 0xFF141020;
+		this.lampOffEdge = 0xFF5B5280;
+		this.lampOn = 0xFF4A2C78;
+		this.lampHot = 0xFFCFD5E3;
+		this.lampOnEdge = 0xFFF3F5FB;
+		this.lampGlow = 0xFFB9A2EA;
+		this.lampText = 0xFFE9E6F5;
+		this.lampTextLit = 0xFFF3F5FB;
+		boolean oled = "oled".equals(base.themeName);
+		this.background = oled ? 0xFF000000 : 0xFF0A0812;
+		this.surface = oled ? 0xFF0A0812 : 0xFF13101F;
+		this.surfaceHover = oled ? 0xFF14101F : 0xFF1C1730;
+		this.surfaceHigh = oled ? 0xFF100C19 : 0xFF181427;
+		this.border = 0xFF3B3358;
+		this.text = 0xFFEDEAF7;
+		this.textDim = 0xFF9A94B4;
+		this.on = 0xFFCFD5E3;
+		this.off = 0xFF2A2440;
+		this.scrim = 0xB007060C;
+		this.deep = oled ? 0xFF000000 : 0xFF07060C;
+		this.bevelLight = 0xFF4A4068;
+		this.bevelDark = 0xFF040308;
+	}
+
+	/**
 	 * Farbe des Redstone-Staubs bei Signalstärke {@code level} (0..15). Wie im Spiel wird der Staub
 	 * mit sinkender Stärke dunkler – nie ganz aus, solange ein Signal anliegt.
 	 */
@@ -195,8 +252,20 @@ public final class Theme {
 		return ColorMath.lerp(ColorMath.lerp(dustOff, dustOn, 0.45f), dustOn, f);
 	}
 
-	/** Aktuelles Thema (nie null). */
+	/** Aktuelles Thema (nie null) – während Halloween dessen Halloween-Variante. */
 	public static Theme get() {
+		Theme c = current;
+		if (!dev.theredstonee.trsclient.core.halloween.Halloween.active()) return c;
+		Theme h = spooky;
+		if (h == null || h.base != c) {
+			h = new Theme(c);
+			spooky = h;
+		}
+		return h;
+	}
+
+	/** Das eingestellte Thema ohne Halloween-Variante. */
+	public static Theme plain() {
 		return current;
 	}
 
@@ -249,6 +318,8 @@ public final class Theme {
 				File parsed = new Gson().fromJson(reader, File.class);
 				if (parsed == null) return false;
 				set(of(parsed.theme, parsed.accent, parsed.accentColor, parsed.design));
+				dev.theredstonee.trsclient.core.halloween.Halloween.fromLauncher(parsed.event);
+				dev.theredstonee.trsclient.core.halloween.Halloween.flickerFromLauncher(parsed.halloweenFlicker);
 				return true;
 			}
 		} catch (IOException | RuntimeException e) {

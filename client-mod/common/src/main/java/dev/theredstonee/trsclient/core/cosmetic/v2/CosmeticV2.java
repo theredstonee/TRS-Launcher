@@ -26,6 +26,12 @@ import java.util.regex.Pattern;
  */
 public final class CosmeticV2 {
 	public static final int FORMAT = 2;
+	/** Fächer: Kopf-Kosmetik und (seit Halloween 2026) Begleiter – beide am Kopf, unabhängig voneinander getragen. */
+	public static final String SLOT_HAT = "hat", SLOT_COMPANION = "companion";
+	/** Flügel am Rücken (Halloween 2026): {@code attach: "body"} – Ursprung = Körper-Drehpunkt (Nacken, Oberkante Torso). */
+	public static final String SLOT_WINGS = "wings";
+	/** Anhängepunkte: Kopf (Hut, Begleiter) bzw. Körper (Flügel). */
+	public static final String ATTACH_HEAD = "head", ATTACH_BODY = "body";
 
 	/** Flächen in fester Reihenfolge (wie {@code FACES} der Referenz). */
 	public static final String[] FACES = { "north", "south", "east", "west", "up", "down" };
@@ -182,6 +188,8 @@ public final class CosmeticV2 {
 
 	public final String id;
 	public final String name;
+	/** Fach: {@link #SLOT_HAT} (Kopf-Kosmetik) oder {@link #SLOT_COMPANION} (Begleiter, zusätzlich zum Hut). */
+	public final String slot;
 	/** Texturmaße in Einheiten (Texel bei Faktor 1). */
 	public final int textureWidth, textureHeight;
 	/** Texel je Einheit (1, 2, 4, 8, 16). */
@@ -199,11 +207,12 @@ public final class CosmeticV2 {
 	/** Welche Materialien vorkommen (Bitmaske 1 &lt;&lt; Material). */
 	public final int materials;
 
-	private CosmeticV2(String id, String name, int tw, int th, int scale, int frames, int frameTimeMs, boolean glow,
+	private CosmeticV2(String id, String name, String slot, int tw, int th, int scale, int frames, int frameTimeMs, boolean glow,
 			int glowFrames, int glowFrameTimeMs, List<Bone> bones, List<Cube> cubes, List<Animation> animations,
 			List<Halo> halos) {
 		this.id = id;
 		this.name = name;
+		this.slot = slot;
 		this.textureWidth = tw;
 		this.textureHeight = th;
 		this.scale = scale;
@@ -241,6 +250,19 @@ public final class CosmeticV2 {
 
 	public boolean has(int material) {
 		return (materials & (1 << material)) != 0;
+	}
+
+	/** Treiber-Index ({@code idle} = 0, {@code walk} 1, {@code sneak} 2, {@code jump} 3, {@code air} 4) eines Namens, sonst -1. */
+	public static int driverIndex(String name) {
+		return index(DRIVERS, name);
+	}
+
+	/** Hat das Modell mindestens eine Animation mit diesem Treiber? */
+	public boolean hasDriver(int driver) {
+		for (Animation a : animations) {
+			if (a.driver == driver) return true;
+		}
+		return false;
 	}
 
 	// =====================================================================================================
@@ -300,8 +322,15 @@ public final class CosmeticV2 {
 		if (id == null || !ID.matcher(id).matches()) out.err("id", "a–z, 0–9, _ (Anfang Buchstabe), max. 40");
 		String name = str(m.get("name"));
 		if (name == null || name.trim().isEmpty() || name.length() > 60) out.err("name", "1–60 Zeichen");
-		if (!"hat".equals(str(m.get("slot")))) out.err("slot", "eins von hat");
-		if (!"head".equals(str(m.get("attach")))) out.err("attach", "eins von head");
+		String slot = str(m.get("slot"));
+		if (!SLOT_HAT.equals(slot) && !SLOT_COMPANION.equals(slot) && !SLOT_WINGS.equals(slot)) {
+			out.err("slot", "eins von hat, companion, wings");
+		}
+		// Flügel hängen am Körper, alles andere am Kopf.
+		String attach = str(m.get("attach"));
+		if (SLOT_WINGS.equals(slot) ? !ATTACH_BODY.equals(attach) : !ATTACH_HEAD.equals(attach)) {
+			out.err("attach", SLOT_WINGS.equals(slot) ? "eins von body" : "eins von head");
+		}
 
 		// Textur
 		JsonObject tex = obj(m.get("texture"));
@@ -668,7 +697,7 @@ public final class CosmeticV2 {
 
 		if (out.ok()) {
 			int glowTime = glow == null ? 0 : intOr(glow.get("frameTimeMs"), 0);
-			out.model = new CosmeticV2(id, name, tw, th, scale, frames, frames > 1 ? intOr(tex.get("frameTimeMs"), 0) : 0,
+			out.model = new CosmeticV2(id, name, slot, tw, th, scale, frames, frames > 1 ? intOr(tex.get("frameTimeMs"), 0) : 0,
 					glow != null, glow == null ? 0 : glowFrames, glowFrames > 1 ? glowTime : 0, bones, cubes, animations, halos);
 		}
 		return out;

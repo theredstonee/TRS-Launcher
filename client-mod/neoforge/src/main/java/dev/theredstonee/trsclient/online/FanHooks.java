@@ -35,17 +35,25 @@ public final class FanHooks {
 	private FanHooks() {
 	}
 
-	/** Wo und für wen ein erweiterter Name das Symbol zeichnet. */
+	/** Wo und für wen ein erweiterter Name das Symbol (und das Profil-Abzeichen) zeichnet. */
 	static final class Decor {
 		final UUID uuid;
 		final boolean tab;
-		/** Breite von allem vor dem Platzhalter (Schrift-Pixel). */
+		/** Breite von allem vor dem Platzhalter des Fan-Symbols (Schrift-Pixel), −1 = kein Fan-Symbol. */
 		final int offset;
+		/** Dasselbe für das Profil-Abzeichen (Halloween 2026), −1 = keins. */
+		final int badgeOffset;
 
-		Decor(UUID uuid, boolean tab, int offset) {
+		Decor(UUID uuid, boolean tab, int offset, int badgeOffset) {
 			this.uuid = uuid;
 			this.tab = tab;
 			this.offset = offset;
+			this.badgeOffset = badgeOffset;
+		}
+
+		/** Versatz des Bildes {@code k} (0 = Abzeichen, 1 = Fan-Symbol) oder −1. */
+		int offset(int k) {
+			return k == 0 ? badgeOffset : offset;
 		}
 	}
 
@@ -65,7 +73,8 @@ public final class FanHooks {
 	}
 
 	/**
-	 * Zustand der Zusätze für einen Spieler: Bit 0 Abzeichen, Bit 1–2 Stern-Stufe + 1, Bit 3 Symbol bereit.
+	 * Zustand der Zusätze für einen Spieler: Bit 0 Abzeichen, Bit 1–2 Stern-Stufe + 1, Bit 3 Symbol bereit, Bit 4
+	 * Profil-Abzeichen (Halloween 2026) bereit.
 	 * 0 = nichts davor.
 	 */
 	private static int state(UUID id, boolean tab) {
@@ -77,6 +86,7 @@ public final class FanHooks {
 		if (tier != null) s |= (tier.ordinal() + 1) << 1;
 		//? if >=1.16 {
 		if (f.fanSymbol(id, tab) != null) s |= 8;
+		if (f.eventBadge(id, tab) != null) s |= 16;
 		//?}
 		return s;
 	}
@@ -141,11 +151,23 @@ public final class FanHooks {
 			if (tier != 0) prefix.append(star(CreatorTier.values()[tier - 1])).append(OnlineHooks.text(" "));
 			net.minecraft.network.chat.MutableComponent out = OnlineHooks.text("");
 			if (!prefix.getSiblings().isEmpty()) out.append(prefix);
-			if ((state & 8) != 0) {
+			if ((state & 24) != 0) {
 				if (slotGlyph == null) slotGlyph = glyph(SLOT, 0xFFFFFF);
-				out.append(slotGlyph);
-				int offset = prefix.getSiblings().isEmpty() ? 0 : net.minecraft.client.Minecraft.getInstance().font.width(prefix);
-				DECOR.put(out.append(name), new Decor(id, tab, offset));
+				net.minecraft.client.gui.Font font = net.minecraft.client.Minecraft.getInstance().font;
+				int at = prefix.getSiblings().isEmpty() ? 0 : font.width(prefix);
+				int badgeAt = -1;
+				int fanAt = -1;
+				// Profil-Abzeichen vor dem Fan-Symbol, jedes an einem eigenen Platzhalter.
+				if ((state & 16) != 0) {
+					out.append(slotGlyph);
+					badgeAt = at;
+					at += font.width(slotGlyph);
+				}
+				if ((state & 8) != 0) {
+					out.append(slotGlyph);
+					fanAt = at;
+				}
+				DECOR.put(out.append(name), new Decor(id, tab, fanAt, badgeAt));
 			} else {
 				out.append(name);
 			}
@@ -196,10 +218,17 @@ public final class FanHooks {
 	}
 
 	//? if >=1.16 {
-	/** Aktuelles Bild des Symbols zu einem erweiterten Namen, sonst null. */
-	private static TextureRef texture(Decor d) {
+	/** Bild {@code k} (0 = Profil-Abzeichen, 1 = Fan-Symbol) zu einem erweiterten Namen, sonst null. */
+	private static TextureRef texture(Decor d, int k) {
+		if (d.offset(k) < 0) return null;
 		OnlineFeatures<Object> f = features();
-		return f == null ? null : f.fanSymbol(d.uuid, d.tab);
+		if (f == null) return null;
+		return k == 0 ? f.eventBadge(d.uuid, d.tab) : f.fanSymbol(d.uuid, d.tab);
+	}
+
+	/** Breite des Bildes in Schrift-Pixeln (Symbol quadratisch, Abzeichen nach Seitenverhältnis). */
+	private static int width(TextureRef tex, int k) {
+		return k == 0 ? dev.theredstonee.trsclient.core.creator.EventBadges.widthFor(tex, SIZE) : SIZE;
 	}
 	//?}
 
@@ -221,20 +250,22 @@ public final class FanHooks {
 		Decor d = decor(text);
 		if (d == null) return;
 		try {
-			TextureRef tex = texture(d);
-			if (tex == null) return;
-			com.mojang.blaze3d.vertex.VertexConsumer vc = buffers.getBuffer(renderType(tex.id, seeThrough));
-			float x0 = x + d.offset;
-			float y0 = y;
-			float x1 = x0 + SIZE;
-			float y1 = y0 + SIZE;
-			// Deckkraft wie die Schrift (Vanilla: Alpha 0 = voll deckend).
-			int a = (color & 0xFC000000) == 0 ? 255 : (color >>> 24);
-			vertex(vc, pose, x0, y0, 0f, 0f, a, light);
-			vertex(vc, pose, x0, y1, 0f, 1f, a, light);
-			vertex(vc, pose, x1, y1, 1f, 1f, a, light);
-			vertex(vc, pose, x1, y0, 1f, 0f, a, light);
-			worldDraws++;
+			for (int k = 0; k < 2; k++) {
+				TextureRef tex = texture(d, k);
+				if (tex == null) continue;
+				com.mojang.blaze3d.vertex.VertexConsumer vc = buffers.getBuffer(renderType(tex.id, seeThrough));
+				float x0 = x + d.offset(k);
+				float y0 = y;
+				float x1 = x0 + width(tex, k);
+				float y1 = y0 + SIZE;
+				// Deckkraft wie die Schrift (Vanilla: Alpha 0 = voll deckend).
+				int a = (color & 0xFC000000) == 0 ? 255 : (color >>> 24);
+				vertex(vc, pose, x0, y0, 0f, 0f, a, light);
+				vertex(vc, pose, x0, y1, 0f, 1f, a, light);
+				vertex(vc, pose, x1, y1, 1f, 1f, a, light);
+				vertex(vc, pose, x1, y0, 1f, 0f, a, light);
+				worldDraws++;
+			}
 		} catch (RuntimeException e) {
 			if (features() != null) features().online().reportError(e);
 		}
@@ -284,23 +315,26 @@ public final class FanHooks {
 		Decor d = decor(name);
 		if (d == null || attachment == null) return;
 		try {
-			TextureRef tex = texture(d);
-			if (tex == null) return;
 			net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
 			poseStack.pushPose();
 			try {
 				poseStack.translate(attachment.x, attachment.y + 0.5, attachment.z);
 				orient(poseStack, camera.orientation);
 				poseStack.scale(0.025F, -0.025F, 0.025F);
-				final float x0 = -mc.font.width(name) / 2.0F + d.offset;
-				final float y0 = offset;
-				collector.submitCustomGeometry(poseStack, renderType(tex.id, false),
-						(pose, vc) -> quad(vc, pose, x0, y0, seeThrough ? 255 : 128, light));
-				if (seeThrough) {
-					collector.submitCustomGeometry(poseStack, renderType(tex.id, true),
-							(pose, vc) -> quad(vc, pose, x0, y0, 128, light));
+				for (int k = 0; k < 2; k++) {
+					TextureRef tex = texture(d, k);
+					if (tex == null) continue;
+					final float x0 = -mc.font.width(name) / 2.0F + d.offset(k);
+					final float y0 = offset;
+					final float w = width(tex, k);
+					collector.submitCustomGeometry(poseStack, renderType(tex.id, false),
+							(pose, vc) -> quad(vc, pose, x0, y0, w, seeThrough ? 255 : 128, light));
+					if (seeThrough) {
+						collector.submitCustomGeometry(poseStack, renderType(tex.id, true),
+								(pose, vc) -> quad(vc, pose, x0, y0, w, 128, light));
+					}
+					worldDraws++;
 				}
-				worldDraws++;
 			} finally {
 				poseStack.popPose();
 			}
@@ -310,8 +344,8 @@ public final class FanHooks {
 	}
 
 	private static void quad(com.mojang.blaze3d.vertex.VertexConsumer vc, com.mojang.blaze3d.vertex.PoseStack.Pose pose,
-			float x0, float y0, int alpha, int light) {
-		float x1 = x0 + SIZE;
+			float x0, float y0, float w, int alpha, int light) {
+		float x1 = x0 + w;
 		float y1 = y0 + SIZE;
 		vc.addVertex(pose, x0, y0, 0f).setColor(255, 255, 255, alpha).setUv(0f, 0f).setLight(light);
 		vc.addVertex(pose, x0, y1, 0f).setColor(255, 255, 255, alpha).setUv(0f, 1f).setLight(light);
@@ -341,44 +375,50 @@ public final class FanHooks {
 	public static void gui(Object raw, Object text, int x, int y) {
 		Decor d = decor(text);
 		if (d == null) return;
+		for (int k = 0; k < 2; k++) {
+			TextureRef tex = texture(d, k);
+			if (tex != null) gui(raw, tex, x + d.offset(k), y, width(tex, k));
+		}
+	}
+
+	/** Ein Bild (Symbol oder Abzeichen), {@code w}×8 Pixel, an (px, y). */
+	private static void gui(Object raw, TextureRef tex, int px, int y, int w) {
 		try {
-			TextureRef tex = texture(d);
-			if (tex == null) return;
-			int px = x + d.offset;
 			int s = tex.width;
+			int sh = tex.height;
 			guiDraws++;
 			//? if >=26.1 {
 			/*((net.minecraft.client.gui.GuiGraphicsExtractor) raw).blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
-					(net.minecraft.resources.Identifier) tex.id, px, y, 0f, 0f, SIZE, SIZE, s, s, s, s);
+					(net.minecraft.resources.Identifier) tex.id, px, y, 0f, 0f, w, SIZE, s, sh, s, sh);
 			*///?} elif >=1.21.11 {
 			/*((net.minecraft.client.gui.GuiGraphics) raw).blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
-					(net.minecraft.resources.Identifier) tex.id, px, y, 0f, 0f, SIZE, SIZE, s, s, s, s);
+					(net.minecraft.resources.Identifier) tex.id, px, y, 0f, 0f, w, SIZE, s, sh, s, sh);
 			*///?} elif >=1.21.6 {
 			/*((net.minecraft.client.gui.GuiGraphics) raw).blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
-					(net.minecraft.resources.ResourceLocation) tex.id, px, y, 0f, 0f, SIZE, SIZE, s, s, s, s);
+					(net.minecraft.resources.ResourceLocation) tex.id, px, y, 0f, 0f, w, SIZE, s, sh, s, sh);
 			*///?} elif >=1.21.2 {
 			/*((net.minecraft.client.gui.GuiGraphics) raw).blit(net.minecraft.client.renderer.RenderType::guiTextured,
-					(net.minecraft.resources.ResourceLocation) tex.id, px, y, 0f, 0f, SIZE, SIZE, s, s, s, s);
+					(net.minecraft.resources.ResourceLocation) tex.id, px, y, 0f, 0f, w, SIZE, s, sh, s, sh);
 			*///?} elif >=1.20 {
 			net.minecraft.client.gui.GuiGraphics g = (net.minecraft.client.gui.GuiGraphics) raw;
 			g.flush();
 			com.mojang.blaze3d.systems.RenderSystem.enableBlend();
 			com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
-			g.blit((net.minecraft.resources.ResourceLocation) tex.id, px, y, SIZE, SIZE, 0f, 0f, s, s, s, s);
+			g.blit((net.minecraft.resources.ResourceLocation) tex.id, px, y, w, SIZE, 0f, 0f, s, sh, s, sh);
 			com.mojang.blaze3d.systems.RenderSystem.disableBlend();
 			//?} elif >=1.17 {
 			/*com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, (net.minecraft.resources.ResourceLocation) tex.id);
 			com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
 			com.mojang.blaze3d.systems.RenderSystem.enableBlend();
 			com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
-			net.minecraft.client.gui.GuiComponent.blit((com.mojang.blaze3d.vertex.PoseStack) raw, px, y, SIZE, SIZE, 0f, 0f, s, s, s, s);
+			net.minecraft.client.gui.GuiComponent.blit((com.mojang.blaze3d.vertex.PoseStack) raw, px, y, w, SIZE, 0f, 0f, s, sh, s, sh);
 			com.mojang.blaze3d.systems.RenderSystem.disableBlend();
 			*///?} else {
 			/*net.minecraft.client.Minecraft.getInstance().getTextureManager().bind((net.minecraft.resources.ResourceLocation) tex.id);
 			com.mojang.blaze3d.systems.RenderSystem.color4f(1f, 1f, 1f, 1f);
 			com.mojang.blaze3d.systems.RenderSystem.enableBlend();
 			com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
-			net.minecraft.client.gui.GuiComponent.blit((com.mojang.blaze3d.vertex.PoseStack) raw, px, y, SIZE, SIZE, 0f, 0f, s, s, s, s);
+			net.minecraft.client.gui.GuiComponent.blit((com.mojang.blaze3d.vertex.PoseStack) raw, px, y, w, SIZE, 0f, 0f, s, sh, s, sh);
 			com.mojang.blaze3d.systems.RenderSystem.disableBlend();
 			*///?}
 		} catch (RuntimeException e) {

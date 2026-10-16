@@ -130,6 +130,8 @@ public final class HudManager {
 			dev.theredstonee.trsclient.social.SocialHooks.hud(g);
 			// Panorama-Toast („gespeichert“, „Ordner öffnen“).
 			dev.theredstonee.trsclient.comfort.ComfortHooks.hud(g);
+			// Halloween: Spuk-Effekte, Jumpscares, Toasts „Kürbis gefunden!“.
+			dev.theredstonee.trsclient.halloween.HalloweenHooks.hud(g);
 		}
 	}
 

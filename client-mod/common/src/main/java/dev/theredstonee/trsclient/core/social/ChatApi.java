@@ -126,6 +126,8 @@ public final class ChatApi {
 		ChatJson.InviteDto invite;
 		WaypointOut waypoint;
 		String nonce;
+		/** Chat-Sticker statt Text (API.md §36). */
+		String sticker;
 	}
 
 	/** Wegpunkt-Karte zum Senden (API.md §18.10) – ganze Zahlen, genau die erlaubten Felder. */
@@ -315,7 +317,17 @@ public final class ChatApi {
 	/** Senden (mit {@code nonce} idempotent). */
 	public Chat.Message send(String token, String id, String text, String replyTo, List<String> attachments,
 			Chat.Invite invite, String nonce) throws IOException, ApiException {
+		return send(token, id, text, replyTo, attachments, invite, nonce, null);
+	}
+
+	/** Senden; {@code sticker} = Sticker-ID statt Text (403 {@code sticker_locked}, wenn nicht besessen). */
+	public Chat.Message send(String token, String id, String text, String replyTo, List<String> attachments,
+			Chat.Invite invite, String nonce, String sticker) throws IOException, ApiException {
 		SendRequest body = new SendRequest();
+		if (sticker != null) {
+			if (!Chat.validSticker(sticker)) throw new ApiException(0, "invalid_request", 0);
+			body.sticker = sticker;
+		}
 		if (text != null && !text.isEmpty()) body.text = text;
 		if (replyTo != null) {
 			if (!Chat.validMessageId(replyTo)) throw new ApiException(0, "invalid_request", 0);

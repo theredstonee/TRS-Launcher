@@ -129,6 +129,8 @@ public final class ChatJson {
 		String deletedBy;
 		Boolean hidden;
 		String nonce;
+		/** Chat-Sticker statt Text (Halloween 2026). */
+		String sticker;
 	}
 
 	static final class ConversationDto {
@@ -208,6 +210,8 @@ public final class ChatJson {
 		String until;
 		OfferDto offer;
 		String capeId;
+		/** {@code events_changed}: gerade aktive Event-IDs. */
+		List<String> events;
 	}
 
 	// --- Umwandlung ---
@@ -348,7 +352,7 @@ public final class ChatJson {
 		String nonce = d.nonce != null && d.nonce.matches("[A-Za-z0-9_-]{8,64}") ? d.nonce : null;
 		return new Chat.Message(d.id, conv, d.seq, system, user(d.sender), text, content ? card(d) : null, atts,
 				reply, info, content ? reactions(d.reactions) : null, time(d.createdAt), time(d.editedAt), deleted, deletedBy,
-				hidden, nonce, false, null);
+				hidden, nonce, false, null, content ? d.sticker : null);
 	}
 
 	static Chat.Conversation conversation(ConversationDto d) {

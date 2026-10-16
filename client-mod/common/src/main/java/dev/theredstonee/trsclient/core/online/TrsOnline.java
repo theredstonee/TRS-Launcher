@@ -65,6 +65,8 @@ public final class TrsOnline {
 	private final CapeDiskCache capeCache;
 	/** Kopf-Kosmetik im Format 2 (Modell + Texturen, Cache nach Inhalts-Kennung). */
 	private final dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2Cache cosmeticCache;
+	/** Platten-Cache der v2-Kosmetik ({@code config/trsclient/cosmetics}). */
+	private final Path cosmeticDir;
 	/** Fan-Symbole (API.md §35.4), unveränderlich je Prüfsumme. */
 	private final dev.theredstonee.trsclient.core.creator.SymbolCache symbolCache;
 	private final PlayerDirectory directory = new PlayerDirectory();
@@ -133,6 +135,7 @@ public final class TrsOnline {
 		this.capeCache = new CapeDiskCache(capeDir);
 		Path cosmeticDir = capeDir.getParent() != null ? capeDir.getParent().resolve("cosmetics") : capeDir.resolve("cosmetics");
 		this.cosmeticCache = new dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2Cache(cosmeticDir);
+		this.cosmeticDir = cosmeticDir;
 		this.symbolCache = new dev.theredstonee.trsclient.core.creator.SymbolCache(
 				capeDir.getParent() != null ? capeDir.getParent().resolve("symbols") : capeDir.resolve("symbols"));
 		CosmeticModels.install(cosmeticDir.resolve("templates"), config, url -> {
@@ -183,6 +186,12 @@ public final class TrsOnline {
 					@Override
 					public boolean wantsStream() {
 						return hosting.wantsStream();
+					}
+
+					@Override
+					public void profileStale() {
+						// Nach einem Stream-Resync das Profil neu lesen (events kann sich geändert haben).
+						lastMe = 0L;
 					}
 				});
 		this.hosting = new dev.theredstonee.trsclient.core.hosting.Hosting(
@@ -244,6 +253,7 @@ public final class TrsOnline {
 		String userAgent = "TRS-Client/" + modVersion + " (Minecraft " + platform.minecraftVersion() + "; "
 				+ platform.loader() + ")";
 		Http http = new Http.UrlConnection(userAgent);
+		dev.theredstonee.trsclient.core.halloween.HalloweenService.get().http(http);
 		TrsOnline online = new TrsOnline(config, platform, http, configDir.resolve("trsclient").resolve("capes"),
 				new PlayerEventStream.UrlOpener(userAgent));
 		current = online;
@@ -538,7 +548,8 @@ public final class TrsOnline {
 					loginFailures = 0;
 					token = s.token;
 					applyMe(s.me);
-					lastMe = System.currentTimeMillis();
+					// Verify alter APIs hat kein events – dann gleich GET /v1/me (vergibt auch das Halloween-Abzeichen).
+					lastMe = s.me != null && s.me.events != null ? System.currentTimeMillis() : 0L;
 					lastPresence = Long.MIN_VALUE / 2;
 					lastEmoteFetch = Long.MIN_VALUE / 2;
 					directory.invalidate(session.uuid);
@@ -732,7 +743,10 @@ public final class TrsOnline {
 	}
 
 	private void applyMe(TrsApi.Me me) {
-		if (me == null || me.settings == null) return;
+		if (me == null) return;
+		// events auch ohne settings (null = Feld fehlt, alte API: Launcher-Datei behalten).
+		dev.theredstonee.trsclient.core.halloween.Halloween.fromApi(me.events);
+		if (me.settings == null) return;
 		shareServer = me.settings.shareServer;
 	}
 
@@ -815,6 +829,29 @@ public final class TrsOnline {
 		})) failed.run();
 	}
 
+	/**
+	 * Lädt das Bild eines Profil-Abzeichens ({@code GET /v1/badges/{id}.png}, Pixel-PNG) und dekodiert es – im
+	 * Textur-Thread. Genau einer der Rückrufe läuft danach im Spiel-Thread.
+	 */
+	public void loadBadge(final String badgeId, final dev.theredstonee.trsclient.core.creator.EventBadges.Done done,
+			final Runnable failed) {
+		if (badgeId == null || !badgeId.matches("[a-z0-9_]{1,40}")) {
+			failed.run();
+			return;
+		}
+		final String t = token;
+		if (!submit(capeWorker, () -> {
+			try {
+				byte[] png = api.asset(config.apiBase() + "/v1/badges/" + badgeId + ".png", "image/png", 256 * 1024, t);
+				dev.theredstonee.trsclient.core.cape.PngDecoder.Image img =
+						dev.theredstonee.trsclient.core.cape.PngDecoder.decode(png, 256L * 256);
+				results.add(() -> done.image(img.width, img.height, img.argb));
+			} catch (IOException | ApiException | RuntimeException e) {
+				results.add(failed);
+			}
+		})) failed.run();
+	}
+
 	// --- Lesen (jeder Thread) ---
 
 	/** Lookup-Ergebnis eines Spielers ({@link PlayerInfo#NONE} = unbekannt/kein TRS). */
@@ -867,6 +904,11 @@ public final class TrsOnline {
 		return config.apiBase();
 	}
 
+	/** Platten-Cache der v2-Kosmetik (Selbsttest-Flügel legen dort ihre Dateien ab). */
+	public Path cosmeticDir() {
+		return cosmeticDir;
+	}
+
 	/** Eigenen Eintrag (Umhang/Abzeichen) beim nächsten Stapel neu nachschlagen (z. B. nach Umhangwechsel). */
 	public void refreshSelf() {
 		results.add(() -> {
@@ -875,7 +917,8 @@ public final class TrsOnline {
 		});
 	}
 
-	OnlineConfig config() {
+	/** Einstellungen der TRS API (Adressen prüfen). */
+	public OnlineConfig config() {
 		return config;
 	}
 

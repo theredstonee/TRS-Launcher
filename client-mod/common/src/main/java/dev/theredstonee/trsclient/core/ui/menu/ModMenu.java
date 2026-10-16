@@ -35,7 +35,7 @@ import java.util.Map;
  */
 public final class ModMenu extends UiScreen {
 	private enum Page {
-		GRID, SETTINGS, PROFILES, PACKS, SERVERS, CIRCUITS, BUG_REPORT, NOTES
+		GRID, SETTINGS, PROFILES, PACKS, SERVERS, CIRCUITS, BUG_REPORT, NOTES, HALLOWEEN
 	}
 
 	private static final int HEADER_H = 30;
@@ -93,6 +93,8 @@ public final class ModMenu extends UiScreen {
 	private Module newsOpenFor;
 	/** Notizen je Welt. */
 	private final dev.theredstonee.trsclient.core.ui.notes.NotesPage notesPage;
+	/** Halloween 2026 (nur während des Events in der Leiste). */
+	private final HalloweenPage halloweenPage;
 	/** Seite beim letzten Zeichnen (Notizen beim Verlassen sichern). */
 	private Page lastPage = Page.GRID;
 
@@ -185,6 +187,22 @@ public final class ModMenu extends UiScreen {
 			@Override
 			public void save() {
 				ModMenu.this.host.save();
+			}
+		});
+		halloweenPage = new HalloweenPage(new HalloweenPage.Host() {
+			@Override
+			public void click() {
+				ModMenu.this.host.playClick();
+			}
+
+			@Override
+			public void save() {
+				ModMenu.this.host.save();
+			}
+
+			@Override
+			public dev.theredstonee.trsclient.core.module.HalloweenModules modules() {
+				return ModMenu.this.host.modules().halloween;
 			}
 		});
 		panel.setKeyLabel(new SettingsPanel.KeyLabel() {
@@ -288,6 +306,20 @@ public final class ModMenu extends UiScreen {
 		return dev.theredstonee.trsclient.core.notes.Notes.get() != null && shown(m) && m.isEnabled();
 	}
 
+	/** Öffnet das Menü direkt bei der Halloween-Seite (nur während des Events; Autotest, Verknüpfungen). */
+	public ModMenu showHalloween() {
+		if (HalloweenPage.available()) {
+			page = Page.HALLOWEEN;
+			halloweenPage.opened();
+		}
+		return this;
+	}
+
+	/** Halloween-Seite (Selbsttest). */
+	public HalloweenPage halloweenPage() {
+		return halloweenPage;
+	}
+
 	/** Öffnet das Menü direkt bei den HUD-Profilen. */
 	public ModMenu showProfiles() {
 		page = Page.PROFILES;
@@ -385,6 +417,14 @@ public final class ModMenu extends UiScreen {
 			case NOTES:
 				notesPage.draw(c, hits, cx + 2, cy, cw - 4, ch, mouseX, mouseY);
 				break;
+			case HALLOWEEN:
+				if (!HalloweenPage.available()) {
+					page = Page.GRID;
+					grid(c, cx, cy, cw, ch, mouseX, mouseY, dt);
+					break;
+				}
+				halloweenPage.draw(c, hits, cx + 2, cy, cw - 4, ch, mouseX, mouseY, dt);
+				break;
 			default:
 				grid(c, cx, cy, cw, ch, mouseX, mouseY, dt);
 				break;
@@ -412,6 +452,12 @@ public final class ModMenu extends UiScreen {
 		String client = I18n.tr("menu.client");
 		int clientX = lx + PixelFont.width("TRS") * 2 + 5;
 		c.text(client, clientX, py + (HEADER_H - 8) / 2, t.textDim, false);
+		if (t.halloween) {
+			// Halloween: Spinnennetz in der Ecke, Blutstropfen an der Kopfkante, Kürbislaterne neben dem Schriftzug.
+			float sec = (System.nanoTime() / 1_000_000L % 100_000L) / 1000f;
+			dev.theredstonee.trsclient.core.ui.halloween.HalloweenLook.menuHeader(c, px + 1, py + 2, pw - 2, HEADER_H - 2,
+					clientX + c.textWidth(client) + 4, sec);
+		}
 		if (t.winter) {
 			// Schnee auf dem Schriftzug, eine Schneeflocke daneben und eine Frostlinie mit Eiskristallen unter dem Kopf.
 			dev.theredstonee.trsclient.core.ui.title.TitleUi.snowCaps(c, rects, lx, ly, 2);
@@ -509,6 +555,7 @@ public final class ModMenu extends UiScreen {
 		int items = 4 + shownCategories + (host.hasPacks() ? 1 : 0) + (host.hasAccounts() ? 1 : 0)
 				+ (host.hasWardrobe() ? 1 : 0) + (host.hasFriends() ? 1 : 0) + (host.hasClips() ? 1 : 0)
 				+ (dev.theredstonee.trsclient.core.bugreport.BugReports.get() != null ? 1 : 0) + (notesAvailable() ? 1 : 0)
+				+ (HalloweenPage.available() ? 1 : 0)
 				+ 1; // Hilfe (Docs)
 		int rowH = 18;
 		int gap = 3;
@@ -568,6 +615,19 @@ public final class ModMenu extends UiScreen {
 		cy += 4;
 		c.fill(x + 2, cy, x + w - 2, cy + 1, t.border);
 		cy += 7;
+
+		if (HalloweenPage.available()) {
+			// Halloween 2026: Kürbis-Suche, Süßes oder Saures, Spuk-Schalter (nur während des Events).
+			railItem(c, x, cy, w, rowH, "pumpkin", I18n.tr("menu.halloween"), page == Page.HALLOWEEN, mx, my, NewSince.MENU_HALLOWEEN,
+					new Runnable() {
+						@Override
+						public void run() {
+							if (page != Page.HALLOWEEN) halloweenPage.opened();
+							page = Page.HALLOWEEN;
+						}
+					});
+			cy += rowH + gap;
+		}
 
 		railItem(c, x, cy, w, rowH, "move", I18n.tr("menu.hudEditor"), false, mx, my, new Runnable() {
 			@Override
@@ -795,7 +855,12 @@ public final class ModMenu extends UiScreen {
 		List<Module> modules = visibleModules();
 		int usable = w - 7;
 		int minW = Math.max(tileMin, (usable - (MAX_COLUMNS - 1) * TILE_GAP) / MAX_COLUMNS);
-		TileGrid layout = TileGrid.of(usable, h - 6, modules.size(), minW, TILE_H, TILE_GAP);
+		// Halloween: ein versteckter Kürbis als letzte „Kachel“ (nur in „Alle“ ohne Suche, bis er gefunden ist).
+		boolean pumpkinTile = category == null && search.text().trim().isEmpty() && !modules.isEmpty()
+				&& dev.theredstonee.trsclient.core.halloween.Halloween.active()
+				&& dev.theredstonee.trsclient.core.halloween.HalloweenService.get().pumpkinVisible(
+						dev.theredstonee.trsclient.core.halloween.Pumpkins.CLIENT_MODULES);
+		TileGrid layout = TileGrid.of(usable, h - 6, modules.size() + (pumpkinTile ? 1 : 0), minW, TILE_H, TILE_GAP);
 		gridScroll = layout.clampScroll(gridScroll);
 
 		if (modules.isEmpty()) {
@@ -815,6 +880,22 @@ public final class ModMenu extends UiScreen {
 			float hv = Anim.approach(hoverOf(m.id()), tileHover ? 1f : 0f, dt, 0.05f);
 			hover.put(m.id(), Float.valueOf(hv));
 			tile(c, m, tx, ty, layout.tileWidth, TILE_H, tileHover, mx, my, dt);
+		}
+		if (pumpkinTile) {
+			int last = modules.size();
+			int tx = x + 3 + layout.x(last);
+			int ty = y + 3 + layout.y(last) - gridScroll;
+			dev.theredstonee.trsclient.core.halloween.Pumpkins.draw(c, hits, dev.theredstonee.trsclient.core.halloween.Pumpkins.CLIENT_MODULES,
+					tx + layout.tileWidth / 2, ty + TILE_H / 2, mx, my);
+		} else if (category == null && search.text().trim().isEmpty()) {
+			// Platz-Animation nach dem Klick weiterlaufen lassen (der Kürbis ist schon „gefunden“).
+			int last = Math.max(0, modules.size() - 1);
+			int tx = x + 3 + layout.x(last) + layout.tileWidth + TILE_GAP;
+			int ty = y + 3 + layout.y(last) - gridScroll;
+			if (tx + layout.tileWidth <= x + w) {
+				dev.theredstonee.trsclient.core.halloween.Pumpkins.draw(c, null, dev.theredstonee.trsclient.core.halloween.Pumpkins.CLIENT_MODULES,
+						tx + layout.tileWidth / 2, ty + TILE_H / 2, mx, my);
+			}
 		}
 		hits.noClip();
 		c.noScissor();
@@ -1310,6 +1391,7 @@ public final class ModMenu extends UiScreen {
 		if (page == Page.CIRCUITS) return circuitsPage.mouseScrolled(mouseX, mouseY, amount);
 		if (page == Page.BUG_REPORT) return bugPage.mouseScrolled(mouseX, mouseY, amount);
 		if (page == Page.NOTES) return notesPage.mouseScrolled(mouseX, mouseY, amount);
+		if (page == Page.HALLOWEEN) return halloweenPage.mouseScrolled(mouseX, mouseY, amount);
 		int step = (int) Math.signum(amount) * (page == Page.SETTINGS ? 16 : TILE_H + TILE_GAP);
 		if (page == Page.SETTINGS) settingsScroll = Math.max(0, settingsScroll - step);
 		else if (page == Page.GRID) gridScroll = Math.max(0, gridScroll - step);

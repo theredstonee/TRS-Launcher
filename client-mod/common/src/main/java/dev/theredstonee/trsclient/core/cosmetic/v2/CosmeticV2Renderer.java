@@ -69,13 +69,28 @@ public final class CosmeticV2Renderer {
 
 	/** Wie {@link #pose(CosmeticV2, long, boolean)}; {@code helmet} = auf einen getragenen Helm setzen. */
 	public void pose(CosmeticV2 m, long timeMs, boolean animate, boolean helmet) {
+		pose(m, timeMs, animate, helmet, 0, 0, 1f);
+	}
+
+	/**
+	 * Wie {@link #pose(CosmeticV2, long, boolean, boolean)} mit Zustands-Animation: Animationen des Treibers
+	 * {@code driver} (fehlt er im Modell: {@code idle}), überblendet aus {@code prevDriver} ({@code blend} 0..1, siehe
+	 * {@link WingState}). Hüte nutzen nur {@code idle} (0, 0, 1).
+	 */
+	public void pose(CosmeticV2 m, long timeMs, boolean animate, boolean helmet, int driver, int prevDriver, float blend) {
 		int n = Math.min(MAX, m.bones.size());
 		for (int b = 0; b < n; b++) {
 			pPos[b][0] = pPos[b][1] = pPos[b][2] = 0f;
 			pRot[b][0] = pRot[b][1] = pRot[b][2] = 0f;
 			pScale[b][0] = pScale[b][1] = pScale[b][2] = 1f;
 		}
-		if (animate) samplePoses(m, timeMs);
+		if (animate) {
+			int cur = effectiveDriver(m, driver);
+			int prev = effectiveDriver(m, prevDriver);
+			float w = blend >= 1f || cur == prev ? 1f : Math.max(0f, blend);
+			samplePoses(m, timeMs, cur, w);
+			if (w < 1f) samplePoses(m, timeMs, prev, 1f - w);
+		}
 		for (int b = 0; b < n; b++) {
 			CosmeticV2.Bone bone = m.bones.get(b);
 			boneLocal(bone, pPos[b], pRot[b], pScale[b], local);
@@ -111,10 +126,18 @@ public final class CosmeticV2Renderer {
 		V2Math.multiply(out, out, tmp2, tmp);
 	}
 
-	/** Pose aller Knochen (nur Treiber {@code idle}); Drehung/Position addieren, Skalierung multiplizieren. */
-	private void samplePoses(CosmeticV2 m, long timeMs) {
+	/** Treiber, den das Modell wirklich hat: sonst {@code idle} (Vertrag: fehlende Zustands-Animation spielt idle). */
+	static int effectiveDriver(CosmeticV2 m, int driver) {
+		return driver != 0 && m.hasDriver(driver) ? driver : 0;
+	}
+
+	/**
+	 * Pose aller Knochen für einen Treiber mit Gewicht {@code weight} (Überblendung); Drehung/Position addieren
+	 * (gewichtet), Skalierung multiplizieren (Faktor 1 + w·(v - 1)).
+	 */
+	private void samplePoses(CosmeticV2 m, long timeMs, int driver, float weight) {
 		for (CosmeticV2.Animation anim : m.animations) {
-			if (anim.driver != 0) continue; // walk/sneak/jump/air: noch nicht unterstützt → nicht abspielen
+			if (anim.driver != driver) continue; // walk/jump: noch nicht unterstützt → nicht abspielen
 			long len = anim.lengthMs;
 			long t = timeMs + anim.offsetMs;
 			double tt;
@@ -126,8 +149,8 @@ public final class CosmeticV2Renderer {
 				float[] target = tr.channel == CosmeticV2.SCALE ? pScale[tr.bone]
 						: tr.channel == CosmeticV2.POSITION ? pPos[tr.bone] : pRot[tr.bone];
 				for (int j = 0; j < 3; j++) {
-					if (tr.channel == CosmeticV2.SCALE) target[j] = (float) (target[j] * v3[j]);
-					else target[j] = (float) (target[j] + v3[j]);
+					if (tr.channel == CosmeticV2.SCALE) target[j] = (float) (target[j] * (1 + weight * (v3[j] - 1)));
+					else target[j] = (float) (target[j] + weight * v3[j]);
 				}
 			}
 		}

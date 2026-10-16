@@ -166,7 +166,10 @@ class OnlineTest {
 	@Test
 	void lookupParsesPlayersAndDropsInvalidCapes() throws Exception {
 		FakeHttp http = new FakeHttp().json("POST /v1/players/lookup", 200, "{\"players\":["
-				+ "{\"uuid\":\"" + OWN + "\",\"badge\":true,\"cape\":{\"id\":\"team\",\"url\":\"https://trs-launcher.theredstonee.de/v1/capes/team.png?v=1\",\"scale\":2,\"animated\":true,\"frames\":8,\"frameTimeMs\":150}},"
+				+ "{\"uuid\":\"" + OWN + "\",\"badge\":true,\"cape\":{\"id\":\"team\",\"url\":\"https://trs-launcher.theredstonee.de/v1/capes/team.png?v=1\",\"scale\":2,\"animated\":true,\"frames\":8,\"frameTimeMs\":150},"
+				+ "\"cosmetics\":{\"hat\":{\"id\":\"rubber_duck\",\"template\":\"duck\",\"url\":\"https://trs-launcher.theredstonee.de/v1/cosmetics/duck.png\",\"scale\":1,\"frames\":1},"
+				+ "\"companion\":{\"id\":\"bat_buddy\",\"format\":2,\"model\":\"/v1/cosmetics/bat_buddy/model.json\",\"url\":\"/v1/cosmetics/bat_buddy.png\",\"hash\":\"abc123\"}},"
+				+ "\"badges\":[\"halloween2026\",\"Bad Id!\",\"halloween2026\",\"pumpkinhunter2026\"],\"fx\":[\"hits\",\"glitter\"]},"
 				+ "{\"uuid\":\"ffffffffffffffffffffffffffffffff\",\"badge\":false,\"cape\":{\"id\":\"evil\",\"url\":\"https://evil.com/a.png\",\"scale\":1,\"frames\":1}},"
 				+ "{\"uuid\":\"kaputt\",\"badge\":true}]}");
 		Map<String, PlayerInfo> out = new TrsApi(http, CONFIG).lookup(TOKEN,
@@ -175,6 +178,12 @@ class OnlineTest {
 		assertTrue(out.get(OWN).badge);
 		assertEquals("team", out.get(OWN).cape.id);
 		assertEquals(8, out.get(OWN).cape.frames);
+		assertEquals("rubber_duck", out.get(OWN).hat.id);
+		assertTrue(out.get(OWN).companion.v2());
+		assertEquals("bat_buddy", out.get(OWN).companion.id);
+		assertEquals(java.util.Arrays.asList("halloween2026", "pumpkinhunter2026"), out.get(OWN).badges);
+		assertEquals(PlayerInfo.FX_HITS, out.get(OWN).fx);
+		assertTrue(out.get("ffffffffffffffffffffffffffffffff").badges.isEmpty());
 		assertNull(out.get("ffffffffffffffffffffffffffffffff").cape, "fremde Textur-URL wird verworfen");
 		assertEquals("Bearer " + TOKEN, http.requests.get(0).headers.get("Authorization"));
 	}

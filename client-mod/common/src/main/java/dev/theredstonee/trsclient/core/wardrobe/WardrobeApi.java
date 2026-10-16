@@ -104,6 +104,10 @@ public final class WardrobeApi {
 		public Shared shared;
 		/** Sichtbare Inhaber (als Ersteller alle, sonst der eigene Ast). */
 		public Integer holders;
+		/** {@code event}, wenn der Umhang an ein Event gebunden ist. */
+		public String unlock;
+		/** Event-ID (z. B. {@code halloween}), sonst null. */
+		public String event;
 	}
 
 	public static final class Shared {
@@ -256,6 +260,34 @@ public final class WardrobeApi {
 		if (id == null) body.add("hat", com.google.gson.JsonNull.INSTANCE);
 		else body.addProperty("hat", id);
 		call("PUT", "/v1/me/cosmetics", body.toString(), token, 200, 256 * 1024);
+	}
+
+	/** {@code PUT /v1/me/cosmetics {companion}}: Begleiter aufsetzen oder absetzen (JSON null, nicht weglassen). */
+	public void setCompanion(String token, String id) throws IOException, ApiException {
+		JsonObject body = new JsonObject();
+		if (id == null) body.add("companion", com.google.gson.JsonNull.INSTANCE);
+		else body.addProperty("companion", id);
+		call("PUT", "/v1/me/cosmetics", body.toString(), token, 200, 256 * 1024);
+	}
+
+	/** {@code PUT /v1/me/cosmetics {wings}}: Flügel anlegen oder ablegen (JSON null, nicht weglassen). Hut/Begleiter bleiben. */
+	public void setWings(String token, String id) throws IOException, ApiException {
+		JsonObject body = new JsonObject();
+		if (id == null) body.add("wings", com.google.gson.JsonNull.INSTANCE);
+		else body.addProperty("wings", id);
+		call("PUT", "/v1/me/cosmetics", body.toString(), token, 200, 256 * 1024);
+	}
+
+	/** {@code POST /v1/me/cosmetics/{id}/claim}. Die ID wird vorher geprüft (kein Pfad aus Nutzereingabe). */
+	public void claimCosmetic(String token, String id) throws IOException, ApiException {
+		if (id == null || !id.matches("[a-z0-9][a-z0-9_-]{0,39}")) throw new ApiException(0, "invalid_id", 0);
+		call("POST", "/v1/me/cosmetics/" + id + "/claim", "{}", token, 200, 64 * 1024);
+	}
+
+	/** {@code POST /v1/me/capes/{id}/claim}. */
+	public void claimCape(String token, String id) throws IOException, ApiException {
+		if (id == null || !id.matches("[a-z0-9][a-z0-9_-]{0,39}")) throw new ApiException(0, "invalid_id", 0);
+		call("POST", "/v1/me/capes/" + id + "/claim", "{}", token, 200, 64 * 1024);
 	}
 
 	// --- Hilfen ---

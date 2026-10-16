@@ -37,6 +37,8 @@ public abstract class UiScreen {
 		}
 		hits.clear();
 		draw(c, width, height, mouseX, mouseY, dt);
+		// Halloween (nur während des Events): Filmkorn, Hinweise, Toasts „Kürbis gefunden!“.
+		dev.theredstonee.trsclient.core.halloween.HalloweenOverlay.afterScreen(c, hits, width, height, mouseX, mouseY, overlay());
 	}
 
 	// --- Touch-Modus (nur mit -Dtrs.touch=true; sonst laufen alle Eingaben unverändert durch) ---

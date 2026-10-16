@@ -347,6 +347,7 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.screenshot.LegacyScreenshots.tick();
 		Minecraft mc = Minecraft.getMinecraft();
 		dev.theredstonee.trsclient.ui.BorderlessDisplay.tick(mc);
+		dev.theredstonee.trsclient.halloween.LegacyHalloween.tick(mc);
 		// Touch-Modus (mobile Engine): feste Overlay-Tasten + Bildschirmtastatur; sonst nichts.
 		dev.theredstonee.trsclient.touch.TouchHooks.tick();
 		migrateKeys(mc);
@@ -640,6 +641,8 @@ public final class TrsClient {
 		HookStats.hud++;
 		ScaledResolution res = Mc.resolution(event);
 		hud.render(Gfx.of(res.getScaledWidth(), res.getScaledHeight()), Mc.partialTicks(event));
+		// Halloween: Spuk-Effekte, Jumpscares, Toasts „Kürbis gefunden!“.
+		dev.theredstonee.trsclient.halloween.LegacyHalloween.hud(res.getScaledWidth(), res.getScaledHeight(), Mc.partialTicks(event));
 		dev.theredstonee.trsclient.chatheads.ChatHeads.render(res.getScaledHeight());
 		// Sozial-Toasts im Spiel (über Bildschirmen zeichnet sie onScreenDrawn).
 		if (Mc.screen() == null && !Mc.hudHidden()) drawToasts(res.getScaledWidth(), res.getScaledHeight());
@@ -658,6 +661,7 @@ public final class TrsClient {
 					dev.theredstonee.trsclient.menus.LegacyMenus.linkBadgeY());
 		}
 		drawToasts(s.width, s.height);
+		dev.theredstonee.trsclient.halloween.LegacyHalloween.overScreen(s);
 		dev.theredstonee.trsclient.screenshot.LegacyScreenshots.afterScreen(s);
 	}
 

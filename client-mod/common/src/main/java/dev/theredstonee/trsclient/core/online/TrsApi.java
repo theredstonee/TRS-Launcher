@@ -62,6 +62,8 @@ public final class TrsApi {
 		public String uuid;
 		public String name;
 		public Settings settings;
+		/** Aktive Events ({@code "halloween"} …). {@code null} = alte API ohne das Feld. */
+		public List<String> events;
 	}
 
 	public static final class Settings {
@@ -86,6 +88,10 @@ public final class TrsApi {
 		/** Creator-Programm (API.md §35.5, fehlt bei älteren APIs): der Spieler ist Creator / trägt ein Fan-Symbol. */
 		LookupCreator creator;
 		LookupFan fan;
+		/** Profil-Abzeichen (API.md §36, z. B. {@code halloween2026}); fehlt bei älteren APIs. */
+		List<String> badges;
+		/** Spuk-Effekte, die andere sehen dürfen ({@code "hits"}, {@code "trail"}), nur während Halloween. */
+		List<String> fx;
 	}
 
 	static final class LookupCreator {
@@ -109,6 +115,10 @@ public final class TrsApi {
 
 	static final class LookupCosmetics {
 		LookupCosmetic hat;
+		/** Begleiter neben dem Hut (Format 2, gleicher Aufbau wie {@link #hat}). */
+		LookupCosmetic companion;
+		/** Flügel am Rücken (Format 2, {@code attach: "body"}). */
+		LookupCosmetic wings;
 	}
 
 	static final class LookupCosmetic {
@@ -332,13 +342,9 @@ public final class TrsApi {
 			if (p.cape != null) {
 				cape = CapeInfo.of(p.cape.id, p.cape.url, p.cape.scale, p.cape.frames, p.cape.frameTimeMs, config);
 			}
-			HatInfo hat = null;
-			if (p.cosmetics != null && p.cosmetics.hat != null) {
-				LookupCosmetic h = p.cosmetics.hat;
-				hat = h.format != null && h.format == 2
-						? HatInfo.v2(h.id, h.model, h.url, h.glow, h.hash, h.frames, h.glowFrames, config)
-						: HatInfo.of(h.id, h.template, h.url, h.scale, h.frames, h.frameTimeMs, h.templateUrl, config);
-			}
+			HatInfo hat = cosmetic(p.cosmetics == null ? null : p.cosmetics.hat, false);
+			HatInfo companion = cosmetic(p.cosmetics == null ? null : p.cosmetics.companion, true);
+			HatInfo wings = cosmetic(p.cosmetics == null ? null : p.cosmetics.wings, true);
 			dev.theredstonee.trsclient.core.creator.CreatorTier tier = p.creator == null ? null
 					: dev.theredstonee.trsclient.core.creator.CreatorTier.parse(p.creator.tier);
 			FanInfo fan = null;
@@ -347,9 +353,46 @@ public final class TrsApi {
 				fan = FanInfo.of(p.fan.creator, p.fan.name,
 						SymbolInfo.of(sy.url, sy.size, sy.frames, sy.frameMs, sy.sha256, config), p.fan.milestone);
 			}
-			out.put(uuid, new PlayerInfo(Boolean.TRUE.equals(p.badge), cape, hat, tier, fan));
+			out.put(uuid, new PlayerInfo(Boolean.TRUE.equals(p.badge), cape, hat, tier, fan, companion, badgeIds(p.badges),
+					fxBits(p.fx), wings));
 		}
 		return out;
+	}
+
+	/** Ein Kosmetik-Teil des Lookups. Begleiter nur als Format 2 (Studio-Modell). */
+	private HatInfo cosmetic(LookupCosmetic h, boolean companion) {
+		if (h == null) return null;
+		if (h.format != null && h.format == 2) {
+			return HatInfo.v2(h.id, h.model, h.url, h.glow, h.hash, h.frames, h.glowFrames, config);
+		}
+		if (companion) return null;
+		return HatInfo.of(h.id, h.template, h.url, h.scale, h.frames, h.frameTimeMs, h.templateUrl, config);
+	}
+
+	/** Höchstens so viele Profil-Abzeichen je Spieler übernehmen. */
+	static final int MAX_BADGES = 16;
+
+	/** Abzeichen-IDs prüfen ({@code [a-z0-9_]{1,40}}), Dubletten weg, höchstens {@link #MAX_BADGES}. */
+	static List<String> badgeIds(List<String> raw) {
+		if (raw == null || raw.isEmpty()) return null;
+		List<String> out = new ArrayList<>();
+		for (String b : raw) {
+			if (b == null || b.length() > 40 || !b.matches("[a-z0-9_]+") || out.contains(b)) continue;
+			out.add(b);
+			if (out.size() >= MAX_BADGES) break;
+		}
+		return out;
+	}
+
+	/** {@code fx} → {@link PlayerInfo#FX_HITS} | {@link PlayerInfo#FX_TRAIL}; Unbekanntes wird ignoriert. */
+	static int fxBits(List<String> raw) {
+		if (raw == null) return 0;
+		int bits = 0;
+		for (String f : raw) {
+			if ("hits".equals(f)) bits |= PlayerInfo.FX_HITS;
+			else if ("trail".equals(f)) bits |= PlayerInfo.FX_TRAIL;
+		}
+		return bits;
 	}
 
 	/**

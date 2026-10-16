@@ -25,6 +25,14 @@ public final class V2Hat<T> {
 	/** Träger hat einen Helm auf: Teil wird auf den Helm gesetzt (siehe {@code CosmeticV2Renderer#HELMET_SCALE}). */
 	public final boolean helmet;
 
+	/**
+	 * Zustands-Animation (Flügel): Treiber des aktuellen Zustands, des vorigen und die Überblendung dazwischen (0 = nur
+	 * {@link #prevDriver}, 1 = nur {@link #driver}). Hüte: immer {@code idle} (0, 0, 1).
+	 */
+	public final int driver;
+	public final int prevDriver;
+	public final float blend;
+
 	private final Lod<T> lod;
 
 	public V2Hat(CosmeticV2 model, T base, T glow, T halo, long now, boolean helmet) {
@@ -32,6 +40,14 @@ public final class V2Hat<T> {
 	}
 
 	public V2Hat(CosmeticV2 model, T base, T glow, T halo, long now, boolean helmet, Lod<T> lod) {
+		this(model, base, glow, halo, now, helmet, lod, 0, 0, 1f);
+	}
+
+	public V2Hat(CosmeticV2 model, T base, T glow, T halo, long now, boolean helmet, Lod<T> lod, int driver, int prevDriver,
+			float blend) {
+		this.driver = driver;
+		this.prevDriver = prevDriver;
+		this.blend = blend;
 		this.lod = lod;
 		this.model = model;
 		this.base = base;
@@ -61,6 +77,11 @@ public final class V2Hat<T> {
 		if (level <= 0 || lod == null || glow == null) return glow;
 		T t = lod.glow(now, level);
 		return t == null ? glow : t;
+	}
+
+	/** Gleiches Teil mit einer Zustands-Animation (Flügel: idle/air/sneak, siehe {@link WingState}). */
+	public V2Hat<T> withState(int driver, int prevDriver, float blend) {
+		return new V2Hat<T>(model, base, glow, halo, now, helmet, lod, driver, prevDriver, blend);
 	}
 
 	/** Gibt es in diesem Durchgang etwas zu zeichnen? */

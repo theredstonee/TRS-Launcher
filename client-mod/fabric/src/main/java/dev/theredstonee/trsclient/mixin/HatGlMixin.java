@@ -44,7 +44,9 @@ public abstract class HatGlMixin {
 		Object tex = features.hatTexture(id);
 		if (tex == null) {
 			V2Hat<Object> hat = features.hatV2(id, helmet);
+			V2Hat<Object> buddy = features.companionV2(id, helmet);
 			if (hat != null) renderV2(features, hat, p, self);
+			if (buddy != null) renderV2(features, buddy, p, self);
 			return;
 		}
 		double dx = p.x - p.xo;
@@ -72,6 +74,8 @@ public abstract class HatGlMixin {
 			GlStateManager.enableCull();
 			GlStateManager.popMatrix();
 		}
+		V2Hat<Object> buddy = features.companionV2(id, helmet);
+		if (buddy != null) renderV2(features, buddy, p, self);
 	}
 
 	// Format 2 über GL: Grundmodell mit Alpha-Test (Welt-/Entity-Licht), emissive voll hell (Lightmap 240, ohne

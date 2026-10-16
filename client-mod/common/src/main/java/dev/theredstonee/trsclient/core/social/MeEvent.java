@@ -55,11 +55,17 @@ public final class MeEvent {
 	public final Application application;
 	/** Rohes JSON der Welt-Hosting-Ereignisse ({@code hosting_*}, ≤ 16 KiB) – ausgewertet in core.hosting. */
 	public final String hostingData;
+	/** {@code events_changed}: aktive Event-IDs, oder null (Feld fehlt – nicht als „keins“ werten). */
+	public final List<String> events;
+	/** Rohes JSON von {@code halloween_updated} (≤ 16 KiB, wie {@code GET /v1/me/halloween}) – ausgewertet in core.halloween. */
+	public final String halloweenData;
 
 	private MeEvent(String type, String id, ChatJson.EventDto d, String data) {
 		this.type = type;
 		this.id = id;
 		this.hostingData = data != null && type.startsWith("hosting_") && data.length() <= 16 * 1024 ? data : null;
+		this.halloweenData = data != null && type.equals("halloween_updated") && data.length() <= 16 * 1024 ? data : null;
+		this.events = d == null ? null : d.events;
 		this.resumed = d != null && Boolean.TRUE.equals(d.resumed);
 		this.reason = d == null || d.reason == null ? null : SafeText.line(d.reason, 200);
 		this.conversationId = d != null && Chat.validConversationId(d.conversationId) ? d.conversationId : null;
@@ -173,6 +179,8 @@ public final class MeEvent {
 		if (event == null || !event.matches("[a-z_]{1,40}")) return null;
 		// Welt-Hosting: eigenes Format (z. B. "from" als UUID-Text) – roh weiterreichen, core.hosting prüft selbst.
 		if (event.startsWith("hosting_")) return new MeEvent(event, id, null, data);
+		// Halloween: Zustand wie GET /v1/me/halloween – roh weiterreichen, core.halloween liest ihn selbst.
+		if (event.equals("halloween_updated")) return new MeEvent(event, id, null, data);
 		ChatJson.EventDto d = null;
 		if (data != null && !data.isEmpty()) {
 			try {

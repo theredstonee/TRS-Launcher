@@ -107,6 +107,11 @@ public final class AutoTest {
 			WinterTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=halloween: Halloween 2026 (Startbildschirm, Seite Halloween, Mondlauf, Spuk-Effekte, Jumpscares)
+		if ("halloween".equals(System.getProperty("trsclient.autotest.only"))) {
+			HalloweenTest.install();
+			return;
+		}
 		// -PtrsAutotestOnly=addserver: Formulare der Serverliste im breiten Fenster mit fremdem Eck-Knopf
 		if ("addserver".equals(System.getProperty("trsclient.autotest.only"))) {
 			MenusTest.installAddServer();

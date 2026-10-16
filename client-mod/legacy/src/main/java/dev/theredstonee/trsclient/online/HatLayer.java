@@ -54,7 +54,9 @@ public final class HatLayer implements LayerRenderer<AbstractClientPlayer> {
 		Object tex = features.hatTexture(id);
 		if (tex == null) {
 			V2Hat<Object> hat = features.hatV2(id, helmet);
+			V2Hat<Object> buddy = features.companionV2(id, helmet);
 			if (hat != null) renderV2(features, hat, player);
+			if (buddy != null) renderV2(features, buddy, player);
 			return;
 		}
 		double dx = player.posX - player.prevPosX;
@@ -78,9 +80,20 @@ public final class HatLayer implements LayerRenderer<AbstractClientPlayer> {
 			GlStateManager.enableCull();
 			GlStateManager.popMatrix();
 		}
+		V2Hat<Object> buddy = features.companionV2(id, helmet);
+		if (buddy != null) renderV2(features, buddy, player);
 	}
 
 	private void renderV2(OnlineFeatures<Object> f, V2Hat<Object> hat, AbstractClientPlayer player) {
+		renderPart(f, hat, player, renderer.getMainModel().bipedHead);
+	}
+
+	/**
+	 * Ein Format-2-Teil am Modell-Teil {@code part} zeichnen (Kopf für Hut/Begleiter, Körper für Flügel – siehe
+	 * {@link WingsLayer}).
+	 */
+	void renderPart(OnlineFeatures<Object> f, V2Hat<Object> hat, AbstractClientPlayer player,
+			net.minecraft.client.model.ModelRenderer part) {
 		float lastX = OpenGlHelper.lastBrightnessX;
 		float lastY = OpenGlHelper.lastBrightnessY;
 		GlStateManager.pushMatrix();
@@ -88,7 +101,7 @@ public final class HatLayer implements LayerRenderer<AbstractClientPlayer> {
 		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 		try {
 			if (player.isSneaking()) GlStateManager.translate(0.0F, 0.2F, 0.0F);
-			renderer.getMainModel().bipedHead.postRender(0.0625F);
+			part.postRender(0.0625F);
 			// Kamera im Kopf-Raum: für die Höfe und die Entfernungs-Stufe der HD-Texturen (gegen Flimmern)
 			double[] cam = null;
 			{

@@ -399,7 +399,10 @@ public final class LegacyOnline {
 					}
 				}
 				// TRS-Kopf-Kosmetik (Quietscheente): eigene Ebene dazu.
-				layers.add(new HatLayer(renderer));
+				HatLayer hats = new HatLayer(renderer);
+				layers.add(hats);
+				// TRS-Flügel (v2, attach body): eigene Ebene, gleicher Zeichenweg am Körper.
+				layers.add(new WingsLayer(renderer, hats));
 			}
 			log("Umhang-Physik: " + replaced + " Umhang-Ebenen ersetzt");
 		} catch (IllegalAccessException | RuntimeException e) {

@@ -142,6 +142,19 @@ public final class NewSince {
 	/** Kamera-Fahrten und Fan-Symbole/Creator-Sterne (Creator-Programm). */
 	public static final String CINEMATIC = "0.18.0";
 	public static final String KEY_CINEMATIC = "key.trsclient.cinematicPlay";
+	/**
+	 * Halloween 2026 „Nacht der langen Schatten“ (nächste Version nach TRS Client 0.18.0): Mondnacht-Look, Kürbis-Suche,
+	 * Süßes oder Saures, Spuk-Effekte, Jumpscares, Abzeichen, Emotes, Chat-Sticker, Begleiter.
+	 */
+	public static final String HALLOWEEN = "0.19.0";
+	/** Leisten-Eintrag „Halloween“ im TRS-Menü. */
+	public static final String MENU_HALLOWEEN = "menu:halloween";
+	/** Garderobe → Kosmetik → Abschnitt „Begleiter“. */
+	public static final String WARDROBE_COMPANION = "wardrobe:companion";
+	/** Garderobe → Kosmetik → Abschnitt „Flügel“. */
+	public static final String WARDROBE_WINGS = "wardrobe:wings";
+	/** Sozial → Chat → Sticker-Auswahl. */
+	public static final String SOCIAL_STICKERS = "social:stickers";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
@@ -219,6 +232,9 @@ public final class NewSince {
 		add(FAST_CONNECT, "fastConnect");
 		// Kamera-Fahrten; Fan-Symbole und Creator-Sterne vor Namen.
 		add(CINEMATIC, "cinematic", KEY_CINEMATIC, "trsOnline.fanSymbolNametag", "trsOnline.fanSymbolTab");
+		// Halloween 2026: Modul + Seite im TRS-Menü, Begleiter in der Garderobe, Sticker im Chat.
+		add(HALLOWEEN, "halloween", "halloween.hits", "halloween.trail", "halloween.others", "halloween.jumpscares",
+				"halloween.sounds", MENU_HALLOWEEN, WARDROBE_COMPANION, WARDROBE_WINGS, SOCIAL_STICKERS);
 	}
 
 	private NewSince() {
