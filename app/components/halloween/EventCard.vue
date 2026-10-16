@@ -27,7 +27,10 @@ const slots = computed(() => Array.from({ length: halloween.state?.pumpkins.tota
       </div>
     </template>
     <p v-else class="mt-2 text-xs text-base-400">{{ t('halloween.card.noData') }}</p>
-    <HalloweenTrickDialog v-if="open" @close="open = false" />
+    <!-- Teleport: das backdrop-filter der Karte würde den festen Dialog sonst in der Karte einsperren. -->
+    <Teleport to="body">
+      <HalloweenTrickDialog v-if="open" @close="open = false" />
+    </Teleport>
   </div>
 </template>
 

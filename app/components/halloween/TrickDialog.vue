@@ -12,7 +12,6 @@ const { reduced } = useMotion()
 const phase = ref<'idle' | 'knocking' | 'done'>('idle')
 const outcome = ref<TrickOutcome | null>(null)
 const failure = ref<string | null>(null)
-const stickerImage = ref<string | null>(null)
 
 const hint = computed(() => localText(halloween.state?.pumpkins.nextHint, currentLocale.value))
 const slots = computed(() => Array.from({ length: halloween.total }, (_, i) => i < halloween.found))
@@ -47,10 +46,7 @@ async function knock() {
     const wait = reduced.value ? 0 : Math.max(0, 900 - (Date.now() - started))
     await new Promise((resolve) => setTimeout(resolve, wait))
     outcome.value = r
-    if (r.reward?.kind === 'sticker') {
-      const list = await halloween.loadStickers(true)
-      stickerImage.value = list.find((s) => s.id === r.reward?.id)?.image ?? null
-    }
+    if (r.reward?.kind === 'sticker') await halloween.loadStickers(true)
   } catch (e) {
     failure.value = errorMessage(e)
     void halloween.load()
@@ -73,7 +69,7 @@ async function knock() {
           <div class="min-h-28" aria-live="polite">
             <p v-if="phase === 'knocking'" class="text-sm text-base-400">{{ t('halloween.trick.knocking') }}</p>
             <div v-else-if="shown?.result === 'sweet'" class="prize">
-              <img v-if="stickerImage" :src="stickerImage" alt="" class="size-12 [image-rendering:pixelated]">
+              <HalloweenSticker v-if="shown.reward?.kind === 'sticker'" :id="shown.reward.id" :size="48" />
               <HalloweenPixelSprite v-else :name="spriteFor(shown.reward)" class="size-12" />
               <div class="min-w-0">
                 <p class="kind">{{ t('halloween.trick.sweet') }}<template v-if="shown.reward"> · {{ kindLabel(shown.reward) }}</template></p>
