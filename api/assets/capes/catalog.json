@@ -150,5 +150,96 @@
     "animated": true,
     "frames": 4,
     "frameTimeMs": 220
+  },
+  {
+    "id": "halloween_night_violet",
+    "name": "Mondnacht · Nachtviolett",
+    "file": "halloween_night_violet.png",
+    "unlock": {
+      "type": "reward",
+      "reward": "halloween2026"
+    },
+    "scale": 8,
+    "animated": true,
+    "frames": 24,
+    "frameTimeMs": 250
+  },
+  {
+    "id": "halloween_moon_silver",
+    "name": "Mondnacht · Mondsilber",
+    "file": "halloween_moon_silver.png",
+    "unlock": {
+      "type": "reward",
+      "reward": "halloween2026"
+    },
+    "scale": 8,
+    "animated": true,
+    "frames": 24,
+    "frameTimeMs": 250
+  },
+  {
+    "id": "halloween_ghost_white",
+    "name": "Mondnacht · Geisterweiß",
+    "file": "halloween_ghost_white.png",
+    "unlock": {
+      "type": "reward",
+      "reward": "halloween2026"
+    },
+    "scale": 8,
+    "animated": true,
+    "frames": 24,
+    "frameTimeMs": 250
+  },
+  {
+    "id": "halloween_poison_green",
+    "name": "Mondnacht · Giftgrün",
+    "file": "halloween_poison_green.png",
+    "unlock": {
+      "type": "reward",
+      "reward": "halloween2026"
+    },
+    "scale": 8,
+    "animated": true,
+    "frames": 24,
+    "frameTimeMs": 250
+  },
+  {
+    "id": "halloween_blood_moon",
+    "name": "Mondnacht · Blutmond",
+    "file": "halloween_blood_moon.png",
+    "unlock": {
+      "type": "reward",
+      "reward": "halloween2026"
+    },
+    "scale": 8,
+    "animated": true,
+    "frames": 24,
+    "frameTimeMs": 250
+  },
+  {
+    "id": "halloween_pumpkin_glow",
+    "name": "Mondnacht · Kürbisglut",
+    "file": "halloween_pumpkin_glow.png",
+    "unlock": {
+      "type": "reward",
+      "reward": "halloween2026"
+    },
+    "scale": 8,
+    "animated": true,
+    "frames": 24,
+    "frameTimeMs": 250
+  },
+  {
+    "id": "halloween_hunter_2026",
+    "name": "Kürbisjäger 2026",
+    "file": "halloween_hunter_2026.png",
+    "unlock": {
+      "type": "reward",
+      "reward": "halloween2026"
+    },
+    "scale": 8,
+    "animated": true,
+    "frames": 24,
+    "frameTimeMs": 250
   }
 ]
