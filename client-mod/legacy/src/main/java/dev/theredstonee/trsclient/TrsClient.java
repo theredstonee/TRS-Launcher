@@ -170,6 +170,8 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.core.map.MapEngine.init(modules, event.getModConfigurationDirectory().toPath());
 		// Notizen je Welt (config/trsclient/notes): Seite im TRS-Menü, Taste, angeheftete Notiz im HUD.
 		dev.theredstonee.trsclient.core.notes.Notes.init(modules, event.getModConfigurationDirectory().toPath(), message -> LOGGER.info(message));
+		// Kamera-Fahrten (config/trsclient-cinematic.json).
+		dev.theredstonee.trsclient.cinematic.LegacyCinematic.init(modules, event.getModConfigurationDirectory().toPath());
 		config = new ConfigStore(file.toPath());
 		ConfigStore.Status status = config.load(modules.registry);
 		// Menü-Stil für Vanilla-Menüs (Pause, Serverliste, Laden, Optionen, Welten).
@@ -200,6 +202,10 @@ public final class TrsClient {
 		modules.freelookKey.link(TrsKeys.link(TrsKeys.freelook));
 		modules.worldMapKey.link(TrsKeys.link(TrsKeys.worldMap));
 		modules.notes.openKey.link(TrsKeys.link(TrsKeys.notes));
+		modules.cinematic.addKey.link(TrsKeys.link(TrsKeys.cinematicAdd));
+		modules.cinematic.playKey.link(TrsKeys.link(TrsKeys.cinematicPlay));
+		modules.cinematic.removeKey.link(TrsKeys.link(TrsKeys.cinematicRemove));
+		modules.cinematic.clearKey.link(TrsKeys.link(TrsKeys.cinematicClear));
 		installSocialOverlay();
 		// Komfort-/PvP-Paket (Erwähnungen, Filter, Auto-Reconnect, Warnungen, Zähler, Streamer-Modus …).
 		dev.theredstonee.trsclient.qol.LegacyQol.init(modules);
@@ -215,6 +221,10 @@ public final class TrsClient {
 		MinecraftForge.EVENT_BUS.register(keySearch);
 		MinecraftForge.EVENT_BUS.register(disconnect);
 		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.online.LegacyOnline.NameTags());
+		// Creator-Programm: Fan-Symbole über dem Kopf und in der Tabliste.
+		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.online.LegacyFans());
+		// Kamera-Fahrten: Tasten, Hilfs-Kamera je Bild, keine Hand.
+		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.cinematic.LegacyCinematic.get());
 		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.perf.LegacyPerf.get());
 		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.net.NetHooks.get());
 		// Schild-Position (ab 1.10.2): Schild-Hand der 1. Person selbst zeichnen.
@@ -549,6 +559,12 @@ public final class TrsClient {
 		if (handPass) {
 			// Hand nicht mitzoomen.
 			handPass = false;
+			return;
+		}
+		// Kamera-Fahrt: Sichtfeld der Fahrt (ohne Zoom).
+		float cinematicFov = dev.theredstonee.trsclient.cinematic.LegacyCinematic.fov();
+		if (cinematicFov > 0) {
+			event.setFOV(cinematicFov);
 			return;
 		}
 		double factor = zoom.factor();

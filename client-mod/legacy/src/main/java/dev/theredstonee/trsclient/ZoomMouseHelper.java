@@ -23,6 +23,12 @@ final class ZoomMouseHelper extends MouseHelper {
 	public void mouseXYChange() {
 		super.mouseXYChange();
 		HookStats.mouse++;
+		// Kamera-Fahrt: die Maus dreht weder Figur noch Kamera.
+		if (dev.theredstonee.trsclient.cinematic.LegacyCinematic.playing()) {
+			deltaX = 0;
+			deltaY = 0;
+			return;
+		}
 		FreelookState freelook = client.pvp().freelook();
 		if (freelook.active()) {
 			// Gleiche Umrechnung wie EntityRenderer#updateCameraAndRender → Entity#setAngles.

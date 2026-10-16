@@ -66,7 +66,7 @@ public final class LegacyOnline {
 	private static final Map<NetworkPlayerInfo, CapeOverride> capes = new WeakHashMap<>();
 	private static final Map<NetworkPlayerInfo, NameOverride> names = new WeakHashMap<>();
 	/** Letzter Abzeichen-Zustand je Spieler (Namensschild): Wechsel → Anzeigenamen neu berechnen lassen. */
-	private static final Map<UUID, Boolean> nameBadges = new HashMap<>();
+	private static final Map<UUID, String> nameBadges = new HashMap<>();
 
 	private LegacyOnline() {
 	}
@@ -280,7 +280,9 @@ public final class LegacyOnline {
 
 	private static void applyTabName(NetworkPlayerInfo info) {
 		UUID id = info.getGameProfile().getId();
-		boolean badge = id != null && features.badge(id, true);
+		// Abzeichen, Creator-Stern und Platz fürs Fan-Symbol (LegacyFans zeichnet das Bild nach der Tabliste).
+		String fanPrefix = id == null ? "" : LegacyFans.prefix(id, true);
+		boolean badge = !fanPrefix.isEmpty();
 		NameOverride state = names.get(info);
 		Object current = info.getDisplayName();
 		if (state != null && current != state.ours) {
@@ -296,7 +298,7 @@ public final class LegacyOnline {
 			}
 			String base = state.original != null ? formatted(state.original)
 					: ScorePlayerTeam.formatPlayerName(info.getPlayerTeam(), info.getGameProfile().getName());
-			String text = BADGE + "\u00a7r " + base;
+			String text = fanPrefix + base;
 			if (state.ours == null || !text.equals(state.text)) {
 				state.ours = component(text);
 				state.text = text;
@@ -343,9 +345,9 @@ public final class LegacyOnline {
 			return;
 		}
 		for (EntityPlayer p : new ArrayList<>(Mc.world().playerEntities)) {
-			boolean badge = features.badge(p.getUniqueID(), false);
-			Boolean before = nameBadges.put(p.getUniqueID(), badge);
-			if (before == null ? badge : before != badge) p.refreshDisplayName();
+			String fanPrefix = LegacyFans.prefix(p.getUniqueID(), false);
+			String before = nameBadges.put(p.getUniqueID(), fanPrefix);
+			if (before == null ? !fanPrefix.isEmpty() : !before.equals(fanPrefix)) p.refreshDisplayName();
 		}
 	}
 
@@ -361,12 +363,15 @@ public final class LegacyOnline {
 			EntityPlayer player = event.entityPlayer;
 			String name = event.displayname;
 			//?}
-			if (player == null || name == null || !features.badge(player.getUniqueID(), false)) return;
+			if (player == null || name == null) return;
+			// Abzeichen, Creator-Stern und Platz fürs Fan-Symbol (LegacyFans zeichnet das Bild nach dem Namensschild).
+			String fanPrefix = LegacyFans.prefix(player.getUniqueID(), false);
+			if (fanPrefix.isEmpty()) return;
 			// Das Team setzt Präfix/Suffix außen herum – dessen Farbe nach dem Abzeichen wiederholen.
 			String prefix = ScorePlayerTeam.formatPlayerName(player.getTeam(), "\u0000");
 			int cut = prefix.indexOf('\u0000');
 			String color = FontRenderer.getFormatFromString(cut > 0 ? prefix.substring(0, cut) : "");
-			String result = BADGE + " " + (color.isEmpty() ? "\u00a7r" : color) + name;
+			String result = fanPrefix + (color.isEmpty() ? "\u00a7r" : color) + name;
 			//? if >=1.9 {
 			/*event.setDisplayname(result);
 			*///?} else
