@@ -45,6 +45,10 @@ const KEYS = [
   ['key.trsclient.quickReply', 'key.trsclient.quickReply'],
   ['key.trsclient.panorama', 'key.trsclient.panorama'],
   ['key.trsclient.notes', 'key.trsclient.notes'],
+  ['key.trsclient.cinematicAdd', 'key.trsclient.cinematicAdd'],
+  ['key.trsclient.cinematicPlay', 'key.trsclient.cinematicPlay'],
+  ['key.trsclient.cinematicRemove', 'key.trsclient.cinematicRemove'],
+  ['key.trsclient.cinematicClear', 'key.trsclient.cinematicClear'],
 ];
 
 const load = (code) => JSON.parse(readFileSync(join(i18nDir, `${code}.json`), 'utf8'));

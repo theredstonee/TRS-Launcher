@@ -116,6 +116,8 @@ public final class TrsClient {
 		UNSUPPORTED.addAll(Arrays.<Object>asList(modules.trsOnline, modules.capePhysics, modules.emotes, modules.colors));
 		// Sozial (Chat, Toasts) braucht die TRS-Online-Funktionen – hier ausgeblendet.
 		UNSUPPORTED.add(modules.social);
+		// Kamera-Fahrten (eigene Kamera) sind für 1.7.10 nicht umgesetzt.
+		UNSUPPORTED.add(modules.cinematic.cinematic);
 		// Screenshot-Werkzeuge ohne eigene Chatzeile (kein Einfüge-Text in 1.7.10); Essential gibt es hier nicht.
 		UNSUPPORTED.addAll(Arrays.<Object>asList(modules.comfort.shotChatActions, modules.comfort.shotReplaceEssential));
 		// Notiz-Sync braucht die TRS-Online-Funktionen – Notizen bleiben hier lokal.

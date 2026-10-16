@@ -67,6 +67,8 @@ public final class Cinematic {
 	static final int PREVIEW_MAX = 120;
 	/** Sichtweite der Vorschau (Blöcke). */
 	static final double PREVIEW_RANGE = 96;
+	/** Keine Vorschau-Partikel direkt vor der Kamera (sie verdecken sonst das Bild). */
+	static final double PREVIEW_MIN = 2.0;
 
 	private static Cinematic instance;
 
@@ -259,7 +261,8 @@ public final class Cinematic {
 		double dx = x - scratch.x;
 		double dy = y - scratch.y;
 		double dz = z - scratch.z;
-		return dx * dx + dy * dy + dz * dz <= PREVIEW_RANGE * PREVIEW_RANGE;
+		double d = dx * dx + dy * dy + dz * dz;
+		return d <= PREVIEW_RANGE * PREVIEW_RANGE && d >= PREVIEW_MIN * PREVIEW_MIN;
 	}
 
 	private double elapsed() {

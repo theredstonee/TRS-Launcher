@@ -15,5 +15,9 @@
 	"key.trsclient.social": "Otwórz społeczność",
 	"key.trsclient.quickReply": "Szybka odpowiedź / dołącz",
 	"key.trsclient.panorama": "Zrób panoramę",
-	"key.trsclient.notes": "Otwórz notatki"
+	"key.trsclient.notes": "Otwórz notatki",
+	"key.trsclient.cinematicAdd": "Ścieżka kamery: dodaj klatkę kluczową",
+	"key.trsclient.cinematicPlay": "Ścieżka kamery: odtwórz / zatrzymaj",
+	"key.trsclient.cinematicRemove": "Ścieżka kamery: usuń ostatnią klatkę kluczową",
+	"key.trsclient.cinematicClear": "Ścieżka kamery: wyczyść"
 }

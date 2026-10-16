@@ -15,5 +15,9 @@
 	"key.trsclient.social": "Sosyal aç",
 	"key.trsclient.quickReply": "Hızlı yanıt / katıl",
 	"key.trsclient.panorama": "Panorama çek",
-	"key.trsclient.notes": "Notları aç"
+	"key.trsclient.notes": "Notları aç",
+	"key.trsclient.cinematicAdd": "Kamera yolu: anahtar kare ekle",
+	"key.trsclient.cinematicPlay": "Kamera yolu: oynat / durdur",
+	"key.trsclient.cinematicRemove": "Kamera yolu: son anahtar kareyi kaldır",
+	"key.trsclient.cinematicClear": "Kamera yolu: temizle"
 }

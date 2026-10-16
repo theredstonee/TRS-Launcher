@@ -233,7 +233,13 @@ class CinematicTest {
 		assertEquals(3, c.keyframes());
 		assertEquals(4, host.messages.size());
 
-		// Vorschau: Partikel an Keyframes und entlang der Bahn.
+		// Vorschau: Partikel an Keyframes und entlang der Bahn (nicht direkt vor der Kamera).
+		host.camera.set(10, 72, 10, 0, 0, 70);
+		for (int i = 0; i < Cinematic.PREVIEW_TICKS; i++) c.tick(host, false);
+		assertEquals(2, host.keyParticles, "Keyframe an der Kamera ausgelassen");
+		host.keyParticles = 0;
+		host.particles = 0;
+		host.camera.set(5, 90, 5, 0, 0, 70);
 		for (int i = 0; i < Cinematic.PREVIEW_TICKS; i++) c.tick(host, false);
 		assertEquals(3, host.keyParticles);
 		assertTrue(host.particles > 10);

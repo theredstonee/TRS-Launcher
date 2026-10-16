@@ -82,7 +82,7 @@ public final class CinematicTest {
 				playStart = System.nanoTime();
 				check("Fahrt läuft", c.playing());
 				check("Dauer 3 s", Math.abs(c.duration() - 3.0) < 1e-6);
-				wait = 2;
+				wait = 6;
 				return true;
 			case 5:
 				cx = Mc.cameraX();
@@ -91,7 +91,7 @@ public final class CinematicTest {
 				check("HUD aus", Mc.hudHidden());
 				check("Ansicht gelöst (dritte Person)", !firstPerson(mc));
 				actions.shot("trsclient-cinematic-start");
-				wait = 26;
+				wait = 22;
 				return true;
 			case 6: {
 				double moved = Math.sqrt(sq(Mc.cameraX() - cx) + sq(Mc.cameraY() - cy) + sq(Mc.cameraZ() - cz));
