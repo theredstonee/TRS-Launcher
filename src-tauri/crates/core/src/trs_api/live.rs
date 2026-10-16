@@ -235,6 +235,8 @@ pub enum LiveEvent {
     AchievementUnlocked { achievement: Box<Achievement>, at: Option<String>, reward: Option<Reward> },
     /// Die aktiven Events dieses Spielers haben sich geändert (§31, z. B. Halloween an/aus).
     EventsChanged { events: Vec<String> },
+    /// Halloween 2026 (§36): Kürbis gefunden, angeklopft oder Abzeichen bekommen – voller Stand.
+    HalloweenUpdated(Box<super::halloween::HalloweenState>),
     /// Creator-Programm (§35.7): eigenes Symbol/Umhang geprüft, Stufe geändert, entzogen, Antrag beantwortet …
     CreatorUpdated { kind: String, reason: Option<String>, tier: Option<String>, milestone: Option<String>, helper: Option<UserRef> },
     /// Der unterstützte Creator hat einen neuen Meilenstein erreicht (an alle Fans).
@@ -490,6 +492,10 @@ pub fn decode(event: &str, data: &str) -> Option<LiveEvent> {
     // Creator-Programm (§35.7): eigene Felder (`kind`, `tier`, `milestone`).
     if event.starts_with("creator_") {
         return super::creator::decode_live(event, data);
+    }
+    // Halloween (§36): Nutzlast = Stand von `GET /v1/me/halloween`.
+    if event.starts_with("halloween_") {
+        return super::halloween::decode_live(event, data);
     }
     let d: D = serde_json::from_str(data).ok()?;
     let message = |d: D| -> Option<(String, Box<ChatMessage>)> {

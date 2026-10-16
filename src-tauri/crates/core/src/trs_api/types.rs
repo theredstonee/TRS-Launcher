@@ -168,6 +168,8 @@ pub enum Unlock {
     Owner,
     /// Gratis, solange ein Event läuft (`unlockEvent`), danach behalten.
     Event,
+    /// Nur als Belohnung (z. B. „Süßes oder Saures“ zu Halloween, `rewardOf`) – nicht einlösbar.
+    Reward,
     #[serde(other)]
     Other,
 }
@@ -177,6 +179,8 @@ pub enum Unlock {
 pub(crate) struct UnlockSpec {
     pub kind: Unlock,
     pub event: Option<String>,
+    /// Bei `reward`: wofür (`halloween2026`), falls im Objekt angegeben.
+    pub reward_of: Option<String>,
 }
 
 impl<'de> Deserialize<'de> for UnlockSpec {
@@ -185,7 +189,8 @@ impl<'de> Deserialize<'de> for UnlockSpec {
         let name = v.as_str().or_else(|| v.get("type").and_then(serde_json::Value::as_str)).unwrap_or_default();
         let kind = serde_json::from_value(serde_json::Value::String(name.to_owned())).unwrap_or(Unlock::Other);
         let event = v.get("event").and_then(serde_json::Value::as_str).filter(|e| super::events::event_id(e)).map(str::to_owned);
-        Ok(Self { kind, event })
+        let reward_of = v.get("rewardOf").and_then(serde_json::Value::as_str).filter(|e| validate::cape_id(e)).map(str::to_owned);
+        Ok(Self { kind, event, reward_of })
     }
 }
 
@@ -208,6 +213,9 @@ pub(crate) struct ApiCape {
     pub name: String,
     pub kind: CapeKind,
     pub unlock: UnlockSpec,
+    /// Belohnung wofür (`halloween2026`) – neben `unlock: "reward"` (§36).
+    #[serde(default)]
+    pub reward_of: Option<String>,
     pub status: CapeStatus,
     pub url: String,
     pub width: u32,
@@ -283,6 +291,8 @@ pub struct CapeItem {
     pub unlock: Unlock,
     /// Bei `unlock == event`: welches Event (`halloween`).
     pub unlock_event: Option<String>,
+    /// Bei `unlock == reward`: wofür (`halloween2026`).
+    pub reward_of: Option<String>,
     pub status: CapeStatus,
     pub width: u32,
     pub height: u32,
@@ -309,6 +319,7 @@ impl CapeItem {
             kind: cape.kind,
             unlock: cape.unlock.kind,
             unlock_event: cape.unlock.event.clone(),
+            reward_of: cape.reward_of.clone().filter(|r| validate::cape_id(r)).or_else(|| cape.unlock.reward_of.clone()),
             status: cape.status,
             width: cape.width,
             height: cape.height,
@@ -537,6 +548,8 @@ pub enum CosmeticUnlock {
     Owner,
     /// Gratis, solange ein Event läuft (`unlockEvent`), danach behalten.
     Event,
+    /// Nur als Belohnung (Halloween „Süßes oder Saures“) – nicht einlösbar.
+    Reward,
     #[serde(other)]
     Other,
 }
@@ -639,6 +652,12 @@ pub(crate) struct ApiLookupPlayer {
     pub badge: bool,
     #[serde(default)]
     pub cape: Option<ApiLookupCape>,
+    /// Profil-Abzeichen (z. B. `halloween2026`), nur wenn der Spieler sie zeigt (§4.1/§36).
+    #[serde(default)]
+    pub badges: Vec<serde_json::Value>,
+    /// Spuk-Effekte, die andere sehen dürfen (`hits`, `trail`) – nur während Halloween.
+    #[serde(default)]
+    pub fx: Vec<serde_json::Value>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -666,6 +685,10 @@ pub struct PlayerCape {
     pub frames: u32,
     pub frame_time_ms: Option<u32>,
     pub texture: Option<String>,
+    /// Profil-Abzeichen (`halloween2026`, `pumpkinhunter2026` …); Bilder per `trs_badge_images`.
+    pub badges: Vec<String>,
+    /// Sichtbare Spuk-Effekte (`hits`, `trail`).
+    pub fx: Vec<String>,
 }
 
 // --- Präsenz & Freunde ----------------------------------------------------------------

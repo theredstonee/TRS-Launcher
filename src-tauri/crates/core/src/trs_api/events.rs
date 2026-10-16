@@ -182,6 +182,11 @@ mod tests {
         assert_eq!((ev.kind, ev.event.as_deref()), (Unlock::Event, Some("halloween")));
         let odd: UnlockSpec = serde_json::from_value(json!({ "type": "nuke", "event": "Bad Id" })).unwrap();
         assert_eq!((odd.kind, odd.event), (Unlock::Other, None));
+        // Halloween 2026 (§36): nur als Belohnung, `rewardOf` sagt wofür.
+        let reward: UnlockSpec = serde_json::from_value(json!("reward")).unwrap();
+        assert_eq!((reward.kind, reward.reward_of), (Unlock::Reward, None));
+        let reward: UnlockSpec = serde_json::from_value(json!({ "type": "reward", "rewardOf": "halloween2026" })).unwrap();
+        assert_eq!((reward.kind, reward.reward_of.as_deref()), (Unlock::Reward, Some("halloween2026")));
     }
 
     #[test]

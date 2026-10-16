@@ -94,6 +94,8 @@ async fn admin_item(trs: &TrsApi, entry: super::types::ApiAdminCape, token: Opti
 
 async fn player_item(trs: &TrsApi, player: super::types::ApiLookupPlayer) -> Option<PlayerCape> {
     let uuid = validate::uuid(&player.uuid)?;
+    let badges = super::halloween::clean_badges(player.badges);
+    let fx = super::halloween::clean_fx(player.fx);
     let cape = player.cape.filter(|c| {
         validate::cape_id(&c.id)
             && (1..=super::types::MAX_CAPE_SCALE).contains(&c.scale)
@@ -110,6 +112,8 @@ async fn player_item(trs: &TrsApi, player: super::types::ApiLookupPlayer) -> Opt
             frames: 1,
             frame_time_ms: None,
             texture: None,
+            badges,
+            fx,
         });
     };
     let frames = cape.frames.max(1);
@@ -131,6 +135,8 @@ async fn player_item(trs: &TrsApi, player: super::types::ApiLookupPlayer) -> Opt
         frames,
         frame_time_ms: if frames > 1 { cape.frame_time_ms } else { None },
         texture,
+        badges,
+        fx,
     })
 }
 

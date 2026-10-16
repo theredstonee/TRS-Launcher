@@ -24,6 +24,7 @@ pub mod cape_video;
 pub mod chat;
 pub mod creator;
 pub mod events;
+pub mod halloween;
 mod head_cosmetics;
 pub mod hosting;
 pub mod moderation;
@@ -442,6 +443,10 @@ fn message_for(code: &str) -> Msg {
         "pack_not_found" => msg!("trsApi.pack_not_found", "Dieses Modpack gibt es nicht (mehr)."),
         "helper_not_found" => msg!("trsApi.helper_not_found", "Dieser Spieler ist (nicht mehr) Helfer."),
         "helper_invite_not_found" => msg!("trsApi.helper_invite_not_found", "Diese Einladung gibt es nicht mehr."),
+        // --- Halloween (§36) ---
+        "pumpkin_unknown" => msg!("trsApi.pumpkin_unknown", "Diesen Kürbis gibt es nicht."),
+        "trick_used" => msg!("trsApi.trick_used", "Heute hast du schon angeklopft – morgen wieder!"),
+        "sticker_locked" => msg!("trsApi.sticker_locked", "Diesen Sticker hast du noch nicht."),
         "invalid_request" | "invalid_json" => msg!("trsApi.invalid_request", "Die Anfrage war ungültig."),
         "not_found" => msg!("trsApi.not_found", "Nicht gefunden."),
         _ => msg!("trsApi.rejected", "Die TRS API hat die Anfrage abgelehnt."),
@@ -944,3 +949,5 @@ mod team_tests;
 mod achievements_tests;
 #[cfg(test)]
 mod creator_tests;
+#[cfg(test)]
+mod halloween_tests;

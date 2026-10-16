@@ -13,6 +13,7 @@ pub mod curseforge;
 pub mod export;
 pub mod extras;
 pub mod files;
+pub mod halloween;
 pub mod games;
 pub mod hosting;
 pub mod import;

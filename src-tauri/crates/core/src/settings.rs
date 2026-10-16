@@ -323,6 +323,11 @@ pub struct UiSettings {
     pub big_picture_auto: bool,
     /// Event-Symbole: Während eines Events (z. B. Halloween) zeigt die App ihr Event-Symbol.
     pub event_icons: bool,
+    /// Halloween: Filmkorn-Rauschen und kurzes Aufflackern bei Blitzen (ab Werk an).
+    /// Der TRS Client übernimmt den Wert über `launcher-theme.json` als Vorgabe.
+    pub halloween_flicker: bool,
+    /// Der Erst-Hinweis zu „Flackern & Rauschen“ wurde schon gezeigt.
+    pub halloween_flicker_hint_seen: bool,
 }
 
 impl Default for UiSettings {
@@ -346,6 +351,8 @@ impl Default for UiSettings {
             big_picture_on_start: false,
             big_picture_auto: true,
             event_icons: true,
+            halloween_flicker: true,
+            halloween_flicker_hint_seen: false,
         }
     }
 }
@@ -826,6 +833,18 @@ mod tests {
         let ui: UiSettings = serde_json::from_value(serde_json::json!({ "eventIcons": false })).unwrap();
         assert!(!ui.event_icons);
         assert_eq!(serde_json::to_value(&ui).unwrap()["eventIcons"].as_bool(), Some(false));
+    }
+
+    #[test]
+    fn halloween_flicker_default_on() {
+        // Ältere Dateien ohne Feld: Flackern an, Hinweis noch nicht gesehen.
+        let old: Settings = serde_json::from_str(r#"{"ui":{"theme":"light"}}"#).unwrap();
+        assert!(old.ui.halloween_flicker);
+        assert!(!old.ui.halloween_flicker_hint_seen);
+        let ui: UiSettings = serde_json::from_value(serde_json::json!({ "halloweenFlicker": false, "halloweenFlickerHintSeen": true })).unwrap();
+        assert!(!ui.halloween_flicker && ui.halloween_flicker_hint_seen);
+        let json = serde_json::to_value(&ui).unwrap();
+        assert_eq!((json["halloweenFlicker"].as_bool(), json["halloweenFlickerHintSeen"].as_bool()), (Some(false), Some(true)));
     }
 
     #[tokio::test]

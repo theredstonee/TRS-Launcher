@@ -388,6 +388,9 @@ pub struct ChatReply {
     /// Antwort auf eine Wegpunkt-Karte (§18.10).
     #[serde(default)]
     pub waypoint: bool,
+    /// Antwort auf einen Sticker (§36): seine ID.
+    #[serde(default)]
+    pub sticker: Option<String>,
     #[serde(default)]
     pub deleted: bool,
 }
@@ -450,6 +453,9 @@ pub(crate) struct ApiMessage {
     /// Roh, damit eine unbekannte Form nicht die ganze Nachricht verwirft.
     #[serde(default)]
     waypoint: Option<serde_json::Value>,
+    /// Chat-Sticker (§36) statt Text/Bildern.
+    #[serde(default)]
+    sticker: Option<String>,
     #[serde(default)]
     attachments: Vec<ApiAttachment>,
     #[serde(default)]
@@ -488,6 +494,8 @@ pub struct ChatMessage {
     pub world: Option<ChatWorld>,
     /// Wegpunkt-Karte (§18.10), sonst `null`.
     pub waypoint: Option<ChatWaypoint>,
+    /// Chat-Sticker (§36, z. B. `ghost_boo`), sonst `null`.
+    pub sticker: Option<String>,
     pub attachments: Vec<ChatAttachment>,
     pub reply_to: Option<ChatReply>,
     pub system: Option<ChatSystem>,
@@ -545,6 +553,7 @@ impl ApiMessage {
                         invite: r.invite && !r.deleted,
                         world: r.world && !r.deleted,
                         waypoint: r.waypoint && !r.deleted,
+                        sticker: r.sticker.filter(|s| !r.deleted && validate::cape_id(s)),
                         deleted: r.deleted,
                     }
                 })
@@ -561,6 +570,7 @@ impl ApiMessage {
             invite: if empty { None } else { self.invite.and_then(ChatInvite::cleaned) },
             world: if empty { None } else { self.world.and_then(ApiWorld::cleaned) },
             waypoint: if empty { None } else { self.waypoint.and_then(ChatWaypoint::from_api) },
+            sticker: if empty || kind == "system" { None } else { self.sticker.filter(|s| validate::cape_id(s)) },
             attachments: if empty {
                 Vec::new()
             } else {
@@ -800,6 +810,9 @@ pub struct OutgoingMessage {
     /// Wegpunkt-Karte (der Launcher sendet selbst keine; der Typ ist trotzdem vollständig).
     #[serde(default)]
     pub waypoint: Option<ChatWaypoint>,
+    /// Chat-Sticker (§36) – allein, ohne Text, Bilder oder Karten.
+    #[serde(default)]
+    pub sticker: Option<String>,
     #[serde(default)]
     pub nonce: Option<String>,
 }
@@ -855,8 +868,14 @@ impl OutgoingMessage {
                 .ok_or_else(|| invalid(crate::msg!("chat.invalidWaypoint", "Ungültiger Wegpunkt.")))?;
             body.insert("waypoint".into(), serde_json::to_value(cleaned).map_err(|_| bad_response())?);
         }
+        if let Some(sticker) = &self.sticker {
+            if !validate::cape_id(sticker) || !text.is_empty() || !attachments.is_empty() || self.invite.is_some() || self.waypoint.is_some() {
+                return Err(invalid(crate::msg!("chat.invalidMessage", "Ungültige Nachricht.")));
+            }
+            body.insert("sticker".into(), json!(sticker));
+        }
         if body.is_empty()
-            || (text.is_empty() && attachments.is_empty() && self.invite.is_none() && self.waypoint.is_none())
+            || (text.is_empty() && attachments.is_empty() && self.invite.is_none() && self.waypoint.is_none() && self.sticker.is_none())
         {
             return Err(invalid(crate::msg!("chat.emptyMessage", "Die Nachricht ist leer.")));
         }
@@ -1363,6 +1382,11 @@ mod tests {
             ..Default::default()
         };
         assert!(bad_invite.body().is_err());
+        // Sticker (§36): allein erlaubt, nie zusammen mit Text oder Bildern.
+        let sticker = OutgoingMessage { sticker: Some("ghost_boo".into()), ..Default::default() }.body().unwrap();
+        assert_eq!(sticker, json!({ "sticker": "ghost_boo" }));
+        assert!(OutgoingMessage { sticker: Some("ghost_boo".into()), text: Some("hi".into()), ..Default::default() }.body().is_err());
+        assert!(OutgoingMessage { sticker: Some("../x".into()), ..Default::default() }.body().is_err());
         let reply = OutgoingMessage { text: Some("a".into()), reply_to: Some("nope".into()), ..Default::default() };
         assert!(reply.body().is_err());
     }

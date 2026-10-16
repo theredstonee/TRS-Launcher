@@ -572,6 +572,9 @@ struct LauncherTheme {
     /// Läuft ein Event für diesen Spieler (`"halloween"`), weiß der Mod es sofort; sonst fehlt das Feld.
     #[serde(skip_serializing_if = "Option::is_none")]
     event: Option<&'static str>,
+    /// Halloween „Flackern & Rauschen“ (Filmkorn + Blitz-Aufflackern) – Vorgabe für den Client,
+    /// solange der Spieler es dort nicht selbst umgestellt hat.
+    halloween_flicker: bool,
 }
 
 /// Events, die der Mod als Theme kennt.
@@ -590,6 +593,7 @@ pub async fn write_theme(paths: &Paths, instance_id: &str, ui: &UiSettings, even
         language: ui.language.code(),
         design: ui.design.code(),
         event: THEME_EVENTS.into_iter().find(|e| events.iter().any(|x| x == e)),
+        halloween_flicker: ui.halloween_flicker,
     };
     let json = serde_json::to_string_pretty(&theme).map_err(|e| Error::json("launcher-theme.json", e))?;
     tokio::fs::write(&file, json).await.map_err(|e| Error::io(&file, e))
@@ -1039,12 +1043,14 @@ mod tests {
         assert_eq!(json["language"], "en");
         assert!(json.get("event").is_none(), "ohne Event fehlt das Feld");
         assert_eq!(json["design"], "redstone");
+        assert_eq!(json["halloweenFlicker"], true, "Flackern & Rauschen ab Werk an");
 
         // "System" gibt es im Spiel nicht – dort gilt das dunkle Thema.
         ui.theme = Theme::System;
         ui.accent = Accent::Redstone;
         ui.language = crate::settings::Language::PtBr;
         ui.design = crate::settings::Design::Winter;
+        ui.halloween_flicker = false;
         write_theme(&paths, "test", &ui, &["halloween".into(), "other".into()]).await.unwrap();
         let json: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&file).unwrap()).unwrap();
         assert_eq!(json["theme"], "dark");
@@ -1052,6 +1058,7 @@ mod tests {
         assert_eq!(json["language"], "pt-BR");
         assert_eq!(json["event"], "halloween");
         assert_eq!(json["design"], "winter");
+        assert_eq!(json["halloweenFlicker"], false);
 
         ui.accent = Accent::Ice;
         write_theme(&paths, "test", &ui, &[]).await.unwrap();
