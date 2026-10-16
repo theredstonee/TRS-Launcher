@@ -152,6 +152,21 @@ export const HALLOWEEN_EMOTES = [
   { id: 'moon_howl', name: { de: 'Mondheulen', en: 'Moon Howl', es: 'Aullido a la luna' } },
 ] as const
 
+/** Belohnungs-Schlüssel der Kürbisjäger-Flügel. */
+export const HUNTER_REWARD = 'pumpkinhunter2026'
+
+/** Halloween-Flügel (Platz `wings`, Format v2): nach allen 13 Kürbissen wählt jeder genau EINEN. */
+export const HALLOWEEN_WINGS = [
+  { id: 'bat_wings', name: { de: 'Fledermausflügel', en: 'Bat Wings', es: 'Alas de murciélago' } },
+  { id: 'demon_wings', name: { de: 'Dämonenflügel', en: 'Demon Wings', es: 'Alas de demonio' } },
+  { id: 'raven_wings', name: { de: 'Rabenflügel', en: 'Raven Wings', es: 'Alas de cuervo' } },
+  { id: 'ghost_wings', name: { de: 'Geisterflügel', en: 'Ghost Wings', es: 'Alas fantasmales' } },
+] as const
+export const HALLOWEEN_WING_IDS: readonly string[] = HALLOWEEN_WINGS.map((w) => w.id)
+export function isHalloweenWing(id: string): boolean {
+  return HALLOWEEN_WING_IDS.includes(id)
+}
+
 export type RewardKind = 'cape' | 'emote' | 'sticker'
 
 /** IDs der sechs Mondnacht-Farben. Jeder Spieler darf höchstens EINE davon besitzen. */
@@ -178,7 +193,7 @@ export const TRICK_POOL: readonly { kind: RewardKind, id: string, name: Lang3 }[
 export const SOUR_ONE_IN = 4
 
 /** Belohnungs-Schlüssel → Event, solange dessen Belohnungen im Katalog gezeigt werden. */
-export const REWARD_EVENTS: Record<string, string> = { [HALLOWEEN_REWARD]: HALLOWEEN_EVENT }
+export const REWARD_EVENTS: Record<string, string> = { [HALLOWEEN_REWARD]: HALLOWEEN_EVENT, [HUNTER_REWARD]: HALLOWEEN_EVENT }
 
 /** Name eines Belohnungs-Teils (für Antworten), sonst `null`. */
 export function rewardName(kind: RewardKind, id: string): Lang3 | null {

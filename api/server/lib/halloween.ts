@@ -3,6 +3,9 @@ import {
   BADGES,
   HALLOWEEN_END_ISO,
   HALLOWEEN_REWARD,
+  HALLOWEEN_WINGS,
+  HALLOWEEN_WING_IDS,
+  isHalloweenWing,
   HUNTER_CAPE,
   MONDNACHT_CAPE_IDS,
   MONDNACHT_POOL_ID,
@@ -49,6 +52,14 @@ export interface HalloweenView {
   trick: { usedToday: boolean, result?: 'sweet' | 'sour', reward?: RewardView, next: string }
   badges: string[]
   effects: { hits: boolean, trail: boolean }
+  /** Kürbisjäger-Flügel: einmal wählbar nach allen 13 Kürbissen (`options` = eingespielte Flügel). */
+  wings: WingsView
+}
+
+export interface WingsView {
+  choice: string | null
+  canChoose: boolean
+  options: string[]
 }
 
 // ---------------------------------------------------------------- Berliner Kalendertag
@@ -206,7 +217,52 @@ export function halloweenView(ctx: AppContext, uuid: string): HalloweenView {
     },
     badges: badgesOf(ctx, uuid),
     effects: effectsOf(ctx, uuid),
+    wings: wingsView(ctx, uuid, found.length >= PUMPKIN_TOTAL),
   }
+}
+
+// ---------------------------------------------------------------- Kürbisjäger-Flügel
+
+/** Eingespielte Halloween-Flügel (renderbar, nicht ausgemustert), feste Reihenfolge. */
+function wingOptions(ctx: AppContext): string[] {
+  return HALLOWEEN_WING_IDS.filter((id) => {
+    const r = one<{ format: number, retired: number }>(ctx.db, 'SELECT format, retired FROM cosmetics WHERE id = ?', id)
+    return !!r && r.retired === 0 && r.format === 2 && ctx.cosmeticsV2.has(id)
+  })
+}
+
+function chosenWing(ctx: AppContext, uuid: string): string | null {
+  return one<{ cosmetic_id: string }>(
+    ctx.db,
+    `SELECT cosmetic_id FROM user_cosmetics WHERE uuid = ? AND cosmetic_id IN (${HALLOWEEN_WING_IDS.map(() => '?').join(', ')}) LIMIT 1`,
+    uuid, ...HALLOWEEN_WING_IDS,
+  )?.cosmetic_id ?? null
+}
+
+function wingsView(ctx: AppContext, uuid: string, complete: boolean): WingsView {
+  const choice = chosenWing(ctx, uuid)
+  const options = wingOptions(ctx)
+  return { choice, canChoose: complete && choice === null && options.length > 0, options }
+}
+
+/**
+ * Flügel wählen (`POST /v1/me/halloween/wings`): nur nach allen 13 Kürbissen (`403 hunt_incomplete`), genau einmal
+ * (`409 wings_chosen`), unbekannt oder nicht eingespielt → `404 wings_unknown`. Geht auch nach dem Event.
+ */
+export function chooseWings(ctx: AppContext, uuid: string, id: string): { wings: WingsView } {
+  if (!isHalloweenWing(id) || !wingOptions(ctx).includes(id)) throw notFound('wings_unknown', 'Unknown wings')
+  if (foundOf(ctx, uuid).length < PUMPKIN_TOTAL) throw forbidden('hunt_incomplete', 'Find all 13 pumpkins first')
+  tx(ctx.db, () => {
+    if (chosenWing(ctx, uuid) !== null) throw new ApiError(409, 'wings_chosen', 'You already chose your wings')
+    grantCosmetic(ctx, uuid, id, 'reward')
+  })
+  notifyHalloween(ctx, uuid)
+  return { wings: wingsView(ctx, uuid, true) }
+}
+
+/** Name eines Flügels (für Oberflächen). */
+export function wingName(id: string): Lang3 | null {
+  return HALLOWEEN_WINGS.find((w) => w.id === id)?.name ?? null
 }
 
 /**

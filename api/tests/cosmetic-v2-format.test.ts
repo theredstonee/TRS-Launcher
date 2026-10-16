@@ -203,7 +203,7 @@ describe('cosmetic v2 validation', () => {
     expect(validateModel(null).ok).toBe(false)
     expect(errs((m) => { m.format = 1 as 2 })).toMatch(/format/)
     expect(errs((m) => { m.id = 'Bad-Id' })).toMatch(/^id:/m)
-    expect(errs((m) => { m.slot = 'wings' as 'hat' })).toMatch(/slot/)
+    expect(errs((m) => { m.slot = 'cape' as 'hat' })).toMatch(/slot/)
     expect(errs((m) => { m.texture.scale = 3 })).toMatch(/texture.scale/)
     expect(errs((m) => { m.texture.width = 12 })).toMatch(/Vielfaches von 8/)
     expect(errs((m) => { m.texture.width = 256 })).toMatch(/Kante höchstens 1024/)

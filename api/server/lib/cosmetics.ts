@@ -11,7 +11,7 @@ import { emitCosmetics } from './playerevents'
 import { decodeRgba, encodeRgba, inspectPng } from './png'
 import { usedMask, WEARABLE_SLOTS, type CosmeticSlot, type Template, type WearableSlot } from './templates'
 import { assertNotSanctioned } from './sanctions'
-import { REWARD_EVENTS } from '../../shared/halloween'
+import { HALLOWEEN_WING_IDS, REWARD_EVENTS, isHalloweenWing } from '../../shared/halloween'
 import { activeEventsFor, eventActiveFor } from './liveevents'
 import { isAdmin } from './users'
 
@@ -320,15 +320,15 @@ function seedV2(ctx: AppContext, c: BuiltinCosmeticV2, t: number): void {
     run(
       ctx.db,
       `INSERT INTO cosmetics (id, kind, slot, template, name, owner_uuid, status, unlock, sha256, width, height, scale,
-         frames, frame_time_ms, emissive, hidden, sort, retired, created_at, format, event)
-       VALUES (?, 'builtin', 'hat', ?, ?, NULL, 'approved', ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 0, ?, 2, ?)
+         frames, frame_time_ms, emissive, hidden, sort, retired, created_at, format, event, reward)
+       VALUES (?, 'builtin', 'hat', ?, ?, NULL, 'approved', ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 0, ?, 2, ?, ?)
        ON CONFLICT(id) DO UPDATE SET slot = excluded.slot, template = excluded.template, name = excluded.name,
-         unlock = excluded.unlock, event = excluded.event, sha256 = excluded.sha256, width = excluded.width, height = excluded.height,
+         unlock = excluded.unlock, event = excluded.event, reward = excluded.reward, sha256 = excluded.sha256, width = excluded.width, height = excluded.height,
          scale = excluded.scale, frames = excluded.frames, frame_time_ms = excluded.frame_time_ms,
          emissive = 0, hidden = excluded.hidden, sort = excluded.sort, retired = 0, format = 2
        WHERE cosmetics.kind = 'builtin'`,
       c.id, V2_TEMPLATE, c.name, c.unlock, c.hash, tex.width * tex.scale, tex.height * tex.scale, tex.scale, frames,
-      frames > 1 ? (tex.frameTimeMs ?? null) : null, c.hidden ? 1 : 0, c.sort, t, c.event ?? null,
+      frames > 1 ? (tex.frameTimeMs ?? null) : null, c.hidden ? 1 : 0, c.sort, t, c.event ?? null, c.reward ?? null,
     )
     run(ctx.db, 'UPDATE OR IGNORE equipped_cosmetics SET slot = ? WHERE cosmetic_id = ? AND slot <> ?', slot, c.id, slot)
     run(ctx.db, 'DELETE FROM equipped_cosmetics WHERE cosmetic_id = ? AND slot <> ?', c.id, slot)
@@ -661,6 +661,15 @@ export function readCosmeticV2File(ctx: AppContext, id: string, which: V2File): 
 // ---------------------------------------------------------------- Zuteilung (Admin, Codes)
 
 export function grantCosmetic(ctx: AppContext, uuid: string, id: string, source: 'code' | 'admin' | 'event' | 'reward'): boolean {
+  // Halloween-Flügel (§36): höchstens EINE der vier je Spieler – gilt für jeden Weg (Wahl, Team, Code).
+  if (isHalloweenWing(id)) {
+    const other = one<{ cosmetic_id: string }>(
+      ctx.db,
+      `SELECT cosmetic_id FROM user_cosmetics WHERE uuid = ? AND cosmetic_id IN (${HALLOWEEN_WING_IDS.map(() => '?').join(', ')}) LIMIT 1`,
+      uuid, ...HALLOWEEN_WING_IDS,
+    )
+    if (other && other.cosmetic_id !== id) throw conflict('wings_chosen', 'This player already chose Halloween wings (only one per player)')
+  }
   return (
     run(
       ctx.db,

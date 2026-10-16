@@ -28,8 +28,10 @@ export const FACE_NORMAL: Readonly<Record<FaceName, Vec3>> = {
 }
 
 export const MATERIALS: readonly MaterialName[] = ['cutout', 'emissive', 'translucent']
-export const ATTACH = ['head'] as const
-export const SLOTS = ['hat', 'companion'] as const
+/** `head` = Kopf-Pivot; `body` = Körper-Pivot (Hals, Oberkante Mitte des Rumpfs; Rumpf x −4…4, y −12…0, z −2…2). */
+export const ATTACH = ['head', 'body'] as const
+/** `wings` (Halloween 2026, §36) hängt an `body`, `hat`/`companion` an `head`. */
+export const SLOTS = ['hat', 'companion', 'wings'] as const
 export const CHANNELS: readonly Channel[] = ['rotation', 'position', 'scale']
 export const INTERPOLATIONS: readonly Interpolation[] = ['linear', 'smooth', 'step']
 export const DRIVERS: readonly Driver[] = ['idle', 'walk', 'sneak', 'jump', 'air']
@@ -141,8 +143,8 @@ export interface CosmeticModel {
   format: 2
   id: string
   name: string
-  slot: 'hat' | 'companion'
-  attach: 'head'
+  slot: 'hat' | 'companion' | 'wings'
+  attach: 'head' | 'body'
   texture: TextureSpec
   glow?: GlowSpec | null
   bones: Bone[]

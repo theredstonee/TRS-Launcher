@@ -31,6 +31,8 @@ export interface BuiltinCosmeticV2 {
   hidden?: boolean
   /** Event-Teil (z. B. `halloween`): gratis abholbar, solange das Event für den Spieler aktiv ist. */
   event?: string
+  /** Belohnung (§36, z. B. `pumpkinhunter2026`): nur der Server vergibt sie. */
+  reward?: string
   model: CosmeticModel
   files: CosmeticV2Files
   /** sha256 (hex) über model.json + Textur + Leucht-Streifen – ändert sich mit jedem der drei. */
@@ -61,6 +63,7 @@ export interface V2EntryInput {
   sort: number
   hidden?: boolean
   event?: string
+  reward?: string
   frames: number
   frameTimeMs?: number | null
   glowFrames: number
@@ -93,7 +96,9 @@ export function buildV2Cosmetic(e: V2EntryInput): BuiltinCosmeticV2 {
   if (!r.ok) fail(r.errors.join('; '))
   const model = json as CosmeticModel
   if (model.id !== e.id) fail(`model id "${model.id}" does not match the catalog id`)
-  if ((model.slot !== 'hat' && model.slot !== 'companion') || model.attach !== 'head') fail('only slot hat or companion / attach head are supported')
+  // Kopf-Teile hängen am Kopf, Flügel (§36) am Körper.
+  const okPair = ((model.slot === 'hat' || model.slot === 'companion') && model.attach === 'head') || (model.slot === 'wings' && model.attach === 'body')
+  if (!okPair) fail('only slot hat or companion with attach head, or slot wings with attach body, are supported')
   if (model.texture.scale > COSMETIC_MAX_SCALE) fail(`texture scale ${model.texture.scale} > ${COSMETIC_MAX_SCALE} (needs a DB migration)`)
   const texFrames = model.texture.frames ?? 1
   if (texFrames !== e.frames) fail(`catalog frames ${e.frames} ≠ model texture.frames ${texFrames}`)
@@ -114,6 +119,7 @@ export function buildV2Cosmetic(e: V2EntryInput): BuiltinCosmeticV2 {
     sort: e.sort,
     hidden: e.hidden ?? false,
     ...(e.event ? { event: e.event } : {}),
+    ...(e.reward ? { reward: e.reward } : {}),
     model,
     files: e.files,
     hash: v2Hash(e.files),

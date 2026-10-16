@@ -1272,7 +1272,7 @@ A **format-2** CosmeticView has `template: null`, `emissive: false` and these ex
 | `GET /v1/cosmetics/templates/{id}` / `{id}.png?scale=k` | no | One template, or its paint guide (§11.1). `404 template_not_found`. |
 | `GET /v1/cosmetics/{id}/template.json` | no | Format 1 only (§11.1): that cosmetic's template JSON. `ETag` = full sha256; with the matching `?v=` `Cache-Control: public, max-age=31536000, immutable`, otherwise 5 min. `If-None-Match` → `304`. Unknown ids, emotes and format 2 → `404 cosmetic_not_found`. |
 | `GET /v1/me/cosmetics` | yes | `{ equipped: { hat, wings, back, aura, companion }, emotes: [emoteId], stickers: [stickerId] }`. Each slot is a CosmeticView or `null`, as you see it (including your pending uploads). `emotes` lists the emotes you may play, in list order. `stickers` lists the chat stickers you own (§36). |
-| `PUT /v1/me/cosmetics` | yes | Body `{ "hat"?: id\|null, "wings"?: id\|null, "back"?: id\|null, "aura"?: id\|null, "companion"?: id\|null }`, with at least one key. An id equips, `null` takes the item off, and a missing key leaves the slot unchanged. Format-2 items are equipped the same way (each one in the slot given by its `slot`: `hat` or `companion`; `companion` takes only format-2 items with `slot: "companion"` and only items you own). **200** has the same shape as `GET /v1/me/cosmetics`. All changes are checked first and then applied together. |
+| `PUT /v1/me/cosmetics` | yes | Body `{ "hat"?: id\|null, "wings"?: id\|null, "back"?: id\|null, "aura"?: id\|null, "companion"?: id\|null }`, with at least one key. An id equips, `null` takes the item off, and a missing key leaves the slot unchanged. Format-2 items are equipped the same way (each one in the slot given by its `slot`: `hat`, `companion` or `wings`; `companion` takes only format-2 items with `slot: "companion"`, `wings` also takes format-2 wings (`slot: "wings"`, §36.7); only items you own). **200** has the same shape as `GET /v1/me/cosmetics`. All changes are checked first and then applied together. |
 | `GET /v1/cosmetics/{id}.png` | optional | The texture (format 2: the v2 base texture, `ETag` = v2 hash). Caching, `ETag`/`304` and the pending/private rules are the same as §5.4. Otherwise `404 cosmetic_not_found`. |
 | `GET /v1/cosmetics/{id}` | optional | `{ cosmetic: CosmeticView }`. Same visibility as the texture. |
 | `GET /v1/cosmetics/{id}/model.json` | no | Format 2 only (§11.9): the model, byte-for-byte as exported by TRS Studio. `ETag` = full hash; with the matching `?v=` `Cache-Control: public, max-age=31536000, immutable`, otherwise 5 min. `If-None-Match` → `304`. Format-1/unknown ids → `404 cosmetic_not_found`. |
@@ -1344,15 +1344,15 @@ Templates without a built-in item (`ring`, and since format 2 also `crown`, `cap
 
 Built-in head items can be **real 3D models** instead of template + texture. Source of truth is the TRS Studio format description (`trs-studio/cosmetic-format.md`); the short form:
 
-- **Files:** `model.json` + base texture (RGBA, alpha 0/255; vertical strip if `texture.frames > 1`) + optional glow strip (additive, black = nothing). Free and event models ship in `api/assets/cosmetics/v2/<id>.json`, `<id>.png`, `<id>-glow.png`, plus `<id>-card.png` / `<id>-card-night.png` (previews ≤ 512 px). Code and team models are proprietary and are loaded from `PRIVATE_ASSETS_DIR` (§11.8), not from the repository. `catalog.json` lists the public items as `{ "id", "name", "format": 2, "unlock", "frames", "frameTimeMs"?, "glowFrames", "glowFrameTimeMs"?, "hidden"? }` (`unlock` is `free`, `code`, `admin` or `{ "type": "event", "event": "<id>" }` – stored as `unlock = admin` plus the column `event`, shown as `unlock: "event"`; capes in `assets/capes/catalog.json` take the same form). The slot comes from the model (`"slot": "hat"` or `"companion"`, both with `attach: "head"`); the frame values must match the model. Import: `node api/scripts/import-cosmetics-v2.mjs` (copies the approved exports unchanged and makes the cards; proprietary ids go to `--private`).
+- **Files:** `model.json` + base texture (RGBA, alpha 0/255; vertical strip if `texture.frames > 1`) + optional glow strip (additive, black = nothing). Free and event models ship in `api/assets/cosmetics/v2/<id>.json`, `<id>.png`, `<id>-glow.png`, plus `<id>-card.png` / `<id>-card-night.png` (previews ≤ 512 px). Code and team models are proprietary and are loaded from `PRIVATE_ASSETS_DIR` (§11.8), not from the repository. `catalog.json` lists the public items as `{ "id", "name", "format": 2, "unlock", "frames", "frameTimeMs"?, "glowFrames", "glowFrameTimeMs"?, "hidden"? }` (`unlock` is `free`, `code`, `admin` or `{ "type": "event", "event": "<id>" }` – stored as `unlock = admin` plus the column `event`, shown as `unlock: "event"`; capes in `assets/capes/catalog.json` take the same form). The slot comes from the model (`"slot": "hat"` or `"companion"`, both with `attach: "head"`, or `"wings"` with `attach: "body"`, §36.7); the frame values must match the model. `unlock` may also be `{ "type": "reward", "reward": "<key>" }` (§36). Import: `node api/scripts/import-cosmetics-v2.mjs` (copies the approved exports unchanged and makes the cards; proprietary ids go to `--private`).
 - **Start check:** every model is validated with the format rules (TypeScript port of `validateModel`, `app/utils/cosmetic-v2/format.ts`) including the image sizes. An invalid **public** model **stops the server start**. An invalid or missing private item is skipped with one warning and does not stop startup.
-- **Units and axes:** 1 unit = 1 skin pixel. **+x = the player's left, +y = up, +z = front** (same as three.js/skinview3d). `attach: "head"`: origin = head pivot (neck, centre of the head's bottom). `ModelPart` space: `x' = x, y' = −y, z' = −z`.
+- **Units and axes:** 1 unit = 1 skin pixel. **+x = the player's left, +y = up, +z = front** (same as three.js/skinview3d). `attach: "head"`: origin = head pivot (neck, centre of the head's bottom). `attach: "body"` (slot `wings`): origin = body pivot = neck = top centre of the torso (like `ModelPart body`); the torso spans x −4…4, y −12…0, z −2…2, so the back is z = −2. Follows body yaw and the body transform (sneak lean, swimming, crawling). `ModelPart` space: `x' = x, y' = −y, z' = −z`.
 - **Bones:** `{ id, parent?, pivot, rotation? }`, parents before children, pivot in model space, rotation in degrees, order **ZYX** (matrix `Rz·Ry·Rx`). Local matrix `T(pivot + pos) · R(rotation + rot) · S(scale) · T(−pivot)`, world `W = W_parent · L`.
 - **Cubes:** `{ id?, bone, from, to, inflate?, material?, faces }` in model space. `faces.<north|south|east|west|up|down> = { uv: [u0,v0,u1,v1] (units), rotation?: 0|90|180|270, material? }`; a missing face is not drawn. Corner order and UV mapping per face are fixed (see the Studio description, §5); one axis may be 0 thick (drawn double-sided).
 - **Materials:** `cutout` (alpha test 0.5), `emissive` (full bright), `translucent` (alpha blend, no depth write). All faces double-sided, nearest filtering, **no mipmaps**.
 - **Glow:** `glow.png` drawn additively over all faces with the same UVs, full bright, no depth write, small polygon offset. Frame = `floor(t / frameTimeMs) % frames`.
 - **Halos:** additive camera-facing squares (`size`, `pos` on a bone, `color`, `intensity`, optional `normal` + `pulse`), pushed `size/2` towards the camera, radial falloff `(1 − r)^2.5`, pulse `min + (max − min)·(0.5 − 0.5·cos(2π·phase))`, faded out when `normal` points away.
-- **Animations:** tracks `rotation` (degrees, added), `position` (units, added), `scale` (multiplied) with `linear` / `smooth` (`u²(3 − 2u)`) / `step`, **wall clock** (`t = now + offsetMs`, `mod lengthMs` when looping) so every client shows the same phase. Driver `idle` always runs; `walk`, `sneak`, `jump`, `air` are reserved.
+- **Animations:** tracks `rotation` (degrees, added), `position` (units, added), `scale` (multiplied) with `linear` / `smooth` (`u²(3 − 2u)`) / `step`, **wall clock** (`t = now + offsetMs`, `mod lengthMs` when looping) so every client shows the same phase. Driver `idle` always runs; for wings a client plays the animations of the active state – `air` (not on ground), `sneak` (sneaking), else `idle` – falling back to `idle` when the model has none for that state, with a 250 ms crossfade. `walk` and `jump` stay reserved.
 - **Limits:** 64 cubes, 32 bones, 1024 px per image edge, strip ≤ 4096 px, 16 frames, 8 animations, 16 halos, coordinates ±48 on a 0.125 grid, scale 1/2/4/8/16 (the server accepts up to 8).
 
 Reference renderer (three.js + skinview3d, pixel-identical to the Studio workbench, shared with the launcher): `api/app/utils/cosmetic-v2/` (README there). Uploads stay format 1.
@@ -4322,6 +4322,18 @@ Reward = { "kind": "cape" | "emote" | "sticker", "id": "halloween_blood_moon", "
   When the Mondnacht item is won, the colour is rolled too (one of the 6, `reward.id` = that colour); once you own any
   colour, the Mondnacht item is out of the pool. All 11 owned → always sour.
 
+### 36.2a Pumpkin Hunter wings
+
+`HalloweenView` also has `"wings": { "choice": null | "<id>", "canChoose": boolean, "options": ["bat_wings", …] }`.
+After all 13 pumpkins every player **chooses exactly one** of the four Halloween wings (final). `options` = the wings whose
+models are installed; `canChoose` = hunt complete, nothing chosen yet and at least one option.
+
+| route | answer |
+|---|---|
+| `POST /v1/me/halloween/wings` | body `{ id }` → `{ wings: { choice, canChoose, options } }`; `403 hunt_incomplete` (fewer than 13 finds), `409 wings_chosen` (already chose, also for the same id), `404 wings_unknown` (not one of the four or not installed). Works after the event too. Sends `halloween_updated`. |
+
+Granting a second Halloween wing is refused on every path (choice, team grant, code) with `409 wings_chosen`.
+
 ### 36.3 Stickers, badges, cosmetics
 
 | route | answer |
@@ -4345,11 +4357,24 @@ ReplyView `sticker`. Push previews say "Sent a sticker".
 - `GET /v1/events/me` (§19): `halloween_updated` with the fields of `GET /v1/me/halloween` after a find, a roll, a badge
   grant or an effects change.
 
+### 36.7 Wings slot
+
+New format-2 slot **`wings`** with **`attach: "body"`** (§11.9). Equip with `PUT /v1/me/cosmetics { "wings": id | null }`;
+the lookup returns `cosmetics.wings` in the flat format-2 form (like `hat`/`companion`, respecting `showCosmeticsToOthers`).
+Clients hide wings while the player wears an elytra. The four Halloween wings `bat_wings`, `demon_wings`, `raven_wings`,
+`ghost_wings` (names "Fledermausflügel"/"Bat Wings", "Dämonenflügel"/"Demon Wings", "Rabenflügel"/"Raven Wings",
+"Geisterflügel"/"Ghost Wings") are public (`assets/cosmetics/v2/`), `unlock: "reward"`, `rewardOf: "pumpkinhunter2026"`,
+not claimable, no codes; catalogs list them while Halloween is active for you or once you own one. Import:
+`node api/scripts/import-halloween-wings.mjs [<dir>]` (copies the model, texture, glow and cards and writes the catalog
+entries). The proprietary `redstone_wings` v2 model lives only in `PRIVATE_ASSETS_DIR/cosmetics/v2/` (+
+`catalog.private.json`, `"format": 2`) – the private loader serves it like private v2 hats; with it the id switches from the
+old template item to the 3D model (ownership and equipment stay).
+
 ### 36.5 Error codes
 
 `pumpkin_unknown` 404, `event_inactive` 403, `trick_used` 409 (+ `next`), `sticker_locked` 403, `sticker_conflict` 400,
 `sticker_not_editable` 409, `sticker_not_found` 404, `badge_not_found` 404, `not_claimable` 400,
-`not_code_redeemable` 400, `mondnacht_owned` 409.
+`not_code_redeemable` 400, `mondnacht_owned` 409, `hunt_incomplete` 403, `wings_chosen` 409, `wings_unknown` 404.
 
 ### 36.6 Data, migration 26
 

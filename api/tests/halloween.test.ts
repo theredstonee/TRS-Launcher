@@ -3,12 +3,14 @@ import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { PNG } from 'pngjs'
 import { loadBuiltins } from '../server/lib/builtin'
+import { buildV2Cosmetic } from '../server/lib/cosmetics-v2'
+import wingsRoute from '../server/routes/v1/me/halloween/wings.post'
 import { describe, expect, it } from 'vitest'
-import { HALLOWEEN_CAPES, HUNTER_CAPE, PUMPKINS, STICKERS, TRICK_POOL } from '../shared/halloween'
+import { HALLOWEEN_CAPES, HALLOWEEN_WING_IDS, HUNTER_CAPE, PUMPKINS, STICKERS, TRICK_POOL } from '../shared/halloween'
 import { catalog, claimCape, grantCape, seedBuiltins, type BuiltinCape } from '../server/lib/capes'
 import { editMessage, openDm, sendMessage } from '../server/lib/chat'
 import { createCodes } from '../server/lib/codes'
-import { cosmeticCatalog, grantCosmetic, ownedEmotes } from '../server/lib/cosmetics'
+import { cosmeticCatalog, equipCosmetics, grantCosmetic, ownedEmotes, seedBuiltinCosmetics } from '../server/lib/cosmetics'
 import { all, migrate, one, run } from '../server/lib/db'
 import {
   berlinDay,
@@ -402,6 +404,81 @@ describe('bundled halloween assets', () => {
     expect([mb.width, mb.height]).toEqual([72, 64])
     const pk = PNG.sync.read(readFileSync(join(ASSETS, 'halloween', 'badges', 'pumpkinhunter2026.png')))
     expect([pk.width, pk.height]).toEqual([64, 64])
+  })
+})
+
+/** Vier Test-Flügel (Modell = Hexenhut, nur Platz/Anhängepunkt/ID geändert). */
+function seedWings(env: TestEnv, ids: readonly string[] = HALLOWEEN_WING_IDS) {
+  const V2 = join(__dirname, '..', 'assets', 'cosmetics', 'v2')
+  const base = JSON.parse(readFileSync(join(V2, 'witch_hat.json'), 'utf8'))
+  seedBuiltinCosmetics(env.ctx, ids.map((id, i) => buildV2Cosmetic({
+    id, name: id, unlock: 'admin', reward: 'pumpkinhunter2026', sort: 100 + i,
+    frames: 1, glowFrames: base.glow ? (base.glow.frames ?? 1) : 0, glowFrameTimeMs: base.glow?.frameTimeMs ?? null,
+    files: {
+      modelJson: Buffer.from(JSON.stringify({ ...base, id, slot: 'wings', attach: 'body' })),
+      texture: readFileSync(join(V2, 'witch_hat.png')),
+      glow: base.glow ? readFileSync(join(V2, 'witch_hat-glow.png')) : null,
+      card: readFileSync(join(V2, 'witch_hat-card.png')),
+      cardNight: readFileSync(join(V2, 'witch_hat-card-night.png')),
+    },
+  })))
+}
+
+describe('pumpkin hunter wings', () => {
+  it('v2 models: wings need attach body, head items attach head', () => {
+    const V2 = join(__dirname, '..', 'assets', 'cosmetics', 'v2')
+    const base = JSON.parse(readFileSync(join(V2, 'witch_hat.json'), 'utf8'))
+    const files = (m: unknown) => ({
+      modelJson: Buffer.from(JSON.stringify(m)), texture: readFileSync(join(V2, 'witch_hat.png')),
+      glow: base.glow ? readFileSync(join(V2, 'witch_hat-glow.png')) : null,
+      card: readFileSync(join(V2, 'witch_hat-card.png')), cardNight: readFileSync(join(V2, 'witch_hat-card-night.png')),
+    })
+    const entry = (m: Record<string, unknown>) => ({ id: 'w', name: 'w', unlock: 'free' as const, sort: 0, frames: 1, glowFrames: base.glow ? (base.glow.frames ?? 1) : 0, glowFrameTimeMs: base.glow?.frameTimeMs ?? null, files: files({ ...base, id: 'w', ...m }) })
+    expect(() => buildV2Cosmetic(entry({ slot: 'wings', attach: 'body' }))).not.toThrow()
+    expect(() => buildV2Cosmetic(entry({ slot: 'wings', attach: 'head' }))).toThrow(/attach body/)
+    expect(() => buildV2Cosmetic(entry({ slot: 'hat', attach: 'body' }))).toThrow(/attach head/)
+  })
+
+  it('after 13 pumpkins exactly one wing can be chosen, equipped and seen in the lookup', async () => {
+    const env = eventEnv()
+    seedWings(env)
+    const [p, viewer] = await players(env, 'Winged', 'Looker')
+    const u = p!.uuid
+    expect(halloweenView(env.ctx, u).wings).toEqual({ choice: null, canChoose: false, options: [...HALLOWEEN_WING_IDS] })
+    const token = (await login(env, 'Winged', u)).token
+    const early = await callRoute(env, wingsRoute, { method: 'POST', url: '/v1/me/halloween/wings', headers: auth(token), body: JSON.stringify({ id: 'raven_wings' }) })
+    expect(early.error!.code).toBe('hunt_incomplete')
+    for (const id of PUMPKINS) findPumpkin(env.ctx, u, id)
+    expect(halloweenView(env.ctx, u).wings.canChoose).toBe(true)
+    const unknown = await callRoute(env, wingsRoute, { method: 'POST', url: '/v1/me/halloween/wings', headers: auth(token), body: JSON.stringify({ id: 'redstone_wings' }) })
+    expect(unknown.error!.code).toBe('wings_unknown')
+    const ok = await callRoute(env, wingsRoute, { method: 'POST', url: '/v1/me/halloween/wings', headers: auth(token), body: JSON.stringify({ id: 'raven_wings' }) })
+    expect(ok.body).toEqual({ wings: { choice: 'raven_wings', canChoose: false, options: [...HALLOWEEN_WING_IDS] } })
+    const again = await callRoute(env, wingsRoute, { method: 'POST', url: '/v1/me/halloween/wings', headers: auth(token), body: JSON.stringify({ id: 'bat_wings' }) })
+    expect(again.status).toBe(409)
+    expect(again.error!.code).toBe('wings_chosen')
+    // Kein zweiter Flügel über andere Wege.
+    expect(code(() => grantCosmetic(env.ctx, u, 'bat_wings', 'admin'))).toBe('wings_chosen')
+    expect(code(() => grantCosmetic(env.ctx, u, 'ghost_wings', 'code'))).toBe('wings_chosen')
+    expect(code(() => equipCosmetics(env.ctx, u, { wings: 'bat_wings' }))).toBe('cosmetic_locked')
+    // Anlegen im Platz wings, im Lookup als v2-Modell.
+    expect(code(() => equipCosmetics(env.ctx, u, { hat: 'raven_wings' }))).toBe('wrong_slot')
+    equipCosmetics(env.ctx, u, { wings: 'raven_wings' })
+    const e = lookupPlayers(env.ctx, viewer!.uuid, [u]).players[0]!
+    expect(e.cosmetics.wings).toMatchObject({ id: 'raven_wings', format: 2 })
+    expect(e.cosmetics.wings!.model).toContain('/v1/cosmetics/raven_wings/model.json')
+    updateSettings(env.ctx, u, { showCosmeticsToOthers: false })
+    expect(lookupPlayers(env.ctx, viewer!.uuid, [u]).players[0]?.cosmetics.wings ?? null).toBeNull()
+    expect(cosmeticCatalog(env.ctx, u).find((c) => c.id === 'raven_wings')).toMatchObject({ slot: 'wings', unlock: 'reward', rewardOf: 'pumpkinhunter2026', owned: true })
+  })
+
+  it('options only list imported wings; without models nothing can be chosen', async () => {
+    const env = eventEnv()
+    const p = await login(env, 'NoModels')
+    for (const id of PUMPKINS) findPumpkin(env.ctx, p.user.uuid, id)
+    expect(halloweenView(env.ctx, p.user.uuid).wings).toEqual({ choice: null, canChoose: false, options: [] })
+    seedWings(env, ['bat_wings'])
+    expect(halloweenView(env.ctx, p.user.uuid).wings).toEqual({ choice: null, canChoose: true, options: ['bat_wings'] })
   })
 })
 
