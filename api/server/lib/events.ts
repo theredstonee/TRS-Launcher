@@ -12,6 +12,7 @@ import type { PackView } from './packs'
 import type { CommandType, PeerView, RemoteStatus } from './remote'
 import type { CreatorTier, CreatorUpdateKind, HelperRight, Milestone } from './creators'
 import type { HalloweenView } from './halloween'
+import type { ScareKind } from './scare'
 
 export interface PlayerRef {
   uuid: string
@@ -156,6 +157,8 @@ export type ApiEvent =
   // ---------------------------------------------------------------- Halloween 2026 (§36, nur /v1/events/me)
   /** Kürbis gefunden, angeklopft, Abzeichen bekommen oder Effekte geändert: Daten = Antwort von `GET /v1/me/halloween`. */
   | ({ type: 'halloween_updated' } & HalloweenView)
+  /** Owner-ausgelöster Schreck (§36, Part C): der Client läuft die genannte Art, wenn seine Sicherheits-/Opt-out-Prüfungen passen. */
+  | { type: 'jumpscare', kind: ScareKind }
 
 export type ApiEventType = ApiEvent['type']
 

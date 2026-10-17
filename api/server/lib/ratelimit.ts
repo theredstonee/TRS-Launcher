@@ -297,4 +297,8 @@ export const RULES = {
   halloweenEffectsUser: { limit: 20, windowMs: MIN },
   /** Öffentliche Sticker-/Abzeichen-Bilder und -Listen je IP – zusätzlich zur globalen IP-Grenze. */
   halloweenPublicIp: { limit: 600, windowMs: MIN },
+  /** Owner-ausgelöster Schreck (Part C): bremst die Auslöse-Knöpfe. */
+  halloweenScareOwner: { limit: 30, windowMs: MIN },
+  /** Private MiyakoMC-Routen (Part A): Intro-Flag und Bündel, je Konto. */
+  miyakoUser: { limit: 60, windowMs: MIN },
 } satisfies Record<string, Rule>

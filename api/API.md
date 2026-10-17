@@ -4391,3 +4391,38 @@ Assets: `node api/scripts/generate-halloween.mjs` builds the capes (`assets/cape
 `studio.json` + `catalog.json` with `unlock: { "type": "reward", "reward": "halloween2026" }`), the stickers
 (`assets/halloween/stickers/<id>.png`) and badges (`assets/halloween/badges/<id>.png`) from the pixel art in
 `shared/halloween-art.ts`; ids, names and riddles live in `shared/halloween.ts`.
+
+### 36.8 Scare extension (private MiyakoMC gag + owner-triggered scare)
+
+**MiyakoMC gag (private, UUID `7f5eb4a770b24574ad99382d42163623` only).** The media is proprietary and lives only under
+`PRIVATE_ASSETS_DIR/miyako/` (`frames/0001.jpg … 0320.jpg`, `intro.ogg`, `jumpscare.png`), never in the repository. A
+missing private folder never breaks boot – only these routes read it and then answer `404`. **For every other account all
+three routes answer `404`, so nothing leaks.** Auth is a normal player session/token (the mod signs in as the player).
+
+| route | answer |
+|---|---|
+| `GET /v1/me/miyako` | MiyakoMC only: `{ "introDone": boolean, "timerMaxMs": 300000 }`. Everyone else `404`. |
+| `POST /v1/me/miyako/intro-done` | MiyakoMC only: marks the one-off intro as played → `{ "introDone": true }`. Everyone else `404`. |
+| `GET /v1/me/miyako/bundle` | MiyakoMC only: a zip (store, no compression) of `frames/*` + `intro.ogg` + `jumpscare.png`, built on the fly from `PRIVATE_ASSETS_DIR/miyako`, `Content-Type: application/zip`, with an `ETag`/`304` (not shared-cacheable). `404` for everyone else and `404` when the private folder is missing or incomplete. The client downloads it once and caches it under `<config>/trsclient/miyako/`. |
+
+`introDone` is a per-account flag (`user_event_flags`, default false). `timerMaxMs` is the upper bound (ms) for the random
+one-shot timer the client arms on each game start / server join (it rolls the delay itself).
+
+**Owner-triggered scare (Part C).**
+
+| route | answer |
+|---|---|
+| `POST /v1/admin/halloween/scare` | body `{ "target": "<uuid-or-name>" }`. **Owner only** (reuses the owner check; `403 not_owner` otherwise), rate-limited. Resolves a name → uuid via the TRS user table or Mojang (`404 player_not_found`, `502` when Mojang is down). If the target has no open `GET /v1/events/me` stream → `404 player_offline`. Otherwise emits on the target's stream and returns `{ "sent": true }`. |
+
+SSE emit on the **target's** `GET /v1/events/me` (§19, `meOnly`):
+
+```json
+{ "type": "jumpscare", "kind": "face" }
+```
+
+`kind` is one of **`face`**, **`whisper`**, **`eye`**, **`flash`** (picked at random server-side; the mod must match these
+exact strings). The server only checks that the target is online; the client is the final gate for the target's own opt-out
+and safety rules (jumpscares on, ≥ 6 hearts, not in combat, per-target cooldown), so no opt-out is stored server-side.
+Migration **27** adds the generic per-account flag table `user_event_flags (uuid, flag, set_at)` (first flag
+`miyako_intro_done`); `ON DELETE CASCADE`, idempotent. When merging: renumber if a parallel branch also added a
+migration 27.

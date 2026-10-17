@@ -809,7 +809,26 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 26,
     run: migrateHalloween2026,
   },
+  {
+    // Allgemeine Konto-Flags je Event (`user_event_flags`): ein boolescher Marker je (uuid, flag), Standard „nicht gesetzt“.
+    // Erstes Flag: `miyako_intro_done` (Halloween-Schreck-Erweiterung, Part A – das einmalige Intro für MiyakoMC).
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 27,
+    run: migrateEventFlags,
+  },
 ]
+
+/** Migration 27 (siehe oben): generische Konto-Flags je Event. Exportiert für den Idempotenz-Test. */
+export function migrateEventFlags(db: DatabaseSync): void {
+  db.exec(`
+CREATE TABLE IF NOT EXISTS user_event_flags (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  flag TEXT NOT NULL CHECK (length(flag) BETWEEN 1 AND 48),
+  set_at INTEGER NOT NULL,
+  PRIMARY KEY (uuid, flag)
+);
+`)
+}
 
 /** Migration 26 (siehe oben). Exportiert für den Idempotenz-Test. */
 export function migrateHalloween2026(db: DatabaseSync): void {
