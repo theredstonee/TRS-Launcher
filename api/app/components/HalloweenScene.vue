@@ -27,7 +27,8 @@ function place() {
   if (!el) return
   const w = el.clientWidth, h = el.clientHeight
   const k = Math.max(w / W, h / H)
-  emit('anchor', { left: (w - W * k) / 2 + graveX * k, top: (h - H * k) / 2 + graveY * k })
+  // Nie in die unteren 48 px: dort schiebt sich die Kachelreihe (-mt-6, eigener Abschnitt) über den Hero.
+  emit('anchor', { left: (w - W * k) / 2 + graveX * k, top: Math.min((h - H * k) / 2 + graveY * k, h - 48) })
 }
 
 function stop() {
@@ -67,10 +68,11 @@ onMounted(() => {
     flicker: () => hw.flicker.value,
   })
   frame = scene.frame
-  // Zwischen dem ersten und zweiten Grab, knapp über dem Boden (links vom Download-Knopf).
+  // Zwischen dem ersten und zweiten Grab, auf Höhe der Grabsteine. Der Boden liegt auf breiten Bildschirmen schon
+  // unter der Kachelreihe – dort wäre der Kürbis verdeckt.
   const g = scene.info.graves
   graveX = g.length >= 2 ? (g[0]!.x + g[1]!.x) / 2 : W * 0.53
-  graveY = g.length >= 2 ? Math.max(g[0]!.y, g[1]!.y) + 4 : H * 0.8
+  graveY = g.length >= 2 ? Math.min(g[0]!.y, g[1]!.y) : H * 0.76
   t0 = performance.now()
   frame(reduced.value ? 4 : 0)
   resize = new ResizeObserver(place)

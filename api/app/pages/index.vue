@@ -89,7 +89,7 @@ const powered = ref(false)
       <template v-if="halloween">
         <HalloweenDrips :count="16" :seed="21" />
         <!-- Kürbis-Suche: „Auf der Startseite, zwischen den Gräbern.“ -->
-        <HalloweenHunt v-if="graveSpot" id="web-home" class="absolute z-20 -translate-x-1/2 -translate-y-full" :style="{ left: `${graveSpot.left}px`, top: `${graveSpot.top}px` }" />
+        <HalloweenHunt v-if="graveSpot" id="web-home" class="absolute z-20 -translate-x-1/2 -translate-y-full" :style="{ left: `${graveSpot.left}px`, top: `${graveSpot.top}px`, zIndex: 30 }" />
       </template>
       <div class="relative mx-auto flex h-full max-w-6xl flex-col justify-end gap-8 px-4 pt-16 pb-12 sm:px-6" data-fx-hero-content>
         <div v-if="halloween" class="hw-hero-top">
