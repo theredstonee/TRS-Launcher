@@ -1378,10 +1378,15 @@ public final class WardrobeUi extends UiScreen {
 			if (cosmeticNight) spec.tint = NIGHT_TINT;
 			if (prepareCosmetic(now)) spec.head = cosmeticHead;
 		}
-		// Halloween: Kürbis „hinter dir, wenn du dich umziehst“ (vor der Figur gezeichnet, sie verdeckt ihn halb).
+		// Halloween: Kürbis „hinter dir, wenn du dich umziehst“ – vor der Figur gezeichnet, schaut rechts neben dem
+		// rechten Fuß hervor. Die Beine sind höchstens 8 Skin-Pixel breit; die Figur ist 32 hoch, also liegt der Fuß
+		// spätestens bei Mitte + 4 * (Höhe / 32). Ein fester Versatz lag bei großen Vorschauen ganz hinter den Beinen.
 		if (!editing && figBottom - figTop > 30) {
+			int footEdge = Math.round(4f * (figBottom - figTop) / 32f);
+			int half = dev.theredstonee.trsclient.core.halloween.Pumpkins.SIZE / 2;
+			int px = Math.min(x + w - half - 4, x + w / 2 + footEdge + half + 2); // Mitte des Kürbisses
 			dev.theredstonee.trsclient.core.halloween.Pumpkins.draw(c, hits,
-					dev.theredstonee.trsclient.core.halloween.Pumpkins.CLIENT_WARDROBE, x + w / 2 + 13, figBottom - 9, mx, my);
+					dev.theredstonee.trsclient.core.halloween.Pumpkins.CLIENT_WARDROBE, px, figBottom - 9, mx, my);
 		}
 		// Halloween-Jumpscare „Der Spiegel“: der Skin grinst kurz zurück.
 		if (dev.theredstonee.trsclient.core.halloween.Jumpscares.get().mirrorGrin(now)) {

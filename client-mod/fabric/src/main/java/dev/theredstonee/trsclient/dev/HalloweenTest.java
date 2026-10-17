@@ -10,6 +10,7 @@ import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.ui.menus.MenuSkin;
 import dev.theredstonee.trsclient.screen.TrsMenuScreen;
 import dev.theredstonee.trsclient.screen.TrsTitleScreen;
+import dev.theredstonee.trsclient.screen.WardrobeScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.LevelLoadingScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -124,8 +125,16 @@ public final class HalloweenTest {
 				return;
 			case 3:
 				shot(mc, "trsmenu-halloween");
+				// Garderobe: Kürbis „hinter dir, wenn du dich umziehst“ muss neben den Füßen sichtbar sein.
+				Mc.setScreen(WardrobeScreen.create(new TrsTitleScreen()));
+				phase = 50;
+				wait = 60;
+				return;
+			case 50:
+				shot(mc, "wardrobe-pumpkin");
+				Mc.setScreen(new TrsTitleScreen());
 				AutoTest.startWorld(mc);
-				phase++;
+				phase = 4;
 				return;
 			case 4:
 				if (screen instanceof LevelLoadingScreen) {
