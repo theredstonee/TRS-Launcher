@@ -262,10 +262,67 @@ class JumpscaresTest {
 		Jumpscares j = scares(s);
 		long t = T0 + 3 * 60_000L;
 		front(j, t);
-		assertFalse(j.takeSound(), "Grusel-Töne ab Werk aus");
+		assertNull(j.takeSound(), "ohne Grusel-Töne kein Ton");
 		s.sounds = true;
 		front(j, t + Jumpscares.COOLDOWN_MS + 5000);
-		assertTrue(j.takeSound());
-		assertFalse(j.takeSound());
+		assertNotNull(j.takeSound());
+		assertNull(j.takeSound());
+	}
+
+	@Test
+	void ownerTriggerPlaysSoundRegardlessOfTheSetting() {
+		Switches s = new Switches();
+		s.sounds = false;
+		Jumpscares j = scares(s);
+		long t = T0 + 10_000L;
+		// In der Welt und bei voller Gesundheit melden (triggerOwner liest den letzten Tick-Zustand).
+		j.tick(in(t));
+		assertTrue(j.triggerOwner(Jumpscares.Type.CHEST, t), "Besitzer-Auslöser kennt keinen 2-Minuten-Anlauf");
+		Jumpscares.Scene sc = j.current(t + 50);
+		assertNotNull(sc);
+		assertEquals(Jumpscares.Type.CHEST, sc.type);
+		assertEquals(Jumpscares.SOUND_SCREAM, j.takeSound(), "Besitzer-Ton trotz Schalter aus");
+	}
+
+	@Test
+	void ownerTriggerRespectsSafety() {
+		Switches s = new Switches();
+		Jumpscares j = scares(s);
+		long t = T0 + 10_000L;
+		Jumpscares.Input low = in(t);
+		low.health = 11f;
+		j.tick(low);
+		assertFalse(j.triggerOwner(Jumpscares.Type.CHEST, t), "unter 6 Herzen nie");
+		Jumpscares.Input hurt = in(t + 50);
+		hurt.hurt = true;
+		j.tick(hurt);
+		assertFalse(j.triggerOwner(Jumpscares.Type.CHEST, t + 100), "nicht im Kampf");
+		j.tick(in(t + Jumpscares.DAMAGE_PAUSE_MS + 100));
+		assertTrue(j.triggerOwner(Jumpscares.Type.CHEST, t + Jumpscares.DAMAGE_PAUSE_MS + 100));
+	}
+
+	@Test
+	void kindMapping() {
+		// Genau die vier Namen, die der Server schickt.
+		assertEquals(Jumpscares.Type.FACE_PRESS, Jumpscares.typeFromKind("face"));
+		assertEquals(Jumpscares.Type.WHISPER_CRAWL, Jumpscares.typeFromKind("whisper"));
+		assertEquals(Jumpscares.Type.THIRTEENTH, Jumpscares.typeFromKind("eye"));
+		assertEquals(Jumpscares.Type.FLASH, Jumpscares.typeFromKind("FLASH"));
+		assertNull(Jumpscares.typeFromKind("mirror"), "Spiegel ist kein Fernauslöser");
+		assertNull(Jumpscares.typeFromKind("nope"));
+	}
+
+	@Test
+	void ownerTriggerHasSixtySecondCooldown() {
+		Jumpscares j = scares(new Switches());
+		long t = T0 + 10_000L;
+		j.tick(in(t));
+		assertTrue(j.triggerOwner(Jumpscares.Type.FACE_PRESS, t));
+		// Szene läuft ab, aber der 60-s-Abstand hält.
+		j.tick(in(t + 2000));
+		assertFalse(j.triggerOwner(Jumpscares.Type.WHISPER_CRAWL, t + 2000));
+		long later = t + Jumpscares.OWNER_COOLDOWN_MS + 10;
+		j.tick(in(later));
+		assertTrue(j.triggerOwner(Jumpscares.Type.WHISPER_CRAWL, later));
 	}
 }

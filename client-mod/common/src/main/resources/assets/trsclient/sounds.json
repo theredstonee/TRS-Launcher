@@ -1,0 +1,20 @@
+{
+	"scare_scream": {
+		"category": "master",
+		"sounds": [
+			{ "name": "trsclient:scare_scream", "stream": false }
+		]
+	},
+	"scare_whisper": {
+		"category": "master",
+		"sounds": [
+			{ "name": "trsclient:scare_whisper", "stream": false }
+		]
+	},
+	"scare_heartbeat": {
+		"category": "master",
+		"sounds": [
+			{ "name": "trsclient:scare_heartbeat", "stream": false }
+		]
+	}
+}

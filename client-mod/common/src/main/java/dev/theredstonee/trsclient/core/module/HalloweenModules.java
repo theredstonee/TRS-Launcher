@@ -21,7 +21,7 @@ public final class HalloweenModules {
 	public final BoolSetting others;
 	/** Jumpscares (ab Werk an; Schutzregeln in {@code core.halloween.Jumpscares}). */
 	public final BoolSetting jumpscares;
-	/** Grusel-Töne (ab Werk aus – ohne sie bleibt alles stumm). */
+	/** Grusel-Töne (ab Werk an – Jumpscares bekommen jetzt standardmäßig einen Ton). */
 	public final BoolSetting sounds;
 	/** Lokaler Zustand: „Flackern &amp; Rauschen“ (Launcher-Standard), gesehene Hinweise. */
 	public final HalloweenLocal local = new HalloweenLocal();
@@ -42,7 +42,9 @@ public final class HalloweenModules {
 		trail = halloween.add(new BoolSetting("ghostTrail", "Ghost trail when sprinting", false));
 		others = halloween.add(new BoolSetting("others", "See other players' spooky effects", false));
 		jumpscares = halloween.add(new BoolSetting("jumpscares", "Jumpscares", true));
-		sounds = halloween.add(new BoolSetting("sounds", "Spooky sounds", false));
+		// Ab Werk an (0.19.2): neuer Schlüssel, damit alte „aus“-Werte nicht greifen – wer nie umgeschaltet hat,
+		// bekommt den neuen Standard „an“ (wie seinerzeit die Umbenennung von „trail“ → „ghostTrail“).
+		sounds = halloween.add(new BoolSetting("spookySounds", "Spooky sounds", true));
 		registry.addPart(local);
 	}
 

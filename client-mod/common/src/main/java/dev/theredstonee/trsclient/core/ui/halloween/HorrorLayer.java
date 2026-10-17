@@ -28,10 +28,42 @@ public final class HorrorLayer {
 	/** Über einen ganzen Bildschirm ({@code inWorld} = Welt dahinter sichtbar → schwächer, kein Blitz). */
 	public static void draw(Canvas c, int width, int height, boolean inWorld) {
 		if (width <= 0 || height <= 0) return;
-		vignette(c, width, height, inWorld ? 0.32f : 0.5f);
-		if (!HalloweenOverlay.flicker() || !animated()) return;
+		boolean motion = HalloweenOverlay.flicker() && animated();
+		float base = inWorld ? 0.32f : 0.5f;
+		// Langsamer Vignetten-Puls (nur mit erlaubter Animation; ohne bleibt die Vignette ruhig).
+		float strength = motion ? base + 0.06f * (float) (0.5 + 0.5 * Math.sin(System.currentTimeMillis() / 2600.0)) : base;
+		vignette(c, width, height, strength);
+		if (!motion) return;
 		grain(c, width, height);
-		if (!inWorld) flash(c, width, height, NightScene.shared().lightningAge());
+		if (!inWorld) {
+			double bt = NightScene.shared().lightningAge();
+			lightningSilhouette(c, width, height, bt);
+			flash(c, width, height, bt);
+		}
+	}
+
+	/**
+	 * Ferner Blitz: eine gezackte, dunkle Skyline (Bäume/Hügel) im unteren Drittel, kurz von violettem Licht
+	 * hinterleuchtet – nur am Anfang eines Blitzes ({@code bt} &lt; 0,22), seltener aber stärker als das Korn.
+	 */
+	public static void lightningSilhouette(Canvas c, int width, int height, double bt) {
+		if (bt < 0 || bt >= 0.22) return;
+		float a = bt < 0.08 ? 1f : (float) Math.max(0, 1 - (bt - 0.08) / 0.14);
+		int horizon = Math.round(height * 0.64f);
+		// Hinterleuchtung über der Skyline.
+		int glow = ColorMath.withAlpha(0xFFB9A2EA, Math.round(70 * a));
+		c.fill(0, horizon - Math.max(10, height / 9), width, horizon, glow);
+		// Gezackte Silhouette mit festem Muster (kein Flackern der Form).
+		int span = Math.max(6, width / 48);
+		int dark = ColorMath.withAlpha(0xFF0A0812, Math.round(235 * a));
+		int seed = 1013904223;
+		for (int x = 0; x < width; x += span) {
+			seed = seed * 1664525 + 1013904223;
+			int peak = (seed >>> 8) % (height / 7 + 1);
+			int top = horizon - Math.max(2, height / 40) - peak;
+			int w = Math.min(span, width - x);
+			c.fill(x, top, x + w, horizon + Math.max(2, height / 30), dark);
+		}
 	}
 
 	/** Animation erlaubt? (TRS-Einstellung „Animierter Hintergrund“ der Menüs.) */

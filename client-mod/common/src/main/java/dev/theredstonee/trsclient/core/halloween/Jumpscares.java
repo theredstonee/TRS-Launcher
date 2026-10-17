@@ -40,10 +40,69 @@ public final class Jumpscares {
 	public static final long EYES_OPEN_MS = 600L;
 	public static final long EYES_HOLD_MS = 1100L;
 
+	/** Gesicht gegen die Scheibe: hereindrücken, halten, verschwinden. */
+	public static final long PRESS_MS = 950L;
+	/** Entsättigung + Flüstern kriecht über die Anzeige. */
+	public static final long CRAWL_MS = 2600L;
+	/** Kurz ein 13. Feld mit Auge in der Schnellleiste. */
+	public static final long THIRTEENTH_MS = 1300L;
+	/** Kurzer, invertierter Lichtblitz. */
+	public static final long FLASH_MS = 520L;
+	/** Besitzer-Auslöser: eigener Abstand (Vertrag Part C, Client ist die letzte Instanz). */
+	public static final long OWNER_COOLDOWN_MS = 60_000L;
+
+	/** Registrierte, generische Grusel-Töne (assets/trsclient/sounds.json). */
+	public static final String SOUND_SCREAM = "scare_scream";
+	public static final String SOUND_WHISPER = "scare_whisper";
+	public static final String SOUND_HEARTBEAT = "scare_heartbeat";
+
 	/** Arten. */
 	public enum Type {
-		BEHIND_YOU, CHEST, CAVE, MIRROR, LOADING
+		BEHIND_YOU, CHEST, CAVE, MIRROR, LOADING, FACE_PRESS, WHISPER_CRAWL, THIRTEENTH, FLASH
 	}
+
+	/** Ton zu einer Art (null = stumm, z. B. Spiegel/Laden). */
+	public static String soundFor(Type type) {
+		if (type == null) return null;
+		switch (type) {
+			case CHEST:
+			case FACE_PRESS:
+			case FLASH:
+				return SOUND_SCREAM;
+			case BEHIND_YOU:
+			case CAVE:
+			case WHISPER_CRAWL:
+				return SOUND_WHISPER;
+			case THIRTEENTH:
+				return SOUND_HEARTBEAT;
+			default:
+				return null;
+		}
+	}
+
+	/**
+	 * Art zu einem Fernauslöser-Namen oder null. Der Server schickt genau diese vier ({@code kind}):
+	 * {@code face} (Gesicht an der Scheibe), {@code whisper} (Flüster-Kriechen), {@code eye} (13. Feld mit Auge),
+	 * {@code flash} (invertierter Blitz).
+	 */
+	public static Type typeFromKind(String kind) {
+		if (kind == null) return null;
+		switch (kind.trim().toLowerCase(java.util.Locale.ROOT)) {
+			case "face":
+				return Type.FACE_PRESS;
+			case "whisper":
+				return Type.WHISPER_CRAWL;
+			case "eye":
+				return Type.THIRTEENTH;
+			case "flash":
+				return Type.FLASH;
+			default:
+				return null;
+		}
+	}
+
+	/** Alle {@code kind}-Namen, die der Besitzer auslösen darf (wie vom Server geschickt). */
+	public static final String[] OWNER_KINDS = {"face", "whisper", "eye", "flash"};
 
 	/** Ein Tick aus dem Spiel. */
 	public static final class Input {
@@ -129,6 +188,7 @@ public final class Jumpscares {
 
 	private long sessionStart = -1;
 	private long lastScare = Long.MIN_VALUE / 2;
+	private long lastOwnerScare = Long.MIN_VALUE / 2;
 	private long lastDamage = Long.MIN_VALUE / 2;
 	private float health = 20f;
 	private boolean inWorld;
@@ -151,7 +211,13 @@ public final class Jumpscares {
 	private long loadingStart;
 	private long stallStart = -1;
 
-	private int pendingSound;
+	/** Zusätzliche Grusel-Stimmung nachts (Flüster-Kriechen, 13. Feld): je Sekunde würfeln. */
+	private long ambientSince = -1;
+	private long lastAmbientRoll;
+
+	/** Ausstehender Ton (ID oder null) und ob er trotz „Grusel-Töne“-Schalter spielen soll (Besitzer-Auslöser). */
+	private String pendingSound;
+	private boolean pendingForce;
 
 	Jumpscares(Random random, Settings settings) {
 		this.random = random;
@@ -184,6 +250,24 @@ public final class Jumpscares {
 		lastDamage = now;
 	}
 
+	/**
+	 * Besitzer-Auslöser (Part C, SSE {@code jumpscare}): einen benannten Schreck sofort zeigen – mit eigenem Ton,
+	 * unabhängig vom „Grusel-Töne“-Schalter. Eigene Schutzregeln: Jumpscares an, im Spiel, mindestens 6 Herzen, kein
+	 * Schaden in den letzten 10 s, nichts läuft gerade. Kein 20-Minuten-Abstand und kein 2-Minuten-Anlauf (der
+	 * Besitzer-Auslöser hat laut Vertrag seinen eigenen Takt, 60 s serverseitig). @return true, wenn gestartet
+	 */
+	public synchronized boolean triggerOwner(Type type, long now) {
+		if (type == null || type == Type.MIRROR || type == Type.LOADING) return false;
+		if (!settings.enabled()) return false;
+		if (!inWorld || health < MIN_HEALTH) return false;
+		if (now - lastDamage < DAMAGE_PAUSE_MS) return false;
+		if (now - lastOwnerScare < OWNER_COOLDOWN_MS) return false;
+		if (active != null) return false;
+		lastOwnerScare = now;
+		start(type, now, true);
+		return true;
+	}
+
 	// --- Tick ---
 
 	/** Einmal je Client-Tick. */
@@ -212,10 +296,29 @@ public final class Jumpscares {
 			}
 			if (!frontRolled && now - frontSince >= 1200) {
 				frontRolled = true;
-				if (allowed(now, true) && random.nextInt(4) == 0) start(Type.BEHIND_YOU, now);
+				// Von vorne nachts: meist die Schattengestalt, manchmal ein Gesicht gegen die Scheibe.
+				if (allowed(now, true) && random.nextInt(4) == 0) {
+					start(random.nextInt(3) == 1 ? Type.FACE_PRESS : Type.BEHIND_YOU, now);
+				}
 			}
 		} else {
 			frontSince = -1;
+		}
+		// Zusätzliche Grusel-Stimmung nachts (nicht in der Vorne-Ansicht): sehr selten das Flüster-Kriechen
+		// über die Anzeige oder ein 13. Feld mit Auge – je Sekunde 1 zu 90.
+		if (in.night && !in.front) {
+			if (ambientSince < 0) {
+				ambientSince = now;
+				lastAmbientRoll = now;
+			}
+			if (now - ambientSince >= 5_000L && now - lastAmbientRoll >= 1000L) {
+				lastAmbientRoll = now;
+				if (allowed(now, true) && random.nextInt(90) == 0) {
+					start(random.nextInt(2) == 0 ? Type.WHISPER_CRAWL : Type.THIRTEENTH, now);
+				}
+			}
+		} else {
+			ambientSince = -1;
 		}
 		// Kiste im Dunkeln: selten (1 zu 12), höchstens einmal je Sitzung.
 		if (in.containerOpened && !chestDone && in.light() <= 3) {
@@ -240,11 +343,19 @@ public final class Jumpscares {
 	}
 
 	private void start(Type type, long now) {
+		start(type, now, false);
+	}
+
+	private void start(Type type, long now, boolean forceSound) {
 		active = type;
 		activeStart = now;
 		activeSeed = random.nextInt(1 << 20);
 		lastScare = now;
-		if (type == Type.CHEST || type == Type.BEHIND_YOU) pendingSound++;
+		String sound = soundFor(type);
+		if (sound != null) {
+			pendingSound = sound;
+			pendingForce = forceSound;
+		}
 	}
 
 	static long duration(Type type) {
@@ -257,6 +368,14 @@ public final class Jumpscares {
 				return WHISPER_MS + EYES_MS + DOTS_MS / 2 + FACE_MS;
 			case MIRROR:
 				return GRIN_MS;
+			case FACE_PRESS:
+				return PRESS_MS;
+			case WHISPER_CRAWL:
+				return CRAWL_MS;
+			case THIRTEENTH:
+				return THIRTEENTH_MS;
+			case FLASH:
+				return FLASH_MS;
 			default:
 				return STALL_MS + DARK_MS + EYES_OPEN_MS + EYES_HOLD_MS;
 		}
@@ -273,11 +392,17 @@ public final class Jumpscares {
 		return new Scene(active, age, activeSeed);
 	}
 
-	/** Soll jetzt ein Grusel-Ton kommen? (nur mit „Grusel-Töne“; einmal je Schreck) */
-	public synchronized boolean takeSound() {
-		if (pendingSound <= 0) return false;
-		pendingSound = 0;
-		return settings.sounds();
+	/**
+	 * Holt den ausstehenden Grusel-Ton (einmal je Schreck) oder null. Normale Schrecke tönen nur mit „Grusel-Töne“;
+	 * der Besitzer-Auslöser (und MiyakoMCs Timer, eigener Pfad) tönt immer.
+	 */
+	public synchronized String takeSound() {
+		String sound = pendingSound;
+		if (sound == null) return null;
+		boolean force = pendingForce;
+		pendingSound = null;
+		pendingForce = false;
+		return force || settings.sounds() ? sound : null;
 	}
 
 	// --- Ladebildschirm ---

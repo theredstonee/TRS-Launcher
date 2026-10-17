@@ -155,6 +155,8 @@ public final class NewSince {
 	public static final String WARDROBE_WINGS = "wardrobe:wings";
 	/** Sozial → Chat → Sticker-Auswahl. */
 	public static final String SOCIAL_STICKERS = "social:stickers";
+	/** Halloween-Schreck-Erweiterung (TRS Client 0.19.2): mehr Jumpscares, Grusel-Töne ab Werk an. */
+	public static final String HALLOWEEN_SCARE = "0.19.2";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
@@ -234,7 +236,9 @@ public final class NewSince {
 		add(CINEMATIC, "cinematic", KEY_CINEMATIC, "trsOnline.fanSymbolNametag", "trsOnline.fanSymbolTab");
 		// Halloween 2026: Modul + Seite im TRS-Menü, Begleiter in der Garderobe, Sticker im Chat.
 		add(HALLOWEEN, "halloween", "halloween.hits", "halloween.ghostTrail", "halloween.others", "halloween.jumpscares",
-				"halloween.sounds", MENU_HALLOWEEN, WARDROBE_COMPANION, WARDROBE_WINGS, SOCIAL_STICKERS);
+				MENU_HALLOWEEN, WARDROBE_COMPANION, WARDROBE_WINGS, SOCIAL_STICKERS);
+		// Schreck-Erweiterung (0.19.2): „Grusel-Töne“ jetzt ab Werk an unter neuem Schlüssel „spookySounds“.
+		add(HALLOWEEN_SCARE, "halloween.spookySounds");
 	}
 
 	private NewSince() {
