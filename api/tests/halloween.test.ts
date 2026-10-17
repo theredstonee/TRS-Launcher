@@ -79,7 +79,7 @@ describe('migration 26: halloween 2026', () => {
     const sql = (n: string) => one<{ sql: string }>(db, "SELECT sql FROM sqlite_master WHERE name = ?", n)!.sql
     expect(sql('user_capes')).toContain("'reward'")
     expect(sql('user_cosmetics')).toContain("'reward'")
-    expect(MIGRATIONS.at(-1)!.version).toBe(26)
+    expect(MIGRATIONS.at(-1)!.version).toBe(27)
   })
 
   it('keeps existing ownership when the leaf tables are rebuilt', () => {
@@ -95,7 +95,8 @@ describe('migration 26: halloween 2026', () => {
     run(db, "INSERT INTO users (uuid, name, name_lower, created_at, last_login_at) VALUES (?, 'A', 'a', 0, 0)", 'a'.repeat(32))
     run(db, "INSERT INTO capes (id, kind, name, status, unlock, sha256, width, height, created_at) VALUES ('x', 'builtin', 'X', 'approved', 'code', 'h', 64, 32, 0)")
     run(db, "INSERT INTO user_capes (uuid, cape_id, source, granted_at) VALUES (?, 'x', 'creator', 1)", 'a'.repeat(32))
-    expect(migrate(db)).toBe(1)
+    // Migrationen 26 (Halloween) und 27 (user_event_flags) laufen hier beide nach.
+    expect(migrate(db)).toBe(2)
     expect(one<{ source: string }>(db, 'SELECT source FROM user_capes')!.source).toBe('creator')
   })
 })
