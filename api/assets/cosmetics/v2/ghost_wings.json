@@ -2647,42 +2647,6 @@
       ]
     }
   ],
-  "halos": [
-    {
-      "bone": "fore",
-      "pos": [
-        10.5,
-        -3,
-        -3.5
-      ],
-      "size": 8,
-      "color": "#9fd6e6",
-      "intensity": 0.55,
-      "pulse": {
-        "periodMs": 3120,
-        "min": 0.2105263157894737,
-        "max": 1,
-        "phaseMs": 1430
-      }
-    },
-    {
-      "bone": "fore_m",
-      "pos": [
-        -10.5,
-        -3,
-        -3.5
-      ],
-      "size": 8,
-      "color": "#9fd6e6",
-      "intensity": 0.55,
-      "pulse": {
-        "periodMs": 3120,
-        "min": 0.2105263157894737,
-        "max": 1,
-        "phaseMs": 1430
-      }
-    }
-  ],
   "meta": {
     "generator": "TRS Studio 3D-Werkbank",
     "palette": "trs-32",
