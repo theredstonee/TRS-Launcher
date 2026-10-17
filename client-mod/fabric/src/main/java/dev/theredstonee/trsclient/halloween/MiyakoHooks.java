@@ -27,10 +27,10 @@ public final class MiyakoHooks {
 		if (failed) return;
 		try {
 			if (!Miyako.get().wantsIntro()) return;
-			// Nicht mitten in einem laufenden Video erneut öffnen.
-			if (mc.screen instanceof MiyakoVideoScreen) return;
+			// Nicht mitten in einem laufenden Video erneut öffnen. Mc.screen() statt mc.screen (Feld ab 26.2 weg).
+			if (Mc.screen() instanceof MiyakoVideoScreen) return;
 			Miyako.get().introStarted();
-			Mc.setScreen(new MiyakoVideoScreen(mc.screen));
+			Mc.setScreen(new MiyakoVideoScreen(Mc.screen()));
 		} catch (RuntimeException | LinkageError e) {
 			failed = true;
 			Miyako.get().introSkipped();
