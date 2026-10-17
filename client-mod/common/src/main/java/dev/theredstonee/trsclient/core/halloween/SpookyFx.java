@@ -59,6 +59,9 @@ public final class SpookyFx {
 	private long lastStep;
 	private float clock;
 
+	/** So weit hinter dem Spieler (Blöcke) erscheint ein Spur-Abbild. */
+	static final double TRAIL_BEHIND = 1.5;
+
 	SpookyFx(Random random) {
 		this.random = random;
 	}
@@ -95,10 +98,13 @@ public final class SpookyFx {
 		lastTrail.put(key, now);
 		if (lastTrail.size() > 128) lastTrail.clear();
 		if (ghosts.size() >= MAX_GHOSTS) ghosts.remove(0);
+		// Ein Stück HINTER dem Spieler absetzen (Blickrichtung MC: -sin(yaw), cos(yaw)) – direkt an den Füßen
+		// erschien das Abbild in der Ich-Ansicht mitten im Bild.
+		double rad = Math.toRadians(yaw);
 		Ghost g = new Ghost();
-		g.x = x;
+		g.x = x + Math.sin(rad) * TRAIL_BEHIND;
 		g.y = y;
-		g.z = z;
+		g.z = z - Math.cos(rad) * TRAIL_BEHIND;
 		g.yaw = yaw;
 		ghosts.add(g);
 	}

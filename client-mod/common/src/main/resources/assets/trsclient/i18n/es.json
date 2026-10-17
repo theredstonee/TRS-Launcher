@@ -2424,7 +2424,7 @@
   "module.halloween": "Halloween",
   "module.halloween.desc": "La noche de las sombras largas: búsqueda de calabazas, truco o trato, efectos espeluznantes y sustos – solo durante el evento de Halloween. Solo visual, el juego limpio sigue intacto.",
   "setting.halloween.hits": "Golpes espeluznantes (murciélagos al golpear)",
-  "setting.halloween.trail": "Estela fantasmal al correr",
+  "setting.halloween.ghostTrail": "Estela fantasmal al correr",
   "setting.halloween.others": "Ver los efectos espeluznantes de otros jugadores",
   "setting.halloween.jumpscares": "Sustos",
   "setting.halloween.sounds": "Sonidos de miedo",

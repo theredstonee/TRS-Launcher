@@ -2424,7 +2424,7 @@
   "module.halloween": "Halloween",
   "module.halloween.desc": "Night of the Long Shadows: pumpkin hunt, trick or treat, spooky effects and jumpscares – only during the Halloween event. Pure visuals, Fair Play stays fair.",
   "setting.halloween.hits": "Spooky hits (bats on hits)",
-  "setting.halloween.trail": "Ghost trail when sprinting",
+  "setting.halloween.ghostTrail": "Ghost trail when sprinting",
   "setting.halloween.others": "See other players' spooky effects",
   "setting.halloween.jumpscares": "Jumpscares",
   "setting.halloween.sounds": "Spooky sounds",

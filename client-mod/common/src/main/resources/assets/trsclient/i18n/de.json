@@ -2424,7 +2424,7 @@
   "module.halloween": "Halloween",
   "module.halloween.desc": "Nacht der langen Schatten: Kürbis-Suche, Süßes oder Saures, Spuk-Effekte und Jumpscares – nur während des Halloween-Events. Reine Optik, Fair Play bleibt fair.",
   "setting.halloween.hits": "Spuk-Treffer (Fledermäuse bei Treffern)",
-  "setting.halloween.trail": "Geister-Spur beim Sprinten",
+  "setting.halloween.ghostTrail": "Geister-Spur beim Sprinten",
   "setting.halloween.others": "Spuk-Effekte anderer Spieler sehen",
   "setting.halloween.jumpscares": "Jumpscares",
   "setting.halloween.sounds": "Grusel-Töne",

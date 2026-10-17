@@ -233,7 +233,7 @@ public final class NewSince {
 		// Kamera-Fahrten; Fan-Symbole und Creator-Sterne vor Namen.
 		add(CINEMATIC, "cinematic", KEY_CINEMATIC, "trsOnline.fanSymbolNametag", "trsOnline.fanSymbolTab");
 		// Halloween 2026: Modul + Seite im TRS-Menü, Begleiter in der Garderobe, Sticker im Chat.
-		add(HALLOWEEN, "halloween", "halloween.hits", "halloween.trail", "halloween.others", "halloween.jumpscares",
+		add(HALLOWEEN, "halloween", "halloween.hits", "halloween.ghostTrail", "halloween.others", "halloween.jumpscares",
 				"halloween.sounds", MENU_HALLOWEEN, WARDROBE_COMPANION, WARDROBE_WINGS, SOCIAL_STICKERS);
 	}
 

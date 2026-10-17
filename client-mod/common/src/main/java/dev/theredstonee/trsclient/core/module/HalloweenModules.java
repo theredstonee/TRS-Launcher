@@ -38,7 +38,8 @@ public final class HalloweenModules {
 			}
 		});
 		hits = halloween.add(new BoolSetting("hits", "Spooky hits (bats on hits)", true));
-		trail = halloween.add(new BoolSetting("trail", "Ghost trail when sprinting", true));
+		// Ab Werk aus (Spieler-Feedback 0.19.0: „Striche beim Laufen nerven“); neuer Schlüssel, damit alte „an“-Werte nicht greifen.
+		trail = halloween.add(new BoolSetting("ghostTrail", "Ghost trail when sprinting", false));
 		others = halloween.add(new BoolSetting("others", "See other players' spooky effects", false));
 		jumpscares = halloween.add(new BoolSetting("jumpscares", "Jumpscares", true));
 		sounds = halloween.add(new BoolSetting("sounds", "Spooky sounds", false));
