@@ -1,7 +1,10 @@
 <script setup lang="ts">
 // Events (§32): global an/aus und einzelne Spieler freigeben. Nur mit events.manage.
 const { a, fill, rel } = useAdminText()
-const { api } = useAdmin()
+const { api, session } = useAdmin()
+
+const isOwner = computed(() => session.value?.owner === true)
+const NAME_OR_UUID = /^(?:[A-Za-z0-9_]{1,16}|[0-9a-fA-F]{32}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/
 
 interface EventPlayer {
   uuid: string
@@ -22,6 +25,30 @@ const error = ref('')
 const loading = ref(true)
 const busy = ref('')
 const name = ref('')
+
+// Owner-only: Part C – einen Spieler erschrecken.
+const scareTarget = ref('')
+const scareMsg = ref('')
+const scaring = ref(false)
+
+async function scare() {
+  const t = scareTarget.value.trim()
+  scareMsg.value = ''
+  if (!NAME_OR_UUID.test(t)) {
+    scareMsg.value = a.value.events.scareInvalid
+    return
+  }
+  scaring.value = true
+  try {
+    await api('/v1/admin/halloween/scare', { method: 'POST', body: { target: t } })
+    scareMsg.value = fill(a.value.events.scareSent, { target: t })
+    scareTarget.value = ''
+  } catch (e) {
+    scareMsg.value = apiCode(e) === 'player_offline' ? a.value.events.scareOffline : fill(a.value.common.failed, { error: apiMessage(e) })
+  } finally {
+    scaring.value = false
+  }
+}
 
 function titleOf(id: string): string {
   return id === 'halloween' ? a.value.events.halloween : id
@@ -148,6 +175,26 @@ async function remove(ev: AdminEvent, p: EventPlayer) {
           </button>
         </li>
       </ul>
+    </section>
+
+    <section v-if="isOwner" class="card mt-6 p-5">
+      <h2 class="display text-2xl text-base-50">{{ a.events.scareTitle }}</h2>
+      <p class="mt-1 text-sm text-base-400">{{ a.events.scareLead }}</p>
+      <form class="mt-3 flex flex-wrap gap-2" @submit.prevent="scare">
+        <label class="sr-only" for="scare-target">{{ a.events.scarePlaceholder }}</label>
+        <input
+          id="scare-target"
+          v-model="scareTarget"
+          class="field max-w-56"
+          maxlength="36"
+          autocomplete="off"
+          spellcheck="false"
+          :placeholder="a.events.scarePlaceholder"
+          :aria-label="a.events.scarePlaceholder"
+        />
+        <button type="submit" class="btn btn-primary" :disabled="scaring || !scareTarget.trim()">{{ a.events.scareButton }}</button>
+      </form>
+      <p v-if="scareMsg" class="mt-3 text-sm text-base-300">{{ scareMsg }}</p>
     </section>
   </div>
 </template>
