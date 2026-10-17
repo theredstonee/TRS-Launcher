@@ -16,6 +16,8 @@
 import http from 'node:http';
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
+import fs from 'node:fs';
+import path from 'node:path';
 
 const port = Number(process.argv[2] || 8796);
 const say = (s) => console.log(`${new Date().toISOString()} ${s}`);
@@ -82,6 +84,85 @@ const STICKERS = {
 	pumpkin_hihi: [{ en: 'Hehe', de: 'Hihi', es: 'Jiji' }, sprite(['............', '.....gg.....', '..ooOgOoo...', '.oOOOoOOOo..', 'oOyOOoOOyOo.', 'oOyyOoOyyOo.', 'oOOOOoOOOOo.', 'oOyOyoyOyOo.', 'oOOyOyOyOOo.', '.oOOOoOOOo..', '..ooooooo...', '............'], PUMPKIN_PAL)],
 	ghost_boo: [{ en: 'Boo!', de: 'Buh!', es: '¡Bu!' }, sprite(['....wwww....', '..wwwwwwww..', '.wwwwwwwwww.', '.wwkkwwkkww.', '.wwkkwwkkww.', '.wwwwwwwwww.', '.wwwwkkwwww.', '.wwwwkkwwws.', '.wwwwwwwwws.', '.wwwwwwwwss.', '.ww.ww.ww.s.', '.w...w...w..'], { w: '#eef1f8', s: '#b8bdcc', k: '#1a1426' })],
 };
+
+// ---------- MiyakoMC (privates Paket, Part A) ----------
+// Medien liegen privat ausserhalb des Repos; Standardpfad kann per MIYAKO_MEDIA überschrieben werden.
+const MIYAKO_MEDIA = process.env.MIYAKO_MEDIA || 'E:/ai/trs-private-assets/miyako';
+let miyakoIntroDone = false;
+let miyakoZip = null;
+let miyakoEtag = null;
+
+/** Ein einfaches, unkomprimiertes (store) ZIP aus [{name, data}] – ohne Abhängigkeiten. */
+function zipStore(entries) {
+	const locals = [];
+	const central = [];
+	let offset = 0;
+	for (const e of entries) {
+		const nameBuf = Buffer.from(e.name, 'utf8');
+		const crc = crc32(e.data);
+		const lh = Buffer.alloc(30);
+		lh.writeUInt32LE(0x04034b50, 0);
+		lh.writeUInt16LE(20, 4);
+		lh.writeUInt16LE(0, 6);
+		lh.writeUInt16LE(0, 8); // store
+		lh.writeUInt16LE(0, 10);
+		lh.writeUInt16LE(0, 12);
+		lh.writeUInt32LE(crc, 14);
+		lh.writeUInt32LE(e.data.length, 18);
+		lh.writeUInt32LE(e.data.length, 22);
+		lh.writeUInt16LE(nameBuf.length, 26);
+		lh.writeUInt16LE(0, 28);
+		locals.push(lh, nameBuf, e.data);
+		const ch = Buffer.alloc(46);
+		ch.writeUInt32LE(0x02014b50, 0);
+		ch.writeUInt16LE(20, 4);
+		ch.writeUInt16LE(20, 6);
+		ch.writeUInt16LE(0, 8);
+		ch.writeUInt16LE(0, 10);
+		ch.writeUInt16LE(0, 12);
+		ch.writeUInt16LE(0, 14);
+		ch.writeUInt32LE(crc, 16);
+		ch.writeUInt32LE(e.data.length, 20);
+		ch.writeUInt32LE(e.data.length, 24);
+		ch.writeUInt16LE(nameBuf.length, 28);
+		ch.writeUInt16LE(0, 30);
+		ch.writeUInt16LE(0, 32);
+		ch.writeUInt16LE(0, 34);
+		ch.writeUInt16LE(0, 36);
+		ch.writeUInt32LE(0, 38);
+		ch.writeUInt32LE(offset, 42);
+		central.push(ch, nameBuf);
+		offset += lh.length + nameBuf.length + e.data.length;
+	}
+	const cd = Buffer.concat(central);
+	const eocd = Buffer.alloc(22);
+	eocd.writeUInt32LE(0x06054b50, 0);
+	eocd.writeUInt16LE(entries.length, 8);
+	eocd.writeUInt16LE(entries.length, 10);
+	eocd.writeUInt32LE(cd.length, 12);
+	eocd.writeUInt32LE(offset, 16);
+	return Buffer.concat([...locals, cd, eocd]);
+}
+
+function miyakoBundle() {
+	if (miyakoZip) return miyakoZip;
+	const entries = [];
+	const framesDir = path.join(MIYAKO_MEDIA, 'frames');
+	if (fs.existsSync(framesDir)) {
+		for (const f of fs.readdirSync(framesDir).filter((n) => /^[0-9]+\.jpg$/.test(n)).sort()) {
+			entries.push({ name: `frames/${f}`, data: fs.readFileSync(path.join(framesDir, f)) });
+		}
+	}
+	for (const f of ['intro.ogg', 'jumpscare.png']) {
+		const p = path.join(MIYAKO_MEDIA, f);
+		if (fs.existsSync(p)) entries.push({ name: f, data: fs.readFileSync(p) });
+	}
+	if (!entries.length) return null;
+	miyakoZip = zipStore(entries);
+	miyakoEtag = '"' + crc32(miyakoZip).toString(16) + '"';
+	say(`miyako bundle: ${entries.length} entries, ${miyakoZip.length} bytes`);
+	return miyakoZip;
+}
 
 // ---------- Zustand ----------
 const IDS = ['launcher-titlebar', 'launcher-settings', 'launcher-skins', 'launcher-social', 'launcher-logs',
@@ -202,6 +283,45 @@ const server = http.createServer(async (req, res) => {
 			say('trick → sweet (ghost_float)');
 			setTimeout(() => broadcast('halloween_updated', state()), 300);
 			return send(res, 200, { ...trickResult, next: nextMidnight() });
+		}
+		// --- MiyakoMC (Part A): privat; hier dient jeder angemeldete Testspieler als „Miyako“. ---
+		if (p.startsWith('/v1/me/miyako')) {
+			if (!user) return fail(res, 401, 'unauthorized');
+			if (m === 'GET' && p === '/v1/me/miyako') {
+				return send(res, 200, { introDone: miyakoIntroDone, timerMaxMs: 300000 });
+			}
+			if (m === 'POST' && p === '/v1/me/miyako/intro-done') {
+				await readBody(req);
+				miyakoIntroDone = true;
+				say('miyako intro-done');
+				return send(res, 200, { introDone: true });
+			}
+			if (m === 'GET' && p === '/v1/me/miyako/bundle') {
+				const zip = miyakoBundle();
+				if (!zip) return fail(res, 404, 'not_found');
+				if ((req.headers['if-none-match'] || '') === miyakoEtag) {
+					res.writeHead(304, { ETag: miyakoEtag, 'Cache-Control': 'private, no-store' });
+					return res.end();
+				}
+				res.writeHead(200, {
+					'Content-Type': 'application/zip',
+					'Content-Length': zip.length,
+					ETag: miyakoEtag,
+					'Cache-Control': 'private, no-store',
+				});
+				return res.end(zip);
+			}
+			return fail(res, 404, 'not_found');
+		}
+		// --- Besitzer-Auslöser (Part C): schickt ein jumpscare-Ereignis auf den /v1/events/me-Stream. ---
+		if (m === 'POST' && p === '/v1/admin/halloween/scare') {
+			if (!user) return fail(res, 401, 'unauthorized');
+			const b = JSON.parse((await readBody(req)) || '{}');
+			const kind = ['face', 'whisper', 'eye', 'flash'].includes(b.kind) ? b.kind : 'face';
+			if (!streams.size) return fail(res, 404, 'player_offline');
+			broadcast('jumpscare', { type: 'jumpscare', kind });
+			say(`scare → ${kind}`);
+			return send(res, 200, { sent: true });
 		}
 		if (m === 'PUT' && p === '/v1/me/halloween/effects') {
 			const b = JSON.parse((await readBody(req)) || '{}');

@@ -35,6 +35,18 @@ public final class ScareOverlay {
 				case CAVE:
 					cave(c, width, height, s);
 					break;
+				case FACE_PRESS:
+					facePress(c, width, height, s.age);
+					break;
+				case WHISPER_CRAWL:
+					whisperCrawl(c, width, height, s);
+					break;
+				case THIRTEENTH:
+					thirteenth(c, width, height, s.age);
+					break;
+				case FLASH:
+					flash(c, width, height, s.age);
+					break;
 				default:
 					break;
 			}
@@ -126,6 +138,90 @@ public final class ScareOverlay {
 		age -= Jumpscares.EYES_MS;
 		long dotsShort = Jumpscares.DOTS_MS / 2;
 		face(c, width, height, age + (Jumpscares.DOTS_MS - dotsShort), true);
+	}
+
+	/**
+	 * Gesicht gegen die Scheibe: ein bleiches Gesicht quetscht sich (breiter als hoch) an den Bildschirm, hält kurz
+	 * und weicht zurück. Ein dünner kalter Schleier und ein Beschlag-Rand verstärken die „Glas“-Wirkung.
+	 */
+	static void facePress(Canvas c, int width, int height, long age) {
+		float len = Jumpscares.PRESS_MS;
+		float in = Math.min(1f, age / 160f);
+		float out = age > len - 200 ? Math.max(0f, (len - age) / 200f) : 1f;
+		float a = Math.min(in, out);
+		// Kalter Schleier (Glas) über dem ganzen Bild.
+		c.fill(0, 0, width, height, ColorMath.fade(0xFF060A08, 0.55f * a));
+		int min = Math.min(width, height);
+		// Dicht an der „Scheibe“: größer als das Kisten-Gesicht, kommt schnell heran.
+		float grow = 0.9f + 0.14f * Math.min(1f, age / 240f);
+		int size = Math.round(min * 1.02f * grow);
+		int px = Math.max(1, size / 24);
+		int x = (width - px * 24) / 2;
+		int y = (height - px * 24) / 2;
+		Sprites.draw(c, Sprites.FACE, x, y, px, a);
+		// Zwei beschlagene, kalte Augenpunkte verstärken den „Gesicht am Glas“-Eindruck.
+		int glow = ColorMath.fade(0x33BFE9E2, a);
+		c.fill(x + px * 7, y + px * 9, x + px * 10, y + px * 11, glow);
+		c.fill(x + px * 14, y + px * 9, x + px * 17, y + px * 11, glow);
+	}
+
+	/**
+	 * Die Welt entsättigt (grauer Schleier, der kurz pulst) und ein Flüstern kriecht quer über die Anzeige.
+	 */
+	static void whisperCrawl(Canvas c, int width, int height, Jumpscares.Scene s) {
+		long age = s.age;
+		float len = Jumpscares.CRAWL_MS;
+		float a = age < 500 ? age / 500f : (age > len - 700 ? Math.max(0f, (len - age) / 700f) : 1f);
+		// Entsättigung andeuten: ein gedeckter grauer Schleier über dem Bild (kein Blitzen).
+		float pulse = 0.18f + 0.07f * (float) Math.sin(age / 180.0);
+		c.fill(0, 0, width, height, ColorMath.fade(0xFF2A2834, (pulse + 0.12f) * a));
+		int n = 1 + Math.floorMod(s.seed, WHISPERS);
+		String text = I18n.tr("halloween.whisper." + n);
+		int tw = c.textWidth(text);
+		// Quer von rechts nach links kriechen.
+		float travel = age / len;
+		int x = Math.round(width + tw - travel * (width + 2 * tw));
+		int y = (int) (height * (0.42f + ((s.seed >> 5) % 16) / 100f));
+		c.text(text, x, y, ColorMath.fade(0xFFCBB9F2, 0.9f * a), true);
+	}
+
+	/**
+	 * Für einen Herzschlag zeigt die Schnellleiste ein 13. Feld mit einem Auge darin (unten mittig, rechts neben der
+	 * Leiste). Blendet ein und wieder aus.
+	 */
+	static void thirteenth(Canvas c, int width, int height, long age) {
+		float len = Jumpscares.THIRTEENTH_MS;
+		float a = age < 150 ? age / 150f : (age > len - 250 ? Math.max(0f, (len - age) / 250f) : 1f);
+		int slot = Math.max(18, height / 12);
+		// Rechts neben der Vanilla-Schnellleiste (die ist 182 px breit, mittig).
+		int barHalf = Math.min(width / 2 - slot - 4, 91 * slot / 20);
+		int x = width / 2 + barHalf + 2;
+		int y = height - slot - 2;
+		// Feldrahmen im Vanilla-Stil (dunkel mit hellem Rand).
+		c.fill(x, y, x + slot, y + slot, ColorMath.fade(0xFF8B8B8B, a));
+		c.fill(x + 1, y + 1, x + slot - 1, y + slot - 1, ColorMath.fade(0xFF2B2B2B, a));
+		int ex = x + slot / 2 - 2;
+		int ey = y + slot / 2 - 1;
+		eyes(c, ex, ey, Math.max(1, slot / 10), a);
+	}
+
+	/**
+	 * Kurzer, invertiert wirkender Lichtblitz (wie bei einem Blitzschlag). Bei „Flackern &amp; Rauschen“ aus wird
+	 * daraus ein sanfter dunkler Puls (reduzierte Bewegung, kein Stroboskop).
+	 */
+	static void flash(Canvas c, int width, int height, long age) {
+		float len = Jumpscares.FLASH_MS;
+		float t = Math.min(1f, age / len);
+		if (!HalloweenOverlay.flicker()) {
+			float a = (float) Math.sin(Math.PI * t) * 0.6f;
+			c.fill(0, 0, width, height, ColorMath.fade(0xFF0A0A12, a));
+			return;
+		}
+		// „Invertiert“ angedeutet durch schnelle Hell-Dunkel-Wechsel, die abklingen.
+		float env = 1f - t;
+		int phase = (int) (age / 70);
+		int col = phase % 2 == 0 ? ColorMath.fade(0xFFF2F2FF, 0.85f * env) : ColorMath.fade(0xFF05040A, 0.9f * env);
+		c.fill(0, 0, width, height, col);
 	}
 
 	/** Zwei rote Augen mit Schein (wie die Augen in der Szene: Kern #ff4433, Schein rgba(255,40,30,.28)). */

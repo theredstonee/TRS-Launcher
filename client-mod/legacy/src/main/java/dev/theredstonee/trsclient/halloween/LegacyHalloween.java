@@ -105,7 +105,8 @@ public final class LegacyHalloween {
 		}
 		lastScreen = screen;
 		Jumpscares.get().tick(in);
-		if (Jumpscares.get().takeSound()) playCave(mc);
+		String scareSound = Jumpscares.get().takeSound();
+		if (scareSound != null) playScare(mc, scareSound);
 	}
 
 	private static void effects(HalloweenModules h, EntityPlayer self, long now) {
@@ -208,13 +209,14 @@ public final class LegacyHalloween {
 		}
 	}
 
-	/** Grusel-Ton (nur mit „Grusel-Töne“): Höhlengeräusch, leise. */
-	private static void playCave(Minecraft mc) {
+	/** Registrierter Grusel-Ton (trsclient:scare_*), leise über alles. */
+	private static void playScare(Minecraft mc, String id) {
 		try {
 			//? if >=1.9 {
-			/*mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(net.minecraft.init.SoundEvents.AMBIENT_CAVE, 0.7F));
+			/*net.minecraft.util.SoundEvent ev = new net.minecraft.util.SoundEvent(new ResourceLocation("trsclient", id));
+			mc.getSoundHandler().playSound(PositionedSoundRecord.getMasterRecord(ev, 1.0F));
 			*///?} else
-			mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("ambient.cave.cave"), 0.7F));
+			mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("trsclient", id), 1.0F));
 		} catch (RuntimeException | LinkageError ignored) {
 			// kein Ton
 		}

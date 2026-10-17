@@ -5,6 +5,8 @@ import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.halloween.Halloween;
 import dev.theredstonee.trsclient.core.halloween.HalloweenOverlay;
 import dev.theredstonee.trsclient.core.halloween.Jumpscares;
+import dev.theredstonee.trsclient.core.halloween.Miyako;
+import dev.theredstonee.trsclient.core.halloween.MiyakoOverlay;
 import dev.theredstonee.trsclient.core.halloween.ScareOverlay;
 import dev.theredstonee.trsclient.core.halloween.SpookyFx;
 import dev.theredstonee.trsclient.core.module.HalloweenModules;
@@ -47,6 +49,7 @@ public final class HalloweenHooks {
 
 	private static final Jumpscares.Input INPUT = new Jumpscares.Input();
 	private static int lastHurtTime;
+	private static boolean prevInWorld;
 	private static Screen lastScreen;
 	/** Schadens-Animation je Entity (Treffer anderer Spieler mit Spuk-Treffern erkennen). */
 	private static final Map<Integer, Integer> HURT = new HashMap<Integer, Integer>();
@@ -110,7 +113,16 @@ public final class HalloweenHooks {
 		}
 		lastScreen = screen;
 		Jumpscares.get().tick(in);
-		if (Jumpscares.get().takeSound()) playCave();
+		String scareSound = Jumpscares.get().takeSound();
+		if (scareSound != null) playScare(scareSound);
+		// MiyakoMC (persönlich, nur seine UUID): Timer beim Betreten einer Welt bewaffnen, Bild-Schreck auslösen.
+		if (in.inWorld && !prevInWorld) Miyako.get().armTimer(now);
+		prevInWorld = in.inWorld;
+		Miyako.get().tick(now, in.inWorld, in.health, in.hurt);
+		String miyakoSound = Miyako.get().takeImageSound();
+		if (miyakoSound != null) playScare(miyakoSound);
+		// Kann die Version das Video nicht (alles ausser modernem Fabric), das Intro still überspringen.
+		if (Miyako.get().wantsIntro() && !Miyako.get().videoSupported()) Miyako.get().introSkipped();
 	}
 
 	/** Behälter (Kiste, Fass …), nicht das eigene Inventar. */
@@ -205,6 +217,7 @@ public final class HalloweenHooks {
 			}
 			if (Mc.screen() == null) {
 				ScareOverlay.draw(c, g.width(), g.height(), now);
+				MiyakoOverlay.draw(c, g.width(), g.height(), now);
 				HalloweenOverlay.hud(c, g.width(), g.height());
 			}
 		} catch (RuntimeException | LinkageError ignored) {
@@ -218,7 +231,11 @@ public final class HalloweenHooks {
 		if (s == null || s instanceof TrsUiScreen) return;
 		try {
 			GfxCanvas c = GfxCanvas.of(g, Mc.mc().font);
-			if (Halloween.active()) ScareOverlay.draw(c, g.width(), g.height(), System.currentTimeMillis());
+			long now = System.currentTimeMillis();
+			if (Halloween.active()) {
+				ScareOverlay.draw(c, g.width(), g.height(), now);
+				MiyakoOverlay.draw(c, g.width(), g.height(), now);
+			}
 			HalloweenOverlay.hud(c, g.width(), g.height());
 		} catch (RuntimeException | LinkageError ignored) {
 			// nur Optik
@@ -269,19 +286,18 @@ public final class HalloweenHooks {
 		/*return Mc.mc().options.thirdPersonView;*/
 	}
 
-	/** Grusel-Ton (nur mit „Grusel-Töne“): Höhlengeräusch, leise. */
-	private static void playCave() {
+	/** Registrierter Grusel-Ton (trsclient:scare_*), über alles leise abgespielt. */
+	private static void playScare(String id) {
 		try {
-			String name = "ambient.cave";
 			//? if >=1.21.11 {
-			/*SoundEvent ev = SoundEvent.createVariableRangeEvent(net.minecraft.resources.Identifier.withDefaultNamespace(name));
+			/*SoundEvent ev = SoundEvent.createVariableRangeEvent(net.minecraft.resources.Identifier.fromNamespaceAndPath("trsclient", id));
 			*///?} elif >=1.21 {
-			/*SoundEvent ev = SoundEvent.createVariableRangeEvent(net.minecraft.resources.ResourceLocation.withDefaultNamespace(name));
+			/*SoundEvent ev = SoundEvent.createVariableRangeEvent(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("trsclient", id));
 			*///?} elif >=1.19.3 {
-			/*SoundEvent ev = SoundEvent.createVariableRangeEvent(new net.minecraft.resources.ResourceLocation("minecraft", name));
+			/*SoundEvent ev = SoundEvent.createVariableRangeEvent(new net.minecraft.resources.ResourceLocation("trsclient", id));
 			*///?} else
-			SoundEvent ev = new SoundEvent(new net.minecraft.resources.ResourceLocation("minecraft", name));
-			Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(ev, 0.8f, 0.7f));
+			SoundEvent ev = new SoundEvent(new net.minecraft.resources.ResourceLocation("trsclient", id));
+			Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(ev, 0.9f, 1.0f));
 		} catch (RuntimeException | LinkageError ignored) {
 			// kein Ton
 		}

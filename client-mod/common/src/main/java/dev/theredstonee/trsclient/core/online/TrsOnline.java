@@ -254,6 +254,8 @@ public final class TrsOnline {
 				+ platform.loader() + ")";
 		Http http = new Http.UrlConnection(userAgent);
 		dev.theredstonee.trsclient.core.halloween.HalloweenService.get().http(http);
+		dev.theredstonee.trsclient.core.halloween.Miyako.get().http(http);
+		dev.theredstonee.trsclient.core.halloween.Miyako.get().dir(configDir.resolve("trsclient").resolve("miyako"));
 		TrsOnline online = new TrsOnline(config, platform, http, configDir.resolve("trsclient").resolve("capes"),
 				new PlayerEventStream.UrlOpener(userAgent));
 		current = online;

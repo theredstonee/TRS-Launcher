@@ -59,6 +59,8 @@ public final class MeEvent {
 	public final List<String> events;
 	/** Rohes JSON von {@code halloween_updated} (≤ 16 KiB, wie {@code GET /v1/me/halloween}) – ausgewertet in core.halloween. */
 	public final String halloweenData;
+	/** {@code jumpscare} (Besitzer-Auslöser, Part C): Art des Schrecks ({@code [a-z_]{1,40}}) oder null. */
+	public final String jumpscareKind;
 
 	private MeEvent(String type, String id, ChatJson.EventDto d, String data) {
 		this.type = type;
@@ -124,6 +126,13 @@ public final class MeEvent {
 		this.appeal = raw == null ? null : SanctionJson.appeal(SanctionJson.obj(raw, "appeal"));
 		this.application = type.equals("application_updated")
 				? Application.of(SanctionJson.obj(SanctionJson.object(data), "application")) : null;
+		this.jumpscareKind = type.equals("jumpscare") ? kind(data) : null;
+	}
+
+	/** {@code kind} aus dem Jumpscare-Ereignis: {@code [a-z_]{1,40}} oder null. */
+	private static String kind(String data) {
+		String k = SanctionJson.str(SanctionJson.object(data), "kind");
+		return k != null && k.matches("[a-z_]{1,40}") ? k : null;
 	}
 
 	/** Eigene Team-Bewerbung (MyApplicationView): nur Status, Stellentitel und Antwort des Teams. */

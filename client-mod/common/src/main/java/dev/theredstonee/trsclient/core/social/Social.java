@@ -530,6 +530,15 @@ public final class Social {
 			dev.theredstonee.trsclient.core.halloween.HalloweenService.get().fromEvent(e.halloweenData);
 			return;
 		}
+		if (t.equals("jumpscare")) {
+			// Besitzer-Auslöser (Vertrag Part C): benannten Schreck zeigen, wenn die lokalen Schutzregeln passen.
+			dev.theredstonee.trsclient.core.halloween.Jumpscares.Type type =
+					dev.theredstonee.trsclient.core.halloween.Jumpscares.typeFromKind(e.jumpscareKind);
+			if (type != null) {
+				dev.theredstonee.trsclient.core.halloween.Jumpscares.get().triggerOwner(type, System.currentTimeMillis());
+			}
+			return;
+		}
 		if (t.equals("notes_changed")) {
 			// Notizen je Welt (API.md §17.5): gleich neu holen statt auf die 5-Minuten-Abfrage zu warten.
 			notesChanged();
