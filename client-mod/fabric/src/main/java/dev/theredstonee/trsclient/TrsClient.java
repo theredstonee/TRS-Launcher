@@ -114,6 +114,10 @@ public final class TrsClient implements ClientModInitializer {
 		TrsKeys.register();
 		// Sozial-Benachrichtigungen (Toasts): Ton, Vollbild, Schnelltaste.
 		dev.theredstonee.trsclient.social.SocialHooks.install(modules);
+		// MiyakoMC (persönlich, nur seine UUID): Intro-Video beim ersten Start (nur moderner Fabric-Pfad).
+		dev.theredstonee.trsclient.core.halloween.Miyako.get().dir(
+				FabricLoader.getInstance().getConfigDir().resolve("trsclient").resolve("miyako"));
+		dev.theredstonee.trsclient.halloween.MiyakoHooks.install();
 		// Zoom-/Freelook-Taste sind Vanilla-Belegungen – im TRS-Menü ändern sie dieselbe Belegung.
 		modules.zoomKey.link(TrsKeys.link(TrsKeys.zoom));
 		modules.freelookKey.link(TrsKeys.link(TrsKeys.freelook));

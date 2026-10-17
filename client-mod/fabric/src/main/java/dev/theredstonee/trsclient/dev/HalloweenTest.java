@@ -5,7 +5,9 @@ import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.halloween.Halloween;
 import dev.theredstonee.trsclient.core.halloween.HalloweenService;
 import dev.theredstonee.trsclient.core.halloween.Jumpscares;
+import dev.theredstonee.trsclient.core.halloween.Miyako;
 import dev.theredstonee.trsclient.core.halloween.SpookyFx;
+import dev.theredstonee.trsclient.halloween.MiyakoVideoScreen;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.ui.menus.MenuSkin;
 import dev.theredstonee.trsclient.screen.TrsMenuScreen;
@@ -95,6 +97,35 @@ public final class HalloweenTest {
 			double side = -2.5 + i * 0.6;
 			fxs.trail("autotest", Mc.x(p) + fx * 6 + fz * side, Mc.y(p), Mc.z(p) + fz * 6 - fx * side, Mc.yRot(p) + 90, now + i * 80L);
 		}
+	}
+
+	/** Ein einfaches 160×90-Schreckbild (dunkel, zwei glühende Augen, gezackter Mund) für den Offline-Test. */
+	private static int[] fakeScareImage() {
+		int w = 160;
+		int h = 90;
+		int[] px = new int[w * h];
+		for (int i = 0; i < px.length; i++) px[i] = 0xFF0A0510;
+		for (int y = 0; y < h; y++) {
+			for (int x = 0; x < w; x++) {
+				int i = y * w + x;
+				// Zwei Augen.
+				if ((sq(x - 58) + sq(y - 38) < 120) || (sq(x - 102) + sq(y - 38) < 120)) px[i] = 0xFFFF3B2F;
+				else if ((sq(x - 58) + sq(y - 38) < 240) || (sq(x - 102) + sq(y - 38) < 240)) px[i] = 0x66FF281E | 0xFF000000;
+				// Gezackter Mund.
+				if (y > 58 && y < 72 && x > 50 && x < 110 && ((x + (y % 4)) % 8 < 4)) px[i] = 0xFFB9A2EA;
+			}
+		}
+		return px;
+	}
+
+	private static int sq(int v) {
+		return v * v;
+	}
+
+	/** Liegt das echte Bild-Paket (frames/0001.jpg) im Cache? */
+	private static boolean hasFrames() {
+		java.nio.file.Path d = Miyako.get().framesDir();
+		return d != null && java.nio.file.Files.isRegularFile(d.resolve("0001.jpg"));
 	}
 
 	private void step(Minecraft mc) {
@@ -217,8 +248,64 @@ public final class HalloweenTest {
 				return;
 			case 14:
 				shot(mc, "cave-eyes");
+				phase = 200;
+				wait = 40;
+				return;
+			// --- Schreck-Erweiterung 0.19.2: neue Jumpscare-Arten ---
+			case 200:
+				Jumpscares.get().forceForTest(Jumpscares.Type.FACE_PRESS, System.currentTimeMillis());
 				phase++;
-				wait = 120;
+				wait = 4;
+				return;
+			case 201:
+				shot(mc, "face-press");
+				Jumpscares.get().forceForTest(Jumpscares.Type.WHISPER_CRAWL, System.currentTimeMillis());
+				phase++;
+				wait = 24;
+				return;
+			case 202:
+				shot(mc, "whisper-crawl");
+				Jumpscares.get().forceForTest(Jumpscares.Type.THIRTEENTH, System.currentTimeMillis());
+				phase++;
+				wait = 8;
+				return;
+			case 203:
+				shot(mc, "thirteenth");
+				Jumpscares.get().forceForTest(Jumpscares.Type.FLASH, System.currentTimeMillis());
+				phase++;
+				wait = 1;
+				return;
+			case 204:
+				shot(mc, "flash");
+				// MiyakoMC: Timer-Bild-Schreck (synthetisches Bild, damit es offline etwas zeigt).
+				Miyako.get().setImageForTest(fakeScareImage(), 160, 90);
+				Miyako.get().forceImageForTest(System.currentTimeMillis());
+				phase++;
+				wait = 4;
+				return;
+			case 205:
+				shot(mc, "miyako-timer");
+				// Echtes Intro-Video nur, wenn das Paket (Attrappe + -Dtrsclient.miyako.test) da ist.
+				if (Miyako.get().videoSupported() && hasFrames()) {
+					Mc.setScreen(new MiyakoVideoScreen(new TrsTitleScreen()));
+					phase = 210;
+					wait = 25;
+				} else {
+					log("kein Miyako-Paket – Video übersprungen");
+					phase = 15;
+					wait = 5;
+				}
+				return;
+			case 210:
+				shot(mc, "miyako-video-1");
+				phase++;
+				wait = 60;
+				return;
+			case 211:
+				shot(mc, "miyako-video-2");
+				Mc.setScreen(new TrsTitleScreen());
+				phase = 15;
+				wait = 5;
 				return;
 			case 15:
 				Halloween.force(null);
