@@ -37,6 +37,7 @@ How to write an entry:
 - **TRS Client: wardrobe pumpkin visible.** The hidden pumpkin in the wardrobe was completely covered by the player's legs; it now peeks out next to the right foot.
 - **Website: home page pumpkin visible.** The pumpkin on the home page was hidden under the tile row; it now sits just above it.
 - **Launcher: "Show more" in the news.** The news feed no longer stops after a handful of posts – it shows a batch and a "Show more" button loads the next, so you can reach older news too.
+- **TRS Client: sharper clip preview.** The in-game clip preview no longer looks like a tiny thumbnail blown up – it now plays close to the clip's own resolution, so it stays crisp on the preview screen.
 
 ### Deutsch
 - **TRS Client: einstellbare Helligkeit (Gamma).** Aus dem alten Fullbright wird ein Helligkeitsregler von 100 % bis hin zu Fullbright. Wirkt sofort, funktioniert mit Shadern und hat zwei optionale Tastenkürzel (ein/aus und durchschalten: aus → dein Wert → Fullbright).
@@ -45,6 +46,7 @@ How to write an entry:
 - **TRS Client: Kürbis in der Garderobe sichtbar.** Der versteckte Kürbis in der Garderobe lag komplett hinter den Beinen der Figur; jetzt schaut er neben dem rechten Fuß hervor.
 - **Website: Kürbis auf der Startseite sichtbar.** Der Kürbis auf der Startseite lag unter der Kachelreihe; jetzt sitzt er knapp darüber.
 - **Launcher: „Mehr ansehen" in den Neuigkeiten.** Der Neuigkeiten-Feed hört nicht mehr nach ein paar Beiträgen auf – er zeigt einen Block, und „Mehr ansehen" lädt den nächsten, sodass du auch an ältere Meldungen kommst.
+- **TRS Client: schärfere Clip-Vorschau.** Die Clip-Vorschau im Spiel sieht nicht mehr aus wie ein hochskaliertes Miniaturbild – sie läuft jetzt nahe an der eigentlichen Auflösung des Clips und bleibt dadurch im Vorschaufenster gestochen scharf.
 
 ## 0.23.0 – 2026-10-17 – Blood Moon | Blutmond
 <!-- banner: accent=#c9424a motif=/news/0.23.0/banner.png -->

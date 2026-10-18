@@ -30,10 +30,13 @@ public final class ClipPreview {
 	/** FFmpeg braucht für lange Clips eine Weile (danach kommt die Leiste aus dem Cache). */
 	static final long PREVIEW_TIMEOUT_MS = 120_000L;
 	static final long OPEN_TIMEOUT_MS = 10_000L;
-	static final long MAX_FILE_BYTES = 16L * 1024 * 1024;
+	static final long MAX_FILE_BYTES = 64L * 1024 * 1024;
 	static final int MAX_FRAMES = 400;
-	static final int MAX_FRAME_SIZE = 640;
+	/** Einzelbild bis nahe an die Clip-Auflösung (Launcher liefert große Bilder → scharfe Vorschau statt Briefmarke). */
+	static final int MAX_FRAME_SIZE = 1024;
 	static final int MAX_SHEET_SIDE = 4096;
+	/** Deckel für die Pixelzahl des ganzen Rasters beim Dekodieren (eine GPU-Textur). */
+	static final long MAX_SHEET_PIXELS = (long) MAX_SHEET_SIDE * MAX_SHEET_SIDE;
 
 	public enum State {
 		/** Noch nichts angefragt. */
@@ -171,7 +174,7 @@ public final class ClipPreview {
 				|| (long) rows * fh > MAX_SHEET_SIDE) {
 			throw new IOException("Unstimmiger Aufbau der Vorschau");
 		}
-		PngDecoder.Image img = PngDecoder.decode(png);
+		PngDecoder.Image img = PngDecoder.decode(png, MAX_SHEET_PIXELS);
 		if (img.width < cols * fw || img.height < rows * fh) throw new IOException("Vorschau kleiner als angegeben");
 		int interval = meta.intervalMs == null ? 1000 : Math.max(1, meta.intervalMs);
 		long duration = meta.durationMs == null ? (long) interval * frames : Math.max(0L, meta.durationMs);
