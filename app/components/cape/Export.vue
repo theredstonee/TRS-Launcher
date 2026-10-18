@@ -26,6 +26,8 @@ const emit = defineEmits<{ reduce: [frames: number]; uploaded: [cape: TrsCape]; 
 const toasts = useToasts()
 const creator = useCreatorStore()
 
+/** „HD – wie Bild“: schon in 1024×512 bearbeitet, glatt skaliert, glatte Vorschau. */
+const hd = computed(() => props.doc.style === 'hd')
 const scale = ref(defaultOutputScale(props.doc.scale))
 const smooth = ref(false)
 const expanded = computed(() => expandTimeline(props.doc.frames))
@@ -58,6 +60,7 @@ async function compute() {
       base: props.doc.scale,
       scale: scale.value,
       smooth: smooth.value && canSmooth.value,
+      style: props.doc.style,
       stale,
       onProgress: (done, total) => {
         if (!stale()) progress.value = { done, total }
@@ -93,7 +96,9 @@ onBeforeUnmount(() => {
 const busy = computed(() => !!progress.value)
 const tooLarge = computed(() => !!result.value && result.value.bytes > CAPE_MAX_BYTES)
 const reductions = computed<Reduction[]>(() =>
-  result.value && tooLarge.value ? suggestReductions(result.value.bytes, result.value.scale, result.value.frames, props.doc.scale) : [],
+  result.value && tooLarge.value
+    ? suggestReductions(result.value.bytes, result.value.scale, result.value.frames, props.doc.scale, undefined, props.doc.style)
+    : [],
 )
 const sizePercent = computed(() => Math.min(100, ((result.value?.bytes ?? 0) / CAPE_MAX_BYTES) * 100))
 
@@ -187,12 +192,18 @@ defineExpose({ upload, canUpload, uploading, uploadFan, canUploadFan, fanMode })
           <span class="label">{{ t('capes.editor.scale.label') }}</span>
           <select v-model.number="scale" class="field" data-testid="cape-export-scale">
             <option v-for="k in scales" :key="k" :value="k">
-              {{ t('capes.editor.scale.option', { w: 64 * k, h: 32 * k, k }) }}{{ isExactScale(doc.scale, k) ? ` · ${t('capes.studio.export.exact')}` : '' }}
+              {{ t('capes.editor.scale.option', { w: 64 * k, h: 32 * k, k }) }}{{ !hd && isExactScale(doc.scale, k) ? ` · ${t('capes.studio.export.exact')}` : '' }}
             </option>
           </select>
-          <span class="mt-1 block text-[11px] text-base-600">{{ t('capes.studio.export.scaleHint', { w: 64 * doc.scale, h: 32 * doc.scale }) }}</span>
+          <span class="mt-1 block text-[11px] text-base-600">
+            {{ hd ? t('capes.studio.export.hdScaleHint') : t('capes.studio.export.scaleHint', { w: 64 * doc.scale, h: 32 * doc.scale }) }}
+          </span>
         </label>
-        <div class="flex items-start justify-between gap-3 rounded-lg bg-base-900 p-3">
+        <div v-if="hd" class="rounded-lg bg-base-900 p-3" data-testid="cape-export-hd">
+          <p class="text-sm text-base-100">{{ t('capes.studio.style.hd') }}</p>
+          <p class="text-[11px] text-base-500">{{ t('capes.studio.export.hdHint') }}</p>
+        </div>
+        <div v-else class="flex items-start justify-between gap-3 rounded-lg bg-base-900 p-3">
           <div class="min-w-0">
             <p class="text-sm text-base-100">{{ t('capes.studio.export.smooth') }}</p>
             <p class="text-[11px] text-base-500">{{ canSmooth ? t('capes.studio.export.smoothHint') : t('capes.studio.export.smoothOff') }}</p>
@@ -240,6 +251,7 @@ defineExpose({ upload, canUpload, uploading, uploadFan, canUploadFan, fanMode })
       <!-- Zu groß: Verkleinerungen anbieten -->
       <div v-if="tooLarge && !busy" class="space-y-2 rounded-lg border border-redstone-600/60 bg-redstone-900/40 p-3" data-testid="cape-export-reduce">
         <p class="text-xs text-redstone-300">{{ t('capes.studio.export.tooLarge', { size: formatFileSize(result?.bytes ?? 0) }) }}</p>
+        <p v-if="hd" class="text-[11px] text-base-300">{{ t('capes.studio.export.hdTooLarge') }}</p>
         <div class="flex flex-wrap gap-2">
           <button v-for="r in reductions" :key="r.kind" type="button" class="btn btn-ghost px-3 py-1.5 text-xs" @click="applyReduction(r)">
             {{
@@ -271,11 +283,27 @@ defineExpose({ upload, canUpload, uploading, uploadFan, canUploadFan, fanMode })
     <!-- Fertiges Ergebnis am Spieler -->
     <div class="space-y-3">
       <div class="rounded-lg bg-base-900">
-        <SkinViewer :skin="null" :cape="result?.url ?? null" :cape-frames="result?.frames ?? 1" :cape-frame-time="animated ? frameTime : null" animation="walk" :height="260" />
+        <SkinViewer
+          :skin="null"
+          :cape="result?.url ?? null"
+          :cape-frames="result?.frames ?? 1"
+          :cape-frame-time="animated ? frameTime : null"
+          :cape-smooth="hd"
+          focus="cape"
+          animation="walk"
+          :height="260"
+        />
       </div>
       <div class="flex items-center gap-3">
         <div class="rounded-lg bg-base-900 p-2">
-          <CapeThumb :texture="result?.url ?? null" :scale="result?.scale ?? 1" :frames="result?.frames ?? 1" :frame-time-ms="animated ? frameTime : null" :width="44" />
+          <CapeThumb
+            :texture="result?.url ?? null"
+            :scale="result?.scale ?? 1"
+            :frames="result?.frames ?? 1"
+            :frame-time-ms="animated ? frameTime : null"
+            :smooth="hd"
+            :width="44"
+          />
         </div>
         <p class="text-[11px] text-base-400">{{ t('capes.studio.export.final') }}</p>
       </div>

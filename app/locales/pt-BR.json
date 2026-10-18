@@ -704,7 +704,7 @@
     },
     "trsCapeImport": {
       "unsupported": "“{name}” não é uma imagem compatível (PNG, APNG, JPEG, WebP, GIF ou JSON do TRS Studio).",
-      "imageTooLarge": "“{name}” é grande demais (no máximo 4096×4096 pixels, animado 2048×2048).",
+      "imageTooLarge": "“{name}” é grande demais. Imagens podem ter no máximo 4096×4096 pixels, GIF/APNG no máximo 2048×2048; tiras de capa prontas (até 1024×512 por quadro, 32 quadros) até 1024×16384.",
       "broken": "Não foi possível ler “{name}”.",
       "tooManyFiles": "Escolha no máximo {max} arquivos de uma vez.",
       "fileTooLarge": "“{name}” é grande demais (máx. 20 MB por arquivo).",
@@ -3644,6 +3644,28 @@
         "auto": "Automática ({w}×{h})",
         "hint": "Você edita nesta resolução; ao enviar, ela é ampliada automaticamente."
       },
+      "style": {
+        "label": "Estilo",
+        "auto": "escolhido automaticamente",
+        "useAuto": "Automático",
+        "pixel": "Pixel art",
+        "hd": "HD – como a imagem",
+        "pixelHint": "Pixels nítidos como no Minecraft – ideal para pixel art desenhada. Ampliada pixel a pixel ao enviar.",
+        "hdHint": "Resolução total de 1024×512, escala suave e todas as cores – ideal para fotos, logos e pinturas. No jogo aparece suave.",
+        "hdDetail": "HD sempre usa a resolução total (fator 16)."
+      },
+      "fit": {
+        "label": "Imagem na moldura",
+        "cover": "Preencher",
+        "contain": "Ajustar",
+        "coverHint": "Preenche a parte de trás – o que não couber é cortado.",
+        "containHint": "A imagem inteira fica visível, o resto recebe um fundo.",
+        "backdrop": "Fundo",
+        "backdropColor": "Cor",
+        "backdropBlur": "Imagem desfocada",
+        "backdropTransparent": "Transparente",
+        "transparentHint": "Áreas transparentes aparecem pretas no jogo."
+      },
       "importSummary": "Quadros: {n} · edição em {w}×{h}",
       "preparing": "Preparando quadros … {done}/{total}",
       "video": {
@@ -3732,7 +3754,10 @@
         "useScale": "{w}×{h} (≈ {size})",
         "useFrames": "{n} quadros (≈ {size})",
         "final": "Exatamente como será enviada.",
-        "failed": "Não foi possível criar a capa."
+        "failed": "Não foi possível criar a capa.",
+        "hdScaleHint": "HD usa 1024×512. Tamanhos menores são reduzidos suavemente – só é preciso se o arquivo ficar grande demais.",
+        "hdHint": "Escala suave, todas as cores e transparência – exatamente como na prévia.",
+        "hdTooLarge": "Imagens HD comprimem pior que pixel art: muitos quadros em 1024×512 passam rápido de 20 MB. Menos quadros ou uma resolução um pouco menor ajudam."
       }
     },
     "hatDialog": {

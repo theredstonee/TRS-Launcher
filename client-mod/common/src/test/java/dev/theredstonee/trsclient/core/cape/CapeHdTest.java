@@ -186,7 +186,9 @@ class CapeHdTest {
 			int[] expected = img.getRGB(0, f * 512, 1024, 512, null, 0, 1024);
 			assertArrayEquals(expected, frames.frames[f], "Bild " + f + " wie ImageIO");
 		}
-		assertEquals(1024L * 512 * 4 * 2, frames.bytes());
+		// Weich gefilterte (echte HD-)Umhänge belegen zusätzlich ihre Mipmaps.
+		long mips = frames.smooth ? CapeFilter.mipBytes(1024, 512) : 0;
+		assertEquals((1024L * 512 * 4 + mips) * 2, frames.bytes());
 	}
 
 	@Test

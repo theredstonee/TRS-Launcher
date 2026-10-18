@@ -1,6 +1,7 @@
 package dev.theredstonee.trsclient.online;
 
 import dev.theredstonee.trsclient.compat.Mc;
+import dev.theredstonee.trsclient.core.cape.CapeFilter;
 import dev.theredstonee.trsclient.core.cape.CapePhysics;
 import dev.theredstonee.trsclient.core.cape.CapeTextures;
 import dev.theredstonee.trsclient.core.cape.ClothSim;
@@ -429,6 +430,16 @@ public final class LegacyOnline {
 			net.minecraft.client.renderer.texture.TextureUtil.uploadTexture(getGlTextureId(), argb, width, height);
 		}
 
+		/**
+		 * Echter HD-Umhang („Automatisch“, siehe {@link CapeFilter}): linear mit Mipmaps (aus {@link CapeFilter#mipChain},
+		 * mit Deckkraft gewichtet), damit er aus der Entfernung nicht flimmert. Pixel-Art nimmt den Konstruktor oben (scharf).
+		 */
+		CapeTexture(int width, int height, int[][] levels) {
+			net.minecraft.client.renderer.texture.TextureUtil.allocateTextureImpl(getGlTextureId(), levels.length - 1, width, height);
+			// uploadTextureMipmap setzt GL_LINEAR(_MIPMAP_LINEAR) auf der gebundenen Textur (allocateTextureImpl bindet sie).
+			net.minecraft.client.renderer.texture.TextureUtil.uploadTextureMipmap(levels, width, height, 0, 0, true, false);
+		}
+
 		@Override
 		public void loadTexture(net.minecraft.client.resources.IResourceManager manager) {
 			// schon hochgeladen
@@ -439,8 +450,16 @@ public final class LegacyOnline {
 	static final class Textures implements CapeTextures.Backend<Object> {
 		@Override
 		public Object upload(String name, int width, int height, int[] argb) {
+			return upload(name, width, height, argb, false);
+		}
+
+		/** {@code smooth}: echter HD-Umhang – weich mit Mipmaps; Pixel-Art bleibt scharf. */
+		@Override
+		public Object upload(String name, int width, int height, int[] argb, boolean smooth) {
 			try {
-				CapeTexture texture = new CapeTexture(width, height, argb);
+				CapeTexture texture = smooth
+						? new CapeTexture(width, height, CapeFilter.mipChain(argb, width, height))
+						: new CapeTexture(width, height, argb);
 				ResourceLocation id = new ResourceLocation("trsclient", name);
 				Minecraft.getMinecraft().getTextureManager().loadTexture(id, texture);
 				return id;

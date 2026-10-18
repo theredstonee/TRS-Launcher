@@ -28,6 +28,24 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Own capes: new "HD – like the image" style.** Photos, logos and paintings now use the full 1024×512 per frame, are scaled smoothly in full color – no more blocky pixels or washed-out colors – and every preview (crop, editor and the 3D player) shows them smooth, exactly as they will be uploaded. The launcher picks HD or Pixel art from your image automatically; you can switch at any time, and pixel art stays crisp as before. HD capes are open to every player.
+- **Own capes: "Fill" or "Fit".** Square logos and other images that don't match the cape shape no longer get cut off: "Fit" keeps the whole image and fills the rest with a color of your choice, a blurred copy of the image or transparency. Logos with a plain or transparent edge are fitted automatically.
+- **Own capes: finished cape strips up to 1024×16384.** Ready-made animated capes in the upload format (up to 1024×512 per frame and 32 frames) are no longer rejected as "too large".
+- **Own capes: size help for HD.** Smooth HD images take more space than pixel art. If an animated HD cape would be bigger than 20 MB, the upload step says so and suggests fewer frames or a slightly smaller resolution.
+- **Bigger, smoother cape previews.** While you make a cape, the 3D preview now shows it large from behind instead of a tiny figure, and big HD capes in the launcher's cape lists and 3D previews are shown smooth instead of grainy.
+- **TRS Client: smooth HD capes.** Real HD capes (photos, logos, paintings) are now drawn smoothly with mipmaps, so they no longer flicker or shimmer from a distance. Pixel-art capes stay crisp.
+
+### Deutsch
+- **Eigene Umhänge: neuer Stil „HD – wie Bild“.** Fotos, Logos und gemalte Bilder nutzen jetzt die vollen 1024×512 je Frame, werden glatt und in allen Farben skaliert – keine Pixelblöcke und keine blassen Farben mehr – und jede Vorschau (Ausschnitt, Editor und die 3D-Figur) zeigt sie glatt, genau so, wie sie hochgeladen werden. Der Launcher wählt HD oder Pixel-Art automatisch passend zum Bild; du kannst jederzeit umschalten, Pixel-Art bleibt scharf wie bisher. HD-Umhänge kann jeder Spieler hochladen.
+- **Eigene Umhänge: „Füllen“ oder „Einpassen“.** Quadratische Logos und andere Bilder, die nicht zur Umhangform passen, werden nicht mehr abgeschnitten: „Einpassen“ zeigt das ganze Bild und füllt den Rest mit einer Farbe deiner Wahl, einer unscharfen Kopie des Bildes oder durchsichtig. Logos mit einfarbigem oder durchsichtigem Rand werden automatisch eingepasst.
+- **Eigene Umhänge: fertige Umhang-Streifen bis 1024×16384.** Fertige animierte Umhänge im Upload-Format (bis 1024×512 je Frame und 32 Frames) werden nicht mehr als „zu groß“ abgelehnt.
+- **Eigene Umhänge: Hilfe bei der Dateigröße.** Glatte HD-Bilder brauchen mehr Platz als Pixel-Art. Wäre ein animierter HD-Umhang größer als 20 MB, sagt dir der Schritt „Hochladen“ das und schlägt weniger Frames oder eine etwas kleinere Auflösung vor.
+- **Größere, glatte Umhang-Vorschauen.** Beim Erstellen zeigt die 3D-Vorschau den Umhang jetzt groß von hinten statt einer winzigen Figur, und große HD-Umhänge sehen in den Umhang-Listen und 3D-Vorschauen des Launchers glatt statt körnig aus.
+- **TRS Client: glatte HD-Umhänge.** Echte HD-Umhänge (Fotos, Logos, gemalte Bilder) werden jetzt weich mit Mipmaps gezeichnet und flimmern aus der Entfernung nicht mehr. Pixel-Art-Umhänge bleiben scharf.
+
 ## 0.24.0 – 2026-10-18 – Haunted Halls | Spukende Hallen
 <!-- banner: accent=#8b5cf6 motif=/news/0.24.0/banner.png -->
 <!-- shots:

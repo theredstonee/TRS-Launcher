@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // Vorderseite eines Umhangs als kleines Bild. TRS-Umhänge können animiert
 // sein (senkrechter Streifen, Frame = floor(jetzt / frameTimeMs) % frames)
-// und in höherer Auflösung (scale 1–8) vorliegen.
+// und in höherer Auflösung (scale 1–16) vorliegen. Große HD-Umhänge werden im
+// kleinen Bild gemittelt verkleinert (kein Pixel-Flimmern), kleine bleiben scharf.
 const props = withDefaults(
   defineProps<{
     texture: string | null
@@ -10,8 +11,10 @@ const props = withDefaults(
     frameTimeMs?: number | null
     /** Breite in CSS-Pixeln (Höhe ergibt sich aus 10:16). */
     width?: number
+    /** Auch beim Vergrößern glatt (HD-Umhänge); sonst scharfe Pixel. Verkleinert wird immer gemittelt. */
+    smooth?: boolean
   }>(),
-  { scale: 1, frames: 1, frameTimeMs: null, width: 30 },
+  { scale: 1, frames: 1, frameTimeMs: null, width: 30, smooth: false },
 )
 
 const canvas = ref<HTMLCanvasElement | null>(null)
@@ -20,6 +23,8 @@ let timer: ReturnType<typeof setInterval> | null = null
 let shown = -1
 
 const height = computed(() => Math.round((props.width * 16) / 10))
+/** Wird die Außenseite verkleinert gezeigt (HD-Umhang im kleinen Bild)? Dann gemittelt statt Pixel auszulassen. */
+const shrinking = ref(false)
 
 function draw() {
   const el = canvas.value
@@ -29,14 +34,20 @@ function draw() {
   shown = f
   const s = props.scale
   const frameHeight = 32 * s
-  el.width = 10 * s
-  el.height = 16 * s
+  // Ziel in Gerätepixeln: größer als die Quelle → Quelle 1:1 (CSS vergrößert), sonst glatt verkleinern.
+  const target = Math.round(props.width * (window.devicePixelRatio || 1))
+  shrinking.value = 10 * s > target
+  const w = shrinking.value ? target : 10 * s
+  const h = shrinking.value ? Math.round((target * 16) / 10) : 16 * s
+  el.width = w
+  el.height = h
   const ctx = el.getContext('2d')
   if (!ctx) return
-  ctx.imageSmoothingEnabled = false
+  ctx.imageSmoothingEnabled = shrinking.value
+  ctx.imageSmoothingQuality = 'high'
   ctx.clearRect(0, 0, el.width, el.height)
   // Außenseite (von hinten gesehen): (1, 1, 10, 16) im 64×32-Raster.
-  ctx.drawImage(image, s, f * frameHeight + s, 10 * s, 16 * s, 0, 0, 10 * s, 16 * s)
+  ctx.drawImage(image, s, f * frameHeight + s, 10 * s, 16 * s, 0, 0, w, h)
 }
 
 function stop() {
@@ -64,14 +75,15 @@ function load() {
 
 onMounted(load)
 onBeforeUnmount(stop)
-watch(() => [props.texture, props.scale, props.frames, props.frameTimeMs], load)
+watch(() => [props.texture, props.scale, props.frames, props.frameTimeMs, props.width], load)
 </script>
 
 <template>
   <canvas
     v-if="texture"
     ref="canvas"
-    class="rounded [image-rendering:pixelated]"
+    class="rounded"
+    :class="{ '[image-rendering:pixelated]': !smooth && !shrinking }"
     :style="{ width: `${width}px`, height: `${height}px` }"
     aria-hidden="true"
   />

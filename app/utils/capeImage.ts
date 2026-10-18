@@ -155,6 +155,62 @@ export function sheetCell(src: Rgba, cols: number, rows: number, index: number):
   return out
 }
 
+/**
+ * Sieht ein Bild im Format 64:32 bzw. 22:17 wirklich wie eine Umhang-Textur aus – oder
+ * nur zufällig so (z. B. ein quadratisches Logo = „zwei 2:1-Frames“)? Eine Umhang-Textur
+ * lässt den Bereich neben Umhang und Elytra frei (durchsichtig oder einfarbig): rechts ab
+ * x = 46 und unten unter Umhang (y ≥ 17) und Elytra (y ≥ 22). 22:17 („nur Umhang“) hat
+ * keine freien Flächen – dort zählt nur, dass der Faktor ganzzahlig und ≤ 16 ist.
+ */
+export function plausibleTexture(img: Rgba, layout: Pick<TextureLayout, 'kind' | 'scale'>): boolean {
+  if (layout.kind === 'cape-only') return Number.isInteger(layout.scale) && layout.scale <= CAPE_MAX_SCALE
+  const k = img.width / 64
+  const free: Crop[] = [
+    { x: 46 * k, y: 0, w: 18 * k, h: 32 * k },
+    { x: 0, y: 17 * k, w: 22 * k, h: 15 * k },
+    { x: 22 * k, y: 22 * k, w: 24 * k, h: 10 * k },
+  ]
+  const d = img.data
+  let total = 0
+  let clear = 0
+  const counts = new Map<number, number>()
+  for (const r of free) {
+    const step = Math.max(1, Math.floor(Math.min(r.w, r.h) / 24))
+    for (let y = Math.floor(r.y); y < Math.min(img.height, r.y + r.h); y += step) {
+      for (let x = Math.floor(r.x); x < Math.min(img.width, r.x + r.w); x += step) {
+        const i = (y * img.width + x) * 4
+        total++
+        if (d[i + 3]! < 16) {
+          clear++
+          continue
+        }
+        // Grob quantisiert: leichtes Rauschen (JPEG) zählt als dieselbe Farbe.
+        const key = ((d[i]! >> 4) << 8) | ((d[i + 1]! >> 4) << 4) | (d[i + 2]! >> 4)
+        counts.set(key, (counts.get(key) ?? 0) + 1)
+      }
+    }
+  }
+  if (!total) return false
+  const top = Math.max(0, ...counts.values())
+  // Frei = fast ganz durchsichtig ODER fast ganz eine Farbe (eine Mischung wäre z. B. ein flaches Logo).
+  return clear / total >= 0.9 || top / total >= 0.9
+}
+
+/**
+ * Wie {@link guessSheet}, aber mit Blick ins Bild: Ein Raster aus Umhang-Texturen gilt nur,
+ * wenn die erste Zelle wie eine aussieht ({@link plausibleTexture}) – sonst bleibt es ein
+ * Bild (ein quadratisches Logo wird nicht in zwei „Frames“ zerschnitten). Mit `frames`
+ * (TRS-Studio-JSON) wird dem Raster vertraut.
+ */
+export function guessSheetFor(img: Rgba, frames?: number): SheetGrid {
+  const grid = guessSheet(img.width, img.height, frames)
+  if (frames !== undefined || grid.count < 2) return grid
+  const cell = sheetCell(img, grid.cols, grid.rows, 0)
+  const layout = detectTexture(cell.width, cell.height, 1)
+  if (layout && !plausibleTexture(cell, layout)) return { cols: 1, rows: 1, count: 1 }
+  return grid
+}
+
 /** Sprite-Sheet in Frames zerlegen (Spalten/Zeilen 1–64, höchstens `count` Zellen, Rest fällt weg). */
 export function splitSheet(src: Rgba, grid: SheetGrid): Rgba[] {
   const cols = Math.max(1, Math.min(64, Math.floor(grid.cols)))
@@ -166,15 +222,19 @@ export function splitSheet(src: Rgba, grid: SheetGrid): Rgba[] {
 }
 
 /**
- * Ausschnitt skalieren. Verkleinern mittelt die Fläche (mit Alpha gewichtet,
- * damit durchsichtige Pixel keine Farbe abgeben), Vergrößern bleibt pixelig.
+ * Ausschnitt skalieren (Pixel-Art). Verkleinern mittelt die Fläche (mit Alpha
+ * gewichtet, damit durchsichtige Pixel keine Farbe abgeben), Vergrößern bleibt
+ * pixelig. `outside`: was jenseits des Bildrands liegt – Randpixel (`clamp`) oder
+ * durchsichtig (`transparent`, für „Einpassen“).
  */
-export function resample(src: Rgba, crop: Crop, dw: number, dh: number): Rgba {
+export function resample(src: Rgba, crop: Crop, dw: number, dh: number, outside: 'clamp' | 'transparent' = 'clamp'): Rgba {
   const out = rgba(dw, dh)
   const rx = crop.w / dw
   const ry = crop.h / dh
   const nearest = rx <= 1 && ry <= 1
+  const clear = outside === 'transparent'
   const px = (x: number, y: number) => {
+    if (clear && (x < 0 || y < 0 || x >= src.width || y >= src.height)) return -1
     const cx = Math.min(src.width - 1, Math.max(0, x))
     const cy = Math.min(src.height - 1, Math.max(0, y))
     return (cy * src.width + cx) * 4
@@ -184,6 +244,7 @@ export function resample(src: Rgba, crop: Crop, dw: number, dh: number): Rgba {
       const o = (dy * dw + dx) * 4
       if (nearest) {
         const i = px(Math.floor(crop.x + (dx + 0.5) * rx), Math.floor(crop.y + (dy + 0.5) * ry))
+        if (i < 0) continue
         out.data[o] = src.data[i]!
         out.data[o + 1] = src.data[i + 1]!
         out.data[o + 2] = src.data[i + 2]!
@@ -207,12 +268,13 @@ export function resample(src: Rgba, crop: Crop, dw: number, dh: number): Rgba {
           if (wx <= 0) continue
           const w = wx * wy
           const i = px(x, y)
+          area += w
+          if (i < 0) continue
           const alpha = src.data[i + 3]! * w
           r += src.data[i]! * alpha
           g += src.data[i + 1]! * alpha
           b += src.data[i + 2]! * alpha
           a += alpha
-          area += w
         }
       }
       if (a > 0) {
@@ -289,21 +351,36 @@ export function textureFromTexture(frame: Rgba, kind: TextureLayout['kind'], s: 
 }
 
 /**
- * Größter Ausschnitt mit Seitenverhältnis `aspect` bei Zoom 1; `zoom` > 1
- * verkleinert ihn. Die Mitte (cx, cy) wird so verschoben, dass er im Bild bleibt.
+ * Wie das Bild in den Rahmen der Außenseite kommt: `cover` = füllen (Ränder werden
+ * abgeschnitten), `contain` = einpassen (ganzes Bild sichtbar, Rest ist Hintergrund).
  */
-export function cropFor(width: number, height: number, zoom: number, cx: number, cy: number, aspect = FACE_ASPECT): Crop {
+export type FitMode = 'cover' | 'contain'
+
+/**
+ * Ausschnitt mit Seitenverhältnis `aspect`. Zoom 1 = `cover`: größter Ausschnitt
+ * im Bild, `contain`: kleinster Rahmen um das ganze Bild (ragt über das Bild hinaus).
+ * `zoom` > 1 verkleinert ihn. Die Mitte (cx, cy) wird so verschoben, dass der
+ * Ausschnitt im Bild bleibt bzw. – wo er größer ist – das Bild im Ausschnitt.
+ */
+export function cropFor(width: number, height: number, zoom: number, cx: number, cy: number, aspect = FACE_ASPECT, fit: FitMode = 'cover'): Crop {
   const z = Math.max(1, zoom)
-  let w = width
-  let h = width / aspect
-  if (h > height) {
-    h = height
-    w = height * aspect
+  let w: number
+  let h: number
+  if (fit === 'contain') {
+    w = Math.max(width, height * aspect)
+    h = w / aspect
+  } else {
+    w = width
+    h = width / aspect
+    if (h > height) {
+      h = height
+      w = height * aspect
+    }
   }
   w /= z
   h /= z
-  const x = Math.min(Math.max(cx - w / 2, 0), width - w)
-  const y = Math.min(Math.max(cy - h / 2, 0), height - h)
+  const x = Math.min(Math.max(cx - w / 2, Math.min(0, width - w)), Math.max(0, width - w))
+  const y = Math.min(Math.max(cy - h / 2, Math.min(0, height - h)), Math.max(0, height - h))
   return { x, y, w, h }
 }
 

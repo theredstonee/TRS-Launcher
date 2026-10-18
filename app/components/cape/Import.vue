@@ -8,9 +8,9 @@ import {
   clampFrameTime,
   cropFor,
   detectTexture,
-  guessSheet,
+  guessSheetFor,
   naturalCompare,
-  resample,
+  plausibleTexture,
   sampleFrames,
   splitSheet,
   textureFromFace,
@@ -20,11 +20,26 @@ import {
   type SheetGrid,
 } from '~/utils/capeImage'
 import { holdsFromDelays, newFrame, type CapeImportResult } from '~/utils/capeEditor'
+import {
+  HD_SCALE,
+  colorHex,
+  hexColor,
+  renderFace,
+  shrinkSource,
+  suggestFit,
+  suggestStyle,
+  textureFromTextureHd,
+  type Backdrop,
+  type CapeStyle,
+} from '~/utils/capeHd'
+import type { FitMode } from '~/utils/capeImage'
 
 // Schritt 1 der Umhang-Werkstatt: Quelle wählen (Bilder, GIF/APNG, Sprite-Sheet,
 // TRS-Studio-Export oder ein Video-Ausschnitt), Reihenfolge und Ausschnitt festlegen.
-// Heraus kommen Frames als Umhang-Texturen im Bearbeitungs-Faktor („Detail“) –
-// hochskaliert wird erst beim Hochladen.
+// Stil „Pixel-Art“: Frames im Bearbeitungs-Faktor („Detail“), hochskaliert wird erst
+// beim Hochladen. Stil „HD – wie Bild“: gleich in 1024×512 je Frame, glatt skaliert
+// (Lanczos), volle Farben – die Vorschau ist dann ebenfalls glatt. Ausschnitt:
+// „Füllen“ (Ränder abschneiden) oder „Einpassen“ (ganzes Bild, Rest Hintergrund).
 const emit = defineEmits<{ done: [result: CapeImportResult] }>()
 
 const toasts = useToasts()
@@ -63,6 +78,17 @@ const zoom = ref(1)
 const center = reactive({ x: 0, y: 0 })
 /** Bearbeitungs-Faktor (64·k × 32·k); `null` = automatisch aus der Quelle. */
 const detailChoice = ref<number | null>(null)
+/** Stil; `null` = automatisch (Vorschlag aus der Quelle). */
+const styleChoice = ref<CapeStyle | null>(null)
+/** Ausschnitt: füllen (abschneiden) oder einpassen (ganzes Bild, Hintergrund drumherum). */
+const fit = ref<FitMode>('cover')
+const backdropKind = ref<'color' | 'blur' | 'transparent'>('blur')
+const backdropColor = ref('#202127')
+const backdrop = computed<Backdrop>(() =>
+  backdropKind.value === 'blur'
+    ? { kind: 'blur' }
+    : { kind: 'color', color: backdropKind.value === 'transparent' ? [0, 0, 0, 0] : hexColor(backdropColor.value) },
+)
 
 /** Alle Frames der Quelle (nach dem Zerlegen), noch nicht ausgedünnt. */
 const allFrames = computed<Rgba[]>(() => {
@@ -78,15 +104,28 @@ const frames = computed(() => picked.value.map((i) => allFrames.value[i]!))
 const first = computed(() => frames.value[0] ?? null)
 /** Ist ein Frame schon eine Umhang-Textur (64:32 oder 22:17)? */
 const textureLayout = computed(() => (first.value ? detectTexture(first.value.width, first.value.height, 1) : null))
-const crop = computed<Crop | null>(() => (first.value ? cropFor(first.value.width, first.value.height, zoom.value, center.x, center.y) : null))
+const crop = computed<Crop | null>(() =>
+  first.value ? cropFor(first.value.width, first.value.height, zoom.value, center.x, center.y, undefined, fit.value) : null,
+)
 const useTexture = computed(() => mode.value === 'texture' && !!textureLayout.value)
 
-/** Automatischer Faktor: Textur → ihr Faktor, Ausschnitt → so fein wie die Quelle (höchstens 16). */
+/** Stil-Vorschlag: hochskalierte Blöcke, kleine Quellen oder wenige harte Farben → Pixel-Art, sonst HD. */
+const autoStyle = computed<CapeStyle>(() => {
+  const f = first.value
+  if (!f) return 'pixel'
+  const faceHeight = useTexture.value ? 16 * textureLayout.value!.scale : cropFor(f.width, f.height, 1, 0, 0).h
+  return suggestStyle(f, faceHeight)
+})
+const style = computed<CapeStyle>(() => styleChoice.value ?? autoStyle.value)
+const hd = computed(() => style.value === 'hd')
+
+/** Automatischer Faktor: HD → 16, Textur → ihr Faktor, Ausschnitt → so fein wie die Quelle (höchstens 16). */
 const autoDetail = computed(() => {
+  if (hd.value) return HD_SCALE
   if (useTexture.value) return clampScale(textureLayout.value!.scale)
   return clampScale((crop.value?.h ?? 16) / 16)
 })
-const detail = computed(() => detailChoice.value ?? autoDetail.value)
+const detail = computed(() => (hd.value ? HD_SCALE : (detailChoice.value ?? autoDetail.value)))
 
 function clampScale(v: number): number {
   return Math.max(1, Math.min(CAPE_MAX_SCALE, Math.round(v)))
@@ -187,10 +226,26 @@ async function use(sources: TrsCapeSource[]) {
   loaded.value = next
   order.value = next.images.map((_, i) => i)
   detailChoice.value = null
+  styleChoice.value = null
   const single = next.kind === 'single' ? next.images[0]! : null
-  Object.assign(grid, single ? guessSheet(single.width, single.height, next.studioFrames ?? undefined) : { cols: 1, rows: 1, count: 1 })
+  // Raster nur, wenn die Zellen wirklich Umhang-Texturen sind (kein quadratisches Logo in zwei „Frames“).
+  Object.assign(grid, single ? guessSheetFor(single, next.studioFrames ?? undefined) : { cols: 1, rows: 1, count: 1 })
   await nextTick()
-  mode.value = textureLayout.value ? 'texture' : 'crop'
+  const layout = textureLayout.value
+  mode.value = layout && (next.studioFrames !== null || plausibleTexture(first.value!, layout)) ? 'texture' : 'crop'
+  // Logos/Sticker (durchsichtiger oder einfarbiger Rand) einpassen statt abschneiden.
+  const suggested = first.value ? suggestFit(first.value) : null
+  fit.value = suggested?.fit ?? 'cover'
+  if (suggested?.backdrop.kind === 'color') {
+    backdropKind.value = 'color'
+    backdropColor.value = colorHex(suggested.backdrop.color)
+  } else backdropKind.value = 'blur'
+  resetCrop()
+}
+
+function setFit(next: FitMode) {
+  if (fit.value === next) return
+  fit.value = next
   resetCrop()
 }
 
@@ -224,11 +279,17 @@ function reverseOrder() {
 
 // --- Vorschau (klein, schnell) ------------------------------------------------------
 
-/** Ein Frame als Umhang-Textur mit Faktor `s`. */
-function textureOf(frame: Rgba, s: number): Rgba {
-  if (useTexture.value) return textureFromTexture(frame, textureLayout.value!.kind, s)
-  const c = crop.value ?? { x: 0, y: 0, w: frame.width, h: frame.height }
-  return textureFromFace(resample(frame, c, 10 * s, 16 * s), s)
+/**
+ * Ein Frame als Umhang-Textur mit Faktor `s` – im gewählten Stil. `factor` < 1: die
+ * Quelle ist für die Vorschau schon verkleinert (Ausschnitt entsprechend umrechnen).
+ */
+function textureOf(frame: Rgba, s: number, factor = 1): Rgba {
+  if (useTexture.value) {
+    return hd.value ? textureFromTextureHd(frame, textureLayout.value!.kind, s) : textureFromTexture(frame, textureLayout.value!.kind, s)
+  }
+  const c = crop.value ?? { x: 0, y: 0, w: frame.width / factor, h: frame.height / factor }
+  const scaled = { x: c.x * factor, y: c.y * factor, w: c.w * factor, h: c.h * factor }
+  return textureFromFace(renderFace(frame, scaled, s, { style: style.value, fit: fit.value, backdrop: backdrop.value }), s)
 }
 
 function toCanvas(img: Rgba): HTMLCanvasElement {
@@ -246,22 +307,60 @@ const timing = computed(() => {
   return { frameTime: clampFrameTime((FRAME_TIME_DEFAULT * Math.max(totalFrames.value, 1)) / Math.max(n, 1)), holds: frames.value.map(() => 1) }
 })
 
+/**
+ * HD-Vorschau: Quelle einmal glatt verkleinert (lange Kante höchstens 1024 bzw. 512
+ * bei vielen Frames) – an der Spielfigur sieht das genauso aus wie das Ergebnis,
+ * rechnet aber ein Vielfaches schneller, während man den Ausschnitt verschiebt.
+ */
+const previewSources = computed(() => {
+  if (!hd.value || useTexture.value) return null
+  const maxSide = frames.value.length > 4 ? 512 : 1024
+  return frames.value.map((f) => shrinkSource(f, maxSide))
+})
+
 const previewCanvases = shallowRef<HTMLCanvasElement[]>([])
 let timer: ReturnType<typeof setTimeout> | null = null
-function refreshPreview() {
-  const s = Math.min(detail.value, 4)
-  const textures = frames.value.map((f) => toCanvas(textureOf(f, s)))
+let previewToken = 0
+/** Vorschau Frame für Frame (mit Pausen, damit Ziehen flüssig bleibt); neuere Änderungen brechen ab. */
+async function refreshPreview() {
+  const mine = ++previewToken
+  // HD in voller Auflösung (die Vorschau zeigt den Umhang groß von hinten); Pixel-Art im eigenen
+  // Faktor (bis 8), damit die Vorschau keine gröberen Pixel zeigt als später hochgeladen.
+  const s = hd.value ? HD_SCALE : Math.min(detail.value, 8)
+  const list = frames.value
+  const sources = previewSources.value
+  const textures: HTMLCanvasElement[] = []
+  for (let i = 0; i < list.length; i++) {
+    if (i > 0) await new Promise((resolve) => setTimeout(resolve, 0))
+    if (mine !== previewToken) return
+    const src = sources?.[i]
+    textures.push(toCanvas(src ? textureOf(src.image, s, src.factor) : textureOf(list[i]!, s)))
+  }
+  if (mine !== previewToken) return
   previewCanvases.value = textures.flatMap((c, i) => Array.from({ length: timing.value.holds[i] ?? 1 }, () => c))
 }
-watch([frames, mode, detail, () => crop.value?.x, () => crop.value?.y, () => crop.value?.w], () => {
-  if (timer) clearTimeout(timer)
-  timer = setTimeout(refreshPreview, 120)
-})
+watch(
+  [frames, mode, detail, style, fit, backdrop, () => crop.value?.x, () => crop.value?.y, () => crop.value?.w],
+  () => {
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(() => void refreshPreview(), 120)
+  },
+)
 
 // --- Ausschnitt (Leinwand mit Rahmen) -------------------------------------------------
 
 const viewport = ref<HTMLCanvasElement | null>(null)
 const frameCanvases = computed(() => frames.value.map(toCanvas))
+/** Unscharfer Hintergrund fürs Einpassen (klein je Frame – die Leinwand streckt ihn weich). */
+const backdropCanvases = computed(() => {
+  if (fit.value !== 'contain' || backdropKind.value !== 'blur') return null
+  return frames.value.map((f) => {
+    const small = shrinkSource(f, 256).image
+    // Ausschnitt neben dem Bild → nur der Hintergrund bleibt übrig.
+    const empty = { x: -small.width - 1, y: 0, w: 1, h: 1 }
+    return toCanvas(renderFace(small, empty, 8, { style: 'hd', fit: 'contain', backdrop: { kind: 'blur' } }))
+  })
+})
 
 /** Rahmen der Außenseite (10:16) in der Leinwand. */
 function windowRect(el: HTMLCanvasElement) {
@@ -287,7 +386,20 @@ function draw() {
   const win = windowRect(el)
   const k = win.h / c.h
   ctx.clearRect(0, 0, el.width, el.height)
-  ctx.imageSmoothingEnabled = k < 1
+  // Einpassen: Hintergrund im Rahmen, darüber das ganze Bild.
+  if (fit.value === 'contain' && backdropKind.value !== 'transparent') {
+    const back = backdropCanvases.value?.[f] ?? backdropCanvases.value?.[0]
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
+    if (back) ctx.drawImage(back, win.x, win.y, win.w, win.h)
+    else if (backdropKind.value === 'color') {
+      ctx.fillStyle = backdropColor.value
+      ctx.fillRect(win.x, win.y, win.w, win.h)
+    }
+  }
+  // HD: immer glatt (so wird es auch gerechnet); Pixel-Art: vergrößert scharf, verkleinert gemittelt.
+  ctx.imageSmoothingEnabled = hd.value || k < 1
+  ctx.imageSmoothingQuality = 'high'
   if (src) ctx.drawImage(src, win.x - c.x * k, win.y - c.y * k, src.width * k, src.height * k)
   ctx.fillStyle = 'rgba(8, 8, 12, 0.62)'
   ctx.beginPath()
@@ -519,7 +631,7 @@ async function finish() {
       preparing.value = { done: i + 1, total: list.length }
     }
     emit('done', {
-      doc: { scale: s, frames: out },
+      doc: { scale: s, frames: out, style: style.value },
       frameTime: timing.value.frameTime,
       name: cleanName(l.label.replace(/ …$/, '')),
       sourceFrames: totalFrames.value,
@@ -658,7 +770,7 @@ defineExpose({ finish, ready })
             @dragover.prevent
             @drop.prevent="dropAt(pos)"
           >
-            <img :src="loaded.urls[src]" alt="" class="h-12 w-auto max-w-16 object-contain [image-rendering:pixelated]" draggable="false" />
+            <img :src="loaded.urls[src]" alt="" class="h-12 w-auto max-w-16 object-contain" :class="{ '[image-rendering:pixelated]': !hd }" draggable="false" />
             <span class="absolute top-0.5 left-1 text-[10px] font-semibold text-white drop-shadow">{{ pos + 1 }}</span>
             <span class="absolute inset-x-0 bottom-0 hidden justify-between px-0.5 group-hover:flex group-focus-within:flex">
               <button class="rounded bg-black/60 px-1 text-[10px] text-white" :aria-label="t('capes.studio.order.earlier')" @click="nudge(pos, -1)">‹</button>
@@ -667,6 +779,30 @@ defineExpose({ finish, ready })
           </li>
         </ol>
         <p class="text-[11px] text-base-600">{{ t('capes.studio.order.hint') }}</p>
+      </div>
+
+      <!-- Stil: Pixel-Art oder HD (automatisch vorgeschlagen, umschaltbar) -->
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between gap-2">
+          <span class="label mb-0">{{ t('capes.studio.style.label') }}</span>
+          <span v-if="styleChoice === null" class="text-[11px] text-base-500">{{ t('capes.studio.style.auto') }}</span>
+          <button v-else class="btn btn-ghost px-2 py-0.5 text-[11px]" @click="styleChoice = null">{{ t('capes.studio.style.useAuto') }}</button>
+        </div>
+        <div class="flex gap-1 rounded-lg bg-base-900 p-1 text-xs" role="radiogroup" :aria-label="t('capes.studio.style.label')" data-testid="cape-style">
+          <button
+            v-for="st in (['pixel', 'hd'] as const)"
+            :key="st"
+            class="seg flex-1 rounded-md"
+            :class="{ 'seg-on': style === st }"
+            role="radio"
+            :aria-checked="style === st"
+            :data-testid="`cape-style-${st}`"
+            @click="styleChoice = st"
+          >
+            {{ t(`capes.studio.style.${st}`) }}
+          </button>
+        </div>
+        <p class="text-[11px] text-base-500">{{ hd ? t('capes.studio.style.hdHint') : t('capes.studio.style.pixelHint') }}</p>
       </div>
 
       <div v-if="textureLayout" class="flex gap-1 rounded-lg bg-base-900 p-1 text-xs" role="radiogroup" :aria-label="t('capes.editor.mode.label')">
@@ -714,6 +850,46 @@ defineExpose({ finish, ready })
           <button class="btn btn-ghost px-2 py-1 text-xs" @click="resetCrop">{{ t('capes.editor.crop.reset') }}</button>
         </div>
         <p class="mt-1 text-[11px] text-base-600">{{ t('capes.editor.crop.hint') }}</p>
+
+        <!-- Füllen (abschneiden) oder Einpassen (ganzes Bild + Hintergrund) -->
+        <div class="mt-3 grid gap-3 sm:grid-cols-2">
+          <div>
+            <span class="label">{{ t('capes.studio.fit.label') }}</span>
+            <div class="flex gap-1 rounded-lg bg-base-900 p-1 text-xs" role="radiogroup" :aria-label="t('capes.studio.fit.label')" data-testid="cape-fit">
+              <button
+                v-for="m in (['cover', 'contain'] as const)"
+                :key="m"
+                class="seg flex-1 rounded-md"
+                :class="{ 'seg-on': fit === m }"
+                role="radio"
+                :aria-checked="fit === m"
+                :data-testid="`cape-fit-${m}`"
+                @click="setFit(m)"
+              >
+                {{ t(`capes.studio.fit.${m}`) }}
+              </button>
+            </div>
+            <span class="mt-1 block text-[11px] text-base-600">{{ fit === 'cover' ? t('capes.studio.fit.coverHint') : t('capes.studio.fit.containHint') }}</span>
+          </div>
+          <div v-if="fit === 'contain'">
+            <span class="label">{{ t('capes.studio.fit.backdrop') }}</span>
+            <div class="flex items-center gap-2">
+              <select v-model="backdropKind" class="field min-w-0 flex-1" data-testid="cape-backdrop">
+                <option value="color">{{ t('capes.studio.fit.backdropColor') }}</option>
+                <option value="blur">{{ t('capes.studio.fit.backdropBlur') }}</option>
+                <option value="transparent">{{ t('capes.studio.fit.backdropTransparent') }}</option>
+              </select>
+              <input
+                v-if="backdropKind === 'color'"
+                v-model="backdropColor"
+                type="color"
+                class="h-9 w-12 shrink-0 cursor-pointer rounded border border-base-700 bg-base-900"
+                :aria-label="t('capes.studio.fit.backdropColor')"
+              />
+            </div>
+            <span v-if="backdropKind === 'transparent'" class="mt-1 block text-[11px] text-lamp-300">{{ t('capes.studio.fit.transparentHint') }}</span>
+          </div>
+        </div>
       </div>
 
       <div class="grid gap-3 sm:grid-cols-2">
@@ -728,7 +904,12 @@ defineExpose({ finish, ready })
           </div>
           <span class="mt-1 block text-[11px] text-base-600">{{ t('capes.editor.sheet.hint') }}</span>
         </fieldset>
-        <label class="block">
+        <div v-if="hd" class="rounded-lg bg-base-900 p-3 text-[11px] text-base-400" data-testid="cape-hd-info">
+          <span class="label">{{ t('capes.studio.detail.label') }}</span>
+          <p class="text-sm font-semibold text-base-50 tabular-nums">1024×512</p>
+          <p class="mt-0.5">{{ t('capes.studio.style.hdDetail') }}</p>
+        </div>
+        <label v-else class="block">
           <span class="label">{{ t('capes.studio.detail.label') }}</span>
           <select :value="detailChoice ?? 0" class="field" @change="detailChoice = Number(($event.target as HTMLSelectElement).value) || null">
             <option :value="0">{{ t('capes.studio.detail.auto', { w: 64 * autoDetail, h: 32 * autoDetail }) }}</option>
@@ -746,7 +927,15 @@ defineExpose({ finish, ready })
     <!-- Vorschau -->
     <div class="space-y-3">
       <div class="rounded-lg bg-base-900">
-        <SkinViewer :skin="null" :cape-canvases="previewCanvases" :cape-frame-time="previewCanvases.length > 1 ? timing.frameTime : null" animation="walk" :height="250" />
+        <SkinViewer
+          :skin="null"
+          :cape-canvases="previewCanvases"
+          :cape-frame-time="previewCanvases.length > 1 ? timing.frameTime : null"
+          :cape-smooth="hd"
+          focus="cape"
+          animation="walk"
+          :height="250"
+        />
       </div>
       <p class="text-[11px] text-base-400">
         {{ t('capes.studio.importSummary', { n: frames.length, w: 64 * detail, h: 32 * detail }) }}

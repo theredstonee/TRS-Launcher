@@ -1,3 +1,4 @@
+import { rescaleTextureHd, type CapeStyle } from './capeHd'
 import { CAPE_MAX_BYTES, CAPE_MAX_SCALE, rgba, type Rgba } from './capeImage'
 import { upscaleTexture } from './capeUpscale'
 
@@ -13,6 +14,8 @@ export interface ExportOptions {
   /** Faktor im Upload. */
   scale: number
   smooth: boolean
+  /** `hd` = glatt skalieren (Lanczos, Teil für Teil) statt pixelgenau. */
+  style?: CapeStyle
   onProgress?: (done: number, total: number) => void
   /** `true` = abbrechen (neuere Einstellungen, Dialog zu). */
   stale?: () => boolean
@@ -51,7 +54,7 @@ export async function buildUploadStrip(frames: readonly Rgba[], options: ExportO
     if (!up) {
       await pause()
       if (options.stale?.()) throw new StaleExport()
-      up = upscaleTexture(frame, options.base, s, options.smooth)
+      up = options.style === 'hd' ? rescaleTextureHd(frame, options.base, s) : upscaleTexture(frame, options.base, s, options.smooth)
       cache.set(frame, up)
       options.onProgress?.(cache.size, distinct)
     }
@@ -106,18 +109,27 @@ export interface Reduction {
 }
 
 /**
- * Vorschläge, wenn das PNG zu groß ist: kleinerer Faktor (Größe wächst mit etwa
- * Faktor^1,5 – pixelgenaue Blöcke packen gut) oder weniger Frames (linear).
- * Geschätzt mit 5 % Sicherheitsabstand; nach der Wahl wird neu gerechnet.
+ * Vorschläge, wenn das PNG zu groß ist: kleinerer Faktor oder weniger Frames (linear).
+ * Pixel-Art wächst mit etwa Faktor^1,5 (gleiche Blöcke packen gut), glatte HD-Bilder
+ * mit der Pixelzahl (Faktor²). Geschätzt mit 5 % Sicherheitsabstand; nach der Wahl
+ * wird neu gerechnet.
  */
-export function suggestReductions(bytes: number, scale: number, frames: number, base: number, limit = CAPE_MAX_BYTES): Reduction[] {
+export function suggestReductions(
+  bytes: number,
+  scale: number,
+  frames: number,
+  base: number,
+  limit = CAPE_MAX_BYTES,
+  style: CapeStyle = 'pixel',
+): Reduction[] {
   if (bytes <= limit) return []
   const budget = limit * 0.95
+  const growth = style === 'hd' ? 2 : 1.5
   const out: Reduction[] = []
   for (let s = scale - 1; s >= 1; s--) {
-    // Pixelgenaue Faktoren zuerst (Vielfache des Bearbeitungsfaktors), sonst jeder kleinere.
-    if (s > base && s % base !== 0) continue
-    const estimate = Math.round(bytes * (s / scale) ** 1.5)
+    // Pixel-Art: pixelgenaue Faktoren zuerst (Vielfache des Bearbeitungsfaktors), sonst jeder kleinere.
+    if (style !== 'hd' && s > base && s % base !== 0) continue
+    const estimate = Math.round(bytes * (s / scale) ** growth)
     if (estimate <= budget) {
       out.push({ kind: 'scale', value: s, bytes: estimate })
       break

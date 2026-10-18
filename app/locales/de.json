@@ -732,7 +732,7 @@
     },
     "trsCapeImport": {
       "unsupported": "„{name}“ ist kein unterstütztes Bild (PNG, APNG, JPEG, WebP, GIF oder TRS-Studio-JSON).",
-      "imageTooLarge": "„{name}“ ist zu groß (höchstens 4096×4096 Pixel, animiert 2048×2048).",
+      "imageTooLarge": "„{name}“ ist zu groß. Bilder dürfen höchstens 4096×4096 Pixel haben, GIF/APNG höchstens 2048×2048; fertige Umhang-Streifen (bis 1024×512 je Frame, 32 Frames) bis 1024×16384.",
       "broken": "„{name}“ konnte nicht gelesen werden.",
       "tooManyFiles": "Bitte höchstens {max} Dateien auf einmal wählen.",
       "fileTooLarge": "„{name}“ ist zu groß (höchstens 20 MB je Datei).",
@@ -3693,6 +3693,28 @@
         "auto": "Automatisch ({w}×{h})",
         "hint": "In dieser Auflösung bearbeitest du; beim Hochladen wird automatisch hochskaliert."
       },
+      "style": {
+        "label": "Stil",
+        "auto": "automatisch gewählt",
+        "useAuto": "Automatisch",
+        "pixel": "Pixel-Art",
+        "hd": "HD – wie Bild",
+        "pixelHint": "Scharfe Pixel wie in Minecraft – ideal für gezeichnete Pixel-Art. Beim Hochladen wird pixelgenau vergrößert.",
+        "hdHint": "Volle Auflösung 1024×512, glatt skaliert und in allen Farben – ideal für Fotos, Logos und gemalte Bilder. Im Spiel wird er weich gezeigt.",
+        "hdDetail": "HD nutzt immer die volle Auflösung (Faktor 16)."
+      },
+      "fit": {
+        "label": "Bild im Rahmen",
+        "cover": "Füllen",
+        "contain": "Einpassen",
+        "coverHint": "Füllt die Rückseite – was nicht hineinpasst, wird abgeschnitten.",
+        "containHint": "Das ganze Bild bleibt sichtbar, der Rest bekommt einen Hintergrund.",
+        "backdrop": "Hintergrund",
+        "backdropColor": "Farbe",
+        "backdropBlur": "Bild unscharf",
+        "backdropTransparent": "Durchsichtig",
+        "transparentHint": "Durchsichtige Stellen erscheinen im Spiel schwarz."
+      },
       "importSummary": "Frames: {n} · bearbeitet in {w}×{h}",
       "preparing": "Frames werden vorbereitet … {done}/{total}",
       "video": {
@@ -3781,7 +3803,10 @@
         "useScale": "{w}×{h} (≈ {size})",
         "useFrames": "{n} Frames (≈ {size})",
         "final": "Genau so, wie er hochgeladen wird.",
-        "failed": "Der Umhang konnte nicht erstellt werden."
+        "failed": "Der Umhang konnte nicht erstellt werden.",
+        "hdScaleHint": "HD nutzt 1024×512. Kleiner wird glatt verkleinert – nur nötig, wenn die Datei zu groß wird.",
+        "hdHint": "Glatt skaliert, volle Farben und Transparenz – genau wie in der Vorschau.",
+        "hdTooLarge": "HD-Bilder lassen sich schlechter packen als Pixel-Art: Viele Frames in 1024×512 überschreiten schnell 20 MB. Weniger Frames oder eine etwas kleinere Auflösung helfen."
       }
     },
     "hatDialog": {

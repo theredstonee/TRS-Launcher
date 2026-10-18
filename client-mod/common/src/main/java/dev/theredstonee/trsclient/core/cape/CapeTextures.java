@@ -50,6 +50,14 @@ public final class CapeTextures<T> {
 		/** Lädt ein Bild hoch; {@code name} ist eindeutig und nur [a-z0-9_/.-]. */
 		T upload(String name, int width, int height, int[] argb);
 
+		/**
+		 * Wie {@link #upload(String, int, int, int[])}; {@code smooth} = echter HD-Umhang ({@link CapeFrames#smooth}):
+		 * weich filtern (linear + Mipmaps) statt scharfer Pixel. Ohne eigene Umsetzung wie bisher scharf.
+		 */
+		default T upload(String name, int width, int height, int[] argb, boolean smooth) {
+			return upload(name, width, height, argb);
+		}
+
 		void release(T texture);
 	}
 
@@ -176,7 +184,7 @@ public final class CapeTextures<T> {
 			pixelBudget -= frames.width * frames.height;
 			int i = slot.loading.size();
 			T tex = backend.upload(slot.name + "/" + slot.requestedDownscale + "/" + i, frames.width, frames.height,
-					frames.frames[i]);
+					frames.frames[i], frames.smooth);
 			if (tex == null) {
 				// Hochladen fehlgeschlagen: später erneut versuchen (ein schon angezeigter Umhang bleibt).
 				release(slot.loading);

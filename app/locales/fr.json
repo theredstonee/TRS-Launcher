@@ -704,7 +704,7 @@
     },
     "trsCapeImport": {
       "unsupported": "« {name} » n’est pas une image prise en charge (PNG, APNG, JPEG, WebP, GIF ou JSON TRS Studio).",
-      "imageTooLarge": "« {name} » est trop grand (4096×4096 pixels max., animé 2048×2048).",
+      "imageTooLarge": "« {name} » est trop grand. Les images peuvent faire au plus 4096×4096 pixels, les GIF/APNG 2048×2048 ; les bandes de cape finies (jusqu’à 1024×512 par image, 32 images) jusqu’à 1024×16384.",
       "broken": "Impossible de lire « {name} ».",
       "tooManyFiles": "Choisis au plus {max} fichiers à la fois.",
       "fileTooLarge": "« {name} » est trop volumineux (20 Mo max. par fichier).",
@@ -3644,6 +3644,28 @@
         "auto": "Automatique ({w}×{h})",
         "hint": "Tu modifies dans cette résolution ; elle est agrandie automatiquement lors de l’envoi."
       },
+      "style": {
+        "label": "Style",
+        "auto": "choisi automatiquement",
+        "useAuto": "Automatique",
+        "pixel": "Pixel art",
+        "hd": "HD – comme l’image",
+        "pixelHint": "Pixels nets comme dans Minecraft – idéal pour le pixel art dessiné. Agrandi pixel par pixel à l’envoi.",
+        "hdHint": "Pleine résolution 1024×512, mise à l’échelle douce et toutes les couleurs – idéal pour photos, logos et peintures. Affiché lissé en jeu.",
+        "hdDetail": "La HD utilise toujours la pleine résolution (facteur 16)."
+      },
+      "fit": {
+        "label": "Image dans le cadre",
+        "cover": "Remplir",
+        "contain": "Ajuster",
+        "coverHint": "Remplit le dos de la cape – ce qui dépasse est coupé.",
+        "containHint": "L’image entière reste visible, le reste reçoit un arrière-plan.",
+        "backdrop": "Arrière-plan",
+        "backdropColor": "Couleur",
+        "backdropBlur": "Image floutée",
+        "backdropTransparent": "Transparent",
+        "transparentHint": "Les zones transparentes apparaissent noires en jeu."
+      },
       "importSummary": "Images : {n} · édition en {w}×{h}",
       "preparing": "Préparation des images … {done}/{total}",
       "video": {
@@ -3732,7 +3754,10 @@
         "useScale": "{w}×{h} (≈ {size})",
         "useFrames": "{n} images (≈ {size})",
         "final": "Exactement comme elle sera envoyée.",
-        "failed": "La cape n’a pas pu être créée."
+        "failed": "La cape n’a pas pu être créée.",
+        "hdScaleHint": "La HD utilise 1024×512. Les tailles plus petites sont réduites en douceur – utile seulement si le fichier est trop lourd.",
+        "hdHint": "Mise à l’échelle douce, toutes les couleurs et la transparence – exactement comme l’aperçu.",
+        "hdTooLarge": "Les images HD se compressent moins bien que le pixel art : beaucoup d’images en 1024×512 dépassent vite 20 Mo. Moins d’images ou une résolution un peu plus petite aident."
       }
     },
     "hatDialog": {

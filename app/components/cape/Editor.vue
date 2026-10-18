@@ -42,7 +42,9 @@ const color = ref<string>(TRS_PALETTE[0])
 const recent = ref<string[]>([])
 const brush = ref(1)
 const mirror = ref<MirrorMode>('none')
-const grid = ref(true)
+/** HD („wie Bild“): Zeichenfläche und Vorschau glatt, Raster aus (es gibt keine großen Pixel). */
+const smooth = computed(() => doc.value.style === 'hd')
+const grid = ref(!smooth.value)
 const guides = ref(true)
 const onionOn = ref(true)
 const lightBackdrop = ref(false)
@@ -58,13 +60,17 @@ const width = computed(() => 64 * s.value)
 
 /** Größter Zoom: Leinwand höchstens 4096 px breit (Speicher), höchstens 24 px je Pixel. */
 const maxZoom = computed(() => Math.max(1, Math.min(24, Math.floor(4096 / width.value))))
+/** HD (1024 breit): auch verkleinert ansehen, damit der ganze Umhang ohne Scrollen passt. */
+const minZoom = computed(() => (smooth.value ? 0.25 : 1))
 function fitZoom() {
+  if (smooth.value && width.value > 720) return Math.max(minZoom.value, Math.floor((720 / width.value) * 4) / 4)
   return Math.max(1, Math.min(maxZoom.value, Math.floor(720 / width.value)))
 }
 const zoom = ref(fitZoom())
-watch(s, () => (zoom.value = fitZoom()))
+watch([s, smooth], () => (zoom.value = fitZoom()))
 function zoomBy(step: number) {
-  zoom.value = Math.max(1, Math.min(maxZoom.value, zoom.value + step))
+  const unit = zoom.value < 1 || (zoom.value === 1 && step < 0) ? 0.25 : 1
+  zoom.value = Math.max(minZoom.value, Math.min(maxZoom.value, zoom.value + step * unit))
 }
 
 // --- Verlauf ----------------------------------------------------------------------------
@@ -287,6 +293,7 @@ onBeforeUnmount(() => listen(false))
             :zoom="zoom"
             :grid="grid"
             :guides="guides"
+            :smooth="smooth"
             :readonly="playing"
             @commit="setImage"
             @pick="onPick"
@@ -295,7 +302,7 @@ onBeforeUnmount(() => listen(false))
         </div>
         <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-base-300">
           <span class="flex items-center gap-1">
-            <button type="button" class="btn-icon size-7" :aria-label="t('iconEditor.pixel.zoomOut')" :title="t('iconEditor.pixel.zoomOut')" :disabled="zoom <= 1" @click="zoomBy(-1)">−</button>
+            <button type="button" class="btn-icon size-7" :aria-label="t('iconEditor.pixel.zoomOut')" :title="t('iconEditor.pixel.zoomOut')" :disabled="zoom <= minZoom" @click="zoomBy(-1)">−</button>
             <span class="w-9 text-center tabular-nums">{{ zoom }}×</span>
             <button type="button" class="btn-icon size-7" :aria-label="t('iconEditor.pixel.zoomIn')" :title="t('iconEditor.pixel.zoomIn')" :disabled="zoom >= maxZoom" @click="zoomBy(1)">+</button>
           </span>
@@ -333,6 +340,8 @@ onBeforeUnmount(() => listen(false))
             :cape-canvases="previewCanvases"
             :cape-frame-time="playing ? frameTime : null"
             :cape-frame="playing ? 0 : firstTick"
+            :cape-smooth="smooth"
+            focus="cape"
             animation="walk"
             :height="230"
           />
@@ -383,6 +392,7 @@ onBeforeUnmount(() => listen(false))
       :current="current"
       :playing="playing"
       :scale="s"
+      :smooth="smooth"
       @select="select"
       @move="move"
       @duplicate="duplicate"

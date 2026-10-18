@@ -26,6 +26,11 @@ public final class CapeFrames {
 	public final int[][] frames;
 	/** Verkleinerung gegenüber der Datei (1 = volle Qualität, 2 = halbe Kantenlänge …). */
 	public final int downscale;
+	/**
+	 * Echter HD-Umhang (nicht aus einfarbigen k×k-Blöcken): wird weich gefiltert (linear + Mipmaps), Pixel-Art bleibt
+	 * scharf – siehe {@link CapeFilter}. Beim Dekodieren bestimmt, solange alle Pixel noch da sind.
+	 */
+	public final boolean smooth;
 
 	CapeFrames(int width, int height, int[][] frames) {
 		this(width, height, frames, 1);
@@ -36,6 +41,7 @@ public final class CapeFrames {
 		this.height = height;
 		this.frames = frames;
 		this.downscale = downscale;
+		this.smooth = CapeFilter.looksSmooth(width, height, frames);
 	}
 
 	/**
@@ -98,9 +104,10 @@ public final class CapeFrames {
 		return k;
 	}
 
-	/** Speicher (Bytes, RGBA) aller Bilder dieses Umhangs – so viel belegt er auch als Textur. */
+	/** Speicher (Bytes, RGBA) aller Bilder dieses Umhangs – so viel belegt er auch als Textur (weich: samt Mipmaps). */
 	public long bytes() {
-		return (long) width * height * 4 * frames.length;
+		long perFrame = (long) width * height * 4 + (smooth ? CapeFilter.mipBytes(width, height) : 0);
+		return perFrame * frames.length;
 	}
 
 	/** Geschätzter Speicher eines Umhangs laut API (Faktor, Bilder) bei Verkleinerung {@code downscale}. */
