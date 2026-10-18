@@ -346,6 +346,11 @@ public final class AutoTest {
 					step = 39;
 					break;
 				}
+				// -PtrsAutotestOnly=gammarefill: Gamma (dunkel/300 %/1000 %, Hinweis) und Automatisch nachlegen (Block, Werkzeug)
+				if ("gammarefill".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 43;
+					break;
+				}
 				// -PtrsAutotestOnly=duck: nur die Quietscheente (braucht -PtrsApi mit Enten-Attrappe)
 				if ("duck".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 29;
@@ -794,6 +799,22 @@ public final class AutoTest {
 				wait = 5;
 				break;
 			}
+			case 43:
+				// Gamma + Automatisch nachlegen: Screenshots trsclient-<mc>-gamma-*.png / -refill-*.png
+				if (gammaRefillTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				step = 24;
+				wait = 5;
+				break;
 			case 33:
 				// Suche in der Tastenbelegung: Screenshots trsclient-<mc>-keysearch-*.png
 				if (keySearchTest.step(mc, new CapeTest.Actions() {
@@ -839,6 +860,7 @@ public final class AutoTest {
 	private final CircuitTest circuitTest = new CircuitTest();
 	private final ScreenshotTest screenshotTest = new ScreenshotTest();
 	private final NotesTest notesTest = new NotesTest();
+	private final GammaRefillTest gammaRefillTest = new GammaRefillTest();
 
 	/** Legt für den Test zwei Server in servers.dat an, falls die Liste leer ist (Schnellbeitritt-Leiste). */
 	private static void seedServers(Minecraft mc) {
