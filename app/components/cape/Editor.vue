@@ -341,6 +341,7 @@ onBeforeUnmount(() => listen(false))
             :cape-frame-time="playing ? frameTime : null"
             :cape-frame="playing ? 0 : firstTick"
             :cape-smooth="smooth"
+            focus="cape"
             animation="walk"
             :height="230"
           />

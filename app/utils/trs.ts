@@ -243,7 +243,8 @@ export const trsAdminCapeSchema = trsCapeSchema.extend({
 // Gewählte Dateien für den Umhang-Dialog (vom Kern geprüft; Bilder als Data-URL).
 const imageDataUrl = z.string().regex(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/)
 const sourceName = text(64)
-const sourceSide = z.number().int().min(1).max(8192)
+/** Bis 8192 für Bilder; fertige Umhang-Streifen (1024 × 512·32) sind bis 16384 hoch – wie der Kern. */
+const sourceSide = z.number().int().min(1).max(16384)
 export const trsCapeSourceSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('image'), name: sourceName, dataUrl: imageDataUrl, width: sourceSide, height: sourceSide }),
   z.object({

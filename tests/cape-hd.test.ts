@@ -30,6 +30,7 @@ import {
   type Rgba,
 } from '../app/utils/capeImage'
 import { composite, smoothResample } from '../app/utils/capeResample'
+import { trsCapeSourceSchema } from '../app/utils/trs'
 import { nearestScale } from '../app/utils/capeUpscale'
 
 function filled(width: number, height: number, color: readonly number[]): Rgba {
@@ -337,6 +338,10 @@ describe('fertige Umhang-Streifen', () => {
     expect(detectTexture(1024, 512 * 32)?.frames).toBe(32)
     expect(detectTexture(352, 272 * 32)).toEqual({ kind: 'cape-only', frames: 32, frameHeight: 272, scale: 16 })
     expect(guessSheet(1024, 512 * 24)).toEqual({ cols: 1, rows: 24, count: 24 })
+    // Der Kern liefert solche Streifen ans Webview – die Prüfung dort lässt sie durch.
+    const strip16k = { kind: 'image', name: 'Streifen', dataUrl: 'data:image/png;base64,AAAA', width: 1024, height: 16384 }
+    expect(trsCapeSourceSchema.safeParse(strip16k).success).toBe(true)
+    expect(trsCapeSourceSchema.safeParse({ ...strip16k, height: 16385 }).success).toBe(false)
     const strip = rgba(64 * 2, 32 * 2 * 3)
     const frames = splitSheet(strip, guessSheet(strip.width, strip.height))
     expect(frames).toHaveLength(3)

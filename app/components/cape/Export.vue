@@ -289,6 +289,7 @@ defineExpose({ upload, canUpload, uploading, uploadFan, canUploadFan, fanMode })
           :cape-frames="result?.frames ?? 1"
           :cape-frame-time="animated ? frameTime : null"
           :cape-smooth="hd"
+          focus="cape"
           animation="walk"
           :height="260"
         />

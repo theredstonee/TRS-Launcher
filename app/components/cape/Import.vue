@@ -324,9 +324,9 @@ let previewToken = 0
 /** Vorschau Frame für Frame (mit Pausen, damit Ziehen flüssig bleibt); neuere Änderungen brechen ab. */
 async function refreshPreview() {
   const mine = ++previewToken
-  // Faktor 8 (512×256) – an der kleinen Figur nicht vom Ergebnis zu unterscheiden. Pixel-Art im
-  // eigenen Faktor (bis 8), damit die Vorschau keine gröberen Pixel zeigt als später hochgeladen.
-  const s = hd.value ? 8 : Math.min(detail.value, 8)
+  // HD in voller Auflösung (die Vorschau zeigt den Umhang groß von hinten); Pixel-Art im eigenen
+  // Faktor (bis 8), damit die Vorschau keine gröberen Pixel zeigt als später hochgeladen.
+  const s = hd.value ? HD_SCALE : Math.min(detail.value, 8)
   const list = frames.value
   const sources = previewSources.value
   const textures: HTMLCanvasElement[] = []
@@ -932,6 +932,7 @@ defineExpose({ finish, ready })
           :cape-canvases="previewCanvases"
           :cape-frame-time="previewCanvases.length > 1 ? timing.frameTime : null"
           :cape-smooth="hd"
+          focus="cape"
           animation="walk"
           :height="250"
         />

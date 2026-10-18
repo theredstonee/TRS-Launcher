@@ -43,8 +43,8 @@ const props = withDefaults(
     wingState?: WingState
     /** Nacht: Licht gedimmt, Leuchten bleibt voll hell. */
     night?: boolean
-    /** Kamera: ganzer Spieler oder Kopf + Schultern (für Kopf-Kosmetik). */
-    focus?: 'body' | 'head'
+    /** Kamera: ganzer Spieler, Kopf + Schultern (für Kopf-Kosmetik) oder der Umhang von hinten (Umhang-Werkstatt). */
+    focus?: 'body' | 'head' | 'cape'
     /** Hochzählen setzt die Kamera auf die Standardansicht zurück. */
     resetTick?: number
   }>(),
@@ -338,6 +338,8 @@ let tween: { from: [Vec, Vec]; to: [Vec, Vec]; start: number } | null = null
 const CAMERA_MS = 450
 /** Schräg von vorne-oben wie die Karten der Studio-Werkbank („three“). */
 const HEAD_DIR = normalize({ x: 0.78, y: 0.5, z: 0.95 })
+/** Umhang-Werkstatt: leicht schräg von hinten auf die Außenseite des Umhangs. */
+const CAPE_DIR = normalize({ x: 0.35, y: 0.12, z: -1 })
 
 function normalize(v: Vec): Vec {
   const l = Math.hypot(v.x, v.y, v.z) || 1
@@ -360,6 +362,12 @@ function focusGoal(dir: Vec): [Vec, Vec] | null {
     const top = neck + cameraTop() + 1.5
     target = { x: 0, y: (bottom + top) / 2, z: 0 }
     distance = ((top - bottom) / 2 / Math.tan(fov / 2)) * 1.4
+  } else if (props.focus === 'cape') {
+    // Umhang hängt vom Nacken (+8) 16 Einheiten nach unten, hinter dem Rücken; etwas Rand fürs Schwingen.
+    const bottom = neck - 18
+    const top = neck + 1.5
+    target = { x: 0, y: (bottom + top) / 2, z: -2 }
+    distance = ((top - bottom) / 2 / Math.tan(fov / 2)) * 1.15
   } else {
     // Standard von skinview3d (passt für 16 + 16 Einheiten), bei hohen Teilen entsprechend weiter weg.
     const bottom = -16
@@ -377,13 +385,14 @@ function applyFocus(instant = false) {
   const key = `${props.focus}:${cameraTop()}`
   if (key === lastFocus) return
   const enteringHead = props.focus === 'head' && !lastFocus?.startsWith('head')
+  const enteringCape = props.focus === 'cape' && !lastFocus?.startsWith('cape')
   lastFocus = key
   const target = viewer.controls.target
   const position = viewer.camera.position
   // Beim Wechsel auf den Kopf schräg von vorne-oben wie die Karten, sonst die aktuelle Blickrichtung
   // (während eines Schwenks die, auf die er zuläuft).
   const [aim, eye] = tween ? tween.to : [target, position]
-  const dir = enteringHead ? HEAD_DIR : normalize({ x: eye.x - aim.x, y: eye.y - aim.y, z: eye.z - aim.z })
+  const dir = enteringHead ? HEAD_DIR : enteringCape ? CAPE_DIR : normalize({ x: eye.x - aim.x, y: eye.y - aim.y, z: eye.z - aim.z })
   const goal = focusGoal(dir)
   if (!goal) return
   if (instant) {
@@ -415,7 +424,7 @@ const BODY_DIR = normalize({ x: 0, y: 0, z: 1 })
 /** Kamera auf die Standardansicht des aktuellen Fokus zurück (Drehung des Nutzers verwerfen). */
 function resetCamera() {
   if (!viewer) return
-  const goal = focusGoal(props.focus === 'head' ? HEAD_DIR : BODY_DIR)
+  const goal = focusGoal(props.focus === 'head' ? HEAD_DIR : props.focus === 'cape' ? CAPE_DIR : BODY_DIR)
   if (!goal) return
   const target = viewer.controls.target
   const position = viewer.camera.position
