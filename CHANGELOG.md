@@ -31,11 +31,15 @@ How to write an entry:
 ## Unreleased
 
 ### English
+- **TRS Client: adjustable brightness (Gamma).** The old Fullbright becomes a brightness slider you can push from 100 % all the way up to fullbright. It applies instantly, works with shaders, and has two optional keybinds (toggle on/off, and cycle off → your level → fullbright).
+- **TRS Client: auto-refill.** When the stack in your hand runs out, the same item is pulled from the rest of your inventory into the slot automatically – blocks, food, potions, arrows and anything else stackable. Tools are only replaced once they break. It pauses itself on Fair-Play/PvP servers and has its own keybind. Off by default (TRS menu).
 - **TRS Client: ghost trail off by default.** The ghost trail when sprinting no longer appears right in front of your face – it is now off by default, and if you switch it on (TRS menu → Halloween) it appears behind you.
 - **TRS Client: wardrobe pumpkin visible.** The hidden pumpkin in the wardrobe was completely covered by the player's legs; it now peeks out next to the right foot.
 - **Website: home page pumpkin visible.** The pumpkin on the home page was hidden under the tile row; it now sits just above it.
 
 ### Deutsch
+- **TRS Client: einstellbare Helligkeit (Gamma).** Aus dem alten Fullbright wird ein Helligkeitsregler von 100 % bis hin zu Fullbright. Wirkt sofort, funktioniert mit Shadern und hat zwei optionale Tastenkürzel (ein/aus und durchschalten: aus → dein Wert → Fullbright).
+- **TRS Client: Automatisch nachlegen.** Geht der Stapel in deiner Hand leer, wird derselbe Gegenstand automatisch aus dem restlichen Inventar nachgelegt – Blöcke, Essen, Tränke, Pfeile und alles andere Stapelbare. Werkzeuge erst, wenn sie kaputtgehen. Auf Fair-Play-/PvP-Servern pausiert es von selbst und hat ein eigenes Tastenkürzel. Ab Werk aus (TRS-Menü).
 - **TRS Client: Geister-Spur ab Werk aus.** Die Geister-Spur beim Sprinten erscheint nicht mehr direkt vor deinem Gesicht – sie ist jetzt ab Werk aus, und wer sie einschaltet (TRS-Menü → Halloween), sieht sie hinter sich.
 - **TRS Client: Kürbis in der Garderobe sichtbar.** Der versteckte Kürbis in der Garderobe lag komplett hinter den Beinen der Figur; jetzt schaut er neben dem rechten Fuß hervor.
 - **Website: Kürbis auf der Startseite sichtbar.** Der Kürbis auf der Startseite lag unter der Kachelreihe; jetzt sitzt er knapp darüber.
