@@ -47,7 +47,10 @@ function onKey(e: KeyboardEvent) {
 const main = useTemplateRef<HTMLElement>('main')
 const route = useRoute()
 // Die Startseite zeigt die Schaltung schon groß im Kopfbereich.
-const appBackground = computed(() => settings.current?.ui.animatedBackground !== false && route.path !== '/')
+const animatedBackground = computed(() => settings.current?.ui.animatedBackground !== false)
+// Halloween: die Mondnacht hinter JEDER Seite (Bibliothek, Instanzen, Entdecken, Skins, Sozial …) –
+// mit „Animierter Hintergrund“ aus als Standbild statt gar nicht.
+const appBackground = computed(() => route.path !== '/' && (animatedBackground.value || events.halloween))
 // Big Picture: eigener Rahmen ohne Titelleiste und Seitenleiste (Dialoge bleiben hier).
 const isBig = computed(() => route.path === BIG_PICTURE_PATH)
 watch(
@@ -211,7 +214,7 @@ onBeforeUnmount(() => void backListener?.unregister())
         <!-- Redstone-Schaltung hinter allen Seiten (die Startseite hat ihre eigene im Kopfbereich). -->
         <div class="relative flex min-w-0 flex-1 flex-col">
           <div v-if="appBackground" class="app-bg" aria-hidden="true">
-            <DesignScene fill />
+            <DesignScene fill bolts :still="!animatedBackground" />
           </div>
         <!-- Seitenwechsel: ein kurzer Redstone-Impuls läuft oben entlang. -->
         <div :key="route.path" class="route-signal" aria-hidden="true" />

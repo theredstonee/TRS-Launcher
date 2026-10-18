@@ -38,6 +38,7 @@ How to write an entry:
 - **Website: home page pumpkin visible.** The pumpkin on the home page was hidden under the tile row; it now sits just above it.
 - **Launcher: "Show more" in the news.** The news feed no longer stops after a handful of posts – it shows a batch and a "Show more" button loads the next, so you can reach older news too.
 - **TRS Client: spooky screenshots.** During Halloween the screenshot editor has a new "Grain" button next to Pixelate: it lays the Halloween film grain, a dark vignette and a moon-night tint over your screenshot. It is off until you click it, can be undone like any other edit and ends up in the saved copy and in everything you share.
+- **Launcher: Halloween on every page.** During the event the moon night with the blood moon is now the background of every page – library, instances, Discover, skins, social and Big Picture – not just the home page, and instances without their own banner get a moon-night picture. With "Animated background" off you get a still image of the moon night instead of the plain background; "Animations off" and "Flicker & grain" work as before.
 
 ### Deutsch
 - **TRS Client: einstellbare Helligkeit (Gamma).** Aus dem alten Fullbright wird ein Helligkeitsregler von 100 % bis hin zu Fullbright. Wirkt sofort, funktioniert mit Shadern und hat zwei optionale Tastenkürzel (ein/aus und durchschalten: aus → dein Wert → Fullbright).
@@ -47,6 +48,7 @@ How to write an entry:
 - **Website: Kürbis auf der Startseite sichtbar.** Der Kürbis auf der Startseite lag unter der Kachelreihe; jetzt sitzt er knapp darüber.
 - **Launcher: „Mehr ansehen" in den Neuigkeiten.** Der Neuigkeiten-Feed hört nicht mehr nach ein paar Beiträgen auf – er zeigt einen Block, und „Mehr ansehen" lädt den nächsten, sodass du auch an ältere Meldungen kommst.
 - **TRS Client: gruselige Screenshots.** Zu Halloween hat der Screenshot-Editor neben „Verpixeln“ einen neuen Knopf „Rauschen“: Er legt das Halloween-Filmkorn, eine dunkle Vignette und einen Mondnacht-Farbton über dein Bild. Er ist aus, bis du ihn anklickst, lässt sich wie jede Änderung rückgängig machen und landet in der gespeicherten Kopie und in allem, was du teilst.
+- **Launcher: Halloween auf jeder Seite.** Während des Events ist die Mondnacht mit dem Blutmond jetzt der Hintergrund jeder Seite – Bibliothek, Instanzen, Entdecken, Skins, Sozial und Big Picture – nicht nur der Startseite, und Instanzen ohne eigenes Titelbild bekommen ein Mondnacht-Bild. Mit „Animierter Hintergrund“ aus gibt es ein Standbild der Mondnacht statt des schlichten Hintergrunds; „Animationen aus“ und „Flackern & Rauschen“ wirken wie bisher.
 
 ## 0.23.0 – 2026-10-17 – Blood Moon | Blutmond
 <!-- banner: accent=#c9424a motif=/news/0.23.0/banner.png -->

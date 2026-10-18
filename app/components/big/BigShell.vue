@@ -3,13 +3,16 @@
 // im Vollbild): Redstone-Schaltung abgedunkelt im Hintergrund. Die Dialoge (Spielstart,
 // Beitreten, Absturz-Helfer, Hinweise) kommen weiter aus dem Standard-Layout.
 const settings = useSettingsStore()
+const events = useEventsStore()
 const animated = computed(() => settings.current?.ui.animatedBackground !== false)
+// Halloween: Mondnacht auch hier, bei „Animierter Hintergrund“ aus als Standbild.
+const scene = computed(() => animated.value || events.halloween)
 </script>
 
 <template>
   <div class="big-root relative h-full min-h-0 flex-1 overflow-hidden bg-base-950">
-    <div v-if="animated" class="big-scene" aria-hidden="true">
-      <DesignScene fill />
+    <div v-if="scene" class="big-scene" aria-hidden="true">
+      <DesignScene fill :still="!animated" />
     </div>
     <div class="big-shade" aria-hidden="true" />
     <slot />
