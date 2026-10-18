@@ -233,8 +233,30 @@ onBeforeUnmount(() => {
     </div>
     <div class="dangle" style="left: 64%; --len: 64px"><i /><canvas ref="hanging" width="7" height="6" /></div>
     <div v-for="w in whispers" :key="w.id" class="whisper hw-italic" :style="{ left: `${w.left}vw`, top: `${w.top}vh` }">{{ w.text }}</div>
+    <!-- Blutiger Handabdruck: einmal definiert, jeder Abdruck verweist darauf. Fingerglieder als einzelne Flecken
+         (Lücken an den Gelenkfalten), Ränder per Rauschen verschmiert, dazu Tropfen und Spritzer. -->
+    <svg width="0" height="0" class="absolute" aria-hidden="true">
+      <defs>
+        <radialGradient id="hw-hp-g" cx="50%" cy="62%" r="62%"><stop offset="0" stop-color="#8e0f18" /><stop offset=".7" stop-color="#6e0a12" /><stop offset="1" stop-color="#4f070d" /></radialGradient>
+        <filter id="hw-hp-f" x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" seed="3" result="n" />
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="3.4" />
+        </filter>
+        <symbol id="hw-hp" viewBox="0 0 100 136">
+          <path d="M26 68 C23 84 28 101 36 112 C44 122 62 124 72 114 C80 104 83 86 81 66 C78 59 70 58 64 60 C58 57 50 56 44 59 C39 57 31 59 28 63 C27 64.5 26.4 66 26 68 Z" />
+          <g transform="rotate(-10 36 60)"><ellipse cx="36" cy="52" rx="5.8" ry="7.6" /><ellipse cx="36" cy="38.5" rx="5.5" ry="7" /><ellipse cx="36" cy="25.5" rx="5.2" ry="7" /></g>
+          <g transform="rotate(-2 50 58)"><ellipse cx="50" cy="50" rx="6.1" ry="8.2" /><ellipse cx="50" cy="34.5" rx="5.8" ry="7.6" /><ellipse cx="50" cy="19.5" rx="5.5" ry="7.6" /></g>
+          <g transform="rotate(7 63 59)"><ellipse cx="63" cy="51" rx="5.8" ry="7.8" /><ellipse cx="63" cy="36.5" rx="5.5" ry="7.1" /><ellipse cx="63" cy="22.5" rx="5.2" ry="7.1" /></g>
+          <g transform="rotate(16 75 63)"><ellipse cx="75" cy="56" rx="4.9" ry="6.3" /><ellipse cx="75" cy="45" rx="4.6" ry="5.9" /><ellipse cx="75" cy="34.5" rx="4.3" ry="5.8" /></g>
+          <g transform="rotate(-46 26 90)"><ellipse cx="26" cy="88" rx="7.2" ry="10" /><ellipse cx="26" cy="71" rx="6.4" ry="8.6" /></g>
+          <path d="M44 118 C44 124 43.4 129 44.6 131 C46 129 45.6 124 46 118 Z" /><circle cx="45.3" cy="131.5" r="2.1" />
+          <path d="M62 117 C62 121 61.6 124 62.5 126 C63.5 124 63.2 121 63.6 117 Z" /><circle cx="62.6" cy="126.4" r="1.6" />
+          <circle cx="88" cy="40" r="1.4" /><circle cx="92" cy="52" r=".9" /><circle cx="14" cy="58" r="1.2" /><circle cx="85" cy="96" r="1" /><circle cx="20" cy="110" r=".8" />
+        </symbol>
+      </defs>
+    </svg>
     <div v-for="h in hands" :key="h.id" class="hand" :style="{ left: `${h.left}%`, top: `${h.top}%`, transform: `rotate(${h.rot}deg)` }">
-      <svg viewBox="0 0 60 80"><g fill="#6a0d14" opacity=".85"><ellipse cx="29" cy="53" rx="15" ry="15" /><rect x="15" y="12" width="7.5" height="38" rx="3.75" transform="rotate(-13 18.75 48)" /><rect x="24" y="6" width="7.5" height="44" rx="3.75" transform="rotate(-3 27.75 48)" /><rect x="33" y="9" width="7.5" height="41" rx="3.75" transform="rotate(8 36.75 48)" /><rect x="41" y="17" width="7" height="34" rx="3.5" transform="rotate(19 44.5 48)" /><rect x="3" y="50" width="20" height="8.5" rx="4.25" transform="rotate(32 23 54)" /></g></svg>
+      <svg viewBox="0 0 100 136"><g fill="url(#hw-hp-g)" filter="url(#hw-hp-f)" opacity=".9"><use href="#hw-hp" /></g></svg>
     </div>
     <div ref="eyes" class="watch" :class="{ on: eyesOn, blink }">
       <i><b :style="{ transform: `translate(${pupil.x}px, ${pupil.y}px)` }" /></i>
