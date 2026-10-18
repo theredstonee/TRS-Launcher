@@ -28,7 +28,13 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.25.0 – 2026-10-18 – Crystal Clear | Gestochen scharf
+<!-- banner: accent=#5ec8ff motif=/news/0.25.0/banner.png -->
+<!-- shots:
+/news/0.25.0/cape-hd-upload.png | Own capes in "HD – like the image": smooth, large preview from behind | Eigene Umhänge in „HD – wie Bild“: glatt und mit großer Rückansicht
+/news/0.25.0/cape-hd-fit-logo.png | "Fit" keeps square logos whole instead of cutting them | „Einpassen“ zeigt quadratische Logos ganz, statt sie abzuschneiden
+/news/0.25.0/cape-hd-ingame.png | HD capes are drawn smoothly in game | HD-Umhänge werden im Spiel glatt gezeichnet
+-->
 
 ### English
 - **Own capes: new "HD – like the image" style.** Photos, logos and paintings now use the full 1024×512 per frame, are scaled smoothly in full color – no more blocky pixels or washed-out colors – and every preview (crop, editor and the 3D player) shows them smooth, exactly as they will be uploaded. The launcher picks HD or Pixel art from your image automatically; you can switch at any time, and pixel art stays crisp as before. HD capes are open to every player.
