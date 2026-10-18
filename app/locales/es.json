@@ -3348,6 +3348,7 @@
   },
   "news": {
     "title": "Noticias",
+    "showMore": "Ver más",
     "filters": {
       "all": "Todo",
       "patchNotes": "Actualizaciones",

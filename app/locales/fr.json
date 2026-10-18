@@ -3303,6 +3303,7 @@
   },
   "news": {
     "title": "Actualités",
+    "showMore": "Voir plus",
     "filters": {
       "all": "Tout",
       "patchNotes": "Mises à jour",

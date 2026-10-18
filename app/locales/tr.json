@@ -3303,6 +3303,7 @@
   },
   "news": {
     "title": "Haberler",
+    "showMore": "Daha fazla göster",
     "filters": {
       "all": "Tümü",
       "patchNotes": "Güncellemeler",

@@ -8,7 +8,8 @@ import type { NewsItem, NewsSource, NewsTexts } from '~/types'
 // neue Launcher-Versionen und die News des TRS-Teams (Website-Blog, nur mit TRS-Diensten). Geholt, geprüft und zwischengespeichert wird alles im Kern; Bilder
 // kommen aus dessen Cache. Ohne Bild: Launcher-Versionen bekommen ihre Redstone-Szene als Banner,
 // Modrinth-Projekte ihr Icon groß auf einem weichgezeichneten Hintergrund aus sich selbst.
-const props = withDefaults(defineProps<{ listLimit?: number }>(), { listLimit: 6 })
+// listLimit = Blockgröße: so viele Karten zeigt der Feed zuerst, und „Mehr ansehen“ lädt jeweils einen weiteren Block.
+const props = withDefaults(defineProps<{ listLimit?: number }>(), { listLimit: 12 })
 
 const toasts = useToasts()
 const items = ref<NewsItem[]>([])
@@ -59,7 +60,17 @@ const featured = computed<NewsItem | null>(() => {
   const withImage = visible.value.find((i) => i.imageUrl && i.source !== 'modrinth' && i.source !== 'launcher')
   return withImage ?? visible.value[0] ?? null
 })
-const list = computed(() => visible.value.filter((i) => i !== featured.value).slice(0, props.listLimit))
+// Alle Karten unter dem Aufmacher; blockweise sichtbar gemacht über „Mehr ansehen“.
+const rest = computed(() => visible.value.filter((i) => i !== featured.value))
+const shown = ref(props.listLimit)
+const list = computed(() => rest.value.slice(0, shown.value))
+const hasMore = computed(() => rest.value.length > shown.value)
+function showMore() {
+  shown.value += props.listLimit
+  void loadImages()
+}
+// Quelle gewechselt: wieder beim ersten Block anfangen.
+watch(filter, () => (shown.value = props.listLimit))
 
 /** Changelog-Beitrag zu einer Launcher-Version („TRS Launcher v0.4.3“ → Abschnitt 0.4.3). */
 function launcherPost(item: NewsItem): ChangelogEntry | null {
@@ -262,6 +273,10 @@ async function showPatchNotes(item: NewsItem) {
           </button>
         </li>
       </ul>
+
+      <div v-if="hasMore" class="pt-1 text-center">
+        <button class="btn btn-ghost" data-testid="news-show-more" @click="showMore">{{ t('news.showMore') }}</button>
+      </div>
     </div>
 
     <UpdatePostDialog v-if="reading" :entries="[reading]" @close="reading = null" />

@@ -36,6 +36,7 @@ How to write an entry:
 - **TRS Client: ghost trail off by default.** The ghost trail when sprinting no longer appears right in front of your face – it is now off by default, and if you switch it on (TRS menu → Halloween) it appears behind you.
 - **TRS Client: wardrobe pumpkin visible.** The hidden pumpkin in the wardrobe was completely covered by the player's legs; it now peeks out next to the right foot.
 - **Website: home page pumpkin visible.** The pumpkin on the home page was hidden under the tile row; it now sits just above it.
+- **Launcher: "Show more" in the news.** The news feed no longer stops after a handful of posts – it shows a batch and a "Show more" button loads the next, so you can reach older news too.
 
 ### Deutsch
 - **TRS Client: einstellbare Helligkeit (Gamma).** Aus dem alten Fullbright wird ein Helligkeitsregler von 100 % bis hin zu Fullbright. Wirkt sofort, funktioniert mit Shadern und hat zwei optionale Tastenkürzel (ein/aus und durchschalten: aus → dein Wert → Fullbright).
@@ -43,6 +44,7 @@ How to write an entry:
 - **TRS Client: Geister-Spur ab Werk aus.** Die Geister-Spur beim Sprinten erscheint nicht mehr direkt vor deinem Gesicht – sie ist jetzt ab Werk aus, und wer sie einschaltet (TRS-Menü → Halloween), sieht sie hinter sich.
 - **TRS Client: Kürbis in der Garderobe sichtbar.** Der versteckte Kürbis in der Garderobe lag komplett hinter den Beinen der Figur; jetzt schaut er neben dem rechten Fuß hervor.
 - **Website: Kürbis auf der Startseite sichtbar.** Der Kürbis auf der Startseite lag unter der Kachelreihe; jetzt sitzt er knapp darüber.
+- **Launcher: „Mehr ansehen" in den Neuigkeiten.** Der Neuigkeiten-Feed hört nicht mehr nach ein paar Beiträgen auf – er zeigt einen Block, und „Mehr ansehen" lädt den nächsten, sodass du auch an ältere Meldungen kommst.
 
 ## 0.23.0 – 2026-10-17 – Blood Moon | Blutmond
 <!-- banner: accent=#c9424a motif=/news/0.23.0/banner.png -->

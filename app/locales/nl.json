@@ -3303,6 +3303,7 @@
   },
   "news": {
     "title": "Nieuws",
+    "showMore": "Meer weergeven",
     "filters": {
       "all": "Alles",
       "patchNotes": "Updates",

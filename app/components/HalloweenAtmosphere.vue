@@ -234,7 +234,7 @@ onBeforeUnmount(() => {
     <div class="dangle" style="left: 64%; --len: 64px"><i /><canvas ref="hanging" width="7" height="6" /></div>
     <div v-for="w in whispers" :key="w.id" class="whisper hw-italic" :style="{ left: `${w.left}vw`, top: `${w.top}vh` }">{{ w.text }}</div>
     <div v-for="h in hands" :key="h.id" class="hand" :style="{ left: `${h.left}%`, top: `${h.top}%`, transform: `rotate(${h.rot}deg)` }">
-      <svg viewBox="0 0 60 80"><g fill="#6a0d14" opacity=".85"><ellipse cx="30" cy="54" rx="16" ry="18" /><rect x="13" y="18" width="7" height="30" rx="3.5" /><rect x="22" y="8" width="7" height="36" rx="3.5" /><rect x="31" y="6" width="7" height="38" rx="3.5" /><rect x="40" y="14" width="7" height="32" rx="3.5" /><rect x="2" y="44" width="16" height="7" rx="3.5" transform="rotate(-35 10 47)" /><rect x="24" y="70" width="3" height="10" rx="1.5" /><rect x="35" y="68" width="2" height="7" rx="1" /></g></svg>
+      <svg viewBox="0 0 60 80"><g fill="#6a0d14" opacity=".85"><ellipse cx="29" cy="53" rx="15" ry="15" /><rect x="15" y="12" width="7.5" height="38" rx="3.75" transform="rotate(-13 18.75 48)" /><rect x="24" y="6" width="7.5" height="44" rx="3.75" transform="rotate(-3 27.75 48)" /><rect x="33" y="9" width="7.5" height="41" rx="3.75" transform="rotate(8 36.75 48)" /><rect x="41" y="17" width="7" height="34" rx="3.5" transform="rotate(19 44.5 48)" /><rect x="3" y="50" width="20" height="8.5" rx="4.25" transform="rotate(32 23 54)" /></g></svg>
     </div>
     <div ref="eyes" class="watch" :class="{ on: eyesOn, blink }">
       <i><b :style="{ transform: `translate(${pupil.x}px, ${pupil.y}px)` }" /></i>
