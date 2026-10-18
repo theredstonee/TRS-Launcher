@@ -2297,6 +2297,8 @@
   "screenshots.tool.rect": "Moldura",
   "screenshots.tool.text": "Texto",
   "screenshots.tool.pixelate": "Pixelizar (esconder nomes, coordenadas …)",
+  "screenshots.tool.grain": "Granulado (Halloween): granulado de filme assustador e clima de noite de lua",
+  "screenshots.tool.grainOff": "Granulado ativado: clique para remover",
   "screenshots.tool.pen": "Caneta",
   "screenshots.tool.size1": "Fino / pequeno",
   "screenshots.tool.size2": "Médio",

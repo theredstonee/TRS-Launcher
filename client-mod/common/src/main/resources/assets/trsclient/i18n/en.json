@@ -2297,6 +2297,8 @@
   "screenshots.tool.rect": "Frame",
   "screenshots.tool.text": "Text",
   "screenshots.tool.pixelate": "Pixelate (hide names, coordinates …)",
+  "screenshots.tool.grain": "Grain (Halloween): spooky film grain and moon-night look",
+  "screenshots.tool.grainOff": "Grain on: click to remove",
   "screenshots.tool.pen": "Pen",
   "screenshots.tool.size1": "Thin / small",
   "screenshots.tool.size2": "Medium",

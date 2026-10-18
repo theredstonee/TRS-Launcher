@@ -2297,6 +2297,8 @@
   "screenshots.tool.rect": "Cadre",
   "screenshots.tool.text": "Texte",
   "screenshots.tool.pixelate": "Pixeliser (cacher noms, coordonnées …)",
+  "screenshots.tool.grain": "Grain (Halloween) : grain de film effrayant et ambiance nuit de lune",
+  "screenshots.tool.grainOff": "Grain activé : cliquer pour retirer",
   "screenshots.tool.pen": "Crayon",
   "screenshots.tool.size1": "Fin / petit",
   "screenshots.tool.size2": "Moyen",

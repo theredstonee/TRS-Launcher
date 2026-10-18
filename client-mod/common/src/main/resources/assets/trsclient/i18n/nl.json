@@ -2297,6 +2297,8 @@
   "screenshots.tool.rect": "Kader",
   "screenshots.tool.text": "Tekst",
   "screenshots.tool.pixelate": "Pixelen (namen, coördinaten … verbergen)",
+  "screenshots.tool.grain": "Ruis (Halloween): griezelige filmkorrel en maannacht-look",
+  "screenshots.tool.grainOff": "Ruis aan: klik om te verwijderen",
   "screenshots.tool.pen": "Pen",
   "screenshots.tool.size1": "Dun / klein",
   "screenshots.tool.size2": "Middel",
