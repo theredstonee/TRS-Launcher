@@ -7,7 +7,10 @@ import dev.theredstonee.trsclient.core.hud.Crosshair;
 import dev.theredstonee.trsclient.core.hud.HudProfiles;
 import dev.theredstonee.trsclient.core.hud.HudAnchor;
 import dev.theredstonee.trsclient.core.hud.HudPosition;
+import dev.theredstonee.trsclient.core.render.Brightness;
 import dev.theredstonee.trsclient.core.render.ColorGrade;
+
+import java.util.OptionalDouble;
 
 /**
  * Alle Module des TRS Clients mit ihren Standardwerten.
@@ -45,7 +48,13 @@ public final class TrsModules {
 	public final Module hitColor;
 	public final Module freelook;
 	public final Module zoom;
+	/** Helligkeit/Gamma (früher „Fullbright“): einstellbar 100–1000 %, 1000 % = voll. */
 	public final Module fullbright;
+	public final NumberSetting fullbrightLevel;
+	/** Nicht gespeichert: zeigt kurzzeitig volle Helligkeit (1000 %) unabhängig vom Regler (Tasten-Zyklus). */
+	private boolean fullbrightBoost;
+	/** Automatisch nachlegen: füllt den leeren Hotbar-Slot aus dem Inventar nach (serverseitig, Fair-Play-Pause). */
+	public final Module autoRefill;
 	public final Module titleScreen;
 	/** Redstone-Stil für Vanilla-Menüs (Pause, Serverliste, Laden, Optionen, Welten); je Menü abschaltbar. */
 	public final Module menuStyle;
@@ -534,7 +543,13 @@ public final class TrsModules {
 		zoom = registry.register(new Module("zoom", "Zoom",
 				"Hold the key to zoom in smoothly. The mouse wheel changes the zoom while held and the mouse "
 						+ "slows down with it. Pauses while you look through a spyglass.", true));
-		fullbright = registry.register(new Module("fullbright", "Fullbright", "Maximum brightness everywhere", false));
+		fullbright = registry.register(new Module("fullbright", "Gamma",
+				"Adjustable brightness, beyond 100% up to fullbright; applies instantly and works with shaders "
+						+ "(via the lightmap).", false));
+		autoRefill = registry.register(new Module("autorefill", "Auto-Refill",
+				"Refills the selected hotbar slot from your inventory when it empties: the last block placed, "
+						+ "the last arrow or potion, a broken tool. Server-friendly (uses the normal inventory click). "
+						+ "Only in survival/adventure and only while no container is open; paused under Fair Play.", false));
 		titleScreen = registry.register(new Module("titleScreen", "Title Screen",
 				"TRS title screen instead of the vanilla one", true));
 		menuStyle = registry.register(new Module("menuStyle", "Menu Style",
@@ -618,6 +633,7 @@ public final class TrsModules {
 		freelook.icon("eye").category(Category.WORLD);
 		zoom.icon("zoom").category(Category.WORLD);
 		fullbright.icon("sun").category(Category.WORLD);
+		autoRefill.icon("packs").category(Category.WORLD);
 		titleScreen.icon("home");
 		menuStyle.icon("palette");
 		reach.icon("sword").category(Category.PVP);
@@ -721,6 +737,9 @@ public final class TrsModules {
 		zoomScroll = zoom.add(new BoolSetting("scroll", "Mouse wheel changes zoom", true));
 		zoomSlowMouse = zoom.add(new BoolSetting("slowMouse", "Slow down mouse", true));
 		zoomCinematic = zoom.add(new BoolSetting("cinematic", "Cinematic camera", false));
+
+		// Gamma/Helligkeit: 100 % = Vanilla-Maximum, 1000 % = voll (Fullbright). Wirkt sofort über die Lightmap.
+		fullbrightLevel = fullbright.add(new NumberSetting("level", "Brightness", 100, 100, 1000, 50, "", "%"));
 
 		freelookKey = freelook.add(new KeySetting("key", "Key", "key.keyboard.left.alt"));
 		freelookToggle = freelook.add(new BoolSetting("toggle", "Toggle instead of hold", false));
@@ -991,5 +1010,63 @@ public final class TrsModules {
 	public ColorGrade colorGrade(ColorGrade out) {
 		return out.set(colorSaturation.get(), colorContrast.get(), colorBrightness.get(), colorVibrance.get(),
 				colorTemperature.get());
+	}
+
+	// --- Gamma/Helligkeit (Modul „fullbright“) ---
+
+	/** Volle Helligkeit kurzzeitig erzwingen (nicht gespeichert); vom Tasten-Zyklus gesetzt. */
+	public void setFullbrightBoost(boolean on) {
+		fullbrightBoost = on;
+	}
+
+	public boolean fullbrightBoost() {
+		return fullbrightBoost;
+	}
+
+	/** Aktiver Helligkeits-Prozentwert: beim Boost 1000 %, sonst der Regler. */
+	public double gammaPercent() {
+		return fullbrightBoost ? Brightness.FULL_PERCENT : fullbrightLevel.get();
+	}
+
+	/** Aktiver Gamma-Wert für die Lightmap (1.0 … 16.0). */
+	public double gammaValue() {
+		return Brightness.gamma(gammaPercent());
+	}
+
+	/** Gamma für die Lightmap: vorhanden = benutzen, leer = Vanilla-Gamma (Modul aus). */
+	public OptionalDouble gammaOverride() {
+		return fullbright.isEnabled() ? OptionalDouble.of(gammaValue()) : OptionalDouble.empty();
+	}
+
+	/** Schaltet das Modul an/aus (Taste). Gibt den Hinweis-Text zurück. */
+	public String toggleGamma() {
+		fullbright.toggle();
+		if (!fullbright.isEnabled()) fullbrightBoost = false;
+		return gammaToast();
+	}
+
+	/** Durchschalten: aus → an (Regler) → an (voll) → aus. Gibt den Hinweis-Text zurück. */
+	public String cycleGamma() {
+		if (!fullbright.isEnabled()) {
+			fullbright.setEnabled(true);
+			fullbrightBoost = false;
+		} else if (!fullbrightBoost) {
+			fullbrightBoost = true;
+		} else {
+			fullbright.setEnabled(false);
+			fullbrightBoost = false;
+		}
+		return gammaToast();
+	}
+
+	/** Hinweis-Text „Gamma: aus/<prozent>%/Fullbright“ in der aktiven Sprache. */
+	public String gammaToast() {
+		if (!fullbright.isEnabled()) {
+			return dev.theredstonee.trsclient.core.i18n.I18n.tr("toast.gamma.off");
+		}
+		if (fullbrightBoost) {
+			return dev.theredstonee.trsclient.core.i18n.I18n.tr("toast.gamma.full");
+		}
+		return dev.theredstonee.trsclient.core.i18n.I18n.tr("toast.gamma.level", fullbrightLevel.getInt());
 	}
 }

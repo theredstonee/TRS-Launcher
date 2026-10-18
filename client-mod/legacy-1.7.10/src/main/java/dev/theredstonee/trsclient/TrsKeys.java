@@ -11,6 +11,8 @@ public final class TrsKeys {
 	public static KeyBinding menu;
 	public static KeyBinding zoom;
 	public static KeyBinding fullbright;
+	/** Gamma durchschalten: aus → an → voll → aus (standardmäßig unbelegt). */
+	public static KeyBinding gammaCycle;
 	/** Wechselt das HUD-Profil (standardmäßig unbelegt). */
 	public static KeyBinding hudProfile;
 	/** Schaltet das Redstone-Signal-Overlay (F8 – F6/F7 sind in 1.7.10 die Stream-Tasten). */
@@ -36,6 +38,7 @@ public final class TrsKeys {
 		zoom = register(new KeyBinding("key.trsclient.zoom", Keyboard.KEY_V, CATEGORY));
 		// Standardmäßig unbelegt – Fullbright lässt sich auch im Menü schalten.
 		fullbright = register(new KeyBinding("key.trsclient.fullbright", Keyboard.KEY_NONE, CATEGORY));
+		gammaCycle = register(new KeyBinding("key.trsclient.gammaCycle", Keyboard.KEY_NONE, CATEGORY));
 		// Standardmäßig unbelegt – Profile lassen sich auch im Menü wechseln.
 		hudProfile = register(new KeyBinding("key.trsclient.hudProfile", Keyboard.KEY_NONE, CATEGORY));
 		redstoneOverlay = register(new KeyBinding("key.trsclient.redstoneOverlay", Keyboard.KEY_F8, CATEGORY));

@@ -24,6 +24,12 @@ public final class TrsKeys {
 	/** Standardmäßig unbelegt – Fullbright lässt sich auch im Menü schalten. */
 	public static final KeyMapping fullbright =
 			new KeyMapping("key.trsclient.fullbright", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
+	/** Gamma durchschalten: aus → an → voll → aus (standardmäßig unbelegt). */
+	public static final KeyMapping gammaCycle =
+			new KeyMapping("key.trsclient.gammaCycle", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
+	/** Automatisch nachlegen an/aus (standardmäßig unbelegt). */
+	public static final KeyMapping autoRefill =
+			new KeyMapping("key.trsclient.autoRefill", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
 	public static final KeyMapping freelook =
 			new KeyMapping("key.trsclient.freelook", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_ALT, CATEGORY);
 
@@ -76,7 +82,7 @@ public final class TrsKeys {
 	/** Freie Kamera an/aus (standardmäßig unbelegt). */
 	public static final KeyMapping cinematicFreecam =
 			new KeyMapping("key.trsclient.cinematicFreecam", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, CATEGORY);
-	private static final KeyMapping[] ALL = {menu, zoom, fullbright, freelook, hudProfile, emoteWheel, redstoneOverlay,
+	private static final KeyMapping[] ALL = {menu, zoom, fullbright, gammaCycle, autoRefill, freelook, hudProfile, emoteWheel, redstoneOverlay,
 			saveClip, toggleRecording, wardrobe, worldMap, social, quickReply, panorama, notes, cinematicAdd, cinematicPlay,
 			cinematicRemove, cinematicClear, cinematicFreecam};
 

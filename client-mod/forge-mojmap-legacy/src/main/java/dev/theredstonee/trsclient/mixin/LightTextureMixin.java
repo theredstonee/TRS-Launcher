@@ -19,15 +19,14 @@ import net.minecraft.client.Options;
  */
 @Mixin(LightTexture.class)
 public abstract class LightTextureMixin {
-	private static final float FULLBRIGHT_GAMMA = 16.0F;
-
 	//? if <1.19 {
 	@Redirect(method = "updateLightTexture",
 			at = @At(value = "FIELD", target = "Lnet/minecraft/client/Options;gamma:D", opcode = 180),
 			require = 1)
 	private double trsclient$fullbright(Options options) {
 		HookStats.lightmap++;
-		return TrsClient.get().fullbright() ? FULLBRIGHT_GAMMA : options.gamma;
+		java.util.OptionalDouble override = TrsClient.get().gammaOverride();
+		return override.isPresent() ? override.getAsDouble() : options.gamma;
 	}
 	//?} else {
 	/*@Redirect(method = "updateLightTexture",
@@ -37,7 +36,8 @@ public abstract class LightTextureMixin {
 			require = 1)
 	private float trsclient$fullbright(Double gamma) {
 		HookStats.lightmap++;
-		return TrsClient.get().fullbright() ? FULLBRIGHT_GAMMA : gamma.floatValue();
+		java.util.OptionalDouble override = TrsClient.get().gammaOverride();
+		return override.isPresent() ? (float) override.getAsDouble() : gamma.floatValue();
 	}
 	*///?}
 }

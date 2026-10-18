@@ -59,8 +59,6 @@ public final class TrsClient {
 	static dev.theredstonee.trsclient.core.account.LegacySessionSwap accountSwap;
 	public static final String MOD_ID = "trsclient";
 	public static final Logger LOGGER = LogManager.getLogger("TRS Client");
-	/** Gamma für Fullbright (Vanilla-Maximum ist 1.0). */
-	private static final double FULLBRIGHT_GAMMA = 16.0;
 
 	private static TrsClient instance;
 	/** Module/Einstellungen, die es in 1.13.2 nicht gibt – im Menü ausgeblendet. */
@@ -180,6 +178,7 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.core.map.MapEngine.init(modules, FMLPaths.CONFIGDIR.get());
 		// Notizen je Welt (config/trsclient/notes): Seite im TRS-Menü, Taste, angeheftete Notiz im HUD.
 		dev.theredstonee.trsclient.core.notes.Notes.init(modules, FMLPaths.CONFIGDIR.get(), message -> LOGGER.info(message));
+		dev.theredstonee.trsclient.feature.AutoRefillHooks.init(modules);
 		hud = new HudManager(modules);
 		MinecraftForge.EVENT_BUS.register(this);
 		// Screenshot-Werkzeuge: Vorschau nach F2, Bild-Editor, Favoriten, Bild kopieren.
@@ -275,12 +274,23 @@ public final class TrsClient {
 		while (TrsKeys.toggleRecording.isPressed()) dev.theredstonee.trsclient.core.clips.Clips.get().toggleRecording();
 		dev.theredstonee.trsclient.core.clips.Clips.get().tick(modules.clips.isEnabled(), CLIP_MESSAGES);
 		while (TrsKeys.fullbright.isPressed()) {
-			modules.fullbright.toggle();
+			String toast = modules.toggleGamma();
+			if (mc.ingameGUI != null) mc.ingameGUI.setOverlayMessage(toast, false);
+			saveConfig();
+		}
+		while (TrsKeys.gammaCycle.isPressed()) {
+			String toast = modules.cycleGamma();
+			if (mc.ingameGUI != null) mc.ingameGUI.setOverlayMessage(toast, false);
+			saveConfig();
+		}
+		while (TrsKeys.autoRefill.isPressed()) {
+			modules.autoRefill.toggle();
 			if (mc.ingameGUI != null) {
-				mc.ingameGUI.setOverlayMessage(I18n.tr("toast.fullbright", modules.fullbright.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled")), false);
+				mc.ingameGUI.setOverlayMessage(I18n.tr("toast.autoRefill", modules.autoRefill.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled")), false);
 			}
 			saveConfig();
 		}
+		dev.theredstonee.trsclient.feature.AutoRefillHooks.tick();
 		// runTick kann den Blick setzen (Teleport, Reiten) – Referenz für die langsame Maus danach neu setzen.
 		captureLook(mc);
 	}
@@ -306,7 +316,7 @@ public final class TrsClient {
 			// In den Video-Einstellungen nicht – dort zeigt/ändert der Regler den echten Wert.
 			if (modules.fullbright.isEnabled() && mc.world != null && !(mc.currentScreen instanceof GuiVideoSettings)) {
 				savedGamma = mc.gameSettings.gammaSetting;
-				mc.gameSettings.gammaSetting = FULLBRIGHT_GAMMA;
+				mc.gameSettings.gammaSetting = modules.gammaValue();
 				gammaSwapped = true;
 				HookStats.lightmap++;
 			}

@@ -5,6 +5,11 @@ loaderVersion = "[1,)"
 license = "GPL-3.0-only"
 issueTrackerURL = "https://github.com/theredstonee/TRS-Launcher/issues"
 
+# BadOptimizations-Cache-Hook: lässt die eingebaute Lightmap-Zwischenspeicherung neu rechnen, wenn das
+# Modul „Gamma" seinen Wert ändert (sonst bliebe die Aufhellung unsichtbar). Ältere Fassungen ignorieren es.
+["badoptimizations:cache_hooks"]
+lightmap = "dev.theredstonee.trsclient.compat.BadOptLightmapHook"
+
 [[mods]]
 modId = "trsclient"
 version = "${version}"

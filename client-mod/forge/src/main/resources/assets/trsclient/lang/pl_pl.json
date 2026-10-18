@@ -4,6 +4,8 @@
 	"key.trsclient.menu": "Otwórz menu TRS",
 	"key.trsclient.zoom": "Zoom (przytrzymaj)",
 	"key.trsclient.fullbright": "Przełącz fullbright",
+	"key.trsclient.gammaCycle": "Cycle gamma",
+	"key.trsclient.autoRefill": "Toggle auto-refill",
 	"key.trsclient.freelook": "Wolna kamera",
 	"key.trsclient.hudProfile": "Zmień profil HUD",
 	"key.trsclient.emoteWheel": "Koło emotek (przytrzymaj)",
