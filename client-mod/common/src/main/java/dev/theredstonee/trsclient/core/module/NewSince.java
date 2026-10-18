@@ -157,6 +157,12 @@ public final class NewSince {
 	public static final String SOCIAL_STICKERS = "social:stickers";
 	/** Halloween-Schreck-Erweiterung (TRS Client 0.19.2): mehr Jumpscares, Grusel-Töne ab Werk an. */
 	public static final String HALLOWEEN_SCARE = "0.19.2";
+	/** Gamma/Helligkeit (aus „Fullbright“) + Automatisch nachlegen (TRS Client 0.19.3). */
+	public static final String GAMMA_REFILL = "0.19.3";
+	/** Taste „Gamma durchschalten“ (standardmäßig unbelegt). */
+	public static final String KEY_GAMMA_CYCLE = "key.trsclient.gammaCycle";
+	/** Taste „Automatisch nachlegen umschalten“ (standardmäßig unbelegt). */
+	public static final String KEY_AUTO_REFILL = "key.trsclient.autoRefill";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
@@ -239,6 +245,8 @@ public final class NewSince {
 				MENU_HALLOWEEN, WARDROBE_COMPANION, WARDROBE_WINGS, SOCIAL_STICKERS);
 		// Schreck-Erweiterung (0.19.2): „Grusel-Töne“ jetzt ab Werk an unter neuem Schlüssel „spookySounds“.
 		add(HALLOWEEN_SCARE, "halloween.spookySounds");
+		// Gamma/Helligkeit (aus „Fullbright“, neuer Regler + Zyklus-Taste) und Automatisch nachlegen.
+		add(GAMMA_REFILL, "autorefill", "fullbright.level", KEY_GAMMA_CYCLE, KEY_AUTO_REFILL);
 	}
 
 	private NewSince() {

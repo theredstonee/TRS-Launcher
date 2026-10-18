@@ -4,6 +4,8 @@
 	"key.trsclient.menu": "Ouvrir le menu TRS",
 	"key.trsclient.zoom": "Zoom (maintenir)",
 	"key.trsclient.fullbright": "Activer/désactiver le fullbright",
+	"key.trsclient.gammaCycle": "Cycle gamma",
+	"key.trsclient.autoRefill": "Toggle auto-refill",
 	"key.trsclient.freelook": "Vue libre",
 	"key.trsclient.hudProfile": "Changer de profil de HUD",
 	"key.trsclient.emoteWheel": "Roue d’emotes (maintenir)",

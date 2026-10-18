@@ -33,6 +33,8 @@ const KEYS = [
   ['key.trsclient.menu', 'key.trsclient.menu'],
   ['key.trsclient.zoom', 'key.trsclient.zoom'],
   ['key.trsclient.fullbright', 'key.trsclient.fullbright'],
+  ['key.trsclient.gammaCycle', 'key.trsclient.gammaCycle'],
+  ['key.trsclient.autoRefill', 'key.trsclient.autoRefill'],
   ['key.trsclient.freelook', 'key.trsclient.freelook'],
   ['key.trsclient.hudProfile', 'key.trsclient.hudProfile'],
   ['key.trsclient.emoteWheel', 'key.trsclient.emoteWheel'],
