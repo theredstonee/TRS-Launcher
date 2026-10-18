@@ -158,6 +158,8 @@ public final class ScreenshotTest {
 				actions.shot("trsclient-screenshots-editor");
 				editor.testTool(0);
 				editor.testCropRotate();
+				// Halloween (-Dtrsclient.halloween=true): Filter „Rauschen“ mit in die gespeicherte Kopie.
+				if (editor.testGrain(true)) TrsClient.LOGGER.info("[Autotest] Screenshot-Editor: Rauschen an");
 				phase++;
 				waited = 0;
 				return true;

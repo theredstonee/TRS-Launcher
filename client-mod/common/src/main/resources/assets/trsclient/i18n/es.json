@@ -2297,6 +2297,8 @@
   "screenshots.tool.rect": "Marco",
   "screenshots.tool.text": "Texto",
   "screenshots.tool.pixelate": "Pixelar (ocultar nombres, coordenadas …)",
+  "screenshots.tool.grain": "Grano (Halloween): grano de película y aire de noche de luna",
+  "screenshots.tool.grainOff": "Grano activado: haz clic para quitarlo",
   "screenshots.tool.pen": "Lápiz",
   "screenshots.tool.size1": "Fino / pequeño",
   "screenshots.tool.size2": "Medio",

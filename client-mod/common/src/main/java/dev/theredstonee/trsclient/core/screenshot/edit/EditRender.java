@@ -232,12 +232,88 @@ public final class EditRender {
 		}
 	}
 
-	/** Ergebnis in voller Größe: drehen, zeichnen, zuschneiden. */
+	/** Ergebnis in voller Größe: drehen, zeichnen, zuschneiden, zuletzt der Filter „Rauschen“. */
 	public static int[] export(int[] base, EditState s) {
 		int[] rotated = rotate(base, s.baseW, s.baseH, s.rotation);
 		int w = s.width(), h = s.height();
 		draw(rotated, w, h, s.shapes, 1f);
-		if (!s.cropped()) return rotated;
-		return crop(rotated, w, h, s.cropX, s.cropY, s.cropW, s.cropH);
+		int[] out = s.cropped() ? crop(rotated, w, h, s.cropX, s.cropY, s.cropW, s.cropH) : rotated;
+		if (s.grain) grain(out, s.cropW, s.cropH, 0, 0, s.cropW, s.cropH, grainCell(s.cropW, s.cropH));
+		return out;
+	}
+
+	/** Seed des Korns – fest, damit Vorschau und Speichern dasselbe Muster zeigen. */
+	static final int GRAIN_SEED = 0x7A110E3;
+	/** Stärke des Korns (± Helligkeit, 0–255). */
+	static final int GRAIN_AMOUNT = 26;
+	/** Stärke der Vignette am Rand (0–1). */
+	static final float GRAIN_VIGNETTE = 0.55f;
+
+	/** Korngröße in Bildpixeln für ein Ergebnis von {@code w}×{@code h} (wie das Menü-Korn: ~1/480 der langen Seite). */
+	public static float grainCell(int w, int h) {
+		return Math.max(1f, Math.max(w, h) / 480f);
+	}
+
+	/**
+	 * Halloween-Filter „Rauschen“ – dasselbe Bild wie „Flackern &amp; Rauschen“ in den Menüs ({@code HorrorLayer}):
+	 * graues Filmkorn, dunkle Vignette und ein kühler Mondnacht-Ton (Lila/Silber). Wirkt auf den Bereich
+	 * ({@code rx, ry, rw, rh}) – die Vignette sitzt in dessen Mitte; {@code cell} = Korngröße in Pufferpixeln. Das
+	 * Muster hängt nur von der Kornzelle ab, nicht von der Auflösung – die Vorschau (verkleinert) sieht aus wie das
+	 * Ergebnis.
+	 */
+	public static void grain(int[] px, int w, int h, int rx, int ry, int rw, int rh, float cell) {
+		int ax = Math.max(0, rx), ay = Math.max(0, ry);
+		int bx = Math.min(w, rx + rw), by = Math.min(h, ry + rh);
+		if (bx <= ax || by <= ay || rw <= 0 || rh <= 0) return;
+		float c = Math.max(0.25f, cell);
+		double cx = rx + rw / 2.0, cy = ry + rh / 2.0;
+		double hx = rw / 2.0, hy = rh / 2.0;
+		for (int y = ay; y < by; y++) {
+			int row = y * w;
+			int gy = (int) Math.floor((y - ry) / c);
+			double ny = (y + 0.5 - cy) / hy;
+			for (int x = ax; x < bx; x++) {
+				int p = px[row + x];
+				int r = (p >> 16) & 0xFF, g = (p >> 8) & 0xFF, b = p & 0xFF;
+				// Mondnacht-Ton: etwas entsättigt, Schatten Richtung Lila, Lichter Richtung Silber.
+				int lum = (r * 77 + g * 151 + b * 28) >> 8;
+				r = (r * 3 + lum * 7 / 8) >> 2;
+				g = (g * 3 + lum * 13 / 16) >> 2;
+				b = (b * 3 + Math.min(255, lum + 18)) >> 2;
+				// Filmkorn: je Kornzelle ein fester Zufallswert (auf hellem Grund etwas schwächer).
+				int gx = (int) Math.floor((x - rx) / c);
+				int n = (hash(gx, gy) & 0xFF) - 128;
+				int d = n * GRAIN_AMOUNT / 128 * (320 - lum / 2) / 320;
+				r += d;
+				g += d;
+				b += d;
+				// Vignette: ab der halben Strecke zum Rand dunkler, in den Ecken am stärksten.
+				double nx = (x + 0.5 - cx) / hx;
+				double e = Math.sqrt(nx * nx + ny * ny) / Math.sqrt(2);
+				if (e > 0.35) {
+					double k = (e - 0.35) / 0.65;
+					double f = 1 - GRAIN_VIGNETTE * k * k;
+					r = (int) (r * f);
+					g = (int) (g * f);
+					b = (int) (b * f);
+				}
+				px[row + x] = 0xFF000000 | clamp255(r) << 16 | clamp255(g) << 8 | clamp255(b);
+			}
+		}
+	}
+
+	private static int clamp255(int v) {
+		return v < 0 ? 0 : v > 255 ? 255 : v;
+	}
+
+	/** Fester Zufallswert je Kornzelle (Integer-Hash, gleichmäßig verteilt). */
+	static int hash(int x, int y) {
+		int v = x * 0x27D4EB2D ^ y * 0x165667B1 ^ GRAIN_SEED;
+		v ^= v >>> 15;
+		v *= 0x2C1B3C6D;
+		v ^= v >>> 12;
+		v *= 0x297A2D39;
+		v ^= v >>> 15;
+		return v;
 	}
 }

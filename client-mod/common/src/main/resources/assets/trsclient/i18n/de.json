@@ -2297,6 +2297,8 @@
   "screenshots.tool.rect": "Rahmen",
   "screenshots.tool.text": "Text",
   "screenshots.tool.pixelate": "Verpixeln (Namen, Koordinaten … verbergen)",
+  "screenshots.tool.grain": "Rauschen (Halloween): gruseliges Filmkorn und Mondnacht-Look",
+  "screenshots.tool.grainOff": "Rauschen an: klicken zum Entfernen",
   "screenshots.tool.pen": "Stift",
   "screenshots.tool.size1": "Dünn / klein",
   "screenshots.tool.size2": "Mittel",

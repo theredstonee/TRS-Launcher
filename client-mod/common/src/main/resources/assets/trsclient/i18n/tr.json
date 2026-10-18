@@ -2297,6 +2297,8 @@
   "screenshots.tool.rect": "Çerçeve",
   "screenshots.tool.text": "Yazı",
   "screenshots.tool.pixelate": "Pikselleştir (isimleri, koordinatları … gizle)",
+  "screenshots.tool.grain": "Kumlanma (Halloween): ürkütücü film greni ve ay gecesi görünümü",
+  "screenshots.tool.grainOff": "Kumlanma açık: kaldırmak için tıkla",
   "screenshots.tool.pen": "Kalem",
   "screenshots.tool.size1": "İnce / küçük",
   "screenshots.tool.size2": "Orta",

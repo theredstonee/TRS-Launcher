@@ -1,6 +1,7 @@
 package dev.theredstonee.trsclient.core.ui.screenshot;
 
 import dev.theredstonee.trsclient.core.cape.PngDecoder;
+import dev.theredstonee.trsclient.core.halloween.Halloween;
 import dev.theredstonee.trsclient.core.i18n.I18n;
 import dev.theredstonee.trsclient.core.panorama.PanoramaPng;
 import dev.theredstonee.trsclient.core.screenshot.ImageClipboard;
@@ -260,6 +261,11 @@ public final class ScreenshotEditorUi extends UiScreen {
 						k = w / (float) s.width();
 					}
 					EditRender.draw(px, w, h, s.shapes, k);
+					if (s.grain) {
+						// Wie beim Speichern: Korn + Vignette über dem Zuschnitt (Vignette in dessen Mitte).
+						EditRender.grain(px, w, h, Math.round(s.cropX * k), Math.round(s.cropY * k), Math.max(1, Math.round(s.cropW * k)),
+								Math.max(1, Math.round(s.cropH * k)), EditRender.grainCell(s.cropW, s.cropH) * k);
+					}
 					for (int i = 0; i < px.length; i++) px[i] |= 0xFF000000;
 					pending = new Rendered(px, w, h, rev, s);
 				} catch (Throwable t) {
@@ -426,6 +432,21 @@ public final class ScreenshotEditorUi extends UiScreen {
 				}
 			});
 			x += size + 2;
+			if (tl == Tool.PIXELATE && grainAvailable()) {
+				// Halloween: Filter „Rauschen“ (Schalter, kein Werkzeug) gleich neben dem Verpixeln.
+				final boolean on = history.current().grain;
+				boolean hg = inside(mx, my, x, y, size, size);
+				Redstone.iconButton(c, x, y, size, "grain", hg, on);
+				if (hg) tooltip = I18n.tr(on ? "screenshots.tool.grainOff" : "screenshots.tool.grain");
+				hits.add(x, y, size, size, new Runnable() {
+					@Override
+					public void run() {
+						owner.platform().playClick();
+						toggleGrain();
+					}
+				});
+				x += size + 2;
+			}
 			if (tl == Tool.CROP) {
 				// Drehen gleich neben dem Zuschneiden
 				boolean hr = inside(mx, my, x, y, size, size);
@@ -839,6 +860,21 @@ public final class ScreenshotEditorUi extends UiScreen {
 		history.push(history.current().rotatedClockwise());
 	}
 
+	/**
+	 * Filter „Rauschen“ anbieten? Nur während des Halloween-Events – oder wenn das Bild ihn schon hat (Event mitten in
+	 * der Bearbeitung vorbei: ausschalten muss weiter gehen).
+	 */
+	boolean grainAvailable() {
+		return history != null && (Halloween.active() || history.current().grain);
+	}
+
+	private void toggleGrain() {
+		if (history == null) return;
+		commitText();
+		EditState s = history.current();
+		history.push(s.withGrain(!s.grain));
+	}
+
 	private void undo() {
 		if (history == null) return;
 		if (textInput != null) {
@@ -1221,6 +1257,13 @@ public final class ScreenshotEditorUi extends UiScreen {
 		history.push(s.withCrop(Math.round(s.width() * 0.05f), Math.round(s.height() * 0.05f), Math.round(s.width() * 0.9f),
 				Math.round(s.height() * 0.9f)));
 		history.push(history.current().rotatedClockwise());
+	}
+
+	/** Für den Selbsttest: Filter „Rauschen“ setzen (nur wenn er angeboten wird); true = jetzt an. */
+	public boolean testGrain(boolean on) {
+		if (!grainAvailable()) return false;
+		if (history.current().grain != on) toggleGrain();
+		return history.current().grain;
 	}
 
 	/** Für den Selbsttest: Kopie speichern; Ergebnis über {@link #testSaved()}. */

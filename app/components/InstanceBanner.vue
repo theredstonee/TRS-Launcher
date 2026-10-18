@@ -23,12 +23,14 @@ watch(banner, () => (failed.value = false))
 // Das Motiv folgt Theme und Akzent; erzeugt wird es erst im Browser.
 const settings = useSettingsStore()
 const design = useDesign()
+// Halloween: Mondnacht-Motiv statt Schaltung (auch beim Ein- und Ausschalten des Events).
+const events = useEventsStore()
 const generated = ref<string | null>(null)
 function regenerate() {
   generated.value = banner.value && !failed.value ? null : generatedBanner(props.instance.id)
 }
 onMounted(regenerate)
-watch([banner, failed, () => props.instance.id, () => settings.current?.ui.theme, () => settings.current?.ui.accent, design], () =>
+watch([banner, failed, () => props.instance.id, () => settings.current?.ui.theme, () => settings.current?.ui.accent, design, () => events.halloween], () =>
   nextTick(regenerate),
 )
 </script>

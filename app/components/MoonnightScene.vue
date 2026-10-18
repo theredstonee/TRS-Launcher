@@ -6,15 +6,31 @@ import { drawSprite } from '~/utils/moonnight/sprites'
 // Mondnacht (Halloween 2026, Stufe „Horror“) als Bühne der Startseite. Echte Pixel-Art:
 // 180 Texel hoch, Breite nach Seitenverhältnis (die Szene rechnet in Anteilen von W),
 // gezeichnet mit ~30 Bildern/s. „Animationen aus“: Standbild ohne Blitz.
-const props = withDefaults(defineProps<{ seed?: number; moonX?: number }>(), { seed: 18, moonX: 0.5 })
+// Auch Hintergrund aller anderen Seiten (über DesignScene): `still` = Standbild (Einstellung
+// „Animierter Hintergrund“ aus), `bolts` = Blitze an die Atmosphäre melden (Aufflackern,
+// Handabdrücke) – nur die eine große Szene, nicht jede kleine Vorschau.
+const props = withDefaults(defineProps<{ seed?: number; moonX?: number; still?: boolean; bolts?: boolean }>(), {
+  seed: 18,
+  moonX: 0.5,
+  still: false,
+  bolts: true,
+})
 
 const root = useTemplateRef<HTMLDivElement>('root')
 const canvas = useTemplateRef<HTMLCanvasElement>('canvas')
 const spider = useTemplateRef<HTMLCanvasElement>('spider')
 const { reduced } = useMotion()
 const look = useHalloweenLook()
+/** Standbild: „Animationen aus“ oder ausdrücklich gewünscht. */
+const quiet = computed(() => reduced.value || props.still)
 
-const opts: SceneOptions = { flicker: true, lightning: true, onBolt: emitBolt }
+const opts: SceneOptions = {
+  flicker: true,
+  lightning: true,
+  onBolt: () => {
+    if (props.bolts) emitBolt()
+  },
+}
 let frame: SceneFrame | null = null
 let raf = 0
 let lastDraw = 0
@@ -58,9 +74,9 @@ function sync() {
   cancelAnimationFrame(raf)
   raf = 0
   opts.flicker = look.flicker.value
-  opts.lightning = !reduced.value
-  if (reduced.value || document.hidden || !visible) {
-    if (reduced.value) paintStill()
+  opts.lightning = !quiet.value
+  if (quiet.value || document.hidden || !visible) {
+    if (quiet.value) paintStill()
     return
   }
   raf = requestAnimationFrame(tick)
@@ -97,14 +113,14 @@ onBeforeUnmount(() => {
   io?.disconnect()
   document.removeEventListener('visibilitychange', sync)
 })
-watch([reduced, look.flicker], sync)
+watch([quiet, look.flicker], sync)
 </script>
 
 <template>
   <div ref="root" class="moonnight" aria-hidden="true">
     <canvas ref="canvas" class="pix" />
     <slot />
-    <div class="dangle" :class="{ still: reduced }" style="left: 38%; --len: 90px">
+    <div class="dangle" :class="{ still: quiet }" style="left: 38%; --len: 90px">
       <i /><canvas ref="spider" width="7" height="6" />
     </div>
   </div>

@@ -18,7 +18,7 @@ defineProps<{ item: NewsItem; image?: string; post?: ChangelogEntry | null; larg
     bare
     class="absolute inset-0"
   />
-  <DesignScene v-else-if="item.source === 'launcher'" fill :seed="versionSeed(post?.version ?? item.title)" class="absolute inset-0" />
+  <DesignScene v-else-if="item.source === 'launcher'" fill no-event :seed="versionSeed(post?.version ?? item.title)" class="absolute inset-0" />
   <template v-else-if="image && item.source === 'modrinth'">
     <img :src="image" alt="" class="absolute inset-0 size-full scale-125 object-cover opacity-60 blur-xl" />
     <div class="absolute inset-0 grid place-items-center">

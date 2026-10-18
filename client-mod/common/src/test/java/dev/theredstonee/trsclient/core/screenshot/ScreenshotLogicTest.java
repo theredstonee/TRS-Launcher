@@ -249,4 +249,59 @@ class ScreenshotLogicTest {
 		assertNull(Screenshots.markerName(prefix.substring(0, prefix.length() - 2) + "x:a.png"));
 		assertNull(Screenshots.markerName(null));
 	}
+
+	@Test
+	void grainFilterIsPartOfTheStateAndOfTheExport() {
+		int w = 64, h = 40;
+		int[] base = new int[w * h];
+		Arrays.fill(base, 0xFF808080);
+		EditState s = EditState.initial(w, h);
+		assertFalse(s.grain);
+		EditState g = s.withGrain(true);
+		assertTrue(g.grain);
+		assertFalse(g.pristine(), "Rauschen allein ist schon eine Änderung");
+		assertTrue(g.withGrain(false).pristine());
+		assertTrue(g.rotatedClockwise().grain, "Drehen behält den Filter");
+		assertTrue(g.withCrop(4, 4, 20, 20).grain);
+		assertTrue(g.withShape(new Shape.Rect(1, 1, 5, 5, 0xFFFF0000, 1f)).grain);
+		EditHistory hist = new EditHistory(s);
+		hist.push(s.withGrain(true));
+		hist.undo();
+		assertFalse(hist.current().grain, "Rückgängig nimmt den Filter weg");
+
+		// Ohne Filter bleibt das Bild unverändert, mit Filter: Korn (verschiedene Werte), Ränder dunkler als die Mitte.
+		assertArrayEquals(base, EditRender.export(base, s));
+		int[] out = EditRender.export(base, g);
+		assertEquals(w * h, out.length);
+		java.util.Set<Integer> values = new java.util.HashSet<Integer>();
+		for (int p : out) values.add(p);
+		assertTrue(values.size() > 8, "Korn erzeugt unterschiedliche Pixel");
+		assertTrue(lum(out[0]) < lum(avg(out, w, w / 2 - 4, h / 2 - 4, 8, 8)), "Ecke dunkler als Mitte (Vignette)");
+		for (int p : out) assertEquals(0xFF, p >>> 24);
+		// Fest: zweimal dasselbe Ergebnis (Vorschau = Speichern).
+		assertArrayEquals(out, EditRender.export(base, g));
+		// Zugeschnitten: Ergebnis hat die Zuschnitt-Größe.
+		EditState gc = g.withCrop(10, 5, 30, 20);
+		assertEquals(30 * 20, EditRender.export(base, gc).length);
+		assertTrue(EditRender.grainCell(4000, 2000) > EditRender.grainCell(800, 400));
+		assertEquals(1f, EditRender.grainCell(100, 50));
+	}
+
+	private static int lum(int p) {
+		return (((p >> 16) & 0xFF) * 77 + ((p >> 8) & 0xFF) * 151 + (p & 0xFF) * 28) >> 8;
+	}
+
+	private static int avg(int[] px, int w, int x0, int y0, int cw, int ch) {
+		long r = 0, g = 0, b = 0;
+		for (int y = y0; y < y0 + ch; y++) {
+			for (int x = x0; x < x0 + cw; x++) {
+				int p = px[y * w + x];
+				r += (p >> 16) & 0xFF;
+				g += (p >> 8) & 0xFF;
+				b += p & 0xFF;
+			}
+		}
+		int n = cw * ch;
+		return 0xFF000000 | (int) (r / n) << 16 | (int) (g / n) << 8 | (int) (b / n);
+	}
 }
