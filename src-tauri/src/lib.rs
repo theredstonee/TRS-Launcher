@@ -1,3 +1,4 @@
+mod clip_overlay;
 mod commands;
 mod deeplink;
 mod dialog_text;
@@ -77,7 +78,9 @@ pub fn run() {
     let builder = builder
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
-        .plugin(tauri_plugin_window_state::Builder::default().build());
+        // Das REC-Overlay ist ein flüchtiges, über das Spiel gelegtes Fenster – Größe/Position
+        // nie merken oder wiederherstellen.
+        .plugin(tauri_plugin_window_state::Builder::default().with_denylist(&[clip_overlay::LABEL]).build());
     let builder = builder
         .plugin(tauri_plugin_notification::init())
         // Fernbedienung: QR-Code des PCs scannen – nur am Handy (am PC ein leeres Plugin).
@@ -605,6 +608,9 @@ pub fn run() {
             commands::clips::export_clip,
             commands::clips::copy_clip_file,
             commands::clips::open_clip_external,
+            clip_overlay::clip_overlay_show,
+            clip_overlay::clip_overlay_track,
+            clip_overlay::clip_overlay_hide,
             commands::export::export_candidates,
             commands::export::export_modpack,
             commands::export::import_modpack_file,

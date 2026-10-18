@@ -808,6 +808,12 @@ export const backend = {
   clipStates: () => call<ClipState[]>('clip_states'),
   /** Wie die Tasten im Spiel: Clip speichern bzw. Aufnahme starten/stoppen. */
   clipAction: (id: string, record: boolean) => call<void>('clip_action', { id, record }),
+  /** REC-Overlay (eigenes, aus der Aufnahme ausgeschlossenes Fenster) über dem Spiel zeigen. */
+  clipOverlayShow: (instanceId: string) => call<void>('clip_overlay_show', { instanceId }),
+  /** REC-Overlay dem Spielfenster nachführen (Position/Größe), während die Aufnahme läuft. */
+  clipOverlayTrack: (instanceId: string) => call<void>('clip_overlay_track', { instanceId }),
+  /** REC-Overlay verstecken (Aufnahme beendet). */
+  clipOverlayHide: () => call<void>('clip_overlay_hide'),
   ffmpegStatus: () => call<FfmpegStatus>('ffmpeg_status'),
   installFfmpeg: (onProgress: (percent: number) => void, taskId: string | null = null) =>
     call<void>('install_ffmpeg', { onProgress: channel(onProgress), taskId }),

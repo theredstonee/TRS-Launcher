@@ -26,6 +26,22 @@ export const useClipsStore = defineStore('clips', () => {
     states.value = { ...states.value, [state.instanceId]: { ...state, receivedAt: Date.now() } }
   }
 
+  /**
+   * Das REC-Overlay (eigenes Launcher-Fenster, aus der Aufnahme ausgeschlossen) dem Aufnahme-Stand
+   * folgen lassen: zeigen, sobald ein Spiel aufnimmt, verstecken, wenn keines mehr aufnimmt. Ein
+   * einzelnes Overlay – nehmen mehrere Spiele gleichzeitig auf, gilt das erste. Außerhalb von
+   * Tauri (und auf Plattformen ohne Aufnahme) ist das ein No-Op.
+   */
+  let overlayInstance: string | null = null
+  function syncOverlay() {
+    if (!isTauri()) return
+    const id = active.value.find((s) => s.recording)?.instanceId ?? null
+    if (id === overlayInstance) return
+    overlayInstance = id
+    if (id) void backend.clipOverlayShow(id).catch(() => {})
+    else void backend.clipOverlayHide().catch(() => {})
+  }
+
   /** Player mit diesem Clip öffnen (Clip-Seite, Deep-Link). */
   function openClip(instanceId: string, fileName: string) {
     void navigateTo({ path: '/clips', query: { instance: instanceId, file: fileName, n: String(Date.now()) } })
@@ -40,11 +56,13 @@ export const useClipsStore = defineStore('clips', () => {
     switch (event.type) {
       case 'state':
         setState(event)
+        syncOverlay()
         break
       case 'ended': {
         const next = { ...states.value }
         delete next[event.instanceId]
         states.value = next
+        syncOverlay()
         break
       }
       case 'saved': {
@@ -80,6 +98,7 @@ export const useClipsStore = defineStore('clips', () => {
     await listen<ClipOpenRequest>('clip-open', (e) => openClip(e.payload.instanceId, e.payload.fileName))
     try {
       for (const s of await backend.clipStates()) setState(s)
+      syncOverlay()
     } catch {
       // Kein Rekorder aktiv – egal.
     }

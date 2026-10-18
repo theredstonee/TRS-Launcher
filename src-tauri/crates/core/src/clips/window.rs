@@ -155,6 +155,74 @@ pub fn client_size(_hwnd: u64) -> Option<(u32, u32)> {
     None
 }
 
+/// Client-Bereich eines Fensters in Bildschirm-Koordinaten (physische Pixel): Ursprung oben-links.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ScreenRect {
+    pub x: i32,
+    pub y: i32,
+    pub width: u32,
+    pub height: u32,
+}
+
+/// Lage des Innenbereichs eines Fensters auf dem Bildschirm (für ein darüberliegendes Overlay),
+/// `None` = Fenster weg oder (fast) nicht sichtbar. Nur das Overlay braucht das; die Aufnahme nicht.
+#[cfg(windows)]
+pub fn screen_rect(hwnd: u64) -> Option<ScreenRect> {
+    use windows::Win32::Foundation::{HWND, POINT, RECT};
+    use windows::Win32::Graphics::Gdi::ClientToScreen;
+    use windows::Win32::UI::WindowsAndMessaging::{GetClientRect, IsWindow, IsWindowVisible};
+
+    let hwnd = HWND(hwnd as usize as *mut core::ffi::c_void);
+    // SAFETY: IsWindow/IsWindowVisible prüfen beliebige Werte gefahrlos; danach nur lesende Abfragen.
+    if !unsafe { IsWindow(Some(hwnd)) }.as_bool() || !unsafe { IsWindowVisible(hwnd) }.as_bool() {
+        return None;
+    }
+    let mut rect = RECT::default();
+    // SAFETY: gültiges Handle (oben geprüft), `rect` ist ein gültiger Zeiger.
+    unsafe { GetClientRect(hwnd, &raw mut rect) }.ok()?;
+    let (width, height) = ((rect.right - rect.left).max(0) as u32, (rect.bottom - rect.top).max(0) as u32);
+    if width < 16 || height < 16 {
+        return None; // minimiert/zu klein
+    }
+    let mut origin = POINT { x: rect.left, y: rect.top };
+    // SAFETY: gültiges Handle; `origin` ist ein gültiger Zeiger und wird in Bildschirm-Koords umgerechnet.
+    if !unsafe { ClientToScreen(hwnd, &raw mut origin) }.as_bool() {
+        return None;
+    }
+    Some(ScreenRect { x: origin.x, y: origin.y, width, height })
+}
+
+#[cfg(not(windows))]
+pub fn screen_rect(_hwnd: u64) -> Option<ScreenRect> {
+    None
+}
+
+/// Fenster des Spiels (ganzer Prozessbaum) + seinen Client-Bereich in Bildschirm-Koordinaten
+/// suchen – für das REC-Overlay, das der Launcher über das Spiel legt.
+pub fn find_screen_rect(pid: u32) -> Option<ScreenRect> {
+    let tree = process_tree(pid);
+    let win = find(&tree)?;
+    screen_rect(win.hwnd)
+}
+
+/// Dieses (Overlay-)Fenster aus jeder Fenster-/Bildschirm-Aufnahme ausschließen
+/// (`SetWindowDisplayAffinity` mit `WDA_EXCLUDEFROMCAPTURE`). So taucht „REC" nie im Clip auf.
+/// `true` = gesetzt.
+#[cfg(windows)]
+pub fn exclude_from_capture(hwnd: u64) -> bool {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{SetWindowDisplayAffinity, WDA_EXCLUDEFROMCAPTURE};
+
+    let hwnd = HWND(hwnd as usize as *mut core::ffi::c_void);
+    // SAFETY: gültiges Fenster-Handle; die Funktion ändert nur die Anzeige-Affinität dieses Fensters.
+    unsafe { SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE) }.is_ok()
+}
+
+#[cfg(not(windows))]
+pub fn exclude_from_capture(_hwnd: u64) -> bool {
+    false
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -176,5 +244,11 @@ mod tests {
     fn eigener_prozessbaum_enthaelt_mich() {
         let me = std::process::id();
         assert!(process_tree(me).contains(&me));
+    }
+
+    #[test]
+    fn kein_spielfenster_ohne_passenden_prozess() {
+        // Eine PID, die (praktisch) kein sichtbares Hauptfenster hat → kein Overlay-Rechteck.
+        assert!(find_screen_rect(0xFFFF_FFF0).is_none());
     }
 }

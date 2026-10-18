@@ -20,6 +20,9 @@ export default defineNuxtConfig({
   },
   devServer: { port: 3000 },
   ignore: ['**/src-tauri/**'],
+  // Das REC-Overlay lädt als eigenes Fenster direkt `/clip-overlay`; die Route wird sonst von
+  // keiner Seite verlinkt, daher explizit mit vorbauen (eigene index.html).
+  nitro: { prerender: { routes: ['/clip-overlay'] } },
   vite: {
     clearScreen: false,
     // vue-i18n: nur Composition API; Nachrichten werden ohne eval übersetzt (CSP bleibt streng).

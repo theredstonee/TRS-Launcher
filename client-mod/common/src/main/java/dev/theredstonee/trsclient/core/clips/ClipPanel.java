@@ -42,7 +42,13 @@ public final class ClipPanel {
 	String statusLine(boolean preview, long now) {
 		ClipStatus s = clips().status();
 		long key;
-		if (s.recording) key = 1L << 40 | (s.recordingMillis(now) / 1000);
+		if (s.recording) {
+			// Den Aufnahme-Indikator ("REC m:ss") zeichnet der Launcher als eigenes Overlay-Fenster,
+			// das aus der Aufnahme ausgeschlossen ist – im echten Spiel also nie ins Bild, sonst wäre
+			// es im Clip zu sehen. Im HUD-Editor (preview) bleibt die Anzeige zur Vorschau erhalten.
+			if (!preview) return null;
+			key = 1L << 40 | (s.recordingMillis(now) / 1000);
+		}
 		else if (s.buffer && bufferIcon()) key = 2L << 40 | s.clipSeconds;
 		else if (preview) key = 3L << 40;
 		else if (s.connected && "ffmpeg".equals(s.reason) && s.progress >= 0) key = 4L << 40 | s.progress;
