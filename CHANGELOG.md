@@ -28,7 +28,11 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.24.0 – 2026-10-18 – Haunted Halls | Spukende Hallen
+<!-- banner: accent=#8b5cf6 motif=/news/0.24.0/banner.png -->
+<!-- shots:
+/news/0.24.0/launcher-halloween-library.png | The moon night now haunts every page – here the library | Die Mondnacht spukt jetzt durch jede Seite – hier die Bibliothek
+-->
 
 ### English
 - **TRS Client: adjustable brightness (Gamma).** The old Fullbright becomes a brightness slider you can push from 100 % all the way up to fullbright. It applies instantly, works with shaders, and has two optional keybinds (toggle on/off, and cycle off → your level → fullbright).
