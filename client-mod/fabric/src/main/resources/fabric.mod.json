@@ -26,6 +26,11 @@
 			"environment": "client"
 		}
 	],
+	"custom": {
+		"badoptimizations:cache_hooks": {
+			"lightmap": "dev.theredstonee.trsclient.compat.BadOptLightmapHook"
+		}
+	},
 	"depends": {
 		"fabricloader": ">=${loader}",
 		"minecraft": "${minecraft}",

@@ -47,6 +47,8 @@ public final class GammaRefillTest {
 				wait = 3;
 				return true;
 			case 2:
+				dev.theredstonee.trsclient.TrsClient.LOGGER.info("[Autotest] Gamma aus: override={} hooks(updateLightTexture)={}",
+						modules.gammaOverride(), HookStats.lightmap);
 				actions.shot("trsclient-gamma-off");
 				modules.fullbright.setEnabled(true);
 				modules.fullbrightLevel.set(300);
@@ -57,7 +59,8 @@ public final class GammaRefillTest {
 				actions.shot("trsclient-gamma-300");
 				modules.fullbrightLevel.set(1000);
 				refreshLight(mc);
-				dev.theredstonee.trsclient.TrsClient.LOGGER.info("[Autotest] Gamma 1000 %: override={}", modules.gammaOverride());
+				dev.theredstonee.trsclient.TrsClient.LOGGER.info("[Autotest] Gamma 1000 %: override={} hooks(updateLightTexture)={}",
+						modules.gammaOverride(), HookStats.lightmap);
 				wait = 5;
 				return true;
 			case 4:
