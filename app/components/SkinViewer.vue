@@ -2,6 +2,7 @@
 import type { SkinVariant } from '~/types'
 import type { CosmeticInstance } from '~/utils/cosmetic-v2/view'
 import { modelTop, validateModel, type CosmeticModel, type ViewerCosmetic, type WingState } from '~/utils/cosmetic-v2/format'
+import { capeLooksSmooth } from '~/utils/capeHd'
 
 // 3D-Vorschau des Skins (skinview3d, mitgeliefert – kein CDN, damit die CSP
 // eng bleibt). Texturen kommen als Data-URL aus dem Kern; dadurch darf WebGL
@@ -26,6 +27,12 @@ const props = withDefaults(
      */
     capeCanvases?: HTMLCanvasElement[] | null
     capeFrame?: number
+    /**
+     * Umhang glatt filtern (linear + Mipmaps, wie HD-Umhänge im TRS Client) statt
+     * scharfer Pixel. `null` = automatisch wie im Spiel: größer als 64×32 und nicht
+     * aus einfarbigen k×k-Blöcken → glatt.
+     */
+    capeSmooth?: boolean | null
     /** Kopf-Kosmetik (v2) am Kopf; Animation und Leuchten laufen zur Wanduhr wie im Spiel. */
     cosmetic?: ViewerCosmetic | null
     /** Begleiter (slot companion), zusätzlich zum Hut, dieselbe Pipeline. */
@@ -50,6 +57,7 @@ const props = withDefaults(
     capeFrameTime: null,
     capeCanvases: null,
     capeFrame: 0,
+    capeSmooth: null,
     cosmetic: null,
     companion: null,
     wings: null,
@@ -92,7 +100,8 @@ async function setAnimation(kind: 'walk' | 'idle' | 'none') {
 async function build() {
   if (!canvas.value || viewer) return
   try {
-    const { SkinViewer } = await import('skinview3d')
+    const [{ SkinViewer }, three] = await Promise.all([import('skinview3d'), import('three')])
+    threeFilters = three
     viewer = new SkinViewer({
       canvas: canvas.value,
       width: box.value?.clientWidth ?? 320,
@@ -147,6 +156,48 @@ async function splitCape(src: string, frames: number): Promise<HTMLCanvasElement
   })
 }
 
+/** Glatt oder scharf? Automatisch einmal je Leinwand bestimmt (Prüfung wie im TRS Client). */
+const smoothCache = new WeakMap<HTMLCanvasElement, boolean>()
+function capeSmoothFor(source: HTMLCanvasElement): boolean {
+  if (props.capeSmooth !== null) return props.capeSmooth
+  let smooth = smoothCache.get(source)
+  if (smooth === undefined) {
+    smooth = false
+    try {
+      const data = source.getContext('2d', { willReadFrequently: true })?.getImageData(0, 0, source.width, source.height)
+      if (data) smooth = capeLooksSmooth({ width: data.width, height: data.height, data: data.data })
+    } catch {
+      smooth = false
+    }
+    smoothCache.set(source, smooth)
+  }
+  return smooth
+}
+
+let threeFilters: typeof import('three') | null = null
+/**
+ * Filter der gerade geladenen Umhang-Textur: HD glatt (linear, Mipmaps, anisotrop –
+ * kein Flimmern beim Drehen), Pixel-Art scharf (skinview3d-Standard).
+ */
+function applyCapeFilter(smooth: boolean) {
+  if (!viewer || !threeFilters || !smooth) return
+  // Dieselbe Textur hängt an Umhang und Elytra (skinview3d legt sie bei jedem Laden neu an).
+  const tex = viewer.playerObject.cape.map
+  if (!tex) return
+  tex.magFilter = threeFilters.LinearFilter
+  tex.minFilter = threeFilters.LinearMipmapLinearFilter
+  tex.generateMipmaps = true
+  tex.anisotropy = viewer.renderer.capabilities.getMaxAnisotropy()
+  tex.needsUpdate = true
+}
+
+/** Umhang aus einer Leinwand laden und filtern. */
+function loadCapeCanvas(canvas: HTMLCanvasElement) {
+  if (!viewer) return
+  viewer.loadCape(canvas, { backEquipment: 'cape' })
+  applyCapeFilter(capeSmoothFor(canvas))
+}
+
 /** Leinwand je Frame als Umhang (animiert zur Wanduhr oder fester Frame). */
 function applyCanvasCape(canvases: HTMLCanvasElement[], frameTime: number | null) {
   const token = capeToken
@@ -157,7 +208,7 @@ function applyCanvasCape(canvases: HTMLCanvasElement[], frameTime: number | null
     const canvas = canvases[Math.max(0, f)]
     if (!canvas || canvas === shown) return
     shown = canvas
-    viewer.loadCape(canvas, { backEquipment: 'cape' })
+    loadCapeCanvas(canvas)
   }
   draw()
   // Kürzer als die Frame-Dauer abtasten, damit der Wechsel zur Wanduhr passt.
@@ -177,12 +228,10 @@ async function applyCape() {
     return
   }
   const animated = props.capeFrames > 1 && !!props.capeFrameTime
-  if (!animated) {
-    await viewer.loadCape(props.cape, { backEquipment: 'cape' })
-    return
-  }
   try {
-    const canvases = await splitCape(props.cape, animated ? props.capeFrames : 1)
+    // Auch ein einzelnes Bild als Leinwand: so lässt sich prüfen, ob es glatt gefiltert werden soll.
+    // Streifen ohne Tempo zeigen den Frame `capeFrame` statt des ganzen Streifens.
+    const canvases = await splitCape(props.cape, props.capeFrames)
     if (token !== capeToken || !viewer) return
     if (canvases.length) applyCanvasCape(canvases, animated ? props.capeFrameTime : null)
     else viewer.resetCape()
@@ -428,7 +477,7 @@ onBeforeUnmount(() => {
 })
 
 watch(() => [props.skin, props.variant], () => void applySkin())
-watch(() => [props.cape, props.capeFrames, props.capeFrameTime, props.capeCanvases, props.capeFrame], () => void applyCape())
+watch(() => [props.cape, props.capeFrames, props.capeFrameTime, props.capeCanvases, props.capeFrame, props.capeSmooth], () => void applyCape())
 watch(() => props.animation, (kind) => void setAnimation(kind))
 watch(() => props.height, resize)
 watch(() => props.cosmetic, () => void applySlot(hatSlot, props.cosmetic))

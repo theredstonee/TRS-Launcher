@@ -19,6 +19,8 @@ const props = defineProps<{
   zoom: number
   grid: boolean
   guides: boolean
+  /** HD-Umhang: vergrößert glatt zeigen (wie im Spiel) statt scharfer Pixel. */
+  smooth?: boolean
   readonly?: boolean
 }>()
 const emit = defineEmits<{ commit: [image: Rgba]; pick: [color: Color]; hover: [info: { x: number; y: number; region: CapeRegion | null } | null] }>()
@@ -63,15 +65,16 @@ function draw() {
   if (!el) return
   const img = shown.value
   const z = props.zoom
-  const W = img.width * z
-  const H = img.height * z
+  const W = Math.round(img.width * z)
+  const H = Math.round(img.height * z)
   if (el.width !== W || el.height !== H) {
     el.width = W
     el.height = H
   }
   const ctx = el.getContext('2d')
   if (!ctx) return
-  ctx.imageSmoothingEnabled = false
+  ctx.imageSmoothingEnabled = !!props.smooth
+  ctx.imageSmoothingQuality = 'high'
   ctx.fillStyle = checkerPattern(ctx) ?? '#2b2833'
   ctx.fillRect(0, 0, W, H)
   if (props.onion) {
@@ -141,7 +144,7 @@ function drawGrid(ctx: CanvasRenderingContext2D, img: Rgba, z: number) {
   ctx.stroke()
 }
 
-watch([shown, () => props.onion, () => props.zoom, () => props.grid, () => props.guides, () => props.scale], draw, { flush: 'post' })
+watch([shown, () => props.onion, () => props.zoom, () => props.grid, () => props.guides, () => props.scale, () => props.smooth], draw, { flush: 'post' })
 onMounted(draw)
 
 // --- Zeichnen ---------------------------------------------------------------------------
@@ -242,7 +245,7 @@ function onLeave() {
     ref="canvas"
     class="block touch-none"
     :class="readonly ? 'cursor-default' : tool === 'move' ? 'cursor-move' : 'cursor-crosshair'"
-    :style="{ width: `${image.width * zoom}px`, height: `${image.height * zoom}px`, imageRendering: 'pixelated' }"
+    :style="{ width: `${image.width * zoom}px`, height: `${image.height * zoom}px`, imageRendering: smooth ? 'auto' : 'pixelated' }"
     role="img"
     :aria-label="t('capes.studio.canvasLabel', { w: image.width, h: image.height })"
     data-testid="cape-pixel-canvas"

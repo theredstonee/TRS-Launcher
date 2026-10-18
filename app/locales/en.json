@@ -732,7 +732,7 @@
     },
     "trsCapeImport": {
       "unsupported": "“{name}” isn’t a supported image (PNG, APNG, JPEG, WebP, GIF or TRS Studio JSON).",
-      "imageTooLarge": "“{name}” is too large (at most 4096×4096 pixels, animated 2048×2048).",
+      "imageTooLarge": "“{name}” is too large. Images can be at most 4096×4096 pixels, GIF/APNG at most 2048×2048; finished cape strips (up to 1024×512 per frame, 32 frames) up to 1024×16384.",
       "broken": "“{name}” couldn't be read.",
       "tooManyFiles": "Please choose at most {max} files at once.",
       "fileTooLarge": "“{name}” is too large (at most 20 MB per file).",
@@ -3693,6 +3693,28 @@
         "auto": "Automatic ({w}×{h})",
         "hint": "You edit in this resolution; it’s scaled up automatically when uploading."
       },
+      "style": {
+        "label": "Style",
+        "auto": "picked automatically",
+        "useAuto": "Automatic",
+        "pixel": "Pixel art",
+        "hd": "HD – like the image",
+        "pixelHint": "Crisp pixels like in Minecraft – ideal for hand-drawn pixel art. Upscaled pixel-perfect when uploading.",
+        "hdHint": "Full 1024×512 resolution, smoothly scaled in full color – ideal for photos, logos and paintings. Shown smooth in-game.",
+        "hdDetail": "HD always uses the full resolution (scale 16)."
+      },
+      "fit": {
+        "label": "Image in the frame",
+        "cover": "Fill",
+        "contain": "Fit",
+        "coverHint": "Fills the back of the cape – whatever doesn’t fit is cut off.",
+        "containHint": "The whole image stays visible, the rest gets a background.",
+        "backdrop": "Background",
+        "backdropColor": "Color",
+        "backdropBlur": "Blurred image",
+        "backdropTransparent": "Transparent",
+        "transparentHint": "Transparent areas show up black in-game."
+      },
       "importSummary": "Frames: {n} · editing at {w}×{h}",
       "preparing": "Preparing frames … {done}/{total}",
       "video": {
@@ -3781,7 +3803,10 @@
         "useScale": "{w}×{h} (≈ {size})",
         "useFrames": "{n} frames (≈ {size})",
         "final": "Exactly as it will be uploaded.",
-        "failed": "The cape couldn’t be built."
+        "failed": "The cape couldn’t be built.",
+        "hdScaleHint": "HD uses 1024×512. Smaller sizes are scaled down smoothly – only needed if the file gets too large.",
+        "hdHint": "Smoothly scaled, full color and transparency – exactly like the preview.",
+        "hdTooLarge": "HD images compress worse than pixel art: many frames at 1024×512 quickly go past 20 MB. Fewer frames or a slightly smaller resolution help."
       }
     },
     "hatDialog": {

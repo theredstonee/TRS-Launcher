@@ -5,7 +5,7 @@ import { timelineLength, type CapeFrame } from '~/utils/capeEditor'
 // Zeitleiste des Umhang-Editors: Frames als Vorschaukarten (Außenseite), ziehen zum
 // Umsortieren, Standzeit je Frame (×1 …), Duplizieren, Löschen, Abspielen und Tempo.
 // Standzeiten werden beim Hochladen zu wiederholten Frames (zusammen höchstens 32).
-const props = defineProps<{ frames: CapeFrame[]; current: number; playing: boolean; scale: number }>()
+const props = defineProps<{ frames: CapeFrame[]; current: number; playing: boolean; scale: number; smooth?: boolean }>()
 const frameTime = defineModel<number>('frameTime', { required: true })
 const emit = defineEmits<{
   select: [index: number]
@@ -30,13 +30,16 @@ function thumb(img: Rgba): string {
   src.width = img.width
   src.height = img.height
   src.getContext('2d')?.putImageData(new ImageData(new Uint8ClampedArray(img.data), img.width, img.height), 0, 0)
+  // HD: doppelt so fein und glatt verkleinert (scharf auf hochauflösenden Bildschirmen).
+  const k = props.smooth ? 2 : 1
   const out = document.createElement('canvas')
-  out.width = 40
-  out.height = 64
+  out.width = 40 * k
+  out.height = 64 * k
   const ctx = out.getContext('2d')
   if (ctx) {
-    ctx.imageSmoothingEnabled = s > 4
-    ctx.drawImage(src, s, s, 10 * s, 16 * s, 0, 0, 40, 64)
+    ctx.imageSmoothingEnabled = !!props.smooth || s > 4
+    ctx.imageSmoothingQuality = 'high'
+    ctx.drawImage(src, s, s, 10 * s, 16 * s, 0, 0, out.width, out.height)
   }
   const url = out.toDataURL('image/png')
   thumbs.set(img, url)
@@ -104,7 +107,7 @@ function onKey(e: KeyboardEvent, index: number) {
           @click="emit('select', i)"
           @keydown="onKey($event, i)"
         >
-          <img :src="thumb(frame.image)" alt="" class="h-16 w-10 rounded-sm bg-[repeating-conic-gradient(#2b2833_0_25%,#35313d_0_50%)] bg-[length:8px_8px] [image-rendering:pixelated]" draggable="false" />
+          <img :src="thumb(frame.image)" alt="" class="h-16 w-10 rounded-sm bg-[repeating-conic-gradient(#2b2833_0_25%,#35313d_0_50%)] bg-[length:8px_8px]" :class="{ '[image-rendering:pixelated]': !smooth }" draggable="false" />
         </button>
         <span class="pointer-events-none absolute top-1.5 left-1.5 rounded bg-black/65 px-1 text-[10px] font-semibold text-white tabular-nums">{{ i + 1 }}</span>
         <span v-if="frame.hold > 1" class="pointer-events-none absolute right-1.5 bottom-1.5 rounded bg-lamp-400 px-1 text-[10px] font-bold text-base-950 tabular-nums">×{{ frame.hold }}</span>

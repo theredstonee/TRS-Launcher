@@ -704,7 +704,7 @@
     },
     "trsCapeImport": {
       "unsupported": "‘{name}’ is geen ondersteunde afbeelding (PNG, APNG, JPEG, WebP, GIF of TRS Studio-JSON).",
-      "imageTooLarge": "‘{name}’ is te groot (max. 4096×4096 pixels, geanimeerd 2048×2048).",
+      "imageTooLarge": "‘{name}’ is te groot. Afbeeldingen mogen maximaal 4096×4096 pixels zijn, GIF/APNG maximaal 2048×2048; kant-en-klare capestroken (tot 1024×512 per frame, 32 frames) tot 1024×16384.",
       "broken": "“{name}” kon niet worden gelezen.",
       "tooManyFiles": "Kies maximaal {max} bestanden tegelijk.",
       "fileTooLarge": "“{name}” is te groot (max. 20 MB per bestand).",
@@ -3644,6 +3644,28 @@
         "auto": "Automatisch ({w}×{h})",
         "hint": "Je bewerkt in deze resolutie; bij het uploaden wordt automatisch opgeschaald."
       },
+      "style": {
+        "label": "Stijl",
+        "auto": "automatisch gekozen",
+        "useAuto": "Automatisch",
+        "pixel": "Pixelart",
+        "hd": "HD – zoals de afbeelding",
+        "pixelHint": "Scherpe pixels zoals in Minecraft – ideaal voor getekende pixelart. Bij het uploaden pixelperfect vergroot.",
+        "hdHint": "Volledige resolutie 1024×512, vloeiend geschaald en in alle kleuren – ideaal voor foto’s, logo’s en schilderijen. In het spel vloeiend weergegeven.",
+        "hdDetail": "HD gebruikt altijd de volledige resolutie (factor 16)."
+      },
+      "fit": {
+        "label": "Afbeelding in het kader",
+        "cover": "Vullen",
+        "contain": "Passend maken",
+        "coverHint": "Vult de achterkant – wat niet past, wordt afgesneden.",
+        "containHint": "De hele afbeelding blijft zichtbaar, de rest krijgt een achtergrond.",
+        "backdrop": "Achtergrond",
+        "backdropColor": "Kleur",
+        "backdropBlur": "Wazige afbeelding",
+        "backdropTransparent": "Transparant",
+        "transparentHint": "Transparante delen zijn in het spel zwart."
+      },
       "importSummary": "Frames: {n} · bewerken in {w}×{h}",
       "preparing": "Frames voorbereiden … {done}/{total}",
       "video": {
@@ -3732,7 +3754,10 @@
         "useScale": "{w}×{h} (≈ {size})",
         "useFrames": "{n} frames (≈ {size})",
         "final": "Precies zoals hij wordt geüpload.",
-        "failed": "De cape kon niet worden gemaakt."
+        "failed": "De cape kon niet worden gemaakt.",
+        "hdScaleHint": "HD gebruikt 1024×512. Kleinere formaten worden vloeiend verkleind – alleen nodig als het bestand te groot wordt.",
+        "hdHint": "Vloeiend geschaald, alle kleuren en transparantie – precies zoals de voorbeeldweergave.",
+        "hdTooLarge": "HD-afbeeldingen comprimeren slechter dan pixelart: veel frames in 1024×512 gaan snel boven 20 MB. Minder frames of een iets kleinere resolutie helpen."
       }
     },
     "hatDialog": {

@@ -732,7 +732,7 @@
     },
     "trsCapeImport": {
       "unsupported": "«{name}» no es una imagen compatible (PNG, APNG, JPEG, WebP, GIF o JSON de TRS Studio).",
-      "imageTooLarge": "«{name}» es demasiado grande (máx. 4096×4096 píxeles, animado 2048×2048).",
+      "imageTooLarge": "«{name}» es demasiado grande. Las imágenes pueden tener como máximo 4096×4096 píxeles, los GIF/APNG 2048×2048; las tiras de capa terminadas (hasta 1024×512 por fotograma, 32 fotogramas) hasta 1024×16384.",
       "broken": "No se pudo leer «{name}».",
       "tooManyFiles": "Elige como máximo {max} archivos a la vez.",
       "fileTooLarge": "«{name}» es demasiado grande (máx. 20 MB por archivo).",
@@ -3693,6 +3693,28 @@
         "auto": "Automática ({w}×{h})",
         "hint": "Editas en esta resolución; al subir se amplía automáticamente."
       },
+      "style": {
+        "label": "Estilo",
+        "auto": "elegido automáticamente",
+        "useAuto": "Automático",
+        "pixel": "Pixel art",
+        "hd": "HD – como la imagen",
+        "pixelHint": "Píxeles nítidos como en Minecraft – ideal para pixel art dibujado. Al subir se amplía píxel a píxel.",
+        "hdHint": "Resolución completa de 1024×512, escalado suave y a todo color – ideal para fotos, logos y pinturas. En el juego se ve suave.",
+        "hdDetail": "HD usa siempre la resolución completa (factor 16)."
+      },
+      "fit": {
+        "label": "Imagen en el marco",
+        "cover": "Rellenar",
+        "contain": "Ajustar",
+        "coverHint": "Rellena la parte trasera – lo que no cabe se recorta.",
+        "containHint": "Se ve la imagen entera; el resto recibe un fondo.",
+        "backdrop": "Fondo",
+        "backdropColor": "Color",
+        "backdropBlur": "Imagen desenfocada",
+        "backdropTransparent": "Transparente",
+        "transparentHint": "Las zonas transparentes se ven negras en el juego."
+      },
       "importSummary": "Fotogramas: {n} · edición en {w}×{h}",
       "preparing": "Preparando fotogramas… {done}/{total}",
       "video": {
@@ -3781,7 +3803,10 @@
         "useScale": "{w}×{h} (≈ {size})",
         "useFrames": "{n} fotogramas (≈ {size})",
         "final": "Tal como se subirá.",
-        "failed": "No se pudo crear la capa."
+        "failed": "No se pudo crear la capa.",
+        "hdScaleHint": "HD usa 1024×512. Los tamaños menores se reducen de forma suave – solo hace falta si el archivo es demasiado grande.",
+        "hdHint": "Escalado suave, todos los colores y la transparencia – igual que en la vista previa.",
+        "hdTooLarge": "Las imágenes HD se comprimen peor que el pixel art: muchos fotogramas a 1024×512 superan pronto los 20 MB. Ayudan menos fotogramas o una resolución algo menor."
       }
     },
     "hatDialog": {

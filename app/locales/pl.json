@@ -704,7 +704,7 @@
     },
     "trsCapeImport": {
       "unsupported": "„{name}” nie jest obsługiwanym obrazem (PNG, APNG, JPEG, WebP, GIF lub JSON z TRS Studio).",
-      "imageTooLarge": "„{name}” jest za duży (maks. 4096×4096 pikseli, animowany 2048×2048).",
+      "imageTooLarge": "„{name}” jest za duży. Obrazy mogą mieć maks. 4096×4096 pikseli, GIF/APNG maks. 2048×2048; gotowe paski peleryn (do 1024×512 na klatkę, 32 klatki) do 1024×16384.",
       "broken": "Nie udało się odczytać „{name}”.",
       "tooManyFiles": "Wybierz maksymalnie {max} plików naraz.",
       "fileTooLarge": "„{name}” jest za duży (maks. 20 MB na plik).",
@@ -3644,6 +3644,28 @@
         "auto": "Automatycznie ({w}×{h})",
         "hint": "Edytujesz w tej rozdzielczości; przy przesyłaniu jest automatycznie powiększana."
       },
+      "style": {
+        "label": "Styl",
+        "auto": "wybrany automatycznie",
+        "useAuto": "Automatycznie",
+        "pixel": "Pixel art",
+        "hd": "HD – jak obraz",
+        "pixelHint": "Ostre piksele jak w Minecrafcie – idealne do rysowanego pixel artu. Przy wysyłaniu powiększane piksel w piksel.",
+        "hdHint": "Pełna rozdzielczość 1024×512, płynne skalowanie i wszystkie kolory – idealne do zdjęć, logo i obrazów. W grze wyświetlana gładko.",
+        "hdDetail": "HD zawsze używa pełnej rozdzielczości (współczynnik 16)."
+      },
+      "fit": {
+        "label": "Obraz w ramce",
+        "cover": "Wypełnij",
+        "contain": "Dopasuj",
+        "coverHint": "Wypełnia tył peleryny – to, co się nie mieści, zostaje przycięte.",
+        "containHint": "Cały obraz pozostaje widoczny, reszta dostaje tło.",
+        "backdrop": "Tło",
+        "backdropColor": "Kolor",
+        "backdropBlur": "Rozmyty obraz",
+        "backdropTransparent": "Przezroczyste",
+        "transparentHint": "Przezroczyste miejsca są w grze czarne."
+      },
       "importSummary": "Klatki: {n} · edycja w {w}×{h}",
       "preparing": "Przygotowywanie klatek … {done}/{total}",
       "video": {
@@ -3732,7 +3754,10 @@
         "useScale": "{w}×{h} (≈ {size})",
         "useFrames": "{n} klatek (≈ {size})",
         "final": "Dokładnie tak, jak zostanie przesłana.",
-        "failed": "Nie udało się utworzyć peleryny."
+        "failed": "Nie udało się utworzyć peleryny.",
+        "hdScaleHint": "HD używa 1024×512. Mniejsze rozmiary są płynnie zmniejszane – potrzebne tylko, gdy plik jest za duży.",
+        "hdHint": "Płynnie skalowane, pełne kolory i przezroczystość – dokładnie jak w podglądzie.",
+        "hdTooLarge": "Obrazy HD kompresują się gorzej niż pixel art: wiele klatek w 1024×512 szybko przekracza 20 MB. Pomaga mniej klatek albo nieco mniejsza rozdzielczość."
       }
     },
     "hatDialog": {

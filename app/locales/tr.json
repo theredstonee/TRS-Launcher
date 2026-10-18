@@ -704,7 +704,7 @@
     },
     "trsCapeImport": {
       "unsupported": "“{name}” desteklenen bir resim değil (PNG, APNG, JPEG, WebP, GIF veya TRS Studio JSON).",
-      "imageTooLarge": "“{name}” çok büyük (en fazla 4096×4096 piksel, animasyonlu 2048×2048).",
+      "imageTooLarge": "“{name}” çok büyük. Görseller en fazla 4096×4096 piksel, GIF/APNG en fazla 2048×2048 olabilir; hazır pelerin şeritleri (kare başına 1024×512’ye kadar, 32 kare) 1024×16384’e kadar.",
       "broken": "“{name}” okunamadı.",
       "tooManyFiles": "Tek seferde en fazla {max} dosya seç.",
       "fileTooLarge": "“{name}” çok büyük (dosya başına en fazla 20 MB).",
@@ -3644,6 +3644,28 @@
         "auto": "Otomatik ({w}×{h})",
         "hint": "Bu çözünürlükte düzenlersin; yüklerken otomatik olarak büyütülür."
       },
+      "style": {
+        "label": "Stil",
+        "auto": "otomatik seçildi",
+        "useAuto": "Otomatik",
+        "pixel": "Piksel sanatı",
+        "hd": "HD – görsel gibi",
+        "pixelHint": "Minecraft’taki gibi keskin pikseller – çizilmiş piksel sanatı için ideal. Yüklerken piksel piksel büyütülür.",
+        "hdHint": "Tam 1024×512 çözünürlük, yumuşak ölçekleme ve tüm renkler – fotoğraflar, logolar ve resimler için ideal. Oyunda yumuşak görünür.",
+        "hdDetail": "HD her zaman tam çözünürlüğü kullanır (16 kat)."
+      },
+      "fit": {
+        "label": "Çerçevedeki görsel",
+        "cover": "Doldur",
+        "contain": "Sığdır",
+        "coverHint": "Pelerinin arkasını doldurur – sığmayan kısımlar kesilir.",
+        "containHint": "Görselin tamamı görünür kalır, kalan alana arka plan eklenir.",
+        "backdrop": "Arka plan",
+        "backdropColor": "Renk",
+        "backdropBlur": "Bulanık görsel",
+        "backdropTransparent": "Saydam",
+        "transparentHint": "Saydam yerler oyunda siyah görünür."
+      },
       "importSummary": "Kareler: {n} · {w}×{h} olarak düzenlenir",
       "preparing": "Kareler hazırlanıyor … {done}/{total}",
       "video": {
@@ -3732,7 +3754,10 @@
         "useScale": "{w}×{h} (≈ {size})",
         "useFrames": "{n} kare (≈ {size})",
         "final": "Tam olarak yükleneceği gibi.",
-        "failed": "Pelerin oluşturulamadı."
+        "failed": "Pelerin oluşturulamadı.",
+        "hdScaleHint": "HD 1024×512 kullanır. Daha küçük boyutlar yumuşakça küçültülür – yalnızca dosya çok büyükse gerekir.",
+        "hdHint": "Yumuşak ölçeklenmiş, tüm renkler ve saydamlık – tam önizlemedeki gibi.",
+        "hdTooLarge": "HD görseller piksel sanatından daha kötü sıkışır: 1024×512’de çok sayıda kare hızla 20 MB’ı aşar. Daha az kare veya biraz daha küçük çözünürlük yardımcı olur."
       }
     },
     "hatDialog": {

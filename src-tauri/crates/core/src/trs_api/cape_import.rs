@@ -125,9 +125,20 @@ fn unsupported(name: &str) -> Error {
 fn too_big(name: &str) -> Error {
     Error::validation(crate::msg!(
         "trsCapeImport.imageTooLarge",
-        "„{name}“ ist zu groß (höchstens 4096×4096 Pixel, animiert 2048×2048).",
+        "„{name}“ ist zu groß. Bilder dürfen höchstens 4096×4096 Pixel haben, GIF/APNG höchstens 2048×2048; \
+         fertige Umhang-Streifen (64·k × 32·k je Frame, bis 1024×512 und 32 Frames) bis 1024×16384.",
         name = name
     ))
+}
+
+/// Darf ein Einzelbild (PNG/JPEG/WebP) ins Webview? Beliebige Bilder bis 4096×4096 (Speicher),
+/// fertige Umhang-Streifen im Upload-Format (64k×32k·n bzw. 22k×17k·n, k ≤ 16, n ≤ 32) auch
+/// länger – z. B. 1024×16384 – denn genau so nimmt sie der Server an.
+fn image_size_ok(width: u32, height: u32) -> bool {
+    if png::upload_layout(width, height).is_some() {
+        return true;
+    }
+    width <= MAX_SIDE && height <= MAX_SIDE && u64::from(width) * u64::from(height) <= MAX_IMAGE_PIXELS
 }
 
 fn broken(name: &str) -> Error {
@@ -201,7 +212,7 @@ pub fn source_from_bytes(name: String, json_ext: bool, bytes: &[u8]) -> Result<C
             if width == 0 || height == 0 {
                 return Err(broken(&name));
             }
-            if width > MAX_SIDE || height > MAX_SIDE || u64::from(width) * u64::from(height) > MAX_IMAGE_PIXELS {
+            if !image_size_ok(width, height) {
                 return Err(too_big(&name));
             }
             let data_url = format!("data:{mime};base64,{}", STANDARD.encode(bytes));
@@ -443,6 +454,23 @@ mod tests {
         assert_eq!(err.message_code(), "trsCapeImport.imageTooLarge");
         let err = source_from_bytes("x".into(), false, b"<svg onload=alert(1)>").unwrap_err();
         assert_eq!(err.message_code(), "trsCapeImport.unsupported");
+    }
+
+    #[test]
+    fn finished_cape_strips_pass_the_size_check() {
+        // Fertige HD-Streifen im Server-Format: 1024 breit, 512 je Frame, bis 32 Frames.
+        for (w, h) in [(1024, 512 * 24), (1024, 512 * 32), (512, 256 * 32), (64, 32 * 32), (352, 272 * 32), (1024, 512)] {
+            assert!(image_size_ok(w, h), "{w}×{h} ist ein gültiger Streifen");
+        }
+        // Beliebige Bilder bleiben begrenzt; Streifen nur in genau passenden Maßen.
+        for (w, h) in [(1024, 512 * 33), (1000, 12288), (4097, 4097), (8193, 10), (1088, 544 * 30)] {
+            assert!(!image_size_ok(w, h), "{w}×{h} wird abgewiesen");
+        }
+        assert!(image_size_ok(4096, 4096) && image_size_ok(1600, 1600));
+        // Nur der Kopf zählt: der Streifen kommt durch, ohne dekodiert zu werden.
+        let strip = super::png::tests::png_with(1024, 512 * 24, &[]);
+        let src = source_from_bytes("streifen".into(), false, &strip).unwrap();
+        assert!(matches!(src, CapeSource::Image { width: 1024, height: 12288, .. }));
     }
 
     /// Echtes APNG: `frames` einfarbige Frames (`delay_ms` je Frame), von Hand aus Chunks gebaut.

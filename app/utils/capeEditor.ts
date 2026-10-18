@@ -1,4 +1,5 @@
 import { CAPE_MAX_FRAMES, FRAME_TIME_DEFAULT, clampFrameTime, rgba, sampleFrames, type Rgba } from './capeImage'
+import type { CapeStyle } from './capeHd'
 import { capeRegionAt, scaleRect, type CapeRect } from './capeLayout'
 import type { MirrorMode, Point } from './iconEditor'
 
@@ -20,6 +21,8 @@ export interface CapeFrame {
 export interface CapeDoc {
   scale: number
   frames: CapeFrame[]
+  /** `hd` = „HD – wie Bild“ (Faktor 16, glatte Vorschau und glattes Skalieren); fehlt = Pixel-Art. */
+  style?: CapeStyle
 }
 
 /** Ergebnis des Import-Schritts. */
