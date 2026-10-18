@@ -458,7 +458,8 @@ impl ClipService {
     /// Vorschau-Leiste eines Clips (PNG-Raster im Cache), `None` ohne FFmpeg.
     pub async fn strip(&self, video: &Path) -> Result<Option<(PathBuf, edit::ClipStrip)>> {
         let Some(exe) = self.shared.ffmpeg.ready().await else { return Ok(None) };
-        let key = Self::cache_key(video).await?;
+        // Versionssuffix: alte Leisten (winzige 160×90-Raster) werden einmalig neu in voller Auflösung erzeugt.
+        let key = format!("{}-v2", Self::cache_key(video).await?);
         let dir = self.shared.paths.root().join("cache").join("clip-strips");
         if let Some(cached) = edit::cached_strip(&dir, &key).await {
             return Ok(Some(cached));

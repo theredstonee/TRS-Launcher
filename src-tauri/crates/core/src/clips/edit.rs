@@ -1,10 +1,12 @@
 //! Clips bearbeiten und für die Wiedergabe aufbereiten – alles mit dem
 //! mitgeladenen FFmpeg, alles lokal:
 //!
-//! - **Vorschau-Leiste** (`strip`): bis zu 60 kleine Bilder (160×90) gleichmäßig
-//!   über den Clip verteilt, als ein PNG-Raster. Der Launcher zeigt daraus die
-//!   Vorschau beim Überfahren der Zeitleiste, die Mod spielt sie im Spiel als
-//!   kleine Animation ab (`clips.preview` über den TRS-Link).
+//! - **Vorschau-Leiste** (`strip`): bis zu 60 Bilder gleichmäßig über den Clip
+//!   verteilt, als ein PNG-Raster. Jedes Bild ist so groß wie möglich (nahe an der
+//!   Clip-Auflösung, bis [`STRIP_FRAME_MAX`] je Kante), das ganze Raster bleibt
+//!   dabei unter [`STRIP_MAX_SHEET`] je Seite (eine GPU-Textur in der Mod). Der
+//!   Launcher zeigt daraus die Vorschau beim Überfahren der Zeitleiste, die Mod
+//!   spielt sie im Spiel scharf als Animation ab (`clips.preview` über den TRS-Link).
 //! - **Zuschneiden** (`trim`): immer als *neuer* Clip, das Original bleibt.
 //!   Beginnt der Schnitt auf einem Keyframe, kopiert FFmpeg die Daten nur
 //!   (`-c copy`, Sekundenbruchteile). Sonst müsste der Clip ab dem vorherigen
@@ -109,9 +111,16 @@ fn base_args() -> Vec<String> {
 
 // --- Vorschau-Leiste ---------------------------------------------------------
 
-pub const STRIP_FRAME_W: u32 = 160;
-pub const STRIP_FRAME_H: u32 = 90;
-pub const STRIP_COLS: u32 = 10;
+/// Höchste Kantenlänge je Einzelbild der Vorschau-Leiste. Nah an der Clip-Auflösung,
+/// damit die Vorschau im Spiel scharf ist (früher fest 160×90 – wie eine Briefmarke
+/// hochskaliert). Nie größer als das Original (kein Hochskalieren).
+pub const STRIP_FRAME_MAX: u32 = 960;
+/// Das gesamte PNG-Raster bleibt je Seite darunter. Es wird in der Mod als eine
+/// einzige GPU-Textur hochgeladen, deshalb konservativ (passt auf jede Grafikkarte
+/// und deckt sich mit der Grenze in der Mod).
+pub const STRIP_MAX_SHEET: u32 = 4096;
+/// So klein wird ein Einzelbild nie (winzige Clips).
+const STRIP_FRAME_MIN: u32 = 48;
 const STRIP_MIN_FRAMES: u32 = 8;
 const STRIP_MAX_FRAMES: u32 = 60;
 /// Ab so viel Abstand zwischen den Bildern reichen Keyframes (alle 2 s) – viel schneller.
@@ -138,15 +147,65 @@ pub fn strip_frames(duration_ms: u64) -> u32 {
     per_second.clamp(STRIP_MIN_FRAMES, STRIP_MAX_FRAMES)
 }
 
-/// FFmpeg: gleichmäßig verteilte Bilder, auf 160×90 eingepasst (schwarzer Rand), als rohe RGB-Daten.
-pub fn strip_args(video: &Path, raw_out: &Path, duration_ms: u64, frames: u32) -> Vec<String> {
+/// Bildgröße und Rasteraufteilung einer Vorschau-Leiste.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct StripLayout {
+    pub frame_width: u32,
+    pub frame_height: u32,
+    pub cols: u32,
+    pub frames: u32,
+}
+
+/// Bildgröße und Spaltenzahl aus Clip-Auflösung und -Dauer.
+///
+/// Jedes Einzelbild wird so groß wie möglich gewählt (bis zur Clip-Auflösung bzw.
+/// [`STRIP_FRAME_MAX`] je Kante), ohne dass das ganze Raster [`STRIP_MAX_SHEET`] je
+/// Seite überschreitet. Dafür wird über alle Spaltenzahlen die größtmögliche
+/// Bildbreite gesucht (Breite *und* Höhe des Rasters eingehalten). Die Zahl der
+/// Bilder bleibt erhalten (keine ruckeligere Animation), nur ihre Größe wächst –
+/// statt des früheren winzigen 160×90-Rasters.
+pub fn strip_layout(width: u32, height: u32, duration_ms: u64) -> StripLayout {
+    let frames = strip_frames(duration_ms);
+    // Seitenverhältnis des Clips (Rückfall 16:9, wenn unbekannt).
+    let (vw, vh) = if width == 0 || height == 0 { (1920u32, 1080u32) } else { (width, height) };
+    let s = STRIP_MAX_SHEET;
+    // Höchstbreite je Bild aus der Kappung der längsten Kante (nie über die Clip-Auflösung).
+    let cap_w = if vw >= vh {
+        STRIP_FRAME_MAX.min(vw)
+    } else {
+        // Hochformat: die längste Kante ist die Höhe.
+        u32::try_from(u64::from(STRIP_FRAME_MAX.min(vh)) * u64::from(vw) / u64::from(vh)).unwrap_or(vw)
+    };
+    let mut best_cols = 1u32;
+    let mut best_w = 0u32;
+    for cols in 1..=frames {
+        let rows = frames.div_ceil(cols);
+        // Durch die Rasterbreite begrenzt …
+        let by_width = s / cols;
+        // … und durch die Rasterhöhe (fh ≤ s/rows ⇒ fw = fh · vw/vh).
+        let by_height = u32::try_from(u64::from(s / rows) * u64::from(vw) / u64::from(vh)).unwrap_or(u32::MAX);
+        let fw = by_width.min(by_height).min(cap_w);
+        if fw > best_w {
+            best_w = fw;
+            best_cols = cols;
+        }
+    }
+    let fw = best_w.max(STRIP_FRAME_MIN);
+    let fh = u32::try_from(u64::from(fw) * u64::from(vh) / u64::from(vw)).unwrap_or(STRIP_FRAME_MIN).max(STRIP_FRAME_MIN);
+    StripLayout { frame_width: fw, frame_height: fh, cols: best_cols, frames }
+}
+
+/// FFmpeg: gleichmäßig verteilte Bilder, auf die Bildgröße der Leiste eingepasst
+/// (schwarzer Rand, Seitenverhältnis bleibt), als rohe RGB-Daten.
+pub fn strip_args(video: &Path, raw_out: &Path, duration_ms: u64, layout: StripLayout) -> Vec<String> {
     let duration_ms = duration_ms.max(1);
+    let frames = layout.frames;
     let mut args = base_args();
     if duration_ms / u64::from(frames.max(1)) >= KEYFRAMES_ONLY_FROM_MS {
         args.extend(["-skip_frame", "nokey"].map(String::from));
     }
     args.extend(["-i".to_owned(), video.display().to_string(), "-an".to_owned(), "-sn".to_owned(), "-vf".to_owned()]);
-    let (w, h) = (STRIP_FRAME_W, STRIP_FRAME_H);
+    let (w, h) = (layout.frame_width, layout.frame_height);
     args.push(format!(
         "fps=fps={}/{duration_ms},scale={w}:{h}:force_original_aspect_ratio=decrease,pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:color=black,format=rgb24",
         u64::from(frames) * 1000
@@ -156,15 +215,15 @@ pub fn strip_args(video: &Path, raw_out: &Path, duration_ms: u64, frames: u32) -
     args
 }
 
-/// Rohe RGB-Bilder → PNG-Raster (höchstens `max_frames`). `None`, wenn kein ganzes Bild da ist.
-pub fn compose_strip(raw: &[u8], max_frames: u32, duration_ms: u64) -> Option<(Vec<u8>, ClipStrip)> {
-    let (w, h) = (STRIP_FRAME_W, STRIP_FRAME_H);
+/// Rohe RGB-Bilder → PNG-Raster (höchstens `layout.frames`). `None`, wenn kein ganzes Bild da ist.
+pub fn compose_strip(raw: &[u8], layout: StripLayout, duration_ms: u64) -> Option<(Vec<u8>, ClipStrip)> {
+    let (w, h) = (layout.frame_width, layout.frame_height);
     let frame_bytes = (w * h * 3) as usize;
-    let count = u32::try_from(raw.len() / frame_bytes).ok()?.min(max_frames);
+    let count = u32::try_from(raw.len() / frame_bytes.max(1)).ok()?.min(layout.frames);
     if count == 0 {
         return None;
     }
-    let cols = count.min(STRIP_COLS);
+    let cols = count.min(layout.cols.max(1));
     let rows = count.div_ceil(cols);
     let mut sheet = image::RgbImage::new(cols * w, rows * h);
     for i in 0..count {
@@ -214,15 +273,15 @@ pub async fn strip(runner: &dyn FfmpegRunner, video: &Path, cache_dir: &Path, ke
         .await
         .map_err(|e| Error::Internal(e.to_string()))?
         .ok_or_else(|| Error::validation(crate::msg!("clips.unreadable", "Der Clip lässt sich nicht lesen.")))?;
-    let frames = strip_frames(info.duration_ms);
+    let layout = strip_layout(info.width, info.height, info.duration_ms);
     let raw = cache_dir.join(format!("{key}.raw.part"));
-    let result = runner.run(strip_args(video, &raw, info.duration_ms, frames), None, STRIP_TIMEOUT).await;
+    let result = runner.run(strip_args(video, &raw, info.duration_ms, layout), None, STRIP_TIMEOUT).await;
     let bytes = tokio::fs::read(&raw).await;
     let _ = tokio::fs::remove_file(&raw).await;
     result?;
     let bytes = bytes.map_err(|e| Error::io(&raw, e))?;
     let duration = info.duration_ms;
-    let (data, strip) = tokio::task::spawn_blocking(move || compose_strip(&bytes, frames, duration))
+    let (data, strip) = tokio::task::spawn_blocking(move || compose_strip(&bytes, layout, duration))
         .await
         .map_err(|e| Error::Internal(e.to_string()))?
         .ok_or_else(|| Error::validation(crate::msg!("clips.unreadable", "Der Clip lässt sich nicht lesen.")))?;
@@ -578,28 +637,47 @@ mod tests {
         assert_eq!(strip_frames(30_000), 30);
         assert_eq!(strip_frames(30_001), 31);
         assert_eq!(strip_frames(600_000), 60);
-        let args = strip_args(Path::new("c.mp4"), Path::new("o.raw"), 30_000, 30).join(" ");
-        assert!(args.contains("fps=fps=30000/30000,scale=160:90"), "{args}");
-        assert!(args.contains("-frames:v 30 -f rawvideo o.raw"), "{args}");
+        let layout = strip_layout(1920, 1080, 30_000);
+        let args = strip_args(Path::new("c.mp4"), Path::new("o.raw"), 30_000, layout).join(" ");
+        assert!(args.contains(&format!("fps=fps=30000/30000,scale={}:{}", layout.frame_width, layout.frame_height)), "{args}");
+        assert!(args.contains(&format!("-frames:v {} -f rawvideo o.raw", layout.frames)), "{args}");
         assert!(!args.contains("nokey"), "kurze Clips: alle Bilder dekodieren");
-        let long = strip_args(Path::new("c.mp4"), Path::new("o.raw"), 600_000, 60).join(" ");
+        let long = strip_args(Path::new("c.mp4"), Path::new("o.raw"), 600_000, strip_layout(1920, 1080, 600_000)).join(" ");
         assert!(long.contains("-skip_frame nokey -i c.mp4"), "lange Clips: nur Keyframes");
     }
 
     #[test]
+    fn leiste_ist_scharf_aber_bleibt_im_rahmen() {
+        // Früher fest 160×90 – jetzt viel größere Bilder, aber das Raster bleibt eine zulässige GPU-Textur.
+        for &(w, h, dur) in &[(1920u32, 1080u32, 600_000u64), (1920, 1080, 8_000), (3440, 1440, 120_000), (1080, 1920, 60_000), (640, 360, 12_000)] {
+            let l = strip_layout(w, h, dur);
+            assert!(l.frame_width >= STRIP_FRAME_MIN && l.frame_height >= STRIP_FRAME_MIN, "{l:?}");
+            assert!(l.frame_width <= STRIP_FRAME_MAX && l.frame_height <= STRIP_FRAME_MAX, "längste Kante gedeckelt: {l:?}");
+            // Nie über die Clip-Auflösung (kein Hochskalieren).
+            assert!(l.frame_width <= w && l.frame_height <= h, "nicht größer als das Original: {l:?}");
+            let rows = l.frames.div_ceil(l.cols);
+            assert!(l.cols * l.frame_width <= STRIP_MAX_SHEET, "Breite passt: {l:?}");
+            assert!(rows * l.frame_height <= STRIP_MAX_SHEET, "Höhe passt: {l:?}");
+            // Deutlich schärfer als das alte 160×90.
+            assert!(l.frame_width > 160, "größer als früher: {l:?}");
+        }
+    }
+
+    #[test]
     fn raster_aus_rohen_bildern() {
-        let frame = (STRIP_FRAME_W * STRIP_FRAME_H * 3) as usize;
+        let layout = StripLayout { frame_width: 160, frame_height: 90, cols: 10, frames: 60 };
+        let frame = (layout.frame_width * layout.frame_height * 3) as usize;
         // 12 volle Bilder + ein halbes (wird ignoriert).
         let mut raw = vec![0u8; frame * 12 + frame / 2];
         raw[frame * 11] = 255; // erstes Pixel des 12. Bildes rot
-        let (png, strip) = compose_strip(&raw, 60, 24_000).unwrap();
+        let (png, strip) = compose_strip(&raw, layout, 24_000).unwrap();
         assert_eq!((strip.frames, strip.cols, strip.rows), (12, 10, 2));
         assert_eq!(strip.interval_ms, 2000);
         let img = image::load_from_memory(&png).unwrap().to_rgb8();
         assert_eq!(img.dimensions(), (1600, 180));
         assert_eq!(img.get_pixel(160, 90).0, [255, 0, 0], "Bild 11 → Spalte 1, Zeile 1");
-        assert!(compose_strip(&raw[..100], 60, 1000).is_none());
-        assert_eq!(compose_strip(&raw, 4, 8000).unwrap().1.frames, 4, "höchstens so viele wie bestellt");
+        assert!(compose_strip(&raw[..100], layout, 1000).is_none());
+        assert_eq!(compose_strip(&raw, StripLayout { frames: 4, ..layout }, 8000).unwrap().1.frames, 4, "höchstens so viele wie bestellt");
     }
 
     #[tokio::test]
@@ -607,8 +685,10 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let video = dir.path().join("c.mp4");
         std::fs::write(&video, media::tests::sample_mp4(10)).unwrap();
-        let frame = (STRIP_FRAME_W * STRIP_FRAME_H * 3) as usize;
-        let runner = FakeRunner { output: vec![7u8; frame * 10], ..Default::default() };
+        // Die Attrappe liefert genau so viele Rohbilder, wie das Layout für diesen Clip (1920×1080, 10 s) erwartet.
+        let layout = strip_layout(1920, 1080, 10_000);
+        let frame = (layout.frame_width * layout.frame_height * 3) as usize;
+        let runner = FakeRunner { output: vec![7u8; frame * layout.frames as usize], ..Default::default() };
         let cache = dir.path().join("cache");
         let (png, made) = strip(&runner, &video, &cache, "k").await.unwrap();
         assert!(png.is_file());
@@ -657,8 +737,12 @@ mod real_ffmpeg {
         let runner = ProcessRunner { exe: exe.clone() };
         let (png, made) = strip(&runner, &src, &dir.path().join("cache"), "k").await.unwrap();
         assert_eq!(made.frames, 12);
+        // Bilder in Clip-Auflösung (640×360, nicht hochskaliert), Raster passend zum Layout.
+        let layout = strip_layout(640, 360, 12_000);
+        assert_eq!((made.frame_width, made.frame_height), (layout.frame_width, layout.frame_height));
+        assert_eq!((made.frame_width, made.frame_height), (640, 360));
         let img = image::open(&png).unwrap();
-        assert_eq!((img.width(), img.height()), (1600, 180));
+        assert_eq!((img.width(), img.height()), (made.cols * made.frame_width, made.rows * made.frame_height));
 
         // Kopieren (Start auf Keyframe).
         let plan = plan_trim(&info, 4000, 9000, TrimMode::Auto).unwrap();
