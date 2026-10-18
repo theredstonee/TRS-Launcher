@@ -142,6 +142,7 @@ public final class TrsClient implements ClientModInitializer {
 		dev.theredstonee.trsclient.cinematic.CinematicHooks.init(modules, FabricLoader.getInstance().getConfigDir());
 		waypoints = new dev.theredstonee.trsclient.feature.Waypoints(modules,
 				FabricLoader.getInstance().getConfigDir().resolve("trsclient-waypoints.json"));
+		dev.theredstonee.trsclient.feature.AutoRefillHooks.init(modules);
 		hud = new HudManager(modules);
 		// Kosten-Messung (-Dtrsclient.bench.noHud): HUD gar nicht erst einhängen.
 		if (!Boolean.getBoolean("trsclient.bench.noHud")) registerHud();
@@ -274,8 +275,16 @@ public final class TrsClient implements ClientModInitializer {
 		while (TrsKeys.toggleRecording.consumeClick()) dev.theredstonee.trsclient.core.clips.Clips.get().toggleRecording();
 		dev.theredstonee.trsclient.core.clips.Clips.get().tick(modules.clips.isEnabled(), CLIP_MESSAGES);
 		while (TrsKeys.fullbright.consumeClick()) {
-			modules.fullbright.toggle();
-			Mc.actionBar(Mc.text(I18n.tr("toast.fullbright", modules.fullbright.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled"))));
+			Mc.actionBar(Mc.text(modules.toggleGamma()));
+			saveConfig();
+		}
+		while (TrsKeys.gammaCycle.consumeClick()) {
+			Mc.actionBar(Mc.text(modules.cycleGamma()));
+			saveConfig();
+		}
+		while (TrsKeys.autoRefill.consumeClick()) {
+			modules.autoRefill.toggle();
+			Mc.actionBar(Mc.text(I18n.tr("toast.autoRefill", modules.autoRefill.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled"))));
 			saveConfig();
 		}
 		// Emote-Rad: Taste halten öffnet es, Loslassen (im Rad abgefragt) spielt das gezeigte Emote.
@@ -329,6 +338,7 @@ public final class TrsClient implements ClientModInitializer {
 			moduleKeys.releaseAll();
 		}
 		waypoints.tick(mc);
+		dev.theredstonee.trsclient.feature.AutoRefillHooks.tick();
 		chat.tick(mc);
 		dev.theredstonee.trsclient.qol.QolHooks.tick(mc);
 		dev.theredstonee.trsclient.halloween.HalloweenHooks.tick(mc);
@@ -424,6 +434,11 @@ public final class TrsClient implements ClientModInitializer {
 
 	public boolean fullbright() {
 		return modules.fullbright.isEnabled();
+	}
+
+	/** Gamma für die Lightmap (vorhanden = benutzen, leer = Vanilla); vom LightmapMixin je Frame gelesen. */
+	public java.util.OptionalDouble gammaOverride() {
+		return modules.gammaOverride();
 	}
 
 	// --- Zugriff ---

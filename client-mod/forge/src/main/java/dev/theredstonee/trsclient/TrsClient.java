@@ -122,6 +122,7 @@ public final class TrsClient {
 		}
 		TrsKeys.create();
 		waypoints = new Waypoints(modules, Platform.configDir().resolve("trsclient-waypoints.json"));
+		dev.theredstonee.trsclient.feature.AutoRefillHooks.init(modules);
 		hud = new HudManager(modules);
 		// TRS API (Abzeichen, TRS-Umhänge, Presence) + Umhang-Physik; nichts davon blockiert den Start.
 		dev.theredstonee.trsclient.online.OnlineHooks.init(Platform.configDir(), modules, Platform.modVersion(MOD_ID),
@@ -226,8 +227,16 @@ public final class TrsClient {
 		while (TrsKeys.toggleRecording.consumeClick()) dev.theredstonee.trsclient.core.clips.Clips.get().toggleRecording();
 		dev.theredstonee.trsclient.core.clips.Clips.get().tick(modules.clips.isEnabled(), CLIP_MESSAGES);
 		while (TrsKeys.fullbright.consumeClick()) {
-			modules.fullbright.toggle();
-			Mc.actionBar(Component.literal(I18n.tr("toast.fullbright", modules.fullbright.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled"))));
+			Mc.actionBar(Component.literal(modules.toggleGamma()));
+			saveConfig();
+		}
+		while (TrsKeys.gammaCycle.consumeClick()) {
+			Mc.actionBar(Component.literal(modules.cycleGamma()));
+			saveConfig();
+		}
+		while (TrsKeys.autoRefill.consumeClick()) {
+			modules.autoRefill.toggle();
+			Mc.actionBar(Component.literal(I18n.tr("toast.autoRefill", modules.autoRefill.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled"))));
 			saveConfig();
 		}
 		// Emote-Rad: Taste halten öffnet es, Loslassen (im Rad abgefragt) spielt das gezeigte Emote.
@@ -285,6 +294,7 @@ public final class TrsClient {
 			moduleKeys.releaseAll();
 		}
 		waypoints.tick(mc);
+		dev.theredstonee.trsclient.feature.AutoRefillHooks.tick();
 		chat.tick(mc);
 		dev.theredstonee.trsclient.qol.QolHooks.tick(mc);
 		dev.theredstonee.trsclient.halloween.HalloweenHooks.tick(mc);
@@ -378,6 +388,11 @@ public final class TrsClient {
 
 	public boolean fullbright() {
 		return modules.fullbright.isEnabled();
+	}
+
+	/** Gamma für die Lightmap (vorhanden = benutzen, leer = Vanilla); von der Lightmap je Frame gelesen. */
+	public java.util.OptionalDouble gammaOverride() {
+		return modules.gammaOverride();
 	}
 
 	// --- Zugriff ---

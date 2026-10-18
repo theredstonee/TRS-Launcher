@@ -78,8 +78,6 @@ public final class TrsClient {
 	static dev.theredstonee.trsclient.core.account.LegacySessionSwap accountSwap;
 	public static final String MOD_ID = "trsclient";
 	public static final Logger LOGGER = LogManager.getLogger("TRS Client");
-	/** Gamma für Fullbright (Vanilla-Maximum ist 1.0). */
-	private static final float FULLBRIGHT_GAMMA = 16.0F;
 
 	private static TrsClient instance;
 
@@ -214,6 +212,7 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.comfort.LegacyComfort.init(modules);
 		// Screenshot-Werkzeuge: Vorschau nach F2, Chat-Aktionen, Bild-Editor, Essential-Vorschau ersetzen.
 		dev.theredstonee.trsclient.screenshot.LegacyScreenshots.install(modules);
+		dev.theredstonee.trsclient.feature.AutoRefillHooks.init(modules);
 		hud = new HudManager(modules);
 		MinecraftForge.EVENT_BUS.register(this);
 		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.qol.LegacyQol.get());
@@ -368,8 +367,16 @@ public final class TrsClient {
 		while (TrsKeys.toggleRecording.isPressed()) dev.theredstonee.trsclient.core.clips.Clips.get().toggleRecording();
 		dev.theredstonee.trsclient.core.clips.Clips.get().tick(modules.clips.isEnabled(), CLIP_MESSAGES);
 		while (TrsKeys.fullbright.isPressed()) {
-			modules.fullbright.toggle();
-			Mc.actionBar(I18n.tr("toast.fullbright", modules.fullbright.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled")));
+			Mc.actionBar(modules.toggleGamma());
+			saveConfig();
+		}
+		while (TrsKeys.gammaCycle.isPressed()) {
+			Mc.actionBar(modules.cycleGamma());
+			saveConfig();
+		}
+		while (TrsKeys.autoRefill.isPressed()) {
+			modules.autoRefill.toggle();
+			Mc.actionBar(I18n.tr("toast.autoRefill", modules.autoRefill.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled")));
 			saveConfig();
 		}
 		// Emote-Rad: Taste halten öffnet es, Loslassen (im Rad abgefragt) spielt das gezeigte Emote.
@@ -436,6 +443,7 @@ public final class TrsClient {
 		}
 		checkWorldChange();
 		pvp.tick(mc);
+		dev.theredstonee.trsclient.feature.AutoRefillHooks.tick();
 		chat.tick(mc);
 		waypoints.tick();
 		hud.tick();
@@ -519,7 +527,7 @@ public final class TrsClient {
 			// In den Video-Einstellungen nicht – dort zeigt/ändert der Regler den echten Wert.
 			if (modules.fullbright.isEnabled() && Mc.world() != null && !(mc.currentScreen instanceof GuiVideoSettings)) {
 				savedGamma = mc.gameSettings.gammaSetting;
-				mc.gameSettings.gammaSetting = FULLBRIGHT_GAMMA;
+				mc.gameSettings.gammaSetting = (float) modules.gammaValue();
 				gammaSwapped = true;
 				HookStats.lightmap++;
 			}

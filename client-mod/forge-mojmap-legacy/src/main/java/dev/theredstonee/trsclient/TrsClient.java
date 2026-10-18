@@ -162,6 +162,7 @@ public final class TrsClient {
 			LOGGER.warn("Config war beschädigt – Standardwerte geladen, Sicherung: {}", config.brokenFile());
 		}
 		waypoints = new Waypoints(modules, FMLPaths.CONFIGDIR.get().resolve("trsclient-waypoints.json"));
+		dev.theredstonee.trsclient.feature.AutoRefillHooks.init(modules);
 		hud = new HudManager(modules);
 		for (Module m : modules.registry.all()) {
 			// Ohne Mixin (Forge 1.14.4) fehlen alle Module, die einen Mixin-Hook brauchen.
@@ -389,8 +390,16 @@ public final class TrsClient {
 		while (TrsKeys.toggleRecording.consumeClick()) dev.theredstonee.trsclient.core.clips.Clips.get().toggleRecording();
 		dev.theredstonee.trsclient.core.clips.Clips.get().tick(modules.clips.isEnabled(), CLIP_MESSAGES);
 		while (TrsKeys.fullbright.consumeClick()) {
-			modules.fullbright.toggle();
-			Mc.actionBar(I18n.tr("toast.fullbright", modules.fullbright.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled")));
+			Mc.actionBar(modules.toggleGamma());
+			saveConfig();
+		}
+		while (TrsKeys.gammaCycle.consumeClick()) {
+			Mc.actionBar(modules.cycleGamma());
+			saveConfig();
+		}
+		while (TrsKeys.autoRefill.consumeClick()) {
+			modules.autoRefill.toggle();
+			Mc.actionBar(I18n.tr("toast.autoRefill", modules.autoRefill.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled")));
 			saveConfig();
 		}
 		// Emote-Rad: Taste halten öffnet es, Loslassen (im Rad abgefragt) spielt das gezeigte Emote.
@@ -455,6 +464,7 @@ public final class TrsClient {
 			hadLevel = hasLevel;
 		}
 		waypoints.tick(mc);
+		dev.theredstonee.trsclient.feature.AutoRefillHooks.tick();
 		chat.tick(mc);
 		dev.theredstonee.trsclient.qol.QolHooks.tick(mc);
 		dev.theredstonee.trsclient.halloween.HalloweenHooks.tick(mc);
@@ -547,6 +557,11 @@ public final class TrsClient {
 
 	public boolean fullbright() {
 		return modules.fullbright.isEnabled();
+	}
+
+	/** Gamma für die Lightmap (vorhanden = benutzen, leer = Vanilla); von der Lightmap je Frame gelesen. */
+	public java.util.OptionalDouble gammaOverride() {
+		return modules.gammaOverride();
 	}
 
 	// --- Zugriff ---

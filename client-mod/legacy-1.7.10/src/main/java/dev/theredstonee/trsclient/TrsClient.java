@@ -57,7 +57,6 @@ public final class TrsClient {
 	public static final String MOD_ID = "trsclient";
 	public static final Logger LOGGER = LogManager.getLogger("TRS Client");
 	/** Gamma für Fullbright (Vanilla-Maximum ist 1.0). */
-	private static final float FULLBRIGHT_GAMMA = 16.0F;
 
 	private static TrsClient instance;
 	/** Module/Einstellungen, die es in 1.7.10 nicht gibt – im Menü ausgeblendet. */
@@ -116,6 +115,8 @@ public final class TrsClient {
 		UNSUPPORTED.addAll(Arrays.<Object>asList(modules.trsOnline, modules.capePhysics, modules.emotes, modules.colors));
 		// Sozial (Chat, Toasts) braucht die TRS-Online-Funktionen – hier ausgeblendet.
 		UNSUPPORTED.add(modules.social);
+		// Automatisch nachlegen ist für 1.7.10 nicht umgesetzt (zu altes Inventar-/Netzwerk-API).
+		UNSUPPORTED.add(modules.autoRefill);
 		// Kamera-Fahrten (eigene Kamera) sind für 1.7.10 nicht umgesetzt.
 		UNSUPPORTED.add(modules.cinematic.cinematic);
 		// Screenshot-Werkzeuge ohne eigene Chatzeile (kein Einfüge-Text in 1.7.10); Essential gibt es hier nicht.
@@ -280,10 +281,13 @@ public final class TrsClient {
 			while (TrsKeys.toggleRecording.isPressed()) dev.theredstonee.trsclient.core.clips.Clips.get().toggleRecording();
 			dev.theredstonee.trsclient.core.clips.Clips.get().tick(modules.clips.isEnabled(), CLIP_MESSAGES);
 			while (TrsKeys.fullbright.isPressed()) {
-				modules.fullbright.toggle();
-				if (mc.ingameGUI != null) {
-					mc.ingameGUI.func_110326_a(I18n.tr("toast.fullbright", modules.fullbright.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled")), false);
-				}
+				String toast = modules.toggleGamma();
+				if (mc.ingameGUI != null) mc.ingameGUI.func_110326_a(toast, false);
+				saveConfig();
+			}
+			while (TrsKeys.gammaCycle.isPressed()) {
+				String toast = modules.cycleGamma();
+				if (mc.ingameGUI != null) mc.ingameGUI.func_110326_a(toast, false);
 				saveConfig();
 			}
 		}
@@ -306,7 +310,7 @@ public final class TrsClient {
 				// In den Video-Einstellungen nicht – dort zeigt/ändert der Regler den echten Wert.
 				if (modules.fullbright.isEnabled() && mc.theWorld != null && !(mc.currentScreen instanceof GuiVideoSettings)) {
 					savedGamma = mc.gameSettings.gammaSetting;
-					mc.gameSettings.gammaSetting = FULLBRIGHT_GAMMA;
+					mc.gameSettings.gammaSetting = (float) modules.gammaValue();
 					gammaSwapped = true;
 					HookStats.lightmap++;
 				}

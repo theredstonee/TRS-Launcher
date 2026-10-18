@@ -24,8 +24,6 @@ import net.minecraft.client.renderer.LightTexture;
 *///?} else
 @Mixin(LightTexture.class)
 public abstract class LightmapMixin {
-	private static final float FULLBRIGHT_GAMMA = 16.0F;
-
 	//? if >=1.19 {
 	@ModifyExpressionValue(
 			//? if >=26.1 {
@@ -38,7 +36,8 @@ public abstract class LightmapMixin {
 			require = 1)
 	private float trsclient$fullbright(float gamma) {
 		HookStats.lightmap++;
-		return TrsClient.get().fullbright() ? FULLBRIGHT_GAMMA : gamma;
+		java.util.OptionalDouble override = TrsClient.get().gammaOverride();
+		return override.isPresent() ? (float) override.getAsDouble() : gamma;
 	}
 	//?} else {
 	/*// Bis 1.18.2 ist Gamma ein einfaches double-Feld der Optionen.
@@ -47,7 +46,8 @@ public abstract class LightmapMixin {
 			require = 1)
 	private double trsclient$fullbright(double gamma) {
 		HookStats.lightmap++;
-		return TrsClient.get().fullbright() ? FULLBRIGHT_GAMMA : gamma;
+		java.util.OptionalDouble override = TrsClient.get().gammaOverride();
+		return override.isPresent() ? override.getAsDouble() : gamma;
 	}
 	*///?}
 }

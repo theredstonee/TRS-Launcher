@@ -22,8 +22,6 @@ import net.minecraft.client.renderer.LightTexture;
 *///?} else
 @Mixin(LightTexture.class)
 public abstract class LightmapMixin {
-	private static final float FULLBRIGHT_GAMMA = 16.0F;
-
 	@Redirect(
 			//? if >=26.1 {
 			/*method = "extract",
@@ -35,6 +33,7 @@ public abstract class LightmapMixin {
 			require = 1)
 	private float trsclient$fullbright(Double gamma) {
 		HookStats.lightmap++;
-		return TrsClient.get().fullbright() ? FULLBRIGHT_GAMMA : gamma.floatValue();
+		java.util.OptionalDouble override = TrsClient.get().gammaOverride();
+		return override.isPresent() ? (float) override.getAsDouble() : gamma.floatValue();
 	}
 }

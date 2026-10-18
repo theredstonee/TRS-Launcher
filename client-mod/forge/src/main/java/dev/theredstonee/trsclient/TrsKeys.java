@@ -16,6 +16,10 @@ public final class TrsKeys {
 	public static KeyMapping menu;
 	public static KeyMapping zoom;
 	public static KeyMapping fullbright;
+	/** Gamma durchschalten: aus → an → voll → aus (standardmäßig unbelegt). */
+	public static KeyMapping gammaCycle;
+	/** Automatisch nachlegen an/aus (standardmäßig unbelegt). */
+	public static KeyMapping autoRefill;
 	public static KeyMapping freelook;
 	/** Wechselt das HUD-Profil (standardmäßig unbelegt). */
 	public static KeyMapping hudProfile;
@@ -65,6 +69,8 @@ public final class TrsKeys {
 		zoom = new KeyMapping("key.trsclient.zoom", KEYBOARD, dev.theredstonee.trsclient.compat.Keys.code("key.keyboard.v"), CATEGORY);
 		// Standardmäßig unbelegt – Fullbright lässt sich auch im Menü schalten.
 		fullbright = new KeyMapping("key.trsclient.fullbright", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY);
+		gammaCycle = new KeyMapping("key.trsclient.gammaCycle", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY);
+		autoRefill = new KeyMapping("key.trsclient.autoRefill", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY);
 		freelook = new KeyMapping("key.trsclient.freelook", KEYBOARD, InputConstants.KEY_LALT, CATEGORY);
 		// Standardmäßig unbelegt – Profile lassen sich auch im Menü wechseln.
 		hudProfile = new KeyMapping("key.trsclient.hudProfile", KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY);
@@ -104,6 +110,8 @@ public final class TrsKeys {
 		event.register(menu);
 		event.register(zoom);
 		event.register(fullbright);
+		event.register(gammaCycle);
+		event.register(autoRefill);
 		event.register(freelook);
 		event.register(hudProfile);
 		event.register(emoteWheel);

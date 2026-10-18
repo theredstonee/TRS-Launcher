@@ -11,6 +11,10 @@ public final class TrsKeys {
 	public static KeyBinding menu;
 	public static KeyBinding zoom;
 	public static KeyBinding fullbright;
+	/** Gamma durchschalten: aus → an → voll → aus (standardmäßig unbelegt). */
+	public static KeyBinding gammaCycle;
+	/** Automatisch nachlegen an/aus (standardmäßig unbelegt). */
+	public static KeyBinding autoRefill;
 	public static KeyBinding freelook;
 	/** Wechselt das HUD-Profil (standardmäßig unbelegt). */
 	public static KeyBinding hudProfile;
@@ -51,6 +55,8 @@ public final class TrsKeys {
 		zoom = register(new KeyBinding("key.trsclient.zoom", Keyboard.KEY_V, CATEGORY));
 		// Standardmäßig unbelegt – Fullbright lässt sich auch im Menü schalten.
 		fullbright = register(new KeyBinding("key.trsclient.fullbright", Keyboard.KEY_NONE, CATEGORY));
+		gammaCycle = register(new KeyBinding("key.trsclient.gammaCycle", Keyboard.KEY_NONE, CATEGORY));
+		autoRefill = register(new KeyBinding("key.trsclient.autoRefill", Keyboard.KEY_NONE, CATEGORY));
 		freelook = register(new KeyBinding("key.trsclient.freelook", Keyboard.KEY_LMENU, CATEGORY));
 		// Standardmäßig unbelegt – Profile lassen sich auch im Menü wechseln.
 		hudProfile = register(new KeyBinding("key.trsclient.hudProfile", Keyboard.KEY_NONE, CATEGORY));

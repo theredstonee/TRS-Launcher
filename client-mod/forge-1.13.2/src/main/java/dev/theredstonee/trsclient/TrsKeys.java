@@ -11,6 +11,10 @@ public final class TrsKeys {
 	public static KeyBinding menu;
 	public static KeyBinding zoom;
 	public static KeyBinding fullbright;
+	/** Gamma durchschalten: aus → an → voll → aus (standardmäßig unbelegt). */
+	public static KeyBinding gammaCycle;
+	/** Automatisch nachlegen an/aus (standardmäßig unbelegt). */
+	public static KeyBinding autoRefill;
 	/** Wechselt das HUD-Profil (standardmäßig unbelegt). */
 	public static KeyBinding hudProfile;
 	/** Schaltet das Redstone-Signal-Overlay (F6 – in keiner Vanilla-Version ab 1.9 belegt). */
@@ -35,6 +39,8 @@ public final class TrsKeys {
 		zoom = register(new KeyBinding("key.trsclient.zoom", GLFW.GLFW_KEY_V, CATEGORY));
 		// Standardmäßig unbelegt – Fullbright lässt sich auch im Menü schalten.
 		fullbright = register(new KeyBinding("key.trsclient.fullbright", GLFW.GLFW_KEY_UNKNOWN, CATEGORY));
+		gammaCycle = register(new KeyBinding("key.trsclient.gammaCycle", GLFW.GLFW_KEY_UNKNOWN, CATEGORY));
+		autoRefill = register(new KeyBinding("key.trsclient.autoRefill", GLFW.GLFW_KEY_UNKNOWN, CATEGORY));
 		// Standardmäßig unbelegt – Profile lassen sich auch im Menü wechseln.
 		hudProfile = register(new KeyBinding("key.trsclient.hudProfile", GLFW.GLFW_KEY_UNKNOWN, CATEGORY));
 		redstoneOverlay = register(new KeyBinding("key.trsclient.redstoneOverlay", GLFW.GLFW_KEY_F6, CATEGORY));
