@@ -87,7 +87,8 @@
         "displayLanguageSelector": true,
         "customLanguageFiles": {
           "Polish": "nsis/Polish.nsh"
-        }
+        },
+        "installerHooks": "nsis/hooks.nsh"
       },
       "webviewInstallMode": {
         "type": "downloadBootstrapper"

@@ -28,6 +28,14 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Installer: no more "error overwriting trs-launcher.exe".** When you update or reinstall while the launcher is still running, the installer now closes it and waits until Windows has really released the file, instead of failing after half a second. If the file stays in use, you get a clear message with "Retry" instead of a cryptic error. A running Minecraft game is not closed.
+
+### Deutsch
+- **Installer: kein „Fehler beim Überschreiben der Datei trs-launcher.exe“ mehr.** Aktualisierst oder installierst du neu, während der Launcher noch läuft, schließt der Installer ihn jetzt und wartet, bis Windows die Datei wirklich freigibt – statt nach einer halben Sekunde abzubrechen. Bleibt die Datei belegt, kommt ein verständlicher Hinweis mit „Wiederholen“ statt eines kryptischen Fehlers. Ein laufendes Minecraft wird dabei nicht beendet.
+
 ## 0.25.0 – 2026-10-18 – Crystal Clear | Gestochen scharf
 <!-- banner: accent=#5ec8ff motif=/news/0.25.0/banner.png -->
 <!-- shots:
