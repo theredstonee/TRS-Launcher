@@ -79,5 +79,6 @@ export default defineEventHandler(async (event) => {
     return noContent(event)
   }
 
-  limit(`ip:${clientIp(event)}`, RULES.globalIp)
+  // Angemeldete Aufrufe (Launcher/Client) bremst die IP-Grenze nicht – nur anonyme.
+  if (getHeader(event, 'authorization') === undefined) limit(`ip:${clientIp(event)}`, RULES.globalIp)
 })

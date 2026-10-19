@@ -50,6 +50,7 @@ export class RateLimiter {
 
   /** Verbraucht einen Token. */
   take(key: string, rule: Rule): TakeResult {
+    if (rule.limit === Infinity) return { ok: true, retryAfter: 0 }
     const b = this.refill(key, rule)
     if (b.tokens >= 1) {
       b.tokens -= 1
@@ -60,6 +61,7 @@ export class RateLimiter {
 
   /** Prüft, ob noch ein Token da ist, ohne ihn zu verbrauchen (z. B. Fehlversuchs-Zähler). */
   check(key: string, rule: Rule): TakeResult {
+    if (rule.limit === Infinity) return { ok: true, retryAfter: 0 }
     const b = this.refill(key, rule)
     return b.tokens >= 1 ? { ok: true, retryAfter: 0 } : { ok: false, retryAfter: this.retry(b, 1) }
   }
@@ -91,6 +93,8 @@ export class RateLimiter {
 
 const MIN = 60_000
 const HOUR = 60 * MIN
+/** Kein Limit: normale Nutzung (Lesen, Schreiben, Sozial/Chat) wird nicht gebremst. */
+const OFF: Rule = { limit: Infinity, windowMs: MIN }
 
 /** Alle Limits an einer Stelle (je IP bzw. je Konto). */
 export const RULES = {
@@ -99,26 +103,26 @@ export const RULES = {
   verifyIp: { limit: 10, windowMs: MIN },
   verifyName: { limit: 10, windowMs: 10 * MIN },
   loginUuid: { limit: 20, windowMs: HOUR },
-  readUser: { limit: 120, windowMs: MIN },
-  writeUser: { limit: 30, windowMs: MIN },
-  lookupUser: { limit: 120, windowMs: MIN },
-  presenceUser: { limit: 6, windowMs: MIN },
-  friendsWriteUser: { limit: 30, windowMs: MIN },
+  readUser: OFF,
+  writeUser: OFF,
+  lookupUser: OFF,
+  presenceUser: OFF,
+  friendsWriteUser: OFF,
   redeemUser: { limit: 10, windowMs: MIN },
   redeemFailUser: { limit: 5, windowMs: 15 * MIN },
   redeemFailIp: { limit: 20, windowMs: 15 * MIN },
   uploadUser: { limit: 5, windowMs: 24 * HOUR },
   reportUser: { limit: 10, windowMs: HOUR },
-  eventsUser: { limit: 10, windowMs: MIN },
+  eventsUser: OFF,
   adminActor: { limit: 240, windowMs: MIN },
   deleteUser: { limit: 3, windowMs: HOUR },
   cosmeticUploadUser: { limit: 5, windowMs: 24 * HOUR },
   emoteUser: { limit: 1, windowMs: 2000 },
   skinChangedUser: { limit: 6, windowMs: MIN },
-  skinLookupUser: { limit: 30, windowMs: MIN },
+  skinLookupUser: OFF,
   /** Ausgehende Mojang-Profilabfragen insgesamt (nur Cache-Fehlschläge). */
   mojangGlobal: { limit: 100, windowMs: MIN },
-  playerEventsUser: { limit: 20, windowMs: MIN },
+  playerEventsUser: OFF,
   /** Website-Login mit Microsoft (§24.1): Weiterleitung starten bzw. Rücksprung, je IP. */
   msLoginIp: { limit: 20, windowMs: 10 * MIN },
   msCallbackIp: { limit: 30, windowMs: 10 * MIN },
@@ -129,29 +133,29 @@ export const RULES = {
   /** Team: Stimmen, Notizen, Statuswechsel an Bewerbungen, je Team-Mitglied. */
   adminApplication: { limit: 60, windowMs: MIN },
   /** TRS-Sync (`/v1/me/sync*`): alle Anfragen je Konto, dazu Skin-Uploads extra. */
-  syncUser: { limit: 120, windowMs: MIN },
-  syncUploadUser: { limit: 30, windowMs: MIN },
+  syncUser: OFF,
+  syncUploadUser: OFF,
   /** Umhänge teilen: anbieten, annehmen, ablehnen, entziehen (je Konto). */
   capeShareUser: { limit: 30, windowMs: MIN },
   // ------------------------------------------------ Chat
   /** Nachrichten senden/bearbeiten: 30 / min, dazu höchstens 5 in 5 s (Spam-Bremse). */
-  chatSendUser: { limit: 30, windowMs: MIN },
-  chatBurstUser: { limit: 5, windowMs: 5000 },
-  chatReactUser: { limit: 60, windowMs: MIN },
-  chatTypingUser: { limit: 40, windowMs: MIN },
+  chatSendUser: OFF,
+  chatBurstUser: OFF,
+  chatReactUser: OFF,
+  chatTypingUser: OFF,
   /** Lesen/ungelesen/stumm, je Konto. */
-  chatStateUser: { limit: 120, windowMs: MIN },
+  chatStateUser: OFF,
   /** DMs öffnen, Gruppen anlegen/ändern/Mitglieder. */
-  chatGroupUser: { limit: 20, windowMs: MIN },
-  chatUploadUser: { limit: 40, windowMs: 10 * MIN },
+  chatGroupUser: OFF,
+  chatUploadUser: OFF,
   /** Bilder abrufen (Vorschauen in Listen). */
-  chatImageUser: { limit: 600, windowMs: MIN },
+  chatImageUser: OFF,
   /** Server-Status für Einladungen (Aufrufe; der Ping selbst ist gecacht). */
-  serverStatusUser: { limit: 30, windowMs: MIN },
+  serverStatusUser: OFF,
   /** Meldungen im Chat (Nachricht, Bild, Spieler, Gruppe). */
   chatReportUser: { limit: 10, windowMs: HOUR },
   /** `GET /v1/events/me` Verbindungen. */
-  eventsMeUser: { limit: 20, windowMs: MIN },
+  eventsMeUser: OFF,
   // ------------------------------------------------ Welt-Hosting
   /** Alle `/v1/hosting/*`-Anfragen je Konto (eigener Topf, Herzschläge + Signale laufen viel). */
   hostingUser: { limit: 240, windowMs: MIN },
