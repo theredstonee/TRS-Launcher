@@ -5227,7 +5227,7 @@ dependencies = [
 
 [[package]]
 name = "tauri-plugin-trs-game"
-version = "0.25.0"
+version = "0.25.1"
 dependencies = [
  "log",
  "lzma-rust2",
@@ -5246,7 +5246,7 @@ dependencies = [
 
 [[package]]
 name = "tauri-plugin-trs-push"
-version = "0.25.0"
+version = "0.25.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -5834,7 +5834,7 @@ dependencies = [
 
 [[package]]
 name = "trs-core"
-version = "0.25.0"
+version = "0.25.1"
 dependencies = [
  "android-native-keyring-store",
  "apple-native-keyring-store",
@@ -5875,7 +5875,7 @@ dependencies = [
 
 [[package]]
 name = "trs-launcher"
-version = "0.25.0"
+version = "0.25.1"
 dependencies = [
  "arboard",
  "chrono",

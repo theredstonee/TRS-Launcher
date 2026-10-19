@@ -28,7 +28,11 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.25.1 – 2026-10-19 – Crystal Clear Fix | Feinschliff
+<!-- banner: accent=#5ec8ff motif=/news/0.25.1/banner.png -->
+<!-- shots:
+/news/0.25.1/installer-update.png | The installer now safely replaces a launcher that was still running | Der Installer ersetzt jetzt auch einen noch laufenden Launcher sauber
+-->
 
 ### English
 - **Installer: no more "error overwriting trs-launcher.exe".** When you update or reinstall while the launcher is still running, the installer now closes it and waits until Windows has really released the file, instead of failing after half a second. If the file stays in use, you get a clear message with "Retry" instead of a cryptic error. A running Minecraft game is not closed.
