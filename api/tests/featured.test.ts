@@ -69,7 +69,7 @@ const CF_ATM = {
   authors: [{ name: 'ATMTeam' }],
   logo: { url: 'https://media.forgecdn.net/avatars/1/2/atm.png', thumbnailUrl: 'https://media.forgecdn.net/avatars/thumbnails/1/2/atm.png' },
   screenshots: [{ url: 'https://media.forgecdn.net/attachments/1/2/shot.jpg' }],
-  latestFilesIndexes: [{ gameVersion: '1.20.1', modLoader: 1 }, { gameVersion: '1.20.1', modLoader: 6 }],
+  latestFilesIndexes: [{ gameVersion: '1.20.1', modLoader: 1 }, { gameVersion: '1.20.1', modLoader: 6 }, { gameVersion: '1.20' }],
   latestFiles: [{ gameVersions: ['1.20.1', 'Forge', 'NeoForge', 'Client'] }],
 }
 const CF_JEI = { ...CF_ATM, id: 238222, classId: 6, slug: 'jei', name: 'JEI' }
@@ -227,7 +227,7 @@ describe('featured: create via the platforms', () => {
       author: 'ATMTeam',
       downloads: 9876543,
       loaders: ['forge', 'neoforge'],
-      gameVersions: ['1.20.1'],
+      gameVersions: ['1.20.1', '1.20'],
     })
     expect(featuredImage(env.ctx, p.id, 'icon')!.mime).toBe('image/png')
     expect(featuredImage(env.ctx, p.id, 'banner')!.mime).toBe('image/jpeg')

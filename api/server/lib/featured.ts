@@ -513,7 +513,7 @@ const cfMod = z.object({
   authors: z.array(z.object({ name: str(200) }).loose()).catch([]),
   logo: z.object({ url: str(1000).nullish(), thumbnailUrl: str(1000).nullish() }).loose().nullish().catch(null),
   screenshots: z.array(z.object({ url: str(1000) }).loose()).catch([]),
-  latestFilesIndexes: z.array(z.object({ gameVersion: z.unknown(), modLoader: z.unknown() }).loose()).catch([]),
+  latestFilesIndexes: z.array(z.object({ gameVersion: z.unknown().optional(), modLoader: z.unknown().optional() }).loose()).catch([]),
   latestFiles: z.array(z.object({ gameVersions: z.array(z.unknown()).catch([]) }).loose()).catch([]),
 }).loose()
 type CfMod = z.output<typeof cfMod>
