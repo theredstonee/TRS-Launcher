@@ -4426,3 +4426,98 @@ and safety rules (jumpscares on, ≥ 6 hearts, not in combat, per-target cooldow
 Migration **27** adds the generic per-account flag table `user_event_flags (uuid, flag, set_at)` (first flag
 `miyako_intro_done`); `ON DELETE CASCADE`, idempotent. When merging: renumber if a parallel branch also added a
 migration 27.
+
+---
+
+## 37. Featured modpacks
+
+The team pastes a Modrinth or CurseForge modpack link; the pack then appears as "featured" on the launcher start page
+(rotating carousel) and on the website home page. The server copies the platform data (title, short description,
+author, downloads, loaders, versions) and stores the icon and banner itself – visitors and the launcher never connect to
+Modrinth/CurseForge for these images (the website CSP stays `img-src 'self'`). Per pack the team sets its own short
+text (EN + DE), a badge, pins it, sorts by drag & drop and can set a time window.
+
+### 37.1 Public (no auth)
+
+- `GET /v1/site/featured-packs` → `{ "packs": FeaturedPack[] }` – only **active** packs: (`startsAt` null or ≤ now) and
+  (`endsAt` null or > now). Order: pinned first, then the manual order (ascending); at most 20.
+  `Cache-Control: public, max-age=300`. Platform data older than 24 h is refreshed silently in the background after the
+  answer (never blocks, errors are swallowed).
+- `GET /v1/site/featured-packs/{id}/icon` and `GET /v1/site/featured-packs/{id}/banner` → the stored image bytes with
+  their real `Content-Type` (`image/png`, `image/jpeg`, `image/webp` or `image/gif`), `Cache-Control: public,
+  max-age=86400`, `ETag` (`If-None-Match` → `304`), `X-Content-Type-Options: nosniff`, `404 not_found` if the pack has
+  no such image (or does not exist). Images are served for inactive packs too (team preview).
+- Both: 600 requests per minute and IP (`featuredPublicIp`).
+
+```ts
+interface FeaturedPack {
+  id: string                 // 'fp_' + 12 random [a-z0-9]
+  source: 'modrinth' | 'curseforge'
+  projectId: string          // Modrinth project id (base62) or CurseForge numeric id as string
+  slug: string
+  url: string                // canonical project page: https://modrinth.com/modpack/<slug> | https://www.curseforge.com/minecraft/modpacks/<slug>
+  title: string              // from the platform
+  summary: string            // platform short description (≤ 300 chars, one line)
+  author: string | null      // Modrinth: project owner (or organization), CurseForge: first author
+  downloads: number
+  loaders: string[]          // lowercase, only real mod loaders: 'fabric' | 'forge' | 'neoforge' | 'quilt'
+  gameVersions: string[]     // release versions only, newest first, max 8
+  iconUrl: string | null     // absolute: `${SITE_URL}/v1/site/featured-packs/<id>/icon?v=<rev>`
+  bannerUrl: string | null   // same for /banner (Modrinth: featured gallery image, else the first one; CurseForge: first screenshot)
+  badge: 'recommended' | 'new' | 'event' | null
+  texts: {                   // team overrides; title ≤ 60, text ≤ 200, one line, control chars stripped; null = not set
+    en: { title: string | null; text: string | null }
+    de: { title: string | null; text: string | null }
+  }
+  pinned: boolean
+  startsAt: string | null    // ISO 8601
+  endsAt: string | null
+  updatedAt: string
+}
+```
+
+Display rule (website and launcher): title = `texts[lang].title` → `texts.en.title` → `title`; text = `texts[lang].text`
+→ `texts.en.text` → `summary` (for `lang = de` the German override, otherwise English). `rev` in the image URLs grows with
+every refresh, so the URLs change when the images change.
+
+"Open in TRS Launcher" deep links: `trs-launcher://modpack/modrinth/<projectId>` and
+`trs-launcher://modpack/curseforge/<projectId>`.
+
+### 37.2 Team (`requireStaff`, website session + CSRF, Bearer or `X-Admin-Key`)
+
+Permission `featured.manage` (defaults: Owner, Admin, Content – migration 28 only adds it to the default roles).
+
+| Route | | |
+| --- | --- | --- |
+| `GET /v1/admin/featured-packs` | `featured.manage` | `{ packs: (FeaturedPack & { active: boolean, createdBy: string, createdAt: ISO, refreshedAt: ISO })[] }` – all packs incl. inactive, same order as public |
+| `POST /v1/admin/featured-packs` | `featured.manage` | `{ url }` → `201 { pack }` (admin view); new pack goes to the end of the list |
+| `PATCH /v1/admin/featured-packs/{id}` | `featured.manage` | `{ texts?, badge?, pinned?, startsAt?, endsAt? }` → `{ pack }`; `null` clears a field |
+| `DELETE /v1/admin/featured-packs/{id}` | `featured.manage` | → `204` (images too) |
+| `PUT /v1/admin/featured-packs/order` | `featured.manage` | `{ ids: string[] }` = exactly the current set → `{ packs }` |
+| `POST /v1/admin/featured-packs/{id}/refresh` | `featured.manage` | re-fetch platform data + images, `rev + 1` → `{ pack }` |
+
+Accepted links (`POST`): `https://modrinth.com/modpack/<slugOrId>[/…]`, `https://modrinth.com/project/<slugOrId>[/…]`,
+`https://www.curseforge.com/minecraft/modpacks/<slug>[/…]` (query/fragment ignored, `www.` optional, `https://` may be
+omitted, `http://` is refused), plus `modrinth:<id>` and `curseforge:<number>`.
+
+`PATCH` body: `texts = { en?: { title?, text? }, de?: { title?, text? } }` (strings are trimmed to one line; an empty
+string counts as `null`; longer than 60/200 → `400 invalid_request`), `badge` one of `recommended`/`new`/`event`/`null`,
+`pinned` boolean, `startsAt`/`endsAt` ISO 8601 with offset or `null` (at most 2 years ahead).
+
+Server-side: CurseForge uses `CURSEFORGE_API_KEY` (`x-api-key`, `https://api.curseforge.com/v1`; slug via
+`/mods/search?gameId=432&classId=4471&slug=…`, id via `/mods/{id}`), Modrinth `https://api.modrinth.com/v2/project/{idOrSlug}`
+(+ `/members` for the owner). Images: only `https://cdn.modrinth.com` / `https://media.forgecdn.net`, redirects only to
+the same host, ≤ 2 MB, magic bytes PNG/JPEG/GIF/WebP; an image that fails is simply missing (`iconUrl`/`bannerUrl`
+`null`), the pack is still created.
+
+Errors: `400 invalid_link`, `404 project_not_found`, `422 not_a_modpack`, `409 already_featured`,
+`409 featured_limit` (at most 100 packs incl. inactive), `503 curseforge_unavailable` (no `CURSEFORGE_API_KEY`),
+`502 upstream_failed` (platform not reachable / bad answer), `400 invalid_window` (`endsAt` not after `startsAt`, or too
+far ahead), `400 invalid_order`, `404 not_found` (unknown id), `403 missing_permission`.
+Audit: `featured.create`, `featured.update`, `featured.delete`, `featured.order`, `featured.refresh`.
+Limits: 120 changes per minute and team member (`adminFeatured`).
+
+Migration 28: tables `featured_packs` (platform data, `texts` as JSON, `badge`, `pinned`, `sort`, `starts_at`/`ends_at`,
+`rev`, `refreshed_at`; `UNIQUE (source, project_id)`) and `featured_pack_images` (`pack_id`, `kind` icon/banner, `mime`,
+`data` BLOB, `sha256`; `ON DELETE CASCADE`); permission `featured.manage` for Owner/Admin/Content. Idempotent.
+When merging: renumber if a parallel branch also added a migration 28.
