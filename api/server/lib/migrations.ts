@@ -816,7 +816,58 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 27,
     run: migrateEventFlags,
   },
+  {
+    // Empfohlene Modpacks (§37): Packs von Modrinth/CurseForge (Plattform-Daten als Kopie, eigene Texte EN/DE als JSON,
+    // Abzeichen, Anheften, Reihenfolge, Zeitfenster) + Symbol/Banner als BLOB (`featured_pack_images`, ON DELETE CASCADE).
+    // Recht `featured.manage` für Owner, Admin und Content-Team. Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 28,
+    run: migrateFeaturedPacks,
+  },
 ]
+
+/** Migration 28 (siehe oben): empfohlene Modpacks. Exportiert für den Idempotenz-Test. */
+export function migrateFeaturedPacks(db: DatabaseSync): void {
+  db.exec(`
+CREATE TABLE IF NOT EXISTS featured_packs (
+  id TEXT PRIMARY KEY CHECK (length(id) = 15),
+  source TEXT NOT NULL CHECK (source IN ('modrinth', 'curseforge')),
+  project_id TEXT NOT NULL CHECK (length(project_id) BETWEEN 1 AND 20),
+  slug TEXT NOT NULL,
+  title TEXT NOT NULL,
+  summary TEXT NOT NULL DEFAULT '',
+  author TEXT,
+  downloads INTEGER NOT NULL DEFAULT 0,
+  loaders TEXT NOT NULL DEFAULT '[]',
+  game_versions TEXT NOT NULL DEFAULT '[]',
+  badge TEXT CHECK (badge IS NULL OR badge IN ('recommended', 'new', 'event')),
+  texts TEXT NOT NULL DEFAULT '{}',
+  pinned INTEGER NOT NULL DEFAULT 0 CHECK (pinned IN (0, 1)),
+  sort INTEGER NOT NULL DEFAULT 0,
+  starts_at INTEGER,
+  ends_at INTEGER,
+  rev INTEGER NOT NULL DEFAULT 1,
+  created_at INTEGER NOT NULL,
+  created_by TEXT NOT NULL,
+  updated_at INTEGER NOT NULL,
+  refreshed_at INTEGER NOT NULL,
+  UNIQUE (source, project_id),
+  CHECK (starts_at IS NULL OR ends_at IS NULL OR ends_at > starts_at)
+);
+CREATE INDEX IF NOT EXISTS featured_packs_order ON featured_packs(pinned DESC, sort, created_at);
+
+-- Kopien der Bilder (≤ 2 MB, nur PNG/JPEG/GIF/WebP), damit Besucher nie Modrinth/CurseForge laden.
+CREATE TABLE IF NOT EXISTS featured_pack_images (
+  pack_id TEXT NOT NULL REFERENCES featured_packs(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('icon', 'banner')),
+  mime TEXT NOT NULL CHECK (mime IN ('image/png', 'image/jpeg', 'image/gif', 'image/webp')),
+  data BLOB NOT NULL,
+  sha256 TEXT NOT NULL,
+  PRIMARY KEY (pack_id, kind)
+);
+`)
+  grantBuiltin(db, { owner: ['featured.manage'], admin: ['featured.manage'], content: ['featured.manage'] })
+}
 
 /** Migration 27 (siehe oben): generische Konto-Flags je Event. Exportiert für den Idempotenz-Test. */
 export function migrateEventFlags(db: DatabaseSync): void {

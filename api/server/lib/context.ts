@@ -60,6 +60,8 @@ export interface AppContext {
   msFetch?: typeof fetch
   /** Für Tests: eigenes fetch für Modrinth (Namen/Symbole der Pack-Inhalte, §27.6). */
   modrinthFetch?: typeof fetch
+  /** Für Tests: eigenes fetch für CurseForge (empfohlene Modpacks, §37). */
+  curseforgeFetch?: typeof fetch
 }
 
 export function createContext(opts: {

@@ -41,6 +41,7 @@ export const PERMISSIONS = [
   'blog.publish',
   'creators.review',
   'creators.manage',
+  'featured.manage',
 ] as const
 export type Permission = (typeof PERMISSIONS)[number]
 const PERMISSION_SET: ReadonlySet<string> = new Set(PERMISSIONS)
@@ -60,6 +61,7 @@ export const PERMISSION_GROUPS: { id: string, permissions: Permission[] }[] = [
   { id: 'issues', permissions: ['issues.manage', 'issues.moderate'] },
   { id: 'blog', permissions: ['blog.write', 'blog.publish'] },
   { id: 'creators', permissions: ['creators.review', 'creators.manage'] },
+  { id: 'featured', permissions: ['featured.manage'] },
 ]
 
 /** Recht je Strafart (§22.2). */
@@ -113,6 +115,6 @@ export const BUILTIN_ROLES: readonly BuiltinRole[] = [
     permissions: ['dashboard.view', 'reports.view', 'players.view', 'sanctions.warn', 'worlds.view', 'issues.manage'],
     maxSanctionMinutes: 1440,
   },
-  { id: 'content', rank: 200, color: '#a855f7', permissions: ['dashboard.view', 'uploads.review', 'codes', 'circuits.manage', 'blog.write', 'creators.review', 'creators.manage'], maxSanctionMinutes: null },
+  { id: 'content', rank: 200, color: '#a855f7', permissions: ['dashboard.view', 'uploads.review', 'codes', 'circuits.manage', 'blog.write', 'creators.review', 'creators.manage', 'featured.manage'], maxSanctionMinutes: null },
   { id: 'recruiter', rank: 150, color: '#14b8a6', permissions: ['dashboard.view', 'applications.view', 'applications.review'], maxSanctionMinutes: null },
 ]

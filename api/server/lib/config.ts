@@ -56,6 +56,8 @@ export interface Config {
   microsoft: MicrosoftConfig | null
   /** Push für die Apps (§33): VAPID-Schlüssel. `null` = UnifiedPush aus (Abruf-Geräte gehen trotzdem). */
   vapid: VapidKeys | null
+  /** CurseForge-API-Schlüssel (empfohlene Modpacks, §37). `null` = CurseForge-Links → 503 curseforge_unavailable. */
+  curseforgeApiKey: string | null
   limits: Limits
 }
 
@@ -335,6 +337,8 @@ const envSchema = z.object({
   VAPID_PUBLIC_KEY: z.string().trim().default(''),
   VAPID_PRIVATE_KEY: z.string().trim().default(''),
   VAPID_SUBJECT: z.string().trim().max(256).default(''),
+  // Empfohlene Modpacks (§37): CurseForge-API-Schlüssel (console.curseforge.com). Leer = nur Modrinth.
+  CURSEFORGE_API_KEY: z.string().trim().max(200).default(''),
 })
 
 const HOST_PORT = /^[A-Za-z0-9.-]{1,253}:(\d{1,5})$/
@@ -465,6 +469,7 @@ export function loadConfig(env: Record<string, string | undefined>, limits: Part
     hosting: parseHosting(e),
     microsoft: parseMicrosoft(e),
     vapid: parseVapid(e),
+    curseforgeApiKey: e.CURSEFORGE_API_KEY === '' ? null : e.CURSEFORGE_API_KEY,
     limits: { ...DEFAULT_LIMITS, ...limits },
   }
 }

@@ -274,13 +274,13 @@ describe('migration 18', () => {
     }
     expect(perms('admin')).toEqual(expect.arrayContaining(['blog.write', 'blog.publish']))
     expect(perms('owner')).toEqual(expect.arrayContaining(['blog.write', 'blog.publish']))
-    // Migration 25 (Creator-Programm) läuft danach mit und gibt `content` die Creator-Rechte.
-    expect(perms('content')).toEqual(['dashboard.view', 'blog.write', 'creators.review', 'creators.manage'])
+    // Migration 25 (Creator-Programm) und 28 (empfohlene Modpacks) laufen danach mit und geben `content` ihre Rechte.
+    expect(perms('content')).toEqual(['dashboard.view', 'blog.write', 'creators.review', 'creators.manage', 'featured.manage'])
     expect(perms('moderator')).not.toContain('blog.write')
     migrateLauncherLoginBlog(db)
     migrateLauncherLoginBlog(db)
     expect(perms('admin').filter((p) => p === 'blog.write')).toHaveLength(1)
-    // Migration 25 (Creator-Programm) läuft danach mit und gibt `content` die Creator-Rechte.
-    expect(perms('content')).toEqual(['dashboard.view', 'blog.write', 'creators.review', 'creators.manage'])
+    // Migration 25 (Creator-Programm) und 28 (empfohlene Modpacks) laufen danach mit und geben `content` ihre Rechte.
+    expect(perms('content')).toEqual(['dashboard.view', 'blog.write', 'creators.review', 'creators.manage', 'featured.manage'])
   })
 })

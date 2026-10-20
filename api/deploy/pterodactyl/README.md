@@ -30,3 +30,9 @@ So läuft die API auf `panel.theredstonee.de` (Node GER-Schliersee, Server „TR
 3. `.output/` (und bei Bedarf `start.sh`) als Zip hochladen und im Datei-Manager entpacken –
    `.env` und `data/` **nicht** überschreiben.
 4. Server neu starten.
+
+## Optionale Schlüssel in `.env`
+
+- `CURSEFORGE_API_KEY=` – für empfohlene Modpacks von CurseForge (API.md §37). Ohne Schlüssel gehen nur
+  Modrinth-Links; CurseForge-Links antworten mit `503 curseforge_unavailable`. Nach dem Eintragen den Server neu
+  starten. Der Schlüssel gehört nur in `.env`, nie ins Repo.

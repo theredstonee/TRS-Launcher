@@ -305,4 +305,9 @@ export const RULES = {
   halloweenScareOwner: { limit: 30, windowMs: MIN },
   /** Private MiyakoMC-Routen (Part A): Intro-Flag und Bündel, je Konto. */
   miyakoUser: { limit: 60, windowMs: MIN },
+  // ---- Empfohlene Modpacks (§37)
+  /** Team: Packs anlegen/ändern/sortieren/auffrischen/löschen. */
+  adminFeatured: { limit: 120, windowMs: MIN },
+  /** Öffentliche Liste und Bilder je IP – zusätzlich zur globalen IP-Grenze. */
+  featuredPublicIp: { limit: 600, windowMs: MIN },
 } satisfies Record<string, Rule>

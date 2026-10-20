@@ -151,6 +151,7 @@ const en = {
       blog: 'Blog',
       events: 'Events',
       creators: 'Creators',
+      featured: 'Featured modpacks',
     } as Record<string, string>,
     perms: {
       'dashboard.view': 'See the overview',
@@ -191,6 +192,7 @@ const en = {
       'blog.publish': 'Publish, schedule and unpublish blog posts',
       'creators.review': 'Review creator fan symbols and fan capes',
       'creators.manage': 'Manage creators (add, tier, codes, revoke, requests, preview builds)',
+      'featured.manage': 'Manage featured modpacks (add, texts, badge, order, time window)',
     } as Record<string, string>,
     roles: {
       title: 'Roles & team',
@@ -551,6 +553,7 @@ const de: TeamTexts = {
       blog: 'Blog',
       events: 'Events',
       creators: 'Creator',
+      featured: 'Empfohlene Modpacks',
     },
     perms: {
       'dashboard.view': 'Übersicht sehen',
@@ -591,6 +594,7 @@ const de: TeamTexts = {
       'blog.publish': 'Blog-Beiträge veröffentlichen, planen und zurückziehen',
       'creators.review': 'Fan-Symbole und Fan-Umhänge der Creator prüfen',
       'creators.manage': 'Creator verwalten (hinzufügen, Stufe, Codes, Entzug, Anfragen, Vorschau-Builds)',
+      'featured.manage': 'Empfohlene Modpacks verwalten (hinzufügen, Texte, Abzeichen, Reihenfolge, Zeitraum)',
     },
     roles: {
       title: 'Rollen & Team',
@@ -949,6 +953,7 @@ const es: TeamTexts = {
       blog: 'Blog',
       events: 'Eventos',
       creators: 'Creadores',
+      featured: 'Modpacks destacados',
     },
     perms: {
       'dashboard.view': 'Ver el resumen',
@@ -989,6 +994,7 @@ const es: TeamTexts = {
       'blog.publish': 'Publicar, programar y retirar entradas del blog',
       'creators.review': 'Revisar símbolos y capas de fans de los creadores',
       'creators.manage': 'Gestionar creadores (añadir, nivel, códigos, retirar, solicitudes, versiones previas)',
+      'featured.manage': 'Gestionar modpacks destacados (añadir, textos, insignia, orden, periodo)',
     },
     roles: {
       title: 'Roles y equipo',
