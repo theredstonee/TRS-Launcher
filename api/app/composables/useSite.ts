@@ -1,4 +1,5 @@
 import type { PostShot } from '~/utils/changelog'
+import type { FeaturedPack } from '~/utils/featured'
 import { docsPageUrl } from '#shared/docs'
 
 // Daten der Website aus der eigenen API (/v1/site/…); serverseitig gerendert und im Browser weiterverwendet.
@@ -83,6 +84,11 @@ export const APK_CERT_SHA256 = '8a:aa:a3:d9:8b:06:a7:24:d1:c7:ee:d0:d0:de:f4:3a:
 
 export function useMobileRelease() {
   return useApiFetch<{ mobile: MobileLatest | null }>('/v1/site/mobile-latest', { key: 'mobile-release', default: () => ({ mobile: null }) })
+}
+
+/** Empfohlene Modpacks (§37) für die Startseite – nur aktive, schon sortiert. */
+export function useFeaturedPacks() {
+  return useApiFetch<{ packs: FeaturedPack[] }>('/v1/site/featured-packs', { key: 'featured-packs', default: () => ({ packs: [] }) })
 }
 
 export function useRelease() {

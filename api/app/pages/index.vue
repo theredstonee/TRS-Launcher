@@ -9,6 +9,8 @@ const { data: releaseData } = await useRelease()
 const { data: blogData } = await useBlog()
 const { data: capeData } = await useCapes()
 const { data: eventsData } = await usePublicEvents()
+const { data: featuredData } = await useFeaturedPacks()
+const featured = computed(() => featuredData.value?.packs ?? [])
 /** Halloween-Hero nur, wenn das Event global an ist (dieselbe Abfrage wie die Klasse am html). */
 const halloween = computed(() => eventsData.value?.events.some((e) => e.id === 'halloween' && e.active) ?? false)
 const hwText = computed(() => HALLOWEEN_TEXTS[lang.value] ?? HALLOWEEN_TEXTS.en)
@@ -159,6 +161,15 @@ const powered = ref(false)
           </NuxtLink>
         </li>
       </ul>
+    </section>
+
+    <!-- Empfohlene Modpacks (§37): direkt nach den Kacheln – frischer, vom Team gepflegter Inhalt vor den festen Funktionen -->
+    <section v-if="featured.length" id="featured-packs" class="mx-auto max-w-6xl px-4 pt-16 sm:px-6" aria-labelledby="featured-title">
+      <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+        <h2 id="featured-title" class="heading text-3xl">{{ m.home.featured.title }}</h2>
+        <p class="max-w-xl text-sm text-base-400">{{ m.home.featured.lead }}</p>
+      </div>
+      <FeaturedPacks :packs="featured" class="mt-8" data-fx="rise" />
     </section>
 
     <!-- Funktionen -->
