@@ -566,7 +566,8 @@ async function curseforgeMeta(ctx: AppContext, ref: { slug: string } | { id: num
     downloads: Math.round(mod.downloadCount),
     loaders: modLoaders(loaders),
     gameVersions: releaseVersions(versions),
-    iconSrc: mod.logo?.url ?? mod.logo?.thumbnailUrl ?? null,
+    // Vorschau (256 px) reicht als Symbol und ist viel kleiner als das Original.
+    iconSrc: mod.logo?.thumbnailUrl ?? mod.logo?.url ?? null,
     bannerSrc: mod.screenshots[0]?.url ?? null,
   }
 }
