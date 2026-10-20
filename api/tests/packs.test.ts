@@ -136,6 +136,15 @@ describe('pack file check (§27)', () => {
     expect(inspectPack(zip({ 'modrinth.index.json': index({ dependencies: { minecraft: '1.20.1' } }) })).loader).toBe('vanilla')
   })
 
+  it('accepts the pack icon the launcher puts in the root, but nothing else there', () => {
+    const minimal = index({ dependencies: { minecraft: '1.20.1' } })
+    for (const name of ['icon.png', 'icon.jpg', 'icon.webp']) {
+      expect(inspectPack(zip({ 'modrinth.index.json': minimal, [name]: Buffer.from('img') })).overrides).toBe(0)
+    }
+    expect(code(() => inspectPack(zip({ 'modrinth.index.json': minimal, 'icon.exe': 'x' })))).toBe('invalid_pack')
+    expect(code(() => inspectPack(zip({ 'modrinth.index.json': minimal, 'icon.png': Buffer.alloc(5 * 1024 * 1024 + 1) })))).toBe('invalid_pack')
+  })
+
   it('rejects everything that is not a clean Modrinth pack', () => {
     const bad = (buf: Buffer) => code(() => inspectPack(buf))
     expect(bad(Buffer.from('not a zip at all, sorry'))).toBe('invalid_pack')

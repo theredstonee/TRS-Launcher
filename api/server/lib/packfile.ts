@@ -243,6 +243,9 @@ const indexSchema = z.object({
 const clean = (s: string, max: number) => s.replace(/[\x00-\x1f\x7f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max)
 
 const OVERRIDE_DIRS = ['overrides/', 'client-overrides/', 'server-overrides/']
+/** Pack-Symbol in der Wurzel (wie der Launcher es schreibt), höchstens 5 MB wie dort. */
+const PACK_ICON_NAMES = ['icon.png', 'icon.jpg', 'icon.webp']
+const PACK_ICON_MAX_BYTES = 5 * 1024 * 1024
 const MC_VERSION = /^[0-9A-Za-z][0-9A-Za-z._+-]{0,39}$/
 
 function inspectReader(r: Reader): PackInfo {
@@ -261,6 +264,11 @@ function inspectReader(r: Reader): PackInfo {
     if (unpacked > PACK_LIMITS.maxUnpackedBytes) throw bad('The pack is too large when unpacked')
     if (e.name === 'modrinth.index.json') {
       index = e
+      continue
+    }
+    // Pack-Symbol des TRS Launchers (Symbol-Editor) liegt in der Wurzel; wird nur durchgelassen, nicht ausgewertet.
+    if (PACK_ICON_NAMES.includes(e.name)) {
+      if (e.size > PACK_ICON_MAX_BYTES) throw bad('The pack icon is too large', { path: e.name })
       continue
     }
     const dir = OVERRIDE_DIRS.find((d) => e.name.startsWith(d))
