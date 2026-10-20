@@ -4,6 +4,7 @@
 use std::path::PathBuf;
 
 use tauri::{AppHandle, State};
+use trs_core::featured::FeaturedPack;
 use trs_core::news::NewsFeed;
 
 use crate::LauncherState;
@@ -36,4 +37,10 @@ pub async fn news_image(
 #[tauri::command]
 pub async fn patch_notes_body(launcher: State<'_, LauncherState>, content_path: String) -> CommandResult<String> {
     Ok(launcher.patch_notes_body(&content_path).await?)
+}
+
+/// Empfohlene Modpacks für die Startseite (vom TRS-Team gewählt). Leer, solange die TRS-Dienste aus sind.
+#[tauri::command]
+pub async fn trs_featured_packs(launcher: State<'_, LauncherState>, force: bool) -> CommandResult<Vec<FeaturedPack>> {
+    Ok(launcher.trs_featured_packs(force).await?)
 }

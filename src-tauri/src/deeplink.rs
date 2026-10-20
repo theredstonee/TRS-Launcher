@@ -9,6 +9,8 @@
 //!   PC-Fernbedienung) → am Handy die Seite „PC“ mit dem Code – gekoppelt wird erst nach einem Klick.
 //! - `trs-launcher://notify/<Route>` (Tipp auf eine Push-Benachrichtigung, Route aus §33.5 wie `/chat/c…`) → die
 //!   Oberfläche öffnet die passende Seite. Es passiert nichts außer Navigation.
+//! - `trs-launcher://modpack/modrinth/<ID oder Slug>` bzw. `trs-launcher://modpack/curseforge/<Zahl>` (z. B. aus den
+//!   empfohlenen Modpacks) → Projektseite im Launcher. Installiert wird erst nach einem Klick.
 //!
 //! Läuft der Launcher schon, reicht das Single-Instance-Plugin den Link an das offene Fenster weiter.
 //! Android/iOS: Das Schema steht im App-Manifest bzw. in der Info.plist (`plugins.deep-link.mobile`), das System
@@ -35,11 +37,36 @@ pub struct PendingRemotePair(Mutex<Option<String>>);
 #[derive(Default)]
 pub struct PendingPushTarget(Mutex<Option<String>>);
 
+/// Modpack-Projekt (`modrinth/<ID>` bzw. `curseforge/<Zahl>`) beim Start, bis die Oberfläche es abholt.
+#[derive(Default)]
+pub struct PendingModpackLink(Mutex<Option<String>>);
+
 enum Link {
     Pack(String),
     WebLogin(String),
     RemotePair(String),
     PushTarget(String),
+    /// `modrinth/<ID>` bzw. `curseforge/<Zahl>`.
+    Modpack(String),
+}
+
+/// `trs-launcher://modpack/modrinth/AANobbMI` → `modrinth/AANobbMI`; `…/curseforge/925200` → `curseforge/925200`.
+/// Modrinth: ID oder Slug (`[A-Za-z0-9_-]`, bis 64 Zeichen), CurseForge: Zahl. Sonst nichts.
+fn modpack_from_link(url: &str) -> Option<String> {
+    use trs_core::featured::{FeaturedSource, is_project_id};
+    let (scheme, rest) = url.split_once("://")?;
+    if !scheme.eq_ignore_ascii_case(trs_core::pack_share::LINK_SCHEME) || url.len() > 200 {
+        return None;
+    }
+    let rest = rest.strip_prefix("modpack/")?;
+    let rest = rest.split(['?', '#']).next()?.trim_end_matches('/');
+    let (platform, id) = rest.split_once('/')?;
+    let source = match platform {
+        "modrinth" => FeaturedSource::Modrinth,
+        "curseforge" => FeaturedSource::Curseforge,
+        _ => return None,
+    };
+    is_project_id(source, id).then(|| format!("{platform}/{id}"))
 }
 
 /// `trs-launcher://notify/chat/c123` → `/chat/c123` (nur Routen nach §33.5).
@@ -62,6 +89,9 @@ fn parse(url: &str) -> Option<Link> {
     }
     if let Some(target) = push_target_from_link(url) {
         return Some(Link::PushTarget(target));
+    }
+    if let Some(project) = modpack_from_link(url) {
+        return Some(Link::Modpack(project));
     }
     trs_core::trs_api::web_login::web_login_token_from_link(url).map(Link::WebLogin)
 }
@@ -99,6 +129,13 @@ fn handle(app: &AppHandle, urls: impl IntoIterator<Item = String>) {
             }
             let _ = app.emit("open-push-target", target);
         }
+        Link::Modpack(project) => {
+            log::info!("Link geöffnet: Modpack {project}");
+            if let Some(state) = app.try_state::<PendingModpackLink>() {
+                *state.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(project.clone());
+            }
+            let _ = app.emit("open-modpack-link", project);
+        }
     }
     if let Some(window) = app.get_webview_window("main") {
         #[cfg(desktop)]
@@ -114,6 +151,7 @@ pub fn setup(app: &tauri::App) {
     app.manage(PendingWebLogin::default());
     app.manage(PendingRemotePair::default());
     app.manage(PendingPushTarget::default());
+    app.manage(PendingModpackLink::default());
     // Installer melden das Protokoll an; zusätzlich beim Start (nur für den eigenen Benutzer), damit es auch nach
     // Updates über ältere Installer, im AppImage und in Entwicklungs-Builds zum laufenden Programm zeigt.
     #[cfg(any(target_os = "linux", windows))]
@@ -153,6 +191,12 @@ pub fn take_pending_push_target(state: State<'_, PendingPushTarget>) -> Option<S
     state.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take()
 }
 
+/// Wie [`take_pending_pack_link`], für `trs-launcher://modpack/<Plattform>/<ID>`.
+#[tauri::command]
+pub fn take_pending_modpack_link(state: State<'_, PendingModpackLink>) -> Option<String> {
+    state.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -167,5 +211,23 @@ mod tests {
         assert!(push_target_from_link("trs-launcher://notifyx/chat").is_none());
         assert!(push_target_from_link("https://notify/chat").is_none());
         assert!(matches!(parse("trs-launcher://notify/worlds/r1/requests"), Some(Link::PushTarget(t)) if t == "/worlds/r1/requests"));
+    }
+
+    #[test]
+    fn modpack_links_open_only_valid_projects() {
+        assert_eq!(modpack_from_link("trs-launcher://modpack/modrinth/AANobbMI").as_deref(), Some("modrinth/AANobbMI"));
+        assert_eq!(modpack_from_link("TRS-LAUNCHER://modpack/modrinth/fabulously-optimized/?x=1").as_deref(), Some("modrinth/fabulously-optimized"));
+        assert_eq!(modpack_from_link("trs-launcher://modpack/curseforge/925200").as_deref(), Some("curseforge/925200"));
+        assert!(modpack_from_link("trs-launcher://modpack/curseforge/abc").is_none());
+        assert!(modpack_from_link("trs-launcher://modpack/curseforge/0123").is_none());
+        assert!(modpack_from_link("trs-launcher://modpack/modrinth/../etc").is_none());
+        assert!(modpack_from_link("trs-launcher://modpack/modrinth/a/b").is_none());
+        assert!(modpack_from_link("trs-launcher://modpack/modrinth/").is_none());
+        assert!(modpack_from_link("trs-launcher://modpack/github/x").is_none());
+        assert!(modpack_from_link(&format!("trs-launcher://modpack/modrinth/{}", "a".repeat(65))).is_none());
+        assert!(modpack_from_link("https://modpack/modrinth/AANobbMI").is_none());
+        assert!(matches!(parse("trs-launcher://modpack/curseforge/925200"), Some(Link::Modpack(p)) if p == "curseforge/925200"));
+        // Codes geteilter Modpacks bleiben beim alten Weg.
+        assert!(!matches!(parse("trs-launcher://pack/ABCD-EFGH"), Some(Link::Modpack(_))));
     }
 }

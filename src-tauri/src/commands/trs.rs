@@ -6,6 +6,8 @@ use std::path::PathBuf;
 use tauri::ipc::Channel;
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
+use trs_core::featured::AdminFeaturedPack;
+use trs_core::trs_api::featured::FeaturedPatch;
 use trs_core::trs_api::achievements::{MyAchievements, PlayerAchievements, ReportKind};
 use trs_core::trs_api::cape_import::{self, CapeSource};
 use trs_core::trs_api::cape_video::{self, VideoInfo, VideoPicks, VideoRequest};
@@ -287,6 +289,45 @@ pub async fn trs_admin_add_event_player(launcher: State<'_, LauncherState>, id: 
 #[tauri::command]
 pub async fn trs_admin_remove_event_player(launcher: State<'_, LauncherState>, id: String, uuid: String) -> CommandResult<()> {
     Ok(launcher.trs_admin_remove_event_player(&id, &uuid).await?)
+}
+
+// --- Empfohlene Modpacks (Team, featured.manage) ---
+
+#[tauri::command]
+pub async fn trs_admin_featured_packs(launcher: State<'_, LauncherState>) -> CommandResult<Vec<AdminFeaturedPack>> {
+    Ok(launcher.trs_admin_featured_packs().await?)
+}
+
+#[tauri::command]
+pub async fn trs_admin_add_featured_pack(launcher: State<'_, LauncherState>, url: String) -> CommandResult<AdminFeaturedPack> {
+    Ok(launcher.trs_admin_add_featured_pack(&url).await?)
+}
+
+#[tauri::command]
+pub async fn trs_admin_update_featured_pack(
+    launcher: State<'_, LauncherState>,
+    id: String,
+    patch: FeaturedPatch,
+) -> CommandResult<AdminFeaturedPack> {
+    Ok(launcher.trs_admin_update_featured_pack(&id, &patch).await?)
+}
+
+#[tauri::command]
+pub async fn trs_admin_delete_featured_pack(launcher: State<'_, LauncherState>, id: String) -> CommandResult<()> {
+    Ok(launcher.trs_admin_delete_featured_pack(&id).await?)
+}
+
+#[tauri::command]
+pub async fn trs_admin_order_featured_packs(
+    launcher: State<'_, LauncherState>,
+    ids: Vec<String>,
+) -> CommandResult<Vec<AdminFeaturedPack>> {
+    Ok(launcher.trs_admin_order_featured_packs(&ids).await?)
+}
+
+#[tauri::command]
+pub async fn trs_admin_refresh_featured_pack(launcher: State<'_, LauncherState>, id: String) -> CommandResult<AdminFeaturedPack> {
+    Ok(launcher.trs_admin_refresh_featured_pack(&id).await?)
 }
 
 #[tauri::command]

@@ -24,6 +24,7 @@ pub mod cape_video;
 pub mod chat;
 pub mod creator;
 pub mod events;
+pub mod featured;
 pub mod halloween;
 mod head_cosmetics;
 pub mod hosting;
@@ -270,6 +271,8 @@ pub(crate) fn api_error(status: u16, code: &str, retry_after: Option<u64>) -> Er
         (_, "hosting_unavailable") => ("trs_api", message_for(code)),
         // Server ohne VAPID-Schlüssel (§33.2): nur Abholen geht.
         (_, "push_unavailable") => ("trs_api", message_for(code)),
+        // Empfohlene Modpacks: CurseForge fehlt auf dem Server bzw. Modrinth/CurseForge antwortet nicht – kein „offline“.
+        (_, "curseforge_unavailable" | "upstream_failed") => ("trs_api", message_for(code)),
         (500..=599, _) => ("trs_offline", crate::msg!("trs.offline", "Der TRS-Server ist gerade nicht erreichbar.")),
         (_, code) => ("trs_api", message_for(code)),
     };
@@ -449,6 +452,15 @@ fn message_for(code: &str) -> Msg {
         "sticker_locked" => msg!("trsApi.sticker_locked", "Diesen Sticker hast du noch nicht."),
         "wings_chosen" => msg!("trsApi.wings_chosen", "Du hast deine Halloween-Flügel schon gewählt."),
         "hunt_incomplete" => msg!("trsApi.hunt_incomplete", "Erst alle 13 Kürbisse finden – dann darfst du Flügel wählen."),
+        // --- Empfohlene Modpacks (Team, featured.manage) ---
+        "invalid_link" => msg!("trsApi.invalid_link", "Das ist kein gültiger Link zu einem Modrinth- oder CurseForge-Projekt."),
+        "project_not_found" => msg!("trsApi.project_not_found", "Dieses Projekt gibt es auf Modrinth bzw. CurseForge nicht."),
+        "not_a_modpack" => msg!("trsApi.not_a_modpack", "Das Projekt ist kein Modpack."),
+        "already_featured" => msg!("trsApi.already_featured", "Dieses Modpack ist schon empfohlen."),
+        "curseforge_unavailable" => msg!("trsApi.curseforge_unavailable", "CurseForge ist auf dem TRS-Server gerade nicht verfügbar."),
+        "upstream_failed" => msg!("trsApi.upstream_failed", "Modrinth bzw. CurseForge antwortet gerade nicht – bitte später erneut versuchen."),
+        "invalid_window" => msg!("trsApi.invalid_window", "Der Zeitraum passt nicht: Das Ende muss nach dem Beginn liegen."),
+        "invalid_order" => msg!("trsApi.invalid_order", "Die Reihenfolge passt nicht – bitte die Liste neu laden."),
         "invalid_request" | "invalid_json" => msg!("trsApi.invalid_request", "Die Anfrage war ungültig."),
         "not_found" => msg!("trsApi.not_found", "Nicht gefunden."),
         _ => msg!("trsApi.rejected", "Die TRS API hat die Anfrage abgelehnt."),
@@ -953,3 +965,5 @@ mod achievements_tests;
 mod creator_tests;
 #[cfg(test)]
 mod halloween_tests;
+#[cfg(test)]
+mod featured_tests;

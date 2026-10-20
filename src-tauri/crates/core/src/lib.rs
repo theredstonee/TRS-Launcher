@@ -26,6 +26,7 @@ pub mod download;
 pub mod error;
 pub mod event_icon;
 pub mod extras;
+pub mod featured;
 pub mod firewall;
 pub mod forge;
 pub mod fsutil;
