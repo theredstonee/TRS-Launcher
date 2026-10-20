@@ -28,6 +28,18 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Featured modpacks on the start page.** The TRS team now picks modpacks from Modrinth and CurseForge that show up as a large carousel on the start page – with a short note from the team, a badge (recommended, new, event), loaders, Minecraft version and downloads. Click a slide for the project page, or install the modpack right from the slide. The list comes live from the TRS server, so new picks appear without a launcher update. Hover or focus pauses the carousel; with reduced motion it doesn't turn on its own. On phones you can swipe.
+- **Team area: manage featured modpacks.** Team members with the new right "Manage featured modpacks" paste a Modrinth or CurseForge link, write a short title and text in English and German, choose a badge, pin packs to the front, plan a time window and change the order by drag and drop (or with the arrow buttons).
+- **New link: open a modpack in the launcher.** `trs-launcher://modpack/modrinth/<id>` and `trs-launcher://modpack/curseforge/<id>` open the project page in the launcher – nothing is installed until you click.
+
+### Deutsch
+- **Empfohlene Modpacks auf der Startseite.** Das TRS-Team wählt jetzt Modpacks von Modrinth und CurseForge aus, die als großes Karussell auf der Startseite erscheinen – mit einem kurzen Text vom Team, einem Abzeichen (Empfohlen, Neu, Event), Loadern, Minecraft-Version und Downloads. Ein Klick auf die Folie öffnet die Projektseite, installieren geht direkt auf der Folie. Die Liste kommt live vom TRS-Server – neue Empfehlungen erscheinen ohne Launcher-Update. Mit der Maus darüber oder mit Fokus hält das Karussell an; bei reduzierter Bewegung blättert es nicht von selbst. Am Handy kannst du wischen.
+- **Team-Bereich: empfohlene Modpacks verwalten.** Team-Mitglieder mit dem neuen Recht „Empfohlene Modpacks verwalten“ fügen einen Modrinth- oder CurseForge-Link ein, schreiben einen kurzen Titel und Text auf Englisch und Deutsch, wählen ein Abzeichen, heften Packs vorn an, planen einen Zeitraum und ändern die Reihenfolge per Ziehen (oder mit den Pfeilknöpfen).
+- **Neuer Link: Modpack im Launcher öffnen.** `trs-launcher://modpack/modrinth/<ID>` und `trs-launcher://modpack/curseforge/<ID>` öffnen die Projektseite im Launcher – installiert wird erst nach einem Klick.
+
 ## 0.25.1 – 2026-10-19 – Crystal Clear Fix | Feinschliff
 <!-- banner: accent=#5ec8ff motif=/news/0.25.1/banner.png -->
 <!-- shots:
