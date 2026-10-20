@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { featuredText, featuredTitle, type FeaturedPack } from '~/utils/featured'
+
 // Big Picture „Start“: zuletzt gespielte Instanz groß mit Spielen-Lampe,
-// darunter die nächsten Instanzen zum schnellen Weiterspielen.
+// darunter die nächsten Instanzen zum schnellen Weiterspielen und die vom
+// TRS-Team empfohlenen Modpacks (A öffnet die Projektseite).
 const instances = useInstancesStore()
 const games = useGamesStore()
 const settings = useSettingsStore()
@@ -10,6 +13,22 @@ const featured = computed(() => instances.items[0] ?? null)
 const game = computed(() => (featured.value ? games.state(featured.value.id) : null))
 const recent = computed(() => instances.items.slice(1, 5))
 const showPlayTime = computed(() => settings.current?.ui.showPlayTime !== false)
+
+const router = useRouter()
+const curseforge = useCurseForgeStore()
+const packs = ref<FeaturedPack[]>([])
+const failed = ref(new Set<string>())
+onMounted(async () => {
+  void curseforge.load()
+  packs.value = (await backend.featuredPacks().catch(() => [])).slice(0, 4)
+})
+function openPack(p: FeaturedPack) {
+  if (p.source === 'curseforge' && curseforge.available === false) {
+    void backend.openExternalUrl(p.url).catch(() => {})
+    return
+  }
+  void router.push(projectRoute(p.source, p.projectId))
+}
 </script>
 
 <template>
@@ -58,6 +77,30 @@ const showPlayTime = computed(() => settings.current?.ui.showPlayTime !== false)
       <h2 id="bp-recent" class="bp-heading mb-5 text-3xl">{{ t('bigPicture.home.recent') }}</h2>
       <div class="grid grid-cols-2 gap-6 xl:grid-cols-4">
         <BigInstanceTile v-for="i in recent" :key="i.id" :instance="i" />
+      </div>
+    </section>
+
+    <section v-if="packs.length" aria-labelledby="bp-featured">
+      <h2 id="bp-featured" class="bp-heading mb-5 text-3xl">{{ t('featured.title') }}</h2>
+      <div class="grid grid-cols-2 gap-6 xl:grid-cols-4">
+        <button
+          v-for="p in packs"
+          :key="p.id"
+          type="button"
+          class="bp-tile flex-row! items-center gap-5 p-5"
+          :data-featured="p.id"
+          :aria-label="t('featured.openNamed', { title: featuredTitle(p, currentLocale) })"
+          @click="openPack(p)"
+        >
+          <span class="relative block size-20 shrink-0 overflow-hidden rounded-lg bg-base-800 ring-2 ring-base-800">
+            <img v-if="p.iconUrl && !failed.has(p.iconUrl)" :src="p.iconUrl" alt="" loading="lazy" class="size-full object-cover" @error="failed = new Set(failed).add(p.iconUrl!)" />
+            <PixelIdenticon v-else :seed="p.title" color="var(--color-base-400)" />
+          </span>
+          <span class="min-w-0 flex-1 text-left">
+            <span class="block truncate text-2xl font-semibold text-base-50">{{ featuredTitle(p, currentLocale) }}</span>
+            <span class="mt-1 line-clamp-2 text-base text-base-400">{{ featuredText(p, currentLocale) }}</span>
+          </span>
+        </button>
       </div>
     </section>
   </div>

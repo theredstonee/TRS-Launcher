@@ -126,6 +126,20 @@ onMounted(async () => {
 })
 onBeforeUnmount(() => unlistenRemotePair?.())
 
+// Link auf ein Modpack (`trs-launcher://modpack/modrinth/<ID>` bzw. `…/curseforge/<Zahl>`): Projektseite öffnen –
+// installiert wird erst nach einem Klick.
+let unlistenModpackLink: (() => void) | null = null
+onMounted(async () => {
+  if (!isTauri()) return
+  const open = (value: unknown) => {
+    const target = parseModpackLink(value)
+    if (target) void router.push(projectRoute(target.platform, target.projectId))
+  }
+  unlistenModpackLink = await listen<string>('open-modpack-link', (e) => open(e.payload))
+  open(await backend.takePendingModpackLink().catch(() => null))
+})
+onBeforeUnmount(() => unlistenModpackLink?.())
+
 // Tipp auf eine Push-Benachrichtigung (`trs-launcher://notify/<Route>`, §33.5): passende Seite bzw. Dialog öffnen.
 let unlistenPushTarget: (() => void) | null = null
 onMounted(async () => {

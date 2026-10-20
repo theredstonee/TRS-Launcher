@@ -336,7 +336,15 @@
       "trick_used": "Ya llamaste hoy, ¡vuelve mañana!",
       "sticker_locked": "Aún no tienes este sticker.",
       "wings_chosen": "Ya elegiste tus alas de Halloween.",
-      "hunt_incomplete": "Primero encuentra las 13 calabazas; después podrás elegir alas."
+      "hunt_incomplete": "Primero encuentra las 13 calabazas; después podrás elegir alas.",
+      "invalid_link": "No es un enlace válido a un proyecto de Modrinth o CurseForge.",
+      "project_not_found": "Este proyecto no existe en Modrinth ni en CurseForge.",
+      "not_a_modpack": "Este proyecto no es un modpack.",
+      "already_featured": "Este modpack ya está destacado.",
+      "curseforge_unavailable": "CurseForge no está disponible en el servidor de TRS ahora mismo.",
+      "upstream_failed": "Modrinth o CurseForge no responde ahora mismo; inténtalo más tarde.",
+      "invalid_window": "El periodo no es válido: el final debe ser posterior al inicio.",
+      "invalid_order": "El orden no coincide: vuelve a cargar la lista."
     },
     "auth": {
       "accountMismatch": "El inicio de sesión pertenece a otra cuenta: vuelve a iniciar sesión.",
@@ -989,6 +997,14 @@
       "invalidChannelUrl": "Indica el enlace a tu canal (https://…).",
       "invalidFollowers": "Número de seguidores no válido.",
       "invalidRights": "Elige al menos un permiso para el ayudante."
+    },
+    "featured": {
+      "unavailable": "Los modpacks destacados no están disponibles ahora mismo.",
+      "invalidLink": "Pega un enlace a un modpack de Modrinth o CurseForge.",
+      "invalidId": "Esta entrada no existe.",
+      "textTooLong": "Título de {title} caracteres como máximo, texto de {text} caracteres como máximo.",
+      "invalidWindow": "El final debe ser posterior al inicio.",
+      "invalidOrder": "El orden no coincide: vuelve a cargar la lista."
     }
   },
   "browse": {
@@ -4292,6 +4308,58 @@
       "related": "Otros reportes sobre este jugador",
       "waypoint": "Punto de ruta «{name}»: {coords} ({dimension})",
       "deleteShare": "Eliminar imagen compartida"
+    },
+    "featured": {
+      "intro": "Modpacks que aparecen como carrusel en la página de inicio del launcher. Pega un enlace de Modrinth o CurseForge: los cambios se aplican al instante, sin actualizar el launcher.",
+      "linkLabel": "Enlace de Modrinth o CurseForge",
+      "add": "Añadir",
+      "adding": "Añadiendo …",
+      "invalidLink": "Pega un enlace a un modpack de Modrinth o CurseForge.",
+      "added": "{title} añadido.",
+      "empty": "Todavía no hay modpacks destacados.",
+      "orderHint": "Los modpacks fijados van primero, después este orden. Arrastra el asa o usa las flechas para reordenar.",
+      "dragHint": "Arrastra para reordenar (o Alt+↑/↓)",
+      "dragLabel": "Mover {title} (posición {n} de {total}, Alt+↑/↓)",
+      "status": {
+        "active": "Activo",
+        "scheduled": "Programado",
+        "expired": "No visible"
+      },
+      "pinned": "Fijado",
+      "pin": "Fijar al principio",
+      "unpin": "Desfijar",
+      "moveUp": "Subir",
+      "moveDown": "Bajar",
+      "openProject": "Abrir página del proyecto",
+      "edit": "Editar",
+      "close": "Cerrar",
+      "unsaved": "Cambios sin guardar",
+      "textsEn": "Inglés",
+      "textsDe": "Alemán",
+      "titleLabel": "Título",
+      "textLabel": "Texto",
+      "count": "{n}/{max}",
+      "titleFallbackDe": "Vacío = título en inglés",
+      "textFallbackDe": "Vacío = texto en inglés o resumen del proyecto",
+      "badge": "Insignia",
+      "badgeNone": "Sin insignia",
+      "from": "Mostrar desde",
+      "to": "Mostrar hasta",
+      "windowHint": "Vacío = sin límite. Horas en tu hora local.",
+      "invalidWindow": "El final debe ser posterior al inicio.",
+      "save": "Guardar",
+      "saving": "Guardando …",
+      "saved": "Guardado: las páginas de inicio lo muestran al instante.",
+      "reset": "Descartar cambios",
+      "createdBy": "Añadido por {name}",
+      "refreshedAt": "datos del {date}",
+      "refresh": "Recargar datos",
+      "refreshed": "Datos e imágenes recargados.",
+      "remove": "Quitar",
+      "removeTitle": "¿Quitar el modpack destacado?",
+      "removeText": "{title} dejará de mostrarse en la página de inicio.",
+      "removed": "{title} quitado.",
+      "orderSaved": "Orden guardado."
     }
   },
   "whatsNew": {
@@ -5568,7 +5636,8 @@
       "website": "En la web",
       "websiteHint": "Abre la web en tu navegador (inicio de sesión con Microsoft).",
       "blog": "Blog",
-      "creators": "Creadores"
+      "creators": "Creadores",
+      "featured": "Modpacks destacados"
     },
     "search": {
       "placeholder": "Buscar jugadores, UUID, ID de reportes, #sanciones, capas …",
@@ -5971,7 +6040,8 @@
       "blog_publish": "Publicar, programar y retirar entradas del blog",
       "events_manage": "Gestionar eventos",
       "creators_review": "Revisar símbolos y capas de fan de creadores",
-      "creators_manage": "Gestionar creadores"
+      "creators_manage": "Gestionar creadores",
+      "featured_manage": "Gestionar modpacks destacados"
     },
     "creators": {
       "intro": "Revisa símbolos y capas de fan, gestiona creadores y responde a sus solicitudes. Las candidaturas se gestionan en la web.",
@@ -7659,6 +7729,26 @@
       "confirmText": "«{name}» serán tuyas para siempre. Solo puedes elegir una vez; las otras tres alas quedan bloqueadas.",
       "confirm": "Elegir definitivamente",
       "chosen": "¡«{name}» ya son tuyas!"
+    }
+  },
+  "featured": {
+    "title": "Modpacks destacados",
+    "hint": "Elegidos por el equipo de TRS",
+    "more": "Más modpacks",
+    "slideOf": "{n} de {total}",
+    "previous": "Modpack anterior",
+    "next": "Siguiente modpack",
+    "goTo": "Mostrar {title} ({n} de {total})",
+    "openNamed": "Abrir {title}",
+    "install": "Instalar",
+    "installNamed": "Instalar {title}",
+    "details": "Detalles",
+    "downloads": "{count} descargas",
+    "by": "por {author}",
+    "badges": {
+      "recommended": "Recomendado",
+      "new": "Nuevo",
+      "event": "Evento"
     }
   }
 }

@@ -311,7 +311,15 @@
       "too_many_devices": "10 appareils reçoivent déjà des notifications pour ton compte – retire-en un d’abord.",
       "endpoint_not_allowed": "L’adresse de ton app push n’est pas acceptée – choisis un serveur public dans l’app push.",
       "invalid_keys": "Les clés des notifications ne sont pas valides – réactive les notifications.",
-      "device_not_found": "Cet appareil n’est pas (ou plus) enregistré."
+      "device_not_found": "Cet appareil n’est pas (ou plus) enregistré.",
+      "invalid_link": "Ce n'est pas un lien valide vers un projet Modrinth ou CurseForge.",
+      "project_not_found": "Ce projet n'existe pas sur Modrinth ou CurseForge.",
+      "not_a_modpack": "Ce projet n'est pas un modpack.",
+      "already_featured": "Ce modpack est déjà à la une.",
+      "curseforge_unavailable": "CurseForge n'est pas disponible sur le serveur TRS pour le moment.",
+      "upstream_failed": "Modrinth ou CurseForge ne répond pas pour le moment, réessaie plus tard.",
+      "invalid_window": "La période ne va pas : la fin doit être après le début.",
+      "invalid_order": "L'ordre ne correspond pas : recharge la liste."
     },
     "auth": {
       "accountMismatch": "Cette connexion appartient à un autre compte – reconnecte-toi.",
@@ -948,6 +956,14 @@
       "ffmpegMissing": "Pour les vidéos, FFmpeg doit d’abord être téléchargé.",
       "unreadable": "« {name} » ne peut pas être lu comme vidéo.",
       "badRange": "Choisis un extrait valide de la vidéo."
+    },
+    "featured": {
+      "unavailable": "Les modpacks à la une ne sont pas disponibles pour le moment.",
+      "invalidLink": "Colle un lien vers un modpack sur Modrinth ou CurseForge.",
+      "invalidId": "Cette entrée n'existe pas.",
+      "textTooLong": "Titre de {title} caractères maximum, texte de {text} caractères maximum.",
+      "invalidWindow": "La fin doit être après le début.",
+      "invalidOrder": "L'ordre ne correspond pas : recharge la liste."
     }
   },
   "browse": {
@@ -4224,6 +4240,58 @@
       "related": "Autres signalements sur ce joueur",
       "waypoint": "Point de passage « {name} » : {coords} ({dimension})",
       "deleteShare": "Supprimer l’image partagée"
+    },
+    "featured": {
+      "intro": "Modpacks affichés en carrousel sur la page d'accueil du launcher. Colle un lien Modrinth ou CurseForge : les changements s'appliquent tout de suite, sans mise à jour du launcher.",
+      "linkLabel": "Lien Modrinth ou CurseForge",
+      "add": "Ajouter",
+      "adding": "Ajout …",
+      "invalidLink": "Colle un lien vers un modpack sur Modrinth ou CurseForge.",
+      "added": "{title} ajouté.",
+      "empty": "Aucun modpack à la une pour le moment.",
+      "orderHint": "Les modpacks épinglés passent en premier, puis cet ordre. Fais glisser la poignée ou utilise les flèches pour réordonner.",
+      "dragHint": "Glisser pour réordonner (ou Alt+↑/↓)",
+      "dragLabel": "Déplacer {title} (position {n} sur {total}, Alt+↑/↓)",
+      "status": {
+        "active": "Actif",
+        "scheduled": "Planifié",
+        "expired": "Non affiché"
+      },
+      "pinned": "Épinglé",
+      "pin": "Épingler en tête",
+      "unpin": "Désépingler",
+      "moveUp": "Monter",
+      "moveDown": "Descendre",
+      "openProject": "Ouvrir la page du projet",
+      "edit": "Modifier",
+      "close": "Fermer",
+      "unsaved": "Modifications non enregistrées",
+      "textsEn": "Anglais",
+      "textsDe": "Allemand",
+      "titleLabel": "Titre",
+      "textLabel": "Texte",
+      "count": "{n}/{max}",
+      "titleFallbackDe": "Vide = titre anglais",
+      "textFallbackDe": "Vide = texte anglais ou résumé du projet",
+      "badge": "Badge",
+      "badgeNone": "Aucun badge",
+      "from": "Afficher à partir du",
+      "to": "Afficher jusqu'au",
+      "windowHint": "Vide = sans limite. Heures dans ton fuseau horaire.",
+      "invalidWindow": "La fin doit être après le début.",
+      "save": "Enregistrer",
+      "saving": "Enregistrement …",
+      "saved": "Enregistré : les pages d'accueil l'affichent tout de suite.",
+      "reset": "Annuler les modifications",
+      "createdBy": "Ajouté par {name}",
+      "refreshedAt": "données du {date}",
+      "refresh": "Recharger les données",
+      "refreshed": "Données et images rechargées.",
+      "remove": "Retirer",
+      "removeTitle": "Retirer le modpack à la une ?",
+      "removeText": "{title} ne sera plus affiché sur la page d'accueil.",
+      "removed": "{title} retiré.",
+      "orderSaved": "Ordre enregistré."
     }
   },
   "whatsNew": {
@@ -5499,7 +5567,8 @@
       "jobs": "Postes",
       "website": "Sur le site",
       "websiteHint": "Ouvre le site dans ton navigateur (connexion avec Microsoft).",
-      "blog": "Blog"
+      "blog": "Blog",
+      "featured": "Modpacks à la une"
     },
     "search": {
       "placeholder": "Chercher joueurs, UUID, ID de signalement, #sanctions, capes …",
@@ -5900,7 +5969,8 @@
       "applications_decide": "Décider des candidatures",
       "blog_write": "Écrire des articles de blog (brouillons, images)",
       "blog_publish": "Publier, planifier et retirer des articles de blog",
-      "events_manage": "Gérer les événements"
+      "events_manage": "Gérer les événements",
+      "featured_manage": "Gérer les modpacks à la une"
     }
   },
   "trsChoice": {
@@ -6978,6 +7048,26 @@
       "installed": "{name} est passé de {from} à {to}.",
       "none": "Il n’existe pas encore de version de {name} pour cette configuration.",
       "unsupported": "{name} n’a pas été installé depuis Modrinth – choisis une version compatible sur la page du mod ou désactive-le."
+    }
+  },
+  "featured": {
+    "title": "Modpacks à la une",
+    "hint": "Choisis par l'équipe TRS",
+    "more": "Plus de modpacks",
+    "slideOf": "{n} sur {total}",
+    "previous": "Modpack précédent",
+    "next": "Modpack suivant",
+    "goTo": "Afficher {title} ({n} sur {total})",
+    "openNamed": "Ouvrir {title}",
+    "install": "Installer",
+    "installNamed": "Installer {title}",
+    "details": "Détails",
+    "downloads": "{count} téléchargements",
+    "by": "par {author}",
+    "badges": {
+      "recommended": "Recommandé",
+      "new": "Nouveau",
+      "event": "Événement"
     }
   }
 }

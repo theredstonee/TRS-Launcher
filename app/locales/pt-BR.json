@@ -311,7 +311,15 @@
       "too_many_devices": "Já há 10 aparelhos com notificações na sua conta – remova um primeiro.",
       "endpoint_not_allowed": "O endereço do seu app de push não é aceito – escolha um servidor público no app de push.",
       "invalid_keys": "As chaves das notificações são inválidas – ative as notificações de novo.",
-      "device_not_found": "Este aparelho não está (mais) registrado."
+      "device_not_found": "Este aparelho não está (mais) registrado.",
+      "invalid_link": "Este não é um link válido para um projeto do Modrinth ou do CurseForge.",
+      "project_not_found": "Este projeto não existe no Modrinth nem no CurseForge.",
+      "not_a_modpack": "Este projeto não é um modpack.",
+      "already_featured": "Este modpack já está em destaque.",
+      "curseforge_unavailable": "O CurseForge não está disponível no servidor TRS agora.",
+      "upstream_failed": "O Modrinth ou o CurseForge não está respondendo agora – tente mais tarde.",
+      "invalid_window": "O período não é válido: o fim precisa ser depois do início.",
+      "invalid_order": "A ordem não confere – recarregue a lista."
     },
     "auth": {
       "accountMismatch": "Este login pertence a outra conta – entre novamente.",
@@ -948,6 +956,14 @@
       "ffmpegMissing": "Para vídeos, o FFmpeg precisa ser baixado primeiro.",
       "unreadable": "“{name}” não pode ser lido como vídeo.",
       "badRange": "Escolha um trecho válido do vídeo."
+    },
+    "featured": {
+      "unavailable": "Os modpacks em destaque não estão disponíveis agora.",
+      "invalidLink": "Cole um link para um modpack no Modrinth ou no CurseForge.",
+      "invalidId": "Esta entrada não existe.",
+      "textTooLong": "Título com no máximo {title} caracteres, texto com no máximo {text} caracteres.",
+      "invalidWindow": "O fim precisa ser depois do início.",
+      "invalidOrder": "A ordem não confere – recarregue a lista."
     }
   },
   "browse": {
@@ -4224,6 +4240,58 @@
       "related": "Outras denúncias sobre este jogador",
       "waypoint": "Ponto “{name}”: {coords} ({dimension})",
       "deleteShare": "Excluir imagem compartilhada"
+    },
+    "featured": {
+      "intro": "Modpacks exibidos como carrossel na página inicial do launcher. Cole um link do Modrinth ou do CurseForge – as mudanças valem na hora, sem atualizar o launcher.",
+      "linkLabel": "Link do Modrinth ou CurseForge",
+      "add": "Adicionar",
+      "adding": "Adicionando …",
+      "invalidLink": "Cole um link para um modpack no Modrinth ou no CurseForge.",
+      "added": "{title} adicionado.",
+      "empty": "Ainda não há modpacks em destaque.",
+      "orderHint": "Modpacks fixados vêm primeiro, depois esta ordem. Arraste a alça ou use as setas para reordenar.",
+      "dragHint": "Arraste para reordenar (ou Alt+↑/↓)",
+      "dragLabel": "Mover {title} (posição {n} de {total}, Alt+↑/↓)",
+      "status": {
+        "active": "Ativo",
+        "scheduled": "Agendado",
+        "expired": "Não exibido"
+      },
+      "pinned": "Fixado",
+      "pin": "Fixar no início",
+      "unpin": "Desafixar",
+      "moveUp": "Subir",
+      "moveDown": "Descer",
+      "openProject": "Abrir página do projeto",
+      "edit": "Editar",
+      "close": "Fechar",
+      "unsaved": "Alterações não salvas",
+      "textsEn": "Inglês",
+      "textsDe": "Alemão",
+      "titleLabel": "Título",
+      "textLabel": "Texto",
+      "count": "{n}/{max}",
+      "titleFallbackDe": "Vazio = título em inglês",
+      "textFallbackDe": "Vazio = texto em inglês ou resumo do projeto",
+      "badge": "Selo",
+      "badgeNone": "Sem selo",
+      "from": "Mostrar a partir de",
+      "to": "Mostrar até",
+      "windowHint": "Vazio = sem limite. Horários no seu fuso local.",
+      "invalidWindow": "O fim precisa ser depois do início.",
+      "save": "Salvar",
+      "saving": "Salvando …",
+      "saved": "Salvo – as páginas iniciais mostram na hora.",
+      "reset": "Descartar alterações",
+      "createdBy": "Adicionado por {name}",
+      "refreshedAt": "dados de {date}",
+      "refresh": "Recarregar dados",
+      "refreshed": "Dados e imagens recarregados.",
+      "remove": "Remover",
+      "removeTitle": "Remover modpack em destaque?",
+      "removeText": "{title} não aparecerá mais na página inicial.",
+      "removed": "{title} removido.",
+      "orderSaved": "Ordem salva."
     }
   },
   "whatsNew": {
@@ -5499,7 +5567,8 @@
       "jobs": "Vagas",
       "website": "No site",
       "websiteHint": "Abre o site no seu navegador (login com a Microsoft).",
-      "blog": "Blog"
+      "blog": "Blog",
+      "featured": "Modpacks em destaque"
     },
     "search": {
       "placeholder": "Buscar jogadores, UUIDs, IDs de denúncia, #punições, capas …",
@@ -5900,7 +5969,8 @@
       "applications_decide": "Decidir candidaturas",
       "blog_write": "Escrever posts do blog (rascunhos, imagens)",
       "blog_publish": "Publicar, agendar e despublicar posts do blog",
-      "events_manage": "Gerenciar eventos"
+      "events_manage": "Gerenciar eventos",
+      "featured_manage": "Gerenciar modpacks em destaque"
     }
   },
   "trsChoice": {
@@ -6978,6 +7048,26 @@
       "installed": "{name} trocado de {from} para {to}.",
       "none": "Ainda não existe uma versão de {name} para esta configuração.",
       "unsupported": "{name} não foi instalado pelo Modrinth – escolha uma versão compatível na página do mod ou desative-o."
+    }
+  },
+  "featured": {
+    "title": "Modpacks em destaque",
+    "hint": "Escolhidos pela equipe TRS",
+    "more": "Mais modpacks",
+    "slideOf": "{n} de {total}",
+    "previous": "Modpack anterior",
+    "next": "Próximo modpack",
+    "goTo": "Mostrar {title} ({n} de {total})",
+    "openNamed": "Abrir {title}",
+    "install": "Instalar",
+    "installNamed": "Instalar {title}",
+    "details": "Detalhes",
+    "downloads": "{count} downloads",
+    "by": "por {author}",
+    "badges": {
+      "recommended": "Recomendado",
+      "new": "Novo",
+      "event": "Evento"
     }
   }
 }

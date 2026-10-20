@@ -336,7 +336,15 @@
       "trick_used": "You already knocked today – come back tomorrow!",
       "sticker_locked": "You don’t have this sticker yet.",
       "wings_chosen": "You already chose your Halloween wings.",
-      "hunt_incomplete": "Find all 13 pumpkins first – then you can choose wings."
+      "hunt_incomplete": "Find all 13 pumpkins first – then you can choose wings.",
+      "invalid_link": "That's not a valid link to a Modrinth or CurseForge project.",
+      "project_not_found": "This project doesn't exist on Modrinth or CurseForge.",
+      "not_a_modpack": "This project isn't a modpack.",
+      "already_featured": "This modpack is already featured.",
+      "curseforge_unavailable": "CurseForge is not available on the TRS server right now.",
+      "upstream_failed": "Modrinth or CurseForge is not responding right now – please try again later.",
+      "invalid_window": "The time window doesn't work: the end must be after the start.",
+      "invalid_order": "The order doesn't match – please reload the list."
     },
     "auth": {
       "accountMismatch": "This sign-in belongs to a different account – please sign in again.",
@@ -989,6 +997,14 @@
       "invalidChannelUrl": "Please enter the link to your channel (https://…).",
       "invalidFollowers": "Invalid follower count.",
       "invalidRights": "Please choose at least one right for the helper."
+    },
+    "featured": {
+      "unavailable": "Featured modpacks are not available right now.",
+      "invalidLink": "Please paste a link to a modpack on Modrinth or CurseForge.",
+      "invalidId": "This entry does not exist.",
+      "textTooLong": "Title at most {title} characters, text at most {text} characters.",
+      "invalidWindow": "The end must be after the start.",
+      "invalidOrder": "The order doesn't match – please reload the list."
     }
   },
   "browse": {
@@ -4292,6 +4308,58 @@
       "related": "Other reports about this player",
       "waypoint": "Waypoint “{name}”: {coords} ({dimension})",
       "deleteShare": "Delete shared picture"
+    },
+    "featured": {
+      "intro": "Modpacks shown as a carousel on the launcher start page. Paste a Modrinth or CurseForge link – changes are live right away, no launcher update needed.",
+      "linkLabel": "Modrinth or CurseForge link",
+      "add": "Add",
+      "adding": "Adding …",
+      "invalidLink": "Paste a link to a modpack on Modrinth or CurseForge.",
+      "added": "{title} added.",
+      "empty": "No featured modpacks yet.",
+      "orderHint": "Pinned modpacks come first, then this order. Drag the handle or use the arrows to reorder.",
+      "dragHint": "Drag to reorder (or Alt+↑/↓)",
+      "dragLabel": "Move {title} (position {n} of {total}, Alt+↑/↓)",
+      "status": {
+        "active": "Active",
+        "scheduled": "Scheduled",
+        "expired": "Not shown"
+      },
+      "pinned": "Pinned",
+      "pin": "Pin to the front",
+      "unpin": "Unpin",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "openProject": "Open project page",
+      "edit": "Edit",
+      "close": "Close",
+      "unsaved": "Unsaved changes",
+      "textsEn": "English",
+      "textsDe": "German",
+      "titleLabel": "Title",
+      "textLabel": "Text",
+      "count": "{n}/{max}",
+      "titleFallbackDe": "Empty = English title",
+      "textFallbackDe": "Empty = English text or project summary",
+      "badge": "Badge",
+      "badgeNone": "No badge",
+      "from": "Show from",
+      "to": "Show until",
+      "windowHint": "Leave empty for no limit. Times are in your local time.",
+      "invalidWindow": "The end must be after the start.",
+      "save": "Save",
+      "saving": "Saving …",
+      "saved": "Saved – the start pages show it right away.",
+      "reset": "Discard changes",
+      "createdBy": "Added by {name}",
+      "refreshedAt": "data from {date}",
+      "refresh": "Reload data",
+      "refreshed": "Data and images reloaded.",
+      "remove": "Remove",
+      "removeTitle": "Remove featured modpack?",
+      "removeText": "{title} will no longer be shown on the start page.",
+      "removed": "{title} removed.",
+      "orderSaved": "Order saved."
     }
   },
   "whatsNew": {
@@ -5568,7 +5636,8 @@
       "website": "On the website",
       "websiteHint": "Opens the website in your browser (sign in with Microsoft).",
       "blog": "Blog",
-      "creators": "Creators"
+      "creators": "Creators",
+      "featured": "Featured modpacks"
     },
     "search": {
       "placeholder": "Search players, UUIDs, report IDs, #sanctions, capes …",
@@ -5971,7 +6040,8 @@
       "blog_publish": "Publish, schedule and unpublish blog posts",
       "events_manage": "Manage events",
       "creators_review": "Review creator symbols and fan capes",
-      "creators_manage": "Manage creators"
+      "creators_manage": "Manage creators",
+      "featured_manage": "Manage featured modpacks"
     },
     "creators": {
       "intro": "Review fan symbols and fan capes, manage creators and answer their requests. Applications are handled on the website.",
@@ -7659,6 +7729,26 @@
       "confirmText": "“{name}” will be yours forever. You can only choose once – the other three wings stay locked.",
       "confirm": "Choose for good",
       "chosen": "“{name}” are yours!"
+    }
+  },
+  "featured": {
+    "title": "Featured modpacks",
+    "hint": "Picked by the TRS team",
+    "more": "More modpacks",
+    "slideOf": "{n} of {total}",
+    "previous": "Previous modpack",
+    "next": "Next modpack",
+    "goTo": "Show {title} ({n} of {total})",
+    "openNamed": "Open {title}",
+    "install": "Install",
+    "installNamed": "Install {title}",
+    "details": "Details",
+    "downloads": "{count} downloads",
+    "by": "by {author}",
+    "badges": {
+      "recommended": "Recommended",
+      "new": "New",
+      "event": "Event"
     }
   }
 }

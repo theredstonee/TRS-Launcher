@@ -311,7 +311,15 @@
       "too_many_devices": "Twoje konto ma już 10 urządzeń z powiadomieniami – najpierw usuń jedno.",
       "endpoint_not_allowed": "Adres twojej aplikacji push nie jest akceptowany – wybierz w niej publiczny serwer.",
       "invalid_keys": "Klucze powiadomień są nieprawidłowe – włącz powiadomienia ponownie.",
-      "device_not_found": "To urządzenie nie jest (już) zarejestrowane."
+      "device_not_found": "To urządzenie nie jest (już) zarejestrowane.",
+      "invalid_link": "To nie jest prawidłowy link do projektu na Modrinth lub CurseForge.",
+      "project_not_found": "Ten projekt nie istnieje na Modrinth ani CurseForge.",
+      "not_a_modpack": "Ten projekt nie jest modpackiem.",
+      "already_featured": "Ten modpack jest już polecany.",
+      "curseforge_unavailable": "CurseForge jest teraz niedostępny na serwerze TRS.",
+      "upstream_failed": "Modrinth lub CurseForge teraz nie odpowiada – spróbuj później.",
+      "invalid_window": "Nieprawidłowy okres: koniec musi być po początku.",
+      "invalid_order": "Kolejność się nie zgadza – wczytaj listę ponownie."
     },
     "auth": {
       "accountMismatch": "To logowanie należy do innego konta – zaloguj się ponownie.",
@@ -948,6 +956,14 @@
       "ffmpegMissing": "Do wideo trzeba najpierw pobrać FFmpeg.",
       "unreadable": "„{name}” nie da się odczytać jako wideo.",
       "badRange": "Wybierz prawidłowy fragment wideo."
+    },
+    "featured": {
+      "unavailable": "Polecane modpacki są teraz niedostępne.",
+      "invalidLink": "Wklej link do modpacka na Modrinth lub CurseForge.",
+      "invalidId": "Ten wpis nie istnieje.",
+      "textTooLong": "Tytuł maksymalnie {title} znaków, tekst maksymalnie {text} znaków.",
+      "invalidWindow": "Koniec musi być po początku.",
+      "invalidOrder": "Kolejność się nie zgadza – wczytaj listę ponownie."
     }
   },
   "browse": {
@@ -4224,6 +4240,58 @@
       "related": "Inne zgłoszenia dotyczące tego gracza",
       "waypoint": "Punkt „{name}”: {coords} ({dimension})",
       "deleteShare": "Usuń udostępniony obraz"
+    },
+    "featured": {
+      "intro": "Modpacki wyświetlane jako karuzela na stronie startowej launchera. Wklej link z Modrinth lub CurseForge – zmiany działają od razu, bez aktualizacji launchera.",
+      "linkLabel": "Link z Modrinth lub CurseForge",
+      "add": "Dodaj",
+      "adding": "Dodawanie …",
+      "invalidLink": "Wklej link do modpacka na Modrinth lub CurseForge.",
+      "added": "Dodano: {title}.",
+      "empty": "Brak polecanych modpacków.",
+      "orderHint": "Przypięte modpacki są pierwsze, potem ta kolejność. Przeciągnij uchwyt lub użyj strzałek, aby zmienić kolejność.",
+      "dragHint": "Przeciągnij, aby zmienić kolejność (lub Alt+↑/↓)",
+      "dragLabel": "Przenieś {title} (pozycja {n} z {total}, Alt+↑/↓)",
+      "status": {
+        "active": "Aktywny",
+        "scheduled": "Zaplanowany",
+        "expired": "Niewidoczny"
+      },
+      "pinned": "Przypięty",
+      "pin": "Przypnij na początku",
+      "unpin": "Odepnij",
+      "moveUp": "W górę",
+      "moveDown": "W dół",
+      "openProject": "Otwórz stronę projektu",
+      "edit": "Edytuj",
+      "close": "Zamknij",
+      "unsaved": "Niezapisane zmiany",
+      "textsEn": "Angielski",
+      "textsDe": "Niemiecki",
+      "titleLabel": "Tytuł",
+      "textLabel": "Tekst",
+      "count": "{n}/{max}",
+      "titleFallbackDe": "Puste = tytuł angielski",
+      "textFallbackDe": "Puste = tekst angielski lub opis projektu",
+      "badge": "Odznaka",
+      "badgeNone": "Bez odznaki",
+      "from": "Pokazuj od",
+      "to": "Pokazuj do",
+      "windowHint": "Puste = bez limitu. Czas lokalny.",
+      "invalidWindow": "Koniec musi być po początku.",
+      "save": "Zapisz",
+      "saving": "Zapisywanie …",
+      "saved": "Zapisano – strony startowe pokażą to od razu.",
+      "reset": "Odrzuć zmiany",
+      "createdBy": "Dodane przez: {name}",
+      "refreshedAt": "dane z {date}",
+      "refresh": "Wczytaj dane ponownie",
+      "refreshed": "Dane i obrazy wczytane ponownie.",
+      "remove": "Usuń",
+      "removeTitle": "Usunąć polecany modpack?",
+      "removeText": "{title} nie będzie już widoczny na stronie startowej.",
+      "removed": "Usunięto: {title}.",
+      "orderSaved": "Kolejność zapisana."
     }
   },
   "whatsNew": {
@@ -5499,7 +5567,8 @@
       "jobs": "Stanowiska",
       "website": "Na stronie",
       "websiteHint": "Otwiera stronę w przeglądarce (logowanie przez Microsoft).",
-      "blog": "Blog"
+      "blog": "Blog",
+      "featured": "Polecane modpacki"
     },
     "search": {
       "placeholder": "Szukaj graczy, UUID, ID zgłoszeń, #kar, peleryn …",
@@ -5900,7 +5969,8 @@
       "applications_decide": "Decydować o zgłoszeniach",
       "blog_write": "Pisanie wpisów na blogu (szkice, obrazy)",
       "blog_publish": "Publikowanie, planowanie i wycofywanie wpisów na blogu",
-      "events_manage": "Zarządzanie wydarzeniami"
+      "events_manage": "Zarządzanie wydarzeniami",
+      "featured_manage": "Zarządzanie polecanymi modpackami"
     }
   },
   "trsChoice": {
@@ -6978,6 +7048,26 @@
       "installed": "{name} zmieniono z {from} na {to}.",
       "none": "Nie ma jeszcze wersji {name} dla tej konfiguracji.",
       "unsupported": "{name} nie został zainstalowany z Modrinth – wybierz pasującą wersję na stronie moda lub go wyłącz."
+    }
+  },
+  "featured": {
+    "title": "Polecane modpacki",
+    "hint": "Wybrane przez zespół TRS",
+    "more": "Więcej modpacków",
+    "slideOf": "{n} z {total}",
+    "previous": "Poprzedni modpack",
+    "next": "Następny modpack",
+    "goTo": "Pokaż {title} ({n} z {total})",
+    "openNamed": "Otwórz {title}",
+    "install": "Zainstaluj",
+    "installNamed": "Zainstaluj {title}",
+    "details": "Szczegóły",
+    "downloads": "Pobrania: {count}",
+    "by": "autor: {author}",
+    "badges": {
+      "recommended": "Polecany",
+      "new": "Nowy",
+      "event": "Wydarzenie"
     }
   }
 }

@@ -4,7 +4,7 @@ import type { Instance, Server } from '~/types'
 
 // Startseite: oben eine lebendige Redstone-Schaltung als Bühne für die zuletzt
 // gespielte Instanz – die Hauptleitung läuft in die Spielen-Lampe und lädt sich
-// beim Start auf. Darunter „Weiterspielen“, laufende Spiele, Neuigkeiten und Server.
+// beim Start auf. Darunter empfohlene Modpacks, „Weiterspielen“, laufende Spiele, Neuigkeiten und Server.
 const instances = useInstancesStore()
 const accounts = useAccountsStore()
 const servers = useServersStore()
@@ -20,10 +20,11 @@ const lamp = ref<HTMLElement | null>(null)
 const canLaunch = computed(() => platformCaps.value.gameLaunch)
 const mobile = mobileUi
 const news = ref<{ refresh: () => Promise<void> } | null>(null)
+const featuredPacks = ref<{ refresh: () => Promise<void> } | null>(null)
 
-/** Handy: „Zum Aktualisieren ziehen“ – Neuigkeiten, Instanzen und Server-Status neu laden. */
+/** Handy: „Zum Aktualisieren ziehen“ – Neuigkeiten, empfohlene Modpacks, Instanzen und Server-Status neu laden. */
 async function refreshAll() {
-  await Promise.allSettled([news.value?.refresh(), instances.load(), servers.load()])
+  await Promise.allSettled([news.value?.refresh(), featuredPacks.value?.refresh(), instances.load(), servers.load()])
 }
 
 // Die Instanzliste ist nach „zuletzt gespielt“ sortiert.
@@ -201,6 +202,9 @@ function play(instance: Instance) {
     <div class="space-y-10 px-8 mobile:space-y-8 mobile:px-4">
       <!-- Neuestes Update als Blog-Karte (Banner aus der Redstone-Szene). -->
       <UpdateNewsCard />
+
+      <!-- Empfohlene Modpacks des TRS-Teams (Karussell, live von der TRS API; leer = unsichtbar). -->
+      <FeaturedPacks ref="featuredPacks" />
 
       <!-- Weiterspielen: breite Banner-Kacheln, am Ende die Kachel für Neues. -->
       <section v-if="ready && featured" aria-labelledby="continue-heading">

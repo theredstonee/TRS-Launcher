@@ -62,6 +62,7 @@ import {
   type HelperRight,
 } from './creator'
 import { bisectViewSchema } from './bisect'
+import { adminFeaturedPackSchema, featuredListSchema, type FeaturedPatch } from './featured'
 import { conflictReportSchema, fitResultSchema } from './modConflicts'
 import {
   claimedCommandSchema,
@@ -727,6 +728,10 @@ export const backend = {
 
   /** Neuigkeiten für die Startseite (Kern cacht sie; `force` lädt neu). */
   getNews: (force = false) => call<NewsFeed>('get_news', { force }),
+  /** Empfohlene Modpacks für die Startseite (vom TRS-Team gewählt; leer ohne TRS-Dienste). */
+  featuredPacks: (force = false) => checked(featuredListSchema, 'trs_featured_packs', { force }),
+  /** `trs-launcher://modpack/<Plattform>/<ID>` beim Start (einmalig abholen). */
+  takePendingModpackLink: () => call<string | null>('take_pending_modpack_link'),
   /** Lädt ein Feed-Bild in den Cache und gibt den freigegebenen Pfad zurück. */
   newsImage: (url: string) => call<string | null>('news_image', { url }),
   /** Voller Patchnotes-Text (HTML) – nur über MarkdownView anzeigen. */
@@ -955,6 +960,14 @@ export const backend = {
     adminSetEvent: (id: string, enabled: boolean) => call<void>('trs_admin_set_event', { id, enabled }),
     adminAddEventPlayer: (id: string, player: string) => call<void>('trs_admin_add_event_player', { id, player }),
     adminRemoveEventPlayer: (id: string, uuid: string) => call<void>('trs_admin_remove_event_player', { id, uuid }),
+    /** Empfohlene Modpacks verwalten (Recht featured.manage). */
+    adminFeaturedPacks: () => checked(z.array(adminFeaturedPackSchema).max(100), 'trs_admin_featured_packs'),
+    adminAddFeaturedPack: (url: string) => checked(adminFeaturedPackSchema, 'trs_admin_add_featured_pack', { url }),
+    adminUpdateFeaturedPack: (id: string, patch: FeaturedPatch) =>
+      checked(adminFeaturedPackSchema, 'trs_admin_update_featured_pack', { id, patch }),
+    adminDeleteFeaturedPack: (id: string) => call<void>('trs_admin_delete_featured_pack', { id }),
+    adminOrderFeaturedPacks: (ids: string[]) => checked(z.array(adminFeaturedPackSchema).max(100), 'trs_admin_order_featured_packs', { ids }),
+    adminRefreshFeaturedPack: (id: string) => checked(adminFeaturedPackSchema, 'trs_admin_refresh_featured_pack', { id }),
     playerCapes: (uuids: string[]) => checked(z.array(trsPlayerCapeSchema), 'trs_player_capes', { uuids }),
     /** Umhänge teilen: offene Angebote an mich (mit Vorschau) und von mir. */
     capeOffers: () => checked(trsCapeOffersSchema, 'trs_cape_offers'),

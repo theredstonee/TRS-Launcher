@@ -311,7 +311,15 @@
       "too_many_devices": "Hesabın için zaten 10 cihaz bildirim alıyor – önce birini kaldır.",
       "endpoint_not_allowed": "Push uygulamanın adresi kabul edilmiyor – push uygulamasında herkese açık bir sunucu seç.",
       "invalid_keys": "Bildirim anahtarları geçersiz – bildirimleri yeniden aç.",
-      "device_not_found": "Bu cihaz kayıtlı değil (artık)."
+      "device_not_found": "Bu cihaz kayıtlı değil (artık).",
+      "invalid_link": "Bu, geçerli bir Modrinth veya CurseForge proje bağlantısı değil.",
+      "project_not_found": "Bu proje Modrinth'te veya CurseForge'da yok.",
+      "not_a_modpack": "Bu proje bir mod paketi değil.",
+      "already_featured": "Bu mod paketi zaten öne çıkarılmış.",
+      "curseforge_unavailable": "CurseForge şu anda TRS sunucusunda kullanılamıyor.",
+      "upstream_failed": "Modrinth veya CurseForge şu anda yanıt vermiyor – lütfen daha sonra tekrar dene.",
+      "invalid_window": "Zaman aralığı geçersiz: bitiş, başlangıçtan sonra olmalı.",
+      "invalid_order": "Sıra uyuşmuyor – lütfen listeyi yeniden yükle."
     },
     "auth": {
       "accountMismatch": "Bu giriş başka bir hesaba ait – lütfen tekrar giriş yap.",
@@ -948,6 +956,14 @@
       "ffmpegMissing": "Videolar için önce FFmpeg indirilmelidir.",
       "unreadable": "“{name}” video olarak okunamıyor.",
       "badRange": "Lütfen videoda geçerli bir bölüm seç."
+    },
+    "featured": {
+      "unavailable": "Öne çıkan mod paketlerine şu anda ulaşılamıyor.",
+      "invalidLink": "Modrinth veya CurseForge'daki bir mod paketinin bağlantısını yapıştır.",
+      "invalidId": "Bu kayıt mevcut değil.",
+      "textTooLong": "Başlık en fazla {title} karakter, metin en fazla {text} karakter.",
+      "invalidWindow": "Bitiş, başlangıçtan sonra olmalı.",
+      "invalidOrder": "Sıra uyuşmuyor – lütfen listeyi yeniden yükle."
     }
   },
   "browse": {
@@ -4224,6 +4240,58 @@
       "related": "Bu oyuncu hakkındaki diğer şikâyetler",
       "waypoint": "Yol noktası “{name}”: {coords} ({dimension})",
       "deleteShare": "Paylaşılan resmi sil"
+    },
+    "featured": {
+      "intro": "Launcher başlangıç sayfasında karusel olarak gösterilen mod paketleri. Bir Modrinth veya CurseForge bağlantısı yapıştır – değişiklikler launcher güncellemesi olmadan hemen geçerli olur.",
+      "linkLabel": "Modrinth veya CurseForge bağlantısı",
+      "add": "Ekle",
+      "adding": "Ekleniyor …",
+      "invalidLink": "Modrinth veya CurseForge'daki bir mod paketinin bağlantısını yapıştır.",
+      "added": "{title} eklendi.",
+      "empty": "Henüz öne çıkan mod paketi yok.",
+      "orderHint": "Sabitlenen mod paketleri önce gelir, sonra bu sıra. Sırayı değiştirmek için tutamacı sürükle veya okları kullan.",
+      "dragHint": "Sıralamak için sürükle (veya Alt+↑/↓)",
+      "dragLabel": "{title} taşı (sıra {n} / {total}, Alt+↑/↓)",
+      "status": {
+        "active": "Etkin",
+        "scheduled": "Planlandı",
+        "expired": "Gösterilmiyor"
+      },
+      "pinned": "Sabitlendi",
+      "pin": "Başa sabitle",
+      "unpin": "Sabitlemeyi kaldır",
+      "moveUp": "Yukarı taşı",
+      "moveDown": "Aşağı taşı",
+      "openProject": "Proje sayfasını aç",
+      "edit": "Düzenle",
+      "close": "Kapat",
+      "unsaved": "Kaydedilmemiş değişiklikler",
+      "textsEn": "İngilizce",
+      "textsDe": "Almanca",
+      "titleLabel": "Başlık",
+      "textLabel": "Metin",
+      "count": "{n}/{max}",
+      "titleFallbackDe": "Boş = İngilizce başlık",
+      "textFallbackDe": "Boş = İngilizce metin veya proje özeti",
+      "badge": "Rozet",
+      "badgeNone": "Rozet yok",
+      "from": "Şu tarihten itibaren göster",
+      "to": "Şu tarihe kadar göster",
+      "windowHint": "Boş = sınır yok. Saatler yerel saatine göre.",
+      "invalidWindow": "Bitiş, başlangıçtan sonra olmalı.",
+      "save": "Kaydet",
+      "saving": "Kaydediliyor …",
+      "saved": "Kaydedildi – başlangıç sayfaları hemen gösterir.",
+      "reset": "Değişiklikleri at",
+      "createdBy": "Ekleyen: {name}",
+      "refreshedAt": "veriler: {date}",
+      "refresh": "Verileri yeniden yükle",
+      "refreshed": "Veriler ve görseller yeniden yüklendi.",
+      "remove": "Kaldır",
+      "removeTitle": "Öne çıkan mod paketi kaldırılsın mı?",
+      "removeText": "{title} artık başlangıç sayfasında gösterilmeyecek.",
+      "removed": "{title} kaldırıldı.",
+      "orderSaved": "Sıra kaydedildi."
     }
   },
   "whatsNew": {
@@ -5499,7 +5567,8 @@
       "jobs": "Pozisyonlar",
       "website": "Web sitesinde",
       "websiteHint": "Web sitesini tarayıcında açar (Microsoft ile giriş).",
-      "blog": "Blog"
+      "blog": "Blog",
+      "featured": "Öne çıkan mod paketleri"
     },
     "search": {
       "placeholder": "Oyuncu, UUID, şikayet kimliği, #ceza, pelerin ara …",
@@ -5900,7 +5969,8 @@
       "applications_decide": "Başvurulara karar verme",
       "blog_write": "Blog yazıları yazma (taslaklar, görseller)",
       "blog_publish": "Blog yazılarını yayınlama, zamanlama ve yayından kaldırma",
-      "events_manage": "Etkinlikleri yönet"
+      "events_manage": "Etkinlikleri yönet",
+      "featured_manage": "Öne çıkan mod paketlerini yönet"
     }
   },
   "trsChoice": {
@@ -6978,6 +7048,26 @@
       "installed": "{name}, {from} sürümünden {to} sürümüne geçirildi.",
       "none": "{name} için bu kurulumda çalışan bir sürüm henüz yok.",
       "unsupported": "{name} Modrinth’ten yüklenmedi – mod sayfasından uyumlu bir sürüm seç veya modu kapat."
+    }
+  },
+  "featured": {
+    "title": "Öne çıkan mod paketleri",
+    "hint": "TRS ekibi tarafından seçildi",
+    "more": "Daha fazla mod paketi",
+    "slideOf": "{n} / {total}",
+    "previous": "Önceki mod paketi",
+    "next": "Sonraki mod paketi",
+    "goTo": "{title} göster ({n} / {total})",
+    "openNamed": "{title} aç",
+    "install": "Yükle",
+    "installNamed": "{title} yükle",
+    "details": "Ayrıntılar",
+    "downloads": "{count} indirme",
+    "by": "yapımcı: {author}",
+    "badges": {
+      "recommended": "Önerilen",
+      "new": "Yeni",
+      "event": "Etkinlik"
     }
   }
 }

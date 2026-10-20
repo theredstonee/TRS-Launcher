@@ -336,7 +336,15 @@
       "trick_used": "Heute hast du schon angeklopft – morgen wieder!",
       "sticker_locked": "Diesen Sticker hast du noch nicht.",
       "wings_chosen": "Du hast deine Halloween-Flügel schon gewählt.",
-      "hunt_incomplete": "Erst alle 13 Kürbisse finden – dann darfst du Flügel wählen."
+      "hunt_incomplete": "Erst alle 13 Kürbisse finden – dann darfst du Flügel wählen.",
+      "invalid_link": "Das ist kein gültiger Link zu einem Modrinth- oder CurseForge-Projekt.",
+      "project_not_found": "Dieses Projekt gibt es auf Modrinth bzw. CurseForge nicht.",
+      "not_a_modpack": "Das Projekt ist kein Modpack.",
+      "already_featured": "Dieses Modpack ist schon empfohlen.",
+      "curseforge_unavailable": "CurseForge ist auf dem TRS-Server gerade nicht verfügbar.",
+      "upstream_failed": "Modrinth bzw. CurseForge antwortet gerade nicht – bitte später erneut versuchen.",
+      "invalid_window": "Der Zeitraum passt nicht: Das Ende muss nach dem Beginn liegen.",
+      "invalid_order": "Die Reihenfolge passt nicht – bitte die Liste neu laden."
     },
     "auth": {
       "accountMismatch": "Die Anmeldung gehört zu einem anderen Account – bitte erneut anmelden.",
@@ -989,6 +997,14 @@
       "invalidChannelUrl": "Bitte den Link zu deinem Kanal angeben (https://…).",
       "invalidFollowers": "Ungültige Follower-Zahl.",
       "invalidRights": "Bitte mindestens ein Recht für den Helfer wählen."
+    },
+    "featured": {
+      "unavailable": "Die empfohlenen Modpacks sind gerade nicht erreichbar.",
+      "invalidLink": "Bitte einen Link zu einem Modpack auf Modrinth oder CurseForge einfügen.",
+      "invalidId": "Diesen Eintrag gibt es nicht.",
+      "textTooLong": "Titel höchstens {title} Zeichen, Text höchstens {text} Zeichen.",
+      "invalidWindow": "Das Ende muss nach dem Beginn liegen.",
+      "invalidOrder": "Die Reihenfolge passt nicht – bitte die Liste neu laden."
     }
   },
   "browse": {
@@ -4292,6 +4308,58 @@
       "related": "Weitere Meldungen zu diesem Spieler",
       "waypoint": "Wegpunkt „{name}“: {coords} ({dimension})",
       "deleteShare": "Geteiltes Bild löschen"
+    },
+    "featured": {
+      "intro": "Modpacks, die auf der Startseite des Launchers als Karussell erscheinen. Modrinth- oder CurseForge-Link einfügen – Änderungen gelten sofort, ganz ohne Launcher-Update.",
+      "linkLabel": "Modrinth- oder CurseForge-Link",
+      "add": "Hinzufügen",
+      "adding": "Wird hinzugefügt …",
+      "invalidLink": "Bitte einen Link zu einem Modpack auf Modrinth oder CurseForge einfügen.",
+      "added": "{title} hinzugefügt.",
+      "empty": "Noch keine empfohlenen Modpacks.",
+      "orderHint": "Angeheftete Modpacks stehen vorn, danach diese Reihenfolge. Zum Umsortieren am Griff ziehen oder die Pfeile nutzen.",
+      "dragHint": "Ziehen zum Umsortieren (oder Alt+↑/↓)",
+      "dragLabel": "{title} verschieben (Platz {n} von {total}, Alt+↑/↓)",
+      "status": {
+        "active": "Aktiv",
+        "scheduled": "Geplant",
+        "expired": "Nicht sichtbar"
+      },
+      "pinned": "Angeheftet",
+      "pin": "Vorn anheften",
+      "unpin": "Lösen",
+      "moveUp": "Nach oben",
+      "moveDown": "Nach unten",
+      "openProject": "Projektseite öffnen",
+      "edit": "Bearbeiten",
+      "close": "Schließen",
+      "unsaved": "Ungespeicherte Änderungen",
+      "textsEn": "Englisch",
+      "textsDe": "Deutsch",
+      "titleLabel": "Titel",
+      "textLabel": "Text",
+      "count": "{n}/{max}",
+      "titleFallbackDe": "Leer = englischer Titel",
+      "textFallbackDe": "Leer = englischer Text oder Projektbeschreibung",
+      "badge": "Abzeichen",
+      "badgeNone": "Kein Abzeichen",
+      "from": "Zeigen ab",
+      "to": "Zeigen bis",
+      "windowHint": "Leer = ohne Grenze. Zeiten in deiner Ortszeit.",
+      "invalidWindow": "Das Ende muss nach dem Beginn liegen.",
+      "save": "Speichern",
+      "saving": "Wird gespeichert …",
+      "saved": "Gespeichert – die Startseiten zeigen es sofort.",
+      "reset": "Änderungen verwerfen",
+      "createdBy": "Hinzugefügt von {name}",
+      "refreshedAt": "Daten vom {date}",
+      "refresh": "Daten neu laden",
+      "refreshed": "Daten und Bilder neu geladen.",
+      "remove": "Entfernen",
+      "removeTitle": "Empfohlenes Modpack entfernen?",
+      "removeText": "{title} erscheint dann nicht mehr auf der Startseite.",
+      "removed": "{title} entfernt.",
+      "orderSaved": "Reihenfolge gespeichert."
     }
   },
   "whatsNew": {
@@ -5568,7 +5636,8 @@
       "website": "Auf der Website",
       "websiteHint": "Öffnet die Website im Browser (Anmeldung mit Microsoft).",
       "blog": "Blog",
-      "creators": "Creator"
+      "creators": "Creator",
+      "featured": "Empfohlene Modpacks"
     },
     "search": {
       "placeholder": "Spieler, UUIDs, Meldungs-IDs, #Strafen, Umhänge suchen …",
@@ -5971,7 +6040,8 @@
       "blog_publish": "Blog-Beiträge veröffentlichen, planen und zurückziehen",
       "events_manage": "Events verwalten",
       "creators_review": "Creator-Symbole und Fan-Umhänge prüfen",
-      "creators_manage": "Creator verwalten"
+      "creators_manage": "Creator verwalten",
+      "featured_manage": "Empfohlene Modpacks verwalten"
     },
     "creators": {
       "intro": "Fan-Symbole und Fan-Umhänge prüfen, Creator verwalten und ihre Anträge beantworten. Bewerbungen laufen über die Website.",
@@ -7659,6 +7729,26 @@
       "confirmText": "„{name}“ gehören dann für immer dir. Du kannst nur einmal wählen – die anderen drei Flügel bleiben gesperrt.",
       "confirm": "Endgültig wählen",
       "chosen": "„{name}“ gehören jetzt dir!"
+    }
+  },
+  "featured": {
+    "title": "Empfohlene Modpacks",
+    "hint": "Ausgewählt vom TRS-Team",
+    "more": "Weitere Modpacks",
+    "slideOf": "{n} von {total}",
+    "previous": "Vorheriges Modpack",
+    "next": "Nächstes Modpack",
+    "goTo": "{title} zeigen ({n} von {total})",
+    "openNamed": "{title} öffnen",
+    "install": "Installieren",
+    "installNamed": "{title} installieren",
+    "details": "Details",
+    "downloads": "{count} Downloads",
+    "by": "von {author}",
+    "badges": {
+      "recommended": "Empfohlen",
+      "new": "Neu",
+      "event": "Event"
     }
   }
 }

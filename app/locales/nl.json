@@ -311,7 +311,15 @@
       "too_many_devices": "Er krijgen al 10 apparaten meldingen voor je account – verwijder er eerst een.",
       "endpoint_not_allowed": "Het adres van je push-app wordt niet geaccepteerd – kies in de push-app een openbare server.",
       "invalid_keys": "De sleutels voor meldingen zijn ongeldig – zet meldingen opnieuw aan.",
-      "device_not_found": "Dit apparaat is niet (meer) aangemeld."
+      "device_not_found": "Dit apparaat is niet (meer) aangemeld.",
+      "invalid_link": "Dat is geen geldige link naar een Modrinth- of CurseForge-project.",
+      "project_not_found": "Dit project bestaat niet op Modrinth of CurseForge.",
+      "not_a_modpack": "Dit project is geen modpack.",
+      "already_featured": "Dit modpack is al uitgelicht.",
+      "curseforge_unavailable": "CurseForge is nu niet beschikbaar op de TRS-server.",
+      "upstream_failed": "Modrinth of CurseForge reageert nu niet – probeer het later opnieuw.",
+      "invalid_window": "De periode klopt niet: het einde moet na het begin liggen.",
+      "invalid_order": "De volgorde klopt niet – herlaad de lijst."
     },
     "auth": {
       "accountMismatch": "Deze login hoort bij een ander account – log opnieuw in.",
@@ -948,6 +956,14 @@
       "ffmpegMissing": "Voor video’s moet eerst FFmpeg worden gedownload.",
       "unreadable": "‘{name}’ kan niet als video worden gelezen.",
       "badRange": "Kies een geldig fragment van de video."
+    },
+    "featured": {
+      "unavailable": "De uitgelichte modpacks zijn nu niet bereikbaar.",
+      "invalidLink": "Plak een link naar een modpack op Modrinth of CurseForge.",
+      "invalidId": "Dit item bestaat niet.",
+      "textTooLong": "Titel maximaal {title} tekens, tekst maximaal {text} tekens.",
+      "invalidWindow": "Het einde moet na het begin liggen.",
+      "invalidOrder": "De volgorde klopt niet – herlaad de lijst."
     }
   },
   "browse": {
@@ -4224,6 +4240,58 @@
       "related": "Andere meldingen over deze speler",
       "waypoint": "Waypoint “{name}”: {coords} ({dimension})",
       "deleteShare": "Gedeelde afbeelding verwijderen"
+    },
+    "featured": {
+      "intro": "Modpacks die als carrousel op de startpagina van de launcher staan. Plak een Modrinth- of CurseForge-link – wijzigingen gelden meteen, zonder launcher-update.",
+      "linkLabel": "Modrinth- of CurseForge-link",
+      "add": "Toevoegen",
+      "adding": "Toevoegen …",
+      "invalidLink": "Plak een link naar een modpack op Modrinth of CurseForge.",
+      "added": "{title} toegevoegd.",
+      "empty": "Nog geen uitgelichte modpacks.",
+      "orderHint": "Vastgezette modpacks staan vooraan, daarna deze volgorde. Sleep aan de greep of gebruik de pijlen om te sorteren.",
+      "dragHint": "Slepen om te sorteren (of Alt+↑/↓)",
+      "dragLabel": "{title} verplaatsen (plek {n} van {total}, Alt+↑/↓)",
+      "status": {
+        "active": "Actief",
+        "scheduled": "Gepland",
+        "expired": "Niet zichtbaar"
+      },
+      "pinned": "Vastgezet",
+      "pin": "Vooraan vastzetten",
+      "unpin": "Losmaken",
+      "moveUp": "Omhoog",
+      "moveDown": "Omlaag",
+      "openProject": "Projectpagina openen",
+      "edit": "Bewerken",
+      "close": "Sluiten",
+      "unsaved": "Niet-opgeslagen wijzigingen",
+      "textsEn": "Engels",
+      "textsDe": "Duits",
+      "titleLabel": "Titel",
+      "textLabel": "Tekst",
+      "count": "{n}/{max}",
+      "titleFallbackDe": "Leeg = Engelse titel",
+      "textFallbackDe": "Leeg = Engelse tekst of projectsamenvatting",
+      "badge": "Badge",
+      "badgeNone": "Geen badge",
+      "from": "Tonen vanaf",
+      "to": "Tonen tot",
+      "windowHint": "Leeg = geen grens. Tijden in je lokale tijd.",
+      "invalidWindow": "Het einde moet na het begin liggen.",
+      "save": "Opslaan",
+      "saving": "Opslaan …",
+      "saved": "Opgeslagen – de startpagina’s tonen het meteen.",
+      "reset": "Wijzigingen verwerpen",
+      "createdBy": "Toegevoegd door {name}",
+      "refreshedAt": "gegevens van {date}",
+      "refresh": "Gegevens herladen",
+      "refreshed": "Gegevens en afbeeldingen herladen.",
+      "remove": "Verwijderen",
+      "removeTitle": "Uitgelicht modpack verwijderen?",
+      "removeText": "{title} staat dan niet meer op de startpagina.",
+      "removed": "{title} verwijderd.",
+      "orderSaved": "Volgorde opgeslagen."
     }
   },
   "whatsNew": {
@@ -5499,7 +5567,8 @@
       "jobs": "Functies",
       "website": "Op de website",
       "websiteHint": "Opent de website in je browser (inloggen met Microsoft).",
-      "blog": "Blog"
+      "blog": "Blog",
+      "featured": "Uitgelichte modpacks"
     },
     "search": {
       "placeholder": "Zoek spelers, UUID’s, meldings-ID’s, #straffen, capes …",
@@ -5900,7 +5969,8 @@
       "applications_decide": "Over sollicitaties beslissen",
       "blog_write": "Blogberichten schrijven (concepten, afbeeldingen)",
       "blog_publish": "Blogberichten publiceren, inplannen en terugtrekken",
-      "events_manage": "Evenementen beheren"
+      "events_manage": "Evenementen beheren",
+      "featured_manage": "Uitgelichte modpacks beheren"
     }
   },
   "trsChoice": {
@@ -6978,6 +7048,26 @@
       "installed": "{name} gewisseld van {from} naar {to}.",
       "none": "Er is nog geen versie van {name} voor deze opstelling.",
       "unsupported": "{name} is niet via Modrinth geïnstalleerd – kies een passende versie op de modpagina of schakel de mod uit."
+    }
+  },
+  "featured": {
+    "title": "Uitgelichte modpacks",
+    "hint": "Gekozen door het TRS-team",
+    "more": "Meer modpacks",
+    "slideOf": "{n} van {total}",
+    "previous": "Vorig modpack",
+    "next": "Volgend modpack",
+    "goTo": "{title} tonen ({n} van {total})",
+    "openNamed": "{title} openen",
+    "install": "Installeren",
+    "installNamed": "{title} installeren",
+    "details": "Details",
+    "downloads": "{count} downloads",
+    "by": "door {author}",
+    "badges": {
+      "recommended": "Aanbevolen",
+      "new": "Nieuw",
+      "event": "Evenement"
     }
   }
 }
