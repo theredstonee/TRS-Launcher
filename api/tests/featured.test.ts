@@ -308,7 +308,7 @@ describe('featured: list, patch, order', () => {
     const env = setup()
     const { a } = await three(env)
     const p = updateFeatured(env.ctx, OWNER, a.id, {
-      texts: { en: { title: 'Fast & pretty', text: 'Line one\nline\u0007 two‮' }, de: { title: 'Schnell' } },
+      texts: { en: { title: 'Fast & pretty', text: 'Line one\nline\u0007 two\u202e' }, de: { title: 'Schnell' } },
       badge: 'recommended',
     })
     expect(p.texts).toEqual({ en: { title: 'Fast & pretty', text: 'Line one line two' }, de: { title: 'Schnell', text: null } })

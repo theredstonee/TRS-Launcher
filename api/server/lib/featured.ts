@@ -410,7 +410,7 @@ async function readCapped(res: Response, max: number): Promise<Buffer | null> {
 }
 
 // eslint-disable-next-line no-control-regex -- Steuer- und Richtungszeichen fliegen raus
-const CONTROL = /[\u0000-\u001f\u007f-\u009f​-‏‪-‮⁦-⁩]/g
+const CONTROL = /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g
 /** Eine Zeile: Steuerzeichen raus, Leerraum zusammenfassen. */
 export const oneLine = (s: string) => s.replace(/[\r\n\t]+/g, ' ').replace(CONTROL, '').replace(/\s+/g, ' ').trim()
 
@@ -521,7 +521,7 @@ type CfMod = z.output<typeof cfMod>
 async function curseforgeMeta(ctx: AppContext, ref: { slug: string } | { id: number }): Promise<PackMeta> {
   const key = cfKey(ctx)
   const h = { 'x-api-key': key }
-  let mod: CfMod | null = null
+  let mod: CfMod | null
   if ('id' in ref) {
     const raw = await getJson(ctx, 'curseforge', `${CURSEFORGE_API}/mods/${ref.id}`, h)
     if (raw === null) throw projectNotFound()
