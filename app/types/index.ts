@@ -114,6 +114,10 @@ export interface UiSettings {
   halloweenFlicker: boolean
   /** Erst-Hinweis zu „Flackern & Rauschen“ schon gezeigt. */
   halloweenFlickerHintSeen: boolean
+  /** Start-Animation beim Öffnen (ab Werk an; fehlt bei älteren Kernen). */
+  startIntro?: boolean
+  /** Ton der Start-Animation (ab Werk an). */
+  startIntroSound?: boolean
 }
 
 export interface JavaPaths {

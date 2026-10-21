@@ -328,6 +328,10 @@ pub struct UiSettings {
     pub halloween_flicker: bool,
     /// Der Erst-Hinweis zu „Flackern & Rauschen“ wurde schon gezeigt.
     pub halloween_flicker_hint_seen: bool,
+    /// Start-Animation („Redstone-Dungeon“) beim Öffnen des Launchers (ab Werk an).
+    pub start_intro: bool,
+    /// Ton der Start-Animation (Jingle + Effekte, ab Werk an).
+    pub start_intro_sound: bool,
 }
 
 impl Default for UiSettings {
@@ -353,6 +357,8 @@ impl Default for UiSettings {
             event_icons: true,
             halloween_flicker: true,
             halloween_flicker_hint_seen: false,
+            start_intro: true,
+            start_intro_sound: true,
         }
     }
 }
@@ -833,6 +839,17 @@ mod tests {
         let ui: UiSettings = serde_json::from_value(serde_json::json!({ "eventIcons": false })).unwrap();
         assert!(!ui.event_icons);
         assert_eq!(serde_json::to_value(&ui).unwrap()["eventIcons"].as_bool(), Some(false));
+    }
+
+    #[test]
+    fn start_intro_default_on() {
+        // Ältere Dateien ohne Felder: Start-Animation samt Ton an.
+        let old: Settings = serde_json::from_str(r#"{"ui":{"theme":"light"}}"#).unwrap();
+        assert!(old.ui.start_intro && old.ui.start_intro_sound);
+        let ui: UiSettings = serde_json::from_value(serde_json::json!({ "startIntro": false, "startIntroSound": false })).unwrap();
+        assert!(!ui.start_intro && !ui.start_intro_sound);
+        let json = serde_json::to_value(&ui).unwrap();
+        assert_eq!((json["startIntro"].as_bool(), json["startIntroSound"].as_bool()), (Some(false), Some(false)));
     }
 
     #[test]

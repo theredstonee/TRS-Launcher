@@ -148,6 +148,8 @@ export const uiSettingsSchema = z.object({
   eventIcons: z.boolean().default(true),
   halloweenFlicker: z.boolean().default(true),
   halloweenFlickerHintSeen: z.boolean().default(false),
+  startIntro: z.boolean().default(true),
+  startIntroSound: z.boolean().default(true),
 })
 
 /** Clips & Aufnahme – gleiche Grenzen wie `trs_core::clips::settings`. */
