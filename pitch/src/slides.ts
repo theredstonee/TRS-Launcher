@@ -20,7 +20,7 @@ const DL = 'trs-launcher.theredstonee.de/download'
 
 const intro: Slide = {
   id: 'intro',
-  dur: 14,
+  dur: 13,
   html: (c) => {
     const d = c.reduced ? 2600 : 9900
     return `<div class="intro-cap">${a(`<div class="t">${t({ de: 'Der Minecraft-Launcher von TheRedstonee', en: 'The Minecraft launcher by TheRedstonee' })}</div>`, d, 'f')}${a(
@@ -109,7 +109,7 @@ const versions: Slide = {
 
 const modpacks: Slide = {
   id: 'modpacks',
-  dur: 11,
+  dur: 10,
   html: () =>
     col(
       head(
@@ -154,7 +154,7 @@ const modpacks: Slide = {
 
 const client: Slide = {
   id: 'client',
-  dur: 11,
+  dur: 10,
   html: () =>
     col(
       head({ de: 'TRS Client', en: 'TRS Client' }, { de: 'Dein Client-Mod.<br><em>Gratis dabei.</em>', en: 'Your client mod.<br><em>Included, free.</em>' }) +
@@ -186,7 +186,7 @@ const client: Slide = {
 
 const perf: Slide = {
   id: 'perf',
-  dur: 11,
+  dur: 10,
   html: () => {
     const max = 1110
     const W = 400
@@ -265,7 +265,7 @@ const redstone: Slide = {
 
 const cosmetics: Slide = {
   id: 'cosmetics',
-  dur: 11,
+  dur: 10,
   html: () =>
     col(
       head({ de: 'Kosmetik', en: 'Cosmetics' }, { de: 'Zeig, wer<br><em>du bist.</em>', en: 'Show who<br><em>you are.</em>' }) +
@@ -413,7 +413,7 @@ const designs: Slide = {
 
 const creator: Slide = {
   id: 'creator',
-  dur: 10,
+  dur: 9,
   html: () =>
     col(
       head({ de: 'Creator-Programm', en: 'Creator programme' }, { de: 'Für Creator<br><em>und ihre Fans.</em>', en: 'For creators<br><em>and their fans.</em>' }) +
@@ -465,7 +465,7 @@ const mobile: Slide = {
 
 const compare: Slide = {
   id: 'compare',
-  dur: 15,
+  dur: 13,
   html: () => {
     const Y = `<span class="mk y">${CHECK}</span>`
     const N = '<span class="mk n">–</span>'
@@ -498,7 +498,7 @@ const compare: Slide = {
 
 const numbers: Slide = {
   id: 'numbers',
-  dur: 10,
+  dur: 9,
   html: () => {
     const stats: [string, string, T, T][] = [
       ['47', '', { de: 'Updates in 30 Tagen', en: 'updates in 30 days' }, { de: 'vom 22.09. bis 21.10.2026', en: '22 Sep to 21 Oct 2026' }],
@@ -531,7 +531,7 @@ const numbers: Slide = {
 
 const tryIt: Slide = {
   id: 'try',
-  dur: 10,
+  dur: 9,
   html: (c) => {
     const left = c.demo
       ? head(
@@ -565,7 +565,7 @@ const tryIt: Slide = {
 
 const outro: Slide = {
   id: 'outro',
-  dur: 9,
+  dur: 8,
   html: (c) =>
     `<div class="outro"><div>${a(`<img class="logo-big" src="${A('icon.png')}" alt="TRS Launcher">`, 100, 'pop')}${a('<h1>TRS Launcher</h1>', 350)}${a(
       `<div class="sub">${t({ de: 'Der Minecraft-Launcher von TheRedstonee · Kostenlos · Open Source', en: 'The Minecraft launcher by TheRedstonee · Free · Open source' })}</div>`,
