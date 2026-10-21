@@ -23,7 +23,9 @@ const out = path.resolve(opt('--out') ?? path.join(root, 'release', 'messe'))
 const pitch = opt('--pitch')
 
 function run(cmd, cmdArgs, env = {}) {
-  const r = spawnSync(cmd, cmdArgs, { cwd: root, stdio: 'inherit', shell: process.platform === 'win32', env: { ...process.env, ...env } })
+  // Shell nur für pnpm (unter Windows eine .cmd) – Node selbst liegt evtl. unter einem Pfad mit Leerzeichen.
+  const shell = cmd === 'pnpm' && process.platform === 'win32'
+  const r = spawnSync(cmd, cmdArgs, { cwd: root, stdio: 'inherit', shell, env: { ...process.env, ...env } })
   if (r.status !== 0) {
     console.error(`[messe] fehlgeschlagen: ${cmd} ${cmdArgs.join(' ')}`)
     process.exit(r.status ?? 1)

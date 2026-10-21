@@ -49,7 +49,7 @@ Wo liegen die Daten?
   im Ordner „data“ neben der EXE.
 
 Für Besucher gesperrt (außer im Personal-Modus)
-  Konten hinzufügen/abmelden, Instanzen löschen/verschieben/exportieren, Welten löschen,
+  Microsoft-Konten anmelden/abmelden (auch im Einrichtungs-Assistenten), Instanzen löschen/verschieben/exportieren, Welten löschen,
   Teilen/Hochladen (Logs, Absturzberichte, Modpacks), Datenordner öffnen/umziehen,
   Ordner im Explorer und Links im Browser öffnen, Team-/Admin-Bereich, Creator-Dashboard,
   TRS-Dienste abschalten/TRS-Daten löschen, Einstellungen „Datenschutz“, „Speicher“,
@@ -57,10 +57,11 @@ Für Besucher gesperrt (außer im Personal-Modus)
   Einrichtungs-Assistent neu starten. Updates gibt es in dieser Fassung keine.
 
 Vorbereitung am Stand
-  1. Launcher starten, Präsentation antippen, Einrichtungs-Assistent durchgehen.
-  2. Strg+Umschalt+M → PIN festlegen → Personal-Modus an → Microsoft-Konto anmelden,
+  1. Launcher starten, Präsentation antippen.
+  2. Strg+Umschalt+M → PIN festlegen → „Personal-Modus“ an (sonst ist das Anmelden gesperrt).
+  3. Einrichtungs-Assistent durchgehen bzw. unter „Accounts“ das Microsoft-Konto des Stands anmelden,
      Demo-Instanzen/Modpacks installieren und einmal starten.
-  3. Im Panel „Präsentation jetzt starten“.
+  4. Strg+Umschalt+M → „Präsentation jetzt starten“ (schaltet den Personal-Modus wieder aus).
 
 Präsentation aktualisieren
   Die Präsentation steckt in der EXE. Neue Fassung = neu bauen (im Repository):

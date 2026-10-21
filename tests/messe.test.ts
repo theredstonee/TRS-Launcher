@@ -143,7 +143,7 @@ describe('Messe: Einstellungen und PIN', () => {
 
 describe('Messe: Besucher-Sperren', () => {
   it('sperrt Löschen, Abmelden, Hochladen, Ordner/Browser und den Team-Bereich', () => {
-    for (const c of ['remove_account', 'delete_instance', 'share_log', 'open_data_dir', 'open_external_url', 'confirm_data_move', 'trs_delete_me', 'trs_admin_remove_event_player', 'admin_delete_word']) {
+    for (const c of ['login_browser', 'login_device_code', 'remove_account', 'delete_instance', 'share_log', 'open_data_dir', 'open_external_url', 'confirm_data_move', 'trs_delete_me', 'trs_admin_remove_event_player', 'admin_delete_word']) {
       expect(isMesseBlockedCommand(c), c).toBe(true)
     }
     for (const c of ['launch_instance', 'list_instances', 'set_active_account', 'save_settings', 'modrinth_search']) {

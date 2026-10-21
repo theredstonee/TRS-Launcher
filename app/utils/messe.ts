@@ -30,7 +30,9 @@ export function messeKioskWindow(): boolean {
  * Ordner/Browser öffnen (raus aus der App), Datenordner umziehen.
  */
 const BLOCKED_COMMANDS = new Set([
-  // Konten und TRS-Konto
+  // Konten und TRS-Konto (Anmelden nur im Personal-Modus – Besucher-Konten blieben sonst am Stand gespeichert)
+  'login_browser',
+  'login_device_code',
   'remove_account',
   'trs_delete_me',
   'trs_set_consent',
