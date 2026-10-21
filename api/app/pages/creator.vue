@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { WAIT_SONG_UUID } from '#shared/wait-song'
 // Creator-Dashboard auf der Website (§35.3 + §35.11) mit der Website-Sitzung: Übersicht/Statistik, öffentliches Profil
 // (Beschreibung + Links, Prüfung durch das Team), Codes, Fan-Symbol und Fan-Umhang, Creator-Packs, Stufe und Helfer.
 // Helfer wählen oben den Creator, für den sie handeln (`?as=`). Nur im Browser (routeRules), nie indexiert.
@@ -7,7 +8,8 @@ const lp = useLocalePath()
 const { account, loaded, load, api, loginUrl } = useAccount()
 
 // Persönliche Wartezeit (Wunsch des Owners): Lencraft151 sieht das Dashboard erst ab Freitag, 23.10.2026, 18:00 Uhr (MESZ).
-const WAIT_UUID = '889912aeb76346ce9911a1ce629540a5'
+// Dazu ein Musikvideo (WaitSongOverlay). Owner/Admins können es mit `?waitsong` ansehen (`&t=<s>` Start, `&still` Standbild).
+const WAIT_UUID = WAIT_SONG_UUID
 const WAIT_UNTIL = Date.parse('2026-10-23T18:00:00+02:00')
 const now = ref(Date.now())
 let waitTimer: ReturnType<typeof setInterval> | undefined
@@ -16,6 +18,14 @@ onBeforeUnmount(() => clearInterval(waitTimer))
 const waiting = computed(() => account.value?.uuid.replace(/-/g, '').toLowerCase() === WAIT_UUID && now.value < WAIT_UNTIL)
 const WAIT_MESSAGE = "Mein Lieber, da du so oft gefragt hast, kommt's für dich erst am Freitag um 18 Uhr."
 const songOpen = ref(true)
+const route = useRoute()
+const songPreview = computed(() => {
+  const team = account.value?.team
+  if (route.query.waitsong === undefined || !team || !(team.owner || team.roles.some((r) => r.id === 'admin'))) return null
+  const at = Number(route.query.t)
+  return { at: Number.isFinite(at) && at > 0 ? at : undefined, still: route.query.still !== undefined }
+})
+const previewOpen = ref(true)
 const d = computed(() => m.value.creatorDash)
 const ct = computed(() => m.value.creators)
 
@@ -288,6 +298,15 @@ const helpingName = computed(() => my.value?.helping.find((h) => h.creator.uuid 
 
 <template>
   <div class="mx-auto max-w-5xl px-4 pt-14 sm:px-6">
+    <WaitSongOverlay
+      v-if="songPreview && previewOpen && !waiting"
+      :name="account!.name"
+      :skin="account!.skin"
+      :message="WAIT_MESSAGE"
+      until="Freitag, 23.10.2026, 18:00 Uhr"
+      :preview="songPreview"
+      @close="previewOpen = false"
+    />
     <header class="flex flex-wrap items-end gap-4">
       <div class="min-w-0 flex-1">
         <p class="text-xs font-semibold tracking-[0.2em] text-redstone-400 uppercase">{{ ct.eyebrow }}</p>
@@ -305,7 +324,7 @@ const helpingName = computed(() => my.value?.helping.find((h) => h.creator.uuid 
     </div>
 
     <div v-else-if="waiting" class="card mt-8 p-6">
-      <WaitSongOverlay v-if="songOpen" :name="account!.name" :message="WAIT_MESSAGE" until="Freitag, 23.10.2026, 18:00 Uhr" @close="songOpen = false" />
+      <WaitSongOverlay v-if="songOpen" :name="account!.name" :skin="account!.skin" :message="WAIT_MESSAGE" until="Freitag, 23.10.2026, 18:00 Uhr" @close="songOpen = false" />
       <template v-else>
         <p class="text-lg font-semibold text-base-50">{{ WAIT_MESSAGE }}</p>
         <p class="mt-2 text-sm text-base-400">Freischaltung: Freitag, 23.10.2026, 18:00 Uhr</p>
