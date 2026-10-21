@@ -179,9 +179,9 @@ fn same_exe(target: &Path, exe: &Path, loose: bool) -> bool {
     if norm(target) == norm(exe) {
         return true;
     }
-    loose
-        && target.file_name().is_some()
-        && target.file_name().map(|n| n.to_string_lossy().to_lowercase()) == exe.file_name().map(|n| n.to_string_lossy().to_lowercase())
+    // Dateiname selbst abtrennen: `Path::file_name` kennt unter Linux keinen `\`-Trenner (Windows-Pfade aus .lnk).
+    let name = |p: &Path| p.to_string_lossy().replace('/', "\\").rsplit('\\').next().unwrap_or("").to_lowercase();
+    loose && !name(target).is_empty() && name(target) == name(exe)
 }
 
 /// Liegt die Symbol-Angabe (`"pfad,index"` oder Pfad) in unserem Ordner der Event-Symbole?

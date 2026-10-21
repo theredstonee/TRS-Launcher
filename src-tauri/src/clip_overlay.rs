@@ -12,6 +12,7 @@ use tauri::Manager;
 use crate::LauncherState;
 
 /// Fenster-Label des Overlays (auch in der Fensterzustands-Sperrliste, siehe `lib.rs`).
+#[cfg_attr(mobile, allow(dead_code))]
 pub const LABEL: &str = "clip-overlay";
 
 /// Overlay-Fenster holen oder beim ersten Mal anlegen: transparent, randlos, immer obenauf,
