@@ -2396,8 +2396,8 @@
         "system": "Windows/sisteme göre",
         "reduced": "Animasyonları azalt"
       },
-      "startIntroTitle": "Her açılışta açılış animasyonu",
-      "startIntroDescription": "Başlatıcı açılırken kısa bir sahne oynar – yaklaşık 4 saniye, günün ilk açılışında biraz daha uzun. Güncellemeden sonra her zaman bir kez oynar; geçmek için tıkla veya herhangi bir tuşa bas.",
+      "startIntroTitle": "Her açılışta kısa açılış animasyonu",
+      "startIntroDescription": "Başlatıcı açılırken kısa, 4 saniyelik bir sahne oynar. Günün ilk açılışında ve güncellemeden sonra daha uzun bir sürüm her zaman bir kez oynar; geçmek için tıkla veya herhangi bir tuşa bas.",
       "startIntroSoundTitle": "Açılış animasyonu sesi",
       "startIntroSoundDescription": "Açılış animasyonunun müziği ve efektleri. Başlatıcı penceresi odakta değilken sessiz kalır.",
       "startIntroReplay": "Şimdi oynat",
@@ -7080,10 +7080,12 @@
   "startIntro": {
     "label": "Açılış animasyonu",
     "skip": "Geçmek için tıkla veya herhangi bir tuşa bas",
-    "flickerTitle": "Titreme ve ışık patlamaları",
-    "flickerQuestion": "Bu açılış animasyonu titreme ve ışık patlamaları içerir. Bu efektlerle görmek ister misin?",
-    "flickerOn": "Titremeli",
-    "flickerOff": "Titremesiz (sakin)",
-    "flickerLater": "Bunu daha sonra Ayarlar → Görünüm altında değiştirebilirsin."
+    "hint": {
+      "title": "Açılış animasyonu",
+      "text": "Kısa 4 saniyelik animasyon her açılışta oynasın mı? Günün ilk açılışında ve güncellemelerden sonra her zaman oynar.",
+      "keep": "Açık kalsın",
+      "off": "Kapat",
+      "calm": "Titremesiz (sakin)"
+    }
   }
 }

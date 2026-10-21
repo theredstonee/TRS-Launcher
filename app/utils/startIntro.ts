@@ -42,7 +42,7 @@ export function readIntroPrefs(): IntroPrefs {
 
 /** Einstellungen spiegeln – aufgerufen, sobald sie geladen oder geändert sind. */
 export function mirrorIntroPrefs(
-  ui: { startIntro?: boolean; startIntroSound?: boolean; startIntroFlicker?: boolean; startIntroFlickerAsked?: boolean; motion?: string } | undefined,
+  ui: { startIntro?: boolean; startIntroSound?: boolean; startIntroFlicker?: boolean; motion?: string } | undefined,
 ) {
   if (!ui) return
   try {
@@ -51,21 +51,10 @@ export function mirrorIntroPrefs(
       sound: ui.startIntroSound !== false,
       motion: ui.motion ?? 'full',
       flicker: ui.startIntroFlicker !== false,
-      // Gefragt ist gefragt – auch wenn der Kern davon (noch) nichts weiß
-      flickerAsked: ui.startIntroFlickerAsked === true || readIntroPrefs().flickerAsked,
     }
     localStorage.setItem(INTRO_PREFS_KEY, JSON.stringify(prefs))
   } catch {
     // Kein Speicher – beim nächsten Start gelten die Vorgaben.
-  }
-}
-
-/** Antwort auf die Flacker-Frage sofort lokal merken (der Kern speichert sie, sobald er bereit ist). */
-export function rememberIntroFlicker(on: boolean) {
-  try {
-    localStorage.setItem(INTRO_PREFS_KEY, JSON.stringify({ ...readIntroPrefs(), flicker: on, flickerAsked: true }))
-  } catch {
-    // egal
   }
 }
 
@@ -91,6 +80,9 @@ export function bootIntroDesign(): IntroDesign {
   const events = root?.dataset.event ? [root.dataset.event] : []
   return pickIntroDesign({ events, design: root?.dataset.design ?? null })
 }
+
+/** Lief in dieser Sitzung schon eine Start-Animation? (Dann darf der Erst-Hinweis kommen.) */
+export const introPlayedThisSession = ref(false)
 
 /** „Jetzt abspielen“ aus den Einstellungen: Zähler, den die Start-Animation beobachtet. */
 export const introReplay = ref<{ n: number; length: IntroLength }>({ n: 0, length: 'long' })

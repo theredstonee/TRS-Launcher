@@ -2439,8 +2439,8 @@
       },
       "halloweenFlickerTitle": "Flackern & Rauschen",
       "halloweenFlickerDescription": "Filmkorn-Rauschen im Hintergrund und kurzes Aufflackern bei Blitzen (nur während Halloween). Der TRS Client nutzt dieselbe Einstellung. Bei „Animationen aus“ flackert nie etwas.",
-      "startIntroTitle": "Start-Animation bei jedem Start",
-      "startIntroDescription": "Beim Öffnen des Launchers läuft eine kurze Szene – etwa 4 Sekunden, beim ersten Start des Tages etwas länger. Nach Updates läuft sie immer einmal; ein Klick oder eine beliebige Taste überspringt sie.",
+      "startIntroTitle": "Kurze Start-Animation bei jedem Start",
+      "startIntroDescription": "Beim Öffnen des Launchers läuft eine kurze 4-Sekunden-Szene. Beim ersten Start des Tages und nach Updates läuft immer einmal eine längere Fassung; ein Klick oder eine beliebige Taste überspringt sie.",
       "startIntroSoundTitle": "Ton der Start-Animation",
       "startIntroSoundDescription": "Musik und Effekte der Start-Animation. Solange das Launcher-Fenster nicht im Vordergrund ist, bleiben sie stumm.",
       "startIntroReplay": "Jetzt abspielen",
@@ -7761,10 +7761,12 @@
   "startIntro": {
     "label": "Start-Animation",
     "skip": "Klicken oder beliebige Taste zum Überspringen",
-    "flickerTitle": "Flackern und Lichtblitze",
-    "flickerQuestion": "Diese Start-Animation enthält Flackern und Lichtblitze. Möchtest du sie mit Effekten sehen?",
-    "flickerOn": "Mit Flackern",
-    "flickerOff": "Ohne Flackern (ruhig)",
-    "flickerLater": "Später änderbar unter Einstellungen → Darstellung."
+    "hint": {
+      "title": "Start-Animation",
+      "text": "Soll beim Start jedes Mal die kurze 4-Sekunden-Animation laufen? Beim ersten Start des Tages und nach Updates läuft sie immer.",
+      "keep": "Anlassen",
+      "off": "Ausschalten",
+      "calm": "Ohne Flackern (ruhig)"
+    }
   }
 }

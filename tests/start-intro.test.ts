@@ -9,7 +9,7 @@ import {
   parseIntroMemory,
   parseIntroPrefs,
   pickIntroLength,
-  shouldAskFlicker,
+  shouldShowIntroHint,
   shouldPlayIntro,
 } from '../app/utils/intro/select'
 import { planDungeon, planFrost, planGraveyard, type SfxEvent } from '../app/utils/intro/sfx'
@@ -34,9 +34,9 @@ describe('Start-Animation: welche Länge', () => {
     expect(pickIntroLength({ last: null, today, version: '0.27.0', mobile: true })).toBe('short')
   })
 
-  it('die Update-Fassung läuft immer, kurz und mittel lassen sich abschalten', () => {
+  it('nur die kurze 4-s-Fassung lässt sich abschalten – Tagesstart und Update laufen immer', () => {
     expect(shouldPlayIntro('long', false)).toBe(true)
-    expect(shouldPlayIntro('medium', false)).toBe(false)
+    expect(shouldPlayIntro('medium', false)).toBe(true)
     expect(shouldPlayIntro('short', false)).toBe(false)
     expect(shouldPlayIntro('short', true)).toBe(true)
   })
@@ -46,21 +46,22 @@ describe('Start-Animation: welche Länge', () => {
     expect(parseIntroMemory('{kaputt')).toBeNull()
     expect(parseIntroMemory('{"day":1}')).toBeNull()
     expect(parseIntroMemory('{"day":"2026-10-21","version":"0.26.0"}')).toEqual({ day: '2026-10-21', version: '0.26.0' })
-    expect(parseIntroPrefs(null)).toEqual({ enabled: true, sound: true, motion: 'full', flicker: true, flickerAsked: false })
-    expect(parseIntroPrefs('{"enabled":false,"sound":false,"motion":"reduced","flicker":false,"flickerAsked":true}')).toEqual({
+    expect(parseIntroPrefs(null)).toEqual({ enabled: true, sound: true, motion: 'full', flicker: true })
+    expect(parseIntroPrefs('{"enabled":false,"sound":false,"motion":"reduced","flicker":false}')).toEqual({
       enabled: false,
       sound: false,
       motion: 'reduced',
       flicker: false,
-      flickerAsked: true,
     })
     expect(parseIntroPrefs('nope').enabled).toBe(true)
   })
 
-  it('fragt nach Flackern nur einmal und nicht bei reduzierter Bewegung', () => {
-    expect(shouldAskFlicker({ flickerAsked: false }, false)).toBe(true)
-    expect(shouldAskFlicker({ flickerAsked: true }, false)).toBe(false)
-    expect(shouldAskFlicker({ flickerAsked: false }, true)).toBe(false)
+  it('Erst-Hinweis kommt einmal, erst nachdem eine Animation lief und die Einstellungen da sind', () => {
+    expect(shouldShowIntroHint({ loaded: true, seen: false, playedThisSession: true })).toBe(true)
+    expect(shouldShowIntroHint({ loaded: true, seen: undefined, playedThisSession: true })).toBe(true)
+    expect(shouldShowIntroHint({ loaded: true, seen: true, playedThisSession: true })).toBe(false)
+    expect(shouldShowIntroHint({ loaded: true, seen: false, playedThisSession: false })).toBe(false)
+    expect(shouldShowIntroHint({ loaded: false, seen: false, playedThisSession: true })).toBe(false)
   })
 
   it('lokaler Kalendertag und reduzierte Bewegung', () => {

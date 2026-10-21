@@ -2396,8 +2396,8 @@
         "system": "Zoals Windows/systeem",
         "reduced": "Animaties beperken"
       },
-      "startIntroTitle": "Startanimatie bij elke start",
-      "startIntroDescription": "Bij het openen van de launcher speelt een korte scène – ongeveer 4 seconden, iets langer bij de eerste start van de dag. Na een update speelt ze altijd één keer; klik of druk op een toets om over te slaan.",
+      "startIntroTitle": "Korte startanimatie bij elke start",
+      "startIntroDescription": "Bij het openen van de launcher speelt een korte scène van 4 seconden. Bij de eerste start van de dag en na een update speelt altijd één keer een langere versie; klik of druk op een toets om over te slaan.",
       "startIntroSoundTitle": "Geluid van de startanimatie",
       "startIntroSoundDescription": "Muziek en effecten van de startanimatie. Ze zijn gedempt zolang het launchervenster niet op de voorgrond staat.",
       "startIntroReplay": "Nu afspelen",
@@ -7080,10 +7080,12 @@
   "startIntro": {
     "label": "Startanimatie",
     "skip": "Klik of druk op een toets om over te slaan",
-    "flickerTitle": "Flikkeren en lichtflitsen",
-    "flickerQuestion": "Deze startanimatie bevat flikkeringen en lichtflitsen. Wil je haar met deze effecten zien?",
-    "flickerOn": "Met flikkeren",
-    "flickerOff": "Zonder flikkeren (rustig)",
-    "flickerLater": "Later te wijzigen onder Instellingen → Weergave."
+    "hint": {
+      "title": "Startanimatie",
+      "text": "Moet de korte animatie van 4 seconden bij elke start spelen? Bij de eerste start van de dag en na updates speelt ze altijd.",
+      "keep": "Aan laten",
+      "off": "Uitzetten",
+      "calm": "Zonder flikkeren (rustig)"
+    }
   }
 }
