@@ -28,6 +28,16 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **New start animation.** When the launcher opens, a short pixel-art scene with its own music plays while the app loads in the background: in the Redstone design a signal races through a dark dungeon, pistons slam open and a redstone lamp ignites into the logo. During Halloween you fly over a moonlit graveyard full of jack-o'-lanterns, and in the Winter Night design an aurora flares over a frozen lake. It takes about 4 seconds, a little longer on the first start of the day, and after an update you get the full 10-second version once.
+- **Skip it or turn it off.** Click or press any key to skip. Under Settings → Appearance you can turn off the animation on every launch and mute its sound. The update version still plays once after each update. With reduced animations only the logo fades in, and the sound stays quiet while the launcher window is in the background.
+
+### Deutsch
+- **Neue Start-Animation.** Beim Öffnen des Launchers läuft eine kurze Pixel-Szene mit eigener Musik, während die App im Hintergrund lädt: Im Redstone-Design rast ein Signal durch einen dunklen Dungeon, Kolben schlagen auf und eine Redstone-Lampe zündet zum Logo. Zu Halloween fliegst du über einen mondhellen Friedhof voller Kürbislaternen, im Design Winternacht flammt ein Polarlicht über einem zugefrorenen See auf. Normal dauert sie etwa 4 Sekunden, beim ersten Start des Tages etwas länger, und nach einem Update gibt es einmal die ganze 10-Sekunden-Fassung.
+- **Überspringen oder abschalten.** Ein Klick oder eine beliebige Taste überspringt sie. Unter Einstellungen → Darstellung lässt sich die Animation bei jedem Start abschalten und ihr Ton stummschalten. Die Update-Fassung läuft nach jedem Update trotzdem einmal. Mit reduzierten Animationen blendet nur das Logo ein, und solange das Launcher-Fenster im Hintergrund ist, bleibt der Ton stumm.
+
 ## 0.26.0 – 2026-10-21 – Showcase | Schaufenster
 <!-- banner: accent=#ffb84d motif=/news/0.26.0/banner.png -->
 <!-- shots:
