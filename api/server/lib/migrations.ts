@@ -824,7 +824,37 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 28,
     run: migrateFeaturedPacks,
   },
+  {
+    // Creator-Profile (§35.11): Beschreibung + Links der öffentlichen Creator-Seite als Fassungen
+    // (`creator_profiles`: wartend → freigegeben/abgelehnt). Öffentlich ist immer die jüngste freigegebene. Hängt per
+    // ON DELETE CASCADE am Creator. Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 29,
+    run: migrateCreatorProfiles,
+  },
 ]
+
+/** Migration 29 (siehe oben): Creator-Profile. Exportiert für den Idempotenz-Test. */
+export function migrateCreatorProfiles(db: DatabaseSync): void {
+  db.exec(`
+CREATE TABLE IF NOT EXISTS creator_profiles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  creator_uuid TEXT NOT NULL REFERENCES creators(uuid) ON DELETE CASCADE,
+  -- reiner Text (gesäubert, höchstens 1500 Zeichen)
+  description TEXT NOT NULL DEFAULT '' CHECK (length(description) <= 1500),
+  -- JSON: [{type, url}] (höchstens 7)
+  links TEXT NOT NULL DEFAULT '[]',
+  status TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')),
+  reason TEXT,
+  submitted_by TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  reviewed_at INTEGER,
+  reviewed_by TEXT
+);
+CREATE INDEX IF NOT EXISTS creator_profiles_creator ON creator_profiles(creator_uuid, status);
+CREATE INDEX IF NOT EXISTS creator_profiles_pending ON creator_profiles(status, created_at);
+`)
+}
 
 /** Migration 28 (siehe oben): empfohlene Modpacks. Exportiert für den Idempotenz-Test. */
 export function migrateFeaturedPacks(db: DatabaseSync): void {

@@ -363,13 +363,13 @@ describe('featured: list, patch, order', () => {
     expect(p.createdBy).toBe(content.user.uuid)
   })
 
-  it('migration 28 is idempotent and the last one', () => {
+  it('migration 28 is idempotent', () => {
     const db = new DatabaseSync(':memory:')
     db.exec('PRAGMA foreign_keys = ON')
     migrate(db)
     migrateFeaturedPacks(db)
     migrateFeaturedPacks(db)
-    expect(MIGRATIONS.at(-1)!.version).toBe(28)
+    expect(MIGRATIONS.at(-1)!.version).toBeGreaterThanOrEqual(28)
     const roles = all<{ id: string, permissions: string }>(db, "SELECT id, permissions FROM team_roles WHERE id IN ('owner', 'admin', 'content', 'moderator') ORDER BY id")
     const has = Object.fromEntries(roles.map((r) => [r.id, (JSON.parse(r.permissions) as string[]).includes('featured.manage')]))
     expect(has).toEqual({ admin: true, content: true, moderator: false, owner: true })

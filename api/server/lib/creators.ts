@@ -1,6 +1,15 @@
 import { readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
+import {
+  checkProfileLink,
+  cleanProfileDescription,
+  PROFILE_DESCRIPTION_MAX,
+  PROFILE_LINK_TYPES,
+  PROFILE_MAX_LINKS,
+  PROFILE_URL_MAX,
+  type ProfileLink,
+} from '../../shared/creator-profile'
 import { capeUrl, capeWearers, getCape, grantCape, removeCape, writeAtomic, type CapeRow } from './capes'
 import type { AppContext } from './context'
 import {
@@ -49,6 +58,8 @@ export type CreatorUpdateKind =
   | 'became_creator'
   | 'helper_joined'
   | 'helper_left'
+  | 'profile_approved'
+  | 'profile_rejected'
 
 /** Rechte eines Helfers (§35.9). Anfragen, Team-Umhang, Helfer und Vorschau-Builds bleiben immer beim Creator. */
 export const HELPER_RIGHTS = ['stats', 'codes', 'uploads', 'packs'] as const
@@ -251,6 +262,8 @@ export interface CreatorSelf {
   helpers?: HelperView[]
   /** Nur wenn ein Helfer die Sicht abruft (`?as=`). */
   viewer?: { helper: true, rights: HelperRight[] }
+  /** Öffentliches Profil (§35.11): freigegebene, wartende und zuletzt abgelehnte Fassung. */
+  profile: ProfileState
 }
 
 export interface HelperView {
@@ -421,8 +434,8 @@ export const previewBody = z.strictObject({
   sha256: z.string().trim().toLowerCase().regex(/^[0-9a-f]{64}$/, 'must be a SHA-256 in hex'),
   publishedAt: isoTime.optional(),
 })
-/** Prüf-Eintrag: `s<id>` = Symbol, `c<capeId>` = Fan-Umhang. */
-export const QUEUE_ID = /^(s\d{1,12}|cu[0-9a-f]{20})$/
+/** Prüf-Eintrag: `s<id>` = Symbol, `c<capeId>` = Fan-Umhang, `p<id>` = Profil-Fassung (§35.11). */
+export const QUEUE_ID = /^(s\d{1,12}|p\d{1,12}|cu[0-9a-f]{20})$/
 
 // ---------------------------------------------------------------- Grundlagen
 
@@ -891,6 +904,7 @@ export function creatorSelf(ctx: AppContext, c: CreatorRow, viewer?: CreatorActo
     },
     requests: helper ? [] : all<RequestRow>(ctx.db, 'SELECT * FROM creator_requests WHERE creator_uuid = ? ORDER BY created_at DESC, id DESC LIMIT 20', c.uuid).map(requestView),
     packs: may('packs') ? ownPacks(ctx, c.uuid) : [],
+    profile: profileState(ctx, c.uuid),
     ...(helper ? { viewer: { helper: true as const, rights: HELPER_RIGHTS.filter((r) => viewer!.rights.has(r)) } } : { helpers: helpersOf(ctx, c.uuid) }),
   }
 }
@@ -1379,10 +1393,12 @@ export function listCreatorPacks(ctx: AppContext, viewer: string | null, rawQuer
 
 export interface QueueItem {
   id: string
-  kind: 'symbol' | 'fan_cape'
+  kind: 'symbol' | 'fan_cape' | 'profile'
   creator: { uuid: string, name: string, tier: CreatorTier }
   symbol?: SymbolView
   cape?: { capeId: string, url: string, name: string, frames: number, scale: number, frameTimeMs: number | null }
+  /** Nur `profile`: die neue Fassung und die bisher öffentliche (oder `null`). */
+  profile?: ProfileView & { previous: ProfileView | null }
   createdAt: string
 }
 
@@ -1396,6 +1412,11 @@ export function reviewQueue(ctx: AppContext): { items: QueueItem[] } {
     ctx.db,
     `SELECT k.*, u.name AS cname, c.tier FROM capes k JOIN creators c ON c.uuid = k.creator_uuid LEFT JOIN users u ON u.uuid = k.creator_uuid
      WHERE k.creator_uuid IS NOT NULL AND k.status = 'pending' ORDER BY k.created_at LIMIT 200`,
+  )
+  const profiles = all<ProfileRow & { name: string | null, tier: CreatorTier }>(
+    ctx.db,
+    `SELECT p.*, u.name, c.tier FROM creator_profiles p JOIN creators c ON c.uuid = p.creator_uuid LEFT JOIN users u ON u.uuid = p.creator_uuid
+     WHERE p.status = 'pending' ORDER BY p.created_at LIMIT 200`,
   )
   const items: (QueueItem & { at: number })[] = [
     ...symbols.map((s) => ({
@@ -1421,6 +1442,17 @@ export function reviewQueue(ctx: AppContext): { items: QueueItem[] } {
       createdAt: iso(k.created_at),
       at: k.created_at,
     })),
+    ...profiles.map((p) => {
+      const prev = approvedProfile(ctx, p.creator_uuid)
+      return {
+        id: `p${p.id}`,
+        kind: 'profile' as const,
+        creator: { uuid: p.creator_uuid, name: p.name ?? '', tier: p.tier },
+        profile: { ...profileView(p), previous: prev ? profileView(prev) : null },
+        createdAt: iso(p.created_at),
+        at: p.created_at,
+      }
+    }),
   ]
   items.sort((a, b) => a.at - b.at)
   return { items: items.map(({ at: _at, ...rest }) => rest) }
@@ -1447,6 +1479,10 @@ export function decideQueueItem(ctx: AppContext, staff: Staff, id: string, appro
     if (!approve) dropSymbolFile(ctx, s.sha256)
     notifyCreator(ctx, s.creator_uuid, approve ? 'symbol_approved' : 'symbol_rejected', { reason })
     if (approve) emitFanCreator(ctx, s.creator_uuid)
+    return
+  }
+  if (id.startsWith('p')) {
+    decideProfile(ctx, staff, Number(id.slice(1)), approve, reason)
     return
   }
   const capeId = id.slice(1)
@@ -1813,7 +1849,308 @@ export function creatorCounts(ctx: AppContext): { queue: number, requests: numbe
   const n = (sql: string) => one<{ n: number }>(ctx.db, sql)!.n
   return {
     queue: n("SELECT COUNT(*) AS n FROM creator_symbols WHERE status = 'pending'")
-      + n("SELECT COUNT(*) AS n FROM capes WHERE creator_uuid IS NOT NULL AND status = 'pending'"),
+      + n("SELECT COUNT(*) AS n FROM capes WHERE creator_uuid IS NOT NULL AND status = 'pending'")
+      + n("SELECT COUNT(*) AS n FROM creator_profiles WHERE status = 'pending'"),
     requests: n("SELECT COUNT(*) AS n FROM creator_requests WHERE status = 'open'"),
   }
+}
+
+// ---------------------------------------------------------------- Profil (§35.11)
+
+interface ProfileRow {
+  id: number
+  creator_uuid: string
+  description: string
+  links: string
+  status: 'pending' | 'approved' | 'rejected'
+  reason: string | null
+  submitted_by: string
+  created_at: number
+  reviewed_at: number | null
+  reviewed_by: string | null
+}
+
+export interface ProfileView {
+  description: string
+  links: ProfileLink[]
+}
+
+export interface ProfileState {
+  /** Öffentlich sichtbare Fassung (oder `null`, solange keine freigegeben ist). */
+  approved: (ProfileView & { at: string }) | null
+  /** Wartet auf das Team (ersetzt bei neuer Einreichung). */
+  pending: (ProfileView & { at: string }) | null
+  /** Nur wenn die jüngste Entscheidung eine Ablehnung war. */
+  rejected: { reason: string | null, at: string } | null
+}
+
+/** Rohe Eingabe; Länge und Links prüft {@link cleanProfile} (mit genauen Gründen). */
+export const profileBody = z.strictObject({
+  description: z.string().max(PROFILE_DESCRIPTION_MAX * 3).default(''),
+  links: z
+    .array(z.strictObject({ type: z.enum(PROFILE_LINK_TYPES), url: z.string().max(PROFILE_URL_MAX * 2) }))
+    .max(PROFILE_MAX_LINKS)
+    .default([]),
+})
+
+function badProfile(field: string, reason: string, message: string): ApiError {
+  return badRequest('invalid_profile', message, { field, reason })
+}
+
+/**
+ * Profil prüfen und vereinheitlichen: Beschreibung gesäubert (reiner Text, ≤ 1500 Zeichen), Links nur `https://` mit
+ * passendem Host je Art (website: jeder öffentliche Host, keine IP/localhost), keine doppelten Adressen. Fehler →
+ * 400 `invalid_profile` mit `details.field` (`description` bzw. `links.<i>`) und `details.reason`.
+ */
+export function cleanProfile(raw: unknown): ProfileView {
+  const input = parse(profileBody, raw)
+  const description = cleanProfileDescription(input.description)
+  if (description.length > PROFILE_DESCRIPTION_MAX) {
+    throw badProfile('description', 'too_long', `The description may have at most ${PROFILE_DESCRIPTION_MAX} characters`)
+  }
+  const links: ProfileLink[] = []
+  input.links.forEach((l, i) => {
+    const r = checkProfileLink(l.type, l.url)
+    if ('problem' in r) throw badProfile(`links.${i}`, r.problem, `Link ${i + 1} is not a valid ${l.type} link`)
+    if (links.some((x) => x.url === r.url)) throw badProfile(`links.${i}`, 'duplicate', `Link ${i + 1} is listed twice`)
+    links.push({ type: l.type, url: r.url })
+  })
+  return { description, links }
+}
+
+function parseLinks(raw: string): ProfileLink[] {
+  try {
+    const v = JSON.parse(raw) as unknown
+    if (!Array.isArray(v)) return []
+    // Beim Lesen nochmals prüfen – nur saubere Links verlassen den Server.
+    return v.flatMap((l: { type?: unknown, url?: unknown }) => {
+      const type = l?.type as ProfileLink['type']
+      if (!PROFILE_LINK_TYPES.includes(type) || typeof l.url !== 'string') return []
+      const r = checkProfileLink(type, l.url)
+      return 'url' in r ? [{ type, url: r.url }] : []
+    }).slice(0, PROFILE_MAX_LINKS)
+  } catch {
+    return []
+  }
+}
+
+function profileView(r: ProfileRow): ProfileView {
+  return { description: r.description, links: parseLinks(r.links) }
+}
+
+function approvedProfile(ctx: AppContext, creator: string): ProfileRow | undefined {
+  return one<ProfileRow>(
+    ctx.db,
+    "SELECT * FROM creator_profiles WHERE creator_uuid = ? AND status = 'approved' ORDER BY reviewed_at DESC, id DESC LIMIT 1",
+    creator,
+  )
+}
+
+function pendingProfile(ctx: AppContext, creator: string): ProfileRow | undefined {
+  return one<ProfileRow>(ctx.db, "SELECT * FROM creator_profiles WHERE creator_uuid = ? AND status = 'pending' ORDER BY id DESC LIMIT 1", creator)
+}
+
+export function profileState(ctx: AppContext, creator: string): ProfileState {
+  const approved = approvedProfile(ctx, creator)
+  const pending = pendingProfile(ctx, creator)
+  const decided = all<ProfileRow>(
+    ctx.db, "SELECT * FROM creator_profiles WHERE creator_uuid = ? AND status <> 'pending' ORDER BY reviewed_at DESC, id DESC LIMIT 5", creator,
+  )
+  return {
+    approved: approved ? { ...profileView(approved), at: iso(approved.reviewed_at ?? approved.created_at) } : null,
+    pending: pending ? { ...profileView(pending), at: iso(pending.created_at) } : null,
+    rejected: lastRejection(decided),
+  }
+}
+
+/** `GET /v1/creator/profile`: Creator oder jeder seiner aktiven Helfer (nur lesen). */
+export function creatorProfile(ctx: AppContext, user: string, as?: string | null): ProfileState {
+  return profileState(ctx, actorFor(ctx, user, as, null).creator.uuid)
+}
+
+const sameProfile = (a: ProfileView, b: ProfileView) =>
+  a.description === b.description && JSON.stringify(a.links) === JSON.stringify(b.links)
+
+/**
+ * Profil einreichen (nur der Creator): neue wartende Fassung (ersetzt eine wartende). Öffentlich bleibt bis zur
+ * Freigabe die bisherige. Gleich wie die freigegebene → keine neue Fassung (eine wartende wird verworfen).
+ */
+export function submitProfile(ctx: AppContext, user: string, raw: unknown, as?: string | null): ProfileState {
+  const a = actorFor(ctx, user, as, 'owner')
+  const uuid = a.creator.uuid
+  const next = cleanProfile(raw)
+  const approved = approvedProfile(ctx, uuid)
+  const pending = pendingProfile(ctx, uuid)
+  if (pending && sameProfile(profileView(pending), next)) return profileState(ctx, uuid)
+  if (approved && sameProfile(profileView(approved), next)) {
+    run(ctx.db, "DELETE FROM creator_profiles WHERE creator_uuid = ? AND status = 'pending'", uuid)
+    return profileState(ctx, uuid)
+  }
+  const r = ctx.limiter.take(`creator-profile:${uuid}`, RULES.creatorProfileUser)
+  if (!r.ok) throw tooMany(r.retryAfter)
+  tx(ctx.db, () => {
+    run(ctx.db, "DELETE FROM creator_profiles WHERE creator_uuid = ? AND status = 'pending'", uuid)
+    run(
+      ctx.db,
+      "INSERT INTO creator_profiles (creator_uuid, description, links, status, submitted_by, created_at) VALUES (?, ?, ?, 'pending', ?, ?)",
+      uuid, next.description, JSON.stringify(next.links), user, ctx.now(),
+    )
+    // Nur die letzten drei Ablehnungen behalten.
+    run(
+      ctx.db,
+      `DELETE FROM creator_profiles WHERE creator_uuid = ? AND status = 'rejected'
+       AND id NOT IN (SELECT id FROM creator_profiles WHERE creator_uuid = ? AND status = 'rejected' ORDER BY id DESC LIMIT 3)`,
+      uuid, uuid,
+    )
+  })
+  return profileState(ctx, uuid)
+}
+
+/** Wartende Fassung zurückziehen (nur der Creator). */
+export function withdrawProfile(ctx: AppContext, user: string, as?: string | null): void {
+  const uuid = actorFor(ctx, user, as, 'owner').creator.uuid
+  run(ctx.db, "DELETE FROM creator_profiles WHERE creator_uuid = ? AND status = 'pending'", uuid)
+}
+
+/** Teil von {@link decideQueueItem}: Profil-Fassung freigeben (ältere freigegebene fallen weg) oder ablehnen. */
+function decideProfile(ctx: AppContext, staff: Staff, id: number, approve: boolean, reason: string | null): void {
+  const p = one<ProfileRow>(ctx.db, "SELECT * FROM creator_profiles WHERE id = ? AND status = 'pending'", id)
+  if (!p) throw notFound('queue_item_not_found', 'Not found (already decided?)')
+  const t = ctx.now()
+  tx(ctx.db, () => {
+    run(
+      ctx.db,
+      'UPDATE creator_profiles SET status = ?, reason = ?, reviewed_at = ?, reviewed_by = ? WHERE id = ?',
+      approve ? 'approved' : 'rejected', reason, t, staff.uuid, p.id,
+    )
+    if (approve) run(ctx.db, "DELETE FROM creator_profiles WHERE creator_uuid = ? AND status = 'approved' AND id <> ?", p.creator_uuid, p.id)
+    audit(ctx, staff.uuid, approve ? 'creator.profile.approve' : 'creator.profile.reject', p.creator_uuid, approve ? `p${p.id}` : `p${p.id}: ${reason}`)
+  })
+  notifyCreator(ctx, p.creator_uuid, approve ? 'profile_approved' : 'profile_rejected', { reason })
+}
+
+// ---------------------------------------------------------------- Website: öffentliche Creator-Seite (§35.11)
+
+export interface SiteCreatorPack {
+  code: string
+  name: string
+  summary?: string
+  mcVersion: string
+  loader: string
+  installs: number
+}
+
+export interface SiteCreator {
+  uuid: string
+  name: string
+  tier: CreatorTier
+  /** Mojang-Skin (textures.minecraft.net) für den Kopf, sonst `null`. */
+  skin: string | null
+  fanCount: number
+  milestone: Milestone | null
+  since: string
+  symbol: { url: string, size: number, frames: number, frameMs: number } | null
+  /** Aktueller Fan-Umhang (Partner+), Adresse auf diesem Host. */
+  fanCape: { name: string, url: string, scale: number, frames: number, frameTimeMs: number | null } | null
+  /** Nur die freigegebene Fassung (sonst leer). */
+  description: string
+  links: ProfileLink[]
+  /** Gelistete Creator-Packs, meiste Installationen zuerst (höchstens 6). */
+  packs: SiteCreatorPack[]
+}
+
+const TIER_RANK: Record<CreatorTier, number> = { top: 0, partner: 1, starter: 2 }
+const SITE_PACKS_PER_CREATOR = 6
+
+/** Aktive Creator (Konto nicht gesperrt) mit freigegebenen Daten; `only` = nur dieser Creator. */
+function siteCreatorRows(ctx: AppContext, only?: string): SiteCreator[] {
+  const t = ctx.now()
+  const rows = all<CreatorRow & { name: string, skin_url: string | null }>(
+    ctx.db,
+    `SELECT c.*, u.name, u.skin_url FROM creators c JOIN users u ON u.uuid = c.uuid
+     WHERE c.state = 'active' AND c.uuid NOT IN (${ACTIVE_BANS}) ${only ? 'AND c.uuid = ?' : ''} LIMIT 1000`,
+    ...(only ? [t, only] : [t]),
+  )
+  if (!rows.length) return []
+  const ids = rows.map((r) => r.uuid)
+  const fans = new Map(all<{ creator_uuid: string, n: number }>(
+    ctx.db,
+    `SELECT creator_uuid, COUNT(*) AS n FROM creator_supports WHERE creator_uuid IN (${placeholders(ids.length)}) GROUP BY creator_uuid`,
+    ...ids,
+  ).map((r) => [r.creator_uuid, r.n]))
+  const profiles = new Map<string, ProfileRow>()
+  for (const p of all<ProfileRow>(
+    ctx.db,
+    `SELECT * FROM creator_profiles WHERE status = 'approved' AND creator_uuid IN (${placeholders(ids.length)}) ORDER BY reviewed_at DESC, id DESC`,
+    ...ids,
+  )) if (!profiles.has(p.creator_uuid)) profiles.set(p.creator_uuid, p)
+  const packs = new Map<string, SiteCreatorPack[]>()
+  for (const p of all<PackRow>(
+    ctx.db,
+    `SELECT * FROM shared_packs WHERE creator_listed = 1 AND (expires_at IS NULL OR expires_at > ?) AND owner_uuid IN (${placeholders(ids.length)})
+     ORDER BY installs DESC, updated_at DESC, id`,
+    t, ...ids,
+  )) {
+    const list = packs.get(p.owner_uuid) ?? []
+    if (list.length >= SITE_PACKS_PER_CREATOR) continue
+    list.push({ code: displayCode(p.code), name: p.name, ...(p.summary ? { summary: p.summary } : {}), mcVersion: p.mc_version, loader: p.loader, installs: p.installs })
+    packs.set(p.owner_uuid, list)
+  }
+  const out = rows.map((c): SiteCreator => {
+    const sym = symbolRow(ctx, c.symbol_id)
+    const cape = currentFanCape(ctx, c)
+    const prof = profiles.get(c.uuid)
+    return {
+      uuid: c.uuid,
+      name: c.name,
+      tier: c.tier,
+      skin: c.skin_url && SKIN_URL_RE.test(c.skin_url) ? c.skin_url : null,
+      fanCount: fans.get(c.uuid) ?? 0,
+      milestone: c.milestone,
+      since: iso(c.created_at),
+      symbol: sym && sym.status === 'approved' ? { url: `/v1/creator-symbols/${sym.sha256}.png`, size: sym.size, frames: sym.frames, frameMs: sym.frame_ms } : null,
+      // Relativ: die Website lädt Bilder nur vom eigenen Host (CSP).
+      fanCape: cape
+        ? {
+            name: cape.name,
+            url: `/v1/capes/${cape.id}.png?v=${cape.sha256.slice(0, 12)}`,
+            scale: Math.max(1, Math.round(cape.width / 64)),
+            frames: cape.frames,
+            frameTimeMs: cape.frames > 1 ? cape.frame_time_ms : null,
+          }
+        : null,
+      description: prof?.description ?? '',
+      links: prof ? parseLinks(prof.links) : [],
+      packs: packs.get(c.uuid) ?? [],
+    }
+  })
+  return out.sort((a, b) => TIER_RANK[a.tier] - TIER_RANK[b.tier] || b.fanCount - a.fanCount || a.name.localeCompare(b.name, 'en'))
+}
+
+/** `GET /v1/site/creators`: alle aktiven Creator, Top → Partner → Starter, je Stufe meiste Fans zuerst. */
+export function siteCreators(ctx: AppContext): { creators: SiteCreator[] } {
+  return { creators: siteCreatorRows(ctx) }
+}
+
+/** Pfad-Parameter von `GET /v1/site/creators/{name}`: Spielername oder Creator-Code. */
+export const SITE_CREATOR_PARAM = /^[A-Za-z0-9_-]{1,20}$/
+
+/** `GET /v1/site/creators/{name}`: per Name (ohne Groß/klein) oder per aktivem Creator-Code. Sonst 404 `creator_not_found`. */
+export function siteCreator(ctx: AppContext, param: string): { creator: SiteCreator } {
+  const missing = () => notFound('creator_not_found', 'Creator not found')
+  if (!SITE_CREATOR_PARAM.test(param)) throw missing()
+  let uuid = one<{ uuid: string }>(
+    ctx.db,
+    "SELECT c.uuid FROM creators c JOIN users u ON u.uuid = c.uuid WHERE u.name_lower = lower(?) AND c.state = 'active'",
+    param,
+  )?.uuid
+  if (!uuid) {
+    const code = normalizeCreatorCode(param)
+    uuid = code
+      ? one<{ creator_uuid: string }>(ctx.db, 'SELECT creator_uuid FROM creator_codes WHERE code = ? AND active = 1', code)?.creator_uuid
+      : undefined
+  }
+  const c = uuid ? siteCreatorRows(ctx, uuid)[0] : undefined
+  if (!c) throw missing()
+  return { creator: c }
 }

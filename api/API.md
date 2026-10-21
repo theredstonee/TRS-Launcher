@@ -4103,9 +4103,11 @@ immutable).
 
 Limits: blocks/settings/support/helper answers 30 per minute.
 
-### 35.3 Creator dashboard (Bearer; active creators or their helpers)
+### 35.3 Creator dashboard (Bearer or website session; active creators or their helpers)
 
-The caller must be an **active** creator (not a creator, revoked or banned → `403 creator_inactive`), or a helper acting
+All routes of this section (and `GET /v1/me/creator`) accept the launcher's Bearer token **or** the website session cookie
+(§24.1/§29; changing requests with the cookie need the `X-CSRF-Token` header, otherwise `403 csrf_failed`). A Bearer header
+always wins over the cookie. The caller must be an **active** creator (not a creator, revoked or banned → `403 creator_inactive`), or a helper acting
 for one with `?as=<creatorUuid>` or header `X-Creator-As: <creatorUuid>` (35.9; missing right → `403 creator_helper_right`).
 
 `GET /v1/creator/dashboard` → `CreatorSelf`:
@@ -4122,7 +4124,8 @@ for one with `?as=<creatorUuid>` or header `X-Creator-As: <creatorUuid>` (35.9; 
   "fanCape": { "current": { "capeId", "name", "url" } | null, "pending": {…} | null, "rejected": { "reason", "at" } | null },
   "requests": [{ "id": 3, "kind": "upgrade", "status": "open", "createdAt": "…", "reason": null }],
   "packs": [{ "code": "TRS-ABCD-2345", "name": "Pixel Pack", "installs": 40, "listed": true }],
-  "helpers": [{ "uuid", "name", "skin", "rights": ["codes"], "status": "pending" | "active", "createdAt" }]
+  "helpers": [{ "uuid", "name", "skin", "rights": ["codes"], "status": "pending" | "active", "createdAt" }],
+  "profile": ProfileState
 }
 ```
 - `stats.daily` = the last 30 UTC days, oldest first. `newPlayers` = fans whose TRS account was created at most 24 h before
@@ -4192,8 +4195,8 @@ action is written to the audit log (`creator.*`). Default grants: owner, admin a
 
 | route | body | answer |
 |---|---|---|
-| `GET /v1/admin/creators/queue` | – | `{ items: [{ id, kind: "symbol"\|"fan_cape", creator: { uuid, name, tier }, symbol?: Symbol, cape?: { capeId, url, name, frames, scale, frameTimeMs }, createdAt }] }` – oldest first; ids are `s<n>` (symbol) and `c<capeId>` (fan cape) |
-| `POST /v1/admin/creators/queue/{id}/approve` | – | `204` – symbol becomes the current one / fan cape becomes the current one (the creator owns it too); `creator_updated` to the creator |
+| `GET /v1/admin/creators/queue` | – | `{ items: [{ id, kind: "symbol"\|"fan_cape"\|"profile", creator: { uuid, name, tier }, symbol?: Symbol, cape?: { capeId, url, name, frames, scale, frameTimeMs }, profile?: { description, links, previous: { description, links } \| null }, createdAt }] }` – oldest first; ids are `s<n>` (symbol), `c<capeId>` (fan cape) and `p<n>` (profile revision, §35.11) |
+| `POST /v1/admin/creators/queue/{id}/approve` | – | `204` – symbol becomes the current one / fan cape becomes the current one (the creator owns it too) / profile revision becomes the public one; `creator_updated` to the creator |
 | `POST /v1/admin/creators/queue/{id}/reject` | `{ reason }` (1–300) | `204`; `creator_updated` with `reason` |
 | `GET /v1/admin/creators?q=&state=` | – | `{ creators: [AdminCreator] }` – `q` matches name, UUID or a code |
 | `POST /v1/admin/creators` | `{ player: name or uuid, tier, mainCode? }` | `201 { creator: AdminCreator }` – `404 player_not_found` (never used TRS), `409 already_creator`, `409 creator_code_taken`, `400 invalid_code` |
@@ -4221,7 +4224,7 @@ Eligibility/submit for creator positions: active creators get `409 already_creat
 
 | event | data |
 |---|---|
-| `creator_updated` | `{ kind, reason?, tier?, helper? }` to the creator; `kind` ∈ `symbol_approved`, `symbol_rejected`, `cape_approved`, `cape_rejected`, `tier_changed` (+`tier`), `revoked` (+`reason`, also for bans), `restored`, `request_answered` (+`reason`), `milestone`, `became_creator` (+`tier`), `helper_joined`, `helper_left` (+`helper: { uuid, name }`). Reload `GET /v1/creator/dashboard`. |
+| `creator_updated` | `{ kind, reason?, tier?, helper? }` to the creator; `kind` ∈ `symbol_approved`, `symbol_rejected`, `cape_approved`, `cape_rejected`, `tier_changed` (+`tier`), `revoked` (+`reason`, also for bans), `restored`, `request_answered` (+`reason`), `milestone`, `became_creator` (+`tier`), `helper_joined`, `helper_left` (+`helper: { uuid, name }`), `profile_approved`, `profile_rejected` (+`reason`, §35.11). Reload `GET /v1/creator/dashboard`. Clients ignore unknown kinds. |
 | `creator_milestone` | `{ creator: { uuid, name }, milestone }` to every current fan |
 | `creator_helper_invite` | `{ creator: { uuid, name }, rights, createdAt }` to the invited player |
 | `creator_helper_removed` | `{ creator: { uuid, name } }` to a helper whom the creator removed (or whose invitation was withdrawn) |
@@ -4233,7 +4236,8 @@ Eligibility/submit for creator positions: active creators get `409 already_creat
 `invalid_code` 400, `invalid_symbol` 400, `creator_symbol_frames` 403, `creator_request_open` 409, `already_creator` 409,
 `creator_banned` 403/409, `not_your_pack` 403, `creator_helper_limit` 403, `creator_helper_exists` 409,
 `creator_helper_right` 403, `not_friends` 400, `helper_not_found` 404, `helper_invite_not_found` 404,
-`symbol_not_found` 404, `queue_item_not_found` 404, `request_closed` 409, `fan_cape_pending` 409.
+`symbol_not_found` 404, `queue_item_not_found` 404, `request_closed` 409, `fan_cape_pending` 409, `invalid_profile` 400,
+`creator_not_found` 404.
 
 ### 35.9 Helper accounts
 
@@ -4262,6 +4266,70 @@ redemptions), `creator_helpers`; new columns `users.show_fan_symbols`, `capes.cr
 `shared_packs.creator_listed`; `user_capes.source` allows `creator`; permissions `creators.review`/`creators.manage`
 granted to the default roles. Everything hangs on the accounts via `ON DELETE CASCADE`. Idempotent. When merging: renumber
 if a parallel branch also added a migration 25.
+
+### 35.11 Creators on the website: profile and public pages
+
+The website shows every active creator at `/creators` (grouped Top → Partner → Starter) and one creator at
+`/creators/<name>`; the creator dashboard is also on the website at `/creator` (§35.3 routes with the session cookie).
+
+**Profile.** A creator writes a **description** (plain text, at most 1500 characters after cleaning) and up to **7 links**
+`{ type, url }` with `type` ∈ `youtube | twitch | tiktok | discord | instagram | x | website`. Rules (shared code:
+`shared/creator-profile.ts`):
+
+- URLs: `https://` only, no user/password, no explicit port, at most 300 characters; stored normalised (host lower case,
+  no `#fragment`); the same URL only once (`duplicate`).
+- Hosts per type (the domain itself or any subdomain): youtube `youtube.com`, `youtu.be` · twitch `twitch.tv` · tiktok
+  `tiktok.com` · discord `discord.gg`, `discord.com` · instagram `instagram.com` · x `x.com`, `twitter.com` · website any
+  public host – never an IP address (v4/v6), `localhost` or a local name (`.local`, `.internal`, `.lan`, …).
+- Description cleaning: `
+
+` → `
+`, tab → space, invisible control/format characters (bidi overrides, zero width, …)
+  removed, trailing spaces removed, at most one empty line in a row, trimmed. It stays plain text – HTML is never rendered;
+  the website shows paragraphs (blank line) and simple lists (lines starting with `- `, `* ` or `• `).
+
+Every submission becomes a **pending revision** for the team (it replaces an older pending one). The public pages keep
+showing the last **approved** revision until the team decides. Submitting exactly the approved content again creates no
+revision (and drops a pending one).
+
+`ProfileState = { approved: { description, links, at } | null, pending: { description, links, at } | null, rejected: { reason, at } | null }`
+– `rejected` only when the latest decision was a rejection.
+
+| route | right | body | answer / errors |
+|---|---|---|---|
+| `GET /v1/creator/profile` | any helper right | – | `ProfileState` |
+| `PUT /v1/creator/profile` | creator only | `{ description?, links? }` | `ProfileState` – `400 invalid_profile` with `details: { field: "description" \| "links.<i>", reason }`, `reason` ∈ `too_long`, `invalid_url`, `not_https`, `wrong_host`, `duplicate`; more than 7 links or an unknown type → `400 invalid_request`; 10 revisions per hour per creator → `429` |
+| `DELETE /v1/creator/profile/pending` | creator only | – | `204` |
+
+The team decides in the normal review queue (§35.6, ids `p<n>`, `creators.review`); the creator gets
+`creator_updated { kind: "profile_approved" | "profile_rejected", reason? }`. Audit actions `creator.profile.approve` /
+`creator.profile.reject`.
+
+**Public routes** (no auth, `Cache-Control: public, max-age=300`, 240 per minute per IP):
+
+`GET /v1/site/creators` → `{ creators: [SiteCreator] }` – all **active** creators whose account is not banned, ordered by
+tier (top, partner, starter), then fans (most first), then name.
+
+`GET /v1/site/creators/{name}` → `{ creator: SiteCreator }` – `name` is the player name (any case) or an active creator code
+(`[A-Za-z0-9_-]{1,20}`); unknown, revoked or banned → `404 creator_not_found`.
+
+```json
+SiteCreator = {
+  "uuid": "…32 hex…", "name": "Pixelmaus", "tier": "partner", "skin": "https://textures.minecraft.net/texture/…" | null,
+  "fanCount": 812, "milestone": "silver" | null, "since": "…",
+  "symbol": { "url": "/v1/creator-symbols/<sha256>.png", "size": 32, "frames": 1, "frameMs": 150 } | null,
+  "fanCape": { "name": "Drache", "url": "/v1/capes/<id>.png?v=…", "scale": 1, "frames": 1, "frameTimeMs": null } | null,
+  "description": "…approved text or empty…",
+  "links": [{ "type": "youtube", "url": "https://youtube.com/@pixel" }],
+  "packs": [{ "code": "TRS-ABCD-2345", "name": "Pixel Pack", "summary": "…", "mcVersion": "1.21.11", "loader": "fabric", "installs": 40 }]
+}
+```
+Only approved data: approved symbol, current approved fan cape (partner+), approved profile revision, listed creator packs
+(at most 6, most installs first). Image URLs are paths on this host (the website's CSP only loads images from itself).
+
+Data: migration 29 adds `creator_profiles` (`id`, `creator_uuid` → creators ON DELETE CASCADE, `description`, `links` JSON,
+`status` pending/approved/rejected, `reason`, `submitted_by`, `created_at`, `reviewed_at`, `reviewed_by`). Only the newest
+approved revision and the last three rejections are kept.
 
 ## 36. Halloween 2026 ("Nacht der langen Schatten")
 

@@ -310,4 +310,9 @@ export const RULES = {
   adminFeatured: { limit: 120, windowMs: MIN },
   /** Öffentliche Liste und Bilder je IP – zusätzlich zur globalen IP-Grenze. */
   featuredPublicIp: { limit: 600, windowMs: MIN },
+  // ---- Creator auf der Website (§35.11)
+  /** Öffentliche Creator-Liste und Creator-Seiten je IP – zusätzlich zur globalen IP-Grenze. */
+  creatorsPublicIp: { limit: 240, windowMs: MIN },
+  /** Creator: Profil (Beschreibung + Links) einreichen – jede Fassung landet beim Team. */
+  creatorProfileUser: { limit: 10, windowMs: HOUR },
 } satisfies Record<string, Rule>
