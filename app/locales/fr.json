@@ -2396,8 +2396,8 @@
         "system": "Comme Windows/système",
         "reduced": "Réduire les animations"
       },
-      "startIntroTitle": "Animation de démarrage à chaque lancement",
-      "startIntroDescription": "Une courte scène se joue à l’ouverture du launcher : environ 4 secondes, un peu plus au premier lancement de la journée. Après une mise à jour, elle se joue toujours une fois ; clique ou appuie sur une touche pour la passer.",
+      "startIntroTitle": "Courte animation de démarrage à chaque lancement",
+      "startIntroDescription": "Une courte scène de 4 secondes se joue à l’ouverture du launcher. Au premier lancement de la journée et après une mise à jour, une version plus longue se joue toujours une fois ; clique ou appuie sur une touche pour la passer.",
       "startIntroSoundTitle": "Son de l’animation de démarrage",
       "startIntroSoundDescription": "Musique et effets de l’animation de démarrage. Ils sont coupés tant que la fenêtre du launcher n’est pas au premier plan.",
       "startIntroReplay": "Lire maintenant",
@@ -7080,10 +7080,12 @@
   "startIntro": {
     "label": "Animation de démarrage",
     "skip": "Clique ou appuie sur une touche pour passer",
-    "flickerTitle": "Scintillements et flashs",
-    "flickerQuestion": "Cette animation de démarrage contient des scintillements et des flashs lumineux. Veux-tu la voir avec ces effets ?",
-    "flickerOn": "Avec scintillements",
-    "flickerOff": "Sans scintillements (calme)",
-    "flickerLater": "Modifiable plus tard dans Paramètres → Apparence."
+    "hint": {
+      "title": "Animation de démarrage",
+      "text": "La courte animation de 4 secondes doit-elle se jouer à chaque lancement ? Au premier lancement de la journée et après une mise à jour, elle se joue toujours.",
+      "keep": "Garder",
+      "off": "Désactiver",
+      "calm": "Sans scintillements (calme)"
+    }
   }
 }

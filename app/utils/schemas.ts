@@ -151,7 +151,7 @@ export const uiSettingsSchema = z.object({
   startIntro: z.boolean().default(true),
   startIntroSound: z.boolean().default(true),
   startIntroFlicker: z.boolean().default(true),
-  startIntroFlickerAsked: z.boolean().default(false),
+  startIntroHintSeen: z.boolean().default(false),
 })
 
 /** Clips & Aufnahme – gleiche Grenzen wie `trs_core::clips::settings`. */

@@ -263,6 +263,7 @@ onBeforeUnmount(() => void backListener?.unregister())
     <CurseForgeBlockedDialog v-if="curseforge.blockedFor" :key="curseforge.blockedFor" :instance-id="curseforge.blockedFor" @close="curseforge.closeBlocked()" />
     <!-- Halloween 2026: Mondnacht-Atmosphäre über jeder Seite, nur solange das Event läuft. -->
     <HalloweenAtmosphere v-if="events.halloween && !isBig" />
+    <StartIntroHint v-if="!isBig" />
     <ToastHost />
     <SocialToastHost />
     <JoinServerDialog />

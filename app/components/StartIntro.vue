@@ -1,22 +1,19 @@
 <script setup lang="ts">
 // Start-Animation beim Öffnen des Launchers. Liegt als Vollbild-Ebene über der App, die darunter ganz normal
 // startet (nichts wartet auf die Animation). Übergabe erst, wenn Animation (oder Überspringen) UND App bereit sind.
-// Länge: nach Updates lang (immer, nicht abschaltbar), erster Start des Tages mittel, sonst kurz.
-// Beim ersten Start fragt ein kleiner Dialog über dem ersten Bild, ob Flackern und Lichtblitze gezeigt werden sollen.
+// Länge: nach Updates lang, erster Start des Tages mittel (beide immer), sonst kurz (abschaltbar).
+// Ob Flackern/Lichtblitze laufen, steuert die Einstellung (ruhige Fassung); den Erst-Hinweis zeigt StartIntroHint.
 import { getVersion } from '@tauri-apps/api/app'
 import { isTauri } from '@tauri-apps/api/core'
 import { IntroPlayer } from '~/utils/intro/player'
-import { introDay, introReduced, pickIntroLength, shouldAskFlicker, shouldPlayIntro } from '~/utils/intro/select'
+import { introDay, introReduced, pickIntroLength, shouldPlayIntro } from '~/utils/intro/select'
 import type { IntroLength } from '~/utils/intro/timeline'
 
 const settings = useSettingsStore()
 const show = ref(false)
 const leaving = ref(false)
 const skipHint = ref(false)
-/** Erst-Start-Frage nach Flackern offen (wartet mit der Länge, die danach läuft). */
-const asking = ref<IntroLength | null>(null)
 const cv = useTemplateRef<HTMLCanvasElement>('cv')
-const askBox = useTemplateRef<HTMLDivElement>('askBox')
 let player: IntroPlayer | null = null
 let length: IntroLength = 'short'
 let animDone = false
@@ -93,58 +90,6 @@ function play(len: IntroLength, sound: boolean) {
   safety = window.setTimeout(() => leave(), (player.duration + 12) * 1000)
 }
 
-/** Erste Szene als Standbild hinter der Frage (die App lädt darunter weiter). */
-async function ask(len: IntroLength) {
-  asking.value = len
-  await nextTick()
-  const canvas = cv.value
-  if (canvas) {
-    const preview = new IntroPlayer({ canvas, design: bootIntroDesign(), length: len, calm: true })
-    preview.still(0.8)
-  }
-  askBox.value?.querySelector<HTMLButtonElement>('button')?.focus()
-}
-
-/** Antwort merken (sofort lokal, im Kern sobald die Einstellungen geladen sind) und die Animation starten. */
-function answer(flicker: boolean) {
-  const len = asking.value
-  if (!len) return
-  asking.value = null
-  prefs.flicker = flicker
-  prefs.flickerAsked = true
-  rememberIntroFlicker(flicker)
-  const persist = () => {
-    const cur = settings.current
-    if (!cur) return false
-    void settings.save({ ...cur, ui: { ...cur.ui, startIntroFlicker: flicker, startIntroFlickerAsked: true } }).catch(() => {})
-    return true
-  }
-  if (!persist()) {
-    const stop = watch(
-      () => settings.current,
-      (cur) => {
-        if (cur && persist()) stop()
-      },
-    )
-  }
-  play(len, prefs.sound)
-}
-
-/** Tastatur im Dialog: Tab bleibt zwischen den beiden Knöpfen, Esc = ruhig. */
-function onAskKey(e: KeyboardEvent) {
-  if (e.key === 'Escape') {
-    e.preventDefault()
-    answer(false)
-    return
-  }
-  if (e.key !== 'Tab') return
-  const buttons = [...(askBox.value?.querySelectorAll<HTMLButtonElement>('button') ?? [])]
-  if (!buttons.length) return
-  const i = buttons.indexOf(document.activeElement as HTMLButtonElement)
-  e.preventDefault()
-  buttons[(i + (e.shiftKey ? -1 : 1) + buttons.length) % buttons.length]!.focus()
-}
-
 function tryLeave() {
   if (animDone && appReady) leave()
 }
@@ -153,6 +98,7 @@ function leave() {
   if (!show.value || leaving.value) return
   leaving.value = true
   skipHint.value = false
+  introPlayedThisSession.value = true
   player?.fadeAudio(0.4)
   window.setTimeout(() => {
     player?.stop(0.1)
@@ -165,15 +111,13 @@ function leave() {
 
 /** Klick/Taste: aufs fertige Logo springen; die Übergabe folgt, sobald die App bereit ist. */
 function skip() {
-  if (!show.value || leaving.value || asking.value) return
+  if (!show.value || leaving.value) return
   if (!player) return leave()
   player.skip()
 }
 
 function onKey(e: KeyboardEvent) {
   if (!show.value) return
-  // Während der Frage gehören die Tasten dem Dialog
-  if (asking.value) return
   // Tasten gehören während der Animation nur ihr (kein Strg+K o. Ä. darunter)
   e.preventDefault()
   e.stopImmediatePropagation()
@@ -198,8 +142,7 @@ onMounted(async () => {
     return
   }
   await nextTick()
-  if (shouldAskFlicker(prefs, introReduced(prefs.motion, systemReduced()))) void ask(len)
-  else play(len, prefs.sound)
+  play(len, prefs.sound)
 })
 
 onBeforeUnmount(() => {
@@ -213,7 +156,8 @@ onBeforeUnmount(() => {
 watch(
   () => settings.current?.ui,
   (ui) => {
-    if (!ui || !show.value || leaving.value) return
+    // Erst nach der Entscheidung über die Länge (sonst gälte noch der Vorgabewert „kurz“)
+    if (!ui || !show.value || leaving.value || !player) return
     if (ui.startIntro === false && !shouldPlayIntro(length, false)) skip()
     if (ui.startIntroSound === false) player?.fadeAudio(0.2)
   },
@@ -242,27 +186,7 @@ watch(
     @pointerdown.prevent="skip"
   >
     <canvas ref="cv" class="start-intro-canvas" />
-    <span class="start-intro-skip" :class="{ on: skipHint && !asking }" aria-hidden="true">{{ t('startIntro.skip') }}</span>
-    <div v-if="asking" class="start-intro-ask" @pointerdown.stop>
-      <div
-        ref="askBox"
-        class="start-intro-card"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="start-intro-ask-title"
-        aria-describedby="start-intro-ask-text"
-        data-testid="start-intro-ask"
-        @keydown="onAskKey"
-      >
-        <h2 id="start-intro-ask-title" class="display start-intro-ask-title">{{ t('startIntro.flickerTitle') }}</h2>
-        <p id="start-intro-ask-text" class="start-intro-ask-text">{{ t('startIntro.flickerQuestion') }}</p>
-        <div class="start-intro-ask-actions">
-          <button type="button" class="btn btn-primary" data-testid="start-intro-flicker-on" @click="answer(true)">{{ t('startIntro.flickerOn') }}</button>
-          <button type="button" class="btn btn-ghost" data-testid="start-intro-flicker-off" @click="answer(false)">{{ t('startIntro.flickerOff') }}</button>
-        </div>
-        <p class="start-intro-ask-hint">{{ t('startIntro.flickerLater') }}</p>
-      </div>
-    </div>
+    <span class="start-intro-skip" :class="{ on: skipHint }" aria-hidden="true">{{ t('startIntro.skip') }}</span>
   </div>
 </template>
 
@@ -301,46 +225,5 @@ watch(
 }
 .start-intro-skip.on {
   opacity: 1;
-}
-.start-intro-ask {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 16px;
-  background: rgb(4 4 8 / 0.45);
-  cursor: default;
-}
-.start-intro-card {
-  width: min(440px, 100%);
-  padding: 22px 22px 16px;
-  border-radius: 14px;
-  background: rgb(18 18 24 / 0.92);
-  border: 1px solid rgb(255 255 255 / 0.1);
-  box-shadow: 0 20px 60px rgb(0 0 0 / 0.6);
-  color: #e8e6e3;
-}
-.start-intro-ask-title {
-  font-size: 18px;
-  margin: 0 0 6px;
-}
-.start-intro-ask-text {
-  margin: 0 0 16px;
-  opacity: 0.85;
-  font-size: 14px;
-  line-height: 1.45;
-}
-.start-intro-ask-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.start-intro-ask-actions .btn {
-  flex: 1 1 160px;
-}
-.start-intro-ask-hint {
-  margin: 12px 0 0;
-  font-size: 12px;
-  opacity: 0.55;
 }
 </style>

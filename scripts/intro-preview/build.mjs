@@ -60,31 +60,35 @@ html, body { margin: 0; height: 100%; background: #0b0c0f; color: #e8e6e3; font:
 .bar button:hover { background: rgba(255,255,255,.12); }
 .bar button.on { background: #e0281e; border-color: #ff5a4d; color: #fff; }
 .bar .sep { width: 1px; height: 22px; background: rgba(255,255,255,.12); margin: 0 4px; }
-.ask { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(4,4,8,.45); z-index: 10; }
-.ask[hidden] { display: none; }
-.ask-card { width: min(440px, calc(100vw - 32px)); padding: 22px 22px 16px; border-radius: 14px; background: rgba(18,18,24,.92); border: 1px solid rgba(255,255,255,.1); box-shadow: 0 20px 60px rgba(0,0,0,.6); backdrop-filter: blur(10px); }
-.ask-title { font: 600 18px "Pixelify Sans Variable", system-ui; letter-spacing: .03em; margin-bottom: 6px; }
-.ask-card p { margin: 0 0 16px; opacity: .85; }
-.ask-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.ask-actions button { flex: 1; font: inherit; color: inherit; padding: 9px 12px; border-radius: 9px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); cursor: pointer; }
-.ask-actions button.primary { background: #e0281e; border-color: #ff5a4d; color: #fff; }
-.ask-actions button:focus-visible { outline: 2px solid #ffb84d; outline-offset: 2px; }
-.ask-card small { display: block; margin-top: 12px; opacity: .55; }
+.hint { position: fixed; left: 88px; top: 54px; z-index: 6; width: min(380px, calc(100vw - 32px)); padding: 14px 16px; border-radius: 12px;
+  background: #17171e; border: 1px solid #333343; box-shadow: 0 18px 40px rgba(0,0,0,.6); animation: hint-in .4s ease; }
+.hint[hidden] { display: none; }
+@keyframes hint-in { from { opacity: 0; transform: translateY(10px); } }
+.hint-row { display: flex; gap: 10px; align-items: flex-start; }
+.hint-icon { font-size: 22px; line-height: 1; }
+.hint-title { margin: 0; font-weight: 600; color: #f4f4f6; }
+.hint-text { margin: 2px 0 0; font-size: 12px; color: #8b8ba2; }
+.hint-check { display: flex; gap: 8px; align-items: center; margin-top: 8px; font-size: 12px; color: #b6b6c8; cursor: pointer; }
+.hint-check input { accent-color: #e0281e; }
+.hint-actions { display: flex; gap: 8px; margin-top: 10px; }
+.hint-actions button { font: inherit; font-size: 14px; color: inherit; height: 32px; padding: 0 12px; border-radius: 8px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); cursor: pointer; }
+.hint-actions button.primary { background: #e0281e; border-color: #ff5a4d; color: #fff; }
+.note { margin-top: 10px; color: #ffb84d; min-height: 1.4em; }
 #status { font-variant-numeric: tabular-nums; opacity: .7; min-width: 150px; text-align: right; }
 </style>
 ${designs.map((d) => `<script src="audio/${d}.js"></script>`).join('\n')}
 </head>
 <body>
-<div class="app"><div><h1>TRS LAUNCHER</h1><p>(hier übernimmt die App nach der Animation)</p></div></div>
+<div class="app"><div><h1>TRS LAUNCHER</h1><p>(hier übernimmt die App nach der Animation)</p><p id="note" class="note"></p></div></div>
 <div id="stage"><canvas id="cv"></canvas></div>
-<div id="ask" class="ask" role="dialog" aria-modal="true" aria-labelledby="ask-title" aria-describedby="ask-text" hidden>
-  <div class="ask-card">
-    <div id="ask-title" class="ask-title">Flackern und Lichtblitze</div>
-    <p id="ask-text">Diese Start-Animation enthält Flackern und Lichtblitze. Möchtest du sie mit Effekten sehen?</p>
-    <div class="ask-actions"><button data-calm="0" class="primary">Mit Flackern</button><button data-calm="1">Ohne Flackern (ruhig)</button></div>
-    <small>Später änderbar unter Einstellungen → Darstellung.</small>
-  </div>
-</div>
+<section id="banner" class="hint" role="dialog" aria-label="Start-Animation" hidden>
+  <div class="hint-row"><div class="hint-icon" aria-hidden="true">🎬</div><div>
+    <p class="hint-title">Start-Animation</p>
+    <p class="hint-text">Soll beim Start jedes Mal die kurze 4-Sekunden-Animation laufen? Beim ersten Start des Tages und nach Updates läuft sie immer.</p>
+    <label class="hint-check"><input id="banner-calm" type="checkbox"> Ohne Flackern (ruhig)</label>
+    <div class="hint-actions"><button data-keep="1" class="primary">Anlassen</button><button data-keep="0">Ausschalten</button></div>
+  </div></div>
+</section>
 <div class="bar">
 ${btn('data-design', 'redstone', 'Redstone')}${btn('data-design', 'halloween', 'Halloween · Mondnacht')}${btn('data-design', 'winter', 'Winternacht')}
 <span class="sep"></span>
@@ -92,7 +96,7 @@ ${btn('data-length', 'short', '4 s')}${btn('data-length', 'medium', '7 s')}${btn
 <span class="sep"></span>
 <button id="replay">↻ Nochmal</button><button id="sound">Ton aus</button><button id="calm">Mit Flackern</button><button id="reduced">Reduziert</button>
 <span class="sep"></span>
-<button id="first">Erster Start (mit Abfrage)</button>
+<button id="first">Erster Start (Banner)</button>
 <span id="status"></span>
 </div>
 <script>window.__TRS_INTRO_LOGO=${JSON.stringify(logo)};</script>

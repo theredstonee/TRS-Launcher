@@ -24,11 +24,9 @@ export interface IntroPrefs {
   motion: string
   /** Flackern und Lichtblitze (aus = ruhige Fassung). */
   flicker: boolean
-  /** Beim ersten Start schon gefragt? */
-  flickerAsked: boolean
 }
 
-export const DEFAULT_INTRO_PREFS: IntroPrefs = { enabled: true, sound: true, motion: 'full', flicker: true, flickerAsked: false }
+export const DEFAULT_INTRO_PREFS: IntroPrefs = { enabled: true, sound: true, motion: 'full', flicker: true }
 
 /** Lokaler Kalendertag. */
 export function introDay(d: Date): string {
@@ -56,7 +54,6 @@ export function parseIntroPrefs(raw: string | null | undefined): IntroPrefs {
       sound: v?.sound !== false,
       motion: typeof v?.motion === 'string' ? v.motion : DEFAULT_INTRO_PREFS.motion,
       flicker: v?.flicker !== false,
-      flickerAsked: v?.flickerAsked === true,
     }
   } catch {
     return { ...DEFAULT_INTRO_PREFS }
@@ -80,16 +77,19 @@ export function pickIntroLength(o: IntroLengthInput): IntroLength {
 }
 
 /**
- * Läuft die Animation? Die Update-Fassung (lang) läuft immer – auch wenn „bei jedem Start“ aus ist; nur kurz und
- * mittel lassen sich abschalten.
+ * Läuft die Animation? Nur die kurze 4-s-Fassung lässt sich abschalten – die Fassung zum ersten Start des Tages
+ * (mittel) und nach Updates (lang) laufen immer (überspringbar per Klick).
  */
 export function shouldPlayIntro(length: IntroLength, enabled: boolean): boolean {
-  return length === 'long' || enabled
+  return length !== 'short' || enabled
 }
 
-/** Beim ersten Start einmal fragen – nicht bei reduzierter Bewegung (dann gibt es ohnehin nur das Logo). */
-export function shouldAskFlicker(prefs: Pick<IntroPrefs, 'flickerAsked'>, reduced: boolean): boolean {
-  return !prefs.flickerAsked && !reduced
+/**
+ * Erst-Hinweis („Soll die Animation bei jedem Start laufen?“): einmal, nachdem in dieser Sitzung wirklich eine
+ * Animation lief, und erst wenn die Einstellungen geladen sind.
+ */
+export function shouldShowIntroHint(o: { loaded: boolean; seen: boolean | undefined; playedThisSession: boolean }): boolean {
+  return o.loaded && o.seen !== true && o.playedThisSession
 }
 
 /** Reduzierte Bewegung aus Einstellung + System (wie `isReducedMotion`). */

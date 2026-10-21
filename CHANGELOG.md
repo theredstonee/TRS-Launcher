@@ -28,6 +28,16 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **No more question in front of the start animation.** The animation now always starts right away. After it has played for the first time, a small note in the launcher asks once whether the short 4-second animation should play on every start – with a box for a calm version without flicker and flashes. On the first start of the day and after updates the animation always plays; you can still skip it with a click or any key.
+- **Clearer setting.** Under Settings → Appearance, “Short start animation on every launch” now only turns off the 4-second version; “Flicker and flashes in the start animation” switches to the calm version.
+
+### Deutsch
+- **Keine Abfrage mehr vor der Start-Animation.** Die Animation startet jetzt immer sofort. Nachdem sie das erste Mal gelaufen ist, fragt ein kleiner Hinweis im Launcher einmal, ob die kurze 4-Sekunden-Animation bei jedem Start laufen soll – mit einem Häkchen für die ruhige Fassung ohne Flackern und Lichtblitze. Beim ersten Start des Tages und nach Updates läuft die Animation immer; ein Klick oder eine beliebige Taste überspringt sie weiterhin.
+- **Klarere Einstellung.** Unter Einstellungen → Darstellung schaltet „Kurze Start-Animation bei jedem Start“ jetzt nur die 4-Sekunden-Fassung ab; „Flackern und Lichtblitze in der Start-Animation“ wechselt zur ruhigen Fassung.
+
 ## 0.27.0 – 2026-10-21 – Grand Entrance | Großer Auftritt
 <!-- banner: accent=#ff9a4d motif=/news/0.27.0/banner.png -->
 <!-- shots:
