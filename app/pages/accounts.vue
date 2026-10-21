@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { messeRestricted } from '~/utils/messe'
 import type { Account, DeviceCode } from '~/types'
 
 const accounts = useAccountsStore()
@@ -39,6 +40,8 @@ async function openLoginPage() {
 }
 
 async function start(mode: LoginMode) {
+  // Messe-PC: Konten meldet nur das Personal an (Personal-Modus) – Besucher-Konten blieben sonst am Stand gespeichert.
+  if (messeRestricted.value) return
   error.value = null
   notApproved.value = false
   login.value = { mode, code: null }
@@ -96,8 +99,8 @@ async function confirmRemove() {
         </button>
       </template>
       <template v-else>
-        <button class="btn btn-ghost" :disabled="!!login" @click="start('code')">{{ t('accounts.signInWithCode') }}</button>
-        <button class="btn btn-primary" :disabled="!!login" @click="start('browser')">
+        <button v-if="!messeRestricted" class="btn btn-ghost" :disabled="!!login" @click="start('code')">{{ t('accounts.signInWithCode') }}</button>
+        <button v-if="!messeRestricted" class="btn btn-primary" :disabled="!!login" @click="start('browser')">
           <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" /></svg>
           {{ t('accounts.add') }}
         </button>
@@ -118,7 +121,7 @@ async function confirmRemove() {
         </div>
         <button v-if="!a.active" class="btn btn-ghost" @click="run(() => accounts.setActive(a.id))">{{ t('accounts.use') }}</button>
         <span v-else class="rounded-full bg-redstone-900 px-2.5 py-1 text-xs font-medium text-redstone-300">{{ t('common.status.active') }}</span>
-        <button class="btn btn-ghost px-2.5 hover:text-redstone-300" :title="t('accounts.signOut')" :aria-label="t('accounts.signOut')" @click="toRemove = a">
+        <button v-if="!messeRestricted" class="btn btn-ghost px-2.5 hover:text-redstone-300" :title="t('accounts.signOut')" :aria-label="t('accounts.signOut')" @click="toRemove = a">
           <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 8l-4 4 4 4M6 12h10" />
           </svg>
@@ -132,7 +135,7 @@ async function confirmRemove() {
       :title="t('accounts.empty.title')"
       :text="t('accounts.empty.text')"
     >
-      <button class="btn btn-primary" :disabled="!!login" @click="start(primaryMode)">{{ t('accounts.login.signInMicrosoft') }}</button>
+      <button v-if="!messeRestricted" class="btn btn-primary" :disabled="!!login" @click="start(primaryMode)">{{ t('accounts.login.signInMicrosoft') }}</button>
     </RedstoneEmpty>
 
     <!-- Handy: Browser-Anmeldung nur als Ausweg (der Rückruf an localhost klappt dort nicht immer). -->

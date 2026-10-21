@@ -1005,7 +1005,8 @@
       "textTooLong": "Title at most {title} characters, text at most {text} characters.",
       "invalidWindow": "The end must be after the start.",
       "invalidOrder": "The order doesn't match – please reload the list."
-    }
+    },
+    "messeBlocked": "Not available on the trade-fair PC."
   },
   "browse": {
     "title": "Discover",
@@ -7767,6 +7768,45 @@
       "keep": "Keep it",
       "off": "Turn off",
       "calm": "Without flicker (calm)"
+    }
+  },
+  "messe": {
+    "pitch": {
+      "label": "Presentation – tap anywhere to try the launcher"
+    },
+    "countdown": {
+      "title": "Still there?",
+      "hint": "Touch the screen or press a key to keep exploring."
+    },
+    "pin": {
+      "setTitle": "Set staff PIN",
+      "setHint": "Choose a PIN with 4–8 digits. It opens the staff panel and is needed to close the launcher.",
+      "title": "Staff PIN",
+      "hintStaff": "Enter the PIN to open the staff panel.",
+      "hintQuit": "Enter the PIN to close the launcher.",
+      "pin": "PIN",
+      "repeat": "Repeat the PIN",
+      "invalid": "The PIN must have 4–8 digits.",
+      "mismatch": "The PINs don’t match – please start again.",
+      "wrong": "Wrong PIN.",
+      "locked": "Too many attempts – try again in {seconds} s.",
+      "clear": "Delete digit",
+      "confirm": "OK"
+    },
+    "staff": {
+      "title": "Staff panel",
+      "gameRunning": "A game is running – the presentation waits until it is closed.",
+      "timeout": "Back to the presentation after",
+      "timeoutHint": "Seconds without input ({min}–{max}), followed by a 10-second countdown.",
+      "language": "Language (presentation and launcher)",
+      "unlock": "Staff mode",
+      "unlockHint": "Lifts the visitor restrictions (accounts, deleting, folders, settings) until the presentation starts again.",
+      "fullscreen": "Full screen",
+      "startPitch": "Start presentation now",
+      "reset": "Reset demo",
+      "resetHint": "Back to the start page with all dialogs closed.",
+      "changePin": "Change PIN",
+      "quit": "Quit launcher"
     }
   }
 }

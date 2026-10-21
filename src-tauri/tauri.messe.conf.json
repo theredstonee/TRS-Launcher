@@ -1,0 +1,58 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "TRS Launcher Messe",
+  "identifier": "dev.theredstonee.trslauncher.messe",
+  "build": {
+    "beforeDevCommand": "node scripts/messe/nuxt.mjs dev",
+    "beforeBuildCommand": "node scripts/messe/nuxt.mjs generate"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "TRS Launcher Messe",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 940,
+        "minHeight": 600,
+        "center": true,
+        "maximized": true,
+        "fullscreen": true,
+        "decorations": false,
+        "backgroundColor": "#0b0c0f"
+      }
+    ],
+    "security": {
+      "csp": {
+        "frame-src": "'self'",
+        "child-src": "'self'",
+        "frame-ancestors": "'self'"
+      },
+      "capabilities": [
+        "desktop",
+        "mobile",
+        "remote-mobile",
+        {
+          "identifier": "messe",
+          "description": "Messe-Build: Beenden nur nach Personal-PIN (Schließen abfangen, danach Fenster/Programm beenden).",
+          "platforms": ["windows", "linux", "macOS"],
+          "windows": ["main"],
+          "permissions": ["core:window:allow-destroy", "process:allow-exit"]
+        }
+      ]
+    }
+  },
+  "bundle": {
+    "createUpdaterArtifacts": false
+  },
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": []
+      }
+    },
+    "updater": {
+      "endpoints": []
+    }
+  }
+}

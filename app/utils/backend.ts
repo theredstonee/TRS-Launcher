@@ -1,5 +1,6 @@
 import { Channel, invoke, isTauri } from '@tauri-apps/api/core'
 import { hasKey, t, tKey } from './i18n'
+import { isMesseBlockedCommand, MESSE, messeRestricted } from './messe'
 import { z } from 'zod'
 import { savedTextSchema, textFileSchema } from './config/types'
 import { instanceLocationSchema, movePlanSchema, pickedFolderSchema, unavailableInstancesSchema } from './relocate'
@@ -285,6 +286,10 @@ function isCommandError(e: unknown): e is CommandError {
 async function call<T>(command: string, args?: Record<string, unknown>): Promise<T> {
   if (!isTauri()) {
     throw new BackendError('no_backend', 'Das Backend ist nur in der Desktop-App verfügbar.', 'noBackend')
+  }
+  // Messe-Build: Löschen, Abmelden, Hochladen, Ordner/Browser öffnen … sind für Besucher gesperrt.
+  if (MESSE && messeRestricted.value && isMesseBlockedCommand(command)) {
+    throw new BackendError('messe_blocked', 'Am Messe-PC gesperrt.', 'messeBlocked')
   }
   try {
     return await invoke<T>(command, args)

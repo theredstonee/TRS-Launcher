@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { messeRestricted } from '~/utils/messe'
 import { motion } from 'motion-v'
 import type { IconName } from '~/utils/icons'
 import type { MessageKey } from '~/utils/i18n'
@@ -70,8 +71,8 @@ const visibleItems = computed(() =>
   items.filter(
     (item) =>
       (!item.optional || router.resolve(item.to).matched.length > 0) &&
-      (!item.admin || trs.isStaff) &&
-      (!item.trsOnly || trs.enabled) &&
+      (!item.admin || (trs.isStaff && !messeRestricted.value)) &&
+      (!item.trsOnly || (trs.enabled && !messeRestricted.value)) &&
       // Clips (Spielaufnahme) gibt es vorerst nur unter Windows.
       (!item.clipsOnly || platformCaps.value.clips) &&
       // Lokale Server erst, wenn es einen gibt (Server-Export „lokal anlegen“).

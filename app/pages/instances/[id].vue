@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { messeRestricted } from '~/utils/messe'
 import type { Instance } from '~/types'
 import { MOD_CONFLICT_CODE } from '~/utils/modConflicts'
 
@@ -33,7 +34,8 @@ const tabs = computed<Tab[]>(() => {
   if (ui.value?.historyTab !== false) list.push('history')
   // Logs gibt es erst, wenn hier ein Spiel laufen kann.
   if (platformCaps.value.gameLaunch) list.push('logs')
-  list.push('share')
+  // Messe-PC: Teilen/Exportieren/Hochladen nur fürs Personal
+  if (!messeRestricted.value) list.push('share')
   return list
 })
 const TAB_ICONS: Record<Tab, string> = {

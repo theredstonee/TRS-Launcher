@@ -18,12 +18,14 @@ use trs_core::data_location::{self, DataLocation};
 
 pub type LauncherState = Arc<Launcher>;
 
-/// Datenordner: `TRS_LAUNCHER_HOME` > portabel > eigener Ordner (Zeiger-Datei) > Standard.
+/// Datenordner: `TRS_LAUNCHER_HOME` > portabel > eigener Ordner (Zeiger-Datei) > Standard (Messe-Build: eigener Name).
 #[cfg(desktop)]
 fn data_location(app: &tauri::App) -> Result<DataLocation, Box<dyn std::error::Error>> {
     let app_data = app.path().data_dir()?;
     let exe_dir = data_location::exe_dir();
-    Ok(data_location::resolve(std::env::var_os(data_location::HOME_ENV), exe_dir.as_deref(), &app_data))
+    // Messe-Build (eigene Kennung): eigener Datenordner, damit die echten Launcher-Daten am Messe-PC unberührt bleiben.
+    let name = data_location::data_name_for(&app.config().identifier);
+    Ok(data_location::resolve_named(std::env::var_os(data_location::HOME_ENV), exe_dir.as_deref(), &app_data, name))
 }
 
 /// Android/iOS: privater Datenordner der App (Sandbox), fest – kein Umzug, keine Zeiger-Datei.

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { messeRestricted } from '~/utils/messe'
 import type { Instance } from '~/types'
 import MobileSheet from '~/components/MobileSheet.vue'
 
@@ -147,10 +148,10 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
             {{ t('instanceCard.moveToGroup') }}
             <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 5 7 7-7 7" /></svg>
           </button>
-          <button v-if="!mobile" class="menu-item" role="menuitem" @click="openFolder">{{ t('common.actions.openFolder') }}</button>
-          <button v-if="!mobile" class="menu-item" role="menuitem" @click="menu = null; exportingServer = true">{{ t('instanceCard.exportServer') }}</button>
-          <div class="my-1 border-t border-base-700" />
-          <button class="menu-item text-redstone-300" role="menuitem" :disabled="game.phase !== 'idle'" @click="menu = null; emit('delete', instance)">{{ t('common.actions.delete') }}</button>
+          <button v-if="!mobile && !messeRestricted" class="menu-item" role="menuitem" @click="openFolder">{{ t('common.actions.openFolder') }}</button>
+          <button v-if="!mobile && !messeRestricted" class="menu-item" role="menuitem" @click="menu = null; exportingServer = true">{{ t('instanceCard.exportServer') }}</button>
+          <div v-if="!messeRestricted" class="my-1 border-t border-base-700" />
+          <button v-if="!messeRestricted" class="menu-item text-redstone-300" role="menuitem" :disabled="game.phase !== 'idle'" @click="menu = null; emit('delete', instance)">{{ t('common.actions.delete') }}</button>
         </component>
         <component
           :is="mobile ? MobileSheet : 'div'"

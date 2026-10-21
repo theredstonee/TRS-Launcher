@@ -2,7 +2,7 @@
 //!
 //! Reihenfolge: `TRS_LAUNCHER_HOME` (Entwicklung/Tests) > portabel (`portable.txt`
 //! bzw. `.portable` neben der EXE → `<exe-ordner>/data`) > eigener Ordner aus der
-//! Zeiger-Datei > Standard `<app-daten>/TRS-Launcher`.
+//! Zeiger-Datei > Standard `<app-daten>/TRS-Launcher` (Messe-Build: `<app-daten>/TRS-Launcher-Messe`).
 //!
 //! Die Zeiger-Datei (`<app-daten>/TRS-Launcher-location.json`) liegt bewusst
 //! außerhalb des Datenordners – sonst fände der Launcher sie nach dem Umzug nicht.
@@ -126,11 +126,27 @@ pub fn sandbox(root: PathBuf) -> DataLocation {
     }
 }
 
+/// Datenordner des Messe-Builds (eigener Ordner + eigene Zeiger-Datei – die echten Launcher-Daten bleiben unberührt).
+pub const MESSE_DATA_NAME: &str = "TRS-Launcher-Messe";
+/// Kennung (Tauri-Identifier) des Messe-Builds endet hierauf.
+pub const MESSE_IDENTIFIER_SUFFIX: &str = ".messe";
+
+/// Name des Standard-Datenordners für diese App-Kennung (Messe-Build → eigener Ordner).
+pub fn data_name_for(identifier: &str) -> &'static str {
+    if identifier.ends_with(MESSE_IDENTIFIER_SUFFIX) { MESSE_DATA_NAME } else { LAUNCHER_NAME }
+}
+
 /// Bestimmt den Datenordner. `app_data`: App-Datenordner des Systems
 /// (Windows `%APPDATA%`, Linux `~/.local/share`).
 pub fn resolve(env: Option<OsString>, exe_dir: Option<&Path>, app_data: &Path) -> DataLocation {
-    let default_root = app_data.join(LAUNCHER_NAME);
-    let pointer_file = app_data.join(POINTER_FILE);
+    resolve_named(env, exe_dir, app_data, LAUNCHER_NAME)
+}
+
+/// Wie [`resolve`], aber mit eigenem Ordnernamen `name` (Standard `<app-daten>/<name>`,
+/// Zeiger-Datei `<app-daten>/<name>-location.json`).
+pub fn resolve_named(env: Option<OsString>, exe_dir: Option<&Path>, app_data: &Path, name: &str) -> DataLocation {
+    let default_root = app_data.join(name);
+    let pointer_file = if name == LAUNCHER_NAME { app_data.join(POINTER_FILE) } else { app_data.join(format!("{name}-location.json")) };
     let location = |root: PathBuf, source, missing_custom| DataLocation {
         root,
         source,
@@ -207,6 +223,26 @@ pub fn same_path(a: &Path, b: &Path) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn messe_build_has_its_own_data_folder() {
+        assert_eq!(data_name_for("dev.theredstonee.trslauncher"), LAUNCHER_NAME);
+        assert_eq!(data_name_for("dev.theredstonee.trslauncher.messe"), MESSE_DATA_NAME);
+        let dir = tempfile::tempdir().unwrap();
+        let app_data = dir.path().join("appdata");
+        std::fs::create_dir_all(&app_data).unwrap();
+        // Zeiger des normalen Launchers (eigener Ordner) darf den Messe-Build nicht umlenken.
+        let custom = dir.path().join("custom");
+        std::fs::create_dir_all(&custom).unwrap();
+        let normal = resolve(None, None, &app_data);
+        assert_eq!(normal.pointer_file, app_data.join(POINTER_FILE));
+        switch_root(&normal, &custom).unwrap();
+        let messe = resolve_named(None, None, &app_data, MESSE_DATA_NAME);
+        assert_eq!(messe.source, RootSource::Default);
+        assert_eq!(messe.root, app_data.join(MESSE_DATA_NAME));
+        assert_eq!(messe.pointer_file, app_data.join("TRS-Launcher-Messe-location.json"));
+        assert_eq!(resolve(None, None, &app_data).root, custom);
+    }
 
     #[test]
     fn resolves_env_portable_pointer_and_default() {

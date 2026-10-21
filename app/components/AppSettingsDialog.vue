@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { messeRestricted } from '~/utils/messe'
 import type { Accent, AppInfo, ClientModStatus, Design, Settings, SharedFolder, StorageStats, Theme } from '~/types'
 import type { ShellSection } from '~/components/SettingsShell.vue'
 import type { Locale } from '~/utils/i18n'
@@ -535,7 +536,7 @@ async function allowFirewall() {
       <SettingRow :title="t('settings.behavior.showSnapshotsTitle')" :description="t('settings.behavior.showSnapshotsDescription')">
         <ToggleSwitch v-model="form.showSnapshots" :label="t('settings.behavior.showSnapshotsTitle')" />
       </SettingRow>
-      <SettingRow :title="t('settings.behavior.restartOnboardingTitle')" :description="t('settings.behavior.restartOnboardingDescription')">
+      <SettingRow v-if="!messeRestricted" :title="t('settings.behavior.restartOnboardingTitle')" :description="t('settings.behavior.restartOnboardingDescription')">
         <button class="btn btn-ghost" @click="close(); onboarding.restart()">{{ t('common.actions.start') }}</button>
       </SettingRow>
 

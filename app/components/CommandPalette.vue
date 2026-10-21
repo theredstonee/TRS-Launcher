@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { messeRestricted } from '~/utils/messe'
 import type { ContentItem, Instance } from '~/types'
 import type { IconName } from '~/utils/icons'
 import type { MessageKey } from '~/utils/i18n'
@@ -81,9 +82,9 @@ const pages = computed<Command[]>(() => {
     { to: '/skins', label: 'nav.skins', icon: 'skins', keywords: 'palette.keywords.skins' },
     { to: '/social', label: 'nav.social', icon: 'chat', keywords: 'palette.keywords.social' },
     { to: '/achievements', label: 'nav.achievements', icon: 'trophy', keywords: 'palette.keywords.achievements' },
-    ...(trs.enabled ? [{ to: '/creator', label: 'nav.creator' as MessageKey, icon: 'star' as IconName, keywords: 'palette.keywords.creator' as MessageKey }] : []),
+    ...(trs.enabled && !messeRestricted.value ? [{ to: '/creator', label: 'nav.creator' as MessageKey, icon: 'star' as IconName, keywords: 'palette.keywords.creator' as MessageKey }] : []),
     // Team-Bereich: für alle Team-Rollen (was sie darin sehen, regeln ihre Rechte).
-    ...(trs.isStaff ? [{ to: '/admin', label: 'nav.admin' as MessageKey, icon: 'admin' as IconName, keywords: 'palette.keywords.admin' as MessageKey }] : []),
+    ...(trs.isStaff && !messeRestricted.value ? [{ to: '/admin', label: 'nav.admin' as MessageKey, icon: 'admin' as IconName, keywords: 'palette.keywords.admin' as MessageKey }] : []),
   ]
   return list
     // Clips (Spielaufnahme) gibt es vorerst nur unter Windows.
@@ -200,7 +201,7 @@ const commands = computed<Command[]>(() => [
     run: () => go('/browse?kind=modpack'),
   },
   // Website (Bewerbungen, Team-Verwaltung): Anmeldung dort per TRS Launcher (Code, §29) oder Microsoft.
-  ...(trs.enabled
+  ...(trs.enabled && !messeRestricted.value
     ? [
         {
           id: 'action:website-login',
@@ -253,7 +254,7 @@ const commands = computed<Command[]>(() => [
     },
   },
   // Ordner im Datei-Explorer gibt es am Handy nicht.
-  ...(isMobileOs(platformCaps.value.platform) ? [] : [{
+  ...(isMobileOs(platformCaps.value.platform) || messeRestricted.value ? [] : [{
     id: 'action:data-dir',
     group: 'actions',
     title: t('palette.actions.dataDir.title'),

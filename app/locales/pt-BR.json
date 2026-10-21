@@ -964,7 +964,8 @@
       "textTooLong": "Título com no máximo {title} caracteres, texto com no máximo {text} caracteres.",
       "invalidWindow": "O fim precisa ser depois do início.",
       "invalidOrder": "A ordem não confere – recarregue a lista."
-    }
+    },
+    "messeBlocked": "Indisponível no PC da feira."
   },
   "browse": {
     "title": "Explorar",
@@ -7086,6 +7087,45 @@
       "keep": "Manter",
       "off": "Desativar",
       "calm": "Sem piscadas (calma)"
+    }
+  },
+  "messe": {
+    "pitch": {
+      "label": "Apresentação – toque em qualquer lugar para testar o launcher"
+    },
+    "countdown": {
+      "title": "Ainda está aí?",
+      "hint": "Toque na tela ou pressione uma tecla para continuar."
+    },
+    "pin": {
+      "setTitle": "Definir PIN da equipe",
+      "setHint": "Escolha um PIN de 4 a 8 dígitos. Ele abre o painel da equipe e é necessário para fechar o launcher.",
+      "title": "PIN da equipe",
+      "hintStaff": "Digite o PIN para abrir o painel da equipe.",
+      "hintQuit": "Digite o PIN para fechar o launcher.",
+      "pin": "PIN",
+      "repeat": "Repita o PIN",
+      "invalid": "O PIN precisa ter de 4 a 8 dígitos.",
+      "mismatch": "Os PINs não coincidem – comece de novo.",
+      "wrong": "PIN incorreto.",
+      "locked": "Tentativas demais – tente novamente em {seconds} s.",
+      "clear": "Apagar dígito",
+      "confirm": "OK"
+    },
+    "staff": {
+      "title": "Painel da equipe",
+      "gameRunning": "Um jogo está em execução – a apresentação espera até ele ser fechado.",
+      "timeout": "Voltar à apresentação após",
+      "timeoutHint": "Segundos sem interação ({min}–{max}), seguidos de uma contagem regressiva de 10 segundos.",
+      "language": "Idioma (apresentação e launcher)",
+      "unlock": "Modo equipe",
+      "unlockHint": "Remove as restrições para visitantes (contas, exclusão, pastas, configurações) até a apresentação começar de novo.",
+      "fullscreen": "Tela cheia",
+      "startPitch": "Iniciar apresentação agora",
+      "reset": "Redefinir demo",
+      "resetHint": "Volta à página inicial com todas as janelas fechadas.",
+      "changePin": "Alterar PIN",
+      "quit": "Sair do launcher"
     }
   }
 }

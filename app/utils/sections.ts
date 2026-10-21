@@ -2,6 +2,7 @@ import { computed } from 'vue'
 import type { ShellSection } from '~/components/SettingsShell.vue'
 import type { PlatformCapabilities } from '~/types'
 import { platformCaps } from './system'
+import { messeRestricted } from './messe'
 import type { IconName } from '~/utils/icons'
 import type { MessageKey } from '~/utils/i18n'
 
@@ -58,8 +59,14 @@ export function appSettingsSectionsFor(caps: Pick<PlatformCapabilities, 'clips' 
 
 /** Bereiche für dieses System (reaktiv: folgt den Fähigkeiten aus `app_info`). */
 export function useAppSettingsSections() {
-  return computed(() => appSettingsSectionsFor(platformCaps.value))
+  return computed(() => {
+    const sections = appSettingsSectionsFor(platformCaps.value)
+    return messeRestricted.value ? sections.filter((s) => !MESSE_HIDDEN_SECTIONS.includes(s.key)) : sections
+  })
 }
+
+/** Messe-PC: Datenschutz/TRS-Konto, Speicher/Datenordner, Fernbedienung, Hooks/JVM, Java und Firewall nur fürs Personal. */
+const MESSE_HIDDEN_SECTIONS = ['privacy', 'storage', 'remote', 'defaults', 'java', 'network']
 
 /** Bereiche der Instanz-Einstellungen. */
 export const instanceSettingsSections: ShellSection[] = [

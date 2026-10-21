@@ -1005,7 +1005,8 @@
       "textTooLong": "Título de {title} caracteres como máximo, texto de {text} caracteres como máximo.",
       "invalidWindow": "El final debe ser posterior al inicio.",
       "invalidOrder": "El orden no coincide: vuelve a cargar la lista."
-    }
+    },
+    "messeBlocked": "No disponible en el PC de la feria."
   },
   "browse": {
     "title": "Explorar",
@@ -7767,6 +7768,45 @@
       "keep": "Mantener",
       "off": "Desactivar",
       "calm": "Sin parpadeo (tranquila)"
+    }
+  },
+  "messe": {
+    "pitch": {
+      "label": "Presentación: toca en cualquier lugar para probar el launcher"
+    },
+    "countdown": {
+      "title": "¿Sigues ahí?",
+      "hint": "Toca la pantalla o pulsa una tecla para seguir explorando."
+    },
+    "pin": {
+      "setTitle": "Establecer PIN del personal",
+      "setHint": "Elige un PIN de 4 a 8 dígitos. Abre el panel del personal y se necesita para cerrar el launcher.",
+      "title": "PIN del personal",
+      "hintStaff": "Introduce el PIN para abrir el panel del personal.",
+      "hintQuit": "Introduce el PIN para cerrar el launcher.",
+      "pin": "PIN",
+      "repeat": "Repite el PIN",
+      "invalid": "El PIN debe tener de 4 a 8 dígitos.",
+      "mismatch": "Los PIN no coinciden; vuelve a empezar.",
+      "wrong": "PIN incorrecto.",
+      "locked": "Demasiados intentos; inténtalo de nuevo en {seconds} s.",
+      "clear": "Borrar dígito",
+      "confirm": "Aceptar"
+    },
+    "staff": {
+      "title": "Panel del personal",
+      "gameRunning": "Hay un juego en marcha; la presentación espera hasta que se cierre.",
+      "timeout": "Volver a la presentación tras",
+      "timeoutHint": "Segundos sin actividad ({min}–{max}), seguidos de una cuenta atrás de 10 segundos.",
+      "language": "Idioma (presentación y launcher)",
+      "unlock": "Modo personal",
+      "unlockHint": "Quita las restricciones para visitantes (cuentas, borrar, carpetas, ajustes) hasta que vuelva a empezar la presentación.",
+      "fullscreen": "Pantalla completa",
+      "startPitch": "Iniciar presentación ahora",
+      "reset": "Restablecer demo",
+      "resetHint": "Vuelve a la página de inicio y cierra todos los diálogos.",
+      "changePin": "Cambiar PIN",
+      "quit": "Salir del launcher"
     }
   }
 }

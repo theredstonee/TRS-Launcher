@@ -964,7 +964,8 @@
       "textTooLong": "Titel maximaal {title} tekens, tekst maximaal {text} tekens.",
       "invalidWindow": "Het einde moet na het begin liggen.",
       "invalidOrder": "De volgorde klopt niet – herlaad de lijst."
-    }
+    },
+    "messeBlocked": "Niet beschikbaar op de beurs-pc."
   },
   "browse": {
     "title": "Ontdekken",
@@ -7086,6 +7087,45 @@
       "keep": "Aan laten",
       "off": "Uitzetten",
       "calm": "Zonder flikkeren (rustig)"
+    }
+  },
+  "messe": {
+    "pitch": {
+      "label": "Presentatie – tik ergens om de launcher te proberen"
+    },
+    "countdown": {
+      "title": "Ben je er nog?",
+      "hint": "Raak het scherm aan of druk op een toets om verder te gaan."
+    },
+    "pin": {
+      "setTitle": "Personeelspincode instellen",
+      "setHint": "Kies een pincode van 4–8 cijfers. Hiermee open je het personeelspaneel en sluit je de launcher.",
+      "title": "Personeelspincode",
+      "hintStaff": "Voer de pincode in om het personeelspaneel te openen.",
+      "hintQuit": "Voer de pincode in om de launcher te sluiten.",
+      "pin": "Pincode",
+      "repeat": "Herhaal de pincode",
+      "invalid": "De pincode moet 4–8 cijfers hebben.",
+      "mismatch": "De pincodes komen niet overeen – begin opnieuw.",
+      "wrong": "Onjuiste pincode.",
+      "locked": "Te veel pogingen – probeer het over {seconds} s opnieuw.",
+      "clear": "Cijfer wissen",
+      "confirm": "OK"
+    },
+    "staff": {
+      "title": "Personeelspaneel",
+      "gameRunning": "Er draait een spel – de presentatie wacht tot het gesloten is.",
+      "timeout": "Terug naar de presentatie na",
+      "timeoutHint": "Seconden zonder invoer ({min}–{max}), gevolgd door een aftelling van 10 seconden.",
+      "language": "Taal (presentatie en launcher)",
+      "unlock": "Personeelsmodus",
+      "unlockHint": "Heft de beperkingen voor bezoekers op (accounts, verwijderen, mappen, instellingen) tot de presentatie opnieuw start.",
+      "fullscreen": "Volledig scherm",
+      "startPitch": "Presentatie nu starten",
+      "reset": "Demo resetten",
+      "resetHint": "Terug naar de startpagina, alle vensters gesloten.",
+      "changePin": "Pincode wijzigen",
+      "quit": "Launcher afsluiten"
     }
   }
 }

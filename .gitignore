@@ -37,3 +37,6 @@ release/
 
 # Beispiel-Logs für die Absturz-Tests gehören ins Repo
 !src-tauri/crates/core/src/crash/fixtures/*.log
+
+# Präsentation des Messe-Builds (scripts/messe/import-pitch.mjs)
+.messe-pitch/

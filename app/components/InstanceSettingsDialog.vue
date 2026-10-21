@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { messeRestricted } from '~/utils/messe'
 import type { EnvVar, FpsMode, Instance, InstanceLocation, InstanceOverrides, SharedFolder, SharedFolderStatus, SyncItem, UpdateChannel } from '~/types'
 import type { ShellSection } from '~/components/SettingsShell.vue'
 
@@ -21,7 +22,11 @@ const g = computed(() => settings.current)
 // Ohne Spielstart (Handy) keine Fenster-/Start-Befehle, ohne Java-Verwaltung kein Java.
 const sections = computed<ShellSection[]>(() =>
   instanceSettingsSections.filter(
-    (s) => ((s.key !== 'window' && s.key !== 'hooks') || platformCaps.value.gameLaunch) && (s.key !== 'java' || platformCaps.value.java),
+    (s) =>
+      ((s.key !== 'window' && s.key !== 'hooks') || platformCaps.value.gameLaunch) &&
+      (s.key !== 'java' || platformCaps.value.java) &&
+      // Messe-PC: eigene Befehle (Hooks) nur fürs Personal
+      (s.key !== 'hooks' || !messeRestricted.value),
   ),
 )
 const active = ref(sections.value.some((s) => s.key === props.initial) ? props.initial : 'general')
@@ -480,7 +485,7 @@ const loaderLine = computed(() => {
           <p v-if="location" class="mt-0.5 truncate font-mono text-xs text-base-400" :title="location.path">{{ location.path }}</p>
         </template>
         <div class="flex flex-wrap gap-2">
-          <button class="btn btn-ghost" :disabled="running || moveRunning || !location" @click="moving = 'custom'">{{ moveRunning ? t('relocate.instance.moving') : t('relocate.instance.move') }}</button>
+          <button v-if="!messeRestricted" class="btn btn-ghost" :disabled="running || moveRunning || !location" @click="moving = 'custom'">{{ moveRunning ? t('relocate.instance.moving') : t('relocate.instance.move') }}</button>
           <button v-if="location?.custom" class="btn btn-ghost" :disabled="running || moveRunning" @click="moving = 'default'">{{ t('relocate.instance.back') }}</button>
         </div>
       </SettingRow>
@@ -489,11 +494,11 @@ const loaderLine = computed(() => {
         <button class="btn btn-ghost" :disabled="duplicating || running" @click="duplicate">{{ duplicating ? t('instanceSettings.general.duplicating') : t('instanceSettings.general.duplicateTitle') }}</button>
       </SettingRow>
 
-      <SettingRow :title="t('instanceSettings.general.exportTitle')" :description="t('instanceSettings.general.exportDescription')">
+      <SettingRow v-if="!messeRestricted" :title="t('instanceSettings.general.exportTitle')" :description="t('instanceSettings.general.exportDescription')">
         <button class="btn btn-ghost" :disabled="running" @click="exporting = true">{{ t('common.actions.export') }}</button>
       </SettingRow>
 
-      <SettingRow :title="t('instanceSettings.general.deleteTitle')" :description="t('instanceSettings.general.deleteDescription')" danger>
+      <SettingRow v-if="!messeRestricted" :title="t('instanceSettings.general.deleteTitle')" :description="t('instanceSettings.general.deleteDescription')" danger>
         <button class="btn btn-danger" :disabled="running" @click="deleting = true">{{ t('instanceSettings.general.deleteTitle') }}</button>
       </SettingRow>
     </div>

@@ -964,7 +964,8 @@
       "textTooLong": "Titre de {title} caractères maximum, texte de {text} caractères maximum.",
       "invalidWindow": "La fin doit être après le début.",
       "invalidOrder": "L'ordre ne correspond pas : recharge la liste."
-    }
+    },
+    "messeBlocked": "Indisponible sur le PC du salon."
   },
   "browse": {
     "title": "Découvrir",
@@ -7086,6 +7087,45 @@
       "keep": "Garder",
       "off": "Désactiver",
       "calm": "Sans scintillements (calme)"
+    }
+  },
+  "messe": {
+    "pitch": {
+      "label": "Présentation – touchez n’importe où pour essayer le launcher"
+    },
+    "countdown": {
+      "title": "Toujours là ?",
+      "hint": "Touchez l’écran ou appuyez sur une touche pour continuer."
+    },
+    "pin": {
+      "setTitle": "Définir le code du personnel",
+      "setHint": "Choisissez un code de 4 à 8 chiffres. Il ouvre le panneau du personnel et sert à fermer le launcher.",
+      "title": "Code du personnel",
+      "hintStaff": "Saisissez le code pour ouvrir le panneau du personnel.",
+      "hintQuit": "Saisissez le code pour fermer le launcher.",
+      "pin": "Code",
+      "repeat": "Répétez le code",
+      "invalid": "Le code doit comporter 4 à 8 chiffres.",
+      "mismatch": "Les codes ne correspondent pas – recommencez.",
+      "wrong": "Code incorrect.",
+      "locked": "Trop de tentatives – réessayez dans {seconds} s.",
+      "clear": "Effacer le chiffre",
+      "confirm": "OK"
+    },
+    "staff": {
+      "title": "Panneau du personnel",
+      "gameRunning": "Un jeu est en cours – la présentation attend sa fermeture.",
+      "timeout": "Retour à la présentation après",
+      "timeoutHint": "Secondes sans action ({min}–{max}), suivies d’un compte à rebours de 10 secondes.",
+      "language": "Langue (présentation et launcher)",
+      "unlock": "Mode personnel",
+      "unlockHint": "Lève les restrictions visiteurs (comptes, suppression, dossiers, paramètres) jusqu’au prochain lancement de la présentation.",
+      "fullscreen": "Plein écran",
+      "startPitch": "Lancer la présentation",
+      "reset": "Réinitialiser la démo",
+      "resetHint": "Retour à l’accueil, toutes les fenêtres fermées.",
+      "changePin": "Changer le code",
+      "quit": "Quitter le launcher"
     }
   }
 }
