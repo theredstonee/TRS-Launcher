@@ -4,45 +4,48 @@
 // Eiskristall auf dem See zerspringt zum Logo.
 
 import type { IntroDesign } from './designs'
-import { canvas, clamp, css, ctx2d, decay, easeOut, hash, hash2, hex, keyframes, mix, range, rgba, rng, smooth, type Cv } from './kit'
+import { canvas, clamp, css, ctx2d, decay, easeOut, hash2, hex, keyframes, mix, range, rgba, rng, smooth, type Cv } from './kit'
+import { colonyAt, PenguinSprites, type ColonyCues } from './penguins'
 import { IntroStage, type ArtView, type IntroStageOptions } from './stage'
 import type { IntroCoreCues, IntroLength } from './timeline'
 
-export interface FrostCues extends IntroCoreCues {
+export interface FrostCues extends IntroCoreCues, ColonyCues {
   /** Kamera [t, x, y, zoom] (Bildmitte in Kunst-Pixeln, Seeoberfläche = 0). */
   cam: [number, number, number, number][]
   /** Eiszapfen klingen. */
   chimes: number[]
-  /** Pinguin watschelt und rutscht übers Eis [von, bis]. */
-  penguin: [number, number] | null
-  /** Frostkristalle wachsen einen Schub weiter. */
+  /** Frostkristalle wachsen einen Schub weiter (auf Schlägen). */
   crystals: number[]
 }
 
-// Der Winter-Jingle hat seinen Schlag schon bei 2,70 s: er setzt erst kurz vor dem Höhepunkt ein,
-// davor tragen Wind, Klänge und Effekte den Aufbau.
+// Der Winter-Jingle (~143 BPM, ein Schlag = 0,42 s) hat seinen Schlag schon bei 2,70 s: er setzt erst kurz vor dem
+// Höhepunkt ein, davor tragen Wind, Klänge und Effekte. Rutschen, Purzeln, Hüpfen und Frostschübe liegen auf dem
+// Schlagraster impact − k · 0,42 s.
 export const FROST_CUES: Record<IntroLength, FrostCues> = {
   short: {
-    duration: 4, fadeIn: 0.35, hush: 1.85, impact: 2.25, logo: 2.95, wordmark: 3.13, fadeOut: 3.57,
-    cam: [[0, 352, -40, 1.25], [1.85, 400, -36, 1.5], [2.6, 402, -38, 1.72]],
-    chimes: [0.4], penguin: null, crystals: [0.6, 1.1, 1.6],
+    duration: 4, fadeIn: 0.35, hush: 1.83, impact: 2.25, logo: 2.95, wordmark: 3.13, fadeOut: 3.57,
+    cam: [[0, 300, -16, 1.32], [1.85, 318, -16, 1.42], [2.6, 322, -22, 1.6]],
+    chimes: [0.3], crystals: [0.57, 0.99, 1.41],
+    march: null, slides: [0.15, 0.57], slip: null, snowball: [0, 1.6], hops: [0.99, 1.41],
   },
   medium: {
-    duration: 7, fadeIn: 0.5, hush: 4.5, impact: 4.9, logo: 5.65, wordmark: 5.78, fadeOut: 6.66,
-    cam: [[0, 200, -72, 1.0], [3.2, 330, -40, 1.12], [4.45, 400, -36, 1.5], [5.2, 402, -38, 1.72]],
-    chimes: [0.5, 1.1], penguin: [0.9, 3.4], crystals: [2.4, 3.1, 3.8, 4.3],
+    duration: 7, fadeIn: 0.5, hush: 4.48, impact: 4.9, logo: 5.65, wordmark: 5.78, fadeOut: 6.66,
+    cam: [[0, 230, -58, 1.05], [2.4, 280, -18, 1.25], [4.45, 318, -16, 1.42], [5.2, 322, -22, 1.6]],
+    chimes: [0.5], crystals: [2.8, 3.64, 4.06],
+    march: [0.2, 1.5], slides: [1.12, 1.54, 1.96, 2.38], slip: 2.8, snowball: [1.0, 3.6], hops: [3.22, 3.64, 4.06],
   },
   long: {
-    duration: 10, fadeIn: 0.6, hush: 7.5, impact: 7.9, logo: 8.65, wordmark: 8.78, fadeOut: 9.66,
-    cam: [[0, 300, -178, 1.0], [2.6, 160, -62, 1.0], [5.6, 330, -40, 1.12], [7.45, 400, -36, 1.5], [8.2, 402, -38, 1.72]],
-    chimes: [1.0, 1.7, 2.4], penguin: [3.0, 5.8], crystals: [5.2, 5.9, 6.6, 7.2],
+    duration: 10, fadeIn: 0.6, hush: 7.48, impact: 7.9, logo: 8.65, wordmark: 8.78, fadeOut: 9.66,
+    cam: [[0, 300, -178, 1.0], [2.6, 215, -36, 1.1], [5.0, 290, -18, 1.28], [7.45, 318, -16, 1.42], [8.2, 322, -22, 1.6]],
+    chimes: [1.0, 1.7, 2.4], crystals: [5.38, 6.22, 7.06],
+    march: [2.4, 3.8], slides: [3.7, 4.12, 4.54, 4.96], slip: 5.38, snowball: [3.4, 6.2], hops: [5.8, 6.22, 6.64, 7.06],
   },
 }
 
 const VIEW_H = 200
 const L0 = -400
 const L1 = 1100
-const CRYSTAL_X = 400
+const CRYSTAL_X = 362
 
 type Layer = { cv: Cv; par: number; x0: number; y0: number }
 
@@ -78,7 +81,7 @@ export class FrostScene extends IntroStage {
   private readonly layers: Layer[] = []
   private readonly fore: Layer
   private readonly crystal: Cv
-  private readonly s: Record<string, Cv>
+  private readonly pen = new PenguinSprites()
   private readonly frost: Dendrite[][] = []
 
   constructor(cv: HTMLCanvasElement, readonly design: IntroDesign, readonly length: IntroLength, options: IntroStageOptions = {}) {
@@ -91,26 +94,6 @@ export class FrostScene extends IntroStage {
     this.layers.push(this.paintForest(0.85, 4, 44, 70, '#08101e', '#cfe3ff', 57, true))
     this.fore = this.paintIcicles()
     this.crystal = this.paintCrystal()
-    const pal = { R: '#d23a3a', W: '#f4f4f4', K: '#1c2230', e: '#f4f4f4', O: '#ffa230', w: '#f4f4f4' }
-    const sprite = (rows: string[]) => {
-      const c = canvas(Math.max(...rows.map((r) => r.length)), rows.length)
-      const g = ctx2d(c)
-      rows.forEach((row, y) => {
-        for (let x = 0; x < row.length; x++) {
-          const col = (pal as Record<string, string>)[row[x]!]
-          if (!col) continue
-          g.fillStyle = col
-          g.fillRect(x, y, 1, 1)
-        }
-      })
-      return c
-    }
-    this.s = {
-      penguinA: sprite(['..RRW..', '.RRRR..', '.WWWWW.', '.KKKKK.', '.KeKeK.', '.KKOKK.', 'KKwwwKK', 'KKwwwKK', '.KwwwK.', '.KwwwK.', '.O...O.']),
-      penguinB: sprite(['..RRW..', '.RRRR..', '.WWWWW.', '.KKKKK.', '.KeKeK.', '.KKOKK.', 'KKwwwKK', 'KKwwwKK', '.KwwwK.', '.KwwwK.', '..O.O..']),
-      // Bauchrutscher (seitlich)
-      slide: sprite(['....RRW....', '.KKKRRRW...', 'KKKKKKKKKeO', 'KwwwwwwwwKK', '.KKKKKKKKK.', 'O..........']),
-    }
     // Frostranken für die vier Ecken (Bildschirm-Anteile, wachsen in Schüben)
     for (let corner = 0; corner < 4; corner++) {
       const r = rng(900 + corner)
@@ -141,7 +124,7 @@ export class FrostScene extends IntroStage {
     const g = ctx2d(c)
     const r = rng(14)
     const peaks: { x: number; h: number }[] = []
-    for (let x = -40; x < c.width + 40; x += 60 + Math.floor(r() * 70)) peaks.push({ x, h: 50 + r() * 70 })
+    for (let x = -40; x < c.width + 40; x += 60 + Math.floor(r() * 70)) peaks.push({ x, h: 34 + r() * 46 })
     for (let x = 0; x < c.width; x++) {
       let top = 0
       for (const pk of peaks) top = Math.max(top, pk.h - Math.abs(x - pk.x) * (0.9 + (pk.h % 7) * 0.05))
@@ -149,7 +132,7 @@ export class FrostScene extends IntroStage {
       g.fillStyle = '#16223a'
       g.fillRect(x, ty, 1, c.height - ty)
       // Schneekappen: schmal, gezackt, Grat hell
-      const cap = Math.round(Math.min(14, Math.max(0, top - 45) * 0.35) + (r() > 0.5 ? 1 : 0) * Math.min(3, Math.max(0, top - 45)))
+      const cap = Math.round(Math.min(12, Math.max(0, top - 30) * 0.35) + (r() > 0.5 ? 1 : 0) * Math.min(3, Math.max(0, top - 30)))
       if (cap > 0) {
         g.fillStyle = '#7f97ba'
         g.fillRect(x, ty, 1, cap)
@@ -283,8 +266,8 @@ export class FrostScene extends IntroStage {
   private auroraLevel(t: number) {
     const c = this.c
     let l = 0.75 + 0.35 * smooth(range(t, 0, 2))
-    for (const k of c.crystals) l += 0.35 * decay(t - k, 3) * (t >= k ? 1 : 0)
-    if (t >= c.impact) l += 2.2 * decay(t - c.impact, 2.2)
+    if (!this.calm) for (const k of c.crystals) l += 0.35 * decay(t - k, 3) * (t >= k ? 1 : 0)
+    if (t >= c.impact) l += this.calm ? 1.2 * smooth(range(t, c.impact, c.impact + 0.6)) * decay(t - c.impact - 0.6, 1.2) : 2.2 * decay(t - c.impact, 2.2)
     return l
   }
 
@@ -320,7 +303,7 @@ export class FrostScene extends IntroStage {
       this.drawReflection(t, v, aur)
       this.layerAt(v, this.layers[3]!)
       this.drawCrystal(t, v, aur)
-      this.drawPenguin(t, v)
+      this.drawColony(t, v)
       this.drawSnow(t, v, 0.6, 50, 1, 0.45)
       this.drawSnow(t, v, 1, 70, 1, 0.75)
       // Eiszapfen ganz vorn (oben am Bildrand, mit Parallaxe), funkeln beim Klingen
@@ -333,7 +316,7 @@ export class FrostScene extends IntroStage {
         for (let i = 0; i < 6; i++) {
           const px = ((hash2(i, ch * 10) * v.bw) | 0) + 0
           const py = 8 + ((hash2(i + 3, ch * 10) * 30) | 0)
-          ag.globalAlpha = decay(age - i * 0.05, 4) * (age > i * 0.05 ? 1 : 0)
+          ag.globalAlpha = (this.calm ? 0.35 : 1) * decay(age - i * 0.05, 4) * (age > i * 0.05 ? 1 : 0)
           ag.drawImage(this.glowSprite('#dff4ff'), px - 6, py - 6, 12, 12)
           ag.fillStyle = '#ffffff'
           ag.fillRect(px, py - 2, 1, 5)
@@ -400,7 +383,7 @@ export class FrostScene extends IntroStage {
   }
 
   private crystalBox(v: ArtView) {
-    const q = this.at(v, CRYSTAL_X, 14)
+    const q = this.at(v, CRYSTAL_X, 8)
     return { x: q.x - 28, y: q.y - 64, w: 56, h: 64 }
   }
 
@@ -410,7 +393,7 @@ export class FrostScene extends IntroStage {
     const b = this.crystalBox(v)
     if (b.x > v.bw + 60 || b.x + b.w < -60) return
     const grow = c.crystals.reduce((n, k) => n + easeOut(range(t, k, k + 0.35)), 0) / Math.max(1, c.crystals.length)
-    const pre = t >= c.hush && t < c.impact ? 0.5 + 0.5 * Math.sin((t - c.hush) * 50) : 0
+    const pre = t >= c.hush && t < c.impact ? (this.calm ? range(t, c.hush, c.impact) : 0.5 + 0.5 * Math.sin((t - c.hush) * 50)) : 0
     ag.globalCompositeOperation = 'lighter'
     ag.globalAlpha = clamp(0.3 + grow * 0.5 + pre * 0.4)
     ag.drawImage(this.glowSprite('#7fd3ff'), b.x - 40, b.y - 30, b.w + 80, b.h + 60)
@@ -430,28 +413,51 @@ export class FrostScene extends IntroStage {
     void level
   }
 
-  private drawPenguin(t: number, v: ArtView) {
-    const c = this.c
-    if (!c.penguin) return
-    const [t0, t1] = c.penguin
-    const k = range(t, t0, t1)
-    if (k <= 0 || k >= 1) return
+  /** Pinguin-Kolonie (nach Tiefe sortiert), Schneeball, Schatten und Schneespritzer. */
+  private drawColony(t: number, v: ArtView) {
     const ag = this.ag
-    // erst watscheln, dann Bauchrutscher
-    const walk = k < 0.3
-    const x = walk ? 220 + k * 60 : 238 + easeOut(range(k, 0.3, 1)) * 140
-    const q = this.at(v, x, 26)
-    if (walk) {
-      const spr = Math.floor(t * 8) % 2 ? this.s.penguinA! : this.s.penguinB!
-      ag.drawImage(spr, q.x - spr.width, q.y - spr.height * 2, spr.width * 2, spr.height * 2)
-    } else {
-      const spr = this.s.slide!
-      ag.drawImage(spr, q.x - spr.width, q.y - spr.height * 2 + 2, spr.width * 2, spr.height * 2)
-      // Schneespritzer
-      for (let i = 0; i < 6; i++) {
-        const ph = (t * 4 + hash(i)) % 1
-        ag.fillStyle = `rgba(240,248,255,${1 - ph})`
-        ag.fillRect(q.x - spr.width - 2 - Math.round(ph * 10), q.y - Math.round(ph * 6 * hash(i + 1)), 1, 1)
+    const { penguins, ball } = colonyAt(this.c, t)
+    const S = 2
+    if (ball) {
+      const q = this.at(v, ball.x, ball.y)
+      const r = Math.round(ball.r)
+      ag.fillStyle = 'rgba(10,20,40,0.3)'
+      ag.fillRect(q.x - r, q.y - 1, r * 2, 2)
+      for (let y = -r; y <= r; y++) {
+        for (let x = -r; x <= r; x++) {
+          if (x * x + y * y > r * r) continue
+          const shadeK = (x + y) / (2 * r)
+          const speck = ((x + ball.spin) * 7 + y * 13) % 11 === 0
+          ag.fillStyle = speck ? '#b9cde6' : shadeK > 0.35 ? '#c9daf0' : '#f4f8ff'
+          ag.fillRect(q.x + x, q.y - r + y - 1, 1, 1)
+        }
+      }
+    }
+    for (const p of penguins) {
+      const spr = this.pen.get(p)
+      const q = this.at(v, p.x, p.y)
+      const w = spr.width * S
+      const h = spr.height * S
+      // Schatten auf dem Eis
+      ag.fillStyle = `rgba(8,16,32,${p.lift > 0 ? 0.18 : 0.3})`
+      ag.fillRect(q.x - Math.round(w * 0.35), q.y - 1, Math.round(w * 0.7), 2)
+      const lift = Math.round(p.lift)
+      if (p.pose === 'tumble') {
+        ag.save()
+        ag.translate(q.x, q.y - h / 2)
+        ag.rotate((p.rot % 4) * (Math.PI / 2))
+        ag.drawImage(spr, -w / 2, -h / 2, w, h)
+        ag.restore()
+      } else {
+        ag.drawImage(spr, q.x - Math.round(w / 2), q.y - h - lift, w, h)
+      }
+      // Schneespritzer beim Bauchrutschen
+      if (p.pose === 'slide') {
+        for (let i = 0; i < 5; i++) {
+          const ph = (t * 5 + i * 0.2) % 1
+          ag.fillStyle = `rgba(240,248,255,${1 - ph})`
+          ag.fillRect(q.x - Math.round(w / 2) - 2 - Math.round(ph * 12), q.y - 2 - Math.round(ph * 7 * ((i % 3) / 2)), 1, 1)
+        }
       }
     }
   }

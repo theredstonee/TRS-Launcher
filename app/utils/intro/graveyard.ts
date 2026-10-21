@@ -444,7 +444,7 @@ export class GraveyardScene extends IntroStage {
       for (const s of this.stones) {
         if (!s.candle) continue
         const q = this.at(v, s.x + s.w + 2, -1)
-        const fl = 0.7 + 0.3 * Math.sin(t * 17 + s.x)
+        const fl = this.flick(0.7 + 0.3 * Math.sin(t * 17 + s.x))
         ag.drawImage(this.glowSprite('#ff9a3a'), q.x - 8, q.y - 12, 16, 16)
         ag.globalCompositeOperation = 'source-over'
         ag.fillStyle = '#e8e0d0'
@@ -463,7 +463,7 @@ export class GraveyardScene extends IntroStage {
           const gx = 300 + k * 70
           const gy = -8 - easeOut(Math.min(1, k * 3)) * 26 + Math.sin(t * 3) * 3
           const q = this.at(v, gx, gy)
-          ag.globalAlpha = 0.75 * Math.sin(Math.PI * k) * (0.8 + 0.2 * Math.sin(t * 9))
+          ag.globalAlpha = 0.75 * Math.sin(Math.PI * k) * this.flick(0.8 + 0.2 * Math.sin(t * 9))
           ag.drawImage(this.s.ghost!, q.x - 12, q.y - 12, 24, 24)
           ag.globalAlpha = 1
           ag.globalCompositeOperation = 'lighter'
@@ -483,11 +483,11 @@ export class GraveyardScene extends IntroStage {
         if (q.x < -30 || q.x > v.bw + 30) return
         if (lit) {
           const ign = easeOut(range(t, lt!, lt! + 0.15))
-          const fl = 0.85 + 0.15 * Math.sin(t * 13 + idx) * Math.sin(t * 7 + idx * 2)
+          const fl = this.flick(0.85 + 0.15 * Math.sin(t * 13 + idx) * Math.sin(t * 7 + idx * 2))
           ag.globalCompositeOperation = 'lighter'
           ag.globalAlpha = ign * fl
           ag.drawImage(this.glowSprite('#ff8a2a'), q.x - 34, q.y - 30, 68, 50)
-          ag.globalAlpha = 0.6 * decay(t - lt!, 5)
+          ag.globalAlpha = this.calm ? 0 : 0.6 * decay(t - lt!, 5)
           ag.drawImage(this.glowSprite('#fff2b0'), q.x - 20, q.y - 26, 40, 40)
           ag.globalAlpha = 1
           ag.globalCompositeOperation = 'source-over'
@@ -535,7 +535,7 @@ export class GraveyardScene extends IntroStage {
     const ag = this.ag
     const b = this.bigBox(v)
     if (b.x > v.bw + 40 || b.x + b.w < -40) return
-    const pre = t >= c.hush && t < c.impact ? (Math.sin((t - c.hush) * 40) > 0.3 ? 0.5 : 0.1) : 0
+    const pre = t >= c.hush && t < c.impact ? (this.calm ? 0.45 * range(t, c.hush, c.impact) : Math.sin((t - c.hush) * 40) > 0.3 ? 0.5 : 0.1) : 0
     const lit = t >= c.impact ? 1 : pre
     // Körper (Ellipse mit Rippen)
     for (let y = 0; y < b.h; y++) {
@@ -577,8 +577,8 @@ export class GraveyardScene extends IntroStage {
       ag.globalAlpha = lit
       ag.drawImage(this.glowSprite('#ff8a2a'), b.x - 40, b.y - 40, b.w + 80, b.h + 80)
       if (t >= c.impact) {
-        const k = easeOut(range(t, c.impact, c.impact + 0.5))
-        ag.globalAlpha = 1 - k * 0.5
+        const k = easeOut(range(t, c.impact, c.impact + (this.calm ? 1.1 : 0.5)))
+        ag.globalAlpha = (1 - k * 0.5) * (this.calm ? 0.6 : 1)
         ag.drawImage(this.glowSprite('#fff2b0'), b.x - 120 * k, b.y - 120 * k, b.w + 240 * k, b.h + 240 * k)
       }
       ag.globalAlpha = 1

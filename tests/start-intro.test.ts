@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_INTRO_DESIGN, INTRO_DESIGNS, introDesignById, pickIntroDesign } from '../app/utils/intro/designs'
 import { FROST_CUES } from '../app/utils/intro/frost'
 import { GRAVEYARD_CUES, LANTERNS } from '../app/utils/intro/graveyard'
+import { colonyAt, HOMES } from '../app/utils/intro/penguins'
 import {
   introDay,
   introReduced,
   parseIntroMemory,
   parseIntroPrefs,
   pickIntroLength,
+  shouldAskFlicker,
   shouldPlayIntro,
 } from '../app/utils/intro/select'
 import { planDungeon, planFrost, planGraveyard, type SfxEvent } from '../app/utils/intro/sfx'
@@ -44,9 +46,21 @@ describe('Start-Animation: welche Länge', () => {
     expect(parseIntroMemory('{kaputt')).toBeNull()
     expect(parseIntroMemory('{"day":1}')).toBeNull()
     expect(parseIntroMemory('{"day":"2026-10-21","version":"0.26.0"}')).toEqual({ day: '2026-10-21', version: '0.26.0' })
-    expect(parseIntroPrefs(null)).toEqual({ enabled: true, sound: true, motion: 'full' })
-    expect(parseIntroPrefs('{"enabled":false,"sound":false,"motion":"reduced"}')).toEqual({ enabled: false, sound: false, motion: 'reduced' })
+    expect(parseIntroPrefs(null)).toEqual({ enabled: true, sound: true, motion: 'full', flicker: true, flickerAsked: false })
+    expect(parseIntroPrefs('{"enabled":false,"sound":false,"motion":"reduced","flicker":false,"flickerAsked":true}')).toEqual({
+      enabled: false,
+      sound: false,
+      motion: 'reduced',
+      flicker: false,
+      flickerAsked: true,
+    })
     expect(parseIntroPrefs('nope').enabled).toBe(true)
+  })
+
+  it('fragt nach Flackern nur einmal und nicht bei reduzierter Bewegung', () => {
+    expect(shouldAskFlicker({ flickerAsked: false }, false)).toBe(true)
+    expect(shouldAskFlicker({ flickerAsked: true }, false)).toBe(false)
+    expect(shouldAskFlicker({ flickerAsked: false }, true)).toBe(false)
   })
 
   it('lokaler Kalendertag und reduzierte Bewegung', () => {
@@ -138,6 +152,34 @@ describe('Start-Animation: Zeitpläne', () => {
       for (let i = 1; i < c.cam.length; i++) expect(c.cam[i]![0]).toBeGreaterThan(c.cam[i - 1]![0])
       checkPlan(planFrost(c), c)
     }
+  })
+
+  it('Pinguin-Kolonie: kommt herein, purzelt, steht am Ende wieder auf ihren Plätzen und jubelt beim Schlag', () => {
+    for (const len of INTRO_LENGTHS) {
+      const c = FROST_CUES[len]
+      for (const t of [...c.slides, ...c.hops]) expect(t).toBeLessThan(c.hush)
+      if (c.slip !== null) expect(c.slip).toBeLessThan(c.hush)
+      const hush = colonyAt(c, c.hush + 0.1)
+      // alle Großen + Baby sind da und schauen nach oben
+      expect(hush.penguins.filter((p) => !p.baby)).toHaveLength(HOMES.length)
+      expect(hush.penguins.some((p) => p.baby)).toBe(true)
+      for (const p of hush.penguins) if (!p.baby && p.id !== 7) expect(p.pose).toBe('look')
+      for (const p of hush.penguins) if (!p.baby && p.id !== 7) expect(p.x).toBeCloseTo(HOMES[p.id]![0], 0)
+      const cheer = colonyAt(c, c.impact + 0.1)
+      for (const p of cheer.penguins) if (!p.baby && p.id !== 7) expect(p.pose).toBe('cheer')
+      // nach Tiefe sortiert (hinten zuerst)
+      for (let i = 1; i < cheer.penguins.length; i++) expect(cheer.penguins[i]!.y).toBeGreaterThanOrEqual(cheer.penguins[i - 1]!.y)
+    }
+    const long = FROST_CUES.long
+    // Rutscher sind vor ihrem Start noch nicht da, beim Rutschen auf dem Bauch
+    expect(colonyAt(long, long.slides[0]! - 0.01).penguins.some((p) => p.id === 0)).toBe(false)
+    expect(colonyAt(long, long.slides[0]! + 0.2).penguins.find((p) => p.id === 0)?.pose).toBe('slide')
+    expect(colonyAt(long, long.slip! + 0.1).penguins.find((p) => p.id === 2)?.pose).toBe('tumble')
+    expect(colonyAt(long, long.hops[0]! + 0.15).penguins.find((p) => p.id === 0)?.lift).toBeGreaterThan(0)
+    // Der Schneeball wächst
+    const r0 = colonyAt(long, long.snowball![0] + 0.1).ball!.r
+    const r1 = colonyAt(long, long.snowball![1]).ball!.r
+    expect(r1).toBeGreaterThan(r0)
   })
 
   it('alle Szenen-Sets zünden zur selben Zeit (ein Jingle-Schnitt je Länge)', () => {

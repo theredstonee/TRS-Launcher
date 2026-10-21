@@ -16,6 +16,8 @@ export interface IntroPlayOptions {
   design: IntroDesign
   length: IntroLength
   reduced?: boolean
+  /** Ohne Flackern und Lichtblitze (gleiche Szenen und Musik). */
+  calm?: boolean
   sound?: boolean
   volume?: number
   /** Jingle (URL oder Lader) oder null = nur Effekte. Sein Schlag (`design.audio.jingleHit`) liegt auf `impact`. */
@@ -69,6 +71,7 @@ export class IntroPlayer {
   constructor(private readonly o: IntroPlayOptions) {
     const made = createIntroScene(o.canvas, o.design, o.length, {
       reduced: !!o.reduced,
+      calm: !!o.calm,
       maxPixels: o.mobile ? 1280 * 720 : 2560 * 1440,
       dprCap: o.mobile ? 1.5 : 2,
     })

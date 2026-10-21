@@ -10,6 +10,11 @@ export const INTRO_FONT = '"Pixelify Sans Variable", "Pixelify Sans", "Segoe UI"
 
 export interface IntroStageOptions {
   reduced?: boolean
+  /**
+   * Ruhig („Ohne Flackern“): gleiche Szenen, Kamera und Musik, aber kein Flackern, keine Lichtblitze, keine
+   * Helligkeits-Pulse auf den Schlägen – der Schlag wird ein weiches Aufblühen statt eines weißen Blitzes.
+   */
+  calm?: boolean
   /** Größte Leinwand in Gerätepixeln (Leistung, z. B. Handy kleiner). */
   maxPixels?: number
   /** Obergrenze für devicePixelRatio. */
@@ -82,6 +87,7 @@ export abstract class IntroStage implements IntroScene {
     this.g = g
     this.opts = {
       reduced: options.reduced ?? false,
+      calm: options.calm ?? false,
       maxPixels: options.maxPixels ?? 2560 * 1440,
       dprCap: options.dprCap ?? 2,
       wordmark: options.wordmark ?? 'TRS LAUNCHER',
@@ -146,6 +152,16 @@ export abstract class IntroStage implements IntroScene {
 
   get size() {
     return { w: this.W, h: this.H }
+  }
+
+  /** Ruhige Fassung (ohne Flackern/Blitze). */
+  protected get calm() {
+    return this.opts.calm
+  }
+
+  /** Flacker-Faktor: im ruhigen Modus konstant 1. */
+  protected flick(v: number) {
+    return this.opts.calm ? 1 : v
   }
 
   /** Ein Bild zur Zeit t. */
@@ -245,12 +261,13 @@ export abstract class IntroStage implements IntroScene {
     vg.addColorStop(1, `rgba(0,0,0,${vignette})`)
     g.fillStyle = vg
     g.fillRect(0, 0, W, H)
-    const pat = this.grain[this.frameNo % this.grain.length]
+    const pat = this.grain[this.opts.calm ? 0 : this.frameNo % this.grain.length]
     if (pat) {
       g.save()
-      g.globalAlpha = 0.05
+      // Körnung: ruhig = stehend und schwächer (kein Rauschen-Flimmern)
+      g.globalAlpha = this.opts.calm ? 0.025 : 0.05
       g.globalCompositeOperation = 'overlay'
-      g.translate((this.frameNo * 37) % 160, (this.frameNo * 71) % 160)
+      if (!this.opts.calm) g.translate((this.frameNo * 37) % 160, (this.frameNo * 71) % 160)
       g.fillStyle = pat
       g.fillRect(-160, -160, W + 320, H + 320)
       g.restore()
@@ -268,7 +285,8 @@ export abstract class IntroStage implements IntroScene {
       g.fillRect(0, 0, this.W, this.H)
       this.drawLogoStage(t, 1, m, t - c.impact, dark, origin, fromColor)
     }
-    const flash = t >= c.impact ? Math.exp(-(t - c.impact) * 5.5) : 0
+    // Blitz beim Schlag – ruhig: weiches Aufblühen (langsam an, langsam ab, nie grell)
+    const flash = t < c.impact ? 0 : this.opts.calm ? 0.28 * smooth(range(t, c.impact, c.impact + 0.35)) * Math.exp(-Math.max(0, t - c.impact - 0.35) * 1.6) : Math.exp(-(t - c.impact) * 5.5)
     if (flash > 0.01) {
       g.globalCompositeOperation = 'lighter'
       g.fillStyle = rgba(flashColor, flash * 0.9)

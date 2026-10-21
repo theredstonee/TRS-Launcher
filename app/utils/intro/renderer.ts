@@ -431,13 +431,13 @@ export class DungeonScene extends IntroStage {
           ag.fillRect(Math.round(tx) - 1, Math.round(ty) - 6, 2, 2)
         }
       })
-      if (on) lights.push({ x: bx, y: by + 2, r: 46, color: p.wireLight, a: 0.6 + 0.5 * decay(t - r.t, 6), bloom: 0.35 })
+      if (on) lights.push({ x: bx, y: by + 2, r: 46, color: p.wireLight, a: 0.6 + (this.calm ? 0 : 0.5 * decay(t - r.t, 6)), bloom: 0.35 })
     }
     // Lichtquellen an der Wand
     for (const tq of s.torches) {
       const lit = tq.t < 0 || t >= tq.t
       const ign = tq.t < 0 ? 1 : easeOut(range(t, tq.t, tq.t + 0.18))
-      const fl = 0.85 + 0.15 * Math.sin(t * 13 + tq.d) * Math.sin(t * 7.3 + tq.d * 2)
+      const fl = this.flick(0.85 + 0.15 * Math.sin(t * 13 + tq.d) * Math.sin(t * 7.3 + tq.d * 2))
       if (props.light === 'torch') {
         const x = projX(0, -tq.d + 0.5)
         const y = projY(0, -tq.d + 0.5, 2.1)
@@ -524,14 +524,16 @@ export class DungeonScene extends IntroStage {
             this.blit(v, spr.cv, bx, by)
           })
         }
-        lights.push({ x: projX(2.5, -dr.d), y: projY(2.5, -dr.d, 1), r: 90, color: p.wireLight, a: 0.5 * decay(tau, 5) })
+        lights.push({ x: projX(2.5, -dr.d), y: projY(2.5, -dr.d, 1), r: 90, color: p.wireLight, a: this.calm ? 0 : 0.5 * decay(tau, 5) })
       }
     }
     // Auftritt in der Nische
     if (s.cameo !== null) this.cameo(t, v, s.cameo, add, lights)
     // Lampe
     {
-      const flick = t >= c.hush && t < c.impact ? (Math.sin((t - c.hush) * 55) > 0.1 ? 1 : 0) : 0
+      // Vor dem Schlag flackert die Lampe – ruhig: sie glimmt stetig an
+      const flick = t >= c.hush && t < c.impact ? (this.calm ? 0 : Math.sin((t - c.hush) * 55) > 0.1 ? 1 : 0) : 0
+      const glim = this.calm && t >= c.hush && t < c.impact ? smooth(range(t, c.hush, c.impact)) : 0
       const on = t >= c.impact
       const spr = this.block(on || flick ? 'lampOn' : 'lampOff', 0)
       const bx = projX(WORLD.wireCol, -WORLD.lamp) + spr.ox
@@ -540,7 +542,8 @@ export class DungeonScene extends IntroStage {
       const lx = projX(WORLD.wireCol + 0.5, -WORLD.lamp + 0.5)
       const ly = projY(WORLD.wireCol + 0.5, -WORLD.lamp + 0.5, 0.6)
       if (flick) lights.push({ x: lx, y: ly, r: 90, color: p.lampOn[0], a: 0.7, bloom: 0.5 })
-      if (on) lights.push({ x: lx, y: ly, r: 140 + 600 * easeOut(range(t, c.impact, c.impact + 0.5)), color: p.lampOn[1], a: 1.3, bloom: 1.2 })
+      if (glim > 0) lights.push({ x: lx, y: ly, r: 90, color: p.lampOn[0], a: 0.6 * glim, bloom: 0.4 * glim })
+      if (on) lights.push({ x: lx, y: ly, r: 140 + 600 * easeOut(range(t, c.impact, c.impact + (this.calm ? 1.1 : 0.5))), color: p.lampOn[1], a: this.calm ? 0.9 : 1.3, bloom: this.calm ? 0.7 : 1.2 })
     }
 
     // Abgrund-Leuchten von unten (Licht an der Vorderkante)
@@ -579,7 +582,7 @@ export class DungeonScene extends IntroStage {
       const spr = this.sprites.creeper!
       const x = projX(-0.5 - back * 0.4, -d) - spr.width / 2
       const y = projY(-0.5 - back * 0.4, -d, 0) - spr.height * 2 + 4
-      const white = t > tc + 0.15 && t < tc + 0.55 && Math.sin((t - tc) * 40) > 0
+      const white = !this.calm && t > tc + 0.15 && t < tc + 0.55 && Math.sin((t - tc) * 40) > 0
       add(-0.5 - d + 0.3, 0.5, () => {
         const ag = this.ag
         const iw = spr.width * 2
@@ -630,7 +633,7 @@ export class DungeonScene extends IntroStage {
   private flame(X: number, Y: number, ign: number, t: number, seed: number) {
     const ag = this.ag
     const p = this.p
-    const f = Math.floor(t * 12 + seed * 3) % 4
+    const f = Math.floor(t * (this.calm ? 3 : 12) + seed * 3) % 4
     const h = Math.round((5 + (f % 2)) * ign)
     const sway = f === 3 ? 1 : f === 1 ? -1 : 0
     ag.fillStyle = p.flame[2]
@@ -655,7 +658,7 @@ export class DungeonScene extends IntroStage {
     ag.fillStyle = css(scale3(hex(p.iron), 0.55))
     ag.fillRect(X - 3, Y - 4, 7, 2)
     ag.fillRect(X - 3, Y + 7, 7, 2)
-    ag.fillStyle = ign > 0 ? css(mix(hex(p.flame[2]), hex(p.flame[0]), 0.4 + 0.2 * Math.sin(t * 9 + seed))) : '#203048'
+    ag.fillStyle = ign > 0 ? css(mix(hex(p.flame[2]), hex(p.flame[0]), 0.4 + (this.calm ? 0 : 0.2 * Math.sin(t * 9 + seed)))) : '#203048'
     ag.fillRect(X - 2, Y - 2, 5, 9)
     if (ign > 0) {
       ag.fillStyle = p.flame[0]

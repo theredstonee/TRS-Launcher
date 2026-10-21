@@ -22,6 +22,7 @@ export type SfxKind =
   | 'ghost'
   | 'chime'
   | 'crystal'
+  | 'boing'
 
 export interface SfxEvent {
   t: number
@@ -83,7 +84,17 @@ export function planFrost(c: FrostCues): SfxEvent[] {
   out.push({ t: first[0] + 0.3, kind: 'whoosh', dur: 2.2, level: 0.25, down: true })
   c.chimes.forEach((t, i) => out.push({ t, kind: 'chime', pan: i % 2 ? 0.5 : -0.5 }))
   c.crystals.forEach((t, i) => out.push({ t, kind: 'crystal', level: 0.6 + i * 0.12, pan: (i % 2 ? 1 : -1) * 0.4 }))
-  if (c.penguin) out.push({ t: c.penguin[0] + (c.penguin[1] - c.penguin[0]) * 0.3, kind: 'squeak' })
+  // Pinguine: Bauchrutscher, Ausrutscher, Schneeball, Hüpfer
+  c.slides.forEach((t, i) => {
+    out.push({ t, kind: 'whoosh', dur: 0.6, level: 0.22, pan: -0.5 + i * 0.25 })
+    out.push({ t: t + 0.7, kind: 'squeak', level: 0.7, pan: -0.3 + i * 0.2 })
+  })
+  if (c.slip !== null) {
+    out.push({ t: c.slip, kind: 'squeak', level: 1 })
+    for (let j = 0; j < 3; j++) out.push({ t: c.slip + j * 0.12 + 0.05, kind: 'boing', level: 0.6, pan: j * 0.2 })
+  }
+  if (c.snowball) out.push({ t: c.snowball[0], kind: 'whoosh', dur: c.snowball[1] - c.snowball[0], level: 0.12 })
+  for (const h of c.hops) out.push({ t: h, kind: 'boing', level: 0.8 })
   finale(c, out)
   return out.sort((a, b) => a.t - b.t)
 }

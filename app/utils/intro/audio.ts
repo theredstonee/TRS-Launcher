@@ -229,7 +229,7 @@ export class IntroAudio {
           this.hiss(e.t)
           break
         case 'squeak':
-          this.squeak(e.t)
+          this.squeak(e.t, pan, level)
           break
         case 'riser':
           this.riser(e.t, e.t + (e.dur ?? 1.4))
@@ -254,6 +254,9 @@ export class IntroAudio {
           break
         case 'crystal':
           this.crystal(e.t, pan, level)
+          break
+        case 'boing':
+          this.boing(e.t, pan, level)
           break
       }
     }
@@ -330,6 +333,22 @@ export class IntroAudio {
       o.start(a)
       o.stop(a + dec + 0.1)
     }
+  }
+
+  /** Kleiner Hüpfer (Pinguine): kurzer, weicher Ton nach oben. */
+  private boing(t: number, pan: number, level: number) {
+    const ctx = this.ctx!
+    const a = this.at(t)
+    const o = this.osc('triangle', 330)
+    o.frequency.setValueAtTime(300, a)
+    o.frequency.exponentialRampToValueAtTime(720, a + 0.09)
+    o.frequency.exponentialRampToValueAtTime(520, a + 0.2)
+    const g = ctx.createGain()
+    this.env(g, a, 0.09 * level, 0.004, 0.2)
+    o.connect(g)
+    this.out(g, pan, 0.25)
+    o.start(a)
+    o.stop(a + 0.26)
   }
 
   /** Frostkristall wächst: gläsernes Aufglitzern. */
@@ -767,7 +786,7 @@ export class IntroAudio {
   }
 
   /** Pinguin-Piepser. */
-  private squeak(t: number) {
+  private squeak(t: number, pan = -0.3, level = 1) {
     const ctx = this.ctx!
     for (const [dt, f0, f1] of [[0, 1100, 1500], [0.16, 1200, 1700]] as const) {
       const a = this.at(t + dt)
@@ -775,9 +794,9 @@ export class IntroAudio {
       o.frequency.setValueAtTime(f0, a)
       o.frequency.exponentialRampToValueAtTime(f1, a + 0.08)
       const g = ctx.createGain()
-      this.env(g, a, 0.08, 0.005, 0.1)
+      this.env(g, a, 0.08 * level, 0.005, 0.1)
       o.connect(g)
-      this.out(g, -0.3, 0.3)
+      this.out(g, pan, 0.3)
       o.start(a)
       o.stop(a + 0.15)
     }
