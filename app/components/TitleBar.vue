@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { MESSE } from '~/utils/messe'
 import { isTauri } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 
@@ -65,7 +66,8 @@ async function toggleMaximize() {
 
     <div data-tauri-drag-region class="min-w-0 flex-1" />
 
-    <UpdateButton />
+    <!-- Messe-Build: keine Updates (feste Fassung am Stand) -->
+    <UpdateButton v-if="!MESSE" />
 
     <!-- Laufende Instanzen und Hintergrund-Aufgaben. -->
     <RunningPill class="mr-1" />

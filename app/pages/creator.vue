@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { messeRestricted } from '~/utils/messe'
 // Creator-Programm (API §35): als Fan Codes einlösen, Creator unterstützen und
 // blockieren; als Creator das Dashboard; als Helfer (§35.9) das Dashboard eines
 // anderen Creators mit den eigenen Rechten. Oben stehen offene Einladungen,
@@ -7,6 +8,8 @@ const store = useCreatorStore()
 const trs = useTrsStore()
 const accounts = useAccountsStore()
 const route = useRoute()
+// Messe-PC: Creator-Dashboard (Konto-Daten) gesperrt
+if (messeRestricted.value) void navigateTo('/', { replace: true })
 const toasts = useToasts()
 
 /** `fan`, `own` (eigenes Dashboard) oder die UUID eines Creators, dem man hilft. */

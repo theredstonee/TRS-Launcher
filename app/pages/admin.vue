@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { messeRestricted } from '~/utils/messe'
 import type { IconName } from '~/utils/icons'
 import { kindLabel } from '~/utils/sanctions'
 import type { SearchResult } from '~/utils/team'
@@ -23,6 +24,10 @@ const team = useTeam()
 const route = useRoute()
 const router = useRouter()
 const toasts = useToasts()
+// Messe-PC: Team-Bereich gesperrt (auch per Adresse/Verlauf)
+watchEffect(() => {
+  if (messeRestricted.value && route.path.startsWith('/admin')) void router.replace('/')
+})
 
 const sections = computed(() => visibleSections(team.team.value))
 const siteSections = computed(() => visibleSections(team.team.value, websiteSections))

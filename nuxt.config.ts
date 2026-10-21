@@ -1,5 +1,14 @@
 import { fileURLToPath } from 'node:url'
+import fs from 'node:fs'
 import tailwindcss from '@tailwindcss/vite'
+
+// Messe-Build (TRS_MESSE=1, alternativ NUXT_PUBLIC_MESSE=1): Präsentation + Kiosk-Ebene. Normale Builds bekommen
+// weder die Präsentation (.messe-pitch/) noch aktive Messe-Pfade – MESSE ist dort zur Bauzeit fest `false`.
+const messe = process.env.TRS_MESSE === '1' || process.env.NUXT_PUBLIC_MESSE === '1'
+const messePitchDir = fileURLToPath(new URL('./.messe-pitch', import.meta.url))
+if (messe && !fs.existsSync(`${messePitchDir}/index.html`)) {
+  throw new Error('Messe-Build ohne Präsentation: erst `node scripts/messe/import-pitch.mjs <Ordner>` ausführen.')
+}
 
 // Tauri hat keine Server-Runtime: SPA-Modus + `nuxt generate`.
 export default defineNuxtConfig({
@@ -32,11 +41,16 @@ export default defineNuxtConfig({
   ignore: ['**/src-tauri/**'],
   // Das REC-Overlay lädt als eigenes Fenster direkt `/clip-overlay`; die Route wird sonst von
   // keiner Seite verlinkt, daher explizit mit vorbauen (eigene index.html).
-  nitro: { prerender: { routes: ['/clip-overlay'] } },
+  nitro: {
+    prerender: { routes: ['/clip-overlay'] },
+    // Nur im Messe-Build: Präsentation unter /messe-pitch/ (eingebettet per iframe).
+    publicAssets: messe ? [{ dir: messePitchDir, baseURL: '/messe-pitch', maxAge: 0 }] : [],
+  },
   vite: {
     clearScreen: false,
     // vue-i18n: nur Composition API; Nachrichten werden ohne eval übersetzt (CSP bleibt streng).
     define: {
+      'import.meta.env.VITE_TRS_MESSE': JSON.stringify(messe ? '1' : ''),
       __VUE_I18N_FULL_INSTALL__: true,
       __VUE_I18N_LEGACY_API__: false,
       __INTLIFY_PROD_DEVTOOLS__: false,

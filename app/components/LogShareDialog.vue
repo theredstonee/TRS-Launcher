@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { messeRestricted } from '~/utils/messe'
 // Log teilen: erst bestätigen (öffentlich lesbar!), dann geschwärzt auf
 // mclo.gs hochladen und den Link mit QR-Code, Kopieren und Öffnen zeigen.
 // `source` = 'live' (neuester Log der Instanz) oder die ID einer Log-Datei.
@@ -86,7 +87,7 @@ onMounted(() => {
     <template #actions>
       <template v-if="step !== 'done'">
         <button class="btn btn-ghost" @click="emit('close')">{{ t('common.actions.cancel') }}</button>
-        <button class="btn btn-primary" :disabled="step === 'uploading' || !uploadAllowed" @click="upload">
+        <button class="btn btn-primary" :disabled="step === 'uploading' || !uploadAllowed || messeRestricted" @click="upload">
           {{ step === 'uploading' ? t('crash.uploading') : t('crash.upload') }}
         </button>
       </template>

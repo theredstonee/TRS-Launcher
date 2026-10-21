@@ -1005,7 +1005,8 @@
       "textTooLong": "Titel höchstens {title} Zeichen, Text höchstens {text} Zeichen.",
       "invalidWindow": "Das Ende muss nach dem Beginn liegen.",
       "invalidOrder": "Die Reihenfolge passt nicht – bitte die Liste neu laden."
-    }
+    },
+    "messeBlocked": "Am Messe-PC nicht verfügbar."
   },
   "browse": {
     "title": "Entdecken",
@@ -7767,6 +7768,45 @@
       "keep": "Anlassen",
       "off": "Ausschalten",
       "calm": "Ohne Flackern (ruhig)"
+    }
+  },
+  "messe": {
+    "pitch": {
+      "label": "Präsentation – irgendwo tippen, um den Launcher auszuprobieren"
+    },
+    "countdown": {
+      "title": "Noch da?",
+      "hint": "Bildschirm berühren oder eine Taste drücken, um weiterzumachen."
+    },
+    "pin": {
+      "setTitle": "Personal-PIN festlegen",
+      "setHint": "Wähle eine PIN mit 4–8 Ziffern. Sie öffnet das Personal-Panel und wird zum Schließen des Launchers gebraucht.",
+      "title": "Personal-PIN",
+      "hintStaff": "PIN eingeben, um das Personal-Panel zu öffnen.",
+      "hintQuit": "PIN eingeben, um den Launcher zu schließen.",
+      "pin": "PIN",
+      "repeat": "PIN wiederholen",
+      "invalid": "Die PIN muss 4–8 Ziffern haben.",
+      "mismatch": "Die PINs stimmen nicht überein – bitte neu beginnen.",
+      "wrong": "Falsche PIN.",
+      "locked": "Zu viele Versuche – in {seconds} s erneut versuchen.",
+      "clear": "Ziffer löschen",
+      "confirm": "OK"
+    },
+    "staff": {
+      "title": "Personal-Panel",
+      "gameRunning": "Ein Spiel läuft – die Präsentation wartet, bis es geschlossen ist.",
+      "timeout": "Zurück zur Präsentation nach",
+      "timeoutHint": "Sekunden ohne Eingabe ({min}–{max}), danach 10 Sekunden Countdown.",
+      "language": "Sprache (Präsentation und Launcher)",
+      "unlock": "Personal-Modus",
+      "unlockHint": "Hebt die Besucher-Sperren (Konten, Löschen, Ordner, Einstellungen) auf, bis die Präsentation wieder startet.",
+      "fullscreen": "Vollbild",
+      "startPitch": "Präsentation jetzt starten",
+      "reset": "Demo zurücksetzen",
+      "resetHint": "Zurück zur Startseite, alle Dialoge geschlossen.",
+      "changePin": "PIN ändern",
+      "quit": "Launcher beenden"
     }
   }
 }

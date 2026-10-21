@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { messeRestricted } from '~/utils/messe'
 // Konto oben rechts in der Titelleiste: Skin-Kopf und Name, im Menü alle
 // Accounts zum Wechseln, dazu „Account hinzufügen“ und „Accounts verwalten“.
 const accounts = useAccountsStore()
@@ -94,7 +95,7 @@ onBeforeUnmount(() => {
       <p v-else class="px-2.5 pb-2 text-xs text-base-400">{{ t('accountMenu.noAccount') }}</p>
 
       <div class="my-1 h-px bg-base-700" />
-      <button class="menu-item" role="menuitem" @click="go('/accounts', { add: 'browser' })">
+      <button v-if="!messeRestricted" class="menu-item" role="menuitem" @click="go('/accounts', { add: 'browser' })">
         <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
         {{ t('accountMenu.add') }}
       </button>

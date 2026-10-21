@@ -964,7 +964,8 @@
       "textTooLong": "Başlık en fazla {title} karakter, metin en fazla {text} karakter.",
       "invalidWindow": "Bitiş, başlangıçtan sonra olmalı.",
       "invalidOrder": "Sıra uyuşmuyor – lütfen listeyi yeniden yükle."
-    }
+    },
+    "messeBlocked": "Fuar bilgisayarında kullanılamaz."
   },
   "browse": {
     "title": "Keşfet",
@@ -7086,6 +7087,45 @@
       "keep": "Açık kalsın",
       "off": "Kapat",
       "calm": "Titremesiz (sakin)"
+    }
+  },
+  "messe": {
+    "pitch": {
+      "label": "Sunum – başlatıcıyı denemek için herhangi bir yere dokun"
+    },
+    "countdown": {
+      "title": "Hâlâ orada mısın?",
+      "hint": "Devam etmek için ekrana dokun veya bir tuşa bas."
+    },
+    "pin": {
+      "setTitle": "Personel PIN’i belirle",
+      "setHint": "4–8 haneli bir PIN seç. Personel panelini açar ve başlatıcıyı kapatmak için gerekir.",
+      "title": "Personel PIN’i",
+      "hintStaff": "Personel panelini açmak için PIN’i gir.",
+      "hintQuit": "Başlatıcıyı kapatmak için PIN’i gir.",
+      "pin": "PIN",
+      "repeat": "PIN’i tekrarla",
+      "invalid": "PIN 4–8 haneli olmalı.",
+      "mismatch": "PIN’ler eşleşmiyor – baştan başla.",
+      "wrong": "Yanlış PIN.",
+      "locked": "Çok fazla deneme – {seconds} sn sonra tekrar dene.",
+      "clear": "Rakamı sil",
+      "confirm": "Tamam"
+    },
+    "staff": {
+      "title": "Personel paneli",
+      "gameRunning": "Bir oyun çalışıyor – sunum, oyun kapanana kadar bekler.",
+      "timeout": "Sunuma dönüş süresi",
+      "timeoutHint": "Giriş olmadan geçen saniye ({min}–{max}), ardından 10 saniyelik geri sayım.",
+      "language": "Dil (sunum ve başlatıcı)",
+      "unlock": "Personel modu",
+      "unlockHint": "Sunum yeniden başlayana kadar ziyaretçi kısıtlamalarını (hesaplar, silme, klasörler, ayarlar) kaldırır.",
+      "fullscreen": "Tam ekran",
+      "startPitch": "Sunumu şimdi başlat",
+      "reset": "Demoyu sıfırla",
+      "resetHint": "Tüm pencereler kapalı olarak başlangıç sayfasına döner.",
+      "changePin": "PIN’i değiştir",
+      "quit": "Başlatıcıdan çık"
     }
   }
 }

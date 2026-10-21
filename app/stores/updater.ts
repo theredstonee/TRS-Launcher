@@ -1,3 +1,4 @@
+import { MESSE } from '~/utils/messe'
 import { isTauri } from '@tauri-apps/api/core'
 import { error as logError, info as logInfo } from '@tauri-apps/plugin-log'
 import { check, type Update } from '@tauri-apps/plugin-updater'
@@ -105,7 +106,8 @@ export const useUpdaterStore = defineStore('updater', () => {
   }
 
   function start() {
-    if (started || !isTauri() || import.meta.dev) return
+    // Messe-Build: keine Updates (eigene Fassung ohne Update-Kanal)
+    if (started || !isTauri() || import.meta.dev || MESSE) return
     started = true
     loadAppInfo()
       .then((info) => (mode.value = info.capabilities.updates))

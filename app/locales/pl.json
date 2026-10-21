@@ -964,7 +964,8 @@
       "textTooLong": "Tytuł maksymalnie {title} znaków, tekst maksymalnie {text} znaków.",
       "invalidWindow": "Koniec musi być po początku.",
       "invalidOrder": "Kolejność się nie zgadza – wczytaj listę ponownie."
-    }
+    },
+    "messeBlocked": "Niedostępne na komputerze targowym."
   },
   "browse": {
     "title": "Odkrywaj",
@@ -7086,6 +7087,45 @@
       "keep": "Zostaw",
       "off": "Wyłącz",
       "calm": "Bez migotania (spokojnie)"
+    }
+  },
+  "messe": {
+    "pitch": {
+      "label": "Prezentacja – dotknij w dowolnym miejscu, aby wypróbować launcher"
+    },
+    "countdown": {
+      "title": "Jesteś tam?",
+      "hint": "Dotknij ekranu lub naciśnij klawisz, aby kontynuować."
+    },
+    "pin": {
+      "setTitle": "Ustaw PIN personelu",
+      "setHint": "Wybierz PIN z 4–8 cyfr. Otwiera panel personelu i jest potrzebny do zamknięcia launchera.",
+      "title": "PIN personelu",
+      "hintStaff": "Wpisz PIN, aby otworzyć panel personelu.",
+      "hintQuit": "Wpisz PIN, aby zamknąć launcher.",
+      "pin": "PIN",
+      "repeat": "Powtórz PIN",
+      "invalid": "PIN musi mieć 4–8 cyfr.",
+      "mismatch": "Kody PIN się różnią – zacznij od nowa.",
+      "wrong": "Nieprawidłowy PIN.",
+      "locked": "Za dużo prób – spróbuj ponownie za {seconds} s.",
+      "clear": "Usuń cyfrę",
+      "confirm": "OK"
+    },
+    "staff": {
+      "title": "Panel personelu",
+      "gameRunning": "Gra jest uruchomiona – prezentacja poczeka, aż zostanie zamknięta.",
+      "timeout": "Powrót do prezentacji po",
+      "timeoutHint": "Sekundy bez aktywności ({min}–{max}), potem 10-sekundowe odliczanie.",
+      "language": "Język (prezentacja i launcher)",
+      "unlock": "Tryb personelu",
+      "unlockHint": "Znosi ograniczenia dla odwiedzających (konta, usuwanie, foldery, ustawienia) do ponownego startu prezentacji.",
+      "fullscreen": "Pełny ekran",
+      "startPitch": "Uruchom prezentację teraz",
+      "reset": "Zresetuj demo",
+      "resetHint": "Powrót do strony startowej, wszystkie okna zamknięte.",
+      "changePin": "Zmień PIN",
+      "quit": "Zamknij launcher"
     }
   }
 }

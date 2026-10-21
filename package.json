@@ -12,7 +12,10 @@
     "tauri": "tauri",
     "app:dev": "tauri dev",
     "app:build": "tauri build",
-    "client-mod:publish": "node scripts/publish-client-mod.mjs"
+    "client-mod:publish": "node scripts/publish-client-mod.mjs",
+    "messe:pitch": "node scripts/messe/import-pitch.mjs",
+    "messe:dev": "tauri dev --config src-tauri/tauri.messe.conf.json",
+    "messe:build": "node scripts/messe/build.mjs"
   },
   "dependencies": {
     "@fontsource-variable/pixelify-sans": "^5.3.0",
