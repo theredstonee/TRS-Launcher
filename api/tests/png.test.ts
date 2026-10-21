@@ -44,7 +44,7 @@ describe('cape upload sanitizing', () => {
   it('accepts a 1024x512x32 strip (the pixel maximum)', () => {
     const out = sanitizeCapeUpload(solidPng(1024, 512 * 32), { frames: 32 })
     expect(out).toMatchObject({ width: 1024, height: 512, frames: 32, scale: 16, source: 'full' })
-  })
+  }, 30_000) // 64 MB Pixel kodieren dauert auf CI-Runnern länger als die 5 s Standard
 
   it('rejects 33 frames', () => {
     expect(code(() => sanitizeCapeUpload(solidPng(64, 32 * 33)))).toBe('invalid_dimensions')
