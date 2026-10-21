@@ -2395,7 +2395,12 @@
         "full": "Sempre ativadas",
         "system": "Como no Windows/sistema",
         "reduced": "Reduzir animações"
-      }
+      },
+      "startIntroTitle": "Animação de abertura em toda inicialização",
+      "startIntroDescription": "Uma cena curta é exibida ao abrir o launcher – cerca de 4 segundos, um pouco mais na primeira abertura do dia. Após uma atualização ela sempre é exibida uma vez; clique ou pressione qualquer tecla para pular.",
+      "startIntroSoundTitle": "Som da animação de abertura",
+      "startIntroSoundDescription": "Música e efeitos da animação de abertura. Ficam mudos enquanto a janela do launcher não está em foco.",
+      "startIntroReplay": "Reproduzir agora"
     },
     "features": {
       "instancePage": "Página da instância",
@@ -7069,5 +7074,9 @@
       "new": "Novo",
       "event": "Evento"
     }
+  },
+  "startIntro": {
+    "label": "Animação de abertura",
+    "skip": "Clique ou pressione qualquer tecla para pular"
   }
 }

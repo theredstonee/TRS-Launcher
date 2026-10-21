@@ -2395,7 +2395,12 @@
         "full": "Toujours activées",
         "system": "Comme Windows/système",
         "reduced": "Réduire les animations"
-      }
+      },
+      "startIntroTitle": "Animation de démarrage à chaque lancement",
+      "startIntroDescription": "Une courte scène se joue à l’ouverture du launcher : environ 4 secondes, un peu plus au premier lancement de la journée. Après une mise à jour, elle se joue toujours une fois ; clique ou appuie sur une touche pour la passer.",
+      "startIntroSoundTitle": "Son de l’animation de démarrage",
+      "startIntroSoundDescription": "Musique et effets de l’animation de démarrage. Ils sont coupés tant que la fenêtre du launcher n’est pas au premier plan.",
+      "startIntroReplay": "Lire maintenant"
     },
     "features": {
       "instancePage": "Page d'instance",
@@ -7069,5 +7074,9 @@
       "new": "Nouveau",
       "event": "Événement"
     }
+  },
+  "startIntro": {
+    "label": "Animation de démarrage",
+    "skip": "Clique ou appuie sur une touche pour passer"
   }
 }

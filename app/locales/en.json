@@ -2438,7 +2438,12 @@
         "reduced": "Reduce animations"
       },
       "halloweenFlickerTitle": "Flicker & grain",
-      "halloweenFlickerDescription": "Film grain in the background and a short flicker on lightning (only during Halloween). The TRS Client uses the same setting. With animations off nothing ever flickers."
+      "halloweenFlickerDescription": "Film grain in the background and a short flicker on lightning (only during Halloween). The TRS Client uses the same setting. With animations off nothing ever flickers.",
+      "startIntroTitle": "Start animation on every launch",
+      "startIntroDescription": "A short scene plays when the launcher opens – about 4 seconds, a little longer on the first start of the day. After an update it always plays once; click or press any key to skip it.",
+      "startIntroSoundTitle": "Start animation sound",
+      "startIntroSoundDescription": "Music and sound effects of the start animation. They are muted while the launcher window is not in focus.",
+      "startIntroReplay": "Play now"
     },
     "features": {
       "instancePage": "Instance page",
@@ -7750,5 +7755,9 @@
       "new": "New",
       "event": "Event"
     }
+  },
+  "startIntro": {
+    "label": "Start animation",
+    "skip": "Click or press any key to skip"
   }
 }

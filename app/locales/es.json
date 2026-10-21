@@ -2438,7 +2438,12 @@
         "reduced": "Reducir animaciones"
       },
       "halloweenFlickerTitle": "Parpadeo y grano",
-      "halloweenFlickerDescription": "Grano de película en el fondo y un breve parpadeo con los rayos (solo durante Halloween). El TRS Client usa el mismo ajuste. Con las animaciones desactivadas nunca parpadea nada."
+      "halloweenFlickerDescription": "Grano de película en el fondo y un breve parpadeo con los rayos (solo durante Halloween). El TRS Client usa el mismo ajuste. Con las animaciones desactivadas nunca parpadea nada.",
+      "startIntroTitle": "Animación de inicio en cada arranque",
+      "startIntroDescription": "Al abrir el launcher se reproduce una breve escena: unos 4 segundos, un poco más en el primer inicio del día. Tras una actualización siempre se reproduce una vez; haz clic o pulsa cualquier tecla para saltarla.",
+      "startIntroSoundTitle": "Sonido de la animación de inicio",
+      "startIntroSoundDescription": "Música y efectos de la animación de inicio. Se silencian mientras la ventana del launcher no está en primer plano.",
+      "startIntroReplay": "Reproducir ahora"
     },
     "features": {
       "instancePage": "Página de instancia",
@@ -7750,5 +7755,9 @@
       "new": "Nuevo",
       "event": "Evento"
     }
+  },
+  "startIntro": {
+    "label": "Animación de inicio",
+    "skip": "Haz clic o pulsa cualquier tecla para saltar"
   }
 }

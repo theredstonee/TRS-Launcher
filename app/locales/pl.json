@@ -2395,7 +2395,12 @@
         "full": "Zawsze włączone",
         "system": "Jak Windows/system",
         "reduced": "Ogranicz animacje"
-      }
+      },
+      "startIntroTitle": "Animacja startowa przy każdym uruchomieniu",
+      "startIntroDescription": "Po otwarciu launchera odtwarzana jest krótka scena – około 4 sekund, trochę dłużej przy pierwszym uruchomieniu dnia. Po aktualizacji odtwarza się zawsze raz; kliknij lub naciśnij dowolny klawisz, aby ją pominąć.",
+      "startIntroSoundTitle": "Dźwięk animacji startowej",
+      "startIntroSoundDescription": "Muzyka i efekty animacji startowej. Są wyciszone, gdy okno launchera nie jest aktywne.",
+      "startIntroReplay": "Odtwórz teraz"
     },
     "features": {
       "instancePage": "Strona instancji",
@@ -7069,5 +7074,9 @@
       "new": "Nowy",
       "event": "Wydarzenie"
     }
+  },
+  "startIntro": {
+    "label": "Animacja startowa",
+    "skip": "Kliknij lub naciśnij dowolny klawisz, aby pominąć"
   }
 }

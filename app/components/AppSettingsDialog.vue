@@ -468,6 +468,23 @@ async function allowFirewall() {
           <option v-for="mode in motionModes" :key="mode" :value="mode">{{ t(`settings.appearance.motionModes.${mode}`) }}</option>
         </select>
       </SettingRow>
+      <SettingRow :title="t('settings.appearance.startIntroTitle')" :description="t('settings.appearance.startIntroDescription')" data-testid="settings-start-intro">
+        <div class="flex items-center gap-2">
+          <button type="button" class="btn btn-ghost shrink-0 py-1.5 text-xs" @click="replayStartIntro('long')">{{ t('settings.appearance.startIntroReplay') }}</button>
+          <ToggleSwitch
+            :model-value="form.ui.startIntro !== false"
+            :label="t('settings.appearance.startIntroTitle')"
+            @update:model-value="(on: boolean) => form && (form.ui.startIntro = on)"
+          />
+        </div>
+      </SettingRow>
+      <SettingRow :title="t('settings.appearance.startIntroSoundTitle')" :description="t('settings.appearance.startIntroSoundDescription')">
+        <ToggleSwitch
+          :model-value="form.ui.startIntroSound !== false"
+          :label="t('settings.appearance.startIntroSoundTitle')"
+          @update:model-value="(on: boolean) => form && (form.ui.startIntroSound = on)"
+        />
+      </SettingRow>
     </div>
 
     <!-- Funktionen ------------------------------------------------------------- -->

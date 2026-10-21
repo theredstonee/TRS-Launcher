@@ -2395,7 +2395,12 @@
         "full": "Her zaman açık",
         "system": "Windows/sisteme göre",
         "reduced": "Animasyonları azalt"
-      }
+      },
+      "startIntroTitle": "Her açılışta açılış animasyonu",
+      "startIntroDescription": "Başlatıcı açılırken kısa bir sahne oynar – yaklaşık 4 saniye, günün ilk açılışında biraz daha uzun. Güncellemeden sonra her zaman bir kez oynar; geçmek için tıkla veya herhangi bir tuşa bas.",
+      "startIntroSoundTitle": "Açılış animasyonu sesi",
+      "startIntroSoundDescription": "Açılış animasyonunun müziği ve efektleri. Başlatıcı penceresi odakta değilken sessiz kalır.",
+      "startIntroReplay": "Şimdi oynat"
     },
     "features": {
       "instancePage": "Kurulum sayfası",
@@ -7069,5 +7074,9 @@
       "new": "Yeni",
       "event": "Etkinlik"
     }
+  },
+  "startIntro": {
+    "label": "Açılış animasyonu",
+    "skip": "Geçmek için tıkla veya herhangi bir tuşa bas"
   }
 }

@@ -2395,7 +2395,12 @@
         "full": "Altijd aan",
         "system": "Zoals Windows/systeem",
         "reduced": "Animaties beperken"
-      }
+      },
+      "startIntroTitle": "Startanimatie bij elke start",
+      "startIntroDescription": "Bij het openen van de launcher speelt een korte scène – ongeveer 4 seconden, iets langer bij de eerste start van de dag. Na een update speelt ze altijd één keer; klik of druk op een toets om over te slaan.",
+      "startIntroSoundTitle": "Geluid van de startanimatie",
+      "startIntroSoundDescription": "Muziek en effecten van de startanimatie. Ze zijn gedempt zolang het launchervenster niet op de voorgrond staat.",
+      "startIntroReplay": "Nu afspelen"
     },
     "features": {
       "instancePage": "Instantiepagina",
@@ -7069,5 +7074,9 @@
       "new": "Nieuw",
       "event": "Evenement"
     }
+  },
+  "startIntro": {
+    "label": "Startanimatie",
+    "skip": "Klik of druk op een toets om over te slaan"
   }
 }

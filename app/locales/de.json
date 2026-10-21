@@ -2438,7 +2438,12 @@
         "reduced": "Animationen reduzieren"
       },
       "halloweenFlickerTitle": "Flackern & Rauschen",
-      "halloweenFlickerDescription": "Filmkorn-Rauschen im Hintergrund und kurzes Aufflackern bei Blitzen (nur während Halloween). Der TRS Client nutzt dieselbe Einstellung. Bei „Animationen aus“ flackert nie etwas."
+      "halloweenFlickerDescription": "Filmkorn-Rauschen im Hintergrund und kurzes Aufflackern bei Blitzen (nur während Halloween). Der TRS Client nutzt dieselbe Einstellung. Bei „Animationen aus“ flackert nie etwas.",
+      "startIntroTitle": "Start-Animation bei jedem Start",
+      "startIntroDescription": "Beim Öffnen des Launchers läuft eine kurze Szene – etwa 4 Sekunden, beim ersten Start des Tages etwas länger. Nach Updates läuft sie immer einmal; ein Klick oder eine beliebige Taste überspringt sie.",
+      "startIntroSoundTitle": "Ton der Start-Animation",
+      "startIntroSoundDescription": "Musik und Effekte der Start-Animation. Solange das Launcher-Fenster nicht im Vordergrund ist, bleiben sie stumm.",
+      "startIntroReplay": "Jetzt abspielen"
     },
     "features": {
       "instancePage": "Instanz-Seite",
@@ -7750,5 +7755,9 @@
       "new": "Neu",
       "event": "Event"
     }
+  },
+  "startIntro": {
+    "label": "Start-Animation",
+    "skip": "Klicken oder beliebige Taste zum Überspringen"
   }
 }
