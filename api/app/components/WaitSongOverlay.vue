@@ -22,6 +22,12 @@ type Phase = 'ready' | 'playing' | 'done'
 const phase = ref<Phase>('ready')
 const paused = ref(false)
 const muted = ref(false)
+/** Läuft gerade Vollbild? Verlässt er es, zeigt das Video einen Knopf zum Zurückkehren. */
+const fullscreen = ref(false)
+const canFullscreen = ref(false)
+function onFullscreenChange() {
+  fullscreen.value = !!document.fullscreenElement
+}
 const progress = ref(0)
 const idle = ref(false)
 const canvasEl = ref<HTMLCanvasElement | null>(null)
@@ -262,6 +268,8 @@ onMounted(() => {
   still()
   document.addEventListener('keydown', onKey)
   document.addEventListener('visibilitychange', onVisibility)
+  document.addEventListener('fullscreenchange', onFullscreenChange)
+  canFullscreen.value = !!document.fullscreenEnabled && !props.preview?.still
   document.documentElement.style.overflow = 'hidden'
   rootEl.value?.focus()
   if (props.preview?.still) void play()
@@ -274,6 +282,7 @@ onBeforeUnmount(() => {
   clearTimeout(idleTimer)
   document.removeEventListener('keydown', onKey)
   document.removeEventListener('visibilitychange', onVisibility)
+  document.removeEventListener('fullscreenchange', onFullscreenChange)
   document.documentElement.style.overflow = ''
   if (audio) {
     audio.removeAttribute('src')
@@ -324,8 +333,13 @@ onBeforeUnmount(() => {
           </svg>
         </button>
       </div>
+      <button v-if="canFullscreen && !fullscreen" type="button" class="fs-pill" @click="enterFullscreen">
+        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg>
+        <span>Mit Vollbild</span>
+      </button>
       <div v-if="paused" class="paused">
         <button type="button" class="play" @click="togglePause()"><SiteIcon name="play" class="size-6" /><span>Weiter</span></button>
+        <button v-if="canFullscreen && !fullscreen" type="button" class="fs-pill static" @click="enterFullscreen(); togglePause()">Weiter mit Vollbild</button>
       </div>
     </template>
 
@@ -455,6 +469,26 @@ onBeforeUnmount(() => {
   transform-origin: left;
   box-shadow: 0 0 10px rgb(255 90 77 / 0.7);
 }
+.fs-pill {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid rgb(255 255 255 / 0.25);
+  border-radius: 999px;
+  background: rgb(229 50 45 / 0.92);
+  padding: 0.55rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.45);
+  animation: fs-pulse 2s ease-in-out infinite;
+}
+.fs-pill.static { position: static; margin-top: 0.8rem; animation: none; }
+@keyframes fs-pulse { 50% { box-shadow: 0 0 0 6px rgb(229 50 45 / 0.25), 0 8px 30px rgb(0 0 0 / 0.45); } }
 .controls {
   position: absolute;
   right: 1rem;
