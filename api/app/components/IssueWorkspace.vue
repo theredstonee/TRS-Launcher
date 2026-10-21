@@ -12,7 +12,7 @@ const { account, load } = useAccount()
 
 const { data: summary, refresh } = await useAsyncData<IssueSummary | null>(
   'issue-summary',
-  () => $fetch<IssueSummary>('/v1/issues/summary', { credentials: 'same-origin' }).catch(() => null),
+  () => apiFetch<IssueSummary>('/v1/issues/summary', { credentials: 'same-origin' }).catch(() => null),
 )
 onMounted(async () => {
   if (await load()) void refresh()

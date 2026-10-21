@@ -35,12 +35,12 @@ type Data = { kind: 'board', board: RoadmapResult } | { kind: 'list', list: Issu
 const fetchKey = computed(() => (view.value === 'board' ? `ib-${filter.value}` : `il-${filter.value}-${sort.value}-${page.value}-${closed.value}`))
 async function fetchData(): Promise<Data> {
   if (view.value === 'board') {
-    return { kind: 'board', board: await $fetch<RoadmapResult>('/v1/issues/roadmap', { query: filter.value ? { filter: filter.value } : {}, credentials: 'same-origin' }) }
+    return { kind: 'board', board: await apiFetch<RoadmapResult>('/v1/issues/roadmap', { query: filter.value ? { filter: filter.value } : {}, credentials: 'same-origin' }) }
   }
   const query: Record<string, string | number> = { sort: sort.value, page: page.value, per: 25 }
   if (filter.value) query.filter = filter.value
   if (closed.value) query.closed = '1'
-  return { kind: 'list', list: await $fetch<IssueListResult>('/v1/issues', { query, credentials: 'same-origin' }) }
+  return { kind: 'list', list: await apiFetch<IssueListResult>('/v1/issues', { query, credentials: 'same-origin' }) }
 }
 const { data, error, refresh, status } = await useAsyncData<Data>(() => fetchKey.value, fetchData, { deep: true })
 onMounted(async () => {
@@ -129,7 +129,7 @@ async function more(statusKey: IssueStatus) {
   try {
     const q: Record<string, string | number> = { column: statusKey, offset: col.issues.length }
     if (filter.value) q.filter = filter.value
-    const r = await $fetch<{ column: RoadmapColumnView }>('/v1/issues/roadmap', { query: q, credentials: 'same-origin' })
+    const r = await apiFetch<{ column: RoadmapColumnView }>('/v1/issues/roadmap', { query: q, credentials: 'same-origin' })
     const known = new Set(col.issues.map((i) => i.number))
     col.issues.push(...r.column.issues.filter((i) => !known.has(i.number)))
     col.total = r.column.total

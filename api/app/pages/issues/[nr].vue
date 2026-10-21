@@ -16,7 +16,7 @@ const siteUrl = useSiteUrl()
 
 const { data } = await useAsyncData<IssuePageData | null>(
   () => `issue-page-${nr.value}`,
-  () => (nr.value ? $fetch<IssuePageData>(`/v1/issues/${nr.value}`).catch(() => null) : Promise.resolve(null)),
+  () => (nr.value ? apiFetch<IssuePageData>(`/v1/issues/${nr.value}`).catch(() => null) : Promise.resolve(null)),
 )
 const issue = computed(() => data.value?.issue ?? null)
 if (!issue.value && import.meta.server) {

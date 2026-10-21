@@ -42,7 +42,7 @@ async function reload() {
   }
   loading.value = true
   try {
-    data.value = await $fetch<IssuePageData>(`/v1/issues/${nr.value}`, { credentials: 'same-origin' })
+    data.value = await apiFetch<IssuePageData>(`/v1/issues/${nr.value}`, { credentials: 'same-origin' })
     missing.value = false
   } catch {
     if (!data.value) missing.value = true
