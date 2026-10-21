@@ -243,6 +243,8 @@ export interface CreatorPackRef {
 export interface CreatorSelf {
   uuid: string
   name: string
+  /** Mojang-Skin (für den Kopf auf der Website), sonst `null`. */
+  skin: string | null
   tier: CreatorTier
   state: CreatorState
   reason: string | null
@@ -882,6 +884,7 @@ export function creatorSelf(ctx: AppContext, c: CreatorRow, viewer?: CreatorActo
   return {
     uuid: c.uuid,
     name: nameOf(ctx, c.uuid),
+    skin: skinOf(ctx, c.uuid),
     tier: c.tier,
     state: c.state,
     reason: c.reason,

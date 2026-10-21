@@ -4113,7 +4113,7 @@ for one with `?as=<creatorUuid>` or header `X-Creator-As: <creatorUuid>` (35.9; 
 `GET /v1/creator/dashboard` → `CreatorSelf`:
 ```json
 {
-  "uuid": "…", "name": "Pixelmaus", "tier": "partner", "state": "active", "reason": null, "since": "…",
+  "uuid": "…", "name": "Pixelmaus", "skin": "https://textures.minecraft.net/…" | null, "tier": "partner", "state": "active", "reason": null, "since": "…",
   "channels": [{ "platform": "youtube", "url": "https://…", "followers": 12000 }],
   "codes": [{ "code": "TRS-PIXELMAUS", "kind": "main", "uses": 1284, "maxUses": null, "expiresAt": null, "active": true, "createdAt": "…" }],
   "limits": { "extraCodes": 5, "maxUsesPerCode": 1000, "symbolFrames": 8, "fanCape": "standard" },
