@@ -184,13 +184,13 @@ describe('creator profile: review flow', () => {
     expect(code(() => submitProfile(env.ctx, c.uuid, { description: 'x' }))).toBe('creator_inactive')
   })
 
-  it('migration 29 is idempotent and the last one', () => {
+  it('migration 29 is idempotent', () => {
     const db = new DatabaseSync(':memory:')
     db.exec('PRAGMA foreign_keys = ON')
     migrate(db)
     migrateCreatorProfiles(db)
     migrateCreatorProfiles(db)
-    expect(MIGRATIONS.at(-1)!.version).toBe(29)
+    expect(MIGRATIONS.at(-1)!.version).toBeGreaterThanOrEqual(29)
     expect(all(db, "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'creator_profiles'")).toHaveLength(1)
   })
 })

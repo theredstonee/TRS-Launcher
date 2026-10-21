@@ -14,6 +14,7 @@ import { ConfigError, loadConfig, type Config } from '../lib/config'
 import { createContext, setContext, setReady } from '../lib/context'
 import { rotateMessageKeys, sweepTyping } from '../lib/chat'
 import { openDb } from '../lib/db'
+import { setPitchBundleLoader } from '../lib/pitch-http'
 import { sweepApplications } from '../lib/applications'
 import { seedCircuits, sweepCircuitSubmissions } from '../lib/circuits'
 import { sweepHosting } from '../lib/hosting'
@@ -76,6 +77,18 @@ export default defineNitroPlugin((nitroApp) => {
     const wasm = await codecAssets.file('webp_dec.wasm')
     if (!wasm) throw new Error('webp_dec.wasm missing in server assets')
     return wasm
+  })
+  // Pitch-Präsentation (§38): Server-Asset `pitch` (assets/pitch, scripts/pitch-import.mjs) – nur über geheime Links.
+  // Schlüssel kommen als `assets:app.js` (Trenner `:`), daraus wird der relative Pfad `assets/app.js`.
+  setPitchBundleLoader(async () => {
+    const storage = useStorage('assets:pitch')
+    const files = new Map<string, Buffer>()
+    for (const key of await storage.getKeys()) {
+      const data = toBuffer(await storage.getItemRaw(key))
+      if (data) files.set(key.split(':').join('/'), data)
+    }
+    if (!files.has('index.html')) console.warn('[trs-api] assets/pitch/index.html missing – pitch links show 404')
+    return files
   })
 
   const warn = (message: string) => console.warn(`[trs-api] ${message}`)

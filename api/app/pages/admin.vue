@@ -81,6 +81,7 @@ const allNav = computed<NavItem[]>(() => [
   { to: '/admin/issues', icon: 'bug', label: iss.value.adm.nav, count: counts.value?.issues, perm: ['issues.manage', 'issues.moderate'] },
   { to: '/admin/blog', icon: 'book', label: bt.value.adm.nav, perm: ['blog.write', 'blog.publish'] },
   { to: '/admin/featured', icon: 'star', label: a.value.nav.featured, perm: ['featured.manage'] },
+  { to: '/admin/pitch', icon: 'link', label: a.value.nav.pitch, perm: ['pitch.manage'] },
   { to: '/admin/creators', icon: 'crown', label: a.value.nav.creators, count: counts.value?.creators, perm: ['creators.review', 'creators.manage'] },
   { to: '/admin/events', icon: 'moon', label: a.value.nav.events, perm: ['events.manage'] },
   { to: '/admin/codes', icon: 'ticket', label: a.value.nav.codes, perm: ['codes'] },

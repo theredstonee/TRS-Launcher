@@ -92,6 +92,10 @@ export default defineNuxtConfig({
     // Geteilte Screenshots (§23): öffentlich per Link, aber nie indexieren; Adresse nicht weiterreichen.
     '/s/**': { headers: { 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer' } },
     '/p/**': { headers: { 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer' } },
+    // Pitch-Präsentation (§38): eigene Header (CSP für das statische Bundle) aus server/lib/pitch-http.ts.
+    '/pitch/**': { security: { headers: false } },
+    '/admin/pitch/preview': { security: { headers: false } },
+    '/admin/pitch/preview/**': { security: { headers: false } },
     // Bilder aus public/ haben keinen Hash im Namen – einen Tag zwischenspeichern, danach neu prüfen (ETag).
     '/shots/**': { headers: { 'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800' } },
     '/flags/**': { headers: { 'Cache-Control': 'public, max-age=604800' } },
@@ -108,6 +112,8 @@ export default defineNuxtConfig({
       { baseName: 'circuits', dir: '../assets/circuits', pattern: '*.json' },
       // Halloween 2026 (§36): Sticker- und Abzeichen-Bilder (stickers/<id>.png, badges/<id>.png)
       { baseName: 'halloween', dir: '../assets/halloween' },
+      // Pitch-Präsentation (§38): nur über geheime Links /pitch/<token> (nie in public/), scripts/pitch-import.mjs
+      { baseName: 'pitch', dir: '../assets/pitch' },
       // WebP-Dekoder für Chat-Bilder (libwebp als Wasm, Apache-2.0)
       { baseName: 'codecs', dir: '../node_modules/@jsquash/webp/codec/dec', pattern: '*.wasm' },
     ],

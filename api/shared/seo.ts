@@ -465,6 +465,7 @@ export function buildRobots(siteUrl: string): string {
     'Disallow: /circuits/mine',
     'Disallow: /issues/new',
     'Disallow: /issues/mine',
+    'Disallow: /pitch/',
     '',
     `Sitemap: ${trimBase(siteUrl)}/sitemap.xml`,
     '',

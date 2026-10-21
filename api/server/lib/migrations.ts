@@ -832,7 +832,38 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 29,
     run: migrateCreatorProfiles,
   },
+  {
+    // Pitch-Links (§38): geheime Links auf die Pitch-Präsentation. Gespeichert wird nur der SHA-256 des Tokens plus die
+    // letzten 4 Zeichen zur Anzeige; Aufrufe zählen. Recht `pitch.manage` für Owner und Admin. Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 30,
+    run: migratePitchLinks,
+  },
 ]
+
+/** Migration 30 (siehe oben): Pitch-Links. Exportiert für den Idempotenz-Test. */
+export function migratePitchLinks(db: DatabaseSync): void {
+  db.exec(`
+CREATE TABLE IF NOT EXISTS pitch_links (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  -- SHA-256 (hex) des Tokens; der Token selbst wird nie gespeichert
+  token_hash TEXT NOT NULL UNIQUE CHECK (length(token_hash) = 64),
+  -- letzte 4 Zeichen des Tokens (Anzeige „…abcd“)
+  token_hint TEXT NOT NULL CHECK (length(token_hint) = 4),
+  label TEXT NOT NULL CHECK (length(label) BETWEEN 1 AND 80),
+  mode TEXT NOT NULL CHECK (mode IN ('loop', 'manual')),
+  lang TEXT NOT NULL CHECK (lang IN ('de', 'en')),
+  created_by TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER,
+  revoked_at INTEGER,
+  views INTEGER NOT NULL DEFAULT 0,
+  last_view_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS pitch_links_created ON pitch_links(created_at);
+`)
+  grantBuiltin(db, { owner: ['pitch.manage'], admin: ['pitch.manage'] })
+}
 
 /** Migration 29 (siehe oben): Creator-Profile. Exportiert für den Idempotenz-Test. */
 export function migrateCreatorProfiles(db: DatabaseSync): void {

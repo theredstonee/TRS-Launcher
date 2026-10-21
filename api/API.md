@@ -4589,3 +4589,86 @@ Migration 28: tables `featured_packs` (platform data, `texts` as JSON, `badge`, 
 `rev`, `refreshed_at`; `UNIQUE (source, project_id)`) and `featured_pack_images` (`pack_id`, `kind` icon/banner, `mime`,
 `data` BLOB, `sha256`; `ON DELETE CASCADE`); permission `featured.manage` for Owner/Admin/Content. Idempotent.
 When merging: renumber if a parallel branch also added a migration 28.
+
+## 38. Pitch links (secret presentation links)
+
+The pitch presentation is a static bundle (`index.html` + `assets/…`, relative paths, no inline scripts; query
+parameters `mode=loop|manual` and `lang=de|en`). It lives in the server as the Nitro server asset `pitch`
+(`api/assets/pitch/`, **not** `public/`), so no file is reachable without a valid link. Team members with
+`pitch.manage` create unguessable links in the team area (`/admin/pitch`).
+
+Updating the bundle: `node api/scripts/pitch-import.mjs <bundle-folder>` (replaces `api/assets/pitch/` completely,
+refuses symlinks and file names outside `[A-Za-z0-9._-]`, warns about inline scripts and absolute paths), then rebuild.
+
+### 38.1 Public: `GET /pitch/{token}[/{path}]`
+
+- `token`: 32 characters base62 (`[A-Za-z0-9]{32}`, ≈ 190 bits). The server stores only its SHA-256 (lookup by hash) and
+  the last 4 characters for display.
+- `GET /pitch/{token}` (also `/pitch/{token}/` and `/pitch/{token}/index.html`) → `index.html` with
+  `<base href="/pitch/{token}/">` inserted right after `<head>` (relative paths resolve under the token even without a
+  trailing slash; the query string is left alone). `Cache-Control: no-store`. **Counts one view** (`views + 1`,
+  `lastViewAt`). 60 page requests per minute and IP (`pitchIp`, on top of the global IP limit) → `429` (plain text,
+  `Retry-After`).
+- `GET /pitch/{token}/{path}` (e.g. `assets/app.js`) → the file with its `Content-Type` (html/js/css/json/png/jpeg/webp/
+  gif/avif/svg/ico/woff2/woff/ttf/otf/wasm/mp4/webm/ogg/mp3/m4a/wav/vtt), `Cache-Control: private, max-age=3600`,
+  `ETag` (`If-None-Match` → `304`), single `Range: bytes=a-b` → `206` (`416` if out of range). Does not count as a view.
+- The path is looked up in a table of bundle files – every segment is percent-decoded on its own and must match
+  `[A-Za-z0-9_-][A-Za-z0-9._-]*`; `..`, `.`, empty segments, `\`, `:`, `%2F` inside a segment, NUL → 404.
+- Unknown/malformed/revoked/expired token, missing file → **the same generic 404 HTML page** (no hint why).
+- Headers on every answer (also 404): `Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'
+  'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:; object-src 'none';
+  base-uri 'self'; form-action 'none'; frame-ancestors 'none'`, `X-Robots-Tag: noindex, nofollow`,
+  `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, HSTS,
+  `Permissions-Policy: …, fullscreen=(self)`, `Cross-Origin-Opener-Policy`/`-Resource-Policy: same-origin`.
+  nuxt-security is switched off for `/pitch/**` (`routeRules`), the website CSP does not apply.
+- `robots.txt`: `Disallow: /pitch/`; never in the sitemap.
+
+The copyable URL is `${SITE_URL}/pitch/{token}?mode={mode}&lang={lang}` (defaults of the link); the bundle reads the
+query itself, so recipients can change it.
+
+### 38.2 Team (`requireStaff`, website session + CSRF, Bearer or `X-Admin-Key`)
+
+Permission `pitch.manage` (defaults: Owner, Admin – migration 30 only adds it to these default roles).
+
+| Route | | |
+| --- | --- | --- |
+| `GET /v1/admin/pitch-links` | `pitch.manage` | `{ links: PitchLink[] }`, newest first, incl. revoked/expired; never contains a token |
+| `POST /v1/admin/pitch-links` | `pitch.manage` | `{ label, mode?, lang?, expiresInDays? }` → `201 { link: PitchLink, url }` – the **only** time the full URL is returned |
+| `POST /v1/admin/pitch-links/{id}/revoke` | `pitch.manage` | → `{ link }`; the link answers 404 immediately; repeating is a no-op |
+| `DELETE /v1/admin/pitch-links/{id}` | `pitch.manage` | → `204` |
+
+`POST` body (strict): `label` 1–80 characters (control/invisible characters stripped, one line), `mode` `loop`
+(default) or `manual`, `lang` `de` (default) or `en`, `expiresInDays` `1 | 7 | 30 | 90 | null` (omitted/`null` = no
+expiry).
+
+```ts
+interface PitchLink {
+  id: number
+  label: string
+  mode: 'loop' | 'manual'
+  lang: 'de' | 'en'
+  tokenHint: string          // last 4 characters of the token ("…abcd")
+  status: 'active' | 'expired' | 'revoked'
+  createdBy: string          // uuid, or 'api-key'
+  createdByName: string | null
+  createdAt: string          // ISO 8601
+  expiresAt: string | null
+  revokedAt: string | null
+  views: number              // page requests (index.html) with this link
+  lastViewAt: string | null
+}
+```
+
+Errors: `400 invalid_request`, `409 pitch_limit` (at most 500 links incl. revoked/expired), `404 not_found`,
+`403 missing_permission`, `401`. Audit: `pitch.create`, `pitch.revoke`, `pitch.delete` (target = link id).
+Limits: 60 changes per minute and team member (`adminPitch`).
+
+### 38.3 Team preview: `GET /admin/pitch/preview[/{path}]`
+
+The same bundle for the team (website session or `X-Admin-Key`/Bearer with `pitch.manage`), base
+`/admin/pitch/preview/`, query passed through, **no** view counting, same headers as 38.1. Without permission → the
+generic 404 page.
+
+Migration 30: table `pitch_links` (`id`, `token_hash` UNIQUE, `token_hint`, `label`, `mode`, `lang`, `created_by`,
+`created_at`, `expires_at`, `revoked_at`, `views`, `last_view_at`); permission `pitch.manage` for Owner/Admin.
+Idempotent. When merging: renumber if a parallel branch also added a migration 30.

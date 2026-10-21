@@ -44,6 +44,9 @@ importers:
       three:
         specifier: 0.156.1
         version: 0.156.1
+      uqr:
+        specifier: 0.1.3
+        version: 0.1.3
       zod:
         specifier: ^4.6.5
         version: 4.6.5

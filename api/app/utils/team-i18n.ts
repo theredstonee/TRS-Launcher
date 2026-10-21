@@ -152,6 +152,7 @@ const en = {
       events: 'Events',
       creators: 'Creators',
       featured: 'Featured modpacks',
+      pitch: 'Pitch',
     } as Record<string, string>,
     perms: {
       'dashboard.view': 'See the overview',
@@ -193,6 +194,7 @@ const en = {
       'creators.review': 'Review creator fan symbols and fan capes',
       'creators.manage': 'Manage creators (add, tier, codes, revoke, requests, preview builds)',
       'featured.manage': 'Manage featured modpacks (add, texts, badge, order, time window)',
+      'pitch.manage': 'Create, revoke and preview secret pitch presentation links',
     } as Record<string, string>,
     roles: {
       title: 'Roles & team',
@@ -554,6 +556,7 @@ const de: TeamTexts = {
       events: 'Events',
       creators: 'Creator',
       featured: 'Empfohlene Modpacks',
+      pitch: 'Pitch',
     },
     perms: {
       'dashboard.view': 'Übersicht sehen',
@@ -595,6 +598,7 @@ const de: TeamTexts = {
       'creators.review': 'Fan-Symbole und Fan-Umhänge der Creator prüfen',
       'creators.manage': 'Creator verwalten (hinzufügen, Stufe, Codes, Entzug, Anfragen, Vorschau-Builds)',
       'featured.manage': 'Empfohlene Modpacks verwalten (hinzufügen, Texte, Abzeichen, Reihenfolge, Zeitraum)',
+      'pitch.manage': 'Geheime Links zur Pitch-Präsentation erzeugen, widerrufen und ansehen',
     },
     roles: {
       title: 'Rollen & Team',
@@ -954,6 +958,7 @@ const es: TeamTexts = {
       events: 'Eventos',
       creators: 'Creadores',
       featured: 'Modpacks destacados',
+      pitch: 'Pitch',
     },
     perms: {
       'dashboard.view': 'Ver el resumen',
@@ -995,6 +1000,7 @@ const es: TeamTexts = {
       'creators.review': 'Revisar símbolos y capas de fans de los creadores',
       'creators.manage': 'Gestionar creadores (añadir, nivel, códigos, retirar, solicitudes, versiones previas)',
       'featured.manage': 'Gestionar modpacks destacados (añadir, textos, insignia, orden, periodo)',
+      'pitch.manage': 'Crear, revocar y ver enlaces secretos de la presentación pitch',
     },
     roles: {
       title: 'Roles y equipo',

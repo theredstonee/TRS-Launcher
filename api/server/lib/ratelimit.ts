@@ -310,6 +310,11 @@ export const RULES = {
   adminFeatured: { limit: 120, windowMs: MIN },
   /** Öffentliche Liste und Bilder je IP – zusätzlich zur globalen IP-Grenze. */
   featuredPublicIp: { limit: 600, windowMs: MIN },
+  // ---- Pitch-Links (§38)
+  /** Team: Pitch-Links anlegen/widerrufen/löschen. */
+  adminPitch: { limit: 60, windowMs: MIN },
+  /** Aufrufe der Pitch-Seite (/pitch/<token>, nur die Seite selbst) je IP – zusätzlich zur globalen IP-Grenze. */
+  pitchIp: { limit: 60, windowMs: MIN },
   // ---- Creator auf der Website (§35.11)
   /** Öffentliche Creator-Liste und Creator-Seiten je IP – zusätzlich zur globalen IP-Grenze. */
   creatorsPublicIp: { limit: 240, windowMs: MIN },

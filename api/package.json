@@ -34,6 +34,7 @@
     "pngjs": "^7.0.0",
     "skinview3d": "3.4.2",
     "three": "0.156.1",
+    "uqr": "0.1.3",
     "zod": "^4.6.5"
   },
   "devDependencies": {

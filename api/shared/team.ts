@@ -42,6 +42,7 @@ export const PERMISSIONS = [
   'creators.review',
   'creators.manage',
   'featured.manage',
+  'pitch.manage',
 ] as const
 export type Permission = (typeof PERMISSIONS)[number]
 const PERMISSION_SET: ReadonlySet<string> = new Set(PERMISSIONS)
@@ -62,6 +63,7 @@ export const PERMISSION_GROUPS: { id: string, permissions: Permission[] }[] = [
   { id: 'blog', permissions: ['blog.write', 'blog.publish'] },
   { id: 'creators', permissions: ['creators.review', 'creators.manage'] },
   { id: 'featured', permissions: ['featured.manage'] },
+  { id: 'pitch', permissions: ['pitch.manage'] },
 ]
 
 /** Recht je Strafart (§22.2). */
