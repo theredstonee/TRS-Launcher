@@ -2400,7 +2400,9 @@
       "startIntroDescription": "Une courte scène se joue à l’ouverture du launcher : environ 4 secondes, un peu plus au premier lancement de la journée. Après une mise à jour, elle se joue toujours une fois ; clique ou appuie sur une touche pour la passer.",
       "startIntroSoundTitle": "Son de l’animation de démarrage",
       "startIntroSoundDescription": "Musique et effets de l’animation de démarrage. Ils sont coupés tant que la fenêtre du launcher n’est pas au premier plan.",
-      "startIntroReplay": "Lire maintenant"
+      "startIntroReplay": "Lire maintenant",
+      "startIntroFlickerTitle": "Scintillements et flashs dans l’animation de démarrage",
+      "startIntroFlickerDescription": "Torches vacillantes, flashs lumineux et pulsations sur le rythme. Désactivé : les mêmes scènes et la même musique, mais calmes – lumières stables et une douce lueur au lieu d’un flash."
     },
     "features": {
       "instancePage": "Page d'instance",
@@ -7077,6 +7079,11 @@
   },
   "startIntro": {
     "label": "Animation de démarrage",
-    "skip": "Clique ou appuie sur une touche pour passer"
+    "skip": "Clique ou appuie sur une touche pour passer",
+    "flickerTitle": "Scintillements et flashs",
+    "flickerQuestion": "Cette animation de démarrage contient des scintillements et des flashs lumineux. Veux-tu la voir avec ces effets ?",
+    "flickerOn": "Avec scintillements",
+    "flickerOff": "Sans scintillements (calme)",
+    "flickerLater": "Modifiable plus tard dans Paramètres → Apparence."
   }
 }

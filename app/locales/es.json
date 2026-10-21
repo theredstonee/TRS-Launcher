@@ -2443,7 +2443,9 @@
       "startIntroDescription": "Al abrir el launcher se reproduce una breve escena: unos 4 segundos, un poco más en el primer inicio del día. Tras una actualización siempre se reproduce una vez; haz clic o pulsa cualquier tecla para saltarla.",
       "startIntroSoundTitle": "Sonido de la animación de inicio",
       "startIntroSoundDescription": "Música y efectos de la animación de inicio. Se silencian mientras la ventana del launcher no está en primer plano.",
-      "startIntroReplay": "Reproducir ahora"
+      "startIntroReplay": "Reproducir ahora",
+      "startIntroFlickerTitle": "Parpadeo y destellos en la animación de inicio",
+      "startIntroFlickerDescription": "Antorchas parpadeantes, destellos de luz y pulsos brillantes al ritmo. Si está desactivado, se reproducen las mismas escenas y la misma música con calma: luces fijas y un brillo suave en lugar de un destello."
     },
     "features": {
       "instancePage": "Página de instancia",
@@ -7758,6 +7760,11 @@
   },
   "startIntro": {
     "label": "Animación de inicio",
-    "skip": "Haz clic o pulsa cualquier tecla para saltar"
+    "skip": "Haz clic o pulsa cualquier tecla para saltar",
+    "flickerTitle": "Parpadeo y destellos",
+    "flickerQuestion": "Esta animación de inicio contiene parpadeos y destellos de luz. ¿Quieres verla con estos efectos?",
+    "flickerOn": "Con parpadeo",
+    "flickerOff": "Sin parpadeo (tranquila)",
+    "flickerLater": "Puedes cambiarlo más tarde en Ajustes → Apariencia."
   }
 }

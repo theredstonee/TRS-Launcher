@@ -2400,7 +2400,9 @@
       "startIntroDescription": "Uma cena curta é exibida ao abrir o launcher – cerca de 4 segundos, um pouco mais na primeira abertura do dia. Após uma atualização ela sempre é exibida uma vez; clique ou pressione qualquer tecla para pular.",
       "startIntroSoundTitle": "Som da animação de abertura",
       "startIntroSoundDescription": "Música e efeitos da animação de abertura. Ficam mudos enquanto a janela do launcher não está em foco.",
-      "startIntroReplay": "Reproduzir agora"
+      "startIntroReplay": "Reproduzir agora",
+      "startIntroFlickerTitle": "Piscadas e clarões na animação de abertura",
+      "startIntroFlickerDescription": "Tochas tremeluzentes, clarões de luz e pulsos brilhantes no ritmo. Desativado: as mesmas cenas e a mesma música, mas calmas – luzes estáveis e um brilho suave em vez de um clarão."
     },
     "features": {
       "instancePage": "Página da instância",
@@ -7077,6 +7079,11 @@
   },
   "startIntro": {
     "label": "Animação de abertura",
-    "skip": "Clique ou pressione qualquer tecla para pular"
+    "skip": "Clique ou pressione qualquer tecla para pular",
+    "flickerTitle": "Piscadas e clarões",
+    "flickerQuestion": "Esta animação de abertura contém piscadas e clarões de luz. Quer vê-la com esses efeitos?",
+    "flickerOn": "Com piscadas",
+    "flickerOff": "Sem piscadas (calma)",
+    "flickerLater": "Você pode mudar isso depois em Configurações → Aparência."
   }
 }

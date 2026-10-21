@@ -2400,7 +2400,9 @@
       "startIntroDescription": "Başlatıcı açılırken kısa bir sahne oynar – yaklaşık 4 saniye, günün ilk açılışında biraz daha uzun. Güncellemeden sonra her zaman bir kez oynar; geçmek için tıkla veya herhangi bir tuşa bas.",
       "startIntroSoundTitle": "Açılış animasyonu sesi",
       "startIntroSoundDescription": "Açılış animasyonunun müziği ve efektleri. Başlatıcı penceresi odakta değilken sessiz kalır.",
-      "startIntroReplay": "Şimdi oynat"
+      "startIntroReplay": "Şimdi oynat",
+      "startIntroFlickerTitle": "Açılış animasyonunda titreme ve ışık patlamaları",
+      "startIntroFlickerDescription": "Titreyen meşaleler, ışık patlamaları ve ritimle parlayan atımlar. Kapalıyken aynı sahneler ve müzik sakin oynar: sabit ışıklar ve patlama yerine yumuşak bir parıltı."
     },
     "features": {
       "instancePage": "Kurulum sayfası",
@@ -7077,6 +7079,11 @@
   },
   "startIntro": {
     "label": "Açılış animasyonu",
-    "skip": "Geçmek için tıkla veya herhangi bir tuşa bas"
+    "skip": "Geçmek için tıkla veya herhangi bir tuşa bas",
+    "flickerTitle": "Titreme ve ışık patlamaları",
+    "flickerQuestion": "Bu açılış animasyonu titreme ve ışık patlamaları içerir. Bu efektlerle görmek ister misin?",
+    "flickerOn": "Titremeli",
+    "flickerOff": "Titremesiz (sakin)",
+    "flickerLater": "Bunu daha sonra Ayarlar → Görünüm altında değiştirebilirsin."
   }
 }

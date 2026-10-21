@@ -28,7 +28,7 @@
       advancedRendering: true, animatedBackground: cfg.animatedBackground === true, worldsTab: true, screenshotsTab: true,
       historyTab: true, sidebarRecent: true, sidebarAccount: true, hideRightSidebar: false, compactLibrary: false, showPlayTime: true,
       language: locale, motion: 'full', bigPictureOnStart: false, bigPictureAuto: true, eventIcons: true, halloweenFlicker: true, halloweenFlickerHintSeen: true,
-      startIntro: false, startIntroSound: false,
+      startIntro: false, startIntroSound: false, startIntroFlicker: true, startIntroFlickerAsked: true,
     },
     allowLogUpload: true, discordPresence: true, java: { java8: null, java17: null, java21: null, java25: null },
     clips: { enabled: false, bufferSeconds: 30, resolution: '1080p', fps: 60, quality: 'medium', encoder: 'auto', systemAudio: true, microphone: false, folder: null, maxStorageGb: 20 },

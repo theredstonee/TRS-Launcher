@@ -41,13 +41,31 @@ export function readIntroPrefs(): IntroPrefs {
 }
 
 /** Einstellungen spiegeln – aufgerufen, sobald sie geladen oder geändert sind. */
-export function mirrorIntroPrefs(ui: { startIntro?: boolean; startIntroSound?: boolean; motion?: string } | undefined) {
+export function mirrorIntroPrefs(
+  ui: { startIntro?: boolean; startIntroSound?: boolean; startIntroFlicker?: boolean; startIntroFlickerAsked?: boolean; motion?: string } | undefined,
+) {
   if (!ui) return
   try {
-    const prefs: IntroPrefs = { enabled: ui.startIntro !== false, sound: ui.startIntroSound !== false, motion: ui.motion ?? 'full' }
+    const prefs: IntroPrefs = {
+      enabled: ui.startIntro !== false,
+      sound: ui.startIntroSound !== false,
+      motion: ui.motion ?? 'full',
+      flicker: ui.startIntroFlicker !== false,
+      // Gefragt ist gefragt – auch wenn der Kern davon (noch) nichts weiß
+      flickerAsked: ui.startIntroFlickerAsked === true || readIntroPrefs().flickerAsked,
+    }
     localStorage.setItem(INTRO_PREFS_KEY, JSON.stringify(prefs))
   } catch {
     // Kein Speicher – beim nächsten Start gelten die Vorgaben.
+  }
+}
+
+/** Antwort auf die Flacker-Frage sofort lokal merken (der Kern speichert sie, sobald er bereit ist). */
+export function rememberIntroFlicker(on: boolean) {
+  try {
+    localStorage.setItem(INTRO_PREFS_KEY, JSON.stringify({ ...readIntroPrefs(), flicker: on, flickerAsked: true }))
+  } catch {
+    // egal
   }
 }
 

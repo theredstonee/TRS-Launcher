@@ -118,6 +118,10 @@ export interface UiSettings {
   startIntro?: boolean
   /** Ton der Start-Animation (ab Werk an). */
   startIntroSound?: boolean
+  /** Flackern und Lichtblitze in der Start-Animation (aus = ruhige Fassung). */
+  startIntroFlicker?: boolean
+  /** Frage nach Flackern beim ersten Start schon gestellt. */
+  startIntroFlickerAsked?: boolean
 }
 
 export interface JavaPaths {

@@ -2400,7 +2400,9 @@
       "startIntroDescription": "Bij het openen van de launcher speelt een korte scène – ongeveer 4 seconden, iets langer bij de eerste start van de dag. Na een update speelt ze altijd één keer; klik of druk op een toets om over te slaan.",
       "startIntroSoundTitle": "Geluid van de startanimatie",
       "startIntroSoundDescription": "Muziek en effecten van de startanimatie. Ze zijn gedempt zolang het launchervenster niet op de voorgrond staat.",
-      "startIntroReplay": "Nu afspelen"
+      "startIntroReplay": "Nu afspelen",
+      "startIntroFlickerTitle": "Flikkeren en lichtflitsen in de startanimatie",
+      "startIntroFlickerDescription": "Flikkerende fakkels, lichtflitsen en felle pulsen op de beat. Uit: dezelfde scènes en muziek, maar rustig – constant licht en een zachte gloed in plaats van een flits."
     },
     "features": {
       "instancePage": "Instantiepagina",
@@ -7077,6 +7079,11 @@
   },
   "startIntro": {
     "label": "Startanimatie",
-    "skip": "Klik of druk op een toets om over te slaan"
+    "skip": "Klik of druk op een toets om over te slaan",
+    "flickerTitle": "Flikkeren en lichtflitsen",
+    "flickerQuestion": "Deze startanimatie bevat flikkeringen en lichtflitsen. Wil je haar met deze effecten zien?",
+    "flickerOn": "Met flikkeren",
+    "flickerOff": "Zonder flikkeren (rustig)",
+    "flickerLater": "Later te wijzigen onder Instellingen → Weergave."
   }
 }

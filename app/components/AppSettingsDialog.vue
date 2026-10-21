@@ -478,6 +478,13 @@ async function allowFirewall() {
           />
         </div>
       </SettingRow>
+      <SettingRow :title="t('settings.appearance.startIntroFlickerTitle')" :description="t('settings.appearance.startIntroFlickerDescription')">
+        <ToggleSwitch
+          :model-value="form.ui.startIntroFlicker !== false"
+          :label="t('settings.appearance.startIntroFlickerTitle')"
+          @update:model-value="(on: boolean) => form && ((form.ui.startIntroFlicker = on), (form.ui.startIntroFlickerAsked = true))"
+        />
+      </SettingRow>
       <SettingRow :title="t('settings.appearance.startIntroSoundTitle')" :description="t('settings.appearance.startIntroSoundDescription')">
         <ToggleSwitch
           :model-value="form.ui.startIntroSound !== false"

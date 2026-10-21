@@ -332,6 +332,10 @@ pub struct UiSettings {
     pub start_intro: bool,
     /// Ton der Start-Animation (Jingle + Effekte, ab Werk an).
     pub start_intro_sound: bool,
+    /// Flackern und Lichtblitze in der Start-Animation (aus = ruhige Fassung).
+    pub start_intro_flicker: bool,
+    /// Die Frage nach Flackern/Lichtblitzen wurde beim ersten Start schon gestellt.
+    pub start_intro_flicker_asked: bool,
 }
 
 impl Default for UiSettings {
@@ -359,6 +363,8 @@ impl Default for UiSettings {
             halloween_flicker_hint_seen: false,
             start_intro: true,
             start_intro_sound: true,
+            start_intro_flicker: true,
+            start_intro_flicker_asked: false,
         }
     }
 }
@@ -845,11 +851,13 @@ mod tests {
     fn start_intro_default_on() {
         // Ältere Dateien ohne Felder: Start-Animation samt Ton an.
         let old: Settings = serde_json::from_str(r#"{"ui":{"theme":"light"}}"#).unwrap();
-        assert!(old.ui.start_intro && old.ui.start_intro_sound);
-        let ui: UiSettings = serde_json::from_value(serde_json::json!({ "startIntro": false, "startIntroSound": false })).unwrap();
-        assert!(!ui.start_intro && !ui.start_intro_sound);
+        assert!(old.ui.start_intro && old.ui.start_intro_sound && old.ui.start_intro_flicker);
+        assert!(!old.ui.start_intro_flicker_asked);
+        let ui: UiSettings = serde_json::from_value(serde_json::json!({ "startIntro": false, "startIntroSound": false, "startIntroFlicker": false, "startIntroFlickerAsked": true })).unwrap();
+        assert!(!ui.start_intro && !ui.start_intro_sound && !ui.start_intro_flicker && ui.start_intro_flicker_asked);
         let json = serde_json::to_value(&ui).unwrap();
         assert_eq!((json["startIntro"].as_bool(), json["startIntroSound"].as_bool()), (Some(false), Some(false)));
+        assert_eq!((json["startIntroFlicker"].as_bool(), json["startIntroFlickerAsked"].as_bool()), (Some(false), Some(true)));
     }
 
     #[test]

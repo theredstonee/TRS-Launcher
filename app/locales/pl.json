@@ -2400,7 +2400,9 @@
       "startIntroDescription": "Po otwarciu launchera odtwarzana jest krótka scena – około 4 sekund, trochę dłużej przy pierwszym uruchomieniu dnia. Po aktualizacji odtwarza się zawsze raz; kliknij lub naciśnij dowolny klawisz, aby ją pominąć.",
       "startIntroSoundTitle": "Dźwięk animacji startowej",
       "startIntroSoundDescription": "Muzyka i efekty animacji startowej. Są wyciszone, gdy okno launchera nie jest aktywne.",
-      "startIntroReplay": "Odtwórz teraz"
+      "startIntroReplay": "Odtwórz teraz",
+      "startIntroFlickerTitle": "Migotanie i błyski w animacji startowej",
+      "startIntroFlickerDescription": "Migoczące pochodnie, błyski światła i jasne pulsy w rytm muzyki. Po wyłączeniu te same sceny i muzyka, ale spokojnie – stałe światło i łagodna poświata zamiast błysku."
     },
     "features": {
       "instancePage": "Strona instancji",
@@ -7077,6 +7079,11 @@
   },
   "startIntro": {
     "label": "Animacja startowa",
-    "skip": "Kliknij lub naciśnij dowolny klawisz, aby pominąć"
+    "skip": "Kliknij lub naciśnij dowolny klawisz, aby pominąć",
+    "flickerTitle": "Migotanie i błyski",
+    "flickerQuestion": "Ta animacja startowa zawiera migotanie i błyski światła. Czy chcesz ją zobaczyć z tymi efektami?",
+    "flickerOn": "Z migotaniem",
+    "flickerOff": "Bez migotania (spokojnie)",
+    "flickerLater": "Możesz to później zmienić w Ustawienia → Wygląd."
   }
 }

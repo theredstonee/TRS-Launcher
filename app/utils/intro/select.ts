@@ -22,9 +22,13 @@ export interface IntroPrefs {
   sound: boolean
   /** Einstellung „Animationen“ (full | system | reduced). */
   motion: string
+  /** Flackern und Lichtblitze (aus = ruhige Fassung). */
+  flicker: boolean
+  /** Beim ersten Start schon gefragt? */
+  flickerAsked: boolean
 }
 
-export const DEFAULT_INTRO_PREFS: IntroPrefs = { enabled: true, sound: true, motion: 'full' }
+export const DEFAULT_INTRO_PREFS: IntroPrefs = { enabled: true, sound: true, motion: 'full', flicker: true, flickerAsked: false }
 
 /** Lokaler Kalendertag. */
 export function introDay(d: Date): string {
@@ -51,6 +55,8 @@ export function parseIntroPrefs(raw: string | null | undefined): IntroPrefs {
       enabled: v?.enabled !== false,
       sound: v?.sound !== false,
       motion: typeof v?.motion === 'string' ? v.motion : DEFAULT_INTRO_PREFS.motion,
+      flicker: v?.flicker !== false,
+      flickerAsked: v?.flickerAsked === true,
     }
   } catch {
     return { ...DEFAULT_INTRO_PREFS }
@@ -79,6 +85,11 @@ export function pickIntroLength(o: IntroLengthInput): IntroLength {
  */
 export function shouldPlayIntro(length: IntroLength, enabled: boolean): boolean {
   return length === 'long' || enabled
+}
+
+/** Beim ersten Start einmal fragen – nicht bei reduzierter Bewegung (dann gibt es ohnehin nur das Logo). */
+export function shouldAskFlicker(prefs: Pick<IntroPrefs, 'flickerAsked'>, reduced: boolean): boolean {
+  return !prefs.flickerAsked && !reduced
 }
 
 /** Reduzierte Bewegung aus Einstellung + System (wie `isReducedMotion`). */
