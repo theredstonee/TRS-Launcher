@@ -63,6 +63,7 @@ function play(patch: Partial<State> = {}) {
     onReady: () => {
       // Übergabe an den „Launcher“: Bühne blendet aus
       stage.classList.add('gone')
+      showBannerIfWanted()
       const cur = player
       fadeTimer = window.setTimeout(() => cur?.stop(0.2), 500)
     },
@@ -97,39 +98,40 @@ for (const b of document.querySelectorAll<HTMLButtonElement>('[data-length]')) b
 ;(document.getElementById('reduced') as HTMLButtonElement).onclick = () => play({ reduced: !state.reduced })
 ;(document.getElementById('calm') as HTMLButtonElement).onclick = () => play({ calm: !state.calm })
 
-// „Erster Start“: wie im Launcher – erstes Bild der Szene, darüber die Abfrage, danach läuft die Animation
-const ask = document.getElementById('ask') as HTMLDivElement
+// „Erster Start (Banner)“: wie im Launcher – die Animation läuft, danach erscheint einmal der Hinweis in der App
+const banner = document.getElementById('banner') as HTMLElement
+const bannerCalm = document.getElementById('banner-calm') as HTMLInputElement
+const note = document.getElementById('note') as HTMLElement
+let wantBanner = false
 function firstStart() {
-  player?.stop(0.1)
-  clearTimeout(fadeTimer)
-  stage.classList.remove('gone')
-  const design = introDesignById(state.design)
-  const still = new IntroPlayer({ canvas: cv, design, length: 'long', logo: window.__TRS_INTRO_LOGO ?? null })
-  player = still
-  still.still(0.7)
-  ask.hidden = false
-  ;(ask.querySelector('[data-calm="0"]') as HTMLButtonElement).focus()
+  banner.hidden = true
+  note.textContent = ''
+  wantBanner = true
+  play({ length: 'long', sound: true })
 }
-for (const b of ask.querySelectorAll<HTMLButtonElement>('[data-calm]')) {
-  b.onclick = (e) => {
-    e.stopPropagation()
-    ask.hidden = true
-    play({ calm: b.dataset.calm === '1', length: 'long', sound: true })
+function showBannerIfWanted() {
+  if (!wantBanner) return
+  wantBanner = false
+  bannerCalm.checked = state.calm
+  setTimeout(() => (banner.hidden = false), 450)
+}
+for (const b of banner.querySelectorAll<HTMLButtonElement>('[data-keep]')) {
+  b.onclick = () => {
+    banner.hidden = true
+    state.calm = bannerCalm.checked
+    sync()
+    note.textContent = b.dataset.keep === '1'
+      ? `Kurze Animation bleibt an${state.calm ? ' – ruhig, ohne Flackern' : ''}.`
+      : `Kurze 4-s-Animation aus (Tagesstart und Updates laufen trotzdem)${state.calm ? ' – ruhig, ohne Flackern' : ''}.`
   }
 }
-ask.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    ask.hidden = true
-    play({ calm: true, length: 'long', sound: true })
-  }
-  e.stopPropagation()
-})
 ;(document.getElementById('first') as HTMLButtonElement).onclick = () => firstStart()
 // Überspringen wie im Launcher: Klick auf die Bühne
 stage.onclick = () => {
-  if (!player || stage.classList.contains('gone') || !ask.hidden) return
+  if (!player || stage.classList.contains('gone')) return
   player.fadeAudio(0.25)
   stage.classList.add('gone')
+  showBannerIfWanted()
   const cur = player
   fadeTimer = window.setTimeout(() => cur.stop(0.1), 350)
 }
