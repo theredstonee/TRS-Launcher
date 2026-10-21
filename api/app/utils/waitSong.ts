@@ -1,4 +1,4 @@
-// „Freitag um sechs“ – kleines Chiptune-Lied mit Karaoke-Zeilen für die persönliche Wartezeit im Creator-Dashboard.
+// „Freitag um sechs am Abend“ – kleines Chiptune-Lied mit Karaoke-Zeilen für die persönliche Wartezeit im Creator-Dashboard.
 // Alles wird im Browser mit der Web Audio API erzeugt (keine Datei, nichts von außen).
 
 export interface SongLine {
@@ -6,7 +6,7 @@ export interface SongLine {
   text: string
 }
 
-export const SONG_TITLE = 'Freitag um sechs'
+export const SONG_TITLE = 'Freitag um sechs am Abend'
 
 export const SONG_LINES: SongLine[] = [
   { part: 'verse', text: 'Jeden Tag die gleiche Frage: „Ist es fertig, sag mal, wann?“' },
@@ -16,7 +16,7 @@ export const SONG_LINES: SongLine[] = [
   { part: 'chorus', text: 'Und ich schwebe überm Server, so weit weg wie ein Astronaut,' },
   { part: 'chorus', text: 'hör dein „Wann, wann, wann?“ bis hoch ins All, so laut.' },
   { part: 'chorus', text: 'Weil du so oft gefragt hast, Freund, das hast du dir gebaut:' },
-  { part: 'chorus', text: 'Für dich kommt\'s erst Freitag um sechs – der Countdown läuft, schau!' },
+  { part: 'chorus', text: 'Für dich kommt\'s erst Freitag um sechs am Abend – der Countdown läuft, schau!' },
   { part: 'verse', text: 'Alle andern sind schon drinnen, klicken rum im Dashboard,' },
   { part: 'verse', text: 'nur bei dir dreht sich die Uhr – und sie dreht sich ziemlich hart.' },
   { part: 'verse', text: 'Geduld ist auch ein Feature, das man üben kann,' },
@@ -24,9 +24,9 @@ export const SONG_LINES: SongLine[] = [
   { part: 'chorus', text: 'Und ich schwebe überm Server, so weit weg wie ein Astronaut,' },
   { part: 'chorus', text: 'hör dein „Wann, wann, wann?“ bis hoch ins All, so laut.' },
   { part: 'chorus', text: 'Weil du so oft gefragt hast, Freund, das hast du dir gebaut:' },
-  { part: 'chorus', text: 'Für dich kommt\'s erst Freitag um sechs – der Countdown läuft, schau!' },
+  { part: 'chorus', text: 'Für dich kommt\'s erst Freitag um sechs am Abend – der Countdown läuft, schau!' },
   { part: 'outro', text: 'Zehn, neun, acht … die Rakete steht bereit.' },
-  { part: 'outro', text: 'Freitag um sechs – dann ist es so weit.' },
+  { part: 'outro', text: 'Freitag um sechs am Abend – dann ist es so weit.' },
 ]
 
 const BPM = 112
