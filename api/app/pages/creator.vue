@@ -6,14 +6,16 @@ const { m, fill, date, lang } = useLang()
 const lp = useLocalePath()
 const { account, loaded, load, api, loginUrl } = useAccount()
 
-// Persönliche Wartezeit (Wunsch des Owners): Lencraft151 sieht das Dashboard erst ab 22.10.2026, 12:00 Uhr (MESZ).
+// Persönliche Wartezeit (Wunsch des Owners): Lencraft151 sieht das Dashboard erst ab Freitag, 23.10.2026, 18:00 Uhr (MESZ).
 const WAIT_UUID = '889912aeb76346ce9911a1ce629540a5'
-const WAIT_UNTIL = Date.parse('2026-10-22T12:00:00+02:00')
+const WAIT_UNTIL = Date.parse('2026-10-23T18:00:00+02:00')
 const now = ref(Date.now())
 let waitTimer: ReturnType<typeof setInterval> | undefined
 onMounted(() => { waitTimer = setInterval(() => (now.value = Date.now()), 15_000) })
 onBeforeUnmount(() => clearInterval(waitTimer))
 const waiting = computed(() => account.value?.uuid.replace(/-/g, '').toLowerCase() === WAIT_UUID && now.value < WAIT_UNTIL)
+const WAIT_MESSAGE = "Mein Lieber, da du so oft gefragt hast, kommt's für dich erst am Freitag um 18 Uhr."
+const songOpen = ref(true)
 const d = computed(() => m.value.creatorDash)
 const ct = computed(() => m.value.creators)
 
@@ -303,8 +305,12 @@ const helpingName = computed(() => my.value?.helping.find((h) => h.creator.uuid 
     </div>
 
     <div v-else-if="waiting" class="card mt-8 p-6">
-      <p class="text-lg font-semibold text-base-50">Mein Lieber, da du so oft gefragt hast, kommt's für dich erst morgen um 12 Uhr.</p>
-      <p class="mt-2 text-sm text-base-400">Freischaltung: 22.10.2026, 12:00 Uhr</p>
+      <WaitSongOverlay v-if="songOpen" :name="account!.name" :message="WAIT_MESSAGE" until="Freitag, 23.10.2026, 18:00 Uhr" @close="songOpen = false" />
+      <template v-else>
+        <p class="text-lg font-semibold text-base-50">{{ WAIT_MESSAGE }}</p>
+        <p class="mt-2 text-sm text-base-400">Freischaltung: Freitag, 23.10.2026, 18:00 Uhr</p>
+        <button type="button" class="btn btn-ghost mt-4" @click="songOpen = true"><SiteIcon name="play" class="size-4" />Lied nochmal ansehen</button>
+      </template>
     </div>
 
     <template v-else>
