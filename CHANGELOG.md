@@ -28,7 +28,12 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.26.0 – 2026-10-21 – Showcase | Schaufenster
+<!-- banner: accent=#ffb84d motif=/news/0.26.0/banner.png -->
+<!-- shots:
+/news/0.26.0/featured-carousel.png | Featured modpacks picked by the TRS team, right on the start page – install with one click | Vom TRS-Team empfohlene Modpacks direkt auf der Startseite – mit einem Klick installiert
+/news/0.26.0/featured-team.png | The team picks packs by pasting a Modrinth or CurseForge link | Das Team wählt Packs per Modrinth- oder CurseForge-Link aus
+-->
 
 ### English
 - **Featured modpacks on the start page.** The TRS team now picks modpacks from Modrinth and CurseForge that show up as a large carousel on the start page – with a short note from the team, a badge (recommended, new, event), loaders, Minecraft version and downloads. Click a slide for the project page, or install the modpack right from the slide. The list comes live from the TRS server, so new picks appear without a launcher update. Hover or focus pauses the carousel; with reduced motion it doesn't turn on its own. On phones you can swipe.
