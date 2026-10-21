@@ -421,7 +421,7 @@ const en = {
   },
   creators: {
     title: 'Creators',
-    lead: 'Creator programme: review fan symbols and fan capes, manage creators, answer requests and preview builds. Applications run through “Applications” (positions with the purpose “Creator programme”).',
+    lead: 'Creator programme: review fan symbols, fan capes and profiles, manage creators, answer requests and preview builds. Applications run through “Applications” (positions with the purpose “Creator programme”).',
     tabs: { queue: 'Review', roster: 'Creators', requests: 'Requests', previews: 'Preview builds' },
     queue: {
       empty: 'Nothing to review.',
@@ -438,6 +438,13 @@ const en = {
       message: 'Message (optional)',
       approved: 'Approved – fans see it right away.',
       rejected: 'Rejected.',
+      profile: 'Profile',
+      profileHint: 'Description and links for the public creator page',
+      previous: 'Currently public',
+      noPrevious: 'Nothing public yet.',
+      noDescription: '(no description)',
+      links: 'Links',
+      profilePresets: ['Contains advertising or unsafe links', 'A link does not belong to the creator', 'Inappropriate content', 'Other reason'],
     },
     roster: {
       search: 'Name, UUID or code',
@@ -940,7 +947,7 @@ const de: AdminTexts = {
   },
   creators: {
     title: 'Creator',
-    lead: 'Creator-Programm: Fan-Symbole und Fan-Umhänge prüfen, Creator verwalten, Anfragen beantworten, Vorschau-Builds. Bewerbungen laufen über „Bewerbungen“ (Stellen mit der Art „Creator-Programm“).',
+    lead: 'Creator-Programm: Fan-Symbole, Fan-Umhänge und Profile prüfen, Creator verwalten, Anfragen beantworten, Vorschau-Builds. Bewerbungen laufen über „Bewerbungen“ (Stellen mit der Art „Creator-Programm“).',
     tabs: { queue: 'Prüfung', roster: 'Creator', requests: 'Anfragen', previews: 'Vorschau-Builds' },
     queue: {
       empty: 'Nichts zu prüfen.',
@@ -957,6 +964,13 @@ const de: AdminTexts = {
       message: 'Nachricht (optional)',
       approved: 'Angenommen – ist sofort bei den Fans.',
       rejected: 'Abgelehnt.',
+      profile: 'Profil',
+      profileHint: 'Beschreibung und Links für die öffentliche Creator-Seite',
+      previous: 'Bisher öffentlich',
+      noPrevious: 'Noch nichts öffentlich.',
+      noDescription: '(keine Beschreibung)',
+      links: 'Links',
+      profilePresets: ['Enthält Werbung oder unsichere Links', 'Ein Link gehört nicht zum Creator', 'Unangemessener Inhalt', 'Anderer Grund'],
     },
     roster: {
       search: 'Name, UUID oder Code',
@@ -1457,7 +1471,7 @@ const es: AdminTexts = {
   },
   creators: {
     title: 'Creadores',
-    lead: 'Programa de creadores: revisar símbolos y capas de fans, gestionar creadores, responder solicitudes y versiones previas. Las candidaturas van por “Solicitudes” (puestos con el tipo “Programa de creadores”).',
+    lead: 'Programa de creadores: revisar símbolos, capas de fans y perfiles, gestionar creadores, responder solicitudes y versiones previas. Las candidaturas van por “Solicitudes” (puestos con el tipo “Programa de creadores”).',
     tabs: { queue: 'Revisión', roster: 'Creadores', requests: 'Solicitudes', previews: 'Versiones previas' },
     queue: {
       empty: 'Nada que revisar.',
@@ -1474,6 +1488,13 @@ const es: AdminTexts = {
       message: 'Mensaje (opcional)',
       approved: 'Aprobado – los fans lo ven al momento.',
       rejected: 'Rechazado.',
+      profile: 'Perfil',
+      profileHint: 'Descripción y enlaces para la página pública del creador',
+      previous: 'Público ahora',
+      noPrevious: 'Todavía no hay nada público.',
+      noDescription: '(sin descripción)',
+      links: 'Enlaces',
+      profilePresets: ['Contiene publicidad o enlaces inseguros', 'Un enlace no pertenece al creador', 'Contenido inapropiado', 'Otro motivo'],
     },
     roster: {
       search: 'Nombre, UUID o código',

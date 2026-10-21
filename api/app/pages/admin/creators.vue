@@ -10,12 +10,15 @@ type Tab = 'queue' | 'roster' | 'requests' | 'previews'
 type Tier = 'starter' | 'partner' | 'top'
 type State = 'active' | 'revoked' | 'banned'
 interface SymbolInfo { url: string, size: number, frames: number, frameMs: number, sha256: string }
+interface ProfileLinkInfo { type: string, url: string }
+interface ProfileInfo { description: string, links: ProfileLinkInfo[] }
 interface QueueItem {
   id: string
-  kind: 'symbol' | 'fan_cape'
+  kind: 'symbol' | 'fan_cape' | 'profile'
   creator: { uuid: string, name: string, tier: Tier }
   symbol?: SymbolInfo
   cape?: { capeId: string, url: string, name: string, frames: number, scale: number, frameTimeMs: number | null }
+  profile?: ProfileInfo & { previous: ProfileInfo | null }
   createdAt: string
 }
 interface Channel { platform: string, url: string, followers: number }
@@ -95,8 +98,9 @@ async function approve(q: QueueItem) {
     busy.value = ''
   }
 }
+const presets = computed(() => (rejecting.value?.kind === 'profile' ? t.value.queue.profilePresets : t.value.queue.presets))
 function askReject(q: QueueItem) {
-  rejectPreset.value = t.value.queue.presets[0]!
+  rejectPreset.value = (q.kind === 'profile' ? t.value.queue.profilePresets : t.value.queue.presets)[0]!
   rejectText.value = ''
   rejecting.value = q
 }
@@ -361,8 +365,11 @@ onMounted(() => {
           <div v-else-if="item.cape" class="rounded-lg bg-base-950 p-2">
             <CapeThumb :texture="localUrl(item.cape.url)" :scale="item.cape.scale" :frames="item.cape.frames" :frame-time-ms="item.cape.frameTimeMs" :width="56" />
           </div>
+          <div v-else-if="item.profile" class="grid size-16 shrink-0 place-items-center rounded-lg bg-base-950 text-base-400">
+            <SiteIcon name="note" class="size-7" />
+          </div>
           <div class="min-w-0 flex-1">
-            <p class="font-semibold text-base-50">{{ item.kind === 'symbol' ? t.queue.symbol : t.queue.fanCape }}<span v-if="item.cape"> · {{ item.cape.name }}</span></p>
+            <p class="font-semibold text-base-50">{{ item.kind === 'symbol' ? t.queue.symbol : item.kind === 'profile' ? t.queue.profile : t.queue.fanCape }}<span v-if="item.cape"> · {{ item.cape.name }}</span></p>
             <p class="text-xs text-base-400">
               {{ fill(t.queue.by, { name: item.creator.name || item.creator.uuid, tier: t.roster.tiers[item.creator.tier] ?? item.creator.tier }) }} ·
               {{ fill(t.queue.submitted, { date: rel(item.createdAt) }) }}
@@ -371,6 +378,32 @@ onMounted(() => {
           </div>
           <button type="button" class="btn btn-primary" :disabled="busy === item.id" @click="approve(item)">{{ t.queue.approve }}</button>
           <button type="button" class="btn btn-ghost" :disabled="busy === item.id" @click="askReject(item)">{{ t.queue.reject }}</button>
+          <!-- Profil: neue Fassung (reiner Text, Links im neuen Tab) neben der bisher öffentlichen -->
+          <div v-if="item.profile" class="grid w-full gap-3 md:grid-cols-2">
+            <div class="profile-box profile-new">
+              <p class="profile-label">{{ t.queue.profileHint }}</p>
+              <p class="mt-2 text-sm whitespace-pre-line text-base-100 [overflow-wrap:anywhere]">{{ item.profile.description || t.queue.noDescription }}</p>
+              <ul v-if="item.profile.links.length" class="mt-3 space-y-1 text-xs">
+                <li v-for="l in item.profile.links" :key="l.url" class="flex gap-2">
+                  <span class="w-20 shrink-0 font-semibold text-base-300">{{ l.type }}</span>
+                  <a :href="l.url" target="_blank" rel="noopener noreferrer nofollow" class="break-all text-lamp-300 hover:underline">{{ l.url }}</a>
+                </li>
+              </ul>
+            </div>
+            <div class="profile-box">
+              <p class="profile-label">{{ t.queue.previous }}</p>
+              <template v-if="item.profile.previous">
+                <p class="mt-2 text-sm whitespace-pre-line text-base-300 [overflow-wrap:anywhere]">{{ item.profile.previous.description || t.queue.noDescription }}</p>
+                <ul v-if="item.profile.previous.links.length" class="mt-3 space-y-1 text-xs">
+                  <li v-for="l in item.profile.previous.links" :key="l.url" class="flex gap-2">
+                    <span class="w-20 shrink-0 font-semibold text-base-400">{{ l.type }}</span>
+                    <span class="break-all text-base-400">{{ l.url }}</span>
+                  </li>
+                </ul>
+              </template>
+              <p v-else class="mt-2 text-sm text-base-400">{{ t.queue.noPrevious }}</p>
+            </div>
+          </div>
         </li>
       </ul>
     </template>
@@ -498,7 +531,7 @@ onMounted(() => {
       <form @submit.prevent="reject">
         <label class="label" for="rj-reason">{{ t.queue.reason }}</label>
         <select id="rj-reason" v-model="rejectPreset" class="field">
-          <option v-for="p in t.queue.presets" :key="p" :value="p">{{ p }}</option>
+          <option v-for="p in presets" :key="p" :value="p">{{ p }}</option>
         </select>
         <label class="label mt-3" for="rj-text">{{ t.queue.message }}</label>
         <textarea id="rj-text" v-model="rejectText" class="field" rows="3" maxlength="200" />
@@ -610,3 +643,22 @@ onMounted(() => {
     />
   </div>
 </template>
+
+<style scoped>
+.profile-box {
+  border-radius: 0.6rem;
+  border: 1px solid var(--color-base-800);
+  background: var(--color-base-950);
+  padding: 0.8rem 0.95rem;
+}
+.profile-new {
+  border-left: 3px solid var(--color-lamp-400);
+}
+.profile-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-base-400);
+}
+</style>
