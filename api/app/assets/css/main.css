@@ -786,3 +786,8 @@ html.hw-flash body {
     background-size: 54px 54px;
   }
 }
+
+/* Offenes Creator-Fenster (§35.11): Seite dahinter scrollt nicht mit. */
+html.modal-open {
+  overflow: hidden;
+}

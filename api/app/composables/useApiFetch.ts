@@ -13,6 +13,8 @@ interface ApiFetchOptions<T> {
   immediate?: boolean
   /** z. B. `accept`, damit `/v1/events` nicht den alten SSE-Stream ausliefert. */
   headers?: Record<string, string>
+  /** Antwort vor dem Speichern verkleinern (nur das Ergebnis landet in der Nuxt-Nutzlast des HTML). */
+  transform?: (input: never) => T
 }
 
 type RawUseFetch = (request: string | (() => string), opts: ApiFetchOptions<unknown>) => unknown

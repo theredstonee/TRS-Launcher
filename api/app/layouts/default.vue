@@ -23,8 +23,10 @@ const links = computed<{ to: string, label: string, icon: string, external?: boo
   { to: lp('/issues'), label: it.value.nav.issues, icon: 'bug' },
   { to: lp('/roadmap'), label: it.value.nav.roadmap, icon: 'roadmap' },
   { to: lp('/faq'), label: m.value.nav.faq, icon: 'note' },
+  { to: lp('/creators'), label: m.value.nav.creators, icon: 'star' },
   { to: lp('/team'), label: m.value.nav.team, icon: 'users' },
   { to: lp('/applications'), label: t.value.account.myApplications, icon: 'inbox' },
+  { to: lp('/creator'), label: m.value.nav.creatorDashboard, icon: 'roadmap' },
 ])
 
 // Themen-Seiten (shared/landing.ts): im Menü unter den Seiten, in der Fußzeile als eigene Spalte.
@@ -166,6 +168,7 @@ onMounted(() => hw.loadPrefs())
           <NuxtLink :to="lp('/issues')" class="footer-link">{{ it.nav.issues }}</NuxtLink>
           <NuxtLink :to="lp('/roadmap')" class="footer-link">{{ it.nav.roadmap }}</NuxtLink>
           <NuxtLink :to="lp('/faq')" class="footer-link">{{ m.nav.faq }}</NuxtLink>
+          <NuxtLink :to="lp('/creators')" class="footer-link">{{ m.nav.creators }}</NuxtLink>
           <NuxtLink :to="lp('/team')" class="footer-link">{{ m.nav.team }}</NuxtLink>
         </nav>
         <nav class="flex flex-col gap-2 text-sm" :aria-label="landing.common.topics">

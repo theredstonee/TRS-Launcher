@@ -11,6 +11,15 @@ const { data: capeData } = await useCapes()
 const { data: eventsData } = await usePublicEvents()
 const { data: featuredData } = await useFeaturedPacks()
 const featured = computed(() => featuredData.value?.packs ?? [])
+// Creator (§35.11): höchstens 8 Köpfe – nur die nötigen Felder landen in der Seite.
+const { data: creatorData } = await useApiFetch<{ creators: Pick<SiteCreator, 'uuid' | 'name' | 'tier' | 'skin' | 'symbol'>[] }>('/v1/site/creators', {
+  key: 'home-creators',
+  default: () => ({ creators: [] }),
+  transform: (r: { creators: SiteCreator[] }) => ({
+    creators: r.creators.slice(0, 8).map(({ uuid, name, tier, skin, symbol }) => ({ uuid, name, tier, skin, symbol })),
+  }),
+})
+const homeCreators = computed(() => creatorData.value?.creators ?? [])
 /** Halloween-Hero nur, wenn das Event global an ist (dieselbe Abfrage wie die Klasse am html). */
 const halloween = computed(() => eventsData.value?.events.some((e) => e.id === 'halloween' && e.active) ?? false)
 const hwText = computed(() => HALLOWEEN_TEXTS[lang.value] ?? HALLOWEEN_TEXTS.en)
@@ -172,6 +181,30 @@ const powered = ref(false)
       <FeaturedPacks :packs="featured" class="mt-8" data-fx="rise" />
     </section>
 
+    <!-- Creator (§35.11): eine Reihe Köpfe, ausgeblendet ohne Creator -->
+    <section v-if="homeCreators.length" id="creators" class="mx-auto max-w-6xl px-4 pt-16 sm:px-6" aria-labelledby="creators-title">
+      <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+        <div>
+          <h2 id="creators-title" class="heading text-3xl">{{ m.creators.home.title }}</h2>
+          <p class="mt-2 max-w-xl text-sm text-base-400">{{ m.creators.home.lead }}</p>
+        </div>
+        <NuxtLink :to="lp('/creators')" class="inline-flex items-center gap-1.5 text-sm font-semibold text-redstone-400 hover:text-redstone-300">
+          {{ m.creators.home.all }} <SiteIcon name="arrow" class="size-4" />
+        </NuxtLink>
+      </div>
+      <ul class="home-creators mt-7" data-fx="stagger">
+        <li v-for="c in homeCreators" :key="c.uuid">
+          <NuxtLink :to="lp(creatorPath(c.name))" class="home-creator">
+            <CreatorAvatar :uuid="c.uuid" :name="c.name" :skin="c.skin" :tier="c.tier" :size="60" />
+            <span class="mt-2 flex max-w-full items-center gap-1 text-sm font-semibold text-base-100">
+              <CreatorSymbol v-if="c.symbol" :url="c.symbol.url" :frames="c.symbol.frames" :frame-ms="c.symbol.frameMs" :px="14" />
+              <span class="truncate">{{ c.name }}</span>
+            </span>
+          </NuxtLink>
+        </li>
+      </ul>
+    </section>
+
     <!-- Funktionen -->
     <section id="features" class="mx-auto max-w-6xl px-4 pt-16 sm:px-6" aria-labelledby="features-title">
       <h2 id="features-title" class="heading text-3xl">{{ m.home.featuresTitle }}</h2>
@@ -306,6 +339,28 @@ const powered = ref(false)
 </template>
 
 <style scoped>
+.home-creators {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+  gap: 1.25rem 0.75rem;
+}
+@media (max-width: 420px) {
+  .home-creators {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.home-creator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border-radius: 0.8rem;
+  padding: 0.35rem 0.2rem;
+}
+.home-creator:hover :deep(.creator-avatar),
+.home-creator:focus-visible :deep(.creator-avatar) {
+  transform: translateY(-3px);
+}
 .hero {
   min-height: 34rem;
   height: min(78vh, 44rem);
