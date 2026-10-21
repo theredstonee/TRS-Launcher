@@ -22,6 +22,11 @@ Third-party parts
   that ship AppleSkin textures are supported.
 - GSAP by GreenSock/Webflow (GSAP Standard License, https://gsap.com/standard-license) and Lenis by
   darkroom.engineering (MIT): scroll animations and smooth scrolling on the website (api/).
+- Space photos in api/public/wait-song (music video on the creator dashboard): The Tortured Clouds
+  of Eta Carinae and Stars Gather in Downtown Milky Way by NASA/JPL-Caltech, Heart and Soul by
+  NASA/JPL-Caltech/UCLA, Earth at Night (Black Marble 2016) by NASA Earth Observatory, ISS photo
+  iss073e0982823 (airglow over Earth's horizon) by NASA and Artemis I Launch by NASA/Joel Kowsky
+  (all public domain); full list with sources in api/public/wait-song/CREDITS.md.
 - Further libraries and bundled mods are listed with their licenses in README.md and
   client-mod/README.md.
 
