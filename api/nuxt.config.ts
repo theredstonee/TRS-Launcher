@@ -78,6 +78,8 @@ export default defineNuxtConfig({
     // Anmeldung und eigene Bewerbungen: persönlich, nie indexieren (Inhalt lädt erst im Browser).
     '/login': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/applications': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    // Creator-Dashboard (§35.11): persönlich, nur im Browser, nie indexieren.
+    '/creator': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     // Schaltungen einreichen + eigene Einreichungen (§25): persönlich, nur im Browser, nie indexieren.
     '/circuits/submit': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/circuits/mine': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
