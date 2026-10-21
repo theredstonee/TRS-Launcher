@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
 
 // Tauri hat keine Server-Runtime: SPA-Modus + `nuxt generate`.
@@ -6,7 +7,16 @@ export default defineNuxtConfig({
   ssr: false,
   telemetry: false,
   devtools: { enabled: false },
-  modules: ['@pinia/nuxt'],
+  modules: [
+    '@pinia/nuxt',
+    // Nur `nuxt dev`: Vorschau der Start-Animation unter /intro-preview (wird nicht mit ausgeliefert).
+    (_options, nuxt) => {
+      if (!nuxt.options.dev) return
+      nuxt.hook('pages:extend', (pages) => {
+        pages.push({ name: 'intro-preview', path: '/intro-preview', file: fileURLToPath(new URL('./app/dev/intro-preview.vue', import.meta.url)) })
+      })
+    },
+  ],
   css: ['~/assets/css/main.css'],
   app: {
     pageTransition: { name: "page", mode: "out-in" },
