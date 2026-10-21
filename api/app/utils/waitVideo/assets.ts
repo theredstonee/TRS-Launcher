@@ -120,6 +120,8 @@ export class Sphere {
   private readonly lat: Float32Array
   private readonly day: Float32Array
   private readonly rim: Float32Array
+  /** Deckkraft am Rand (weiche Kante statt Treppe). */
+  private readonly edge: Uint8Array
   constructor(readonly n: number, tilt = 0.32, light: [number, number, number] = [0.85, -0.35, -0.2]) {
     this.out = canvas(n, n)
     this.g = ctx2d(this.out)
@@ -130,6 +132,7 @@ export class Sphere {
     const lat: number[] = []
     const day: number[] = []
     const rim: number[] = []
+    const edge: number[] = []
     const ll = Math.hypot(...light)
     const [lx, ly, lz] = light.map((v) => v / ll) as [number, number, number]
     const r = n / 2
@@ -139,6 +142,7 @@ export class Sphere {
         const dy = (y + 0.5 - r) / r
         const d2 = dx * dx + dy * dy
         if (d2 > 1) continue
+        edge.push(Math.round(clamp((1 - Math.sqrt(d2)) * r * 1.4, 0, 1) * 255))
         const dz = Math.sqrt(1 - d2)
         const yy = dy * Math.cos(tilt) - dz * Math.sin(tilt)
         const zz = dy * Math.sin(tilt) + dz * Math.cos(tilt)
@@ -155,11 +159,12 @@ export class Sphere {
     this.lat = Float32Array.from(lat)
     this.day = Float32Array.from(day)
     this.rim = Float32Array.from(rim)
+    this.edge = Uint8Array.from(edge)
   }
 
   /** Zeichnet die Kugel mit Drehung `rot` (0…1 = eine Umdrehung). `lights` hebt die Stadtlichter (Puls). */
   render(tex: PlanetTex, rot: number, lights = 1) {
-    const { buf, idx, lon, lat, day, rim } = this
+    const { buf, idx, lon, lat, day, rim, edge } = this
     buf.fill(0)
     const tw = tex.w
     const th = tex.h
@@ -190,7 +195,7 @@ export class Sphere {
       r += e * (120 + d * 120)
       g += e * (40 + d * 70)
       b += e * (150 + d * 60)
-      buf[idx[i]!] = (255 << 24) | (Math.min(255, b) << 16) | (Math.min(255, g) << 8) | Math.min(255, r)
+      buf[idx[i]!] = (edge[i]! << 24) | (Math.min(255, b) << 16) | (Math.min(255, g) << 8) | Math.min(255, r)
     }
     this.g.putImageData(this.img, 0, 0)
     return this.out
@@ -278,7 +283,7 @@ export class Assets {
 
   constructor() {
     this.planet = planetProcedural()
-    this.sphere = new Sphere(300)
+    this.sphere = new Sphere(400)
     this.face = headFace(FAN)
     this.astronaut = astronaut(null)
     this.rocket = rocket(this.face)

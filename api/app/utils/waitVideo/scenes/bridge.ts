@@ -9,6 +9,8 @@ export const GROUND = 210
 export const WALL = { x: 136, cols: 7, rows: 5, size: 16 }
 export const PAD = { x: 312, y: GROUND }
 const LEN = { x: 92, y: GROUND - 34 }
+/** Laternenpfosten (nicht vor der Mauer). */
+const LAMPS = [30, 124, 400]
 
 let land: Cv | null = null
 const cache = new Map<string, Cv>()
@@ -49,7 +51,7 @@ function buildLand(): Cv {
       for (let y = GROUND - 70; y < GROUND; y += 8) g.fillRect(x - 2, y, 8, 1)
     }
     // Redstone-Lampen auf Pfosten
-    for (const x of [60, 210, 380]) {
+    for (const x of LAMPS) {
       g.fillStyle = C.woodB
       g.fillRect(x, GROUND - 24, 2, 24)
     }
@@ -146,7 +148,7 @@ export function dusk(f: Frame, warm = 1) {
 /** Laternen-Licht (warm) + Redstone-Glühen auf den Pfosten. */
 export function duskLights(f: Frame) {
   const g = f.g
-  for (const x of [61, 211, 381]) {
+  for (const x of LAMPS.map((l) => l + 1)) {
     g.fillStyle = C.lamp
     g.fillRect(x - 3, GROUND - 30, 7, 7)
     glow(g, x, GROUND - 27, 46, C.lamp, 0.35 + f.pulse * 0.1)

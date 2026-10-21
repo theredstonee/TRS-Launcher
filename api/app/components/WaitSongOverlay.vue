@@ -127,7 +127,29 @@ function still() {
   video.render(phase.value === 'done' ? cueTime(timeline, 'fade') + 3.2 : Math.min(timeline.verse1 * 0.35, 3))
 }
 
+/** Automatisch Vollbild (geht nur direkt nach einem Klick; ohne Unterstützung, z. B. iPhone, bleibt es das Overlay). */
+function enterFullscreen() {
+  const el = rootEl.value as (HTMLElement & { webkitRequestFullscreen?: () => void }) | null
+  if (!el || document.fullscreenElement || props.preview?.still) return
+  try {
+    if (el.requestFullscreen) void el.requestFullscreen({ navigationUI: 'hide' }).catch(() => {})
+    else el.webkitRequestFullscreen?.()
+  } catch {
+    // Vollbild abgelehnt – Overlay deckt die Seite trotzdem ab
+  }
+}
+
+function exitFullscreen() {
+  if (document.fullscreenElement) void document.exitFullscreen().catch(() => {})
+}
+
+function close() {
+  exitFullscreen()
+  emit('close')
+}
+
 async function play() {
+  enterFullscreen()
   ensureVideo()
   await Promise.race([setup, new Promise((r) => setTimeout(r, 1500))])
   video?.setTimeline(timeline)
@@ -246,6 +268,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  exitFullscreen()
   stopAll()
   ro?.disconnect()
   clearTimeout(idleTimer)
@@ -313,7 +336,7 @@ onBeforeUnmount(() => {
         <p class="unlock"><SiteIcon name="clock" class="size-4" />Freischaltung: {{ props.until }}</p>
         <div class="actions">
           <button type="button" class="btn btn-ghost" @click="play"><SiteIcon name="play" class="size-4" />Nochmal abspielen</button>
-          <button type="button" class="btn btn-primary" @click="emit('close')">Okay, ich warte</button>
+          <button type="button" class="btn btn-primary" @click="close">Okay, ich warte</button>
         </div>
       </div>
     </div>

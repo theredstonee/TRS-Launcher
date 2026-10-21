@@ -49,6 +49,8 @@ export default defineNuxtConfig({
         geolocation: [],
         payment: [],
         usb: [],
+        // Vollbild nur für die eigene Seite (Musikvideo im Creator-Dashboard)
+        fullscreen: ['self'],
       },
       contentSecurityPolicy: {
         'default-src': ["'self'"],
