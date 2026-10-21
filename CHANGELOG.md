@@ -28,7 +28,14 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.27.0 – 2026-10-21 – Grand Entrance | Großer Auftritt
+<!-- banner: accent=#ff9a4d motif=/news/0.27.0/banner.png -->
+<!-- shots:
+/news/0.27.0/intro-redstone.png | The new start animation: a redstone signal races through a dungeon until the lamp ignites | Die neue Start-Animation: Ein Redstone-Signal rast durch den Dungeon, bis die Lampe zündet
+/news/0.27.0/intro-halloween.png | During Halloween a moonlit graveyard with pumpkins and a ghost opens the launcher | Zu Halloween öffnet ein Friedhof im Mondlicht mit Kürbissen und Geist den Launcher
+/news/0.27.0/intro-winter.png | With the Winter Night design a penguin colony slides across the frozen lake | Mit dem Design Winternacht rutscht eine Pinguin-Kolonie über den zugefrorenen See
+/news/0.27.0/intro-flicker-ask.png | On the first start you choose whether you want flicker and flashes | Beim ersten Start wählst du, ob du Flackern und Lichtblitze sehen möchtest
+-->
 
 ### English
 - **New start animation.** When the launcher opens, a short pixel-art scene with its own music plays while the app loads in the background: in the Redstone design a signal races through a dark dungeon, pistons slam open and a redstone lamp ignites into the logo. During Halloween you fly over a moonlit graveyard full of jack-o'-lanterns, and in the Winter Night design a colony of penguins in scarves and beanies slides, tumbles and hops across a frozen lake until the aurora flares. It takes about 4 seconds, a little longer on the first start of the day, and after an update you get the full 10-second version once.
