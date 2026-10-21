@@ -14,6 +14,7 @@ const design = ref(introDesignById(String(route.query.design ?? '')).id)
 const length = ref<IntroLength>((INTRO_LENGTHS as readonly string[]).includes(String(route.query.length)) ? (route.query.length as IntroLength) : 'long')
 const sound = ref(route.query.sound === '1')
 const reduced = ref(route.query.reduced === '1')
+const calm = ref(route.query.calm === '1')
 const gone = ref(false)
 const time = ref(0)
 let player: IntroPlayer | null = null
@@ -29,6 +30,7 @@ function play() {
     design: d,
     length: length.value,
     reduced: reduced.value,
+    calm: calm.value,
     sound: sound.value,
     volume: 0.85,
     jingle: introJingleUrl(d.id),
@@ -40,7 +42,7 @@ function play() {
     },
   })
   player.start()
-  void router.replace({ query: { design: design.value, length: length.value, sound: sound.value ? '1' : '0', reduced: reduced.value ? '1' : undefined } })
+  void router.replace({ query: { design: design.value, length: length.value, sound: sound.value ? '1' : '0', reduced: reduced.value ? '1' : undefined, calm: calm.value ? '1' : undefined } })
 }
 
 function skip() {
@@ -75,6 +77,7 @@ onBeforeUnmount(() => {
       <span class="sep" />
       <button @click="play()">↻ Nochmal</button>
       <button :class="{ on: sound }" @click="(sound = !sound), play()">Ton</button>
+      <button :class="{ on: calm }" @click="(calm = !calm), play()">Ohne Flackern</button>
       <button :class="{ on: reduced }" @click="(reduced = !reduced), play()">Reduziert</button>
       <span class="tabular-nums opacity-70">{{ time.toFixed(2) }} s</span>
     </div>

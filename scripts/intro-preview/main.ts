@@ -18,6 +18,7 @@ interface State {
   length: IntroLength
   sound: boolean
   reduced: boolean
+  calm: boolean
 }
 
 const q = new URLSearchParams(location.search)
@@ -26,6 +27,7 @@ const state: State = {
   length: (INTRO_LENGTHS as readonly string[]).includes(q.get('length') ?? '') ? (q.get('length') as IntroLength) : 'long',
   sound: q.get('sound') === '1',
   reduced: q.get('reduced') === '1',
+  calm: q.get('calm') === '1',
 }
 
 const stage = document.getElementById('stage') as HTMLDivElement
@@ -53,6 +55,7 @@ function play(patch: Partial<State> = {}) {
     design,
     length: state.length,
     reduced: state.reduced,
+    calm: state.calm,
     sound: state.sound,
     volume: 0.85,
     jingle: b64 ? async () => b64ToBuffer(b64) : null,
@@ -76,10 +79,14 @@ function sync() {
   s.textContent = state.sound ? 'Ton an' : 'Ton aus'
   const r = document.getElementById('reduced') as HTMLButtonElement
   r.classList.toggle('on', state.reduced)
+  const cb = document.getElementById('calm') as HTMLButtonElement
+  cb.classList.toggle('on', state.calm)
+  cb.textContent = state.calm ? 'Ohne Flackern' : 'Mit Flackern'
   const u = new URL(location.href)
   u.searchParams.set('design', state.design)
   u.searchParams.set('length', state.length)
   u.searchParams.set('sound', state.sound ? '1' : '0')
+  u.searchParams.set('calm', state.calm ? '1' : '0')
   history.replaceState(null, '', u)
 }
 
@@ -88,9 +95,39 @@ for (const b of document.querySelectorAll<HTMLButtonElement>('[data-length]')) b
 ;(document.getElementById('replay') as HTMLButtonElement).onclick = () => play()
 ;(document.getElementById('sound') as HTMLButtonElement).onclick = () => play({ sound: !state.sound })
 ;(document.getElementById('reduced') as HTMLButtonElement).onclick = () => play({ reduced: !state.reduced })
+;(document.getElementById('calm') as HTMLButtonElement).onclick = () => play({ calm: !state.calm })
+
+// „Erster Start“: wie im Launcher – erstes Bild der Szene, darüber die Abfrage, danach läuft die Animation
+const ask = document.getElementById('ask') as HTMLDivElement
+function firstStart() {
+  player?.stop(0.1)
+  clearTimeout(fadeTimer)
+  stage.classList.remove('gone')
+  const design = introDesignById(state.design)
+  const still = new IntroPlayer({ canvas: cv, design, length: 'long', logo: window.__TRS_INTRO_LOGO ?? null })
+  player = still
+  still.still(0.7)
+  ask.hidden = false
+  ;(ask.querySelector('[data-calm="0"]') as HTMLButtonElement).focus()
+}
+for (const b of ask.querySelectorAll<HTMLButtonElement>('[data-calm]')) {
+  b.onclick = (e) => {
+    e.stopPropagation()
+    ask.hidden = true
+    play({ calm: b.dataset.calm === '1', length: 'long', sound: true })
+  }
+}
+ask.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    ask.hidden = true
+    play({ calm: true, length: 'long', sound: true })
+  }
+  e.stopPropagation()
+})
+;(document.getElementById('first') as HTMLButtonElement).onclick = () => firstStart()
 // Überspringen wie im Launcher: Klick auf die Bühne
 stage.onclick = () => {
-  if (!player || stage.classList.contains('gone')) return
+  if (!player || stage.classList.contains('gone') || !ask.hidden) return
   player.fadeAudio(0.25)
   stage.classList.add('gone')
   const cur = player
