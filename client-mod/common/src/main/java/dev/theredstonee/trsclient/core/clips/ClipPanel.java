@@ -30,6 +30,8 @@ public final class ClipPanel {
 		// Der Wunsch zur Puffer-Anzeige geht an das Overlay des Launchers (clips.hud).
 		final dev.theredstonee.trsclient.core.module.BoolSetting bufferIcon = modules.clipsBufferIcon;
 		Clips.useBufferIcon(bufferIcon::get);
+		// Lage des Elements: Dort legt der Launcher sein Overlay hin (Puffer, REC, Meldungen).
+		Clips.useHudModule(modules.clips);
 	}
 
 	/** Immer die aktuelle Instanz (init kann nach dem HUD-Aufbau laufen). */

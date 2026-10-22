@@ -36,6 +36,7 @@ class ClipsOverlayTest {
 	void restore() {
 		Clips.set(before);
 		Clips.useBufferIcon(null);
+		Clips.useHudModule(null);
 		I18n.use("en");
 	}
 
@@ -93,6 +94,30 @@ class ClipsOverlayTest {
 				List<String> bar = new CopyOnWriteArrayList<String>();
 				clips.tick(true, bar::add);
 				assertEquals("true", launcher.huds.poll(10, TimeUnit.SECONDS));
+				// Mit der Lage des HUD-Elements (Standard: rechts Mitte, etwas höher) – dort liegt das Overlay.
+				com.google.gson.JsonObject first = launcher.hudRequests.poll(1, TimeUnit.SECONDS);
+				assertNotNull(first);
+				assertEquals("1.0000", first.get("anchorX").getAsString());
+				assertEquals("0.5000", first.get("anchorY").getAsString());
+				assertEquals("-0.0050", first.get("offsetX").getAsString());
+				assertEquals("-0.2000", first.get("offsetY").getAsString());
+
+				// Element im HUD-Editor verschoben → neue Lage (nach der Bremse).
+				modules.clips.position().set(new dev.theredstonee.trsclient.core.hud.HudPosition(
+						dev.theredstonee.trsclient.core.hud.HudAnchor.BOTTOM_LEFT, 0.01, -0.05));
+				com.google.gson.JsonObject moved = null;
+				long movedUntil = System.currentTimeMillis() + 10000;
+				while (moved == null && System.currentTimeMillis() < movedUntil) {
+					clips.tick(true, bar::add);
+					moved = launcher.hudRequests.poll(50, TimeUnit.MILLISECONDS);
+				}
+				assertNotNull(moved, "Lage neu gemeldet");
+				assertEquals("0.0000", moved.get("anchorX").getAsString());
+				assertEquals("1.0000", moved.get("anchorY").getAsString());
+				assertEquals("0.0100", moved.get("offsetX").getAsString());
+				assertEquals("-0.0500", moved.get("offsetY").getAsString());
+				assertEquals("true", launcher.huds.poll(1, TimeUnit.SECONDS));
+				launcher.hudRequests.clear();
 				modules.clipsBufferIcon.set(false);
 				String next = null;
 				long until = System.currentTimeMillis() + 10000;

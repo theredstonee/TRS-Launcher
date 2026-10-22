@@ -25,9 +25,27 @@ public final class Clips {
 	/** Einstellung „Puffer-Anzeige zeigen“ (setzt das HUD-Element, {@link ClipPanel}); ohne: an. */
 	private static volatile java.util.function.BooleanSupplier bufferIcon;
 
+	/** HUD-Element „Clips“ (Lage für das Launcher-Overlay); setzt {@link ClipPanel}. */
+	private static volatile dev.theredstonee.trsclient.core.module.HudModule hudModule;
+
 	/** Einstellung „Puffer-Anzeige zeigen“ anbinden (für den Wunsch an das Launcher-Overlay). */
 	static void useBufferIcon(java.util.function.BooleanSupplier setting) {
 		bufferIcon = setting;
+	}
+
+	/** HUD-Element „Clips“ anbinden: Dort legt der Launcher sein Overlay hin. */
+	static void useHudModule(dev.theredstonee.trsclient.core.module.HudModule module) {
+		hudModule = module;
+	}
+
+	/** Aktuelle Lage des HUD-Elements „Clips“ (Kopie) oder null. */
+	private static dev.theredstonee.trsclient.core.hud.HudPosition hudPlace() {
+		dev.theredstonee.trsclient.core.module.HudModule m = hudModule;
+		try {
+			return m == null || m.position() == null ? null : m.position().copy();
+		} catch (RuntimeException e) {
+			return null;
+		}
 	}
 
 	private static boolean bufferIconWanted() {
@@ -147,7 +165,7 @@ public final class Clips {
 		try {
 			if (link != null) {
 				link.tick(now);
-				link.syncHud(hudVisible && bufferIconWanted(), now);
+				link.syncHud(hudVisible && bufferIconWanted(), hudPlace(), now);
 			}
 			boolean overlay = launcherOverlay();
 			ClipNotice n;

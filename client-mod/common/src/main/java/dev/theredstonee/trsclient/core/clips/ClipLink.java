@@ -1,5 +1,6 @@
 package dev.theredstonee.trsclient.core.clips;
 
+import dev.theredstonee.trsclient.core.hud.HudPosition;
 import dev.theredstonee.trsclient.core.link.LinkTarget;
 import dev.theredstonee.trsclient.core.link.TrsLink;
 
@@ -55,8 +56,8 @@ public final class ClipLink implements TrsLink.Listener {
 	/** Nach dem Einschalten: seit wann auf den laufenden Puffer gewartet wird (0 = nicht). */
 	private volatile long awaitingSince;
 	private volatile int lastProgressStep = -1;
-	/** Zuletzt vom Launcher bestätigter Wunsch zur Puffer-Anzeige (null = seit dem Verbinden noch keiner). */
-	private volatile Boolean hudSent;
+	/** Zuletzt vom Launcher bestätigte {@code clips.hud}-Felder (null = seit dem Verbinden noch keine). */
+	private volatile String hudSent;
 	private volatile long hudSentAt;
 	private volatile boolean hudInFlight;
 
@@ -119,22 +120,29 @@ public final class ClipLink implements TrsLink.Listener {
 		return link.status().has(TrsLink.FEATURE_CLIPS_OVERLAY);
 	}
 
-	/**
-	 * Spiel-Thread (Tick): Wunsch zur Puffer-Anzeige an den Launcher melden – nach dem Verbinden und bei jeder
-	 * Änderung, nur wenn der Launcher das Overlay hat. Höchstens alle {@link #HUD_INTERVAL_MS}; Senden im Hintergrund,
-	 * ein Fehlschlag wird beim nächsten Tick wiederholt.
-	 */
+	/** Wie {@link #syncHud(boolean, HudPosition, long)}, ohne Lage des HUD-Elements. */
 	public void syncHud(final boolean buffer, long now) {
+		syncHud(buffer, null, now);
+	}
+
+	/**
+	 * Spiel-Thread (Tick): Wunsch zur Puffer-Anzeige und Lage des HUD-Elements „Clips“ (Anker + Versatz wie im
+	 * HUD-Editor; dort legt der Launcher sein Overlay hin) an den Launcher melden – nach dem Verbinden und bei jeder
+	 * echten Änderung, nur wenn der Launcher das Overlay hat. Höchstens alle {@link #HUD_INTERVAL_MS} (der Launcher
+	 * nimmt eine je Sekunde an), beim Verschieben im HUD-Editor also gesammelt; Senden im Hintergrund, ein Fehlschlag
+	 * wird beim nächsten Tick wiederholt. Anker und Versatz hängen nicht von Fenstergröße oder GUI-Skala ab.
+	 */
+	public void syncHud(final boolean buffer, HudPosition place, long now) {
 		if (hudInFlight || !launcherOverlay()) return;
-		Boolean sent = hudSent;
-		if ((sent != null && sent == buffer) || now - hudSentAt < HUD_INTERVAL_MS) return;
+		final java.util.Map<String, String> args = hudArgs(buffer, place);
+		final String key = args.toString();
+		if (key.equals(hudSent) || now - hudSentAt < HUD_INTERVAL_MS) return;
 		hudInFlight = true;
 		hudSentAt = now;
-		Runnable send = () -> link.request(OP_HUD, java.util.Collections.singletonMap("buffer", String.valueOf(buffer)),
-				HUD_TIMEOUT_MS, new TrsLink.Callback() {
+		Runnable send = () -> link.request(OP_HUD, args, HUD_TIMEOUT_MS, new TrsLink.Callback() {
 					@Override
 					public void done(TrsLink.Line response) {
-						hudSent = buffer;
+						hudSent = key;
 						hudInFlight = false;
 					}
 
@@ -155,6 +163,24 @@ public final class ClipLink implements TrsLink.Listener {
 		} catch (java.util.concurrent.RejectedExecutionException e) {
 			hudInFlight = false;
 		}
+	}
+
+	/** Felder von {@code clips.hud}: {@code buffer} und – falls bekannt – Anker/Versatz des HUD-Elements (Text, 4 Stellen). */
+	static java.util.Map<String, String> hudArgs(boolean buffer, HudPosition place) {
+		java.util.Map<String, String> args = new java.util.LinkedHashMap<String, String>();
+		args.put("buffer", String.valueOf(buffer));
+		if (place != null && place.anchor != null) {
+			args.put("anchorX", decimal(place.anchor.fx));
+			args.put("anchorY", decimal(place.anchor.fy));
+			args.put("offsetX", decimal(place.offsetX));
+			args.put("offsetY", decimal(place.offsetY));
+		}
+		return args;
+	}
+
+	private static String decimal(double v) {
+		if (Double.isNaN(v) || Double.isInfinite(v)) v = 0;
+		return String.format(java.util.Locale.ROOT, "%.4f", Math.max(-1, Math.min(1, v)));
 	}
 
 	private java.util.concurrent.ExecutorService presses;

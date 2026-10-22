@@ -230,8 +230,10 @@ independent in `common/core/clips`:
 - **Launcher overlay:** the launcher draws "REC m:ss" in its own window excluded from capture (never in the clip).
   If it also announces `clips.overlay` in its `challenge`, it shows the buffer indicator and the clip messages
   (saved, recording started, its `failed` codes except `disabled`) there too: the mod then draws neither (also not
-  in the action bar; the HUD editor preview stays) and sends `req {op:"clips.hud",buffer:"true"|"false"}` after
-  connecting and whenever *Show buffer indicator* (or the HUD element) changes – at most every 1.1 s, the launcher
+  in the action bar; the HUD editor preview stays) and sends `req {op:"clips.hud",buffer:"true"|"false",anchorX,anchorY,offsetX,offsetY}` (anchor 0/0.5/1 and offset of the
+  *Clips* HUD element as in the HUD editor, text with 4 decimals – the launcher places its overlay there with the HUD
+  formula, independent of window size and GUI scale) after
+  connecting and whenever *Show buffer indicator*, the HUD element or its position changes – at most every 1.1 s, the launcher
   accepts one per second from the verified game process. The mod names `clips.overlay` in its `auth` features, so
   the launcher keeps out of the way for older mods that still draw everything themselves. Hints and offers ("clips
   are off", "not reachable" …) always stay in the game – no recording runs then.
