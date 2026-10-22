@@ -15,6 +15,9 @@ Starten
   Der normal installierte TRS Launcher bleibt unberührt und kann parallel laufen
   (eigene Kennung, eigene Daten, kein Auto-Update, keine trs-launcher://-Links).
   Der Launcher startet im Vollbild, zuerst kommt die Start-Animation, danach die Präsentation.
+  Minecraft ausprobieren: Ist kein Konto angemeldet, startet das Spiel im offiziellen
+  Demo-Modus von Minecraft (Demo-Welt, kein Mehrspieler, kein Konto nötig). Ist ein
+  Stand-Konto angemeldet, spielen Besucher mit diesem Konto.
 
 Personal-Panel
   Strg + Umschalt + M  → Personal-PIN eingeben → Panel.
@@ -61,7 +64,7 @@ Für Besucher gesperrt (außer im Personal-Modus)
 Vorbereitung am Stand
   1. Launcher starten, Präsentation antippen.
   2. Strg+Umschalt+M → PIN eingeben bzw. festlegen → „Personal-Modus“ an (sonst ist das Anmelden gesperrt).
-  3. Einrichtungs-Assistent durchgehen bzw. unter „Accounts“ das Microsoft-Konto des Stands anmelden,
+  3. Einrichtungs-Assistent durchgehen bzw. (optional, sonst Demo-Modus) unter „Accounts“ das Microsoft-Konto des Stands anmelden,
      Demo-Instanzen/Modpacks installieren und einmal starten.
   4. Strg+Umschalt+M → „Präsentation jetzt starten“ (schaltet den Personal-Modus wieder aus).
 

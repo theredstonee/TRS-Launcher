@@ -1540,11 +1540,19 @@ fn describe_version(game_version: &str, loader: &Loader) -> String {
     }
 }
 
-/// Ohne Account startet nur ein Entwicklungs-Build – und dann im offiziellen
-/// Demo-Modus des Spiels. Release-Builds verlangen immer eine Anmeldung.
+/// Messe-Build: Besucher dürfen ohne Konto im offiziellen Demo-Modus spielen.
+static DEMO_WITHOUT_ACCOUNT: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Ohne Konto im Demo-Modus starten lassen (nur der Messe-Build ruft das beim Start auf).
+pub fn allow_demo_without_account() {
+    DEMO_WITHOUT_ACCOUNT.store(true, std::sync::atomic::Ordering::Relaxed);
+}
+
+/// Ohne Account startet nur ein Entwicklungs-Build oder der Messe-Build – und dann im
+/// offiziellen Demo-Modus des Spiels. Release-Builds verlangen sonst immer eine Anmeldung.
 fn demo_session() -> Result<Session> {
-    if cfg!(debug_assertions) {
-        tracing::warn!("Kein Account angemeldet – starte im Demo-Modus (nur Entwicklungs-Build)");
+    if cfg!(debug_assertions) || DEMO_WITHOUT_ACCOUNT.load(std::sync::atomic::Ordering::Relaxed) {
+        tracing::warn!("Kein Account angemeldet – starte im Demo-Modus");
         Ok(Session {
             player_name: "Player".into(),
             uuid: "0".repeat(32),
