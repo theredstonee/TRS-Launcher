@@ -22,6 +22,22 @@ public final class Clips {
 
 	private static Clips instance = new Clips(null);
 	private static volatile ActionBar keys;
+	/** Einstellung „Puffer-Anzeige zeigen“ (setzt das HUD-Element, {@link ClipPanel}); ohne: an. */
+	private static volatile java.util.function.BooleanSupplier bufferIcon;
+
+	/** Einstellung „Puffer-Anzeige zeigen“ anbinden (für den Wunsch an das Launcher-Overlay). */
+	static void useBufferIcon(java.util.function.BooleanSupplier setting) {
+		bufferIcon = setting;
+	}
+
+	private static boolean bufferIconWanted() {
+		java.util.function.BooleanSupplier s = bufferIcon;
+		try {
+			return s == null || s.getAsBoolean();
+		} catch (RuntimeException e) {
+			return true;
+		}
+	}
 
 	private final ClipLink link;
 	private ClipNotice notice;
@@ -72,6 +88,14 @@ public final class Clips {
 		return link == null ? ClipStatus.OFFLINE : link.status();
 	}
 
+	/**
+	 * Zeigt der verbundene Launcher Puffer-Anzeige und Clip-Meldungen in seinem Overlay (nie im Clip)? Dann zeichnet die
+	 * Mod sie nicht selbst.
+	 */
+	public boolean launcherOverlay() {
+		return link != null && link.launcherOverlay();
+	}
+
 	/** Ohne Verbindung: warum (kein TRS Launcher, Clips im alten Launcher aus, Launcher nicht erreichbar). */
 	public String offlineText() {
 		return ClipNotice.hintText(link == null ? "noLauncher" : link.offlineCode());
@@ -112,15 +136,23 @@ public final class Clips {
 	/**
 	 * Client-Tick: Meldungen abholen. Mit sichtbarem HUD-Element erscheinen Erfolgsmeldungen dort,
 	 * Hinweise und Fehler immer auch in der Aktionsleiste (ohne HUD-Element alles dort). Ein Angebot
-	 * („noch einmal drücken = einschalten“) bleibt stehen, bis es abläuft.
+	 * („noch einmal drücken = einschalten“) bleibt stehen, bis es abläuft. Hat der Launcher ein
+	 * Overlay, zeigt er „gespeichert“, „Aufnahme läuft“ und seine Fehler selbst (außerhalb der
+	 * Aufnahme) – die Mod zeichnet sie dann gar nicht, auch nicht in der Aktionsleiste, und meldet
+	 * nur, ob der Spieler die Puffer-Anzeige sehen will.
 	 */
 	public void tick(boolean hudVisible, ActionBar actionBar) {
 		long now = System.currentTimeMillis();
 		keys = actionBar;
 		try {
-			if (link != null) link.tick(now);
+			if (link != null) {
+				link.tick(now);
+				link.syncHud(hudVisible && bufferIconWanted(), now);
+			}
+			boolean overlay = launcherOverlay();
 			ClipNotice n;
 			while ((n = link == null ? null : link.pollNotice()) != null) {
+				if (overlay && n.shownByLauncher()) continue;
 				show(n, now);
 				if (!hudVisible || !n.success()) {
 					actionBar.show(n.text());

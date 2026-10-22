@@ -103,13 +103,21 @@ public final class TrsLink {
 	/** Merkmal des Launchers: Clips per Anfrage einschalten. */
 	/** Launcher → Spiel: Beitritt zu einer gehosteten Welt (docs/hosting-link.md). */
 	public static final String FEATURE_HOSTING_JOIN = "hosting.join";
+	/**
+	 * Launcher ↔ Spiel: Puffer-Anzeige, „REC“ und Clip-Meldungen zeigt der Launcher in einem eigenen Overlay-Fenster,
+	 * das aus der Aufnahme ausgeschlossen ist (nie im Clip). Nennt der Launcher es im {@code challenge}, zeichnet die
+	 * Mod Puffer und diese Meldungen nicht selbst und meldet nur ihren Wunsch zur Puffer-Anzeige
+	 * ({@code clips.hud}); die Mod nennt es ihrerseits im {@code auth}, damit der Launcher weiß, dass sie es kann.
+	 */
+	public static final String FEATURE_CLIPS_OVERLAY = "clips.overlay";
 	/** Was DIESES Spiel kann – geht in der {@code auth}-Zeile mit (Launcher schickt sonst keinen Welt-Beitritt). */
-	static final String GAME_FEATURES_JSON = "[\"" + FEATURE_HOSTING_JOIN + "\"]";
+	static final String GAME_FEATURES_JSON = "[\"" + FEATURE_HOSTING_JOIN + "\",\"" + FEATURE_CLIPS_OVERLAY + "\"]";
 
 	/** Merkmale dieses Spiels; im Touch-Modus (mobile Engine) zusätzlich Tastatur-Anfragen (docs/touch-mode.md). */
 	static String gameFeaturesJson() {
 		if (!dev.theredstonee.trsclient.core.touch.TouchMode.enabled()) return GAME_FEATURES_JSON;
-		return "[\"" + FEATURE_HOSTING_JOIN + "\",\"" + dev.theredstonee.trsclient.core.touch.TouchKeyboard.FEATURE + "\"]";
+		return "[\"" + FEATURE_HOSTING_JOIN + "\",\"" + FEATURE_CLIPS_OVERLAY + "\",\""
+				+ dev.theredstonee.trsclient.core.touch.TouchKeyboard.FEATURE + "\"]";
 	}
 
 	public static final String FEATURE_CLIPS_ENABLE = "clips.enable";

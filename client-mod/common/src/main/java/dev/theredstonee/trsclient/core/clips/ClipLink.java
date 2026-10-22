@@ -20,6 +20,11 @@ public final class ClipLink implements TrsLink.Listener {
 	public static final String RECORD = "record";
 	/** Anfrage „Clips einschalten“ (Launcher ab 0.6.1, Merkmal {@link TrsLink#FEATURE_CLIPS_ENABLE}). */
 	public static final String OP_ENABLE = "clips.enable";
+	/** Anfrage „Puffer-Anzeige im Launcher-Overlay an/aus“ (Merkmal {@link TrsLink#FEATURE_CLIPS_OVERLAY}). */
+	public static final String OP_HUD = "clips.hud";
+	/** Der Launcher nimmt {@link #OP_HUD} höchstens einmal je Sekunde an. */
+	static final long HUD_INTERVAL_MS = 1100;
+	private static final long HUD_TIMEOUT_MS = 5000;
 
 	/** Ein vorgemerkter Tastendruck verfällt, wenn die Verbindung nicht zustande kommt. */
 	private static final long PENDING_MS = 4000;
@@ -50,6 +55,10 @@ public final class ClipLink implements TrsLink.Listener {
 	/** Nach dem Einschalten: seit wann auf den laufenden Puffer gewartet wird (0 = nicht). */
 	private volatile long awaitingSince;
 	private volatile int lastProgressStep = -1;
+	/** Zuletzt vom Launcher bestätigter Wunsch zur Puffer-Anzeige (null = seit dem Verbinden noch keiner). */
+	private volatile Boolean hudSent;
+	private volatile long hudSentAt;
+	private volatile boolean hudInFlight;
 
 	/** Eigene Verbindung (Tests, Launcher-Protokoll 1 aus clips.json). */
 	public ClipLink(Path configDir) {
@@ -102,20 +111,67 @@ public final class ClipLink implements TrsLink.Listener {
 		return offerUntil != 0 && now <= offerUntil && status.offersEnable();
 	}
 
+	/**
+	 * Zeigt der Launcher Puffer-Anzeige, „REC“ und Clip-Meldungen in seinem Overlay (außerhalb der Aufnahme)? Dann
+	 * zeichnet die Mod sie nicht ins Spiel – sonst stünden sie im Clip.
+	 */
+	public boolean launcherOverlay() {
+		return link.status().has(TrsLink.FEATURE_CLIPS_OVERLAY);
+	}
+
+	/**
+	 * Spiel-Thread (Tick): Wunsch zur Puffer-Anzeige an den Launcher melden – nach dem Verbinden und bei jeder
+	 * Änderung, nur wenn der Launcher das Overlay hat. Höchstens alle {@link #HUD_INTERVAL_MS}; Senden im Hintergrund,
+	 * ein Fehlschlag wird beim nächsten Tick wiederholt.
+	 */
+	public void syncHud(final boolean buffer, long now) {
+		if (hudInFlight || !launcherOverlay()) return;
+		Boolean sent = hudSent;
+		if ((sent != null && sent == buffer) || now - hudSentAt < HUD_INTERVAL_MS) return;
+		hudInFlight = true;
+		hudSentAt = now;
+		Runnable send = () -> link.request(OP_HUD, java.util.Collections.singletonMap("buffer", String.valueOf(buffer)),
+				HUD_TIMEOUT_MS, new TrsLink.Callback() {
+					@Override
+					public void done(TrsLink.Line response) {
+						hudSent = buffer;
+						hudInFlight = false;
+					}
+
+					@Override
+					public void failed(String code) {
+						debug("Puffer-Anzeige melden fehlgeschlagen: " + code);
+						hudInFlight = false;
+					}
+				});
+		try {
+			executor().execute(() -> {
+				try {
+					send.run();
+				} catch (RuntimeException e) {
+					hudInFlight = false;
+				}
+			});
+		} catch (java.util.concurrent.RejectedExecutionException e) {
+			hudInFlight = false;
+		}
+	}
+
 	private java.util.concurrent.ExecutorService presses;
 
-	private void inBackground(final Runnable task) {
-		java.util.concurrent.ExecutorService ex;
-		synchronized (this) {
-			if (presses == null) {
-				presses = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
-					Thread t = new Thread(r, "TRS-Clips-Taste");
-					t.setDaemon(true);
-					return t;
-				});
-			}
-			ex = presses;
+	private synchronized java.util.concurrent.ExecutorService executor() {
+		if (presses == null) {
+			presses = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+				Thread t = new Thread(r, "TRS-Clips-Taste");
+				t.setDaemon(true);
+				return t;
+			});
 		}
+		return presses;
+	}
+
+	private void inBackground(final Runnable task) {
+		java.util.concurrent.ExecutorService ex = executor();
 		try {
 			ex.execute(() -> {
 				try {
@@ -258,6 +314,9 @@ public final class ClipLink implements TrsLink.Listener {
 
 	@Override
 	public void onConnected(TrsLink l, boolean accounts) {
+		// Neue Verbindung: den Wunsch zur Puffer-Anzeige gleich (wieder) melden.
+		hudSent = null;
+		hudSentAt = 0;
 		// Status kommt mit der ersten Zeile (onLine); vorgemerkten Tastendruck jetzt senden.
 		String p = pending;
 		pending = null;
@@ -272,6 +331,7 @@ public final class ClipLink implements TrsLink.Listener {
 		wasRecording = false;
 		offerUntil = 0;
 		enabling = false;
+		hudSent = null;
 	}
 
 	@Override
@@ -289,7 +349,7 @@ public final class ClipLink implements TrsLink.Listener {
 				// Taste kam an, bevor die Mod „aus“ kannte – jetzt das Einschalten anbieten.
 				offer(s, lastRecordKey, System.currentTimeMillis());
 			} else {
-				notices.add(ClipNotice.failed(code, s.progress));
+				notices.add(ClipNotice.failedByLauncher(code, s.progress));
 			}
 		}
 	}

@@ -35,12 +35,19 @@ public final class ClipNotice {
 	/** Was aufgenommen wird (nur {@link Type#OFFER}). */
 	public final boolean audio;
 	public final boolean mic;
+	/** Fehler kam als Meldung vom Launcher (nicht von der Mod selbst erkannt). */
+	final boolean fromLauncher;
 
 	ClipNotice(Type type, int seconds, String code) {
 		this(type, seconds, code, -1, false, true, false);
 	}
 
 	ClipNotice(Type type, int seconds, String code, int progress, boolean recordKey, boolean audio, boolean mic) {
+		this(type, seconds, code, progress, recordKey, audio, mic, false);
+	}
+
+	private ClipNotice(Type type, int seconds, String code, int progress, boolean recordKey, boolean audio, boolean mic,
+			boolean fromLauncher) {
 		this.type = type;
 		this.seconds = seconds;
 		this.code = code;
@@ -48,6 +55,7 @@ public final class ClipNotice {
 		this.recordKey = recordKey;
 		this.audio = audio;
 		this.mic = mic;
+		this.fromLauncher = fromLauncher;
 	}
 
 	static ClipNotice hint(String code) {
@@ -56,6 +64,30 @@ public final class ClipNotice {
 
 	static ClipNotice failed(String code, int progress) {
 		return new ClipNotice(Type.FAILED, 0, code, progress, false, true, false);
+	}
+
+	/** Fehlermeldung des Launchers ({@code {"type":"failed"}}) – zeigt ein Launcher mit Overlay selbst. */
+	static ClipNotice failedByLauncher(String code, int progress) {
+		return new ClipNotice(Type.FAILED, 0, code, progress, false, true, false, true);
+	}
+
+	/**
+	 * Zeigt ein Launcher mit Overlay ({@link dev.theredstonee.trsclient.core.link.TrsLink#FEATURE_CLIPS_OVERLAY}) diese
+	 * Meldung selbst – außerhalb der Aufnahme? Dann zeichnet die Mod sie nicht (sonst stünde sie im Clip). Gespeichert,
+	 * Aufnahme läuft und Fehler des Launchers ja; „Clips sind aus“ und alle Hinweise/Angebote der Mod bleiben im Spiel
+	 * (dann läuft ohnehin keine Aufnahme).
+	 */
+	public boolean shownByLauncher() {
+		switch (type) {
+			case CLIP_SAVED:
+			case RECORDING_SAVED:
+			case RECORDING_STARTED:
+				return true;
+			case FAILED:
+				return fromLauncher && !"disabled".equals(code);
+			default:
+				return false;
+		}
 	}
 
 	static ClipNotice offer(boolean recordKey, boolean audio, boolean mic) {

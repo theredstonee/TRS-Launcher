@@ -27,6 +27,9 @@ public final class ClipPanel {
 	public ClipPanel(TrsModules modules) {
 		this.modules = modules;
 		this.module = modules.clips;
+		// Der Wunsch zur Puffer-Anzeige geht an das Overlay des Launchers (clips.hud).
+		final dev.theredstonee.trsclient.core.module.BoolSetting bufferIcon = modules.clipsBufferIcon;
+		Clips.useBufferIcon(bufferIcon::get);
 	}
 
 	/** Immer die aktuelle Instanz (init kann nach dem HUD-Aufbau laufen). */
@@ -49,7 +52,12 @@ public final class ClipPanel {
 			if (!preview) return null;
 			key = 1L << 40 | (s.recordingMillis(now) / 1000);
 		}
-		else if (s.buffer && bufferIcon()) key = 2L << 40 | s.clipSeconds;
+		else if (s.buffer && bufferIcon()) {
+			// Puffer-Anzeige: Hat der Launcher ein Overlay (außerhalb der Aufnahme), zeigt er sie dort – im echten
+			// Spiel also nichts zeichnen, sonst wäre sie im Clip. Ältere Launcher: wie bisher im Spiel.
+			if (!preview && clips().launcherOverlay()) return null;
+			key = 2L << 40 | s.clipSeconds;
+		}
 		else if (preview) key = 3L << 40;
 		else if (s.connected && "ffmpeg".equals(s.reason) && s.progress >= 0) key = 4L << 40 | s.progress;
 		else return null;

@@ -71,7 +71,7 @@ All features can be toggled in the TRS menu. Settings are stored in `config/trsc
 | Entity-Culling | Skips mobs hidden behind full opaque blocks (own ray casts to 9 points of the hitbox, 600 rays per tick, result cached 2–4 ticks, never hides wrongly when the budget runs out; glowing entities, your vehicle and giants stay), mobs/chests & signs/dropped items/item frames/name tags beyond a distance. Players are always shown by default |
 | Partikel | Upper limit of particles at once, share of all particles (*Menge*), explosion particles, rain splashes and smoke off |
 | Welt-Details | Sky, stars, distance fog, rain/snow and texture animations (water, lava, fire …) off – each only where the version has a clean hook |
-| Clips & Aufnahme | **F9** saves the last seconds as a clip, **F10** starts/stops a recording (both changeable in the vanilla controls). The TRS Launcher records the game window – the mod only reports the key presses over a local link (see below). HUD element (movable): red dot + time while recording, a subtle ring while the clip buffer runs (*Show buffer indicator*), "Clip saved (30 s)" for a few seconds. Without the TRS Launcher (or with clips off there) the keys only show a hint |
+| Clips & Aufnahme | **F9** saves the last seconds as a clip, **F10** starts/stops a recording (both changeable in the vanilla controls). The TRS Launcher records the game window – the mod only reports the key presses over a local link (see below). HUD element (movable): a subtle ring while the clip buffer runs (*Show buffer indicator*), "Clip saved (30 s)" for a few seconds – with a current TRS Launcher both (and the REC timer) appear in the launcher's overlay instead, so they never end up in a clip. Without the TRS Launcher (or with clips off there) the keys only show a hint |
 | Startbildschirm | TRS title screen: animated redstone circuit on deepslate, glowing pixel wordmark, buttons as redstone lamps (Einzelspieler/Mehrspieler/Einstellungen/TRS-Menü/Mods*/Beenden; keyboard: Tab/arrows + Enter, narrated where the version has a narrator); link "Klassischer Titelbildschirm"; setting *Animierter Hintergrund* switches to a still image; disable the module to always get the vanilla one. Servers are only reached through Mehrspieler |
 
 *Mods only if ModMenu is installed. The TRS menu also has a **Resourcepacks** screen (search, filter all/enabled/available,
@@ -227,6 +227,14 @@ independent in `common/core/clips`:
   `res {ok,clipSeconds}`; the mod shows "Clips on – recording is starting …", download progress and finally
   "Clips on – F9 saves the last 30 s". Older launchers (protocol 1 or no feature) only get the hint to use
   Settings → Clips. The Clips & Images screen has a "Turn on now" button with the same consent text.
+- **Launcher overlay:** the launcher draws "REC m:ss" in its own window excluded from capture (never in the clip).
+  If it also announces `clips.overlay` in its `challenge`, it shows the buffer indicator and the clip messages
+  (saved, recording started, its `failed` codes except `disabled`) there too: the mod then draws neither (also not
+  in the action bar; the HUD editor preview stays) and sends `req {op:"clips.hud",buffer:"true"|"false"}` after
+  connecting and whenever *Show buffer indicator* (or the HUD element) changes – at most every 1.1 s, the launcher
+  accepts one per second from the verified game process. The mod names `clips.overlay` in its `auth` features, so
+  the launcher keeps out of the way for older mods that still draw everything themselves. Hints and offers ("clips
+  are off", "not reachable" …) always stay in the game – no recording runs then.
 - `ClipPanel` draws the HUD element through `Canvas`; `Clips` is the facade the loaders call (`init(configDir)`,
   `saveClip()`, `toggleRecording()`, `tick(hudVisible, actionBar)`). Hints and errors also go to the action bar.
 - Per loader only the two key bindings, one tick block and `hud/ClipHud` (identical in the Mojmap trees). No mixins.
