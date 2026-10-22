@@ -27,7 +27,7 @@ Media in `pitch/media/` are generated from the release screenshots and committed
 | `demo` | `1` | – | kiosk build: "Try it yourself" call to action; any tap/key in loop mode emits the demo event |
 | `calm` | `0` | calm on | `calm=0` plays the start animation with flicker and flashes |
 | `sound` | `1` | off | start with sound (jingle of the start animation; toggle with M) |
-| `slide` | `0…17` | `0` | start slide |
+| `slide` | `0…20` | `0` | start slide |
 
 ## Controls
 
@@ -50,4 +50,6 @@ README.md (features, platforms, loaders, versions), CHANGELOG.md (47 releases 0.
 capes, creator programme, mobile), client-mod/README.md (client version ranges), client-mod/docs/benchmark.md
 (FPS chart: 1.21.11 village scene, runs from one series), src-tauri/resources/client-mod/builds.json (105 builds),
 src-tauri/crates/core/src/import/mod.rs (import sources), app/locales (8 languages), test counts by grep
-(`#[test]` in src-tauri, `it(`/`test(` in *.test.ts). Competitor cells are conservative; see the footnote on the slide.
+(`#[test]` in src-tauri, `it(`/`test(` in *.test.ts). Competitor cells: vendor sites as of October 2026, unclear cells marked “?”; see the footnote on the slide.
+Usage slide (`traction`): GitHub release download counts (installers + updates) and TRS API stats (accounts, active in
+7 days, issues), read on 22 Oct 2026 – refresh them in `pitch/src/slides.ts` before each event.

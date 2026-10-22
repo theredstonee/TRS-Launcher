@@ -141,4 +141,13 @@ export function col(inner: string, top = 150, width = 800, left = 110): string {
   return `<div class="col" style="top:${top}px;width:${width}px;left:${left}px">${inner}</div>`
 }
 
+/**
+ * Animated number. The count-up is drawn by CSS (::before from data-v, aria-hidden); the final value sits next to it
+ * as visually hidden text, so screen readers, copy & paste and text extraction never see an in-between value.
+ */
+export function count(to: number, dur: number, delay: number): string {
+  const final = new Intl.NumberFormat(lang === 'de' ? 'de-DE' : 'en-US').format(to)
+  return `<span class="count" aria-hidden="true" data-to="${to}" data-dur="${dur}" data-delay="${delay}" data-v="${final}"></span><span class="sr">${final}</span>`
+}
+
 export const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="square"/></svg>'

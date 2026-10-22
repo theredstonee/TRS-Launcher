@@ -129,18 +129,15 @@ function runCounters(el: HTMLElement) {
     const to = Number(c.dataset.to)
     const dur = Number(c.dataset.dur ?? 1400)
     const delay = Number(c.dataset.delay ?? 0)
-    c.textContent = '0'
+    c.dataset.v = reduced ? nf.format(to) : '0'
     counterRuns.push(
       window.setTimeout(() => {
-        if (reduced) {
-          c.textContent = nf.format(to)
-          return
-        }
+        if (reduced) return
         const t0 = performance.now()
         const step = (now: number) => {
           const k = Math.min(1, (now - t0) / dur)
           const e = 1 - Math.pow(1 - k, 3)
-          c.textContent = nf.format(Math.round(to * e))
+          c.dataset.v = nf.format(Math.round(to * e))
           if (k < 1) requestAnimationFrame(step)
         }
         requestAnimationFrame(step)

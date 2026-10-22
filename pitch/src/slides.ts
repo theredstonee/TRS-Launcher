@@ -1,7 +1,7 @@
 // The showcase slides. Every fact comes from the repo (README, CHANGELOG, client-mod docs, builds.json);
 // see pitch/README.md for the sources. Durations in seconds (loop mode).
 
-import { a, A, CHECK, chips, col, game, head, phone, points, t, vis, win, type T } from './h'
+import { a, A, CHECK, chips, col, count, game, head, phone, points, t, vis, win, type T } from './h'
 
 export interface Ctx {
   demo: boolean
@@ -17,6 +17,10 @@ export interface Slide {
 }
 
 const DL = 'trs-launcher.theredstonee.de/download'
+const FEEDBACK: T = {
+  de: 'Feedback & Ideen: <b>trs-launcher.theredstonee.de/issues</b> · Discord <b>dc.theredstonee.de</b>',
+  en: 'Feedback & ideas: <b>trs-launcher.theredstonee.de/issues</b> · Discord <b>dc.theredstonee.de</b>',
+}
 
 const intro: Slide = {
   id: 'intro',
@@ -24,9 +28,50 @@ const intro: Slide = {
   html: (c) => {
     const d = c.reduced ? 2600 : 9900
     return `<div class="intro-cap">${a(`<div class="t">${t({ de: 'Der Minecraft-Launcher von TheRedstonee', en: 'The Minecraft launcher by TheRedstonee' })}</div>`, d, 'f')}${a(
-      `<div class="s">${t({ de: 'Kostenlos · Open Source · Windows · Linux · Android · iOS', en: 'Free · Open source · Windows · Linux · Android · iOS' })}</div>`,
+      `<div class="s">${t({ de: 'Kostenlos · Open Source · Windows · Linux · Android & iOS (Vorschau)', en: 'Free · Open source · Windows · Linux · Android & iOS (preview)' })}</div>`,
       d + 500,
     )}</div>`
+  },
+}
+
+const problem: Slide = {
+  id: 'problem',
+  dur: 10,
+  html: () => {
+    const pains: [T, T, T][] = [
+      [{ de: 'Mods & Modpacks', en: 'Mods & modpacks' }, { de: 'Prism oder CurseForge App', en: 'Prism or the CurseForge app' }, { de: 'eigener Launcher', en: 'its own launcher' }],
+      [{ de: 'Client & HUD', en: 'Client & HUD' }, { de: 'Lunar oder Feather', en: 'Lunar or Feather' }, { de: 'noch ein Launcher', en: 'another launcher' }],
+      [{ de: 'Freunde & Chat', en: 'Friends & chat' }, { de: 'Discord', en: 'Discord' }, { de: 'extra App', en: 'extra app' }],
+      [{ de: 'Clips', en: 'Clips' }, { de: 'OBS oder ein Overlay', en: 'OBS or an overlay' }, { de: 'extra App', en: 'extra app' }],
+      [{ de: 'Welt mit Freunden', en: 'World with friends' }, { de: 'Portfreigabe oder Hamachi', en: 'Port forwarding or Hamachi' }, { de: 'Router-Gefummel', en: 'router fiddling' }],
+    ]
+    return (
+      col(
+        head(
+          { de: 'Das Problem', en: 'The problem' },
+          { de: 'Ein Spiel.<br><em>Fünf Apps.</em>', en: 'One game.<br><em>Five apps.</em>' },
+          {
+            de: 'Wer heute Minecraft mit Mods und Freunden spielt, jongliert mit Launchern, Clients und Zusatz-Tools – jedes mit eigenem Konto, eigenen Einstellungen und eigenen Updates.',
+            en: 'Playing Minecraft with mods and friends today means juggling launchers, clients and extra tools – each with its own account, its own settings and its own updates.',
+          },
+        ),
+        150,
+        760,
+      ) +
+      `<div class="pains">${pains
+        .map(
+          ([need, tool, cost], i) =>
+            `<div class="pain a r" style="--d:${700 + i * 220}ms"><div class="need">${t(need)}</div><div class="tool">${t(tool)}</div><div class="cost">${t(cost)}</div></div>`,
+        )
+        .join('')}</div>` +
+      a(
+        `<div class="pain-answer">${t({ de: 'Der TRS Launcher macht daraus <b>eine App</b>.', en: 'The TRS Launcher turns that into <b>one app</b>.' })}</div>`,
+        2200,
+        'pop',
+        '',
+        'position:absolute;left:110px;bottom:130px',
+      )
+    )
   },
 }
 
@@ -92,7 +137,7 @@ const versions: Slide = {
         '<div class="big-range">1.5.2 <span>→</span> 26.x</div>',
         650,
         'z',
-      )}${a(`<div class="small" style="margin-top:14px">${t({ de: 'Java wird automatisch passend geladen', en: 'The right Java is downloaded automatically' })}</div>`, 1100, 'f')}</div>` +
+      )}${a(`<div class="small" style="margin-top:14px">${t({ de: 'Java wird automatisch passend geladen', en: 'The right Java is downloaded automatically' })}</div>`, 1100, 'f')}${a(`<div class="small" style="margin-top:6px">${t({ de: '26.x = neue Jahres-Versionen von Minecraft ab 2026 (nach 1.21.11)', en: '26.x = Minecraft’s new year-based versions from 2026 (after 1.21.11)' })}</div>`, 1300, 'f')}</div>` +
       `<div class="loaders" style="position:absolute;left:110px;top:560px">${loaders
         .map(([n, s], i) => `<div class="loader a pop" style="--d:${1400 + i * 160}ms"><div>${n}${s ? `<small>${t(s)}</small>` : ''}</div></div>`)
         .join('')}</div>` +
@@ -212,7 +257,7 @@ const perf: Slide = {
         .map(
           ([l, s, v, cls], i) =>
             `<div class="bar-row">${a(`<div class="lbl">${t(l)}<small>${t(s)}</small></div>`, 500 + i * 350, 'l')}<div class="bar-track" style="--w:${Math.round((v / max) * W)}px"><div class="bar ${cls}" style="--d:${700 + i * 350}ms"></div>${a(
-              `<span class="bar-val"><span class="count" data-to="${v}" data-dur="1400" data-delay="${700 + i * 350}">0</span><small>FPS</small></span>`,
+              `<span class="bar-val">${count(v, 1400, 700 + i * 350)}<small>FPS</small></span>`,
               900 + i * 350,
               'f',
               '',
@@ -357,13 +402,12 @@ const clips: Slide = {
         points(
           [
             { de: '<b>F9</b> speichert die letzten 15–120 Sekunden, <b>F10</b> nimmt auf', en: '<b>F9</b> saves the last 15–120 seconds, <b>F10</b> records' },
-            { de: 'Hardware-Encoding (NVENC, AMF, QSV) mit Systemton', en: 'Hardware encoding (NVENC, AMF, QSV) with system sound' },
+            { de: 'Hardware-Encoding (NVENC, AMF, QSV) mit Systemton – <b>vorerst nur Windows</b>', en: 'Hardware encoding (NVENC, AMF, QSV) with system sound – <b>Windows only for now</b>' },
             { de: 'Clips <b>zuschneiden</b> und teilen', en: '<b>Trim</b> and share clips' },
             { de: '<b>Screenshot-Editor</b>: zuschneiden, Pfeile, Text, verpixeln – als Link teilen', en: '<b>Screenshot editor</b>: crop, arrows, text, pixelate – share as a link' },
           ],
           600,
         ) +
-        a(`<p class="small" style="margin-top:30px">${t({ de: 'Clip-Aufnahme: Windows', en: 'Clip recording: Windows' })}</p>`, 1400, 'f'),
       150,
       780,
     ) +
@@ -455,7 +499,7 @@ const mobile: Slide = {
           ],
           600,
         ) +
-        a(`<p class="small" style="margin-top:30px">${t({ de: 'iOS per AltStore/SideStore · am besten ab Minecraft 1.21', en: 'iOS via AltStore/SideStore · best on Minecraft 1.21 and newer' })}</p>`, 1400, 'f'),
+        a(`<p class="small" style="margin-top:30px">${t({ de: 'Vorschau = noch in Entwicklung, nicht im App Store / Play Store.<br>Android per APK von der Website · iOS per AltStore/SideStore · am besten ab Minecraft 1.21', en: 'Preview = still in development, not in the App Store / Play Store.<br>Android via APK from the website · iOS via AltStore/SideStore · best on Minecraft 1.21 and newer' })}</p>`, 1400, 'f'),
       150,
       780,
     ) +
@@ -465,32 +509,38 @@ const mobile: Slide = {
 
 const compare: Slide = {
   id: 'compare',
-  dur: 13,
+  dur: 15,
   html: () => {
     const Y = `<span class="mk y">${CHECK}</span>`
     const N = '<span class="mk n">–</span>'
     const P = `<span class="mk p">${t({ de: 'teilweise', en: 'partly' })}</span>`
-    const cols = ['TRS Launcher', 'Lunar Client', 'Feather Client', 'CurseForge App', 'Prism Launcher']
+    const U = '<span class="mk u">?</span>'
+    // Prism leaves these out on purpose (a plain launcher) – that is scope, not a gap.
+    const G = `<span class="mk g">${t({ de: 'kein Ziel', en: 'not a goal' })}</span>`
+    const cols = ['TRS Launcher', t({ de: 'Offizieller Launcher', en: 'Official launcher' }), 'Modrinth App', 'Prism Launcher', 'CurseForge App', 'Lunar Client', 'Feather Client']
     const rows: [T, string[]][] = [
-      [{ de: 'Kostenlos nutzbar', en: 'Free to use' }, [Y, Y, Y, Y, Y]],
-      [{ de: 'Open Source', en: 'Open source' }, [Y, N, N, N, Y]],
-      [{ de: 'Fabric, Quilt, Forge & NeoForge', en: 'Fabric, Quilt, Forge & NeoForge' }, [Y, P, P, Y, Y]],
-      [{ de: 'Modpacks von Modrinth & CurseForge', en: 'Modpacks from Modrinth & CurseForge' }, [Y, N, N, P, Y]],
-      [{ de: 'Eigener Client-Mod (HUD, PvP, FPS)', en: 'Own client mod (HUD, PvP, FPS)' }, [Y, Y, Y, N, N]],
-      [{ de: 'Freunde & Chat', en: 'Friends & chat' }, [Y, Y, Y, N, N]],
-      [{ de: 'Welt hosten ohne Portfreigabe', en: 'Host a world without port forwarding' }, [Y, N, Y, N, N]],
-      [{ de: 'App für Android & iOS', en: 'App for Android & iOS' }, [Y, N, N, N, N]],
+      [{ de: 'Kostenlos nutzbar', en: 'Free to use' }, [Y, Y, Y, Y, Y, Y, Y]],
+      [{ de: 'Ohne Werbung', en: 'No ads' }, [Y, Y, P, Y, N, U, U]],
+      [{ de: 'Open Source', en: 'Open source' }, [Y, N, Y, Y, N, N, N]],
+      [{ de: 'Windows, macOS & Linux', en: 'Windows, macOS & Linux' }, [P, Y, Y, Y, P, Y, P]],
+      [{ de: 'Bedrock Edition starten', en: 'Launch Bedrock Edition' }, [N, Y, N, N, N, N, N]],
+      [{ de: 'Fabric, Quilt, Forge & NeoForge', en: 'Fabric, Quilt, Forge & NeoForge' }, [Y, N, Y, Y, Y, P, P]],
+      [{ de: 'Modpacks von Modrinth & CurseForge', en: 'Modpacks from Modrinth & CurseForge' }, [Y, N, P, Y, P, N, N]],
+      [{ de: 'Eigener Client-Mod (HUD, PvP, FPS)', en: 'Own client mod (HUD, PvP, FPS)' }, [Y, N, N, G, N, Y, Y]],
+      [{ de: 'Freunde & Chat', en: 'Friends & chat' }, [Y, N, U, G, N, Y, Y]],
+      [{ de: 'Welt hosten ohne Portfreigabe', en: 'Host a world without port forwarding' }, [Y, N, N, N, N, U, Y]],
+      [{ de: 'App für Android & iOS', en: 'App for Android & iOS' }, [P, N, N, N, N, N, N]],
     ]
     let k = 0
-    const cell = (v: string, i: number) => `<td class="${i === 0 ? 'trs' : ''}"><span class="a pop" style="--d:${900 + (k++ % 40) * 55 + (i === 0 ? 0 : 400)}ms;display:inline-block">${v}</span></td>`
+    const cell = (v: string, i: number) => `<td class="${i === 0 ? 'trs' : ''}"><span class="a pop" style="--d:${900 + (k++ % 60) * 30 + (i === 0 ? 0 : 300)}ms;display:inline-block">${v}</span></td>`
     return (
-      col(head({ de: 'Im Vergleich', en: 'Compared' }, { de: 'Was andere <em>nicht alles</em> haben.', en: 'What others <em>don’t all</em> have.' }), 90, 1700) +
-      `<table class="cmp"><thead><tr><th></th>${cols.map((c, i) => `<th class="${i === 0 ? 'trs' : ''}"><span class="a f" style="--d:${500 + i * 90}ms;display:inline-block">${c}</span></th>`).join('')}</tr></thead><tbody>${rows
-        .map(([l, v], r) => `<tr><td><span class="a l" style="--d:${600 + r * 90}ms;display:inline-block">${t(l)}</span></td>${v.map(cell).join('')}</tr>`)
+      col(head({ de: 'Im Vergleich', en: 'Compared' }, { de: 'Ehrlich <em>verglichen.</em>', en: 'An honest <em>comparison.</em>' }), 70, 1700) +
+      `<table class="cmp cmp7"><thead><tr><th></th>${cols.map((c, i) => `<th class="${i === 0 ? 'trs' : ''}"><span class="a f" style="--d:${500 + i * 80}ms;display:inline-block">${c}</span></th>`).join('')}</tr></thead><tbody>${rows
+        .map(([l, v], r) => `<tr><td><span class="a l" style="--d:${600 + r * 70}ms;display:inline-block">${t(l)}</span></td>${v.map(cell).join('')}</tr>`)
         .join('')}</tbody></table>` +
       `<div class="cmp-legend a f" style="--d:2600ms">${t({
-        de: 'Stand Oktober 2026, ohne Gewähr. Angaben zu anderen Produkten nach bestem Wissen; „–“ = nein oder nicht bekannt. TRS Launcher auf Android & iOS als Vorschau.',
-        en: 'As of October 2026, no guarantee. Details on other products to the best of our knowledge; “–” = no or not known. TRS Launcher on Android & iOS as a preview.',
+        de: 'Stand Oktober 2026, nach bestem Wissen (Herstellerseiten), ohne Gewähr. „teilweise“ = mit Einschränkungen (TRS: kein macOS, Handy als Vorschau) · „?“ = nicht sicher geprüft · „kein Ziel“ = bewusst nicht im Umfang.',
+        en: 'As of October 2026, to the best of our knowledge (vendor sites), no guarantee. “partly” = with limits (TRS: no macOS, phones as a preview) · “?” = not reliably checked · “not a goal” = deliberately out of scope.',
       })}</div>`
     )
   },
@@ -511,7 +561,7 @@ const numbers: Slide = {
       `<div class="stats">${stats
         .map(
           ([n, sup, l, d], i) =>
-            `<div class="stat a z" style="--d:${500 + i * 200}ms"><div class="n"><span class="count" data-to="${n}" data-dur="1600" data-delay="${700 + i * 200}">0</span>${sup ? `<sup>${sup}</sup>` : ''}</div><div class="l">${t(l)}</div><div class="d">${t(d)}</div></div>`,
+            `<div class="stat a z" style="--d:${500 + i * 200}ms"><div class="n">${count(Number(n), 1600, 700 + i * 200)}${sup ? `<sup>${sup}</sup>` : ''}</div><div class="l">${t(l)}</div><div class="d">${t(d)}</div></div>`,
         )
         .join('')}</div>` +
       `<div class="tech">${[
@@ -529,6 +579,71 @@ const numbers: Slide = {
   },
 }
 
+// Usage: GitHub release downloads (installers + update downloads, all releases) and the TRS API
+// (accounts = people who turned on the optional online features). Read on 22 Oct 2026 – refresh before each event.
+const traction: Slide = {
+  id: 'traction',
+  dur: 10,
+  html: () => {
+    const stats: [number, T, T][] = [
+      [415, { de: 'Downloads', en: 'downloads' }, { de: 'Installer & Updates auf GitHub', en: 'installers & updates on GitHub' }],
+      [32, { de: 'TRS-Konten', en: 'TRS accounts' }, { de: 'Online-Funktionen sind freiwillig', en: 'online features are optional' }],
+      [18, { de: 'aktiv in 7 Tagen', en: 'active in 7 days' }, { de: 'mit TRS-Konto', en: 'with a TRS account' }],
+      [14, { de: 'Ideen & Bugs gemeldet', en: 'ideas & bugs reported' }, { de: 'im öffentlichen Issue-Tracker', en: 'in the public issue tracker' }],
+    ]
+    return (
+      col(
+        head(
+          { de: 'Wo wir stehen', en: 'Where we are' },
+          { de: 'Früh dran.<br><em>Ehrliche Zahlen.</em>', en: 'Early days.<br><em>Honest numbers.</em>' },
+          {
+            de: 'Den TRS Launcher gibt es seit gut einem Monat. Die Zahlen sind klein – deshalb zählt jede Rückmeldung.',
+            en: 'The TRS Launcher has been out for just over a month. The numbers are small – so every bit of feedback counts.',
+          },
+        ),
+        110,
+        1500,
+      ) +
+      `<div class="stats" style="top:500px">${stats
+        .map(
+          ([n, l, d], i) =>
+            `<div class="stat a z" style="--d:${600 + i * 200}ms"><div class="n">${count(n, 1600, 800 + i * 200)}</div><div class="l">${t(l)}</div><div class="d">${t(d)}</div></div>`,
+        )
+        .join('')}</div>` +
+      `<div class="cmp-legend a f" style="--d:2200ms">${t({ de: 'Stand 22.10.2026 · seit dem ersten Release am 22.09.2026', en: 'As of 22 Oct 2026 · since the first release on 22 Sep 2026' })}</div>`
+    )
+  },
+}
+
+const honest: Slide = {
+  id: 'honest',
+  dur: 13,
+  html: () => {
+    const qa: [T, T][] = [
+      [
+        { de: 'Was, wenn der Entwickler aufhört?', en: 'What if the developer stops?' },
+        {
+          de: '<b>Open Source (GPL-3.0):</b> Code, Builds und Doku liegen öffentlich auf GitHub – jeder darf weitermachen. Dazu ein <b>Team aus 6 Leuten</b> und über 1.800 automatische Tests bei jeder Änderung. Und der Launcher läuft auch <b>ohne TRS-Server</b>: Online-Funktionen sind freiwillig, deine Instanzen liegen auf deinem PC.',
+          en: '<b>Open source (GPL-3.0):</b> code, builds and docs are public on GitHub – anyone may carry on. Plus a <b>team of 6</b> and more than 1,800 automated tests on every change. And the launcher also runs <b>without TRS servers</b>: online features are optional, your instances stay on your PC.',
+        },
+      ],
+      [
+        { de: 'Wer bezahlt das?', en: 'Who pays for it?' },
+        {
+          de: '<b>Kostenlos – ohne Abo, ohne Werbung, ohne Bezahl-Kosmetik.</b> Die TRS-Server (Konten, Freunde, Chat, Relay) betreibt TheRedstonee selbst. Grenzen wie 10 Spieler pro gehosteter Welt und 1 GB pro geteiltem Modpack halten die Kosten im Rahmen.',
+          en: '<b>Free – no subscription, no ads, no paid cosmetics.</b> TheRedstonee runs the TRS servers (accounts, friends, chat, relay) himself. Limits such as 10 players per hosted world and 1 GB per shared modpack keep costs in check.',
+        },
+      ],
+    ]
+    return (
+      col(head({ de: 'Ehrlich gefragt', en: 'Honest answers' }, { de: 'Die Fragen,<br><em>die jeder stellt.</em>', en: 'The questions<br><em>everyone asks.</em>' }), 110, 1700) +
+      `<div class="qa">${qa
+        .map(([q, ans], i) => `<div class="qa-item a r" style="--d:${700 + i * 450}ms"><div class="q">${t(q)}</div><p>${t(ans)}</p></div>`)
+        .join('')}</div>`
+    )
+  },
+}
+
 const tryIt: Slide = {
   id: 'try',
   dur: 9,
@@ -540,7 +655,8 @@ const tryIt: Slide = {
           { de: 'Hier am Stand kannst du den TRS Launcher direkt testen.', en: 'Test the TRS Launcher right here at the booth.' },
         ) +
         a(`<button class="cta" type="button" data-demo>▶ ${t({ de: 'Jetzt selbst ausprobieren', en: 'Try it yourself' })}</button>`, 900, 'pop') +
-        a(`<p class="small" style="margin-top:26px">${t({ de: 'Einfach irgendwo antippen.', en: 'Just tap anywhere.' })}</p>`, 1300, 'f')
+        a(`<p class="small" style="margin-top:26px">${t({ de: 'Einfach irgendwo antippen.', en: 'Just tap anywhere.' })}</p>`, 1300, 'f') +
+        a(`<p class="small" style="margin-top:10px">${t(FEEDBACK)}</p>`, 1500, 'f')
       : head({ de: 'Jetzt du', en: 'Your turn' }, { de: 'Probier’s<br><em>selbst aus.</em>', en: 'Try it<br><em>yourself.</em>' }) +
         `<div class="steps">${[
           { de: `QR-Code scannen oder öffnen:<br><b class="url">${DL}</b>`, en: `Scan the QR code or open:<br><b class="url">${DL}</b>` },
@@ -548,7 +664,8 @@ const tryIt: Slide = {
           { de: 'Mit deinem Microsoft-Konto anmelden und spielen', en: 'Sign in with your Microsoft account and play' },
         ]
           .map((s, i) => `<div class="step a l" style="--d:${600 + i * 250}ms"><b>${i + 1}</b><span>${t(s)}</span></div>`)
-          .join('')}</div>`
+          .join('')}</div>` +
+        a(`<p class="small" style="margin-top:30px">${t(FEEDBACK)}</p>`, 1500, 'f')
     return (
       col(left, c.demo ? 200 : 230, 900) +
       vis(
@@ -580,4 +697,4 @@ const outro: Slide = {
       .join('')}</div></div>${c.demo ? '' : a(`<div class="qr">${c.qr}</div>`, 1500, 'pop', '', 'position:absolute;right:110px;top:90px')}</div>`,
 }
 
-export const SLIDES: Slide[] = [intro, what, versions, modpacks, client, perf, redstone, cosmetics, social, hosting, clips, designs, creator, mobile, compare, numbers, tryIt, outro]
+export const SLIDES: Slide[] = [intro, problem, what, versions, modpacks, client, perf, redstone, cosmetics, social, hosting, clips, designs, creator, mobile, compare, numbers, traction, honest, tryIt, outro]
