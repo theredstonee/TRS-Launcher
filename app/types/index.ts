@@ -372,6 +372,12 @@ export interface ClipState {
   recordingMs: number
   reason: ClipReason | null
   encoder: ClipCodec | null
+  /** Länge eines Sofort-Clips in Sekunden. */
+  clipSeconds: number
+  /** Die Mod überlässt Puffer-Anzeige und Clip-Meldungen dem Overlay (TRS Client mit `clips.overlay`). */
+  overlay: boolean
+  /** Puffer-Anzeige im Overlay gewünscht (Einstellung im Spiel, Standard an). */
+  bufferHud: boolean
 }
 
 export type ClipFailure =

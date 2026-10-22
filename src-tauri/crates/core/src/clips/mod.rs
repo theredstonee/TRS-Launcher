@@ -72,6 +72,13 @@ pub struct ClipState {
     pub recording_ms: u64,
     pub reason: Option<&'static str>,
     pub encoder: Option<Codec>,
+    /// Länge eines Sofort-Clips in Sekunden (Puffer-Anzeige im Overlay).
+    pub clip_seconds: u32,
+    /// Das Spiel überlässt Puffer-Anzeige und Clip-Meldungen dem Overlay des Launchers
+    /// (TRS Client mit `clips.overlay`); sonst zeichnet die Mod sie selbst.
+    pub overlay: bool,
+    /// Puffer-Anzeige im Overlay gewünscht (Einstellung der Mod, Standard an).
+    pub buffer_hud: bool,
 }
 
 pub type ClipSink = Arc<dyn Fn(ClipEvent) + Send + Sync>;
@@ -108,6 +115,17 @@ fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     m.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
+/// Gleicher Stand für die Oberfläche? (Die laufende Aufnahmezeit zählt sie selbst weiter.)
+fn same_view(a: &ClipState, b: &ClipState) -> bool {
+    a.buffer == b.buffer
+        && a.recording == b.recording
+        && a.reason == b.reason
+        && a.encoder == b.encoder
+        && a.clip_seconds == b.clip_seconds
+        && a.overlay == b.overlay
+        && a.buffer_hud == b.buffer_hud
+}
+
 impl Shared {
     pub(crate) fn emit(&self, event: ClipEvent) {
         let sink = self.sink.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
@@ -127,6 +145,7 @@ impl Shared {
     }
 
     pub(crate) fn publish(&self, instance_id: &str, state: LinkState, codec: Option<Codec>) {
+        let hud = self.link.hud(instance_id);
         let view = ClipState {
             instance_id: instance_id.to_owned(),
             buffer: state.buffer,
@@ -134,21 +153,38 @@ impl Shared {
             recording_ms: state.recording_ms,
             reason: state.reason,
             encoder: codec,
+            clip_seconds: state.clip_seconds,
+            overlay: hud.overlay,
+            buffer_hud: hud.buffer,
         };
         self.link.set_state(instance_id, state);
         // Oberfläche nur bei echten Änderungen (die Zeit zählt sie selbst weiter).
         let changed = {
             let mut states = lock(&self.states);
-            let old = states.get(instance_id);
-            let changed = old.is_none_or(|o| {
-                o.buffer != view.buffer || o.recording != view.recording || o.reason != view.reason || o.encoder != view.encoder
-            });
+            let changed = states.get(instance_id).is_none_or(|o| !same_view(o, &view));
             states.insert(instance_id.to_owned(), view.clone());
             changed
         };
         if changed {
             self.emit(ClipEvent::State(view));
         }
+    }
+
+    /// Overlay-Stand aus dem Link (Mod mit `clips.overlay` verbunden/getrennt, `clips.hud`)
+    /// in den Stand der Oberfläche übernehmen – nur für Spiele mit laufender Aufnahme-Sitzung.
+    fn hud_changed(&self, instance_id: &str) {
+        let hud = self.link.hud(instance_id);
+        let view = {
+            let mut states = lock(&self.states);
+            let Some(state) = states.get_mut(instance_id) else { return };
+            if state.overlay == hud.overlay && state.buffer_hud == hud.buffer {
+                return;
+            }
+            state.overlay = hud.overlay;
+            state.buffer_hud = hud.buffer;
+            state.clone()
+        };
+        self.emit(ClipEvent::State(view));
     }
 
     pub(crate) fn ended(&self, instance_id: &str) {
@@ -280,6 +316,12 @@ impl ClipService {
             let sent = lock(&shared.sessions).get(instance_id).is_some_and(|s| s.tx.send(command).is_ok());
             if !sent {
                 shared.fail(instance_id, "disabled");
+            }
+        }));
+        let weak = Arc::downgrade(&shared);
+        link.set_hud_sink(Arc::new(move |instance_id: &str| {
+            if let Some(shared) = weak.upgrade() {
+                shared.hud_changed(instance_id);
             }
         }));
         Self { shared }
@@ -635,10 +677,58 @@ mod tests {
             recording_ms: 0,
             reason: None,
             encoder: Some(Codec::Nvenc),
+            clip_seconds: 30,
+            overlay: true,
+            buffer_hud: false,
         });
         let v = serde_json::to_value(&s).unwrap();
         assert_eq!(v["type"], "state");
         assert_eq!(v["encoder"], "nvenc");
         assert_eq!(v["recordingMs"], 0);
+        assert_eq!(v["clipSeconds"], 30);
+        assert_eq!(v["overlay"], true);
+        assert_eq!(v["bufferHud"], false);
+    }
+
+    /// Verbindet sich ein TRS Client mit `clips.overlay` bzw. schaltet er die Puffer-Anzeige um,
+    /// bekommt die Oberfläche (Overlay) einen neuen Stand – nur für Spiele mit Aufnahme-Sitzung.
+    #[tokio::test]
+    async fn overlay_stand_folgt_dem_link() {
+        let dir = tempfile::tempdir().unwrap();
+        let (service, link) = service(dir.path());
+        let events = Arc::new(Mutex::new(Vec::new()));
+        let sink = events.clone();
+        service.set_sink(Arc::new(move |e| sink.lock().unwrap().push(e)));
+        link.open_session("survival", false).await.unwrap();
+        let state = LinkState { available: true, buffer: true, clip_seconds: 45, ..Default::default() };
+        service.shared.publish("survival", state.clone(), None);
+        let last = |events: &Arc<Mutex<Vec<ClipEvent>>>| match events.lock().unwrap().last() {
+            Some(ClipEvent::State(s)) => s.clone(),
+            other => panic!("kein Status: {other:?}"),
+        };
+        let first = last(&events);
+        assert_eq!((first.clip_seconds, first.overlay, first.buffer_hud), (45, false, true), "ohne Mod: Standard");
+
+        // Gleicher Stand → kein neues Ereignis.
+        service.shared.publish("survival", state.clone(), None);
+        assert_eq!(events.lock().unwrap().len(), 1);
+        // Link meldet eine Änderung, die es nicht gibt → nichts.
+        service.shared.hud_changed("survival");
+        assert_eq!(events.lock().unwrap().len(), 1);
+
+        // Mod mit `clips.overlay` verbunden, Puffer-Anzeige aus → sofort neuer Stand für das Overlay.
+        link.fake_hud("survival", link::LinkHud { overlay: true, buffer: false });
+        let now = last(&events);
+        assert_eq!((now.overlay, now.buffer_hud, now.clip_seconds), (true, false, 45));
+        assert_eq!(events.lock().unwrap().len(), 2);
+        // Der nächste Status der Aufnahme behält ihn.
+        service.shared.publish("survival", LinkState { recording: true, ..state }, None);
+        let now = last(&events);
+        assert!(now.recording && now.overlay && !now.buffer_hud);
+
+        // Ohne Aufnahme-Sitzung (kein Stand) → nichts.
+        link.open_session("fremd", false).await.unwrap();
+        link.fake_hud("fremd", link::LinkHud { overlay: true, buffer: true });
+        assert_eq!(events.lock().unwrap().len(), 3);
     }
 }

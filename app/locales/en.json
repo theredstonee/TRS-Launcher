@@ -4741,6 +4741,13 @@
       "trashed": "Clip moved to the recycle bin",
       "enabledInGame": "Clips were turned on in the game – {instance} is recording"
     },
+    "overlay": {
+      "buffer": "Buffer {duration}",
+      "seconds": "{n} s",
+      "clipSaved": "Clip saved ({duration})",
+      "recordingSaved": "Recording saved ({duration})",
+      "recordingStarted": "Recording started"
+    },
     "errors": {
       "disabled": "Clips are off – turn them on under Settings → Clips.",
       "starting": "Recording is still starting – try again in a moment.",

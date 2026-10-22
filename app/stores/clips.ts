@@ -2,6 +2,7 @@ import { isTauri } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { defineStore } from 'pinia'
 import type { ClipEvent, ClipOpenRequest, ClipState } from '~/types'
+import { OVERLAY_NOTE_MS, overlayInstance, overlayNoteFor } from '~/utils/clipOverlay'
 
 /** Aufnahmestand je laufendem Spiel, mit Empfangszeit (die Aufnahmezeit zählt die Oberfläche selbst weiter). */
 export interface LiveClipState extends ClipState {
@@ -27,19 +28,36 @@ export const useClipsStore = defineStore('clips', () => {
   }
 
   /**
-   * Das REC-Overlay (eigenes Launcher-Fenster, aus der Aufnahme ausgeschlossen) dem Aufnahme-Stand
-   * folgen lassen: zeigen, sobald ein Spiel aufnimmt, verstecken, wenn keines mehr aufnimmt. Ein
-   * einzelnes Overlay – nehmen mehrere Spiele gleichzeitig auf, gilt das erste. Außerhalb von
-   * Tauri (und auf Plattformen ohne Aufnahme) ist das ein No-Op.
+   * Das Clip-Overlay (eigenes Launcher-Fenster, aus der Aufnahme ausgeschlossen) dem Stand folgen
+   * lassen: sichtbar, solange ein Spiel aufnimmt, seine Puffer-Anzeige dort hat oder eine Meldung
+   * steht (Regel in `overlayInstance`); sonst verstecken. Ein einzelnes Overlay – das erste
+   * passende Spiel. Außerhalb von Tauri (und auf Plattformen ohne Aufnahme) ist das ein No-Op.
    */
-  let overlayInstance: string | null = null
+  let shownInstance: string | null = null
+  /** Meldungen im Overlay: Instanz → sichtbar bis (ms). */
+  const overlayNotes: Record<string, number> = {}
+  let noteTimer: ReturnType<typeof setTimeout> | null = null
   function syncOverlay() {
     if (!isTauri()) return
-    const id = active.value.find((s) => s.recording)?.instanceId ?? null
-    if (id === overlayInstance) return
-    overlayInstance = id
+    const now = Date.now()
+    for (const [id, until] of Object.entries(overlayNotes)) if (until <= now) delete overlayNotes[id]
+    const id = overlayInstance(active.value, overlayNotes, now)
+    if (id === shownInstance) return
+    shownInstance = id
     if (id) void backend.clipOverlayShow(id).catch(() => {})
     else void backend.clipOverlayHide().catch(() => {})
+  }
+
+  /** Meldung im Overlay: es bleibt mindestens so lange sichtbar, danach neu entscheiden. */
+  function noteOverlay(event: ClipEvent, previous: ClipState | undefined) {
+    const note = overlayNoteFor(event, previous)
+    if (!note) return
+    overlayNotes[note.instanceId] = Date.now() + OVERLAY_NOTE_MS
+    if (noteTimer) clearTimeout(noteTimer)
+    noteTimer = setTimeout(() => {
+      noteTimer = null
+      syncOverlay()
+    }, OVERLAY_NOTE_MS + 50)
   }
 
   /** Player mit diesem Clip öffnen (Clip-Seite, Deep-Link). */
@@ -53,6 +71,7 @@ export const useClipsStore = defineStore('clips', () => {
 
   function onEvent(event: ClipEvent) {
     const toasts = useToasts()
+    noteOverlay(event, 'instanceId' in event ? states.value[event.instanceId] : undefined)
     switch (event.type) {
       case 'state':
         setState(event)
@@ -73,10 +92,12 @@ export const useClipsStore = defineStore('clips', () => {
         })
         toasts.ok(text, { label: t('clips.toasts.show'), run: () => openClip(event.instanceId, event.fileName) })
         if (event.removed > 0) toasts.info(t('clips.toasts.limitCleanup', event.removed))
+        syncOverlay()
         break
       }
       case 'failed':
         toasts.error(failureText(event.code))
+        syncOverlay()
         break
       case 'ffmpeg':
         ffmpegDownloading.value = event.state === 'downloading'

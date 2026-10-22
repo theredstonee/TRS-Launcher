@@ -4741,6 +4741,13 @@
       "trashed": "Clip in den Papierkorb verschoben",
       "enabledInGame": "Clips wurden im Spiel eingeschaltet – {instance} nimmt auf"
     },
+    "overlay": {
+      "buffer": "Puffer {duration}",
+      "seconds": "{n} s",
+      "clipSaved": "Clip gespeichert ({duration})",
+      "recordingSaved": "Aufnahme gespeichert ({duration})",
+      "recordingStarted": "Aufnahme läuft"
+    },
     "errors": {
       "disabled": "Clips sind aus – unter Einstellungen → Clips einschalten.",
       "starting": "Die Aufnahme startet noch – gleich noch einmal versuchen.",

@@ -4673,6 +4673,13 @@
       "trashed": "Klip geri dönüşüm kutusuna taşındı",
       "enabledInGame": "Klipler oyunda açıldı – {instance} kaydediyor"
     },
+    "overlay": {
+      "buffer": "Arabellek {duration}",
+      "seconds": "{n} sn",
+      "clipSaved": "Klip kaydedildi ({duration})",
+      "recordingSaved": "Kayıt kaydedildi ({duration})",
+      "recordingStarted": "Kayıt başladı"
+    },
     "errors": {
       "disabled": "Klipler kapalı – Ayarlar → Klipler altından aç.",
       "starting": "Kayıt hâlâ başlıyor – birazdan tekrar dene.",

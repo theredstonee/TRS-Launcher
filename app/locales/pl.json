@@ -4673,6 +4673,13 @@
       "trashed": "Klip przeniesiono do kosza",
       "enabledInGame": "Klipy zostały włączone w grze – {instance} nagrywa"
     },
+    "overlay": {
+      "buffer": "Bufor {duration}",
+      "seconds": "{n} s",
+      "clipSaved": "Klip zapisany ({duration})",
+      "recordingSaved": "Nagranie zapisane ({duration})",
+      "recordingStarted": "Nagrywanie rozpoczęte"
+    },
     "errors": {
       "disabled": "Klipy są wyłączone – włącz je w Ustawieniach → Klipy.",
       "starting": "Nagrywanie jeszcze się uruchamia – spróbuj za chwilę.",

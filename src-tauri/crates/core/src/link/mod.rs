@@ -154,6 +154,33 @@ pub const FEATURE_HOSTING_JOIN: &str = "hosting.join";
 pub const FEATURE_HOSTING_MODS: &str = "hosting.mods";
 /// Merkmal: Mod-Dialog einer gehosteten Welt im Launcher öffnen (`hosting.open {roomId}`).
 pub const FEATURE_HOSTING_OPEN: &str = "hosting.open";
+/// Merkmal: Der Launcher zeigt Puffer-Anzeige, „REC“ und Clip-Meldungen in einem eigenen,
+/// aus der Aufnahme ausgeschlossenen Overlay-Fenster an – nie im Clip. Die Mod nennt es auch in
+/// ihrem `auth`: Nur dann übernimmt das Overlay Puffer und Meldungen (sonst zeichnet die Mod sie
+/// selbst, und der Launcher hält sich zurück, damit nichts doppelt erscheint).
+pub const FEATURE_CLIPS_OVERLAY: &str = "clips.overlay";
+/// Anfrage `clips.hud {buffer}`: Will der Spieler die Puffer-Anzeige sehen (Einstellung der Mod)?
+pub const OP_CLIPS_HUD: &str = "clips.hud";
+
+/// Was das Overlay des Launchers für ein Spiel anzeigen darf.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LinkHud {
+    /// Eine angemeldete Verbindung des Spiels hat `clips.overlay` genannt (die Mod zeichnet
+    /// Puffer und Meldungen dann nicht selbst).
+    pub overlay: bool,
+    /// Puffer-Anzeige gewünscht (`clips.hud`); ohne Anfrage: an.
+    pub buffer: bool,
+}
+
+impl Default for LinkHud {
+    fn default() -> Self {
+        Self { overlay: false, buffer: true }
+    }
+}
+
+/// Wird gerufen, wenn sich [`LinkHud`] eines Spiels geändert hat (Instanz).
+pub type HudSink = Arc<dyn Fn(&str) + Send + Sync>;
+
 /// Ein Welt-Beitritt wartet höchstens so lange auf das Spiel.
 const HOSTING_JOIN_TTL: Duration = Duration::from_secs(10 * 60);
 
@@ -316,6 +343,7 @@ struct Limits {
     mods_running: bool,
     last_mods: Option<Instant>,
     mods: VecDeque<Instant>,
+    last_hud: Option<Instant>,
 }
 
 const WINDOW: Duration = Duration::from_secs(10 * 60);
@@ -392,6 +420,15 @@ impl Limits {
         true
     }
 
+    /// `clips.hud`: eine Einstellung, die sich selten ändert – höchstens einmal je Sekunde.
+    fn allow_hud(&mut self, now: Instant) -> bool {
+        if self.last_hud.is_some_and(|t| now.duration_since(t) < Duration::from_secs(1)) {
+            return false;
+        }
+        self.last_hud = Some(now);
+        true
+    }
+
     /// `hosting.mods`: eine gleichzeitig, höchstens alle 5 s und 20-mal je 10 Minuten (liest alle Mod-Dateien).
     fn begin_mods(&mut self, now: Instant) -> HandlerResult<()> {
         prune(&mut self.mods, now);
@@ -440,6 +477,10 @@ struct Session {
     hosting_capable: Option<bool>,
     /// Offene, angemeldete v2-Verbindungen des Spiels (TRS Client verbunden).
     live: usize,
+    /// Davon: Verbindungen, die `clips.overlay` genannt haben.
+    overlay_live: usize,
+    /// Puffer-Anzeige im Overlay gewünscht (`clips.hud`, Standard an).
+    buffer_hud: bool,
 }
 
 impl Session {
@@ -461,7 +502,13 @@ impl Session {
             hosting_state: HostingDelivery::None,
             hosting_capable: None,
             live: 0,
+            overlay_live: 0,
+            buffer_hud: true,
         }
+    }
+
+    fn hud(&self) -> LinkHud {
+        LinkHud { overlay: self.overlay_live > 0, buffer: self.buffer_hud }
     }
 
     /// Abgelaufenen Welt-Beitritt verwerfen.
@@ -482,6 +529,7 @@ struct Shared {
     enable_clips: RwLock<Option<ClipsEnabler>>,
     clips: RwLock<Option<Arc<dyn ClipsHandler>>>,
     hosting: RwLock<Option<Arc<dyn HostingHandler>>>,
+    on_hud: RwLock<Option<HudSink>>,
     persist_file: Option<PathBuf>,
     persist_lock: tokio::sync::Mutex<()>,
     first_auth_ttl: Duration,
@@ -508,6 +556,14 @@ impl Shared {
 
     fn clips_enabler(&self) -> Option<ClipsEnabler> {
         self.enable_clips.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
+    }
+
+    /// Overlay-Stand eines Spiels hat sich geändert (nie mit gehaltener `hub`-Sperre rufen).
+    fn hud_changed(&self, instance_id: &str) {
+        let sink = self.on_hud.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
+        if let Some(sink) = sink {
+            sink(instance_id);
+        }
     }
 
     fn command(&self, instance_id: &str, command: LinkCommand) {
@@ -565,12 +621,26 @@ impl Shared {
 
     /// Eine angemeldete v2-Verbindung zählt (bzw. nicht mehr); nur für die
     /// Sitzung, mit der sie sich angemeldet hat – nicht für eine neuere.
-    fn count_live(&self, instance_id: &str, sid: &str, open: bool) {
-        let mut hub = self.hub();
-        if let Some(session) = hub.get_mut(instance_id).filter(|s| proto::ct_eq(s.sid.as_bytes(), sid.as_bytes())) {
-            session.live = if open { session.live + 1 } else { session.live.saturating_sub(1) };
+    /// `overlay`: die Verbindung hat `clips.overlay` genannt.
+    fn count_live(&self, instance_id: &str, sid: &str, open: bool, overlay: bool) {
+        let hud_changed = {
+            let mut hub = self.hub();
+            let mut hud_changed = false;
+            if let Some(session) = hub.get_mut(instance_id).filter(|s| proto::ct_eq(s.sid.as_bytes(), sid.as_bytes())) {
+                let before = session.hud();
+                let count = |n: usize| if open { n + 1 } else { n.saturating_sub(1) };
+                session.live = count(session.live);
+                if overlay {
+                    session.overlay_live = count(session.overlay_live);
+                }
+                hud_changed = session.hud() != before;
+            }
+            self.refresh_linked(&hub);
+            hud_changed
+        };
+        if hud_changed {
+            self.hud_changed(instance_id);
         }
-        self.refresh_linked(&hub);
     }
 }
 
@@ -579,18 +649,19 @@ struct LiveGuard {
     shared: Arc<Shared>,
     instance_id: String,
     sid: String,
+    overlay: bool,
 }
 
 impl LiveGuard {
     fn new(shared: Arc<Shared>, conn: &Conn) -> Self {
-        shared.count_live(&conn.instance_id, &conn.marker, true);
-        Self { shared, instance_id: conn.instance_id.clone(), sid: conn.marker.clone() }
+        shared.count_live(&conn.instance_id, &conn.marker, true, conn.overlay);
+        Self { shared, instance_id: conn.instance_id.clone(), sid: conn.marker.clone(), overlay: conn.overlay }
     }
 }
 
 impl Drop for LiveGuard {
     fn drop(&mut self) {
-        self.shared.count_live(&self.instance_id, &self.sid, false);
+        self.shared.count_live(&self.instance_id, &self.sid, false, self.overlay);
     }
 }
 
@@ -634,6 +705,7 @@ impl TrsLink {
                 enable_clips: RwLock::default(),
                 clips: RwLock::default(),
                 hosting: RwLock::default(),
+                on_hud: RwLock::default(),
                 persist_file,
                 persist_lock: tokio::sync::Mutex::new(()),
                 first_auth_ttl,
@@ -664,6 +736,26 @@ impl TrsLink {
     /// Welt-Hosting mit Mods (`hosting.mods`, `hosting.open`) anbinden.
     pub fn set_hosting_handler(&self, handler: Arc<dyn HostingHandler>) {
         *self.shared.hosting.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(handler);
+    }
+
+    /// Änderungen am Overlay-Stand ([`Self::hud`]) melden (Clips geben sie an die Oberfläche weiter).
+    pub fn set_hud_sink(&self, sink: HudSink) {
+        *self.shared.on_hud.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(sink);
+    }
+
+    /// Was das Overlay des Launchers für dieses Spiel anzeigen darf (ohne Sitzung: Standard).
+    pub fn hud(&self, instance_id: &str) -> LinkHud {
+        self.shared.hub().get(instance_id).map(Session::hud).unwrap_or_default()
+    }
+
+    /// Nur für Tests anderer Module: Overlay-Stand setzen, als hätte sich eine Mod gemeldet.
+    #[cfg(test)]
+    pub(crate) fn fake_hud(&self, instance_id: &str, hud: LinkHud) {
+        if let Some(session) = self.shared.hub().get_mut(instance_id) {
+            session.overlay_live = usize::from(hud.overlay);
+            session.buffer_hud = hud.buffer;
+        }
+        self.shared.hud_changed(instance_id);
     }
 
     /// Port, falls der Server schon läuft.
@@ -929,6 +1021,9 @@ struct Incoming {
     /// Welt für `hosting.open`.
     #[serde(default, rename = "roomId")]
     room_id: Option<String>,
+    /// `clips.hud`: Puffer-Anzeige gewünscht (true/false bzw. "true"/"false").
+    #[serde(default)]
+    buffer: Option<serde_json::Value>,
 }
 
 /// Eine angemeldete Verbindung.
@@ -943,6 +1038,8 @@ struct Conn {
     limits: Arc<Mutex<Limits>>,
     /// Die Mod kann gehostete Welten betreten (`hosting.join` im `auth`).
     hosting: bool,
+    /// Die Mod überlässt Puffer-Anzeige und Clip-Meldungen dem Overlay (`clips.overlay` im `auth`).
+    overlay: bool,
 }
 
 type Subscribed = (Conn, watch::Receiver<LinkState>, broadcast::Receiver<Push>);
@@ -992,7 +1089,8 @@ async fn handshake(
         };
         tracing::debug!("TRS-Link: v1-Anmeldung {}", if found.is_some() { "ok" } else { "abgewiesen" });
         let Some((instance_id, state_rx, push_rx, limits)) = found else { return deny(write).await };
-        let conn = Conn { instance_id, marker: token, v2: false, peer: None, seal_key: None, limits, hosting: false };
+        let conn =
+            Conn { instance_id, marker: token, v2: false, peer: None, seal_key: None, limits, hosting: false, overlay: false };
         return Some((conn, state_rx, push_rx));
     }
 
@@ -1023,13 +1121,15 @@ async fn handshake(
         "nonce": nl,
         "proof": proto::hex(&proto::launcher_proof(&key, &sid, &nc, &nl)),
         "features": ["clips", "accounts", FEATURE_CLIPS_ENABLE, FEATURE_CLIPS_PREVIEW, FEATURE_CLIPS_OPEN, FEATURE_HOSTING_JOIN,
-            FEATURE_HOSTING_MODS, FEATURE_HOSTING_OPEN],
+            FEATURE_HOSTING_MODS, FEATURE_HOSTING_OPEN, FEATURE_CLIPS_OVERLAY],
     });
     write_json(write, &challenge).await?;
     tokio::time::timeout_at(deadline, read_line(reader, buf)).await.ok()??;
     let auth: Incoming = serde_json::from_slice(buf).unwrap_or_default();
     let expected = proto::game_proof(&key, &sid, &nc, &nl);
-    let hosting = auth.features.as_deref().is_some_and(|f| f.iter().take(32).any(|f| f == FEATURE_HOSTING_JOIN));
+    let names = |wanted: &str| auth.features.as_deref().is_some_and(|f| f.iter().take(32).any(|f| f == wanted));
+    let hosting = names(FEATURE_HOSTING_JOIN);
+    let overlay = names(FEATURE_CLIPS_OVERLAY);
     let proof_ok = auth.kind == "auth"
         && auth.proof.as_deref().and_then(proto::unhex).is_some_and(|p| proto::ct_eq(&p, &expected));
     if !proof_ok {
@@ -1054,6 +1154,7 @@ async fn handshake(
         seal_key: Some(proto::seal_key(&key, &nc, &nl)),
         limits,
         hosting,
+        overlay,
     };
     Some((conn, state_rx, push_rx))
 }
@@ -1082,6 +1183,9 @@ fn handle_request(conn: &Conn, shared: &Arc<Shared>, msg: Incoming, id: u64, out
     }
     if op == FEATURE_CLIPS_PREVIEW || op == FEATURE_CLIPS_OPEN {
         return clips_request(conn, shared, &op, msg.clip, id, now, out);
+    }
+    if op == OP_CLIPS_HUD {
+        return reply(clips_hud(conn, shared, msg.buffer.as_ref(), id, now));
     }
     if op == FEATURE_HOSTING_JOIN {
         // Abholen statt Push: liefert den vorgemerkten Beitritt (genau einmal) oder `null`.
@@ -1182,6 +1286,32 @@ fn enable_clips(conn: &Conn, shared: &Arc<Shared>, id: u64, now: Instant, out: &
         };
         let _ = out.send(value);
     });
+}
+
+/// `clips.hud {buffer}`: Puffer-Anzeige im Overlay an/aus (Einstellung der Mod). Nur vom
+/// nachweislichen Spielprozess, höchstens einmal je Sekunde; gilt für die Sitzung dieser Verbindung.
+fn clips_hud(conn: &Conn, shared: &Shared, buffer: Option<&serde_json::Value>, id: u64, now: Instant) -> serde_json::Value {
+    if conn.peer != Some(true) {
+        return error_response(id, "not_allowed");
+    }
+    let buffer = match buffer {
+        Some(serde_json::Value::Bool(b)) => *b,
+        Some(serde_json::Value::String(s)) if s == "true" || s == "1" => true,
+        Some(serde_json::Value::String(s)) if s == "false" || s == "0" => false,
+        _ => return error_response(id, "error"),
+    };
+    if !conn.limits.lock().unwrap_or_else(std::sync::PoisonError::into_inner).allow_hud(now) {
+        return error_response(id, "rate_limited");
+    }
+    let changed = shared
+        .hub()
+        .get_mut(&conn.instance_id)
+        .filter(|s| proto::ct_eq(s.sid.as_bytes(), conn.marker.as_bytes()))
+        .is_some_and(|s| std::mem::replace(&mut s.buffer_hud, buffer) != buffer);
+    if changed {
+        shared.hud_changed(&conn.instance_id);
+    }
+    json!({ "type": "res", "id": id, "ok": true })
 }
 
 /// `clips.preview` / `clips.open`: nur ein bloßer Clip-Dateiname (kein Pfad);

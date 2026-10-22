@@ -4673,6 +4673,13 @@
       "trashed": "Clipe movido para a lixeira",
       "enabledInGame": "Os clipes foram ativados no jogo – {instance} está gravando"
     },
+    "overlay": {
+      "buffer": "Buffer {duration}",
+      "seconds": "{n} s",
+      "clipSaved": "Clipe salvo ({duration})",
+      "recordingSaved": "Gravação salva ({duration})",
+      "recordingStarted": "Gravação iniciada"
+    },
     "errors": {
       "disabled": "Os clipes estão desativados – ative em Configurações → Clipes.",
       "starting": "A gravação ainda está iniciando – tente de novo em instantes.",

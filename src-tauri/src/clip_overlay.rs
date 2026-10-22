@@ -1,9 +1,12 @@
-//! REC-Overlay: ein eigenes, immer obenauf liegendes, klick-durchlässiges und aus jeder
-//! Aufnahme ausgeschlossenes Fenster, das den Aufnahme-Indikator („REC m:ss") über dem Spiel
-//! zeigt. So landet „REC" nicht im Clip (den nimmt der Launcher per Windows Graphics Capture
-//! genau vom Spielfenster auf). Blinken und die Zeit zählt die Oberfläche (`/clip-overlay`);
-//! die Position führt der Launcher nach. Nur Windows – auf anderen Plattformen gibt es keine
-//! Aufnahme, die Befehle sind dort No-Ops und das Fenster wird nie erstellt.
+//! Clip-Overlay: ein eigenes, immer obenauf liegendes, klick-durchlässiges und aus jeder
+//! Aufnahme ausgeschlossenes Fenster über dem Spiel. Es zeigt den Aufnahme-Indikator
+//! („REC m:ss"), die Puffer-Anzeige („○ Puffer 30 s") und kurze Clip-Meldungen („Clip
+//! gespeichert") – so landet nichts davon im Clip (den nimmt der Launcher per Windows Graphics
+//! Capture genau vom Spielfenster auf). Inhalt, Blinken und Zeit macht die Oberfläche
+//! (`/clip-overlay`); die Position führt der Launcher nach. Das Fenster ist nur so groß wie
+//! sein Inhalt (oben links im Client-Bereich), weil es jetzt die ganze Spielsitzung über
+//! sichtbar sein kann. Nur Windows – auf anderen Plattformen gibt es keine Aufnahme, die
+//! Befehle sind dort No-Ops und das Fenster wird nie erstellt.
 
 use tauri::{AppHandle, State};
 #[cfg(windows)]
@@ -14,6 +17,11 @@ use crate::LauncherState;
 /// Fenster-Label des Overlays (auch in der Fensterzustands-Sperrliste, siehe `lib.rs`).
 #[cfg_attr(mobile, allow(dead_code))]
 pub const LABEL: &str = "clip-overlay";
+
+/// Größe des Overlays in logischen Pixeln (Pille + bis zu zwei Zeilen Meldung); wird mit dem
+/// DPI-Faktor des Fensters umgerechnet und auf den Client-Bereich des Spiels begrenzt.
+#[cfg(windows)]
+const SIZE: (f64, f64) = (440.0, 100.0);
 
 /// Overlay-Fenster holen oder beim ersten Mal anlegen: transparent, randlos, immer obenauf,
 /// nicht in der Taskleiste, ohne Schatten, nicht fokussierbar/änderbar, versteckt – dazu
@@ -26,14 +34,16 @@ fn ensure(app: &AppHandle) -> Option<tauri::WebviewWindow> {
         return Some(window);
     }
     let window = WebviewWindowBuilder::new(app, LABEL, WebviewUrl::App("clip-overlay".into()))
-        .title("TRS REC")
-        .inner_size(320.0, 64.0)
+        .title("TRS Clips")
+        .inner_size(SIZE.0, SIZE.1)
         .decorations(false)
         .transparent(true)
         .always_on_top(true)
         .skip_taskbar(true)
         .shadow(false)
         .focused(false)
+        // Nie aktivierbar: Zeigen/Nachführen nimmt dem Spiel nie den Fokus.
+        .focusable(false)
         .resizable(false)
         .maximizable(false)
         .minimizable(false)
@@ -59,49 +69,64 @@ fn ensure(app: &AppHandle) -> Option<tauri::WebviewWindow> {
     Some(window)
 }
 
-/// Overlay deckungsgleich über den Client-Bereich des Spielfensters legen.
+/// Lage des Overlays (physische Pixel): oben links im Client-Bereich des Spiels, so groß wie der
+/// Inhalt (`SIZE` × DPI-Faktor), höchstens so groß wie der Client-Bereich.
+#[cfg(windows)]
+fn overlay_rect(rect: trs_core::clips::window::ScreenRect, scale: f64) -> (i32, i32, u32, u32) {
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let scaled = |logical: f64| (logical * scale.clamp(0.5, 8.0)).round().max(1.0) as u32;
+    (rect.x, rect.y, scaled(SIZE.0).min(rect.width).max(1), scaled(SIZE.1).min(rect.height).max(1))
+}
+
+/// Overlay oben links über den Client-Bereich des Spielfensters legen und zeigen. Nur echte
+/// Änderungen gehen an das Fenster (der 500-ms-Takt läuft die ganze Spielsitzung).
 /// `Some(())` = platziert, `None` = kein (sichtbares) Spielfenster – dann besser verstecken.
 #[cfg(windows)]
 fn place(window: &tauri::WebviewWindow, launcher: &LauncherState, instance_id: &str) -> Option<()> {
     let pid = launcher.games().running().into_iter().find(|g| g.instance_id == instance_id)?.pid;
     let rect = trs_core::clips::window::find_screen_rect(pid)?;
-    let _ = window.set_position(tauri::PhysicalPosition::new(rect.x, rect.y));
-    let _ = window.set_size(tauri::PhysicalSize::new(rect.width.max(1), rect.height.max(1)));
+    let (x, y, width, height) = overlay_rect(rect, window.scale_factor().unwrap_or(1.0));
+    if window.outer_position().ok() != Some(tauri::PhysicalPosition::new(x, y)) {
+        let _ = window.set_position(tauri::PhysicalPosition::new(x, y));
+    }
+    if window.inner_size().ok() != Some(tauri::PhysicalSize::new(width, height)) {
+        let _ = window.set_size(tauri::PhysicalSize::new(width, height));
+    }
+    if !window.is_visible().unwrap_or(false) {
+        let _ = window.show();
+    }
     Some(())
 }
 
-/// Aufnahme hat begonnen: Overlay über das Spiel legen und zeigen.
+/// Overlay zeigen (Aufnahme, Puffer-Anzeige oder Meldung für dieses Spiel).
 #[tauri::command]
 pub fn clip_overlay_show(app: AppHandle, launcher: State<'_, LauncherState>, instance_id: String) {
     #[cfg(windows)]
-    if let Some(window) = ensure(&app) {
-        if place(&window, &launcher, &instance_id).is_some() {
-            let _ = window.show();
-        } else {
-            let _ = window.hide();
-        }
+    if let Some(window) = ensure(&app)
+        && place(&window, &launcher, &instance_id).is_none()
+    {
+        let _ = window.hide();
     }
     #[cfg(not(windows))]
     let _ = (app, launcher, instance_id);
 }
 
-/// Während der Aufnahme (~500 ms-Takt): Position/Größe dem Spielfenster nachführen;
+/// Solange das Overlay etwas zeigt (~500-ms-Takt): Position/Größe dem Spielfenster nachführen;
 /// ist das Spielfenster weg oder minimiert, das Overlay verstecken.
 #[tauri::command]
 pub fn clip_overlay_track(app: AppHandle, launcher: State<'_, LauncherState>, instance_id: String) {
     #[cfg(windows)]
-    if let Some(window) = app.get_webview_window(LABEL) {
-        if place(&window, &launcher, &instance_id).is_some() {
-            let _ = window.show();
-        } else {
-            let _ = window.hide();
-        }
+    if let Some(window) = app.get_webview_window(LABEL)
+        && place(&window, &launcher, &instance_id).is_none()
+        && window.is_visible().unwrap_or(true)
+    {
+        let _ = window.hide();
     }
     #[cfg(not(windows))]
     let _ = (app, launcher, instance_id);
 }
 
-/// Aufnahme beendet: Overlay verstecken (das Fenster bleibt für die nächste Aufnahme bestehen).
+/// Nichts mehr zu zeigen: Overlay verstecken (das Fenster bleibt für später bestehen).
 #[tauri::command]
 pub fn clip_overlay_hide(app: AppHandle) {
     #[cfg(windows)]

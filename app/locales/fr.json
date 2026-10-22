@@ -4673,6 +4673,13 @@
       "trashed": "Clip déplacé dans la corbeille",
       "enabledInGame": "Les clips ont été activés en jeu – {instance} enregistre"
     },
+    "overlay": {
+      "buffer": "Tampon {duration}",
+      "seconds": "{n} s",
+      "clipSaved": "Clip enregistré ({duration})",
+      "recordingSaved": "Enregistrement sauvegardé ({duration})",
+      "recordingStarted": "Enregistrement lancé"
+    },
     "errors": {
       "disabled": "Les clips sont désactivés – active-les dans Paramètres → Clips.",
       "starting": "L'enregistrement démarre encore – réessaie dans un instant.",

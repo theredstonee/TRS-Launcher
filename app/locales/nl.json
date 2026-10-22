@@ -4673,6 +4673,13 @@
       "trashed": "Clip naar de prullenbak verplaatst",
       "enabledInGame": "Clips zijn in het spel aangezet – {instance} neemt op"
     },
+    "overlay": {
+      "buffer": "Buffer {duration}",
+      "seconds": "{n} s",
+      "clipSaved": "Clip opgeslagen ({duration})",
+      "recordingSaved": "Opname opgeslagen ({duration})",
+      "recordingStarted": "Opname gestart"
+    },
     "errors": {
       "disabled": "Clips staan uit – zet ze aan onder Instellingen → Clips.",
       "starting": "De opname start nog – probeer het zo opnieuw.",
