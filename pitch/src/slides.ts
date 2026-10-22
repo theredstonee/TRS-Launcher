@@ -407,7 +407,7 @@ const clips: Slide = {
             { de: '<b>Screenshot-Editor</b>: zuschneiden, Pfeile, Text, verpixeln – als Link teilen', en: '<b>Screenshot editor</b>: crop, arrows, text, pixelate – share as a link' },
           ],
           600,
-        ) +
+        ),
       150,
       780,
     ) +
