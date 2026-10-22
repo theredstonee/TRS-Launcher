@@ -70,23 +70,26 @@ fn ensure(app: &AppHandle) -> Option<tauri::WebviewWindow> {
     Some(window)
 }
 
-/// Lage des Overlays (physische Pixel): oben links im Client-Bereich des Spiels, so groß wie der
-/// Inhalt (`SIZE` × DPI-Faktor), höchstens so groß wie der Client-Bereich.
+/// Größe des Overlays in physischen Pixeln (`SIZE` × DPI-Faktor des Fensters).
 #[cfg(windows)]
-fn overlay_rect(rect: trs_core::clips::window::ScreenRect, scale: f64) -> (i32, i32, u32, u32) {
+fn physical_size(scale: f64) -> (u32, u32) {
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let scaled = |logical: f64| (logical * scale.clamp(0.5, 8.0)).round().max(1.0) as u32;
-    (rect.x, rect.y, scaled(SIZE.0).min(rect.width).max(1), scaled(SIZE.1).min(rect.height).max(1))
+    (scaled(SIZE.0), scaled(SIZE.1))
 }
 
-/// Overlay oben links über den Client-Bereich des Spielfensters legen und zeigen. Nur echte
-/// Änderungen gehen an das Fenster (der 500-ms-Takt läuft die ganze Spielsitzung).
+/// Overlay an die Stelle des HUD-Elements „Clips“ im Client-Bereich des Spielfensters legen (ohne
+/// Angabe oben links, immer ganz im Client-Bereich) und zeigen. Nur echte Änderungen gehen an das
+/// Fenster (der 500-ms-Takt läuft die ganze Spielsitzung).
 /// `Some(())` = platziert, `None` = kein (sichtbares) Spielfenster – dann besser verstecken.
 #[cfg(windows)]
 fn place(window: &tauri::WebviewWindow, launcher: &LauncherState, instance_id: &str) -> Option<()> {
     let pid = launcher.games().running().into_iter().find(|g| g.instance_id == instance_id)?.pid;
-    let rect = trs_core::clips::window::find_screen_rect(pid)?;
-    let (x, y, width, height) = overlay_rect(rect, window.scale_factor().unwrap_or(1.0));
+    let client = trs_core::clips::window::find_screen_rect(pid)?;
+    let hud_place = launcher.clips().states().into_iter().find(|s| s.instance_id == instance_id).and_then(|s| s.hud_place);
+    let size = physical_size(window.scale_factor().unwrap_or(1.0));
+    let trs_core::clips::window::ScreenRect { x, y, width, height } =
+        trs_core::clips::window::overlay_rect(client, size, hud_place);
     if window.outer_position().ok() != Some(tauri::PhysicalPosition::new(x, y)) {
         let _ = window.set_position(tauri::PhysicalPosition::new(x, y));
     }

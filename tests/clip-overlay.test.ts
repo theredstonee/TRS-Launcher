@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, it } from 'vitest'
 import {
+  overlayAlign,
   overlayDuration,
   overlayInstance,
   overlayLine,
@@ -7,6 +8,7 @@ import {
   overlayNoteFor,
   overlayNoteText,
   overlayNoteTone,
+  overlayNoteWins,
   type OverlayState,
 } from '../app/utils/clipOverlay'
 import { setLocale } from '../app/utils/i18n'
@@ -22,7 +24,7 @@ const base: OverlayState = {
 }
 
 function stateEvent(patch: Partial<OverlayState>): ClipEvent {
-  return { type: 'state', recordingMs: 0, reason: null, encoder: null, ...base, ...patch }
+  return { type: 'state', recordingMs: 0, reason: null, encoder: null, hudPlace: null, ...base, ...patch }
 }
 
 describe('Clip-Overlay', () => {
@@ -71,6 +73,27 @@ describe('Clip-Overlay', () => {
     expect(overlayNoteFor(stateEvent({ recording: true }), undefined)).toBeNull()
     expect(overlayNoteFor(stateEvent({ recording: true, overlay: false }), base)).toBeNull()
     expect(overlayNoteFor({ type: 'ffmpeg', state: 'ready' }, undefined)).toBeNull()
+  })
+
+  it('richtet sich nach dem Anker des Clips-Elements', () => {
+    const place = (anchorX: number, anchorY: number, offsetX = 0, offsetY = 0) => ({ anchorX, anchorY, offsetX, offsetY })
+    expect(overlayAlign(null)).toEqual({ x: 'start', y: 'start', noteAbove: false })
+    // Standard des TRS Client: rechts Mitte, 20 % höher → rechtsbündig, Meldung darunter.
+    expect(overlayAlign(place(1000, 500, 0, -200))).toEqual({ x: 'end', y: 'center', noteAbove: false })
+    expect(overlayAlign(place(500, 0))).toEqual({ x: 'center', y: 'start', noteAbove: false })
+    // Unten (unteres Drittel) → Meldung über der Pille.
+    expect(overlayAlign(place(0, 1000, 10, -50))).toEqual({ x: 'start', y: 'end', noteAbove: true })
+    expect(overlayAlign(place(0, 500, 0, 200))).toEqual({ x: 'start', y: 'center', noteAbove: true })
+    expect(overlayAlign(place(0, 500, 0, 100)).noteAbove).toBe(false)
+  })
+
+  it('lässt „Clip gespeichert“ nicht von „Aufnahme läuft“ verdrängen', () => {
+    const started = { instanceId: 'a', kind: 'recordingStarted' as const }
+    const saved = { instanceId: 'a', kind: 'clipSaved' as const, seconds: 30 }
+    expect(overlayNoteWins(started, 2000, 1000)).toBe(false)
+    expect(overlayNoteWins(started, 900, 1000)).toBe(true)
+    expect(overlayNoteWins(started, undefined, 1000)).toBe(true)
+    expect(overlayNoteWins(saved, 2000, 1000)).toBe(true)
   })
 
   it('formuliert Texte und Farben', () => {

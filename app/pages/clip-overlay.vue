@@ -4,12 +4,14 @@ import { listen } from '@tauri-apps/api/event'
 import type { ClipEvent, ClipState } from '~/types'
 import {
   OVERLAY_NOTE_MS,
+  overlayAlign,
   overlayInstance,
   overlayLine,
   overlayLineText,
   overlayNoteFor,
   overlayNoteText,
   overlayNoteTone,
+  overlayNoteWins,
   type OverlayNote,
 } from '~/utils/clipOverlay'
 
@@ -43,6 +45,9 @@ const note = computed(() => {
   return entry && entry.until > now.value ? entry.note : null
 })
 
+/** Ausrichtung im Fenster nach dem Anker des HUD-Elements „Clips“. */
+const align = computed(() => overlayAlign(state.value?.hudPlace))
+
 /** Roter Punkt blinkt im Sekundentakt (an/aus je 500 ms) – wie zuvor im Spiel. */
 const dotOn = computed(() => Math.floor(now.value / 500) % 2 === 0)
 
@@ -56,7 +61,8 @@ function apply(s: ClipState) {
 function onEvent(event: ClipEvent) {
   const previous = 'instanceId' in event ? live[event.instanceId] : undefined
   const n = overlayNoteFor(event, previous)
-  if (n) notes[n.instanceId] = { note: n, until: Date.now() + OVERLAY_NOTE_MS }
+  const at = Date.now()
+  if (n && overlayNoteWins(n, notes[n.instanceId]?.until, at)) notes[n.instanceId] = { note: n, until: at + OVERLAY_NOTE_MS }
   if (event.type === 'state') apply(event)
   else if (event.type === 'ended') {
     delete live[event.instanceId]
@@ -103,34 +109,86 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="overlay">
-    <div v-if="line" class="pill" :class="line.kind">
-      <span v-if="line.kind === 'rec'" class="dot rec" :class="{ off: !dotOn }" aria-hidden="true" />
-      <span v-else class="ring" aria-hidden="true" />
-      <span class="text">{{ lineText }}</span>
-    </div>
-    <div v-if="note" class="pill note" :class="overlayNoteTone(note)">
-      <span class="dot" aria-hidden="true" />
-      <span class="text">{{ overlayNoteText(note) }}</span>
+  <div class="overlay" :class="[`x-${align.x}`, `y-${align.y}`, { 'note-above': align.noteAbove }]">
+    <div v-if="line || note" class="anchor">
+      <div v-if="line" class="pill" :class="line.kind">
+        <span v-if="line.kind === 'rec'" class="dot rec" :class="{ off: !dotOn }" aria-hidden="true" />
+        <span v-else class="ring" aria-hidden="true" />
+        <span class="text">{{ lineText }}</span>
+      </div>
+      <div v-if="note" class="pill note" :class="[overlayNoteTone(note), { follow: !!line }]">
+        <span class="dot" aria-hidden="true" />
+        <span class="text">{{ overlayNoteText(note) }}</span>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* Kleines (transparentes) Fenster oben links im Spiel; die Pillen sitzen linksbündig mit etwas Rand. */
+/*
+ * Kleines (transparentes) Fenster an der Stelle des HUD-Elements „Clips“. Die Pille sitzt im
+ * Fenster wie das Element an seinem Anker (links/Mitte/rechts, oben/Mitte/unten); die Meldung
+ * hängt darunter – bzw. darüber, wenn das Element im unteren Bildschirmdrittel liegt.
+ */
 .overlay {
   position: fixed;
   inset: 0;
   margin: 0;
-  padding: 6px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
   background: transparent;
   pointer-events: none;
   overflow: hidden;
-  box-sizing: border-box;
+  --tx: 0;
+  --ty: 0;
+}
+.anchor {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  transform: translate(var(--tx), var(--ty));
+}
+.x-start .anchor {
+  left: 2px;
+  align-items: flex-start;
+}
+.x-center .anchor {
+  left: 50%;
+  --tx: -50%;
+  align-items: center;
+}
+.x-end .anchor {
+  right: 2px;
+  align-items: flex-end;
+}
+.y-start .anchor {
+  top: 2px;
+}
+.y-center .anchor {
+  top: 50%;
+  --ty: -50%;
+}
+.y-end .anchor {
+  bottom: 2px;
+}
+/* Meldung neben der Pille: absolut, damit die Pille genau am Anker bleibt. */
+.note.follow {
+  position: absolute;
+  top: calc(100% + 4px);
+  width: max-content;
+  max-width: 420px;
+}
+.note-above .note.follow {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+.x-start .note.follow {
+  left: 0;
+}
+.x-end .note.follow {
+  right: 0;
+}
+.x-center .note.follow {
+  left: 50%;
+  transform: translateX(-50%);
 }
 .pill {
   display: inline-flex;

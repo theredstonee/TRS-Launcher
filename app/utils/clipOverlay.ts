@@ -1,10 +1,33 @@
 import { t } from './i18n'
 import { failureText, formatClipDuration } from './clips'
-import type { ClipEvent, ClipState } from '~/types'
+import type { ClipEvent, ClipHudPlace, ClipState } from '~/types'
 
 // Inhalt des Clip-Overlays (eigenes, aus der Aufnahme ausgeschlossenes Launcher-Fenster über dem
 // Spiel): „● REC m:ss“, „○ Puffer 30 s“ und kurze Clip-Meldungen. Reine Funktionen – der Store
 // (zeigen/verstecken) und die Overlay-Seite (Inhalt) entscheiden damit gleich.
+
+/** Ausrichtung im Overlay-Fenster: wie der Anker des HUD-Elements „Clips“. */
+export type OverlayEdge = 'start' | 'center' | 'end'
+
+export interface OverlayAlign {
+  x: OverlayEdge
+  y: OverlayEdge
+  /** Meldung über der Pille (Element im unteren Bildschirmdrittel), sonst darunter. */
+  noteAbove: boolean
+}
+
+/**
+ * Wie Pille und Meldung im Overlay-Fenster liegen. Das Fenster selbst legt der Launcher mit der
+ * HUD-Formel an die Stelle des Clips-Elements (rechter Anker → rechtsbündig usw.); im Fenster
+ * richtet sich der Inhalt nach demselben Anker. Ohne Lage: oben links, Meldung darunter.
+ */
+export function overlayAlign(place: ClipHudPlace | null | undefined): OverlayAlign {
+  if (!place) return { x: 'start', y: 'start', noteAbove: false }
+  const edge = (anchor: number): OverlayEdge => (anchor <= 250 ? 'start' : anchor >= 750 ? 'end' : 'center')
+  // Mitte des Elements ≈ Anker + Versatz (das Element ist klein gegen den Bildschirm).
+  const centerY = (place.anchorY + place.offsetY) / 1000
+  return { x: edge(place.anchorX), y: edge(place.anchorY), noteAbove: centerY > 2 / 3 }
+}
 
 /** So lange steht eine Meldung im Overlay (ms). */
 export const OVERLAY_NOTE_MS = 3000
@@ -66,6 +89,14 @@ export function overlayNoteFor(
     default:
       return null
   }
+}
+
+/**
+ * Ersetzt `next` die noch stehende Meldung (sichtbar bis `currentUntil`)? „Aufnahme läuft“ nicht –
+ * das zeigt die REC-Pille ohnehin, und F10 direkt nach F9 soll „Clip gespeichert“ nicht schlucken.
+ */
+export function overlayNoteWins(next: OverlayNote, currentUntil: number | undefined, now: number): boolean {
+  return next.kind !== 'recordingStarted' || !(currentUntil !== undefined && currentUntil > now)
 }
 
 /** „30 s“ unter einer Minute, sonst „1:05“ – wie bisher im Spiel. */

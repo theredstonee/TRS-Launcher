@@ -79,6 +79,8 @@ pub struct ClipState {
     pub overlay: bool,
     /// Puffer-Anzeige im Overlay gewünscht (Einstellung der Mod, Standard an).
     pub buffer_hud: bool,
+    /// Lage des HUD-Elements „Clips“ im Spiel – dort liegt das Overlay (`None` = oben links).
+    pub hud_place: Option<link::HudPlace>,
 }
 
 pub type ClipSink = Arc<dyn Fn(ClipEvent) + Send + Sync>;
@@ -124,6 +126,7 @@ fn same_view(a: &ClipState, b: &ClipState) -> bool {
         && a.clip_seconds == b.clip_seconds
         && a.overlay == b.overlay
         && a.buffer_hud == b.buffer_hud
+        && a.hud_place == b.hud_place
 }
 
 impl Shared {
@@ -156,6 +159,7 @@ impl Shared {
             clip_seconds: state.clip_seconds,
             overlay: hud.overlay,
             buffer_hud: hud.buffer,
+            hud_place: hud.place,
         };
         self.link.set_state(instance_id, state);
         // Oberfläche nur bei echten Änderungen (die Zeit zählt sie selbst weiter).
@@ -177,11 +181,12 @@ impl Shared {
         let view = {
             let mut states = lock(&self.states);
             let Some(state) = states.get_mut(instance_id) else { return };
-            if state.overlay == hud.overlay && state.buffer_hud == hud.buffer {
+            if state.overlay == hud.overlay && state.buffer_hud == hud.buffer && state.hud_place == hud.place {
                 return;
             }
             state.overlay = hud.overlay;
             state.buffer_hud = hud.buffer;
+            state.hud_place = hud.place;
             state.clone()
         };
         self.emit(ClipEvent::State(view));
@@ -680,6 +685,7 @@ mod tests {
             clip_seconds: 30,
             overlay: true,
             buffer_hud: false,
+            hud_place: Some(link::HudPlace { anchor_x: 1000, anchor_y: 500, offset_x: 0, offset_y: -200 }),
         });
         let v = serde_json::to_value(&s).unwrap();
         assert_eq!(v["type"], "state");
@@ -688,6 +694,7 @@ mod tests {
         assert_eq!(v["clipSeconds"], 30);
         assert_eq!(v["overlay"], true);
         assert_eq!(v["bufferHud"], false);
+        assert_eq!(v["hudPlace"], serde_json::json!({ "anchorX": 1000, "anchorY": 500, "offsetX": 0, "offsetY": -200 }));
     }
 
     /// Verbindet sich ein TRS Client mit `clips.overlay` bzw. schaltet er die Puffer-Anzeige um,
@@ -717,7 +724,7 @@ mod tests {
         assert_eq!(events.lock().unwrap().len(), 1);
 
         // Mod mit `clips.overlay` verbunden, Puffer-Anzeige aus → sofort neuer Stand für das Overlay.
-        link.fake_hud("survival", link::LinkHud { overlay: true, buffer: false });
+        link.fake_hud("survival", link::LinkHud { overlay: true, buffer: false, place: None });
         let now = last(&events);
         assert_eq!((now.overlay, now.buffer_hud, now.clip_seconds), (true, false, 45));
         assert_eq!(events.lock().unwrap().len(), 2);
@@ -728,7 +735,7 @@ mod tests {
 
         // Ohne Aufnahme-Sitzung (kein Stand) → nichts.
         link.open_session("fremd", false).await.unwrap();
-        link.fake_hud("fremd", link::LinkHud { overlay: true, buffer: true });
+        link.fake_hud("fremd", link::LinkHud { overlay: true, buffer: true, place: None });
         assert_eq!(events.lock().unwrap().len(), 3);
     }
 }

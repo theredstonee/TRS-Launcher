@@ -2,7 +2,7 @@ import { isTauri } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { defineStore } from 'pinia'
 import type { ClipEvent, ClipOpenRequest, ClipState } from '~/types'
-import { OVERLAY_NOTE_MS, overlayInstance, overlayNoteFor } from '~/utils/clipOverlay'
+import { OVERLAY_NOTE_MS, overlayInstance, overlayNoteFor, overlayNoteWins } from '~/utils/clipOverlay'
 
 /** Aufnahmestand je laufendem Spiel, mit Empfangszeit (die Aufnahmezeit zählt die Oberfläche selbst weiter). */
 export interface LiveClipState extends ClipState {
@@ -51,8 +51,9 @@ export const useClipsStore = defineStore('clips', () => {
   /** Meldung im Overlay: es bleibt mindestens so lange sichtbar, danach neu entscheiden. */
   function noteOverlay(event: ClipEvent, previous: ClipState | undefined) {
     const note = overlayNoteFor(event, previous)
-    if (!note) return
-    overlayNotes[note.instanceId] = Date.now() + OVERLAY_NOTE_MS
+    const now = Date.now()
+    if (!note || !overlayNoteWins(note, overlayNotes[note.instanceId], now)) return
+    overlayNotes[note.instanceId] = now + OVERLAY_NOTE_MS
     if (noteTimer) clearTimeout(noteTimer)
     noteTimer = setTimeout(() => {
       noteTimer = null

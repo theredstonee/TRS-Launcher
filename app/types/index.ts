@@ -378,6 +378,16 @@ export interface ClipState {
   overlay: boolean
   /** Puffer-Anzeige im Overlay gewünscht (Einstellung im Spiel, Standard an). */
   bufferHud: boolean
+  /** Lage des HUD-Elements „Clips“ (Anker/Versatz in Promille); null = oben links. */
+  hudPlace: ClipHudPlace | null
+}
+
+/** Anker (0 = links/oben … 1000 = rechts/unten) und Versatz (Promille der Fläche) wie im HUD-Editor. */
+export interface ClipHudPlace {
+  anchorX: number
+  anchorY: number
+  offsetX: number
+  offsetY: number
 }
 
 export type ClipFailure =

@@ -170,11 +170,59 @@ pub struct LinkHud {
     pub overlay: bool,
     /// Puffer-Anzeige gewünscht (`clips.hud`); ohne Anfrage: an.
     pub buffer: bool,
+    /// Wo der Spieler das HUD-Element „Clips“ hingelegt hat (`None` = unbekannt → oben links).
+    pub place: Option<HudPlace>,
 }
 
 impl Default for LinkHud {
     fn default() -> Self {
-        Self { overlay: false, buffer: true }
+        Self { overlay: false, buffer: true, place: None }
+    }
+}
+
+/// Lage des HUD-Elements „Clips“ wie im HUD-Editor des TRS Client: Anker (0 = links/oben,
+/// 1 = rechts/unten, 0,5 = Mitte) und Versatz als Anteil der Bildschirmbreite/-höhe – alles in
+/// Promille. Unabhängig von Fenstergröße und GUI-Skala: Das Overlay legt sich mit derselben
+/// Formel wie das HUD (`Anker × (Fläche − eigene Größe) + Versatz × Fläche`) in den Spielbereich.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HudPlace {
+    pub anchor_x: u16,
+    pub anchor_y: u16,
+    pub offset_x: i16,
+    pub offset_y: i16,
+}
+
+impl HudPlace {
+    /// Aus der Anfrage `clips.hud` (Zahlen oder Text, wie die Mod sie schickt). Alle vier Werte
+    /// fehlen → `Ok(None)`; einer fehlt oder ist keine endliche Zahl → `Err`. Anker werden auf
+    /// 0..1, Versätze auf −1..1 begrenzt; Fehlercode `error`.
+    pub fn parse(
+        anchor_x: Option<&serde_json::Value>,
+        anchor_y: Option<&serde_json::Value>,
+        offset_x: Option<&serde_json::Value>,
+        offset_y: Option<&serde_json::Value>,
+    ) -> HandlerResult<Option<Self>> {
+        fn number(value: Option<&serde_json::Value>) -> HandlerResult<f64> {
+            let n = match value {
+                Some(serde_json::Value::Number(n)) => n.as_f64(),
+                Some(serde_json::Value::String(s)) if s.len() <= 32 => s.trim().parse::<f64>().ok(),
+                _ => None,
+            };
+            n.filter(|n| n.is_finite()).ok_or("error")
+        }
+        #[allow(clippy::cast_possible_truncation)]
+        let permille = |v: f64, min: f64| (v.clamp(min, 1.0) * 1000.0).round() as i16;
+        if anchor_x.is_none() && anchor_y.is_none() && offset_x.is_none() && offset_y.is_none() {
+            return Ok(None);
+        }
+        let anchor = |v: f64| u16::try_from(permille(v, 0.0)).unwrap_or(0);
+        Ok(Some(Self {
+            anchor_x: anchor(number(anchor_x)?),
+            anchor_y: anchor(number(anchor_y)?),
+            offset_x: permille(number(offset_x)?, -1.0),
+            offset_y: permille(number(offset_y)?, -1.0),
+        }))
     }
 }
 
@@ -481,6 +529,8 @@ struct Session {
     overlay_live: usize,
     /// Puffer-Anzeige im Overlay gewünscht (`clips.hud`, Standard an).
     buffer_hud: bool,
+    /// Lage des HUD-Elements „Clips“ (`clips.hud`).
+    hud_place: Option<HudPlace>,
 }
 
 impl Session {
@@ -504,11 +554,12 @@ impl Session {
             live: 0,
             overlay_live: 0,
             buffer_hud: true,
+            hud_place: None,
         }
     }
 
     fn hud(&self) -> LinkHud {
-        LinkHud { overlay: self.overlay_live > 0, buffer: self.buffer_hud }
+        LinkHud { overlay: self.overlay_live > 0, buffer: self.buffer_hud, place: self.hud_place }
     }
 
     /// Abgelaufenen Welt-Beitritt verwerfen.
@@ -754,6 +805,7 @@ impl TrsLink {
         if let Some(session) = self.shared.hub().get_mut(instance_id) {
             session.overlay_live = usize::from(hud.overlay);
             session.buffer_hud = hud.buffer;
+            session.hud_place = hud.place;
         }
         self.shared.hud_changed(instance_id);
     }
@@ -1024,6 +1076,15 @@ struct Incoming {
     /// `clips.hud`: Puffer-Anzeige gewünscht (true/false bzw. "true"/"false").
     #[serde(default)]
     buffer: Option<serde_json::Value>,
+    /// `clips.hud`: Lage des HUD-Elements „Clips“ (Anker/Versatz, siehe [`HudPlace`]).
+    #[serde(default, rename = "anchorX")]
+    anchor_x: Option<serde_json::Value>,
+    #[serde(default, rename = "anchorY")]
+    anchor_y: Option<serde_json::Value>,
+    #[serde(default, rename = "offsetX")]
+    offset_x: Option<serde_json::Value>,
+    #[serde(default, rename = "offsetY")]
+    offset_y: Option<serde_json::Value>,
 }
 
 /// Eine angemeldete Verbindung.
@@ -1175,7 +1236,7 @@ fn handle_request(conn: &Conn, shared: &Arc<Shared>, msg: Incoming, id: u64, out
     if !conn.v2 {
         return reply(error_response(id, "not_allowed"));
     }
-    let op = msg.op.unwrap_or_default();
+    let op = msg.op.clone().unwrap_or_default();
     let now = Instant::now();
     let limits = || conn.limits.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     if op == "clips.enable" {
@@ -1185,7 +1246,7 @@ fn handle_request(conn: &Conn, shared: &Arc<Shared>, msg: Incoming, id: u64, out
         return clips_request(conn, shared, &op, msg.clip, id, now, out);
     }
     if op == OP_CLIPS_HUD {
-        return reply(clips_hud(conn, shared, msg.buffer.as_ref(), id, now));
+        return reply(clips_hud(conn, shared, &msg, id, now));
     }
     if op == FEATURE_HOSTING_JOIN {
         // Abholen statt Push: liefert den vorgemerkten Beitritt (genau einmal) oder `null`.
@@ -1288,17 +1349,22 @@ fn enable_clips(conn: &Conn, shared: &Arc<Shared>, id: u64, now: Instant, out: &
     });
 }
 
-/// `clips.hud {buffer}`: Puffer-Anzeige im Overlay an/aus (Einstellung der Mod). Nur vom
+/// `clips.hud {buffer, anchorX?, anchorY?, offsetX?, offsetY?}`: Puffer-Anzeige im Overlay an/aus
+/// (Einstellung der Mod) und Lage des HUD-Elements „Clips“, an die sich das Overlay legt. Nur vom
 /// nachweislichen Spielprozess, höchstens einmal je Sekunde; gilt für die Sitzung dieser Verbindung.
-fn clips_hud(conn: &Conn, shared: &Shared, buffer: Option<&serde_json::Value>, id: u64, now: Instant) -> serde_json::Value {
+fn clips_hud(conn: &Conn, shared: &Shared, msg: &Incoming, id: u64, now: Instant) -> serde_json::Value {
     if conn.peer != Some(true) {
         return error_response(id, "not_allowed");
     }
-    let buffer = match buffer {
+    let buffer = match &msg.buffer {
         Some(serde_json::Value::Bool(b)) => *b,
         Some(serde_json::Value::String(s)) if s == "true" || s == "1" => true,
         Some(serde_json::Value::String(s)) if s == "false" || s == "0" => false,
         _ => return error_response(id, "error"),
+    };
+    let Ok(place) = HudPlace::parse(msg.anchor_x.as_ref(), msg.anchor_y.as_ref(), msg.offset_x.as_ref(), msg.offset_y.as_ref())
+    else {
+        return error_response(id, "error");
     };
     if !conn.limits.lock().unwrap_or_else(std::sync::PoisonError::into_inner).allow_hud(now) {
         return error_response(id, "rate_limited");
@@ -1307,7 +1373,12 @@ fn clips_hud(conn: &Conn, shared: &Shared, buffer: Option<&serde_json::Value>, i
         .hub()
         .get_mut(&conn.instance_id)
         .filter(|s| proto::ct_eq(s.sid.as_bytes(), conn.marker.as_bytes()))
-        .is_some_and(|s| std::mem::replace(&mut s.buffer_hud, buffer) != buffer);
+        .is_some_and(|s| {
+            let changed = s.buffer_hud != buffer || s.hud_place != place;
+            s.buffer_hud = buffer;
+            s.hud_place = place;
+            changed
+        });
     if changed {
         shared.hud_changed(&conn.instance_id);
     }

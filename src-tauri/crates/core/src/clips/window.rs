@@ -197,6 +197,25 @@ pub fn screen_rect(_hwnd: u64) -> Option<ScreenRect> {
     None
 }
 
+/// Lage des Clip-Overlays (Größe `size`, physische Pixel) im Client-Bereich `client`: an der Stelle
+/// des HUD-Elements „Clips“ – dieselbe Formel wie das HUD des TRS Client (`Anker × (Fläche −
+/// Größe) + Versatz × Fläche`), also bei rechtem Anker rechtsbündig, unten verankert unten bündig.
+/// Ohne Angabe oben links. Immer vollständig im Client-Bereich (zu große Overlays werden kleiner).
+pub fn overlay_rect(client: ScreenRect, size: (u32, u32), place: Option<crate::link::HudPlace>) -> ScreenRect {
+    let width = size.0.min(client.width).max(1);
+    let height = size.1.min(client.height).max(1);
+    let (dx, dy) = place.map_or((0, 0), |p| {
+        let free_w = f64::from(client.width.saturating_sub(width));
+        let free_h = f64::from(client.height.saturating_sub(height));
+        let x = f64::from(p.anchor_x) / 1000.0 * free_w + f64::from(p.offset_x) / 1000.0 * f64::from(client.width);
+        let y = f64::from(p.anchor_y) / 1000.0 * free_h + f64::from(p.offset_y) / 1000.0 * f64::from(client.height);
+        #[allow(clippy::cast_possible_truncation)]
+        let clamp = |v: f64, max: f64| v.round().clamp(0.0, max) as i32;
+        (clamp(x, free_w), clamp(y, free_h))
+    });
+    ScreenRect { x: client.x.saturating_add(dx), y: client.y.saturating_add(dy), width, height }
+}
+
 /// Fenster des Spiels (ganzer Prozessbaum) + seinen Client-Bereich in Bildschirm-Koordinaten
 /// suchen – für das REC-Overlay, das der Launcher über das Spiel legt.
 pub fn find_screen_rect(pid: u32) -> Option<ScreenRect> {
@@ -244,6 +263,29 @@ mod tests {
     fn eigener_prozessbaum_enthaelt_mich() {
         let me = std::process::id();
         assert!(process_tree(me).contains(&me));
+    }
+
+    #[test]
+    fn overlay_liegt_an_der_stelle_des_clips_elements() {
+        use crate::link::HudPlace;
+        let client = ScreenRect { x: -1600, y: 167, width: 1280, height: 720 };
+        let place = |ax, ay, ox, oy| Some(HudPlace { anchor_x: ax, anchor_y: ay, offset_x: ox, offset_y: oy });
+        // Ohne Angabe: oben links.
+        assert_eq!(overlay_rect(client, (440, 100), None), ScreenRect { x: -1600, y: 167, width: 440, height: 100 });
+        // Standard des TRS Client: rechts, Mitte, 20 % nach oben → rechtsbündig, (720−100)/2 − 144 = 166.
+        let r = overlay_rect(client, (440, 100), place(1000, 500, 0, -200));
+        assert_eq!((r.x - client.x, r.y - client.y, r.width), (840, 166, 440));
+        // Unten links mit Versatz nach innen.
+        let r = overlay_rect(client, (440, 100), place(0, 1000, 10, -10));
+        assert_eq!((r.x - client.x, r.y - client.y), (13, 613));
+        // Versatz über den Rand hinaus → geklemmt, nie außerhalb des Client-Bereichs.
+        let r = overlay_rect(client, (440, 100), place(1000, 0, 500, -500));
+        assert_eq!((r.x - client.x, r.y - client.y), (840, 0));
+        let r = overlay_rect(client, (440, 100), place(0, 1000, -1000, 1000));
+        assert_eq!((r.x - client.x, r.y - client.y), (0, 620));
+        // Kleines Spielfenster: Overlay schrumpft auf den Client-Bereich.
+        let tiny = ScreenRect { x: 0, y: 0, width: 300, height: 80 };
+        assert_eq!(overlay_rect(tiny, (440, 100), place(1000, 1000, 0, 0)), ScreenRect { x: 0, y: 0, width: 300, height: 80 });
     }
 
     #[test]
