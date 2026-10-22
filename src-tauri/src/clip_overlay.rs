@@ -8,10 +8,11 @@
 //! sichtbar sein kann. Nur Windows – auf anderen Plattformen gibt es keine Aufnahme, die
 //! Befehle sind dort No-Ops und das Fenster wird nie erstellt.
 
-use tauri::{AppHandle, State};
+use tauri::AppHandle;
 #[cfg(windows)]
 use tauri::Manager;
 
+#[cfg(windows)]
 use crate::LauncherState;
 
 /// Fenster-Label des Overlays (auch in der Fensterzustands-Sperrliste, siehe `lib.rs`).
@@ -98,40 +99,82 @@ fn place(window: &tauri::WebviewWindow, launcher: &LauncherState, instance_id: &
     Some(())
 }
 
+/// Für welches Spiel das Overlay gerade zeigen soll (`None` = versteckt). Die Befehle laufen
+/// synchron und damit in Aufrufreihenfolge auf dem Hauptthread und setzen nur diesen Wunsch; die
+/// eigentliche Arbeit (Fenster anlegen, Spielfenster suchen) läuft in [`apply`] außerhalb davon.
+#[cfg(windows)]
+static WANTED: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
+
+#[cfg(windows)]
+fn wanted() -> Option<String> {
+    WANTED.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
+}
+
+#[cfg(windows)]
+fn set_wanted(instance_id: Option<String>) {
+    *WANTED.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = instance_id;
+}
+
+/// Wunsch umsetzen – nie auf dem Hauptthread: Ein Webview-Fenster in einem synchronen Befehl
+/// (also auf dem Hauptthread) anzulegen, blockiert unter Windows die ganze Oberfläche (WebView2
+/// wartet auf den Hauptthread, der auf das Fenster wartet). Auch die Suche nach dem Spielfenster
+/// (Prozess-Schnappschuss) soll die Oberfläche nicht im 500-ms-Takt bremsen.
+#[cfg(windows)]
+fn apply(app: AppHandle) {
+    // Nacheinander (nie zwei Fenster gleichzeitig anlegen); der Hauptthread nimmt diese Sperre nie.
+    static APPLY: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    tauri::async_runtime::spawn_blocking(move || {
+        let _serial = APPLY.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let Some(instance_id) = wanted() else {
+            if let Some(window) = app.get_webview_window(LABEL) {
+                let _ = window.hide();
+            }
+            return;
+        };
+        let Some(window) = ensure(&app) else { return };
+        if place(&window, &app.state::<LauncherState>(), &instance_id).is_none() {
+            let _ = window.hide();
+        }
+        // Inzwischen versteckt worden (Befehl lief, während hier gezeigt wurde)? Dann gilt das.
+        if wanted().is_none() {
+            let _ = window.hide();
+        }
+    });
+}
+
 /// Overlay zeigen (Aufnahme, Puffer-Anzeige oder Meldung für dieses Spiel).
 #[tauri::command]
-pub fn clip_overlay_show(app: AppHandle, launcher: State<'_, LauncherState>, instance_id: String) {
+pub fn clip_overlay_show(app: AppHandle, instance_id: String) {
     #[cfg(windows)]
-    if let Some(window) = ensure(&app)
-        && place(&window, &launcher, &instance_id).is_none()
     {
-        let _ = window.hide();
+        set_wanted(Some(instance_id));
+        apply(app);
     }
     #[cfg(not(windows))]
-    let _ = (app, launcher, instance_id);
+    let _ = (app, instance_id);
 }
 
 /// Solange das Overlay etwas zeigt (~500-ms-Takt): Position/Größe dem Spielfenster nachführen;
 /// ist das Spielfenster weg oder minimiert, das Overlay verstecken.
 #[tauri::command]
-pub fn clip_overlay_track(app: AppHandle, launcher: State<'_, LauncherState>, instance_id: String) {
+pub fn clip_overlay_track(app: AppHandle, instance_id: String) {
     #[cfg(windows)]
-    if let Some(window) = app.get_webview_window(LABEL)
-        && place(&window, &launcher, &instance_id).is_none()
-        && window.is_visible().unwrap_or(true)
-    {
-        let _ = window.hide();
+    if wanted().as_deref() == Some(instance_id.as_str()) {
+        apply(app);
     }
     #[cfg(not(windows))]
-    let _ = (app, launcher, instance_id);
+    let _ = (app, instance_id);
 }
 
 /// Nichts mehr zu zeigen: Overlay verstecken (das Fenster bleibt für später bestehen).
 #[tauri::command]
 pub fn clip_overlay_hide(app: AppHandle) {
     #[cfg(windows)]
-    if let Some(window) = app.get_webview_window(LABEL) {
-        let _ = window.hide();
+    {
+        set_wanted(None);
+        if let Some(window) = app.get_webview_window(LABEL) {
+            let _ = window.hide();
+        }
     }
     #[cfg(not(windows))]
     let _ = app;
