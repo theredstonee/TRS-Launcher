@@ -18,7 +18,9 @@ Starten
 
 Personal-Panel
   Strg + Umschalt + M  → Personal-PIN eingeben → Panel.
-  Beim allerersten Öffnen wird die PIN festgelegt (4–8 Ziffern, zweimal eingeben).
+  Wurde die EXE mit --pin gebaut, gilt diese PIN ab Werk (im Panel änderbar; eine neu
+  gebaute EXE mit neuer PIN setzt sie wieder auf die eingebaute). Sonst wird die PIN beim
+  allerersten Öffnen festgelegt (4–8 Ziffern, zweimal eingeben).
   Nach 5 falschen Versuchen ist die Eingabe 30 Sekunden gesperrt.
   Im Panel:
     - Leerlaufzeit (Sekunden ohne Eingabe bis zum Countdown, 20–1800, Standard 90)
@@ -37,7 +39,7 @@ Schließen
 PIN vergessen?
   Launcher über den Task-Manager beenden und diesen Ordner löschen:
     %LOCALAPPDATA%\dev.theredstonee.trslauncher.messe\EBWebView
-  Danach sind PIN, Leerlaufzeit und Sprache zurückgesetzt (die Launcher-Daten bleiben).
+  Danach sind PIN (auf die eingebaute), Leerlaufzeit und Sprache zurückgesetzt (die Launcher-Daten bleiben).
 
 Wo liegen die Daten?
   Launcher-Daten (Konten, Instanzen, Einstellungen, Spiele):
@@ -58,14 +60,14 @@ Für Besucher gesperrt (außer im Personal-Modus)
 
 Vorbereitung am Stand
   1. Launcher starten, Präsentation antippen.
-  2. Strg+Umschalt+M → PIN festlegen → „Personal-Modus“ an (sonst ist das Anmelden gesperrt).
+  2. Strg+Umschalt+M → PIN eingeben bzw. festlegen → „Personal-Modus“ an (sonst ist das Anmelden gesperrt).
   3. Einrichtungs-Assistent durchgehen bzw. unter „Accounts“ das Microsoft-Konto des Stands anmelden,
      Demo-Instanzen/Modpacks installieren und einmal starten.
   4. Strg+Umschalt+M → „Präsentation jetzt starten“ (schaltet den Personal-Modus wieder aus).
 
 Präsentation aktualisieren
   Die Präsentation steckt in der EXE. Neue Fassung = neu bauen (im Repository):
-    node scripts/messe/build.mjs --pitch <Ordner mit index.html + assets/> --out <Zielordner>
+    node scripts/messe/build.mjs --pitch <Ordner mit index.html + assets/> --out <Zielordner> [--pin <PIN>]
   (ohne --pitch wird die zuletzt importierte Präsentation bzw. der Platzhalter genommen;
    --debug für einen schnellen Test-Build, --with-client-mod legt die TRS-Client-Jars
    für Offline-Betrieb neben die EXE).

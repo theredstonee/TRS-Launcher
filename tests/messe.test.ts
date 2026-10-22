@@ -13,7 +13,9 @@ import {
   isValidPin,
   MESSE,
   messeRestricted,
+  parseBuiltInPin,
   parseMesseConfig,
+  pickPinRecord,
   pitchUrl,
   verifyPin,
   type IdlePhase,
@@ -138,6 +140,23 @@ describe('Messe: Einstellungen und PIN', () => {
     expect(await verifyPin('', record)).toBe(false)
     // anderes Salz → anderer Hash
     expect((await createPinRecord('4711')).hash).not.toBe(record.hash)
+  })
+
+  it('eingebaute PIN: gilt ab Werk, am Stand geänderte nur zur gleichen EXE-PIN', async () => {
+    expect(parseBuiltInPin('')).toBeNull()
+    expect(parseBuiltInPin('{kaputt')).toBeNull()
+    const builtIn = await createPinRecord('1337')
+    expect(parseBuiltInPin(JSON.stringify(builtIn))).toEqual(builtIn)
+    const changed = { ...(await createPinRecord('2468')), base: builtIn.hash }
+    const old = await createPinRecord('4711')
+    expect(pickPinRecord(null, builtIn)).toBe(builtIn)
+    expect(pickPinRecord(changed, builtIn)).toBe(changed)
+    // alte PIN ohne/mit anderer Basis → neue EXE-PIN gewinnt
+    expect(pickPinRecord(old, builtIn)).toBe(builtIn)
+    expect(pickPinRecord({ ...old, base: 'f'.repeat(64) }, builtIn)).toBe(builtIn)
+    // ohne eingebaute PIN bleibt alles wie bisher
+    expect(pickPinRecord(old, null)).toBe(old)
+    expect(pickPinRecord(null, null)).toBeNull()
   })
 })
 
