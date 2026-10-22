@@ -1,3 +1,4 @@
+import { createHash, randomBytes } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import fs from 'node:fs'
 import tailwindcss from '@tailwindcss/vite'
@@ -9,6 +10,15 @@ const messePitchDir = fileURLToPath(new URL('./.messe-pitch', import.meta.url))
 if (messe && !fs.existsSync(`${messePitchDir}/index.html`)) {
   throw new Error('Messe-Build ohne Präsentation: erst `node scripts/messe/import-pitch.mjs <Ordner>` ausführen.')
 }
+
+// Eingebaute Personal-PIN (TRS_MESSE_PIN, 4–8 Ziffern) – landet nur als gesalzener Hash im Build
+// (gleiches Format wie hashPin in app/utils/messe.ts).
+const messePin = messe ? (process.env.TRS_MESSE_PIN ?? '') : ''
+if (messePin && !/^\d{4,8}$/.test(messePin)) throw new Error('TRS_MESSE_PIN: 4–8 Ziffern erwartet.')
+const messePinSalt = messePin ? randomBytes(16).toString('hex') : ''
+const messePinRecord = messePin
+  ? JSON.stringify({ salt: messePinSalt, hash: createHash('sha256').update(`trs-messe:${messePinSalt}:${messePin}`).digest('hex') })
+  : ''
 
 // Tauri hat keine Server-Runtime: SPA-Modus + `nuxt generate`.
 export default defineNuxtConfig({
@@ -51,6 +61,7 @@ export default defineNuxtConfig({
     // vue-i18n: nur Composition API; Nachrichten werden ohne eval übersetzt (CSP bleibt streng).
     define: {
       'import.meta.env.VITE_TRS_MESSE': JSON.stringify(messe ? '1' : ''),
+      'import.meta.env.VITE_TRS_MESSE_PIN': JSON.stringify(messePinRecord),
       __VUE_I18N_FULL_INSTALL__: true,
       __VUE_I18N_LEGACY_API__: false,
       __INTLIFY_PROD_DEVTOOLS__: false,

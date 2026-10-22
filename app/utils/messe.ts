@@ -218,6 +218,8 @@ export function writeMesseConfig(config: MesseConfig) {
 export interface PinRecord {
   salt: string
   hash: string
+  /** Hash der eingebauten PIN, als diese PIN am Stand gesetzt wurde (neue EXE mit neuer PIN gewinnt). */
+  base?: string
 }
 
 export function isValidPin(pin: string): boolean {
@@ -243,22 +245,46 @@ export async function verifyPin(pin: string, record: PinRecord): Promise<boolean
   return (await hashPin(pin, record.salt)) === record.hash
 }
 
-export function readPinRecord(): PinRecord | null {
+function asPinRecord(value: unknown): PinRecord | null {
+  if (!value || typeof value !== 'object') return null
+  const { salt, hash, base } = value as Record<string, unknown>
+  if (typeof salt !== 'string' || typeof hash !== 'string' || !/^[0-9a-f]{64}$/.test(hash)) return null
+  return typeof base === 'string' ? { salt, hash, base } : { salt, hash }
+}
+
+/** Eingebaute PIN (`build.mjs --pin`, zur Bauzeit nur als gesalzener Hash), sonst null. */
+export function parseBuiltInPin(raw: unknown): PinRecord | null {
+  if (typeof raw !== 'string' || !raw) return null
   try {
-    const parsed: unknown = JSON.parse(localStorage.getItem(PIN_KEY) ?? 'null')
-    if (parsed && typeof parsed === 'object') {
-      const { salt, hash } = parsed as Record<string, unknown>
-      if (typeof salt === 'string' && typeof hash === 'string' && /^[0-9a-f]{64}$/.test(hash)) return { salt, hash }
-    }
+    const record = asPinRecord(JSON.parse(raw))
+    return record && { salt: record.salt, hash: record.hash }
   } catch {
-    // kein Speicher → keine PIN
+    return null
   }
-  return null
+}
+
+export const BUILT_IN_PIN: PinRecord | null = parseBuiltInPin(import.meta.env.VITE_TRS_MESSE_PIN)
+
+/** Am Stand gesetzte PIN gilt, solange sie zur eingebauten PIN dieser EXE gehört – sonst die eingebaute. */
+export function pickPinRecord(stored: PinRecord | null, builtIn: PinRecord | null): PinRecord | null {
+  if (!builtIn) return stored
+  return stored && stored.base === builtIn.hash ? stored : builtIn
+}
+
+export function readPinRecord(): PinRecord | null {
+  let stored: PinRecord | null = null
+  try {
+    stored = asPinRecord(JSON.parse(localStorage.getItem(PIN_KEY) ?? 'null'))
+  } catch {
+    // kein Speicher → keine gespeicherte PIN
+  }
+  return pickPinRecord(stored, BUILT_IN_PIN)
 }
 
 export function writePinRecord(record: PinRecord) {
   try {
-    localStorage.setItem(PIN_KEY, JSON.stringify(record))
+    const base = BUILT_IN_PIN?.hash
+    localStorage.setItem(PIN_KEY, JSON.stringify(base ? { salt: record.salt, hash: record.hash, base } : record))
   } catch {
     // ohne Speicher gilt die PIN nur bis zum Neustart
   }
