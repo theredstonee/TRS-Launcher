@@ -178,10 +178,24 @@ public final class AutoTest {
 		ClientTickEvents.END_CLIENT_TICK.register(test::tick);
 	}
 
+	/**
+	 * Demo-Hinweis (Spiel ohne Lizenz, z. B. Rauchtest über einen Entwicklungs-Launcher): pausiert das Spiel. Im
+	 * Produktions-Jar sind die Klassennamen verschleiert – deshalb über den Titel erkannt.
+	 */
+	private static boolean isDemoIntro(net.minecraft.client.gui.screens.Screen screen) {
+		if (screen == null) return false;
+		try {
+			return screen.getTitle().getString().equals(net.minecraft.client.resources.language.I18n.get("demo.help.title"));
+		} catch (RuntimeException e) {
+			return false;
+		}
+	}
+
 	private void tick(Minecraft mc) {
 		// Verliert das Fenster den Fokus oder drückt jemand Esc, öffnet Vanilla das Pausenmenü –
 		// für saubere Screenshots wieder schließen und hängende Tasten lösen.
-		if ((step >= 3 && step < 25 || step == 28 || step == 35 || step == 37) && Mc.screen() instanceof PauseScreen) {
+		if ((step >= 3 && step < 25 || step == 28 || step == 35 || step == 37)
+				&& (Mc.screen() instanceof PauseScreen || isDemoIntro(Mc.screen()))) {
 			Mc.setScreen(null);
 			KeyMapping.releaseAll();
 		}
