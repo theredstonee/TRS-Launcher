@@ -32,9 +32,11 @@ How to write an entry:
 
 ### English
 - **TRS Client: pixel-art capes are sharp again.** Since TRS Client 0.19.5 many capes – all TRS capes like Tester, Dragon, Ender, Nether and the Halloween capes, plus capes made in HD pixel style – were drawn smoothed and looked blurry. Only real HD images (photos, painted pictures) are smoothed now; everything with a pixel palette stays crisp. The cape preview in the launcher uses the same rule.
+- **TRS Client: server rules.** Servers with the new "TRS Server Rules" plugin can turn single TRS Client features off or on for everyone (for example the minimap, gamma or freecam) and fix or limit settings (for example the highest zoom). Locked features are marked "Set by server" in the TRS menu, and the server can show a short note once. Your own settings stay saved and come back as soon as you leave the server. Openly documented: members of the TRS team with the matching permission are asked in game whether they want to use a locked feature anyway – only for themselves and only until they disconnect.
 
 ### Deutsch
 - **TRS Client: Pixel-Art-Umhänge sind wieder scharf.** Seit TRS Client 0.19.5 wurden viele Umhänge – alle TRS-Umhänge wie Tester, Drache, Ender, Nether und die Halloween-Umhänge sowie Umhänge im HD-Pixel-Stil – weichgezeichnet und sahen verwaschen aus. Weich gefiltert werden jetzt nur noch echte HD-Bilder (Fotos, gemalte Bilder); alles mit Pixel-Palette bleibt scharf. Die Umhang-Vorschau im Launcher nutzt dieselbe Regel.
+- **TRS Client: Server-Regeln.** Server mit dem neuen Plugin „TRS Server Rules“ können einzelne Funktionen des TRS Clients für alle aus- oder einschalten (zum Beispiel Minimap, Gamma oder Freecam) und Einstellungen festlegen oder begrenzen (zum Beispiel den höchsten Zoom). Gesperrtes ist im TRS-Menü mit „Vom Server“ markiert, und der Server kann einmal einen kurzen Hinweis zeigen. Deine eigenen Einstellungen bleiben gespeichert und gelten wieder, sobald du den Server verlässt. Offen dokumentiert: Mitglieder des TRS-Teams mit dem passenden Recht werden im Spiel gefragt, ob sie eine gesperrte Funktion trotzdem benutzen wollen – nur für sich und nur bis zum Trennen.
 
 ## 0.28.0 – 2026-10-23 – Your Look | Dein Look
 <!-- banner: accent=#f07a22 motif=/news/0.28.0/banner.png -->

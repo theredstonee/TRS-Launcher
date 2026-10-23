@@ -174,6 +174,8 @@ public final class TrsClient implements ClientModInitializer {
 				dev.theredstonee.trsclient.core.perf.PerfCompat.FABRIC, minecraft, message -> LOGGER.info(message), true);
 		// Netzwerk-Optimierung + Ping-Messung (Handler an der Client-Verbindung, siehe core.net).
 		dev.theredstonee.trsclient.net.NetHooks.init(modules, message -> LOGGER.info(message));
+		// TRS Server Rules: Server sperrt/erzwingt Module (Kanäle trsclient:rules/hello, Logik in core.serverrules).
+		dev.theredstonee.trsclient.net.ServerRulesNet.init(modules, version, minecraft, message -> LOGGER.info(message));
 		// Eingebaute Optimierungen (Jar-in-Jar): welche Fassung lädt Fabric gerade?
 		dev.theredstonee.trsclient.core.perf.BundledMods.setLoaded(id -> FabricLoader.getInstance().getModContainer(id)
 				.map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse(null));
@@ -350,6 +352,7 @@ public final class TrsClient implements ClientModInitializer {
 		dev.theredstonee.trsclient.online.EmoteHooks.tick(mc);
 		dev.theredstonee.trsclient.perf.PerfHooks.tick(mc);
 		dev.theredstonee.trsclient.net.NetHooks.tick(mc);
+		dev.theredstonee.trsclient.net.ServerRulesNet.tick(mc);
 	}
 
 	/** Redstone-Werkzeuge; ein Fehler darf nie das Spiel stören (höchstens einmal je Minute geloggt). */
