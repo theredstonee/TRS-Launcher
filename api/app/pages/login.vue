@@ -141,7 +141,7 @@ async function copyCode() {
     // Kein Zugriff auf die Zwischenablage – der Code ist markierbar.
   }
 }
-const { on: hwOn } = useHalloween()
+const { look: hwOn } = useHalloween()
 </script>
 
 <template>

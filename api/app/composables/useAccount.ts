@@ -30,6 +30,10 @@ export interface WebAccount {
   csrf: string
   expiresAt: string
   team: MyTeam | null
+  /** Für dich aktive Events (§32.2). Fehlt bei alten Servern. */
+  events?: string[]
+  /** Davon die, deren Look du sehen sollst (Team-Sperre, §32.6). Fehlt ⇒ wie `events`. */
+  eventLook?: string[]
 }
 
 export function useAccount() {

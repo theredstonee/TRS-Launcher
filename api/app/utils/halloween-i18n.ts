@@ -39,6 +39,9 @@ export interface HalloweenTexts {
   flickerOff: string
   flickerKeep: string
   flickerSwitch: string
+  /** Eigener Schalter „Event-Design anzeigen“ (§32.6) + Hinweis, dass Kürbis-Suche usw. bleiben. */
+  lookSwitch: string
+  lookSwitchHint: string
   wingsTitle: string
   wingsLead: string
   wingsPick: string
@@ -90,6 +93,8 @@ const en: HalloweenTexts = {
   flickerOff: 'Switch off',
   flickerKeep: 'Keep',
   flickerSwitch: 'Flicker & grain',
+  lookSwitch: 'Show event design',
+  lookSwitchHint: 'Turns off the Halloween look and effects. The pumpkin hunt, trick or treat and rewards stay.',
   wingsTitle: 'Your hunter wings',
   wingsLead: 'You found all 13 pumpkins. Choose ONE pair of wings – the choice is final.',
   wingsPick: 'Choose',
@@ -141,6 +146,8 @@ const de: HalloweenTexts = {
   flickerOff: 'Ausschalten',
   flickerKeep: 'Anlassen',
   flickerSwitch: 'Flackern & Rauschen',
+  lookSwitch: 'Event-Design anzeigen',
+  lookSwitchHint: 'Schaltet den Halloween-Look und die Effekte aus. Kürbis-Suche, Süßes oder Saures und Belohnungen bleiben.',
   wingsTitle: 'Deine Jäger-Flügel',
   wingsLead: 'Du hast alle 13 Kürbisse gefunden. Wähle EIN Paar Flügel – die Wahl ist endgültig.',
   wingsPick: 'Wählen',
@@ -192,6 +199,8 @@ const es: HalloweenTexts = {
   flickerOff: 'Apagar',
   flickerKeep: 'Dejar',
   flickerSwitch: 'Parpadeo y grano',
+  lookSwitch: 'Mostrar diseño del evento',
+  lookSwitchHint: 'Desactiva el aspecto y los efectos de Halloween. La búsqueda de calabazas, truco o trato y las recompensas se mantienen.',
   wingsTitle: 'Tus alas de cazador',
   wingsLead: 'Has encontrado las 13 calabazas. Elige UN par de alas – la elección es definitiva.',
   wingsPick: 'Elegir',

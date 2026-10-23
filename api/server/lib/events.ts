@@ -126,8 +126,11 @@ export type ApiEvent =
   /** Eigene Notizen wurden (auf einem anderen Gerät) geändert: `GET /v1/me/sync/notes?since=<eigener Cursor>`. */
   | { type: 'notes_changed', cursor: string }
   // ---------------------------------------------------------------- Events (§32, nur /v1/events/me)
-  /** Ein Event wurde ein-/ausgeschaltet oder du wurdest freigegeben/entfernt: `events` = für DICH aktive Events. */
-  | { type: 'events_changed', events: string[] }
+  /**
+   * Ein Event wurde ein-/ausgeschaltet, du wurdest freigegeben/entfernt oder dein Look wurde gesperrt/freigegeben:
+   * `events` = für DICH aktive Events (Features), `look` = davon die, deren Look du sehen sollst (§32.6).
+   */
+  | { type: 'events_changed', events: string[], look: string[] }
   // ---------------------------------------------------------------- PC-Fernbedienung (§34, nur /v1/events/me)
   /** An den Ziel-PC: Befehl vom Handy. `payload` = signierter JSON-String, `sig` = HMAC (nur der PC kann prüfen). */
   | { type: 'remote_command', desktopId: string, payload: string, sig: string }

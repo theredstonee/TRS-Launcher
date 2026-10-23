@@ -8,7 +8,7 @@ import { finishChatPurge, prepareChatPurge } from './chat'
 import { forgetCircuitAuthor } from './circuits'
 import { endHostingFor } from './hosting'
 import { forgetIssueAuthor, removeUploadFiles, type UploadRow } from './issues'
-import { activeEventsFor } from './liveevents'
+import { activeEventsFor, lookEventsFor } from './liveevents'
 import { purgeModeration } from './moderation'
 import { emitCape } from './playerevents'
 import { packsOf, removePackFiles } from './packs'
@@ -60,6 +60,8 @@ export interface MeView {
   activeCape: CapeView | null
   /** Events, die für dich aktiv sind (global an ODER für dich freigegeben), z. B. `["halloween"]` (§32). */
   events: string[]
+  /** Davon die Events, deren LOOK du sehen sollst (ohne Team-Sperre, §32.6). Fehlt bei alten Servern ⇒ = `events`. */
+  eventLook: string[]
 }
 
 export function getUser(ctx: AppContext, uuid: string): UserRow | undefined {
@@ -147,6 +149,7 @@ export function meView(ctx: AppContext, u: UserRow): MeView {
     settings: settingsOf(u),
     activeCape: cape ? capeView(ctx, cape) : null,
     events: activeEventsFor(ctx, u.uuid),
+    eventLook: lookEventsFor(ctx, u.uuid),
   }
 }
 

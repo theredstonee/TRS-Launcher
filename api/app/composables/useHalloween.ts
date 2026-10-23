@@ -1,6 +1,7 @@
-// Halloween 2026 „Nacht der langen Schatten“ (API §36) auf der Website: Look an/aus (Event global an), Schalter
-// „Flackern & Rauschen“ (localStorage, Standard an), Spielstand des angemeldeten Kontos, Kürbis-Funde, Anklopfen,
-// Flügel-Wahl und eine kleine Meldung (Toast). Persönliches lädt erst im Browser.
+// Halloween 2026 „Nacht der langen Schatten“ (API §36) auf der Website: Event an/aus (global an), Look an/aus (§32.6:
+// Event an ∧ nicht vom Team gesperrt ∧ eigener Schalter „Event-Design“), Schalter „Flackern & Rauschen“ (localStorage,
+// Standard an), Spielstand des angemeldeten Kontos, Kürbis-Funde, Anklopfen, Flügel-Wahl und eine kleine Meldung
+// (Toast). Persönliches lädt erst im Browser. `on` = Event (Features wie die Kürbis-Suche), `look` = Design/Effekte.
 
 import { HALLOWEEN_TEXTS } from '~/utils/halloween-i18n'
 
@@ -28,6 +29,8 @@ export interface HalloweenToast {
 }
 
 const FLICKER_KEY = 'trs-halloween-flicker'
+/** Eigener Schalter „Event-Design anzeigen“ (§32.6): "0" = aus. Gilt für alle Events, auch für Gäste. */
+const LOOK_KEY = 'trs-event-look'
 /** Laufendes Laden (mehrere Kürbisse + Karte auf einer Seite fragen nur einmal). */
 let inflight: Promise<HalloweenMe | null> | null = null
 const HINT_KEY = 'trs-halloween-flicker-hint'
@@ -50,10 +53,12 @@ function writeStore(key: string, value: string): void {
 export function useHalloween() {
   const { lang } = useLang()
   const { data: events } = usePublicEvents()
-  /** Look an: Event `halloween` global an (wie bisher die Klasse am html). */
+  /** Event `halloween` global an: Features (Kürbis-Suche, Süßes oder Saures, Karte) sind da. */
   const on = computed(() => events.value?.events.some((e: { id: string, active: boolean }) => e.id === 'halloween' && e.active) ?? false)
   const t = computed(() => HALLOWEEN_TEXTS[lang.value] ?? HALLOWEEN_TEXTS.en)
   const flicker = useState<boolean>('hw-flicker', () => true)
+  /** Eigener Schalter „Event-Design anzeigen“ – vor dem Lesen aus localStorage „an“ (SSR wie bisher). */
+  const lookPref = useState<boolean>('hw-look-pref', () => true)
   /** Erst-Hinweis schon gesehen? Vor dem Lesen aus localStorage „ja“, damit SSR nichts aufblitzen lässt. */
   const hintSeen = useState<boolean>('hw-hint-seen', () => true)
   const prefsLoaded = useState<boolean>('hw-prefs', () => false)
@@ -61,11 +66,21 @@ export function useHalloween() {
   const meLoaded = useState<boolean>('hw-me-loaded', () => false)
   const toast = useState<HalloweenToast | null>('hw-toast', () => null)
   const { account, load, api, loginUrl } = useAccount()
+  /**
+   * Look (Theme, Szenen, Overlay, Effekte): Event an ∧ eigener Schalter an ∧ nicht vom Team gesperrt
+   * (`eventLook` aus `GET /v1/web/me`; fehlt das Feld – alter Server oder nicht angemeldet – gilt keine Sperre).
+   */
+  const look = computed(() => {
+    if (!on.value || !lookPref.value) return false
+    const allowed = account.value?.eventLook
+    return !Array.isArray(allowed) || allowed.includes('halloween')
+  })
 
   function loadPrefs(): void {
     if (prefsLoaded.value || import.meta.server) return
     prefsLoaded.value = true
     flicker.value = readStore(FLICKER_KEY) !== '0'
+    lookPref.value = readStore(LOOK_KEY) !== '0'
     hintSeen.value = readStore(HINT_KEY) === '1'
     document.documentElement.classList.toggle('hw-noflick', !flicker.value)
   }
@@ -74,6 +89,11 @@ export function useHalloween() {
     flicker.value = v
     writeStore(FLICKER_KEY, v ? '1' : '0')
     document.documentElement.classList.toggle('hw-noflick', !v)
+  }
+
+  function setLook(v: boolean): void {
+    lookPref.value = v
+    writeStore(LOOK_KEY, v ? '1' : '0')
   }
 
   function dismissHint(): void {
@@ -163,7 +183,7 @@ export function useHalloween() {
     }
   }
 
-  return { on, t, lang, flicker, hintSeen, loadPrefs, setFlicker, dismissHint, me, meLoaded, account, refresh, findPumpkin, knock, chooseWings, toast, say, loginUrl }
+  return { on, look, lookPref, t, lang, flicker, hintSeen, loadPrefs, setFlicker, setLook, dismissHint, me, meLoaded, account, refresh, findPumpkin, knock, chooseWings, toast, say, loginUrl }
 }
 
 /** Bewegung reduzieren (System) – live. */

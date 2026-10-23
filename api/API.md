@@ -233,10 +233,11 @@ Auth required.
     "chatTypingIndicator": true
   },
   "activeCape": null,
-  "events": []
+  "events": [],
+  "eventLook": []
 }
 ```
-`activeCape` is either `null` or a **CapeView** (§5.1). `events` lists the ids of the events that are **active for you** – switched on globally **or** you were allowed individually (§32), e.g. `["halloween"]`. Older servers don't send it: treat a missing field as `[]`. Changes arrive as `events_changed` on `GET /v1/events/me` (§19).
+`activeCape` is either `null` or a **CapeView** (§5.1). `events` lists the ids of the events that are **active for you** – switched on globally **or** you were allowed individually (§32), e.g. `["halloween"]`. Older servers don't send it: treat a missing field as `[]`. `eventLook` is the part of `events` whose **look** you should see (the team can switch the look off for single players, §32.6); a missing `eventLook` (older server) means `eventLook = events`. Changes arrive as `events_changed` on `GET /v1/events/me` (§19).
 
 | Setting | Default | Effect |
 |---|---|---|
@@ -2011,7 +2012,7 @@ data: {"type":"chat_message","conversationId":"c…","message":{…}}
 | `hosting_*` | world hosting: `hosting_invite`, `hosting_invite_revoked`, `hosting_join_request`, `hosting_join_accepted`, `hosting_join_declined`, `hosting_kicked`, `hosting_room`, `hosting_room_updated`, `hosting_room_closed`, `hosting_signal` – see §21.5 |
 | `achievement_unlocked` | `{achievement: AchievementView, at, reward: {kind, id}\|null}` – you unlocked an achievement (§31.6) |
 | `notes_changed` | `{cursor}` – your synced notes changed (§17.5); fetch `GET /v1/me/sync/notes?since=<your cursor>` |
-| `events_changed` | `{events}` – the events active for you changed (§32); `events` is the full list (`[]` = none) |
+| `events_changed` | `{events, look}` – the events active for you or their look changed (§32); `events` is the full list (`[]` = none), `look` = the part of it whose look you should see (§32.6, missing on older servers ⇒ `look = events`) |
 | `halloween_updated` | the same fields as `GET /v1/me/halloween` (`active, endsAt, pumpkins, trick, badges, effects`) next to `type` – after a pumpkin find, a trick-or-treat roll, a badge grant or an effects change (§36) |
 | `remote_*` | PC remote control: `remote_command`, `remote_command_update`, `remote_status` (no id, not replayed), `remote_pairing` – see §34.6 |
 | `creator_*` | Creator programme: `creator_updated`, `creator_milestone`, `creator_helper_invite`, `creator_helper_removed` – see §35.7 |
@@ -2641,7 +2642,7 @@ The website signs in **only** with the Microsoft account that owns Minecraft: Ja
 | `GET /auth/microsoft/login?return=/path` | **302** to `https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize?…` (client_id, redirect_uri, `response_mode=query`, `scope=XboxLive.signin`, `state`, `code_challenge`, `code_challenge_method=S256`, `prompt=select_account`). Sets cookie `trs_oauth` (random handle, httpOnly, Secure, **SameSite=Lax**, `Path=/auth/microsoft`, 10 minutes). `return` must be a relative path of this site (else `/applications`). Limit 20 / 10 min per IP. Disabled → **302** `/login?error=ms_disabled`. |
 | `GET /auth/microsoft/callback?code&state` | Checks `state` against the cookie handle (one use, constant-time, 10 min), then Microsoft token → Xbox Live `user.auth.xboxlive.com` (`RpsTicket: d=<token>`) → XSTS `xsts.auth.xboxlive.com` (`RelyingParty: rp://api.minecraftservices.com/`) → `POST api.minecraftservices.com/authentication/login_with_xbox` → `GET /minecraft/profile`. Success: creates/updates the TRS account (UUID, name), new website session (rotation: a session presented in the cookie is deleted), cookie `trs_session` (httpOnly, Secure, **SameSite=Strict**, `Path=/`, 8 hours), deletes the old `trs_admin` cookie, answers **200** with a tiny HTML page that forwards by meta refresh to `return` (a same-site navigation, so the Strict cookie is sent). Errors → **302** `/login?error=<code>`. Limit 30 / 10 min per IP, plus the per-account login limit (§2). |
 | `GET /v1/web/login` | `{ microsoft: boolean }` – is the sign-in configured? |
-| `GET /v1/web/me` | `{ uuid, name, skin, csrf, expiresAt, team: MyTeamView \| null }` for the cookie session, else `401`. `skin` = texture URL (textures.minecraft.net) or `null`. |
+| `GET /v1/web/me` | `{ uuid, name, skin, csrf, expiresAt, team: MyTeamView \| null, events, eventLook }` for the cookie session, else `401`. `events`/`eventLook` as in `GET /v1/me` (§32.2, §32.6). `skin` = texture URL (textures.minecraft.net) or `null`. |
 | `POST /v1/web/logout` | **204**, session deleted on the server. Needs `X-CSRF-Token`. |
 
 **Error codes** (`/login?error=`): `ms_disabled`, `ms_cancelled` (user cancelled at Microsoft), `ms_state` (state/cookie missing, expired, replayed or tampered), `ms_failed` (Microsoft/Xbox/Minecraft not reachable or rejected, wrong secret – details only in the server log), `no_xbox` (XSTS 2148916233 or no Xbox profile), `child_account` (XSTS 2148916238), `xbox_region` (2148916235), `xbox_verification` (2148916236/7), `xbox_banned` (2148916227), `no_minecraft` (profile 404 = no Java Edition or no profile name), `banned` (active TRS `account_ban`), `rate_limited`.
@@ -3640,7 +3641,7 @@ Auth required, write bucket (30 / min). Strict body (`400 invalid_request` for a
 
 ## 32. Events (Halloween 2026)
 
-A team member (permission **`events.manage`**, default roles owner and admin; migration 21 adds it to the existing default roles) switches an **event** on or off **globally** and can additionally allow **single players** (also while the event is off globally). The first event is `halloween`. For a player an event is **active** when it is on globally **or** the player is on its list. Clients (launcher, TRS Client) show the event theme when it is active for the signed-in player; the website shows it when it is on globally.
+A team member (permission **`events.manage`**, default roles owner and admin; migration 21 adds it to the existing default roles) switches an **event** on or off **globally** and can additionally allow **single players** (also while the event is off globally). The first event is `halloween`. For a player an event is **active** when it is on globally **or** the player is on its list. Clients (launcher, TRS Client) offer the event features when it is active for the signed-in player and show the event **look** when it is also in `eventLook` (§32.6); the website shows it when it is on globally (and, once signed in, in `eventLook`).
 
 Event items (cosmetics and capes with `unlock: "event"`, §5.1/§11.6) are **free to claim while the event is active for you** and **kept afterwards**.
 
@@ -3657,21 +3658,24 @@ No auth. `Cache-Control: public, max-age=60`. Only the **global** state:
 ### 32.2 For the signed-in player
 
 - `GET /v1/me` → `events: string[]` (§3.1): the events active for **you**.
-- `events_changed` on `GET /v1/events/me` (§19): `{ "type": "events_changed", "events": ["halloween"] }`, `events` = what is active for **the receiver now**. Sent to everyone with an open stream when a global switch changes, and to a single player when he is added to or removed from the list. Replayable like other events; after `resync` read `GET /v1/me` again.
+- `GET /v1/me` → `eventLook: string[]` (§3.1, §32.6): the part of `events` whose look you should see.
+- `events_changed` on `GET /v1/events/me` (§19): `{ "type": "events_changed", "events": ["halloween"], "look": ["halloween"] }`, `events` = what is active for **the receiver now**, `look` = the part of it whose look he should see (§32.6). Sent to everyone with an open stream when a global switch changes, and to a single player when he is added to or removed from the list or the look block list. Replayable like other events; after `resync` read `GET /v1/me` again.
 - `POST /v1/me/cosmetics/{id}/claim` (§11.7) and `POST /v1/me/capes/{id}/claim` (§5.9a): `200 { "owned": true }` or `403 event_inactive`.
 - `PUT /v1/me/cosmetics` takes `companion` (§11.7).
 - Catalogs (`GET /v1/cosmetics`, `GET /v1/capes`) list event items while the event is active for you, or when you own them.
 
 ### 32.3 Team (`events.manage`)
 
-All changes go to the audit log (`event.enable`, `event.disable`, `event.player_add`, `event.player_remove`, `ref = event:<id>`).
+All changes go to the audit log (`event.enable`, `event.disable`, `event.player_add`, `event.player_remove`, `event.look_block_add`, `event.look_block_remove`, `ref = event:<id>`).
 
 | Request | Body | Response |
 |---|---|---|
-| `GET /v1/admin/events` | – | `[ { id, enabled, updatedAt, players: [ { uuid, name, addedAt } ] } ]` |
+| `GET /v1/admin/events` | – | `[ { id, enabled, updatedAt, players: [ { uuid, name, addedAt } ], lookBlocked: [ { uuid, name, addedAt } ] } ]` |
 | `PUT /v1/admin/events/{id}` | `{ "enabled": boolean }` | the changed event (same shape). `404 event_not_found` |
 | `POST /v1/admin/events/{id}/players` | `{ "name": "<Minecraft name>" }` **or** `{ "uuid": "<uuid>" }` | **201** + the changed event. A name is looked up among TRS accounts first, then at Mojang (`404 player_not_found`, `502 upstream_unavailable`). `409 already_added` |
 | `DELETE /v1/admin/events/{id}/players/{uuid}` | – | the changed event. `404 player_not_found`. Already claimed items stay. |
+| `POST /v1/admin/events/{id}/look-blocks` | `{ "name": "<Minecraft name>" }` **or** `{ "uuid": "<uuid>" }` | **201** + the changed event. Switches only the **look** off for that player (§32.6). Name lookup and errors as for `players`; `409 already_added` |
+| `DELETE /v1/admin/events/{id}/look-blocks/{uuid}` | – | the changed event. `404 player_not_found` |
 
 Missing permission → `403 missing_permission`.
 
@@ -3682,6 +3686,17 @@ Missing permission → `403 missing_permission`.
 ### 32.5 Data, migration 21
 
 Tables `events (id, enabled, updated_at, updated_by)` (seeded: `halloween`, off) and `event_players (event_id, player_uuid, player_name, added_at, added_by)`; columns `cosmetics.event` and `capes.event` (event items are stored with `unlock = admin` and the event id); `user_cosmetics`/`user_capes` accept `source = 'event'`, `equipped_cosmetics` accepts the slot `companion` (these three leaf tables are rebuilt, data is kept). The website lists (`GET /v1/site/cosmetics` -> `hats` + `companions`, `GET /v1/site/capes`) show event items only while the event is **globally** on, with `unlock: "event"`, `event`, and (cosmetics) `slot`. Idempotent. When merging: renumber if a parallel branch also added a migration 21.
+
+### 32.6 Event look per player, migration 31
+
+An event has two signals: **features** (`events`: pumpkin hunt, trick or treat, stickers, claiming event items, badges) and **look** (`eventLook` / `look`: theme and colours, backgrounds and scenes, start page, progress bars, splash, atmosphere/overlay, event app icon, title screen/menu look in the client, spooky effects, jumpscares, spooky sounds). The team can switch the **look** off for single players (block list per event); the features stay unchanged for them.
+
+- `eventLook` (in `GET /v1/me`, `GET /v1/web/me`) and `look` (in `events_changed`) = `events` minus the events whose look the team blocked for you. Missing field (older server) ⇒ use `events`.
+- Every app also has its **own switch** "Show event design" (local, not sent to the server): launcher setting `ui.eventLook`, website `localStorage["trs-event-look"]` (`"0"` = off, also for guests), TRS Client setting. The launcher passes its result to the TRS Client in `launcher-theme.json` as `eventLook: boolean` (missing ⇒ `true`); the field `event` there stays unchanged.
+- Look is shown when: event active (features) **and** not blocked by the team **and** own switch on.
+- Team routes: §32.3 (`look-blocks`), permission `events.manage`, same rate limit and CSRF rules as `players`. After a change, `events_changed` goes to that player.
+
+Migration 31: table `event_look_blocks (event_id → events ON DELETE CASCADE, player_uuid [32], player_name, added_at, added_by, PRIMARY KEY (event_id, player_uuid))` plus an index on `player_uuid`. A block is independent of `event_players` and also applies while the event is off. Idempotent. When merging: renumber if a parallel branch also added a migration 31.
 
 ## 33. Push notifications for the mobile apps
 

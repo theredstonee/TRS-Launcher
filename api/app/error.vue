@@ -4,8 +4,10 @@ import type { NuxtError } from '#app'
 const props = defineProps<{ error: NuxtError }>()
 const { m } = useLang()
 const is404 = computed(() => props.error.statusCode === 404)
-const { data: publicEvents } = await usePublicEvents()
-const halloween = computed(() => publicEvents.value?.events.some((e) => e.id === 'halloween' && e.active) ?? false)
+await usePublicEvents()
+const hw = useHalloween()
+const halloween = hw.look
+onMounted(() => hw.loadPrefs())
 useHead({
   title: () => `${is404.value ? m.value.notFound.title : 'Error'} · TRS Launcher`,
   meta: [{ name: 'robots', content: 'noindex' }],
@@ -15,6 +17,7 @@ useHead({
 
 <template>
   <HalloweenOverlay v-if="halloween" />
+  <HalloweenToast v-if="hw.on.value" />
   <NuxtLayout>
     <div class="relative isolate mx-auto grid max-w-3xl place-items-center overflow-hidden px-4 py-28 text-center sm:px-6">
       <p class="display text-8xl text-redstone-500 drop-shadow">{{ error.statusCode || 500 }}</p>

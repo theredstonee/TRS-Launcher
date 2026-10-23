@@ -71,7 +71,8 @@ onBeforeUnmount(() => {
 })
 watch(() => route.fullPath, () => closeMenu())
 const year = new Date().getFullYear()
-// Halloween 2026: Blut-Tropfen unter der Kopfzeile, Schalter „Flackern & Rauschen“ in der Fußzeile.
+// Halloween 2026: Blut-Tropfen unter der Kopfzeile (nur mit Look), Schalter „Event-Design“ und „Flackern & Rauschen“
+// in der Fußzeile (§32.6).
 const hw = useHalloween()
 onMounted(() => hw.loadPrefs())
 </script>
@@ -114,7 +115,7 @@ onMounted(() => hw.loadPrefs())
           </NuxtLink>
         </div>
 
-        <HalloweenDrips v-if="hw.on.value" class="hw-header-drips" :count="18" :seed="3" />
+        <HalloweenDrips v-if="hw.look.value" class="hw-header-drips" :count="18" :seed="3" />
         <Transition name="menu">
           <nav v-if="menuOpen" id="site-menu" ref="menuPanel" class="menu-panel" :aria-label="m.nav.menu">
             <ul class="grid gap-1 sm:grid-cols-2">
@@ -186,10 +187,16 @@ onMounted(() => hw.loadPrefs())
         <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-xs text-base-600 sm:px-6">
           <span>© {{ year }} Theredstonee · GPL-3.0</span>
           <ClientOnly>
-            <label v-if="hw.on.value" class="hw-switch">
-              <input type="checkbox" :checked="hw.flicker.value" @change="hw.setFlicker(($event.target as HTMLInputElement).checked)" />
-              <span>{{ hw.t.value.flickerSwitch }}</span>
-            </label>
+            <span v-if="hw.on.value" class="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <label class="hw-switch" :title="hw.t.value.lookSwitchHint">
+                <input type="checkbox" :checked="hw.lookPref.value" @change="hw.setLook(($event.target as HTMLInputElement).checked)" />
+                <span>{{ hw.t.value.lookSwitch }}</span>
+              </label>
+              <label v-if="hw.look.value" class="hw-switch">
+                <input type="checkbox" :checked="hw.flicker.value" @change="hw.setFlicker(($event.target as HTMLInputElement).checked)" />
+                <span>{{ hw.t.value.flickerSwitch }}</span>
+              </label>
+            </span>
           </ClientOnly>
           <NuxtLink to="/admin" rel="nofollow" class="hover:text-base-400">{{ m.nav.admin }}</NuxtLink>
         </div>
