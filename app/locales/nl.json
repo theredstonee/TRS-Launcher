@@ -2391,6 +2391,8 @@
       "animatedBackgroundDescription": "Een rustige, geanimeerde scène achter elke pagina – een redstonecircuit of een winterlandschap, afhankelijk van het ontwerp. Als dit uit staat, wordt alleen het achtergrondpatroon getoond.",
       "eventIconsTitle": "Evenementpictogrammen",
       "eventIconsDescription": "Tijdens evenementen zoals Halloween verandert ook het app-pictogram – venster, taakbalk, snelkoppelingen op het bureaublad en in het startmenu en het startscherm van je telefoon. Na het evenement komt het gewone pictogram vanzelf terug.",
+      "eventLookTitle": "Evenementontwerp tonen (bijv. Halloween)",
+      "eventLookDescription": "Kleuren, achtergronden, voortgangsbalken, sfeer en het evenementpictogram tijdens een evenement. Uit = normaal uiterlijk. De pompoenjacht, trick or treat en beloningen blijven.",
       "motionTitle": "Animaties",
       "motionDescription": "Geanimeerde achtergrond, looplichten, overgangen van pagina’s en vensters, en lijsten die naar hun plek glijden. „Animaties beperken” zet alles uit; „Zoals Windows/systeem” volgt de animatie-instelling van Windows of het bureaublad – die staat op geoptimaliseerde of externe pc’s vaak uit.",
       "motionModes": {
@@ -4035,7 +4037,12 @@
         "halloween": "Halloween"
       },
       "removeTitle": "Van de lijst halen?",
-      "removeText": "{name} van dit evenement halen?"
+      "removeText": "{name} van dit evenement halen?",
+      "lookTitle": "Uiterlijk uit voor …",
+      "lookHint": "Deze spelers krijgen het evenement zonder ontwerp en effecten (kleuren, scènes, spookeffecten). De pompoenjacht, trick or treat en beloningen blijven.",
+      "noLookBlocks": "Niemand – iedereen met het evenement ziet ook het uiterlijk.",
+      "lookRemoveTitle": "Uiterlijk weer aanzetten?",
+      "lookRemoveText": "{name} ziet het uiterlijk van dit evenement dan weer."
     },
     "tabs": {
       "capes": "Capes beoordelen"

@@ -2391,6 +2391,8 @@
       "animatedBackgroundDescription": "Une scène animée et paisible derrière chaque page – un circuit de redstone ou un paysage d'hiver, selon le design. Désactivé, seul le motif d'arrière-plan s'affiche.",
       "eventIconsTitle": "Icônes d'événement",
       "eventIconsDescription": "Pendant des événements comme Halloween, l'icône de l'application change aussi : fenêtre, barre des tâches, raccourcis du bureau et du menu Démarrer, et l'écran d'accueil du téléphone. L'icône habituelle revient d'elle-même à la fin de l'événement.",
+      "eventLookTitle": "Afficher le design de l'événement (p. ex. Halloween)",
+      "eventLookDescription": "Couleurs, arrière-plans, barres de progression, ambiance et icône de l'événement pendant un événement. Désactivé = apparence normale. La chasse aux citrouilles, « des bonbons ou un sort » et les récompenses restent.",
       "motionTitle": "Animations",
       "motionDescription": "Arrière-plan animé, lumières défilantes, transitions des pages et des fenêtres, et listes qui glissent à leur place. « Réduire les animations » désactive tout ; « Comme Windows/système » suit le réglage des animations de Windows ou du bureau, souvent désactivé sur les PC optimisés ou à distance.",
       "motionModes": {
@@ -4035,7 +4037,12 @@
         "halloween": "Halloween"
       },
       "removeTitle": "Retirer de la liste ?",
-      "removeText": "Retirer {name} de cet événement ?"
+      "removeText": "Retirer {name} de cet événement ?",
+      "lookTitle": "Apparence désactivée pour …",
+      "lookHint": "Ces joueurs ont l'événement sans son design ni ses effets (couleurs, scènes, frayeurs). La chasse aux citrouilles, « des bonbons ou un sort » et les récompenses restent.",
+      "noLookBlocks": "Personne – tous ceux qui ont l'événement voient aussi son apparence.",
+      "lookRemoveTitle": "Réactiver l'apparence ?",
+      "lookRemoveText": "{name} verra de nouveau l'apparence de cet événement."
     },
     "tabs": {
       "capes": "Vérifier les capes"

@@ -110,7 +110,7 @@ function play(instance: Instance) {
       :class="`hero-${sceneMode}`"
       :aria-label="featured ? t('home.lastPlayed', { name: featured.name }) : t('nav.home')"
     >
-      <MoonnightScene v-if="events.halloween">
+      <MoonnightScene v-if="events.lookHalloween">
         <div class="scrim scrim-moon" />
       </MoonnightScene>
       <DesignScene v-else :mode="sceneMode" :progress="sceneProgress" :anchor="lamp">

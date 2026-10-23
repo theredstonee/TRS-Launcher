@@ -95,6 +95,10 @@ pub(crate) struct ApiMe {
     /// Aktive Events des Spielers (§31); ältere Server: fehlt.
     #[serde(default)]
     pub events: Vec<String>,
+    /// Davon die Events, deren Look der Spieler sehen soll (Team-Sperre abgezogen);
+    /// ältere Server: fehlt (`None`) – dann gilt `events`.
+    #[serde(default)]
+    pub event_look: Option<Vec<String>>,
 }
 
 /// Unterscheidet ein fehlendes Feld (`None` über `default`) von `null` (`Some(Null)`).
@@ -118,6 +122,9 @@ pub struct Me {
     pub active_cape_id: Option<String>,
     /// Events, die für diesen Spieler aktiv sind (z. B. `halloween`, §31).
     pub events: Vec<String>,
+    /// Teilmenge von `events`, deren Look (Design & Effekte) der Spieler sehen soll.
+    /// Der eigene Schalter `ui.eventLook` ist hier noch NICHT eingerechnet.
+    pub event_look: Vec<String>,
 }
 
 impl ApiMe {
@@ -134,6 +141,8 @@ impl ApiMe {
             Some(value) => super::access::MyTeam::from_value(value),
             None => legacy.and_then(super::access::MyTeam::legacy),
         };
+        let events = super::events::clean_events(self.events);
+        let event_look = super::events::clean_look(&events, self.event_look);
         Some(Me {
             uuid: validate::uuid(&self.uuid)?,
             name: validate::display_name(&self.name),
@@ -143,7 +152,8 @@ impl ApiMe {
             created_at: self.created_at.map(|t| validate::text(&t, 40)),
             settings: self.settings,
             active_cape_id: self.active_cape.and_then(|c| validate::cape_id(&c.id).then_some(c.id)),
-            events: super::events::clean_events(self.events),
+            events,
+            event_look,
         })
     }
 }

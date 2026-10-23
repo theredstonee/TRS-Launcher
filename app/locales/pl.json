@@ -2391,6 +2391,8 @@
       "animatedBackgroundDescription": "Spokojna, animowana scena za każdą stroną – obwód z redstone albo zimowy krajobraz, zależnie od wyglądu. Po wyłączeniu widoczny jest tylko wzór tła.",
       "eventIconsTitle": "Ikony wydarzeń",
       "eventIconsDescription": "Podczas wydarzeń takich jak Halloween zmienia się też ikona aplikacji – okno, pasek zadań, skróty na pulpicie i w menu Start oraz ekran główny telefonu. Po zakończeniu wydarzenia zwykła ikona wraca sama.",
+      "eventLookTitle": "Pokazuj wygląd wydarzenia (np. Halloween)",
+      "eventLookDescription": "Kolory, tła, paski postępu, klimat i ikona wydarzenia w trakcie wydarzenia. Wyłączone = zwykły wygląd. Polowanie na dynie, cukierek albo psikus i nagrody zostają.",
       "motionTitle": "Animacje",
       "motionDescription": "Animowane tło, biegnące światła, przejścia stron i okien oraz listy, które płynnie wskakują na swoje miejsce. „Ogranicz animacje” wyłącza wszystko; „Jak Windows/system” stosuje ustawienie animacji z Windows lub pulpitu – na zoptymalizowanych lub zdalnych komputerach jest ono często wyłączone.",
       "motionModes": {
@@ -4035,7 +4037,12 @@
         "halloween": "Halloween"
       },
       "removeTitle": "Usunąć z listy?",
-      "removeText": "Usunąć {name} z tego wydarzenia?"
+      "removeText": "Usunąć {name} z tego wydarzenia?",
+      "lookTitle": "Wygląd wyłączony dla …",
+      "lookHint": "Ci gracze mają wydarzenie bez jego wyglądu i efektów (kolory, sceny, straszenie). Polowanie na dynie, cukierek albo psikus i nagrody zostają.",
+      "noLookBlocks": "Nikt – każdy z wydarzeniem widzi też jego wygląd.",
+      "lookRemoveTitle": "Włączyć wygląd z powrotem?",
+      "lookRemoveText": "{name} znów zobaczy wygląd tego wydarzenia."
     },
     "tabs": {
       "capes": "Weryfikacja peleryn"

@@ -30,6 +30,15 @@ pub(crate) fn clean_events(raw: Vec<String>) -> Vec<String> {
     out
 }
 
+/// Look-Liste (`eventLook` bzw. `look`): nur gültige IDs, die auch in `events` stehen.
+/// Fehlt sie (älterer Server), gilt `events` als Look – das bisherige Verhalten.
+pub(crate) fn clean_look(events: &[String], look: Option<Vec<String>>) -> Vec<String> {
+    match look {
+        Some(look) => clean_events(look).into_iter().filter(|e| events.contains(e)).collect(),
+        None => events.to_vec(),
+    }
+}
+
 /// Spieler auf der Allowlist eines Events.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -52,6 +61,24 @@ pub struct AdminEvent {
     pub updated_at: Option<serde_json::Value>,
     #[serde(default)]
     pub players: Vec<EventPlayer>,
+    /// Spieler, für die das Team den Look (Design & Effekte) dieses Events abgeschaltet hat.
+    /// Event-Inhalte (Kürbis-Suche, Süßes oder Saures …) bleiben für sie nutzbar.
+    #[serde(default)]
+    pub look_blocked: Vec<EventPlayer>,
+}
+
+fn clean_players(players: Vec<EventPlayer>) -> Vec<EventPlayer> {
+    players
+        .into_iter()
+        .filter_map(|p| {
+            Some(EventPlayer {
+                uuid: validate::uuid(&p.uuid)?,
+                name: validate::display_name(&p.name),
+                added_at: p.added_at.filter(|v| v.is_number() || v.is_string()),
+            })
+        })
+        .take(MAX_PLAYERS)
+        .collect()
 }
 
 impl AdminEvent {
@@ -59,18 +86,8 @@ impl AdminEvent {
         if !event_id(&self.id) {
             return None;
         }
-        self.players = self
-            .players
-            .into_iter()
-            .filter_map(|p| {
-                Some(EventPlayer {
-                    uuid: validate::uuid(&p.uuid)?,
-                    name: validate::display_name(&p.name),
-                    added_at: p.added_at.filter(|v| v.is_number() || v.is_string()),
-                })
-            })
-            .take(MAX_PLAYERS)
-            .collect();
+        self.players = clean_players(self.players);
+        self.look_blocked = clean_players(self.look_blocked);
         self.updated_at = self.updated_at.filter(|v| v.is_number() || v.is_string());
         Some(self)
     }
@@ -167,6 +184,26 @@ impl Launcher {
             .ok_or_else(|| Error::validation(crate::msg!("trsOps.invalidPlayerId", "Ungültige Spieler-ID.")))?;
         self.trs_do(Req::delete(format!("/v1/admin/events/{id}/players/{uuid}"))).await
     }
+
+    /// Look des Events für einen Spieler abschalten (Mojang-Name oder UUID); Features bleiben.
+    pub async fn trs_admin_add_event_look_block(&self, id: &str, player: &str) -> Result<()> {
+        let id = event_arg(id)?;
+        let target = validate::target(player)?;
+        let body = if validate::uuid(&target).is_some() { json!({ "uuid": target }) } else { json!({ "name": target }) };
+        self.trs_do(Req::post(format!("/v1/admin/events/{id}/look-blocks"), body)).await
+    }
+
+    pub async fn trs_admin_remove_event_look_block(&self, id: &str, uuid: &str) -> Result<()> {
+        let id = event_arg(id)?;
+        let uuid = validate::uuid(uuid)
+            .ok_or_else(|| Error::validation(crate::msg!("trsOps.invalidPlayerId", "Ungültige Spieler-ID.")))?;
+        self.trs_do(Req::delete(format!("/v1/admin/events/{id}/look-blocks/{uuid}"))).await
+    }
+
+    /// Davon die Events, deren Look der Spieler sehen soll (Team-Sperre abgezogen, ohne eigenen Schalter).
+    pub fn trs_look_events(&self) -> Vec<String> {
+        self.trs.look_events()
+    }
 }
 
 #[cfg(test)]
@@ -202,7 +239,9 @@ mod tests {
         let raw = json!([
             { "id": "halloween", "enabled": true, "updatedAt": 5, "players": [
                 { "uuid": "069a79f4-44e9-4726-a5be-fca90e38aaf5", "name": "Notch", "addedAt": 7 },
-                { "uuid": "nope", "name": "x" } ] },
+                { "uuid": "nope", "name": "x" } ],
+              "lookBlocked": [ { "uuid": "75c1a6f3112240abbdb57b9d21c64232", "name": "Theredstonee", "addedAt": "2026-10-23T10:00:00Z" },
+                { "uuid": "../x" } ] },
             { "id": "../evil", "enabled": true, "players": [] }
         ]);
         let a: ApiAdminEvents = serde_json::from_value(raw.clone()).unwrap();
@@ -214,7 +253,20 @@ mod tests {
             assert!(events[0].enabled);
             assert_eq!(events[0].players.len(), 1);
             assert_eq!(events[0].players[0].uuid, "069a79f444e94726a5befca90e38aaf5");
+            assert_eq!(events[0].look_blocked.len(), 1);
+            assert_eq!(events[0].look_blocked[0].name, "Theredstonee");
         }
+        // Älterer Server ohne Sperrliste: leer.
+        let old: AdminEvent = serde_json::from_value(json!({ "id": "halloween", "enabled": true })).unwrap();
+        assert!(old.cleaned().unwrap().look_blocked.is_empty());
+    }
+
+    #[test]
+    fn look_list_is_a_subset_and_falls_back_to_events() {
+        let events: Vec<String> = vec!["halloween".into(), "xmas".into()];
+        assert_eq!(clean_look(&events, None), events, "älterer Server: Look = Events");
+        assert_eq!(clean_look(&events, Some(vec![])), Vec::<String>::new());
+        assert_eq!(clean_look(&events, Some(vec!["xmas".into(), "ghost".into(), "Bad".into()])), ["xmas"]);
     }
 
     #[tokio::test]
@@ -233,7 +285,7 @@ mod tests {
                     200,
                     json!({ "uuid": ACC, "name": "Theredstonee", "admin": false,
                         "settings": { "showBadge": true, "showCapeToOthers": true, "presenceVisibility": "friends", "shareServer": false },
-                        "activeCape": null, "events": ["halloween", "../x", "halloween"] }),
+                        "activeCape": null, "events": ["halloween", "../x", "halloween"], "eventLook": [] }),
                 ),
                 ("POST", "/v1/me/cosmetics/witch_hat/claim") | ("POST", "/v1/me/capes/halloween/claim") => {
                     Response::json(200, json!({ "owned": true }))
@@ -241,6 +293,10 @@ mod tests {
                 ("PUT", "/v1/me/cosmetics") => Response::json(200, json!({})),
                 ("PUT", "/v1/admin/events/halloween") => Response::json(200, json!({})),
                 ("POST", "/v1/admin/events/halloween/players") => Response::json(200, json!({})),
+                ("POST", "/v1/admin/events/halloween/look-blocks") => Response::json(200, json!({})),
+                ("DELETE", "/v1/admin/events/halloween/look-blocks/069a79f444e94726a5befca90e38aaf5") => {
+                    Response::json(200, json!({}))
+                }
                 _ => Response::json(404, json!({ "error": { "code": "not_found", "message": "x" } })),
             }
         })
@@ -250,6 +306,15 @@ mod tests {
         let me = launcher.trs_me().await.unwrap();
         assert_eq!(me.events, ["halloween"]);
         assert_eq!(launcher.trs_active_events(), ["halloween"], "me füllt den Zwischenspeicher");
+        assert!(me.event_look.is_empty(), "Team-Sperre: kein Look");
+        assert!(launcher.trs_look_events().is_empty(), "Features bleiben, Look aus");
+        launcher.trs_admin_add_event_look_block("halloween", "Notch").await.unwrap();
+        let body = &server.hits("POST", "/v1/admin/events/halloween/look-blocks")[0];
+        assert!(String::from_utf8_lossy(&body.body).contains("\"name\":\"Notch\""));
+        launcher.trs_admin_remove_event_look_block("halloween", "069a79f4-44e9-4726-a5be-fca90e38aaf5").await.unwrap();
+        assert_eq!(server.hits("DELETE", "/v1/admin/events/halloween/look-blocks/069a79f444e94726a5befca90e38aaf5").len(), 1);
+        assert!(launcher.trs_admin_remove_event_look_block("halloween", "nope").await.is_err());
+        assert!(launcher.trs_admin_add_event_look_block("../x", "Notch").await.is_err());
         launcher.trs_claim_cosmetic("witch_hat").await.unwrap();
         launcher.trs_claim_cape("halloween").await.unwrap();
         launcher.trs_set_companion(Some("bat_buddy".into())).await.unwrap();

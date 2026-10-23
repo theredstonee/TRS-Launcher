@@ -24,7 +24,7 @@ function back() {
       </button>
       <NuxtLink v-else to="/" class="flex h-11 items-center gap-2 px-2 text-base-200" :aria-label="t('nav.home')">
         <img src="/icon.png" alt="" class="pointer-events-none size-5 [image-rendering:pixelated]" />
-        <PixelSnowflake v-if="design === 'winter' && !events.halloween" />
+        <PixelSnowflake v-if="design === 'winter' && !events.lookHalloween" />
         <span class="display text-[15px] leading-none">TRS Launcher</span>
       </NuxtLink>
 

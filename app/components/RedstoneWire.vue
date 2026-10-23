@@ -16,7 +16,7 @@ const lit = computed(() => (props.powered ? props.segments : Math.round((props.p
 
 <template>
   <!-- Halloween: jede Leitung (Installieren, Starten, Downloads) wird zum Mondlauf. -->
-  <MoonProgress v-if="events.halloween" :percent="percent" :powered="powered" :indeterminate="indeterminate" />
+  <MoonProgress v-if="events.lookHalloween" :percent="percent" :powered="powered" :indeterminate="indeterminate" />
   <!-- Winternacht: Eisbalken statt Redstone-Staub. -->
   <FrostProgress v-else-if="design === 'winter'" :percent="percent" :powered="powered" :indeterminate="indeterminate" />
   <div v-else class="relative flex items-center gap-[3px]" aria-hidden="true">

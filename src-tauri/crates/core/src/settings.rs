@@ -323,6 +323,10 @@ pub struct UiSettings {
     pub big_picture_auto: bool,
     /// Event-Symbole: Während eines Events (z. B. Halloween) zeigt die App ihr Event-Symbol.
     pub event_icons: bool,
+    /// Event-Design (Look & Effekte, z. B. Halloween) anzeigen. Aus = normales Aussehen;
+    /// Event-Inhalte (Kürbis-Suche, Süßes oder Saures, Belohnungen) bleiben nutzbar.
+    /// Der TRS Client bekommt den Wert über `launcher-theme.json` (`eventLook`).
+    pub event_look: bool,
     /// Halloween: Filmkorn-Rauschen und kurzes Aufflackern bei Blitzen (ab Werk an).
     /// Der TRS Client übernimmt den Wert über `launcher-theme.json` als Vorgabe.
     pub halloween_flicker: bool,
@@ -359,6 +363,7 @@ impl Default for UiSettings {
             big_picture_on_start: false,
             big_picture_auto: true,
             event_icons: true,
+            event_look: true,
             halloween_flicker: true,
             halloween_flicker_hint_seen: false,
             start_intro: true,
@@ -858,6 +863,16 @@ mod tests {
         let json = serde_json::to_value(&ui).unwrap();
         assert_eq!((json["startIntro"].as_bool(), json["startIntroSound"].as_bool()), (Some(false), Some(false)));
         assert_eq!((json["startIntroFlicker"].as_bool(), json["startIntroHintSeen"].as_bool()), (Some(false), Some(true)));
+    }
+
+    #[test]
+    fn event_look_default_on() {
+        // Ältere Dateien ohne Feld: Event-Design an.
+        let old: Settings = serde_json::from_str(r#"{"ui":{"theme":"light"}}"#).unwrap();
+        assert!(old.ui.event_look);
+        let ui: UiSettings = serde_json::from_value(serde_json::json!({ "eventLook": false })).unwrap();
+        assert!(!ui.event_look);
+        assert_eq!(serde_json::to_value(&ui).unwrap()["eventLook"].as_bool(), Some(false));
     }
 
     #[test]

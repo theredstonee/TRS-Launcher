@@ -47,6 +47,8 @@ export const trsMeSchema = z.object({
   activeCapeId: capeId.nullable(),
   /** Events, die für diesen Spieler aktiv sind (API §31); ältere Server: leer. */
   events: z.array(eventId).max(16).catch([]).default([]),
+  /** Davon die Events, deren Look der Spieler sehen soll (Team-Sperre abgezogen). Fehlt ⇒ = `events`. */
+  eventLook: z.array(eventId).max(16).optional().catch(undefined),
 })
 
 const userRef = z.object({ uuid, name: text(16) })
@@ -326,21 +328,25 @@ export const trsSyncEventSchema = z.object({
 export type TrsStatus = z.infer<typeof trsStatusSchema>
 export type TrsPrivacy = z.infer<typeof trsPrivacySchema>
 /** Event in der Team-Verwaltung (`GET /v1/admin/events`). */
+const adminEventPlayers = z
+  .array(
+    z.object({
+      uuid,
+      name: text(16).catch(''),
+      addedAt: z.union([z.string().max(40), z.number()]).nullable().catch(null).default(null),
+    }),
+  )
+  .max(500)
+  .catch([])
+  .default([])
+
 export const trsAdminEventSchema = z.object({
   id: eventId,
   enabled: z.boolean(),
   updatedAt: z.union([z.string().max(40), z.number()]).nullable().catch(null).default(null),
-  players: z
-    .array(
-      z.object({
-        uuid,
-        name: text(16).catch(''),
-        addedAt: z.union([z.string().max(40), z.number()]).nullable().catch(null).default(null),
-      }),
-    )
-    .max(500)
-    .catch([])
-    .default([]),
+  players: adminEventPlayers,
+  /** Spieler, für die das Team den Look des Events abgeschaltet hat (Features bleiben). */
+  lookBlocked: adminEventPlayers,
 })
 export type TrsAdminEvent = z.infer<typeof trsAdminEventSchema>
 export type TrsCosmeticSlot = z.infer<typeof trsCosmeticSlotSchema>

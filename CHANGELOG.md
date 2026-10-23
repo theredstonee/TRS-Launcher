@@ -31,9 +31,13 @@ How to write an entry:
 ## Unreleased
 
 ### English
+- **New: turn off the event design.** Settings → Appearance → "Show event design (e.g. Halloween)". Switched off, the launcher keeps its normal look during an event – no night colours, scenes, moon progress bars, atmosphere or event icon. The pumpkin hunt, trick or treat, stickers and rewards stay available, and every pumpkin can still be found. The TRS Client follows the setting in game.
+- **Team area:** each event has a new "Look off for …" list. Players on it get the event without its design and effects; the event content stays for them.
 - **Clearer message when sharing a modpack fails.** If the TRS server rejects a modpack, the launcher now shows the server's reason instead of a general "not a valid Modrinth pack". (Large packs saved in the ZIP64 format are accepted again on the server side.)
 
 ### Deutsch
+- **Neu: Event-Design abschalten.** Einstellungen → Darstellung → „Event-Design anzeigen (z. B. Halloween)“. Ausgeschaltet behält der Launcher während eines Events sein normales Aussehen – keine Nachtfarben, Szenen, Mond-Ladebalken, Atmosphäre und kein Event-Symbol. Kürbis-Suche, Süßes oder Saures, Sticker und Belohnungen bleiben, und alle Kürbisse sind weiter auffindbar. Der TRS Client übernimmt die Einstellung im Spiel.
+- **Team-Bereich:** Jedes Event hat eine neue Liste „Look aus für …“. Spieler darauf bekommen das Event ohne Design und Effekte; die Event-Inhalte bleiben für sie.
 - **Klarere Meldung, wenn das Teilen eines Modpacks scheitert.** Lehnt der TRS-Server ein Modpack ab, zeigt der Launcher jetzt den Grund des Servers statt eines allgemeinen „kein gültiges Modrinth-Pack“. (Große Packs im ZIP64-Format nimmt der Server wieder an.)
 
 ## 0.27.5 – 2026-10-23 – Clean Cut Fix | Feinschliff

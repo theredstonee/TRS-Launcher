@@ -2432,6 +2432,8 @@
       "animatedBackgroundDescription": "A calm animated scene behind every page – a redstone circuit or a winter landscape, depending on the design. When off, only the background pattern is shown.",
       "eventIconsTitle": "Event icons",
       "eventIconsDescription": "During events like Halloween, the app icon changes too – window, taskbar, desktop and Start menu shortcuts, and the home screen on phones. The normal icon comes back by itself when the event ends.",
+      "eventLookTitle": "Show event design (e.g. Halloween)",
+      "eventLookDescription": "Colours, backgrounds, progress bars, atmosphere and the event icon during an event. Off = normal look. The pumpkin hunt, trick or treat and rewards stay.",
       "motionTitle": "Animations",
       "motionDescription": "Animated background, running lights, page and dialog transitions, and lists that glide into place. “Reduce animations” turns them all off; “Follow Windows/system” uses the animation setting of Windows or your desktop – it is often off on tuned or remote PCs.",
       "motionModes": {
@@ -4103,7 +4105,12 @@
         "halloween": "Halloween"
       },
       "removeTitle": "Remove from the allowlist?",
-      "removeText": "Remove {name} from this event?"
+      "removeText": "Remove {name} from this event?",
+      "lookTitle": "Look off for …",
+      "lookHint": "These players get the event without its design & effects (colours, scenes, spooks). The pumpkin hunt, trick or treat and rewards stay.",
+      "noLookBlocks": "Nobody – everyone with the event also sees its look.",
+      "lookRemoveTitle": "Turn the look back on?",
+      "lookRemoveText": "{name} will see this event's look again."
     },
     "tabs": {
       "capes": "Review capes"

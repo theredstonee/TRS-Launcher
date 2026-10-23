@@ -30,7 +30,7 @@ function regenerate() {
   generated.value = banner.value && !failed.value ? null : generatedBanner(props.instance.id)
 }
 onMounted(regenerate)
-watch([banner, failed, () => props.instance.id, () => settings.current?.ui.theme, () => settings.current?.ui.accent, design, () => events.halloween], () =>
+watch([banner, failed, () => props.instance.id, () => settings.current?.ui.theme, () => settings.current?.ui.accent, design, () => events.lookHalloween], () =>
   nextTick(regenerate),
 )
 </script>

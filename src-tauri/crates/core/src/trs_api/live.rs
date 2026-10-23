@@ -234,7 +234,8 @@ pub enum LiveEvent {
     /// Erfolg freigeschaltet: Katalog-Eintrag (auch geheime jetzt mit Titel), Zeitpunkt, ggf. Belohnung.
     AchievementUnlocked { achievement: Box<Achievement>, at: Option<String>, reward: Option<Reward> },
     /// Die aktiven Events dieses Spielers haben sich geändert (§31, z. B. Halloween an/aus).
-    EventsChanged { events: Vec<String> },
+    /// `look` = davon die Events, deren Look der Spieler sehen soll (fehlt beim Server ⇒ = `events`).
+    EventsChanged { events: Vec<String>, look: Vec<String> },
     /// Halloween 2026 (§36): Kürbis gefunden, angeklopft oder Abzeichen bekommen – voller Stand.
     HalloweenUpdated(Box<super::halloween::HalloweenState>),
     /// Creator-Programm (§35.7): eigenes Symbol/Umhang geprüft, Stufe geändert, entzogen, Antrag beantwortet …
@@ -428,6 +429,8 @@ struct D {
     reward: Option<serde_json::Value>,
     #[serde(default)]
     events: Option<Vec<String>>,
+    #[serde(default)]
+    look: Option<Vec<String>>,
 }
 
 #[derive(Deserialize)]
@@ -642,7 +645,11 @@ pub fn decode(event: &str, data: &str) -> Option<LiveEvent> {
             let reward = Reward::from_value(d.reward).or_else(|| achievement.reward.clone());
             LiveEvent::AchievementUnlocked { achievement: Box::new(achievement), at: time(d.at), reward }
         }
-        "events_changed" => LiveEvent::EventsChanged { events: super::events::clean_events(d.events?) },
+        "events_changed" => {
+            let events = super::events::clean_events(d.events?);
+            let look = super::events::clean_look(&events, d.look);
+            LiveEvent::EventsChanged { events, look }
+        }
         _ => return None,
     })
 }
@@ -965,8 +972,8 @@ impl TrsApi {
                         } else if frame.event == "hosting_signal" {
                             self.live.signal(&frame.data);
                         } else if let Some(event) = decode(&frame.event, &frame.data) {
-                            if let LiveEvent::EventsChanged { events } = &event {
-                                self.set_active_events(events);
+                            if let LiveEvent::EventsChanged { events, look } = &event {
+                                self.set_active_events(events, Some(look));
                             }
                             if self.live.take_notified(frame.id.as_deref()) {
                                 self.live.emit(LiveOut::Notified(event));
@@ -1238,6 +1245,21 @@ mod tests {
         ] {
             assert!(decode("issue_updated", &bad.to_string()).is_none(), "{bad}");
         }
+    }
+
+    #[test]
+    fn events_changed_carries_the_look_list() {
+        // Neuer Server: `look` ohne gesperrte Events, nur Teilmenge von `events`.
+        let ev = decode("events_changed", r#"{"events":["halloween","xmas"],"look":["xmas","ghost","Bad"]}"#).unwrap();
+        assert_eq!(ev, LiveEvent::EventsChanged { events: vec!["halloween".into(), "xmas".into()], look: vec!["xmas".into()] });
+        let out = serde_json::to_value(&ev).unwrap();
+        assert_eq!(out, json!({ "type": "events_changed", "events": ["halloween", "xmas"], "look": ["xmas"] }));
+        // Team-Sperre: Look leer, Features bleiben.
+        let blocked = decode("events_changed", r#"{"events":["halloween"],"look":[]}"#).unwrap();
+        assert_eq!(blocked, LiveEvent::EventsChanged { events: vec!["halloween".into()], look: vec![] });
+        // Älterer Server ohne `look`: Look = Events.
+        let old = decode("events_changed", r#"{"events":["halloween"]}"#).unwrap();
+        assert_eq!(old, LiveEvent::EventsChanged { events: vec!["halloween".into()], look: vec!["halloween".into()] });
     }
 
     #[test]

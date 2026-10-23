@@ -269,6 +269,12 @@ pub fn trs_active_events(launcher: State<'_, LauncherState>) -> Vec<String> {
     launcher.trs_active_events()
 }
 
+/// Davon die Events, deren Look der Spieler sehen soll (Team-Sperre abgezogen; Zwischenspeicher).
+#[tauri::command]
+pub fn trs_look_events(launcher: State<'_, LauncherState>) -> Vec<String> {
+    launcher.trs_look_events()
+}
+
 #[tauri::command]
 pub async fn trs_admin_events(
     launcher: State<'_, LauncherState>,
@@ -289,6 +295,16 @@ pub async fn trs_admin_add_event_player(launcher: State<'_, LauncherState>, id: 
 #[tauri::command]
 pub async fn trs_admin_remove_event_player(launcher: State<'_, LauncherState>, id: String, uuid: String) -> CommandResult<()> {
     Ok(launcher.trs_admin_remove_event_player(&id, &uuid).await?)
+}
+
+#[tauri::command]
+pub async fn trs_admin_add_event_look_block(launcher: State<'_, LauncherState>, id: String, player: String) -> CommandResult<()> {
+    Ok(launcher.trs_admin_add_event_look_block(&id, &player).await?)
+}
+
+#[tauri::command]
+pub async fn trs_admin_remove_event_look_block(launcher: State<'_, LauncherState>, id: String, uuid: String) -> CommandResult<()> {
+    Ok(launcher.trs_admin_remove_event_look_block(&id, &uuid).await?)
 }
 
 // --- Empfohlene Modpacks (Team, featured.manage) ---
