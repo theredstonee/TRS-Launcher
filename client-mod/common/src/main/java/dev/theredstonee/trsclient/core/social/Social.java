@@ -522,7 +522,7 @@ public final class Social {
 		}
 		if (t.equals("events_changed")) {
 			// Aktive Events (z. B. Halloween). null = Feld fehlt, nicht als leere Liste werten.
-			dev.theredstonee.trsclient.core.halloween.Halloween.fromApi(e.events);
+			dev.theredstonee.trsclient.core.halloween.Halloween.fromApi(e.events, e.look);
 			return;
 		}
 		if (t.equals("halloween_updated")) {

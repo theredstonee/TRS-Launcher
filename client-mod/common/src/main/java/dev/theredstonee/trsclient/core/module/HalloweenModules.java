@@ -23,6 +23,11 @@ public final class HalloweenModules {
 	public final BoolSetting jumpscares;
 	/** Grusel-Töne (ab Werk an – Jumpscares bekommen jetzt standardmäßig einen Ton). */
 	public final BoolSetting sounds;
+	/**
+	 * „Event-Design anzeigen“ (ab Werk an): aus = kein Halloween-Look, keine Spuk-Effekte, Jumpscares oder Spuk-Töne.
+	 * Kürbis-Suche, Süßes oder Saures, Sticker und Belohnungen bleiben.
+	 */
+	public final BoolSetting eventLook;
 	/** Lokaler Zustand: „Flackern &amp; Rauschen“ (Launcher-Standard), gesehene Hinweise. */
 	public final HalloweenLocal local = new HalloweenLocal();
 
@@ -45,12 +50,25 @@ public final class HalloweenModules {
 		// Ab Werk an (0.19.2): neuer Schlüssel, damit alte „aus“-Werte nicht greifen – wer nie umgeschaltet hat,
 		// bekommt den neuen Standard „an“ (wie seinerzeit die Umbenennung von „trail“ → „ghostTrail“).
 		sounds = halloween.add(new BoolSetting("spookySounds", "Spooky sounds", true));
+		eventLook = halloween.add(new BoolSetting("eventLook", "Show event design", true));
+		final BoolSetting look = eventLook;
+		Halloween.ownLook(new java.util.function.BooleanSupplier() {
+			@Override
+			public boolean getAsBoolean() {
+				// Die Module des laufenden Spiels zählen (weitere Instanzen, z. B. Benchmark-Standardwerte, nicht).
+				TrsModules game = dev.theredstonee.trsclient.core.intro.IntroGate.modules();
+				return game != null ? game.halloween.eventLook.get() : look.get();
+			}
+		});
 		registry.addPart(local);
 	}
 
-	/** Halloween-Look und -Funktionen gerade an? (Event aktiv und Modul nicht ausgeschaltet.) */
+	/**
+	 * Spuk-Effekte, Jumpscares und Spuk-Töne gerade an? (Event-Look an – siehe {@link Halloween#lookActive()} – und Modul
+	 * nicht ausgeschaltet.) Die Funktionen des Events (Kürbis-Suche …) hängen nur an {@link Halloween#active()}.
+	 */
 	public boolean on() {
-		return Halloween.active() && halloween.isEnabled();
+		return Halloween.lookActive() && halloween.isEnabled();
 	}
 
 	/** Filmkorn + Blitz (Einstellung „Flackern &amp; Rauschen“). */

@@ -57,6 +57,8 @@ public final class MeEvent {
 	public final String hostingData;
 	/** {@code events_changed}: aktive Event-IDs, oder null (Feld fehlt – nicht als „keins“ werten). */
 	public final List<String> events;
+	/** {@code events_changed}: Event-IDs, deren Look gezeigt wird, oder null (Feld fehlt = wie {@link #events}). */
+	public final List<String> look;
 	/** Rohes JSON von {@code halloween_updated} (≤ 16 KiB, wie {@code GET /v1/me/halloween}) – ausgewertet in core.halloween. */
 	public final String halloweenData;
 	/** {@code jumpscare} (Besitzer-Auslöser, Part C): Art des Schrecks ({@code [a-z_]{1,40}}) oder null. */
@@ -68,6 +70,7 @@ public final class MeEvent {
 		this.hostingData = data != null && type.startsWith("hosting_") && data.length() <= 16 * 1024 ? data : null;
 		this.halloweenData = data != null && type.equals("halloween_updated") && data.length() <= 16 * 1024 ? data : null;
 		this.events = d == null ? null : d.events;
+		this.look = d == null ? null : d.look;
 		this.resumed = d != null && Boolean.TRUE.equals(d.resumed);
 		this.reason = d == null || d.reason == null ? null : SafeText.line(d.reason, 200);
 		this.conversationId = d != null && Chat.validConversationId(d.conversationId) ? d.conversationId : null;

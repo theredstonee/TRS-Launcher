@@ -30,6 +30,12 @@ How to write an entry:
 
 ## Unreleased
 
+### English
+- **TRS Client: turn the event design off.** The Halloween page in the TRS menu has a new switch "Event design" (on by default). Turned off, the TRS Client looks like it does outside the event – no Halloween theme, title screen or loading bar, no grain, spooky effects, jumpscares or spooky sounds. The pumpkin hunt (all pumpkins stay findable), trick or treat, stickers and rewards keep working. The TRS Client also follows the matching launcher setting and the TRS team's choice for your account.
+
+### Deutsch
+- **TRS Client: Event-Design abschalten.** Die Halloween-Seite im TRS-Menü hat einen neuen Schalter „Event-Design“ (ab Werk an). Ist er aus, sieht der TRS Client aus wie außerhalb des Events – kein Halloween-Thema, kein Halloween-Titelbildschirm oder -Ladebalken, kein Filmkorn, keine Spuk-Effekte, Jumpscares oder Grusel-Töne. Kürbis-Suche (alle Kürbisse bleiben auffindbar), Süßes oder Saures, Sticker und Belohnungen funktionieren weiter. Der TRS Client folgt außerdem der passenden Einstellung im Launcher und der Entscheidung des TRS-Teams für dein Konto.
+
 ## 0.27.5 – 2026-10-23 – Clean Cut Fix | Feinschliff
 <!-- banner: accent=#3ee6c8 motif=/news/0.27.5/banner.png -->
 <!-- shots:

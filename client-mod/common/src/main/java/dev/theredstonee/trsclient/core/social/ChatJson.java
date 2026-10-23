@@ -212,6 +212,8 @@ public final class ChatJson {
 		String capeId;
 		/** {@code events_changed}: gerade aktive Event-IDs. */
 		List<String> events;
+		/** {@code events_changed}: Events, deren Look dieser Spieler sehen soll (fehlt bei alten Servern). */
+		List<String> look;
 	}
 
 	// --- Umwandlung ---

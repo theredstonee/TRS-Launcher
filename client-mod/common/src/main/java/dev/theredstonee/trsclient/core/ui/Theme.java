@@ -32,6 +32,11 @@ public final class Theme {
 		String event;
 		/** Halloween: „Flackern &amp; Rauschen“ im Launcher (fehlt = Standard an). */
 		Boolean halloweenFlicker;
+		/**
+		 * Zeigt der Launcher den Event-Look? false = vom Team gesperrt oder im Launcher ausgeschaltet (fehlt = an, ältere
+		 * Launcher). {@link #event} bleibt davon unberührt (Funktionen).
+		 */
+		Boolean eventLook;
 	}
 
 	/** Design „Redstone“ (Standard) und „Winternacht“. */
@@ -252,10 +257,10 @@ public final class Theme {
 		return ColorMath.lerp(ColorMath.lerp(dustOff, dustOn, 0.45f), dustOn, f);
 	}
 
-	/** Aktuelles Thema (nie null) – während Halloween dessen Halloween-Variante. */
+	/** Aktuelles Thema (nie null) – während Halloween (Look an) dessen Halloween-Variante. */
 	public static Theme get() {
 		Theme c = current;
-		if (!dev.theredstonee.trsclient.core.halloween.Halloween.active()) return c;
+		if (!dev.theredstonee.trsclient.core.halloween.Halloween.lookActive()) return c;
 		Theme h = spooky;
 		if (h == null || h.base != c) {
 			h = new Theme(c);
@@ -320,6 +325,7 @@ public final class Theme {
 				set(of(parsed.theme, parsed.accent, parsed.accentColor, parsed.design));
 				dev.theredstonee.trsclient.core.halloween.Halloween.fromLauncher(parsed.event);
 				dev.theredstonee.trsclient.core.halloween.Halloween.flickerFromLauncher(parsed.halloweenFlicker);
+				dev.theredstonee.trsclient.core.halloween.Halloween.lookFromLauncher(parsed.eventLook);
 				return true;
 			}
 		} catch (IOException | RuntimeException e) {

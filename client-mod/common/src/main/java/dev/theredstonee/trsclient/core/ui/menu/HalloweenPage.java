@@ -276,6 +276,9 @@ public final class HalloweenPage {
 		int tw = (w - (cols - 1) * gap) / cols;
 		int th = 34;
 		String[][] rows = {
+				// Event-Look (Thema, Szenen, Spuk) – Kürbis-Suche, Süßes oder Saures und Belohnungen bleiben.
+				{"eventLook", "halloween.switch.eventLook",
+						Halloween.lookBlocked() ? "halloween.switch.eventLook.blocked" : "halloween.switch.eventLook.desc"},
 				{"hits", "halloween.switch.hits", "halloween.switch.hits.desc"},
 				{"trail", "halloween.switch.trail", "halloween.switch.trail.desc"},
 				{"jumpscares", "halloween.switch.jumpscares", "halloween.switch.jumpscares.desc"},
@@ -322,6 +325,7 @@ public final class HalloweenPage {
 		if ("jumpscares".equals(key)) return m.jumpscares;
 		if ("others".equals(key)) return m.others;
 		if ("sounds".equals(key)) return m.sounds;
+		if ("eventLook".equals(key)) return m.eventLook;
 		return null;
 	}
 

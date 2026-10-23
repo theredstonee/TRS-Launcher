@@ -64,6 +64,8 @@ public final class TrsApi {
 		public Settings settings;
 		/** Aktive Events ({@code "halloween"} …). {@code null} = alte API ohne das Feld. */
 		public List<String> events;
+		/** Events, deren Look dieser Spieler sehen soll (ohne Team-Sperre). {@code null} = alte API (= events). */
+		public List<String> eventLook;
 	}
 
 	public static final class Settings {

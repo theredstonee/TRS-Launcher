@@ -158,4 +158,26 @@ class HalloweenServiceTest {
 		assertFalse(Pumpkins.valid("client-other"));
 		assertEquals(Pumpkins.CLIENT_TITLE, Pumpkins.ALL.get(9));
 	}
+
+	@Test
+	void pumpkinsStayFindableWithTheEventLookOff() {
+		Halloween.force(null);
+		Halloween.fromLauncher("halloween");
+		Halloween.lookFromLauncher(Boolean.FALSE);
+		Halloween.fromApi(Arrays.asList("halloween"), java.util.Collections.<String>emptyList());
+		Halloween.ownLook(() -> false);
+		s.fromEvent(STATE);
+		assertTrue(Halloween.active());
+		assertFalse(Halloween.lookActive());
+		assertFalse(dev.theredstonee.trsclient.core.ui.Theme.get().halloween, "kein Halloween-Thema");
+		for (String id : Arrays.asList(Pumpkins.CLIENT_TITLE, Pumpkins.CLIENT_WARDROBE, Pumpkins.CLIENT_HUD, Pumpkins.CLIENT_MODULES)) {
+			assertTrue(s.pumpkinVisible(id), id);
+			SpookyFxTest.Count c = new SpookyFxTest.Count();
+			dev.theredstonee.trsclient.core.ui.Hits hits = new dev.theredstonee.trsclient.core.ui.Hits();
+			assertTrue(Pumpkins.draw(c, hits, id, 20, 20, 0, 0), "Kürbis " + id + " wird ohne Look gezeichnet");
+			assertTrue(c.fills > 0);
+			assertTrue(hits.hovers(20, 20), "und ist anklickbar");
+		}
+		Pumpkins.resetAnimations();
+	}
 }
