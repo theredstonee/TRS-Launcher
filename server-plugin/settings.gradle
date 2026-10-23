@@ -21,3 +21,8 @@ include 'bukkit'    // Spigot / Paper / Purpur 1.8.8 – 26.x + Folia (Java 8 by
 include 'bungee'    // BungeeCord / Waterfall
 include 'velocity'  // Velocity 3.x
 include 'sponge'    // Sponge API 8+
+
+// common + relocated SnakeYAML as one jar for the server mods (Fabric / NeoForge / Forge). The mods themselves are
+// separate Gradle builds in mods/ (Loom, ModDevGradle and ForgeGradle do not share one build well); the root tasks
+// fabricMods / neoforgeMods / forgeMods run them – see build.gradle.
+include 'modcore'

@@ -73,6 +73,17 @@ missing-client:
   notify-message: "&cThis server is made for the &fTRS Client&c. &7Get it free at &fhttps://trs-launcher.theredstonee.de"
   kick-message: "&cThis server requires the &fTRS Client&c.\n&7Get it free at &fhttps://trs-launcher.theredstonee.de"
 
-# Players with this server permission get no rules at all (empty rule set) and are exempt from missing-client.
-# Set to "" to disable. (This is your server's own bypass – unrelated to the TRS team note at the top.)
+# -----------------------------------------------------------------------------------------------------
+# Bypass – players who get no rules at all (empty rule set) and are exempt from missing-client.
+# (This is your server's own bypass – unrelated to the TRS team note at the top.)
+# -----------------------------------------------------------------------------------------------------
+# Players with this server permission. Set to "" to disable.
+# Fabric server mod: needs a permissions mod (e.g. LuckPerms); NeoForge/Forge: not used (see below).
 bypass-permission: trsrules.bypass
+
+# Players listed by name or UUID (works everywhere), e.g. [Notch, 069a79f4-44e9-4726-a5be-fca90e38aaf5]
+bypass-players: []
+
+# Fabric/NeoForge/Forge server mods: operators with at least this OP level (1-4). 0 = off.
+# (Plugin platforms ignore it – give the bypass permission instead.)
+bypass-op-level: 0

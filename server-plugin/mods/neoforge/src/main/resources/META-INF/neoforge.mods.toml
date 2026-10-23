@@ -1,0 +1,31 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "GPL-3.0-only"
+issueTrackerURL = "https://github.com/theredstonee/TRS-Launcher/issues"
+
+[[mods]]
+modId = "trsserverrules"
+version = "${version}"
+displayName = "TRS Server Rules"
+authors = "theredstonee"
+displayURL = "https://trs-launcher.theredstonee.de"
+description = '''
+Server-side only: lock or force TRS Client modules and settings on your server, globally or per dimension (config/trs-server-rules.yml, /trsrules). Players without the TRS Client are not affected.
+Note: TRS team members with the team permission serverrules.bypass can override the rules in their own client after an in-game confirmation – documented on purpose.
+'''
+# Server-only mod: clients do not need it, the server's version is not compared with the client.
+displayTest = "IGNORE_SERVER_VERSION"
+
+[[dependencies.trsserverrules]]
+modId = "neoforge"
+type = "required"
+versionRange = "[${neoforge},)"
+ordering = "NONE"
+side = "SERVER"
+
+[[dependencies.trsserverrules]]
+modId = "minecraft"
+type = "required"
+versionRange = "[${minecraft}]"
+ordering = "NONE"
+side = "SERVER"

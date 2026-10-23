@@ -1,0 +1,15 @@
+// TRS Server Rules – Forge (MinecraftForge) server mod for Minecraft 1.20.1. Separate Gradle build (ForgeGradle 7),
+// run by the root task :forgeMods (or directly: ../../gradlew -p mods/forge dist – after ../../gradlew :modcore:shadowJar).
+pluginManagement {
+	repositories {
+		gradlePluginPortal()
+		mavenCentral()
+		maven { url = 'https://maven.minecraftforge.net/' }
+	}
+}
+
+plugins {
+	id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'trs-server-rules-forge'

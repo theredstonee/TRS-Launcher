@@ -263,6 +263,25 @@ class ConfigTest {
 	}
 
 	@Test
+	void bypassPlayersAndOpLevel() {
+		RulesConfig cfg = parse("bypass-players: [Notch, 069A79F4-44E9-4726-A5BE-FCA90E38AAF5, \"bad name!\"]\nbypass-op-level: 3\n", ScopeKind.WORLDS);
+		assertTrue(cfg.isBypassPlayer("notch", null));
+		assertTrue(cfg.isBypassPlayer("x", java.util.UUID.fromString("069a79f4-44e9-4726-a5be-fca90e38aaf5")));
+		assertFalse(cfg.isBypassPlayer("Steve", java.util.UUID.randomUUID()));
+		assertEquals(2, cfg.bypassPlayers().size());
+		assertTrue(String.valueOf(cfg.warnings()).contains("bad name!"));
+		assertEquals(3, cfg.bypassOpLevel());
+
+		RulesConfig defaults = parse("", ScopeKind.WORLDS);
+		assertTrue(defaults.bypassPlayers().isEmpty());
+		assertEquals(0, defaults.bypassOpLevel());
+
+		RulesConfig clamped = parse("bypass-op-level: 7\n", ScopeKind.WORLDS);
+		assertEquals(4, clamped.bypassOpLevel());
+		assertTrue(String.valueOf(clamped.warnings()).contains("bypass-op-level"));
+	}
+
+	@Test
 	void oversizedRulesAreReported() {
 		StringBuilder sb = new StringBuilder("message: \"");
 		for (int i = 0; i < Protocol.MAX_PAYLOAD; i++) sb.append('x');

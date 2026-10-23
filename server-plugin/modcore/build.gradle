@@ -1,0 +1,10 @@
+// Not a server platform: common + SnakeYAML (relocated) as ONE jar for the Fabric/NeoForge/Forge server mods
+// (mods/*). Those builds use Loom / ModDevGradle / ForgeGradle and are separate Gradle builds; they compile against
+// this jar and copy its classes into every mod jar. Built automatically by the root tasks fabricMods/neoforgeMods/
+// forgeMods (and therefore by dist).
+//
+// Output: modcore/build/libs/trs-server-rules-modcore-<version>.jar (not part of build/dist).
+
+tasks.named('compileJava') {
+	options.release = 8
+}

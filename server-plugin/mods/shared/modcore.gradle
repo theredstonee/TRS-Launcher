@@ -1,0 +1,34 @@
+// Shared by the mod builds (mods/fabric, mods/neoforge, mods/forge), applied to every mod project.
+//
+// - version: plugin_version from server-plugin/gradle.properties (one version for plugins and mods)
+// - modcoreJar: common + relocated SnakeYAML (server-plugin/modcore), compiled against and copied into the mod jar
+// - trsSharedSources(mcCompat): the loader-independent mod sources (mods/shared/*)
+// - distDir: server-plugin/build/dist (the mod builds copy their finished jars there)
+
+def pluginRoot = new File(buildscript.sourceFile.parentFile, '../..').canonicalFile
+def pluginProps = new Properties()
+new File(pluginRoot, 'gradle.properties').withInputStream { pluginProps.load(it) }
+def trsVersion = pluginProps.getProperty('plugin_version')
+
+project.ext.trsRulesVersion = trsVersion
+project.ext.modcoreJar = new File(pluginRoot, "modcore/build/libs/trs-server-rules-modcore-${trsVersion}.jar")
+project.ext.trsDistDir = new File(pluginRoot, 'build/dist')
+project.ext.trsLicense = new File(pluginRoot, 'LICENSE')
+project.ext.trsSharedSources = { String mcCompat ->
+	def shared = new File(pluginRoot, 'mods/shared')
+	[new File(shared, 'core/java'), new File(shared, 'vanilla/java'), new File(shared, "mc-${mcCompat}/java")]
+}
+
+group = pluginProps.getProperty('maven_group')
+version = trsVersion
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+	doFirst {
+		if (!project.modcoreJar.isFile()) {
+			throw new GradleException("Missing ${project.modcoreJar} – run the mods through the server-plugin root build " +
+					"(./gradlew dist or ./gradlew ${project.rootProject.name.replace('trs-server-rules-', '')}Mods), " +
+					"or build it first with ./gradlew :modcore:shadowJar")
+		}
+	}
+}

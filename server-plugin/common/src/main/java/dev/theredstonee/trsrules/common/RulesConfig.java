@@ -23,7 +23,9 @@ public final class RulesConfig {
 	/** Words that mean "no lock" (useful in a world/server section to lift a global lock). */
 	private static final Set<String> FREE_WORDS = new HashSet<String>(Arrays.asList("free", "default", "player", "unset"));
 	private static final Set<String> TOP_KEYS = new HashSet<String>(Arrays.asList("config-version", "modules", "settings",
-			"worlds", "servers", "message", "missing-client", "bypass-permission"));
+			"worlds", "servers", "message", "missing-client", "bypass-permission", "bypass-players", "bypass-op-level"));
+	/** Highest Minecraft operator level. */
+	public static final int MAX_OP_LEVEL = 4;
 	private static final Set<String> SCOPE_KEYS = new HashSet<String>(Arrays.asList("modules", "settings", "message"));
 
 	private final ScopeKind kind;
@@ -31,22 +33,26 @@ public final class RulesConfig {
 	private final Map<String, RuleSet> scopes;
 	private final MissingClientPolicy missingClient;
 	private final String bypassPermission;
+	private final Set<String> bypassPlayers;
+	private final int bypassOpLevel;
 	private final List<String> warnings;
 
 	private RulesConfig(ScopeKind kind, RuleSet global, Map<String, RuleSet> scopes, MissingClientPolicy missingClient,
-			String bypassPermission, List<String> warnings) {
+			String bypassPermission, Set<String> bypassPlayers, int bypassOpLevel, List<String> warnings) {
 		this.kind = kind;
 		this.global = global;
 		this.scopes = scopes;
 		this.missingClient = missingClient;
 		this.bypassPermission = bypassPermission;
+		this.bypassPlayers = bypassPlayers;
+		this.bypassOpLevel = bypassOpLevel;
 		this.warnings = warnings;
 	}
 
 	/** No rules at all (used before the config could be loaded). */
 	public static RulesConfig empty(ScopeKind kind) {
 		return new RulesConfig(kind, RuleSet.empty(), Collections.<String, RuleSet>emptyMap(), MissingClientPolicy.defaults(),
-				DEFAULT_BYPASS_PERMISSION, Collections.<String>emptyList());
+				DEFAULT_BYPASS_PERMISSION, Collections.<String>emptySet(), 0, Collections.<String>emptyList());
 	}
 
 	public ScopeKind kind() {
@@ -69,6 +75,29 @@ public final class RulesConfig {
 	/** Permission that exempts a player from all rules, or {@code null} if disabled. */
 	public String bypassPermission() {
 		return bypassPermission;
+	}
+
+	/**
+	 * Players exempt from all rules by name or UUID ({@code bypass-players:}), lower case. Works on every platform –
+	 * the only bypass besides the OP level on vanilla-based servers without a permission system.
+	 */
+	public Set<String> bypassPlayers() {
+		return Collections.unmodifiableSet(bypassPlayers);
+	}
+
+	/** True if {@code name} or {@code id} is listed in {@code bypass-players:}. */
+	public boolean isBypassPlayer(String name, java.util.UUID id) {
+		if (bypassPlayers.isEmpty()) return false;
+		return (name != null && bypassPlayers.contains(name.toLowerCase(Locale.ROOT)))
+				|| (id != null && bypassPlayers.contains(id.toString().toLowerCase(Locale.ROOT)));
+	}
+
+	/**
+	 * Operators with at least this OP level are exempt ({@code bypass-op-level:}, 1–4), {@code 0} = off. Used by the
+	 * Fabric/NeoForge/Forge server mods (vanilla servers have no permission system); plugin platforms ignore it.
+	 */
+	public int bypassOpLevel() {
+		return bypassOpLevel;
 	}
 
 	/** Problems found while parsing (to be logged). */
@@ -171,7 +200,10 @@ public final class RulesConfig {
 			if (bypass != null && bypass.isEmpty()) bypass = null;
 		}
 
-		RulesConfig cfg = new RulesConfig(kind, global, scopes, missing, bypass, warnings);
+		Set<String> bypassPlayers = parseBypassPlayers(root.get("bypass-players"), warnings);
+		int bypassOpLevel = parseOpLevel(root.get("bypass-op-level"), warnings);
+
+		RulesConfig cfg = new RulesConfig(kind, global, scopes, missing, bypass, bypassPlayers, bypassOpLevel, warnings);
 		cfg.checkSizes();
 		return cfg;
 	}
@@ -289,6 +321,44 @@ public final class RulesConfig {
 			}
 		}
 		throw new IllegalArgumentException(name + " must be a number");
+	}
+
+	private static Set<String> parseBypassPlayers(Object section, List<String> warnings) {
+		Set<String> out = new HashSet<String>();
+		if (section == null) return out;
+		List<?> list;
+		if (section instanceof List) {
+			list = (List<?>) section;
+		} else if (section instanceof String) {
+			list = Arrays.asList(((String) section).split(","));
+		} else {
+			warnings.add("bypass-players must be a list of player names or UUIDs – ignored.");
+			return out;
+		}
+		for (Object o : list) {
+			String s = o == null ? "" : String.valueOf(o).trim();
+			if (s.isEmpty()) continue;
+			if (!s.matches("[A-Za-z0-9_]{1,16}") && !s.matches("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")) {
+				warnings.add("bypass-players: '" + s + "' is neither a player name nor a UUID – ignored.");
+				continue;
+			}
+			out.add(s.toLowerCase(Locale.ROOT));
+		}
+		return out;
+	}
+
+	private static int parseOpLevel(Object v, List<String> warnings) {
+		if (v == null || Boolean.FALSE.equals(v)) return 0;
+		if (!(v instanceof Number)) {
+			warnings.add("bypass-op-level must be a number from 0 (off) to " + MAX_OP_LEVEL + " – using 0.");
+			return 0;
+		}
+		int level = ((Number) v).intValue();
+		if (level < 0 || level > MAX_OP_LEVEL) {
+			warnings.add("bypass-op-level must be between 0 (off) and " + MAX_OP_LEVEL + " – clamped.");
+			level = Math.max(0, Math.min(MAX_OP_LEVEL, level));
+		}
+		return level;
 	}
 
 	private static MissingClientPolicy parseMissing(Object section, List<String> warnings) {

@@ -1,0 +1,85 @@
+// TRS Server Rules – NeoForge server mod, one jar per Minecraft version (:1.21.1, :1.21.11).
+//
+// Sources: src/main + ../shared (engine glue, tick scheduler, Mc compat per version) + modcore jar (common + SnakeYAML).
+// NeoForge 1.20.5+ runs with Mojang names in production, so the normal jar is the finished mod (no reobfuscation).
+// Server-side only: @Mod(dist = DEDICATED_SERVER), optional payloads (vanilla/Fabric clients can join),
+// displayTest = IGNORE_SERVER_VERSION (clients do not need the mod).
+plugins {
+	id 'net.neoforged.moddev' version "${moddev_version}" apply false
+}
+
+subprojects {
+	apply plugin: 'java'
+	apply plugin: 'net.neoforged.moddev'
+	apply from: rootProject.file('../shared/modcore.gradle')
+
+	def mc = project.name
+
+	base {
+		archivesName = "trs-server-rules-neoforge-${mc}"
+	}
+
+	java {
+		toolchain {
+			languageVersion = JavaLanguageVersion.of(21)
+		}
+	}
+
+	tasks.withType(JavaCompile).configureEach {
+		options.release = 21
+	}
+
+	sourceSets.main {
+		java.srcDirs = [rootProject.file('src/main/java')] + project.trsSharedSources(project.mc_compat as String)
+		resources.srcDirs = [rootProject.file('src/main/resources')]
+	}
+
+	repositories {
+		mavenCentral()
+	}
+
+	neoForge {
+		version = project.neo_version
+		mods {
+			trsserverrules {
+				sourceSet sourceSets.main
+			}
+		}
+	}
+
+	dependencies {
+		implementation files(project.modcoreJar)
+	}
+
+	processResources {
+		// "21.1.251" → "21.1" (lowest NeoForge of this Minecraft version)
+		def props = [version: project.version, minecraft: mc,
+				neoforge: project.neo_version.toString().tokenize('.').take(2).join('.')]
+		inputs.properties(props)
+		filesMatching('META-INF/neoforge.mods.toml') {
+			expand props
+		}
+	}
+
+	tasks.named('jar', Jar) {
+		from({ zipTree(project.modcoreJar) }) {
+			exclude 'META-INF/MANIFEST.MF'
+		}
+		from(project.trsLicense) { rename { 'LICENSE_trs-server-rules' } }
+		duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	}
+
+	tasks.register('dist', Copy) {
+		group = 'build'
+		from(tasks.named('jar'))
+		into project.trsDistDir
+		// build/dist is shared with the root build (and may be wiped by it): always copy
+		outputs.upToDateWhen { false }
+	}
+}
+
+tasks.register('dist') {
+	group = 'build'
+	description = 'Builds every NeoForge version into server-plugin/build/dist.'
+	dependsOn subprojects.collect { "${it.path}:dist" }
+}
