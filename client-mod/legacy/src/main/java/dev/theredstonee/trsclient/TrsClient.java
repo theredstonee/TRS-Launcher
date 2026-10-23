@@ -185,6 +185,8 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.perf.LegacyPerf.init(modules, Mc.version(), message -> LOGGER.info(message));
 		// Netzwerk-Optimierung + Ping-Messung (Handler an der Client-Verbindung, siehe core.net).
 		dev.theredstonee.trsclient.net.NetHooks.init(modules, message -> LOGGER.info(message));
+		// TRS Server Rules: Server sperrt/erzwingt Module (Kanäle TRS|Rules/TRS|Hello, Logik in core.serverrules).
+		dev.theredstonee.trsclient.net.ServerRulesNet.init(modules, version, Mc.version(), message -> LOGGER.info(message));
 	}
 
 	@Mod.EventHandler
@@ -450,6 +452,7 @@ public final class TrsClient {
 		tickRedstone();
 		dev.theredstonee.trsclient.online.LegacyOnline.tick(mc);
 		dev.theredstonee.trsclient.online.LegacyEmotes.tick(mc);
+		dev.theredstonee.trsclient.net.ServerRulesNet.tick(mc);
 	}
 
 	/** Weltwechsel erkennen (Legacy-Forge hat dafür kein eigenes Ereignis). */
