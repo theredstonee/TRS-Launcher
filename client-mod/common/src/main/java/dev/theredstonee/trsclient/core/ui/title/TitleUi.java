@@ -1128,11 +1128,10 @@ public final class TitleUi extends UiScreen {
 		int room = lx - 18;
 		if (c.textWidth(version) > room) version = room > 20 ? c.clip(version, room - c.textWidth("…")) + "…" : "";
 		if (!version.isEmpty()) labels.add(new Label(version, 4, height - 10, dimText(t), false));
-		// Halloween: Kürbis „client-title“ gleich neben der Versionszeile (Kürbis-Suche).
-		if (t.halloween) {
-			dev.theredstonee.trsclient.core.halloween.Pumpkins.draw(c, hits, dev.theredstonee.trsclient.core.halloween.Pumpkins.CLIENT_TITLE,
-					4 + c.textWidth(version) + 10, height - 7, mx, my);
-		}
+		// Halloween: Kürbis „client-title“ gleich neben der Versionszeile (Kürbis-Suche). Hängt am Event (Funktion), nicht
+		// am Look – auch mit „Event-Design“ aus bleibt er im normalen Titelbild auffindbar (draw prüft Halloween.active()).
+		dev.theredstonee.trsclient.core.halloween.Pumpkins.draw(c, hits, dev.theredstonee.trsclient.core.halloween.Pumpkins.CLIENT_TITLE,
+				4 + c.textWidth(version) + 10, height - 7, mx, my);
 		boolean hover = inside(mx, my, lx - 10, height - 12, cw + 10, 12);
 		boolean on = hover || focus == linkIndex();
 		linkLit = on ? Math.min(1f, linkLit + dt / 0.08f) : Math.max(0f, linkLit - dt / 0.08f);

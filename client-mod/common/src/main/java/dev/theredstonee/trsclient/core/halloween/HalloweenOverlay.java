@@ -39,7 +39,7 @@ public final class HalloweenOverlay {
 	 * – dann nur Toasts.
 	 */
 	public static void afterScreen(Canvas c, Hits hits, int width, int height, int mouseX, int mouseY, boolean overlay) {
-		if (Halloween.active()) {
+		if (Halloween.lookActive()) {
 			if (!overlay) HorrorLayer.draw(c, width, height, false);
 			infoOnce();
 			if (!overlay) flickerHint(c, hits, mouseX, mouseY);
@@ -49,7 +49,7 @@ public final class HalloweenOverlay {
 
 	/** Im HUD (in der Welt): Toasts (Kürbisse findet man in Menüs, der Toast läuft weiter). */
 	public static void hud(Canvas c, int width, int height) {
-		if (Halloween.active()) infoOnce();
+		if (Halloween.lookActive()) infoOnce();
 		HalloweenToast.draw(c, width, height);
 	}
 

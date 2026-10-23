@@ -865,7 +865,7 @@ public final class ScreenshotEditorUi extends UiScreen {
 	 * der Bearbeitung vorbei: ausschalten muss weiter gehen).
 	 */
 	boolean grainAvailable() {
-		return history != null && (Halloween.active() || history.current().grain);
+		return history != null && (Halloween.lookActive() || history.current().grain);
 	}
 
 	private void toggleGrain() {

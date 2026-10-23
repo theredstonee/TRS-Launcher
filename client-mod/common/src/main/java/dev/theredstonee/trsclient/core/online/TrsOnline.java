@@ -747,7 +747,7 @@ public final class TrsOnline {
 	private void applyMe(TrsApi.Me me) {
 		if (me == null) return;
 		// events auch ohne settings (null = Feld fehlt, alte API: Launcher-Datei behalten).
-		dev.theredstonee.trsclient.core.halloween.Halloween.fromApi(me.events);
+		dev.theredstonee.trsclient.core.halloween.Halloween.fromApi(me.events, me.eventLook);
 		if (me.settings == null) return;
 		shareServer = me.settings.shareServer;
 	}

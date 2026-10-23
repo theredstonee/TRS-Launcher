@@ -92,6 +92,26 @@ class WinterTest {
 	}
 
 	@Test
+	void launcherFileCanTurnTheEventLookOff(@TempDir Path dir) throws IOException {
+		Path file = dir.resolve("trsclient").resolve("launcher-theme.json");
+		Files.createDirectories(file.getParent());
+		Files.write(file, "{\"version\":1,\"theme\":\"dark\",\"accent\":\"lapis\",\"event\":\"halloween\",\"eventLook\":false}"
+				.getBytes(StandardCharsets.UTF_8));
+		try {
+			assertTrue(Theme.loadFrom(dir));
+			assertTrue(dev.theredstonee.trsclient.core.halloween.Halloween.active(), "event bleibt (Funktionen)");
+			assertFalse(dev.theredstonee.trsclient.core.halloween.Halloween.lookActive());
+			assertFalse(Theme.get().halloween, "kein Halloween-Thema");
+			assertEquals(0xFF3563E9, Theme.get().accent);
+			Files.write(file, "{\"version\":1,\"theme\":\"dark\",\"event\":\"halloween\",\"eventLook\":true}".getBytes(StandardCharsets.UTF_8));
+			assertTrue(Theme.loadFrom(dir));
+			assertTrue(Theme.get().halloween);
+		} finally {
+			dev.theredstonee.trsclient.core.halloween.Halloween.reset();
+		}
+	}
+
+	@Test
 	void clientStateRemembersTheDesign() {
 		ClientState cs = new ClientState();
 		cs.chooseLook("dark", "ice", "de", "winter", 1234L);
