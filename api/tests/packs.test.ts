@@ -48,6 +48,75 @@ const SHA1 = 'a'.repeat(40)
 const SHA512 = 'b'.repeat(128)
 
 /** Minimales Zip (Deflate), wie es der Launcher-Export schreibt. */
+/** Wie `zip`, aber im ZIP64-Format (so packen viele Programme große Packs): Größen/Offsets im Zusatzfeld, ZIP64-EOCD. */
+function zip64(files: Record<string, string | Buffer>): Buffer {
+  const locals: Buffer[] = []
+  const central: Buffer[] = []
+  let offset = 0
+  for (const [name, content] of Object.entries(files)) {
+    const data = Buffer.isBuffer(content) ? content : Buffer.from(content)
+    const comp = deflateRawSync(data)
+    const n = Buffer.from(name)
+    const crc = crc32(data) >>> 0
+    const lx = Buffer.alloc(20)
+    lx.writeUInt16LE(0x0001, 0)
+    lx.writeUInt16LE(16, 2)
+    lx.writeBigUInt64LE(BigInt(data.length), 4)
+    lx.writeBigUInt64LE(BigInt(comp.length), 12)
+    const lh = Buffer.alloc(30)
+    lh.writeUInt32LE(0x04034b50, 0)
+    lh.writeUInt16LE(45, 4)
+    lh.writeUInt16LE(8, 8)
+    lh.writeUInt32LE(crc, 14)
+    lh.writeUInt32LE(0xffffffff, 18)
+    lh.writeUInt32LE(0xffffffff, 22)
+    lh.writeUInt16LE(n.length, 26)
+    lh.writeUInt16LE(lx.length, 28)
+    locals.push(lh, n, lx, comp)
+    const cx = Buffer.alloc(28)
+    cx.writeUInt16LE(0x0001, 0)
+    cx.writeUInt16LE(24, 2)
+    cx.writeBigUInt64LE(BigInt(data.length), 4)
+    cx.writeBigUInt64LE(BigInt(comp.length), 12)
+    cx.writeBigUInt64LE(BigInt(offset), 20)
+    const ch = Buffer.alloc(46)
+    ch.writeUInt32LE(0x02014b50, 0)
+    ch.writeUInt16LE(45, 4)
+    ch.writeUInt16LE(45, 6)
+    ch.writeUInt16LE(8, 10)
+    ch.writeUInt32LE(crc, 16)
+    ch.writeUInt32LE(0xffffffff, 20)
+    ch.writeUInt32LE(0xffffffff, 24)
+    ch.writeUInt16LE(n.length, 28)
+    ch.writeUInt16LE(cx.length, 30)
+    ch.writeUInt32LE(0xffffffff, 42)
+    central.push(ch, n, cx)
+    offset += 30 + n.length + lx.length + comp.length
+  }
+  const cd = Buffer.concat(central)
+  const count = Object.keys(files).length
+  const rec = Buffer.alloc(56)
+  rec.writeUInt32LE(0x06064b50, 0)
+  rec.writeBigUInt64LE(44n, 4)
+  rec.writeUInt16LE(45, 12)
+  rec.writeUInt16LE(45, 14)
+  rec.writeBigUInt64LE(BigInt(count), 24)
+  rec.writeBigUInt64LE(BigInt(count), 32)
+  rec.writeBigUInt64LE(BigInt(cd.length), 40)
+  rec.writeBigUInt64LE(BigInt(offset), 48)
+  const loc = Buffer.alloc(20)
+  loc.writeUInt32LE(0x07064b50, 0)
+  loc.writeBigUInt64LE(BigInt(offset + cd.length), 8)
+  loc.writeUInt32LE(1, 16)
+  const end = Buffer.alloc(22)
+  end.writeUInt32LE(0x06054b50, 0)
+  end.writeUInt16LE(0xffff, 8)
+  end.writeUInt16LE(0xffff, 10)
+  end.writeUInt32LE(0xffffffff, 12)
+  end.writeUInt32LE(0xffffffff, 16)
+  return Buffer.concat([...locals, cd, rec, loc, end])
+}
+
 function zip(files: Record<string, string | Buffer>): Buffer {
   const locals: Buffer[] = []
   const central: Buffer[] = []
@@ -134,6 +203,22 @@ describe('pack file check (§27)', () => {
       overrides: 2,
     })
     expect(inspectPack(zip({ 'modrinth.index.json': index({ dependencies: { minecraft: '1.20.1' } }) })).loader).toBe('vanilla')
+  })
+
+  it('accepts ZIP64 packs (large packs are often written that way)', () => {
+    const files = {
+      'modrinth.index.json': index(),
+      'overrides/config/sodium.json': '{"a":1}',
+      'overrides/mods/own-mod.jar': 'PK-jar',
+      'overrides/options.txt': 'fov:90',
+    }
+    const info = inspectPack(zip64(files))
+    expect(info).toMatchObject({ name: 'Redstone Pack', loader: 'fabric', downloads: 1, ownJars: 1, overrides: 2 })
+    expect(inspectPack(zip64(files))).toEqual(inspectPack(zip(files)))
+    // Kaputter ZIP64-Verweis bleibt ein Fehler.
+    const broken = zip64(files)
+    broken.writeBigUInt64LE(BigInt(broken.length + 100), broken.length - 22 - 20 + 8)
+    expect(code(() => inspectPack(broken))).toBe('invalid_pack')
   })
 
   it('accepts the pack icon the launcher puts in the root, but nothing else there', () => {

@@ -131,6 +131,26 @@ class FileReader implements Reader {
   }
 }
 
+/** 64-Bit-Wert (ZIP64) als Zahl; größer als 2^53 gibt es bei uns nicht (Packs sind auf 1 GB begrenzt). */
+function u64(buf: Buffer, offset: number): number {
+  const v = buf.readBigUInt64LE(offset)
+  if (v > BigInt(Number.MAX_SAFE_INTEGER)) throw bad('Broken zip file')
+  return Number(v)
+}
+
+/** Inhalt des ZIP64-Zusatzfelds (Kennung 0x0001) aus dem Zusatzbereich eines Eintrags, sonst `null`. */
+function zip64Field(extra: Buffer): Buffer | null {
+  let i = 0
+  while (i + 4 <= extra.length) {
+    const id = extra.readUInt16LE(i)
+    const len = extra.readUInt16LE(i + 2)
+    if (i + 4 + len > extra.length) return null
+    if (id === 0x0001) return extra.subarray(i + 4, i + 4 + len)
+    i += 4 + len
+  }
+  return null
+}
+
 function readEntries(r: Reader): ZipEntry[] {
   if (r.length < 22 || r.read(0, 4).readUInt32LE(0) !== 0x04034b50) throw bad('This is not a .mrpack file')
   // Ende des Inhaltsverzeichnisses (EOCD) suchen – höchstens 64 KiB Kommentar.
@@ -146,10 +166,23 @@ function readEntries(r: Reader): ZipEntry[] {
   }
   if (rel < 0) throw bad('Broken zip file')
   const eocd = tailOff + rel
-  const count = tail.readUInt16LE(rel + 10)
-  const cdSize = tail.readUInt32LE(rel + 12)
-  const cdOffset = tail.readUInt32LE(rel + 16)
-  if (count === 0xffff || cdOffset === 0xffffffff || cdSize === 0xffffffff) throw bad('ZIP64 packs are not supported')
+  let count = tail.readUInt16LE(rel + 10)
+  let cdSize = tail.readUInt32LE(rel + 12)
+  let cdOffset = tail.readUInt32LE(rel + 16)
+  // ZIP64 (große Packs/viele Dateien – viele Programme schreiben es auch einfach immer): Locator direkt vor dem EOCD
+  // zeigt auf den ZIP64-EOCD mit 64-Bit-Werten.
+  if (eocd >= 20 && r.read(eocd - 20, 4).readUInt32LE(0) === 0x07064b50) {
+    const loc = r.read(eocd - 20, 20)
+    const recOffset = u64(loc, 8)
+    if (recOffset + 56 > eocd) throw bad('Broken zip file')
+    const rec = r.read(recOffset, 56)
+    if (rec.readUInt32LE(0) !== 0x06064b50) throw bad('Broken zip file')
+    count = u64(rec, 32)
+    cdSize = u64(rec, 40)
+    cdOffset = u64(rec, 48)
+  } else if (count === 0xffff || cdOffset === 0xffffffff || cdSize === 0xffffffff) {
+    throw bad('Broken zip file')
+  }
   if (count > PACK_LIMITS.maxEntries) throw bad(`Too many files in the pack (max ${PACK_LIMITS.maxEntries})`)
   if (cdSize > PACK_LIMITS.maxCentralDirectoryBytes) throw bad('Broken zip file')
   if (cdOffset + cdSize > eocd) throw bad('Broken zip file')
@@ -160,14 +193,28 @@ function readEntries(r: Reader): ZipEntry[] {
     if (p + 46 > cd.length || cd.readUInt32LE(p) !== 0x02014b50) throw bad('Broken zip file')
     const flags = cd.readUInt16LE(p + 8)
     const method = cd.readUInt16LE(p + 10)
-    const compressedSize = cd.readUInt32LE(p + 20)
-    const size = cd.readUInt32LE(p + 24)
+    let compressedSize = cd.readUInt32LE(p + 20)
+    let size = cd.readUInt32LE(p + 24)
     const nameLen = cd.readUInt16LE(p + 28)
     const extraLen = cd.readUInt16LE(p + 30)
     const commentLen = cd.readUInt16LE(p + 32)
-    const localOffset = cd.readUInt32LE(p + 42)
-    if (p + 46 + nameLen > cd.length) throw bad('Broken zip file')
+    let localOffset = cd.readUInt32LE(p + 42)
+    if (p + 46 + nameLen + extraLen > cd.length) throw bad('Broken zip file')
     const name = cd.toString('utf8', p + 46, p + 46 + nameLen)
+    // ZIP64-Zusatzfeld (0x0001): 64-Bit-Werte genau für die Felder, die im Eintrag auf 0xffffffff stehen.
+    if (size === 0xffffffff || compressedSize === 0xffffffff || localOffset === 0xffffffff) {
+      const z64 = zip64Field(cd.subarray(p + 46 + nameLen, p + 46 + nameLen + extraLen))
+      let q = 0
+      const next = () => {
+        if (!z64 || q + 8 > z64.length) throw bad('Broken zip file')
+        const v = u64(z64, q)
+        q += 8
+        return v
+      }
+      if (size === 0xffffffff) size = next()
+      if (compressedSize === 0xffffffff) compressedSize = next()
+      if (localOffset === 0xffffffff) localOffset = next()
+    }
     out.push({ name, method, flags, compressedSize, size, localOffset })
     p += 46 + nameLen + extraLen + commentLen
   }
@@ -177,7 +224,6 @@ function readEntries(r: Reader): ZipEntry[] {
 function readEntry(r: Reader, e: ZipEntry, max: number): Buffer {
   if (e.flags & 0x1) throw bad('Encrypted packs are not supported')
   if (e.size > max) throw bad('modrinth.index.json is too large')
-  if (e.compressedSize === 0xffffffff || e.size === 0xffffffff || e.localOffset === 0xffffffff) throw bad('ZIP64 packs are not supported')
   if (e.localOffset + 30 > r.length) throw bad('Broken zip file')
   const hdr = r.read(e.localOffset, 30)
   if (hdr.readUInt32LE(0) !== 0x04034b50) throw bad('Broken zip file')

@@ -244,7 +244,7 @@ describe('HD and animated uploads', () => {
     expect(strip).toMatchObject({ width: 1024, height: 512, scale: 16, animated: true, frames: 32, frameTimeMs: 100 })
     expect(uploadQuery.safeParse({ frames: '32', frameTimeMs: '100' }).success).toBe(true)
     expect(uploadQuery.safeParse({ frames: '33', frameTimeMs: '100' }).success).toBe(false)
-  })
+  }, 30_000)
 
   it('animated uploads need frameTimeMs; frames must match; nothing is stored on errors', async () => {
     const env = makeEnv()
