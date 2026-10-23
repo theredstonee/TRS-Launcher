@@ -99,6 +99,8 @@ public final class SyncState {
 
 	/** Schreibt atomar (Fehler still – dann gleicht der nächste Start eben einmal mehr ab). */
 	public synchronized void save() {
+		// Zweitfenster schreibt den Sync-Stand nicht (gehört dem ersten Spiel dieser Instanz).
+		if (dev.theredstonee.trsclient.core.config.ConfigStore.readOnly()) return;
 		if (file == null) return;
 		try {
 			Path dir = file.toAbsolutePath().getParent();

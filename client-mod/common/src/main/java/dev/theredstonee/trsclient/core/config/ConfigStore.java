@@ -30,6 +30,9 @@ public final class ConfigStore {
 	}
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+	/** Vom Launcher gesetzt, wenn dieses Spiel ein Zweitfenster einer schon laufenden Instanz ist. */
+	public static final String SECONDARY_ENV = "TRS_CLIENT_SECONDARY";
+	private static volatile Boolean readOnly;
 
 	private final Path file;
 	/** Zuletzt geladene Config des Spiels (für Dienste ohne direkten Zugriff, z. B. den Client-Sync). */
@@ -198,7 +201,26 @@ public final class ConfigStore {
 	}
 
 	/** Schreibt {@code config}, außer ein neuerer Stand ist schon geschrieben. */
+	/**
+	 * Zweitfenster („Erneut starten“, evtl. mit anderem Konto): Config und Sync-Stand gehören dem ersten Spiel derselben
+	 * Instanz. Hier wird nichts geschrieben und nicht synchronisiert – Änderungen gelten nur bis zum Beenden.
+	 */
+	public static boolean readOnly() {
+		Boolean r = readOnly;
+		if (r == null) {
+			r = "1".equals(System.getenv(SECONDARY_ENV));
+			readOnly = r;
+		}
+		return r;
+	}
+
+	/** Nur für Tests. */
+	static void readOnlyForTest(Boolean value) {
+		readOnly = value;
+	}
+
 	private void write(TrsConfig config, long seq) throws IOException {
+		if (readOnly()) return;
 		synchronized (writeLock) {
 			if (seq <= writtenSeq) return;
 			Path dir = file.toAbsolutePath().getParent();

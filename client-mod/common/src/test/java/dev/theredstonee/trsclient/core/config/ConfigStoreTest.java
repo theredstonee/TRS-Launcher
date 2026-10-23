@@ -32,6 +32,35 @@ class ConfigStoreTest {
 	}
 
 	@Test
+	void secondaryWindowNeverWritesTheSharedConfig() throws IOException {
+		Path file = dir.resolve("trsclient.json");
+		TrsModules a = new TrsModules();
+		ConfigStore store = new ConfigStore(file);
+		store.load(a.registry);
+		a.fps.setEnabled(false);
+		store.save(a.registry);
+		String before = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
+		try {
+			ConfigStore.readOnlyForTest(true);
+			TrsModules other = new TrsModules();
+			ConfigStore second = new ConfigStore(file);
+			second.load(other.registry);
+			other.fps.setEnabled(true);
+			other.fullbright.setEnabled(true);
+			second.save(other.registry);
+			second.saveLater(other.registry);
+			second.flush();
+			assertEquals(before, new String(Files.readAllBytes(file), StandardCharsets.UTF_8));
+			// Auch eine fehlende Datei legt das Zweitfenster nicht an.
+			Path missing = dir.resolve("other/trsclient.json");
+			new ConfigStore(missing).load(new TrsModules().registry);
+			assertFalse(Files.exists(missing));
+		} finally {
+			ConfigStore.readOnlyForTest(null);
+		}
+	}
+
+	@Test
 	void saveAndLoadRoundTrip() throws IOException {
 		Path file = dir.resolve("trsclient.json");
 		TrsModules a = new TrsModules();

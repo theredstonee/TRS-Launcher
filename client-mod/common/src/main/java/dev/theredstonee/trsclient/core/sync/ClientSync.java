@@ -303,6 +303,8 @@ public final class ClientSync {
 	/** Einmal je Client-Tick; blockiert nie. */
 	public void tick(long now) {
 		tickNow = now;
+		// Zweitfenster: Config + Sync-Stand gehören dem ersten Spiel dieser Instanz (siehe ConfigStore.readOnly).
+		if (ConfigStore.readOnly()) return;
 		Runnable r;
 		while ((r = results.poll()) != null) r.run();
 		if (!lookInitialized) initLook();

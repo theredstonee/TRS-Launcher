@@ -1107,6 +1107,11 @@ impl Launcher {
         // Ein weiterer Prozess läuft ohne TRS-Link: Die Sitzung gehört dem ersten (Schlüssel = Instanz-ID).
         if extra {
             command.env.retain(|(k, _)| k != link::ENV_VAR);
+            // Zweitfenster: Es teilt sich Config + Sync-Stand mit dem ersten Prozess (gleicher Spielordner, evtl.
+            // anderes Konto). Der TRS Client schreibt dort nichts und synchronisiert nicht – sonst landen die
+            // Einstellungen des anderen Kontos in der gemeinsamen Datei und im Sync des Hauptkontos.
+            command.env.retain(|(k, _)| k != SECONDARY_ENV);
+            command.env.push((SECONDARY_ENV.to_owned(), "1".to_owned()));
         } else {
             self.link_open_for(&instance.id, legacy_mod, world, &mut command, &mut secrets).await?;
             // Clips: Port (bzw. altes Token für Mods ≤ 0.5.0) und Status für die Mod.
@@ -1555,6 +1560,10 @@ static DEMO_WITHOUT_ACCOUNT: std::sync::atomic::AtomicBool = std::sync::atomic::
 pub fn allow_demo_without_account() {
     DEMO_WITHOUT_ACCOUNT.store(true, std::sync::atomic::Ordering::Relaxed);
 }
+
+/// Umgebungsvariable für ein Zweitfenster derselben Instanz („Erneut starten“): Der TRS Client speichert dann
+/// weder seine Config noch den Sync-Stand und synchronisiert nicht (siehe `ConfigStore.readOnly()` im Mod).
+pub const SECONDARY_ENV: &str = "TRS_CLIENT_SECONDARY";
 
 /// Ohne Account startet nur ein Entwicklungs-Build oder der Messe-Build – und dann im
 /// offiziellen Demo-Modus des Spiels. Release-Builds verlangen sonst immer eine Anmeldung.
