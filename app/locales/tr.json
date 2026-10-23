@@ -5993,7 +5993,8 @@
       "blog_write": "Blog yazıları yazma (taslaklar, görseller)",
       "blog_publish": "Blog yazılarını yayınlama, zamanlama ve yayından kaldırma",
       "events_manage": "Etkinlikleri yönet",
-      "featured_manage": "Öne çıkan mod paketlerini yönet"
+      "featured_manage": "Öne çıkan mod paketlerini yönet",
+      "serverrules_bypass": "Sunucunun engellediği TRS Client özelliklerini yine de kullan (oyunda onaydan sonra)"
     }
   },
   "trsChoice": {

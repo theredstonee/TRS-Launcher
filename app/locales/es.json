@@ -6064,7 +6064,8 @@
       "events_manage": "Gestionar eventos",
       "creators_review": "Revisar símbolos y capas de fan de creadores",
       "creators_manage": "Gestionar creadores",
-      "featured_manage": "Gestionar modpacks destacados"
+      "featured_manage": "Gestionar modpacks destacados",
+      "serverrules_bypass": "Usar igualmente funciones del TRS Client bloqueadas por el servidor (tras confirmar en el juego)"
     },
     "creators": {
       "intro": "Revisa símbolos y capas de fan, gestiona creadores y responde a sus solicitudes. Las candidaturas se gestionan en la web.",

@@ -6064,7 +6064,8 @@
       "events_manage": "Manage events",
       "creators_review": "Review creator symbols and fan capes",
       "creators_manage": "Manage creators",
-      "featured_manage": "Manage featured modpacks"
+      "featured_manage": "Manage featured modpacks",
+      "serverrules_bypass": "Use server-locked TRS Client features anyway (after an in-game prompt)"
     },
     "creators": {
       "intro": "Review fan symbols and fan capes, manage creators and answer their requests. Applications are handled on the website.",

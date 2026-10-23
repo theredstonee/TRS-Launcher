@@ -6064,7 +6064,8 @@
       "events_manage": "Events verwalten",
       "creators_review": "Creator-Symbole und Fan-Umhänge prüfen",
       "creators_manage": "Creator verwalten",
-      "featured_manage": "Empfohlene Modpacks verwalten"
+      "featured_manage": "Empfohlene Modpacks verwalten",
+      "serverrules_bypass": "Vom Server gesperrte TRS-Client-Funktionen trotzdem nutzen (nach Nachfrage im Spiel)"
     },
     "creators": {
       "intro": "Fan-Symbole und Fan-Umhänge prüfen, Creator verwalten und ihre Anträge beantworten. Bewerbungen laufen über die Website.",

@@ -49,6 +49,8 @@ export const permissions = [
   'creators.manage',
   // Empfohlene Modpacks auf der Startseite des Launchers verwalten.
   'featured.manage',
+  // TRS Server Rules: vom Server gesperrte TRS-Client-Module trotzdem nutzen (Nachfrage im Spiel, offen dokumentiert).
+  'serverrules.bypass',
 ] as const
 export type Permission = (typeof permissions)[number]
 const permissionSet: ReadonlySet<string> = new Set(permissions)

@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { readFileSync } from 'node:fs'
 import { setLocale } from '../app/utils/i18n'
 import { liveEventSchema } from '../app/utils/chat'
 import { adminReportEnvelopeSchema } from '../app/utils/moderation'
@@ -18,6 +19,7 @@ import {
   landingPath,
   mayOpen,
   myTeamSchema,
+  permissionLabel,
   permissions,
   roleLabel,
   sanctionRights,
@@ -101,6 +103,22 @@ describe('Sichtbarkeit nach Rechten', () => {
     expect(site(content)).toEqual(['blog'])
     expect(teamCan(content, 'blog.publish')).toBe(false)
     expect(permissions).toEqual(expect.arrayContaining(['blog.write', 'blog.publish']))
+  })
+
+  it('serverrules.bypass (TRS Server Rules) wird erkannt, ist kein Bereich und hat Texte in allen Sprachen', async () => {
+    const t = team(200, ['dashboard.view', 'serverrules.bypass'], {}, 'content')
+    expect(t.permissions).toEqual(['dashboard.view', 'serverrules.bypass'])
+    expect(teamCan(t, 'serverrules.bypass')).toBe(true)
+    expect(teamCan(moderator, 'serverrules.bypass')).toBe(false)
+    expect(teamCan(owner, 'serverrules.bypass')).toBe(true)
+    expect(paths(t)).toEqual(['/admin'])
+    expect(site(t)).toEqual([])
+    for (const lang of ['en', 'de', 'es', 'fr', 'nl', 'pl', 'pt-BR', 'tr']) {
+      const locale = JSON.parse(readFileSync(new URL(`../app/locales/${lang}.json`, import.meta.url), 'utf8')) as { team: { permissions: Record<string, string> } }
+      expect(locale.team.permissions.serverrules_bypass, lang).toMatch(/TRS/)
+    }
+    await setLocale('en')
+    expect(permissionLabel('serverrules.bypass')).toContain('server-locked')
   })
 
   it('Bewerbungs-Team: nur Übersicht im Launcher, Bewerbungen und Stellen auf der Website', () => {
