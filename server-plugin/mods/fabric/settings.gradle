@@ -1,0 +1,21 @@
+// TRS Server Rules – Fabric server mod. Separate Gradle build (Loom), run by the root task :fabricMods
+// (or directly: ../../gradlew -p mods/fabric dist  – after ../../gradlew :modcore:shadowJar).
+// One subproject per Minecraft version; its settings live in versions/<minecraft>/gradle.properties.
+pluginManagement {
+	repositories {
+		maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
+		mavenCentral()
+		gradlePluginPortal()
+	}
+}
+
+plugins {
+	id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'trs-server-rules-fabric'
+
+['1.20.1', '1.21.1', '1.21.4', '1.21.11'].each { v ->
+	include v
+	project(":${v}").projectDir = file("versions/${v}")
+}

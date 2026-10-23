@@ -1,0 +1,30 @@
+{
+	"schemaVersion": 1,
+	"id": "trsserverrules",
+	"version": "${version}",
+	"name": "TRS Server Rules",
+	"description": "Server-side only: lock or force TRS Client modules and settings on your server, globally or per dimension (config/trs-server-rules.yml, /trsrules). Players without the TRS Client are not affected. Note: TRS team members with the team permission serverrules.bypass can override the rules in their own client after an in-game confirmation – documented on purpose.",
+	"authors": [
+		"theredstonee"
+	],
+	"contact": {
+		"homepage": "https://trs-launcher.theredstonee.de",
+		"sources": "https://github.com/theredstonee/TRS-Launcher"
+	},
+	"license": "GPL-3.0-only",
+	"environment": "server",
+	"entrypoints": {
+		"server": [
+			"dev.theredstonee.trsrules.fabric.TrsRulesFabric"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=${loader}",
+		"minecraft": "${minecraft}",
+		"java": ">=${java}",
+		${fapiDepends}
+	},
+	"suggests": {
+		"fabric-permissions-api-v0": "*"
+	}
+}

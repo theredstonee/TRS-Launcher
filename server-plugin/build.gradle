@@ -72,14 +72,36 @@ subprojects {
 	}
 }
 
+// Server mods (Fabric / NeoForge / Forge): separate Gradle builds in mods/<loader>, run as nested builds.
+// They compile against modcore (common + relocated SnakeYAML) and copy their finished jars into build/dist themselves:
+//   trs-server-rules-fabric-<mc>-<version>.jar, trs-server-rules-neoforge-<mc>-<version>.jar,
+//   trs-server-rules-forge-<mc>-<version>.jar
+// -PnoMods skips them (plugin jars only, no Minecraft download/decompile).
+def modLoaders = ['fabric', 'neoforge', 'forge']
+def withMods = !project.hasProperty('noMods')
+modLoaders.each { loader ->
+	tasks.register("${loader}Mods", GradleBuild) {
+		group = 'build'
+		description = "Builds the ${loader} server mods (mods/${loader}) into build/dist."
+		dependsOn ':modcore:shadowJar'
+		dir = file("mods/${loader}")
+		setTasks(['dist'])
+		buildName = "trs-server-rules-${loader}"
+	}
+}
+
 // All platform jars in one folder (release channel "server-plugin"): build/dist/
 tasks.register('dist', Copy) {
 	group = 'build'
-	description = 'Collects all platform jars into build/dist.'
+	description = 'Collects all platform jars (and the server mods unless -PnoMods) into build/dist.'
 	['bukkit', 'bungee', 'velocity', 'sponge'].each { p ->
 		from(project(":$p").tasks.named('shadowJar'))
 	}
 	into layout.buildDirectory.dir('dist')
+	// (the mod builds copy their jars into the same folder)
+	if (withMods) {
+		modLoaders.each { dependsOn "${it}Mods" }
+	}
 }
 tasks.named('assemble') {
 	dependsOn 'dist'

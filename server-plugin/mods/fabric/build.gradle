@@ -1,0 +1,101 @@
+// TRS Server Rules – Fabric server mod, one jar per Minecraft version (:1.20.1, :1.21.1, :1.21.4, :1.21.11).
+//
+// Sources: src/main (all versions) + src/net-<legacy|payload> (networking API before/after 1.20.5)
+//          + ../shared (engine glue, tick scheduler, Mc compat per version) + modcore jar (common + SnakeYAML).
+// Server-side only: environment "server" in fabric.mod.json and only a "server" entrypoint – the mod never runs on a
+// client (also not in single player), so it cannot clash with the TRS Client's own payload registrations.
+plugins {
+	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}" apply false
+}
+
+subprojects {
+	apply plugin: 'net.fabricmc.fabric-loom-remap'
+	apply from: rootProject.file('../shared/modcore.gradle')
+
+	def mc = project.name
+	def javaVersion = (project.java_version as String) as int
+
+	base {
+		archivesName = "trs-server-rules-fabric-${mc}"
+	}
+
+	java {
+		toolchain {
+			languageVersion = JavaLanguageVersion.of(Math.max(javaVersion, 17))
+		}
+	}
+
+	tasks.withType(JavaCompile).configureEach {
+		options.release = javaVersion
+	}
+
+	sourceSets.main {
+		java.srcDirs = [rootProject.file('src/main/java'), rootProject.file("src/net-${project.fabric_net}/java")] +
+				project.trsSharedSources(project.mc_compat as String)
+		resources.srcDirs = [rootProject.file('src/main/resources')]
+	}
+
+	repositories {
+		mavenCentral()
+	}
+
+	def fapiModules = ['fabric-api-base', 'fabric-networking-api-v1', 'fabric-lifecycle-events-v1',
+			'fabric-entity-events-v1', 'fabric-command-api-v2']
+
+	dependencies {
+		minecraft "com.mojang:minecraft:${mc}"
+		mappings loom.officialMojangMappings()
+		modImplementation "net.fabricmc:fabric-loader:${rootProject.loader_version}"
+		fapiModules.each {
+			modImplementation(fabricApi.module(it, project.fabric_api_version)) {
+				exclude group: 'net.fabricmc', module: 'fabric-loader'
+			}
+		}
+		implementation files(project.modcoreJar)
+	}
+
+	loom {
+		runs {
+			server {
+				runDir = "../../run/${mc}"
+				ideConfigGenerated = false
+			}
+			client {
+				ideConfigGenerated = false
+			}
+		}
+	}
+
+	processResources {
+		def props = [version: project.version, minecraft: mc, java: "${javaVersion}",
+				loader: rootProject.min_loader_version,
+				fapiDepends: fapiModules.collect { "\"${it}\": \"*\"" }.join(', ')]
+		inputs.properties(props)
+		filesMatching('fabric.mod.json') {
+			expand props
+		}
+	}
+
+	tasks.named('jar', Jar) {
+		// common + relocated SnakeYAML go into the mod jar (remapJar leaves non-Minecraft classes alone)
+		from({ zipTree(project.modcoreJar) }) {
+			exclude 'META-INF/MANIFEST.MF'
+		}
+		from(project.trsLicense) { rename { 'LICENSE_trs-server-rules' } }
+		duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	}
+
+	tasks.register('dist', Copy) {
+		group = 'build'
+		from(tasks.named('remapJar'))
+		into project.trsDistDir
+		// build/dist is shared with the root build (and may be wiped by it): always copy
+		outputs.upToDateWhen { false }
+	}
+}
+
+tasks.register('dist') {
+	group = 'build'
+	description = 'Builds every Fabric version into server-plugin/build/dist.'
+	dependsOn subprojects.collect { "${it.path}:dist" }
+}

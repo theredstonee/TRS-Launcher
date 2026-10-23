@@ -1,0 +1,82 @@
+// TRS Server Rules – Forge server mod for Minecraft 1.20.1 (ForgeGradle 7, like client-mod/forge).
+//
+// Sources: src/main + ../shared (engine glue, tick scheduler, Mc compat 1.20.1) + modcore jar (common + SnakeYAML).
+// Forge 1.20.1 runs with SRG names in production: the Renamer turns the Mojang-named jar into the SRG jar
+// (no mixins, so no refmap). Server-side only: the mod does nothing outside a dedicated server, clients do not
+// need it (DisplayTest IGNORESERVERONLY, channels accept vanilla/absent).
+plugins {
+	id 'java'
+	id 'net.minecraftforge.gradle' version "${forgegradle_version}"
+	id 'net.minecraftforge.renamer' version "${renamer_version}"
+}
+
+apply from: file('../shared/modcore.gradle')
+
+def mc = project.minecraft_version
+
+base {
+	archivesName = "trs-server-rules-forge-${mc}"
+}
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.release = 17
+}
+
+sourceSets.main {
+	java.srcDirs = [file('src/main/java')] + project.trsSharedSources('1.20.1')
+}
+
+minecraft {
+	mappings channel: 'official', version: mc
+}
+
+repositories {
+	minecraft.mavenizer(it)
+	maven fg.forgeMaven
+	maven fg.minecraftLibsMaven
+	mavenCentral()
+}
+
+dependencies {
+	implementation minecraft.dependency("net.minecraftforge:forge:${mc}-${project.forge_version}")
+	implementation files(project.modcoreJar)
+}
+
+processResources {
+	def props = [version: project.version.toString(), minecraft: mc, forge: project.min_forge_version.toString()]
+	inputs.properties(props)
+	filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+		expand props
+	}
+}
+
+tasks.named('jar', Jar) {
+	from({ zipTree(project.modcoreJar) }) {
+		exclude 'META-INF/MANIFEST.MF'
+	}
+	from(project.trsLicense) { rename { 'LICENSE_trs-server-rules' } }
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// Mojang names → SRG (what Forge 1.20.1 uses at runtime)
+renamer.mappings(minecraft.dependency.toSrg)
+renamer.classes(tasks.named('jar', Jar)) {
+	archiveClassifier = 'srg'
+}
+tasks.named('assemble') { dependsOn 'renameJar' }
+
+tasks.register('dist', Copy) {
+	group = 'build'
+	description = 'Copies the finished (SRG) jar into server-plugin/build/dist.'
+	from(tasks.named('renameJar'))
+	into project.trsDistDir
+	rename { "trs-server-rules-forge-${mc}-${project.version}.jar" }
+	// build/dist is shared with the root build (and may be wiped by it): always copy
+	outputs.upToDateWhen { false }
+}

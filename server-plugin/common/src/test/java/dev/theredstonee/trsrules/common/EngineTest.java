@@ -25,6 +25,7 @@ class EngineTest {
 		final String name;
 		String world = "world";
 		boolean canReceive = true;
+		int op = -1;
 		final Set<String> perms = new HashSet<String>();
 		final List<String> received = new ArrayList<String>();
 		final List<String> chat = new ArrayList<String>();
@@ -50,6 +51,7 @@ class EngineTest {
 		@Override public String name(FakePlayer p) { return p.name; }
 		@Override public boolean hasPermission(FakePlayer p, String perm) { return p.perms.contains(perm); }
 		@Override public String scope(FakePlayer p) { return p.world; }
+		@Override public int opLevel(FakePlayer p) { return p.op; }
 
 		@Override
 		public boolean sendRules(FakePlayer p, byte[] payload) {
@@ -166,6 +168,39 @@ class EngineTest {
 		p.perms.add("my.bypass");
 		e.sendRules(p);
 		assertEquals(EMPTY, p.last());
+	}
+
+	@Test
+	void bypassByPlayerListNameOrUuid() {
+		FakeBridge b = new FakeBridge();
+		FakePlayer byName = new FakePlayer("Notch");
+		FakePlayer byId = new FakePlayer("Jeb_");
+		FakePlayer other = new FakePlayer("Steve");
+		RulesEngine<FakePlayer> e = engine(b, "modules: {minimap: false}\nbypass-players: [notch, " + byId.id + "]\n");
+		for (FakePlayer p : new FakePlayer[] {byName, byId, other}) {
+			e.onJoin(p);
+			e.onHello(p, HELLO, Protocol.HELLO);
+		}
+		assertEquals(EMPTY, byName.last());
+		assertEquals(EMPTY, byId.last());
+		assertEquals("{\"v\":1,\"modules\":{\"minimap\":{\"enabled\":false}}}", other.last());
+		assertTrue(String.valueOf(e.status(byName)).contains("bypass-players"));
+	}
+
+	@Test
+	void bypassByOpLevel() {
+		FakeBridge b = new FakeBridge();
+		RulesEngine<FakePlayer> e = engine(b, "modules: {minimap: false}\nbypass-op-level: 3\n");
+		FakePlayer op4 = new FakePlayer("Owner");
+		op4.op = 4;
+		FakePlayer op2 = new FakePlayer("Helper");
+		op2.op = 2;
+		FakePlayer unknown = new FakePlayer("PluginPlatform"); // opLevel -1: platform does not know OP levels
+		assertTrue(e.isBypassed(op4));
+		assertFalse(e.isBypassed(op2));
+		assertFalse(e.isBypassed(unknown));
+		RulesEngine<FakePlayer> off = engine(b, "modules: {minimap: false}\n");
+		assertFalse(off.isBypassed(op4), "bypass-op-level defaults to 0 = off");
 	}
 
 	@Test

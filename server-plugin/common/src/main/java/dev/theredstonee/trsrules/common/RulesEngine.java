@@ -27,6 +27,14 @@ public final class RulesEngine<P> {
 
 		boolean hasPermission(P player, String permission);
 
+		/**
+		 * Minecraft operator level of the player (0–4) for {@code bypass-op-level}, or {@code -1} if the platform does
+		 * not know it (plugin platforms – they use {@code bypass-permission}).
+		 */
+		default int opLevel(P player) {
+			return -1;
+		}
+
 		/** Current world (game server) or backend server name (proxy); {@code null} if unknown. */
 		String scope(P player);
 
@@ -231,8 +239,20 @@ public final class RulesEngine<P> {
 	}
 
 	private boolean isBypassed(P player, RulesConfig cfg) {
+		return bypassReason(player, cfg) != null;
+	}
+
+	/** Why the player is exempt from all rules, or {@code null} if not. */
+	private String bypassReason(P player, RulesConfig cfg) {
 		String perm = cfg.bypassPermission();
-		return perm != null && bridge.hasPermission(player, perm);
+		if (perm != null && bridge.hasPermission(player, perm)) return perm;
+		if (cfg.isBypassPlayer(bridge.name(player), bridge.id(player))) return "bypass-players";
+		int level = cfg.bypassOpLevel();
+		if (level > 0) {
+			int op = bridge.opLevel(player);
+			if (op >= level) return "OP level " + op + ", bypass-op-level: " + level;
+		}
+		return null;
 	}
 
 	/** Sends the current rules if the player has sent a hello. */
@@ -347,8 +367,8 @@ public final class RulesEngine<P> {
 				out.add("TRS Client: no answer yet (" + waited + " s of " + p.timeoutSeconds() + " s)");
 			}
 		}
-		boolean bypass = isBypassed(player, cfg);
-		out.add("Bypass: " + (bypass ? "yes (" + cfg.bypassPermission() + ") – gets no rules" : "no"));
+		String bypass = bypassReason(player, cfg);
+		out.add("Bypass: " + (bypass != null ? "yes (" + bypass + ") – gets no rules" : "no"));
 		String scope = bridge.scope(player);
 		boolean section = cfg.scopeLayer(scope) != null;
 		out.add(capitalize(cfg.kind().singular()) + ": " + (scope == null ? "unknown" : scope)

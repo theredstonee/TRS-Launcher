@@ -1,0 +1,21 @@
+// TRS Server Rules – NeoForge server mod. Separate Gradle build (ModDevGradle), run by the root task :neoforgeMods
+// (or directly: ../../gradlew -p mods/neoforge dist  – after ../../gradlew :modcore:shadowJar).
+// One subproject per Minecraft version; its settings live in versions/<minecraft>/gradle.properties.
+pluginManagement {
+	repositories {
+		gradlePluginPortal()
+		mavenCentral()
+		maven { url = 'https://maven.neoforged.net/releases' }
+	}
+}
+
+plugins {
+	id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'trs-server-rules-neoforge'
+
+['1.21.1', '1.21.11'].each { v ->
+	include v
+	project(":${v}").projectDir = file("versions/${v}")
+}
