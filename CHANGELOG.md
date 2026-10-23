@@ -30,6 +30,18 @@ How to write an entry:
 
 ## Unreleased
 
+## 0.27.5 – 2026-10-23 – Clean Cut Fix | Feinschliff
+<!-- banner: accent=#3ee6c8 motif=/news/0.27.5/banner.png -->
+<!-- shots:
+/news/0.27.5/overlay-on-screen.png | The clip overlay now only shows while the game is in front | Das Clip-Overlay erscheint jetzt nur, solange das Spiel vorne ist
+-->
+
+### English
+- **Fixed: the buffer indicator showed up over other apps.** The small clip overlay ("○ Buffer 30 s", REC, clip messages) stayed on top when you switched to another window, e.g. the browser or Discord. It now only appears while the game is the active window and disappears as soon as you switch away.
+
+### Deutsch
+- **Behoben: Die Puffer-Anzeige war auch über anderen Apps zu sehen.** Das kleine Clip-Overlay („○ Puffer 30 s“, REC, Clip-Meldungen) blieb obenauf, wenn du in ein anderes Fenster gewechselt bist, z. B. Browser oder Discord. Es erscheint jetzt nur, solange das Spiel das aktive Fenster ist, und verschwindet, sobald du wegwechselst.
+
 ## 0.27.4 – 2026-10-23 – Clean Cut Fix | Feinschliff
 <!-- banner: accent=#3ee6c8 motif=/news/0.27.4/banner.png -->
 <!-- shots:

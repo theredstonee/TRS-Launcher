@@ -165,16 +165,25 @@ pub struct ScreenRect {
 }
 
 /// Lage des Innenbereichs eines Fensters auf dem Bildschirm (für ein darüberliegendes Overlay),
-/// `None` = Fenster weg oder (fast) nicht sichtbar. Nur das Overlay braucht das; die Aufnahme nicht.
+/// `None` = Fenster weg, (fast) nicht sichtbar oder nicht im Vordergrund. Nur das Overlay braucht das;
+/// die Aufnahme nicht. Im Hintergrund (andere App vorn) läge das immer-obenauf-Overlay sonst über ihr.
 #[cfg(windows)]
 pub fn screen_rect(hwnd: u64) -> Option<ScreenRect> {
     use windows::Win32::Foundation::{HWND, POINT, RECT};
     use windows::Win32::Graphics::Gdi::ClientToScreen;
-    use windows::Win32::UI::WindowsAndMessaging::{GetClientRect, IsWindow, IsWindowVisible};
+    use windows::Win32::UI::WindowsAndMessaging::{
+        GA_ROOTOWNER, GetAncestor, GetClientRect, GetForegroundWindow, IsWindow, IsWindowVisible,
+    };
 
     let hwnd = HWND(hwnd as usize as *mut core::ffi::c_void);
     // SAFETY: IsWindow/IsWindowVisible prüfen beliebige Werte gefahrlos; danach nur lesende Abfragen.
     if !unsafe { IsWindow(Some(hwnd)) }.as_bool() || !unsafe { IsWindowVisible(hwnd) }.as_bool() {
+        return None;
+    }
+    // SAFETY: reine Abfragen; ein Null-Handle (kein Vordergrundfenster) ergibt einfach „nicht vorn“.
+    let front = unsafe { GetForegroundWindow() };
+    let root = |h: HWND| unsafe { GetAncestor(h, GA_ROOTOWNER) };
+    if front.is_invalid() || (front != hwnd && root(front) != root(hwnd)) {
         return None;
     }
     let mut rect = RECT::default();
