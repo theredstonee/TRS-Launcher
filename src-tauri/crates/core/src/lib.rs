@@ -930,15 +930,23 @@ impl Launcher {
         }
         // Passen die Mod-Versionen nicht zusammen (Iris will Sodium 0.9.x, da liegt 0.8.9),
         // werden passende getauscht – sonst bricht Fabric mit „Incompatible mods“ ab.
+        // Zweite Kopie (`extra`): Die erste läuft schon mit genau diesen Mods – nichts prüfen, nichts tauschen
+        // (Jars einer laufenden Instanz sind gesperrt, ein Tausch hinterließ sonst doppelte Dateien).
         if let Some(note) =
-            depcheck::versions_for_launch(&self.http, &self.paths, catalog.builds(), instance, skip_mod_check, &mods_progress).await?
+            depcheck::versions_for_launch(&self.http, &self.paths, catalog.builds(), instance, skip_mod_check || extra, &mods_progress)
+                .await?
         {
             let sink = self.games.sink();
             sink(GameEvent::notice(instance.id.clone(), &note));
         }
         // Fehlt einer Mod eine Pflicht-Abhängigkeit (z. B. Cloth Config für More Culling),
         // wird sie ergänzt – sonst bricht Fabric den Start mit „Incompatible mods“ ab.
-        match depcheck::ensure_before_launch(&self.http, &self.paths, catalog.builds(), instance, &mods_progress).await {
+        let dependencies = if extra {
+            Ok(Default::default())
+        } else {
+            depcheck::ensure_before_launch(&self.http, &self.paths, catalog.builds(), instance, &mods_progress).await
+        };
+        match dependencies {
             Ok(fix) if !fix.is_empty() => {
                 let sink = self.games.sink();
                 sink(GameEvent::notice(

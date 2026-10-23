@@ -186,23 +186,25 @@ pub(crate) fn find_conflicts(entries: &[Entry], builtins: &[ModInfo]) -> Vec<Con
     for (i, e) in entries.iter().enumerate() {
         for m in &e.mods {
             for c in &m.breaks {
-                for (party, other) in present.get(c.id.as_str()).into_iter().flatten() {
-                    if *party == Party::Entry(i) {
-                        continue;
-                    }
-                    if satisfies(m.scheme, c, &other.version) == Some(true) {
-                        push(Conflict {
-                            declarer: i,
-                            target: *party,
-                            kind: ConflictKind::Breaks,
-                            declarer_label: m.label(),
-                            target_label: other.label(),
-                            declarer_mod: ModRef::of(m),
-                            target_mod: ModRef::of(other),
-                            ranges: c.any_of.clone(),
-                        });
-                    }
+                // Wie der Loader: Von mehreren Kopien derselben ID (Mods-Ordner + eingebettet) wird nur eine
+                // geladen. Eine alte eingebettete Kopie (z. B. Fabric API in Distant Horizons) neben einer
+                // passenden ist also kein Konflikt – nur wenn JEDE Kopie ausgeschlossen ist.
+                let candidates: Vec<&(Party, &ModInfo)> =
+                    present.get(c.id.as_str()).into_iter().flatten().filter(|(p, _)| *p != Party::Entry(i)).collect();
+                if candidates.is_empty() || !candidates.iter().all(|(_, o)| satisfies(m.scheme, c, &o.version) == Some(true)) {
+                    continue;
                 }
+                let (party, other) = candidates[0];
+                push(Conflict {
+                    declarer: i,
+                    target: *party,
+                    kind: ConflictKind::Breaks,
+                    declarer_label: m.label(),
+                    target_label: other.label(),
+                    declarer_mod: ModRef::of(m),
+                    target_mod: ModRef::of(other),
+                    ranges: c.any_of.clone(),
+                });
             }
             for c in &m.depends {
                 // Eigene eingebettete Kopien zählen mit (der Loader nimmt auch die).

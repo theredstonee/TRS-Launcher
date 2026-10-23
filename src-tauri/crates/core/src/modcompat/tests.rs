@@ -421,3 +421,19 @@ fn embedded_mods_count_for_version_requirements() {
     let iris_with_own = Entry { nested_mods: vec![sodium26("0.9.2", "26.1.2")], ..iris };
     assert!(find_conflicts(&[sodium, iris_with_own], &[]).is_empty());
 }
+
+#[test]
+fn bundled_older_copy_does_not_break_when_a_matching_one_is_installed() {
+    // Echter Fall: Sodium 0.8.12 „breaks fabric-api <0.140.0“, Distant Horizons bringt Fabric API 0.139.4 eingebettet
+    // mit, im Mods-Ordner liegt aber 0.141.6 – der Loader lädt nur die, also kein Konflikt.
+    let sodium = Entry { mods: vec![info("sodium", "Sodium", "0.8.12+mc1.21.11", &[], &[("fabric-api", "<0.140.0")])], ..Default::default() };
+    let fapi = Entry { mods: vec![info("fabric-api", "Fabric API", "0.141.6+1.21.11", &[], &[])], ..Default::default() };
+    let dh = Entry {
+        mods: vec![info("distanthorizons", "Distant Horizons", "3.3.3", &[], &[])],
+        nested_mods: vec![info("fabric-api", "Fabric API", "0.139.4+1.21.11", &[], &[])],
+        ..Default::default()
+    };
+    assert!(find_conflicts(&[sodium.clone(), fapi, dh.clone()], &[]).is_empty());
+    // Nur die alte eingebettete Kopie da: echter Konflikt bleibt.
+    assert_eq!(find_conflicts(&[sodium, dh], &[]).len(), 1);
+}

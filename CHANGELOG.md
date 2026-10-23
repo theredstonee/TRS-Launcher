@@ -30,6 +30,14 @@ How to write an entry:
 
 ## Unreleased
 
+### English
+- **Fixed: false "mods don't work together" warning.** Some mods carry an older copy of another mod inside (Distant Horizons, for example, brings its own older Fabric API). The launcher counted that hidden copy even when you have a newer one installed – which is the one the game actually loads – and stopped the launch, e.g. "Sodium doesn't work with Fabric API (inside Distant Horizons)". Now only the copy the game really uses is checked, and the launcher no longer swaps such mods back and forth between versions.
+- **Fixed: "Launch again" stopped with a mod error.** A second copy of a running instance now starts with exactly the same mods as the first one – the launcher no longer checks or swaps mods of an instance that is already running.
+
+### Deutsch
+- **Behoben: falsche Warnung „Mods passen nicht zusammen“.** Manche Mods bringen eine ältere Kopie einer anderen Mod mit (Distant Horizons z. B. eine eigene ältere Fabric API). Der Launcher hat diese versteckte Kopie mitgezählt, obwohl eine neuere installiert ist – und die lädt das Spiel tatsächlich – und den Start gestoppt, z. B. „Sodium passt nicht zu Fabric API (in Distant Horizons)“. Jetzt zählt nur die Kopie, die das Spiel wirklich benutzt, und der Launcher tauscht solche Mods nicht mehr zwischen Versionen hin und her.
+- **Behoben: „Erneut starten“ brach mit einem Mod-Fehler ab.** Eine zweite Kopie einer laufenden Instanz startet jetzt mit genau denselben Mods wie die erste – der Launcher prüft und tauscht keine Mods einer Instanz mehr, die schon läuft.
+
 ## 0.27.2 – 2026-10-23 – Clean Cut | Sauberer Schnitt
 <!-- banner: accent=#3ee6c8 motif=/news/0.27.2/banner.png -->
 <!-- shots:
