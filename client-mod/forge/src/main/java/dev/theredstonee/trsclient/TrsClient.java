@@ -137,6 +137,9 @@ public final class TrsClient {
 				dev.theredstonee.trsclient.core.perf.PerfCompat.FORGE, Platform.modVersion("minecraft"), message -> LOGGER.info(message), true);
 		// Netzwerk-Optimierung + Ping-Messung (Handler an der Client-Verbindung, siehe core.net).
 		dev.theredstonee.trsclient.net.NetHooks.init(modules, message -> LOGGER.info(message));
+		// TRS Server Rules: Server sperrt/erzwingt Module (Kanäle trsclient:rules/hello, Logik in core.serverrules).
+		dev.theredstonee.trsclient.net.ServerRulesNet.init(modules, Platform.modVersion(MOD_ID), Platform.modVersion("minecraft"),
+				message -> LOGGER.info(message));
 		autoTest = AutoTest.createIfRequested();
 		// Beim Beenden speichern (Forge-unabhängig; Änderungen im Menü werden ohnehin sofort gespeichert).
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -306,6 +309,7 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.online.EmoteHooks.tick(mc);
 		dev.theredstonee.trsclient.perf.PerfHooks.tick(mc);
 		dev.theredstonee.trsclient.net.NetHooks.tick(mc);
+		dev.theredstonee.trsclient.net.ServerRulesNet.tick(mc);
 		if (autoTest != null) autoTest.tick(mc);
 	}
 
