@@ -1,0 +1,6 @@
+TRS Server Rules - third-party software bundled in this jar
+
+SnakeYAML (https://bitbucket.org/snakeyaml/snakeyaml)
+  Relocated to dev.theredstonee.trsrules.lib.snakeyaml
+  Copyright (c) 2008, SnakeYAML
+  Licensed under the Apache License, Version 2.0: https://www.apache.org/licenses/LICENSE-2.0

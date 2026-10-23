@@ -1,0 +1,36 @@
+// Sponge API 8+ (SpongeVanilla / SpongeForge) – Java 17 bytecode.
+//
+// Compiled against API 8 (the oldest supported). The few spots where later APIs changed binary signatures
+// (channel handler, disconnect event) go through small reflection helpers. To catch source-level breaks, the same
+// sources are additionally compiled against newer APIs during `check` (sponge_api_check_versions).
+
+dependencies {
+	compileOnly "org.spongepowered:spongeapi:${sponge_api_version}"
+}
+
+tasks.named('compileJava') {
+	options.release = 17
+}
+
+def checkVersions = (project.findProperty('sponge_api_check_versions') ?: '').split(',')*.trim().findAll { it }
+checkVersions.each { v ->
+	def id = v.replace('.', '_')
+	def conf = configurations.create("spongeApi${id}") {
+		canBeConsumed = false
+		canBeResolved = true
+	}
+	dependencies.add(conf.name, "org.spongepowered:spongeapi:${v}")
+	def task = tasks.register("compileAgainstSpongeApi${id}", JavaCompile) {
+		group = 'verification'
+		description = "Compiles the Sponge sources against Sponge API ${v} (compatibility check)."
+		source = sourceSets.main.java
+		// common + SnakeYAML come from this project's runtime classpath; only the Sponge API is swapped
+		classpath = configurations.runtimeClasspath + conf
+		destinationDirectory = layout.buildDirectory.dir("api-check/${v}")
+		options.release = 21
+		options.encoding = 'UTF-8'
+		options.compilerArgs << '-Xlint:-options'
+		javaCompiler = javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(21) }
+	}
+	tasks.named('check') { dependsOn task }
+}

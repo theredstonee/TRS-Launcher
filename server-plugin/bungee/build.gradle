@@ -1,0 +1,9 @@
+// BungeeCord / Waterfall – Java 8 bytecode.
+
+dependencies {
+	compileOnly "net.md-5:bungeecord-api:${bungee_api_version}"
+}
+
+tasks.named('compileJava') {
+	options.release = 8
+}

@@ -1,0 +1,86 @@
+plugins {
+	id 'base'
+	// Fat jars: common + SnakeYAML (relocated) go into every platform jar.
+	id 'com.gradleup.shadow' version '9.6.1' apply false
+}
+
+group = maven_group
+version = plugin_version
+
+subprojects {
+	group = rootProject.maven_group
+	version = rootProject.plugin_version
+
+	repositories {
+		mavenCentral()
+		maven { name = 'SpigotMC'; url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
+		maven { name = 'PaperMC'; url = 'https://repo.papermc.io/repository/maven-public/' }
+		maven { name = 'Sponge'; url = 'https://repo.spongepowered.org/repository/maven-public/' }
+	}
+
+	plugins.withType(JavaPlugin).configureEach {
+		java {
+			// One JDK for everything; the bytecode level is set per project with options.release.
+			toolchain {
+				languageVersion = JavaLanguageVersion.of(21)
+			}
+		}
+		tasks.withType(JavaCompile).configureEach {
+			options.encoding = 'UTF-8'
+			options.compilerArgs << '-Xlint:-options'
+		}
+		tasks.withType(Jar).configureEach {
+			from(rootProject.file('LICENSE')) { rename { 'LICENSE_trs-server-rules' } }
+		}
+	}
+
+	// Platform projects: one shaded jar named trs-server-rules-<platform>-<version>.jar
+	if (name != 'common') {
+		apply plugin: 'java'
+		apply plugin: 'com.gradleup.shadow'
+
+		dependencies {
+			implementation project(':common')
+		}
+
+		tasks.named('jar') {
+			archiveClassifier = 'plain'
+		}
+		tasks.named('shadowJar') {
+			archiveBaseName = "trs-server-rules-${project.name}"
+			archiveClassifier = ''
+			relocate 'org.yaml.snakeyaml', 'dev.theredstonee.trsrules.lib.snakeyaml'
+			// SnakeYAML is a multi-release jar (Java 9+ logger variant); the Java 8 classes are enough everywhere.
+			exclude 'META-INF/versions/**'
+			exclude 'module-info.class'
+			exclude 'META-INF/maven/**'
+			exclude 'META-INF/MANIFEST.MF'
+			mergeServiceFiles()
+		}
+		tasks.named('assemble') {
+			dependsOn 'shadowJar'
+		}
+
+		// Placeholders in plugin descriptors (plugin.yml, velocity-plugin.json, sponge_plugins.json)
+		tasks.named('processResources') {
+			def props = [version: project.version]
+			inputs.properties(props)
+			filesMatching(['plugin.yml', 'bungee.yml', 'velocity-plugin.json', 'META-INF/sponge_plugins.json']) {
+				expand(props)
+			}
+		}
+	}
+}
+
+// All platform jars in one folder (release channel "server-plugin"): build/dist/
+tasks.register('dist', Copy) {
+	group = 'build'
+	description = 'Collects all platform jars into build/dist.'
+	['bukkit', 'bungee', 'velocity', 'sponge'].each { p ->
+		from(project(":$p").tasks.named('shadowJar'))
+	}
+	into layout.buildDirectory.dir('dist')
+}
+tasks.named('assemble') {
+	dependsOn 'dist'
+}

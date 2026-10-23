@@ -1,0 +1,37 @@
+// Spigot / Paper / Purpur 1.8.8 – 26.x and Folia – ONE jar with Java 8 bytecode.
+//
+// main  : compiled against the oldest API (spigot-api 1.8.8); every call used exists unchanged up to 26.x.
+// folia : the region-aware scheduler bridge, compiled against paper-api (also Java 8 bytecode, it only uses
+//         Java 8 language features). It is loaded by reflection only when Folia is detected, so the classes
+//         never touch servers that do not have the Folia scheduler API.
+
+sourceSets {
+	folia {
+		java.srcDir 'src/folia/java'
+	}
+}
+
+dependencies {
+	compileOnly "org.spigotmc:spigot-api:${spigot_api_version}"
+
+	foliaCompileOnly "io.papermc.paper:paper-api:${paper_api_version}"
+	foliaCompileOnly sourceSets.main.output
+}
+
+// paper-api is published for Java 21; we only read its class files (output stays Java 8 bytecode).
+configurations.named('foliaCompileClasspath') {
+	attributes {
+		attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 21)
+	}
+}
+
+tasks.named('compileJava') {
+	options.release = 8
+}
+tasks.named('compileFoliaJava') {
+	options.release = 8
+}
+
+tasks.named('shadowJar') {
+	from sourceSets.folia.output
+}

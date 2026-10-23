@@ -1,0 +1,9 @@
+// Velocity 3.x – Java 17 bytecode (Velocity 3.x needs Java 17+; newer Velocity releases keep this API).
+
+dependencies {
+	compileOnly "com.velocitypowered:velocity-api:${velocity_api_version}"
+}
+
+tasks.named('compileJava') {
+	options.release = 17
+}

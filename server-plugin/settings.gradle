@@ -1,0 +1,23 @@
+pluginManagement {
+	repositories {
+		gradlePluginPortal()
+		mavenCentral()
+	}
+}
+
+plugins {
+	// Downloads a matching JDK automatically when none is installed (Gradle toolchains).
+	id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'trs-server-rules'
+
+// Platform-independent logic: config model, rule resolution, protocol JSON, hello parsing, missing-client timeout.
+// Pure Java 8, no Minecraft or server API – every platform (and the later Fabric/NeoForge/Forge server mods) reuses it.
+include 'common'
+
+// Server platforms (one shaded jar each: trs-server-rules-<platform>-<version>.jar)
+include 'bukkit'    // Spigot / Paper / Purpur 1.8.8 – 26.x + Folia (Java 8 bytecode)
+include 'bungee'    // BungeeCord / Waterfall
+include 'velocity'  // Velocity 3.x
+include 'sponge'    // Sponge API 8+

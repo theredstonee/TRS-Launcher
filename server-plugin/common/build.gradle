@@ -1,0 +1,29 @@
+plugins {
+	id 'java-library'
+}
+
+dependencies {
+	// YAML parser for config.yml. Platform jars shade and relocate it; it never appears in the public API of common
+	// (the config model is built from plain Maps), so other packagers (e.g. Fabric jar-in-jar) are free to bundle it.
+	implementation "org.yaml:snakeyaml:${snakeyaml_version}"
+
+	testImplementation platform("org.junit:junit-bom:${junit_version}")
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// common is compiled into every platform jar – also Bukkit 1.8.8 and BungeeCord on Java 8.
+// So: Java 8 language and API only (no records/var/switch expressions/List.of …).
+tasks.named('compileJava') {
+	options.release = 8
+}
+tasks.named('compileTestJava') {
+	options.release = 8
+}
+
+test {
+	useJUnitPlatform()
+	testLogging {
+		events 'passed', 'skipped', 'failed'
+	}
+}

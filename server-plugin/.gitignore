@@ -1,0 +1,16 @@
+# Gradle
+.gradle/
+build/
+out/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+bin/
+.classpath
+.project
+
+# Test servers (never commit)
+run/

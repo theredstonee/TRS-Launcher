@@ -1,0 +1,21 @@
+name: TRSServerRules
+main: dev.theredstonee.trsrules.bukkit.TrsRulesBukkit
+version: '${version}'
+# 1.13 is the lowest valid value; servers before 1.13 ignore this key.
+api-version: '1.13'
+folia-supported: true
+author: theredstonee
+website: https://trs-launcher.theredstonee.de
+description: "Control TRS Client features on your server: lock or force modules and settings, per world. Note: TRS team members with the 'serverrules.bypass' team permission can override the rules in their own client after an in-game confirmation (documented on purpose)."
+commands:
+  trsrules:
+    description: Reload the TRS Server Rules config or show a player's TRS Client status.
+    usage: /trsrules reload | /trsrules status [player]
+    permission: trsrules.admin
+permissions:
+  trsrules.admin:
+    description: Use /trsrules (reload, status).
+    default: op
+  trsrules.bypass:
+    description: Receive no TRS Server Rules (empty rule set) and be exempt from the missing-client action.
+    default: false

@@ -1,0 +1,5 @@
+name: TRSServerRules
+main: dev.theredstonee.trsrules.bungee.TrsRulesBungee
+version: '${version}'
+author: theredstonee
+description: "Control TRS Client features on your network: lock or force modules and settings, per backend server. Note: TRS team members with the 'serverrules.bypass' team permission can override the rules in their own client after an in-game confirmation (documented on purpose)."

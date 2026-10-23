@@ -1,0 +1,78 @@
+# =====================================================================================================
+#  TRS Server Rules – control TRS Client features on your server.
+#  https://trs-launcher.theredstonee.de  ·  GPL-3.0
+# =====================================================================================================
+#
+# How it works: the TRS Client says hello when a player joins; this plugin answers with the rules below
+# (again after a world/server change and after /trsrules reload). Players without the TRS Client are
+# not affected (see "missing-client" to notify or kick them). Vanilla and other clients never see anything.
+#
+# NOTE – TRS team bypass (documented on purpose, not a hidden feature):
+#   Members of the TRS team with the team permission "serverrules.bypass" (granted by the TRS team in the
+#   TRS account system, not by this server) can override these rules in their own client after an in-game
+#   confirmation ("This server locks X – use it anyway as TRS team?"). The server is not told about it and
+#   cannot switch it off. It only affects that one player's own client.
+#
+# Changes take effect with: /trsrules reload   (permission: trsrules.admin)
+# Unknown module ids or broken entries are reported in the server log and skipped.
+
+config-version: 1
+
+# -----------------------------------------------------------------------------------------------------
+# modules – lock whole TRS Client modules for everybody.
+#   false = forced off (the player cannot turn it on)
+#   true  = forced on  (the player cannot turn it off)
+#   not listed (or commented out) = the player decides.
+# Remove the "# " in front of a line to activate it. Everything commented out = nothing locked.
+# -----------------------------------------------------------------------------------------------------
+modules:
+%MODULE_LIST%
+
+# -----------------------------------------------------------------------------------------------------
+# settings – lock single module settings. Key: <module>.<setting> (setting ids as in the TRS Client).
+#   <module>.<setting>: true / 4.0 / SMOOTH     a bare value forces it (bool, number, or choice by enum name)
+#   <module>.<setting>: {value: SMOOTH}         same, long form
+#   <module>.<setting>: {min: 2, max: 4}        clamp a number (one bound is enough, e.g. {max: 4})
+# Examples:
+#   zoom.factor: {max: 4}                  # zoom at most 4x
+#   fullbright.level: {max: 200}           # brightness at most 200 %
+#   cinematic.freecamFairPlay: true        # freecam may not look through walls
+# -----------------------------------------------------------------------------------------------------
+settings:
+  # zoom.factor: {max: 4}
+  # cinematic.freecamFairPlay: true
+
+# -----------------------------------------------------------------------------------------------------
+# %SCOPE_KEY% – different rules per %SCOPE_KEY%.
+%SCOPE_HELP%
+# Each section may contain modules, settings and message (same format as above).
+# Example:
+#   %SCOPE_KEY%:
+#     %SCOPE_EXAMPLE%:
+#       modules: {zoom: false, freelook: false, minimap: false}
+#       settings: {fullbright.level: {max: 100}}
+#       message: "PvP area: zoom, freelook and minimap are disabled."
+#     %SCOPE_EXAMPLE_2%:
+#       modules: {minimap: free}     # 'free' lifts a global lock here
+# -----------------------------------------------------------------------------------------------------
+%SCOPE_KEY%: {}
+
+# Optional short text the TRS Client shows once when the rules arrive (plain text, "" = none).
+message: ""
+
+# -----------------------------------------------------------------------------------------------------
+# missing-client – players whose client does not answer with a TRS Client hello within the timeout.
+#   action: ignore   nothing happens (default)
+#           notify   send notify-message once
+#           kick     disconnect with kick-message (use only if your server really requires the TRS Client)
+# Messages support & color codes and \n for a new line. Players with the bypass permission are exempt.
+# -----------------------------------------------------------------------------------------------------
+missing-client:
+  action: ignore
+  timeout-seconds: 10
+  notify-message: "&cThis server is made for the &fTRS Client&c. &7Get it free at &fhttps://trs-launcher.theredstonee.de"
+  kick-message: "&cThis server requires the &fTRS Client&c.\n&7Get it free at &fhttps://trs-launcher.theredstonee.de"
+
+# Players with this server permission get no rules at all (empty rule set) and are exempt from missing-client.
+# Set to "" to disable. (This is your server's own bypass – unrelated to the TRS team note at the top.)
+bypass-permission: trsrules.bypass

@@ -1,0 +1,33 @@
+{
+  "loader": {
+    "name": "java_plain",
+    "version": "1.0"
+  },
+  "license": "GPL-3.0",
+  "plugins": [
+    {
+      "id": "trsserverrules",
+      "name": "TRS Server Rules",
+      "version": "${version}",
+      "entrypoint": "dev.theredstonee.trsrules.sponge.TrsRulesSponge",
+      "description": "Control TRS Client features on your server: lock or force modules and settings, per world. Note: TRS team members with the 'serverrules.bypass' team permission can override the rules in their own client after an in-game confirmation (documented on purpose).",
+      "links": {
+        "homepage": "https://trs-launcher.theredstonee.de"
+      },
+      "contributors": [
+        {
+          "name": "theredstonee",
+          "description": "Author"
+        }
+      ],
+      "dependencies": [
+        {
+          "id": "spongeapi",
+          "version": "8.0.0",
+          "load-order": "after",
+          "optional": false
+        }
+      ]
+    }
+  ]
+}
