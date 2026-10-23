@@ -165,6 +165,9 @@ public final class TrsClient {
 			LOGGER.warn("Config war beschädigt – Standardwerte geladen, Sicherung: {}", client.config.brokenFile());
 		}
 		LOGGER.info("Config {} ({})", status, client.config.file());
+		// TRS Server Rules: Server sperrt/erzwingt Module (Kanäle trsclient:rules/hello, Logik in core.serverrules).
+		// Hier im Konstruktor: Forge sperrt neue Netzwerk-Kanäle nach dem Laden.
+		dev.theredstonee.trsclient.net.ServerRulesNet.init(client.modules, client.version, message -> LOGGER.info(message));
 		FMLJavaModLoadingContext.get().getModEventBus().addListener(client::clientSetup);
 	}
 
@@ -291,6 +294,7 @@ public final class TrsClient {
 			saveConfig();
 		}
 		dev.theredstonee.trsclient.feature.AutoRefillHooks.tick();
+		dev.theredstonee.trsclient.net.ServerRulesNet.tick(mc);
 		// runTick kann den Blick setzen (Teleport, Reiten) – Referenz für die langsame Maus danach neu setzen.
 		captureLook(mc);
 	}
