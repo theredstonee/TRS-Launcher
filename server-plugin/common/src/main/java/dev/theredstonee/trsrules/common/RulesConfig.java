@@ -156,7 +156,11 @@ public final class RulesConfig {
 		parseModules(root.get("modules"), global, "modules", warnings, false);
 		parseSettings(root.get("settings"), global, "settings", warnings, false);
 		Object msg = root.get("message");
-		global.message(msg == null ? null : String.valueOf(msg));
+		// Global "" (the default config) = no message. It must stay null, not "": on a proxy the proxy rules are laid
+		// over the backend rules, and an empty proxy message would otherwise erase the backend's message. An explicit
+		// "" in a world/server section still silences the message there.
+		String globalMessage = msg == null ? null : String.valueOf(msg);
+		global.message(globalMessage == null || globalMessage.isEmpty() ? null : globalMessage);
 
 		Map<String, RuleSet> scopes = new LinkedHashMap<String, RuleSet>();
 		Object scopeSection = root.get(kind.configKey());

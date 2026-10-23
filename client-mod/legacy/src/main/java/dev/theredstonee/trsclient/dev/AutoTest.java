@@ -122,6 +122,11 @@ public final class AutoTest {
 			ConnectTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=serverrules: TRS Server Rules gegen einen echten Server mit Plugin (-PtrsAutotestServer, RCON)
+		if ("serverrules".equals(System.getProperty("trsclient.autotest.only"))) {
+			ServerRulesTest.install();
+			return;
+		}
 		if ("menus".equals(System.getProperty("trsclient.autotest.only"))) {
 			MenusTest.install();
 			return;

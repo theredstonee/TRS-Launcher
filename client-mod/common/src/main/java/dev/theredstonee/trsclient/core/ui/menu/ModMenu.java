@@ -1046,8 +1046,9 @@ public final class ModMenu extends UiScreen {
 		int nameX = x + 52;
 		c.text(c.clip(m.name(), resetX - nameX - 6), nameX, y + 4, t.text, false);
 		String state = m.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled");
-		// Vom Server gesperrt (oder Einstellungen begrenzt): statt der Kategorie „Vom Server“.
-		String where = m.serverRestricted() ? I18n.tr("settings.serverLocked") : m.category().label();
+		// An/Aus vom Server gesperrt: statt der Kategorie „Vom Server“. Sind nur Einstellungen begrenzt, bleibt die
+		// Kategorie stehen (sonst läse sich „An · Vom Server“ wie erzwungen an) – die Zeilen zeigen die Grenzen selbst.
+		String where = moduleLocked ? I18n.tr("settings.serverLocked") : m.category().label();
 		c.text(c.clip(state + " · " + where, resetX - nameX - 6), nameX, y + 14, m.isEnabled() ? t.dustOn : t.textDim, false);
 
 		int top = y + headH + 8;

@@ -317,6 +317,28 @@ class EngineTest {
 	// ------------------------------------------------------------------ proxy
 
 	@Test
+	void emptyProxyMessageKeepsBackendMessage() {
+		// the default config has message: "" – it must not erase the message of a backend plugin
+		FakeBridge b = new FakeBridge();
+		RulesEngine<FakePlayer> e = new RulesEngine<FakePlayer>(b,
+				cfg("message: \"\"\nservers:\n  rules:\n    modules: {freelook: false}\n  quiet:\n    message: \"\"\n",
+						ScopeKind.SERVERS), () -> b.now);
+		FakePlayer p = new FakePlayer("Steve");
+		p.world = "rules";
+		e.onServerSwitch(p);
+		e.onHello(p, HELLO, Protocol.HELLO);
+		e.onUpstreamRules(p, "rules", "{\"v\":1,\"modules\":{\"minimap\":{\"enabled\":false}},\"message\":\"Backend\"}"
+				.getBytes(Protocol.UTF8));
+		assertEquals("{\"v\":1,\"modules\":{\"minimap\":{\"enabled\":false},\"freelook\":{\"enabled\":false}},\"message\":\"Backend\"}",
+				p.last());
+		// an explicit "" in a server section still silences the backend message there
+		p.world = "quiet";
+		e.onServerSwitch(p);
+		e.onUpstreamRules(p, "quiet", "{\"v\":1,\"modules\":{},\"message\":\"Backend\"}".getBytes(Protocol.UTF8));
+		assertEquals("{\"v\":1,\"modules\":{}}", p.last());
+	}
+
+	@Test
 	void proxyMergesBackendRulesWithProxyPrecedence() {
 		FakeBridge b = new FakeBridge();
 		RulesEngine<FakePlayer> e = new RulesEngine<FakePlayer>(b,
