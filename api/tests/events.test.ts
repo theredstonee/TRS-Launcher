@@ -6,20 +6,24 @@ import { loadBuiltinCosmetics, loadBuiltins } from '../server/lib/builtin'
 import { catalog, seedBuiltins } from '../server/lib/capes'
 import { cosmeticCatalog, equipCosmetics, seedBuiltinCosmetics } from '../server/lib/cosmetics'
 import { all, migrate, one, run } from '../server/lib/db'
-import { activeEventsFor, adminEvents, setEventEnabled } from '../server/lib/liveevents'
+import { activeEventsFor, addEventLookBlock, adminEvents, lookEventsFor, setEventEnabled } from '../server/lib/liveevents'
 import { lookupPlayers } from '../server/lib/lookup'
-import { MIGRATIONS, migrateEvents } from '../server/lib/migrations'
+import { MIGRATIONS, migrateEventLookBlocks, migrateEvents } from '../server/lib/migrations'
 import { publicCapes, publicCompanions, publicHats } from '../server/lib/site'
 import { ownerStaff, setMemberRoles } from '../server/lib/team'
+import { createWebSession } from '../server/lib/weblogin'
 import adminDelete from '../server/routes/v1/admin/events/[id]/players/[uuid].delete'
 import adminAdd from '../server/routes/v1/admin/events/[id]/players/index.post'
 import adminPut from '../server/routes/v1/admin/events/[id].put'
+import lookDelete from '../server/routes/v1/admin/events/[id]/look-blocks/[uuid].delete'
+import lookAdd from '../server/routes/v1/admin/events/[id]/look-blocks/index.post'
 import adminList from '../server/routes/v1/admin/events/index.get'
 import publicRoute from '../server/routes/v1/events/index.get'
 import claimCapeRoute from '../server/routes/v1/me/capes/[id]/claim.post'
 import claimRoute from '../server/routes/v1/me/cosmetics/[id]/claim.post'
 import putCosmetics from '../server/routes/v1/me/cosmetics.put'
 import meRoute from '../server/routes/v1/me/index.get'
+import webMeRoute from '../server/routes/v1/web/me.get'
 import { callRoute } from './circuithelpers'
 import { listen, players } from './chathelpers'
 import { ADMIN, login, makeEnv, type TestEnv } from './helpers'
@@ -197,22 +201,146 @@ describe('admin routes', () => {
     const lp = listen(env, p.user.uuid)
     const lq = listen(env, q.user.uuid)
     await callRoute(env, adminAdd, { method: 'POST', url: '/v1/admin/events/halloween/players', params: { id: 'halloween' }, body: JSON.stringify({ name: 'Player' }), headers: auth(a.token) })
-    expect(lp.of('events_changed')).toEqual([{ type: 'events_changed', events: ['halloween'] }])
+    expect(lp.of('events_changed')).toEqual([{ type: 'events_changed', events: ['halloween'], look: ['halloween'] }])
     expect(lq.of('events_changed')).toEqual([])
     lp.clear()
     const put = (enabled: boolean) => callRoute(env, adminPut, { method: 'PUT', url: '/v1/admin/events/halloween', params: { id: 'halloween' }, body: JSON.stringify({ enabled }), headers: auth(a.token) })
     await put(true)
-    expect(lp.of('events_changed')).toEqual([{ type: 'events_changed', events: ['halloween'] }])
-    expect(lq.of('events_changed')).toEqual([{ type: 'events_changed', events: ['halloween'] }])
+    expect(lp.of('events_changed')).toEqual([{ type: 'events_changed', events: ['halloween'], look: ['halloween'] }])
+    expect(lq.of('events_changed')).toEqual([{ type: 'events_changed', events: ['halloween'], look: ['halloween'] }])
     lp.clear()
     lq.clear()
     // Global aus: nur wer auf der Liste steht, behält es.
     await put(false)
-    expect(lp.of('events_changed')).toEqual([{ type: 'events_changed', events: ['halloween'] }])
-    expect(lq.of('events_changed')).toEqual([{ type: 'events_changed', events: [] }])
+    expect(lp.of('events_changed')).toEqual([{ type: 'events_changed', events: ['halloween'], look: ['halloween'] }])
+    expect(lq.of('events_changed')).toEqual([{ type: 'events_changed', events: [], look: [] }])
     // Gleicher Zustand noch einmal: nichts Neues.
     lq.clear()
     await put(false)
+    expect(lq.of('events_changed')).toEqual([])
+  })
+})
+
+describe('event look blocks (§32.6, migration 31)', () => {
+  const lookAddCall = (env: TestEnv, token: string, body: unknown) =>
+    callRoute(env, lookAdd, { method: 'POST', url: '/v1/admin/events/halloween/look-blocks', params: { id: 'halloween' }, body: JSON.stringify(body), headers: auth(token) })
+  const lookDelCall = (env: TestEnv, token: string, uuid: string) =>
+    callRoute(env, lookDelete, { method: 'DELETE', url: `/v1/admin/events/halloween/look-blocks/${uuid}`, params: { id: 'halloween', uuid }, headers: auth(token) })
+
+  it('migration 31 creates the table, is registered and idempotent; rows go with the event', () => {
+    const env = makeEnv()
+    const db = env.ctx.db
+    expect(MIGRATIONS.find((m) => m.version === 31)?.run).toBe(migrateEventLookBlocks)
+    expect(all(db, "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'event_look_blocks'")).toHaveLength(1)
+    migrateEventLookBlocks(db)
+    migrateEventLookBlocks(db)
+    run(db, "INSERT INTO event_look_blocks (event_id, player_uuid, player_name, added_at) VALUES ('halloween', ?, 'X', 1)", 'a'.repeat(32))
+    expect(() => run(db, "INSERT INTO event_look_blocks (event_id, player_uuid, added_at) VALUES ('halloween', 'short', 1)")).toThrow()
+    run(db, "DELETE FROM events WHERE id = 'halloween'")
+    expect(all(db, 'SELECT * FROM event_look_blocks')).toEqual([])
+  })
+
+  it('lookEventsFor = active events minus the block list; features stay', async () => {
+    const env = makeEnv()
+    const u = (await login(env, 'Steve')).user.uuid
+    const v = (await login(env, 'Alex')).user.uuid
+    expect(lookEventsFor(env.ctx, u)).toEqual([])
+    // Gesperrt, obwohl (noch) nicht aktiv: bleibt leer.
+    addEventLookBlock(env.ctx, ADMIN, 'halloween', u, 'Steve')
+    expect(lookEventsFor(env.ctx, u)).toEqual([])
+    setEventEnabled(env.ctx, ADMIN, 'halloween', true)
+    expect(activeEventsFor(env.ctx, u)).toEqual(['halloween'])
+    expect(lookEventsFor(env.ctx, u)).toEqual([])
+    expect(lookEventsFor(env.ctx, v)).toEqual(['halloween'])
+    // Freigabe für Einzelne + Sperre: Features ja, Look nein.
+    setEventEnabled(env.ctx, ADMIN, 'halloween', false)
+    run(env.ctx.db, "INSERT INTO event_players (event_id, player_uuid, player_name, added_at) VALUES ('halloween', ?, 'Steve', 1)", u)
+    expect(activeEventsFor(env.ctx, u)).toEqual(['halloween'])
+    expect(lookEventsFor(env.ctx, u)).toEqual([])
+  })
+
+  it('GET /v1/me and GET /v1/web/me carry eventLook next to events', async () => {
+    const env = makeEnv()
+    const a = await login(env, 'Steve')
+    const b = await login(env, 'Alex')
+    setEventEnabled(env.ctx, ADMIN, 'halloween', true)
+    addEventLookBlock(env.ctx, ADMIN, 'halloween', a.user.uuid, 'Steve')
+    const me = async (t: string) => (await callRoute(env, meRoute, { url: '/v1/me', headers: auth(t) })).body as { events: string[], eventLook: string[] }
+    expect(await me(a.token)).toMatchObject({ events: ['halloween'], eventLook: [] })
+    expect(await me(b.token)).toMatchObject({ events: ['halloween'], eventLook: ['halloween'] })
+    const web = async (uuid: string) => (await callRoute(env, webMeRoute, { url: '/v1/web/me', headers: { cookie: `trs_session=${createWebSession(env.ctx, uuid).token}` } })).body
+    expect(await web(a.user.uuid)).toMatchObject({ events: ['halloween'], eventLook: [] })
+    expect(await web(b.user.uuid)).toMatchObject({ events: ['halloween'], eventLook: ['halloween'] })
+  })
+
+  it('admin routes: need events.manage, validate, add by name/uuid, 409 on duplicates, remove, audit log', async () => {
+    const env = makeEnv()
+    const { a, m, p } = await crew(env)
+    env.mojang.accounts.set('ghost', { uuid: 'c'.repeat(32), name: 'Ghost', model: 'classic', skinUrl: null, capeUrl: null })
+    expect((await lookAddCall(env, m.token, { name: 'Player' })).error?.code).toBe('missing_permission')
+    expect((await lookAddCall(env, p.token, { name: 'Player' })).error?.status).toBe(403)
+    expect((await lookDelCall(env, m.token, p.user.uuid)).error?.code).toBe('missing_permission')
+    expect((await lookAddCall(env, a.token, { name: 'a b' })).error?.status).toBe(400)
+    expect((await lookAddCall(env, a.token, { name: 'Player', x: 1 })).error?.status).toBe(400)
+    expect((await lookAddCall(env, a.token, {})).error?.status).toBe(400)
+    const bad = await callRoute(env, lookAdd, { method: 'POST', url: '/v1/admin/events/nope/look-blocks', params: { id: 'nope' }, body: '{"name":"Player"}', headers: auth(a.token) })
+    expect(bad.error?.code).toBe('event_not_found')
+
+    const r1 = await lookAddCall(env, a.token, { name: 'player' })
+    expect(r1.status).toBe(201)
+    expect(r1.body).toMatchObject({ id: 'halloween', players: [], lookBlocked: [{ uuid: p.user.uuid, name: 'Player' }] })
+    expect((await lookAddCall(env, a.token, { name: 'Player' })).error?.code).toBe('already_added')
+    const r2 = await lookAddCall(env, a.token, { name: 'Ghost' })
+    expect((r2.body as { lookBlocked: { name: string }[] }).lookBlocked.map((x) => x.name)).toEqual(['Player', 'Ghost'])
+    expect((await lookAddCall(env, a.token, { name: 'Nobody' })).error?.code).toBe('player_not_found')
+    env.mojang.fail = true
+    expect((await lookAddCall(env, a.token, { name: 'Zed' })).error?.status).toBe(502)
+    env.mojang.fail = false
+    const dashed = ['d'.repeat(8), 'd'.repeat(4), 'd'.repeat(4), 'd'.repeat(4), 'd'.repeat(12)].join('-')
+    expect((await lookAddCall(env, a.token, { uuid: dashed })).status).toBe(201)
+    expect((await lookAddCall(env, a.token, { uuid: 'z'.repeat(32) })).error?.status).toBe(404)
+    // Die Freigabe-Liste ist davon unberührt.
+    expect(adminEvents(env.ctx)[0]!.players).toEqual([])
+    expect((await callRoute(env, adminList, { url: '/v1/admin/events', headers: auth(a.token) })).body).toMatchObject([{ id: 'halloween', lookBlocked: [{ name: 'Player' }, { name: 'Ghost' }, { uuid: 'd'.repeat(32) }] }])
+
+    const d = await lookDelCall(env, a.token, p.user.uuid)
+    expect((d.body as { lookBlocked: { uuid: string }[] }).lookBlocked.some((x) => x.uuid === p.user.uuid)).toBe(false)
+    expect((await lookDelCall(env, a.token, p.user.uuid)).error?.code).toBe('player_not_found')
+    expect((await lookDelCall(env, a.token, 'not-a-uuid')).error?.status).toBe(404)
+    const log = all<{ action: string }>(env.ctx.db, "SELECT action FROM admin_log WHERE action LIKE 'event.look%' ORDER BY id").map((x) => x.action)
+    expect(log).toEqual(['event.look_block_add', 'event.look_block_add', 'event.look_block_add', 'event.look_block_remove'])
+  })
+
+  it('website cookie session needs the CSRF token for changes', async () => {
+    const env = makeEnv()
+    const { a } = await crew(env)
+    const s = createWebSession(env.ctx, a.user.uuid)
+    const call = (headers: Record<string, string>) =>
+      callRoute(env, lookAdd, { method: 'POST', url: '/v1/admin/events/halloween/look-blocks', params: { id: 'halloween' }, body: '{"name":"Player"}', headers: { 'content-type': 'application/json', cookie: `trs_session=${s.token}`, ...headers } })
+    expect((await call({})).error?.status).toBe(403)
+    expect((await call({ 'x-csrf-token': s.csrf })).status).toBe(201)
+  })
+
+  it('pushes events_changed with look only to the affected player', async () => {
+    const env = makeEnv()
+    const { a, p, q } = await crew(env)
+    setEventEnabled(env.ctx, ADMIN, 'halloween', true)
+    const lp = listen(env, p.user.uuid)
+    const lq = listen(env, q.user.uuid)
+    await lookAddCall(env, a.token, { name: 'Player' })
+    expect(lp.of('events_changed')).toEqual([{ type: 'events_changed', events: ['halloween'], look: [] }])
+    expect(lq.of('events_changed')).toEqual([])
+    lp.clear()
+    // Globaler Schalter: jeder bekommt seinen eigenen Look-Stand.
+    const put = (enabled: boolean) => callRoute(env, adminPut, { method: 'PUT', url: '/v1/admin/events/halloween', params: { id: 'halloween' }, body: JSON.stringify({ enabled }), headers: auth(a.token) })
+    await put(false)
+    await put(true)
+    expect(lp.of('events_changed').at(-1)).toEqual({ type: 'events_changed', events: ['halloween'], look: [] })
+    expect(lq.of('events_changed').at(-1)).toEqual({ type: 'events_changed', events: ['halloween'], look: ['halloween'] })
+    lp.clear()
+    lq.clear()
+    await lookDelCall(env, a.token, p.user.uuid)
+    expect(lp.of('events_changed')).toEqual([{ type: 'events_changed', events: ['halloween'], look: ['halloween'] }])
     expect(lq.of('events_changed')).toEqual([])
   })
 })

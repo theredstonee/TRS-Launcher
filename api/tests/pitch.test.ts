@@ -150,13 +150,13 @@ describe('pitch: tokens', () => {
     expect(listPitchLinks(env.ctx, OWNER)[0]).toMatchObject({ id: r.link.id, createdBy: admin.user.uuid, createdByName: 'Admina' })
   })
 
-  it('migration 30 is idempotent, the last one, and grants pitch.manage to owner + admin only', () => {
+  it('migration 30 is idempotent, registered, and grants pitch.manage to owner + admin only', () => {
     const db = new DatabaseSync(':memory:')
     db.exec('PRAGMA foreign_keys = ON')
     migrate(db)
     migratePitchLinks(db)
     migratePitchLinks(db)
-    expect(MIGRATIONS.at(-1)!.version).toBe(30)
+    expect(MIGRATIONS.find((m) => m.version === 30)?.run).toBe(migratePitchLinks)
     expect(all(db, "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'pitch_links'")).toHaveLength(1)
     const roles = all<{ id: string, permissions: string }>(db, "SELECT id, permissions FROM team_roles WHERE id IN ('owner', 'admin', 'content', 'moderator') ORDER BY id")
     const has = Object.fromEntries(roles.map((r) => [r.id, (JSON.parse(r.permissions) as string[]).includes('pitch.manage')]))

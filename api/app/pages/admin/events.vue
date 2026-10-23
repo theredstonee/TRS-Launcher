@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// Events (§32): global an/aus und einzelne Spieler freigeben. Nur mit events.manage.
+// Events (§32): global an/aus, einzelne Spieler freigeben und für einzelne Spieler nur den Look abschalten (§32.6).
+// Nur mit events.manage.
 const { a, fill, rel } = useAdminText()
 const { api, session } = useAdmin()
 
@@ -16,7 +17,12 @@ interface AdminEvent {
   enabled: boolean
   updatedAt: string | null
   players: EventPlayer[]
+  /** Look aus für diese Spieler (§32.6); fehlt bei alten Servern. */
+  lookBlocked?: EventPlayer[]
 }
+
+/** Freigabe-Liste (`players`) oder Look-Sperre (`look-blocks`). */
+type ListKind = 'players' | 'look-blocks'
 
 const NAME = /^[A-Za-z0-9_]{1,16}$/
 
@@ -25,6 +31,7 @@ const error = ref('')
 const loading = ref(true)
 const busy = ref('')
 const name = ref('')
+const lookName = ref('')
 
 // Owner-only: Part C – einen Spieler erschrecken.
 const scareTarget = ref('')
@@ -84,17 +91,18 @@ async function toggle(ev: AdminEvent) {
   }
 }
 
-async function add(ev: AdminEvent) {
-  const who = name.value.trim()
+async function add(ev: AdminEvent, kind: ListKind = 'players') {
+  const input = kind === 'players' ? name : lookName
+  const who = input.value.trim()
   if (!NAME.test(who)) {
     error.value = a.value.events.invalidName
     return
   }
-  busy.value = `a:${ev.id}`
+  busy.value = `a:${kind}:${ev.id}`
   error.value = ''
   try {
-    replace(await api<AdminEvent>(`/v1/admin/events/${encodeURIComponent(ev.id)}/players`, { method: 'POST', body: { name: who } }))
-    name.value = ''
+    replace(await api<AdminEvent>(`/v1/admin/events/${encodeURIComponent(ev.id)}/${kind}`, { method: 'POST', body: { name: who } }))
+    input.value = ''
   } catch (e) {
     error.value = fill(a.value.common.failed, { error: apiMessage(e) })
   } finally {
@@ -102,11 +110,11 @@ async function add(ev: AdminEvent) {
   }
 }
 
-async function remove(ev: AdminEvent, p: EventPlayer) {
-  busy.value = `r:${p.uuid}`
+async function remove(ev: AdminEvent, p: EventPlayer, kind: ListKind = 'players') {
+  busy.value = `r:${kind}:${p.uuid}`
   error.value = ''
   try {
-    replace(await api<AdminEvent>(`/v1/admin/events/${encodeURIComponent(ev.id)}/players/${p.uuid}`, { method: 'DELETE' }))
+    replace(await api<AdminEvent>(`/v1/admin/events/${encodeURIComponent(ev.id)}/${kind}/${p.uuid}`, { method: 'DELETE' }))
   } catch (e) {
     error.value = fill(a.value.common.failed, { error: apiMessage(e) })
   } finally {
@@ -156,7 +164,7 @@ async function remove(ev: AdminEvent, p: EventPlayer) {
           :placeholder="a.events.name"
           :aria-label="a.events.name"
         />
-        <button type="submit" class="btn btn-primary" :disabled="busy === `a:${ev.id}` || !name.trim()">{{ a.events.add }}</button>
+        <button type="submit" class="btn btn-primary" :disabled="busy === `a:players:${ev.id}` || !name.trim()">{{ a.events.add }}</button>
       </form>
       <p v-if="!ev.players.length" class="mt-4 text-sm text-base-400">{{ a.events.empty }}</p>
       <ul v-else class="mt-3 divide-y divide-base-800 text-sm">
@@ -167,9 +175,43 @@ async function remove(ev: AdminEvent, p: EventPlayer) {
           <button
             type="button"
             class="btn btn-ghost"
-            :disabled="busy === `r:${p.uuid}`"
+            :disabled="busy === `r:players:${p.uuid}`"
             :aria-label="fill(a.events.remove, { name: p.name || p.uuid })"
             @click="remove(ev, p)"
+          >
+            {{ a.events.removeLabel }}
+          </button>
+        </li>
+      </ul>
+
+      <h3 class="mt-8 font-semibold text-base-50">{{ a.events.lookTitle }}</h3>
+      <p class="mt-1 text-sm text-base-400">{{ a.events.lookLead }}</p>
+      <form class="mt-3 flex flex-wrap gap-2" @submit.prevent="add(ev, 'look-blocks')">
+        <label class="sr-only" :for="`ev-look-${ev.id}`">{{ a.events.name }}</label>
+        <input
+          :id="`ev-look-${ev.id}`"
+          v-model="lookName"
+          class="field max-w-56"
+          maxlength="16"
+          autocomplete="off"
+          spellcheck="false"
+          :placeholder="a.events.name"
+          :aria-label="a.events.name"
+        />
+        <button type="submit" class="btn btn-primary" :disabled="busy === `a:look-blocks:${ev.id}` || !lookName.trim()">{{ a.events.add }}</button>
+      </form>
+      <p v-if="!ev.lookBlocked?.length" class="mt-4 text-sm text-base-400">{{ a.events.lookEmpty }}</p>
+      <ul v-else class="mt-3 divide-y divide-base-800 text-sm">
+        <li v-for="p in ev.lookBlocked" :key="p.uuid" class="flex items-center gap-3 py-2">
+          <PlayerHead :uuid="p.uuid" :name="p.name" :size="28" />
+          <span class="min-w-0 flex-1 truncate text-base-50">{{ p.name || p.uuid }}</span>
+          <span class="text-xs text-base-400">{{ rel(p.addedAt) }}</span>
+          <button
+            type="button"
+            class="btn btn-ghost"
+            :disabled="busy === `r:look-blocks:${p.uuid}`"
+            :aria-label="fill(a.events.remove, { name: p.name || p.uuid })"
+            @click="remove(ev, p, 'look-blocks')"
           >
             {{ a.events.removeLabel }}
           </button>

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 // Halloween 2026 auf jeder Seite (nur solange das Event global an ist): Filmkorn + Vignette, Aufflackern und blutige
 // Handabdrücke nach Blitzen, krabbelnde Spinnen, Flüstern, rote Augen unten links (folgen der Maus, verstecken sich bei
-// Annäherung), Erst-Hinweis „Flackern & Rauschen“ und die Meldungen der Kürbis-Suche. Alles ohne Zeigerereignisse
-// (außer Hinweis und Meldung). „Bewegung reduzieren“: nur die Vignette, nichts bewegt sich, nichts flackert.
+// Annäherung) und der Erst-Hinweis „Flackern & Rauschen“. Alles ohne Zeigerereignisse (außer dem Hinweis). Nur mit
+// Event-Look (§32.6); die Meldungen der Kürbis-Suche zeigt HalloweenToast (gehören zum Event, nicht zum Look). „Bewegung reduzieren“: nur die Vignette, nichts bewegt sich, nichts flackert.
 const hw = useHalloween()
 const reduced = useReducedMotion()
 
@@ -20,8 +20,6 @@ let blinkTimer: ReturnType<typeof setInterval> | undefined
 let eyesBack: ReturnType<typeof setTimeout> | undefined
 
 const grainOn = computed(() => hw.flicker.value && !reduced.value)
-const toastVisible = ref(false)
-let toastTimer: ReturnType<typeof setTimeout> | undefined
 
 function later(ms: number, fn: () => void) {
   timers.push(setTimeout(fn, ms))
@@ -136,14 +134,6 @@ function onMouse(e: MouseEvent) {
   }
 }
 
-watch(() => hw.toast.value?.at, () => {
-  if (!hw.toast.value) return
-  toastVisible.value = true
-  clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => {
-    toastVisible.value = false
-  }, hw.toast.value.link ? 6000 : 3600)
-})
 watch(grainOn, () => {
   void nextTick(syncGrain)
 })
@@ -170,7 +160,6 @@ onBeforeUnmount(() => {
   clearInterval(grainTimer)
   clearInterval(blinkTimer)
   clearTimeout(eyesBack)
-  clearTimeout(toastTimer)
   window.removeEventListener('trs-bolt', onBolt)
   window.removeEventListener('mousemove', onMouse)
   document.documentElement.classList.remove('hw-flash')
@@ -213,16 +202,6 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </div>
-    <Transition name="toast">
-      <div v-if="toastVisible && hw.toast.value" class="hw-toast" role="status">
-        <HalloweenSprite name="pumpkin" class="size-8 shrink-0" />
-        <div>
-          <p class="font-semibold text-[#f3f5fb]">{{ hw.toast.value.title }}</p>
-          <p class="text-sm text-base-400">{{ hw.toast.value.text }}</p>
-          <NuxtLink v-if="hw.toast.value.link" :to="hw.toast.value.link.to" class="mt-1 inline-block text-sm font-semibold text-[#b9a2ea] underline">{{ hw.toast.value.link.label }}</NuxtLink>
-        </div>
-      </div>
-    </Transition>
   </ClientOnly>
 </template>
 
@@ -331,21 +310,6 @@ onBeforeUnmount(() => {
 }
 @keyframes rise {
   from { transform: translateY(10px); opacity: 0; }
-}
-.hw-toast {
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
-  z-index: 50;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  max-width: min(340px, calc(100vw - 32px));
-  padding: 12px 16px;
-  border: 1px solid #3b3358;
-  border-left: 3px solid #e08a3c;
-  border-radius: 10px;
-  background: rgb(20 16 33 / 0.95);
 }
 @media (prefers-reduced-motion: reduce) {
   .hw-hint { animation: none; }

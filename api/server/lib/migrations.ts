@@ -839,7 +839,30 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 30,
     run: migratePitchLinks,
   },
+  {
+    // Event-Look-Sperre (§32.6): Das Team schaltet für einzelne Spieler nur den LOOK eines Events ab (Theme, Szenen,
+    // Effekte, Spuk) – Features (Kürbis-Suche, Süßes oder Saures, Abholen) bleiben. Hängt per ON DELETE CASCADE am
+    // Event. Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 31,
+    run: migrateEventLookBlocks,
+  },
 ]
+
+/** Migration 31 (siehe oben): Look-Sperrliste je Event. Exportiert für den Idempotenz-Test. */
+export function migrateEventLookBlocks(db: DatabaseSync): void {
+  db.exec(`
+CREATE TABLE IF NOT EXISTS event_look_blocks (
+  event_id TEXT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  player_uuid TEXT NOT NULL CHECK (length(player_uuid) = 32),
+  player_name TEXT,
+  added_at INTEGER NOT NULL,
+  added_by TEXT,
+  PRIMARY KEY (event_id, player_uuid)
+);
+CREATE INDEX IF NOT EXISTS event_look_blocks_player ON event_look_blocks(player_uuid);
+`)
+}
 
 /** Migration 30 (siehe oben): Pitch-Links. Exportiert für den Idempotenz-Test. */
 export function migratePitchLinks(db: DatabaseSync): void {

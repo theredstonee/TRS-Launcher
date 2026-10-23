@@ -3,9 +3,18 @@ import { isSeoLang } from '#shared/seo'
 
 const { lang, m } = useLang()
 const route = useRoute()
-const { data: publicEvents } = await usePublicEvents()
-/** Halloween-Look, sobald das Event global an ist (`GET /v1/events`). */
-const halloween = computed(() => publicEvents.value?.events.some((e) => e.id === 'halloween' && e.active) ?? false)
+await usePublicEvents()
+/**
+ * Halloween: Event global an (`GET /v1/events`) → Meldungen der Kürbis-Suche; Look (Klasse, Overlay) nur, wenn er nicht
+ * vom Team gesperrt und nicht selbst abgeschaltet ist (§32.6, erst im Browser bekannt – kurzes Aufblitzen nach SSR ok).
+ */
+const hw = useHalloween()
+const halloween = hw.look
+const { load: loadAccount } = useAccount()
+onMounted(() => {
+  hw.loadPrefs()
+  if (hw.on.value) void loadAccount()
+})
 
 // Seiten setzen ihren vollständigen Titel selbst (usePageSeo); ohne Titel gilt der der Website.
 useHead({
@@ -36,6 +45,7 @@ watch(
 
 <template>
   <HalloweenOverlay v-if="halloween" />
+  <HalloweenToast v-if="hw.on.value" />
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>

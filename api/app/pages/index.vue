@@ -20,8 +20,10 @@ const { data: creatorData } = await useApiFetch<{ creators: Pick<SiteCreator, 'u
   }),
 })
 const homeCreators = computed(() => creatorData.value?.creators ?? [])
-/** Halloween-Hero nur, wenn das Event global an ist (dieselbe Abfrage wie die Klasse am html). */
+/** Halloween-Event global an: Karte (Kürbis-Suche, Süßes oder Saures) und Kürbis `web-home` sind da. */
 const halloween = computed(() => eventsData.value?.events.some((e) => e.id === 'halloween' && e.active) ?? false)
+/** Halloween-Look (Szene, Tropfen, Zeile): zusätzlich nicht gesperrt und nicht selbst abgeschaltet (§32.6). */
+const hwLook = useHalloween().look
 const hwText = computed(() => HALLOWEEN_TEXTS[lang.value] ?? HALLOWEEN_TEXTS.en)
 /** Bildschirm-Position zwischen den Gräbern der Szene (für den Kürbis `web-home`). */
 const graveSpot = ref<{ left: number, top: number } | null>(null)
@@ -87,9 +89,9 @@ const powered = ref(false)
 
 <template>
   <div>
-    <section class="hero relative isolate overflow-hidden" :class="{ 'hero-on': powered, 'hero-hw': halloween }" :data-hw-frame="halloween ? '' : undefined" data-fx-hero>
+    <section class="hero relative isolate overflow-hidden" :class="{ 'hero-on': powered, 'hero-hw': halloween }" :data-hw-frame="hwLook ? '' : undefined" data-fx-hero>
       <ClientOnly>
-        <HalloweenScene v-if="halloween" @anchor="onAnchor">
+        <HalloweenScene v-if="hwLook" @anchor="onAnchor">
           <div class="scrim" />
         </HalloweenScene>
         <RedstoneScene v-else :mode="powered ? 'running' : 'idle'" :anchor="lamp">
@@ -98,15 +100,16 @@ const powered = ref(false)
       </ClientOnly>
 
       <template v-if="halloween">
-        <HalloweenDrips :count="16" :seed="21" />
-        <!-- Kürbis-Suche: „Auf der Startseite, zwischen den Gräbern.“ -->
-        <HalloweenHunt v-if="graveSpot" id="web-home" class="absolute z-20 -translate-x-1/2 -translate-y-full" :style="{ left: `${graveSpot.left}px`, top: `${graveSpot.top}px`, zIndex: 30 }" />
+        <HalloweenDrips v-if="hwLook" :count="16" :seed="21" />
+        <!-- Kürbis-Suche: „Auf der Startseite, zwischen den Gräbern.“ Ohne Look (keine Gräber) unten links im Bild. -->
+        <HalloweenHunt v-if="hwLook && graveSpot" id="web-home" class="absolute z-20 -translate-x-1/2 -translate-y-full" :style="{ left: `${graveSpot.left}px`, top: `${graveSpot.top}px`, zIndex: 30 }" />
+        <HalloweenHunt v-else-if="!hwLook" id="web-home" class="hw-home-plain absolute" />
       </template>
       <div class="relative mx-auto flex h-full max-w-6xl flex-col justify-end gap-8 px-4 pt-16 pb-12 sm:px-6" data-fx-hero-content>
         <div v-if="halloween" class="hw-hero-top">
           <ClientOnly><HalloweenPanel /></ClientOnly>
         </div>
-        <p v-if="halloween" class="hw-eyebrow">{{ hwText.eyebrow }} · {{ hwText.until }}</p>
+        <p v-if="hwLook" class="hw-eyebrow">{{ hwText.eyebrow }} · {{ hwText.until }}</p>
         <!-- Die Zeile darüber gehört zur Überschrift (sichtbar, gleiche Optik wie vorher) – so steht „Minecraft-Launcher“ in der h1. -->
         <h1>
           <span class="block text-xs font-semibold tracking-[0.2em] text-lamp-300 uppercase">{{ m.home.kicker }}</span>
@@ -389,6 +392,12 @@ const powered = ref(false)
   .hw-hero-below {
     display: none;
   }
+}
+/* Kürbis `web-home` ohne Event-Design (§32.6): unauffällig unten links, über der Szene. */
+.hw-home-plain {
+  left: 1rem;
+  bottom: 0.75rem;
+  z-index: 30;
 }
 .hw-eyebrow {
   font-family: "Cormorant Garamond", Georgia, serif;
