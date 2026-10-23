@@ -56,6 +56,11 @@ class CapeFilterTest {
 		assertFalse(CapeFilter.looksSmooth(1024, 512, art), "pixelgenau hochskaliert → scharf");
 		assertTrue(CapeFilter.looksSmooth(1024, 512, hd), "Foto → weich");
 		assertFalse(CapeFilter.looksSmooth(64, 32, new int[][] {image(64, 32, CapeFilterTest::photo)}), "Vanilla-Größe bleibt scharf");
+		// Feinere HD-Pixel-Art (Raster 128/256 statt 64) bleibt scharf – so sahen die Studio-Umhänge früher aus.
+		assertFalse(CapeFilter.looksSmooth(512, 256, new int[][] {image(512, 256, (x, y) -> pixelArt(x, y, 4))}), "4×4-Blöcke auf 512");
+		assertFalse(CapeFilter.looksSmooth(1024, 512, new int[][] {image(1024, 512, (x, y) -> pixelArt(x, y, 2))}), "2×2-Blöcke auf 1024");
+		// Palette-Pixel-Art ohne exakte Blöcke (TRS-Studio-Umhänge, ~40 Farben) bleibt scharf.
+		assertFalse(CapeFilter.looksSmooth(512, 256, new int[][] {image(512, 256, (x, y) -> 0xFF000000 | (((x * 7 + y * 13) % 40) * 6) << 8)}), "40 Farben");
 		// Ein Bild von vielen glatt genügt.
 		assertTrue(CapeFilter.looksSmooth(1024, 512, new int[][] {art[0], hd[0]}));
 		// Fürs Budget so verkleinert, dass die Blöcke nicht mehr aufgehen (96 = 64 · 1,5): schon gemittelt → weich.

@@ -8,9 +8,10 @@ import java.util.List;
  * Logos, gemalte Bilder aus „HD – wie Bild“ im Launcher – werden weich gefiltert (linear + Mipmaps), damit sie aus der
  * Entfernung nicht flimmern.
  *
- * <p>Regel (wie {@code capeLooksSmooth} im Launcher): eine Umhang-Textur {@code 64·k × 32·k} ist Pixel-Art, wenn sie aus
- * einfarbigen {@code k × k}-Blöcken besteht (pixelgenau hochskaliert) oder {@code k = 1} ist – sonst HD. Ganz
- * durchsichtige Pixel zählen unabhängig von ihrer Farbe als gleich.
+ * <p>Regel (wie {@code capeLooksSmooth} im Launcher): eine Umhang-Textur ist Pixel-Art, wenn sie nur 64 breit ist, höchstens
+ * {@value #MAX_PIXEL_ART_COLORS} Farben hat (Palette, z. B. TRS-Studio-Umhänge) oder aus einfarbigen Blöcken irgendeiner
+ * Größe ≥ 2 besteht (pixelgenau hochskaliert, auch feiner als 64er-Raster) – sonst HD.
+ * Ganz durchsichtige Pixel zählen unabhängig von ihrer Farbe als gleich.
  */
 public final class CapeFilter {
 	/** Mipmaps nur bis zur Vanilla-Größe (64 breit): darunter liefen die Farben über die Kanten der UV-Inseln. */
@@ -40,16 +41,61 @@ public final class CapeFilter {
 
 	/**
 	 * Soll dieser Umhang weich gefiltert werden? {@code width}/{@code height} = Größe eines Bildes (nach einer evtl.
-	 * Verkleinerung fürs Textur-Budget). Ist die Breite kein Vielfaches von 64 mehr, wurde schon gemittelt – dann weich.
+	 * Verkleinerung fürs Textur-Budget). Pixel-Art = einfarbige Blöcke irgendeiner Größe ≥ 2 – auch feinere HD-Pixel-Art
+	 * (z. B. 4×4 auf 512 Breite) bleibt scharf; nur Fotos/gemalte Bilder werden weich. Geprüft werden die Primteiler der
+	 * Kanten (gleichförmig bei 4 ⇒ auch bei 2). Ist die Breite kein Vielfaches von 64 mehr, wurde schon gemittelt – weich.
 	 */
 	public static boolean looksSmooth(int width, int height, int[][] frames) {
 		if (width <= MIN_MIP_WIDTH || frames == null) return false;
 		if (width % 64 != 0) return true;
-		int k = width / 64;
-		for (int[] frame : frames) {
-			if (frame != null && frame.length >= width * height && !blockUniform(frame, width, height, k)) return true;
+		// Palette-Pixel-Art (TRS-Studio-/eingebaute Umhänge: 12–250 Farben, ohne exakte Blöcke) bleibt scharf;
+		// echte Fotos/gemalte Bilder haben tausende Farben.
+		if (fewColors(frames, width * height, MAX_PIXEL_ART_COLORS)) return false;
+		int g = gcd(width, height);
+		for (int p = 2; p <= g; p++) {
+			if (g % p != 0 || !prime(p)) continue;
+			boolean uniform = true;
+			for (int[] frame : frames) {
+				if (frame != null && frame.length >= width * height && !blockUniform(frame, width, height, p)) {
+					uniform = false;
+					break;
+				}
+			}
+			if (uniform) return false;
 		}
-		return false;
+		return true;
+	}
+
+	/** Höchstens so viele verschiedene Farben (ganz durchsichtig zählt als eine) gelten als Palette/Pixel-Art. */
+	public static final int MAX_PIXEL_ART_COLORS = 256;
+
+	/** Haben alle Bilder zusammen höchstens {@code limit} Farben? */
+	static boolean fewColors(int[][] frames, int pixels, int limit) {
+		java.util.HashSet<Integer> seen = new java.util.HashSet<>();
+		for (int[] frame : frames) {
+			if (frame == null) continue;
+			int n = Math.min(pixels, frame.length);
+			for (int i = 0; i < n; i++) {
+				int c = frame[i];
+				if (seen.add((c >>> 24) == 0 ? 0 : c) && seen.size() > limit) return false;
+			}
+		}
+		return true;
+	}
+
+	private static int gcd(int a, int b) {
+		while (b != 0) {
+			int t = a % b;
+			a = b;
+			b = t;
+		}
+		return a;
+	}
+
+	private static boolean prime(int n) {
+		if (n < 2) return false;
+		for (int i = 2; i * i <= n; i++) if (n % i == 0) return false;
+		return true;
 	}
 
 	/**

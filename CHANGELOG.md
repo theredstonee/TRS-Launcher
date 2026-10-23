@@ -30,6 +30,12 @@ How to write an entry:
 
 ## Unreleased
 
+### English
+- **TRS Client: pixel-art capes are sharp again.** Since TRS Client 0.19.5 many capes – all TRS capes like Tester, Dragon, Ender, Nether and the Halloween capes, plus capes made in HD pixel style – were drawn smoothed and looked blurry. Only real HD images (photos, painted pictures) are smoothed now; everything with a pixel palette stays crisp. The cape preview in the launcher uses the same rule.
+
+### Deutsch
+- **TRS Client: Pixel-Art-Umhänge sind wieder scharf.** Seit TRS Client 0.19.5 wurden viele Umhänge – alle TRS-Umhänge wie Tester, Drache, Ender, Nether und die Halloween-Umhänge sowie Umhänge im HD-Pixel-Stil – weichgezeichnet und sahen verwaschen aus. Weich gefiltert werden jetzt nur noch echte HD-Bilder (Fotos, gemalte Bilder); alles mit Pixel-Palette bleibt scharf. Die Umhang-Vorschau im Launcher nutzt dieselbe Regel.
+
 ## 0.28.0 – 2026-10-23 – Your Look | Dein Look
 <!-- banner: accent=#f07a22 motif=/news/0.28.0/banner.png -->
 <!-- shots:

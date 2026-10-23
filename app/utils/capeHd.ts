@@ -93,13 +93,29 @@ export function suggestStyle(img: Rgba, faceHeight: number): CapeStyle {
 }
 
 /**
- * Wie der TRS Client („Automatisch“): eine fertige Umhang-Textur ist „glatt“, wenn
- * sie größer als 64×32 ist und NICHT aus einfarbigen k×k-Blöcken besteht (k = Breite / 64).
+ * Wie der TRS Client („Automatisch“): eine fertige Umhang-Textur ist „glatt“, wenn sie größer als 64×32 ist und
+ * aus KEINEN einfarbigen Blöcken ≥ 2 besteht. Auch feinere HD-Pixel-Art (z. B. 4×4-Blöcke auf 512 Breite) bleibt scharf –
+ * nur Fotos/gemalte Bilder werden weich. Geprüft werden die Primteiler der Kanten (gleichförmig bei 4 ⇒ auch bei 2).
  */
+/** Höchstens so viele Farben gelten als Palette/Pixel-Art (wie `CapeFilter.MAX_PIXEL_ART_COLORS` im TRS Client). */
+const MAX_PIXEL_ART_COLORS = 256
+
 export function capeLooksSmooth(img: Rgba): boolean {
-  const k = img.width / 64
-  if (!Number.isInteger(k) || k < 2) return false
-  return !isBlockUniform(img, k)
+  if (img.width <= 64 || img.width % 64 !== 0) return false
+  // Palette-Pixel-Art (TRS-Studio-/eingebaute Umhänge: 12–250 Farben ohne exakte Blöcke) bleibt scharf.
+  if (countColors(img, MAX_PIXEL_ART_COLORS + 1) <= MAX_PIXEL_ART_COLORS) return false
+  const g = gcd(img.width, img.height)
+  for (let p = 2; p <= g; p++) {
+    if (g % p !== 0 || !isPrime(p)) continue
+    if (isBlockUniform(img, p)) return false
+  }
+  return true
+}
+
+function isPrime(n: number): boolean {
+  if (n < 2) return false
+  for (let i = 2; i * i <= n; i++) if (n % i === 0) return false
+  return true
 }
 
 /** Rand des Bildes: Anteil durchsichtiger Pixel, einfarbig?, mittlere Farbe der deckenden. */

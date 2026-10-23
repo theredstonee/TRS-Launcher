@@ -247,6 +247,17 @@ describe('Pixel-Art oder HD', () => {
     expect(capeLooksSmooth(photo(1024, 512))).toBe(true)
     expect(capeLooksSmooth(photo(64, 32))).toBe(false)
     expect(capeLooksSmooth(photo(100, 50))).toBe(false)
+    // Palette-Pixel-Art ohne exakte Blöcke (~40 Farben, wie die TRS-Studio-Umhänge) bleibt scharf.
+    const palette = { width: 512, height: 256, data: new Uint8ClampedArray(512 * 256 * 4) }
+    for (let p = 0; p < 512 * 256; p++) {
+      palette.data[p * 4 + 1] = ((p * 7) % 40) * 6
+      palette.data[p * 4 + 3] = 255
+    }
+    expect(capeLooksSmooth(palette)).toBe(false)
+    // Feinere HD-Pixel-Art (Raster 128 bzw. 256 auf 512/1024 Breite) bleibt scharf.
+    expect(capeLooksSmooth(nearestScale(pixelArt(128, 64), 4))).toBe(false)
+    expect(capeLooksSmooth(nearestScale(pixelArt(256, 128), 2))).toBe(false)
+    expect(capeLooksSmooth(nearestScale(pixelArt(128, 64), 8))).toBe(false)
   })
 })
 
