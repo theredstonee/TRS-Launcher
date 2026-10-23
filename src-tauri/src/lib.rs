@@ -350,6 +350,13 @@ pub fn run() {
                 tauri::WindowEvent::Resumed => return push::on_foreground(window.app_handle(), true),
                 _ => {}
             }
+            // Hauptfenster zu → App beenden. Sonst hält ein unsichtbares Hilfsfenster (Clip-Overlay) den Prozess
+            // ohne Oberfläche am Leben: Ein neuer Start landet dann bei diesem Prozess, und es passiert nichts.
+            #[cfg(desktop)]
+            if matches!(event, tauri::WindowEvent::Destroyed) && window.label() == "main" {
+                window.app_handle().exit(0);
+                return;
+            }
             let payload = match event {
                 tauri::WindowEvent::DragDrop(tauri::DragDropEvent::Enter { .. }) => DropEvent::Enter,
                 tauri::WindowEvent::DragDrop(tauri::DragDropEvent::Leave) => DropEvent::Leave,
