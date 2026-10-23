@@ -30,6 +30,13 @@ How to write an entry:
 
 ## Unreleased
 
+## 0.27.2 – 2026-10-23 – Clean Cut | Sauberer Schnitt
+<!-- banner: accent=#3ee6c8 motif=/news/0.27.2/banner.png -->
+<!-- shots:
+/news/0.27.2/overlay-on-screen.png | On screen you still see the buffer indicator and “Clip saved” – exactly where you placed the Clips element | Am Bildschirm siehst du Puffer-Anzeige und „Clip gespeichert“ weiter – genau dort, wo du das Clips-Element hingelegt hast
+/news/0.27.2/clip-clean.png | The same moment in the saved clip: no indicator, no message | Derselbe Moment im gespeicherten Clip: keine Anzeige, keine Meldung
+-->
+
 ### English
 - **Clips: no more buffer indicator or clip messages in your recordings.** Like the REC timer, the "○ Buffer 30 s" indicator and short messages such as "Clip saved (30 s)", "Recording started" or errors now appear in the small launcher overlay above the game instead of inside it – you still see them, but they never show up in a saved clip. The overlay sits exactly where you placed the "Clips" element in the HUD editor (by default on the right, above the middle), so it never covers your other HUD elements, and a new message no longer hides "Clip saved" when you start a recording right after it. Needs the new TRS Client; older TRS Client versions keep showing them in the game.
 - **Fixed:** when the clip overlay appeared for the first time (e.g. when a recording started), the launcher window could freeze completely and the REC timer never showed up.
