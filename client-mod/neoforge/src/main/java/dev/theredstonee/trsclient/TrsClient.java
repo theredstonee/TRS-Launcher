@@ -194,6 +194,9 @@ public final class TrsClient {
 				dev.theredstonee.trsclient.core.perf.PerfCompat.NEOFORGE, modVersion("minecraft"), message -> LOGGER.info(message), true);
 		// Netzwerk-Optimierung + Ping-Messung (Handler an der Client-Verbindung, siehe core.net).
 		dev.theredstonee.trsclient.net.NetHooks.init(modules, message -> LOGGER.info(message));
+		// TRS Server Rules: Server sperrt/erzwingt Module (Kanäle trsclient:rules/hello, Logik in core.serverrules).
+		dev.theredstonee.trsclient.net.ServerRulesNet.init(modBus, modules, modVersion(MOD_ID), modVersion("minecraft"),
+				message -> LOGGER.info(message));
 		AutoTest.installIfRequested();
 
 		LOGGER.info("TRS Client {} initialisiert (NeoForge {}) – {} Module, Config {} ({})",
