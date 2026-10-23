@@ -30,6 +30,13 @@ How to write an entry:
 
 ## Unreleased
 
+## 0.28.0 – 2026-10-23 – Your Look | Dein Look
+<!-- banner: accent=#f07a22 motif=/news/0.28.0/banner.png -->
+<!-- shots:
+/news/0.28.0/website-look-on.png | Halloween with the event design | Halloween mit Event-Design
+/news/0.28.0/website-look-off.png | Event design turned off – the pumpkin hunt card stays | Event-Design ausgeschaltet – die Karte zur Kürbis-Suche bleibt
+-->
+
 ### English
 - **New: turn off the event design.** Settings → Appearance → "Show event design (e.g. Halloween)". Switched off, the launcher keeps its normal look during an event – no night colours, scenes, moon progress bars, atmosphere or event icon. The pumpkin hunt, trick or treat, stickers and rewards stay available, and every pumpkin can still be found. The TRS Client follows the setting in game.
 - **Team area:** each event has a new "Look off for …" list. Players on it get the event without its design and effects; the event content stays for them.
