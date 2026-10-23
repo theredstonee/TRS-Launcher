@@ -37,6 +37,8 @@ public abstract class UiScreen {
 		}
 		hits.clear();
 		draw(c, width, height, mouseX, mouseY, dt);
+		// TRS Server Rules: Nachfrage für das TRS-Team liegt über allem.
+		dev.theredstonee.trsclient.core.serverrules.BypassPrompt.draw(c, hits, width, height, mouseX, mouseY);
 		// Halloween (nur während des Events): Filmkorn, Hinweise, Toasts „Kürbis gefunden!“.
 		dev.theredstonee.trsclient.core.halloween.HalloweenOverlay.afterScreen(c, hits, width, height, mouseX, mouseY, overlay());
 	}
@@ -65,10 +67,13 @@ public abstract class UiScreen {
 			hits.clear();
 			if (s == 1f) {
 				draw(c, width, height, px, py, dt);
+				dev.theredstonee.trsclient.core.serverrules.BypassPrompt.draw(c, hits, width, height, px, py);
 			} else {
 				c.push();
 				c.scale(s);
-				draw(ScaledCanvas.of(c, s), vw, vh, px, py, dt);
+				Canvas scaled = ScaledCanvas.of(c, s);
+				draw(scaled, vw, vh, px, py, dt);
+				dev.theredstonee.trsclient.core.serverrules.BypassPrompt.draw(scaled, hits, vw, vh, px, py);
 				c.pop();
 			}
 			TouchKeyboard.reportUi(TouchKeyboard.fieldOf(this), nowMs);
@@ -129,6 +134,11 @@ public abstract class UiScreen {
 
 	/** Maustaste gedrückt (Bildschirmkoordinaten). */
 	public final boolean inputClick(double mouseX, double mouseY, int button) {
+		if (!TouchMode.enabled() && dev.theredstonee.trsclient.core.serverrules.BypassPrompt.isOpen()) {
+			// Offene Nachfrage: nur ihre Knöpfe zählen, nichts darunter.
+			hits.click(mouseX, mouseY, button);
+			return true;
+		}
 		if (!TouchMode.enabled()) return mouseClicked(mouseX, mouseY, button);
 		Object before = TouchKeyboard.enter(this);
 		try {
@@ -162,12 +172,14 @@ public abstract class UiScreen {
 
 	/** Mausrad (echtes Rad oder Touchpad – im Touch-Modus nur umgerechnet). */
 	public final boolean inputScroll(double mouseX, double mouseY, double amount) {
+		if (dev.theredstonee.trsclient.core.serverrules.BypassPrompt.isOpen()) return true;
 		if (!TouchMode.enabled()) return mouseScrolled(mouseX, mouseY, amount);
 		return mouseScrolled(mouseX / touchScale, mouseY / touchScale, amount);
 	}
 
 	/** Taste (wie {@link #keyPressed}; im Touch-Modus mit Fokus-Zuordnung für die Bildschirmtastatur). */
 	public final boolean inputKey(int rawKey, UiKey key, boolean shift) {
+		if (dev.theredstonee.trsclient.core.serverrules.BypassPrompt.key(key)) return true;
 		if (!TouchMode.enabled()) return keyPressed(rawKey, key, shift);
 		Object before = TouchKeyboard.enter(this);
 		try {
@@ -179,6 +191,7 @@ public abstract class UiScreen {
 
 	/** Zeichen (wie {@link #charTyped}). */
 	public final boolean inputChar(char c) {
+		if (dev.theredstonee.trsclient.core.serverrules.BypassPrompt.isOpen()) return true;
 		if (!TouchMode.enabled()) return charTyped(c);
 		Object before = TouchKeyboard.enter(this);
 		try {

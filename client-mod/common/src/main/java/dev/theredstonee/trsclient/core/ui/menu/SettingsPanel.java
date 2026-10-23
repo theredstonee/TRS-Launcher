@@ -1,5 +1,6 @@
 package dev.theredstonee.trsclient.core.ui.menu;
 
+import dev.theredstonee.trsclient.core.i18n.I18n;
 import dev.theredstonee.trsclient.core.module.BoolSetting;
 import dev.theredstonee.trsclient.core.module.ChoiceSetting;
 import dev.theredstonee.trsclient.core.module.ColorSetting;
@@ -7,6 +8,7 @@ import dev.theredstonee.trsclient.core.module.KeySetting;
 import dev.theredstonee.trsclient.core.module.NumberSetting;
 import dev.theredstonee.trsclient.core.module.Setting;
 import dev.theredstonee.trsclient.core.module.TextSetting;
+import dev.theredstonee.trsclient.core.serverrules.BypassPrompt;
 import dev.theredstonee.trsclient.core.ui.Anim;
 import dev.theredstonee.trsclient.core.ui.Canvas;
 import dev.theredstonee.trsclient.core.ui.ColorMath;
@@ -103,9 +105,9 @@ public final class SettingsPanel {
 		// Textzeilen haben rechts ein breites Eingabefeld – dann den Namen früher abschneiden.
 		// Schalter sind schmal (24 px) – dort bekommt der Name fast die ganze Zeile.
 		int labelWidth = s instanceof TextSetting ? w - textFieldWidth(c, s, w) - 8 : s instanceof BoolSetting ? w - 34 : w - 90;
-		if (s instanceof BoolSetting && ((BoolSetting) s).locked()) {
-			labelWidth -= c.textWidth(dev.theredstonee.trsclient.core.i18n.I18n.tr("settings.serverLocked")) + 6;
-		}
+		// Vom Server festgelegt/begrenzt: kurzer Hinweis vor dem Bedienelement.
+		String hint = serverHint(s);
+		if (hint != null) labelWidth -= c.textWidth(hint) + 6;
 		boolean isNew = badge != null && badge.isNew(s);
 		int badgeW = isNew ? NewBadge.width(c) + 4 : 0;
 		Paint.textClipped(c, s.label(), x + 2, y + 6, labelWidth - badgeW, t.text, false);
@@ -115,21 +117,22 @@ public final class SettingsPanel {
 			int bw = 24;
 			int bx = right - bw;
 			if (b.locked()) {
-				// Vom Server erzwungen: ausgegraut, nicht klickbar, kurzer Hinweis davor.
+				// Vom Server erzwungen: ausgegraut, nicht klickbar (TRS-Team: Nachfrage), kurzer Hinweis davor.
 				Paint.toggle(c, bx, y + 4, bw, 12, b.get() ? 1f : 0f, false);
 				c.fill(bx, y + 4, bx + bw, y + 16, ColorMath.withAlpha(t.surface, 150));
-				Paint.textRight(c, dev.theredstonee.trsclient.core.i18n.I18n.tr("settings.serverLocked"), bx - 4, y + 6, t.textDim, false);
+				Paint.textRight(c, hint, bx - 4, y + 6, t.textDim, false);
+				if (BypassPrompt.available(b)) hits.add(bx - 4, y, bw + 4, 18, ask(b, new Toggle(b)));
 			} else {
 				boolean hover = inside(mx, my, bx - 4, y, bw + 4, 18);
 				Paint.toggle(c, bx, y + 4, bw, 12, b.get() ? 1f : 0f, hover);
 				hits.add(bx - 4, y, bw + 4, 18, new Toggle(b));
 			}
 		} else if (s instanceof NumberSetting) {
-			number(c, hits, (NumberSetting) s, x, y, w, mx, my);
+			number(c, hits, (NumberSetting) s, x, y, w, mx, my, hint);
 		} else if (s instanceof ColorSetting) {
 			color(c, hits, (ColorSetting) s, x, y, w, rowHeight, mx, my);
 		} else if (s instanceof ChoiceSetting) {
-			choice(c, hits, (ChoiceSetting<?>) s, x, y, w, mx, my);
+			choice(c, hits, (ChoiceSetting<?>) s, x, y, w, mx, my, hint);
 		} else if (s instanceof KeySetting) {
 			key(c, hits, (KeySetting) s, x, y, w, mx, my);
 		} else if (s instanceof TextSetting) {
@@ -137,14 +140,37 @@ public final class SettingsPanel {
 		}
 	}
 
-	private void number(Canvas c, Hits hits, final NumberSetting n, int x, int y, int w, int mx, int my) {
+	private void number(Canvas c, Hits hits, final NumberSetting n, int x, int y, int w, int mx, int my, String hint) {
 		Theme t = Theme.get();
-		Paint.textRight(c, n.display(), x + w, y + 6, t.dustOn, false);
+		String value = n.display();
+		Paint.textRight(c, value, x + w, y + 6, t.dustOn, false);
+		if (hint != null) Paint.textRight(c, hint, x + w - c.textWidth(value) - 6, y + 6, t.textDim, false);
 		final int sliderX = x + 2;
 		final int sliderW = Math.max(20, w - 4);
 		int sliderY = y + 17;
-		boolean hover = inside(mx, my, sliderX - 2, sliderY - 4, sliderW + 4, 12);
+		boolean fixed = n.serverFixed();
+		boolean hover = !fixed && inside(mx, my, sliderX - 2, sliderY - 4, sliderW + 4, 12);
 		Paint.slider(c, sliderX, sliderY - 4, sliderW, 10, (float) n.fraction(), hover);
+		if (fixed) {
+			// Wert vom Server festgelegt: Regler ausgegraut.
+			c.fill(sliderX, sliderY - 4, sliderX + sliderW, sliderY + 6, ColorMath.withAlpha(t.surface, 150));
+		} else if (n.serverLocked()) {
+			// Grenzen vom Server: der erlaubte Bereich als Staubspur unter dem Regler.
+			double lo = Double.isNaN(n.serverMin()) ? n.min() : n.serverMin();
+			double hi = Double.isNaN(n.serverMax()) ? n.max() : n.serverMax();
+			double span = n.max() - n.min();
+			if (span > 0) {
+				int ax = sliderX + (int) Math.round((lo - n.min()) / span * sliderW);
+				int bx = sliderX + (int) Math.round((hi - n.min()) / span * sliderW);
+				c.fill(ax, sliderY + 7, Math.max(ax + 1, bx), sliderY + 8, ColorMath.withAlpha(t.dustOn, 200));
+			}
+		}
+		if (BypassPrompt.available(n)) {
+			// TRS-Team: erst fragen, danach ist der Regler frei.
+			hits.add(sliderX - 3, sliderY - 6, sliderW + 6, 14, ask(n, null));
+			return;
+		}
+		if (fixed) return;
 		hits.addDrag(sliderX - 3, sliderY - 6, sliderW + 6, 14, new Hits.Drag() {
 			@Override
 			public void to(double mouseX, double mouseY) {
@@ -284,11 +310,28 @@ public final class SettingsPanel {
 		return true;
 	}
 
-	private void choice(Canvas c, Hits hits, final ChoiceSetting<?> choice, int x, int y, int w, int mx, int my) {
+	private void choice(Canvas c, Hits hits, final ChoiceSetting<?> choice, int x, int y, int w, int mx, int my, String hint) {
 		Theme t = Theme.get();
-		String label = choice.display() + "  ▾";
+		boolean locked = choice.serverLocked();
+		String label = locked ? choice.display() : choice.display() + "  ▾";
 		int bw = Math.min(Math.max(46, c.textWidth(label) + 12), Math.max(46, w - 60));
 		int bx = x + w - bw;
+		if (locked) {
+			// Vom Server festgelegt: ausgegraut, keine Liste (TRS-Team: Nachfrage, danach klappt sie auf).
+			if (expanded == choice) expanded = null;
+			Redstone.stone(c, bx, y + 2, bw, 15, t.surface, t.border);
+			Paint.textCentered(c, c.clip(label, bw - 6), bx + bw / 2, y + 6, t.textDim, false);
+			if (hint != null) Paint.textRight(c, hint, bx - 4, y + 6, t.textDim, false);
+			if (BypassPrompt.available(choice)) {
+				hits.add(bx, y + 2, bw, 14, ask(choice, new Runnable() {
+					@Override
+					public void run() {
+						expanded = choice;
+					}
+				}));
+			}
+			return;
+		}
 		boolean hover = inside(mx, my, bx, y + 2, bw, 14);
 		boolean open = expanded == choice;
 		Redstone.stone(c, bx, y + 2, bw, 15, hover || open ? t.surfaceHover : t.surfaceHigh, open ? t.accent : (hover ? t.textDim : t.border));
@@ -477,6 +520,36 @@ public final class SettingsPanel {
 				c.fill(x + px, y + py, x + Math.min(px + 4, w), y + Math.min(py + 4, h), dark ? 0xFF6A6A78 : 0xFF9A9AA8);
 			}
 		}
+	}
+
+	/**
+	 * Hinweis vor einem gesperrten Bedienelement: „Vom Server“ bzw. bei Zahlen-Grenzen der erlaubte Bereich
+	 * (null = keine Sperre).
+	 */
+	static String serverHint(Setting s) {
+		if (s instanceof BoolSetting) {
+			return ((BoolSetting) s).locked() ? I18n.tr("settings.serverLocked") : null;
+		}
+		if (!s.serverLocked()) return null;
+		if (s instanceof NumberSetting && !s.serverFixed()) {
+			NumberSetting n = (NumberSetting) s;
+			boolean lo = !Double.isNaN(n.serverMin());
+			boolean hi = !Double.isNaN(n.serverMax());
+			if (lo && hi) return I18n.tr("settings.serverRange", n.format(n.serverMin()), n.format(n.serverMax()));
+			if (hi) return I18n.tr("settings.serverMax", n.format(n.serverMax()));
+			if (lo) return I18n.tr("settings.serverMin", n.format(n.serverMin()));
+		}
+		return I18n.tr("settings.serverLocked");
+	}
+
+	/** Klick auf ein gesperrtes Element (TRS-Team): Nachfrage öffnen, nach „Ja“ {@code then}. */
+	private static Runnable ask(final Setting s, final Runnable then) {
+		return new Runnable() {
+			@Override
+			public void run() {
+				BypassPrompt.ask(s.moduleId(), then);
+			}
+		};
 	}
 
 	/** Schließt aufgeklappte Bereiche; true, wenn etwas geschlossen wurde. */

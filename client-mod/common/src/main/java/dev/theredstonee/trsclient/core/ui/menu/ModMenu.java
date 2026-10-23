@@ -922,8 +922,12 @@ public final class ModMenu extends UiScreen {
 		int tw = 24;
 		int tx = x + w - tw - 8;
 		int ty = y + 10;
-		boolean toggleHover = inside(mx, my, tx - 3, ty - 3, tw + 6, 18);
+		boolean moduleLocked = m.serverLocked();
+		boolean toggleHover = !moduleLocked && inside(mx, my, tx - 3, ty - 3, tw + 6, 18);
 		Paint.toggle(c, tx, ty, tw, 12, progress, toggleHover);
+		if (moduleLocked) c.fill(tx, ty, tx + tw, ty + 12, ColorMath.withAlpha(t.surface, 150));
+		// Vom Server gesperrt/begrenzt: Schloss neben dem Schalter.
+		if (m.serverRestricted()) Icons.draw(c, "lock", tx - 11, ty + 2, 1, moduleLocked ? t.dustOn : t.textDim);
 
 		// Name ungekürzt: notfalls in zwei Zeilen.
 		boolean gear = !m.settings().isEmpty();
@@ -948,13 +952,33 @@ public final class ModMenu extends UiScreen {
 				panel.reset();
 			}
 		});
-		hits.add(tx - 3, ty - 3, tw + 6, 18, new Runnable() {
+		hits.add(tx - 3, ty - 3, tw + 6, 18, toggleAction(m));
+	}
+
+	/**
+	 * Klick auf den An/Aus-Schalter eines Moduls. Vom Server gesperrt: nichts (TRS-Team: Nachfrage, nach „Ja“ wird
+	 * umgeschaltet).
+	 */
+	private Runnable toggleAction(final Module m) {
+		return new Runnable() {
 			@Override
 			public void run() {
-				host.playClick();
-				m.toggle();
+				if (!m.serverLocked()) {
+					host.playClick();
+					m.toggle();
+					return;
+				}
+				if (dev.theredstonee.trsclient.core.serverrules.BypassPrompt.available(m)) {
+					host.playClick();
+					dev.theredstonee.trsclient.core.serverrules.BypassPrompt.ask(m.id(), new Runnable() {
+						@Override
+						public void run() {
+							m.toggle();
+						}
+					});
+				}
 			}
-		});
+		};
 	}
 
 	/** Schmaler Rollbalken: unbestromter Staub, der sichtbare Teil leuchtet. */
@@ -1004,15 +1028,11 @@ public final class ModMenu extends UiScreen {
 
 		int tw = 26;
 		int tx = x + w - tw - 2;
-		boolean toggleHover = inside(mx, my, tx - 3, y + 2, tw + 6, 18);
+		boolean moduleLocked = m.serverLocked();
+		boolean toggleHover = !moduleLocked && inside(mx, my, tx - 3, y + 2, tw + 6, 18);
 		Paint.toggle(c, tx, y + 5, tw, 13, progress, toggleHover);
-		hits.add(tx - 3, y + 2, tw + 6, 18, new Runnable() {
-			@Override
-			public void run() {
-				host.playClick();
-				m.toggle();
-			}
-		});
+		if (moduleLocked) c.fill(tx, y + 5, tx + tw, y + 18, ColorMath.withAlpha(t.surface, 150));
+		hits.add(tx - 3, y + 2, tw + 6, 18, toggleAction(m));
 		int resetX = tx - 26;
 		boolean resetHover = inside(mx, my, resetX, y + 2, 18, 18);
 		Paint.iconButton(c, resetX, y + 2, 18, "reset", resetHover, false);
@@ -1026,7 +1046,9 @@ public final class ModMenu extends UiScreen {
 		int nameX = x + 52;
 		c.text(c.clip(m.name(), resetX - nameX - 6), nameX, y + 4, t.text, false);
 		String state = m.isEnabled() ? I18n.tr("common.enabled") : I18n.tr("common.disabled");
-		c.text(c.clip(state + " · " + m.category().label(), resetX - nameX - 6), nameX, y + 14, m.isEnabled() ? t.dustOn : t.textDim, false);
+		// Vom Server gesperrt (oder Einstellungen begrenzt): statt der Kategorie „Vom Server“.
+		String where = m.serverRestricted() ? I18n.tr("settings.serverLocked") : m.category().label();
+		c.text(c.clip(state + " · " + where, resetX - nameX - 6), nameX, y + 14, m.isEnabled() ? t.dustOn : t.textDim, false);
 
 		int top = y + headH + 8;
 		c.fill(x, top - 4, x + w, top - 3, t.border);

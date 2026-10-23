@@ -111,6 +111,9 @@ def fapiModules = [
 ]
 // HudRenderCallback gibt es erst ab 1.15 – in 1.14 hängt sich der HUD per eigenem Mixin ein.
 if (stonecutter.eval(mc, '>=1.15')) fapiModules << 'fabric-rendering-v1'
+// TRS Server Rules (Kanäle trsclient:rules/hello): Networking API v1 – nur die Fabric API für 1.16.2/1.16.3 hat sie
+// noch nicht (dort das alte fabric-networking-v0 ohne Verbindungs-Events, siehe net/ServerRulesNet).
+fapiModules << (stonecutter.eval(mc, '>=1.16') && stonecutter.eval(mc, '<1.16.4') ? 'fabric-networking-v0' : 'fabric-networking-api-v1')
 // Die komplette Fabric API nur, wenn genau diese Version gestartet wird (:fabric:<v>:runClient)
 // oder mit -PtrsFullApi – Loom verarbeitet Mod-Abhängigkeiten schon beim Konfigurieren.
 def running = project.hasProperty('trsFullApi') ||

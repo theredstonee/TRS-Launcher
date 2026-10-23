@@ -19,6 +19,8 @@ public final class ChoiceSetting<E extends Enum<E> & ChoiceSetting.Option> exten
 	private String[] optionKeys;
 	private final E defaultValue;
 	private E value;
+	/** Vom Server erzwungene Option (null = keine). */
+	private E serverValue;
 
 	public ChoiceSetting(String key, String label, Class<E> type, E defaultValue) {
 		super(key, label);
@@ -27,8 +29,41 @@ public final class ChoiceSetting<E extends Enum<E> & ChoiceSetting.Option> exten
 		this.value = defaultValue;
 	}
 
+	/** Wirksame Option (bei einer Server-Regel die erzwungene). */
 	public E get() {
+		E forced = serverValue;
+		return forced != null ? forced : value;
+	}
+
+	/** Die eigene (gespeicherte) Option – ohne Server-Regel. */
+	public E own() {
 		return value;
+	}
+
+	/**
+	 * Option vom Server erzwingen – per Enum-Name (ohne Groß-/Kleinschreibung).
+	 *
+	 * @return false, wenn es die Option nicht gibt (dann bleibt alles, wie es ist)
+	 */
+	public boolean serverForce(String name) {
+		if (name == null) return false;
+		for (E e : options) {
+			if (e.name().equalsIgnoreCase(name.trim())) {
+				serverValue = e;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Override
+	public boolean serverLocked() {
+		return serverValue != null;
+	}
+
+	@Override
+	public void clearServerLock() {
+		serverValue = null;
 	}
 
 	public void set(E value) {
@@ -37,6 +72,7 @@ public final class ChoiceSetting<E extends Enum<E> & ChoiceSetting.Option> exten
 
 	/** Nächste ({@code steps} > 0) bzw. vorherige Option, rundherum. */
 	public void cycle(int steps) {
+		if (serverValue != null) return;
 		int n = options.length;
 		value = options[Math.floorMod(value.ordinal() + steps, n)];
 	}
@@ -70,16 +106,17 @@ public final class ChoiceSetting<E extends Enum<E> & ChoiceSetting.Option> exten
 
 	/** Index der aktuellen Option. */
 	public int index() {
-		return value.ordinal();
+		return get().ordinal();
 	}
 
-	/** Wählt die Option {@code i} (außerhalb des Bereichs → unverändert). */
+	/** Wählt die Option {@code i} (außerhalb des Bereichs oder bei einer Server-Regel → unverändert). */
 	public void setIndex(int i) {
+		if (serverValue != null) return;
 		if (i >= 0 && i < options.length) value = options[i];
 	}
 
 	public String display() {
-		return optionLabel(value.ordinal());
+		return optionLabel(get().ordinal());
 	}
 
 	@Override

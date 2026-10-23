@@ -19,6 +19,8 @@ public class Module {
 	private final boolean defaultEnabled;
 	private final List<Setting> settings = new ArrayList<>();
 	private boolean enabled;
+	/** Vom Server erzwungen an/aus (null = der Spieler entscheidet), siehe {@code core.serverrules}. */
+	private Boolean serverEnabled;
 	/** Menü-Reiter; null = automatisch (HUD-Module → HUD, sonst Sonstiges). */
 	private Category category;
 	/** Symbol-ID (siehe core.ui.Icons); null = Symbol der Kategorie. */
@@ -67,16 +69,56 @@ public class Module {
 		return descriptionKey;
 	}
 
+	/** Wirksamer Zustand (bei einer Server-Sperre der erzwungene). */
 	public boolean isEnabled() {
+		Boolean forced = serverEnabled;
+		return forced != null ? forced.booleanValue() : enabled;
+	}
+
+	/** Der eigene (gespeicherte) Zustand – ohne Server-Sperre. */
+	public boolean ownEnabled() {
 		return enabled;
 	}
 
+	/** Setzt den eigenen Zustand (eine Server-Sperre bleibt trotzdem wirksam, bis sie endet). */
 	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
 	}
 
+	/** Umschalten (bei einer Server-Sperre ohne Wirkung). */
 	public void toggle() {
+		if (serverEnabled != null) return;
 		enabled = !enabled;
+	}
+
+	// --- Sperre durch den Server (core.serverrules) ---
+
+	/**
+	 * An/Aus vom Server erzwingen ({@code null} = aufheben). Wie {@link BoolSetting#lock}: der eigene Zustand bleibt
+	 * gespeichert und gilt wieder, sobald die Sperre endet.
+	 */
+	public void serverLock(Boolean enabled) {
+		this.serverEnabled = enabled;
+	}
+
+	/** Ist An/Aus gerade vom Server festgelegt? */
+	public boolean serverLocked() {
+		return serverEnabled != null;
+	}
+
+	/** Gilt für das Modul oder eine seiner Einstellungen gerade eine Server-Regel? */
+	public boolean serverRestricted() {
+		if (serverEnabled != null) return true;
+		for (int i = 0; i < settings.size(); i++) {
+			if (settings.get(i).serverLocked()) return true;
+		}
+		return false;
+	}
+
+	/** Alle Server-Regeln des Moduls und seiner Einstellungen aufheben. */
+	public void clearServerLocks() {
+		serverEnabled = null;
+		for (int i = 0; i < settings.size(); i++) settings.get(i).clearServerLock();
 	}
 
 	public List<Setting> settings() {

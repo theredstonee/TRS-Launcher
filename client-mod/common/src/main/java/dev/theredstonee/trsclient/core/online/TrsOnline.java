@@ -327,6 +327,8 @@ public final class TrsOnline {
 			ownUuid = session.uuid;
 			token = null;
 			shareServer = null;
+			// Team-Rechte gehören zum alten Konto.
+			dev.theredstonee.trsclient.core.serverrules.ServerRules.team(null, null);
 			directory.clear();
 			loginFailures = 0;
 			nextLoginAt = 0;
@@ -748,6 +750,9 @@ public final class TrsOnline {
 		if (me == null) return;
 		// events auch ohne settings (null = Feld fehlt, alte API: Launcher-Datei behalten).
 		dev.theredstonee.trsclient.core.halloween.Halloween.fromApi(me.events, me.eventLook);
+		// TRS Server Rules: Team-Recht serverrules.bypass (Nachfrage „trotzdem benutzen?“).
+		dev.theredstonee.trsclient.core.serverrules.ServerRules.team(me.team == null ? null : me.team.owner,
+				me.team == null ? null : me.team.permissions);
 		if (me.settings == null) return;
 		shareServer = me.settings.shareServer;
 	}
