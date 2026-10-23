@@ -9,6 +9,8 @@ public final class BoolSetting extends Setting {
 	/** Sperre (z. B. vom Server erzwungen): solange sie greift, gilt {@link #lockedValue} statt des eigenen Werts. */
 	private java.util.function.BooleanSupplier lock;
 	private boolean lockedValue;
+	/** Vom Server erzwungener Wert (null = keiner); eine eigene {@link #lock}-Sperre hat Vorrang. */
+	private Boolean serverValue;
 
 	public BoolSetting(String key, String label, boolean defaultValue) {
 		super(key, label);
@@ -18,7 +20,14 @@ public final class BoolSetting extends Setting {
 
 	/** Wirksamer Wert (bei aktiver Sperre der erzwungene). */
 	public boolean get() {
-		return lock != null && locked() ? lockedValue : value;
+		if (lock != null && localLocked()) return lockedValue;
+		Boolean forced = serverValue;
+		return forced != null ? forced.booleanValue() : value;
+	}
+
+	/** Der eigene (gespeicherte) Wert – ohne Sperren. */
+	public boolean own() {
+		return value;
 	}
 
 	/**
@@ -31,14 +40,34 @@ public final class BoolSetting extends Setting {
 		return this;
 	}
 
-	/** Greift gerade eine Sperre? */
+	/** Greift gerade eine Sperre (eigene oder vom Server)? */
 	public boolean locked() {
+		return serverValue != null || localLocked();
+	}
+
+	/** Greift die eigene Sperre (z. B. Freecam-Codes im Chat/MOTD)? */
+	public boolean localLocked() {
 		if (lock == null) return false;
 		try {
 			return lock.getAsBoolean();
 		} catch (RuntimeException e) {
 			return false;
 		}
+	}
+
+	/** Wert vom Server erzwingen (null = aufheben). */
+	public void serverForce(Boolean value) {
+		this.serverValue = value;
+	}
+
+	@Override
+	public boolean serverLocked() {
+		return serverValue != null;
+	}
+
+	@Override
+	public void clearServerLock() {
+		serverValue = null;
 	}
 
 	public void set(boolean value) {

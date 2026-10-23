@@ -19,6 +19,8 @@ public abstract class Setting {
 	private Object labelArg;
 	private String cachedLabel;
 	private int cachedGeneration = -1;
+	/** ID des Moduls, zu dem die Einstellung gehört (gesetzt von {@link Module#add}). */
+	private String moduleId;
 
 	protected Setting(String key, String label) {
 		this.key = key;
@@ -40,6 +42,7 @@ public abstract class Setting {
 
 	/** Hängt die Einstellung an ihr Modul (Standard-Schlüssel "setting.<modul>.<key>"). */
 	void bind(String moduleId) {
+		this.moduleId = moduleId;
 		if (labelKey == null) labelKey = "setting." + moduleId + "." + key;
 		onBound();
 	}
@@ -73,6 +76,30 @@ public abstract class Setting {
 	/** Englischer Name aus dem Code (die Suche findet Module auch auf Englisch). */
 	public String fallbackLabel() {
 		return labelArg == null ? label : I18n.format(label, labelArg);
+	}
+
+	/** ID des Moduls, zu dem die Einstellung gehört (null, solange ungebunden). */
+	public String moduleId() {
+		return moduleId;
+	}
+
+	// --- Sperre durch den Server (core.serverrules) ---
+
+	/**
+	 * Greift gerade eine Server-Regel (fester Wert oder Grenzen)? Der eigene Wert bleibt gespeichert und gilt wieder,
+	 * sobald die Regel endet. Nur Schalter, Zahlen und Auswahllisten kennen Server-Regeln.
+	 */
+	public boolean serverLocked() {
+		return false;
+	}
+
+	/** Liegt der Wert durch den Server fest (Bedienelement ausgegraut)? Grenzen allein lassen das Element bedienbar. */
+	public boolean serverFixed() {
+		return serverLocked();
+	}
+
+	/** Server-Regel aufheben (Trennen, neue Regeln, TRS-Team-Freigabe). */
+	public void clearServerLock() {
 	}
 
 	/** Übernimmt den Wert aus der Config (oder den Standard). */

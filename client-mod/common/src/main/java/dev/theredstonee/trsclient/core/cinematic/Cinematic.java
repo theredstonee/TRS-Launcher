@@ -286,6 +286,10 @@ public final class Cinematic {
 			host.actionBar(I18n.tr("cinematic.msg.freecamOff"));
 			return;
 		}
+		if (serverBlocked()) {
+			host.actionBar(I18n.tr("cinematic.msg.freecamBlocked"));
+			return;
+		}
 		if (!settings.cinematic.isEnabled() || playing || !refreshKey(host)) return;
 		updateRules(host);
 		if (!rules.allowed()) {
@@ -344,6 +348,11 @@ public final class Cinematic {
 		settings.freecamSpeed.set(next);
 		host.actionBar(I18n.tr("cinematic.msg.speed", speedText()));
 		return true;
+	}
+
+	/** Sperrt der Server (TRS Server Rules) die Kamera-Fahrten samt freier Kamera? */
+	private boolean serverBlocked() {
+		return settings.cinematic.serverLocked() && !settings.cinematic.isEnabled();
 	}
 
 	/** Gilt Fair Play (eigene Einstellung oder vom Server erzwungen)? */
@@ -419,7 +428,7 @@ public final class Cinematic {
 			key = now;
 		}
 		if (freecam.active() && (!settings.cinematic.isEnabled() || !rules.allowed())) {
-			boolean blocked = !rules.allowed();
+			boolean blocked = !rules.allowed() || serverBlocked();
 			exitFreecam(host);
 			if (blocked) host.actionBar(I18n.tr("cinematic.msg.freecamBlocked"));
 		}
