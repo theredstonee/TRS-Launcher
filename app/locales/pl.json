@@ -826,6 +826,7 @@
       "storageFull": "Serwer TRS nie ma teraz miejsca – spróbuj później.",
       "unchanged": "Od ostatniej wersji nic się nie zmieniło.",
       "invalidPack": "Serwer odrzucił modpack – to nie jest prawidłowy pack Modrinth.",
+      "invalidPackReason": "Serwer odrzucił modpack: {reason}",
       "noRecipients": "Modpacki możesz wysyłać tylko znajomym.",
       "invalidDuration": "Nieprawidłowy czas ważności."
     },

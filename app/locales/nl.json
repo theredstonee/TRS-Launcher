@@ -826,6 +826,7 @@
       "storageFull": "De TRS-server heeft nu geen ruimte – probeer het later opnieuw.",
       "unchanged": "Er is niets veranderd sinds de vorige versie.",
       "invalidPack": "De server heeft het modpack geweigerd – het is geen geldig Modrinth-pack.",
+      "invalidPackReason": "De server heeft het modpack geweigerd: {reason}",
       "noRecipients": "Je kunt modpacks alleen naar je vrienden sturen.",
       "invalidDuration": "Ongeldige duur."
     },

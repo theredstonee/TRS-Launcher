@@ -826,6 +826,7 @@
       "storageFull": "TRS sunucusunda şu an yer yok – lütfen daha sonra tekrar dene.",
       "unchanged": "Son sürümden bu yana hiçbir şey değişmedi.",
       "invalidPack": "Sunucu modpack’i reddetti – geçerli bir Modrinth paketi değil.",
+      "invalidPackReason": "Sunucu mod paketini reddetti: {reason}",
       "noRecipients": "Modpack’leri yalnızca arkadaşlarına gönderebilirsin.",
       "invalidDuration": "Geçersiz süre."
     },

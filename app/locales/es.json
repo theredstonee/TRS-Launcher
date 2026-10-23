@@ -854,6 +854,7 @@
       "storageFull": "El servidor TRS no tiene espacio ahora mismo: inténtalo más tarde.",
       "unchanged": "No ha cambiado nada desde la última versión.",
       "invalidPack": "El servidor rechazó el modpack: no es un pack válido de Modrinth.",
+      "invalidPackReason": "El servidor rechazó el modpack: {reason}",
       "noRecipients": "Solo puedes enviar modpacks a tus amigos.",
       "invalidDuration": "Duración no válida."
     },

@@ -286,6 +286,12 @@ fn pack_error(e: Error) -> Error {
         "storage_full" => crate::msg!("packShare.storageFull", "Der TRS-Server hat gerade keinen Platz – bitte später erneut versuchen."),
         "pack_not_found" => crate::msg!("packShare.notFound", "Dieses Modpack gibt es nicht (mehr)."),
         "pack_unchanged" => crate::msg!("packShare.unchanged", "Seit der letzten Version hat sich nichts geändert."),
+        // Den Grund des Servers mitgeben (z. B. „Too many files in the pack“) – sonst rät der Spieler.
+        "invalid_pack" if !msg.trim().is_empty() => crate::msg!(
+            "packShare.invalidPackReason",
+            "Der Server hat das Modpack abgelehnt: {reason}",
+            reason = msg.trim()
+        ),
         "invalid_pack" => crate::msg!("packShare.invalidPack", "Der Server hat das Modpack abgelehnt – es ist kein gültiges Modrinth-Pack."),
         "payload_too_large" => crate::msg!("packShare.tooLarge", "Das Modpack ist größer als 1 GB – wähle weniger Ordner aus (z. B. ohne Resource Packs)."),
         "no_recipients" => crate::msg!("packShare.noRecipients", "Modpacks kannst du nur an deine Freunde schicken."),

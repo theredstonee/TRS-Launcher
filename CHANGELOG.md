@@ -30,6 +30,12 @@ How to write an entry:
 
 ## Unreleased
 
+### English
+- **Clearer message when sharing a modpack fails.** If the TRS server rejects a modpack, the launcher now shows the server's reason instead of a general "not a valid Modrinth pack". (Large packs saved in the ZIP64 format are accepted again on the server side.)
+
+### Deutsch
+- **Klarere Meldung, wenn das Teilen eines Modpacks scheitert.** Lehnt der TRS-Server ein Modpack ab, zeigt der Launcher jetzt den Grund des Servers statt eines allgemeinen „kein gültiges Modrinth-Pack“. (Große Packs im ZIP64-Format nimmt der Server wieder an.)
+
 ## 0.27.5 – 2026-10-23 – Clean Cut Fix | Feinschliff
 <!-- banner: accent=#3ee6c8 motif=/news/0.27.5/banner.png -->
 <!-- shots:
