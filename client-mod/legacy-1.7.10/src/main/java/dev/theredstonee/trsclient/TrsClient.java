@@ -180,6 +180,8 @@ public final class TrsClient {
 		FMLCommonHandler.instance().bus().register(dev.theredstonee.trsclient.net.NetHooks.get());
 		// Bildschirm-Ereignisse (Schnell verbinden: Zeile auf „Verbinde …“) kommen in 1.7.10 über den Forge-Bus.
 		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.net.NetHooks.get());
+		// TRS Server Rules: Server sperrt/erzwingt Module (Kanäle TRS|Rules/TRS|Hello, Logik in core.serverrules).
+		dev.theredstonee.trsclient.net.ServerRulesNet.init(modules, version, message -> LOGGER.info(message));
 		AutoTest.installIfRequested();
 		// 1.7.10-Forge hat kein "Client stoppt"-Ereignis – beim Beenden trotzdem speichern.
 		Runtime.getRuntime().addShutdownHook(new Thread(this::saveConfig, "TRS Client config save"));
@@ -290,6 +292,7 @@ public final class TrsClient {
 				if (mc.ingameGUI != null) mc.ingameGUI.func_110326_a(toast, false);
 				saveConfig();
 			}
+			dev.theredstonee.trsclient.net.ServerRulesNet.tick(mc);
 		}
 
 		@SubscribeEvent
