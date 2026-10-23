@@ -5993,7 +5993,8 @@
       "blog_write": "Pisanie wpisów na blogu (szkice, obrazy)",
       "blog_publish": "Publikowanie, planowanie i wycofywanie wpisów na blogu",
       "events_manage": "Zarządzanie wydarzeniami",
-      "featured_manage": "Zarządzanie polecanymi modpackami"
+      "featured_manage": "Zarządzanie polecanymi modpackami",
+      "serverrules_bypass": "Używać funkcji TRS Client zablokowanych przez serwer mimo to (po potwierdzeniu w grze)"
     }
   },
   "trsChoice": {

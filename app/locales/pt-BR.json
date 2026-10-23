@@ -5993,7 +5993,8 @@
       "blog_write": "Escrever posts do blog (rascunhos, imagens)",
       "blog_publish": "Publicar, agendar e despublicar posts do blog",
       "events_manage": "Gerenciar eventos",
-      "featured_manage": "Gerenciar modpacks em destaque"
+      "featured_manage": "Gerenciar modpacks em destaque",
+      "serverrules_bypass": "Usar mesmo assim recursos do TRS Client bloqueados pelo servidor (após confirmação no jogo)"
     }
   },
   "trsChoice": {

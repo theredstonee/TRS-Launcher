@@ -5993,7 +5993,8 @@
       "blog_write": "Blogberichten schrijven (concepten, afbeeldingen)",
       "blog_publish": "Blogberichten publiceren, inplannen en terugtrekken",
       "events_manage": "Evenementen beheren",
-      "featured_manage": "Uitgelichte modpacks beheren"
+      "featured_manage": "Uitgelichte modpacks beheren",
+      "serverrules_bypass": "Door de server geblokkeerde TRS Client-functies toch gebruiken (na bevestiging in het spel)"
     }
   },
   "trsChoice": {
