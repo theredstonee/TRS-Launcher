@@ -255,6 +255,11 @@ public final class ServerRules {
 		return received > 0;
 	}
 
+	/** Zahl der in dieser Verbindung empfangenen Regelsätze (Anzeige/Tests). */
+	public int receivedCount() {
+		return received;
+	}
+
 	/** Hat das TRS-Team die Sperre dieses Moduls (für diese Verbindung) aufgehoben? */
 	public boolean bypassed(String moduleId) {
 		return moduleId != null && bypassed.contains(moduleId);
