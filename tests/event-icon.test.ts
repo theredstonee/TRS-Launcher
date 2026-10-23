@@ -8,14 +8,15 @@ import { nextTick, reactive } from 'vue'
 
 const eventIconSync = vi.fn(async (_events: string[]) => null as string | null)
 const activeEvents = vi.fn(async () => [] as string[])
+const lookEvents = vi.fn(async () => [] as string[])
 
 vi.mock('../app/utils/backend', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../app/utils/backend')>()),
-  backend: { eventIconSync, trs: { activeEvents } },
+  backend: { eventIconSync, trs: { activeEvents, lookEvents } },
 }))
 
-type Ui = { eventIcons?: boolean }
-const trs = reactive({ me: null as { events?: string[] } | null, status: null as object | null, enabled: false })
+type Ui = { eventIcons?: boolean; eventLook?: boolean }
+const trs = reactive({ me: null as { events?: string[]; eventLook?: string[] } | null, status: null as object | null, enabled: false })
 const settings = reactive({ current: null as { ui: Ui } | null })
 
 beforeAll(() => {
@@ -119,5 +120,63 @@ describe('Event-Symbole', () => {
     await nextTick()
     await Promise.resolve()
     expect(events.halloween).toBe(true)
+  })
+})
+
+describe('Event-Look (Team-Sperre + eigener Schalter)', () => {
+  it('Team-Sperre: Features bleiben, Look und Event-Symbol aus', async () => {
+    trs.status = {}
+    trs.enabled = true
+    trs.me = { events: ['halloween'], eventLook: [] }
+    settings.current = { ui: { eventIcons: true, eventLook: true } }
+    const events = await store()
+    await nextTick()
+    expect(events.halloween).toBe(true)
+    expect(events.has('halloween')).toBe(true)
+    expect(events.lookHalloween).toBe(false)
+    expect(events.look).toEqual([])
+    expect(eventIconSync).toHaveBeenLastCalledWith([])
+
+    // events_changed: Sperre aufgehoben → Look und Symbol wieder da.
+    trs.me = { events: ['halloween'], eventLook: ['halloween'] }
+    await nextTick()
+    expect(events.lookHalloween).toBe(true)
+    expect(eventIconSync).toHaveBeenLastCalledWith(['halloween'])
+  })
+
+  it('eigener Schalter aus: nur der Look geht, das Event bleibt', async () => {
+    trs.status = {}
+    trs.enabled = true
+    trs.me = { events: ['halloween'], eventLook: ['halloween'] }
+    settings.current = { ui: { eventIcons: true, eventLook: true } }
+    const events = await store()
+    await nextTick()
+    expect(events.lookHalloween).toBe(true)
+    settings.current = { ui: { eventIcons: true, eventLook: false } }
+    await nextTick()
+    expect(events.halloween).toBe(true)
+    expect(events.lookHalloween).toBe(false)
+    expect(eventIconSync).toHaveBeenLastCalledWith([])
+  })
+
+  it('älterer Server ohne eventLook: Look = Events', async () => {
+    trs.status = {}
+    trs.enabled = true
+    trs.me = { events: ['halloween'] }
+    settings.current = { ui: { eventIcons: true } }
+    const events = await store()
+    await nextTick()
+    expect(events.look).toEqual(['halloween'])
+    expect(events.lookHalloween).toBe(true)
+  })
+
+  it('Look ist immer Teilmenge der aktiven Events', async () => {
+    trs.status = {}
+    trs.enabled = true
+    trs.me = { events: [], eventLook: ['halloween'] }
+    settings.current = { ui: {} }
+    const events = await store()
+    await nextTick()
+    expect(events.lookHalloween).toBe(false)
   })
 })

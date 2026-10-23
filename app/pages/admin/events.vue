@@ -3,7 +3,8 @@ import { z } from 'zod'
 import type { TrsAdminEvent } from '~/utils/trs'
 import { isEventPlayer } from '~/utils/halloween'
 
-// Team-Bereich Events (API §31, Recht events.manage): global an/aus und Allowlist.
+// Team-Bereich Events (API §31, Recht events.manage): global an/aus, Allowlist und
+// „Look aus für …“ (Sperrliste: Event ohne Design & Effekte, Inhalte bleiben).
 // Der Server prüft das Recht selbst – hier nur die Oberfläche.
 const toasts = useToasts()
 const team = useTeam()
@@ -13,7 +14,10 @@ const shown = computed(() => events.value ?? [])
 const names = reactive<Record<string, string>>({})
 const formError = ref<Record<string, string>>({})
 const busy = ref<string | null>(null)
-const removing = ref<{ eventId: string; uuid: string; name: string } | null>(null)
+const removing = ref<{ eventId: string; uuid: string; name: string; look?: boolean } | null>(null)
+/** Eingaben für die Look-Sperrliste („Look aus für …“), je Event. */
+const lookNames = reactive<Record<string, string>>({})
+const lookError = ref<Record<string, string>>({})
 
 const playerSchema = z.string().trim().refine(isEventPlayer)
 
@@ -75,12 +79,35 @@ async function add(ev: TrsAdminEvent) {
   }
 }
 
+/** Look (Design & Effekte) des Events für einen Spieler abschalten – Kürbis-Suche & Co. bleiben. */
+async function addLook(ev: TrsAdminEvent) {
+  if (!team.can('events.manage') || busy.value) return
+  const parsed = playerSchema.safeParse(lookNames[ev.id] ?? '')
+  if (!parsed.success) {
+    lookError.value = { ...lookError.value, [ev.id]: t('admin.events.invalidPlayer') }
+    return
+  }
+  lookError.value = { ...lookError.value, [ev.id]: '' }
+  busy.value = ev.id
+  try {
+    await backend.trs.adminAddEventLookBlock(ev.id, parsed.data)
+    lookNames[ev.id] = ''
+    toasts.ok(t('admin.toasts.eventPlayerAdded', { name: parsed.data }))
+    await load()
+  } catch (e) {
+    toasts.error(e)
+  } finally {
+    busy.value = null
+  }
+}
+
 async function remove() {
   const target = removing.value
   if (!target || busy.value) return
   busy.value = target.uuid
   try {
-    await backend.trs.adminRemoveEventPlayer(target.eventId, target.uuid)
+    if (target.look) await backend.trs.adminRemoveEventLookBlock(target.eventId, target.uuid)
+    else await backend.trs.adminRemoveEventPlayer(target.eventId, target.uuid)
     toasts.ok(t('admin.toasts.eventPlayerRemoved', { name: target.name }))
     removing.value = null
     await load()
@@ -148,11 +175,48 @@ async function remove() {
           </button>
         </li>
       </ul>
+
+      <!-- Look aus für …: Event-Design & Effekte für einzelne Spieler aus, Inhalte bleiben. -->
+      <div class="space-y-3 border-t border-base-800 pt-4" data-testid="admin-event-look-blocks">
+        <h3 class="text-sm font-semibold text-base-50">{{ t('admin.events.lookTitle') }}</h3>
+        <p class="text-xs text-base-400">{{ t('admin.events.lookHint') }}</p>
+        <form v-if="team.can('events.manage')" class="flex flex-wrap items-end gap-2" @submit.prevent="addLook(ev)">
+          <label class="min-w-52 flex-1">
+            <span class="sr-only">{{ t('admin.events.lookTitle') }}</span>
+            <input
+              v-model="lookNames[ev.id]"
+              class="field"
+              maxlength="36"
+              autocomplete="off"
+              :placeholder="t('admin.events.playerPlaceholder')"
+            />
+          </label>
+          <button class="btn btn-primary px-3 py-2 text-xs" :disabled="busy === ev.id">
+            {{ busy === ev.id ? t('admin.events.adding') : t('admin.events.add') }}
+          </button>
+          <p v-if="lookError[ev.id]" role="alert" class="w-full text-xs text-redstone-300">{{ lookError[ev.id] }}</p>
+        </form>
+        <p v-if="!ev.lookBlocked.length" class="text-sm text-base-400">{{ t('admin.events.noLookBlocks') }}</p>
+        <ul v-else class="divide-y divide-base-800">
+          <li v-for="p in ev.lookBlocked" :key="p.uuid" class="flex items-center gap-3 py-2 text-sm">
+            <span class="min-w-0 flex-1 truncate text-base-50">{{ p.name || p.uuid }}</span>
+            <span class="font-mono text-[11px] text-base-400">{{ p.uuid }}</span>
+            <span class="text-xs text-base-400">{{ when(p.addedAt) }}</span>
+            <button
+              v-if="team.can('events.manage')"
+              class="btn btn-ghost px-2 py-0.5 text-[11px] hover:text-redstone-300"
+              @click="removing = { eventId: ev.id, uuid: p.uuid, name: p.name || p.uuid, look: true }"
+            >
+              {{ t('admin.events.remove') }}
+            </button>
+          </li>
+        </ul>
+      </div>
     </article>
     </template>
 
-    <BaseDialog v-if="removing" :title="t('admin.events.removeTitle')" @close="removing = null">
-      <i18n-t keypath="admin.events.removeText" tag="p" scope="global" class="text-sm text-base-200">
+    <BaseDialog v-if="removing" :title="t(removing.look ? 'admin.events.lookRemoveTitle' : 'admin.events.removeTitle')" @close="removing = null">
+      <i18n-t :keypath="removing.look ? 'admin.events.lookRemoveText' : 'admin.events.removeText'" tag="p" scope="global" class="text-sm text-base-200">
         <template #name><strong class="text-base-50">{{ removing.name }}</strong></template>
       </i18n-t>
       <template #actions>

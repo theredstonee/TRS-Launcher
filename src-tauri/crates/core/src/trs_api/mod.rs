@@ -495,6 +495,9 @@ pub struct TrsApi {
     head_sources: std::sync::Mutex<std::collections::HashMap<String, head_cosmetics::V2Source>>,
     /// Aktive Events des Spielers (aus `GET /v1/me` und `events_changed`, §31) – nur im Speicher.
     events: std::sync::Mutex<Vec<String>>,
+    /// Davon die Events, deren Look (Design & Effekte) der Spieler sehen soll (`eventLook`/`look`,
+    /// ohne Team-Sperre). `None` = älterer Server ohne Feld – dann gilt `events`.
+    look: std::sync::Mutex<Option<Vec<String>>>,
     /// PC-Fernbedienung: Geräte-Zugang je Konto (§33).
     pub(crate) remote: remote::RemoteStore,
     /// Push-Benachrichtigungen der Handy-Apps: Schalter und angemeldetes Gerät je Konto (§33).
@@ -507,9 +510,24 @@ impl TrsApi {
         self.events.lock().map(|e| e.clone()).unwrap_or_default()
     }
 
-    pub(crate) fn set_active_events(&self, events: &[String]) {
+    /// Aktive Events, deren Look der Spieler sehen darf (Team-Sperre schon abgezogen).
+    /// Fehlte die Liste beim Server (älterer Stand), gilt `events`. Immer Teilmenge von `events`.
+    pub(crate) fn look_events(&self) -> Vec<String> {
+        let events = self.active_events();
+        let look = self.look.lock().map(|l| l.clone()).unwrap_or_default();
+        match look {
+            Some(look) => events.into_iter().filter(|e| look.contains(e)).collect(),
+            None => events,
+        }
+    }
+
+    /// Merkt sich die aktiven Events und – falls der Server sie schickt – die Look-Liste.
+    pub(crate) fn set_active_events(&self, events: &[String], look: Option<&[String]>) {
         if let Ok(mut e) = self.events.lock() {
             e.clone_from(&events.to_vec());
+        }
+        if let Ok(mut l) = self.look.lock() {
+            *l = look.map(<[String]>::to_vec);
         }
     }
 
@@ -553,6 +571,7 @@ impl TrsApi {
             achievements: achievements::ReportQueue::default(),
             head_sources: std::sync::Mutex::default(),
             events: std::sync::Mutex::default(),
+            look: std::sync::Mutex::default(),
         })
     }
 

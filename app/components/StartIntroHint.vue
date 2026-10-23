@@ -10,7 +10,7 @@ const calm = ref(false)
 const saving = ref(false)
 
 // Der Halloween-Hinweis sitzt an derselben Stelle – erst er, dann dieser.
-const halloweenHintOpen = computed(() => events.halloween && settings.current?.ui.halloweenFlickerHintSeen !== true)
+const halloweenHintOpen = computed(() => events.lookHalloween && settings.current?.ui.halloweenFlickerHintSeen !== true)
 const open = computed(
   () =>
     !halloweenHintOpen.value &&

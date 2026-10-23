@@ -32,7 +32,7 @@ const files = computed(() => {
 <template>
   <!-- Groß, während Halloween: Starten und Installieren als Mondlauf statt Lampenfüllung. -->
   <template v-if="hidden" />
-  <div v-else-if="large && events.halloween && (install || game.phase === 'preparing')" class="relative min-w-0 flex-1">
+  <div v-else-if="large && events.lookHalloween && (install || game.phase === 'preparing')" class="relative min-w-0 flex-1">
     <div
       class="rounded-md bg-base-900/80 px-3 py-2"
       role="progressbar"

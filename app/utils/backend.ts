@@ -961,10 +961,15 @@ export const backend = {
     claimCape: (id: string) => call<void>('trs_claim_cape', { id }),
     /** Zuletzt bekannte aktive Events (ohne Netz). */
     activeEvents: () => checked(z.array(z.string()), 'trs_active_events'),
+    /** Davon die Events mit Look (Team-Sperre abgezogen, ohne eigenen Schalter) – Zwischenspeicher des Kerns. */
+    lookEvents: () => checked(z.array(z.string()), 'trs_look_events'),
     adminEvents: () => checked(z.array(trsAdminEventSchema), 'trs_admin_events'),
     adminSetEvent: (id: string, enabled: boolean) => call<void>('trs_admin_set_event', { id, enabled }),
     adminAddEventPlayer: (id: string, player: string) => call<void>('trs_admin_add_event_player', { id, player }),
     adminRemoveEventPlayer: (id: string, uuid: string) => call<void>('trs_admin_remove_event_player', { id, uuid }),
+    /** Look (Design & Effekte) des Events für einen Spieler abschalten – Features bleiben. */
+    adminAddEventLookBlock: (id: string, player: string) => call<void>('trs_admin_add_event_look_block', { id, player }),
+    adminRemoveEventLookBlock: (id: string, uuid: string) => call<void>('trs_admin_remove_event_look_block', { id, uuid }),
     /** Empfohlene Modpacks verwalten (Recht featured.manage). */
     adminFeaturedPacks: () => checked(z.array(adminFeaturedPackSchema).max(100), 'trs_admin_featured_packs'),
     adminAddFeaturedPack: (url: string) => checked(adminFeaturedPackSchema, 'trs_admin_add_featured_pack', { url }),

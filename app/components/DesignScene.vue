@@ -19,7 +19,7 @@ const props = defineProps<{
 
 const design = useDesign()
 const events = useEventsStore()
-const moonnight = computed(() => events.halloween && !props.noEvent)
+const moonnight = computed(() => events.lookHalloween && !props.noEvent)
 </script>
 
 <template>

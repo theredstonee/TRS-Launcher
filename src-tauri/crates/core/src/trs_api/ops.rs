@@ -210,7 +210,7 @@ impl Launcher {
 
     pub async fn trs_me(&self) -> Result<Me> {
         let me = me_view(self.trs_get::<ApiMe>(Req::get("/v1/me")).await?)?;
-        self.trs.set_active_events(&me.events);
+        self.trs.set_active_events(&me.events, Some(&me.event_look));
         Ok(me)
     }
 

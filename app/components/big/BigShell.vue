@@ -6,7 +6,7 @@ const settings = useSettingsStore()
 const events = useEventsStore()
 const animated = computed(() => settings.current?.ui.animatedBackground !== false)
 // Halloween: Mondnacht auch hier, bei „Animierter Hintergrund“ aus als Standbild.
-const scene = computed(() => animated.value || events.halloween)
+const scene = computed(() => animated.value || events.lookHalloween)
 </script>
 
 <template>

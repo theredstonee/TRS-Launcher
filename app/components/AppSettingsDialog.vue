@@ -458,10 +458,13 @@ async function allowFirewall() {
       <SettingRow :title="t('settings.appearance.animatedBackgroundTitle')" :description="t('settings.appearance.animatedBackgroundDescription')">
         <ToggleSwitch v-model="form.ui.animatedBackground" :label="t('settings.appearance.animatedBackgroundTitle')" />
       </SettingRow>
+      <SettingRow :title="t('settings.appearance.eventLookTitle')" :description="t('settings.appearance.eventLookDescription')" data-testid="settings-event-look">
+        <ToggleSwitch v-model="form.ui.eventLook" :label="t('settings.appearance.eventLookTitle')" />
+      </SettingRow>
       <SettingRow :title="t('settings.appearance.eventIconsTitle')" :description="t('settings.appearance.eventIconsDescription')">
         <ToggleSwitch v-model="form.ui.eventIcons" :label="t('settings.appearance.eventIconsTitle')" />
       </SettingRow>
-      <SettingRow v-if="events.halloween" :title="t('settings.appearance.halloweenFlickerTitle')" :description="t('settings.appearance.halloweenFlickerDescription')" data-testid="settings-halloween-flicker">
+      <SettingRow v-if="events.lookHalloween" :title="t('settings.appearance.halloweenFlickerTitle')" :description="t('settings.appearance.halloweenFlickerDescription')" data-testid="settings-halloween-flicker">
         <ToggleSwitch v-model="form.ui.halloweenFlicker" :label="t('settings.appearance.halloweenFlickerTitle')" />
       </SettingRow>
       <SettingRow :title="t('settings.appearance.motionTitle')" :description="t('settings.appearance.motionDescription')">

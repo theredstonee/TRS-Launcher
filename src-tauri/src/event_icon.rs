@@ -45,7 +45,9 @@ pub async fn event_icon_sync(
         return Err(trs_core::Error::validation(trs_core::msg!("trsEvents.invalidEvent", "Ungültiges Event.")).into());
     }
     let events: Vec<String> = events.into_iter().filter(|e| trs_core::trs_api::events::event_id(e)).collect();
-    let want = pick(&events, launcher.settings().await.ui.event_icons);
+    // Die Oberfläche meldet nur Events mit Look; „Event-Design anzeigen“ aus schaltet das Symbol mit ab.
+    let ui = launcher.settings().await.ui;
+    let want = pick(&events, ui.event_icons && ui.event_look);
     let mut session = state.session.lock().await;
     if *session == Some(want) {
         return Ok(want.map(str::to_owned));

@@ -369,7 +369,8 @@ impl Launcher {
         }
         let settings = self.settings().await;
         let trs_enabled = self.trs.enabled().await;
-        client_mod::sync(&self.http, &self.paths, dir.as_deref(), Some(&self.client_mod_updates), &instance, &settings.ui, trs_enabled, &self.trs.active_events()).await?;
+        let (events, look) = (self.trs.active_events(), self.trs.look_events());
+        client_mod::sync(&self.http, &self.paths, dir.as_deref(), Some(&self.client_mod_updates), &instance, &settings.ui, trs_enabled, &events, &look).await?;
         Ok(client_mod::installed_version(&self.paths, &instance.id).await)
     }
 }

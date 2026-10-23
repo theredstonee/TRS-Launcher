@@ -110,6 +110,9 @@ export interface UiSettings {
   bigPictureAuto: boolean
   /** Event-Symbole: während eines Events (z. B. Halloween) das Event-Symbol der App (ab Werk an). */
   eventIcons: boolean
+  /** Event-Design (Look & Effekte, z. B. Halloween) anzeigen (ab Werk an). Aus = normales Aussehen,
+   *  Kürbis-Suche, Süßes oder Saures und Belohnungen bleiben. */
+  eventLook: boolean
   /** Halloween: Filmkorn-Rauschen + Aufflackern bei Blitzen (ab Werk an). */
   halloweenFlicker: boolean
   /** Erst-Hinweis zu „Flackern & Rauschen“ schon gezeigt. */

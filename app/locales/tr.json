@@ -2390,6 +2390,8 @@
       "animatedBackgroundDescription": "Her sayfanın arkasında sakin, animasyonlu bir sahne – tasarıma göre bir redstone devresi ya da bir kış manzarası. Kapalıyken yalnızca arka plan deseni gösterilir.",
       "eventIconsTitle": "Etkinlik simgeleri",
       "eventIconsDescription": "Cadılar Bayramı gibi etkinliklerde uygulama simgesi de değişir – pencere, görev çubuğu, masaüstü ve Başlat menüsü kısayolları ile telefonun ana ekranı. Etkinlik bitince normal simge kendiliğinden geri gelir.",
+      "eventLookTitle": "Etkinlik tasarımını göster (ör. Cadılar Bayramı)",
+      "eventLookDescription": "Etkinlik sırasında renkler, arka planlar, ilerleme çubukları, atmosfer ve etkinlik simgesi. Kapalı = normal görünüm. Balkabağı avı, şeker mi şaka mı ve ödüller kalır.",
       "motionTitle": "Animasyonlar",
       "motionDescription": "Animasyonlu arka plan, akan ışıklar, sayfa ve pencere geçişleri ve yerine kayan listeler. “Animasyonları azalt” hepsini kapatır; “Windows/sisteme göre”, Windows’un veya masaüstünün animasyon ayarını izler; bu ayar optimize edilmiş veya uzak bilgisayarlarda genellikle kapalıdır.",
       "motionModes": {
@@ -4034,7 +4036,12 @@
         "halloween": "Halloween"
       },
       "removeTitle": "Listeden kaldırılsın mı?",
-      "removeText": "{name} bu etkinlikten kaldırılsın mı?"
+      "removeText": "{name} bu etkinlikten kaldırılsın mı?",
+      "lookTitle": "Görünüm kapalı: …",
+      "lookHint": "Bu oyuncular etkinliği tasarımı ve efektleri olmadan alır (renkler, sahneler, korkutmalar). Balkabağı avı, şeker mi şaka mı ve ödüller kalır.",
+      "noLookBlocks": "Kimse – etkinliği olan herkes görünümü de görür.",
+      "lookRemoveTitle": "Görünüm yeniden açılsın mı?",
+      "lookRemoveText": "{name} bu etkinliğin görünümünü yeniden görecek."
     },
     "tabs": {
       "capes": "Pelerinleri incele"

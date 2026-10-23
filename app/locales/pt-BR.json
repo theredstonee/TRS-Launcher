@@ -2390,6 +2390,8 @@
       "animatedBackgroundDescription": "Uma cena animada e tranquila atrás de cada página – um circuito de redstone ou uma paisagem de inverno, dependendo do visual. Quando desativado, só o padrão de fundo é exibido.",
       "eventIconsTitle": "Ícones de eventos",
       "eventIconsDescription": "Durante eventos como o Halloween, o ícone do app também muda – janela, barra de tarefas, atalhos da área de trabalho e do menu Iniciar e a tela inicial do celular. Quando o evento termina, o ícone normal volta sozinho.",
+      "eventLookTitle": "Mostrar o visual do evento (ex.: Halloween)",
+      "eventLookDescription": "Cores, fundos, barras de progresso, atmosfera e ícone do evento durante um evento. Desligado = visual normal. A caça às abóboras, doces ou travessuras e as recompensas continuam.",
       "motionTitle": "Animações",
       "motionDescription": "Fundo animado, luzes em movimento, transições de páginas e janelas e listas que deslizam até o lugar. “Reduzir animações” desliga tudo; “Como no Windows/sistema” segue a configuração de animações do Windows ou da área de trabalho, que costuma estar desativada em PCs otimizados ou remotos.",
       "motionModes": {
@@ -4034,7 +4036,12 @@
         "halloween": "Halloween"
       },
       "removeTitle": "Remover da lista?",
-      "removeText": "Remover {name} deste evento?"
+      "removeText": "Remover {name} deste evento?",
+      "lookTitle": "Visual desligado para …",
+      "lookHint": "Esses jogadores têm o evento sem o visual e os efeitos (cores, cenas, sustos). A caça às abóboras, doces ou travessuras e as recompensas continuam.",
+      "noLookBlocks": "Ninguém – todos com o evento também veem o visual.",
+      "lookRemoveTitle": "Ligar o visual de novo?",
+      "lookRemoveText": "{name} verá o visual deste evento de novo."
     },
     "tabs": {
       "capes": "Analisar capas"

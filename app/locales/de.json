@@ -2431,6 +2431,8 @@
       "animatedBackgroundDescription": "Eine ruhige, animierte Szene hinter allen Seiten – je nach Design eine Redstone-Schaltung oder eine Winterlandschaft. Aus zeigt nur das Hintergrundmuster.",
       "eventIconsTitle": "Event-Symbole",
       "eventIconsDescription": "Bei Events wie Halloween wechselt auch das App-Symbol – Fenster, Taskleiste, Verknüpfungen auf dem Desktop und im Startmenü sowie der Startbildschirm am Handy. Nach dem Event kommt das normale Symbol von selbst zurück.",
+      "eventLookTitle": "Event-Design anzeigen (z. B. Halloween)",
+      "eventLookDescription": "Farben, Hintergründe, Ladebalken, Atmosphäre und Event-Symbol während eines Events. Aus = normales Aussehen. Kürbis-Suche, Süßes oder Saures und Belohnungen bleiben.",
       "motionTitle": "Animationen",
       "motionDescription": "Animierter Hintergrund, Lauflichter, Seiten- und Dialog-Übergänge und Listen, die an ihren Platz gleiten. „Animationen reduzieren“ schaltet alles ab; „Wie Windows/System“ folgt der Animations-Einstellung von Windows bzw. des Desktops – auf optimierten oder Remote-PCs ist sie oft aus.",
       "motionModes": {
@@ -4102,7 +4104,12 @@
         "halloween": "Halloween"
       },
       "removeTitle": "Von der Allowlist nehmen?",
-      "removeText": "{name} von diesem Event nehmen?"
+      "removeText": "{name} von diesem Event nehmen?",
+      "lookTitle": "Look aus für …",
+      "lookHint": "Diese Spieler sehen das Event ohne Design & Effekte (Farben, Szenen, Spuk). Kürbis-Suche, Süßes oder Saures und Belohnungen bleiben.",
+      "noLookBlocks": "Niemand – alle mit dem Event sehen auch den Look.",
+      "lookRemoveTitle": "Look wieder einschalten?",
+      "lookRemoveText": "{name} sieht den Look dieses Events dann wieder."
     },
     "tabs": {
       "capes": "Umhänge prüfen"

@@ -261,7 +261,12 @@ export const liveEventSchema = z.discriminatedUnion('type', [
     }),
   }),
   /** Aktive Events dieses Spielers haben sich geändert (API §31). */
-  z.object({ type: z.literal('events_changed'), events: z.array(z.string().regex(/^[a-z][a-z0-9_-]{0,31}$/)).max(16) }),
+  // `look` = davon die Events mit Look (Team-Sperre abgezogen); fehlt beim älteren Kern ⇒ = `events`.
+  z.object({
+    type: z.literal('events_changed'),
+    events: z.array(z.string().regex(/^[a-z][a-z0-9_-]{0,31}$/)).max(16),
+    look: z.array(z.string().regex(/^[a-z][a-z0-9_-]{0,31}$/)).max(16).optional(),
+  }),
   ...hostingEventSchemas,
   ...packEventSchemas,
   ...issueEventSchemas,

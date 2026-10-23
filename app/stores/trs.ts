@@ -284,7 +284,7 @@ export const useTrsStore = defineStore('trs', () => {
         break
       case 'events_changed':
         // Event an/aus (z. B. Halloween): Theme und Kosmetik-Seite reagieren sofort.
-        if (me.value) me.value = { ...me.value, events: e.events }
+        if (me.value) me.value = { ...me.value, events: e.events, eventLook: e.look ?? e.events }
         capesRevision.value++
         break
       default:

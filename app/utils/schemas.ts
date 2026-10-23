@@ -146,6 +146,7 @@ export const uiSettingsSchema = z.object({
   bigPictureOnStart: z.boolean().default(false),
   bigPictureAuto: z.boolean().default(true),
   eventIcons: z.boolean().default(true),
+  eventLook: z.boolean().default(true),
   halloweenFlicker: z.boolean().default(true),
   halloweenFlickerHintSeen: z.boolean().default(false),
   startIntro: z.boolean().default(true),

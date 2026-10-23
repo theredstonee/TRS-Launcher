@@ -39,7 +39,7 @@ async function toggleMaximize() {
     class="titlebar relative z-40 flex h-9 shrink-0 items-center gap-2 border-b border-base-800 bg-base-900 pl-3"
   >
     <!-- Spinnennetz in der Ecke, hinter Logo und Schrift, fängt keine Klicks. -->
-    <svg v-if="events.halloween" class="cobweb" viewBox="0 0 40 40" aria-hidden="true">
+    <svg v-if="events.lookHalloween" class="cobweb" viewBox="0 0 40 40" aria-hidden="true">
       <g fill="none" stroke="currentColor" stroke-width="1">
         <path d="M.5.5H39.5M.5.5V39.5M.5.5L39.5 14.5M.5.5L14.5 39.5M.5.5L39.5 39.5" />
         <path d="M9.5.5V7.5H.5M18.5.5l-3 10-8 3L.5 12.5M27.5.5l-8 13-9 6-6-1L.5 20.5M34.5 4.5l-12 14-10 8-7-2L.5 28.5" />
@@ -47,7 +47,7 @@ async function toggleMaximize() {
     </svg>
     <div data-tauri-drag-region class="relative z-[1] flex items-center gap-2 text-base-200">
       <img src="/icon.png" alt="" class="pointer-events-none size-4 [image-rendering:pixelated]" />
-      <template v-if="events.halloween">
+      <template v-if="events.lookHalloween">
         <HalloweenPixelSprite name="pumpkin" class="pumpkin" />
         <HalloweenPixelSprite name="moonbat" class="moonbat" />
       </template>
@@ -92,9 +92,10 @@ async function toggleMaximize() {
     <AccountMenu />
     <div class="h-4 w-px bg-base-800" />
 
-    <!-- Halloween 2026: Spinnennetz neben den Fensterknöpfen, darin versteckt ein Kürbis (Kürbis-Suche 1/13). -->
+    <!-- Halloween 2026: Spinnennetz neben den Fensterknöpfen, darin versteckt ein Kürbis (Kürbis-Suche 1/13).
+         Der Kürbis hängt am Event (Features), das Netz am Look – ohne Event-Design bleibt er auffindbar. -->
     <div v-if="events.halloween" class="web-corner">
-      <svg class="web" viewBox="0 0 46 36" aria-hidden="true"><g fill="none" stroke="#cfd5e3" stroke-width=".6"><path d="M46 0 L14 36 M46 0 L28 36 M46 0 L4 20 M46 0 L0 6" /><path d="M38 0 Q36 8 46 10 M28 0 Q26 14 46 18 M18 0 Q16 20 46 28" /></g></svg>
+      <svg v-if="events.lookHalloween" class="web" viewBox="0 0 46 36" aria-hidden="true"><g fill="none" stroke="#cfd5e3" stroke-width=".6"><path d="M46 0 L14 36 M46 0 L28 36 M46 0 L4 20 M46 0 L0 6" /><path d="M38 0 Q36 8 46 10 M28 0 Q26 14 46 18 M18 0 Q16 20 46 28" /></g></svg>
       <HalloweenPumpkin id="launcher-titlebar" :size="11" class="web-pumpkin" />
     </div>
     <div v-if="win" class="flex h-full">

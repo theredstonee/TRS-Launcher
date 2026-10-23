@@ -50,7 +50,7 @@ const route = useRoute()
 const animatedBackground = computed(() => settings.current?.ui.animatedBackground !== false)
 // Halloween: die Mondnacht hinter JEDER Seite (Bibliothek, Instanzen, Entdecken, Skins, Sozial …) –
 // mit „Animierter Hintergrund“ aus als Standbild statt gar nicht.
-const appBackground = computed(() => route.path !== '/' && (animatedBackground.value || events.halloween))
+const appBackground = computed(() => route.path !== '/' && (animatedBackground.value || events.lookHalloween))
 // Big Picture: eigener Rahmen ohne Titelleiste und Seitenleiste (Dialoge bleiben hier).
 const isBig = computed(() => route.path === BIG_PICTURE_PATH)
 watch(
@@ -262,7 +262,7 @@ onBeforeUnmount(() => void backListener?.unregister())
     <WhatsNewDialog v-if="whatsNew.open && !onboarding.open && !trs.consentOpen" />
     <CurseForgeBlockedDialog v-if="curseforge.blockedFor" :key="curseforge.blockedFor" :instance-id="curseforge.blockedFor" @close="curseforge.closeBlocked()" />
     <!-- Halloween 2026: Mondnacht-Atmosphäre über jeder Seite, nur solange das Event läuft. -->
-    <HalloweenAtmosphere v-if="events.halloween && !isBig" />
+    <HalloweenAtmosphere v-if="events.lookHalloween && !isBig" />
     <StartIntroHint v-if="!isBig" />
     <ToastHost />
     <SocialToastHost />
