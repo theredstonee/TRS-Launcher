@@ -917,6 +917,11 @@
       "loaderUnavailable": "Este mod loader no está disponible como servidor para Minecraft {version}.",
       "installerFailed": "El instalador del mod loader falló. Comprueba tu conexión a internet e inténtalo de nuevo."
     },
+    "serverRules": {
+      "manifestUnreadable": "El manifiesto de TRS Server Rules no se puede leer.",
+      "unavailable": "TRS Server Rules no está disponible para este servidor (Minecraft {version}) – desmarca la opción.",
+      "channelUnavailable": "No se pudo cargar TRS Server Rules ahora mismo – inténtalo más tarde o desmarca la opción."
+    },
     "localServer": {
       "notFound": "Este servidor ya no existe.",
       "eulaMissing": "El servidor solo se inicia cuando se acepta el EULA de Minecraft.",
@@ -6840,7 +6845,22 @@
     "doneZip": "Servidor guardado: {file} ({size})",
     "doneLocal": "Servidor «{name}» creado",
     "localCreated": "Servidor «{name}» creado.",
-    "openConsole": "Abrir consola"
+    "openConsole": "Abrir consola",
+    "serverRules": {
+      "label": "TRS Server Rules (bloquear módulos del TRS Client en el servidor)",
+      "info": "Añade el plugin de servidor de TRS. Con él decides qué funciones del TRS Client (p. ej. minimapa, zoom, fullbright) pueden usar los jugadores en tu servidor – para todos o por mundo. La configuración se crea en el primer arranque en config/trs-server-rules.yml.",
+      "link": "Más información",
+      "version": "Versión {version}",
+      "teamNote": "Documentado abiertamente: los miembros del equipo TRS pueden levantar un bloqueo en su propio cliente tras una confirmación.",
+      "unavailable": {
+        "vanilla": "Solo disponible para servidores con Fabric, Quilt, Forge o NeoForge – un servidor vanilla no carga mods.",
+        "version": "TRS Server Rules (todavía) no está disponible para Minecraft {version} con {loader}.",
+        "offline": "No se pudo acceder a la descarga de TRS Server Rules – vuelve a abrir el diálogo más tarde."
+      },
+      "fabricApiIncluded": "Necesita Fabric API en el servidor – está seleccionada.",
+      "fabricApiMissing": "Necesita Fabric API en el servidor – esta instancia no la tiene. Pon Fabric API en la carpeta mods del servidor después de exportar.",
+      "fabricApiDeselected": "Necesita Fabric API en el servidor – vuelve a seleccionar Fabric API en la lista de mods."
+    }
   },
   "localServers": {
     "title": "Mis servidores",

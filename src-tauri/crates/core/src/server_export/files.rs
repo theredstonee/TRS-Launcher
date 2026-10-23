@@ -142,6 +142,8 @@ pub struct ReadmeInfo<'a> {
     pub left_out: &'a [String],
     /// Fabric lädt seine Bibliotheken erst beim ersten Start.
     pub needs_internet_first_start: bool,
+    /// Jar von TRS Server Rules in `mods/` (falls mitinstalliert).
+    pub server_rules: Option<&'a str>,
 }
 
 /// `README.txt` (Englisch und Deutsch).
@@ -170,6 +172,21 @@ pub fn readme(info: &ReadmeInfo<'_>) -> String {
     } else {
         ("", "")
     };
+    let (rules_en, rules_de) = match info.server_rules {
+        Some(file) => (
+            format!(
+                "TRS Server Rules: mods/{file} – locks or forces TRS Client features. The config is created on the\n\
+                 \x20      first start (config/trs-server-rules.yml); reload it with /trsrules reload. More: {url}\n",
+                url = crate::server_rules::INFO_URL
+            ),
+            format!(
+                "TRS Server Rules: mods/{file} – sperrt oder erzwingt TRS-Client-Funktionen. Die Config entsteht beim\n\
+                 \x20      ersten Start (config/trs-server-rules.yml); neu laden mit /trsrules reload. Mehr: {url}\n",
+                url = crate::server_rules::INFO_URL
+            ),
+        ),
+        None => (String::new(), String::new()),
+    };
     format!(
         "{name} – Minecraft {game} server ({loader})\n\
          Created with the TRS Launcher\n\
@@ -183,6 +200,7 @@ pub fn readme(info: &ReadmeInfo<'_>) -> String {
          \x20      this port in your router and allow Java in the firewall.\n\
          {eula_en}\n{net_en}\
          Stop the server with the command \"stop\" so the world is saved.\n\
+         {rules_en}\
          Mods on the server: {mods}. Left out as client-only (players keep them in their game):\n{left_out}\n\n\
          DEUTSCH\n\
          -------\n\
@@ -193,6 +211,7 @@ pub fn readme(info: &ReadmeInfo<'_>) -> String {
          \x20      im Router weiterleiten und Java in der Firewall erlauben.\n\
          {eula_de}\n{net_de}\
          Den Server mit dem Befehl \"stop\" beenden, damit die Welt gespeichert wird.\n\
+         {rules_de}\
          Mods auf dem Server: {mods}. Als reine Client-Mods weggelassen (Spieler behalten sie im Spiel):\n{left_out}\n",
         name = info.name,
         game = info.game_version,

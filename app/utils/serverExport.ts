@@ -1,6 +1,7 @@
 import { z } from 'zod'
 // Relativ importiert, damit Tests die Datei ohne Nuxt laden können.
 import { t, type MessageKey } from './i18n'
+import { loaderLabels } from './format'
 
 // Instanz als Minecraft-Server exportieren (ZIP und/oder lokal) und lokale
 // Server steuern. Antworten des Kerns werden hier mit zod geprüft; die
@@ -28,6 +29,20 @@ export const serverModSchema = z.object({
 })
 export type ServerMod = z.infer<typeof serverModSchema>
 
+/** Infoseite zu TRS Server Rules auf der TRS-Website (wie `server_rules::INFO_URL` im Kern). */
+export const SERVER_RULES_URL = 'https://trs-launcher.theredstonee.de/servers'
+
+/** Option „TRS Server Rules mitinstallieren“ (`ServerRulesOffer` im Kern). */
+export const serverRulesOfferSchema = z.object({
+  available: z.boolean(),
+  reason: z.enum(['vanilla', 'version', 'offline']).nullable(),
+  version: text(32).nullable(),
+  file: fileName.nullable(),
+  needsFabricApi: z.boolean(),
+  fabricApiFile: fileName.nullable(),
+})
+export type ServerRulesOffer = z.infer<typeof serverRulesOfferSchema>
+
 export const serverExportPlanSchema = z.object({
   suggestedName: text(200),
   gameVersion: text(64),
@@ -40,6 +55,7 @@ export const serverExportPlanSchema = z.object({
   worlds: z.array(z.object({ folder: fileName, name: text(200) })).max(1000),
   configDirs: z.array(text(64)).max(20),
   offline: z.boolean(),
+  serverRules: serverRulesOfferSchema,
 })
 export type ServerExportPlan = z.infer<typeof serverExportPlanSchema>
 
@@ -113,6 +129,8 @@ export interface ServerExportOptions {
   eulaAccepted: boolean
   zip: boolean
   local: boolean
+  /** TRS Server Rules mit in `mods/` legen. */
+  serverRules: boolean
 }
 
 function err(key: MessageKey) {
@@ -138,6 +156,7 @@ export const serverExportOptionsSchema = z
     eulaAccepted: z.boolean(),
     zip: z.boolean(),
     local: z.boolean(),
+    serverRules: z.boolean(),
   })
   .refine((o) => o.zip || o.local, err('errors.serverExport.noTarget'))
   .refine((o) => !o.local || o.eulaAccepted, err('errors.serverExport.eulaRequired'))
@@ -145,6 +164,30 @@ export const serverExportOptionsSchema = z
 /** Ab Werk gewählte Mods (Client-Mods und der TRS Client nicht). */
 export function defaultServerMods(mods: ServerMod[]): string[] {
   return mods.filter((m) => m.included && !m.locked).map((m) => m.fileName)
+}
+
+/** Hinweis unter der Option TRS Server Rules: warum sie fehlt bzw. was mit Fabric API ist. */
+export function serverRulesHint(
+  offer: ServerRulesOffer,
+  plan: { gameVersion: string; loader: ServerExportPlan['loader'] },
+  enabled: boolean,
+  selected: string[],
+): { text: string; warn: boolean } | null {
+  if (!offer.available) {
+    if (offer.reason === 'vanilla') return { text: t('serverExport.serverRules.unavailable.vanilla'), warn: false }
+    if (offer.reason === 'offline') return { text: t('serverExport.serverRules.unavailable.offline'), warn: false }
+    return { text: t('serverExport.serverRules.unavailable.version', { version: plan.gameVersion, loader: loaderLabels[plan.loader] }), warn: false }
+  }
+  if (!enabled || !offer.needsFabricApi) return null
+  if (!offer.fabricApiFile) return { text: t('serverExport.serverRules.fabricApiMissing'), warn: true }
+  if (!selected.includes(offer.fabricApiFile)) return { text: t('serverExport.serverRules.fabricApiDeselected'), warn: true }
+  return { text: t('serverExport.serverRules.fabricApiIncluded'), warn: false }
+}
+
+/** Option einschalten: Fabric API (falls die Instanz sie hat) kommt automatisch mit. */
+export function withServerRulesDeps(offer: ServerRulesOffer, selected: string[]): string[] {
+  const api = offer.needsFabricApi ? offer.fabricApiFile : null
+  return api && !selected.includes(api) ? [...selected, api] : selected
 }
 
 /** Teilt die Mods für die Anzeige: was auf den Server kommt und was wegbleibt. */

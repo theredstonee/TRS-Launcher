@@ -889,6 +889,11 @@
       "loaderUnavailable": "Bu mod loader, Minecraft {version} için sunucu olarak mevcut değil.",
       "installerFailed": "Mod loader yükleyicisi başarısız oldu. İnternet bağlantını kontrol edip tekrar dene."
     },
+    "serverRules": {
+      "manifestUnreadable": "TRS Server Rules manifestosu okunamıyor.",
+      "unavailable": "TRS Server Rules bu sunucu (Minecraft {version}) için mevcut değil – lütfen seçeneğin işaretini kaldır.",
+      "channelUnavailable": "TRS Server Rules şu an yüklenemedi – daha sonra tekrar dene veya seçeneğin işaretini kaldır."
+    },
     "localServer": {
       "notFound": "Bu sunucu (artık) yok.",
       "eulaMissing": "Sunucu ancak Minecraft EULA'sı kabul edildiğinde başlar.",
@@ -6691,7 +6696,22 @@
     "doneZip": "Sunucu kaydedildi: {file} ({size})",
     "doneLocal": "\"{name}\" sunucusu kuruldu",
     "localCreated": "\"{name}\" sunucusu kuruldu.",
-    "openConsole": "Konsolu aç"
+    "openConsole": "Konsolu aç",
+    "serverRules": {
+      "label": "TRS Server Rules (sunucuda TRS Client modüllerini kilitle)",
+      "info": "TRS sunucu eklentisini sunucuya ekler. Böylece oyuncuların sunucunda hangi TRS Client özelliklerini (ör. mini harita, yakınlaştırma, fullbright) kullanabileceğine sen karar verirsin – herkes için ya da dünya bazında. Yapılandırma ilk başlatmada config/trs-server-rules.yml konumunda oluşturulur.",
+      "link": "Daha fazla bilgi",
+      "version": "Sürüm {version}",
+      "teamNote": "Açıkça belgelenmiştir: TRS ekibi üyeleri bir kilidi onay sonrasında kendi istemcilerinde kaldırabilir.",
+      "unavailable": {
+        "vanilla": "Yalnızca Fabric, Quilt, Forge veya NeoForge sunucuları için – vanilla sunucu mod yükleyemez.",
+        "version": "TRS Server Rules, {loader} ile Minecraft {version} için (henüz) mevcut değil.",
+        "offline": "TRS Server Rules indirmesine şu an ulaşılamadı – pencereyi daha sonra yeniden aç."
+      },
+      "fabricApiIncluded": "Sunucuda Fabric API gerekir – seçili.",
+      "fabricApiMissing": "Sunucuda Fabric API gerekir – bu kurulumda yok. Dışa aktardıktan sonra Fabric API'yi sunucunun mods klasörüne koy.",
+      "fabricApiDeselected": "Sunucuda Fabric API gerekir – lütfen mod listesinde Fabric API'yi yeniden seç."
+    }
   },
   "localServers": {
     "title": "Sunucularım",

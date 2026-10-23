@@ -889,6 +889,11 @@
       "loaderUnavailable": "Deze modloader bestaat niet als server voor Minecraft {version}.",
       "installerFailed": "De installer van de modloader is mislukt. Controleer je internetverbinding en probeer het opnieuw."
     },
+    "serverRules": {
+      "manifestUnreadable": "Het manifest van TRS Server Rules is onleesbaar.",
+      "unavailable": "TRS Server Rules is niet beschikbaar voor deze server (Minecraft {version}) – vink de optie uit.",
+      "channelUnavailable": "TRS Server Rules kon nu niet worden geladen – probeer het later opnieuw of vink de optie uit."
+    },
     "localServer": {
       "notFound": "Deze server bestaat niet (meer).",
       "eulaMissing": "De server start pas als de Minecraft-EULA is geaccepteerd.",
@@ -6691,7 +6696,22 @@
     "doneZip": "Server opgeslagen: {file} ({size})",
     "doneLocal": "Server \"{name}\" is aangemaakt",
     "localCreated": "Server \"{name}\" is aangemaakt.",
-    "openConsole": "Console openen"
+    "openConsole": "Console openen",
+    "serverRules": {
+      "label": "TRS Server Rules (TRS Client-modules op de server vergrendelen)",
+      "info": "Zet de serverplugin van TRS op de server. Daarmee bepaal je welke TRS Client-functies (bijv. minimap, zoom, fullbright) spelers op je server mogen gebruiken – voor iedereen of per wereld. De config wordt bij de eerste start aangemaakt in config/trs-server-rules.yml.",
+      "link": "Meer informatie",
+      "version": "Versie {version}",
+      "teamNote": "Openlijk gedocumenteerd: leden van het TRS-team kunnen een vergrendeling in hun eigen client na een bevestiging opheffen.",
+      "unavailable": {
+        "vanilla": "Alleen beschikbaar voor servers met Fabric, Quilt, Forge of NeoForge – een vanilla-server laadt geen mods.",
+        "version": "TRS Server Rules is (nog) niet beschikbaar voor Minecraft {version} met {loader}.",
+        "offline": "De download van TRS Server Rules was niet bereikbaar – open het venster later opnieuw."
+      },
+      "fabricApiIncluded": "Heeft Fabric API op de server nodig – is geselecteerd.",
+      "fabricApiMissing": "Heeft Fabric API op de server nodig – deze instantie heeft het niet. Zet Fabric API na het exporteren in de mods-map van de server.",
+      "fabricApiDeselected": "Heeft Fabric API op de server nodig – selecteer Fabric API weer in de modlijst."
+    }
   },
   "localServers": {
     "title": "Mijn servers",

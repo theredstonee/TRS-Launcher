@@ -46,7 +46,7 @@ pub const SIGNATURE_FILE: &str = "client-mod.json.sig";
 /// Höchstens so oft wird vor einem Spielstart nachgesehen.
 pub const CHECK_INTERVAL: Duration = Duration::from_secs(30 * 60);
 pub const MAX_MANIFEST_BYTES: u64 = 512 * 1024;
-const MAX_SIGNATURE_BYTES: u64 = 4 * 1024;
+pub(crate) const MAX_SIGNATURE_BYTES: u64 = 4 * 1024;
 /// Die Jars sind heute unter 1 MB – alles über diesem Limit ist verdächtig.
 pub const MAX_JAR_BYTES: u64 = 32 * 1024 * 1024;
 const MAX_VERSION_LEN: usize = 32;
@@ -85,20 +85,7 @@ impl ClientModUpdater {
     }
 
     fn build(dir: PathBuf, base_url: &str, public_key: &str, https_only: bool) -> Result<Self> {
-        let http = crate::net::client_builder()
-            .user_agent(crate::USER_AGENT)
-            .https_only(https_only)
-            .redirect(reqwest::redirect::Policy::custom(move |attempt| {
-                if attempt.previous().len() >= MAX_REDIRECTS {
-                    attempt.error("zu viele Weiterleitungen")
-                } else if https_only && attempt.url().scheme() != "https" {
-                    attempt.error("Weiterleitung ohne HTTPS")
-                } else {
-                    attempt.follow()
-                }
-            }))
-            .connect_timeout(Duration::from_secs(5))
-            .build()?;
+        let http = channel_client(https_only)?;
         let base_url = if base_url.ends_with('/') { base_url.to_owned() } else { format!("{base_url}/") };
         Ok(Self {
             http,
@@ -173,21 +160,7 @@ impl ClientModUpdater {
     }
 
     async fn get(&self, file: &str, limit: u64) -> Result<Vec<u8>> {
-        let url = format!("{}{file}", self.base_url);
-        let response = self.http.get(&url).timeout(MANIFEST_TIMEOUT).send().await?.error_for_status()?;
-        if response.content_length().is_some_and(|len| len > limit) {
-            return Err(Error::download(url, "Datei zu groß"));
-        }
-        let mut body = Vec::new();
-        let mut stream = response.bytes_stream();
-        while let Some(chunk) = stream.next().await {
-            let chunk = chunk?;
-            if (body.len() + chunk.len()) as u64 > limit {
-                return Err(Error::download(url, "Datei zu groß"));
-            }
-            body.extend_from_slice(&chunk);
-        }
-        Ok(body)
+        fetch_limited(&self.http, &format!("{}{file}", self.base_url), limit).await
     }
 
     async fn store(&self, bytes: &[u8], signature: &[u8]) -> Result<()> {
@@ -248,39 +221,7 @@ impl ClientModUpdater {
     }
 
     async fn download_to(&self, file: &str, tmp: &Path, sha256: &str, size: u64) -> Result<()> {
-        let url = format!("{}{file}", self.base_url);
-        let response = self.http.get(&url).timeout(JAR_TIMEOUT).send().await?.error_for_status()?;
-        if response.content_length().is_some_and(|len| len != size) {
-            return Err(Error::download(url, "unerwartete Größe"));
-        }
-        let mut out = tokio::fs::File::create(tmp).await.map_err(|e| Error::io(tmp, e))?;
-        let mut hasher = Sha256::new();
-        let mut written = 0u64;
-        let mut stream = response.bytes_stream();
-        // Läuft das in einer Aufgabe (Spielstart), zählt es dort mit und
-        // lässt sich pausieren/abbrechen.
-        crate::task::add_total(size);
-        loop {
-            crate::task::checkpoint().await?;
-            let Some(chunk) = stream.next().await else { break };
-            let chunk = chunk?;
-            written += chunk.len() as u64;
-            crate::task::add_done(chunk.len() as i64);
-            if written > size {
-                return Err(Error::download(url, "unerwartete Größe"));
-            }
-            hasher.update(&chunk);
-            out.write_all(&chunk).await.map_err(|e| Error::io(tmp, e))?;
-        }
-        out.flush().await.map_err(|e| Error::io(tmp, e))?;
-        drop(out);
-        if written != size {
-            return Err(Error::download(url, "unerwartete Größe"));
-        }
-        if !hex(&hasher.finalize()).eq_ignore_ascii_case(sha256) {
-            return Err(Error::download(url, "Prüfsumme stimmt nicht"));
-        }
-        Ok(())
+        download_verified(&self.http, &format!("{}{file}", self.base_url), tmp, sha256, size).await
     }
 
     /// Behält nur den Ordner der gespeicherten Kanal-Version – und den auch nur,
@@ -306,6 +247,80 @@ impl ClientModUpdater {
             }
         }
     }
+}
+
+/// HTTP-Client für signierte Kanäle auf GitHub: nur HTTPS (auch bei jeder
+/// Weiterleitung, außer in Tests), höchstens fünf Weiterleitungen.
+pub(crate) fn channel_client(https_only: bool) -> Result<reqwest::Client> {
+    Ok(crate::net::client_builder()
+        .user_agent(crate::USER_AGENT)
+        .https_only(https_only)
+        .redirect(reqwest::redirect::Policy::custom(move |attempt| {
+            if attempt.previous().len() >= MAX_REDIRECTS {
+                attempt.error("zu viele Weiterleitungen")
+            } else if https_only && attempt.url().scheme() != "https" {
+                attempt.error("Weiterleitung ohne HTTPS")
+            } else {
+                attempt.follow()
+            }
+        }))
+        .connect_timeout(Duration::from_secs(5))
+        .build()?)
+}
+
+/// Kleine Datei (Manifest, Signatur) mit hartem Größenlimit und kurzem Timeout.
+pub(crate) async fn fetch_limited(http: &reqwest::Client, url: &str, limit: u64) -> Result<Vec<u8>> {
+    let response = http.get(url).timeout(MANIFEST_TIMEOUT).send().await?.error_for_status()?;
+    if response.content_length().is_some_and(|len| len > limit) {
+        return Err(Error::download(url, "Datei zu groß"));
+    }
+    let mut body = Vec::new();
+    let mut stream = response.bytes_stream();
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk?;
+        if (body.len() + chunk.len()) as u64 > limit {
+            return Err(Error::download(url, "Datei zu groß"));
+        }
+        body.extend_from_slice(&chunk);
+    }
+    Ok(body)
+}
+
+/// Lädt `url` nach `tmp` und prüft Größe + SHA-256 aus einem signierten Manifest.
+/// Bei Fehler bleibt `tmp` liegen – der Aufrufer räumt auf.
+pub(crate) async fn download_verified(http: &reqwest::Client, url: &str, tmp: &Path, sha256: &str, size: u64) -> Result<()> {
+    let response = http.get(url).timeout(JAR_TIMEOUT).send().await?.error_for_status()?;
+    if response.content_length().is_some_and(|len| len != size) {
+        return Err(Error::download(url, "unerwartete Größe"));
+    }
+    let mut out = tokio::fs::File::create(tmp).await.map_err(|e| Error::io(tmp, e))?;
+    let mut hasher = Sha256::new();
+    let mut written = 0u64;
+    let mut stream = response.bytes_stream();
+    // Läuft das in einer Aufgabe (Spielstart, Server-Export), zählt es dort mit und
+    // lässt sich pausieren/abbrechen.
+    crate::task::add_total(size);
+    loop {
+        crate::task::checkpoint().await?;
+        let Some(chunk) = stream.next().await else { break };
+        let chunk = chunk?;
+        written += chunk.len() as u64;
+        crate::task::add_done(chunk.len() as i64);
+        if written > size {
+            return Err(Error::download(url, "unerwartete Größe"));
+        }
+        hasher.update(&chunk);
+        out.write_all(&chunk).await.map_err(|e| Error::io(tmp, e))?;
+    }
+    out.flush().await.map_err(|e| Error::io(tmp, e))?;
+    drop(out);
+    if written != size {
+        return Err(Error::download(url, "unerwartete Größe"));
+    }
+    if !hex(&hasher.finalize()).eq_ignore_ascii_case(sha256) {
+        return Err(Error::download(url, "Prüfsumme stimmt nicht"));
+    }
+    Ok(())
 }
 
 async fn remove_partial_downloads(dir: &Path) {
@@ -395,7 +410,7 @@ fn decode_base64_text(raw: &[u8]) -> Option<String> {
     String::from_utf8(STANDARD.decode(text).ok()?).ok()
 }
 
-fn is_sha256(s: &str) -> bool {
+pub(crate) fn is_sha256(s: &str) -> bool {
     s.len() == 64 && s.bytes().all(|b| b.is_ascii_hexdigit())
 }
 

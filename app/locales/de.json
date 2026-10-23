@@ -917,6 +917,11 @@
       "loaderUnavailable": "Für Minecraft {version} gibt es diesen Modloader nicht als Server.",
       "installerFailed": "Der Modloader-Installer ist fehlgeschlagen. Bitte Internetverbindung prüfen und erneut versuchen."
     },
+    "serverRules": {
+      "manifestUnreadable": "Das Manifest von TRS Server Rules ist unlesbar.",
+      "unavailable": "TRS Server Rules gibt es für diesen Server (Minecraft {version}) nicht – bitte die Option abwählen.",
+      "channelUnavailable": "TRS Server Rules konnte gerade nicht geladen werden – bitte später erneut versuchen oder die Option abwählen."
+    },
     "localServer": {
       "notFound": "Diesen Server gibt es nicht (mehr).",
       "eulaMissing": "Der Server startet erst, wenn die Minecraft-EULA akzeptiert ist.",
@@ -6840,7 +6845,22 @@
     "doneZip": "Server gespeichert: {file} ({size})",
     "doneLocal": "Server „{name}“ ist angelegt",
     "localCreated": "Server „{name}“ ist angelegt.",
-    "openConsole": "Konsole öffnen"
+    "openConsole": "Konsole öffnen",
+    "serverRules": {
+      "label": "TRS Server Rules (TRS-Client-Module auf dem Server sperren)",
+      "info": "Legt das Server-Plugin von TRS mit auf den Server. Damit bestimmst du, welche TRS-Client-Funktionen (z. B. Minimap, Zoom, Fullbright) Spieler bei dir nutzen dürfen – für alle oder je Welt. Die Config entsteht beim ersten Start unter config/trs-server-rules.yml.",
+      "link": "Mehr erfahren",
+      "version": "Version {version}",
+      "teamNote": "Offen dokumentiert: Mitglieder des TRS-Teams können eine Sperre in ihrem eigenen Client nach einer Nachfrage aufheben.",
+      "unavailable": {
+        "vanilla": "Gibt es nur für Server mit Fabric, Quilt, Forge oder NeoForge – ein Vanilla-Server lädt keine Mods.",
+        "version": "Für Minecraft {version} mit {loader} gibt es TRS Server Rules (noch) nicht.",
+        "offline": "Der Download von TRS Server Rules war gerade nicht erreichbar – öffne den Dialog später noch einmal."
+      },
+      "fabricApiIncluded": "Braucht Fabric API auf dem Server – ist ausgewählt.",
+      "fabricApiMissing": "Braucht Fabric API auf dem Server – die Instanz hat keine. Lege Fabric API nach dem Export in den mods-Ordner des Servers.",
+      "fabricApiDeselected": "Braucht Fabric API auf dem Server – bitte Fabric API in der Mod-Liste wieder auswählen."
+    }
   },
   "localServers": {
     "title": "Meine Server",
