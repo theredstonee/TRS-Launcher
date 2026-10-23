@@ -84,7 +84,7 @@ const en = {
       'Windows and Linux',
     ],
   },
-  nav: { home: 'Home', features: 'Features', download: 'Download', blog: 'Blog', cosmetics: 'Cosmetics', faq: 'FAQ', team: 'Team', admin: 'Admin', menu: 'Menu', docs: 'Docs', creators: 'Creators', creatorDashboard: 'Creator dashboard' },
+  nav: { home: 'Home', features: 'Features', download: 'Download', blog: 'Blog', cosmetics: 'Cosmetics', faq: 'FAQ', team: 'Team', admin: 'Admin', menu: 'Menu', docs: 'Docs', creators: 'Creators', creatorDashboard: 'Creator dashboard', servers: 'For servers' },
   common: { loading: 'Loading …', error: 'Could not load this right now. Please try again later.', copy: 'Copy', copied: 'Copied', close: 'Close', version: 'Version {version}', new: 'New' },
   footer: {
     tagline: 'TRS Launcher – The Redstone Launcher by TheRedstonee. A free Minecraft launcher, open source under GPL-3.0.',
@@ -947,7 +947,7 @@ const de: Messages = {
       'Windows und Linux',
     ],
   },
-  nav: { home: 'Start', features: 'Funktionen', download: 'Download', blog: 'Blog', cosmetics: 'Kosmetik', faq: 'FAQ', team: 'Team', admin: 'Admin', menu: 'Menü', docs: 'Doku', creators: 'Creator', creatorDashboard: 'Creator-Dashboard' },
+  nav: { home: 'Start', features: 'Funktionen', download: 'Download', blog: 'Blog', cosmetics: 'Kosmetik', faq: 'FAQ', team: 'Team', admin: 'Admin', menu: 'Menü', docs: 'Doku', creators: 'Creator', creatorDashboard: 'Creator-Dashboard', servers: 'Für Server' },
   common: { loading: 'Lädt …', error: 'Das lässt sich gerade nicht laden. Bitte später noch einmal versuchen.', copy: 'Kopieren', copied: 'Kopiert', close: 'Schließen', version: 'Version {version}', new: 'Neu' },
   footer: {
     tagline: 'TRS Launcher – der Redstone Launcher von TheRedstonee. Ein kostenloser Minecraft-Launcher, Open Source unter GPL-3.0.',
@@ -1808,7 +1808,7 @@ const es: Messages = {
       'Windows y Linux',
     ],
   },
-  nav: { home: 'Inicio', features: 'Funciones', download: 'Descargar', blog: 'Blog', cosmetics: 'Cosméticos', faq: 'FAQ', team: 'Equipo', admin: 'Admin', menu: 'Menú', docs: 'Documentación', creators: 'Creadores', creatorDashboard: 'Panel de creador' },
+  nav: { home: 'Inicio', features: 'Funciones', download: 'Descargar', blog: 'Blog', cosmetics: 'Cosméticos', faq: 'FAQ', team: 'Equipo', admin: 'Admin', menu: 'Menú', docs: 'Documentación', creators: 'Creadores', creatorDashboard: 'Panel de creador', servers: 'Para servidores' },
   common: { loading: 'Cargando …', error: 'Ahora no se puede cargar. Inténtalo más tarde.', copy: 'Copiar', copied: 'Copiado', close: 'Cerrar', version: 'Versión {version}', new: 'Nuevo' },
   footer: {
     tagline: 'TRS Launcher – el Redstone Launcher de TheRedstonee. Un launcher de Minecraft gratis, de código abierto bajo GPL-3.0.',

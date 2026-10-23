@@ -15,6 +15,7 @@ const menuPanel = shallowRef<HTMLElement | null>(null)
 const links = computed<{ to: string, label: string, icon: string, external?: boolean }[]>(() => [
   { to: lp('/features'), label: m.value.nav.features, icon: 'bolt' },
   { to: lp('/download'), label: m.value.nav.download, icon: 'download' },
+  { to: lp('/servers'), label: m.value.nav.servers, icon: 'server' },
   // Doku: eigene Domain (trs-launcher.wiki) – normaler Seitenwechsel statt Router.
   { to: docsUrl(lang.value), label: m.value.nav.docs, icon: 'docs', external: true },
   { to: lp('/blog'), label: m.value.nav.blog, icon: 'book' },
@@ -162,6 +163,7 @@ onMounted(() => hw.loadPrefs())
         <nav class="flex flex-col gap-2 text-sm" aria-label="Site">
           <NuxtLink :to="lp('/features')" class="footer-link">{{ m.nav.features }}</NuxtLink>
           <NuxtLink :to="lp('/download')" class="footer-link">{{ m.nav.download }}</NuxtLink>
+          <NuxtLink :to="lp('/servers')" class="footer-link">{{ m.nav.servers }}</NuxtLink>
           <a :href="docsUrl(lang)" class="footer-link">{{ m.footer.docs }}</a>
           <NuxtLink :to="lp('/blog')" class="footer-link">{{ m.nav.blog }}</NuxtLink>
           <NuxtLink :to="lp('/cosmetics')" class="footer-link">{{ m.nav.cosmetics }}</NuxtLink>

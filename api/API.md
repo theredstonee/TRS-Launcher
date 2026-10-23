@@ -2682,6 +2682,7 @@ The website signs in **only** with the Microsoft account that owns Minecraft: Ja
 | `wordfilter` | Word filter (list, add, remove) |
 | `roles.manage` | Roles and members (§24.2 API), old `/v1/admin/roles` |
 | `applications.view` / `.review` / `.manage` / `.decide` | See applications and positions / vote, notes, status new–review–interview / edit positions and forms / accept, reject, reopen, give the linked role |
+| `serverrules.bypass` | No API route. The TRS Client reads it from `me.team.permissions` and lets the player use a module that a server locked via TRS Server Rules after an in-game prompt (§39). Default: Owner, Admin. |
 
 The dashboard returns `null` for every block the viewer may not see (`reports` needs `reports.view`, `appeals` `appeals.handle`, `sanctions` `players.view` or `appeals.handle`, `uploads` `uploads.review`, `hosting` `stats.view` or `worlds.view`, `users/series/server/chat` `stats.view`, `applications` `applications.view`, `recentAudit` = `[]` without `audit.view`). Search returns only allowed groups.
 
@@ -4687,3 +4688,23 @@ generic 404 page.
 Migration 30: table `pitch_links` (`id`, `token_hash` UNIQUE, `token_hint`, `label`, `mode`, `lang`, `created_by`,
 `created_at`, `expires_at`, `revoked_at`, `views`, `last_view_at`); permission `pitch.manage` for Owner/Admin.
 Idempotent. When merging: renumber if a parallel branch also added a migration 30.
+
+## 39. TRS Server Rules – team bypass `serverrules.bypass`
+
+TRS Server Rules is a server plugin/mod (Spigot/Paper/Purpur/Folia, Velocity, BungeeCord, Sponge, Fabric/NeoForge/Forge
+server mods; GitHub release channel `server-plugin`) that sends rules to the TRS Client over plugin channels
+(`trsclient:rules` / `trsclient:hello`, legacy `TRS|Rules` / `TRS|Hello`): lock modules off, force them on, force or clamp
+settings. **The API is not involved in that exchange** – the server never talks to the TRS API, and the API stores nothing
+about servers or rules. Public description: website `/servers`, documentation `/en/developers/server-rules`.
+
+The only API part is the team permission **`serverrules.bypass`** (§24.2, group `serverrules`):
+
+- Delivered like every permission in `GET /v1/me` → `team.permissions` (owners get all permissions).
+- A TRS Client whose account has it shows, when the player tries to change a locked module/setting, a prompt
+  ("This server locks “Minimap”. Use it anyway as TRS team?"). "Yes" lifts that lock until the player disconnects. Nothing
+  is sent to the game server, and the server cannot switch this off.
+- It is documented on purpose: on the website, in the documentation, in the plugin README and as a comment at the top of
+  every generated config. A server's own exception for its staff is the server permission `trsrules.bypass`.
+
+Migration 32 adds `serverrules.bypass` to the default roles Owner and Admin (custom role changes stay). Idempotent.
+When merging: renumber if a parallel branch also added a migration 32.

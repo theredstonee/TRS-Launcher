@@ -78,6 +78,12 @@ export interface MobileLatest {
 
 /** Fester Kanal: Release-Seite und AltStore-/SideStore-Quelle (die Adressen ändern sich nie). */
 export const MOBILE_RELEASE_PAGE = `${REPO_URL}/releases/tag/mobile`
+/**
+ * TRS Server Rules (Seite /servers): fester GitHub-Release-Kanal `server-plugin` mit allen Plattform-Jars.
+ * Modrinth-Projekt: Adresse eintragen, sobald es veröffentlicht ist – bis dahin bleibt der Knopf ausgeblendet.
+ */
+export const SERVER_PLUGIN_RELEASE_PAGE = `${REPO_URL}/releases/tag/server-plugin`
+export const SERVER_PLUGIN_MODRINTH_URL: string = ''
 export const ALTSTORE_SOURCE = `${REPO_URL}/releases/download/mobile/altstore.json`
 /** SHA-256 des Zertifikats, mit dem die APK signiert ist (zum Nachprüfen, z. B. mit apksigner). */
 export const APK_CERT_SHA256 = '8a:aa:a3:d9:8b:06:a7:24:d1:c7:ee:d0:d0:de:f4:3a:27:75:de:f5:58:a4:51:2e:07:e7:81:61:63:1f:91:aa'

@@ -40,6 +40,7 @@ export const SITE_PAGES: readonly { path: string, priority: number }[] = [
   { path: '/', priority: 1 },
   { path: '/features', priority: 0.9 },
   { path: '/download', priority: 0.9 },
+  { path: '/servers', priority: 0.7 },
   // Themen-Seiten (shared/landing.ts)
   { path: '/minecraft-launcher', priority: 0.8 },
   { path: '/redstone-launcher', priority: 0.8 },

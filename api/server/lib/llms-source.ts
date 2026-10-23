@@ -2,6 +2,7 @@ import { WEBSITE_PRIVACY } from '../../app/content/website-privacy'
 import { circuitTexts } from '../../app/utils/circuit-i18n'
 import { issueTexts } from '../../app/utils/issue-i18n'
 import { messages } from '../../app/utils/messages'
+import { serversTexts } from '../../app/utils/servers-i18n'
 import { teamTexts } from '../../app/utils/team-i18n'
 import { landingTexts } from '../../shared/landing'
 import type { LlmsSource } from './llms'
@@ -19,6 +20,7 @@ export async function llmsSource(siteUrl: string): Promise<LlmsSource> {
       roadmap: issueTexts.en.seo.roadmap.description,
       circuits: circuitTexts.en.seo.list.description,
       team: teamTexts.en.seo.team.description,
+      servers: serversTexts.en.seo.description,
     },
     privacy: WEBSITE_PRIVACY.en.intro,
     releases: posts.slice(0, 6).map((p) => ({ version: p.version, name: p.title?.en ?? null, date: p.date, headlines: p.headlines.en })),

@@ -3,7 +3,7 @@ import type { ScrollFx } from '~/utils/scroll-fx/engine'
 
 // Sanftes Scrollen + Scroll-Animationen nur auf den Inhaltsseiten. Admin, Docs, Issues, Chat & Co. bleiben
 // unberührt; GSAP/Lenis werden erst geladen, wenn eine solche Seite offen ist (eigener Chunk).
-const FX_PATHS = new Set(['/', '/features', '/download', '/faq', '/privacy', '/blog', '/team', '/cosmetics', ...LANDING_IDS.map(landingPath)])
+const FX_PATHS = new Set(['/', '/features', '/download', '/servers', '/faq', '/privacy', '/blog', '/team', '/cosmetics', ...LANDING_IDS.map(landingPath)])
 
 function wantsFx(path: string): boolean {
   const p = path.replace(/\/+$/, '') || '/'

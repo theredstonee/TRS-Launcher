@@ -153,6 +153,7 @@ const en = {
       creators: 'Creators',
       featured: 'Featured modpacks',
       pitch: 'Pitch',
+      serverrules: 'Server rules',
     } as Record<string, string>,
     perms: {
       'dashboard.view': 'See the overview',
@@ -195,6 +196,7 @@ const en = {
       'creators.manage': 'Manage creators (add, tier, codes, revoke, requests, preview builds)',
       'featured.manage': 'Manage featured modpacks (add, texts, badge, order, time window)',
       'pitch.manage': 'Create, revoke and preview secret pitch presentation links',
+      'serverrules.bypass': 'Use TRS Client features locked by a server anyway (after an in-game prompt; the server is not told)',
     } as Record<string, string>,
     roles: {
       title: 'Roles & team',
@@ -557,6 +559,7 @@ const de: TeamTexts = {
       creators: 'Creator',
       featured: 'Empfohlene Modpacks',
       pitch: 'Pitch',
+      serverrules: 'Server-Regeln',
     },
     perms: {
       'dashboard.view': 'Übersicht sehen',
@@ -599,6 +602,7 @@ const de: TeamTexts = {
       'creators.manage': 'Creator verwalten (hinzufügen, Stufe, Codes, Entzug, Anfragen, Vorschau-Builds)',
       'featured.manage': 'Empfohlene Modpacks verwalten (hinzufügen, Texte, Abzeichen, Reihenfolge, Zeitraum)',
       'pitch.manage': 'Geheime Links zur Pitch-Präsentation erzeugen, widerrufen und ansehen',
+      'serverrules.bypass': 'Vom Server gesperrte TRS-Client-Funktionen trotzdem nutzen (nach Nachfrage im Spiel; der Server erfährt nichts)',
     },
     roles: {
       title: 'Rollen & Team',
@@ -959,6 +963,7 @@ const es: TeamTexts = {
       creators: 'Creadores',
       featured: 'Modpacks destacados',
       pitch: 'Pitch',
+      serverrules: 'Reglas de servidor',
     },
     perms: {
       'dashboard.view': 'Ver el resumen',
@@ -1001,6 +1006,7 @@ const es: TeamTexts = {
       'creators.manage': 'Gestionar creadores (añadir, nivel, códigos, retirar, solicitudes, versiones previas)',
       'featured.manage': 'Gestionar modpacks destacados (añadir, textos, insignia, orden, periodo)',
       'pitch.manage': 'Crear, revocar y ver enlaces secretos de la presentación pitch',
+      'serverrules.bypass': 'Usar igualmente funciones del TRS Client bloqueadas por un servidor (tras confirmar en el juego; el servidor no se entera)',
     },
     roles: {
       title: 'Roles y equipo',

@@ -22,7 +22,7 @@ export interface LlmsSource {
   m: Messages
   landing: LandingTexts
   /** Beschreibungen der Seiten aus den anderen Textdateien (Issues, Roadmap, Schaltungen, Team). */
-  pages: { issues: string, roadmap: string, circuits: string, team: string }
+  pages: { issues: string, roadmap: string, circuits: string, team: string, servers?: string }
   /** Kurzfassung der Datenschutzerklärung. */
   privacy: string
   /** Neueste Versionen aus dem Changelog, neueste zuerst (leer, wenn GitHub nicht erreichbar war). */
@@ -81,6 +81,7 @@ export function buildLlmsTxt(s: LlmsSource): string {
     `- [Features](${u}/features): ${line(m.seo.features.description)}`,
     `- [Download](${u}/download): ${line(m.seo.download.description)}`,
     `- [FAQ](${u}/faq): ${line(m.seo.faq.description)}`,
+    ...(s.pages.servers ? [`- [For servers: TRS Server Rules](${u}/servers): ${line(s.pages.servers)}`] : []),
     '',
     '## Topics',
     '',

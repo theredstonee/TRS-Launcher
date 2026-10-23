@@ -43,6 +43,8 @@ export const PERMISSIONS = [
   'creators.manage',
   'featured.manage',
   'pitch.manage',
+  // TRS Server Rules: vom Server gesperrte TRS-Client-Module trotzdem nutzen (Nachfrage im Spiel; offen dokumentiert).
+  'serverrules.bypass',
 ] as const
 export type Permission = (typeof PERMISSIONS)[number]
 const PERMISSION_SET: ReadonlySet<string> = new Set(PERMISSIONS)
@@ -64,6 +66,7 @@ export const PERMISSION_GROUPS: { id: string, permissions: Permission[] }[] = [
   { id: 'creators', permissions: ['creators.review', 'creators.manage'] },
   { id: 'featured', permissions: ['featured.manage'] },
   { id: 'pitch', permissions: ['pitch.manage'] },
+  { id: 'serverrules', permissions: ['serverrules.bypass'] },
 ]
 
 /** Recht je Strafart (§22.2). */

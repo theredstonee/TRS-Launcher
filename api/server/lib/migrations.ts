@@ -847,7 +847,19 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 31,
     run: migrateEventLookBlocks,
   },
+  {
+    // TRS Server Rules: Team-Recht `serverrules.bypass` (vom Server gesperrte TRS-Client-Module nach Nachfrage im Spiel
+    // trotzdem nutzen; offen dokumentiert) für Owner und Admin. Nur Rechte, keine Tabellen. Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 32,
+    run: migrateServerRulesBypass,
+  },
 ]
+
+/** Migration 32 (siehe oben): Recht `serverrules.bypass` für die Standardrollen Owner und Admin. Exportiert für den Test. */
+export function migrateServerRulesBypass(db: DatabaseSync): void {
+  grantBuiltin(db, { owner: ['serverrules.bypass'], admin: ['serverrules.bypass'] })
+}
 
 /** Migration 31 (siehe oben): Look-Sperrliste je Event. Exportiert für den Idempotenz-Test. */
 export function migrateEventLookBlocks(db: DatabaseSync): void {
