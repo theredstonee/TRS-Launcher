@@ -66,6 +66,7 @@ pub mod presets;
 pub mod process;
 pub mod screenshots;
 pub mod server_export;
+pub mod server_rules;
 pub mod server_share;
 pub mod servers;
 pub mod settings;
@@ -126,6 +127,8 @@ pub struct Launcher {
     client_mod_dir: std::sync::RwLock<Option<PathBuf>>,
     /// Update-Kanal für den TRS Client (GitHub-Release `client-mod`).
     client_mod_updates: client_mod_update::ClientModUpdater,
+    /// Kanal für das Server-Plugin „TRS Server Rules“ (GitHub-Release `server-plugin`).
+    server_rules: server_rules::ServerRulesChannel,
     /// Instanzen, die gerade vorbereitet werden (Schutz vor Doppelklicks).
     preparing: Mutex<HashSet<String>>,
     /// Instanzen, deren nächster Start nach einem Speicherfehler sichere Werte nimmt.
@@ -239,6 +242,7 @@ impl Launcher {
             import_folders: Mutex::default(),
             client_mod_dir: std::sync::RwLock::default(),
             client_mod_updates: client_mod_update::ClientModUpdater::new(&paths)?,
+            server_rules: server_rules::ServerRulesChannel::new()?,
             preparing: Mutex::default(),
             safe_memory: Mutex::default(),
             skin_sync: skin_sync::SkinSync::default(),

@@ -150,6 +150,7 @@ fn options() -> ServerExportOptions {
         eula_accepted: false,
         zip: true,
         local: false,
+        server_rules: false,
     }
 }
 
@@ -282,8 +283,10 @@ fn readme_mentions_eula_state_and_left_out_mods() {
         mods: 3,
         left_out: &left,
         needs_internet_first_start: true,
+        server_rules: None,
     };
     let text = files::readme(&info);
+    assert!(!text.contains("TRS Server Rules"));
     assert!(text.contains("Fabric 0.16.9"));
     assert!(text.contains("NOT been accepted"));
     assert!(text.contains("  - Sodium"));
@@ -292,6 +295,10 @@ fn readme_mentions_eula_state_and_left_out_mods() {
     let accepted = files::readme(&ReadmeInfo { eula_accepted: true, needs_internet_first_start: false, ..info });
     assert!(accepted.contains("was accepted"));
     assert!(!accepted.contains("needs internet"));
+    let rules = files::readme(&ReadmeInfo { server_rules: Some("trs-server-rules-fabric-1.21.1-1.0.0.jar"), ..info });
+    assert!(rules.contains("TRS Server Rules: mods/trs-server-rules-fabric-1.21.1-1.0.0.jar"));
+    assert!(rules.contains("config/trs-server-rules.yml"));
+    assert!(rules.contains("https://trs-launcher.theredstonee.de/servers"));
 }
 
 #[test]

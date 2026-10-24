@@ -3,14 +3,19 @@ import { createPinia, setActivePinia } from 'pinia'
 import {
   type LocalServer,
   type ServerMod,
+  type ServerRulesOffer,
   appendLog,
   cleanCommand,
   defaultServerMods,
   localServerEventSchema,
   serverExportOptionsSchema,
   serverExportPlanSchema,
+  serverRulesHint,
   splitMods,
+  withServerRulesDeps,
 } from '../app/utils/serverExport'
+import { t } from '../app/utils/i18n'
+import { isNewer, parseJarName } from '../scripts/publish-server-plugin.mjs'
 
 // „Als Server exportieren“: Vorauswahl der Mods, Formularregeln (wie im Kern),
 // Prüfung der Kern-Antworten und der Store der lokalen Server (Log + Zustand).
@@ -65,6 +70,16 @@ const options = {
   eulaAccepted: false,
   zip: true,
   local: false,
+  serverRules: false,
+}
+
+const rules: ServerRulesOffer = {
+  available: true,
+  reason: null,
+  version: '1.0.0',
+  file: 'trs-server-rules-fabric-1.21.11-1.0.0.jar',
+  needsFabricApi: true,
+  fabricApiFile: 'fabric-api-0.140.jar',
 }
 
 describe('Mod-Auswahl', () => {
@@ -111,6 +126,57 @@ describe('Formular', () => {
   })
 })
 
+describe('TRS Server Rules', () => {
+  const fabric = { gameVersion: '1.21.11', loader: 'fabric' as const }
+
+  it('nimmt Fabric API beim Einschalten mit', () => {
+    expect(withServerRulesDeps(rules, ['a.jar'])).toEqual(['a.jar', 'fabric-api-0.140.jar'])
+    expect(withServerRulesDeps(rules, ['fabric-api-0.140.jar'])).toEqual(['fabric-api-0.140.jar'])
+    expect(withServerRulesDeps({ ...rules, needsFabricApi: false }, ['a.jar'])).toEqual(['a.jar'])
+    expect(withServerRulesDeps({ ...rules, fabricApiFile: null }, ['a.jar'])).toEqual(['a.jar'])
+  })
+
+  it('erklärt, warum die Option fehlt, und warnt ohne Fabric API', () => {
+    const off = (reason: ServerRulesOffer['reason']) => ({ ...rules, available: false, reason, file: null })
+    expect(serverRulesHint(off('vanilla'), { gameVersion: '1.21.11', loader: 'vanilla' }, false, [])).toEqual({
+      text: t('serverExport.serverRules.unavailable.vanilla'),
+      warn: false,
+    })
+    expect(serverRulesHint(off('version'), { gameVersion: '1.12.2', loader: 'forge' }, false, [])?.text).toBe(
+      t('serverExport.serverRules.unavailable.version', { version: '1.12.2', loader: 'Forge' }),
+    )
+    expect(serverRulesHint(off('offline'), fabric, false, [])?.text).toBe(t('serverExport.serverRules.unavailable.offline'))
+    // Verfügbar, aber aus: kein Hinweis.
+    expect(serverRulesHint(rules, fabric, false, [])).toBeNull()
+    expect(serverRulesHint(rules, fabric, true, ['fabric-api-0.140.jar'])).toEqual({ text: t('serverExport.serverRules.fabricApiIncluded'), warn: false })
+    expect(serverRulesHint(rules, fabric, true, [])?.warn).toBe(true)
+    expect(serverRulesHint({ ...rules, fabricApiFile: null }, fabric, true, [])).toEqual({ text: t('serverExport.serverRules.fabricApiMissing'), warn: true })
+    expect(serverRulesHint({ ...rules, needsFabricApi: false }, { gameVersion: '1.21.1', loader: 'neoforge' }, true, [])).toBeNull()
+  })
+
+  it('Veröffentlichen liest Plattform und Minecraft-Version aus den Jar-Namen', () => {
+    expect(parseJarName('trs-server-rules-bukkit-1.0.0.jar', '1.0.0')).toEqual({ platform: 'bukkit' })
+    expect(parseJarName('trs-server-rules-velocity-1.0.0.jar', '1.0.0')).toEqual({ platform: 'velocity' })
+    expect(parseJarName('trs-server-rules-fabric-1.21.11-1.0.0.jar', '1.0.0')).toEqual({ platform: 'fabric', mc: '1.21.11' })
+    expect(parseJarName('trs-server-rules-neoforge-1.21.1-1.0.0.jar', '1.0.0')).toEqual({ platform: 'neoforge', mc: '1.21.1' })
+    expect(parseJarName('trs-server-rules-forge-1.20.1-1.0.0.jar', '1.0.0')).toEqual({ platform: 'forge', mc: '1.20.1' })
+    // Andere Version (alter Build im Ordner), unbekannte Plattform, Plugin mit Version, Mod ohne.
+    expect(parseJarName('trs-server-rules-bukkit-0.9.0.jar', '1.0.0')).toBeNull()
+    expect(parseJarName('trs-server-rules-minestom-1.0.0.jar', '1.0.0')).toBeNull()
+    expect(parseJarName('trs-server-rules-bukkit-1.21-1.0.0.jar', '1.0.0')).toBeNull()
+    expect(parseJarName('trs-server-rules-fabric-1.0.0.jar', '1.0.0')).toBeNull()
+    expect(parseJarName('other-1.0.0.jar', '1.0.0')).toBeNull()
+    expect(isNewer('1.0.1', '1.0.0')).toBe(true)
+    expect(isNewer('1.0.0', '1.0.0')).toBe(false)
+    expect(isNewer('1.0.0', '1.0.0-beta.1')).toBe(true)
+  })
+
+  it('gehört zu den Formular-Optionen', () => {
+    expect(serverExportOptionsSchema.safeParse({ ...options, serverRules: true }).success).toBe(true)
+    expect(serverExportOptionsSchema.safeParse({ ...options, serverRules: 'ja' }).success).toBe(false)
+  })
+})
+
 describe('Antworten des Kerns', () => {
   it('prüft den Plan und die Ereignisse', () => {
     const plan = {
@@ -125,8 +191,11 @@ describe('Antworten des Kerns', () => {
       worlds: [{ folder: 'Welt', name: 'Meine Welt' }],
       configDirs: ['config'],
       offline: false,
+      serverRules: rules,
     }
     expect(serverExportPlanSchema.safeParse(plan).success).toBe(true)
+    expect(serverExportPlanSchema.safeParse({ ...plan, serverRules: { ...rules, reason: 'kaputt' } }).success).toBe(false)
+    expect(serverExportPlanSchema.safeParse({ ...plan, serverRules: { ...rules, file: '' } }).success).toBe(false)
     expect(serverExportPlanSchema.safeParse({ ...plan, loader: 'optifine' }).success).toBe(false)
     expect(localServerEventSchema.safeParse({ type: 'logs', id: 'mein-server', lines: ['x'] }).success).toBe(true)
     expect(localServerEventSchema.safeParse({ type: 'logs', id: '../x', lines: [] }).success).toBe(false)

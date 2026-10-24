@@ -889,6 +889,11 @@
       "loaderUnavailable": "Ce mod loader n'existe pas en version serveur pour Minecraft {version}.",
       "installerFailed": "L'installateur du mod loader a échoué. Vérifie ta connexion internet et réessaie."
     },
+    "serverRules": {
+      "manifestUnreadable": "Le manifeste de TRS Server Rules est illisible.",
+      "unavailable": "TRS Server Rules n’est pas disponible pour ce serveur (Minecraft {version}) – décoche l’option.",
+      "channelUnavailable": "Impossible de charger TRS Server Rules pour le moment – réessaie plus tard ou décoche l’option."
+    },
     "localServer": {
       "notFound": "Ce serveur n'existe pas (ou plus).",
       "eulaMissing": "Le serveur ne démarre qu'une fois l'EULA de Minecraft acceptée.",
@@ -6691,7 +6696,22 @@
     "doneZip": "Serveur enregistré : {file} ({size})",
     "doneLocal": "Le serveur « {name} » est installé",
     "localCreated": "Le serveur « {name} » est installé.",
-    "openConsole": "Ouvrir la console"
+    "openConsole": "Ouvrir la console",
+    "serverRules": {
+      "label": "TRS Server Rules (verrouiller des modules du TRS Client sur le serveur)",
+      "info": "Ajoute le plugin serveur de TRS. Tu décides ainsi quelles fonctions du TRS Client (p. ex. minicarte, zoom, fullbright) les joueurs peuvent utiliser sur ton serveur – pour tous ou par monde. La config est créée au premier démarrage dans config/trs-server-rules.yml.",
+      "link": "En savoir plus",
+      "version": "Version {version}",
+      "teamNote": "Documenté ouvertement : les membres de l’équipe TRS peuvent lever un verrou dans leur propre client après confirmation.",
+      "unavailable": {
+        "vanilla": "Disponible uniquement pour les serveurs Fabric, Quilt, Forge ou NeoForge – un serveur vanilla ne charge pas de mods.",
+        "version": "TRS Server Rules n’est pas (encore) disponible pour Minecraft {version} avec {loader}.",
+        "offline": "Le téléchargement de TRS Server Rules est injoignable – rouvre la fenêtre plus tard."
+      },
+      "fabricApiIncluded": "Nécessite Fabric API sur le serveur – il est sélectionné.",
+      "fabricApiMissing": "Nécessite Fabric API sur le serveur – cette instance n’en a pas. Mets Fabric API dans le dossier mods du serveur après l’export.",
+      "fabricApiDeselected": "Nécessite Fabric API sur le serveur – resélectionne Fabric API dans la liste des mods."
+    }
   },
   "localServers": {
     "title": "Mes serveurs",

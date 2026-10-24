@@ -917,6 +917,11 @@
       "loaderUnavailable": "This mod loader isn't available as a server for Minecraft {version}.",
       "installerFailed": "The mod loader installer failed. Please check your internet connection and try again."
     },
+    "serverRules": {
+      "manifestUnreadable": "The TRS Server Rules manifest is unreadable.",
+      "unavailable": "TRS Server Rules is not available for this server (Minecraft {version}) – please untick the option.",
+      "channelUnavailable": "TRS Server Rules could not be loaded right now – please try again later or untick the option."
+    },
     "localServer": {
       "notFound": "This server doesn't exist (anymore).",
       "eulaMissing": "The server only starts once the Minecraft EULA is accepted.",
@@ -6840,7 +6845,22 @@
     "doneZip": "Server saved: {file} ({size})",
     "doneLocal": "Server \"{name}\" is set up",
     "localCreated": "Server \"{name}\" is set up.",
-    "openConsole": "Open console"
+    "openConsole": "Open console",
+    "serverRules": {
+      "label": "TRS Server Rules (lock TRS Client modules on the server)",
+      "info": "Adds the TRS server plugin to the server. With it you decide which TRS Client features (e.g. minimap, zoom, fullbright) players may use on your server – for everyone or per world. The config is created on the first start at config/trs-server-rules.yml.",
+      "link": "Learn more",
+      "version": "Version {version}",
+      "teamNote": "Openly documented: members of the TRS team can lift a lock in their own client after a confirmation.",
+      "unavailable": {
+        "vanilla": "Only available for servers with Fabric, Quilt, Forge or NeoForge – a vanilla server cannot load mods.",
+        "version": "TRS Server Rules is not available (yet) for Minecraft {version} with {loader}.",
+        "offline": "The TRS Server Rules download could not be reached – open the dialog again later."
+      },
+      "fabricApiIncluded": "Needs Fabric API on the server – it is selected.",
+      "fabricApiMissing": "Needs Fabric API on the server – this instance has none. Put Fabric API into the server's mods folder after the export.",
+      "fabricApiDeselected": "Needs Fabric API on the server – please select Fabric API in the mod list again."
+    }
   },
   "localServers": {
     "title": "My servers",

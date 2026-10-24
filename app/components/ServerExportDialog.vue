@@ -2,11 +2,14 @@
 import type { Instance } from '~/types'
 import {
   MINECRAFT_EULA_URL,
+  SERVER_RULES_URL,
   type ServerExportPlan,
   type ServerExportProgress,
   type ServerMod,
   defaultServerMods,
   serverExportOptionsSchema,
+  serverRulesHint,
+  withServerRulesDeps,
   modSideLabel,
   modSourceLabel,
   splitMods,
@@ -41,6 +44,7 @@ const ramMb = ref(4096)
 const eula = ref(false)
 const asZip = ref(true)
 const local = ref(false)
+const serverRules = ref(false)
 const formError = ref<string | null>(null)
 
 onMounted(async () => {
@@ -93,6 +97,19 @@ const actionLabel = computed(() => {
 })
 const canStart = computed(() => !!plan.value?.supported && !loading.value && !progress.value && (asZip.value || local.value))
 
+const rulesHint = computed(() => (plan.value ? serverRulesHint(plan.value.serverRules, plan.value, serverRules.value, selected.value) : null))
+
+function setServerRules(on: boolean) {
+  if (!plan.value?.serverRules.available || progress.value) return
+  serverRules.value = on
+  // Die Fabric-Mod braucht Fabric API auf dem Server – gleich mit auswählen.
+  if (on) selected.value = withServerRulesDeps(plan.value.serverRules, selected.value)
+}
+
+function openServerRulesInfo() {
+  backend.openExternalUrl(SERVER_RULES_URL).catch((e) => toasts.error(e))
+}
+
 function openEula() {
   backend.openExternalUrl(MINECRAFT_EULA_URL).catch((e) => toasts.error(e))
 }
@@ -115,6 +132,7 @@ async function start() {
     eulaAccepted: eula.value,
     zip: asZip.value,
     local: local.value,
+    serverRules: serverRules.value && !!plan.value?.serverRules.available,
   })
   if (!parsed.success) {
     formError.value = firstIssue(parsed.error)
@@ -277,6 +295,28 @@ async function start() {
             </label>
             <input id="se-ram" v-model.number="ramMb" type="range" min="1024" max="16384" step="512" class="w-full accent-redstone-500" :disabled="!!progress" />
             <p class="mt-1 text-xs text-base-400">{{ t('serverExport.javaHint', { major: plan.javaMajor }) }}</p>
+          </div>
+
+          <div class="rounded-md border border-base-700 bg-base-900/60 p-3">
+            <label class="flex items-start gap-3" :class="plan.serverRules.available ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'">
+              <input
+                type="checkbox"
+                class="mt-0.5 size-4 accent-redstone-500"
+                :checked="serverRules"
+                :disabled="!plan.serverRules.available || !!progress"
+                @change="setServerRules(($event.target as HTMLInputElement).checked)"
+              />
+              <span class="min-w-0 text-sm text-base-100">{{ t('serverExport.serverRules.label') }}</span>
+            </label>
+            <p class="mt-1.5 pl-7 text-xs leading-relaxed text-base-400">
+              {{ t('serverExport.serverRules.info') }}
+              <button type="button" class="text-redstone-300 underline hover:text-redstone-200" @click="openServerRulesInfo">{{ t('serverExport.serverRules.link') }}</button>
+            </p>
+            <p v-if="plan.serverRules.available && plan.serverRules.version" class="mt-1 truncate pl-7 font-mono text-[11px] text-base-500" :title="plan.serverRules.file ?? undefined">
+              {{ t('serverExport.serverRules.version', { version: plan.serverRules.version }) }}
+            </p>
+            <p v-if="rulesHint" class="mt-1 pl-7 text-xs" :class="rulesHint.warn ? 'text-lamp-300' : 'text-base-400'">{{ rulesHint.text }}</p>
+            <p v-if="serverRules" class="mt-1 pl-7 text-xs text-base-500">{{ t('serverExport.serverRules.teamNote') }}</p>
           </div>
 
           <div class="rounded-md border border-base-700 bg-base-900/60 p-3">

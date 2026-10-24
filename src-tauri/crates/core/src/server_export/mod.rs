@@ -24,6 +24,7 @@ use self::sides::{ModSide, SideSignals, SideSource};
 use crate::instance::{LoaderKind, validate_id};
 use crate::local_servers::{self, LocalServerInfo, ServerMeta};
 use crate::meta::version::VersionInfo;
+use crate::server_rules::{self, ServerRulesOffer};
 use crate::{Error, Launcher, Result, java, meta, modpack_export, modrinth, worlds};
 
 /// Höchstens so viele Mods werden angesehen.
@@ -77,6 +78,8 @@ pub struct ServerExportPlan {
     pub config_dirs: Vec<String>,
     /// Modrinth/CurseForge waren nicht erreichbar – Einordnung nur aus den Jars.
     pub offline: bool,
+    /// Option „TRS Server Rules mitinstallieren“ (passender Jar aus dem Kanal `server-plugin`).
+    pub server_rules: ServerRulesOffer,
 }
 
 /// Auswahl des Nutzers.
@@ -104,6 +107,9 @@ pub struct ServerExportOptions {
     /// Lokal anlegen und starten.
     #[serde(default)]
     pub local: bool,
+    /// Das Server-Plugin „TRS Server Rules“ mit in `mods/` legen.
+    #[serde(default)]
+    pub server_rules: bool,
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -445,7 +451,21 @@ impl Launcher {
 
         let mods_dir = game_dir.join("mods");
         let scanned = tokio::task::spawn_blocking(move || scan_mods(&mods_dir, true)).await.map_err(blocking_err)?;
-        let (modrinth, curseforge, offline) = self.lookup_sides(&game_dir, &scanned).await;
+        // Kanal von TRS Server Rules gleichzeitig mit dem Mod-Abgleich fragen (Vanilla braucht ihn nicht).
+        let rules_manifest = async {
+            server_rules::platform_for(instance.loader.kind)?;
+            match self.server_rules.manifest().await {
+                Ok(m) => Some(m),
+                Err(e) => {
+                    tracing::info!("TRS Server Rules nicht verfügbar: {e}");
+                    None
+                }
+            }
+        };
+        let ((modrinth, curseforge, offline), rules_manifest) = tokio::join!(self.lookup_sides(&game_dir, &scanned), rules_manifest);
+        let fabric_api_file = scanned.iter().find(|m| server_rules::is_fabric_api(&m.facts.ids)).map(|m| m.file_name.clone());
+        let server_rules =
+            ServerRulesOffer::new(rules_manifest.as_ref(), instance.loader.kind, &instance.game_version, fabric_api_file);
         let mods = classify_mods(&scanned, &modrinth, &curseforge);
 
         let worlds = worlds::list(self.paths(), &instance.id)
@@ -473,6 +493,7 @@ impl Launcher {
             worlds,
             config_dirs,
             offline,
+            server_rules,
         })
     }
 
@@ -595,6 +616,19 @@ impl Launcher {
             Some(folder) => Some(worlds::world_dir(self.paths(), &instance.id, folder).map_err(|_| invalid_world())?),
             None => None,
         };
+        // TRS Server Rules: vor dem Bauen klären, ob es den passenden Jar gibt.
+        let rules_file = if options.server_rules {
+            Some(self.server_rules_file(instance.loader.kind, &instance.game_version).await?)
+        } else {
+            None
+        };
+        // Ein mitgewählter alter Jar würde neben dem neuen doppelt laden.
+        let chosen_mods: Vec<String> = checked
+            .mods
+            .iter()
+            .filter(|m| rules_file.is_none() || !m.to_ascii_lowercase().starts_with(server_rules::FILE_PREFIX))
+            .cloned()
+            .collect();
 
         // 1. Version + Java
         progress(ServerExportPhase::Java, 0.0);
@@ -663,7 +697,7 @@ impl Launcher {
             .collect();
         {
             let (game_dir, dest, mods, world_dir, include_configs) =
-                (game_dir.clone(), staging_dir.clone(), checked.mods.clone(), world_dir.clone(), options.include_configs);
+                (game_dir.clone(), staging_dir.clone(), chosen_mods.clone(), world_dir.clone(), options.include_configs);
             let cancelled = cancel_probe();
             let report = {
                 let on_progress = on_progress.clone();
@@ -701,6 +735,10 @@ impl Launcher {
             .await
             .map_err(blocking_err)??;
         }
+        if let Some(file) = &rules_file {
+            self.server_rules.install(file, &staging_dir).await?;
+        }
+        let mod_count = chosen_mods.len() + usize::from(rules_file.is_some());
 
         let eula_at = chrono::Utc::now();
         let readme = files::readme(&ReadmeInfo {
@@ -712,9 +750,10 @@ impl Launcher {
             port: checked.props.port,
             ram_mb: options.ram_mb,
             eula_accepted: options.eula_accepted,
-            mods: checked.mods.len(),
+            mods: mod_count,
             left_out: &left_out,
             needs_internet_first_start: installed.needs_internet,
+            server_rules: rules_file.as_ref().map(|f| f.file.as_str()),
         });
         let mut own_files: Vec<(&str, String)> = vec![
             ("server.properties", files::server_properties(&checked.props, checked.world.is_some())),
@@ -743,7 +782,7 @@ impl Launcher {
             zip_file: None,
             zip_bytes: 0,
             local: None,
-            mods: checked.mods.len(),
+            mods: mod_count,
             left_out: left_out.len(),
             start_error: None,
         };
@@ -796,6 +835,28 @@ impl Launcher {
         }
         drop(staging);
         Ok(result)
+    }
+
+    /// Jar von TRS Server Rules für diesen Server – oder ein Fehler, der sagt, warum nicht.
+    async fn server_rules_file(&self, loader: LoaderKind, game_version: &str) -> Result<server_rules::PluginFile> {
+        let unavailable = || {
+            Error::validation(crate::msg!(
+                "serverRules.unavailable",
+                "TRS Server Rules gibt es für diesen Server (Minecraft {version}) nicht – bitte die Option abwählen.",
+                version = game_version
+            ))
+        };
+        if server_rules::platform_for(loader).is_none() {
+            return Err(unavailable());
+        }
+        let manifest = self.server_rules.manifest().await.map_err(|e| {
+            tracing::warn!("TRS Server Rules nicht abrufbar: {e}");
+            Error::validation(crate::msg!(
+                "serverRules.channelUnavailable",
+                "TRS Server Rules konnte gerade nicht geladen werden – bitte später erneut versuchen oder die Option abwählen."
+            ))
+        })?;
+        server_rules::select(&manifest, loader, game_version).cloned().map_err(|_| unavailable())
     }
 
     /// Startet einen lokalen Server (Java wird bei Bedarf geladen).
