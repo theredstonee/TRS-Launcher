@@ -34,7 +34,8 @@ public final class MapCompareTest {
 	static final long SEED = 20261024L;
 	/** Eingebaute Stellen für {@link #SEED} (mit {@code cmp.locate=true} ermittelt). */
 	static final String DEFAULT_SPOTS = "peaks:2240:1312,coast:192:192,swamp:-224:-256,jungle:-480:224,village:-544:544,warmocean:1984:-768";
-	private static final float[] WORLD_ZOOMS = {4f, 2f, 1f, 0.5f, 0.25f, 0.125f};
+	/** Zoomstufen der Weltkarte (Bildschirmpixel je Block); 3 entspricht dem Standardzoom der Vergleichskarte. */
+	private static final float[] WORLD_ZOOMS = {4f, 3f, 2f, 1f, 0.5f, 0.25f, 0.125f};
 
 	private final String label = System.getProperty("trsclient.autotest.cmp.label", MapPreview.enabled() ? "v3" : "v2");
 	private final boolean locate = Boolean.getBoolean("trsclient.autotest.cmp.locate");
@@ -270,6 +271,8 @@ public final class MapCompareTest {
 					wait = 40;
 					return;
 				}
+				// Zoom der Vergleichskarte zurück auf den Standard (+1 −4 +3), damit jede Stelle gleich aussieht.
+				for (int k = 0; k < 3; k++) scroll(1);
 				Mc.setScreen(null);
 				phase = 16;
 				wait = 10;
