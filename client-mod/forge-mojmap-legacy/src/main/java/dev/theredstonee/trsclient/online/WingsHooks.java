@@ -26,6 +26,14 @@ public final class WingsHooks {
 	static V2Hat<Object> wings(OnlineFeatures<Object> f, AbstractClientPlayer p) {
 		boolean elytra = p.getItemBySlot(EquipmentSlot.CHEST).getItem() == Items.ELYTRA;
 		if (elytra) return null;
+		return f.wingsV2(p.getUUID(), p == Minecraft.getInstance().player, false, state(p));
+	}
+
+	/**
+	 * Zustand des Spielers für Zustands-Animationen ({@code WingState} IDLE/AIR/SNEAK) – Flügel, aber auch Kopf-Kosmetik
+	 * und Begleiter am Kopf (z. B. Weihnachtsmütze im Sprung).
+	 */
+	static int state(AbstractClientPlayer p) {
 		//? if >=1.17 {
 		/*boolean flying = p.getAbilities().flying || p.isFallFlying();
 		*///?} else
@@ -40,8 +48,7 @@ public final class WingsHooks {
 		boolean climbing = p.onClimbable();
 		//?} else
 		/*boolean climbing = p.onLadder();*/
-		int state = WingState.classify(ground, p.isCrouching(), flying, p.isPassenger(), p.isInWater() || p.isInLava(), climbing);
-		return f.wingsV2(p.getUUID(), p == Minecraft.getInstance().player, false, state);
+		return WingState.classify(ground, p.isCrouching(), flying, p.isPassenger(), p.isInWater() || p.isInLava(), climbing);
 	}
 
 	//? if >=1.21.9 {

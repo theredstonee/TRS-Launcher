@@ -23,9 +23,22 @@ public final class PetDraw<T> {
 	/** Kamera im Anhängepunkt-Raum des Modells (Einheiten = Pixel) – für Höfe und Entfernungs-Stufe. */
 	public final double[] eye = new double[3];
 	private double cos, sin;
+	/** Zusätzlicher Versatz nur der Ecken (Ursprung der Zeichen-Matrix ≠ Kamera, z. B. Legacy-GL), siehe {@link #shift}. */
+	private double sx, sy, sz;
+
+	/**
+	 * Ecken zusätzlich um ({@code x}, {@code y}, {@code z}) verschieben – wenn der Ursprung der Zeichen-Matrix nicht die
+	 * Kamera ist (Legacy: Füße des Kamera-Wesens, die Kamera sitzt in Augenhöhe bzw. dahinter). {@link #eye} bleibt.
+	 */
+	public void shift(double x, double y, double z) {
+		sx = x;
+		sy = y;
+		sz = z;
+	}
 
 	/** Lage setzen; berechnet {@link #eye}. */
 	public void set(double dx, double dy, double dz, double yawDeg) {
+		sx = sy = sz = 0;
 		this.dx = dx;
 		this.dy = dy;
 		this.dz = dz;
@@ -42,7 +55,7 @@ public final class PetDraw<T> {
 
 	/** Vierecke (ModelPart-Raum) in kamerazentrierte Welt-Koordinaten umrechnen und an {@code out} geben. */
 	public CosmeticV2Renderer.VertexSink wrap(final CosmeticV2Renderer.VertexSink out) {
-		final double c = cos, s = sin, ox = dx, oy = dy, oz = dz;
+		final double c = cos, s = sin, ox = dx + sx, oy = dy + sy, oz = dz + sz;
 		return new CosmeticV2Renderer.VertexSink() {
 			@Override
 			public void vertex(float x, float y, float z, float u, float v, float nx, float ny, float nz, int argb) {

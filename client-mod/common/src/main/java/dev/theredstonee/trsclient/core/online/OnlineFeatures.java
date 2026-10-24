@@ -486,7 +486,7 @@ public final class OnlineFeatures<T> {
 		java.util.function.BiConsumer<dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<?>, Integer> trace = v2Trace;
 		if (trace != null) trace.accept(hat, pass);
 		try {
-			v2Renderer.pose(hat.model, hat.now, true, hat.helmet, hat.driver, hat.prevDriver, hat.blend);
+			v2Renderer.pose(hat.model, hat.now, true, hat.helmet, hat.driver, hat.prevDriver, hat.blend, hat.hiddenBones);
 			v2Renderer.emit(hat.model, pass, hat.now, eye, sink);
 		} catch (RuntimeException e) {
 			online.reportError(e);

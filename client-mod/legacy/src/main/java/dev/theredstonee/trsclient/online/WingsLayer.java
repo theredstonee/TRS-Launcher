@@ -29,20 +29,24 @@ public final class WingsLayer implements LayerRenderer<AbstractClientPlayer> {
 		OnlineFeatures<Object> features = LegacyOnline.features();
 		if (features == null || player.isInvisible() || LegacyOnline.elytra(player)) return;
 		try {
-			//? if >=1.9 {
-			/*boolean riding = player.isRiding();
-			boolean flying = player.capabilities.isFlying || player.isElytraFlying();
-			*///?} else {
-			boolean riding = player.ridingEntity != null;
-			boolean flying = player.capabilities.isFlying;
-			//?}
-			int state = WingState.classify(player.onGround, player.isSneaking(), flying, riding,
-					player.isInWater() || player.isInLava(), player.isOnLadder());
-			V2Hat<Object> wings = features.wingsV2(player.getUniqueID(), player == Mc.player(), false, state);
+			V2Hat<Object> wings = features.wingsV2(player.getUniqueID(), player == Mc.player(), false, state(player));
 			if (wings != null) hats.renderPart(features, wings, player, renderer.getMainModel().bipedBody);
 		} catch (RuntimeException e) {
 			features.online().reportError(e);
 		}
+	}
+
+	/** Zustand für Zustands-Animationen ({@code WingState} IDLE/AIR/SNEAK): Flügel, Kopf-Kosmetik, Begleiter am Kopf. */
+	static int state(AbstractClientPlayer player) {
+		//? if >=1.9 {
+		/*boolean riding = player.isRiding();
+		boolean flying = player.capabilities.isFlying || player.isElytraFlying();
+		*///?} else {
+		boolean riding = player.ridingEntity != null;
+		boolean flying = player.capabilities.isFlying;
+		//?}
+		return WingState.classify(player.onGround, player.isSneaking(), flying, riding, player.isInWater() || player.isInLava(),
+				player.isOnLadder());
 	}
 
 	@Override
