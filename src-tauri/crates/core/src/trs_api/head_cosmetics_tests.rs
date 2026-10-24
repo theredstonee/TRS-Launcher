@@ -221,8 +221,10 @@ async fn list_model_and_cache() {
     let before = server.requests().len();
     launcher.trs_head_cosmetic_model("crown").await.unwrap();
     launcher.trs_head_cosmetics().await.unwrap();
-    let after: Vec<_> = server.requests()[before..].iter().map(|r| r.path.clone()).collect();
-    assert_eq!(after, vec!["/v1/cosmetics".to_owned()], "nur der Katalog wird neu geholt");
+    let mut after: Vec<_> = server.requests()[before..].iter().map(|r| r.path.clone()).collect();
+    after.sort();
+    // Nur Katalog + Getragenes (Optionen/Anzahl) werden neu geholt; `me/cosmetics` darf fehlen (404 → ohne Extras).
+    assert_eq!(after, vec!["/v1/cosmetics".to_owned(), "/v1/me/cosmetics".to_owned()], "nur der Katalog wird neu geholt");
 }
 
 #[tokio::test]
@@ -288,4 +290,172 @@ fn wings_hang_on_the_body() {
     assert!(wearable_hat(&wings) && listed(&wings));
     assert_eq!(wings.unlock_kind(), Some(CosmeticUnlock::Reward));
     assert!(!wearable_hat(&entry(json!({ "id": "w", "slot": "wings", "template": "duck" }))), "Flügel nur als v2");
+}
+
+// --- Winter 2026 (Anhang D): Begleiter am Boden, Optionen, Anzahl -------------------------------
+
+#[test]
+fn pets_stand_on_the_ground() {
+    let mut m = model("test_pet", None);
+    m["slot"] = json!("pet");
+    assert!(check_model(&m, "test_pet").is_none(), "Begleiter am Boden brauchen attach ground");
+    m["attach"] = json!("ground");
+    assert!(check_model(&m, "test_pet").is_some());
+    m["slot"] = json!("companion");
+    assert!(check_model(&m, "test_pet").is_none(), "Begleiter am Kopf bleiben am Kopf");
+    let pet = entry(json!({ "id": "test_pet", "slot": "pet", "format": 2, "unlock": "code" }));
+    assert!(wearable_hat(&pet) && listed(&pet));
+    assert!(!wearable_hat(&entry(json!({ "id": "p", "slot": "pet", "template": "duck" }))), "Begleiter am Boden nur als v2");
+}
+
+#[test]
+fn model_options_are_checked() {
+    let with = |options: serde_json::Value| {
+        let mut m = model("test_cap", None);
+        m["options"] = options;
+        check_model(&m, "test_cap")
+    };
+    assert!(with(json!([{ "id": "beard", "bones": ["root"], "default": true, "name": { "de": "Bart" } }])).is_some());
+    assert!(with(json!([])).is_some());
+    assert!(with(json!([{ "id": "Beard", "bones": ["root"], "default": true }])).is_none());
+    assert!(with(json!([{ "id": "beard", "bones": [], "default": true }])).is_none());
+    assert!(with(json!([{ "id": "beard", "bones": ["root"], "default": "ja" }])).is_none());
+    assert!(with(json!([{ "id": "a", "bones": ["root"], "default": true }, { "id": "a", "bones": ["root"], "default": false }])).is_none());
+    let five: Vec<_> = ["a", "b", "c", "d", "e"].iter().map(|id| json!({ "id": id, "bones": ["root"], "default": true })).collect();
+    assert!(with(json!(five)).is_none());
+    assert!(with(json!({ "beard": true })).is_none());
+}
+
+#[test]
+fn worn_extras_read_options_and_count() {
+    let me = json!({ "equipped": {
+        "hat": { "id": "test_cap", "options": { "beard": false, "Bad-Key": true, "glow": "ja" } },
+        "pet": { "id": "test_pet", "count": 3, "source": "creator" },
+        "wings": null,
+        "companion": { "id": "../x" }
+    } });
+    let worn = worn_extras(&me);
+    assert_eq!(worn.len(), 2);
+    assert_eq!(worn["test_cap"].options, [("beard".to_owned(), false)].into_iter().collect());
+    assert_eq!(worn["test_cap"].count, None, "Anzahl nur beim Begleiter am Boden");
+    assert_eq!((worn["test_pet"].count, worn["test_pet"].creator), (Some(3), true));
+    // Rückfall: oberstes `options.<slot>`, ungültige Anzahl, Code-Pinguin.
+    let me = json!({ "equipped": { "hat": { "id": "test_cap" }, "pet": { "id": "test_pet", "count": 7 } }, "options": { "hat": { "beard": false } } });
+    let worn = worn_extras(&me);
+    assert_eq!(worn["test_cap"].options.get("beard"), Some(&false));
+    assert_eq!((worn["test_pet"].count, worn["test_pet"].creator), (None, false));
+    let me = json!({ "equipped": { "pet": { "id": "test_pet", "count": 2 } } });
+    assert!(worn_extras(&me)["test_pet"].creator, "mehr als einer = Creator-Stufe");
+    assert!(worn_extras(&json!({ "emotes": [] })).is_empty());
+}
+
+#[test]
+fn equip_bodies_carry_slot_and_options() {
+    use crate::trs_api::ops::equip_body;
+    let beard_off: BTreeMap<String, bool> = [("beard".to_owned(), false)].into_iter().collect();
+    assert_eq!(equip_body("pet", Some("test_pet"), None).unwrap(), json!({ "pet": "test_pet" }));
+    assert_eq!(equip_body("pet", None, None).unwrap(), json!({ "pet": null }));
+    assert_eq!(
+        equip_body("hat", Some("test_cap"), Some(&beard_off)).unwrap(),
+        json!({ "hat": "test_cap", "options": { "hat": { "beard": false } } })
+    );
+    assert_eq!(equip_body("hat", None, Some(&beard_off)).unwrap(), json!({ "hat": null }), "Optionen nur mit Teil");
+    assert_eq!(equip_body("hat", Some("test_cap"), Some(&BTreeMap::new())).unwrap(), json!({ "hat": "test_cap" }));
+    assert!(equip_body("back", Some("x"), None).is_err());
+    assert!(equip_body("pet", Some("../x"), None).is_err());
+    let bad: BTreeMap<String, bool> = [("Bad-Key".to_owned(), true)].into_iter().collect();
+    assert!(equip_body("hat", Some("test_cap"), Some(&bad)).is_err());
+    let many: BTreeMap<String, bool> = ["a", "b", "c", "d", "e"].iter().map(|k| ((*k).to_owned(), true)).collect();
+    assert!(equip_body("hat", Some("test_cap"), Some(&many)).is_err());
+}
+
+/// API mit Winter-Teilen (synthetisch): Testmütze mit Option, Test-Tier am Boden (Creator-Stufe 2).
+fn winter_api() -> impl Fn(&Request) -> Response + Send + Sync + 'static {
+    let issued = AtomicUsize::new(0);
+    move |req: &Request| {
+        if let Some(r) = auth_routes(req, &issued, "mc-token") {
+            return r;
+        }
+        match (req.method.as_str(), req.path.split('?').next().unwrap_or_default()) {
+            ("GET", "/v1/cosmetics") => Response::json(
+                200,
+                json!({ "cosmetics": [
+                    { "id": "test_cap", "name": "Testmütze", "slot": "hat", "format": 2, "unlock": "code", "owned": true, "equipped": true,
+                      "model": "/v1/cosmetics/test_cap/model.json?v=w1", "texture": "/v1/cosmetics/test_cap.png?v=w1", "hash": "w1" },
+                    { "id": "test_pet", "name": "Testtier", "slot": "pet", "format": 2, "unlock": "code", "owned": true, "equipped": true,
+                      "model": "/v1/cosmetics/test_pet/model.json?v=w2", "texture": "/v1/cosmetics/test_pet.png?v=w2", "hash": "w2" },
+                    { "id": "test_pet2", "name": "Testtier 2", "slot": "pet", "format": 2, "unlock": "code", "owned": false, "equipped": false,
+                      "count": 4, "model": "/v1/cosmetics/test_pet2/model.json?v=w3", "texture": "/v1/cosmetics/test_pet2.png?v=w3", "hash": "w3" }
+                ] }),
+            ),
+            ("GET", "/v1/me/cosmetics") => Response::json(
+                200,
+                json!({ "equipped": {
+                    "hat": { "id": "test_cap", "options": { "beard": false } },
+                    "pet": { "id": "test_pet", "count": 2, "source": "creator" },
+                    "wings": null, "companion": null
+                }, "emotes": [] }),
+            ),
+            ("PUT", "/v1/me/cosmetics") => Response::json(200, json!({ "equipped": {} })),
+            ("POST", "/v1/capes/redeem") => Response::json(
+                200,
+                json!({ "cape": null, "alreadyOwned": false, "cosmetic": { "id": "test_pet", "name": "Testtier", "slot": "pet", "format": 2 } }),
+            ),
+            _ => Response::error(404, "not_found"),
+        }
+    }
+}
+
+#[tokio::test]
+async fn pets_with_count_and_options_end_to_end() {
+    let server = MockServer::start(winter_api()).await;
+    let (_dir, launcher) = launcher(&server, &[ACC]).await;
+
+    let list = launcher.trs_head_cosmetics().await.unwrap();
+    let by = |id: &str| list.iter().find(|c| c.id == id).unwrap();
+    assert_eq!(list.len(), 3);
+    assert_eq!((by("test_cap").options.get("beard"), by("test_cap").count), (Some(&false), None));
+    let pet = by("test_pet");
+    assert_eq!((pet.slot.as_str(), pet.count, pet.creator, pet.equipped), ("pet", Some(2), true, true));
+    assert_eq!(by("test_pet2").count, None, "Anzahl nur am getragenen Teil");
+
+    // Setzen/Leeren + Optionen.
+    launcher.trs_set_pet(Some("test_pet".into())).await.unwrap();
+    launcher.trs_set_pet(None).await.unwrap();
+    let beard_on = [("beard".to_owned(), true)].into_iter().collect();
+    launcher.trs_equip_cosmetic("hat", Some("test_cap".into()), Some(beard_on)).await.unwrap();
+    assert!(launcher.trs_equip_cosmetic("aura", Some("test_cap".into()), None).await.is_err());
+    let puts: Vec<_> = server.hits("PUT", "/v1/me/cosmetics").iter().map(Request::json).collect();
+    assert_eq!(
+        puts,
+        vec![json!({ "pet": "test_pet" }), json!({ "pet": null }), json!({ "hat": "test_cap", "options": { "hat": { "beard": true } } })]
+    );
+
+    // Einlösen erkennt den Begleiter am Boden samt Fach.
+    let redeemed = launcher.trs_redeem("7K3QF-M2XPA-9RTVB-C4HJN").await.unwrap();
+    assert!(redeemed.wearable_hat);
+    assert_eq!(redeemed.slot.as_deref(), Some("pet"));
+}
+
+#[tokio::test]
+async fn older_api_without_me_cosmetics_still_lists() {
+    let issued = AtomicUsize::new(0);
+    let server = MockServer::start(move |req: &Request| {
+        if let Some(r) = auth_routes(req, &issued, "mc-token") {
+            return r;
+        }
+        match (req.method.as_str(), req.path.split('?').next().unwrap_or_default()) {
+            ("GET", "/v1/cosmetics") => Response::json(
+                200,
+                json!({ "cosmetics": [{ "id": "test_pet", "name": "Testtier", "slot": "pet", "format": 2, "owned": true, "equipped": true,
+                    "count": 3, "options": { "beard": false } }] }),
+            ),
+            _ => Response::error(404, "not_found"),
+        }
+    })
+    .await;
+    let (_dir, launcher) = launcher(&server, &[ACC]).await;
+    let list = launcher.trs_head_cosmetics().await.unwrap();
+    // Rückfall auf die Angaben am Katalog-Eintrag.
+    assert_eq!((list[0].count, list[0].options.get("beard")), (Some(3), Some(&false)));
 }

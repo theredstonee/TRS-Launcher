@@ -1,11 +1,13 @@
 //! TRS-Funktionen des Launchers: immer für den **aktiven** Minecraft-Account.
 
+use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::Duration;
 
 use serde_json::json;
 
 use super::texture::TextureSpec;
+use super::types::{MAX_OPTIONS, option_id};
 use super::types::{
     AdminCape, AdminStats, AdminUser, ApiActiveCape, ApiAdminCapes, ApiAdminUser, ApiBlocks, ApiCapeEnvelope,
     ApiCapeOffers, ApiCatalog, ApiCodes, ApiGrant, ApiLookup, ApiMe, ApiRedeem, BlockedUser, CapeHolders, CapeItem,
@@ -34,6 +36,33 @@ fn presence_retry(error: Option<Error>) -> Duration {
 
 fn bad_response() -> Error {
     super::bad_response()
+}
+
+/// Fächer, die `PUT /v1/me/cosmetics` mit einem 3D-Teil belegen kann (Begleiter am Boden: `pet`).
+pub(crate) const EQUIP_SLOTS: &[&str] = &["hat", "companion", "wings", "pet"];
+
+/// Body für `PUT /v1/me/cosmetics`: `{ <slot>: id|null }`, mit Teil optional
+/// `options: { <slot>: { <optId>: bool } }` (Anhang D; nur gültige Kennungen, höchstens 4).
+pub(crate) fn equip_body(slot: &str, id: Option<&str>, options: Option<&BTreeMap<String, bool>>) -> Result<serde_json::Value> {
+    if !EQUIP_SLOTS.contains(&slot) {
+        return Err(Error::validation(crate::msg!("trsOps.invalidCosmeticSlot", "Unbekanntes Kosmetik-Fach.")));
+    }
+    if let Some(id) = id
+        && !validate::cape_id(id)
+    {
+        return Err(Error::validation(crate::msg!("trsOps.invalidCosmeticId", "Ungültige Kosmetik-ID.")));
+    }
+    let mut body = serde_json::Map::new();
+    body.insert(slot.to_owned(), json!(id));
+    if let (Some(_), Some(options)) = (id, options.filter(|o| !o.is_empty())) {
+        if options.len() > MAX_OPTIONS || !options.keys().all(|k| option_id(k)) {
+            return Err(Error::validation(crate::msg!("trsOps.invalidCosmeticOption", "Ungültige Option für dieses Teil.")));
+        }
+        let mut per_slot = serde_json::Map::new();
+        per_slot.insert(slot.to_owned(), json!(options));
+        body.insert("options".into(), serde_json::Value::Object(per_slot));
+    }
+    Ok(serde_json::Value::Object(body))
 }
 
 fn uuid_arg(input: &str) -> Result<String> {
@@ -356,11 +385,13 @@ impl Launcher {
                 cosmetic_id: None,
                 already_owned: result.already_owned,
                 wearable_hat: false,
+                slot: None,
             }),
             (None, Some(c)) if validate::cape_id(&c.id) => Ok(super::types::RedeemResult {
                 kind: "cosmetic".into(),
                 name: validate::cape_name(&c.name, &c.id),
                 wearable_hat: wearable_hat(&c),
+                slot: EQUIP_SLOTS.contains(&c.slot.as_str()).then(|| c.slot.clone()),
                 cape_id: None,
                 cosmetic_id: Some(c.id),
                 already_owned: result.already_owned,
@@ -394,6 +425,24 @@ impl Launcher {
             return Err(Error::validation(crate::msg!("trsOps.invalidCosmeticId", "Ungültige Kosmetik-ID.")));
         }
         self.trs_do(Req::put("/v1/me/cosmetics", json!({ "hat": id }))).await
+    }
+
+    /// Begleiter am Boden (Pinguin …) hinstellen (`Some(id)`) oder wegnehmen (`None`).
+    pub async fn trs_set_pet(&self, id: Option<String>) -> Result<()> {
+        self.trs_equip_cosmetic("pet", id, None).await
+    }
+
+    /// Ein Fach belegen oder leeren, optional mit der Wahl der abschaltbaren Teile (Anhang D):
+    /// `PUT /v1/me/cosmetics { <slot>: id|null, options?: { <slot>: { <optId>: bool } } }`.
+    /// Optionen gehen nur mit einem Teil mit (beim Leeren fallen sie weg).
+    pub async fn trs_equip_cosmetic(
+        &self,
+        slot: &str,
+        id: Option<String>,
+        options: Option<BTreeMap<String, bool>>,
+    ) -> Result<()> {
+        let body = equip_body(slot, id.as_deref(), options.as_ref())?;
+        self.trs_do(Req::put("/v1/me/cosmetics", body)).await
     }
 
     /// Abzeichen und Umhänge anderer Spieler (z. B. der Freunde), höchstens 100.

@@ -251,6 +251,23 @@ pub async fn trs_set_companion(launcher: State<'_, LauncherState>, id: Option<St
     Ok(launcher.trs_set_companion(id).await?)
 }
 
+/// Begleiter am Boden (Pinguin …) hinstellen oder wegnehmen.
+#[tauri::command]
+pub async fn trs_set_pet(launcher: State<'_, LauncherState>, id: Option<String>) -> CommandResult<()> {
+    Ok(launcher.trs_set_pet(id).await?)
+}
+
+/// Fach belegen/leeren, optional mit der Wahl der abschaltbaren Teile (`{ "beard": false }`).
+#[tauri::command]
+pub async fn trs_equip_cosmetic(
+    launcher: State<'_, LauncherState>,
+    slot: String,
+    id: Option<String>,
+    options: Option<std::collections::BTreeMap<String, bool>>,
+) -> CommandResult<()> {
+    Ok(launcher.trs_equip_cosmetic(&slot, id, options).await?)
+}
+
 /// Kosmetik-Teil eines laufenden Events gratis holen.
 #[tauri::command]
 pub async fn trs_claim_cosmetic(launcher: State<'_, LauncherState>, id: String) -> CommandResult<()> {

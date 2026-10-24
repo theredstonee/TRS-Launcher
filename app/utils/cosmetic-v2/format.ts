@@ -17,17 +17,29 @@ export const CHANNELS = ['rotation', 'position', 'scale'] as const
 export type Channel = (typeof CHANNELS)[number]
 export const INTERPOLATIONS = ['linear', 'smooth', 'step'] as const
 export type Interpolation = (typeof INTERPOLATIONS)[number]
-export const DRIVERS = ['idle', 'walk', 'sneak', 'jump', 'air'] as const
+export const DRIVERS = ['idle', 'walk', 'sneak', 'jump', 'air', 'slide', 'swim'] as const
 export type Driver = (typeof DRIVERS)[number]
-/** Fächer und ihr Anhängepunkt (§3): Hut/Begleiter am Kopf, Flügel am Rumpf (seit 2026-10-16). */
-export const SLOTS = ['hat', 'companion', 'wings'] as const
+/**
+ * Fächer und ihr Anhängepunkt (§3): Hut/Begleiter am Kopf, Flügel am Rumpf (seit 2026-10-16),
+ * Begleiter am Boden (`pet`, z. B. der Pinguin, seit 2026-10-24, Anhang D).
+ */
+export const SLOTS = ['hat', 'companion', 'wings', 'pet'] as const
 export type CosmeticSlot = (typeof SLOTS)[number]
-export const ATTACH = ['head', 'body'] as const
+export const ATTACH = ['head', 'body', 'ground'] as const
 export type Attach = (typeof ATTACH)[number]
-export const SLOT_ATTACH: Record<CosmeticSlot, Attach> = { hat: 'head', companion: 'head', wings: 'body' }
+export const SLOT_ATTACH: Record<CosmeticSlot, Attach> = { hat: 'head', companion: 'head', wings: 'body', pet: 'ground' }
 /** Zustände für Zustands-Animationen (§7): Vorrang sneak > air > idle. */
 export const STATES = ['idle', 'air', 'sneak'] as const
 export type WingState = (typeof STATES)[number]
+/** Zustände eines Begleiters am Boden (Anhang D); fehlt eine Animation → idle. */
+export const PET_STATES = ['idle', 'walk', 'slide', 'swim', 'air'] as const
+export type PetState = (typeof PET_STATES)[number]
+/** Jeder Zustand, den ein Modell spielen kann (Spieler- oder Begleiter-Zustand). */
+export type AnimState = WingState | PetState
+/** Höchstens so viele Begleiter am Boden je Spieler (`count` vom Server). */
+export const MAX_PETS = 4
+/** Höchstens so viele abschaltbare Teile je Modell (Anhang D). */
+export const MAX_OPTIONS = 4
 /** Überblenden zwischen Zuständen (§7). */
 export const STATE_FADE_MS = 250
 
@@ -125,13 +137,28 @@ export interface CosmeticStrip {
   frameTimeMs?: number
 }
 
+/** Abschaltbares Teil (Anhang D): aus ⇒ Würfel dieser Knochen und aller Kind-Knochen unsichtbar. */
+export interface CosmeticOption {
+  id: string
+  bones: string[]
+  default: boolean
+  name?: Partial<Record<string, string>>
+}
+
+/** Wahl des Spielers je Option (`{ beard: false }`); fehlt ein Eintrag, gilt `default`. */
+export type OptionChoices = Record<string, boolean>
+
 export interface CosmeticModel {
   format: 2
   id: string
   name: string
-  /** `hat` = Kopf-Kosmetik, `companion` = Begleiter (zusätzlich zum Hut), `wings` = Flügel am Rumpf. */
+  /**
+   * `hat` = Kopf-Kosmetik, `companion` = Begleiter (zusätzlich zum Hut), `wings` = Flügel am Rumpf,
+   * `pet` = Begleiter am Boden (eigene Position neben dem Spieler, Zustände `PET_STATES`).
+   */
   slot: CosmeticSlot
   attach: Attach
+  options?: CosmeticOption[]
   texture: CosmeticStrip & { width: number; height: number; scale: number }
   glow?: (CosmeticStrip & { blend?: 'additive' }) | null
   bones: CosmeticBone[]
@@ -155,6 +182,7 @@ export interface BonePose {
 }
 
 const ID = /^[a-z][a-z0-9_]{0,39}$/
+const OPTION_ID = /^[a-z][a-z0-9_]{0,19}$/
 const FILE = /^[a-z0-9][a-z0-9_.-]{0,63}\.png$/
 const COLOR = /^#[0-9a-f]{6}$/
 const GRID = 0.125
@@ -332,12 +360,12 @@ export function wingState(p: { crouching?: boolean; flying?: boolean; onGround?:
 }
 
 /** Welcher Treiber für einen Zustand läuft: der Zustand selbst, sonst Rückfall idle (§7). */
-export function resolveDriver(model: Pick<CosmeticModel, 'animations'>, state: WingState = 'idle'): Driver {
+export function resolveDriver(model: Pick<CosmeticModel, 'animations'>, state: AnimState = 'idle'): Driver {
   return (model.animations ?? []).some((a) => (a.driver ?? 'idle') === state) ? state : 'idle'
 }
 
 /** Pose der Zustands-Animationen (exklusiv, mit Rückfall auf idle). */
-export function stateAnimations(model: Pick<CosmeticModel, 'animations'>, timeMs: number, state: WingState = 'idle'): Map<string, BonePose> {
+export function stateAnimations(model: Pick<CosmeticModel, 'animations'>, timeMs: number, state: AnimState = 'idle'): Map<string, BonePose> {
   return samplePoses(model, timeMs, [resolveDriver(model, state)])
 }
 
@@ -356,8 +384,8 @@ export function blendPoses(a: Map<string, BonePose>, b: Map<string, BonePose>, w
 }
 
 export interface StateMixer {
-  pose(model: Pick<CosmeticModel, 'animations'>, timeMs: number, state?: WingState): Map<string, BonePose>
-  readonly state: WingState | null
+  pose(model: Pick<CosmeticModel, 'animations'>, timeMs: number, state?: AnimState): Map<string, BonePose>
+  readonly state: AnimState | null
 }
 
 /**
@@ -365,7 +393,7 @@ export interface StateMixer {
  * Pose als Schnappschuss eingefroren und zur neuen Zustands-Pose geblendet (§7).
  */
 export function createStateMixer(fadeMs = STATE_FADE_MS): StateMixer {
-  let cur: WingState | null = null
+  let cur: AnimState | null = null
   let since = 0
   let snap: Map<string, BonePose> | null = null
   let last = new Map<string, BonePose>()
@@ -423,6 +451,105 @@ export function modelTop(model: Pick<CosmeticModel, 'cubes'>): number {
   return Math.max(8, ...model.cubes.map((c) => c.to[1]))
 }
 
+/** Höchster Punkt eines Begleiters am Boden über dem Boden (Ruhepose). */
+export function groundTop(model: Pick<CosmeticModel, 'cubes'>): number {
+  return Math.max(0, ...model.cubes.map((c) => c.to[1]))
+}
+
+// --- Optionen (Anhang D) -----------------------------------------------------------------------
+
+/** Gültige Optionen eines Modells (fehlerhafte Einträge fallen weg – `validateModel` meldet sie). */
+export function modelOptions(model: unknown): CosmeticOption[] {
+  const raw = isObject(model) ? model.options : undefined
+  if (!Array.isArray(raw)) return []
+  const out: CosmeticOption[] = []
+  for (const o of (raw as unknown[]).slice(0, MAX_OPTIONS)) {
+    if (!isObject(o) || !OPTION_ID.test(String(o.id ?? '')) || typeof o.default !== 'boolean' || !Array.isArray(o.bones)) continue
+    const id = String(o.id)
+    if (out.some((x) => x.id === id)) continue
+    const bones = (o.bones as unknown[]).filter((b): b is string => typeof b === 'string')
+    const name = isObject(o.name)
+      ? (Object.fromEntries(Object.entries(o.name).filter(([, v]) => typeof v === 'string')) as Record<string, string>)
+      : undefined
+    out.push({ id, bones, default: o.default, ...(name ? { name } : {}) })
+  }
+  return out
+}
+
+/** Wert jeder Option: Wahl des Spielers, sonst `default`. Unbekannte Einträge der Wahl fallen weg. */
+export function resolveOptions(model: unknown, choices?: OptionChoices | null): OptionChoices {
+  const out: OptionChoices = {}
+  for (const o of modelOptions(model)) {
+    const v = choices?.[o.id]
+    out[o.id] = typeof v === 'boolean' ? v : o.default
+  }
+  return out
+}
+
+/**
+ * Knochen, die wegen abgeschalteter Optionen nicht gezeichnet werden: die Knochen der Option und
+ * alle ihre Kind-Knochen (Eltern stehen vor den Kindern, ein Durchlauf reicht) – samt Würfeln,
+ * Leucht-Schicht und Höfen daran.
+ */
+export function hiddenBones(model: Pick<CosmeticModel, 'bones'>, choices?: OptionChoices | null): Set<string> {
+  const values = resolveOptions(model, choices)
+  const hidden = new Set<string>()
+  for (const o of modelOptions(model)) if (!values[o.id]) for (const b of o.bones) hidden.add(b)
+  if (!hidden.size) return hidden
+  for (const b of model.bones) if (b.parent && hidden.has(b.parent)) hidden.add(b.id)
+  return hidden
+}
+
+/** Name einer Option in der Sprache `locale` (Rückfall Grundsprache, en, de, sonst die id). */
+export function optionName(option: CosmeticOption, locale: string): string {
+  const n = option.name ?? {}
+  const base = locale.split('-')[0]!
+  return n[locale] ?? n[base] ?? n.en ?? n.de ?? option.id
+}
+
+// --- Begleiter am Boden (Anhang D) -------------------------------------------------------------
+
+/** Anzahl der Begleiter vom Server auf 1…4 begrenzen (fehlt/ungültig → 1). */
+export function petCount(count: unknown): number {
+  const n = typeof count === 'number' && Number.isFinite(count) ? Math.floor(count) : 1
+  return Math.max(1, Math.min(MAX_PETS, n))
+}
+
+/**
+ * Eigener Zeitversatz je Begleiter (FNV-1a über Spieler-UUID ohne Striche + Index), damit mehrere
+ * Begleiter nicht im Gleichschritt laufen: 0 … 59 999 ms, für dieselbe Eingabe immer gleich.
+ */
+export function petTimeOffset(uuid: string, index: number): number {
+  let h = 0x811c9dc5
+  const key = `${uuid.toLowerCase().replace(/-/g, '')}:${index}`
+  for (let i = 0; i < key.length; i++) {
+    h ^= key.charCodeAt(i)
+    h = Math.imul(h, 0x01000193) >>> 0
+  }
+  return h % 60000
+}
+
+/**
+ * Plätze der Begleiter in der 3D-Vorschau (Raum des skinview3d-Spielers: Füße bei y = −16, +x =
+ * links vom Spieler, +z = vorne). Der erste steht wie in der Studio-Werkbank neben dem linken Fuß
+ * (vom Betrachter aus rechts), weitere versetzt dahinter. `yaw` = Drehung um y in Radiant.
+ */
+export const PET_ANCHOR = { x: 13, y: -16, z: 7, yaw: 0.35 } as const
+const PET_FORMATION = [
+  [0, 0, 0],
+  [10, -9, -0.3],
+  [2, -17, 0.55],
+  [13, -24, 0.1],
+] as const
+export function petSlots(count: unknown): { x: number; y: number; z: number; yaw: number }[] {
+  return PET_FORMATION.slice(0, petCount(count)).map(([dx, dz, dyaw]) => ({
+    x: PET_ANCHOR.x + dx,
+    y: PET_ANCHOR.y,
+    z: PET_ANCHOR.z + dz,
+    yaw: PET_ANCHOR.yaw + dyaw,
+  }))
+}
+
 // --- Prüfung -----------------------------------------------------------------------------------
 
 export interface ValidationResult {
@@ -449,6 +576,25 @@ export function validateModel(m: unknown, images: { texture?: ImageSize | null; 
   if (!(ATTACH as readonly unknown[]).includes(m.attach)) err('attach', `eins von ${ATTACH.join(', ')}`)
   else if ((SLOTS as readonly unknown[]).includes(m.slot) && SLOT_ATTACH[m.slot as CosmeticSlot] !== m.attach) {
     err('attach', `slot ${String(m.slot)} braucht attach ${SLOT_ATTACH[m.slot as CosmeticSlot]}`)
+  }
+
+  // Optionen (Anhang D): [{ id, bones: [Knochen-ids], default: bool, name: { de, en, … } }], max. 4
+  if (m.options !== undefined) {
+    if (!Array.isArray(m.options) || m.options.length > MAX_OPTIONS) err('options', `Liste mit höchstens ${MAX_OPTIONS} Einträgen`)
+    else {
+      const boneIds = new Set((Array.isArray(m.bones) ? (m.bones as unknown[]) : []).map((b) => (isObject(b) ? b.id : undefined)))
+      const seen = new Set<unknown>()
+      ;(m.options as unknown[]).forEach((raw, i) => {
+        const o = isObject(raw) ? raw : {}
+        if (!OPTION_ID.test(String(o.id ?? '')) || seen.has(o.id)) err(`options[${i}].id`, 'a–z, 0–9, _ (max. 20), eindeutig')
+        seen.add(o.id)
+        if (!Array.isArray(o.bones) || !o.bones.length || (o.bones as unknown[]).some((b) => !boneIds.has(b))) err(`options[${i}].bones`, 'vorhandene Knochen')
+        if (typeof o.default !== 'boolean') err(`options[${i}].default`, 'true/false')
+        if (o.name !== undefined && (!isObject(o.name) || Object.values(o.name).some((v) => typeof v !== 'string' || v.length > 40))) {
+          err(`options[${i}].name`, '{ Sprache: Text ≤ 40 }')
+        }
+      })
+    }
   }
 
   const tex = (isObject(m.texture) ? m.texture : {}) as Record<string, number | string | undefined>

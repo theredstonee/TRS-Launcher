@@ -1,7 +1,18 @@
 <script setup lang="ts">
 import type { SkinVariant } from '~/types'
 import type { CosmeticInstance } from '~/utils/cosmetic-v2/view'
-import { modelTop, validateModel, type CosmeticModel, type ViewerCosmetic, type WingState } from '~/utils/cosmetic-v2/format'
+import {
+  modelTop,
+  petSlots,
+  petTimeOffset,
+  validateModel,
+  type CosmeticModel,
+  type CosmeticSlot as CosmeticSlotId,
+  type OptionChoices,
+  type PetState,
+  type ViewerCosmetic,
+  type WingState,
+} from '~/utils/cosmetic-v2/format'
 import { capeLooksSmooth } from '~/utils/capeHd'
 
 // 3D-Vorschau des Skins (skinview3d, mitgeliefert – kein CDN, damit die CSP
@@ -41,6 +52,16 @@ const props = withDefaults(
     wings?: ViewerCosmetic | null
     /** Zustand für die Zustands-Animationen der Flügel (idle/air/sneak); sneak neigt den Rumpf. */
     wingState?: WingState
+    /** Begleiter am Boden (slot pet, `attach: ground`): steht neben dem Spieler auf dem Boden. */
+    pet?: ViewerCosmetic | null
+    /** So viele Begleiter am Boden (1…4, vom Server), versetzt nebeneinander. */
+    petCount?: number
+    /** Zustand der Begleiter am Boden (idle/walk/slide/swim/air). */
+    petState?: PetState
+    /** Spieler-UUID für den Zeitversatz je Begleiter (sonst laufen alle im Gleichschritt). */
+    petSeed?: string
+    /** Wahl der abschaltbaren Teile je Fach (Anhang D), z. B. `{ hat: { beard: false } }`. */
+    cosmeticOptions?: Partial<Record<CosmeticSlotId, OptionChoices>> | null
     /** Nacht: Licht gedimmt, Leuchten bleibt voll hell. */
     night?: boolean
     /** Kamera: ganzer Spieler, Kopf + Schultern (für Kopf-Kosmetik) oder der Umhang von hinten (Umhang-Werkstatt). */
@@ -62,6 +83,11 @@ const props = withDefaults(
     companion: null,
     wings: null,
     wingState: 'idle',
+    pet: null,
+    petCount: 1,
+    petState: 'idle',
+    petSeed: '',
+    cosmeticOptions: null,
     night: false,
     focus: 'body',
     resetTick: 0,
@@ -251,6 +277,7 @@ async function applySkin() {
 // --- Kopf-Kosmetik (v2) + Begleiter -----------------------------------------------------------
 
 interface CosmeticSlot {
+  id: CosmeticSlotId
   inst: CosmeticInstance | null
   top: number
   token: number
@@ -258,10 +285,13 @@ interface CosmeticSlot {
   emptyTop: number
 }
 
-const hatSlot: CosmeticSlot = { inst: null, top: 8, token: 0, emptyTop: 8 }
-const companionSlot: CosmeticSlot = { inst: null, top: 0, token: 0, emptyTop: 0 }
+const hatSlot: CosmeticSlot = { id: 'hat', inst: null, top: 8, token: 0, emptyTop: 8 }
+const companionSlot: CosmeticSlot = { id: 'companion', inst: null, top: 0, token: 0, emptyTop: 0 }
 /** Flügel am Rumpf (Kamera: zählen nur, wenn sie über den Nacken ragen). */
-const wingsSlot: CosmeticSlot = { inst: null, top: 0, token: 0, emptyTop: 0 }
+const wingsSlot: CosmeticSlot = { id: 'wings', inst: null, top: 0, token: 0, emptyTop: 0 }
+
+/** Begleiter am Boden: bis zu 4 Exemplare desselben Modells, je mit eigenem Zeitversatz. */
+const petSlot = { list: [] as { inst: CosmeticInstance; offset: number }[], token: 0 }
 
 /** Oberkante für die Kamera: Hut und Begleiter zusammen, mindestens der Nacken. */
 function cameraTop(): number {
@@ -295,6 +325,7 @@ async function applySlot(slot: CosmeticSlot, data: ViewerCosmetic | null | undef
     const next = createCosmetic(data.model as unknown as CosmeticModel, { texture, glow: hasGlow ? glow : null })
     slot.inst?.dispose()
     slot.inst = next
+    next.setOptions(props.cosmeticOptions?.[slot.id])
     slot.top = modelTop(data.model as unknown as CosmeticModel)
     if (slot === wingsSlot) {
       // Rumpf von skinview3d: Mitte bei y = −6, also Nacken (Ursprung von attach: body) bei +6 im Rumpf.
@@ -314,10 +345,72 @@ async function applySlot(slot: CosmeticSlot, data: ViewerCosmetic | null | undef
   }
 }
 
+function clearPets() {
+  for (const p of petSlot.list) p.inst.dispose()
+  petSlot.list = []
+}
+
+/**
+ * Begleiter am Boden (`attach: ground`) neben den Spieler stellen: Ursprung = Boden unter der Mitte,
+ * +z = Laufrichtung. Mehrere (Creator-Stufe) stehen versetzt dahinter, jeder mit eigenem Zeitversatz.
+ */
+async function applyPets() {
+  const token = ++petSlot.token
+  if (!viewer) return
+  const data = props.pet
+  if (!data) {
+    clearPets()
+    applyFocus()
+    return
+  }
+  try {
+    const [{ createCosmetic }, texture, glow] = await Promise.all([
+      import('~/utils/cosmetic-v2/view'),
+      loadImage(data.texture),
+      data.glow ? loadImage(data.glow) : Promise.resolve(null),
+    ])
+    if (token !== petSlot.token || !viewer) return
+    const hasGlow = !!glow && data.model.glow != null
+    const size = (img: HTMLImageElement) => ({ width: img.naturalWidth, height: img.naturalHeight })
+    const check = validateModel(data.model, { texture: size(texture), glow: hasGlow ? size(glow!) : null })
+    if (!check.ok) throw new Error(`Kosmetik-Modell ungültig: ${check.errors.slice(0, 3).join('; ')}`)
+    const model = data.model as unknown as CosmeticModel
+    if (model.attach !== 'ground') throw new Error('Begleiter am Boden braucht attach ground')
+    clearPets()
+    petSlot.list = petSlots(props.petCount).map((spot, i) => {
+      const inst = createCosmetic(model, { texture, glow: hasGlow ? glow : null })
+      inst.root.position.set(spot.x, spot.y, spot.z)
+      inst.root.rotation.y = spot.yaw
+      inst.setOptions(props.cosmeticOptions?.pet)
+      viewer!.playerObject.add(inst.root)
+      return { inst, offset: petTimeOffset(props.petSeed || model.id, i) }
+    })
+    applyLight()
+    const now = Date.now()
+    for (const p of petSlot.list) p.inst.update(now + p.offset, { camera: viewer.camera, state: props.petState })
+    applyFocus()
+  } catch (e) {
+    if (token !== petSlot.token) return
+    console.warn(e)
+    clearPets()
+    emit('cosmeticError')
+  }
+}
+
 function applyCosmetics() {
   void applySlot(hatSlot, props.cosmetic)
   void applySlot(companionSlot, props.companion)
   void applySlot(wingsSlot, props.wings)
+  void applyPets()
+}
+
+/** Gewählte Optionen (Bart an/aus …) auf alle gezeigten Teile anwenden. */
+function applyOptions() {
+  const o = props.cosmeticOptions
+  hatSlot.inst?.setOptions(o?.hat)
+  companionSlot.inst?.setOptions(o?.companion)
+  wingsSlot.inst?.setOptions(o?.wings)
+  for (const p of petSlot.list) p.inst.setOptions(o?.pet)
 }
 
 function applyLight() {
@@ -328,6 +421,7 @@ function applyLight() {
   hatSlot.inst?.setLight(light)
   companionSlot.inst?.setLight(light)
   wingsSlot.inst?.setLight(light)
+  for (const p of petSlot.list) p.inst.setLight(light)
 }
 
 // --- Kamera ------------------------------------------------------------------------------------
@@ -374,15 +468,26 @@ function focusGoal(dir: Vec): [Vec, Vec] | null {
     const top = Math.max(16, neck + cameraTop() + 1)
     target = { x: 0, y: (bottom + top) / 2, z: 0 }
     distance = (4.5 + 16.5 / Math.tan(fov / 2) / viewer.zoom) * ((top - bottom) / 32)
+    // Begleiter am Boden: Bild nach links (+x) erweitern, damit Spieler und Begleiter hineinpassen.
+    const reach = petReach()
+    if (reach > 8) {
+      target.x = (reach - 8) / 2
+      distance *= 1 + (reach - 8) / 64
+    }
   }
   return [target, { x: target.x + dir.x * distance, y: target.y + dir.y * distance, z: target.z + dir.z * distance }]
+}
+
+/** Äußerste x-Kante der Begleiter am Boden (0 = keine). */
+function petReach(): number {
+  return petSlot.list.reduce((m, p) => Math.max(m, p.inst.root.position.x + 8), 0)
 }
 
 let lastFocus: string | null = null
 /** Kamera zum Fokus schwenken – nur wenn sich Fokus oder Modellhöhe geändert haben (sonst bleibt alles, wie der Nutzer es gedreht hat). */
 function applyFocus(instant = false) {
   if (!viewer) return
-  const key = `${props.focus}:${cameraTop()}`
+  const key = `${props.focus}:${cameraTop()}:${petReach()}`
   if (key === lastFocus) return
   const enteringHead = props.focus === 'head' && !lastFocus?.startsWith('head')
   const enteringCape = props.focus === 'cape' && !lastFocus?.startsWith('cape')
@@ -438,6 +543,7 @@ function beforeRender() {
     hatSlot.inst?.update(now, { camera: viewer.camera })
     companionSlot.inst?.update(now, { camera: viewer.camera })
     wingsSlot.inst?.update(now, { camera: viewer.camera, state: props.wingState })
+    for (const p of petSlot.list) p.inst.update(now + p.offset, { camera: viewer.camera, state: props.petState })
     leanForSneak()
   }
 }
@@ -474,6 +580,8 @@ onBeforeUnmount(() => {
   hatSlot.token++
   companionSlot.token++
   wingsSlot.token++
+  petSlot.token++
+  clearPets()
   hatSlot.inst?.dispose()
   companionSlot.inst?.dispose()
   wingsSlot.inst?.dispose()
@@ -492,6 +600,8 @@ watch(() => props.height, resize)
 watch(() => props.cosmetic, () => void applySlot(hatSlot, props.cosmetic))
 watch(() => props.companion, () => void applySlot(companionSlot, props.companion))
 watch(() => props.wings, () => void applySlot(wingsSlot, props.wings))
+watch(() => [props.pet, props.petCount, props.petSeed], () => void applyPets())
+watch(() => props.cosmeticOptions, applyOptions, { deep: true })
 watch(() => props.night, applyLight)
 watch(() => props.focus, () => applyFocus())
 watch(

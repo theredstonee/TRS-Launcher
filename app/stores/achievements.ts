@@ -14,7 +14,8 @@ import {
   type PlayerAchievements,
 } from '../utils/achievements'
 import { backend, errorMessage } from '../utils/backend'
-import { t } from '../utils/i18n'
+import { t, tKey } from '../utils/i18n'
+import type { TrsCosmeticSlot } from '../utils/trs'
 import type { SocialToastAction } from '../utils/socialToasts'
 import { useSocialToasts } from './socialToasts'
 
@@ -89,6 +90,9 @@ export const useAchievementsStore = defineStore('achievements', () => {
     }
   }
 
+  /** Fach je eigener Kosmetik (Hut, Begleiter, Flügel, Begleiter am Boden) – für „Jetzt tragen“. */
+  const hatSlots = new Map<string, TrsCosmeticSlot>()
+
   /** Umhänge (Katalog mit Namen, eigene) und eigene Kopf-Kosmetik holen – Fehler lassen die Listen leer. */
   async function loadRewards(kinds: { capes: boolean; hats: boolean } = { capes: true, hats: true }): Promise<Owned> {
     const [capes, hats] = await Promise.allSettled([
@@ -102,7 +106,10 @@ export const useAchievementsStore = defineStore('achievements', () => {
       next.capes = capes.value.filter((c) => c.owned).map((c) => c.id)
     }
     if (hats.status === 'fulfilled' && hats.value) {
-      for (const h of hats.value) names[h.id] = h.name
+      for (const h of hats.value) {
+        names[h.id] = h.name
+        hatSlots.set(h.id, h.slot)
+      }
       next.hats = hats.value.map((h) => h.id)
     }
     rewardNames.value = names
@@ -129,8 +136,11 @@ export const useAchievementsStore = defineStore('achievements', () => {
         toasts.ok(t('capes.toasts.worn', { name }))
         useTrsStore().capesRevision++
       } else if (action === 'hat') {
-        await backend.trs.setHat(reward.id)
-        toasts.ok(t('capes.toasts.hatOn', { name }))
+        // Ins richtige Fach: Flügel, Begleiter und Begleiter am Boden nicht als Hut aufsetzen.
+        const slot = hatSlots.get(reward.id) ?? 'hat'
+        if (slot === 'hat') await backend.trs.setHat(reward.id)
+        else await backend.trs.equipCosmetic(slot, reward.id)
+        toasts.ok(slot === 'hat' ? t('capes.toasts.hatOn', { name }) : tKey(`headCosmetics.${slot}.toasts.on`, { name }))
         useTrsStore().capesRevision++
       } else if (action === 'emote') {
         toasts.ok(t('achievements.reward.emoteHint', { name }))

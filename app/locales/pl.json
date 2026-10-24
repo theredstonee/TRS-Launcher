@@ -625,7 +625,9 @@
       "invalidCodeId": "Nieprawidłowy identyfikator kodu.",
       "redemptionsRange": "Liczba użyć na kod: od 1 do 100 000.",
       "countRange": "Ilość: od 1 do 100 kodów naraz.",
-      "expiryInPast": "Data wygaśnięcia jest w przeszłości."
+      "expiryInPast": "Data wygaśnięcia jest w przeszłości.",
+      "invalidCosmeticSlot": "Nieznane miejsce na kosmetyk.",
+      "invalidCosmeticOption": "Nieprawidłowa opcja dla tego przedmiotu."
     },
     "trsEvents": {
       "invalidEvent": "Nieprawidłowe wydarzenie."
@@ -3796,7 +3798,9 @@
       "title": "Odblokowano „{name}”!",
       "text": "Założyć teraz? Zobaczysz go na głowie w TRS Client (trzecia osoba), podobnie jak inni gracze TRS.",
       "wear": "Załóż",
-      "later": "Później"
+      "later": "Później",
+      "textPet": "Zabrać go teraz? Chodzi obok ciebie w TRS Client, inni gracze TRS też go widzą.",
+      "textOther": "Założyć teraz? Widzisz to w TRS Client (trzecia osoba), inni gracze TRS też."
     },
     "filter": {
       "search": "Szukaj peleryn po nazwie",
@@ -3891,6 +3895,42 @@
       "toasts": {
         "on": "„{name}” lata z tobą",
         "off": "Zdjęto towarzysza"
+      }
+    },
+    "pet": {
+      "title": "Towarzysze na ziemi",
+      "intro": "Chodzi obok ciebie – widzą go wszyscy z TRS Client. Podgląd pokazuje go obok twojej postaci.",
+      "creatorHint": "Twórcy dostają pingwiny automatycznie według fanów: jeden od 1 fana, dwa od 10, trzy od 100, cztery od 1000.",
+      "empty": "Brak towarzyszy na ziemi.",
+      "wearing": "Obok ciebie: {name}",
+      "selectedWorn": "Chodzi obok ciebie – widzą go wszyscy z TRS Client.",
+      "toasts": {
+        "on": "„{name}” chodzi teraz obok ciebie",
+        "off": "Towarzysz na ziemi odesłany"
+      },
+      "states": "Towarzysz:",
+      "state": {
+        "idle": "Stoi",
+        "walk": "Chodzi",
+        "slide": "Ślizga się",
+        "swim": "Pływa",
+        "air": "Skacze"
+      },
+      "count": "{n} × {name} | {n} × {name} | {n} × {name}",
+      "counts": {
+        "penguin": "{n} pingwin | {n} pingwiny | {n} pingwinów"
+      },
+      "creatorTier": "{label} – poziom twórcy"
+    },
+    "options": {
+      "title": "{name}:",
+      "on": "wł.",
+      "off": "wył.",
+      "hintWorn": "Zapisywane od razu – inni widzą to w grze.",
+      "hintPreview": "Tylko w podglądzie – zadziała po założeniu.",
+      "toasts": {
+        "on": "{option}: wł. ({name})",
+        "off": "{option}: wył. ({name})"
       }
     }
   },

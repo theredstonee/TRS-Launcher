@@ -516,6 +516,44 @@ pub(crate) struct ApiCosmeticRef {
     /// Inhalts-Hash (12 Hex) von Modell + Textur + Glow – Cache-Schlüssel.
     #[serde(default)]
     pub hash: Option<String>,
+    /// Begleiter am Boden (`slot: "pet"`): so viele zeigt der TRS Client (1…4, Creator-Stufe nach Fans).
+    #[serde(default)]
+    pub count: Option<serde_json::Value>,
+    /// Wahl der abschaltbaren Teile (`{ "beard": false }`) – nur bei getragenen Teilen.
+    #[serde(default)]
+    pub options: Option<serde_json::Value>,
+    /// Woher das Teil kommt (`code`, `creator` …) – nur zur Anzeige der Creator-Stufe.
+    #[serde(default)]
+    pub source: Option<String>,
+}
+
+/// Höchstens so viele Begleiter am Boden je Spieler (Anhang D).
+pub const MAX_PETS: u8 = 4;
+/// Höchstens so viele abschaltbare Teile je Modell (Anhang D).
+pub const MAX_OPTIONS: usize = 4;
+
+/// Options-Kennung (Anhang D): `^[a-z][a-z0-9_]{0,19}$`.
+pub(crate) fn option_id(id: &str) -> bool {
+    let b = id.as_bytes();
+    (1..=20).contains(&b.len())
+        && b[0].is_ascii_lowercase()
+        && b.iter().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || *c == b'_')
+}
+
+/// Wahl der Optionen aus einer API-Antwort: nur gültige Kennungen mit `true`/`false`, höchstens 4.
+pub(crate) fn clean_options(v: Option<&serde_json::Value>) -> std::collections::BTreeMap<String, bool> {
+    let Some(serde_json::Value::Object(o)) = v else { return Default::default() };
+    o.iter()
+        .filter(|(k, _)| option_id(k))
+        .filter_map(|(k, v)| Some((k.clone(), v.as_bool()?)))
+        .take(MAX_OPTIONS)
+        .collect()
+}
+
+/// Anzahl der Begleiter: ganze Zahl 1…4 (fehlt oder ungültig → `None`, der Launcher zeigt dann 1).
+pub(crate) fn clean_count(v: Option<&serde_json::Value>) -> Option<u8> {
+    let n = v?.as_u64()?;
+    (1..=u64::from(MAX_PETS)).contains(&n).then_some(n as u8)
 }
 
 impl ApiCosmeticRef {
@@ -572,7 +610,7 @@ pub struct HeadCosmetic {
     pub name: String,
     /// 1 = Vorlage (z. B. Quietscheente), 2 = 3D-Modell.
     pub format: u8,
-    /// `hat` oder `companion`.
+    /// `hat`, `companion`, `wings` oder `pet` (Begleiter am Boden).
     pub slot: String,
     /// Nur v1: Vorlage (`duck`).
     pub template: Option<String>,
@@ -592,6 +630,12 @@ pub struct HeadCosmetic {
     /// Streifen der Grundtextur / der Leucht-Schicht (nur zur Anzeige).
     pub frames: u32,
     pub glow_frames: u32,
+    /// Getragener Begleiter am Boden: so viele sehen andere (1…4); `None` = unbekannt (ältere API → 1).
+    pub count: Option<u8>,
+    /// Kam über die Creator-Stufe (automatisch nach Fans), nicht per Code.
+    pub creator: bool,
+    /// Getragenes Teil: gewählte Optionen (`{ "beard": false }`); fehlende gelten als Standard des Modells.
+    pub options: std::collections::BTreeMap<String, bool>,
 }
 
 /// v2-Modell für die 3D-Vorschau: `model.json` (geprüft) + Texturen als PNG-Data-URLs.
@@ -617,7 +661,7 @@ pub(crate) struct ApiCosmeticCatalog {
 pub struct HatItem {
     pub id: String,
     pub name: String,
-    /// `hat` oder `companion`.
+    /// `hat`, `companion`, `wings` oder `pet`.
     pub slot: String,
     pub template: String,
     pub equipped: bool,
@@ -637,6 +681,8 @@ pub struct RedeemResult {
     pub already_owned: bool,
     /// Kopf-Kosmetik, die der TRS Client zeichnet (z. B. die Quietscheente) – kann gleich aufgesetzt werden.
     pub wearable_hat: bool,
+    /// Fach des Teils (`hat`, `companion`, `wings`, `pet`), damit „Jetzt aufsetzen?“ das richtige Fach trifft.
+    pub slot: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

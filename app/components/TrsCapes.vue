@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TrsCape } from '~/utils/trs'
+import type { TrsCape, TrsCosmeticSlot } from '~/utils/trs'
 import { capeFilters, capeOrigin, capeSorts, filterCapes, type CapeFilter, type CapeSort } from '~/utils/capeFilter'
 
 // TRS-Umhänge auf der Skins-Seite: Katalog mit Sperr-Status, Vorschau in der
@@ -70,15 +70,22 @@ async function load() {
 
 // --- Kopf-Kosmetik per Code: gleich anbieten, sie aufzusetzen (Liste: TrsHeadCosmetics) ----
 
-const hatOffer = ref<{ id: string; name: string } | null>(null)
+const hatOffer = ref<{ id: string; name: string; slot: TrsCosmeticSlot } | null>(null)
+
+/** Hinweis im Dialog je Fach (Hut auf den Kopf, Pinguin neben dich …). */
+const offerText = computed(() => {
+  const slot = hatOffer.value?.slot ?? 'hat'
+  return slot === 'hat' ? t('capes.hatDialog.text') : slot === 'pet' ? t('capes.hatDialog.textPet') : t('capes.hatDialog.textOther')
+})
 
 async function wearOffered() {
   const offer = hatOffer.value
   hatOffer.value = null
   if (!offer) return
   await run('hat', async () => {
-    await backend.trs.setHat(offer.id)
-    toasts.ok(t('capes.toasts.hatOn', { name: offer.name }))
+    // Das richtige Fach belegen: Begleiter, Flügel und Pinguin nicht als Hut aufsetzen.
+    await backend.trs.equipCosmetic(offer.slot, offer.id)
+    toasts.ok(offer.slot === 'hat' ? t('capes.toasts.hatOn', { name: offer.name }) : tKey(`headCosmetics.${offer.slot}.toasts.on`, { name: offer.name }))
     trs.capesRevision++
   })
 }
@@ -164,7 +171,7 @@ async function redeem() {
         // Kopf-Kosmetik-Liste neu laden; neue Kopf-Teile gleich zum Aufsetzen anbieten.
         trs.capesRevision++
         if (result.wearableHat && result.cosmeticId && !result.alreadyOwned) {
-          hatOffer.value = { id: result.cosmeticId, name: result.name }
+          hatOffer.value = { id: result.cosmeticId, name: result.name, slot: result.slot ?? 'hat' }
           return
         }
       }
@@ -474,7 +481,7 @@ function lockClass(cape: TrsCape) {
       </template>
     </BaseDialog>
     <BaseDialog v-if="hatOffer":title="t('capes.hatDialog.title', { name: hatOffer.name })" @close="hatOffer = null">
-      <p class="text-sm text-base-300">{{ t('capes.hatDialog.text') }}</p>
+      <p class="text-sm text-base-300">{{ offerText }}</p>
       <template #actions>
         <button class="btn btn-ghost" @click="hatOffer = null">{{ t('capes.hatDialog.later') }}</button>
         <button class="btn btn-primary" :disabled="!!busy" @click="wearOffered">{{ t('capes.hatDialog.wear') }}</button>

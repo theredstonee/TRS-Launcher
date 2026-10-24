@@ -650,7 +650,9 @@
       "invalidCodeId": "Invalid code ID.",
       "redemptionsRange": "Redemptions per code: 1 to 100,000.",
       "countRange": "Amount: 1 to 100 codes at once.",
-      "expiryInPast": "The expiry date is in the past."
+      "expiryInPast": "The expiry date is in the past.",
+      "invalidCosmeticSlot": "Unknown cosmetic slot.",
+      "invalidCosmeticOption": "Invalid option for this item."
     },
     "trsEvents": {
       "invalidEvent": "Invalid event."
@@ -3845,7 +3847,9 @@
       "title": "“{name}” unlocked!",
       "text": "Put it on now? You will see it on your head in the TRS Client (third person), and so will other TRS players.",
       "wear": "Put on",
-      "later": "Later"
+      "later": "Later",
+      "textPet": "Bring it along now? It walks next to you in TRS Client, and other TRS players see it too.",
+      "textOther": "Put it on now? You see it in TRS Client (third person), and so do other TRS players."
     },
     "filter": {
       "search": "Search capes by name",
@@ -3959,6 +3963,42 @@
         "idle": "Standing",
         "air": "In the air",
         "sneak": "Sneaking"
+      }
+    },
+    "pet": {
+      "title": "Ground companions",
+      "intro": "Walks along next to you – everyone with TRS Client sees it. The preview shows it next to your character.",
+      "creatorHint": "Creators get penguins automatically by fans: one from 1 fan, two from 10, three from 100, four from 1000.",
+      "empty": "No ground companions yet.",
+      "wearing": "Next to you: {name}",
+      "selectedWorn": "Walks along next to you – everyone with TRS Client sees it.",
+      "toasts": {
+        "on": "“{name}” now walks next to you",
+        "off": "Ground companion sent away"
+      },
+      "states": "Companion:",
+      "state": {
+        "idle": "Stands",
+        "walk": "Walks",
+        "slide": "Slides",
+        "swim": "Swims",
+        "air": "Jumps"
+      },
+      "count": "{n} × {name} | {n} × {name}",
+      "counts": {
+        "penguin": "{n} penguin | {n} penguins"
+      },
+      "creatorTier": "{label} – creator tier"
+    },
+    "options": {
+      "title": "{name}:",
+      "on": "on",
+      "off": "off",
+      "hintWorn": "Saved right away – others see it in game.",
+      "hintPreview": "Preview only – applies when you put it on.",
+      "toasts": {
+        "on": "{option} on ({name})",
+        "off": "{option} off ({name})"
       }
     }
   },

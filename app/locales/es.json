@@ -650,7 +650,9 @@
       "invalidCodeId": "ID de código no válido.",
       "redemptionsRange": "Canjes por código: de 1 a 100 000.",
       "countRange": "Cantidad: de 1 a 100 códigos a la vez.",
-      "expiryInPast": "La fecha de caducidad ya ha pasado."
+      "expiryInPast": "La fecha de caducidad ya ha pasado.",
+      "invalidCosmeticSlot": "Ranura de cosmético desconocida.",
+      "invalidCosmeticOption": "Opción no válida para este objeto."
     },
     "trsEvents": {
       "invalidEvent": "Evento no válido."
@@ -3845,7 +3847,9 @@
       "title": "¡«{name}» desbloqueado!",
       "text": "¿Ponértelo ahora? Lo verás en tu cabeza en el TRS Client (tercera persona), igual que otros jugadores de TRS.",
       "wear": "Ponerse",
-      "later": "Más tarde"
+      "later": "Más tarde",
+      "textPet": "¿Llevarlo ahora? Camina a tu lado en TRS Client y otros jugadores de TRS también lo ven.",
+      "textOther": "¿Ponértelo ahora? Lo ves en TRS Client (tercera persona) y otros jugadores de TRS también."
     },
     "filter": {
       "search": "Buscar capas por nombre",
@@ -3959,6 +3963,42 @@
         "idle": "En el suelo",
         "air": "En el aire",
         "sneak": "Agachado"
+      }
+    },
+    "pet": {
+      "title": "Compañeros en el suelo",
+      "intro": "Camina a tu lado: todos con TRS Client lo ven. La vista previa lo muestra junto a tu personaje.",
+      "creatorHint": "Los creadores reciben pingüinos automáticamente según sus fans: uno desde 1 fan, dos desde 10, tres desde 100, cuatro desde 1000.",
+      "empty": "Aún no hay compañeros en el suelo.",
+      "wearing": "A tu lado: {name}",
+      "selectedWorn": "Camina a tu lado: todos con TRS Client lo ven.",
+      "toasts": {
+        "on": "«{name}» ahora camina a tu lado",
+        "off": "Compañero en el suelo retirado"
+      },
+      "states": "Compañero:",
+      "state": {
+        "idle": "Quieto",
+        "walk": "Camina",
+        "slide": "Se desliza",
+        "swim": "Nada",
+        "air": "Salta"
+      },
+      "count": "{n} × {name} | {n} × {name}",
+      "counts": {
+        "penguin": "{n} pingüino | {n} pingüinos"
+      },
+      "creatorTier": "{label} – nivel de creador"
+    },
+    "options": {
+      "title": "{name}:",
+      "on": "sí",
+      "off": "no",
+      "hintWorn": "Se guarda al instante: los demás lo ven en el juego.",
+      "hintPreview": "Solo en la vista previa: se aplica al ponértelo.",
+      "toasts": {
+        "on": "{option}: sí ({name})",
+        "off": "{option}: no ({name})"
       }
     }
   },

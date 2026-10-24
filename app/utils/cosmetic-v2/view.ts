@@ -15,10 +15,12 @@ import {
   haloFalloff,
   haloIntensity,
   createStateMixer,
+  hiddenBones,
+  type AnimState,
   type CosmeticHalo,
   type CosmeticModel,
+  type OptionChoices,
   type Vec3,
-  type WingState,
 } from './format'
 
 const MAT_INDEX = { cutout: 0, emissive: 1, translucent: 2 } as const
@@ -26,15 +28,21 @@ const MAT_INDEX = { cutout: 0, emissive: 1, translucent: 2 } as const
 export type CosmeticImage = HTMLImageElement | HTMLCanvasElement | ImageBitmap
 
 export interface CosmeticInstance {
-  /** An den Kopf hängen (`attach: head`) bzw. an den Rumpf (`attach: body`) – beide Ursprünge am Nacken. */
+  /**
+   * An den Kopf hängen (`attach: head`) bzw. an den Rumpf (`attach: body`) – beide Ursprünge am Nacken –
+   * oder auf den Boden stellen (`attach: ground`, Ursprung = Boden unter der Mitte, +z = Laufrichtung).
+   */
   root: THREE.Group
   /**
    * Pose, Streifen-Bilder und Höfe zur Wanduhr `timeMs` setzen. `state` = Zustand für
-   * Zustands-Animationen (idle/air/sneak, §7) mit 250 ms Überblenden; ohne Angabe idle.
+   * Zustands-Animationen (idle/air/sneak, §7; Begleiter am Boden idle/walk/slide/swim/air) mit
+   * 250 ms Überblenden; ohne Angabe idle.
    */
-  update(timeMs: number, opts?: { animate?: boolean; glow?: boolean; camera?: THREE.Camera | null; state?: WingState }): void
+  update(timeMs: number, opts?: { animate?: boolean; glow?: boolean; camera?: THREE.Camera | null; state?: AnimState }): void
   /** Umgebungslicht 0…1 (nur cutout/translucent; emissive und Leuchten bleiben voll hell). */
   setLight(f: number): void
+  /** Optionen (Anhang D): abgeschaltete Teile samt Kind-Knochen ausblenden; fehlt ein Eintrag, gilt `default`. */
+  setOptions(choices: OptionChoices | null | undefined): void
   dispose(): void
 }
 
@@ -208,6 +216,9 @@ export function createCosmetic(model: CosmeticModel, images: { texture: Cosmetic
   const worldScale = (o: THREE.Object3D) => o.getWorldScale(scl).x
   let glowOn = true
   const mixer = createStateMixer()
+  // Standardwerte der Optionen gelten, bis der Spieler etwas anderes gewählt hat.
+  const hiddenByDefault = hiddenBones(model, null)
+  for (const [id, g] of bones) g.visible = !hiddenByDefault.has(id)
 
   return {
     root,
@@ -242,6 +253,11 @@ export function createCosmetic(model: CosmeticModel, images: { texture: Cosmetic
     setLight(f) {
       mats[0]!.color.setScalar(f)
       mats[2]!.color.setScalar(f)
+    },
+    setOptions(choices) {
+      // Knochen-Gruppe unsichtbar ⇒ three.js zeichnet auch Kinder (Kind-Knochen, Leucht-Schicht, Höfe) nicht.
+      const hidden = hiddenBones(model, choices)
+      for (const [id, g] of bones) g.visible = !hidden.has(id)
     },
     dispose() {
       root.parent?.remove(root)
