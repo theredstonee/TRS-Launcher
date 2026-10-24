@@ -30,6 +30,8 @@ public final class MinimapRenderer {
 
 	/** Unterauflösung der Textur-Ausschnitte (1/16 Block genau). */
 	static final int SUB = 16;
+	/** Karte v3: Platzhalter „wird geladen“ (etwas heller als der Kartenhintergrund). */
+	static final int LOADING = 0xFF24222B;
 	static final int LINE_H = 10;
 	static final int HOSTILE = 0xFFE5483E;
 	static final int PASSIVE = 0xFFEDE6D2;
@@ -123,6 +125,8 @@ public final class MinimapRenderer {
 		}
 
 		if (live) {
+			// Karte v3: fehlende Chunks auch je Bild abtasten (kleines Budget).
+			if (!preview) e.frame(false);
 			drawMap(c, e, layer, cx, cy, radius, round, theta, px, pz, opacity, nowMs, clip);
 		}
 
@@ -178,7 +182,7 @@ public final class MinimapRenderer {
 			if (clipped) clip.end();
 			return;
 		}
-		e.textures().beginFrame(3);
+		e.textures().beginFrame(e.v3() ? 4 : 3);
 		int tint = (opacity << 24) | 0xFFFFFF;
 		// Innenansicht: darunter die Oberfläche – noch nicht abgetastete Stellen bleiben so nicht leer
 		// (nur deckend, sonst schimmerte das ausgeblendete Dach durch).
@@ -211,16 +215,34 @@ public final class MinimapRenderer {
 		if (wx1 <= wx0 || wz1 <= wz0) return;
 		int rx0 = (int) Math.floor(wx0) >> MapRegion.SHIFT, rx1 = (int) Math.floor(wx1 - 1e-6) >> MapRegion.SHIFT;
 		int rz0 = (int) Math.floor(wz0) >> MapRegion.SHIFT, rz1 = (int) Math.floor(wz1 - 1e-6) >> MapRegion.SHIFT;
+		boolean v3 = e.v3();
 		for (int rz = rz0; rz <= rz1; rz++) {
 			for (int rx = rx0; rx <= rx1; rx++) {
 				MapRegion region = layer.get(rx, rz, now);
-				if (region == null) continue;
-				TextureRef tex = e.textures().region(layer, region, now, 250);
-				if (tex == null) continue;
+				TextureRef tex = region == null ? null : e.textures().region(layer, region, now, 250);
 				double bx = (double) rx * MapRegion.SIZE, bz = (double) rz * MapRegion.SIZE;
 				double x0 = Math.max(wx0, bx), x1 = Math.min(wx1, bx + MapRegion.SIZE);
 				double z0 = Math.max(wz0, bz), z1 = Math.min(wz1, bz + MapRegion.SIZE);
 				if (x1 <= x0 || z1 <= z0) continue;
+				if (tex == null) {
+					// Karte v3: gespeichert, aber noch nicht geladen → dezenter Platzhalter statt Loch.
+					if (v3 && layer.known(MapRegion.key(rx, rz))) {
+						c.push();
+						c.translate((float) (x0 - originX), (float) (z0 - originZ));
+						c.scale((float) (x1 - x0) / 16f, (float) (z1 - z0) / 16f);
+						c.fill(0, 0, 16, 16, (tint & 0xFF000000) | (LOADING & 0xFFFFFF));
+						c.pop();
+					}
+					continue;
+				}
+				if (v3) {
+					// Karte v3: an Texturkanten leicht nach innen (keine Nähte durch Textur-Wiederholung).
+					c.push();
+					c.translate((float) (x0 - originX), (float) (z0 - originZ));
+					MapDraw.image(c, tex, x0 - bx, z0 - bz, x1 - bx, z1 - bz, (float) (x1 - x0), (float) (z1 - z0), tint);
+					c.pop();
+					continue;
+				}
 				int w = (int) Math.round((x1 - x0) * SUB), h = (int) Math.round((z1 - z0) * SUB);
 				if (w <= 0 || h <= 0) continue;
 				TextureRef sub = new TextureRef(tex.id, tex.width * SUB, tex.height * SUB);

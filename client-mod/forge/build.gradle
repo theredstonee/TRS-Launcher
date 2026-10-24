@@ -209,3 +209,5 @@ if (srg) {
 
 // Autotests ohne Ton (siehe gradle/autotest-mute.gradle).
 apply from: new File(buildscript.sourceFile.parentFile, '../gradle/autotest-mute.gradle')
+// Vorschau-Builds (-PtrsPreview=map-v3, siehe gradle/preview-features.gradle).
+apply from: new File(buildscript.sourceFile.parentFile, '../gradle/preview-features.gradle')

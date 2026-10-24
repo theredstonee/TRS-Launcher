@@ -279,7 +279,8 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 			dimsLoading = true;
 			final String key = wk;
 			final java.nio.file.Path worldDir = disk.worldDir(wk);
-			disk.background(() -> MapDimensions.scan(worldDir), list -> {
+			final java.nio.file.Path legacyWorldDir = disk.legacyDirOf(worldDir);
+			disk.background(() -> MapDimensions.scan(worldDir, legacyWorldDir), list -> {
 				dimsLoading = false;
 				dimsAt = System.currentTimeMillis();
 				if (list != null && key.equals(worldOpened)) dims = list;
@@ -328,6 +329,8 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 			return;
 		}
 		if (e.disk() != null) e.disk().nextFrame();
+		// Karte v3: fehlende Chunks auch je Bild abtasten (offene Weltkarte → mehr Budget).
+		e.frame(true);
 		drawMap(c, layer, w, h, now);
 		if (e.modules().worldMapGrid.get() && cam.scale() * gs >= 6f) grid(c, w, h);
 		markers(c, w, h, mx, my, gs);

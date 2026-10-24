@@ -175,11 +175,21 @@ public final class MapExport {
 		final int[] pixels;
 		final short[] heights;
 		final int[] summary;
+		/** Karte v3: Wassertiefe/Grund (null = keine). */
+		byte[] depth;
+		int[] floor;
 
 		Snap(int[] pixels, short[] heights, int[] summary) {
 			this.pixels = pixels;
 			this.heights = heights;
 			this.summary = summary;
+		}
+
+		void into(MapRegion r) {
+			System.arraycopy(pixels, 0, r.pixels, 0, MapRegion.AREA);
+			System.arraycopy(heights, 0, r.heights, 0, MapRegion.AREA);
+			r.depth = depth;
+			r.floor = floor;
 		}
 	}
 
@@ -190,6 +200,9 @@ public final class MapExport {
 	private final Map<Long, Snap> snaps;
 	private final MapDisk disk;
 	private final Path dir;
+	/** Karte v3: Bereiche, die nur in den bisherigen Karten liegen, und deren Ordner. */
+	private Set<Long> legacyKeys = java.util.Collections.emptySet();
+	private Path legacyDir;
 	private final int caveRef;
 	private final Path file;
 	private final Consumer<MapExport> onFinish;
@@ -257,10 +270,17 @@ public final class MapExport {
 		for (MapRegion r : layer.loaded()) {
 			if (!keys.contains(r.key()) || (fromDisk && !r.dirty()) || !r.anyKnown()) continue;
 			int[] summary = r.summary != null && r.summaryVersion == r.version ? r.summary.clone() : null;
-			snaps.put(r.key(), new Snap(r.pixels.clone(), r.heights.clone(), summary));
+			Snap snap = new Snap(r.pixels.clone(), r.heights.clone(), summary);
+			if (r.depth != null && r.floor != null) {
+				snap.depth = r.depth.clone();
+				snap.floor = r.floor.clone();
+			}
+			snaps.put(r.key(), snap);
 		}
 		Path file = unique(outDir, fileName(worldKey, dimension, layer, new Date()));
 		final MapExport job = new MapExport(plan, keys, snaps, disk, layer.dir(), layer.caveRef, file, onFinish);
+		job.legacyKeys = layer.legacyKeys();
+		job.legacyDir = disk == null ? null : disk.legacyDirOf(layer.dir());
 		current = job;
 		if (!background) {
 			job.run();
@@ -386,7 +406,8 @@ public final class MapExport {
 			long key = MapRegion.key(rx, rz);
 			if (!keys.contains(key) || snaps.containsKey(key)) continue;
 			want.add(key);
-			futures.add(disk.readRaw(MapDisk.regionFile(dir, rx, rz)));
+			boolean legacy = legacyDir != null && legacyKeys.contains(key);
+			futures.add(disk.readRaw(MapDisk.regionFile(legacy ? legacyDir : dir, rx, rz)));
 		}
 		for (int i = 0; i < want.size(); i++) {
 			try {
@@ -404,8 +425,7 @@ public final class MapExport {
 		if (s != null) {
 			if (s.summary != null) return s.summary;
 			MapRegion r = new MapRegion(MapRegion.keyX(key), MapRegion.keyZ(key));
-			System.arraycopy(s.pixels, 0, r.pixels, 0, MapRegion.AREA);
-			System.arraycopy(s.heights, 0, r.heights, 0, MapRegion.AREA);
+			s.into(r);
 			compose(r, null, null, scratch);
 			return MapCompose.summaryOf(scratch);
 		}
@@ -427,8 +447,7 @@ public final class MapExport {
 		Snap s = snaps.get(key);
 		MapRegion r = new MapRegion(MapRegion.keyX(key), MapRegion.keyZ(key));
 		if (s != null) {
-			System.arraycopy(s.pixels, 0, r.pixels, 0, MapRegion.AREA);
-			System.arraycopy(s.heights, 0, r.heights, 0, MapRegion.AREA);
+			s.into(r);
 			return r;
 		}
 		if (data == null) return null;
@@ -436,6 +455,8 @@ public final class MapExport {
 			RegionCodec.Decoded d = RegionCodec.decode(new ByteArrayInputStream(data));
 			System.arraycopy(d.pixels, 0, r.pixels, 0, MapRegion.AREA);
 			System.arraycopy(d.heights, 0, r.heights, 0, MapRegion.AREA);
+			r.depth = d.depth;
+			r.floor = d.floor;
 			return r;
 		} catch (IOException | RuntimeException e) {
 			return null;
@@ -452,7 +473,6 @@ public final class MapExport {
 
 	private static void copyInto(MapLayer tmp, MapRegion src) {
 		MapRegion dst = tmp.forWrite(src.rx, src.rz, 0);
-		System.arraycopy(src.pixels, 0, dst.pixels, 0, MapRegion.AREA);
-		System.arraycopy(src.heights, 0, dst.heights, 0, MapRegion.AREA);
+		dst.copyFrom(src);
 	}
 }

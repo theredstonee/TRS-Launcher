@@ -51,6 +51,10 @@ public final class MapDisk {
 	static final int PRIO_EXPORT = 2;
 
 	private final Path root;
+	/** Karte v3: Ordner der bisherigen Karten (nur gelesen, nie beschrieben/gelöscht) oder null. */
+	private Path legacyRoot;
+	/** Karte v3: speichert in Fassung 2 (Wassertiefe, 64×64-Übersicht). */
+	private boolean v3;
 	private final ThreadPoolExecutor worker;
 	private final ConcurrentLinkedQueue<Runnable> results = new ConcurrentLinkedQueue<Runnable>();
 	private final boolean synchronous;
@@ -109,6 +113,30 @@ public final class MapDisk {
 
 	public Path root() {
 		return root;
+	}
+
+	/**
+	 * Karte v3: speichert ab jetzt in Fassung 2 und liest fehlende Bereiche aus den bisherigen Karten unter
+	 * {@code legacy} (nur lesen – die alte Fassung findet ihre Dateien unverändert vor).
+	 */
+	public void enableV3(Path legacy) {
+		v3 = true;
+		legacyRoot = legacy;
+	}
+
+	public boolean v3() {
+		return v3;
+	}
+
+	/** Ordner der bisherigen Karten, der zu {@code dir} (unter {@link #root()}) gehört, oder null. */
+	public Path legacyDirOf(Path dir) {
+		if (legacyRoot == null || dir == null || root == null) return null;
+		try {
+			if (!dir.startsWith(root)) return null;
+			return legacyRoot.resolve(root.relativize(dir).toString());
+		} catch (RuntimeException e) {
+			return null;
+		}
 	}
 
 	/** Ordner einer Ebene (Welt/Server + Dimension + Ebene). */
@@ -241,11 +269,43 @@ public final class MapDisk {
 		});
 	}
 
+	/** Lädt nur die 64×64-Übersicht (Karte v3; null = fehlt oder alte Datei). */
+	public void loadSummary64(final Path file, final BooleanSupplier stillWanted, final Consumer<int[]> done,
+			final Runnable skipped) {
+		submit(PRIO_LOAD, () -> {
+			if (stillWanted != null && skipped != null && !stillWanted.getAsBoolean()) {
+				this.skipped.incrementAndGet();
+				post(skipped);
+				return;
+			}
+			int[] s = null;
+			if (Files.isRegularFile(file)) {
+				try (InputStream in = Files.newInputStream(file)) {
+					s = RegionCodec.readSummary64(in);
+				} catch (IOException | RuntimeException e) {
+					s = null;
+				}
+			}
+			final int[] result = s;
+			post(() -> done.accept(result));
+		});
+	}
+
 	/** Speichert einen Bereich (die Arrays müssen Kopien sein – sie werden im Hintergrund gelesen). */
 	public void save(final Path file, final int rx, final int rz, final int[] pixels, final short[] heights, final int[] summary) {
+		save(file, rx, rz, pixels, heights, null, null, summary, null);
+	}
+
+	/**
+	 * Speichert einen Bereich; mit Karte v3 in Fassung 2 samt Wasser-Ebenen und 64×64-Übersicht (alles Kopien).
+	 */
+	public void save(final Path file, final int rx, final int rz, final int[] pixels, final short[] heights, final byte[] depth,
+			final int[] floor, final int[] summary, final int[] summary64) {
+		final boolean format2 = v3;
 		submit(() -> {
 			try {
-				byte[] data = RegionCodec.encode(rx, rz, pixels, heights, summary);
+				byte[] data = format2 ? RegionCodec.encodeV3(rx, rz, pixels, heights, depth, floor, summary, summary64)
+						: RegionCodec.encode(rx, rz, pixels, heights, summary);
 				Files.createDirectories(file.getParent());
 				Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
 				Files.write(tmp, data);
@@ -266,7 +326,49 @@ public final class MapDisk {
 	 */
 	public void enforceLimit(final long maxBytes, final Collection<Path> keep) {
 		final List<Path> protectedDirs = new ArrayList<Path>(keep);
-		submit(() -> trim(root, maxBytes, protectedDirs));
+		final boolean careful = v3;
+		submit(() -> {
+			if (careful) trimV3(root, maxBytes, protectedDirs);
+			else trim(root, maxBytes, protectedDirs);
+		});
+	}
+
+	/**
+	 * Karte v3: wie {@link #trim}, aber zuerst Höhlen-/Innenansichten (lassen sich jederzeit neu abtasten), erst danach
+	 * Oberflächen anderer Welten – jeweils die am längsten nicht geänderten. Offene Ebenen bleiben immer.
+	 */
+	static int trimV3(Path root, long maxBytes, List<Path> keep) {
+		List<FileInfo> files = scan(root);
+		long total = 0;
+		for (FileInfo f : files) total += f.size;
+		if (total <= maxBytes) return 0;
+		Collections.sort(files, new Comparator<FileInfo>() {
+			@Override
+			public int compare(FileInfo a, FileInfo b) {
+				boolean sa = surfaceLayer(a.path), sb = surfaceLayer(b.path);
+				if (sa != sb) return sa ? 1 : -1;
+				return Long.compare(a.modified, b.modified);
+			}
+		});
+		long target = maxBytes / 10 * 9;
+		int deleted = 0;
+		for (FileInfo f : files) {
+			if (total <= target) break;
+			if (isInside(f.path, keep)) continue;
+			try {
+				Files.deleteIfExists(f.path);
+				total -= f.size;
+				deleted++;
+			} catch (IOException e) {
+				// weiter mit der nächsten
+			}
+		}
+		return deleted;
+	}
+
+	private static boolean surfaceLayer(Path file) {
+		Path dir = file.getParent();
+		return dir != null && dir.getFileName() != null && dir.getFileName().toString().startsWith("surface");
 	}
 
 	/** Größe aller Kartendateien (Bytes, blockiert – nur Hintergrund/Tests). */
