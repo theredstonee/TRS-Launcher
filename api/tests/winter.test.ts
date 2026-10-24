@@ -241,7 +241,7 @@ describe('slot pet and options per player', () => {
     expect((await put({ options: { hat: { beard: false } } })).error?.code).toBe('unknown_option')
 
     const on = await put({ hat: 'test_hat', pet: CREATOR_PET_ID })
-    expect(on.body).toMatchObject({ equipped: { hat: { id: 'test_hat', options: { beard: true } }, pet: { id: CREATOR_PET_ID, slot: 'pet', format: 2 } } })
+    expect(on.body).toMatchObject({ equipped: { hat: { id: 'test_hat', options: { beard: true } }, pet: { id: CREATOR_PET_ID, slot: 'pet', format: 2, count: 1 } } })
     expect((on.body as { equipped: { pet: object } }).equipped.pet).not.toHaveProperty('options')
     expect((await put({ options: { hat: { mustache: false } } })).error?.code).toBe('unknown_option')
     expect((await put({ options: { pet: { beard: false } } })).error?.code).toBe('unknown_option')
@@ -333,6 +333,7 @@ describe('creator penguins by fans', () => {
     expect(seen.filter((e) => e.type === 'cosmetics').length).toBe(afterFirst) // 9 Fans: Stufe bleibt 1
     redeemCreatorCode(env.ctx, fans[9]!, { code: c.code })
     expect(petOf(env, viewer, c.uuid)).toMatchObject({ count: 2 })
+    expect(equippedView(env.ctx, c.uuid).pet).toMatchObject({ id: CREATOR_PET_ID, count: 2 })
     const ev = seen.filter((e) => e.type === 'cosmetics')
     expect(ev.length).toBe(afterFirst + 1)
     expect((ev.at(-1) as { cosmetics: { pet: { count: number } } }).cosmetics.pet.count).toBe(2)

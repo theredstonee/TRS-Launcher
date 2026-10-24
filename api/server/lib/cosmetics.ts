@@ -4,6 +4,7 @@ import { writeAtomic } from './capes'
 import { resolveOptions } from '../../app/utils/cosmetic-v2/format'
 import { shortHash, V2_TEMPLATE, v2File, type BuiltinCosmeticV2, type CosmeticV2Assets, type V2File } from './cosmetics-v2'
 import type { AppContext } from './context'
+import { creatorFanCounts, petCount } from './creator-lookup'
 import { all, one, run, tx } from './db'
 import { EMOTE_BY_ID, EMOTES } from './emotes'
 import { ApiError, badRequest, conflict, forbidden, notFound } from './errors'
@@ -97,6 +98,8 @@ export interface CosmeticView extends Partial<CosmeticV2Fields> {
    * Wahl je Option (`{ beard: false }`), fehlende Wahl = `default` des Modells – immer vollständig.
    */
   options?: Record<string, boolean>
+  /** Nur in der eigenen Ausrüstung im Platz `pet`: Anzahl (1…4, Creator-Pinguine nach Fans, sonst 1) – wie im Lookup. */
+  count?: number
 }
 
 /** Zusatzfelder für Format v2 (§11.9). Fehlen bei v1-Teilen (alte Clients kennen sie nicht). */
@@ -419,7 +422,7 @@ function withOptions(ctx: AppContext, r: EquippedRow): CosmeticView {
   return options ? { ...view, options } : view
 }
 
-/** Ausgerüstete Teile aus Sicht des Besitzers (auch wartende Uploads). */
+/** Ausgerüstete Teile aus Sicht des Besitzers (auch wartende Uploads); im Platz `pet` mit `count` wie im Lookup. */
 export function equippedView(ctx: AppContext, uuid: string): EquippedView {
   const m = equippedMap(ctx, uuid)
   const out = {} as EquippedView
@@ -427,6 +430,8 @@ export function equippedView(ctx: AppContext, uuid: string): EquippedView {
     const r = m.get(s)
     out[s] = r ? withOptions(ctx, r) : null
   }
+  const pet = m.get('pet')
+  if (pet && out.pet) out.pet = { ...out.pet, count: petCount(pet.id, creatorFanCounts(ctx, [uuid]).get(uuid)) }
   return out
 }
 

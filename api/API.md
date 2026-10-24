@@ -1268,6 +1268,7 @@ Animated particle textures use the same frame formula as models. All particles o
 | `emissive` | Render at full brightness (§11.3). |
 | `emote` | `{ "durationMs", "loop" }` for emotes, otherwise `null`. |
 | `options` | Only in your own equipment (`GET`/`PUT /v1/me/cosmetics`) and only when the model declares `options` (§11.9): your choice per option, complete, e.g. `{ "beard": true }`. Absent otherwise. |
+| `count` | Only in your own equipment, slot `pet`: how many companions walk with you (1–4, same value as `cosmetics.pet.count` in the lookup, §4.1). |
 
 **LookupCosmetic** is the flat form used in the lookup and in events (`cosmetics` has the keys `hat`, `wings`, `back`, `aura`, `companion` and `pet`, each an item or `null`): `{ id, template, templateUrl, url, scale, animated, frames, frameTimeMs, emissive }` for format 1, `{ id, format: 2, model, url, scale, animated, frames, frameTimeMs, glow, glowFrames, glowFrameTimeMs, hash, options?, count? }` for format 2 (§11.9, `options`/`count` see §4.1). `templateUrl` is the same path as on CosmeticView.
 
