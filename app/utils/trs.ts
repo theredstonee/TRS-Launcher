@@ -113,11 +113,22 @@ export const trsRedeemSchema = z.object({
   alreadyOwned: z.boolean(),
   /** Kopf-Kosmetik, die der TRS Client zeichnet (Quietscheente, v2-Modelle) – kann gleich aufgesetzt werden. */
   wearableHat: z.boolean(),
+  /** Fach des Teils, damit „Jetzt aufsetzen?“ das richtige Fach belegt (ältere Kerne: `null` = Hut). */
+  slot: z.enum(['hat', 'companion', 'wings', 'pet']).nullable().catch(null).default(null),
 })
 
-/** Eigene Kopf-Kosmetik (nur Teile, die der TRS Client zeichnen kann). */
-/** Kopf-Kosmetik: `hat` (Kopf) oder `companion` (Begleiter, z. B. Fledermaus). */
-export const trsCosmeticSlotSchema = z.enum(['hat', 'companion', 'wings']).catch('hat').default('hat')
+/**
+ * Kosmetik-Fach: `hat` (Kopf), `companion` (Begleiter am Kopf, z. B. Fledermaus), `wings` (Rücken)
+ * oder `pet` (Begleiter am Boden, z. B. Pinguin).
+ */
+export const TRS_COSMETIC_SLOTS = ['hat', 'companion', 'wings', 'pet'] as const
+export const trsCosmeticSlotSchema = z.enum(TRS_COSMETIC_SLOTS).catch('hat').default('hat')
+/** Wahl der abschaltbaren Teile (`{ beard: false }`, Anhang D): gültige Kennungen, höchstens 4. */
+export const trsCosmeticOptionsSchema = z
+  .record(z.string().regex(/^[a-z][a-z0-9_]{0,19}$/), z.boolean())
+  .refine((o) => Object.keys(o).length <= 4)
+  .catch({})
+  .default({})
 export const trsHatSchema = z.object({ id: capeId, name: text(48), slot: trsCosmeticSlotSchema, template: text(32), equipped: z.boolean() })
 export type TrsHat = z.infer<typeof trsHatSchema>
 
@@ -144,6 +155,12 @@ export const trsHeadCosmeticSchema = z.object({
   cardNight: pngDataUrl,
   frames: z.number().int().min(1).max(16),
   glowFrames: z.number().int().min(0).max(16),
+  /** Getragener Begleiter am Boden: so viele sehen andere (1…4); `null` = unbekannt (gilt als 1). */
+  count: z.number().int().min(1).max(4).nullable().catch(null).default(null),
+  /** Über die Creator-Stufe bekommen (automatisch nach Fans). */
+  creator: z.boolean().catch(false).default(false),
+  /** Getragenes Teil: gewählte Optionen; fehlende gelten als Standard des Modells. */
+  options: trsCosmeticOptionsSchema,
 })
 export type TrsHeadCosmetic = z.infer<typeof trsHeadCosmeticSchema>
 

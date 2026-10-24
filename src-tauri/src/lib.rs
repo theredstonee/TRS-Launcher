@@ -686,6 +686,8 @@ pub fn run() {
             commands::trs::trs_head_cosmetic_model,
             commands::trs::trs_set_hat,
             commands::trs::trs_set_companion,
+            commands::trs::trs_set_pet,
+            commands::trs::trs_equip_cosmetic,
             commands::trs::trs_claim_cosmetic,
             commands::trs::trs_claim_cape,
             commands::trs::trs_active_events,

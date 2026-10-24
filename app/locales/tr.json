@@ -625,7 +625,9 @@
       "invalidCodeId": "Geçersiz kod kimliği.",
       "redemptionsRange": "Kod başına kullanım: 1 ile 100.000 arası.",
       "countRange": "Miktar: aynı anda 1 ile 100 kod arası.",
-      "expiryInPast": "Son kullanma tarihi geçmişte."
+      "expiryInPast": "Son kullanma tarihi geçmişte.",
+      "invalidCosmeticSlot": "Bilinmeyen kozmetik yuvası.",
+      "invalidCosmeticOption": "Bu öğe için geçersiz seçenek."
     },
     "trsEvents": {
       "invalidEvent": "Geçersiz etkinlik."
@@ -3796,7 +3798,9 @@
       "title": "“{name}” açıldı!",
       "text": "Şimdi takmak ister misin? TRS Client’ta başında görürsün (üçüncü şahıs), diğer TRS oyuncuları da görür.",
       "wear": "Tak",
-      "later": "Sonra"
+      "later": "Sonra",
+      "textPet": "Şimdi yanına alalım mı? TRS Client’ta yanında yürür, diğer TRS oyuncuları da görür.",
+      "textOther": "Şimdi takalım mı? TRS Client’ta (üçüncü şahıs) görürsün, diğer TRS oyuncuları da."
     },
     "filter": {
       "search": "Pelerinleri ada göre ara",
@@ -3891,6 +3895,42 @@
       "toasts": {
         "on": "“{name}” seninle uçuyor",
         "off": "Yoldaş çıkarıldı"
+      }
+    },
+    "pet": {
+      "title": "Yerdeki yoldaşlar",
+      "intro": "Yanında yürür – TRS Client kullanan herkes onu görür. Önizleme onu karakterinin yanında gösterir.",
+      "creatorHint": "İçerik üreticileri hayran sayısına göre otomatik penguen alır: 1 hayrandan itibaren bir, 10’dan iki, 100’den üç, 1000’den dört.",
+      "empty": "Henüz yerde yoldaş yok.",
+      "wearing": "Yanında: {name}",
+      "selectedWorn": "Yanında yürür – TRS Client kullanan herkes onu görür.",
+      "toasts": {
+        "on": "“{name}” artık yanında yürüyor",
+        "off": "Yerdeki yoldaş gönderildi"
+      },
+      "states": "Yoldaş:",
+      "state": {
+        "idle": "Duruyor",
+        "walk": "Yürüyor",
+        "slide": "Kayıyor",
+        "swim": "Yüzüyor",
+        "air": "Zıplıyor"
+      },
+      "count": "{n} × {name} | {n} × {name}",
+      "counts": {
+        "penguin": "{n} penguen | {n} penguen"
+      },
+      "creatorTier": "{label} – içerik üretici seviyesi"
+    },
+    "options": {
+      "title": "{name}:",
+      "on": "açık",
+      "off": "kapalı",
+      "hintWorn": "Hemen kaydedilir – diğerleri oyunda görür.",
+      "hintPreview": "Yalnızca önizleme – takınca geçerli olur.",
+      "toasts": {
+        "on": "{option} açık ({name})",
+        "off": "{option} kapalı ({name})"
       }
     }
   },

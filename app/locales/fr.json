@@ -625,7 +625,9 @@
       "invalidCodeId": "ID de code invalide.",
       "redemptionsRange": "Utilisations par code : de 1 à 100 000.",
       "countRange": "Quantité : de 1 à 100 codes à la fois.",
-      "expiryInPast": "La date d'expiration est dans le passé."
+      "expiryInPast": "La date d'expiration est dans le passé.",
+      "invalidCosmeticSlot": "Emplacement de cosmétique inconnu.",
+      "invalidCosmeticOption": "Option invalide pour cet objet."
     },
     "trsEvents": {
       "invalidEvent": "Événement invalide."
@@ -3796,7 +3798,9 @@
       "title": "« {name} » débloqué !",
       "text": "Le mettre maintenant ? Tu le verras sur ta tête dans le TRS Client (3e personne), comme les autres joueurs TRS.",
       "wear": "Mettre",
-      "later": "Plus tard"
+      "later": "Plus tard",
+      "textPet": "L’emmener maintenant ? Il marche à côté de toi dans TRS Client, et les autres joueurs TRS le voient aussi.",
+      "textOther": "L’équiper maintenant ? Tu le vois dans TRS Client (3e personne), les autres joueurs TRS aussi."
     },
     "filter": {
       "search": "Rechercher des capes par nom",
@@ -3891,6 +3895,42 @@
       "toasts": {
         "on": "« {name} » vole avec toi",
         "off": "Compagnon retiré"
+      }
+    },
+    "pet": {
+      "title": "Compagnons au sol",
+      "intro": "Marche à côté de toi – tous ceux qui ont TRS Client le voient. L’aperçu le montre à côté de ton personnage.",
+      "creatorHint": "Les créateurs reçoivent automatiquement des pingouins selon leurs fans : un dès 1 fan, deux dès 10, trois dès 100, quatre dès 1000.",
+      "empty": "Pas encore de compagnons au sol.",
+      "wearing": "À côté de toi : {name}",
+      "selectedWorn": "Marche à côté de toi – tous ceux qui ont TRS Client le voient.",
+      "toasts": {
+        "on": "« {name} » marche maintenant à côté de toi",
+        "off": "Compagnon au sol renvoyé"
+      },
+      "states": "Compagnon :",
+      "state": {
+        "idle": "Debout",
+        "walk": "Marche",
+        "slide": "Glisse",
+        "swim": "Nage",
+        "air": "Saute"
+      },
+      "count": "{n} × {name} | {n} × {name}",
+      "counts": {
+        "penguin": "{n} pingouin | {n} pingouins"
+      },
+      "creatorTier": "{label} – palier créateur"
+    },
+    "options": {
+      "title": "{name} :",
+      "on": "oui",
+      "off": "non",
+      "hintWorn": "Enregistré tout de suite – les autres le voient en jeu.",
+      "hintPreview": "Aperçu seulement – s’applique quand tu l’équipes.",
+      "toasts": {
+        "on": "{option} : oui ({name})",
+        "off": "{option} : non ({name})"
       }
     }
   },

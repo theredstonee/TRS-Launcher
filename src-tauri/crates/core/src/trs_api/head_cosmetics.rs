@@ -5,14 +5,17 @@
 //! `<daten>/cache/trs-cosmetics/<id>/<version>-<datei>`. Das Webview bekommt
 //! nur geprüftes JSON und PNG-Data-URLs (CSP bleibt eng, WebGL braucht kein CORS).
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::PathBuf;
 
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use serde_json::Value;
 
-use super::types::{ApiCosmeticCatalog, ApiCosmeticRef, CosmeticUnlock, HeadCosmetic, HeadCosmeticModel};
+use super::types::{
+    ApiCosmeticCatalog, ApiCosmeticRef, CosmeticUnlock, HeadCosmetic, HeadCosmeticModel, MAX_OPTIONS, clean_count,
+    clean_options, option_id,
+};
 use super::{Req, TrsApi, png, validate};
 use crate::{Error, Launcher, Result, fsutil};
 
@@ -43,6 +46,8 @@ pub(crate) fn wearable_hat(c: &ApiCosmeticRef) -> bool {
         "companion" => c.is_v2(),
         // Flügel (seit 2026-10-16, `attach: body`): nur v2.
         "wings" => c.is_v2(),
+        // Begleiter am Boden (Pinguin, seit 2026-10-24, `attach: ground`): nur v2.
+        "pet" => c.is_v2(),
         _ => false,
     }
 }
@@ -209,10 +214,13 @@ pub(crate) fn check_model(model: &Value, id: &str) -> Option<ModelInfo> {
     if uint(o, "format")? != 2 || o.get("id")?.as_str()? != id {
         return None;
     }
-    // Hut/Begleiter hängen am Kopf, Flügel am Rumpf (§3 `SLOT_ATTACH`).
+    // Hut/Begleiter hängen am Kopf, Flügel am Rumpf, Begleiter am Boden stehen (§3 `SLOT_ATTACH`, Anhang D).
     match (o.get("slot")?.as_str()?, o.get("attach")?.as_str()?) {
-        ("hat" | "companion", "head") | ("wings", "body") => {}
+        ("hat" | "companion", "head") | ("wings", "body") | ("pet", "ground") => {}
         _ => return None,
+    }
+    if !options_ok(o) {
+        return None;
     }
     let tex = o.get("texture")?.as_object()?;
     let (w, h, scale) = (uint(tex, "width")?, uint(tex, "height")?, uint(tex, "scale")?);
@@ -243,6 +251,26 @@ pub(crate) fn check_model(model: &Value, id: &str) -> Option<ModelInfo> {
         && list_len(o, "animations", 0, 8)
         && list_len(o, "halos", 0, 16);
     lists.then_some(ModelInfo { texture: (pw, ph * frames), glow })
+}
+
+/// Abschaltbare Teile (Anhang D, optional): höchstens 4, je gültige eindeutige `id`, `default`
+/// true/false und mindestens ein Knochen-Name. Ob die Knochen existieren, prüft der Renderer.
+fn options_ok(o: &serde_json::Map<String, Value>) -> bool {
+    let list = match o.get("options") {
+        None => return true,
+        Some(Value::Array(a)) if a.len() <= MAX_OPTIONS => a,
+        Some(_) => return false,
+    };
+    let mut seen = std::collections::HashSet::new();
+    list.iter().all(|opt| {
+        let Some(opt) = opt.as_object() else { return false };
+        let id = opt.get("id").and_then(Value::as_str).filter(|id| option_id(id));
+        let bones = opt
+            .get("bones")
+            .and_then(Value::as_array)
+            .is_some_and(|b| !b.is_empty() && b.len() <= 32 && b.iter().all(Value::is_string));
+        id.is_some_and(|id| seen.insert(id.to_owned())) && bones && opt.get("default").is_some_and(Value::is_boolean)
+    })
 }
 
 fn data_url(bytes: &[u8]) -> String {
@@ -354,6 +382,33 @@ impl TrsApi {
     }
 }
 
+/// Extras eines getragenen Teils aus `GET /v1/me/cosmetics` (Anhang D): Optionen und – beim
+/// Begleiter am Boden – die Anzahl (Creator-Stufe).
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub(crate) struct Worn {
+    pub options: BTreeMap<String, bool>,
+    pub count: Option<u8>,
+    pub creator: bool,
+}
+
+/// `equipped.<slot>` = CosmeticView (`{ id, options?, count?, source? }`) je Fach; ältere Antworten
+/// ohne Extras ergeben leere Einträge. Ein oberstes `options: { <slot>: {…} }` gilt als Rückfall.
+pub(crate) fn worn_extras(me: &Value) -> HashMap<String, Worn> {
+    let mut out = HashMap::new();
+    let Some(equipped) = me.get("equipped").and_then(Value::as_object) else { return out };
+    for (slot, view) in equipped {
+        let Some(id) = view.get("id").and_then(Value::as_str).filter(|id| validate::cape_id(id)) else { continue };
+        let mut options = clean_options(view.get("options"));
+        if options.is_empty() {
+            options = clean_options(me.get("options").and_then(|o| o.get(slot)));
+        }
+        let count = if slot == "pet" { clean_count(view.get("count")) } else { None };
+        let creator = view.get("source").and_then(Value::as_str) == Some("creator") || count.is_some_and(|n| n > 1);
+        out.insert(id.to_owned(), Worn { options, count, creator });
+    }
+    out
+}
+
 /// Ältere Versionen derselben Datei aus dem Cache räumen.
 async fn prune_versions(dir: &std::path::Path, asset: Asset, keep: &std::path::Path) {
     let Ok(mut entries) = tokio::fs::read_dir(dir).await else { return };
@@ -373,11 +428,27 @@ impl Launcher {
     /// Alle Kopf-Kosmetik-Teile, die der TRS Client zeichnen kann – besessene und
     /// gesperrte (versteckte nur, wenn man sie hat) – mit Vorschaubildern.
     pub async fn trs_head_cosmetics(&self) -> Result<Vec<HeadCosmetic>> {
-        let catalog: ApiCosmeticCatalog = self.trs_get(Req::get("/v1/cosmetics")).await?;
+        // Getragenes mit Optionen/Anzahl kommt aus `me/cosmetics` – fehlt das (ältere API), geht es ohne.
+        let (catalog, me) = futures::future::join(
+            self.trs_get::<ApiCosmeticCatalog>(Req::get("/v1/cosmetics")),
+            self.trs_get::<Value>(Req::get("/v1/me/cosmetics")),
+        )
+        .await;
+        let catalog = catalog?;
+        let worn = me.map(|m| worn_extras(&m)).unwrap_or_else(|e| {
+            tracing::debug!("Getragene Kosmetik (Optionen/Anzahl) nicht geladen: {e}");
+            HashMap::new()
+        });
         let sources = self.trs.remember_sources(&catalog.cosmetics);
         let trs = &self.trs;
         let jobs = catalog.cosmetics.into_iter().filter(listed).take(MAX_ITEMS).map(|c| {
             let source = sources.get(&c.id).cloned();
+            let extra = worn.get(&c.id).cloned().filter(|_| c.equipped).unwrap_or_else(|| Worn {
+                // Rückfall: Angaben direkt am Katalog-Eintrag.
+                options: if c.equipped { clean_options(c.options.as_ref()) } else { BTreeMap::new() },
+                count: if c.equipped && c.slot == "pet" { clean_count(c.count.as_ref()) } else { None },
+                creator: c.source.as_deref() == Some("creator"),
+            });
             async move {
                 let (card, card_night) = match &source {
                     Some(s) => {
@@ -405,6 +476,9 @@ impl Launcher {
                     card_night,
                     frames: c.frames.unwrap_or(1).clamp(1, MAX_FRAMES),
                     glow_frames: c.glow_frames.unwrap_or(0).min(MAX_FRAMES),
+                    count: extra.count,
+                    creator: extra.creator || c.source.as_deref() == Some("creator"),
+                    options: extra.options,
                     id: c.id,
                 }
             }

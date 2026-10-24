@@ -192,6 +192,7 @@ const trsApi = {
   hats: vi.fn(async (): Promise<{ id: string; name: string }[]> => []),
   setCape: vi.fn(async () => 'veteran'),
   setHat: vi.fn(async () => undefined),
+  equipCosmetic: vi.fn(async () => undefined),
 }
 vi.mock('../app/utils/backend', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../app/utils/backend')>()),
@@ -268,6 +269,16 @@ describe('achievement_unlocked in the launcher', () => {
     expect(toast.actions[0]!.label).toBe('Wo finde ich es?')
     toast.actions[0]!.run()
     await vi.waitFor(() => expect(ok).toHaveBeenCalledWith(expect.stringContaining('Emote-Rad')))
+  })
+
+  it('a ground companion reward goes into the pet slot, not on the head', async () => {
+    trsApi.hats.mockResolvedValueOnce([{ id: 'test-pet', name: 'Testtier', slot: 'pet' } as { id: string; name: string }])
+    const store = useAchievementsStore()
+    const toasts = useSocialToasts()
+    await store.onLiveEvent(unlockEvent({ reward: { kind: 'cosmetic', id: 'test-pet' } }))
+    toasts.items[0]!.actions[0]!.run()
+    await vi.waitFor(() => expect(trsApi.equipCosmetic).toHaveBeenCalledWith('pet', 'test-pet'))
+    expect(trsApi.setHat).not.toHaveBeenCalledWith('test-pet')
   })
 
   it('stays quiet in game with the TRS Client', async () => {

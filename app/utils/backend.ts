@@ -26,6 +26,7 @@ import {
   trsHatSchema,
   trsHeadCosmeticModelSchema,
   trsHeadCosmeticSchema,
+  type TrsCosmeticSlot,
   trsStatusSchema,
   trsSyncStatusSchema,
   trsUserRefSchema,
@@ -956,6 +957,14 @@ export const backend = {
     setCompanion: (id: string | null) => call<void>('trs_set_companion', { id }),
     /** Flügel (slot wings, am Rumpf) anlegen oder ablegen. */
     setWings: (id: string | null) => call<void>('trs_set_wings', { id }),
+    /** Begleiter am Boden (Pinguin …) hinstellen oder wegnehmen. */
+    setPet: (id: string | null) => call<void>('trs_set_pet', { id }),
+    /**
+     * Ein Fach belegen/leeren, optional mit der Wahl der abschaltbaren Teile (Anhang D) –
+     * `PUT /v1/me/cosmetics { <slot>: id, options: { <slot>: { beard: false } } }`.
+     */
+    equipCosmetic: (slot: TrsCosmeticSlot, id: string | null, options: Record<string, boolean> | null = null) =>
+      call<void>('trs_equip_cosmetic', { slot, id, options }),
     /** Event-Kosmetik bzw. -Umhang gratis holen (nur solange das Event für dich läuft). */
     claimCosmetic: (id: string) => call<void>('trs_claim_cosmetic', { id }),
     claimCape: (id: string) => call<void>('trs_claim_cape', { id }),

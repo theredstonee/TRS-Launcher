@@ -1,13 +1,24 @@
 <script setup lang="ts">
-import type { TrsHeadCosmetic } from '~/utils/trs'
+import type { TrsCosmeticSlot, TrsHeadCosmetic } from '~/utils/trs'
 
 // Kopf-Kosmetik auf der Skins-Seite: alle Teile als Bild-Karten (besessen und
 // gesperrt – versteckte nur, wenn man sie hat). Klick = in der großen 3D-Vorschau
 // der Seite anprobieren (per `preview`), Aufsetzen/Absetzen, und bei gesperrten
 // Teilen steht dabei, wie man sie bekommt (Code, Erfolg, nur Team).
-const props = withDefaults(defineProps<{ previewId: string | null; night: boolean; cosmeticSlot?: 'hat' | 'companion' | 'wings' }>(), {
-  cosmeticSlot: 'hat',
-})
+// Dasselbe für Flügel, Begleiter am Kopf und Begleiter am Boden (`pet`, Pinguin).
+const props = withDefaults(
+  defineProps<{
+    previewId: string | null
+    night: boolean
+    cosmeticSlot?: TrsCosmeticSlot
+    /** Gewählte Optionen je Teil (Bart an/aus …) – gehen beim Aufsetzen mit (Anhang D). */
+    options?: Record<string, Record<string, boolean>> | null
+  }>(),
+  {
+    cosmeticSlot: 'hat',
+    options: null,
+  },
+)
 const emit = defineEmits<{
   preview: [item: TrsHeadCosmetic | null]
   equipped: [item: TrsHeadCosmetic | null]
@@ -32,10 +43,18 @@ watch(equipped, (item) => emit('equipped', item), { immediate: true })
 const selected = computed(() => listed.value.find((c) => c.id === props.previewId) ?? null)
 const companion = computed(() => props.cosmeticSlot === 'companion')
 const wings = computed(() => props.cosmeticSlot === 'wings')
-/** Text je Fach: Hut, Begleiter oder Flügel. */
-function pick(hat: string, buddy: string, wing: string): string {
-  return wings.value ? wing : companion.value ? buddy : hat
+const pet = computed(() => props.cosmeticSlot === 'pet')
+/** Text je Fach: Hut, Begleiter, Flügel oder Begleiter am Boden. */
+function pick(hat: string, buddy: string, wing: string, ground: string): string {
+  return pet.value ? ground : wings.value ? wing : companion.value ? buddy : hat
 }
+
+/** „2 Pinguine – Creator-Stufe“: Anzahl des getragenen Begleiters am Boden (fehlt = 1, `petCountText`). */
+const petCountLabel = computed(() => {
+  const item = equipped.value
+  if (!pet.value || !item) return null
+  return petCountText(item)
+})
 
 async function load() {
   if (!trs.enabled || !accounts.active) {
@@ -89,13 +108,13 @@ async function wear(item: TrsHeadCosmetic | null) {
   if (busy.value) return
   busy.value = true
   try {
-    if (wings.value) await backend.trs.setWings(item?.id ?? null)
-    else if (companion.value) await backend.trs.setCompanion(item?.id ?? null)
-    else await backend.trs.setHat(item?.id ?? null)
+    // Gewählte Optionen (z. B. Bart aus) gehen gleich mit; ohne Wahl gelten die Standardwerte.
+    const options = item ? (props.options?.[item.id] ?? null) : null
+    await backend.trs.equipCosmetic(props.cosmeticSlot, item?.id ?? null, options && Object.keys(options).length ? options : null)
     toasts.ok(
       item
-        ? tKey(pick('capes.toasts.hatOn', 'headCosmetics.companion.toasts.on', 'headCosmetics.wings.toasts.on'), { name: item.name })
-        : tKey(pick('capes.toasts.hatOff', 'headCosmetics.companion.toasts.off', 'headCosmetics.wings.toasts.off')),
+        ? tKey(pick('capes.toasts.hatOn', 'headCosmetics.companion.toasts.on', 'headCosmetics.wings.toasts.on', 'headCosmetics.pet.toasts.on'), { name: item.name })
+        : tKey(pick('capes.toasts.hatOff', 'headCosmetics.companion.toasts.off', 'headCosmetics.wings.toasts.off', 'headCosmetics.pet.toasts.off')),
     )
     await load()
   } catch (e) {
@@ -173,16 +192,23 @@ const howText = computed(() => {
 </script>
 
 <template>
-  <section :aria-labelledby="pick('trs-head-title', 'trs-companion-title', 'trs-wings-title')" :data-testid="pick('trs-head-cosmetics', 'trs-companions', 'trs-wings')">
+  <section
+    :aria-labelledby="pick('trs-head-title', 'trs-companion-title', 'trs-wings-title', 'trs-pet-title')"
+    :data-testid="pick('trs-head-cosmetics', 'trs-companions', 'trs-wings', 'trs-pets')"
+  >
     <div class="mb-2 flex flex-wrap items-center gap-2">
-      <h2 :id="pick('trs-head-title', 'trs-companion-title', 'trs-wings-title')" class="section-title">
-        {{ tKey(pick('headCosmetics.title', 'headCosmetics.companion.title', 'headCosmetics.wings.title')) }}
+      <h2 :id="pick('trs-head-title', 'trs-companion-title', 'trs-wings-title', 'trs-pet-title')" class="section-title">
+        {{ tKey(pick('headCosmetics.title', 'headCosmetics.companion.title', 'headCosmetics.wings.title', 'headCosmetics.pet.title')) }}
       </h2>
       <span v-if="equipped" class="badge bg-ok/10 text-ok">
-        {{ tKey(pick('headCosmetics.wearing', 'headCosmetics.companion.wearing', 'headCosmetics.wings.wearing'), { name: equipped.name }) }}
+        {{ tKey(pick('headCosmetics.wearing', 'headCosmetics.companion.wearing', 'headCosmetics.wings.wearing', 'headCosmetics.pet.wearing'), { name: equipped.name }) }}
       </span>
+      <span v-if="petCountLabel" class="badge bg-[#16324a]/70 text-[#bfe6ff]" data-testid="trs-pet-count">{{ petCountLabel }}</span>
     </div>
-    <p class="mb-3 text-xs text-base-400">{{ tKey(pick('headCosmetics.intro', 'headCosmetics.companion.intro', 'headCosmetics.wings.intro')) }}</p>
+    <p class="mb-3 text-xs text-base-400">
+      {{ tKey(pick('headCosmetics.intro', 'headCosmetics.companion.intro', 'headCosmetics.wings.intro', 'headCosmetics.pet.intro')) }}
+      <template v-if="pet">{{ ' ' + t('headCosmetics.pet.creatorHint') }}</template>
+    </p>
 
     <TrsGate what="cosmetics">
       <div v-if="offline" class="card flex items-center gap-3 px-4 py-3 text-sm text-base-400">
@@ -194,7 +220,7 @@ const howText = computed(() => {
         <div v-for="i in 6" :key="i" class="skeleton aspect-[4/5]" />
       </div>
       <template v-else-if="items">
-        <ul v-stagger class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3" :data-testid="pick('trs-head-list', 'trs-companion-list', 'trs-wings-list')">
+        <ul v-stagger class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3" :data-testid="pick('trs-head-list', 'trs-companion-list', 'trs-wings-list', 'trs-pet-list')">
           <li v-for="item in listed" :key="item.id">
             <button
               class="card card-hover card-lift group flex h-full w-full flex-col items-center gap-2 p-2 pb-3"
@@ -246,7 +272,7 @@ const howText = computed(() => {
           </li>
         </ul>
         <p v-if="!listed.length" class="card px-4 py-6 text-center text-sm text-base-400">
-          {{ tKey(pick('headCosmetics.empty', 'headCosmetics.companion.empty', 'headCosmetics.wings.empty')) }}
+          {{ tKey(pick('headCosmetics.empty', 'headCosmetics.companion.empty', 'headCosmetics.wings.empty', 'headCosmetics.pet.empty')) }}
         </p>
 
         <!-- Aktionen für das angeprobte Teil -->
@@ -259,10 +285,11 @@ const howText = computed(() => {
             <p v-else class="text-xs text-base-400">
               {{
                 selected.equipped
-                  ? tKey(pick('headCosmetics.selected.worn', 'headCosmetics.companion.selectedWorn', 'headCosmetics.wings.selectedWorn'))
+                  ? tKey(pick('headCosmetics.selected.worn', 'headCosmetics.companion.selectedWorn', 'headCosmetics.wings.selectedWorn', 'headCosmetics.pet.selectedWorn'))
                   : t('headCosmetics.selected.owned')
               }}
             </p>
+            <p v-if="pet && selected.equipped" class="text-xs text-[#bfe6ff]">{{ petCountText(selected) }}</p>
             <p v-if="!selected.preview" class="text-xs text-base-600">{{ t('headCosmetics.selected.noPreview') }}</p>
           </div>
           <button

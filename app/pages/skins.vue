@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { BuiltinSkins, Cape, LibrarySkin, SelectableSkin, SkinPack, SkinProfile, SkinSyncStatus, SkinVariant } from '~/types'
 import type { TrsCape, TrsHeadCosmetic } from '~/utils/trs'
-import type { ViewerCosmetic, WingState } from '~/utils/cosmetic-v2/format'
+import { PET_STATES, petCount, type OptionChoices, type PetState, type ViewerCosmetic, type WingState } from '~/utils/cosmetic-v2/format'
+import type { TrsCosmeticSlot } from '~/utils/trs'
+import { optionToggles, toggleOption, type OptionToggle } from '~/utils/trsCosmetics'
 import type { ThumbRequest } from '~/utils/skinThumbs'
 import {
   baseDraft,
@@ -229,10 +231,18 @@ const wingsEquipped = ref<TrsHeadCosmetic | null>(null)
 const shownWings = computed(() => wingsPreview.value ?? wingsEquipped.value)
 /** Vorschau der Flügel-Zustände: am Boden, in der Luft, beim Schleichen. */
 const wingState = ref<WingState>('idle')
+/** Begleiter am Boden (Pinguin, seit Winter 2026): steht neben dem Spieler, eigene Zustände. */
+const petPreview = ref<TrsHeadCosmetic | null>(null)
+const petEquipped = ref<TrsHeadCosmetic | null>(null)
+const shownPet = computed(() => petPreview.value ?? petEquipped.value)
+const petState = ref<PetState>('idle')
+/** So viele Begleiter zeigt die Vorschau: beim getragenen die Anzahl vom Server (Creator-Stufe), sonst einer. */
+const shownPetCount = computed(() => (shownPet.value?.equipped ? petCount(shownPet.value.count ?? 1) : 1))
 /** Modell + Texturen für die Vorschau (null = nichts am Kopf bzw. noch am Laden). */
 const viewerCosmetic = shallowRef<ViewerCosmetic | null>(null)
 const viewerCompanion = shallowRef<ViewerCosmetic | null>(null)
 const viewerWings = shallowRef<ViewerCosmetic | null>(null)
+const viewerPet = shallowRef<ViewerCosmetic | null>(null)
 /** Tag/Nacht in der Vorschau (nachts leuchten Lampen und Kristalle). */
 const night = ref(false)
 /** Kamera: ganzer Spieler oder Kopf + Schultern. */
@@ -275,6 +285,60 @@ function bindCosmetic(pick: () => TrsHeadCosmetic | null, target: typeof viewerC
 bindCosmetic(() => shownHead.value, viewerCosmetic)
 bindCosmetic(() => shownCompanion.value, viewerCompanion)
 bindCosmetic(() => shownWings.value, viewerWings)
+bindCosmetic(() => shownPet.value, viewerPet)
+
+// --- Optionen (Anhang D): abschaltbare Teile wie der Bart der Weihnachtsmütze -------------
+
+/** Lokale Wahl je Teil (angeprobt oder getragen); getragene Teile speichern sie sofort beim Server. */
+const optionDraft = ref<Record<string, OptionChoices>>({})
+/** Wahl für ein Teil: lokal geändert, sonst (getragen) die vom Server, sonst Standard des Modells. */
+function choicesFor(item: TrsHeadCosmetic | null): OptionChoices {
+  if (!item) return {}
+  return optionDraft.value[item.id] ?? (item.equipped ? item.options : {})
+}
+const viewerOptions = computed<Partial<Record<TrsCosmeticSlot, OptionChoices>>>(() => ({
+  hat: choicesFor(shownHead.value),
+  companion: choicesFor(shownCompanion.value),
+  wings: choicesFor(shownWings.value),
+  pet: choicesFor(shownPet.value),
+}))
+/** Schalter unter der Vorschau: je gezeigtem Teil mit Optionen (Modell geladen). */
+const optionRows = computed(() => {
+  const rows: { slot: TrsCosmeticSlot; item: TrsHeadCosmetic; model: Record<string, unknown>; toggles: OptionToggle[] }[] = []
+  const add = (slot: TrsCosmeticSlot, item: TrsHeadCosmetic | null, view: ViewerCosmetic | null) => {
+    if (!item || !view) return
+    const toggles = optionToggles(view.model, choicesFor(item))
+    if (toggles.length) rows.push({ slot, item, model: view.model, toggles })
+  }
+  add('hat', shownHead.value, viewerCosmetic.value)
+  add('companion', shownCompanion.value, viewerCompanion.value)
+  add('wings', shownWings.value, viewerWings.value)
+  add('pet', shownPet.value, viewerPet.value)
+  return rows
+})
+const optionBusy = ref(false)
+
+async function flipOption(row: (typeof optionRows.value)[number], toggle: OptionToggle) {
+  if (optionBusy.value) return
+  const before = optionDraft.value[row.item.id]
+  const next = toggleOption(row.model, choicesFor(row.item), toggle.option.id)
+  optionDraft.value = { ...optionDraft.value, [row.item.id]: next }
+  // Nur angeprobt: bleibt lokal und geht beim Aufsetzen mit.
+  if (!row.item.equipped) return
+  optionBusy.value = true
+  try {
+    await backend.trs.equipCosmetic(row.slot, row.item.id, next)
+    toasts.ok(t(next[toggle.option.id] ? 'headCosmetics.options.toasts.on' : 'headCosmetics.options.toasts.off', { option: toggle.label, name: row.item.name }))
+  } catch (e) {
+    const rest = { ...optionDraft.value }
+    if (before) rest[row.item.id] = before
+    else delete rest[row.item.id]
+    optionDraft.value = rest
+    toasts.error(e)
+  } finally {
+    optionBusy.value = false
+  }
+}
 
 function previewHead(item: TrsHeadCosmetic | null) {
   headPreview.value = item
@@ -290,6 +354,12 @@ function previewCompanion(item: TrsHeadCosmetic | null) {
 function previewWings(item: TrsHeadCosmetic | null) {
   wingsPreview.value = item
   // Flügel sieht man am ganzen Spieler.
+  if (item) focus.value = 'body'
+}
+
+function previewPet(item: TrsHeadCosmetic | null) {
+  petPreview.value = item
+  // Begleiter am Boden stehen neben den Füßen – ganzer Spieler.
   if (item) focus.value = 'body'
 }
 
@@ -726,6 +796,11 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
                   :companion="viewerCompanion"
                   :wings="viewerWings"
                   :wing-state="wingState"
+                  :pet="viewerPet"
+                  :pet-count="shownPetCount"
+                  :pet-state="petState"
+                  :pet-seed="accounts.active?.id ?? ''"
+                  :cosmetic-options="viewerOptions"
                   :night="night"
                   :focus="focus"
                   :reset-tick="cameraReset"
@@ -769,6 +844,55 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
                   @click="previewCompanion(null)"
                 >
                   {{ companionPreview.name }} ✕
+                </button>
+                <button
+                  v-if="petPreview"
+                  class="badge max-w-full truncate bg-lamp-900/70 text-lamp-200 hover:text-base-50"
+                  :title="t('skins.endHeadPreview')"
+                  data-testid="pet-preview-badge"
+                  @click="previewPet(null)"
+                >
+                  {{ petPreview.name }} ✕
+                </button>
+              </div>
+              <!-- Optionen (Anhang D): abschaltbare Teile wie der Bart – getragene Teile speichern sofort. -->
+              <div
+                v-for="row in optionRows"
+                :key="`${row.slot}:${row.item.id}`"
+                class="flex flex-wrap items-center gap-1 border-t border-base-800/80 bg-base-950/60 p-1 text-[11px] backdrop-blur-sm"
+                data-testid="cosmetic-options"
+                :data-slot="row.slot"
+              >
+                <span class="truncate px-1 text-base-400">{{ t('headCosmetics.options.title', { name: row.item.name }) }}</span>
+                <button
+                  v-for="tg in row.toggles"
+                  :key="tg.option.id"
+                  class="seg inline-flex flex-1 items-center justify-center gap-1.5 rounded px-2 py-1 mobile:min-h-10"
+                  :class="{ 'seg-on': tg.on }"
+                  role="switch"
+                  :aria-checked="tg.on"
+                  :disabled="optionBusy"
+                  :title="row.item.equipped ? t('headCosmetics.options.hintWorn') : t('headCosmetics.options.hintPreview')"
+                  :data-option="tg.option.id"
+                  @click="flipOption(row, tg)"
+                >
+                  <span class="size-2 rounded-full" :class="tg.on ? 'bg-ok' : 'bg-base-600'" aria-hidden="true" />
+                  {{ tg.label }}: {{ tg.on ? t('headCosmetics.options.on') : t('headCosmetics.options.off') }}
+                </button>
+              </div>
+              <!-- Begleiter am Boden: Zustände vorführen (steht, läuft, rutscht, schwimmt, springt). -->
+              <div v-if="viewerPet" class="flex flex-wrap items-center gap-1 border-t border-base-800/80 bg-base-950/60 p-1 text-[11px] backdrop-blur-sm" data-testid="pet-states">
+                <span class="px-1 text-base-400">{{ t('headCosmetics.pet.states') }}</span>
+                <button
+                  v-for="key in PET_STATES"
+                  :key="key"
+                  class="seg flex-1 rounded px-2 py-1 mobile:min-h-10"
+                  :class="{ 'seg-on': petState === key }"
+                  :aria-pressed="petState === key"
+                  :data-state="key"
+                  @click="petState = key"
+                >
+                  {{ t(`headCosmetics.pet.state.${key}`) }}
                 </button>
               </div>
               <!-- Flügel: Zustände vorführen (am Boden, in der Luft, Schleichen). -->
@@ -1167,6 +1291,7 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
               cosmetic-slot="hat"
               :preview-id="headPreview?.id ?? null"
               :night="night"
+              :options="optionDraft"
               @preview="previewHead"
               @equipped="headEquipped = $event"
               @redeem="openRedeem"
@@ -1176,6 +1301,7 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
               cosmetic-slot="wings"
               :preview-id="wingsPreview?.id ?? null"
               :night="night"
+              :options="optionDraft"
               @preview="previewWings"
               @equipped="wingsEquipped = $event"
               @redeem="openRedeem"
@@ -1185,8 +1311,19 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
               cosmetic-slot="companion"
               :preview-id="companionPreview?.id ?? null"
               :night="night"
+              :options="optionDraft"
               @preview="previewCompanion"
               @equipped="companionEquipped = $event"
+              @redeem="openRedeem"
+            />
+            <TrsHeadCosmetics
+              class="mt-8"
+              cosmetic-slot="pet"
+              :preview-id="petPreview?.id ?? null"
+              :night="night"
+              :options="optionDraft"
+              @preview="previewPet"
+              @equipped="petEquipped = $event"
               @redeem="openRedeem"
             />
           </div>

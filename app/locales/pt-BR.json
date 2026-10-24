@@ -625,7 +625,9 @@
       "invalidCodeId": "ID de código inválido.",
       "redemptionsRange": "Resgates por código: 1 a 100.000.",
       "countRange": "Quantidade: 1 a 100 códigos de uma vez.",
-      "expiryInPast": "A data de validade está no passado."
+      "expiryInPast": "A data de validade está no passado.",
+      "invalidCosmeticSlot": "Espaço de cosmético desconhecido.",
+      "invalidCosmeticOption": "Opção inválida para este item."
     },
     "trsEvents": {
       "invalidEvent": "Evento inválido."
@@ -3796,7 +3798,9 @@
       "title": "“{name}” desbloqueado!",
       "text": "Colocar agora? Você verá na sua cabeça no TRS Client (terceira pessoa), assim como outros jogadores TRS.",
       "wear": "Colocar",
-      "later": "Depois"
+      "later": "Depois",
+      "textPet": "Levar agora? Ele anda ao seu lado no TRS Client, e outros jogadores TRS também o veem.",
+      "textOther": "Equipar agora? Você vê no TRS Client (terceira pessoa), e outros jogadores TRS também."
     },
     "filter": {
       "search": "Buscar capas pelo nome",
@@ -3891,6 +3895,42 @@
       "toasts": {
         "on": "“{name}” está voando com você",
         "off": "Companheiro removido"
+      }
+    },
+    "pet": {
+      "title": "Companheiros no chão",
+      "intro": "Anda ao seu lado – todos com o TRS Client o veem. A prévia o mostra ao lado do seu personagem.",
+      "creatorHint": "Criadores ganham pinguins automaticamente pelos fãs: um a partir de 1 fã, dois a partir de 10, três a partir de 100, quatro a partir de 1000.",
+      "empty": "Ainda não há companheiros no chão.",
+      "wearing": "Ao seu lado: {name}",
+      "selectedWorn": "Anda ao seu lado – todos com o TRS Client o veem.",
+      "toasts": {
+        "on": "“{name}” agora anda ao seu lado",
+        "off": "Companheiro no chão dispensado"
+      },
+      "states": "Companheiro:",
+      "state": {
+        "idle": "Parado",
+        "walk": "Anda",
+        "slide": "Desliza",
+        "swim": "Nada",
+        "air": "Pula"
+      },
+      "count": "{n} × {name} | {n} × {name}",
+      "counts": {
+        "penguin": "{n} pinguim | {n} pinguins"
+      },
+      "creatorTier": "{label} – nível de criador"
+    },
+    "options": {
+      "title": "{name}:",
+      "on": "sim",
+      "off": "não",
+      "hintWorn": "Salvo na hora – os outros veem no jogo.",
+      "hintPreview": "Só na prévia – vale quando você equipar.",
+      "toasts": {
+        "on": "{option}: sim ({name})",
+        "off": "{option}: não ({name})"
       }
     }
   },

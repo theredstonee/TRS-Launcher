@@ -219,6 +219,8 @@ export const useLiveStore = defineStore('live', () => {
       case 'creator_helper_removed':
         // Creator-Programm (§35.7/§35.9): Symbol/Umhang geprüft, Stufe, Status, Meilensteine, Helfer.
         useCreatorStore().onLiveEvent(e)
+        // Fans/Status ändern die Pinguin-Stufe (Anhang D): Kosmetik-Liste samt Anzahl neu laden.
+        if (e.type === 'creator_updated' || e.type === 'creator_milestone') useTrsStore().capesRevision++
         return
       case 'remote_command':
       case 'remote_command_update':
