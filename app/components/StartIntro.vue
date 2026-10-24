@@ -6,7 +6,7 @@
 import { getVersion } from '@tauri-apps/api/app'
 import { isTauri } from '@tauri-apps/api/core'
 import { IntroPlayer } from '~/utils/intro/player'
-import { introDay, introReduced, pickIntroLength, shouldPlayIntro } from '~/utils/intro/select'
+import { introDay, introReduced, introVolume, pickIntroLength, shouldPlayIntro } from '~/utils/intro/select'
 import type { IntroLength } from '~/utils/intro/timeline'
 
 const settings = useSettingsStore()
@@ -56,7 +56,8 @@ async function appVersion(): Promise<string> {
 
 const systemReduced = () => typeof matchMedia === 'function' && matchMedia(REDUCED_MOTION_QUERY).matches
 
-function play(len: IntroLength, sound: boolean) {
+// Lautstärke 0–100 → Gesamtpegel (100 % = bisheriger Pegel 0,8; ab Werk 25 % ≈ −12 dB leiser).
+function play(len: IntroLength, sound: boolean, volumePct: number = prefs.volume) {
   const canvas = cv.value
   if (!canvas) return
   player?.stop(0.05)
@@ -72,8 +73,8 @@ function play(len: IntroLength, sound: boolean) {
     length: len,
     reduced,
     calm: !prefs.flicker,
-    sound,
-    volume: 0.8,
+    sound: sound && volumePct > 0,
+    volume: 0.8 * (introVolume(volumePct) / 100),
     jingle: introJingleUrl(design.id),
     logo: '/icon.png',
     mobile: isMobile,
@@ -159,7 +160,7 @@ watch(
     // Erst nach der Entscheidung über die Länge (sonst gälte noch der Vorgabewert „kurz“)
     if (!ui || !show.value || leaving.value || !player) return
     if (ui.startIntro === false && !shouldPlayIntro(length, false)) skip()
-    if (ui.startIntroSound === false) player?.fadeAudio(0.2)
+    if (ui.startIntroSound === false || ui.startIntroVolume === 0) player?.fadeAudio(0.2)
   },
 )
 
@@ -170,7 +171,7 @@ watch(
     appReady = true
     show.value = true
     await nextTick()
-    play(introReplay.value.length, settings.current?.ui.startIntroSound !== false)
+    play(introReplay.value.length, settings.current?.ui.startIntroSound !== false, introVolume(settings.current?.ui.startIntroVolume))
   },
 )
 </script>

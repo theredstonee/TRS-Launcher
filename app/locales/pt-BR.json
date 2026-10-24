@@ -2411,6 +2411,8 @@
       "startIntroDescription": "Uma cena curta de 4 segundos é exibida ao abrir o launcher. Na primeira abertura do dia e após uma atualização, uma versão mais longa sempre é exibida uma vez; clique ou pressione qualquer tecla para pular.",
       "startIntroSoundTitle": "Som da animação de abertura",
       "startIntroSoundDescription": "Música e efeitos da animação de abertura. Ficam mudos enquanto a janela do launcher não está em foco.",
+      "startIntroVolumeTitle": "Volume da animação de início",
+      "startIntroVolumeDescription": "O volume da música e dos efeitos da animação de início. 0% = mudo.",
       "startIntroReplay": "Reproduzir agora",
       "startIntroFlickerTitle": "Piscadas e clarões na animação de abertura",
       "startIntroFlickerDescription": "Tochas tremeluzentes, clarões de luz e pulsos brilhantes no ritmo. Desativado: as mesmas cenas e a mesma música, mas calmas – luzes estáveis e um brilho suave em vez de um clarão."

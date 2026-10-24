@@ -122,6 +122,8 @@ export interface UiSettings {
   /** Ton der Start-Animation (ab Werk an). */
   startIntroSound?: boolean
   /** Flackern und Lichtblitze in der Start-Animation (aus = ruhige Fassung). */
+  /** Lautstärke der Start-Animation 0–100 (ab Werk 25). */
+  startIntroVolume?: number
   startIntroFlicker?: boolean
   /** Erst-Hinweis zur Start-Animation („bei jedem Start?“) schon gezeigt. */
   startIntroHintSeen?: boolean

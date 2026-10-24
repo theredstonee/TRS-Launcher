@@ -336,6 +336,8 @@ pub struct UiSettings {
     pub start_intro: bool,
     /// Ton der Start-Animation (Jingle + Effekte, ab Werk an).
     pub start_intro_sound: bool,
+    /// Lautstärke der Start-Animation in Prozent (0–100, ab Werk 25; 0 = stumm).
+    pub start_intro_volume: u8,
     /// Flackern und Lichtblitze in der Start-Animation (aus = ruhige Fassung).
     pub start_intro_flicker: bool,
     /// Der Erst-Hinweis zur Start-Animation („bei jedem Start?“) wurde schon gezeigt.
@@ -368,6 +370,7 @@ impl Default for UiSettings {
             halloween_flicker_hint_seen: false,
             start_intro: true,
             start_intro_sound: true,
+            start_intro_volume: 25,
             start_intro_flicker: true,
             start_intro_hint_seen: false,
         }
@@ -857,6 +860,7 @@ mod tests {
         // Ältere Dateien ohne Felder: Start-Animation samt Ton an.
         let old: Settings = serde_json::from_str(r#"{"ui":{"theme":"light"}}"#).unwrap();
         assert!(old.ui.start_intro && old.ui.start_intro_sound && old.ui.start_intro_flicker);
+        assert_eq!(old.ui.start_intro_volume, 25);
         assert!(!old.ui.start_intro_hint_seen);
         let ui: UiSettings = serde_json::from_value(serde_json::json!({ "startIntro": false, "startIntroSound": false, "startIntroFlicker": false, "startIntroHintSeen": true })).unwrap();
         assert!(!ui.start_intro && !ui.start_intro_sound && !ui.start_intro_flicker && ui.start_intro_hint_seen);

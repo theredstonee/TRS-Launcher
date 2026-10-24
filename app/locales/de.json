@@ -2454,6 +2454,8 @@
       "startIntroDescription": "Beim Öffnen des Launchers läuft eine kurze 4-Sekunden-Szene. Beim ersten Start des Tages und nach Updates läuft immer einmal eine längere Fassung; ein Klick oder eine beliebige Taste überspringt sie.",
       "startIntroSoundTitle": "Ton der Start-Animation",
       "startIntroSoundDescription": "Musik und Effekte der Start-Animation. Solange das Launcher-Fenster nicht im Vordergrund ist, bleiben sie stumm.",
+      "startIntroVolumeTitle": "Lautstärke der Start-Animation",
+      "startIntroVolumeDescription": "Wie laut Musik und Effekte der Start-Animation sind. 0 % = stumm.",
       "startIntroReplay": "Jetzt abspielen",
       "startIntroFlickerTitle": "Flackern und Lichtblitze in der Start-Animation",
       "startIntroFlickerDescription": "Flackernde Fackeln, Lichtblitze und helle Pulse auf den Schlägen. Aus: dieselben Szenen und dieselbe Musik, aber ruhig – stetiges Licht und ein sanftes Aufleuchten statt eines Blitzes."

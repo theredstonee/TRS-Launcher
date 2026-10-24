@@ -3,7 +3,7 @@ import type { Settings, UiSettings } from '~/types'
 import type { Locale } from '~/utils/i18n'
 
 /** Design, Theme, Akzentfarbe, Unschärfe und Animationen sofort auf das Dokument anwenden. */
-export function applyAppearance(ui: Pick<UiSettings, 'theme' | 'accent' | 'design' | 'advancedRendering' | 'motion' | 'startIntro' | 'startIntroSound' | 'startIntroFlicker'> | undefined) {
+export function applyAppearance(ui: Pick<UiSettings, 'theme' | 'accent' | 'design' | 'advancedRendering' | 'motion' | 'startIntro' | 'startIntroSound' | 'startIntroFlicker' | 'startIntroVolume'> | undefined) {
   applyMotion(ui?.motion)
   if (typeof document === 'undefined') return
   // Start-Animation entscheidet beim nächsten Start sofort – ohne auf den Kern zu warten.

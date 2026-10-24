@@ -2454,6 +2454,8 @@
       "startIntroDescription": "A short 4-second scene plays when the launcher opens. On the first start of the day and after an update a longer version always plays once; click or press any key to skip it.",
       "startIntroSoundTitle": "Start animation sound",
       "startIntroSoundDescription": "Music and sound effects of the start animation. They are muted while the launcher window is not in focus.",
+      "startIntroVolumeTitle": "Start animation volume",
+      "startIntroVolumeDescription": "How loud the music and effects of the start animation are. 0% = muted.",
       "startIntroReplay": "Play now",
       "startIntroFlickerTitle": "Flicker and flashes in the start animation",
       "startIntroFlickerDescription": "Flickering torches, flashes of light and bright pulses on the beat. When off, the same scenes and music play calmly: steady lights and a soft glow instead of a flash."

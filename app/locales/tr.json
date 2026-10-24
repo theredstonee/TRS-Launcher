@@ -2411,6 +2411,8 @@
       "startIntroDescription": "Başlatıcı açılırken kısa, 4 saniyelik bir sahne oynar. Günün ilk açılışında ve güncellemeden sonra daha uzun bir sürüm her zaman bir kez oynar; geçmek için tıkla veya herhangi bir tuşa bas.",
       "startIntroSoundTitle": "Açılış animasyonu sesi",
       "startIntroSoundDescription": "Açılış animasyonunun müziği ve efektleri. Başlatıcı penceresi odakta değilken sessiz kalır.",
+      "startIntroVolumeTitle": "Başlangıç animasyonu ses düzeyi",
+      "startIntroVolumeDescription": "Başlangıç animasyonunun müzik ve efektlerinin ne kadar yüksek olduğu. %0 = sessiz.",
       "startIntroReplay": "Şimdi oynat",
       "startIntroFlickerTitle": "Açılış animasyonunda titreme ve ışık patlamaları",
       "startIntroFlickerDescription": "Titreyen meşaleler, ışık patlamaları ve ritimle parlayan atımlar. Kapalıyken aynı sahneler ve müzik sakin oynar: sabit ışıklar ve patlama yerine yumuşak bir parıltı."

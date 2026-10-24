@@ -496,6 +496,22 @@ async function allowFirewall() {
           @update:model-value="(on: boolean) => form && (form.ui.startIntroSound = on)"
         />
       </SettingRow>
+      <SettingRow :title="t('settings.appearance.startIntroVolumeTitle')" :description="t('settings.appearance.startIntroVolumeDescription')" stacked>
+        <div class="flex items-center gap-4" :class="form.ui.startIntroSound === false ? 'pointer-events-none opacity-50' : ''">
+          <input
+            :value="form.ui.startIntroVolume ?? 25"
+            type="range"
+            min="0"
+            max="100"
+            step="5"
+            class="flex-1 accent-redstone-500"
+            :aria-label="t('settings.appearance.startIntroVolumeTitle')"
+            :disabled="form.ui.startIntroSound === false"
+            @input="(e) => form && (form.ui.startIntroVolume = Number((e.target as HTMLInputElement).value))"
+          />
+          <span class="w-12 text-right font-mono text-xs text-base-300">{{ form.ui.startIntroVolume ?? 25 }} %</span>
+        </div>
+      </SettingRow>
     </div>
 
     <!-- Funktionen ------------------------------------------------------------- -->

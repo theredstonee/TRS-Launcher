@@ -46,13 +46,17 @@ describe('Start-Animation: welche Länge', () => {
     expect(parseIntroMemory('{kaputt')).toBeNull()
     expect(parseIntroMemory('{"day":1}')).toBeNull()
     expect(parseIntroMemory('{"day":"2026-10-21","version":"0.26.0"}')).toEqual({ day: '2026-10-21', version: '0.26.0' })
-    expect(parseIntroPrefs(null)).toEqual({ enabled: true, sound: true, motion: 'full', flicker: true })
+    expect(parseIntroPrefs(null)).toEqual({ enabled: true, sound: true, motion: 'full', flicker: true, volume: 25 })
     expect(parseIntroPrefs('{"enabled":false,"sound":false,"motion":"reduced","flicker":false}')).toEqual({
       enabled: false,
       sound: false,
       motion: 'reduced',
       flicker: false,
+      volume: 25,
     })
+    expect(parseIntroPrefs('{"volume":250}').volume).toBe(100)
+    expect(parseIntroPrefs('{"volume":-3}').volume).toBe(0)
+    expect(parseIntroPrefs('{"volume":"laut"}').volume).toBe(25)
     expect(parseIntroPrefs('nope').enabled).toBe(true)
   })
 

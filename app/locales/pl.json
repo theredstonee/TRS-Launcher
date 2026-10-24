@@ -2411,6 +2411,8 @@
       "startIntroDescription": "Po otwarciu launchera odtwarzana jest krótka 4-sekundowa scena. Przy pierwszym uruchomieniu dnia i po aktualizacji zawsze raz odtwarza się dłuższa wersja; kliknij lub naciśnij dowolny klawisz, aby ją pominąć.",
       "startIntroSoundTitle": "Dźwięk animacji startowej",
       "startIntroSoundDescription": "Muzyka i efekty animacji startowej. Są wyciszone, gdy okno launchera nie jest aktywne.",
+      "startIntroVolumeTitle": "Głośność animacji startowej",
+      "startIntroVolumeDescription": "Jak głośno grają muzyka i efekty animacji startowej. 0% = wyciszone.",
       "startIntroReplay": "Odtwórz teraz",
       "startIntroFlickerTitle": "Migotanie i błyski w animacji startowej",
       "startIntroFlickerDescription": "Migoczące pochodnie, błyski światła i jasne pulsy w rytm muzyki. Po wyłączeniu te same sceny i muzyka, ale spokojnie – stałe światło i łagodna poświata zamiast błysku."

@@ -24,9 +24,16 @@ export interface IntroPrefs {
   motion: string
   /** Flackern und Lichtblitze (aus = ruhige Fassung). */
   flicker: boolean
+  /** Lautstärke 0–100 (ab Werk 25). */
+  volume: number
 }
 
-export const DEFAULT_INTRO_PREFS: IntroPrefs = { enabled: true, sound: true, motion: 'full', flicker: true }
+export const DEFAULT_INTRO_PREFS: IntroPrefs = { enabled: true, sound: true, motion: 'full', flicker: true, volume: 25 }
+
+/** Lautstärke-Einstellung (0–100) sicher lesen. */
+export function introVolume(v: unknown): number {
+  return typeof v === 'number' && Number.isFinite(v) ? Math.min(100, Math.max(0, Math.round(v))) : DEFAULT_INTRO_PREFS.volume
+}
 
 /** Lokaler Kalendertag. */
 export function introDay(d: Date): string {
@@ -54,6 +61,7 @@ export function parseIntroPrefs(raw: string | null | undefined): IntroPrefs {
       sound: v?.sound !== false,
       motion: typeof v?.motion === 'string' ? v.motion : DEFAULT_INTRO_PREFS.motion,
       flicker: v?.flicker !== false,
+      volume: introVolume(v?.volume),
     }
   } catch {
     return { ...DEFAULT_INTRO_PREFS }

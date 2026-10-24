@@ -2411,6 +2411,8 @@
       "startIntroDescription": "Une courte scène de 4 secondes se joue à l’ouverture du launcher. Au premier lancement de la journée et après une mise à jour, une version plus longue se joue toujours une fois ; clique ou appuie sur une touche pour la passer.",
       "startIntroSoundTitle": "Son de l’animation de démarrage",
       "startIntroSoundDescription": "Musique et effets de l’animation de démarrage. Ils sont coupés tant que la fenêtre du launcher n’est pas au premier plan.",
+      "startIntroVolumeTitle": "Volume de l’animation de démarrage",
+      "startIntroVolumeDescription": "Volume de la musique et des effets de l’animation de démarrage. 0 % = muet.",
       "startIntroReplay": "Lire maintenant",
       "startIntroFlickerTitle": "Scintillements et flashs dans l’animation de démarrage",
       "startIntroFlickerDescription": "Torches vacillantes, flashs lumineux et pulsations sur le rythme. Désactivé : les mêmes scènes et la même musique, mais calmes – lumières stables et une douce lueur au lieu d’un flash."

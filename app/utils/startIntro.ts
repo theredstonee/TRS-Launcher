@@ -6,6 +6,7 @@ import { pickIntroDesign, type IntroDesign } from './intro/designs'
 import {
   INTRO_MEMORY_KEY,
   INTRO_PREFS_KEY,
+  introVolume,
   parseIntroMemory,
   parseIntroPrefs,
   type IntroMemory,
@@ -42,7 +43,7 @@ export function readIntroPrefs(): IntroPrefs {
 
 /** Einstellungen spiegeln – aufgerufen, sobald sie geladen oder geändert sind. */
 export function mirrorIntroPrefs(
-  ui: { startIntro?: boolean; startIntroSound?: boolean; startIntroFlicker?: boolean; motion?: string } | undefined,
+  ui: { startIntro?: boolean; startIntroSound?: boolean; startIntroFlicker?: boolean; startIntroVolume?: number; motion?: string } | undefined,
 ) {
   if (!ui) return
   try {
@@ -51,6 +52,7 @@ export function mirrorIntroPrefs(
       sound: ui.startIntroSound !== false,
       motion: ui.motion ?? 'full',
       flicker: ui.startIntroFlicker !== false,
+      volume: introVolume(ui.startIntroVolume),
     }
     localStorage.setItem(INTRO_PREFS_KEY, JSON.stringify(prefs))
   } catch {

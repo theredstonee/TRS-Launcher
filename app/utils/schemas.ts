@@ -151,6 +151,7 @@ export const uiSettingsSchema = z.object({
   halloweenFlickerHintSeen: z.boolean().default(false),
   startIntro: z.boolean().default(true),
   startIntroSound: z.boolean().default(true),
+  startIntroVolume: z.number().int().min(0).max(100).catch(25).default(25),
   startIntroFlicker: z.boolean().default(true),
   startIntroHintSeen: z.boolean().default(false),
 })
