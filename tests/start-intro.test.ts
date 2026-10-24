@@ -89,7 +89,7 @@ describe('Start-Animation: Design-Registry', () => {
   it('jede Variante hat eine eindeutige ID und ein eigenes Szenen-Set', () => {
     const ids = INTRO_DESIGNS.map((d) => d.id)
     expect(new Set(ids).size).toBe(ids.length)
-    expect(Object.fromEntries(INTRO_DESIGNS.map((d) => [d.id, d.scene]))).toEqual({ halloween: 'graveyard', winter: 'frost', redstone: 'dungeon' })
+    expect(Object.fromEntries(INTRO_DESIGNS.map((d) => [d.id, d.scene]))).toEqual({ halloween: 'graveyard', winter: 'frost', fox: 'foxden', redstone: 'dungeon' })
     for (const d of INTRO_DESIGNS) expect(d.audio.jingleHit).toBeGreaterThan(0)
   })
 })
