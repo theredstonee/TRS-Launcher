@@ -14,24 +14,31 @@ public final class MapShade {
 	/** Stärke des Reliefs (heller zum Licht hin, dunkler im Schatten) und Sättigung (größer = später gesättigt). */
 	static final float RELIEF_LIGHT = 0.42f;
 	static final float RELIEF_SHADOW = 0.52f;
-	static final float RELIEF_SOFT = 1.35f;
-	/** Relief des Grunds unter flachem Wasser (schwächer). */
-	static final float FLOOR_RELIEF = 0.6f;
+	static final float RELIEF_SOFT = 1.0f;
+	/** Relief des Grunds unter Wasser (volle Stärke – Abhänge des Meeresgrunds bleiben lesbar). */
+	static final float FLOOR_RELIEF = 0.65f;
+	/** Schatten in Senken (tiefer als der höchste Nachbar, z. B. Boden zwischen Baumkronen): je Block, höchstens 6 Blöcke. */
+	static final float OCCLUSION = 0.03f;
+	/** Helle, leicht gesättigte Flächen (Sand, Birkenholz …): so weit zu Weiß hin aufhellen. */
+	static final float LIFT = 0.32f;
+	/** Laub/Pflanzen (Kartenfarbe PLANT): dunkler und satter – im Spiel sieht man durch die Lücken ins dunkle Innere. */
+	static final float FOLIAGE_DARK = 0.86f;
+	static final float FOLIAGE_SATURATE = 1.05f;
 	/** Höhentönung: so viele Blöcke über/unter Meereshöhe bis zur Grenze. */
 	static final float HEIGHT_RANGE = 170f;
 	static final float HEIGHT_UP = 0.14f;
 	static final float HEIGHT_DOWN = 0.16f;
 	/** Wasser: Deckkraft bei 1 Block Tiefe, Strecke (Blöcke), über die es deckend wird, und Abdunklung in der Tiefe. */
-	static final float WATER_ALPHA0 = 0.58f;
-	static final float WATER_FADE = 7f;
-	static final float WATER_DARK = 0.40f;
-	static final float WATER_DARK_RANGE = 16f;
+	static final float WATER_ALPHA0 = 0.30f;
+	static final float WATER_FADE = 13f;
+	static final float WATER_DARK = 0.34f;
+	static final float WATER_DARK_RANGE = 22f;
 	/** Tönung der Vanilla-Kartenfarben (Gras, Pflanzen, sonstiges) – heller als die bisherigen 0,76/0,64/0,8. */
 	static final float TINT_GRASS = 0.84f;
 	static final float TINT_PLANT = 0.74f;
 	static final float TINT_OTHER = 0.86f;
 	/** Wasserfarbe aus der Biom-Tönung ohne Textur. */
-	static final float WATER_TINT = 0.92f;
+	static final float WATER_TINT = 1.0f;
 
 	private static final int PAD = MapRegion.SIZE + 2;
 
@@ -121,9 +128,58 @@ public final class MapShade {
 	 */
 	static int water(int surface, int floor, int depth, float floorRelief, float surfaceRelief) {
 		float alpha = floor == 0 ? 1f : waterAlpha(depth);
-		int base = floor == 0 ? surface : MapColors.mul(floor, floorRelief * 0.86f);
+		int base = floor == 0 ? surface : MapColors.mul(absorb(floor, surface, depth), floorRelief);
 		int c = MapColors.mix(base, surface, alpha);
 		return MapColors.mul(c, waterDark(depth) * surfaceRelief);
+	}
+
+	/**
+	 * Grund, wie man ihn durchs Wasser sieht: Rot und Grün werden mit der Tiefe stärker geschluckt als Blau – Sand
+	 * wird türkis statt grau, Ton/Kies bläulich (kein Matsch an der Küste).
+	 */
+	static int absorb(int floor, int water, int depth) {
+		int wr = (water >> 16) & 0xFF, wg = (water >> 8) & 0xFF, wb = water & 0xFF;
+		int m = Math.max(1, Math.max(wr, Math.max(wg, wb)));
+		float k = Math.min(1f, 0.45f + depth / 24f);
+		float fr = 1f - k * (1f - wr / (float) m), fg = 1f - k * (1f - wg / (float) m), fb = 1f - k * (1f - wb / (float) m);
+		int r = Math.round(((floor >> 16) & 0xFF) * fr), g = Math.round(((floor >> 8) & 0xFF) * fg), b = Math.round((floor & 0xFF) * fb);
+		return (Math.min(255, r) << 16) | (Math.min(255, g) << 8) | Math.min(255, b);
+	}
+
+	/** Laub/Pflanzen-Farbe (Kartenfarbe PLANT) für die Karte: dunkler und satter. */
+	public static int foliage(int rgb) {
+		return saturate(MapColors.mul(rgb, FOLIAGE_DARK), FOLIAGE_SATURATE);
+	}
+
+	/** Sättigung um {@code k} ändern (1 = gleich), Helligkeit bleibt. */
+	static int saturate(int rgb, float k) {
+		int r = (rgb >> 16) & 0xFF, g = (rgb >> 8) & 0xFF, b = rgb & 0xFF;
+		float l = 0.299f * r + 0.587f * g + 0.114f * b;
+		int nr = clamp(Math.round(l + (r - l) * k)), ng = clamp(Math.round(l + (g - l) * k)), nb = clamp(Math.round(l + (b - l) * k));
+		return (nr << 16) | (ng << 8) | nb;
+	}
+
+	/** Helle Flächen (Sand & Co., nicht Schnee) etwas heller und weniger gelb – wie im Spiel bei Tageslicht. */
+	static int lift(int rgb) {
+		int r = (rgb >> 16) & 0xFF, g = (rgb >> 8) & 0xFF, b = rgb & 0xFF;
+		int max = Math.max(r, Math.max(g, b));
+		if (max >= 235) return rgb;
+		int lum = (r * 299 + g * 587 + b * 114) / 1000;
+		if (lum < 160) return rgb;
+		float w = LIFT * Math.min(1f, (lum - 160) / 40f);
+		return MapColors.mix(saturate(rgb, 1f - w * 0.45f), 0xFFFFFF, w * 0.6f);
+	}
+
+	private static int clamp(int v) {
+		return v < 0 ? 0 : (v > 255 ? 255 : v);
+	}
+
+	/** Schatten in Senken: tiefer als der höchste der vier Nachbarn → dunkler (Boden zwischen Bäumen, Gräben). */
+	static float occlusion(int h, int hn, int hs, int hw, int he) {
+		int top = Math.max(Math.max(hn, hs), Math.max(hw, he));
+		int d = top - h - 1;
+		if (d <= 0) return 1f;
+		return 1f - OCCLUSION * Math.min(6, d);
 	}
 
 	/** Schattiertes ARGB-Bild (128×128) eines Bereichs in {@code out}; Nachbarn (für die Ränder) aus {@code layer}. */
@@ -191,7 +247,8 @@ public final class MapShade {
 						c = water(rgb, floorPlane[i] & MapColors.RGB, depth, floorRelief * heightTone(fh), surface);
 					}
 				} else {
-					c = shade(headroom(rgb), relief(slope(h, hn, hs, hw, he)) * heightTone(h));
+					int base = (p & MapColors.FOLIAGE) != 0 ? foliage(rgb) : headroom(lift(rgb));
+					c = shade(base, relief(slope(h, hn, hs, hw, he)) * heightTone(h) * occlusion(h, hn, hs, hw, he));
 				}
 				if (cave != Integer.MIN_VALUE) {
 					float below = (cave - h - 2) / 44f;

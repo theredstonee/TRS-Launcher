@@ -17,6 +17,8 @@ public final class MapColors {
 	public static final int WALL = 1 << 26;
 	/** Erkundet, aber leer (Leere im End, Abgrund). */
 	public static final int EMPTY = 1 << 27;
+	/** Karte v3: Laub/Pflanze (Kartenfarbe PLANT) – wird beim Zeichnen dunkler und satter ({@link MapShade#foliage}). */
+	public static final int FOLIAGE = 1 << 28;
 	public static final int RGB = 0xFFFFFF;
 
 	/** Vanilla-Kartenfarben, an denen die Art des Blocks erkannt wird. */

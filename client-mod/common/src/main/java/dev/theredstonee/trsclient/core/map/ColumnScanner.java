@@ -158,9 +158,7 @@ public final class ColumnScanner {
 	static int blockColorV3(ChunkReader r, int x, int y, int z, int mapRgb, boolean textures) {
 		if (textures) {
 			int t = r.textureColor(x, y, z);
-			if (t != -1) {
-				return (t & TexturePalette.TINTED) != 0 ? TexturePalette.tint(t, r.tint(x, y, z)) : t & MapColors.RGB;
-			}
+			if (t != -1) return (t & TexturePalette.TINTED) != 0 ? TexturePalette.tint(t, r.tint(x, y, z)) : t & MapColors.RGB;
 		}
 		return MapShade.tint(mapRgb, r.tint(x, y, z));
 	}
@@ -171,7 +169,8 @@ public final class ColumnScanner {
 	private static int colorAtV3(ChunkReader r, int x, int y, int z, int rgb, int min, boolean textures, int i, int[] depths,
 			int[] floors) {
 		if (rgb != MapColors.MAP_WATER) {
-			return MapColors.KNOWN | blockColorV3(r, x, y, z, rgb, textures);
+			// Laub/Pflanzen merken: beim Zeichnen dunkler und satter (Kalibrierung ohne neu abzutasten).
+			return MapColors.KNOWN | (rgb == MapColors.MAP_PLANT ? MapColors.FOLIAGE : 0) | blockColorV3(r, x, y, z, rgb, textures);
 		}
 		int waterTint = r.tint(x, y, z);
 		int depth = 1;

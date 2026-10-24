@@ -147,7 +147,8 @@ class MapV3Test {
 		// Flaches Wasser zeigt den Grund, die Farbe ist noch nach 10 Blöcken nicht ganz deckend.
 		assertTrue(brightness(MapShade.water(water, sand, 1, 1f, 1f)) > brightness(MapShade.water(water, 0x202020, 1, 1f, 1f)) + 60);
 		assertTrue(MapShade.waterAlpha(8) < 0.88f, "längerer Verlauf als bisher (alt: 0,92 nach 8 Blöcken, neu " + MapShade.waterAlpha(8) + ")");
-		assertTrue(MapShade.waterAlpha(30) > 0.95f);
+		assertTrue(MapShade.waterAlpha(12) < 0.75f, "Grund bis über 10 Blöcke erkennbar (" + MapShade.waterAlpha(12) + ")");
+		assertTrue(MapShade.waterAlpha(40) > 0.93f);
 		// Grund nicht gefunden = tief: reine Wasserfarbe, abgedunkelt.
 		assertEquals(MapColors.mul(water, MapShade.waterDark(40)), MapShade.water(water, 0, 40, 1f, 1f));
 	}
@@ -195,6 +196,29 @@ class MapV3Test {
 		long before = MapTextures.neighbourStamp(alone, b);
 		alone.forWrite(-1, 0, 0);
 		assertNotEquals(before, MapTextures.neighbourStamp(alone, b));
+	}
+
+	@Test
+	void seabedTurnsBluishNotMuddyAndFoliageSandAreCalibrated() {
+		int water = MapShade.waterColor(0x3F76E4);
+		int sand = 0xD8CDA1;
+		int seen = MapShade.absorb(sand, water, 4);
+		assertTrue((seen & 0xFF) > ((seen >> 16) & 0xFF) + 15, "Sand unter Wasser bläulich");
+		int deeper = MapShade.absorb(sand, water, 16);
+		assertTrue(((deeper >> 16) & 0xFF) < ((seen >> 16) & 0xFF), "tiefer = mehr Rot geschluckt");
+		// Laub: dunkler und satter.
+		int leaf = 0x6A9A2E;
+		int f = MapShade.foliage(leaf);
+		assertTrue(brightness(f) < brightness(leaf));
+		// Sand: heller und weniger gelb; Schnee bleibt unberührt.
+		int lifted = MapShade.lift(sand);
+		assertTrue(brightness(lifted) > brightness(sand));
+		assertTrue(((lifted >> 16) & 0xFF) - (lifted & 0xFF) < ((sand >> 16) & 0xFF) - (sand & 0xFF), "weniger gelb");
+		assertEquals(0xF8FAFF, MapShade.lift(0xF8FAFF));
+		assertEquals(0x507030, MapShade.lift(0x507030), "dunkle Farben unverändert");
+		// Senke zwischen Baumkronen: dunkler; ebene Fläche nicht.
+		assertTrue(MapShade.occlusion(64, 70, 70, 64, 64) < 1f);
+		assertEquals(1f, MapShade.occlusion(64, 64, 65, 64, 64), 1e-6);
 	}
 
 	@Test

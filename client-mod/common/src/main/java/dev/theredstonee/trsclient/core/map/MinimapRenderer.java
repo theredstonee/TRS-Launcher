@@ -45,6 +45,8 @@ public final class MinimapRenderer {
 	static final float EDGE_GAP = EDGE_BOX + 3;
 
 	private final float[] bands = new float[4 * 512];
+	/** Karte v3: unter 1 Bildschirmpixel je Block die Stufe-2-Kacheln (vorgemittelt, flimmerfrei) statt Bereichs-Texturen. */
+	private boolean coarse;
 	private float zoom = -1f;
 	private float spin = -1f;
 	private long lastFrame;
@@ -106,6 +108,7 @@ public final class MinimapRenderer {
 		float screenPx = auto ? e.autoZoom().frame(basePx, dt) : basePx;
 		float target = (float) (screenPx / Math.max(0.5, scale));
 		zoom = zoom < 0 || auto ? target : Anim.approach(zoom, target, dt, 0.09f);
+		coarse = e.v3() && zoom * scale < 0.99;
 		// Drehen an/aus weich überblenden.
 		float spinTarget = m.minimapRotate.get() ? 1f : 0f;
 		spin = spin < 0 ? spinTarget : Anim.approach(spin, spinTarget, dt, 0.12f);
@@ -196,11 +199,53 @@ public final class MinimapRenderer {
 			// Streifen in Weltblöcken.
 			double wx0 = px + bands[b * 4 + 2] * inv, wx1 = px + bands[b * 4 + 3] * inv;
 			double wz0 = pz + bands[b * 4] * inv, wz1 = pz + bands[b * 4 + 1] * inv;
+			if (coarse) {
+				if (under != null) drawCoarse(c, e, under, wx0, wz0, wx1, wz1, px, pz, tint, now);
+				drawCoarse(c, e, layer, wx0, wz0, wx1, wz1, px, pz, tint, now);
+				continue;
+			}
 			if (under != null) drawPieces(c, e, under, wx0, wz0, wx1, wz1, px, pz, tint, now);
 			drawPieces(c, e, layer, wx0, wz0, wx1, wz1, px, pz, tint, now);
 		}
 		c.pop();
 		if (clipped) clip.end();
+	}
+
+	/**
+	 * Karte v3, weit herausgezoomt (unter 1 Bildschirmpixel je Block): das Rechteck aus den Kacheln der Stufe 2 (ein
+	 * Texel je 2×2 Blöcke, vorgemittelt) – sonst würden beim Bewegen einzelne Blöcke aufblitzen. Fehlt eine Kachel
+	 * noch, zeichnen die Bereichs-Texturen diesen Teil.
+	 */
+	static void drawCoarse(Canvas c, MapEngine e, MapLayer layer, double wx0, double wz0, double wx1, double wz1,
+			double originX, double originZ, int tint, long now) {
+		wx0 = Math.round(wx0 * SUB) / (double) SUB;
+		wx1 = Math.round(wx1 * SUB) / (double) SUB;
+		wz0 = Math.round(wz0 * SUB) / (double) SUB;
+		wz1 = Math.round(wz1 * SUB) / (double) SUB;
+		if (wx1 <= wx0 || wz1 <= wz0) return;
+		int level = WorldMapPyramid.MIN_LEVEL;
+		int span = MapRegion.SIZE << level;
+		double perBlock = (double) MapTextures.SUPER_PIXELS / span;
+		int tx0 = Math.floorDiv((int) Math.floor(wx0), span), tx1 = Math.floorDiv((int) Math.floor(wx1 - 1e-6), span);
+		int tz0 = Math.floorDiv((int) Math.floor(wz0), span), tz1 = Math.floorDiv((int) Math.floor(wz1 - 1e-6), span);
+		for (int tz = tz0; tz <= tz1; tz++) {
+			for (int tx = tx0; tx <= tx1; tx++) {
+				double bx = (double) tx * span, bz = (double) tz * span;
+				double x0 = Math.max(wx0, bx), x1 = Math.min(wx1, bx + span);
+				double z0 = Math.max(wz0, bz), z1 = Math.min(wz1, bz + span);
+				if (x1 <= x0 || z1 <= z0) continue;
+				TextureRef tex = e.textures().levelTile(layer, level, tx, tz, now);
+				if (tex == null) {
+					drawPieces(c, e, layer, x0, z0, x1, z1, originX, originZ, tint, now);
+					continue;
+				}
+				c.push();
+				c.translate((float) (x0 - originX), (float) (z0 - originZ));
+				MapDraw.image(c, tex, (x0 - bx) * perBlock, (z0 - bz) * perBlock, (x1 - bx) * perBlock, (z1 - bz) * perBlock,
+						(float) (x1 - x0), (float) (z1 - z0), tint);
+				c.pop();
+			}
+		}
 	}
 
 	/** Zeichnet das Welt-Rechteck [wx0,wx1]×[wz0,wz1], aufgeteilt auf die Bereichs-Texturen. */
