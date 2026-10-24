@@ -31,9 +31,11 @@ How to write an entry:
 ## Unreleased
 
 ### English
+- **TRS Client: fixed a crash when opening the HUD editor from the main menu on Minecraft 26.x.** The previews of the armor display and the item counter needed item data that 26.x only loads inside a world; they now stay empty there instead of crashing the game.
 - **TRS Client: the hunger display no longer shines through menus.** On Minecraft 1.21.9 and newer (including 26.x), opening the inventory, a chest or a furnace drew the saturation outline, the food and health preview and all TRS HUD elements (FPS, coordinates and more) bright on top of the darkened menu background. They now sit under the menu background and are dimmed just like the vanilla hearts and hunger bar.
 
 ### Deutsch
+- **TRS Client: Absturz beim Öffnen des HUD-Editors im Hauptmenü unter Minecraft 26.x behoben.** Die Vorschauen von Rüstungsanzeige und Item-Zähler brauchten Item-Daten, die 26.x erst in einer Welt lädt; dort bleiben sie jetzt leer, statt das Spiel abstürzen zu lassen.
 - **TRS Client: Die Hunger-Anzeige scheint nicht mehr durch Menüs.** Ab Minecraft 1.21.9 (auch 26.x) lagen der Sättigungsrand, die Essens- und Lebens-Vorschau und alle TRS-Anzeigen (FPS, Koordinaten und mehr) bei offenem Inventar, Truhe oder Ofen hell über dem abgedunkelten Menü-Hintergrund. Jetzt liegen sie darunter und werden genau wie die Vanilla-Herzen und die Hungerleiste abgedunkelt.
 
 ## 0.28.1 – 2026-10-24 – House Rules | Hausordnung

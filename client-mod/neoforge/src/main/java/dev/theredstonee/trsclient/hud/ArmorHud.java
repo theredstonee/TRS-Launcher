@@ -86,8 +86,14 @@ public final class ArmorHud extends HudElement {
 
 	private ItemStack preview(int i) {
 		if (previewStacks == null) {
-			previewStacks = new ItemStack[]{new ItemStack(Items.IRON_HELMET), new ItemStack(Items.DIAMOND_CHESTPLATE),
-					new ItemStack(Items.IRON_LEGGINGS), new ItemStack(Items.GOLDEN_BOOTS), new ItemStack(Items.DIAMOND_SWORD)};
+			// Ab 26.x sind die Item-Daten erst in einer Welt gebunden („Components not bound yet“) – im Hauptmenü
+			// (HUD-Editor) bleibt die Vorschau dann leer statt abzustürzen; später erneut versuchen.
+			try {
+				previewStacks = new ItemStack[]{new ItemStack(Items.IRON_HELMET), new ItemStack(Items.DIAMOND_CHESTPLATE),
+						new ItemStack(Items.IRON_LEGGINGS), new ItemStack(Items.GOLDEN_BOOTS), new ItemStack(Items.DIAMOND_SWORD)};
+			} catch (RuntimeException e) {
+				return ItemStack.EMPTY;
+			}
 		}
 		return previewStacks[i];
 	}

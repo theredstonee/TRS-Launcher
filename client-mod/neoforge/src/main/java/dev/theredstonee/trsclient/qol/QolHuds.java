@@ -248,9 +248,14 @@ public final class QolHuds {
 
 		private ItemStack fallback(ItemCounter.Kind k) {
 			if (fallback == null) {
-				fallback = new ItemStack[]{new ItemStack(Items.ARROW), new ItemStack(Items.TOTEM_OF_UNDYING), new ItemStack(Items.POTION),
-						new ItemStack(Items.SPLASH_POTION), new ItemStack(Items.GOLDEN_APPLE), new ItemStack(Items.ENDER_PEARL),
-						new ItemStack(Items.COBBLESTONE)};
+				// Ab 26.x im Hauptmenü noch keine Item-Daten (siehe ArmorHud.preview) – dann ohne Symbol statt Absturz.
+				try {
+					fallback = new ItemStack[]{new ItemStack(Items.ARROW), new ItemStack(Items.TOTEM_OF_UNDYING), new ItemStack(Items.POTION),
+							new ItemStack(Items.SPLASH_POTION), new ItemStack(Items.GOLDEN_APPLE), new ItemStack(Items.ENDER_PEARL),
+							new ItemStack(Items.COBBLESTONE)};
+				} catch (RuntimeException e) {
+					return ItemStack.EMPTY;
+				}
 			}
 			return fallback[k.ordinal()];
 		}
