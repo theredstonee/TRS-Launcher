@@ -135,6 +135,11 @@ public final class AutoTest {
 			MapsTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=mapcompare: Kartenbilder an festen Stellen (Minimap + Weltkarte, Flug, Höhle) für Vorher/Nachher
+		if ("mapcompare".equals(System.getProperty("trsclient.autotest.only"))) {
+			MapCompareTest.install();
+			return;
+		}
 		// -PtrsAutotestOnly=roof: Karten – Dach ausblenden (Innenansicht) und Barriere-Decken
 		if ("roof".equals(System.getProperty("trsclient.autotest.only"))) {
 			RoofMapTest.install();

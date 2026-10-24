@@ -3,6 +3,7 @@ package dev.theredstonee.trsclient.dev;
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.map.MapEngine;
+import dev.theredstonee.trsclient.core.map.MapPreview;
 import dev.theredstonee.trsclient.core.map.WorldMapUi;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.screen.TrsUiScreen;
@@ -169,8 +170,18 @@ public final class MapsTest {
 				return;
 			case 7:
 				shot(mc, "worldmap");
+				log("Weltkarte nah: Stufe " + worldMap().testTileLevel() + ", Karte v3 " + (MapPreview.enabled() ? "an" : "aus"));
+				// Zwischen ½ und 1 Pixel je Block: Karte v3 zeichnet hier Stufe 2 (ein Texel je 2 Blöcke) statt der 4×4-Übersicht.
+				worldMap().setScaleNow(0.5f);
+				phase = 40;
+				wait = 60;
+				return;
+			case 40:
+				shot(mc, "worldmap-half");
+				log("Weltkarte ½ px/Block: Stufe " + worldMap().testTileLevel() + (MapPreview.enabled() ? " (v3: 2 = ein Texel je 2 Blöcke)" : "")
+						+ ", Rückstand beim Abtasten: " + e.backlog());
 				worldMap().setScaleNow(0.25f);
-				phase++;
+				phase = 8;
 				wait = 60;
 				return;
 			case 8:
