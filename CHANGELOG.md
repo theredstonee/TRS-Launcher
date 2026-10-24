@@ -30,6 +30,13 @@ How to write an entry:
 
 ## Unreleased
 
+## 0.28.1 – 2026-10-24 – House Rules | Hausordnung
+<!-- banner: accent=#f2b72e motif=/news/0.28.1/banner.png -->
+<!-- shots:
+/news/0.28.1/server-rules-locked.png | A server with TRS Server Rules locks the minimap – the TRS Client shows a lock | Ein Server mit TRS Server Rules sperrt die Minimap – der TRS Client zeigt ein Schloss
+/news/0.28.1/server-rules-limit.png | Settings can be limited by the server, here the zoom factor | Einstellungen kann der Server begrenzen, hier den Zoom-Faktor
+-->
+
 ### English
 - **TRS Client: pixel-art capes are sharp again.** Since TRS Client 0.19.5 many capes – all TRS capes like Tester, Dragon, Ender, Nether and the Halloween capes, plus capes made in HD pixel style – were drawn smoothed and looked blurry. Only real HD images (photos, painted pictures) are smoothed now; everything with a pixel palette stays crisp. The cape preview in the launcher uses the same rule.
 - **TRS Client: server rules.** Servers with the new "TRS Server Rules" plugin can turn single TRS Client features off or on for everyone (for example the minimap, gamma or freecam) and fix or limit settings (for example the highest zoom). Locked features are marked "Set by server" in the TRS menu, and the server can show a short note once. Your own settings stay saved and come back as soon as you leave the server. Openly documented: members of the TRS team with the matching permission are asked in game whether they want to use a locked feature anyway – only for themselves and only until they disconnect.
