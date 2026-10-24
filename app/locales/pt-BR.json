@@ -5596,7 +5596,8 @@
       "website": "No site",
       "websiteHint": "Abre o site no seu navegador (login com a Microsoft).",
       "blog": "Blog",
-      "featured": "Modpacks em destaque"
+      "featured": "Modpacks em destaque",
+      "previews": "Versões de teste"
     },
     "search": {
       "placeholder": "Buscar jogadores, UUIDs, IDs de denúncia, #punições, capas …",
@@ -5999,7 +6000,8 @@
       "blog_publish": "Publicar, agendar e despublicar posts do blog",
       "events_manage": "Gerenciar eventos",
       "featured_manage": "Gerenciar modpacks em destaque",
-      "serverrules_bypass": "Usar mesmo assim recursos do TRS Client bloqueados pelo servidor (após confirmação no jogo)"
+      "serverrules_bypass": "Usar mesmo assim recursos do TRS Client bloqueados pelo servidor (após confirmação no jogo)",
+      "previews_access": "Versões de teste: Baixar versões de teste do launcher e do TRS Client como os criadores Partner"
     }
   },
   "trsChoice": {

@@ -5665,7 +5665,8 @@
       "websiteHint": "Opens the website in your browser (sign in with Microsoft).",
       "blog": "Blog",
       "creators": "Creators",
-      "featured": "Featured modpacks"
+      "featured": "Featured modpacks",
+      "previews": "Preview builds"
     },
     "search": {
       "placeholder": "Search players, UUIDs, report IDs, #sanctions, capes …",
@@ -6070,7 +6071,8 @@
       "creators_review": "Review creator symbols and fan capes",
       "creators_manage": "Manage creators",
       "featured_manage": "Manage featured modpacks",
-      "serverrules_bypass": "Use server-locked TRS Client features anyway (after an in-game prompt)"
+      "serverrules_bypass": "Use server-locked TRS Client features anyway (after an in-game prompt)",
+      "previews_access": "Preview builds: Download launcher and TRS Client preview builds like Partner creators"
     },
     "creators": {
       "intro": "Review fan symbols and fan capes, manage creators and answer their requests. Applications are handled on the website.",

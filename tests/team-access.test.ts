@@ -81,7 +81,7 @@ describe('me.team aus dem Kern', () => {
 
 describe('Sichtbarkeit nach Rechten', () => {
   it('Admin sieht alles, Rollen/Bewerbungen/Stellen als Website-Links', () => {
-    expect(paths(admin)).toEqual(['/admin', '/admin/reports', '/admin/appeals', '/admin/players', '/admin/sanctions', '/admin/uploads', '/admin/worlds', '/admin/codes', '/admin/word-filter', '/admin/events', '/admin/featured', '/admin/creators', '/admin/audit'])
+    expect(paths(admin)).toEqual(['/admin', '/admin/reports', '/admin/appeals', '/admin/players', '/admin/sanctions', '/admin/uploads', '/admin/worlds', '/admin/codes', '/admin/word-filter', '/admin/events', '/admin/featured', '/admin/creators', '/admin/previews', '/admin/audit'])
     expect(site(admin)).toEqual(['applications', 'jobs', 'roles', 'blog'])
     expect(websiteSections.every((s) => s.external && s.to.startsWith('https://trs-launcher.theredstonee.de/admin/'))).toBe(true)
   })
@@ -121,6 +121,21 @@ describe('Sichtbarkeit nach Rechten', () => {
     expect(permissionLabel('serverrules.bypass')).toContain('server-locked')
   })
 
+  it('previews.access (Vorschau-Builds) öffnet den Bereich /admin/previews, auch ohne Creator-Status', () => {
+    const t = team(200, ['previews.access'], {}, 'content')
+    expect(t.permissions).toEqual(['previews.access'])
+    expect(paths(t)).toEqual(['/admin/previews'])
+    expect(mayOpen(t, '/admin/previews')).toBe(true)
+    expect(mayOpen(moderator, '/admin/previews')).toBe(false)
+    expect(teamCan(owner, 'previews.access')).toBe(true)
+    expect(landingPath(t)).toBe('/admin/previews')
+    for (const lang of ['en', 'de', 'es', 'fr', 'nl', 'pl', 'pt-BR', 'tr']) {
+      const locale = JSON.parse(readFileSync(new URL(`../app/locales/${lang}.json`, import.meta.url), 'utf8')) as { team: { permissions: Record<string, string>, nav: Record<string, string> } }
+      expect(locale.team.permissions.previews_access, lang).toBeTruthy()
+      expect(locale.team.nav.previews, lang).toBeTruthy()
+    }
+  })
+
   it('Bewerbungs-Team: nur Übersicht im Launcher, Bewerbungen und Stellen auf der Website', () => {
     expect(paths(recruiter)).toEqual(['/admin'])
     expect(site(recruiter)).toEqual(['applications', 'jobs'])
@@ -136,7 +151,7 @@ describe('Sichtbarkeit nach Rechten', () => {
     expect(paths(null)).toEqual([])
     expect(mayOpen(admin, '/admin/unbekannt')).toBe(false)
     // Owner dürfen alles, auch ohne ausdrückliche Rechte in der Liste.
-    expect(paths(owner)).toHaveLength(13)
+    expect(paths(owner)).toHaveLength(14)
   })
 })
 

@@ -5596,7 +5596,8 @@
       "website": "Op de website",
       "websiteHint": "Opent de website in je browser (inloggen met Microsoft).",
       "blog": "Blog",
-      "featured": "Uitgelichte modpacks"
+      "featured": "Uitgelichte modpacks",
+      "previews": "Testversies"
     },
     "search": {
       "placeholder": "Zoek spelers, UUID’s, meldings-ID’s, #straffen, capes …",
@@ -5999,7 +6000,8 @@
       "blog_publish": "Blogberichten publiceren, inplannen en terugtrekken",
       "events_manage": "Evenementen beheren",
       "featured_manage": "Uitgelichte modpacks beheren",
-      "serverrules_bypass": "Door de server geblokkeerde TRS Client-functies toch gebruiken (na bevestiging in het spel)"
+      "serverrules_bypass": "Door de server geblokkeerde TRS Client-functies toch gebruiken (na bevestiging in het spel)",
+      "previews_access": "Testversies: Testversies van launcher en TRS Client downloaden, net als Partner-creators"
     }
   },
   "trsChoice": {
