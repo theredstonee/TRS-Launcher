@@ -124,7 +124,7 @@ final class WorldMapTest {
 			}
 			case 8: {
 				shot(mc, "worldmap2-far");
-				log("weit (0.1 px/Block): Kachelstufe " + ui().testTileLevel() + " (erwartet 2)");
+				log("weit (0.1 px/Block): Kachelstufe " + ui().testTileLevel() + " (erwartet " + (dev.theredstonee.trsclient.core.map.MapPreview.enabled() ? "4 – Karte v3: ein Texel je 8 Blöcke" : "2") + ")");
 				List<String> dims = ui().testDimensions();
 				log("Dimensionen: " + dims);
 				String nether = null;

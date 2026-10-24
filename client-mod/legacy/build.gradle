@@ -176,6 +176,8 @@ ext.trsLauncherVersions = project.launcher_versions.split(',').collect { it.trim
 
 // Autotests ohne Ton (siehe gradle/autotest-mute.gradle).
 apply from: new File(buildscript.sourceFile.parentFile, '../gradle/autotest-mute.gradle')
+// Vorschau-Builds (-PtrsPreview=map-v3, siehe gradle/preview-features.gradle).
+apply from: new File(buildscript.sourceFile.parentFile, '../gradle/preview-features.gradle')
 
 // -PtrsBenchOptions=real: options.txt neu mit Minecraft-Standards, nur unbegrenzte Bildrate/ohne VSync, Sichtweite 12
 if (project.findProperty('trsBenchOptions') == 'real') {

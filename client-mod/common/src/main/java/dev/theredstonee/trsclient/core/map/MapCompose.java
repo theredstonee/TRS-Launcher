@@ -12,8 +12,12 @@ public final class MapCompose implements MapLayer.SummaryMaker {
 	private MapCompose() {
 	}
 
-	/** Schattiertes ARGB-Bild (128×128) in {@code out}. */
+	/** Schattiertes ARGB-Bild (128×128) in {@code out} (mit Karte v3 über {@link MapShade}). */
 	public static void compose(MapLayer layer, MapRegion r, int[] out) {
+		if (MapPreview.enabled()) {
+			MapShade.compose(layer, r, out);
+			return;
+		}
 		int size = MapRegion.SIZE;
 		MapRegion north = layer == null ? null : layer.peek(r.rx, r.rz - 1);
 		MapRegion west = layer == null ? null : layer.peek(r.rx - 1, r.rz);
@@ -67,6 +71,10 @@ public final class MapCompose implements MapLayer.SummaryMaker {
 	@Override
 	public int[] summary(MapLayer layer, MapRegion region) {
 		compose(layer, region, buffer);
+		if (MapPreview.enabled()) {
+			region.summary64 = MapShade.summary64Of(buffer);
+			region.summary64Version = region.version;
+		}
 		return summaryOf(buffer);
 	}
 }

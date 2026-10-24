@@ -42,6 +42,16 @@ public final class MapEngine {
 	private static final int[] ROOF_PROBE = {0, 0, 1, 0, -1, 0, 0, 1, 0, -1};
 	/** Zeitbudget fürs Abtasten je Tick (ns). */
 	static final long SAMPLE_BUDGET_NS = 600_000L;
+	/** Karte v3: Grundbudget je Tick, mit Rückstand (fehlende Chunks) und bei offener Weltkarte (ns). */
+	static final long V3_BUDGET_NS = 1_000_000L;
+	static final long V3_BACKLOG_BUDGET_NS = 2_000_000L;
+	static final long V3_WORLDMAP_BUDGET_NS = 3_000_000L;
+	/** Karte v3: zusätzliches Abtasten je Bild bei Rückstand – Minimap bzw. offene Weltkarte (ns), höchstens so viel je Tick. */
+	static final long V3_FRAME_BUDGET_NS = 300_000L;
+	static final long V3_FRAME_BUDGET_MAP_NS = 1_200_000L;
+	static final long V3_FRAME_TOTAL_NS = 4_000_000L;
+	/** Karte v3: Abtast-Radius bis zur Sichtweite, höchstens so viele Chunks. */
+	static final int V3_MAX_RADIUS = 32;
 	static final int MAX_ENTITIES = 256;
 
 	private static MapEngine instance;
@@ -61,6 +71,16 @@ public final class MapEngine {
 	private int outdoorTicks;
 	private final int[] chunkPixels = new int[256];
 	private final int[] chunkHeights = new int[256];
+	/** Karte v3: Wassertiefe und Grundfarbe je Spalte. */
+	private final int[] chunkDepths = new int[256];
+	private final int[] chunkFloors = new int[256];
+	/** Karte v3 an? (einmal beim Start bestimmt) */
+	private final boolean v3 = MapPreview.enabled();
+	/** Karte v3: beim letzten Abtasten blieben fehlende Chunks übrig (Rückstand → mehr Budget, auch je Bild). */
+	private boolean backlog;
+	/** Karte v3: im laufenden Tick schon je Bild abgetastet (ns). */
+	private long frameSpent;
+	private int radiusNow = 2;
 
 	private String worldKey = "";
 	private String dimension = "";
@@ -116,9 +136,33 @@ public final class MapEngine {
 
 	public MapEngine(TrsModules modules, Path configDir, boolean synchronousDisk) {
 		this.modules = modules;
-		Path root = configDir == null ? null : configDir.resolve("trsclient").resolve("maps");
+		Path legacy = configDir == null ? null : configDir.resolve("trsclient").resolve("maps");
+		// Karte v3 speichert getrennt (maps-v3) und liest die bisherigen Karten nur – Umschalten beschädigt nichts.
+		Path root = legacy == null ? null : (v3 ? configDir.resolve("trsclient").resolve("maps-v3") : legacy);
 		this.disk = root == null ? null : new MapDisk(root, synchronousDisk);
+		if (v3 && disk != null) disk.enableV3(legacy);
 		this.palette = new TexturePalette(synchronousDisk);
+	}
+
+	/** Läuft die Karten-Vorschau v3 ({@link MapPreview})? */
+	public boolean v3() {
+		return v3;
+	}
+
+	/**
+	 * Karte v3: Bereiche im Speicher je nach Java-Speicher (etwa 1/12 davon, je Bereich grob 140 KB mit Wasser),
+	 * zwischen 256 und 1024.
+	 */
+	static int adaptiveMaxRegions(long maxMemory) {
+		long budget = maxMemory / 12;
+		long n = budget / (140L * 1024L);
+		return (int) Math.max(256, Math.min(1024, n));
+	}
+
+	/** Karte v3: Grenze des Kartenspeichers auf der Platte – das Vierfache der Einstellung (256 MB → 1 GB), höchstens 8 GB. */
+	static long v3DiskLimitBytes(int settingMb) {
+		long mb = Math.min(8192L, Math.max(64L, settingMb * 4L));
+		return mb * 1024L * 1024L;
 	}
 
 	/** Einmal beim Start (je Loader). */
@@ -542,16 +586,23 @@ public final class MapEngine {
 		updatePalette(p, now, texMode);
 
 		// Abtasten mit Zeitbudget: die gerade gezeigte Ebene zuerst, dann die Oberfläche.
+		frameSpent = 0;
 		if (reader != null) {
-			long deadline = System.nanoTime() + SAMPLE_BUDGET_NS;
-			int radius = Math.max(2, Math.min(12, p.renderDistance()));
+			long budget = !v3 ? SAMPLE_BUDGET_NS
+					: worldMapOpen ? V3_WORLDMAP_BUDGET_NS : (backlog || speed > 0.6 ? V3_BACKLOG_BUDGET_NS : V3_BUDGET_NS);
+			long deadline = System.nanoTime() + budget;
+			int radius = v3 ? Math.max(2, Math.min(V3_MAX_RADIUS, p.renderDistance())) : Math.max(2, Math.min(12, p.renderDistance()));
+			radiusNow = radius;
+			if (v3) surface.setMaxRegions(adaptiveMaxRegions(Runtime.getRuntime().maxMemory()));
 			try {
+				boolean left = false;
 				if (caveActive && cave != null) {
-					sample(reader, cave, caveStamps, Math.min(radius, 8), deadline, now);
+					left = sample(reader, cave, caveStamps, Math.min(radius, v3 ? 12 : 8), deadline, now);
 				} else if (roofActive && roof != null) {
-					sample(reader, roof, roofStamps, Math.min(radius, 8), deadline, now);
+					left = sample(reader, roof, roofStamps, Math.min(radius, v3 ? 12 : 8), deadline, now);
 				}
-				sample(reader, surface, surfaceStamps, radius, deadline, now);
+				left |= sample(reader, surface, surfaceStamps, radius, deadline, now);
+				backlog = left;
 			} catch (RuntimeException e) {
 				// Ein Chunk im Umbau darf die Karte nicht anhalten.
 			}
@@ -594,10 +645,44 @@ public final class MapEngine {
 			if (surface.dir() != null) keep.add(surface.dir());
 			for (MapLayer l : caves) if (l.dir() != null) keep.add(l.dir());
 			for (MapLayer l : roofs) if (l.dir() != null) keep.add(l.dir());
-			disk.enforceLimit((long) modules.worldMapCache.get() * 1024L * 1024L, keep);
+			long limit = v3 ? v3DiskLimitBytes(modules.worldMapCache.getInt()) : (long) modules.worldMapCache.get() * 1024L * 1024L;
+			disk.enforceLimit(limit, keep);
 		}
 		float us = (System.nanoTime() - t0) / 1000f;
 		tickMicros = tickMicros == 0 ? us : tickMicros + (us - tickMicros) * 0.05f;
+	}
+
+	/**
+	 * Karte v3: zusätzliches Abtasten je Bild (aus Minimap/Weltkarte), solange noch Chunks fehlen – neue Chunks sind
+	 * so fast sofort auf der Karte, auch beim schnellen Fliegen. Kleines Budget je Bild, insgesamt begrenzt je Tick.
+	 *
+	 * @param worldMap true = von der offenen Weltkarte (mehr Budget, man sieht ohnehin nur die Karte)
+	 */
+	public void frame(boolean worldMap) {
+		if (!v3 || !backlog || platform == null || surface == null || frameSpent >= V3_FRAME_TOTAL_NS) return;
+		ChunkReader reader = platform.reader();
+		if (reader == null) return;
+		long t0 = System.nanoTime();
+		long budget = Math.min(worldMap ? V3_FRAME_BUDGET_MAP_NS : V3_FRAME_BUDGET_NS, V3_FRAME_TOTAL_NS - frameSpent);
+		long now = System.currentTimeMillis();
+		try {
+			boolean left = false;
+			if (caveActive && cave != null) {
+				left = sample(reader, cave, caveStamps, Math.min(radiusNow, 12), t0 + budget, now);
+			} else if (roofActive && roof != null) {
+				left = sample(reader, roof, roofStamps, Math.min(radiusNow, 12), t0 + budget, now);
+			}
+			left |= sampleMissing(reader, surface, surfaceStamps, radiusNow, t0 + budget, now);
+			backlog = left;
+		} catch (RuntimeException e) {
+			backlog = false;
+		}
+		frameSpent += System.nanoTime() - t0;
+	}
+
+	/** Karte v3: Rückstand beim Abtasten (fehlende Chunks)? Für Tests/Autotest-Log. */
+	public boolean backlog() {
+		return backlog;
 	}
 
 	private void updatePalette(MapPlatform p, long now, boolean texMode) {
@@ -762,8 +847,35 @@ public final class MapEngine {
 	/**
 	 * Tastet Chunks rund um den Spieler ab: erst fehlende (Ringe von innen nach außen), dann das Auffrischen
 	 * (nahe Chunks alle 2 s, weitere alle 30 s) – bis das Zeitbudget verbraucht ist.
+	 *
+	 * @return true, wenn fehlende Chunks übrig blieben (Budget war zu Ende)
 	 */
-	private void sample(ChunkReader r, MapLayer layer, ChunkStamps stamps, int radius, long deadline, long now) {
+	private boolean sample(ChunkReader r, MapLayer layer, ChunkStamps stamps, int radius, long deadline, long now) {
+		if (sampleMissing(r, layer, stamps, radius, deadline, now)) return true;
+		int pcx = (int) Math.floor(curX) >> 4;
+		int pcz = (int) Math.floor(curZ) >> 4;
+		// Auffrischen: reihum durch das Quadrat, nahe Chunks häufiger.
+		int side = 2 * radius + 1;
+		int total = side * side;
+		int per = v3 ? 48 : 24;
+		for (int n = 0; n < per && System.nanoTime() < deadline; n++) {
+			refreshCursor = (refreshCursor + 1) % total;
+			int dx = refreshCursor % side - radius;
+			int dz = refreshCursor / side - radius;
+			int cx = pcx + dx, cz = pcz + dz;
+			long key = ChunkStamps.key(cx, cz);
+			long last = stamps.get(key);
+			if (last < 0) continue;
+			int dist = Math.max(Math.abs(dx), Math.abs(dz));
+			long maxAge = v3 ? (dist <= 2 ? 2_000 : (dist <= 6 ? 6_000 : 20_000)) : (dist <= 2 ? 2_000 : (dist <= 5 ? 8_000 : 30_000));
+			if (now - last < maxAge || !r.isLoaded(cx, cz)) continue;
+			scan(r, layer, stamps, cx, cz, key, now);
+		}
+		return false;
+	}
+
+	/** Fehlende Chunks in Ringen von innen nach außen; true = Budget zu Ende, bevor alle abgetastet waren. */
+	private boolean sampleMissing(ChunkReader r, MapLayer layer, ChunkStamps stamps, int radius, long deadline, long now) {
 		int pcx = (int) Math.floor(curX) >> 4;
 		int pcz = (int) Math.floor(curZ) >> 4;
 		for (int ring = 0; ring <= radius; ring++) {
@@ -774,36 +886,27 @@ public final class MapEngine {
 					long key = ChunkStamps.key(cx, cz);
 					if (stamps.get(key) >= 0) continue;
 					if (!r.isLoaded(cx, cz)) continue;
+					// Karte v3 prüft vorher (true = es fehlt noch etwas), die bisherige Karte wie gehabt danach.
+					if (v3 && System.nanoTime() > deadline) return true;
 					scan(r, layer, stamps, cx, cz, key, now);
-					if (System.nanoTime() > deadline) return;
+					if (!v3 && System.nanoTime() > deadline) return true;
 				}
 			}
 		}
-		// Auffrischen: reihum durch das Quadrat, nahe Chunks häufiger.
-		int side = 2 * radius + 1;
-		int total = side * side;
-		for (int n = 0; n < 24 && System.nanoTime() < deadline; n++) {
-			refreshCursor = (refreshCursor + 1) % total;
-			int dx = refreshCursor % side - radius;
-			int dz = refreshCursor / side - radius;
-			int cx = pcx + dx, cz = pcz + dz;
-			long key = ChunkStamps.key(cx, cz);
-			long last = stamps.get(key);
-			if (last < 0) continue;
-			int dist = Math.max(Math.abs(dx), Math.abs(dz));
-			long maxAge = dist <= 2 ? 2_000 : (dist <= 5 ? 8_000 : 30_000);
-			if (now - last < maxAge || !r.isLoaded(cx, cz)) continue;
-			scan(r, layer, stamps, cx, cz, key, now);
-		}
+		return false;
 	}
 
 	private void scan(ChunkReader r, MapLayer layer, ChunkStamps stamps, int cx, int cz, long key, long now) {
 		boolean texMode = lastTextures;
-		boolean ok = layer.cave() ? ColumnScanner.cave(r, cx, cz, layer.caveRef, texMode, chunkPixels, chunkHeights)
-				: ColumnScanner.surface(r, cx, cz, layer.roofCut, texMode, chunkPixels, chunkHeights);
+		int[] depths = v3 ? chunkDepths : null;
+		int[] floors = v3 ? chunkFloors : null;
+		boolean ok = layer.cave() ? ColumnScanner.cave(r, cx, cz, layer.caveRef, texMode, chunkPixels, chunkHeights, depths, floors)
+				: ColumnScanner.surface(r, cx, cz, layer.roofCut, texMode, chunkPixels, chunkHeights, depths, floors);
 		stamps.put(key, now);
 		if (!ok) return;
-		layer.forWrite(cx >> 3, cz >> 3, now).writeChunk(cx, cz, chunkPixels, chunkHeights, now);
+		MapRegion region = layer.forWrite(cx >> 3, cz >> 3, now);
+		if (v3) region.writeChunk(cx, cz, chunkPixels, chunkHeights, chunkDepths, chunkFloors, now);
+		else region.writeChunk(cx, cz, chunkPixels, chunkHeights, now);
 		sampledTotal++;
 	}
 

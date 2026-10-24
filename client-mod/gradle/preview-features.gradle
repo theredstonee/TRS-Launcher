@@ -1,0 +1,27 @@
+// Vorschau-Builds (z. B. die Creator-Vorschau der Karte v3): ./gradlew … -PtrsPreview=map-v3
+// legt assets/trsclient/preview-features.txt (eine Funktion je Zeile) ins Mod-Jar – der Mod liest die Liste beim Start
+// (core/map/MapPreview). Ohne die Eigenschaft fehlt die Datei: normale Builds bleiben unverändert.
+// Eingebunden von jedem Loader-Build: apply from: new File(buildscript.sourceFile.parentFile, '../gradle/preview-features.gradle')
+
+def previewRaw = (project.findProperty('trsPreview') ?: rootProject.findProperty('trsPreview'))?.toString()
+def previewFeatures = previewRaw == null ? [] : previewRaw.split('[,;\\s]+').collect { it.trim().toLowerCase() }.findAll { it ==~ /[a-z0-9-]+/ }
+
+def previewDir = layout.buildDirectory.dir('generated/preview')
+def writePreviewFeatures = tasks.register('writePreviewFeatures') {
+	inputs.property('features', previewFeatures.join(','))
+	outputs.dir(previewDir)
+	doLast {
+		File root = previewDir.get().asFile
+		project.delete(root)
+		if (previewFeatures.isEmpty()) return
+		File out = new File(root, 'assets/trsclient/preview-features.txt')
+		out.parentFile.mkdirs()
+		out.setText(previewFeatures.join('\n') + '\n', 'UTF-8')
+		logger.lifecycle("Vorschau-Build: ${previewFeatures.join(', ')}")
+	}
+}
+tasks.named('processResources') {
+	dependsOn(writePreviewFeatures)
+	inputs.property('trsPreview', previewFeatures.join(','))
+	from(previewDir)
+}

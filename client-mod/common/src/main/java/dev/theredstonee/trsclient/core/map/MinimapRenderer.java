@@ -30,6 +30,8 @@ public final class MinimapRenderer {
 
 	/** Unterauflösung der Textur-Ausschnitte (1/16 Block genau). */
 	static final int SUB = 16;
+	/** Karte v3: Platzhalter „wird geladen“ (etwas heller als der Kartenhintergrund). */
+	static final int LOADING = 0xFF24222B;
 	static final int LINE_H = 10;
 	static final int HOSTILE = 0xFFE5483E;
 	static final int PASSIVE = 0xFFEDE6D2;
@@ -43,6 +45,8 @@ public final class MinimapRenderer {
 	static final float EDGE_GAP = EDGE_BOX + 3;
 
 	private final float[] bands = new float[4 * 512];
+	/** Karte v3: unter 1 Bildschirmpixel je Block die Stufe-2-Kacheln (vorgemittelt, flimmerfrei) statt Bereichs-Texturen. */
+	private boolean coarse;
 	private float zoom = -1f;
 	private float spin = -1f;
 	private long lastFrame;
@@ -104,6 +108,7 @@ public final class MinimapRenderer {
 		float screenPx = auto ? e.autoZoom().frame(basePx, dt) : basePx;
 		float target = (float) (screenPx / Math.max(0.5, scale));
 		zoom = zoom < 0 || auto ? target : Anim.approach(zoom, target, dt, 0.09f);
+		coarse = e.v3() && zoom * scale < 0.99;
 		// Drehen an/aus weich überblenden.
 		float spinTarget = m.minimapRotate.get() ? 1f : 0f;
 		spin = spin < 0 ? spinTarget : Anim.approach(spin, spinTarget, dt, 0.12f);
@@ -123,6 +128,8 @@ public final class MinimapRenderer {
 		}
 
 		if (live) {
+			// Karte v3: fehlende Chunks auch je Bild abtasten (kleines Budget).
+			if (!preview) e.frame(false);
 			drawMap(c, e, layer, cx, cy, radius, round, theta, px, pz, opacity, nowMs, clip);
 		}
 
@@ -178,7 +185,7 @@ public final class MinimapRenderer {
 			if (clipped) clip.end();
 			return;
 		}
-		e.textures().beginFrame(3);
+		e.textures().beginFrame(e.v3() ? 4 : 3);
 		int tint = (opacity << 24) | 0xFFFFFF;
 		// Innenansicht: darunter die Oberfläche – noch nicht abgetastete Stellen bleiben so nicht leer
 		// (nur deckend, sonst schimmerte das ausgeblendete Dach durch).
@@ -192,11 +199,53 @@ public final class MinimapRenderer {
 			// Streifen in Weltblöcken.
 			double wx0 = px + bands[b * 4 + 2] * inv, wx1 = px + bands[b * 4 + 3] * inv;
 			double wz0 = pz + bands[b * 4] * inv, wz1 = pz + bands[b * 4 + 1] * inv;
+			if (coarse) {
+				if (under != null) drawCoarse(c, e, under, wx0, wz0, wx1, wz1, px, pz, tint, now);
+				drawCoarse(c, e, layer, wx0, wz0, wx1, wz1, px, pz, tint, now);
+				continue;
+			}
 			if (under != null) drawPieces(c, e, under, wx0, wz0, wx1, wz1, px, pz, tint, now);
 			drawPieces(c, e, layer, wx0, wz0, wx1, wz1, px, pz, tint, now);
 		}
 		c.pop();
 		if (clipped) clip.end();
+	}
+
+	/**
+	 * Karte v3, weit herausgezoomt (unter 1 Bildschirmpixel je Block): das Rechteck aus den Kacheln der Stufe 2 (ein
+	 * Texel je 2×2 Blöcke, vorgemittelt) – sonst würden beim Bewegen einzelne Blöcke aufblitzen. Fehlt eine Kachel
+	 * noch, zeichnen die Bereichs-Texturen diesen Teil.
+	 */
+	static void drawCoarse(Canvas c, MapEngine e, MapLayer layer, double wx0, double wz0, double wx1, double wz1,
+			double originX, double originZ, int tint, long now) {
+		wx0 = Math.round(wx0 * SUB) / (double) SUB;
+		wx1 = Math.round(wx1 * SUB) / (double) SUB;
+		wz0 = Math.round(wz0 * SUB) / (double) SUB;
+		wz1 = Math.round(wz1 * SUB) / (double) SUB;
+		if (wx1 <= wx0 || wz1 <= wz0) return;
+		int level = WorldMapPyramid.MIN_LEVEL;
+		int span = MapRegion.SIZE << level;
+		double perBlock = (double) MapTextures.SUPER_PIXELS / span;
+		int tx0 = Math.floorDiv((int) Math.floor(wx0), span), tx1 = Math.floorDiv((int) Math.floor(wx1 - 1e-6), span);
+		int tz0 = Math.floorDiv((int) Math.floor(wz0), span), tz1 = Math.floorDiv((int) Math.floor(wz1 - 1e-6), span);
+		for (int tz = tz0; tz <= tz1; tz++) {
+			for (int tx = tx0; tx <= tx1; tx++) {
+				double bx = (double) tx * span, bz = (double) tz * span;
+				double x0 = Math.max(wx0, bx), x1 = Math.min(wx1, bx + span);
+				double z0 = Math.max(wz0, bz), z1 = Math.min(wz1, bz + span);
+				if (x1 <= x0 || z1 <= z0) continue;
+				TextureRef tex = e.textures().levelTile(layer, level, tx, tz, now);
+				if (tex == null) {
+					drawPieces(c, e, layer, x0, z0, x1, z1, originX, originZ, tint, now);
+					continue;
+				}
+				c.push();
+				c.translate((float) (x0 - originX), (float) (z0 - originZ));
+				MapDraw.image(c, tex, (x0 - bx) * perBlock, (z0 - bz) * perBlock, (x1 - bx) * perBlock, (z1 - bz) * perBlock,
+						(float) (x1 - x0), (float) (z1 - z0), tint);
+				c.pop();
+			}
+		}
 	}
 
 	/** Zeichnet das Welt-Rechteck [wx0,wx1]×[wz0,wz1], aufgeteilt auf die Bereichs-Texturen. */
@@ -211,16 +260,34 @@ public final class MinimapRenderer {
 		if (wx1 <= wx0 || wz1 <= wz0) return;
 		int rx0 = (int) Math.floor(wx0) >> MapRegion.SHIFT, rx1 = (int) Math.floor(wx1 - 1e-6) >> MapRegion.SHIFT;
 		int rz0 = (int) Math.floor(wz0) >> MapRegion.SHIFT, rz1 = (int) Math.floor(wz1 - 1e-6) >> MapRegion.SHIFT;
+		boolean v3 = e.v3();
 		for (int rz = rz0; rz <= rz1; rz++) {
 			for (int rx = rx0; rx <= rx1; rx++) {
 				MapRegion region = layer.get(rx, rz, now);
-				if (region == null) continue;
-				TextureRef tex = e.textures().region(layer, region, now, 250);
-				if (tex == null) continue;
+				TextureRef tex = region == null ? null : e.textures().region(layer, region, now, 250);
 				double bx = (double) rx * MapRegion.SIZE, bz = (double) rz * MapRegion.SIZE;
 				double x0 = Math.max(wx0, bx), x1 = Math.min(wx1, bx + MapRegion.SIZE);
 				double z0 = Math.max(wz0, bz), z1 = Math.min(wz1, bz + MapRegion.SIZE);
 				if (x1 <= x0 || z1 <= z0) continue;
+				if (tex == null) {
+					// Karte v3: gespeichert, aber noch nicht geladen → dezenter Platzhalter statt Loch.
+					if (v3 && layer.known(MapRegion.key(rx, rz))) {
+						c.push();
+						c.translate((float) (x0 - originX), (float) (z0 - originZ));
+						c.scale((float) (x1 - x0) / 16f, (float) (z1 - z0) / 16f);
+						c.fill(0, 0, 16, 16, (tint & 0xFF000000) | (LOADING & 0xFFFFFF));
+						c.pop();
+					}
+					continue;
+				}
+				if (v3) {
+					// Karte v3: an Texturkanten leicht nach innen (keine Nähte durch Textur-Wiederholung).
+					c.push();
+					c.translate((float) (x0 - originX), (float) (z0 - originZ));
+					MapDraw.image(c, tex, x0 - bx, z0 - bz, x1 - bx, z1 - bz, (float) (x1 - x0), (float) (z1 - z0), tint);
+					c.pop();
+					continue;
+				}
 				int w = (int) Math.round((x1 - x0) * SUB), h = (int) Math.round((z1 - z0) * SUB);
 				if (w <= 0 || h <= 0) continue;
 				TextureRef sub = new TextureRef(tex.id, tex.width * SUB, tex.height * SUB);

@@ -40,7 +40,10 @@ final class WorldMapTiles {
 	private final List<MapRegion> ready = new ArrayList<MapRegion>();
 	private final List<TextureRef> readyTex = new ArrayList<TextureRef>();
 
-	/** Statistik fürs Autotest-Log: gezeichnete Stufe (0 = Bereiche, 1 = Übersicht, 2 = Weitkacheln). */
+	/** Karte v3: Bild-Pyramide statt der drei festen Stufen (siehe {@link WorldMapPyramid}). */
+	private WorldMapPyramid pyramid;
+
+	/** Statistik fürs Autotest-Log: gezeichnete Stufe (0 = Bereiche, 1 = Übersicht, 2 = Weitkacheln; Karte v3: Pyramiden-Stufe). */
 	int lastLevel;
 	int lastMissing;
 
@@ -50,6 +53,13 @@ final class WorldMapTiles {
 	 */
 	void draw(Canvas c, MapEngine e, MapLayer layer, double cx, double cz, double wx0, double wz0, double wx1, double wz1,
 			float screenPx, long now) {
+		if (MapPreview.enabled()) {
+			if (pyramid == null) pyramid = new WorldMapPyramid(this);
+			pyramid.draw(c, e, layer, cx, cz, wx0, wz0, wx1, wz1, screenPx, now);
+			lastLevel = pyramid.lastLevel;
+			lastMissing = pyramid.lastMissing;
+			return;
+		}
 		refreshTiles(layer, now);
 		int rx0 = floor(wx0) >> MapRegion.SHIFT, rx1 = floor(wx1) >> MapRegion.SHIFT;
 		int rz0 = floor(wz0) >> MapRegion.SHIFT, rz1 = floor(wz1) >> MapRegion.SHIFT;

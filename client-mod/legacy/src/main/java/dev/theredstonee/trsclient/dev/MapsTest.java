@@ -183,8 +183,19 @@ public final class MapsTest {
 				return;
 			case 6:
 				shot(mc, "worldmap");
+				log("Weltkarte nah: Stufe " + worldMap(mc).testTileLevel() + ", Karte v3 "
+						+ (dev.theredstonee.trsclient.core.map.MapPreview.enabled() ? "an" : "aus"));
+				// Zwischen ½ und 1 Pixel je Block: Karte v3 zeichnet hier Stufe 2 (ein Texel je 2 Blöcke).
+				worldMap(mc).setScaleNow(0.5f);
+				phase = 40;
+				wait = 60;
+				return;
+			case 40:
+				shot(mc, "worldmap-half");
+				log("Weltkarte ½ px/Block: Stufe " + worldMap(mc).testTileLevel() + ", Rückstand beim Abtasten: "
+						+ MapEngine.get().backlog());
 				worldMap(mc).setScaleNow(0.25f);
-				phase++;
+				phase = 7;
 				wait = 60;
 				return;
 			case 7:

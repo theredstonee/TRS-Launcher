@@ -209,6 +209,46 @@ public final class MapDimensions {
 		return out;
 	}
 
+	/**
+	 * Karte v3: wie {@link #scan(Path)}, dazu die bisherigen Karten ({@code legacyWorldDir}): Dimensionen/Ebenen, die
+	 * es nur dort gibt, erscheinen mit ihrem Ordner unter {@code worldDir} (die Ebene liest fehlende Bereiche selbst aus
+	 * den bisherigen Karten). Bereichszahl = die größere der beiden.
+	 */
+	public static List<DimInfo> scan(Path worldDir, Path legacyWorldDir) {
+		List<DimInfo> v3 = scan(worldDir);
+		if (legacyWorldDir == null || worldDir == null) return v3;
+		List<DimInfo> old = scan(legacyWorldDir);
+		if (old.isEmpty()) return v3;
+		List<DimInfo> out = new ArrayList<DimInfo>();
+		for (DimInfo d : v3) out.add(d);
+		for (DimInfo o : old) {
+			DimInfo match = null;
+			for (DimInfo d : out) {
+				if (d.id.equals(o.id)) match = d;
+			}
+			Path dimDir = worldDir.resolve(o.dir.getFileName().toString());
+			List<LayerInfo> layers = new ArrayList<LayerInfo>(match == null ? new ArrayList<LayerInfo>() : match.layers);
+			for (LayerInfo ol : o.layers) {
+				LayerInfo have = null;
+				for (LayerInfo l : layers) {
+					if (l.id.equals(ol.id)) have = l;
+				}
+				Path dir = dimDir.resolve(ol.dir.getFileName().toString());
+				if (have == null) {
+					layers.add(new LayerInfo(ol.id, dir, ol.regions));
+				} else if (ol.regions > have.regions) {
+					layers.set(layers.indexOf(have), new LayerInfo(have.id, have.dir, ol.regions));
+				}
+			}
+			Collections.sort(layers, LAYER_ORDER);
+			DimInfo merged = new DimInfo(o.id, match == null ? dimDir : match.dir, layers);
+			if (match != null) out.set(out.indexOf(match), merged);
+			else out.add(merged);
+		}
+		Collections.sort(out, ORDER);
+		return out;
+	}
+
 	/** Oberfläche zuerst, dann Höhlenschichten von oben nach unten. */
 	static final Comparator<LayerInfo> LAYER_ORDER = new Comparator<LayerInfo>() {
 		@Override

@@ -452,6 +452,7 @@ class MapTest {
 		String dim = "minecraft:overworld";
 		double x = 8, y = 64, z = 8;
 		int sky = 15;
+		int renderDistance = 2;
 		boolean lastLos;
 		int saves;
 		List<double[]> mobs = new ArrayList<double[]>();
@@ -502,7 +503,7 @@ class MapTest {
 
 		@Override
 		public int renderDistance() {
-			return 2;
+			return renderDistance;
 		}
 
 		@Override
