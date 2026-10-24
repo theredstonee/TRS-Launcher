@@ -5596,7 +5596,8 @@
       "website": "Na stronie",
       "websiteHint": "Otwiera stronę w przeglądarce (logowanie przez Microsoft).",
       "blog": "Blog",
-      "featured": "Polecane modpacki"
+      "featured": "Polecane modpacki",
+      "previews": "Wersje testowe"
     },
     "search": {
       "placeholder": "Szukaj graczy, UUID, ID zgłoszeń, #kar, peleryn …",
@@ -5999,7 +6000,8 @@
       "blog_publish": "Publikowanie, planowanie i wycofywanie wpisów na blogu",
       "events_manage": "Zarządzanie wydarzeniami",
       "featured_manage": "Zarządzanie polecanymi modpackami",
-      "serverrules_bypass": "Używać funkcji TRS Client zablokowanych przez serwer mimo to (po potwierdzeniu w grze)"
+      "serverrules_bypass": "Używać funkcji TRS Client zablokowanych przez serwer mimo to (po potwierdzeniu w grze)",
+      "previews_access": "Wersje testowe: Pobieranie wersji testowych launchera i TRS Client jak twórcy Partner"
     }
   },
   "trsChoice": {

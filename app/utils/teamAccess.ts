@@ -51,6 +51,8 @@ export const permissions = [
   'featured.manage',
   // TRS Server Rules: vom Server gesperrte TRS-Client-Module trotzdem nutzen (Nachfrage im Spiel, offen dokumentiert).
   'serverrules.bypass',
+  // Vorschau-Builds (API §35.3) laden wie Partner-Creator, auch ohne Creator-Status.
+  'previews.access',
 ] as const
 export type Permission = (typeof permissions)[number]
 const permissionSet: ReadonlySet<string> = new Set(permissions)
@@ -157,6 +159,7 @@ export const teamSections: readonly TeamSection[] = [
   { to: '/admin/events', label: 'team.nav.events', icon: 'star', perms: ['events.manage'] },
   { to: '/admin/featured', label: 'team.nav.featured', icon: 'compass', perms: ['featured.manage'] },
   { to: '/admin/creators', label: 'team.nav.creators', icon: 'crown', perms: ['creators.review', 'creators.manage'] },
+  { to: '/admin/previews', label: 'team.nav.previews', icon: 'bolt', perms: ['previews.access'] },
   { to: '/admin/audit', label: 'team.nav.audit', icon: 'list', perms: ['audit.view'] },
 ]
 

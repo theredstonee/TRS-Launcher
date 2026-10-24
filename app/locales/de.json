@@ -5665,7 +5665,8 @@
       "websiteHint": "Öffnet die Website im Browser (Anmeldung mit Microsoft).",
       "blog": "Blog",
       "creators": "Creator",
-      "featured": "Empfohlene Modpacks"
+      "featured": "Empfohlene Modpacks",
+      "previews": "Vorschau-Builds"
     },
     "search": {
       "placeholder": "Spieler, UUIDs, Meldungs-IDs, #Strafen, Umhänge suchen …",
@@ -6070,7 +6071,8 @@
       "creators_review": "Creator-Symbole und Fan-Umhänge prüfen",
       "creators_manage": "Creator verwalten",
       "featured_manage": "Empfohlene Modpacks verwalten",
-      "serverrules_bypass": "Vom Server gesperrte TRS-Client-Funktionen trotzdem nutzen (nach Nachfrage im Spiel)"
+      "serverrules_bypass": "Vom Server gesperrte TRS-Client-Funktionen trotzdem nutzen (nach Nachfrage im Spiel)",
+      "previews_access": "Vorschau-Builds: Vorschau-Builds von Launcher und TRS Client laden wie Partner-Creator"
     },
     "creators": {
       "intro": "Fan-Symbole und Fan-Umhänge prüfen, Creator verwalten und ihre Anträge beantworten. Bewerbungen laufen über die Website.",

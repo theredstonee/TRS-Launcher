@@ -5665,7 +5665,8 @@
       "websiteHint": "Abre la web en tu navegador (inicio de sesión con Microsoft).",
       "blog": "Blog",
       "creators": "Creadores",
-      "featured": "Modpacks destacados"
+      "featured": "Modpacks destacados",
+      "previews": "Versiones de prueba"
     },
     "search": {
       "placeholder": "Buscar jugadores, UUID, ID de reportes, #sanciones, capas …",
@@ -6070,7 +6071,8 @@
       "creators_review": "Revisar símbolos y capas de fan de creadores",
       "creators_manage": "Gestionar creadores",
       "featured_manage": "Gestionar modpacks destacados",
-      "serverrules_bypass": "Usar igualmente funciones del TRS Client bloqueadas por el servidor (tras confirmar en el juego)"
+      "serverrules_bypass": "Usar igualmente funciones del TRS Client bloqueadas por el servidor (tras confirmar en el juego)",
+      "previews_access": "Versiones de prueba: Descargar versiones de prueba del launcher y del TRS Client como los creadores Partner"
     },
     "creators": {
       "intro": "Revisa símbolos y capas de fan, gestiona creadores y responde a sus solicitudes. Las candidaturas se gestionan en la web.",

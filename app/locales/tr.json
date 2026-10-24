@@ -5596,7 +5596,8 @@
       "website": "Web sitesinde",
       "websiteHint": "Web sitesini tarayıcında açar (Microsoft ile giriş).",
       "blog": "Blog",
-      "featured": "Öne çıkan mod paketleri"
+      "featured": "Öne çıkan mod paketleri",
+      "previews": "Önizleme sürümleri"
     },
     "search": {
       "placeholder": "Oyuncu, UUID, şikayet kimliği, #ceza, pelerin ara …",
@@ -5999,7 +6000,8 @@
       "blog_publish": "Blog yazılarını yayınlama, zamanlama ve yayından kaldırma",
       "events_manage": "Etkinlikleri yönet",
       "featured_manage": "Öne çıkan mod paketlerini yönet",
-      "serverrules_bypass": "Sunucunun engellediği TRS Client özelliklerini yine de kullan (oyunda onaydan sonra)"
+      "serverrules_bypass": "Sunucunun engellediği TRS Client özelliklerini yine de kullan (oyunda onaydan sonra)",
+      "previews_access": "Önizleme sürümleri: Başlatıcının ve TRS Client'ın önizleme sürümlerini Partner içerik üreticileri gibi indir"
     }
   },
   "trsChoice": {
