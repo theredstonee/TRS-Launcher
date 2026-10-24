@@ -9,7 +9,8 @@ import net.minecraft.server.level.ServerPlayer;
 
 /**
  * Selbsttest Hunger-Anzeige ({@code -PtrsAutotestOnly=hunger}): halber Hunger + Steak in der Hand (Vorschau blinkt –
- * zwei Bilder), danach ohne Essen mit Sättigung und Erschöpfung. Screenshots trsclient-&lt;mc&gt;-hunger-*.png.
+ * zwei Bilder), danach ohne Essen mit Sättigung und Erschöpfung, dann im offenen Inventar (Modul an/aus, mit weiteren
+ * Anzeigen – nichts darf über dem abgedunkelten Hintergrund liegen). Screenshots trsclient-&lt;mc&gt;-hunger-*.png.
  */
 public final class HungerOverlayTest {
 	private int phase;
@@ -60,6 +61,40 @@ public final class HungerOverlayTest {
 						mc.player.getFoodData().getFoodLevel(), mc.player.getFoodData().getSaturationLevel(), mc.player.getHealth(),
 						mc.player.getMainHandItem());
 				actions.shot("trsclient-hunger-saturation");
+				// Menü offen: Hunger-Anzeige muss wie die Vanilla-Leiste UNTER dem abgedunkelten Hintergrund liegen.
+				actions.command("item replace entity @p weapon.mainhand with cooked_beef 16");
+				food(mc, 9, 3f, 0.5f, 11f);
+				wait = 30;
+				return true;
+			case 5:
+				dev.theredstonee.trsclient.compat.Mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player));
+				wait = 15;
+				return true;
+			case 6:
+				actions.shot("trsclient-hunger-menu-on");
+				modules.comfort.hunger.setEnabled(false);
+				wait = 7;
+				return true;
+			case 7:
+				// Vergleich: Modul aus = reines Vanilla.
+				actions.shot("trsclient-hunger-menu-off");
+				modules.comfort.hunger.setEnabled(true);
+				// Andere Anzeigen dazu – auch die dürfen nicht durchscheinen.
+				modules.fps.setEnabled(true);
+				modules.coords.setEnabled(true);
+				modules.armor.setEnabled(true);
+				wait = 7;
+				return true;
+			case 8:
+				actions.shot("trsclient-hunger-menu-hud");
+				dev.theredstonee.trsclient.compat.Mc.setScreen(null);
+				for (Module m : modules.registry.all()) {
+					if (m instanceof HudModule) m.setEnabled(false);
+				}
+				wait = 7;
+				return true;
+			case 9:
+				actions.shot("trsclient-hunger-menu-closed");
 				actions.command("gamerule naturalRegeneration true");
 				return false;
 			default:

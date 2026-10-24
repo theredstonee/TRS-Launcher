@@ -188,10 +188,15 @@ public final class TrsClient implements ClientModInitializer {
 	/**
 	 * HUD einhängen: Fabric-HUD-Ebenen ab 1.21.6 (dort ersetzt TRS auch die Fadenkreuz-Ebene),
 	 * davor der klassische HUD-Callback (Vanilla-Fadenkreuz blendet dann CrosshairMixin aus).
+	 *
+	 * <p>Nicht {@code addLast}: Fabric hängt solche Ebenen an die Untertitel, und die zeichnet Minecraft ab 1.21.9
+	 * verzögert – mit offenem Inventar/Truhe/Ofen erst nach dem abgedunkelten Menü-Hintergrund. Das ganze TRS-HUD
+	 * (Hunger-Anzeige, Anzeigen) lag dann hell über dem Hintergrund statt wie die Vanilla-Leisten darunter. Direkt
+	 * nach der Spielerliste bleibt es über allen Vanilla-Anzeigen, aber im normalen HUD-Durchgang.
 	 */
 	private void registerHud() {
 		//? if >=1.21.6 {
-		/*HudElementRegistry.addLast(id("hud"), (g, delta) -> hud.render(Gfx.of(g)));
+		/*HudElementRegistry.attachElementAfter(VanillaHudElements.PLAYER_LIST, id("hud"), (g, delta) -> hud.render(Gfx.of(g)));
 		HudElementRegistry.replaceElement(VanillaHudElements.CROSSHAIR, vanilla -> (g, delta) -> {
 			if (hud.crosshair().replacesVanilla()) hud.crosshair().drawInGame(Gfx.of(g));
 			//? if >=26.1 {
