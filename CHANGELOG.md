@@ -30,6 +30,14 @@ How to write an entry:
 
 ## Unreleased
 
+## 0.29.0 – 2026-10-24 – First Frost | Erster Frost
+<!-- banner: accent=#6fd0ea motif=/news/0.29.0/banner.png -->
+<!-- shots:
+/news/0.29.0/penguins.png | Penguins with red TRS scarves follow you across the ice | Pinguine mit rotem TRS-Schal folgen dir übers Eis
+/news/0.29.0/wardrobe.png | The Cosmetics tab with the Santa hat, the beard switch and two penguins | Der Reiter Kosmetik mit Weihnachtsmütze, Bart-Schalter und zwei Pinguinen
+/news/0.29.0/snow-wings.png | Snow wings with drifting snowflakes | Schneeflügel mit rieselnden Schneeflocken
+-->
+
 ### English
 - **Winter cosmetics in the launcher: ground companions and switchable parts.** The Cosmetics tab has a new section "Ground companions" for companions that walk next to you instead of floating at your head – like the penguin with its red TRS scarf. The 3D preview places it on the ground next to your character, and buttons show how it stands, walks, slides on its belly, swims and jumps. Creators see how many penguins they have ("2 penguins – creator tier"). Cosmetics with switchable parts get a switch below the preview – for example the beard of the Santa hat: switch it off, and everyone with TRS Client sees the hat without the beard. Redeeming a code for a ground companion, wings or a head companion now offers to put it into the right slot.
 - **Team: preview builds for team members.** A new team permission "Preview builds" lets team members download launcher and TRS Client preview builds in the team area, just like Partner creators – no creator status needed.
