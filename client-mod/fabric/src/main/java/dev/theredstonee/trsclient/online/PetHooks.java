@@ -47,7 +47,9 @@ public final class PetHooks {
 		BLOCKS.level = level;
 		for (AbstractClientPlayer p : mc.level.players()) {
 			boolean hidden = p.isInvisible() || p.isSpectator();
-			f.petOwner(p.getUUID(), p == mc.player, p.getX(), p.getY(), p.getZ(), p.yBodyRot, hidden, BLOCKS);
+			// Reitet er (Boot, Pferd, Lore …), zählt das unterste Fahrzeug: dessen Lage und Tempo, Boden darunter.
+			net.minecraft.world.entity.Entity v = p.getRootVehicle();
+			f.petOwner(p.getUUID(), p == mc.player, v.getX(), v.getY(), v.getZ(), p.yBodyRot, hidden, BLOCKS);
 		}
 		f.petsEnd();
 	}
@@ -87,8 +89,8 @@ public final class PetHooks {
 					(last, vc) -> f.emitV2(hat, CosmeticV2Renderer.PASS_GLOW, null, d.wrap(HatHooks.additiveSink(vc, last))));
 		}
 		if (eye != null) {
-			collector.submitCustomGeometry(pose, HatHooks.additive(hat.halo),
-					(last, vc) -> f.emitV2(hat, CosmeticV2Renderer.PASS_HALO, eye, d.wrap(HatHooks.additiveSink(vc, last))));
+			collector.submitCustomGeometry(pose, HatHooks.halo(hat.halo),
+					(last, vc) -> f.emitV2(hat, CosmeticV2Renderer.PASS_HALO, eye, d.wrap(HatHooks.haloSink(vc, last))));
 		}
 	}
 	*///?} else {
@@ -125,7 +127,7 @@ public final class PetHooks {
 		}
 		if (hat.has(CosmeticV2Renderer.PASS_HALO)) {
 			f.emitV2(hat, CosmeticV2Renderer.PASS_HALO, d.eye,
-					d.wrap(HatHooks.additiveSink(buffers.getBuffer(HatHooks.additive(hat.halo)), last)));
+					d.wrap(HatHooks.haloSink(buffers.getBuffer(HatHooks.halo(hat.halo)), last)));
 		}
 	}
 	//?}

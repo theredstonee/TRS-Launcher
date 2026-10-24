@@ -438,7 +438,8 @@ public final class OnlineFeatures<T> {
 				dev.theredstonee.trsclient.core.cosmetic.pet.PetDraw<T> d = petDraws[out];
 				if (d == null) petDraws[out] = d = new dev.theredstonee.trsclient.core.cosmetic.pet.PetDraw<T>();
 				d.pet = p;
-				d.hat = hat.forPet(base + p.offsetMs, dev.theredstonee.trsclient.core.cosmetic.pet.Pet.driver(st),
+				long fixed = dev.theredstonee.trsclient.core.cosmetic.pet.PetSim.forceTimeMs;
+				d.hat = hat.forPet(fixed >= 0 ? fixed : base + p.offsetMs, dev.theredstonee.trsclient.core.cosmetic.pet.Pet.driver(st),
 						dev.theredstonee.trsclient.core.cosmetic.pet.Pet.driver(p.prevState()), p.blend(wall));
 				double px = p.x(alpha), py = p.y(alpha), pz = p.z(alpha);
 				d.set(px - camX, py - camY, pz - camZ, p.yaw(alpha));

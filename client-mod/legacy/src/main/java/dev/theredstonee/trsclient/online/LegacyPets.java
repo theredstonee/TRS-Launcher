@@ -35,13 +35,41 @@ import java.util.ArrayList;
 
 /**
  * Begleiter am Boden (Winter 2026: Pinguine) für Forge 1.8.9–1.12.2: einmal je Client-Tick die Spieler an die
- * Simulation melden ({@code core.cosmetic.pet.PetSim}), einmal je Bild in {@code RenderWorldLastEvent} alle sichtbaren
- * Begleiter per GL zeichnen – mit Licht am Standort (Lightmap), Entity-Licht, Entfernungs-Grenze und Obergrenze aus
- * {@code OnlineFeatures#petFrame}. Die Ecken rechnet {@link PetDraw#wrap} in die Welt um (Ursprung = Render-Position des
- * Kamera-Wesens), die Kamera kommt aus der GL-Matrix. Auch der eigene Begleiter ist sichtbar (auch in der Ich-Perspektive).
+ * Simulation melden ({@code core.cosmetic.pet.PetSim}), einmal je Bild alle sichtbaren Begleiter per GL zeichnen – mit
+ * Licht am Standort (Lightmap), Entity-Licht, Entfernungs-Grenze und Obergrenze aus {@code OnlineFeatures#petFrame}. Die
+ * Ecken rechnet {@link PetDraw#wrap} in die Welt um (Ursprung = Render-Position des Kamera-Wesens), die Kamera kommt aus
+ * der GL-Matrix. Auch der eigene Begleiter ist sichtbar (auch in der Ich-Perspektive).
+ *
+ * <p>Gezeichnet wird im Entity-Durchgang über einen unsichtbaren {@link Anchor} beim Kamera-Wesen – also VOR dem Wasser:
+ * 1.8–1.12 zeichnen Wasser ohne Tiefe, danach (in {@code RenderWorldLastEvent}) lagen Pinguine sonst unverdeckt über dem
+ * Wasser statt darin. Kam der Anker in einem Bild nicht dran (Abschnitt nicht sichtbar), zeichnet
+ * {@code RenderWorldLastEvent} wie bisher.
  */
 public final class LegacyPets {
 	private static final Blocks BLOCKS = new Blocks();
+	/** Feste Kennung des Ankers in der Client-Welt (negativ: nie vom Server vergeben). */
+	private static final int ANCHOR_ID = -0x7E5E7;
+	private static LegacyPets instance;
+	private static Anchor anchor;
+	private static World anchorWorld;
+	/** In diesem Bild schon im Entity-Durchgang gezeichnet? (zurückgesetzt in RenderWorldLast) */
+	private static boolean drawnInPass;
+
+	public LegacyPets() {
+		instance = this;
+	}
+
+	/** Zeichner des Ankers anmelden (aus {@code TrsClient.preInit}). */
+	public static void registerRenderer() {
+		net.minecraftforge.fml.client.registry.RenderingRegistry.registerEntityRenderingHandler(Anchor.class,
+				new net.minecraftforge.fml.client.registry.IRenderFactory<Anchor>() {
+					@Override
+					public net.minecraft.client.renderer.entity.Render<? super Anchor> createRenderFor(
+							net.minecraft.client.renderer.entity.RenderManager manager) {
+						return new AnchorRender(manager);
+					}
+				});
+	}
 	private final FloatBuffer matrix = GLAllocation.createDirectFloatBuffer(16);
 	private final float[] m = new float[16];
 	private final double[] cam = new double[3];
@@ -54,23 +82,73 @@ public final class LegacyPets {
 		BLOCKS.world = world;
 		for (EntityPlayer p : new ArrayList<EntityPlayer>(world.playerEntities)) {
 			boolean hidden = p.isInvisible() || p.isSpectator();
-			f.petOwner(p.getUniqueID(), p == self, p.posX, p.posY, p.posZ, p.renderYawOffset, hidden, BLOCKS);
+			// Reitet er (Boot, Pferd, Lore …), zählt das unterste Fahrzeug: dessen Lage und Tempo, Boden darunter.
+			//? if >=1.9 {
+			/*net.minecraft.entity.Entity v = p.getLowestRidingEntity();
+			*///?} else {
+			net.minecraft.entity.Entity v = p;
+			while (v.ridingEntity != null && v.ridingEntity != v) v = v.ridingEntity;
+			//?}
+			f.petOwner(p.getUniqueID(), p == self, v.posX, v.posY, v.posZ, p.renderYawOffset, hidden, BLOCKS);
 		}
 		f.petsEnd();
+		keepAnchor(world, f.pets().size() > 0);
 	}
 
-	@SubscribeEvent
-	public void onRenderLast(RenderWorldLastEvent event) {
+	/** Anker beim Kamera-Wesen halten, solange es Begleiter gibt; sonst entfernen. */
+	private static void keepAnchor(World world, boolean wanted) {
+		if (!(world instanceof net.minecraft.client.multiplayer.WorldClient)) return;
+		net.minecraft.client.multiplayer.WorldClient w = (net.minecraft.client.multiplayer.WorldClient) world;
+		if (!wanted) {
+			if (anchor != null && anchorWorld == world) w.removeEntityFromWorld(ANCHOR_ID);
+			anchor = null;
+			anchorWorld = null;
+			return;
+		}
+		net.minecraft.entity.Entity view = Minecraft.getMinecraft().getRenderViewEntity();
+		if (view == null) return;
+		if (anchor == null || anchorWorld != world || anchor.isDead) {
+			anchor = new Anchor(world);
+			anchorWorld = world;
+			anchor.setPosition(view.posX, view.posY, view.posZ);
+			w.addEntityToWorld(ANCHOR_ID, anchor);
+		}
+		anchor.setPosition(view.posX, view.posY, view.posZ);
+		anchor.prevPosX = anchor.lastTickPosX = view.posX;
+		anchor.prevPosY = anchor.lastTickPosY = view.posY;
+		anchor.prevPosZ = anchor.lastTickPosZ = view.posZ;
+	}
+
+	/** Aus dem Zeichner des Ankers: alle Begleiter im Entity-Durchgang (vor dem Wasser). */
+	static void drawInEntityPass() {
 		OnlineFeatures<Object> f = LegacyOnline.features();
-		if (f == null || Mc.world() == null) return;
+		if (f == null || instance == null || drawnInPass || Mc.world() == null) return;
+		drawnInPass = true;
 		try {
-			render(f);
+			instance.render(f, true);
 		} catch (RuntimeException e) {
 			f.online().reportError(e);
 		}
 	}
 
-	private void render(OnlineFeatures<Object> f) {
+	@SubscribeEvent
+	public void onRenderLast(RenderWorldLastEvent event) {
+		OnlineFeatures<Object> f = LegacyOnline.features();
+		boolean done = drawnInPass;
+		drawnInPass = false;
+		if (done || f == null || Mc.world() == null) return;
+		try {
+			render(f, false);
+		} catch (RuntimeException e) {
+			f.online().reportError(e);
+		}
+	}
+
+	/**
+	 * Alle sichtbaren Begleiter zeichnen. {@code inPass} = im Entity-Durchgang: Lightmap und Entity-Licht sind dort schon
+	 * an und bleiben an (die übrigen Wesen brauchen sie noch).
+	 */
+	private void render(OnlineFeatures<Object> f, boolean inPass) {
 		// Kamera aus der GL-Matrix: Ursprung = Render-Position (Füße des Kamera-Wesens), die Kamera sitzt in Augenhöhe
 		// bzw. in der 3. Person dahinter.
 		matrix.clear();
@@ -95,8 +173,10 @@ public final class LegacyPets {
 		Minecraft mc = Minecraft.getMinecraft();
 		float lastX = OpenGlHelper.lastBrightnessX;
 		float lastY = OpenGlHelper.lastBrightnessY;
-		mc.entityRenderer.enableLightmap();
-		RenderHelper.enableStandardItemLighting();
+		if (!inPass) {
+			mc.entityRenderer.enableLightmap();
+			RenderHelper.enableStandardItemLighting();
+		}
 		GlStateManager.pushMatrix();
 		GlStateManager.disableCull();
 		GlStateManager.enableDepth();
@@ -112,9 +192,88 @@ public final class LegacyPets {
 			GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 			GlStateManager.enableCull();
 			GlStateManager.popMatrix();
-			RenderHelper.disableStandardItemLighting();
 			OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, lastX, lastY);
-			mc.entityRenderer.disableLightmap();
+			if (!inPass) {
+				RenderHelper.disableStandardItemLighting();
+				mc.entityRenderer.disableLightmap();
+			}
+		}
+	}
+
+	/**
+	 * Unsichtbares Wesen nur auf dem Client, immer beim Kamera-Wesen: sein Zeichner ruft im Entity-Durchgang
+	 * {@link #drawInEntityPass}. Keine Kollision, kein Schatten, nicht gespeichert, nur Durchgang 0.
+	 */
+	static final class Anchor extends net.minecraft.entity.Entity {
+		Anchor(World world) {
+			super(world);
+			setSize(0.1F, 0.1F);
+			noClip = true;
+			ignoreFrustumCheck = true;
+		}
+
+		@Override
+		protected void entityInit() {
+		}
+
+		@Override
+		protected void readEntityFromNBT(net.minecraft.nbt.NBTTagCompound tag) {
+		}
+
+		@Override
+		protected void writeEntityToNBT(net.minecraft.nbt.NBTTagCompound tag) {
+		}
+
+		@Override
+		public boolean writeToNBTOptional(net.minecraft.nbt.NBTTagCompound tag) {
+			return false;
+		}
+
+		@Override
+		public void onUpdate() {
+		}
+
+		@Override
+		public boolean canBeCollidedWith() {
+			return false;
+		}
+
+		@Override
+		public boolean canBePushed() {
+			return false;
+		}
+
+		@Override
+		public boolean isInRangeToRender3d(double x, double y, double z) {
+			return true;
+		}
+
+		@Override
+		public boolean shouldRenderInPass(int pass) {
+			return pass == 0;
+		}
+	}
+
+	static final class AnchorRender extends net.minecraft.client.renderer.entity.Render<Anchor> {
+		AnchorRender(net.minecraft.client.renderer.entity.RenderManager manager) {
+			super(manager);
+			shadowSize = 0F;
+		}
+
+		@Override
+		protected ResourceLocation getEntityTexture(Anchor entity) {
+			return null;
+		}
+
+		@Override
+		public boolean shouldRender(Anchor entity, net.minecraft.client.renderer.culling.ICamera camera, double x, double y,
+				double z) {
+			return true;
+		}
+
+		@Override
+		public void doRender(Anchor entity, double x, double y, double z, float yaw, float partialTicks) {
+			drawInEntityPass();
 		}
 	}
 

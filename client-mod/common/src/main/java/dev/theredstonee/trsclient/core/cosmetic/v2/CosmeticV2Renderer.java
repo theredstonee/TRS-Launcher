@@ -459,6 +459,76 @@ public final class CosmeticV2Renderer {
 		};
 	}
 
+	/** Dreiecke ohne Textur: Position und Farbe (ARGB, Alpha = Deckkraft für {@code SRC_ALPHA, ONE}). */
+	public interface TriangleSink {
+		void vertex(float x, float y, float z, int argb);
+	}
+
+	/** Ringe der Hof-Scheibe ({@link #haloTriangles}): Radien 0…1 und Ecken je Ring. */
+	static final float[] HALO_RINGS = { 0f, 0.1f, 0.22f, 0.34f, 0.46f, 0.58f, 0.7f, 0.82f, 1f };
+	static final int HALO_SEGMENTS = 20;
+
+	/**
+	 * Leucht-Höfe als Scheibe aus Dreiecken ohne Textur: der Verlauf {@code (1 − r)^2,5} steckt in der Deckkraft der
+	 * Eckfarben ({@link #HALO_RINGS}, dazwischen linear). Für Render-Typen, die additiv ({@code SRC_ALPHA, ONE}) und
+	 * OHNE Tiefe zeichnen (ab 1.21.5 {@code dragon_rays}) – {@code energy_swirl} schreibt Tiefe, und das danach
+	 * gezeichnete Wasser fehlte hinter jedem Hof. Nimmt die Vierecke von {@link #emit} mit {@link #PASS_HALO} (Ecken
+	 * OL, OR, UR, UL zur Kamera); Farbe wie dort (RGB mit der Helligkeit, ×Verlauf wie die Hof-Textur). Dreiecke gegen
+	 * den Uhrzeigersinn von der Kamera aus (für Rückseiten-Culling).
+	 */
+	public static VertexSink haloTriangles(final TriangleSink out) {
+		return new VertexSink() {
+			private final float[] q = new float[12];
+			private int n;
+			private final float[] alpha = new float[HALO_RINGS.length];
+
+			{
+				for (int i = 0; i < HALO_RINGS.length; i++) alpha[i] = (float) haloFalloff(HALO_RINGS[i]);
+			}
+
+			@Override
+			public void vertex(float x, float y, float z, float u, float v, float nx, float ny, float nz, int argb) {
+				q[n * 3] = x;
+				q[n * 3 + 1] = y;
+				q[n * 3 + 2] = z;
+				if (++n < 4) return;
+				n = 0;
+				// Mitte, rechte und obere Halbachse aus OL (0), OR (1), UR (2), UL (3)
+				float cx = (q[0] + q[6]) / 2, cy = (q[1] + q[7]) / 2, cz = (q[2] + q[8]) / 2;
+				float rx = (q[3] - q[0]) / 2, ry = (q[4] - q[1]) / 2, rz = (q[5] - q[2]) / 2;
+				float ux = (q[0] - q[9]) / 2, uy = (q[1] - q[10]) / 2, uz = (q[2] - q[11]) / 2;
+				int rgb = argb & 0xFFFFFF;
+				for (int ring = 1; ring < HALO_RINGS.length; ring++) {
+					float r0 = HALO_RINGS[ring - 1], r1 = HALO_RINGS[ring];
+					int c0 = color(rgb, alpha[ring - 1]), c1 = color(rgb, alpha[ring]);
+					if ((c0 >>> 24) == 0 && (c1 >>> 24) == 0) continue;
+					for (int s = 0; s < HALO_SEGMENTS; s++) {
+						double a0 = 2 * Math.PI * s / HALO_SEGMENTS, a1 = 2 * Math.PI * (s + 1) / HALO_SEGMENTS;
+						float co0 = (float) Math.cos(a0), si0 = (float) Math.sin(a0), co1 = (float) Math.cos(a1), si1 = (float) Math.sin(a1);
+						// innen (A) und außen (B), je bei a0 und a1
+						float ax0 = cx + (rx * co0 + ux * si0) * r0, ay0 = cy + (ry * co0 + uy * si0) * r0, az0 = cz + (rz * co0 + uz * si0) * r0;
+						float ax1 = cx + (rx * co1 + ux * si1) * r0, ay1 = cy + (ry * co1 + uy * si1) * r0, az1 = cz + (rz * co1 + uz * si1) * r0;
+						float bx0 = cx + (rx * co0 + ux * si0) * r1, by0 = cy + (ry * co0 + uy * si0) * r1, bz0 = cz + (rz * co0 + uz * si0) * r1;
+						float bx1 = cx + (rx * co1 + ux * si1) * r1, by1 = cy + (ry * co1 + uy * si1) * r1, bz1 = cz + (rz * co1 + uz * si1) * r1;
+						out.vertex(ax0, ay0, az0, c0);
+						out.vertex(bx0, by0, bz0, c1);
+						out.vertex(bx1, by1, bz1, c1);
+						if (r0 > 0) {
+							out.vertex(ax0, ay0, az0, c0);
+							out.vertex(bx1, by1, bz1, c1);
+							out.vertex(ax1, ay1, az1, c0);
+						}
+					}
+				}
+			}
+
+			private int color(int rgb, float a) {
+				int al = Math.round(Math.max(0f, Math.min(1f, a)) * 255);
+				return (al << 24) | rgb;
+			}
+		};
+	}
+
 	/** Höchste Entfernungs-Stufe für einen Textur-Faktor: bis hinunter auf 1 Unter-Pixel je Texel (Faktor 8 → 3). */
 	public static int maxLod(int scale) {
 		int l = 0;

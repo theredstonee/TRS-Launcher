@@ -162,12 +162,30 @@ class CosmeticV2TimingTest {
 		assertEquals(B, half[1], "halbe Abdeckung bleibt deckend, Farbe ohne Schwarz vom leeren Rand");
 		int[] sparse = { R, T, T, T };
 		assertEquals(0, V2Images.downsample(sparse, 2, 2, false)[0], "ein Viertel Abdeckung → durchsichtig");
-		// Leucht-Schicht (vormultipliziert): einfacher Mittelwert, Alpha 255
-		int[] glow = { 0xFFFF0000, 0xFF000000, 0xFF000000, 0xFF000000 };
+		// Leucht-Schicht (vormultipliziert): einfacher Mittelwert, deckend nur wo es leuchtet
+		int[] glow = { 0xFFFF0000, 0, 0, 0 };
 		assertEquals(0xFF400000, V2Images.downsample(glow, 2, 2, true)[0]);
+		assertEquals(0, V2Images.downsample(new int[] { 0, 0, 0, 0xFF000000 }, 2, 2, true)[0], "dunkel bleibt durchsichtig");
+		int[] lv = V2Images.levels(glow, 2, 2, 1, true)[1];
+		assertEquals(0xFF400000, lv[0]);
 		int[][] levels = V2Images.levels(new int[320 * 256], 320, 256, 3, true);
 		assertEquals(4, levels.length);
 		assertEquals(40 * 32, levels[3].length);
+	}
+
+	@Test
+	void glowIsTransparentWhereNothingGlows() {
+		// Schwarz (deckend oder durchsichtig) = kein Leuchten → Alpha 0: Render-Typen mit Alpha-Test, die Tiefe schreiben
+		// (energy_swirl ab 1.21.5), verwerfen diese Stellen. Sonst schreibt jede Fläche als volles Viereck Tiefe und das
+		// danach gezeichnete Wasser fehlt dahinter (Loch um die Flügel).
+		int[] px = { 0xFF000000, 0x00000000, 0x80FF0000, 0xFF00FF00, 0x40000000, 0x01FFFFFF };
+		V2Images.premultiplyGlow(px);
+		assertEquals(0, px[0], "deckend schwarz");
+		assertEquals(0, px[1], "durchsichtig");
+		assertEquals(0xFF800000, px[2], "halb rot → vormultipliziert, deckend");
+		assertEquals(0xFF00FF00, px[3]);
+		assertEquals(0, px[4], "halb schwarz");
+		assertEquals(0xFF010101, px[5], "fast nichts, aber nicht schwarz: bleibt (addiert 1)");
 	}
 
 	private static int boneIndex(CosmeticV2 m, String id) {

@@ -63,7 +63,7 @@ class PetSimTest {
 		PetSim.forceSlide = Double.NaN;
 	}
 
-	private static void run(PetSim sim, FakeWorld w, int ticks, double ox, double oy, double oz, int count) {
+	private static void run(PetSim sim, PetWorld w, int ticks, double ox, double oy, double oz, int count) {
 		for (int i = 0; i < ticks; i++) {
 			sim.begin(w, i * 50L);
 			sim.owner(OWNER, count, ox, oy, oz, 0f, false, true, w);
@@ -324,6 +324,168 @@ class PetSimTest {
 		sim.owner(OWNER, 2, 0.5, 64, 30.5, 0f, true, true, w);
 		sim.end();
 		assertEquals(0, sim.visible(0.5, 65.6, 0, 0, 0, 1, 64, 8, 1f, out), "OTHER diesen Tick nicht gemeldet, OWNER unsichtbar");
+	}
+
+	/** Meer: Grund (Oberkante) bei y = 41, Wasser y 41–62 (22 tief, Oberfläche 62,9); ab x ≥ {@code shore} Land (y 64). */
+	static final class Ocean implements PetWorld {
+		final int shore;
+
+		Ocean(int shore) {
+			this.shore = shore;
+		}
+
+		@Override
+		public int block(int x, int y, int z) {
+			if (x >= shore) return y <= 63 ? STONE : 0;
+			if (y <= 40) return STONE;
+			return y <= 62 ? WATER : 0;
+		}
+
+		@Override
+		public int light(int x, int y, int z) {
+			return PetWorld.packLight(15, 0);
+		}
+	}
+
+	/**
+	 * Besitzer fährt {@code ticks} lang mit {@code speed} Blöcken je Tick nach Süden (+z) auf Höhe {@code y} (Boot:
+	 * Unterseite des Boots); liefert den größten Abstand eines Begleiters zum Besitzer in der zweiten Hälfte.
+	 */
+	private static double ride(PetSim sim, PetWorld w, int count, double y, double speed, int ticks, boolean[] swam,
+			boolean[] slid) {
+		double worst = 0;
+		for (int i = 0; i < ticks; i++) {
+			double oz = 0.5 + i * speed;
+			sim.begin(w, 100_000 + i * 50L);
+			sim.owner(OWNER, count, 0.5, y, oz, 0f, false, true, w);
+			sim.end();
+			for (Pet p : sim.pets(OWNER)) {
+				if (p.state() == Pet.SWIM) swam[0] = true;
+				if (p.state() == Pet.SLIDE) slid[0] = true;
+				if (i > ticks / 2) worst = Math.max(worst, Math.hypot(p.x - 0.5, p.z - oz));
+			}
+		}
+		return worst;
+	}
+
+	private static int teleports(PetSim sim) {
+		int n = 0;
+		for (Pet p : sim.pets(OWNER)) n += p.teleports;
+		return n;
+	}
+
+	@Test
+	void swimsAlongsideABoatAt8BlocksPerSecondWithoutTeleporting() {
+		PetSim.forceSlide = 0;
+		PetSim sim = new PetSim();
+		Ocean sea = new Ocean(Integer.MAX_VALUE);
+		// Boot liegt auf der Oberfläche (Unterseite ≈ 62,6): Begleiter erscheinen schwimmend, nicht auf dem Meeresgrund
+		run(sim, sea, 1, 0.5, 62.6, 0.5, 3);
+		for (Pet p : sim.pets(OWNER)) assertEquals(62.9 - PetSim.SWIM_DEPTH, p.y, 0.05, "an der Oberfläche abgesetzt");
+		boolean[] swam = { false }, slid = { false };
+		// 8 Blöcke je Sekunde = 0,4 je Tick, 30 s lang (240 Blöcke weit)
+		double worst = ride(sim, sea, 3, 62.6, 0.4, 600, swam, slid);
+		assertTrue(swam[0], "schwimmen");
+		assertEquals(0, teleports(sim), "kein Teleport – sie schwimmen mit");
+		assertTrue(worst < 4.5, "bleiben neben/hinter dem Boot: größter Abstand " + worst);
+		for (Pet p : sim.pets(OWNER)) {
+			assertEquals(Pet.SWIM, p.state());
+			assertEquals(62.9 - PetSim.SWIM_DEPTH, p.y, 0.15, "an der Oberfläche");
+			assertTrue(p.z < 0.5 + 599 * 0.4, "hinter (nicht vor) dem Boot");
+			// Blick in Fahrtrichtung (Süden, Gieren 0)
+			assertEquals(0, Pet.wrap(p.yaw), 25);
+		}
+	}
+
+	@Test
+	void slidesOnTheBellyToKeepUpWithAHorseAndWalksAgainWhenSlow() {
+		PetSim.forceSlide = 0;
+		PetSim sim = new PetSim();
+		FakeWorld w = new FakeWorld();
+		run(sim, w, 1, 0.5, 64, 0.5, 2);
+		boolean[] swam = { false }, slid = { false };
+		// Pferd im Galopp: 0,6 Blöcke je Tick (12 je Sekunde)
+		double worst = ride(sim, w, 2, 64, 0.6, 400, swam, slid);
+		assertTrue(slid[0], "schneller Gang = Bauchrutschen");
+		assertEquals(0, teleports(sim), "kein Teleport");
+		assertTrue(worst < 6.0, "halten mit: größter Abstand " + worst);
+		for (Pet p : sim.pets(OWNER)) assertEquals(Pet.SLIDE, p.state(), "rutschen während des Galopps");
+		// Besitzer hält an: rutschen aus, wieder watscheln/stehen, ohne Teleport
+		double z = 0.5 + 399 * 0.6;
+		for (int i = 0; i < 160; i++) {
+			sim.begin(w, 200_000 + i * 50L);
+			sim.owner(OWNER, 2, 0.5, 64, z, 0f, false, true, w);
+			sim.end();
+		}
+		for (Pet p : sim.pets(OWNER)) {
+			assertTrue(p.state() == Pet.IDLE || p.state() == Pet.WALK, "nach dem Anhalten: " + p.stateName());
+			assertTrue(Math.hypot(p.x - 0.5, p.z - z) < 4.0);
+		}
+		assertEquals(0, teleports(sim));
+	}
+
+	@Test
+	void stuckDetectorIgnoresFastTargetsButTeleportsOnlyAsLastResort() {
+		PetSim.forceSlide = 0;
+		// Eis-Boot (2 Blöcke je Tick) ist schneller als jeder Pinguin: erst ab 20 Blöcken Abstand nachsetzen – selten
+		PetSim sim = new PetSim();
+		FakeWorld w = new FakeWorld();
+		run(sim, w, 1, 0.5, 64, 0.5, 1);
+		boolean[] swam = { false }, slid = { false };
+		ride(sim, w, 1, 64, 2.0, 200, swam, slid);
+		int n = teleports(sim);
+		assertTrue(n >= 1 && n <= 40, "Teleport nur gelegentlich als letzter Ausweg: " + n);
+
+		// Besitzer fliegt (Elytra) 40 Blöcke über dem Boden langsam weiter: kein Teleport nach oben, sie laufen unten nach
+		PetSim sim2 = new PetSim();
+		run(sim2, w, 1, 0.5, 64, 0.5, 1);
+		for (int i = 0; i < 200; i++) {
+			sim2.begin(w, i * 50L);
+			sim2.owner(OWNER, 1, 0.5, 104, 0.5 + i * 0.05, 0f, false, true, w);
+			sim2.end();
+		}
+		Pet q = sim2.pets(OWNER).get(0);
+		assertEquals(0, q.teleports, "fliegender Besitzer: bleiben am Boden");
+		assertEquals(64.0, q.y, 1e-6);
+		assertTrue(Math.hypot(q.x - 0.5, q.z - 10.45) < 4.0, "laufen unter ihm nach");
+
+		// Wirklich fest: Besitzer hinter einer hohen Mauer – nach ~3 s zu ihm gesetzt
+		PetSim sim3 = new PetSim();
+		FakeWorld walled = new FakeWorld();
+		walled.box(-40, 64, 4, 40, 70, 4, STONE);
+		run(sim3, walled, 1, 0.5, 64, 0.5, 1);
+		for (int i = 0; i < 120; i++) {
+			sim3.begin(walled, i * 50L);
+			sim3.owner(OWNER, 1, 0.5, 64, 12.5, 0f, false, true, walled);
+			sim3.end();
+		}
+		Pet s = sim3.pets(OWNER).get(0);
+		assertEquals(1, s.teleports, "festgesteckt → einmal zum Besitzer");
+		assertTrue(s.z > 5, "jetzt hinter der Mauer: " + s.z);
+	}
+
+	@Test
+	void entersDeepWaterFromTheShoreAndSwimsOut() {
+		PetSim.forceSlide = 0;
+		PetSim sim = new PetSim();
+		// Land ab x ≥ 0 (Oberkante 64), davor tiefes Meer. Besitzer steht an Land, fährt dann im Boot hinaus (−x).
+		Ocean sea = new Ocean(0);
+		sim.begin(sea, 0);
+		sim.owner(OWNER, 1, 3.5, 64, 0.5, 90f, false, true, sea);
+		sim.end();
+		Pet p = sim.pets(OWNER).get(0);
+		boolean swam = false;
+		for (int i = 0; i < 300; i++) {
+			double ox = 3.5 - Math.min(60, i * 0.25);
+			double oy = ox < 0 ? 62.6 : 64;
+			sim.begin(sea, 50 + i * 50L);
+			sim.owner(OWNER, 1, ox, oy, 0.5, 90f, false, true, sea);
+			sim.end();
+			if (p.state() == Pet.SWIM) swam = true;
+		}
+		assertTrue(swam, "ins Wasser gegangen");
+		assertEquals(0, p.teleports, "nicht ans Ufer geklemmt und dann teleportiert");
+		assertTrue(p.x < -50, "mit hinausgeschwommen: x=" + p.x);
 	}
 
 	@Test

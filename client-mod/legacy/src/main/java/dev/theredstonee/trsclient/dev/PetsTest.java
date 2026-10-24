@@ -34,7 +34,7 @@ public final class PetsTest {
 	private CosmeticCatalog catalog;
 	private WardrobeUi ui;
 	private double bx, by, bz;
-	private String hat, pet;
+	private String hat, pet, wings;
 
 	/** Ein Tick; true = noch nicht fertig. */
 	public boolean step(Minecraft mc, TrsModules modules, CapeTest.Actions actions) {
@@ -86,8 +86,20 @@ public final class PetsTest {
 				for (CosmeticCatalog.Item it : s.items) {
 					if ("hat".equals(it.slot) && hat == null) hat = it.id;
 					if ("pet".equals(it.slot)) pet = it.id;
+					if ("wings".equals(it.slot) && it.id.contains("snow")) wings = it.id;
 				}
 				TrsClient.LOGGER.info("[Autotest] Winter: Katalog {} – Mütze {}, Begleiter {}", s.loaded ? "geladen" : "FEHLT", hat, pet);
+				if (Boolean.getBoolean("trsclient.autotest.petsFix")) {
+					// Nur die Prüfung der Fehlerbehebungen: Flossen (idle/air), Pinguine und Flügel im/vor Wasser
+					catalog.wear(hat);
+					catalog.wearPet(pet);
+					if (wings != null) catalog.wearWings(wings);
+					DevPets.forcedCount = 1;
+					PetSim.forceSlide = 0;
+					tries = 0;
+					phase = 40;
+					return true;
+				}
 				place(player, 0, 0, 0f, 0);
 				catalog.wear(hat);
 				catalog.wearPet(pet);
@@ -227,6 +239,61 @@ public final class PetsTest {
 				mc.displayGuiScreen(null);
 				DevPets.forcedCount = 0;
 				PetSim.forceSlide = Double.NaN;
+				return false;
+			case 40: {
+				place(player, 0, 0, 0f, 0);
+				boolean pets = !f.pets().pets(player.getUniqueID()).isEmpty();
+				V2Hat<Object> w = f.wingsV2(player.getUniqueID(), true, false, 0);
+				boolean wingsOk = wings == null || w != null && w.model.id.equals(wings);
+				if ((!pets || !wingsOk) && tries++ < 600) {
+					if (tries % 200 == 0) f.online().refreshSelf();
+					return true;
+				}
+				TrsClient.LOGGER.info("[Autotest] Fix: Pinguin {}, Flügel {} nach {} Ticks", pets ? "da" : "FEHLT", wingsOk ? "geladen" : "FEHLEN", tries);
+				TrsClient.get().setForceZoom(true);
+				TrsClient.get().pvp().forceFreelook(Float.NaN);
+				mc.gameSettings.thirdPersonView = 0;
+				ticks = 0;
+				phase = 41;
+				return true;
+			}
+			case 41:
+			case 42: {
+				// Flossen wie in der Studio-Werkbank: idle bei 4100 ms, air bei 0 ms; Pinguin 3 Blöcke vor der Kamera
+				boolean air = phase == 42;
+				PetSim.frozen = true;
+				PetSim.forceState = air ? Pet.AIR : Pet.IDLE;
+				PetSim.forceTimeMs = air ? 0 : 4100;
+				place(player, 0, 0, 0f, 0);
+				player.rotationPitch = 24F;
+				player.prevRotationPitch = 24F;
+				f.pets().debugPose(player.getUniqueID(), bx, by, bz + 3.0, 180f);
+				if (++ticks < 8) return true;
+				actions.shot(air ? "fix-pet-air-front" : "fix-pet-idle-front");
+				ticks = 0;
+				phase++;
+				return true;
+			}
+			case 43:
+				// Im Becken stehen: Pinguine schwimmen, Flügel vor dem Wasser
+				PetSim.frozen = false;
+				PetSim.forceState = -1;
+				PetSim.forceTimeMs = -1;
+				TrsClient.get().setForceZoom(false);
+				DevPets.forcedCount = 3;
+				place(player, 10.5, 0, 0f, -0.4);
+				ticks++;
+				if (ticks < 80) camera(mc, 15F, 38F);
+				if (ticks == 80) actions.shot("fix-water-stand-back");
+				if (ticks == 81) camera(mc, 140F, 30F);
+				if (ticks == 92) {
+					actions.shot("fix-water-stand-front");
+					log(f, player, "im Becken");
+				}
+				if (ticks < 94) return true;
+				DevPets.forcedCount = 0;
+				PetSim.forceSlide = Double.NaN;
+				TrsClient.get().pvp().forceFreelook(Float.NaN);
 				return false;
 			default:
 				return false;

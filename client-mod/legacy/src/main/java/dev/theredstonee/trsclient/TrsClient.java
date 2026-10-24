@@ -147,6 +147,8 @@ public final class TrsClient {
 		version = event.getModMetadata().version;
 		// Benchmark „Vanilla“ (-PtrsBenchVanilla): TRS Client bleibt ganz aus, nur der Messablauf läuft (siehe init).
 		if (BENCH_VANILLA) return;
+		// Begleiter am Boden: unsichtbarer Anker im Entity-Durchgang (zeichnet Pinguine vor dem Wasser)
+		dev.theredstonee.trsclient.online.LegacyPets.registerRenderer();
 		File file = new File(event.getModConfigurationDirectory(), "trsclient.json");
 		// Farben des Launchers (config/trsclient/launcher-theme.json) – fehlt sie, gilt das Standard-Thema.
 		dev.theredstonee.trsclient.core.ui.Theme.loadFrom(file.getParentFile().toPath());

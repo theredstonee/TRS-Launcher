@@ -48,6 +48,10 @@ public final class Pet {
 	double lookYaw = Double.NaN;
 	int stuckTicks;
 	int jumpCooldown;
+	/** Ticks bis zum nächsten Versuch, zum Besitzer zu springen (kein Landeplatz beim Besitzer). */
+	int teleportCooldown;
+	/** Wie oft der Begleiter zum Besitzer gesetzt wurde (Selbsttests). */
+	public int teleports;
 	/** Nur {@link PetSim#visible}: Reihenfolge beim Zeichnen. */
 	double sortKey;
 
@@ -85,6 +89,11 @@ public final class Pet {
 	/** Zustandsname ({@code idle}, {@code walk}, {@code slide}, {@code swim}, {@code air}). */
 	public String stateName() {
 		return STATE_NAMES[state];
+	}
+
+	/** Name eines Zustands ({@link #IDLE} …). */
+	public static String stateNameOf(int state) {
+		return STATE_NAMES[Math.max(0, Math.min(STATE_NAMES.length - 1, state))];
 	}
 
 	/** Treiber-Index der Animation eines Zustands ({@link CosmeticV2#DRIVER_IDLE} …). */

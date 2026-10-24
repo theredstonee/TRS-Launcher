@@ -244,8 +244,17 @@ class CosmeticV2Test {
 		assertEquals(1, l.base.length);
 		assertEquals(384 * 256, l.base[0].length);
 		assertEquals(12, l.glow.length);
-		// Leuchten vormultipliziert: Alpha immer 255
-		for (int[] f : l.glow) for (int p : f) assertEquals(0xFF, p >>> 24);
+		// Leuchten vormultipliziert: deckend, wo es leuchtet, sonst ganz durchsichtig (kein volles Viereck in der Tiefe)
+		int lit = 0, dark = 0;
+		for (int[] f : l.glow) {
+			for (int p : f) {
+				int a = p >>> 24;
+				assertTrue(a == 0xFF && (p & 0xFFFFFF) != 0 || p == 0, Integer.toHexString(p));
+				if (a == 0xFF) lit++;
+				else dark++;
+			}
+		}
+		assertTrue(lit > 0 && dark > 0, "beides kommt vor: " + lit + "/" + dark);
 		// Falsche Maße (Leucht-Streifen als Textur) → Fehler
 		assertThrows(IOException.class, () -> CosmeticV2Cache.decode(res("lamp_helmet.json"), bytes("lamp_helmet-glow.png"), null));
 	}

@@ -13,8 +13,11 @@ import java.util.UUID;
  * Begleiter am Boden (Winter 2026: Pinguine) – reine Simulation ohne Minecraft-Klassen, 20 Ticks je Sekunde. Je
  * Besitzer bis zu {@link #MAX_PER_OWNER} Begleiter: folgen in einer Formation (etwa 1,5–3 Blöcke hinter dem Besitzer),
  * watscheln und schauen zufällig umher, rutschen manchmal auf dem Bauch (öfter auf Schnee/Eis und bergab, mit
- * Tempo-Schub), schwimmen an der Wasseroberfläche, springen 1-Block-Stufen hoch und werden ab
- * {@link #TELEPORT_DISTANCE} Blöcken zum Besitzer gesetzt. Kollision über {@link PetWorld}.
+ * Tempo-Schub), schwimmen an der Wasseroberfläche, springen 1-Block-Stufen hoch. Ist der Besitzer schnell (Boot,
+ * Pferd, Elytra, Eis-Boot), halten sie mit: im Wasser schwimmen sie neben/hinter ihm her, an Land rutschen sie auf dem
+ * Bauch hinterher (das ist ihr „schneller Gang“), beides mit Obergrenze. Zum Besitzer gesetzt werden sie nur als letzter
+ * Ausweg: ab {@link #TELEPORT_DISTANCE} Blöcken Abstand oder wenn sie wirklich festhängen. Kollision über
+ * {@link PetWorld}.
  *
  * <p>Ablauf je Client-Tick: {@link #begin}, {@link #owner} für jeden Spieler in der Welt mit Begleiter, {@link #end}.
  * Zeichnen: {@link #visible} (Entfernung, hinter der Kamera, Obergrenze gesamt) und {@link #alpha} zum Überblenden
@@ -28,8 +31,17 @@ public final class PetSim {
 	/** Folgen: Abstand zum Besitzer, ab dem nachgelaufen wird. */
 	static final double FOLLOW_FAR = 3.0;
 	static final double WALK_SPEED = 0.11, MAX_SPEED = 0.42, SWIM_SPEED = 0.16;
-	/** Höchsttempo beim Bauchrutschen (Blöcke je Tick). */
+	/** Höchsttempo beim zufälligen Bauchrutschen (Blöcke je Tick). */
 	static final double SLIDE_MAX = 0.55;
+	/**
+	 * Hinterherkommen bei schnellem Besitzer: ab {@link #CHASE_SLIDE} Blöcken je Tick rutschen sie an Land auf dem Bauch
+	 * (bis {@link #CHASE_MAX}), im Wasser schwimmen sie bis {@link #SWIM_MAX} (Boot ≈ 0,4, Pferd bis ≈ 0,7).
+	 */
+	static final double CHASE_SLIDE = 0.3, CHASE_MAX = 1.1, SWIM_MAX = 0.8;
+	/** Längster Einzelschritt beim Bewegen (schnelle Begleiter prüfen ihren Weg in Teilschritten, nicht durch Wände). */
+	static final double MAX_STEP = 0.45;
+	/** Weiter als so viele Blöcke in einem Tick: der Besitzer wurde versetzt (Teleport), kein echtes Tempo. */
+	static final double OWNER_JUMP = 5.0;
 	/** Höhenunterschiede: ohne Sprung (Stufe, Treppe) bzw. mit Sprung (ein Block). */
 	static final double STEP = 0.6, JUMP_HEIGHT = 1.25;
 	static final double JUMP_VELOCITY = 0.44, GRAVITY = 0.08, DRAG = 0.98;
@@ -49,7 +61,11 @@ public final class PetSim {
 	static final class Owner {
 		final UUID id;
 		final List<Pet> pets = new ArrayList<Pet>(MAX_PER_OWNER);
-		double x, y, z, lastX, lastZ, speed;
+		double x, y, z, lastX, lastZ;
+		/** Waagerechtes Tempo (Blöcke je Tick, geglättet) – beim Reiten das des Fahrzeugs. */
+		double speed;
+		/** Steht/schwimmt der Besitzer (Boden oder Wasser bis 3 Blöcke unter ihm) – sonst fliegt er. */
+		boolean grounded = true;
 		/** Blickrichtung der Formation (Gieren); ändert sich nur, wenn der Besitzer läuft. */
 		double heading;
 		boolean hidden;
@@ -68,6 +84,28 @@ public final class PetSim {
 	private long tickNanos;
 	/** Nur Selbsttests: Zufall beim Rutschen erzwingen (1 = immer, 0 = nie, NaN = normal). */
 	public static volatile double forceSlide = Double.NaN;
+	/**
+	 * Nur Selbsttests (Vergleich mit der Studio-Werkbank): {@code frozen} = Begleiter nicht bewegen, {@code forceState}
+	 * = Zustand vorgeben ({@link Pet#IDLE} …, −1 = normal), {@code forceTimeMs} = feste Animationszeit ohne eigenen
+	 * Versatz (−1 = Wanduhr).
+	 */
+	public static volatile boolean frozen;
+	public static volatile int forceState = -1;
+	public static volatile long forceTimeMs = -1;
+
+	/** Nur Selbsttests: alle Begleiter eines Besitzers nebeneinander (je 0,9 Blöcke nach links) hinstellen. */
+	public void debugPose(UUID owner, double x, double y, double z, double yawDeg) {
+		Owner o = owners.get(owner);
+		if (o == null) return;
+		double h = Math.toRadians(yawDeg);
+		for (Pet p : o.pets) {
+			double side = p.index * 0.9;
+			p.x = p.px = x + Math.cos(h) * side;
+			p.z = p.pz = z + Math.sin(h) * side;
+			p.y = p.py = y;
+			p.yaw = p.pyaw = yawDeg;
+		}
+	}
 
 	/** Beginn eines Ticks; ein anderer {@code worldKey} (neue Welt/Dimension) leert alles. */
 	public void begin(Object worldKey, long nowMs) {
@@ -81,7 +119,8 @@ public final class PetSim {
 	}
 
 	/**
-	 * Ein Besitzer in diesem Tick: {@code count} Begleiter (0 = keine mehr), Position (Füße) und Gieren des Körpers.
+	 * Ein Besitzer in diesem Tick: {@code count} Begleiter (0 = keine mehr), Position (Füße; reitet er, die Unterseite
+	 * des untersten Fahrzeugs – Boot, Pferd, Lore) und Gieren des Körpers.
 	 * {@code hidden} = nicht zeichnen (unsichtbar, Zuschauer), weiter simulieren. {@code self} = eigener Spieler (hat
 	 * beim Zeichnen Vorrang).
 	 */
@@ -107,13 +146,15 @@ public final class PetSim {
 		o.x = x;
 		o.y = y;
 		o.z = z;
-		o.speed = Math.hypot(o.x - o.lastX, o.z - o.lastZ);
-		if (o.speed > 0.6) o.speed = 0; // Teleport des Besitzers
-		if (o.speed > 0.03) o.heading = Math.toDegrees(Math.atan2(-(o.x - o.lastX), o.z - o.lastZ));
+		double step = Math.hypot(o.x - o.lastX, o.z - o.lastZ);
+		if (step > OWNER_JUMP) step = 0; // Teleport des Besitzers, kein Tempo
+		o.speed = o.speed * 0.5 + step * 0.5;
+		if (step > 0.03) o.heading = Math.toDegrees(Math.atan2(-(o.x - o.lastX), o.z - o.lastZ));
 		else if (o.pets.isEmpty()) o.heading = bodyYaw;
 		o.hidden = hidden;
 		o.self = self;
 		o.seenTick = tick;
+		o.grounded = finite(landing(world, x, z, y + 0.5, 3));
 		while (o.pets.size() > count) o.pets.remove(o.pets.size() - 1);
 		while (o.pets.size() < count) {
 			int index = o.pets.size();
@@ -215,8 +256,10 @@ public final class PetSim {
 		double h = Math.toRadians(o.heading);
 		double fx = -Math.sin(h), fz = Math.cos(h);
 		double lx = Math.cos(h), lz = Math.sin(h);
-		out[0] = o.x + lx * s[0] - fx * s[1];
-		out[1] = o.z + lz * s[0] - fz * s[1];
+		// Schnell (Boot, Pferd): etwas weiter zurück, damit sie nicht im Fahrzeug stecken
+		double back = s[1] * (1 + Math.min(0.5, o.speed * 1.2));
+		out[0] = o.x + lx * s[0] - fx * back;
+		out[1] = o.z + lz * s[0] - fz * back;
 	}
 
 	private final double[] tmp = new double[2];
@@ -225,11 +268,12 @@ public final class PetSim {
 	void place(Pet p, Owner o, PetWorld w) {
 		slot(o, p.index, tmp);
 		double sx = tmp[0], sz = tmp[1];
-		double g = surface(w, sx, sz, o.y + 1.0, 24);
+		// Boden oder – auf dem Meer – die Wasseroberfläche (nie auf den Meeresgrund)
+		double g = landing(w, sx, sz, o.y + 1.0, PLACE_DEPTH);
 		if (!finite(g) || !headroom(w, sx, sz, g)) {
 			sx = o.x;
 			sz = o.z;
-			g = surface(w, sx, sz, o.y + 0.5, 24);
+			g = landing(w, sx, sz, o.y + 0.5, PLACE_DEPTH);
 		}
 		p.x = sx;
 		p.z = sz;
@@ -255,13 +299,26 @@ public final class PetSim {
 		p.py = p.y;
 		p.pz = p.z;
 		p.pyaw = p.yaw;
+		if (frozen) {
+			// Selbsttest: stehen lassen, wo {@link #debugPose} sie hingestellt hat, Zustand vorgegeben
+			int fs = forceState;
+			if (fs >= 0 && fs != p.state) {
+				p.state = p.prevState = fs;
+				p.stateSince = now - Pet.FADE_MS;
+			}
+			return;
+		}
 		if (p.jumpCooldown > 0) p.jumpCooldown--;
 		if (p.slideCooldown > 0) p.slideCooldown--;
+		if (p.teleportCooldown > 0) p.teleportCooldown--;
 		double dxo = o.x - p.x, dzo = o.z - p.z, dyo = o.y - p.y;
 		double distOwner = Math.hypot(dxo, dzo);
-		if (distOwner * distOwner + dyo * dyo > TELEPORT_DISTANCE * TELEPORT_DISTANCE) {
-			place(p, o, w);
-			return;
+		// Letzter Ausweg: zu weit weg. Höhe zählt nur, wenn der Besitzer steht/schwimmt (fliegt er hoch, bleiben sie unten
+		// und laufen nach); ohne Landeplatz beim Besitzer (hoch über der Leere) bleiben sie, wo sie sind.
+		boolean far = distOwner > TELEPORT_DISTANCE || o.grounded && Math.abs(dyo) > TELEPORT_DISTANCE;
+		if (far && p.teleportCooldown == 0) {
+			if (teleport(p, o, w)) return;
+			p.teleportCooldown = 20;
 		}
 		// Umgebung
 		int bx = floor(p.x), bz = floor(p.z);
@@ -287,9 +344,10 @@ public final class PetSim {
 			gx = tx;
 			gz = tz;
 			speed = WALK_SPEED + 0.08 * Math.max(0, distOwner - FOLLOW_FAR);
-			// Mit dem Besitzer mithalten (Sprinten), sonst fällt die Formation auseinander.
-			if (distOwner > 2.0) speed = Math.max(speed, o.speed * 1.08);
-			speed = Math.min(MAX_SPEED, speed);
+			// Mit dem Besitzer mithalten (sein Tempo + Aufholen zum Platz), sonst fällt die Formation auseinander.
+			if (distOwner > 2.0) speed = Math.max(speed, o.speed * 1.08 + 0.06 * dSlot);
+			// Obergrenze je Gangart: schwimmen, auf dem Bauch rutschen (schneller Gang, siehe unten), sonst watscheln
+			speed = Math.min(deep ? SWIM_MAX : CHASE_MAX, speed);
 		} else {
 			if (!Double.isNaN(p.wanderX)) {
 				gx = p.wanderX;
@@ -336,9 +394,22 @@ public final class PetSim {
 			}
 		}
 
+		// Schneller Gang an Land: auf dem Bauch hinterherrutschen (ohne Zufall und ohne Pause zwischen zwei Rutschern)
+		boolean chase = follow && !deep && !water && p.onGround && speed > CHASE_SLIDE;
+		if (chase) {
+			p.slideTicks = Math.max(p.slideTicks, 8);
+			p.slideX = dirX * speed;
+			p.slideZ = dirZ * speed;
+		} else if (!deep) {
+			speed = Math.min(MAX_SPEED, speed);
+		}
+
 		// Bauchrutschen
 		boolean downhill = speed > 0 && downhill(w, p, dirX, dirZ);
-		if (p.slideTicks > 0) {
+		if (chase) {
+			// Tempo kommt vom Hinterherkommen, nicht von der Reibung
+			p.slideTicks--;
+		} else if (p.slideTicks > 0) {
 			p.slideTicks--;
 			double friction = slippery ? 0.985 : 0.955;
 			if (downhill) friction += 0.03;
@@ -372,14 +443,15 @@ public final class PetSim {
 			mx = p.slideX;
 			mz = p.slideZ;
 		} else {
-			double sp = deep ? Math.min(speed, SWIM_SPEED) : speed;
-			mx = dirX * sp + sepX;
-			mz = dirZ * sp + sepZ;
+			mx = dirX * speed + sepX;
+			mz = dirZ * speed + sepZ;
 		}
 
-		// Waagerecht bewegen (mit Stufen, Sprüngen, Wänden)
+		// Waagerecht bewegen (mit Stufen, Sprüngen, Wänden) – schnell in Teilschritten
 		double beforeX = p.x, beforeZ = p.z;
-		boolean blocked = move(p, w, mx, mz, deep);
+		int parts = Math.max(1, (int) Math.ceil(Math.hypot(mx, mz) / MAX_STEP));
+		boolean blocked = false;
+		for (int i = 0; i < parts && !blocked; i++) blocked = move(p, w, mx / parts, mz / parts, deep);
 		if (blocked && p.slideTicks > 0) endSlide(p);
 
 		// Senkrecht
@@ -395,13 +467,11 @@ public final class PetSim {
 			fall(p, w);
 		}
 
-		// Festgesteckt hinter Hindernissen → zum Besitzer
+		// Festgesteckt (Wand, Klippe: will laufen, kommt aber nicht vom Fleck) → zum Besitzer. Nur echtes Feststecken
+		// zählt: ein schnelles Ziel allein (Boot, Pferd) nicht – solange er vorankommt, läuft/schwimmt er nach.
 		double moved = Math.hypot(p.x - beforeX, p.z - beforeZ);
-		if (follow && distOwner > 6 && moved < 0.02) {
-			if (++p.stuckTicks > 60) {
-				place(p, o, w);
-				return;
-			}
+		if (follow && distOwner > 6 && speed > 0.05 && moved < 0.02) {
+			if (++p.stuckTicks > 60 && teleport(p, o, w)) return;
 		} else {
 			p.stuckTicks = 0;
 		}
@@ -468,14 +538,28 @@ public final class PetSim {
 			return false;
 		}
 		if (!finite(s)) {
-			// Kein Boden in der Nähe (tiefe Klippe/Leere): nur hinterher, wenn der Besitzer weit unten ist.
-			return false;
+			// Kein Boden in der Nähe: tiefes Wasser (Meer) – hinein/weiter schwimmen; tiefe Klippe/Leere – stehen bleiben.
+			if (!waterAround(w, nx, nz, p.y)) return false;
+			p.x = nx;
+			p.z = nz;
+			return true;
 		}
 		p.x = nx;
 		p.z = nz;
 		// Stufe hoch sofort, runter fallen (fall) – kleine Absätze am Boden direkt anschmiegen
 		if (s > p.y) p.y = s;
 		else if (p.onGround && !swimming && p.y - s <= STEP) p.y = s;
+		return true;
+	}
+
+	/**
+	 * Zum Besitzer setzen (Teleport, letzter Ausweg); false = kein Landeplatz beim Besitzer (er fliegt hoch über der
+	 * Leere) – dann bleibt der Begleiter, wo er ist.
+	 */
+	private boolean teleport(Pet p, Owner o, PetWorld w) {
+		if (!finite(landing(w, o.x, o.z, o.y + 1.0, PLACE_DEPTH))) return false;
+		place(p, o, w);
+		p.teleports++;
 		return true;
 	}
 
@@ -581,6 +665,48 @@ public final class PetSim {
 			return false;
 		}
 		return true;
+	}
+
+	/** Wie tief {@link #place} unter dem Besitzer nach Boden/Wasser sucht. */
+	static final int PLACE_DEPTH = 48;
+
+	/**
+	 * Wo ein Begleiter in der Säule ({@code x}, {@code z}) ab {@code fromY} abwärts landet: Oberkante des ersten Bodens
+	 * oder – kommt vorher tiefes Wasser – Schwimmhöhe an dessen Oberfläche. Sonst wie {@link #surface}.
+	 */
+	static double landing(PetWorld w, double x, double z, double fromY, int depth) {
+		int bx = floor(x), bz = floor(z);
+		int start = floor(fromY);
+		for (int by = start; by >= start - depth; by--) {
+			int c = w.block(bx, by, bz);
+			if ((c & PetWorld.UNLOADED) != 0) return UNKNOWN;
+			if ((c & PetWorld.DANGER) != 0) return WALL;
+			if ((c & PetWorld.SOLID) != 0) {
+				double top = by + PetWorld.top(c);
+				return top > fromY + 1e-4 ? WALL : top;
+			}
+			if ((c & PetWorld.WATER) != 0) {
+				double top = waterSurface(w, bx, by, bz);
+				// Flaches Wasser: am Grund stehen (waten)
+				int below = w.block(bx, by - 1, bz);
+				if ((below & PetWorld.SOLID) != 0 && top - (by - 1 + PetWorld.top(below)) < SWIM_MIN_DEPTH) {
+					return by - 1 + PetWorld.top(below);
+				}
+				return top - SWIM_DEPTH;
+			}
+		}
+		return NONE;
+	}
+
+	/** Wasser in der Säule nahe der Höhe {@code y} (bis 2 darunter, knapp darüber) – dort kann man hinein schwimmen. */
+	static boolean waterAround(PetWorld w, double x, double z, double y) {
+		int bx = floor(x), bz = floor(z);
+		for (int by = floor(y + SWIM_DEPTH + 0.05); by >= floor(y) - 2; by--) {
+			int c = w.block(bx, by, bz);
+			if ((c & PetWorld.WATER) != 0) return true;
+			if ((c & (PetWorld.SOLID | PetWorld.DANGER | PetWorld.UNLOADED)) != 0) return false;
+		}
+		return false;
 	}
 
 	/** Wasseroberfläche über ({@code bx}, {@code by}, {@code bz}) (Quelle ≈ 0,9 über der Blockunterseite). */

@@ -42,8 +42,8 @@ public final class V2Images {
 	 * Entity-Texturen ohne Mipmaps; eine HD-Textur (Faktor 8) wird aus normaler Entfernung stark verkleinert und dann je
 	 * Bild an anderen Unter-Pixeln abgetastet – sie flimmert. Die Stufen ersetzen die fehlenden Mipmaps.
 	 *
-	 * <p>{@code additive} (Leucht-Schicht, vormultipliziert, Alpha 255): Mittelwert der Farbe. Sonst (Grundtextur):
-	 * Farbe = Mittel der deckenden Pixel (nach Alpha gewichtet), Alpha = Abdeckung; Grundtexturen mit Alpha nur 0/255
+	 * <p>{@code additive} (Leucht-Schicht, vormultipliziert): Mittelwert der Farbe, deckend nur wo es leuchtet. Sonst
+	 * (Grundtextur): Farbe = Mittel der deckenden Pixel (nach Alpha gewichtet), Alpha = Abdeckung; Grundtexturen mit Alpha nur 0/255
 	 * bleiben so (ab halber Abdeckung deckend) – wie der Alpha-Test 0,5 der Werkbank, ohne Kanten anzufressen.
 	 */
 	public static int[] downsample(int[] src, int width, int height, boolean additive) {
@@ -80,7 +80,9 @@ public final class V2Images {
 					ob = (int) ((b + a / 2) / a);
 				}
 				if (additive) {
-					oa = 255;
+					// wie premultiplyGlow: deckend nur, wo es leuchtet
+					out[y * w + x] = glowPixel(or, og, ob);
+					continue;
 				} else if (binary) {
 					oa = a >= 2 * 255 ? 255 : 0;
 				} else {
@@ -109,19 +111,26 @@ public final class V2Images {
 	}
 
 	/**
-	 * Leucht-Schicht für additives Zeichnen mit {@code ONE, ONE}: RGB mit Alpha vormultipliziert, Alpha 255 (so
-	 * wirkt auch eine halbdurchsichtige Datei wie in three.js mit {@code SRC_ALPHA, ONE}).
+	 * Leucht-Schicht für additives Zeichnen mit {@code ONE, ONE}: RGB mit Alpha vormultipliziert (so wirkt auch eine
+	 * halbdurchsichtige Datei wie in three.js mit {@code SRC_ALPHA, ONE}). Alpha = 255 nur, wo etwas leuchtet, sonst 0:
+	 * Render-Typen mit Alpha-Test, die Tiefe schreiben (ab 1.21.5 {@code energy_swirl}), verwerfen so die dunklen
+	 * Stellen – sonst landet jede Fläche als volles Viereck im Tiefenpuffer und das danach gezeichnete Wasser fehlt
+	 * dahinter („Wasser-Röntgenblick“ um Flügel herum). Additiv bleibt die Farbe gleich (Schwarz addiert nichts).
 	 */
 	public static void premultiplyGlow(int[] argb) {
 		for (int i = 0; i < argb.length; i++) {
 			int p = argb[i];
 			int a = (p >>> 24) & 0xFF;
-			if (a == 255) continue;
 			int r = ((p >> 16) & 0xFF) * a / 255;
 			int g = ((p >> 8) & 0xFF) * a / 255;
 			int b = (p & 0xFF) * a / 255;
-			argb[i] = 0xFF000000 | (r << 16) | (g << 8) | b;
+			argb[i] = glowPixel(r, g, b);
 		}
+	}
+
+	/** Ein vormultipliziertes Leucht-Pixel: deckend, wenn es leuchtet, sonst ganz durchsichtig (schwarz). */
+	static int glowPixel(int r, int g, int b) {
+		return (r | g | b) == 0 ? 0 : 0xFF000000 | (r << 16) | (g << 8) | b;
 	}
 
 	/**

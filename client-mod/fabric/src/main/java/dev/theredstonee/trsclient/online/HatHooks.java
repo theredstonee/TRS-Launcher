@@ -181,8 +181,8 @@ public final class HatHooks {
 						(last, vc) -> f.emitV2(hat, CosmeticV2Renderer.PASS_GLOW, null, additiveSink(vc, last)));
 			}
 			if (eye != null) {
-				collector.submitCustomGeometry(pose, additive(hat.halo),
-						(last, vc) -> f.emitV2(hat, CosmeticV2Renderer.PASS_HALO, eye, additiveSink(vc, last)));
+				collector.submitCustomGeometry(pose, halo(hat.halo),
+						(last, vc) -> f.emitV2(hat, CosmeticV2Renderer.PASS_HALO, eye, haloSink(vc, last)));
 			}
 		} catch (RuntimeException e) {
 			f.online().reportError(e);
@@ -223,7 +223,7 @@ public final class HatHooks {
 			}
 			if (hat.has(CosmeticV2Renderer.PASS_HALO)) {
 				if (eye != null) {
-					f.emitV2(hat, CosmeticV2Renderer.PASS_HALO, eye, additiveSink(buffers.getBuffer(additive(hat.halo)), last));
+					f.emitV2(hat, CosmeticV2Renderer.PASS_HALO, eye, haloSink(buffers.getBuffer(halo(hat.halo)), last));
 				}
 			}
 		} catch (RuntimeException e) {
@@ -234,7 +234,10 @@ public final class HatHooks {
 	}
 	//?}
 
-	// Render-Typen: Grundmodell ohne Rückseiten-Culling mit Alpha-Test, durchscheinend.
+	// Render-Typen: Grundmodell ohne Rückseiten-Culling mit Alpha-Test, durchscheinend. Durchscheinend bis 1.21.11 als
+	// „entity_no_outline“ (wie entity_translucent, aber ohne Tiefe schreiben – wie Legacy mit depthMask(false)): Wasser
+	// wird erst nach den Wesen gezeichnet und fehlte sonst hinter durchscheinenden Flächen (Eisflügel über dem Meer).
+	// Ab 26.1 (neue Mischung durchscheinender Wesen, kein entity_no_outline mehr) bleibt entity_translucent.
 	//? if >=26.1 {
 	/*static net.minecraft.client.renderer.rendertype.RenderType cutout(Object tex) {
 		return net.minecraft.client.renderer.rendertype.RenderTypes.entityCutout((net.minecraft.resources.Identifier) tex);
@@ -250,7 +253,7 @@ public final class HatHooks {
 	}
 
 	static net.minecraft.client.renderer.rendertype.RenderType translucent(Object tex) {
-		return net.minecraft.client.renderer.rendertype.RenderTypes.entityTranslucent((net.minecraft.resources.Identifier) tex);
+		return net.minecraft.client.renderer.rendertype.RenderTypes.entityNoOutline((net.minecraft.resources.Identifier) tex);
 	}
 
 	*///?} else {
@@ -259,7 +262,7 @@ public final class HatHooks {
 	}
 
 	static net.minecraft.client.renderer.RenderType translucent(Object tex) {
-		return net.minecraft.client.renderer.RenderType.entityTranslucent((net.minecraft.resources.ResourceLocation) tex);
+		return net.minecraft.client.renderer.RenderType.entityNoOutline((net.minecraft.resources.ResourceLocation) tex);
 	}
 
 	//?}
@@ -289,6 +292,35 @@ public final class HatHooks {
 
 	static CosmeticV2Renderer.VertexSink additiveSink(VertexConsumer vc, PoseStack.Pose last) {
 		return CosmeticV2Renderer.bothSides(v2sink(vc, last, FULL_BRIGHT));
+	}
+	//?}
+
+	// Leucht-Höfe: ab 1.21.5 als Dreiecks-Scheibe ohne Textur in „dragon_rays“ (additiv SRC_ALPHA/ONE, schreibt KEINE
+	// Tiefe) – „energy_swirl“ schreibt Tiefe, und das erst danach gezeichnete Wasser fehlte hinter jedem Hof. Bis 1.21.4
+	// zeichnet „eyes“ ohne Tiefe, dort bleibt das Hof-Viereck mit Textur.
+	//? if >=1.21.11 {
+	/*static net.minecraft.client.renderer.rendertype.RenderType halo(Object tex) {
+		return net.minecraft.client.renderer.rendertype.RenderTypes.dragonRays();
+	}
+
+	static CosmeticV2Renderer.VertexSink haloSink(final VertexConsumer vc, final PoseStack.Pose last) {
+		return CosmeticV2Renderer.haloTriangles((x, y, z, argb) -> vc.addVertex(last, x, y, z).setColor(argb));
+	}
+	*///?} elif >=1.21.5 {
+	/*static net.minecraft.client.renderer.RenderType halo(Object tex) {
+		return net.minecraft.client.renderer.RenderType.dragonRays();
+	}
+
+	static CosmeticV2Renderer.VertexSink haloSink(final VertexConsumer vc, final PoseStack.Pose last) {
+		return CosmeticV2Renderer.haloTriangles((x, y, z, argb) -> vc.addVertex(last, x, y, z).setColor(argb));
+	}
+	*///?} else {
+	static net.minecraft.client.renderer.RenderType halo(Object tex) {
+		return additive(tex);
+	}
+
+	static CosmeticV2Renderer.VertexSink haloSink(VertexConsumer vc, PoseStack.Pose last) {
+		return additiveSink(vc, last);
 	}
 	//?}
 

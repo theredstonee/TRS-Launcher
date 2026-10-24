@@ -28,6 +28,18 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **TRS Client: penguins keep up with boats, horses and fast rides.** When you rode a boat, the penguins didn't swim along – on deep water they were put back onto the seabed again and again, so they only seemed to teleport every now and then. They now swim next to and behind your boat at its speed, and on land they belly-slide after you when you ride or run fast (horse, minecart, elytra landing). They only jump to you as a last resort: when they are more than 20 blocks away or really stuck (for example after you dropped down a cliff). When you fly high above them, they stay on the ground and follow below you.
+- **TRS Client: penguin flippers flap outwards.** The flippers of the penguin flapped into its body instead of away from it (when looking around, walking, swimming and jumping). They now flap outwards, like in the cosmetic preview.
+- **TRS Client: no more "X-ray water" around wings and other cosmetics.** On Minecraft 1.21.5 and newer, the water behind glowing cosmetics (snow wings, ice wings, glowing halos and more) was cut away in rectangles, so you looked straight down to the seabed – very visible in a boat on the ocean. Water behind and around wings, halos and see-through parts like the ice wings now looks normal. On Minecraft 1.8.9–1.12.2, swimming penguins were drawn on top of the water instead of in it; now the part below the surface is tinted by the water like any other mob.
+
+### Deutsch
+- **TRS Client: Pinguine kommen mit Boot, Pferd und schnellen Fahrten mit.** Im Boot schwammen die Pinguine nicht mit – auf tiefem Wasser wurden sie immer wieder auf den Meeresgrund gesetzt und schienen nur ab und zu hinterherzuteleportieren. Jetzt schwimmen sie neben und hinter deinem Boot in seinem Tempo her, und an Land rutschen sie dir auf dem Bauch hinterher, wenn du schnell reitest oder läufst (Pferd, Lore, Elytra-Landung). Zu dir springen sie nur noch als letzter Ausweg: wenn sie mehr als 20 Blöcke entfernt sind oder wirklich festhängen (zum Beispiel, nachdem du eine Klippe hinuntergesprungen bist). Fliegst du hoch über ihnen, bleiben sie am Boden und laufen unter dir mit.
+- **TRS Client: Pinguin-Flossen schlagen nach außen.** Die Flossen des Pinguins schlugen in den Körper hinein statt nach außen (beim Umschauen, Laufen, Schwimmen und Springen). Jetzt schlagen sie nach außen, wie in der Kosmetik-Vorschau.
+- **TRS Client: Kein „Röntgen-Wasser“ mehr um Flügel und andere Kosmetik.** Ab Minecraft 1.21.5 wurde das Wasser hinter leuchtender Kosmetik (Schneeflügel, Eisflügel, leuchtende Höfe und mehr) rechteckig weggeschnitten – man sah direkt auf den Meeresgrund, besonders deutlich im Boot auf dem Ozean. Wasser hinter und um Flügel, Höfe und durchsichtige Teile wie die Eisflügel sieht jetzt normal aus. Unter Minecraft 1.8.9–1.12.2 lagen schwimmende Pinguine über dem Wasser statt darin; jetzt wird der Teil unter der Oberfläche wie bei jedem anderen Wesen vom Wasser eingefärbt.
+
 ## 0.29.0 – 2026-10-24 – First Frost | Erster Frost
 <!-- banner: accent=#6fd0ea motif=/news/0.29.0/banner.png -->
 <!-- shots:
