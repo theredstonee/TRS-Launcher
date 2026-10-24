@@ -103,6 +103,46 @@ class CosmeticCatalogTest {
 	}
 
 	@Test
+	void readsPetSlotOptionsAndMyChoices() {
+		CosmeticCatalog.Item pet = CosmeticCatalog.parse(json("{\"id\":\"test_pet\",\"name\":\"Pinguin\",\"slot\":\"pet\","
+				+ "\"unlock\":\"code\",\"owned\":true,\"format\":2,\"model\":\"/v1/cosmetics/test_pet/model.json\","
+				+ "\"texture\":{\"url\":\"/v1/cosmetics/test_pet.png\"}}"), CFG);
+		assertNotNull(pet);
+		assertEquals("pet", pet.slot);
+		assertTrue(pet.options.isEmpty());
+		assertNull(CosmeticCatalog.parse(json("{\"id\":\"old_pet\",\"slot\":\"pet\",\"template\":\"duck\",\"owned\":true,"
+				+ "\"texture\":\"/v1/b\"}"), CFG), "Begleiter am Boden nur als Format 2");
+		CosmeticCatalog.Item hat = CosmeticCatalog.parse(json("{\"id\":\"test_hat\",\"name\":\"Mütze\",\"slot\":\"hat\","
+				+ "\"unlock\":\"code\",\"owned\":true,\"format\":2,\"model\":\"/v1/m\",\"texture\":\"/v1/t\","
+				+ "\"options\":[{\"id\":\"beard\",\"default\":true,\"name\":{\"de\":\"Bart\",\"en\":\"Beard\"}},{\"id\":\"BAD\"},"
+				+ "{\"id\":\"pompom\",\"default\":false,\"name\":\"Pompom\"}]}"), CFG);
+		assertNotNull(hat);
+		assertEquals(2, hat.options.size());
+		assertEquals("beard", hat.options.get(0).id);
+		assertTrue(hat.options.get(0).defaultOn);
+		assertEquals("Bart", hat.options.get(0).name("de"));
+		assertEquals("Beard", hat.options.get(0).name("fr"));
+		assertFalse(hat.options.get(1).defaultOn);
+		assertEquals("Pompom", hat.options.get(1).name("de"));
+
+		CosmeticCatalog.Mine mine = CosmeticCatalog.parseMine("{\"equipped\":{\"hat\":{\"id\":\"test_hat\",\"options\":{\"beard\":false,"
+				+ "\"x\":1}},\"pet\":{\"id\":\"test_pet\",\"count\":3},\"wings\":null},\"emotes\":[]}");
+		assertNotNull(mine);
+		assertEquals(Boolean.FALSE, mine.options.get("hat").get("beard"));
+		assertFalse(mine.options.get("hat").containsKey("x"));
+		assertTrue(mine.options.get("wings").isEmpty());
+		assertEquals(3, mine.petCount);
+		// Optionen auch oben als options.<slot>; ohne pet-Fach (ältere API) bleibt die Anzahl unbekannt
+		CosmeticCatalog.Mine top = CosmeticCatalog.parseMine("{\"equipped\":{\"hat\":{\"id\":\"test_hat\"}},"
+				+ "\"options\":{\"hat\":{\"beard\":true}}}");
+		assertEquals(Boolean.TRUE, top.options.get("hat").get("beard"));
+		assertEquals(-1, top.petCount);
+		assertEquals(0, CosmeticCatalog.parseMine("{\"equipped\":{\"pet\":null}}").petCount, "kein Begleiter am Boden");
+		assertEquals(4, CosmeticCatalog.parseMine("{\"equipped\":{\"pet\":{\"id\":\"p\",\"count\":12}}}").petCount);
+		assertNull(CosmeticCatalog.parseMine("kaputt["));
+	}
+
+	@Test
 	void shrinksCards() {
 		int[] px = new int[400 * 400];
 		java.util.Arrays.fill(px, 0xFF336699);

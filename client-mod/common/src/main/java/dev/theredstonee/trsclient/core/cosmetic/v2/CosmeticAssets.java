@@ -123,10 +123,11 @@ public final class CosmeticAssets<T> {
 	/** Fertiges Teil oder null, solange es (noch) nicht da ist (Laden/Hochladen läuft dann an). */
 	public Entry<T> get(HatInfo hat, long now) {
 		if (hat == null || !hat.v2()) return null;
-		Slot<T> slot = slots.get(hat.key());
+		// Optionen/Anzahl ändern keine Datei: ein Eintrag je Teil und Stand (assetKey).
+		Slot<T> slot = slots.get(hat.assetKey());
 		if (slot == null) {
 			slot = new Slot<T>(hat, "cosmetics/" + hat.id.replaceAll("[^a-z0-9_]", "") + "_" + (serial++));
-			slots.put(hat.key(), slot);
+			slots.put(hat.assetKey(), slot);
 		}
 		slot.lastUsed = now;
 		if (!slot.ready || slot.pending != null) {

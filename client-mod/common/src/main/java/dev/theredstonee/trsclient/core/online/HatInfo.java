@@ -39,7 +39,19 @@ public final class HatInfo {
 	/** Format 2: vom Lookup versprochene Frames (0 = unbekannt). */
 	public final int frames;
 	public final int glowFrames;
+	/**
+	 * Wahl des Spielers für die abschaltbaren Teile des Modells ({@code cosmetics.<slot>.options}, Anhang D:
+	 * {@code optionId → an}); nie null, unveränderlich, sortiert. Fehlt ein Eintrag, gilt {@code default} des Modells.
+	 */
+	public final java.util.Map<String, Boolean> options;
+	/** Begleiter am Boden: wie viele (1…{@link #MAX_COUNT}, Lookup {@code cosmetics.pet.count}); sonst 1. */
+	public final int count;
+	/** Höchstens so viele Begleiter am Boden je Spieler. */
+	public static final int MAX_COUNT = 4;
+	/** Höchstens so viele Optionen werden übernommen (Modell-Grenze). */
+	static final int MAX_OPTIONS = 4;
 	private final String key;
+	private final String assetKey;
 
 	HatInfo(String id, String template, CapeInfo texture, String templateUrl) {
 		this.id = id;
@@ -53,7 +65,33 @@ public final class HatInfo {
 		this.hash = null;
 		this.frames = 0;
 		this.glowFrames = 0;
+		this.options = java.util.Collections.emptyMap();
+		this.count = 1;
 		this.key = "v1|" + id + "|" + (texture == null ? "" : texture.key());
+		this.assetKey = key;
+	}
+
+	private HatInfo(HatInfo base, java.util.Map<String, Boolean> options, int count) {
+		this.id = base.id;
+		this.template = base.template;
+		this.texture = base.texture;
+		this.templateUrl = base.templateUrl;
+		this.format = base.format;
+		this.modelUrl = base.modelUrl;
+		this.textureUrl = base.textureUrl;
+		this.glowUrl = base.glowUrl;
+		this.hash = base.hash;
+		this.frames = base.frames;
+		this.glowFrames = base.glowFrames;
+		this.options = options;
+		this.count = count;
+		this.assetKey = base.assetKey;
+		StringBuilder k = new StringBuilder(base.assetKey);
+		if (count != 1) k.append("|x").append(count);
+		for (java.util.Map.Entry<String, Boolean> e : options.entrySet()) {
+			k.append('|').append(e.getKey()).append('=').append(e.getValue().booleanValue() ? '1' : '0');
+		}
+		this.key = k.toString();
 	}
 
 	private HatInfo(String id, String modelUrl, String textureUrl, String glowUrl, String hash, int frames, int glowFrames) {
@@ -68,16 +106,53 @@ public final class HatInfo {
 		this.hash = hash;
 		this.frames = frames;
 		this.glowFrames = glowFrames;
+		this.options = java.util.Collections.emptyMap();
+		this.count = 1;
 		this.key = "v2|" + id + "|" + hash;
+		this.assetKey = key;
 	}
 
 	public boolean v2() {
 		return format == 2;
 	}
 
-	/** Gleiches Teil in gleichem Stand → gleicher Schlüssel (Texturen/Cache). */
+	/**
+	 * Gleiches Teil in gleichem Stand mit gleicher Wahl (Optionen, Anzahl) → gleicher Schlüssel. Für Texturen/Cache gilt
+	 * {@link #assetKey()} (die Wahl ändert keine Datei).
+	 */
 	public String key() {
 		return key;
+	}
+
+	/** Gleiches Teil in gleichem Stand → gleicher Schlüssel für Modell, Texturen und Platten-Cache (ohne Optionen/Anzahl). */
+	public String assetKey() {
+		return assetKey;
+	}
+
+	/** Ist die Option {@code optionId} an? {@code fallback} (der {@code default} des Modells), wenn der Spieler nichts wählte. */
+	public boolean option(String optionId, boolean fallback) {
+		Boolean b = options.get(optionId);
+		return b == null ? fallback : b.booleanValue();
+	}
+
+	/**
+	 * Gleiches Teil mit der Wahl des Spielers ({@code options}, nur gültige IDs, höchstens 4) und der Anzahl (Begleiter am
+	 * Boden, auf 1…{@link #MAX_COUNT} begrenzt; null = 1).
+	 */
+	public HatInfo with(java.util.Map<String, Boolean> chosen, Integer wantedCount) {
+		java.util.TreeMap<String, Boolean> o = new java.util.TreeMap<String, Boolean>();
+		if (chosen != null) {
+			for (java.util.Map.Entry<String, Boolean> e : chosen.entrySet()) {
+				String k = e.getKey();
+				if (k == null || e.getValue() == null || !k.matches("[a-z][a-z0-9_]{0,19}")) continue;
+				if (o.size() >= MAX_OPTIONS) break;
+				o.put(k, e.getValue());
+			}
+		}
+		int c = wantedCount == null ? 1 : Math.max(1, Math.min(MAX_COUNT, wantedCount));
+		if (o.isEmpty() && c == 1 && options.isEmpty() && count == 1) return this;
+		return new HatInfo(this, o.isEmpty() ? java.util.Collections.<String, Boolean>emptyMap()
+				: java.util.Collections.unmodifiableMap(o), c);
 	}
 
 	/** Prüft streng; unbekannte Vorlage (neuere API), fremde URL oder kaputte Werte → null (nichts zeichnen). */

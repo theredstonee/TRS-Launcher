@@ -53,8 +53,17 @@ public final class PlayerInfo {
 		this(badge, cape, hat, creator, fan, companion, badges, fx, null);
 	}
 
+	/** Begleiter am Boden (Format 2, {@code attach: "ground"}, Anzahl in {@link HatInfo#count}) oder null. */
+	public final HatInfo pet;
+
 	public PlayerInfo(boolean badge, CapeInfo cape, HatInfo hat, CreatorTier creator, FanInfo fan, HatInfo companion,
 			List<String> badges, int fx, HatInfo wings) {
+		this(badge, cape, hat, creator, fan, companion, badges, fx, wings, null);
+	}
+
+	public PlayerInfo(boolean badge, CapeInfo cape, HatInfo hat, CreatorTier creator, FanInfo fan, HatInfo companion,
+			List<String> badges, int fx, HatInfo wings, HatInfo pet) {
+		this.pet = pet;
 		this.badge = badge;
 		this.cape = cape;
 		this.hat = hat;
@@ -68,7 +77,7 @@ public final class PlayerInfo {
 
 	/** Gleiche Infos, anderes Live-Abzeichen. */
 	PlayerInfo withBadge(boolean badge) {
-		return new PlayerInfo(badge, cape, hat, creator, fan, companion, badges, fx, wings);
+		return new PlayerInfo(badge, cape, hat, creator, fan, companion, badges, fx, wings, pet);
 	}
 
 	/** Hat der Spieler das Profil-Abzeichen {@code id}? */

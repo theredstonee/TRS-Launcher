@@ -130,6 +130,8 @@ public final class TrsApi {
 		LookupCosmetic companion;
 		/** Flügel am Rücken (Format 2, {@code attach: "body"}). */
 		LookupCosmetic wings;
+		/** Begleiter am Boden (Format 2, {@code attach: "ground"}, Winter 2026) mit {@code count} 1…4. */
+		LookupCosmetic pet;
 	}
 
 	static final class LookupCosmetic {
@@ -148,6 +150,25 @@ public final class TrsApi {
 		String hash;
 		/** Format 1: {@code /v1/cosmetics/<id>/template.json?v=<hash>} (fehlt bei älteren APIs). */
 		String templateUrl;
+		/**
+		 * Wahl des Spielers für abschaltbare Teile ({@code { "beard": false }}, Anhang D) – roh gelesen, damit ein
+		 * unerwarteter Wert nie den ganzen Lookup kippt.
+		 */
+		com.google.gson.JsonElement options;
+		/** Begleiter am Boden: Anzahl 1…4 (Creator-Stufe), sonst fehlt das Feld. */
+		Integer count;
+	}
+
+	/** {@code options} eines Kosmetik-Teils: nur {@code id → true/false}, Unbekanntes fällt weg. */
+	static java.util.Map<String, Boolean> optionChoices(com.google.gson.JsonElement raw) {
+		if (raw == null || !raw.isJsonObject()) return null;
+		java.util.Map<String, Boolean> out = new java.util.TreeMap<String, Boolean>();
+		for (java.util.Map.Entry<String, com.google.gson.JsonElement> e : raw.getAsJsonObject().entrySet()) {
+			com.google.gson.JsonElement v = e.getValue();
+			if (v == null || !v.isJsonPrimitive() || !v.getAsJsonPrimitive().isBoolean()) continue;
+			out.put(e.getKey(), v.getAsBoolean());
+		}
+		return out;
 	}
 
 	static final class LookupCape {
@@ -356,6 +377,7 @@ public final class TrsApi {
 			HatInfo hat = cosmetic(p.cosmetics == null ? null : p.cosmetics.hat, false);
 			HatInfo companion = cosmetic(p.cosmetics == null ? null : p.cosmetics.companion, true);
 			HatInfo wings = cosmetic(p.cosmetics == null ? null : p.cosmetics.wings, true);
+			HatInfo pet = cosmetic(p.cosmetics == null ? null : p.cosmetics.pet, true);
 			dev.theredstonee.trsclient.core.creator.CreatorTier tier = p.creator == null ? null
 					: dev.theredstonee.trsclient.core.creator.CreatorTier.parse(p.creator.tier);
 			FanInfo fan = null;
@@ -365,7 +387,7 @@ public final class TrsApi {
 						SymbolInfo.of(sy.url, sy.size, sy.frames, sy.frameMs, sy.sha256, config), p.fan.milestone);
 			}
 			out.put(uuid, new PlayerInfo(Boolean.TRUE.equals(p.badge), cape, hat, tier, fan, companion, badgeIds(p.badges),
-					fxBits(p.fx), wings));
+					fxBits(p.fx), wings, pet));
 		}
 		return out;
 	}
@@ -374,7 +396,8 @@ public final class TrsApi {
 	private HatInfo cosmetic(LookupCosmetic h, boolean companion) {
 		if (h == null) return null;
 		if (h.format != null && h.format == 2) {
-			return HatInfo.v2(h.id, h.model, h.url, h.glow, h.hash, h.frames, h.glowFrames, config);
+			HatInfo v2 = HatInfo.v2(h.id, h.model, h.url, h.glow, h.hash, h.frames, h.glowFrames, config);
+			return v2 == null ? null : v2.with(optionChoices(h.options), h.count);
 		}
 		if (companion) return null;
 		return HatInfo.of(h.id, h.template, h.url, h.scale, h.frames, h.frameTimeMs, h.templateUrl, config);

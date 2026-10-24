@@ -63,9 +63,31 @@ final class CosmeticPreview implements SkinModel.HeadAttachment {
 	private final int[] hc = new int[CosmeticV2.MAX_HALOS];
 	private int halos;
 	private final float[] tmp = new float[3];
+	/** Abgeschaltete Knochen (Optionen, z. B. Bart aus) – {@code CosmeticV2#hiddenBones}. */
+	private long hidden;
+	/**
+	 * Versatz des Anhängepunkts im Kopf-Raum (Skin-Pixel): 0 für Kopf/Körper (beide Ursprünge liegen am Nacken),
+	 * Begleiter am Boden neben dem rechten Fuß ({@link #ground}).
+	 */
+	private float ox, oy, oz;
 
 	CosmeticPreview(WardrobeTextures textures) {
 		this.textures = textures;
+	}
+
+	/** Abgeschaltete Knochen für die Vorschau setzen (0 = alles zeigen). */
+	void hidden(long mask) {
+		hidden = mask;
+	}
+
+	/**
+	 * Anhängepunkt: {@code ground} = Begleiter am Boden – Ursprung neben dem rechten Fuß der Figur (Füße 24 Pixel unter
+	 * dem Nacken, rechts = −x), sonst am Nacken.
+	 */
+	void ground(boolean ground) {
+		ox = ground ? -15f : 0f;
+		oy = ground ? -24f : 0f;
+		oz = ground ? 2f : 0f;
 	}
 
 	/** Was gezeigt wird (null = nichts). */
@@ -176,13 +198,13 @@ final class CosmeticPreview implements SkinModel.HeadAttachment {
 		if (preview.v2 != null) {
 			final CosmeticV2 m = preview.v2.model;
 			final float scale = m.scale;
-			renderer.pose(m, now, true);
+			renderer.pose(m, now, true, false, 0, 0, 1f, hidden);
 			renderer.faces(m, -1, (p, uv, material, nx, ny, nz) -> {
 				if (quads >= MAX_QUADS) return;
 				int q = quads++;
 				float d = 0f;
 				for (int k = 0; k < 4; k++) {
-					view.project(p[k * 3], p[k * 3 + 1], p[k * 3 + 2], tmp, 0);
+					view.project(p[k * 3] + ox, p[k * 3 + 1] + oy, p[k * 3 + 2] + oz, tmp, 0);
 					sx[q * 4 + k] = tmp[0];
 					sy[q * 4 + k] = tmp[1];
 					d += tmp[2];
@@ -195,7 +217,7 @@ final class CosmeticPreview implements SkinModel.HeadAttachment {
 			double dx = view.towardViewer(0), dy = view.towardViewer(1), dz = view.towardViewer(2);
 			renderer.halos(m, now, dx, dy, dz, true, (cx, cy, cz, half, rgb, intensity) -> {
 				if (halos >= hx.length) return;
-				view.project(cx, cy, cz, tmp, 0);
+				view.project(cx + ox, cy + oy, cz + oz, tmp, 0);
 				int i = halos++;
 				hx[i] = tmp[0];
 				hy[i] = tmp[1];

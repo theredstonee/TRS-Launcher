@@ -261,6 +261,30 @@ public final class OnlineFeatures<T> {
 	}
 
 	/**
+	 * Wie {@link #hatV2(UUID, boolean)} mit Zustands-Animation ({@code state} = {@code WingState} IDLE/AIR/SNEAK aus der
+	 * Bewegung, überblendet 250 ms) – z. B. die Weihnachtsmütze im Sprung. Modelle ohne Animation des Zustands spielen
+	 * {@code idle} (Format §7).
+	 */
+	public dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> hatV2(UUID uuid, boolean helmet, int state) {
+		return withState(uuid, hatV2(uuid, helmet), state);
+	}
+
+	/** Wie {@link #companionV2(UUID, boolean)} mit Zustands-Animation (siehe {@link #hatV2(UUID, boolean, int)}). */
+	public dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> companionV2(UUID uuid, boolean helmet, int state) {
+		return withState(uuid, companionV2(uuid, helmet), state);
+	}
+
+	private dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> withState(UUID uuid,
+			dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> hat, int state) {
+		if (hat == null || !hat.model.hasDriver(dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2.DRIVER_AIR)
+				&& !hat.model.hasDriver(dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticV2.DRIVER_SNEAK)) {
+			return hat; // nur idle: keine Zustände nötig
+		}
+		dev.theredstonee.trsclient.core.cosmetic.v2.WingState.Snapshot s = headStates.update(uuid, state, hat.now);
+		return hat.withState(s.driver, s.prevDriver, s.blend);
+	}
+
+	/**
 	 * Begleiter (Slot {@code companion}, Format 2) neben dem Hut. Gleiche Regeln wie {@link #hatV2}: nur Spiel-Thread,
 	 * Module an, mit Helm auf den Helm gesetzt. null = nichts.
 	 */
@@ -272,6 +296,8 @@ public final class OnlineFeatures<T> {
 
 	/** Zustand der Flügel je Spieler (idle/air/sneak mit Überblendung). */
 	private final dev.theredstonee.trsclient.core.cosmetic.v2.WingState wingStates = new dev.theredstonee.trsclient.core.cosmetic.v2.WingState();
+	/** Gleicher Zustand für Kopf-Kosmetik und Begleiter am Kopf (eigene Überblendung, unabhängig von den Flügeln). */
+	private final dev.theredstonee.trsclient.core.cosmetic.v2.WingState headStates = new dev.theredstonee.trsclient.core.cosmetic.v2.WingState();
 
 	/**
 	 * Flügel (Slot {@code wings}, Format 2, {@code attach: "body"}) für dieses Bild oder null: nichts getragen, Module
@@ -299,11 +325,149 @@ public final class OnlineFeatures<T> {
 			dev.theredstonee.trsclient.core.cosmetic.v2.CosmeticAssets.Entry<T> e = cosmetics.get(piece, wall);
 			if (e == null) return null;
 			T halo = e.model.halos.isEmpty() ? null : cosmetics.halo();
-			return new dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T>(e.model, e.base(now), e.glow(now), halo, now, helmet, e);
+			// Abgeschaltete Optionen (z. B. Bart aus): Knochen samt Kindern nicht zeichnen.
+			long hidden = e.model.options.isEmpty() ? 0L : e.model.hiddenBones(piece.options);
+			return new dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T>(e.model, e.base(now), e.glow(now), halo, now, helmet, e,
+					0, 0, 1f, hidden);
 		} catch (RuntimeException ex) {
 			online.reportError(ex);
 			return null;
 		}
+	}
+
+	// =====================================================================================================
+	// Begleiter am Boden (Slot pet, Winter 2026)
+	// =====================================================================================================
+
+	/** Höchstens so viele Begleiter am Boden werden je Bild gezeichnet (alle Spieler zusammen). */
+	public static final int MAX_PETS_DRAWN = 48;
+	/** Weiter weg (Blöcke) werden Begleiter nicht gezeichnet. */
+	public static final double PET_DRAW_DISTANCE = 64.0;
+
+	private final dev.theredstonee.trsclient.core.cosmetic.pet.PetSim pets = new dev.theredstonee.trsclient.core.cosmetic.pet.PetSim();
+	private final dev.theredstonee.trsclient.core.cosmetic.pet.Pet[] petBuffer =
+			new dev.theredstonee.trsclient.core.cosmetic.pet.Pet[MAX_PETS_DRAWN];
+	@SuppressWarnings("unchecked")
+	private final dev.theredstonee.trsclient.core.cosmetic.pet.PetDraw<T>[] petDraws =
+			new dev.theredstonee.trsclient.core.cosmetic.pet.PetDraw[MAX_PETS_DRAWN];
+	private boolean petsActive;
+
+	/** Simulation der Begleiter (Selbsttests lesen Zustände). */
+	public dev.theredstonee.trsclient.core.cosmetic.pet.PetSim pets() {
+		return pets;
+	}
+
+	/**
+	 * Beginn des Begleiter-Ticks (einmal je Client-Tick, Spiel-Thread). {@code worldKey} = aktuelle Welt (ein Wechsel
+	 * leert alles). false = Module aus, dann {@link #petOwner} nicht aufrufen.
+	 */
+	public boolean petsBegin(Object worldKey) {
+		gameThread = Thread.currentThread();
+		boolean on = worldKey != null && modules.trsOnline.isEnabled() && modules.trsCosmetics.get();
+		if (!on) {
+			if (petsActive) pets.clear();
+			petsActive = false;
+			return false;
+		}
+		petsActive = true;
+		pets.begin(worldKey, System.currentTimeMillis());
+		return true;
+	}
+
+	/**
+	 * Ein Spieler in der Welt (nach {@link #petsBegin}): hat er Begleiter am Boden ({@code cosmetics.pet}, Anzahl
+	 * {@code count}), laufen sie ihm nach. {@code hidden} = nicht zeichnen (unsichtbar, Zuschauer). Fehler landen im
+	 * Fehlerbericht, nie im Spiel.
+	 */
+	public void petOwner(UUID uuid, boolean self, double x, double y, double z, float bodyYaw, boolean hidden,
+			dev.theredstonee.trsclient.core.cosmetic.pet.PetWorld world) {
+		if (!petsActive || uuid == null) return;
+		if (self) selfPetOwner = uuid;
+		try {
+			HatInfo piece = online.info(uuid).pet;
+			if (piece == null && self) piece = dev.theredstonee.trsclient.core.cosmetic.pet.DevPets.info(online);
+			int count = piece == null || !piece.v2() ? 0 : piece.count;
+			int forced = dev.theredstonee.trsclient.core.cosmetic.pet.DevPets.forcedCount;
+			if (count > 0 && self && forced > 0) count = forced;
+			pets.owner(uuid, count, x, y, z, bodyYaw, hidden, self, world);
+		} catch (RuntimeException e) {
+			online.reportError(e);
+		}
+	}
+
+	/** Ende des Begleiter-Ticks. */
+	public void petsEnd() {
+		if (petsActive) pets.end();
+	}
+
+	/**
+	 * Begleiter für dieses Bild (Render-Thread): sichtbare, geladene Teile in der Nähe der Kamera, höchstens
+	 * {@link #MAX_PETS_DRAWN}, eigene zuerst. Danach {@link #petDraw}{@code (0 … n−1)}. Kamera = Position und Blickwinkel
+	 * (Gieren/Nicken wie Minecraft).
+	 */
+	public int petFrame(dev.theredstonee.trsclient.core.cosmetic.pet.PetWorld world, double camX, double camY, double camZ,
+			float camYaw, float camPitch) {
+		if (!petsActive || Thread.currentThread() != gameThread) return 0;
+		try {
+			double yr = Math.toRadians(camYaw), pr = Math.toRadians(camPitch);
+			double fx = -Math.sin(yr) * Math.cos(pr), fy = -Math.sin(pr), fz = Math.cos(yr) * Math.cos(pr);
+			float alpha = pets.alpha(System.nanoTime());
+			int n = pets.visible(camX, camY, camZ, fx, fy, fz, PET_DRAW_DISTANCE, MAX_PETS_DRAWN, alpha, petBuffer);
+			java.util.function.LongSupplier clock = v2Clock;
+			long wall = System.currentTimeMillis();
+			long base = clock != null ? clock.getAsLong() : wall;
+			int out = 0;
+			UUID lastOwner = null;
+			dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> lastHat = null;
+			for (int i = 0; i < n; i++) {
+				dev.theredstonee.trsclient.core.cosmetic.pet.Pet p = petBuffer[i];
+				dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> hat;
+				if (p.owner.equals(lastOwner)) {
+					hat = lastHat;
+				} else {
+					HatInfo piece = online.info(p.owner).pet;
+					if (piece == null && p.owner.equals(ownParsedUuid())) {
+						piece = dev.theredstonee.trsclient.core.cosmetic.pet.DevPets.info(online);
+					}
+					hat = piece == null ? null : v2(piece, false);
+					lastOwner = p.owner;
+					lastHat = hat;
+				}
+				if (hat == null || !hat.model.pet()) continue;
+				int st = p.state();
+				dev.theredstonee.trsclient.core.cosmetic.pet.PetDraw<T> d = petDraws[out];
+				if (d == null) petDraws[out] = d = new dev.theredstonee.trsclient.core.cosmetic.pet.PetDraw<T>();
+				d.pet = p;
+				d.hat = hat.forPet(base + p.offsetMs, dev.theredstonee.trsclient.core.cosmetic.pet.Pet.driver(st),
+						dev.theredstonee.trsclient.core.cosmetic.pet.Pet.driver(p.prevState()), p.blend(wall));
+				double px = p.x(alpha), py = p.y(alpha), pz = p.z(alpha);
+				d.set(px - camX, py - camY, pz - camZ, p.yaw(alpha));
+				d.light = world == null ? dev.theredstonee.trsclient.core.cosmetic.pet.PetWorld.packLight(15, 15)
+						: world.light(floorInt(px), floorInt(py + 0.25), floorInt(pz));
+				out++;
+			}
+			return out;
+		} catch (RuntimeException e) {
+			online.reportError(e);
+			return 0;
+		}
+	}
+
+	/** Ein Begleiter dieses Bildes (nach {@link #petFrame}). */
+	public dev.theredstonee.trsclient.core.cosmetic.pet.PetDraw<T> petDraw(int i) {
+		return petDraws[i];
+	}
+
+	/** Eigener Spieler aus dem letzten Begleiter-Tick (für die Selbsttest-Begleiter), sonst null. */
+	private UUID selfPetOwner;
+
+	private UUID ownParsedUuid() {
+		return selfPetOwner;
+	}
+
+	private static int floorInt(double v) {
+		int i = (int) v;
+		return v < i ? i - 1 : i;
 	}
 
 	/** Nur für Selbsttests: feste Uhrzeit für v2-Kosmetik (wie {@code ?t=} der Studio-Werkbank); null = Wanduhr. */

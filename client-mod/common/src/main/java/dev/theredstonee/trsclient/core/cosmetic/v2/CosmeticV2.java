@@ -30,8 +30,13 @@ public final class CosmeticV2 {
 	public static final String SLOT_HAT = "hat", SLOT_COMPANION = "companion";
 	/** Flügel am Rücken (Halloween 2026): {@code attach: "body"} – Ursprung = Körper-Drehpunkt (Nacken, Oberkante Torso). */
 	public static final String SLOT_WINGS = "wings";
-	/** Anhängepunkte: Kopf (Hut, Begleiter) bzw. Körper (Flügel). */
-	public static final String ATTACH_HEAD = "head", ATTACH_BODY = "body";
+	/**
+	 * Begleiter am Boden (Winter 2026, Anhang D): {@code attach: "ground"} – Ursprung = Boden unter der Mitte, +z =
+	 * Lauf-/Blickrichtung; Position und Gieren setzt der Client selbst ({@code core.cosmetic.pet}).
+	 */
+	public static final String SLOT_PET = "pet";
+	/** Anhängepunkte: Kopf (Hut, Begleiter), Körper (Flügel) bzw. Boden (Begleiter am Boden). */
+	public static final String ATTACH_HEAD = "head", ATTACH_BODY = "body", ATTACH_GROUND = "ground";
 
 	/** Flächen in fester Reihenfolge (wie {@code FACES} der Referenz). */
 	public static final String[] FACES = { "north", "south", "east", "west", "up", "down" };
@@ -45,7 +50,12 @@ public final class CosmeticV2 {
 	static final String[] CHANNELS = { "rotation", "position", "scale" };
 	public static final int LINEAR = 0, SMOOTH = 1, STEP = 2;
 	static final String[] INTERPOLATIONS = { "linear", "smooth", "step" };
-	static final String[] DRIVERS = { "idle", "walk", "sneak", "jump", "air" };
+	static final String[] DRIVERS = { "idle", "walk", "sneak", "jump", "air", "slide", "swim" };
+	/** Treiber-Indizes (Reihenfolge wie {@code DRIVERS} der Referenz). */
+	public static final int DRIVER_IDLE = 0, DRIVER_WALK = 1, DRIVER_SNEAK = 2, DRIVER_JUMP = 3, DRIVER_AIR = 4,
+			DRIVER_SLIDE = 5, DRIVER_SWIM = 6;
+	/** Höchstens so viele abschaltbare Teile ({@code options}) je Modell. */
+	public static final int MAX_OPTIONS = 4;
 
 	/** Grenzen (§10). */
 	public static final int MAX_CUBES = 64, MAX_BONES = 32, MAX_TEXTURE_EDGE = 1024, MAX_STRIP = 4096, MAX_FRAMES = 16,
@@ -57,6 +67,7 @@ public final class CosmeticV2 {
 	private static final Pattern ID = Pattern.compile("^[a-z][a-z0-9_]{0,39}$");
 	private static final Pattern FILE = Pattern.compile("^[a-z0-9][a-z0-9_.-]{0,63}\\.png$");
 	private static final Pattern COLOR = Pattern.compile("^#[0-9a-f]{6}$");
+	private static final Pattern OPTION_ID = Pattern.compile("^[a-z][a-z0-9_]{0,19}$");
 
 	public static final class Bone {
 		public final String id;
@@ -186,10 +197,43 @@ public final class CosmeticV2 {
 		}
 	}
 
+	/**
+	 * Abschaltbares Teil (Anhang D, z. B. der Bart der Weihnachtsmütze): ist es für einen Spieler aus, werden die Würfel
+	 * dieser Knochen und aller Kind-Knochen nicht gezeichnet (auch Leucht-Schicht und Höfe daran).
+	 */
+	public static final class Option {
+		public final String id;
+		/** Knochen-Indizes (vorhandene Knochen). */
+		public final int[] bones;
+		public final boolean defaultOn;
+		/** Anzeigename je Sprache ({@code de}, {@code en}, {@code es} …), nie null. */
+		public final Map<String, String> names;
+
+		Option(String id, int[] bones, boolean defaultOn, Map<String, String> names) {
+			this.id = id;
+			this.bones = bones;
+			this.defaultOn = defaultOn;
+			this.names = Collections.unmodifiableMap(names);
+		}
+
+		/** Name in der Sprache {@code lang} (z. B. {@code de} oder {@code pt-BR}), sonst Englisch, sonst die ID. */
+		public String name(String lang) {
+			String n = lang == null ? null : names.get(lang);
+			if (n == null && lang != null && lang.indexOf('-') > 0) n = names.get(lang.substring(0, lang.indexOf('-')));
+			if (n == null) n = names.get("en");
+			return n == null || n.trim().isEmpty() ? id : n;
+		}
+	}
+
 	public final String id;
 	public final String name;
-	/** Fach: {@link #SLOT_HAT} (Kopf-Kosmetik) oder {@link #SLOT_COMPANION} (Begleiter, zusätzlich zum Hut). */
+	/**
+	 * Fach: {@link #SLOT_HAT} (Kopf-Kosmetik), {@link #SLOT_COMPANION} (Begleiter, zusätzlich zum Hut),
+	 * {@link #SLOT_WINGS} (Flügel) oder {@link #SLOT_PET} (Begleiter am Boden).
+	 */
 	public final String slot;
+	/** Anhängepunkt ({@link #ATTACH_HEAD}, {@link #ATTACH_BODY}, {@link #ATTACH_GROUND}). */
+	public final String attach;
 	/** Texturmaße in Einheiten (Texel bei Faktor 1). */
 	public final int textureWidth, textureHeight;
 	/** Texel je Einheit (1, 2, 4, 8, 16). */
@@ -202,17 +246,21 @@ public final class CosmeticV2 {
 	public final List<Cube> cubes;
 	public final List<Animation> animations;
 	public final List<Halo> halos;
+	/** Abschaltbare Teile (höchstens {@link #MAX_OPTIONS}); nie null. */
+	public final List<Option> options;
 	/** Anzahl gezeichneter Flächen. */
 	public final int faceCount;
 	/** Welche Materialien vorkommen (Bitmaske 1 &lt;&lt; Material). */
 	public final int materials;
 
-	private CosmeticV2(String id, String name, String slot, int tw, int th, int scale, int frames, int frameTimeMs, boolean glow,
-			int glowFrames, int glowFrameTimeMs, List<Bone> bones, List<Cube> cubes, List<Animation> animations,
-			List<Halo> halos) {
+	private CosmeticV2(String id, String name, String slot, String attach, int tw, int th, int scale, int frames, int frameTimeMs,
+			boolean glow, int glowFrames, int glowFrameTimeMs, List<Bone> bones, List<Cube> cubes, List<Animation> animations,
+			List<Halo> halos, List<Option> options) {
 		this.id = id;
 		this.name = name;
 		this.slot = slot;
+		this.attach = attach;
+		this.options = Collections.unmodifiableList(options);
 		this.textureWidth = tw;
 		this.textureHeight = th;
 		this.scale = scale;
@@ -252,7 +300,10 @@ public final class CosmeticV2 {
 		return (materials & (1 << material)) != 0;
 	}
 
-	/** Treiber-Index ({@code idle} = 0, {@code walk} 1, {@code sneak} 2, {@code jump} 3, {@code air} 4) eines Namens, sonst -1. */
+	/**
+	 * Treiber-Index ({@code idle} 0, {@code walk} 1, {@code sneak} 2, {@code jump} 3, {@code air} 4, {@code slide} 5,
+	 * {@code swim} 6) eines Namens, sonst -1.
+	 */
 	public static int driverIndex(String name) {
 		return index(DRIVERS, name);
 	}
@@ -263,6 +314,48 @@ public final class CosmeticV2 {
 			if (a.driver == driver) return true;
 		}
 		return false;
+	}
+
+	/** Begleiter am Boden ({@code slot: "pet"}, {@code attach: "ground"})? */
+	public boolean pet() {
+		return SLOT_PET.equals(slot);
+	}
+
+	/** Abschaltbares Teil mit dieser ID oder null. */
+	public Option option(String optionId) {
+		if (optionId == null) return null;
+		for (Option o : options) if (o.id.equals(optionId)) return o;
+		return null;
+	}
+
+	/**
+	 * Knochen, die bei dieser Wahl nicht gezeichnet werden (Bit {@code 1L << knochen}), samt aller Kind-Knochen.
+	 * {@code choices} = Wahl des Spielers ({@code optionId → an}); fehlt ein Eintrag (oder ist {@code choices} null), gilt
+	 * {@code default} der Option. 0 = alles zeichnen.
+	 */
+	public long hiddenBones(Map<String, Boolean> choices) {
+		if (options.isEmpty()) return 0L;
+		long hidden = 0L;
+		for (Option o : options) {
+			Boolean on = choices == null ? null : choices.get(o.id);
+			if (on == null ? o.defaultOn : on.booleanValue()) continue;
+			for (int b : o.bones) hidden |= 1L << b;
+		}
+		if (hidden == 0L) return 0L;
+		// Eltern stehen immer vor ihren Kindern: eine Schleife vererbt das Ausblenden an alle Nachkommen.
+		for (int b = 0; b < bones.size() && b < 64; b++) {
+			int p = bones.get(b).parent;
+			if (p >= 0 && (hidden & (1L << p)) != 0) hidden |= 1L << b;
+		}
+		return hidden;
+	}
+
+	/** Anhängepunkt eines Fachs ({@code SLOT_ATTACH} der Referenz) oder null bei unbekanntem Fach. */
+	public static String attachOf(String slot) {
+		if (SLOT_HAT.equals(slot) || SLOT_COMPANION.equals(slot)) return ATTACH_HEAD;
+		if (SLOT_WINGS.equals(slot)) return ATTACH_BODY;
+		if (SLOT_PET.equals(slot)) return ATTACH_GROUND;
+		return null;
 	}
 
 	// =====================================================================================================
@@ -323,13 +416,15 @@ public final class CosmeticV2 {
 		String name = str(m.get("name"));
 		if (name == null || name.trim().isEmpty() || name.length() > 60) out.err("name", "1–60 Zeichen");
 		String slot = str(m.get("slot"));
-		if (!SLOT_HAT.equals(slot) && !SLOT_COMPANION.equals(slot) && !SLOT_WINGS.equals(slot)) {
-			out.err("slot", "eins von hat, companion, wings");
+		if (!SLOT_HAT.equals(slot) && !SLOT_COMPANION.equals(slot) && !SLOT_WINGS.equals(slot) && !SLOT_PET.equals(slot)) {
+			out.err("slot", "eins von hat, companion, wings, pet");
 		}
-		// Flügel hängen am Körper, alles andere am Kopf.
+		// Flügel am Körper, Begleiter am Boden auf dem Boden, alles andere am Kopf (SLOT_ATTACH der Referenz).
 		String attach = str(m.get("attach"));
-		if (SLOT_WINGS.equals(slot) ? !ATTACH_BODY.equals(attach) : !ATTACH_HEAD.equals(attach)) {
-			out.err("attach", SLOT_WINGS.equals(slot) ? "eins von body" : "eins von head");
+		if (!ATTACH_HEAD.equals(attach) && !ATTACH_BODY.equals(attach) && !ATTACH_GROUND.equals(attach)) {
+			out.err("attach", "eins von head, body, ground");
+		} else if (attachOf(slot) != null && !attach.equals(attachOf(slot))) {
+			out.err("attach", "slot " + slot + " braucht attach " + attachOf(slot));
 		}
 
 		// Textur
@@ -407,6 +502,65 @@ public final class CosmeticV2 {
 				// Doppelte id: der erste Eintrag bleibt maßgeblich (Modell ist ohnehin ungültig).
 				if (!boneIndex.containsKey(bid)) boneIndex.put(bid, bones.size());
 				bones.add(new Bone(bid, parent, pivot == null ? new float[3] : pivot, rot));
+			}
+		}
+
+		// Optionen (Anhang D): [{ id, bones: [Knochen-ids], default: bool, name: { de, en, … } }], höchstens 4
+		List<Option> options = new ArrayList<Option>();
+		JsonElement optsEl = m.get("options");
+		if (optsEl != null && !optsEl.isJsonNull()) {
+			JsonArray opts = arr(optsEl);
+			if (opts == null || opts.size() > MAX_OPTIONS) {
+				out.err("options", "Liste mit höchstens " + MAX_OPTIONS + " Einträgen");
+			} else {
+				Set<String> seen = new HashSet<String>();
+				for (int i = 0; i < opts.size(); i++) {
+					String p = "options[" + i + "]";
+					JsonObject o = obj(opts.get(i));
+					String oid = o == null ? null : str(o.get("id"));
+					if (oid == null || !OPTION_ID.matcher(oid).matches() || seen.contains(oid)) {
+						out.err(p + ".id", "a–z, 0–9, _ (max. 20), eindeutig");
+					}
+					if (oid != null) seen.add(oid);
+					JsonArray ob = o == null ? null : arr(o.get("bones"));
+					int[] boneIdx = null;
+					if (ob == null || ob.size() == 0) {
+						out.err(p + ".bones", "vorhandene Knochen");
+					} else {
+						boneIdx = new int[ob.size()];
+						for (int k = 0; k < ob.size(); k++) {
+							String bn = str(ob.get(k));
+							Integer bi = bn == null ? null : boneIndex.get(bn);
+							if (bi == null) {
+								out.err(p + ".bones", "vorhandene Knochen");
+								boneIdx = null;
+								break;
+							}
+							boneIdx[k] = bi;
+						}
+					}
+					JsonElement def = o == null ? null : o.get("default");
+					boolean defOk = def != null && def.isJsonPrimitive() && def.getAsJsonPrimitive().isBoolean();
+					if (!defOk) out.err(p + ".default", "true/false");
+					Map<String, String> names = new HashMap<String, String>();
+					JsonElement nameEl = o == null ? null : o.get("name");
+					if (nameEl != null && !nameEl.isJsonNull()) {
+						JsonObject no = obj(nameEl);
+						if (no == null) {
+							out.err(p + ".name", "{ Sprache: Text ≤ 40 }");
+						} else {
+							for (Entry<String, JsonElement> e : no.entrySet()) {
+								String v = str(e.getValue());
+								if (v == null || v.length() > 40) {
+									out.err(p + ".name", "{ Sprache: Text ≤ 40 }");
+									break;
+								}
+								names.put(e.getKey(), v);
+							}
+						}
+					}
+					if (oid != null && boneIdx != null && defOk) options.add(new Option(oid, boneIdx, def.getAsBoolean(), names));
+				}
 			}
 		}
 
@@ -550,7 +704,7 @@ public final class CosmeticV2 {
 				if (aid == null || !ID.matcher(aid).matches()) out.err(p, "ungültige id");
 				JsonElement drvEl = a.get("driver");
 				int driver = drvEl == null || drvEl.isJsonNull() ? 0 : index(DRIVERS, str(drvEl));
-				if (driver < 0) out.err(p, "driver eins von idle, walk, sneak, jump, air");
+				if (driver < 0) out.err(p, "driver eins von idle, walk, sneak, jump, air, slide, swim");
 				JsonElement lenEl = a.get("lengthMs");
 				int length = isInt(lenEl) ? intOr(lenEl, 0) : 0;
 				if (!isInt(lenEl) || length < 50 || length > MAX_LENGTH_MS) out.err(p, "lengthMs 50…" + MAX_LENGTH_MS);
@@ -697,8 +851,9 @@ public final class CosmeticV2 {
 
 		if (out.ok()) {
 			int glowTime = glow == null ? 0 : intOr(glow.get("frameTimeMs"), 0);
-			out.model = new CosmeticV2(id, name, slot, tw, th, scale, frames, frames > 1 ? intOr(tex.get("frameTimeMs"), 0) : 0,
-					glow != null, glow == null ? 0 : glowFrames, glowFrames > 1 ? glowTime : 0, bones, cubes, animations, halos);
+			out.model = new CosmeticV2(id, name, slot, attach, tw, th, scale, frames,
+					frames > 1 ? intOr(tex.get("frameTimeMs"), 0) : 0, glow != null, glow == null ? 0 : glowFrames,
+					glowFrames > 1 ? glowTime : 0, bones, cubes, animations, halos, options);
 		}
 		return out;
 	}
