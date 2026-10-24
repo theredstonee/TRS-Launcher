@@ -46,6 +46,13 @@ public final class CosmeticV2Renderer {
 	private final float[] uv = new float[8];
 	private final double[] v3 = new double[3];
 	private final double[] n3 = new double[3];
+	/** Ausgeblendete Knochen des letzten {@link #pose} (Bit je Knochen). */
+	private long hidden;
+
+	/** Ist der Knochen im aktuellen Bild ausgeblendet (abgeschaltete Option)? */
+	private boolean hiddenBone(int bone) {
+		return hidden != 0L && bone < 64 && (hidden & (1L << bone)) != 0L;
+	}
 
 	// =====================================================================================================
 	// Pose
@@ -78,6 +85,17 @@ public final class CosmeticV2Renderer {
 	 * {@link WingState}). Hüte nutzen nur {@code idle} (0, 0, 1).
 	 */
 	public void pose(CosmeticV2 m, long timeMs, boolean animate, boolean helmet, int driver, int prevDriver, float blend) {
+		pose(m, timeMs, animate, helmet, driver, prevDriver, blend, 0L);
+	}
+
+	/**
+	 * Wie {@link #pose(CosmeticV2, long, boolean, boolean, int, int, float)}; {@code hiddenBones} = Knochen, deren Würfel
+	 * und Höfe nicht gezeichnet werden (abgeschaltete Optionen, {@link CosmeticV2#hiddenBones}). Gilt bis zum nächsten
+	 * {@code pose}.
+	 */
+	public void pose(CosmeticV2 m, long timeMs, boolean animate, boolean helmet, int driver, int prevDriver, float blend,
+			long hiddenBones) {
+		this.hidden = hiddenBones;
 		int n = Math.min(MAX, m.bones.size());
 		for (int b = 0; b < n; b++) {
 			pPos[b][0] = pPos[b][1] = pPos[b][2] = 0f;
@@ -137,7 +155,7 @@ public final class CosmeticV2Renderer {
 	 */
 	private void samplePoses(CosmeticV2 m, long timeMs, int driver, float weight) {
 		for (CosmeticV2.Animation anim : m.animations) {
-			if (anim.driver != driver) continue; // walk/jump: noch nicht unterstützt → nicht abspielen
+			if (anim.driver != driver) continue; // exklusiv: nur die Animationen des Zustands (§7)
 			long len = anim.lengthMs;
 			long t = timeMs + anim.offsetMs;
 			double tt;
@@ -236,6 +254,7 @@ public final class CosmeticV2Renderer {
 	/** Alle Flächen im Anhängepunkt-Raum ausgeben (nach {@link #pose}); {@code material} −1 = alle. */
 	public void faces(CosmeticV2 m, int material, FaceSink sink) {
 		for (CosmeticV2.Cube cb : m.cubes) {
+			if (hiddenBone(cb.bone)) continue;
 			double[] w = world[cb.bone];
 			for (int f = 0; f < 6; f++) {
 				CosmeticV2.Face face = cb.faces[f];
@@ -280,6 +299,7 @@ public final class CosmeticV2Renderer {
 	 */
 	public void halos(CosmeticV2 m, long timeMs, double ex, double ey, double ez, boolean direction, HaloSink sink) {
 		for (CosmeticV2.Halo h : m.halos) {
+			if (hiddenBone(h.bone)) continue;
 			double[] w = world[h.bone];
 			V2Math.transformPoint(w, h.x, h.y, h.z, v3, 0);
 			double dx, dy, dz;

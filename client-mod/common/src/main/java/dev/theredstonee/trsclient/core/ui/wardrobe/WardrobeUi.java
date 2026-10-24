@@ -746,7 +746,8 @@ public final class WardrobeUi extends UiScreen {
 				Friends f = friends();
 				if (f != null && s.trs && f.snapshot().unseenOffers > 0) NewBadge.dot(c, x + w - 7, cy + 2);
 			}
-			if (cat == Category.COSMETICS && (isNew(NewSince.WARDROBE_COSMETICS) || isNew(NewSince.WARDROBE_COMPANION))) {
+			if (cat == Category.COSMETICS && (isNew(NewSince.WARDROBE_COSMETICS) || isNew(NewSince.WARDROBE_COMPANION)
+					|| isNew(NewSince.WARDROBE_PET))) {
 				NewBadge.dot(c, x + w - 7, cy + 2);
 			}
 			hits.add(x, cy, w, rowH, () -> {
@@ -1269,12 +1270,16 @@ public final class WardrobeUi extends UiScreen {
 					title = it.name;
 					boolean worn = cs.worn(it);
 					if (it.locked()) subtitle = I18n.tr("wardrobe.cosmetics.locked");
-					else if (worn) subtitle = I18n.tr("wardrobe.worn");
+					else if (worn && "pet".equals(it.slot) && cs.petCount > 1) {
+						subtitle = I18n.tr("wardrobe.cosmetics.petCount", cs.petCount);
+					} else if (worn) subtitle = I18n.tr("wardrobe.worn");
 					else subtitle = I18n.tr("wardrobe.cosmetics.tryOn");
 				} else if ("companion:none".equals(selectedCosmetic)) {
 					title = I18n.tr("wardrobe.cosmetics.companion");
 				} else if ("wings:none".equals(selectedCosmetic)) {
 					title = I18n.tr("wardrobe.cosmetics.wings");
+				} else if ("pet:none".equals(selectedCosmetic)) {
+					title = I18n.tr("wardrobe.cosmetics.pet");
 				} else {
 					title = I18n.tr("wardrobe.cat.cosmetics");
 				}
@@ -1374,10 +1379,13 @@ public final class WardrobeUi extends UiScreen {
 		spec.tint = 0xFFFFFFFF;
 		spec.head = null;
 		boolean bust = category == Category.COSMETICS;
+		// Begleiter am Boden: ganze Figur mit dem Pinguin neben dem rechten Fuß
+		boolean petScene = bust && petSelected();
 		if (bust) {
 			if (cosmeticNight) spec.tint = NIGHT_TINT;
 			if (prepareCosmetic(now)) spec.head = cosmeticHead;
 		}
+		if (petScene) bust = false;
 		// Halloween: Kürbis „hinter dir, wenn du dich umziehst“ – vor der Figur gezeichnet, schaut rechts neben dem
 		// rechten Fuß hervor. Die Beine sind höchstens 8 Skin-Pixel breit; die Figur ist 32 hoch, also liegt der Fuß
 		// spätestens bei Mitte + 4 * (Höhe / 32). Ein fester Versatz lag bei großen Vorschauen ganz hinter den Beinen.
@@ -1396,9 +1404,10 @@ public final class WardrobeUi extends UiScreen {
 		if (skin != null && figBottom - figTop > 30) {
 			c.scissor(x + 1, figTop - 4, x + w - 1, figBottom + 2);
 			if (bust) drawBust(c, x + 6, figTop, w - 12, figBottom - figTop);
+			else if (petScene) drawPetScene(c, x + 6, figTop, w - 12, figBottom - figTop);
 			else model.drawFitted(c, x + 6, figTop, w - 12, figBottom - figTop, spec);
 			c.noScissor();
-			if (bust) cosmeticStatus(c, x, figTop, w, figBottom - figTop);
+			if (bust || petScene) cosmeticStatus(c, x, figTop, w, figBottom - figTop);
 		} else if (skin == null) {
 			Paint.textCentered(c, c.clip(I18n.tr("wardrobe.loading"), w - 8), x + w / 2, (figTop + figBottom) / 2, t.textDim, false);
 		}
@@ -1433,6 +1442,7 @@ public final class WardrobeUi extends UiScreen {
 			cat.refresh(false);
 			seen(NewSince.WARDROBE_COSMETICS);
 			seen(NewSince.WARDROBE_COMPANION);
+			seen(NewSince.WARDROBE_PET);
 		}
 		if (catalog == null) return;
 		CosmeticCatalog.State cs = catalog.state();
@@ -1442,7 +1452,7 @@ public final class WardrobeUi extends UiScreen {
 			if (cs.message != null && cs.busy == null) showToast(message(cs.message));
 		}
 		boolean off = "none".equals(selectedCosmetic) || "companion:none".equals(selectedCosmetic)
-				|| "wings:none".equals(selectedCosmetic);
+				|| "wings:none".equals(selectedCosmetic) || "pet:none".equals(selectedCosmetic);
 		if (selectedCosmetic == null || (!off && cs.loaded && cs.item(selectedCosmetic) == null)) {
 			if (cs.equipped != null && cs.item(cs.equipped) != null) selectedCosmetic = cs.equipped;
 			else {
@@ -1482,11 +1492,20 @@ public final class WardrobeUi extends UiScreen {
 		return selected || worn;
 	}
 
+	/** Ist gerade ein Begleiter am Boden (oder „ohne“ im Fach) gewählt? Dann zeigt die Vorschau die ganze Figur. */
+	private boolean petSelected() {
+		if ("pet:none".equals(selectedCosmetic)) return true;
+		if (catalog == null || selectedCosmetic == null) return false;
+		CosmeticCatalog.Item it = catalog.state().item(selectedCosmetic);
+		return it != null && "pet".equals(it.slot);
+	}
+
 	/** Das getragene Teil des anderen Slots, oder null. */
 	private String otherEquipped(CosmeticCatalog.State cs) {
 		CosmeticCatalog.Item sel = cs.item(selectedCosmetic);
 		boolean companionSide = "companion:none".equals(selectedCosmetic) || (sel != null && "companion".equals(sel.slot))
-				|| "wings:none".equals(selectedCosmetic) || (sel != null && "wings".equals(sel.slot));
+				|| "wings:none".equals(selectedCosmetic) || (sel != null && "wings".equals(sel.slot))
+				|| "pet:none".equals(selectedCosmetic) || (sel != null && "pet".equals(sel.slot));
 		String other = companionSide ? cs.equipped : cs.equippedCompanion;
 		return other != null && cs.item(other) != null ? other : null;
 	}
@@ -1502,8 +1521,24 @@ public final class WardrobeUi extends UiScreen {
 			preview.set(null, null, false);
 			return false;
 		}
+		CosmeticCatalog.Item it = cs.item(id);
 		preview.set(id, p, cosmeticNight);
+		preview.ground("pet".equals(it.slot));
+		// Optionen (Bart an/aus): getragen = Wahl des Spielers, anprobiert = Standard des Modells
+		long hide = 0L;
+		if (p.v2 != null && !p.v2.model.options.isEmpty()) {
+			java.util.Map<String, Boolean> choice = cs.worn(it) ? cs.options.get(it.slot) : null;
+			hide = p.v2.model.hiddenBones(choice);
+		}
+		preview.hidden(hide);
 		return preview.prepare(now);
+	}
+
+	/** Ganze Figur, rechts daneben (vom Betrachter links) der Begleiter am Boden – beides passt hinein. */
+	private void drawPetScene(Canvas c, int x, int y, int w, int h) {
+		float scale = Math.max(0.1f, Math.min(h / 34f, w / 44f));
+		float cx = x + w / 2f + 8f * scale;
+		model.draw(c, cx, y + h - 1f, scale, spec);
 	}
 
 	/** Figur von der Hüfte aufwärts, so groß, dass das Teil ganz hineinpasst. */
@@ -1553,6 +1588,10 @@ public final class WardrobeUi extends UiScreen {
 		y = cosmeticSection(c, cs, "wardrobe.cosmetics.companion", "companion", "companion:none", x, y, w, mx, my);
 		y += 4;
 		y = cosmeticSection(c, cs, "wardrobe.cosmetics.wings", "wings", "wings:none", x, y, w, mx, my);
+		y += 4;
+		int petTop = y;
+		y = cosmeticSection(c, cs, "wardrobe.cosmetics.pet", "pet", "pet:none", x, y, w, mx, my);
+		if (isNew(NewSince.WARDROBE_PET)) NewBadge.draw(c, x + w - NewBadge.width(c) - 2, petTop + 1);
 		return y - start;
 	}
 
@@ -1594,7 +1633,8 @@ public final class WardrobeUi extends UiScreen {
 		boolean sel = id.equals(selectedCosmetic);
 		boolean hov = inside(mx, my, x, y, w, h);
 		boolean worn = it == null
-				? cs.equipped("companion:none".equals(nothingId) ? "companion" : "wings:none".equals(nothingId) ? "wings" : "hat") == null
+				? cs.equipped("companion:none".equals(nothingId) ? "companion" : "wings:none".equals(nothingId) ? "wings"
+						: "pet:none".equals(nothingId) ? "pet" : "hat") == null
 				: cs.worn(it);
 		boolean lockedCard = it != null && it.locked();
 		if (sel) Redstone.glow(c, x, y, w, h, t.glow, 0.45f);
@@ -1838,6 +1878,12 @@ public final class WardrobeUi extends UiScreen {
 							!nothing && !cbusy, mx, my, () -> catalog.wearWings(null));
 					return bh;
 				}
+				if ("pet:none".equals(selectedCosmetic)) {
+					boolean nothing = cs.equippedPet == null;
+					button(c, x, y, w, bh, I18n.tr(nothing ? "wardrobe.worn" : "wardrobe.cosmetics.takeOff"), !nothing,
+							!nothing && !cbusy, mx, my, () -> catalog.wearPet(null));
+					return bh;
+				}
 				if ("none".equals(selectedCosmetic) || selectedCosmetic == null) {
 					boolean nothing = cs.equipped == null;
 					button(c, x, y, w, bh, I18n.tr(nothing ? "wardrobe.worn" : "wardrobe.cosmetics.takeOff"), !nothing,
@@ -1864,7 +1910,10 @@ public final class WardrobeUi extends UiScreen {
 					button(c, x, y, w, bh, I18n.tr("wardrobe.cosmetics.put"), true, !cbusy, mx, my,
 							() -> catalog.wearSlot(slot, it.id));
 				}
-				return bh;
+				// Abschaltbare Teile (z. B. Bart): Schalter über dem Knopf, nur für das getragene Teil
+				int used = bh;
+				if (worn) used += optionToggles(c, cs, it, x, y - 3, w, mx, my, cbusy);
+				return used;
 			}
 			case EMOTES: {
 				if (selectedEmote == null) return 0;
@@ -1875,6 +1924,42 @@ public final class WardrobeUi extends UiScreen {
 			default:
 				return 0;
 		}
+	}
+
+	/**
+	 * Schalter für die abschaltbaren Teile eines getragenen Teils (z. B. „Bart“ an der Weihnachtsmütze), von
+	 * {@code bottom} nach oben gestapelt. Ein Klick speichert sofort ({@code PUT /v1/me/cosmetics} mit {@code options}).
+	 * Liefert die belegte Höhe.
+	 */
+	private int optionToggles(Canvas c, CosmeticCatalog.State cs, final CosmeticCatalog.Item it, int x, int bottom, int w,
+			int mx, int my, boolean busy) {
+		final List<CosmeticCatalog.OptionInfo> opts = CosmeticCatalog.optionsOf(cs, it);
+		if (opts.isEmpty()) return 0;
+		Theme t = Theme.get();
+		int rh = 14;
+		int tw = 22;
+		int yy = bottom;
+		int used = 0;
+		for (int i = opts.size() - 1; i >= 0; i--) {
+			final CosmeticCatalog.OptionInfo o = opts.get(i);
+			yy -= rh;
+			final boolean on = cs.option(it.slot, o.id, o.defaultOn);
+			String key = "wardrobe.cosmetics.option." + o.id;
+			String label = I18n.has(key) ? I18n.tr(key) : o.name(I18n.code());
+			if (label == null) label = o.id;
+			boolean hov = !busy && inside(mx, my, x, yy, w, rh);
+			Paint.textClipped(c, label, x + 2, yy + (rh - 8) / 2, w - tw - 8, hov ? t.text : t.textDim, false);
+			Paint.toggle(c, x + w - tw, yy + 2, tw, rh - 4, on ? 1f : 0f, hov);
+			if (!busy) {
+				hits.add(x, yy, w, rh, () -> {
+					host.playClick();
+					catalog.setOption(it.slot, o.id, !on, opts);
+				});
+			}
+			yy -= 2;
+			used += rh + 2;
+		}
+		return used + 1;
 	}
 
 	/** Hinweis über einem Knopf; liefert die belegte Höhe. */

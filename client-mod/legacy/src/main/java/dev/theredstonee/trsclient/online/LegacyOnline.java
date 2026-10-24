@@ -120,6 +120,12 @@ public final class LegacyOnline {
 			samples = Collections.emptyList();
 		}
 		features.tick(visible, samples);
+		// Begleiter am Boden (Pinguine) laufen ihren Besitzern nach
+		try {
+			LegacyPets.tick(features);
+		} catch (RuntimeException e) {
+			features.online().reportError(e);
+		}
 		for (NetworkPlayerInfo info : infos) {
 			try {
 				applyCape(info);

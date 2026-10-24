@@ -53,8 +53,8 @@ public final class HatLayer implements LayerRenderer<AbstractClientPlayer> {
 		boolean helmet = Mc.equipment(player, 0) != null;
 		Object tex = features.hatTexture(id);
 		if (tex == null) {
-			V2Hat<Object> hat = features.hatV2(id, helmet);
-			V2Hat<Object> buddy = features.companionV2(id, helmet);
+			V2Hat<Object> hat = features.hatV2(id, helmet, WingsLayer.state(player));
+			V2Hat<Object> buddy = features.companionV2(id, helmet, WingsLayer.state(player));
 			if (hat != null) renderV2(features, hat, player);
 			if (buddy != null) renderV2(features, buddy, player);
 			return;
@@ -80,7 +80,7 @@ public final class HatLayer implements LayerRenderer<AbstractClientPlayer> {
 			GlStateManager.enableCull();
 			GlStateManager.popMatrix();
 		}
-		V2Hat<Object> buddy = features.companionV2(id, helmet);
+		V2Hat<Object> buddy = features.companionV2(id, helmet, WingsLayer.state(player));
 		if (buddy != null) renderV2(features, buddy, player);
 	}
 
@@ -174,6 +174,15 @@ public final class HatLayer implements LayerRenderer<AbstractClientPlayer> {
 	}
 
 	private static void drawV2(OnlineFeatures<Object> f, V2Hat<Object> hat, int pass, double[] eye) {
+		drawV2(f, hat, pass, eye, null);
+	}
+
+	/**
+	 * Einen Durchgang zeichnen; {@code wrap} (oder null) rechnet die Ecken vorher um (Begleiter am Boden: in die Welt,
+	 * siehe {@code PetDraw#wrap}).
+	 */
+	static void drawV2(OnlineFeatures<Object> f, V2Hat<Object> hat, int pass, double[] eye,
+			java.util.function.UnaryOperator<CosmeticV2Renderer.VertexSink> wrap) {
 		Tessellator tessellator = Tessellator.getInstance();
 		//? if >=1.12 {
 		/*final BufferBuilder buffer = tessellator.getBuffer();
@@ -183,13 +192,14 @@ public final class HatLayer implements LayerRenderer<AbstractClientPlayer> {
 		final WorldRenderer buffer = tessellator.getWorldRenderer();
 		buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR_NORMAL);
 		try {
-			f.emitV2(hat, pass, eye, new CosmeticV2Renderer.VertexSink() {
+			CosmeticV2Renderer.VertexSink sink = new CosmeticV2Renderer.VertexSink() {
 				@Override
 				public void vertex(float x, float y, float z, float u, float v, float nx, float ny, float nz, int argb) {
 					buffer.pos(x, y, z).tex(u, v).color((argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF, (argb >>> 24) & 0xFF)
 							.normal(nx, ny, nz).endVertex();
 				}
-			});
+			};
+			f.emitV2(hat, pass, eye, wrap == null ? sink : wrap.apply(sink));
 		} finally {
 			// Immer abschließen – ein offener Puffer ließe das nächste begin() abstürzen.
 			tessellator.draw();

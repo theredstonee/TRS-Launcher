@@ -163,6 +163,13 @@ public final class NewSince {
 	public static final String KEY_GAMMA_CYCLE = "key.trsclient.gammaCycle";
 	/** Taste „Automatisch nachlegen umschalten“ (standardmäßig unbelegt). */
 	public static final String KEY_AUTO_REFILL = "key.trsclient.autoRefill";
+	/**
+	 * Winter-Kosmetik 2026 (nächste Version nach TRS Client 0.20.2): Begleiter am Boden (Pinguine), abschaltbare Teile
+	 * (Bart der Weihnachtsmütze).
+	 */
+	public static final String WINTER_COSMETICS = "0.21.0";
+	/** Garderobe → Kosmetik → Abschnitt „Begleiter (Boden)“ samt Schaltern für abschaltbare Teile. */
+	public static final String WARDROBE_PET = "wardrobe:pet";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
@@ -247,6 +254,8 @@ public final class NewSince {
 		add(HALLOWEEN_SCARE, "halloween.spookySounds");
 		// Gamma/Helligkeit (aus „Fullbright“, neuer Regler + Zyklus-Taste) und Automatisch nachlegen.
 		add(GAMMA_REFILL, "autorefill", "fullbright.level", KEY_GAMMA_CYCLE, KEY_AUTO_REFILL);
+		// Winter-Kosmetik: Begleiter am Boden + Optionen in der Garderobe.
+		add(WINTER_COSMETICS, WARDROBE_PET);
 	}
 
 	private NewSince() {

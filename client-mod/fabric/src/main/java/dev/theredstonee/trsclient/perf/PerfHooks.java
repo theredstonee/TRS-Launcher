@@ -394,8 +394,11 @@ public final class PerfHooks {
 			// Riesen (Drache, Wither-Boss-Hitbox, Schiffe aus Mods) nie verstecken.
 			if (box.maxX - box.minX > 6 || box.maxY - box.minY > 6 || box.maxZ - box.minZ > 6) return false;
 			// Nur das zuletzt berechnete Ergebnis – die Sichtlinien rechnet ein Hintergrund-Thread.
-			boolean visible = p.occlusion().visible(e.getId(), camX, camY, camZ, box.minX, box.minY, box.minZ, box.maxX, box.maxY,
-					box.maxZ);
+			// Spieler: Platz für 3D-Kosmetik (Flügel seitlich, Schneewolke bis etwa 1,5 Blöcke über dem Kopf)
+			double pad = e instanceof Player ? 1.0 : 0.0;
+			double top = e instanceof Player ? 1.5 : 0.0;
+			boolean visible = p.occlusion().visible(e.getId(), camX, camY, camZ, box.minX - pad, box.minY, box.minZ - pad,
+					box.maxX + pad, box.maxY + top, box.maxZ + pad);
 			if (!visible) entitiesCulled++;
 			return !visible;
 		} catch (RuntimeException | LinkageError ex) {

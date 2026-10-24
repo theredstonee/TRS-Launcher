@@ -225,6 +225,8 @@ public final class TrsClient {
 		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.online.LegacyOnline.NameTags());
 		// Creator-Programm: Fan-Symbole über dem Kopf und in der Tabliste.
 		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.online.LegacyFans());
+		// Begleiter am Boden (Pinguine): Zeichnen nach der Welt
+		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.online.LegacyPets());
 		// Kamera-Fahrten: Tasten, Hilfs-Kamera je Bild, keine Hand.
 		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.cinematic.LegacyCinematic.get());
 		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.perf.LegacyPerf.get());

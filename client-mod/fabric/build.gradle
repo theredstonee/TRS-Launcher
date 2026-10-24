@@ -291,6 +291,8 @@ if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'CapeLayerMixin'
 if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'HatLayerMixin'
 // Flügel (v2, attach body) am Körper – wie die Kopf-Kosmetik am Umhang-Layer.
 if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'WingsLayerMixin'
+// Begleiter am Boden (Pinguine): Welt-Haken nach den Entities.
+if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'PetWorldMixin'
 if (stonecutter.eval(mc, '<1.15')) mixinClasses << 'HatGlMixin'
 if (stonecutter.eval(mc, '>=1.15')) mixinClasses << 'OverlayTextureAccessor'
 if (stonecutter.eval(mc, '<1.15')) mixinClasses += ['HudMixin', 'KeyMappingAccessor']

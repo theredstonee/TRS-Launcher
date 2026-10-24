@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Die Aufrufe der TRS API, die die Garderobe braucht (API.md §3.4, §5.3, §13.4, §14, §17): eigene Skins
@@ -276,6 +277,42 @@ public final class WardrobeApi {
 		if (id == null) body.add("wings", com.google.gson.JsonNull.INSTANCE);
 		else body.addProperty("wings", id);
 		call("PUT", "/v1/me/cosmetics", body.toString(), token, 200, 256 * 1024);
+	}
+
+	/**
+	 * {@code PUT /v1/me/cosmetics {<slot>}} für ein beliebiges Fach ({@code hat}, {@code companion}, {@code wings},
+	 * {@code pet}): anlegen ({@code id}) oder ablegen (null). Liefert die Antwort (gleiche Form wie
+	 * {@code GET /v1/me/cosmetics}) als Rohtext.
+	 */
+	public String setSlot(String token, String slot, String id) throws IOException, ApiException {
+		if (slot == null || !slot.matches("[a-z]{1,16}")) throw new ApiException(0, "invalid_slot", 0);
+		JsonObject body = new JsonObject();
+		if (id == null) body.add(slot, com.google.gson.JsonNull.INSTANCE);
+		else body.addProperty(slot, id);
+		return call("PUT", "/v1/me/cosmetics", body.toString(), token, 200, 256 * 1024).text();
+	}
+
+	/**
+	 * {@code PUT /v1/me/cosmetics {options: {<slot>: {<optId>: bool}}}} (Anhang D): Wahl der abschaltbaren Teile eines
+	 * getragenen Teils (z. B. Bart der Weihnachtsmütze). Nur vom Modell deklarierte Optionen schicken (sonst 400).
+	 */
+	public String setOptions(String token, String slot, Map<String, Boolean> options) throws IOException, ApiException {
+		if (slot == null || !slot.matches("[a-z]{1,16}") || options == null) throw new ApiException(0, "invalid_slot", 0);
+		JsonObject choice = new JsonObject();
+		for (Map.Entry<String, Boolean> e : options.entrySet()) {
+			if (e.getKey() == null || !e.getKey().matches("[a-z][a-z0-9_]{0,19}") || e.getValue() == null) continue;
+			choice.addProperty(e.getKey(), e.getValue());
+		}
+		JsonObject opts = new JsonObject();
+		opts.add(slot, choice);
+		JsonObject body = new JsonObject();
+		body.add("options", opts);
+		return call("PUT", "/v1/me/cosmetics", body.toString(), token, 200, 256 * 1024).text();
+	}
+
+	/** {@code GET /v1/me/cosmetics}: was getragen wird (Rohtext, JSON – auch {@code <slot>.options}, {@code pet.count}). */
+	public String myCosmetics(String token) throws IOException, ApiException {
+		return call("GET", "/v1/me/cosmetics", null, token, 200, 512 * 1024).text();
 	}
 
 	/** {@code POST /v1/me/cosmetics/{id}/claim}. Die ID wird vorher geprüft (kein Pfad aus Nutzereingabe). */

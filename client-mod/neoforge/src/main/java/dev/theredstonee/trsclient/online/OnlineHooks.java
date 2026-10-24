@@ -109,6 +109,14 @@ public final class OnlineHooks {
 			SAMPLES.clear();
 		}
 		features.tick(visible, SAMPLES);
+		//? if >=1.15 {
+		// Begleiter am Boden (Pinguine) laufen ihren Besitzern nach
+		try {
+			PetHooks.tick(mc);
+		} catch (RuntimeException e) {
+			features.online().reportError(e);
+		}
+		//?}
 	}
 
 	//? if >=1.15 {

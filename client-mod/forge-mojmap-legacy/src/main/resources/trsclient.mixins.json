@@ -11,6 +11,7 @@
 		"CapeTextureMixin",
 		"HatLayerMixin",
 		"WingsLayerMixin",
+		"PetWorldMixin",
 		"ChatComponentAccessor",
 		"ChatMixin",
 		"ChatHeadMixin",

@@ -33,6 +33,12 @@ public final class V2Hat<T> {
 	public final int prevDriver;
 	public final float blend;
 
+	/**
+	 * Knochen, die nicht gezeichnet werden (vom Spieler abgeschaltete Optionen, {@link CosmeticV2#hiddenBones}); 0 =
+	 * alles.
+	 */
+	public final long hiddenBones;
+
 	private final Lod<T> lod;
 
 	public V2Hat(CosmeticV2 model, T base, T glow, T halo, long now, boolean helmet) {
@@ -45,6 +51,12 @@ public final class V2Hat<T> {
 
 	public V2Hat(CosmeticV2 model, T base, T glow, T halo, long now, boolean helmet, Lod<T> lod, int driver, int prevDriver,
 			float blend) {
+		this(model, base, glow, halo, now, helmet, lod, driver, prevDriver, blend, 0L);
+	}
+
+	public V2Hat(CosmeticV2 model, T base, T glow, T halo, long now, boolean helmet, Lod<T> lod, int driver, int prevDriver,
+			float blend, long hiddenBones) {
+		this.hiddenBones = hiddenBones;
 		this.driver = driver;
 		this.prevDriver = prevDriver;
 		this.blend = blend;
@@ -81,7 +93,22 @@ public final class V2Hat<T> {
 
 	/** Gleiches Teil mit einer Zustands-Animation (Flügel: idle/air/sneak, siehe {@link WingState}). */
 	public V2Hat<T> withState(int driver, int prevDriver, float blend) {
-		return new V2Hat<T>(model, base, glow, halo, now, helmet, lod, driver, prevDriver, blend);
+		return new V2Hat<T>(model, base, glow, halo, now, helmet, lod, driver, prevDriver, blend, hiddenBones);
+	}
+
+	/** Gleiches Teil mit abgeschalteten Knochen ({@link CosmeticV2#hiddenBones}). */
+	public V2Hat<T> withHidden(long hidden) {
+		return hidden == hiddenBones ? this
+				: new V2Hat<T>(model, base, glow, halo, now, helmet, lod, driver, prevDriver, blend, hidden);
+	}
+
+	/**
+	 * Ein Begleiter am Boden in diesem Bild: eigener Zeitversatz ({@code timeMs} = Wanduhr + Versatz je Begleiter, damit
+	 * mehrere nicht im Gleichschritt laufen) und Zustand ({@code core.cosmetic.pet.PetSim}). Die Texturen bleiben die
+	 * des Bildes (Leucht-Frames laufen mit der Wanduhr wie bei allen Teilen).
+	 */
+	public V2Hat<T> forPet(long timeMs, int driver, int prevDriver, float blend) {
+		return new V2Hat<T>(model, base, glow, halo, timeMs, false, lod, driver, prevDriver, blend, hiddenBones);
 	}
 
 	/** Gibt es in diesem Durchgang etwas zu zeichnen? */

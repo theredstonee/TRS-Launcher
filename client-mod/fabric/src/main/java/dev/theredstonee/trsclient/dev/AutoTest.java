@@ -345,6 +345,12 @@ public final class AutoTest {
 					step = 37;
 					break;
 				}
+				// -PtrsAutotestOnly=pets: Winter-Kosmetik (Mütze mit Bart an/aus, Wolke, Flügel, Pinguine; braucht -PtrsApi mit
+				// scripts/mock-winter-api.mjs)
+				if ("pets".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 44;
+					break;
+				}
 				// -PtrsAutotestOnly=hunger: Hunger-Anzeige (Vorschau mit Essen, Sättigung, Erschöpfung)
 				if ("hunger".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 38;
@@ -839,6 +845,22 @@ public final class AutoTest {
 				step = 24;
 				wait = 5;
 				break;
+			case 44:
+				// Winter-Kosmetik: Screenshots trsclient-<mc>-winter-*.png
+				if (petsTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				step = 24;
+				wait = 5;
+				break;
 			case 33:
 				// Suche in der Tastenbelegung: Screenshots trsclient-<mc>-keysearch-*.png
 				if (keySearchTest.step(mc, new CapeTest.Actions() {
@@ -875,6 +897,7 @@ public final class AutoTest {
 	private final ShieldTest shieldTest = new ShieldTest();
 	private final DuckTest duckTest = new DuckTest();
 	private final Cosmetics2Test cosmetics2Test = new Cosmetics2Test();
+	private final PetsTest petsTest = new PetsTest();
 	private final KeySearchTest keySearchTest = new KeySearchTest();
 	private final DisconnectTest disconnectTest = new DisconnectTest();
 	private final QolTest qolTest = new QolTest();
