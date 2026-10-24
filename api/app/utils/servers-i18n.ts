@@ -19,6 +19,7 @@ const en = {
   modrinth: 'Modrinth',
   docs: 'Documentation',
   releaseNote: 'All platforms are in one release – pick the file for your server software. Open source under GPL-3.0.',
+  teaser: { title: 'Server plugin – TRS Server Rules', text: 'Lock or force TRS Client modules on your server via config. For Spigot, Paper, Folia, Velocity, BungeeCord, Sponge and Fabric, NeoForge and Forge servers.', button: 'For servers' },
   features: {
     title: 'What it does',
     items: [
@@ -94,6 +95,7 @@ const de: ServersTexts = {
   modrinth: 'Modrinth',
   docs: 'Dokumentation',
   releaseNote: 'Alle Plattformen stecken in einem Release – nimm die Datei für deine Server-Software. Open Source unter GPL-3.0.',
+  teaser: { title: 'Server-Plugin – TRS Server Rules', text: 'Sperre oder erzwinge TRS-Client-Module auf deinem Server per Config. Für Spigot, Paper, Folia, Velocity, BungeeCord, Sponge sowie Fabric-, NeoForge- und Forge-Server.', button: 'Für Server' },
   features: {
     title: 'Was es kann',
     items: [
@@ -167,6 +169,7 @@ const es: ServersTexts = {
   modrinth: 'Modrinth',
   docs: 'Documentación',
   releaseNote: 'Todas las plataformas están en una sola versión: elige el archivo para tu software de servidor. Código abierto bajo GPL-3.0.',
+  teaser: { title: 'Plugin de servidor – TRS Server Rules', text: 'Bloquea o fuerza módulos del TRS Client en tu servidor mediante la configuración. Para Spigot, Paper, Folia, Velocity, BungeeCord, Sponge y servidores Fabric, NeoForge y Forge.', button: 'Para servidores' },
   features: {
     title: 'Qué hace',
     items: [

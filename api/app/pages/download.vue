@@ -3,6 +3,8 @@ import { breadcrumbLd } from '#shared/seo'
 
 const { lang, m, fill, date } = useLang()
 const siteUrl = useSiteUrl()
+const lp = useLocalePath()
+const { s } = useServersText()
 const { data } = await useRelease()
 const { data: blogData } = await useBlog()
 const { data: mobileData } = await useMobileRelease()
@@ -231,6 +233,18 @@ async function copyAur() {
         <SiteIcon name="github" class="size-4" />{{ mm.releasePage }}
         <SiteIcon name="external" class="size-3.5 opacity-60" />
       </a>
+    </section>
+
+    <!-- Server-Plugin -->
+    <section id="server-plugin" class="card flex flex-col gap-5 p-6 sm:p-8 md:flex-row md:items-center" aria-labelledby="srv-title">
+      <span class="os-icon shrink-0"><SiteIcon name="server" class="size-6" /></span>
+      <div class="min-w-0 flex-1">
+        <h2 id="srv-title" class="heading text-2xl">{{ s.teaser.title }}</h2>
+        <p class="mt-2 text-base-400">{{ s.teaser.text }}</p>
+      </div>
+      <NuxtLink :to="lp('/servers')" class="btn btn-primary pixel-corners h-12 shrink-0 justify-center px-6 text-base" style="--notch: 3px">
+        <SiteIcon name="server" class="size-5" />{{ s.teaser.button }}
+      </NuxtLink>
     </section>
     </div>
 

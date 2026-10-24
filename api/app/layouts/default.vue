@@ -110,6 +110,10 @@ onMounted(() => hw.loadPrefs())
           <a :href="REPO_URL" class="btn-icon hidden sm:inline-flex" aria-label="GitHub" rel="noopener" target="_blank">
             <SiteIcon name="github" class="size-4.5" />
           </a>
+          <NuxtLink :to="lp('/servers')" class="btn btn-ghost hidden lg:inline-flex">
+            <SiteIcon name="server" class="size-4" />
+            {{ m.nav.servers }}
+          </NuxtLink>
           <NuxtLink :to="lp('/download')" class="btn btn-primary hidden sm:inline-flex">
             <SiteIcon name="download" class="size-4" />
             {{ m.nav.download }}
@@ -137,6 +141,7 @@ onMounted(() => hw.loadPrefs())
             </ul>
             <div class="mt-3 flex gap-2 border-t border-base-800 pt-3 sm:hidden">
               <NuxtLink :to="lp('/download')" class="btn btn-primary flex-1" @click="closeMenu()"><SiteIcon name="download" class="size-4" />{{ m.nav.download }}</NuxtLink>
+              <NuxtLink :to="lp('/servers')" class="btn btn-ghost flex-1" @click="closeMenu()"><SiteIcon name="server" class="size-4" />{{ m.nav.servers }}</NuxtLink>
               <a :href="REPO_URL" class="btn-icon" aria-label="GitHub" rel="noopener" target="_blank"><SiteIcon name="github" class="size-4.5" /></a>
             </div>
           </nav>
