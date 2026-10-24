@@ -110,9 +110,12 @@ export function useCapes() {
   return useApiFetch<{ capes: SiteCape[] }>('/v1/site/capes', { key: 'capes', default: () => ({ capes: [] }) })
 }
 
-/** Kopf-Kosmetik im Format v2: `hats` und `companions` (Begleiter), ohne versteckte Teile. */
+/** Kosmetik im Format v2: `hats`, `companions` (Begleiter am Kopf), `wings` und `pets` (Begleiter am Boden), ohne versteckte Teile. */
 export function useHats() {
-  return useApiFetch<{ hats: SiteHat[], companions: SiteHat[] }>('/v1/site/cosmetics', { key: 'hats', default: () => ({ hats: [], companions: [] }) })
+  return useApiFetch<{ hats: SiteHat[], companions: SiteHat[], wings?: SiteHat[], pets?: SiteHat[] }>('/v1/site/cosmetics', {
+    key: 'hats',
+    default: () => ({ hats: [], companions: [], wings: [], pets: [] }),
+  })
 }
 
 export interface PublicEvent {

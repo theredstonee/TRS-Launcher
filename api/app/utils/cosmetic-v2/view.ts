@@ -15,6 +15,7 @@ import {
   haloFacing,
   haloFalloff,
   haloIntensity,
+  hiddenBones,
   parseModel,
   samplePoses,
   type CosmeticModel,
@@ -45,7 +46,10 @@ export interface CosmeticUpdateOptions {
 }
 
 export interface CosmeticInstance {
-  /** An den Kopf hängen (Ursprung = Nacken, wie ModelPart head / skinview3d `skin.head`). */
+  /**
+   * An den Anhängepunkt hängen (`head`: Ursprung = Nacken wie skinview3d `skin.head`; `body`/`ground`: siehe
+   * {@link attachAnchor}).
+   */
   readonly root: ThreeNs.Group
   readonly model: CosmeticModel
   /** Pose, Streifen-Bilder und Höfe zur Wanduhr `timeMs` setzen – vor jedem Bild aufrufen. */
@@ -54,6 +58,11 @@ export interface CosmeticInstance {
   setLight(f: number): void
   /** Umriss um einen Würfel (Werkzeug-Ansicht), `null` = aus. */
   highlight(cubeId: string | null): void
+  /**
+   * Optionen (Anhang D): Wahl je Option-id (fehlend = `default`). Abgeschaltete Optionen blenden ihre Knochen samt
+   * Kind-Knochen aus (Würfel, Leucht-Schicht und Höfe daran).
+   */
+  setOptions(choices: Readonly<Record<string, boolean>> | null): void
   dispose(): void
 }
 
@@ -282,6 +291,10 @@ export function createCosmetic(THREE: Three, model: CosmeticModel, images: Cosme
       mats[0]!.color.setScalar(f)
       mats[2]!.color.setScalar(f)
     },
+    setOptions(choices) {
+      const hidden = hiddenBones(model, choices)
+      for (const [id, g] of bones) g.visible = !hidden.has(id)
+    },
     highlight(cubeId) {
       if (highlightObj) {
         highlightObj.parent?.remove(highlightObj)
@@ -403,6 +416,56 @@ export interface MountOptions {
   night?: boolean
   /** Feste Zeit (ms) statt Wanduhr – für Standbilder/Tests. */
   fixedTime?: number | null
+  /** Wahl der Optionen (Anhang D), `null` = alle Standardwerte. */
+  options?: Readonly<Record<string, boolean>> | null
+  /** Aktive Treiber (Standard nur `idle`; Begleiter am Boden z. B. `['walk']`). */
+  drivers?: readonly Driver[] | null
+}
+
+/** Boden-Anker (attach `ground`) wie die Studio-Werkbank: neben dem rechten Fuß des Spielers, leicht zur Kamera gedreht. */
+export const GROUND_ANCHOR = { position: [13, -24, 7] as const, rotationY: 0.35 }
+
+/**
+ * Anker-Gruppe für einen Anhängepunkt am skinview3d-Spieler (wie die Werkbank): `head` = `skin.head` (Ursprung Nacken),
+ * `body` = neue Gruppe in `skin.body` bei y + 6 (skinview3d setzt die Rumpf-Gruppe in die Rumpf-Mitte, der Nacken liegt
+ * 6 darüber), `ground` = neue Gruppe in `playerObject` am Boden neben dem rechten Fuß (+z des Modells = Blickrichtung).
+ * `own` = die Gruppe wurde neu angelegt und muss beim Abnehmen entfernt werden.
+ */
+export function attachAnchor(THREE: Three, viewer: SkinViewer, attach: CosmeticModel['attach']): { group: ThreeNs.Object3D, own: boolean } {
+  if (attach === 'head') return { group: viewer.playerObject.skin.head, own: false }
+  const g = new THREE.Group()
+  if (attach === 'body') {
+    g.name = 'trs-body-anchor'
+    g.position.set(0, 6, 0)
+    viewer.playerObject.skin.body.add(g)
+  } else {
+    g.name = 'trs-ground-anchor'
+    g.position.set(...GROUND_ANCHOR.position)
+    g.rotation.y = GROUND_ANCHOR.rotationY
+    viewer.playerObject.add(g)
+  }
+  return { group: g, own: true }
+}
+
+/**
+ * Kamera passend zum Anhängepunkt: `head` wie {@link frameHead}; `body` (Flügel) = ganzer Spieler, „three“ schräg von
+ * hinten; `ground` (Begleiter am Boden) = Spieler und Begleiter nebeneinander, Ziel zwischen beiden.
+ */
+export function frameModel(THREE: Three, viewer: SkinViewer, model: CosmeticModel | null, view: ViewName = 'three', zoom = 1): void {
+  const attach = model?.attach ?? 'head'
+  if (attach === 'head') return frameHead(THREE, viewer, model, view, zoom)
+  viewer.playerWrapper.rotation.y = 0
+  viewer.playerObject.rotation.y = 0
+  viewer.playerObject.updateMatrixWorld(true)
+  const neck = new THREE.Vector3()
+  viewer.playerObject.skin.head.getWorldPosition(neck)
+  const ground = attach === 'ground'
+  const target = ground ? new THREE.Vector3(5, neck.y - 9, 2) : new THREE.Vector3(0, neck.y - 3, 0)
+  const dist = (ground ? 100 : 92) * zoom
+  const dir = new THREE.Vector3(...(!ground && view === 'three' ? [0.85, 0.42, -0.95] as const : VIEWS[view])).normalize()
+  viewer.camera.position.copy(target).addScaledVector(dir, dist)
+  viewer.controls.target.copy(target)
+  viewer.controls.update()
 }
 
 export interface MountedCosmetic {
@@ -413,15 +476,17 @@ export interface MountedCosmetic {
 }
 
 /**
- * Hängt ein Modell an den Kopf eines skinview3d-Spielers und hält es mit einer eigenen Bild-Schleife
- * aktuell (Wanduhr wie im Spiel: alle Clients zeigen dieselbe Phase). Animation aus = Ruhepose,
- * Leuchten steht – wie die Werkbank.
+ * Hängt ein Modell an seinen Anhängepunkt (`head`, `body`, `ground`, siehe {@link attachAnchor}) eines
+ * skinview3d-Spielers und hält es mit einer eigenen Bild-Schleife aktuell (Wanduhr wie im Spiel: alle Clients zeigen
+ * dieselbe Phase). Animation aus = Ruhepose, Leuchten steht – wie die Werkbank.
  */
 export function mountOnSkinViewer(THREE: Three, viewer: SkinViewer, loaded: LoadedCosmetic, opts: MountOptions = {}): MountedCosmetic {
   const cos = createCosmetic(THREE, loaded.model, loaded.images)
-  viewer.playerObject.skin.head.add(cos.root)
-  const state: Required<MountOptions> = { animate: true, glow: true, night: false, fixedTime: null, ...opts }
+  const anchor = attachAnchor(THREE, viewer, loaded.model.attach)
+  anchor.group.add(cos.root)
+  const state: Required<MountOptions> = { animate: true, glow: true, night: false, fixedTime: null, options: null, drivers: null, ...opts }
   applyDayNight(viewer, cos, state.night)
+  cos.setOptions(state.options)
   let frozenAt = state.fixedTime ?? Date.now()
   let raf = 0
   let alive = true
@@ -433,7 +498,12 @@ export function mountOnSkinViewer(THREE: Three, viewer: SkinViewer, loaded: Load
   }
   const tick = () => {
     if (!alive) return
-    cos.update(now(), { animate: state.animate || state.fixedTime != null, glow: state.glow, camera: viewer.camera })
+    cos.update(now(), {
+      animate: state.animate || state.fixedTime != null,
+      glow: state.glow,
+      camera: viewer.camera,
+      ...(state.drivers ? { drivers: state.drivers } : {}),
+    })
     raf = requestAnimationFrame(tick)
   }
   tick()
@@ -442,11 +512,13 @@ export function mountOnSkinViewer(THREE: Three, viewer: SkinViewer, loaded: Load
     set(next) {
       Object.assign(state, next)
       if (next.night !== undefined) applyDayNight(viewer, cos, state.night)
+      if (next.options !== undefined) cos.setOptions(state.options)
     },
     dispose() {
       alive = false
       cancelAnimationFrame(raf)
       cos.dispose()
+      if (anchor.own) anchor.group.parent?.remove(anchor.group)
     },
   }
 }

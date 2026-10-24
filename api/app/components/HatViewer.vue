@@ -2,13 +2,22 @@
 import type { SkinViewer } from 'skinview3d'
 import type { LoadedCosmetic, MountedCosmetic, Three } from '~/utils/cosmetic-v2/view'
 
-// 3D-Vorschau einer Kopf-Kosmetik (Format v2) an der Schaufensterpuppe – derselbe Renderer wie die Studio-Werkbank
+// 3D-Vorschau einer Kosmetik (Format v2) an der Schaufensterpuppe – derselbe Renderer wie die Studio-Werkbank
 // und der Launcher (utils/cosmetic-v2). skinview3d + three.js sind mitgebündelt, Modell und Bilder kommen von der
 // eigenen API (gleiche Herkunft, strenge CSP bleibt). Kamera wie die Werkbank („three“, fov 32), Ziehen dreht.
-const props = withDefaults(defineProps<{ hat: SiteHat | null, night?: boolean, animate?: boolean, height?: number }>(), {
+// Anhängepunkt aus dem Modell: Kopf, Rumpf (Flügel, ganzer Spieler) oder Boden (Begleiter neben dem Spieler).
+const props = withDefaults(defineProps<{
+  hat: SiteHat | null
+  night?: boolean
+  animate?: boolean
+  height?: number
+  /** Wahl der Optionen (z. B. `{ beard: false }`), `null` = Standardwerte. */
+  options?: Record<string, boolean> | null
+}>(), {
   night: false,
   animate: true,
   height: 400,
+  options: null,
 })
 const emit = defineEmits<{ loading: [boolean] }>()
 
@@ -58,8 +67,8 @@ async function apply() {
     const loaded = await load(hat)
     if (mine !== token || !viewer) return
     mounted?.dispose()
-    mounted = view.mountOnSkinViewer(three, viewer, loaded, { animate: props.animate, night: props.night })
-    view.frameHead(three, viewer, loaded.model, 'three', zoom())
+    mounted = view.mountOnSkinViewer(three, viewer, loaded, { animate: props.animate, night: props.night, options: props.options })
+    view.frameModel(three, viewer, loaded.model, 'three', zoom())
   } catch (e) {
     console.error('cosmetic preview failed', e)
   } finally {
@@ -109,6 +118,7 @@ watch(() => props.night, (night) => {
   else if (viewer && view) view.applyDayNight(viewer, null, night)
 })
 watch(() => props.animate, (animate) => mounted?.set({ animate }))
+watch(() => props.options, (options) => mounted?.set({ options }), { deep: true })
 </script>
 
 <template>

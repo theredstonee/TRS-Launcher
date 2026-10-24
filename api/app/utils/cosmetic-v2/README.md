@@ -43,6 +43,9 @@ mounted.dispose()                                                          // ab
 | `mountOnSkinViewer(THREE, viewer, loaded, opts)` | Hängt an `viewer.playerObject.skin.head`, eigene rAF-Schleife wie die Werkbank. `set({ animate, glow, night, fixedTime })`, `dispose()`. Animation aus = Ruhepose, Leuchten steht. |
 | `applyDayNight(viewer, cos, night)` | Werkbank-Licht: Nacht = Umgebungslicht 3 × 0,18, Kameralicht 0,6 × 0,2, Modell-Licht 0,2 (emissive + Leuchten bleiben voll). |
 | `frameHead(THREE, viewer, model, view = 'three', zoom = 1)` | Kamera auf den Kopf (Ziel Nacken + 8 + Anhebung nach Modellhöhe, Abstand 34 · (1 + Anhebung/9)); `VIEWS` = front/three/side/back/top. |
+| `attachAnchor(THREE, viewer, attach)` | Anker je Anhängepunkt wie die Werkbank: `head` = `skin.head`; `body` = Gruppe in `skin.body` bei y + 6 (Nacken); `ground` = Gruppe in `playerObject` bei (13, −24, 7), Drehung y 0,35 (neben dem rechten Fuß). `mountOnSkinViewer` nutzt ihn automatisch nach `model.attach`. |
+| `frameModel(THREE, viewer, model, view, zoom)` | Kamera nach Anhängepunkt: `head` = `frameHead`; `body` (Flügel) = ganzer Spieler, „three“ schräg von hinten; `ground` = Spieler + Begleiter. |
+| `setOptions(choices)` / `mount.set({ options })` | Optionen (Anhang D, z. B. `{ beard: false }`): abgeschaltete Optionen blenden ihre Knochen samt Kind-Knochen aus (Gruppe unsichtbar). `format.ts`: `resolveOptions`, `hiddenBones`, `SLOT_ATTACH`, `PET_STATES`. `mount.set({ drivers })` spielt z. B. `['walk']`. |
 
 `format.ts` exportiert u. a. `validateModel`, `parseModel`, `samplePoses`, `boneLocal`, `boneMatrices`, `faceCorners`,
 `faceUvCorners`, `frameAt`, `haloIntensity`, `haloFacing`, `haloFalloff`, `rotationZYX`, `LIMITS` und alle Modell-Typen
