@@ -999,6 +999,20 @@ public final class VanillaMenus {
 	public static volatile String overlayPhase;
 	/** Deckkraft der Überblendung in diesem Bild. */
 	public static volatile float overlayAlpha;
+	/** In diesem Bild hat die TRS-Fläche eine von einem anderen Mod (RRLS) versteckte Überblendung gezeichnet. */
+	private static boolean hiddenOverlayDrawn;
+
+	/** Aus LoadingOverlayMixin: die TRS-Fläche für eine versteckte Überblendung (RRLS) ist gezeichnet. */
+	public static void hiddenOverlayDrawn() {
+		hiddenOverlayDrawn = true;
+	}
+
+	/** Für RrlsOverlayMixin: true = in diesem Bild schon gezeichnet (die Ladeleiste von RRLS bleibt weg); setzt zurück. */
+	public static boolean takeHiddenOverlayDrawn() {
+		boolean drawn = hiddenOverlayDrawn;
+		hiddenOverlayDrawn = false;
+		return drawn;
+	}
 
 	/** Ressourcen-Überblendung im Redstone-Stil (Menü-Stil → Ladebildschirme an)? */
 	public static boolean resourceOverlayStyled() {

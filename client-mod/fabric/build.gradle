@@ -255,6 +255,10 @@ if (stonecutter.eval(mc, '>=1.20.3')) mixinClasses += ['HostingPackServerMixin',
 mixinClasses += ['MenuScreenMixin', 'MenuButtonMixin', 'MenuEditBoxMixin', 'ServerEntryMixin', 'WorldEntryMixin', 'LoadingOverlayMixin',
 		'JoinMultiplayerAccessor']
 if (stonecutter.eval(mc, '>=1.20.5')) mixinClasses << 'MenuListMixin'
+// Ladebildschirm mit RRLS: TRS-Fläche über ein eigenes Zeichenziel (ab 1.21.6 auf dem Oberflächen-Zustand des
+// Bildes), die Ladeleiste von RRLS bleibt dann weg (require = 0 – ohne RRLS ohne Wirkung).
+if (stonecutter.eval(mc, '>=1.20')) mixinClasses << 'RrlsOverlayMixin'
+if (stonecutter.eval(mc, '>=1.21.6') && stonecutter.eval(mc, '<26.1')) mixinClasses << 'GuiStateAccessor'
 // Suche in der Tastenbelegung: Einträge der Liste ersetzen (alle Versionen).
 mixinClasses << 'KeySearchListInvoker'
 // Fehlerbildschirm: Ziel der letzten Verbindung merken (Erneut verbinden, Neu anmelden).
