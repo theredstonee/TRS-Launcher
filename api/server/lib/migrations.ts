@@ -860,7 +860,57 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 33,
     run: migratePreviewsAccess,
   },
+  {
+    // Winter 2026: Platz `pet` (Begleiter am Boden, Pinguin) und Optionen je Spieler (`equipped_cosmetics.options`, JSON
+    // `{ <optionId>: bool }`, z. B. Bart der Weihnachtsmütze); `user_cosmetics.source = 'creator'` (Creator-Pinguine nach
+    // Fans); `creators.pet_count` = zuletzt gemeldete Pinguin-Stufe (0 = keiner) für das Ereignis bei Änderung.
+    // Blätter-Tabellen neu angelegt (SQLite kann CHECKs nicht ändern; niemand verweist auf sie), Daten bleiben. Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 34,
+    run: migrateWinterCosmetics,
+  },
 ]
+
+/** Migration 34 (siehe oben): Platz `pet`, Optionen je Spieler, Quelle `creator`. Exportiert für den Idempotenz-Test. */
+export function migrateWinterCosmetics(db: DatabaseSync): void {
+  const sqlOf = (name: string) => (db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?").get(name) as { sql: string } | undefined)?.sql ?? ''
+  if (hasTable(db, 'equipped_cosmetics') && !sqlOf('equipped_cosmetics').includes("'pet'")) {
+    // Ältere Fassung ohne Spalte `options`: zuerst anlegen, damit die Kopie unten eine feste Anweisung bleibt.
+    if (!hasColumn(db, 'equipped_cosmetics', 'options')) db.exec('ALTER TABLE equipped_cosmetics ADD COLUMN options TEXT')
+    db.exec(`
+CREATE TABLE equipped_cosmetics_v34 (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  slot TEXT NOT NULL CHECK (slot IN ('hat', 'wings', 'back', 'aura', 'companion', 'pet')),
+  cosmetic_id TEXT NOT NULL REFERENCES cosmetics(id) ON DELETE CASCADE,
+  -- Wahl des Spielers für die Optionen des Modells (JSON-Objekt { optionId: bool }), NULL = alle Standardwerte
+  options TEXT CHECK (options IS NULL OR (json_valid(options) AND json_type(options) = 'object')),
+  PRIMARY KEY (uuid, slot)
+);
+INSERT INTO equipped_cosmetics_v34 (uuid, slot, cosmetic_id, options)
+  SELECT uuid, slot, cosmetic_id, options FROM equipped_cosmetics;
+DROP TABLE equipped_cosmetics;
+ALTER TABLE equipped_cosmetics_v34 RENAME TO equipped_cosmetics;
+CREATE INDEX IF NOT EXISTS equipped_cosmetics_item ON equipped_cosmetics(cosmetic_id);
+`)
+  }
+  if (hasTable(db, 'user_cosmetics') && !sqlOf('user_cosmetics').includes("'creator'")) {
+    db.exec(`
+CREATE TABLE user_cosmetics_v34 (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  cosmetic_id TEXT NOT NULL REFERENCES cosmetics(id) ON DELETE CASCADE,
+  source TEXT NOT NULL CHECK (source IN ('code', 'admin', 'event', 'reward', 'creator')),
+  granted_at INTEGER NOT NULL,
+  PRIMARY KEY (uuid, cosmetic_id)
+);
+INSERT INTO user_cosmetics_v34 (uuid, cosmetic_id, source, granted_at) SELECT uuid, cosmetic_id, source, granted_at FROM user_cosmetics;
+DROP TABLE user_cosmetics;
+ALTER TABLE user_cosmetics_v34 RENAME TO user_cosmetics;
+`)
+  }
+  if (hasTable(db, 'creators') && !hasColumn(db, 'creators', 'pet_count')) {
+    db.exec('ALTER TABLE creators ADD COLUMN pet_count INTEGER NOT NULL DEFAULT 0 CHECK (pet_count BETWEEN 0 AND 4)')
+  }
+}
 
 /** Migration 32 (siehe oben): Recht `serverrules.bypass` für die Standardrollen Owner und Admin. Exportiert für den Test. */
 export function migrateServerRulesBypass(db: DatabaseSync): void {

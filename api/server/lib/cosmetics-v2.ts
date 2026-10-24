@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { getRouterParam, type H3Event } from 'h3'
-import { validateModel, type CosmeticModel } from '../../app/utils/cosmetic-v2/format'
+import { SLOT_ATTACH, validateModel, type CosmeticModel } from '../../app/utils/cosmetic-v2/format'
 import { notFound } from './errors'
 import { COSMETIC_ID, sha256Hex } from './ids'
 import { COSMETIC_MAX_SCALE, inspectPng } from './png'
@@ -96,9 +96,8 @@ export function buildV2Cosmetic(e: V2EntryInput): BuiltinCosmeticV2 {
   if (!r.ok) fail(r.errors.join('; '))
   const model = json as CosmeticModel
   if (model.id !== e.id) fail(`model id "${model.id}" does not match the catalog id`)
-  // Kopf-Teile hängen am Kopf, Flügel (§36) am Körper.
-  const okPair = ((model.slot === 'hat' || model.slot === 'companion') && model.attach === 'head') || (model.slot === 'wings' && model.attach === 'body')
-  if (!okPair) fail('only slot hat or companion with attach head, or slot wings with attach body, are supported')
+  // Kopf-Teile hängen am Kopf, Flügel (§36) am Körper, Begleiter am Boden (`pet`, Winter 2026) am Boden.
+  if (SLOT_ATTACH[model.slot] !== model.attach) fail('slot/attach pair not supported (hat/companion: head, wings: body, pet: ground)')
   if (model.texture.scale > COSMETIC_MAX_SCALE) fail(`texture scale ${model.texture.scale} > ${COSMETIC_MAX_SCALE} (needs a DB migration)`)
   const texFrames = model.texture.frames ?? 1
   if (texFrames !== e.frames) fail(`catalog frames ${e.frames} ≠ model texture.frames ${texFrames}`)

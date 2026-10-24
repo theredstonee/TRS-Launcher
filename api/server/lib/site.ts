@@ -254,16 +254,31 @@ export function publicCapes(ctx: AppContext): PublicCape[] {
 
 // --- Kopf-Kosmetik (Format v2) ------------------------------------------------------------
 
+export type PublicV2Slot = 'hat' | 'companion' | 'wings' | 'pet'
+
+/** Abschaltbares Teil eines Modells (Winter 2026), für den Schalter in der Vorschau. */
+export interface PublicOption {
+  id: string
+  default: boolean
+  name: Record<string, string> | null
+}
+
 export interface PublicHat extends CosmeticV2Fields {
   id: string
   name: string
   /** Titel des Erfolgs, der dieses Teil als Belohnung vergibt (§31), sonst `null`. */
   achievement: { en: string, de: string, es: string } | null
-  unlock: 'free' | 'code' | 'admin' | 'event'
+  unlock: 'free' | 'code' | 'admin' | 'event' | 'reward'
   /** Nur bei Event-Teilen (`unlock` = `event`): das Event. */
   event: string | null
-  /** Platz: `hat` (Kopf) oder `companion` (Begleiter). */
-  slot: 'hat' | 'companion'
+  /** Nur bei Belohnungen (`unlock` = `reward`, §36): wofür, z. B. `pumpkinhunter2026`. */
+  rewardOf: string | null
+  /** Platz: `hat` (Kopf), `companion` (Begleiter am Kopf), `wings` (Rücken) oder `pet` (Begleiter am Boden). */
+  slot: PublicV2Slot
+  /** Anhängepunkt des Modells (`head`, `body`, `ground`). */
+  attach: 'head' | 'body' | 'ground'
+  /** Abschaltbare Teile (z. B. Bart), leer wenn keine. */
+  options: PublicOption[]
   /** Grundtextur – relativ zur Website (gleiche Herkunft, CSP `img-src 'self'`). */
   texture: string
   /** Hat das Modell Knochen-Animationen (Treiber idle)? */
@@ -283,11 +298,21 @@ export function publicCompanions(ctx: AppContext): PublicHat[] {
   return publicV2(ctx, 'companion')
 }
 
-function publicV2(ctx: AppContext, slot: 'hat' | 'companion'): PublicHat[] {
+/** Flügel (Format v2, Platz `wings`) – wie {@link publicHats}; Belohnungs-Flügel nur, solange ihr Event läuft. */
+export function publicWings(ctx: AppContext): PublicHat[] {
+  return publicV2(ctx, 'wings')
+}
+
+/** Begleiter am Boden (Format v2, Platz `pet`, z. B. der Pinguin) – wie {@link publicHats}. */
+export function publicPets(ctx: AppContext): PublicHat[] {
+  return publicV2(ctx, 'pet')
+}
+
+function publicV2(ctx: AppContext, slot: PublicV2Slot): PublicHat[] {
   const live = new Set(globalEvents(ctx))
-  const rows = all<{ id: string, name: string, unlock: 'free' | 'code' | 'admin', event: string | null, format: number }>(
+  const rows = all<{ id: string, name: string, unlock: 'free' | 'code' | 'admin', event: string | null, reward: string | null, format: number }>(
     ctx.db,
-    `SELECT id, name, unlock, event, format FROM cosmetics
+    `SELECT id, name, unlock, event, reward, format FROM cosmetics
      WHERE kind = 'builtin' AND slot = 'hat' AND format = 2 AND status = 'approved' AND retired = 0 AND hidden = 0
      ORDER BY sort, id`,
   )
@@ -296,13 +321,17 @@ function publicV2(ctx: AppContext, slot: 'hat' | 'companion'): PublicHat[] {
   for (const r of rows) {
     const a = v2Assets(ctx, r)
     if (!a || a.model.slot !== slot || (r.event && !live.has(r.event))) continue
+    if (r.reward && !live.has(REWARD_EVENTS[r.reward] ?? '')) continue
     const f = v2Fields(a, '')
     out.push({
       id: r.id,
       name: r.name,
-      unlock: r.event ? 'event' : r.unlock,
+      unlock: r.reward ? 'reward' : r.event ? 'event' : r.unlock,
       event: r.event,
+      rewardOf: r.reward,
       slot,
+      attach: a.model.attach,
+      options: (a.model.options ?? []).map((o) => ({ id: o.id, default: o.default, name: o.name ?? null })),
       achievement: byReward.get(r.id) ?? null,
       texture: `/v1/cosmetics/${r.id}.png?v=${f.hash}`,
       animated: (a.model.animations ?? []).some((x) => (x.driver ?? 'idle') === 'idle'),

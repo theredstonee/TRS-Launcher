@@ -5,7 +5,10 @@ import { equipCosmetics, ownedEmotes } from '../../../lib/cosmetics'
 import { readJson, requireUser } from '../../../lib/http'
 import { equipBody } from '../../../lib/schemas'
 
-/** Plätze setzen: `{ hat?, wings?, back?, aura? }` – ID anlegen, `null` ablegen, fehlend unverändert. */
+/**
+ * Plätze setzen: `{ hat?, wings?, back?, aura?, companion?, pet? }` – ID anlegen, `null` ablegen, fehlend unverändert;
+ * dazu `options: { <slot>: { <optionId>: bool } }` (nur deklarierte Optionen, sonst 400 `unknown_option`).
+ */
 export default defineEventHandler(async (event) => {
   const auth = requireUser(event, 'write')
   const body = await readJson(event, equipBody)

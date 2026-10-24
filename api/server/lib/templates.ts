@@ -11,8 +11,11 @@ import { encodeRgba } from './png'
 
 /** Plätze für Vorlagen (Format 1). */
 export const TEMPLATE_SLOTS = ['hat', 'wings', 'back', 'aura'] as const
-/** Plätze zum Tragen: zusätzlich `companion` (Begleiter, nur Format 2, wird zusätzlich zum Hut getragen). */
-export const WEARABLE_SLOTS = [...TEMPLATE_SLOTS, 'companion'] as const
+/**
+ * Plätze zum Tragen: zusätzlich `companion` (Begleiter am Kopf, nur Format 2, wird zusätzlich zum Hut getragen) und
+ * `pet` (Begleiter am Boden wie der Pinguin, nur Format 2, Winter 2026).
+ */
+export const WEARABLE_SLOTS = [...TEMPLATE_SLOTS, 'companion', 'pet'] as const
 export type WearableSlot = (typeof WEARABLE_SLOTS)[number]
 export type CosmeticSlot = WearableSlot | 'emote'
 

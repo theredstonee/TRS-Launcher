@@ -98,3 +98,40 @@ export function creatorLookupData(
   }
   return { creators, fans }
 }
+
+// ---------------------------------------------------------------- Creator-Pinguine (Winter 2026)
+
+/** Das Teil, das aktive Creator nach Fans bekommen (slot `pet`). */
+export const CREATOR_PET_ID = 'penguin'
+
+/** Pinguin-Stufen nach Fans: ≥ 1 → 1, ≥ 10 → 2, ≥ 100 → 3, ≥ 1000 → 4; 0 Fans → 0 (kein Creator-Pinguin). */
+export function petCountForFans(fans: number): number {
+  if (fans >= 1000) return 4
+  if (fans >= 100) return 3
+  if (fans >= 10) return 2
+  return fans >= 1 ? 1 : 0
+}
+
+/** Fans je aktivem Creator unter `uuids` (eine gruppierte Abfrage); Nicht-Creator fehlen in der Map. */
+export function creatorFanCounts(ctx: AppContext, uuids: readonly string[]): Map<string, number> {
+  const out = new Map<string, number>()
+  if (uuids.length === 0) return out
+  for (const r of all<{ uuid: string, n: number }>(
+    ctx.db,
+    `SELECT c.uuid, COUNT(s.fan_uuid) AS n FROM creators c
+     LEFT JOIN creator_supports s ON s.creator_uuid = c.uuid
+     WHERE c.state = 'active' AND c.uuid IN (${placeholders(uuids.length)})
+     GROUP BY c.uuid`,
+    ...uuids,
+  )) out.set(r.uuid, r.n)
+  return out
+}
+
+/**
+ * Anzahl der Pinguine (`cosmetics.pet.count`, 1…4): für `penguin` bei aktiven Creatorn mit Fans die Stufe nach Fans,
+ * sonst (Code-Pinguin, andere Begleiter) 1.
+ */
+export function petCount(cosmeticId: string, fans: number | undefined): number {
+  if (cosmeticId !== CREATOR_PET_ID || !fans) return 1
+  return Math.max(1, petCountForFans(fans))
+}

@@ -173,11 +173,33 @@ export const adminCapeListQuery = z.strictObject({
 
 export const templateIdSchema = z.string().regex(TEMPLATE_ID, 'invalid template id')
 
-/** `{ hat?, wings?, back?, aura?, companion? }`: ID = anlegen, null = ablegen, fehlend = unverändert. */
+/**
+ * `{ hat?, wings?, back?, aura?, companion?, pet?, options? }`: ID = anlegen, null = ablegen, fehlend = unverändert.
+ * `options` (Winter 2026): `{ <slot>: { <optionId>: bool } }` – nur Optionen, die das Modell im Platz deklariert
+ * (geprüft in equipCosmetics).
+ */
 const slotValue = cosmeticIdSchema.nullable().optional()
+const optionChoices = z.record(z.string().regex(/^[a-z][a-z0-9_]{0,19}$/, 'invalid option id'), z.boolean())
+  .refine((o) => Object.keys(o).length >= 1 && Object.keys(o).length <= 4, '1–4 options per slot')
+const slotOptions = z.strictObject({
+  hat: optionChoices.optional(),
+  wings: optionChoices.optional(),
+  back: optionChoices.optional(),
+  aura: optionChoices.optional(),
+  companion: optionChoices.optional(),
+  pet: optionChoices.optional(),
+} satisfies Record<(typeof WEARABLE_SLOTS)[number], z.ZodOptional<typeof optionChoices>>)
+  .refine((o) => Object.values(o).some((v) => v !== undefined), 'options needs at least one slot')
 export const equipBody = z
-  .strictObject({ hat: slotValue, wings: slotValue, back: slotValue, aura: slotValue, companion: slotValue } satisfies
-    Record<(typeof WEARABLE_SLOTS)[number], typeof slotValue>)
+  .strictObject({
+    hat: slotValue,
+    wings: slotValue,
+    back: slotValue,
+    aura: slotValue,
+    companion: slotValue,
+    pet: slotValue,
+    options: slotOptions.optional(),
+  })
   .refine((o) => Object.values(o).some((v) => v !== undefined), 'at least one slot is required')
 
 export const cosmeticUploadQuery = z.strictObject({

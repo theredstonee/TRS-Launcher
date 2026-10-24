@@ -140,7 +140,9 @@ export function redeemCode(ctx: AppContext, uuid: string, normalized: string): R
       alreadyOwned,
     })
     const already = one(ctx.db, 'SELECT 1 AS x FROM code_redemptions WHERE code_id = ? AND uuid = ?', row.id, uuid)
-    if (already || (cape ? canUse(ctx, uuid, cape) : canUseCosmetic(ctx, uuid, cosmetic!))) {
+    // Nur auf Zeit (Creator-Pinguin nach Fans, Winter 2026) zählt nicht als Besitz: der Code macht ihn dauerhaft.
+    const onlyTemporary = !cape && one(ctx.db, "SELECT 1 AS x FROM user_cosmetics WHERE uuid = ? AND cosmetic_id = ? AND source = 'creator'", uuid, cosmetic!.id) !== undefined
+    if (already || (cape ? canUse(ctx, uuid, cape) : canUseCosmetic(ctx, uuid, cosmetic!) && !onlyTemporary)) {
       // Schon freigeschaltet: Code wird nicht verbraucht.
       grant()
       return result(true)

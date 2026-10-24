@@ -12,6 +12,7 @@ import {
 } from '../../shared/creator-profile'
 import { capeUrl, capeWearers, getCape, grantCape, removeCape, writeAtomic, type CapeRow } from './capes'
 import type { AppContext } from './context'
+import { syncCreatorPet, syncCreatorPets } from './creator-pet'
 import {
   symbolView,
   type CreatorState,
@@ -669,6 +670,7 @@ export function redeemCreatorCode(ctx: AppContext, fan: string, raw: unknown): R
     }
   }
 
+  const prevCreator = supportRow(ctx, fan)?.creator_uuid ?? null
   const r = tx(ctx.db, () => {
     let supportChanged = false
     let lockUntil: number | null = null
@@ -708,6 +710,8 @@ export function redeemCreatorCode(ctx: AppContext, fan: string, raw: unknown): R
   if (supportChanged) {
     emitFan(ctx, fan)
     checkMilestone(ctx, creator)
+    // Creator-Pinguine (Winter 2026): neuer Creator +1 Fan, bisheriger −1.
+    syncCreatorPets(ctx, [creator, prevCreator])
   }
   const after = supportRow(ctx, fan)
   const until = supportChanged ? switchLockUntil(ctx, after) : lockUntil ?? switchLockUntil(ctx, after)
@@ -721,8 +725,12 @@ export function redeemCreatorCode(ctx: AppContext, fan: string, raw: unknown): R
 
 /** Unterstützung beenden: Abzeichen weg, zählt nicht mehr als Fan. Fan-Umhänge bleiben. */
 export function endSupport(ctx: AppContext, fan: string): void {
+  const prev = supportRow(ctx, fan)?.creator_uuid ?? null
   const n = run(ctx.db, 'UPDATE creator_supports SET creator_uuid = NULL, updated_at = ? WHERE fan_uuid = ? AND creator_uuid IS NOT NULL', ctx.now(), fan)
-  if (n > 0) emitFan(ctx, fan)
+  if (n > 0) {
+    emitFan(ctx, fan)
+    syncCreatorPets(ctx, [prev])
+  }
 }
 
 export function blockedList(ctx: AppContext, uuid: string): PlayerRef[] {
@@ -1599,6 +1607,7 @@ export function insertCreatorInTx(ctx: AppContext, uuid: string, tier: CreatorTi
   return () => {
     notifyCreator(ctx, uuid, 'became_creator', { tier })
     emitFan(ctx, uuid)
+    syncCreatorPet(ctx, uuid)
   }
 }
 
@@ -1693,6 +1702,7 @@ export function adminRevokeCreator(ctx: AppContext, staff: Staff, uuid: string, 
   notifyCreator(ctx, uuid, 'revoked', { reason: input.reason })
   emitFan(ctx, uuid)
   emitFanCreator(ctx, uuid)
+  syncCreatorPet(ctx, uuid)
   return { creator: adminView(ctx, creatorRow(ctx, uuid)!) }
 }
 
@@ -1705,6 +1715,7 @@ export function adminRestoreCreator(ctx: AppContext, staff: Staff, uuid: string)
   notifyCreator(ctx, uuid, 'restored')
   emitFan(ctx, uuid)
   emitFanCreator(ctx, uuid)
+  syncCreatorPet(ctx, uuid)
   return { creator: adminView(ctx, creatorRow(ctx, uuid)!) }
 }
 
@@ -1733,6 +1744,7 @@ export function adminDeleteCreator(ctx: AppContext, staff: Staff, uuid: string):
   for (const f of fans) emitFan(ctx, f)
   emitFan(ctx, uuid)
   emitFanCreator(ctx, uuid)
+  syncCreatorPet(ctx, uuid)
 }
 
 // ---------------------------------------------------------------- Team: Anfragen
@@ -1843,6 +1855,7 @@ export function creatorFromApplicationInTx(ctx: AppContext, uuid: string): () =>
     notifyCreator(ctx, uuid, 'became_creator', { tier: 'starter' })
     emitFan(ctx, uuid)
     emitFanCreator(ctx, uuid)
+    syncCreatorPet(ctx, uuid)
   }
 }
 

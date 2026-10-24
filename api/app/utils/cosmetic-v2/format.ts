@@ -14,7 +14,7 @@ export type FaceName = 'north' | 'south' | 'east' | 'west' | 'up' | 'down'
 export type MaterialName = 'cutout' | 'emissive' | 'translucent'
 export type Channel = 'rotation' | 'position' | 'scale'
 export type Interpolation = 'linear' | 'smooth' | 'step'
-export type Driver = 'idle' | 'walk' | 'sneak' | 'jump' | 'air'
+export type Driver = 'idle' | 'walk' | 'sneak' | 'jump' | 'air' | 'slide' | 'swim'
 
 /** Flächen und ihre Außennormale im Modellraum (+x = links vom Spieler, +y = oben, +z = vorne). */
 export const FACES: readonly FaceName[] = ['north', 'south', 'east', 'west', 'up', 'down']
@@ -28,13 +28,35 @@ export const FACE_NORMAL: Readonly<Record<FaceName, Vec3>> = {
 }
 
 export const MATERIALS: readonly MaterialName[] = ['cutout', 'emissive', 'translucent']
-/** `head` = Kopf-Pivot; `body` = Körper-Pivot (Hals, Oberkante Mitte des Rumpfs; Rumpf x −4…4, y −12…0, z −2…2). */
-export const ATTACH = ['head', 'body'] as const
-/** `wings` (Halloween 2026, §36) hängt an `body`, `hat`/`companion` an `head`. */
-export const SLOTS = ['hat', 'companion', 'wings'] as const
+/**
+ * `head` = Kopf-Pivot; `body` = Körper-Pivot (Hals, Oberkante Mitte des Rumpfs; Rumpf x −4…4, y −12…0, z −2…2);
+ * `ground` (Winter 2026, Anhang D) = Boden unter der Mitte eines Begleiters, +z = Lauf-/Blickrichtung, kein ModelPart.
+ */
+export const ATTACH = ['head', 'body', 'ground'] as const
+export type Attach = (typeof ATTACH)[number]
+/** `wings` (Halloween 2026, §36) hängt an `body`, `hat`/`companion` an `head`, `pet` (Winter 2026) an `ground`. */
+export const SLOTS = ['hat', 'companion', 'wings', 'pet'] as const
+export type ModelSlot = (typeof SLOTS)[number]
+/** Pflicht-Anhängepunkt je Fach. */
+export const SLOT_ATTACH: Readonly<Record<ModelSlot, Attach>> = { hat: 'head', companion: 'head', wings: 'body', pet: 'ground' }
+/** Prüf-Kasten je Anhängepunkt (Studio-Werkbank; nur Hilfe für Werkzeuge, keine harte Grenze). */
+export const ATTACH_BOX: Readonly<Record<Attach, { from: Vec3, to: Vec3 }>> = {
+  head: { from: [-4, 0, -4], to: [4, 8, 4] },
+  body: { from: [-4, -12, -2], to: [4, 0, 2] },
+  ground: { from: [-8, 0, -8], to: [8, 16, 8] },
+}
+/** Zustände eines Begleiters am Boden (slot `pet`): Clients spielen die Animationen mit diesem `driver` (Rückfall idle). */
+export const PET_STATES = ['idle', 'walk', 'slide', 'swim', 'air'] as const
+export type PetState = (typeof PET_STATES)[number]
+/** Überblendzeit zwischen Zuständen in ms (§7 der Studio-Beschreibung). */
+export const STATE_FADE_MS = 250
+/** Höchstens so viele abschaltbare Optionen je Modell (Anhang D). */
+export const MAX_OPTIONS = 4
+/** id einer Option. */
+export const OPTION_ID = /^[a-z][a-z0-9_]{0,19}$/
 export const CHANNELS: readonly Channel[] = ['rotation', 'position', 'scale']
 export const INTERPOLATIONS: readonly Interpolation[] = ['linear', 'smooth', 'step']
-export const DRIVERS: readonly Driver[] = ['idle', 'walk', 'sneak', 'jump', 'air']
+export const DRIVERS: readonly Driver[] = ['idle', 'walk', 'sneak', 'jump', 'air', 'slide', 'swim']
 
 export const LIMITS = {
   cubes: 64,
@@ -139,12 +161,22 @@ export interface Halo {
   pulse?: Pulse
 }
 
+/** Abschaltbares Teil (Anhang D): ist die Option aus, werden diese Knochen samt Kind-Knochen nicht gezeichnet. */
+export interface ModelOption {
+  id: string
+  bones: string[]
+  default: boolean
+  /** Anzeigename je Sprache (`de`, `en`, `es`, …). */
+  name?: Record<string, string>
+}
+
 export interface CosmeticModel {
   format: 2
   id: string
   name: string
-  slot: 'hat' | 'companion' | 'wings'
-  attach: 'head' | 'body'
+  slot: ModelSlot
+  attach: Attach
+  options?: ModelOption[]
   texture: TextureSpec
   glow?: GlowSpec | null
   bones: Bone[]
@@ -468,8 +500,27 @@ export function validateModel(m: any, images: { texture?: ImageSize | null, glow
   if (typeof m.name !== 'string' || !m.name.trim() || m.name.length > 60) err('name', '1–60 Zeichen')
   if (!(SLOTS as readonly string[]).includes(m.slot)) err('slot', `eins von ${SLOTS.join(', ')}`)
   if (!(ATTACH as readonly string[]).includes(m.attach)) err('attach', `eins von ${ATTACH.join(', ')}`)
-  else if (m.slot === 'wings' && m.attach !== 'body') err('attach', 'slot wings braucht attach body')
-  else if ((m.slot === 'hat' || m.slot === 'companion') && m.attach !== 'head') err('attach', 'slot hat/companion braucht attach head')
+  else if ((SLOTS as readonly string[]).includes(m.slot) && SLOT_ATTACH[m.slot as ModelSlot] !== m.attach) {
+    err('attach', `slot ${m.slot} braucht attach ${SLOT_ATTACH[m.slot as ModelSlot]}`)
+  }
+
+  // Optionen (Anhang D): [{ id, bones: [Knochen-ids], default: bool, name: { de, en, … } }], max. 4
+  if (m.options !== undefined) {
+    if (!Array.isArray(m.options) || m.options.length > MAX_OPTIONS) err('options', `Liste mit höchstens ${MAX_OPTIONS} Einträgen`)
+    else {
+      const boneIds = new Set((Array.isArray(m.bones) ? (m.bones as any[]) : []).map((b) => b?.id))
+      const seen = new Set<string>()
+      for (const [i, o] of (m.options as any[]).entries()) {
+        if (!OPTION_ID.test(o?.id ?? '') || seen.has(o.id)) err(`options[${i}].id`, 'a–z, 0–9, _ (max. 20), eindeutig')
+        seen.add(o?.id)
+        if (!Array.isArray(o?.bones) || !o.bones.length || o.bones.some((b: unknown) => !boneIds.has(b))) err(`options[${i}].bones`, 'vorhandene Knochen')
+        if (typeof o?.default !== 'boolean') err(`options[${i}].default`, 'true/false')
+        if (o?.name !== undefined && (!o.name || typeof o.name !== 'object' || Array.isArray(o.name) || Object.values(o.name).some((v) => typeof v !== 'string' || v.length > 40))) {
+          err(`options[${i}].name`, '{ Sprache: Text ≤ 40 }')
+        }
+      }
+    }
+  }
 
   // Textur
   const tex = m.texture ?? {}
@@ -690,4 +741,27 @@ export function parseModel(json: unknown, images: { texture?: ImageSize | null, 
   const r = validateModel(json, images)
   if (!r.ok) throw new Error(`Ungültiges Kosmetik-Modell: ${r.errors.slice(0, 5).join('; ')}${r.errors.length > 5 ? ` (+${r.errors.length - 5})` : ''}`)
   return json as CosmeticModel
+}
+
+// ---------------------------------------------------------------- Optionen (Anhang D)
+
+/**
+ * Wahl des Spielers auf die deklarierten Optionen anwenden: jede Option des Modells bekommt `true`/`false`
+ * (fehlt eine Wahl, gilt `default`). Unbekannte Schlüssel in `choices` fallen weg.
+ */
+export function resolveOptions(model: Pick<CosmeticModel, 'options'>, choices: Readonly<Record<string, boolean>> | null | undefined): Record<string, boolean> {
+  const out: Record<string, boolean> = {}
+  for (const o of model.options ?? []) out[o.id] = typeof choices?.[o.id] === 'boolean' ? choices[o.id]! : o.default
+  return out
+}
+
+/** Knochen, die bei dieser Wahl NICHT gezeichnet werden: die Knochen abgeschalteter Optionen samt aller Kind-Knochen. */
+export function hiddenBones(model: Pick<CosmeticModel, 'bones' | 'options'>, choices: Readonly<Record<string, boolean>> | null | undefined): Set<string> {
+  const on = resolveOptions(model, choices)
+  const hidden = new Set<string>()
+  for (const o of model.options ?? []) if (!on[o.id]) for (const b of o.bones) hidden.add(b)
+  if (hidden.size === 0) return hidden
+  // Eltern stehen vor ihren Kindern: ein Durchlauf reicht.
+  for (const b of model.bones) if (b.parent && hidden.has(b.parent)) hidden.add(b.id)
+  return hidden
 }

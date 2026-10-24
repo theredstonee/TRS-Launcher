@@ -2,8 +2,8 @@ import type { AppContext } from './context'
 import { all, placeholders } from './db'
 import { capeView, type CapeRow } from './capes'
 import { badgeFxFor, type FxKind } from './badge-lookup'
-import { creatorLookupData, type LookupCreator, type LookupFan } from './creator-lookup'
-import { cosmeticView, renderable, type CosmeticRow } from './cosmetics'
+import { creatorFanCounts, creatorLookupData, petCount, type LookupCreator, type LookupFan } from './creator-lookup'
+import { cosmeticView, optionsOf, renderable, type CosmeticRow } from './cosmetics'
 import { WEARABLE_SLOTS, type WearableSlot } from './templates'
 import { ACTIVE_BANS } from './users'
 
@@ -38,6 +38,10 @@ export interface LookupCosmetic {
   glowFrames?: number
   glowFrameTimeMs?: number | null
   hash?: string
+  /** Format 2 mit `options` im Modell (Winter 2026): Wahl des Trägers je Option, vollständig (`{ "beard": false }`). */
+  options?: Record<string, boolean>
+  /** Nur im Platz `pet`: wie viele dieser Begleiter laufen (1…4; Creator-Pinguine nach Fans, sonst 1). */
+  count?: number
 }
 
 export type LookupCosmetics = Record<WearableSlot, LookupCosmetic | null>
@@ -78,7 +82,7 @@ interface Row {
 const visibleStatus = (status: string, self: boolean) => status === 'approved' || (self && status === 'pending')
 
 export function emptyCosmetics(): LookupCosmetics {
-  return { hat: null, wings: null, back: null, aura: null, companion: null }
+  return { hat: null, wings: null, back: null, aura: null, companion: null, pet: null }
 }
 
 /**
@@ -121,20 +125,23 @@ function collect(ctx: AppContext, viewer: string, uuids: string[]): LookupEntry[
     ...unique, ctx.now(), viewer,
   )
   if (rows.length === 0) return []
-  const equipped = all<CosmeticRow & { eq_uuid: string, eq_slot: WearableSlot }>(
+  const equipped = all<CosmeticRow & { eq_uuid: string, eq_slot: WearableSlot, eq_options: string | null }>(
     ctx.db,
-    `SELECT c.*, e.uuid AS eq_uuid, e.slot AS eq_slot FROM equipped_cosmetics e
+    `SELECT c.*, e.uuid AS eq_uuid, e.slot AS eq_slot, e.options AS eq_options FROM equipped_cosmetics e
      JOIN cosmetics c ON c.id = e.cosmetic_id
      WHERE e.uuid IN (${placeholders(rows.length)})`,
     ...rows.map((r) => r.uuid),
   )
-  const worn = new Map<string, (CosmeticRow & { eq_slot: WearableSlot })[]>()
+  const worn = new Map<string, (CosmeticRow & { eq_slot: WearableSlot, eq_options: string | null })[]>()
   for (const e of equipped) {
     const list = worn.get(e.eq_uuid)
     if (list) list.push(e)
     else worn.set(e.eq_uuid, [e])
   }
 
+  // Pinguin-Anzahl der Creator (Winter 2026): nur nachschlagen, wenn jemand etwas im Platz `pet` trägt.
+  const petWearers = equipped.filter((e) => e.eq_slot === 'pet').map((e) => e.eq_uuid)
+  const fanCounts = creatorFanCounts(ctx, petWearers)
   const viewerLive = seesLiveBadges(ctx, viewer)
   const extra = creatorLookupData(ctx, viewer, rows.map((r) => r.uuid))
   const badgeFx = badgeFxFor(ctx, viewer, rows)
@@ -180,6 +187,9 @@ function collect(ctx: AppContext, viewer: string, uuids: string[]): LookupEntry[
             glowFrameTimeMs: view.glowFrameTimeMs ?? null,
             hash: view.hash!,
           }
+          const options = optionsOf(ctx, c, c.eq_options)
+          if (options) cosmetics[c.eq_slot]!.options = options
+          if (c.eq_slot === 'pet') cosmetics[c.eq_slot]!.count = petCount(c.id, fanCounts.get(r.uuid))
         } else {
           if (!c.template) continue
           cosmetics[c.eq_slot] = {

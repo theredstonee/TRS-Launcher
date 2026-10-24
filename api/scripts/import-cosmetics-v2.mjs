@@ -1,8 +1,9 @@
 // Übernimmt die freigegebenen v2-Kosmetik-Exporte aus dem TRS Studio.
 // Öffentliche Teile → api/assets/cosmetics/v2/. Code-/Team-Teile → PRIVATE_ASSETS_DIR/cosmetics/v2/.
 //
-//   node api/scripts/import-cosmetics-v2.mjs [<studio-ordner>] [--private <ordner>]
+//   node api/scripts/import-cosmetics-v2.mjs [<studio-ordner>] [--private <ordner>] [--only <id,id,…>]
 //   Standard: Studio E:/ai/trs-studio, privat PRIVATE_ASSETS_DIR oder E:/ai/trs-private-assets
+//   --only: nur diese IDs übernehmen (z. B. nur die neuen Winter-Teile, ohne die übrigen Exporte erneut zu kopieren).
 //
 // Kopiert 1:1 (nicht verändern – vom User abgenommen): exports/cosmetic-v2/<id>.json, <id>.png, <id>-glow.png.
 // Karten: cosmetics/<id>/preview-three.png → <id>-card.png, preview-three-night.png → <id>-card-night.png,
@@ -14,18 +15,26 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PNG } from 'pngjs'
 
-const IDS = ['redstone_crown', 'team_crown', 'trs_cap', 'lamp_helmet', 'top_hat', 'halo', 'witch_hat', 'pumpkin_head', 'bat_buddy']
-const PRIVATE_IDS = new Set(['redstone_crown', 'team_crown', 'halo'])
+/** Winter 2026: alle fünf per Code ⇒ proprietär (nur PRIVATE_ASSETS_DIR, nie ins Repo). */
+const WINTER_IDS = ['snow_wings', 'ice_wings', 'santa_hat', 'snow_cloud', 'penguin']
+const IDS = ['redstone_crown', 'team_crown', 'trs_cap', 'lamp_helmet', 'top_hat', 'halo', 'witch_hat', 'pumpkin_head', 'bat_buddy', ...WINTER_IDS]
+const PRIVATE_IDS = new Set(['redstone_crown', 'team_crown', 'halo', ...WINTER_IDS])
 const MAX_CARD = 512
 
 function args() {
   let studio = null
   let priv = process.env.PRIVATE_ASSETS_DIR || 'E:/ai/trs-private-assets'
+  let only = null
   const argv = process.argv.slice(2)
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--private') {
       priv = argv[++i]
       if (!priv) throw new Error('--private needs a directory')
+    } else if (argv[i] === '--only') {
+      only = (argv[++i] ?? '').split(',').map((s) => s.trim()).filter(Boolean)
+      if (!only.length) throw new Error('--only needs ids')
+      const unknown = only.filter((id) => !IDS.includes(id))
+      if (unknown.length) throw new Error(`--only: unknown ids ${unknown.join(', ')}`)
     } else if (argv[i].startsWith('-')) {
       throw new Error(`unknown option ${argv[i]}`)
     } else if (studio) {
@@ -34,10 +43,10 @@ function args() {
       studio = argv[i]
     }
   }
-  return { studio: studio ?? 'E:/ai/trs-studio', priv }
+  return { studio: studio ?? 'E:/ai/trs-studio', priv, only }
 }
 
-const { studio: STUDIO, priv: PRIV } = args()
+const { studio: STUDIO, priv: PRIV, only: ONLY } = args()
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'cosmetics', 'v2')
 const PRIVATE_OUT = join(PRIV, 'cosmetics', 'v2')
 mkdirSync(OUT, { recursive: true })
@@ -97,7 +106,7 @@ function card(src, dest) {
   return `${img.width}×${img.height} ${(buf.length / 1024).toFixed(0)} KB`
 }
 
-for (const id of IDS) {
+for (const id of ONLY ?? IDS) {
   const dest = PRIVATE_IDS.has(id) ? PRIVATE_OUT : OUT
   const exp = join(STUDIO, 'exports', 'cosmetic-v2')
   for (const f of [`${id}.json`, `${id}.png`, `${id}-glow.png`]) {

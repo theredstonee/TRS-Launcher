@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { writeAtomic } from './capes'
+import { resolveOptions } from '../../app/utils/cosmetic-v2/format'
 import { shortHash, V2_TEMPLATE, v2File, type BuiltinCosmeticV2, type CosmeticV2Assets, type V2File } from './cosmetics-v2'
 import type { AppContext } from './context'
 import { all, one, run, tx } from './db'
@@ -91,6 +92,11 @@ export interface CosmeticView extends Partial<CosmeticV2Fields> {
   /** Ohne Weltlicht rendern (volle Helligkeit). Nur mitgelieferte Designs (v1). */
   emissive: boolean
   emote: { durationMs: number, loop: boolean } | null
+  /**
+   * Nur in der eigenen Ausrüstung (`GET/PUT /v1/me/cosmetics`) und nur, wenn das Modell Optionen deklariert (Winter 2026):
+   * Wahl je Option (`{ beard: false }`), fehlende Wahl = `default` des Modells – immer vollständig.
+   */
+  options?: Record<string, boolean>
 }
 
 /** Zusatzfelder für Format v2 (§11.9). Fehlen bei v1-Teilen (alte Clients kennen sie nicht). */
@@ -372,13 +378,45 @@ function ownsCosmetic(ctx: AppContext, uuid: string, id: string): boolean {
   return one(ctx.db, 'SELECT 1 AS x FROM user_cosmetics WHERE uuid = ? AND cosmetic_id = ?', uuid, id) !== undefined
 }
 
-function equippedMap(ctx: AppContext, uuid: string): Map<WearableSlot, CosmeticRow> {
-  const rows = all<CosmeticRow & { eq_slot: WearableSlot }>(
+type EquippedRow = CosmeticRow & { eq_slot: WearableSlot, eq_options: string | null }
+
+function equippedMap(ctx: AppContext, uuid: string): Map<WearableSlot, EquippedRow> {
+  const rows = all<EquippedRow>(
     ctx.db,
-    `SELECT c.*, e.slot AS eq_slot FROM equipped_cosmetics e JOIN cosmetics c ON c.id = e.cosmetic_id WHERE e.uuid = ?`,
+    `SELECT c.*, e.slot AS eq_slot, e.options AS eq_options FROM equipped_cosmetics e JOIN cosmetics c ON c.id = e.cosmetic_id WHERE e.uuid = ?`,
     uuid,
   )
   return new Map(rows.filter((r) => renderable(ctx, r)).map((r) => [r.eq_slot, r]))
+}
+
+/** Gespeicherte Wahl (`equipped_cosmetics.options`) lesen; Unsinn → leer. */
+export function parseOptionChoices(raw: string | null | undefined): Record<string, boolean> {
+  if (!raw) return {}
+  try {
+    const o = JSON.parse(raw) as unknown
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return {}
+    const out: Record<string, boolean> = {}
+    for (const [k, v] of Object.entries(o as Record<string, unknown>)) if (typeof v === 'boolean') out[k] = v
+    return out
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * Vollständige Wahl je Option des Modells (`{ beard: true }`) oder `undefined`, wenn das Teil keine Optionen deklariert
+ * (dann fehlt das Feld in den Sichten).
+ */
+export function optionsOf(ctx: AppContext, c: Pick<CosmeticRow, 'id' | 'format'>, raw: string | null | undefined): Record<string, boolean> | undefined {
+  const model = v2Assets(ctx, c)?.model
+  if (!model?.options?.length) return undefined
+  return resolveOptions(model, parseOptionChoices(raw))
+}
+
+function withOptions(ctx: AppContext, r: EquippedRow): CosmeticView {
+  const view = cosmeticView(ctx, r)
+  const options = optionsOf(ctx, r, r.eq_options)
+  return options ? { ...view, options } : view
 }
 
 /** Ausgerüstete Teile aus Sicht des Besitzers (auch wartende Uploads). */
@@ -387,7 +425,7 @@ export function equippedView(ctx: AppContext, uuid: string): EquippedView {
   const out = {} as EquippedView
   for (const s of WEARABLE_SLOTS) {
     const r = m.get(s)
-    out[s] = r ? cosmeticView(ctx, r) : null
+    out[s] = r ? withOptions(ctx, r) : null
   }
   return out
 }
@@ -428,14 +466,18 @@ export function ownedEmotes(ctx: AppContext, uuid: string): string[] {
     .map((c) => c.id)
 }
 
+export type OptionPatch = Partial<Record<WearableSlot, Record<string, boolean>>>
+
 /**
- * Setzt die übergebenen Plätze (`null` = ablegen, fehlend = unverändert). Alles
- * wird vorher geprüft und dann in einer Transaktion geschrieben.
+ * Setzt die übergebenen Plätze (`null` = ablegen, fehlend = unverändert) und Optionen (`options[slot][optionId]`,
+ * Winter 2026: nur Optionen, die das Teil im Platz – nach dieser Änderung – deklariert, sonst `400 unknown_option`).
+ * Ein anderes Teil im Platz beginnt mit den Standardwerten. Alles wird vorher geprüft und dann in einer Transaktion
+ * geschrieben.
  */
 export function equipCosmetics(
   ctx: AppContext,
   uuid: string,
-  patch: Partial<Record<WearableSlot, string | null>>,
+  patch: Partial<Record<WearableSlot, string | null>> & { options?: OptionPatch },
 ): EquippedView {
   const before = equippedMap(ctx, uuid)
   const plan: [WearableSlot, CosmeticRow | null][] = []
@@ -454,20 +496,48 @@ export function equipCosmetics(
     if (!canUseCosmetic(ctx, uuid, c)) throw forbidden('cosmetic_locked', `You have not unlocked cosmetic ${id}`)
     plan.push([slot, c])
   }
+  // Optionen gegen das Teil prüfen, das NACH dieser Änderung im Platz liegt.
+  const optionWrites: [WearableSlot, string | null][] = []
+  for (const slot of WEARABLE_SLOTS) {
+    const choices = patch.options?.[slot]
+    if (!choices) continue
+    const planned = plan.find(([s]) => s === slot)
+    const target = planned ? planned[1] : (before.get(slot) ?? null)
+    if (!target) throw badRequest('unknown_option', `Slot ${slot} is empty; equip an item before setting its options`)
+    const declared = v2Assets(ctx, target)?.model.options ?? []
+    for (const key of Object.keys(choices)) {
+      if (!declared.some((o) => o.id === key)) throw badRequest('unknown_option', `Cosmetic ${target.id} has no option ${key}`)
+    }
+    const prev = before.get(slot)
+    const base = prev && prev.id === target.id ? parseOptionChoices(prev.eq_options) : {}
+    const merged: Record<string, boolean> = {}
+    for (const o of declared) {
+      const v = choices[o.id] ?? base[o.id]
+      if (typeof v === 'boolean') merged[o.id] = v
+    }
+    optionWrites.push([slot, Object.keys(merged).length ? JSON.stringify(merged) : null])
+  }
   tx(ctx.db, () => {
     for (const [slot, c] of plan) {
       if (c === null) run(ctx.db, 'DELETE FROM equipped_cosmetics WHERE uuid = ? AND slot = ?', uuid, slot)
       else {
+        // Gleiches Teil erneut: Wahl bleibt; anderes Teil: Standardwerte.
         run(
           ctx.db,
-          `INSERT INTO equipped_cosmetics (uuid, slot, cosmetic_id) VALUES (?, ?, ?)
-           ON CONFLICT(uuid, slot) DO UPDATE SET cosmetic_id = excluded.cosmetic_id`,
+          `INSERT INTO equipped_cosmetics (uuid, slot, cosmetic_id, options) VALUES (?, ?, ?, NULL)
+           ON CONFLICT(uuid, slot) DO UPDATE SET cosmetic_id = excluded.cosmetic_id,
+             options = CASE WHEN equipped_cosmetics.cosmetic_id = excluded.cosmetic_id THEN equipped_cosmetics.options ELSE NULL END`,
           uuid, slot, c.id,
         )
       }
     }
+    for (const [slot, json] of optionWrites) {
+      run(ctx.db, 'UPDATE equipped_cosmetics SET options = ? WHERE uuid = ? AND slot = ?', json, uuid, slot)
+    }
   })
-  const changed = plan.some(([slot, c]) => (before.get(slot)?.id ?? null) !== (c?.id ?? null))
+  const after = equippedMap(ctx, uuid)
+  const key = (r: EquippedRow | undefined) => (r ? `${r.id}|${JSON.stringify(optionsOf(ctx, r, r.eq_options) ?? null)}` : '')
+  const changed = WEARABLE_SLOTS.some((slot) => key(before.get(slot)) !== key(after.get(slot)))
   if (changed) emitCosmetics(ctx, uuid)
   return equippedView(ctx, uuid)
 }
@@ -660,7 +730,11 @@ export function readCosmeticV2File(ctx: AppContext, id: string, which: V2File): 
 
 // ---------------------------------------------------------------- Zuteilung (Admin, Codes)
 
-export function grantCosmetic(ctx: AppContext, uuid: string, id: string, source: 'code' | 'admin' | 'event' | 'reward'): boolean {
+/**
+ * Zuteilen. `creator` (Winter 2026, Creator-Pinguin nach Fans) ist eine Zuteilung auf Zeit: kommt dasselbe Teil später
+ * auf anderem Weg (Code, Team, …), wird die Zeile dauerhaft (`true`); umgekehrt überschreibt `creator` nie.
+ */
+export function grantCosmetic(ctx: AppContext, uuid: string, id: string, source: 'code' | 'admin' | 'event' | 'reward' | 'creator'): boolean {
   // Halloween-Flügel (§36): höchstens EINE der vier je Spieler – gilt für jeden Weg (Wahl, Team, Code).
   if (isHalloweenWing(id)) {
     const other = one<{ cosmetic_id: string }>(
@@ -673,7 +747,9 @@ export function grantCosmetic(ctx: AppContext, uuid: string, id: string, source:
   return (
     run(
       ctx.db,
-      'INSERT INTO user_cosmetics (uuid, cosmetic_id, source, granted_at) VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING',
+      `INSERT INTO user_cosmetics (uuid, cosmetic_id, source, granted_at) VALUES (?, ?, ?, ?)
+       ON CONFLICT(uuid, cosmetic_id) DO UPDATE SET source = excluded.source, granted_at = excluded.granted_at
+       WHERE user_cosmetics.source = 'creator' AND excluded.source <> 'creator'`,
       uuid, id, source, ctx.now(),
     ) > 0
   )

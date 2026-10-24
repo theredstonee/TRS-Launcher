@@ -5,6 +5,7 @@ import { rotateAttachmentKeys, sweepOrphanFiles, sweepPendingAttachments } from 
 import { sweepExpired } from '../lib/auth'
 import { loadBuiltinCosmetics, loadBuiltins } from '../lib/builtin'
 import { seedBuiltins, type BuiltinCape } from '../lib/capes'
+import { syncAllCreatorPets } from '../lib/creator-pet'
 import { seedBuiltinCosmetics, seedEmotes, type AnyBuiltinCosmetic } from '../lib/cosmetics'
 import { sha256Hex } from '../lib/ids'
 import { artKey, grantPendingHalloweenRewards } from '../lib/halloween'
@@ -184,6 +185,8 @@ export default defineNitroPlugin((nitroApp) => {
     // Erfolge (§31): Belohnungen nachreichen, deren Teil es jetzt gibt (z. B. neu im Katalog).
     const rewards = grantPendingRewards(ctx)
     if (rewards > 0) console.info(`[trs-api] granted ${rewards} pending achievement rewards`)
+    // Creator-Pinguine (Winter 2026): Zuteilungen nach Fans abgleichen (z. B. erstmals mit geladenem Pinguin).
+    syncAllCreatorPets(ctx)
     console.info(
       `[trs-api] ready – ${circuits} built-in circuits, ${capes.length} built-in capes, ${ctx.templates.list.length} templates, ${cosmetics} built-in cosmetics, data in ${config.dataDir}`,
     )
@@ -223,6 +226,8 @@ export default defineNitroPlugin((nitroApp) => {
       grantPendingRewards(ctx)
       // Fernbedienung (§34): abgelaufene Kopplungs-Codes, alte Befehle.
       sweepRemote(ctx)
+      // Creator-Pinguine: Änderungen abseits von creators.ts (z. B. ein Fan hat sein Konto gelöscht).
+      syncAllCreatorPets(ctx)
     }),
     // Chat: Tipp-Status, Wiederaufnahme-Puffer, Spam-Bremse, nicht verwendete Bilder.
     // Welt-Hosting: Räume ohne Herzschlag schließen.
