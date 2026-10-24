@@ -154,6 +154,7 @@ const en = {
       featured: 'Featured modpacks',
       pitch: 'Pitch',
       serverrules: 'Server rules',
+      previews: 'Preview builds',
     } as Record<string, string>,
     perms: {
       'dashboard.view': 'See the overview',
@@ -197,6 +198,7 @@ const en = {
       'featured.manage': 'Manage featured modpacks (add, texts, badge, order, time window)',
       'pitch.manage': 'Create, revoke and preview secret pitch presentation links',
       'serverrules.bypass': 'Use TRS Client features locked by a server anyway (after an in-game prompt; the server is not told)',
+      'previews.access': 'Preview builds: download launcher and TRS Client preview builds like Partner creators',
     } as Record<string, string>,
     roles: {
       title: 'Roles & team',
@@ -560,6 +562,7 @@ const de: TeamTexts = {
       featured: 'Empfohlene Modpacks',
       pitch: 'Pitch',
       serverrules: 'Server-Regeln',
+      previews: 'Vorschau-Builds',
     },
     perms: {
       'dashboard.view': 'Übersicht sehen',
@@ -603,6 +606,7 @@ const de: TeamTexts = {
       'featured.manage': 'Empfohlene Modpacks verwalten (hinzufügen, Texte, Abzeichen, Reihenfolge, Zeitraum)',
       'pitch.manage': 'Geheime Links zur Pitch-Präsentation erzeugen, widerrufen und ansehen',
       'serverrules.bypass': 'Vom Server gesperrte TRS-Client-Funktionen trotzdem nutzen (nach Nachfrage im Spiel; der Server erfährt nichts)',
+      'previews.access': 'Vorschau-Builds: Vorschau-Builds von Launcher und TRS Client laden wie Partner-Creator',
     },
     roles: {
       title: 'Rollen & Team',
@@ -964,6 +968,7 @@ const es: TeamTexts = {
       featured: 'Modpacks destacados',
       pitch: 'Pitch',
       serverrules: 'Reglas de servidor',
+      previews: 'Versiones de prueba',
     },
     perms: {
       'dashboard.view': 'Ver el resumen',
@@ -1007,6 +1012,7 @@ const es: TeamTexts = {
       'featured.manage': 'Gestionar modpacks destacados (añadir, textos, insignia, orden, periodo)',
       'pitch.manage': 'Crear, revocar y ver enlaces secretos de la presentación pitch',
       'serverrules.bypass': 'Usar igualmente funciones del TRS Client bloqueadas por un servidor (tras confirmar en el juego; el servidor no se entera)',
+      'previews.access': 'Versiones de prueba: descargar versiones de prueba del launcher y del TRS Client como los creadores Partner',
     },
     roles: {
       title: 'Roles y equipo',

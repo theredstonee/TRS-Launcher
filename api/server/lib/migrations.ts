@@ -854,11 +854,22 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 32,
     run: migrateServerRulesBypass,
   },
+  {
+    // Team-Recht `previews.access` (Vorschau-Builds §35.3 auch für Team-Mitglieder) für Owner und Admin. Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 33,
+    run: migratePreviewsAccess,
+  },
 ]
 
 /** Migration 32 (siehe oben): Recht `serverrules.bypass` für die Standardrollen Owner und Admin. Exportiert für den Test. */
 export function migrateServerRulesBypass(db: DatabaseSync): void {
   grantBuiltin(db, { owner: ['serverrules.bypass'], admin: ['serverrules.bypass'] })
+}
+
+/** Migration 33 (siehe oben): Recht `previews.access` für die Standardrollen Owner und Admin. Exportiert für den Test. */
+export function migratePreviewsAccess(db: DatabaseSync): void {
+  grantBuiltin(db, { owner: ['previews.access'], admin: ['previews.access'] })
 }
 
 /** Migration 31 (siehe oben): Look-Sperrliste je Event. Exportiert für den Idempotenz-Test. */

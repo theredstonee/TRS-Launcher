@@ -2683,6 +2683,7 @@ The website signs in **only** with the Microsoft account that owns Minecraft: Ja
 | `roles.manage` | Roles and members (§24.2 API), old `/v1/admin/roles` |
 | `applications.view` / `.review` / `.manage` / `.decide` | See applications and positions / vote, notes, status new–review–interview / edit positions and forms / accept, reject, reopen, give the linked role |
 | `serverrules.bypass` | No API route. The TRS Client reads it from `me.team.permissions` and lets the player use a module that a server locked via TRS Server Rules after an in-game prompt (§39). Default: Owner, Admin. |
+| `previews.access` | `GET /v1/creator/previews` (§35.3): download launcher/TRS Client preview builds like Partner creators, without being a creator. Clients read it from `me.team.permissions`. Default: Owner, Admin (migration 33). |
 
 The dashboard returns `null` for every block the viewer may not see (`reports` needs `reports.view`, `appeals` `appeals.handle`, `sanctions` `players.view` or `appeals.handle`, `uploads` `uploads.review`, `hosting` `stats.view` or `worlds.view`, `users/series/server/chat` `stats.view`, `applications` `applications.view`, `recentAudit` = `[]` without `audit.view`). Search returns only allowed groups.
 
@@ -4160,7 +4161,7 @@ for one with `?as=<creatorUuid>` or header `X-Creator-As: <creatorUuid>` (35.9; 
 | `PUT /v1/creator/fan-cape?name=&frames=&frameTimeMs=` | `uploads` | raw PNG as `POST /v1/capes/upload` (§5.6) | `{ fanCape: { capeId, name, url } }` (pending, replaces a pending one) – `403 creator_tier` (starter; partner with HD or animation), cape upload errors of §5.6; 5 uploads / 24 h per creator |
 | `DELETE /v1/creator/fan-cape/pending` | `uploads` | – | `204` |
 | `POST /v1/creator/requests` | creator only | `{ kind: "upgrade", channelUrl, followers, note? }` or `{ kind: "team_cape", text, attachmentUploadId? }` | `201 { requests }` – one open request per kind (`409 creator_request_open`); upgrade at top → `403 creator_tier` |
-| `GET /v1/creator/previews` | creator only, partner+ | – | `{ previews: [{ id, product: "launcher"\|"client", version, notes, url, sha256, publishedAt }] }` – starter → `403 creator_tier` |
+| `GET /v1/creator/previews` | creator partner+ **or** team member with `previews.access` (no creator status needed) | – | `{ previews: [{ id, product: "launcher"\|"client", version, notes, url, sha256, publishedAt }] }` – starter → `403 creator_tier`; a non-creator without the permission → `403 creator_inactive` |
 | `PUT /v1/creator/packs/{packCode}` | `packs` | `{ listed: boolean }` | `{ packs }` – lists/unlists one of the **creator's** own shared packs (§27) as creator pack. A listed pack never expires; unlisting restarts its chosen duration from now. Not the creator's → `403 not_your_pack`; unknown → `404 pack_not_found` |
 | `POST /v1/creator/helpers` | creator only | `{ uuid, rights }` | `201 { helpers }` (35.9) |
 | `PATCH /v1/creator/helpers/{uuid}` | creator only | `{ rights }` | `{ helpers }` |

@@ -31,7 +31,7 @@ import { RULES } from './ratelimit'
 import { assertNotSanctioned } from './sanctions'
 import { capeNameSchema, plainText } from './schemas'
 import { SKIN_URL_RE } from './skins'
-import { assertCan, type Staff } from './team'
+import { assertCan, can, teamOf, type Staff } from './team'
 import { audit } from './audit'
 import { ACTIVE_BANS, getUser, getUserByName } from './users'
 import type { Watcher } from './watch'
@@ -1317,8 +1317,12 @@ function allPreviews(ctx: AppContext): PreviewView[] {
   return all<PreviewRow>(ctx.db, 'SELECT * FROM creator_previews ORDER BY published_at DESC, id DESC LIMIT 100').map(previewView)
 }
 
-/** Vorschau-Builds (Partner+). */
+/** Vorschau-Builds (Partner+ oder Team-Recht `previews.access`, auch ohne Creator-Status). */
 export function creatorPreviews(ctx: AppContext, uuid: string, as?: string | null): { previews: PreviewView[] } {
+  if (!as) {
+    const staff = teamOf(ctx, uuid)
+    if (staff && can(staff, 'previews.access')) return { previews: allPreviews(ctx) }
+  }
   const c = actorFor(ctx, uuid, as, 'owner').creator
   if (c.tier === 'starter') throw forbidden('creator_tier', 'Preview builds need the Partner tier')
   return { previews: allPreviews(ctx) }
