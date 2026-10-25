@@ -13,6 +13,9 @@ use super::tests::{ACC, auth_routes, launcher};
 use super::*;
 
 const CREATOR: &str = "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0";
+/// Creator, den das Team im Team-Modus öffnet, und ein Helfer von ihm.
+const TEAMED: &str = "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0";
+const HELPER: &str = "e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0";
 
 fn sha(n: u8) -> String {
     format!("{n:02x}").repeat(32)
@@ -117,9 +120,35 @@ async fn server(symbol_hits: std::sync::Arc<AtomicUsize>) -> MockServer {
                     d["uuid"] = json!(CREATOR);
                     d["viewer"] = json!({ "helper": true, "rights": ["codes", "stats"] });
                 }
+                // Team-Modus: alle Rechte, auch wenn man zugleich eingeschränkter Helfer ist.
+                if req.path.ends_with(&format!("?as={TEAMED}")) {
+                    d["uuid"] = json!(TEAMED);
+                    d["viewer"] = json!({ "helper": true, "team": true, "rights": ["stats"] });
+                    d["helpers"] = json!([{ "uuid": HELPER, "name": "Cutter", "rights": ["stats"], "status": "active" }]);
+                    d["teamChanges"] = json!([{ "action": "code.create", "at": "2026-10-25T09:00:00.000Z" }, { "action": "Böse" }]);
+                    d["stats"]["fanCapeFans"] = json!(2);
+                }
                 Response::json(200, d)
             }
             ("POST", "/v1/creator/helpers") => Response::error(403, "creator_helper_limit"),
+            ("PATCH", p) | ("DELETE", p) if p == format!("/v1/creator/helpers/{HELPER}") => Response::empty(204),
+            ("POST", "/v1/creator/requests") => Response::json(201, json!({ "requests": [{ "id": 9, "kind": "team_cape", "status": "open", "createdAt": "2026-10-25T08:00:00.000Z" }] })),
+            ("GET", "/v1/admin/creators/stats") => Response::json(200, json!({
+                "generatedAt": "2026-10-25T12:00:00.000Z",
+                "definitions": { "newPlayerWindowHours": 24, "activitySince": "2026-10-25" },
+                "totals": { "creators": 1, "fans": 4, "fans7d": 2 },
+                "creators": [{ "uuid": CREATOR, "name": "Pixelmaus", "tier": "top", "state": "active", "mainCode": "PIXELMAUS",
+                    "fans": { "total": 4, "today": 1, "d7": 2, "d30": 4 }, "newPlayers": { "total": 2, "d7": 1, "d30": 2 },
+                    "pets": { "pet": null, "codes": 0, "activeCodes": 0, "redemptions": 0, "month": { "month": "2026-10", "used": 0, "limit": 200, "redemptions": 0 } },
+                    "activity": { "online7d": 3, "online30d": 4, "played7d": 2, "played30d": 3 } }]
+            })),
+            ("GET", p) if p == format!("/v1/admin/creators/{CREATOR}/stats") => Response::json(200, json!({
+                "definitions": { "newPlayerWindowHours": 24, "activitySince": null },
+                "creator": { "uuid": CREATOR, "name": "Pixelmaus", "tier": "top", "state": "active" },
+                "fanCape": { "holders": 6, "fanHolders": 4 },
+                "series": [{ "day": "2026-10-25", "newFans": 1, "newPlayers": 1, "redemptions": 1, "petRedemptions": 0, "activeFans": null, "playingFans": null }]
+            })),
+            ("GET", p) if p == format!("/v1/admin/creators/{}/stats", "c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0") => Response::error(404, "creator_not_found"),
             ("POST", p) if p == format!("/v1/me/creator/helper-invites/{CREATOR}") => Response::empty(204),
             ("DELETE", p) if p == format!("/v1/me/creator/helping/{CREATOR}") => Response::empty(204),
             _ => Response::error(404, "not_found"),
@@ -308,4 +337,56 @@ async fn helpers_act_for_their_creator() {
     // Uploads als Helfer tragen `?as=`.
     launcher.creator_upload_symbol(real_png(16, 16), None, 1, Some(CREATOR)).await.unwrap();
     assert!(server.hits("PUT", "/v1/creator/symbol")[0].path.ends_with(&format!("?frameMs=150&as={CREATOR}")));
+}
+
+#[tokio::test]
+async fn team_mode_acts_with_all_rights() {
+    let server = server(Default::default()).await;
+    let (_dir, launcher) = launcher(&server, &[ACC]).await;
+
+    let d = launcher.creator_dashboard(Some(TEAMED)).await.unwrap();
+    let viewer = d.viewer.as_ref().unwrap();
+    assert!(viewer.team && !viewer.helper, "Team-Modus hat Vorrang vor der Helfer-Rolle");
+    assert_eq!(viewer.rights, ["stats", "codes", "uploads", "packs"]);
+    assert_eq!(d.helpers.len(), 1);
+    assert_eq!(d.team_changes, vec![creator::TeamChange { action: "code.create".into(), at: Some("2026-10-25T09:00:00.000Z".into()) }]);
+    assert_eq!(d.stats.fan_cape_fans, Some(2));
+    assert_eq!(launcher.creator_dashboard(None).await.unwrap().stats.fan_cape_fans, None, "ältere API ohne Feld");
+
+    // Helfer-Verwaltung und Anträge tragen `?as=`.
+    launcher.creator_update_helper(HELPER, &["codes".into()], Some(TEAMED)).await.unwrap();
+    let sent = &server.hits("PATCH", &format!("/v1/creator/helpers/{HELPER}"))[0];
+    assert!(sent.path.ends_with(&format!("?as={TEAMED}")));
+    assert_eq!(sent.json(), json!({ "rights": ["codes"] }));
+    launcher.creator_remove_helper(HELPER, Some(TEAMED)).await.unwrap();
+    assert!(server.hits("DELETE", &format!("/v1/creator/helpers/{HELPER}"))[0].path.ends_with(&format!("?as={TEAMED}")));
+    launcher.creator_remove_helper(HELPER, None).await.unwrap();
+    assert_eq!(server.hits("DELETE", &format!("/v1/creator/helpers/{HELPER}"))[1].path, format!("/v1/creator/helpers/{HELPER}"));
+    let requests = launcher.creator_request(&creator::NewRequest::TeamCape { text: "Drache".into() }, Some(TEAMED)).await.unwrap();
+    assert_eq!(requests[0].kind, "team_cape");
+    assert!(server.hits("POST", "/v1/creator/requests")[0].path.ends_with(&format!("?as={TEAMED}")));
+}
+
+#[tokio::test]
+async fn team_statistics_are_loaded() {
+    let server = server(Default::default()).await;
+    let (_dir, launcher) = launcher(&server, &[ACC]).await;
+
+    let query = creator_stats::CreatorStatsQuery { q: Some("pix".into()), tier: Some("top".into()), sort: Some("fans7d".into()), ..Default::default() };
+    let list = launcher.admin_creator_stats(&query).await.unwrap();
+    assert_eq!(server.hits("GET", "/v1/admin/creators/stats")[0].path, "/v1/admin/creators/stats?q=pix&tier=top&sort=fans7d");
+    assert_eq!(list.creators[0].fans.d7, 2);
+    assert_eq!(list.totals.creators, 1);
+    assert_eq!(list.definitions.activity_since.as_deref(), Some("2026-10-25"));
+    let bad = creator_stats::CreatorStatsQuery { sort: Some("x".into()), ..Default::default() };
+    assert!(launcher.admin_creator_stats(&bad).await.is_err());
+    assert_eq!(server.hits("GET", "/v1/admin/creators/stats").len(), 1, "ungültige Filter gehen nicht raus");
+
+    let detail = launcher.admin_creator_stats_detail(CREATOR, Some(9999)).await.unwrap();
+    assert!(server.hits("GET", &format!("/v1/admin/creators/{CREATOR}/stats"))[0].path.ends_with("?days=365"), "auf 365 Tage begrenzt");
+    assert_eq!(detail.fan_cape.fan_holders, 4);
+    assert_eq!(detail.series[0].active_fans, None);
+    let missing = launcher.admin_creator_stats_detail("c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0", None).await.unwrap_err();
+    assert_eq!(missing.message_code(), "trsApi.creator_not_found");
+    assert!(launcher.admin_creator_stats_detail("../x", None).await.is_err());
 }

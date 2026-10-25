@@ -129,7 +129,7 @@ async fn pet_request_sends_fields_then_the_checked_image() {
         colors: Some("Orange".into()),
         image: Some(format!("data:image/png;base64,{}", STANDARD.encode(&image))),
     };
-    let created = launcher.creator_request_pet(&request).await.unwrap();
+    let created = launcher.creator_request_pet(&request, None).await.unwrap();
     assert_eq!((created.id.as_str(), created.status.as_str(), created.has_image), ("7", "open", true));
     assert_eq!(server.hits("POST", "/v1/creator/pet/requests")[0].json(), json!({ "species": "Fuchs", "description": "Mit Schal", "colors": "Orange" }));
     let upload = &server.hits("PUT", "/v1/creator/pet/requests/7/image")[0];
@@ -137,19 +137,19 @@ async fn pet_request_sends_fields_then_the_checked_image() {
 
     // Ohne Bild: kein Upload.
     let plain = NewPetRequest { image: None, ..request.clone() };
-    assert!(!launcher.creator_request_pet(&plain).await.unwrap().has_image);
+    assert!(!launcher.creator_request_pet(&plain, None).await.unwrap().has_image);
     assert_eq!(server.hits("PUT", "/v1/creator/pet/requests/7/image").len(), 1);
 
     // GIF wird vor dem Senden abgelehnt.
     let gif = NewPetRequest { image: Some(STANDARD.encode(b"GIF89a")), ..request.clone() };
-    assert_eq!(launcher.creator_request_pet(&gif).await.unwrap_err().message_code(), "creatorPet.invalidImage");
+    assert_eq!(launcher.creator_request_pet(&gif, None).await.unwrap_err().message_code(), "creatorPet.invalidImage");
     assert_eq!(server.hits("POST", "/v1/creator/pet/requests").len(), 2);
 
     // Bild später anhängen, Wunsch in Arbeit → Fehler; zurückziehen.
     let jpg = STANDARD.encode([0xFF, 0xD8, 0xFF, 0xE0, 0, 1]);
-    let err = launcher.creator_pet_request_image("8", &jpg).await.unwrap_err();
+    let err = launcher.creator_pet_request_image("8", &jpg, None).await.unwrap_err();
     assert_eq!(err.message_code(), "trsApi.request_closed");
     assert_eq!(server.hits("PUT", "/v1/creator/pet/requests/8/image")[0].header("content-type"), Some("image/jpeg"));
-    launcher.creator_withdraw_pet_request("7").await.unwrap();
+    launcher.creator_withdraw_pet_request("7", None).await.unwrap();
     assert_eq!(server.hits("DELETE", "/v1/creator/pet/requests/7").len(), 1);
 }

@@ -9,6 +9,7 @@ use trs_core::trs_api::creator::{
     CreatorSelf, ListedPacks, MyCreator, NewCreator, NewCreatorCode, NewRequest, PreviewBuild, QueueItem, Revoke,
 };
 use trs_core::trs_api::creator_pet::{CreatorPetState, NewPetCodes, NewPetRequest, PetCode, PetRequest};
+use trs_core::trs_api::creator_stats::{CreatorStatsDetail, CreatorStatsList, CreatorStatsQuery};
 use trs_core::trs_api::types::UserRef;
 
 use crate::LauncherState;
@@ -121,8 +122,12 @@ pub async fn creator_withdraw_fan_cape(launcher: State<'_, LauncherState>, as_cr
 }
 
 #[tauri::command]
-pub async fn creator_request(launcher: State<'_, LauncherState>, request: NewRequest) -> CommandResult<Vec<CreatorRequest>> {
-    Ok(launcher.creator_request(&request).await?)
+pub async fn creator_request(
+    launcher: State<'_, LauncherState>,
+    request: NewRequest,
+    as_creator: Option<String>,
+) -> CommandResult<Vec<CreatorRequest>> {
+    Ok(launcher.creator_request(&request, as_creator.as_deref()).await?)
 }
 
 #[tauri::command]
@@ -169,19 +174,28 @@ pub async fn creator_revoke_pet_code(launcher: State<'_, LauncherState>, id: Str
 
 /// Wunsch nach einem eigenen Haustier (Tierart, Beschreibung, Farben + optional PNG/JPG als Base64, der Kern prüft es).
 #[tauri::command]
-pub async fn creator_request_pet(launcher: State<'_, LauncherState>, request: NewPetRequest) -> CommandResult<PetRequest> {
-    Ok(launcher.creator_request_pet(&request).await?)
+pub async fn creator_request_pet(
+    launcher: State<'_, LauncherState>,
+    request: NewPetRequest,
+    as_creator: Option<String>,
+) -> CommandResult<PetRequest> {
+    Ok(launcher.creator_request_pet(&request, as_creator.as_deref()).await?)
 }
 
 /// Referenzbild an einen offenen Wunsch hängen bzw. ersetzen.
 #[tauri::command]
-pub async fn creator_pet_request_image(launcher: State<'_, LauncherState>, id: String, image: String) -> CommandResult<PetRequest> {
-    Ok(launcher.creator_pet_request_image(&id, &image).await?)
+pub async fn creator_pet_request_image(
+    launcher: State<'_, LauncherState>,
+    id: String,
+    image: String,
+    as_creator: Option<String>,
+) -> CommandResult<PetRequest> {
+    Ok(launcher.creator_pet_request_image(&id, &image, as_creator.as_deref()).await?)
 }
 
 #[tauri::command]
-pub async fn creator_withdraw_pet_request(launcher: State<'_, LauncherState>, id: String) -> CommandResult<()> {
-    Ok(launcher.creator_withdraw_pet_request(&id).await?)
+pub async fn creator_withdraw_pet_request(launcher: State<'_, LauncherState>, id: String, as_creator: Option<String>) -> CommandResult<()> {
+    Ok(launcher.creator_withdraw_pet_request(&id, as_creator.as_deref()).await?)
 }
 
 // --- Helfer (§35.9) -------------------------------------------------------------------------
@@ -192,13 +206,18 @@ pub async fn creator_invite_helper(launcher: State<'_, LauncherState>, uuid: Str
 }
 
 #[tauri::command]
-pub async fn creator_update_helper(launcher: State<'_, LauncherState>, uuid: String, rights: Vec<String>) -> CommandResult<()> {
-    Ok(launcher.creator_update_helper(&uuid, &rights).await?)
+pub async fn creator_update_helper(
+    launcher: State<'_, LauncherState>,
+    uuid: String,
+    rights: Vec<String>,
+    as_creator: Option<String>,
+) -> CommandResult<()> {
+    Ok(launcher.creator_update_helper(&uuid, &rights, as_creator.as_deref()).await?)
 }
 
 #[tauri::command]
-pub async fn creator_remove_helper(launcher: State<'_, LauncherState>, uuid: String) -> CommandResult<()> {
-    Ok(launcher.creator_remove_helper(&uuid).await?)
+pub async fn creator_remove_helper(launcher: State<'_, LauncherState>, uuid: String, as_creator: Option<String>) -> CommandResult<()> {
+    Ok(launcher.creator_remove_helper(&uuid, as_creator.as_deref()).await?)
 }
 
 #[tauri::command]
@@ -266,4 +285,22 @@ pub async fn admin_creator_answer(
     reason: Option<String>,
 ) -> CommandResult<()> {
     Ok(launcher.admin_creator_answer(&id, accept, reason.as_deref()).await?)
+}
+
+// --- Team: Statistik (§35.14, `creators.manage`) ---------------------------------------------
+
+/// Rangliste aller Creator mit Fans, neuen Spielern, Haustier-Codes und aktiven Fans.
+#[tauri::command]
+pub async fn admin_creator_stats(launcher: State<'_, LauncherState>, query: CreatorStatsQuery) -> CommandResult<CreatorStatsList> {
+    Ok(launcher.admin_creator_stats(&query).await?)
+}
+
+/// Kennzahlen und Tagesreihen eines Creators (Standard 90 Tage).
+#[tauri::command]
+pub async fn admin_creator_stats_detail(
+    launcher: State<'_, LauncherState>,
+    uuid: String,
+    days: Option<u32>,
+) -> CommandResult<CreatorStatsDetail> {
+    Ok(launcher.admin_creator_stats_detail(&uuid, days).await?)
 }

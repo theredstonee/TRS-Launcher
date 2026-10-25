@@ -24,6 +24,7 @@ pub mod cape_video;
 pub mod chat;
 pub mod creator;
 pub mod creator_pet;
+pub mod creator_stats;
 pub mod events;
 pub mod featured;
 pub mod halloween;
@@ -444,6 +445,10 @@ fn message_for(code: &str) -> Msg {
         "creator_helper_exists" => msg!("trsApi.creator_helper_exists", "Dieser Spieler ist schon dein Helfer oder eingeladen."),
         "creator_helper_right" => msg!("trsApi.creator_helper_right", "Dafür hat dir der Creator kein Recht gegeben."),
         "creator_self" => msg!("trsApi.creator_self", "Das ist dein eigener Creator-Code."),
+        "creator_not_found" => msg!("trsApi.creator_not_found", "Diesen Creator gibt es nicht (mehr)."),
+        "creator_team_forbidden" => {
+            msg!("trsApi.creator_team_forbidden", "Das darf nur der Creator selbst – auch im Team-Modus nicht.")
+        }
         "pack_not_found" => msg!("trsApi.pack_not_found", "Dieses Modpack gibt es nicht (mehr)."),
         "helper_not_found" => msg!("trsApi.helper_not_found", "Dieser Spieler ist (nicht mehr) Helfer."),
         "helper_invite_not_found" => msg!("trsApi.helper_invite_not_found", "Diese Einladung gibt es nicht mehr."),

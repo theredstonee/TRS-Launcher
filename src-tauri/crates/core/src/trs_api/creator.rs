@@ -28,7 +28,8 @@ pub const STATES: [&str; 3] = ["active", "revoked", "banned"];
 pub const MILESTONES: [&str; 4] = ["bronze", "silver", "gold", "diamond"];
 /// Arten von `creator_updated` (§35.7).
 /// `pet_*` (Creator-Haustiere, §35.13): zugeordnet, entfernt, Wunsch beantwortet (`reason` = Antwort des Teams).
-pub const UPDATE_KINDS: [&str; 15] = [
+/// `team_changed` (§35.9): das Team hat im Team-Modus etwas geändert (`action`).
+pub const UPDATE_KINDS: [&str; 16] = [
     "symbol_approved",
     "symbol_rejected",
     "cape_approved",
@@ -44,6 +45,7 @@ pub const UPDATE_KINDS: [&str; 15] = [
     "pet_assigned",
     "pet_removed",
     "pet_request_answered",
+    "team_changed",
 ];
 /// Rechte eines Helfers (§35.9). Stufe, Anträge, Helfer und Vorschau-Builds bleiben beim Creator.
 pub const HELPER_RIGHTS: [&str; 4] = ["stats", "codes", "uploads", "packs"];
@@ -141,7 +143,7 @@ fn reason_text(r: Option<String>) -> Option<String> {
     r.map(|r| chat_text(&r, 500)).map(|r| r.trim().to_owned()).filter(|r| !r.is_empty())
 }
 
-fn pick(value: Option<String>, allowed: &[&str]) -> Option<String> {
+pub(super) fn pick(value: Option<String>, allowed: &[&str]) -> Option<String> {
     value.filter(|v| allowed.contains(&v.as_str()))
 }
 
@@ -377,6 +379,8 @@ pub struct CreatorStats {
     pub fan_cape_holders: u64,
     pub new_players: u64,
     pub pack_installs: u64,
+    /// Aktuelle Fans, die einen Fan-Umhang dieses Creators besitzen (`None` = ältere API).
+    pub fan_cape_fans: Option<u64>,
     /// Letzte 30 Tage, älteste zuerst.
     pub daily: Vec<DailyStat>,
 }
@@ -454,8 +458,19 @@ pub struct CreatorSelf {
     pub packs: Vec<CreatorPackRef>,
     /// Helfer (nur für den Creator selbst).
     pub helpers: Vec<Helper>,
-    /// Wer gerade schaut: `Some` = ein Helfer mit diesen Rechten (`?as=`).
+    /// Wer gerade schaut: `Some` = ein Helfer mit diesen Rechten bzw. das Team (`?as=`).
     pub viewer: Option<Viewer>,
+    /// Änderungen des Teams im Team-Modus (neueste zuerst, ohne Namen).
+    pub team_changes: Vec<TeamChange>,
+}
+
+/// Eine Änderung des Teams am Dashboard (§35.9, Team-Modus).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TeamChange {
+    /// z. B. `code.create` oder `pet.code.revoke`.
+    pub action: String,
+    pub at: Option<String>,
 }
 
 /// Helfer eines Creators (§35.9).
@@ -474,6 +489,8 @@ pub struct Helper {
 #[serde(rename_all = "camelCase")]
 pub struct Viewer {
     pub helper: bool,
+    /// Team-Mitglied mit `creators.manage` im Team-Modus: alle Rechte, Änderungen werden protokolliert.
+    pub team: bool,
     pub rights: Vec<String>,
 }
 
@@ -721,6 +738,7 @@ fn clean_stats(v: Option<&Value>) -> CreatorStats {
         fan_cape_holders: u64_of(v, "fanCapeHolders"),
         new_players: u64_of(v, "newPlayers"),
         pack_installs: u64_of(v, "packInstalls"),
+        fan_cape_fans: opt_u64(v, "fanCapeFans"),
         daily: daily.into_iter().skip(skip).collect(),
     }
 }
@@ -793,11 +811,28 @@ fn clean_self(v: &Value) -> Option<CreatorSelf> {
         requests: v.get("requests").and_then(Value::as_array).into_iter().flatten().take(50).filter_map(clean_request).collect(),
         packs: v.get("packs").and_then(Value::as_array).into_iter().flatten().take(200).filter_map(clean_pack_ref).collect(),
         helpers: v.get("helpers").and_then(Value::as_array).into_iter().flatten().take(50).filter_map(clean_helper).collect(),
-        viewer: v.get("viewer").filter(|w| w.is_object()).map(|w| Viewer {
-            helper: w.get("helper").and_then(Value::as_bool).unwrap_or(false),
-            rights: clean_rights(w.get("rights")),
+        viewer: v.get("viewer").filter(|w| w.is_object()).map(|w| {
+            let team = w.get("team").and_then(Value::as_bool).unwrap_or(false);
+            Viewer {
+                // Team-Modus hat Vorrang (auch wenn man zusätzlich eingeschränkter Helfer ist).
+                helper: !team && w.get("helper").and_then(Value::as_bool).unwrap_or(false),
+                team,
+                rights: if team { HELPER_RIGHTS.iter().map(|r| (*r).to_owned()).collect() } else { clean_rights(w.get("rights")) },
+            }
         }),
+        team_changes: v.get("teamChanges").and_then(Value::as_array).into_iter().flatten().take(20).filter_map(clean_team_change).collect(),
     })
+}
+
+/// Aktions-Kennung einer Team-Änderung: `[a-z_]` in Abschnitten mit Punkt, höchstens 40 Zeichen.
+pub(super) fn team_action(input: &str) -> Option<String> {
+    let ok = (1..=40).contains(&input.len())
+        && input.split('.').all(|part| !part.is_empty() && part.bytes().all(|b| b.is_ascii_lowercase() || b == b'_'));
+    ok.then(|| input.to_owned())
+}
+
+fn clean_team_change(v: &Value) -> Option<TeamChange> {
+    Some(TeamChange { action: team_action(v.get("action")?.as_str()?)?, at: time(str_of(v, "at")) })
 }
 
 fn clean_me(v: &Value) -> Option<MyCreator> {
@@ -1161,6 +1196,8 @@ struct LiveData {
     rights: Option<Value>,
     #[serde(default)]
     helper: Option<Value>,
+    #[serde(default)]
+    action: Option<String>,
 }
 
 /// Helfer-Ereignisse und `creator_updated` / `creator_milestone` → gesäubertes Ereignis (kaputt → `None`).
@@ -1173,6 +1210,7 @@ pub(crate) fn decode_live(event: &str, data: &str) -> Option<LiveEvent> {
             tier: pick(d.tier, &TIERS),
             milestone: pick(d.milestone, &MILESTONES),
             helper: user_ref(d.helper.as_ref()),
+            action: d.action.as_deref().and_then(team_action),
         }),
         "creator_helper_invite" => Some(LiveEvent::CreatorHelperInvite {
             creator: user_ref(d.creator.as_ref())?,
@@ -1439,8 +1477,9 @@ impl Launcher {
         self.trs_do(Req::delete(acting("/v1/creator/fan-cape/pending".into(), as_creator)?)).await
     }
 
-    pub async fn creator_request(&self, request: &NewRequest) -> Result<Vec<CreatorRequest>> {
-        let raw: Value = self.trs_get(Req::post("/v1/creator/requests", request.body()?)).await?;
+    /// Antrag ans Team; `as_creator` nur im Team-Modus (Helfer dürfen das nicht).
+    pub async fn creator_request(&self, request: &NewRequest, as_creator: Option<&str>) -> Result<Vec<CreatorRequest>> {
+        let raw: Value = self.trs_get(Req::post(acting("/v1/creator/requests".into(), as_creator)?, request.body()?)).await?;
         Ok(raw.get("requests").and_then(Value::as_array).into_iter().flatten().take(50).filter_map(clean_request).collect())
     }
 
@@ -1468,14 +1507,16 @@ impl Launcher {
         self.trs_do(Req::post("/v1/creator/helpers", json!({ "uuid": uuid, "rights": rights_arg(rights)? }))).await
     }
 
-    pub async fn creator_update_helper(&self, uuid: &str, rights: &[String]) -> Result<()> {
+    /// Rechte eines Helfers ändern – der Creator selbst oder das Team im Team-Modus (`as_creator`).
+    pub async fn creator_update_helper(&self, uuid: &str, rights: &[String], as_creator: Option<&str>) -> Result<()> {
         let uuid = uuid_arg(uuid)?;
-        self.trs_do(Req::patch(format!("/v1/creator/helpers/{uuid}"), json!({ "rights": rights_arg(rights)? }))).await
+        self.trs_do(Req::patch(acting(format!("/v1/creator/helpers/{uuid}"), as_creator)?, json!({ "rights": rights_arg(rights)? }))).await
     }
 
-    pub async fn creator_remove_helper(&self, uuid: &str) -> Result<()> {
+    /// Helfer entfernen – der Creator selbst oder das Team im Team-Modus (`as_creator`).
+    pub async fn creator_remove_helper(&self, uuid: &str, as_creator: Option<&str>) -> Result<()> {
         let uuid = uuid_arg(uuid)?;
-        self.trs_do(Req::delete(format!("/v1/creator/helpers/{uuid}"))).await
+        self.trs_do(Req::delete(acting(format!("/v1/creator/helpers/{uuid}"), as_creator)?)).await
     }
 
     /// Einladung als Helfer annehmen oder ablehnen.
@@ -1741,7 +1782,11 @@ mod tests {
     #[test]
     fn live_events_are_cleaned() {
         let e = decode_live("creator_updated", &json!({ "type": "creator_updated", "kind": "symbol_rejected", "reason": "Fremdes\u{202E} Logo" }).to_string()).unwrap();
-        assert_eq!(e, LiveEvent::CreatorUpdated { kind: "symbol_rejected".into(), reason: Some("Fremdes Logo".into()), tier: None, milestone: None, helper: None });
+        assert_eq!(e, LiveEvent::CreatorUpdated { kind: "symbol_rejected".into(), reason: Some("Fremdes Logo".into()), tier: None, milestone: None, helper: None, action: None });
+        let team = decode_live("creator_updated", r#"{"kind":"team_changed","action":"pet.code.create"}"#).unwrap();
+        assert!(matches!(team, LiveEvent::CreatorUpdated { ref kind, action: Some(ref a), .. } if kind == "team_changed" && a == "pet.code.create"));
+        let bad = decode_live("creator_updated", r#"{"kind":"team_changed","action":"../Drop"}"#).unwrap();
+        assert!(matches!(bad, LiveEvent::CreatorUpdated { action: None, .. }), "unbekannte Form fällt weg");
         let t = decode_live("creator_updated", r#"{"kind":"tier_changed","tier":"top"}"#).unwrap();
         assert!(matches!(t, LiveEvent::CreatorUpdated { tier: Some(ref t), .. } if t == "top"));
         assert!(decode_live("creator_updated", r#"{"kind":"nuke"}"#).is_none());

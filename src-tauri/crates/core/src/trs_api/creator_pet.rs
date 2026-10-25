@@ -403,35 +403,35 @@ impl Launcher {
         self.trs_do(Req::delete(acting(format!("/v1/creator/pet/codes/{id}"), as_creator)?)).await
     }
 
-    /// Wunsch nach einem eigenen Haustier (nur der Creator selbst), danach ggf. das Referenzbild.
-    pub async fn creator_request_pet(&self, request: &NewPetRequest) -> Result<PetRequest> {
+    /// Wunsch nach einem eigenen Haustier (der Creator selbst oder das Team im Team-Modus), danach ggf. das Referenzbild.
+    pub async fn creator_request_pet(&self, request: &NewPetRequest, as_creator: Option<&str>) -> Result<PetRequest> {
         let (body, image) = request.parts()?;
-        let raw: Value = self.trs_get(Req::post("/v1/creator/pet/requests", body)).await?;
+        let raw: Value = self.trs_get(Req::post(acting("/v1/creator/pet/requests".into(), as_creator)?, body)).await?;
         let created = latest_request(&raw).ok_or_else(super::bad_response)?;
         match image {
-            Some((mime, bytes)) => self.upload_pet_image(&created.id, mime, bytes).await,
+            Some((mime, bytes)) => self.upload_pet_image(&created.id, mime, bytes, as_creator).await,
             None => Ok(created),
         }
     }
 
     /// Referenzbild an einen offenen Wunsch hängen bzw. ersetzen.
-    pub async fn creator_pet_request_image(&self, id: &str, image: &str) -> Result<PetRequest> {
+    pub async fn creator_pet_request_image(&self, id: &str, image: &str, as_creator: Option<&str>) -> Result<PetRequest> {
         let id = id_arg(id)?.to_owned();
         let (mime, bytes) = decode_image(image)?;
-        self.upload_pet_image(&id, mime, bytes).await
+        self.upload_pet_image(&id, mime, bytes, as_creator).await
     }
 
-    async fn upload_pet_image(&self, id: &str, mime: &'static str, bytes: Vec<u8>) -> Result<PetRequest> {
-        let req = Req::with(reqwest::Method::PUT, format!("/v1/creator/pet/requests/{id}/image"), Body::Image(mime, bytes), 1024 * 1024)
-            .timeout(IMAGE_TIMEOUT);
+    async fn upload_pet_image(&self, id: &str, mime: &'static str, bytes: Vec<u8>, as_creator: Option<&str>) -> Result<PetRequest> {
+        let path = acting(format!("/v1/creator/pet/requests/{id}/image"), as_creator)?;
+        let req = Req::with(reqwest::Method::PUT, path, Body::Image(mime, bytes), 1024 * 1024).timeout(IMAGE_TIMEOUT);
         let raw: Value = self.trs_get(req).await?;
         latest_request(&raw).ok_or_else(super::bad_response)
     }
 
     /// Offenen Wunsch zurückziehen.
-    pub async fn creator_withdraw_pet_request(&self, id: &str) -> Result<()> {
+    pub async fn creator_withdraw_pet_request(&self, id: &str, as_creator: Option<&str>) -> Result<()> {
         let id = id_arg(id)?;
-        self.trs_do(Req::delete(format!("/v1/creator/pet/requests/{id}"))).await
+        self.trs_do(Req::delete(acting(format!("/v1/creator/pet/requests/{id}"), as_creator)?)).await
     }
 }
 

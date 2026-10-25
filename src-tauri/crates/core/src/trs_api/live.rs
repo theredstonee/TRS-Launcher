@@ -239,7 +239,8 @@ pub enum LiveEvent {
     /// Halloween 2026 (§36): Kürbis gefunden, angeklopft oder Abzeichen bekommen – voller Stand.
     HalloweenUpdated(Box<super::halloween::HalloweenState>),
     /// Creator-Programm (§35.7): eigenes Symbol/Umhang geprüft, Stufe geändert, entzogen, Antrag beantwortet …
-    CreatorUpdated { kind: String, reason: Option<String>, tier: Option<String>, milestone: Option<String>, helper: Option<UserRef> },
+    /// `action`: nur bei `team_changed` – was das Team im Team-Modus geändert hat (z. B. `code.create`).
+    CreatorUpdated { kind: String, reason: Option<String>, tier: Option<String>, milestone: Option<String>, helper: Option<UserRef>, action: Option<String> },
     /// Der unterstützte Creator hat einen neuen Meilenstein erreicht (an alle Fans).
     CreatorMilestone { creator: UserRef, milestone: String },
     /// Einladung, Helfer eines Creators zu werden (§35.9).

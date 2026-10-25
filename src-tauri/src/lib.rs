@@ -852,6 +852,8 @@ pub fn run() {
             commands::creator::admin_creator_restore,
             commands::creator::admin_creator_requests,
             commands::creator::admin_creator_answer,
+            commands::creator::admin_creator_stats,
+            commands::creator::admin_creator_stats_detail,
             commands::social::social_quiet_hours,
             commands::social::social_notify_native,
             commands::social::social_focus_window,
