@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { Driver } from '~/utils/cosmetic-v2/format'
 // Ein Abschnitt der Kosmetik-Seite für Teile im Format v2 (Hüte, Begleiter am Kopf, Flügel, Begleiter am Boden):
 // Raster mit Studio-Karten + große 3D-Vorschau (HatViewer). Klick wählt aus, Überfahren (nur mit Maus) zeigt kurz in
 // der Vorschau. Tag/Nacht und Animation teilen sich alle Abschnitte (v-model). Abschaltbare Teile (Optionen, z. B. Bart)
@@ -48,6 +49,19 @@ function toggleOption(h: SiteHat, id: string) {
 }
 const shownChoices = computed(() => (shown.value ? (choices[shown.value.id] ?? null) : null))
 const optionName = (o: { id: string, name: Record<string, string> | null }) => o.name?.[lang.value] ?? o.name?.en ?? o.id
+
+// Begleiter am Boden: Zustände, für die das Modell eine Animation hat (nur Vorschau; im Spiel wählt der Client selbst).
+const STATE_NAMES: Record<string, Record<string, string>> = {
+  en: { idle: 'Idle', walk: 'Walk', slide: 'Slide', swim: 'Swim', air: 'Jump', sneak: 'Sneak', grab: 'Grab', flee: 'Flee', handsup: 'Hands up' },
+  de: { idle: 'Stehen', walk: 'Laufen', slide: 'Rutschen', swim: 'Schwimmen', air: 'Springen', sneak: 'Schleichen', grab: 'Schnappen', flee: 'Flüchten', handsup: 'Hände hoch' },
+  es: { idle: 'Quieto', walk: 'Andar', slide: 'Deslizar', swim: 'Nadar', air: 'Saltar', sneak: 'Sigilo', grab: 'Agarrar', flee: 'Huir', handsup: 'Manos arriba' },
+}
+const STATE_GROUP: Record<string, string> = { en: 'Animation state', de: 'Zustand', es: 'Estado' }
+const stateName = (s: string) => STATE_NAMES[lang.value]?.[s] ?? STATE_NAMES.en![s] ?? s
+const petState = ref<string>('idle')
+const shownStates = computed(() => shown.value?.states ?? [])
+watch(() => shown.value?.id, () => (petState.value = 'idle'))
+const viewerState = computed(() => (shownStates.value.includes(petState.value) && petState.value !== 'idle' ? petState.value as Driver : null))
 
 let canHover = false
 let hoverTimer: ReturnType<typeof setTimeout> | null = null
@@ -106,7 +120,7 @@ function pick(h: SiteHat) {
         <div class="card overflow-hidden">
           <div class="stage relative" :class="{ 'stage-night': night }">
             <ClientOnly>
-              <HatViewer :hat="shown" :night="night" :animate="animate" :options="shownChoices" :height="400" @loading="loading = $event" />
+              <HatViewer :hat="shown" :night="night" :animate="animate" :options="shownChoices" :state="viewerState" :height="400" @loading="loading = $event" />
             </ClientOnly>
             <p class="absolute top-3 left-4 text-xs tracking-[0.18em] text-base-400 uppercase">{{ m.capes.preview }}</p>
             <p class="absolute right-4 bottom-3 text-xs text-base-600">{{ m.capes.dragHint }}</p>
@@ -132,6 +146,9 @@ function pick(h: SiteHat) {
                 <span class="opt-dot" aria-hidden="true" />{{ optionName(o) }}
               </button>
             </div>
+          </div>
+          <div v-if="shownStates.length > 1" class="flex flex-wrap gap-2 border-t border-base-800 px-5 py-3" role="group" :aria-label="STATE_GROUP[lang] ?? STATE_GROUP.en">
+            <button v-for="st in shownStates" :key="st" type="button" class="tog" :aria-pressed="petState === st" @click="petState = st">{{ stateName(st) }}</button>
           </div>
           <div v-if="shown" class="border-t border-base-800 p-5">
             <p class="display text-2xl text-base-50">{{ shown.name }}</p>

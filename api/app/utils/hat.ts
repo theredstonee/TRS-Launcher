@@ -29,4 +29,8 @@ export interface SiteHat {
   hash: string
   /** Knochen-Animation vorhanden. */
   animated: boolean
+  /** Nur Begleiter am Boden: Größe relativ zu anderen Begleitern (1 = normal). */
+  petScale?: number
+  /** Nur Begleiter am Boden: Zustände mit eigener Animation (Reihenfolge wie PET_STATES, `idle` immer zuerst). */
+  states?: string[]
 }

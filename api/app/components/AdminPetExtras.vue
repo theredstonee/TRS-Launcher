@@ -41,6 +41,8 @@ const TEXTS = {
     unavailable: 'not loaded',
     owner: 'pet of {name}',
     team: 'team only',
+    code: 'by code',
+    free: 'free',
     scale: 'size ×{n}',
   },
   de: {
@@ -64,6 +66,8 @@ const TEXTS = {
     unavailable: 'nicht geladen',
     owner: 'Haustier von {name}',
     team: 'nur Team',
+    code: 'per Code',
+    free: 'frei',
     scale: 'Größe ×{n}',
   },
   es: {
@@ -87,6 +91,8 @@ const TEXTS = {
     unavailable: 'no cargado',
     owner: 'mascota de {name}',
     team: 'solo equipo',
+    code: 'con código',
+    free: 'gratis',
     scale: 'tamaño ×{n}',
   },
 } as const
@@ -259,7 +265,7 @@ const scaleText = (n: number) => fill(x.value.scale, { n: String(n).replace('.',
                 <span class="block text-[11px] text-base-500">
                   <template v-if="known(id).petScale !== 1">{{ scaleText(known(id).petScale) }} · </template>
                   <template v-if="option(id)?.owner">{{ fill(x.owner, { name: option(id)!.owner!.name }) }}</template>
-                  <template v-else>{{ x.team }}</template>
+                  <template v-else>{{ option(id)?.unlock === 'code' ? x.code : option(id)?.unlock === 'free' ? x.free : x.team }}</template>
                   <template v-if="!known(id).available"> · <span class="text-redstone-300">{{ x.unavailable }}</span></template>
                 </span>
               </span>

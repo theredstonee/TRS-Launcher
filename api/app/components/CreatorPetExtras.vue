@@ -3,7 +3,8 @@
 // Begleiter und den Schalter „Gefolge zeigen“ (`PUT /v1/creator/pet/extras`, nur der Creator selbst).
 import { sameOriginPath, type PetExtraInfo } from '~/utils/creators'
 
-const props = defineProps<{ extras: PetExtraInfo[], show: boolean, helper: boolean }>()
+/** `endpoint`: `/v1/creator/pet/extras`, im Team-Modus mit `?as=` (das Dashboard baut den Pfad). */
+const props = defineProps<{ extras: PetExtraInfo[], show: boolean, helper: boolean, endpoint?: string }>()
 const emit = defineEmits<{ changed: [show: boolean] }>()
 const { lang, fill } = useLang()
 const { api } = useAccount()
@@ -48,7 +49,7 @@ async function toggle(show: boolean) {
   busy.value = true
   error.value = ''
   try {
-    const r = await api<{ showExtras: boolean }>('/v1/creator/pet/extras', { method: 'PUT', body: { show } })
+    const r = await api<{ showExtras: boolean }>(props.endpoint ?? '/v1/creator/pet/extras', { method: 'PUT', body: { show } })
     emit('changed', r.showExtras)
   } catch (e) {
     error.value = fill(x.value.failed, { error: e instanceof Error ? e.message : String(e) })
