@@ -49,7 +49,8 @@ public final class PetHooks {
 			boolean hidden = p.isInvisible() || p.isSpectator();
 			// Reitet er (Boot, Pferd, Lore …), zählt das unterste Fahrzeug: dessen Lage und Tempo, Boden darunter.
 			net.minecraft.world.entity.Entity v = p.getRootVehicle();
-			f.petOwner(p.getUUID(), p == mc.player, v.getX(), v.getY(), v.getZ(), p.yBodyRot, hidden, BLOCKS);
+			f.petOwner(p.getUUID(), p == mc.player, v.getX(), v.getY(), v.getZ(), p.yBodyRot, v == p && p.isShiftKeyDown(), hidden,
+					BLOCKS);
 		}
 		f.petsEnd();
 	}

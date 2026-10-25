@@ -70,6 +70,11 @@ final class CosmeticPreview implements SkinModel.HeadAttachment {
 	 * Begleiter am Boden neben dem rechten Fuß ({@link #ground}).
 	 */
 	private float ox, oy, oz;
+	/** Größe um den Anhängepunkt (Gefolge am Boden: Kaiserpinguin 1,25) und Zeitversatz der Animation (nur Pose). */
+	private float size = 1f;
+	private long poseOffset;
+	/** Texturen von dieser Vorschau übernehmen, wenn sie dasselbe Teil zeigt (mehrere gleiche Begleiter im Gefolge). */
+	private CosmeticPreview textureFrom;
 
 	CosmeticPreview(WardrobeTextures textures) {
 		this.textures = textures;
@@ -88,6 +93,44 @@ final class CosmeticPreview implements SkinModel.HeadAttachment {
 		ox = ground ? -15f : 0f;
 		oy = ground ? -24f : 0f;
 		oz = ground ? 2f : 0f;
+		size = 1f;
+		poseOffset = 0L;
+	}
+
+	/**
+	 * Begleiter am Boden an eine eigene Stelle (Kopf-Raum, Skin-Pixel; Boden = {@code y −24}) mit Größe {@code size}
+	 * und eigenem Zeitversatz der Animation stellen (Gefolge in der Vorschau).
+	 */
+	void place(float x, float y, float z, float size, long poseOffset) {
+		ox = x;
+		oy = y;
+		oz = z;
+		this.size = size > 0f ? size : 1f;
+		this.poseOffset = poseOffset;
+	}
+
+	/** Texturen von {@code other} übernehmen, solange beide dasselbe Teil zeigen (null = eigene). */
+	void textureFrom(CosmeticPreview other) {
+		textureFrom = other == this ? null : other;
+	}
+
+	/** Tiefe des Anhängepunkts in der Ansicht {@code view} (größer = näher am Betrachter) – zum Sortieren mehrerer. */
+	float originDepth(SkinModel.HeadView view) {
+		view.project(ox, oy, oz, tmp, 0);
+		return tmp[2];
+	}
+
+	/** Stelle des Anhängepunkts (Kopf-Raum) und Größe – für den Platzbedarf der Vorschau. */
+	float x() {
+		return ox;
+	}
+
+	float z() {
+		return oz;
+	}
+
+	float size() {
+		return size;
 	}
 
 	/** Was gezeigt wird (null = nichts). */
@@ -112,10 +155,26 @@ final class CosmeticPreview implements SkinModel.HeadAttachment {
 		return preview != null;
 	}
 
+	/** Zeigt diese Vorschau genau diese geladenen Daten? */
+	boolean sameAs(CosmeticCatalog.Preview p) {
+		return p != null && preview == p;
+	}
+
 	/** Vor dem Zeichnen der Figur: Texturen für dieses Bild vorbereiten. false = noch nicht bereit. */
 	boolean prepare(long now) {
 		this.now = now;
 		if (preview == null) return false;
+		CosmeticPreview from = textureFrom;
+		if (from != null && from.preview == preview && from.tLit != null && from.night == night) {
+			texW = from.texW;
+			texH = from.texH;
+			tLit = from.tLit;
+			tLitM = from.tLitM;
+			tEmis = from.tEmis;
+			tEmisM = from.tEmisM;
+			tHalo = from.tHalo;
+			return tLit != null && tLitM != null && tEmis != null && tEmisM != null;
+		}
 		int frame;
 		int[] base;
 		int[] glow = null;
@@ -198,13 +257,14 @@ final class CosmeticPreview implements SkinModel.HeadAttachment {
 		if (preview.v2 != null) {
 			final CosmeticV2 m = preview.v2.model;
 			final float scale = m.scale;
-			renderer.pose(m, now, true, false, 0, 0, 1f, hidden);
+			final float k0 = size;
+			renderer.pose(m, now + poseOffset, true, false, 0, 0, 1f, hidden);
 			renderer.faces(m, -1, (p, uv, material, nx, ny, nz) -> {
 				if (quads >= MAX_QUADS) return;
 				int q = quads++;
 				float d = 0f;
 				for (int k = 0; k < 4; k++) {
-					view.project(p[k * 3] + ox, p[k * 3 + 1] + oy, p[k * 3 + 2] + oz, tmp, 0);
+					view.project(p[k * 3] * k0 + ox, p[k * 3 + 1] * k0 + oy, p[k * 3 + 2] * k0 + oz, tmp, 0);
 					sx[q * 4 + k] = tmp[0];
 					sy[q * 4 + k] = tmp[1];
 					d += tmp[2];
@@ -215,14 +275,14 @@ final class CosmeticPreview implements SkinModel.HeadAttachment {
 				emissive[q] = (byte) (material == CosmeticV2.EMISSIVE ? 1 : 0);
 			});
 			double dx = view.towardViewer(0), dy = view.towardViewer(1), dz = view.towardViewer(2);
-			renderer.halos(m, now, dx, dy, dz, true, (cx, cy, cz, half, rgb, intensity) -> {
+			renderer.halos(m, now + poseOffset, dx, dy, dz, true, (cx, cy, cz, half, rgb, intensity) -> {
 				if (halos >= hx.length) return;
-				view.project(cx + ox, cy + oy, cz + oz, tmp, 0);
+				view.project(cx * k0 + ox, cy * k0 + oy, cz * k0 + oz, tmp, 0);
 				int i = halos++;
 				hx[i] = tmp[0];
 				hy[i] = tmp[1];
 				hd[i] = tmp[2];
-				hs[i] = (float) (half * view.scale);
+				hs[i] = (float) (half * k0 * view.scale);
 				int a = Math.round(Math.min(1f, intensity) * 255f);
 				hc[i] = (a << 24) | (rgb & 0xFFFFFF);
 			});

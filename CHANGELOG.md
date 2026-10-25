@@ -28,6 +28,16 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **TRS Client: a whole escort of companions.** Creators can now be followed by more than one kind of companion: next to their own pet, the team can give them up to four extra companions (for example different penguins), and all of them follow together – at most eight per player. Each one walks, belly-slides and swims on its own and keeps its own rhythm, bigger ones (like the emperor penguin, a quarter bigger than the others) keep more distance, swim a little deeper, step up higher ledges and need more room above their head. The wardrobe preview shows the whole escort around your figure.
+- **TRS Client: companions with a mind of their own.** Companions can now have new moves, starting with the "Black Sheep" penguin: it sneaks along when you sneak, every now and then it snatches some loot (turned towards a player nearby) and then dashes off past you, and when someone looks straight at it, it puts its flippers up until you look away. Nothing is really taken – it's just for show. Companions without these moves behave as before.
+
+### Deutsch
+- **TRS Client: ein ganzes Gefolge an Begleitern.** Creatorn können jetzt mehrere verschiedene Begleiter folgen: Neben ihrem eigenen Haustier kann das Team ihnen bis zu vier weitere Begleiter geben (zum Beispiel verschiedene Pinguine), und alle laufen gemeinsam mit – höchstens acht je Spieler. Jeder läuft, rutscht auf dem Bauch und schwimmt für sich und hat seinen eigenen Rhythmus; größere (wie der Kaiserpinguin, ein Viertel größer als die anderen) halten mehr Abstand, schwimmen etwas tiefer, steigen höhere Absätze hoch und brauchen mehr Platz über dem Kopf. Die Vorschau in der Garderobe zeigt das ganze Gefolge um deine Figur.
+- **TRS Client: Begleiter mit eigenem Kopf.** Begleiter können jetzt neue Bewegungen haben, als Erstes der Pinguin „Schwarzes Schaf“: Er schleicht mit, wenn du schleichst, schnappt sich ab und zu etwas Beute (zu einem Spieler in der Nähe gedreht) und flitzt dann an dir vorbei davon, und wenn ihn jemand direkt ansieht, hebt er die Flossen, bis man wegschaut. Genommen wird dabei nichts – alles nur Show. Begleiter ohne diese Bewegungen verhalten sich wie bisher.
+
 ## 0.30.1 – 2026-10-25 – Companions | Begleiter
 <!-- banner: accent=#d79ad6 motif=/news/0.30.1/banner.png -->
 <!-- shots:

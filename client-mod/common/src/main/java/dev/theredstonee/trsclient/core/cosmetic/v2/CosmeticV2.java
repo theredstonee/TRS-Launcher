@@ -50,16 +50,19 @@ public final class CosmeticV2 {
 	static final String[] CHANNELS = { "rotation", "position", "scale" };
 	public static final int LINEAR = 0, SMOOTH = 1, STEP = 2;
 	static final String[] INTERPOLATIONS = { "linear", "smooth", "step" };
-	static final String[] DRIVERS = { "idle", "walk", "sneak", "jump", "air", "slide", "swim" };
-	/** Treiber-Indizes (Reihenfolge wie {@code DRIVERS} der Referenz). */
+	static final String[] DRIVERS = { "idle", "walk", "sneak", "jump", "air", "slide", "swim", "grab", "flee", "handsup" };
+	/**
+	 * Treiber-Indizes (Reihenfolge wie {@code DRIVERS} der Referenz). {@code grab}/{@code flee}/{@code handsup}: Anhang E
+	 * (Begleiter-Zustände, 2026-10-25).
+	 */
 	public static final int DRIVER_IDLE = 0, DRIVER_WALK = 1, DRIVER_SNEAK = 2, DRIVER_JUMP = 3, DRIVER_AIR = 4,
-			DRIVER_SLIDE = 5, DRIVER_SWIM = 6;
+			DRIVER_SLIDE = 5, DRIVER_SWIM = 6, DRIVER_GRAB = 7, DRIVER_FLEE = 8, DRIVER_HANDSUP = 9;
 	/** Höchstens so viele abschaltbare Teile ({@code options}) je Modell. */
 	public static final int MAX_OPTIONS = 4;
 
 	/** Grenzen (§10). */
 	public static final int MAX_CUBES = 64, MAX_BONES = 32, MAX_TEXTURE_EDGE = 1024, MAX_STRIP = 4096, MAX_FRAMES = 16,
-			MAX_ANIMATIONS = 8, MAX_TRACKS = 32, MAX_KEYS = 64, MAX_HALOS = 16, MAX_LENGTH_MS = 60000;
+			MAX_ANIMATIONS = 12, MAX_TRACKS = 32, MAX_KEYS = 64, MAX_HALOS = 16, MAX_LENGTH_MS = 60000;
 	static final float MAX_COORD = 48f, MAX_SIZE = 32f, MAX_INFLATE = 1f, GRID = 0.125f;
 	/** Größte Modell-Datei, die gelesen wird. */
 	public static final int MAX_JSON_BYTES = 512 * 1024;
@@ -302,7 +305,7 @@ public final class CosmeticV2 {
 
 	/**
 	 * Treiber-Index ({@code idle} 0, {@code walk} 1, {@code sneak} 2, {@code jump} 3, {@code air} 4, {@code slide} 5,
-	 * {@code swim} 6) eines Namens, sonst -1.
+	 * {@code swim} 6, {@code grab} 7, {@code flee} 8, {@code handsup} 9) eines Namens, sonst -1.
 	 */
 	public static int driverIndex(String name) {
 		return index(DRIVERS, name);
@@ -704,7 +707,7 @@ public final class CosmeticV2 {
 				if (aid == null || !ID.matcher(aid).matches()) out.err(p, "ungültige id");
 				JsonElement drvEl = a.get("driver");
 				int driver = drvEl == null || drvEl.isJsonNull() ? 0 : index(DRIVERS, str(drvEl));
-				if (driver < 0) out.err(p, "driver eins von idle, walk, sneak, jump, air, slide, swim");
+				if (driver < 0) out.err(p, "driver eins von " + String.join(", ", DRIVERS));
 				JsonElement lenEl = a.get("lengthMs");
 				int length = isInt(lenEl) ? intOr(lenEl, 0) : 0;
 				if (!isInt(lenEl) || length < 50 || length > MAX_LENGTH_MS) out.err(p, "lengthMs 50…" + MAX_LENGTH_MS);

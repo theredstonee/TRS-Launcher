@@ -20,6 +20,8 @@ public final class PetDraw<T> {
 	public double yaw;
 	/** Licht am Standort, gepackt wie Minecraft ({@code (himmel << 20) | (block << 4)}). */
 	public int light;
+	/** Größe des Begleiters (1 = wie modelliert; um den Ursprung am Boden skaliert, die Füße bleiben am Boden). */
+	public double scale = 1.0;
 	/** Kamera im Anhängepunkt-Raum des Modells (Einheiten = Pixel) – für Höfe und Entfernungs-Stufe. */
 	public final double[] eye = new double[3];
 	private double cos, sin;
@@ -36,9 +38,15 @@ public final class PetDraw<T> {
 		sz = z;
 	}
 
-	/** Lage setzen; berechnet {@link #eye}. */
+	/** Lage setzen (Größe 1); berechnet {@link #eye}. */
 	public void set(double dx, double dy, double dz, double yawDeg) {
+		set(dx, dy, dz, yawDeg, 1.0);
+	}
+
+	/** Lage und Größe setzen; berechnet {@link #eye} (im Modell-Raum, also durch die Größe geteilt). */
+	public void set(double dx, double dy, double dz, double yawDeg, double scale) {
 		sx = sy = sz = 0;
+		this.scale = scale > 0 && !Double.isInfinite(scale) ? scale : 1.0;
 		this.dx = dx;
 		this.dy = dy;
 		this.dz = dz;
@@ -48,17 +56,23 @@ public final class PetDraw<T> {
 		sin = Math.sin(h);
 		// Kamera relativ zum Ursprung: c = (−dx, −dy, −dz); Modell: x = links (cos, 0, sin), z = vorne (−sin, 0, cos)
 		double cx = -dx, cy = -dy, cz = -dz;
-		eye[0] = 16.0 * (cx * cos + cz * sin);
-		eye[1] = 16.0 * cy;
-		eye[2] = 16.0 * (-cx * sin + cz * cos);
+		double k = 16.0 / this.scale;
+		eye[0] = k * (cx * cos + cz * sin);
+		eye[1] = k * cy;
+		eye[2] = k * (-cx * sin + cz * cos);
 	}
 
 	/** Vierecke (ModelPart-Raum) in kamerazentrierte Welt-Koordinaten umrechnen und an {@code out} geben. */
 	public CosmeticV2Renderer.VertexSink wrap(final CosmeticV2Renderer.VertexSink out) {
 		final double c = cos, s = sin, ox = dx + sx, oy = dy + sy, oz = dz + sz;
+		final float k = (float) scale;
 		return new CosmeticV2Renderer.VertexSink() {
 			@Override
 			public void vertex(float x, float y, float z, float u, float v, float nx, float ny, float nz, int argb) {
+				// Größe um den Ursprung (Boden unter der Mitte); Normalen bleiben (gleichmäßig skaliert)
+				x *= k;
+				y *= k;
+				z *= k;
 				// Modell (x, y, z)/16 = (x', −y', −z'): Welt = x·links + y·oben + z·vorne
 				float wx = (float) (ox + x * c + z * s);
 				float wy = (float) (oy - y);

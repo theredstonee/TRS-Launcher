@@ -46,8 +46,25 @@ public final class HatInfo {
 	public final java.util.Map<String, Boolean> options;
 	/** Begleiter am Boden: wie viele (1…{@link #MAX_COUNT}, Lookup {@code cosmetics.pet.count}); sonst 1. */
 	public final int count;
-	/** Höchstens so viele Begleiter am Boden je Spieler. */
+	/**
+	 * Begleiter am Boden: Größe im Spiel (Lookup {@code petScale}; Standard 1,
+	 * {@link #MIN_PET_SCALE}…{@link #MAX_PET_SCALE}) – z. B. Kaiserpinguin 1,25.
+	 */
+	public final double petScale;
+	/**
+	 * Begleiter am Boden: zusätzliches Gefolge ({@code cosmetics.pet.extras}, Creator-Begleiter, je einmal gezeichnet,
+	 * höchstens {@link #MAX_EXTRAS}); nie null, unveränderlich. Jedes Extra ist ein eigenes Format-2-Teil mit eigener
+	 * {@link #petScale}, ohne eigene Extras.
+	 */
+	public final java.util.List<HatInfo> extras;
+	/** Höchstens so oft wird das Haupt-Teil am Boden gezeichnet ({@code count}). */
 	public static final int MAX_COUNT = 4;
+	/** Höchstens so viele zusätzliche Begleiter je Spieler. */
+	public static final int MAX_EXTRAS = 4;
+	/** Höchstens so viele Begleiter am Boden je Spieler (Haupt-Teil × {@code count} + Extras). */
+	public static final int MAX_PETS = 8;
+	/** Grenzen der Größe eines Begleiters am Boden. */
+	public static final double MIN_PET_SCALE = 0.5, MAX_PET_SCALE = 2.0;
 	/** Höchstens so viele Optionen werden übernommen (Modell-Grenze). */
 	static final int MAX_OPTIONS = 4;
 	private final String key;
@@ -67,11 +84,14 @@ public final class HatInfo {
 		this.glowFrames = 0;
 		this.options = java.util.Collections.emptyMap();
 		this.count = 1;
+		this.petScale = 1.0;
+		this.extras = java.util.Collections.emptyList();
 		this.key = "v1|" + id + "|" + (texture == null ? "" : texture.key());
 		this.assetKey = key;
 	}
 
-	private HatInfo(HatInfo base, java.util.Map<String, Boolean> options, int count) {
+	private HatInfo(HatInfo base, java.util.Map<String, Boolean> options, int count, double petScale,
+			java.util.List<HatInfo> extras) {
 		this.id = base.id;
 		this.template = base.template;
 		this.texture = base.texture;
@@ -85,12 +105,16 @@ public final class HatInfo {
 		this.glowFrames = base.glowFrames;
 		this.options = options;
 		this.count = count;
+		this.petScale = petScale;
+		this.extras = extras;
 		this.assetKey = base.assetKey;
 		StringBuilder k = new StringBuilder(base.assetKey);
 		if (count != 1) k.append("|x").append(count);
+		if (petScale != 1.0) k.append("|s").append(petScale);
 		for (java.util.Map.Entry<String, Boolean> e : options.entrySet()) {
 			k.append('|').append(e.getKey()).append('=').append(e.getValue().booleanValue() ? '1' : '0');
 		}
+		for (HatInfo e : extras) k.append("|+[").append(e.key).append(']');
 		this.key = k.toString();
 	}
 
@@ -108,6 +132,8 @@ public final class HatInfo {
 		this.glowFrames = glowFrames;
 		this.options = java.util.Collections.emptyMap();
 		this.count = 1;
+		this.petScale = 1.0;
+		this.extras = java.util.Collections.emptyList();
 		this.key = "v2|" + id + "|" + hash;
 		this.assetKey = key;
 	}
@@ -152,7 +178,47 @@ public final class HatInfo {
 		int c = wantedCount == null ? 1 : Math.max(1, Math.min(MAX_COUNT, wantedCount));
 		if (o.isEmpty() && c == 1 && options.isEmpty() && count == 1) return this;
 		return new HatInfo(this, o.isEmpty() ? java.util.Collections.<String, Boolean>emptyMap()
-				: java.util.Collections.unmodifiableMap(o), c);
+				: java.util.Collections.unmodifiableMap(o), c, petScale, extras);
+	}
+
+	/**
+	 * Gleiches Teil als Begleiter am Boden mit Größe {@code scale} (auf {@link #MIN_PET_SCALE}…{@link #MAX_PET_SCALE}
+	 * begrenzt, kein endlicher Wert = 1) und Gefolge {@code extraPets} (nur Format 2, ohne eigene Extras, Dubletten
+	 * erlaubt, höchstens {@link #MAX_EXTRAS}; null = keins).
+	 */
+	public HatInfo withPet(double scale, java.util.List<HatInfo> extraPets) {
+		double sc = clampScale(scale);
+		java.util.List<HatInfo> ex = new java.util.ArrayList<HatInfo>();
+		if (extraPets != null) {
+			for (HatInfo e : extraPets) {
+				if (e == null || !e.v2() || ex.size() >= MAX_EXTRAS) continue;
+				ex.add(e.extras.isEmpty() ? e : new HatInfo(e, e.options, e.count, e.petScale,
+						java.util.Collections.<HatInfo>emptyList()));
+			}
+		}
+		if (sc == petScale && ex.equals(extras)) return this;
+		return new HatInfo(this, options, count, sc,
+				ex.isEmpty() ? java.util.Collections.<HatInfo>emptyList() : java.util.Collections.unmodifiableList(ex));
+	}
+
+	/** Größe eines Begleiters am Boden begrenzen (kein endlicher Wert = 1). */
+	public static double clampScale(double scale) {
+		if (Double.isNaN(scale) || Double.isInfinite(scale)) return 1.0;
+		double s = Math.max(MIN_PET_SCALE, Math.min(MAX_PET_SCALE, scale));
+		// auf Hundertstel runden: gleicher Wert → gleicher Schlüssel
+		return Math.round(s * 100.0) / 100.0;
+	}
+
+	/** Wie viele Begleiter am Boden insgesamt gezeichnet werden ({@code count} + Extras, höchstens {@link #MAX_PETS}). */
+	public int petTotal() {
+		return Math.min(MAX_PETS, count + extras.size());
+	}
+
+	/** Teil des {@code i}-ten Begleiters am Boden (0 … {@link #petTotal()}−1): erst {@code count} × dieses, dann die Extras. */
+	public HatInfo petPiece(int i) {
+		if (i < count) return this;
+		int e = i - count;
+		return e >= 0 && e < extras.size() ? extras.get(e) : null;
 	}
 
 	/** Prüft streng; unbekannte Vorlage (neuere API), fremde URL oder kaputte Werte → null (nichts zeichnen). */

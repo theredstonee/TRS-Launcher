@@ -110,10 +110,45 @@ public final class WardrobeUi extends UiScreen {
 	private final SkinModel.HeadAttachment cosmeticHead = new SkinModel.HeadAttachment() {
 		@Override
 		public void draw(Canvas c, SkinModel.HeadView view, boolean front) {
-			cosmeticPreview.draw(c, view, front);
+			if (escortCount == 0) {
+				cosmeticPreview.draw(c, view, front);
+			} else {
+				// Gefolge: von hinten nach vorn (je Begleiter sortiert der eigene Durchgang die Flächen)
+				int n = 0;
+				escortOrder[n++] = cosmeticPreview;
+				for (int i = 0; i < escortCount; i++) escortOrder[n++] = escort[i];
+				for (int i = 0; i < n; i++) escortDepth[i] = escortOrder[i].originDepth(view);
+				for (int i = 1; i < n; i++) {
+					CosmeticPreview pv = escortOrder[i];
+					float d = escortDepth[i];
+					int j = i - 1;
+					while (j >= 0 && escortDepth[j] > d) {
+						escortOrder[j + 1] = escortOrder[j];
+						escortDepth[j + 1] = escortDepth[j];
+						j--;
+					}
+					escortOrder[j + 1] = pv;
+					escortDepth[j + 1] = d;
+				}
+				for (int i = 0; i < n; i++) escortOrder[i].draw(c, view, front);
+			}
 			wornPreview.draw(c, view, front);
 		}
 	};
+	/**
+	 * Gefolge des getragenen Begleiters am Boden in der Vorschau: weitere Exemplare des Haupt-Teils ({@code count}) und
+	 * die Extras ({@code equipped.pet.extras}) – das erste Exemplar ist {@link #cosmeticPreview}.
+	 */
+	private final CosmeticPreview[] escort = new CosmeticPreview[PET_SPOTS.length - 1];
+	private int escortCount;
+	private final CosmeticPreview[] escortOrder = new CosmeticPreview[PET_SPOTS.length];
+	private final float[] escortDepth = new float[PET_SPOTS.length];
+	/**
+	 * Plätze des Gefolges in der Vorschau (Kopf-Raum, Skin-Pixel: x = links der Figur, z = vorne; Boden y −24): erst
+	 * neben dem rechten Fuß (wie bisher ein einzelner Begleiter), dann abwechselnd links/rechts und dahinter.
+	 */
+	static final float[][] PET_SPOTS = { { -15f, 2f }, { 15f, 2f }, { -25f, -8f }, { 25f, -8f }, { -8f, -14f }, { 8f, -14f },
+			{ -34f, 3f }, { 34f, 3f } };
 	String selectedCosmetic;
 	boolean cosmeticNight;
 	private int seenCosmeticVersion = -1;
@@ -1385,7 +1420,12 @@ public final class WardrobeUi extends UiScreen {
 			if (cosmeticNight) spec.tint = NIGHT_TINT;
 			if (prepareCosmetic(now)) spec.head = cosmeticHead;
 		}
-		if (petScene) bust = false;
+		if (petScene) {
+			bust = false;
+			prepareEscort(now);
+		} else {
+			escortCount = 0;
+		}
 		// Halloween: Kürbis „hinter dir, wenn du dich umziehst“ – vor der Figur gezeichnet, schaut rechts neben dem
 		// rechten Fuß hervor. Die Beine sind höchstens 8 Skin-Pixel breit; die Figur ist 32 hoch, also liegt der Fuß
 		// spätestens bei Mitte + 4 * (Höhe / 32). Ein fester Versatz lag bei großen Vorschauen ganz hinter den Beinen.
@@ -1536,9 +1576,77 @@ public final class WardrobeUi extends UiScreen {
 
 	/** Ganze Figur, rechts daneben (vom Betrachter links) der Begleiter am Boden – beides passt hinein. */
 	private void drawPetScene(Canvas c, int x, int y, int w, int h) {
+		if (escortCount > 0) {
+			// Gefolge rund um die Figur: Platz für den weitesten Begleiter in jeder Drehung
+			float r = 10f;
+			for (int i = -1; i < escortCount; i++) {
+				CosmeticPreview pv = i < 0 ? cosmeticPreview : escort[i];
+				r = Math.max(r, (float) Math.hypot(pv.x(), pv.z()) + 5f * pv.size());
+			}
+			float scale = Math.max(0.1f, Math.min(h / 34f, w / (2f * r + 4f)));
+			model.draw(c, x + w / 2f, y + h - 1f, scale, spec);
+			return;
+		}
 		float scale = Math.max(0.1f, Math.min(h / 34f, w / 44f));
 		float cx = x + w / 2f + 8f * scale;
 		model.draw(c, cx, y + h - 1f, scale, spec);
+	}
+
+	/**
+	 * Gefolge vorbereiten: nur wenn der gewählte Begleiter am Boden getragen wird – dann {@code count} × dieses Teil und
+	 * jedes Extra (Größe je Teil, eigener Zeitversatz). Noch nicht geladene Extras werden angefragt und fehlen so lange.
+	 */
+	private void prepareEscort(long now) {
+		escortCount = 0;
+		if (catalog == null || selectedCosmetic == null || !cosmeticPreview.active()) return;
+		CosmeticCatalog.State cs = catalog.state();
+		CosmeticCatalog.Item it = cs.item(selectedCosmetic);
+		if (it == null || !"pet".equals(it.slot) || !cs.worn(it)) return;
+		CosmeticCatalog.Preview main = cs.previews.get(it.id);
+		if (main == null) return;
+		float mainSize = (float) cs.petScale;
+		spot(cosmeticPreview, 0, mainSize, 0L);
+		int count = Math.max(1, Math.min(dev.theredstonee.trsclient.core.online.HatInfo.MAX_COUNT, cs.petCount));
+		int slot = 1;
+		for (int i = 1; i < count && slot < PET_SPOTS.length; i++, slot++) {
+			CosmeticPreview pv = escortSlot(escortCount);
+			pv.set(it.id, main, cosmeticNight);
+			pv.hidden(0L);
+			pv.textureFrom(cosmeticPreview);
+			spot(pv, slot, mainSize, slot * 1370L);
+			if (pv.prepare(now)) escortCount++;
+		}
+		for (dev.theredstonee.trsclient.core.online.HatInfo extra : cs.petExtras) {
+			if (slot >= PET_SPOTS.length) break;
+			CosmeticCatalog.Preview p = cs.previews.get(extra.id);
+			if (p == null || p.v2 == null || !p.v2.model.pet()) {
+				if (p == null && !cs.failed.contains(extra.id)) catalog.wantPreview(extra.id);
+				continue;
+			}
+			CosmeticPreview pv = escortSlot(escortCount);
+			pv.set(extra.id, p, cosmeticNight);
+			pv.hidden(p.v2.model.options.isEmpty() ? 0L : p.v2.model.hiddenBones(null));
+			// gleiches Teil schon im Gefolge → dessen Texturen nehmen
+			CosmeticPreview same = null;
+			for (int k = 0; k < escortCount && same == null; k++) if (escort[k].sameAs(p)) same = escort[k];
+			pv.textureFrom(same);
+			spot(pv, slot, (float) extra.petScale, slot * 1370L);
+			slot++;
+			if (pv.prepare(now)) escortCount++;
+		}
+	}
+
+	private CosmeticPreview escortSlot(int i) {
+		if (escort[i] == null) escort[i] = new CosmeticPreview(textures);
+		return escort[i];
+	}
+
+	/** Begleiter an Platz {@code slot} der Vorschau stellen; größere rücken nach außen. */
+	private static void spot(CosmeticPreview pv, int slot, float size, long offset) {
+		float[] s = PET_SPOTS[slot];
+		float out = (size - 1f) * 5f;
+		float x = s[0] + Math.signum(s[0]) * out;
+		pv.place(x, -24f, s[1], size, offset);
 	}
 
 	/** Figur von der Hüfte aufwärts, so groß, dass das Teil ganz hineinpasst. */
