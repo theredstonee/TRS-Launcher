@@ -22,6 +22,7 @@ import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.ui.TileGrid;
 import dev.theredstonee.trsclient.core.ui.UiKey;
 import dev.theredstonee.trsclient.core.ui.UiScreen;
+import dev.theredstonee.trsclient.core.ui.fox.Ember;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -434,6 +435,11 @@ public final class ModMenu extends UiScreen {
 			float frost = 1f - Anim.easeOut(open);
 			c.fill(px + 1, py + 1, px + pw - 1, py + ph - 1, ColorMath.withAlpha(0xFFEAF6FF, Math.round(110 * frost)));
 		}
+		if (t.fox && open < 0.999f) {
+			// Fuchsbau: das Fenster glimmt beim Öffnen kurz warm auf (wie die Menüs im Launcher).
+			float ember = 1f - Anim.easeOut(open);
+			c.fill(px + 1, py + 1, px + pw - 1, py + ph - 1, ColorMath.withAlpha(0xFFFFB050, Math.round(90 * ember)));
+		}
 		c.pop();
 	}
 
@@ -457,6 +463,25 @@ public final class ModMenu extends UiScreen {
 			float sec = (System.nanoTime() / 1_000_000L % 100_000L) / 1000f;
 			dev.theredstonee.trsclient.core.ui.halloween.HalloweenLook.menuHeader(c, px + 1, py + 2, pw - 2, HEADER_H - 2,
 					clientX + c.textWidth(client) + 4, sec);
+		}
+		if (t.fox) {
+			// Blätter auf dem Schriftzug, das Fuchsgesicht daneben und ein glimmender Ast unter dem Kopf, der nach rechts verglimmt.
+			Ember.leafCaps(c, rects, lx, ly, 2);
+			float sec = (System.nanoTime() / 1_000_000L % 100_000L) / 1000f;
+			Ember.foxMark(c, clientX + c.textWidth(client) + 5, py + (HEADER_H - 7) / 2, 1, t.light ? t.accent : ColorMath.lerp(t.accent, 0xFFFFFFFF, 0.2f),
+					Ember.blink(sec));
+			int fx2 = px + 1 + Math.round((pw - 2) * 0.45f);
+			int segs = 6;
+			for (int i = 0; i < segs; i++) {
+				int sx = px + 1 + (fx2 - px - 1) * i / segs;
+				int ex = px + 1 + (fx2 - px - 1) * (i + 1) / segs;
+				int a = Math.round(200 * (1f - i / (float) segs));
+				c.fill(sx, py + HEADER_H - 1, ex, py + HEADER_H, ColorMath.withAlpha(t.dustOn, a));
+			}
+			for (int fx = px + 7; fx < fx2 - 2; fx += 19) {
+				float f = 1f - (fx - px) / (float) Math.max(1, fx2 - px);
+				c.fill(fx, py + HEADER_H - 1, fx + 2, py + HEADER_H, ColorMath.withAlpha(Ember.FLAME_CORE, Math.round(220 * f)));
+			}
 		}
 		if (t.winter) {
 			// Schnee auf dem Schriftzug, eine Schneeflocke daneben und eine Frostlinie mit Eiskristallen unter dem Kopf.

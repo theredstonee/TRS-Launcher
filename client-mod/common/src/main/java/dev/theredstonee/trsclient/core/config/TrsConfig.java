@@ -73,7 +73,7 @@ public final class TrsConfig {
 		public String lookTheme;
 		public String lookAccent;
 		public String lookLanguage;
-		/** Design ("redstone"/"winter"), null = nie im Client gewählt (bleibt lokal, nicht im Konto). */
+		/** Design ("redstone"/"winter"/"fox"), null = nie im Client gewählt (bleibt lokal, nicht im Konto). */
 		public String lookDesign;
 		public Long lookAt;
 		/** „NEU“: Stand, ab dem neue Module markiert werden, und bereits geöffnete Einträge. */

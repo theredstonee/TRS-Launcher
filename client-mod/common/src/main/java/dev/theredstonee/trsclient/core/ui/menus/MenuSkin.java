@@ -3,6 +3,8 @@ package dev.theredstonee.trsclient.core.ui.menus;
 import dev.theredstonee.trsclient.core.ui.Canvas;
 import dev.theredstonee.trsclient.core.ui.ColorMath;
 import dev.theredstonee.trsclient.core.ui.FadeCanvas;
+import dev.theredstonee.trsclient.core.ui.fox.Ember;
+import dev.theredstonee.trsclient.core.ui.fox.FoxScene;
 import dev.theredstonee.trsclient.core.ui.Icons;
 import dev.theredstonee.trsclient.core.ui.PixelFont;
 import dev.theredstonee.trsclient.core.ui.Redstone;
@@ -54,8 +56,39 @@ public final class MenuSkin {
 	private static final int ICE_FIELD = 0xFF060B16;
 	private static final int ICE_FIELD_EDGE = 0xFF2D4166;
 
+	// Fuchsbau: Platten aus dunklem Pflaumenholz mit Abendlicht-Kante (immer dunkel – Vanilla schreibt weiß).
+	private static final int WOOD = 0xFF2F1F2C;
+	private static final int WOOD_HOVER = 0xFF412A38;
+	private static final int WOOD_OFF = 0xFF201520;
+	private static final int WOOD_EDGE = 0xFF0E070C;
+	private static final int DUSK_LIGHT = 0xFF7A5468;
+	private static final int DUSK_DARK = 0xFF140A12;
+	private static final int FOX_FIELD = 0xFF0E080D;
+	private static final int FOX_FIELD_EDGE = 0xFF4A3446;
+
 	private static boolean winter() {
 		return Theme.get().winter;
+	}
+
+	private static boolean fox() {
+		return Theme.get().fox;
+	}
+
+	/** Lichtkante (oben) passend zum Design. */
+	private static int bevelLight(Theme t) {
+		return t.winter ? FROST_LIGHT : (t.fox ? DUSK_LIGHT : BEVEL_LIGHT);
+	}
+
+	/** Schattenkante (unten) passend zum Design. */
+	private static int bevelDark(Theme t) {
+		return t.winter ? FROST_DARK : (t.fox ? DUSK_DARK : BEVEL_DARK);
+	}
+
+	/** Grund von Kopf- und Fußleiste. */
+	private static int barFill(Theme t, boolean inWorld) {
+		if (t.winter) return inWorld ? 0x8C060B16 : 0xD80B1222;
+		if (t.fox) return inWorld ? 0x8C0E080D : 0xD8170E15;
+		return inWorld ? 0x8C0C0A0B : 0xD8141113;
 	}
 
 	private MenuSkin() {
@@ -104,6 +137,15 @@ public final class MenuSkin {
 				int band = Math.max(4, height / 24);
 				int y2 = height - i * band;
 				c.fill(0, y2 - band, width, y2, ColorMath.withAlpha(t.lampGlow, Math.max(0, 18 - i * 3)));
+			}
+			Redstone.dustH(c, 0, width, height - 2, ColorMath.lerp(t.dustOff, t.dustOn, 0.55f + 0.2f * pulse(time)), 0.4f);
+		} else if (inWorld && t.fox) {
+			// Fuchsbau in der Welt: Schleier in später Dämmerung, unten warmer Feuerschein und ein glimmender Ast.
+			c.fill(0, 0, width, height, 0x9A100A10);
+			for (int i = 0; i < 6; i++) {
+				int band = Math.max(4, height / 24);
+				int y2 = height - i * band;
+				c.fill(0, y2 - band, width, y2, ColorMath.withAlpha(t.lampGlow, Math.max(0, 20 - i * 3)));
 			}
 			Redstone.dustH(c, 0, width, height - 2, ColorMath.lerp(t.dustOff, t.dustOn, 0.55f + 0.2f * pulse(time)), 0.4f);
 		} else if (inWorld) {
@@ -156,6 +198,10 @@ public final class MenuSkin {
 			WinterScene.shared().draw(c, width, height, animated);
 			return;
 		}
+		if (fox()) {
+			FoxScene.shared().draw(c, width, height, animated);
+			return;
+		}
 		if (sceneSimple == null || sceneSimple != !animated) {
 			// setSimple baut die Schaltung neu – nur beim Umschalten aufrufen.
 			sceneSimple = !animated;
@@ -183,8 +229,8 @@ public final class MenuSkin {
 			HalloweenLook.menuHeader(c, 0, 0, width, h, lx + PixelFont.width("TRS") * 2 + 2, seconds());
 			return;
 		}
-		c.fill(0, 0, width, h, t.winter ? (inWorld ? 0x8C060B16 : 0xD80B1222) : (inWorld ? 0x8C0C0A0B : 0xD8141113));
-		c.fill(0, 0, width, 1, ColorMath.withAlpha(t.winter ? FROST_LIGHT : BEVEL_LIGHT, 0x60));
+		c.fill(0, 0, width, h, barFill(t, inWorld));
+		c.fill(0, 0, width, 1, ColorMath.withAlpha(bevelLight(t), 0x60));
 		Redstone.dustH(c, 0, width, h - 2, ColorMath.lerp(t.dustOff, t.dustOn, 0.8f), 0.7f);
 		logo(c, 8, (h - PixelFont.HEIGHT * 2) / 2, 2, 1f);
 	}
@@ -197,7 +243,7 @@ public final class MenuSkin {
 			c.fill(0, top, width, top + 1, 0x803B3358);
 			return;
 		}
-		c.fill(0, top, width, height, t.winter ? (inWorld ? 0x8C060B16 : 0xD80B1222) : (inWorld ? 0x8C0C0A0B : 0xD8141113));
+		c.fill(0, top, width, height, barFill(t, inWorld));
 		Redstone.dustH(c, 0, width, top, ColorMath.lerp(t.dustOff, t.dustOn, 0.8f), 0.7f);
 	}
 
@@ -222,6 +268,13 @@ public final class MenuSkin {
 			int fx = x + PixelFont.width("TRS") * scale + scale * 2;
 			int px = Math.max(1, scale / 2);
 			Frost.snowflake(c, fx, y + (PixelFont.HEIGHT * scale - 9 * px) / 2, px, 0xFFB8E7FF, Frost.glint(seconds()));
+		} else if (t.fox && alpha > 0.5f) {
+			// Ein paar Blätter auf dem Schriftzug und das kleine Fuchsgesicht daneben (wie im Launcher).
+			Ember.leafCaps(c, rects, x, y, scale);
+			int fx = x + PixelFont.width("TRS") * scale + scale * 2;
+			int px = Math.max(1, scale / 2);
+			Ember.foxMarkGlow(c, fx, y + (PixelFont.HEIGHT * scale - 7 * px) / 2, px, ColorMath.lerp(t.accent, 0xFFFFFFFF, 0.2f), seconds(),
+					dev.theredstonee.trsclient.core.menus.MenuStyle.animated(), 1f);
 		}
 	}
 
@@ -235,9 +288,10 @@ public final class MenuSkin {
 			c.fill(x1, y2 - 1, x2, y2, 0x603B3358);
 			return;
 		}
-		c.fill(x1, y1, x2, y2, w ? (inWorld ? 0x70020610 : 0xA8050A16) : (inWorld ? 0x70000000 : 0xA8080607));
+		boolean f = fox();
+		c.fill(x1, y1, x2, y2, w ? (inWorld ? 0x70020610 : 0xA8050A16) : (f ? (inWorld ? 0x700A0408 : 0xA80E070C) : (inWorld ? 0x70000000 : 0xA8080607)));
 		c.fill(x1, y1, x2, y1 + 1, 0x80000000);
-		c.fill(x1, y2 - 1, x2, y2, ColorMath.withAlpha(w ? FROST_LIGHT : BEVEL_LIGHT, 0x50));
+		c.fill(x1, y2 - 1, x2, y2, ColorMath.withAlpha(bevelLight(Theme.get()), 0x50));
 	}
 
 	/** Trennlinien einer Liste (oben/unten) als Staubleitungen. */
@@ -264,6 +318,10 @@ public final class MenuSkin {
 		}
 		if (t.winter) {
 			iceButton(c, t, x, y, w, h, hot, active);
+			return;
+		}
+		if (t.fox) {
+			woodButton(c, t, x, y, w, h, hot, active);
 			return;
 		}
 		int fill = !active ? STONE_OFF : (hot ? STONE_HOVER : STONE);
@@ -314,6 +372,40 @@ public final class MenuSkin {
 	}
 
 	/**
+	 * Fuchsbau: Platte aus Pflaumenholz, die tiefe Sonne legt eine warme Kante oben drauf, ab und zu liegt ein Blatt
+	 * darauf; beim Überfahren glimmt die Platte wie Glut und ein Ast leuchtet unten auf.
+	 */
+	private static void woodButton(Canvas c, Theme t, int x, int y, int w, int h, boolean hot, boolean active) {
+		int fill = !active ? WOOD_OFF : (hot ? WOOD_HOVER : WOOD);
+		if (hot) Redstone.glow(c, x, y, w, h, t.lampGlow, 0.55f);
+		Redstone.block(c, x, y, w, h, hot ? ColorMath.lerp(WOOD_EDGE, t.lampGlow, 0.6f) : WOOD_EDGE);
+		if (h < 5) return;
+		c.fill(x + 1, y + 1, x + w - 1, y + h - 1, fill);
+		// Abendlicht auf der Oberkante.
+		int rim = active ? (hot ? 0xFFFFD49A : 0xFF8A5A5E) : 0xFF3E2A36;
+		c.fill(x + 1, y + 1, x + w - 1, y + 2, rim);
+		if (hot) c.fill(x + 1, y + 2, x + w - 1, y + h - 2, ColorMath.withAlpha(t.lampGlow, 0x1C));
+		if (active && w > 24) {
+			// Ein Blatt auf der Kante (fest je Lage), selten eine Kirschblüte.
+			int lx = x + 5 + Math.floorMod(x * 5 + y * 3, Math.max(1, w - 14));
+			int k = Math.floorMod(x * 7 + y, 9);
+			int leaf = k == 0 ? Ember.PETAL : (k < 4 ? Ember.LEAF : Ember.FALL[k % Ember.FALL.length]);
+			c.fill(lx, y + 1, lx + 2, y + 2, hot ? ColorMath.lerp(leaf, 0xFFFFFFFF, 0.2f) : leaf);
+			c.fill(lx + 1, y, lx + 2, y + 1, ColorMath.withAlpha(leaf, 0xC0));
+		}
+		c.fill(x + 1, y + h - 2, x + w - 1, y + h - 1, DUSK_DARK);
+		if (active && w >= 10 && h >= 8) {
+			int sun = ColorMath.withAlpha(0xFFFFB878, hot ? 0x60 : 0x2C);
+			c.fill(x + 1, y + 2, x + 2, y + 4, sun);
+		}
+		if (hot) {
+			Redstone.dustH(c, x + 3, x + w - 3, y + h - 4, t.lampOn, 0f);
+		} else if (active && w > 12) {
+			c.fill(x + 3, y + h - 4, x + w - 3, y + h - 3, ColorMath.withAlpha(t.dustOff, 0x90));
+		}
+	}
+
+	/**
 	 * Fläche eines Vanilla-Textfelds (Text und Schreibmarke zeichnet Minecraft darüber): eingelassene Mulde wie
 	 * die TRS-Eingabefelder, mit Akzentkante und bestromter Staubleitung, solange das Feld den Fokus hat.
 	 * Wie bei den Knöpfen immer dunkel – Vanilla schreibt hellgrau.
@@ -322,14 +414,15 @@ public final class MenuSkin {
 		if (w < 3 || h < 3) return;
 		Theme t = Theme.get();
 		if (focused && active) Redstone.glow(c, x, y, w, h, t.glow, 0.45f);
-		int fieldEdge = t.halloween ? HalloweenPalette.BUTTON_EDGE : (t.winter ? ICE_FIELD_EDGE : FIELD_EDGE);
+		int fieldEdge = t.halloween ? HalloweenPalette.BUTTON_EDGE : (t.winter ? ICE_FIELD_EDGE : (t.fox ? FOX_FIELD_EDGE : FIELD_EDGE));
 		int edge = focused && active ? t.accent : (hover && active ? ColorMath.lerp(fieldEdge, t.accent, 0.4f) : fieldEdge);
 		Redstone.block(c, x, y, w, h, edge);
 		if (h < 5) return;
-		int fill = t.halloween ? (active ? HalloweenPalette.NIGHT : 0xFF0B0912) : (active ? (t.winter ? ICE_FIELD : FIELD) : (t.winter ? ICE_OFF : STONE_OFF));
+		int fill = t.halloween ? (active ? HalloweenPalette.NIGHT : 0xFF0B0912)
+				: (active ? (t.winter ? ICE_FIELD : (t.fox ? FOX_FIELD : FIELD)) : (t.winter ? ICE_OFF : (t.fox ? WOOD_OFF : STONE_OFF)));
 		c.fill(x + 1, y + 1, x + w - 1, y + h - 1, fill);
-		c.fill(x + 1, y + 1, x + w - 1, y + 2, t.winter ? FROST_DARK : BEVEL_DARK);
-		c.fill(x + 1, y + h - 2, x + w - 1, y + h - 1, ColorMath.lerp(fill, t.winter ? FROST_LIGHT : BEVEL_LIGHT, 0.35f));
+		c.fill(x + 1, y + 1, x + w - 1, y + 2, bevelDark(t));
+		c.fill(x + 1, y + h - 2, x + w - 1, y + h - 1, ColorMath.lerp(fill, bevelLight(t), 0.35f));
 		if (focused && active && w > 8) Redstone.dustH(c, x + 2, x + w - 2, y + h - 1, t.dustOn, 0f);
 	}
 
@@ -376,17 +469,22 @@ public final class MenuSkin {
 		Theme t = Theme.get();
 		if (w < 4 || h < 4) return;
 		if (selected) Redstone.glow(c, x, y, w, h, t.glow, 0.5f);
-		int e0 = t.halloween ? HalloweenPalette.LINE : (t.winter ? ICE_EDGE : EDGE);
+		int e0 = t.halloween ? HalloweenPalette.LINE : (t.winter ? ICE_EDGE : (t.fox ? WOOD_EDGE : EDGE));
 		int edge = selected ? ColorMath.lerp(e0, t.accent, 0.8f) : (hover ? ColorMath.lerp(e0, t.accent, 0.35f) : e0);
 		Redstone.block(c, x, y, w, h, edge);
 		int fill = cardFill(selected, hover);
 		c.fill(x + 1, y + 1, x + w - 1, y + h - 1, fill);
-		c.fill(x + 1, y + 1, x + w - 1, y + 2, ColorMath.withAlpha(t.halloween ? HalloweenPalette.SILVER : (t.winter ? FROST_LIGHT : BEVEL_LIGHT), t.halloween ? 0x18 : 0x70));
+		c.fill(x + 1, y + 1, x + w - 1, y + 2, ColorMath.withAlpha(t.halloween ? HalloweenPalette.SILVER : bevelLight(t), t.halloween ? 0x18 : 0x70));
 		if (t.halloween && w >= 24 && h >= 16) HalloweenLook.cobweb(c, x + w - 2, y + 1, Math.min(9, h / 2), 1, 0x30CFD5E3);
 		if (t.winter && w >= 12 && h >= 10) {
 			int rime = ColorMath.withAlpha(0xFFFFFFFF, selected ? 0x60 : 0x30);
 			c.fill(x + 1, y + 2, x + 4, y + 3, rime);
 			c.fill(x + 1, y + 3, x + 2, y + 5, rime);
+		}
+		if (t.fox && w >= 12 && h >= 10) {
+			int sun = ColorMath.withAlpha(0xFFFFB878, selected ? 0x60 : 0x2C);
+			c.fill(x + 1, y + 2, x + 4, y + 3, sun);
+			c.fill(x + 1, y + 3, x + 2, y + 5, sun);
 		}
 		if (pinned) {
 			// Angeheftet: Staubleitung an der linken Kante, bestromt.
@@ -398,6 +496,7 @@ public final class MenuSkin {
 	public static int cardFill(boolean selected, boolean hover) {
 		if (Theme.get().halloween) return selected ? 0xFF261B3B : (hover ? 0xFF1C1630 : 0xFF13101F);
 		if (winter()) return selected ? 0xFF1F3354 : (hover ? 0xFF18284A : 0xFF111B31);
+		if (fox()) return selected ? 0xFF3A2434 : (hover ? 0xFF2F1E2B : 0xFF221620);
 		return selected ? 0xFF33292B : (hover ? 0xFF2B2628 : 0xFF1F1C1E);
 	}
 
@@ -511,10 +610,10 @@ public final class MenuSkin {
 			scene(c, width, height, time);
 			c.fill(0, 0, width, height, 0x8C07060C);
 		} else if (inWorld) {
-			c.fill(0, 0, width, height, t.winter ? 0xE0060B16 : 0xE00A0708);
+			c.fill(0, 0, width, height, t.winter ? 0xE0060B16 : (t.fox ? 0xE00E080D : 0xE00A0708));
 		} else {
 			scene(c, width, height, time);
-			c.fill(0, 0, width, height, t.winter ? (t.light ? 0x30000000 : 0x50030814) : 0x60000000);
+			c.fill(0, 0, width, height, t.winter ? (t.light ? 0x30000000 : 0x50030814) : (t.fox ? (t.light ? 0x30000000 : 0x500E0610) : 0x60000000));
 		}
 		int cx = width / 2;
 		int[] layout = loadingLayout(height, avoidTop, avoidBottom);
@@ -562,6 +661,11 @@ public final class MenuSkin {
 		if (t.winter) {
 			// Winternacht: ein Eisbalken, der von links zufriert, statt der Lampenreihe.
 			Frost.bar(c, cx, y + 3, maxWidth, progress, time);
+			return;
+		}
+		if (t.fox) {
+			// Fuchsbau: ein glimmender Ast, durch den sich die Glut von links frisst.
+			Ember.bar(c, cx, y + 3, maxWidth, progress, time);
 			return;
 		}
 		int n = 10;
@@ -634,6 +738,8 @@ public final class MenuSkin {
 				int size = i % 7 == 0 ? 2 : 1;
 				c.fill(fx, fy, fx + size, fy + size, i % 3 == 0 ? 0xC0F4F9FF : 0x709FB4D6);
 			}
+		} else if (t.fox) {
+			foxResources(c, width, height);
 		} else {
 			c.fill(0, 0, width, height, 0xFF120D0E);
 			// Gitter aus unbestromtem Staub, sehr dezent.
@@ -651,7 +757,56 @@ public final class MenuSkin {
 		int light = ColorMath.lerp(t.accent, 0xFFFFFFFF, 0.3f);
 		for (int[] r : rects) c.fill(x + r[0] * scale, y + r[1] * scale, x + r[2] * scale, y + r[3] * scale, r[1] == 0 ? light : t.accent);
 		if (t.winter) TitleUi.snowCaps(c, rects, x, y, scale);
+		if (t.fox) Ember.leafCaps(c, rects, x, y, scale);
 		lamps(c, width / 2, height / 2 + 14, Math.min(width - 40, 220), progress, seconds());
+	}
+
+	/**
+	 * Fuchsbau beim Laden der Ressourcen: nur Rechtecke – Dämmerungshimmel in Bändern (Farben der Szene), eckige Sonne
+	 * über blockigen Hügeln, ein dunkler Waldrand und langsam treibende Blätter und Glühwürmchen.
+	 */
+	private static void foxResources(Canvas c, int width, int height) {
+		int[] sky = {0xFF2A1A3A, 0xFF3E2044, 0xFF56284E, 0xFF7A3A5A, 0xFF9A4A5C, 0xFFC05E5A, 0xFFE0785A, 0xFFF09A64};
+		int horizon = height * 70 / 100;
+		for (int i = 0; i < sky.length; i++) c.fill(0, horizon * i / sky.length, width, horizon * (i + 1) / sky.length, sky[i]);
+		int half = Math.max(4, height / 26);
+		int sx = width * 62 / 100;
+		int sy = horizon - half;
+		c.fill(sx - half * 3, sy - half * 2, sx + half * 3, sy + half * 2, 0x22FFB070);
+		c.fill(sx - half, sy - half, sx + half, sy + half, 0xFFFFD27A);
+		c.fill(sx - half + 2, sy - half + 2, sx + half - 2, sy + half - 2, 0xFFFFF2C0);
+		int block = Math.max(4, height / 40);
+		for (int x = 0; x < width; x += block) {
+			int hgt = block * (2 + Math.floorMod((int) Math.round(Math.sin(x * 0.011) * 3 + Math.sin(x * 0.037) * 2), 4));
+			c.fill(x, horizon - hgt, x + block, horizon + 2, 0xFF8A4566);
+			c.fill(x, horizon - hgt, x + block, horizon - hgt + 1, 0xFFB0647A);
+		}
+		// Waldrand: Fichten-Schattenrisse auf der Wiese.
+		c.fill(0, horizon, width, height, 0xFF3C3A2C);
+		for (int x = 0; x < width; x += block * 2) {
+			int tiers = 3 + Math.floorMod(x * 7, 4);
+			for (int i = 0; i < tiers; i++) {
+				int hw = i == 0 ? 0 : (i % 2 == 1 ? 1 : 2);
+				c.fill(x - hw * block / 2, horizon - (tiers - i) * block / 2 - block / 2, x + block / 2 + hw * block / 2, horizon - (tiers - i - 1) * block / 2 - block / 2, 0xFF2A1424);
+			}
+		}
+		c.fill(0, horizon + block, width, height, 0xFF261C22);
+		c.fill(0, height * 92 / 100, width, height, 0xFF170D14);
+		float drift = seconds() * 6f;
+		for (int i = 0; i < 36; i++) {
+			int fx = Math.floorMod(i * 97 + (int) (drift * (0.6f + (i % 3) * 0.3f)), Math.max(1, width));
+			int fy = Math.floorMod(i * 57 + (int) (drift * (0.5f + (i % 3) * 0.4f)), Math.max(1, height));
+			int col = i % 5 == 0 ? Ember.PETAL : Ember.FALL[i % Ember.FALL.length];
+			c.fill(fx, fy, fx + (i % 4 == 0 ? 2 : 1), fy + 1, ColorMath.withAlpha(col, 0xC0));
+		}
+		for (int i = 0; i < 14; i++) {
+			float a = 0.5f + 0.5f * (float) Math.sin(seconds() * (0.8 + (i % 4) * 0.3) + i * 1.7);
+			if (a < 0.4f) continue;
+			int fx = Math.floorMod(i * 211 + 37, Math.max(1, width));
+			int fy = horizon + 4 + Math.floorMod(i * 89, Math.max(1, height - horizon - 8));
+			c.fill(fx - 1, fy - 1, fx + 2, fy + 2, ColorMath.withAlpha(0xFFFFE27A, Math.round(40 * a)));
+			c.fill(fx, fy, fx + 1, fy + 1, ColorMath.withAlpha(0xFFFFF4A8, Math.round(255 * a)));
+		}
 	}
 
 	/**

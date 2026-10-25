@@ -46,6 +46,11 @@ public final class Redstone {
 			int rime = ColorMath.withAlpha(0xFFFFFFFF, t.light ? 0xB0 : 0x38);
 			c.fill(x + 1, y + 1, x + 4, y + 2, rime);
 			c.fill(x + 1, y + 2, x + 2, y + 4, rime);
+		} else if (t.fox && w >= 10 && h >= 8) {
+			// Fuchsbau: die tiefe Sonne legt einen warmen Saum in die Ecke oben links.
+			int sun = ColorMath.withAlpha(0xFFFFB878, t.light ? 0x90 : 0x30);
+			c.fill(x + 1, y + 1, x + 4, y + 2, sun);
+			c.fill(x + 1, y + 2, x + 2, y + 3, sun);
 		}
 	}
 
@@ -103,6 +108,10 @@ public final class Redstone {
 		}
 		if (t.winter) {
 			dev.theredstonee.trsclient.core.ui.winter.Frost.lantern(c, x, y, w, h, lit, flash);
+			return;
+		}
+		if (t.fox) {
+			dev.theredstonee.trsclient.core.ui.fox.Ember.lantern(c, x, y, w, h, lit, flash);
 			return;
 		}
 		float l = ColorMath.clamp01(lit);
@@ -167,6 +176,10 @@ public final class Redstone {
 			dev.theredstonee.trsclient.core.ui.winter.Frost.lineH(c, x1, x2, y, argb, glow);
 			return;
 		}
+		if (Theme.get().fox) {
+			dev.theredstonee.trsclient.core.ui.fox.Ember.lineH(c, x1, x2, y, argb, glow);
+			return;
+		}
 		c.fill(x1, y, x2, y + 2, argb);
 		if (glow > 0.02f) {
 			int g = ColorMath.withAlpha(Theme.get().glow, Math.round(40 * ColorMath.clamp01(glow)));
@@ -184,6 +197,10 @@ public final class Redstone {
 		}
 		if (Theme.get().winter) {
 			dev.theredstonee.trsclient.core.ui.winter.Frost.lineV(c, x, y1, y2, argb, glow);
+			return;
+		}
+		if (Theme.get().fox) {
+			dev.theredstonee.trsclient.core.ui.fox.Ember.lineV(c, x, y1, y2, argb, glow);
 			return;
 		}
 		c.fill(x, y1, x + 2, y2, argb);
@@ -206,6 +223,10 @@ public final class Redstone {
 		}
 		if (t.winter) {
 			dev.theredstonee.trsclient.core.ui.winter.Frost.crystal(c, x, y, lit, flicker);
+			return;
+		}
+		if (t.fox) {
+			dev.theredstonee.trsclient.core.ui.fox.Ember.flame(c, x, y, lit, flicker);
 			return;
 		}
 		float l = ColorMath.clamp01(lit);
@@ -237,14 +258,14 @@ public final class Redstone {
 		int k = Math.max(3, h - 4);
 		int kx = x + 2 + Math.round((w - k - 4) * p);
 		int ky = y + (h - k) / 2;
-		int knob = ColorMath.lerp(t.winter ? (hover ? 0xFF9FB4D6 : 0xFF8197BC) : (hover ? 0xFF8E8E96 : 0xFF7A7A82), t.lampOn, p);
+		int knob = ColorMath.lerp(t.winter ? (hover ? 0xFF9FB4D6 : 0xFF8197BC) : (t.fox ? (hover ? 0xFFB89AA8 : 0xFF9A7E8C) : (hover ? 0xFF8E8E96 : 0xFF7A7A82)), t.lampOn, p);
 		block(c, kx, ky, k, k, knob);
 		c.fill(kx + 1, ky + 1, kx + k - 1, ky + 2, ColorMath.lerp(knob, 0xFFFFFFFF, 0.3f));
 		c.fill(kx + 1, ky + k - 2, kx + k - 1, ky + k - 1, ColorMath.lerp(knob, 0xFF000000, 0.25f));
 		int core = Math.max(1, k / 3);
 		int cx = kx + (k - core) / 2;
 		int cy = ky + (k - core) / 2;
-		c.fill(cx, cy, cx + core, cy + core, ColorMath.lerp(t.winter ? 0xFF14243C : 0xFF3A1210, t.lampHot, p));
+		c.fill(cx, cy, cx + core, cy + core, ColorMath.lerp(t.winter ? 0xFF14243C : (t.fox ? 0xFF2A1416 : 0xFF3A1210), t.lampHot, p));
 	}
 
 	/**
@@ -276,6 +297,7 @@ public final class Redstone {
 		if (hover) glow(c, kx, ky, kw, kh, t.glow, 0.8f);
 		if (t.halloween) stone(c, kx, ky, kw, kh, hover ? 0xFFF3F5FB : 0xFFCFD5E3, 0xFF2A2440);
 		else if (t.winter) stone(c, kx, ky, kw, kh, hover ? 0xFFB4C8E6 : 0xFF9AB0D2, 0xFF1A2740);
+		else if (t.fox) stone(c, kx, ky, kw, kh, hover ? 0xFFC8A8B4 : 0xFFAE8E9C, 0xFF2A1620);
 		else stone(c, kx, ky, kw, kh, hover ? 0xFF9A9AA2 : 0xFF84848C, 0xFF2A2A30);
 		c.fill(kx + 2, ky + 2, kx + 4, ky + 4, hover ? t.lampHot : t.dustOn);
 	}

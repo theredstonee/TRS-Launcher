@@ -26,7 +26,7 @@ public final class Theme {
 		String theme;
 		String accent;
 		String accentColor;
-		/** "redstone" oder "winter" (ab Launcher 0.20); fehlt/unbekannt = Redstone. */
+		/** "redstone", "winter" (ab Launcher 0.20) oder "fox"; fehlt/unbekannt = Redstone. */
 		String design;
 		/** Aktives TRS-Event für dieses Konto ({@code "halloween"}) – fehlt sonst. */
 		String event;
@@ -39,9 +39,10 @@ public final class Theme {
 		Boolean eventLook;
 	}
 
-	/** Design „Redstone“ (Standard) und „Winternacht“. */
+	/** Design „Redstone“ (Standard), „Winternacht“ und „Fuchsbau“. */
 	public static final String REDSTONE = "redstone";
 	public static final String WINTER = "winter";
+	public static final String FOX = "fox";
 
 	private static Theme current = new Theme("dark", "redstone", 0xFFE0281E, REDSTONE);
 	/** Halloween-Variante des aktuellen Themas (zwischengespeichert, solange {@link #current} gleich bleibt). */
@@ -49,10 +50,15 @@ public final class Theme {
 
 	public final String themeName;
 	public final String accentName;
-	/** Design: {@link #REDSTONE} oder {@link #WINTER}. */
+	/** Design: {@link #REDSTONE}, {@link #WINTER} oder {@link #FOX}. */
 	public final String designName;
 	/** Winternacht? (Nachtblau, Eis statt Stein, Eislaternen statt Redstone-Lampen, Frost statt Staub.) */
 	public final boolean winter;
+	/**
+	 * Fuchsbau? (Warme Abenddämmerung: Pflaume und Kastanie statt Deepslate, Laternen mit Glut statt Redstone-Lampen,
+	 * glimmende Äste statt Staub.)
+	 */
+	public final boolean fox;
 	/**
 	 * Halloween 2026 „Mondnacht“ (Event aktiv, siehe {@code core.halloween.Halloween}): Nacht, Pflaume, Violett und
 	 * Mondsilber – liegt über Redstone und Winternacht, immer dunkel.
@@ -110,8 +116,9 @@ public final class Theme {
 		this.base = null;
 		this.themeName = themeName;
 		this.accentName = accentName;
-		this.designName = WINTER.equals(design) ? WINTER : REDSTONE;
+		this.designName = normalizeDesign(design);
 		this.winter = WINTER.equals(designName);
+		this.fox = FOX.equals(designName);
 		this.accent = accent;
 		this.accentHover = ColorMath.lerp(accent, 0xFFFFFFFF, 0.22f);
 		this.light = "light".equals(themeName);
@@ -158,6 +165,52 @@ public final class Theme {
 				deep = oled ? 0xFF02040A : 0xFF080D19;
 				bevelLight = oled ? 0xFF1F2C47 : 0xFF31476F;
 				bevelDark = oled ? 0xFF000000 : 0xFF070B15;
+			}
+			return;
+		}
+		if (fox) {
+			// Fuchsbau (Launcher: [data-design="fox"]): warme Dämmerung. Die Lampen sind Laternen mit warmem Glutlicht –
+			// golden unabhängig vom Akzent wie „unter Strom“ im Launcher; glimmende Äste in Akzentfarbe statt Staub.
+			this.dustOff = ColorMath.lerp(ColorMath.scaleRgb(accent, 0.36f), oled ? 0xFF0E080D : 0xFF241620, 0.32f);
+			this.dustOn = ColorMath.lerp(accent, 0xFFFFE1A6, 0.22f);
+			this.glow = accent;
+			this.lampOff = 0xFF3A2428;
+			this.lampOffEdge = 0xFF1E1416;
+			this.lampOn = 0xFFFFC362;
+			this.lampHot = 0xFFFFF6D8;
+			this.lampOnEdge = 0xFF9A4A1C;
+			this.lampGlow = 0xFFFFB050;
+			this.lampText = 0xFFF3E2D8;
+			this.lampTextLit = 0xFF2E1404;
+			if (light) {
+				// Goldene Stunde.
+				background = 0xFFF6EBE0;
+				surface = 0xFFFFFAF5;
+				surfaceHover = 0xFFF0E0D0;
+				surfaceHigh = 0xFFFBF2E8;
+				border = 0xFFE3CDB9;
+				text = 0xFF1E130F;
+				textDim = 0xFF7D5E50;
+				on = 0xFFB8650F;
+				off = 0xFFEAD8C6;
+				scrim = 0x501E130F;
+				deep = 0xFFEAD6C2;
+				bevelLight = 0xFFFFFFFF;
+				bevelDark = 0xFFC7A993;
+			} else {
+				background = oled ? 0xFF000000 : 0xFF1A1119;
+				surface = oled ? 0xFF0E080D : 0xFF281A27;
+				surfaceHover = oled ? 0xFF181017 : 0xFF332232;
+				surfaceHigh = oled ? 0xFF120B11 : 0xFF2D1E2C;
+				border = oled ? 0xFF261A24 : 0xFF462F44;
+				text = 0xFFFFF3EA;
+				textDim = oled ? 0xFFA48C9A : 0xFFB398A8;
+				on = 0xFFFFC362;
+				off = oled ? 0xFF181017 : 0xFF332232;
+				scrim = oled ? 0xB0000000 : 0xA80E080D;
+				deep = oled ? 0xFF040204 : 0xFF100A10;
+				bevelLight = oled ? 0xFF33232F : 0xFF563A53;
+				bevelDark = oled ? 0xFF000000 : 0xFF0C070B;
 			}
 			return;
 		}
@@ -217,6 +270,7 @@ public final class Theme {
 		this.accentName = base.accentName;
 		this.designName = base.designName;
 		this.winter = false;
+		this.fox = false;
 		this.light = false;
 		this.accent = 0xFF8E6CC9;
 		this.accentHover = 0xFFB9A2EA;
@@ -293,19 +347,29 @@ public final class Theme {
 		return new Theme(t, a.isEmpty() ? "redstone" : a, accent, normalizeDesign(design));
 	}
 
-	/** "winter" → Winternacht, alles andere (fehlt, ältere Launcher, Tippfehler) → Redstone. */
+	/** "winter" → Winternacht, "fox" → Fuchsbau, alles andere (fehlt, ältere Launcher, Tippfehler) → Redstone. */
 	public static String normalizeDesign(String design) {
-		return WINTER.equals(normalize(design)) ? WINTER : REDSTONE;
+		String d = normalize(design);
+		if (WINTER.equals(d)) return WINTER;
+		if (FOX.equals(d)) return FOX;
+		return REDSTONE;
+	}
+
+	/** Akzent, den jedes Design ab Werk mitbringt (wie {@code DESIGN_ACCENTS} im Launcher). */
+	public static String designAccent(String design) {
+		String d = normalizeDesign(design);
+		if (WINTER.equals(d)) return "ice";
+		if (FOX.equals(d)) return "fox";
+		return "redstone";
 	}
 
 	/**
-	 * Akzent beim Wechsel des Designs (wie der Launcher): Winternacht mit dem Redstone-Akzent bekommt Eisblau, zurück
-	 * zu Redstone wird aus Eisblau wieder Redstone. Jede andere (selbst gewählte) Farbe bleibt.
+	 * Akzent beim Wechsel des Designs (wie der Launcher): ist noch der Akzent eines Designs gewählt (Redstone, Eisblau,
+	 * Fuchsorange), kommt der des neuen Designs – Winternacht mit Redstone wird Eisblau, Fuchsbau Fuchsorange, zurück zu
+	 * Redstone wieder Redstone. Jede andere (selbst gewählte) Farbe bleibt.
 	 */
 	public static String accentForDesign(String design, String accent) {
-		String d = normalizeDesign(design);
-		if (WINTER.equals(d) && "redstone".equals(accent)) return "ice";
-		if (REDSTONE.equals(d) && "ice".equals(accent)) return "redstone";
+		if ("redstone".equals(accent) || "ice".equals(accent) || "fox".equals(accent)) return designAccent(design);
 		return accent;
 	}
 
@@ -341,6 +405,7 @@ public final class Theme {
 		if ("lapis".equals(name)) return 0xFF3563E9;
 		if ("amethyst".equals(name)) return 0xFF9B4DDF;
 		if ("ice".equals(name)) return 0xFF2B97D6;
+		if ("fox".equals(name)) return 0xFFE8702A;
 		if ("redstone".equals(name)) return 0xFFE0281E;
 		int parsed = parseHex(hex);
 		return parsed != 0 ? parsed : 0xFFE0281E;

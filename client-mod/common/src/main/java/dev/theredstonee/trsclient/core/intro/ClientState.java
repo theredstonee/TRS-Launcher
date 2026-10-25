@@ -114,7 +114,7 @@ public final class ClientState implements ConfigPart {
 		chooseLook(theme, accent, language, lookDesign, at);
 	}
 
-	/** Design ("redstone"/"winter") der Wahl im Client oder null. */
+	/** Design ("redstone"/"winter"/"fox") der Wahl im Client oder null. */
 	public String lookDesign() {
 		return lookDesign;
 	}

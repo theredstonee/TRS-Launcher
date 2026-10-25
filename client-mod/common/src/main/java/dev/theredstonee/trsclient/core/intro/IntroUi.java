@@ -236,6 +236,7 @@ public final class IntroUi extends UiScreen {
 		for (int[] r : rects) c.fill(lx + r[0] * 2, ly + r[1] * 2, lx + r[2] * 2, ly + r[3] * 2, r[1] == 0 ? light : t.accent);
 		int textX = lx + PixelFont.width("TRS") * 2 + 6;
 		if (t.winter) dev.theredstonee.trsclient.core.ui.title.TitleUi.snowCaps(c, rects, lx, ly, 2);
+		if (t.fox) dev.theredstonee.trsclient.core.ui.fox.Ember.leafCaps(c, rects, lx, ly, 2);
 		c.text(I18n.tr("intro.title"), textX, py + (HEADER_H - 8) / 2, t.textDim, false);
 		// Schritte als Lampen, verbunden durch Staub: erledigte und der aktuelle leuchten.
 		int lamp = 12;
@@ -327,6 +328,10 @@ public final class IntroUi extends UiScreen {
 		c.text(I18n.tr("intro.theme"), x, ry, t.text, false);
 		ry += 11;
 		int tw = Math.min(110, (w - gap * 2) / 3);
+		// Die Akzente passen neben die Farbschemata, wenn deren Knöpfe etwas schmaler werden – dann hat die Design-Wahl
+		// (drei Knöpfe) darunter eine eigene Zeile, ohne dass der Schritt höher wird.
+		int fit = (w - gap * 3 - 10 - ACCENTS.length * (16 + 4)) / 3;
+		if (fit < tw && fit >= 60) tw = fit;
 		for (int i = 0; i < THEMES.length; i++) {
 			final String theme = THEMES[i];
 			choice(c, x + i * (tw + gap), ry, tw, bh, I18n.tr("intro.theme." + theme), theme.equals(t.themeName), mx, my, new Runnable() {
@@ -359,15 +364,15 @@ public final class IntroUi extends UiScreen {
 				}
 			});
 		}
-		// Design (Redstone | Winternacht) neben den Akzenten, sonst in einer eigenen Zeile.
+		// Design (Redstone | Winternacht | Fuchsbau) neben den Akzenten, sonst in einer eigenen Zeile.
 		int dx = ax + ACCENTS.length * (size + 4) + 10;
 		int dw = x + w - dx;
-		if (dw < 150) {
+		if (dw < 270) {
 			ry += bh + gap + 4;
 			dx = x;
-			dw = Math.min(w, 304);
+			dw = Math.min(w, LookPicker.DESIGNS_WIDTH);
 		}
-		LookPicker.drawDesigns(c, hits, modules, dx, ry - 1, Math.min(dw, 304), mx, my, new Runnable() {
+		LookPicker.drawDesigns(c, hits, modules, dx, ry - 1, Math.min(dw, LookPicker.DESIGNS_WIDTH), mx, my, new Runnable() {
 			@Override
 			public void run() {
 				host.playClick();

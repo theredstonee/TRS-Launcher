@@ -23,6 +23,8 @@ import dev.theredstonee.trsclient.core.ui.halloween.HalloweenLook;
 import dev.theredstonee.trsclient.core.ui.halloween.HalloweenPalette;
 import dev.theredstonee.trsclient.core.ui.halloween.NightScene;
 import dev.theredstonee.trsclient.core.ui.halloween.Sprites;
+import dev.theredstonee.trsclient.core.ui.fox.Ember;
+import dev.theredstonee.trsclient.core.ui.fox.FoxScene;
 import dev.theredstonee.trsclient.core.ui.winter.Frost;
 import dev.theredstonee.trsclient.core.ui.winter.WinterScene;
 
@@ -433,6 +435,9 @@ public final class TitleUi extends UiScreen {
 		} else if (t.winter) {
 			if (sceneEnabled) WinterScene.shared().draw(bg, width, height, animated);
 			else bg.fill(0, 0, width, height, t.background);
+		} else if (t.fox) {
+			if (sceneEnabled) FoxScene.shared().draw(bg, width, height, animated);
+			else bg.fill(0, 0, width, height, t.background);
 		} else if (sceneEnabled) {
 			scene.draw(bg, width, height, time, reserved);
 		} else {
@@ -444,6 +449,8 @@ public final class TitleUi extends UiScreen {
 		if (sb != null && sideMode != SIDE_ROW) readingPlate(bg, sb[0], sb[1], sb[2] - sb[0], sb[3] - sb[1], plate);
 		// Winternacht: die Fußzeile steht auf dem Schnee – ein Schleier hält sie lesbar.
 		if (t.winter) bg.fill(0, height - 14, width, height, t.light ? 0x70FFFFFF : 0x90060A14);
+		// Fuchsbau: die Fußzeile steht auf den Grasblöcken – ein warmer Schleier hält sie lesbar.
+		if (t.fox) bg.fill(0, height - 14, width, height, t.light ? 0x70FFF8F0 : 0x90170D14);
 		if (t.halloween) bg.fill(0, height - 14, width, height, 0x9007060C);
 
 		Canvas c = FadeCanvas.of(raw, alpha());
@@ -891,6 +898,7 @@ public final class TitleUi extends UiScreen {
 	/** Farbe der Lese-Fläche: Schiefer-Schatten, im Winter Nachtblau bzw. am hellen Wintertag ein weißer Schleier. */
 	private static int plateColor(Theme t) {
 		if (t.halloween) return 0x2407060C;
+		if (t.fox) return t.light ? 0x1CFFFFFF : 0x12120810;
 		if (!t.winter) return 0x1E000000;
 		return t.light ? 0x26FFFFFF : 0x22030814;
 	}
@@ -898,6 +906,7 @@ public final class TitleUi extends UiScreen {
 	/** Gedämpfte Schrift (Hinweise, Fußzeile) passend zum Design. */
 	private static int dimText(Theme t) {
 		if (t.halloween) return HalloweenPalette.MUTED_LIGHT;
+		if (t.fox) return t.light ? 0xFF5A3E34 : 0xFFC8AAB4;
 		if (!t.winter) return 0xFF8F8B89;
 		return t.light ? 0xFF26344D : 0xFFB4C4E0;
 	}
@@ -1054,6 +1063,7 @@ public final class TitleUi extends UiScreen {
 			c.fill(x + r[0] * big, y + r[1] * big, x + r[2] * big, y + r[3] * big, color);
 		}
 		if (t.winter) snowCaps(c, rects, x, y, big);
+		if (t.fox) Ember.leafCaps(c, rects, x, y, big);
 		// Glanzpunkt: ein heller Pixel oben links in jedem Buchstaben.
 		int sheen = ColorMath.withAlpha(0xFFFFFFFF, Math.round(90 * pulse));
 		c.fill(x, y, x + Math.max(1, big / 3), y + Math.max(1, big / 3), sheen);
@@ -1062,7 +1072,7 @@ public final class TitleUi extends UiScreen {
 		int subW = PixelFont.width("CLIENT") * small;
 		int sx = (width - subW) / 2;
 		int sy = top + logoH + gapA;
-		int sub = t.winter ? (t.light ? 0xFF26344D : 0xFFDCE8F8) : 0xFFDAD3CC;
+		int sub = t.winter ? (t.light ? 0xFF26344D : 0xFFDCE8F8) : (t.fox ? (t.light ? 0xFF3D2A24 : 0xFFF6DCC8) : 0xFFDAD3CC);
 		for (int[] r : PixelFont.rects("CLIENT")) {
 			c.fill(sx + r[0] * small, sy + r[1] * small, sx + r[2] * small, sy + r[3] * small, sub);
 		}
@@ -1074,6 +1084,14 @@ public final class TitleUi extends UiScreen {
 			int fy = sy + (PixelFont.HEIGHT * small - size) / 2;
 			c.fill(fx - 1, fy - 1, fx + size + 1, fy + size + 1, ColorMath.withAlpha(t.glow, Math.round(28 * pulse)));
 			Frost.snowflake(c, fx, fy, px, t.light ? 0xFF2B97D6 : 0xFFB8E7FF, animated ? Frost.glint(time) : 0f);
+			return;
+		}
+		if (t.fox) {
+			// Das kleine Fuchsgesicht statt der Lampe (wie neben dem Logo im Launcher), blinzelt ab und zu.
+			int px = Math.max(1, small * 2 / 3);
+			int fx = sx + subW + small * 3;
+			int fy = sy + (PixelFont.HEIGHT * small - 7 * px) / 2;
+			Ember.foxMarkGlow(c, fx, fy, px, ColorMath.lerp(t.accent, 0xFFFFFFFF, 0.2f), time, animated, pulse);
 			return;
 		}
 		int pip = small * 3 + 1;
@@ -1136,7 +1154,7 @@ public final class TitleUi extends UiScreen {
 		boolean on = hover || focus == linkIndex();
 		linkLit = on ? Math.min(1f, linkLit + dt / 0.08f) : Math.max(0f, linkLit - dt / 0.08f);
 		Redstone.pip(c, lx - 9, height - 9, 5, linkLit);
-		labels.add(new Label(classic, lx, height - 10, ColorMath.lerp(dimText(t), t.halloween ? HalloweenPalette.SILVER_LIGHT : (t.light && t.winter ? t.on : t.lampOn), linkLit), false));
+		labels.add(new Label(classic, lx, height - 10, ColorMath.lerp(dimText(t), t.halloween ? HalloweenPalette.SILVER_LIGHT : (t.light && (t.winter || t.fox) ? t.on : t.lampOn), linkLit), false));
 		hits.add(lx - 10, height - 12, cw + 14, 12, new Runnable() {
 			@Override
 			public void run() {

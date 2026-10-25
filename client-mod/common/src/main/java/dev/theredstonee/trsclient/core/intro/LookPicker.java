@@ -10,21 +10,23 @@ import dev.theredstonee.trsclient.core.ui.Redstone;
 import dev.theredstonee.trsclient.core.ui.Theme;
 
 /**
- * Aussehen im Client wählen (Einführung und TRS-Menü): Farbschema, Akzent und Design (Redstone | Winternacht). Die Wahl
+ * Aussehen im Client wählen (Einführung und TRS-Menü): Farbschema, Akzent und Design (Redstone | Winternacht | Fuchsbau). Die Wahl
  * gilt sofort, wird lokal gemerkt und – Thema, Akzent, Sprache – mit dem TRS-Konto synchronisiert; das Design bleibt
  * auf diesem PC (die Konto-Einstellungen kennen es nicht), der Launcher übergibt beim Start sein eigenes.
  */
 public final class LookPicker {
 	public static final String[] THEMES = {"dark", "oled", "light"};
-	public static final String[] ACCENTS = {"redstone", "lamp", "emerald", "lapis", "amethyst", "ice"};
-	public static final String[] DESIGNS = {Theme.REDSTONE, Theme.WINTER};
+	public static final String[] ACCENTS = {"redstone", "lamp", "emerald", "lapis", "amethyst", "ice", "fox"};
+	public static final String[] DESIGNS = {Theme.REDSTONE, Theme.WINTER, Theme.FOX};
+	/** Breite der Design-Wahl (drei Knöpfe). */
+	public static final int DESIGNS_WIDTH = 456;
 
 	private LookPicker() {
 	}
 
 	/**
-	 * Übernimmt eine Wahl (null = unverändert). Beim Designwechsel folgt der Akzent wie im Launcher (Redstone-Rot ↔
-	 * Eisblau), eine selbst gewählte Farbe bleibt.
+	 * Übernimmt eine Wahl (null = unverändert). Beim Designwechsel folgt der Akzent wie im Launcher (Redstone-Rot,
+	 * Eisblau, Fuchsorange), eine selbst gewählte Farbe bleibt.
 	 */
 	public static void choose(TrsModules modules, String theme, String accent, String language, String design) {
 		Theme cur = Theme.get();
@@ -71,9 +73,41 @@ public final class LookPicker {
 		c.text(label, x + pw + 6 + Math.max(0, (room - 4 - c.textWidth(label)) / 2), y + (h - 8) / 2, color, false);
 	}
 
-	/** Kleines Vorschaubild eines Designs (nur Rechtecke): Schiefer mit Staub und Lampe bzw. Nacht, Berge, Schnee, Hütte. */
+	/**
+	 * Kleines Vorschaubild eines Designs (nur Rechtecke): Schiefer mit Staub und Lampe, Nacht mit Bergen, Schnee und
+	 * Hütte, oder Dämmerung mit Sonne, Fichten und Lagerfeuer.
+	 */
 	public static void preview(Canvas c, int x, int y, int w, int h, String design) {
 		if (w < 6 || h < 6) return;
+		if (Theme.FOX.equals(Theme.normalizeDesign(design))) {
+			// Dämmerung in Bändern, eckige Sonne über rosa Hügeln, Fichten, Wiese, Lagerfeuer mit Fuchs.
+			int[] sky = {0xFF3E2044, 0xFF7A3A5A, 0xFFC05E5A, 0xFFF09A64};
+			int horizon = y + h * 3 / 5;
+			for (int i = 0; i < sky.length; i++) c.fill(x, y + (horizon - y) * i / sky.length, x + w, y + (horizon - y) * (i + 1) / sky.length, sky[i]);
+			int sx = x + w * 3 / 5;
+			c.fill(sx - 1, horizon - 4, sx + 2, horizon - 1, 0xFFFFF2C0);
+			for (int i = 0; i < w; i += 2) {
+				int hh = 1 + Math.floorMod(i * 7 + 3, 3);
+				c.fill(x + i, horizon - hh, x + i + 2, horizon, 0xFFB4607A);
+			}
+			c.fill(x, horizon, x + w, y + h, 0xFF5A5634);
+			c.fill(x, horizon, x + w, horizon + 1, 0xFF8A7A46);
+			c.fill(x, y + h - 2, x + w, y + h, 0xFF6E4630);
+			int[] trees = {1, 4, w - 4};
+			for (int tx : trees) {
+				if (tx < 0 || tx + 3 > w) continue;
+				c.fill(x + tx + 1, horizon - 5, x + tx + 2, horizon - 3, 0xFF1F3A2E);
+				c.fill(x + tx, horizon - 3, x + tx + 3, horizon + 1, 0xFF1F3A2E);
+				c.fill(x + tx + 1, horizon + 1, x + tx + 2, horizon + 2, 0xFF3B2614);
+			}
+			int fx = x + w / 3;
+			c.fill(fx, y + h - 4, fx + 2, y + h - 2, 0xFFFFB340);
+			c.fill(fx, y + h - 5, fx + 1, y + h - 4, 0xFFFFF2A8);
+			c.fill(fx + 3, y + h - 3, fx + 6, y + h - 2, 0xFFE47C3A);
+			c.fill(fx + 3, y + h - 4, fx + 4, y + h - 3, 0xFFE47C3A);
+			Redstone.frame(c, x - 1, y - 1, w + 2, h + 2, 0x60FF9A52);
+			return;
+		}
 		if (Theme.WINTER.equals(Theme.normalizeDesign(design))) {
 			c.fill(x, y, x + w, y + h, 0xFF0A1224);
 			c.fill(x, y + h / 3, x + w, y + h * 2 / 3, 0xFF152442);
@@ -114,7 +148,7 @@ public final class LookPicker {
 	}
 
 	/**
-	 * Zeichnet die Design-Wahl (zwei Knöpfe nebeneinander) und registriert die Klicks.
+	 * Zeichnet die Design-Wahl (drei Knöpfe nebeneinander) und registriert die Klicks.
 	 *
 	 * @return Höhe des Bereichs
 	 */
@@ -123,7 +157,8 @@ public final class LookPicker {
 		Theme t = Theme.get();
 		int gap = 4;
 		int h = 18;
-		int cw = Math.min(150, (w - gap) / 2);
+		int n = DESIGNS.length;
+		int cw = Math.min(150, (w - gap * (n - 1)) / n);
 		for (int i = 0; i < DESIGNS.length; i++) {
 			final String d = DESIGNS[i];
 			int cx = x + i * (cw + gap);

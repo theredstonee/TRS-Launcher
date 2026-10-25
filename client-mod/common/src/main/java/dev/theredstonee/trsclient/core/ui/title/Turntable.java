@@ -109,6 +109,10 @@ public final class Turntable {
 			floeBack(c, t, cx, cy, radius, ry, thick, squash, px, time);
 			return;
 		}
+		if (t.fox) {
+			islandBack(c, t, cx, cy, radius, ry, thick, squash, px, time);
+			return;
+		}
 		// Leuchten unter der Scheibe
 		int glow = t.glow;
 		for (int i = 3; i >= 1; i--) {
@@ -142,6 +146,11 @@ public final class Turntable {
 		if (t.winter) {
 			frostRing(c, t, cx, cy, radius, squash, px, time, false);
 			mounds(c, t, cx, cy, radius, squash, px, time, false);
+			return;
+		}
+		if (t.fox) {
+			leafRing(c, t, cx, cy, radius, squash, px, time, false);
+			flowers(c, t, cx, cy, radius, squash, px, time, false);
 			return;
 		}
 		dustRing(c, t, cx, cy, radius, squash, px, time, false);
@@ -385,6 +394,124 @@ public final class Turntable {
 				// Kurzer Riss schräg nach unten.
 				c.fill(x, y, x + px, y + px, 0xFF2F6596);
 				c.fill(x + px, y + px, x + 2 * px, y + 2 * px, 0xFF2F6596);
+			}
+		}
+	}
+
+	/**
+	 * Fuchsbau: eine Grasinsel – Grasblock-Oberseite, Erdband mit Wurzeln und Steinchen (wandern mit der Drehung), ein Ring
+	 * aus Herbstlaub, kleine Blumen und Glühwürmchen; in der Mitte glimmt warme Glut, darunter Feuerschein.
+	 */
+	private void islandBack(Canvas c, Theme t, int cx, int cy, int radius, int ry, int thick, float squash, int px, float time) {
+		for (int i = 3; i >= 1; i--) {
+			ellipse(c, cx, cy + thick, radius + i * 3 * px, ry + i * px, px, ColorMath.withAlpha(t.lampGlow, 8 + (3 - i) * 7));
+		}
+		dirtBand(c, cx, cy, radius, ry, thick, px);
+		// Oberfläche: Gras, Kante im Schatten, Licht der tiefen Sonne von links.
+		ellipse(c, cx, cy, radius, ry, px, 0xFF3E6A2C);
+		ellipse(c, cx, cy, radius - px, Math.max(px, ry - px), px, 0xFF5A8A3A);
+		ellipse(c, cx - px, cy, radius - 3 * px, Math.max(px, ry - 2 * px), px, 0xFF6A9A42);
+		leafRing(c, t, cx, cy, radius, squash, px, time, true);
+		flowers(c, t, cx, cy, radius, squash, px, time, true);
+		// Mitte: glimmende Glut im Gras, pulsiert leise.
+		int pr = Math.max(2 * px, Math.round(radius * 0.36f / px) * px);
+		int pry = Math.max(px, Math.round(pr * squash));
+		float pulse = 0.55f + 0.45f * (float) (0.5 + 0.5 * Math.sin(time * 2.1));
+		ellipse(c, cx, cy, pr + px, pry + px, px, 0xFF4A2A1A);
+		ellipse(c, cx, cy, pr, pry, px, ColorMath.lerp(t.lampOff, t.lampOn, 0.55f * pulse));
+		ellipse(c, cx, cy, Math.max(px, pr - 2 * px), Math.max(px, pry - px), px, ColorMath.withAlpha(t.lampHot, Math.round(80 * pulse)));
+	}
+
+	/** Seitenband der Insel: oben eine Graskante, darunter Erde (nach unten dunkler), Wurzeln und Steinchen. */
+	private void dirtBand(Canvas c, int cx, int cy, int rx, int ry, int thick, int px) {
+		int top = 0xFF9A6A44;
+		int deep = 0xFF4E3420;
+		int edge = 0xFF3B2614;
+		for (int y = 0; y < ry + thick; y += px) {
+			int hw;
+			if (y < thick) {
+				hw = rx;
+			} else {
+				float fy = (y - thick + px / 2f) / (float) ry;
+				float f = 1f - fy * fy;
+				if (f <= 0f) continue;
+				hw = Math.round(rx * (float) Math.sqrt(f) / px) * px;
+			}
+			if (hw <= 0) continue;
+			float depth = y / (float) Math.max(px, ry + thick);
+			c.fill(cx - hw, cy + y, cx + hw, cy + y + px, ColorMath.lerp(top, deep, depth));
+			c.fill(cx - hw, cy + y, cx - hw + px, cy + y + px, edge);
+			c.fill(cx + hw - px, cy + y, cx + hw, cy + y + px, edge);
+		}
+		// Graskante, die über die Erde hängt.
+		int grassY = cy + Math.max(px, thick / 3);
+		c.fill(cx - rx + px, grassY, cx + rx - px, grassY + px, 0xFF4C7A30);
+		float phase = -(float) Math.toRadians(angle);
+		int rows = Math.max(1, thick / px);
+		for (int i = 0; i < 18; i++) {
+			double a = phase + i * (Math.PI * 2 / 18);
+			double s = Math.sin(a);
+			if (s <= 0.05) continue;
+			int x = cx + (int) Math.round(Math.cos(a) * (rx - px) / px) * px;
+			int row = 1 + (i * 7) % rows;
+			int y = cy + (int) Math.round(s * ry / px) * px + row * px;
+			if (y + px > cy + ry + thick - px) y = cy + ry + thick - 2 * px;
+			if ((i & 1) == 0) {
+				// Steinchen.
+				c.fill(x, y, x + px, y + px, 0xFF8A8078);
+			} else {
+				// Wurzel schräg nach unten.
+				c.fill(x, y, x + px, y + px, 0xFF2C1C0E);
+				c.fill(x + px, y + px, x + 2 * px, y + 2 * px, 0xFF2C1C0E);
+			}
+		}
+	}
+
+	/** Ring aus Herbstlaub: Blätter auf einer Ellipse, ein Glutschimmer läuft im Kreis (statt des Signals im Staub). */
+	private void leafRing(Canvas c, Theme t, int cx, int cy, int rx, float squash, int px, float time, boolean back) {
+		float r = rx * 0.72f;
+		float spin = -(float) Math.toRadians(angle);
+		float head = (time * 0.6f) % 1f;
+		int[] tones = {0xFFE07A3A, 0xFFF0A050, 0xFFB4502A, 0xFFE8B04A, 0xFFF3A6C8};
+		for (int i = 0; i < DUST_DOTS; i++) {
+			double a = spin + i * (Math.PI * 2 / DUST_DOTS);
+			double s = Math.sin(a);
+			if (back != (s < 0)) continue;
+			if (i % 4 == 3) continue;
+			int x = cx + (int) Math.round(Math.cos(a) * r / px) * px;
+			int y = cy + (int) Math.round(s * r * squash / px) * px;
+			float pos = i / (float) DUST_DOTS;
+			float behind = (head - pos + 1f) % 1f;
+			float glint = Math.max(0f, 1f - behind * 6f);
+			int color = ColorMath.lerp(tones[i % tones.length], 0xFFFFE1A6, glint * 0.8f);
+			if (glint > 0.3f) c.fill(x - px, y - px, x + 3 * px, y + px, ColorMath.withAlpha(t.lampGlow, Math.round(50 * glint)));
+			c.fill(x, y, x + px * 2, y + px, color);
+		}
+	}
+
+	/** Kleine Blumen am Rand (rosa, gelb, weiß), über jeder zweiten schwebt ein Glühwürmchen, das aufleuchtet. */
+	private void flowers(Canvas c, Theme t, int cx, int cy, int rx, float squash, int px, float time, boolean back) {
+		float r = rx * 0.9f;
+		float spin = -(float) Math.toRadians(angle);
+		int[] heads = {0xFFFF8AC0, 0xFFFFD84A, 0xFFF4EFE8};
+		for (int i = 0; i < REPEATERS; i++) {
+			double a = spin + (i + 0.5) * (Math.PI * 2 / REPEATERS);
+			double s = Math.sin(a);
+			if (back != (s < 0)) continue;
+			int x = cx + (int) Math.round(Math.cos(a) * r / px) * px;
+			int y = cy + (int) Math.round(s * r * squash / px) * px - px;
+			c.fill(x, y - 2 * px, x + px, y + px, 0xFF3E6A2C);
+			c.fill(x + px, y - px, x + 2 * px, y, 0xFF5A8A3A);
+			int head = heads[i % heads.length];
+			c.fill(x - px, y - 3 * px, x + 2 * px, y - 2 * px, head);
+			c.fill(x, y - 4 * px, x + px, y - 3 * px, ColorMath.lerp(head, 0xFFFFFFFF, 0.3f));
+			if (i % 2 == 0) {
+				float glow = Math.max(0f, (float) Math.sin(time * (1.1f + i * 0.2f) + i * 1.7f));
+				if (glow > 0.2f) {
+					int fy = y - 7 * px - Math.round((float) Math.sin(time * 0.9f + i) * px);
+					c.fill(x - px, fy - px, x + 2 * px, fy + 2 * px, ColorMath.withAlpha(0xFFFFE27A, Math.round(50 * glow)));
+					c.fill(x, fy, x + px, fy + px, ColorMath.withAlpha(0xFFFFF4A8, Math.round(255 * glow)));
+				}
 			}
 		}
 	}

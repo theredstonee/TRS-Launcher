@@ -81,7 +81,7 @@ public final class Snow {
 		}
 
 		/** {@code originX/Y} = Schornstein; {@code has} = false: keine neuen Wölkchen. */
-		public void step(boolean has, int originX, int originY, int tick) {
+		public void step(boolean has, double originX, double originY, int tick) {
 			double wnd = wind(tick);
 			int n = 0;
 			for (int i = 0; i < count; i++) {

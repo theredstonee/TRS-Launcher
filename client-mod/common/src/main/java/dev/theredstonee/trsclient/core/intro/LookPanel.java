@@ -11,7 +11,7 @@ import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.ui.menu.ModulePanel;
 
 /**
- * „Aussehen“ auf den Seiten „Startbildschirm“ und „Menü-Stil“ des TRS-Menüs: Design (Redstone | Winternacht) mit
+ * „Aussehen“ auf den Seiten „Startbildschirm“ und „Menü-Stil“ des TRS-Menüs: Design (Redstone | Winternacht | Fuchsbau) mit
  * Vorschau, Farbschema und Akzent – dieselbe Wahl wie im ersten Schritt der Einführung.
  */
 public final class LookPanel implements ModulePanel {
@@ -27,7 +27,7 @@ public final class LookPanel implements ModulePanel {
 		c.text(c.clip(I18n.tr("look.design"), w), x, y, t.text, false);
 		int ny = Paint.paragraph(c, I18n.tr("look.design." + t.designName + ".hint"), x, y + 11, Math.min(w, 360), 10, t.textDim);
 		ny += 3;
-		ny += LookPicker.drawDesigns(c, hits, modules, x, ny, Math.min(w, 304), mouseX, mouseY, click) + 8;
+		ny += LookPicker.drawDesigns(c, hits, modules, x, ny, Math.min(w, LookPicker.DESIGNS_WIDTH), mouseX, mouseY, click) + 8;
 
 		c.text(c.clip(I18n.tr("intro.theme"), w), x, ny, t.text, false);
 		ny += 11;

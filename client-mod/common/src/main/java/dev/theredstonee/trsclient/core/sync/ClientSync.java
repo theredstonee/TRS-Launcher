@@ -236,7 +236,7 @@ public final class ClientSync {
 	}
 
 	/**
-	 * Wie {@link #chooseLook(String, String, String, long)} mit Design ("redstone"/"winter"). Das Design bleibt lokal
+	 * Wie {@link #chooseLook(String, String, String, long)} mit Design ("redstone"/"winter"/"fox"). Das Design bleibt lokal
 	 * (die Konto-Einstellungen kennen nur Thema, Akzent und Sprache); der Launcher setzt es beim Start selbst.
 	 */
 	public void chooseLook(String theme, String accent, String language, String design, long now) {
