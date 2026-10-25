@@ -118,7 +118,7 @@ describe('Stufen, Statistik, Helfer', () => {
     expect(visibleTabs(null)).toContain('helpers')
     expect(visibleTabs({ helper: false, rights: [] })).toContain('tier')
     expect(visibleTabs({ helper: true, rights: ['stats', 'uploads'] })).toEqual(['stats', 'symbol', 'cape'])
-    expect(visibleTabs({ helper: true, rights: ['codes', 'packs'] })).toEqual(['codes', 'packs'])
+    expect(visibleTabs({ helper: true, rights: ['codes', 'packs'] })).toEqual(['codes', 'pet', 'packs'])
     expect(visibleTabs({ helper: true, rights: [] })).toEqual([])
     expect(canInviteHelper([{}], 'starter')).toBe(false)
     expect(canInviteHelper([{}, {}], 'partner')).toBe(true)

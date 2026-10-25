@@ -52,6 +52,7 @@ import {
   adminCreatorRequestSchema,
   adminCreatorSchema,
   creatorCodeSchema,
+  creatorPetStateSchema,
   creatorQueueItemSchema,
   creatorRedeemSchema,
   creatorRequestSchema,
@@ -59,6 +60,8 @@ import {
   creatorUserRefSchema,
   listedPacksSchema,
   myCreatorSchema,
+  petCodeSchema,
+  petRequestSchema,
   previewBuildSchema,
   type CreatorTier,
   type HelperRight,
@@ -1276,6 +1279,16 @@ export const backend = {
     request: (request: { kind: 'upgrade'; channelUrl: string; followers: number; note?: string } | { kind: 'team_cape'; text: string }) =>
       checked(z.array(creatorRequestSchema), 'creator_request', { request }),
     previews: () => checked(z.array(previewBuildSchema), 'creator_previews'),
+    // Haustier: eigener Stand, Codes (Klartext nur in der Antwort von createPetCodes), Antrag.
+    pet: (asCreator: string | null = null) => checked(creatorPetStateSchema, 'creator_pet', { asCreator }),
+    petCodes: (asCreator: string | null = null) => checked(z.array(petCodeSchema), 'creator_pet_codes', { asCreator }),
+    createPetCodes: (codes: { count: number; maxUses: number; expiresAt?: string; note?: string }, asCreator: string | null = null) =>
+      checked(z.array(petCodeSchema), 'creator_create_pet_codes', { codes, asCreator }),
+    revokePetCode: (id: string, asCreator: string | null = null) => call<void>('creator_revoke_pet_code', { id, asCreator }),
+    requestPet: (request: { species: string; description: string; colors?: string; image?: string }) =>
+      checked(petRequestSchema, 'creator_request_pet', { request }),
+    petRequestImage: (id: string, image: string) => checked(petRequestSchema, 'creator_pet_request_image', { id, image }),
+    withdrawPetRequest: (id: string) => call<void>('creator_withdraw_pet_request', { id }),
     setPackListed: (code: string, listed: boolean, asCreator: string | null = null) =>
       call<void>('creator_set_pack_listed', { code, listed, asCreator }),
     /** Helfer (§35.9): Freunde einladen, Rechte ändern, entfernen; Einladungen annehmen, aufhören. */

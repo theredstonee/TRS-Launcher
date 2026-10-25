@@ -28,6 +28,14 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Creator pets.** The creator dashboard has a new "Pet" tab. Creators with their own pet see its card, a bar with this month's code limit and their pet codes: create up to 20 codes at once (each up to 100 redemptions, optional expiry date and note), copy them right away – the full code is shown only once – and revoke codes any time. Creators without a pet can wish for one there (animal, description and colours, optional reference picture as PNG or JPG up to 2 MB), follow the status and the team's answer, add or replace the picture or withdraw the request while it is still open – a notification shows up when the team answers or assigns the pet. Helpers with the "Codes" right can manage the pet codes too. For the team, the creator area links to the website, where requests are handled and pets are assigned.
+
+### Deutsch
+- **Creator-Haustiere.** Das Creator-Dashboard hat einen neuen Reiter „Haustier“. Creator mit eigenem Haustier sehen dessen Karte, einen Balken mit dem Code-Limit des Monats und ihre Haustier-Codes: bis zu 20 Codes auf einmal erstellen (je bis zu 100 Einlösungen, optional mit Ablaufdatum und Notiz), sofort kopieren – den vollständigen Code gibt es nur einmal – und jederzeit widerrufen. Creator ohne Haustier können sich dort eins wünschen (Tierart, Beschreibung und Farben, optional ein Referenzbild als PNG oder JPG bis 2 MB), Stand und Antwort des Teams verfolgen und den Antrag, solange er offen ist, um ein Bild ergänzen oder zurückziehen – antwortet das Team oder ordnet es das Haustier zu, gibt es eine Benachrichtigung. Helfer mit dem Recht „Codes“ dürfen die Haustier-Codes ebenfalls verwalten. Fürs Team verlinkt der Creator-Bereich auf die Website, wo Anträge bearbeitet und Haustiere zugeordnet werden.
+
 ## 0.30.0 – 2026-10-25 – Fox Den | Fuchsbau
 <!-- banner: accent=#e8702a motif=/news/0.30.0/banner.png -->
 <!-- shots:

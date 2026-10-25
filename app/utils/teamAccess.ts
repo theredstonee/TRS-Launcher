@@ -130,6 +130,8 @@ export function mainRole(team: MyTeam | null | undefined): TeamRoleRef | null {
 /** Die Website – dort liegen Rollen, Bewerbungen und Stellen mit voller Oberfläche. */
 export const TEAM_WEBSITE = 'https://trs-launcher.theredstonee.de'
 export const WEBSITE_LOGIN_URL = `${TEAM_WEBSITE}/login`
+/** Website-Admin: Creator-Haustiere (Anträge + Zuordnung Creator ↔ Haustier). */
+export const CREATOR_PETS_ADMIN_URL = `${TEAM_WEBSITE}/admin/creators?tab=pets`
 
 export interface TeamSection {
   /** Pfad im Launcher oder – bei `external` – auf der Website. */
@@ -169,6 +171,8 @@ export const websiteSections: readonly TeamSection[] = [
   { to: `${TEAM_WEBSITE}/admin/jobs`, label: 'team.nav.jobs', icon: 'list', perms: ['applications.view', 'applications.manage'], external: true },
   { to: `${TEAM_WEBSITE}/admin/roles`, label: 'team.nav.roles', icon: 'key', perms: ['roles.manage'], external: true },
   { to: `${TEAM_WEBSITE}/admin/blog`, label: 'team.nav.blog', icon: 'edit', perms: ['blog.write', 'blog.publish'], external: true },
+  // Creator-Haustiere: Anträge bearbeiten und Haustier-Kosmetik einem Creator zuordnen (Creator-Admin-Recht).
+  { to: CREATOR_PETS_ADMIN_URL, label: 'team.nav.creatorPets', icon: 'star', perms: ['creators.manage'], external: true },
 ]
 
 export function visibleSections(team: MyTeam | null | undefined, list: readonly TeamSection[] = teamSections): TeamSection[] {

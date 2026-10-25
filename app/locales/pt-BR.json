@@ -319,7 +319,13 @@
       "curseforge_unavailable": "O CurseForge não está disponível no servidor TRS agora.",
       "upstream_failed": "O Modrinth ou o CurseForge não está respondendo agora – tente mais tarde.",
       "invalid_window": "O período não é válido: o fim precisa ser depois do início.",
-      "invalid_order": "A ordem não confere – recarregue a lista."
+      "invalid_order": "A ordem não confere – recarregue a lista.",
+      "creator_no_pet": "Você ainda não tem um pet próprio – peça um para a equipe primeiro.",
+      "limit_reached": "Seu limite mensal de códigos de pet não dá para isso – escolha menos códigos ou resgates, ou espere o próximo mês.",
+      "creator_pet_unavailable": "Seu pet não está disponível agora – fale com a equipe.",
+      "creator_pet_owned": "Você já tem um pet próprio.",
+      "request_closed": "A equipe já está trabalhando neste pedido – ele não pode mais ser alterado.",
+      "code_not_found": "Este código não existe (mais)."
     },
     "auth": {
       "accountMismatch": "Este login pertence a outra conta – entre novamente.",
@@ -973,7 +979,14 @@
       "invalidWindow": "O fim precisa ser depois do início.",
       "invalidOrder": "A ordem não confere – recarregue a lista."
     },
-    "messeBlocked": "Indisponível no PC da feira."
+    "messeBlocked": "Indisponível no PC da feira.",
+    "creatorPet": {
+      "countRange": "Quantidade: de 1 a {max} códigos de uma vez.",
+      "usesRange": "Resgates por código: de 1 a {max}.",
+      "imageTooLarge": "A imagem é grande demais (no máximo 2 MB).",
+      "invalidImage": "A imagem de referência precisa ser PNG ou JPG.",
+      "speciesLength": "Animal: de 1 a {max} caracteres."
+    }
   },
   "browse": {
     "title": "Explorar",
@@ -3905,7 +3918,7 @@
     "pet": {
       "title": "Companheiros no chão",
       "intro": "Anda ao seu lado – todos com o TRS Client o veem. A prévia o mostra ao lado do seu personagem.",
-      "creatorHint": "Criadores ganham pinguins automaticamente pelos fãs: um a partir de 1 fã, dois a partir de 10, três a partir de 100, quatro a partir de 1000.",
+      "creatorHint": "Pet de criador: os fãs ganham com os códigos do criador, e o próprio criador anda com mais conforme os fãs (dois a partir de 10, três a partir de 100, quatro a partir de 1000).",
       "empty": "Ainda não há companheiros no chão.",
       "wearing": "Ao seu lado: {name}",
       "selectedWorn": "Anda ao seu lado – todos com o TRS Client o veem.",
@@ -5642,7 +5655,8 @@
       "websiteHint": "Abre o site no seu navegador (login com a Microsoft).",
       "blog": "Blog",
       "featured": "Modpacks em destaque",
-      "previews": "Versões de teste"
+      "previews": "Versões de teste",
+      "creatorPets": "Pets de criadores"
     },
     "search": {
       "placeholder": "Buscar jogadores, UUIDs, IDs de denúncia, #punições, capas …",
@@ -6047,6 +6061,13 @@
       "featured_manage": "Gerenciar modpacks em destaque",
       "serverrules_bypass": "Usar mesmo assim recursos do TRS Client bloqueados pelo servidor (após confirmação no jogo)",
       "previews_access": "Versões de teste: Baixar versões de teste do launcher e do TRS Client como os criadores Partner"
+    },
+    "creators": {
+      "pets": {
+        "title": "Pets de criadores",
+        "text": "Cuidar dos pedidos de pet e atribuir um cosmético de pet a um criador – no site.",
+        "open": "Abrir o site"
+      }
     }
   },
   "trsChoice": {
@@ -7209,6 +7230,136 @@
       "resetHint": "Volta à página inicial com todas as janelas fechadas.",
       "changePin": "Alterar PIN",
       "quit": "Sair do launcher"
+    }
+  },
+  "creator": {
+    "dashboard": {
+      "tabs": {
+        "pet": "Pet"
+      }
+    },
+    "pet": {
+      "copiedAll": "Todos os códigos copiados.",
+      "yourPet": "Seu pet de criador",
+      "theirPet": "Pet de criador",
+      "intro": "Ele é só seu. Os fãs ganham ele com os códigos que você cria aqui – eles resgatam como qualquer código de cosmético (Skins → Resgatar código).",
+      "limit": {
+        "title": "Limite mensal {month}",
+        "titleNoMonth": "Limite mensal",
+        "used": "{used} / {max} resgates",
+        "left": "Restam {n} neste mês",
+        "full": "Limite deste mês atingido",
+        "resets": "renova em {date}"
+      },
+      "created": {
+        "title": "{n} código novo – copie agora | {n} códigos novos – copie agora",
+        "once": "Esses códigos só aparecem uma vez. Depois de ocultar ou sair da página, você só verá o final de cada código.",
+        "uses": "{n}×"
+      },
+      "codes": {
+        "title": "Códigos do pet",
+        "new": "Criar códigos",
+        "empty": "Ainda não há códigos – crie alguns para um sorteio ou sua live.",
+        "note": "Nota",
+        "state": {
+          "active": "ativo",
+          "revoked": "revogado",
+          "usedUp": "esgotado",
+          "expired": "expirado"
+        },
+        "revoke": "Revogar",
+        "revoked": "Código revogado – não pode mais ser resgatado.",
+        "footer": "Até {count} códigos de uma vez, cada um com até {uses} resgates. A soma de todos os resgates conta para o seu limite mensal."
+      },
+      "none": {
+        "title": "Ainda sem pet próprio",
+        "text": "Peça um pet só seu: a equipe cria ele para você e atribui a você. Depois você cria aqui códigos para os seus fãs.",
+        "helperTitle": "Ainda sem pet",
+        "helperText": "Este criador ainda não tem um pet próprio. Só o próprio criador pode pedir um."
+      },
+      "request": {
+        "yours": "Seu pedido",
+        "status": {
+          "open": "Aberto",
+          "in_progress": "Em andamento",
+          "done": "Pronto",
+          "rejected": "Recusado"
+        },
+        "statusText": {
+          "open": "A equipe recebeu seu pedido e vai olhar em breve.",
+          "in_progress": "A equipe está criando o seu pet agora.",
+          "done": "Seu pedido está pronto. Assim que o pet for atribuído a você, ele aparece aqui.",
+          "rejected": "A equipe recusou seu pedido. Você pode enviar um novo."
+        },
+        "answer": "Equipe:",
+        "sentAt": "Enviado em {date}",
+        "again": "Enviar um novo pedido",
+        "title": "Pedir seu próprio pet",
+        "hint": "Descreva o animal, a aparência e as cores. Uma imagem de referência ajuda (PNG ou JPG, até 2 MB). Um pet por criador.",
+        "textLabel": "Descrição",
+        "placeholder": "ex.: pequeno, com cachecol azul, balança o rabo ao andar …",
+        "imageLabel": "Imagem de referência (opcional)",
+        "pickImage": "Escolher imagem …",
+        "removeImage": "Remover",
+        "imageTooLarge": "A imagem é grande demais (no máximo 2 MB).",
+        "imageType": "Escolha uma imagem PNG ou JPG.",
+        "textInvalid": "Descreva o seu pet (de 1 a {max} caracteres).",
+        "sending": "Enviando …",
+        "send": "Enviar pedido",
+        "sent": "Pedido enviado – a equipe vai responder.",
+        "speciesLabel": "Animal",
+        "speciesPlaceholder": "ex.: raposa",
+        "colorsLabel": "Cores (opcional)",
+        "colorsPlaceholder": "ex.: laranja, branco, azul-escuro",
+        "colorsShown": "Cores: {colors}",
+        "speciesInvalid": "Informe o animal (de 1 a {max} caracteres).",
+        "colorsInvalid": "Cores: no máximo {max} caracteres.",
+        "imageAttached": "Imagem de referência anexada",
+        "addImage": "Anexar imagem",
+        "replaceImage": "Trocar imagem",
+        "imageAdded": "Imagem anexada ao seu pedido.",
+        "withdraw": "Retirar",
+        "withdrawTitle": "Retirar o pedido?",
+        "withdrawText": "Seu pedido e a imagem serão apagados. Você pode enviar um novo quando quiser.",
+        "withdrawn": "Pedido retirado."
+      },
+      "create": {
+        "title": "Criar códigos do pet",
+        "count": "Quantidade de códigos (1–{max})",
+        "uses": "Resgates por código (1–{max})",
+        "note": "Nota (opcional)",
+        "notePlaceholder": "ex.: sorteio na live de sexta",
+        "cost": "Conta para o seu limite: {cost} de {left} disponíveis",
+        "fit": "Com esse número cabem no máximo {n} códigos.",
+        "once": "Você só verá os códigos completos uma vez, logo depois de criar.",
+        "countInvalid": "Quantidade de códigos: de 1 a {max}.",
+        "usesInvalid": "Resgates por código: de 1 a {max}.",
+        "noteInvalid": "Nota: no máximo {max} caracteres.",
+        "overLimit": "Seriam {cost} resgates, mas neste mês só restam {left}.",
+        "done": "{n} código criado | {n} códigos criados"
+      },
+      "revoke": {
+        "title": "Revogar o código?",
+        "text": "{code} não poderá mais ser resgatado. Fãs que já resgataram continuam com o pet."
+      },
+      "unavailable": "Seu pet não está disponível agora, então não dá para criar códigos novos. Os códigos já distribuídos voltam a funcionar quando ele voltar."
+    },
+    "toast": {
+      "answer": "Equipe: {reason}",
+      "updated": {
+        "pet_assigned": {
+          "title": "Seu pet chegou!",
+          "body": "Crie códigos para os seus fãs na aba \"Pet\"."
+        },
+        "pet_removed": {
+          "title": "Seu pet de criador foi removido",
+          "body": "Em caso de dúvidas, fale com a equipe."
+        },
+        "pet_request_answered": {
+          "title": "Seu pedido de pet foi respondido",
+          "body": "Detalhes na aba \"Pet\"."
+        }
+      }
     }
   }
 }

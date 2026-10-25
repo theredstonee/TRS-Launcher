@@ -8,11 +8,13 @@ import {
   type CreatorQueueItem,
   type CreatorTier,
 } from '~/utils/creator'
+import { CREATOR_PETS_ADMIN_URL } from '~/utils/teamAccess'
 
 // Creator verwalten (API §35.6): Prüfung neuer Fan-Symbole und Fan-Umhänge
 // (`creators.review`), Creator-Liste mit Stufe, Haupt-Code, Entziehen/Sperren/
 // Wiederherstellen und Hinzufügen sowie Anträge (Aufstieg, Team-Umhang) –
-// beides `creators.manage`. Bewerbungen laufen über die Website.
+// beides `creators.manage`. Bewerbungen und Creator-Haustiere (Anträge,
+// Zuordnung) laufen über die Website.
 const team = useTeam()
 const toasts = useToasts()
 
@@ -248,6 +250,16 @@ const stateClass = { active: 'bg-ok/15 text-ok', revoked: 'bg-base-800 text-base
 <template>
   <section class="space-y-4" :aria-label="t('team.nav.creators')" data-testid="admin-creators">
     <p class="text-xs text-base-400">{{ t('team.creators.intro') }}</p>
+    <div v-if="team.can('creators.manage')" class="card flex flex-wrap items-center gap-3 px-4 py-3" data-testid="admin-creator-pets-link">
+      <SocialIcon name="star" class="size-5 shrink-0 text-lamp-300" />
+      <div class="min-w-0 flex-1">
+        <p class="text-sm font-medium text-base-50">{{ t('team.creators.pets.title') }}</p>
+        <p class="text-xs text-base-400">{{ t('team.creators.pets.text') }}</p>
+      </div>
+      <button class="btn btn-ghost px-3 py-1.5 text-xs" @click="openUrl(CREATOR_PETS_ADMIN_URL)">
+        {{ t('team.creators.pets.open') }} <SocialIcon name="external" class="size-3.5" />
+      </button>
+    </div>
     <div class="flex gap-1" role="tablist">
       <button v-for="k in tabs" :key="k" class="tab" :class="{ 'tab-on': tab === k }" role="tab" :aria-selected="tab === k" @click="tab = k">
         {{ t(`team.creators.tabs.${k}`) }}

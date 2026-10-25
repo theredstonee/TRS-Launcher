@@ -319,7 +319,13 @@
       "curseforge_unavailable": "CurseForge jest teraz niedostępny na serwerze TRS.",
       "upstream_failed": "Modrinth lub CurseForge teraz nie odpowiada – spróbuj później.",
       "invalid_window": "Nieprawidłowy okres: koniec musi być po początku.",
-      "invalid_order": "Kolejność się nie zgadza – wczytaj listę ponownie."
+      "invalid_order": "Kolejność się nie zgadza – wczytaj listę ponownie.",
+      "creator_no_pet": "Nie masz jeszcze własnego zwierzaka – najpierw poproś o niego zespół.",
+      "limit_reached": "Twój miesięczny limit kodów zwierzaka na to nie wystarczy – wybierz mniej kodów lub użyć albo poczekaj do przyszłego miesiąca.",
+      "creator_pet_unavailable": "Twój zwierzak jest teraz niedostępny – zapytaj zespół.",
+      "creator_pet_owned": "Masz już własnego zwierzaka.",
+      "request_closed": "Zespół już pracuje nad tym wnioskiem – nie można go już zmienić.",
+      "code_not_found": "Ten kod nie istnieje (już)."
     },
     "auth": {
       "accountMismatch": "To logowanie należy do innego konta – zaloguj się ponownie.",
@@ -973,7 +979,14 @@
       "invalidWindow": "Koniec musi być po początku.",
       "invalidOrder": "Kolejność się nie zgadza – wczytaj listę ponownie."
     },
-    "messeBlocked": "Niedostępne na komputerze targowym."
+    "messeBlocked": "Niedostępne na komputerze targowym.",
+    "creatorPet": {
+      "countRange": "Liczba: od 1 do {max} kodów naraz.",
+      "usesRange": "Użycia na kod: od 1 do {max}.",
+      "imageTooLarge": "Obraz jest za duży (maksymalnie 2 MB).",
+      "invalidImage": "Obraz poglądowy musi być w formacie PNG lub JPG.",
+      "speciesLength": "Zwierzę: od 1 do {max} znaków."
+    }
   },
   "browse": {
     "title": "Odkrywaj",
@@ -3905,7 +3918,7 @@
     "pet": {
       "title": "Towarzysze na ziemi",
       "intro": "Chodzi obok ciebie – widzą go wszyscy z TRS Client. Podgląd pokazuje go obok twojej postaci.",
-      "creatorHint": "Twórcy dostają pingwiny automatycznie według fanów: jeden od 1 fana, dwa od 10, trzy od 100, cztery od 1000.",
+      "creatorHint": "Zwierzak twórcy: fani dostają go dzięki kodom twórcy, a sam twórca ma ich więcej zależnie od fanów (dwa od 10, trzy od 100, cztery od 1000).",
       "empty": "Brak towarzyszy na ziemi.",
       "wearing": "Obok ciebie: {name}",
       "selectedWorn": "Chodzi obok ciebie – widzą go wszyscy z TRS Client.",
@@ -5642,7 +5655,8 @@
       "websiteHint": "Otwiera stronę w przeglądarce (logowanie przez Microsoft).",
       "blog": "Blog",
       "featured": "Polecane modpacki",
-      "previews": "Wersje testowe"
+      "previews": "Wersje testowe",
+      "creatorPets": "Zwierzaki twórców"
     },
     "search": {
       "placeholder": "Szukaj graczy, UUID, ID zgłoszeń, #kar, peleryn …",
@@ -6047,6 +6061,13 @@
       "featured_manage": "Zarządzanie polecanymi modpackami",
       "serverrules_bypass": "Używać funkcji TRS Client zablokowanych przez serwer mimo to (po potwierdzeniu w grze)",
       "previews_access": "Wersje testowe: Pobieranie wersji testowych launchera i TRS Client jak twórcy Partner"
+    },
+    "creators": {
+      "pets": {
+        "title": "Zwierzaki twórców",
+        "text": "Obsługa wniosków o zwierzaki i przypisywanie kosmetyku zwierzaka twórcy – na stronie.",
+        "open": "Otwórz stronę"
+      }
     }
   },
   "trsChoice": {
@@ -7209,6 +7230,136 @@
       "resetHint": "Powrót do strony startowej, wszystkie okna zamknięte.",
       "changePin": "Zmień PIN",
       "quit": "Zamknij launcher"
+    }
+  },
+  "creator": {
+    "dashboard": {
+      "tabs": {
+        "pet": "Zwierzak"
+      }
+    },
+    "pet": {
+      "copiedAll": "Skopiowano wszystkie kody.",
+      "yourPet": "Twój zwierzak twórcy",
+      "theirPet": "Zwierzak twórcy",
+      "intro": "Należy tylko do ciebie. Fani dostają go dzięki kodom, które tu tworzysz – realizują je jak każdy kod kosmetyczny (Skiny → Zrealizuj kod).",
+      "limit": {
+        "title": "Limit miesięczny {month}",
+        "titleNoMonth": "Limit miesięczny",
+        "used": "{used} / {max} użyć",
+        "left": "W tym miesiącu zostało {n}",
+        "full": "Limit na ten miesiąc osiągnięty",
+        "resets": "odnawia się {date}"
+      },
+      "created": {
+        "title": "{n} nowy kod – skopiuj go teraz | {n} nowe kody – skopiuj je teraz | {n} nowych kodów – skopiuj je teraz",
+        "once": "Te kody zobaczysz tylko raz. Po ukryciu lub opuszczeniu strony zobaczysz już tylko koniec każdego kodu.",
+        "uses": "{n}×"
+      },
+      "codes": {
+        "title": "Kody zwierzaka",
+        "new": "Utwórz kody",
+        "empty": "Brak kodów – utwórz kilka na konkurs albo stream.",
+        "note": "Notatka",
+        "state": {
+          "active": "aktywny",
+          "revoked": "unieważniony",
+          "usedUp": "wykorzystany",
+          "expired": "wygasł"
+        },
+        "revoke": "Unieważnij",
+        "revoked": "Kod unieważniony – nie da się go już zrealizować.",
+        "footer": "Do {count} kodów naraz, każdy do {uses} użyć. Suma wszystkich użyć liczy się do twojego miesięcznego limitu."
+      },
+      "none": {
+        "title": "Nie masz jeszcze własnego zwierzaka",
+        "text": "Poproś o własnego zwierzaka: zespół zaprojektuje go dla ciebie i ci go przypisze. Potem utworzysz tu kody dla swoich fanów.",
+        "helperTitle": "Jeszcze bez zwierzaka",
+        "helperText": "Ten twórca nie ma jeszcze własnego zwierzaka. Poprosić o niego może tylko sam twórca."
+      },
+      "request": {
+        "yours": "Twój wniosek",
+        "status": {
+          "open": "Otwarty",
+          "in_progress": "W realizacji",
+          "done": "Gotowy",
+          "rejected": "Odrzucony"
+        },
+        "statusText": {
+          "open": "Zespół otrzymał twój wniosek i wkrótce go przejrzy.",
+          "in_progress": "Zespół właśnie tworzy twojego zwierzaka.",
+          "done": "Twój wniosek jest gotowy. Gdy tylko zwierzak zostanie ci przypisany, pojawi się tutaj.",
+          "rejected": "Zespół odrzucił twój wniosek. Możesz wysłać nowy."
+        },
+        "answer": "Zespół:",
+        "sentAt": "Wysłano {date}",
+        "again": "Wyślij nowy wniosek",
+        "title": "Poproś o własnego zwierzaka",
+        "hint": "Opisz zwierzę, jego wygląd i kolory. Obraz poglądowy pomaga (PNG lub JPG, do 2 MB). Jeden zwierzak na twórcę.",
+        "textLabel": "Opis",
+        "placeholder": "np. mały, z niebieskim szalikiem, macha ogonem podczas chodzenia …",
+        "imageLabel": "Obraz poglądowy (opcjonalnie)",
+        "pickImage": "Wybierz obraz …",
+        "removeImage": "Usuń",
+        "imageTooLarge": "Obraz jest za duży (maksymalnie 2 MB).",
+        "imageType": "Wybierz obraz PNG lub JPG.",
+        "textInvalid": "Opisz swojego zwierzaka (od 1 do {max} znaków).",
+        "sending": "Wysyłanie …",
+        "send": "Wyślij wniosek",
+        "sent": "Wniosek wysłany – zespół się odezwie.",
+        "speciesLabel": "Zwierzę",
+        "speciesPlaceholder": "np. lis",
+        "colorsLabel": "Kolory (opcjonalnie)",
+        "colorsPlaceholder": "np. pomarańczowy, biały, granatowy",
+        "colorsShown": "Kolory: {colors}",
+        "speciesInvalid": "Podaj zwierzę (od 1 do {max} znaków).",
+        "colorsInvalid": "Kolory: maksymalnie {max} znaków.",
+        "imageAttached": "Dołączono obraz poglądowy",
+        "addImage": "Dołącz obraz",
+        "replaceImage": "Zmień obraz",
+        "imageAdded": "Obraz dołączony do wniosku.",
+        "withdraw": "Wycofaj",
+        "withdrawTitle": "Wycofać wniosek?",
+        "withdrawText": "Twój wniosek i jego obraz zostaną usunięte. W każdej chwili możesz wysłać nowy.",
+        "withdrawn": "Wniosek wycofany."
+      },
+      "create": {
+        "title": "Utwórz kody zwierzaka",
+        "count": "Liczba kodów (1–{max})",
+        "uses": "Użycia na kod (1–{max})",
+        "note": "Notatka (opcjonalnie)",
+        "notePlaceholder": "np. konkurs na streamie w piątek",
+        "cost": "Liczy się do limitu: {cost} z {left} dostępnych",
+        "fit": "Przy tej liczbie zmieści się najwyżej {n} kodów.",
+        "once": "Pełne kody zobaczysz tylko raz – zaraz po utworzeniu.",
+        "countInvalid": "Liczba kodów: od 1 do {max}.",
+        "usesInvalid": "Użycia na kod: od 1 do {max}.",
+        "noteInvalid": "Notatka: maksymalnie {max} znaków.",
+        "overLimit": "To {cost} użyć, a w tym miesiącu zostało tylko {left}.",
+        "done": "Utworzono {n} kod | Utworzono {n} kody | Utworzono {n} kodów"
+      },
+      "revoke": {
+        "title": "Unieważnić kod?",
+        "text": "Kodu {code} nie da się potem zrealizować. Fani, którzy już go użyli, zachowują zwierzaka."
+      },
+      "unavailable": "Twój zwierzak jest teraz niedostępny, więc nie można tworzyć nowych kodów. Rozdane kody znów zadziałają, gdy wróci."
+    },
+    "toast": {
+      "answer": "Zespół: {reason}",
+      "updated": {
+        "pet_assigned": {
+          "title": "Twój zwierzak jest gotowy!",
+          "body": "Utwórz kody dla fanów w karcie „Zwierzak”."
+        },
+        "pet_removed": {
+          "title": "Usunięto twojego zwierzaka twórcy",
+          "body": "W razie pytań napisz do zespołu."
+        },
+        "pet_request_answered": {
+          "title": "Twój wniosek o zwierzaka dostał odpowiedź",
+          "body": "Szczegóły w karcie „Zwierzak”."
+        }
+      }
     }
   }
 }

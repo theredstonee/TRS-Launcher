@@ -344,7 +344,13 @@
       "curseforge_unavailable": "CurseForge ist auf dem TRS-Server gerade nicht verfügbar.",
       "upstream_failed": "Modrinth bzw. CurseForge antwortet gerade nicht – bitte später erneut versuchen.",
       "invalid_window": "Der Zeitraum passt nicht: Das Ende muss nach dem Beginn liegen.",
-      "invalid_order": "Die Reihenfolge passt nicht – bitte die Liste neu laden."
+      "invalid_order": "Die Reihenfolge passt nicht – bitte die Liste neu laden.",
+      "creator_no_pet": "Du hast noch kein eigenes Haustier – wünsch dir zuerst eins vom Team.",
+      "limit_reached": "Dein Monatslimit für Haustier-Codes reicht dafür nicht mehr – wähle weniger Codes oder Einlösungen oder warte bis nächsten Monat.",
+      "creator_pet_unavailable": "Dein Haustier ist gerade nicht verfügbar – frag beim Team nach.",
+      "creator_pet_owned": "Du hast schon ein eigenes Haustier.",
+      "request_closed": "Das Team arbeitet schon an diesem Antrag – er lässt sich nicht mehr ändern.",
+      "code_not_found": "Diesen Code gibt es nicht (mehr)."
     },
     "auth": {
       "accountMismatch": "Die Anmeldung gehört zu einem anderen Account – bitte erneut anmelden.",
@@ -1014,7 +1020,14 @@
       "invalidWindow": "Das Ende muss nach dem Beginn liegen.",
       "invalidOrder": "Die Reihenfolge passt nicht – bitte die Liste neu laden."
     },
-    "messeBlocked": "Am Messe-PC nicht verfügbar."
+    "messeBlocked": "Am Messe-PC nicht verfügbar.",
+    "creatorPet": {
+      "countRange": "Anzahl: 1 bis {max} Codes auf einmal.",
+      "usesRange": "Einlösungen je Code: 1 bis {max}.",
+      "imageTooLarge": "Das Bild ist zu groß (höchstens 2 MB).",
+      "invalidImage": "Das Referenzbild muss ein PNG- oder JPG-Bild sein.",
+      "speciesLength": "Tierart: 1 bis {max} Zeichen."
+    }
   },
   "browse": {
     "title": "Entdecken",
@@ -3973,7 +3986,7 @@
     "pet": {
       "title": "Begleiter am Boden",
       "intro": "Läuft neben dir her – alle mit TRS Client sehen ihn. Die Vorschau zeigt ihn neben deiner Figur.",
-      "creatorHint": "Creator bekommen Pinguine automatisch nach Fans: ab 1 Fan einen, ab 10 zwei, ab 100 drei, ab 1000 vier.",
+      "creatorHint": "Creator-Haustier: Fans bekommen es über die Codes des Creators, der Creator selbst läuft mit mehr je nach Fans (ab 10 zwei, ab 100 drei, ab 1000 vier).",
       "empty": "Noch keine Begleiter am Boden.",
       "wearing": "Neben dir: {name}",
       "selectedWorn": "Läuft neben dir her – alle mit TRS Client sehen ihn.",
@@ -5711,7 +5724,8 @@
       "blog": "Blog",
       "creators": "Creator",
       "featured": "Empfohlene Modpacks",
-      "previews": "Vorschau-Builds"
+      "previews": "Vorschau-Builds",
+      "creatorPets": "Creator-Haustiere"
     },
     "search": {
       "placeholder": "Spieler, UUIDs, Meldungs-IDs, #Strafen, Umhänge suchen …",
@@ -6195,6 +6209,11 @@
         "declineTitle": "Antrag ablehnen",
         "reason": "Antwort an den Creator (optional)",
         "upgradeHint": "Annehmen hebt den Creator eine Stufe höher."
+      },
+      "pets": {
+        "title": "Creator-Haustiere",
+        "text": "Haustier-Anträge bearbeiten und einem Creator eine Haustier-Kosmetik zuordnen – auf der Website.",
+        "open": "Website öffnen"
       }
     }
   },
@@ -7466,7 +7485,8 @@
         "previews": "Vorschau-Builds",
         "packs": "Packs",
         "helpers": "Helfer",
-        "tier": "Stufe & Vorteile"
+        "tier": "Stufe & Vorteile",
+        "pet": "Haustier"
       }
     },
     "stats": {
@@ -7743,8 +7763,127 @@
         "helper_left": {
           "title": "{name} hilft nicht mehr",
           "body": "Du kannst einen neuen Helfer einladen."
+        },
+        "pet_assigned": {
+          "title": "Dein Haustier ist da!",
+          "body": "Erstelle im Reiter „Haustier“ Codes für deine Fans."
+        },
+        "pet_removed": {
+          "title": "Dein Creator-Haustier wurde entfernt",
+          "body": "Bei Fragen wende dich ans Team."
+        },
+        "pet_request_answered": {
+          "title": "Dein Haustier-Antrag wurde beantwortet",
+          "body": "Details im Reiter „Haustier“."
         }
-      }
+      },
+      "answer": "Team: {reason}"
+    },
+    "pet": {
+      "copiedAll": "Alle Codes kopiert.",
+      "yourPet": "Dein Creator-Haustier",
+      "theirPet": "Creator-Haustier",
+      "intro": "Es gehört nur dir. Fans bekommen es über die Codes, die du hier erstellst – eingelöst wird wie jeder Kosmetik-Code (Skins → Code einlösen).",
+      "limit": {
+        "title": "Monatslimit {month}",
+        "titleNoMonth": "Monatslimit",
+        "used": "{used} / {max} Einlösungen",
+        "left": "Noch {n} frei in diesem Monat",
+        "full": "Limit für diesen Monat erreicht",
+        "resets": "wieder frei am {date}"
+      },
+      "created": {
+        "title": "{n} neuer Code – jetzt kopieren | {n} neue Codes – jetzt kopieren",
+        "once": "Diese Codes siehst du nur einmal. Nach „Ausblenden“ oder beim Verlassen der Seite steht nur noch das Ende jedes Codes da.",
+        "uses": "{n}×"
+      },
+      "codes": {
+        "title": "Haustier-Codes",
+        "new": "Codes erstellen",
+        "empty": "Noch keine Codes – erstelle welche für ein Gewinnspiel oder deinen Stream.",
+        "note": "Notiz",
+        "state": {
+          "active": "aktiv",
+          "revoked": "widerrufen",
+          "usedUp": "aufgebraucht",
+          "expired": "abgelaufen"
+        },
+        "revoke": "Widerrufen",
+        "revoked": "Code widerrufen – er lässt sich nicht mehr einlösen.",
+        "footer": "Bis zu {count} Codes auf einmal, je bis zu {uses} Einlösungen. Die Summe aller Einlösungen zählt gegen dein Monatslimit."
+      },
+      "none": {
+        "title": "Noch kein eigenes Haustier",
+        "text": "Wünsch dir ein eigenes Haustier: Das Team gestaltet es für dich und ordnet es dir zu. Danach erstellst du hier Codes für deine Fans.",
+        "helperTitle": "Noch kein Haustier",
+        "helperText": "Dieser Creator hat noch kein eigenes Haustier. Wünschen kann es sich nur der Creator selbst."
+      },
+      "request": {
+        "yours": "Dein Antrag",
+        "status": {
+          "open": "Offen",
+          "in_progress": "In Arbeit",
+          "done": "Fertig",
+          "rejected": "Abgelehnt"
+        },
+        "statusText": {
+          "open": "Das Team hat deinen Antrag bekommen und schaut ihn sich bald an.",
+          "in_progress": "Das Team baut gerade dein Haustier.",
+          "done": "Dein Antrag ist fertig. Sobald dir das Haustier zugeordnet ist, erscheint es hier.",
+          "rejected": "Das Team hat deinen Antrag abgelehnt. Du kannst einen neuen stellen."
+        },
+        "answer": "Team:",
+        "sentAt": "Gesendet am {date}",
+        "again": "Neuen Antrag stellen",
+        "title": "Eigenes Haustier wünschen",
+        "hint": "Beschreibe Tierart, Aussehen und Farben. Ein Referenzbild hilft (PNG oder JPG, bis 2 MB). Ein Haustier je Creator.",
+        "textLabel": "Beschreibung",
+        "placeholder": "z. B. klein, mit blauem Schal, wedelt beim Laufen mit dem Schwanz …",
+        "imageLabel": "Referenzbild (optional)",
+        "pickImage": "Bild wählen …",
+        "removeImage": "Entfernen",
+        "imageTooLarge": "Das Bild ist zu groß (höchstens 2 MB).",
+        "imageType": "Bitte ein PNG- oder JPG-Bild wählen.",
+        "textInvalid": "Bitte beschreibe dein Haustier (1 bis {max} Zeichen).",
+        "sending": "Sende …",
+        "send": "Antrag senden",
+        "sent": "Antrag gesendet – das Team meldet sich.",
+        "speciesLabel": "Tierart",
+        "speciesPlaceholder": "z. B. Fuchs",
+        "colorsLabel": "Farben (optional)",
+        "colorsPlaceholder": "z. B. Orange, Weiß, Dunkelblau",
+        "colorsShown": "Farben: {colors}",
+        "speciesInvalid": "Bitte die Tierart angeben (1 bis {max} Zeichen).",
+        "colorsInvalid": "Farben: höchstens {max} Zeichen.",
+        "imageAttached": "Referenzbild angehängt",
+        "addImage": "Bild anhängen",
+        "replaceImage": "Bild ersetzen",
+        "imageAdded": "Bild an deinen Antrag angehängt.",
+        "withdraw": "Zurückziehen",
+        "withdrawTitle": "Antrag zurückziehen?",
+        "withdrawText": "Dein Antrag und sein Bild werden gelöscht. Du kannst jederzeit einen neuen stellen.",
+        "withdrawn": "Antrag zurückgezogen."
+      },
+      "create": {
+        "title": "Haustier-Codes erstellen",
+        "count": "Anzahl Codes (1–{max})",
+        "uses": "Einlösungen je Code (1–{max})",
+        "note": "Notiz (optional)",
+        "notePlaceholder": "z. B. Gewinnspiel im Stream am Freitag",
+        "cost": "Zählt gegen dein Limit: {cost} von {left} frei",
+        "fit": "Mit dieser Zahl passen höchstens {n} Codes.",
+        "once": "Die Codes siehst du nur einmal vollständig – direkt nach dem Erstellen.",
+        "countInvalid": "Anzahl Codes: 1 bis {max}.",
+        "usesInvalid": "Einlösungen je Code: 1 bis {max}.",
+        "noteInvalid": "Notiz: höchstens {max} Zeichen.",
+        "overLimit": "Das wären {cost} Einlösungen, in diesem Monat sind aber nur noch {left} frei.",
+        "done": "{n} Code erstellt | {n} Codes erstellt"
+      },
+      "revoke": {
+        "title": "Code widerrufen?",
+        "text": "{code} lässt sich danach nicht mehr einlösen. Fans, die ihn schon eingelöst haben, behalten das Haustier."
+      },
+      "unavailable": "Dein Haustier ist gerade nicht verfügbar, deshalb lassen sich keine neuen Codes erstellen. Schon verteilte Codes gelten wieder, sobald es zurück ist."
     }
   },
   "halloween": {

@@ -16,6 +16,8 @@ export const useCreatorStore = defineStore('creator', () => {
   const dashboard = ref<CreatorSelf | null>(null)
   /** Creator, für den man gerade als Helfer arbeitet (`null` = eigenes Dashboard). */
   const actingAs = ref<string | null>(null)
+  /** Zählt Haustier-Ereignisse (`pet_*`) – der Reiter „Haustier“ lädt dann neu. */
+  const petRevision = ref(0)
   const loading = ref(false)
   const error = ref<string | null>(null)
   const dashboardError = ref<string | null>(null)
@@ -192,14 +194,20 @@ export const useCreatorStore = defineStore('creator', () => {
         break
       case 'creator_updated': {
         const tab =
-          e.kind.startsWith('symbol') ? 'symbol' : e.kind.startsWith('cape') ? 'cape' : e.kind.startsWith('helper') ? 'helpers' : e.kind === 'tier_changed' || e.kind === 'request_answered' ? 'tier' : null
+          e.kind.startsWith('symbol') ? 'symbol' : e.kind.startsWith('cape') ? 'cape' : e.kind.startsWith('pet') ? 'pet' : e.kind.startsWith('helper') ? 'helpers' : e.kind === 'tier_changed' || e.kind === 'request_answered' ? 'tier' : null
         const params = {
           reason: e.reason ?? '',
           tier: e.tier ? tKey(`creator.tiers.${e.tier}.name`) : '',
           milestone: e.milestone ? tKey(`creator.milestones.${e.milestone}`) : '',
           name: e.helper?.name ?? '?',
         }
-        const body = e.reason ? t('creator.toast.reason', { reason: e.reason }) : tKey(`creator.toast.updated.${e.kind}.body`, params)
+        if (e.kind.startsWith('pet')) petRevision.value++
+        // Beim Haustier-Wunsch ist `reason` die Antwort des Teams, kein Ablehnungsgrund.
+        const body = e.reason
+          ? e.kind === 'pet_request_answered'
+            ? t('creator.toast.answer', { reason: e.reason })
+            : t('creator.toast.reason', { reason: e.reason })
+          : tKey(`creator.toast.updated.${e.kind}.body`, params)
         void toasts.notify('creator', {
           key: `creator:${e.kind}`,
           title: tKey(`creator.toast.updated.${e.kind}.title`, params),
@@ -218,6 +226,7 @@ export const useCreatorStore = defineStore('creator', () => {
     me,
     dashboard,
     actingAs,
+    petRevision,
     self,
     active,
     helperRights,

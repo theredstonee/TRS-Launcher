@@ -319,7 +319,13 @@
       "curseforge_unavailable": "CurseForge şu anda TRS sunucusunda kullanılamıyor.",
       "upstream_failed": "Modrinth veya CurseForge şu anda yanıt vermiyor – lütfen daha sonra tekrar dene.",
       "invalid_window": "Zaman aralığı geçersiz: bitiş, başlangıçtan sonra olmalı.",
-      "invalid_order": "Sıra uyuşmuyor – lütfen listeyi yeniden yükle."
+      "invalid_order": "Sıra uyuşmuyor – lütfen listeyi yeniden yükle.",
+      "creator_no_pet": "Henüz kendi evcil hayvanın yok – önce ekipten bir tane iste.",
+      "limit_reached": "Evcil hayvan kodları için aylık sınırın buna yetmiyor – daha az kod veya kullanım seç ya da gelecek ayı bekle.",
+      "creator_pet_unavailable": "Evcil hayvanın şu anda kullanılamıyor – ekibe sor.",
+      "creator_pet_owned": "Zaten kendi evcil hayvanın var.",
+      "request_closed": "Ekip bu başvuru üzerinde çalışıyor – artık değiştirilemez.",
+      "code_not_found": "Bu kod yok (artık yok)."
     },
     "auth": {
       "accountMismatch": "Bu giriş başka bir hesaba ait – lütfen tekrar giriş yap.",
@@ -973,7 +979,14 @@
       "invalidWindow": "Bitiş, başlangıçtan sonra olmalı.",
       "invalidOrder": "Sıra uyuşmuyor – lütfen listeyi yeniden yükle."
     },
-    "messeBlocked": "Fuar bilgisayarında kullanılamaz."
+    "messeBlocked": "Fuar bilgisayarında kullanılamaz.",
+    "creatorPet": {
+      "countRange": "Adet: tek seferde 1 ile {max} arası kod.",
+      "usesRange": "Kod başına kullanım: 1 ile {max} arası.",
+      "imageTooLarge": "Görsel çok büyük (en fazla 2 MB).",
+      "invalidImage": "Örnek görsel PNG veya JPG olmalı.",
+      "speciesLength": "Hayvan: 1 ile {max} karakter arası."
+    }
   },
   "browse": {
     "title": "Keşfet",
@@ -3905,7 +3918,7 @@
     "pet": {
       "title": "Yerdeki yoldaşlar",
       "intro": "Yanında yürür – TRS Client kullanan herkes onu görür. Önizleme onu karakterinin yanında gösterir.",
-      "creatorHint": "İçerik üreticileri hayran sayısına göre otomatik penguen alır: 1 hayrandan itibaren bir, 10’dan iki, 100’den üç, 1000’den dört.",
+      "creatorHint": "Creator evcil hayvanı: hayranlar onu creator'ın kodlarıyla alır, creator'ın kendisi hayran sayısına göre daha fazlasıyla dolaşır (10'dan itibaren iki, 100'den üç, 1000'den dört).",
       "empty": "Henüz yerde yoldaş yok.",
       "wearing": "Yanında: {name}",
       "selectedWorn": "Yanında yürür – TRS Client kullanan herkes onu görür.",
@@ -5642,7 +5655,8 @@
       "websiteHint": "Web sitesini tarayıcında açar (Microsoft ile giriş).",
       "blog": "Blog",
       "featured": "Öne çıkan mod paketleri",
-      "previews": "Önizleme sürümleri"
+      "previews": "Önizleme sürümleri",
+      "creatorPets": "Creator evcil hayvanları"
     },
     "search": {
       "placeholder": "Oyuncu, UUID, şikayet kimliği, #ceza, pelerin ara …",
@@ -6047,6 +6061,13 @@
       "featured_manage": "Öne çıkan mod paketlerini yönet",
       "serverrules_bypass": "Sunucunun engellediği TRS Client özelliklerini yine de kullan (oyunda onaydan sonra)",
       "previews_access": "Önizleme sürümleri: Başlatıcının ve TRS Client'ın önizleme sürümlerini Partner içerik üreticileri gibi indir"
+    },
+    "creators": {
+      "pets": {
+        "title": "Creator evcil hayvanları",
+        "text": "Evcil hayvan başvurularını yönet ve bir creator'a evcil hayvan kozmetiği ata – web sitesinde.",
+        "open": "Web sitesini aç"
+      }
     }
   },
   "trsChoice": {
@@ -7209,6 +7230,136 @@
       "resetHint": "Tüm pencereler kapalı olarak başlangıç sayfasına döner.",
       "changePin": "PIN’i değiştir",
       "quit": "Başlatıcıdan çık"
+    }
+  },
+  "creator": {
+    "dashboard": {
+      "tabs": {
+        "pet": "Evcil hayvan"
+      }
+    },
+    "pet": {
+      "copiedAll": "Tüm kodlar kopyalandı.",
+      "yourPet": "Creator evcil hayvanın",
+      "theirPet": "Creator evcil hayvanı",
+      "intro": "Yalnızca sana ait. Hayranlar onu burada oluşturduğun kodlarla alır – her kozmetik kodu gibi kullanılır (Skinler → Kod kullan).",
+      "limit": {
+        "title": "Aylık sınır {month}",
+        "titleNoMonth": "Aylık sınır",
+        "used": "{used} / {max} kullanım",
+        "left": "Bu ay {n} kaldı",
+        "full": "Bu ayın sınırına ulaşıldı",
+        "resets": "{date} tarihinde yenilenir"
+      },
+      "created": {
+        "title": "{n} yeni kod – şimdi kopyala | {n} yeni kod – şimdi kopyala",
+        "once": "Bu kodlar yalnızca bir kez gösterilir. Gizledikten veya sayfadan çıktıktan sonra her kodun yalnızca sonunu görürsün.",
+        "uses": "{n}×"
+      },
+      "codes": {
+        "title": "Evcil hayvan kodları",
+        "new": "Kod oluştur",
+        "empty": "Henüz kod yok – bir çekiliş ya da yayının için birkaç tane oluştur.",
+        "note": "Not",
+        "state": {
+          "active": "etkin",
+          "revoked": "iptal edildi",
+          "usedUp": "tükendi",
+          "expired": "süresi doldu"
+        },
+        "revoke": "İptal et",
+        "revoked": "Kod iptal edildi – artık kullanılamaz.",
+        "footer": "Tek seferde en fazla {count} kod, her biri en fazla {uses} kullanım. Tüm kullanımların toplamı aylık sınırına sayılır."
+      },
+      "none": {
+        "title": "Henüz kendi evcil hayvanın yok",
+        "text": "Kendine ait bir evcil hayvan iste: ekip onu senin için tasarlar ve sana atar. Sonra hayranların için burada kod oluşturursun.",
+        "helperTitle": "Henüz evcil hayvan yok",
+        "helperText": "Bu creator'ın henüz kendi evcil hayvanı yok. Yalnızca creator'ın kendisi isteyebilir."
+      },
+      "request": {
+        "yours": "Başvurun",
+        "status": {
+          "open": "Açık",
+          "in_progress": "Hazırlanıyor",
+          "done": "Tamamlandı",
+          "rejected": "Reddedildi"
+        },
+        "statusText": {
+          "open": "Ekip başvurunu aldı ve yakında inceleyecek.",
+          "in_progress": "Ekip şu anda evcil hayvanını hazırlıyor.",
+          "done": "Başvurun tamamlandı. Evcil hayvan sana atanır atanmaz burada görünür.",
+          "rejected": "Ekip başvurunu reddetti. Yeni bir başvuru gönderebilirsin."
+        },
+        "answer": "Ekip:",
+        "sentAt": "{date} tarihinde gönderildi",
+        "again": "Yeni başvuru gönder",
+        "title": "Kendi evcil hayvanını iste",
+        "hint": "Hayvanı, görünüşünü ve renklerini anlat. Örnek bir görsel yardımcı olur (PNG veya JPG, en fazla 2 MB). Her creator için bir evcil hayvan.",
+        "textLabel": "Açıklama",
+        "placeholder": "ör. küçük, mavi atkılı, yürürken kuyruğunu sallar …",
+        "imageLabel": "Örnek görsel (isteğe bağlı)",
+        "pickImage": "Görsel seç …",
+        "removeImage": "Kaldır",
+        "imageTooLarge": "Görsel çok büyük (en fazla 2 MB).",
+        "imageType": "Lütfen PNG veya JPG bir görsel seç.",
+        "textInvalid": "Lütfen evcil hayvanını anlat (1 ile {max} karakter arası).",
+        "sending": "Gönderiliyor …",
+        "send": "Başvuruyu gönder",
+        "sent": "Başvuru gönderildi – ekip sana dönecek.",
+        "speciesLabel": "Hayvan",
+        "speciesPlaceholder": "ör. tilki",
+        "colorsLabel": "Renkler (isteğe bağlı)",
+        "colorsPlaceholder": "ör. turuncu, beyaz, lacivert",
+        "colorsShown": "Renkler: {colors}",
+        "speciesInvalid": "Lütfen hayvanı belirt (1 ile {max} karakter arası).",
+        "colorsInvalid": "Renkler: en fazla {max} karakter.",
+        "imageAttached": "Örnek görsel eklendi",
+        "addImage": "Görsel ekle",
+        "replaceImage": "Görseli değiştir",
+        "imageAdded": "Görsel başvuruna eklendi.",
+        "withdraw": "Geri çek",
+        "withdrawTitle": "Başvuru geri çekilsin mi?",
+        "withdrawText": "Başvurun ve görseli silinir. İstediğin zaman yenisini gönderebilirsin.",
+        "withdrawn": "Başvuru geri çekildi."
+      },
+      "create": {
+        "title": "Evcil hayvan kodu oluştur",
+        "count": "Kod sayısı (1–{max})",
+        "uses": "Kod başına kullanım (1–{max})",
+        "note": "Not (isteğe bağlı)",
+        "notePlaceholder": "ör. cuma günkü yayında çekiliş",
+        "cost": "Sınırına sayılır: {left} boş içinden {cost}",
+        "fit": "Bu sayıyla en fazla {n} kod sığar.",
+        "once": "Kodları yalnızca bir kez, oluşturduktan hemen sonra tam olarak görürsün.",
+        "countInvalid": "Kod sayısı: 1 ile {max} arası.",
+        "usesInvalid": "Kod başına kullanım: 1 ile {max} arası.",
+        "noteInvalid": "Not: en fazla {max} karakter.",
+        "overLimit": "Bu {cost} kullanım eder, ama bu ay yalnızca {left} kaldı.",
+        "done": "{n} kod oluşturuldu | {n} kod oluşturuldu"
+      },
+      "revoke": {
+        "title": "Kod iptal edilsin mi?",
+        "text": "{code} bundan sonra kullanılamaz. Onu zaten kullanmış hayranlar evcil hayvanı korur."
+      },
+      "unavailable": "Evcil hayvanın şu anda kullanılamıyor, bu yüzden yeni kod oluşturulamaz. Dağıtılmış kodlar o geri gelince yeniden çalışır."
+    },
+    "toast": {
+      "answer": "Ekip: {reason}",
+      "updated": {
+        "pet_assigned": {
+          "title": "Evcil hayvanın hazır!",
+          "body": "\"Evcil hayvan\" sekmesinde hayranların için kod oluştur."
+        },
+        "pet_removed": {
+          "title": "Creator evcil hayvanın kaldırıldı",
+          "body": "Soruların için ekibe yaz."
+        },
+        "pet_request_answered": {
+          "title": "Evcil hayvan başvurun yanıtlandı",
+          "body": "Ayrıntılar \"Evcil hayvan\" sekmesinde."
+        }
+      }
     }
   }
 }

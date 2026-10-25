@@ -344,7 +344,13 @@
       "curseforge_unavailable": "CurseForge no está disponible en el servidor de TRS ahora mismo.",
       "upstream_failed": "Modrinth o CurseForge no responde ahora mismo; inténtalo más tarde.",
       "invalid_window": "El periodo no es válido: el final debe ser posterior al inicio.",
-      "invalid_order": "El orden no coincide: vuelve a cargar la lista."
+      "invalid_order": "El orden no coincide: vuelve a cargar la lista.",
+      "creator_no_pet": "Todavía no tienes mascota propia: primero pídele una al equipo.",
+      "limit_reached": "Tu límite mensual de códigos de mascota no alcanza para eso: elige menos códigos o canjes, o espera al mes que viene.",
+      "creator_pet_unavailable": "Tu mascota no está disponible ahora mismo: pregunta al equipo.",
+      "creator_pet_owned": "Ya tienes una mascota propia.",
+      "request_closed": "El equipo ya está trabajando en esta solicitud: ya no se puede cambiar.",
+      "code_not_found": "Este código no existe (o ya no existe)."
     },
     "auth": {
       "accountMismatch": "El inicio de sesión pertenece a otra cuenta: vuelve a iniciar sesión.",
@@ -1014,7 +1020,14 @@
       "invalidWindow": "El final debe ser posterior al inicio.",
       "invalidOrder": "El orden no coincide: vuelve a cargar la lista."
     },
-    "messeBlocked": "No disponible en el PC de la feria."
+    "messeBlocked": "No disponible en el PC de la feria.",
+    "creatorPet": {
+      "countRange": "Cantidad: de 1 a {max} códigos a la vez.",
+      "usesRange": "Canjes por código: de 1 a {max}.",
+      "imageTooLarge": "La imagen es demasiado grande (máximo 2 MB).",
+      "invalidImage": "La imagen de referencia debe ser PNG o JPG.",
+      "speciesLength": "Animal: de 1 a {max} caracteres."
+    }
   },
   "browse": {
     "title": "Explorar",
@@ -3973,7 +3986,7 @@
     "pet": {
       "title": "Compañeros en el suelo",
       "intro": "Camina a tu lado: todos con TRS Client lo ven. La vista previa lo muestra junto a tu personaje.",
-      "creatorHint": "Los creadores reciben pingüinos automáticamente según sus fans: uno desde 1 fan, dos desde 10, tres desde 100, cuatro desde 1000.",
+      "creatorHint": "Mascota de creador: los fans la consiguen con los códigos del creador, y el creador lleva más según sus fans (dos desde 10, tres desde 100, cuatro desde 1000).",
       "empty": "Aún no hay compañeros en el suelo.",
       "wearing": "A tu lado: {name}",
       "selectedWorn": "Camina a tu lado: todos con TRS Client lo ven.",
@@ -5711,7 +5724,8 @@
       "blog": "Blog",
       "creators": "Creadores",
       "featured": "Modpacks destacados",
-      "previews": "Versiones de prueba"
+      "previews": "Versiones de prueba",
+      "creatorPets": "Mascotas de creadores"
     },
     "search": {
       "placeholder": "Buscar jugadores, UUID, ID de reportes, #sanciones, capas …",
@@ -6195,6 +6209,11 @@
         "declineTitle": "Rechazar solicitud",
         "reason": "Respuesta al creador (opcional)",
         "upgradeHint": "Aceptar sube al creador un nivel."
+      },
+      "pets": {
+        "title": "Mascotas de creadores",
+        "text": "Gestionar solicitudes de mascotas y asignar un cosmético de mascota a un creador, en la web.",
+        "open": "Abrir la web"
       }
     }
   },
@@ -7466,7 +7485,8 @@
         "previews": "Versiones de prueba",
         "packs": "Packs",
         "helpers": "Ayudantes",
-        "tier": "Nivel y ventajas"
+        "tier": "Nivel y ventajas",
+        "pet": "Mascota"
       }
     },
     "stats": {
@@ -7743,8 +7763,127 @@
         "helper_left": {
           "title": "{name} ha dejado de ayudar",
           "body": "Puedes invitar a un nuevo ayudante."
+        },
+        "pet_assigned": {
+          "title": "¡Tu mascota está lista!",
+          "body": "Crea códigos para tus fans en la pestaña «Mascota»."
+        },
+        "pet_removed": {
+          "title": "Se quitó tu mascota de creador",
+          "body": "Si tienes dudas, pregunta al equipo."
+        },
+        "pet_request_answered": {
+          "title": "Respondieron tu solicitud de mascota",
+          "body": "Detalles en la pestaña «Mascota»."
         }
-      }
+      },
+      "answer": "Equipo: {reason}"
+    },
+    "pet": {
+      "copiedAll": "Todos los códigos copiados.",
+      "yourPet": "Tu mascota de creador",
+      "theirPet": "Mascota de creador",
+      "intro": "Es solo tuya. Los fans la consiguen con los códigos que creas aquí: se canjean como cualquier código de cosmético (Skins → Canjear código).",
+      "limit": {
+        "title": "Límite mensual {month}",
+        "titleNoMonth": "Límite mensual",
+        "used": "{used} / {max} canjes",
+        "left": "Quedan {n} este mes",
+        "full": "Límite de este mes alcanzado",
+        "resets": "se renueva el {date}"
+      },
+      "created": {
+        "title": "{n} código nuevo: cópialo ahora | {n} códigos nuevos: cópialos ahora",
+        "once": "Estos códigos solo se muestran una vez. Al ocultarlos o salir de la página solo verás el final de cada código.",
+        "uses": "{n}×"
+      },
+      "codes": {
+        "title": "Códigos de mascota",
+        "new": "Crear códigos",
+        "empty": "Aún no hay códigos: crea algunos para un sorteo o tu directo.",
+        "note": "Nota",
+        "state": {
+          "active": "activo",
+          "revoked": "revocado",
+          "usedUp": "agotado",
+          "expired": "caducado"
+        },
+        "revoke": "Revocar",
+        "revoked": "Código revocado: ya no se puede canjear.",
+        "footer": "Hasta {count} códigos a la vez, cada uno con hasta {uses} canjes. La suma de todos los canjes cuenta para tu límite mensual."
+      },
+      "none": {
+        "title": "Todavía no tienes mascota propia",
+        "text": "Pide una mascota propia: el equipo la diseña para ti y te la asigna. Después podrás crear aquí códigos para tus fans.",
+        "helperTitle": "Todavía sin mascota",
+        "helperText": "Este creador todavía no tiene mascota propia. Solo el creador puede pedirla."
+      },
+      "request": {
+        "yours": "Tu solicitud",
+        "status": {
+          "open": "Abierta",
+          "in_progress": "En curso",
+          "done": "Lista",
+          "rejected": "Rechazada"
+        },
+        "statusText": {
+          "open": "El equipo recibió tu solicitud y la revisará pronto.",
+          "in_progress": "El equipo está creando tu mascota ahora mismo.",
+          "done": "Tu solicitud está lista. En cuanto se te asigne la mascota, aparecerá aquí.",
+          "rejected": "El equipo rechazó tu solicitud. Puedes enviar una nueva."
+        },
+        "answer": "Equipo:",
+        "sentAt": "Enviada el {date}",
+        "again": "Enviar una nueva solicitud",
+        "title": "Pedir tu propia mascota",
+        "hint": "Describe el animal, su aspecto y sus colores. Una imagen de referencia ayuda (PNG o JPG, hasta 2 MB). Una mascota por creador.",
+        "textLabel": "Descripción",
+        "placeholder": "p. ej. pequeño, con bufanda azul, mueve la cola al andar …",
+        "imageLabel": "Imagen de referencia (opcional)",
+        "pickImage": "Elegir imagen …",
+        "removeImage": "Quitar",
+        "imageTooLarge": "La imagen es demasiado grande (máximo 2 MB).",
+        "imageType": "Elige una imagen PNG o JPG.",
+        "textInvalid": "Describe tu mascota (de 1 a {max} caracteres).",
+        "sending": "Enviando …",
+        "send": "Enviar solicitud",
+        "sent": "Solicitud enviada: el equipo te responderá.",
+        "speciesLabel": "Animal",
+        "speciesPlaceholder": "p. ej. zorro",
+        "colorsLabel": "Colores (opcional)",
+        "colorsPlaceholder": "p. ej. naranja, blanco, azul oscuro",
+        "colorsShown": "Colores: {colors}",
+        "speciesInvalid": "Indica el animal (de 1 a {max} caracteres).",
+        "colorsInvalid": "Colores: máximo {max} caracteres.",
+        "imageAttached": "Imagen de referencia adjunta",
+        "addImage": "Adjuntar imagen",
+        "replaceImage": "Cambiar imagen",
+        "imageAdded": "Imagen adjuntada a tu solicitud.",
+        "withdraw": "Retirar",
+        "withdrawTitle": "¿Retirar la solicitud?",
+        "withdrawText": "Se borrarán tu solicitud y su imagen. Puedes enviar una nueva cuando quieras.",
+        "withdrawn": "Solicitud retirada."
+      },
+      "create": {
+        "title": "Crear códigos de mascota",
+        "count": "Número de códigos (1–{max})",
+        "uses": "Canjes por código (1–{max})",
+        "note": "Nota (opcional)",
+        "notePlaceholder": "p. ej. sorteo en el directo del viernes",
+        "cost": "Cuenta para tu límite: {cost} de {left} disponibles",
+        "fit": "Con este número caben como máximo {n} códigos.",
+        "once": "Solo verás los códigos completos una vez, justo después de crearlos.",
+        "countInvalid": "Número de códigos: de 1 a {max}.",
+        "usesInvalid": "Canjes por código: de 1 a {max}.",
+        "noteInvalid": "Nota: máximo {max} caracteres.",
+        "overLimit": "Serían {cost} canjes, pero este mes solo quedan {left}.",
+        "done": "{n} código creado | {n} códigos creados"
+      },
+      "revoke": {
+        "title": "¿Revocar el código?",
+        "text": "{code} ya no se podrá canjear. Los fans que ya lo canjearon conservan la mascota."
+      },
+      "unavailable": "Tu mascota no está disponible ahora mismo, así que no se pueden crear códigos nuevos. Los códigos ya repartidos vuelven a funcionar cuando regrese."
     }
   },
   "halloween": {

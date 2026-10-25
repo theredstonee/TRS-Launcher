@@ -319,7 +319,13 @@
       "curseforge_unavailable": "CurseForge n'est pas disponible sur le serveur TRS pour le moment.",
       "upstream_failed": "Modrinth ou CurseForge ne répond pas pour le moment, réessaie plus tard.",
       "invalid_window": "La période ne va pas : la fin doit être après le début.",
-      "invalid_order": "L'ordre ne correspond pas : recharge la liste."
+      "invalid_order": "L'ordre ne correspond pas : recharge la liste.",
+      "creator_no_pet": "Tu n'as pas encore de compagnon à toi – demande-en d'abord un à l'équipe.",
+      "limit_reached": "Ta limite mensuelle de codes de compagnon ne suffit plus – choisis moins de codes ou d'utilisations, ou attends le mois prochain.",
+      "creator_pet_unavailable": "Ton compagnon n'est pas disponible pour le moment – demande à l'équipe.",
+      "creator_pet_owned": "Tu as déjà ton propre compagnon.",
+      "request_closed": "L'équipe travaille déjà sur cette demande – elle ne peut plus être modifiée.",
+      "code_not_found": "Ce code n'existe pas (ou plus)."
     },
     "auth": {
       "accountMismatch": "Cette connexion appartient à un autre compte – reconnecte-toi.",
@@ -973,7 +979,14 @@
       "invalidWindow": "La fin doit être après le début.",
       "invalidOrder": "L'ordre ne correspond pas : recharge la liste."
     },
-    "messeBlocked": "Indisponible sur le PC du salon."
+    "messeBlocked": "Indisponible sur le PC du salon.",
+    "creatorPet": {
+      "countRange": "Nombre : 1 à {max} codes à la fois.",
+      "usesRange": "Utilisations par code : 1 à {max}.",
+      "imageTooLarge": "L'image est trop lourde (2 Mo au maximum).",
+      "invalidImage": "L'image de référence doit être au format PNG ou JPG.",
+      "speciesLength": "Animal : 1 à {max} caractères."
+    }
   },
   "browse": {
     "title": "Découvrir",
@@ -3905,7 +3918,7 @@
     "pet": {
       "title": "Compagnons au sol",
       "intro": "Marche à côté de toi – tous ceux qui ont TRS Client le voient. L’aperçu le montre à côté de ton personnage.",
-      "creatorHint": "Les créateurs reçoivent automatiquement des pingouins selon leurs fans : un dès 1 fan, deux dès 10, trois dès 100, quatre dès 1000.",
+      "creatorHint": "Compagnon de créateur : les fans l'obtiennent avec les codes du créateur, et le créateur en a plus selon ses fans (deux dès 10, trois dès 100, quatre dès 1000).",
       "empty": "Pas encore de compagnons au sol.",
       "wearing": "À côté de toi : {name}",
       "selectedWorn": "Marche à côté de toi – tous ceux qui ont TRS Client le voient.",
@@ -5642,7 +5655,8 @@
       "websiteHint": "Ouvre le site dans ton navigateur (connexion avec Microsoft).",
       "blog": "Blog",
       "featured": "Modpacks à la une",
-      "previews": "Versions de test"
+      "previews": "Versions de test",
+      "creatorPets": "Compagnons de créateurs"
     },
     "search": {
       "placeholder": "Chercher joueurs, UUID, ID de signalement, #sanctions, capes …",
@@ -6047,6 +6061,13 @@
       "featured_manage": "Gérer les modpacks à la une",
       "serverrules_bypass": "Utiliser quand même les fonctions du TRS Client bloquées par le serveur (après confirmation en jeu)",
       "previews_access": "Versions de test: Télécharger les versions de test du launcher et du TRS Client comme les créateurs Partner"
+    },
+    "creators": {
+      "pets": {
+        "title": "Compagnons de créateurs",
+        "text": "Traiter les demandes de compagnon et attribuer un cosmétique de compagnon à un créateur – sur le site.",
+        "open": "Ouvrir le site"
+      }
     }
   },
   "trsChoice": {
@@ -7209,6 +7230,136 @@
       "resetHint": "Retour à l’accueil, toutes les fenêtres fermées.",
       "changePin": "Changer le code",
       "quit": "Quitter le launcher"
+    }
+  },
+  "creator": {
+    "dashboard": {
+      "tabs": {
+        "pet": "Compagnon"
+      }
+    },
+    "pet": {
+      "copiedAll": "Tous les codes copiés.",
+      "yourPet": "Ton compagnon de créateur",
+      "theirPet": "Compagnon de créateur",
+      "intro": "Il n'appartient qu'à toi. Les fans l'obtiennent avec les codes que tu crées ici – ils les utilisent comme n'importe quel code cosmétique (Skins → Utiliser un code).",
+      "limit": {
+        "title": "Limite mensuelle {month}",
+        "titleNoMonth": "Limite mensuelle",
+        "used": "{used} / {max} utilisations",
+        "left": "Encore {n} ce mois-ci",
+        "full": "Limite atteinte pour ce mois",
+        "resets": "remise à zéro le {date}"
+      },
+      "created": {
+        "title": "{n} nouveau code – copie-le maintenant | {n} nouveaux codes – copie-les maintenant",
+        "once": "Ces codes ne s'affichent qu'une fois. Après les avoir masqués ou quitté la page, tu ne verras plus que la fin de chaque code.",
+        "uses": "{n}×"
+      },
+      "codes": {
+        "title": "Codes de compagnon",
+        "new": "Créer des codes",
+        "empty": "Pas encore de codes – crée-en pour un concours ou ton live.",
+        "note": "Note",
+        "state": {
+          "active": "actif",
+          "revoked": "révoqué",
+          "usedUp": "épuisé",
+          "expired": "expiré"
+        },
+        "revoke": "Révoquer",
+        "revoked": "Code révoqué – il ne peut plus être utilisé.",
+        "footer": "Jusqu'à {count} codes à la fois, chacun avec jusqu'à {uses} utilisations. La somme de toutes les utilisations compte dans ta limite mensuelle."
+      },
+      "none": {
+        "title": "Pas encore de compagnon à toi",
+        "text": "Demande ton propre compagnon : l'équipe le conçoit pour toi et te l'attribue. Ensuite, tu crées ici des codes pour tes fans.",
+        "helperTitle": "Pas encore de compagnon",
+        "helperText": "Ce créateur n'a pas encore de compagnon à lui. Seul le créateur peut en demander un."
+      },
+      "request": {
+        "yours": "Ta demande",
+        "status": {
+          "open": "Ouverte",
+          "in_progress": "En cours",
+          "done": "Terminée",
+          "rejected": "Refusée"
+        },
+        "statusText": {
+          "open": "L'équipe a reçu ta demande et va bientôt la regarder.",
+          "in_progress": "L'équipe est en train de créer ton compagnon.",
+          "done": "Ta demande est terminée. Dès que le compagnon t'est attribué, il apparaît ici.",
+          "rejected": "L'équipe a refusé ta demande. Tu peux en envoyer une nouvelle."
+        },
+        "answer": "Équipe :",
+        "sentAt": "Envoyée le {date}",
+        "again": "Envoyer une nouvelle demande",
+        "title": "Demander ton propre compagnon",
+        "hint": "Décris l'animal, son apparence et ses couleurs. Une image de référence aide (PNG ou JPG, jusqu'à 2 Mo). Un compagnon par créateur.",
+        "textLabel": "Description",
+        "placeholder": "p. ex. petit, avec une écharpe bleue, remue la queue en marchant …",
+        "imageLabel": "Image de référence (facultatif)",
+        "pickImage": "Choisir une image …",
+        "removeImage": "Retirer",
+        "imageTooLarge": "L'image est trop lourde (2 Mo au maximum).",
+        "imageType": "Choisis une image PNG ou JPG.",
+        "textInvalid": "Décris ton compagnon (1 à {max} caractères).",
+        "sending": "Envoi …",
+        "send": "Envoyer la demande",
+        "sent": "Demande envoyée – l'équipe te répondra.",
+        "speciesLabel": "Animal",
+        "speciesPlaceholder": "p. ex. renard",
+        "colorsLabel": "Couleurs (facultatif)",
+        "colorsPlaceholder": "p. ex. orange, blanc, bleu foncé",
+        "colorsShown": "Couleurs : {colors}",
+        "speciesInvalid": "Indique l'animal (1 à {max} caractères).",
+        "colorsInvalid": "Couleurs : {max} caractères au maximum.",
+        "imageAttached": "Image de référence jointe",
+        "addImage": "Joindre une image",
+        "replaceImage": "Remplacer l'image",
+        "imageAdded": "Image jointe à ta demande.",
+        "withdraw": "Retirer",
+        "withdrawTitle": "Retirer la demande ?",
+        "withdrawText": "Ta demande et son image seront supprimées. Tu peux en envoyer une nouvelle à tout moment.",
+        "withdrawn": "Demande retirée."
+      },
+      "create": {
+        "title": "Créer des codes de compagnon",
+        "count": "Nombre de codes (1–{max})",
+        "uses": "Utilisations par code (1–{max})",
+        "note": "Note (facultatif)",
+        "notePlaceholder": "p. ex. concours en live vendredi",
+        "cost": "Compte dans ta limite : {cost} sur {left} disponibles",
+        "fit": "Avec ce nombre, {n} codes au maximum rentrent.",
+        "once": "Tu ne verras les codes en entier qu'une fois, juste après leur création.",
+        "countInvalid": "Nombre de codes : 1 à {max}.",
+        "usesInvalid": "Utilisations par code : 1 à {max}.",
+        "noteInvalid": "Note : {max} caractères au maximum.",
+        "overLimit": "Ça ferait {cost} utilisations, mais il n'en reste que {left} ce mois-ci.",
+        "done": "{n} code créé | {n} codes créés"
+      },
+      "revoke": {
+        "title": "Révoquer le code ?",
+        "text": "{code} ne pourra plus être utilisé. Les fans qui l'ont déjà utilisé gardent le compagnon."
+      },
+      "unavailable": "Ton compagnon n'est pas disponible pour le moment, tu ne peux donc pas créer de nouveaux codes. Les codes déjà distribués refonctionnent dès son retour."
+    },
+    "toast": {
+      "answer": "Équipe : {reason}",
+      "updated": {
+        "pet_assigned": {
+          "title": "Ton compagnon est là !",
+          "body": "Crée des codes pour tes fans dans l'onglet « Compagnon »."
+        },
+        "pet_removed": {
+          "title": "Ton compagnon de créateur a été retiré",
+          "body": "Pour toute question, contacte l'équipe."
+        },
+        "pet_request_answered": {
+          "title": "Ta demande de compagnon a reçu une réponse",
+          "body": "Détails dans l'onglet « Compagnon »."
+        }
+      }
     }
   }
 }

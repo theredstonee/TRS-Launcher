@@ -2,7 +2,7 @@
 import { milestoneColor, tierAtLeast, visibleTabs, type CreatorSelf, type DashboardTab } from '~/utils/creator'
 
 // Creator-Dashboard: Kopf mit Stufe und Haupt-Code, darunter die Reiter
-// Statistik, Codes, Fan-Symbol, Fan-Umhang, Vorschau-Builds, Packs, Helfer und
+// Statistik, Codes, Haustier, Fan-Symbol, Fan-Umhang, Vorschau-Builds, Packs, Helfer und
 // Stufe & Vorteile. Helfer (§35.9) sehen nur die Reiter ihrer Rechte. Der
 // Reiter steht in `?tab=` (Sprung aus Hinweisen).
 const props = defineProps<{ self: CreatorSelf }>()
@@ -91,6 +91,7 @@ function channelLine(c: { platform: string; followers: number | null }): string 
 
     <CreatorStatsTab v-if="tab === 'stats'" :self="self" />
     <CreatorCodesTab v-else-if="tab === 'codes'" :self="self" />
+    <CreatorPetTab v-else-if="tab === 'pet'" :self="self" />
     <CreatorSymbolTab v-else-if="tab === 'symbol'" :self="self" />
     <CreatorCapeTab v-else-if="tab === 'cape'" :self="self" @tiers="tab = 'tier'" />
     <CreatorPreviewsTab v-else-if="tab === 'previews'" :partner="partner" />

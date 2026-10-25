@@ -344,7 +344,13 @@
       "curseforge_unavailable": "CurseForge is not available on the TRS server right now.",
       "upstream_failed": "Modrinth or CurseForge is not responding right now – please try again later.",
       "invalid_window": "The time window doesn't work: the end must be after the start.",
-      "invalid_order": "The order doesn't match – please reload the list."
+      "invalid_order": "The order doesn't match – please reload the list.",
+      "creator_no_pet": "You don't have your own pet yet – ask the team for one first.",
+      "limit_reached": "Your monthly limit for pet codes isn't enough for that – choose fewer codes or redemptions, or wait until next month.",
+      "creator_pet_unavailable": "Your pet is not available right now – ask the team.",
+      "creator_pet_owned": "You already have your own pet.",
+      "request_closed": "The team is already working on this request – it can no longer be changed.",
+      "code_not_found": "This code doesn't exist (anymore)."
     },
     "auth": {
       "accountMismatch": "This sign-in belongs to a different account – please sign in again.",
@@ -1014,7 +1020,14 @@
       "invalidWindow": "The end must be after the start.",
       "invalidOrder": "The order doesn't match – please reload the list."
     },
-    "messeBlocked": "Not available on the trade-fair PC."
+    "messeBlocked": "Not available on the trade-fair PC.",
+    "creatorPet": {
+      "countRange": "Count: 1 to {max} codes at once.",
+      "usesRange": "Redemptions per code: 1 to {max}.",
+      "imageTooLarge": "The image is too large (2 MB at most).",
+      "invalidImage": "The reference image must be a PNG or JPG.",
+      "speciesLength": "Animal: 1 to {max} characters."
+    }
   },
   "browse": {
     "title": "Discover",
@@ -3973,7 +3986,7 @@
     "pet": {
       "title": "Ground companions",
       "intro": "Walks along next to you – everyone with TRS Client sees it. The preview shows it next to your character.",
-      "creatorHint": "Creators get penguins automatically by fans: one from 1 fan, two from 10, three from 100, four from 1000.",
+      "creatorHint": "A creator's own pet: fans get it with the creator's codes, and the creator walks with more by fans (two from 10, three from 100, four from 1000).",
       "empty": "No ground companions yet.",
       "wearing": "Next to you: {name}",
       "selectedWorn": "Walks along next to you – everyone with TRS Client sees it.",
@@ -5711,7 +5724,8 @@
       "blog": "Blog",
       "creators": "Creators",
       "featured": "Featured modpacks",
-      "previews": "Preview builds"
+      "previews": "Preview builds",
+      "creatorPets": "Creator pets"
     },
     "search": {
       "placeholder": "Search players, UUIDs, report IDs, #sanctions, capes …",
@@ -6195,6 +6209,11 @@
         "declineTitle": "Decline request",
         "reason": "Answer to the creator (optional)",
         "upgradeHint": "Accepting raises the creator one tier."
+      },
+      "pets": {
+        "title": "Creator pets",
+        "text": "Handle pet requests and assign a pet cosmetic to a creator – on the website.",
+        "open": "Open website"
       }
     }
   },
@@ -7466,7 +7485,8 @@
         "previews": "Preview builds",
         "packs": "Packs",
         "helpers": "Helpers",
-        "tier": "Tier & perks"
+        "tier": "Tier & perks",
+        "pet": "Pet"
       }
     },
     "stats": {
@@ -7743,8 +7763,127 @@
         "helper_left": {
           "title": "{name} stopped helping",
           "body": "You can invite a new helper."
+        },
+        "pet_assigned": {
+          "title": "Your pet is ready!",
+          "body": "Create codes for your fans in the \"Pet\" tab."
+        },
+        "pet_removed": {
+          "title": "Your creator pet was removed",
+          "body": "Ask the team if you have questions."
+        },
+        "pet_request_answered": {
+          "title": "Your pet request was answered",
+          "body": "Details in the \"Pet\" tab."
         }
-      }
+      },
+      "answer": "Team: {reason}"
+    },
+    "pet": {
+      "copiedAll": "All codes copied.",
+      "yourPet": "Your creator pet",
+      "theirPet": "Creator pet",
+      "intro": "It belongs to you alone. Fans get it with the codes you create here – they redeem them like any cosmetic code (Skins → Redeem code).",
+      "limit": {
+        "title": "Monthly limit {month}",
+        "titleNoMonth": "Monthly limit",
+        "used": "{used} / {max} redemptions",
+        "left": "{n} left this month",
+        "full": "Limit reached for this month",
+        "resets": "resets on {date}"
+      },
+      "created": {
+        "title": "{n} new code – copy it now | {n} new codes – copy them now",
+        "once": "These codes are shown only once. After hiding them or leaving the page you'll only see the end of each code.",
+        "uses": "{n}×"
+      },
+      "codes": {
+        "title": "Pet codes",
+        "new": "Create codes",
+        "empty": "No codes yet – create some for a giveaway or your stream.",
+        "note": "Note",
+        "state": {
+          "active": "active",
+          "revoked": "revoked",
+          "usedUp": "used up",
+          "expired": "expired"
+        },
+        "revoke": "Revoke",
+        "revoked": "Code revoked – it can no longer be redeemed.",
+        "footer": "Up to {count} codes at once, each with up to {uses} redemptions. The sum of all redemptions counts against your monthly limit."
+      },
+      "none": {
+        "title": "No pet of your own yet",
+        "text": "Wish for a pet of your own: the team designs it for you and assigns it to you. Then you can create codes for your fans here.",
+        "helperTitle": "No pet yet",
+        "helperText": "This creator has no pet of their own yet. Only the creator can ask for one."
+      },
+      "request": {
+        "yours": "Your request",
+        "status": {
+          "open": "Open",
+          "in_progress": "In progress",
+          "done": "Done",
+          "rejected": "Rejected"
+        },
+        "statusText": {
+          "open": "The team has received your request and will look at it soon.",
+          "in_progress": "The team is building your pet right now.",
+          "done": "Your request is done. As soon as the pet is assigned to you, it shows up here.",
+          "rejected": "The team turned down your request. You can send a new one."
+        },
+        "answer": "Team:",
+        "sentAt": "Sent on {date}",
+        "again": "Send a new request",
+        "title": "Wish for your own pet",
+        "hint": "Describe the animal, its look and its colours. A reference image helps (PNG or JPG, up to 2 MB). One pet per creator.",
+        "textLabel": "Description",
+        "placeholder": "e.g. small, with a blue scarf, wags its tail while walking …",
+        "imageLabel": "Reference image (optional)",
+        "pickImage": "Choose image …",
+        "removeImage": "Remove",
+        "imageTooLarge": "The image is too large (2 MB at most).",
+        "imageType": "Please choose a PNG or JPG image.",
+        "textInvalid": "Please describe your pet (1 to {max} characters).",
+        "sending": "Sending …",
+        "send": "Send request",
+        "sent": "Request sent – the team will get back to you.",
+        "speciesLabel": "Animal",
+        "speciesPlaceholder": "e.g. fox",
+        "colorsLabel": "Colours (optional)",
+        "colorsPlaceholder": "e.g. orange, white, dark blue",
+        "colorsShown": "Colours: {colors}",
+        "speciesInvalid": "Please name the animal (1 to {max} characters).",
+        "colorsInvalid": "Colours: at most {max} characters.",
+        "imageAttached": "Reference image attached",
+        "addImage": "Add image",
+        "replaceImage": "Replace image",
+        "imageAdded": "Image added to your request.",
+        "withdraw": "Withdraw",
+        "withdrawTitle": "Withdraw request?",
+        "withdrawText": "Your request and its image will be deleted. You can send a new one any time.",
+        "withdrawn": "Request withdrawn."
+      },
+      "create": {
+        "title": "Create pet codes",
+        "count": "Number of codes (1–{max})",
+        "uses": "Redemptions per code (1–{max})",
+        "note": "Note (optional)",
+        "notePlaceholder": "e.g. giveaway stream on Friday",
+        "cost": "Counts against your limit: {cost} of {left} left",
+        "fit": "With this number, at most {n} codes fit.",
+        "once": "You'll see the codes in full only once, right after creating them.",
+        "countInvalid": "Number of codes: 1 to {max}.",
+        "usesInvalid": "Redemptions per code: 1 to {max}.",
+        "noteInvalid": "Note: at most {max} characters.",
+        "overLimit": "That's {cost} redemptions, but only {left} are left this month.",
+        "done": "{n} code created | {n} codes created"
+      },
+      "revoke": {
+        "title": "Revoke code?",
+        "text": "{code} can no longer be redeemed afterwards. Fans who already redeemed it keep the pet."
+      },
+      "unavailable": "Your pet is not available right now, so no new codes can be created. Codes you already handed out keep working once it is back."
     }
   },
   "halloween": {

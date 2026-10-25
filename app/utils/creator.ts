@@ -266,6 +266,10 @@ export const creatorUpdateKinds = [
   'became_creator',
   'helper_joined',
   'helper_left',
+  // Creator-Haustiere (§35.13): zugeordnet, entfernt, Wunsch beantwortet (`reason` = Antwort des Teams).
+  'pet_assigned',
+  'pet_removed',
+  'pet_request_answered',
 ] as const
 export type CreatorUpdateKind = (typeof creatorUpdateKinds)[number]
 
@@ -315,13 +319,15 @@ export type CreatorHelperInvite = MyCreator['helperInvites'][number]
 
 // --- Dashboard-Reiter und Helfer ----------------------------------------------------------
 
-export const dashboardTabs = ['stats', 'codes', 'symbol', 'cape', 'previews', 'packs', 'helpers', 'tier'] as const
+export const dashboardTabs = ['stats', 'codes', 'pet', 'symbol', 'cape', 'previews', 'packs', 'helpers', 'tier'] as const
 export type DashboardTab = (typeof dashboardTabs)[number]
 
 /** Welches Recht ein Reiter für Helfer braucht (`null` = nur der Creator selbst). */
 const tabRight: Record<DashboardTab, HelperRight | null> = {
   stats: 'stats',
   codes: 'codes',
+  // Haustier-Codes erstellen/widerrufen dürfen Helfer mit „Codes“ (der Antrag bleibt beim Creator).
+  pet: 'codes',
   symbol: 'uploads',
   cape: 'uploads',
   packs: 'packs',
@@ -524,4 +530,178 @@ export function symbolVisible(strip: Rgba): boolean {
     if (strip.data[i]! > 0) return true
   }
   return false
+}
+
+// --- Creator-Haustier ------------------------------------------------------------------
+// Ein Creator hat höchstens ein eigenes Haustier (Kosmetik mit slot `pet`). Der
+// Besitzer erstellt Codes dafür – die Summe der Einlösungen zählt gegen ein
+// Monatslimit je Stufe. Ohne Haustier gibt es einen Antrag ans Team.
+
+export const petRequestStatuses = ['open', 'in_progress', 'done', 'rejected'] as const
+export type PetRequestStatus = (typeof petRequestStatuses)[number]
+export const PET_CODE_MAX_COUNT = 20
+export const PET_CODE_MAX_USES = 100
+export const PET_NOTE_MAX = 100
+export const PET_SPECIES_MAX = 60
+export const PET_REQUEST_TEXT_MAX = 1000
+export const PET_COLORS_MAX = 200
+export const PET_IMAGE_MAX_BYTES = 2 * 1024 * 1024
+
+export const petRequestSchema = z.object({
+  id: text(40),
+  status: z.enum(petRequestStatuses),
+  species: text(240).nullable(),
+  /** Beschreibung des Wunsches. */
+  text: text(4000),
+  colors: text(800).nullable(),
+  hasImage: z.boolean(),
+  /** Antwort des Teams. */
+  answer: text(4000).nullable(),
+  createdAt: time,
+})
+
+export const creatorPetStateSchema = z.object({
+  pet: z
+    .object({
+      cosmeticId: z.string().regex(/^[A-Za-z0-9_.-]{1,64}$/),
+      name: text(96),
+      card: pngDataUrl.nullable(),
+      count: z.number().int().min(1).max(4).nullable(),
+      available: z.boolean(),
+    })
+    .nullable(),
+  limit: z.object({ month: z.string().regex(/^\d{4}-\d{2}$/).nullable(), used: count, max: count, resetsAt: time }).nullable(),
+  request: petRequestSchema.nullable(),
+  /** Vom Server: darf jetzt einen Wunsch stellen (`null` = unbekannt, dann rechnet `canRequestPet`). */
+  canRequest: z.boolean().nullable(),
+})
+
+export const petCodeSchema = z.object({
+  id: text(40),
+  /** Klartext – nur direkt nach dem Erstellen. */
+  code: z.string().regex(/^[A-Z0-9-]{4,40}$/).nullable(),
+  codeHint: text(48).nullable(),
+  maxUses: count,
+  uses: count,
+  revoked: z.boolean(),
+  expiresAt: time,
+  note: text(400).nullable(),
+  createdAt: time,
+})
+
+export type PetRequest = z.infer<typeof petRequestSchema>
+export type CreatorPetState = z.infer<typeof creatorPetStateSchema>
+export type CreatorPet = NonNullable<CreatorPetState['pet']>
+export type PetLimit = NonNullable<CreatorPetState['limit']>
+export type PetCode = z.infer<typeof petCodeSchema>
+
+/** Noch freie Einlösungen in diesem Monat (nie negativ). */
+export function petRemaining(limit: Pick<PetLimit, 'used' | 'max'> | null): number {
+  return limit ? Math.max(0, limit.max - limit.used) : 0
+}
+
+/** Verbrauch in Prozent (0–100) für den Balken. */
+export function petLimitPercent(limit: Pick<PetLimit, 'used' | 'max'> | null): number {
+  if (!limit || limit.max <= 0) return limit && limit.used > 0 ? 100 : 0
+  return Math.max(0, Math.min(100, Math.round((limit.used / limit.max) * 100)))
+}
+
+/** Wann das Limit wieder frei ist: `resetsAt` vom Server, sonst der Erste des Folgemonats (`2026-10` → 1. Nov. 2026). */
+export function petLimitResetsAt(month: string | null, resetsAt: string | null = null): Date | null {
+  const at = resetsAt ? Date.parse(resetsAt) : Number.NaN
+  if (Number.isFinite(at)) return new Date(at)
+  const m = month?.match(/^(\d{4})-(\d{2})$/)
+  if (!m) return null
+  const mon = Number(m[2])
+  if (mon < 1 || mon > 12) return null
+  return new Date(Number(m[1]), mon, 1)
+}
+
+/** Kalendermonat `YYYY-MM` als Datum (für die Anzeige „Oktober 2026“). */
+export function petMonthDate(month: string | null): Date | null {
+  const next = petLimitResetsAt(month)
+  return next ? new Date(next.getFullYear(), next.getMonth() - 1, 1) : null
+}
+
+export interface PetCodesForm {
+  count: number | ''
+  maxUses: number | ''
+  until: string
+  note: string
+}
+
+export type PetCodesProblem = 'count' | 'uses' | 'limit' | 'until' | 'note'
+
+/** Eingaben prüfen, bevor etwas rausgeht. `remaining` = noch freie Einlösungen im Monat. */
+export function checkPetCodes(form: PetCodesForm, remaining: number, now = Date.now()): PetCodesProblem | null {
+  const count = Number(form.count)
+  const uses = Number(form.maxUses)
+  if (form.count === '' || !Number.isInteger(count) || count < 1 || count > PET_CODE_MAX_COUNT) return 'count'
+  if (form.maxUses === '' || !Number.isInteger(uses) || uses < 1 || uses > PET_CODE_MAX_USES) return 'uses'
+  if (form.until) {
+    const at = expiryFromDate(form.until)
+    if (!at || Date.parse(at) <= now) return 'until'
+  }
+  if (form.note.trim().length > PET_NOTE_MAX) return 'note'
+  if (count * uses > remaining) return 'limit'
+  return null
+}
+
+/** Höchstzahl Codes, die bei `maxUses` noch ins Limit passen (0–20). */
+export function petCodesFit(remaining: number, maxUses: number): number {
+  if (!Number.isInteger(maxUses) || maxUses < 1) return 0
+  return Math.max(0, Math.min(PET_CODE_MAX_COUNT, Math.floor(remaining / maxUses)))
+}
+
+export type PetCodeStatus = 'active' | 'revoked' | 'usedUp' | 'expired'
+
+export function petCodeStatus(c: Pick<PetCode, 'revoked' | 'uses' | 'maxUses' | 'expiresAt'>, now = Date.now()): PetCodeStatus {
+  if (c.revoked) return 'revoked'
+  if (c.uses >= c.maxUses) return 'usedUp'
+  const until = c.expiresAt ? Date.parse(c.expiresAt) : Number.NaN
+  if (Number.isFinite(until) && until <= now) return 'expired'
+  return 'active'
+}
+
+/** Kurzform eines Codes in der Liste (der Klartext kommt nur einmal). */
+export function petCodeLabel(c: Pick<PetCode, 'code' | 'codeHint'>): string {
+  if (c.code) return c.code
+  const hint = c.codeHint ?? ''
+  return hint.startsWith('…') ? hint : `…${hint}`
+}
+
+/** Darf ein (neuer) Wunsch gestellt werden? Sagt es der Server, gilt das; sonst sperren offene und laufende Wünsche. */
+export function canRequestPet(state: Pick<CreatorPetState, 'pet' | 'request'> & { canRequest?: boolean | null }): boolean {
+  if (state.pet) return false
+  if (typeof state.canRequest === 'boolean') return state.canRequest
+  return !state.request || state.request.status === 'rejected' || state.request.status === 'done'
+}
+
+export type PetRequestProblem = 'species' | 'description' | 'colors'
+
+/** Wunsch prüfen: Tierart 1–60, Beschreibung 1–1000, Farben höchstens 200 Zeichen. */
+export function checkPetRequest(wish: { species: string; description: string; colors: string }): PetRequestProblem | null {
+  const species = wish.species.trim()
+  const description = wish.description.trim()
+  if (!species || species.length > PET_SPECIES_MAX) return 'species'
+  if (!description || description.length > PET_REQUEST_TEXT_MAX) return 'description'
+  if (wish.colors.trim().length > PET_COLORS_MAX) return 'colors'
+  return null
+}
+
+export type PetImageProblem = 'type' | 'size'
+
+/** Referenzbild: PNG oder JPG (Typ der Datei), höchstens 2 MB. Die Bytes prüft der Kern noch einmal. */
+export function petImageProblem(file: { type: string; size: number }): PetImageProblem | null {
+  if (!['image/png', 'image/jpeg'].includes(file.type)) return 'type'
+  if (file.size > PET_IMAGE_MAX_BYTES) return 'size'
+  return null
+}
+
+/** Bildart aus den ersten Bytes (`null` = weder PNG noch JPG). */
+export function petImageKind(bytes: Uint8Array): 'image/png' | 'image/jpeg' | null {
+  const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
+  if (bytes.length >= 8 && png.every((b, i) => bytes[i] === b)) return 'image/png'
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg'
+  return null
 }
