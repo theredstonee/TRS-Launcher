@@ -27,6 +27,19 @@ function banded(t: number, steps: number, x: number, y: number): number {
   return Math.min(steps, i + (f > bayer(x, y) ? 1 : 0)) / steps
 }
 
+/** Glattes 2D-Rauschen 0…1 (Gitter-Rauschen, weich interpoliert). */
+export function smooth2(x: number, y: number, s: number): number {
+  const ix = Math.floor(x)
+  const iy = Math.floor(y)
+  const fx = x - ix
+  const fy = y - iy
+  const tx = fx * fx * (3 - 2 * fx)
+  const ty = fy * fy * (3 - 2 * fy)
+  const a = noise(ix, iy, s) + (noise(ix + 1, iy, s) - noise(ix, iy, s)) * tx
+  const b = noise(ix, iy + 1, s) + (noise(ix + 1, iy + 1, s) - noise(ix, iy + 1, s)) * tx
+  return a + (b - a) * ty
+}
+
 function nh(x: number, y: number, s = 0): number {
   let h = (Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263) + Math.imul(s | 0, 1442695041)) | 0
   h = Math.imul(h ^ (h >>> 13), 1274126177)
@@ -181,7 +194,9 @@ export function paintLand(L: FoxLandscape, P: FoxPalette): Raster {
   const R = new Raster(L.w, L.h)
   const T = textures(P)
   paintHills(R, L, L.hillsBack, P.hillBack, P.hillBackRim, P, 0.35)
+  paintHillCrowns(R, L, L.hillsBack, P, 0.5, L.h >= 90 ? 4 : 2, 31)
   paintHills(R, L, L.hills, P.hill, P.hillRim, P, 0.15)
+  paintHillCrowns(R, L, L.hills, P, 0.32, L.h >= 90 ? 3 : 2, 37)
   paintForestFloor(R, L, P)
   for (const t of L.trees) if (t.layer === 0) paintTree(R, L, t, P, T, 0.62, P.forestFar)
   paintMeadow(R, L, P)
@@ -208,6 +223,31 @@ function paintHills(R: Raster, L: FoxLandscape, line: Int16Array, col: Rgb, rim:
       if (y === top) c = mix(c, P.sunCore, 0.25 * toSun)
       const fog = banded((y - (L.horizon - L.hillAmp * 0.5)) / (L.hillAmp * 0.6), 2, x, y)
       R.set(x, y, mix(c, P.haze, (mist * fog) * P.hazeScale))
+    }
+  }
+}
+
+/**
+ * Saum aus Kirschkronen auf den Hügelkämmen: blockige rosa Kuppen (eine bis zwei Blockhöhen),
+ * oben heller, im Dunst wie die Hügel; um die Sonne bleibt der Kamm frei.
+ */
+function paintHillCrowns(R: Raster, L: FoxLandscape, line: Int16Array, P: FoxPalette, mist: number, bs: number, seed: number) {
+  const s = (L.seed & 0xffff) + seed
+  const fog = mist * P.hazeScale
+  for (let bx = 0; bx < L.w; bx += bs) {
+    if (smooth(bx / 11, s) < 0.48 || Math.abs(bx - L.sun.x) < L.sun.half * 1.6) continue
+    const rows = nh(bx, 0, s + 1) > 0.55 ? 2 : 1
+    const top = line[Math.min(L.w - 1, bx)]!
+    for (let k = 0; k < rows; k++) {
+      // Obere Lage etwas schmaler: Kuppen statt Kästen.
+      const inset = k === rows - 1 && rows > 1 ? 1 : 0
+      for (let x = bx + inset; x < Math.min(L.w, bx + bs - inset); x++) {
+        for (let y = top - (k + 1) * bs; y < top - k * bs; y++) {
+          const lit = y === top - (k + 1) * bs
+          const c = lit ? P.cherry[3] : nh(x, y, s + 2) < 0.3 ? P.cherry[1] : P.cherry[2]
+          R.set(x, y, mix(c, P.haze, fog))
+        }
+      }
     }
   }
 }
@@ -243,6 +283,13 @@ function paintMeadow(R: Raster, L: FoxLandscape, P: FoxPalette) {
         const glow = banded(sheen * (1 - d / (depth * 0.5)), 3, x, y)
         if (glow > 0) c = mix(c, P.rim, glow * 0.35)
       }
+      // Blütenteppiche (Pink Petals): Flecken aus rosa Blüten im Gras, fern im Dunst.
+      // Flache, waagrechte Flecken (2D-Rauschen, breiter als hoch) wie liegende Teppiche.
+      const patch = smooth2(x / 14, y / 4, s + 40)
+      if (d > 2 && patch > 0.7 && nh(x, y, s + 43) < 0.3 + (patch - 0.7) * 3) {
+        const pink = lit(P.petals[nh(x, y, s + 44) < 0.5 ? 0 : 2]!, P.ambient)
+        c = mix(pink, P.haze, Math.max(0, 0.35 - d / depth) * P.hazeScale)
+      }
       R.set(x, y, c)
     }
   }
@@ -262,6 +309,14 @@ function paintGround(R: Raster, L: FoxLandscape, P: FoxPalette, T: Textures) {
     for (let by = top, row = 0; by < L.h; by += bs, row++) {
       const shade = clamp(row * 0.34 + 0.06, 0, 0.9)
       block(R, bx, by, bs, row === 0 ? T.grass : T.dirt, bx * 7 + row, shade, P.deep)
+    }
+    // Blütenblätter auf den Grasblöcken (fleckweise, wie Pink Petals im Spiel).
+    if (smooth(bx / 37, (L.seed & 0xffff) + 45) > 0.45) {
+      for (let x = bx; x < Math.min(L.w, bx + bs); x++) {
+        for (let k = 0; k < Math.min(3, bs); k++) {
+          if (nh(x, top + k, 46) < (k === 0 ? 0.42 : 0.2)) R.set(x, top + k, mix(P.cherry[nh(x, top + k, 47) < 0.5 ? 2 : 3]!, P.deep, 0.06 + k * 0.08))
+        }
+      }
     }
     // Stufe nach oben: die Seite des höheren Blocks zeigt Erde.
     const next = L.ground[bx + bs]

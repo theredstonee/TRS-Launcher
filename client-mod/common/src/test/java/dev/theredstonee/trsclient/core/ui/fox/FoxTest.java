@@ -147,8 +147,8 @@ class FoxTest {
 		assertEquals(57463, sum(L.forest));
 		assertEquals(59455, sum(L.meadow));
 		assertEquals(87418, sum(L.ground));
-		assertEquals(86, L.trees.size());
-		assertArrayEquals(new long[]{123736, 202695045}, treeSums(L));
+		assertEquals(84, L.trees.size());
+		assertArrayEquals(new long[]{119806, 147174073}, treeSums(L));
 		assertEquals(22, L.stars.size());
 		assertEquals(239, L.sunX);
 		assertEquals(104, L.sunY);
@@ -169,14 +169,14 @@ class FoxTest {
 		assertEquals(182, p.lanternY);
 		assertEquals(392, p.bushX);
 		assertEquals(13, p.bushSize);
-		assertEquals(22, L.flowers.size());
+		assertEquals(32, L.flowers.size());
 		assertEquals(36, L.tufts.size());
 		assertEquals(13, L.shrubs.size());
-		assertArrayEquals(new int[]{190, 144, 2}, L.shrubs.get(0));
+		assertArrayEquals(new int[]{5, 163, 4}, L.shrubs.get(0));
 		assertEquals(4, L.clouds.size());
 		FoxLandscape.Cloud c = L.clouds.get(0);
-		assertArrayEquals(new int[]{371, 32, 8, 3, 345761649}, new int[]{c.x, c.y, c.cols, c.rows, c.seed});
-		assertEquals(0.03923620367771946, c.speed, 1e-12);
+		assertArrayEquals(new int[]{0, 62, 6, 3, 537481540}, new int[]{c.x, c.y, c.cols, c.rows, c.seed});
+		assertEquals(0.034759872835129504, c.speed, 1e-12);
 	}
 
 	@Test
@@ -184,8 +184,8 @@ class FoxTest {
 		FoxLandscape big = FoxLandscape.build(640, 360, FoxScene.SEED, true);
 		assertEquals(198, big.horizon);
 		assertEquals(198048, sum(big.ground));
-		assertEquals(126, big.trees.size());
-		assertArrayEquals(new long[]{262332, 800627432}, treeSums(big));
+		assertEquals(127, big.trees.size());
+		assertArrayEquals(new long[]{262340, 251019842}, treeSums(big));
 		assertEquals(358, big.sunX);
 		assertEquals(512, big.den.x);
 		assertEquals(5, big.clouds.size());
@@ -196,14 +196,37 @@ class FoxTest {
 		assertFalse(small.den.large);
 		assertFalse(small.den.fox);
 		assertFalse(small.parts().hasFox);
-		assertArrayEquals(new long[]{18879, 883159639}, treeSums(small));
+		assertArrayEquals(new long[]{17499, 350702012}, treeSums(small));
 
 		// Sehr klein: kein Bau.
 		FoxLandscape tiny = FoxLandscape.build(80, 40, FoxScene.SEED, true);
 		assertNull(tiny.den);
 		assertNull(tiny.parts());
-		assertArrayEquals(new long[]{6037, 484656846}, treeSums(tiny));
+		assertArrayEquals(new long[]{6225, 522885417}, treeSums(tiny));
 		assertNull(FoxLandscape.build(427, 240, FoxScene.SEED, false).den, "ohne Bau");
+	}
+
+	@Test
+	void cherryGroveAroundTheDen() {
+		FoxLandscape L = FoxLandscape.build(427, 240, FoxScene.SEED, true);
+		int cherries = 0;
+		int midCherries = 0;
+		boolean bigByTheFire = false;
+		FoxLandscape.Parts p = L.parts();
+		for (FoxLandscape.Tree t : L.trees) {
+			if (t.kind != FoxLandscape.CHERRY) continue;
+			cherries++;
+			if (t.layer >= 1) midCherries++;
+			if (t.layer == 2 && t.bs >= 7 && t.x < p.fireX && t.x > p.fireX - 3 * t.bs) bigByTheFire = true;
+		}
+		assertTrue(cherries * 5 >= L.trees.size(), "viele Kirschbäume: " + cherries + " von " + L.trees.size());
+		assertTrue(midCherries >= 4, "mehrere Kirschbäume im Mittel- und Vordergrund: " + midCherries);
+		assertTrue(bigByTheFire, "ein großer Kirschbaum gleich links vom Lagerfeuer");
+		// Meist treiben Kirschblüten durch die Luft, dazwischen Herbstblätter.
+		FoxParticles.Leaves many = new FoxParticles.Leaves(1260, 120, new WinterMath.Rng(9), 1);
+		int petals = 0;
+		for (int i = 0; i < many.count; i++) if (many.petal[i]) petals++;
+		assertTrue(petals * 2 > many.count && petals < many.count, "Blüten " + petals + " von " + many.count);
 	}
 
 	@Test

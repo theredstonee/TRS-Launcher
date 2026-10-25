@@ -118,6 +118,17 @@ describe('Fuchsbau-Landschaft', () => {
     }
   })
 
+  it('Kirschhain: viele Kirschbäume, mehrere vorn, ein großer gleich links vom Lagerfeuer', () => {
+    for (const seed of [0xf0c5, 3, 7]) {
+      const l = buildFoxLandscape({ cols: 427, rows: 240, seed })
+      const cherries = l.trees.filter((t) => t.kind === 'cherry')
+      expect(cherries.length * 5).toBeGreaterThanOrEqual(l.trees.length)
+      expect(cherries.filter((t) => t.layer >= 1).length).toBeGreaterThanOrEqual(3)
+      const fire = denParts(l.den!).fire
+      expect(cherries.some((t) => t.layer === 2 && t.bs >= 7 && t.x < fire.x && t.x > fire.x - 3 * t.bs)).toBe(true)
+    }
+  })
+
   it('Banner: kleiner Bau ohne großen Fuchs, auf Wunsch ganz ohne Bau', () => {
     const small = buildFoxLandscape({ cols: 128, rows: 48, seed: 9, fox: true })
     expect(small.den?.size).toBe('small')
@@ -219,8 +230,9 @@ describe('Blätter, Funken, Glühwürmchen', () => {
     }
     const many = new Leaves(1200, 120, rng(9)).leaves
     const petals = many.filter((f) => f.petal).length / many.length
-    expect(petals).toBeGreaterThan(0.05)
-    expect(petals).toBeLessThan(0.45)
+    // Meist Kirschblüten, dazwischen ein paar Herbstblätter.
+    expect(petals).toBeGreaterThan(0.5)
+    expect(petals).toBeLessThan(0.85)
     expect(Math.abs(breeze(10))).toBeLessThan(0.3)
   })
 

@@ -127,7 +127,7 @@ function base(variant: FoxVariant): Base {
     fly: hex('#fff4a8'),
     flyGlow: hex('#ffe27a'),
     leaves: ['#e07a3a', '#f0a050', '#b4502a', '#e8b04a'].map(hex),
-    petals: ['#f3a6c8', '#ffc6dc'].map(hex),
+    petals: ['#f3a6c8', '#ffc6dc', '#e88ab4'].map(hex),
     flowers: [hex('#ff8ac0'), hex('#ffd84a'), hex('#f4efe8')] as [Rgb, Rgb, Rgb],
     ambient: amb,
     glowFire: hex('#ff9a40'),

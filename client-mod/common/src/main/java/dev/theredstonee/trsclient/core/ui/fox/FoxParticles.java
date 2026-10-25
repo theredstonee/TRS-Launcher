@@ -4,7 +4,7 @@ import dev.theredstonee.trsclient.core.ui.winter.WinterMath;
 
 /**
  * Bewegtes in der Fuchsbau-Szene (Port von {@code app/utils/fox/particles.ts} und {@code sleep.ts}), nur Zahlen. Ein
- * Takt = ein Bild (80 ms): treibende Blätter und ein paar Kirschblüten, Glühwürmchen über der Wiese, Funken vom
+ * Takt = ein Bild (80 ms): treibende Kirschblüten und ein paar Herbstblätter, Glühwürmchen über der Wiese, Funken vom
  * Lagerfeuer und das Atmen des schlafenden Fuchses.
  */
 public final class FoxParticles {
@@ -51,7 +51,8 @@ public final class FoxParticles {
 		}
 
 		private void spawn(int i, boolean anywhere) {
-			petal[i] = rand.next() < 0.22;
+			// Meist rosa Kirschblüten (wie im Kirschhain), dazwischen ein paar Herbstblätter.
+			petal[i] = rand.next() < 0.65;
 			size[i] = (byte) (rand.next() < 0.35 ? 1 : 0);
 			x[i] = rand.next() * w;
 			y[i] = anywhere ? rand.next() * h : -2 - rand.next() * 10;

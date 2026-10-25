@@ -1,5 +1,5 @@
 // Bewegtes in der Fuchsbau-Szene – nur Zahlen, ohne Canvas (tests/fox-design.test.ts).
-// Ein Takt = ein Bild (80 ms): treibende Blätter und ein paar Kirschblüten, Glühwürmchen
+// Ein Takt = ein Bild (80 ms): treibende Kirschblüten und ein paar Herbstblätter, Glühwürmchen
 // über der Wiese und Funken, die vom Lagerfeuer aufsteigen.
 
 export interface Leaf {
@@ -35,7 +35,8 @@ export class Leaves {
   }
 
   private spawn(anywhere: boolean): Leaf {
-    const petal = this.rand() < 0.22
+    // Meist rosa Kirschblüten (wie im Kirschhain), dazwischen ein paar Herbstblätter.
+    const petal = this.rand() < 0.65
     const size: Leaf['size'] = this.rand() < 0.35 ? 1 : 0
     return {
       x: this.rand() * this.w,

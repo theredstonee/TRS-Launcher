@@ -3,9 +3,10 @@ import { rng } from '../redstone/scene'
 import { smooth } from '../winter/landscape'
 
 // Aufbau der Fuchsbau-Landschaft (nur Daten, ohne Canvas – testbar): ein Minecraft-Wald
-// in der Abenddämmerung von der Seite. Hinten blockige Hügel im rosa Dunst mit kleinen
-// Fichten, davor ein dichtes Waldband (Taiga-Fichten, ab und zu ein Kirschbaum), eine
-// Wiese im Abendlicht und vorn eine Reihe Grasblöcke. Rechts liegt der Fuchsbau: ein
+// in der Abenddämmerung von der Seite, halb Taiga, halb Kirschhain. Hinten blockige Hügel
+// im rosa Dunst mit einem Saum aus Kirschkronen, davor ein dichtes Waldband (Fichten und
+// viele Kirschbäume), eine Wiese im Abendlicht mit Kirschbaum-Gruppen und Blütenteppichen
+// und vorn eine Reihe Grasblöcke. Rechts liegt der Fuchsbau: ein
 // kleiner Grashügel mit dunklem Loch zwischen Wurzeln, eine Fichte darauf, davor das
 // Lagerfeuer – und daneben schläft ein einzelner Fuchs. Auf der Startseite läuft ein
 // Fichtenzaun mit Laternen bis zum Spielen-Knopf. Alles in Texeln (1 Texel = 3
@@ -253,14 +254,14 @@ export function buildFoxLandscape(o: FoxLandscapeOptions): FoxLandscape {
     const patch = smooth(x / 30, s + 11)
     const clear = Math.abs(x - sun.x) < half * 1.6
     if (patch > 0.26 && !clear) {
-      const cherry = rand() < 0.1
+      const cherry = rand() < 0.35
       trees.push({ kind: cherry ? 'cherry' : 'spruce', x, base: forest[x]! + 1, bs: fb, tiers: cherry ? 3 : 3 + Math.floor(rand() * 3 + patch * 2), layer: 0, seed: treeSeed(), flip: rand() < 0.5 })
     }
     x += fb * (2 + Math.floor(rand() * 2))
   }
-  // Baumgruppen auf der Wiese, eher rechts (links steht die Schrift).
+  // Baumgruppen auf der Wiese, eher rechts (links steht die Schrift) – meist Kirschbäume wie im Kirschhain.
   const mb = h >= 90 ? 4 : 2
-  const groups = Math.max(1, Math.round(w / (anchored ? 210 : 170)))
+  const groups = Math.max(1, Math.round(w / (anchored ? 140 : 100)))
   for (let g = 0; g < groups; g++) {
     // Startseite: rechts (links steht die Schrift); als Seiten-Hintergrund überall.
     const gx = Math.round(w * (anchored ? 0.4 + rand() * 0.55 : 0.08 + rand() * 0.86))
@@ -269,23 +270,24 @@ export function buildFoxLandscape(o: FoxLandscapeOptions): FoxLandscape {
       const x = gx + Math.round((k - n / 2) * mb * (2.5 + rand() * 1.5))
       // Die Sonne bleibt frei, der Bau auch.
       if (x < 0 || x >= w || nearDen(x, mb * 3) || Math.abs(x - sun.x) < half + mb * 5) continue
-      const cherry = k === 1 && rand() < 0.45
-      trees.push({ kind: cherry ? 'cherry' : 'spruce', x, base: meadow[x]! + 1 + depth, bs: mb, tiers: cherry ? 4 : 5 + Math.floor(rand() * 4), layer: 1, seed: treeSeed(), flip: rand() < 0.5 })
+      const cherry = rand() < 0.75
+      trees.push({ kind: cherry ? 'cherry' : 'spruce', x, base: meadow[x]! + 1 + depth, bs: mb, tiers: cherry ? 3 + Math.floor(rand() * 2) : 5 + Math.floor(rand() * 4), layer: 1, seed: treeSeed(), flip: rand() < 0.5 })
     }
   }
-  // Am Bau: eine Fichte auf dem Hügel, ein Kirschbaum hinter dem Feuer; groß dazu eine Fichte am Bildrand.
+  // Am Bau: ein großer Kirschbaum links vom Feuer, dessen Krone über das Feuer reicht, eine Fichte
+  // auf dem Hügel; groß dazu ein Kirschbaum am Bildrand, der sich über Bau und Beerenstrauch neigt.
   if (den) {
     const p = denParts(den)
     const b = den.bs
     const big = den.size === 'large'
-    // Der Kirschbaum steht etwas weiter hinten (kleinere Blöcke) und rahmt das Feuer.
-    const cb = big ? 5 : 2
-    trees.push({ kind: 'cherry', x: den.x - Math.round(b * 0.4), base: den.y - (big ? 3 : 1), bs: cb, tiers: 4, layer: 1, seed: treeSeed(), flip: true })
-    trees.push({ kind: 'spruce', x: p.hill.x + 5 * b, base: den.y - 2 * b, bs: b, tiers: big ? 6 : 6, layer: 2, seed: treeSeed(), flip: false })
+    if (big) trees.push({ kind: 'cherry', x: den.x - b, base: den.y, bs: 7, tiers: 5, layer: 2, seed: treeSeed(), flip: true })
+    else trees.push({ kind: 'cherry', x: den.x - Math.round(b * 0.4), base: den.y - 1, bs: 2, tiers: 4, layer: 1, seed: treeSeed(), flip: true })
+    trees.push({ kind: 'spruce', x: p.hill.x + 5 * b, base: den.y - 2 * b, bs: b, tiers: 6, layer: 2, seed: treeSeed(), flip: false })
     const edge = den.x + DEN_BLOCKS * b + Math.round(b * 1.2)
-    if (big && edge < w) trees.push({ kind: 'spruce', x: edge, base: ground[clamp(edge, 0, w - 1)]!, bs: b, tiers: 9, layer: 2, seed: treeSeed(), flip: false })
+    if (big && edge < w) trees.push({ kind: 'cherry', x: edge, base: ground[clamp(edge, 0, w - 1)]!, bs: b, tiers: 4, layer: 2, seed: treeSeed(), flip: true })
   }
-  if (!anchored && w > 220 && size === 'large') trees.push({ kind: 'spruce', x: -Math.round(bs * 0.5), base: ground[0]!, bs, tiers: 10, layer: 2, seed: treeSeed(), flip: false })
+  // Seiten-Hintergrund: am linken Rand ein großer Kirschbaum, der sich ins Bild neigt.
+  if (!anchored && w > 220 && size === 'large') trees.push({ kind: 'cherry', x: -Math.round(bs * 0.5), base: ground[0]!, bs, tiers: 5, layer: 2, seed: treeSeed(), flip: false })
   trees.sort((a, b) => a.layer - b.layer || a.base - b.base)
 
   // Erste Sterne oben im Violett.
@@ -307,11 +309,11 @@ export function buildFoxLandscape(o: FoxLandscapeOptions): FoxLandscape {
   }
 
   const flowers: FoxLandscape['flowers'] = []
-  for (let i = 0, n = Math.round(w * 0.08); i < n; i++) {
+  for (let i = 0, n = Math.round(w * 0.12); i < n; i++) {
     const x = Math.floor(rand() * w)
     const top = meadow[x]!
     const y = top + 2 + Math.floor(Math.pow(rand(), 0.7) * Math.max(1, ground[x]! - top - 4))
-    if (y < ground[x]! - 1 && noise(x >> 3, 0, s + 21) > 0.35) flowers.push({ x, y, c: (rand() < 0.5 ? 0 : rand() < 0.6 ? 1 : 2) as 0 | 1 | 2 })
+    if (y < ground[x]! - 1 && noise(x >> 3, 0, s + 21) > 0.35) flowers.push({ x, y, c: (rand() < 0.65 ? 0 : rand() < 0.6 ? 1 : 2) as 0 | 1 | 2 })
   }
 
   const tufts: FoxLandscape['tufts'] = []

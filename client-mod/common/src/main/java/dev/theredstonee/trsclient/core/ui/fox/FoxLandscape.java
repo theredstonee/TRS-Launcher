@@ -13,9 +13,9 @@ import static dev.theredstonee.trsclient.core.ui.winter.WinterMath.smooth;
 
 /**
  * Aufbau der Fuchsbau-Landschaft (Port von {@code app/utils/fox/landscape.ts}, nur Daten, testbar): ein Minecraft-Wald
- * in der Abenddämmerung von der Seite. Hinten blockige Hügel im rosa Dunst mit kleinen Fichten, davor ein dichtes
- * Waldband (Taiga-Fichten, ab und zu ein Kirschbaum), eine Wiese im Abendlicht und vorn eine Reihe Grasblöcke. Rechts
- * liegt der Fuchsbau: ein kleiner Grashügel mit dunklem Loch zwischen Wurzeln, eine Fichte darauf, davor das
+ * in der Abenddämmerung von der Seite, halb Taiga, halb Kirschhain. Hinten blockige Hügel im rosa Dunst mit einem Saum
+ * aus Kirschkronen, davor ein dichtes Waldband (Fichten und viele Kirschbäume), eine Wiese mit Kirschbaum-Gruppen und
+ * Blütenteppichen und vorn eine Reihe Grasblöcke. Rechts liegt der Fuchsbau: ein kleiner Grashügel mit dunklem Loch zwischen Wurzeln, eine Fichte darauf, davor das
  * Lagerfeuer – und daneben schläft ein einzelner Fuchs. Alles in Texeln, aus dem Seed stabil: gleiche Größe + Seed =
  * dieselbe Landschaft wie im Launcher.
  */
@@ -294,7 +294,7 @@ public final class FoxLandscape {
 			double patch = smooth(x / 30.0, s + 11);
 			boolean clear = Math.abs(x - sunX) < half * 1.6;
 			if (patch > 0.26 && !clear) {
-				boolean cherry = rand.next() < 0.1;
+				boolean cherry = rand.next() < 0.35;
 				int tiers = cherry ? 3 : 3 + (int) Math.floor(rand.next() * 3 + patch * 2);
 				int ts = treeSeed(rand);
 				boolean flip = rand.next() < 0.5;
@@ -302,9 +302,9 @@ public final class FoxLandscape {
 			}
 			x += fb * (2 + (int) Math.floor(rand.next() * 2));
 		}
-		// Baumgruppen auf der Wiese.
+		// Baumgruppen auf der Wiese – meist Kirschbäume wie im Kirschhain.
 		int mb = h >= 90 ? 4 : 2;
-		int groups = Math.max(1, round(w / 170.0));
+		int groups = Math.max(1, round(w / 100.0));
 		for (int g = 0; g < groups; g++) {
 			int gx = round(w * (0.08 + rand.next() * 0.86));
 			int depth = round(rand.next() * Math.max(1, h * 0.03));
@@ -312,25 +312,27 @@ public final class FoxLandscape {
 				int x = gx + round((k - n / 2.0) * mb * (2.5 + rand.next() * 1.5));
 				// Die Sonne bleibt frei, der Bau auch.
 				if (x < 0 || x >= w || nearDen(d, x, mb * 3) || Math.abs(x - sunX) < half + mb * 5) continue;
-				boolean cherry = k == 1 && rand.next() < 0.45;
-				int tiers = cherry ? 4 : 5 + (int) Math.floor(rand.next() * 4);
+				boolean cherry = rand.next() < 0.75;
+				int tiers = cherry ? 3 + (int) Math.floor(rand.next() * 2) : 5 + (int) Math.floor(rand.next() * 4);
 				int ts = treeSeed(rand);
 				boolean flip = rand.next() < 0.5;
 				trees.add(new Tree(cherry ? CHERRY : SPRUCE, x, meadow[x] + 1 + depth, mb, tiers, 1, ts, flip));
 			}
 		}
-		// Am Bau: eine Fichte auf dem Hügel, ein Kirschbaum hinter dem Feuer; groß dazu eine Fichte am Bildrand.
+		// Am Bau: ein großer Kirschbaum links vom Feuer, dessen Krone über das Feuer reicht, eine Fichte auf dem Hügel;
+		// groß dazu ein Kirschbaum am Bildrand, der sich über Bau und Beerenstrauch neigt.
 		if (d != null) {
 			Parts p = new Parts(d);
 			int b = d.bs;
 			boolean big = d.large;
-			int cb = big ? 5 : 2;
-			trees.add(new Tree(CHERRY, d.x - round(b * 0.4), d.y - (big ? 3 : 1), cb, 4, 1, treeSeed(rand), true));
+			if (big) trees.add(new Tree(CHERRY, d.x - b, d.y, 7, 5, 2, treeSeed(rand), true));
+			else trees.add(new Tree(CHERRY, d.x - round(b * 0.4), d.y - 1, 2, 4, 1, treeSeed(rand), true));
 			trees.add(new Tree(SPRUCE, p.hillX + 5 * b, d.y - 2 * b, b, 6, 2, treeSeed(rand), false));
 			int edge = d.x + DEN_BLOCKS * b + round(b * 1.2);
-			if (big && edge < w) trees.add(new Tree(SPRUCE, edge, ground[clamp(edge, 0, w - 1)], b, 9, 2, treeSeed(rand), false));
+			if (big && edge < w) trees.add(new Tree(CHERRY, edge, ground[clamp(edge, 0, w - 1)], b, 4, 2, treeSeed(rand), true));
 		}
-		if (w > 220 && size == 2) trees.add(new Tree(SPRUCE, -round(bs * 0.5), ground[0], bs, 10, 2, treeSeed(rand), false));
+		// Am linken Rand ein großer Kirschbaum, der sich ins Bild neigt.
+		if (w > 220 && size == 2) trees.add(new Tree(CHERRY, -round(bs * 0.5), ground[0], bs, 5, 2, treeSeed(rand), false));
 		// Stabil sortiert wie Array.sort im Launcher: Ebene, dann Fußpunkt.
 		Collections.sort(trees, new Comparator<Tree>() {
 			@Override
@@ -350,12 +352,12 @@ public final class FoxLandscape {
 			stars.add(new Star(x, y, bright, tw));
 		}
 
-		for (int i = 0, n = round(w * 0.08); i < n; i++) {
+		for (int i = 0, n = round(w * 0.12); i < n; i++) {
 			int x = (int) Math.floor(rand.next() * w);
 			int top = meadow[x];
 			int y = top + 2 + (int) Math.floor(Math.pow(rand.next(), 0.7) * Math.max(1, ground[x] - top - 4));
 			if (y < ground[x] - 1 && noise(x >> 3, 0, s + 21) > 0.35) {
-				int c = rand.next() < 0.5 ? 0 : (rand.next() < 0.6 ? 1 : 2);
+				int c = rand.next() < 0.65 ? 0 : (rand.next() < 0.6 ? 1 : 2);
 				flowers.add(new int[]{x, y, c});
 			}
 		}

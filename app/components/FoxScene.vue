@@ -9,9 +9,10 @@ import { foxBreath } from '~/utils/fox/sleep'
 import { Smoke } from '~/utils/winter/snow'
 
 // Hintergrund im Design „Fuchsbau“: ein Minecraft-Wald in der Abenddämmerung von der
-// Seite – blockige Hügel im rosa Dunst, Fichten und einzelne Kirschbäume, die eckige
-// Sonne geht unter. Am Fuchsbau brennt ein Lagerfeuer, daneben schläft ein Fuchs und
-// atmet ruhig; Glühwürmchen, treibende Blätter und ein paar Kirschblüten. Auf der
+// Seite – blockige Hügel im rosa Dunst mit Kirschkronen-Saum, Fichten und viele
+// Kirschbäume, die eckige Sonne geht unter. Am Fuchsbau brennt ein Lagerfeuer unter einem
+// großen Kirschbaum, daneben schläft ein Fuchs und atmet ruhig; Blütenteppiche,
+// Glühwürmchen, treibende Kirschblüten und ein paar Herbstblätter. Auf der
 // Startseite läuft ein Fichtenzaun mit Laternen bis zum Spielen-Knopf (`anchor`): beim
 // Spielstart gehen sie mit dem Fortschritt an, läuft das Spiel, lodert das Feuer.
 //

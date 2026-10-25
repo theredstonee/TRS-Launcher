@@ -9,9 +9,10 @@ import dev.theredstonee.trsclient.core.ui.winter.WinterMath;
 
 /**
  * Hintergrund im Design „Fuchsbau“ (Gegenstück zu {@code app/components/FoxScene.vue}): ein Minecraft-Wald in der
- * Abenddämmerung von der Seite – blockige Hügel im rosa Dunst, Fichten und einzelne Kirschbäume, die eckige Sonne geht
- * unter. Am Fuchsbau brennt ein Lagerfeuer, daneben schläft ein Fuchs und atmet ruhig; Glühwürmchen, treibende Blätter
- * und ein paar Kirschblüten. Im hellen Farbschema die goldene Stunde.
+ * Abenddämmerung von der Seite – blockige Hügel im rosa Dunst mit Kirschkronen-Saum, Fichten und viele Kirschbäume, die
+ * eckige Sonne geht unter. Am Fuchsbau brennt ein Lagerfeuer unter einem großen Kirschbaum, daneben schläft ein Fuchs und
+ * atmet ruhig; Blütenteppiche, Glühwürmchen, treibende Kirschblüten und ein paar Herbstblätter. Im hellen Farbschema die
+ * goldene Stunde.
  *
  * <p>Wie die Winternacht: gemalt wird in Texeln (ein Texel = 1 GUI-Pixel, bei sehr großen Fenstern mehr) in einen
  * eigenen Puffer, der als Textur hochgeladen und pixelig hochskaliert gezeichnet wird. Eigener Takt von 80 ms – nur dann

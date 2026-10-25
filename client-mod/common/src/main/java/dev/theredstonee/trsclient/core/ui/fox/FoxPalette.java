@@ -126,7 +126,7 @@ public final class FoxPalette {
 		fly = hex("#fff4a8");
 		flyGlow = hex("#ffe27a");
 		leaves = hexes("#e07a3a", "#f0a050", "#b4502a", "#e8b04a");
-		petals = hexes("#f3a6c8", "#ffc6dc");
+		petals = hexes("#f3a6c8", "#ffc6dc", "#e88ab4");
 		flowers = hexes("#ff8ac0", "#ffd84a", "#f4efe8");
 		glowFire = hex("#ff9a40");
 		glowFly = hex("#ffe27a");
