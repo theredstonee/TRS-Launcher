@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { BuiltinSkins, Cape, LibrarySkin, SelectableSkin, SkinPack, SkinProfile, SkinSyncStatus, SkinVariant } from '~/types'
 import type { TrsCape, TrsHeadCosmetic } from '~/utils/trs'
-import { PET_STATES, petCount, type OptionChoices, type PetState, type ViewerCosmetic, type WingState } from '~/utils/cosmetic-v2/format'
+import { PET_GRAB_MS, PET_STATES, petCount, petScale, petStateAvailable, type OptionChoices, type PetState, type ViewerCosmetic, type WingState } from '~/utils/cosmetic-v2/format'
 import type { TrsCosmeticSlot } from '~/utils/trs'
 import { optionToggles, toggleOption, type OptionToggle } from '~/utils/trsCosmetics'
 import type { ThumbRequest } from '~/utils/skinThumbs'
@@ -238,6 +238,21 @@ const shownPet = computed(() => petPreview.value ?? petEquipped.value)
 const petState = ref<PetState>('idle')
 /** So viele Begleiter zeigt die Vorschau: beim getragenen die Anzahl vom Server (Creator-Stufe), sonst einer. */
 const shownPetCount = computed(() => (shownPet.value?.equipped ? petCount(shownPet.value.count ?? 1) : 1))
+const petStateTick = ref(0)
+let grabTimer: ReturnType<typeof setTimeout> | null = null
+/** Zustand vorführen; `grab` läuft einmal (2,4 s) ab Klick und fällt dann auf „steht“ zurück. */
+function choosePetState(key: PetState) {
+  if (grabTimer) clearTimeout(grabTimer)
+  grabTimer = null
+  petState.value = key
+  petStateTick.value++
+  if (key === 'grab') grabTimer = setTimeout(() => (petState.value = 'idle'), PET_GRAB_MS)
+}
+onBeforeUnmount(() => grabTimer && clearTimeout(grabTimer))
+/** Größe des gezeigten Haupt-Pets (Standard 1; z. B. Kaiserpinguin 1,25). */
+const shownPetScale = computed(() => petScale(shownPet.value?.scale))
+/** Gefolge (Creator): zusätzliche Begleiter am getragenen Pet, je mit eigenem Modell und eigener Größe. */
+const shownPetExtras = computed(() => (shownPet.value?.equipped ? shownPet.value.extras : []))
 /** Modell + Texturen für die Vorschau (null = nichts am Kopf bzw. noch am Laden). */
 const viewerCosmetic = shallowRef<ViewerCosmetic | null>(null)
 const viewerCompanion = shallowRef<ViewerCosmetic | null>(null)
@@ -286,6 +301,44 @@ bindCosmetic(() => shownHead.value, viewerCosmetic)
 bindCosmetic(() => shownCompanion.value, viewerCompanion)
 bindCosmetic(() => shownWings.value, viewerWings)
 bindCosmetic(() => shownPet.value, viewerPet)
+
+/** Knöpfe der Zustände: die fünf Grundzustände immer, sneak/grab/flee/handsup nur wenn das Modell sie hat. */
+const petStateKeys = computed(() =>
+  PET_STATES.filter((k) => viewerPet.value && petStateAvailable(viewerPet.value.model as never, k)),
+)
+// Anderes Tier ohne den gewählten Zustand → zurück auf „steht“.
+watch(petStateKeys, (keys) => {
+  if (!keys.includes(petState.value)) petState.value = 'idle'
+})
+
+/** Modelle des Gefolges (gleicher Cache wie oben); ein Extra ohne ladbares Modell fällt einzeln weg. */
+const viewerPetExtras = shallowRef<{ cosmetic: ViewerCosmetic; scale: number }[]>([])
+let extrasToken = 0
+watch(
+  () => shownPetExtras.value.filter((e) => e.preview).map((e) => `${e.id}:${e.hash ?? ''}:${e.scale}`).join('|'),
+  async () => {
+    const mine = ++extrasToken
+    const list = await Promise.all(
+      shownPetExtras.value.map(async (e) => {
+        if (!e.preview) return null
+        const key = `${e.id}:${e.hash ?? ''}`
+        const cached = cosmeticModels.get(key)
+        if (cached) return { cosmetic: cached, scale: e.scale }
+        try {
+          const data = await backend.trs.headCosmeticModel(e.id)
+          const loaded: ViewerCosmetic = { model: data.model, texture: data.texture, glow: data.glow }
+          cosmeticModels.set(key, loaded)
+          return { cosmetic: loaded, scale: e.scale }
+        } catch (err) {
+          console.warn(err)
+          return null
+        }
+      }),
+    )
+    if (mine === extrasToken) viewerPetExtras.value = list.filter((x) => x !== null)
+  },
+  { immediate: true },
+)
 
 // --- Optionen (Anhang D): abschaltbare Teile wie der Bart der Weihnachtsmütze -------------
 
@@ -798,7 +851,10 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
                   :wing-state="wingState"
                   :pet="viewerPet"
                   :pet-count="shownPetCount"
+                  :pet-scale="shownPetScale"
+                  :pet-extras="viewerPetExtras"
                   :pet-state="petState"
+                  :pet-state-tick="petStateTick"
                   :pet-seed="accounts.active?.id ?? ''"
                   :cosmetic-options="viewerOptions"
                   :night="night"
@@ -884,13 +940,13 @@ const packSkinCount = computed(() => packs.value?.reduce((n, p) => n + p.skins.l
               <div v-if="viewerPet" class="flex flex-wrap items-center gap-1 border-t border-base-800/80 bg-base-950/60 p-1 text-[11px] backdrop-blur-sm" data-testid="pet-states">
                 <span class="px-1 text-base-400">{{ t('headCosmetics.pet.states') }}</span>
                 <button
-                  v-for="key in PET_STATES"
+                  v-for="key in petStateKeys"
                   :key="key"
                   class="seg flex-1 rounded px-2 py-1 mobile:min-h-10"
                   :class="{ 'seg-on': petState === key }"
                   :aria-pressed="petState === key"
                   :data-state="key"
-                  @click="petState = key"
+                  @click="choosePetState(key)"
                 >
                   {{ t(`headCosmetics.pet.state.${key}`) }}
                 </button>

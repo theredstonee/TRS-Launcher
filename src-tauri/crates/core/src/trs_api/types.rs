@@ -525,10 +525,19 @@ pub(crate) struct ApiCosmeticRef {
     /// Woher das Teil kommt (`code`, `creator` …) – nur zur Anzeige der Creator-Stufe.
     #[serde(default)]
     pub source: Option<String>,
+    /// Größe des Begleiters am Boden (Standard 1, Kaiserpinguin 1,25) – im Katalog `petScale`.
+    #[serde(default, alias = "petScale")]
+    pub scale: Option<serde_json::Value>,
+    /// Zusätzliche Begleiter in `equipped.pet.extras` nennen die Textur-Adresse gern als `url`.
+    #[serde(default)]
+    pub url: Option<String>,
 }
 
 /// Höchstens so viele Begleiter am Boden je Spieler (Anhang D).
 pub const MAX_PETS: u8 = 4;
+/// Höchstens so viele zusätzliche Begleiter (Gefolge) je Creator; mit den eigenen zusammen höchstens [`MAX_PET_GROUP`].
+pub const MAX_PET_EXTRAS: usize = 4;
+pub const MAX_PET_GROUP: usize = 8;
 /// Höchstens so viele abschaltbare Teile je Modell (Anhang D).
 pub const MAX_OPTIONS: usize = 4;
 
@@ -556,6 +565,12 @@ pub(crate) fn clean_count(v: Option<&serde_json::Value>) -> Option<u8> {
     (1..=u64::from(MAX_PETS)).contains(&n).then_some(n as u8)
 }
 
+/// Größe eines Begleiters: Zahl von 0,25 bis 3 (auf drei Stellen gerundet); alles andere → `None` (= 1).
+pub(crate) fn clean_scale(v: Option<&serde_json::Value>) -> Option<f32> {
+    let n = v?.as_f64().filter(|n| n.is_finite() && (0.25..=3.0).contains(n))?;
+    Some(((n * 1000.0).round() / 1000.0) as f32)
+}
+
 impl ApiCosmeticRef {
     /// Freischaltart: Zeichenkette (`code`) oder Objekt (`{ "type": "event", "event": "halloween" }`).
     pub(crate) fn unlock_kind(&self) -> Option<CosmeticUnlock> {
@@ -577,10 +592,11 @@ impl ApiCosmeticRef {
 
     /// URL der Textur: `texture.url` (oder `texture` selbst, falls eine Zeichenkette).
     pub(crate) fn texture_url(&self) -> Option<&str> {
-        match self.texture.as_ref()? {
-            serde_json::Value::String(s) => Some(s),
-            serde_json::Value::Object(o) => o.get("url")?.as_str(),
-            _ => None,
+        match self.texture.as_ref() {
+            Some(serde_json::Value::String(s)) => Some(s),
+            Some(serde_json::Value::Object(o)) => o.get("url")?.as_str(),
+            Some(_) => None,
+            None => self.url.as_deref(),
         }
     }
 }
@@ -636,6 +652,22 @@ pub struct HeadCosmetic {
     pub creator: bool,
     /// Getragenes Teil: gewählte Optionen (`{ "beard": false }`); fehlende gelten als Standard des Modells.
     pub options: std::collections::BTreeMap<String, bool>,
+    /// Größe des Begleiters am Boden (Standard 1; Kaiserpinguin 1,25) – Vorschau und Spiel skalieren gleich.
+    pub scale: f32,
+    /// Gefolge: zusätzliche Begleiter am getragenen Pet (nur beim Creator selbst, höchstens 4).
+    pub extras: Vec<PetExtra>,
+}
+
+/// Zusätzlicher Begleiter am getragenen Pet (`equipped.pet.extras`); das Modell lädt `headCosmeticModel(id)`.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PetExtra {
+    pub id: String,
+    pub name: String,
+    pub scale: f32,
+    pub hash: Option<String>,
+    /// Das Modell lässt sich in der 3D-Vorschau zeigen.
+    pub preview: bool,
 }
 
 /// v2-Modell für die 3D-Vorschau: `model.json` (geprüft) + Texturen als PNG-Data-URLs.

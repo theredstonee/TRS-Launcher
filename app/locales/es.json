@@ -4000,7 +4000,11 @@
         "walk": "Camina",
         "slide": "Se desliza",
         "swim": "Nada",
-        "air": "Salta"
+        "air": "Salta",
+        "sneak": "Se acerca sigiloso",
+        "grab": "Agarra el botín",
+        "flee": "Huye",
+        "handsup": "Manos arriba"
       },
       "count": "{n} × {name} | {n} × {name}",
       "counts": {
@@ -7784,6 +7788,15 @@
       "yourPet": "Tu mascota de creador",
       "theirPet": "Mascota de creador",
       "intro": "Es solo tuya. Los fans la consiguen con los códigos que creas aquí: se canjean como cualquier código de cosmético (Skins → Canjear código).",
+      "escort": {
+        "title": "Séquito",
+        "intro": "El equipo te ha asignado un compañero más: acompaña a tu mascota. | El equipo te ha asignado {n} compañeros más: acompañan a tu mascota.",
+        "show": "Mostrar séquito",
+        "shown": "Tu séquito vuelve a ser visible.",
+        "hidden": "Tu séquito está oculto.",
+        "visibleHint": "Los demás ven tu séquito a tu lado en el juego mientras lo muestres.",
+        "hiddenHint": "Tu séquito es invisible para los demás. Tu mascota normal se queda."
+      },
       "limit": {
         "title": "Límite mensual {month}",
         "titleNoMonth": "Límite mensual",

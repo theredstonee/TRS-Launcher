@@ -28,6 +28,14 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Pet entourage.** A creator's team can give them up to four more companions that walk along next to their own pet (for example three more penguins, one of them bigger). The 3D preview on the Skins page now shows the pet and the whole entourage side by side, each at its own size, and the camera frames them all. Pets can now also sneak, grab loot, flee and put their hands up – the preview shows buttons for these when the pet has them. In the creator dashboard the "Pet" tab shows the entourage cards and a "Show entourage" switch to hide or show them for everyone.
+
+### Deutsch
+- **Pet-Gefolge.** Das Team kann einem Creator bis zu vier weitere Begleiter zuordnen, die neben seinem eigenen Haustier mitlaufen (zum Beispiel drei weitere Pinguine, einer davon größer). Die 3D-Vorschau auf der Skins-Seite zeigt das Haustier und das ganze Gefolge nebeneinander, jedes in seiner Größe, und die Kamera erfasst alle. Haustiere können jetzt auch schleichen, Beute schnappen, fliehen und die Hände hochnehmen – die Vorschau zeigt dafür Knöpfe, wenn das Haustier es kann. Im Creator-Dashboard zeigt der Reiter „Haustier“ die Karten des Gefolges und einen Schalter „Gefolge zeigen“, um es für alle ein- oder auszublenden.
+
 ## 0.30.1 – 2026-10-25 – Companions | Begleiter
 <!-- banner: accent=#d79ad6 motif=/news/0.30.1/banner.png -->
 <!-- shots:

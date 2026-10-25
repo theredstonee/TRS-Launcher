@@ -3932,7 +3932,11 @@
         "walk": "Marche",
         "slide": "Glisse",
         "swim": "Nage",
-        "air": "Saute"
+        "air": "Saute",
+        "sneak": "Se faufile",
+        "grab": "Attrape le butin",
+        "flee": "S’enfuit",
+        "handsup": "Les mains en l’air"
       },
       "count": "{n} × {name} | {n} × {name}",
       "counts": {
@@ -7243,6 +7247,15 @@
       "yourPet": "Ton compagnon de créateur",
       "theirPet": "Compagnon de créateur",
       "intro": "Il n'appartient qu'à toi. Les fans l'obtiennent avec les codes que tu crées ici – ils les utilisent comme n'importe quel code cosmétique (Skins → Utiliser un code).",
+      "escort": {
+        "title": "Cortège",
+        "intro": "L'équipe t'a attribué un compagnon de plus : il accompagne ton animal. | L'équipe t'a attribué {n} compagnons de plus : ils accompagnent ton animal.",
+        "show": "Afficher le cortège",
+        "shown": "Ton cortège est de nouveau visible.",
+        "hidden": "Ton cortège est masqué.",
+        "visibleHint": "Les autres voient ton cortège à tes côtés en jeu tant que tu l'affiches.",
+        "hiddenHint": "Ton cortège est invisible pour les autres. Ton animal habituel reste."
+      },
       "limit": {
         "title": "Limite mensuelle {month}",
         "titleNoMonth": "Limite mensuelle",

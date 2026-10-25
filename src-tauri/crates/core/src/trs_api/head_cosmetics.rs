@@ -13,8 +13,8 @@ use base64::engine::general_purpose::STANDARD;
 use serde_json::Value;
 
 use super::types::{
-    ApiCosmeticCatalog, ApiCosmeticRef, CosmeticUnlock, HeadCosmetic, HeadCosmeticModel, MAX_OPTIONS, clean_count,
-    clean_options, option_id,
+    ApiCosmeticCatalog, ApiCosmeticRef, CosmeticUnlock, HeadCosmetic, HeadCosmeticModel, MAX_OPTIONS, MAX_PET_EXTRAS, PetExtra,
+    clean_count, clean_options, clean_scale, option_id,
 };
 use super::{Req, TrsApi, png, validate};
 use crate::{Error, Launcher, Result, fsutil};
@@ -248,7 +248,7 @@ pub(crate) fn check_model(model: &Value, id: &str) -> Option<ModelInfo> {
     };
     let lists = list_len(o, "bones", 1, 32)
         && list_len(o, "cubes", 1, 64)
-        && list_len(o, "animations", 0, 8)
+        && list_len(o, "animations", 0, 12)
         && list_len(o, "halos", 0, 16);
     lists.then_some(ModelInfo { texture: (pw, ph * frames), glow })
 }
@@ -303,9 +303,45 @@ impl TrsApi {
             .filter_map(|c| Some((c.id.clone(), v2_source(&self.base, &trusted, c)?)))
             .collect();
         if let Ok(mut known) = self.head_sources.lock() {
-            known.clone_from(&sources);
+            // Gefolge-Modelle (nicht im Katalog) bleiben bekannt; alles andere wird ersetzt.
+            known.retain(|id, _| self.extra_ids.lock().is_ok_and(|e| e.contains(id)));
+            known.extend(sources.clone());
         }
         sources
+    }
+
+    /// Zusätzliche Begleiter (`equipped.pet.extras`) prüfen und ihre Quellen merken – sie stehen oft nicht im Katalog.
+    fn remember_extras(&self, raw: &[Value]) -> Vec<PetExtra> {
+        let trusted = self.trusted_bases();
+        let mut out = Vec::new();
+        let mut ids = Vec::new();
+        for v in raw.iter().take(MAX_PET_EXTRAS) {
+            let Some(mut o) = v.as_object().cloned() else { continue };
+            o.entry("slot").or_insert_with(|| "pet".into());
+            o.entry("format").or_insert_with(|| 2.into());
+            let Ok(c) = serde_json::from_value::<ApiCosmeticRef>(Value::Object(o)) else { continue };
+            if c.slot != "pet" || !validate::cape_id(&c.id) {
+                continue;
+            }
+            let source = v2_source(&self.base, &trusted, &c);
+            out.push(PetExtra {
+                name: validate::cape_name(&c.name, &c.id),
+                scale: clean_scale(c.scale.as_ref()).unwrap_or(1.0),
+                hash: source.as_ref().map(|s| s.hash.clone()),
+                preview: source.is_some(),
+                id: c.id.clone(),
+            });
+            if let Some(s) = source {
+                ids.push(c.id.clone());
+                if let Ok(mut known) = self.head_sources.lock() {
+                    known.insert(c.id, s);
+                }
+            }
+        }
+        if let Ok(mut e) = self.extra_ids.lock() {
+            *e = ids;
+        }
+        out
     }
 
     fn known_source(&self, id: &str) -> Option<V2Source> {
@@ -384,11 +420,15 @@ impl TrsApi {
 
 /// Extras eines getragenen Teils aus `GET /v1/me/cosmetics` (Anhang D): Optionen und – beim
 /// Begleiter am Boden – die Anzahl (Creator-Stufe).
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone)]
 pub(crate) struct Worn {
     pub options: BTreeMap<String, bool>,
     pub count: Option<u8>,
     pub creator: bool,
+    /// Größe des Begleiters am Boden (`equipped.pet.scale`).
+    pub scale: Option<f32>,
+    /// Gefolge (`equipped.pet.extras`), roh – geprüft wird in [`TrsApi::remember_extras`].
+    pub extras: Vec<Value>,
 }
 
 /// `equipped.<slot>` = CosmeticView (`{ id, options?, count?, source? }`) je Fach; ältere Antworten
@@ -404,7 +444,13 @@ pub(crate) fn worn_extras(me: &Value) -> HashMap<String, Worn> {
         }
         let count = if slot == "pet" { clean_count(view.get("count")) } else { None };
         let creator = view.get("source").and_then(Value::as_str) == Some("creator") || count.is_some_and(|n| n > 1);
-        out.insert(id.to_owned(), Worn { options, count, creator });
+        let scale = if slot == "pet" { clean_scale(view.get("scale")) } else { None };
+        let extras = if slot == "pet" {
+            view.get("extras").and_then(Value::as_array).map(|a| a.iter().take(MAX_PET_EXTRAS).cloned().collect()).unwrap_or_default()
+        } else {
+            Vec::new()
+        };
+        out.insert(id.to_owned(), Worn { options, count, creator, scale, extras });
     }
     out
 }
@@ -440,14 +486,18 @@ impl Launcher {
             HashMap::new()
         });
         let sources = self.trs.remember_sources(&catalog.cosmetics);
+        let extras = worn.values().find(|w| !w.extras.is_empty()).map(|w| self.trs.remember_extras(&w.extras)).unwrap_or_default();
         let trs = &self.trs;
         let jobs = catalog.cosmetics.into_iter().filter(listed).take(MAX_ITEMS).map(|c| {
             let source = sources.get(&c.id).cloned();
+            let gang = extras.clone();
             let extra = worn.get(&c.id).cloned().filter(|_| c.equipped).unwrap_or_else(|| Worn {
                 // Rückfall: Angaben direkt am Katalog-Eintrag.
                 options: if c.equipped { clean_options(c.options.as_ref()) } else { BTreeMap::new() },
                 count: if c.equipped && c.slot == "pet" { clean_count(c.count.as_ref()) } else { None },
                 creator: c.source.as_deref() == Some("creator"),
+                scale: None,
+                extras: Vec::new(),
             });
             async move {
                 let (card, card_night) = match &source {
@@ -461,7 +511,10 @@ impl Launcher {
                     None => (None, None),
                 };
                 let v2 = c.is_v2();
+                let worn_pet = c.equipped && c.slot == "pet";
                 HeadCosmetic {
+                    scale: if c.slot == "pet" { extra.scale.or_else(|| clean_scale(c.scale.as_ref())).unwrap_or(1.0) } else { 1.0 },
+                    extras: if worn_pet { gang } else { Vec::new() },
                     name: validate::cape_name(&c.name, &c.id),
                     format: if v2 { 2 } else { 1 },
                     template: if v2 { None } else { c.template.as_deref().map(|t| validate::text(t, 32)) },

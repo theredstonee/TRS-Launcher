@@ -3932,7 +3932,11 @@
         "walk": "Chodzi",
         "slide": "Ślizga się",
         "swim": "Pływa",
-        "air": "Skacze"
+        "air": "Skacze",
+        "sneak": "Skrada się",
+        "grab": "Chwyta łup",
+        "flee": "Ucieka",
+        "handsup": "Ręce do góry"
       },
       "count": "{n} × {name} | {n} × {name} | {n} × {name}",
       "counts": {
@@ -7243,6 +7247,15 @@
       "yourPet": "Twój zwierzak twórcy",
       "theirPet": "Zwierzak twórcy",
       "intro": "Należy tylko do ciebie. Fani dostają go dzięki kodom, które tu tworzysz – realizują je jak każdy kod kosmetyczny (Skiny → Zrealizuj kod).",
+      "escort": {
+        "title": "Świta",
+        "intro": "Zespół przydzielił ci jeszcze jednego towarzysza – idzie obok twojego zwierzaka. | Zespół przydzielił ci jeszcze {n} towarzyszy – idą obok twojego zwierzaka. | Zespół przydzielił ci jeszcze {n} towarzyszy – idą obok twojego zwierzaka.",
+        "show": "Pokaż świtę",
+        "shown": "Twoja świta jest znowu widoczna.",
+        "hidden": "Twoja świta jest ukryta.",
+        "visibleHint": "Inni widzą twoją świtę obok ciebie w grze, dopóki ją pokazujesz.",
+        "hiddenHint": "Twoja świta jest niewidoczna dla innych. Twój zwykły zwierzak zostaje."
+      },
       "limit": {
         "title": "Limit miesięczny {month}",
         "titleNoMonth": "Limit miesięczny",

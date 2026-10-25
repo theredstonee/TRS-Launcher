@@ -3932,7 +3932,11 @@
         "walk": "Yürüyor",
         "slide": "Kayıyor",
         "swim": "Yüzüyor",
-        "air": "Zıplıyor"
+        "air": "Zıplıyor",
+        "sneak": "Sinsice yürür",
+        "grab": "Ganimeti kapar",
+        "flee": "Kaçar",
+        "handsup": "Eller yukarı"
       },
       "count": "{n} × {name} | {n} × {name}",
       "counts": {
@@ -7243,6 +7247,15 @@
       "yourPet": "Creator evcil hayvanın",
       "theirPet": "Creator evcil hayvanı",
       "intro": "Yalnızca sana ait. Hayranlar onu burada oluşturduğun kodlarla alır – her kozmetik kodu gibi kullanılır (Skinler → Kod kullan).",
+      "escort": {
+        "title": "Maiyet",
+        "intro": "Ekip sana bir yoldaş daha atadı – evcil hayvanınla birlikte yürür. | Ekip sana {n} yoldaş daha atadı – evcil hayvanınla birlikte yürürler.",
+        "show": "Maiyeti göster",
+        "shown": "Maiyetin yeniden görünür.",
+        "hidden": "Maiyetin gizli.",
+        "visibleHint": "Sen gösterdiğin sürece diğerleri oyunda maiyetini yanında görür.",
+        "hiddenHint": "Maiyetin diğerleri için görünmez. Normal evcil hayvanın kalır."
+      },
       "limit": {
         "title": "Aylık sınır {month}",
         "titleNoMonth": "Aylık sınır",

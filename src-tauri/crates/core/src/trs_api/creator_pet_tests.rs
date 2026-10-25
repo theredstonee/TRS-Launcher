@@ -39,6 +39,11 @@ async fn server() -> MockServer {
             ("GET", "/v1/creator/pet") => Response::json(200, json!({
                 "pet": { "cosmeticId": "penguin", "name": "Pinguin", "card": "/v1/cosmetics/penguin/card.png?v=ab12", "count": 2, "available": true },
                 "quota": quota(190), "codes": [], "requests": [], "canRequest": false })),
+            ("PUT", "/v1/creator/pet/escort") => Response::json(200, json!({
+                "pet": { "cosmeticId": "penguin", "name": "Pinguin", "count": 1 },
+                "extras": [{ "cosmeticId": "penguin_emperor", "name": "Kaiserpinguin", "card": "/v1/cosmetics/penguin_emperor/card.png?v=e1", "scale": 1.25 }],
+                "escortVisible": req.json()["visible"], "quota": quota(0) })),
+            ("GET", "/v1/cosmetics/penguin_emperor/card.png") => Response::png(real_png(64, 80)),
             ("GET", "/v1/cosmetics/penguin/card.png") => {
                 if req.bearer().is_some() { Response::png(real_png(64, 80)) } else { Response::error(404, "not_found") }
             }
@@ -152,4 +157,22 @@ async fn pet_request_sends_fields_then_the_checked_image() {
     assert_eq!(server.hits("PUT", "/v1/creator/pet/requests/8/image")[0].header("content-type"), Some("image/jpeg"));
     launcher.creator_withdraw_pet_request("7").await.unwrap();
     assert_eq!(server.hits("DELETE", "/v1/creator/pet/requests/7").len(), 1);
+}
+
+#[tokio::test]
+async fn escort_switch_returns_the_state_with_extra_cards() {
+    let server = server().await;
+    let (_dir, launcher) = launcher(&server, &[ACC]).await;
+
+    let state = launcher.creator_set_pet_escort(false, None).await.unwrap();
+    assert!(!state.escort_visible);
+    assert_eq!(state.extras.len(), 1);
+    let extra = &state.extras[0];
+    assert_eq!((extra.cosmetic_id.as_str(), extra.name.as_str(), extra.scale), ("penguin_emperor", "Kaiserpinguin", 1.25));
+    assert!(extra.card.as_deref().unwrap().starts_with("data:image/png;base64,"));
+    assert_eq!(server.hits("PUT", "/v1/creator/pet/escort")[0].json(), json!({ "visible": false }));
+    assert!(launcher.creator_set_pet_escort(true, None).await.unwrap().escort_visible);
+    // Ohne Gefolge-Felder (ältere API) gilt der Schalter als an und die Liste ist leer.
+    let old = launcher.creator_pet(None).await.unwrap();
+    assert!(old.extras.is_empty() && old.escort_visible);
 }
