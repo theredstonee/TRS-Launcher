@@ -28,7 +28,13 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.30.1 – 2026-10-25 – Companions | Begleiter
+<!-- banner: accent=#d79ad6 motif=/news/0.30.1/banner.png -->
+<!-- shots:
+/news/0.30.1/pet-tab.png | The new "Pet" tab in the creator dashboard with the monthly code limit | Der neue Reiter „Haustier“ im Creator-Dashboard mit dem Code-Limit des Monats
+/news/0.30.1/pet-codes.png | Creators create codes for their own pet | Creator erstellen Codes für ihr eigenes Haustier
+/news/0.30.1/pet-request.png | Creators without a pet wish for their own one – the team builds it | Creator ohne Haustier wünschen sich ein eigenes – das Team baut es
+-->
 
 ### English
 - **Creator pets.** The creator dashboard has a new "Pet" tab. Creators with their own pet see its card, a bar with this month's code limit and their pet codes: create up to 20 codes at once (each up to 100 redemptions, optional expiry date and note), copy them right away – the full code is shown only once – and revoke codes any time. Creators without a pet can wish for one there (animal, description and colours, optional reference picture as PNG or JPG up to 2 MB), follow the status and the team's answer, add or replace the picture or withdraw the request while it is still open – a notification shows up when the team answers or assigns the pet. Helpers with the "Codes" right can manage the pet codes too. For the team, the creator area links to the website, where requests are handled and pets are assigned.
