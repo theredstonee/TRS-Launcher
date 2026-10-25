@@ -462,15 +462,17 @@ async fn older_api_without_me_cosmetics_still_lists() {
 
 #[test]
 fn worn_extras_read_scale_and_escort() {
-    let me = json!({ "equipped": { "pet": { "id": "penguin", "count": 1, "scale": 1.25, "extras": [
-        { "id": "penguin_beanie", "scale": 1 }, "kaputt", { "id": "penguin_shades" }, { "id": "a" }, { "id": "b" }, { "id": "c" }
-    ] }, "hat": { "id": "test_cap", "scale": 3, "extras": [{ "id": "x" }] } } });
+    let me = json!({ "equipped": { "pet": { "id": "penguin", "count": 1, "petScale": 1.25, "extras": [
+        { "id": "penguin_beanie", "petScale": 1 }, "kaputt", { "id": "penguin_shades" }, { "id": "a" }, { "id": "b" }, { "id": "c" }
+    ] }, "hat": { "id": "test_cap", "petScale": 3, "extras": [{ "id": "x" }] } } });
     let worn = worn_extras(&me);
-    assert_eq!(worn["penguin"].scale, Some(1.25));
+    assert_eq!(worn["penguin"].pet_scale, Some(1.25));
     assert_eq!(worn["penguin"].extras.len(), 4, "höchstens 4 Einträge");
-    assert_eq!((worn["test_cap"].scale, worn["test_cap"].extras.len()), (None, 0), "Gefolge und Größe nur beim Begleiter am Boden");
-    let bad = worn_extras(&json!({ "equipped": { "pet": { "id": "penguin", "scale": 99 } } }));
-    assert_eq!(bad["penguin"].scale, None, "Größe nur von 0,25 bis 3");
+    assert_eq!((worn["test_cap"].pet_scale, worn["test_cap"].extras.len()), (None, 0), "Gefolge und Größe nur beim Begleiter am Boden");
+    let bad = worn_extras(&json!({ "equipped": { "pet": { "id": "penguin", "petScale": 99 } } }));
+    assert_eq!(bad["penguin"].pet_scale, Some(2.0), "Größe wird auf 0,5 bis 2 geklemmt");
+    let texture_factor = worn_extras(&json!({ "equipped": { "pet": { "id": "penguin", "scale": 8 } } }));
+    assert_eq!(texture_factor["penguin"].pet_scale, None, "`scale` ist der Textur-Faktor, nie die Größe");
 }
 
 #[tokio::test]
@@ -492,7 +494,7 @@ async fn pet_escort_models_load_even_when_not_in_the_catalog() {
             ("GET", "/v1/me/cosmetics") => Response::json(
                 200,
                 json!({ "equipped": { "pet": { "id": "penguin", "count": 1, "extras": [
-                    { "id": "penguin_emperor", "name": "Kaiserpinguin", "scale": 1.25, "hash": "e1",
+                    { "id": "penguin_emperor", "name": "Kaiserpinguin", "petScale": 1.25, "hash": "e1",
                       "model": format!("{host}/v1/cosmetics/penguin_emperor/model.json?v=e1"), "url": format!("{host}/v1/cosmetics/penguin_emperor.png?v=e1") },
                     { "id": "evil", "name": "Fremd", "model": "https://evil.example/v1/cosmetics/evil/model.json", "url": "https://evil.example/v1/cosmetics/evil.png" }
                 ] } } }),
@@ -508,10 +510,10 @@ async fn pet_escort_models_load_even_when_not_in_the_catalog() {
     let list = launcher.trs_head_cosmetics().await.unwrap();
     assert_eq!(list.len(), 1, "Gefolge steht nicht im Katalog");
     let pet = &list[0];
-    assert_eq!(pet.scale, 1.0);
+    assert_eq!(pet.pet_scale, 1.0);
     assert_eq!(pet.extras.len(), 2);
     let emperor = &pet.extras[0];
-    assert_eq!((emperor.id.as_str(), emperor.name.as_str(), emperor.scale, emperor.preview), ("penguin_emperor", "Kaiserpinguin", 1.25, true));
+    assert_eq!((emperor.id.as_str(), emperor.name.as_str(), emperor.pet_scale, emperor.preview), ("penguin_emperor", "Kaiserpinguin", 1.25, true));
     assert!(!pet.extras[1].preview, "fremde Adressen bekommen keine Vorschau");
     // Das Modell des Gefolges lässt sich laden – auch nach erneutem Laden der Liste.
     let loaded = launcher.trs_head_cosmetic_model("penguin_emperor").await.unwrap();

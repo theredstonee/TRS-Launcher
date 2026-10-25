@@ -526,8 +526,8 @@ pub(crate) struct ApiCosmeticRef {
     #[serde(default)]
     pub source: Option<String>,
     /// Größe des Begleiters am Boden (Standard 1, Kaiserpinguin 1,25) – im Katalog `petScale`.
-    #[serde(default, alias = "petScale")]
-    pub scale: Option<serde_json::Value>,
+    #[serde(default)]
+    pub pet_scale: Option<serde_json::Value>,
     /// Zusätzliche Begleiter in `equipped.pet.extras` nennen die Textur-Adresse gern als `url`.
     #[serde(default)]
     pub url: Option<String>,
@@ -565,9 +565,10 @@ pub(crate) fn clean_count(v: Option<&serde_json::Value>) -> Option<u8> {
     (1..=u64::from(MAX_PETS)).contains(&n).then_some(n as u8)
 }
 
-/// Größe eines Begleiters: Zahl von 0,25 bis 3 (auf drei Stellen gerundet); alles andere → `None` (= 1).
+/// Größe eines Begleiters (`petScale`): Zahl, auf 0,5 bis 2 geklemmt und auf drei Stellen gerundet; keine Zahl → `None` (= 1).
+/// Nie `scale` lesen – das ist der Pixel-Faktor der Textur (Pinguin = 8).
 pub(crate) fn clean_scale(v: Option<&serde_json::Value>) -> Option<f32> {
-    let n = v?.as_f64().filter(|n| n.is_finite() && (0.25..=3.0).contains(n))?;
+    let n = v?.as_f64().filter(|n| n.is_finite())?.clamp(0.5, 2.0);
     Some(((n * 1000.0).round() / 1000.0) as f32)
 }
 
@@ -653,7 +654,7 @@ pub struct HeadCosmetic {
     /// Getragenes Teil: gewählte Optionen (`{ "beard": false }`); fehlende gelten als Standard des Modells.
     pub options: std::collections::BTreeMap<String, bool>,
     /// Größe des Begleiters am Boden (Standard 1; Kaiserpinguin 1,25) – Vorschau und Spiel skalieren gleich.
-    pub scale: f32,
+    pub pet_scale: f32,
     /// Gefolge: zusätzliche Begleiter am getragenen Pet (nur beim Creator selbst, höchstens 4).
     pub extras: Vec<PetExtra>,
 }
@@ -664,7 +665,7 @@ pub struct HeadCosmetic {
 pub struct PetExtra {
     pub id: String,
     pub name: String,
-    pub scale: f32,
+    pub pet_scale: f32,
     pub hash: Option<String>,
     /// Das Modell lässt sich in der 3D-Vorschau zeigen.
     pub preview: bool,

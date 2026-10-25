@@ -66,7 +66,9 @@ pub struct CreatorPetExtra {
     pub name: String,
     pub card: Option<String>,
     /// Größe im Spiel (Standard 1; Kaiserpinguin 1,25).
-    pub scale: f32,
+    pub pet_scale: f32,
+    /// `false` = Kosmetik gerade nicht verfügbar.
+    pub available: bool,
     #[serde(skip)]
     pub card_url: Option<String>,
 }
@@ -115,7 +117,7 @@ pub struct CreatorPetState {
     /// Gefolge: bis zu 4 zusätzliche Begleiter (leer = keins).
     pub extras: Vec<CreatorPetExtra>,
     /// Gefolge ist für andere sichtbar (Schalter „Gefolge zeigen“); fehlt es, gilt „an“.
-    pub escort_visible: bool,
+    pub show_extras: bool,
     pub limit: Option<PetLimit>,
     /// Der neueste Wunsch (leer für Helfer).
     pub request: Option<PetRequest>,
@@ -172,7 +174,8 @@ fn clean_extras(v: Option<&Value>) -> Vec<CreatorPetExtra> {
                 name: name.unwrap_or_else(|| cosmetic_id.clone()),
                 cosmetic_id,
                 card: None,
-                scale: e.get("scale").and_then(Value::as_f64).filter(|n| n.is_finite() && (0.25..=3.0).contains(n)).map_or(1.0, |n| n as f32),
+                pet_scale: super::types::clean_scale(e.get("petScale")).unwrap_or(1.0),
+                available: e.get("available").and_then(Value::as_bool).unwrap_or(true),
                 card_url: str_of(e, "cardUrl").or_else(|| str_of(e, "card")).filter(|u| u.len() <= 500),
             })
         })
@@ -244,7 +247,7 @@ pub(crate) fn clean_state(v: &Value) -> Option<CreatorPetState> {
     v.is_object().then(|| CreatorPetState {
         pet: clean_pet(v.get("pet")),
         extras: clean_extras(v.get("extras")),
-        escort_visible: v.get("escortVisible").and_then(Value::as_bool).unwrap_or(true),
+        show_extras: v.get("showExtras").and_then(Value::as_bool).unwrap_or(true),
         limit: clean_limit(v),
         request: latest_request(v),
         can_request: v.get("canRequest").and_then(Value::as_bool),
@@ -437,10 +440,11 @@ impl Launcher {
         self.state_with_cards(&raw).await
     }
 
-    /// Gefolge für andere zeigen oder verstecken (`PUT /v1/creator/pet/escort`) → neuer Stand.
-    pub async fn creator_set_pet_escort(&self, visible: bool, as_creator: Option<&str>) -> Result<CreatorPetState> {
-        let raw: Value = self.trs_get(Req::put(acting("/v1/creator/pet/escort".into(), as_creator)?, json!({ "visible": visible }))).await?;
-        self.state_with_cards(&raw).await
+    /// Gefolge für andere zeigen oder verstecken (`PUT /v1/creator/pet/extras { show }`; die Antwort enthält
+    /// nur `{ extras, showExtras, max }`, darum danach der volle Stand). Helfer bekommen 403 `creator_helper_right`.
+    pub async fn creator_set_pet_extras(&self, show: bool, as_creator: Option<&str>) -> Result<CreatorPetState> {
+        let _: Value = self.trs_get(Req::put(acting("/v1/creator/pet/extras".into(), as_creator)?, json!({ "show": show }))).await?;
+        self.creator_pet(as_creator).await
     }
 
     /// Alle Haustier-Codes (ohne Klartext).
@@ -535,23 +539,23 @@ mod tests {
         let raw = json!({
             "pet": { "cosmeticId": "penguin", "name": "Pinguin", "count": 1 },
             "extras": [
-                { "cosmeticId": "penguin_emperor", "name": "Kaiserpinguin", "card": "/v1/cosmetics/penguin_emperor/card.png?v=ab", "scale": 1.25 },
+                { "cosmeticId": "penguin_emperor", "name": "Kaiserpinguin", "card": "/v1/cosmetics/penguin_emperor/card.png?v=ab", "petScale": 1.25, "scale": 8, "available": false },
                 { "cosmeticId": "penguin_beanie", "name": "Mütze" },
                 { "cosmeticId": "../x", "name": "kaputt" },
-                { "cosmeticId": "penguin_shades", "scale": 99 },
+                { "cosmeticId": "penguin_shades", "petScale": 99 },
                 "kein Objekt", { "cosmeticId": "a" }, { "cosmeticId": "b" }
             ],
-            "escortVisible": false
+            "showExtras": false
         });
         let s = clean_state(&raw).unwrap();
-        let ids: Vec<_> = s.extras.iter().map(|e| (e.cosmetic_id.as_str(), e.scale)).collect();
-        assert_eq!(ids, [("penguin_emperor", 1.25), ("penguin_beanie", 1.0), ("penguin_shades", 1.0), ("a", 1.0)], "kaputte fallen weg, höchstens 4, Größe 0,25 bis 3");
+        let ids: Vec<_> = s.extras.iter().map(|e| (e.cosmetic_id.as_str(), e.pet_scale)).collect();
+        assert_eq!(ids, [("penguin_emperor", 1.25), ("penguin_beanie", 1.0), ("penguin_shades", 2.0), ("a", 1.0)], "kaputte fallen weg, höchstens 4, Größe geklemmt auf 0,5 bis 2, `scale` zählt nicht");
         assert_eq!(s.extras[0].name, "Kaiserpinguin");
         assert!(s.extras[0].card_url.as_deref().unwrap().ends_with("card.png?v=ab"));
-        assert!(!s.escort_visible);
+        assert!(!s.show_extras);
         // Ältere API: kein Gefolge, Schalter gilt als an.
         let old = clean_state(&json!({ "pet": { "cosmeticId": "penguin" } })).unwrap();
-        assert!(old.extras.is_empty() && old.escort_visible);
+        assert!(old.extras.is_empty() && old.show_extras);
     }
 
     #[test]
@@ -577,7 +581,7 @@ mod tests {
     fn pet_events_arrive_as_creator_updates() {
         use super::super::creator::decode_live;
         use super::super::live::LiveEvent;
-        for kind in ["pet_assigned", "pet_removed", "pet_request_answered"] {
+        for kind in ["pet_assigned", "pet_removed", "pet_extras_changed", "pet_request_answered"] {
             let data = json!({ "kind": kind, "reason": "Fertig – viel Spaß!" }).to_string();
             match decode_live("creator_updated", &data) {
                 Some(LiveEvent::CreatorUpdated { kind: k, reason, .. }) => {

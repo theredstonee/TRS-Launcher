@@ -133,7 +133,7 @@ describe('Server-Form', () => {
   })
 
   it('Haustier-Ereignisse sind bekannte creator_updated-Arten', () => {
-    for (const kind of ['pet_assigned', 'pet_removed', 'pet_request_answered']) {
+    for (const kind of ['pet_assigned', 'pet_removed', 'pet_extras_changed', 'pet_request_answered']) {
       expect(creatorEventSchemas[0].parse({ type: 'creator_updated', kind, reason: 'Fertig', tier: null, milestone: null, helper: null }).kind).toBe(kind)
     }
   })

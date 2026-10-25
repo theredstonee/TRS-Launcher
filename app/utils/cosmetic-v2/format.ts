@@ -47,8 +47,8 @@ export const MAX_PETS = 4
 /** Gefolge: höchstens so viele zusätzliche Begleiter (Creator), gesamt höchstens `MAX_PET_GROUP` je Besitzer. */
 export const MAX_PET_EXTRAS = 4
 export const MAX_PET_GROUP = 8
-/** Erlaubte Größe eines Begleiters (`scale`, Standard 1; Kaiserpinguin 1,25). */
-export const PET_SCALE_RANGE = [0.25, 3] as const
+/** Erlaubte Größe eines Begleiters (`petScale`, Standard 1; Kaiserpinguin 1,25) – nie `scale`, das ist der Textur-Faktor. */
+export const PET_SCALE_RANGE = [0.5, 2] as const
 /** Höchstens so viele abschaltbare Teile je Modell (Anhang D). */
 export const MAX_OPTIONS = 4
 /** Überblenden zwischen Zuständen (§7). */
@@ -570,10 +570,10 @@ export function petSlots(count: unknown): { x: number; y: number; z: number; yaw
   }))
 }
 
-/** Größe eines Begleiters vom Server: Zahl von 0,25 bis 3, sonst 1. */
+/** Größe eines Begleiters vom Server (`petScale`): Zahl, auf 0,5 bis 2 geklemmt, sonst 1. */
 export function petScale(scale: unknown): number {
   if (typeof scale !== 'number' || !Number.isFinite(scale)) return 1
-  return scale >= PET_SCALE_RANGE[0] && scale <= PET_SCALE_RANGE[1] ? Math.round(scale * 1000) / 1000 : 1
+  return Math.round(Math.min(PET_SCALE_RANGE[1], Math.max(PET_SCALE_RANGE[0], scale)) * 1000) / 1000
 }
 
 /** Eintrag der Gruppe: `main` = das Haupt-Pet (`count`-mal), `extra` = Gefolge (Nummer in der Liste). */

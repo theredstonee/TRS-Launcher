@@ -7,11 +7,11 @@ import { trsHeadCosmeticSchema } from '../app/utils/trs'
 // Größe je Pet, gesamt höchstens 8. Nur reine Regeln und Schemas; die Zeichnung selbst prüft der Screenshot.
 
 describe('Größe der Begleiter', () => {
-  it('nimmt 0,25 bis 3, sonst 1', () => {
+  it('klemmt auf 0,5 bis 2, keine Zahl = 1', () => {
     expect(petScale(1.25)).toBe(1.25)
-    expect(petScale(0.25)).toBe(0.25)
-    expect(petScale(3)).toBe(3)
-    for (const bad of [undefined, null, '1.25', NaN, Infinity, 0, -1, 0.1, 3.5, 99]) expect(petScale(bad)).toBe(1)
+    expect(petScale(0.1)).toBe(0.5)
+    expect(petScale(8)).toBe(2)
+    for (const bad of [undefined, null, '1.25', NaN, Infinity]) expect(petScale(bad)).toBe(1)
     expect(petScale(1.12345)).toBe(1.123)
   })
 })
@@ -102,18 +102,18 @@ const base = {
 describe('Kosmetik-Eintrag mit Gefolge', () => {
   it('liest Größe und Gefolge', () => {
     const c = trsHeadCosmeticSchema.parse({
-      ...base, scale: 1.25,
-      extras: [{ id: 'penguin_emperor', name: 'Kaiserpinguin', scale: 1.25, hash: 'e1', preview: true }, { id: 'penguin_beanie', name: 'Mütze' }],
+      ...base, petScale: 1.25, scale: 8,
+      extras: [{ id: 'penguin_emperor', name: 'Kaiserpinguin', petScale: 1.25, scale: 8, hash: 'e1', preview: true }, { id: 'penguin_beanie', name: 'Mütze' }],
     })
-    expect(c.scale).toBe(1.25)
-    expect(c.extras.map((e) => [e.id, e.scale, e.preview, e.hash])).toEqual([['penguin_emperor', 1.25, true, 'e1'], ['penguin_beanie', 1, false, null]])
+    expect(c.petScale).toBe(1.25)
+    expect(c.extras.map((e) => [e.id, e.petScale, e.preview, e.hash])).toEqual([['penguin_emperor', 1.25, true, 'e1'], ['penguin_beanie', 1, false, null]])
   })
 
   it('ältere Kerne ohne die Felder: Größe 1, kein Gefolge; Unsinn fällt zurück', () => {
     const c = trsHeadCosmeticSchema.parse(base)
-    expect([c.scale, c.extras]).toEqual([1, []])
-    const bad = trsHeadCosmeticSchema.parse({ ...base, scale: 99, extras: 'x' })
-    expect([bad.scale, bad.extras]).toEqual([1, []])
+    expect([c.petScale, c.extras]).toEqual([1, []])
+    const bad = trsHeadCosmeticSchema.parse({ ...base, petScale: 99, extras: 'x' })
+    expect([bad.petScale, bad.extras]).toEqual([1, []])
   })
 })
 
@@ -122,15 +122,15 @@ describe('Haustier-Stand mit Gefolge', () => {
   it('liest Karten, Größe und Schalter', () => {
     const s = creatorPetStateSchema.parse({
       ...state, pet: { cosmeticId: 'penguin', name: 'Pinguin', card: null, count: 1, available: true },
-      extras: [{ cosmeticId: 'penguin_emperor', name: 'Kaiserpinguin', card: null, scale: 1.25 }, { cosmeticId: 'penguin_shades', name: 'Sonnenbrille', card: null }],
-      escortVisible: false,
+      extras: [{ cosmeticId: 'penguin_emperor', name: 'Kaiserpinguin', card: null, petScale: 1.25, available: false }, { cosmeticId: 'penguin_shades', name: 'Sonnenbrille', card: null }],
+      showExtras: false,
     })
-    expect(s.extras.map((e) => [e.cosmeticId, e.scale])).toEqual([['penguin_emperor', 1.25], ['penguin_shades', 1]])
-    expect(s.escortVisible).toBe(false)
+    expect(s.extras.map((e) => [e.cosmeticId, e.petScale])).toEqual([['penguin_emperor', 1.25], ['penguin_shades', 1]])
+    expect(s.showExtras).toBe(false)
   })
 
   it('ohne Felder: kein Gefolge, Schalter an', () => {
     const s = creatorPetStateSchema.parse(state)
-    expect([s.extras, s.escortVisible]).toEqual([[], true])
+    expect([s.extras, s.showExtras]).toEqual([[], true])
   })
 })

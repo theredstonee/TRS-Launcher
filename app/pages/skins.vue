@@ -250,7 +250,7 @@ function choosePetState(key: PetState) {
 }
 onBeforeUnmount(() => grabTimer && clearTimeout(grabTimer))
 /** Größe des gezeigten Haupt-Pets (Standard 1; z. B. Kaiserpinguin 1,25). */
-const shownPetScale = computed(() => petScale(shownPet.value?.scale))
+const shownPetScale = computed(() => petScale(shownPet.value?.petScale))
 /** Gefolge (Creator): zusätzliche Begleiter am getragenen Pet, je mit eigenem Modell und eigener Größe. */
 const shownPetExtras = computed(() => (shownPet.value?.equipped ? shownPet.value.extras : []))
 /** Modell + Texturen für die Vorschau (null = nichts am Kopf bzw. noch am Laden). */
@@ -315,7 +315,7 @@ watch(petStateKeys, (keys) => {
 const viewerPetExtras = shallowRef<{ cosmetic: ViewerCosmetic; scale: number }[]>([])
 let extrasToken = 0
 watch(
-  () => shownPetExtras.value.filter((e) => e.preview).map((e) => `${e.id}:${e.hash ?? ''}:${e.scale}`).join('|'),
+  () => shownPetExtras.value.filter((e) => e.preview).map((e) => `${e.id}:${e.hash ?? ''}:${e.petScale}`).join('|'),
   async () => {
     const mine = ++extrasToken
     const list = await Promise.all(
@@ -323,12 +323,12 @@ watch(
         if (!e.preview) return null
         const key = `${e.id}:${e.hash ?? ''}`
         const cached = cosmeticModels.get(key)
-        if (cached) return { cosmetic: cached, scale: e.scale }
+        if (cached) return { cosmetic: cached, scale: e.petScale }
         try {
           const data = await backend.trs.headCosmeticModel(e.id)
           const loaded: ViewerCosmetic = { model: data.model, texture: data.texture, glow: data.glow }
           cosmeticModels.set(key, loaded)
-          return { cosmetic: loaded, scale: e.scale }
+          return { cosmetic: loaded, scale: e.petScale }
         } catch (err) {
           console.warn(err)
           return null

@@ -39,10 +39,6 @@ async fn server() -> MockServer {
             ("GET", "/v1/creator/pet") => Response::json(200, json!({
                 "pet": { "cosmeticId": "penguin", "name": "Pinguin", "card": "/v1/cosmetics/penguin/card.png?v=ab12", "count": 2, "available": true },
                 "quota": quota(190), "codes": [], "requests": [], "canRequest": false })),
-            ("PUT", "/v1/creator/pet/escort") => Response::json(200, json!({
-                "pet": { "cosmeticId": "penguin", "name": "Pinguin", "count": 1 },
-                "extras": [{ "cosmeticId": "penguin_emperor", "name": "Kaiserpinguin", "card": "/v1/cosmetics/penguin_emperor/card.png?v=e1", "scale": 1.25 }],
-                "escortVisible": req.json()["visible"], "quota": quota(0) })),
             ("GET", "/v1/cosmetics/penguin_emperor/card.png") => Response::png(real_png(64, 80)),
             ("GET", "/v1/cosmetics/penguin/card.png") => {
                 if req.bearer().is_some() { Response::png(real_png(64, 80)) } else { Response::error(404, "not_found") }
@@ -160,19 +156,45 @@ async fn pet_request_sends_fields_then_the_checked_image() {
 }
 
 #[tokio::test]
-async fn escort_switch_returns_the_state_with_extra_cards() {
-    let server = server().await;
-    let (_dir, launcher) = launcher(&server, &[ACC]).await;
+async fn extras_switch_puts_show_and_reloads_the_state_with_cards() {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    let shown = std::sync::Arc::new(AtomicBool::new(true));
+    let flag = std::sync::Arc::clone(&shown);
+    let issued = AtomicUsize::new(0);
+    let server = MockServer::start(move |req| {
+        if let Some(r) = auth_routes(req, &issued, "mc-token") {
+            return r;
+        }
+        match (req.method.as_str(), req.path.split('?').next().unwrap_or_default()) {
+            ("PUT", "/v1/creator/pet/extras") => {
+                flag.store(req.json()["show"].as_bool().unwrap(), Ordering::SeqCst);
+                Response::json(200, json!({ "extras": [], "showExtras": flag.load(Ordering::SeqCst), "max": 4 }))
+            }
+            ("GET", "/v1/creator/pet") => Response::json(200, json!({
+                "pet": { "cosmeticId": "penguin", "name": "Pinguin", "count": 1 },
+                "extras": [{ "cosmeticId": "penguin_emperor", "name": "Kaiserpinguin", "card": "/v1/cosmetics/penguin_emperor/card.png?v=e1",
+                             "petScale": 1.25, "scale": 8, "available": true }],
+                "showExtras": flag.load(Ordering::SeqCst), "quota": quota(0) })),
+            ("GET", "/v1/cosmetics/penguin_emperor/card.png") => Response::png(real_png(64, 80)),
+            _ => Response::error(404, "not_found"),
+        }
+    })
+    .await;
+    let (_dir, api) = launcher(&server, &[ACC]).await;
 
-    let state = launcher.creator_set_pet_escort(false, None).await.unwrap();
-    assert!(!state.escort_visible);
-    assert_eq!(state.extras.len(), 1);
+    let state = api.creator_set_pet_extras(false, None).await.unwrap();
+    assert!(!state.show_extras);
     let extra = &state.extras[0];
-    assert_eq!((extra.cosmetic_id.as_str(), extra.name.as_str(), extra.scale), ("penguin_emperor", "Kaiserpinguin", 1.25));
+    assert_eq!((extra.cosmetic_id.as_str(), extra.name.as_str(), extra.pet_scale, extra.available), ("penguin_emperor", "Kaiserpinguin", 1.25, true));
     assert!(extra.card.as_deref().unwrap().starts_with("data:image/png;base64,"));
-    assert_eq!(server.hits("PUT", "/v1/creator/pet/escort")[0].json(), json!({ "visible": false }));
-    assert!(launcher.creator_set_pet_escort(true, None).await.unwrap().escort_visible);
+    assert_eq!(server.hits("PUT", "/v1/creator/pet/extras")[0].json(), json!({ "show": false }));
+    assert!(api.creator_set_pet_extras(true, None).await.unwrap().show_extras);
+    let json = serde_json::to_value(&state).unwrap();
+    assert_eq!((json["showExtras"].clone(), json["extras"][0]["petScale"].clone()), (json!(false), json!(1.25)));
+
     // Ohne Gefolge-Felder (ältere API) gilt der Schalter als an und die Liste ist leer.
-    let old = launcher.creator_pet(None).await.unwrap();
-    assert!(old.extras.is_empty() && old.escort_visible);
+    let plain = self::server().await;
+    let (_d2, old_launcher) = launcher(&plain, &[ACC]).await;
+    let old = old_launcher.creator_pet(None).await.unwrap();
+    assert!(old.extras.is_empty() && old.show_extras);
 }

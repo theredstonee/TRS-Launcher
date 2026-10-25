@@ -81,17 +81,17 @@ async function copy(text: string, all = false) {
 // Der Schalter „Gefolge zeigen“ blendet sie für alle ein oder aus; Helfer sehen ihn nur.
 const escortBusy = ref(false)
 const escortVisible = computed({
-  get: () => state.value?.escortVisible ?? true,
+  get: () => state.value?.showExtras ?? true,
   set: (visible: boolean) => void setEscort(visible),
 })
 async function setEscort(visible: boolean) {
   if (helper.value || escortBusy.value || !state.value) return
   const before = state.value
   // Sofort umschalten, bei einem Fehler zurück.
-  state.value = { ...before, escortVisible: visible }
+  state.value = { ...before, showExtras: visible }
   escortBusy.value = true
   try {
-    state.value = await backend.creator.setPetEscort(visible, store.actingAs)
+    state.value = await backend.creator.setPetExtras(visible, store.actingAs)
     toasts.ok(t(visible ? 'creator.pet.escort.shown' : 'creator.pet.escort.hidden'))
   } catch (e) {
     state.value = before
@@ -364,18 +364,18 @@ const requestClass = {
             <ToggleSwitch v-model="escortVisible" :label="t('creator.pet.escort.show')" :disabled="helper || escortBusy" data-testid="creator-pet-escort-switch" />
           </label>
         </div>
-        <ul class="grid grid-cols-2 gap-3 transition-opacity sm:grid-cols-4" :class="{ 'opacity-50': !state.escortVisible }" data-testid="creator-pet-escort-list">
-          <li v-for="(e, i) in state.extras" :key="`${e.cosmeticId}:${i}`" class="min-w-0">
+        <ul class="grid grid-cols-2 gap-3 transition-opacity sm:grid-cols-4" :class="{ 'opacity-50': !state.showExtras }" data-testid="creator-pet-escort-list">
+          <li v-for="(e, i) in state.extras" :key="`${e.cosmeticId}:${i}`" class="min-w-0" :class="{ 'opacity-50': !e.available }">
             <span class="relative block aspect-[4/5] overflow-hidden rounded-lg bg-gradient-to-b from-base-800 to-base-950 ring-1 ring-base-700">
               <img v-if="e.card" :src="e.card" alt="" class="size-full object-cover" draggable="false" />
               <span v-else class="grid size-full place-items-center text-base-600"><SocialIcon name="star" class="size-8" /></span>
-              <span v-if="e.scale !== 1" class="badge absolute right-1.5 bottom-1.5 bg-base-950/80 text-base-200 tabular-nums">×{{ e.scale }}</span>
+              <span v-if="e.petScale !== 1" class="badge absolute right-1.5 bottom-1.5 bg-base-950/80 text-base-200 tabular-nums">×{{ e.petScale }}</span>
             </span>
             <p class="mt-1 truncate text-xs font-medium text-base-100">{{ e.name }}</p>
           </li>
         </ul>
         <p class="mt-2 text-[11px] text-base-400" data-testid="creator-pet-escort-state">
-          {{ state.escortVisible ? t('creator.pet.escort.visibleHint') : t('creator.pet.escort.hiddenHint') }}
+          {{ state.showExtras ? t('creator.pet.escort.visibleHint') : t('creator.pet.escort.hiddenHint') }}
         </p>
       </section>
 

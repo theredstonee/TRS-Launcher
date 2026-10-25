@@ -326,7 +326,7 @@ impl TrsApi {
             let source = v2_source(&self.base, &trusted, &c);
             out.push(PetExtra {
                 name: validate::cape_name(&c.name, &c.id),
-                scale: clean_scale(c.scale.as_ref()).unwrap_or(1.0),
+                pet_scale: clean_scale(c.pet_scale.as_ref()).unwrap_or(1.0),
                 hash: source.as_ref().map(|s| s.hash.clone()),
                 preview: source.is_some(),
                 id: c.id.clone(),
@@ -425,8 +425,8 @@ pub(crate) struct Worn {
     pub options: BTreeMap<String, bool>,
     pub count: Option<u8>,
     pub creator: bool,
-    /// Größe des Begleiters am Boden (`equipped.pet.scale`).
-    pub scale: Option<f32>,
+    /// Größe des Begleiters am Boden (`equipped.pet.petScale`).
+    pub pet_scale: Option<f32>,
     /// Gefolge (`equipped.pet.extras`), roh – geprüft wird in [`TrsApi::remember_extras`].
     pub extras: Vec<Value>,
 }
@@ -444,13 +444,13 @@ pub(crate) fn worn_extras(me: &Value) -> HashMap<String, Worn> {
         }
         let count = if slot == "pet" { clean_count(view.get("count")) } else { None };
         let creator = view.get("source").and_then(Value::as_str) == Some("creator") || count.is_some_and(|n| n > 1);
-        let scale = if slot == "pet" { clean_scale(view.get("scale")) } else { None };
+        let pet_scale = if slot == "pet" { clean_scale(view.get("petScale")) } else { None };
         let extras = if slot == "pet" {
             view.get("extras").and_then(Value::as_array).map(|a| a.iter().take(MAX_PET_EXTRAS).cloned().collect()).unwrap_or_default()
         } else {
             Vec::new()
         };
-        out.insert(id.to_owned(), Worn { options, count, creator, scale, extras });
+        out.insert(id.to_owned(), Worn { options, count, creator, pet_scale, extras });
     }
     out
 }
@@ -496,7 +496,7 @@ impl Launcher {
                 options: if c.equipped { clean_options(c.options.as_ref()) } else { BTreeMap::new() },
                 count: if c.equipped && c.slot == "pet" { clean_count(c.count.as_ref()) } else { None },
                 creator: c.source.as_deref() == Some("creator"),
-                scale: None,
+                pet_scale: None,
                 extras: Vec::new(),
             });
             async move {
@@ -513,7 +513,7 @@ impl Launcher {
                 let v2 = c.is_v2();
                 let worn_pet = c.equipped && c.slot == "pet";
                 HeadCosmetic {
-                    scale: if c.slot == "pet" { extra.scale.or_else(|| clean_scale(c.scale.as_ref())).unwrap_or(1.0) } else { 1.0 },
+                    pet_scale: if c.slot == "pet" { extra.pet_scale.or_else(|| clean_scale(c.pet_scale.as_ref())).unwrap_or(1.0) } else { 1.0 },
                     extras: if worn_pet { gang } else { Vec::new() },
                     name: validate::cape_name(&c.name, &c.id),
                     format: if v2 { 2 } else { 1 },

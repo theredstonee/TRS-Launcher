@@ -269,6 +269,7 @@ export const creatorUpdateKinds = [
   // Creator-Haustiere (§35.13): zugeordnet, entfernt, Wunsch beantwortet (`reason` = Antwort des Teams).
   'pet_assigned',
   'pet_removed',
+  'pet_extras_changed',
   'pet_request_answered',
 ] as const
 export type CreatorUpdateKind = (typeof creatorUpdateKinds)[number]
@@ -566,7 +567,9 @@ export const creatorPetExtraSchema = z.object({
   name: text(96),
   card: pngDataUrl.nullable(),
   /** Größe im Spiel (Standard 1; Kaiserpinguin 1,25). */
-  scale: z.number().min(0.25).max(3).catch(1).default(1),
+  petScale: z.number().min(0.5).max(2).catch(1).default(1),
+  /** `false` = Kosmetik gerade nicht verfügbar. */
+  available: z.boolean().catch(true).default(true),
 })
 
 export const creatorPetStateSchema = z.object({
@@ -582,7 +585,7 @@ export const creatorPetStateSchema = z.object({
   /** Gefolge: bis zu 4 zusätzliche Begleiter (ältere Kerne: leer). */
   extras: z.array(creatorPetExtraSchema).max(4).catch([]).default([]),
   /** Schalter „Gefolge zeigen“ (Standard an). */
-  escortVisible: z.boolean().catch(true).default(true),
+  showExtras: z.boolean().catch(true).default(true),
   limit: z.object({ month: z.string().regex(/^\d{4}-\d{2}$/).nullable(), used: count, max: count, resetsAt: time }).nullable(),
   request: petRequestSchema.nullable(),
   /** Vom Server: darf jetzt einen Wunsch stellen (`null` = unbekannt, dann rechnet `canRequestPet`). */

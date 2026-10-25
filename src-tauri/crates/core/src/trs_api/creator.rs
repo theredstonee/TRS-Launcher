@@ -28,7 +28,7 @@ pub const STATES: [&str; 3] = ["active", "revoked", "banned"];
 pub const MILESTONES: [&str; 4] = ["bronze", "silver", "gold", "diamond"];
 /// Arten von `creator_updated` (§35.7).
 /// `pet_*` (Creator-Haustiere, §35.13): zugeordnet, entfernt, Wunsch beantwortet (`reason` = Antwort des Teams).
-pub const UPDATE_KINDS: [&str; 15] = [
+pub const UPDATE_KINDS: [&str; 16] = [
     "symbol_approved",
     "symbol_rejected",
     "cape_approved",
@@ -43,6 +43,7 @@ pub const UPDATE_KINDS: [&str; 15] = [
     "helper_left",
     "pet_assigned",
     "pet_removed",
+    "pet_extras_changed",
     "pet_request_answered",
 ];
 /// Rechte eines Helfers (§35.9). Stufe, Anträge, Helfer und Vorschau-Builds bleiben beim Creator.
