@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { introDesignById, pickIntroDesign } from '../app/utils/intro/designs'
-import { DEN, familyAt, foxRects, KIT_SPOTS, POUNCE, pounceAt, SLEEPER, type FoxPose } from '../app/utils/intro/fox'
-import { camAt, familyCues, fireGlow, FOXDEN_BEAT, FOXDEN_CUES, gustAt, LEAP_CAM, spruceHalf, SUN, sunAt } from '../app/utils/intro/foxden'
+import { applyXf, DEN, faceShade, familyAt, foxModel, foxTexel, KIT_SPOTS, POUNCE, pounceAt, SLEEPER, type FoxPose, type Part, type V3 } from '../app/utils/intro/fox'
+import { camAt, familyCues, fireGlow, FOX_CENTER_PX, FOXDEN_BEAT, FOXDEN_CUES, gustAt, LEAP_CAM, spruceHalf, SUN, sunAt } from '../app/utils/intro/foxden'
 import { FOX_SCALE, planFoxden } from '../app/utils/intro/sfx'
 import { INTRO_CUES, INTRO_LENGTHS } from '../app/utils/intro/timeline'
 
@@ -97,7 +97,7 @@ describe('Start-Animation Fuchsbau: Zeitplan', () => {
       // Bildschirmlage relativ zur Mitte: Welt − Kamera · Parallaxe
       const sunRel = { x: sun.x - cx * SUN.par, y: sun.y - cy * SUN.par }
       const fox = pounceAt(0.5)
-      const foxRel = { x: fox.x - cx, y: fox.y - 9 - cy }
+      const foxRel = { x: fox.x - cx, y: fox.y - FOX_CENTER_PX - cy }
       expect(sunRel.x).toBeCloseTo(foxRel.x, 3)
       expect(sunRel.y).toBeCloseTo(foxRel.y, 3)
     }
@@ -152,27 +152,95 @@ describe('Start-Animation Fuchsbau: Fuchsfamilie', () => {
     const air = hunter((cues.pounce[1] + cues.pounce[2]) / 2)!
     expect(air.airborne).toBe(true)
     expect(air.look.pose).toBe('leap')
+    // Gegenlicht nur vor der Sonne, beim Absprung und Eintauchen farbig
+    expect(hunter(cues.pounce[1] + (cues.pounce[2] - cues.pounce[1]) * 0.1)!.airborne).toBe(false)
+    expect(hunter(cues.pounce[1] + (cues.pounce[2] - cues.pounce[1]) * 0.1)!.look.pose).toBe('leap')
     expect(hunter(cues.pounce[2] + 0.1)).toBeUndefined()
     expect(hunter(cues.impact)!.look.pose).toBe('peek')
     expect(hunter(cues.impact)!.look.berries).toBe(true)
   })
 
-  it('jede Pose besteht aus Quadern im Sprite-Rahmen (Fußpunkt unten)', () => {
-    const poses: FoxPose[] = ['stand', 'walk', 'sit', 'sleep', 'crouch', 'leap', 'peek']
+  it('Box-Modell wie in Minecraft: Kopf mit Schnauze und zwei Ohren, Körper, vier Beine, Schwanz', () => {
+    const count = (ps: Part[], k: Part['kind']) => ps.filter((p) => p.kind === k).length
+    const stand = foxModel({ pose: 'stand', kit: false, frame: 0, berries: false })
+    expect(count(stand, 'head')).toBe(1)
+    expect(count(stand, 'snout')).toBe(1)
+    expect(count(stand, 'ear')).toBe(2)
+    expect(count(stand, 'body')).toBe(1)
+    expect(count(stand, 'leg')).toBe(4)
+    expect(count(stand, 'tail')).toBe(1)
+    const head = stand.find((p) => p.kind === 'head')!
+    const body = stand.find((p) => p.kind === 'body')!
+    expect(head.size).toEqual([6, 6, 8])
+    expect(body.size).toEqual([11, 6, 6])
+    expect(stand.find((p) => p.kind === 'snout')!.size).toEqual([3, 2, 4])
+    expect(stand.find((p) => p.kind === 'tail')!.size).toEqual([9, 5, 4])
+    for (const p of stand.filter((q) => q.kind === 'leg')) expect(p.size).toEqual([2, 6, 2])
+    // Beere quer im Maul: breiter als die Schnauze
+    const carry = foxModel({ pose: 'walk', kit: false, frame: 1, berries: true })
+    expect(carry.find((p) => p.kind === 'berry')!.size[2]).toBeGreaterThan(4)
+    // alle Posen: positive Maße, nichts unter dem Boden
+    const poses: FoxPose[] = ['stand', 'walk', 'sit', 'sleep', 'crouch', 'leap', 'peek', 'sniff', 'tumble']
     for (const kit of [false, true]) {
       for (const pose of poses) {
-        const rects = foxRects({ pose, kit, frame: 1, berries: true })
-        expect(rects.length).toBeGreaterThan(5)
-        for (const [x0, y0, x1, y1] of rects) {
-          expect(x0).toBeLessThanOrEqual(x1)
-          expect(y0).toBeLessThanOrEqual(y1)
-          expect(y1).toBeLessThanOrEqual(0)
-          expect(y0).toBeGreaterThanOrEqual(-30)
-          expect(x0).toBeGreaterThanOrEqual(-26)
-          expect(x1).toBeLessThan(26)
+        for (const p of foxModel({ pose, kit, frame: 1, berries: true, pitch: 0 })) {
+          for (const d of p.size) expect(d).toBeGreaterThan(0)
+          if (pose !== 'tumble') expect(applyXf(p.min, p.xf)[1]).toBeGreaterThan(-6)
         }
       }
     }
+  })
+
+  it('Junge: großer Kopf, kleiner Körper (Minecraft-Babyfuchs)', () => {
+    const ratio = (kit: boolean) => {
+      const ps = foxModel({ pose: 'stand', kit, frame: 0, berries: false })
+      return ps.find((p) => p.kind === 'head')!.size[0] / ps.find((p) => p.kind === 'body')!.size[0]
+    }
+    expect(ratio(true)).toBeGreaterThan(ratio(false) * 1.3)
+  })
+
+  it('Pounce: Vorderbeine vorgestreckt; Schlafen: Schwanz liegt vorn über der Schnauze, Augen zu', () => {
+    const leap = foxModel({ pose: 'leap', kit: false, frame: 0, berries: false, pitch: 0 })
+    const bodyFront = 5.5
+    const frontLegs = leap.filter((p) => p.kind === 'leg' && p.min[0] > 0)
+    for (const l of frontLegs) {
+      const foot = applyXf([l.min[0] + 1, l.min[1], l.min[2] + 1], l.xf)
+      expect(foot[0]).toBeGreaterThan(bodyFront)
+    }
+    const sleep = foxModel({ pose: 'sleep', kit: false, frame: 0, berries: false })
+    const tail = sleep.find((p) => p.kind === 'tail')!
+    const snout = sleep.find((p) => p.kind === 'snout')!
+    expect(tail.tipFront).toBe(true)
+    expect(sleep.find((p) => p.kind === 'head')!.closed).toBe(true)
+    expect(sleep.some((p) => p.kind === 'leg')).toBe(false)
+    const tailFront = applyXf([tail.min[0] + tail.size[0], tail.min[1] + tail.size[1], tail.min[2]], tail.xf)
+    const snoutBottom = applyXf(snout.min, snout.xf)
+    expect(tailFront[1]).toBeGreaterThan(snoutBottom[1])
+  })
+
+  it('Texturen: weiße Schwanzspitze, dunkle Socken, Augen mit Glanzpixel, schwarze Nase', () => {
+    const stand = foxModel({ pose: 'stand', kit: false, frame: 0, berries: false })
+    const tail = stand.find((p) => p.kind === 'tail')!
+    expect(foxTexel(tail, 'pz', 0, 2, 9, 5)).toBe('w')
+    expect(foxTexel(tail, 'pz', 8, 2, 9, 5)).not.toBe('w')
+    const leg = stand.find((p) => p.kind === 'leg')!
+    expect(foxTexel(leg, 'pz', 0, 5, 2, 6)).toMatch(/^[dD]$/)
+    expect(foxTexel(leg, 'pz', 0, 1, 2, 6)).toBe('o')
+    const head = stand.find((p) => p.kind === 'head')!
+    const face: string[] = []
+    for (let v = 0; v < 6; v++) for (let u = 0; u < 8; u++) face.push(foxTexel(head, 'px', u, v, 8, 6))
+    expect(face.filter((c) => c === 'g')).toHaveLength(2)
+    expect(face.filter((c) => c === 'e').length).toBeGreaterThanOrEqual(4)
+    const snout = stand.find((p) => p.kind === 'snout')!
+    expect([0, 1, 2, 3].map((u) => foxTexel(snout, 'px', u, 0, 4, 2))).toContain('n')
+  })
+
+  it('Schattierung je Fläche: oben hell, Seite mittel, unten dunkel', () => {
+    const up: V3 = [0, 1, 0]
+    const side: V3 = [0, 0, 1]
+    const down: V3 = [0, -1, 0]
+    expect(faceShade(up)).toBeGreaterThan(faceShade(side))
+    expect(faceShade(side)).toBeGreaterThan(faceShade(down))
   })
 })
 

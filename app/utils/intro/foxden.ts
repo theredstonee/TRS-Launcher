@@ -11,7 +11,7 @@
 // (7,33 s in der Datei = impact − 4 Schläge). Anderer Jingle: FOXDEN_BEAT und `jingleHit` (designs.ts) anpassen.
 
 import type { IntroDesign } from './designs'
-import { DEN, familyAt, foxCanvas, FOX_OX, FOX_OY, POUNCE, BERRY_DROP, SLEEPER, type FamilyCues, type FoxLook } from './fox'
+import { DEN, familyAt, FOX_CENTER, POUNCE, BERRY_DROP, projectFox, renderFox, SLEEPER, type FamilyCues, type FoxLook, type FoxSprite } from './fox'
 import { bayer, canvas, clamp, css, ctx2d, decay, easeIn, easeOut, hash, hash2, hex, lerp, mix, range, rng, smooth, type Cv, type Rgb } from './kit'
 import { IntroStage, type ArtView, type IntroStageOptions } from './stage'
 import type { IntroCoreCues, IntroLength } from './timeline'
@@ -41,10 +41,14 @@ export interface FoxdenCues extends IntroCoreCues {
 /** Kamera im Scheitel des Pounce – die Sonne steht genau dahinter. */
 export const LEAP_CAM = [POUNCE.apex.x, -50, 1.3] as const
 /** Minecraft-Sonne (Parallaxe 0,08): so gelegt, dass sie im Scheitel hinter dem Fuchs steht; sinkt langsam. */
-export const SUN = { x: POUNCE.apex.x - 0.92 * LEAP_CAM[0], y: POUNCE.apex.y - 9 - 0.92 * LEAP_CAM[1], half: 20, par: 0.08, sink: 2.5 } as const
-export const CAMPFIRE = { x: 264 } as const
-export const LANTERN_POST = { x: 450 } as const
-export const BUSHES = [576, 600] as const
+/** Bildhöhe der Körpermitte über dem Fußpunkt (Kunst-Pixel) – dort steht die Sonne im Scheitel. */
+export const FOX_CENTER_PX = -projectFox([0, FOX_CENTER, 0]).y
+export const SUN = { x: POUNCE.apex.x - 0.92 * LEAP_CAM[0], y: POUNCE.apex.y - FOX_CENTER_PX - 0.92 * LEAP_CAM[1], half: 20, par: 0.08, sink: 2.5 } as const
+export const CAMPFIRE = { x: 226 } as const
+export const LANTERN_POST = { x: 438 } as const
+/** Süßbeerensträucher (linke Kante x, je 2×2 Blöcke groß); in den mittleren taucht der Fuchs. */
+export const BUSHES = [506, 560, 594] as const
+const DIVE_BUSH = 1
 
 const k = (impact: number, n: number) => Math.round((impact - n * FOXDEN_BEAT) * 1000) / 1000
 
@@ -371,27 +375,30 @@ function cherryTree(R: Raster, x: number, ground: number, bs: number, seed: numb
   }
 }
 
-/** Süßbeerenstrauch (Minecraft, ausgewachsen mit Beeren). */
-function berryBush(R: Raster, x: number, ground: number, seed: number) {
-  for (let y = -15; y <= -1; y++) {
-    for (let xx = 0; xx < 16; xx++) {
-      const d = Math.hypot((xx - 7.5) / 8, (y + 7) / 8.5)
-      const n = nh(xx, y, seed)
-      if (d > 1 - (n - 0.5) * 0.25) continue
+/** Süßbeerenstrauch (Minecraft, ausgewachsen mit Beeren) als eigenes Sprite, 2×2 Blöcke, Texel 2 px; Fußpunkt unten links. */
+function berryBush(seed: number): Cv {
+  const w = 34
+  const h = 30
+  const R = new Raster(w, h, 0, -h)
+  for (let y = -h; y <= -1; y++) {
+    for (let xx = 0; xx < w; xx++) {
+      const tx = xx >> 1
+      const ty = y >> 1
+      const d = Math.hypot((xx - w / 2) / (w / 2), (y + h * 0.48) / (h * 0.52))
+      const n = nh(tx, ty, seed)
+      if (d > 1 - (n - 0.5) * 0.3) continue
       if (n < 0.08) continue
-      R.set(x + xx, ground + y, pick(C.berryLeaf, nh(xx, y, seed + 1) * (y < -8 ? 1 : 0.8)))
+      R.set(xx, y, pick(C.berryLeaf, nh(tx, ty, seed + 1) * (y < -h * 0.5 ? 1 : 0.75)))
     }
   }
   const r = rng(seed)
-  for (let i = 0; i < 9; i++) {
-    const bx = x + 2 + Math.floor(r() * 12)
-    const by = ground - 3 - Math.floor(r() * 10)
-    R.set(bx, by, H(C.berry))
-    R.set(bx + 1, by, H(C.berry))
-    R.set(bx, by + 1, H('#8a0a1e'))
-    R.set(bx + 1, by + 1, H(C.berry))
-    R.set(bx, by, H(C.berryHi))
+  for (let i = 0; i < 11; i++) {
+    const bx = 4 + Math.floor(r() * 12) * 2
+    const by = -5 - Math.floor(r() * 10) * 2
+    for (let q = 0; q < 2; q++) for (let p = 0; p < 2; p++) R.set(bx + p * 2, by + q * 2, H(q ? '#8a0a1e' : p ? C.berry : C.berryHi))
+    for (let q = 0; q < 4; q++) for (let p = 0; p < 4; p++) if (!R.has(bx + p, by + q) || (q + p) % 2 === 0) R.set(bx + p, by + q, H(q > 1 ? '#8a0a1e' : p < 2 && q < 2 ? C.berryHi : C.berry))
   }
+  return R.canvas()
 }
 
 export class FoxdenScene extends IntroStage {
@@ -402,7 +409,8 @@ export class FoxdenScene extends IntroStage {
   private readonly near: Layer
   private readonly fore: Layer
   private readonly clouds: { cv: Cv; x: number; y: number }[] = []
-  private readonly foxes = new Map<string, Cv>()
+  private readonly foxes = new Map<string, FoxSprite>()
+  private readonly bushes: Cv[] = BUSHES.map((x) => berryBush(x))
   private wc: Cv = canvas(4, 4)
   private wg: CanvasRenderingContext2D = ctx2d(this.wc)
   private light: Cv = canvas(4, 4)
@@ -435,11 +443,21 @@ export class FoxdenScene extends IntroStage {
     this.tg = ctx2d(this.tmp)
   }
 
-  private foxSprite(look: FoxLook, silhouette: boolean): Cv {
-    const key = `${look.pose}|${look.kit ? 1 : 0}|${look.frame & 1}|${look.berries ? 1 : 0}|${silhouette ? 1 : 0}`
+  /** Sprite-Atlas: jede Pose/jedes Bild wird einmal aus dem Box-Modell gerastert und dann wiederverwendet. */
+  private foxSprite(look: FoxLook, silhouette: boolean, dark = 0): FoxSprite {
+    const pitch = look.pose === 'leap' ? Math.round(((look.pitch ?? 0) * 180) / Math.PI / 10) : look.pose === 'tumble' ? Math.round(((look.pitch ?? 0) * 180) / Math.PI / 30) * 3 : 0
+    const dk = Math.round(dark * 4)
+    const key = `${look.pose}|${look.kit ? 1 : 0}|${look.frame & 3}|${look.berries ? 1 : 0}|${pitch}|${silhouette ? 1 : 0}|${dk}`
     let c = this.foxes.get(key)
     if (!c) {
-      c = foxCanvas(look.pose === 'tumble' ? { ...look, pose: 'crouch' } : look, silhouette)
+      c = renderFox({ ...look, pitch: (pitch * 10 * Math.PI) / 180 }, silhouette)
+      if (dk > 0) {
+        // im dunklen Bau: abgedunkelt (deckend, nicht durchsichtig)
+        const g = ctx2d(c.cv)
+        g.globalCompositeOperation = 'source-atop'
+        g.fillStyle = `rgba(14,8,6,${(dk / 4) * 0.8})`
+        g.fillRect(0, 0, c.cv.width, c.cv.height)
+      }
       this.foxes.set(key, c)
     }
     return c
@@ -601,8 +619,6 @@ export class FoxdenScene extends IntroStage {
     spruce(R, 160, 0, bs, 7, 905)
     spruce(R, 752, 0, bs, 10, 903)
     cherryTree(R, 690, 0, bs, 904, true)
-    for (const bx of BUSHES) berryBush(R, bx - 8, 0, bx)
-    berryBush(R, 520, 0, 17)
     return layerOf(R, 1)
   }
 
@@ -807,13 +823,6 @@ export class FoxdenScene extends IntroStage {
         wg.fillRect(q.x + dx, q.y + dy, 1, 1)
       }
     }
-    // Busch wackelt nach dem Pounce
-    const p2 = this.c.pounce[2]
-    if (t > p2 && t < p2 + 0.8) {
-      const q = this.at(v, BUSHES[0] - 8, -16)
-      const wob = Math.round(Math.sin((t - p2) * 40) * 1.5 * (1 - (t - p2) / 0.8))
-      wg.drawImage(this.near.cv, BUSHES[0] - 8 - this.near.x0, -16 - this.near.y0, 16, 16, q.x + wob, q.y, 16, 16)
-    }
     // Lagerfeuer: gekreuzte Stämme
     const cf = this.at(v, CAMPFIRE.x, 0)
     const logs: [number, number, number, string][] = [
@@ -835,29 +844,34 @@ export class FoxdenScene extends IntroStage {
     wg.fillRect(lp.x + 2, lp.y - 2, 2, 2)
     wg.fillStyle = '#4a3a30'
     wg.fillRect(lp.x + 1, lp.y + 2, 4, 4)
-    // Füchse (nicht im Sprung)
-    for (const f of familyAt(this.fam, t)) {
-      if (f.airborne) continue
-      if (f.id === 'hunter' && f.look.pose === 'peek') continue
-      this.drawFox(wg, v, f.x, f.y, f.look, f.flip, f.rot, false, f.shade)
+    // Sträucher, dann die Füchse (im Sprung als Schattenriss vor der Sonne); beim Eintauchen liegt der Busch davor
+    const fam = familyAt(this.fam, t)
+    const [, p1, p2] = this.c.pounce
+    const bush = (i: number) => {
+      const bx = BUSHES[i]!
+      const q = this.at(v, bx, 0)
+      const wob = i === DIVE_BUSH && t > p2 - 0.05 && t < p2 + 0.9 ? Math.round(Math.sin((t - p2) * 38) * 2 * (1 - (t - p2) / 0.9)) : 0
+      wg.drawImage(this.bushes[i]!, q.x + wob, q.y - this.bushes[i]!.height)
     }
+    BUSHES.forEach((_, i) => bush(i))
+    for (const f of fam) {
+      if (f.id === 'hunter' && f.look.pose === 'peek') continue
+      this.drawFox(wg, v, f.x, f.y, f.look, f.flip, f.airborne, f.shade)
+    }
+    if (t > p1 + (p2 - p1) * 0.55) bush(DIVE_BUSH)
+    // schaut mit Beere aus dem Busch
+    for (const f of fam) if (f.id === 'hunter' && f.look.pose === 'peek') this.drawFox(wg, v, f.x, f.y, f.look, f.flip, false)
     this.applyLit(v)
   }
 
-  private drawFox(g: CanvasRenderingContext2D, v: ArtView, x: number, y: number, look: FoxLook, flip: boolean, rot: number, silhouette: boolean, shade = 0) {
-    const spr = this.foxSprite(look, silhouette)
+  private drawFox(g: CanvasRenderingContext2D, v: ArtView, x: number, y: number, look: FoxLook, flip: boolean, silhouette: boolean, shade = 0) {
+    const spr = this.foxSprite(look, silhouette, shade)
     const q = this.at(v, x, y)
-    if (q.x < -40 || q.x > v.bw + 40) return
+    if (q.x < -80 || q.x > v.bw + 80) return
     g.save()
     g.translate(q.x, q.y)
     if (flip) g.scale(-1, 1)
-    if (look.pose === 'tumble') {
-      g.translate(0, -5)
-      g.rotate(rot)
-      g.translate(0, 5)
-    } else if (rot) g.rotate(rot)
-    if (shade > 0) g.globalAlpha = 1 - shade * 0.7
-    g.drawImage(spr, -FOX_OX, -FOX_OY)
+    g.drawImage(spr.cv, -spr.ox, -spr.oy)
     g.restore()
   }
 
@@ -933,14 +947,6 @@ export class FoxdenScene extends IntroStage {
     }
     ag.globalAlpha = 1
     ag.globalCompositeOperation = 'source-over'
-    // Fuchs im Pounce: Schattenriss mit warmem Saum vor der Sonne; schaut danach mit Beere aus dem Busch
-    for (const f of familyAt(this.fam, t)) {
-      if (f.airborne) this.drawFox(ag, v, f.x, f.y, f.look, f.flip, f.rot, true)
-      else if (f.id === 'hunter' && f.look.pose === 'peek') {
-        // hinter den Blättern: Kopf über dem Busch
-        this.drawFox(ag, v, f.x, f.y, f.look, f.flip, 0, false)
-      }
-    }
   }
 
   // ── Teilchen in der Welt: Rauch, Funken, Kirschblüten, Beeren-Ausbruch ──
@@ -997,7 +1003,7 @@ export class FoxdenScene extends IntroStage {
       for (let i = 0; i < 64; i++) {
         const ang = -Math.PI / 2 + (hash(i + 300) - 0.5) * 2.6
         const sp = 80 + hash(i + 301) * 150
-        const x0 = BUSHES[0] + (hash(i + 302) - 0.5) * 12
+        const x0 = POUNCE.to.x + (hash(i + 302) - 0.5) * 20
         let x = x0 + Math.cos(ang) * sp * age * 0.8 + Math.sin(age * 4 + i) * 4 * age
         let y = -8 + Math.sin(ang) * sp * age + 60 * age * age
         const q = this.at(v, x, y)
@@ -1068,7 +1074,7 @@ export class FoxdenScene extends IntroStage {
         const Z = lerp(1, 0.18, easeIn(kk))
         const ang = hash(i + 502) * Math.PI * 2 + tau * (3 + hash(i + 503) * 3)
         const rad = (14 + 60 * kk) * (0.5 + hash(i + 504))
-        const bp = this.at(v, BUSHES[0], -10)
+        const bp = this.at(v, POUNCE.to.x, -14)
         const bx = bp.x + v.ox - v.cx
         const by = bp.y + v.oy - v.cy
         let x = W / 2 + ((bx + Math.cos(ang) * rad - tau * 30) / Z) * v.S * 0.6
