@@ -141,6 +141,11 @@ public final class AutoTest {
 			WinterTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=fox: Design „Fuchsbau“ (Startbildschirm, Einführung, TRS-Menü, Laden, Pause)
+		if ("fox".equals(System.getProperty("trsclient.autotest.only"))) {
+			FoxDenTest.install();
+			return;
+		}
 		// -PtrsAutotestOnly=addserver: Formulare der Serverliste mit breiter GUI und fremdem Eck-Knopf
 		if ("addserver".equals(System.getProperty("trsclient.autotest.only"))) {
 			MenusTest.installAddServer();

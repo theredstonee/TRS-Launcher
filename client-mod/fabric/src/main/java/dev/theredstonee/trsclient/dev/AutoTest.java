@@ -112,6 +112,11 @@ public final class AutoTest {
 			WinterTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=fox: Design „Fuchsbau“ (Startbildschirm Dunkel/Hell/OLED, Einführung, TRS-Menü, Laden, Pause)
+		if ("fox".equals(System.getProperty("trsclient.autotest.only"))) {
+			FoxDenTest.install();
+			return;
+		}
 		// -PtrsAutotestOnly=halloween: Halloween 2026 (Startbildschirm, Seite Halloween, Mondlauf, Spuk-Effekte, Jumpscares)
 		if ("halloween".equals(System.getProperty("trsclient.autotest.only"))) {
 			HalloweenTest.install();
