@@ -387,7 +387,7 @@ Only players who **use TRS and show something** (badge, cape, at least one cosme
 Winter 2026 additions (format 2 only, both keys omitted when they don't apply):
 
 - `options` – `{ "<optionId>": true|false }` when the model declares `options` (§11.9), e.g. `"options": { "beard": false }` on the Santa hat. Always complete (a missing player choice is filled with the model's `default`). Bones of an option that is `false` are not drawn, including their child bones.
-- `count` – only in `pet`: how many of this companion walk with the player, **1–4**. Normal players get 1. For `penguin`, active creators (§35) get the tier by their fans: **≥ 1 fan → 1, ≥ 10 → 2, ≥ 100 → 3, ≥ 1000 → 4** (a creator who owns it by code and has 0 fans: 1). When `count` changes the server sends a `cosmetics` event (§13).
+- `count` – only in `pet`: how many of this companion walk with the player, **1–4**. Normal players get 1. An active creator wearing **his own** creator pet (§35.13) gets the tier by his fans: **≥ 1 fan → 1, ≥ 10 → 2, ≥ 100 → 3, ≥ 1000 → 4** (0 fans: 1). When `count` changes the server sends a `cosmetics` event (§13).
 
 Privacy rules, enforced server-side:
 
@@ -1465,7 +1465,7 @@ The response is `Content-Type: text/event-stream`, in the same frame format as �
 | `emote` | `{"type":"emote","uuid":"…","emote":"winken","durationMs":2000,"at":"…"}` |
 | `skin` | `{"type":"skin","uuid":"…","at":"…"}`. The player changed their Mojang skin. Load it again from Mojang or `GET /v1/skins/by-uuid/{uuid}`. |
 | `cape` | `{"type":"cape","uuid":"…","cape":LookupCape\|null}`. The cape as **you** may see it (§4.1 rules). |
-| `cosmetics` | `{"type":"cosmetics","uuid":"…","cosmetics":{"hat":…,"wings":…,"back":…,"aura":…,"companion":…,"pet":…}}`. All slots as **you** may see them (same form as the lookup, including `options` and `count`). Also sent when an option changes or a creator's penguin `count` changes. |
+| `cosmetics` | `{"type":"cosmetics","uuid":"…","cosmetics":{"hat":…,"wings":…,"back":…,"aura":…,"companion":…,"pet":…}}`. All slots as **you** may see them (same form as the lookup, including `options` and `count`). Also sent when an option changes or the `count` of a creator's own pet changes (§35.13). |
 | `badge` | `{"type":"badge","uuid":"…","badge":true\|false}`. The live badge (§4.1) turned on or off: the player started or stopped playing with TRS, or changed `showBadge`. `true` is sent only to viewers who are in game themselves; `false` goes to every viewer. |
 | `fan`, `fan_creator` | Creator programme: fan/creator data changed – look the player (or all fans of that creator) up again, see §35.5. |
 | `badges` | `{"type":"badges","uuid":"…","badges":["halloween2026"],"fx":["hits","trail"]}` – profile badges or allowed spooky effects changed (§36), filtered for **you** like the lookup. Also sent with `[]` when the player gets banned. |
@@ -4173,7 +4173,8 @@ for one with `?as=<creatorUuid>` or header `X-Creator-As: <creatorUuid>` (35.9; 
   "requests": [{ "id": 3, "kind": "upgrade", "status": "open", "createdAt": "…", "reason": null }],
   "packs": [{ "code": "TRS-ABCD-2345", "name": "Pixel Pack", "installs": 40, "listed": true }],
   "helpers": [{ "uuid", "name", "skin", "rights": ["codes"], "status": "pending" | "active", "createdAt" }],
-  "profile": ProfileState
+  "profile": ProfileState,
+  "pet": CreatorPetRef | null
 }
 ```
 - `stats.daily` = the last 30 UTC days, oldest first. `newPlayers` = fans whose TRS account was created at most 24 h before
@@ -4272,7 +4273,7 @@ Eligibility/submit for creator positions: active creators get `409 already_creat
 
 | event | data |
 |---|---|
-| `creator_updated` | `{ kind, reason?, tier?, helper? }` to the creator; `kind` ∈ `symbol_approved`, `symbol_rejected`, `cape_approved`, `cape_rejected`, `tier_changed` (+`tier`), `revoked` (+`reason`, also for bans), `restored`, `request_answered` (+`reason`), `milestone`, `became_creator` (+`tier`), `helper_joined`, `helper_left` (+`helper: { uuid, name }`), `profile_approved`, `profile_rejected` (+`reason`, §35.11). Reload `GET /v1/creator/dashboard`. Clients ignore unknown kinds. |
+| `creator_updated` | `{ kind, reason?, tier?, helper? }` to the creator; `kind` ∈ `symbol_approved`, `symbol_rejected`, `cape_approved`, `cape_rejected`, `tier_changed` (+`tier`), `revoked` (+`reason`, also for bans), `restored`, `request_answered` (+`reason`), `milestone`, `became_creator` (+`tier`), `helper_joined`, `helper_left` (+`helper: { uuid, name }`), `profile_approved`, `profile_rejected` (+`reason`, §35.11), `pet_assigned`, `pet_removed`, `pet_request_answered` (+`reason`, §35.13). Reload `GET /v1/creator/dashboard`. Clients ignore unknown kinds. |
 | `creator_milestone` | `{ creator: { uuid, name }, milestone }` to every current fan |
 | `creator_helper_invite` | `{ creator: { uuid, name }, rights, createdAt }` to the invited player |
 | `creator_helper_removed` | `{ creator: { uuid, name } }` to a helper whom the creator removed (or whose invitation was withdrawn) |
@@ -4285,7 +4286,8 @@ Eligibility/submit for creator positions: active creators get `409 already_creat
 `creator_banned` 403/409, `not_your_pack` 403, `creator_helper_limit` 403, `creator_helper_exists` 409,
 `creator_helper_right` 403, `not_friends` 400, `helper_not_found` 404, `helper_invite_not_found` 404,
 `symbol_not_found` 404, `queue_item_not_found` 404, `request_closed` 409, `fan_cape_pending` 409, `invalid_profile` 400,
-`creator_not_found` 404.
+`creator_not_found` 404; creator pets (35.13): `creator_pet_missing`, `creator_pet_unavailable`, `creator_pet_limit`,
+`creator_pet_owned`, `creator_pet_taken`, `not_a_pet`, `image_not_found`.
 
 ### 35.9 Helper accounts
 
@@ -4296,7 +4298,8 @@ A creator gives helpers (editor, moderator, …) access to parts of the dashboar
   (`DELETE /v1/me/creator/helping/{creatorUuid}`). The creator changes rights with `PATCH /v1/creator/helpers/{uuid}` and
   removes a helper or withdraws an invitation with `DELETE /v1/creator/helpers/{uuid}`.
 - Limits (invited + active): starter 1, partner 3, top 10 → `403 creator_helper_limit`; inviting twice → `409 creator_helper_exists`.
-- Rights: `stats` (see statistics), `codes` (create/toggle extra codes – never the main code), `uploads` (fan symbol and fan
+- Rights: `stats` (see statistics), `codes` (create/toggle extra codes – never the main code; create/revoke codes for the
+  creator's pet, 35.13), `uploads` (fan symbol and fan
   cape submissions), `packs` (list/unlist the **creator's** packs; helpers cannot list their own packs). Always creator
   only: requests, team-cape wish, helper management, preview builds.
 - Acting: dashboard routes accept `?as=<creatorUuid>` or `X-Creator-As` (allowed by CORS). Every route checks its right
@@ -4379,22 +4382,111 @@ Data: migration 29 adds `creator_profiles` (`id`, `creator_uuid` → creators ON
 `status` pending/approved/rejected, `reason`, `submitted_by`, `created_at`, `reviewed_at`, `reviewed_by`). Only the newest
 approved revision and the last three rejections are kept.
 
-### 35.12 Creator penguins (Winter 2026, migration 34)
+### 35.12 Creator penguins (Winter 2026, migration 34) – superseded by 35.13
 
-Active creators (`state = 'active'`) with at least one fan (rows in `creator_supports` for them) get the ground companion
-`penguin` (slot `pet`, §11.9) automatically: a `user_cosmetics` row with `source = 'creator'`. On the **first** grant the
-penguin is also equipped if the creator's `pet` slot is empty. The lookup returns `cosmetics.pet.count` = tier by fans:
-**≥ 1 → 1, ≥ 10 → 2, ≥ 100 → 3, ≥ 1000 → 4**. When a creator drops to 0 fans or is no longer active (revoked, banned,
-deleted), only the `creator` grant is removed (and the penguin taken off unless the creator still owns it another way);
-a code redemption stays. Redeeming a penguin code while owning it only through the creator rule makes it permanent
-(`source = 'code'`, the code use counts). `creators.pet_count` stores the last tier; when it changes, watchers get a
-`cosmetics` event. The server syncs on every support change, on revoke/restore/delete/application, at start and every
-10 minutes (catches fans who deleted their account). Without the penguin item loaded (private assets missing) nothing
-is granted or removed.
+Until migration 35 every active creator with at least one fan got the ground companion `penguin` (slot `pet`, §11.9)
+automatically (`user_cosmetics.source = 'creator'`). **Since migration 35 this rule is gone:** the penguin is the creator
+pet of one creator (assigned by the team, 35.13) and only the **owning** creator gets it automatically. Everybody who had
+the penguin keeps it: migration 35 turns all earlier automatic grants into permanent ones (`source = 'admin'`), and code
+redemptions stay as they are.
 
-Data, migration 34: `equipped_cosmetics` rebuilt with slot `pet` and the column `options` (JSON object `{ optionId: bool }`
-or `NULL` = defaults); `user_cosmetics.source` allows `creator`; new column `creators.pet_count` (0–4). Existing rows stay.
-Idempotent. When merging: renumber if a parallel branch also added a migration 34.
+Still valid from migration 34: `equipped_cosmetics` has the slot `pet` and the column `options` (JSON object
+`{ optionId: bool }` or `NULL` = defaults); `user_cosmetics.source` allows `creator`; `creators.pet_count` (0–4) stores the
+last reported number of animals of the creator's **own** pet (0 = none).
+
+### 35.13 Creator pets (migration 35)
+
+A creator owns **at most one** pet (a cosmetic whose slot is `pet`), a pet belongs to **at most one** creator. The team
+assigns it (`creators.manage`). The first one: the penguin belongs to PixelCST (assigned after the deploy in the admin UI –
+no UUID is hard-coded).
+
+- **Automatic for the owner only.** While the creator is active and the item is loaded, the owner gets his pet as
+  `user_cosmetics.source = 'creator'`; on the first grant it is equipped if his `pet` slot is empty. The lookup / own
+  equipment returns `cosmetics.pet.count` = animals by **his** fans: **≥ 1 fan → 1, ≥ 10 → 2, ≥ 100 → 3, ≥ 1000 → 4**
+  (at least 1, also with 0 fans). Everybody else wearing a pet (code, team, earlier grant, someone else's pet) gets `count: 1`.
+  When the ownership ends (team removes or replaces it, creator revoked/banned/deleted) only the `creator` grant is
+  removed (and the pet taken off unless he owns it another way); code/team grants stay. Watchers get a `cosmetics` event
+  when the visible count changes. The server syncs on every fan change, on assign/remove, revoke/restore/delete, at start
+  and every 10 minutes. Without the item loaded (private files missing) or a retired item nothing is granted or removed.
+- **Codes by the creator.** The owner (or a helper with the right `codes`, 35.9) creates codes for **his** pet through the
+  **normal code system** (`codes` table, same codes as team codes, fans redeem them with `POST /v1/redeem` (§5.9) – in the
+  launcher, the website or the TRS Client). The plain text exists only in the create answer. **Monthly limit** per tier and
+  calendar month (UTC), default **Starter 10, Partner 50, Top 200** redemptions, changeable by the team: the sum of
+  `maxUses` of the codes created this month counts; a revoked code counts only with its real uses. Per create: `count`
+  1–20, `maxUses` 1–100, optional `expiresAt` (future, ≤ 1 year) and `note` (≤ 100). A creator code works only while the
+  creator is **active and still owns that pet** – otherwise redeeming gives `404 invalid_code` (it works again after a
+  restore). Deleting a creator revokes his pet codes. The team code list (`GET /v1/admin/codes`) shows the origin.
+- **Wishes.** Creators without an own pet ask for one ("Eigenes Haustier wünschen"): animal, description, colours,
+  optional reference image. The team builds it in TRS Studio and assigns it. One wish at a time (`open`/`in_progress`).
+
+**Creator routes** (Bearer or website session + `X-CSRF-Token`, like 35.3; `?as=<creatorUuid>` / `X-Creator-As` for helpers):
+
+| route | right | body | answer / errors |
+|---|---|---|---|
+| `GET /v1/creator/pet` | any helper right | – | `CreatorPetState` (below) |
+| `GET /v1/creator/pet/codes` | `codes` | – | `{ codes: PetCode[], quota: PetQuota }` |
+| `POST /v1/creator/pet/codes` | `codes` | `{ count?: 1–20 (1), maxUses?: 1–100 (1), expiresAt?: iso, note?: ≤ 100 }` | `201 { codes: (PetCode & { code })[], quota }` – `409 creator_pet_missing` (no own pet), `409 creator_pet_unavailable` (item not loaded/retired), `403 creator_pet_limit` with `limit`, `used`, `remaining`, `resetsAt` in the error body, `400 invalid_request` |
+| `DELETE /v1/creator/pet/codes/{id}` | `codes` | – | `200 { codes, quota }` – only own pet codes, else `404 code_not_found` |
+| `POST /v1/creator/pet/requests` | creator only | `{ species: 1–60, description: 1–1000 (multi-line), colors?: ≤ 200 }` | `201 { requests: PetRequest[] }` – `409 creator_pet_owned`, `409 creator_request_open`; 10 / hour |
+| `PUT /v1/creator/pet/requests/{id}/image` | creator only | raw body, `Content-Type: image/png` or `image/jpeg`, ≤ 2 MiB | `{ request: PetRequest }` – magic bytes must match the type (WebP/other → `415`), re-encoded without metadata (opaque images become JPEG, ≤ 2048 px), replaces an existing image; only while `open` (`409 request_closed`); `413 payload_too_large`; 5 images / 24 h per creator → `429` |
+| `DELETE /v1/creator/pet/requests/{id}/image` | creator only | – | `{ request }` – only while `open` |
+| `DELETE /v1/creator/pet/requests/{id}` | creator only | – | `204` – withdraw, only while `open` (`409 request_closed`) |
+
+Writes count on the creator write limit (60 / minute).
+
+```json
+CreatorPetState = {
+  "pet": CreatorPetRef | null,
+  "quota": { "month": "2026-10", "limit": 200, "used": 40, "remaining": 160, "resetsAt": "2026-11-01T00:00:00.000Z" },
+  "codes": [PetCode] | null,          // null for helpers without the right "codes"
+  "requests": [PetRequest],           // newest first, max 20; [] for helpers
+  "canRequest": false                 // creator himself, no own pet, no open wish
+}
+CreatorPetRef = { "cosmeticId": "penguin", "name": "Pinguin", "card": "https://…/v1/cosmetics/penguin/card.png?v=…" | null,
+                  "count": 3, "available": true, "assignedAt": "…" }
+PetCode = { "id": 812, "hint": "Q7XK", "maxUses": 10, "uses": 4, "expiresAt": "…" | null, "revokedAt": "…" | null,
+            "note": "Stream 24.10." | null, "createdAt": "…", "createdBy": { "uuid": "…", "name": "PixelCST" } }
+PetRequest = { "id": 3, "status": "open" | "in_progress" | "done" | "declined", "species": "Fuchs", "description": "…",
+               "colors": "rot, weiß", "image": { "url": "/v1/creator-pet-images/<sha256>.jpg", "mime": "image/jpeg",
+               "width": 800, "height": 600 } | null, "reply": "…" | null, "cosmeticId": "fox" | null,
+               "createdAt": "…", "updatedAt": "…", "decidedAt": "…" | null }
+```
+
+`CreatorSelf` (35.3, `GET /v1/creator/dashboard` and `GET /v1/me/creator`) additionally has `pet: CreatorPetRef | null`.
+`card` is absolute (like all cosmetic URLs); the image `url` is relative to the API base.
+
+`GET /v1/creator-pet-images/{sha256}.png|.jpg` → the reference image, `Cache-Control: private, no-store`, only for the
+creator of the wish and team members with `creators.review` or `uploads.review` (Bearer or website session); otherwise
+`404 image_not_found`.
+
+**Team routes** (`creators.manage`, website session + CSRF or Bearer, audit log `creator.pet.*`):
+
+| route | body | answer |
+|---|---|---|
+| `GET /v1/admin/creators/pets` | – | `{ pets: [{ creator: { uuid, name, tier, state }, pet: CreatorPetRef, assignedBy: { uuid, name }, quota: PetQuota }], cosmetics: [{ id, name, unlock, hidden, card, available, owner: { uuid, name } \| null }], limits: { starter, partner, top } }` – `cosmetics` = all built-in, not retired items with slot `pet` |
+| `PUT /v1/admin/creators/{uuid}/pet` | `{ cosmeticId }` | `{ pet: CreatorPetRef }` – replaces the creator's pet; open wishes of the creator become `done`. `400 not_a_pet`, `404 cosmetic_not_found`, `404 creator_not_found`, `409 creator_pet_taken` with `owner: { uuid, name }` |
+| `DELETE /v1/admin/creators/{uuid}/pet` | – | `204` – `404 creator_pet_missing` |
+| `GET /v1/admin/creators/pet-requests?status=` | – | `{ requests: [PetRequest & { creator: { uuid, name, tier, state } }] }` – open, then in progress, then the rest (newest first) |
+| `POST /v1/admin/creators/pet-requests/{id}` | `{ status: "open"\|"in_progress"\|"done"\|"declined", reply?: ≤ 500 \| null, cosmeticId?: (only with "done") }` | `{ requests }` – with `cosmeticId` the pet is assigned in the same step |
+| `PUT /v1/admin/creators/pets/limits` | `{ starter, partner, top }` (0–1 000 000) | `{ limits }` |
+
+To find a creator by name (e.g. "PixelCST") use `GET /v1/admin/creators?q=` (35.6). `GET /v1/admin/codes` entries have
+`creator: { uuid, name } | null` (origin of the code). Open wishes count into `GET /v1/admin/dashboard` →
+`creators.requests`.
+
+**Events** (`creator_updated`, 35.7): new kinds `pet_assigned`, `pet_removed`, `pet_request_answered` (+`reason` = the
+team's reply). Reload `GET /v1/creator/pet`.
+
+**Errors:** `creator_pet_missing` 409/404, `creator_pet_unavailable` 409, `creator_pet_limit` 403, `creator_pet_owned` 409,
+`creator_pet_taken` 409, `not_a_pet` 400, `image_not_found` 404, plus `creator_request_open`, `request_closed`,
+`request_not_found`, `code_not_found`, `cosmetic_not_found`.
+
+**Data, migration 35:** tables `creator_pets` (`creator_uuid` PK → creators, `cosmetic_id` UNIQUE → cosmetics,
+`assigned_at`, `assigned_by`), `creator_pet_requests` (status, texts, image sha256/mime/size, reply, assigned
+`cosmetic_id`; images under `<DATA_DIR>/creator-pet-images/<sha256>.png|.jpg`, removed with the wish or the creator),
+`creator_pet_limits` (`tier` PK, `monthly`; seeded 10/50/200); new column `codes.creator_uuid` (+ index). All earlier
+`user_cosmetics` rows with `source = 'creator'` become `admin`. Idempotent. When merging: renumber if a parallel branch also
+added a migration 35.
 
 ## 36. Halloween 2026 ("Nacht der langen Schatten")
 

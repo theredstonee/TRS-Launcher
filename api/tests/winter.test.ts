@@ -12,8 +12,9 @@ import {
   type AnyBuiltinCosmetic,
 } from '../server/lib/cosmetics'
 import { buildV2Cosmetic } from '../server/lib/cosmetics-v2'
-import { CREATOR_PET_ID, petCount, petCountForFans } from '../server/lib/creator-lookup'
+import { petCount, petCountForFans } from '../server/lib/creator-lookup'
 import { syncAllCreatorPets, syncCreatorPet } from '../server/lib/creator-pet'
+import { adminAssignPet, adminRemovePet } from '../server/lib/creator-pets'
 import { adminCreateCreator, adminDeleteCreator, adminRestoreCreator, adminRevokeCreator, endSupport, redeemCreatorCode } from '../server/lib/creators'
 import { all, migrate, one, run } from '../server/lib/db'
 import { lookupPlayers } from '../server/lib/lookup'
@@ -33,6 +34,8 @@ import { ADMIN, login, makeEnv, solidPng, type TestEnv } from './helpers'
 // Nur synthetische Platzhalter-Modelle – die echten Winter-Teile sind proprietär und liegen nie im Repo.
 
 const OWNER = ownerStaff(ADMIN)
+/** Der Pinguin (Winter 2026) – seit §35.13 ein normales Creator-Haustier ohne Sonderrolle im Code. */
+const CREATOR_PET_ID = 'penguin'
 const auth = (token: string) => ({ authorization: `Bearer ${token}`, 'content-type': 'application/json' })
 
 type Slot = 'hat' | 'companion' | 'wings' | 'pet'
@@ -307,101 +310,92 @@ describe('slot pet and options per player', () => {
   })
 })
 
-describe('creator penguins by fans', () => {
-  it('fan tiers: 1 / 10 / 100 / 1000 → 1 / 2 / 3 / 4; other pets and code penguins count 1', () => {
+describe('creator penguins: only the owning creator (§35.13)', () => {
+  it('fan tiers: 1 / 10 / 100 / 1000 → 1 / 2 / 3 / 4; only the own pet of a creator counts by fans', () => {
     expect([0, 1, 9, 10, 99, 100, 999, 1000, 5000].map(petCountForFans)).toEqual([0, 1, 1, 2, 2, 3, 3, 4, 4])
     expect(petCount(CREATOR_PET_ID, undefined)).toBe(1)
-    expect(petCount(CREATOR_PET_ID, 0)).toBe(1)
-    expect(petCount(CREATOR_PET_ID, 150)).toBe(3)
-    expect(petCount('free_pet', 150)).toBe(1)
+    expect(petCount(CREATOR_PET_ID, { cosmeticId: CREATOR_PET_ID, fans: 0 })).toBe(1)
+    expect(petCount(CREATOR_PET_ID, { cosmeticId: CREATOR_PET_ID, fans: 150 })).toBe(3)
+    expect(petCount('free_pet', { cosmeticId: CREATOR_PET_ID, fans: 150 })).toBe(1)
   })
 
-  it('first fan grants and equips the penguin, 10 fans → 2, back to 0 fans → taken away', async () => {
+  it('a creator WITHOUT an own pet gets nothing from fans any more', async () => {
+    const env = makeEnv()
+    seedWinter(env)
+    const c = await creator(env, 'Pixelmaus')
+    for (const f of bulkFans(env, 10, 'a')) redeemCreatorCode(env.ctx, f, { code: c.code })
+    expect(all(env.ctx.db, 'SELECT * FROM user_cosmetics WHERE uuid = ?', c.uuid)).toEqual([])
+    expect(petOf(env, c.uuid, c.uuid)).toBeNull()
+  })
+
+  it('the owner gets and wears it at once, 10 fans → 2, revoke/restore/delete follow the state', async () => {
     const env = makeEnv()
     seedWinter(env)
     const c = await creator(env, 'Pixelmaus')
     const viewer = (await login(env, 'Viewer')).user.uuid
-    expect(petOf(env, viewer, c.uuid)).toBeNull()
     const seen = watch(env, viewer, [c.uuid])
-    const fans = bulkFans(env, 10, 'f')
-    redeemCreatorCode(env.ctx, fans[0]!, { code: c.code })
+    adminAssignPet(env.ctx, OWNER, c.uuid, { cosmeticId: CREATOR_PET_ID })
     expect(one(env.ctx.db, 'SELECT source FROM user_cosmetics WHERE uuid = ? AND cosmetic_id = ?', c.uuid, CREATOR_PET_ID)).toEqual({ source: 'creator' })
     expect(petOf(env, viewer, c.uuid)).toMatchObject({ id: CREATOR_PET_ID, count: 1 })
-    const afterFirst = seen.filter((e) => e.type === 'cosmetics').length
-    expect(afterFirst).toBeGreaterThanOrEqual(1)
-    for (const f of fans.slice(1, 9)) redeemCreatorCode(env.ctx, f, { code: c.code })
-    expect(seen.filter((e) => e.type === 'cosmetics').length).toBe(afterFirst) // 9 Fans: Stufe bleibt 1
+    const afterAssign = seen.filter((e) => e.type === 'cosmetics').length
+    expect(afterAssign).toBeGreaterThanOrEqual(1)
+    const fans = bulkFans(env, 10, 'f')
+    for (const f of fans.slice(0, 9)) redeemCreatorCode(env.ctx, f, { code: c.code })
+    expect(seen.filter((e) => e.type === 'cosmetics').length).toBe(afterAssign) // 9 Fans: Stufe bleibt 1
     redeemCreatorCode(env.ctx, fans[9]!, { code: c.code })
     expect(petOf(env, viewer, c.uuid)).toMatchObject({ count: 2 })
     expect(equippedView(env.ctx, c.uuid).pet).toMatchObject({ id: CREATOR_PET_ID, count: 2 })
-    const ev = seen.filter((e) => e.type === 'cosmetics')
-    expect(ev.length).toBe(afterFirst + 1)
-    expect((ev.at(-1) as { cosmetics: { pet: { count: number } } }).cosmetics.pet.count).toBe(2)
     expect(one<{ n: number }>(env.ctx.db, 'SELECT pet_count AS n FROM creators WHERE uuid = ?', c.uuid)!.n).toBe(2)
-
+    // Ohne Fans bleibt das eigene Haustier (1 Tier).
     for (const f of fans) endSupport(env.ctx, f)
-    expect(petOf(env, viewer, c.uuid)).toBeNull()
-    expect(one(env.ctx.db, 'SELECT 1 AS x FROM user_cosmetics WHERE uuid = ? AND cosmetic_id = ?', c.uuid, CREATOR_PET_ID)).toBeUndefined()
-    expect(code(() => equipCosmetics(env.ctx, c.uuid, { pet: CREATOR_PET_ID }))).toBe('cosmetic_locked')
-  })
-
-  it('does not auto-equip over another pet, and a code penguin stays when the fans are gone', async () => {
-    const env = makeEnv()
-    seedWinter(env)
-    const c = await creator(env, 'Pixelmaus')
-    equipCosmetics(env.ctx, c.uuid, { pet: 'free_pet' })
-    const [fan] = bulkFans(env, 1, 'g')
-    redeemCreatorCode(env.ctx, fan!, { code: c.code })
-    expect(equippedView(env.ctx, c.uuid).pet?.id).toBe('free_pet')
-    expect(equipCosmetics(env.ctx, c.uuid, { pet: CREATOR_PET_ID }).pet?.id).toBe(CREATOR_PET_ID)
-    // Code auf einen Creator-Pinguin: wird dauerhaft (Code wird verbraucht).
-    expect(redeemCode(env.ctx, c.uuid, penguinCode(env)).alreadyOwned).toBe(false)
-    expect(one(env.ctx.db, 'SELECT source FROM user_cosmetics WHERE uuid = ? AND cosmetic_id = ?', c.uuid, CREATOR_PET_ID)).toEqual({ source: 'code' })
-    endSupport(env.ctx, fan!)
-    expect(equippedView(env.ctx, c.uuid).pet?.id).toBe(CREATOR_PET_ID)
-    expect(petOf(env, c.uuid, c.uuid)).toMatchObject({ count: 1 })
-    // Ein späterer Creator-Abgleich überschreibt die Code-Zeile nicht.
-    redeemCreatorCode(env.ctx, fan!, { code: c.code })
-    expect(one(env.ctx.db, 'SELECT source FROM user_cosmetics WHERE uuid = ? AND cosmetic_id = ?', c.uuid, CREATOR_PET_ID)).toEqual({ source: 'code' })
-    expect(petOf(env, c.uuid, c.uuid)).toMatchObject({ count: 1 })
-  })
-
-  it('revoke / restore / delete follow the creator state; 1000 fans → 4', async () => {
-    const env = makeEnv()
-    seedWinter(env)
-    const c = await creator(env, 'Pixelmaus')
-    for (const f of bulkFans(env, 1000, 'h')) {
-      run(env.ctx.db, 'INSERT INTO creator_supports (fan_uuid, creator_uuid, last_creator_uuid, last_started_at, updated_at) VALUES (?, ?, ?, ?, ?)', f, c.uuid, c.uuid, 1, 1)
-    }
-    syncCreatorPet(env.ctx, c.uuid)
-    expect(petOf(env, c.uuid, c.uuid)).toMatchObject({ count: 4 })
+    expect(petOf(env, viewer, c.uuid)).toMatchObject({ count: 1 })
     adminRevokeCreator(env.ctx, OWNER, c.uuid, { reason: 'test', ban: false })
     expect(petOf(env, c.uuid, c.uuid)).toBeNull()
+    expect(code(() => equipCosmetics(env.ctx, c.uuid, { pet: CREATOR_PET_ID }))).toBe('cosmetic_locked')
     adminRestoreCreator(env.ctx, OWNER, c.uuid)
-    expect(petOf(env, c.uuid, c.uuid)).toMatchObject({ count: 4 })
+    expect(petOf(env, c.uuid, c.uuid)).toMatchObject({ count: 1 })
     adminDeleteCreator(env.ctx, OWNER, c.uuid)
     expect(petOf(env, c.uuid, c.uuid)).toBeNull()
   })
 
-  it('the periodic sync catches fans that deleted their account', async () => {
+  it('1000 fans → 4; does not auto-equip over another pet; a code penguin stays after the pet is taken away', async () => {
     const env = makeEnv()
     seedWinter(env)
     const c = await creator(env, 'Pixelmaus')
-    const fan = await login(env, 'Fan')
-    redeemCreatorCode(env.ctx, fan.user.uuid, { code: c.code })
-    expect(petOf(env, c.uuid, c.uuid)).toMatchObject({ count: 1 })
-    deleteUser(env.ctx, fan.user.uuid)
-    syncAllCreatorPets(env.ctx)
-    expect(petOf(env, c.uuid, c.uuid)).toBeNull()
+    equipCosmetics(env.ctx, c.uuid, { pet: 'free_pet' })
+    for (const f of bulkFans(env, 1000, 'h')) {
+      run(env.ctx.db, 'INSERT INTO creator_supports (fan_uuid, creator_uuid, last_creator_uuid, last_started_at, updated_at) VALUES (?, ?, ?, ?, ?)', f, c.uuid, c.uuid, 1, 1)
+    }
+    adminAssignPet(env.ctx, OWNER, c.uuid, { cosmeticId: CREATOR_PET_ID })
+    expect(equippedView(env.ctx, c.uuid).pet?.id).toBe('free_pet')
+    expect(equipCosmetics(env.ctx, c.uuid, { pet: CREATOR_PET_ID }).pet?.id).toBe(CREATOR_PET_ID)
+    expect(petOf(env, c.uuid, c.uuid)).toMatchObject({ count: 4 })
+    // Code auf das eigene Haustier: wird dauerhaft (Code wird verbraucht).
+    expect(redeemCode(env.ctx, c.uuid, penguinCode(env)).alreadyOwned).toBe(false)
+    adminRemovePet(env.ctx, OWNER, c.uuid)
+    expect(one(env.ctx.db, 'SELECT source FROM user_cosmetics WHERE uuid = ? AND cosmetic_id = ?', c.uuid, CREATOR_PET_ID)).toEqual({ source: 'code' })
+    expect(petOf(env, c.uuid, c.uuid)).toMatchObject({ id: CREATOR_PET_ID, count: 1 })
   })
 
-  it('without the penguin item loaded nothing is granted or removed', async () => {
+  it('the periodic sync catches deleted accounts; without the item loaded nothing is granted', async () => {
     const env = makeEnv()
-    seedBuiltinCosmetics(env.ctx, [synthetic('test_hat', 'hat', 'code')])
-    expect(getCosmetic(env.ctx, CREATOR_PET_ID)).toBeUndefined()
+    seedWinter(env)
     const c = await creator(env, 'Pixelmaus')
-    const [fan] = bulkFans(env, 1, 'k')
-    redeemCreatorCode(env.ctx, fan!, { code: c.code })
-    expect(all(env.ctx.db, 'SELECT * FROM user_cosmetics WHERE uuid = ?', c.uuid)).toEqual([])
+    adminAssignPet(env.ctx, OWNER, c.uuid, { cosmeticId: CREATOR_PET_ID })
+    const fans = bulkFans(env, 10, 'k')
+    for (const f of fans) redeemCreatorCode(env.ctx, f, { code: c.code })
+    expect(petOf(env, c.uuid, c.uuid)).toMatchObject({ count: 2 })
+    for (const f of fans.slice(0, 5)) deleteUser(env.ctx, f)
+    syncAllCreatorPets(env.ctx)
+    expect(one<{ n: number }>(env.ctx.db, 'SELECT pet_count AS n FROM creators WHERE uuid = ?', c.uuid)!.n).toBe(1)
+
+    const env2 = makeEnv()
+    seedBuiltinCosmetics(env2.ctx, [synthetic('test_hat', 'hat', 'code')])
+    expect(getCosmetic(env2.ctx, CREATOR_PET_ID)).toBeUndefined()
+    const c2 = await creator(env2, 'Pixelmaus')
+    const [fan] = bulkFans(env2, 1, 'k')
+    redeemCreatorCode(env2.ctx, fan!, { code: c2.code })
+    syncCreatorPet(env2.ctx, c2.uuid)
+    expect(all(env2.ctx.db, 'SELECT * FROM user_cosmetics WHERE uuid = ?', c2.uuid)).toEqual([])
   })
 })

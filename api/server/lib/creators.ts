@@ -12,7 +12,7 @@ import {
 } from '../../shared/creator-profile'
 import { capeUrl, capeWearers, getCape, grantCape, removeCape, writeAtomic, type CapeRow } from './capes'
 import type { AppContext } from './context'
-import { syncCreatorPet, syncCreatorPets } from './creator-pet'
+import { creatorPetRef, dropPetImage, petImagesOf, syncCreatorPet, syncCreatorPets, type CreatorPetRef } from './creator-pet'
 import {
   symbolView,
   type CreatorState,
@@ -61,6 +61,9 @@ export type CreatorUpdateKind =
   | 'helper_left'
   | 'profile_approved'
   | 'profile_rejected'
+  | 'pet_assigned'
+  | 'pet_removed'
+  | 'pet_request_answered'
 
 /** Rechte eines Helfers (§35.9). Anfragen, Team-Umhang, Helfer und Vorschau-Builds bleiben immer beim Creator. */
 export const HELPER_RIGHTS = ['stats', 'codes', 'uploads', 'packs'] as const
@@ -267,6 +270,8 @@ export interface CreatorSelf {
   viewer?: { helper: true, rights: HelperRight[] }
   /** Öffentliches Profil (§35.11): freigegebene, wartende und zuletzt abgelehnte Fassung. */
   profile: ProfileState
+  /** Eigenes Creator-Haustier (§35.13) oder `null`; Details unter `GET /v1/creator/pet`. */
+  pet: CreatorPetRef | null
 }
 
 export interface HelperView {
@@ -320,7 +325,7 @@ function parseChannels(raw: string): Channel[] {
   }
 }
 
-function parse<S extends z.ZodType>(schema: S, raw: unknown): z.output<S> {
+export function parse<S extends z.ZodType>(schema: S, raw: unknown): z.output<S> {
   const r = schema.safeParse(raw)
   if (!r.success) {
     throw badRequest('invalid_request', 'Request validation failed', {
@@ -346,7 +351,7 @@ const httpsUrl = z
   }, 'must be an https URL')
 
 /** Mehrzeiliger Text ohne Steuerzeichen (außer Zeilenumbruch). */
-const multiline = (max: number) =>
+export const multiline = (max: number) =>
   z
     .string()
     .trim()
@@ -363,7 +368,7 @@ const channelSchema = z.strictObject({
 
 export const creatorCodeBody = z.strictObject({ code: z.string().trim().min(1).max(64) })
 export const creatorSettingsBody = z.strictObject({ showFanSymbols: z.boolean() })
-const isoTime = z.iso.datetime({ offset: true })
+export const isoTime = z.iso.datetime({ offset: true })
 export const createCodeBody = z.strictObject({
   code: z.string().trim().min(1).max(32),
   maxUses: z.number().int().min(1).max(10_000_000).optional(),
@@ -491,7 +496,7 @@ function requireActive(ctx: AppContext, uuid: string): CreatorRow {
   return c
 }
 
-function nameOf(ctx: AppContext, uuid: string): string {
+export function nameOf(ctx: AppContext, uuid: string): string {
   return getUser(ctx, uuid)?.name ?? ''
 }
 
@@ -532,7 +537,7 @@ export function creatorCard(ctx: AppContext, c: CreatorRow): CreatorCard {
 
 // ---------------------------------------------------------------- Ereignisse
 
-function notifyCreator(
+export function notifyCreator(
   ctx: AppContext,
   uuid: string,
   kind: CreatorUpdateKind,
@@ -916,6 +921,7 @@ export function creatorSelf(ctx: AppContext, c: CreatorRow, viewer?: CreatorActo
     requests: helper ? [] : all<RequestRow>(ctx.db, 'SELECT * FROM creator_requests WHERE creator_uuid = ? ORDER BY created_at DESC, id DESC LIMIT 20', c.uuid).map(requestView),
     packs: may('packs') ? ownPacks(ctx, c.uuid) : [],
     profile: profileState(ctx, c.uuid),
+    pet: creatorPetRef(ctx, c.uuid),
     ...(helper ? { viewer: { helper: true as const, rights: HELPER_RIGHTS.filter((r) => viewer!.rights.has(r)) } } : { helpers: helpersOf(ctx, c.uuid) }),
   }
 }
@@ -953,7 +959,7 @@ export function actorFor(ctx: AppContext, user: string, as: string | null | unde
 }
 
 /** Aktionen eines Helfers landen mit seiner UUID im Audit-Log (Ziel = Creator). */
-function auditHelper(ctx: AppContext, a: CreatorActor, action: string, detail: string): void {
+export function auditHelper(ctx: AppContext, a: CreatorActor, action: string, detail: string): void {
   if (a.helper) audit(ctx, a.user, `creator.helper.${action}`, a.creator.uuid, detail)
 }
 
@@ -1730,10 +1736,13 @@ export function adminDeleteCreator(ctx: AppContext, staff: Staff, uuid: string):
   const fanCapeIds = all<{ id: string }>(ctx.db, 'SELECT id FROM capes WHERE creator_uuid = ?', uuid).map((r) => r.id)
   const shas = all<{ sha256: string }>(ctx.db, 'SELECT DISTINCT sha256 FROM creator_symbols WHERE creator_uuid = ?', uuid).map((r) => r.sha256)
   const fans = all<{ fan_uuid: string }>(ctx.db, 'SELECT fan_uuid FROM creator_supports WHERE creator_uuid = ?', uuid).map((r) => r.fan_uuid)
+  const petImages = petImagesOf(ctx, uuid)
   tx(ctx.db, () => {
     unlistPacks(ctx, uuid)
     for (const id of fanCapeIds) removeCape(ctx, id)
     run(ctx.db, 'DELETE FROM creator_blocks WHERE creator_uuid = ?', uuid)
+    // Codes für sein Haustier (§35.13) bleiben in der Team-Liste, gelten aber nicht mehr.
+    run(ctx.db, 'UPDATE codes SET revoked_at = ? WHERE creator_uuid = ? AND revoked_at IS NULL', ctx.now(), uuid)
     run(ctx.db, 'DELETE FROM creators WHERE uuid = ?', uuid)
     audit(ctx, staff.uuid, 'creator.delete', uuid, `${c.tier}/${c.state}, ${fans.length} fans, ${fanCapeIds.length} fan capes`)
   })
@@ -1741,6 +1750,7 @@ export function adminDeleteCreator(ctx: AppContext, staff: Staff, uuid: string):
   for (const sha of shas) {
     if (!one(ctx.db, 'SELECT 1 AS x FROM creator_symbols WHERE sha256 = ?', sha)) rmSync(join(symbolDir(ctx), `${sha}.png`), { force: true })
   }
+  for (const img of petImages) dropPetImage(ctx, img.sha, img.mime)
   for (const f of fans) emitFan(ctx, f)
   emitFan(ctx, uuid)
   emitFanCreator(ctx, uuid)
@@ -1866,12 +1876,14 @@ export function creatorStateOf(ctx: AppContext, uuid: string): CreatorState | nu
 
 /** Zähler für die Seitenleiste/Übersicht des Team-Bereichs. */
 export function creatorCounts(ctx: AppContext): { queue: number, requests: number } {
+  // Offene Haustier-Wünsche (§35.13) zählen als Anfragen mit.
   const n = (sql: string) => one<{ n: number }>(ctx.db, sql)!.n
   return {
     queue: n("SELECT COUNT(*) AS n FROM creator_symbols WHERE status = 'pending'")
       + n("SELECT COUNT(*) AS n FROM capes WHERE creator_uuid IS NOT NULL AND status = 'pending'")
       + n("SELECT COUNT(*) AS n FROM creator_profiles WHERE status = 'pending'"),
-    requests: n("SELECT COUNT(*) AS n FROM creator_requests WHERE status = 'open'"),
+    requests: n("SELECT COUNT(*) AS n FROM creator_requests WHERE status = 'open'")
+      + n("SELECT COUNT(*) AS n FROM creator_pet_requests WHERE status = 'open'"),
   }
 }
 

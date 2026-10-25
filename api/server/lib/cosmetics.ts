@@ -4,7 +4,7 @@ import { writeAtomic } from './capes'
 import { resolveOptions } from '../../app/utils/cosmetic-v2/format'
 import { shortHash, V2_TEMPLATE, v2File, type BuiltinCosmeticV2, type CosmeticV2Assets, type V2File } from './cosmetics-v2'
 import type { AppContext } from './context'
-import { creatorFanCounts, petCount } from './creator-lookup'
+import { ownedPets, petCount } from './creator-lookup'
 import { all, one, run, tx } from './db'
 import { EMOTE_BY_ID, EMOTES } from './emotes'
 import { ApiError, badRequest, conflict, forbidden, notFound } from './errors'
@@ -98,7 +98,7 @@ export interface CosmeticView extends Partial<CosmeticV2Fields> {
    * Wahl je Option (`{ beard: false }`), fehlende Wahl = `default` des Modells – immer vollständig.
    */
   options?: Record<string, boolean>
-  /** Nur in der eigenen Ausrüstung im Platz `pet`: Anzahl (1…4, Creator-Pinguine nach Fans, sonst 1) – wie im Lookup. */
+  /** Nur in der eigenen Ausrüstung im Platz `pet`: Anzahl (1…4: eigenes Creator-Haustier nach Fans, §35.13; sonst 1) – wie im Lookup. */
   count?: number
 }
 
@@ -431,7 +431,7 @@ export function equippedView(ctx: AppContext, uuid: string): EquippedView {
     out[s] = r ? withOptions(ctx, r) : null
   }
   const pet = m.get('pet')
-  if (pet && out.pet) out.pet = { ...out.pet, count: petCount(pet.id, creatorFanCounts(ctx, [uuid]).get(uuid)) }
+  if (pet && out.pet) out.pet = { ...out.pet, count: petCount(pet.id, ownedPets(ctx, [uuid]).get(uuid)) }
   return out
 }
 

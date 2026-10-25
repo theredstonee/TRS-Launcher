@@ -869,7 +869,66 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 34,
     run: migrateWinterCosmetics,
   },
+  {
+    // Creator-Haustiere (§35.13): `creator_pets` (ein Haustier je Creator, ein Creator je Haustier), Wünsche
+    // `creator_pet_requests` (+ Referenzbild unter <DATA_DIR>/creator-pet-images/), Monatsgrenzen je Stufe
+    // `creator_pet_limits` (Vorgabe 10/50/200) und `codes.creator_uuid` (Herkunft eines Codes: Creator statt Team).
+    // Bisherige automatische Pinguin-Zuteilungen (`user_cosmetics.source = 'creator'` aus Migration 34) werden dauerhaft
+    // (`'admin'`): wer den Pinguin hat, behält ihn – `creator` meint ab jetzt nur noch „Besitzer-Creator“. Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 35,
+    run: migrateCreatorPets,
+  },
 ]
+
+/** Migration 35 (siehe oben): Creator-Haustiere. Exportiert für den Idempotenz-Test. */
+export function migrateCreatorPets(db: DatabaseSync): void {
+  db.exec(`
+CREATE TABLE IF NOT EXISTS creator_pets (
+  creator_uuid TEXT PRIMARY KEY REFERENCES creators(uuid) ON DELETE CASCADE,
+  -- Kosmetik mit Platz pet; gehört höchstens EINEM Creator
+  cosmetic_id TEXT NOT NULL UNIQUE REFERENCES cosmetics(id) ON DELETE CASCADE,
+  assigned_at INTEGER NOT NULL,
+  assigned_by TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS creator_pet_requests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  creator_uuid TEXT NOT NULL REFERENCES creators(uuid) ON DELETE CASCADE,
+  status TEXT NOT NULL CHECK (status IN ('open', 'in_progress', 'done', 'declined')),
+  species TEXT NOT NULL CHECK (length(species) BETWEEN 1 AND 60),
+  description TEXT NOT NULL CHECK (length(description) BETWEEN 1 AND 1000),
+  colors TEXT NOT NULL DEFAULT '' CHECK (length(colors) <= 200),
+  -- Referenzbild (neu kodiert, Datei <sha256>.png|.jpg), optional
+  image_sha256 TEXT CHECK (image_sha256 IS NULL OR length(image_sha256) = 64),
+  image_mime TEXT CHECK (image_mime IS NULL OR image_mime IN ('image/png', 'image/jpeg')),
+  image_width INTEGER,
+  image_height INTEGER,
+  reply TEXT CHECK (reply IS NULL OR length(reply) <= 500),
+  -- zugeordnetes Haustier, wenn das Team den Wunsch mit „fertig“ abschließt
+  cosmetic_id TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  decided_at INTEGER,
+  decided_by TEXT
+);
+CREATE INDEX IF NOT EXISTS creator_pet_requests_creator ON creator_pet_requests(creator_uuid, status);
+CREATE INDEX IF NOT EXISTS creator_pet_requests_status ON creator_pet_requests(status, created_at);
+
+-- Einlösungen je Kalendermonat (UTC), die ein Creator mit Codes für sein Haustier ausgeben darf
+CREATE TABLE IF NOT EXISTS creator_pet_limits (
+  tier TEXT PRIMARY KEY CHECK (tier IN ('starter', 'partner', 'top')),
+  monthly INTEGER NOT NULL CHECK (monthly BETWEEN 0 AND 1000000)
+);
+INSERT OR IGNORE INTO creator_pet_limits (tier, monthly) VALUES ('starter', 10), ('partner', 50), ('top', 200);
+`)
+  if (hasTable(db, 'codes') && !hasColumn(db, 'codes', 'creator_uuid')) db.exec('ALTER TABLE codes ADD COLUMN creator_uuid TEXT')
+  if (hasTable(db, 'codes')) db.exec('CREATE INDEX IF NOT EXISTS codes_creator ON codes(creator_uuid, created_at)')
+  // Zuteilungen eines Besitzer-Creators (gibt es erst nach dieser Migration) bleiben unberührt – auch bei erneutem Lauf.
+  if (hasTable(db, 'user_cosmetics')) {
+    db.exec("UPDATE user_cosmetics SET source = 'admin' WHERE source = 'creator' AND NOT EXISTS (SELECT 1 FROM creator_pets p WHERE p.creator_uuid = user_cosmetics.uuid AND p.cosmetic_id = user_cosmetics.cosmetic_id)")
+  }
+}
 
 /** Migration 34 (siehe oben): Platz `pet`, Optionen je Spieler, Quelle `creator`. Exportiert für den Idempotenz-Test. */
 export function migrateWinterCosmetics(db: DatabaseSync): void {

@@ -2,7 +2,7 @@ import type { AppContext } from './context'
 import { all, placeholders } from './db'
 import { capeView, type CapeRow } from './capes'
 import { badgeFxFor, type FxKind } from './badge-lookup'
-import { creatorFanCounts, creatorLookupData, petCount, type LookupCreator, type LookupFan } from './creator-lookup'
+import { creatorLookupData, ownedPets, petCount, type LookupCreator, type LookupFan } from './creator-lookup'
 import { cosmeticView, optionsOf, renderable, type CosmeticRow } from './cosmetics'
 import { WEARABLE_SLOTS, type WearableSlot } from './templates'
 import { ACTIVE_BANS } from './users'
@@ -139,9 +139,9 @@ function collect(ctx: AppContext, viewer: string, uuids: string[]): LookupEntry[
     else worn.set(e.eq_uuid, [e])
   }
 
-  // Pinguin-Anzahl der Creator (Winter 2026): nur nachschlagen, wenn jemand etwas im Platz `pet` trägt.
+  // Tier-Anzahl eigener Creator-Haustiere (§35.13): nur nachschlagen, wenn jemand etwas im Platz `pet` trägt.
   const petWearers = equipped.filter((e) => e.eq_slot === 'pet').map((e) => e.eq_uuid)
-  const fanCounts = creatorFanCounts(ctx, petWearers)
+  const petOwners = ownedPets(ctx, petWearers)
   const viewerLive = seesLiveBadges(ctx, viewer)
   const extra = creatorLookupData(ctx, viewer, rows.map((r) => r.uuid))
   const badgeFx = badgeFxFor(ctx, viewer, rows)
@@ -189,7 +189,7 @@ function collect(ctx: AppContext, viewer: string, uuids: string[]): LookupEntry[
           }
           const options = optionsOf(ctx, c, c.eq_options)
           if (options) cosmetics[c.eq_slot]!.options = options
-          if (c.eq_slot === 'pet') cosmetics[c.eq_slot]!.count = petCount(c.id, fanCounts.get(r.uuid))
+          if (c.eq_slot === 'pet') cosmetics[c.eq_slot]!.count = petCount(c.id, petOwners.get(r.uuid))
         } else {
           if (!c.template) continue
           cosmetics[c.eq_slot] = {

@@ -99,12 +99,9 @@ export function creatorLookupData(
   return { creators, fans }
 }
 
-// ---------------------------------------------------------------- Creator-Pinguine (Winter 2026)
+// ---------------------------------------------------------------- Creator-Haustiere (§35.13)
 
-/** Das Teil, das aktive Creator nach Fans bekommen (slot `pet`). */
-export const CREATOR_PET_ID = 'penguin'
-
-/** Pinguin-Stufen nach Fans: ≥ 1 → 1, ≥ 10 → 2, ≥ 100 → 3, ≥ 1000 → 4; 0 Fans → 0 (kein Creator-Pinguin). */
+/** Haustier-Stufen nach Fans: ≥ 1 → 1, ≥ 10 → 2, ≥ 100 → 3, ≥ 1000 → 4; 0 Fans → 0. */
 export function petCountForFans(fans: number): number {
   if (fans >= 1000) return 4
   if (fans >= 100) return 3
@@ -112,26 +109,36 @@ export function petCountForFans(fans: number): number {
   return fans >= 1 ? 1 : 0
 }
 
-/** Fans je aktivem Creator unter `uuids` (eine gruppierte Abfrage); Nicht-Creator fehlen in der Map. */
-export function creatorFanCounts(ctx: AppContext, uuids: readonly string[]): Map<string, number> {
-  const out = new Map<string, number>()
+/** Eigenes Haustier eines aktiven Creators und seine Fans. */
+export interface OwnedPet {
+  cosmeticId: string
+  fans: number
+}
+
+/**
+ * Eigene Haustiere (`creator_pets`) der AKTIVEN Creator unter `uuids` samt Fan-Zahl (eine gruppierte Abfrage);
+ * alle anderen fehlen in der Map.
+ */
+export function ownedPets(ctx: AppContext, uuids: readonly string[]): Map<string, OwnedPet> {
+  const out = new Map<string, OwnedPet>()
   if (uuids.length === 0) return out
-  for (const r of all<{ uuid: string, n: number }>(
+  for (const r of all<{ uuid: string, cosmetic_id: string, n: number }>(
     ctx.db,
-    `SELECT c.uuid, COUNT(s.fan_uuid) AS n FROM creators c
-     LEFT JOIN creator_supports s ON s.creator_uuid = c.uuid
-     WHERE c.state = 'active' AND c.uuid IN (${placeholders(uuids.length)})
-     GROUP BY c.uuid`,
+    `SELECT p.creator_uuid AS uuid, p.cosmetic_id, COUNT(s.fan_uuid) AS n FROM creator_pets p
+     JOIN creators c ON c.uuid = p.creator_uuid AND c.state = 'active'
+     LEFT JOIN creator_supports s ON s.creator_uuid = p.creator_uuid
+     WHERE p.creator_uuid IN (${placeholders(uuids.length)})
+     GROUP BY p.creator_uuid`,
     ...uuids,
-  )) out.set(r.uuid, r.n)
+  )) out.set(r.uuid, { cosmeticId: r.cosmetic_id, fans: r.n })
   return out
 }
 
 /**
- * Anzahl der Pinguine (`cosmetics.pet.count`, 1…4): für `penguin` bei aktiven Creatorn mit Fans die Stufe nach Fans,
- * sonst (Code-Pinguin, andere Begleiter) 1.
+ * Anzahl der Tiere (`cosmetics.pet.count`, 1…4): trägt ein aktiver Creator SEIN eigenes Haustier, die Stufe nach Fans
+ * (mindestens 1); sonst (Code, Team, frühere Zuteilung, fremdes Haustier) 1.
  */
-export function petCount(cosmeticId: string, fans: number | undefined): number {
-  if (cosmeticId !== CREATOR_PET_ID || !fans) return 1
-  return Math.max(1, petCountForFans(fans))
+export function petCount(cosmeticId: string, owned: OwnedPet | undefined): number {
+  if (!owned || owned.cosmeticId !== cosmeticId) return 1
+  return Math.max(1, petCountForFans(owned.fans))
 }

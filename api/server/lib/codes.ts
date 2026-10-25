@@ -18,6 +18,8 @@ interface CodeRow {
   note: string | null
   created_at: number
   created_by: string
+  /** Code eines Creators für sein eigenes Haustier (§35.13), sonst `null` (Team). */
+  creator_uuid: string | null
 }
 
 export interface CodeView {
@@ -33,11 +35,13 @@ export interface CodeView {
   note: string | null
   createdAt: string
   createdBy: string
+  /** Herkunft: `null` = Team, sonst der Creator, der den Code für sein Haustier erstellt hat (§35.13). */
+  creator: { uuid: string, name: string } | null
 }
 
 const iso = (t: number | null) => (t === null ? null : new Date(t).toISOString())
 
-function codeView(r: CodeRow): CodeView {
+export function codeView(r: CodeRow & { creator_name?: string | null }): CodeView {
   return {
     id: r.id,
     hint: r.hint,
@@ -50,6 +54,7 @@ function codeView(r: CodeRow): CodeView {
     note: r.note,
     createdAt: new Date(r.created_at).toISOString(),
     createdBy: r.created_by,
+    creator: r.creator_uuid ? { uuid: r.creator_uuid, name: r.creator_name ?? '' } : null,
   }
 }
 
@@ -63,7 +68,7 @@ export type CodeTarget = { capeId: string } | { cosmeticId: string }
 export function createCodes(
   ctx: AppContext,
   actor: string,
-  opts: CodeTarget & { maxUses: number, count: number, expiresAt?: string, note?: string },
+  opts: CodeTarget & { maxUses: number, count: number, expiresAt?: string, note?: string, creatorUuid?: string },
 ): { codes: (CodeView & { code: string })[] } {
   let capeId: string | null = null
   let cosmeticId: string | null = null
@@ -90,9 +95,9 @@ export function createCodes(
       const normalized = normalizeRedeemCode(code)!
       const row = one<CodeRow>(
         ctx.db,
-        `INSERT INTO codes (code_hash, hint, cape_id, cosmetic_id, max_uses, uses, expires_at, revoked_at, note, created_at, created_by)
-         VALUES (?, ?, ?, ?, ?, 0, ?, NULL, ?, ?, ?) RETURNING *`,
-        hashCode(ctx, normalized), normalized.slice(-4), capeId, cosmeticId, opts.maxUses, expires, opts.note ?? null, t, actor,
+        `INSERT INTO codes (code_hash, hint, cape_id, cosmetic_id, max_uses, uses, expires_at, revoked_at, note, created_at, created_by, creator_uuid)
+         VALUES (?, ?, ?, ?, ?, 0, ?, NULL, ?, ?, ?, ?) RETURNING *`,
+        hashCode(ctx, normalized), normalized.slice(-4), capeId, cosmeticId, opts.maxUses, expires, opts.note ?? null, t, actor, opts.creatorUuid ?? null,
       )!
       out.push({ ...codeView(row), code })
     }
@@ -101,7 +106,10 @@ export function createCodes(
 }
 
 export function listCodes(ctx: AppContext): CodeView[] {
-  return all<CodeRow>(ctx.db, 'SELECT * FROM codes ORDER BY id DESC LIMIT 1000').map(codeView)
+  return all<CodeRow & { creator_name: string | null }>(
+    ctx.db,
+    'SELECT k.*, u.name AS creator_name FROM codes k LEFT JOIN users u ON u.uuid = k.creator_uuid ORDER BY k.id DESC LIMIT 1000',
+  ).map(codeView)
 }
 
 export function revokeCode(ctx: AppContext, id: number): void {
@@ -131,6 +139,12 @@ export function redeemCode(ctx: AppContext, uuid: string, normalized: string): R
     const cape = row.cape_id !== null ? getCape(ctx, row.cape_id) : undefined
     const cosmetic = row.cosmetic_id !== null ? getCosmetic(ctx, row.cosmetic_id) : undefined
     if ((!cape || cape.retired) && (!cosmetic || cosmetic.retired)) throw invalid()
+    // Creator-Code (§35.13): gilt nur, solange der Creator aktiv ist und ihm das Haustier noch gehört.
+    if (row.creator_uuid !== null && !one(
+      ctx.db,
+      "SELECT 1 AS x FROM creator_pets p JOIN creators c ON c.uuid = p.creator_uuid WHERE p.creator_uuid = ? AND p.cosmetic_id = ? AND c.state = 'active'",
+      row.creator_uuid, row.cosmetic_id,
+    )) throw invalid()
     if (row.expires_at !== null && row.expires_at <= t) throw new ApiError(410, 'code_expired', 'This code has expired')
     const grant = () => (cape ? grantCape(ctx, uuid, cape.id, 'code') : grantCosmetic(ctx, uuid, cosmetic!.id, 'code'))
     const result = (alreadyOwned: boolean): RedeemResult => ({
