@@ -206,6 +206,7 @@ describe('sync presets and settings', () => {
     expect(parseWith(syncSettingsBody, { data: { theme: 'dark', accent: 'ice', design: 'winter' }, updatedAt: at }).data)
       .toEqual({ theme: 'dark', accent: 'ice', design: 'winter' })
     expect(parseWith(syncSettingsBody, { data: { design: 'redstone' }, updatedAt: at }).data).toEqual({ design: 'redstone' })
+    expect(parseWith(syncSettingsBody, { data: { design: 'fox', accent: 'fox' }, updatedAt: at }).data).toEqual({ design: 'fox', accent: 'fox' })
     const bad = (v: unknown) => err(() => parseWith(syncSettingsBody, v)).code
     expect(bad({ data: { design: 'summer' }, updatedAt: at })).toBe('invalid_request')
     expect(bad({ data: { design: 5 }, updatedAt: at })).toBe('invalid_request')
