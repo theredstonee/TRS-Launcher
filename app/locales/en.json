@@ -350,7 +350,9 @@
       "creator_pet_unavailable": "Your pet is not available right now – ask the team.",
       "creator_pet_owned": "You already have your own pet.",
       "request_closed": "The team is already working on this request – it can no longer be changed.",
-      "code_not_found": "This code doesn't exist (anymore)."
+      "code_not_found": "This code doesn't exist (anymore).",
+      "creator_not_found": "This creator doesn't exist (anymore).",
+      "creator_team_forbidden": "Only the creator can do this – not even in team mode."
     },
     "auth": {
       "accountMismatch": "This sign-in belongs to a different account – please sign in again.",
@@ -5725,7 +5727,8 @@
       "creators": "Creators",
       "featured": "Featured modpacks",
       "previews": "Preview builds",
-      "creatorPets": "Creator pets"
+      "creatorPets": "Creator pets",
+      "creatorStats": "Creator statistics"
     },
     "search": {
       "placeholder": "Search players, UUIDs, report IDs, #sanctions, capes …",
@@ -6214,6 +6217,94 @@
         "title": "Creator pets",
         "text": "Handle pet requests and assign a pet cosmetic to a creator – on the website.",
         "open": "Open website"
+      }
+    },
+    "creatorStats": {
+      "title": "Creator statistics",
+      "intro": "All creators side by side – numbers only, never fans' names. Click a row to see the history.",
+      "search": "Search name, UUID or code",
+      "tier": "Tier",
+      "allTiers": "All tiers",
+      "totals": {
+        "creators": "Creators",
+        "fans": "Fans in total",
+        "fans7d": "New fans (7 days)",
+        "newPlayers30d": "New players (30 days)",
+        "petRedemptions": "Pet code redemptions",
+        "online7d": "Fans online (7 days)"
+      },
+      "groups": {
+        "fans": "Fans",
+        "newPlayers": "New players",
+        "pets": "Pet codes",
+        "activity": "Active fans"
+      },
+      "columns": {
+        "name": "Creator",
+        "fans": "Total",
+        "fansToday": "Today",
+        "fans7d": "7 d",
+        "fans30d": "30 d",
+        "newPlayers": "Total",
+        "newPlayers7d": "7 d",
+        "newPlayers30d": "30 d",
+        "petCodes": "Codes",
+        "petRedemptions": "Redeemed",
+        "online7d": "Online 7 d",
+        "online30d": "Online 30 d",
+        "played7d": "Played 7 d",
+        "played30d": "Played 30 d",
+        "petMonth": "This month"
+      },
+      "sortBy": "Sort by {column}",
+      "empty": "No creators match these filters.",
+      "error": "Couldn't load the statistics.",
+      "generated": "As of {time}",
+      "definitions": "How we count",
+      "defFans": "New fans: supports started on that day (UTC). Fans in total: current supporters.",
+      "defNewPlayers": "New players: fans whose TRS account was created at most {hours} hours before they first redeemed a code of this creator.",
+      "defActivity": "Online: TRS Launcher open or game running; Played: in game. Counted are current fans with activity in the last 7 or 30 days.",
+      "activitySince": "Activity per day has been recorded since {date} – earlier days stay empty.",
+      "activityNever": "Activity per day is not recorded yet.",
+      "noPet": "No own pet yet.",
+      "detail": {
+        "title": "Creator history",
+        "back": "Back to the ranking",
+        "open": "Statistics",
+        "range": "Period",
+        "days": "{n} days",
+        "pet": "Pet: {name}",
+        "tiles": {
+          "fans": "Fans",
+          "fansNew": "New: {today} today · {d7} in 7 d · {d30} in 30 d",
+          "newPlayers": "New players",
+          "recent": "{d7} in 7 d · {d30} in 30 d",
+          "online": "Fans online (7 days)",
+          "activity": "{online30} online in 30 d · played: {played7} in 7 d, {played30} in 30 d",
+          "petRedemptions": "Pet code redemptions",
+          "petCodes": "{codes} codes, {active} usable"
+        },
+        "petMonth": "Monthly pet code limit",
+        "petMonthText": "{used} of {limit} handed out · {redemptions} redeemed",
+        "cape": "Fan cape among current fans",
+        "capeText": "{fanHolders} of {fans} current fans own it · {holders} owners in total (including former fans).",
+        "charts": {
+          "fans": "New fans per day",
+          "players": "New players per day",
+          "active": "Active fans per day (online)",
+          "playing": "Fans in game per day",
+          "redemptions": "Code redemptions per day",
+          "pet": "Pet code redemptions per day"
+        },
+        "chartSummary": "{label}: {days} days, total {total}, peak {peak}. Use the arrow keys for single days.",
+        "total": "Total {n}",
+        "peak": "Peak {n}",
+        "notRecorded": "not recorded",
+        "noActivityYet": "Not recorded yet",
+        "showTable": "Show as table",
+        "hideTable": "Hide table",
+        "day": "Day",
+        "value": "Value"
       }
     }
   },
@@ -7493,7 +7584,7 @@
       "activeFans": "Active fans",
       "redemptions": "Code redemptions in total",
       "capeHolders": "Fan capes handed out",
-      "capeShare": "{n} % of your fans have it",
+      "capeShare": "{n} % of your current fans have it ({held} of {fans})",
       "fromPartner": "from Partner",
       "newPlayers": "New launcher players via your code",
       "newPlayersHint": "started TRS for the first time with your code",
@@ -7775,6 +7866,10 @@
         "pet_request_answered": {
           "title": "Your pet request was answered",
           "body": "Details in the \"Pet\" tab."
+        },
+        "team_changed": {
+          "title": "Changed by the team",
+          "body": "{action} – see \"Changed by the team\" in your dashboard."
         }
       },
       "answer": "Team: {reason}"
@@ -7884,6 +7979,46 @@
         "text": "{code} can no longer be redeemed afterwards. Fans who already redeemed it keep the pet."
       },
       "unavailable": "Your pet is not available right now, so no new codes can be created. Codes you already handed out keep working once it is back."
+    },
+    "teamMode": {
+      "option": "Team: {name}",
+      "pick": "Pick creator (team)",
+      "pickTitle": "Open a creator dashboard (team)",
+      "pickText": "With \"Manage creators\" you can open any creator dashboard with all rights. Every change is logged and shown to the creator.",
+      "search": "Search name or code",
+      "fans": "{n} fans",
+      "noResults": "No active creators found.",
+      "bannerTitle": "Team mode – changes are logged",
+      "bannerText": "You are viewing the dashboard of {name} with all rights. Every change goes to the team log, and {name} sees it under \"Changed by the team\".",
+      "changesTitle": "Changed by the team",
+      "changesHint": "The team can open your dashboard to help with problems and change things for you. Every change is logged.",
+      "all": "Show all {n}",
+      "less": "Show less",
+      "noInvite": "Only the creator can invite helpers – in team mode you can change rights or remove helpers.",
+      "openDashboard": "Open dashboard (team)",
+      "openDashboardHint": "Opens the creator dashboard in team mode with all rights – every change is logged.",
+      "actions": {
+        "code_create": "Code created",
+        "code_update": "Code changed",
+        "symbol_upload": "Fan symbol submitted",
+        "symbol_withdraw": "Fan symbol withdrawn",
+        "cape_upload": "Fan cape submitted",
+        "cape_withdraw": "Fan cape withdrawn",
+        "pack_list": "Pack listed",
+        "pack_unlist": "Pack unlisted",
+        "request_create": "Request sent",
+        "profile_submit": "Profile submitted",
+        "profile_withdraw": "Profile change withdrawn",
+        "helper_update": "Helper rights changed",
+        "helper_remove": "Helper removed",
+        "pet_code_create": "Pet codes created",
+        "pet_code_revoke": "Pet code revoked",
+        "pet_request_create": "Pet requested",
+        "pet_request_withdraw": "Pet wish withdrawn",
+        "pet_request_image": "Reference image uploaded",
+        "pet_request_image_delete": "Reference image removed",
+        "other": "Dashboard changed"
+      }
     }
   },
   "halloween": {

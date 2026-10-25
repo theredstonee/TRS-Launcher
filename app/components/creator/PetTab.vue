@@ -37,6 +37,8 @@ const store = useCreatorStore()
 const toasts = useToasts()
 
 const helper = computed(() => !!props.self.viewer?.helper)
+/** Fremdes Haustier (Helfer oder Team-Modus) – Texte in der dritten Person. */
+const foreign = computed(() => helper.value || !!props.self.viewer?.team)
 const state = ref<CreatorPetState | null>(null)
 const codes = ref<PetCode[] | null>(null)
 const error = ref<string | null>(null)
@@ -204,7 +206,7 @@ async function pickImage(event: Event) {
   }
   attaching.value = true
   try {
-    const request = await backend.creator.petRequestImage(id, image)
+    const request = await backend.creator.petRequestImage(id, image, store.actingAs)
     if (state.value) state.value = { ...state.value, request }
     toasts.ok(t('creator.pet.request.imageAdded'))
   } catch (e) {
@@ -240,7 +242,7 @@ async function sendWish() {
       description: wish.description.trim(),
       ...(colors ? { colors } : {}),
       ...(wish.image ? { image: wish.image } : {}),
-    })
+    }, store.actingAs)
     wish.species = ''
     wish.description = ''
     wish.colors = ''
@@ -262,7 +264,7 @@ async function withdraw() {
   if (!id) return
   withdrawing.value = true
   try {
-    await backend.creator.withdrawPetRequest(id)
+    await backend.creator.withdrawPetRequest(id, store.actingAs)
     confirmWithdraw.value = false
     toasts.ok(t('creator.pet.request.withdrawn'))
     await load()
@@ -298,7 +300,7 @@ const requestClass = {
         </span>
         <div class="flex min-w-0 flex-1 flex-col gap-2">
           <div>
-            <p class="text-[11px] tracking-wide text-base-400 uppercase">{{ helper ? t('creator.pet.theirPet') : t('creator.pet.yourPet') }}</p>
+            <p class="text-[11px] tracking-wide text-base-400 uppercase">{{ foreign ? t('creator.pet.theirPet') : t('creator.pet.yourPet') }}</p>
             <h3 class="display text-2xl leading-tight text-base-50">{{ state.pet.name }}</h3>
             <p class="mt-1 text-xs text-base-400">{{ t('creator.pet.intro') }}</p>
             <p v-if="!state.pet.available" class="mt-2 rounded-lg border-l-2 border-lamp-400 bg-base-900 px-3 py-1.5 text-xs text-lamp-300" data-testid="creator-pet-unavailable">{{ t('creator.pet.unavailable') }}</p>
@@ -390,8 +392,8 @@ const requestClass = {
     <!-- Noch kein Haustier -->
     <template v-else-if="state">
       <section class="card p-4" data-testid="creator-pet-none">
-        <h3 class="section-title">{{ helper ? t('creator.pet.none.helperTitle') : t('creator.pet.none.title') }}</h3>
-        <p class="mt-1 text-sm text-base-400">{{ helper ? t('creator.pet.none.helperText') : t('creator.pet.none.text') }}</p>
+        <h3 class="section-title">{{ foreign ? t('creator.pet.none.helperTitle') : t('creator.pet.none.title') }}</h3>
+        <p class="mt-1 text-sm text-base-400">{{ foreign ? t('creator.pet.none.helperText') : t('creator.pet.none.text') }}</p>
       </section>
 
       <section v-if="state.request" class="card p-4" data-testid="creator-pet-request">

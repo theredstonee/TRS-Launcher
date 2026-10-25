@@ -161,6 +161,8 @@ export const teamSections: readonly TeamSection[] = [
   { to: '/admin/events', label: 'team.nav.events', icon: 'star', perms: ['events.manage'] },
   { to: '/admin/featured', label: 'team.nav.featured', icon: 'compass', perms: ['featured.manage'] },
   { to: '/admin/creators', label: 'team.nav.creators', icon: 'crown', perms: ['creators.review', 'creators.manage'] },
+  // Creator-Statistik (API §35.14): Rangliste + Verlauf je Creator.
+  { to: '/admin/creator-stats', label: 'team.nav.creatorStats', icon: 'chart', perms: ['creators.manage'] },
   { to: '/admin/previews', label: 'team.nav.previews', icon: 'bolt', perms: ['previews.access'] },
   { to: '/admin/audit', label: 'team.nav.audit', icon: 'list', perms: ['audit.view'] },
 ]

@@ -350,7 +350,9 @@
       "creator_pet_unavailable": "Dein Haustier ist gerade nicht verfügbar – frag beim Team nach.",
       "creator_pet_owned": "Du hast schon ein eigenes Haustier.",
       "request_closed": "Das Team arbeitet schon an diesem Antrag – er lässt sich nicht mehr ändern.",
-      "code_not_found": "Diesen Code gibt es nicht (mehr)."
+      "code_not_found": "Diesen Code gibt es nicht (mehr).",
+      "creator_not_found": "Diesen Creator gibt es nicht (mehr).",
+      "creator_team_forbidden": "Das darf nur der Creator selbst – auch im Team-Modus nicht."
     },
     "auth": {
       "accountMismatch": "Die Anmeldung gehört zu einem anderen Account – bitte erneut anmelden.",
@@ -5725,7 +5727,8 @@
       "creators": "Creator",
       "featured": "Empfohlene Modpacks",
       "previews": "Vorschau-Builds",
-      "creatorPets": "Creator-Haustiere"
+      "creatorPets": "Creator-Haustiere",
+      "creatorStats": "Creator-Statistik"
     },
     "search": {
       "placeholder": "Spieler, UUIDs, Meldungs-IDs, #Strafen, Umhänge suchen …",
@@ -6214,6 +6217,94 @@
         "title": "Creator-Haustiere",
         "text": "Haustier-Anträge bearbeiten und einem Creator eine Haustier-Kosmetik zuordnen – auf der Website.",
         "open": "Website öffnen"
+      }
+    },
+    "creatorStats": {
+      "title": "Creator-Statistik",
+      "intro": "Alle Creator im Vergleich – nur Zahlen, nie Namen von Fans. Ein Klick auf eine Zeile zeigt den Verlauf.",
+      "search": "Name, UUID oder Code suchen",
+      "tier": "Stufe",
+      "allTiers": "Alle Stufen",
+      "totals": {
+        "creators": "Creator",
+        "fans": "Fans gesamt",
+        "fans7d": "Neue Fans (7 Tage)",
+        "newPlayers30d": "Neue Spieler (30 Tage)",
+        "petRedemptions": "Haustier-Einlösungen",
+        "online7d": "Fans online (7 Tage)"
+      },
+      "groups": {
+        "fans": "Fans",
+        "newPlayers": "Neue Spieler",
+        "pets": "Haustier-Codes",
+        "activity": "Aktive Fans"
+      },
+      "columns": {
+        "name": "Creator",
+        "fans": "Gesamt",
+        "fansToday": "Heute",
+        "fans7d": "7 T.",
+        "fans30d": "30 T.",
+        "newPlayers": "Gesamt",
+        "newPlayers7d": "7 T.",
+        "newPlayers30d": "30 T.",
+        "petCodes": "Codes",
+        "petRedemptions": "Eingelöst",
+        "online7d": "Online 7 T.",
+        "online30d": "Online 30 T.",
+        "played7d": "Gespielt 7 T.",
+        "played30d": "Gespielt 30 T.",
+        "petMonth": "Monat"
+      },
+      "sortBy": "Nach {column} sortieren",
+      "empty": "Keine Creator für diese Filter.",
+      "error": "Die Statistik konnte nicht geladen werden.",
+      "generated": "Stand: {time}",
+      "definitions": "So wird gezählt",
+      "defFans": "Neue Fans: an dem Tag (UTC) begonnene Unterstützungen. Fans gesamt: aktuelle Unterstützer.",
+      "defNewPlayers": "Neue Spieler: Fans, deren TRS-Konto höchstens {hours} Stunden vor ihrer ersten Einlösung eines Codes dieses Creators angelegt wurde.",
+      "defActivity": "Online: TRS Launcher offen oder Spiel läuft; Gespielt: im Spiel. Gezählt werden aktuelle Fans mit Aktivität in den letzten 7 bzw. 30 Tagen.",
+      "activitySince": "Aktivität je Tag wird seit {date} erfasst – frühere Tage bleiben leer.",
+      "activityNever": "Aktivität je Tag wird noch nicht erfasst.",
+      "noPet": "Noch kein eigenes Haustier.",
+      "detail": {
+        "title": "Creator-Verlauf",
+        "back": "Zur Rangliste",
+        "open": "Statistik",
+        "range": "Zeitraum",
+        "days": "{n} Tage",
+        "pet": "Haustier: {name}",
+        "tiles": {
+          "fans": "Fans",
+          "fansNew": "Neu: {today} heute · {d7} in 7 T. · {d30} in 30 T.",
+          "newPlayers": "Neue Spieler",
+          "recent": "{d7} in 7 T. · {d30} in 30 T.",
+          "online": "Fans online (7 Tage)",
+          "activity": "{online30} online in 30 T. · gespielt: {played7} in 7 T., {played30} in 30 T.",
+          "petRedemptions": "Haustier-Einlösungen",
+          "petCodes": "{codes} Codes, {active} nutzbar"
+        },
+        "petMonth": "Monatsgrenze Haustier-Codes",
+        "petMonthText": "{used} von {limit} vergeben · {redemptions} eingelöst",
+        "cape": "Fan-Umhang unter aktuellen Fans",
+        "capeText": "{fanHolders} von {fans} aktuellen Fans haben ihn · insgesamt {holders} Besitzer (inkl. ehemaliger Fans).",
+        "charts": {
+          "fans": "Neue Fans pro Tag",
+          "players": "Neue Spieler pro Tag",
+          "active": "Aktive Fans pro Tag (online)",
+          "playing": "Fans im Spiel pro Tag",
+          "redemptions": "Code-Einlösungen pro Tag",
+          "pet": "Haustier-Einlösungen pro Tag"
+        },
+        "chartSummary": "{label}: {days} Tage, Summe {total}, Höchstwert {peak}. Mit den Pfeiltasten einzelne Tage ansehen.",
+        "total": "Summe {n}",
+        "peak": "Höchstwert {n}",
+        "notRecorded": "nicht erfasst",
+        "noActivityYet": "Noch nicht erfasst",
+        "showTable": "Als Tabelle anzeigen",
+        "hideTable": "Tabelle ausblenden",
+        "day": "Tag",
+        "value": "Wert"
       }
     }
   },
@@ -7493,7 +7584,7 @@
       "activeFans": "Aktive Fans",
       "redemptions": "Code-Einlösungen gesamt",
       "capeHolders": "Fan-Umhänge vergeben",
-      "capeShare": "{n} % deiner Fans tragen ihn",
+      "capeShare": "{n} % deiner aktuellen Fans haben ihn ({held} von {fans})",
       "fromPartner": "ab Partner",
       "newPlayers": "Neue Launcher-Spieler über deinen Code",
       "newPlayersHint": "haben TRS mit deinem Code zum ersten Mal gestartet",
@@ -7775,6 +7866,10 @@
         "pet_request_answered": {
           "title": "Dein Haustier-Antrag wurde beantwortet",
           "body": "Details im Reiter „Haustier“."
+        },
+        "team_changed": {
+          "title": "Vom Team geändert",
+          "body": "{action} – Details unter „Vom Team geändert“ in deinem Dashboard."
         }
       },
       "answer": "Team: {reason}"
@@ -7884,6 +7979,46 @@
         "text": "{code} lässt sich danach nicht mehr einlösen. Fans, die ihn schon eingelöst haben, behalten das Haustier."
       },
       "unavailable": "Dein Haustier ist gerade nicht verfügbar, deshalb lassen sich keine neuen Codes erstellen. Schon verteilte Codes gelten wieder, sobald es zurück ist."
+    },
+    "teamMode": {
+      "option": "Team: {name}",
+      "pick": "Creator wählen (Team)",
+      "pickTitle": "Creator-Dashboard öffnen (Team)",
+      "pickText": "Mit „Creator verwalten“ kannst du jedes Creator-Dashboard mit allen Rechten öffnen. Jede Änderung wird protokolliert und dem Creator angezeigt.",
+      "search": "Name oder Code suchen",
+      "fans": "{n} Fans",
+      "noResults": "Keine aktiven Creator gefunden.",
+      "bannerTitle": "Team-Modus – Änderungen werden protokolliert",
+      "bannerText": "Du siehst das Dashboard von {name} mit allen Rechten. Jede Änderung landet im Team-Protokoll und {name} sieht sie unter „Vom Team geändert“.",
+      "changesTitle": "Vom Team geändert",
+      "changesHint": "Das Team kann dein Dashboard bei Problemen öffnen und Dinge für dich ändern. Jede Änderung wird protokolliert.",
+      "all": "Alle {n} anzeigen",
+      "less": "Weniger anzeigen",
+      "noInvite": "Helfer einladen kann nur der Creator selbst – im Team-Modus kannst du Rechte ändern oder Helfer entfernen.",
+      "openDashboard": "Dashboard öffnen (Team)",
+      "openDashboardHint": "Öffnet das Creator-Dashboard im Team-Modus mit allen Rechten – jede Änderung wird protokolliert.",
+      "actions": {
+        "code_create": "Code erstellt",
+        "code_update": "Code geändert",
+        "symbol_upload": "Fan-Symbol eingereicht",
+        "symbol_withdraw": "Fan-Symbol zurückgezogen",
+        "cape_upload": "Fan-Umhang eingereicht",
+        "cape_withdraw": "Fan-Umhang zurückgezogen",
+        "pack_list": "Pack gelistet",
+        "pack_unlist": "Pack nicht mehr gelistet",
+        "request_create": "Antrag gestellt",
+        "profile_submit": "Profil eingereicht",
+        "profile_withdraw": "Profil-Änderung zurückgezogen",
+        "helper_update": "Helfer-Rechte geändert",
+        "helper_remove": "Helfer entfernt",
+        "pet_code_create": "Haustier-Codes erstellt",
+        "pet_code_revoke": "Haustier-Code widerrufen",
+        "pet_request_create": "Haustier gewünscht",
+        "pet_request_withdraw": "Haustier-Wunsch zurückgezogen",
+        "pet_request_image": "Referenzbild hochgeladen",
+        "pet_request_image_delete": "Referenzbild entfernt",
+        "other": "Dashboard geändert"
+      }
     }
   },
   "halloween": {

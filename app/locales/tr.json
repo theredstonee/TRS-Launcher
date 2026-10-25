@@ -325,7 +325,9 @@
       "creator_pet_unavailable": "Evcil hayvanın şu anda kullanılamıyor – ekibe sor.",
       "creator_pet_owned": "Zaten kendi evcil hayvanın var.",
       "request_closed": "Ekip bu başvuru üzerinde çalışıyor – artık değiştirilemez.",
-      "code_not_found": "Bu kod yok (artık yok)."
+      "code_not_found": "Bu kod yok (artık yok).",
+      "creator_not_found": "Bu içerik üretici (artık) yok.",
+      "creator_team_forbidden": "Bunu yalnızca içerik üretici yapabilir – ekip modunda bile olmaz."
     },
     "auth": {
       "accountMismatch": "Bu giriş başka bir hesaba ait – lütfen tekrar giriş yap.",
@@ -5656,7 +5658,8 @@
       "blog": "Blog",
       "featured": "Öne çıkan mod paketleri",
       "previews": "Önizleme sürümleri",
-      "creatorPets": "Creator evcil hayvanları"
+      "creatorPets": "Creator evcil hayvanları",
+      "creatorStats": "İçerik üretici istatistikleri"
     },
     "search": {
       "placeholder": "Oyuncu, UUID, şikayet kimliği, #ceza, pelerin ara …",
@@ -6067,6 +6070,94 @@
         "title": "Creator evcil hayvanları",
         "text": "Evcil hayvan başvurularını yönet ve bir creator'a evcil hayvan kozmetiği ata – web sitesinde.",
         "open": "Web sitesini aç"
+      }
+    },
+    "creatorStats": {
+      "title": "İçerik üretici istatistikleri",
+      "intro": "Tüm içerik üreticiler yan yana – yalnızca sayılar, asla hayran adları yok. Geçmişi görmek için bir satıra tıkla.",
+      "search": "Ad, UUID veya kod ara",
+      "tier": "Seviye",
+      "allTiers": "Tüm seviyeler",
+      "totals": {
+        "creators": "İçerik üreticiler",
+        "fans": "Toplam hayran",
+        "fans7d": "Yeni hayranlar (7 gün)",
+        "newPlayers30d": "Yeni oyuncular (30 gün)",
+        "petRedemptions": "Evcil hayvan kodu kullanımı",
+        "online7d": "Çevrimiçi hayranlar (7 gün)"
+      },
+      "groups": {
+        "fans": "Hayranlar",
+        "newPlayers": "Yeni oyuncular",
+        "pets": "Evcil hayvan kodları",
+        "activity": "Etkin hayranlar"
+      },
+      "columns": {
+        "name": "İçerik üretici",
+        "fans": "Toplam",
+        "fansToday": "Bugün",
+        "fans7d": "7 g",
+        "fans30d": "30 g",
+        "newPlayers": "Toplam",
+        "newPlayers7d": "7 g",
+        "newPlayers30d": "30 g",
+        "petCodes": "Kodlar",
+        "petRedemptions": "Kullanılan",
+        "online7d": "Çevrimiçi 7 g",
+        "online30d": "Çevrimiçi 30 g",
+        "played7d": "Oynadı 7 g",
+        "played30d": "Oynadı 30 g",
+        "petMonth": "Bu ay"
+      },
+      "sortBy": "{column} sütununa göre sırala",
+      "empty": "Bu filtrelere uyan içerik üretici yok.",
+      "error": "İstatistikler yüklenemedi.",
+      "generated": "Durum: {time}",
+      "definitions": "Nasıl sayıyoruz",
+      "defFans": "Yeni hayranlar: o gün (UTC) başlayan destekler. Toplam hayran: mevcut destekçiler.",
+      "defNewPlayers": "Yeni oyuncular: TRS hesabı, bu içerik üreticinin bir kodunu ilk kullanmalarından en fazla {hours} saat önce açılmış hayranlar.",
+      "defActivity": "Çevrimiçi: TRS Launcher açık veya oyun çalışıyor; Oynadı: oyunda. Son 7 veya 30 günde etkin olan mevcut hayranlar sayılır.",
+      "activitySince": "Günlük etkinlik {date} tarihinden beri kaydediliyor – önceki günler boş kalır.",
+      "activityNever": "Günlük etkinlik henüz kaydedilmiyor.",
+      "noPet": "Henüz kendi evcil hayvanı yok.",
+      "detail": {
+        "title": "İçerik üretici geçmişi",
+        "back": "Sıralamaya dön",
+        "open": "İstatistikler",
+        "range": "Dönem",
+        "days": "{n} gün",
+        "pet": "Evcil hayvan: {name}",
+        "tiles": {
+          "fans": "Hayranlar",
+          "fansNew": "Yeni: bugün {today} · 7 günde {d7} · 30 günde {d30}",
+          "newPlayers": "Yeni oyuncular",
+          "recent": "7 günde {d7} · 30 günde {d30}",
+          "online": "Çevrimiçi hayranlar (7 gün)",
+          "activity": "30 günde {online30} çevrimiçi · oynadı: 7 günde {played7}, 30 günde {played30}",
+          "petRedemptions": "Evcil hayvan kodu kullanımı",
+          "petCodes": "{codes} kod, {active} kullanılabilir"
+        },
+        "petMonth": "Aylık evcil hayvan kodu sınırı",
+        "petMonthText": "{limit} hakkın {used} kadarı dağıtıldı · {redemptions} kullanıldı",
+        "cape": "Mevcut hayranlarda hayran pelerini",
+        "capeText": "{fans} mevcut hayranın {fanHolders} kadarında var · toplam {holders} sahip (eski hayranlar dahil).",
+        "charts": {
+          "fans": "Günlük yeni hayranlar",
+          "players": "Günlük yeni oyuncular",
+          "active": "Günlük etkin hayranlar (çevrimiçi)",
+          "playing": "Günlük oyundaki hayranlar",
+          "redemptions": "Günlük kod kullanımı",
+          "pet": "Günlük evcil hayvan kodu kullanımı"
+        },
+        "chartSummary": "{label}: {days} gün, toplam {total}, en yüksek {peak}. Tek tek günler için ok tuşlarını kullan.",
+        "total": "Toplam {n}",
+        "peak": "En yüksek {n}",
+        "notRecorded": "kaydedilmedi",
+        "noActivityYet": "Henüz kaydedilmedi",
+        "showTable": "Tablo olarak göster",
+        "hideTable": "Tabloyu gizle",
+        "day": "Gün",
+        "value": "Değer"
       }
     }
   },
@@ -7358,7 +7449,54 @@
         "pet_request_answered": {
           "title": "Evcil hayvan başvurun yanıtlandı",
           "body": "Ayrıntılar \"Evcil hayvan\" sekmesinde."
+        },
+        "team_changed": {
+          "title": "Ekip tarafından değiştirildi",
+          "body": "{action} – ayrıntılar panelindeki \"Ekip tarafından değiştirildi\" bölümünde."
         }
+      }
+    },
+    "stats": {
+      "capeShare": "Mevcut hayranlarının %{n} kadarında var ({held}/{fans})"
+    },
+    "teamMode": {
+      "option": "Ekip: {name}",
+      "pick": "İçerik üretici seç (ekip)",
+      "pickTitle": "İçerik üretici panelini aç (ekip)",
+      "pickText": "\"İçerik üreticileri yönet\" yetkisiyle her içerik üretici panelini tüm haklarla açabilirsin. Her değişiklik kaydedilir ve içerik üreticiye gösterilir.",
+      "search": "Ad veya kod ara",
+      "fans": "{n} hayran",
+      "noResults": "Etkin içerik üretici bulunamadı.",
+      "bannerTitle": "Ekip modu – değişiklikler kaydedilir",
+      "bannerText": "{name} panelini tüm haklarla görüyorsun. Her değişiklik ekip kaydına girer ve {name} bunu \"Ekip tarafından değiştirildi\" bölümünde görür.",
+      "changesTitle": "Ekip tarafından değiştirildi",
+      "changesHint": "Ekip, sorunlarda yardım etmek için panelini açıp senin yerine değişiklik yapabilir. Her değişiklik kaydedilir.",
+      "all": "Tümünü göster ({n})",
+      "less": "Daha az göster",
+      "noInvite": "Yardımcıları yalnızca içerik üretici davet edebilir – ekip modunda hakları değiştirebilir veya yardımcıları kaldırabilirsin.",
+      "openDashboard": "Paneli aç (ekip)",
+      "openDashboardHint": "İçerik üretici panelini ekip modunda tüm haklarla açar – her değişiklik kaydedilir.",
+      "actions": {
+        "code_create": "Kod oluşturuldu",
+        "code_update": "Kod değiştirildi",
+        "symbol_upload": "Hayran sembolü gönderildi",
+        "symbol_withdraw": "Hayran sembolü geri çekildi",
+        "cape_upload": "Hayran pelerini gönderildi",
+        "cape_withdraw": "Hayran pelerini geri çekildi",
+        "pack_list": "Paket listelendi",
+        "pack_unlist": "Paket listeden kaldırıldı",
+        "request_create": "Başvuru gönderildi",
+        "profile_submit": "Profil gönderildi",
+        "profile_withdraw": "Profil değişikliği geri çekildi",
+        "helper_update": "Yardımcı hakları değiştirildi",
+        "helper_remove": "Yardımcı kaldırıldı",
+        "pet_code_create": "Evcil hayvan kodları oluşturuldu",
+        "pet_code_revoke": "Evcil hayvan kodu iptal edildi",
+        "pet_request_create": "Evcil hayvan istendi",
+        "pet_request_withdraw": "Evcil hayvan isteği geri çekildi",
+        "pet_request_image": "Referans görseli yüklendi",
+        "pet_request_image_delete": "Referans görseli kaldırıldı",
+        "other": "Panel değiştirildi"
       }
     }
   }

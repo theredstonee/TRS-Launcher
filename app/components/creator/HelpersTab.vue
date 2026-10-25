@@ -4,7 +4,10 @@ import { canInviteHelper, helperLimit, helperRights, invitableFriends, type Crea
 // Helfer (§35.9, nur für den Creator): TRS-Freunde einladen, Rechte je Helfer
 // als Häkchen (Statistik, Codes, Symbol/Umhang, Packs), ändern und entfernen.
 // Grenze je Stufe: Starter 1, Partner 3, Top 10 (angenommen + eingeladen).
+// Im Team-Modus darf das Team Rechte ändern und Helfer entfernen, aber niemanden
+// einladen – wem der Creator Zugriff gibt, entscheidet nur er selbst.
 const props = defineProps<{ self: CreatorSelf }>()
+const team = computed(() => !!props.self.viewer?.team)
 const store = useCreatorStore()
 const trs = useTrsStore()
 const toasts = useToasts()
@@ -118,7 +121,13 @@ async function invite() {
       <div class="flex flex-wrap items-center gap-2">
         <h3 class="section-title mr-auto">{{ t('creator.helpers.title') }}</h3>
         <span class="text-xs text-base-400">{{ t('creator.helpers.count', { n: self.helpers.length, max: limit }) }}</span>
-        <button class="btn btn-primary px-3 py-1.5 text-xs" :disabled="!canInvite" data-testid="creator-helper-invite" @click="openInvite">
+        <button
+          class="btn btn-primary px-3 py-1.5 text-xs"
+          :disabled="!canInvite || team"
+          :title="team ? t('creator.teamMode.noInvite') : undefined"
+          data-testid="creator-helper-invite"
+          @click="openInvite"
+        >
           <SocialIcon name="userPlus" class="size-4" />{{ t('creator.helpers.invite') }}
         </button>
       </div>
@@ -142,6 +151,7 @@ async function invite() {
           <button class="btn btn-danger px-3 py-1 text-xs" :disabled="busy === h.uuid" @click="removing = h">{{ t('creator.helpers.remove') }}</button>
         </li>
       </ul>
+      <p v-if="team" class="mt-3 text-[11px] text-lamp-300" data-testid="creator-team-no-invite">{{ t('creator.teamMode.noInvite') }}</p>
       <p class="mt-3 text-[11px] text-base-400">{{ t('creator.helpers.creatorOnly') }}</p>
     </section>
 

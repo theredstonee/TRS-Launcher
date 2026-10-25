@@ -325,7 +325,9 @@
       "creator_pet_unavailable": "Je huisdier is op dit moment niet beschikbaar – vraag het team.",
       "creator_pet_owned": "Je hebt al een eigen huisdier.",
       "request_closed": "Het team werkt al aan deze aanvraag – hij kan niet meer worden gewijzigd.",
-      "code_not_found": "Deze code bestaat niet (meer)."
+      "code_not_found": "Deze code bestaat niet (meer).",
+      "creator_not_found": "Deze creator bestaat niet (meer).",
+      "creator_team_forbidden": "Alleen de creator kan dit doen – ook niet in teammodus."
     },
     "auth": {
       "accountMismatch": "Deze login hoort bij een ander account – log opnieuw in.",
@@ -5656,7 +5658,8 @@
       "blog": "Blog",
       "featured": "Uitgelichte modpacks",
       "previews": "Testversies",
-      "creatorPets": "Creator-huisdieren"
+      "creatorPets": "Creator-huisdieren",
+      "creatorStats": "Creatorstatistieken"
     },
     "search": {
       "placeholder": "Zoek spelers, UUID’s, meldings-ID’s, #straffen, capes …",
@@ -6067,6 +6070,94 @@
         "title": "Creator-huisdieren",
         "text": "Huisdieraanvragen afhandelen en een huisdier-cosmetic aan een creator toewijzen – op de website.",
         "open": "Website openen"
+      }
+    },
+    "creatorStats": {
+      "title": "Creatorstatistieken",
+      "intro": "Alle creators naast elkaar – alleen cijfers, nooit namen van fans. Klik op een rij voor het verloop.",
+      "search": "Naam, UUID of code zoeken",
+      "tier": "Niveau",
+      "allTiers": "Alle niveaus",
+      "totals": {
+        "creators": "Creators",
+        "fans": "Fans in totaal",
+        "fans7d": "Nieuwe fans (7 dagen)",
+        "newPlayers30d": "Nieuwe spelers (30 dagen)",
+        "petRedemptions": "Huisdiercodes ingewisseld",
+        "online7d": "Fans online (7 dagen)"
+      },
+      "groups": {
+        "fans": "Fans",
+        "newPlayers": "Nieuwe spelers",
+        "pets": "Huisdiercodes",
+        "activity": "Actieve fans"
+      },
+      "columns": {
+        "name": "Creator",
+        "fans": "Totaal",
+        "fansToday": "Vandaag",
+        "fans7d": "7 d",
+        "fans30d": "30 d",
+        "newPlayers": "Totaal",
+        "newPlayers7d": "7 d",
+        "newPlayers30d": "30 d",
+        "petCodes": "Codes",
+        "petRedemptions": "Ingewisseld",
+        "online7d": "Online 7 d",
+        "online30d": "Online 30 d",
+        "played7d": "Gespeeld 7 d",
+        "played30d": "Gespeeld 30 d",
+        "petMonth": "Deze maand"
+      },
+      "sortBy": "Sorteren op {column}",
+      "empty": "Geen creators voor deze filters.",
+      "error": "De statistieken konden niet worden geladen.",
+      "generated": "Stand: {time}",
+      "definitions": "Zo tellen we",
+      "defFans": "Nieuwe fans: steun die op die dag (UTC) begon. Fans in totaal: huidige supporters.",
+      "defNewPlayers": "Nieuwe spelers: fans van wie het TRS-account hoogstens {hours} uur vóór hun eerste ingewisselde code van deze creator is aangemaakt.",
+      "defActivity": "Online: TRS Launcher open of spel actief; Gespeeld: in het spel. Geteld worden huidige fans met activiteit in de laatste 7 of 30 dagen.",
+      "activitySince": "Activiteit per dag wordt sinds {date} vastgelegd – eerdere dagen blijven leeg.",
+      "activityNever": "Activiteit per dag wordt nog niet vastgelegd.",
+      "noPet": "Nog geen eigen huisdier.",
+      "detail": {
+        "title": "Creatorverloop",
+        "back": "Terug naar de ranglijst",
+        "open": "Statistieken",
+        "range": "Periode",
+        "days": "{n} dagen",
+        "pet": "Huisdier: {name}",
+        "tiles": {
+          "fans": "Fans",
+          "fansNew": "Nieuw: {today} vandaag · {d7} in 7 d · {d30} in 30 d",
+          "newPlayers": "Nieuwe spelers",
+          "recent": "{d7} in 7 d · {d30} in 30 d",
+          "online": "Fans online (7 dagen)",
+          "activity": "{online30} online in 30 d · gespeeld: {played7} in 7 d, {played30} in 30 d",
+          "petRedemptions": "Huisdiercodes ingewisseld",
+          "petCodes": "{codes} codes, {active} bruikbaar"
+        },
+        "petMonth": "Maandlimiet huisdiercodes",
+        "petMonthText": "{used} van {limit} uitgegeven · {redemptions} ingewisseld",
+        "cape": "Fancape onder huidige fans",
+        "capeText": "{fanHolders} van {fans} huidige fans hebben hem · {holders} bezitters in totaal (inclusief oud-fans).",
+        "charts": {
+          "fans": "Nieuwe fans per dag",
+          "players": "Nieuwe spelers per dag",
+          "active": "Actieve fans per dag (online)",
+          "playing": "Fans in het spel per dag",
+          "redemptions": "Codes ingewisseld per dag",
+          "pet": "Huisdiercodes ingewisseld per dag"
+        },
+        "chartSummary": "{label}: {days} dagen, totaal {total}, hoogste {peak}. Gebruik de pijltjestoetsen voor losse dagen.",
+        "total": "Totaal {n}",
+        "peak": "Hoogste {n}",
+        "notRecorded": "niet vastgelegd",
+        "noActivityYet": "Nog niet vastgelegd",
+        "showTable": "Als tabel tonen",
+        "hideTable": "Tabel verbergen",
+        "day": "Dag",
+        "value": "Waarde"
       }
     }
   },
@@ -7358,7 +7449,54 @@
         "pet_request_answered": {
           "title": "Je huisdieraanvraag is beantwoord",
           "body": "Details op het tabblad „Huisdier”."
+        },
+        "team_changed": {
+          "title": "Gewijzigd door het team",
+          "body": "{action} – details onder \"Gewijzigd door het team\" in je dashboard."
         }
+      }
+    },
+    "stats": {
+      "capeShare": "{n} % van je huidige fans heeft hem ({held} van {fans})"
+    },
+    "teamMode": {
+      "option": "Team: {name}",
+      "pick": "Creator kiezen (team)",
+      "pickTitle": "Creator-dashboard openen (team)",
+      "pickText": "Met \"Creators beheren\" kun je elk creator-dashboard met alle rechten openen. Elke wijziging wordt vastgelegd en aan de creator getoond.",
+      "search": "Naam of code zoeken",
+      "fans": "{n} fans",
+      "noResults": "Geen actieve creators gevonden.",
+      "bannerTitle": "Teammodus – wijzigingen worden vastgelegd",
+      "bannerText": "Je bekijkt het dashboard van {name} met alle rechten. Elke wijziging komt in het teamlogboek en {name} ziet hem onder \"Gewijzigd door het team\".",
+      "changesTitle": "Gewijzigd door het team",
+      "changesHint": "Het team kan je dashboard openen om bij problemen te helpen en dingen voor je te wijzigen. Elke wijziging wordt vastgelegd.",
+      "all": "Alle {n} tonen",
+      "less": "Minder tonen",
+      "noInvite": "Alleen de creator kan helpers uitnodigen – in teammodus kun je rechten wijzigen of helpers verwijderen.",
+      "openDashboard": "Dashboard openen (team)",
+      "openDashboardHint": "Opent het creator-dashboard in teammodus met alle rechten – elke wijziging wordt vastgelegd.",
+      "actions": {
+        "code_create": "Code aangemaakt",
+        "code_update": "Code gewijzigd",
+        "symbol_upload": "Fansymbool ingediend",
+        "symbol_withdraw": "Fansymbool ingetrokken",
+        "cape_upload": "Fancape ingediend",
+        "cape_withdraw": "Fancape ingetrokken",
+        "pack_list": "Pack vermeld",
+        "pack_unlist": "Pack niet meer vermeld",
+        "request_create": "Aanvraag verstuurd",
+        "profile_submit": "Profiel ingediend",
+        "profile_withdraw": "Profielwijziging ingetrokken",
+        "helper_update": "Helperrechten gewijzigd",
+        "helper_remove": "Helper verwijderd",
+        "pet_code_create": "Huisdiercodes aangemaakt",
+        "pet_code_revoke": "Huisdiercode ingetrokken",
+        "pet_request_create": "Huisdier aangevraagd",
+        "pet_request_withdraw": "Huisdierwens ingetrokken",
+        "pet_request_image": "Referentieafbeelding geüpload",
+        "pet_request_image_delete": "Referentieafbeelding verwijderd",
+        "other": "Dashboard gewijzigd"
       }
     }
   }

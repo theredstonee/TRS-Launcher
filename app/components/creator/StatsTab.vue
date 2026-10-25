@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { codeShares, milestoneColor, milestoneProgress, recentSum, tierAtLeast, type CreatorSelf } from '~/utils/creator'
+import { codeShares, fanCapeShare, milestoneColor, milestoneProgress, recentSum, tierAtLeast, type CreatorSelf } from '~/utils/creator'
 
 // Statistik: nur Zahlen, nie Namen der Fans (§35.3). Neue Fans der letzten 30 Tage als Säulen.
 const props = defineProps<{ self: CreatorSelf }>()
@@ -8,7 +8,8 @@ const s = computed(() => props.self.stats)
 const partner = computed(() => tierAtLeast(props.self.tier, 'partner'))
 const fansWeek = computed(() => recentSum(s.value.daily, 'newFans'))
 const redemptionsWeek = computed(() => recentSum(s.value.daily, 'redemptions'))
-const capeShare = computed(() => (s.value.activeFans ? Math.round((s.value.fanCapeHolders / s.value.activeFans) * 100) : 0))
+// Anteil der AKTUELLEN Fans mit Umhang (nie über 100 %) – ehemalige Fans behalten ihn, zählen aber nicht mehr.
+const capeShare = computed(() => fanCapeShare(s.value))
 const days = computed(() => s.value.daily.map((d) => d.day))
 const newFans = computed(() => s.value.daily.map((d) => d.newFans))
 const shares = computed(() => codeShares(props.self.codes))
@@ -31,7 +32,9 @@ const progress = computed(() => milestoneProgress(s.value.activeFans, props.self
       <div class="card px-4 py-3">
         <p class="display text-2xl text-base-50 tabular-nums">{{ partner ? formatNumber(s.fanCapeHolders) : '–' }}</p>
         <p class="text-xs text-base-400">{{ t('creator.stats.capeHolders') }}</p>
-        <p v-if="partner && s.activeFans" class="mt-0.5 text-[11px] text-ok">{{ t('creator.stats.capeShare', { n: capeShare }) }}</p>
+        <p v-if="partner && s.activeFans" class="mt-0.5 text-[11px] text-ok" data-testid="creator-cape-share">
+          {{ t('creator.stats.capeShare', { n: capeShare.percent, held: formatNumber(capeShare.held), fans: formatNumber(capeShare.fans) }) }}
+        </p>
         <p v-else-if="!partner" class="mt-0.5 text-[11px] text-base-600">{{ t('creator.stats.fromPartner') }}</p>
       </div>
       <div class="card px-4 py-3">

@@ -28,6 +28,18 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Creator statistics for the team.** Team members who manage creators get a new "Creator statistics" page in the team area: a ranking of all creators with fans (total and new today, in 7 and in 30 days), new players the creator brought to TRS, pet codes (created, redeemed, this month's limit) and how many fans were online or played in the last 7 and 30 days. Every column can be sorted, and there is a search plus tier and status filters. A click on a creator opens its history: daily new fans, new players, active fans, code and pet code redemptions over 30, 90, 180 or 365 days, each as a chart you can also read with the keyboard or as a table. Only numbers are shown, never fans' names.
+- **Team mode in the creator dashboard.** Team members who manage creators can open every creator dashboard with all rights – also when they are only a helper with fewer rights there. "Pick creator (team)" on the creator page lists all creators with a search, and the creator list and statistics have an "Open dashboard (team)" button. A clear banner says that every change is logged. Only the creator can invite new helpers. Creators see what the team changed under "Changed by the team" and get a notification.
+- **Fan cape share fixed.** The creator statistics could say that more than 100 % of your fans own your fan cape (for example "150 %"), because former fans keep their cape. The share now only counts your current fans, never goes above 100 % and shows the numbers ("3 of 4").
+
+### Deutsch
+- **Creator-Statistik fürs Team.** Team-Mitglieder, die Creator verwalten, bekommen im Team-Bereich die neue Seite „Creator-Statistik“: eine Rangliste aller Creator mit Fans (gesamt sowie neu heute, in 7 und in 30 Tagen), neuen Spielern, die der Creator zu TRS gebracht hat, Haustier-Codes (erstellt, eingelöst, Monatsgrenze) und wie viele Fans in den letzten 7 und 30 Tagen online waren oder gespielt haben. Jede Spalte lässt sich sortieren, dazu gibt es eine Suche und Filter für Stufe und Status. Ein Klick auf einen Creator öffnet seinen Verlauf: neue Fans, neue Spieler, aktive Fans, Code- und Haustier-Einlösungen pro Tag über 30, 90, 180 oder 365 Tage, jeweils als Diagramm, das sich auch per Tastatur oder als Tabelle lesen lässt. Es gibt nur Zahlen, nie Namen von Fans.
+- **Team-Modus im Creator-Dashboard.** Team-Mitglieder, die Creator verwalten, können jedes Creator-Dashboard mit allen Rechten öffnen – auch wenn sie dort nur Helfer mit weniger Rechten sind. „Creator wählen (Team)“ auf der Creator-Seite listet alle Creator mit Suche, und Creator-Liste und Statistik haben einen Knopf „Dashboard öffnen (Team)“. Ein deutliches Banner zeigt, dass jede Änderung protokolliert wird. Neue Helfer einladen kann nur der Creator selbst. Creator sehen unter „Vom Team geändert“, was das Team geändert hat, und bekommen eine Benachrichtigung.
+- **Fan-Umhang-Anteil korrigiert.** Die Creator-Statistik konnte anzeigen, dass mehr als 100 % deiner Fans deinen Fan-Umhang haben (zum Beispiel „150 %“), weil ehemalige Fans ihren Umhang behalten. Der Anteil zählt jetzt nur deine aktuellen Fans, geht nie über 100 % und zeigt die Zahlen dazu („3 von 4“).
+
 ## 0.30.1 – 2026-10-25 – Companions | Begleiter
 <!-- banner: accent=#d79ad6 motif=/news/0.30.1/banner.png -->
 <!-- shots:

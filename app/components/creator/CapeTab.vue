@@ -42,7 +42,7 @@ async function sendWish() {
   sending.value = true
   wishError.value = null
   try {
-    const requests = await backend.creator.request({ kind: 'team_cape', text })
+    const requests = await backend.creator.request({ kind: 'team_cape', text }, store.actingAs)
     if (store.dashboard) store.dashboard = { ...store.dashboard, requests }
     wishOpen.value = false
     wish.value = ''

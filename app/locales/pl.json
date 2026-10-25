@@ -325,7 +325,9 @@
       "creator_pet_unavailable": "Twój zwierzak jest teraz niedostępny – zapytaj zespół.",
       "creator_pet_owned": "Masz już własnego zwierzaka.",
       "request_closed": "Zespół już pracuje nad tym wnioskiem – nie można go już zmienić.",
-      "code_not_found": "Ten kod nie istnieje (już)."
+      "code_not_found": "Ten kod nie istnieje (już).",
+      "creator_not_found": "Ten twórca nie istnieje (już).",
+      "creator_team_forbidden": "Może to zrobić tylko twórca – nawet w trybie zespołu nie."
     },
     "auth": {
       "accountMismatch": "To logowanie należy do innego konta – zaloguj się ponownie.",
@@ -5656,7 +5658,8 @@
       "blog": "Blog",
       "featured": "Polecane modpacki",
       "previews": "Wersje testowe",
-      "creatorPets": "Zwierzaki twórców"
+      "creatorPets": "Zwierzaki twórców",
+      "creatorStats": "Statystyki twórców"
     },
     "search": {
       "placeholder": "Szukaj graczy, UUID, ID zgłoszeń, #kar, peleryn …",
@@ -6067,6 +6070,94 @@
         "title": "Zwierzaki twórców",
         "text": "Obsługa wniosków o zwierzaki i przypisywanie kosmetyku zwierzaka twórcy – na stronie.",
         "open": "Otwórz stronę"
+      }
+    },
+    "creatorStats": {
+      "title": "Statystyki twórców",
+      "intro": "Wszyscy twórcy obok siebie – tylko liczby, nigdy nazwy fanów. Kliknij wiersz, aby zobaczyć przebieg.",
+      "search": "Szukaj nazwy, UUID lub kodu",
+      "tier": "Poziom",
+      "allTiers": "Wszystkie poziomy",
+      "totals": {
+        "creators": "Twórcy",
+        "fans": "Fani łącznie",
+        "fans7d": "Nowi fani (7 dni)",
+        "newPlayers30d": "Nowi gracze (30 dni)",
+        "petRedemptions": "Użyte kody zwierzaka",
+        "online7d": "Fani online (7 dni)"
+      },
+      "groups": {
+        "fans": "Fani",
+        "newPlayers": "Nowi gracze",
+        "pets": "Kody zwierzaka",
+        "activity": "Aktywni fani"
+      },
+      "columns": {
+        "name": "Twórca",
+        "fans": "Łącznie",
+        "fansToday": "Dziś",
+        "fans7d": "7 d",
+        "fans30d": "30 d",
+        "newPlayers": "Łącznie",
+        "newPlayers7d": "7 d",
+        "newPlayers30d": "30 d",
+        "petCodes": "Kody",
+        "petRedemptions": "Użyte",
+        "online7d": "Online 7 d",
+        "online30d": "Online 30 d",
+        "played7d": "Grali 7 d",
+        "played30d": "Grali 30 d",
+        "petMonth": "Ten miesiąc"
+      },
+      "sortBy": "Sortuj według: {column}",
+      "empty": "Brak twórców dla tych filtrów.",
+      "error": "Nie udało się wczytać statystyk.",
+      "generated": "Stan: {time}",
+      "definitions": "Jak liczymy",
+      "defFans": "Nowi fani: wsparcia rozpoczęte danego dnia (UTC). Fani łącznie: obecni wspierający.",
+      "defNewPlayers": "Nowi gracze: fani, których konto TRS powstało najwyżej {hours} godz. przed pierwszym użyciem kodu tego twórcy.",
+      "defActivity": "Online: TRS Launcher otwarty lub gra uruchomiona; Grali: w grze. Liczeni są obecni fani aktywni w ostatnich 7 lub 30 dniach.",
+      "activitySince": "Aktywność dzienna jest zapisywana od {date} – wcześniejsze dni pozostają puste.",
+      "activityNever": "Aktywność dzienna nie jest jeszcze zapisywana.",
+      "noPet": "Brak własnego zwierzaka.",
+      "detail": {
+        "title": "Przebieg twórcy",
+        "back": "Wróć do rankingu",
+        "open": "Statystyki",
+        "range": "Okres",
+        "days": "{n} dni",
+        "pet": "Zwierzak: {name}",
+        "tiles": {
+          "fans": "Fani",
+          "fansNew": "Nowi: {today} dziś · {d7} w 7 d · {d30} w 30 d",
+          "newPlayers": "Nowi gracze",
+          "recent": "{d7} w 7 d · {d30} w 30 d",
+          "online": "Fani online (7 dni)",
+          "activity": "{online30} online w 30 d · grali: {played7} w 7 d, {played30} w 30 d",
+          "petRedemptions": "Użyte kody zwierzaka",
+          "petCodes": "Kody: {codes}, aktywne: {active}"
+        },
+        "petMonth": "Miesięczny limit kodów zwierzaka",
+        "petMonthText": "Rozdano {used} z {limit} · użyto {redemptions}",
+        "cape": "Peleryna fana wśród obecnych fanów",
+        "capeText": "{fanHolders} z {fans} obecnych fanów ją ma · łącznie {holders} właścicieli (z byłymi fanami).",
+        "charts": {
+          "fans": "Nowi fani dziennie",
+          "players": "Nowi gracze dziennie",
+          "active": "Aktywni fani dziennie (online)",
+          "playing": "Fani w grze dziennie",
+          "redemptions": "Użyte kody dziennie",
+          "pet": "Użyte kody zwierzaka dziennie"
+        },
+        "chartSummary": "{label}: {days} dni, suma {total}, maksimum {peak}. Strzałkami przejdziesz do pojedynczych dni.",
+        "total": "Suma {n}",
+        "peak": "Maksimum {n}",
+        "notRecorded": "nie zapisano",
+        "noActivityYet": "Jeszcze nie zapisano",
+        "showTable": "Pokaż jako tabelę",
+        "hideTable": "Ukryj tabelę",
+        "day": "Dzień",
+        "value": "Wartość"
       }
     }
   },
@@ -7358,7 +7449,54 @@
         "pet_request_answered": {
           "title": "Twój wniosek o zwierzaka dostał odpowiedź",
           "body": "Szczegóły w karcie „Zwierzak”."
+        },
+        "team_changed": {
+          "title": "Zmienione przez zespół",
+          "body": "{action} – szczegóły w sekcji „Zmienione przez zespół” w panelu."
         }
+      }
+    },
+    "stats": {
+      "capeShare": "{n} % twoich obecnych fanów ma ją ({held} z {fans})"
+    },
+    "teamMode": {
+      "option": "Zespół: {name}",
+      "pick": "Wybierz twórcę (zespół)",
+      "pickTitle": "Otwórz panel twórcy (zespół)",
+      "pickText": "Z uprawnieniem „Zarządzanie twórcami” możesz otworzyć każdy panel twórcy ze wszystkimi prawami. Każda zmiana jest zapisywana i pokazywana twórcy.",
+      "search": "Szukaj nazwy lub kodu",
+      "fans": "Fani: {n}",
+      "noResults": "Nie znaleziono aktywnych twórców.",
+      "bannerTitle": "Tryb zespołu – zmiany są zapisywane",
+      "bannerText": "Oglądasz panel twórcy {name} ze wszystkimi prawami. Każda zmiana trafia do dziennika zespołu, a {name} widzi ją w sekcji „Zmienione przez zespół”.",
+      "changesTitle": "Zmienione przez zespół",
+      "changesHint": "Zespół może otworzyć twój panel, aby pomóc przy problemach, i coś za ciebie zmienić. Każda zmiana jest zapisywana.",
+      "all": "Pokaż wszystkie ({n})",
+      "less": "Pokaż mniej",
+      "noInvite": "Pomocników może zapraszać tylko twórca – w trybie zespołu możesz zmieniać prawa lub usuwać pomocników.",
+      "openDashboard": "Otwórz panel (zespół)",
+      "openDashboardHint": "Otwiera panel twórcy w trybie zespołu ze wszystkimi prawami – każda zmiana jest zapisywana.",
+      "actions": {
+        "code_create": "Utworzono kod",
+        "code_update": "Zmieniono kod",
+        "symbol_upload": "Wysłano symbol fana",
+        "symbol_withdraw": "Wycofano symbol fana",
+        "cape_upload": "Wysłano pelerynę fana",
+        "cape_withdraw": "Wycofano pelerynę fana",
+        "pack_list": "Pack opublikowany",
+        "pack_unlist": "Pack usunięty z listy",
+        "request_create": "Wysłano wniosek",
+        "profile_submit": "Wysłano profil",
+        "profile_withdraw": "Wycofano zmianę profilu",
+        "helper_update": "Zmieniono prawa pomocnika",
+        "helper_remove": "Usunięto pomocnika",
+        "pet_code_create": "Utworzono kody zwierzaka",
+        "pet_code_revoke": "Unieważniono kod zwierzaka",
+        "pet_request_create": "Poproszono o zwierzaka",
+        "pet_request_withdraw": "Wycofano prośbę o zwierzaka",
+        "pet_request_image": "Przesłano obraz referencyjny",
+        "pet_request_image_delete": "Usunięto obraz referencyjny",
+        "other": "Zmieniono panel"
       }
     }
   }

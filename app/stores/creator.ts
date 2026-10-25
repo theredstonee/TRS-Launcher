@@ -3,18 +3,22 @@ import { computed, ref } from 'vue'
 // Relativ importiert, damit Tests den Store ohne Nuxt laden können (`useTrsStore` bleibt Auto-Import).
 import { backend, errorMessage } from '../utils/backend'
 import type { CreatorEvent, CreatorRedeem, CreatorSelf, HelperRight, MyCreator } from '../utils/creator'
+import { teamActionKey } from '../utils/creatorStats'
 import { t, tKey } from '../utils/i18n'
+import { teamCan } from '../utils/teamAccess'
 import { useSocialToasts } from './socialToasts'
 
 // Creator-Programm (API §35): Stand der Creator-Seite (unterstützter Creator,
 // Fan-Umhänge, Blockierte, Einstellung, Helfer-Einladungen), das Dashboard –
 // das eigene oder als Helfer das eines anderen Creators (`?as=`, §35.9) – und
-// die Echtzeit-Ereignisse. Die Umhang-Werkstatt fragt hier, ob sie
+// die Echtzeit-Ereignisse. Team-Mitglieder mit `creators.manage` dürfen jedes
+// Dashboard mit allen Rechten öffnen (Team-Modus, §35.9) – der Server
+// protokolliert jede Änderung. Die Umhang-Werkstatt fragt hier, ob sie
 // „Als Fan-Umhang einreichen“ anbieten darf.
 export const useCreatorStore = defineStore('creator', () => {
   const me = ref<MyCreator | null>(null)
   const dashboard = ref<CreatorSelf | null>(null)
-  /** Creator, für den man gerade als Helfer arbeitet (`null` = eigenes Dashboard). */
+  /** Creator, für den man gerade als Helfer oder im Team-Modus arbeitet (`null` = eigenes Dashboard). */
   const actingAs = ref<string | null>(null)
   /** Zählt Haustier-Ereignisse (`pet_*`) – der Reiter „Haustier“ lädt dann neu. */
   const petRevision = ref(0)
@@ -28,6 +32,10 @@ export const useCreatorStore = defineStore('creator', () => {
   const self = computed<CreatorSelf | null>(() => dashboard.value ?? (actingAs.value ? null : (me.value?.creator ?? null)))
   /** Eigener Creator-Status aktiv? */
   const active = computed(() => me.value?.creator?.state === 'active')
+  /** Darf man jedes Creator-Dashboard öffnen (Team mit `creators.manage`, Owner automatisch)? */
+  const canTeamMode = computed(() => teamCan(useTrsStore().team, 'creators.manage'))
+  /** Team-Modus aktiv (der Server bestätigt ihn in `viewer.team`). */
+  const teamMode = computed(() => !!actingAs.value && !!dashboard.value?.viewer?.team)
   /** Rechte als Helfer (`null` = man ist selbst der Creator). */
   const helperRights = computed<HelperRight[] | null>(() => (actingAs.value ? (dashboard.value?.viewer?.rights ?? []) : null))
   /** Fan-Umhang einreichen: `standard` (Partner) oder `hd` (Top), sonst `null`. */
@@ -50,8 +58,8 @@ export const useCreatorStore = defineStore('creator', () => {
     error.value = null
     try {
       me.value = await backend.creator.me()
-      // Nicht mehr Helfer dieses Creators → zurück zum eigenen Stand.
-      if (actingAs.value && !me.value.helping.some((h) => h.creator.uuid === actingAs.value)) actingAs.value = null
+      // Nicht mehr Helfer dieses Creators → zurück zum eigenen Stand (außer im Team-Modus: dort darf man jeden öffnen).
+      if (actingAs.value && !canTeamMode.value && !me.value.helping.some((h) => h.creator.uuid === actingAs.value)) actingAs.value = null
       if (actingAs.value || me.value.creator?.state === 'active') await loadDashboard()
       else dashboard.value = null
     } catch (e) {
@@ -135,12 +143,12 @@ export const useCreatorStore = defineStore('creator', () => {
   }
 
   async function updateHelper(uuid: string, rights: HelperRight[]) {
-    await backend.creator.updateHelper(uuid, rights)
+    await backend.creator.updateHelper(uuid, rights, actingAs.value)
     await loadDashboard()
   }
 
   async function removeHelper(uuid: string) {
-    await backend.creator.removeHelper(uuid)
+    await backend.creator.removeHelper(uuid, actingAs.value)
     await loadDashboard()
   }
 
@@ -194,14 +202,15 @@ export const useCreatorStore = defineStore('creator', () => {
         break
       case 'creator_updated': {
         const tab =
-          e.kind.startsWith('symbol') ? 'symbol' : e.kind.startsWith('cape') ? 'cape' : e.kind.startsWith('pet') ? 'pet' : e.kind.startsWith('helper') ? 'helpers' : e.kind === 'tier_changed' || e.kind === 'request_answered' ? 'tier' : null
+          e.kind === 'team_changed' ? null : e.kind.startsWith('symbol') ? 'symbol' : e.kind.startsWith('cape') ? 'cape' : e.kind.startsWith('pet') ? 'pet' : e.kind.startsWith('helper') ? 'helpers' : e.kind === 'tier_changed' || e.kind === 'request_answered' ? 'tier' : null
         const params = {
           reason: e.reason ?? '',
           tier: e.tier ? tKey(`creator.tiers.${e.tier}.name`) : '',
           milestone: e.milestone ? tKey(`creator.milestones.${e.milestone}`) : '',
           name: e.helper?.name ?? '?',
+          action: e.action ? tKey(teamActionKey(e.action)) : t('creator.teamMode.actions.other'),
         }
-        if (e.kind.startsWith('pet')) petRevision.value++
+        if (e.kind.startsWith('pet') || (e.kind === 'team_changed' && e.action?.startsWith('pet'))) petRevision.value++
         // Beim Haustier-Wunsch ist `reason` die Antwort des Teams, kein Ablehnungsgrund.
         const body = e.reason
           ? e.kind === 'pet_request_answered'
@@ -229,6 +238,8 @@ export const useCreatorStore = defineStore('creator', () => {
     petRevision,
     self,
     active,
+    canTeamMode,
+    teamMode,
     helperRights,
     fanCapeMode,
     fanCapeWorkshop,

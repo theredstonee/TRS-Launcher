@@ -133,6 +133,8 @@ export const creatorStatsSchema = z.object({
   fanCapeHolders: count,
   newPlayers: count,
   packInstalls: count,
+  /** Aktuelle Fans mit einem Fan-Umhang dieses Creators (`null` = ältere API). */
+  fanCapeFans: count.nullable().default(null),
   daily: z.array(dailySchema).max(30),
 })
 
@@ -169,8 +171,10 @@ export const creatorSelfSchema = z.object({
     .array(z.object({ uuid, name: text(16), rights, status: z.enum(['pending', 'active']), createdAt: time }))
     .max(50)
     .default([]),
-  /** Ein Helfer schaut (`?as=`): seine Rechte. */
-  viewer: z.object({ helper: z.boolean(), rights }).nullable().default(null),
+  /** Ein Helfer schaut (`?as=`): seine Rechte; `team` = Team-Modus mit allen Rechten (§35.9). */
+  viewer: z.object({ helper: z.boolean(), team: z.boolean().default(false), rights }).nullable().default(null),
+  /** Änderungen des Teams im Team-Modus (neueste zuerst, ohne Namen). */
+  teamChanges: z.array(z.object({ action: z.string().regex(/^[a-z_]+(\.[a-z_]+)*$/).max(40), at: time })).max(20).default([]),
 })
 
 export const myCreatorSchema = z.object({
@@ -270,6 +274,8 @@ export const creatorUpdateKinds = [
   'pet_assigned',
   'pet_removed',
   'pet_request_answered',
+  // Team-Modus (§35.9): das Team hat etwas geändert (`action`).
+  'team_changed',
 ] as const
 export type CreatorUpdateKind = (typeof creatorUpdateKinds)[number]
 
@@ -282,6 +288,8 @@ export const creatorEventSchemas = [
     tier: tier.nullable(),
     milestone,
     helper: userRef.nullable(),
+    /** Nur bei `team_changed`: was das Team geändert hat (z. B. `code.create`). */
+    action: text(40).nullable().default(null),
   }),
   z.object({ type: z.literal('creator_milestone'), creator: userRef, milestone: z.enum(milestones) }),
   z.object({ type: z.literal('creator_helper_invite'), creator: userRef, rights }),
@@ -458,6 +466,17 @@ export function expiryFromDate(date: string): string | null {
 /** Summe der letzten `days` Tage (Tageswerte älteste zuerst). */
 export function recentSum(daily: CreatorStats['daily'], key: 'newFans' | 'redemptions', days = 7): number {
   return daily.slice(-days).reduce((s, d) => s + d[key], 0)
+}
+
+/**
+ * Fan-Umhang-Anteil: aktuelle Fans mit Umhang / aktuelle Fans – nie über 100 %. Ehemalige Fans behalten
+ * ihren Umhang (zählen bei `fanCapeHolders` mit), sind aber keine Fans mehr. Ältere API ohne
+ * `fanCapeFans` → höchstens alle Fans.
+ */
+export function fanCapeShare(stats: Pick<CreatorStats, 'activeFans' | 'fanCapeHolders' | 'fanCapeFans'>): { held: number; fans: number; percent: number } {
+  const fans = stats.activeFans
+  const held = Math.min(fans, stats.fanCapeFans ?? stats.fanCapeHolders)
+  return { held, fans, percent: fans ? Math.min(100, Math.round((held / fans) * 100)) : 0 }
 }
 
 /** Fortschritt zum nächsten Meilenstein in Prozent (0–100). */

@@ -325,7 +325,9 @@
       "creator_pet_unavailable": "Ton compagnon n'est pas disponible pour le moment – demande à l'équipe.",
       "creator_pet_owned": "Tu as déjà ton propre compagnon.",
       "request_closed": "L'équipe travaille déjà sur cette demande – elle ne peut plus être modifiée.",
-      "code_not_found": "Ce code n'existe pas (ou plus)."
+      "code_not_found": "Ce code n'existe pas (ou plus).",
+      "creator_not_found": "Ce créateur n’existe pas (ou plus).",
+      "creator_team_forbidden": "Seul le créateur peut faire cela – même pas en mode équipe."
     },
     "auth": {
       "accountMismatch": "Cette connexion appartient à un autre compte – reconnecte-toi.",
@@ -5656,7 +5658,8 @@
       "blog": "Blog",
       "featured": "Modpacks à la une",
       "previews": "Versions de test",
-      "creatorPets": "Compagnons de créateurs"
+      "creatorPets": "Compagnons de créateurs",
+      "creatorStats": "Statistiques des créateurs"
     },
     "search": {
       "placeholder": "Chercher joueurs, UUID, ID de signalement, #sanctions, capes …",
@@ -6067,6 +6070,94 @@
         "title": "Compagnons de créateurs",
         "text": "Traiter les demandes de compagnon et attribuer un cosmétique de compagnon à un créateur – sur le site.",
         "open": "Ouvrir le site"
+      }
+    },
+    "creatorStats": {
+      "title": "Statistiques des créateurs",
+      "intro": "Tous les créateurs comparés – uniquement des chiffres, jamais de noms de fans. Clique sur une ligne pour voir l’historique.",
+      "search": "Chercher un nom, un UUID ou un code",
+      "tier": "Niveau",
+      "allTiers": "Tous les niveaux",
+      "totals": {
+        "creators": "Créateurs",
+        "fans": "Fans au total",
+        "fans7d": "Nouveaux fans (7 jours)",
+        "newPlayers30d": "Nouveaux joueurs (30 jours)",
+        "petRedemptions": "Codes d’animal utilisés",
+        "online7d": "Fans en ligne (7 jours)"
+      },
+      "groups": {
+        "fans": "Fans",
+        "newPlayers": "Nouveaux joueurs",
+        "pets": "Codes d’animal",
+        "activity": "Fans actifs"
+      },
+      "columns": {
+        "name": "Créateur",
+        "fans": "Total",
+        "fansToday": "Aujourd’hui",
+        "fans7d": "7 j",
+        "fans30d": "30 j",
+        "newPlayers": "Total",
+        "newPlayers7d": "7 j",
+        "newPlayers30d": "30 j",
+        "petCodes": "Codes",
+        "petRedemptions": "Utilisés",
+        "online7d": "En ligne 7 j",
+        "online30d": "En ligne 30 j",
+        "played7d": "Joué 7 j",
+        "played30d": "Joué 30 j",
+        "petMonth": "Ce mois"
+      },
+      "sortBy": "Trier par {column}",
+      "empty": "Aucun créateur ne correspond à ces filtres.",
+      "error": "Impossible de charger les statistiques.",
+      "generated": "État : {time}",
+      "definitions": "Comment nous comptons",
+      "defFans": "Nouveaux fans : soutiens commencés ce jour-là (UTC). Fans au total : soutiens actuels.",
+      "defNewPlayers": "Nouveaux joueurs : fans dont le compte TRS a été créé au plus {hours} heures avant leur première utilisation d’un code de ce créateur.",
+      "defActivity": "En ligne : TRS Launcher ouvert ou jeu lancé ; Joué : en jeu. On compte les fans actuels actifs au cours des 7 ou 30 derniers jours.",
+      "activitySince": "L’activité par jour est enregistrée depuis le {date} – les jours précédents restent vides.",
+      "activityNever": "L’activité par jour n’est pas encore enregistrée.",
+      "noPet": "Pas encore d’animal à soi.",
+      "detail": {
+        "title": "Historique du créateur",
+        "back": "Retour au classement",
+        "open": "Statistiques",
+        "range": "Période",
+        "days": "{n} jours",
+        "pet": "Animal : {name}",
+        "tiles": {
+          "fans": "Fans",
+          "fansNew": "Nouveaux : {today} aujourd’hui · {d7} en 7 j · {d30} en 30 j",
+          "newPlayers": "Nouveaux joueurs",
+          "recent": "{d7} en 7 j · {d30} en 30 j",
+          "online": "Fans en ligne (7 jours)",
+          "activity": "{online30} en ligne en 30 j · joué : {played7} en 7 j, {played30} en 30 j",
+          "petRedemptions": "Codes d’animal utilisés",
+          "petCodes": "{codes} codes, {active} utilisables"
+        },
+        "petMonth": "Limite mensuelle des codes d’animal",
+        "petMonthText": "{used} sur {limit} distribués · {redemptions} utilisés",
+        "cape": "Cape de fan chez les fans actuels",
+        "capeText": "{fanHolders} des {fans} fans actuels l’ont · {holders} propriétaires au total (anciens fans compris).",
+        "charts": {
+          "fans": "Nouveaux fans par jour",
+          "players": "Nouveaux joueurs par jour",
+          "active": "Fans actifs par jour (en ligne)",
+          "playing": "Fans en jeu par jour",
+          "redemptions": "Codes utilisés par jour",
+          "pet": "Codes d’animal utilisés par jour"
+        },
+        "chartSummary": "{label} : {days} jours, total {total}, maximum {peak}. Utilise les flèches pour voir chaque jour.",
+        "total": "Total {n}",
+        "peak": "Maximum {n}",
+        "notRecorded": "non enregistré",
+        "noActivityYet": "Pas encore enregistré",
+        "showTable": "Afficher en tableau",
+        "hideTable": "Masquer le tableau",
+        "day": "Jour",
+        "value": "Valeur"
       }
     }
   },
@@ -7358,7 +7449,54 @@
         "pet_request_answered": {
           "title": "Ta demande de compagnon a reçu une réponse",
           "body": "Détails dans l'onglet « Compagnon »."
+        },
+        "team_changed": {
+          "title": "Modifié par l’équipe",
+          "body": "{action} – détails dans « Modifié par l’équipe » de ton tableau de bord."
         }
+      }
+    },
+    "stats": {
+      "capeShare": "{n} % de tes fans actuels l’ont ({held} sur {fans})"
+    },
+    "teamMode": {
+      "option": "Équipe : {name}",
+      "pick": "Choisir un créateur (équipe)",
+      "pickTitle": "Ouvrir le tableau de bord d’un créateur (équipe)",
+      "pickText": "Avec « Gérer les créateurs », tu peux ouvrir n’importe quel tableau de bord avec tous les droits. Chaque modification est enregistrée et montrée au créateur.",
+      "search": "Chercher un nom ou un code",
+      "fans": "{n} fans",
+      "noResults": "Aucun créateur actif trouvé.",
+      "bannerTitle": "Mode équipe – les modifications sont enregistrées",
+      "bannerText": "Tu vois le tableau de bord de {name} avec tous les droits. Chaque modification est inscrite au journal de l’équipe et {name} la voit dans « Modifié par l’équipe ».",
+      "changesTitle": "Modifié par l’équipe",
+      "changesHint": "L’équipe peut ouvrir ton tableau de bord pour t’aider en cas de problème et modifier des choses pour toi. Chaque modification est enregistrée.",
+      "all": "Tout afficher ({n})",
+      "less": "Afficher moins",
+      "noInvite": "Seul le créateur peut inviter des assistants – en mode équipe, tu peux modifier les droits ou retirer des assistants.",
+      "openDashboard": "Ouvrir le tableau de bord (équipe)",
+      "openDashboardHint": "Ouvre le tableau de bord du créateur en mode équipe avec tous les droits – chaque modification est enregistrée.",
+      "actions": {
+        "code_create": "Code créé",
+        "code_update": "Code modifié",
+        "symbol_upload": "Symbole de fan envoyé",
+        "symbol_withdraw": "Symbole de fan retiré",
+        "cape_upload": "Cape de fan envoyée",
+        "cape_withdraw": "Cape de fan retirée",
+        "pack_list": "Pack listé",
+        "pack_unlist": "Pack retiré de la liste",
+        "request_create": "Demande envoyée",
+        "profile_submit": "Profil envoyé",
+        "profile_withdraw": "Modification du profil retirée",
+        "helper_update": "Droits d’assistant modifiés",
+        "helper_remove": "Assistant retiré",
+        "pet_code_create": "Codes d’animal créés",
+        "pet_code_revoke": "Code d’animal révoqué",
+        "pet_request_create": "Animal demandé",
+        "pet_request_withdraw": "Souhait d’animal retiré",
+        "pet_request_image": "Image de référence envoyée",
+        "pet_request_image_delete": "Image de référence supprimée",
+        "other": "Tableau de bord modifié"
       }
     }
   }

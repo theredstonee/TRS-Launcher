@@ -350,7 +350,9 @@
       "creator_pet_unavailable": "Tu mascota no está disponible ahora mismo: pregunta al equipo.",
       "creator_pet_owned": "Ya tienes una mascota propia.",
       "request_closed": "El equipo ya está trabajando en esta solicitud: ya no se puede cambiar.",
-      "code_not_found": "Este código no existe (o ya no existe)."
+      "code_not_found": "Este código no existe (o ya no existe).",
+      "creator_not_found": "Este creador no existe (ya).",
+      "creator_team_forbidden": "Solo el creador puede hacer esto, ni siquiera en modo equipo."
     },
     "auth": {
       "accountMismatch": "El inicio de sesión pertenece a otra cuenta: vuelve a iniciar sesión.",
@@ -5725,7 +5727,8 @@
       "creators": "Creadores",
       "featured": "Modpacks destacados",
       "previews": "Versiones de prueba",
-      "creatorPets": "Mascotas de creadores"
+      "creatorPets": "Mascotas de creadores",
+      "creatorStats": "Estadísticas de creadores"
     },
     "search": {
       "placeholder": "Buscar jugadores, UUID, ID de reportes, #sanciones, capas …",
@@ -6214,6 +6217,94 @@
         "title": "Mascotas de creadores",
         "text": "Gestionar solicitudes de mascotas y asignar un cosmético de mascota a un creador, en la web.",
         "open": "Abrir la web"
+      }
+    },
+    "creatorStats": {
+      "title": "Estadísticas de creadores",
+      "intro": "Todos los creadores comparados: solo números, nunca nombres de fans. Haz clic en una fila para ver la evolución.",
+      "search": "Buscar nombre, UUID o código",
+      "tier": "Nivel",
+      "allTiers": "Todos los niveles",
+      "totals": {
+        "creators": "Creadores",
+        "fans": "Fans en total",
+        "fans7d": "Fans nuevos (7 días)",
+        "newPlayers30d": "Jugadores nuevos (30 días)",
+        "petRedemptions": "Canjes de mascota",
+        "online7d": "Fans en línea (7 días)"
+      },
+      "groups": {
+        "fans": "Fans",
+        "newPlayers": "Jugadores nuevos",
+        "pets": "Códigos de mascota",
+        "activity": "Fans activos"
+      },
+      "columns": {
+        "name": "Creador",
+        "fans": "Total",
+        "fansToday": "Hoy",
+        "fans7d": "7 d",
+        "fans30d": "30 d",
+        "newPlayers": "Total",
+        "newPlayers7d": "7 d",
+        "newPlayers30d": "30 d",
+        "petCodes": "Códigos",
+        "petRedemptions": "Canjeados",
+        "online7d": "En línea 7 d",
+        "online30d": "En línea 30 d",
+        "played7d": "Jugado 7 d",
+        "played30d": "Jugado 30 d",
+        "petMonth": "Este mes"
+      },
+      "sortBy": "Ordenar por {column}",
+      "empty": "Ningún creador coincide con estos filtros.",
+      "error": "No se pudieron cargar las estadísticas.",
+      "generated": "Actualizado: {time}",
+      "definitions": "Cómo contamos",
+      "defFans": "Fans nuevos: apoyos iniciados ese día (UTC). Fans en total: seguidores actuales.",
+      "defNewPlayers": "Jugadores nuevos: fans cuya cuenta TRS se creó como máximo {hours} horas antes de canjear por primera vez un código de este creador.",
+      "defActivity": "En línea: TRS Launcher abierto o juego en marcha; Jugado: dentro del juego. Se cuentan los fans actuales con actividad en los últimos 7 o 30 días.",
+      "activitySince": "La actividad por día se registra desde el {date}; los días anteriores quedan vacíos.",
+      "activityNever": "La actividad por día aún no se registra.",
+      "noPet": "Todavía sin mascota propia.",
+      "detail": {
+        "title": "Evolución del creador",
+        "back": "Volver a la clasificación",
+        "open": "Estadísticas",
+        "range": "Periodo",
+        "days": "{n} días",
+        "pet": "Mascota: {name}",
+        "tiles": {
+          "fans": "Fans",
+          "fansNew": "Nuevos: {today} hoy · {d7} en 7 d · {d30} en 30 d",
+          "newPlayers": "Jugadores nuevos",
+          "recent": "{d7} en 7 d · {d30} en 30 d",
+          "online": "Fans en línea (7 días)",
+          "activity": "{online30} en línea en 30 d · jugado: {played7} en 7 d, {played30} en 30 d",
+          "petRedemptions": "Canjes de mascota",
+          "petCodes": "{codes} códigos, {active} utilizables"
+        },
+        "petMonth": "Límite mensual de códigos de mascota",
+        "petMonthText": "{used} de {limit} repartidos · {redemptions} canjeados",
+        "cape": "Capa de fan entre los fans actuales",
+        "capeText": "{fanHolders} de {fans} fans actuales la tienen · {holders} propietarios en total (incluidos antiguos fans).",
+        "charts": {
+          "fans": "Fans nuevos por día",
+          "players": "Jugadores nuevos por día",
+          "active": "Fans activos por día (en línea)",
+          "playing": "Fans jugando por día",
+          "redemptions": "Canjes de códigos por día",
+          "pet": "Canjes de mascota por día"
+        },
+        "chartSummary": "{label}: {days} días, total {total}, máximo {peak}. Usa las flechas para ver días sueltos.",
+        "total": "Total {n}",
+        "peak": "Máximo {n}",
+        "notRecorded": "sin registrar",
+        "noActivityYet": "Aún sin registrar",
+        "showTable": "Ver como tabla",
+        "hideTable": "Ocultar tabla",
+        "day": "Día",
+        "value": "Valor"
       }
     }
   },
@@ -7493,7 +7584,7 @@
       "activeFans": "Fans activos",
       "redemptions": "Canjes de códigos en total",
       "capeHolders": "Capas de fan entregadas",
-      "capeShare": "El {n} % de tus fans la lleva",
+      "capeShare": "El {n} % de tus fans actuales la tiene ({held} de {fans})",
       "fromPartner": "desde Partner",
       "newPlayers": "Nuevos jugadores del launcher con tu código",
       "newPlayersHint": "iniciaron TRS por primera vez con tu código",
@@ -7775,6 +7866,10 @@
         "pet_request_answered": {
           "title": "Respondieron tu solicitud de mascota",
           "body": "Detalles en la pestaña «Mascota»."
+        },
+        "team_changed": {
+          "title": "Cambiado por el equipo",
+          "body": "{action}: más detalles en «Cambiado por el equipo» de tu panel."
         }
       },
       "answer": "Equipo: {reason}"
@@ -7884,6 +7979,46 @@
         "text": "{code} ya no se podrá canjear. Los fans que ya lo canjearon conservan la mascota."
       },
       "unavailable": "Tu mascota no está disponible ahora mismo, así que no se pueden crear códigos nuevos. Los códigos ya repartidos vuelven a funcionar cuando regrese."
+    },
+    "teamMode": {
+      "option": "Equipo: {name}",
+      "pick": "Elegir creador (equipo)",
+      "pickTitle": "Abrir el panel de un creador (equipo)",
+      "pickText": "Con «Gestionar creadores» puedes abrir cualquier panel de creador con todos los permisos. Cada cambio se registra y se muestra al creador.",
+      "search": "Buscar nombre o código",
+      "fans": "{n} fans",
+      "noResults": "No hay creadores activos.",
+      "bannerTitle": "Modo equipo: los cambios se registran",
+      "bannerText": "Estás viendo el panel de {name} con todos los permisos. Cada cambio queda en el registro del equipo y {name} lo ve en «Cambiado por el equipo».",
+      "changesTitle": "Cambiado por el equipo",
+      "changesHint": "El equipo puede abrir tu panel para ayudarte con problemas y cambiar cosas por ti. Cada cambio se registra.",
+      "all": "Ver los {n}",
+      "less": "Ver menos",
+      "noInvite": "Solo el creador puede invitar ayudantes; en modo equipo puedes cambiar permisos o quitar ayudantes.",
+      "openDashboard": "Abrir panel (equipo)",
+      "openDashboardHint": "Abre el panel del creador en modo equipo con todos los permisos; cada cambio se registra.",
+      "actions": {
+        "code_create": "Código creado",
+        "code_update": "Código cambiado",
+        "symbol_upload": "Símbolo de fan enviado",
+        "symbol_withdraw": "Símbolo de fan retirado",
+        "cape_upload": "Capa de fan enviada",
+        "cape_withdraw": "Capa de fan retirada",
+        "pack_list": "Pack publicado",
+        "pack_unlist": "Pack retirado de la lista",
+        "request_create": "Solicitud enviada",
+        "profile_submit": "Perfil enviado",
+        "profile_withdraw": "Cambio de perfil retirado",
+        "helper_update": "Permisos de ayudante cambiados",
+        "helper_remove": "Ayudante eliminado",
+        "pet_code_create": "Códigos de mascota creados",
+        "pet_code_revoke": "Código de mascota revocado",
+        "pet_request_create": "Mascota solicitada",
+        "pet_request_withdraw": "Deseo de mascota retirado",
+        "pet_request_image": "Imagen de referencia subida",
+        "pet_request_image_delete": "Imagen de referencia eliminada",
+        "other": "Panel cambiado"
+      }
     }
   },
   "halloween": {

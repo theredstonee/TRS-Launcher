@@ -325,7 +325,9 @@
       "creator_pet_unavailable": "Seu pet não está disponível agora – fale com a equipe.",
       "creator_pet_owned": "Você já tem um pet próprio.",
       "request_closed": "A equipe já está trabalhando neste pedido – ele não pode mais ser alterado.",
-      "code_not_found": "Este código não existe (mais)."
+      "code_not_found": "Este código não existe (mais).",
+      "creator_not_found": "Este criador não existe (mais).",
+      "creator_team_forbidden": "Só o criador pode fazer isso – nem no modo equipe."
     },
     "auth": {
       "accountMismatch": "Este login pertence a outra conta – entre novamente.",
@@ -5656,7 +5658,8 @@
       "blog": "Blog",
       "featured": "Modpacks em destaque",
       "previews": "Versões de teste",
-      "creatorPets": "Pets de criadores"
+      "creatorPets": "Pets de criadores",
+      "creatorStats": "Estatísticas de criadores"
     },
     "search": {
       "placeholder": "Buscar jogadores, UUIDs, IDs de denúncia, #punições, capas …",
@@ -6067,6 +6070,94 @@
         "title": "Pets de criadores",
         "text": "Cuidar dos pedidos de pet e atribuir um cosmético de pet a um criador – no site.",
         "open": "Abrir o site"
+      }
+    },
+    "creatorStats": {
+      "title": "Estatísticas de criadores",
+      "intro": "Todos os criadores lado a lado – só números, nunca nomes de fãs. Clique numa linha para ver o histórico.",
+      "search": "Buscar nome, UUID ou código",
+      "tier": "Nível",
+      "allTiers": "Todos os níveis",
+      "totals": {
+        "creators": "Criadores",
+        "fans": "Fãs no total",
+        "fans7d": "Novos fãs (7 dias)",
+        "newPlayers30d": "Novos jogadores (30 dias)",
+        "petRedemptions": "Resgates de pet",
+        "online7d": "Fãs online (7 dias)"
+      },
+      "groups": {
+        "fans": "Fãs",
+        "newPlayers": "Novos jogadores",
+        "pets": "Códigos de pet",
+        "activity": "Fãs ativos"
+      },
+      "columns": {
+        "name": "Criador",
+        "fans": "Total",
+        "fansToday": "Hoje",
+        "fans7d": "7 d",
+        "fans30d": "30 d",
+        "newPlayers": "Total",
+        "newPlayers7d": "7 d",
+        "newPlayers30d": "30 d",
+        "petCodes": "Códigos",
+        "petRedemptions": "Resgatados",
+        "online7d": "Online 7 d",
+        "online30d": "Online 30 d",
+        "played7d": "Jogaram 7 d",
+        "played30d": "Jogaram 30 d",
+        "petMonth": "Este mês"
+      },
+      "sortBy": "Ordenar por {column}",
+      "empty": "Nenhum criador para estes filtros.",
+      "error": "Não foi possível carregar as estatísticas.",
+      "generated": "Atualizado: {time}",
+      "definitions": "Como contamos",
+      "defFans": "Novos fãs: apoios iniciados naquele dia (UTC). Fãs no total: apoiadores atuais.",
+      "defNewPlayers": "Novos jogadores: fãs cuja conta TRS foi criada no máximo {hours} horas antes do primeiro resgate de um código deste criador.",
+      "defActivity": "Online: TRS Launcher aberto ou jogo rodando; Jogaram: dentro do jogo. Contam os fãs atuais com atividade nos últimos 7 ou 30 dias.",
+      "activitySince": "A atividade por dia é registrada desde {date} – dias anteriores ficam vazios.",
+      "activityNever": "A atividade por dia ainda não é registrada.",
+      "noPet": "Ainda sem pet próprio.",
+      "detail": {
+        "title": "Histórico do criador",
+        "back": "Voltar ao ranking",
+        "open": "Estatísticas",
+        "range": "Período",
+        "days": "{n} dias",
+        "pet": "Pet: {name}",
+        "tiles": {
+          "fans": "Fãs",
+          "fansNew": "Novos: {today} hoje · {d7} em 7 d · {d30} em 30 d",
+          "newPlayers": "Novos jogadores",
+          "recent": "{d7} em 7 d · {d30} em 30 d",
+          "online": "Fãs online (7 dias)",
+          "activity": "{online30} online em 30 d · jogaram: {played7} em 7 d, {played30} em 30 d",
+          "petRedemptions": "Resgates de pet",
+          "petCodes": "{codes} códigos, {active} utilizáveis"
+        },
+        "petMonth": "Limite mensal de códigos de pet",
+        "petMonthText": "{used} de {limit} distribuídos · {redemptions} resgatados",
+        "cape": "Capa de fã entre os fãs atuais",
+        "capeText": "{fanHolders} de {fans} fãs atuais têm ela · {holders} donos no total (incluindo ex-fãs).",
+        "charts": {
+          "fans": "Novos fãs por dia",
+          "players": "Novos jogadores por dia",
+          "active": "Fãs ativos por dia (online)",
+          "playing": "Fãs no jogo por dia",
+          "redemptions": "Resgates de códigos por dia",
+          "pet": "Resgates de pet por dia"
+        },
+        "chartSummary": "{label}: {days} dias, total {total}, pico {peak}. Use as setas para ver dias individuais.",
+        "total": "Total {n}",
+        "peak": "Pico {n}",
+        "notRecorded": "não registrado",
+        "noActivityYet": "Ainda não registrado",
+        "showTable": "Mostrar como tabela",
+        "hideTable": "Ocultar tabela",
+        "day": "Dia",
+        "value": "Valor"
       }
     }
   },
@@ -7358,7 +7449,54 @@
         "pet_request_answered": {
           "title": "Seu pedido de pet foi respondido",
           "body": "Detalhes na aba \"Pet\"."
+        },
+        "team_changed": {
+          "title": "Alterado pela equipe",
+          "body": "{action} – veja \"Alterado pela equipe\" no seu painel."
         }
+      }
+    },
+    "stats": {
+      "capeShare": "{n} % dos seus fãs atuais têm ela ({held} de {fans})"
+    },
+    "teamMode": {
+      "option": "Equipe: {name}",
+      "pick": "Escolher criador (equipe)",
+      "pickTitle": "Abrir o painel de um criador (equipe)",
+      "pickText": "Com \"Gerenciar criadores\" você pode abrir qualquer painel de criador com todos os direitos. Cada alteração é registrada e mostrada ao criador.",
+      "search": "Buscar nome ou código",
+      "fans": "{n} fãs",
+      "noResults": "Nenhum criador ativo encontrado.",
+      "bannerTitle": "Modo equipe – alterações são registradas",
+      "bannerText": "Você está vendo o painel de {name} com todos os direitos. Cada alteração vai para o registro da equipe e {name} a vê em \"Alterado pela equipe\".",
+      "changesTitle": "Alterado pela equipe",
+      "changesHint": "A equipe pode abrir seu painel para ajudar com problemas e mudar coisas por você. Cada alteração é registrada.",
+      "all": "Mostrar todas ({n})",
+      "less": "Mostrar menos",
+      "noInvite": "Só o criador pode convidar ajudantes – no modo equipe você pode mudar direitos ou remover ajudantes.",
+      "openDashboard": "Abrir painel (equipe)",
+      "openDashboardHint": "Abre o painel do criador no modo equipe com todos os direitos – cada alteração é registrada.",
+      "actions": {
+        "code_create": "Código criado",
+        "code_update": "Código alterado",
+        "symbol_upload": "Símbolo de fã enviado",
+        "symbol_withdraw": "Símbolo de fã retirado",
+        "cape_upload": "Capa de fã enviada",
+        "cape_withdraw": "Capa de fã retirada",
+        "pack_list": "Pack listado",
+        "pack_unlist": "Pack removido da lista",
+        "request_create": "Pedido enviado",
+        "profile_submit": "Perfil enviado",
+        "profile_withdraw": "Alteração de perfil retirada",
+        "helper_update": "Direitos de ajudante alterados",
+        "helper_remove": "Ajudante removido",
+        "pet_code_create": "Códigos de pet criados",
+        "pet_code_revoke": "Código de pet revogado",
+        "pet_request_create": "Pet solicitado",
+        "pet_request_withdraw": "Pedido de pet retirado",
+        "pet_request_image": "Imagem de referência enviada",
+        "pet_request_image_delete": "Imagem de referência removida",
+        "other": "Painel alterado"
       }
     }
   }

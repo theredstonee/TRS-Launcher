@@ -230,6 +230,11 @@ async function answer() {
   }
 }
 
+/** Dashboard des Creators im Team-Modus öffnen (alle Rechte, jede Änderung wird protokolliert). */
+function openDashboard(c: AdminCreator) {
+  void navigateTo({ path: '/creator', query: { view: c.uuid, team: '1', name: c.name } })
+}
+
 function openUrl(url: string) {
   void backend.openExternalUrl(url).catch((e) => toasts.error(e))
 }
@@ -363,6 +368,10 @@ const stateClass = { active: 'bg-ok/15 text-ok', revoked: 'bg-base-800 text-base
               <td class="py-2"><span class="badge" :class="stateClass[c.state]">{{ t(`team.creators.roster.states.${c.state}`) }}</span></td>
               <td class="py-2 pr-4 text-right whitespace-nowrap">
                 <template v-if="c.state === 'active'">
+                  <button class="btn btn-ghost px-3 py-1 text-xs" :data-testid="`creator-open-dashboard-${c.uuid}`" :title="t('creator.teamMode.openDashboardHint')" @click="openDashboard(c)">
+                    {{ t('creator.teamMode.openDashboard') }}
+                  </button>
+                  <NuxtLink :to="`/admin/creator-stats/${c.uuid}`" class="btn btn-ghost px-3 py-1 text-xs">{{ t('team.creatorStats.detail.open') }}</NuxtLink>
                   <button class="btn btn-ghost px-3 py-1 text-xs" :disabled="busy === c.uuid" @click="startRevoke(c, false)">{{ t('team.creators.roster.revoke') }}</button>
                   <button class="btn btn-danger ml-1 px-3 py-1 text-xs" :disabled="busy === c.uuid" @click="startRevoke(c, true)">{{ t('team.creators.roster.ban') }}</button>
                 </template>

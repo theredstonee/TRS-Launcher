@@ -52,7 +52,7 @@ async function send() {
   sending.value = true
   formError.value = null
   try {
-    const requests = await backend.creator.request({ kind: 'upgrade', channelUrl: form.channelUrl.trim(), followers: n, ...(form.note.trim() ? { note: form.note.trim() } : {}) })
+    const requests = await backend.creator.request({ kind: 'upgrade', channelUrl: form.channelUrl.trim(), followers: n, ...(form.note.trim() ? { note: form.note.trim() } : {}) }, store.actingAs)
     if (store.dashboard) store.dashboard = { ...store.dashboard, requests }
     dialog.value = false
     toasts.ok(t('creator.tier.sent'))

@@ -66,6 +66,7 @@ import {
   type CreatorTier,
   type HelperRight,
 } from './creator'
+import { creatorStatsDetailSchema, creatorStatsListSchema, type SortOrder, type StatSortKey } from './creatorStats'
 import { bisectViewSchema } from './bisect'
 import { adminFeaturedPackSchema, featuredListSchema, type FeaturedPatch } from './featured'
 import { conflictReportSchema, fitResultSchema } from './modConflicts'
@@ -1276,8 +1277,10 @@ export const backend = {
     uploadFanCape: (upload: { png: string; frames: number; frameTimeMs: number | null; name: string }, asCreator: string | null = null) =>
       call<void>('creator_upload_fan_cape', { ...upload, asCreator }),
     withdrawFanCape: (asCreator: string | null = null) => call<void>('creator_withdraw_fan_cape', { asCreator }),
-    request: (request: { kind: 'upgrade'; channelUrl: string; followers: number; note?: string } | { kind: 'team_cape'; text: string }) =>
-      checked(z.array(creatorRequestSchema), 'creator_request', { request }),
+    request: (
+      request: { kind: 'upgrade'; channelUrl: string; followers: number; note?: string } | { kind: 'team_cape'; text: string },
+      asCreator: string | null = null,
+    ) => checked(z.array(creatorRequestSchema), 'creator_request', { request, asCreator }),
     previews: () => checked(z.array(previewBuildSchema), 'creator_previews'),
     // Haustier: eigener Stand, Codes (Klartext nur in der Antwort von createPetCodes), Antrag.
     pet: (asCreator: string | null = null) => checked(creatorPetStateSchema, 'creator_pet', { asCreator }),
@@ -1285,16 +1288,19 @@ export const backend = {
     createPetCodes: (codes: { count: number; maxUses: number; expiresAt?: string; note?: string }, asCreator: string | null = null) =>
       checked(z.array(petCodeSchema), 'creator_create_pet_codes', { codes, asCreator }),
     revokePetCode: (id: string, asCreator: string | null = null) => call<void>('creator_revoke_pet_code', { id, asCreator }),
-    requestPet: (request: { species: string; description: string; colors?: string; image?: string }) =>
-      checked(petRequestSchema, 'creator_request_pet', { request }),
-    petRequestImage: (id: string, image: string) => checked(petRequestSchema, 'creator_pet_request_image', { id, image }),
-    withdrawPetRequest: (id: string) => call<void>('creator_withdraw_pet_request', { id }),
+    requestPet: (request: { species: string; description: string; colors?: string; image?: string }, asCreator: string | null = null) =>
+      checked(petRequestSchema, 'creator_request_pet', { request, asCreator }),
+    petRequestImage: (id: string, image: string, asCreator: string | null = null) =>
+      checked(petRequestSchema, 'creator_pet_request_image', { id, image, asCreator }),
+    withdrawPetRequest: (id: string, asCreator: string | null = null) => call<void>('creator_withdraw_pet_request', { id, asCreator }),
     setPackListed: (code: string, listed: boolean, asCreator: string | null = null) =>
       call<void>('creator_set_pack_listed', { code, listed, asCreator }),
     /** Helfer (§35.9): Freunde einladen, Rechte ändern, entfernen; Einladungen annehmen, aufhören. */
     inviteHelper: (uuid: string, rights: HelperRight[]) => call<void>('creator_invite_helper', { uuid, rights }),
-    updateHelper: (uuid: string, rights: HelperRight[]) => call<void>('creator_update_helper', { uuid, rights }),
-    removeHelper: (uuid: string) => call<void>('creator_remove_helper', { uuid }),
+    // `asCreator` nur im Team-Modus (§35.9) – Helfer dürfen andere Helfer nicht verwalten.
+    updateHelper: (uuid: string, rights: HelperRight[], asCreator: string | null = null) =>
+      call<void>('creator_update_helper', { uuid, rights, asCreator }),
+    removeHelper: (uuid: string, asCreator: string | null = null) => call<void>('creator_remove_helper', { uuid, asCreator }),
     answerHelperInvite: (creator: string, accept: boolean) => call<void>('creator_answer_helper_invite', { creator, accept }),
     leaveHelping: (creator: string) => call<void>('creator_leave_helping', { creator }),
 
@@ -1308,6 +1314,10 @@ export const backend = {
     adminRestore: (uuid: string) => call<void>('admin_creator_restore', { uuid }),
     adminRequests: () => checked(z.array(adminCreatorRequestSchema), 'admin_creator_requests'),
     adminAnswer: (id: string, accept: boolean, reason: string | null = null) => call<void>('admin_creator_answer', { id, accept, reason }),
+    /** Statistik für das Team (§35.14): Rangliste bzw. ein Creator mit Tagesreihen. */
+    adminStats: (query: { q?: string; tier?: string; state?: string; sort?: StatSortKey; order?: SortOrder; limit?: number } = {}) =>
+      checked(creatorStatsListSchema, 'admin_creator_stats', { query }),
+    adminStatsDetail: (uuid: string, days = 90) => checked(creatorStatsDetailSchema, 'admin_creator_stats_detail', { uuid, days }),
   },
 
   /** Welt-Hosting (§21): Beitreten/Anfragen und Listen – Verbindungsdaten bleiben im Kern bzw. im Spiel. */
