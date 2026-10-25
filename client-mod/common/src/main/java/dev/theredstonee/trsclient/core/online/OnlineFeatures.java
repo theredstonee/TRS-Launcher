@@ -381,6 +381,15 @@ public final class OnlineFeatures<T> {
 	 */
 	public void petOwner(UUID uuid, boolean self, double x, double y, double z, float bodyYaw, boolean hidden,
 			dev.theredstonee.trsclient.core.cosmetic.pet.PetWorld world) {
+		petOwner(uuid, self, x, y, z, bodyYaw, false, hidden, world);
+	}
+
+	/**
+	 * Wie {@link #petOwner(UUID, boolean, double, double, double, float, boolean, dev.theredstonee.trsclient.core.cosmetic.pet.PetWorld)}
+	 * plus {@code sneaking} (Schleichen-Taste gedrückt, nicht im Fahrzeug) – Überfall-Begleiter schleichen dann mit.
+	 */
+	public void petOwner(UUID uuid, boolean self, double x, double y, double z, float bodyYaw, boolean sneaking, boolean hidden,
+			dev.theredstonee.trsclient.core.cosmetic.pet.PetWorld world) {
 		if (!petsActive || uuid == null) return;
 		if (self) selfPetOwner = uuid;
 		try {
@@ -389,10 +398,45 @@ public final class OnlineFeatures<T> {
 			int count = piece == null || !piece.v2() ? 0 : piece.count;
 			int forced = dev.theredstonee.trsclient.core.cosmetic.pet.DevPets.forcedCount;
 			if (count > 0 && self && forced > 0) count = forced;
-			pets.owner(uuid, count, x, y, z, bodyYaw, hidden, self, world);
+			double[] extras = null;
+			int[] abilities = null;
+			if (count > 0) {
+				int n = piece.extras.size();
+				if (n > 0) {
+					extras = petScales(n);
+					for (int i = 0; i < n; i++) extras[i] = piece.extras.get(i).petScale;
+				}
+				// Was die Modelle können (Anhang E: sneak/grab/flee/handsup) – erst, wenn sie geladen sind
+				abilities = petAbilities[n];
+				if (abilities == null) petAbilities[n] = abilities = new int[n + 1];
+				for (int k = 0; k <= n; k++) {
+					dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> h = v2(k == 0 ? piece : piece.extras.get(k - 1), false);
+					abilities[k] = h == null ? 0 : dev.theredstonee.trsclient.core.cosmetic.pet.Pet.abilitiesOf(h.model);
+				}
+			}
+			pets.owner(uuid, count, piece == null ? 1.0 : piece.petScale, extras, abilities, x, y, z, bodyYaw, sneaking, hidden,
+					self, world);
 		} catch (RuntimeException e) {
 			online.reportError(e);
 		}
+	}
+
+	/** Wiederverwendete Größen-Felder für das Gefolge (je Länge eins, nur Spiel-Thread). */
+	private final double[][] petScaleBuffers = new double[HatInfo.MAX_EXTRAS + 1][];
+
+	/** Wiederverwendete Fähigkeits-Felder je Gefolge-Länge + 1 (nur Spiel-Thread). */
+	private final int[][] petAbilities = new int[HatInfo.MAX_EXTRAS + 1][];
+
+	private double[] petScales(int n) {
+		double[] b = petScaleBuffers[n];
+		if (b == null) petScaleBuffers[n] = b = new double[n];
+		return b;
+	}
+
+	/** Teil eines Begleiters ({@link dev.theredstonee.trsclient.core.cosmetic.pet.Pet#kind}: 0 = Haupt-Teil, sonst Extra). */
+	private static HatInfo petPiece(HatInfo main, int kind) {
+		if (main == null || kind <= 0) return main;
+		return kind - 1 < main.extras.size() ? main.extras.get(kind - 1) : null;
 	}
 
 	/** Ende des Begleiter-Ticks. */
@@ -412,39 +456,53 @@ public final class OnlineFeatures<T> {
 			double yr = Math.toRadians(camYaw), pr = Math.toRadians(camPitch);
 			double fx = -Math.sin(yr) * Math.cos(pr), fy = -Math.sin(pr), fz = Math.cos(yr) * Math.cos(pr);
 			float alpha = pets.alpha(System.nanoTime());
+			// eigene Kamera für „Hände hoch“ (Anhang E)
+			pets.viewer(camX, camY, camZ, fx, fy, fz);
 			int n = pets.visible(camX, camY, camZ, fx, fy, fz, PET_DRAW_DISTANCE, MAX_PETS_DRAWN, alpha, petBuffer);
 			java.util.function.LongSupplier clock = v2Clock;
 			long wall = System.currentTimeMillis();
 			long base = clock != null ? clock.getAsLong() : wall;
 			int out = 0;
 			UUID lastOwner = null;
-			dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> lastHat = null;
+			HatInfo lastPiece = null;
+			// Teile des zuletzt gesehenen Besitzers je kind (Haupt-Teil + Extras), erst bei Bedarf geladen
+			java.util.Arrays.fill(petHats, null);
+			java.util.Arrays.fill(petHatsTried, false);
 			for (int i = 0; i < n; i++) {
 				dev.theredstonee.trsclient.core.cosmetic.pet.Pet p = petBuffer[i];
-				dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> hat;
-				if (p.owner.equals(lastOwner)) {
-					hat = lastHat;
-				} else {
+				if (!p.owner.equals(lastOwner)) {
 					HatInfo piece = online.info(p.owner).pet;
 					if (piece == null && p.owner.equals(ownParsedUuid())) {
 						piece = dev.theredstonee.trsclient.core.cosmetic.pet.DevPets.info(online);
 					}
-					hat = piece == null ? null : v2(piece, false);
 					lastOwner = p.owner;
-					lastHat = hat;
+					lastPiece = piece;
+					java.util.Arrays.fill(petHats, null);
+					java.util.Arrays.fill(petHatsTried, false);
 				}
+				int kind = Math.max(0, Math.min(petHats.length - 1, p.kind));
+				if (!petHatsTried[kind]) {
+					HatInfo piece = petPiece(lastPiece, p.kind);
+					petHats[kind] = piece == null ? null : v2(piece, false);
+					petHatsTried[kind] = true;
+				}
+				dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T> hat = petHats[kind];
 				if (hat == null || !hat.model.pet()) continue;
 				int st = p.state();
 				dev.theredstonee.trsclient.core.cosmetic.pet.PetDraw<T> d = petDraws[out];
 				if (d == null) petDraws[out] = d = new dev.theredstonee.trsclient.core.cosmetic.pet.PetDraw<T>();
 				d.pet = p;
 				long fixed = dev.theredstonee.trsclient.core.cosmetic.pet.PetSim.forceTimeMs;
-				d.hat = hat.forPet(fixed >= 0 ? fixed : base + p.offsetMs, dev.theredstonee.trsclient.core.cosmetic.pet.Pet.driver(st),
+				// „grab“ läuft einmal ab Zustandsbeginn (Anhang E), alles andere nach der Uhr mit eigenem Versatz
+				long t = fixed >= 0 ? fixed
+						: dev.theredstonee.trsclient.core.cosmetic.pet.Pet.fromStateStart(st) ? Math.max(0L, wall - p.stateSince())
+								: base + p.offsetMs;
+				d.hat = hat.forPet(t, dev.theredstonee.trsclient.core.cosmetic.pet.Pet.driver(st),
 						dev.theredstonee.trsclient.core.cosmetic.pet.Pet.driver(p.prevState()), p.blend(wall));
 				double px = p.x(alpha), py = p.y(alpha), pz = p.z(alpha);
-				d.set(px - camX, py - camY, pz - camZ, p.yaw(alpha));
+				d.set(px - camX, py - camY, pz - camZ, p.yaw(alpha), p.scale);
 				d.light = world == null ? dev.theredstonee.trsclient.core.cosmetic.pet.PetWorld.packLight(15, 15)
-						: world.light(floorInt(px), floorInt(py + 0.25), floorInt(pz));
+						: world.light(floorInt(px), floorInt(py + 0.25 * p.scale), floorInt(pz));
 				out++;
 			}
 			return out;
@@ -453,6 +511,12 @@ public final class OnlineFeatures<T> {
 			return 0;
 		}
 	}
+
+	/** Geladene Teile je {@code kind} des gerade gezeichneten Besitzers (nur Render-Thread, in {@link #petFrame}). */
+	@SuppressWarnings("unchecked")
+	private final dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat<T>[] petHats =
+			new dev.theredstonee.trsclient.core.cosmetic.v2.V2Hat[HatInfo.MAX_EXTRAS + 1];
+	private final boolean[] petHatsTried = new boolean[HatInfo.MAX_EXTRAS + 1];
 
 	/** Ein Begleiter dieses Bildes (nach {@link #petFrame}). */
 	public dev.theredstonee.trsclient.core.cosmetic.pet.PetDraw<T> petDraw(int i) {

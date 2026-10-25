@@ -143,6 +143,28 @@ class CosmeticCatalogTest {
 	}
 
 	@Test
+	void readsTheEscortOfTheWornPet() {
+		dev.theredstonee.trsclient.core.online.OnlineConfig cfg = new dev.theredstonee.trsclient.core.online.OnlineConfig(true,
+				"https://trs-launcher.theredstonee.de", "https://sessionserver.mojang.com");
+		String raw = "{\"equipped\":{\"pet\":{\"id\":\"penguin\",\"format\":2,\"count\":1,\"scale\":8,\"extras\":["
+				+ "{\"id\":\"penguin_emperor\",\"format\":2,\"model\":\"/v1/cosmetics/penguin_emperor/model.json\","
+				+ "\"url\":\"/v1/cosmetics/penguin_emperor.png\",\"hash\":\"aa11bb\",\"scale\":8,\"petScale\":1.25},"
+				+ "{\"id\":\"penguin_beanie\",\"model\":\"/v1/cosmetics/penguin_beanie/model.json\","
+				+ "\"texture\":{\"url\":\"/v1/cosmetics/penguin_beanie.png\"}},"
+				+ "{\"id\":\"bad\",\"format\":1,\"model\":\"/v1/x\",\"url\":\"/v1/y\"},\"nope\"]}}}";
+		CosmeticCatalog.Mine m = CosmeticCatalog.parseMine(raw, cfg);
+		assertEquals(1, m.petCount);
+		assertEquals(1.0, m.petScale, 0);
+		assertEquals(2, m.petExtras.size());
+		assertEquals("penguin_emperor", m.petExtras.get(0).id);
+		assertEquals(1.25, m.petExtras.get(0).petScale, 0);
+		assertEquals("penguin_beanie", m.petExtras.get(1).id);
+		assertTrue(CosmeticCatalog.parseMine(raw).petExtras.isEmpty(), "ohne API-Adresse kein Gefolge");
+		assertTrue(CosmeticCatalog.parseMine("{\"equipped\":{\"pet\":{\"id\":\"p\"}}}", cfg).petExtras.isEmpty(),
+				"ältere API ohne extras");
+	}
+
+	@Test
 	void shrinksCards() {
 		int[] px = new int[400 * 400];
 		java.util.Arrays.fill(px, 0xFF336699);

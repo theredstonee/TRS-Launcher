@@ -175,6 +175,14 @@ public final class CosmeticCatalog {
 		public final Map<String, Map<String, Boolean>> options;
 		/** Anzahl der Begleiter am Boden (1–4, Creator-Stufe) laut {@code GET /v1/me/cosmetics}; 0 = unbekannt. */
 		public final int petCount;
+		/** Größe des getragenen Begleiters am Boden (1 = normal) laut {@code GET /v1/me/cosmetics}. */
+		public final double petScale;
+		/**
+		 * Gefolge des getragenen Begleiters am Boden ({@code equipped.pet.extras}, je mit eigener
+		 * {@link HatInfo#petScale}); nie null, leer ohne Gefolge oder bei älteren APIs. Die Teile müssen nicht im Katalog
+		 * stehen – {@link #previews} hat sie unter ihrer ID, sobald geladen ({@link CosmeticCatalog#wantPreview}).
+		 */
+		public final List<HatInfo> petExtras;
 		public final boolean loaded;
 		public final boolean loading;
 		/** Mit der TRS API verbunden (angemeldet)? */
@@ -208,6 +216,16 @@ public final class CosmeticCatalog {
 				boolean loaded, boolean loading, boolean trs, String busy, String message, boolean error, int version,
 				Map<String, Art> cards, Map<String, Preview> previews, Set<String> failed, Map<String, Map<String, Boolean>> options,
 				int petCount) {
+			this(items, equipped, equippedCompanion, equippedWings, equippedPet, loaded, loading, trs, busy, message, error, version,
+					cards, previews, failed, options, petCount, 1.0, Collections.<HatInfo>emptyList());
+		}
+
+		State(List<Item> items, String equipped, String equippedCompanion, String equippedWings, String equippedPet,
+				boolean loaded, boolean loading, boolean trs, String busy, String message, boolean error, int version,
+				Map<String, Art> cards, Map<String, Preview> previews, Set<String> failed, Map<String, Map<String, Boolean>> options,
+				int petCount, double petScale, List<HatInfo> petExtras) {
+			this.petScale = petScale;
+			this.petExtras = petExtras == null ? Collections.<HatInfo>emptyList() : petExtras;
 			this.items = items;
 			this.equipped = equipped;
 			this.equippedCompanion = equippedCompanion;
@@ -253,6 +271,13 @@ public final class CosmeticCatalog {
 			return null;
 		}
 
+		/** Teil des Gefolges mit dieser ID (Format 2) oder null. */
+		public HatInfo petExtra(String id) {
+			if (id == null) return null;
+			for (HatInfo h : petExtras) if (h.id.equals(id)) return h;
+			return null;
+		}
+
 		/** Kartenbild (Tag oder Nacht) oder null. */
 		public Art card(String id, boolean night) {
 			Art a = cards.get(id + (night ? "#n" : "#d"));
@@ -276,6 +301,8 @@ public final class CosmeticCatalog {
 	/** Wahl der Optionen je Fach (nur Hintergrund-Thread). */
 	private final Map<String, Map<String, Boolean>> choices = new LinkedHashMap<String, Map<String, Boolean>>();
 	private int petCount;
+	private double petScale = 1.0;
+	private List<HatInfo> petExtras = Collections.emptyList();
 	private boolean loaded;
 	private boolean loadingFlag;
 	private boolean trs;
@@ -416,8 +443,14 @@ public final class CosmeticCatalog {
 	private void setEquipped(String slot, String id) {
 		if ("companion".equals(slot)) equippedCompanion = id;
 		else if ("wings".equals(slot)) equippedWings = id;
-		else if ("pet".equals(slot)) equippedPet = id;
-		else equipped = id;
+		else if ("pet".equals(slot)) {
+			if (id == null || !id.equals(equippedPet)) {
+				// anderes Teil oder abgelegt: Gefolge kommt mit der Antwort neu
+				petExtras = Collections.emptyList();
+				petScale = 1.0;
+			}
+			equippedPet = id;
+		} else equipped = id;
 	}
 
 	/**
@@ -737,14 +770,19 @@ public final class CosmeticCatalog {
 	private void loadPreview(String id) {
 		State s = state.get();
 		Item it = s.item(id);
-		if (it == null) {
+		HatInfo extra = it == null ? s.petExtra(id) : null;
+		if (it == null && extra == null) {
 			previewRequested.remove(id);
 			return;
 		}
 		String token = platform.trsToken();
 		try {
 			Preview p;
-			if (it.format == 2) {
+			if (extra != null) {
+				// Gefolge (muss nicht im Katalog stehen)
+				CosmeticV2Cache cache = new CosmeticV2Cache(platform.configDir().resolve("trsclient").resolve("cosmetics"));
+				p = new Preview(cache.load(extra, trsApi(), token), null, null, 0, 0);
+			} else if (it.format == 2) {
 				CosmeticV2Cache cache = new CosmeticV2Cache(platform.configDir().resolve("trsclient").resolve("cosmetics"));
 				p = new Preview(cache.load(it.hat, trsApi(), token), null, null, 0, 0);
 			} else {
@@ -790,7 +828,8 @@ public final class CosmeticCatalog {
 		state.set(new State(items, equipped, equippedCompanion, equippedWings, equippedPet, loaded, loadingFlag, trs, busy, message,
 				error, version, Collections.unmodifiableMap(new LinkedHashMap<String, Art>(cards)),
 				Collections.unmodifiableMap(new LinkedHashMap<String, Preview>(previews)),
-				Collections.unmodifiableSet(new HashSet<String>(failed)), Collections.unmodifiableMap(opts), petCount));
+				Collections.unmodifiableSet(new HashSet<String>(failed)), Collections.unmodifiableMap(opts), petCount, petScale,
+				petExtras));
 	}
 
 	/**
@@ -798,10 +837,17 @@ public final class CosmeticCatalog {
 	 * bzw. {@code options.<slot>}) und Anzahl der Begleiter am Boden ({@code equipped.pet.count}). Unbekanntes bleibt.
 	 */
 	void readMine(String raw) {
-		Mine m = parseMine(raw);
+		Mine m = parseMine(raw, config());
 		if (m == null) return;
 		choices.putAll(m.options);
 		if (m.petCount >= 0) petCount = m.petCount;
+		if (m.petCount == 0) {
+			petScale = 1.0;
+			petExtras = Collections.emptyList();
+		} else if (m.petCount > 0) {
+			petScale = m.petScale;
+			petExtras = m.petExtras;
+		}
 	}
 
 	/** Gelesene Antwort von {@code /v1/me/cosmetics}: Optionen je Fach und Anzahl der Begleiter am Boden. */
@@ -809,10 +855,19 @@ public final class CosmeticCatalog {
 		final Map<String, Map<String, Boolean>> options = new LinkedHashMap<String, Map<String, Boolean>>();
 		/** −1 = unbekannt (ältere API), 0 = kein Begleiter am Boden, sonst 1–4. */
 		int petCount = -1;
+		/** Größe des Begleiters am Boden ({@code petScale}; Standard 1). */
+		double petScale = 1.0;
+		/** Gefolge ({@code equipped.pet.extras}, Format 2, höchstens {@link HatInfo#MAX_EXTRAS}); leer, wenn keins. */
+		List<HatInfo> petExtras = Collections.emptyList();
 	}
 
-	/** Antwort lesen; null, wenn kein JSON-Objekt. */
+	/** Antwort lesen (ohne Gefolge, dafür braucht es die API-Adresse); null, wenn kein JSON-Objekt. */
 	static Mine parseMine(String raw) {
+		return parseMine(raw, null);
+	}
+
+	/** Antwort lesen; {@code cfg} = API (für die Adressen des Gefolges; null = Gefolge überspringen). */
+	static Mine parseMine(String raw, OnlineConfig cfg) {
 		if (raw == null) return null;
 		JsonElement root;
 		try {
@@ -847,6 +902,8 @@ public final class CosmeticCatalog {
 			if ("pet".equals(slot) && o != null) {
 				Integer c = integer(o, "count");
 				mine.petCount = c == null ? 1 : Math.max(1, Math.min(4, c));
+				mine.petScale = petScale(o);
+				if (cfg != null) mine.petExtras = petExtras(o.get("extras"), cfg);
 			} else if ("pet".equals(slot) && eq != null && eq.has(slot)) {
 				mine.petCount = 0;
 			}
@@ -856,6 +913,45 @@ public final class CosmeticCatalog {
 
 	/** Fächer, deren Optionen gelesen werden. */
 	static final String[] SLOTS = { "hat", "companion", "wings", "pet" };
+
+	/**
+	 * Größe eines Begleiters am Boden: {@code petScale} (begrenzt wie {@link HatInfo#clampScale}), sonst 1. {@code scale}
+	 * ist der Pixel-Faktor der Textur und keine Größe.
+	 */
+	static double petScale(JsonObject o) {
+		Double d = number(o.get("petScale"));
+		return d == null ? 1.0 : HatInfo.clampScale(d);
+	}
+
+	private static Double number(JsonElement e) {
+		if (e == null || !e.isJsonPrimitive() || !e.getAsJsonPrimitive().isNumber()) return null;
+		double d = e.getAsDouble();
+		return Double.isNaN(d) || Double.isInfinite(d) ? null : d;
+	}
+
+	/** Gefolge ({@code extras}): Format-2-Teile mit eigener Größe; kaputte Einträge fallen weg, höchstens 4. */
+	static List<HatInfo> petExtras(JsonElement raw, OnlineConfig cfg) {
+		if (raw == null || !raw.isJsonArray()) return Collections.emptyList();
+		List<HatInfo> out = new ArrayList<HatInfo>();
+		for (JsonElement e : raw.getAsJsonArray()) {
+			if (out.size() >= HatInfo.MAX_EXTRAS) break;
+			if (e == null || !e.isJsonObject()) continue;
+			JsonObject x = e.getAsJsonObject();
+			try {
+				Integer format = integer(x, "format");
+				if (format != null && format != 2) continue;
+				String tex = str(x, "url");
+				JsonElement t = x.get("texture");
+				if (tex == null && t != null && t.isJsonObject()) tex = str(t.getAsJsonObject(), "url");
+				HatInfo h = HatInfo.v2(str(x, "id"), str(x, "model"), tex, str(x, "glow"), str(x, "hash"), integer(x, "frames"),
+						integer(x, "glowFrames"), cfg);
+				if (h != null) out.add(h.withPet(petScale(x), null));
+			} catch (RuntimeException ignored) {
+				// kaputter Eintrag: nur dieser fällt weg
+			}
+		}
+		return out.isEmpty() ? Collections.<HatInfo>emptyList() : Collections.unmodifiableList(out);
+	}
 
 	private void submit(Runnable r) {
 		try {

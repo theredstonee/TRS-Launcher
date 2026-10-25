@@ -100,6 +100,15 @@ public final class PetsTest {
 					phase = 40;
 					return true;
 				}
+				if (Boolean.getBoolean("trsclient.autotest.petsEscort")) {
+					// Nur das Gefolge (Attrappe mit WINTER_PET_EXTRAS=1): 1 Pinguin + 3 verschiedene, einer größer
+					place(player, 0, 0, 0f, 0);
+					catalog.wearPet(pet);
+					PetSim.forceSlide = 0;
+					tries = 0;
+					phase = 60;
+					return true;
+				}
 				place(player, 0, 0, 0f, 0);
 				catalog.wear(hat);
 				catalog.wearPet(pet);
@@ -292,6 +301,80 @@ public final class PetsTest {
 				}
 				if (ticks < 94) return true;
 				DevPets.forcedCount = 0;
+				PetSim.forceSlide = Double.NaN;
+				TrsClient.get().pvp().forceFreelook(Float.NaN);
+				return false;
+			case 60: {
+				// Gefolge: warten, bis alle 4 da und gezeichnet sind
+				place(player, 0, 0, 0f, 0);
+				java.util.List<Pet> pets = f.pets().pets(player.getUniqueID());
+				int drawn = f.petFrame(null, player.posX, player.posY + 1.62, player.posZ, player.rotationYaw, 0f);
+				if ((pets.size() < 5 || drawn < 1) && tries++ < 600) {
+					if (tries % 200 == 0) f.online().refreshSelf();
+					return true;
+				}
+				StringBuilder sb = new StringBuilder();
+				for (Pet p : pets) sb.append(p.kind).append('x').append(p.scale).append(' ');
+				TrsClient.LOGGER.info("[Autotest] Gefolge: {} Begleiter, {} gezeichnet nach {} Ticks (kind x Größe: {})", pets.size(),
+						drawn, tries, sb);
+				ticks = 0;
+				phase = 61;
+				return true;
+			}
+			case 61:
+				place(player, 0, Math.min(6, ticks * 0.2), 0f, 0);
+				camera(mc, 145F, 28F);
+				if (++ticks == 50) {
+					actions.shot("escort-follow");
+					log(f, player, "Gefolge folgt");
+				}
+				if (ticks < 52) return true;
+				ticks = 0;
+				phase = 62;
+				return true;
+			case 62:
+				PetSim.forceSlide = 1;
+				place(player, 0, 6 + Math.min(8, ticks * 0.3), 0f, 0);
+				camera(mc, 160F, 25F);
+				if (++ticks == 22) {
+					actions.shot("escort-slide");
+					log(f, player, "Gefolge rutscht");
+				}
+				if (ticks < 30) return true;
+				PetSim.forceSlide = 0;
+				ticks = 0;
+				phase = 63;
+				return true;
+			case 63:
+				place(player, 10.5, 0, 0f, -0.4);
+				camera(mc, 130F, 35F);
+				if (++ticks == 90) {
+					actions.shot("escort-swim");
+					log(f, player, "Gefolge schwimmt");
+				}
+				if (ticks < 92) return true;
+				mc.gameSettings.hideGUI = false;
+				mc.displayGuiScreen(WardrobeScreen.create(null));
+				ui = WardrobeScreen.last;
+				ui.category("cosmetics");
+				ui.selectCosmetic(pet);
+				tries = 0;
+				phase = 64;
+				wait = 10;
+				return true;
+			case 64: {
+				CosmeticCatalog.State s = catalog.state();
+				boolean all = s.previews.containsKey(pet) && !s.petExtras.isEmpty();
+				for (dev.theredstonee.trsclient.core.online.HatInfo e : s.petExtras) all &= s.previews.containsKey(e.id);
+				if (!all && tries++ < 300) return true;
+				TrsClient.LOGGER.info("[Autotest] Gefolge: Garderobe {} ({} Extras)", all ? "geladen" : "FEHLT", s.petExtras.size());
+				phase = 65;
+				wait = 20;
+				return true;
+			}
+			case 65:
+				actions.shot("escort-wardrobe");
+				mc.displayGuiScreen(null);
 				PetSim.forceSlide = Double.NaN;
 				TrsClient.get().pvp().forceFreelook(Float.NaN);
 				return false;

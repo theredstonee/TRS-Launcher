@@ -45,6 +45,7 @@ public final class PetsTest {
 			return true;
 		}
 		OnlineFeatures<Object> f = OnlineHooks.features();
+		if (phase >= 60) return escort(mc, f, actions);
 		if (phase >= 40) return fix(mc, f, actions);
 		switch (phase) {
 			case 0: {
@@ -101,6 +102,12 @@ public final class PetsTest {
 				if (Boolean.getBoolean("trsclient.autotest.petsFix")) {
 					// Nur die Prüfung der Fehlerbehebungen: Flossen je Zustand, Flügel/Pinguine vor Wasser, Boot
 					phase = 40;
+					tries = 0;
+					return true;
+				}
+				if (Boolean.getBoolean("trsclient.autotest.petsEscort")) {
+					// Nur das Gefolge (Attrappe mit WINTER_PET_EXTRAS=1): 1 Pinguin + 3 verschiedene, einer größer
+					phase = 60;
 					tries = 0;
 					return true;
 				}
@@ -538,6 +545,259 @@ public final class PetsTest {
 		}
 	}
 
+	// =====================================================================================================
+	// Gefolge eines Creators (-PtrsSys.trsclient.autotest.petsEscort=true, Attrappe mit WINTER_PET_EXTRAS=1): Haupt-
+	// Pinguin + 3 Extras (Kaiserpinguin 1,25), folgen, rutschen, schwimmen, stehen, Garderobe mit dem ganzen Gefolge.
+	// =====================================================================================================
+
+	private boolean escort(Minecraft mc, OnlineFeatures<Object> f, CapeTest.Actions actions) {
+		java.util.UUID me = mc.player.getUUID();
+		switch (phase) {
+			case 60:
+				place(mc, 0, 0, 0f);
+				if (pet != null) catalog.wearPet(pet);
+				PetSim.forceSlide = 0;
+				tries = 0;
+				phase = 61;
+				return true;
+			case 61: {
+				place(mc, 0, 0, 0f);
+				List<Pet> pets = f.pets().pets(me);
+				int drawn = f.petFrame(null, Mc.cameraX(), Mc.cameraY(), Mc.cameraZ(), Mc.cameraYaw(), Mc.cameraPitch());
+				if ((pets.size() < 5 || drawn < 1) && tries++ < 600) {
+					if (tries % 200 == 0) f.online().refreshSelf();
+					return true;
+				}
+				StringBuilder sb = new StringBuilder();
+				for (Pet p : pets) sb.append(p.kind).append('×').append(p.scale).append(" kann ").append(p.abilities()).append(' ');
+				TrsClient.LOGGER.info("[Autotest] Gefolge: {} Begleiter, {} gezeichnet nach {} Ticks (kind×Größe: {}), Garderobe {} Extras",
+						pets.size(), drawn, tries, sb, catalog.state().petExtras.size());
+				ticks = 0;
+				phase = 62;
+				return true;
+			}
+			case 62:
+				// Folgen: 6 Blöcke nach Süden, Kamera schräg von vorne oben
+				place(mc, 0, Math.min(6, ticks * 0.2), 0f);
+				camera(mc, 145F, 28F);
+				if (++ticks == 50) {
+					actions.shot("trsclient-escort-follow");
+					log(f, mc, "Gefolge folgt");
+				}
+				if (ticks < 52) return true;
+				ticks = 0;
+				phase = 63;
+				return true;
+			case 63:
+				// Rutschen auf der Eisbahn
+				PetSim.forceSlide = 1;
+				place(mc, 0, 6 + Math.min(12, ticks * 0.3), 0f);
+				camera(mc, 160F, 25F);
+				if (++ticks == 22) {
+					actions.shot("trsclient-escort-slide");
+					log(f, mc, "Gefolge rutscht");
+				}
+				if (ticks < 30) return true;
+				PetSim.forceSlide = 0;
+				ticks = 0;
+				phase = 64;
+				return true;
+			case 64:
+				// Schwimmen im Becken
+				place(mc, 11, 0, 0f, -0.4);
+				camera(mc, 130F, 35F);
+				if (++ticks == 90) {
+					actions.shot("trsclient-escort-swim");
+					log(f, mc, "Gefolge schwimmt");
+				}
+				if (ticks < 92) return true;
+				ticks = 0;
+				phase = 65;
+				return true;
+			case 65:
+				// Stehen auf dem Schnee (Größen im Vergleich), Kamera von vorne
+				place(mc, -4, -6, 0f);
+				camera(mc, 165F, 20F);
+				if (++ticks == 80) {
+					actions.shot("trsclient-escort-stand");
+					log(f, mc, "Gefolge steht");
+				}
+				if (ticks < 82) return true;
+				ticks = 0;
+				phase = 70;
+				return true;
+			case 70:
+			case 71:
+			case 72:
+			case 73:
+			case 74:
+				return heist(mc, f, actions);
+			case 75:
+				// Garderobe: Vorschau mit dem ganzen Gefolge
+				Mc.setHudHidden(false);
+				Mc.setScreen(WardrobeScreen.create(null));
+				ui = WardrobeScreen.last;
+				ui.category("cosmetics");
+				ui.selectCosmetic(pet);
+				tries = 0;
+				phase = 66;
+				wait = 10;
+				return true;
+			case 66: {
+				CosmeticCatalog.State s = catalog.state();
+				boolean all = s.previews.containsKey(pet) && !s.petExtras.isEmpty();
+				for (dev.theredstonee.trsclient.core.online.HatInfo e : s.petExtras) all &= s.previews.containsKey(e.id);
+				if (!all && tries++ < 300) return true;
+				TrsClient.LOGGER.info("[Autotest] Gefolge: Garderobe {} nach {} Ticks ({} Extras)", all ? "geladen" : "FEHLT", tries,
+						s.petExtras.size());
+				phase = 67;
+				wait = 20;
+				return true;
+			}
+			case 67:
+				actions.shot("trsclient-escort-wardrobe");
+				Mc.setScreen(null);
+				return finish();
+			default:
+				return finish();
+		}
+	}
+
+	/**
+	 * Ich-Perspektive an (Szene + dx, Szene + dz), Blick knapp NEBEN den Begleiter (18° seitlich, also kein „Hände hoch“),
+	 * damit er groß im Bild ist.
+	 */
+	private void aimNear(Minecraft mc, Pet h, double dx, double dz) {
+		TrsClient.get().pvp().forceFreelook(Float.NaN);
+		Mc.setCameraMode(0);
+		mc.player.setPos(bx + dx, by, bz + dz);
+		mc.player.setDeltaMovement(0, 0, 0);
+		double ex = bx + dx, ey = by + mc.player.getEyeHeight(), ez = bz + dz;
+		double vx = h.x(1f) - ex, vy = h.y(1f) + 0.4 * h.scale - ey, vz = h.z(1f) - ez;
+		float yaw = (float) Math.toDegrees(Math.atan2(-vx, vz)) + 18f;
+		float pitch = (float) -Math.toDegrees(Math.atan2(vy, Math.hypot(vx, vz)));
+		//? if >=1.17 {
+		mc.player.setYRot(yaw);
+		mc.player.setXRot(pitch);
+		//?} else {
+		/*mc.player.yRot = yaw;
+		mc.player.xRot = pitch;
+		*///?}
+		mc.player.yHeadRot = yaw;
+		mc.player.yBodyRot = yaw;
+	}
+
+	/** Schleichen-Taste halten/loslassen. */
+	private static void sneak(boolean down) {
+		//? if >=1.15 {
+		Mc.sneakKey().setDown(down);
+		//?} else
+		/*((dev.theredstonee.trsclient.mixin.KeyMappingAccessor) Mc.sneakKey()).trsclient$setDown(down);*/
+	}
+
+	/** Das „Schwarze Schaf“ (Überfall-Begleiter: kann schnappen) im eigenen Gefolge oder null. */
+	private static Pet heistPet(OnlineFeatures<Object> f, java.util.UUID me) {
+		for (Pet p : f.pets().pets(me)) if ((p.abilities() & Pet.CAN_GRAB) != 0) return p;
+		return null;
+	}
+
+	/**
+	 * Überfall-Begleiter (Anhang E): schleichen (Besitzer schleicht nach Süden), Beute schnappen + Flucht (erzwungen),
+	 * Hände hoch (Ich-Perspektive, Blick auf ihn). Je ein Bild.
+	 */
+	private boolean heist(Minecraft mc, OnlineFeatures<Object> f, CapeTest.Actions actions) {
+		java.util.UUID me = mc.player.getUUID();
+		Pet h = heistPet(f, me);
+		if (h == null) {
+			TrsClient.LOGGER.info("[Autotest] Gefolge: kein Überfall-Begleiter (Modell ohne grab?) – Schritte übersprungen");
+			sneak(false);
+			ticks = 0;
+			phase = 75;
+			return true;
+		}
+		switch (phase) {
+			case 70:
+				// Schleichen: 4 Blöcke nach Süden, Schleichen-Taste gedrückt, Kamera von der Seite
+				sneak(true);
+				aimNear(mc, h, -4, -6 + Math.min(4, ticks * 0.05));
+				ticks++;
+				if (ticks == 70) {
+					actions.shot("trsclient-heist-sneak");
+					TrsClient.LOGGER.info("[Autotest] Überfall: schleichen – Zustand {}", h.stateName());
+				}
+				if (ticks < 72) return true;
+				sneak(false);
+				ticks = 0;
+				phase = 71;
+				return true;
+			case 71:
+				// stehen lassen, bis er ruhig steht, dann Schnappen erzwingen
+				aimNear(mc, h, -4, -2);
+				if (++ticks < 40) return true;
+				PetSim.forceGrab = true;
+				if (h.state() != Pet.GRAB && ticks < 200) return true;
+				PetSim.forceGrab = false;
+				TrsClient.LOGGER.info("[Autotest] Überfall: schnappen nach {} Ticks – Zustand {}", ticks, h.stateName());
+				ticks = 0;
+				phase = 72;
+				return true;
+			case 72:
+				// mitten im Schnappen (≈ 1,2 s), danach Flucht
+				aimNear(mc, h, -4, -2);
+				ticks++;
+				if (ticks == 22) {
+					actions.shot("trsclient-heist-grab");
+					TrsClient.LOGGER.info("[Autotest] Überfall: Bild schnappen – Zustand {}", h.stateName());
+				}
+				if (h.state() == Pet.FLEE && ticks > 22 || ticks > 120) {
+					ticks = 0;
+					phase = 73;
+				}
+				return true;
+			case 73:
+				aimNear(mc, h, -4, -2);
+				if (++ticks == 8) {
+					actions.shot("trsclient-heist-flee");
+					TrsClient.LOGGER.info("[Autotest] Überfall: Bild Flucht – Zustand {}", h.stateName());
+				}
+				if (ticks < 100) return true;
+				ticks = 0;
+				phase = 74;
+				return true;
+			case 74: {
+				// Hände hoch: Ich-Perspektive, Blick genau auf ihn (vorher eine Abklingzeit lang daneben geschaut)
+				TrsClient.get().pvp().forceFreelook(Float.NaN);
+				Mc.setCameraMode(0);
+				mc.player.setPos(bx - 4, by, bz - 2);
+				mc.player.setDeltaMovement(0, 0, 0);
+				double ex = bx - 4, ey = by + mc.player.getEyeHeight(), ez = bz - 2;
+				double dx = h.x(1f) - ex, dy = h.y(1f) + 0.4 * h.scale - ey, dz = h.z(1f) - ez;
+				float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+				float pitch = (float) -Math.toDegrees(Math.atan2(dy, Math.hypot(dx, dz)));
+				//? if >=1.17 {
+				mc.player.setYRot(yaw);
+				mc.player.setXRot(pitch);
+				//?} else {
+				/*mc.player.yRot = yaw;
+				mc.player.xRot = pitch;
+				*///?}
+				mc.player.yHeadRot = yaw;
+				ticks++;
+				if (h.state() == Pet.HANDSUP && ticks > 20 || ticks == 120) {
+					actions.shot("trsclient-heist-handsup");
+					TrsClient.LOGGER.info("[Autotest] Überfall: Hände hoch nach {} Ticks – Zustand {} ({} Blöcke)", ticks, h.stateName(),
+							String.format(java.util.Locale.ROOT, "%.1f", Math.sqrt(dx * dx + dy * dy + dz * dz)));
+					ticks = 0;
+					phase = 75;
+				}
+				return true;
+			}
+			default:
+				phase = 75;
+				return true;
+		}
+	}
+
 	private static String boatType() {
 		//? if >=1.21.2 {
 		return "oak_boat";
@@ -553,6 +813,7 @@ public final class PetsTest {
 		dev.theredstonee.trsclient.core.cosmetic.v2.WingState.forced = -1;
 		DevPets.forcedCount = 0;
 		PetSim.forceSlide = Double.NaN;
+		PetSim.forceGrab = false;
 		TrsClient.get().setForceZoom(false);
 		phase = 99;
 		return false;

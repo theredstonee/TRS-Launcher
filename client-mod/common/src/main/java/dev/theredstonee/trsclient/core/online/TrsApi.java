@@ -138,7 +138,11 @@ public final class TrsApi {
 		String id;
 		String template;
 		String url;
-		Integer scale;
+		/**
+		 * Skalierung der Textur (Pixel-Faktor, ganzzahlig, z. B. 8) – nie die Größe eines Begleiters ({@link #petScale}).
+		 * Roh gelesen, damit ein unerwarteter Bruch nie den ganzen Lookup kippt.
+		 */
+		com.google.gson.JsonElement scale;
 		Integer frames;
 		Integer frameTimeMs;
 		/** Format 2 (Studio-Modell): {@code format: 2}, Modell-/Leucht-Adresse, Leucht-Frames, Inhalts-Kennung. */
@@ -157,6 +161,36 @@ public final class TrsApi {
 		com.google.gson.JsonElement options;
 		/** Begleiter am Boden: Anzahl 1…4 (Creator-Stufe), sonst fehlt das Feld. */
 		Integer count;
+		/** Begleiter am Boden: Größe im Spiel ({@code petScale}, Standard 1, 0,5…2) – roh gelesen. */
+		com.google.gson.JsonElement petScale;
+		/**
+		 * Begleiter am Boden: zusätzliches Gefolge (Liste von Format-2-Teilen gleicher Form, je einmal gezeichnet) – roh
+		 * gelesen, damit ein kaputter Eintrag nur sich selbst kostet.
+		 */
+		com.google.gson.JsonElement extras;
+	}
+
+	/** Ganze Zahl aus einem rohen JSON-Wert (Bruch, Text, Unsinn → null). */
+	static Integer intOrNull(com.google.gson.JsonElement e) {
+		if (e == null || !e.isJsonPrimitive() || !e.getAsJsonPrimitive().isNumber()) return null;
+		double d = e.getAsDouble();
+		if (Double.isNaN(d) || d != Math.rint(d) || Math.abs(d) > 1e6) return null;
+		return (int) d;
+	}
+
+	/**
+	 * Größe eines Begleiters am Boden: {@code petScale} (auf 0,5…2 begrenzt), fehlt es (ältere API): 1. {@code scale} ist
+	 * der Pixel-Faktor der Textur und wird dafür nie gelesen.
+	 */
+	static double petScale(LookupCosmetic h) {
+		Double d = h == null ? null : number(h.petScale);
+		return d == null ? 1.0 : HatInfo.clampScale(d);
+	}
+
+	private static Double number(com.google.gson.JsonElement e) {
+		if (e == null || !e.isJsonPrimitive() || !e.getAsJsonPrimitive().isNumber()) return null;
+		double d = e.getAsDouble();
+		return Double.isNaN(d) || Double.isInfinite(d) ? null : d;
 	}
 
 	/** {@code options} eines Kosmetik-Teils: nur {@code id → true/false}, Unbekanntes fällt weg. */
@@ -377,7 +411,7 @@ public final class TrsApi {
 			HatInfo hat = cosmetic(p.cosmetics == null ? null : p.cosmetics.hat, false);
 			HatInfo companion = cosmetic(p.cosmetics == null ? null : p.cosmetics.companion, true);
 			HatInfo wings = cosmetic(p.cosmetics == null ? null : p.cosmetics.wings, true);
-			HatInfo pet = cosmetic(p.cosmetics == null ? null : p.cosmetics.pet, true);
+			HatInfo pet = pet(p.cosmetics == null ? null : p.cosmetics.pet);
 			dev.theredstonee.trsclient.core.creator.CreatorTier tier = p.creator == null ? null
 					: dev.theredstonee.trsclient.core.creator.CreatorTier.parse(p.creator.tier);
 			FanInfo fan = null;
@@ -400,7 +434,36 @@ public final class TrsApi {
 			return v2 == null ? null : v2.with(optionChoices(h.options), h.count);
 		}
 		if (companion) return null;
-		return HatInfo.of(h.id, h.template, h.url, h.scale, h.frames, h.frameTimeMs, h.templateUrl, config);
+		return HatInfo.of(h.id, h.template, h.url, intOrNull(h.scale), h.frames, h.frameTimeMs, h.templateUrl, config);
+	}
+
+	/**
+	 * Begleiter am Boden ({@code cosmetics.pet}): Format 2 mit {@code count}, Größe ({@link #petScale(LookupCosmetic)})
+	 * und optionalem Gefolge {@code extras} (je Format 2, eigene Größe; kaputte Einträge fallen weg, höchstens
+	 * {@link HatInfo#MAX_EXTRAS}). Ältere APIs ohne {@code extras}/Größe → wie bisher.
+	 */
+	HatInfo pet(LookupCosmetic h) {
+		HatInfo main = cosmetic(h, true);
+		if (main == null) return null;
+		List<HatInfo> extras = new ArrayList<>();
+		if (h.extras != null && h.extras.isJsonArray()) {
+			for (com.google.gson.JsonElement e : h.extras.getAsJsonArray()) {
+				if (extras.size() >= HatInfo.MAX_EXTRAS) break;
+				if (e == null || !e.isJsonObject()) continue;
+				try {
+					LookupCosmetic x = GSON.fromJson(e, LookupCosmetic.class);
+					if (x == null) continue;
+					// Gefolge ist immer Format 2 – fehlt {@code format}, reicht ein Modell
+					if (x.format == null && x.model != null) x.format = 2;
+					HatInfo v = cosmetic(x, true);
+					if (v == null) continue;
+					extras.add(v.withPet(petScale(x), null));
+				} catch (RuntimeException ignored) {
+					// kaputter Eintrag: nur dieser fällt weg
+				}
+			}
+		}
+		return main.withPet(petScale(h), extras);
 	}
 
 	/** Höchstens so viele Profil-Abzeichen je Spieler übernehmen. */

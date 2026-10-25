@@ -12,7 +12,8 @@ import java.nio.file.StandardCopyOption;
 /**
  * Selbsttest-Begleiter ohne TRS API (wie {@code DevWings}): {@code -Dtrsclient.devPet=<pfad zu <id>.json>} lässt dem
  * eigenen Spieler einen Begleiter am Boden folgen ({@code <id>.png} daneben), Anzahl {@code -Dtrsclient.devPetCount}
- * (1–4). Nur im Autotest ({@code -Dtrsclient.autotest=true}) oder gegen eine lokale API-Attrappe ({@code http://}).
+ * (1–4), Gefolge {@code -Dtrsclient.devPetExtras=<a.json>[@größe];…} und Größe {@code -Dtrsclient.devPetScale}. Nur
+ * im Autotest ({@code -Dtrsclient.autotest=true}) oder gegen eine lokale API-Attrappe ({@code http://}).
  * Die Dateien werden einmal in den Platten-Cache der v2-Kosmetik gelegt; danach läuft der normale Lade-Weg.
  */
 public final class DevPets {
@@ -34,11 +35,38 @@ public final class DevPets {
 		boolean dev = Boolean.getBoolean("trsclient.autotest") || online.apiBase().startsWith("http://");
 		if (!dev) return null;
 		try {
-			info = prepare(Paths.get(raw.trim()), online);
+			HatInfo main = prepare(Paths.get(raw.trim()), online);
+			if (main != null) {
+				// Gefolge: -Dtrsclient.devPetExtras=<a.json>[@größe];<b.json>[@größe] …, Größe des Haupt-Teils devPetScale
+				java.util.List<HatInfo> extras = new java.util.ArrayList<HatInfo>();
+				String ex = System.getProperty("trsclient.devPetExtras", "");
+				for (String part : ex.split(";")) {
+					String t = part.trim();
+					if (t.isEmpty()) continue;
+					double sc = 1.0;
+					int at = t.lastIndexOf('@');
+					if (at > 0) {
+						sc = parse(t.substring(at + 1), 1.0);
+						t = t.substring(0, at);
+					}
+					HatInfo e = prepare(Paths.get(t), online);
+					if (e != null) extras.add(e.withPet(sc, null));
+				}
+				main = main.withPet(parse(System.getProperty("trsclient.devPetScale", "1"), 1.0), extras);
+			}
+			info = main;
 		} catch (IOException | RuntimeException e) {
 			info = null;
 		}
 		return info;
+	}
+
+	private static double parse(String s, double fallback) {
+		try {
+			return Double.parseDouble(s.trim());
+		} catch (RuntimeException e) {
+			return fallback;
+		}
 	}
 
 	private static HatInfo prepare(Path json, TrsOnline online) throws IOException {

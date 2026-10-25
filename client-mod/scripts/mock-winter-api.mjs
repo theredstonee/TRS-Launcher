@@ -12,6 +12,12 @@
 // stattdessen santa_hat, snow_cloud, snow_wings, ice_wings, penguin aus diesem Ordner an – zur Laufzeit gelesen, nie
 // kopiert. WINTER_PET_COUNT (1–4, Standard 1) = Anzahl der Pinguine im Lookup.
 //
+// Gefolge (Creator-Begleiter, Vertrag pixelcst-penguins): WINTER_PET_EXTRAS=1 gibt dem Pinguin im Lookup und in
+// /v1/me/cosmetics `extras` mit vier weiteren Pinguinen (Kaiserpinguin mit `petScale: 1.25`, Mütze, Sonnenbrille und
+// „Schwarzes Schaf“ mit den Zuständen sneak/grab/flee/handsup) – synthetisch test_penguin_emperor/_beanie/_shades/_heist
+// bzw. mit WINTER_REAL_DIR penguin_emperor/_beanie/_shades/_heist. Wie bei der echten API: `petScale` ist die Größe
+// (immer gesetzt), `scale` bleibt der Pixel-Faktor der Textur; die Extras stehen (hidden) nicht im Katalog.
+//
 // Kann: Anmeldung (challenge → Mojang-Join → verify), GET /v1/me, GET /v1/cosmetics (Katalog), Modell/Texturen,
 //   GET/PUT /v1/me/cosmetics (Fächer hat/companion/wings/pet, options je Fach, nur deklarierte → sonst 400),
 //   POST /v1/players/lookup (eigener Spieler mit cosmetics.* inkl. options und pet.count), SSE /v1/events/*.
@@ -24,6 +30,7 @@ import path from 'node:path';
 const port = Number(process.argv[2] || 8797);
 const REAL = process.env.WINTER_REAL_DIR || '';
 const PET_COUNT = Math.max(1, Math.min(4, Number(process.env.WINTER_PET_COUNT || 1)));
+const PET_EXTRAS = process.env.WINTER_PET_EXTRAS === '1';
 const say = (s) => console.log(`${new Date().toISOString()} ${s}`);
 
 // ---------- PNG ----------
@@ -115,10 +122,68 @@ const TEX = (id) => ({ file: `${id}.png`, width: 16, height: 8, scale: 8, frames
 const PAL = ['#1b1d26', '#f3f4f8', '#f39a2b', '#c4202a', '#ffffff', '#9fd8ff', '#dfe8f2', '#5c6a8a'];
 // 0 schwarz, 1 weiß, 2 orange, 3 rot, 4 reinweiß, 5 eisblau, 6 schneeweiß, 7 graublau
 
-function penguin() {
-	const id = 'test_penguin';
+/**
+ * Synthetischer Pinguin. `variant`: undefined (roter Schal), 'emperor' (graublau, gelbe Wangen, ohne Schal),
+ * 'beanie' (lila Schal, blaue Mütze mit Bommel), 'shades' (lila Schal, Sonnenbrille).
+ */
+function penguin(id = 'test_penguin', name = 'Test-Pinguin', variant) {
+	const extra = [];
+	if (variant === 'emperor') {
+		extra.push(cube('cheek_l', 'head', [2.5, 9, -1], [2.75, 11, 1.5], 2), cube('cheek_r', 'head', [-2.75, 9, -1], [-2.5, 11, 1.5], 2));
+	} else if (variant === 'beanie') {
+		extra.push(cube('beanie', 'head', [-2.75, 11.75, -2.5], [2.75, 13.75, 2.5], 5), cube('pompom', 'head', [-0.75, 13.75, -0.75], [0.75, 15, 0.75], 4));
+	} else if (variant === 'shades') {
+		extra.push(cube('shades', 'head', [-2.25, 10.5, 2.25], [2.25, 11.5, 2.75], 7));
+	} else if (variant === 'heist') {
+		extra.push(cube('mask', 'head', [-2.75, 9.75, -2.5], [2.75, 11.25, 2.5], 7), cube('sack', 'flip', [3.75, 1, -1], [6.25, 4, 1.5], 6));
+	}
+	const base = penguinBase(id, name);
+	if (variant === 'heist') {
+		// Anhang E: sneak/grab/flee/handsup (synthetisch, deutlich sichtbar)
+		base.animations.push(
+			{ id: 'sneak', driver: 'sneak', lengthMs: 2400, tracks: [
+				track('pen', 'position', [key(0, [0, -1, 0]), key(1200, [0, -0.6, 0]), key(2400, [0, -1, 0])]),
+				track('body', 'rotation', [key(0, [25, 0, -6]), key(1200, [25, 0, 6]), key(2400, [25, 0, -6])]),
+			] },
+			{ id: 'grab', driver: 'grab', lengthMs: 2400, tracks: [
+				track('flip', 'rotation', [key(0, [0, 0, 0]), key(800, [-100, 0, -20]), key(1600, [-100, 0, -20]), key(2400, [0, 0, 0])]),
+				track('body', 'rotation', [key(0, [0, 0, 0]), key(800, [20, 0, 0]), key(1600, [20, 0, 0]), key(2400, [0, 0, 0])]),
+			] },
+			{ id: 'flee', driver: 'flee', lengthMs: 400, tracks: [
+				track('pen', 'rotation', [key(0, [-15, 0, -14]), key(200, [-15, 0, 14]), key(400, [-15, 0, -14])]),
+				track('foot_l', 'rotation', [key(0, [-40, 0, 0]), key(200, [35, 0, 0]), key(400, [-40, 0, 0])]),
+				track('foot_r', 'rotation', [key(0, [35, 0, 0]), key(200, [-40, 0, 0]), key(400, [35, 0, 0])]),
+			] },
+			{ id: 'handsup', driver: 'handsup', lengthMs: 1600, tracks: [
+				track('flip', 'rotation', [key(0, [0, 0, 150]), key(800, [0, 0, 160]), key(1600, [0, 0, 150])]),
+				track('flip_m', 'rotation', [key(0, [0, 0, -150]), key(800, [0, 0, -160]), key(1600, [0, 0, -150])]),
+			] },
+		);
+	}
+	if (variant === 'emperor') base.cubes = base.cubes.filter((c) => c.id !== 'scarf');
+	base.cubes.push(...extra);
+	return base;
+}
+/** Farben je Variante (Felder wie PAL: 0 Körper, 3 Schal, 5 Mütze, 7 Brille). */
+function penguinPal(variant) {
+	const p = [...PAL];
+	if (variant === 'emperor') {
+		p[0] = '#39404f';
+		p[2] = '#f2c230';
+	}
+	if (variant === 'beanie' || variant === 'shades') p[3] = '#8a3fd1';
+	if (variant === 'beanie') p[5] = '#2f64d8';
+	if (variant === 'shades') p[7] = '#0b0b10';
+	if (variant === 'heist') {
+		p[0] = '#141414';
+		p[7] = '#6c6f78';
+		p[6] = '#8a6a3c';
+	}
+	return p;
+}
+function penguinBase(id, name) {
 	return {
-		format: 2, id, name: 'Test-Pinguin', slot: 'pet', attach: 'ground', texture: TEX(id),
+		format: 2, id, name, slot: 'pet', attach: 'ground', texture: TEX(id),
 		bones: [
 			{ id: 'pen', pivot: [0, 0, 0] },
 			{ id: 'body', parent: 'pen', pivot: [0, 1, 0] },
@@ -272,26 +337,31 @@ function wings(id, ice) {
 
 // ---------- Teile ----------
 const ITEMS = new Map();
-function addSynthetic(model, glowColor) {
+function addSynthetic(model, glowColor, pal = PAL, hidden = false) {
 	const body = JSON.stringify(model);
 	const alpha = model.id === 'test_ice_wings' ? { 5: 150 } : null;
-	const tex = swatches(PAL, 8, 1, alpha);
+	const tex = swatches(pal, 8, 1, alpha);
 	let glow = null;
 	if (model.glow) {
 		glow = swatches(null, 8, model.glow.frames, null, (i, f) => (i === 4 || i === 5) ? (f % 2 ? glowColor : '#203040') : null);
 	}
-	ITEMS.set(model.id, { model, json: body, tex, glow, card: tex, hash: crypto.createHash('sha256').update(body).digest('hex').slice(0, 12) });
+	ITEMS.set(model.id, { model, json: body, tex, glow, card: tex, hidden, hash: crypto.createHash('sha256').update(body).digest('hex').slice(0, 12) });
 }
-function addReal(id) {
+function addReal(id, hidden = false) {
 	const json = fs.readFileSync(path.join(REAL, `${id}.json`), 'utf8');
 	const model = JSON.parse(json);
 	const glowPath = path.join(REAL, `${id}-glow.png`);
 	const tex = fs.readFileSync(path.join(REAL, `${id}.png`));
 	const glow = fs.existsSync(glowPath) ? fs.readFileSync(glowPath) : null;
-	ITEMS.set(id, { model, json, tex, glow, card: tex, hash: crypto.createHash('sha256').update(json).digest('hex').slice(0, 12) });
+	ITEMS.set(id, { model, json, tex, glow, card: tex, hidden, hash: crypto.createHash('sha256').update(json).digest('hex').slice(0, 12) });
 }
+/** Gefolge: [id, Größe] (Kaiserpinguin 1,25). */
+const EXTRAS = REAL
+	? [['penguin_emperor', 1.25], ['penguin_beanie', 1], ['penguin_shades', 1], ['penguin_heist', 1]]
+	: [['test_penguin_emperor', 1.25], ['test_penguin_beanie', 1], ['test_penguin_shades', 1], ['test_penguin_heist', 1]];
 if (REAL) {
 	for (const id of ['santa_hat', 'snow_cloud', 'snow_wings', 'ice_wings', 'penguin']) addReal(id);
+	for (const [id] of EXTRAS) if (fs.existsSync(path.join(REAL, `${id}.json`))) addReal(id, true);
 	say(`Echte Exporte aus ${REAL} (nur zur Laufzeit gelesen)`);
 } else {
 	addSynthetic(santa());
@@ -299,6 +369,10 @@ if (REAL) {
 	addSynthetic(wings('test_snow_wings', false), '#c8dcff');
 	addSynthetic(wings('test_ice_wings', true), '#7fd0ff');
 	addSynthetic(penguin());
+	addSynthetic(penguin('test_penguin_emperor', 'Test-Kaiserpinguin', 'emperor'), null, penguinPal('emperor'), true);
+	addSynthetic(penguin('test_penguin_beanie', 'Test-Pinguin mit Mütze', 'beanie'), null, penguinPal('beanie'), true);
+	addSynthetic(penguin('test_penguin_shades', 'Test-Pinguin mit Sonnenbrille', 'shades'), null, penguinPal('shades'), true);
+	addSynthetic(penguin('test_penguin_heist', 'Test-Schwarzes-Schaf', 'heist'), null, penguinPal('heist'), true);
 }
 
 // ---------- Zustand ----------
@@ -308,7 +382,9 @@ const options = { hat: {}, companion: {}, wings: {}, pet: {} };
 const streams = new Set();
 
 function flat(slot) {
-	const id = equipped[slot];
+	return flatItem(slot, equipped[slot]);
+}
+function flatItem(slot, id) {
 	if (!id) return null;
 	const it = ITEMS.get(id);
 	const m = it.model;
@@ -317,8 +393,15 @@ function flat(slot) {
 		scale: m.texture.scale, frames: m.texture.frames ?? 1, glow: it.glow ? `/v1/cosmetics/${id}-glow.png?v=${it.hash}` : null,
 		glowFrames: m.glow ? m.glow.frames : 0, glowFrameTimeMs: m.glow ? m.glow.frameTimeMs : null, hash: it.hash,
 	};
-	if (Object.keys(options[slot]).length) out.options = { ...options[slot] };
-	if (slot === 'pet') out.count = PET_COUNT;
+	if (Object.keys(options[slot] || {}).length) out.options = { ...options[slot] };
+	if (slot === 'pet') {
+		out.count = PET_COUNT;
+		out.petScale = 1;
+		if (PET_EXTRAS) {
+			// wie die echte API: gleiche Form je Extra (ohne count/extras), Größe in `petScale`
+			out.extras = EXTRAS.filter(([x]) => ITEMS.has(x)).map(([x, size]) => ({ ...flatItem('extra', x), petScale: size }));
+		}
+	}
 	return out;
 }
 function view(slot) {
@@ -332,7 +415,7 @@ function mine() {
 }
 function catalog() {
 	return {
-		cosmetics: [...ITEMS.values()].map(({ model: m, hash, glow }) => ({
+		cosmetics: [...ITEMS.values()].filter((it) => !it.hidden).map(({ model: m, hash, glow }) => ({
 			id: m.id, name: m.name, slot: m.slot, kind: 'builtin', unlock: 'code', status: 'approved', format: 2, owned: true,
 			equipped: equipped[m.slot] === m.id, template: null, emissive: false,
 			model: `/v1/cosmetics/${m.id}/model.json?v=${hash}`,

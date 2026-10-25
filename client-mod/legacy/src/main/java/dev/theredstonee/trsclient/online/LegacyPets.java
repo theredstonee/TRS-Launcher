@@ -89,7 +89,8 @@ public final class LegacyPets {
 			net.minecraft.entity.Entity v = p;
 			while (v.ridingEntity != null && v.ridingEntity != v) v = v.ridingEntity;
 			//?}
-			f.petOwner(p.getUniqueID(), p == self, v.posX, v.posY, v.posZ, p.renderYawOffset, hidden, BLOCKS);
+			f.petOwner(p.getUniqueID(), p == self, v.posX, v.posY, v.posZ, p.renderYawOffset, v == p && p.isSneaking(), hidden,
+					BLOCKS);
 		}
 		f.petsEnd();
 		keepAnchor(world, f.pets().size() > 0);
