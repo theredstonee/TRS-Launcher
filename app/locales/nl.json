@@ -3934,7 +3934,11 @@
         "walk": "Loopt",
         "slide": "Glijdt",
         "swim": "Zwemt",
-        "air": "Springt"
+        "air": "Springt",
+        "sneak": "Sluipt",
+        "grab": "Grijpt de buit",
+        "flee": "Vlucht",
+        "handsup": "Handen omhoog"
       },
       "count": "{n} × {name} | {n} × {name}",
       "counts": {
@@ -7334,6 +7338,15 @@
       "yourPet": "Jouw creator-huisdier",
       "theirPet": "Creator-huisdier",
       "intro": "Het is alleen van jou. Fans krijgen het met de codes die je hier maakt – ze wisselen ze in zoals elke cosmetische code (Skins → Code inwisselen).",
+      "escort": {
+        "title": "Gevolg",
+        "intro": "Het team heeft je nog een metgezel toegewezen – die loopt mee naast je huisdier. | Het team heeft je nog {n} metgezellen toegewezen – ze lopen mee naast je huisdier.",
+        "show": "Gevolg tonen",
+        "shown": "Je gevolg is weer zichtbaar.",
+        "hidden": "Je gevolg is verborgen.",
+        "visibleHint": "Anderen zien je gevolg naast je in het spel zolang je het toont.",
+        "hiddenHint": "Je gevolg is onzichtbaar voor anderen. Je gewone huisdier blijft."
+      },
       "limit": {
         "title": "Maandlimiet {month}",
         "titleNoMonth": "Maandlimiet",

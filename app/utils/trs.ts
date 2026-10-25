@@ -136,6 +136,18 @@ export type TrsHat = z.infer<typeof trsHatSchema>
 export const trsCosmeticUnlockSchema = z.enum(['free', 'code', 'admin', 'achievement', 'owner', 'event', 'reward', 'other']).catch('other')
 export type TrsCosmeticUnlock = z.infer<typeof trsCosmeticUnlockSchema>
 
+/** Größe eines Begleiters am Boden (Standard 1; Kaiserpinguin 1,25). */
+export const trsPetScaleSchema = z.number().min(0.5).max(2).catch(1).default(1)
+/** Gefolge: zusätzlicher Begleiter am getragenen Pet (nur beim Creator selbst); das Modell lädt `headCosmeticModel(id)`. */
+export const trsPetExtraSchema = z.object({
+  id: capeId,
+  name: text(48),
+  petScale: trsPetScaleSchema,
+  hash: z.string().regex(/^[A-Za-z0-9]{1,64}$/).nullable().catch(null).default(null),
+  preview: z.boolean().catch(false).default(false),
+})
+export type TrsPetExtra = z.infer<typeof trsPetExtraSchema>
+
 /** Kopf-Kosmetik für die Skins-Seite: besessen oder gesperrt, v2 = 3D-Modell mit Vorschau. */
 export const trsHeadCosmeticSchema = z.object({
   id: capeId,
@@ -161,6 +173,10 @@ export const trsHeadCosmeticSchema = z.object({
   creator: z.boolean().catch(false).default(false),
   /** Getragenes Teil: gewählte Optionen; fehlende gelten als Standard des Modells. */
   options: trsCosmeticOptionsSchema,
+  /** Größe des Begleiters am Boden (Standard 1). */
+  petScale: trsPetScaleSchema,
+  /** Gefolge am getragenen Begleiter (höchstens 4); ältere Kerne kennen es nicht. */
+  extras: z.array(trsPetExtraSchema).max(4).catch([]).default([]),
 })
 export type TrsHeadCosmetic = z.infer<typeof trsHeadCosmeticSchema>
 

@@ -3934,7 +3934,11 @@
         "walk": "Anda",
         "slide": "Desliza",
         "swim": "Nada",
-        "air": "Pula"
+        "air": "Pula",
+        "sneak": "Esgueira-se",
+        "grab": "Pega o butim",
+        "flee": "Foge",
+        "handsup": "Mãos ao alto"
       },
       "count": "{n} × {name} | {n} × {name}",
       "counts": {
@@ -7334,6 +7338,15 @@
       "yourPet": "Seu pet de criador",
       "theirPet": "Pet de criador",
       "intro": "Ele é só seu. Os fãs ganham ele com os códigos que você cria aqui – eles resgatam como qualquer código de cosmético (Skins → Resgatar código).",
+      "escort": {
+        "title": "Comitiva",
+        "intro": "A equipe atribuiu mais um companheiro a você – ele acompanha o seu bichinho. | A equipe atribuiu mais {n} companheiros a você – eles acompanham o seu bichinho.",
+        "show": "Mostrar comitiva",
+        "shown": "Sua comitiva está visível de novo.",
+        "hidden": "Sua comitiva está oculta.",
+        "visibleHint": "Os outros veem a sua comitiva ao seu lado no jogo enquanto você a mostrar.",
+        "hiddenHint": "Sua comitiva está invisível para os outros. Seu bichinho normal continua."
+      },
       "limit": {
         "title": "Limite mensal {month}",
         "titleNoMonth": "Limite mensal",

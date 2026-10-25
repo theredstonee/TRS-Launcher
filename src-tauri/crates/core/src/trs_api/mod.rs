@@ -511,6 +511,8 @@ pub struct TrsApi {
     pub(crate) achievements: achievements::ReportQueue,
     /// Adressen der v2-Kopf-Kosmetik aus dem letzten Katalog (für die 3D-Vorschau).
     head_sources: std::sync::Mutex<std::collections::HashMap<String, head_cosmetics::V2Source>>,
+    /// IDs der Gefolge-Begleiter in `head_sources` (nicht im Katalog, bleiben beim Neuladen erhalten).
+    extra_ids: std::sync::Mutex<Vec<String>>,
     /// Aktive Events des Spielers (aus `GET /v1/me` und `events_changed`, §31) – nur im Speicher.
     events: std::sync::Mutex<Vec<String>>,
     /// Davon die Events, deren Look (Design & Effekte) der Spieler sehen soll (`eventLook`/`look`,
@@ -588,6 +590,7 @@ impl TrsApi {
             appeal_tokens: sanctions::AppealTokens::default(),
             achievements: achievements::ReportQueue::default(),
             head_sources: std::sync::Mutex::default(),
+            extra_ids: std::sync::Mutex::default(),
             events: std::sync::Mutex::default(),
             look: std::sync::Mutex::default(),
         })

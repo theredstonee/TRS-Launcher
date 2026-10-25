@@ -4002,7 +4002,11 @@
         "walk": "Walks",
         "slide": "Slides",
         "swim": "Swims",
-        "air": "Jumps"
+        "air": "Jumps",
+        "sneak": "Sneaks",
+        "grab": "Grabs loot",
+        "flee": "Flees",
+        "handsup": "Hands up"
       },
       "count": "{n} × {name} | {n} × {name}",
       "counts": {
@@ -7879,6 +7883,15 @@
       "yourPet": "Your creator pet",
       "theirPet": "Creator pet",
       "intro": "It belongs to you alone. Fans get it with the codes you create here – they redeem them like any cosmetic code (Skins → Redeem code).",
+      "escort": {
+        "title": "Entourage",
+        "intro": "The team assigned you one more companion – it walks along in addition to your pet. | The team assigned you {n} more companions – they walk along in addition to your pet.",
+        "show": "Show entourage",
+        "shown": "Your entourage is visible again.",
+        "hidden": "Your entourage is hidden.",
+        "visibleHint": "Others see your entourage next to you in the game while it is shown.",
+        "hiddenHint": "Your entourage is invisible to others. Your regular pet stays."
+      },
       "limit": {
         "title": "Monthly limit {month}",
         "titleNoMonth": "Monthly limit",

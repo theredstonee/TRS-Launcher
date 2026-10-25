@@ -823,6 +823,7 @@ pub fn run() {
             commands::creator::creator_packs,
             commands::creator::creator_dashboard,
             commands::creator::creator_pet,
+            commands::creator::creator_set_pet_extras,
             commands::creator::creator_pet_codes,
             commands::creator::creator_create_pet_codes,
             commands::creator::creator_revoke_pet_code,

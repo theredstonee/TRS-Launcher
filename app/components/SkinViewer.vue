@@ -3,7 +3,8 @@ import type { SkinVariant } from '~/types'
 import type { CosmeticInstance } from '~/utils/cosmetic-v2/view'
 import {
   modelTop,
-  petSlots,
+  petGroup,
+  petGroupSlots,
   petTimeOffset,
   validateModel,
   type CosmeticModel,
@@ -56,8 +57,14 @@ const props = withDefaults(
     pet?: ViewerCosmetic | null
     /** So viele Begleiter am Boden (1…4, vom Server), versetzt nebeneinander. */
     petCount?: number
+    /** Größe des Haupt-Pets (Standard 1). */
+    petScale?: number
+    /** Gefolge: zusätzliche Begleiter (je 1×, eigenes Modell, eigene Größe), gesamt mit dem Haupt-Pet höchstens 8. */
+    petExtras?: { cosmetic: ViewerCosmetic; scale: number }[]
     /** Zustand der Begleiter am Boden (idle/walk/slide/swim/air). */
     petState?: PetState
+    /** Hochzählen startet den aktuellen Zustand neu (ein erneuter Klick auf „grab“ spielt es noch einmal). */
+    petStateTick?: number
     /** Spieler-UUID für den Zeitversatz je Begleiter (sonst laufen alle im Gleichschritt). */
     petSeed?: string
     /** Wahl der abschaltbaren Teile je Fach (Anhang D), z. B. `{ hat: { beard: false } }`. */
@@ -85,7 +92,10 @@ const props = withDefaults(
     wingState: 'idle',
     pet: null,
     petCount: 1,
+    petScale: 1,
+    petExtras: () => [],
     petState: 'idle',
+    petStateTick: 0,
     petSeed: '',
     cosmeticOptions: null,
     night: false,
@@ -291,7 +301,7 @@ const companionSlot: CosmeticSlot = { id: 'companion', inst: null, top: 0, token
 const wingsSlot: CosmeticSlot = { id: 'wings', inst: null, top: 0, token: 0, emptyTop: 0 }
 
 /** Begleiter am Boden: bis zu 4 Exemplare desselben Modells, je mit eigenem Zeitversatz. */
-const petSlot = { list: [] as { inst: CosmeticInstance; offset: number }[], token: 0 }
+const petSlot = { list: [] as { inst: CosmeticInstance; offset: number; scale: number }[], token: 0 }
 
 /** Oberkante für die Kamera: Hut und Begleiter zusammen, mindestens der Nacken. */
 function cameraTop(): number {
@@ -345,6 +355,12 @@ async function applySlot(slot: CosmeticSlot, data: ViewerCosmetic | null | undef
   }
 }
 
+/** Beginn des aktuellen Begleiter-Zustands (für `grab`: läuft einmalig ab hier statt zur Wanduhr, Anhang E). */
+let petStateSince = Date.now()
+function petTime(now: number, offset: number): number {
+  return props.petState === 'grab' ? now - petStateSince : now + offset
+}
+
 function clearPets() {
   for (const p of petSlot.list) p.inst.dispose()
   petSlot.list = []
@@ -357,37 +373,60 @@ function clearPets() {
 async function applyPets() {
   const token = ++petSlot.token
   if (!viewer) return
-  const data = props.pet
-  if (!data) {
+  const main = props.pet
+  if (!main) {
     clearPets()
     applyFocus()
     return
   }
-  try {
+  const size = (img: HTMLImageElement) => ({ width: img.naturalWidth, height: img.naturalHeight })
+  /** Modell + Texturen prüfen und laden; wirft bei einem ungültigen Modell. */
+  const load = async (data: ViewerCosmetic) => {
     const [{ createCosmetic }, texture, glow] = await Promise.all([
       import('~/utils/cosmetic-v2/view'),
       loadImage(data.texture),
       data.glow ? loadImage(data.glow) : Promise.resolve(null),
     ])
-    if (token !== petSlot.token || !viewer) return
     const hasGlow = !!glow && data.model.glow != null
-    const size = (img: HTMLImageElement) => ({ width: img.naturalWidth, height: img.naturalHeight })
     const check = validateModel(data.model, { texture: size(texture), glow: hasGlow ? size(glow!) : null })
     if (!check.ok) throw new Error(`Kosmetik-Modell ungültig: ${check.errors.slice(0, 3).join('; ')}`)
     const model = data.model as unknown as CosmeticModel
     if (model.attach !== 'ground') throw new Error('Begleiter am Boden braucht attach ground')
+    return { create: () => createCosmetic(model, { texture, glow: hasGlow ? glow : null }), id: model.id }
+  }
+  try {
+    const extras = props.petExtras ?? []
+    // Gefolge einzeln laden: ein kaputtes Extra lässt die übrigen stehen.
+    const loadedExtras = await Promise.all(
+      extras.map(async (e) => {
+        try {
+          return await load(e.cosmetic)
+        } catch (err) {
+          console.warn(err)
+          return null
+        }
+      }),
+    )
+    const mainLoaded = await load(main)
+    if (token !== petSlot.token || !viewer) return
+    // Zeichenreihenfolge: count x Haupt-Pet, dann je 1 x Extra; ohne Extra-Modell fällt der Platz weg.
+    const group = petGroup(props.petCount, props.petScale, extras.map((e) => e.scale)).filter((g) => g.kind === 'main' || loadedExtras[g.extra])
+    const spots = petGroupSlots(group.length, group.some((g) => g.kind === 'extra'))
     clearPets()
-    petSlot.list = petSlots(props.petCount).map((spot, i) => {
-      const inst = createCosmetic(model, { texture, glow: hasGlow ? glow : null })
+    petSlot.list = group.map((g, i) => {
+      const spot = spots[i]!
+      const src = g.kind === 'main' ? mainLoaded : loadedExtras[g.extra]!
+      const inst = src.create()
       inst.root.position.set(spot.x, spot.y, spot.z)
       inst.root.rotation.y = spot.yaw
-      inst.setOptions(props.cosmeticOptions?.pet)
+      inst.root.scale.setScalar(g.scale)
+      inst.setOptions(g.kind === 'main' ? props.cosmeticOptions?.pet : undefined)
       viewer!.playerObject.add(inst.root)
-      return { inst, offset: petTimeOffset(props.petSeed || model.id, i) }
+      return { inst, offset: petTimeOffset(props.petSeed || mainLoaded.id, i), scale: g.scale }
     })
     applyLight()
     const now = Date.now()
-    for (const p of petSlot.list) p.inst.update(now + p.offset, { camera: viewer.camera, state: props.petState })
+    for (const p of petSlot.list) p.inst.update(petTime(now, p.offset), { camera: viewer.camera, state: props.petState })
     applyFocus()
   } catch (e) {
     if (token !== petSlot.token) return
@@ -468,26 +507,33 @@ function focusGoal(dir: Vec): [Vec, Vec] | null {
     const top = Math.max(16, neck + cameraTop() + 1)
     target = { x: 0, y: (bottom + top) / 2, z: 0 }
     distance = (4.5 + 16.5 / Math.tan(fov / 2) / viewer.zoom) * ((top - bottom) / 32)
-    // Begleiter am Boden: Bild nach links (+x) erweitern, damit Spieler und Begleiter hineinpassen.
-    const reach = petReach()
-    if (reach > 8) {
-      target.x = (reach - 8) / 2
-      distance *= 1 + (reach - 8) / 64
+    // Begleiter am Boden: Bild zu den Seiten erweitern, damit Spieler und alle Begleiter hineinpassen.
+    const [lo, hi] = petExtent()
+    if (hi - lo > 16) {
+      target.x = (lo + hi) / 2
+      distance *= 1 + (hi - lo - 16) / 64
     }
   }
   return [target, { x: target.x + dir.x * distance, y: target.y + dir.y * distance, z: target.z + dir.z * distance }]
 }
 
-/** Äußerste x-Kante der Begleiter am Boden (0 = keine). */
-function petReach(): number {
-  return petSlot.list.reduce((m, p) => Math.max(m, p.inst.root.position.x + 8), 0)
+/** Waagerechter Bereich von Spieler (+-8) und allen Begleitern am Boden (größere ragen weiter hinaus). */
+function petExtent(): [number, number] {
+  let lo = -8
+  let hi = 8
+  for (const p of petSlot.list) {
+    const x = p.inst.root.position.x
+    lo = Math.min(lo, x - 8 * p.scale)
+    hi = Math.max(hi, x + 8 * p.scale)
+  }
+  return [lo, hi]
 }
 
 let lastFocus: string | null = null
 /** Kamera zum Fokus schwenken – nur wenn sich Fokus oder Modellhöhe geändert haben (sonst bleibt alles, wie der Nutzer es gedreht hat). */
 function applyFocus(instant = false) {
   if (!viewer) return
-  const key = `${props.focus}:${cameraTop()}:${petReach()}`
+  const key = `${props.focus}:${cameraTop()}:${petExtent().join(',')}`
   if (key === lastFocus) return
   const enteringHead = props.focus === 'head' && !lastFocus?.startsWith('head')
   const enteringCape = props.focus === 'cape' && !lastFocus?.startsWith('cape')
@@ -543,7 +589,7 @@ function beforeRender() {
     hatSlot.inst?.update(now, { camera: viewer.camera })
     companionSlot.inst?.update(now, { camera: viewer.camera })
     wingsSlot.inst?.update(now, { camera: viewer.camera, state: props.wingState })
-    for (const p of petSlot.list) p.inst.update(now + p.offset, { camera: viewer.camera, state: props.petState })
+    for (const p of petSlot.list) p.inst.update(petTime(now, p.offset), { camera: viewer.camera, state: props.petState })
     leanForSneak()
   }
 }
@@ -600,7 +646,8 @@ watch(() => props.height, resize)
 watch(() => props.cosmetic, () => void applySlot(hatSlot, props.cosmetic))
 watch(() => props.companion, () => void applySlot(companionSlot, props.companion))
 watch(() => props.wings, () => void applySlot(wingsSlot, props.wings))
-watch(() => [props.pet, props.petCount, props.petSeed], () => void applyPets())
+watch(() => [props.pet, props.petCount, props.petScale, props.petExtras, props.petSeed], () => void applyPets())
+watch(() => [props.petState, props.petStateTick], () => (petStateSince = Date.now()))
 watch(() => props.cosmeticOptions, applyOptions, { deep: true })
 watch(() => props.night, applyLight)
 watch(() => props.focus, () => applyFocus())

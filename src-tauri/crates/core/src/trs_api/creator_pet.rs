@@ -36,6 +36,8 @@ pub const PET_COLORS_MAX: usize = 200;
 pub const PET_IMAGE_MAX_BYTES: usize = 2 * 1024 * 1024;
 /// Größtes Kartenbild (Vorschauen sind höchstens 512 px groß).
 const MAX_CARD_BYTES: usize = 2 * 1024 * 1024;
+/// Höchstens so viele Begleiter im Gefolge.
+const MAX_EXTRAS: usize = 4;
 /// Upload des Referenzbilds: der Server kodiert neu, das dauert etwas.
 const IMAGE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(60);
 
@@ -51,6 +53,21 @@ pub struct CreatorPet {
     /// So viele laufen beim Creator mit (1–4 nach Fans), falls bekannt.
     pub count: Option<u64>,
     /// `false` = Kosmetik gerade nicht verfügbar (Codes lassen sich nicht erstellen).
+    pub available: bool,
+    #[serde(skip)]
+    pub card_url: Option<String>,
+}
+
+/// Ein Begleiter aus dem Gefolge des Creators (vom Team zugeordnet, nur für ihn selbst).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreatorPetExtra {
+    pub cosmetic_id: String,
+    pub name: String,
+    pub card: Option<String>,
+    /// Größe im Spiel (Standard 1; Kaiserpinguin 1,25).
+    pub pet_scale: f32,
+    /// `false` = Kosmetik gerade nicht verfügbar.
     pub available: bool,
     #[serde(skip)]
     pub card_url: Option<String>,
@@ -93,10 +110,14 @@ pub struct PetRequest {
 }
 
 /// Stand für den Reiter „Haustier“.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreatorPetState {
     pub pet: Option<CreatorPet>,
+    /// Gefolge: bis zu 4 zusätzliche Begleiter (leer = keins).
+    pub extras: Vec<CreatorPetExtra>,
+    /// Gefolge ist für andere sichtbar (Schalter „Gefolge zeigen“); fehlt es, gilt „an“.
+    pub show_extras: bool,
     pub limit: Option<PetLimit>,
     /// Der neueste Wunsch (leer für Helfer).
     pub request: Option<PetRequest>,
@@ -139,6 +160,27 @@ fn clean_pet(v: Option<&Value>) -> Option<CreatorPet> {
         available: v.get("available").and_then(Value::as_bool).unwrap_or(true),
         card_url: str_of(v, "cardUrl").or_else(|| str_of(v, "card")).filter(|u| u.len() <= 500),
     })
+}
+
+fn clean_extras(v: Option<&Value>) -> Vec<CreatorPetExtra> {
+    v.and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|e| {
+            let e = e.is_object().then_some(e)?;
+            let cosmetic_id = str_of(e, "cosmeticId").or_else(|| str_of(e, "id")).and_then(|id| cosmetic_id(&id))?;
+            let name = str_of(e, "name").map(|n| validate::text(n.trim(), 48)).filter(|n| !n.trim().is_empty());
+            Some(CreatorPetExtra {
+                name: name.unwrap_or_else(|| cosmetic_id.clone()),
+                cosmetic_id,
+                card: None,
+                pet_scale: super::types::clean_scale(e.get("petScale")).unwrap_or(1.0),
+                available: e.get("available").and_then(Value::as_bool).unwrap_or(true),
+                card_url: str_of(e, "cardUrl").or_else(|| str_of(e, "card")).filter(|u| u.len() <= 500),
+            })
+        })
+        .take(MAX_EXTRAS)
+        .collect()
 }
 
 fn month(v: Option<String>) -> Option<String> {
@@ -204,6 +246,8 @@ fn latest_request(v: &Value) -> Option<PetRequest> {
 pub(crate) fn clean_state(v: &Value) -> Option<CreatorPetState> {
     v.is_object().then(|| CreatorPetState {
         pet: clean_pet(v.get("pet")),
+        extras: clean_extras(v.get("extras")),
+        show_extras: v.get("showExtras").and_then(Value::as_bool).unwrap_or(true),
         limit: clean_limit(v),
         request: latest_request(v),
         can_request: v.get("canRequest").and_then(Value::as_bool),
@@ -366,23 +410,41 @@ impl NewPetRequest {
 impl Launcher {
     /// Kartenbild der eigenen API laden (mit Token – Creator-Haustiere sind oft nicht öffentlich).
     async fn pet_card(&self, pet: &mut CreatorPet) {
-        let Some(path) = pet.card_url.as_deref().and_then(|u| self.trs.own_path(u)).map(str::to_owned) else { return };
+        pet.card = self.card_data(pet.card_url.as_deref()).await;
+    }
+
+    /// Kartenbild von der eigenen API als Data-URL (`None`, wenn die Adresse fremd oder das Bild kaputt ist).
+    async fn card_data(&self, url: Option<&str>) -> Option<String> {
+        let path = url.and_then(|u| self.trs.own_path(u))?.to_owned();
         let token = self.creator_token().await;
-        if let Some(bytes) = self.trs.own_png(&path, token.as_deref(), MAX_CARD_BYTES).await
-            && png::size(&bytes).is_some()
-        {
-            pet.card = Some(format!("data:image/png;base64,{}", STANDARD.encode(&bytes)));
+        let bytes = self.trs.own_png(&path, token.as_deref(), MAX_CARD_BYTES).await?;
+        png::size(&bytes)?;
+        Some(format!("data:image/png;base64,{}", STANDARD.encode(&bytes)))
+    }
+
+    async fn state_with_cards(&self, raw: &Value) -> Result<CreatorPetState> {
+        let mut state = clean_state(raw).ok_or_else(super::bad_response)?;
+        if let Some(pet) = state.pet.as_mut() {
+            self.pet_card(pet).await;
         }
+        let cards = futures::future::join_all(state.extras.iter().map(|e| self.card_data(e.card_url.as_deref()))).await;
+        for (extra, card) in state.extras.iter_mut().zip(cards) {
+            extra.card = card;
+        }
+        Ok(state)
     }
 
     /// Eigenes Haustier, Monatslimit und Wunsch (`GET /v1/creator/pet`).
     pub async fn creator_pet(&self, as_creator: Option<&str>) -> Result<CreatorPetState> {
         let raw: Value = self.trs_get(Req::get(acting("/v1/creator/pet".into(), as_creator)?)).await?;
-        let mut state = clean_state(&raw).ok_or_else(super::bad_response)?;
-        if let Some(pet) = state.pet.as_mut() {
-            self.pet_card(pet).await;
-        }
-        Ok(state)
+        self.state_with_cards(&raw).await
+    }
+
+    /// Gefolge für andere zeigen oder verstecken (`PUT /v1/creator/pet/extras { show }`; die Antwort enthält
+    /// nur `{ extras, showExtras, max }`, darum danach der volle Stand). Helfer bekommen 403 `creator_helper_right`.
+    pub async fn creator_set_pet_extras(&self, show: bool, as_creator: Option<&str>) -> Result<CreatorPetState> {
+        let _: Value = self.trs_get(Req::put(acting("/v1/creator/pet/extras".into(), as_creator)?, json!({ "show": show }))).await?;
+        self.creator_pet(as_creator).await
     }
 
     /// Alle Haustier-Codes (ohne Klartext).
@@ -473,6 +535,30 @@ mod tests {
     }
 
     #[test]
+    fn escort_is_read_tolerantly() {
+        let raw = json!({
+            "pet": { "cosmeticId": "penguin", "name": "Pinguin", "count": 1 },
+            "extras": [
+                { "cosmeticId": "penguin_emperor", "name": "Kaiserpinguin", "card": "/v1/cosmetics/penguin_emperor/card.png?v=ab", "petScale": 1.25, "scale": 8, "available": false },
+                { "cosmeticId": "penguin_beanie", "name": "Mütze" },
+                { "cosmeticId": "../x", "name": "kaputt" },
+                { "cosmeticId": "penguin_shades", "petScale": 99 },
+                "kein Objekt", { "cosmeticId": "a" }, { "cosmeticId": "b" }
+            ],
+            "showExtras": false
+        });
+        let s = clean_state(&raw).unwrap();
+        let ids: Vec<_> = s.extras.iter().map(|e| (e.cosmetic_id.as_str(), e.pet_scale)).collect();
+        assert_eq!(ids, [("penguin_emperor", 1.25), ("penguin_beanie", 1.0), ("penguin_shades", 2.0), ("a", 1.0)], "kaputte fallen weg, höchstens 4, Größe geklemmt auf 0,5 bis 2, `scale` zählt nicht");
+        assert_eq!(s.extras[0].name, "Kaiserpinguin");
+        assert!(s.extras[0].card_url.as_deref().unwrap().ends_with("card.png?v=ab"));
+        assert!(!s.show_extras);
+        // Ältere API: kein Gefolge, Schalter gilt als an.
+        let old = clean_state(&json!({ "pet": { "cosmeticId": "penguin" } })).unwrap();
+        assert!(old.extras.is_empty() && old.show_extras);
+    }
+
+    #[test]
     fn requests_are_normalized() {
         let raw = json!({ "requests": [
             { "id": 5, "status": "declined", "species": "Fuchs", "description": "Mit Schal\nund Mütze", "colors": "", "image": { "url": "/v1/creator-pet-images/x.jpg" },
@@ -495,7 +581,7 @@ mod tests {
     fn pet_events_arrive_as_creator_updates() {
         use super::super::creator::decode_live;
         use super::super::live::LiveEvent;
-        for kind in ["pet_assigned", "pet_removed", "pet_request_answered"] {
+        for kind in ["pet_assigned", "pet_removed", "pet_extras_changed", "pet_request_answered"] {
             let data = json!({ "kind": kind, "reason": "Fertig – viel Spaß!" }).to_string();
             match decode_live("creator_updated", &data) {
                 Some(LiveEvent::CreatorUpdated { kind: k, reason, .. }) => {

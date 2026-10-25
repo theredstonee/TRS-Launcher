@@ -17,7 +17,7 @@ export const CHANNELS = ['rotation', 'position', 'scale'] as const
 export type Channel = (typeof CHANNELS)[number]
 export const INTERPOLATIONS = ['linear', 'smooth', 'step'] as const
 export type Interpolation = (typeof INTERPOLATIONS)[number]
-export const DRIVERS = ['idle', 'walk', 'sneak', 'jump', 'air', 'slide', 'swim'] as const
+export const DRIVERS = ['idle', 'walk', 'sneak', 'jump', 'air', 'slide', 'swim', 'flee', 'grab', 'handsup'] as const
 export type Driver = (typeof DRIVERS)[number]
 /**
  * Fächer und ihr Anhängepunkt (§3): Hut/Begleiter am Kopf, Flügel am Rumpf (seit 2026-10-16),
@@ -32,12 +32,23 @@ export const SLOT_ATTACH: Record<CosmeticSlot, Attach> = { hat: 'head', companio
 export const STATES = ['idle', 'air', 'sneak'] as const
 export type WingState = (typeof STATES)[number]
 /** Zustände eines Begleiters am Boden (Anhang D); fehlt eine Animation → idle. */
-export const PET_STATES = ['idle', 'walk', 'slide', 'swim', 'air'] as const
+export const PET_STATES = ['idle', 'walk', 'slide', 'swim', 'air', 'sneak', 'grab', 'flee', 'handsup'] as const
 export type PetState = (typeof PET_STATES)[number]
+/** Zustände, die jedes Begleiter-Modell zeigen darf; die übrigen (Anhang E) nur, wenn das Modell den Treiber hat. */
+export const PET_BASE_STATES: readonly PetState[] = ['idle', 'walk', 'slide', 'swim', 'air']
+/** Rückfall eines Begleiter-Zustands ohne eigene Animation (Anhang E). */
+export const PET_FALLBACK: Partial<Record<PetState, PetState>> = { sneak: 'walk', flee: 'walk', grab: 'idle', handsup: 'idle' }
+/** Dauer der einmaligen Animation `grab` im Spiel (ms). */
+export const PET_GRAB_MS = 2400
 /** Jeder Zustand, den ein Modell spielen kann (Spieler- oder Begleiter-Zustand). */
 export type AnimState = WingState | PetState
 /** Höchstens so viele Begleiter am Boden je Spieler (`count` vom Server). */
 export const MAX_PETS = 4
+/** Gefolge: höchstens so viele zusätzliche Begleiter (Creator), gesamt höchstens `MAX_PET_GROUP` je Besitzer. */
+export const MAX_PET_EXTRAS = 4
+export const MAX_PET_GROUP = 8
+/** Erlaubte Größe eines Begleiters (`petScale`, Standard 1; Kaiserpinguin 1,25) – nie `scale`, das ist der Textur-Faktor. */
+export const PET_SCALE_RANGE = [0.5, 2] as const
 /** Höchstens so viele abschaltbare Teile je Modell (Anhang D). */
 export const MAX_OPTIONS = 4
 /** Überblenden zwischen Zuständen (§7). */
@@ -59,7 +70,7 @@ export const LIMITS = {
   stripEdge: 4096,
   frames: 16,
   scale: [1, 2, 4, 8, 16],
-  animations: 8,
+  animations: 12,
   tracks: 32,
   keys: 64,
   halos: 16,
@@ -360,12 +371,21 @@ export function wingState(p: { crouching?: boolean; flying?: boolean; onGround?:
 }
 
 /** Welcher Treiber für einen Zustand läuft: der Zustand selbst, sonst Rückfall idle (§7). */
-export function resolveDriver(model: Pick<CosmeticModel, 'animations'>, state: AnimState = 'idle'): Driver {
-  return (model.animations ?? []).some((a) => (a.driver ?? 'idle') === state) ? state : 'idle'
+export function resolveDriver(model: Pick<CosmeticModel, 'animations'> & { slot?: string }, state: AnimState = 'idle'): Driver {
+  const has = (d: string) => (model.animations ?? []).some((a) => (a.driver ?? 'idle') === d)
+  if (has(state)) return state
+  // Begleiter am Boden: sneak/flee → walk, grab/handsup → idle (Anhang E); Flügel fallen immer auf idle.
+  const back = model.slot === 'pet' ? PET_FALLBACK[state as PetState] : undefined
+  return back && has(back) ? back : 'idle'
+}
+
+/** Kann die Vorschau diesen Begleiter-Zustand zeigen? Die fünf Grundzustände immer, die übrigen nur mit eigener Animation. */
+export function petStateAvailable(model: Pick<CosmeticModel, 'animations'>, state: PetState): boolean {
+  return PET_BASE_STATES.includes(state) || (model.animations ?? []).some((a) => a.driver === state)
 }
 
 /** Pose der Zustands-Animationen (exklusiv, mit Rückfall auf idle). */
-export function stateAnimations(model: Pick<CosmeticModel, 'animations'>, timeMs: number, state: AnimState = 'idle'): Map<string, BonePose> {
+export function stateAnimations(model: Pick<CosmeticModel, 'animations'> & { slot?: string }, timeMs: number, state: AnimState = 'idle'): Map<string, BonePose> {
   return samplePoses(model, timeMs, [resolveDriver(model, state)])
 }
 
@@ -384,7 +404,7 @@ export function blendPoses(a: Map<string, BonePose>, b: Map<string, BonePose>, w
 }
 
 export interface StateMixer {
-  pose(model: Pick<CosmeticModel, 'animations'>, timeMs: number, state?: AnimState): Map<string, BonePose>
+  pose(model: Pick<CosmeticModel, 'animations'> & { slot?: string }, timeMs: number, state?: AnimState): Map<string, BonePose>
   readonly state: AnimState | null
 }
 
@@ -548,6 +568,66 @@ export function petSlots(count: unknown): { x: number; y: number; z: number; yaw
     z: PET_ANCHOR.z + dz,
     yaw: PET_ANCHOR.yaw + dyaw,
   }))
+}
+
+/** Größe eines Begleiters vom Server (`petScale`): Zahl, auf 0,5 bis 2 geklemmt, sonst 1. */
+export function petScale(scale: unknown): number {
+  if (typeof scale !== 'number' || !Number.isFinite(scale)) return 1
+  return Math.round(Math.min(PET_SCALE_RANGE[1], Math.max(PET_SCALE_RANGE[0], scale)) * 1000) / 1000
+}
+
+/** Eintrag der Gruppe: `main` = das Haupt-Pet (`count`-mal), `extra` = Gefolge (Nummer in der Liste). */
+export interface PetGroupEntry {
+  kind: 'main' | 'extra'
+  extra: number
+  scale: number
+}
+
+/**
+ * Alle Begleiter eines Besitzers in Zeichenreihenfolge: `count` × Haupt-Pet, dann je 1 × jedes Extra,
+ * gesamt höchstens `MAX_PET_GROUP` (Überzähliges fällt weg, zuerst Extras vom Ende).
+ */
+export function petGroup(count: unknown, mainScale: unknown, extraScales: readonly unknown[]): PetGroupEntry[] {
+  const main = petCount(count)
+  const scale = petScale(mainScale)
+  const out: PetGroupEntry[] = Array.from({ length: main }, () => ({ kind: 'main', extra: 0, scale }))
+  const room = Math.max(0, MAX_PET_GROUP - main)
+  extraScales.slice(0, Math.min(MAX_PET_EXTRAS, room)).forEach((s, i) => out.push({ kind: 'extra', extra: i, scale: petScale(s) }))
+  return out
+}
+
+/**
+ * Breite Aufstellung fürs Gefolge: erst ein Paar links/rechts neben dem Spieler, dann ein weiteres Paar
+ * weiter außen, dann zwei Reihen dahinter – so verdeckt keiner den anderen, auch bei verschieden großen Tieren.
+ * Der erste Platz ist derselbe wie beim einzelnen Begleiter (Haupt-Pet).
+ */
+const PET_FORMATION_WIDE = [
+  [PET_ANCHOR.x, PET_ANCHOR.z, PET_ANCHOR.yaw],
+  [-PET_ANCHOR.x, PET_ANCHOR.z, -PET_ANCHOR.yaw],
+  [PET_ANCHOR.x + 10, -5, 0.25],
+  [-(PET_ANCHOR.x + 10), -5, -0.25],
+  [8, -17, 0.1],
+  [-8, -17, -0.1],
+  [PET_ANCHOR.x + 17, -16, 0.15],
+  [-(PET_ANCHOR.x + 17), -16, -0.15],
+] as const
+
+/**
+ * Plätze für `total` Begleiter (0…8). Ohne Gefolge (`wide = false`) stehen die ersten vier wie bei
+ * `petSlots` links vom Spieler (vom Betrachter aus rechts), weitere spiegelbildlich auf der anderen Seite;
+ * mit Gefolge (`wide = true`) gilt die breite Aufstellung (Paare links/rechts, dahinter Reihen).
+ */
+export function petGroupSlots(total: number, wide = false): { x: number; y: number; z: number; yaw: number }[] {
+  const n = Math.max(0, Math.min(MAX_PET_GROUP, Math.floor(total)))
+  if (wide) return PET_FORMATION_WIDE.slice(0, n).map(([x, z, yaw]) => ({ x, y: PET_ANCHOR.y, z, yaw }))
+  const left = PET_FORMATION.map(([dx, dz, dyaw]) => ({
+    x: PET_ANCHOR.x + dx,
+    y: PET_ANCHOR.y,
+    z: PET_ANCHOR.z + dz,
+    yaw: PET_ANCHOR.yaw + dyaw,
+  }))
+  const right = left.map((s) => ({ ...s, x: -s.x, yaw: -s.yaw }))
+  return [...left, ...right].slice(0, n)
 }
 
 // --- Prüfung -----------------------------------------------------------------------------------

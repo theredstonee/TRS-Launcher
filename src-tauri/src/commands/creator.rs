@@ -152,6 +152,12 @@ pub async fn creator_pet(launcher: State<'_, LauncherState>, as_creator: Option<
     Ok(launcher.creator_pet(as_creator.as_deref()).await?)
 }
 
+/// Gefolge für andere zeigen oder verstecken → neuer Stand des Reiters.
+#[tauri::command]
+pub async fn creator_set_pet_extras(launcher: State<'_, LauncherState>, show: bool, as_creator: Option<String>) -> CommandResult<CreatorPetState> {
+    Ok(launcher.creator_set_pet_extras(show, as_creator.as_deref()).await?)
+}
+
 #[tauri::command]
 pub async fn creator_pet_codes(launcher: State<'_, LauncherState>, as_creator: Option<String>) -> CommandResult<Vec<PetCode>> {
     Ok(launcher.creator_pet_codes(as_creator.as_deref()).await?)

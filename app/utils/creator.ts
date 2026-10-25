@@ -273,6 +273,7 @@ export const creatorUpdateKinds = [
   // Creator-Haustiere (§35.13): zugeordnet, entfernt, Wunsch beantwortet (`reason` = Antwort des Teams).
   'pet_assigned',
   'pet_removed',
+  'pet_extras_changed',
   'pet_request_answered',
   // Team-Modus (§35.9): das Team hat etwas geändert (`action`).
   'team_changed',
@@ -579,6 +580,17 @@ export const petRequestSchema = z.object({
   createdAt: time,
 })
 
+/** Begleiter aus dem Gefolge des Creators (vom Team zugeordnet, nur für ihn selbst sichtbar). */
+export const creatorPetExtraSchema = z.object({
+  cosmeticId: z.string().regex(/^[A-Za-z0-9_.-]{1,64}$/),
+  name: text(96),
+  card: pngDataUrl.nullable(),
+  /** Größe im Spiel (Standard 1; Kaiserpinguin 1,25). */
+  petScale: z.number().min(0.5).max(2).catch(1).default(1),
+  /** `false` = Kosmetik gerade nicht verfügbar. */
+  available: z.boolean().catch(true).default(true),
+})
+
 export const creatorPetStateSchema = z.object({
   pet: z
     .object({
@@ -589,6 +601,10 @@ export const creatorPetStateSchema = z.object({
       available: z.boolean(),
     })
     .nullable(),
+  /** Gefolge: bis zu 4 zusätzliche Begleiter (ältere Kerne: leer). */
+  extras: z.array(creatorPetExtraSchema).max(4).catch([]).default([]),
+  /** Schalter „Gefolge zeigen“ (Standard an). */
+  showExtras: z.boolean().catch(true).default(true),
   limit: z.object({ month: z.string().regex(/^\d{4}-\d{2}$/).nullable(), used: count, max: count, resetsAt: time }).nullable(),
   request: petRequestSchema.nullable(),
   /** Vom Server: darf jetzt einen Wunsch stellen (`null` = unbekannt, dann rechnet `canRequestPet`). */
@@ -610,6 +626,7 @@ export const petCodeSchema = z.object({
 
 export type PetRequest = z.infer<typeof petRequestSchema>
 export type CreatorPetState = z.infer<typeof creatorPetStateSchema>
+export type CreatorPetExtra = z.infer<typeof creatorPetExtraSchema>
 export type CreatorPet = NonNullable<CreatorPetState['pet']>
 export type PetLimit = NonNullable<CreatorPetState['limit']>
 export type PetCode = z.infer<typeof petCodeSchema>

@@ -1284,6 +1284,9 @@ export const backend = {
     previews: () => checked(z.array(previewBuildSchema), 'creator_previews'),
     // Haustier: eigener Stand, Codes (Klartext nur in der Antwort von createPetCodes), Antrag.
     pet: (asCreator: string | null = null) => checked(creatorPetStateSchema, 'creator_pet', { asCreator }),
+    /** Gefolge für andere zeigen oder verstecken → neuer Stand des Reiters. */
+    setPetExtras: (show: boolean, asCreator: string | null = null) =>
+      checked(creatorPetStateSchema, 'creator_set_pet_extras', { show, asCreator }),
     petCodes: (asCreator: string | null = null) => checked(z.array(petCodeSchema), 'creator_pet_codes', { asCreator }),
     createPetCodes: (codes: { count: number; maxUses: number; expiresAt?: string; note?: string }, asCreator: string | null = null) =>
       checked(z.array(petCodeSchema), 'creator_create_pet_codes', { codes, asCreator }),

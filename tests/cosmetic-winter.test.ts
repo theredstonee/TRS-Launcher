@@ -170,7 +170,7 @@ describe('Winter – Optionen', () => {
 describe('Winter – Begleiter am Boden', () => {
   it('spielt idle/walk/slide/swim/air mit Rückfall auf idle', () => {
     const m = pet()
-    expect(PET_STATES).toEqual(['idle', 'walk', 'slide', 'swim', 'air'])
+    expect(PET_STATES).toEqual(['idle', 'walk', 'slide', 'swim', 'air', 'sneak', 'grab', 'flee', 'handsup'])
     expect(resolveDriver(m, 'slide')).toBe('slide')
     expect(resolveDriver(m, 'swim')).toBe('idle')
     expect(stateAnimations(m, 0, 'slide').get('body')!.rotation[0]).toBe(80)

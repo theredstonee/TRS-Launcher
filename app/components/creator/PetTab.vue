@@ -78,6 +78,31 @@ async function copy(text: string, all = false) {
   }
 }
 
+// --- Gefolge ------------------------------------------------------------------------------
+// Das Team ordnet dem Creator bis zu 4 weitere Begleiter zu (nur er selbst sieht sie im Spiel).
+// Der Schalter „Gefolge zeigen“ blendet sie für alle ein oder aus; Helfer sehen ihn nur.
+const escortBusy = ref(false)
+const escortVisible = computed({
+  get: () => state.value?.showExtras ?? true,
+  set: (visible: boolean) => void setEscort(visible),
+})
+async function setEscort(visible: boolean) {
+  if (helper.value || escortBusy.value || !state.value) return
+  const before = state.value
+  // Sofort umschalten, bei einem Fehler zurück.
+  state.value = { ...before, showExtras: visible }
+  escortBusy.value = true
+  try {
+    state.value = await backend.creator.setPetExtras(visible, store.actingAs)
+    toasts.ok(t(visible ? 'creator.pet.escort.shown' : 'creator.pet.escort.hidden'))
+  } catch (e) {
+    state.value = before
+    toasts.error(e)
+  } finally {
+    escortBusy.value = false
+  }
+}
+
 // --- Codes erstellen ----------------------------------------------------------------------
 const dialog = ref(false)
 const form = reactive({ count: 1 as number | '', maxUses: 10 as number | '', until: '', note: '' })
@@ -327,6 +352,33 @@ const requestClass = {
             </p>
           </div>
         </div>
+      </section>
+
+      <!-- Gefolge: weitere Begleiter vom Team, nur für den Creator selbst -->
+      <section v-if="state.extras.length" class="card p-4" data-testid="creator-pet-escort" :aria-label="t('creator.pet.escort.title')">
+        <div class="mb-2 flex flex-wrap items-center gap-3">
+          <div class="min-w-0 flex-1">
+            <h3 class="section-title">{{ t('creator.pet.escort.title') }}</h3>
+            <p class="mt-0.5 text-xs text-base-400">{{ t('creator.pet.escort.intro', state.extras.length) }}</p>
+          </div>
+          <label class="flex items-center gap-2 text-xs text-base-200">
+            {{ t('creator.pet.escort.show') }}
+            <ToggleSwitch v-model="escortVisible" :label="t('creator.pet.escort.show')" :disabled="helper || escortBusy" data-testid="creator-pet-escort-switch" />
+          </label>
+        </div>
+        <ul class="grid grid-cols-2 gap-3 transition-opacity sm:grid-cols-4" :class="{ 'opacity-50': !state.showExtras }" data-testid="creator-pet-escort-list">
+          <li v-for="(e, i) in state.extras" :key="`${e.cosmeticId}:${i}`" class="min-w-0" :class="{ 'opacity-50': !e.available }">
+            <span class="relative block aspect-[4/5] overflow-hidden rounded-lg bg-gradient-to-b from-base-800 to-base-950 ring-1 ring-base-700">
+              <img v-if="e.card" :src="e.card" alt="" class="size-full object-cover" draggable="false" />
+              <span v-else class="grid size-full place-items-center text-base-600"><SocialIcon name="star" class="size-8" /></span>
+              <span v-if="e.petScale !== 1" class="badge absolute right-1.5 bottom-1.5 bg-base-950/80 text-base-200 tabular-nums">×{{ e.petScale }}</span>
+            </span>
+            <p class="mt-1 truncate text-xs font-medium text-base-100">{{ e.name }}</p>
+          </li>
+        </ul>
+        <p class="mt-2 text-[11px] text-base-400" data-testid="creator-pet-escort-state">
+          {{ state.showExtras ? t('creator.pet.escort.visibleHint') : t('creator.pet.escort.hiddenHint') }}
+        </p>
       </section>
 
       <!-- Gerade erstellt: Klartext nur jetzt -->

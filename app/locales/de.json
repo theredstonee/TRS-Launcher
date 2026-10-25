@@ -4002,7 +4002,11 @@
         "walk": "Läuft",
         "slide": "Rutscht",
         "swim": "Schwimmt",
-        "air": "Springt"
+        "air": "Springt",
+        "sneak": "Schleicht",
+        "grab": "Schnappt zu",
+        "flee": "Flieht",
+        "handsup": "Hände hoch"
       },
       "count": "{n} × {name} | {n} × {name}",
       "counts": {
@@ -7879,6 +7883,15 @@
       "yourPet": "Dein Creator-Haustier",
       "theirPet": "Creator-Haustier",
       "intro": "Es gehört nur dir. Fans bekommen es über die Codes, die du hier erstellst – eingelöst wird wie jeder Kosmetik-Code (Skins → Code einlösen).",
+      "escort": {
+        "title": "Gefolge",
+        "intro": "Das Team hat dir einen weiteren Begleiter zugeordnet – er läuft zusätzlich zu deinem Haustier mit. | Das Team hat dir {n} weitere Begleiter zugeordnet – sie laufen zusätzlich zu deinem Haustier mit.",
+        "show": "Gefolge zeigen",
+        "shown": "Dein Gefolge ist wieder sichtbar.",
+        "hidden": "Dein Gefolge ist ausgeblendet.",
+        "visibleHint": "Andere sehen dein Gefolge im Spiel neben dir, solange du es zeigst.",
+        "hiddenHint": "Dein Gefolge ist für andere unsichtbar. Dein normales Haustier bleibt."
+      },
       "limit": {
         "title": "Monatslimit {month}",
         "titleNoMonth": "Monatslimit",

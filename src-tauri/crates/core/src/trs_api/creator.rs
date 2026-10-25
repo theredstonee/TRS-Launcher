@@ -29,7 +29,7 @@ pub const MILESTONES: [&str; 4] = ["bronze", "silver", "gold", "diamond"];
 /// Arten von `creator_updated` (§35.7).
 /// `pet_*` (Creator-Haustiere, §35.13): zugeordnet, entfernt, Wunsch beantwortet (`reason` = Antwort des Teams).
 /// `team_changed` (§35.9): das Team hat im Team-Modus etwas geändert (`action`).
-pub const UPDATE_KINDS: [&str; 16] = [
+pub const UPDATE_KINDS: [&str; 17] = [
     "symbol_approved",
     "symbol_rejected",
     "cape_approved",
@@ -44,6 +44,7 @@ pub const UPDATE_KINDS: [&str; 16] = [
     "helper_left",
     "pet_assigned",
     "pet_removed",
+    "pet_extras_changed",
     "pet_request_answered",
     "team_changed",
 ];
