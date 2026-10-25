@@ -92,6 +92,8 @@ export interface CreatorDashboard {
     activeFans: number
     redemptions: number
     fanCapeHolders: number
+    /** Davon aktuelle Fans (neu; ältere API-Stände ohne). */
+    fanCapeFans?: number
     newPlayers: number
     packInstalls: number
     daily: { day: string, newFans: number, redemptions: number }[]
@@ -103,7 +105,10 @@ export interface CreatorDashboard {
   requests: { id: number, kind: 'upgrade' | 'team_cape', status: 'open' | 'accepted' | 'declined', createdAt: string, reason: string | null }[]
   packs: { code: string, name: string, installs: number, listed: boolean }[]
   helpers?: { uuid: string, name: string, skin: string | null, rights: HelperRight[], status: 'pending' | 'active', createdAt: string }[]
-  viewer?: { helper: true, rights: HelperRight[] }
+  /** Helfer (`helper`) oder Team-Modus (`team`, alle Rechte, §35.9). */
+  viewer?: { helper: boolean, team?: boolean, rights: HelperRight[] }
+  /** Änderungen des Teams im Team-Modus (ohne Namen). */
+  teamChanges?: { action: string, at: string }[]
   profile?: ProfileState
   /** Eigenes Creator-Haustier (§35.13); ältere API-Stände ohne. */
   pet?: CreatorPetRef | null

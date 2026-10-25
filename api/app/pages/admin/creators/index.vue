@@ -2,11 +2,13 @@
 // Creator-Programm (§35.6): Prüfung (Fan-Symbole 64/16 px inkl. Animation, Fan-Umhänge), Creator (Liste, Suche,
 // anlegen, Stufe/Haupt-Code/Kanäle, entziehen/sperren/wiederherstellen, Helfer nur lesend), Anfragen, Vorschau-Builds.
 // Prüfen braucht creators.review, alles andere creators.manage – der Server prüft ohnehin jede Anfrage.
+// Reiter „Statistik“ (§35.14): Rangliste aller Creator, Details unter /admin/creators/<uuid>. „Dashboard öffnen (Team)“
+// öffnet /creator?as=<uuid> im Team-Modus (§35.9).
 const { a, fill, rel, day, num } = useAdminText()
 const { api, can } = useAdmin()
 const route = useRoute()
 
-type Tab = 'queue' | 'roster' | 'requests' | 'pets' | 'previews'
+type Tab = 'queue' | 'roster' | 'stats' | 'requests' | 'pets' | 'previews'
 type Tier = 'starter' | 'partner' | 'top'
 type State = 'active' | 'revoked' | 'banned'
 interface SymbolInfo { url: string, size: number, frames: number, frameMs: number, sha256: string }
@@ -56,10 +58,10 @@ const manage = computed(() => can('creators.manage'))
 const tabs = computed<Tab[]>(() => [
   ...(review.value ? ['queue' as const] : []),
   'roster',
-  ...(manage.value ? ['requests' as const, 'pets' as const, 'previews' as const] : []),
+  ...(manage.value ? ['stats' as const, 'requests' as const, 'pets' as const, 'previews' as const] : []),
 ])
 const initial = route.query.tab
-const tab = ref<Tab>(typeof initial === 'string' && ['queue', 'roster', 'requests', 'pets', 'previews'].includes(initial) ? initial as Tab : review.value ? 'queue' : 'roster')
+const tab = ref<Tab>(typeof initial === 'string' && ['queue', 'roster', 'stats', 'requests', 'pets', 'previews'].includes(initial) ? initial as Tab : review.value ? 'queue' : 'roster')
 
 const error = ref('')
 const notice = ref('')
@@ -471,11 +473,15 @@ async function run(fn: () => Promise<void>) {
     loading.value = false
   }
 }
-const loaders: Record<Tab, () => Promise<void>> = { queue: loadQueue, roster: loadCreators, requests: loadRequests, pets: loadPets, previews: loadPreviews }
+// Die Statistik lädt sich selbst (eigene Filter).
+const loaders: Record<Tab, () => Promise<void>> = { queue: loadQueue, roster: loadCreators, stats: async () => {}, requests: loadRequests, pets: loadPets, previews: loadPreviews }
 watch(tab, (v) => {
   notice.value = ''
+  void navigateTo({ query: { ...route.query, tab: v } }, { replace: true })
   void run(loaders[v])
 })
+const lp = useLocalePath()
+const dashboardLink = (uuid: string) => lp(`/creator?as=${uuid}`)
 onMounted(() => {
   if (!tabs.value.includes(tab.value)) tab.value = tabs.value[0] ?? 'roster'
   void run(loaders[tab.value])
@@ -584,6 +590,8 @@ onMounted(() => {
             </div>
             <template v-if="manage">
               <template v-if="c.state === 'active'">
+                <NuxtLink :to="`/admin/creators/${c.uuid}`" class="btn btn-ghost"><SiteIcon name="chart" class="size-4" />{{ t.stats.details }}</NuxtLink>
+                <a :href="dashboardLink(c.uuid)" class="btn btn-ghost" :title="t.stats.openDashboardHint"><SiteIcon name="shield" class="size-4" />{{ t.stats.openDashboard }}</a>
                 <button type="button" class="btn btn-ghost" @click="edit(c)">{{ t.roster.edit }}</button>
                 <button type="button" class="btn btn-ghost" @click="askRevoke(c, false)">{{ t.roster.revoke }}</button>
                 <button type="button" class="btn btn-danger" @click="askRevoke(c, true)">{{ t.roster.ban }}</button>
@@ -604,6 +612,9 @@ onMounted(() => {
       </ul>
       <p class="mt-4 text-xs text-base-400">{{ t.roster.note }}</p>
     </template>
+
+    <!-- Statistik (§35.14) -->
+    <AdminCreatorStats v-else-if="tab === 'stats'" />
 
     <!-- Anfragen -->
     <template v-else-if="tab === 'requests'">

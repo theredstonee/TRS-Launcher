@@ -51,6 +51,7 @@ const PATHS: Record<string, string> = {
   filter: 'M4 5h16l-6 8v5l-4 2v-7z',
   key: 'M8 15a4 4 0 1 1 3.4-6H21v3h-2v2h-3v-2h-4.6A4 4 0 0 1 8 15z',
   list: 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01',
+  chart: 'M4 4v16h16M8 16v-4M12 16V8M16 16v-6',
   keyboard: 'M3 6h18v12H3zM7 10h.01M11 10h.01M15 10h.01M7 14h10',
   clock: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM12 7v5l3 2',
   note: 'M5 4h14v16H5zM9 9h6M9 13h6M9 17h3',

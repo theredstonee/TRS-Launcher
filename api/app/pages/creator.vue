@@ -2,7 +2,9 @@
 import { WAIT_SONG_UUID } from '#shared/wait-song'
 // Creator-Dashboard auf der Website (§35.3 + §35.11) mit der Website-Sitzung: Übersicht/Statistik, öffentliches Profil
 // (Beschreibung + Links, Prüfung durch das Team), Codes, Fan-Symbol und Fan-Umhang, Creator-Packs, Stufe und Helfer.
-// Helfer wählen oben den Creator, für den sie handeln (`?as=`). Nur im Browser (routeRules), nie indexiert.
+// Helfer wählen oben den Creator, für den sie handeln (`?as=`). Team-Mitglieder mit `creators.manage` öffnen jedes
+// Dashboard im Team-Modus (alle Rechte, jede Änderung protokolliert, §35.9) – Einstieg auch per `/creator?as=<uuid>`.
+// Nur im Browser (routeRules), nie indexiert.
 const { m, fill, date, lang } = useLang()
 const lp = useLocalePath()
 const { account, loaded, load, api, loginUrl } = useAccount()
@@ -43,6 +45,13 @@ const busy = ref('')
 const tab = ref<Tab>('overview')
 
 const helper = computed(() => !!dash.value?.viewer?.helper)
+/** Team-Mitglied mit `creators.manage` (Owner automatisch) – darf jedes Creator-Dashboard öffnen. */
+const teamManager = computed(() => {
+  const t = account.value?.team
+  return !!t && (t.owner || t.permissions.includes('creators.manage'))
+})
+const teamMode = computed(() => !!dash.value?.viewer?.team)
+const tm = computed(() => d.value.teamMode)
 const rights = computed(() => new Set(dash.value?.viewer?.rights ?? HELPER_RIGHTS))
 const may = (r: HelperRight) => !helper.value || rights.value.has(r)
 const tabs = computed<Tab[]>(() => {
@@ -78,6 +87,7 @@ async function refresh() {
     my.value = await api<MyCreatorState>('/v1/me/creator')
     const own = my.value.creator?.state === 'active'
     if (!own && !as.value && my.value.helping.length) as.value = my.value.helping[0]!.creator.uuid
+    if (as.value && as.value === account.value?.uuid.replace(/-/g, '').toLowerCase()) as.value = null
     if (own || as.value) await loadDash()
     else dash.value = null
   } catch (e) {
@@ -87,15 +97,49 @@ async function refresh() {
   }
 }
 onMounted(async () => {
-  if (await load()) await refresh()
-  else loading.value = false
+  if (!(await load())) {
+    loading.value = false
+    return
+  }
+  // Einstieg aus dem Team-Bereich: /creator?as=<uuid> (der Server prüft das Recht ohnehin).
+  const q = typeof route.query.as === 'string' ? route.query.as.replace(/-/g, '').toLowerCase() : ''
+  if (/^[0-9a-f]{32}$/.test(q)) as.value = q
+  await refresh()
 })
 async function switchTo(uuid: string | null) {
   as.value = uuid
   tab.value = 'overview'
   notice.value = ''
+  teamQuery.value = ''
+  teamHits.value = []
+  void navigateTo({ query: { ...route.query, as: uuid ?? undefined } }, { replace: true })
   await refresh()
 }
+
+// Team-Modus: jeden Creator per Suche öffnen (Liste wie im Team-Bereich, nur aktive Creator).
+interface TeamCreatorHit { uuid: string, name: string, tier: CreatorTier, mainCode: string | null }
+const teamQuery = ref('')
+const teamHits = ref<TeamCreatorHit[]>([])
+const teamSearched = ref(false)
+let teamTimer: ReturnType<typeof setTimeout> | undefined
+watch(teamQuery, (v) => {
+  clearTimeout(teamTimer)
+  teamSearched.value = false
+  if (!v.trim()) {
+    teamHits.value = []
+    return
+  }
+  teamTimer = setTimeout(async () => {
+    try {
+      teamHits.value = (await api<{ creators: TeamCreatorHit[] }>(`/v1/admin/creators?state=active&q=${encodeURIComponent(v.trim().slice(0, 32))}`)).creators.slice(0, 8)
+      teamSearched.value = true
+    } catch (e) {
+      fail(e)
+    }
+  }, 250)
+})
+const teamName = computed(() => (teamMode.value ? dash.value?.name ?? '' : ''))
+const teamChanges = computed(() => dash.value?.teamChanges ?? [])
 
 async function act(key: string, fn: () => Promise<void>, ok?: string) {
   busy.value = key
@@ -118,12 +162,19 @@ const statCards = computed(() => {
   return [
     { label: d.value.stats.activeFans, value: s.activeFans },
     { label: d.value.stats.redemptions, value: s.redemptions },
-    { label: d.value.stats.fanCapeHolders, value: s.fanCapeHolders },
+    { label: d.value.stats.fanCapeHolders, value: s.fanCapeHolders, hint: capeShare.value },
     { label: d.value.stats.newPlayers, value: s.newPlayers },
     { label: d.value.stats.packInstalls, value: s.packInstalls },
   ]
 })
 const num = (n: number) => new Intl.NumberFormat(lang.value === 'en' ? 'en-GB' : lang.value).format(n)
+const capeShare = computed(() => {
+  const s = dash.value?.stats
+  if (!s || !s.activeFans) return null
+  // Ältere API ohne fanCapeFans: höchstens alle Fans.
+  const held = Math.min(s.activeFans, s.fanCapeFans ?? s.fanCapeHolders)
+  return fill(d.value.stats.capeShare, { held: num(held), fans: num(s.activeFans), p: Math.round((held / s.activeFans) * 100) })
+})
 
 // ---------------------------------------------------------------- Profil
 interface LinkRow { type: ProfileLinkType, url: string }
@@ -266,7 +317,7 @@ async function requestUpgrade() {
   await act('upgrade', async () => {
     const body: Record<string, unknown> = { kind: 'upgrade', channelUrl: upgradeForm.channelUrl.trim(), followers: Math.max(0, Math.round(Number(upgradeForm.followers) || 0)) }
     if (upgradeForm.note.trim()) body.note = upgradeForm.note.trim().slice(0, 500)
-    const r = await api<{ requests: CreatorDashboard['requests'] }>('/v1/creator/requests', { method: 'POST', body })
+    const r = await api<{ requests: CreatorDashboard['requests'] }>(withAs('/v1/creator/requests'), { method: 'POST', body })
     if (dash.value) dash.value.requests = r.requests
     Object.assign(upgradeForm, { channelUrl: '', followers: '', note: '' })
   }, d.value.team.sent)
@@ -275,13 +326,13 @@ async function setHelperRight(h: NonNullable<CreatorDashboard['helpers']>[number
   const next = on ? [...new Set([...h.rights, right])] : h.rights.filter((r) => r !== right)
   if (!next.length) return
   await act(`helper:${h.uuid}`, async () => {
-    const r = await api<{ helpers: CreatorDashboard['helpers'] }>(`/v1/creator/helpers/${h.uuid}`, { method: 'PATCH', body: { rights: next } })
+    const r = await api<{ helpers: CreatorDashboard['helpers'] }>(withAs(`/v1/creator/helpers/${h.uuid}`), { method: 'PATCH', body: { rights: next } })
     if (dash.value) dash.value.helpers = r.helpers
   })
 }
 async function removeHelper(uuid: string) {
   await act(`helper:${uuid}`, async () => {
-    await api(`/v1/creator/helpers/${uuid}`, { method: 'DELETE' })
+    await api(withAs(`/v1/creator/helpers/${uuid}`), { method: 'DELETE' })
     await loadDash()
   })
 }
@@ -368,7 +419,7 @@ async function sendWish() {
   await act('pet-wish', async () => {
     const body: Record<string, unknown> = { species: wishForm.species.trim().slice(0, 60), description: wishForm.description.trim().slice(0, 1000) }
     if (wishForm.colors.trim()) body.colors = wishForm.colors.trim().slice(0, 200)
-    const r = await api<{ requests: PetRequest[] }>('/v1/creator/pet/requests', { method: 'POST', body })
+    const r = await api<{ requests: PetRequest[] }>(withAs('/v1/creator/pet/requests'), { method: 'POST', body })
     const f = wishFile.value
     if (f && r.requests[0]) await putWishImage(r.requests[0].id, f)
     Object.assign(wishForm, { species: '', description: '', colors: '' })
@@ -391,13 +442,13 @@ async function addWishImage(id: number, e: Event) {
 }
 async function removeWishImage(id: number) {
   await act(`pet-img:${id}`, async () => {
-    await api(`/v1/creator/pet/requests/${id}/image`, { method: 'DELETE' })
+    await api(withAs(`/v1/creator/pet/requests/${id}/image`), { method: 'DELETE' })
     await loadPet()
   })
 }
 async function withdrawWish(id: number) {
   await act(`pet-wish:${id}`, async () => {
-    await api(`/v1/creator/pet/requests/${id}`, { method: 'DELETE' })
+    await api(withAs(`/v1/creator/pet/requests/${id}`), { method: 'DELETE' })
     await loadPet()
   })
 }
@@ -454,14 +505,33 @@ async function withdrawWish(id: number) {
 
       <template v-else>
         <!-- Für wen? (eigenes Dashboard oder als Helfer) -->
-        <div v-if="my && my.helping.length" class="mt-6 flex flex-wrap items-center gap-2">
+        <div v-if="my && (my.helping.length || teamManager)" class="mt-6 flex flex-wrap items-center gap-2">
           <label for="dash-as" class="text-sm text-base-400">{{ d.actingAs }}</label>
           <select id="dash-as" class="field w-auto" :value="as ?? ''" @change="switchTo(($event.target as HTMLSelectElement).value || null)">
             <option v-if="my.creator?.state === 'active'" value="">{{ d.mine }}</option>
+            <option v-else-if="!as" value="" disabled>{{ tm.choose }}</option>
             <option v-for="h in my.helping" :key="h.creator.uuid" :value="h.creator.uuid">{{ h.creator.name }}</option>
+            <option v-if="teamMode && as && !my.helping.some((h) => h.creator.uuid === as)" :value="as">{{ teamName }}</option>
           </select>
           <span v-if="helper" class="text-xs text-base-400">{{ fill(d.helperNote, { name: helpingName, rights: [...rights].map((r) => d.team.rights[r] ?? r).join(', ') }) }}</span>
+          <div v-if="teamManager" class="team-pick relative">
+            <input v-model="teamQuery" type="search" class="field w-64" maxlength="32" :placeholder="tm.search" :aria-label="tm.search" autocomplete="off" />
+            <ul v-if="teamHits.length" class="team-hits card" role="listbox" :aria-label="tm.pick">
+              <li v-for="c in teamHits" :key="c.uuid">
+                <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-base-850" @click="switchTo(c.uuid)">
+                  <PlayerHead :uuid="c.uuid" :name="c.name" :size="20" />
+                  <span class="flex-1 text-base-50">{{ c.name }}</span>
+                  <span class="text-xs text-base-400">{{ ct.tier[c.tier] }}</span>
+                </button>
+              </li>
+            </ul>
+            <p v-else-if="teamSearched" class="team-hits card px-3 py-2 text-sm text-base-400">{{ tm.none }}</p>
+          </div>
         </div>
+        <p v-if="teamMode" class="team-banner mt-4" role="status">
+          <SiteIcon name="shield" class="size-5 shrink-0" />
+          <span>{{ tm.banner }}</span>
+        </p>
 
         <section class="card mt-6 flex flex-wrap items-center gap-5 p-5">
           <CreatorAvatar :uuid="dash.uuid" :name="dash.name" :skin="dash.skin ?? null" :tier="dash.tier" :size="64" />
@@ -483,12 +553,23 @@ async function withdrawWish(id: number) {
 
         <!-- Übersicht -->
         <section v-if="tab === 'overview'" class="mt-6">
+          <div v-if="teamChanges.length" class="card team-changes mb-4 p-4">
+            <p class="text-sm font-semibold text-base-100">{{ tm.changesTitle }}</p>
+            <p class="mt-0.5 text-xs text-base-400">{{ tm.changesLead }}</p>
+            <ul class="mt-2 space-y-1 text-sm">
+              <li v-for="(c, i) in teamChanges.slice(0, 8)" :key="i" class="flex flex-wrap gap-x-2">
+                <span class="text-base-100">{{ tm.actions[c.action] ?? c.action }}</span>
+                <span class="text-xs text-base-400">{{ date(c.at) }}</span>
+              </li>
+            </ul>
+          </div>
           <p v-if="!dash.stats" class="card p-5 text-base-400">{{ d.stats.hidden }}</p>
           <template v-else>
             <ul class="grid grid-cols-2 gap-3 md:grid-cols-5">
               <li v-for="s in statCards" :key="s.label" class="card p-4">
                 <p class="text-2xl font-bold text-base-50 tabular-nums">{{ num(s.value) }}</p>
                 <p class="mt-1 text-xs text-base-400">{{ s.label }}</p>
+                <p v-if="s.hint" class="mt-1 text-[11px] leading-snug text-base-400">{{ s.hint }}</p>
               </li>
             </ul>
             <div class="mt-4 grid gap-4 md:grid-cols-2">
@@ -863,6 +944,30 @@ async function withdrawWish(id: number) {
 </template>
 
 <style scoped>
+.team-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 0.75rem;
+  padding: 0.7rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-lamp-300);
+  background: color-mix(in srgb, var(--color-lamp-900) 70%, var(--color-base-900));
+  border: 1px solid color-mix(in srgb, var(--color-lamp-400) 45%, transparent);
+}
+.team-hits {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  overflow: hidden;
+  padding: 0.25rem 0;
+}
+.team-changes {
+  border-left: 3px solid var(--color-lamp-400);
+}
 .dash-tabs {
   display: flex;
   flex-wrap: wrap;
