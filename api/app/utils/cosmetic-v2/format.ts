@@ -14,7 +14,7 @@ export type FaceName = 'north' | 'south' | 'east' | 'west' | 'up' | 'down'
 export type MaterialName = 'cutout' | 'emissive' | 'translucent'
 export type Channel = 'rotation' | 'position' | 'scale'
 export type Interpolation = 'linear' | 'smooth' | 'step'
-export type Driver = 'idle' | 'walk' | 'sneak' | 'jump' | 'air' | 'slide' | 'swim'
+export type Driver = 'idle' | 'walk' | 'sneak' | 'jump' | 'air' | 'slide' | 'swim' | 'grab' | 'flee' | 'handsup'
 
 /** Flächen und ihre Außennormale im Modellraum (+x = links vom Spieler, +y = oben, +z = vorne). */
 export const FACES: readonly FaceName[] = ['north', 'south', 'east', 'west', 'up', 'down']
@@ -45,8 +45,12 @@ export const ATTACH_BOX: Readonly<Record<Attach, { from: Vec3, to: Vec3 }>> = {
   body: { from: [-4, -12, -2], to: [4, 0, 2] },
   ground: { from: [-8, 0, -8], to: [8, 16, 8] },
 }
-/** Zustände eines Begleiters am Boden (slot `pet`): Clients spielen die Animationen mit diesem `driver` (Rückfall idle). */
-export const PET_STATES = ['idle', 'walk', 'slide', 'swim', 'air'] as const
+/**
+ * Zustände eines Begleiters am Boden (slot `pet`): Clients spielen die Animationen mit diesem `driver` (Rückfall idle).
+ * Seit 2026-10-25 auch `sneak` (Anschleichen), `grab` (Beute schnappen), `flee` (Flucht-Sprint), `handsup` (Hände hoch) –
+ * nur wenn das Modell sie hat (Rückfall sneak/flee → walk, grab/handsup → idle).
+ */
+export const PET_STATES = ['idle', 'walk', 'slide', 'swim', 'air', 'sneak', 'grab', 'flee', 'handsup'] as const
 export type PetState = (typeof PET_STATES)[number]
 /** Überblendzeit zwischen Zuständen in ms (§7 der Studio-Beschreibung). */
 export const STATE_FADE_MS = 250
@@ -56,7 +60,7 @@ export const MAX_OPTIONS = 4
 export const OPTION_ID = /^[a-z][a-z0-9_]{0,19}$/
 export const CHANNELS: readonly Channel[] = ['rotation', 'position', 'scale']
 export const INTERPOLATIONS: readonly Interpolation[] = ['linear', 'smooth', 'step']
-export const DRIVERS: readonly Driver[] = ['idle', 'walk', 'sneak', 'jump', 'air', 'slide', 'swim']
+export const DRIVERS: readonly Driver[] = ['idle', 'walk', 'sneak', 'jump', 'air', 'slide', 'swim', 'grab', 'flee', 'handsup']
 
 export const LIMITS = {
   cubes: 64,
@@ -67,7 +71,8 @@ export const LIMITS = {
   stripEdge: 4096,
   frames: 16,
   scale: [1, 2, 4, 8, 16],
-  animations: 8,
+  /** 2026-10-25: 8 → 12 (Begleiter-Zustände sneak/grab/flee/handsup). */
+  animations: 12,
   tracks: 32,
   keys: 64,
   halos: 16,

@@ -1,5 +1,6 @@
 import { REWARD_EVENTS } from '../../shared/halloween'
 import type { AppContext } from './context'
+import { PET_STATES } from '../../app/utils/cosmetic-v2/format'
 import { ACHIEVEMENTS } from './achievement-catalog'
 import { v2Assets, v2Fields, type CosmeticV2Fields } from './cosmetics'
 import { all } from './db'
@@ -283,6 +284,8 @@ export interface PublicHat extends CosmeticV2Fields {
   texture: string
   /** Hat das Modell Knochen-Animationen (Treiber idle)? */
   animated: boolean
+  /** Nur Platz `pet`: Zustände mit eigener Animation (Reihenfolge wie `PET_STATES`, `idle` immer zuerst) – Vorschau-Knöpfe. */
+  states?: string[]
 }
 
 /**
@@ -306,6 +309,12 @@ export function publicWings(ctx: AppContext): PublicHat[] {
 /** Begleiter am Boden (Format v2, Platz `pet`, z. B. der Pinguin) – wie {@link publicHats}. */
 export function publicPets(ctx: AppContext): PublicHat[] {
   return publicV2(ctx, 'pet')
+}
+
+/** Zustände eines Begleiters, für die das Modell Animationen hat (`idle` immer). */
+function petStatesOf(anims: readonly { driver?: string }[]): string[] {
+  const has = new Set(anims.map((x) => x.driver ?? 'idle'))
+  return PET_STATES.filter((s) => s === 'idle' || has.has(s))
 }
 
 function publicV2(ctx: AppContext, slot: PublicV2Slot): PublicHat[] {
@@ -335,6 +344,7 @@ function publicV2(ctx: AppContext, slot: PublicV2Slot): PublicHat[] {
       achievement: byReward.get(r.id) ?? null,
       texture: `/v1/cosmetics/${r.id}.png?v=${f.hash}`,
       animated: (a.model.animations ?? []).some((x) => (x.driver ?? 'idle') === 'idle'),
+      ...(slot === 'pet' ? { states: petStatesOf(a.model.animations ?? []) } : {}),
       ...f,
     })
   }

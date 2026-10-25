@@ -4,7 +4,7 @@ import type { AppContext } from './context'
 import { getCosmetic, slotOf, v2Assets, v2Fields } from './cosmetics'
 import type { CreatorState, CreatorTier } from './creator-lookup'
 import { petCosmeticOptions, type PetCosmeticOption } from './creator-pets'
-import { actorFor, notifyCreator, parse } from './creators'
+import { actorFor, auditActor, notifyCreator, parse } from './creators'
 import { all, one, run, tx } from './db'
 import { badRequest, notFound } from './errors'
 import { isUsablePetRow, MAX_PET_EXTRAS, petScaleOf } from './pet-extras-lookup'
@@ -152,11 +152,16 @@ export function adminSetPetExtras(ctx: AppContext, staff: Staff, creator: string
 
 // ---------------------------------------------------------------- Creator
 
-/** `PUT /v1/creator/pet/extras`: Schalter „Gefolge zeigen“ (nur der Creator selbst, keine Helfer). */
+/**
+ * `PUT /v1/creator/pet/extras`: Schalter „Gefolge zeigen“ – der Creator selbst oder das Team im Team-Modus (§35.9,
+ * protokolliert), keine Helfer.
+ */
 export function setShowPetExtras(ctx: AppContext, user: string, raw: unknown, as?: string | null): PetExtrasState {
-  const c = actorFor(ctx, user, as, 'owner').creator
+  const a = actorFor(ctx, user, as, 'owner')
+  const c = a.creator
   const input = parse(showPetExtrasBody, raw)
   const changed = run(ctx.db, 'UPDATE creators SET show_pet_extras = ? WHERE uuid = ? AND show_pet_extras <> ?', input.show ? 1 : 0, c.uuid, input.show ? 1 : 0) > 0
+  if (changed) auditActor(ctx, a, 'pet.extras.show', input.show ? 'on' : 'off')
   if (changed && wearsPet(ctx, c.uuid) && one(ctx.db, 'SELECT 1 AS x FROM creator_pet_extras WHERE creator_uuid = ?', c.uuid)) emitCosmetics(ctx, c.uuid)
   return petExtrasState(ctx, c.uuid)
 }

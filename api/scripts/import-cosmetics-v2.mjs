@@ -17,8 +17,8 @@ import { PNG } from 'pngjs'
 
 /** Winter 2026: alle fünf per Code ⇒ proprietär (nur PRIVATE_ASSETS_DIR, nie ins Repo). */
 const WINTER_IDS = ['snow_wings', 'ice_wings', 'santa_hat', 'snow_cloud', 'penguin']
-/** Gefolge von PixelCST (nur das Team vergibt sie) ⇒ proprietär. */
-const PIXELCST_PET_IDS = ['penguin_emperor', 'penguin_beanie', 'penguin_shades']
+/** Gefolge von PixelCST (Team) + Schwarzes Schaf (per Code) ⇒ proprietär. */
+const PIXELCST_PET_IDS = ['penguin_emperor', 'penguin_beanie', 'penguin_shades', 'penguin_heist']
 const IDS = ['redstone_crown', 'team_crown', 'trs_cap', 'lamp_helmet', 'top_hat', 'halo', 'witch_hat', 'pumpkin_head', 'bat_buddy', ...WINTER_IDS, ...PIXELCST_PET_IDS]
 const PRIVATE_IDS = new Set(['redstone_crown', 'team_crown', 'halo', ...WINTER_IDS, ...PIXELCST_PET_IDS])
 const MAX_CARD = 512

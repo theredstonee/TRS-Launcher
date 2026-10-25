@@ -1,5 +1,6 @@
 import { DatabaseSync } from 'node:sqlite'
 import { describe, expect, it } from 'vitest'
+import { PET_STATES, validateModel } from '../app/utils/cosmetic-v2/format'
 import { cosmeticEntrySchema } from '../server/lib/builtin'
 import { cosmeticCatalog, equipCosmetics, equippedView, grantCosmetic, seedBuiltinCosmetics, type AnyBuiltinCosmetic } from '../server/lib/cosmetics'
 import { buildV2Cosmetic } from '../server/lib/cosmetics-v2'
@@ -10,6 +11,7 @@ import { lookupPlayers } from '../server/lib/lookup'
 import { migratePetExtras } from '../server/lib/migrations'
 import { adminPetExtrasOverview, adminSetPetExtras, setShowPetExtras } from '../server/lib/pet-extras'
 import type { PlayerEvent } from '../server/lib/watch'
+import { publicPets } from '../server/lib/site'
 import { ownerStaff } from '../server/lib/team'
 import adminExtrasGet from '../server/routes/v1/admin/creators/pet-extras/index.get'
 import adminExtrasPut from '../server/routes/v1/admin/creators/[uuid]/pet-extras.put'
@@ -256,10 +258,56 @@ describe('routes', () => {
     expect(off.body).toMatchObject({ showExtras: false })
     const state = await callRoute(env, petGet, { url: '/v1/creator/pet', headers: { authorization: `Bearer ${c.token}` } })
     expect(state.body).toMatchObject({ showExtras: false, extras: [{ cosmeticId: BIG }, { cosmeticId: CAP }, { cosmeticId: SHADES }] })
+    // Team-Modus (§35.9): ein Team-Mitglied mit creators.manage schaltet für den Creator um (protokolliert).
+    const asTeam = await callRoute(env, extrasPut, {
+      method: 'PUT', url: `/v1/creator/pet/extras?as=${c.uuid}`, headers: { authorization: `Bearer ${admin.token}`, ...json }, body: JSON.stringify({ show: true }),
+    })
+    expect(asTeam.status).toBe(200)
+    expect(asTeam.body).toMatchObject({ showExtras: true })
+    expect(one<{ n: number }>(env.ctx.db, "SELECT COUNT(*) AS n FROM admin_log WHERE action LIKE '%pet.extras.show' AND target = ?", c.uuid)!.n).toBe(1)
     const nobody = await login(env, 'Nobody')
     const notCreator = await callRoute(env, extrasPut, {
       method: 'PUT', url: '/v1/creator/pet/extras', headers: { authorization: `Bearer ${nobody.token}`, ...json }, body: JSON.stringify({ show: true }),
     })
     expect(notCreator.status).toBe(403)
+  })
+})
+
+describe('pet states sneak/grab/flee/handsup (format, website)', () => {
+  const anim = (id: string, driver: string) => ({ id, driver, lengthMs: 1000, tracks: [{ bone: 'root', channel: 'rotation', keys: [{ t: 0, v: [0, 0, 0] }, { t: 1000, v: [0, 10, 0] }] }] })
+  const model = (anims: unknown[]) => ({
+    format: 2,
+    id: 'test_heist',
+    name: 'test_heist',
+    slot: 'pet',
+    attach: 'ground',
+    texture: { file: 'test_heist.png', width: 16, height: 16, scale: 1 },
+    bones: [{ id: 'root', pivot: [0, 0, 0] }],
+    cubes: [{ bone: 'root', from: [-1, 0, -1], to: [1, 2, 1], faces: { south: { uv: [0, 0, 2, 2] } } }],
+    animations: anims,
+  })
+
+  it('accepts the new drivers and up to 12 animations, rejects 13 and unknown drivers', () => {
+    expect(PET_STATES).toEqual(['idle', 'walk', 'slide', 'swim', 'air', 'sneak', 'grab', 'flee', 'handsup'])
+    const nine = PET_STATES.map((d) => anim(d, d))
+    expect(validateModel(model(nine), { texture: { width: 16, height: 16 } })).toMatchObject({ ok: true })
+    const twelve = [...nine, anim('x1', 'idle'), anim('x2', 'walk'), anim('x3', 'grab')]
+    expect(validateModel(model(twelve), { texture: { width: 16, height: 16 } }).ok).toBe(true)
+    expect(validateModel(model([...twelve, anim('x4', 'idle')]), { texture: { width: 16, height: 16 } }).ok).toBe(false)
+    expect(validateModel(model([anim('a', 'dance')]), { texture: { width: 16, height: 16 } }).ok).toBe(false)
+  })
+
+  it('website pets list their states (idle first, only those with an animation) and petScale; code pets are listed', () => {
+    const env = makeEnv()
+    const card = solidPng(8, 8)
+    const heist = buildV2Cosmetic({
+      id: 'test_heist', name: 'Schwarzes Schaf', unlock: 'code', sort: 0, frames: 1, frameTimeMs: null, glowFrames: 0, glowFrameTimeMs: null,
+      files: { modelJson: Buffer.from(JSON.stringify(model([anim('w', 'walk'), anim('h', 'handsup'), anim('g', 'grab'), anim('s', 'sneak')]))), texture: solidPng(16, 16), glow: null, card, cardNight: card },
+    })
+    seedBuiltinCosmetics(env.ctx, [heist, { ...pet(BIG, 'pet', 1.25), sort: 1 }])
+    const list = publicPets(env.ctx)
+    expect(list.find((p) => p.id === 'test_heist')).toMatchObject({ unlock: 'code', states: ['idle', 'walk', 'sneak', 'grab', 'handsup'], petScale: 1 })
+    // Versteckte Team-Begleiter erscheinen nicht.
+    expect(list.find((p) => p.id === BIG)).toBeUndefined()
   })
 })
