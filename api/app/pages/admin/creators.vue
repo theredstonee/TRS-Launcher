@@ -6,7 +6,7 @@ const { a, fill, rel, day, num } = useAdminText()
 const { api, can } = useAdmin()
 const route = useRoute()
 
-type Tab = 'queue' | 'roster' | 'requests' | 'previews'
+type Tab = 'queue' | 'roster' | 'requests' | 'pets' | 'previews'
 type Tier = 'starter' | 'partner' | 'top'
 type State = 'active' | 'revoked' | 'banned'
 interface SymbolInfo { url: string, size: number, frames: number, frameMs: number, sha256: string }
@@ -56,10 +56,10 @@ const manage = computed(() => can('creators.manage'))
 const tabs = computed<Tab[]>(() => [
   ...(review.value ? ['queue' as const] : []),
   'roster',
-  ...(manage.value ? ['requests' as const, 'previews' as const] : []),
+  ...(manage.value ? ['requests' as const, 'pets' as const, 'previews' as const] : []),
 ])
 const initial = route.query.tab
-const tab = ref<Tab>(typeof initial === 'string' && ['queue', 'roster', 'requests', 'previews'].includes(initial) ? initial as Tab : review.value ? 'queue' : 'roster')
+const tab = ref<Tab>(typeof initial === 'string' && ['queue', 'roster', 'requests', 'pets', 'previews'].includes(initial) ? initial as Tab : review.value ? 'queue' : 'roster')
 
 const error = ref('')
 const notice = ref('')
@@ -315,6 +315,150 @@ async function removePreview() {
   }
 }
 
+// --- Haustiere (§35.13) ---------------------------------------------------------------------------
+type PetStatus = 'open' | 'in_progress' | 'done' | 'declined'
+const PET_STATUSES: PetStatus[] = ['open', 'in_progress', 'done', 'declined']
+interface PetRef { cosmeticId: string, name: string, card: string | null, count: number, available: boolean, assignedAt: string }
+interface PetQuota { month: string, limit: number, used: number, remaining: number, resetsAt: string }
+interface PetAssignment { creator: { uuid: string, name: string, tier: Tier, state: State }, pet: PetRef, assignedBy: { uuid: string, name: string }, quota: PetQuota }
+interface PetOption { id: string, name: string, unlock: string, hidden: boolean, card: string | null, available: boolean, owner: { uuid: string, name: string } | null }
+interface PetWish {
+  id: number
+  status: PetStatus
+  species: string
+  description: string
+  colors: string
+  image: { url: string, mime: string, width: number, height: number } | null
+  reply: string | null
+  cosmeticId: string | null
+  createdAt: string
+  decidedAt: string | null
+  creator: { uuid: string, name: string, tier: Tier, state: State }
+}
+const pt = computed(() => t.value.pets)
+const petAssignments = ref<PetAssignment[]>([])
+const petOptions = ref<PetOption[]>([])
+const petLimits = reactive({ starter: 10, partner: 50, top: 200 })
+const petWishes = ref<PetWish[]>([])
+const wishFilter = ref<'' | PetStatus>('')
+async function loadPets() {
+  const [o, w] = await Promise.all([
+    api<{ pets: PetAssignment[], cosmetics: PetOption[], limits: Record<Tier, number> }>('/v1/admin/creators/pets'),
+    api<{ requests: PetWish[] }>(`/v1/admin/creators/pet-requests${wishFilter.value ? `?status=${wishFilter.value}` : ''}`),
+  ])
+  petAssignments.value = o.pets
+  petOptions.value = o.cosmetics
+  Object.assign(petLimits, o.limits)
+  petWishes.value = w.requests
+}
+watch(wishFilter, () => void run(loadPets))
+const petName = (id: string | null) => (id ? petOptions.value.find((p) => p.id === id)?.name ?? id : '')
+
+// Zuordnen: Creator per Name/UUID/Code suchen (wie die Creator-Liste), Haustier wählen.
+const assignQuery = ref('')
+const assignHits = ref<Creator[]>([])
+const assignTo = ref<Creator | null>(null)
+const assignPet = ref('')
+let assignTimer: ReturnType<typeof setTimeout> | null = null
+watch(assignQuery, (v) => {
+  if (assignTimer) clearTimeout(assignTimer)
+  if (assignTo.value && v === assignTo.value.name) return
+  assignTo.value = null
+  if (!v.trim()) {
+    assignHits.value = []
+    return
+  }
+  assignTimer = setTimeout(async () => {
+    try {
+      assignHits.value = (await api<{ creators: Creator[] }>(`/v1/admin/creators?q=${encodeURIComponent(v.trim().slice(0, 32))}&state=active`)).creators.slice(0, 8)
+    } catch (e) {
+      fail(e)
+    }
+  }, 250)
+})
+function chooseCreator(c: Creator) {
+  assignTo.value = c
+  assignQuery.value = c.name
+  assignHits.value = []
+  assignPet.value = petAssignments.value.find((x) => x.creator.uuid === c.uuid)?.pet.cosmeticId ?? ''
+}
+const takenBy = (o: PetOption) => (o.owner && o.owner.uuid !== assignTo.value?.uuid ? o.owner : null)
+async function doAssign() {
+  const c = assignTo.value
+  if (!c || !assignPet.value) return
+  busy.value = 'pet-assign'
+  error.value = ''
+  try {
+    await api(`/v1/admin/creators/${c.uuid}/pet`, { method: 'PUT', body: { cosmeticId: assignPet.value } })
+    notice.value = pt.value.assigned
+    assignTo.value = null
+    assignQuery.value = ''
+    assignPet.value = ''
+    await loadPets()
+  } catch (e) {
+    fail(e)
+  } finally {
+    busy.value = ''
+  }
+}
+const removingPet = ref<PetAssignment | null>(null)
+async function removePet() {
+  const x = removingPet.value
+  if (!x) return
+  busy.value = 'pet-remove'
+  error.value = ''
+  try {
+    await api(`/v1/admin/creators/${x.creator.uuid}/pet`, { method: 'DELETE' })
+    removingPet.value = null
+    await loadPets()
+  } catch (e) {
+    fail(e)
+  } finally {
+    busy.value = ''
+  }
+}
+async function saveLimits() {
+  busy.value = 'pet-limits'
+  error.value = ''
+  try {
+    const body = Object.fromEntries(TIERS.map((x) => [x, Math.max(0, Math.min(1_000_000, Math.round(Number(petLimits[x]) || 0)))]))
+    Object.assign(petLimits, (await api<{ limits: Record<Tier, number> }>('/v1/admin/creators/pets/limits', { method: 'PUT', body })).limits)
+    notice.value = pt.value.limitsSaved
+  } catch (e) {
+    fail(e)
+  } finally {
+    busy.value = ''
+  }
+}
+
+// Wunsch bearbeiten: Status + Antwort, mit „Fertig“ optional gleich zuordnen.
+const editingWish = ref<PetWish | null>(null)
+const wishForm = reactive({ status: 'in_progress' as PetStatus, reply: '', cosmeticId: '' })
+function editWish(w: PetWish) {
+  Object.assign(wishForm, { status: w.status === 'open' ? 'in_progress' : w.status, reply: w.reply ?? '', cosmeticId: '' })
+  editingWish.value = w
+}
+async function saveWish() {
+  const w = editingWish.value
+  if (!w) return
+  busy.value = 'pet-wish'
+  error.value = ''
+  try {
+    const reply = wishForm.reply.replace(/\s+/g, ' ').trim().slice(0, 500)
+    await api(`/v1/admin/creators/pet-requests/${w.id}`, {
+      method: 'POST',
+      body: { status: wishForm.status, reply: reply || null, ...(wishForm.status === 'done' && wishForm.cosmeticId ? { cosmeticId: wishForm.cosmeticId } : {}) },
+    })
+    editingWish.value = null
+    await loadPets()
+  } catch (e) {
+    fail(e)
+  } finally {
+    busy.value = ''
+  }
+}
+const wishTone = (s: PetStatus) => (s === 'open' ? 'tone-warn' : s === 'in_progress' ? 'tone-info' : s === 'done' ? 'tone-ok' : 'tone-muted')
+
 // --- Laden ---------------------------------------------------------------------------------------
 async function run(fn: () => Promise<void>) {
   loading.value = true
@@ -327,7 +471,7 @@ async function run(fn: () => Promise<void>) {
     loading.value = false
   }
 }
-const loaders: Record<Tab, () => Promise<void>> = { queue: loadQueue, roster: loadCreators, requests: loadRequests, previews: loadPreviews }
+const loaders: Record<Tab, () => Promise<void>> = { queue: loadQueue, roster: loadCreators, requests: loadRequests, pets: loadPets, previews: loadPreviews }
 watch(tab, (v) => {
   notice.value = ''
   void run(loaders[v])
@@ -489,6 +633,110 @@ onMounted(() => {
       </ul>
     </template>
 
+    <!-- Haustiere (§35.13) -->
+    <template v-else-if="tab === 'pets'">
+      <p class="mt-4 max-w-3xl text-sm text-base-400">{{ pt.lead }}</p>
+      <div class="mt-4 grid gap-6 lg:grid-cols-[1fr_22rem]">
+        <div class="min-w-0">
+          <div class="adm-toolbar">
+            <h2 class="section-title">{{ pt.requestsTitle }}</h2>
+            <select v-model="wishFilter" class="field adm-select ml-auto" :aria-label="pt.status">
+              <option value="">{{ pt.allStatuses }}</option>
+              <option v-for="x in PET_STATUSES" :key="x" :value="x">{{ pt.statuses[x] }}</option>
+            </select>
+          </div>
+          <p v-if="!petWishes.length" class="adm-empty mt-3"><SiteIcon name="inbox" class="size-6" />{{ pt.noRequests }}</p>
+          <ul v-else class="mt-3 space-y-2">
+            <li v-for="w in petWishes" :key="w.id" class="card flex flex-wrap items-start gap-3 p-4">
+              <a v-if="w.image" :href="localUrl(w.image.url)" target="_blank" rel="noopener" class="shrink-0" :title="`${w.image.width}×${w.image.height}`">
+                <img :src="localUrl(w.image.url)" alt="" class="wish-thumb" loading="lazy" />
+              </a>
+              <div v-else class="wish-thumb grid place-items-center text-center text-[10px] text-base-500">{{ pt.noImage }}</div>
+              <div class="min-w-0 flex-1">
+                <p class="flex flex-wrap items-center gap-2">
+                  <span class="font-semibold text-base-50">{{ w.species }}</span>
+                  <span class="tone" :class="wishTone(w.status)">{{ pt.statuses[w.status] }}</span>
+                  <span class="text-xs text-base-400">{{ w.creator.name }} · {{ t.roster.tiers[w.creator.tier] }} · {{ rel(w.createdAt) }}</span>
+                  <span v-if="w.creator.state !== 'active'" class="tone tone-danger">{{ t.roster.states[w.creator.state] }}</span>
+                </p>
+                <p class="mt-1 text-sm whitespace-pre-line text-base-200 [overflow-wrap:anywhere]">{{ w.description }}</p>
+                <p v-if="w.colors" class="mt-1 text-xs text-base-400">{{ pt.colors }}: {{ w.colors }}</p>
+                <p v-if="w.cosmeticId" class="mt-1 text-xs text-ok">→ {{ petName(w.cosmeticId) }}</p>
+                <p v-if="w.reply" class="mt-1 text-xs text-base-400">„{{ w.reply }}“</p>
+              </div>
+              <button type="button" class="btn btn-ghost" @click="editWish(w)">{{ pt.answer }}</button>
+            </li>
+          </ul>
+
+          <h2 class="section-title mt-8">{{ pt.listTitle }}</h2>
+          <p v-if="!petAssignments.length" class="adm-empty mt-3"><SiteIcon name="star" class="size-6" />{{ pt.noPets }}</p>
+          <ul v-else class="mt-3 grid gap-3 sm:grid-cols-2">
+            <li v-for="x in petAssignments" :key="x.creator.uuid" class="card flex gap-3 p-4">
+              <img v-if="x.pet.card" :src="localUrl(x.pet.card)" alt="" class="pet-thumb" loading="lazy" />
+              <div v-else class="pet-thumb grid place-items-center text-base-500"><SiteIcon name="star" class="size-6" /></div>
+              <div class="min-w-0 flex-1">
+                <p class="font-semibold text-base-50">{{ x.pet.name }} <span class="text-xs font-normal text-base-400">· {{ fill(pt.animals, { n: x.pet.count }) }}</span></p>
+                <p class="mt-0.5 flex items-center gap-1.5 text-sm text-base-200">
+                  <PlayerHead :uuid="x.creator.uuid" :name="x.creator.name" :size="16" />{{ x.creator.name }}
+                  <span class="tone tone-info">{{ t.roster.tiers[x.creator.tier] }}</span>
+                  <span v-if="x.creator.state !== 'active'" class="tone tone-danger">{{ t.roster.states[x.creator.state] }}</span>
+                </p>
+                <p class="mt-1 text-xs text-base-400">{{ fill(pt.month, { used: num(x.quota.used), limit: num(x.quota.limit) }) }}</p>
+                <p class="text-xs text-base-500">{{ fill(pt.by, { date: day(x.pet.assignedAt), name: x.assignedBy.name || x.assignedBy.uuid }) }}</p>
+                <p v-if="!x.pet.available" class="mt-1 text-xs text-redstone-300">{{ pt.unavailable }}</p>
+                <button type="button" class="mt-2 text-xs text-redstone-300 underline" @click="removingPet = x">{{ pt.remove }}</button>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="space-y-6">
+          <form class="card h-fit p-5" @submit.prevent="doAssign">
+            <h2 class="section-title">{{ pt.assignTitle }}</h2>
+            <p class="mt-1 text-xs text-base-400">{{ pt.assignLead }}</p>
+            <label class="label mt-4" for="pa-creator">{{ t.tabs.roster }}</label>
+            <div class="relative">
+              <input id="pa-creator" v-model="assignQuery" class="field" maxlength="32" autocomplete="off" spellcheck="false" :placeholder="pt.creatorSearch" />
+              <ul v-if="assignHits.length" class="assign-hits" role="listbox">
+                <li v-for="c in assignHits" :key="c.uuid">
+                  <button type="button" role="option" :aria-selected="false" @click="chooseCreator(c)">
+                    <PlayerHead :uuid="c.uuid" :name="c.name" :size="20" />
+                    <span class="flex-1 truncate text-left">{{ c.name }}</span>
+                    <span class="text-xs text-base-400">{{ t.roster.tiers[c.tier] }}<template v-if="c.mainCode"> · {{ c.mainCode }}</template></span>
+                  </button>
+                </li>
+              </ul>
+              <p v-else-if="assignQuery.trim() && !assignTo" class="mt-1 text-xs text-base-500">{{ pt.noMatch }}</p>
+            </div>
+            <p v-if="assignTo" class="mt-2 flex items-center gap-2 text-sm text-ok"><SiteIcon name="check" class="size-4" />{{ assignTo.name }} · {{ t.roster.tiers[assignTo.tier] }}</p>
+            <label class="label mt-3" for="pa-pet">{{ pt.pet }}</label>
+            <select id="pa-pet" v-model="assignPet" class="field" :disabled="!assignTo">
+              <option value="" disabled>{{ pt.choosePet }}</option>
+              <option v-for="o in petOptions" :key="o.id" :value="o.id" :disabled="!!takenBy(o)">
+                {{ o.name }}{{ takenBy(o) ? ` – ${fill(pt.ownedBy, { name: takenBy(o)!.name })}` : '' }}{{ o.available ? '' : ` (${pt.unavailable})` }}
+              </option>
+            </select>
+            <div v-if="assignPet" class="mt-3 flex items-center gap-3 rounded-lg bg-base-950 p-2">
+              <img v-if="petOptions.find((o) => o.id === assignPet)?.card" :src="localUrl(petOptions.find((o) => o.id === assignPet)!.card!)" alt="" class="pet-thumb" />
+              <span class="text-sm text-base-200">{{ petName(assignPet) }}</span>
+            </div>
+            <button type="submit" class="btn btn-primary mt-4 w-full" :disabled="busy === 'pet-assign' || !assignTo || !assignPet">{{ pt.assign }}</button>
+          </form>
+
+          <form class="card h-fit p-5" @submit.prevent="saveLimits">
+            <h2 class="section-title">{{ pt.limitsTitle }}</h2>
+            <p class="mt-1 text-xs text-base-400">{{ pt.limitsLead }}</p>
+            <div class="mt-4 grid grid-cols-3 gap-2">
+              <label v-for="x in TIERS" :key="x" class="text-xs text-base-300">{{ t.roster.tiers[x] }}
+                <input v-model.number="petLimits[x]" class="field mt-1" type="number" min="0" max="1000000" required />
+              </label>
+            </div>
+            <button type="submit" class="btn btn-primary mt-4 w-full" :disabled="busy === 'pet-limits'">{{ a.common.save }}</button>
+          </form>
+        </div>
+      </div>
+    </template>
+
     <!-- Vorschau-Builds -->
     <template v-else-if="tab === 'previews'">
       <p class="mt-4 text-sm text-base-400">{{ t.previews.lead }}</p>
@@ -632,6 +880,41 @@ onMounted(() => {
       @confirm="removeCreator"
     />
 
+    <AdminDialog v-if="editingWish" :title="fill(pt.answerTitle, { name: editingWish.creator.name })" size="sm" @close="editingWish = null">
+      <form @submit.prevent="saveWish">
+        <p class="mb-3 text-sm text-base-300"><strong class="text-base-50">{{ editingWish.species }}</strong> – {{ editingWish.description.slice(0, 160) }}</p>
+        <label class="label" for="pw-status">{{ pt.status }}</label>
+        <select id="pw-status" v-model="wishForm.status" class="field">
+          <option v-for="x in PET_STATUSES" :key="x" :value="x">{{ pt.statuses[x] }}</option>
+        </select>
+        <label class="label mt-3" for="pw-reply">{{ pt.reply }}</label>
+        <textarea id="pw-reply" v-model="wishForm.reply" class="field" rows="3" maxlength="500" />
+        <template v-if="wishForm.status === 'done'">
+          <label class="label mt-3" for="pw-pet">{{ pt.assignWith }}</label>
+          <select id="pw-pet" v-model="wishForm.cosmeticId" class="field">
+            <option value="">{{ pt.noPet }}</option>
+            <option v-for="o in petOptions" :key="o.id" :value="o.id" :disabled="!!o.owner && o.owner.uuid !== editingWish.creator.uuid">
+              {{ o.name }}{{ o.owner && o.owner.uuid !== editingWish.creator.uuid ? ` – ${fill(pt.ownedBy, { name: o.owner.name })}` : '' }}
+            </option>
+          </select>
+        </template>
+        <div class="mt-4 flex justify-end gap-2">
+          <button type="button" class="btn btn-ghost" @click="editingWish = null">{{ a.common.cancel }}</button>
+          <button type="submit" class="btn btn-primary" :disabled="busy === 'pet-wish'">{{ a.common.save }}</button>
+        </div>
+      </form>
+    </AdminDialog>
+
+    <AdminConfirm
+      v-if="removingPet"
+      :title="fill(pt.removeTitle, { pet: removingPet.pet.name, name: removingPet.creator.name })"
+      :text="pt.removeConfirm"
+      danger
+      :busy="busy === 'pet-remove'"
+      @cancel="removingPet = null"
+      @confirm="removePet"
+    />
+
     <AdminConfirm
       v-if="removingPreview"
       :title="t.previews.remove"
@@ -645,6 +928,45 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.wish-thumb {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 0.5rem;
+  background: var(--color-base-950);
+  object-fit: cover;
+}
+.pet-thumb {
+  width: 3.5rem;
+  height: 3.5rem;
+  flex-shrink: 0;
+  border-radius: 0.5rem;
+  background: var(--color-base-950);
+  object-fit: cover;
+}
+.assign-hits {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + 0.25rem);
+  z-index: 20;
+  overflow: hidden;
+  border-radius: 0.6rem;
+  border: 1px solid var(--color-base-700);
+  background: var(--color-base-900);
+  box-shadow: 0 12px 30px rgb(0 0 0 / 0.35);
+}
+.assign-hits button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.875rem;
+  color: var(--color-base-100);
+}
+.assign-hits button:hover,
+.assign-hits button:focus-visible {
+  background: var(--color-base-800);
+}
 .profile-box {
   border-radius: 0.6rem;
   border: 1px solid var(--color-base-800);

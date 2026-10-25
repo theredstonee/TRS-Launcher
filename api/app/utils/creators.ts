@@ -105,6 +105,8 @@ export interface CreatorDashboard {
   helpers?: { uuid: string, name: string, skin: string | null, rights: HelperRight[], status: 'pending' | 'active', createdAt: string }[]
   viewer?: { helper: true, rights: HelperRight[] }
   profile?: ProfileState
+  /** Eigenes Creator-Haustier (§35.13); ältere API-Stände ohne. */
+  pet?: CreatorPetRef | null
 }
 
 export interface MyCreatorState {
@@ -123,3 +125,36 @@ export function sameOriginPath(url: string): string {
     return url
   }
 }
+
+// ---------------------------------------------------------------- Creator-Haustiere (§35.13)
+
+export interface CreatorPetRef { cosmeticId: string, name: string, card: string | null, count: number, available: boolean, assignedAt: string }
+export interface PetQuota { month: string, limit: number, used: number, remaining: number, resetsAt: string }
+export interface PetCode {
+  id: number
+  hint: string
+  maxUses: number
+  uses: number
+  expiresAt: string | null
+  revokedAt: string | null
+  note: string | null
+  createdAt: string
+  createdBy: { uuid: string, name: string }
+}
+export type PetRequestStatus = 'open' | 'in_progress' | 'done' | 'declined'
+export interface PetRequest {
+  id: number
+  status: PetRequestStatus
+  species: string
+  description: string
+  colors: string
+  image: { url: string, mime: string, width: number, height: number } | null
+  reply: string | null
+  cosmeticId: string | null
+  createdAt: string
+  updatedAt: string
+  decidedAt: string | null
+}
+export interface CreatorPetState { pet: CreatorPetRef | null, quota: PetQuota, codes: PetCode[] | null, requests: PetRequest[], canRequest: boolean }
+/** Referenzbild: PNG oder JPEG bis 2 MiB (der Server prüft die Magic Bytes und kodiert neu). */
+export const PET_IMAGE_MAX_BYTES = 2 * 1024 * 1024

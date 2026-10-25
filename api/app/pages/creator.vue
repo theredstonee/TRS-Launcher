@@ -31,7 +31,7 @@ const ct = computed(() => m.value.creators)
 
 usePageSeo(() => ({ path: '/creator', title: `${d.value.title} – TRS Launcher`, description: d.value.lead, noindex: true }))
 
-type Tab = 'overview' | 'profile' | 'codes' | 'uploads' | 'packs' | 'team'
+type Tab = 'overview' | 'profile' | 'codes' | 'uploads' | 'packs' | 'team' | 'pet'
 
 const my = ref<MyCreatorState | null>(null)
 const dash = ref<CreatorDashboard | null>(null)
@@ -52,6 +52,8 @@ const tabs = computed<Tab[]>(() => {
   if (may('uploads')) list.push('uploads')
   if (may('packs')) list.push('packs')
   if (!helper.value) list.push('team')
+  // Haustier (§35.13): der Creator immer, Helfer nur mit dem Recht `codes` (Wünsche bleiben beim Creator).
+  if (!helper.value || may('codes')) list.push('pet')
   return list
 })
 const asQuery = computed(() => (as.value ? `as=${as.value}` : ''))
@@ -294,6 +296,111 @@ const limitsText = computed(() => {
   })
 })
 const helpingName = computed(() => my.value?.helping.find((h) => h.creator.uuid === as.value)?.creator.name ?? '')
+
+// ---------------------------------------------------------------- Haustier (§35.13)
+const petState = ref<CreatorPetState | null>(null)
+const petForm = reactive({ count: 1, maxUses: 1, expiresAt: '', note: '' })
+const petCreated = ref<string[]>([])
+const petCopied = ref(false)
+const wishForm = reactive({ species: '', description: '', colors: '' })
+const wishFile = ref<File | null>(null)
+const wishFileError = ref('')
+async function loadPet() {
+  petState.value = await api<CreatorPetState>(withAs('/v1/creator/pet'))
+}
+watch(tab, (v) => {
+  if (v === 'pet') void act('pet-load', loadPet)
+})
+watch(as, () => (petState.value = null))
+const clampInt = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Math.round(Number(v) || lo)))
+const petWant = computed(() => clampInt(petForm.count, 1, 20) * clampInt(petForm.maxUses, 1, 100))
+const petOver = computed(() => !!petState.value && petWant.value > petState.value.quota.remaining)
+const monthName = (month: string) => {
+  const d = new Date(`${month}-01T00:00:00Z`)
+  return Number.isNaN(d.getTime()) ? month : d.toLocaleDateString(lang.value === 'en' ? 'en-GB' : lang.value, { month: 'long', year: 'numeric', timeZone: 'UTC' })
+}
+const petCodeState = (c: PetCode) => (c.revokedAt ? 'revoked' : c.expiresAt && Date.parse(c.expiresAt) <= Date.now() ? 'expired' : c.uses >= c.maxUses ? 'used' : 'ok')
+async function createPetCodes() {
+  await act('pet-codes', async () => {
+    const body: Record<string, unknown> = { count: clampInt(petForm.count, 1, 20), maxUses: clampInt(petForm.maxUses, 1, 100) }
+    if (petForm.expiresAt) body.expiresAt = new Date(`${petForm.expiresAt}T23:59:59`).toISOString()
+    if (petForm.note.trim()) body.note = petForm.note.trim().slice(0, 100)
+    const r = await api<{ codes: (PetCode & { code: string })[], quota: PetQuota }>(withAs('/v1/creator/pet/codes'), { method: 'POST', body })
+    petCreated.value = r.codes.map((c) => c.code)
+    petCopied.value = false
+    Object.assign(petForm, { count: 1, maxUses: 1, expiresAt: '', note: '' })
+    await loadPet()
+  })
+}
+async function copyPetCodes() {
+  try {
+    await navigator.clipboard.writeText(petCreated.value.join('\n'))
+    petCopied.value = true
+  } catch {
+    // Zwischenablage gesperrt: Codes stehen markierbar im Feld.
+  }
+}
+async function revokePetCode(id: number) {
+  await act(`pet-code:${id}`, async () => {
+    const r = await api<{ codes: PetCode[], quota: PetQuota }>(withAs(`/v1/creator/pet/codes/${id}`), { method: 'DELETE' })
+    if (petState.value) Object.assign(petState.value, { codes: r.codes, quota: r.quota })
+  })
+}
+function checkImage(f: File | null): string {
+  if (!f) return ''
+  if (f.type !== 'image/png' && f.type !== 'image/jpeg') return d.value.pet.imageType
+  return f.size > PET_IMAGE_MAX_BYTES ? d.value.pet.imageTooBig : ''
+}
+function pickWishFile(e: Event) {
+  const f = pick(e)
+  wishFileError.value = checkImage(f)
+  wishFile.value = wishFileError.value ? null : f
+}
+async function putWishImage(id: number, f: File) {
+  await apiFetch(withAs(`/v1/creator/pet/requests/${id}/image`), {
+    method: 'PUT',
+    body: f,
+    headers: { 'Content-Type': f.type, 'X-CSRF-Token': account.value?.csrf ?? '' },
+    credentials: 'same-origin',
+  })
+}
+async function sendWish() {
+  await act('pet-wish', async () => {
+    const body: Record<string, unknown> = { species: wishForm.species.trim().slice(0, 60), description: wishForm.description.trim().slice(0, 1000) }
+    if (wishForm.colors.trim()) body.colors = wishForm.colors.trim().slice(0, 200)
+    const r = await api<{ requests: PetRequest[] }>('/v1/creator/pet/requests', { method: 'POST', body })
+    const f = wishFile.value
+    if (f && r.requests[0]) await putWishImage(r.requests[0].id, f)
+    Object.assign(wishForm, { species: '', description: '', colors: '' })
+    wishFile.value = null
+    await loadPet()
+  }, d.value.pet.sent)
+}
+async function addWishImage(id: number, e: Event) {
+  const f = pick(e)
+  const problem = checkImage(f)
+  if (problem) {
+    error.value = problem
+    return
+  }
+  if (!f) return
+  await act(`pet-img:${id}`, async () => {
+    await putWishImage(id, f)
+    await loadPet()
+  })
+}
+async function removeWishImage(id: number) {
+  await act(`pet-img:${id}`, async () => {
+    await api(`/v1/creator/pet/requests/${id}/image`, { method: 'DELETE' })
+    await loadPet()
+  })
+}
+async function withdrawWish(id: number) {
+  await act(`pet-wish:${id}`, async () => {
+    await api(`/v1/creator/pet/requests/${id}`, { method: 'DELETE' })
+    await loadPet()
+  })
+}
 </script>
 
 <template>
@@ -581,6 +688,126 @@ const helpingName = computed(() => my.value?.helping.find((h) => h.creator.uuid 
           </ul>
         </section>
 
+        <!-- Haustier (§35.13) -->
+        <section v-else-if="tab === 'pet'" class="mt-6">
+          <div v-if="!petState" class="skeleton h-40 rounded-xl" />
+          <div v-else class="grid gap-6 lg:grid-cols-[1fr_20rem]">
+            <div class="card min-w-0 p-5">
+              <h2 class="section-title">{{ d.pet.title }}</h2>
+              <p class="mt-1 text-sm text-base-400">{{ d.pet.lead }}</p>
+              <div v-if="petState.pet" class="pet-hero mt-4">
+                <img v-if="petState.pet.card" :src="sameOriginPath(petState.pet.card)" alt="" class="pet-card" width="112" height="112" />
+                <div v-else class="pet-card grid place-items-center text-base-500"><SiteIcon name="star" class="size-8" /></div>
+                <div class="min-w-0">
+                  <p class="text-xl font-bold text-base-50">{{ petState.pet.name }}</p>
+                  <p class="mt-1 text-sm text-base-300">{{ fill(d.pet.count, { n: petState.pet.count }) }}</p>
+                  <p class="mt-1.5 flex gap-1" aria-hidden="true"><span v-for="i in 4" :key="i" class="pet-dot" :data-on="i <= petState.pet.count" /></p>
+                  <p v-if="!petState.pet.available" class="state state-warn mt-2 text-sm"><SiteIcon name="clock" class="size-4" />{{ d.pet.unavailable }}</p>
+                </div>
+              </div>
+              <p v-else class="state mt-4 text-sm"><SiteIcon name="note" class="size-4" />{{ d.pet.none }}</p>
+
+              <template v-if="petState.pet && petState.codes">
+                <h3 class="mt-6 text-sm font-semibold text-base-200">{{ d.pet.codesTitle }}</h3>
+                <p class="mt-1 text-xs text-base-400">{{ d.pet.codesLead }}</p>
+                <div class="mt-3">
+                  <div class="quota-bar"><span :style="{ width: `${petState.quota.limit ? Math.min(100, (petState.quota.used / petState.quota.limit) * 100) : 100}%` }" /></div>
+                  <p class="mt-1.5 text-xs text-base-300 tabular-nums">{{ fill(d.pet.quota, { used: num(petState.quota.used), limit: num(petState.quota.limit), month: monthName(petState.quota.month), date: date(petState.quota.resetsAt) }) }}</p>
+                </div>
+                <p v-if="!petState.codes.length" class="mt-4 text-sm text-base-400">{{ d.pet.noCodes }}</p>
+                <ul v-else class="mt-4 space-y-2">
+                  <li v-for="c in petState.codes" :key="c.id" class="code-row" :data-off="petCodeState(c) !== 'ok'">
+                    <div class="min-w-0 flex-1">
+                      <p class="flex flex-wrap items-center gap-2">
+                        <code class="text-base font-bold text-lamp-300">…{{ c.hint }}</code>
+                        <span v-if="petCodeState(c) === 'revoked'" class="pill">{{ d.pet.revoked }}</span>
+                        <span v-else-if="petCodeState(c) === 'expired'" class="pill">{{ d.pet.expired }}</span>
+                        <span v-if="c.note" class="truncate text-xs text-base-300">{{ c.note }}</span>
+                      </p>
+                      <p class="mt-0.5 text-xs text-base-400">
+                        {{ fill(d.pet.usesMax, { n: num(c.uses), max: num(c.maxUses) }) }} · {{ date(c.createdAt) }}
+                        <template v-if="c.expiresAt"> · {{ fill(d.pet.expires, { date: date(c.expiresAt) }) }}</template>
+                        <template v-if="c.createdBy.uuid !== dash.uuid"> · {{ fill(d.pet.by, { name: c.createdBy.name }) }}</template>
+                      </p>
+                    </div>
+                    <button v-if="!c.revokedAt" type="button" class="btn btn-ghost" :disabled="busy === `pet-code:${c.id}`" @click="revokePetCode(c.id)">{{ d.pet.revoke }}</button>
+                  </li>
+                </ul>
+              </template>
+
+              <template v-if="!helper && petState.requests.length">
+                <h3 class="mt-6 text-sm font-semibold text-base-200">{{ d.pet.wishes }}</h3>
+                <ul class="mt-2 space-y-2">
+                  <li v-for="r in petState.requests" :key="r.id" class="wish">
+                    <img v-if="r.image" :src="sameOriginPath(r.image.url)" alt="" class="wish-img" loading="lazy" />
+                    <div class="min-w-0 flex-1">
+                      <p class="flex flex-wrap items-center gap-2">
+                        <span class="font-semibold text-base-50">{{ r.species }}</span>
+                        <span class="pill" :class="{ 'pill-ok': r.status === 'done' }">{{ d.pet.statuses[r.status] }}</span>
+                        <span class="text-xs text-base-400">{{ date(r.createdAt) }}</span>
+                      </p>
+                      <p class="mt-1 text-sm whitespace-pre-line text-base-300 [overflow-wrap:anywhere]">{{ r.description }}</p>
+                      <p v-if="r.colors" class="mt-0.5 text-xs text-base-400">{{ d.pet.colorsShort }}: {{ r.colors }}</p>
+                      <p v-if="r.reply" class="mt-1 text-xs text-lamp-300">{{ fill(d.pet.reply, { text: r.reply }) }}</p>
+                      <div v-if="r.status === 'open'" class="mt-2 flex flex-wrap gap-3 text-xs">
+                        <label class="cursor-pointer underline">
+                          {{ d.pet.imageAdd }}
+                          <input type="file" class="sr-only" accept="image/png,image/jpeg" @change="addWishImage(r.id, $event)" />
+                        </label>
+                        <button v-if="r.image" type="button" class="underline" :disabled="busy === `pet-img:${r.id}`" @click="removeWishImage(r.id)">{{ d.pet.imageRemove }}</button>
+                        <button type="button" class="underline" :disabled="busy === `pet-wish:${r.id}`" @click="withdrawWish(r.id)">{{ d.pet.withdraw }}</button>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </template>
+            </div>
+
+            <div class="space-y-6">
+              <form v-if="petState.pet && petState.codes" class="card h-fit p-5" @submit.prevent="createPetCodes">
+                <h2 class="section-title">{{ d.pet.create }}</h2>
+                <p class="mt-1 text-xs text-base-400">{{ d.pet.quotaHint }}</p>
+                <div class="mt-4 grid grid-cols-2 gap-3">
+                  <label class="text-sm text-base-300">{{ d.pet.count2 }}
+                    <input v-model.number="petForm.count" class="field mt-1" type="number" min="1" max="20" required />
+                  </label>
+                  <label class="text-sm text-base-300">{{ d.pet.maxUses }}
+                    <input v-model.number="petForm.maxUses" class="field mt-1" type="number" min="1" max="100" required />
+                  </label>
+                </div>
+                <label class="label mt-3" for="pc-exp">{{ d.pet.expiresAt }}</label>
+                <input id="pc-exp" v-model="petForm.expiresAt" class="field" type="date" />
+                <label class="label mt-3" for="pc-note">{{ d.pet.note }}</label>
+                <input id="pc-note" v-model="petForm.note" class="field" maxlength="100" />
+                <p v-if="petOver" class="mt-2 text-xs text-redstone-300">{{ fill(d.pet.overLimit, { n: petState.quota.remaining }) }}</p>
+                <button type="submit" class="btn btn-primary mt-4 w-full" :disabled="busy === 'pet-codes' || petOver || !petState.pet.available">{{ d.pet.create }}</button>
+                <div v-if="petCreated.length" class="mt-4">
+                  <p class="text-xs text-lamp-300">{{ d.pet.createdTitle }}</p>
+                  <pre class="codes-out mt-2 select-all">{{ petCreated.join('\n') }}</pre>
+                  <button type="button" class="btn btn-ghost mt-2 w-full" @click="copyPetCodes"><SiteIcon :name="petCopied ? 'check' : 'copy'" class="size-4" />{{ petCopied ? d.pet.copied : d.pet.copyAll }}</button>
+                </div>
+              </form>
+
+              <form v-if="!helper && petState.canRequest" class="card h-fit p-5" @submit.prevent="sendWish">
+                <h2 class="section-title">{{ d.pet.requestTitle }}</h2>
+                <p class="mt-1 text-xs text-base-400">{{ d.pet.requestLead }}</p>
+                <label class="label mt-4" for="pw-species">{{ d.pet.species }}</label>
+                <input id="pw-species" v-model="wishForm.species" class="field" maxlength="60" required :placeholder="d.pet.speciesPh" />
+                <label class="label mt-3" for="pw-desc">{{ d.pet.description }}</label>
+                <textarea id="pw-desc" v-model="wishForm.description" class="field" rows="4" maxlength="1000" required :placeholder="d.pet.descriptionPh" />
+                <label class="label mt-3" for="pw-colors">{{ d.pet.colors }}</label>
+                <input id="pw-colors" v-model="wishForm.colors" class="field" maxlength="200" />
+                <label class="label mt-3" for="pw-image">{{ d.pet.image }}</label>
+                <input id="pw-image" class="field" type="file" accept="image/png,image/jpeg" @change="pickWishFile" />
+                <p v-if="wishFileError" class="mt-1 text-xs text-redstone-300">{{ wishFileError }}</p>
+                <button type="submit" class="btn btn-primary mt-4 w-full" :disabled="busy === 'pet-wish' || !wishForm.species.trim() || !wishForm.description.trim()">{{ d.pet.send }}</button>
+              </form>
+              <p v-else-if="!helper && !petState.pet" class="card p-5 text-sm text-base-300"><SiteIcon name="clock" class="mr-1 inline size-4 align-[-3px]" />{{ d.pet.hasOpen }}</p>
+              <p v-else-if="helper" class="card p-5 text-sm text-base-400">{{ d.pet.ownerOnly }}</p>
+            </div>
+          </div>
+        </section>
+
         <!-- Stufe, Anfragen, Helfer -->
         <section v-else-if="tab === 'team'" class="mt-6 grid gap-6 md:grid-cols-2">
           <div class="card p-5">
@@ -746,6 +973,69 @@ const helpingName = computed(() => my.value?.helping.find((h) => h.creator.uuid 
 .chip.bad {
   border-color: var(--color-redstone-600);
   color: var(--color-redstone-300);
+}
+.pet-hero {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-base-800);
+  background: radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--color-lamp-400) 10%, transparent), var(--color-base-950) 60%);
+  padding: 0.9rem;
+}
+.pet-card {
+  width: 7rem;
+  height: 7rem;
+  flex-shrink: 0;
+  border-radius: 0.6rem;
+  background: var(--color-base-900);
+  object-fit: cover;
+}
+.pet-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 999px;
+  background: var(--color-base-800);
+}
+.pet-dot[data-on='true'] {
+  background: var(--color-lamp-400);
+}
+.quota-bar {
+  height: 0.45rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-base-800);
+}
+.quota-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-redstone-500);
+}
+.wish {
+  display: flex;
+  gap: 0.75rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--color-base-800);
+  background: var(--color-base-950);
+  padding: 0.7rem 0.85rem;
+}
+.wish-img {
+  width: 4rem;
+  height: 4rem;
+  flex-shrink: 0;
+  border-radius: 0.4rem;
+  object-fit: cover;
+}
+.codes-out {
+  max-height: 12rem;
+  overflow: auto;
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--color-lamp-300);
+  background: var(--color-base-950);
 }
 :deep(.adm-chart rect.bar) {
   fill: color-mix(in srgb, var(--color-redstone-500) 80%, transparent);

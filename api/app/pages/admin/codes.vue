@@ -15,6 +15,8 @@ interface CodeView {
   revokedAt: string | null
   note: string | null
   createdAt: string
+  /** Haustier-Code eines Creators (§35.13), sonst `null` (Team). */
+  creator?: { uuid: string, name: string } | null
 }
 const codes = ref<CodeView[]>([])
 const catalog = ref<SiteCape[]>([])
@@ -163,7 +165,10 @@ const cosmeticName = (id: string | null) => cosmetics.value.find((c) => c.id ===
                   </span>
                 </td>
                 <td class="px-4 py-2.5 text-base-400 tabular-nums">{{ fill(m.admin.codes.uses2, { uses: c.uses, max: c.maxUses }) }}</td>
-                <td class="max-w-56 truncate px-4 py-2.5 text-base-400">{{ c.note }}</td>
+                <td class="max-w-56 px-4 py-2.5 text-base-400">
+                  <span v-if="c.creator" class="tone tone-info mr-1 whitespace-nowrap">{{ fill(m.admin.codes.byCreator, { name: c.creator.name || c.creator.uuid }) }}</span>
+                  <span class="truncate">{{ c.note }}</span>
+                </td>
                 <td class="px-4 py-2.5 text-right">
                   <button v-if="!c.revokedAt && can('codes')" type="button" class="btn btn-danger py-1 text-xs" :disabled="busy === `code-${c.id}`" @click="revoking = c">{{ m.admin.codes.revoke }}</button>
                 </td>
