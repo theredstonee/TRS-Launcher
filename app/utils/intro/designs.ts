@@ -1,10 +1,10 @@
 // Design-Varianten der Start-Animation als kleine Registry. Ein künftiges Event braucht nur einen weiteren Eintrag
 // (Farben + Requisiten + Klangfarbe); die Auswahl läuft automatisch über das aktive Event bzw. das gewählte Design.
 
-export type IntroLight = 'torch' | 'pumpkin' | 'iceLantern' | 'campfire'
-export type IntroCameo = 'creeper' | 'bats' | 'penguin' | 'fox'
-export type IntroSky = 'cave' | 'moon' | 'aurora' | 'sunset'
-export type IntroMood = 'redstone' | 'spooky' | 'frost' | 'fox'
+export type IntroLight = 'torch' | 'pumpkin' | 'iceLantern'
+export type IntroCameo = 'creeper' | 'bats' | 'penguin'
+export type IntroSky = 'cave' | 'moon' | 'aurora'
+export type IntroMood = 'redstone' | 'spooky' | 'frost'
 
 export interface IntroPalette {
   /** Ganz hinten (Leere unter/um das Diorama). */
@@ -72,7 +72,7 @@ export interface IntroAudioStyle {
 }
 
 /** Szenen-Set: eigene Welt, eigene Kamerafahrten, eigene Effekte. */
-export type IntroSceneKind = 'dungeon' | 'graveyard' | 'frost' | 'foxden'
+export type IntroSceneKind = 'dungeon' | 'graveyard' | 'frost'
 
 export interface IntroDesign {
   id: string
@@ -193,48 +193,8 @@ const winter: IntroDesign = {
   audio: { mood: 'frost', jingleHit: 2.7 },
 }
 
-// Fuchsbau (Arbeitsname): Minecraft-Wald in der Abenddämmerung mit Fuchsfamilie. Jingle app/assets/intro/fox.ogg/.mp3
-// (Suno, 101 BPM, ganze 12 s): `jingleHit` = zweiter Höhepunkt bei 9,72 s (Bass-Einsatz nach kurzer Senke), danach
-// klingt das Stück genau zur Übergabe aus. Anderer Jingle: Datei ersetzen, hier die Schlag-Sekunde eintragen und
-// FOXDEN_BEAT (foxden.ts) aufs neue Tempo setzen.
-const fox: IntroDesign = {
-  id: 'fox',
-  scene: 'foxden',
-  design: 'fox',
-  palette: {
-    void: '#0e0810',
-    sky: ['#2a1a3a', '#ffc27a'],
-    abyss: '#e0785a',
-    ambient: '#f2cdb8',
-    stone: ['#3a2a26', '#6e4630', '#8a5a3a', '#9a6a44'],
-    mortar: '#2c1c0e',
-    moss: '#2f5a40',
-    frost: '',
-    door: ['#2c1c0e', '#3b2614', '#4e3420'],
-    doorBand: '#e3823a',
-    wireOff: '#7a3a5a',
-    wireOn: '#e3823a',
-    wireHot: '#fff0d8',
-    wireLight: '#ffb060',
-    lampOff: ['#2a2a32', '#4a3a30'],
-    lampOn: ['#ffb347', '#fff0b0', '#ffffff'],
-    light: '#ff9a40',
-    flame: ['#fff2a8', '#ffb340', '#ff6a1a'],
-    fog: '#e0785a',
-    wood: ['#3b2614', '#4e3420'],
-    iron: '#2a2a32',
-    flash: '#fff0d8',
-    logoGlow: '#ffb060',
-    ray: '#ffd8a0',
-    wordmark: '#fff4ea',
-    cold: '#f3a6c8',
-  },
-  props: { light: 'campfire', cameo: 'fox', sky: 'sunset', fog: 0.2, snow: false, bats: false, banners: false, cobwebs: false },
-  audio: { mood: 'fox', jingleHit: 9.72 },
-}
-
 /** Reihenfolge = Vorrang: Events zuerst, dann Designs, Redstone ist der Rückfall. */
-export const INTRO_DESIGNS: readonly IntroDesign[] = [halloween, winter, fox, redstone]
+export const INTRO_DESIGNS: readonly IntroDesign[] = [halloween, winter, redstone]
 
 export const DEFAULT_INTRO_DESIGN = redstone
 

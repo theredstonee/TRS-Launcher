@@ -90,7 +90,7 @@ ${designs.map((d) => `<script src="audio/${d}.js"></script>`).join('\n')}
   </div></div>
 </section>
 <div class="bar">
-${btn('data-design', 'redstone', 'Redstone')}${btn('data-design', 'halloween', 'Halloween · Mondnacht')}${btn('data-design', 'winter', 'Winternacht')}${btn('data-design', 'fox', 'Fuchsbau')}
+${btn('data-design', 'redstone', 'Redstone')}${btn('data-design', 'halloween', 'Halloween · Mondnacht')}${btn('data-design', 'winter', 'Winternacht')}
 <span class="sep"></span>
 ${btn('data-length', 'short', '4 s')}${btn('data-length', 'medium', '7 s')}${btn('data-length', 'long', '10 s')}
 <span class="sep"></span>

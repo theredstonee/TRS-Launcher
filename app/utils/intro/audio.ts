@@ -203,9 +203,7 @@ export class IntroAudio {
   private schedule(t0: number) {
     const mood = this.o.style.mood
     for (const e of this.o.plan) {
-      if (e.t < t0 - 0.01 && e.kind !== 'drone' && e.kind !== 'crackle') continue
-      // Musikalische Effekte nur ohne Jingle (sonst beißen sie sich mit Tonart und Takt)
-      if (e.solo && this.o.jingle) continue
+      if (e.t < t0 - 0.01 && e.kind !== 'drone') continue
       const pan = e.pan ?? 0
       const level = e.level ?? 1
       switch (e.kind) {
@@ -259,25 +257,6 @@ export class IntroAudio {
           break
         case 'boing':
           this.boing(e.t, pan, level)
-          break
-        case 'crackle':
-          this.crackle(Math.max(t0, e.t), e.t + (e.dur ?? 4), pan, level)
-          break
-        case 'yip':
-          this.yip(e.t, pan, level)
-          break
-        case 'rustle':
-          this.rustle(e.t, e.dur ?? 0.4, pan, level)
-          break
-        case 'pop':
-          this.pop(e.t, pan, level)
-          break
-        case 'pluck':
-          this.pluck(e.t, e.note ?? 660, pan, level)
-          break
-        case 'gust':
-          this.whoosh(e.t, e.dur ?? 1.2, 0.3 * level, false)
-          this.rustle(e.t + 0.1, Math.min(1.2, e.dur ?? 1.2), -0.3, 0.45 * level)
           break
       }
     }
@@ -397,175 +376,6 @@ export class IntroAudio {
     n.stop(a + 0.5)
   }
 
-  /** Lagerfeuer-Knistern: unregelmäßige kurze Knackser über einem leisen Rauschen. */
-  private crackle(t0: number, t1: number, pan: number, level: number) {
-    const ctx = this.ctx!
-    const a = this.at(t0)
-    const b = this.at(t1)
-    const n = this.noise()
-    const lp = ctx.createBiquadFilter()
-    lp.type = 'lowpass'
-    lp.frequency.value = 900
-    const g = ctx.createGain()
-    g.gain.setValueAtTime(0.0001, a)
-    g.gain.linearRampToValueAtTime(0.05 * level, a + 0.4)
-    g.gain.setValueAtTime(0.05 * level, Math.max(a + 0.4, b - 0.3))
-    g.gain.linearRampToValueAtTime(0.0001, b)
-    n.connect(lp).connect(g)
-    this.out(g, pan, 0.2)
-    n.start(a, Math.random())
-    n.stop(b + 0.05)
-    for (let tt = t0 + 0.05; tt < t1; tt += 0.06 + hash(Math.floor(tt * 1000)) * 0.22) {
-      const at = this.at(tt)
-      const c = this.noise()
-      const bp = ctx.createBiquadFilter()
-      bp.type = 'bandpass'
-      bp.frequency.value = 1800 + hash(Math.floor(tt * 997)) * 3500
-      bp.Q.value = 2
-      const cg = ctx.createGain()
-      this.env(cg, at, (0.08 + hash(Math.floor(tt * 991)) * 0.18) * level, 0.001, 0.02 + hash(Math.floor(tt * 983)) * 0.03)
-      c.connect(bp).connect(cg)
-      this.out(cg, pan + (hash(Math.floor(tt * 977)) - 0.5) * 0.3, 0.15)
-      c.start(at, Math.random())
-      c.stop(at + 0.08)
-    }
-  }
-
-  /** Fuchs-Fiepen (kurz, hoch, wie im Spiel). */
-  private yip(t: number, pan: number, level: number) {
-    const ctx = this.ctx!
-    const parts: [number, number, number, number][] = [
-      [0, 900, 1700, 0.09],
-      [0.11, 1300, 1050, 0.06],
-    ]
-    for (const [dt, f0, f1, amp] of parts) {
-      const a = this.at(t + dt)
-      const o = this.osc('sawtooth', f0)
-      o.frequency.setValueAtTime(f0, a)
-      o.frequency.exponentialRampToValueAtTime(f1, a + 0.07)
-      const bp = ctx.createBiquadFilter()
-      bp.type = 'bandpass'
-      bp.frequency.value = 1500
-      bp.Q.value = 1.2
-      const g = ctx.createGain()
-      this.env(g, a, amp * level, 0.005, 0.09)
-      o.connect(bp).connect(g)
-      this.out(g, pan, 0.25)
-      o.start(a)
-      o.stop(a + 0.14)
-    }
-  }
-
-  /** Rascheln (Blätter, Busch). */
-  private rustle(t: number, dur: number, pan: number, level: number) {
-    const ctx = this.ctx!
-    const a = this.at(t)
-    const n = this.noise()
-    const bp = ctx.createBiquadFilter()
-    bp.type = 'bandpass'
-    bp.frequency.value = 3200
-    bp.Q.value = 0.9
-    const am = this.osc('square', 23)
-    const ag = ctx.createGain()
-    ag.gain.value = 0.5
-    const amp = ctx.createGain()
-    amp.gain.value = 0.5
-    am.connect(ag).connect(amp.gain)
-    const g = ctx.createGain()
-    g.gain.setValueAtTime(0.0001, a)
-    g.gain.linearRampToValueAtTime(0.22 * level, a + Math.min(0.05, dur * 0.2))
-    g.gain.exponentialRampToValueAtTime(0.0001, a + dur)
-    n.connect(bp).connect(amp).connect(g)
-    this.out(g, pan, 0.3)
-    n.start(a, Math.random())
-    n.stop(a + dur + 0.05)
-    am.start(a)
-    am.stop(a + dur + 0.05)
-  }
-
-  /** Plopp (Junges purzelt heraus, Beere springt). */
-  private pop(t: number, pan: number, level: number) {
-    const ctx = this.ctx!
-    const a = this.at(t)
-    const o = this.osc('sine', 380)
-    o.frequency.setValueAtTime(260, a)
-    o.frequency.exponentialRampToValueAtTime(900, a + 0.05)
-    const g = ctx.createGain()
-    this.env(g, a, 0.16 * level, 0.002, 0.08)
-    o.connect(g)
-    this.out(g, pan, 0.2)
-    o.start(a)
-    o.stop(a + 0.12)
-  }
-
-  /** Gezupfter Ton (Pizzicato mit Glockenspiel-Oberton; Karplus-Strong als vorab berechneter Puffer). */
-  private pluck(t: number, f: number, pan: number, level: number) {
-    const ctx = this.ctx!
-    const a = this.at(t)
-    const sr = ctx.sampleRate
-    const len = Math.floor(sr * 1.4)
-    const buf = ctx.createBuffer(1, len, sr)
-    const d = buf.getChannelData(0)
-    const period = Math.max(2, Math.round(sr / f))
-    const ring = new Float32Array(period)
-    for (let i = 0; i < period; i++) ring[i] = Math.random() * 2 - 1
-    let idx = 0
-    for (let i = 0; i < len; i++) {
-      const cur = ring[idx]!
-      const next = ring[(idx + 1) % period]!
-      d[i] = cur
-      ring[idx] = 0.996 * 0.5 * (cur + next)
-      idx = (idx + 1) % period
-    }
-    const src = ctx.createBufferSource()
-    src.buffer = buf
-    this.sources.push(src)
-    const g = ctx.createGain()
-    this.env(g, a, 0.22 * level, 0.002, 1.2)
-    const o = this.osc('sine', f * 2)
-    const og = ctx.createGain()
-    this.env(og, a, 0.05 * level, 0.002, 0.6)
-    src.connect(g)
-    o.connect(og)
-    this.out(g, pan, 0.5)
-    this.out(og, pan, 0.6)
-    src.start(a)
-    src.stop(a + 1.4)
-    o.start(a)
-    o.stop(a + 0.7)
-  }
-
-  /** Grillen am Waldrand (Abendstimmung): pulsierendes, leises Zirpen. */
-  private crickets(t0: number, t1: number) {
-    const ctx = this.ctx!
-    const a = this.at(t0)
-    const b = this.at(t1)
-    const voices: [number, number, number][] = [
-      [4300, 7.3, -0.6],
-      [4700, 6.1, 0.5],
-    ]
-    for (const [f, rate, pan] of voices) {
-      const o = this.osc('sine', f)
-      const trem = this.osc('square', rate)
-      const tg = ctx.createGain()
-      tg.gain.value = 0.5
-      const amp = ctx.createGain()
-      amp.gain.value = 0.5
-      trem.connect(tg).connect(amp.gain)
-      const g = ctx.createGain()
-      g.gain.setValueAtTime(0.0001, a)
-      g.gain.linearRampToValueAtTime(0.012, a + 1.5)
-      g.gain.setValueAtTime(0.012, Math.max(a + 1.5, b - 0.6))
-      g.gain.linearRampToValueAtTime(0.0001, b)
-      o.connect(amp).connect(g)
-      this.out(g, pan, 0.4)
-      o.start(a)
-      o.stop(b + 0.1)
-      trem.start(a)
-      trem.stop(b + 0.1)
-    }
-  }
-
   private impulse(sec: number): AudioBuffer {
     const ctx = this.ctx!
     const len = Math.floor(ctx.sampleRate * sec)
@@ -630,11 +440,10 @@ export class IntroAudio {
     g.gain.linearRampToValueAtTime(0.22, a + 1.2)
     g.gain.setValueAtTime(0.22, Math.max(a + 1.2, b - 0.8))
     g.gain.linearRampToValueAtTime(0.0001, b)
-    const root = mood === 'spooky' ? 49 : mood === 'frost' ? 58.3 : mood === 'fox' ? 65.4 : 55
+    const root = mood === 'spooky' ? 49 : mood === 'frost' ? 58.3 : 55
     const fs = mood === 'spooky' ? [root, root * 1.06, root * 1.5] : [root, root * 1.004, root * 1.5]
-    if (mood === 'fox') this.crickets(t0, t1)
     for (const f of fs) {
-      const o = this.osc(mood === 'fox' ? 'triangle' : 'sawtooth', f)
+      const o = this.osc('sawtooth', f)
       o.connect(lp)
       o.start(a)
       o.stop(b + 0.1)
@@ -875,7 +684,7 @@ export class IntroAudio {
   private shimmer(t: number, mood: string) {
     const ctx = this.ctx!
     const a = this.at(t)
-    const base = mood === 'spooky' ? [622, 932, 1244, 1865, 2489] : mood === 'frost' ? [698, 1047, 1397, 2093, 2794] : mood === 'fox' ? [784, 1047, 1319, 1568, 2093] : [659, 988, 1319, 1976, 2637]
+    const base = mood === 'spooky' ? [622, 932, 1244, 1865, 2489] : mood === 'frost' ? [698, 1047, 1397, 2093, 2794] : [659, 988, 1319, 1976, 2637]
     base.forEach((f, i) => {
       const o = this.osc('sine', f * (1 + (Math.random() - 0.5) * 0.004))
       const g = ctx.createGain()
@@ -900,7 +709,7 @@ export class IntroAudio {
     const ctx = this.ctx!
     const a = this.at(t0)
     const b = this.at(t1)
-    const notes = mood === 'spooky' ? [196, 233, 294, 392] : mood === 'frost' ? [233, 294, 349, 466] : mood === 'fox' ? [262, 330, 392, 523] : [220, 277, 330, 440]
+    const notes = mood === 'spooky' ? [196, 233, 294, 392] : mood === 'frost' ? [233, 294, 349, 466] : [220, 277, 330, 440]
     notes.forEach((f, i) => {
       const o = this.osc('triangle', f)
       const lp = ctx.createBiquadFilter()

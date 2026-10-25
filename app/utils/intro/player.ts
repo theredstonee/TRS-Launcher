@@ -5,10 +5,9 @@
 import { IntroAudio } from './audio'
 import type { IntroDesign } from './designs'
 import { FROST_CUES, FrostScene } from './frost'
-import { FOXDEN_CUES, FoxdenScene } from './foxden'
 import { GRAVEYARD_CUES, GraveyardScene } from './graveyard'
 import { DungeonScene } from './renderer'
-import { planFoxden, planDungeon, planFrost, planGraveyard, type SfxEvent } from './sfx'
+import { planDungeon, planFrost, planGraveyard, type SfxEvent } from './sfx'
 import type { IntroScene, IntroStageOptions } from './stage'
 import { buildScript, type IntroCoreCues, type IntroLength } from './timeline'
 
@@ -46,10 +45,6 @@ export function createIntroScene(
     case 'frost': {
       const cues = FROST_CUES[length]
       return { scene: new FrostScene(cv, design, length, opts), cues, plan: planFrost(cues) }
-    }
-    case 'foxden': {
-      const cues = FOXDEN_CUES[length]
-      return { scene: new FoxdenScene(cv, design, length, opts), cues, plan: planFoxden(cues) }
     }
     default: {
       const script = buildScript(length)

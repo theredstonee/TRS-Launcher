@@ -1,7 +1,6 @@
 // Effekt-Fahrpläne je Szenen-Set: aus denselben Schnittpunkten wie das Bild, damit Ton und Bild nie auseinanderlaufen.
 // Rein (ohne Web Audio) – `audio.ts` spielt die Ereignisse ab, Tests prüfen die Zeiten.
 
-import { FOXDEN_BEAT, type FoxdenCues } from './foxden'
 import type { FrostCues } from './frost'
 import type { GraveyardCues } from './graveyard'
 import type { IntroCoreCues, IntroScript } from './timeline'
@@ -24,12 +23,6 @@ export type SfxKind =
   | 'chime'
   | 'crystal'
   | 'boing'
-  | 'crackle'
-  | 'yip'
-  | 'rustle'
-  | 'pop'
-  | 'pluck'
-  | 'gust'
 
 export interface SfxEvent {
   t: number
@@ -40,10 +33,6 @@ export interface SfxEvent {
   level?: number
   /** Wusch nach unten (Sturzflug). */
   down?: boolean
-  /** Tonhöhe (Hz) für gezupfte Töne. */
-  note?: number
-  /** Nur ohne Jingle (musikalische Effekte, die mit dem Jingle kollidieren würden). */
-  solo?: boolean
 }
 
 /** Gemeinsamer Abschluss: Spannung → Stille → Schlag + Schimmer (+ Akkord, wenn kein Jingle). */
@@ -107,41 +96,5 @@ export function planFrost(c: FrostCues): SfxEvent[] {
   if (c.snowball) out.push({ t: c.snowball[0], kind: 'whoosh', dur: c.snowball[1] - c.snowball[0], level: 0.12 })
   for (const h of c.hops) out.push({ t: h, kind: 'boing', level: 0.8 })
   finale(c, out)
-  return out.sort((a, b) => a.t - b.t)
-}
-
-/** Dur-Pentatonik (C) für verspielte Zupfer: C5 D5 E5 G5 A5 C6 D6 E6. */
-export const FOX_SCALE = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66, 1318.51] as const
-
-export function planFoxden(c: FoxdenCues): SfxEvent[] {
-  const out: SfxEvent[] = [{ t: 0, kind: 'drone', dur: c.fadeOut + 0.4 }]
-  const first = c.cam[0]!
-  if (first[2] < -100) out.push({ t: 0.25, kind: 'whoosh', dur: Math.max(0.8, c.fire - 0.3), level: 0.22, down: true })
-  // Lagerfeuer: Aufflammen + Knistern; Laterne: leises Zünden
-  if (c.fire >= 0) {
-    out.push({ t: c.fire, kind: 'ignite', pan: -0.4, level: 1.2 })
-    out.push({ t: c.fire + 0.05, kind: 'crackle', dur: c.impact - c.fire, pan: -0.4 })
-  } else out.push({ t: 0, kind: 'crackle', dur: c.impact, pan: -0.4, level: 0.8 })
-  if (c.lantern >= 0) out.push({ t: c.lantern, kind: 'ignite', pan: 0.3, level: 0.5 })
-  // Junge purzeln heraus: Plopp + Fiepen, Zupfer aufwärts
-  c.kits.forEach((t, i) => {
-    if (t < 0) return
-    out.push({ t, kind: 'pop', pan: -0.2 + i * 0.2 })
-    out.push({ t: t + 0.12, kind: 'squeak', pan: -0.2 + i * 0.2, level: 0.6 })
-    out.push({ t, kind: 'pluck', note: FOX_SCALE[2 + i * 2], pan: -0.2 + i * 0.2, solo: true })
-  })
-  // Süßbeeren abgelegt
-  if (c.berries) for (let j = 0; j < 3; j++) out.push({ t: c.berries[1] + j * 0.07, kind: 'pop', level: 0.5 - j * 0.1, pan: 0.15 })
-  // Pounce: Ducken (Rascheln), Absprung (Fiepen + Luft), Eintauchen in den Busch (Rascheln + Beeren ploppen)
-  const [p0, p1, p2] = c.pounce
-  if (p0 > 0) out.push({ t: p0, kind: 'rustle', dur: 0.25, level: 0.35, pan: 0.2 })
-  out.push({ t: p1, kind: 'yip', pan: 0.2 })
-  out.push({ t: p1 + 0.03, kind: 'whoosh', dur: p2 - p1, level: 0.32 })
-  out.push({ t: p2, kind: 'rustle', dur: 0.6, level: 1, pan: 0.45 })
-  for (let j = 0; j < 4; j++) out.push({ t: p2 + 0.04 + j * 0.06, kind: 'pop', level: 0.7 - j * 0.12, pan: 0.3 + j * 0.1 })
-  out.push({ t: p2 + 0.05, kind: 'gust', dur: c.impact - p2 + 0.3 })
-  finale(c, out)
-  // Abschluss-Glockenspiel (nur ohne Jingle)
-  ;[0, 2, 4, 5, 7].forEach((n, i) => out.push({ t: c.impact + 0.3 + i * FOXDEN_BEAT * 0.25, kind: 'pluck', note: FOX_SCALE[n], pan: -0.4 + i * 0.2, solo: true }))
   return out.sort((a, b) => a.t - b.t)
 }
