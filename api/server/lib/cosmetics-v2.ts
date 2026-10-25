@@ -33,6 +33,8 @@ export interface BuiltinCosmeticV2 {
   event?: string
   /** Belohnung (§36, z. B. `pumpkinhunter2026`): nur der Server vergibt sie. */
   reward?: string
+  /** Nur Platz `pet`: Größe relativ zu den anderen Begleitern (1 = normal; Kaiserpinguin 1.25). */
+  petScale: number
   model: CosmeticModel
   files: CosmeticV2Files
   /** sha256 (hex) über model.json + Textur + Leucht-Streifen – ändert sich mit jedem der drei. */
@@ -64,6 +66,7 @@ export interface V2EntryInput {
   hidden?: boolean
   event?: string
   reward?: string
+  petScale?: number
   frames: number
   frameTimeMs?: number | null
   glowFrames: number
@@ -98,6 +101,9 @@ export function buildV2Cosmetic(e: V2EntryInput): BuiltinCosmeticV2 {
   if (model.id !== e.id) fail(`model id "${model.id}" does not match the catalog id`)
   // Kopf-Teile hängen am Kopf, Flügel (§36) am Körper, Begleiter am Boden (`pet`, Winter 2026) am Boden.
   if (SLOT_ATTACH[model.slot] !== model.attach) fail('slot/attach pair not supported (hat/companion: head, wings: body, pet: ground)')
+  const petScale = e.petScale ?? 1
+  if (!(petScale >= 0.5 && petScale <= 2)) fail(`petScale ${petScale} outside 0.5–2`)
+  if (petScale !== 1 && model.slot !== 'pet') fail('petScale only for the slot "pet"')
   if (model.texture.scale > COSMETIC_MAX_SCALE) fail(`texture scale ${model.texture.scale} > ${COSMETIC_MAX_SCALE} (needs a DB migration)`)
   const texFrames = model.texture.frames ?? 1
   if (texFrames !== e.frames) fail(`catalog frames ${e.frames} ≠ model texture.frames ${texFrames}`)
@@ -119,6 +125,7 @@ export function buildV2Cosmetic(e: V2EntryInput): BuiltinCosmeticV2 {
     hidden: e.hidden ?? false,
     ...(e.event ? { event: e.event } : {}),
     ...(e.reward ? { reward: e.reward } : {}),
+    petScale,
     model,
     files: e.files,
     hash: v2Hash(e.files),

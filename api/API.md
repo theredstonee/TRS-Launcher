@@ -370,7 +370,25 @@ Auth required. Send 1–100 UUIDs, dashed or not. Duplicates are ignored.
           "glowFrames": 0,
           "glowFrameTimeMs": null,
           "hash": "4c0de5a1b2c3",
-          "count": 2
+          "count": 2,
+          "petScale": 1,
+          "extras": [
+            {
+              "id": "penguin_emperor",
+              "format": 2,
+              "model": "https://api.theredstonee.de/v1/cosmetics/penguin_emperor/model.json?v=7d1e9a0b3c4f",
+              "url": "https://api.theredstonee.de/v1/cosmetics/penguin_emperor.png?v=7d1e9a0b3c4f",
+              "scale": 8,
+              "animated": false,
+              "frames": 1,
+              "frameTimeMs": null,
+              "glow": null,
+              "glowFrames": 0,
+              "glowFrameTimeMs": null,
+              "hash": "7d1e9a0b3c4f",
+              "petScale": 1.25
+            }
+          ]
         }
       },
       "badges": ["halloween2026"],
@@ -388,6 +406,8 @@ Winter 2026 additions (format 2 only, both keys omitted when they don't apply):
 
 - `options` – `{ "<optionId>": true|false }` when the model declares `options` (§11.9), e.g. `"options": { "beard": false }` on the Santa hat. Always complete (a missing player choice is filled with the model's `default`). Bones of an option that is `false` are not drawn, including their child bones.
 - `count` – only in `pet`: how many of this companion walk with the player, **1–4**. Normal players get 1. An active creator wearing **his own** creator pet (§35.13) gets the tier by his fans: **≥ 1 fan → 1, ≥ 10 → 2, ≥ 100 → 3, ≥ 1000 → 4** (0 fans: 1). When `count` changes the server sends a `cosmetics` event (§13).
+- `petScale` – only in `pet` (always set there): size of this companion relative to the others, `1` = normal (the emperor penguin is `1.25`). Scale the whole model, its collision box, height and swim depth by it. **Not** the same as `scale`, which stays the pixel factor of the texture.
+- `extras` – only in `pet`, only for an **active creator** with an entourage (§35.13.1) and "show entourage" on: a list of 1–4 more companions, **one each**, in this order. Each entry has the same shape as the main pet (format 2, with `petScale`, `options` when the model has any) but **no** `count` and no `extras`. Draw `count` × main pet + every extra once (at most 8 per player). Missing when there is no entourage; fans and other wearers of the same pet never get it. It follows `showCosmeticsToOthers` like the slot itself. Changes come as a `cosmetics` event (§13).
 
 Privacy rules, enforced server-side:
 
@@ -1269,8 +1289,10 @@ Animated particle textures use the same frame formula as models. All particles o
 | `emote` | `{ "durationMs", "loop" }` for emotes, otherwise `null`. |
 | `options` | Only in your own equipment (`GET`/`PUT /v1/me/cosmetics`) and only when the model declares `options` (§11.9): your choice per option, complete, e.g. `{ "beard": true }`. Absent otherwise. |
 | `count` | Only in your own equipment, slot `pet`: how many companions walk with you (1–4, same value as `cosmetics.pet.count` in the lookup, §4.1). |
+| `petScale` | Format 2, slot `pet` only (everywhere: catalog, own equipment, website): size relative to other companions, `1` = normal (catalog field `petScale`, §11.9). |
+| `extras` | Only in your own equipment, slot `pet`: your entourage as CosmeticViews (each with `petScale`), same list and rules as `cosmetics.pet.extras` in the lookup (§4.1, §35.13.1). Absent without an entourage or with "show entourage" off. |
 
-**LookupCosmetic** is the flat form used in the lookup and in events (`cosmetics` has the keys `hat`, `wings`, `back`, `aura`, `companion` and `pet`, each an item or `null`): `{ id, template, templateUrl, url, scale, animated, frames, frameTimeMs, emissive }` for format 1, `{ id, format: 2, model, url, scale, animated, frames, frameTimeMs, glow, glowFrames, glowFrameTimeMs, hash, options?, count? }` for format 2 (§11.9, `options`/`count` see §4.1). `templateUrl` is the same path as on CosmeticView.
+**LookupCosmetic** is the flat form used in the lookup and in events (`cosmetics` has the keys `hat`, `wings`, `back`, `aura`, `companion` and `pet`, each an item or `null`): `{ id, template, templateUrl, url, scale, animated, frames, frameTimeMs, emissive }` for format 1, `{ id, format: 2, model, url, scale, animated, frames, frameTimeMs, glow, glowFrames, glowFrameTimeMs, hash, options?, count?, petScale?, extras? }` for format 2 (§11.9, `options`/`count`/`petScale`/`extras` see §4.1). `templateUrl` is the same path as on CosmeticView.
 
 A **format-2** CosmeticView has `template: null`, `emissive: false` and these extra fields (all absent on format-1 items):
 
@@ -1364,18 +1386,21 @@ A **format-2** CosmeticView has `template: null`, `emissive: false` and these ex
 | `santa_hat` | Weihnachtsmütze | **format 2** (hat) | code | idle/air; **option `beard`** (default on) |
 | `snow_cloud` | Schneewolke | **format 2** (**companion**) | code | three drifting clouds with snowfall (animations only) |
 | `penguin` | Pinguin | **format 2** (**pet**, `attach: "ground"`) | code; active creators by fans (§35.12) | idle/walk/slide/swim/air |
+| `penguin_emperor` | Kaiserpinguin | **format 2** (**pet**), `petScale` **1.25** | **admin**, **hidden** (entourage, §35.13.1) | like `penguin` |
+| `penguin_beanie` | Pinguin mit Mütze | **format 2** (**pet**) | **admin**, **hidden** (entourage) | like `penguin` |
+| `penguin_shades` | Pinguin mit Sonnenbrille | **format 2** (**pet**) | **admin**, **hidden** (entourage) | like `penguin` |
 
 Templates without a built-in item (`ring`, and since format 2 also `crown`, `cap`, `lamp_helmet`, `tophat`, `halo`) are available for uploads. The six format-2 items kept their ids, so owners and codes still work; a `halo` equipped in `aura` moved to `hat` at the first start with format 2 (taken off if `hat` was already in use).
 
-**Proprietary built-ins.** Items with unlock `code` or `admin` are not in this repository: capes `trs`, `team`, `tester`, `content-team`, `veteran`, `ideengeber` and cosmetics `redstone_crown`, `team_crown`, `halo`, `redstone_wings`, `rubber_duck` and the Winter 2026 items `snow_wings`, `ice_wings`, `santa_hat`, `snow_cloud`, `penguin`. Their textures, models, glow maps and cards live only on the server in `PRIVATE_ASSETS_DIR` (default `<DATA_DIR>/private-assets`). Layout: `capes/`, `cosmetics/`, `cosmetics/v2/`, plus `capes/catalog.private.json`, `cosmetics/catalog.private.json` (same entry schema as the public catalogs, with the original `sort` index) and `cosmetics/templates.private.json` (same schema as `templates.json`; the `duck` rig lives only there). At startup the server merges the private catalogs and `templates.private.json` with the public built-ins. Ids, hashes, routes, cards, models, glow maps, lookup, codes and ownership stay the same. If the directory is missing, it logs one warning and skips every private item. If one item's files are missing or invalid, it logs one warning and skips that item. Startup does not crash, and `user_capes` / `user_cosmetics` rows are not deleted: the item is usable again on the next start once the files exist. A broken **public** catalog still stops startup. `node api/scripts/import-cosmetics-v2.mjs [--private <dir>] [--only <id,id>]` (or `PRIVATE_ASSETS_DIR`, default `E:/ai/trs-private-assets`) writes the proprietary models there and the free/event models to `api/assets`; `--only` limits the run to the given ids. `generate-capes.mjs` and `generate-cosmetics.mjs` take the same `--private` flag.
+**Proprietary built-ins.** Items with unlock `code` or `admin` are not in this repository: capes `trs`, `team`, `tester`, `content-team`, `veteran`, `ideengeber` and cosmetics `redstone_crown`, `team_crown`, `halo`, `redstone_wings`, `rubber_duck` and the Winter 2026 items `snow_wings`, `ice_wings`, `santa_hat`, `snow_cloud`, `penguin`, plus the entourage penguins `penguin_emperor`, `penguin_beanie`, `penguin_shades`. Their textures, models, glow maps and cards live only on the server in `PRIVATE_ASSETS_DIR` (default `<DATA_DIR>/private-assets`). Layout: `capes/`, `cosmetics/`, `cosmetics/v2/`, plus `capes/catalog.private.json`, `cosmetics/catalog.private.json` (same entry schema as the public catalogs, with the original `sort` index) and `cosmetics/templates.private.json` (same schema as `templates.json`; the `duck` rig lives only there). At startup the server merges the private catalogs and `templates.private.json` with the public built-ins. Ids, hashes, routes, cards, models, glow maps, lookup, codes and ownership stay the same. If the directory is missing, it logs one warning and skips every private item. If one item's files are missing or invalid, it logs one warning and skips that item. Startup does not crash, and `user_capes` / `user_cosmetics` rows are not deleted: the item is usable again on the next start once the files exist. A broken **public** catalog still stops startup. `node api/scripts/import-cosmetics-v2.mjs [--private <dir>] [--only <id,id>]` (or `PRIVATE_ASSETS_DIR`, default `E:/ai/trs-private-assets`) writes the proprietary models there and the free/event models to `api/assets`; `--only` limits the run to the given ids. `generate-capes.mjs` and `generate-cosmetics.mjs` take the same `--private` flag.
 
-**Hidden items** (`hidden: true` in `catalog.json`, only together with `unlock: "code"`) never appear in `GET /v1/cosmetics` for anyone who has not unlocked them – not even as locked, and not for admins. Once redeemed, they are listed and wearable like any other item, and others see them on the wearer through the lookup. Admins find them for code creation under `GET /v1/admin/cosmetics/builtin` (staff): every built-in item and emote that is not `free`, with `hidden`.
+**Hidden items** (`hidden: true` in `catalog.json`, only together with `unlock: "code"` or `"admin"`) never appear in `GET /v1/cosmetics` for anyone who has not unlocked them – not even as locked, and not for admins. Once redeemed, they are listed and wearable like any other item, and others see them on the wearer through the lookup. Admins find them for code creation under `GET /v1/admin/cosmetics/builtin` (staff): every built-in item and emote that is not `free`, with `hidden`.
 
 ### 11.9 Format 2: 3D models
 
 Built-in head items can be **real 3D models** instead of template + texture. Source of truth is the TRS Studio format description (`trs-studio/cosmetic-format.md`); the short form:
 
-- **Files:** `model.json` + base texture (RGBA, alpha 0/255; vertical strip if `texture.frames > 1`) + optional glow strip (additive, black = nothing). Free and event models ship in `api/assets/cosmetics/v2/<id>.json`, `<id>.png`, `<id>-glow.png`, plus `<id>-card.png` / `<id>-card-night.png` (previews ≤ 512 px). Code and team models are proprietary and are loaded from `PRIVATE_ASSETS_DIR` (§11.8), not from the repository. `catalog.json` lists the public items as `{ "id", "name", "format": 2, "unlock", "frames", "frameTimeMs"?, "glowFrames", "glowFrameTimeMs"?, "hidden"? }` (`unlock` is `free`, `code`, `admin` or `{ "type": "event", "event": "<id>" }` – stored as `unlock = admin` plus the column `event`, shown as `unlock: "event"`; capes in `assets/capes/catalog.json` take the same form). The slot comes from the model (`"slot": "hat"` or `"companion"`, both with `attach: "head"`, `"wings"` with `attach: "body"` (§36.7), or `"pet"` with `attach: "ground"` (Winter 2026)); the frame values must match the model. `unlock` may also be `{ "type": "reward", "reward": "<key>" }` (§36). Import: `node api/scripts/import-cosmetics-v2.mjs` (copies the approved exports unchanged and makes the cards; proprietary ids go to `--private`).
+- **Files:** `model.json` + base texture (RGBA, alpha 0/255; vertical strip if `texture.frames > 1`) + optional glow strip (additive, black = nothing). Free and event models ship in `api/assets/cosmetics/v2/<id>.json`, `<id>.png`, `<id>-glow.png`, plus `<id>-card.png` / `<id>-card-night.png` (previews ≤ 512 px). Code and team models are proprietary and are loaded from `PRIVATE_ASSETS_DIR` (§11.8), not from the repository. `catalog.json` lists the public items as `{ "id", "name", "format": 2, "unlock", "frames", "frameTimeMs"?, "glowFrames", "glowFrameTimeMs"?, "hidden"?, "petScale"? }` (`petScale`: slot `pet` only, 0.5–2, default 1 – the size relative to other companions, delivered as `petScale` in views and the lookup; `unlock` is `free`, `code`, `admin` or `{ "type": "event", "event": "<id>" }` – stored as `unlock = admin` plus the column `event`, shown as `unlock: "event"`; capes in `assets/capes/catalog.json` take the same form). The slot comes from the model (`"slot": "hat"` or `"companion"`, both with `attach: "head"`, `"wings"` with `attach: "body"` (§36.7), or `"pet"` with `attach: "ground"` (Winter 2026)); the frame values must match the model. `unlock` may also be `{ "type": "reward", "reward": "<key>" }` (§36). Import: `node api/scripts/import-cosmetics-v2.mjs` (copies the approved exports unchanged and makes the cards; proprietary ids go to `--private`).
 - **Start check:** every model is validated with the format rules (TypeScript port of `validateModel`, `app/utils/cosmetic-v2/format.ts`) including the image sizes. An invalid **public** model **stops the server start**. An invalid or missing private item is skipped with one warning and does not stop startup.
 - **Units and axes:** 1 unit = 1 skin pixel. **+x = the player's left, +y = up, +z = front** (same as three.js/skinview3d). `attach: "head"`: origin = head pivot (neck, centre of the head's bottom). `attach: "body"` (slot `wings`): origin = body pivot = neck = top centre of the torso (like `ModelPart body`); the torso spans x −4…4, y −12…0, z −2…2, so the back is z = −2. Follows body yaw and the body transform (sneak lean, swimming, crawling). `ModelPart` space: `x' = x, y' = −y, z' = −z`. `attach: "ground"` (slot `pet`): origin = the ground under the centre of the companion, +y up, **+z = the direction it looks/walks**, 16 units = 1 block, check box x −8…8, y 0…16, z −8…8. Not tied to a `ModelPart`: the client sets world position and yaw itself (the website/launcher preview puts it on the ground next to the player's right foot).
 - **Bones:** `{ id, parent?, pivot, rotation? }`, parents before children, pivot in model space, rotation in degrees, order **ZYX** (matrix `Rz·Ry·Rx`). Local matrix `T(pivot + pos) · R(rotation + rot) · S(scale) · T(−pivot)`, world `W = W_parent · L`.
@@ -1383,7 +1408,7 @@ Built-in head items can be **real 3D models** instead of template + texture. Sou
 - **Materials:** `cutout` (alpha test 0.5), `emissive` (full bright), `translucent` (alpha blend, no depth write). All faces double-sided, nearest filtering, **no mipmaps**.
 - **Glow:** `glow.png` drawn additively over all faces with the same UVs, full bright, no depth write, small polygon offset. Frame = `floor(t / frameTimeMs) % frames`.
 - **Halos:** additive camera-facing squares (`size`, `pos` on a bone, `color`, `intensity`, optional `normal` + `pulse`), pushed `size/2` towards the camera, radial falloff `(1 − r)^2.5`, pulse `min + (max − min)·(0.5 − 0.5·cos(2π·phase))`, faded out when `normal` points away.
-- **Animations:** tracks `rotation` (degrees, added), `position` (units, added), `scale` (multiplied) with `linear` / `smooth` (`u²(3 − 2u)`) / `step`, **wall clock** (`t = now + offsetMs`, `mod lengthMs` when looping) so every client shows the same phase. Driver `idle` always runs; for wings a client plays the animations of the active state – `air` (not on ground), `sneak` (sneaking), else `idle` – falling back to `idle` when the model has none for that state, with a 250 ms crossfade. `walk` and `jump` stay reserved for worn items. **Ground companions** (`pet`) play the states `idle`, `walk`, `slide` (belly slide), `swim` (on the water surface) and `air` (jump/fall) – new drivers `slide` and `swim`; fall back to `idle`, 250 ms crossfade; time = wall clock + an own offset per companion (e.g. hash of the owner UUID + index) so several penguins don't move in lockstep. The number of companions comes from the lookup (`count`, §4.1).
+- **Animations:** tracks `rotation` (degrees, added), `position` (units, added), `scale` (multiplied) with `linear` / `smooth` (`u²(3 − 2u)`) / `step`, **wall clock** (`t = now + offsetMs`, `mod lengthMs` when looping) so every client shows the same phase. Driver `idle` always runs; for wings a client plays the animations of the active state – `air` (not on ground), `sneak` (sneaking), else `idle` – falling back to `idle` when the model has none for that state, with a 250 ms crossfade. `walk` and `jump` stay reserved for worn items. **Ground companions** (`pet`) play the states `idle`, `walk`, `slide` (belly slide), `swim` (on the water surface) and `air` (jump/fall) – new drivers `slide` and `swim`; fall back to `idle`, 250 ms crossfade; time = wall clock + an own offset per companion (e.g. hash of the owner UUID + index) so several penguins don't move in lockstep. The number of companions comes from the lookup (`count`, §4.1), plus one of each `extras` entry; each companion is scaled by its own `petScale` (model, collision, height, swim depth).
 - **Options** (Winter 2026, optional, at most 4): `"options": [{ "id": "beard", "bones": ["beard"], "default": true, "name": { "de": "Bart", "en": "Beard", "es": "Barba" } }]`. `id` `^[a-z][a-z0-9_]{0,19}$`, unique; `bones` = existing bone ids; `name` = up to 40 characters per language. When an option is off for a player, the cubes of these bones **and all their child bones** are not drawn (glow layer and halos on them included). The player's choice comes from the server (`options` in `GET /v1/me/cosmetics` and the lookup, set with `PUT /v1/me/cosmetics`); a missing choice means `default`.
 - **Limits:** 64 cubes, 32 bones, 4 options, 1024 px per image edge, strip ≤ 4096 px, 16 frames, 8 animations, 16 halos, coordinates ±48 on a 0.125 grid, scale 1/2/4/8/16 (the server accepts up to 8).
 
@@ -4278,7 +4303,7 @@ Eligibility/submit for creator positions: active creators get `409 already_creat
 
 | event | data |
 |---|---|
-| `creator_updated` | `{ kind, reason?, tier?, helper?, action? }` to the creator; `kind` ∈ `symbol_approved`, `symbol_rejected`, `cape_approved`, `cape_rejected`, `tier_changed` (+`tier`), `revoked` (+`reason`, also for bans), `restored`, `request_answered` (+`reason`), `milestone`, `became_creator` (+`tier`), `helper_joined`, `helper_left` (+`helper: { uuid, name }`), `profile_approved`, `profile_rejected` (+`reason`, §35.11), `pet_assigned`, `pet_removed`, `pet_request_answered` (+`reason`, §35.13), `team_changed` (+`action`, team mode §35.9). Reload `GET /v1/creator/dashboard`. Clients ignore unknown kinds. |
+| `creator_updated` | `{ kind, reason?, tier?, helper?, action? }` to the creator; `kind` ∈ `symbol_approved`, `symbol_rejected`, `cape_approved`, `cape_rejected`, `tier_changed` (+`tier`), `revoked` (+`reason`, also for bans), `restored`, `request_answered` (+`reason`), `milestone`, `became_creator` (+`tier`), `helper_joined`, `helper_left` (+`helper: { uuid, name }`), `profile_approved`, `profile_rejected` (+`reason`, §35.11), `pet_assigned`, `pet_removed`, `pet_request_answered` (+`reason`, §35.13), `pet_extras_changed` (§35.13.1), `team_changed` (+`action`, team mode §35.9). Reload `GET /v1/creator/dashboard`. Clients ignore unknown kinds. |
 | `creator_milestone` | `{ creator: { uuid, name }, milestone }` to every current fan |
 | `creator_helper_invite` | `{ creator: { uuid, name }, rights, createdAt }` to the invited player |
 | `creator_helper_removed` | `{ creator: { uuid, name } }` to a helper whom the creator removed (or whose invitation was withdrawn) |
@@ -4508,6 +4533,50 @@ team's reply). Reload `GET /v1/creator/pet`.
 `creator_pet_limits` (`tier` PK, `monthly`; seeded 10/50/200); new column `codes.creator_uuid` (+ index). All earlier
 `user_cosmetics` rows with `source = 'creator'` become `admin`. Idempotent. When merging: renumber if a parallel branch also
 added a migration 35.
+
+#### 35.13.1 Entourage – extra companions (migration 37)
+
+On top of his creator pet a creator can get **up to 4 more companions** (cosmetics with slot `pet`) in a fixed order – the
+"Gefolge". Only the team assigns them (`creators.manage`). They are **only for the creator himself**: no codes, no fans,
+no ownership (`user_cosmetics` is not touched). An extra may be a team-only pet that nobody owns (e.g. `penguin_emperor`,
+`penguin_beanie`, `penguin_shades`, all `unlock: "admin"`, `hidden: true`) or the same pet another creator has.
+
+- **Lookup / own equipment / events:** `cosmetics.pet.extras` (§4.1) – one LookupCosmetic per extra, in order, each with
+  `petScale`; `count` stays the main pet only. Draw `count` × main pet + each extra once (≤ 8 per player). `extras` is
+  only set when the player is an **active creator**, wears a format-2 item in `pet`, "show entourage" is on and at least
+  one extra is loaded (not loaded/retired extras are skipped). It follows `showCosmeticsToOthers`. Own equipment
+  (`GET /v1/me/cosmetics`) has the same list as `equipped.pet.extras` (CosmeticViews). Watchers get a `cosmetics` event
+  (with the new `pet`) whenever the visible entourage changes (team edit, creator toggle).
+- **Size:** `petScale` (catalog, §11.9) is in every pet view and in the lookup; extras carry it too (emperor 1.25).
+
+**Creator route** (Bearer or website session + `X-CSRF-Token`, creator only – helpers get `403 creator_helper_right`):
+
+| route | body | answer |
+|---|---|---|
+| `PUT /v1/creator/pet/extras` | `{ show: boolean }` | `{ extras: PetExtra[], showExtras, max: 4 }` – the switch "Gefolge zeigen" (default on) |
+
+`CreatorPetState` (`GET /v1/creator/pet`) additionally has `extras: PetExtra[]` (in order, `[]` = none) and
+`showExtras: boolean`.
+
+```json
+PetExtra = { "cosmeticId": "penguin_emperor", "name": "Kaiserpinguin", "card": "https://…/card.png?v=…" | null,
+             "petScale": 1.25, "available": true }
+```
+
+**Team routes** (`creators.manage`, audit `creator.pet.extras`):
+
+| route | body | answer |
+|---|---|---|
+| `GET /v1/admin/creators/pet-extras` | – | `{ creators: [{ creator: { uuid, name, tier, state }, extras: PetExtra[], showExtras, max, updatedAt, updatedBy: { uuid, name } }], cosmetics: [same as in GET /v1/admin/creators/pets], max: 4 }` – only creators with at least one extra |
+| `PUT /v1/admin/creators/{uuid}/pet-extras` | `{ cosmeticIds: string[] }` (0–4, no duplicates, order = display order) | `{ extras, showExtras, max }` – replaces the list (add, remove and reorder in one call, `[]` removes all). `400 not_a_pet`, `404 cosmetic_not_found`, `404 creator_not_found`, `400 invalid_request` (more than 4, duplicates) |
+
+**Events:** `creator_updated` kind `pet_extras_changed` to the creator when the team changes his list (reload
+`GET /v1/creator/pet`); `cosmetics` to watchers as above.
+
+**Data, migration 37:** table `creator_pet_extras` (`creator_uuid` → creators, `cosmetic_id` → cosmetics, `position` 0–3,
+`assigned_at`, `assigned_by`; PK `(creator_uuid, cosmetic_id)`, UNIQUE `(creator_uuid, position)`), new column
+`creators.show_pet_extras` (default 1). Revoking a creator hides the entourage, the rows stay for a restore; deleting the
+creator removes them. Idempotent. When merging: renumber if a parallel branch also added a migration 37.
 
 ### 35.14 Creator statistics for the team (migration 36)
 

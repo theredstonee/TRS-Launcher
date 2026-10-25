@@ -4,6 +4,7 @@ import { capeView, type CapeRow } from './capes'
 import { badgeFxFor, type FxKind } from './badge-lookup'
 import { creatorLookupData, ownedPets, petCount, type LookupCreator, type LookupFan } from './creator-lookup'
 import { cosmeticView, optionsOf, renderable, type CosmeticRow } from './cosmetics'
+import { visiblePetExtras } from './pet-extras-lookup'
 import { WEARABLE_SLOTS, type WearableSlot } from './templates'
 import { ACTIVE_BANS } from './users'
 
@@ -42,6 +43,16 @@ export interface LookupCosmetic {
   options?: Record<string, boolean>
   /** Nur im Platz `pet`: wie viele dieser Begleiter laufen (1…4; Creator-Pinguine nach Fans, sonst 1). */
   count?: number
+  /**
+   * Nur im Platz `pet` (Format 2): Größe dieses Begleiters relativ zu anderen (1 = normal, Kaiserpinguin 1.25). NICHT mit
+   * `scale` verwechseln – das ist der Pixel-Faktor der Textur.
+   */
+  petScale?: number
+  /**
+   * Nur im Platz `pet`: Begleiter-Gefolge eines Creators (§35.13) – weitere Begleiter je 1× in dieser Reihenfolge, gleiche
+   * Form wie das Haupt-Pet (Format 2, mit `petScale`, ohne `count`/`extras`). Fehlt, wenn es keins gibt.
+   */
+  extras?: LookupCosmetic[]
 }
 
 export type LookupCosmetics = Record<WearableSlot, LookupCosmetic | null>
@@ -142,6 +153,7 @@ function collect(ctx: AppContext, viewer: string, uuids: string[]): LookupEntry[
   // Tier-Anzahl eigener Creator-Haustiere (§35.13): nur nachschlagen, wenn jemand etwas im Platz `pet` trägt.
   const petWearers = equipped.filter((e) => e.eq_slot === 'pet').map((e) => e.eq_uuid)
   const petOwners = ownedPets(ctx, petWearers)
+  const petExtras = visiblePetExtras(ctx, petWearers)
   const viewerLive = seesLiveBadges(ctx, viewer)
   const extra = creatorLookupData(ctx, viewer, rows.map((r) => r.uuid))
   const badgeFx = badgeFxFor(ctx, viewer, rows)
@@ -173,23 +185,14 @@ function collect(ctx: AppContext, viewer: string, uuids: string[]): LookupEntry[
         const tex = view.texture
         if (!tex) continue
         if (view.format === 2) {
-          cosmetics[c.eq_slot] = {
-            id: c.id,
-            format: 2,
-            model: view.model!,
-            url: tex.url,
-            scale: tex.scale,
-            animated: tex.animated,
-            frames: tex.frames,
-            frameTimeMs: tex.frameTimeMs,
-            glow: view.glow ?? null,
-            glowFrames: view.glowFrames ?? 0,
-            glowFrameTimeMs: view.glowFrameTimeMs ?? null,
-            hash: view.hash!,
+          const item = v2Lookup(ctx, c, c.eq_options)
+          if (!item) continue
+          if (c.eq_slot === 'pet') {
+            item.count = petCount(c.id, petOwners.get(r.uuid))
+            const extras = (petExtras.get(r.uuid) ?? []).map((x) => v2Lookup(ctx, x, null)).filter((x) => x !== null)
+            if (extras.length) item.extras = extras
           }
-          const options = optionsOf(ctx, c, c.eq_options)
-          if (options) cosmetics[c.eq_slot]!.options = options
-          if (c.eq_slot === 'pet') cosmetics[c.eq_slot]!.count = petCount(c.id, petOwners.get(r.uuid))
+          cosmetics[c.eq_slot] = item
         } else {
           if (!c.template) continue
           cosmetics[c.eq_slot] = {
@@ -216,6 +219,31 @@ function collect(ctx: AppContext, viewer: string, uuids: string[]): LookupEntry[
     players.push({ uuid: r.uuid, badge, cape, cosmetics, ...(creator ? { creator } : {}), ...(fan ? { fan } : {}), badges, fx })
   }
   return players
+}
+
+/** Lookup-Form eines v2-Teils (`null`, wenn es keine Textur hat). Im Platz `pet` mit `petScale`. */
+function v2Lookup(ctx: AppContext, c: CosmeticRow, rawOptions: string | null): LookupCosmetic | null {
+  const view = cosmeticView(ctx, c)
+  const tex = view.texture
+  if (!tex) return null
+  const item: LookupCosmetic = {
+    id: c.id,
+    format: 2,
+    model: view.model!,
+    url: tex.url,
+    scale: tex.scale,
+    animated: tex.animated,
+    frames: tex.frames,
+    frameTimeMs: tex.frameTimeMs,
+    glow: view.glow ?? null,
+    glowFrames: view.glowFrames ?? 0,
+    glowFrameTimeMs: view.glowFrameTimeMs ?? null,
+    hash: view.hash!,
+  }
+  const options = optionsOf(ctx, c, rawOptions)
+  if (options) item.options = options
+  if (view.petScale !== undefined) item.petScale = view.petScale
+  return item
 }
 
 /**

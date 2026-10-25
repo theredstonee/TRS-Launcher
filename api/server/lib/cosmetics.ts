@@ -6,6 +6,7 @@ import { shortHash, V2_TEMPLATE, v2File, type BuiltinCosmeticV2, type CosmeticV2
 import type { AppContext } from './context'
 import { ownedPets, petCount } from './creator-lookup'
 import { all, one, run, tx } from './db'
+import { visiblePetExtras } from './pet-extras-lookup'
 import { EMOTE_BY_ID, EMOTES } from './emotes'
 import { ApiError, badRequest, conflict, forbidden, notFound } from './errors'
 import { newUploadCosmeticId, sha256Hex } from './ids'
@@ -100,6 +101,11 @@ export interface CosmeticView extends Partial<CosmeticV2Fields> {
   options?: Record<string, boolean>
   /** Nur in der eigenen Ausrüstung im Platz `pet`: Anzahl (1…4: eigenes Creator-Haustier nach Fans, §35.13; sonst 1) – wie im Lookup. */
   count?: number
+  /**
+   * Nur in der eigenen Ausrüstung im Platz `pet`: Begleiter-Gefolge eines Creators (§35.13, je 1×, in Reihenfolge) – wie
+   * `cosmetics.pet.extras` im Lookup; fehlt ohne Gefolge bzw. bei „Gefolge zeigen“ aus.
+   */
+  extras?: CosmeticView[]
 }
 
 /** Zusatzfelder für Format v2 (§11.9). Fehlen bei v1-Teilen (alte Clients kennen sie nicht). */
@@ -121,6 +127,8 @@ export interface CosmeticV2Fields {
   glowFrameTimeMs: number | null
   /** 12 Hex: sha256 über model.json + Textur + Leucht-Streifen (gleich dem `?v=` von model/texture/glow). */
   hash: string
+  /** Nur Platz `pet`: Größe relativ zu anderen Begleitern (1 = normal, Kaiserpinguin 1.25; Katalog `petScale`). */
+  petScale?: number
 }
 
 export interface CosmeticCatalogEntry extends CosmeticView {
@@ -153,6 +161,7 @@ export function v2Fields(a: CosmeticV2Assets, base: string): CosmeticV2Fields {
     glowFrames,
     glowFrameTimeMs: glowFrames > 1 ? (g?.frameTimeMs ?? null) : null,
     hash: v,
+    ...(a.model.slot === 'pet' ? { petScale: a.petScale ?? 1 } : {}),
   }
 }
 
@@ -431,7 +440,12 @@ export function equippedView(ctx: AppContext, uuid: string): EquippedView {
     out[s] = r ? withOptions(ctx, r) : null
   }
   const pet = m.get('pet')
-  if (pet && out.pet) out.pet = { ...out.pet, count: petCount(pet.id, ownedPets(ctx, [uuid]).get(uuid)) }
+  if (pet && out.pet) {
+    out.pet = { ...out.pet, count: petCount(pet.id, ownedPets(ctx, [uuid]).get(uuid)) }
+    // Gefolge (§35.13) nur zu einem v2-Begleiter – wie im Lookup.
+    const extras = out.pet.format === 2 ? visiblePetExtras(ctx, [uuid]).get(uuid) : undefined
+    if (extras?.length) out.pet.extras = extras.map((r) => withOptions(ctx, { ...r, eq_slot: 'pet', eq_options: null }))
+  }
   return out
 }
 

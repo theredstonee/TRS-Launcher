@@ -888,6 +888,13 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 36,
     run: migrateCreatorStats,
   },
+  {
+    // Begleiter-Gefolge (§35.13): bis zu 4 zusätzliche Begleiter (Platz `pet`) je Creator, nur vom Team zugeordnet,
+    // Reihenfolge `position` (0…3); `creators.show_pet_extras` = Schalter „Gefolge zeigen“ im Dashboard (Standard an).
+    // Idempotent. HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 37,
+    run: migratePetExtras,
+  },
 ]
 
 /** Migration 36 (siehe oben): Creator-Statistik + Team-Modus. Exportiert für den Idempotenz-Test. */
@@ -901,6 +908,26 @@ export function migrateCreatorStats(db: DatabaseSync): void {
     if (!hasColumn(db, 'creator_daily', 'playing_fans')) db.exec('ALTER TABLE creator_daily ADD COLUMN playing_fans INTEGER')
   }
   if (hasTable(db, 'admin_log')) db.exec('CREATE INDEX IF NOT EXISTS admin_log_target ON admin_log(target, at)')
+}
+
+/** Migration 37 (siehe oben): Begleiter-Gefolge. Exportiert für den Idempotenz-Test. */
+export function migratePetExtras(db: DatabaseSync): void {
+  db.exec(`
+CREATE TABLE IF NOT EXISTS creator_pet_extras (
+  creator_uuid TEXT NOT NULL REFERENCES creators(uuid) ON DELETE CASCADE,
+  -- Kosmetik mit Platz pet; darf auch anderen gehören (Team-Pet oder dasselbe Pet wie bei anderen)
+  cosmetic_id TEXT NOT NULL REFERENCES cosmetics(id) ON DELETE CASCADE,
+  position INTEGER NOT NULL CHECK (position BETWEEN 0 AND 3),
+  assigned_at INTEGER NOT NULL,
+  assigned_by TEXT NOT NULL,
+  PRIMARY KEY (creator_uuid, cosmetic_id),
+  UNIQUE (creator_uuid, position)
+);
+CREATE INDEX IF NOT EXISTS creator_pet_extras_item ON creator_pet_extras(cosmetic_id);
+`)
+  if (hasTable(db, 'creators') && !hasColumn(db, 'creators', 'show_pet_extras')) {
+    db.exec('ALTER TABLE creators ADD COLUMN show_pet_extras INTEGER NOT NULL DEFAULT 1 CHECK (show_pet_extras IN (0, 1))')
+  }
 }
 
 /** Migration 35 (siehe oben): Creator-Haustiere. Exportiert für den Idempotenz-Test. */

@@ -19,6 +19,7 @@ import {
 import type { CreatorState, CreatorTier } from './creator-lookup'
 import { actorFor, auditActor, isoTime, multiline, nameOf, notifyCreator, parse, TIERS, type CreatorActor } from './creators'
 import { all, one, run, tx } from './db'
+import { petExtrasState, type PetExtraView } from './pet-extras'
 import { ApiError, badRequest, conflict, notFound, tooMany, unsupportedMedia } from './errors'
 import { sha256Hex } from './ids'
 import { processImage, sniffImage, type ImageLimits } from './images'
@@ -166,6 +167,10 @@ export interface CreatorPetState {
   requests: PetRequestView[]
   /** Darf jetzt einen Wunsch stellen (Creator selbst, noch kein Haustier, kein offener Wunsch). */
   canRequest: boolean
+  /** Begleiter-Gefolge (vom Team zugeordnet, in Reihenfolge; leer = keins). */
+  extras: PetExtraView[]
+  /** Schalter „Gefolge zeigen“ (`PUT /v1/creator/pet/extras`). */
+  showExtras: boolean
 }
 
 const iso = (t: number) => new Date(t).toISOString()
@@ -268,12 +273,15 @@ function openRequest(ctx: AppContext, creator: string): PetRequestRow | undefine
 function stateFor(ctx: AppContext, a: CreatorActor): CreatorPetState {
   const c = a.creator
   const pet = creatorPetRef(ctx, c.uuid)
+  const ex = petExtrasState(ctx, c.uuid)
   return {
     pet,
     quota: petQuota(ctx, c.uuid, c.tier),
     codes: a.rights.has('codes') ? petCodesOf(ctx, c.uuid) : null,
     requests: a.helper ? [] : requestsOf(ctx, c.uuid),
     canRequest: !a.helper && !pet && !openRequest(ctx, c.uuid),
+    extras: ex.extras,
+    showExtras: ex.showExtras,
   }
 }
 

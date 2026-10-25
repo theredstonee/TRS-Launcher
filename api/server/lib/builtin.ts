@@ -69,9 +69,11 @@ const cosmeticV2Entry = z
     glowFrames: z.int().min(0).max(16).default(0),
     glowFrameTimeMs: z.int().min(16).max(10_000).nullish(),
     hidden: z.boolean().default(false),
+    /** Nur Platz `pet`: Größe im Spiel relativ zu den anderen Begleitern (Standard 1, z. B. Kaiserpinguin 1.25). */
+    petScale: z.number().min(0.5).max(2).optional(),
     sort: sortField,
   })
-  .refine((c) => !c.hidden || c.unlock === 'code', 'hidden cosmetics must be unlocked by code')
+  .refine((c) => !c.hidden || c.unlock === 'code' || c.unlock === 'admin', 'hidden cosmetics must be unlocked by code or by the team')
 
 const cosmeticV1Entry = z
   .object({

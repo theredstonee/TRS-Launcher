@@ -66,6 +66,7 @@ export type CreatorUpdateKind =
   | 'pet_request_answered'
   /** Ein Team-Mitglied hat im Team-Modus etwas im Dashboard geändert (`action`, §35.9). */
   | 'team_changed'
+  | 'pet_extras_changed'
 
 /** Rechte eines Helfers (§35.9). Anfragen, Team-Umhang, Helfer und Vorschau-Builds bleiben immer beim Creator. */
 export const HELPER_RIGHTS = ['stats', 'codes', 'uploads', 'packs'] as const
