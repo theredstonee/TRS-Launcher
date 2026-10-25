@@ -879,7 +879,29 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 35,
     run: migrateCreatorPets,
   },
+  {
+    // Creator-Statistik für das Team (§35.14): `achievement_playtime.last_played_day` (letzter UTC-Tag mit
+    // In-Game-Herzschlag; `last_day` zählt jeden Herzschlag, also auch „nur Launcher offen“) + Index auf `last_day`,
+    // `creator_daily.active_fans` / `playing_fans` (Tages-Schnappschuss: aktuelle Fans mit Präsenz bzw. Spiel an dem Tag;
+    // NULL = nicht erfasst) und ein Index für die Team-Änderungen je Creator im Admin-Log. Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 36,
+    run: migrateCreatorStats,
+  },
 ]
+
+/** Migration 36 (siehe oben): Creator-Statistik + Team-Modus. Exportiert für den Idempotenz-Test. */
+export function migrateCreatorStats(db: DatabaseSync): void {
+  if (hasTable(db, 'achievement_playtime')) {
+    if (!hasColumn(db, 'achievement_playtime', 'last_played_day')) db.exec('ALTER TABLE achievement_playtime ADD COLUMN last_played_day INTEGER')
+    db.exec('CREATE INDEX IF NOT EXISTS achievement_playtime_last_day ON achievement_playtime(last_day)')
+  }
+  if (hasTable(db, 'creator_daily')) {
+    if (!hasColumn(db, 'creator_daily', 'active_fans')) db.exec('ALTER TABLE creator_daily ADD COLUMN active_fans INTEGER')
+    if (!hasColumn(db, 'creator_daily', 'playing_fans')) db.exec('ALTER TABLE creator_daily ADD COLUMN playing_fans INTEGER')
+  }
+  if (hasTable(db, 'admin_log')) db.exec('CREATE INDEX IF NOT EXISTS admin_log_target ON admin_log(target, at)')
+}
 
 /** Migration 35 (siehe oben): Creator-Haustiere. Exportiert für den Idempotenz-Test. */
 export function migrateCreatorPets(db: DatabaseSync): void {

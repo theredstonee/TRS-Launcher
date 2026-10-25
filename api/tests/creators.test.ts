@@ -575,7 +575,7 @@ describe('helper accounts (§35.9)', () => {
     const view = creatorDashboard(env.ctx, ed, c.uuid)
     expect(view.stats).toBeNull()
     expect(view.helpers).toBeUndefined()
-    expect(view.viewer).toEqual({ helper: true, rights: ['codes'] })
+    expect(view.viewer).toEqual({ helper: true, team: false, rights: ['codes'] })
     expect(creatorDashboard(env.ctx, c.uuid).helpers).toHaveLength(1)
     // Rechte je Route.
     createExtraCode(env.ctx, ed, { code: 'PIXEL-ED' }, c.uuid)

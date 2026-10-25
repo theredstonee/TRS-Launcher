@@ -4165,7 +4165,7 @@ for one with `?as=<creatorUuid>` or header `X-Creator-As: <creatorUuid>` (35.9; 
   "channels": [{ "platform": "youtube", "url": "https://…", "followers": 12000 }],
   "codes": [{ "code": "TRS-PIXELMAUS", "kind": "main", "uses": 1284, "maxUses": null, "expiresAt": null, "active": true, "createdAt": "…" }],
   "limits": { "extraCodes": 5, "maxUsesPerCode": 1000, "symbolFrames": 8, "fanCape": "standard" },
-  "stats": { "activeFans": 812, "redemptions": 1596, "fanCapeHolders": 640, "newPlayers": 211, "packInstalls": 90,
+  "stats": { "activeFans": 812, "redemptions": 1596, "fanCapeHolders": 640, "fanCapeFans": 590, "newPlayers": 211, "packInstalls": 90,
              "daily": [{ "day": "2026-10-16", "newFans": 12, "redemptions": 15 }] },
   "milestone": "silver", "nextMilestone": { "name": "gold", "at": 1000 },
   "symbol": { "current": Symbol | null, "pending": Symbol | null, "rejected": { "reason": "…", "at": "…" } | null },
@@ -4174,15 +4174,20 @@ for one with `?as=<creatorUuid>` or header `X-Creator-As: <creatorUuid>` (35.9; 
   "packs": [{ "code": "TRS-ABCD-2345", "name": "Pixel Pack", "installs": 40, "listed": true }],
   "helpers": [{ "uuid", "name", "skin", "rights": ["codes"], "status": "pending" | "active", "createdAt" }],
   "profile": ProfileState,
-  "pet": CreatorPetRef | null
+  "pet": CreatorPetRef | null,
+  "teamChanges": [{ "action": "code.create", "at": "…" }]
 }
 ```
 - `stats.daily` = the last 30 UTC days, oldest first. `newPlayers` = fans whose TRS account was created at most 24 h before
   their first redemption of this creator's codes. `packInstalls` = installs of the listed creator packs. Numbers only,
-  never fan names.
+  never fan names. `fanCapeHolders` = everybody who owns one of the creator's fan capes (former fans keep them);
+  `fanCapeFans` = how many of the **current** fans own one – use `fanCapeFans / activeFans` for a share (never above 100 %).
+- `teamChanges` = the last 20 changes the team made in team mode (35.9) within 90 days, newest first, without names of
+  team members. Show them as "Changed by the team: …".
 - `rejected` is set only when the latest decision was a rejection.
-- `helpers` only for the creator. A helper gets `viewer: { helper: true, rights }` instead, `stats: null` without the
-  `stats` right, `requests: []` and `packs: []` without the `packs` right.
+- `helpers` only for the creator (and the team in team mode). A helper gets `viewer: { helper: true, team: false, rights }`
+  instead, `stats: null` without the `stats` right, `requests: []` and `packs: []` without the `packs` right. In team
+  mode (35.9) the answer has `viewer: { helper: false, team: true, rights: [all] }` **and** `helpers`.
 
 | route | right | body | answer / errors |
 |---|---|---|---|
@@ -4273,7 +4278,7 @@ Eligibility/submit for creator positions: active creators get `409 already_creat
 
 | event | data |
 |---|---|
-| `creator_updated` | `{ kind, reason?, tier?, helper? }` to the creator; `kind` ∈ `symbol_approved`, `symbol_rejected`, `cape_approved`, `cape_rejected`, `tier_changed` (+`tier`), `revoked` (+`reason`, also for bans), `restored`, `request_answered` (+`reason`), `milestone`, `became_creator` (+`tier`), `helper_joined`, `helper_left` (+`helper: { uuid, name }`), `profile_approved`, `profile_rejected` (+`reason`, §35.11), `pet_assigned`, `pet_removed`, `pet_request_answered` (+`reason`, §35.13). Reload `GET /v1/creator/dashboard`. Clients ignore unknown kinds. |
+| `creator_updated` | `{ kind, reason?, tier?, helper?, action? }` to the creator; `kind` ∈ `symbol_approved`, `symbol_rejected`, `cape_approved`, `cape_rejected`, `tier_changed` (+`tier`), `revoked` (+`reason`, also for bans), `restored`, `request_answered` (+`reason`), `milestone`, `became_creator` (+`tier`), `helper_joined`, `helper_left` (+`helper: { uuid, name }`), `profile_approved`, `profile_rejected` (+`reason`, §35.11), `pet_assigned`, `pet_removed`, `pet_request_answered` (+`reason`, §35.13), `team_changed` (+`action`, team mode §35.9). Reload `GET /v1/creator/dashboard`. Clients ignore unknown kinds. |
 | `creator_milestone` | `{ creator: { uuid, name }, milestone }` to every current fan |
 | `creator_helper_invite` | `{ creator: { uuid, name }, rights, createdAt }` to the invited player |
 | `creator_helper_removed` | `{ creator: { uuid, name } }` to a helper whom the creator removed (or whose invitation was withdrawn) |
@@ -4287,7 +4292,7 @@ Eligibility/submit for creator positions: active creators get `409 already_creat
 `creator_helper_right` 403, `not_friends` 400, `helper_not_found` 404, `helper_invite_not_found` 404,
 `symbol_not_found` 404, `queue_item_not_found` 404, `request_closed` 409, `fan_cape_pending` 409, `invalid_profile` 400,
 `creator_not_found` 404; creator pets (35.13): `creator_pet_missing`, `creator_pet_unavailable`, `creator_pet_limit`,
-`creator_pet_owned`, `creator_pet_taken`, `not_a_pet`, `image_not_found`.
+`creator_pet_owned`, `creator_pet_taken`, `not_a_pet`, `image_not_found`; team mode (35.9): `creator_team_forbidden` 403.
 
 ### 35.9 Helper accounts
 
@@ -4307,6 +4312,22 @@ A creator gives helpers (editor, moderator, …) access to parts of the dashboar
 - Revoking or banning the creator suspends helper access (`403 creator_inactive`) and hides it from `helping`.
 - Actions of helpers are written to the audit log as `creator.helper.<action>` with the **helper's** uuid as actor and the
   creator as target.
+
+**Team mode.** A team member with `creators.manage` (owner/admin automatically) may call every dashboard route with
+`?as=<creatorUuid>` / `X-Creator-As` for **any active creator** – also when he is no helper or only a limited one there
+(team mode wins over a helper row). He then has all helper rights **and** the creator's own actions: requests (tier
+upgrade, team cape), profile, pet wishes (35.13), changing and removing helpers (`PATCH`/`DELETE /v1/creator/helpers/{uuid}`
+accept `as` – for helpers they stay `403 creator_helper_right`). Not in team mode: **inviting helpers** (`POST
+/v1/creator/helpers` with `as` → `403 creator_team_forbidden`) – that hands a third person access to the dashboard, so
+only the creator decides whom he trusts. Fan actions (redeem, end support, block) are personal and not part of the
+dashboard; account deletion is not a dashboard action. An inactive creator → `403 creator_inactive`.
+Every **changing** action in team mode is written to the audit log as `creator.team.<action>` (actor = team member,
+target = creator, detail) and the creator gets `creator_updated { kind: "team_changed", action }`; it also shows up in
+`teamChanges` of his dashboard. Actions: `code.create`, `code.update`, `symbol.upload`, `symbol.withdraw`, `cape.upload`,
+`cape.withdraw`, `pack.list`, `pack.unlist`, `request.create`, `profile.submit`, `profile.withdraw`, `helper.update`,
+`helper.remove`, `pet.code.create`, `pet.code.revoke`, `pet.request.create`, `pet.request.withdraw`, `pet.request.image`,
+`pet.request.image.delete`. Uploads in team mode also respect the team member's own upload ban. Pick a creator with
+`GET /v1/admin/creators?q=` (35.6).
 
 ### 35.10 Data, migration 25
 
@@ -4487,6 +4508,71 @@ team's reply). Reload `GET /v1/creator/pet`.
 `creator_pet_limits` (`tier` PK, `monthly`; seeded 10/50/200); new column `codes.creator_uuid` (+ index). All earlier
 `user_cosmetics` rows with `source = 'creator'` become `admin`. Idempotent. When merging: renumber if a parallel branch also
 added a migration 35.
+
+### 35.14 Creator statistics for the team (migration 36)
+
+Team routes (`creators.manage`, website session or Bearer, rate limit like the other creator admin routes). Numbers
+only – never names of fans. Both routes are read-only and not audited.
+
+`GET /v1/admin/creators/stats?q=&tier=&state=&sort=&order=&limit=` – ranking of all creators. Query (strict; unknown
+keys or values → `400 invalid_request`): `q` ≤ 32 (name part, uuid or creator code part), `tier` = `starter|partner|top`,
+`state` = `active|revoked|banned|all` (default `all`), `sort` = `fans|fansToday|fans7d|fans30d|newPlayers|newPlayers7d|
+newPlayers30d|petCodes|petRedemptions|online7d|online30d|played7d|played30d|name|since` (default `fans`), `order` =
+`asc|desc` (default `desc`), `limit` 1–500 (default 500). The figures are computed for all creators at once (one grouped
+query per figure) and reused for up to 60 s; filters and sorting run on that copy. Ties: more fans first, then name.
+
+```json
+{
+  "generatedAt": "…",
+  "definitions": { "newPlayerWindowHours": 24, "activitySince": "2026-10-25" | null },
+  "totals": { "creators": 12, "fans": 840, "fans7d": 51, "fans30d": 190, "newPlayers": 77, "newPlayers30d": 20,
+              "petRedemptions": 33, "online7d": 400, "online30d": 610 },
+  "creators": [CreatorStatRow]
+}
+CreatorStatRow = {
+  "uuid", "name", "tier", "state", "since", "mainCode": "PIXEL" | null,
+  "fans": { "total": 120, "today": 3, "d7": 12, "d30": 40 },
+  "newPlayers": { "total": 30, "d7": 4, "d30": 11 },
+  "pets": { "pet": { "cosmeticId": "penguin", "name": "Pinguin" } | null, "codes": 8, "activeCodes": 2, "redemptions": 41,
+            "month": { "month": "2026-10", "used": 40, "limit": 200, "redemptions": 12 } },
+  "activity": { "online7d": 60, "online30d": 90, "played7d": 41, "played30d": 77 }
+}
+```
+`totals` sums the filtered list (before `limit`).
+
+`GET /v1/admin/creators/{uuid}/stats?days=90` (`days` 7–365, default 90) → `404 creator_not_found` or
+```json
+{
+  "generatedAt": "…", "definitions": { … },
+  "creator": CreatorStatRow,
+  "fanCape": { "holders": 6, "fanHolders": 4 },
+  "series": [{ "day": "2026-07-28", "newFans": 0, "newPlayers": 0, "redemptions": 0, "petRedemptions": 0,
+               "activeFans": null, "playingFans": null }]
+}
+```
+`series` has exactly `days` entries, oldest first, the last one is today (UTC).
+
+Definitions:
+- **Fans** `total` = current supporters (`creator_supports`); `today`/`d7`/`d30` = support starts per UTC day
+  (`creator_daily.new_fans`, 7/30 days including today).
+- **New players** = fans whose TRS account (`users.created_at`, = first sign-in with TRS) was created at most **24 h**
+  before their **first** redemption of any code of this creator – the same rule as `stats.newPlayers` in the creator's own
+  dashboard (35.3). The day is the day of that first redemption. There is no link/referral tracking: creator pages only
+  link to the download, accounts are created on the first launcher sign-in, so no new tracking was added.
+- **Pet codes** (35.13): `codes` = codes created for the creator's pet, `activeCodes` = not revoked, not expired, not used
+  up; `redemptions` = all redemptions; `month.used`/`month.limit` = the monthly quota like `PetQuota`, `month.redemptions`
+  = redemptions this calendar month (UTC).
+- **Fan activity** (current fans only): `online` = a TRS presence heartbeat (launcher open or game running) on one of the
+  last 7/30 UTC days (`achievement_playtime.last_day`); `played` = an in-game heartbeat
+  (`achievement_playtime.last_played_day`, recorded since migration 36).
+- **Series** `activeFans`/`playingFans` = a snapshot every 10 minutes of the creator's current fans with presence / in-game
+  heartbeat that day (`creator_daily.active_fans`/`playing_fans`, the maximum of the day counts). `null` before the first
+  snapshot of this creator (`definitions.activitySince` = first snapshot day of any creator); fans who first show up in the
+  last minutes before midnight UTC can be missing from that day's value.
+
+**Data, migration 36:** column `achievement_playtime.last_played_day` (+ index on `last_day`), columns
+`creator_daily.active_fans`/`playing_fans` (NULL = not recorded), index `admin_log(target, at)` for `teamChanges`.
+Idempotent. When merging: renumber if a parallel branch also added a migration 36.
 
 ## 36. Halloween 2026 ("Nacht der langen Schatten")
 

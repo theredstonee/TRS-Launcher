@@ -150,7 +150,7 @@ export type ApiEvent =
   | { type: 'remote_pairing', action: 'added' | 'removed', desktopId: string, phoneId: string, desktop?: PeerView, phone?: PeerView }
   // ---------------------------------------------------------------- Creator-Programm (§35, nur /v1/events/me)
   /** An den Creator: Symbol/Fan-Umhang geprüft, Stufe geändert, Status entzogen/wiederhergestellt, Anfrage beantwortet, Meilenstein, neu Creator. */
-  | { type: 'creator_updated', kind: CreatorUpdateKind, reason?: string, tier?: CreatorTier, helper?: PlayerRef }
+  | { type: 'creator_updated', kind: CreatorUpdateKind, reason?: string, tier?: CreatorTier, helper?: PlayerRef, action?: string }
   /** An den Eingeladenen: ein Freund lädt dich als Helfer ein (§35.9). */
   | { type: 'creator_helper_invite', creator: PlayerRef, rights: HelperRight[], createdAt: string }
   /** An den Helfer: der Creator hat dich entfernt bzw. die Einladung zurückgezogen. */

@@ -17,7 +17,7 @@ import {
   type CreatorPetRef,
 } from './creator-pet'
 import type { CreatorState, CreatorTier } from './creator-lookup'
-import { actorFor, auditHelper, isoTime, multiline, nameOf, notifyCreator, parse, TIERS, type CreatorActor } from './creators'
+import { actorFor, auditActor, isoTime, multiline, nameOf, notifyCreator, parse, TIERS, type CreatorActor } from './creators'
 import { all, one, run, tx } from './db'
 import { ApiError, badRequest, conflict, notFound, tooMany, unsupportedMedia } from './errors'
 import { sha256Hex } from './ids'
@@ -319,7 +319,8 @@ export function createPetCodes(
     note: input.note,
     creatorUuid: c.uuid,
   })
-  audit(ctx, user, 'creator.pet.codes', c.uuid, `${input.count}x ${own.cosmetic_id} (max ${input.maxUses})${a.helper ? ' (helper)' : ''}`)
+  audit(ctx, user, 'creator.pet.codes', c.uuid, `${input.count}x ${own.cosmetic_id} (max ${input.maxUses})${a.helper ? ' (helper)' : a.team ? ' (team)' : ''}`)
+  if (a.team) auditActor(ctx, a, 'pet.code.create', `${input.count}x max ${input.maxUses}`)
   const name = nameOf(ctx, user)
   return {
     codes: made.codes.map((k) => ({
@@ -349,7 +350,7 @@ export function revokePetCode(ctx: AppContext, user: string, id: number, as?: st
   const c = a.creator
   if (!one(ctx.db, 'SELECT 1 AS x FROM codes WHERE id = ? AND creator_uuid = ?', id, c.uuid)) throw notFound('code_not_found', 'Code not found')
   revokeCode(ctx, id)
-  auditHelper(ctx, a, 'pet.code.revoke', String(id))
+  auditActor(ctx, a, 'pet.code.revoke', String(id))
   return { codes: petCodesOf(ctx, c.uuid), quota: petQuota(ctx, c.uuid, c.tier) }
 }
 
@@ -357,7 +358,8 @@ export function revokePetCode(ctx: AppContext, user: string, id: number, as?: st
 
 /** Wunsch „Eigenes Haustier“ (nur der Creator): einer offen/in Arbeit zur Zeit, nicht mit eigenem Haustier. */
 export function createPetRequest(ctx: AppContext, user: string, raw: unknown, as?: string | null): { requests: PetRequestView[] } {
-  const c = actorFor(ctx, user, as, 'owner').creator
+  const a = actorFor(ctx, user, as, 'owner')
+  const c = a.creator
   const input = parse(petRequestBody, raw)
   if (one(ctx.db, 'SELECT 1 AS x FROM creator_pets WHERE creator_uuid = ?', c.uuid)) throw conflict('creator_pet_owned', 'You already have an own pet')
   if (openRequest(ctx, c.uuid)) throw conflict('creator_request_open', 'You already have an open pet request')
@@ -367,6 +369,7 @@ export function createPetRequest(ctx: AppContext, user: string, raw: unknown, as
     "INSERT INTO creator_pet_requests (creator_uuid, status, species, description, colors, created_at, updated_at) VALUES (?, 'open', ?, ?, ?, ?, ?)",
     c.uuid, input.species, input.description, input.colors ?? '', t, t,
   )
+  auditActor(ctx, a, 'pet.request.create', input.species)
   return { requests: requestsOf(ctx, c.uuid) }
 }
 
@@ -379,9 +382,11 @@ function ownOpenRequest(ctx: AppContext, creator: string, id: number): PetReques
 
 /** Wunsch zurückziehen (nur solange er offen ist). */
 export function withdrawPetRequest(ctx: AppContext, user: string, id: number, as?: string | null): void {
-  const c = actorFor(ctx, user, as, 'owner').creator
+  const a = actorFor(ctx, user, as, 'owner')
+  const c = a.creator
   const r = ownOpenRequest(ctx, c.uuid, id)
   run(ctx.db, 'DELETE FROM creator_pet_requests WHERE id = ?', r.id)
+  auditActor(ctx, a, 'pet.request.withdraw', String(r.id))
   if (r.image_sha256 && r.image_mime) dropPetImage(ctx, r.image_sha256, r.image_mime)
 }
 
@@ -399,9 +404,11 @@ export async function uploadPetRequestImage(
   contentType: string,
   as?: string | null,
 ): Promise<{ request: PetRequestView }> {
-  const c = actorFor(ctx, user, as, 'owner').creator
+  const a = actorFor(ctx, user, as, 'owner')
+  const c = a.creator
   ownOpenRequest(ctx, c.uuid, id)
   assertNotSanctioned(ctx, c.uuid, 'upload_ban')
+  if (a.team) assertNotSanctioned(ctx, user, 'upload_ban')
   // WebP versteht processImage zwar, hier sind nur PNG/JPEG erlaubt – auch wenn der Content-Type lügt.
   const kind = sniffImage(body)
   if (kind !== 'png' && kind !== 'jpeg' && body.length > 0) throw unsupportedMedia('Only PNG and JPEG images are allowed')
@@ -425,12 +432,15 @@ export async function uploadPetRequestImage(
     sha, img.full.mime, img.full.width, img.full.height, ctx.now(), r.id,
   )
   if (r.image_sha256 && r.image_mime && !(r.image_sha256 === sha && r.image_mime === img.full.mime)) dropPetImage(ctx, r.image_sha256, r.image_mime)
+  auditActor(ctx, a, 'pet.request.image', `${r.id}: ${sha}`)
   return { request: requestView(one<PetRequestRow>(ctx.db, 'SELECT * FROM creator_pet_requests WHERE id = ?', r.id)!) }
 }
 
 export function deletePetRequestImage(ctx: AppContext, user: string, id: number, as?: string | null): { request: PetRequestView } {
-  const c = actorFor(ctx, user, as, 'owner').creator
+  const a = actorFor(ctx, user, as, 'owner')
+  const c = a.creator
   const r = ownOpenRequest(ctx, c.uuid, id)
+  auditActor(ctx, a, 'pet.request.image.delete', String(r.id))
   run(ctx.db, 'UPDATE creator_pet_requests SET image_sha256 = NULL, image_mime = NULL, image_width = NULL, image_height = NULL, updated_at = ? WHERE id = ?', ctx.now(), r.id)
   if (r.image_sha256 && r.image_mime) dropPetImage(ctx, r.image_sha256, r.image_mime)
   return { request: requestView(one<PetRequestRow>(ctx.db, 'SELECT * FROM creator_pet_requests WHERE id = ?', r.id)!) }

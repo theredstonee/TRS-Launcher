@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { grantPendingRewards } from '../lib/achievements'
 import { rotateAttachmentKeys, sweepOrphanFiles, sweepPendingAttachments } from '../lib/attachments'
 import { sweepExpired } from '../lib/auth'
+import { snapshotCreatorActivity } from '../lib/creator-stats'
 import { loadBuiltinCosmetics, loadBuiltins } from '../lib/builtin'
 import { seedBuiltins, type BuiltinCape } from '../lib/capes'
 import { syncAllCreatorPets } from '../lib/creator-pet'
@@ -228,6 +229,8 @@ export default defineNitroPlugin((nitroApp) => {
       sweepRemote(ctx)
       // Creator-Pinguine: Änderungen abseits von creators.ts (z. B. ein Fan hat sein Konto gelöscht).
       syncAllCreatorPets(ctx)
+      // Creator-Statistik (§35.14): heutige Fan-Aktivität je Creator festhalten (Tagesverlauf).
+      snapshotCreatorActivity(ctx)
     }),
     // Chat: Tipp-Status, Wiederaufnahme-Puffer, Spam-Bremse, nicht verwendete Bilder.
     // Welt-Hosting: Räume ohne Herzschlag schließen.

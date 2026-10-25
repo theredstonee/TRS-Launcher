@@ -113,6 +113,8 @@ interface PlaytimeRow {
   session_ms: number
   best_session_ms: number
   last_day: number | null
+  /** Letzter UTC-Tag mit In-Game-Herzschlag (Migration 36, Creator-Statistik §35.14). */
+  last_played_day?: number | null
   streak: number
   best_streak: number
 }
@@ -397,14 +399,16 @@ export function recordHeartbeat(ctx: AppContext, uuid: string, inGame: boolean, 
       bestStreak = Math.max(bestStreak, streak)
     }
   }
+  // Nur für die Creator-Statistik (§35.14): an welchem Tag zuletzt wirklich gespielt wurde.
+  const playedDay = inGame ? Math.floor(t / DAY_MS) : (row?.last_played_day ?? null)
   run(
     ctx.db,
-    `INSERT INTO achievement_playtime (uuid, played_ms, last_beat_at, session_ms, best_session_ms, last_day, streak, best_streak)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO achievement_playtime (uuid, played_ms, last_beat_at, session_ms, best_session_ms, last_day, streak, best_streak, last_played_day)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(uuid) DO UPDATE SET played_ms = excluded.played_ms, last_beat_at = excluded.last_beat_at,
        session_ms = excluded.session_ms, best_session_ms = excluded.best_session_ms, last_day = excluded.last_day,
-       streak = excluded.streak, best_streak = excluded.best_streak`,
-    uuid, played, last, session, bestSession, lastDay, streak, bestStreak,
+       streak = excluded.streak, best_streak = excluded.best_streak, last_played_day = excluded.last_played_day`,
+    uuid, played, last, session, bestSession, lastDay, streak, bestStreak, playedDay,
   )
   checkAchievements(ctx, uuid, ['play_minutes', 'best_session_minutes', 'best_streak_days'])
 }
