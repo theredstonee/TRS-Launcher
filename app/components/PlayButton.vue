@@ -308,6 +308,49 @@ button.lamp:active {
   opacity: 0.9;
 }
 
+/*
+ * Fuchsbau: aus der Redstone-Lampe wird eine Laterne am Lagerfeuer. Dunkle Eisenstreben
+ * vor warmem Glas, darin ein paar Glutpunkte; beim Start glimmt sie mit dem Fortschritt
+ * auf und die Glut steigt, läuft das Spiel, leuchtet sie golden wie ein Feuer.
+ */
+:root[data-design="fox"]:not([data-event="halloween"]) .lamp-glass {
+  background:
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='28' shape-rendering='crispEdges'><path d='M7 22h1v1H7zM19 9h1v1h-1zM33 18h1v1h-1zM46 5h1v1h-1zM54 24h1v1h-1zM27 3h1v1h-1z' fill='%23ffc362'/><path d='M12 14h1v1h-1zM40 12h1v1h-1zM3 6h1v1H3z' fill='%23ff8a2a' fill-opacity='.8'/></svg>") 0 0 / 120px 56px,
+    repeating-linear-gradient(90deg, var(--lamp-line) 0 3px, transparent 3px 30px),
+    linear-gradient(180deg, var(--lamp-line) 0 3px, transparent 3px calc(100% - 3px), var(--lamp-line) calc(100% - 3px));
+  opacity: 0.5;
+}
+:root[data-design="fox"]:not([data-event="halloween"]) .lamp-light {
+  background: radial-gradient(90% 150% at 50% 85%, #fff6d8, var(--color-lamp-300) 25%, var(--color-lamp-400) 60%, color-mix(in srgb, var(--color-lamp-400) 55%, var(--color-redstone-500)));
+}
+:root[data-design="fox"]:not([data-event="halloween"]) .lamp-preparing .lamp-glass,
+:root[data-design="fox"]:not([data-event="halloween"]) .lamp-running .lamp-glass {
+  animation: ember-rise 2.6s steps(13) infinite;
+}
+:root[data-design="fox"]:not([data-event="halloween"]) .lamp-preparing .lamp-glass {
+  opacity: 0.75;
+}
+:root[data-design="fox"]:not([data-event="halloween"]) .lamp-running .lamp {
+  color: #2e1404;
+  box-shadow:
+    inset 0 0 0 3px var(--color-lamp-300),
+    inset 0 0 0 5px color-mix(in srgb, var(--color-lamp-400) 55%, #6b2a00);
+}
+:root[data-design="fox"]:not([data-event="halloween"]) .lamp-running .lamp-glass {
+  opacity: 0.7;
+}
+@keyframes ember-rise {
+  from {
+    background-position: 0 0, 0 0, 0 0;
+  }
+  to {
+    background-position: 0 -56px, 0 0, 0 0;
+  }
+}
+:root[data-reduced-motion][data-design="fox"] .lamp-glass {
+  animation: none !important;
+}
+
 @keyframes flicker {
   0%,
   100% {

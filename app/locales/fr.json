@@ -2367,11 +2367,13 @@
       "designDescription": "L'apparence globale du launcher : scène d'arrière-plan, motif et couleurs. La couleur d'accent et le thème de couleurs restent à ton choix.",
       "designs": {
         "redstone": "Redstone",
-        "winter": "Nuit d'hiver"
+        "winter": "Nuit d'hiver",
+        "fox": "Terrier du renard"
       },
       "designHints": {
         "redstone": "Ardoise des abîmes et un circuit de redstone vivant",
-        "winter": "Paysage enneigé en pixels, aurores boréales, bleu glacier"
+        "winter": "Paysage enneigé en pixels, aurores boréales, bleu glacier",
+        "fox": "Forêt Minecraft au crépuscule, feu de camp, orange renard"
       },
       "designLabel": "Design {name}",
       "colorScheme": "Thème de couleurs",
@@ -2387,7 +2389,8 @@
         "emerald": "Émeraude",
         "lapis": "Lapis",
         "amethyst": "Améthyste",
-        "ice": "Glace"
+        "ice": "Glace",
+        "fox": "Renard"
       },
       "accentTitle": "Couleur d'accent",
       "accentDescription": "Couleur des boutons, des éléments actifs et des lumières de l'arrière-plan.",
@@ -2395,7 +2398,7 @@
       "advancedRenderingTitle": "Rendu avancé",
       "advancedRenderingDescription": "Effets de flou derrière les boîtes de dialogue et les barres. Les désactiver économise un peu de performances sur les PC lents.",
       "animatedBackgroundTitle": "Arrière-plan animé",
-      "animatedBackgroundDescription": "Une scène animée et paisible derrière chaque page – un circuit de redstone ou un paysage d'hiver, selon le design. Désactivé, seul le motif d'arrière-plan s'affiche.",
+      "animatedBackgroundDescription": "Une scène animée et paisible derrière chaque page – un circuit de redstone, un paysage d'hiver ou une forêt au crépuscule, selon le design. Désactivé, seul le motif d'arrière-plan s'affiche.",
       "eventIconsTitle": "Icônes d'événement",
       "eventIconsDescription": "Pendant des événements comme Halloween, l'icône de l'application change aussi : fenêtre, barre des tâches, raccourcis du bureau et du menu Démarrer, et l'écran d'accueil du téléphone. L'icône habituelle revient d'elle-même à la fin de l'événement.",
       "eventLookTitle": "Afficher le design de l'événement (p. ex. Halloween)",

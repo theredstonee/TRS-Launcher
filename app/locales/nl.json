@@ -2367,11 +2367,13 @@
       "designDescription": "Het totale uiterlijk van de launcher: achtergrondscène, patroon en kleuren. Accentkleur en kleurthema kies je nog steeds zelf.",
       "designs": {
         "redstone": "Redstone",
-        "winter": "Winternacht"
+        "winter": "Winternacht",
+        "fox": "Vossenhol"
       },
       "designHints": {
         "redstone": "Deepslate en een levend redstonecircuit",
-        "winter": "Besneeuwd pixellandschap, noorderlicht, ijsblauw"
+        "winter": "Besneeuwd pixellandschap, noorderlicht, ijsblauw",
+        "fox": "Minecraft-bos in de schemering, kampvuur, vossenoranje"
       },
       "designLabel": "Ontwerp {name}",
       "colorScheme": "Kleurthema",
@@ -2387,7 +2389,8 @@
         "emerald": "Smaragd",
         "lapis": "Lapis",
         "amethyst": "Amethist",
-        "ice": "IJs"
+        "ice": "IJs",
+        "fox": "Vos"
       },
       "accentTitle": "Accentkleur",
       "accentDescription": "Kleur voor knoppen, actieve items en lichtjes in de achtergrond.",
@@ -2395,7 +2398,7 @@
       "advancedRenderingTitle": "Geavanceerde weergave",
       "advancedRenderingDescription": "Vervagingseffecten achter dialogen en balken. Uitschakelen bespaart wat prestaties op tragere pc’s.",
       "animatedBackgroundTitle": "Geanimeerde achtergrond",
-      "animatedBackgroundDescription": "Een rustige, geanimeerde scène achter elke pagina – een redstonecircuit of een winterlandschap, afhankelijk van het ontwerp. Als dit uit staat, wordt alleen het achtergrondpatroon getoond.",
+      "animatedBackgroundDescription": "Een rustige, geanimeerde scène achter elke pagina – een redstonecircuit, een winterlandschap of een bos in de schemering, afhankelijk van het ontwerp. Als dit uit staat, wordt alleen het achtergrondpatroon getoond.",
       "eventIconsTitle": "Evenementpictogrammen",
       "eventIconsDescription": "Tijdens evenementen zoals Halloween verandert ook het app-pictogram – venster, taakbalk, snelkoppelingen op het bureaublad en in het startmenu en het startscherm van je telefoon. Na het evenement komt het gewone pictogram vanzelf terug.",
       "eventLookTitle": "Evenementontwerp tonen (bijv. Halloween)",

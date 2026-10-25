@@ -1,6 +1,7 @@
 import { documentDesign } from '../design'
 import { HALLOWEEN_EVENT } from '../halloween'
 import { paintMoonnightBanner } from '../moonnight/banner'
+import { paintFoxBanner } from '../fox/banner'
 import { paintWinterBanner } from '../winter/banner'
 import { documentPalette } from './palette'
 import { TEX, Sprites, paintFloor, paintFrame } from './paint'
@@ -10,7 +11,8 @@ import { buildScene } from './scene'
 // aus der Instanz-ID erzeugt – jede Instanz bekommt so ihr eigenes, stabiles
 // Motiv im Stil der Startseite. Ergebnis ist eine winzige PNG-Data-URL
 // (256 × 96 Texel), die das Bild-Element pixelig hochskaliert.
-// Im Design „Winternacht“ statt der Schaltung eine kleine Winterlandschaft, zu Halloween
+// Im Design „Winternacht“ statt der Schaltung eine kleine Winterlandschaft, im „Fuchsbau“
+// ein Waldrand in der Dämmerung mit Bau und Lagerfeuer, zu Halloween
 // (jedes Design) ein Standbild der Mondnacht.
 
 export const BANNER_COLS = 16
@@ -42,6 +44,7 @@ export function generatedBanner(id: string): string | null {
     let canvas: HTMLCanvasElement | null
     if (halloween) canvas = paintMoonnightBanner(seed)
     else if (design === 'winter') canvas = paintWinterBanner(seed)
+    else if (design === 'fox') canvas = paintFoxBanner(seed)
     else {
       const circuit = buildScene({ cols: BANNER_COLS, rows: BANNER_ROWS, busRow: -1, busEnd: 0, seed })
       // Jede Instanz zeigt einen anderen Moment ihrer Schaltung.

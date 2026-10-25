@@ -164,6 +164,17 @@
   --color-redstone-300: #136a9f;
   --color-redstone-900: #dcf1fc;
 }
+:root[data-accent="fox"] {
+  --color-redstone-300: #ffc89a;
+  --color-redstone-400: #ff9a52;
+  --color-redstone-500: #e8702a;
+  --color-redstone-600: #b8521c;
+  --color-redstone-900: #3a1c0e;
+}
+:root[data-accent="fox"][data-theme="light"] {
+  --color-redstone-300: #a8460f;
+  --color-redstone-900: #fde6d2;
+}
 
 /*
  * Design „Winternacht“ (`data-design="winter"`, utils/design.ts): Nachtblau statt
@@ -209,6 +220,51 @@
   --color-lamp-300: #136a9f;
   --color-lamp-900: #dcf1fc;
   --deepslate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'><path d='M0 15h16v1H0zM15 0h1v15h-1z' fill='%23527aa8' fill-opacity='.05'/><path d='M0 0h15v1H0zM0 1h1v14H0z' fill='%23fff' fill-opacity='.32'/><path d='M3 3h1v1H3zM11 5h1v1h-1zM6 10h1v1H6zM13 12h1v1h-1zM8 7h1v1H8z' fill='%23fff' fill-opacity='.6'/><path d='M4 12h1v1H4zM10 2h1v1h-1zM12 9h1v1h-1zM2 7h1v1H2z' fill='%23527aa8' fill-opacity='.06'/></svg>");
+}
+
+/*
+ * Design „Fuchsbau“ (`data-design="fox"`): warme Abenddämmerung statt Deepslate – Pflaume
+ * und Kastanie im Grund, Laub- und Nadel-Fliesen als Muster. Akzent frei wählbar (ab Werk
+ * Fuchsorange); „unter Strom“ (Spiel läuft) leuchtet golden wie Glut. Dunkel = Dämmerung,
+ * OLED = späte Dämmerung, Hell = goldene Stunde. Halloween gewinnt, solange es läuft.
+ */
+:root[data-design="fox"] {
+  --color-base-950: #1a1119;
+  --color-base-900: #20151f;
+  --color-base-850: #281a27;
+  --color-base-800: #332232;
+  --color-base-700: #462f44;
+  --color-base-600: #654862;
+  --color-base-400: #b398a8;
+  --color-base-200: #ecd8d2;
+  --color-base-50: #fff3ea;
+  --color-lamp-300: #ffe1a6;
+  --color-lamp-400: #ffc362;
+  --color-lamp-900: #3a2610;
+  --fox-tile: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'><path d='M0 15h16v1H0zM15 0h1v15h-1z' fill='%23000' fill-opacity='.16'/><path d='M0 0h15v1H0zM0 1h1v14H0z' fill='%23ffb878' fill-opacity='.025'/><path d='M3 3h2v1H3zM4 4h2v1H4zM11 9h2v1h-2zM10 10h2v1h-2z' fill='%23e8702a' fill-opacity='.07'/><path d='M12 3h1v1h-1zM6 11h1v1H6zM2 12h1v1H2zM8 6h1v1H8z' fill='%23f3a6c8' fill-opacity='.05'/><path d='M13 13h1v1h-1zM5 7h1v1H5zM9 2h1v1H9z' fill='%23fff' fill-opacity='.035'/></svg>");
+  --deepslate: var(--fox-tile);
+}
+:root[data-design="fox"][data-theme="oled"] {
+  --color-base-950: #000000;
+  --color-base-900: #070407;
+  --color-base-850: #0e080d;
+  --color-base-800: #181017;
+  --color-base-700: #261a24;
+  --color-base-600: #3d2c3b;
+}
+:root[data-design="fox"][data-theme="light"] {
+  --color-base-950: #f6ebe0;
+  --color-base-900: #fffaf5;
+  --color-base-850: #fbf2e8;
+  --color-base-800: #f0e0d0;
+  --color-base-700: #e3cdb9;
+  --color-base-600: #c7a993;
+  --color-base-400: #7d5e50;
+  --color-base-200: #3d2a24;
+  --color-base-50: #1e130f;
+  --color-lamp-300: #94560a;
+  --color-lamp-900: #fcecd2;
+  --deepslate: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'><path d='M0 15h16v1H0zM15 0h1v15h-1z' fill='%23b07a50' fill-opacity='.06'/><path d='M0 0h15v1H0zM0 1h1v14H0z' fill='%23fff' fill-opacity='.35'/><path d='M3 3h2v1H3zM4 4h2v1H4zM11 9h2v1h-2zM10 10h2v1h-2z' fill='%23e8702a' fill-opacity='.08'/><path d='M12 3h1v1h-1zM6 11h1v1H6zM2 12h1v1H2zM8 6h1v1H8z' fill='%23e07aa8' fill-opacity='.07'/></svg>");
 }
 
 /*
@@ -805,6 +861,66 @@ textarea {
     filter: none;
   }
 }
+/* --- Fuchsbau: Glut und Abendlicht statt Redstone-Signal ------------------------------- */
+/* Ladeplatzhalter: ein warmer Schein zieht über die Platte, unten ein glimmender Rand. */
+:root[data-design="fox"]:not([data-event="halloween"]) .skeleton {
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--color-redstone-500) 25%, transparent);
+}
+:root[data-design="fox"]:not([data-event="halloween"]) .skeleton::after {
+  inset: 0;
+  width: 60%;
+  height: auto;
+  background: linear-gradient(
+    100deg,
+    transparent 15%,
+    color-mix(in srgb, var(--color-redstone-400) 10%, transparent) 40%,
+    color-mix(in srgb, var(--color-lamp-300) 14%, transparent) 50%,
+    color-mix(in srgb, var(--color-redstone-400) 10%, transparent) 60%,
+    transparent 85%
+  );
+  box-shadow: none;
+  animation: frost-sweep 2.4s ease-in-out infinite;
+}
+/* Karten: beim Drüberfahren fällt Abendlicht von oben rechts auf den Rand, eine Glutkante läuft. */
+:root[data-design="fox"]:not([data-event="halloween"]) .card-hover::before {
+  background:
+    linear-gradient(225deg, color-mix(in srgb, var(--color-lamp-300) 80%, transparent) 0, transparent 26%) top right / 100% 100% no-repeat,
+    linear-gradient(45deg, color-mix(in srgb, var(--color-redstone-500) 70%, transparent) 0, transparent 22%) bottom left / 100% 100% no-repeat,
+    linear-gradient(90deg, color-mix(in srgb, var(--color-redstone-500) 40%, transparent), color-mix(in srgb, var(--color-lamp-300) 45%, transparent), color-mix(in srgb, var(--color-redstone-500) 40%, transparent)) 0 0 / 200% 100%;
+}
+:root[data-design="fox"]:not([data-event="halloween"]) .card-hover:hover::before {
+  animation: frost-glint 3.2s linear infinite;
+}
+/* Menüs glimmen beim Öffnen kurz warm auf. */
+:root[data-design="fox"]:not([data-event="halloween"]) .menu {
+  animation: ember-on 0.35s ease-out;
+}
+/* Seitenwechsel: ein Funke fliegt über den Rand. */
+:root[data-design="fox"]:not([data-event="halloween"]) .route-signal::after {
+  width: 34%;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-redstone-600) 70%, transparent), var(--color-redstone-400), var(--color-lamp-300), #fff6d8 92%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-redstone-400) 80%, transparent);
+  animation: frost-run 0.75s cubic-bezier(0.3, 0.6, 0.4, 1) 1 forwards;
+}
+@keyframes ember-on {
+  0% {
+    opacity: 0;
+    transform: translateY(-3px);
+    filter: brightness(1.25) sepia(0.35) drop-shadow(0 0 0 transparent);
+  }
+  45% {
+    opacity: 1;
+    filter: brightness(1.08) sepia(0.12) drop-shadow(0 0 10px color-mix(in srgb, var(--color-redstone-400) 45%, transparent));
+  }
+  100% {
+    transform: none;
+    filter: none;
+  }
+}
+:root[data-reduced-motion][data-design="fox"] .skeleton::after,
+:root[data-reduced-motion][data-design="fox"] .route-signal::after,
+:root[data-reduced-motion][data-design="fox"] .card-hover:hover::before,
+:root[data-reduced-motion][data-design="fox"] .menu,
 :root[data-reduced-motion][data-design="winter"] .skeleton::after,
 :root[data-reduced-motion][data-design="winter"] .route-signal::after,
 :root[data-reduced-motion][data-design="winter"] .card-hover:hover::before,

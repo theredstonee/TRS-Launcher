@@ -2367,11 +2367,13 @@
       "designDescription": "A aparência geral do launcher: cena de fundo, padrão e cores. A cor de destaque e o tema de cores continuam sendo escolha sua.",
       "designs": {
         "redstone": "Redstone",
-        "winter": "Noite de inverno"
+        "winter": "Noite de inverno",
+        "fox": "Toca da raposa"
       },
       "designHints": {
         "redstone": "Ardósia profunda e um circuito de redstone vivo",
-        "winter": "Paisagem nevada em pixels, aurora boreal, azul-gelo"
+        "winter": "Paisagem nevada em pixels, aurora boreal, azul-gelo",
+        "fox": "Floresta do Minecraft ao entardecer, fogueira, laranja-raposa"
       },
       "designLabel": "Visual {name}",
       "colorScheme": "Tema de cores",
@@ -2387,7 +2389,8 @@
         "emerald": "Esmeralda",
         "lapis": "Lápis-lazúli",
         "amethyst": "Ametista",
-        "ice": "Gelo"
+        "ice": "Gelo",
+        "fox": "Raposa"
       },
       "accentTitle": "Cor de destaque",
       "accentDescription": "Cor dos botões, itens ativos e luzes do fundo.",
@@ -2395,7 +2398,7 @@
       "advancedRenderingTitle": "Renderização avançada",
       "advancedRenderingDescription": "Efeitos de desfoque atrás de diálogos e barras. Desativar economiza um pouco de desempenho em PCs mais lentos.",
       "animatedBackgroundTitle": "Fundo animado",
-      "animatedBackgroundDescription": "Uma cena animada e tranquila atrás de cada página – um circuito de redstone ou uma paisagem de inverno, dependendo do visual. Quando desativado, só o padrão de fundo é exibido.",
+      "animatedBackgroundDescription": "Uma cena animada e tranquila atrás de cada página – um circuito de redstone, uma paisagem de inverno ou uma floresta ao entardecer, dependendo do visual. Quando desativado, só o padrão de fundo é exibido.",
       "eventIconsTitle": "Ícones de eventos",
       "eventIconsDescription": "Durante eventos como o Halloween, o ícone do app também muda – janela, barra de tarefas, atalhos da área de trabalho e do menu Iniciar e a tela inicial do celular. Quando o evento termina, o ícone normal volta sozinho.",
       "eventLookTitle": "Mostrar o visual do evento (ex.: Halloween)",

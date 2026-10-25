@@ -191,6 +191,8 @@ pub enum Accent {
     Amethyst,
     /// Eisblau – passt zum Design „Winternacht“.
     Ice,
+    /// Fuchsorange – passt zum Design „Fuchsbau“.
+    Fox,
 }
 
 /// Unbekannte Akzentfarbe (neuere Version) → Redstone statt kaputter `settings.json`.
@@ -209,6 +211,8 @@ pub enum Design {
     Redstone,
     /// „Winternacht“: verschneite Pixel-Landschaft, Eisblau.
     Winter,
+    /// „Fuchsbau“: Minecraft-Wald in der Abenddämmerung, Lagerfeuer, Fuchsorange.
+    Fox,
 }
 
 impl Design {
@@ -216,6 +220,7 @@ impl Design {
         match self {
             Self::Redstone => "redstone",
             Self::Winter => "winter",
+            Self::Fox => "fox",
         }
     }
 }
@@ -811,7 +816,7 @@ mod tests {
         // Ältere Dateien ohne Feld: Redstone.
         let old: Settings = serde_json::from_str(r#"{"ui":{"theme":"light"}}"#).unwrap();
         assert_eq!((old.ui.design, old.ui.accent), (Design::Redstone, Accent::Redstone));
-        for design in [Design::Redstone, Design::Winter] {
+        for design in [Design::Redstone, Design::Winter, Design::Fox] {
             assert_eq!(serde_json::to_value(design).unwrap(), design.code());
         }
         let ui: UiSettings = serde_json::from_value(serde_json::json!({ "design": "winter", "accent": "ice" })).unwrap();
@@ -831,6 +836,22 @@ mod tests {
         s.save(&file).await.unwrap();
         let back = Settings::load(&file).await.unwrap();
         assert_eq!((back.ui.design, back.ui.accent), (Design::Winter, Accent::Ice));
+    }
+
+    #[tokio::test]
+    async fn fox_design_and_accent_round_trip() {
+        let ui: UiSettings = serde_json::from_value(serde_json::json!({ "design": "fox", "accent": "fox" })).unwrap();
+        assert_eq!((ui.design, ui.accent), (Design::Fox, Accent::Fox));
+        assert_eq!(Design::Fox.code(), "fox");
+        let json = serde_json::to_value(&ui).unwrap();
+        assert_eq!((json["design"].as_str(), json["accent"].as_str()), (Some("fox"), Some("fox")));
+
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("settings.json");
+        let s = Settings { ui: UiSettings { design: Design::Fox, accent: Accent::Fox, theme: Theme::Light, ..Default::default() }, ..Default::default() };
+        s.save(&file).await.unwrap();
+        let back = Settings::load(&file).await.unwrap();
+        assert_eq!((back.ui.design, back.ui.accent, back.ui.theme), (Design::Fox, Accent::Fox, Theme::Light));
     }
 
     #[test]

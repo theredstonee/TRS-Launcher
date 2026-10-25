@@ -2367,11 +2367,13 @@
       "designDescription": "Başlatıcının genel görünümü: arka plan sahnesi, desen ve renkler. Vurgu rengi ve renk teması yine senin seçimin.",
       "designs": {
         "redstone": "Redstone",
-        "winter": "Kış Gecesi"
+        "winter": "Kış Gecesi",
+        "fox": "Tilki İni"
       },
       "designHints": {
         "redstone": "Derin kayrak ve canlı bir redstone devresi",
-        "winter": "Karlı piksel manzara, kutup ışıkları, buz mavisi"
+        "winter": "Karlı piksel manzara, kutup ışıkları, buz mavisi",
+        "fox": "Alacakaranlıkta Minecraft ormanı, kamp ateşi, tilki turuncusu"
       },
       "designLabel": "Tasarım: {name}",
       "colorScheme": "Renk teması",
@@ -2387,7 +2389,8 @@
         "emerald": "Zümrüt",
         "lapis": "Lapis",
         "amethyst": "Ametist",
-        "ice": "Buz"
+        "ice": "Buz",
+        "fox": "Tilki"
       },
       "accentTitle": "Vurgu rengi",
       "accentDescription": "Düğmeler, etkin öğeler ve arka plandaki ışıklar için renk.",
@@ -2395,7 +2398,7 @@
       "advancedRenderingTitle": "Gelişmiş görüntüleme",
       "advancedRenderingDescription": "Pencerelerin ve çubukların arkasında bulanıklık efektleri. Kapatmak yavaş bilgisayarlarda biraz performans kazandırır.",
       "animatedBackgroundTitle": "Animasyonlu arka plan",
-      "animatedBackgroundDescription": "Her sayfanın arkasında sakin, animasyonlu bir sahne – tasarıma göre bir redstone devresi ya da bir kış manzarası. Kapalıyken yalnızca arka plan deseni gösterilir.",
+      "animatedBackgroundDescription": "Her sayfanın arkasında sakin, animasyonlu bir sahne – tasarıma göre bir redstone devresi, bir kış manzarası ya da alacakaranlıkta bir orman. Kapalıyken yalnızca arka plan deseni gösterilir.",
       "eventIconsTitle": "Etkinlik simgeleri",
       "eventIconsDescription": "Cadılar Bayramı gibi etkinliklerde uygulama simgesi de değişir – pencere, görev çubuğu, masaüstü ve Başlat menüsü kısayolları ile telefonun ana ekranı. Etkinlik bitince normal simge kendiliğinden geri gelir.",
       "eventLookTitle": "Etkinlik tasarımını göster (ör. Cadılar Bayramı)",

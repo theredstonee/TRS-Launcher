@@ -5,7 +5,8 @@
   try {
     if (localStorage.getItem('trs-event') === 'halloween') document.documentElement.dataset.event = 'halloween'
     // Design vom letzten Lauf gleich setzen: Splash und erste Farben passen, nichts flackert.
-    if (localStorage.getItem('trs-design') === 'winter') document.documentElement.dataset.design = 'winter'
+    var d = localStorage.getItem('trs-design')
+    if (d === 'winter' || d === 'fox') document.documentElement.dataset.design = d
   } catch (e) {}
 </script>
 <div class="trs-splash" role="status" aria-busy="true" aria-label="TRS Launcher">
@@ -64,9 +65,31 @@
     animation: trs-snow 14s linear infinite;
   }
   html[data-design="winter"] .trs-splash { z-index: 0; }
+  /* Fuchsbau: warme Dämmerung, oranges Glühen, Glutfunke statt Signal, treibende Blätter und Kirschblüten. */
+  html[data-design="fox"]:not([data-event="halloween"]), html[data-design="fox"]:not([data-event="halloween"]) body { background: #1a1119; }
+  html[data-design="fox"]:not([data-event="halloween"]) .trs-splash {
+    background: radial-gradient(ellipse at 50% 75%, #3a2232 0%, #1a1119 70%);
+    color: #fff3ea;
+  }
+  html[data-design="fox"]:not([data-event="halloween"]) .trs-splash img { filter: drop-shadow(0 0 14px rgba(255, 154, 82, 0.55)); }
+  html[data-design="fox"]:not([data-event="halloween"]) .trs-splash-wire { background: #3a1c0e; }
+  html[data-design="fox"]:not([data-event="halloween"]) .trs-splash-wire span {
+    background: linear-gradient(90deg, transparent, #b8521c, #e8702a, #ffc362, #fff6d8, transparent);
+    box-shadow: 0 0 10px #ff9a52;
+    animation-timing-function: ease-in-out;
+  }
+  html[data-design="fox"]:not([data-event="halloween"]) .trs-splash-snow {
+    display: block; position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: 0.75;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' shape-rendering='crispEdges'%3E%3Cpath d='M12 8h4v2h-4zM161 40h4v2h-4zM83 131h4v2h-4zM221 187h4v2h-4z' fill='%23e8702a'/%3E%3Cpath d='M40 222h3v3h-3zM120 70h3v3h-3z' fill='%23f3a6c8'/%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='190' height='190' shape-rendering='crispEdges'%3E%3Cpath d='M20 30h2v2h-2zM130 14h2v2h-2zM171 92h2v2h-2zM47 161h2v2h-2z' fill='%23b4502a'/%3E%3Cpath d='M98 120h2v2h-2zM150 176h2v2h-2z' fill='%23ffc6dc'/%3E%3C/svg%3E");
+    animation: trs-leaves 18s linear infinite;
+  }
+  html[data-design="fox"] .trs-splash { z-index: 0; }
+  @keyframes trs-leaves { from { background-position: 0 0, 0 0; } to { background-position: 160px 520px, 110px 380px; } }
   @keyframes trs-snow { from { background-position: 0 0, 0 0; } to { background-position: 40px 520px, -30px 380px; } }
   @keyframes trs-signal { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
-  @media (prefers-reduced-motion: reduce) { .trs-splash-wire span { animation: none; width: 100%; } .trs-splash-snow { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .trs-splash-wire span { animation: none; width: 100%; } .trs-splash-snow { animation: none !important; } }
 </style>
 <script>
   // Mondlauf (unbestimmt): der Mond gleitet hin und her und durchläuft die Phasen (wie MoonProgress).

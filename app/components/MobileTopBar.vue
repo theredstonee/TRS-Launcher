@@ -25,6 +25,7 @@ function back() {
       <NuxtLink v-else to="/" class="flex h-11 items-center gap-2 px-2 text-base-200" :aria-label="t('nav.home')">
         <img src="/icon.png" alt="" class="pointer-events-none size-5 [image-rendering:pixelated]" />
         <PixelSnowflake v-if="design === 'winter' && !events.lookHalloween" />
+        <PixelFoxMark v-else-if="design === 'fox' && !events.lookHalloween" />
         <span class="display text-[15px] leading-none">TRS Launcher</span>
       </NuxtLink>
 
@@ -72,5 +73,15 @@ header::after {
   -webkit-mask-image: linear-gradient(90deg, #000 40%, transparent);
   mask-image: linear-gradient(90deg, #000 40%, transparent);
   opacity: 0.75;
+}
+/* Fuchsbau: eine glimmende Glutlinie mit kleinen Funken statt der Leitung. */
+:root[data-design="fox"]:not([data-event="halloween"]) header::after {
+  height: 2px;
+  background:
+    repeating-linear-gradient(90deg, var(--color-lamp-300) 0 2px, transparent 2px 11px, color-mix(in srgb, var(--color-lamp-400) 70%, transparent) 11px 12px, transparent 12px 23px),
+    linear-gradient(90deg, var(--color-redstone-500), color-mix(in srgb, var(--color-redstone-400) 50%, transparent) 50%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, #000 40%, transparent);
+  mask-image: linear-gradient(90deg, #000 40%, transparent);
+  opacity: 0.8;
 }
 </style>

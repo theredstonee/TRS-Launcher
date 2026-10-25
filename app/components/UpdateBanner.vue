@@ -124,6 +124,37 @@ const style = computed(() => ({ '--accent': props.accent && /^#[0-9a-f]{6}$/i.te
     inset 0 0 0 2px var(--accent),
     0 0 12px var(--accent);
 }
+/*
+ * Design „Fuchsbau“: warme Dämmerung und eine Ranke mit Herbstblättern und Süßbeeren statt
+ * der Leitung, an den Enden glimmen kleine Laternen. Motiv und Schrift bleiben.
+ */
+:root[data-design="fox"] .update-banner {
+  background-color: #1a1119;
+  background-image: var(--fox-tile, var(--deepslate));
+}
+:root[data-design="fox"] .ub-glow {
+  background:
+    radial-gradient(60% 90% at 78% 50%, color-mix(in srgb, var(--accent) 38%, transparent), transparent 70%),
+    linear-gradient(90deg, rgb(24 14 22 / 0.92) 0%, rgb(24 14 22 / 0.55) 45%, rgb(24 14 22 / 0.1) 75%);
+}
+:root[data-design="fox"] .ub-wire {
+  background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='6' shape-rendering='crispEdges'><path d='M0 3h24v1H0z' fill='%234e3420'/><path d='M0 2h24v1H0z' fill='%236b4a2e'/><path d='M6 0h2v1H6zM5 1h4v1H5zM7 2h1v1H7z' fill='%23e8702a'/><path d='M6 1h1v1H6z' fill='%23ffb878'/><path d='M16 4h2v1h-2zM17 5h2v1h-2z' fill='%23c8102e'/><path d='M16 4h1v1h-1z' fill='%23ff5a6a'/><path d='M12 4h1v1h-1zM11 5h1v1h-1z' fill='%233f8a4a'/></svg>") 0 50% / 24px 6px repeat-x;
+  filter: drop-shadow(0 0 4px rgb(255 154 82 / 0.45));
+}
+:root[data-design="fox"] .ub-wire::before,
+:root[data-design="fox"] .ub-wire::after {
+  top: -2px;
+  background: #ffc362;
+  box-shadow:
+    inset 0 0 0 2px #2a1a16,
+    0 0 10px #ff9a52;
+}
+:root[data-design="fox"] .ub-wire::after {
+  background: color-mix(in srgb, var(--accent) 55%, #ffe1a6);
+  box-shadow:
+    inset 0 0 0 2px #2a1a16,
+    0 0 12px var(--accent);
+}
 .ub-motif {
   position: absolute;
   right: 4%;

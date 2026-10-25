@@ -129,7 +129,7 @@ export const groupSchema = z
 
 export const uiSettingsSchema = z.object({
   theme: z.enum(['dark', 'oled', 'light', 'system']),
-  accent: z.enum(['redstone', 'lamp', 'emerald', 'lapis', 'amethyst', 'ice']),
+  accent: z.enum(['redstone', 'lamp', 'emerald', 'lapis', 'amethyst', 'ice', 'fox']),
   design: z.enum(designs).catch('redstone').default('redstone'),
   advancedRendering: z.boolean(),
   animatedBackground: z.boolean(),

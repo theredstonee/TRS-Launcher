@@ -19,6 +19,8 @@ const lit = computed(() => (props.powered ? props.segments : Math.round((props.p
   <MoonProgress v-if="events.lookHalloween" :percent="percent" :powered="powered" :indeterminate="indeterminate" />
   <!-- Winternacht: Eisbalken statt Redstone-Staub. -->
   <FrostProgress v-else-if="design === 'winter'" :percent="percent" :powered="powered" :indeterminate="indeterminate" />
+  <!-- Fuchsbau: glimmender Ast statt Redstone-Staub. -->
+  <EmberProgress v-else-if="design === 'fox'" :percent="percent" :powered="powered" :indeterminate="indeterminate" />
   <div v-else class="relative flex items-center gap-[3px]" aria-hidden="true">
     <span
       v-for="i in segments"

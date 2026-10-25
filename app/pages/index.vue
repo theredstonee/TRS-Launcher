@@ -361,6 +361,12 @@ function play(instance: Instance) {
     linear-gradient(90deg, color-mix(in srgb, var(--color-base-950) 72%, transparent) 0%, color-mix(in srgb, var(--color-base-950) 38%, transparent) 30%, transparent 58%),
     linear-gradient(0deg, var(--color-base-950) 0%, color-mix(in srgb, var(--color-base-950) 30%, transparent) 22%, transparent 45%);
 }
+/* Fuchsbau, goldene Stunde: ebenso weicher, damit Sonne, Hügel und Wald sichtbar bleiben. */
+:root[data-design="fox"][data-theme="light"]:not([data-event="halloween"]) .scrim {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--color-base-950) 72%, transparent) 0%, color-mix(in srgb, var(--color-base-950) 38%, transparent) 30%, transparent 58%),
+    linear-gradient(0deg, var(--color-base-950) 0%, color-mix(in srgb, var(--color-base-950) 30%, transparent) 22%, transparent 45%);
+}
 /* Halloween: Mondnacht – unten dunkel (Text), oben und rechts offen für Mond und Friedhof. */
 .scrim-moon {
   background:

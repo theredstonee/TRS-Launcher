@@ -2367,11 +2367,13 @@
       "designDescription": "Ogólny wygląd launchera: scena w tle, wzór i kolory. Kolor akcentu i motyw kolorów nadal wybierasz sam.",
       "designs": {
         "redstone": "Redstone",
-        "winter": "Zimowa noc"
+        "winter": "Zimowa noc",
+        "fox": "Lisia nora"
       },
       "designHints": {
         "redstone": "Łupek i żywy obwód z redstone",
-        "winter": "Ośnieżony pikselowy krajobraz, zorza polarna, lodowy błękit"
+        "winter": "Ośnieżony pikselowy krajobraz, zorza polarna, lodowy błękit",
+        "fox": "Las z Minecrafta o zmierzchu, ognisko, lisi pomarańcz"
       },
       "designLabel": "Wygląd {name}",
       "colorScheme": "Motyw kolorów",
@@ -2387,7 +2389,8 @@
         "emerald": "Szmaragd",
         "lapis": "Lazuryt",
         "amethyst": "Ametyst",
-        "ice": "Lód"
+        "ice": "Lód",
+        "fox": "Lis"
       },
       "accentTitle": "Kolor akcentu",
       "accentDescription": "Kolor przycisków, aktywnych elementów i świateł w tle.",
@@ -2395,7 +2398,7 @@
       "advancedRenderingTitle": "Zaawansowane renderowanie",
       "advancedRenderingDescription": "Efekty rozmycia za oknami dialogowymi i paskami. Wyłączenie oszczędza trochę wydajności na słabszych komputerach.",
       "animatedBackgroundTitle": "Animowane tło",
-      "animatedBackgroundDescription": "Spokojna, animowana scena za każdą stroną – obwód z redstone albo zimowy krajobraz, zależnie od wyglądu. Po wyłączeniu widoczny jest tylko wzór tła.",
+      "animatedBackgroundDescription": "Spokojna, animowana scena za każdą stroną – obwód z redstone, zimowy krajobraz albo las o zmierzchu, zależnie od wyglądu. Po wyłączeniu widoczny jest tylko wzór tła.",
       "eventIconsTitle": "Ikony wydarzeń",
       "eventIconsDescription": "Podczas wydarzeń takich jak Halloween zmienia się też ikona aplikacji – okno, pasek zadań, skróty na pulpicie i w menu Start oraz ekran główny telefonu. Po zakończeniu wydarzenia zwykła ikona wraca sama.",
       "eventLookTitle": "Pokazuj wygląd wydarzenia (np. Halloween)",

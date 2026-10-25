@@ -568,7 +568,7 @@ struct LauncherTheme {
     accent_color: &'static str,
     /// Sprache des Launchers ("en", "de", "pt-BR", …) – der Mod darf sie übernehmen.
     language: &'static str,
-    /// Design des Launchers ("redstone" oder "winter") – der Mod kann sein Aussehen anpassen.
+    /// Design des Launchers ("redstone", "winter" oder "fox") – der Mod kann sein Aussehen anpassen.
     design: &'static str,
     /// Läuft ein Event für diesen Spieler (`"halloween"`), weiß der Mod es sofort; sonst fehlt das Feld.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -623,6 +623,7 @@ fn accent_name(accent: Accent) -> &'static str {
         Accent::Lapis => "lapis",
         Accent::Amethyst => "amethyst",
         Accent::Ice => "ice",
+        Accent::Fox => "fox",
     }
 }
 
@@ -635,6 +636,7 @@ fn accent_color(accent: Accent) -> &'static str {
         Accent::Lapis => "#3563E9",
         Accent::Amethyst => "#9B4DDF",
         Accent::Ice => "#2B97D6",
+        Accent::Fox => "#E8702A",
     }
 }
 
@@ -1102,7 +1104,7 @@ mod tests {
 
     #[test]
     fn every_accent_has_a_colour() {
-        for accent in [Accent::Redstone, Accent::Lamp, Accent::Emerald, Accent::Lapis, Accent::Amethyst, Accent::Ice] {
+        for accent in [Accent::Redstone, Accent::Lamp, Accent::Emerald, Accent::Lapis, Accent::Amethyst, Accent::Ice, Accent::Fox] {
             let hex = accent_color(accent);
             assert!(hex.len() == 7 && hex.starts_with('#'), "{accent:?} → {hex}");
             assert!(hex[1..].chars().all(|c| c.is_ascii_hexdigit()), "{accent:?} → {hex}");

@@ -81,9 +81,9 @@ export interface SyncSettings {
 }
 
 export type Theme = 'dark' | 'oled' | 'light' | 'system'
-export type Accent = 'redstone' | 'lamp' | 'emerald' | 'lapis' | 'amethyst' | 'ice'
-/** Gesamtes Aussehen: Redstone (Standard) oder „Winternacht“. */
-export type Design = 'redstone' | 'winter'
+export type Accent = 'redstone' | 'lamp' | 'emerald' | 'lapis' | 'amethyst' | 'ice' | 'fox'
+/** Gesamtes Aussehen: Redstone (Standard), „Winternacht“ oder „Fuchsbau“. */
+export type Design = 'redstone' | 'winter' | 'fox'
 /** Animationen: immer, wie im System („Bewegung reduzieren“) oder reduziert. */
 export type Motion = 'full' | 'system' | 'reduced'
 

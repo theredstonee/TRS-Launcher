@@ -2408,11 +2408,13 @@
       "designDescription": "Das gesamte Aussehen des Launchers: Hintergrund-Szene, Muster und Farben. Akzentfarbe und Farbschema wählst du weiter selbst.",
       "designs": {
         "redstone": "Redstone",
-        "winter": "Winternacht"
+        "winter": "Winternacht",
+        "fox": "Fuchsbau"
       },
       "designHints": {
         "redstone": "Deepslate und eine lebendige Redstone-Schaltung",
-        "winter": "Verschneite Pixel-Landschaft, Polarlicht, Eisblau"
+        "winter": "Verschneite Pixel-Landschaft, Polarlicht, Eisblau",
+        "fox": "Minecraft-Wald in der Abenddämmerung, Lagerfeuer, Fuchsorange"
       },
       "designLabel": "Design {name}",
       "colorScheme": "Farbschema",
@@ -2428,7 +2430,8 @@
         "emerald": "Smaragd",
         "lapis": "Lapis",
         "amethyst": "Amethyst",
-        "ice": "Eis"
+        "ice": "Eis",
+        "fox": "Fuchs"
       },
       "accentTitle": "Akzentfarbe",
       "accentDescription": "Farbe für Knöpfe, aktive Punkte und Lichter im Hintergrund.",
@@ -2436,7 +2439,7 @@
       "advancedRenderingTitle": "Erweitertes Rendering",
       "advancedRenderingDescription": "Unschärfe-Effekte hinter Dialogen und Leisten. Aus spart auf schwachen Rechnern etwas Leistung.",
       "animatedBackgroundTitle": "Animierter Hintergrund",
-      "animatedBackgroundDescription": "Eine ruhige, animierte Szene hinter allen Seiten – je nach Design eine Redstone-Schaltung oder eine Winterlandschaft. Aus zeigt nur das Hintergrundmuster.",
+      "animatedBackgroundDescription": "Eine ruhige, animierte Szene hinter allen Seiten – je nach Design eine Redstone-Schaltung, eine Winterlandschaft oder ein Wald in der Abenddämmerung. Aus zeigt nur das Hintergrundmuster.",
       "eventIconsTitle": "Event-Symbole",
       "eventIconsDescription": "Bei Events wie Halloween wechselt auch das App-Symbol – Fenster, Taskleiste, Verknüpfungen auf dem Desktop und im Startmenü sowie der Startbildschirm am Handy. Nach dem Event kommt das normale Symbol von selbst zurück.",
       "eventLookTitle": "Event-Design anzeigen (z. B. Halloween)",

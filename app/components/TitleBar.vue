@@ -52,6 +52,7 @@ async function toggleMaximize() {
         <HalloweenPixelSprite name="moonbat" class="moonbat" />
       </template>
       <PixelSnowflake v-else-if="design === 'winter'" />
+      <PixelFoxMark v-else-if="design === 'fox'" />
       <span data-tauri-drag-region class="display text-[13px] leading-none">TRS Launcher</span>
     </div>
 
@@ -184,6 +185,16 @@ async function toggleMaximize() {
   -webkit-mask-image: linear-gradient(90deg, #000 40%, transparent);
   mask-image: linear-gradient(90deg, #000 40%, transparent);
   opacity: 0.75;
+}
+/* Fuchsbau: eine glimmende Glutlinie mit kleinen Funken statt der Leitung. */
+:root[data-design="fox"]:not([data-event="halloween"]) .titlebar::after {
+  height: 2px;
+  background:
+    repeating-linear-gradient(90deg, var(--color-lamp-300) 0 2px, transparent 2px 11px, color-mix(in srgb, var(--color-lamp-400) 70%, transparent) 11px 12px, transparent 12px 23px),
+    linear-gradient(90deg, var(--color-redstone-500), color-mix(in srgb, var(--color-redstone-400) 50%, transparent) 50%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, #000 40%, transparent);
+  mask-image: linear-gradient(90deg, #000 40%, transparent);
+  opacity: 0.8;
 }
 .ctl {
   @apply flex h-full w-11 items-center justify-center text-base-400 transition-colors hover:bg-base-700 hover:text-base-50;

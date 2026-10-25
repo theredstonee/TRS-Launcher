@@ -1101,6 +1101,11 @@ mod tests {
         let merged = merge_ui(local, UiTimes::default(), Some((&json!({ "theme": "dark", "accent": "redstone", "language": "de", "design": "summer" }), Some(at(0)))));
         assert_eq!(merged.data["design"], "summer");
         assert_eq!(merged.values.design, Design::Redstone);
+        // Fuchsbau mit Fuchsorange kommt vom Konto wie jedes andere Design.
+        let remote = json!({ "theme": "light", "accent": "fox", "language": "de", "design": "fox" });
+        let merged = merge_ui(local, UiTimes::default(), Some((&remote, Some(at(0)))));
+        assert_eq!((merged.values.design, merged.values.accent), (Design::Fox, Accent::Fox));
+        assert_eq!(merged.data["design"], "fox");
     }
 
     #[test]

@@ -157,7 +157,15 @@ const winterThemes: typeof redstoneThemes = [
   { key: 'light', bg: '#e8eff7', panel: '#ffffff', line: '#cbd8e7' },
   { key: 'system', bg: 'linear-gradient(135deg,#0d1424 50%,#e8eff7 50%)', panel: '#15203a', line: '#283a5e' },
 ]
-const themes = computed(() => (normalizeDesign(form.value?.ui.design) === 'winter' ? winterThemes : redstoneThemes))
+// Fuchsbau: Dämmerung (Pflaume), späte Dämmerung (OLED), goldene Stunde (Hell).
+const foxThemes: typeof redstoneThemes = [
+  { key: 'dark', bg: '#1a1119', panel: '#281a27', line: '#462f44' },
+  { key: 'oled', bg: '#000000', panel: '#0e080d', line: '#261a24' },
+  { key: 'light', bg: '#f6ebe0', panel: '#fffaf5', line: '#e3cdb9' },
+  { key: 'system', bg: 'linear-gradient(135deg,#1a1119 50%,#f6ebe0 50%)', panel: '#281a27', line: '#462f44' },
+]
+const themesByDesign: Record<Design, typeof redstoneThemes> = { redstone: redstoneThemes, winter: winterThemes, fox: foxThemes }
+const themes = computed(() => themesByDesign[normalizeDesign(form.value?.ui.design)])
 const accents: { key: Accent; color: string }[] = [
   { key: 'redstone', color: '#e0281e' },
   { key: 'lamp', color: '#e0900c' },
@@ -165,6 +173,7 @@ const accents: { key: Accent; color: string }[] = [
   { key: 'lapis', color: '#3563e9' },
   { key: 'amethyst', color: '#9b4ddf' },
   { key: 'ice', color: '#7fd3ff' },
+  { key: 'fox', color: '#e8702a' },
 ]
 
 // Design: Vorschau als echte Mini-Szene (hell/dunkel wie das gewählte Farbschema).
@@ -176,7 +185,7 @@ watch(
   () => nextTick(() => (previewLight.value = document.documentElement.dataset.theme === 'light')),
   { immediate: true },
 )
-/** Winternacht bringt Eisblau mit, solange noch der Redstone-Akzent gewählt ist (und umgekehrt). */
+/** Jedes Design bringt seinen Akzent mit (Eisblau, Fuchsorange), solange noch der eines Designs gewählt ist. */
 function setDesign(design: Design) {
   if (!form.value) return
   form.value.ui.design = design
@@ -377,7 +386,7 @@ async function allowFirewall() {
     <div v-else-if="active === 'appearance'">
       <h3 class="section-heading">{{ t('settings.appearance.designTitle') }}</h3>
       <p class="-mt-1 mb-3 text-xs text-base-400">{{ t('settings.appearance.designDescription') }}</p>
-      <div class="mb-5 grid grid-cols-2 gap-3 border-b border-base-800 pb-5 mobile:grid-cols-1" data-testid="design-picker">
+      <div class="mb-5 grid grid-cols-3 gap-3 border-b border-base-800 pb-5 mobile:grid-cols-1" data-testid="design-picker">
         <button
           v-for="d in designs"
           :key="d"
@@ -406,7 +415,7 @@ async function allowFirewall() {
             </span>
             <span class="min-w-0">
               <span class="block text-sm font-medium">{{ t(`settings.appearance.designs.${d}`) }}</span>
-              <span class="block truncate text-xs text-base-400">{{ t(`settings.appearance.designHints.${d}`) }}</span>
+              <span class="line-clamp-2 block text-xs text-base-400">{{ t(`settings.appearance.designHints.${d}`) }}</span>
             </span>
           </div>
         </button>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Hintergrund-Szene des gewählten Designs: Redstone-Schaltung oder Winterlandschaft.
+// Hintergrund-Szene des gewählten Designs: Redstone-Schaltung, Winterlandschaft oder Fuchsbau.
 // Gleiche Props wie beide Szenen; ohne Angabe gilt deren eigener Standard.
 // Solange Halloween läuft, überall die Mondnacht (Bibliothek, Instanzen, Entdecken, Leer-Zustände,
 // Big Picture …) – das Event geht vor dem Design. `noEvent` behält das Design (z. B. Update-Titelbilder).
@@ -29,6 +29,9 @@ const moonnight = computed(() => events.lookHalloween && !props.noEvent)
   <WinterScene v-else-if="design === 'winter'" :mode="mode" :progress="progress" :anchor="anchor" :fill="fill" :seed="seed">
     <slot />
   </WinterScene>
+  <FoxScene v-else-if="design === 'fox'" :mode="mode" :progress="progress" :anchor="anchor" :fill="fill" :seed="seed">
+    <slot />
+  </FoxScene>
   <RedstoneScene v-else :mode="mode" :progress="progress" :anchor="anchor" :fill="fill" :seed="seed">
     <slot />
   </RedstoneScene>

@@ -28,11 +28,13 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   modules: [
     '@pinia/nuxt',
-    // Nur `nuxt dev`: Vorschau der Start-Animation unter /intro-preview (wird nicht mit ausgeliefert).
+    // Nur `nuxt dev`: Vorschau der Start-Animation unter /intro-preview und der Design-Hintergründe unter
+    // /design-preview (werden nicht mit ausgeliefert).
     (_options, nuxt) => {
       if (!nuxt.options.dev) return
       nuxt.hook('pages:extend', (pages) => {
         pages.push({ name: 'intro-preview', path: '/intro-preview', file: fileURLToPath(new URL('./app/dev/intro-preview.vue', import.meta.url)) })
+        pages.push({ name: 'design-preview', path: '/design-preview', file: fileURLToPath(new URL('./app/dev/design-preview.vue', import.meta.url)) })
       })
     },
   ],

@@ -1,12 +1,15 @@
 import { readonly, ref } from 'vue'
 import type { Accent, Design } from '~/types'
 
-// Design des Launchers: „Redstone“ (Standard) oder „Winternacht“. Steht als
-// `data-design="winter"` auf <html> (Redstone ohne Attribut) – das CSS tauscht
+// Design des Launchers: „Redstone“ (Standard), „Winternacht“ oder „Fuchsbau“. Steht als
+// `data-design="winter"` bzw. `"fox"` auf <html> (Redstone ohne Attribut) – das CSS tauscht
 // damit Farben und Muster, die Szenen-Komponenten den Hintergrund. Akzentfarbe
 // und Farbschema bleiben eigene Einstellungen.
 
-export const designs = ['redstone', 'winter'] as const satisfies readonly Design[]
+export const designs = ['redstone', 'winter', 'fox'] as const satisfies readonly Design[]
+
+/** Akzent, den jedes Design ab Werk mitbringt. */
+export const DESIGN_ACCENTS: Record<Design, Accent> = { redstone: 'redstone', winter: 'ice', fox: 'fox' }
 
 /** Merker für den Splash, der vor Vue läuft (nächster Start). */
 export const DESIGN_STORAGE_KEY = 'trs-design'
@@ -58,14 +61,13 @@ export function applyDesign(value: unknown, target?: { root: DesignRoot | null; 
 }
 
 /**
- * Akzent beim Wechsel des Designs: Winternacht mit dem Redstone-Akzent bekommt
- * Eisblau, zurück zu Redstone wird aus Eisblau wieder Redstone. Jede andere
- * (selbst gewählte) Farbe bleibt.
+ * Akzent beim Wechsel des Designs: ist noch der Akzent eines Designs gewählt
+ * (Redstone, Eisblau, Fuchsorange), kommt der des neuen Designs – Winternacht mit
+ * Redstone wird Eisblau, Fuchsbau Fuchsorange, zurück zu Redstone wieder Redstone.
+ * Jede andere (selbst gewählte) Farbe bleibt.
  */
 export function accentForDesign(design: Design, accent: Accent): Accent {
-  if (design === 'winter' && accent === 'redstone') return 'ice'
-  if (design === 'redstone' && accent === 'ice') return 'redstone'
-  return accent
+  return Object.values(DESIGN_ACCENTS).includes(accent) ? DESIGN_ACCENTS[design] : accent
 }
 
 /** Aktuelles Design laut <html> (Szenen-Komponenten, Banner). */

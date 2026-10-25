@@ -2408,11 +2408,13 @@
       "designDescription": "The overall look of the launcher: background scene, pattern and colors. Accent color and color theme stay your choice.",
       "designs": {
         "redstone": "Redstone",
-        "winter": "Winter Night"
+        "winter": "Winter Night",
+        "fox": "Fox Den"
       },
       "designHints": {
         "redstone": "Deepslate and a living redstone circuit",
-        "winter": "Snowy pixel landscape, northern lights, ice blue"
+        "winter": "Snowy pixel landscape, northern lights, ice blue",
+        "fox": "Minecraft forest at dusk, campfire, fox orange"
       },
       "designLabel": "Design {name}",
       "colorScheme": "Color theme",
@@ -2428,7 +2430,8 @@
         "emerald": "Emerald",
         "lapis": "Lapis",
         "amethyst": "Amethyst",
-        "ice": "Ice"
+        "ice": "Ice",
+        "fox": "Fox"
       },
       "accentTitle": "Accent color",
       "accentDescription": "Color for buttons, active items and highlights in the background.",
@@ -2436,7 +2439,7 @@
       "advancedRenderingTitle": "Advanced rendering",
       "advancedRenderingDescription": "Blur effects behind dialogs and bars. Turning it off saves a little performance on slower PCs.",
       "animatedBackgroundTitle": "Animated background",
-      "animatedBackgroundDescription": "A calm animated scene behind every page – a redstone circuit or a winter landscape, depending on the design. When off, only the background pattern is shown.",
+      "animatedBackgroundDescription": "A calm animated scene behind every page – a redstone circuit, a winter landscape or a forest at dusk, depending on the design. When off, only the background pattern is shown.",
       "eventIconsTitle": "Event icons",
       "eventIconsDescription": "During events like Halloween, the app icon changes too – window, taskbar, desktop and Start menu shortcuts, and the home screen on phones. The normal icon comes back by itself when the event ends.",
       "eventLookTitle": "Show event design (e.g. Halloween)",

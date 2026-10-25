@@ -2408,11 +2408,13 @@
       "designDescription": "El aspecto general del launcher: escena de fondo, patrón y colores. El color de acento y el tema de color siguen siendo tu elección.",
       "designs": {
         "redstone": "Redstone",
-        "winter": "Noche de invierno"
+        "winter": "Noche de invierno",
+        "fox": "Madriguera"
       },
       "designHints": {
         "redstone": "Pizarra profunda y un circuito de redstone vivo",
-        "winter": "Paisaje nevado en píxeles, auroras boreales, azul hielo"
+        "winter": "Paisaje nevado en píxeles, auroras boreales, azul hielo",
+        "fox": "Bosque de Minecraft al atardecer, fogata, naranja zorro"
       },
       "designLabel": "Diseño {name}",
       "colorScheme": "Tema de color",
@@ -2428,7 +2430,8 @@
         "emerald": "Esmeralda",
         "lapis": "Lapislázuli",
         "amethyst": "Amatista",
-        "ice": "Hielo"
+        "ice": "Hielo",
+        "fox": "Zorro"
       },
       "accentTitle": "Color de acento",
       "accentDescription": "Color de los botones, los elementos activos y las luces del fondo.",
@@ -2436,7 +2439,7 @@
       "advancedRenderingTitle": "Renderizado avanzado",
       "advancedRenderingDescription": "Efectos de desenfoque detrás de diálogos y barras. Desactivarlo ahorra algo de rendimiento en equipos modestos.",
       "animatedBackgroundTitle": "Fondo animado",
-      "animatedBackgroundDescription": "Una escena animada y tranquila detrás de todas las páginas: un circuito de redstone o un paisaje invernal, según el diseño. Desactivado, solo se ve el patrón de fondo.",
+      "animatedBackgroundDescription": "Una escena animada y tranquila detrás de todas las páginas: un circuito de redstone, un paisaje invernal o un bosque al atardecer, según el diseño. Desactivado, solo se ve el patrón de fondo.",
       "eventIconsTitle": "Iconos de eventos",
       "eventIconsDescription": "Durante eventos como Halloween también cambia el icono de la app: ventana, barra de tareas, accesos directos del escritorio y del menú Inicio, y la pantalla de inicio del móvil. Al terminar el evento vuelve solo el icono normal.",
       "eventLookTitle": "Mostrar el diseño del evento (p. ej. Halloween)",
