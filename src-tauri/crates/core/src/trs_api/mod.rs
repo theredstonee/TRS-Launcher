@@ -23,6 +23,7 @@ pub mod cape_import;
 pub mod cape_video;
 pub mod chat;
 pub mod creator;
+pub mod creator_pet;
 pub mod events;
 pub mod featured;
 pub mod halloween;
@@ -446,6 +447,18 @@ fn message_for(code: &str) -> Msg {
         "pack_not_found" => msg!("trsApi.pack_not_found", "Dieses Modpack gibt es nicht (mehr)."),
         "helper_not_found" => msg!("trsApi.helper_not_found", "Dieser Spieler ist (nicht mehr) Helfer."),
         "helper_invite_not_found" => msg!("trsApi.helper_invite_not_found", "Diese Einladung gibt es nicht mehr."),
+        // --- Creator-Haustiere (§35) ---
+        "creator_no_pet" | "creator_pet_missing" => {
+            msg!("trsApi.creator_no_pet", "Du hast noch kein eigenes Haustier – wünsch dir zuerst eins vom Team.")
+        }
+        "limit_reached" | "creator_pet_limit" => msg!(
+            "trsApi.limit_reached",
+            "Das Monatslimit für Haustier-Codes reicht dafür nicht mehr – weniger Codes oder Einlösungen wählen oder bis nächsten Monat warten."
+        ),
+        "creator_pet_unavailable" => msg!("trsApi.creator_pet_unavailable", "Dein Haustier ist gerade nicht verfügbar – frag beim Team nach."),
+        "creator_pet_owned" => msg!("trsApi.creator_pet_owned", "Du hast schon ein eigenes Haustier."),
+        "request_closed" => msg!("trsApi.request_closed", "Das Team arbeitet schon an diesem Wunsch – er lässt sich nicht mehr ändern."),
+        "code_not_found" => msg!("trsApi.code_not_found", "Diesen Code gibt es nicht (mehr)."),
         // --- Halloween (§36) ---
         "pumpkin_unknown" => msg!("trsApi.pumpkin_unknown", "Diesen Kürbis gibt es nicht."),
         "trick_used" => msg!("trsApi.trick_used", "Heute hast du schon angeklopft – morgen wieder!"),
@@ -982,6 +995,8 @@ mod team_tests;
 mod achievements_tests;
 #[cfg(test)]
 mod creator_tests;
+#[cfg(test)]
+mod creator_pet_tests;
 #[cfg(test)]
 mod halloween_tests;
 #[cfg(test)]

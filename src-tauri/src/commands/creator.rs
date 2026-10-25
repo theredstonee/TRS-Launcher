@@ -8,6 +8,7 @@ use trs_core::trs_api::creator::{
     AdminCreator, AdminRequest, CodePatch, CreatorCode, CreatorPatch, CreatorQuery, CreatorRedeem, CreatorRequest,
     CreatorSelf, ListedPacks, MyCreator, NewCreator, NewCreatorCode, NewRequest, PreviewBuild, QueueItem, Revoke,
 };
+use trs_core::trs_api::creator_pet::{CreatorPetState, NewPetCodes, NewPetRequest, PetCode, PetRequest};
 use trs_core::trs_api::types::UserRef;
 
 use crate::LauncherState;
@@ -137,6 +138,50 @@ pub async fn creator_set_pack_listed(
     as_creator: Option<String>,
 ) -> CommandResult<()> {
     Ok(launcher.creator_set_pack_listed(&code, listed, as_creator.as_deref()).await?)
+}
+
+// --- Haustier (eigenes Creator-Haustier, Codes mit Monatslimit, Antrag) ---------------------
+
+#[tauri::command]
+pub async fn creator_pet(launcher: State<'_, LauncherState>, as_creator: Option<String>) -> CommandResult<CreatorPetState> {
+    Ok(launcher.creator_pet(as_creator.as_deref()).await?)
+}
+
+#[tauri::command]
+pub async fn creator_pet_codes(launcher: State<'_, LauncherState>, as_creator: Option<String>) -> CommandResult<Vec<PetCode>> {
+    Ok(launcher.creator_pet_codes(as_creator.as_deref()).await?)
+}
+
+/// Neue Codes – die Antwort enthält den Klartext, der danach nie wieder kommt.
+#[tauri::command]
+pub async fn creator_create_pet_codes(
+    launcher: State<'_, LauncherState>,
+    codes: NewPetCodes,
+    as_creator: Option<String>,
+) -> CommandResult<Vec<PetCode>> {
+    Ok(launcher.creator_create_pet_codes(&codes, as_creator.as_deref()).await?)
+}
+
+#[tauri::command]
+pub async fn creator_revoke_pet_code(launcher: State<'_, LauncherState>, id: String, as_creator: Option<String>) -> CommandResult<()> {
+    Ok(launcher.creator_revoke_pet_code(&id, as_creator.as_deref()).await?)
+}
+
+/// Wunsch nach einem eigenen Haustier (Tierart, Beschreibung, Farben + optional PNG/JPG als Base64, der Kern prüft es).
+#[tauri::command]
+pub async fn creator_request_pet(launcher: State<'_, LauncherState>, request: NewPetRequest) -> CommandResult<PetRequest> {
+    Ok(launcher.creator_request_pet(&request).await?)
+}
+
+/// Referenzbild an einen offenen Wunsch hängen bzw. ersetzen.
+#[tauri::command]
+pub async fn creator_pet_request_image(launcher: State<'_, LauncherState>, id: String, image: String) -> CommandResult<PetRequest> {
+    Ok(launcher.creator_pet_request_image(&id, &image).await?)
+}
+
+#[tauri::command]
+pub async fn creator_withdraw_pet_request(launcher: State<'_, LauncherState>, id: String) -> CommandResult<()> {
+    Ok(launcher.creator_withdraw_pet_request(&id).await?)
 }
 
 // --- Helfer (§35.9) -------------------------------------------------------------------------

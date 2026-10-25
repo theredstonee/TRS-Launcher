@@ -27,7 +27,8 @@ pub const TIERS: [&str; 3] = ["starter", "partner", "top"];
 pub const STATES: [&str; 3] = ["active", "revoked", "banned"];
 pub const MILESTONES: [&str; 4] = ["bronze", "silver", "gold", "diamond"];
 /// Arten von `creator_updated` (§35.7).
-pub const UPDATE_KINDS: [&str; 12] = [
+/// `pet_*` (Creator-Haustiere, §35.13): zugeordnet, entfernt, Wunsch beantwortet (`reason` = Antwort des Teams).
+pub const UPDATE_KINDS: [&str; 15] = [
     "symbol_approved",
     "symbol_rejected",
     "cape_approved",
@@ -40,6 +41,9 @@ pub const UPDATE_KINDS: [&str; 12] = [
     "became_creator",
     "helper_joined",
     "helper_left",
+    "pet_assigned",
+    "pet_removed",
+    "pet_request_answered",
 ];
 /// Rechte eines Helfers (§35.9). Stufe, Anträge, Helfer und Vorschau-Builds bleiben beim Creator.
 pub const HELPER_RIGHTS: [&str; 4] = ["stats", "codes", "uploads", "packs"];
@@ -54,7 +58,7 @@ const IMAGE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(60);
 
 // --- Prüfungen --------------------------------------------------------------------------
 
-fn invalid(msg: crate::error::Msg) -> Error {
+pub(super) fn invalid(msg: crate::error::Msg) -> Error {
     Error::validation(msg)
 }
 
@@ -102,7 +106,7 @@ fn sha256_hex(input: &str) -> bool {
 }
 
 /// IDs aus der API (Warteschlange, Anträge, Vorschauen): Zahl oder `[A-Za-z0-9_-]{1,40}`.
-fn id_of(value: &Value) -> Option<String> {
+pub(super) fn id_of(value: &Value) -> Option<String> {
     match value {
         Value::Number(n) => n.as_u64().map(|n| n.to_string()),
         Value::String(s) if (1..=40).contains(&s.len()) && s.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-') => {
@@ -112,7 +116,7 @@ fn id_of(value: &Value) -> Option<String> {
     }
 }
 
-fn id_arg(input: &str) -> Result<&str> {
+pub(super) fn id_arg(input: &str) -> Result<&str> {
     id_of(&Value::String(input.to_owned()))
         .map(|_| input)
         .ok_or_else(|| invalid(crate::msg!("creator.invalidId", "Ungültiger Eintrag.")))
@@ -129,7 +133,7 @@ pub fn https_url(input: &str) -> Option<String> {
         .then(|| url.to_string())
 }
 
-fn time(t: Option<String>) -> Option<String> {
+pub(super) fn time(t: Option<String>) -> Option<String> {
     t.map(|t| validate::text(&t, 40)).filter(|t| !t.is_empty())
 }
 
@@ -147,7 +151,7 @@ fn reason_arg(input: &str) -> Result<String> {
 }
 
 /// Mehrzeiliger Text (Wunsch an das Team): Umbrüche erlaubt, 1–`max` Zeichen.
-fn long_text(input: &str, max: usize) -> Result<String> {
+pub(super) fn long_text(input: &str, max: usize) -> Result<String> {
     let text: String = input.chars().filter(|c| *c != '\r').map(|c| if c == '\t' { ' ' } else { c }).collect();
     let text = text.trim();
     if text.is_empty() || text.chars().count() > max {
@@ -611,15 +615,15 @@ pub struct AdminRequest {
 
 // --- Rohdaten → Ansicht ------------------------------------------------------------------
 
-fn u64_of(v: &Value, key: &str) -> u64 {
+pub(super) fn u64_of(v: &Value, key: &str) -> u64 {
     v.get(key).and_then(Value::as_u64).unwrap_or(0)
 }
 
-fn opt_u64(v: &Value, key: &str) -> Option<u64> {
+pub(super) fn opt_u64(v: &Value, key: &str) -> Option<u64> {
     v.get(key).and_then(Value::as_u64)
 }
 
-fn str_of(v: &Value, key: &str) -> Option<String> {
+pub(super) fn str_of(v: &Value, key: &str) -> Option<String> {
     v.get(key).and_then(Value::as_str).map(str::to_owned)
 }
 
@@ -948,7 +952,7 @@ fn max_uses_arg(n: u64) -> Result<u64> {
     }
 }
 
-fn expiry_arg(at: &str) -> Result<String> {
+pub(super) fn expiry_arg(at: &str) -> Result<String> {
     let at = validate::iso_datetime(at)?;
     let parsed = chrono::DateTime::parse_from_rfc3339(&at).map_err(|_| invalid_expiry())?;
     if parsed <= chrono::Utc::now() {
@@ -1042,7 +1046,7 @@ fn rights_arg(rights: &[String]) -> Result<Vec<String>> {
 }
 
 /// Dashboard-Anfrage für einen anderen Creator (Helfer, `?as=<uuid>`, §35.9).
-fn acting(path: String, as_creator: Option<&str>) -> Result<String> {
+pub(super) fn acting(path: String, as_creator: Option<&str>) -> Result<String> {
     match as_creator.filter(|a| !a.is_empty()) {
         None => Ok(path),
         Some(a) => {
@@ -1195,7 +1199,7 @@ impl TrsApi {
     }
 
     /// Pfad ab `/v1/…` einer Bild-URL der eigenen API (relativ oder mit vertrauenswürdiger Adresse).
-    fn own_path<'a>(&self, url: &'a str) -> Option<&'a str> {
+    pub(super) fn own_path<'a>(&self, url: &'a str) -> Option<&'a str> {
         let path = if url.starts_with("/v1/") { url } else { self.trusted_bases().into_iter().find_map(|b| url.strip_prefix(b))? };
         let file = path.split('?').next()?;
         let query_ok = path.split_once('?').is_none_or(|(_, q)| {
@@ -1210,7 +1214,7 @@ impl TrsApi {
     }
 
     /// Lädt ein Bild der eigenen API (mit Token, wenn es nicht öffentlich ist).
-    async fn own_png(&self, path: &str, token: Option<&str>, max: usize) -> Option<Vec<u8>> {
+    pub(super) async fn own_png(&self, path: &str, token: Option<&str>, max: usize) -> Option<Vec<u8>> {
         let mut request = self.http.get(format!("{}{path}", self.base)).header("Accept", "image/png").timeout(IMAGE_TIMEOUT);
         if let Some(token) = token {
             request = request.bearer_auth(token);
@@ -1265,7 +1269,7 @@ impl TrsApi {
 // --- Anfragen ----------------------------------------------------------------------------
 
 impl Launcher {
-    async fn creator_token(&self) -> Option<String> {
+    pub(super) async fn creator_token(&self) -> Option<String> {
         let account = self.trs_account().await.ok()?;
         self.trs.store.token(&account).await
     }
