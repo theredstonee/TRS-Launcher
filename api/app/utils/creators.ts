@@ -160,6 +160,16 @@ export interface PetRequest {
   updatedAt: string
   decidedAt: string | null
 }
-export interface CreatorPetState { pet: CreatorPetRef | null, quota: PetQuota, codes: PetCode[] | null, requests: PetRequest[], canRequest: boolean }
+/** Begleiter-Gefolge (§35.13): vom Team zugeordnete weitere Begleiter in Reihenfolge, `petScale` = Größe (1 = normal). */
+export interface PetExtraInfo { cosmeticId: string, name: string, card: string | null, petScale: number, available: boolean }
+export interface CreatorPetState {
+  pet: CreatorPetRef | null
+  quota: PetQuota
+  codes: PetCode[] | null
+  requests: PetRequest[]
+  canRequest: boolean
+  extras: PetExtraInfo[]
+  showExtras: boolean
+}
 /** Referenzbild: PNG oder JPEG bis 2 MiB (der Server prüft die Magic Bytes und kodiert neu). */
 export const PET_IMAGE_MAX_BYTES = 2 * 1024 * 1024

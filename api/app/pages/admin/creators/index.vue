@@ -699,6 +699,8 @@ onMounted(() => {
               </div>
             </li>
           </ul>
+
+          <AdminPetExtras />
         </div>
 
         <div class="space-y-6">

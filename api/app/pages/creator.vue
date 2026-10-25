@@ -787,6 +787,7 @@ async function withdrawWish(id: number) {
                 </div>
               </div>
               <p v-else class="state mt-4 text-sm"><SiteIcon name="note" class="size-4" />{{ d.pet.none }}</p>
+              <CreatorPetExtras v-if="petState.extras?.length" :extras="petState.extras" :show="petState.showExtras" :helper="helper" @changed="(v: boolean) => { if (petState) petState.showExtras = v }" />
 
               <template v-if="petState.pet && petState.codes">
                 <h3 class="mt-6 text-sm font-semibold text-base-200">{{ d.pet.codesTitle }}</h3>
