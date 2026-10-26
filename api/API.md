@@ -5005,3 +5005,235 @@ The only API part is the team permission **`serverrules.bypass`** (§24.2, group
 
 Migration 32 adds `serverrules.bypass` to the default roles Owner and Admin (custom role changes stay). Idempotent.
 When merging: renumber if a parallel branch also added a migration 32.
+
+## 40. Mail & newsletter
+
+The app sends e-mail itself over SMTP (nodemailer): double opt-in confirmations, team notifications and newsletter
+campaigns. Everything goes through a **SQLite outbox** (one row per e-mail with a status), sent in the background with a
+rate limit per SMTP account. Without SMTP configuration everything else keeps working; every route that has to send
+answers **`503 mail_unavailable`**.
+
+### 40.1 Configuration (server `.env`, never in the repository or logs)
+
+| Variable | Meaning |
+|---|---|
+| `SMTP_HOST` | SMTP server (e.g. `mail.theredstonee.de`). **Empty = mail off** (warning at start). |
+| `SMTP_PORT`, `SMTP_SECURE` | `465` + `true` (implicit TLS) or `587` + `false` (STARTTLS, then required). Shared by both accounts. |
+| `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | **System account** (`TRS Launcher <no-reply@trs-launcher.de>`): confirmations, team notifications. |
+| `NEWSLETTER_SMTP_USER`, `NEWSLETTER_SMTP_PASS`, `NEWSLETTER_FROM` | **Newsletter account** (`TRS Launcher <newsletter@trs-launcher.de>`): campaigns and test e-mails. Empty = campaigns go through the system account (warning at start). |
+| `MAIL_REPLY_TO` | Optional `Reply-To` of all e-mails. |
+| `MAIL_TEAM_TO` | Comma-separated fallback recipients of team notifications (§40.6). |
+| `MAIL_RATE_PER_MIN` | Max. e-mails per minute **per account** (default 60). |
+
+Each account has its own nodemailer pool (max. 2 connections). User/password must be set together, otherwise the server
+refuses to start (the error names the variable, never its value).
+
+### 40.2 Public: subscribe, confirm, unsubscribe
+
+| Method + path | Body | Answer |
+|---|---|---|
+| `POST /v1/newsletter/subscribe` | `{ "email": "...", "lang": "de" \| "en" \| "es" }` | **Always** `202 { "ok": true }` – new, pending, already confirmed or throttled look the same. `400 invalid_email`, `503 mail_unavailable`. |
+| `POST /v1/newsletter/confirm` | `{ "token": "c…" \| "t…" }` | `200 { "kind": "newsletter" \| "team", "email": "s***e@example.com" }`; `404 invalid_token`, `410 token_expired` (48 h). |
+| `POST /v1/newsletter/unsubscribe` | `{ "token": "<id>.<hex40>" }` | `200 { "status": "unsubscribed", "email": "s***e@example.com" }` (also when already unsubscribed); `404 invalid_token`. |
+| `POST /newsletter/unsubscribe?token=…` | anything (`List-Unsubscribe=One-Click`) | **RFC 8058 one-click** for mail programs: no cookie, no CSRF – the token is the permission. `200 text/plain`. |
+
+Website pages: `/newsletter` (form, EN/DE/ES), `/newsletter/confirm?token=` (redeems the token with a `POST` from the
+browser, so link previews never confirm anything), `/newsletter/unsubscribe?token=` (`GET` = page with a button). The
+form is also in the footer. Rate limits: subscribe 10/h per IP **and** 3/24 h per address (silently, keyed by an HMAC of
+the address), token routes 30/10 min per IP.
+
+Double opt-in: a new or re-subscribing address is `pending` and gets a confirmation e-mail from the system account; only
+the click makes it `confirmed` and stores the consent (time, source `website`/`launcher`, consent text version). Confirm
+tokens are stored as SHA-256 only. Unsubscribe tokens are not stored at all: `<id>.<HMAC(SECRET_KEY, id:nonce)>`, a new
+nonce on every new subscription (old links stop working). Unconfirmed rows are deleted after 7 days, unsubscribed ones
+after 30 days. No IP addresses, no tracking pixels, no click tracking.
+
+### 40.3 Launcher: `/v1/me/newsletter` (Bearer `trs_…`)
+
+```jsonc
+// GET /v1/me/newsletter → 200
+{ "newsletter": {
+  "status": "none" | "pending" | "confirmed" | "unsubscribed",
+  "email": "steve@example.com" | null,       // normalised (lower case)
+  "lang": "de" | "en" | "es" | null,
+  "source": "website" | "launcher" | null,
+  "confirmedAt": "2026-10-26T12:00:00.000Z" | null,
+  "updatedAt": "2026-10-26T12:00:00.000Z" | null
+} }
+```
+
+| Method | Body | Effect |
+|---|---|---|
+| `GET` | – | Own status (above). |
+| `PUT` | `{ "email": "...", "lang": "de" \| "en" \| "es" }` | Subscribe / change address or language. New address → confirmation e-mail, status `pending` until the click (the address is linked to the account only then). Same address already confirmed for this account → only the language changes, no e-mail. Changing the address unsubscribes the old one. A confirmation e-mail is sent at most every 2 minutes per address. Errors: `400 invalid_email`, `503 mail_unavailable`, `429` (10/h). |
+| `DELETE` | – | Unsubscribe → `{ "newsletter": { "status": "unsubscribed", … } }`; a pending link of this account is dropped (an address confirmed by somebody else is never unsubscribed by this). |
+
+Launcher UI: e-mail field, language = launcher language, show `pending` as "please confirm the e-mail", `confirmed`,
+`unsubscribed`, button to unsubscribe. Poll `GET` after the user says they clicked the link (there is no event).
+
+### 40.4 Team / API key: campaigns (`/v1/admin/newsletter/…`)
+
+Access: website session (+ CSRF), Bearer `trs_…` of a team member, `X-Admin-Key`, **or** an API key `Bearer trsk_…`
+(§40.5). Permissions: **`newsletter.manage`** (drafts, preview, test, codes) and **`newsletter.send`** (schedule, send,
+cancel, audience). Owner and Admin have both (migration 38). Every change is in the audit log (`newsletter.*`, ref `n<id>`).
+
+| Method + path | Permission | Body / answer |
+|---|---|---|
+| `GET campaigns[?status=]` | manage | `{ campaigns: CampaignListItem[] }` (newest first, without content, with `subject` in German). |
+| `POST campaigns` | manage | `{ name?, look?, content? }` → `201 { campaign }`. Update blocks with only `version` are filled from the changelog. |
+| `GET campaigns/{id}` | manage | `{ campaign: CampaignView }` |
+| `PATCH campaigns/{id}` | manage | `{ rev, name?, look?, content? }` → `{ campaign }`; `409 stale` (+ `details.current`), `409 campaign_locked` (sending/sent). |
+| `DELETE campaigns/{id}` | manage | `204`; `409 campaign_active` while scheduled/sending. |
+| `POST campaigns/{id}/duplicate` | manage | `201 { campaign }` (new draft, codes removed). |
+| `POST preview` | manage | `{ content, look, lang }` (unsaved) → `{ subject, preheader, html, text, look }` |
+| `POST campaigns/{id}/preview` | manage | `{ lang?, look? }` → same as above (saved content). |
+| `POST campaigns/{id}/test` | manage | `{ lang?, look? }` → `{ to }` (masked). Goes to the own confirmed notification address (§40.6) – for an API key to its test address, else the first `MAIL_TEAM_TO`; `409 no_test_address`. Subject starts with `[TEST]`. 20/h. |
+| `POST campaigns/{id}/code` | manage | `{ blockId, maxUses (1–100000), expiresAt?, rev }` → creates ONE code with the normal code system (note `newsletter <id>`) and writes it into the cosmetic block. `409 code_exists`, `400 item_missing`, code-system errors (`cape_is_free`, `not_code_redeemable` …). |
+| `GET campaigns/{id}/audience[?langs=de,en]` | send | `{ count }` – confirmed recipients, for the confirmation dialog. |
+| `POST campaigns/{id}/schedule` | send | `{ at, langs? }` → `{ campaign }` (status `scheduled`, ≤ 90 days ahead). |
+| `POST campaigns/{id}/send` | send | `{ langs?, expectedCount? }` → `{ campaign, queued }`. With `expectedCount` the server refuses when the audience changed (`409 audience_changed`, `details.count`). |
+| `POST campaigns/{id}/cancel` | send | Scheduled → `cancelled`; sending → queued e-mails are dropped, sent ones stay. |
+| `GET sources` | manage | `{ versions, items, creators, autoLook, mailAvailable }` – pick lists for the editor. |
+| `GET updates/{version}` | manage | `{ block }` – update block (banner, items per language) from `CHANGELOG.md`. |
+| `GET stats` | manage | `{ stats: { total, byStatus, byLang, bySource, confirmedLast30d }, mailAvailable }` – numbers only, no export. |
+
+**Status:** `draft` → (`scheduled`) → `sending` → `sent`; `cancelled` from scheduled/sending. Drafts, scheduled and
+cancelled campaigns are editable; scheduling/sending again is allowed from those states.
+
+**Look:** `auto` (follows the active website event: `halloween…` → `halloween`, `winter…`/`christmas…` → `winter`,
+`fox…`/`autumn…` → `fox`, otherwise `redstone`), or fixed `redstone` | `halloween` | `winter` | `fox`. The look is fixed
+when sending starts (`resolvedLook`).
+
+**Languages:** every text is `{ "de"?, "en"?, "es"? }`. A recipient gets their language, otherwise English, otherwise
+German. `langs` on schedule/send restricts recipients by language.
+
+**Content** (`content`, max. 40 blocks, unknown fields rejected):
+
+```jsonc
+{
+  "subject":   { "de": "Version 0.31.0 – Der Coup", "en": "Version 0.31.0 – The Heist" },
+  "preheader": { "de": "Schwarzes Schaf, Pinguin-Gefolge und ein Gratis-Code." },
+  "blocks": [
+    { "id": "h1", "type": "title", "size": "h1", "kicker": { "de": "Hey," }, "text": { "de": "Version 0.31.0 – *Der Coup*" } },
+    { "id": "t1", "type": "text", "text": { "de": "Ein **neuer** Begleiter …\n\n- Punkt\n- [Link](https://…)" }, "muted": false },
+    { "id": "u1", "type": "update", "version": "0.31.0" },                       // items/banner are filled from the changelog
+    { "id": "i1", "type": "images", "images": [ { "src": "https://…/a.png", "caption": { "de": "…" }, "alt": { "de": "…" } }, { "src": "/news/0.31.0/b.png" } ] },
+    { "id": "k1", "type": "cosmetic", "item": { "kind": "cosmetic", "id": "black_sheep" }, "kicker": { "de": "Nur für Newsletter-Leser" },
+      "title": { "de": "Schwarzes Schaf *gratis*" }, "text": { "de": "…" } },             // code via POST …/code
+    { "id": "c1", "type": "creator", "uuid": "<32 hex>", "text": { "de": "Der Pinguin-König …" }, "url": null },
+    { "id": "b1", "type": "button", "label": { "de": "Zum Blog" }, "url": "/blog" },
+    { "id": "d1", "type": "divider" }
+  ]
+}
+```
+
+- `title`: `h1` (big) or `h2` (section title with optional kicker). Text in `*stars*` gets the accent colour. Rendered as a
+  **pixel-font image** (§40.7), alt text = plain text.
+- `text`: simple Markdown – `**bold**`, `*italic*`, `[link](https://…)` (http(s)/mailto, `/path` = website), lists with
+  `- ` / `1. `, blank line = paragraph. No HTML.
+- `update`: `version` + optional `title`, `accent`, `motif` (image), `items: { de?: [{title,text}], en?: […] }`, `button`,
+  `url` (default `/download`). Send only `version` to fill the rest from `CHANGELOG.md`.
+- `images`: 1 or 2 pictures (`https://…` or `/path`), side by side on desktop, stacked on phones.
+- `cosmetic`: `item` (`cape`/`cosmetic` + id; card picture of the item) or own `image`, texts, `code`/`codeExpiresAt`
+  (set by `POST …/code`).
+- `creator`: active creator → head, tier badge, main creator code, link (`url` or first channel or creator page).
+- `button`, `divider`.
+
+The e-mail: table layout, inline styles, 600 px, media query for phones, `color-scheme: dark`, plain-text part, no
+external fonts, all pictures from the website. Every campaign e-mail has `List-Unsubscribe: <…/newsletter/unsubscribe?token=…>`,
+`List-Unsubscribe-Post: List-Unsubscribe=One-Click` and `List-Id`, plus the unsubscribe link in the footer.
+
+### 40.5 API keys `trsk_…` (e.g. for Claude)
+
+Owner/Admin manage keys in the team area (Newsletter → API keys) or here:
+
+| Method + path | Body / answer |
+|---|---|
+| `GET /v1/admin/newsletter/keys` | `{ keys: [{ id, name, hint, permissions, testEmail, createdAt, createdBy, lastUsedAt, revokedAt }] }` |
+| `POST /v1/admin/newsletter/keys` | `{ name, permissions: ["newsletter.manage", "newsletter.send"], testEmail? }` → `201 { key, token }` – **the token is shown only here.** Max. 20 active keys. |
+| `DELETE /v1/admin/newsletter/keys/{id}` | Revoke (immediately) → `{ key }` |
+
+A key works **only on the newsletter routes of §40.4** (they call `requireNewsletter`); every other route rejects it with
+`401` (it is not a session token). Only the SHA-256 is stored; `lastUsedAt` is updated at most once a minute; 240
+requests/min per key. Campaigns show "created/changed by" as `{ kind: "key", name }`; the audit log actor is `key:<id>`.
+
+**Examples** (replace `$TRSK` with the key, `$API` with `https://trs-launcher.theredstonee.de`):
+
+```bash
+# 1. Draft with blocks (the update block is filled from the changelog)
+curl -sS -X POST "$API/v1/admin/newsletter/campaigns" \
+  -H "Authorization: Bearer $TRSK" -H "Content-Type: application/json" \
+  -d '{"name":"0.31.0 Der Coup","look":"auto","content":{
+        "subject":{"de":"Version 0.31.0 – Der Coup","en":"Version 0.31.0 – The Heist"},
+        "preheader":{"de":"Schwarzes Schaf und Pinguin-Gefolge","en":"Black sheep and penguin entourage"},
+        "blocks":[
+          {"id":"h","type":"title","size":"h1","text":{"de":"Version 0.31.0 – *Der Coup*","en":"Version 0.31.0 – *The Heist*"}},
+          {"id":"t","type":"text","text":{"de":"Ein neuer Begleiter treibt sein Unwesen.","en":"A new companion is up to mischief."}},
+          {"id":"u","type":"update","version":"0.31.0"}]}}'
+# → 201 {"campaign":{"id":"Ab3…","rev":1,…}}
+
+# 2. Preview (HTML of the real e-mail) in English, winter look
+curl -sS -X POST "$API/v1/admin/newsletter/campaigns/Ab3…/preview" \
+  -H "Authorization: Bearer $TRSK" -H "Content-Type: application/json" \
+  -d '{"lang":"en","look":"winter"}' | jq -r .html > preview.html
+
+# 3. Change the text (rev from the last answer)
+curl -sS -X PATCH "$API/v1/admin/newsletter/campaigns/Ab3…" \
+  -H "Authorization: Bearer $TRSK" -H "Content-Type: application/json" \
+  -d '{"rev":1,"content":{ … }}'
+
+# 4. Test e-mail (to the key's test address)
+curl -sS -X POST "$API/v1/admin/newsletter/campaigns/Ab3…/test" \
+  -H "Authorization: Bearer $TRSK" -H "Content-Type: application/json" -d '{"lang":"de"}'
+
+# 5. Send: first ask for the audience, then send with the expected count
+curl -sS "$API/v1/admin/newsletter/campaigns/Ab3…/audience" -H "Authorization: Bearer $TRSK"
+# → {"count":1234}
+curl -sS -X POST "$API/v1/admin/newsletter/campaigns/Ab3…/send" \
+  -H "Authorization: Bearer $TRSK" -H "Content-Type: application/json" -d '{"expectedCount":1234}'
+
+# or schedule (optionally only German recipients)
+curl -sS -X POST "$API/v1/admin/newsletter/campaigns/Ab3…/schedule" \
+  -H "Authorization: Bearer $TRSK" -H "Content-Type: application/json" \
+  -d '{"at":"2026-11-01T17:00:00Z","langs":["de"]}'
+```
+
+### 40.6 Team notifications
+
+Kinds and the permission a member needs: `application` (`applications.view`), `report` (`reports.view`), `appeal`
+(`appeals.handle`), `pet_request` (`creators.manage`). Each team member sets their own address and kinds:
+
+| Method + path | Body / answer |
+|---|---|
+| `GET /v1/admin/newsletter/notifications` | `{ notifications: { email, pendingEmail, kinds, available, lang, fallbackConfigured }, mailAvailable }` |
+| `PUT /v1/admin/newsletter/notifications` | `{ email?: string \| null, kinds, lang }` → `{ notifications, confirmationSent }`. A new address gets a confirmation link (`t…` token, `/newsletter/confirm`) and is used only after the click; `null` removes it. 10/h. |
+
+Events are collected per kind; at most **one e-mail per kind every 5 minutes** (the first one goes out at once, the rest
+is bundled into the next e-mail). Recipients: members with the permission, the kind switched on and a confirmed address;
+if nobody qualifies, `MAIL_TEAM_TO`. The e-mails (template "team", look follows the event) contain only short facts –
+position, name, report reason/number, sanction number, animal – and a link to the team area, never message or appeal
+texts. The confirmed address is also the target of the own test newsletters.
+
+### 40.7 Mail images
+
+- `GET /v1/mail/px/{sig}.png?d={payload}` – pixel-font title (own bitmap font in the style of Silkscreen: capitals, accents
+  ÄÖÜÁÉÍÓÚÑ¿¡, accent colour for `*…*`), rendered @2x, transparent, cached for a year. `payload` = base64url JSON
+  `{ t, k: "h1" | "h2" | "logo", l: look, w? }`, `sig` = HMAC with `SECRET_KEY` – there is no open renderer for arbitrary text.
+- `GET /v1/mail/head/{uuid}.png?s={sig}` – head (face + hat layer of the stored Mojang skin, 128 × 128), signed, 1 day.
+- Static: `/mail/head-{look}.png`, `/mail/div-{look}.png`, `/mail/logo.png` (CORP `cross-origin`, so web mail can load them).
+- 600 requests/min per IP.
+
+### 40.8 Outbox and guarantees
+
+- Statuses per e-mail: `queued` → `sending` → `sent` | `failed` | `skipped` (recipient unsubscribed meanwhile) |
+  `cancelled`. Temporary errors (4xx, network) are retried after 1, 2, 4, 8 min (max. 5 attempts); permanent ones (5xx)
+  fail at once.
+- **No double sending:** a row is marked `sending` before the SMTP call; rows still `sending` after a restart are marked
+  `failed` (`interrupted`) and not sent again.
+- Campaign e-mails are rendered per recipient at send time (language, unsubscribe link); the HTML is not kept after sending.
+  Done rows (address, status, error) are deleted after 30 days.
+- Counters on the campaign: `total`, `sent`, `failed`, `queued`; `sent` when nothing is left.
+
+Migration 38: `newsletter_subscribers`, `newsletter_campaigns`, `mail_outbox`, `mail_api_keys`, `mail_team_prefs`,
+`mail_team_pending`, `mail_team_state`; permissions `newsletter.manage` + `newsletter.send` for Owner/Admin. Idempotent.
+When merging: renumber if a parallel branch also added a migration 38.

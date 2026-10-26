@@ -125,6 +125,10 @@ Erwartet: `{"status":"ok",…}`
 | `RELAY_TCP_PORT` / `RELAY_UDP_PORT` | nein | Standard `25503` / `25504`. |
 | `HOSTING_STUN` | nein | STUN-Server `host:port`, kommagetrennt. Leer = nur das Relay (`RELAY_HOST:RELAY_UDP_PORT`). Fremde STUN-Server (z. B. Google) sehen die IP der Spieler – deshalb ab Werk keine. |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | für Push an die Apps | Schlüsselpaar für Web Push/UnifiedPush (RFC 8292), erzeugen mit `node scripts/vapid-keys.mjs` (base64url). `VAPID_SUBJECT` = `mailto:…` oder `https://…` (Kontakt für die Push-Dienste). Alle drei oder keiner; leer = UnifiedPush aus (`503 push_unavailable`), Abruf-Geräte (iOS) gehen trotzdem. **Nicht tauschen**, solange Geräte angemeldet sind. API.md §33, Betrieb eines eigenen ntfy: `docs/push.md`. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` | für Mail/Newsletter | Gemeinsamer SMTP-Server beider Konten (465 + `true` = TLS, 587 + `false` = STARTTLS). Leer = Mail aus (`503 mail_unavailable`, Warnung beim Start). API.md §40. |
+| `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | für Mail | System-Konto (`TRS Launcher <no-reply@trs-launcher.de>`): Double-Opt-in-Bestätigungen, Team-Benachrichtigungen. Nur in die Server-.env. |
+| `NEWSLETTER_SMTP_USER`, `NEWSLETTER_SMTP_PASS`, `NEWSLETTER_FROM` | optional | Newsletter-Konto (`TRS Launcher <newsletter@trs-launcher.de>`) für Kampagnen + Testmails; leer = über das System-Konto. |
+| `MAIL_REPLY_TO`, `MAIL_TEAM_TO`, `MAIL_RATE_PER_MIN` | optional | Antwort-Adresse; Fallback-Empfänger der Team-Benachrichtigungen (kommagetrennt); Drosselung je Konto (Vorgabe 60/min). |
 
 `.env` ist in `.gitignore` und darf **nie** ins Repo.
 
