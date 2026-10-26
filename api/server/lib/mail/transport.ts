@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer'
-import type { MailConfig } from '../config'
+import type { MailAccount, MailConfig } from '../config'
 
 /**
  * SMTP-Versand über nodemailer. Zugangsdaten nur aus der Konfiguration (.env); Fehlermeldungen werden vor dem
@@ -31,31 +31,55 @@ export interface Sender {
   close?(): void
 }
 
+/** `system` = no-reply (Bestätigungen, Team), `newsletter` = Kampagnen + Testmails. */
+export type MailChannel = 'system' | 'newsletter'
+export const MAIL_CHANNELS: readonly MailChannel[] = ['system', 'newsletter']
+
+/**
+ * Zwei SMTP-Konten auf demselben Server, je ein nodemailer-Pool. Ohne eigenes Newsletter-Konto teilen sich beide
+ * Kanäle einen Pool (und damit auch die Drosselung).
+ */
 export class MailService {
-  private sender: Sender | null
+  private senders: Record<MailChannel, Sender | null>
 
   constructor(readonly config: MailConfig | null, sender?: Sender | null) {
-    this.sender = sender ?? (config ? smtpSender(config) : null)
+    if (sender !== undefined || !config) this.senders = { system: sender ?? null, newsletter: sender ?? null }
+    else {
+      const system = smtpSender(config, config.system)
+      this.senders = { system, newsletter: config.newsletter.shared ? system : smtpSender(config, config.newsletter) }
+    }
   }
 
   /** Mail ist eingerichtet (SMTP oder Test-Attrappe). */
   get available(): boolean {
-    return this.sender !== null
+    return this.senders.system !== null
   }
 
-  /** Für Tests und den lokalen Smoke: eigenen Versand setzen (`null` = aus). */
-  setSender(sender: Sender | null): void {
-    this.sender?.close?.()
-    this.sender = sender
+  /** Teilen sich beide Kanäle einen Versand (eine gemeinsame Drosselung)? */
+  get shared(): boolean {
+    return this.senders.system === this.senders.newsletter
   }
 
-  async send(mail: OutgoingMail): Promise<SendResult> {
-    if (!this.sender) throw new SendError('mail not configured', false)
-    return this.sender.send(mail)
+  /** Für Tests und den lokalen Smoke: eigenen Versand setzen (`null` = aus); ohne `channel` für beide. */
+  setSender(sender: Sender | null, channel?: MailChannel): void {
+    if (channel) {
+      if (this.senders[channel] !== this.senders[channel === 'system' ? 'newsletter' : 'system']) this.senders[channel]?.close?.()
+      this.senders[channel] = sender
+      return
+    }
+    this.close()
+    this.senders = { system: sender, newsletter: sender }
+  }
+
+  async send(mail: OutgoingMail, channel: MailChannel = 'system'): Promise<SendResult> {
+    const s = this.senders[channel]
+    if (!s) throw new SendError('mail not configured', false)
+    return s.send(mail)
   }
 
   close(): void {
-    this.sender?.close?.()
+    this.senders.system?.close?.()
+    if (this.senders.newsletter !== this.senders.system) this.senders.newsletter?.close?.()
   }
 }
 
@@ -69,7 +93,7 @@ export function cleanError(message: string): string {
     .slice(0, 300)
 }
 
-function smtpSender(c: MailConfig): Sender {
+function smtpSender(c: MailConfig, account: MailAccount): Sender {
   const local = c.host === '127.0.0.1' || c.host === 'localhost'
   const transport = nodemailer.createTransport({
     host: c.host,
@@ -78,7 +102,7 @@ function smtpSender(c: MailConfig): Sender {
     // Ohne TLS nur an localhost (lokaler Test-Sink); sonst STARTTLS Pflicht.
     requireTLS: !c.secure && !local,
     ignoreTLS: local && !c.secure,
-    auth: c.user && c.pass ? { user: c.user, pass: c.pass } : undefined,
+    auth: account.user && account.pass ? { user: account.user, pass: account.pass } : undefined,
     pool: true,
     maxConnections: 2,
     maxMessages: 200,
@@ -93,7 +117,7 @@ function smtpSender(c: MailConfig): Sender {
     async send(mail) {
       try {
         const info = await transport.sendMail({
-          from: c.from,
+          from: account.from,
           ...(c.replyTo ? { replyTo: c.replyTo } : {}),
           to: mail.to,
           subject: mail.subject,

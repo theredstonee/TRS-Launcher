@@ -155,6 +155,7 @@ const en = {
       pitch: 'Pitch',
       serverrules: 'Server rules',
       previews: 'Preview builds',
+      newsletter: 'Newsletter',
     } as Record<string, string>,
     perms: {
       'dashboard.view': 'See the overview',
@@ -199,6 +200,8 @@ const en = {
       'pitch.manage': 'Create, revoke and preview secret pitch presentation links',
       'serverrules.bypass': 'Use TRS Client features locked by a server anyway (after an in-game prompt; the server is not told)',
       'previews.access': 'Preview builds: download launcher and TRS Client preview builds like Partner creators',
+      'newsletter.manage': 'Newsletter: write drafts, preview, send a test to yourself',
+      'newsletter.send': 'Newsletter: send and schedule to all subscribers',
     } as Record<string, string>,
     roles: {
       title: 'Roles & team',
@@ -563,6 +566,7 @@ const de: TeamTexts = {
       pitch: 'Pitch',
       serverrules: 'Server-Regeln',
       previews: 'Vorschau-Builds',
+      newsletter: 'Newsletter',
     },
     perms: {
       'dashboard.view': 'Übersicht sehen',
@@ -607,6 +611,8 @@ const de: TeamTexts = {
       'pitch.manage': 'Geheime Links zur Pitch-Präsentation erzeugen, widerrufen und ansehen',
       'serverrules.bypass': 'Vom Server gesperrte TRS-Client-Funktionen trotzdem nutzen (nach Nachfrage im Spiel; der Server erfährt nichts)',
       'previews.access': 'Vorschau-Builds: Vorschau-Builds von Launcher und TRS Client laden wie Partner-Creator',
+      'newsletter.manage': 'Newsletter: Entwürfe schreiben, Vorschau, Testmail an dich',
+      'newsletter.send': 'Newsletter: an alle Abonnenten senden und planen',
     },
     roles: {
       title: 'Rollen & Team',
@@ -969,6 +975,7 @@ const es: TeamTexts = {
       pitch: 'Pitch',
       serverrules: 'Reglas de servidor',
       previews: 'Versiones de prueba',
+      newsletter: 'Boletín',
     },
     perms: {
       'dashboard.view': 'Ver el resumen',
@@ -1013,6 +1020,8 @@ const es: TeamTexts = {
       'pitch.manage': 'Crear, revocar y ver enlaces secretos de la presentación pitch',
       'serverrules.bypass': 'Usar igualmente funciones del TRS Client bloqueadas por un servidor (tras confirmar en el juego; el servidor no se entera)',
       'previews.access': 'Versiones de prueba: descargar versiones de prueba del launcher y del TRS Client como los creadores Partner',
+      'newsletter.manage': 'Boletín: escribir borradores, vista previa, prueba a ti mismo',
+      'newsletter.send': 'Boletín: enviar y programar a todos los suscriptores',
     },
     roles: {
       title: 'Roles y equipo',

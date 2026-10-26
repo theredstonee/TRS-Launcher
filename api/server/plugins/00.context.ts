@@ -58,6 +58,10 @@ export default defineNitroPlugin((nitroApp) => {
   if (!config.microsoft) console.warn('[trs-api] MS_CLIENT_ID/MS_CLIENT_SECRET not set – website sign-in with Microsoft is disabled')
   if (!config.hosting) console.warn('[trs-api] RELAY_SECRET/RELAY_HOST not set – world hosting is disabled (503 hosting_unavailable)')
   if (!config.mail) console.warn('[trs-api] SMTP_HOST not set – e-mail (newsletter, confirmations, team notifications) is disabled (503 mail_unavailable)')
+  else {
+    if (!config.mail.system.user) console.warn('[trs-api] SMTP_USER/SMTP_PASS not set – system mails (no-reply) are sent without SMTP authentication')
+    if (config.mail.newsletter.shared) console.warn('[trs-api] NEWSLETTER_SMTP_USER/NEWSLETTER_SMTP_PASS not set – newsletter campaigns are sent from the system account')
+  }
   if (!config.vapid) console.warn('[trs-api] VAPID_* not set – UnifiedPush for the apps is disabled (poll devices still work, §33)')
   // Mails, deren Versand ein Neustart unterbrochen hat: nicht erneut senden (kein Doppelversand).
   const interrupted = recoverOutbox(ctx)

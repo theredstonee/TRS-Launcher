@@ -68,15 +68,22 @@ export interface MailConfig {
   port: number
   /** `true` = TLS ab dem ersten Byte (Port 465), sonst STARTTLS (Pflicht, außer bei 127.0.0.1/localhost). */
   secure: boolean
-  user: string | null
-  pass: string | null
-  /** Absender, z. B. `TRS Launcher <news@trs-launcher.de>`. */
-  from: string
+  /** System-Konto (`no-reply@…`): Bestätigungen, Team-Benachrichtigungen. */
+  system: MailAccount
+  /** Newsletter-Konto (`newsletter@…`): Kampagnen + Testmails. Ohne NEWSLETTER_* = das System-Konto (`shared`). */
+  newsletter: MailAccount & { shared: boolean }
   replyTo: string | null
   /** Fallback-Empfänger der Team-Benachrichtigungen (wenn kein Team-Mitglied sie aktiviert hat). */
   teamTo: string[]
-  /** Höchstens so viele Mails je Minute (Ausgangs-Warteschlange). */
+  /** Höchstens so viele Mails je Minute und Konto (Ausgangs-Warteschlange). */
   ratePerMin: number
+}
+
+export interface MailAccount {
+  user: string | null
+  pass: string | null
+  /** Absender, z. B. `TRS Launcher <no-reply@trs-launcher.de>`. */
+  from: string
 }
 
 export interface HostingConfig {
@@ -363,7 +370,11 @@ const envSchema = z.object({
   SMTP_SECURE: bool.default(false),
   SMTP_USER: z.string().max(320).default(''),
   SMTP_PASS: z.string().max(1024).default(''),
-  MAIL_FROM: z.string().trim().max(200).default('TRS Launcher <news@trs-launcher.de>'),
+  MAIL_FROM: z.string().trim().max(200).default('TRS Launcher <no-reply@trs-launcher.de>'),
+  // Eigenes Konto für Kampagnen (gleicher SMTP-Server). Leer = Kampagnen über das System-Konto.
+  NEWSLETTER_SMTP_USER: z.string().max(320).default(''),
+  NEWSLETTER_SMTP_PASS: z.string().max(1024).default(''),
+  NEWSLETTER_FROM: z.string().trim().max(200).default('TRS Launcher <newsletter@trs-launcher.de>'),
   MAIL_REPLY_TO: z.string().trim().max(254).default(''),
   MAIL_TEAM_TO: z.string().trim().max(2000).default(''),
   MAIL_RATE_PER_MIN: z.coerce.number().int().min(1).max(6000).default(60),
@@ -425,20 +436,29 @@ const MAIL_ADDRESS = /^[^\s@<>",;]{1,64}@[A-Za-z0-9.-]{1,253}\.[A-Za-z]{2,63}$/
 /** SMTP lesen; ohne SMTP_HOST → `null` (Mail aus). Werte erscheinen nie in Fehlermeldungen. */
 function parseMail(e: z.output<typeof envSchema>): MailConfig | null {
   if (e.SMTP_HOST === '') return null
-  const m = /^(?:([^<>\r\n]{1,100}?)\s*<([^<>\s]+)>|([^<>\s]+))$/.exec(e.MAIL_FROM)
-  const fromAddr = m ? (m[2] ?? m[3]!) : ''
-  if (!m || !MAIL_ADDRESS.test(fromAddr)) throw new ConfigError('Invalid configuration: MAIL_FROM (expected "Name <address>" or an address)')
+  const checkFrom = (value: string, key: string) => {
+    const m = /^(?:([^<>\r\n]{1,100}?)\s*<([^<>\s]+)>|([^<>\s]+))$/.exec(value)
+    const addr = m ? (m[2] ?? m[3]!) : ''
+    if (!m || !MAIL_ADDRESS.test(addr)) throw new ConfigError(`Invalid configuration: ${key} (expected "Name <address>" or an address)`)
+  }
+  checkFrom(e.MAIL_FROM, 'MAIL_FROM')
   if (e.MAIL_REPLY_TO !== '' && !MAIL_ADDRESS.test(e.MAIL_REPLY_TO)) throw new ConfigError('Invalid configuration: MAIL_REPLY_TO')
   const teamTo = e.MAIL_TEAM_TO.split(',').map((s) => s.trim()).filter(Boolean)
   if (teamTo.some((a) => !MAIL_ADDRESS.test(a))) throw new ConfigError('Invalid configuration: MAIL_TEAM_TO (comma-separated addresses)')
   if ((e.SMTP_USER === '') !== (e.SMTP_PASS === '')) throw new ConfigError('Invalid configuration: SMTP_USER and SMTP_PASS must be set together')
+  if ((e.NEWSLETTER_SMTP_USER === '') !== (e.NEWSLETTER_SMTP_PASS === '')) throw new ConfigError('Invalid configuration: NEWSLETTER_SMTP_USER and NEWSLETTER_SMTP_PASS must be set together')
+  const system: MailAccount = { user: e.SMTP_USER || null, pass: e.SMTP_PASS || null, from: e.MAIL_FROM }
+  // Ohne eigenes Newsletter-Konto: alles über das System-Konto (Absender inklusive – der Server lässt meist nur die eigene Adresse zu).
+  const own = e.NEWSLETTER_SMTP_USER !== ''
+  if (own) checkFrom(e.NEWSLETTER_FROM, 'NEWSLETTER_FROM')
   return {
     host: e.SMTP_HOST,
     port: e.SMTP_PORT,
     secure: e.SMTP_SECURE,
-    user: e.SMTP_USER === '' ? null : e.SMTP_USER,
-    pass: e.SMTP_PASS === '' ? null : e.SMTP_PASS,
-    from: e.MAIL_FROM,
+    system,
+    newsletter: own
+      ? { user: e.NEWSLETTER_SMTP_USER, pass: e.NEWSLETTER_SMTP_PASS, from: e.NEWSLETTER_FROM, shared: false }
+      : { ...system, shared: true },
     replyTo: e.MAIL_REPLY_TO === '' ? null : e.MAIL_REPLY_TO,
     teamTo: teamTo.slice(0, 10),
     ratePerMin: e.MAIL_RATE_PER_MIN,

@@ -5,7 +5,7 @@ import type { CampaignContent, NewsletterLang } from '../../../shared/newsletter
 import { renderCampaign, UNSUB_PLACEHOLDER, type RenderedMail } from './render'
 import { isLook, resolveLook, type Look } from './theme'
 import { unsubscribeUrl } from './tokens'
-import { SendError, type OutgoingMail } from './transport'
+import { SendError, type MailChannel, type OutgoingMail } from './transport'
 
 /**
  * Ausgangs-Warteschlange (SQLite): jede Mail ist eine Zeile mit Status. Der Hintergrund-Takt verschickt gedrosselt
@@ -18,6 +18,11 @@ export type OutboxKind = 'confirm' | 'campaign' | 'test' | 'team' | 'team_confir
 export const MAX_ATTEMPTS = 5
 /** Erledigte Zeilen (mit Adresse/Inhalt) werden nach so langer Zeit gelöscht. */
 export const OUTBOX_RETENTION_MS = 30 * 24 * 60 * 60 * 1000
+
+/** Kampagnen und Testmails gehen über das Newsletter-Konto, alles andere über das System-Konto (no-reply). */
+export function channelOf(kind: OutboxKind): MailChannel {
+  return kind === 'campaign' || kind === 'test' ? 'newsletter' : 'system'
+}
 
 export function requireMail(ctx: AppContext): void {
   if (!ctx.mail.available) throw unavailable('mail_unavailable', 'Sending e-mail is not configured on this server')
@@ -127,7 +132,7 @@ function finishCampaigns(ctx: AppContext, ids: Iterable<string>): void {
 let running: Promise<{ sent: number, failed: number }> | null = null
 
 /**
- * Bis zu `budget` fällige Mails versenden (nacheinander). Läuft nie doppelt (ein laufender Durchgang wird geteilt).
+ * Bis zu `budget` fällige Mails je SMTP-Konto versenden (nacheinander). Läuft nie doppelt (ein laufender Durchgang wird geteilt).
  * Startet vorher fällige geplante Kampagnen.
  */
 export function processOutbox(ctx: AppContext, budget: number): Promise<{ sent: number, failed: number }> {
@@ -136,12 +141,21 @@ export function processOutbox(ctx: AppContext, budget: number): Promise<{ sent: 
     let sent = 0
     let failed = 0
     startDueCampaigns(ctx)
-    if (!ctx.mail.available || budget <= 0) return { sent, failed }
-    const rows = all<OutboxRow>(
+    if (!ctx.mail.available || budget <= 0) {
+      finishCampaigns(ctx, all<{ id: string }>(ctx.db, "SELECT id FROM newsletter_campaigns WHERE status = 'sending'").map((c) => c.id))
+      return { sent, failed }
+    }
+    // Budget je SMTP-Konto (eigene Drosselung); teilen sich beide Kanäle ein Konto, gilt ein gemeinsames Budget.
+    const groups: OutboxKind[][] = ctx.mail.shared
+      ? [['confirm', 'team', 'team_confirm', 'test', 'campaign']]
+      : [['confirm', 'team', 'team_confirm'], ['test', 'campaign']]
+    const rows = groups.flatMap((kinds) => all<OutboxRow>(
       ctx.db,
-      "SELECT id, kind, campaign_id, subscriber_id, to_addr, subject, html, text, headers, attempts FROM mail_outbox WHERE status = 'queued' AND next_at <= ? ORDER BY CASE kind WHEN 'campaign' THEN 1 ELSE 0 END, id LIMIT ?",
-      ctx.now(), budget,
-    )
+      `SELECT id, kind, campaign_id, subscriber_id, to_addr, subject, html, text, headers, attempts FROM mail_outbox
+       WHERE status = 'queued' AND next_at <= ? AND kind IN (${kinds.map(() => '?').join(', ')})
+       ORDER BY CASE kind WHEN 'campaign' THEN 1 ELSE 0 END, id LIMIT ?`,
+      ctx.now(), ...kinds, budget,
+    ))
     const touched = new Set<string>()
     for (const r of rows) {
       if (r.campaign_id) touched.add(r.campaign_id)
@@ -159,7 +173,7 @@ export function processOutbox(ctx: AppContext, budget: number): Promise<{ sent: 
       // Erst als „sending“ markieren, dann senden: stirbt der Prozess dazwischen, gibt es keinen zweiten Versuch.
       if (run(ctx.db, "UPDATE mail_outbox SET status = 'sending', attempts = attempts + 1 WHERE id = ? AND status = 'queued'", r.id) === 0) continue
       try {
-        await ctx.mail.send(mail)
+        await ctx.mail.send(mail, channelOf(r.kind))
         tx(ctx.db, () => {
           run(ctx.db, "UPDATE mail_outbox SET status = 'sent', sent_at = ?, last_error = NULL, html = CASE WHEN kind = 'campaign' THEN NULL ELSE html END WHERE id = ?", ctx.now(), r.id)
           if (r.campaign_id && r.kind === 'campaign') run(ctx.db, 'UPDATE newsletter_campaigns SET sent_count = sent_count + 1 WHERE id = ?', r.campaign_id)
@@ -181,6 +195,8 @@ export function processOutbox(ctx: AppContext, budget: number): Promise<{ sent: 
         console.warn(`[mail] send failed (${permanent ? 'permanent' : `attempt ${attempts}`}): ${msg}`)
       }
     }
+    // Auch Kampagnen ohne offene Zeilen abschließen (z. B. nach einem Neustart, der den Rest als fehlgeschlagen markiert hat).
+    for (const c of all<{ id: string }>(ctx.db, "SELECT id FROM newsletter_campaigns WHERE status = 'sending'")) touched.add(c.id)
     finishCampaigns(ctx, touched)
     return { sent, failed }
   })().finally(() => {
