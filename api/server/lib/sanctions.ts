@@ -7,6 +7,7 @@ import { endHostingFor } from './hosting'
 import { emitCleared } from './playerevents'
 import { MIN_WARN_MINUTES, OWNER_RANK, SANCTION_PERMISSION, SYSTEM, assertCan, can, ownerStaff, rankOf, teamOf, type Staff } from './team'
 import { getUser, type StaffRole } from './users'
+import { notifyTeam, stamp } from './mail/team-notify'
 
 export { SYSTEM, type Staff } from './team'
 
@@ -676,6 +677,11 @@ export function createAppeal(ctx: AppContext, uuid: string, sanctionId: number, 
   })
   const v = mySanctionView(ctx, getSanction(ctx, s.id)!)
   ctx.events.publish(uuid, { type: 'sanction_updated', sanction: v }, { meOnly: true })
+  // Team-Mail (§40.6): Strafe + Name, nicht die Begründung des Einspruchs.
+  notifyTeam(ctx, 'appeal', {
+    fields: [['sanction', `#${s.id} ${s.kind}`], ['from', one<{ name: string }>(ctx.db, 'SELECT name FROM users WHERE uuid = ?', uuid)?.name ?? uuid], ['at', stamp(t)]],
+    path: '/admin/appeals',
+  })
   return v
 }
 

@@ -7,6 +7,7 @@ import { EventHub } from './events'
 import { OAuthStateStore } from './microsoft'
 import type { MojangClient } from './mojang'
 import { PresenceStore } from './presence'
+import { MailService } from './mail/transport'
 import { PushService } from './push'
 import { RateLimiter } from './ratelimit'
 import { SpamGuard } from './safety'
@@ -56,6 +57,8 @@ export interface AppContext {
   oauth: OAuthStateStore
   /** Push-Benachrichtigungen für die Apps (§33): Geräte, Versand (UnifiedPush) und Abruf-Liste (iOS). */
   push: PushService
+  /** Mail über SMTP (§40): Versand der Ausgangs-Warteschlange. Ohne SMTP_HOST nicht verfügbar (503 mail_unavailable). */
+  mail: MailService
   /** Für Tests: eigenes fetch für die Microsoft-/Xbox-/Minecraft-Kette. */
   msFetch?: typeof fetch
   /** Für Tests: eigenes fetch für Modrinth (Namen/Symbole der Pack-Inhalte, §27.6). */
@@ -79,6 +82,7 @@ export function createContext(opts: {
   const limiter = new RateLimiter(now)
   const lim = opts.config.limits
   const base: Omit<AppContext, 'push'> = {
+    mail: new MailService(opts.config.mail),
     config: opts.config,
     db: opts.db,
     mojang: opts.mojang,

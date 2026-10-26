@@ -320,4 +320,25 @@ export const RULES = {
   creatorsPublicIp: { limit: 240, windowMs: MIN },
   /** Creator: Profil (Beschreibung + Links) einreichen – jede Fassung landet beim Team. */
   creatorProfileUser: { limit: 10, windowMs: HOUR },
+  // ---- Mail + Newsletter (§40)
+  /** Öffentliche Anmeldung je IP (zusätzlich je Adresse, s. u.). */
+  newsletterSubscribeIp: { limit: 10, windowMs: HOUR },
+  /** Anmeldungen je Adresse (Schlüssel = HMAC der Adresse) – bremst Mail-Bomben an fremde Adressen. */
+  newsletterSubscribeAddr: { limit: 3, windowMs: 24 * HOUR },
+  /** Bestätigen/Abmelden per Token je IP (falsche Tokens zählen mit). */
+  newsletterTokenIp: { limit: 30, windowMs: 10 * MIN },
+  /** Launcher: Adresse eintragen/ändern/abmelden je Konto. */
+  newsletterMeUser: { limit: 10, windowMs: HOUR },
+  /** Team/API-Schlüssel: Kampagnen anlegen/ändern/lesen. */
+  adminNewsletter: { limit: 240, windowMs: MIN },
+  /** Live-Vorschau im Editor (rendert bei jeder Pause im Tippen). */
+  newsletterPreview: { limit: 240, windowMs: MIN },
+  /** Testmails je Akteur. */
+  newsletterTest: { limit: 20, windowMs: HOUR },
+  /** Jede Anfrage mit einem API-Schlüssel. */
+  newsletterKey: { limit: 240, windowMs: MIN },
+  /** Eigene Team-Benachrichtigungen speichern (mit Bestätigungs-Mail bei neuer Adresse). */
+  teamNotifyUser: { limit: 10, windowMs: HOUR },
+  /** Bilder der Mails (Pixel-Überschriften, Köpfe) je IP. */
+  mailImageIp: { limit: 600, windowMs: MIN },
 } satisfies Record<string, Rule>

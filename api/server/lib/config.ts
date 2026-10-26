@@ -58,7 +58,25 @@ export interface Config {
   vapid: VapidKeys | null
   /** CurseForge-API-Schlüssel (empfohlene Modpacks, §37). `null` = CurseForge-Links → 503 curseforge_unavailable. */
   curseforgeApiKey: string | null
+  /** Mail über SMTP (§40). `null` = aus (SMTP_HOST leer): Versand → 503 `mail_unavailable`, alles andere geht. */
+  mail: MailConfig | null
   limits: Limits
+}
+
+export interface MailConfig {
+  host: string
+  port: number
+  /** `true` = TLS ab dem ersten Byte (Port 465), sonst STARTTLS (Pflicht, außer bei 127.0.0.1/localhost). */
+  secure: boolean
+  user: string | null
+  pass: string | null
+  /** Absender, z. B. `TRS Launcher <news@trs-launcher.de>`. */
+  from: string
+  replyTo: string | null
+  /** Fallback-Empfänger der Team-Benachrichtigungen (wenn kein Team-Mitglied sie aktiviert hat). */
+  teamTo: string[]
+  /** Höchstens so viele Mails je Minute (Ausgangs-Warteschlange). */
+  ratePerMin: number
 }
 
 export interface HostingConfig {
@@ -339,6 +357,16 @@ const envSchema = z.object({
   VAPID_SUBJECT: z.string().trim().max(256).default(''),
   // Empfohlene Modpacks (§37): CurseForge-API-Schlüssel (console.curseforge.com). Leer = nur Modrinth.
   CURSEFORGE_API_KEY: z.string().trim().max(200).default(''),
+  // Mail (§40): SMTP-Zugang nur hier (Server-.env), nie im Repo oder Log. SMTP_HOST leer = Mail aus.
+  SMTP_HOST: z.string().trim().max(253).default('').refine((s) => s === '' || /^[A-Za-z0-9.-]{1,253}$/.test(s), 'must be a hostname'),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(587),
+  SMTP_SECURE: bool.default(false),
+  SMTP_USER: z.string().max(320).default(''),
+  SMTP_PASS: z.string().max(1024).default(''),
+  MAIL_FROM: z.string().trim().max(200).default('TRS Launcher <news@trs-launcher.de>'),
+  MAIL_REPLY_TO: z.string().trim().max(254).default(''),
+  MAIL_TEAM_TO: z.string().trim().max(2000).default(''),
+  MAIL_RATE_PER_MIN: z.coerce.number().int().min(1).max(6000).default(60),
 })
 
 const HOST_PORT = /^[A-Za-z0-9.-]{1,253}:(\d{1,5})$/
@@ -389,6 +417,31 @@ function parseMicrosoft(e: z.output<typeof envSchema>): MicrosoftConfig | null {
     xboxUserAuthUrl: e.XBOX_USER_AUTH_URL,
     xboxXstsUrl: e.XBOX_XSTS_URL,
     minecraftServicesUrl: e.MINECRAFT_SERVICES_URL,
+  }
+}
+
+const MAIL_ADDRESS = /^[^\s@<>",;]{1,64}@[A-Za-z0-9.-]{1,253}\.[A-Za-z]{2,63}$/
+
+/** SMTP lesen; ohne SMTP_HOST → `null` (Mail aus). Werte erscheinen nie in Fehlermeldungen. */
+function parseMail(e: z.output<typeof envSchema>): MailConfig | null {
+  if (e.SMTP_HOST === '') return null
+  const m = /^(?:([^<>\r\n]{1,100}?)\s*<([^<>\s]+)>|([^<>\s]+))$/.exec(e.MAIL_FROM)
+  const fromAddr = m ? (m[2] ?? m[3]!) : ''
+  if (!m || !MAIL_ADDRESS.test(fromAddr)) throw new ConfigError('Invalid configuration: MAIL_FROM (expected "Name <address>" or an address)')
+  if (e.MAIL_REPLY_TO !== '' && !MAIL_ADDRESS.test(e.MAIL_REPLY_TO)) throw new ConfigError('Invalid configuration: MAIL_REPLY_TO')
+  const teamTo = e.MAIL_TEAM_TO.split(',').map((s) => s.trim()).filter(Boolean)
+  if (teamTo.some((a) => !MAIL_ADDRESS.test(a))) throw new ConfigError('Invalid configuration: MAIL_TEAM_TO (comma-separated addresses)')
+  if ((e.SMTP_USER === '') !== (e.SMTP_PASS === '')) throw new ConfigError('Invalid configuration: SMTP_USER and SMTP_PASS must be set together')
+  return {
+    host: e.SMTP_HOST,
+    port: e.SMTP_PORT,
+    secure: e.SMTP_SECURE,
+    user: e.SMTP_USER === '' ? null : e.SMTP_USER,
+    pass: e.SMTP_PASS === '' ? null : e.SMTP_PASS,
+    from: e.MAIL_FROM,
+    replyTo: e.MAIL_REPLY_TO === '' ? null : e.MAIL_REPLY_TO,
+    teamTo: teamTo.slice(0, 10),
+    ratePerMin: e.MAIL_RATE_PER_MIN,
   }
 }
 
@@ -470,6 +523,7 @@ export function loadConfig(env: Record<string, string | undefined>, limits: Part
     microsoft: parseMicrosoft(e),
     vapid: parseVapid(e),
     curseforgeApiKey: e.CURSEFORGE_API_KEY === '' ? null : e.CURSEFORGE_API_KEY,
+    mail: parseMail(e),
     limits: { ...DEFAULT_LIMITS, ...limits },
   }
 }

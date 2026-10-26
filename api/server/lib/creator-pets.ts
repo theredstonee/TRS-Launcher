@@ -27,6 +27,7 @@ import { RULES } from './ratelimit'
 import { assertNotSanctioned } from './sanctions'
 import { plainText } from './schemas'
 import { assertCan, type Staff } from './team'
+import { notifyTeam, stamp } from './mail/team-notify'
 
 /**
  * Creator-Haustiere (API.md §35.13): Ein Creator hat höchstens EIN eigenes Haustier (Kosmetik mit Platz `pet`), ein
@@ -378,6 +379,10 @@ export function createPetRequest(ctx: AppContext, user: string, raw: unknown, as
     c.uuid, input.species, input.description, input.colors ?? '', t, t,
   )
   auditActor(ctx, a, 'pet.request.create', input.species)
+  notifyTeam(ctx, 'pet_request', {
+    fields: [['creator', one<{ name: string }>(ctx.db, 'SELECT name FROM users WHERE uuid = ?', c.uuid)?.name ?? c.uuid], ['species', input.species], ['at', stamp(t)]],
+    path: '/admin/creators?tab=pets',
+  })
   return { requests: requestsOf(ctx, c.uuid) }
 }
 

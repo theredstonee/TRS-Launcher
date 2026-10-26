@@ -47,6 +47,9 @@ export const PERMISSIONS = [
   'serverrules.bypass',
   // Vorschau-Builds (§35.3) laden wie Partner-Creator.
   'previews.access',
+  // Newsletter (§40): Entwürfe, Vorschau, Testmail bzw. Versand an alle bestätigten Empfänger.
+  'newsletter.manage',
+  'newsletter.send',
 ] as const
 export type Permission = (typeof PERMISSIONS)[number]
 const PERMISSION_SET: ReadonlySet<string> = new Set(PERMISSIONS)
@@ -70,6 +73,7 @@ export const PERMISSION_GROUPS: { id: string, permissions: Permission[] }[] = [
   { id: 'pitch', permissions: ['pitch.manage'] },
   { id: 'serverrules', permissions: ['serverrules.bypass'] },
   { id: 'previews', permissions: ['previews.access'] },
+  { id: 'newsletter', permissions: ['newsletter.manage', 'newsletter.send'] },
 ]
 
 /** Recht je Strafart (§22.2). */

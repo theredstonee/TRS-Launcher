@@ -24,6 +24,9 @@ import { setWebpWasmLoader } from '../lib/images'
 import { sweepIssues, sweepOrphanIssueFiles } from '../lib/issues'
 import { rotateReportKeys, sweepModeration } from '../lib/moderation'
 import { sweepExpiredPacks, sweepOrphanPackFiles } from '../lib/packs'
+import { budgetPerTick, processOutbox, recoverOutbox, sweepOutbox } from '../lib/mail/outbox'
+import { sweepSubscribers } from '../lib/mail/subscribers'
+import { flushTeam } from '../lib/mail/team-notify'
 import { sweepPush } from '../lib/push'
 import { sweepExpiredShares, sweepOrphanShareFiles } from '../lib/shares'
 import { sweepRemote } from '../lib/remote'
@@ -54,7 +57,11 @@ export default defineNitroPlugin((nitroApp) => {
   setContext(ctx)
   if (!config.microsoft) console.warn('[trs-api] MS_CLIENT_ID/MS_CLIENT_SECRET not set – website sign-in with Microsoft is disabled')
   if (!config.hosting) console.warn('[trs-api] RELAY_SECRET/RELAY_HOST not set – world hosting is disabled (503 hosting_unavailable)')
+  if (!config.mail) console.warn('[trs-api] SMTP_HOST not set – e-mail (newsletter, confirmations, team notifications) is disabled (503 mail_unavailable)')
   if (!config.vapid) console.warn('[trs-api] VAPID_* not set – UnifiedPush for the apps is disabled (poll devices still work, §33)')
+  // Mails, deren Versand ein Neustart unterbrochen hat: nicht erneut senden (kein Doppelversand).
+  const interrupted = recoverOutbox(ctx)
+  if (interrupted > 0) console.warn(`[trs-api] mail outbox: ${interrupted} interrupted mails marked as failed (not resent)`)
   if (config.chatKeys.derived) {
     console.warn('[trs-api] CHAT_KEYS is not set – chat encryption key is derived from SECRET_KEY (see API.md §18.9)')
   }
@@ -211,7 +218,22 @@ export default defineNitroPlugin((nitroApp) => {
     t.unref()
     return t
   }
+  // Mail-Warteschlange: alle 5 s ein gedrosselter Durchgang (MAIL_RATE_PER_MIN), geplante Kampagnen starten.
+  const MAIL_TICK_MS = 5000
+  let mailTick: Promise<unknown> | null = null
   const timers = [
+    every(MAIL_TICK_MS, () => {
+      if (mailTick) return
+      mailTick = processOutbox(ctx, budgetPerTick(ctx, MAIL_TICK_MS))
+        .catch((err) => console.error('[trs-api] mail outbox failed', err))
+        .finally(() => {
+          mailTick = null
+        })
+    }),
+    // Team-Benachrichtigungen: gebündelte Ereignisse nach Ablauf der 5 Minuten verschicken.
+    every(60_000, () => {
+      flushTeam(ctx)
+    }),
     // Abgelaufene Präsenz → Freunde bekommen „offline“, Beobachter ggf. „Abzeichen aus“.
     every(30_000, () => {
       for (const { uuid, wasInGame } of ctx.presence.sweepChanges()) afterPresenceChange(ctx, uuid, true, wasInGame)
@@ -256,6 +278,9 @@ export default defineNitroPlugin((nitroApp) => {
       sweepOrphanIssueFiles(ctx)
       // Schaltungs-Einreichungen: Löschfrist nach der Entscheidung (§25.5).
       sweepCircuitSubmissions(ctx)
+      // Mail (§40): erledigte Warteschlangen-Zeilen nach 30 Tagen, unbestätigte/abgemeldete Adressen.
+      sweepOutbox(ctx)
+      sweepSubscribers(ctx)
     }),
     // Schlüsseltausch: alte Chat-Daten nach und nach mit dem aktiven Schlüssel neu verschlüsseln.
     every(60_000, () => {
@@ -269,6 +294,7 @@ export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook('close', () => {
     for (const t of timers) clearInterval(t)
     ctx.push.stop()
+    ctx.mail.close()
     db.close()
   })
 })

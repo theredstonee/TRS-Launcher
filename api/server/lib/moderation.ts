@@ -41,6 +41,7 @@ import { adminDeletePack, displayCode, packById, type PackRow } from './packs'
 import { adminDeleteShare, getShare, readShareImage, type ShareRow } from './shares'
 import { can } from './team'
 import { getUser, staffRole } from './users'
+import { notifyTeam, stamp } from './mail/team-notify'
 
 /**
  * Moderation für den Chat: Sanktionen (Verwarnung, Stummschaltung), Meldungen mit
@@ -542,7 +543,10 @@ export function createReport(ctx: AppContext, reporter: string, input: ReportInp
     }
   }
   if (target && !lowTrust) maybeAutoMute(ctx, target, id)
-  return myReportView(one<ReportRow>(ctx.db, 'SELECT * FROM chat_reports WHERE id = ?', id)!)
+  const created = one<ReportRow>(ctx.db, 'SELECT * FROM chat_reports WHERE id = ?', id)!
+  // Team-Mail (§40.6): nur Art, Grund und Nummer – nie Inhalte.
+  notifyTeam(ctx, 'report', { fields: [['kind', created.kind], ['reason', created.reason], ['id', id], ['at', stamp(created.created_at)]], path: `/admin/reports/${id}` })
+  return myReportView(created)
 }
 
 function packEvidence(ctx: AppContext, p: PackRow): NonNullable<Evidence['pack']> {
@@ -627,6 +631,7 @@ export function createAnonymousShareReport(ctx: AppContext, shareId: string, rea
     id, s.owner_uuid, s.id, reason, ctx.cipher.encrypt(JSON.stringify(evidence), `rep:${id}`), t, t,
   )
   keepShareEvidence(ctx, id, s)
+  notifyTeam(ctx, 'report', { fields: [['kind', 'share'], ['reason', reason], ['id', id], ['at', stamp(t)]], path: `/admin/reports/${id}` })
   return true
 }
 

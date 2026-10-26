@@ -895,7 +895,141 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 37,
     run: migratePetExtras,
   },
+  {
+    // Mail + Newsletter (§40): Abonnenten (Double-Opt-in, Tokens nur gehasht bzw. per HMAC abgeleitet), Kampagnen
+    // (Bausteine mit Texten je Sprache als JSON), Ausgangs-Warteschlange (Status je Mail, kein Doppelversand),
+    // API-Schlüssel `trsk_…` (nur Newsletter-Routen), Team-Benachrichtigungen (Adresse + Arten je Mitglied, Bündelung
+    // je Art) und die Rechte `newsletter.manage` / `newsletter.send` für Owner und Admin. Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 38,
+    run: migrateMail,
+  },
 ]
+
+/** Migration 38 (siehe oben): Mail + Newsletter. Exportiert für den Idempotenz-Test. */
+export function migrateMail(db: DatabaseSync): void {
+  db.exec(`
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  -- normalisiert (getrimmt, NFC, klein)
+  email TEXT NOT NULL UNIQUE,
+  lang TEXT NOT NULL CHECK (lang IN ('de', 'en', 'es')),
+  status TEXT NOT NULL CHECK (status IN ('pending', 'confirmed', 'unsubscribed')),
+  source TEXT NOT NULL CHECK (source IN ('website', 'launcher')),
+  -- TRS-Konto (Launcher), sonst NULL; Kontolöschung trennt nur die Verbindung
+  uuid TEXT REFERENCES users(uuid) ON DELETE SET NULL,
+  -- Konto, das die Adresse im Launcher eingetragen hat; wird erst mit der Bestätigung zu uuid
+  link_uuid TEXT REFERENCES users(uuid) ON DELETE SET NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  -- zuletzt eine Bestätigungs-Mail angefordert
+  requested_at INTEGER,
+  -- Einwilligung: Zeitpunkt der Bestätigung + Quelle + Version des Einwilligungstexts
+  confirmed_at INTEGER,
+  consent_source TEXT,
+  consent_version TEXT,
+  unsubscribed_at INTEGER,
+  -- SHA-256 des Bestätigungs-Tokens (48 h)
+  confirm_hash TEXT UNIQUE,
+  confirm_expires_at INTEGER,
+  -- Zufallswert: Abmelde-Token = <id>.<HMAC(SECRET_KEY, id:nonce)>, neu bei jeder Anmeldung
+  unsub_nonce TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS newsletter_subscribers_status ON newsletter_subscribers(status, lang);
+CREATE UNIQUE INDEX IF NOT EXISTS newsletter_subscribers_uuid ON newsletter_subscribers(uuid) WHERE uuid IS NOT NULL;
+CREATE INDEX IF NOT EXISTS newsletter_subscribers_link ON newsletter_subscribers(link_uuid) WHERE link_uuid IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS newsletter_campaigns (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  look TEXT NOT NULL DEFAULT 'auto' CHECK (look IN ('auto', 'redstone', 'halloween', 'winter', 'fox')),
+  -- JSON: { subject: {de,en,es}, preheader: {de,en,es}, blocks: [...] }
+  content TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('draft', 'scheduled', 'sending', 'sent', 'cancelled')),
+  -- JSON-Liste der Empfänger-Sprachen oder NULL = alle
+  langs TEXT,
+  scheduled_at INTEGER,
+  started_at INTEGER,
+  sent_at INTEGER,
+  -- beim Versand aufgelöster Look (bei look = auto)
+  sent_look TEXT,
+  total INTEGER NOT NULL DEFAULT 0,
+  sent_count INTEGER NOT NULL DEFAULT 0,
+  failed_count INTEGER NOT NULL DEFAULT 0,
+  rev INTEGER NOT NULL DEFAULT 1,
+  created_at INTEGER NOT NULL,
+  -- UUID oder key:<id> (API-Schlüssel)
+  created_by TEXT NOT NULL,
+  updated_at INTEGER NOT NULL,
+  updated_by TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS newsletter_campaigns_due ON newsletter_campaigns(status, scheduled_at);
+
+CREATE TABLE IF NOT EXISTS mail_outbox (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind TEXT NOT NULL CHECK (kind IN ('confirm', 'campaign', 'test', 'team', 'team_confirm')),
+  campaign_id TEXT REFERENCES newsletter_campaigns(id) ON DELETE CASCADE,
+  subscriber_id INTEGER REFERENCES newsletter_subscribers(id) ON DELETE CASCADE,
+  to_addr TEXT NOT NULL,
+  -- fertige Mail; bei Kampagnen NULL (wird beim Versand je Empfänger gerendert)
+  subject TEXT,
+  html TEXT,
+  text TEXT,
+  headers TEXT,
+  status TEXT NOT NULL CHECK (status IN ('queued', 'sending', 'sent', 'failed', 'skipped', 'cancelled')),
+  attempts INTEGER NOT NULL DEFAULT 0,
+  next_at INTEGER NOT NULL,
+  last_error TEXT,
+  created_at INTEGER NOT NULL,
+  sent_at INTEGER
+);
+CREATE UNIQUE INDEX IF NOT EXISTS mail_outbox_campaign ON mail_outbox(campaign_id, subscriber_id) WHERE kind = 'campaign';
+CREATE INDEX IF NOT EXISTS mail_outbox_due ON mail_outbox(status, next_at);
+
+CREATE TABLE IF NOT EXISTS mail_api_keys (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  key_hash TEXT NOT NULL UNIQUE,
+  hint TEXT NOT NULL,
+  -- JSON-Liste aus newsletter.manage / newsletter.send
+  permissions TEXT NOT NULL,
+  -- Ziel der Testmails dieses Schlüssels (sonst MAIL_TEAM_TO)
+  test_email TEXT,
+  created_at INTEGER NOT NULL,
+  created_by TEXT NOT NULL,
+  last_used_at INTEGER,
+  revoked_at INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS mail_team_prefs (
+  uuid TEXT PRIMARY KEY REFERENCES users(uuid) ON DELETE CASCADE,
+  -- bestätigte Adresse
+  email TEXT,
+  -- neue, noch nicht bestätigte Adresse + SHA-256 des Tokens
+  pending_email TEXT,
+  confirm_hash TEXT UNIQUE,
+  confirm_expires_at INTEGER,
+  -- JSON-Liste der Arten (application, report, appeal, pet_request)
+  kinds TEXT NOT NULL DEFAULT '[]',
+  lang TEXT NOT NULL DEFAULT 'de' CHECK (lang IN ('de', 'en', 'es')),
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS mail_team_pending (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind TEXT NOT NULL,
+  data TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS mail_team_pending_kind ON mail_team_pending(kind, id);
+
+CREATE TABLE IF NOT EXISTS mail_team_state (
+  kind TEXT PRIMARY KEY,
+  last_sent_at INTEGER NOT NULL
+);
+`)
+  grantBuiltin(db, { owner: ['newsletter.manage', 'newsletter.send'], admin: ['newsletter.manage', 'newsletter.send'] })
+}
 
 /** Migration 36 (siehe oben): Creator-Statistik + Team-Modus. Exportiert für den Idempotenz-Test. */
 export function migrateCreatorStats(db: DatabaseSync): void {

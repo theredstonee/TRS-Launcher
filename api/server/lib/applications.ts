@@ -7,6 +7,7 @@ import { creatorFromApplicationInTx, creatorStateOf } from './creators'
 import { adminSanctionViews, sanctionsOf, type AdminSanctionView } from './sanctions'
 import { sanitizeText, textLength } from './safety'
 import { addMemberRole, assertCan, can, getRole, rankOf, type Staff } from './team'
+import { notifyTeam, stamp } from './mail/team-notify'
 
 /**
  * Team-Bewerbungen (API.md §24.3): öffentliche Stellen mit Formular-Baukasten, Bewerben nur angemeldet (Website mit
@@ -482,6 +483,11 @@ export function submitApplication(ctx: AppContext, applicant: { uuid: string, na
   })
   const view = myApplicationView(ctx, appRow(ctx, id)!)
   ctx.events.publish(applicant.uuid, { type: 'application_updated', application: view }, { meOnly: true })
+  // Team-Mail (§40.6): nur Stelle, Name und Zeit – die Antworten stehen nur im Admin.
+  notifyTeam(ctx, 'application', {
+    fields: [['job', view.job.title.de ?? view.job.title.en ?? jobId], ['from', applicant.name], ['at', stamp(t)]],
+    path: `/admin/applications/${id}`,
+  })
   return view
 }
 
