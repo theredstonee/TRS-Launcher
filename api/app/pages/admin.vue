@@ -13,6 +13,7 @@ const { t } = useTeamText()
 const { c: ct } = useCircuitText()
 const { it: iss } = useIssueText()
 const { b: bt } = useBlogText()
+const { n: nt } = useNewsletterText()
 const { session, account, counts, load, api, logout, can } = useAdmin()
 const { loginUrl } = useAccount()
 const route = useRoute()
@@ -80,6 +81,8 @@ const allNav = computed<NavItem[]>(() => [
   { to: '/admin/circuits', icon: 'blocks', label: ct.value.adm.nav, count: counts.value?.circuits, perm: ['circuits.manage'] },
   { to: '/admin/issues', icon: 'bug', label: iss.value.adm.nav, count: counts.value?.issues, perm: ['issues.manage', 'issues.moderate'] },
   { to: '/admin/blog', icon: 'book', label: bt.value.adm.nav, perm: ['blog.write', 'blog.publish'] },
+  // Newsletter (§40): Kampagnen mit newsletter.*, eigene Mail-Benachrichtigungen für jeden, der welche bekommen kann.
+  { to: '/admin/newsletter', icon: 'mail', label: nt.value.adm.nav, perm: ['newsletter.manage', 'newsletter.send', 'applications.view', 'reports.view', 'appeals.handle', 'creators.manage'] },
   { to: '/admin/featured', icon: 'star', label: a.value.nav.featured, perm: ['featured.manage'] },
   { to: '/admin/pitch', icon: 'link', label: a.value.nav.pitch, perm: ['pitch.manage'] },
   { to: '/admin/creators', icon: 'crown', label: a.value.nav.creators, count: counts.value?.creators, perm: ['creators.review', 'creators.manage'] },

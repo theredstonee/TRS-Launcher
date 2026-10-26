@@ -14,7 +14,7 @@ const c = CONTROLLER
 export const WEBSITE_PRIVACY: Record<'en' | 'de' | 'es', { title: string, updated: string, intro: string, body: string, launcher: string }> = {
   en: {
     title: 'Privacy policy',
-    updated: 'Last updated: 28 September 2026',
+    updated: 'Last updated: 26 October 2026',
     intro:
       'This policy covers the website trs-launcher.theredstonee.de, the TRS Launcher, the TRS Client mod and the TRS services. In short: no tracking, no analytics, no advertising – only what is needed for what you use.',
     body: `## Controller
@@ -53,6 +53,18 @@ All details are in the [imprint](https://theredstonee.de/imprint/).
 **News posts (\`/blog\`).** Besides the automatic update posts, the team writes news. A news post shows the **name and head of the team member** who wrote it (or “TRS Team”); its pictures are served from this server. Legal basis: Art. 6(1)(f) GDPR (informing about the project).
 
 **Links** to Discord, GitHub and other sites are plain links; nothing is loaded from them until you click.
+
+## Newsletter and e-mail
+
+**Newsletter.** You can subscribe to the TRS newsletter on this website (footer or \`/newsletter\`) or in the TRS Launcher (Settings → Account → Newsletter). We use **double opt-in**: you only get newsletters after clicking the link in the confirmation e-mail (valid 48 hours). We store your **e-mail address**, the **language** of the newsletter, the **source** (website or launcher), the **status** (waiting, confirmed, unsubscribed), the **time of your confirmation** and the **version of the consent text** – as proof of your consent. If you subscribe in the launcher, the address is linked to your TRS account only after you confirm. We do **not** store your IP address, and the e-mails contain **no tracking pixels** and no tracked links; we do not know whether or when you open them.
+
+**Unsubscribing.** Every newsletter has an unsubscribe link and supports one-click unsubscribe in your mail program (\`List-Unsubscribe\`, RFC 8058). You can also unsubscribe in the launcher. Unconfirmed sign-ups are deleted after 7 days, unsubscribed addresses after 30 days.
+
+**Team notifications.** Team members can get e-mails about new applications, reports, appeals and creator pet requests at an address they confirm themselves. These e-mails contain only short facts (type, name, position, time) and a link to the team area – never message contents.
+
+**Sending.** We send e-mails through our own mail server (mail.theredstonee.de) from \`no-reply@trs-launcher.de\` and \`newsletter@trs-launcher.de\`. Pictures in the e-mails (headers, titles, creator heads) are loaded from this website when you open the e-mail; your mail program decides whether it loads them. Sent e-mails stay in our outbox for at most 30 days (address and status, for delivery and error handling), then they are deleted.
+
+**Legal basis.** Newsletter: your consent, Art. 6(1)(a) GDPR, which you can withdraw at any time with effect for the future. Proof of consent and team notifications: Art. 6(1)(f) GDPR.
 
 ## Website sign-in with Microsoft
 
@@ -125,7 +137,7 @@ The team page (/team) shows team members that the team **added by hand** – nob
   },
   de: {
     title: 'Datenschutzerklärung',
-    updated: 'Stand: 28. September 2026',
+    updated: 'Stand: 26. Oktober 2026',
     intro:
       'Diese Erklärung gilt für die Website trs-launcher.theredstonee.de, den TRS Launcher, die TRS-Client-Mod und die TRS-Dienste. Kurz gesagt: kein Tracking, keine Analyse, keine Werbung – nur, was für das nötig ist, was du nutzt.',
     body: `## Verantwortlicher
@@ -164,6 +176,18 @@ Alle Angaben stehen im [Impressum](https://theredstonee.de/imprint/).
 **News-Beiträge (\`/blog\`).** Neben den automatischen Update-Beiträgen schreibt das Team News. Ein News-Beitrag zeigt **Namen und Kopf des Team-Mitglieds**, das ihn geschrieben hat (oder „TRS-Team“); seine Bilder kommen von diesem Server. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (Information über das Projekt).
 
 **Links** zu Discord, GitHub und anderen Seiten sind einfache Links; von dort wird erst etwas geladen, wenn du klickst.
+
+## Newsletter und E-Mail
+
+**Newsletter.** Du kannst den TRS-Newsletter auf dieser Website (Fußzeile oder \`/newsletter\`) oder im TRS Launcher (Einstellungen → Konto → Newsletter) abonnieren. Wir nutzen das **Double-Opt-in-Verfahren**: Newsletter bekommst du erst, wenn du den Link in der Bestätigungs-Mail anklickst (gültig 48 Stunden). Wir speichern deine **E-Mail-Adresse**, die **Sprache** des Newsletters, die **Quelle** (Website oder Launcher), den **Status** (ausstehend, bestätigt, abgemeldet), den **Zeitpunkt deiner Bestätigung** und die **Version des Einwilligungstexts** – als Nachweis deiner Einwilligung. Meldest du dich im Launcher an, wird die Adresse erst nach der Bestätigung mit deinem TRS-Konto verknüpft. Deine IP-Adresse speichern wir **nicht**, und die Mails enthalten **keine Zählpixel** und keine verfolgten Links; wir wissen nicht, ob oder wann du sie öffnest.
+
+**Abmelden.** Jeder Newsletter enthält einen Abmeldelink und unterstützt das Abmelden mit einem Klick in deinem Mail-Programm (\`List-Unsubscribe\`, RFC 8058). Abmelden geht auch im Launcher. Unbestätigte Anmeldungen löschen wir nach 7 Tagen, abgemeldete Adressen nach 30 Tagen.
+
+**Team-Benachrichtigungen.** Team-Mitglieder können Mails zu neuen Bewerbungen, Meldungen, Einsprüchen und Creator-Haustier-Anträgen an eine Adresse bekommen, die sie selbst bestätigen. Diese Mails enthalten nur kurze Angaben (Art, Name, Stelle, Zeit) und einen Link in den Team-Bereich – nie Nachrichteninhalte.
+
+**Versand.** Wir verschicken Mails über unseren eigenen Mailserver (mail.theredstonee.de) von \`no-reply@trs-launcher.de\` und \`newsletter@trs-launcher.de\`. Bilder in den Mails (Kopfbilder, Überschriften, Creator-Köpfe) werden beim Öffnen von dieser Website geladen; ob das passiert, entscheidet dein Mail-Programm. Versendete Mails bleiben höchstens 30 Tage in unserer Ausgangs-Warteschlange (Adresse und Status, für Zustellung und Fehlerbehandlung), danach werden sie gelöscht.
+
+**Rechtsgrundlage.** Newsletter: deine Einwilligung, Art. 6 Abs. 1 lit. a DSGVO, die du jederzeit mit Wirkung für die Zukunft widerrufen kannst. Nachweis der Einwilligung und Team-Benachrichtigungen: Art. 6 Abs. 1 lit. f DSGVO.
 
 ## Anmeldung mit Microsoft
 
@@ -236,7 +260,7 @@ Die Team-Seite (/team) zeigt Team-Mitglieder, die das Team **von Hand eingetrage
   },
   es: {
     title: 'Política de privacidad',
-    updated: 'Última actualización: 28 de septiembre de 2026',
+    updated: 'Última actualización: 26 de octubre de 2026',
     intro:
       'Esta política cubre el sitio web trs-launcher.theredstonee.de, el TRS Launcher, el mod TRS Client y los servicios TRS. En resumen: sin rastreo, sin analíticas, sin publicidad – solo lo necesario para lo que usas. La versión alemana es la vinculante.',
     body: `## Responsable
@@ -271,6 +295,18 @@ Todos los datos están en el [aviso legal](https://theredstonee.de/imprint/).
 **Modpacks compartidos (páginas \`/p/…\`).** Un jugador puede compartir un modpack con un código; su página muestra el nombre, la descripción, los mods, resource packs y shaders que contiene y **el nombre y la cabeza del jugador que lo compartió**, y los buscadores nunca la indexan. Los nombres, versiones e iconos de los archivos vienen de Modrinth: nuestro servidor solo consulta a la API pública de Modrinth los ID de proyecto y versión del pack y entrega él mismo los iconos – tu navegador no se conecta a Modrinth y no se envían datos sobre ti. Descargar el pack solo es posible en TRS Launcher con una cuenta TRS. Con sesión iniciada puedes denunciar un pack; la denuncia se trata como las demás. Base jurídica: art. 6.1.f RGPD (mostrar un pack que el jugador quiso compartir, un servicio seguro). Detalles: «Compartir modpacks» más abajo.
 
 **Capturas compartidas (páginas \`/s/…\`).** Cuando un jugador comparte una captura como enlace, cualquiera con el enlace puede abrir esta página durante 30 días. Solo muestra la imagen, la fecha de subida y la fecha de caducidad – **sin nombre ni UUID de Minecraft** – y los buscadores nunca la indexan. Apps de chat como Discord cargan la imagen cuando alguien publica el enlace, para mostrar una vista previa. Con **«Denunciar»** puedes avisar a nuestro equipo sin cuenta: solo guardamos el motivo elegido, nunca tu dirección IP (solo se cuenta en memoria para limitar solicitudes). Base jurídica: art. 6.1.f RGPD (un servicio seguro). Detalles: «Capturas compartidas» más abajo.
+
+## Boletín y correo electrónico
+
+**Boletín.** Puedes suscribirte al boletín de TRS en este sitio web (pie de página o \`/newsletter\`) o en el TRS Launcher (Ajustes → Cuenta → Boletín). Usamos **doble confirmación**: solo recibes boletines después de hacer clic en el enlace del correo de confirmación (válido 48 horas). Guardamos tu **dirección de correo**, el **idioma** del boletín, el **origen** (web o launcher), el **estado** (pendiente, confirmado, dado de baja), el **momento de tu confirmación** y la **versión del texto de consentimiento**, como prueba de tu consentimiento. Si te suscribes en el launcher, la dirección se vincula a tu cuenta TRS solo después de confirmar. **No** guardamos tu dirección IP, y los correos **no contienen píxeles de seguimiento** ni enlaces rastreados; no sabemos si ni cuándo los abres.
+
+**Darse de baja.** Cada boletín tiene un enlace para darse de baja y admite la baja con un clic en tu programa de correo (\`List-Unsubscribe\`, RFC 8058). También puedes darte de baja en el launcher. Las suscripciones no confirmadas se borran a los 7 días y las direcciones dadas de baja a los 30 días.
+
+**Notificaciones del equipo.** Los miembros del equipo pueden recibir correos sobre nuevas solicitudes, reportes, apelaciones y solicitudes de mascota de creadores en una dirección que confirman ellos mismos. Estos correos solo contienen datos breves (tipo, nombre, puesto, hora) y un enlace al área del equipo, nunca contenidos de mensajes.
+
+**Envío.** Enviamos los correos a través de nuestro propio servidor de correo (mail.theredstonee.de) desde \`no-reply@trs-launcher.de\` y \`newsletter@trs-launcher.de\`. Las imágenes de los correos (cabeceras, títulos, cabezas de creadores) se cargan desde este sitio web al abrir el correo; tu programa de correo decide si las carga. Los correos enviados permanecen como máximo 30 días en nuestra cola de salida (dirección y estado, para la entrega y la gestión de errores) y después se borran.
+
+**Base jurídica.** Boletín: tu consentimiento, art. 6.1.a RGPD, que puedes retirar en cualquier momento con efecto para el futuro. Prueba del consentimiento y notificaciones del equipo: art. 6.1.f RGPD.
 
 ## Inicio de sesión con Microsoft
 

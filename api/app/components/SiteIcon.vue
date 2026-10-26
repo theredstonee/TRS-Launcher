@@ -72,6 +72,7 @@ const PATHS: Record<string, string> = {
   bug: 'M9 7a3 3 0 0 1 6 0M8 9h8v6a4 4 0 0 1-8 0zM12 11v8M4 13h4M16 13h4M5 8l3 2M19 8l-3 2M5 19l3-2M19 19l-3-2',
   roadmap: 'M4 6h5v12H4zM10 6h5v8h-5zM16 6h4v5h-4z',
   lock: 'M6 11h12v9H6zM8 11V8a4 4 0 0 1 8 0v3',
+  mail: 'M4 6h16v12H4zM4 7l8 6 8-6',
   bell: 'M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0',
   image: 'M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M15 9h.01',
   pencil: 'M4 20h4L19 9l-4-4L4 16zM13 7l4 4',

@@ -54,6 +54,7 @@ export const SITE_PAGES: readonly { path: string, priority: number }[] = [
   { path: '/faq', priority: 0.6 },
   { path: '/creators', priority: 0.6 },
   { path: '/team', priority: 0.5 },
+  { path: '/newsletter', priority: 0.4 },
   { path: '/privacy', priority: 0.3 },
 ]
 

@@ -5,6 +5,7 @@ const { m, lang } = useLang()
 const { t } = useTeamText()
 const { c } = useCircuitText()
 const { it } = useIssueText()
+const { n: nl } = useNewsletterText()
 const lp = useLocalePath()
 const route = useRoute()
 const menuOpen = ref(false)
@@ -164,6 +165,7 @@ onMounted(() => hw.loadPrefs())
           </div>
           <p class="mt-3 max-w-sm text-sm text-base-400">{{ m.footer.tagline }}</p>
           <p class="mt-3 max-w-sm text-xs text-base-600">{{ m.footer.notAffiliated }}</p>
+          <NewsletterForm class="mt-6 max-w-sm" />
         </div>
         <nav class="flex flex-col gap-2 text-sm" aria-label="Site">
           <NuxtLink :to="lp('/features')" class="footer-link">{{ m.nav.features }}</NuxtLink>
@@ -187,6 +189,7 @@ onMounted(() => hw.loadPrefs())
           <a :href="REPO_URL" class="footer-link" rel="noopener" target="_blank">{{ m.footer.github }}</a>
           <a :href="DISCORD_URL" class="footer-link" rel="noopener" target="_blank">{{ m.footer.discord }}</a>
           <a :href="IMPRINT_URL" class="footer-link" rel="noopener">{{ m.footer.imprint }}</a>
+          <NuxtLink :to="lp('/newsletter')" class="footer-link">{{ nl.form.title }}</NuxtLink>
           <NuxtLink :to="lp('/privacy')" class="footer-link">{{ m.footer.privacy }}</NuxtLink>
         </nav>
       </div>
