@@ -100,7 +100,7 @@ export default defineNuxtConfig({
     '/shots/**': { headers: { 'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800' } },
     '/flags/**': { headers: { 'Cache-Control': 'public, max-age=604800' } },
     // Bilder der Mails (Kopfbilder, Trenner): lange cachebar, auch aus Mail-Programmen ladbar.
-    '/mail/**': { headers: { 'Cache-Control': 'public, max-age=604800' }, security: { headers: { crossOriginResourcePolicy: 'cross-origin' } } },
+    '/mail/**': { headers: { 'Cache-Control': 'public, max-age=604800' } },
     // Newsletter-Links (Token in der Adresse): nie indexieren, Adresse nicht weiterreichen.
     '/newsletter/confirm': { headers: { 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer' } },
     '/newsletter/unsubscribe': { headers: { 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer' } },

@@ -110,6 +110,7 @@ export function shell(ctx: AppContext, inner: string, o: ShellOpts): string {
   @media (max-width:620px){
     .wrap{width:100%!important} .px{padding-left:18px!important;padding-right:18px!important}
     .col{display:block!important;width:100%!important;padding:0 0 14px 0!important}
+    .colpad{padding:16px 16px 4px 16px!important}
     .h1 img{max-width:100%!important;height:auto!important}
     .hide-m{display:none!important}
   }
@@ -253,16 +254,16 @@ function renderBlock(ctx: AppContext, b: Block, look: Look, lang: NewsletterLang
       const body = text ? mdToHtml(text, site, { ...st, p: `${st.p}margin:0 0 12px 0;` }) : ''
       const code = b.code
         ? `<table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border:2px dashed ${T.accent};border-radius:10px;padding:10px 18px;background:${T.bg};">
-            <span style="font-family:${MONO};font-size:20px;font-weight:700;letter-spacing:3px;color:${T.accent2};">${esc(b.code)}</span></td></tr></table>
+            <span style="font-family:${MONO};font-size:17px;font-weight:700;letter-spacing:1.5px;white-space:nowrap;color:${T.accent2};">${esc(b.code)}</span></td></tr></table>
           <div style="font-family:${FONT};font-size:11px;color:${T.muted};margin-top:6px;">${esc(note)}</div>`
         : ''
       const redeem = b.code ? mdToHtml(tx.cosmetic.redeem, site, st) : ''
       const left = img
-        ? `<td class="col" width="200" style="padding:16px;vertical-align:middle;"><img src="${esc(img)}" width="168" alt="${esc(plain(title))}" style="display:block;width:168px;max-width:100%;height:auto;border-radius:10px;image-rendering:pixelated;"></td>`
+        ? `<td class="col colpad" width="200" style="padding:16px;vertical-align:middle;"><img src="${esc(img)}" width="168" alt="${esc(plain(title))}" style="display:block;width:168px;max-width:100%;height:auto;border-radius:10px;image-rendering:pixelated;"></td>`
         : ''
       out.html.push(row(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${T.card2};border:1px solid ${T.line};border-radius:12px;">
       <tr>${left}
-        <td class="col" style="padding:16px 18px 16px ${img ? '0' : '18px'};vertical-align:middle;">
+        <td class="col colpad" style="padding:16px 18px 16px ${img ? '0' : '18px'};vertical-align:middle;">
           ${sectionTitle(ctx, look, kicker, title, img ? 300 : 500)}
           ${body}${redeem}${code}
         </td></tr>

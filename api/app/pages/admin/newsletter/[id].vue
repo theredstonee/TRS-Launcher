@@ -599,7 +599,7 @@ const lookLabel = (l: CampaignLook) => (l === 'auto' && sources.value ? `${t.val
               <fieldset class="flex flex-wrap items-center gap-3 text-sm text-base-200">
                 <legend class="label">{{ e.audience }}</legend>
                 <label v-for="l in NEWSLETTER_LANGS" :key="l" class="flex items-center gap-1.5"><input v-model="sendLangs" type="checkbox" :value="l" />{{ t.langs[l] }}</label>
-                <span class="text-xs text-base-500">({{ sendLangs.length ? '' : e.allLangs }})</span>
+                <span v-if="!sendLangs.length" class="text-xs text-base-500">({{ e.allLangs }})</span>
               </fieldset>
               <div class="flex flex-wrap items-end gap-2">
                 <label class="label">{{ e.scheduleAt }}<input v-model="scheduleAt" type="datetime-local" class="field mt-1" /></label>
