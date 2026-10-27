@@ -28,6 +28,14 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **TRS Client: crash on Minecraft 1.21.6 to 1.21.10 fixed.** On Fabric, NeoForge and Forge for these versions the game could crash right at startup ("Mods clash while changing ChatHud") because the chat heads hooked into a place that moved in these versions. Chat heads now work there again, and if the place ever moves again only the heads are missing – the game still starts.
+
+### Deutsch
+- **TRS Client: Absturz unter Minecraft 1.21.6 bis 1.21.10 behoben.** Mit Fabric, NeoForge und Forge konnte das Spiel in diesen Versionen direkt beim Start abstürzen („Mods kollidieren bei ChatHud“), weil sich die Chat-Köpfe an einer Stelle einhakten, die es dort so nicht mehr gibt. Die Chat-Köpfe funktionieren dort wieder, und sollte sich die Stelle noch einmal ändern, fehlen nur die Köpfe – das Spiel startet trotzdem.
+
 ## 0.31.0 – 2026-10-25 – The Heist | Der Coup
 <!-- banner: accent=#41cd62 motif=/news/0.31.0/banner.png -->
 <!-- shots:

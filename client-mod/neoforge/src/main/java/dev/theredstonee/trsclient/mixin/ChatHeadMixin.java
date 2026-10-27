@@ -104,8 +104,11 @@ public abstract class ChatHeadMixin {
 	}
 	*///?}
 
+	// Ab 1.21.6 zeichnet Vanilla jede Chat-Zeile in einer Lambda aus render() (forEachLine) – dort liegt der
+	// drawString-Aufruf, nicht in render() selbst. Gleicher Name/gleiche Signatur in 1.21.6 bis 1.21.10.
+	// require = 0: fehlt die Stelle doch einmal, fehlen nur die Köpfe – das Spiel startet trotzdem.
 	//? if >=1.21.6 && <1.21.11 {
-	/*@ModifyArg(method = "render(Lnet/minecraft/client/gui/GuiGraphics;IIIZ)V", index = 2, require = 1,
+	/*@ModifyArg(method = "lambda$render$1(ILnet/minecraft/client/gui/GuiGraphics;FIIILnet/minecraft/client/GuiMessage$Line;IF)V", index = 2, require = 0,
 			at = @At(value = "INVOKE", ordinal = 0, target = "Lnet/minecraft/client/gui/GuiGraphics;drawString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/util/FormattedCharSequence;III)V"))
 	private int trsclient$move(net.minecraft.client.gui.Font font, net.minecraft.util.FormattedCharSequence line, int x, int y, int color) {
 		return ChatHeadHooks.offset(x, line, y, color);
