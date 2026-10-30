@@ -741,6 +741,7 @@ public final class TrsModules {
 				"Graphics API: Vulkan (experimental) – draws the game with the TRS Client's own Vulkan renderer instead of OpenGL. Experimental: takes effect after "
 						+ "a restart, falls back to OpenGL by itself if Vulkan does not start.", false));
 		vulkanRenderer.icon("chip").category(Category.PERFORMANCE);
+		dev.theredstonee.trsclient.core.ext.TrsExtensions.placeholders(this);
 		builtinOptimizations.icon("chip").category(Category.PERFORMANCE).availableWhen(new java.util.concurrent.Callable<Boolean>() {
 			@Override
 			public Boolean call() {

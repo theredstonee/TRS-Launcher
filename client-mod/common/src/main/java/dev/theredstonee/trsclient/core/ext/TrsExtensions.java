@@ -69,13 +69,17 @@ public final class TrsExtensions {
 		}
 	}
 
-	/** Registers the "not available" pages first, then lets every extension start. */
+	/**
+	 * Pages of modules that belong to extensions show "not available in this build" until the extension (if any)
+	 * registers its own page in {@link #clientInit}. Called by {@link TrsModules} – works in every loader tree.
+	 */
+	public static void placeholders(TrsModules m) {
+		ModulePanel.Registry.set(m.smartThreads, new Unavailable());
+		ModulePanel.Registry.set(m.vulkanRenderer, new Unavailable());
+	}
+
+	/** Lets every extension start (they replace the placeholder pages of their modules). */
 	public static void clientInit(ExtContext.Client client) {
-		TrsModules m = client.modules;
-		if (m != null) {
-			if (!has(SMART_THREADS)) ModulePanel.Registry.set(m.smartThreads, new Unavailable());
-			if (!has(VULKAN)) ModulePanel.Registry.set(m.vulkanRenderer, new Unavailable());
-		}
 		for (TrsExtension e : all()) {
 			try {
 				e.clientInit(client);
