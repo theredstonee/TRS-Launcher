@@ -146,11 +146,11 @@ public final class TrsClient implements ClientModInitializer {
 		hud = new HudManager(modules);
 		// Kosten-Messung (-Dtrsclient.bench.noHud): HUD gar nicht erst einhängen.
 		if (!Boolean.getBoolean("trsclient.bench.noHud")) registerHud();
-		ClientTickEvents.END_CLIENT_TICK.register(this::onTick);
+		ClientTickEvents.END_CLIENT_TICK.register(mc -> trsTick(this::onTick, mc));
 		// Vor der Spieler-Bewegung: Toggle-Tasten, Freelook, Treffer-Farbe, PvP-Zähler.
-		ClientTickEvents.START_CLIENT_TICK.register(pvp::tick);
+		ClientTickEvents.START_CLIENT_TICK.register(mc -> trsTick(pvp::tick, mc));
 		// Kamera-Fahrten: Tasten, Ende der Fahrt, Vorschau – und während der Fahrt alle Eingaben loslassen.
-		ClientTickEvents.START_CLIENT_TICK.register(dev.theredstonee.trsclient.cinematic.CinematicHooks::tick);
+		ClientTickEvents.START_CLIENT_TICK.register(mc -> trsTick(dev.theredstonee.trsclient.cinematic.CinematicHooks::tick, mc));
 		ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
 			saveConfig();
 			waypoints.save();
@@ -172,6 +172,10 @@ public final class TrsClient implements ClientModInitializer {
 		// Leistung (Dynamische FPS, Culling, Partikel, Welt-Details, FPS-Boost); Leistungs-Mods übernehmen ihre Teile.
 		dev.theredstonee.trsclient.perf.PerfHooks.init(modules, id -> FabricLoader.getInstance().isModLoaded(id),
 				dev.theredstonee.trsclient.core.perf.PerfCompat.FABRIC, minecraft, message -> LOGGER.info(message), true);
+		// Optionale Erweiterungen (core.ext; im Open-Source-Build keine): starten, sonst Seiten „nicht verfügbar“.
+		dev.theredstonee.trsclient.core.ext.TrsExtensions.clientInit(new dev.theredstonee.trsclient.core.ext.ExtContext.Client(modules,
+				FabricLoader.getInstance().getConfigDir().toFile(), id -> FabricLoader.getInstance().isModLoaded(id), minecraft, "fabric",
+				message -> LOGGER.info(message), true));
 		// Netzwerk-Optimierung + Ping-Messung (Handler an der Client-Verbindung, siehe core.net).
 		dev.theredstonee.trsclient.net.NetHooks.init(modules, message -> LOGGER.info(message));
 		// TRS Server Rules: Server sperrt/erzwingt Module (Kanäle trsclient:rules/hello, Logik in core.serverrules).
@@ -258,6 +262,17 @@ public final class TrsClient implements ClientModInitializer {
 			return Mc.keyName(record ? TrsKeys.toggleRecording : TrsKeys.saveClip);
 		}
 	};
+
+	/** Tick-Arbeit des TRS Clients – optional gemessen (core.perf.Probes). */
+	private static void trsTick(java.util.function.Consumer<Minecraft> handler, Minecraft mc) {
+		long probe = dev.theredstonee.trsclient.core.perf.Probes.begin();
+		try {
+			handler.accept(mc);
+		} finally {
+			dev.theredstonee.trsclient.core.perf.Probes.end(
+					dev.theredstonee.trsclient.core.perf.Probes.TRS_TICK, probe);
+		}
+	}
 
 	private void onTick(Minecraft mc) {
 		migrateKeys(mc);

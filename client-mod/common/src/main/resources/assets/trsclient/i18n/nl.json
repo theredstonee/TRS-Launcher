@@ -2542,5 +2542,14 @@
   "halloween.wings.demon_wings": "Demon Wings",
   "halloween.wings.raven_wings": "Raven Wings",
   "halloween.wings.ghost_wings": "Ghost Wings",
-  "halloween.page.riddle": "“{0}”"
+  "halloween.page.riddle": "“{0}”",
+  "module.smartThreads": "Smart Threads",
+  "module.smartThreads.desc": "Verdeelt het achtergrondwerk van Minecraft (chunks bouwen, wereldgeneratie, licht, laden) slim over je CPU-kernen: het juiste aantal werkthreads, de renderthread vóór achtergrondwerk en vrije kernen voor Discord en OBS. Minecraft houdt precies één renderthread en één serverthread – Smart Threads splitst die niet. Werkt samen met Sodium, Iris en Distant Horizons.",
+  "module.threadLoad": "CPU-belasting",
+  "module.threadLoad.desc": "Belasting per threadgroep (render, server, workers, Sodium, Distant Horizons), frametijd en of je CPU of je videokaart de grens is.",
+  "setting.threadLoad.details": "Alle threadgroepen",
+  "setting.threadLoad.bars": "Balken",
+  "ext.unavailable": "Niet beschikbaar in deze build van de TRS Client.",
+  "module.vulkanRenderer": "Vulkan-renderer",
+  "module.vulkanRenderer.desc": "Grafische API: Vulkan (experimenteel) – Tekent het spel met de eigen Vulkan-renderer van de TRS Client in plaats van OpenGL. Experimenteel: werkt na een herstart en valt vanzelf terug op OpenGL als Vulkan niet start."
 }

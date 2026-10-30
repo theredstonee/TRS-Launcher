@@ -54,26 +54,36 @@ public final class WingsHooks {
 	//? if >=1.21.9 {
 	/*public static void render(PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector, int light,
 			int entityId, ModelPart body) {
-		OnlineFeatures<Object> features = OnlineHooks.features();
-		AbstractClientPlayer p = HatHooks.player(entityId);
-		if (features == null || p == null || p.isInvisible()) return;
+		long trsProbe = dev.theredstonee.trsclient.core.perf.Probes.begin();
 		try {
-			V2Hat<Object> wings = wings(features, p);
-			if (wings != null) HatHooks.drawV2(features, wings, pose, collector, light, body);
-		} catch (RuntimeException e) {
-			features.online().reportError(e);
+			OnlineFeatures<Object> features = OnlineHooks.features();
+			AbstractClientPlayer p = HatHooks.player(entityId);
+			if (features == null || p == null || p.isInvisible()) return;
+			try {
+				V2Hat<Object> wings = wings(features, p);
+				if (wings != null) HatHooks.drawV2(features, wings, pose, collector, light, body);
+			} catch (RuntimeException e) {
+				features.online().reportError(e);
+			}
+		} finally {
+			dev.theredstonee.trsclient.core.perf.Probes.end(dev.theredstonee.trsclient.core.perf.Probes.TRS_WORLD, trsProbe);
 		}
 	}
 	*///?} else {
 	public static void render(PoseStack pose, net.minecraft.client.renderer.MultiBufferSource buffers, int light,
 			AbstractClientPlayer p, ModelPart body) {
-		OnlineFeatures<Object> features = OnlineHooks.features();
-		if (features == null || p == null || p.isInvisible()) return;
+		long trsProbe = dev.theredstonee.trsclient.core.perf.Probes.begin();
 		try {
-			V2Hat<Object> wings = wings(features, p);
-			if (wings != null) HatHooks.drawV2(features, wings, pose, buffers, light, body);
-		} catch (RuntimeException e) {
-			features.online().reportError(e);
+			OnlineFeatures<Object> features = OnlineHooks.features();
+			if (features == null || p == null || p.isInvisible()) return;
+			try {
+				V2Hat<Object> wings = wings(features, p);
+				if (wings != null) HatHooks.drawV2(features, wings, pose, buffers, light, body);
+			} catch (RuntimeException e) {
+				features.online().reportError(e);
+			}
+		} finally {
+			dev.theredstonee.trsclient.core.perf.Probes.end(dev.theredstonee.trsclient.core.perf.Probes.TRS_WORLD, trsProbe);
 		}
 	}
 	//?}

@@ -132,6 +132,14 @@ public final class TrsModules {
 	public final BoolSetting fastConnectPreResolve;
 	public final BoolSetting fastConnectSwitch;
 	public final BoolSetting fastConnectPacks;
+	/** Smart Threads: Hintergrund-Threads passend auf die Kerne verteilen (optionale Erweiterung, siehe core.ext). */
+	public final Module smartThreads;
+	/** Last-HUD: Auslastung je Thread-Gruppe, Bildzeit, CPU- oder GPU-limitiert. */
+	public final HudModule threadLoad;
+	public final BoolSetting threadLoadDetails;
+	public final BoolSetting threadLoadBars;
+	/** Eigener Vulkan-Renderer (experimentell, optionale Erweiterung): wirkt nach einem Neustart. */
+	public final Module vulkanRenderer;
 	/** Randloses Vollbild: F11 deckt den aktuellen Monitor ab, ohne den exklusiven Vollbildmodus. */
 	public final Module borderlessFullscreen;
 	public final ChoiceSetting<dev.theredstonee.trsclient.core.perf.LowLatency.Mode> lowLatencyMode;
@@ -711,6 +719,28 @@ public final class TrsModules {
 		fastConnectPreResolve = fastConnect.add(new BoolSetting("preResolve", "Look up servers in advance", true));
 		fastConnectSwitch = fastConnect.add(new BoolSetting("fastSwitch", "Faster server switch", true));
 		fastConnectPacks = fastConnect.add(new BoolSetting("prePacks", "Preload server resource packs", true));
+		smartThreads = registry.register(new Module("smartThreads", "Smart Threads",
+				"Spreads Minecraft's background work (chunk building, world generation, lighting, loading) sensibly across "
+						+ "your CPU cores: the right number of worker threads, the render thread before background work, cores "
+						+ "left free for Discord and OBS. Minecraft keeps exactly one render thread and one server thread – "
+						+ "Smart Threads does not split them. Works together with Sodium, Iris and Distant Horizons.", true));
+		smartThreads.icon("cores").category(Category.PERFORMANCE);
+		threadLoad = registry.register(new HudModule("threadLoad", "CPU Load",
+				"Load of each thread group (render, server, workers, Sodium, Distant Horizons), frame time and whether "
+						+ "your CPU or your graphics card is the limit.", false,
+				new HudPosition(HudAnchor.TOP_RIGHT, -0.005, 0.34)));
+		threadLoad.icon("cores").availableWhen(new java.util.concurrent.Callable<Boolean>() {
+			@Override
+			public Boolean call() {
+				return dev.theredstonee.trsclient.core.ext.TrsExtensions.has(dev.theredstonee.trsclient.core.ext.TrsExtensions.SMART_THREADS);
+			}
+		});
+		threadLoadDetails = threadLoad.add(new BoolSetting("details", "All thread groups", true));
+		threadLoadBars = threadLoad.add(new BoolSetting("bars", "Bars", true));
+		vulkanRenderer = registry.register(new Module("vulkanRenderer", "Vulkan Renderer",
+				"Graphics API: Vulkan (experimental) – draws the game with the TRS Client's own Vulkan renderer instead of OpenGL. Experimental: takes effect after "
+						+ "a restart, falls back to OpenGL by itself if Vulkan does not start.", false));
+		vulkanRenderer.icon("chip").category(Category.PERFORMANCE);
 		builtinOptimizations.icon("chip").category(Category.PERFORMANCE).availableWhen(new java.util.concurrent.Callable<Boolean>() {
 			@Override
 			public Boolean call() {
