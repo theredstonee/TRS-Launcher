@@ -2,6 +2,7 @@ import type { AppContext } from '../context'
 import { all, one, run, tx } from '../db'
 import { unavailable } from '../errors'
 import type { CampaignContent, NewsletterLang } from '../../../shared/newsletter'
+import { inlineImages } from './inline'
 import { renderCampaign, UNSUB_PLACEHOLDER, type RenderedMail } from './render'
 import { isLook, resolveLook, type Look } from './theme'
 import { unsubscribeUrl } from './tokens'
@@ -173,7 +174,8 @@ export function processOutbox(ctx: AppContext, budget: number): Promise<{ sent: 
       // Erst als „sending“ markieren, dann senden: stirbt der Prozess dazwischen, gibt es keinen zweiten Versuch.
       if (run(ctx.db, "UPDATE mail_outbox SET status = 'sending', attempts = attempts + 1 WHERE id = ? AND status = 'queued'", r.id) === 0) continue
       try {
-        await ctx.mail.send(mail, channelOf(r.kind))
+        // Bilder einbetten: viele Mail-Programme laden externe Bilder erst nach einem Klick.
+        await ctx.mail.send(await inlineImages(ctx, mail), channelOf(r.kind))
         tx(ctx.db, () => {
           run(ctx.db, "UPDATE mail_outbox SET status = 'sent', sent_at = ?, last_error = NULL, html = CASE WHEN kind = 'campaign' THEN NULL ELSE html END WHERE id = ?", ctx.now(), r.id)
           if (r.campaign_id && r.kind === 'campaign') run(ctx.db, 'UPDATE newsletter_campaigns SET sent_count = sent_count + 1 WHERE id = ?', r.campaign_id)

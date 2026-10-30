@@ -6,12 +6,22 @@ import type { MailAccount, MailConfig } from '../config'
  * Speichern gekürzt und von Adressen/Zugangsdaten befreit. Tests setzen eine eigene `Sender`-Attrappe.
  */
 
+export interface MailAttachment {
+  /** Content-ID, im HTML als `cid:<cid>` verwendet. */
+  cid: string
+  filename: string
+  content: Buffer
+  contentType: string
+}
+
 export interface OutgoingMail {
   to: string
   subject: string
   html: string
   text: string
   headers?: Record<string, string>
+  /** Eingebettete Bilder (siehe inline.ts). */
+  attachments?: MailAttachment[]
 }
 
 export interface SendResult {
@@ -124,6 +134,9 @@ function smtpSender(c: MailConfig, account: MailAccount): Sender {
           html: mail.html,
           text: mail.text,
           headers: mail.headers,
+          ...(mail.attachments?.length
+            ? { attachments: mail.attachments.map((a) => ({ cid: a.cid, filename: a.filename, content: a.content, contentType: a.contentType, contentDisposition: 'inline' as const })) }
+            : {}),
           disableFileAccess: true,
           disableUrlAccess: true,
         })

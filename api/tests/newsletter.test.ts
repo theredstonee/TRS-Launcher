@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
 import { PNG } from 'pngjs'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -22,6 +23,7 @@ import {
 import { headUrl, renderTitleSpec, titleImage, verifyHead, verifyTitle, faceFromSkin } from '../server/lib/mail/images'
 import { authenticateKey, createKey, revokeKey, type NewsletterActor } from '../server/lib/mail/keys'
 import { mdToHtml, mdToText } from '../server/lib/mail/markdown'
+import { inlineImages } from '../server/lib/mail/inline'
 import { processOutbox, recoverOutbox } from '../server/lib/mail/outbox'
 import { layout, parseRuns, pixelText, renderTitle } from '../server/lib/mail/pixelfont'
 import {
@@ -65,6 +67,8 @@ function mailEnv(): TestEnv & { sender: FakeSender } {
   return Object.assign(env, { sender })
 }
 
+/** Festes Mail-Bild (public/mail) als CID-Anhang eingebettet? */
+const embeds = (m: OutgoingMail, file: string) => !!m.attachments?.some((a) => a.content.equals(readFileSync(`public/mail/${file}`)))
 const token = (m: OutgoingMail, re: RegExp) => re.exec(m.text)?.[1] ?? null
 const confirmFrom = (m: OutgoingMail) => token(m, /token=([ct][A-Za-z0-9_-]{43})/)
 const owner = (): NewsletterActor => ({ kind: 'staff', staff: ownerStaff(ADMIN) })
@@ -363,7 +367,7 @@ describe('campaigns', () => {
     expect(byTo['de@example.test']?.subject ?? byTo['en@example.test']?.subject).toBeTruthy()
     if (byTo['en@example.test']) expect(byTo['en@example.test'].subject).toBe('Version 0.31.0 – The Heist')
     for (const m of sent) {
-      expect(m.html).toContain('/mail/head-winter.png')
+      expect(embeds(m, 'head-winter.png')).toBe(true)
       expect(m.html).not.toContain('%%TRS_UNSUBSCRIBE_URL%%')
       expect(m.headers!['List-Unsubscribe']).toMatch(/^<https:\/\/site\.example\.test\/newsletter\/unsubscribe\?token=\d+\.[0-9a-f]{40}>$/)
     }
@@ -440,7 +444,7 @@ describe('campaigns', () => {
     await processOutbox(env.ctx, 10)
     const m = env.sender.sent.at(-1)!
     expect(m.subject).toBe('[TEST] Version 0.31.0 – The Heist')
-    expect(m.html).toContain('/mail/head-fox.png')
+    expect(embeds(m, 'head-fox.png')).toBe(true)
   })
 
   it('cosmetic cards get a code from the code system', () => {
@@ -558,6 +562,39 @@ function decodeMime(raw: string): string {
   return out.join('\n')
 }
 
+describe('inline images', () => {
+  it('embeds own images as CID attachments and leaves foreign or broken ones alone', async () => {
+    const env = mailEnv()
+    const title = titleImage(env.ctx, { text: 'Hallo', kind: 'h1', look: 'redstone' })
+    const shot = solidPng(4, 4, [10, 20, 30, 255])
+    const seen: string[] = []
+    const fetcher = (async (u: string) => {
+      seen.push(u)
+      if (u.endsWith('/shot.png')) return new Response(shot, { headers: { 'content-type': 'image/png' } })
+      if (u.endsWith('/page')) return new Response('<html>', { headers: { 'content-type': 'text/html' } })
+      return new Response('nope', { status: 404 })
+    }) as typeof fetch
+    const html = [
+      `<img src="https://site.example.test/mail/logo.png" alt="">`,
+      `<img src="${title.url.replace(/&/g, '&amp;')}" width="${title.width}">`,
+      `<img src="https://site.example.test/shot.png"><img src="https://site.example.test/shot.png">`,
+      `<img src="https://site.example.test/page">`,
+      `<img src="https://site.example.test/missing.png">`,
+      `<img src="https://elsewhere.example.test/x.png">`,
+    ].join('')
+    const out = await inlineImages(env.ctx, { to: 'a@example.test', subject: 's', html, text: 't' }, fetcher)
+    expect(out.attachments).toHaveLength(3)
+    expect(out.attachments!.map((a) => a.contentType)).toEqual(['image/png', 'image/png', 'image/png'])
+    expect(out.attachments![1]!.content.equals(renderTitleSpec({ text: 'Hallo', kind: 'h1', look: 'redstone' }).png)).toBe(true)
+    expect(out.html.match(/src="cid:/g)).toHaveLength(4) // Screenshot zweimal, ein Anhang
+    expect(out.html).toContain('src="https://site.example.test/page"')
+    expect(out.html).toContain('src="https://site.example.test/missing.png"')
+    expect(out.html).toContain('src="https://elsewhere.example.test/x.png"')
+    // Logo von der Platte, Überschrift gerendert, fremde Adressen nie abgerufen.
+    expect(seen.some((u) => u.includes('/mail/logo.png') || u.includes('/v1/mail/px/') || u.includes('elsewhere'))).toBe(false)
+  })
+})
+
 describe('real SMTP (nodemailer → local sink)', () => {
   const sinks: SmtpSink[] = []
   afterEach(async () => {
@@ -590,6 +627,10 @@ describe('real SMTP (nodemailer → local sink)', () => {
     expect(m.data).toContain('multipart/alternative')
     expect(m.data).toContain('text/plain')
     expect(m.data).toContain('text/html')
+    // Bilder der eigenen Website hängen eingebettet an (sonst laden viele Mail-Programme sie erst nach einem Klick).
+    expect(m.data).toContain('multipart/related')
+    expect(m.data).toMatch(/^Content-ID: <img1\.[0-9a-f]{12}@site\.example\.test>/m)
+    expect(decodeMime(m.data)).toContain('src="cid:img1.')
   })
 
   it('a permanent SMTP error marks the mail failed without retry', async () => {
