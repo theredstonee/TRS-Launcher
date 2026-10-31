@@ -139,6 +139,8 @@ public final class LiveShare {
 	private final Set<String> hiddenOwners = new HashSet<String>();
 	private boolean friendsWanted;
 	private boolean friendsInFlight;
+	/** Steigt bei jeder entzogenen Freigabe: eine vorher gestartete Abfrage ist dann veraltet (würde ihn zurückholen). */
+	private int revokeSerial;
 	private final Backoff friendsBackoff = new Backoff();
 	private int friendsFetches;
 
@@ -595,6 +597,7 @@ public final class LiveShare {
 	private void fetchFriends() {
 		final String t = token;
 		final LiveWorld w = world;
+		final int serial = revokeSerial;
 		friendsWanted = false;
 		friendsInFlight = true;
 		friendsFetches++;
@@ -605,6 +608,11 @@ public final class LiveShare {
 					friendsInFlight = false;
 					if (!w.equals(world)) return;
 					friendsBackoff.ok();
+					if (serial != revokeSerial) {
+						// Während der Abfrage wurde eine Freigabe entzogen – Antwort verwerfen, neu holen.
+						friendsWanted = true;
+						return;
+					}
 					applyOwners(LiveJson.owners(body, System.currentTimeMillis()));
 				});
 			} catch (final ApiException e) {
@@ -704,6 +712,7 @@ public final class LiveShare {
 			String u = Uuids.normalize(LiveJson.str(d, "uuid"));
 			if (u == null) return;
 			if (owners.remove(u) != null) rebuildView();
+			revokeSerial++;
 			grantedToMe.remove(u);
 			grantsStale = true;
 			return;
@@ -747,6 +756,11 @@ public final class LiveShare {
 	}
 
 	// --- Freigaben ---
+
+	/** Freigaben gleich neu laden (Freunde-Bildschirm geöffnet – jemand hat mir evtl. inzwischen freigegeben). */
+	public void refreshGrants() {
+		grantsStale = true;
+	}
 
 	/** Die Oberfläche (Freunde) braucht die Freigaben: laden, wenn unbekannt oder älter als 30 s. */
 	public void wantGrants() {

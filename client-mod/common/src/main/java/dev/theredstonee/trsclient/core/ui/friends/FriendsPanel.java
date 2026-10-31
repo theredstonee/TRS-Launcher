@@ -70,6 +70,9 @@ public final class FriendsPanel {
 			online.friends().want(Friends.Interest.FOREGROUND, false);
 			online.friends().refresh();
 		}
+		// Freigaben (Live-Wegpunkte) beim Öffnen frisch holen – „teilt mit dir“ kommt ohne Ereignis.
+		LiveShare live = LiveShare.get();
+		if (live != null) live.refreshGrants();
 	}
 
 	public void showTab(int index) {
