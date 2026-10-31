@@ -75,18 +75,30 @@ public final class WaypointListScreen extends TrsScreen {
 			g.fill(listX, ry, listX + listW, ry + ROW_H - 2, hover ? Brand.SURFACE_HOVER : Brand.SURFACE);
 			g.fill(listX + 4, ry + 5, listX + 10, ry + 11, 0xFF000000 | waypoint.color);
 			String label = waypoint.name + (waypoint.death ? " (" + I18n.tr("waypoints.death") + ")" : "");
-			g.text(font, Gfx.clip(font, label, listW - 210), listX + 16, ry + 5, Brand.TEXT, false);
+			g.text(font, Gfx.clip(font, label, listW - 230), listX + 16, ry + 5, Brand.TEXT, false);
 			String info = waypoint.x + " / " + waypoint.y + " / " + waypoint.z;
 			if (minecraft != null && minecraft.player != null) {
 				info += "   " + Projection.distanceLabel(waypoint.distanceTo(Mc.x(minecraft.player),
 						Mc.y(minecraft.player), Mc.z(minecraft.player)));
 			}
-			g.text(font, info, listX + listW - 196, ry + 5, Brand.TEXT_DIM, false);
+			g.text(font, info, listX + listW - 216, ry + 5, Brand.TEXT_DIM, false);
 
 			int bx = listX + listW - 66;
 			// Teilen: an Freunde/Gruppen im Sozial-Chat (Wegpunkt-Karte).
 			int sx = bx - 20;
 			Brand.button(g, font, sx, ry + 3, 16, 13, "↗", false, inside(mouseX, mouseY, sx, ry + 3, 16, 13));
+			if (dev.theredstonee.trsclient.core.waypoint.live.LiveShare.get() != null) {
+				// Live mit Freunden teilen (leuchtet, wenn an; den Todespunkt teilt die Einstellung).
+				int fx = sx - 20;
+				boolean on = waypoint.shared || (waypoint.death && TrsClient.get().modules().waypointShareDeath.get());
+				Brand.button(g, font, fx, ry + 3, 16, 13, "⇆", on, inside(mouseX, mouseY, fx, ry + 3, 16, 13));
+				hot.add(fx, ry + 3, 16, 13, () -> {
+					waypoint.shared = !waypoint.shared;
+					TrsClient.get().waypoints().save();
+					note = I18n.tr(waypoint.shared ? "map.friend.sharedNow" : "map.friend.unsharedNow", waypoint.name);
+					noteAt = System.currentTimeMillis();
+				});
+			}
 			hot.add(sx, ry + 3, 16, 13, () -> {
 				dev.theredstonee.trsclient.core.waypoint.WaypointShare.Result r =
 						dev.theredstonee.trsclient.core.waypoint.WaypointShare.shareLocal(waypoint);

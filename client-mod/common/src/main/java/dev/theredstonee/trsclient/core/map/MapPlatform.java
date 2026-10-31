@@ -108,6 +108,14 @@ public interface MapPlatform {
 		return null;
 	}
 
+	/**
+	 * Ist dieser Spieler gerade als Entity geladen (in Sichtweite)? Dann zeigt das Spiel ihn selbst – das HUD zeichnet
+	 * den Kopf eines Freundes (Live-Teilen) nicht doppelt. false = unbekannt/nein.
+	 */
+	default boolean playerLoaded(java.util.UUID uuid) {
+		return false;
+	}
+
 	/** Kurze Meldung im Chat (nur für den Spieler, z. B. „Karte gespeichert als …“). Nur Spiel-Thread. */
 	default void message(String text) {
 	}

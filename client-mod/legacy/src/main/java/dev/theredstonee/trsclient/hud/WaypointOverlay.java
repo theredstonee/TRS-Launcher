@@ -28,6 +28,8 @@ public final class WaypointOverlay {
 	private final TrsModules modules;
 	private final double[] point = new double[3];
 	private final double[] top = new double[3];
+	/** Wegpunkte und Köpfe der Freunde (Live-Teilen, für alle Versionen gleich). */
+	private final dev.theredstonee.trsclient.core.waypoint.live.LiveHud friends = new dev.theredstonee.trsclient.core.waypoint.live.LiveHud();
 
 	public WaypointOverlay(TrsModules modules) {
 		this.modules = modules;
@@ -37,7 +39,9 @@ public final class WaypointOverlay {
 		if (!modules.waypoints.isEnabled()) return;
 		if (Mc.player() == null || Mc.world() == null) return;
 		List<Waypoint> list = TrsClient.get().waypoints().visible();
-		if (list.isEmpty()) return;
+		dev.theredstonee.trsclient.core.waypoint.live.LiveShare live = dev.theredstonee.trsclient.core.waypoint.live.LiveShare.get();
+		boolean withFriends = live != null && live.active();
+		if (list.isEmpty() && !withFriends) return;
 
 		Entity view = Mc.viewEntity();
 		if (view == null) return;
@@ -57,6 +61,8 @@ public final class WaypointOverlay {
 		int w = g.width();
 		int h = g.height();
 		double range = modules.waypointRange.get();
+		// Freunde zuerst – die eigenen Wegpunkte liegen darüber.
+		if (withFriends) friends.draw(dev.theredstonee.trsclient.ui.GfxCanvas.of(g, font), modules, camX, camY, camZ, yaw, pitch, fov, w, h);
 
 		for (int i = 0, n = list.size(); i < n; i++) {
 			Waypoint waypoint = list.get(i);

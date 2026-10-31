@@ -380,6 +380,12 @@ public final class SocialUi extends WindowUi implements SocialContext {
 			tab = 0;
 			list.openDm(f.uuid);
 		});
+		final dev.theredstonee.trsclient.core.waypoint.live.LiveShare live = dev.theredstonee.trsclient.core.waypoint.live.LiveShare.get();
+		if (live != null && live.grantsLoaded()) {
+			// Live-Wegpunkte: Freigabe für diesen Freund an/aus.
+			final boolean on = live.granted(f.uuid);
+			p.add(on ? "check" : "map", I18n.tr(on ? "friends.wp.stop" : "friends.wp.share", f.name), () -> live.setGrant(f.uuid, !on));
+		}
 		p.separator();
 		p.danger("close", I18n.tr("social.menu.removeFriend"), () -> confirmFriend(f.uuid, f.name, Friends.Action.REMOVE));
 		p.danger("lock", I18n.tr("social.menu.block"), () -> confirmFriend(f.uuid, f.name, Friends.Action.BLOCK));

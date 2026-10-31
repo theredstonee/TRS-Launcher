@@ -55,6 +55,8 @@ public final class MeEvent {
 	public final Application application;
 	/** Rohes JSON der Welt-Hosting-Ereignisse ({@code hosting_*}, ≤ 16 KiB) – ausgewertet in core.hosting. */
 	public final String hostingData;
+	/** Rohes JSON der Live-Wegpunkte ({@code wpshare_*}, ≤ 16 KiB, API.md §41) – ausgewertet in core.waypoint.live. */
+	public final String wpshareData;
 	/** {@code events_changed}: aktive Event-IDs, oder null (Feld fehlt – nicht als „keins“ werten). */
 	public final List<String> events;
 	/** {@code events_changed}: Event-IDs, deren Look gezeigt wird, oder null (Feld fehlt = wie {@link #events}). */
@@ -68,6 +70,7 @@ public final class MeEvent {
 		this.type = type;
 		this.id = id;
 		this.hostingData = data != null && type.startsWith("hosting_") && data.length() <= 16 * 1024 ? data : null;
+		this.wpshareData = data != null && type.startsWith("wpshare_") && data.length() <= 16 * 1024 ? data : null;
 		this.halloweenData = data != null && type.equals("halloween_updated") && data.length() <= 16 * 1024 ? data : null;
 		this.events = d == null ? null : d.events;
 		this.look = d == null ? null : d.look;
@@ -191,6 +194,8 @@ public final class MeEvent {
 		if (event == null || !event.matches("[a-z_]{1,40}")) return null;
 		// Welt-Hosting: eigenes Format (z. B. "from" als UUID-Text) – roh weiterreichen, core.hosting prüft selbst.
 		if (event.startsWith("hosting_")) return new MeEvent(event, id, null, data);
+		// Live-Wegpunkte: eigenes Format (Position, Peers) – roh weiterreichen, core.waypoint.live prüft selbst.
+		if (event.startsWith("wpshare_")) return new MeEvent(event, id, null, data);
 		// Halloween: Zustand wie GET /v1/me/halloween – roh weiterreichen, core.halloween liest ihn selbst.
 		if (event.equals("halloween_updated")) return new MeEvent(event, id, null, data);
 		ChatJson.EventDto d = null;
@@ -207,6 +212,16 @@ public final class MeEvent {
 	/** Für Tests: Ereignis ohne Daten. */
 	static MeEvent of(String type) {
 		return new MeEvent(type, null, null, null);
+	}
+
+	/** Für Tests: Live-Wegpunkt-Ereignis ({@code wpshare_*}) mit rohem JSON. */
+	public static MeEvent wpshare(String type, String json) {
+		return new MeEvent(type, null, null, json);
+	}
+
+	/** Für Tests: hello/resync ({@code resumed} nur bei hello). */
+	public static MeEvent stream(String type, boolean resumed) {
+		return parse(type, resumed ? "{\"resumed\":true}" : "{}", null);
 	}
 
 	/** Für Tests: Hosting-Ereignis mit rohem JSON. */

@@ -9,6 +9,12 @@ import dev.theredstonee.trsclient.core.ui.ColorMath;
 import dev.theredstonee.trsclient.core.ui.TextureRef;
 import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.waypoint.Waypoint;
+import dev.theredstonee.trsclient.core.waypoint.WaypointShare;
+import dev.theredstonee.trsclient.core.waypoint.live.FriendFaces;
+import dev.theredstonee.trsclient.core.waypoint.live.FriendPosition;
+import dev.theredstonee.trsclient.core.waypoint.live.FriendWaypoint;
+import dev.theredstonee.trsclient.core.waypoint.live.LiveShare;
+import dev.theredstonee.trsclient.core.waypoint.live.Owner;
 
 import java.util.List;
 
@@ -53,6 +59,8 @@ public final class MinimapRenderer {
 	private final double[] point = new double[2];
 	private final double[] edgeS = new double[MAX_EDGE];
 	private final Waypoint[] edgeW = new Waypoint[MAX_EDGE];
+	/** Rand-Kästchen von Wegpunkten der Freunde (statt {@link #edgeW}). */
+	private final FriendWaypoint[] edgeF = new FriendWaypoint[MAX_EDGE];
 	private final double[] compassS = new double[4];
 
 	// Zwischengespeicherte Texte (nur bei Änderung neu).
@@ -142,7 +150,10 @@ public final class MinimapRenderer {
 
 		if (live) {
 			drawEntities(c, e, cx, cy, radius, round, theta, px, pz, scale);
-			if (m.minimapWaypoints.get() || m.minimapDeath.get()) drawWaypoints(c, e, cx, cy, radius, round, theta, px, pz, scale);
+			if (m.minimapWaypoints.get() || m.minimapDeath.get() || friendWaypointsShown(m)) {
+				drawWaypoints(c, e, cx, cy, radius, round, theta, px, pz, scale);
+			}
+			if (m.waypointFriendPositions.get()) drawFriendHeads(c, e, cx, cy, radius, round, theta, px, pz, scale);
 		}
 		// Himmelsrichtungen zuletzt: immer lesbar, die Rand-Kästchen weichen ihnen aus.
 		if (m.minimapCompass.get()) drawCompass(c, e, cx, cy, radius, round, theta, scale, theme);
@@ -336,6 +347,23 @@ public final class MinimapRenderer {
 		boolean edgeBoxes = m.minimapEdgeWaypoints.get();
 		List<Waypoint> list = e.waypoints();
 		int edges = 0;
+		// Wegpunkte der Freunde zuerst (eigene liegen darüber).
+		if (friendWaypointsShown(m)) {
+			List<FriendWaypoint> friends = LiveShare.get().friendWaypoints(WaypointShare.canonicalDimension(e.dimension()));
+			for (int i = 0, n = friends.size(); i < n; i++) {
+				FriendWaypoint w = friends.get(i);
+				toScreen(w.x + 0.5, w.z + 0.5, px, pz, theta);
+				if (!w.death && edgeBoxes && !inside(radius, round, 4f)) {
+					if (edges < MAX_EDGE) {
+						edgeS[edges] = EdgeLayout.along(point[0], point[1], edgeHalf(radius, round), round);
+						edgeF[edges++] = w;
+					}
+					continue;
+				}
+				boolean edge = clampToEdge(radius, round, 5f);
+				friendMark(c, e, w, cx + (float) point[0], cy + (float) point[1], edge ? 0.8f : 1f, scale);
+			}
+		}
 		for (int i = 0, n = list.size(); i < n; i++) {
 			Waypoint w = list.get(i);
 			if (w.death ? !m.minimapDeath.get() : (!m.minimapWaypoints.get() || !w.visible)) continue;
@@ -369,8 +397,73 @@ public final class MinimapRenderer {
 		EdgeLayout.spread(edgeS, edges, EDGE_GAP, EdgeLayout.perimeter(half, round), compassS, fixed);
 		for (int i = 0; i < edges; i++) {
 			EdgeLayout.point(edgeS[i], half, round, point);
-			edgeBox(c, cx + (float) point[0], cy + (float) point[1], edgeW[i]);
+			if (edgeF[i] != null) edgeBox(c, cx + (float) point[0], cy + (float) point[1], edgeF[i].name, edgeF[i].color, true);
+			else edgeBox(c, cx + (float) point[0], cy + (float) point[1], edgeW[i].name, edgeW[i].color, false);
 			edgeW[i] = null;
+			edgeF[i] = null;
+		}
+	}
+
+	/** Werden Wegpunkte der Freunde auf der Minimap gezeigt (Einstellung, Live-Teilen aktiv)? */
+	static boolean friendWaypointsShown(TrsModules m) {
+		LiveShare live = LiveShare.get();
+		return live != null && live.active() && m.waypointFriendWaypoints.get() && m.minimapWaypoints.get();
+	}
+
+	/**
+	 * Wegpunkt eines Freundes: dunkle Plakette mit goldenem Rand und kleiner Raute in seiner Farbe (eigene sind
+	 * große Rauten ohne Plakette); Todespunkte als goldener Grabstein.
+	 */
+	static void friendMark(Canvas c, MapEngine e, FriendWaypoint w, float x, float y, float k, double scale) {
+		MapSprites sprites = e.sprites();
+		if (w.death) {
+			sprites.draw(c, MapSprites.GRAVE, x, y, 8f * k, 0f, ColorMath.withAlpha(FriendFaces.FRIEND, 0xE0), scale);
+			return;
+		}
+		sprites.draw(c, MapSprites.BADGE, x, y, 10f * k, 0f, 0xE0FFC23D, scale);
+		sprites.draw(c, MapSprites.BADGE, x, y, 8.5f * k, 0f, 0xF0141217, scale);
+		sprites.draw(c, MapSprites.DIAMOND, x, y, 5.5f * k, 0f, 0xFF000000 | w.color, scale);
+	}
+
+	/** Deckkraft einer Live-Position nach ihrem Alter (frisch voll, danach verblassend), 0 = nicht zeigen. */
+	public static int positionAlpha(FriendPosition p, long now) {
+		if (!LiveShare.live(p, now)) return 0;
+		long age = now - p.at;
+		if (age <= LiveShare.POSITION_FADE_MS) return 255;
+		float t = (age - LiveShare.POSITION_FADE_MS) / (float) (LiveShare.POSITION_MAX_AGE_MS - LiveShare.POSITION_FADE_MS);
+		return Math.max(0x50, Math.round(255 - t * (255 - 0x50)));
+	}
+
+	/** Steht der Freund als geladener Spieler auf der Karte? Dann zeichnet ihn {@link #drawEntities} schon. */
+	static boolean loadedEntity(MapEngine e, String uuid) {
+		for (int i = 0, n = e.entityCount(); i < n; i++) {
+			MapEntity en = e.entity(i);
+			if (en.type == MapEntity.PLAYER && en.uuid != null && uuid.equals(dev.theredstonee.trsclient.core.online.Uuids.of(en.uuid))) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Live-Köpfe der Freunde mit Blickrichtung – auch weit weg (dann am Rand). */
+	private void drawFriendHeads(Canvas c, MapEngine e, float cx, float cy, float radius, boolean round, float theta,
+			double px, double pz, double scale) {
+		LiveShare live = LiveShare.get();
+		if (live == null || !live.active()) return;
+		String dim = WaypointShare.canonicalDimension(e.dimension());
+		long now = System.currentTimeMillis();
+		for (Owner o : live.owners()) {
+			FriendPosition p = o.position();
+			if (o.hidden() || p == null || !p.dimension.equals(dim)) continue;
+			int alpha = positionAlpha(p, now);
+			if (alpha == 0 || loadedEntity(e, o.uuid)) continue;
+			toScreen(p.x, p.z, px, pz, theta);
+			boolean edge = clampToEdge(radius, round, 6f);
+			float x = cx + (float) point[0], y = cy + (float) point[1];
+			if (edge) alpha = Math.min(alpha, 0xC0);
+			float rot = theta + (float) Math.toRadians(p.yaw) + (float) Math.PI;
+			FriendFaces.facing(c, e.sprites(), x, y, edge ? 6f : 7f, rot, alpha, scale);
+			FriendFaces.head(c, o.uuid, o.name(), x, y, edge ? 6f : 7f, alpha);
 		}
 	}
 
@@ -379,19 +472,19 @@ public final class MinimapRenderer {
 		return round ? radius - MapSprites.ringIn(radius) * 0.5f + 0.5f : radius;
 	}
 
-	/** Kästchen in der Farbe des Wegpunkts mit seinem Anfangsbuchstaben. */
-	private static void edgeBox(Canvas c, float x, float y, Waypoint w) {
+	/** Kästchen in der Farbe des Wegpunkts mit seinem Anfangsbuchstaben (Freunde: goldener Rand). */
+	private static void edgeBox(Canvas c, float x, float y, String name, int rgb, boolean friend) {
 		int s = EDGE_BOX;
 		int x0 = Math.round(x - s / 2f), y0 = Math.round(y - s / 2f);
-		int color = 0xFF000000 | (w.color & 0xFFFFFF);
-		c.fill(x0 - 1, y0 - 1, x0 + s + 1, y0 + s + 1, 0xF0101014);
+		int color = 0xFF000000 | (rgb & 0xFFFFFF);
+		c.fill(x0 - 1, y0 - 1, x0 + s + 1, y0 + s + 1, friend ? FriendFaces.FRIEND : 0xF0101014);
 		c.fill(x0, y0, x0 + s, y0 + s, color);
 		// Obere Kante etwas heller, untere dunkler – wie ein kleiner Block.
 		c.fill(x0, y0, x0 + s, y0 + 1, ColorMath.lerp(color, 0xFFFFFFFF, 0.3f));
 		c.fill(x0, y0 + s - 1, x0 + s, y0 + s, ColorMath.lerp(color, 0xFF000000, 0.3f));
-		String letter = initial(w.name);
+		String letter = initial(name);
 		int tw = c.textWidth(letter);
-		c.text(letter, x0 + (s - tw) / 2 + 1, y0 + 1, textOn(w.color), false);
+		c.text(letter, x0 + (s - tw) / 2 + 1, y0 + 1, textOn(rgb), false);
 	}
 
 	/** Anfangsbuchstabe (groß) eines Namens, "?" wenn es keinen gibt. */

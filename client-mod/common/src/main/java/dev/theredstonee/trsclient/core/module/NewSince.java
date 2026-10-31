@@ -171,6 +171,16 @@ public final class NewSince {
 	/** Garderobe → Kosmetik → Abschnitt „Begleiter (Boden)“ samt Schaltern für abschaltbare Teile. */
 	public static final String WARDROBE_PET = "wardrobe:pet";
 
+	/**
+	 * Live-Wegpunkte mit Freunden (nächste Version nach TRS Client 0.23.1): geteilte Wegpunkte, Live-Position,
+	 * Todespunkt, Freigabe je Freund.
+	 */
+	public static final String WAYPOINT_LIVE = "0.24.0";
+	/** Sozial → Freunde: Schalter „Wegpunkte & Position teilen“ je Freund. */
+	public static final String FRIENDS_WAYPOINTS = "friends:waypoints";
+	/** Weltkarte → Wegpunkt-Liste → Reiter „Freunde“. */
+	public static final String WORLD_MAP_FRIENDS = "worldMap:friends";
+
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
 	private static final Map<String, List<String>> EXTRAS = new LinkedHashMap<String, List<String>>();
@@ -256,6 +266,9 @@ public final class NewSince {
 		add(GAMMA_REFILL, "autorefill", "fullbright.level", KEY_GAMMA_CYCLE, KEY_AUTO_REFILL);
 		// Winter-Kosmetik: Begleiter am Boden + Optionen in der Garderobe.
 		add(WINTER_COSMETICS, WARDROBE_PET);
+		// Live-Wegpunkte mit Freunden.
+		add(WAYPOINT_LIVE, "waypoints.shareLive", "waypoints.shareDeath", "waypoints.sharePosition", "waypoints.friendWaypoints",
+				"waypoints.friendPositions", FRIENDS_WAYPOINTS, WORLD_MAP_FRIENDS);
 	}
 
 	private NewSince() {

@@ -2,6 +2,16 @@ package dev.theredstonee.trsclient.core.waypoint;
 
 /** Ein gespeicherter Wegpunkt (Gson-DTO – alle Felder öffentlich und einfach). */
 public final class Waypoint {
+	/** Erlaubte Kennung (wie die TRS API: 1–40 Zeichen {@code [A-Za-z0-9_-]}). */
+	private static final java.util.regex.Pattern ID = java.util.regex.Pattern.compile("[A-Za-z0-9_-]{1,40}");
+	private static final java.security.SecureRandom RANDOM = new java.security.SecureRandom();
+	private static final char[] ID_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-".toCharArray();
+
+	/**
+	 * Feste, zufällige Kennung (fürs Live-Teilen mit Freunden). Alte Dateien haben keine – {@link #normalized()} vergibt
+	 * dann eine neue (der Speicher schreibt sie beim nächsten Speichern mit).
+	 */
+	public String id;
 	public String name = defaultName();
 	public int x;
 	public int y;
@@ -14,6 +24,8 @@ public final class Waypoint {
 	public boolean visible = true;
 	/** Automatisch angelegter Todespunkt. */
 	public boolean death;
+	/** Mit Freunden live teilen (Freigabe je Freund; Standard aus). */
+	public boolean shared;
 	/** Zeitpunkt der Erstellung (ms). */
 	public long created;
 	/**
@@ -22,10 +34,12 @@ public final class Waypoint {
 	 */
 	public transient boolean temporary;
 
+	/** Für Gson: die Kennung vergibt {@link #normalized()} (so erkennt der Speicher alte Einträge ohne Kennung). */
 	public Waypoint() {
 	}
 
 	public Waypoint(String name, int x, int y, int z, String dimension, int color) {
+		this.id = newId();
 		this.name = name == null || name.isEmpty() ? defaultName() : name;
 		this.x = x;
 		this.y = y;
@@ -52,8 +66,21 @@ public final class Waypoint {
 		return Math.sqrt(dx * dx + dy * dy + dz * dz);
 	}
 
+	/** Neue zufällige Kennung (12 Zeichen, 72 Bit). */
+	public static String newId() {
+		char[] out = new char[12];
+		for (int i = 0; i < out.length; i++) out[i] = ID_CHARS[RANDOM.nextInt(ID_CHARS.length)];
+		return new String(out);
+	}
+
+	/** Gültige Kennung? */
+	public static boolean validId(String id) {
+		return id != null && ID.matcher(id).matches();
+	}
+
 	/** Fehlende/kaputte Werte einer geladenen Datei geradeziehen. */
 	public Waypoint normalized() {
+		if (!validId(id)) id = newId();
 		if (name == null || name.trim().isEmpty()) name = defaultName();
 		if (name.length() > 32) name = name.substring(0, 32);
 		if (dimension == null) dimension = "";
