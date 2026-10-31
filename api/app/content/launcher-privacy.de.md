@@ -434,6 +434,31 @@ den TRS-Server.
   Pack wird nur verwendet, wenn du Minecrafts Frage mit Ja beantwortest; dein Spiel reicht es über eine lokale Adresse
   auf deinem Rechner (`127.0.0.1`) an Minecraft, die nur für diese Verbindung gilt.
 
+### Live-Wegpunkte mit Freunden (TRS Client)
+
+Im TRS Client kannst du Wegpunkte und deine Position live mit einzelnen Freunden teilen. Das ist **aus, bis du es für
+einen Freund einschaltest** (je Freund „Wegpunkte & Position teilen“), und wirkt nur in derselben Welt.
+
+- **Gerichtet:** Teilst du mit einem Freund, sieht er deine geteilten Wegpunkte und deine Position – seine siehst du nur,
+  wenn er auch mit dir teilt. Endet die Freundschaft oder blockiert einer von euch den anderen, endet das Teilen sofort
+  in beide Richtungen.
+- **Nur in derselben Welt:** Dein Freund sieht nur etwas, solange ihr beide auf demselben Server bzw. in derselben
+  gehosteten Welt seid. Der TRS-Server verrät niemandem, auf welchem Server oder in welcher Welt du bist – nur, ob ein
+  Freund in derselben ist. Einzelspielerwelten, die nicht gehostet werden, teilen nichts.
+- **Nur markierte Wegpunkte:** Ein Wegpunkt wird nur geteilt, wenn du bei ihm „Mit Freunden teilen“ einschaltest (ab
+  Werk aus); auf Wunsch auch dein letzter Todespunkt.
+- **Deine Position** (Koordinaten, Dimension, Blickrichtung) wird höchstens alle 3 Sekunden gesendet und nur, solange
+  ein Freund, mit dem du teilst, in derselben Welt ist. Der TRS-Server reicht sie an diese Freunde weiter und behält nur
+  die letzte **im Arbeitsspeicher** (nie auf der Festplatte, nie in Logs, kein Verlauf); sie verschwindet, wenn du die
+  Welt verlässt, spätestens 3 Minuten nach der letzten Meldung deines Spiels.
+- **Auf dem TRS-Server gespeichert:** mit wem du teilst (mit Zeitpunkt) und je Welt deine geteilten Wegpunkte (Name,
+  Koordinaten, Dimension, Farbe, Todespunkt ja/nein) samt der Welt, zu der sie gehören (Server-Adresse bzw. bei einer
+  gehosteten Welt ihr Code), und dem Zeitpunkt der letzten Änderung. Freunde, mit denen du teilst, können deine
+  Wegpunkte in ihrem Spiel in die eigene Liste übernehmen.
+- **Löschen:** Schaltest du das Teilen für einen Freund aus, löscht sein Spiel deine Daten; schaltest du „Teilen“ bei
+  einem Wegpunkt aus, verschwindet er vom Server. Geteilte Wegpunkte, die du **180 Tage** nicht geändert hast, werden
+  automatisch gelöscht; „Alle TRS-Daten löschen“ löscht alles sofort.
+
 ### Erfolge
 
 Der Launcher hat Erfolge (Punkte, Seltenheiten, ein paar Belohnungen wie ein Umhang oder eine Kosmetik). Sie gehören
@@ -483,6 +508,7 @@ zu den TRS-Diensten und funktionieren nur, solange diese eingeschaltet sind.
 | Eingereichte Schaltungen: die Schaltung (nur Blöcke und Zustände), Name, Beschreibung, Kategorie, Sprache, Zeitpunkt, Status und Antwort des Teams; bei angenommenen Schaltungen dein Name als Ersteller | Eine Schaltung für die Bibliothek einreichen (siehe oben) |
 | Meldungen, die du abgibst, und Meldungen über dich, jeweils mit verschlüsselter Kopie des gemeldeten Inhalts samt Kontext; Strafen (Verwarnung, Stummschaltung, Sperren) mit Verlauf und Einspruch, interne Notizen des Teams, frühere Namen | Moderation (siehe oben) |
 | Welt hosten (nur solange deine Welt offen ist): Weltname, Version, Mod-Loader und Einstellungen, Beitrittscode, eingeladene Spieler, Beitrittsanfragen, hereingelassene und gesperrte Spieler mit Zeitpunkt, Spielerzahl, Liste geteilter Mods und Resource-Pack-Angaben (Namen, Größen, Quellen, Prüfsummen – keine Dateien); deine Liste der für alle Welten gesperrten Spieler | Welt für Freunde hosten (siehe oben) |
+| Live-Wegpunkte (nur wenn du mit einem Freund teilst): mit wem du teilst und je Welt deine geteilten Wegpunkte (Name, Koordinaten, Dimension, Farbe, Todespunkt ja/nein) mit der Welt (Server-Adresse bzw. Code der gehosteten Welt) und dem Zeitpunkt der letzten Änderung. Deine Live-Position nur im Arbeitsspeicher (siehe oben), nie auf der Festplatte | Live-Wegpunkte mit Freunden (siehe oben) |
 
 **Synchronisation:** „Mit TRS-Konto synchronisieren“ (*Einstellungen → Datenschutz*, ab Werk an, solange die
 TRS-Dienste an sind) hält deine eigenen Skins, deine eigenen Presets und das Aussehen des Launchers (Theme, Akzentfarbe,
@@ -494,7 +520,7 @@ lesen – es gibt keine Admin-Ansicht dafür.
 **TRS-Client-Synchronisation:** Die TRS-Client-Mod meldet sich selbst an (siehe oben) und legt ihre eigenen
 Einstellungen am selben Ort ab – als ein Dokument von höchstens 64 KB je Account. Das tut sie nur, solange die
 TRS-Dienste im Launcher an sind und ihr Schalter „Mit TRS-Konto synchronisieren“ (TRS-Menü → *TRS-Online-Funktionen*,
-ab Werk an) an ist; der Schalter selbst, Wegpunkte, die Freelook-Serverliste und Minecrafts eigene Optionen
+ab Werk an) an ist; der Schalter selbst, Wegpunkte (außer denen, die du mit Freunden teilst, siehe „Live-Wegpunkte“), die Freelook-Serverliste und Minecrafts eigene Optionen
 (options.txt) bleiben auf deinem PC. Das Spiel liest außerdem dein synchronisiertes Theme, Akzentfarbe und Sprache und
 schreibt sie zurück, wenn du sie in der Einführung änderst, damit der Launcher folgt. „Alle TRS-Daten löschen“ löscht
 auch dieses Dokument.
@@ -541,13 +567,16 @@ Profiling und keinen Verkauf von Daten.
   löschst.
 - Geteilte Modpacks werden automatisch gelöscht, wenn die gewählte Laufzeit endet (1, 7 oder 30 Tage; „unbegrenzt“
   bleibt, bis du oder das Team es löschen).
+- Geteilte Wegpunkte (Live-Wegpunkte) werden **180 Tage** nach ihrer letzten Änderung gelöscht, oder früher, wenn du
+  sie nicht mehr teilst; deine Live-Position verschwindet aus dem Arbeitsspeicher des Servers, wenn du die Welt
+  verlässt (spätestens nach 3 Minuten).
 - Entschiedene Schaltungs-Einreichungen werden **90 Tage** nach der Entscheidung gelöscht; veröffentlichte
   Schaltungen bleiben, bis das Team sie entfernt (nach „Alle TRS-Daten löschen“ ohne deinen Namen).
 - **„Alle TRS-Daten löschen“** (*Einstellungen → Datenschutz*) löscht sofort alles (Art. 17 DSGVO): deinen Account,
   Sitzungen, Freundschaften, Anfragen und Blockierungen, hochgeladene Umhänge samt Dateien, geteilte Umhänge (deine
   Umhänge bei Freunden und die Umhänge, die Freunde mit dir geteilt haben), eingelöste Codes, Meldungen,
   deinen Online-Status, alle synchronisierten Skins, Presets und Einstellungen, alle deine Direktchats (für beide
-  Seiten) sowie deine Nachrichten, Reaktionen und Bilder in Gruppen (eigene Gruppen gehen an das dienstälteste Mitglied) alle Bilder, die du als Link geteilt hast, alle Modpacks, die du geteilt hast, und deine Erfolge samt Zählern. Danach sind die TRS-Dienste im
+  Seiten) sowie deine Nachrichten, Reaktionen und Bilder in Gruppen (eigene Gruppen gehen an das dienstälteste Mitglied) alle Bilder, die du als Link geteilt hast, alle Modpacks, die du geteilt hast, deine geteilten Wegpunkte samt Freigaben und deine Erfolge samt Zählern. Danach sind die TRS-Dienste im
   Launcher ausgeschaltet. Die Skins und Presets auf deinem PC bleiben erhalten.
 - Nach der Löschung bleiben nur aktive Strafen (etwa eine Sperre oder eine laufende Chat-Stummschaltung, mit Grund
   und Zeitraum) und Meldungen über dich (bis zum Ende ihrer Frist, siehe oben) erhalten, damit sie sich nicht
