@@ -89,7 +89,10 @@ public final class WaypointOverlay {
 			int ty = y - 14;
 			g.fill(tx - 2, ty - 2, tx + tw + 2, ty + 9, Brand.HUD_BG);
 			g.text(font, label, tx, ty, color, false);
+			// Beschriftungen der Freunde weichen den eigenen aus.
+			if (withFriends) friends.occupy(tx - 2, ty - 2, tx + tw + 2, ty + 9);
 		}
+		if (withFriends) friends.flush(dev.theredstonee.trsclient.ui.GfxCanvas.of(g, font));
 	}
 
 	/** Lichtsäule als Kette kleiner Rechtecke (in der Projektion sind senkrechte Linien schräg). */

@@ -441,7 +441,15 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 		return sidebarOpen && sidebar.contains(mx, my);
 	}
 
+	/** Beschriftungen der Karte (ohne Überlappung, gesetzt am Ende von {@link #markers}). */
+	private final MapLabels labels = new MapLabels();
+
 	private void markers(Canvas c, int w, int h, int mx, int my, double s) {
+		markerSprites(c, w, h, mx, my, s);
+		labels.flush(c);
+	}
+
+	private void markerSprites(Canvas c, int w, int h, int mx, int my, double s) {
 		TrsModules m = e.modules();
 		MapSprites sprites = e.sprites();
 		double px = e.playerX(), pz = e.playerZ();
@@ -465,11 +473,12 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 					sprites.draw(c, MapSprites.HALO, x, y, p, 0f, 0xFF000000 | fw.color, s);
 				}
 				MinimapRenderer.friendMark(c, e, fw, x, y, 1.15f, s);
-				if (fw == friendHl || scale * s >= 1.5f || Math.abs(mx - x) < 8 && Math.abs(my - y) < 8) {
+				boolean near = Math.abs(mx - x) < 8 && Math.abs(my - y) < 8;
+				if (fw == friendHl || scale * s >= 1.5f || near) {
 					int lw = c.textWidth(fw.name);
-					c.fill(Math.round(x - lw / 2f - 2), Math.round(y + 7), Math.round(x + lw / 2f + 2), Math.round(y + 17), 0x90000000);
 					int labelColor = fw.death ? FriendFaces.FRIEND : ColorMath.lerp(0xFF000000 | fw.color, 0xFFFFFFFF, 0.25f);
-					c.text(fw.name, Math.round(x - lw / 2f), Math.round(y + 8), labelColor, false);
+					labels.add(fw.name, Math.round(x - lw / 2f), Math.round(y + 8), labelColor, 0x90000000, false,
+							fw == friendHl || near ? MapLabels.HOVER : MapLabels.FRIEND, true);
 				}
 				double d = (mx - x) * (mx - x) + (my - y) * (my - y);
 				if (mapHover && d <= best) {
@@ -495,10 +504,11 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 				if (wp.death) sprites.draw(c, MapSprites.GRAVE, x, y, 11f, 0f, 0xFFFFFFFF, s);
 				else sprites.draw(c, MapSprites.DIAMOND, x, y, 10f, 0f, (wp.visible ? 0xFF000000 : 0x90000000) | wp.color, s);
 				String label = wp.name;
-				if (hl || scale * s >= 0.7f || Math.abs(mx - x) < 8 && Math.abs(my - y) < 8) {
+				boolean near = Math.abs(mx - x) < 8 && Math.abs(my - y) < 8;
+				if (hl || scale * s >= 0.7f || near) {
 					int lw = c.textWidth(label);
-					c.fill(Math.round(x - lw / 2f - 2), Math.round(y + 7), Math.round(x + lw / 2f + 2), Math.round(y + 17), 0xA0000000);
-					c.text(label, Math.round(x - lw / 2f), Math.round(y + 8), 0xFF000000 | wp.color, false);
+					labels.add(label, Math.round(x - lw / 2f), Math.round(y + 8), 0xFF000000 | wp.color, 0xA0000000, false,
+							hl || near ? MapLabels.HOVER : MapLabels.OWN, true);
 				}
 				double d = (mx - x) * (mx - x) + (my - y) * (my - y);
 				if (mapHover && d <= hoveredD) {
@@ -564,7 +574,8 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 				MinimapRenderer.face(c, e, en, x, y, 9f, s);
 				if (en.name != null) {
 					int lw = c.textWidth(en.name);
-					c.text(en.name, Math.round(x - lw / 2f), Math.round(y + 7), en.friend ? MinimapRenderer.FRIEND : 0xFFFFFFFF, true);
+					labels.add(en.name, Math.round(x - lw / 2f), Math.round(y + 7), en.friend ? MinimapRenderer.FRIEND : 0xFFFFFFFF, 0, true,
+							Math.abs(mx - x) < 8 && Math.abs(my - y) < 8 ? MapLabels.HOVER : MapLabels.PLAYER, true);
 				}
 			}
 		}
@@ -577,8 +588,7 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 				sprites.draw(c, MapSprites.HALO, x, y, p, 0f, 0xFF000000 | focus.color, s);
 				sprites.draw(c, MapSprites.DIAMOND, x, y, 10f, 0f, 0xFF000000 | focus.color, s);
 				int lw = c.textWidth(focus.name);
-				c.fill(Math.round(x - lw / 2f - 2), Math.round(y + 7), Math.round(x + lw / 2f + 2), Math.round(y + 17), 0xA0000000);
-				c.text(focus.name, Math.round(x - lw / 2f), Math.round(y + 8), 0xFF000000 | focus.color, false);
+				labels.add(focus.name, Math.round(x - lw / 2f), Math.round(y + 8), 0xFF000000 | focus.color, 0xA0000000, false, MapLabels.FORCE, true);
 			}
 		}
 		// Eigene Position.
@@ -1031,9 +1041,13 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 			sprites().draw(c, MapSprites.HALO, x, y, 16f, 0f, ColorMath.withAlpha(FriendFaces.FRIEND, alpha), s);
 			FriendFaces.facing(c, sprites(), x, y, 9f, (float) Math.toRadians(p.yaw) + (float) Math.PI, alpha, s);
 			FriendFaces.head(c, o.uuid, o.name(), x, y, 9f, alpha);
+			// Der Kopf bleibt frei – Beschriftungen weichen ihm aus.
+			labels.occupy(Math.round(x - 9), Math.round(y - 9), Math.round(x + 9), Math.round(y + 7));
 			String n = o.name();
 			int lw = c.textWidth(n);
-			c.text(n, Math.round(x - lw / 2f), Math.round(y + 8), ColorMath.withAlpha(FriendFaces.FRIEND, alpha), true);
+			boolean near = mapHover && Math.abs(mx - x) < 7 && Math.abs(my - y) < 7;
+			labels.add(n, Math.round(x - lw / 2f), Math.round(y + 8), ColorMath.withAlpha(FriendFaces.FRIEND, alpha), 0, true,
+					near ? MapLabels.HOVER : MapLabels.FRIEND_HEAD, true);
 			if (mapHover && Math.abs(mx - x) < 7 && Math.abs(my - y) < 7 && hover.isEmpty()) {
 				hover.add(n);
 				double f = MapDimensions.factor(e.dimension(), viewDimension());

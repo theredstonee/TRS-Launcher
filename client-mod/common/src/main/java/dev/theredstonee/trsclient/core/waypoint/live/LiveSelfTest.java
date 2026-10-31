@@ -80,7 +80,7 @@ public final class LiveSelfTest {
 				m.minimapShape.set(TrsModules.MapShape.ROUND);
 				m.minimapRotate.set(false);
 				for (Waypoint w : e.waypoints()) {
-					if ("Turm".equals(w.name)) e.removeWaypoint(w);
+					if ("Turm".equals(w.name) || "Wachturm".equals(w.name)) e.removeWaypoint(w);
 				}
 				for (Waypoint w : e.waypoints()) {
 					if ("Basis".equals(w.name)) {
@@ -106,6 +106,8 @@ public final class LiveSelfTest {
 				for (FriendWaypoint w : o == null ? java.util.Collections.<FriendWaypoint>emptyList() : o.waypoints()) {
 					if ("Turm".equals(w.name)) turm = w;
 				}
+				// Eigener Wegpunkt direkt neben dem Turm: die Beschriftungen müssen einander ausweichen.
+				if (turm != null) e.addWaypoint("Wachturm", turm.x + 2, turm.y, turm.z + 1, 0xF2E14C);
 				phase++;
 				return 40;
 			}
@@ -188,7 +190,7 @@ public final class LiveSelfTest {
 						live.granted(FRIEND) ? "an" : "aus", n[0], n[1], n[2]));
 				host.closeScreen();
 				for (Waypoint w : e.waypoints()) {
-					if ("Turm".equals(w.name)) e.removeWaypoint(w);
+					if ("Turm".equals(w.name) || "Wachturm".equals(w.name)) e.removeWaypoint(w);
 				}
 				LiveShare.testWorld(null);
 				m.minimapZoom.set(TrsModules.MinimapZoom.NORMAL);

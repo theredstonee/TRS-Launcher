@@ -1,6 +1,7 @@
 package dev.theredstonee.trsclient.core.waypoint.live;
 
 import dev.theredstonee.trsclient.core.map.MapEngine;
+import dev.theredstonee.trsclient.core.map.MapLabels;
 import dev.theredstonee.trsclient.core.map.MapPlatform;
 import dev.theredstonee.trsclient.core.map.MinimapRenderer;
 import dev.theredstonee.trsclient.core.module.TrsModules;
@@ -16,9 +17,23 @@ import java.util.List;
  * Wegpunkte und Köpfe der Freunde im HUD (in der Welt, über die eigene Projektion – wie die eigenen Wegpunkte, aber
  * gedimmt, ohne Lichtsäule, mit goldenem Rand). Köpfe auch weit weg; steht der Freund als Spieler in Sichtweite, zeigt
  * ihn das Spiel selbst – dann nichts zeichnen. Für alle Versionen gleich ({@link Canvas}).
+ *
+ * <p>Ablauf je Bild: {@link #draw} (Markierungen, Köpfe; Beschriftungen nur vorgemerkt), der Baum meldet seine eigenen
+ * Beschriftungen mit {@link #occupy}, {@link #flush} setzt die der Freunde ohne Überlappung.
  */
 public final class LiveHud {
 	private final double[] point = new double[3];
+	private final MapLabels labels = new MapLabels();
+
+	/** Fläche einer eigenen Wegpunkt-Beschriftung (dort keine der Freunde). */
+	public void occupy(int x1, int y1, int x2, int y2) {
+		labels.occupy(x1, y1, x2, y2);
+	}
+
+	/** Beschriftungen der Freunde setzen (nach den eigenen Wegpunkten). */
+	public void flush(Canvas c) {
+		labels.flush(c);
+	}
 
 	/**
 	 * @param fov senkrechtes Sichtfeld (Grad), {@code w}/{@code h} GUI-Größe
@@ -48,9 +63,8 @@ public final class LiveHud {
 				String label = fw.name + " · " + (o == null ? "?" : o.name());
 				if (m.waypointDistance.get()) label = label + "  " + Projection.distanceLabel(distance);
 				int tw = c.textWidth(label);
-				int tx = x - tw / 2, ty = y - 14;
-				c.fill(tx - 2, ty - 2, tx + tw + 2, ty + 9, 0x70000000);
-				c.text(label, tx, ty, ColorMath.lerp(0xD0000000 | fw.color, 0xD0FFFFFF, 0.35f), false);
+				labels.add(label, x - tw / 2, y - 13, ColorMath.lerp(0xD0000000 | fw.color, 0xD0FFFFFF, 0.35f), 0x70000000, false,
+						MapLabels.FRIEND, false);
 			}
 		}
 		if (m.waypointFriendPositions.get()) {
@@ -64,11 +78,12 @@ public final class LiveHud {
 				int x = (int) Math.round(point[0]), y = (int) Math.round(point[1]);
 				if (x < -20 || x > w + 20 || y < -20 || y > h + 20) continue;
 				FriendFaces.head(c, o.uuid, o.name(), x, y, 10f, alpha);
+				labels.occupy(x - 7, y - 7, x + 7, y + 6);
 				double dx = fp.x - camX, dy = fp.y - camY, dz = fp.z - camZ;
 				String label = o.name() + "  " + Projection.distanceLabel(Math.sqrt(dx * dx + dy * dy + dz * dz));
 				int tw = c.textWidth(label);
-				c.fill(x - tw / 2 - 2, y + 7, x + tw / 2 + 2, y + 17, ColorMath.withAlpha(0xFF000000, Math.min(0x80, alpha)));
-				c.text(label, x - tw / 2, y + 8, ColorMath.withAlpha(FriendFaces.FRIEND, alpha), false);
+				labels.add(label, x - tw / 2, y + 8, ColorMath.withAlpha(FriendFaces.FRIEND, alpha),
+						ColorMath.withAlpha(0xFF000000, Math.min(0x80, alpha)), false, MapLabels.FRIEND_HEAD, true);
 			}
 		}
 	}

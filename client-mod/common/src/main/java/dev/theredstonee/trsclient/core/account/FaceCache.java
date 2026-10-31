@@ -22,12 +22,21 @@ import java.util.concurrent.TimeUnit;
  */
 public final class FaceCache {
 	static final String PROFILE_URL = "https://sessionserver.mojang.com/session/minecraft/profile/";
-	/** Ergebnis „kein Gesicht“ (Fehler) – nicht erneut versuchen. */
+	/** Ergebnis „kein Gesicht“ (Fehler) – erst nach {@link #RETRY_MS} erneut versuchen. */
 	private static final int[] NONE = new int[0];
+	/**
+	 * Wartezeiten nach Fehlschlägen (z. B. Mojang drosselt die Profil-Abfrage kurz): 30 s, 1, 2, 5, 10 min, danach
+	 * alle 10 min – ein Platzhalter bleibt so nicht die ganze Sitzung.
+	 */
+	static final long[] RETRY_MS = {30_000L, 60_000L, 120_000L, 300_000L, 600_000L};
 
 	private final Http http;
 	private final Map<String, int[]> faces = new ConcurrentHashMap<String, int[]>();
 	private final java.util.Set<String> loading = java.util.Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+	/** Nach einem Fehlschlag: frühester neuer Versuch (ms) und Zahl der Fehlschläge. */
+	private final Map<String, long[]> retry = new ConcurrentHashMap<String, long[]>();
+	/** Uhr (Tests stellen sie vor). */
+	java.util.function.LongSupplier clock = System::currentTimeMillis;
 	private final ThreadPoolExecutor worker;
 
 	public FaceCache(Http http) {
@@ -59,12 +68,24 @@ public final class FaceCache {
 	public int[] face(final String uuid, final String skinUrl) {
 		if (uuid == null) return null;
 		int[] f = faces.get(uuid);
-		if (f != null) return f.length == 0 ? null : f;
+		if (f != null && f.length > 0) return f;
+		if (f != null) {
+			// Fehlgeschlagen oder lädt noch: erst nach der Wartezeit erneut.
+			long[] r = retry.get(uuid);
+			if (loading.contains(uuid) || r == null || clock.getAsLong() < r[0]) return null;
+		}
 		faces.put(uuid, NONE);
 		loading.add(uuid);
 		try {
 			worker.execute(() -> {
 				int[] loaded = load(uuid, skinUrl);
+				if (loaded == null) {
+					long[] r = retry.get(uuid);
+					int n = r == null ? 0 : (int) r[1];
+					retry.put(uuid, new long[]{clock.getAsLong() + RETRY_MS[Math.min(n, RETRY_MS.length - 1)], n + 1});
+				} else {
+					retry.remove(uuid);
+				}
 				faces.put(uuid, loaded == null ? NONE : loaded);
 				loading.remove(uuid);
 			});
