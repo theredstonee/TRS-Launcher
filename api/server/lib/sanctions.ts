@@ -4,6 +4,7 @@ import { all, one, placeholders, run, tx } from './db'
 import { ApiError, badRequest, conflict, forbidden, notFound } from './errors'
 import { broadcastPresence } from './friends'
 import { endHostingFor } from './hosting'
+import { endSession as endWpshareSession } from './waypoint-share'
 import { emitCleared } from './playerevents'
 import { MIN_WARN_MINUTES, OWNER_RANK, SANCTION_PERMISSION, SYSTEM, assertCan, can, ownerStaff, rankOf, teamOf, type Staff } from './team'
 import { getUser, type StaffRole } from './users'
@@ -414,6 +415,8 @@ function applyEffects(ctx: AppContext, s: SanctionRow): void {
   if (s.kind === 'account_ban') {
     if (ctx.presence.delete(s.uuid)) broadcastPresence(ctx, s.uuid)
     endHostingFor(ctx, s.uuid)
+    // Live-Wegpunkte (§41): keine Position mehr an Freunde (Freigaben bleiben für die Zeit nach der Sperre).
+    endWpshareSession(ctx, s.uuid)
     // Beobachter (Mod) vergessen Abzeichen, Umhang und Kosmetik sofort.
     emitCleared(ctx, s.uuid)
     ctx.events.kick(s.uuid)

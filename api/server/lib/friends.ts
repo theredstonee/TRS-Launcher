@@ -9,6 +9,7 @@ import { hostingOnBlock, hostingOnUnfriend } from './hosting'
 import type { Presence } from './presence'
 import { assertNotSanctioned } from './sanctions'
 import { ACTIVE_BANS, getUser, getUserByName, isBanned, type UserRow } from './users'
+import { wpshareOnBlock, wpshareOnUnfriend } from './waypoint-share'
 
 export interface PresenceView {
   state: 'online' | 'in-game'
@@ -220,6 +221,7 @@ export function removeFriend(ctx: AppContext, me: string, other: string): void {
   // Die DM bleibt lesbar, aber ohne Schreibrecht.
   refreshDm(ctx, me, other)
   hostingOnUnfriend(ctx, me, other)
+  wpshareOnUnfriend(ctx, me, other)
 }
 
 export function block(ctx: AppContext, me: string, target: { uuid: string } | { name: string }): { uuid: string, name: string } {
@@ -245,6 +247,7 @@ export function block(ctx: AppContext, me: string, target: { uuid: string } | { 
   }
   for (const d of dropped) publish(ctx, d.holder, { type: 'cape_share_removed', capeId: d.capeId })
   hostingOnBlock(ctx, me, u.uuid)
+  wpshareOnBlock(ctx, me, u.uuid)
   selfChanged(ctx, me)
   return { uuid: u.uuid, name: u.name }
 }

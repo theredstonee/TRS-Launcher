@@ -320,19 +320,76 @@ const inviteSchema = z.strictObject({
   name: z.string().trim().min(1).max(32).optional(),
 })
 
-/** Wegpunkt-Karte (§18.10): keine Freitexte außer dem Namen. */
-export const waypointSchema = z.strictObject({
+/** Dimension als Namespaced-ID (§18.10), z. B. `minecraft:overworld`. */
+export const dimensionSchema = z.string().regex(/^[a-z0-9_.-]{1,32}:[a-z0-9_./-]{1,64}$/, 'invalid dimension')
+
+/** Welt eines Wegpunkts (§18.10, §41): Server-Adresse oder Hash einer Einzelspieler-/gehosteten Welt (16 hex). */
+export const waypointWorldSchema = z.discriminatedUnion('type', [
+  z.strictObject({ type: z.literal('server'), address: serverAddress }),
+  z.strictObject({ type: z.literal('world'), id: z.string().regex(/^[0-9a-f]{16}$/, 'invalid world id') }),
+])
+
+/** Felder eines Wegpunkts ohne Welt (§18.10) – auch für geteilte Wegpunkt-Listen (§41). Name wird in chat.ts gesäubert. */
+const waypointFields = {
   name: z.string().max(200),
   x: z.int().min(-30_000_000).max(30_000_000),
   y: z.int().min(-2048).max(4096),
   z: z.int().min(-30_000_000).max(30_000_000),
-  dimension: z.string().regex(/^[a-z0-9_.-]{1,32}:[a-z0-9_./-]{1,64}$/, 'invalid dimension'),
-  world: z.discriminatedUnion('type', [
-    z.strictObject({ type: z.literal('server'), address: serverAddress }),
-    z.strictObject({ type: z.literal('world'), id: z.string().regex(/^[0-9a-f]{16}$/, 'invalid world id') }),
-  ]),
+  dimension: dimensionSchema,
   color: z.int().min(0).max(0xffffff).optional(),
+}
+
+/** Wegpunkt-Karte (§18.10): keine Freitexte außer dem Namen. */
+export const waypointSchema = z.strictObject({ ...waypointFields, world: waypointWorldSchema })
+
+// ---------------------------------------------------------------- Live-Wegpunkte (§41)
+
+/** Wegpunkt-ID je Liste (vom Client erzeugt). */
+export const wpshareIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,40}$/, 'invalid waypoint id')
+export const WPSHARE_MAX_WAYPOINTS = 100
+
+export const wpshareWaypointSchema = z.strictObject({
+  id: wpshareIdSchema,
+  ...waypointFields,
+  death: z.boolean().optional(),
 })
+
+export const wpshareSessionBody = z.strictObject({ world: waypointWorldSchema, dimension: dimensionSchema })
+
+/** Koordinaten wie bei Wegpunkten, aber mit Nachkommastellen (Spielerposition); `yaw` in Grad (wird auf −180…180 gebracht). */
+export const wpsharePositionBody = z.strictObject({
+  x: z.number().min(-30_000_000).max(30_000_000),
+  y: z.number().min(-2048).max(4096),
+  z: z.number().min(-30_000_000).max(30_000_000),
+  dimension: dimensionSchema,
+  yaw: z.number().min(-1_000_000).max(1_000_000),
+})
+
+export const wpshareWaypointsBody = z.strictObject({
+  world: waypointWorldSchema,
+  rev: z.int().min(0).max(Number.MAX_SAFE_INTEGER).optional(),
+  waypoints: z.array(wpshareWaypointSchema).max(WPSHARE_MAX_WAYPOINTS),
+})
+
+/** `?world=<JSON>` (URL-kodiert), z. B. `{"type":"server","address":"play.example.net"}`. */
+const worldQuery = z.string().max(400).transform((s, ctx) => {
+  let v: unknown
+  try {
+    v = JSON.parse(s)
+  } catch {
+    ctx.addIssue({ code: 'custom', message: 'world must be JSON' })
+    return z.NEVER
+  }
+  const r = waypointWorldSchema.safeParse(v)
+  if (!r.success) {
+    ctx.addIssue({ code: 'custom', message: r.error.issues[0]?.message ?? 'invalid world' })
+    return z.NEVER
+  }
+  return r.data
+})
+
+export const wpshareWorldQuery = z.strictObject({ world: worldQuery })
+export const wpshareOptionalWorldQuery = z.strictObject({ world: worldQuery.optional() })
 
 export const sendMessageBody = z.strictObject({
   text: messageText.optional(),

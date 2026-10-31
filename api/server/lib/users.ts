@@ -7,6 +7,7 @@ import { notifyShareRemoved, releaseHoldings, shareHolders } from './capeshares'
 import { finishChatPurge, prepareChatPurge } from './chat'
 import { forgetCircuitAuthor } from './circuits'
 import { endHostingFor } from './hosting'
+import { wpshareOnAccountDelete } from './waypoint-share'
 import { forgetIssueAuthor, removeUploadFiles, type UploadRow } from './issues'
 import { activeEventsFor, lookEventsFor } from './liveevents'
 import { purgeModeration } from './moderation'
@@ -217,6 +218,8 @@ export function deleteUser(ctx: AppContext, uuid: string): void {
   const uploadDirs = packUploadTmpDirs(ctx, uuid)
   // Gehostete Welten schließen, aus fremden austragen (Rest per ON DELETE CASCADE).
   endHostingFor(ctx, uuid)
+  // Live-Wegpunkte (§41): Sitzung, Freigaben, geteilte Listen; Empfänger löschen lokal.
+  wpshareOnAccountDelete(ctx, uuid)
   // Issues (§28): Issues/Kommentare bleiben ohne Ersteller, Logs und eigene Bilder gehen (Dateien danach).
   let issueFiles: UploadRow[] = []
   tx(ctx.db, () => {

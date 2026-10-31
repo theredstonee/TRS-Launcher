@@ -904,6 +904,50 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 38,
     run: migrateMail,
   },
+  {
+    // Live-Wegpunkte (§41): gerichtete Freigaben (owner → friend = „friend sieht owner“), geteilte Wegpunkt-Listen je
+    // Besitzer und Welt (`world_key` = SHA-256 der normalisierten Welt, `world_json` nur für die eigene Übersicht, `rev`
+    // für Optimistic Concurrency) und ihre Wegpunkte (`sort` = Reihenfolge der Liste). Sitzungen und Positionen liegen
+    // nur im RAM, nie hier. Kontolöschung räumt per ON DELETE CASCADE auf. Idempotent.
+    // HINWEIS beim Mergen: Nummer ggf. an parallele Branches anpassen (nur anhängen).
+    version: 39,
+    sql: `
+CREATE TABLE IF NOT EXISTS wpshare_grants (
+  owner TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  friend TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (owner, friend)
+) WITHOUT ROWID;
+CREATE INDEX IF NOT EXISTS wpshare_grants_friend ON wpshare_grants(friend);
+
+CREATE TABLE IF NOT EXISTS wpshare_worlds (
+  owner TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  world_key TEXT NOT NULL,
+  world_json TEXT NOT NULL,
+  rev INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (owner, world_key)
+) WITHOUT ROWID;
+CREATE INDEX IF NOT EXISTS wpshare_worlds_updated ON wpshare_worlds(updated_at);
+
+CREATE TABLE IF NOT EXISTS wpshare_waypoints (
+  owner TEXT NOT NULL,
+  world_key TEXT NOT NULL,
+  id TEXT NOT NULL,
+  sort INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  x INTEGER NOT NULL,
+  y INTEGER NOT NULL,
+  z INTEGER NOT NULL,
+  dimension TEXT NOT NULL,
+  color INTEGER,
+  death INTEGER NOT NULL DEFAULT 0 CHECK (death IN (0, 1)),
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (owner, world_key, id),
+  FOREIGN KEY (owner, world_key) REFERENCES wpshare_worlds(owner, world_key) ON DELETE CASCADE
+) WITHOUT ROWID;
+`,
+  },
 ]
 
 /** Migration 38 (siehe oben): Mail + Newsletter. Exportiert für den Idempotenz-Test. */

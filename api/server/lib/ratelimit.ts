@@ -341,4 +341,15 @@ export const RULES = {
   teamNotifyUser: { limit: 10, windowMs: HOUR },
   /** Bilder der Mails (Pixel-Überschriften, Köpfe) je IP. */
   mailImageIp: { limit: 600, windowMs: MIN },
+  // ---- Live-Wegpunkte (§41)
+  /** Positionen: der Client sendet höchstens alle 3 s (Keepalive 15 s) – 30/min lässt Luft für Dimensionswechsel. */
+  wpPositionUser: { limit: 30, windowMs: MIN },
+  /** `PUT`/`DELETE /session`: Herzschlag alle 60 s plus Welt-/Dimensionswechsel. */
+  wpSessionUser: { limit: 20, windowMs: MIN },
+  /** Wechsel in eine ANDERE Welt (gegen das Orten von Freunden durch Ausprobieren von Server-Adressen). */
+  wpWorldChangeUser: { limit: 12, windowMs: 10 * MIN },
+  /** Freigaben setzen/entziehen, eigene Liste ersetzen. */
+  wpWriteUser: { limit: 60, windowMs: MIN },
+  /** Freigaben, eigene Listen, Listen der Freunde lesen. */
+  wpReadUser: { limit: 60, windowMs: MIN },
 } satisfies Record<string, Rule>

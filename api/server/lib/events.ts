@@ -162,6 +162,18 @@ export type ApiEvent =
   | ({ type: 'halloween_updated' } & HalloweenView)
   /** Owner-ausgelöster Schreck (§36, Part C): der Client läuft die genannte Art, wenn seine Sicherheits-/Opt-out-Prüfungen passen. */
   | { type: 'jumpscare', kind: ScareKind }
+  // ---------------------------------------------------------------- Live-Wegpunkte (§41, nur /v1/events/me)
+  /**
+   * Flüchtig: wer gerade mit dir in derselben Welt ist. `send` = Zahl der Freunde mit deiner Freigabe (nur dann Positionen
+   * senden), `receive` = Freunde, die dir freigegeben haben. Die Welt selbst wird nie genannt.
+   */
+  | { type: 'wpshare_peers', send: number, receive: string[] }
+  /** Flüchtig: Live-Position eines Freundes, der dir freigegeben hat und in derselben Welt ist (`t` = Zeitpunkt). */
+  | { type: 'wpshare_position', uuid: string, x: number, y: number, z: number, dimension: string, yaw: number, t: string }
+  /** Die geteilte Wegpunkt-Liste eines Freundes für deine aktuelle Welt hat sich geändert: `GET /v1/waypoint-share/friends` (`rev` 0 = gelöscht). */
+  | { type: 'wpshare_changed', uuid: string, rev: number }
+  /** Freigabe entzogen (oder Freundschaft beendet, Konto gelöscht): alles von `uuid` lokal löschen. */
+  | { type: 'wpshare_revoked', uuid: string }
 
 export type ApiEventType = ApiEvent['type']
 
