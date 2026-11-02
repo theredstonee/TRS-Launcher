@@ -573,7 +573,7 @@ class MapTest {
 		e.leaveWorld();
 		assertFalse(e.inWorld());
 		// Beim Verlassen gespeichert.
-		assertTrue(Files.isDirectory(dir.resolve("trsclient").resolve("maps")));
+		assertTrue(Files.isDirectory(dir.resolve("trsclient").resolve("maps-v3")));
 	}
 
 	@Test

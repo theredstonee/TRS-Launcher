@@ -7,16 +7,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 /**
- * Der eine Schalter für die Karten-Vorschau „Karte v3“ (Relief aus allen Nachbarhöhen, Wassertiefe beim Zeichnen,
- * lebendigere Biomfarben, gestochen scharfe Weltkarte in allen Zoomstufen, schnelleres Laden). Zuerst nur in
- * Vorschau-Builds für Creator (ab Partner-Stufe) und das TRS-Team – in normalen Builds aus, dann bleibt alles wie bisher.
+ * Der eine Schalter für die „Karte v3“ (Relief aus allen Nachbarhöhen, Wassertiefe beim Zeichnen, lebendigere
+ * Biomfarben, gestochen scharfe Weltkarte in allen Zoomstufen, schnelleres Laden). Für alle an, seit sie die
+ * Creator-Vorschau verlassen hat; die alte Karte bleibt nur als Ausweg.
  *
  * <p>Woher der Schalter kommt (einmal beim Start gelesen):
  * <ol>
- *   <li>System-Eigenschaft {@code trsclient.preview} (Komma-Liste): {@code map-v3} schaltet ein, {@code -map-v3} aus –
- *   für Tests und zum Ausprobieren ({@code -Dtrsclient.preview=map-v3});</li>
- *   <li>sonst die Datei {@value #RESOURCE} im Mod-Jar: Vorschau-Builds ({@code ./gradlew … -PtrsPreview=map-v3})
- *   schreiben dort die eingeschalteten Vorschau-Funktionen hinein, normale Builds haben sie nicht.</li>
+ *   <li>System-Eigenschaft {@code trsclient.preview} (Komma-Liste): {@code -map-v3} schaltet aus, {@code map-v3} ein –
+ *   für Tests und als Ausweg bei Problemen ({@code -Dtrsclient.preview=-map-v3});</li>
+ *   <li>sonst die Datei {@value #RESOURCE} im Mod-Jar, falls sie die Funktion nennt
+ *   ({@code ./gradlew … -PtrsPreview=-map-v3});</li>
+ *   <li>sonst an.</li>
  * </ol>
  *
  * <p>Die neue Karte speichert in einem eigenen Ordner ({@code config/trsclient/maps-v3}) und liest die bisherigen
@@ -50,13 +51,13 @@ public final class MapPreview {
 
 	/**
 	 * Entscheidung aus System-Eigenschaft und Build-Liste: die Eigenschaft gewinnt ({@code map-v3} an,
-	 * {@code -map-v3}/{@code !map-v3} aus), sonst zählt die Build-Liste.
+	 * {@code -map-v3}/{@code !map-v3} aus), sonst die Build-Liste, ohne Angabe ist die Karte v3 an.
 	 */
 	static boolean decide(String property, String buildList) {
 		Boolean prop = find(property);
 		if (prop != null) return prop;
 		Boolean build = find(buildList);
-		return build != null && build;
+		return build == null || build;
 	}
 
 	private static Boolean find(String list) {
