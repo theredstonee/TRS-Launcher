@@ -535,6 +535,13 @@ async function allowFirewall() {
       <SettingRow :title="t('settings.features.worldsTabTitle')" :description="t('settings.features.worldsTabDescription')">
         <ToggleSwitch v-model="form.ui.worldsTab" :label="t('settings.features.worldsTabTitle')" />
       </SettingRow>
+      <h3 class="section-heading mt-6">{{ t('settings.features.minigames') }}</h3>
+      <SettingRow :title="t('settings.features.minigamesTabTitle')" :description="t('settings.features.minigamesTabDescription')">
+        <ToggleSwitch v-model="form.ui.minigamesTab" :label="t('settings.features.minigamesTabTitle')" />
+      </SettingRow>
+      <SettingRow :title="t('settings.features.minigamesLoadingTitle')" :description="t('settings.features.minigamesLoadingDescription')">
+        <ToggleSwitch v-model="form.ui.minigamesWhileLoading" :label="t('settings.features.minigamesLoadingTitle')" />
+      </SettingRow>
       <template v-if="!mobile">
         <h3 class="section-heading mt-6">{{ t('settings.features.sidebar') }}</h3>
         <SettingRow :title="t('settings.features.sidebarRecentTitle')" :description="t('settings.features.sidebarRecentDescription')">

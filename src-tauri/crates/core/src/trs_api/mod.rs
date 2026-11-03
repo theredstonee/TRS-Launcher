@@ -18,6 +18,7 @@
 
 pub mod access;
 pub mod achievements;
+pub mod minigames;
 pub mod applications;
 pub mod cape_import;
 pub mod cape_video;

@@ -326,6 +326,17 @@ const mcTextureSetSchema = z.object({
   version: z.string().max(128),
   textures: z.array(z.object({ key: z.string().regex(/^(item|block)\/[a-z0-9_]{1,64}$/), dataUrl: pngDataUrl })).max(4000),
 })
+const minigameTextureSetSchema = z.object({
+  version: z.string().max(128),
+  textures: z.array(z.object({ key: z.string().regex(/^[a-z0-9_]{1,64}$/), dataUrl: pngDataUrl })).max(128),
+})
+const minigameStartSchema = z.object({ runId: z.string().max(64), seed: z.number().int().min(0).max(0xFFFFFFFF) })
+const minigameSubmitSchema = z.object({ accepted: z.boolean(), rank: z.number().int().min(0).default(0), best: z.number().int().min(0).default(0), improved: z.boolean().default(false) })
+const minigameLeaderboardSchema = z.object({
+  entries: z.array(z.object({ rank: z.number().int().min(1), uuid: z.string().max(36), name: z.string().max(32), score: z.number().int().min(0), at: z.string().max(40) })).max(200),
+  me: z.object({ rank: z.number().int().min(1), score: z.number().int().min(0) }).nullable(),
+  total: z.number().int().min(0),
+})
 const pickedIconImageSchema = z.object({ dataUrl: pngDataUrl, width: z.number().int().min(1).max(512), height: z.number().int().min(1).max(512) })
 
 /** Mobiler Update-Kanal (`mobile_update_check`). */
@@ -418,6 +429,7 @@ export const backend = {
   /** Spielversionen mit geladenem Client (Quelle der Item-/Block-Texturen), neueste zuerst. */
   mcTextureVersions: () => checked(z.array(z.string().max(128)).max(500), 'mc_texture_versions'),
   mcTextures: (version: string | null) => checked(mcTextureSetSchema, 'mc_textures', { version }),
+  minigameTextures: () => checked(minigameTextureSetSchema, 'minigame_textures'),
   /** Eigenes Bild über den nativen Dialog (geprüft, höchstens 512 px); `null` = abgebrochen. */
   pickIconImage: () => checked(pickedIconImageSchema.nullable(), 'pick_icon_image'),
   /** Pixel-Bild als PNG speichern; `false` = abgebrochen. */
@@ -1193,6 +1205,12 @@ export const backend = {
   },
 
   /** Launcher-Erfolge: eigene (Katalog, Fortschritt, Punkte) und die eines Freundes. */
+  minigames: {
+    start: (game: string) => checked(minigameStartSchema, 'trs_minigame_start', { game }),
+    submit: (game: string, runId: string, inputs: number[], score: number) => checked(minigameSubmitSchema, 'trs_minigame_submit', { game, runId, inputs, score }),
+    leaderboard: (game: string) => checked(minigameLeaderboardSchema, 'trs_minigame_leaderboard', { game }),
+    remove: (game: string, uuid: string, reason: string) => checked(z.null(), 'trs_minigame_remove', { game, uuid, reason }),
+  },
   achievements: {
     mine: () => checked(myAchievementsSchema, 'trs_achievements'),
     player: (uuid: string) => checked(playerAchievementsSchema, 'trs_player_achievements', { uuid }),

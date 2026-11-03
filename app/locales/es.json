@@ -1029,6 +1029,12 @@
       "imageTooLarge": "La imagen es demasiado grande (máximo 2 MB).",
       "invalidImage": "La imagen de referencia debe ser PNG o JPG.",
       "speciesLength": "Animal: de 1 a {max} caracteres."
+    },
+    "minigames": {
+      "noTextures": "Los minijuegos necesitan las texturas de Minecraft. Inicia una vez una instancia con Minecraft 1.17 o posterior.",
+      "unknownGame": "Este minijuego no existe.",
+      "invalidRun": "Esta partida no es válida.",
+      "invalidReason": "Indica un motivo breve."
     }
   },
   "browse": {
@@ -2490,7 +2496,12 @@
       "sidebarRecentTitle": "Instancias rápidas",
       "sidebarRecentDescription": "Las últimas instancias jugadas, con imagen, debajo de la navegación.",
       "sidebarAccountTitle": "Tarjeta de cuenta",
-      "sidebarAccountDescription": "La cuenta activa con la cabeza de su skin al pie de la barra."
+      "sidebarAccountDescription": "La cuenta activa con la cabeza de su skin al pie de la barra.",
+      "minigames": "Minijuegos",
+      "minigamesTabTitle": "Pestaña de minijuegos",
+      "minigamesTabDescription": "Muestra los juegos en la barra lateral.",
+      "minigamesLoadingTitle": "Ofrecer un juego mientras arranca Minecraft",
+      "minigamesLoadingDescription": "Un pequeño aviso te permite jugar una partida durante la espera. Nunca se abre solo."
     },
     "behavior": {
       "title": "Comportamiento",
@@ -3123,7 +3134,8 @@
     "localServers": "Mis servidores",
     "controls": "Controles",
     "pc": "PC",
-    "creator": "Creadores"
+    "creator": "Creadores",
+    "minigames": "Minijuegos"
   },
   "accountMenu": {
     "menuLabel": "Cuentas",
@@ -3183,7 +3195,8 @@
       "achievements": "logros trofeos puntos recompensas insignias desbloquear achievements",
       "docs": "ayuda docs documentación guía wiki faq manual soporte preguntas help",
       "bigPicture": "big picture tv mando gamepad steam deck pantalla completa sofá consola",
-      "creator": "creador código fans apoyar youtuber streamer símbolo de fan capa de fan"
+      "creator": "creador código fans apoyar youtuber streamer símbolo de fan capa de fan",
+      "minigames": "juegos arcade redstone apilador vagoneta clasificacion record"
     },
     "actions": {
       "newInstance": {
@@ -8177,6 +8190,85 @@
       "resetHint": "Vuelve a la página de inicio y cierra todos los diálogos.",
       "changePin": "Cambiar PIN",
       "quit": "Salir del launcher"
+    }
+  },
+  "minigames": {
+    "noTexturesTitle": "Faltan texturas de Minecraft",
+    "signal": "Fuerza de señal",
+    "score": "Puntos",
+    "localBest": "Tu récord",
+    "newBest": "¡Nuevo récord personal!",
+    "paused": "Pausa",
+    "start": "Empezar",
+    "again": "Otra vez",
+    "resume": "Continuar",
+    "enterHint": "O pulsa Intro",
+    "soundOn": "Activar sonido",
+    "soundOff": "Desactivar sonido",
+    "pauseKey": "Pausa (P)",
+    "stapler": {
+      "name": "Apilador de Redstone",
+      "tagline": "Los dispensadores sueltan los bloques, tu circuito los elimina.",
+      "hold": "Guardar (C)",
+      "next": "Siguientes",
+      "lamps": "Lámparas encendidas",
+      "pulseReady": "Pulso listo: E",
+      "levelLines": "Nivel · Filas",
+      "combo": "Cadena",
+      "over": "Circuito sobrecargado",
+      "keys": "← → mover · ↓ más rápido · Espacio soltar · ↑ o X girar · Z o Y girar al revés · C guardar · E pulso con señal máxima · P pausa · R reiniciar · M sonido",
+      "rules": {
+        "redstoneTitle": "Bloque de redstone:",
+        "redstone": "Al eliminarse su fila, da señal a todo lo que tiene cerca.",
+        "tntTitle": "TNT:",
+        "tnt": "Con señal o en una fila eliminada explota, y la pila de arriba cae.",
+        "lampTitle": "Lámpara:",
+        "lamp": "Con señal brilla 10 segundos. Cada lámpara encendida aumenta los puntos un 50 %.",
+        "pistonTitle": "Pistón:",
+        "piston": "Con señal empuja su fila hasta el hueco más cercano y lo rellena."
+      }
+    },
+    "loren": {
+      "name": "Vagoneta Veloz",
+      "tagline": "Mueve las palancas, recoge redstone y no te salgas de las vías.",
+      "over": "Descarrilado",
+      "speed": "{n} bloques/s",
+      "blocks": "{n} bloques",
+      "shield": "{n} / 15 · Escudo activo",
+      "turboReady": "Turbo listo: E",
+      "turboActive": "TURBO",
+      "keys": "← → o A D cambiar de vía · ↑ W o Espacio saltar · ↓ o S agacharse · E turbo con señal máxima · P pausa · R reiniciar · M sonido",
+      "zones": {
+        "mine": "Mina",
+        "deepslate": "Pizarra profunda",
+        "nether": "Nether",
+        "frost": "Cueva helada",
+        "den": "Madriguera"
+      }
+    },
+    "result": {
+      "checking": "Comprobando la partida…",
+      "improved": "Nueva entrada: puesto {rank} mundial.",
+      "notImproved": "Sigues en el puesto {rank} mundial con {score} puntos.",
+      "rejected": "El servidor no pudo confirmar esta partida, así que no cuenta.",
+      "failed": "No se pudo enviar la partida. Solo cuenta en local.",
+      "local": "Esta partida solo cuenta en local."
+    },
+    "board": {
+      "title": "Mundial, histórico",
+      "needsTrs": "La clasificación necesita los servicios de TRS. Puedes jugar igualmente.",
+      "error": "Ahora mismo no se puede cargar la clasificación.",
+      "empty": "Aún no hay entradas. Sé la primera persona.",
+      "me": "Tú: puesto {rank} con {score} puntos",
+      "note": "El servidor recalcula cada partida a partir de tus entradas. El equipo puede eliminar entradas falsas.",
+      "remove": "Eliminar a {name}",
+      "removeTitle": "¿Eliminar la entrada de {name}?",
+      "removeReason": "Motivo",
+      "removeConfirm": "Eliminar"
+    },
+    "loading": {
+      "title": "Minecraft se está iniciando",
+      "text": "¿Te apetece una partida rápida mientras esperas?"
     }
   }
 }

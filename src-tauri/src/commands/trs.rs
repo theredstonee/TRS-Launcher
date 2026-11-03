@@ -45,6 +45,30 @@ pub async fn trs_achievements(launcher: State<'_, LauncherState>) -> CommandResu
     Ok(launcher.trs_achievements().await?)
 }
 
+/// Minispiele: Startwert einer gewerteten Partie.
+#[tauri::command]
+pub async fn trs_minigame_start(launcher: State<'_, LauncherState>, game: String) -> CommandResult<serde_json::Value> {
+    Ok(launcher.trs_minigame_start(&game).await?)
+}
+
+/// Minispiele: beendete Partie einreichen, der Server rechnet sie nach.
+#[tauri::command]
+pub async fn trs_minigame_submit(launcher: State<'_, LauncherState>, game: String, run_id: String, inputs: Vec<u32>, score: u64) -> CommandResult<serde_json::Value> {
+    Ok(launcher.trs_minigame_submit(&game, &run_id, inputs, score).await?)
+}
+
+/// Minispiele: Bestenliste samt eigenem Platz.
+#[tauri::command]
+pub async fn trs_minigame_leaderboard(launcher: State<'_, LauncherState>, game: String) -> CommandResult<serde_json::Value> {
+    Ok(launcher.trs_minigame_leaderboard(&game).await?)
+}
+
+/// Minispiele: Team entfernt einen falschen Eintrag.
+#[tauri::command]
+pub async fn trs_minigame_remove(launcher: State<'_, LauncherState>, game: String, uuid: String, reason: String) -> CommandResult<()> {
+    Ok(launcher.trs_minigame_remove(&game, &uuid, &reason).await?)
+}
+
 /// Meldung aus der Oberfläche (nur `crash_fixed`: Behebungen des Absturz-Helfers laufen dort).
 #[tauri::command]
 pub async fn trs_achievement_report(launcher: State<'_, LauncherState>, kind: String) -> CommandResult<()> {

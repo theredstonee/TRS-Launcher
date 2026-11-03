@@ -97,6 +97,8 @@ export interface UiSettings {
   motion: Motion
   worldsTab: boolean
   screenshotsTab: boolean
+  minigamesTab: boolean
+  minigamesWhileLoading: boolean
   historyTab: boolean
   sidebarRecent: boolean
   sidebarAccount: boolean

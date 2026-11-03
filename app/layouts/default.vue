@@ -264,6 +264,7 @@ onBeforeUnmount(() => void backListener?.unregister())
     <!-- Halloween 2026: Mondnacht-Atmosphäre über jeder Seite, nur solange das Event läuft. -->
     <HalloweenAtmosphere v-if="events.lookHalloween && !isBig" />
     <StartIntroHint v-if="!isBig" />
+    <MinigamesLaunchMinigame v-if="!isBig" />
     <ToastHost />
     <SocialToastHost />
     <JoinServerDialog />
