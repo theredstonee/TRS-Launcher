@@ -33,10 +33,12 @@ How to write an entry:
 ### English
 - **TRS Client: crash on Minecraft 1.21.6 to 1.21.10 fixed.** On Fabric, NeoForge and Forge for these versions the game could crash right at startup ("Mods clash while changing ChatHud") because the chat heads hooked into a place that moved in these versions. Chat heads now work there again, and if the place ever moves again only the heads are missing – the game still starts.
 - **TRS Client: new minimap and world map for everyone.** The landscape now has real relief from all sides, water shows its depth and the ground below, biome colours are livelier, the world map stays sharp at every zoom level, and the map fills in faster and across your whole render distance. Your existing maps keep working and are still shown; the new map saves its data separately.
+- **TRS Client: minigames.** Redstone Stacker and Minecart Rush are now in the TRS menu, with the textures of your game and resource packs and the worldwide leaderboard. They are a menu screen, so they give no advantage on servers, and in singleplayer the world waits while you play.
 
 ### Deutsch
 - **TRS Client: Absturz unter Minecraft 1.21.6 bis 1.21.10 behoben.** Mit Fabric, NeoForge und Forge konnte das Spiel in diesen Versionen direkt beim Start abstürzen („Mods kollidieren bei ChatHud“), weil sich die Chat-Köpfe an einer Stelle einhakten, die es dort so nicht mehr gibt. Die Chat-Köpfe funktionieren dort wieder, und sollte sich die Stelle noch einmal ändern, fehlen nur die Köpfe – das Spiel startet trotzdem.
 - **TRS Client: neue Minimap und Weltkarte für alle.** Die Landschaft hat jetzt echtes Relief von allen Seiten, Wasser zeigt seine Tiefe und den Grund darunter, Biomfarben wirken lebendiger, die Weltkarte bleibt in jeder Zoomstufe scharf, und die Karte füllt sich schneller und über deine ganze Sichtweite. Deine bisherigen Karten funktionieren weiter und werden weiter angezeigt; die neue Karte speichert ihre Daten getrennt.
+- **TRS Client: Minispiele.** Redstone-Stapler und Loren-Rausch stehen jetzt im TRS-Menü, mit den Texturen deines Spiels und deiner Ressourcenpakete und der weltweiten Rangliste. Sie sind ein Menü-Bildschirm, bringen also auf Servern keinen Vorteil, und im Einzelspieler wartet die Welt, solange du spielst.
 
 ## 0.31.0 – 2026-10-25 – The Heist | Der Coup
 <!-- banner: accent=#41cd62 motif=/news/0.31.0/banner.png -->
