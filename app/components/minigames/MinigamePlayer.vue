@@ -27,6 +27,7 @@ const hud = shallowRef<GameHud | null>(null)
 const soundOn = ref(true)
 const lastRun = shallowRef<FinishedRun | null>(null)
 const starting = ref(false)
+const newBest = ref(false)
 let session: GameSession | null = null
 
 const best = computed(() => store.localBest(props.game))
@@ -55,6 +56,7 @@ function createSession() {
       state.value = value
     },
     onFinish: (run) => {
+      newBest.value = run.score > store.localBest(run.game)
       lastRun.value = run
       store.recordLocal(run.game, run.score)
       emit('finished', run)
@@ -252,7 +254,7 @@ defineExpose({ pause: () => session?.pause(true) })
             <template v-if="state === 'over' && lastRun">
               <h2>{{ t(game === 'stapler' ? 'minigames.stapler.over' : 'minigames.loren.over') }}</h2>
               <p class="score">{{ format(lastRun.score) }}</p>
-              <p v-if="lastRun.score >= best" class="text-sm text-redstone-300">{{ t('minigames.newBest') }}</p>
+              <p v-if="newBest" class="text-sm text-redstone-300">{{ t('minigames.newBest') }}</p>
               <slot name="result" :run="lastRun" />
             </template>
             <template v-else-if="state === 'paused'">
@@ -341,8 +343,18 @@ defineExpose({ pause: () => session?.pause(true) })
 .legend canvas { width: 32px; height: 32px; }
 .keys { margin-top: 12px; font-size: 12px; line-height: 1.6; color: rgb(255 255 255 / 0.72); }
 .controls { position: absolute; left: 12px; bottom: 12px; display: flex; gap: 6px; }
+.loren-hud .mt-auto { margin-left: 84px; }
 .ctl { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 6px; color: #fff; background: rgb(0 0 0 / 0.55); border: 1px solid rgb(255 255 255 / 0.15); }
 .ctl:hover { background: rgb(0 0 0 / 0.75); }
 @media (max-width: 760px) { .side { display: none; } }
+@media (max-height: 780px) {
+  .side { gap: 5px; }
+  .box { padding: 4px 8px; }
+  .lab { margin-bottom: 1px; font-size: 10px; }
+  .val { font-size: 16px; }
+  .mini { width: 52px; }
+  .hint { margin-top: 2px; }
+  .meter { height: 14px; }
+}
 @media (prefers-reduced-motion: reduce) { .meter i.on { box-shadow: none; } }
 </style>
