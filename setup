@@ -1,0 +1,172 @@
+#!/bin/bash
+# First-time setup: checks what a developer needs, installs what is missing after asking, then fetches the packages.
+#   setup            check, ask before each install, run pnpm install
+#   setup --pruefen  only check, change nothing
+#   setup --ja       install without asking
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.dev/ui.sh"
+
+MODE=ask
+case "${1:-}" in
+  "") ;;
+  --pruefen) MODE=check ;;
+  --ja) MODE=yes ;;
+  *) ui_fail "Unbekannte Option $1 (--pruefen, --ja)"; exit 2 ;;
+esac
+
+NODE_MIN=22; JAVA_MIN=21
+PNPM_VERSION="$(sed -n 's/.*"packageManager": *"pnpm@\([^"]*\)".*/\1/p' "$DEV_ROOT/package.json")"
+MISSING=0; RESTART=0
+
+major() { sed -E 's/^[^0-9]*([0-9]+).*/\1/' <<< "$1"; }
+
+java_major() { # the JDK Gradle will use: JAVA_HOME first, then PATH. Java 8 reports itself as 1.8.
+  local bin=java line v
+  [[ -n "$JAVA_HOME" && -x "$JAVA_HOME/bin/java" ]] && bin="$JAVA_HOME/bin/java"
+  [[ -n "$JAVA_HOME" && -x "$JAVA_HOME/bin/java.exe" ]] && bin="$JAVA_HOME/bin/java.exe"
+  line="$("$bin" -version 2>&1 | head -n 1)" || return 1
+  v="$(sed -nE 's/.*version "([^"]+)".*/\1/p' <<< "$line")"
+  [[ -n "$v" ]] || return 1
+  [[ "$v" == 1.* ]] && v="${v#1.}"
+  major "$v"
+}
+
+msvc_ok() {
+  # Looks for the linker itself: vswhere does not list every installation that Rust can use.
+  local base link
+  for base in "$(cygpath -F 42)" "$(cygpath -F 38)"; do # the folders "Program Files (x86)" and "Program Files"
+    for link in "$base"/Microsoft\ Visual\ Studio/*/*/VC/Tools/MSVC/*/bin/Hostx64/x64/link.exe; do
+      [[ -f "$link" ]] && return 0
+    done
+  done
+  return 1
+}
+
+webview_ok() {
+  local key='SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'
+  MSYS_NO_PATHCONV=1 reg query "HKLM\\${key/SOFTWARE/SOFTWARE\\WOW6432Node}" /v pv > /dev/null 2>&1 ||
+    MSYS_NO_PATHCONV=1 reg query "HKCU\\$key" /v pv > /dev/null 2>&1
+}
+
+confirm() { # confirm <what>
+  [[ "$MODE" == yes ]] && return 0
+  [[ "$MODE" == check ]] && return 1
+  local answer
+  read -r -p "  $1 installieren? [j/N] " answer
+  [[ "$answer" == [jJyY]* ]]
+}
+
+offer() { # offer <name> <hint> [install command...] : reports a missing tool and installs it after asking
+  local name="$1" hint="$2"; shift 2
+  ui_fail "$name fehlt. $hint"
+  if (($# > 0)) && confirm "$name"; then
+    ui_step "Installiere $name"
+    if "$@"; then
+      ui_ok "$name installiert"
+      RESTART=1
+      return 0
+    fi
+    ui_fail "$name ließ sich nicht installieren."
+  fi
+  MISSING=$((MISSING + 1))
+  return 1
+}
+
+winget_cmd() { # prints nothing, runs winget with the usual options
+  winget install --id "$1" -e --accept-package-agreements --accept-source-agreements "${@:2}"
+}
+
+ui_banner "Einrichtung" "prüft Werkzeuge, installiert nur nach Rückfrage"
+
+IS_WINDOWS=0
+command -v winget > /dev/null && IS_WINDOWS=1
+
+# Git
+if command -v git > /dev/null; then ui_ok "$(git --version)"; else offer "Git" "https://git-scm.com/downloads"; fi
+
+# Node.js
+node_major=""
+command -v node > /dev/null && node_major="$(major "$(node -v)")"
+if [[ -n "$node_major" ]] && ((node_major >= NODE_MIN)); then
+  ui_ok "Node.js $(node -v)"
+elif ((IS_WINDOWS)); then
+  offer "Node.js $NODE_MIN+" "Gefunden: ${node_major:-keins}." winget_cmd OpenJS.NodeJS.LTS
+else
+  offer "Node.js $NODE_MIN+" "Gefunden: ${node_major:-keins}. https://nodejs.org"
+fi
+
+# pnpm: any version works, it switches to the one in package.json by itself
+if command -v pnpm > /dev/null; then
+  ui_ok "pnpm $(pnpm -v)"
+elif command -v npm > /dev/null; then
+  offer "pnpm $PNPM_VERSION" "" npm install -g "pnpm@$PNPM_VERSION"
+else
+  offer "pnpm $PNPM_VERSION" "Kommt nach Node.js dran, dann setup erneut starten."
+fi
+
+# Rust
+if command -v cargo > /dev/null; then
+  ui_ok "$(cargo -V)"
+elif ((IS_WINDOWS)); then
+  offer "Rust" "" winget_cmd Rustlang.Rustup
+else
+  offer "Rust" "Installieren mit rustup: https://rustup.rs"
+fi
+
+# What Tauri needs from the system
+if ((IS_WINDOWS)); then
+  if msvc_ok; then
+    ui_ok "Visual Studio Build Tools mit C++"
+  else
+    offer "Visual Studio Build Tools mit C++" "Großer Download, mehrere GB." winget_cmd Microsoft.VisualStudio.2022.BuildTools \
+      --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+  fi
+  if webview_ok; then ui_ok "WebView2"; else offer "WebView2" "" winget_cmd Microsoft.EdgeWebView2Runtime; fi
+elif [[ "$(uname -s)" == Linux ]]; then
+  if command -v pkg-config > /dev/null && pkg-config --exists webkit2gtk-4.1 gtk+-3.0 librsvg-2.0 openssl; then
+    ui_ok "Linux-Bibliotheken für Tauri"
+  else
+    offer "Linux-Bibliotheken für Tauri" "Die Befehle für apt, pacman und dnf stehen in der README unter Linux."
+  fi
+else
+  ui_warn "Dieses System prüft setup nicht weiter. Voraussetzungen stehen in der README."
+fi
+
+# Java for the TRS Client: Gradle itself needs 21+ and fetches the other versions alone
+jdk="$(java_major 2> /dev/null)"
+if [[ -n "$jdk" ]] && ((jdk >= JAVA_MIN)); then
+  ui_ok "JDK $jdk für Gradle"
+elif ((IS_WINDOWS)); then
+  offer "JDK $JAVA_MIN+" "Gefunden: ${jdk:-keins}. Nur für den TRS Client nötig. Danach JAVA_HOME prüfen." winget_cmd EclipseAdoptium.Temurin.25.JDK
+else
+  offer "JDK $JAVA_MIN+" "Gefunden: ${jdk:-keins}. Nur für den TRS Client nötig. https://adoptium.net"
+fi
+
+printf '\n'
+if ((RESTART)); then
+  ui_warn "Neu installiert: Terminal schließen, neu öffnen und setup noch einmal starten."
+  exit 0
+fi
+if ((MISSING)); then
+  if [[ "$MODE" == check ]]; then
+    ui_fail "Es fehlt noch etwas ($MISSING). setup ohne --pruefen bietet die Installation an."
+  else
+    ui_fail "Es fehlt noch etwas ($MISSING), Pakete werden erst danach geholt."
+  fi
+  exit 1
+fi
+
+if [[ "$MODE" == check ]]; then
+  ui_ok "Alles da. Nichts verändert."
+  exit 0
+fi
+
+cd "$DEV_ROOT" || exit 1
+ui_step "Hole die Pakete"
+UI_PHASE="pnpm install"
+ui_run setup-install pnpm install --frozen-lockfile
+rc=$?
+if ((rc != 0)); then ui_finish $rc "pnpm install"; exit $rc; fi
+
+ui_ok "Fertig eingerichtet."
+printf '\n  %sLauncher testen:%s  test\n  %sClient testen:%s    start-client\n  %sTRS Studio:%s       studio (nur fürs Team)\n\n' \
+  "$C_BOLD" "$C_OFF" "$C_BOLD" "$C_OFF" "$C_BOLD" "$C_OFF"
