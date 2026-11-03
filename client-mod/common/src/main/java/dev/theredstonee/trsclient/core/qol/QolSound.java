@@ -12,7 +12,15 @@ public enum QolSound {
 	BASS("block.note_block.bass", "block.note.bass", "note.bass"),
 	HAT("block.note_block.hat", "block.note.hat", "note.hat"),
 	ARROW_HIT("entity.arrow.hit_player", "entity.arrow.hit_player", "random.successful_hit"),
-	CRIT("entity.player.attack.crit", "entity.player.attack.crit", null);
+	CRIT("entity.player.attack.crit", "entity.player.attack.crit", null),
+	// Minispiele: Geräusche der Bauteile, die sie zeigen.
+	LEVER("block.lever.click", "block.lever.click", "random.click"),
+	DISPENSE("block.dispenser.dispense", "block.dispenser.dispense", "random.click"),
+	STONE_PLACE("block.stone.place", "block.stone.place", "dig.stone"),
+	TNT_PRIMED("entity.tnt.primed", "entity.tnt.primed", "game.tnt.primed"),
+	EXPLODE("entity.generic.explode", "entity.generic.explode", "random.explode"),
+	PISTON("block.piston.extend", "block.piston.extend", "tile.piston.out"),
+	MINECART("entity.minecart.riding", "entity.minecart.riding", "minecart.base");
 
 	public final String modern;
 	public final String legacy;

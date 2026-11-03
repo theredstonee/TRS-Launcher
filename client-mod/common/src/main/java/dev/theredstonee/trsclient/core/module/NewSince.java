@@ -170,6 +170,10 @@ public final class NewSince {
 	public static final String WINTER_COSMETICS = "0.21.0";
 	/** Garderobe → Kosmetik → Abschnitt „Begleiter (Boden)“ samt Schaltern für abschaltbare Teile. */
 	public static final String WARDROBE_PET = "wardrobe:pet";
+	/** Minispiele (nächste Version nach TRS Client 0.23.1): Redstone-Stapler und Loren-Rausch mit weltweiter Rangliste. */
+	public static final String MINIGAMES = "0.24.0";
+	/** Leisten-Eintrag „Minispiele“ im TRS-Menü. */
+	public static final String MENU_MINIGAMES = "menu:minigames";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
@@ -256,6 +260,8 @@ public final class NewSince {
 		add(GAMMA_REFILL, "autorefill", "fullbright.level", KEY_GAMMA_CYCLE, KEY_AUTO_REFILL);
 		// Winter-Kosmetik: Begleiter am Boden + Optionen in der Garderobe.
 		add(WINTER_COSMETICS, WARDROBE_PET);
+		// Minispiele: Modul + Eintrag in der Menü-Leiste.
+		add(MINIGAMES, "minigames", MENU_MINIGAMES);
 	}
 
 	private NewSince() {

@@ -127,7 +127,7 @@ The generated default config lists **all module ids by category** (all commented
 | CHAT | `chat` `autoGg` `textHotkeys` `social` `chatMentions` `chatHeads` `chatFilter` |
 | REDSTONE | `redstoneSignal` `redstoneOverlay` `redstoneClock` `circuitLibrary` |
 | PERFORMANCE | `fpsBoost` `dynamicFps` `borderlessFullscreen` `entityCulling` `particles` `worldDetails` `builtinOptimizations` `netOptimize` `lowLatency` `fastConnect` |
-| MISC | `titleScreen` `menuStyle` `trsOnline` `capePhysics` `emotes` `clips` `cinematic` `halloween` `tooltips` `serverProfiles` `screenshots` `keySearch` `autoReconnect` `queueAlerts` `streamerMode` |
+| MISC | `titleScreen` `menuStyle` `trsOnline` `capePhysics` `emotes` `clips` `cinematic` `halloween` `tooltips` `serverProfiles` `screenshots` `keySearch` `autoReconnect` `queueAlerts` `streamerMode` `minigames` |
 
 ## Commands and permissions
 
