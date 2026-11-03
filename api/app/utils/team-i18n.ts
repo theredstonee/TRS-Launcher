@@ -156,6 +156,7 @@ const en = {
       serverrules: 'Server rules',
       previews: 'Preview builds',
       newsletter: 'Newsletter',
+      minigames: 'Minigames',
     } as Record<string, string>,
     perms: {
       'dashboard.view': 'See the overview',
@@ -202,6 +203,7 @@ const en = {
       'previews.access': 'Preview builds: download launcher and TRS Client preview builds like Partner creators',
       'newsletter.manage': 'Newsletter: write drafts, preview, send a test to yourself',
       'newsletter.send': 'Newsletter: send and schedule to all subscribers',
+      'minigames.manage': 'Remove wrong entries from the minigame leaderboards',
     } as Record<string, string>,
     roles: {
       title: 'Roles & team',
@@ -567,6 +569,7 @@ const de: TeamTexts = {
       serverrules: 'Server-Regeln',
       previews: 'Vorschau-Builds',
       newsletter: 'Newsletter',
+      minigames: 'Minispiele',
     },
     perms: {
       'dashboard.view': 'Übersicht sehen',
@@ -613,6 +616,7 @@ const de: TeamTexts = {
       'previews.access': 'Vorschau-Builds: Vorschau-Builds von Launcher und TRS Client laden wie Partner-Creator',
       'newsletter.manage': 'Newsletter: Entwürfe schreiben, Vorschau, Testmail an dich',
       'newsletter.send': 'Newsletter: an alle Abonnenten senden und planen',
+      'minigames.manage': 'Falsche Einträge aus den Minispiel-Ranglisten entfernen',
     },
     roles: {
       title: 'Rollen & Team',
@@ -976,6 +980,7 @@ const es: TeamTexts = {
       serverrules: 'Reglas de servidor',
       previews: 'Versiones de prueba',
       newsletter: 'Boletín',
+      minigames: 'Minijuegos',
     },
     perms: {
       'dashboard.view': 'Ver el resumen',
@@ -1022,6 +1027,7 @@ const es: TeamTexts = {
       'previews.access': 'Versiones de prueba: descargar versiones de prueba del launcher y del TRS Client como los creadores Partner',
       'newsletter.manage': 'Boletín: escribir borradores, vista previa, prueba a ti mismo',
       'newsletter.send': 'Boletín: enviar y programar a todos los suscriptores',
+      'minigames.manage': 'Quitar entradas incorrectas de las clasificaciones de minijuegos',
     },
     roles: {
       title: 'Roles y equipo',

@@ -904,7 +904,42 @@ CREATE INDEX chat_report_notes_report ON chat_report_notes(report_id);
     version: 38,
     run: migrateMail,
   },
+  {
+    // Minispiel-Ranglisten (§42): laufende Partien (Startwert vom Server, einmal benutzbar) und Bestwerte je Spiel
+    // und Konto; Recht `minigames.manage` für Owner und Admin. Idempotent.
+    // HINWEIS: Nummer 39 ist auf dem Branch wpshare-website belegt (bewusst übersprungen). Der Runner überspringt
+    // jede Version <= höchster angewandter – 39 muss VOR 40 live gehen oder umnummeriert werden.
+    version: 40,
+    run: migrateMinigames,
+  },
 ]
+
+/** Migration 40 (siehe oben): Minispiel-Ranglisten. Exportiert für den Idempotenz-Test. */
+export function migrateMinigames(db: DatabaseSync): void {
+  db.exec(`
+CREATE TABLE IF NOT EXISTS minigame_runs (
+  run_id TEXT PRIMARY KEY,
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  game TEXT NOT NULL CHECK (game IN ('stapler', 'loren')),
+  seed INTEGER NOT NULL CHECK (seed >= 0 AND seed <= 4294967295),
+  created_at INTEGER NOT NULL,
+  used INTEGER NOT NULL DEFAULT 0 CHECK (used IN (0, 1))
+);
+CREATE INDEX IF NOT EXISTS minigame_runs_created ON minigame_runs(created_at);
+
+CREATE TABLE IF NOT EXISTS minigame_scores (
+  game TEXT NOT NULL CHECK (game IN ('stapler', 'loren')),
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  score INTEGER NOT NULL CHECK (score >= 0),
+  ticks INTEGER NOT NULL CHECK (ticks >= 0),
+  at INTEGER NOT NULL,
+  PRIMARY KEY (game, uuid)
+);
+-- Rangfolge: höchste Punktzahl zuerst, bei Gleichstand der frühere Eintrag.
+CREATE INDEX IF NOT EXISTS minigame_scores_rank ON minigame_scores(game, score DESC, at ASC);
+`)
+  grantBuiltin(db, { owner: ['minigames.manage'], admin: ['minigames.manage'] })
+}
 
 /** Migration 38 (siehe oben): Mail + Newsletter. Exportiert für den Idempotenz-Test. */
 export function migrateMail(db: DatabaseSync): void {

@@ -5237,3 +5237,54 @@ texts. The confirmed address is also the target of the own test newsletters.
 Migration 38: `newsletter_subscribers`, `newsletter_campaigns`, `mail_outbox`, `mail_api_keys`, `mail_team_prefs`,
 `mail_team_pending`, `mail_team_state`; permissions `newsletter.manage` + `newsletter.send` for Owner/Admin. Idempotent.
 When merging: renumber if a parallel branch also added a migration 38.
+
+
+---
+
+## 42. Minigame leaderboards
+
+Games: `stapler` (Redstone Stapler) and `loren` (Loren-Rausch); any other `{game}` answers `404 not_found`. Only the
+server counts: it hands out the seed and replays every submitted game with the same rules as the launcher and the TRS
+Client (`api/shared/minigames`, test vectors in `api/tests/fixtures/minigames-vectors.json`, fixed 60 Hz tick, integers
+only). Everything needs a signed-in account (Bearer token).
+
+### 42.1 Start a game
+
+`POST /v1/minigames/{game}/start` (no body) -> `{ runId, seed }`. `seed` is a random uint32 chosen by the server;
+`runId` is an opaque id (letters, digits, `-`, max. 64). A run belongs to the account and the game, can be submitted
+once, and expires after **3 hours** (unused runs older than that are deleted on the next start). Limit: 60 starts per
+hour and account.
+
+### 42.2 Submit a game
+
+`POST /v1/minigames/{game}/runs` body `{ runId, inputs: number[], score: number }` (max. 512 KiB, `inputs` max.
+36 000 numbers, alternating tick gap and key mask; `score` an integer) -> `{ accepted, rank, best, improved }`.
+
+- The run is **consumed first** (once, atomically), then replayed. An unknown, foreign (other account or game), used or
+  expired run answers `404 minigame_run_unknown` and changes nothing. A body of the wrong shape answers
+  `400 invalid_request` and does **not** consume the run.
+- `{ accepted: false, rank: 0, best: 0, improved: false }` when the input list is invalid (`validInputs`), the replayed
+  game did not finish, the replayed score differs from `score`, or the game was submitted too fast: `ticks / 60` seconds
+  may not exceed the time since `start` by more than 10 % plus 5 seconds (`ticks/60 <= elapsed * 1.1 + 5 s`).
+- Otherwise the personal best is raised when the replayed score is higher (`improved: true`); `rank` and `best` are the
+  account's place and best score afterwards. A lower or equal score is accepted with `improved: false`.
+- Limit: 20 submissions per 10 minutes and account. Replaying runs synchronously on the main thread (up to 216 000
+  ticks, a few hundred ms at most), so this limit together with the start limit bounds the CPU time one account can use.
+
+### 42.3 Leaderboard
+
+`GET /v1/minigames/{game}/leaderboard` -> `{ entries: [{ rank, uuid, name, score, at }], me: { rank, score } | null,
+total }`. Top 100, highest score first; with equal scores the entry reached earlier comes first (then by UUID).
+`at` is the ISO time of the best score, `me` is the caller's place (also when beyond 100), `total` the number of
+entries. 60 requests per minute and account.
+
+### 42.4 Team: remove an entry
+
+`POST /v1/admin/minigames/{game}/scores/{uuid}/remove` body `{ reason }` (1 to 300 characters, no control characters)
+-> `{ ok: true }`. Permission **`minigames.manage`** (group `minigames`), audit action `minigames.score.remove`
+(target = player, detail = `game (score): reason`). `404 minigame_score_unknown` if the player has no entry. The player
+may play again. 60 per minute and team member.
+
+Migration 40: tables `minigame_runs` and `minigame_scores`; permission `minigames.manage` for Owner and Admin
+(idempotent). Number 39 is reserved for the unreleased branch `wpshare-website`; the migration runner skips every
+version that is not higher than the highest applied one, so 39 has to be deployed **before** 40 or be renumbered.

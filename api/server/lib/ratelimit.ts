@@ -341,4 +341,13 @@ export const RULES = {
   teamNotifyUser: { limit: 10, windowMs: HOUR },
   /** Bilder der Mails (Pixel-Überschriften, Köpfe) je IP. */
   mailImageIp: { limit: 600, windowMs: MIN },
+  // ---- Minispiel-Ranglisten (§42)
+  /** Partie starten: höchstens 60 je Stunde und Konto (ein Konto kann so höchstens 60 Nachrechnungen je Stunde auslösen). */
+  minigameStartUser: { limit: 60, windowMs: HOUR },
+  /** Partie einreichen (Nachrechnen im Hauptthread, bis ~0,2 s je Partie): 20 je 10 min und Konto. */
+  minigameSubmitUser: { limit: 20, windowMs: 10 * MIN },
+  /** Bestenliste lesen. */
+  minigameBoardUser: { limit: 60, windowMs: MIN },
+  /** Team: Einträge entfernen. */
+  adminMinigames: { limit: 60, windowMs: MIN },
 } satisfies Record<string, Rule>

@@ -50,6 +50,8 @@ export const PERMISSIONS = [
   // Newsletter (§40): Entwürfe, Vorschau, Testmail bzw. Versand an alle bestätigten Empfänger.
   'newsletter.manage',
   'newsletter.send',
+  // Minispiel-Ranglisten (§42): falsche Einträge entfernen.
+  'minigames.manage',
 ] as const
 export type Permission = (typeof PERMISSIONS)[number]
 const PERMISSION_SET: ReadonlySet<string> = new Set(PERMISSIONS)
@@ -74,6 +76,7 @@ export const PERMISSION_GROUPS: { id: string, permissions: Permission[] }[] = [
   { id: 'serverrules', permissions: ['serverrules.bypass'] },
   { id: 'previews', permissions: ['previews.access'] },
   { id: 'newsletter', permissions: ['newsletter.manage', 'newsletter.send'] },
+  { id: 'minigames', permissions: ['minigames.manage'] },
 ]
 
 /** Recht je Strafart (§22.2). */
