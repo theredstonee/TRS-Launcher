@@ -269,7 +269,7 @@ defineExpose({ pause: () => session?.pause(true) })
               </div>
               <p v-if="!compact" class="keys">{{ t(game === 'stapler' ? 'minigames.stapler.keys' : 'minigames.loren.keys') }}</p>
             </template>
-            <button class="btn-primary mt-4" type="button" :disabled="starting" @click="state === 'paused' ? togglePause() : play()">
+            <button class="btn btn-primary mt-4" type="button" :disabled="starting" @click="state === 'paused' ? togglePause() : play()">
               {{ state === 'paused' ? t('minigames.resume') : state === 'over' ? t('minigames.again') : t('minigames.start') }}
             </button>
             <p class="mt-2 text-xs text-base-400">{{ t('minigames.enterHint') }}</p>
@@ -302,11 +302,11 @@ defineExpose({ pause: () => session?.pause(true) })
 
       <div class="controls">
         <button type="button" class="ctl" :aria-pressed="soundOn" :title="t(soundOn ? 'minigames.soundOff' : 'minigames.soundOn')" @click="toggleSound">
-          <AppIcon :name="soundOn ? 'volume' : 'volumeOff'" class="size-4" />
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path :d="icons[soundOn ? 'volume' : 'volumeOff']" /></svg>
           <span class="sr-only">{{ t(soundOn ? 'minigames.soundOff' : 'minigames.soundOn') }}</span>
         </button>
         <button v-if="state === 'playing' || state === 'paused'" type="button" class="ctl" :title="t('minigames.pauseKey')" @click="togglePause">
-          <AppIcon :name="state === 'paused' ? 'play' : 'pause'" class="size-4" />
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path :d="icons[state === 'paused' ? 'play' : 'pause']" /></svg>
           <span class="sr-only">{{ t('minigames.pauseKey') }}</span>
         </button>
       </div>
@@ -316,21 +316,22 @@ defineExpose({ pause: () => session?.pause(true) })
 
 <style scoped>
 .minigame { padding: 12px; border-radius: 12px; overflow: hidden; }
-.minigame:focus-visible { box-shadow: inset 0 0 0 2px var(--color-redstone-500, #ff3b30); }
+.minigame:focus-visible { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.28); }
 .screen { position: relative; height: 100%; max-height: 100%; max-width: 100%; }
 .screen[data-game='loren'] { height: auto; width: 100%; max-height: 100%; }
 .pixel { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
-.side { display: flex; width: 170px; flex: none; flex-direction: column; gap: 10px; }
+.side { display: flex; width: 142px; flex: none; flex-direction: column; gap: 8px; }
 .box { background: rgb(0 0 0 / 0.45); border: 2px solid rgb(255 255 255 / 0.1); box-shadow: inset 0 0 0 2px rgb(0 0 0 / 0.4); padding: 8px 10px; }
 .lab { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: rgb(255 255 255 / 0.62); margin-bottom: 4px; }
-.val { font-size: 22px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
-.mini { display: block; width: 100%; image-rendering: pixelated; }
+.val { font-size: 20px; line-height: 1.2; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+.mini { display: block; width: 72px; margin: 0 auto; image-rendering: pixelated; }
 .meter { display: grid; grid-template-columns: repeat(15, 1fr); gap: 2px; height: 20px; }
 .meter i { display: block; background: rgb(255 255 255 / 0.08); }
 .meter i.on { background: var(--color-redstone-500, #ff3b30); box-shadow: 0 0 6px var(--color-redstone-500, #ff3b30); }
 .hint { min-height: 16px; margin-top: 5px; font-size: 12px; color: rgb(255 255 255 / 0.62); }
 .hint.go { color: #fff; font-weight: 600; }
-.loren-hud { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 10px 14px; pointer-events: none; text-shadow: 0 1px 2px #000; }
+.loren-hud { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 10px 14px; pointer-events: none; text-shadow: 0 1px 2px #000, 0 0 6px #000; background: linear-gradient(rgb(0 0 0 / 0.55), transparent 22%, transparent 82%, rgb(0 0 0 / 0.6)); }
+.loren-hud .lab, .loren-hud .hint { color: rgb(255 255 255 / 0.9); }
 .card-wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgb(0 0 0 / 0.62); padding: 10px; overflow: auto; }
 .card { width: min(560px, 100%); text-align: center; color: #fff; }
 .card h2 { font-size: 26px; font-weight: 800; letter-spacing: 0.03em; }

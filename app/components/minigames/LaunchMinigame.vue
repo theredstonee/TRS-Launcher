@@ -55,13 +55,13 @@ async function onFinished(run: FinishedRun) {
     <div class="flex items-start justify-between gap-2">
       <p class="text-sm font-semibold text-base-50">{{ t('minigames.loading.title') }}</p>
       <button type="button" class="text-base-400 hover:text-base-100" :aria-label="t('common.actions.close')" @click="dismissed = true">
-        <AppIcon name="close" class="size-4" />
+        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path :d="icons.close" /></svg>
       </button>
     </div>
     <p class="mt-1 text-xs text-base-300">{{ t('minigames.loading.text') }}</p>
     <div class="mt-3 flex gap-2">
-      <button type="button" class="btn-secondary flex-1 text-xs" @click="start('stapler')">{{ t('minigames.stapler.name') }}</button>
-      <button type="button" class="btn-secondary flex-1 text-xs" @click="start('loren')">{{ t('minigames.loren.name') }}</button>
+      <button type="button" class="btn btn-ghost flex-1 text-xs" @click="start('stapler')">{{ t('minigames.stapler.name') }}</button>
+      <button type="button" class="btn btn-ghost flex-1 text-xs" @click="start('loren')">{{ t('minigames.loren.name') }}</button>
     </div>
   </div>
 
@@ -69,7 +69,7 @@ async function onFinished(run: FinishedRun) {
     <div class="relative flex h-[min(620px,90vh)] w-[min(820px,94vw)] rounded-xl bg-base-900">
       <MinigamesMinigamePlayer :game="game" compact class="w-full" @finished="onFinished" />
       <button type="button" class="absolute right-3 top-3 z-10 rounded-md bg-black/60 p-1.5 text-white hover:bg-black/80" :aria-label="t('common.actions.close')" @click="open = false">
-        <AppIcon name="close" class="size-4" />
+        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path :d="icons.close" /></svg>
       </button>
     </div>
   </div>

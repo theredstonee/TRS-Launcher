@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Reiter „Minispiele“: Spiel wählen, spielen, weltweite Allzeit-Rangliste.
 import type { Leaderboard, LeaderboardEntry, SubmitResult } from '~/stores/minigames'
+import { teamCan } from '~/utils/teamAccess'
 import type { GameId } from '~/utils/minigames/replay'
 import type { FinishedRun } from '~/utils/minigames/session'
 
@@ -16,7 +17,7 @@ const result = shallowRef<SubmitResult | null>(null)
 const submitting = ref(false)
 const removing = ref<LeaderboardEntry | null>(null)
 const removeReason = ref('')
-const canManage = computed(() => trs.team?.permissions.includes('minigames.manage') ?? false)
+const canManage = computed(() => teamCan(trs.team, 'minigames.manage'))
 
 const games: { id: GameId, name: 'minigames.stapler.name' | 'minigames.loren.name', tagline: 'minigames.stapler.tagline' | 'minigames.loren.tagline' }[] = [
   { id: 'stapler', name: 'minigames.stapler.name', tagline: 'minigames.stapler.tagline' },
@@ -138,7 +139,7 @@ onMounted(loadBoard)
             <span class="min-w-0 flex-1 truncate text-base-100">{{ entry.name }}</span>
             <span class="flex-none tabular-nums font-semibold text-base-50">{{ format(entry.score) }}</span>
             <button v-if="canManage" type="button" class="flex-none text-base-400 opacity-0 hover:text-danger focus:opacity-100 group-hover:opacity-100" :aria-label="t('minigames.board.remove', { name: entry.name })" :title="t('minigames.board.remove', { name: entry.name })" @click="removing = entry">
-              <AppIcon name="close" class="size-3.5" />
+              <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path :d="icons.close" /></svg>
             </button>
           </li>
         </ol>
@@ -149,10 +150,10 @@ onMounted(loadBoard)
 
     <BaseDialog v-if="removing" :title="t('minigames.board.removeTitle', { name: removing.name })" @close="removing = null">
       <label class="block text-sm text-base-200" for="minigame-remove-reason">{{ t('minigames.board.removeReason') }}</label>
-      <input id="minigame-remove-reason" v-model="removeReason" class="input mt-2 w-full" maxlength="300" />
+      <input id="minigame-remove-reason" v-model="removeReason" class="field mt-2 w-full" maxlength="300" />
       <div class="mt-4 flex justify-end gap-2">
-        <button type="button" class="btn-ghost" @click="removing = null">{{ t('common.actions.cancel') }}</button>
-        <button type="button" class="btn-danger" :disabled="!removeReason.trim()" @click="confirmRemove">{{ t('minigames.board.removeConfirm') }}</button>
+        <button type="button" class="btn btn-ghost" @click="removing = null">{{ t('common.actions.cancel') }}</button>
+        <button type="button" class="btn btn-danger" :disabled="!removeReason.trim()" @click="confirmRemove">{{ t('minigames.board.removeConfirm') }}</button>
       </div>
     </BaseDialog>
   </div>

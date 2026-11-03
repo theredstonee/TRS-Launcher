@@ -6151,7 +6151,8 @@
       "creators_manage": "Manage creators",
       "featured_manage": "Manage featured modpacks",
       "serverrules_bypass": "Use server-locked TRS Client features anyway (after an in-game prompt)",
-      "previews_access": "Preview builds: Download launcher and TRS Client preview builds like Partner creators"
+      "previews_access": "Preview builds: Download launcher and TRS Client preview builds like Partner creators",
+      "minigames_manage": "Remove minigame entries"
     },
     "creators": {
       "intro": "Review fan symbols and fan capes, manage creators and answer their requests. Applications are handled on the website.",

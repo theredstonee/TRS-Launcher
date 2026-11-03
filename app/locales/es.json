@@ -6151,7 +6151,8 @@
       "creators_manage": "Gestionar creadores",
       "featured_manage": "Gestionar modpacks destacados",
       "serverrules_bypass": "Usar igualmente funciones del TRS Client bloqueadas por el servidor (tras confirmar en el juego)",
-      "previews_access": "Versiones de prueba: Descargar versiones de prueba del launcher y del TRS Client como los creadores Partner"
+      "previews_access": "Versiones de prueba: Descargar versiones de prueba del launcher y del TRS Client como los creadores Partner",
+      "minigames_manage": "Eliminar entradas de minijuegos"
     },
     "creators": {
       "intro": "Revisa símbolos y capas de fan, gestiona creadores y responde a sus solicitudes. Las candidaturas se gestionan en la web.",

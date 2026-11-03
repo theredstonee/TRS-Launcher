@@ -215,7 +215,7 @@ export class LorenView {
         const m = ((wz % SUPPORT) + SUPPORT) % SUPPORT
         const dt = Math.abs(m - 7.5)
         const tl = dt < 7.5 ? 1 - dt / 7.5 : 0
-        const tq = tl * tl * lat
+        const tq = tl * tl * lat * 0.6
         const fog = 1 / (1 + z * z * 0.0048)
         const lr = (zone.amb[0] + zone.torch[0] * tq + emit + this.red * 110) * fog + this.flash * 200
         const lg = (zone.amb[1] + zone.torch[1] * tq + emit * 0.34) * fog + this.flash * 170
@@ -230,7 +230,7 @@ export class LorenView {
     const m = ((wz % SUPPORT) + SUPPORT) % SUPPORT
     const dt = Math.abs(m - 7.5)
     const tl = dt < 7.5 ? 1 - dt / 7.5 : 0
-    const tq = tl * tl * 0.8
+    const tq = tl * tl * 0.55
     const fog = 1 / (1 + z * z * 0.0048)
     return [(zone.amb[0] + 32 + zone.torch[0] * tq) * fog + this.flash * 200, (zone.amb[1] + 30 + zone.torch[1] * tq) * fog + this.flash * 170, (zone.amb[2] + 28 + zone.torch[2] * tq) * fog + this.flash * 130]
   }
