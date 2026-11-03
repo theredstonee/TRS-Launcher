@@ -85,12 +85,10 @@ export class GameSession {
 
   private onStapler(e: StaplerEvent) {
     this.stapler!.onEvent(e)
-    if (e.type === 'over') this.finish()
   }
 
   private onLoren(e: LorenEvent) {
     this.loren!.onEvent(e, this.sim as Loren)
-    if (e.type === 'crash' || e.type === 'over') this.finish()
   }
 
   private finish() {
@@ -156,7 +154,11 @@ export class GameSession {
         this.acc -= STEP
         this.sim.step(this.mask | this.latch)
         this.latch = 0
-        if ((this.state as SessionState) !== 'playing') break
+        // Erst nach dem ganzen Takt auswerten: Beim Zusammenstoß kommen im selben Takt noch Punkte dazu.
+        if (this.sim.finished) {
+          this.finish()
+          break
+        }
       }
       if (steps >= MAX_STEPS_PER_FRAME) this.acc = 0
     }

@@ -57,6 +57,17 @@ describe('Minispiele: Nachrechnen', () => {
     expect(replay('loren', seed, g.inputs)).toEqual({ score: g.score, ticks: g.tick, hash: g.hash(), finished: true })
   })
 
+  it('beim Zusammenstoß kommen im selben Takt noch Punkte dazu: Auswerten darf man erst nach dem Takt', () => {
+    let atCrash = -1
+    const g = new Loren(6, (e) => {
+      if (e.type === 'crash') atCrash = g.score
+    })
+    while (!g.finished) g.step(0)
+    expect(atCrash).toBeGreaterThanOrEqual(0)
+    expect(g.score).toBeGreaterThan(atCrash)
+    expect(replay('loren', 6, g.inputs).score).toBe(g.score)
+  })
+
   it('eine geänderte Eingabe ergibt ein anderes Ergebnis', () => {
     const g = playStapler(42, 100)
     const inputs = [...g.inputs]
