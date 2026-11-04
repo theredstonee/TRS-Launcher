@@ -46,6 +46,7 @@ export TRS_TEST_HOME="D:/trs-launcher-test"   # data folder of `test`, default ~
 export TRS_STUDIO_DIR="D:/trs-studio"         # folder of TRS Studio, default next to this repository
 TRS_BUILD_LOCK="/d/builds/gradle.lock"        # `start-client` waits while this file exists
 TRS_WORKTREES_DIR="/d/worktrees"              # `aufraeumen` also cleans old build caches in these worktrees
+export TRS_LOW_MB=20000                       # `aufraeumen --auto` starts below this many free MB, default 15000
 ```
 
 ## Workflow

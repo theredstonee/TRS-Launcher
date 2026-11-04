@@ -16,7 +16,7 @@ case "${1:-}" in
   *) ui_fail "Unbekannte Option $1 (--zeigen, --gross, --auto)"; exit 2 ;;
 esac
 
-LOW_MB=15000
+LOW_MB="${TRS_LOW_MB:-15000}"
 KEEP_RECENT_MIN=120                # worktrees used within this time stay untouched
 LOG_DAYS=14
 LOCK_FILE="${TRS_BUILD_LOCK:-}"
