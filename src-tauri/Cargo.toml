@@ -50,7 +50,8 @@ trs-core = { path = "crates/core" }
 arboard = { version = "3.6.1", default-features = false, features = ["image-data"] }
 tauri-plugin-process = "2.3.1"
 tauri-plugin-single-instance = { version = "2.4.4", features = ["deep-link"] }
-tauri-plugin-updater = "2.12.0"
+# Ohne Feature "zip": Wir liefern Updates direkt als .exe und .AppImage, das Entpacken wird nie gebraucht.
+tauri-plugin-updater = { version = "2.12.0", default-features = false, features = ["rustls-tls", "system-proxy"] }
 tauri-plugin-window-state = "2.4.1"
 
 # Nur Android/iOS: Spiel-Engine (eingebettete JVM) und QR-Scanner der PC-Fernbedienung.
