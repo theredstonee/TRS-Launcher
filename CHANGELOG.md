@@ -33,10 +33,14 @@ How to write an entry:
 ### English
 - **TRS Client: crash on Minecraft 1.21.6 to 1.21.10 fixed.** On Fabric, NeoForge and Forge for these versions the game could crash right at startup ("Mods clash while changing ChatHud") because the chat heads hooked into a place that moved in these versions. Chat heads now work there again, and if the place ever moves again only the heads are missing – the game still starts.
 - **TRS Client: new minimap and world map for everyone.** The landscape now has real relief from all sides, water shows its depth and the ground below, biome colours are livelier, the world map stays sharp at every zoom level, and the map fills in faster and across your whole render distance. Your existing maps keep working and are still shown; the new map saves its data separately.
+- **Select mods with Shift-click.** In an instance's content list, you can select or deselect a mod by Shift-clicking its row instead of its checkbox. Each click affects only that mod, even lower down the list.
+- **No default browser menu on right-click.** The Tauri WebView no longer opens its browser context menu when you right-click; editable fields and the launcher's own context menus still work.
 
 ### Deutsch
 - **TRS Client: Absturz unter Minecraft 1.21.6 bis 1.21.10 behoben.** Mit Fabric, NeoForge und Forge konnte das Spiel in diesen Versionen direkt beim Start abstürzen („Mods kollidieren bei ChatHud“), weil sich die Chat-Köpfe an einer Stelle einhakten, die es dort so nicht mehr gibt. Die Chat-Köpfe funktionieren dort wieder, und sollte sich die Stelle noch einmal ändern, fehlen nur die Köpfe – das Spiel startet trotzdem.
 - **TRS Client: neue Minimap und Weltkarte für alle.** Die Landschaft hat jetzt echtes Relief von allen Seiten, Wasser zeigt seine Tiefe und den Grund darunter, Biomfarben wirken lebendiger, die Weltkarte bleibt in jeder Zoomstufe scharf, und die Karte füllt sich schneller und über deine ganze Sichtweite. Deine bisherigen Karten funktionieren weiter und werden weiter angezeigt; die neue Karte speichert ihre Daten getrennt.
+- **Mods per Umschalt-Klick auswählen.** In der Inhaltsliste einer Instanz kannst du einen Mod per Umschalt-Klick auf die Zeile auswählen oder abwählen, statt auf das Kästchen zu klicken. Jeder Klick betrifft nur diesen Mod, auch weiter unten in der Liste.
+- **Kein Browsermenü bei Rechtsklick.** Die Tauri-WebView öffnet bei einem Rechtsklick nicht mehr ihr Browser-Kontextmenü; bearbeitbare Felder und die eigenen Menüs des Launchers funktionieren weiterhin.
 
 ## 0.31.0 – 2026-10-25 – The Heist | Der Coup
 <!-- banner: accent=#41cd62 motif=/news/0.31.0/banner.png -->
