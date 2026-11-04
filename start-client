@@ -1,0 +1,61 @@
+#!/bin/bash
+# Builds the TRS Client from the current code and starts a test game.
+#   start-client [version] [--stumm] [--sofort]     default 1.21.11, 1.8.9 goes through the legacy build
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.dev/ui.sh"
+
+VERSION=1.21.11; WAIT_LOCK=1; LOCK_FILE="${TRS_BUILD_LOCK:-}"
+for arg in "$@"; do
+  case "$arg" in
+    --stumm) export ALSOFT_DRIVERS=null ;;
+    --sofort) WAIT_LOCK=0 ;;
+    -*) ui_fail "Unbekannte Option $arg"; exit 2 ;;
+    *) VERSION="$arg" ;;
+  esac
+done
+
+TASKS=0; RUNNING=0
+on_line() {
+  case "$1" in
+    "> Task "*)
+      TASKS=$((TASKS + 1)); UI_PHASE="Gradle baut"; UI_DETAIL="$TASKS Schritte · ${1#> Task }"
+      case "$1" in *runClient*) UI_PHASE="Spiel startet"; UI_DETAIL="" ;; esac ;;
+    *"Sound engine started"*|*"Created: "*"atlas"*)
+      if ((!RUNNING)); then RUNNING=1; UI_PHASE="Spiel läuft"; UI_DETAIL="Fenster schließen beendet"; fi ;;
+  esac
+}
+
+ui_banner "Client-Test" "Minecraft $VERSION · aktueller Code · Live-Logs"
+"$DEV_ROOT/aufraeumen" --auto
+
+if [[ "$VERSION" == "1.8.9" ]]; then
+  WORK="$DEV_ROOT/client-mod/legacy"; TASK=":1.8.9:runClient"
+elif [[ -d "$DEV_ROOT/client-mod/fabric/versions/$VERSION" ]]; then
+  WORK="$DEV_ROOT/client-mod"; TASK=":fabric:$VERSION:runClient"
+else
+  ui_fail "Version $VERSION gibt es nicht. Vorhanden: $(ls "$DEV_ROOT/client-mod/fabric/versions" | tail -n 5 | tr '\n' ' ')… und 1.8.9"
+  exit 2
+fi
+[[ -n "$ALSOFT_DRIVERS" ]] && ui_ok "Ohne Ton"
+
+# Optional lock for machines that run several Gradle builds (TRS_BUILD_LOCK): wait for it, never take it from others.
+if ((WAIT_LOCK)) && [[ -n "$LOCK_FILE" ]]; then
+  printf '\e[?25l'
+  trap ui_stop INT TERM
+  while [[ -f "$LOCK_FILE" ]] && ! grep -q '^start-client' "$LOCK_FILE" 2> /dev/null; do
+    UI_PHASE="Wartet auf Build-Sperre"; UI_DETAIL="$(cut -d' ' -f1 "$LOCK_FILE" 2> /dev/null) · --sofort überspringt"
+    ui_draw; sleep 0.25
+  done
+  printf '%s\e[?25h' "$ESC_CLEAR"
+  mkdir -p "$(dirname "$LOCK_FILE")"
+  printf 'start-client %s\n' "$(date -Iseconds)" > "$LOCK_FILE"
+  UI_LOCK=1
+  ui_ok "Build-Sperre geholt"
+fi
+
+cd "$WORK" || exit 1
+UI_PHASE="Gradle startet"; UI_DETAIL=""
+ui_step "Baue und starte $TASK"
+ui_run client ./gradlew --max-workers=2 --console=plain "$TASK"
+rc=$?
+ui_finish $rc "Client-Test"
+exit $rc

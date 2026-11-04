@@ -1,0 +1,126 @@
+#!/bin/bash
+# Frees disk space by removing only what can be rebuilt. Never touches code, commits, worktrees themselves,
+# instances, clips or anything of a running build.
+#   aufraeumen           clean now
+#   aufraeumen --zeigen  only list what would go
+#   aufraeumen --gross   also heavy caches (next build takes longer)
+#   aufraeumen --auto    only when a drive is low, used by test and start-client
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.dev/ui.sh"
+
+MODE=now
+case "${1:-}" in
+  "") ;;
+  --zeigen) MODE=show ;;
+  --gross) MODE=big ;;
+  --auto) MODE=auto ;;
+  *) ui_fail "Unbekannte Option $1 (--zeigen, --gross, --auto)"; exit 2 ;;
+esac
+
+LOW_MB="${TRS_LOW_MB:-15000}"
+KEEP_RECENT_MIN=120                # worktrees used within this time stay untouched
+LOG_DAYS=14
+LOCK_FILE="${TRS_BUILD_LOCK:-}"
+WORKTREES_DIR="${TRS_WORKTREES_DIR:-}"   # empty: worktrees are not cleaned
+GRADLE="$HOME/.gradle"
+
+free_mb() { df -Pm "$1" 2> /dev/null | awk 'END { print $4 }'; }
+free_gb() { awk -v m="$(free_mb "$1")" 'BEGIN { printf "%.1f", m / 1024 }'; }
+mount_of() { df -P "$1" 2> /dev/null | awk 'END { print $6 }'; }
+
+# Rust and the pnpm packages live next to the code, Gradle's caches in the home folder. Often that is one drive.
+SAME_DRIVE=0
+[[ "$(mount_of "$DEV_ROOT")" == "$(mount_of "$HOME")" ]] && SAME_DRIVE=1
+
+free_summary() {
+  if ((SAME_DRIVE)); then
+    printf '%s GB frei' "$(free_gb "$DEV_ROOT")"
+  else
+    printf 'Code %s GB, Home %s GB frei' "$(free_gb "$DEV_ROOT")" "$(free_gb "$HOME")"
+  fi
+}
+
+gradle_busy() { # a build holds the lock, or a Gradle daemon is alive and may be using its caches
+  [[ -n "$LOCK_FILE" && -f "$LOCK_FILE" ]] && return 0
+  if command -v powershell.exe > /dev/null; then
+    powershell.exe -NoProfile -Command "if (Get-CimInstance Win32_Process -Filter \"Name='java.exe'\" | Where-Object { \$_.CommandLine -match 'GradleDaemon' }) { exit 0 } else { exit 1 }" > /dev/null 2>&1
+  else
+    pgrep -f GradleDaemon > /dev/null
+  fi
+}
+
+if [[ "$MODE" == auto ]]; then
+  (($(free_mb "$DEV_ROOT") >= LOW_MB && $(free_mb "$HOME") >= LOW_MB)) && exit 0
+  ui_warn "Wenig Platz ($(free_summary)), räume auf"
+else
+  ui_banner "Aufräumen" "nur was sich neu erzeugen lässt"
+fi
+
+BEFORE_CODE=$(free_mb "$DEV_ROOT"); BEFORE_HOME=$(free_mb "$HOME"); REMOVED=0; SKIPPED=0
+
+drop() { # drop <path> <label>
+  [[ -e "$1" ]] || return 0
+  if [[ -L "$1" ]]; then SKIPPED=$((SKIPPED + 1)); return 0; fi
+  if [[ "$MODE" == show ]]; then
+    printf '  %s%8s%s  %s\n' "$C_DIM" "$(du -sh "$1" 2> /dev/null | cut -f1)" "$C_OFF" "$2"
+    return 0
+  fi
+  UI_PHASE="Löscht"; UI_DETAIL="$2"; ui_draw
+  if rm -rf "$1" 2> /dev/null && [[ ! -e "$1" ]]; then REMOVED=$((REMOVED + 1)); else ui_warn "Nicht ganz gelöscht: $2"; SKIPPED=$((SKIPPED + 1)); fi
+}
+
+printf '\e[?25l'
+trap ui_stop INT TERM
+
+# 1. Caches in a folder of extra worktrees (TRS_WORKTREES_DIR), only if Git ignores them, tracks nothing in them and
+#    nobody used them lately.
+if [[ -n "$WORKTREES_DIR" ]]; then
+  for wt in "$WORKTREES_DIR"/*/; do
+    [[ -e "$wt.git" ]] || continue
+    name="$(basename "$wt")"
+    for rel in client-mod/.gradle node_modules src-tauri/target; do
+      [[ -e "$wt$rel" && ! -L "$wt$rel" ]] || continue
+      git -C "$wt" check-ignore -q "$rel" 2> /dev/null || { SKIPPED=$((SKIPPED + 1)); continue; }
+      [[ -z "$(git -C "$wt" ls-files -- "$rel" 2> /dev/null | head -n 1)" ]] || { SKIPPED=$((SKIPPED + 1)); continue; }
+      if [[ -n "$(find "$wt$rel" -maxdepth 3 -mmin "-$KEEP_RECENT_MIN" -print -quit 2> /dev/null)" ]]; then SKIPPED=$((SKIPPED + 1)); continue; fi
+      drop "$wt$rel" "$name/$rel"
+    done
+  done
+fi
+
+# 2. Old logs and temporary Gradle files.
+while IFS= read -r f; do drop "$f" "Log $(basename "$f")"; done < <(find "$DEV_ROOT/.dev/logs" "$GRADLE/daemon" -type f -name '*.log' -mtime "+$LOG_DAYS" 2> /dev/null)
+if gradle_busy; then
+  ui_warn "Gradle läuft gerade, seine Caches bleiben diesmal."
+else
+  drop "$GRADLE/.tmp" "Gradle .tmp"
+
+  # 3. Heavy Gradle caches: on request, or when the home drive is really low. Forge and NeoForge rebuild them next time.
+  if [[ "$MODE" == big || "$MODE" == show ]] || (($(free_mb "$HOME") < LOW_MB)); then
+    for c in neoformruntime minecraftforge essential-loom ng_execute; do
+      drop "$GRADLE/caches/$c" "Gradle-Cache $c"
+    done
+  fi
+fi
+
+# 4. Rust's incremental data of this checkout: on request or when its drive is really low, unless a test is running.
+if [[ "$MODE" == big || "$MODE" == show ]] || (($(free_mb "$DEV_ROOT") < LOW_MB)); then
+  if ui_running cargo rustc; then
+    ui_warn "Rust baut gerade, target bleibt diesmal."
+  else
+    drop "$DEV_ROOT/src-tauri/target/debug/incremental" "Rust incremental"
+  fi
+fi
+printf '%s\e[?25h' "$ESC_CLEAR"
+
+declare -F dev_local_after_cleanup > /dev/null && dev_local_after_cleanup
+
+if [[ "$MODE" == show ]]; then
+  printf '\n'
+  ui_ok "Nur angezeigt, nichts gelöscht. $(free_summary)."
+  exit 0
+fi
+GAINED_CODE=$(($(free_mb "$DEV_ROOT") - BEFORE_CODE)); GAINED_HOME=$(($(free_mb "$HOME") - BEFORE_HOME))
+((SAME_DRIVE)) && GAINED_HOME=0
+GAIN=$(awk -v m="$((GAINED_CODE + GAINED_HOME))" 'BEGIN { printf "%.1f", (m < 0 ? 0 : m / 1024) }')
+ui_ok "$REMOVED Einträge weg, ungefähr $GAIN GB gewonnen ($SKIPPED übersprungen). $(free_summary)."
+exit 0

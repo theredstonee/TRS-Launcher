@@ -1,0 +1,62 @@
+#!/bin/bash
+# Builds the launcher from the current code and starts it next to the installed one.
+# Uses its own app id and data folder, so real instances and a running game stay untouched.
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.dev/ui.sh"
+
+TEST_HOME="${TRS_TEST_HOME:-$HOME/.trs-launcher-test}"
+TOTAL_CRATES=$(grep -c '^name = ' "$DEV_ROOT/src-tauri/Cargo.lock" 2> /dev/null); TOTAL_CRATES=${TOTAL_CRATES:-1}
+BUILT=0; STARTED=0
+
+on_progress() { # cargo: "Building [====> ] 577/580: trs-core"
+  local plain="${1//$'\e['*([0-9;?])[a-zA-Z]/}"
+  if [[ "$plain" =~ Building.*\]\ ([0-9]+)/([0-9]+):?\ ?(.*) ]]; then
+    UI_PHASE="Rust baut"; UI_PERCENT=$((BASH_REMATCH[1] * 100 / BASH_REMATCH[2]))
+    UI_DETAIL="${BASH_REMATCH[1]}/${BASH_REMATCH[2]} ${BASH_REMATCH[3]}"
+  fi
+}
+
+on_line() {
+  on_progress "$1"
+  case "$1" in
+    *Compiling\ *)
+      BUILT=$((BUILT + 1)); UI_PHASE="Rust baut"; UI_DETAIL="${1##*Compiling }"
+      if ((UI_PERCENT < 0)); then UI_PERCENT=$((BUILT * 100 / TOTAL_CRATES)); ((UI_PERCENT > 99)) && UI_PERCENT=99; fi ;;
+    *Blocking\ waiting\ for\ file\ lock*) UI_DETAIL="wartet auf anderen Build" ;;
+    *Finished\ *dev*) UI_PHASE="Startet Launcher"; UI_DETAIL=""; UI_PERCENT=100 ;;
+    *Running\ *trs-launcher*)
+      if ((!STARTED)); then STARTED=1; UI_PHASE="Launcher läuft"; UI_PERCENT=-1; UI_DETAIL="Strg+C beendet"; fi ;;
+    *Nuxt*|*Vite*|*Nitro*) ((STARTED)) || { UI_PHASE="Oberfläche baut"; UI_DETAIL="Nuxt"; } ;;
+  esac
+}
+
+ui_banner "Launcher-Test" "aktueller Code · eigene Daten · Live-Logs"
+cd "$DEV_ROOT" || exit 1
+"$DEV_ROOT/aufraeumen" --auto
+
+for tool in node pnpm cargo; do
+  command -v "$tool" > /dev/null || { ui_fail "$tool fehlt im PATH."; exit 1; }
+done
+if node -e "require('net').connect(3000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"; then
+  ui_fail "Port 3000 ist belegt, läuft schon ein Test? Beende ihn zuerst."
+  exit 1
+fi
+ui_ok "Werkzeuge da, Port 3000 frei"
+
+if [[ ! -d node_modules || pnpm-lock.yaml -nt node_modules/.modules.yaml ]]; then
+  ui_step "Pakete aktualisieren"
+  UI_PHASE="pnpm install"
+  ui_run test-install pnpm install --frozen-lockfile || { rc=$?; ui_finish $rc "pnpm install"; exit $rc; }
+fi
+
+mkdir -p "$TEST_HOME"
+export TRS_LAUNCHER_HOME="$TEST_HOME"
+unset NO_COLOR
+export CARGO_TERM_PROGRESS_WHEN=always CARGO_TERM_PROGRESS_WIDTH=100 CARGO_TERM_COLOR=always FORCE_COLOR=1
+ui_ok "Datenordner $TEST_HOME"
+ui_step "Baue und starte, das erste Mal dauert mehrere Minuten"
+
+UI_PHASE="Oberfläche baut"
+ui_run test pnpm tauri dev --config "$(ui_path "$DEV_ROOT/.dev/tauri-test.json")" "$@"
+rc=$?
+ui_finish $rc "Launcher-Test"
+exit $rc
