@@ -335,7 +335,7 @@ defineExpose({ pause: () => session?.pause(true) })
 .loren-hud { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 10px 14px; pointer-events: none; text-shadow: 0 1px 2px #000, 0 0 6px #000; background: linear-gradient(rgb(0 0 0 / 0.55), transparent 22%, transparent 82%, rgb(0 0 0 / 0.6)); }
 .loren-hud .lab, .loren-hud .hint { color: rgb(255 255 255 / 0.9); }
 .card-wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgb(0 0 0 / 0.62); padding: 10px; overflow: auto; }
-.card { width: min(560px, 100%); text-align: center; color: #fff; }
+.card { width: min(560px, 100%); padding: 18px 22px; text-align: center; color: #fff; }
 .card h2 { font-size: 26px; font-weight: 800; letter-spacing: 0.03em; }
 .card-small h2 { font-size: 17px; }
 .score { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; }
@@ -356,5 +356,5 @@ defineExpose({ pause: () => session?.pause(true) })
   .hint { margin-top: 2px; }
   .meter { height: 14px; }
 }
-@media (prefers-reduced-motion: reduce) { .meter i.on { box-shadow: none; } }
+:global([data-reduced-motion]) .meter i.on { box-shadow: none; }
 </style>
