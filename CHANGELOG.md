@@ -28,6 +28,14 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Fixed a crash at game start with the TRS Client on Vulkan.** With Vulkan switched on, Iris or Xaero's World Map installed and an older Fabric Loader (up to 0.19.4), Minecraft 1.21.6 to 26.1.2 could crash at every start. TRS Client 0.24.1 starts normally again, no change to your instance needed.
+
+### Deutsch
+- **Absturz beim Spielstart mit TRS Client auf Vulkan behoben.** Mit eingeschaltetem Vulkan, Iris oder Xaero's World Map und einem älteren Fabric Loader (bis 0.19.4) konnte Minecraft 1.21.6 bis 26.1.2 bei jedem Start abstürzen. TRS Client 0.24.1 startet wieder normal, an der Instanz musst du nichts ändern.
+
 ## 0.32.2 – 2026-11-04 – Full Throttle Fix 2 | Sicherheits-Update
 <!-- banner: accent=#ffb02e motif=/news/0.32.0/banner.png -->
 <!-- shots:
