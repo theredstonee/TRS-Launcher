@@ -708,7 +708,7 @@ const pendingUpdates = computed(() => updates.value ?? [])
           :class="{ 'bg-redstone-900/15': selected.has(keyOf(row.item)), 'opacity-40': drag?.items.includes(row.item) }"
           @click="selectRow($event, row.item)"
           >
-          <input type="checkbox" class="size-4 accent-redstone-500 mobile:row-span-2" :checked="selected.has(keyOf(row.item))" :aria-label="t('content.row.select', { name: titleOf(row.item) })" @click.prevent.stop="toggleOne(row.item)" />
+          <input type="checkbox" class="size-4 accent-redstone-500 mobile:row-span-2" :checked="selected.has(keyOf(row.item))" :aria-label="t('content.row.select', { name: titleOf(row.item) })" @change="toggleOne(row.item)" />
 
           <div class="flex min-w-0 items-center gap-3" :class="{ 'opacity-55': !row.item.enabled }">
             <button

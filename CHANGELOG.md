@@ -28,6 +28,18 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## 0.32.1 – 2026-11-04 – Full Throttle Fix | Feinschliff
+<!-- banner: accent=#ffb02e motif=/news/0.32.0/banner.png -->
+<!-- shots:
+/news/0.32.1/content-select.png | Selected mods in the content list | Ausgewählte Mods in der Inhaltsliste
+-->
+
+### English
+- **Mod checkboxes show their tick again.** In an instance's content list, clicking a mod's checkbox selected the mod, but the tick could stay invisible. The box now always shows what is selected. Shift-clicking a row still selects or deselects just that mod.
+
+### Deutsch
+- **Mod-Kästchen zeigen ihren Haken wieder.** In der Inhaltsliste einer Instanz wählte ein Klick auf das Kästchen den Mod zwar aus, der Haken konnte aber unsichtbar bleiben. Das Kästchen zeigt jetzt immer, was ausgewählt ist. Ein Umschalt-Klick auf eine Zeile wählt weiterhin nur diesen Mod aus oder ab.
+
 ## 0.32.0 – 2026-11-04 – Full Throttle | Vollgas
 <!-- banner: accent=#ffb02e motif=/news/0.32.0/banner.png -->
 <!-- shots:
