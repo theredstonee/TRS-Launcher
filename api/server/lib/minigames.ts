@@ -72,15 +72,18 @@ const REJECTED: SubmitResult = { accepted: false, rank: 0, best: 0, improved: fa
 
 interface RunRow { uuid: string, game: string, seed: number, created_at: number, used: number }
 
+/** Gesperrte Konten (aktive Strafe `account_ban`, wie `isBanned`) stehen nicht in der Liste und zählen nicht mit. Alias `s` = minigame_scores; ein Parameter (jetzt). */
+const NOT_BANNED = `NOT EXISTS (SELECT 1 FROM sanctions z WHERE z.uuid = s.uuid AND z.kind = 'account_ban' AND z.lifted_at IS NULL AND (z.expires_at IS NULL OR z.expires_at > ?))`
+
 /** Platz = 1 + Einträge davor: höhere Punktzahl, bei Gleichstand früher erreicht, dann UUID (fest). */
 export function rankOf(ctx: AppContext, game: GameId, uuid: string): { rank: number, score: number } | null {
   const me = one<{ score: number, at: number }>(ctx.db, 'SELECT score, at FROM minigame_scores WHERE game = ? AND uuid = ?', game, uuid)
   if (!me) return null
   const ahead = one<{ n: number }>(
     ctx.db,
-    `SELECT COUNT(*) AS n FROM minigame_scores
-     WHERE game = ? AND (score > ? OR (score = ? AND at < ?) OR (score = ? AND at = ? AND uuid < ?))`,
-    game, me.score, me.score, me.at, me.score, me.at, uuid,
+    `SELECT COUNT(*) AS n FROM minigame_scores s
+     WHERE s.game = ? AND (s.score > ? OR (s.score = ? AND s.at < ?) OR (s.score = ? AND s.at = ? AND s.uuid < ?)) AND ${NOT_BANNED}`,
+    game, me.score, me.score, me.at, me.score, me.at, uuid, ctx.now(),
   )!.n
   return { rank: ahead + 1, score: me.score }
 }
@@ -131,10 +134,10 @@ export function leaderboard(ctx: AppContext, uuid: string, game: GameId): Leader
   const rows = all<{ uuid: string, name: string, score: number, at: number }>(
     ctx.db,
     `SELECT s.uuid, u.name, s.score, s.at FROM minigame_scores s JOIN users u ON u.uuid = s.uuid
-     WHERE s.game = ? ORDER BY s.score DESC, s.at ASC, s.uuid ASC LIMIT ?`,
-    game, LEADERBOARD_SIZE,
+     WHERE s.game = ? AND ${NOT_BANNED} ORDER BY s.score DESC, s.at ASC, s.uuid ASC LIMIT ?`,
+    game, ctx.now(), LEADERBOARD_SIZE,
   )
-  const total = one<{ n: number }>(ctx.db, 'SELECT COUNT(*) AS n FROM minigame_scores WHERE game = ?', game)!.n
+  const total = one<{ n: number }>(ctx.db, `SELECT COUNT(*) AS n FROM minigame_scores s WHERE s.game = ? AND ${NOT_BANNED}`, game, ctx.now())!.n
   return {
     entries: rows.map((r, i) => ({ rank: i + 1, uuid: r.uuid, name: r.name, score: r.score, at: iso(r.at) })),
     me: rankOf(ctx, game, uuid),

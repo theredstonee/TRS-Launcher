@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { describe, expect, it } from 'vitest'
 import { GAMES, MAX_INPUTS, replay, validInputs, type GameId } from '../shared/minigames/replay'
+import { banUser, unbanUser } from '../server/lib/admin'
 import { all, one, run } from '../server/lib/db'
 import { migrateMinigames } from '../server/lib/migrations'
 import { leaderboard, removeScore, startRun, submitRun, RUN_TTL_MS } from '../server/lib/minigames'
@@ -174,6 +175,22 @@ describe('leaderboard', () => {
     expect(leaderboard(env.ctx, c, 'stapler').me).toEqual({ rank: 2, score: 500 })
     expect(leaderboard(env.ctx, d, 'stapler').me).toBeNull()
     expect(leaderboard(env.ctx, d, 'loren')).toMatchObject({ total: 1, me: { rank: 1, score: 10 } })
+  })
+
+  it('hides banned accounts (and brings them back when unbanned)', async () => {
+    const env = makeEnv()
+    const [a, b, c] = [await player(env, 'Alpha'), await player(env, 'Bravo'), await player(env, 'Charlie')]
+    const t = env.clock.t
+    putScore(env, 'stapler', a, 900, t)
+    putScore(env, 'stapler', b, 800, t)
+    putScore(env, 'stapler', c, 700, t)
+    banUser(env.ctx, OWNER, a, 'cheating')
+    const board = leaderboard(env.ctx, c, 'stapler')
+    expect(board.entries.map((e) => e.name)).toEqual(['Bravo', 'Charlie'])
+    expect(board.total).toBe(2)
+    expect(board.me).toEqual({ rank: 2, score: 700 })
+    unbanUser(env.ctx, OWNER, a)
+    expect(leaderboard(env.ctx, c, 'stapler')).toMatchObject({ total: 3, me: { rank: 3 } })
   })
 
   it('shows only the top 100 but ranks everybody and counts the total', async () => {

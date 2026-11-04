@@ -5269,12 +5269,12 @@ hour and account.
 - Otherwise the personal best is raised when the replayed score is higher (`improved: true`); `rank` and `best` are the
   account's place and best score afterwards. A lower or equal score is accepted with `improved: false`.
 - Limit: 20 submissions per 10 minutes and account. Replaying runs synchronously on the main thread (up to 216 000
-  ticks, a few hundred ms at most), so this limit together with the start limit bounds the CPU time one account can use.
+  ticks; measured about 90-120 ms for stapler and 15 ms for loren), so this limit together with the start limit bounds the CPU time one account can use.
 
 ### 42.3 Leaderboard
 
 `GET /v1/minigames/{game}/leaderboard` -> `{ entries: [{ rank, uuid, name, score, at }], me: { rank, score } | null,
-total }`. Top 100, highest score first; with equal scores the entry reached earlier comes first (then by UUID).
+total }`. Top 100, highest score first (accounts with an active account ban are hidden and not counted); with equal scores the entry reached earlier comes first (then by UUID).
 `at` is the ISO time of the best score, `me` is the caller's place (also when beyond 100), `total` the number of
 entries. 60 requests per minute and account.
 
