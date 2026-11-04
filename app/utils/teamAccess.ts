@@ -34,6 +34,7 @@ export const permissions = [
   'worlds.close',
   'codes',
   'wordfilter',
+  'minigames.manage',
   'roles.manage',
   'applications.view',
   'applications.review',

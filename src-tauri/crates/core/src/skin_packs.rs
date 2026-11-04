@@ -229,7 +229,8 @@ fn skins_from_zip(bytes: &[u8], def: &PackDef) -> Vec<PackSkin> {
         if !entry.is_file() || entry.size() > skins::MAX_SKIN_BYTES as u64 {
             continue;
         }
-        let path = entry.name().replace('\\', "/");
+        let Ok(name) = entry.name() else { continue };
+        let path = name.replace('\\', "/");
         if path.split('/').any(|part| part == "__MACOSX" || part.starts_with('.')) {
             continue;
         }

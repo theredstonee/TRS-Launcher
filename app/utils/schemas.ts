@@ -136,6 +136,8 @@ export const uiSettingsSchema = z.object({
   motion: z.enum(motionModes),
   worldsTab: z.boolean(),
   screenshotsTab: z.boolean(),
+  minigamesTab: z.boolean().default(true),
+  minigamesWhileLoading: z.boolean().default(true),
   historyTab: z.boolean(),
   sidebarRecent: z.boolean(),
   sidebarAccount: z.boolean(),

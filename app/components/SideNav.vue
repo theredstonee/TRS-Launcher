@@ -25,6 +25,8 @@ interface NavItem {
   phoneOnly?: boolean
   /** Nur mit eingeschalteten TRS-Diensten (Creator-Programm). */
   trsOnly?: boolean
+  /** Abschaltbar in den Einstellungen. */
+  minigames?: boolean
 }
 
 const items: NavItem[] = [
@@ -37,6 +39,7 @@ const items: NavItem[] = [
   { to: '/screenshots', label: 'nav.screenshots', icon: 'screenshots', optional: true },
   { to: '/clips', label: 'nav.clips', icon: 'clips', optional: true, clipsOnly: true },
   { to: '/skins', label: 'nav.skins', icon: 'skins', optional: true },
+  { to: '/minigames', label: 'nav.minigames', icon: 'gamepad', minigames: true },
   { to: '/social', label: 'nav.social', icon: 'chat' },
   { to: '/creator', label: 'nav.creator', icon: 'star', trsOnly: true },
   { to: '/controls', label: 'nav.controls', icon: 'touch', touchOnly: true },
@@ -73,6 +76,7 @@ const visibleItems = computed(() =>
       (!item.optional || router.resolve(item.to).matched.length > 0) &&
       (!item.admin || (trs.isStaff && !messeRestricted.value)) &&
       (!item.trsOnly || (trs.enabled && !messeRestricted.value)) &&
+      (!item.minigames || (uiSettings.value?.minigamesTab !== false && !messeRestricted.value)) &&
       // Clips (Spielaufnahme) gibt es vorerst nur unter Windows.
       (!item.clipsOnly || platformCaps.value.clips) &&
       // Lokale Server erst, wenn es einen gibt (Server-Export „lokal anlegen“).

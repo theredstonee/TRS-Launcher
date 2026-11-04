@@ -334,7 +334,8 @@ pub fn extract_textures(jar: &Path, cache: &Path, version: &str) -> Result<usize
             if !entry.is_file() || entry.size() > MAX_TEXTURE_ENTRY_BYTES {
                 continue;
             }
-            let Some(key) = texture_key(entry.name()) else { continue };
+            let Ok(name) = entry.name() else { continue };
+            let Some(key) = texture_key(&name) else { continue };
             if keys.contains(&key) {
                 continue;
             }

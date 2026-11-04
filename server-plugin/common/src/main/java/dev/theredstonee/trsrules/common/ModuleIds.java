@@ -33,7 +33,7 @@ public final class ModuleIds {
 		m.put("PERFORMANCE", ids("fpsBoost", "dynamicFps", "borderlessFullscreen", "entityCulling", "particles",
 				"worldDetails", "builtinOptimizations", "netOptimize", "lowLatency", "fastConnect"));
 		m.put("MISC", ids("titleScreen", "menuStyle", "trsOnline", "capePhysics", "emotes", "clips", "cinematic", "halloween",
-				"tooltips", "serverProfiles", "screenshots", "keySearch", "autoReconnect", "queueAlerts", "streamerMode"));
+				"tooltips", "serverProfiles", "screenshots", "keySearch", "autoReconnect", "queueAlerts", "streamerMode", "minigames"));
 		BY_CATEGORY = Collections.unmodifiableMap(m);
 		Set<String> all = new LinkedHashSet<String>();
 		for (List<String> l : m.values()) all.addAll(l);

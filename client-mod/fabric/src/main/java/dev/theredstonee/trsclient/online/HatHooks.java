@@ -71,77 +71,92 @@ public final class HatHooks {
 	//? if >=1.21.11 {
 	/*public static void render(PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector, int light,
 			int entityId, ModelPart head) {
-		OnlineFeatures<Object> features = OnlineHooks.features();
-		AbstractClientPlayer p = player(entityId);
-		if (features == null || p == null || p.isInvisible()) return;
-		final UUID id = p.getUUID();
-		Object tex = features.hatTexture(id);
-		if (tex == null) {
-			renderV2(features, p, pose, collector, light, head);
-			return;
-		}
-		final Wearer w = wearer(p);
-		pose.pushPose();
+		long trsProbe = dev.theredstonee.trsclient.core.perf.Probes.begin();
 		try {
-			head.translateAndRotate(pose);
-			collector.submitCustomGeometry(pose, net.minecraft.client.renderer.rendertype.RenderTypes.entitySolid(
-					(net.minecraft.resources.Identifier) tex), (last, vc) -> features.emitHat(id, w, sink(vc, last, light)));
-		} catch (RuntimeException e) {
-			features.online().reportError(e);
+			OnlineFeatures<Object> features = OnlineHooks.features();
+			AbstractClientPlayer p = player(entityId);
+			if (features == null || p == null || p.isInvisible()) return;
+			final UUID id = p.getUUID();
+			Object tex = features.hatTexture(id);
+			if (tex == null) {
+				renderV2(features, p, pose, collector, light, head);
+				return;
+			}
+			final Wearer w = wearer(p);
+			pose.pushPose();
+			try {
+				head.translateAndRotate(pose);
+				collector.submitCustomGeometry(pose, net.minecraft.client.renderer.rendertype.RenderTypes.entitySolid(
+						(net.minecraft.resources.Identifier) tex), (last, vc) -> features.emitHat(id, w, sink(vc, last, light)));
+			} catch (RuntimeException e) {
+				features.online().reportError(e);
+			} finally {
+				pose.popPose();
+			}
+			drawV2(features, features.companionV2(id, helmet(p), WingsHooks.state(p)), pose, collector, light, head);
 		} finally {
-			pose.popPose();
+			dev.theredstonee.trsclient.core.perf.Probes.end(dev.theredstonee.trsclient.core.perf.Probes.TRS_WORLD, trsProbe);
 		}
-		drawV2(features, features.companionV2(id, helmet(p), WingsHooks.state(p)), pose, collector, light, head);
 	}
 	*///?} elif >=1.21.9 {
 	/*public static void render(PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector, int light,
 			int entityId, ModelPart head) {
-		OnlineFeatures<Object> features = OnlineHooks.features();
-		AbstractClientPlayer p = player(entityId);
-		if (features == null || p == null || p.isInvisible()) return;
-		final UUID id = p.getUUID();
-		Object tex = features.hatTexture(id);
-		if (tex == null) {
-			renderV2(features, p, pose, collector, light, head);
-			return;
-		}
-		final Wearer w = wearer(p);
-		pose.pushPose();
+		long trsProbe = dev.theredstonee.trsclient.core.perf.Probes.begin();
 		try {
-			head.translateAndRotate(pose);
-			collector.submitCustomGeometry(pose, net.minecraft.client.renderer.RenderType.entitySolid(
-					(net.minecraft.resources.ResourceLocation) tex), (last, vc) -> features.emitHat(id, w, sink(vc, last, light)));
-		} catch (RuntimeException e) {
-			features.online().reportError(e);
+			OnlineFeatures<Object> features = OnlineHooks.features();
+			AbstractClientPlayer p = player(entityId);
+			if (features == null || p == null || p.isInvisible()) return;
+			final UUID id = p.getUUID();
+			Object tex = features.hatTexture(id);
+			if (tex == null) {
+				renderV2(features, p, pose, collector, light, head);
+				return;
+			}
+			final Wearer w = wearer(p);
+			pose.pushPose();
+			try {
+				head.translateAndRotate(pose);
+				collector.submitCustomGeometry(pose, net.minecraft.client.renderer.RenderType.entitySolid(
+						(net.minecraft.resources.ResourceLocation) tex), (last, vc) -> features.emitHat(id, w, sink(vc, last, light)));
+			} catch (RuntimeException e) {
+				features.online().reportError(e);
+			} finally {
+				pose.popPose();
+			}
+			drawV2(features, features.companionV2(id, helmet(p), WingsHooks.state(p)), pose, collector, light, head);
 		} finally {
-			pose.popPose();
+			dev.theredstonee.trsclient.core.perf.Probes.end(dev.theredstonee.trsclient.core.perf.Probes.TRS_WORLD, trsProbe);
 		}
-		drawV2(features, features.companionV2(id, helmet(p), WingsHooks.state(p)), pose, collector, light, head);
 	}
 	*///?} else {
 	// Bis 1.21.8: sofort zeichnen.
 	public static void render(PoseStack pose, net.minecraft.client.renderer.MultiBufferSource buffers, int light,
 			AbstractClientPlayer p, ModelPart head) {
-		OnlineFeatures<Object> features = OnlineHooks.features();
-		if (features == null || p == null || p.isInvisible()) return;
-		UUID id = p.getUUID();
-		Object tex = features.hatTexture(id);
-		if (tex == null) {
-			renderV2(features, p, pose, buffers, light, head);
-			return;
-		}
-		pose.pushPose();
+		long trsProbe = dev.theredstonee.trsclient.core.perf.Probes.begin();
 		try {
-			VertexConsumer vc = buffers.getBuffer(net.minecraft.client.renderer.RenderType.entitySolid(
-					(net.minecraft.resources.ResourceLocation) tex));
-			head.translateAndRotate(pose);
-			features.emitHat(id, wearer(p), sink(vc, pose.last(), light));
-		} catch (RuntimeException e) {
-			features.online().reportError(e);
+			OnlineFeatures<Object> features = OnlineHooks.features();
+			if (features == null || p == null || p.isInvisible()) return;
+			UUID id = p.getUUID();
+			Object tex = features.hatTexture(id);
+			if (tex == null) {
+				renderV2(features, p, pose, buffers, light, head);
+				return;
+			}
+			pose.pushPose();
+			try {
+				VertexConsumer vc = buffers.getBuffer(net.minecraft.client.renderer.RenderType.entitySolid(
+						(net.minecraft.resources.ResourceLocation) tex));
+				head.translateAndRotate(pose);
+				features.emitHat(id, wearer(p), sink(vc, pose.last(), light));
+			} catch (RuntimeException e) {
+				features.online().reportError(e);
+			} finally {
+				pose.popPose();
+			}
+			drawV2(features, features.companionV2(id, helmet(p), WingsHooks.state(p)), pose, buffers, light, head);
 		} finally {
-			pose.popPose();
+			dev.theredstonee.trsclient.core.perf.Probes.end(dev.theredstonee.trsclient.core.perf.Probes.TRS_WORLD, trsProbe);
 		}
-		drawV2(features, features.companionV2(id, helmet(p), WingsHooks.state(p)), pose, buffers, light, head);
 	}
 	//?}
 

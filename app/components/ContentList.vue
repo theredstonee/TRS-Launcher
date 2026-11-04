@@ -238,6 +238,13 @@ function toggleOne(item: ContentItem) {
   if (!next.delete(keyOf(item))) next.add(keyOf(item))
   selected.value = next
 }
+function selectRow(event: MouseEvent, item: ContentItem) {
+  if (!event.shiftKey) return
+  const target = event.target
+  if (target instanceof Element && target.closest('button, input, [role="switch"], [data-row-menu]')) return
+  event.preventDefault()
+  toggleOne(item)
+}
 const selectedUpdates = computed(() => selectedItems.value.map(updateFor).filter((u): u is ContentUpdate => !!u))
 
 // --- Gruppen ----------------------------------------------------------------------
@@ -699,6 +706,7 @@ const pendingUpdates = computed(() => updates.value ?? [])
             v-else
           class="group grid grid-cols-[1.5rem_minmax(0,1fr)_11rem_10.5rem] items-center gap-3 px-3 py-2 transition-colors hover:bg-base-850 mobile:grid-cols-[1.5rem_minmax(0,1fr)_auto] mobile:gap-x-2 mobile:gap-y-0.5"
           :class="{ 'bg-redstone-900/15': selected.has(keyOf(row.item)), 'opacity-40': drag?.items.includes(row.item) }"
+          @click="selectRow($event, row.item)"
           >
           <input type="checkbox" class="size-4 accent-redstone-500 mobile:row-span-2" :checked="selected.has(keyOf(row.item))" :aria-label="t('content.row.select', { name: titleOf(row.item) })" @change="toggleOne(row.item)" />
 

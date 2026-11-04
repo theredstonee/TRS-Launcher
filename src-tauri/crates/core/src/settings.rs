@@ -313,6 +313,8 @@ pub struct UiSettings {
     pub motion: Motion,
     pub worlds_tab: bool,
     pub screenshots_tab: bool,
+    pub minigames_tab: bool,
+    pub minigames_while_loading: bool,
     pub history_tab: bool,
     /// „Zuletzt gespielt“ in der linken Leiste.
     pub sidebar_recent: bool,
@@ -360,6 +362,8 @@ impl Default for UiSettings {
             motion: Motion::Full,
             worlds_tab: true,
             screenshots_tab: true,
+            minigames_tab: true,
+            minigames_while_loading: true,
             history_tab: true,
             sidebar_recent: true,
             sidebar_account: true,

@@ -1,7 +1,20 @@
 <script setup lang="ts">
+import { isTauri } from '@tauri-apps/api/core'
 import { MESSE, messeKioskWindow } from '~/utils/messe'
 
 const kiosk = MESSE && messeKioskWindow()
+
+function preventNativeContextMenu(event: MouseEvent) {
+  if (!(event.target instanceof Element)) return
+  if (event.target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]')) return
+  event.preventDefault()
+}
+
+onMounted(() => {
+  if (isTauri()) document.addEventListener('contextmenu', preventNativeContextMenu)
+})
+
+onBeforeUnmount(() => document.removeEventListener('contextmenu', preventNativeContextMenu))
 </script>
 
 <template>

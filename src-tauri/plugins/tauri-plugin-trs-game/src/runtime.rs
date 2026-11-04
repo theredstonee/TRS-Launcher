@@ -263,7 +263,7 @@ pub fn unpack_zip_tar_xz(archive: &Path, dest: &Path) -> Result<()> {
     let mut inner = None;
     for i in 0..zip.len() {
         let entry = zip.by_index(i).map_err(|e| Error::Archive(e.to_string()))?;
-        let name = entry.name();
+        let name = entry.name().map_err(|e| Error::Archive(e.to_string()))?;
         if name.starts_with("jre") && name.ends_with(".tar.xz") && !name.contains(['/', '\\']) {
             inner = Some(i);
             break;

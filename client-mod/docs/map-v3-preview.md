@@ -1,8 +1,7 @@
-# Map v3 – creator preview
+# Map v3
 
-Map v3 is the new look and loading of the TRS Client minimap and world map. It ships first only as a
-**preview build** (creators from the Partner tier up and the TRS team). Normal builds keep the current map
-unchanged.
+Map v3 is the new look and loading of the TRS Client minimap and world map. It started as a creator preview and is
+now on for everyone. The old map stays available only as a way out if something goes wrong.
 
 ## What changes with map v3
 
@@ -23,30 +22,26 @@ unchanged.
 
 ## The switch
 
-There is exactly one switch, the preview feature `map-v3`. It is read once at game start
-(`core/map/MapPreview`):
+There is exactly one switch, the feature `map-v3`. It is read once at game start (`core/map/MapPreview`):
 
-1. System property `trsclient.preview` (comma list): `map-v3` turns it on, `-map-v3` turns it off.
-   Overrides the build. Example: `-Dtrsclient.preview=map-v3`.
-2. Otherwise `assets/trsclient/preview-features.txt` inside the mod jar. Only preview builds contain this file.
+1. System property `trsclient.preview` (comma list): `-map-v3` turns it off, `map-v3` turns it on.
+   Overrides the build. Example: `-Dtrsclient.preview=-map-v3`.
+2. Otherwise `assets/trsclient/preview-features.txt` inside the mod jar, if it names the feature.
 
-Default: off.
+Default: on.
 
-## Building the preview
+## Building with a feature list
 
-Add `-PtrsPreview=map-v3` to the normal mod build, for example
+Add `-PtrsPreview=...` to the normal mod build, for example to build with the old map:
 
 ```
 cd client-mod
-./gradlew collectLauncherJars -PtrsPreview=map-v3 -x test -x compileTestJava
+./gradlew collectLauncherJars -PtrsPreview=-map-v3 -x test -x compileTestJava
 ```
 
 Every loader tree applies `gradle/preview-features.gradle`, which writes
 `assets/trsclient/preview-features.txt` (one feature per line) into each jar. Without the property the file is not
-written. Check a jar with `unzip -p <jar> assets/trsclient/preview-features.txt` → `map-v3`.
-
-Give the preview jars a distinct version (for example `mod_version=0.21.0-preview.1`) so they are never mixed up
-with the release channel. Distribution to creators/team is not part of the mod.
+written.
 
 ## Map files and switching back and forth
 

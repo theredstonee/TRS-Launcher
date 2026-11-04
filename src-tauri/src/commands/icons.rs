@@ -41,6 +41,12 @@ pub async fn mc_textures(launcher: State<'_, LauncherState>, version: Option<Str
     Ok(launcher.mc_textures(version.as_deref()).await?)
 }
 
+/// Texturen für die Minispiele aus einer geladenen Version.
+#[tauri::command]
+pub async fn minigame_textures(launcher: State<'_, LauncherState>) -> CommandResult<TextureSet> {
+    Ok(launcher.minigame_textures().await?)
+}
+
 /// Eigenes Bild wählen (Pfad bleibt in Rust); `None` = abgebrochen.
 #[tauri::command]
 pub async fn pick_icon_image(app: AppHandle, launcher: State<'_, LauncherState>) -> CommandResult<Option<PreparedImage>> {

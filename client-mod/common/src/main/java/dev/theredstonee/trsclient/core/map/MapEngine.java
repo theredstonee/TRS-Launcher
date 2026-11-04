@@ -40,6 +40,11 @@ public final class MapEngine {
 	static final int ROOF_LEAVE_TICKS = 10;
 	/** Dach-Prüfung in Plus-Form: Mitte und vier Nachbarn (ein einzelner Baumstamm über dem Kopf ist kein Dach). */
 	private static final int[] ROOF_PROBE = {0, 0, 1, 0, -1, 0, 0, 1, 0, -1};
+	/** Ohne sichtbare Karte wird so viel seltener aufgefrischt (fehlende Chunks bleiben sofort). */
+	static final int HIDDEN_REFRESH_FACTOR = 8;
+	/** Ohne sichtbare Karte höchstens so viel Abtast-Zeit je Tick (ns). */
+	static final long HIDDEN_BUDGET_NS = 200_000L;
+	private boolean restampPending;
 	/** Zeitbudget fürs Abtasten je Tick (ns). */
 	static final long SAMPLE_BUDGET_NS = 600_000L;
 	/** Karte v3: Grundbudget je Tick, mit Rückstand (fehlende Chunks) und bei offener Weltkarte (ns). */
@@ -239,6 +244,11 @@ public final class MapEngine {
 	/** Läuft die Karte überhaupt (Minimap oder Weltkarte an)? */
 	public boolean enabled() {
 		return modules.minimap.isEnabled() || modules.worldMap.isEnabled();
+	}
+
+	/** Ist gerade eine Karte zu sehen (Minimap an oder Weltkarte offen)? */
+	boolean mapVisible() {
+		return worldMapOpen || modules.minimap.isEnabled();
 	}
 
 	public boolean inWorld() {
@@ -590,6 +600,9 @@ public final class MapEngine {
 		if (reader != null) {
 			long budget = !v3 ? SAMPLE_BUDGET_NS
 					: worldMapOpen ? V3_WORLDMAP_BUDGET_NS : (backlog || speed > 0.6 ? V3_BACKLOG_BUDGET_NS : V3_BUDGET_NS);
+			// Keine Karte zu sehen: nur ein kleines Budget im Render-Thread – neue Chunks kommen trotzdem auf die Weltkarte,
+			// nur etwas später (Smart Threads: Render-Thread entlasten).
+			if (!mapVisible()) budget = Math.min(budget, HIDDEN_BUDGET_NS);
 			long deadline = System.nanoTime() + budget;
 			int radius = v3 ? Math.max(2, Math.min(V3_MAX_RADIUS, p.renderDistance())) : Math.max(2, Math.min(12, p.renderDistance()));
 			radiusNow = radius;
@@ -686,19 +699,30 @@ public final class MapEngine {
 	}
 
 	private void updatePalette(MapPlatform p, long now, boolean texMode) {
+		// Neue Texturfarben, während keine Karte zu sehen ist: erst neu abtasten, wenn wieder eine Karte sichtbar ist
+		// (sonst tastete der Render-Thread alle paar Sekunden die ganze Umgebung neu ab).
+		if (restampPending && mapVisible()) {
+			restampPending = false;
+			restamp();
+		}
 		if (paletteSource != p) {
 			paletteSource = p;
 			palette.setResources(p::readResource);
 		}
 		try {
-			if (palette.checkGeneration(p.resourceGeneration()) && texMode) restamp();
+			if (palette.checkGeneration(p.resourceGeneration()) && texMode) restampWhenVisible();
 		} catch (RuntimeException e) {
 			// ohne Erkennung eben ohne
 		}
 		if (now - lastPaletteCheck >= 1000) {
 			lastPaletteCheck = now;
-			if (palette.takeChanged() && texMode) restamp();
+			if (palette.takeChanged() && texMode) restampWhenVisible();
 		}
+	}
+
+	private void restampWhenVisible() {
+		if (mapVisible()) restamp();
+		else restampPending = true;
 	}
 
 	/** Alle geladenen Chunks neu abtasten (neue Farben): Stempel vergessen – das Zeitbudget je Tick bleibt. */
@@ -868,6 +892,9 @@ public final class MapEngine {
 			if (last < 0) continue;
 			int dist = Math.max(Math.abs(dx), Math.abs(dz));
 			long maxAge = v3 ? (dist <= 2 ? 2_000 : (dist <= 6 ? 6_000 : 20_000)) : (dist <= 2 ? 2_000 : (dist <= 5 ? 8_000 : 30_000));
+			// Keine Karte zu sehen (Minimap aus, Weltkarte zu): neue Chunks kommen weiter sofort auf die Karte, bereits
+			// abgetastete werden nur selten aufgefrischt – das spart dem Render-Thread ~0,6 ms je Tick (Smart Threads).
+			if (!mapVisible()) maxAge *= HIDDEN_REFRESH_FACTOR;
 			if (now - last < maxAge || !r.isLoaded(cx, cz)) continue;
 			scan(r, layer, stamps, cx, cz, key, now);
 		}

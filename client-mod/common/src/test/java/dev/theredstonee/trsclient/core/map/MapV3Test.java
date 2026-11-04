@@ -31,13 +31,14 @@ class MapV3Test {
 
 	@Test
 	void switchComesFromPropertyOrBuildList() {
-		assertFalse(MapPreview.decide(null, null), "normale Builds: aus");
-		assertTrue(MapPreview.decide(null, "map-v3\n"), "Vorschau-Build");
-		assertTrue(MapPreview.decide("map-v3", null), "System-Eigenschaft");
-		assertFalse(MapPreview.decide("-map-v3", "map-v3"), "Eigenschaft schaltet einen Vorschau-Build aus");
-		assertFalse(MapPreview.decide("!map-v3", "map-v3"));
+		assertTrue(MapPreview.decide(null, null), "normale Builds: an");
+		assertTrue(MapPreview.decide(null, "map-v3\n"), "Build-Liste an");
+		assertFalse(MapPreview.decide(null, "-map-v3\n"), "Build-Liste aus");
+		assertTrue(MapPreview.decide("map-v3", "-map-v3"), "Eigenschaft gewinnt gegen die Build-Liste");
+		assertFalse(MapPreview.decide("-map-v3", "map-v3"), "Eigenschaft schaltet aus");
+		assertFalse(MapPreview.decide("!map-v3", null), "Ausweg ohne Build-Liste");
 		assertTrue(MapPreview.decide("other, map-v3", null));
-		assertFalse(MapPreview.decide("other", null));
+		assertTrue(MapPreview.decide("other", null), "andere Funktionen ändern nichts");
 		assertTrue(MapPreview.decide("", "other\nmap-v3"), "leere Eigenschaft zählt nicht");
 	}
 

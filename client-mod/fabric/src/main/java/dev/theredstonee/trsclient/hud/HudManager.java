@@ -33,7 +33,7 @@ public final class HudManager {
 		this.minimap = new MinimapHud(modules.minimap, modules);
 		dev.theredstonee.trsclient.core.redstone.RedstoneTools redstone = dev.theredstonee.trsclient.TrsClient.get().redstone();
 		this.redstoneOverlay = new RedstoneHuds.Overlay(modules, redstone);
-		this.elements = dev.theredstonee.trsclient.qol.QolHuds.join(Arrays.asList(
+		this.elements = new ArrayList<>(dev.theredstonee.trsclient.qol.QolHuds.join(Arrays.asList(
 				new FpsHud(modules.fps),
 				new CpsHud(modules.cps),
 				new KeystrokesHud(modules.keystrokes, modules),
@@ -54,7 +54,7 @@ public final class HudManager {
 				new RedstoneHuds.Signal(modules, redstone),
 				new RedstoneHuds.Clock(modules, redstone),
 				new ClipHud(modules),
-				new NotesHud(modules)), modules);
+				new NotesHud(modules)), modules));
 	}
 
 	public CrosshairRenderer crosshair() {
@@ -69,6 +69,12 @@ public final class HudManager {
 	/** Weltwechsel: Kartenspeicher leeren. */
 	public void onWorldChange() {
 		minimap.onWorldChange();
+	}
+
+	/** Zusätzliches HUD-Element (optionale Erweiterungen, core.ext) – vor dem ersten Zeichnen anmelden. */
+	public void add(HudElement element) {
+		elements.add(element);
+		editorItems = null;
 	}
 
 	public List<HudElement> elements() {
@@ -123,6 +129,7 @@ public final class HudManager {
 
 	/** HUD-Callback (jeden Frame). */
 	public void render(Gfx g) {
+		long probe = dev.theredstonee.trsclient.core.perf.Probes.begin();
 		try {
 			renderElements(g);
 		} finally {
@@ -132,6 +139,8 @@ public final class HudManager {
 			dev.theredstonee.trsclient.comfort.ComfortHooks.hud(g);
 			// Halloween: Spuk-Effekte, Jumpscares, Toasts „Kürbis gefunden!“.
 			dev.theredstonee.trsclient.halloween.HalloweenHooks.hud(g);
+			dev.theredstonee.trsclient.core.perf.Probes.end(
+					dev.theredstonee.trsclient.core.perf.Probes.TRS_HUD, probe);
 		}
 	}
 

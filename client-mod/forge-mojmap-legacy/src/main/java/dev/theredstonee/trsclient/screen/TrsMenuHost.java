@@ -141,6 +141,21 @@ public final class TrsMenuHost implements MenuHost {
 	}
 
 	@Override
+	public void openMinigames() {
+		Mc.setScreen(new TrsUiScreen(I18n.tr("minigames.title"), new dev.theredstonee.trsclient.core.minigames.MinigamesUi(new TrsMenuHost(new TrsMenuScreen(parent)))));
+	}
+
+	@Override
+	public boolean hasMinigames() {
+		return true;
+	}
+
+	@Override
+	public boolean keyDown(String keyName) {
+		return Keys.isDown(keyName);
+	}
+
+	@Override
 	public boolean hasClips() {
 		return true;
 	}

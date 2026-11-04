@@ -1029,6 +1029,12 @@
       "imageTooLarge": "The image is too large (2 MB at most).",
       "invalidImage": "The reference image must be a PNG or JPG.",
       "speciesLength": "Animal: 1 to {max} characters."
+    },
+    "minigames": {
+      "noTextures": "The minigames need Minecraft's textures. Start an instance with Minecraft 1.17 or newer once.",
+      "unknownGame": "This minigame doesn't exist.",
+      "invalidRun": "This run is invalid.",
+      "invalidReason": "Please give a short reason."
     }
   },
   "browse": {
@@ -2490,7 +2496,12 @@
       "sidebarRecentTitle": "Quick instances",
       "sidebarRecentDescription": "Your recently played instances with their icons below the navigation.",
       "sidebarAccountTitle": "Account tile",
-      "sidebarAccountDescription": "The active account with its skin head at the bottom of the sidebar."
+      "sidebarAccountDescription": "The active account with its skin head at the bottom of the sidebar.",
+      "minigames": "Minigames",
+      "minigamesTabTitle": "Minigames tab",
+      "minigamesTabDescription": "Shows the games in the sidebar.",
+      "minigamesLoadingTitle": "Offer a game while Minecraft starts",
+      "minigamesLoadingDescription": "A small note lets you play a round during the wait. It never opens by itself."
     },
     "behavior": {
       "title": "Behavior",
@@ -3123,7 +3134,8 @@
     "localServers": "My servers",
     "controls": "Controls",
     "pc": "PC",
-    "creator": "Creator"
+    "creator": "Creator",
+    "minigames": "Minigames"
   },
   "accountMenu": {
     "menuLabel": "Accounts",
@@ -3183,7 +3195,8 @@
       "achievements": "achievements trophies points rewards badges unlock",
       "docs": "help docs documentation guide wiki faq manual support questions",
       "bigPicture": "big picture tv controller gamepad steam deck fullscreen couch console",
-      "creator": "creator code fans support youtuber streamer fan symbol fan cape"
+      "creator": "creator code fans support youtuber streamer fan symbol fan cape",
+      "minigames": "games arcade redstone stacker minecart rush leaderboard highscore"
     },
     "actions": {
       "newInstance": {
@@ -6138,7 +6151,8 @@
       "creators_manage": "Manage creators",
       "featured_manage": "Manage featured modpacks",
       "serverrules_bypass": "Use server-locked TRS Client features anyway (after an in-game prompt)",
-      "previews_access": "Preview builds: Download launcher and TRS Client preview builds like Partner creators"
+      "previews_access": "Preview builds: Download launcher and TRS Client preview builds like Partner creators",
+      "minigames_manage": "Remove minigame entries"
     },
     "creators": {
       "intro": "Review fan symbols and fan capes, manage creators and answer their requests. Applications are handled on the website.",
@@ -8177,6 +8191,85 @@
       "resetHint": "Back to the start page with all dialogs closed.",
       "changePin": "Change PIN",
       "quit": "Quit launcher"
+    }
+  },
+  "minigames": {
+    "noTexturesTitle": "Minecraft textures needed",
+    "signal": "Signal strength",
+    "score": "Score",
+    "localBest": "Your best",
+    "newBest": "New personal best!",
+    "paused": "Paused",
+    "start": "Start",
+    "again": "Play again",
+    "resume": "Resume",
+    "enterHint": "Or press Enter",
+    "soundOn": "Turn sound on",
+    "soundOff": "Turn sound off",
+    "pauseKey": "Pause (P)",
+    "stapler": {
+      "name": "Redstone Stacker",
+      "tagline": "Droppers hand out the blocks, your circuit clears them.",
+      "hold": "Hold (C)",
+      "next": "Next",
+      "lamps": "Lamps on",
+      "pulseReady": "Pulse ready: E",
+      "levelLines": "Level · Lines",
+      "combo": "Chain",
+      "over": "Circuit overloaded",
+      "keys": "← → move · ↓ faster · Space drop · ↑ or X rotate · Z or Y rotate back · C hold · E pulse at full signal · P pause · R restart · M sound",
+      "rules": {
+        "redstoneTitle": "Redstone block:",
+        "redstone": "When its row clears, it powers everything nearby.",
+        "tntTitle": "TNT:",
+        "tnt": "With signal or in a cleared row it explodes, and the stack above falls down.",
+        "lampTitle": "Lamp:",
+        "lamp": "With signal it glows for 10 seconds. Each lit lamp raises your points by 50%.",
+        "pistonTitle": "Piston:",
+        "piston": "With signal it pushes its row into the nearest gap and fills it."
+      }
+    },
+    "loren": {
+      "name": "Minecart Rush",
+      "tagline": "Pull the levers, collect redstone, stay on the rails.",
+      "over": "Derailed",
+      "speed": "{n} blocks/s",
+      "blocks": "{n} blocks",
+      "shield": "{n} / 15 · Shield active",
+      "turboReady": "Turbo ready: E",
+      "turboActive": "TURBO",
+      "keys": "← → or A D switch track · ↑ W or Space jump · ↓ or S duck · E turbo at full signal · P pause · R restart · M sound",
+      "zones": {
+        "mine": "Mine",
+        "deepslate": "Deepslate",
+        "nether": "Nether",
+        "frost": "Frost cave",
+        "den": "Fox den"
+      }
+    },
+    "result": {
+      "checking": "Checking your run…",
+      "improved": "New entry: rank {rank} worldwide.",
+      "notImproved": "Rank {rank} worldwide stays, with {score} points.",
+      "rejected": "The server could not confirm this run, so it doesn't count.",
+      "failed": "The run could not be submitted. It only counts locally.",
+      "local": "This run only counts locally."
+    },
+    "board": {
+      "title": "Worldwide all-time",
+      "needsTrs": "The leaderboard needs TRS services. You can still play.",
+      "error": "The leaderboard can't be loaded right now.",
+      "empty": "No entries yet. Be the first.",
+      "me": "You: rank {rank} with {score} points",
+      "note": "The server replays every run from your inputs. Team members can remove false entries.",
+      "remove": "Remove {name}",
+      "removeTitle": "Remove entry from {name}?",
+      "removeReason": "Reason",
+      "removeConfirm": "Remove"
+    },
+    "loading": {
+      "title": "Minecraft is starting",
+      "text": "Fancy a quick round while you wait?"
     }
   }
 }

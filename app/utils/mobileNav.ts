@@ -22,6 +22,7 @@ export const mobileTabs: MobileNavItem[] = [
 
 const moreAll: MobileNavItem[] = [
   { to: '/skins', label: 'nav.skins', icon: 'skins' },
+  { to: '/minigames', label: 'nav.minigames', icon: 'gamepad' },
   { to: '/screenshots', label: 'nav.screenshots', icon: 'screenshots' },
   { to: '/achievements', label: 'nav.achievements', icon: 'trophy' },
   { to: '/creator', label: 'nav.creator', icon: 'star' },

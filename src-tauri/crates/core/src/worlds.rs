@@ -371,7 +371,7 @@ mod tests {
         assert_eq!(progress.lock().unwrap().last(), Some(&100));
         let zip_path = paths.instance_game_dir("test").join(BACKUP_DIR).join(&name);
         let mut archive = zip::ZipArchive::new(std::fs::File::open(&zip_path).unwrap()).unwrap();
-        let names: Vec<String> = archive.file_names().map(str::to_owned).collect();
+        let names: Vec<String> = archive.file_names().map(|n| n.unwrap().into_owned()).collect();
         assert!(names.contains(&"welt1/level.dat".to_owned()));
         assert!(names.contains(&"welt1/region/r.0.0.mca".to_owned()));
         assert!(!names.iter().any(|n| n.ends_with("session.lock")));

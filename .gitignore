@@ -44,3 +44,6 @@ release/
 # Dev scripts: logs and settings of this machine
 .dev/logs/
 .dev/local.sh
+
+# Classes unpacked from a Minecraft jar, never commit them
+*.class

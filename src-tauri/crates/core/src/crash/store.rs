@@ -82,7 +82,7 @@ fn jar_layout(path: &Path) -> (Vec<String>, Vec<String>) {
     let Ok(archive) = zip::ZipArchive::new(file) else { return (Vec::new(), Vec::new()) };
     let mut packages = BTreeSet::new();
     let mut configs = BTreeSet::new();
-    for name in archive.file_names().take(MAX_JAR_ENTRIES) {
+    for name in archive.file_names().take(MAX_JAR_ENTRIES).flatten() {
         if let Some((dir, file)) = name.rsplit_once('/') {
             if !file.ends_with(".class") || dir.starts_with("META-INF") {
                 continue;
@@ -97,7 +97,7 @@ fn jar_layout(path: &Path) -> (Vec<String>, Vec<String>) {
                 packages.insert(package);
             }
         } else if name.ends_with(".json") && name.contains("mixins") && configs.len() < 32 {
-            configs.insert(name.to_owned());
+            configs.insert(name.to_string());
         }
     }
     (packages.into_iter().collect(), configs.into_iter().collect())

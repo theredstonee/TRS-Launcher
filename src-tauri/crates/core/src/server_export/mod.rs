@@ -344,7 +344,11 @@ fn write_zip(dir: &Path, root_name: &str, dest: &Path, report: &dyn Fn(f64), can
     let result = (|| -> Result<u64> {
         let file = std::fs::File::create(&tmp).map_err(|e| Error::io(&tmp, e))?;
         let mut zip = zip::ZipWriter::new(std::io::BufWriter::new(file));
-        let base = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated).large_file(true);
+        // Unix-Rechte gelten nur mit dieser Angabe: zip nimmt unter Windows sonst DOS, und start.sh waere nicht mehr ausfuehrbar.
+        let base = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated)
+            .large_file(true)
+            .system(zip::System::Unix);
         let mut done = 0u64;
         for (rel, len) in &entries {
             if cancelled() {

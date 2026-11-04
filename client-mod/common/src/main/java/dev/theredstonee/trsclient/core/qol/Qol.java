@@ -78,6 +78,16 @@ public final class Qol {
 		return instance;
 	}
 
+	/** Spielt einen Klang über die Plattform (für Bereiche außerhalb dieses Pakets, z. B. Minispiele). */
+	public void playSound(QolSound sound, float volume, float pitch) {
+		platform.play(sound, volume, pitch);
+	}
+
+	/** Hat das Spielfenster gerade den Fokus? */
+	public boolean windowFocused() {
+		return platform.focused();
+	}
+
 	// --- Tick ---
 
 	/**

@@ -58,7 +58,7 @@ import net.minecraft.world.level.GameRules;
  */
 public final class AutoTest {
 	/** Minecraft-Version für Dateinamen: Screenshots/Testwelten mehrerer Versionen kommen sich nicht in die Quere. */
-	static final String MC_VERSION = FabricLoader.getInstance().getModContainer("minecraft")
+	public static final String MC_VERSION = FabricLoader.getInstance().getModContainer("minecraft")
 			.map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("mc");
 	/** Eigene Testwelt je Version (kein Öffnen einer neueren Welt in einer älteren Version). */
 	private static final String WORLD = "trs-autotest-" + MC_VERSION;
@@ -115,6 +115,11 @@ public final class AutoTest {
 		// -PtrsAutotestOnly=fox: Design „Fuchsbau“ (Startbildschirm Dunkel/Hell/OLED, Einführung, TRS-Menü, Laden, Pause)
 		if ("fox".equals(System.getProperty("trsclient.autotest.only"))) {
 			FoxDenTest.install();
+			return;
+		}
+		// -PtrsAutotestOnly=minigames: Minispiele (Auswahl, beide Spiele mit Bot, Pause, Anstriche, Ressourcen neu laden, Welt)
+		if ("minigames".equals(System.getProperty("trsclient.autotest.only"))) {
+			MinigamesTest.install();
 			return;
 		}
 		// -PtrsAutotestOnly=halloween: Halloween 2026 (Startbildschirm, Seite Halloween, Mondlauf, Spuk-Effekte, Jumpscares)
@@ -184,6 +189,8 @@ public final class AutoTest {
 			SocialTest.installToasts();
 			return;
 		}
+		// Autotests optionaler Erweiterungen (core.ext), z. B. -PtrsAutotestOnly=threads
+		if (dev.theredstonee.trsclient.core.ext.TrsExtensions.autotest(System.getProperty("trsclient.autotest.only"))) return;
 		// -PtrsAutotestOnly=bugreport: „Bug melden“ – Formular, Vorschau, Senden an die Attrappe, Fehlerfall
 		if ("bugreport".equals(System.getProperty("trsclient.autotest.only"))) {
 			BugReportTest.install();
@@ -951,7 +958,7 @@ public final class AutoTest {
 	}
 
 	/** Führt einen Befehl als Server (Berechtigungsstufe 4) aus. */
-	static void command(Minecraft mc, String command) {
+	public static void command(Minecraft mc, String command) {
 		MinecraftServer server = mc.getSingleplayerServer();
 		if (server == null) return;
 		//? if >=1.19 {
@@ -1177,7 +1184,7 @@ public final class AutoTest {
 	}
 
 	/** Welt öffnen oder neu anlegen (Kreativ, friedlich); {@code seed} null = zufällig. */
-	static void startWorld(Minecraft mc, String world, Long seed) {
+	public static void startWorld(Minecraft mc, String world, Long seed) {
 		if (mc.getLevelSource().levelExists(world)) {
 			TrsClient.LOGGER.info("[Autotest] öffne Testwelt '{}'", world);
 			//? if >=1.20.5 {
@@ -1236,7 +1243,7 @@ public final class AutoTest {
 		return seed == null ? java.util.OptionalLong.empty() : java.util.OptionalLong.of(seed);
 	}
 
-	static void disconnect(Minecraft mc) {
+	public static void disconnect(Minecraft mc) {
 		//? if >=1.21.6 {
 		/*if (mc.level != null) mc.level.disconnect(Mc.text("TRS-Autotest"));
 		mc.disconnectWithSavingScreen();
@@ -1250,7 +1257,7 @@ public final class AutoTest {
 	}
 
 
-	static void shot(Minecraft mc, String name) {
+	public static void shot(Minecraft mc, String name) {
 		// run/screenshots/trsclient-<minecraft>-<name>.png
 		Screenshot.grab(mc.gameDirectory, name.replace("trsclient-", "trsclient-" + MC_VERSION + "-") + ".png",
 				//? if <1.17.1

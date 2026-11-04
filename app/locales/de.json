@@ -1029,6 +1029,12 @@
       "imageTooLarge": "Das Bild ist zu groß (höchstens 2 MB).",
       "invalidImage": "Das Referenzbild muss ein PNG- oder JPG-Bild sein.",
       "speciesLength": "Tierart: 1 bis {max} Zeichen."
+    },
+    "minigames": {
+      "noTextures": "Für die Minispiele fehlen die Minecraft-Texturen. Starte einmal eine Instanz mit Minecraft 1.17 oder neuer.",
+      "unknownGame": "Dieses Minispiel gibt es nicht.",
+      "invalidRun": "Diese Partie ist ungültig.",
+      "invalidReason": "Bitte gib einen kurzen Grund an."
     }
   },
   "browse": {
@@ -2490,7 +2496,12 @@
       "sidebarRecentTitle": "Schnell-Instanzen",
       "sidebarRecentDescription": "Die zuletzt gespielten Instanzen mit Bild unter der Navigation.",
       "sidebarAccountTitle": "Account-Kachel",
-      "sidebarAccountDescription": "Aktiver Account mit Skin-Kopf unten in der Leiste."
+      "sidebarAccountDescription": "Aktiver Account mit Skin-Kopf unten in der Leiste.",
+      "minigames": "Minispiele",
+      "minigamesTabTitle": "Reiter Minispiele",
+      "minigamesTabDescription": "Zeigt die Spiele in der Seitenleiste.",
+      "minigamesLoadingTitle": "Spiel anbieten, während Minecraft startet",
+      "minigamesLoadingDescription": "Ein kleiner Hinweis lässt dich in der Wartezeit eine Runde spielen. Er öffnet sich nie von selbst."
     },
     "behavior": {
       "title": "Verhalten",
@@ -3123,7 +3134,8 @@
     "localServers": "Meine Server",
     "controls": "Steuerung",
     "pc": "PC",
-    "creator": "Creator"
+    "creator": "Creator",
+    "minigames": "Minispiele"
   },
   "accountMenu": {
     "menuLabel": "Konten",
@@ -3183,7 +3195,8 @@
       "achievements": "erfolge trophäen punkte belohnungen abzeichen freischalten achievements",
       "docs": "hilfe docs dokumentation anleitung wiki faq handbuch support fragen help",
       "bigPicture": "big picture fernseher tv controller gamepad steam deck vollbild sofa konsole",
-      "creator": "creator code fans unterstützen youtuber streamer fan-symbol fan-umhang"
+      "creator": "creator code fans unterstützen youtuber streamer fan-symbol fan-umhang",
+      "minigames": "spiele arcade redstone stapler loren rausch rangliste rekord"
     },
     "actions": {
       "newInstance": {
@@ -6138,7 +6151,8 @@
       "creators_manage": "Creator verwalten",
       "featured_manage": "Empfohlene Modpacks verwalten",
       "serverrules_bypass": "Vom Server gesperrte TRS-Client-Funktionen trotzdem nutzen (nach Nachfrage im Spiel)",
-      "previews_access": "Vorschau-Builds: Vorschau-Builds von Launcher und TRS Client laden wie Partner-Creator"
+      "previews_access": "Vorschau-Builds: Vorschau-Builds von Launcher und TRS Client laden wie Partner-Creator",
+      "minigames_manage": "Minispiel-Einträge entfernen"
     },
     "creators": {
       "intro": "Fan-Symbole und Fan-Umhänge prüfen, Creator verwalten und ihre Anträge beantworten. Bewerbungen laufen über die Website.",
@@ -8177,6 +8191,85 @@
       "resetHint": "Zurück zur Startseite, alle Dialoge geschlossen.",
       "changePin": "PIN ändern",
       "quit": "Launcher beenden"
+    }
+  },
+  "minigames": {
+    "noTexturesTitle": "Minecraft-Texturen fehlen",
+    "signal": "Signalstärke",
+    "score": "Punkte",
+    "localBest": "Dein Rekord",
+    "newBest": "Neuer eigener Rekord!",
+    "paused": "Pause",
+    "start": "Starten",
+    "again": "Noch mal",
+    "resume": "Weiter",
+    "enterHint": "Oder Enter drücken",
+    "soundOn": "Ton einschalten",
+    "soundOff": "Ton ausschalten",
+    "pauseKey": "Pause (P)",
+    "stapler": {
+      "name": "Redstone-Stapler",
+      "tagline": "Die Dropper geben die Steine aus, deine Schaltung räumt sie weg.",
+      "hold": "Halten (C)",
+      "next": "Nächste",
+      "lamps": "Lampen an",
+      "pulseReady": "Impuls bereit: E",
+      "levelLines": "Stufe · Reihen",
+      "combo": "Kette",
+      "over": "Schaltung überlastet",
+      "keys": "← → bewegen · ↓ schneller · Leertaste fallen lassen · ↑ oder X drehen · Z oder Y zurückdrehen · C halten · E Impuls bei voller Signalstärke · P Pause · R neu · M Ton",
+      "rules": {
+        "redstoneTitle": "Redstone-Block:",
+        "redstone": "Wird seine Reihe gelöscht, versorgt er alles in seiner Nähe mit Signal.",
+        "tntTitle": "TNT:",
+        "tnt": "Mit Signal oder in einer gelöschten Reihe explodiert es, der Stapel darüber stürzt nach.",
+        "lampTitle": "Lampe:",
+        "lamp": "Mit Signal leuchtet sie 10 Sekunden. Jede brennende Lampe erhöht die Punkte um 50 %.",
+        "pistonTitle": "Kolben:",
+        "piston": "Mit Signal schiebt er seine Reihe in die nächste Lücke und füllt sie."
+      }
+    },
+    "loren": {
+      "name": "Loren-Rausch",
+      "tagline": "Hebel umlegen, Redstone sammeln, auf den Schienen bleiben.",
+      "over": "Entgleist",
+      "speed": "{n} Blöcke/s",
+      "blocks": "{n} Blöcke",
+      "shield": "{n} / 15 · Schutz aktiv",
+      "turboReady": "Turbo bereit: E",
+      "turboActive": "TURBO",
+      "keys": "← → oder A D Gleis wechseln · ↑ W oder Leertaste springen · ↓ oder S ducken · E Turbo bei voller Signalstärke · P Pause · R neu · M Ton",
+      "zones": {
+        "mine": "Mine",
+        "deepslate": "Tiefenschiefer",
+        "nether": "Nether",
+        "frost": "Frosthöhle",
+        "den": "Fuchsbau"
+      }
+    },
+    "result": {
+      "checking": "Partie wird geprüft …",
+      "improved": "Neuer Eintrag: Platz {rank} weltweit.",
+      "notImproved": "Es bleibt bei Platz {rank} weltweit mit {score} Punkten.",
+      "rejected": "Der Server konnte diese Partie nicht bestätigen, sie zählt nicht.",
+      "failed": "Die Partie ließ sich nicht einreichen. Sie zählt nur lokal.",
+      "local": "Diese Partie zählt nur lokal."
+    },
+    "board": {
+      "title": "Weltweit, alle Zeiten",
+      "needsTrs": "Die Rangliste braucht die TRS-Dienste. Spielen geht trotzdem.",
+      "error": "Die Rangliste lässt sich gerade nicht laden.",
+      "empty": "Noch keine Einträge. Sei der oder die Erste.",
+      "me": "Du: Platz {rank} mit {score} Punkten",
+      "note": "Der Server rechnet jede Partie aus deinen Eingaben nach. Das Team kann falsche Einträge entfernen.",
+      "remove": "{name} entfernen",
+      "removeTitle": "Eintrag von {name} entfernen?",
+      "removeReason": "Grund",
+      "removeConfirm": "Entfernen"
+    },
+    "loading": {
+      "title": "Minecraft startet",
+      "text": "Lust auf eine kurze Runde, solange du wartest?"
     }
   }
 }

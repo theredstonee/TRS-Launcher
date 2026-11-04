@@ -581,6 +581,7 @@ public final class ModMenu extends UiScreen {
 				+ (host.hasWardrobe() ? 1 : 0) + (host.hasFriends() ? 1 : 0) + (host.hasClips() ? 1 : 0)
 				+ (dev.theredstonee.trsclient.core.bugreport.BugReports.get() != null ? 1 : 0) + (notesAvailable() ? 1 : 0)
 				+ (HalloweenPage.available() ? 1 : 0)
+				+ (minigamesAvailable() ? 1 : 0)
 				+ 1; // Hilfe (Docs)
 		int rowH = 18;
 		int gap = 3;
@@ -690,6 +691,16 @@ public final class ModMenu extends UiScreen {
 			});
 			cy += rowH + gap;
 		}
+		if (minigamesAvailable()) {
+			railItem(c, x, cy, w, rowH, "game", I18n.tr("menu.minigames"), false, mx, my, NewSince.MENU_MINIGAMES, new Runnable() {
+				@Override
+				public void run() {
+					host.save();
+					host.openMinigames();
+				}
+			});
+			cy += rowH + gap;
+		}
 		if (host.hasPacks()) {
 			railItem(c, x, cy, w, rowH, "packs", I18n.tr("menu.packs"), false, mx, my, new Runnable() {
 				@Override
@@ -784,6 +795,12 @@ public final class ModMenu extends UiScreen {
 		Redstone.pip(c, x + 2, footerY + 1, 7, active > 0 ? 1f : 0f);
 		Paint.textClipped(c, I18n.tr("menu.activeCount", active, total), x + 14, footerY, w - 14, t.text, false);
 		Redstone.keycap(c, x, footerY + 14, host.menuKeyLabel(), w);
+	}
+
+	/** Minispiele brauchen eine Tastatur, im Touch-Modus gibt es sie deshalb nicht. Ein Server kann das Modul sperren. */
+	private boolean minigamesAvailable() {
+		dev.theredstonee.trsclient.core.module.Module m = host.modules().minigames.minigames;
+		return host.hasMinigames() && shown(m) && m.isEnabled() && !dev.theredstonee.trsclient.core.touch.TouchMode.enabled();
 	}
 
 	/** Gibt es in {@code cat} (null = überall) ein „NEU“-Modul dieser Version? */

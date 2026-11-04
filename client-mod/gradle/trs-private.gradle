@@ -1,0 +1,26 @@
+// Optionale private Erweiterungen des TRS Clients (z. B. Smart Threads) – NICHT Teil dieses Repos.
+//
+// Release-Builds:  ./gradlew … -PtrsPrivate=<ordner>   (oder Umgebungsvariable TRS_PRIVATE_DIR=<ordner>)
+// Der Ordner bringt ein eigenes Build-Skript mit (<ordner>/gradle/private.gradle), das seine Quellen, Ressourcen und
+// Mixins in den Build dieses Loader-Baums einhängt. Ohne Eigenschaft passiert hier nichts: der Open-Source-Build (und
+// die CI) bauen ohne Erweiterungen, das Menü zeigt deren Seiten dann als „in diesem Build nicht verfügbar“
+// (Schnittstelle: common/…/core/ext).
+//
+// Eingebunden von jedem Loader-Build NACH dem Setzen von ext.trsTree:
+//   ext.trsTree = 'fabric'
+//   apply from: new File(buildscript.sourceFile.parentFile, '../gradle/trs-private.gradle')
+
+def privateRaw = (project.findProperty('trsPrivate') ?: rootProject.findProperty('trsPrivate') ?: System.getenv('TRS_PRIVATE_DIR'))?.toString()?.trim()
+ext.trsPrivateDir = null
+if (privateRaw) {
+	File dir = new File(privateRaw).canonicalFile
+	File script = new File(dir, 'gradle/private.gradle')
+	if (!script.isFile()) {
+		throw new GradleException("trsPrivate: ${script} gibt es nicht (Ordner der privaten Erweiterungen?)")
+	}
+	if (!project.hasProperty('trsTree')) {
+		throw new GradleException('trsPrivate: ext.trsTree fehlt vor apply from trs-private.gradle')
+	}
+	ext.trsPrivateDir = dir
+	apply from: script
+}

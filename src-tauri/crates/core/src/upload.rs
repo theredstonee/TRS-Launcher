@@ -77,7 +77,7 @@ pub fn classify(path: &Path) -> Result<ContentKind> {
     if ext == "jar" {
         return Ok(ContentKind::Mod);
     }
-    let names: Vec<&str> = archive.file_names().take(MAX_SCANNED_ENTRIES).collect();
+    let names: Vec<_> = archive.file_names().take(MAX_SCANNED_ENTRIES).flatten().collect();
     if names.iter().any(|n| n.eq_ignore_ascii_case("pack.mcmeta")) {
         // Datenpakete haben `data/`, Ressourcenpakete `assets/`.
         let has = |prefix: &str| names.iter().any(|n| n.starts_with(prefix));
