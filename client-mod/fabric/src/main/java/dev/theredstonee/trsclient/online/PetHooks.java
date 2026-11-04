@@ -57,15 +57,20 @@ public final class PetHooks {
 
 	//? if >=1.21.9 {
 	/*public static void render(PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector) {
-		OnlineFeatures<Object> f = OnlineHooks.features();
-		Minecraft mc = Minecraft.getInstance();
-		if (f == null || mc.level == null) return;
+		long trsProbe = dev.theredstonee.trsclient.core.perf.Probes.begin();
 		try {
-			BLOCKS.level = mc.level;
-			int n = f.petFrame(BLOCKS, Mc.cameraX(), Mc.cameraY(), Mc.cameraZ(), Mc.cameraYaw(), Mc.cameraPitch());
-			for (int i = 0; i < n; i++) draw(f, f.petDraw(i), pose, collector);
-		} catch (RuntimeException e) {
-			f.online().reportError(e);
+			OnlineFeatures<Object> f = OnlineHooks.features();
+			Minecraft mc = Minecraft.getInstance();
+			if (f == null || mc.level == null) return;
+			try {
+				BLOCKS.level = mc.level;
+				int n = f.petFrame(BLOCKS, Mc.cameraX(), Mc.cameraY(), Mc.cameraZ(), Mc.cameraYaw(), Mc.cameraPitch());
+				for (int i = 0; i < n; i++) draw(f, f.petDraw(i), pose, collector);
+			} catch (RuntimeException e) {
+				f.online().reportError(e);
+			}
+		} finally {
+			dev.theredstonee.trsclient.core.perf.Probes.end(dev.theredstonee.trsclient.core.perf.Probes.TRS_WORLD, trsProbe);
 		}
 	}
 
@@ -96,15 +101,20 @@ public final class PetHooks {
 	}
 	*///?} else {
 	public static void render(PoseStack pose, net.minecraft.client.renderer.MultiBufferSource buffers) {
-		OnlineFeatures<Object> f = OnlineHooks.features();
-		Minecraft mc = Minecraft.getInstance();
-		if (f == null || mc.level == null || buffers == null) return;
+		long trsProbe = dev.theredstonee.trsclient.core.perf.Probes.begin();
 		try {
-			BLOCKS.level = mc.level;
-			int n = f.petFrame(BLOCKS, Mc.cameraX(), Mc.cameraY(), Mc.cameraZ(), Mc.cameraYaw(), Mc.cameraPitch());
-			for (int i = 0; i < n; i++) draw(f, f.petDraw(i), pose, buffers);
-		} catch (RuntimeException e) {
-			f.online().reportError(e);
+			OnlineFeatures<Object> f = OnlineHooks.features();
+			Minecraft mc = Minecraft.getInstance();
+			if (f == null || mc.level == null || buffers == null) return;
+			try {
+				BLOCKS.level = mc.level;
+				int n = f.petFrame(BLOCKS, Mc.cameraX(), Mc.cameraY(), Mc.cameraZ(), Mc.cameraYaw(), Mc.cameraPitch());
+				for (int i = 0; i < n; i++) draw(f, f.petDraw(i), pose, buffers);
+			} catch (RuntimeException e) {
+				f.online().reportError(e);
+			}
+		} finally {
+			dev.theredstonee.trsclient.core.perf.Probes.end(dev.theredstonee.trsclient.core.perf.Probes.TRS_WORLD, trsProbe);
 		}
 	}
 

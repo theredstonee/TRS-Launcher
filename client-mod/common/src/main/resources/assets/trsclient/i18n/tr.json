@@ -2542,5 +2542,14 @@
   "halloween.wings.demon_wings": "Demon Wings",
   "halloween.wings.raven_wings": "Raven Wings",
   "halloween.wings.ghost_wings": "Ghost Wings",
-  "halloween.page.riddle": "“{0}”"
+  "halloween.page.riddle": "“{0}”",
+  "module.smartThreads": "Smart Threads",
+  "module.smartThreads.desc": "Minecraft'ın arka plan işini (chunk oluşturma, dünya üretimi, ışık, yükleme) işlemci çekirdeklerine akıllıca dağıtır: doğru sayıda işçi iş parçacığı, arka plan işinden önce render iş parçacığı, Discord ve OBS için boş çekirdekler. Minecraft tam olarak bir render ve bir sunucu iş parçacığını korur – Smart Threads bunları bölmez. Sodium, Iris ve Distant Horizons ile birlikte çalışır.",
+  "module.threadLoad": "CPU Yükü",
+  "module.threadLoad.desc": "Her iş parçacığı grubunun yükü (render, sunucu, işçiler, Sodium, Distant Horizons), kare süresi ve sınırın işlemci mi ekran kartı mı olduğu.",
+  "setting.threadLoad.details": "Tüm iş parçacığı grupları",
+  "setting.threadLoad.bars": "Çubuklar",
+  "ext.unavailable": "TRS Client'ın bu sürümünde kullanılamaz.",
+  "module.vulkanRenderer": "Vulkan Oluşturucu",
+  "module.vulkanRenderer.desc": "Grafik API: Vulkan (deneysel) – Oyunu OpenGL yerine TRS Client'ın kendi Vulkan oluşturucusuyla çizer. Deneysel: yeniden başlatmadan sonra etkili olur ve Vulkan başlamazsa kendiliğinden OpenGL'e döner."
 }

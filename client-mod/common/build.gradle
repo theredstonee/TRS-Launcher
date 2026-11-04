@@ -47,3 +47,7 @@ test {
 		events 'passed', 'skipped', 'failed'
 	}
 }
+
+// Optionale private Erweiterungen: deren Logik und Unit-Tests laufen mit (-PtrsPrivate=<ordner>, siehe gradle/trs-private.gradle).
+ext.trsTree = 'common'
+apply from: new File(buildscript.sourceFile.parentFile, '../gradle/trs-private.gradle')

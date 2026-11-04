@@ -2542,5 +2542,14 @@
   "halloween.wings.demon_wings": "Dämonenflügel",
   "halloween.wings.raven_wings": "Rabenflügel",
   "halloween.wings.ghost_wings": "Geisterflügel",
-  "halloween.page.riddle": "„{0}“"
+  "halloween.page.riddle": "„{0}“",
+  "module.smartThreads": "Smart Threads",
+  "module.smartThreads.desc": "Verteilt Minecrafts Hintergrund-Arbeit (Chunk-Bau, Weltgenerierung, Licht, Laden) sinnvoll auf deine CPU-Kerne: die passende Zahl an Worker-Threads, der Render-Thread vor der Hintergrund-Arbeit, freie Kerne für Discord und OBS. Minecraft behält genau einen Render-Thread und einen Server-Thread – die teilt Smart Threads nicht auf. Läuft zusammen mit Sodium, Iris und Distant Horizons.",
+  "module.threadLoad": "CPU-Last",
+  "module.threadLoad.desc": "Auslastung je Thread-Gruppe (Render, Server, Worker, Sodium, Distant Horizons), Bildzeit und ob CPU oder Grafikkarte bremst.",
+  "setting.threadLoad.details": "Alle Thread-Gruppen",
+  "setting.threadLoad.bars": "Balken",
+  "ext.unavailable": "In diesem Build des TRS Clients nicht verfügbar.",
+  "module.vulkanRenderer": "Vulkan-Renderer",
+  "module.vulkanRenderer.desc": "Grafik-API: Vulkan (experimentell) – Zeichnet das Spiel mit dem eigenen Vulkan-Renderer des TRS Clients statt mit OpenGL. Experimentell: wirkt nach einem Neustart und fällt von selbst auf OpenGL zurück, wenn Vulkan nicht startet."
 }

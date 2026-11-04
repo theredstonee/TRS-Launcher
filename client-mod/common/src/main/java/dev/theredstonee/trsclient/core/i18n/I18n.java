@@ -228,7 +228,16 @@ public final class I18n {
 	}
 
 	private static Map<String, String> load(String language) {
-		InputStream in = open(RESOURCE_DIR + language + ".json");
+		Map<String, String> base = parse(open(RESOURCE_DIR + language + ".json"));
+		// Texte optionaler Erweiterungen (core.ext): eigene Datei je Sprache, nur in Builds mit Erweiterung vorhanden.
+		Map<String, String> ext = parse(open(RESOURCE_DIR + "ext/" + language + ".json"));
+		if (ext.isEmpty()) return base;
+		Map<String, String> merged = new LinkedHashMap<String, String>(ext);
+		merged.putAll(base);
+		return Collections.unmodifiableMap(merged);
+	}
+
+	private static Map<String, String> parse(InputStream in) {
 		if (in == null) return Collections.emptyMap();
 		try (Reader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
 			Type type = new TypeToken<LinkedHashMap<String, String>>() {

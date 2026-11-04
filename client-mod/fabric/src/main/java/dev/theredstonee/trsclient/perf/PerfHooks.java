@@ -167,6 +167,7 @@ public final class PerfHooks {
 			}
 			p.tick(System.currentTimeMillis(), Mc.screen() != null);
 			LatencyHooks.tick(mc);
+			dev.theredstonee.trsclient.core.ext.TrsExtensions.clientTick(mc);
 			if (p.particleLimitActive() && mc.particleEngine != null) particleCount = parseCount(mc.particleEngine.countParticles());
 		} catch (RuntimeException | LinkageError e) {
 			error(e);
@@ -191,6 +192,8 @@ public final class PerfHooks {
 		Runnable probe = frameProbe;
 		if (probe != null) probe.run();
 		FRAME_STATS.frame(System.nanoTime());
+		// Erweiterungen (core.ext): Bildanfang – nur Felder, nie warten.
+		dev.theredstonee.trsclient.core.ext.TrsExtensions.frameStart();
 		try {
 			//? if >=26.3 {
 			/*dev.theredstonee.trsclient.ui.BorderlessSdl.sync();
@@ -227,12 +230,16 @@ public final class PerfHooks {
 			int limit = p.frameLimit(System.currentTimeMillis(), focused, minimized, afk ? mc.mouseHandler.xpos() : 0,
 					afk ? mc.mouseHandler.ypos() : 0, afk && anyKeyCached);
 			applyVolume(mc, p.volume());
+			long paceStart = System.nanoTime();
 			p.pacer().pace(limit, WAKE);
+			dev.theredstonee.trsclient.core.perf.Probes.waited(System.nanoTime() - paceStart);
 		} catch (RuntimeException | LinkageError e) {
 			error(e);
 		}
 		// Nach der FPS-Grenze: GPU-Warteschlange begrenzen (Modul „Niedrige Eingabeverzögerung“).
+		long fenceStart = System.nanoTime();
 		LatencyHooks.frameStart();
+		dev.theredstonee.trsclient.core.perf.Probes.waited(System.nanoTime() - fenceStart);
 	}
 
 	private static boolean anyKeyDown(Minecraft mc) {
@@ -407,17 +414,30 @@ public final class PerfHooks {
 		}
 	}
 
-	/** Block-Entity (Truhe, Schild, Banner, Kopf …) weiter weg als eingestellt? Leuchtfeuer bleiben. */
+	/**
+	 * Block-Entity (Truhe, Schild, Banner, Kopf …) weiter weg als eingestellt? Leuchtfeuer bleiben. Danach dürfen
+	 * optionale Erweiterungen (core.ext) sie noch ausblenden (nie Endtransit-Portale – deren Strahl reicht weit).
+	 */
 	public static boolean cullBlockEntity(BlockEntity be) {
 		Performance p = perf;
-		if (p == null || be == null || !p.active(PerfFeature.BLOCK_ENTITY_DISTANCE)) return false;
+		if (p == null || be == null) return false;
+		boolean distance = p.active(PerfFeature.BLOCK_ENTITY_DISTANCE);
+		if (!distance && dev.theredstonee.trsclient.core.ext.TrsExtensions.all().length == 0) return false;
 		try {
 			if (be instanceof BeaconBlockEntity) return false;
 			BlockPos pos = be.getBlockPos();
-			double dx = pos.getX() + 0.5 - Mc.cameraX(), dy = pos.getY() + 0.5 - Mc.cameraY(), dz = pos.getZ() + 0.5 - Mc.cameraZ();
-			boolean cull = p.cullBlockEntity(dx * dx + dy * dy + dz * dz);
-			if (cull) blockEntitiesCulled++;
-			return cull;
+			double camX = Mc.cameraX(), camY = Mc.cameraY(), camZ = Mc.cameraZ();
+			double dx = pos.getX() + 0.5 - camX, dy = pos.getY() + 0.5 - camY, dz = pos.getZ() + 0.5 - camZ;
+			if (distance && p.cullBlockEntity(dx * dx + dy * dy + dz * dz)) {
+				blockEntitiesCulled++;
+				return true;
+			}
+			if (be instanceof net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity) return false;
+			if (dev.theredstonee.trsclient.core.ext.TrsExtensions.hideBlockEntity(pos.getX(), pos.getY(), pos.getZ(), camX, camY, camZ)) {
+				blockEntitiesCulled++;
+				return true;
+			}
+			return false;
 		} catch (RuntimeException | LinkageError ex) {
 			error(ex);
 			return false;

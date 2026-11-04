@@ -253,57 +253,72 @@ public final class OnlineHooks {
 	//? if >=1.21.11 {
 	/*public static boolean render(PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector, int light,
 			Object texture, ClothSim sim, ModelPart body, boolean armor) {
-		float partial = features.physics().partial();
-		float zOff = zOffset(armor);
-		pose.pushPose();
+		long trsProbe = dev.theredstonee.trsclient.core.perf.Probes.begin();
 		try {
-			body.translateAndRotate(pose);
-			collector.submitCustomGeometry(pose, net.minecraft.client.renderer.rendertype.RenderTypes.entitySolid(
-					(net.minecraft.resources.Identifier) texture), (last, vc) ->
-					features.emitCape(sim, partial, sink(vc, last, light, zOff)));
-			return true;
-		} catch (RuntimeException e) {
-			features.online().reportError(e);
-			return false;
+			float partial = features.physics().partial();
+			float zOff = zOffset(armor);
+			pose.pushPose();
+			try {
+				body.translateAndRotate(pose);
+				collector.submitCustomGeometry(pose, net.minecraft.client.renderer.rendertype.RenderTypes.entitySolid(
+						(net.minecraft.resources.Identifier) texture), (last, vc) ->
+						features.emitCape(sim, partial, sink(vc, last, light, zOff)));
+				return true;
+			} catch (RuntimeException e) {
+				features.online().reportError(e);
+				return false;
+			} finally {
+				pose.popPose();
+			}
 		} finally {
-			pose.popPose();
+			dev.theredstonee.trsclient.core.perf.Probes.end(dev.theredstonee.trsclient.core.perf.Probes.TRS_WORLD, trsProbe);
 		}
 	}
 	*///?} elif >=1.21.9 {
 	/*public static boolean render(PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector, int light,
 			Object texture, ClothSim sim, ModelPart body, boolean armor) {
-		float partial = features.physics().partial();
-		float zOff = zOffset(armor);
-		pose.pushPose();
+		long trsProbe = dev.theredstonee.trsclient.core.perf.Probes.begin();
 		try {
-			body.translateAndRotate(pose);
-			collector.submitCustomGeometry(pose, net.minecraft.client.renderer.RenderType.entitySolid(
-					(net.minecraft.resources.ResourceLocation) texture), (last, vc) ->
-					features.emitCape(sim, partial, sink(vc, last, light, zOff)));
-			return true;
-		} catch (RuntimeException e) {
-			features.online().reportError(e);
-			return false;
+			float partial = features.physics().partial();
+			float zOff = zOffset(armor);
+			pose.pushPose();
+			try {
+				body.translateAndRotate(pose);
+				collector.submitCustomGeometry(pose, net.minecraft.client.renderer.RenderType.entitySolid(
+						(net.minecraft.resources.ResourceLocation) texture), (last, vc) ->
+						features.emitCape(sim, partial, sink(vc, last, light, zOff)));
+				return true;
+			} catch (RuntimeException e) {
+				features.online().reportError(e);
+				return false;
+			} finally {
+				pose.popPose();
+			}
 		} finally {
-			pose.popPose();
+			dev.theredstonee.trsclient.core.perf.Probes.end(dev.theredstonee.trsclient.core.perf.Probes.TRS_WORLD, trsProbe);
 		}
 	}
 	*///?} else {
 	public static boolean render(PoseStack pose, net.minecraft.client.renderer.MultiBufferSource buffers, int light,
 			Object texture, ClothSim sim, ModelPart body, boolean armor) {
-		float partial = features.physics().partial();
-		pose.pushPose();
+		long trsProbe = dev.theredstonee.trsclient.core.perf.Probes.begin();
 		try {
-			VertexConsumer vc = buffers.getBuffer(net.minecraft.client.renderer.RenderType.entitySolid(
-				(net.minecraft.resources.ResourceLocation) texture));
-			body.translateAndRotate(pose);
-			features.emitCape(sim, partial, sink(vc, pose.last(), light, zOffset(armor)));
-			return true;
-		} catch (RuntimeException e) {
-			features.online().reportError(e);
-			return false;
+			float partial = features.physics().partial();
+			pose.pushPose();
+			try {
+				VertexConsumer vc = buffers.getBuffer(net.minecraft.client.renderer.RenderType.entitySolid(
+					(net.minecraft.resources.ResourceLocation) texture));
+				body.translateAndRotate(pose);
+				features.emitCape(sim, partial, sink(vc, pose.last(), light, zOffset(armor)));
+				return true;
+			} catch (RuntimeException e) {
+				features.online().reportError(e);
+				return false;
+			} finally {
+				pose.popPose();
+			}
 		} finally {
-			pose.popPose();
+			dev.theredstonee.trsclient.core.perf.Probes.end(dev.theredstonee.trsclient.core.perf.Probes.TRS_WORLD, trsProbe);
 		}
 	}
 	//?}

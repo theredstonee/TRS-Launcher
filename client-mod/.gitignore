@@ -26,3 +26,7 @@ hs_err_*.log
 replay_*.log
 *.hprof
 *.jfr
+
+# Bereitgestellte Quellen privater Erweiterungen (gradle/trs-private.gradle) – nie einchecken
+src/trsext/
+**/src/trsext/
