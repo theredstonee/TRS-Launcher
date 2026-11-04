@@ -4,3 +4,7 @@ allowBuilds:
   '@parcel/watcher': true
   esbuild: true
   unrs-resolver: true
+
+overrides:
+  glob: ^14.0.3
+  minimatch: ^11.0.4
