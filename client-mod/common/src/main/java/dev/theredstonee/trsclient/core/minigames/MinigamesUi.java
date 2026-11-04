@@ -467,7 +467,7 @@ public final class MinigamesUi extends UiScreen {
 		int on = t.dustOn;
 		for (int i = 0; i < 15; i++) {
 			int cx = x + i * (cell + 1);
-			c.fill(cx, y, cx + cell, y + h, i < signal ? on : 0x18FFFFFF);
+			c.fill(cx, y, cx + cell, y + h, i < signal ? on : 0x24FFFFFF);
 		}
 	}
 

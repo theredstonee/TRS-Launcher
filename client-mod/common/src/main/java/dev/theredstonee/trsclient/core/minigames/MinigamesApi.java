@@ -104,7 +104,7 @@ public final class MinigamesApi {
 	}
 
 	public Start start(String token, String game) throws IOException, ApiException {
-		Http.Response r = send("POST", path(game, "start"), "{}", token);
+		Http.Response r = send("POST", path(game, "start"), "", token);
 		if (r.status != 200 && r.status != 201) throw error(r);
 		JsonObject body = parse(r);
 		String run = str(body, "runId");
@@ -172,7 +172,7 @@ public final class MinigamesApi {
 		Http.Request req = new Http.Request(method, base + path).header("Accept", "application/json");
 		if (token != null) req.header("Authorization", "Bearer " + token);
 		if (json != null) {
-			req.header("Content-Type", "application/json");
+			if (!json.isEmpty()) req.header("Content-Type", "application/json");
 			req.body = json.getBytes(StandardCharsets.UTF_8);
 		}
 		req.maxBytes = MAX_RESPONSE;

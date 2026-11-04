@@ -72,16 +72,18 @@ public final class FrameMeter {
 		float sum = 0f;
 		int over20 = 0;
 		int over33 = 0;
+		int over50 = 0;
 		for (float g : sorted) {
 			sum += g;
 			if (g > 20f) over20++;
 			if (g > 33.4f) over33++;
+			if (g > 50f) over50++;
 		}
 		float mean = gapCount == 0 ? 0f : sum / gapCount;
 		float p99 = gapCount == 0 ? 0f : sorted[Math.min(gapCount - 1, (int) (gapCount * 0.99f))];
 		float max = gapCount == 0 ? 0f : sorted[gapCount - 1];
 		return String.format(Locale.ROOT,
-				"Bilder %d, Rechnen %.0f us (max %.0f), Hochladen %.0f us (max %.0f), Frames %d: Abstand %.2f ms, 99 %% %.2f ms, max %.2f ms, ueber 20 ms: %d, ueber 33 ms: %d",
-				frames, renderMicros(), renderMax / 1000.0, uploadMicros(), uploadMax / 1000.0, gapCount, mean, p99, max, over20, over33);
+				"Bilder %d, Rechnen %.0f us (max %.0f), Hochladen %.0f us (max %.0f), Frames %d: Abstand %.2f ms, 99 %% %.2f ms, max %.2f ms, ueber 20 ms: %d, ueber 33,4 ms: %d, ueber 50 ms: %d",
+				frames, renderMicros(), renderMax / 1000.0, uploadMicros(), uploadMax / 1000.0, gapCount, mean, p99, max, over20, over33, over50);
 	}
 }

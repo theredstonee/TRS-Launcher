@@ -7,8 +7,12 @@ package dev.theredstonee.trsclient.core.minigames;
 public final class MinigameSession {
 	private static final double STEP = 1.0 / 60.0;
 	private static final int MAX_STEPS_PER_FRAME = 8;
-	/** Kürzester Abstand zweier Bilder: mehr als 80 Bilder je Sekunde bringen bei einem 60-Hz-Takt nichts. */
+	/** Abstand zweier Bilder im Mittel: mehr als 60 Bilder je Sekunde bringen bei einem 60-Hz-Takt nichts. */
+	private static final float IMAGE_GAP = 1f / 60f;
+	/** Früher als das kommt kein neues Bild; ein Bildschirm mit etwas mehr als 60 Hz bekommt so trotzdem jedes Bild. */
 	private static final float MIN_IMAGE_GAP = 0.012f;
+	/** Letztes Bild einer laufenden Partie (System.nanoTime), siehe {@link #running()}. */
+	private static volatile long lastPlaying;
 
 	/** Zustand der Partie. */
 	public enum State {
@@ -48,7 +52,8 @@ public final class MinigameSession {
 	private int mask;
 	private int latch;
 	private double acc;
-	private float imageAcc = MIN_IMAGE_GAP;
+	private float imageAcc = IMAGE_GAP;
+	private float liveAcc;
 	private boolean imageKnown;
 	private Finished finished;
 
@@ -64,6 +69,15 @@ public final class MinigameSession {
 			staplerView = null;
 			frame = new PixelFrame("minigames/loren", LorenView.WIDTH, LorenView.HEIGHT);
 		}
+	}
+
+	/**
+	 * Läuft gerade eine Partie? Dann soll Minecraft das Bild nicht auf die Menü-Grenze drosseln (siehe
+	 * {@code mixin/FrameCapMixin}). Läuft von selbst aus, wenn der Bildschirm verschwindet.
+	 */
+	public static boolean running() {
+		long last = lastPlaying;
+		return last != 0 && System.nanoTime() - last < 500_000_000L;
 	}
 
 	boolean isStapler() {
@@ -138,6 +152,7 @@ public final class MinigameSession {
 		meter.frame();
 		float clamped = Math.min(0.1f, dt);
 		if (state == State.PLAYING) {
+			lastPlaying = System.nanoTime();
 			acc += clamped;
 			int steps = 0;
 			while (acc >= STEP && steps < MAX_STEPS_PER_FRAME) {
@@ -158,9 +173,12 @@ public final class MinigameSession {
 		if (lorenView != null) lorenView.updateSound(clamped, loren, state == State.PLAYING);
 		if (state == State.PAUSED && frame.ready()) return;
 		imageAcc += clamped;
+		liveAcc += clamped;
 		if (imageAcc < MIN_IMAGE_GAP && imageKnown) return;
-		float live = state == State.PAUSED ? 0f : imageAcc;
-		imageAcc = 0f;
+		float live = state == State.PAUSED ? 0f : liveAcc;
+		liveAcc = 0f;
+		// Rest mitnehmen: Bei 100 Bildern je Sekunde gäbe es sonst nur jedes zweite, also 50 statt 60.
+		imageAcc = imageAcc >= IMAGE_GAP ? Math.min(IMAGE_GAP, imageAcc - IMAGE_GAP) : 0f;
 		long t0 = System.nanoTime();
 		int[] pixels;
 		if (staplerView != null) {

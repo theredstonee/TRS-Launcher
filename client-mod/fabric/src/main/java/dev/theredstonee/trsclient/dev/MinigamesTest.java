@@ -31,6 +31,11 @@ public final class MinigamesTest implements MinigameSelfTest.Hook {
 			mc.options.pauseOnLostFocus = false;
 			started = true;
 		}
+		// Vanillas eigene AFK-Bremse (ab 1.21.2, 30 FPS nach einer Minute ohne Eingabe) soll die Messung nicht verfälschen:
+		// Wer spielt, drückt Tasten, der Bot nicht.
+		//? if >=1.21.2 {
+		/*mc.getFramerateLimitTracker().onInputReceived();
+		*///?}
 		try {
 			test.tick();
 		} catch (RuntimeException e) {

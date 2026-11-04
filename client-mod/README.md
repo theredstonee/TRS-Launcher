@@ -527,7 +527,9 @@ worldwide all-time leaderboard. Everything is version independent in `common/cor
   recorded inputs. Change the rules in the launcher, the server and here together, or the vectors fail.
 - **Picture:** `StaplerView` (224×384) and `LorenView` (400×225) compute every frame into an `int[]`; `PixelFrame` uploads it
   through `Textures.Store.upload` and draws one image. Additive glow and vignette therefore look the same in every version.
-  At most one image per 12 ms; a pause keeps the last image. `FrameMeter` measures computing, uploading and frame gaps.
+  About 60 images per second at most; a pause keeps the last image. `FrameMeter` measures computing, uploading and frame
+  gaps. From 1.20.2 `FrameCapMixin` lifts Minecraft's menu frame limit while a game runs; before that the vanilla menu limit
+  applies outside a world (60 FPS, and 30 FPS in 1.8.9–1.12.2).
 - **Textures:** `GameTextures` reads from the running game (`gameBytes`), resource packs included, and rereads them after a
   reload. Each name has a list of paths (`block/…`, then `blocks/…` before 1.13, then vanilla stand-ins such as stone bricks for
   deepslate before 1.17) and finally a plain replacement. Large packs are scaled to 16×16, animations give their first frame.
