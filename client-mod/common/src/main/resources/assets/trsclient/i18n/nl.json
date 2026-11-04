@@ -2551,7 +2551,7 @@
   "setting.threadLoad.bars": "Balken",
   "ext.unavailable": "Niet beschikbaar in deze build van de TRS Client.",
   "module.vulkanRenderer": "Vulkan-renderer",
-  "module.vulkanRenderer.desc": "Grafische API: Vulkan (experimenteel) – Tekent het spel met de eigen Vulkan-renderer van de TRS Client in plaats van OpenGL. Experimenteel: werkt na een herstart en valt vanzelf terug op OpenGL als Vulkan niet start.",
+  "module.vulkanRenderer.desc": "Grafische API: Vulkan (experimenteel, Fabric, Minecraft 1.21.6 t/m 26.3) – Tekent het spel met Vulkan in plaats van OpenGL: t/m 26.1.2 met de eigen renderer van de TRS Client, vanaf 26.2 met de eigen Vulkan-backend van Minecraft. Experimenteel: werkt na een herstart en valt vanzelf terug op OpenGL als Vulkan niet start.",
   "minigames.signal": "Signaalsterkte",
   "minigames.score": "Score",
   "minigames.localBest": "Jouw record",

@@ -740,8 +740,9 @@ public final class TrsModules {
 		threadLoadDetails = threadLoad.add(new BoolSetting("details", "All thread groups", true));
 		threadLoadBars = threadLoad.add(new BoolSetting("bars", "Bars", true));
 		vulkanRenderer = registry.register(new Module("vulkanRenderer", "Vulkan Renderer",
-				"Graphics API: Vulkan (experimental) – draws the game with the TRS Client's own Vulkan renderer instead of OpenGL. Experimental: takes effect after "
-						+ "a restart, falls back to OpenGL by itself if Vulkan does not start.", false));
+				"Graphics API: Vulkan (experimental, Fabric, Minecraft 1.21.6 to 26.3) – draws the game with Vulkan instead of OpenGL: up to 26.1.2 with the TRS Client's "
+						+ "own renderer, from 26.2 with Minecraft's own Vulkan backend. Experimental: takes effect after a restart, falls back to OpenGL by itself if Vulkan does "
+						+ "not start.", false));
 		vulkanRenderer.icon("chip").category(Category.PERFORMANCE);
 		dev.theredstonee.trsclient.core.ext.TrsExtensions.placeholders(this);
 		builtinOptimizations.icon("chip").category(Category.PERFORMANCE).availableWhen(new java.util.concurrent.Callable<Boolean>() {

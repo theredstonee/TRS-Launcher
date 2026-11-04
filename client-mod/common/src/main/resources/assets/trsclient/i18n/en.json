@@ -2551,7 +2551,7 @@
   "setting.threadLoad.bars": "Bars",
   "ext.unavailable": "Not available in this build of the TRS Client.",
   "module.vulkanRenderer": "Vulkan Renderer",
-  "module.vulkanRenderer.desc": "Graphics API: Vulkan (experimental) – Draws the game with the TRS Client's own Vulkan renderer instead of OpenGL. Experimental: takes effect after a restart and falls back to OpenGL by itself if Vulkan does not start.",
+  "module.vulkanRenderer.desc": "Graphics API: Vulkan (experimental, Fabric, Minecraft 1.21.6 to 26.3) – Draws the game with Vulkan instead of OpenGL: up to 26.1.2 with the TRS Client's own renderer, from 26.2 with Minecraft's own Vulkan backend. Experimental: takes effect after a restart and falls back to OpenGL by itself if Vulkan does not start.",
   "minigames.signal": "Signal strength",
   "minigames.score": "Score",
   "minigames.localBest": "Your best",

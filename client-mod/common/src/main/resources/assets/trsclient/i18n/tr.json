@@ -2551,7 +2551,7 @@
   "setting.threadLoad.bars": "Çubuklar",
   "ext.unavailable": "TRS Client'ın bu sürümünde kullanılamaz.",
   "module.vulkanRenderer": "Vulkan Oluşturucu",
-  "module.vulkanRenderer.desc": "Grafik API: Vulkan (deneysel) – Oyunu OpenGL yerine TRS Client'ın kendi Vulkan oluşturucusuyla çizer. Deneysel: yeniden başlatmadan sonra etkili olur ve Vulkan başlamazsa kendiliğinden OpenGL'e döner.",
+  "module.vulkanRenderer.desc": "Grafik API: Vulkan (deneysel, Fabric, Minecraft 1.21.6–26.3) – Oyunu OpenGL yerine Vulkan ile çizer: 26.1.2'ye kadar TRS Client'ın kendi oluşturucusuyla, 26.2'den itibaren Minecraft'ın kendi Vulkan arka ucuyla. Deneysel: yeniden başlatmadan sonra etkili olur ve Vulkan başlamazsa kendiliğinden OpenGL'e döner.",
   "minigames.signal": "Sinyal gücü",
   "minigames.score": "Puan",
   "minigames.localBest": "Rekorun",
