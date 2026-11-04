@@ -42,4 +42,4 @@ release/
 .messe-pitch/
 
 # Classes unpacked from a Minecraft jar, never commit them
-/com/mojang/
+*.class
