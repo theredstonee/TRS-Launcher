@@ -4,8 +4,8 @@
 
 use serde_json::{Value, json};
 
-use super::Req;
-use crate::{Error, Launcher, Result, validate};
+use super::{Req, validate};
+use crate::{Error, Launcher, Result};
 
 const GAMES: [&str; 2] = ["stapler", "loren"];
 /// Gleiche Grenze wie `MAX_INPUTS` in `app/utils/minigames/replay.ts` und auf dem Server.
