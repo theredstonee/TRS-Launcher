@@ -40,3 +40,6 @@ release/
 
 # Präsentation des Messe-Builds (scripts/messe/import-pitch.mjs)
 .messe-pitch/
+
+# Classes unpacked from a Minecraft jar, never commit them
+/com/mojang/
