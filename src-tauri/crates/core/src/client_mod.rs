@@ -927,10 +927,10 @@ mod tests {
             let mut zip = zip::ZipArchive::new(file).unwrap();
             for i in 0..zip.len() {
                 let mut entry = zip.by_index(i).unwrap();
-                if !entry.name().ends_with(".class") {
+                if !entry.name().unwrap().ends_with(".class") {
                     continue;
                 }
-                let name = entry.name().to_owned();
+                let name = entry.name().unwrap().into_owned();
                 let mut bytes = Vec::new();
                 entry.read_to_end(&mut bytes).unwrap();
                 for needle in MOJANG {
@@ -985,11 +985,11 @@ mod tests {
                 Err(_) => return problems.push(format!("{label}: ohne fabric.mod.json")),
             };
             ids.extend(meta["id"].as_str().map(str::to_owned));
-            let own_reflect = zip.file_names().any(|n| n.as_bytes().starts_with(REFLECT));
+            let own_reflect = zip.file_names().flatten().any(|n| n.as_bytes().starts_with(REFLECT));
             if nested_mod && !own_reflect && !*uses_reflect {
                 for i in 0..zip.len() {
                     let mut entry = zip.by_index(i).unwrap();
-                    if !entry.name().ends_with(".class") {
+                    if !entry.name().unwrap().ends_with(".class") {
                         continue;
                     }
                     let mut class = Vec::new();

@@ -350,7 +350,7 @@ pub(crate) fn override_mod_names(pack: &Path, prefixes: &[&str]) -> Vec<String> 
     archive
         .file_names()
         .filter_map(|name| {
-            let name = name.replace('\\', "/");
+            let name = name.ok()?.replace('\\', "/");
             prefixes.iter().find_map(|p| Some(name.strip_prefix(p)?.strip_prefix("mods/")?.to_owned()))
         })
         .filter(|n| {

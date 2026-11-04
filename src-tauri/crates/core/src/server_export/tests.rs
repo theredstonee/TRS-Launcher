@@ -215,7 +215,7 @@ fn zip_has_root_folder_and_executable_script() {
     let dest = tmp.path().join("out.zip");
     write_zip(&dir, "mein-server", &dest, &|_| {}, &|| false).unwrap();
     let mut zip = zip::ZipArchive::new(std::fs::File::open(&dest).unwrap()).unwrap();
-    let mut names: Vec<String> = zip.file_names().map(str::to_owned).collect();
+    let mut names: Vec<String> = zip.file_names().map(|n| n.unwrap().into_owned()).collect();
     names.sort();
     assert_eq!(names, vec!["mein-server/mods/a.jar".to_owned(), "mein-server/start.sh".to_owned()]);
     assert_eq!(zip.by_name("mein-server/start.sh").unwrap().unix_mode().map(|m| m & 0o777), Some(0o755));

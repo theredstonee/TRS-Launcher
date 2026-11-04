@@ -126,9 +126,10 @@ fn read_archive<R: Read + Seek>(archive: &mut zip::ZipArchive<R>) -> Vec<ModInfo
 fn collect_nested<R: Read + Seek>(archive: &mut zip::ZipArchive<R>, depth: u8, out: &mut Vec<ModInfo>) {
     let names: Vec<String> = archive
         .file_names()
+        .flatten()
         .filter(|n| NESTED_DIRS.iter().any(|d| n.starts_with(d)) && n.to_ascii_lowercase().ends_with(".jar"))
         .take(MAX_NESTED_JARS)
-        .map(str::to_owned)
+        .map(|n| n.into_owned())
         .collect();
     for name in names {
         let Ok(entry) = archive.by_name(&name) else { continue };
