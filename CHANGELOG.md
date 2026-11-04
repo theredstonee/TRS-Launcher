@@ -28,6 +28,14 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Security updates.** Updated the components the launcher is built with, including the library that unpacks modpacks and other archives, which had known security problems with manipulated files. Nothing changes in how the launcher works.
+
+### Deutsch
+- **Sicherheits-Updates.** Die Bausteine des Launchers sind aktualisiert, darunter die Bibliothek, die Modpacks und andere Archive entpackt und bekannte Sicherheitsprobleme mit manipulierten Dateien hatte. An der Bedienung des Launchers ändert sich nichts.
+
 ## 0.32.1 – 2026-11-04 – Full Throttle Fix | Feinschliff
 <!-- banner: accent=#ffb02e motif=/news/0.32.0/banner.png -->
 <!-- shots:

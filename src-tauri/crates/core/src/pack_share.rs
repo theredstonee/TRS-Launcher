@@ -289,7 +289,8 @@ fn override_hashes(pack: &Path) -> Result<BTreeMap<String, String>> {
         if entry.is_dir() || entry.enclosed_name().is_none() {
             continue;
         }
-        let Some((rank, rel)) = override_rel(entry.name()) else { continue };
+        let Ok(name) = entry.name() else { continue };
+        let Some((rank, rel)) = override_rel(&name) else { continue };
         if best.get(&rel).is_some_and(|(r, _)| *r > rank) {
             continue;
         }
@@ -318,7 +319,8 @@ fn extract_selected(pack: &Path, game_dir: &Path, wanted: &HashSet<String>) -> R
             if entry.is_dir() || entry.enclosed_name().is_none() {
                 continue;
             }
-            let Some((r, rel)) = override_rel(entry.name()) else { continue };
+            let Ok(name) = entry.name() else { continue };
+            let Some((r, rel)) = override_rel(&name) else { continue };
             if r != rank || !wanted.contains(&rel) {
                 continue;
             }

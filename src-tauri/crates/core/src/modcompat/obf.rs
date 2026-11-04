@@ -40,7 +40,7 @@ pub(crate) fn uses_intermediary<R: Read + Seek>(reader: R) -> bool {
 }
 
 fn scan<R: Read + Seek>(archive: &mut zip::ZipArchive<R>, depth: u8, budget: &mut u64) -> bool {
-    let names: Vec<String> = archive.file_names().take(MAX_ENTRIES).map(str::to_owned).collect();
+    let names: Vec<String> = archive.file_names().take(MAX_ENTRIES).flatten().map(|n| n.into_owned()).collect();
     let mut nested = Vec::new();
     for name in names {
         let lower = name.to_ascii_lowercase();
