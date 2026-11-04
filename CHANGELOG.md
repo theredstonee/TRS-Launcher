@@ -28,7 +28,11 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.32.2 – 2026-11-04 – Full Throttle Fix 2 | Sicherheits-Update
+<!-- banner: accent=#ffb02e motif=/news/0.32.0/banner.png -->
+<!-- shots:
+/news/0.32.2/content-list.png | The launcher looks the same, the update changes its building blocks | Der Launcher sieht gleich aus, das Update betrifft seine Bausteine
+-->
 
 ### English
 - **Security updates.** Updated the components the launcher is built with, including the library that unpacks modpacks and other archives, which had known security problems with manipulated files. Nothing changes in how the launcher works.
