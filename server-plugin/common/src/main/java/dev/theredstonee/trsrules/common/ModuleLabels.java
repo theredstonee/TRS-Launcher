@@ -94,6 +94,7 @@ public final class ModuleLabels {
 		put("autoReconnect", "Auto Reconnect");
 		put("queueAlerts", "Queue & Alerts");
 		put("streamerMode", "Streamer Mode");
+		put("minigames", "Minigames");
 	}
 
 	private ModuleLabels() {

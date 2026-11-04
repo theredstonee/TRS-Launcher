@@ -34,6 +34,14 @@ public final class TrsConfig {
 	public ServerProfilesData serverProfiles;
 	/** Halloween 2026: lokaler Zustand (eigene Wahl „Flackern &amp; Rauschen“, Hinweise gesehen); optional, bleibt lokal. */
 	public HalloweenData halloween;
+	/** Minispiele: eigene Rekorde; optional, bleibt lokal. */
+	public MinigamesData minigames;
+
+	/** Siehe {@code core.minigames.MinigameBest}. */
+	public static final class MinigamesData {
+		public Long stapler;
+		public Long loren;
+	}
 
 	/** Siehe {@code core.halloween.HalloweenLocal}. */
 	public static final class HalloweenData {

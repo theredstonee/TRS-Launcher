@@ -88,6 +88,32 @@ public interface MenuHost {
 		return false;
 	}
 
+	/** Minispiele öffnen; „Zurück“ führt ins TRS-Menü. Nur wenn {@link #hasMinigames()}. */
+	default void openMinigames() {
+	}
+
+	/** Gibt es in dieser Version die Minispiele? */
+	default boolean hasMinigames() {
+		return false;
+	}
+
+	/** Ist die Taste gerade gedrückt ({@code "key.keyboard.left"})? Für Minispiele, die gehaltene Tasten brauchen. */
+	default boolean keyDown(String keyName) {
+		return false;
+	}
+
+	/** Hat das Spielfenster den Fokus? Sonst halten die Minispiele an. */
+	default boolean windowFocused() {
+		dev.theredstonee.trsclient.core.qol.Qol qol = dev.theredstonee.trsclient.core.qol.Qol.get();
+		return qol == null || qol.windowFocused();
+	}
+
+	/** Spielt einen Klang; fehlt er in dieser Version, passiert nichts. */
+	default void playSound(dev.theredstonee.trsclient.core.qol.QolSound sound, float volume, float pitch) {
+		dev.theredstonee.trsclient.core.qol.Qol qol = dev.theredstonee.trsclient.core.qol.Qol.get();
+		if (qol != null) qol.playSound(sound, volume, pitch);
+	}
+
 	/** Inhalt der Zwischenablage (Einfügen in Textfelder, z. B. „Bug melden“) oder null. */
 	default String clipboard() {
 		return null;

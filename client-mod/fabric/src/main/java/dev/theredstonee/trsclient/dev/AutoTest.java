@@ -117,6 +117,11 @@ public final class AutoTest {
 			FoxDenTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=minigames: Minispiele (Auswahl, beide Spiele mit Bot, Pause, Anstriche, Ressourcen neu laden, Welt)
+		if ("minigames".equals(System.getProperty("trsclient.autotest.only"))) {
+			MinigamesTest.install();
+			return;
+		}
 		// -PtrsAutotestOnly=halloween: Halloween 2026 (Startbildschirm, Seite Halloween, Mondlauf, Spuk-Effekte, Jumpscares)
 		if ("halloween".equals(System.getProperty("trsclient.autotest.only"))) {
 			HalloweenTest.install();

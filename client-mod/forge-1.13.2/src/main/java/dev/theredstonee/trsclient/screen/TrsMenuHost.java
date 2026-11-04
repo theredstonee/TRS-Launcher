@@ -93,6 +93,33 @@ public final class TrsMenuHost implements MenuHost {
 	}
 
 	@Override
+	public void openMinigames() {
+		Minecraft.getInstance().displayGuiScreen(new TrsUiScreen(new dev.theredstonee.trsclient.core.minigames.MinigamesUi(new TrsMenuHost(new TrsMenuScreen(parent)))));
+	}
+
+	@Override
+	public boolean hasMinigames() {
+		return true;
+	}
+
+	@Override
+	public boolean keyDown(String keyName) {
+		return Keys.isDown(keyName);
+	}
+
+	/** Diese Version hat kein Komfort-Paket, darum Fokus und Ton hier selbst. */
+	@Override
+	public boolean windowFocused() {
+		return Minecraft.getInstance().isGameFocused();
+	}
+
+	@Override
+	public void playSound(dev.theredstonee.trsclient.core.qol.QolSound sound, float volume, float pitch) {
+		Minecraft.getInstance().getSoundHandler().play(SimpleSound.master(
+				new net.minecraft.util.SoundEvent(new net.minecraft.util.ResourceLocation(sound.modern)), pitch));
+	}
+
+	@Override
 	public boolean hasClips() {
 		return true;
 	}

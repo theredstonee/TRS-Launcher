@@ -515,6 +515,37 @@ one identical file for the Mojmap trees (1.14.4–26.3; the only branch is `getA
 1.21.9), block IDs + state property names for Forge 1.8.9–1.12.2, block + metadata for 1.7.10, MCP names for 1.13.2.
 Fair on every server: only block states the client already has are read, nothing is sent.
 
+## Minigames
+
+Rail entry **Minigames** in the TRS menu: *Redstone Stacker* and *Minecart Rush*, the same games as in the launcher, with a
+worldwide all-time leaderboard. Everything is version independent in `common/core/minigames`; the trees only add
+`openMinigames`, `keyDown` and, where there is no comfort package (1.7.10, 1.13.2), focus and sound to `TrsMenuHost`.
+
+- **Rules:** `Stapler`, `Loren`, `Replay`, `Mulberry` are an exact port of `app/utils/minigames/*.ts`: integers only, fixed
+  60 Hz, JavaScript semantics spelled out (`remainderUnsigned`, ToInt32 in `hash()`, unsigned hash and seed in a `long`).
+  `MinigameVectorsTest` replays `minigames-vectors.json` (copy of `tests/fixtures/`) and compares score, ticks, hash and the
+  recorded inputs. Change the rules in the launcher, the server and here together, or the vectors fail.
+- **Picture:** `StaplerView` (224×384) and `LorenView` (400×225) compute every frame into an `int[]`; `PixelFrame` uploads it
+  through `Textures.Store.upload` and draws one image. Additive glow and vignette therefore look the same in every version.
+  About 60 images per second at most; a pause keeps the last image. `FrameMeter` measures computing, uploading and frame
+  gaps. From 1.20.2 `FrameCapMixin` lifts Minecraft's menu frame limit while a game runs; before that the vanilla menu limit
+  applies outside a world (60 FPS, and 30 FPS in 1.8.9–1.12.2).
+- **Textures:** `GameTextures` reads from the running game (`gameBytes`), resource packs included, and rereads them after a
+  reload. Each name has a list of paths (`block/…`, then `blocks/…` before 1.13, then vanilla stand-ins such as stone bricks for
+  deepslate before 1.17) and finally a plain replacement. Large packs are scaled to 16×16, animations give their first frame.
+  Mojang textures never go into the repo or the jars.
+- **Sound:** no free sound generation in the client, so each event plays a Minecraft sound (`QolSound`, `GameSound`).
+  1.8.9–1.12.2 ignore the volume of a single sound, as everywhere in the comfort package.
+- **Leaderboard:** `MinigamesApi` (API §42) and `MinigamesOnline` run on the daemon thread `TRS-Minigames`, never in the render
+  thread. Without a token, a connection or an answer within 2.5 s the run stays local and is not ranked. The server replays
+  the inputs; personal bests live in `trsclient.json` (`MinigameBest`).
+- **Fair play:** a menu screen without any advantage on servers. Servers can still lock the id `minigames` with TRS Server
+  Rules (listed in `server-plugin`), then the rail entry disappears. Not offered in touch mode, because the games need keys.
+
+Self test: `-PtrsAutotestOnly=minigames` (`MinigameSelfTest`, thin `dev/MinigamesTest` in fabric and legacy): hub, both games
+with a bot, pause, game over, winter and fox skins, resource reload and both games inside a world; screenshots
+`trsclient-<mc>-minigames-*.png`, measurements in the log under `[Autotest] Minispiele`.
+
 ## Fair play
 
 The client never automates anything and never shows more than the game already knows:
