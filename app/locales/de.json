@@ -1363,11 +1363,14 @@
       "update": "Aktualisieren ({n})",
       "clear": "Auswahl aufheben",
       "tipTitle": "Tipp:",
-      "tip": "Strg+Klick wählt einen einzelnen Eintrag aus. Umschalt+Klick wählt alles von der zuletzt angeklickten Zeile bis hierher aus.",
+      "tip": "Strg+Klick wählt einen einzelnen Eintrag aus oder ab. Umschalt+Klick nimmt alles von der zuletzt angeklickten Zeile bis hierher: Ist die Zeile schon ausgewählt, wird der Bereich abgewählt.",
+      "hint": "Strg+Klick: einzeln · Umschalt+Klick: Bereich an- oder abwählen",
       "needStart": "Erst eine Zeile anklicken, dann eine andere mit Umschalt+Klick",
       "hoverRow": "Auf eine Zeile zeigen und klicken",
       "preview": "Klick wählt {n} Eintrag aus | Klick wählt {n} Einträge aus",
-      "confirmed": "{n} Eintrag ausgewählt | {n} Einträge ausgewählt"
+      "previewOff": "Klick wählt {n} Eintrag ab | Klick wählt {n} Einträge ab",
+      "confirmed": "{n} Eintrag ausgewählt | {n} Einträge ausgewählt",
+      "confirmedOff": "{n} Eintrag abgewählt | {n} Einträge abgewählt"
     },
     "columns": {
       "project": "Projekt",

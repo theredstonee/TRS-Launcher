@@ -1363,11 +1363,14 @@
       "update": "Actualizar ({n})",
       "clear": "Quitar selección",
       "tipTitle": "Consejo:",
-      "tip": "Ctrl+clic selecciona una sola entrada. Mayús+clic selecciona todo desde la última fila pulsada hasta esta.",
+      "tip": "Ctrl+clic selecciona o quita una sola entrada. Mayús+clic toma todo desde la última fila pulsada hasta esta: si esta fila ya está seleccionada, se quita la selección del rango.",
+      "hint": "Ctrl+clic: una entrada · Mayús+clic: seleccionar o quitar un rango",
       "needStart": "Pulsa primero una fila y luego otra con Mayús+clic",
       "hoverRow": "Señala una fila y haz clic",
       "preview": "El clic selecciona {n} entrada | El clic selecciona {n} entradas",
-      "confirmed": "{n} entrada seleccionada | {n} entradas seleccionadas"
+      "previewOff": "El clic quita {n} entrada | El clic quita {n} entradas",
+      "confirmed": "{n} entrada seleccionada | {n} entradas seleccionadas",
+      "confirmedOff": "{n} entrada quitada | {n} entradas quitadas"
     },
     "columns": {
       "project": "Proyecto",

@@ -18,7 +18,7 @@ import {
   type GroupColor,
   type OriginFilter,
 } from '~/utils/contentGroups'
-import { rangeBetween } from '~/utils/contentSelection'
+import { applyRange, rangeAction, rangeBetween, type RangeAction } from '~/utils/contentSelection'
 
 // Inhalte einer Instanz als EINE Tabelle: Filter-Chips,
 // Suche, Sortierung, Mehrfachauswahl mit Sammelaktionen, Dateien per Dialog
@@ -240,13 +240,15 @@ function toggleOne(item: ContentItem) {
   selected.value = next
 }
 
-// Wie im Dateimanager: Strg+Klick wählt einen Eintrag, Umschalt+Klick alles vom Startpunkt bis hierher.
+// Wie im Dateimanager: Strg+Klick schaltet einen Eintrag, Umschalt+Klick den ganzen Bereich vom Startpunkt bis hierher.
+// Die angeklickte Zeile entscheidet: Ist sie schon ausgewählt, wird der Bereich abgewählt.
 const SELECT_TIP_KEY = 'trs.content.selectTipSeen'
 const selectAnchor = ref<string | null>(null)
 const shiftHeld = ref(false)
 const hoveredRow = ref<string | null>(null)
 const flashRows = ref<Set<string>>(new Set())
-const selectConfirm = ref<number | null>(null)
+const flashOff = ref(false)
+const selectConfirm = ref<{ n: number; action: RangeAction } | null>(null)
 const selectTipOpen = ref(!readSelectTipSeen())
 let confirmTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -266,20 +268,27 @@ function closeSelectTip() {
   }
 }
 const selectKeys = computed(() => rows.value.flatMap((row) => (row.type === 'item' ? [row.key] : [])))
-/** Zeilen, die ein Klick gerade auswählen würde: nur während Umschalt gedrückt ist. */
+/** Zeilen, die ein Klick gerade ändern würde: nur während Umschalt gedrückt ist. */
 const rangePreview = computed(() => {
   if (!shiftHeld.value || !selectAnchor.value || !hoveredRow.value) return new Set<string>()
   return new Set(rangeBetween(selectKeys.value, selectAnchor.value, hoveredRow.value) ?? [])
 })
+const previewAction = computed<RangeAction>(() => (hoveredRow.value ? rangeAction(selected.value, hoveredRow.value) : 'select'))
 const selectPill = computed(() => {
-  if (selectConfirm.value !== null) return t('content.selection.confirmed', { n: selectConfirm.value }, selectConfirm.value)
+  if (selectConfirm.value) {
+    const { n, action } = selectConfirm.value
+    return t(action === 'select' ? 'content.selection.confirmed' : 'content.selection.confirmedOff', { n }, n)
+  }
   if (!shiftHeld.value || mobile.value || !selectKeys.value.length) return ''
   if (!selectAnchor.value) return t('content.selection.needStart')
-  return rangePreview.value.size ? t('content.selection.preview', { n: rangePreview.value.size }, rangePreview.value.size) : t('content.selection.hoverRow')
+  const n = rangePreview.value.size
+  if (!n) return t('content.selection.hoverRow')
+  return t(previewAction.value === 'select' ? 'content.selection.preview' : 'content.selection.previewOff', { n }, n)
 })
-function confirmSelection(keys: string[]) {
+function confirmSelection(keys: string[], action: RangeAction) {
   flashRows.value = new Set(keys)
-  selectConfirm.value = keys.length
+  flashOff.value = action === 'deselect'
+  selectConfirm.value = { n: keys.length, action }
   if (confirmTimer) clearTimeout(confirmTimer)
   confirmTimer = setTimeout(() => {
     flashRows.value = new Set()
@@ -296,10 +305,9 @@ function selectRange(item: ContentItem) {
     toggleOne(item)
     return
   }
-  const next = new Set(selected.value)
-  for (const k of keys) next.add(k)
-  selected.value = next
-  confirmSelection(keys)
+  const action = rangeAction(selected.value, key)
+  selected.value = applyRange(selected.value, keys, action)
+  confirmSelection(keys, action)
 }
 function selectRow(event: MouseEvent, item: ContentItem) {
   const target = event.target
@@ -742,11 +750,15 @@ const pendingUpdates = computed(() => updates.value ?? [])
             </div>
             <button v-if="selectedUpdates.length" class="bulk-btn text-lamp-300" :disabled="!!bulkBusy" @click="applyUpdates(selectedUpdates)">{{ t('content.selection.update', { n: selectedUpdates.length }) }}</button>
             <button class="bulk-btn text-redstone-300" :disabled="!!bulkBusy" @click="toDelete = [...selectedItems]">{{ t('common.actions.delete') }}</button>
-            <button class="ml-auto text-base-400 hover:text-base-50" @click="selected = new Set()">{{ t('content.selection.clear') }}</button>
+            <span class="ml-auto min-w-0 truncate font-normal text-base-400 mobile:hidden" data-testid="content-select-hint-bulk">{{ t('content.selection.hint') }}</span>
+            <button class="text-base-400 hover:text-base-50 mobile:ml-auto" @click="selected = new Set()">{{ t('content.selection.clear') }}</button>
           </div>
         </template>
         <template v-else>
-          <span>{{ t('content.columns.project') }}</span>
+          <span class="flex min-w-0 items-baseline gap-3">
+            <span class="shrink-0">{{ t('content.columns.project') }}</span>
+            <span class="min-w-0 truncate font-normal text-base-400 mobile:hidden" data-testid="content-select-hint">{{ t('content.selection.hint') }}</span>
+          </span>
           <span class="mobile:hidden">{{ t('common.labels.version') }}</span>
           <span class="text-right mobile:hidden">{{ t('content.columns.actions') }}</span>
         </template>
@@ -819,8 +831,10 @@ const pendingUpdates = computed(() => updates.value ?? [])
             'bg-redstone-900/15': selected.has(keyOf(row.item)),
             'opacity-40': drag?.items.includes(row.item),
             'row-anchor': selectAnchor === keyOf(row.item) && !mobile,
-            'row-preview': rangePreview.has(keyOf(row.item)),
-            'row-flash': flashRows.has(keyOf(row.item)),
+            'row-preview': rangePreview.has(keyOf(row.item)) && previewAction === 'select',
+            'row-preview-off': rangePreview.has(keyOf(row.item)) && previewAction === 'deselect',
+            'row-flash': flashRows.has(keyOf(row.item)) && !flashOff,
+            'row-flash-off': flashRows.has(keyOf(row.item)) && flashOff,
           }"
           @mousedown="$event.shiftKey && $event.preventDefault()"
           @mouseenter="hoveredRow = keyOf(row.item)"
@@ -1052,15 +1066,29 @@ const pendingUpdates = computed(() => updates.value ?? [])
   outline: 1px dashed color-mix(in srgb, var(--color-redstone-400) 60%, transparent);
   outline-offset: -1px;
 }
+.row-preview-off {
+  @apply bg-base-800/40;
+  outline: 1px dashed var(--color-base-400);
+  outline-offset: -1px;
+}
 .row-flash {
   animation: row-flash 0.7s ease-out;
+}
+.row-flash-off {
+  animation: row-flash-off 0.7s ease-out;
 }
 @keyframes row-flash {
   from {
     background-color: color-mix(in srgb, var(--color-redstone-500) 45%, transparent);
   }
 }
-:root[data-reduced-motion] .row-flash {
+@keyframes row-flash-off {
+  from {
+    background-color: color-mix(in srgb, var(--color-base-400) 35%, transparent);
+  }
+}
+:root[data-reduced-motion] .row-flash,
+:root[data-reduced-motion] .row-flash-off {
   animation: none;
 }
 .bulk-btn {

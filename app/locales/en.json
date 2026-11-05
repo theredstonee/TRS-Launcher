@@ -1363,11 +1363,14 @@
       "update": "Update ({n})",
       "clear": "Clear selection",
       "tipTitle": "Tip:",
-      "tip": "Ctrl+click selects a single entry. Shift+click selects everything from the last clicked row up to this one.",
+      "tip": "Ctrl+click selects or deselects a single entry. Shift+click takes everything from the last clicked row up to this one: if this row is already selected, the range is deselected.",
+      "hint": "Ctrl+click: one entry · Shift+click: select or deselect a range",
       "needStart": "Click a row first, then Shift+click another one",
       "hoverRow": "Point at a row and click",
       "preview": "Click selects {n} entry | Click selects {n} entries",
-      "confirmed": "{n} entry selected | {n} entries selected"
+      "previewOff": "Click deselects {n} entry | Click deselects {n} entries",
+      "confirmed": "{n} entry selected | {n} entries selected",
+      "confirmedOff": "{n} entry deselected | {n} entries deselected"
     },
     "columns": {
       "project": "Project",
