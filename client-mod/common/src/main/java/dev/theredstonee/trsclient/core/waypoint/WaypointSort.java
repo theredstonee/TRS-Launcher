@@ -6,7 +6,7 @@ import dev.theredstonee.trsclient.core.module.ChoiceSetting;
 public enum WaypointSort implements ChoiceSetting.Option {
 	DISTANCE("Distance"),
 	NAME("Name"),
-	CREATED("Newest first");
+	CREATED("Newest");
 
 	private final String label;
 

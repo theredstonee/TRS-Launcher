@@ -2699,7 +2699,7 @@
   "setting.waypoints.deathGuide": "Weg zurück: Todespunkt wird zum Ziel",
   "setting.waypoints.teleport": "Teleport-Einträge (nur mit Rechten)",
   "setting.waypoints.sort": "Sortierung der Liste",
-  "setting.waypoints.sort.distance": "Entfernung",
+  "setting.waypoints.sort.distance": "Nähe",
   "setting.waypoints.sort.name": "Name",
-  "setting.waypoints.sort.created": "Neueste zuerst"
+  "setting.waypoints.sort.created": "Neueste"
 }

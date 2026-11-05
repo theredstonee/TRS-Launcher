@@ -2701,5 +2701,5 @@
   "setting.waypoints.sort": "Ordre de la liste",
   "setting.waypoints.sort.distance": "Distance",
   "setting.waypoints.sort.name": "Nom",
-  "setting.waypoints.sort.created": "Récents d'abord"
+  "setting.waypoints.sort.created": "Récents"
 }

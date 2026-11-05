@@ -344,7 +344,7 @@ public final class WaypointsUi extends UiScreen implements WaypointDialog.Host {
 		rows = WaypointFilter.apply(all, query, wp -> s.shown(key, wp), playerDim, platform.x(), platform.z());
 
 		// Werkzeugleiste: Suche und drei Wahlknöpfe.
-		int tx = x + 5, ty = y + 4, bw = 54, dimW = 74;
+		int tx = x + 5, ty = y + 4, bw = 54, dimW = 84;
 		int searchW = Math.max(60, w - 10 - 2 * (bw + 3) - dimW - 3);
 		Redstone.well(c, tx, ty, searchW, 15, search.focused() ? t.accent : t.border);
 		Icons.draw(c, "search", tx + 3, ty + 4, 1, t.textDim);

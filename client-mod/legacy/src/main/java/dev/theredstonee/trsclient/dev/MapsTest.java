@@ -121,6 +121,11 @@ public final class MapsTest {
 				public void quickWaypoint() {
 					TrsClient.get().waypoints().createQuick();
 				}
+
+				@Override
+				public void openNewHere() {
+					Minecraft.getMinecraft().displayGuiScreen(dev.theredstonee.trsclient.screen.WaypointListScreen.newHere(null));
+				}
 			}, text -> log("Wegpunkte: " + text));
 
 	public static void install() {

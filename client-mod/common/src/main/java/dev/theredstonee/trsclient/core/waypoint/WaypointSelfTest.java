@@ -38,6 +38,9 @@ public final class WaypointSelfTest {
 
 		/** Schnell-Wegpunkt wie mit der Taste. */
 		void quickWaypoint();
+
+		/** Dialog „Neuer Wegpunkt“ am Standort wie mit der Taste. */
+		void openNewHere();
 	}
 
 	private final Host host;
@@ -272,7 +275,16 @@ public final class WaypointSelfTest {
 			}
 			case 18:
 				host.shot("wp-quick");
+				// Im Spiel-Chat teilen (die Zwischenablage bleibt im Test unberührt).
+				WaypointMenu.run(WaypointMenu.CHAT, e, chest);
+				host.openNewHere();
+				phase = 26;
+				return 15;
+			case 26:
+				host.shot("wp-new-here");
+				host.closeScreen();
 				host.command("kill @p");
+				phase = 19;
 				return 30;
 			case 19:
 				host.respawn();

@@ -118,6 +118,11 @@ public final class MapsTest {
 				public void quickWaypoint() {
 					TrsClient.get().waypoints().createQuick();
 				}
+
+				@Override
+				public void openNewHere() {
+					Mc.setScreen(dev.theredstonee.trsclient.screen.WaypointListScreen.newHere(null));
+				}
 			}, text -> log("Wegpunkte: " + text));
 
 	public static void install() {
