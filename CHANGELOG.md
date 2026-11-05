@@ -28,7 +28,13 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.33.0 – 2026-11-05 – Find Your Way | Weg gefunden
+<!-- banner: accent=#41cd62 motif=/news/0.33.0/banner.png -->
+<!-- shots:
+/news/0.33.0/waypoint-menu.png | Right-click on the world map: create a waypoint, teleport or share the spot | Rechtsklick auf der Weltkarte: Wegpunkt erstellen, teleportieren oder die Stelle teilen
+/news/0.33.0/waypoint-list.png | Waypoints in sets, with search, sorting, colors and symbols | Wegpunkte in Sets, mit Suche, Sortierung, Farben und Symbolen
+/news/0.33.0/waypoint-world.png | Waypoints in the world with name and distance, a beam for your target | Wegpunkte in der Welt mit Name und Entfernung, ein Lichtstrahl für dein Ziel
+-->
 
 ### English
 
