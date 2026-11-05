@@ -20,6 +20,7 @@ import { setPitchBundleLoader } from '../lib/pitch-http'
 import { sweepApplications } from '../lib/applications'
 import { seedCircuits, sweepCircuitSubmissions } from '../lib/circuits'
 import { sweepHosting } from '../lib/hosting'
+import { sweepWpshare, sweepWpshareSessions } from '../lib/waypoint-share'
 import { setWebpWasmLoader } from '../lib/images'
 import { sweepIssues, sweepOrphanIssueFiles } from '../lib/issues'
 import { rotateReportKeys, sweepModeration } from '../lib/moderation'
@@ -264,6 +265,8 @@ export default defineNitroPlugin((nitroApp) => {
       sweepTyping(ctx)
       ctx.events.sweep()
       sweepHosting(ctx)
+      // Live-Wegpunkte (§41): Sitzungen ohne Herzschlag (3 min) beenden → Freunde bekommen neue Peers.
+      sweepWpshareSessions(ctx)
       // Push (§33): abgelaufene Abruf-Einträge, alte Stream-Vermerke.
       sweepPush(ctx)
     }),
@@ -285,6 +288,8 @@ export default defineNitroPlugin((nitroApp) => {
       // Mail (§40): erledigte Warteschlangen-Zeilen nach 30 Tagen, unbestätigte/abgemeldete Adressen.
       sweepOutbox(ctx)
       sweepSubscribers(ctx)
+      // Live-Wegpunkte (§41): geteilte Listen, die 180 Tage nicht geändert wurden.
+      sweepWpshare(ctx)
     }),
     // Schlüsseltausch: alte Chat-Daten nach und nach mit dem aktiven Schlüssel neu verschlüsseln.
     every(60_000, () => {

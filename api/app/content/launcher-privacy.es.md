@@ -428,6 +428,32 @@ servidor TRS.
   paquete de recursos solo se usa si respondes que sí a la pregunta de Minecraft; tu juego se lo pasa a Minecraft por una
   dirección local en tu ordenador (`127.0.0.1`) que solo vale para esta conexión.
 
+### Puntos de ruta en directo con amigos (TRS Client)
+
+En el TRS Client puedes compartir puntos de ruta y tu posición en directo con amigos concretos. Está **desactivado
+hasta que lo actives para un amigo** (por amigo, «Compartir puntos de ruta y posición») y solo funciona en el mismo
+mundo.
+
+- **En una dirección:** si compartes con un amigo, él ve tus puntos de ruta compartidos y tu posición; tú ves los suyos
+  solo si él también comparte contigo. Si termina la amistad o uno de los dos bloquea al otro, se deja de compartir en
+  ambas direcciones al instante.
+- **Solo en el mismo mundo:** tu amigo solo ve algo mientras los dos estéis en el mismo servidor o en el mismo mundo
+  alojado. El servidor TRS nunca le dice a nadie en qué servidor o mundo estás, solo si un amigo está en el mismo. Los
+  mundos de un jugador que no se alojan no comparten nada.
+- **Solo puntos de ruta marcados:** un punto de ruta solo se comparte si activas «Compartir con amigos» en él
+  (desactivado de fábrica); si quieres, también tu último punto de muerte.
+- **Tu posición** (coordenadas, dimensión, dirección de la vista) se envía como mucho cada 3 segundos y solo mientras
+  un amigo con el que compartes esté en el mismo mundo. El servidor TRS la reenvía a esos amigos y guarda solo la última
+  **en memoria** (nunca en disco, nunca en registros, sin historial); desaparece cuando sales del mundo, a más tardar 3
+  minutos después del último aviso de tu juego.
+- **Lo que guarda el servidor TRS:** con quién compartes (con la fecha) y, por mundo, tus puntos de ruta compartidos
+  (nombre, coordenadas, dimensión, color, punto de muerte sí/no) junto con el mundo al que pertenecen (dirección del
+  servidor o, en un mundo alojado, su código) y la fecha del último cambio. Los amigos con los que compartes pueden
+  copiar tus puntos de ruta a su propia lista en su juego.
+- **Borrar:** si dejas de compartir con un amigo, su juego borra tus datos; si desactivas «Compartir» en un punto de
+  ruta, desaparece del servidor. Los puntos de ruta compartidos que no hayas cambiado en **180 días** se borran
+  automáticamente; «Alle TRS-Daten löschen» lo borra todo al instante.
+
 ### Logros
 
 El launcher tiene logros (puntos, rarezas y algunas recompensas como una capa o un cosmético). Forman parte de los
@@ -476,6 +502,7 @@ servicios TRS y solo funcionan mientras estén activados.
 | Circuitos enviados: el circuito (solo bloques y estados), nombre, descripción, categoría, idioma, fecha, estado y respuesta del equipo; en los circuitos aceptados, tu nombre como creador | Enviar un circuito a la biblioteca (ver arriba) |
 | Denuncias que haces y denuncias sobre ti, cada una con una copia cifrada del contenido denunciado y su contexto; sanciones (advertencia, silencio, bloqueos) con su historial y apelación, notas internas del equipo, nombres anteriores | Moderación (ver arriba) |
 | Alojar un mundo (solo mientras tu mundo está abierto): nombre del mundo, versión, cargador de mods y ajustes, código de acceso, jugadores invitados, solicitudes de acceso, jugadores admitidos y bloqueados con fecha, número de jugadores, lista de mods compartidos y datos del paquete de recursos (nombres, tamaños, orígenes, sumas de comprobación – sin archivos); tu lista de jugadores bloqueados en todos tus mundos | Alojar un mundo para amigos (ver arriba) |
+| Puntos de ruta en directo (solo si compartes con un amigo): con quién compartes y, por mundo, tus puntos de ruta compartidos (nombre, coordenadas, dimensión, color, punto de muerte sí/no) con el mundo (dirección del servidor o código del mundo alojado) y la fecha del último cambio. Tu posición en directo solo en memoria (ver arriba), nunca en disco | Puntos de ruta en directo con amigos (ver arriba) |
 
 **Sincronización:** «Sincronizar con la cuenta de TRS» (*Einstellungen → Datenschutz*, activado de fábrica mientras
 los servicios TRS estén activados) mantiene iguales en todos tus PC tus skins propias, tus presets propios y el aspecto
@@ -487,7 +514,7 @@ administración para ellos.
 **Sincronización del TRS Client:** el mod TRS Client inicia sesión por sí mismo (ver arriba) y guarda sus propios
 ajustes en el mismo lugar, como un documento de 64 KB como máximo por cuenta. Solo lo hace mientras los servicios TRS
 estén activados en el launcher y su interruptor «Sincronizar con la cuenta de TRS» (menú TRS → *Funciones en línea de
-TRS*, activado de fábrica) esté activado; el propio interruptor, los puntos de ruta, la lista de servidores de la vista
+TRS*, activado de fábrica) esté activado; el propio interruptor, los puntos de ruta (salvo los que compartes con amigos, ver «Puntos de ruta en directo»), la lista de servidores de la vista
 libre y las opciones de Minecraft (options.txt) se quedan en tu PC. El juego también lee tu tema, color de acento e
 idioma sincronizados y los vuelve a escribir cuando los cambias en la introducción, para que el launcher los siga.
 «Alle TRS-Daten löschen» borra también este documento.
@@ -533,6 +560,9 @@ seguro (art. 6.1.f del RGPD). No hay publicidad, ni elaboración de perfiles, ni
   las borráis.
 - Los modpacks compartidos se borran automáticamente cuando termina el tiempo que elegiste (1, 7 o 30 días; «sin
   caducidad» sigue hasta que tú o el equipo lo borréis).
+- Los puntos de ruta compartidos (en directo) se borran **180 días** después de su último cambio, o antes si dejas de
+  compartirlos; tu posición en directo desaparece de la memoria del servidor cuando sales del mundo (como mucho a los
+  3 minutos).
 - Los envíos de circuitos decididos se borran **90 días** después de la decisión; los circuitos publicados siguen
   hasta que el equipo los quite (sin tu nombre tras «Alle TRS-Daten löschen»).
 - **«Alle TRS-Daten löschen»** (borrar todos los datos TRS, en *Einstellungen → Datenschutz*) lo elimina todo al
@@ -540,7 +570,7 @@ seguro (art. 6.1.f del RGPD). No hay publicidad, ni elaboración de perfiles, ni
   las capas compartidas (tus capas con amigos y las que tus amigos compartieron contigo),
   los códigos canjeados, las denuncias, tu estado en línea, todas las skins, presets y ajustes sincronizados, todos tus
   chats directos (para ambas partes) y tus mensajes, reacciones e imágenes en grupos (tus grupos pasan al miembro más
-  antiguo), todas las imágenes que compartiste como enlace, todos los modpacks que compartiste y tus logros con sus contadores. Después,
+  antiguo), todas las imágenes que compartiste como enlace, todos los modpacks que compartiste, tus puntos de ruta compartidos con sus permisos y tus logros con sus contadores. Después,
   los servicios TRS quedan desactivados en el launcher. Las skins y presets de tu PC se conservan.
 - Tras la eliminación solo se conservan las sanciones activas (por ejemplo un bloqueo o un silencio en el chat, con
   motivo y periodo) y las denuncias sobre ti (hasta que termine su plazo, ver arriba), para que no se puedan eludir

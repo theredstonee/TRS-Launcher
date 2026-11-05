@@ -109,7 +109,7 @@ interface Body {
   s?: { e: SystemEvent, tg?: string, n?: string }
 }
 
-interface WaypointBody {
+export interface WaypointBody {
   n: string
   x: number
   y: number
@@ -895,11 +895,19 @@ export interface SendInput {
   nonce?: string
 }
 
-/** Wegpunkt prüfen (Schema hat Typen/Bereiche geprüft) und für die Ablage vorbereiten. */
-function waypointBody(ctx: AppContext, w: WaypointInput): WaypointBody {
-  const name = sanitizeText(w.name).replace(/\s+/g, ' ').trim()
+/**
+ * Wegpunkt-Name nach §18.10: gesäubert (eine Zeile, keine Steuer-/Bidi-Zeichen), 1–32 Zeichen, Wortfilter
+ * (`400 invalid_waypoint` / `422 message_blocked`). Auch für geteilte Wegpunkt-Listen (§41).
+ */
+export function cleanWaypointName(ctx: AppContext, raw: string): string {
+  const name = sanitizeText(raw).replace(/\s+/g, ' ').trim()
   if (!name || [...name].length > 32) throw badRequest('invalid_waypoint', 'The waypoint name must be 1–32 characters')
-  const filtered = applyWordFilter(ctx, name)
+  return applyWordFilter(ctx, name)
+}
+
+/** Wegpunkt prüfen (Schema hat Typen/Bereiche geprüft) und für die Ablage vorbereiten. */
+export function waypointBody(ctx: AppContext, w: WaypointInput): WaypointBody {
+  const filtered = cleanWaypointName(ctx, w.name)
   return {
     n: filtered,
     x: w.x,

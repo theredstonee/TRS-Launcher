@@ -403,6 +403,30 @@ the TRS server.
   answer Minecraft's question with yes; your game serves it to Minecraft through a local address on your computer
   (`127.0.0.1`) that only works for this connection.
 
+### Live waypoints with friends (TRS Client)
+
+In the TRS Client you can share waypoints and your position live with single friends. It is **off until you switch it
+on for a friend** (per friend, "Share waypoints & position"), and it only works in the same world.
+
+- **Directional:** if you share with a friend, they see your shared waypoints and position – you see theirs only if they
+  share with you too. Ending the friendship or a block (by either of you) ends sharing in both directions at once.
+- **Only in the same world:** your friend only sees anything while you are both on the same server or in the same hosted
+  world. The TRS server never tells anybody which server or world you are on – only whether a friend is in the same one.
+  Singleplayer worlds that are not hosted share nothing.
+- **Only marked waypoints:** a waypoint is shared only if you switch "Share with friends" on for it (off by default);
+  optionally your last death point too.
+- **Your position** (coordinates, dimension, viewing direction) is sent at most every 3 seconds and only while a friend
+  you share with is in the same world. The TRS server passes it on to those friends and keeps only the last one **in its
+  memory** (never on disk, never in logs, no history); it disappears when you leave the world, at the latest 3 minutes
+  after your game stops reporting.
+- **Stored on the TRS server:** whom you share with (with the time), and per world your shared waypoints (name,
+  coordinates, dimension, colour, death point yes/no) together with the world they belong to (server address, or for a
+  hosted world its code) and the time of the last change. Friends you share with can copy your waypoints into their own
+  list in their game.
+- **Deleting:** turning sharing off for a friend makes their game delete your data; turning "Share" off for a waypoint
+  removes it from the server. Shared waypoints that you have not changed for **180 days** are deleted automatically;
+  "Alle TRS-Daten löschen" deletes everything at once.
+
 ### Achievements
 
 The launcher has achievements (points, rarities, a few rewards such as a cape or a cosmetic). They are part of the TRS
@@ -451,6 +475,7 @@ services and only work while those are on.
 | Circuit submissions: the circuit (blocks and states only), name, description, category, language, time, status and the team's answer; for accepted circuits your name as the creator | Submitting a circuit to the library (see above) |
 | Reports you file and reports about you, each with an encrypted copy of the reported content and its context; sanctions (warning, mute, bans) with their history and appeal, internal team notes, former names | Moderation (see above) |
 | World hosting (only while your world is open): world name, version, mod loader and settings, join code, invited players, join requests, admitted and banned players with times, player count, shared mod list and resource pack info (names, sizes, sources, checksums – no files); your list of players banned from all your worlds | Hosting a world for friends (see above) |
+| Live waypoints (only if you share with a friend): whom you share with, and per world your shared waypoints (name, coordinates, dimension, colour, death point yes/no) with the world (server address or hosted-world code) and the time of the last change. Your live position only in memory (see above), never on disk | Live waypoints with friends (see above) |
 
 **Sync:** "Sync with TRS account" (*Einstellungen → Datenschutz*, on by default while the TRS services are on) keeps
 your own skins, your own presets and the look of the launcher (theme, accent colour, language) the same on all your
@@ -461,7 +486,7 @@ read your synced data – there is no admin view of it.
 **TRS Client sync:** the TRS Client mod signs in by itself (see above) and keeps its own settings in the same place,
 as one document of at most 64 KB per account. It only does this while the TRS services are on in the launcher and
 its switch "Sync with TRS account" (TRS menu → *TRS Online Features*, on by default) is on; the switch itself,
-waypoints, the freelook server list and Minecraft's own options (options.txt) stay on your PC. The game also reads
+waypoints (except those you share with friends, see "Live waypoints"), the freelook server list and Minecraft's own options (options.txt) stay on your PC. The game also reads
 your synced theme, accent colour and language and, when you change them in the introduction, writes them back so the
 launcher follows. Deleting all TRS data deletes this document too.
 
@@ -502,13 +527,16 @@ The legal basis is the performance of the service you requested (Art. 6(1)(b) GD
 - Shared screenshots are deleted automatically **30 days** after sharing, or earlier when you (or the team) delete them.
 - Shared modpacks are deleted automatically when the duration you chose ends (1, 7 or 30 days; "no expiry" stays
   until you or the team delete it).
+- Shared waypoints (live waypoints) are deleted **180 days** after their last change, or earlier when you stop
+  sharing them; your live position disappears from the server's memory when you leave the world (at the latest after
+  3 minutes).
 - Decided circuit submissions are deleted **90 days** after the decision; published circuits stay until the team
   removes them (without your name after "Alle TRS-Daten löschen").
 - **"Alle TRS-Daten löschen"** (*Einstellungen → Datenschutz*) deletes everything immediately (GDPR Art. 17): your
   account, sessions, friendships, requests and blocks, uploaded capes and their files, cape shares (your capes with
   friends and the capes friends shared with you), code redemptions, reports,
   your online status, all synced skins, presets and settings, all your direct chats (for both sides) and your messages,
-  reactions and pictures in groups (groups you own go to the longest member), all pictures you shared as a link, all modpacks you shared and your achievements with their counters. Afterwards the TRS services are turned off in the
+  reactions and pictures in groups (groups you own go to the longest member), all pictures you shared as a link, all modpacks you shared, your shared waypoints with whom you shared them, and your achievements with their counters. Afterwards the TRS services are turned off in the
   launcher. The skins and presets on your PC are kept.
 - Only active sanctions (such as a ban or a running chat mute, with reason and period) and reports about you (until
   their retention ends, see above) are kept after deletion, so they can't be escaped by signing in again.

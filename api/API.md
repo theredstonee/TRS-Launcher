@@ -115,6 +115,9 @@ All limits use a token bucket that refills evenly across the window.
 | `GET /v1/me/sanctions`, per account | 30 / min |
 | `GET /v1/achievements`, per IP | 60 / min |
 | `POST /v1/me/achievements/report` / `GET /v1/players/{uuid}/achievements`, per account | 30 / min / 60 / min (§31) |
+| `POST /v1/waypoint-share/position`, per account | 30 / min (§41) |
+| `PUT`/`DELETE /v1/waypoint-share/session`, per account | 20 / min; switching to **another** world 12 / 10 min (§41) |
+| Other `/v1/waypoint-share/*` reads / writes, per account | 60 / min / 60 / min (§41) |
 
 ---
 
@@ -2073,6 +2076,7 @@ data: {"type":"chat_message","conversationId":"c…","message":{…}}
 | `halloween_updated` | the same fields as `GET /v1/me/halloween` (`active, endsAt, pumpkins, trick, badges, effects`) next to `type` – after a pumpkin find, a trick-or-treat roll, a badge grant or an effects change (§36) |
 | `remote_*` | PC remote control: `remote_command`, `remote_command_update`, `remote_status` (no id, not replayed), `remote_pairing` – see §34.6 |
 | `creator_*` | Creator programme: `creator_updated`, `creator_milestone`, `creator_helper_invite`, `creator_helper_removed` – see §35.7 |
+| `wpshare_*` | Live waypoints: `wpshare_peers`, `wpshare_position` (both no id, not replayed), `wpshare_changed`, `wpshare_revoked` – see §41.6 |
 
 `?pushDevice={id}` (optional, §33): set by the mobile app on its push device. While such a stream is open (and 60 s after), that device gets no push notifications. Streams without it count as desktop (§33.6).
 
@@ -5238,6 +5242,186 @@ Migration 38: `newsletter_subscribers`, `newsletter_campaigns`, `mail_outbox`, `
 `mail_team_pending`, `mail_team_state`; permissions `newsletter.manage` + `newsletter.send` for Owner/Admin. Idempotent.
 When merging: renumber if a parallel branch also added a migration 38.
 
+---
+
+## 41. Live waypoints (share waypoints and position with friends)
+
+The TRS Client shares **marked waypoints** (switch "Share" per waypoint, off by default), the **last death point**
+(optional) and the **live position** with single friends – but only while both are in the **same world** (same server
+or the same hosted world). Singleplayer worlds without hosting share nothing (client rule).
+
+**Rules at a glance**
+
+- **Directional grants:** A grants B → B sees A's shared waypoints and position. Not the other way round unless B grants
+  A too. Only friends (`403 not_friends`); if you blocked the player, `403 blocked`. A block in either direction or
+  ending the friendship deletes **both** grants at once and sends `wpshare_revoked` to each side that lost access.
+- **The world of another player is never revealed.** You only learn *that* a friend is in the same world as you
+  (`receive` list, positions). `GET /friends` only answers for the world of your own live session. Switching to another
+  world is limited to **12 per 10 minutes** (heartbeats in the same world don't count), so nobody can locate friends by
+  trying server addresses.
+- **Sessions and positions live only in the server's memory** (like presence): no database, no logs, no history.
+  A session expires **3 minutes** after the last `PUT /session` (or position); the last position is dropped with it.
+- Shared waypoint lists are stored per owner and world and expire **180 days** after their last change. Account
+  deletion deletes everything (grants in both directions, lists, session). An account ban ends the session at once.
+- All routes need `Authorization: Bearer trs_…`. All events below come only on `GET /v1/events/me` (§19).
+
+### 41.1 World key
+
+`world` is the same object as in waypoint cards (§18.10):
+
+| Form | Meaning |
+|---|---|
+| `{ "type": "server", "address": "host[:port]" }` | multiplayer server; normalised to lower case, port `25565` removed (`Play.Example.net:25565` = `play.example.net`) |
+| `{ "type": "world", "id": "<16 hex>" }` | a hosted world (§21) – host and guests must send the **same** id |
+
+Internally the server keys everything by SHA-256 of the normalised JSON. The address itself is only stored next to
+shared waypoint lists (for your own overview, `GET /waypoints`). In query strings `world` is the URL-encoded JSON,
+e.g. `?world=%7B%22type%22%3A%22server%22%2C%22address%22%3A%22play.example.net%22%7D`.
+
+### 41.2 Grants
+
+| Method + path | Answer |
+|---|---|
+| `GET /v1/waypoint-share/grants` | `{ "grants": ["<uuid>", …], "grantedToMe": ["<uuid>", …] }` – whom I share with / who shares with me (sorted by UUID) |
+| `PUT /v1/waypoint-share/grants/{uuid}` | **204**. Idempotent. `403 not_friends` (not friends, or they blocked you), `403 blocked` (you blocked them), `400 cannot_target_self`, `409 too_many_grants` (max **200**); with a social ban `403` like friend requests. |
+| `DELETE /v1/waypoint-share/grants/{uuid}` | **204**. Idempotent. If a grant existed: `wpshare_revoked { uuid: <me> }` to the friend. |
+
+A grant change updates `wpshare_peers` for both players if they are in the same world right now. There is no event for
+a *new* grant outside the same world – the friends UI reads `GET /grants`.
+
+### 41.3 Session
+
+`PUT /v1/waypoint-share/session` when entering a world, on every world or dimension change and **every 60 s**:
+
+```json
+{ "world": { "type": "server", "address": "play.example.net" }, "dimension": "minecraft:overworld" }
+```
+→ **200**
+```json
+{ "peers": { "send": 1, "receive": ["b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0"] }, "expiresInSec": 180 }
+```
+
+- `send` = number of friends **with my grant** who are in the same world right now. Send positions only while `send > 0`.
+- `receive` = friends who **granted me** and are in the same world right now (sorted). Show only their heads/waypoints.
+- Whenever this changes (somebody comes, goes, grants or revokes), the server pushes `wpshare_peers` (§41.6) to the
+  players concerned – not to the caller of `PUT /session`, who gets it in the answer.
+- `DELETE /v1/waypoint-share/session` → **204** (leaving the world; idempotent). Without heartbeat the session ends
+  after 3 minutes anyway.
+- `429 rate_limited` (with `Retry-After`): more than 20 calls per minute, or more than 12 switches to another world in
+  10 minutes. Clients back off and keep playing.
+- `dimension`: namespaced id like §18.10 (`minecraft:overworld`, `minecraft:the_nether`, `minecraft:the_end`, …).
+
+### 41.4 Position
+
+`POST /v1/waypoint-share/position` – only while `send > 0`; at most every **3 s**, only after moving more than 2 blocks or
+changing dimension, otherwise a keepalive every **15 s**:
+
+```json
+{ "x": 120.53, "y": 64.0, "z": -33.25, "dimension": "minecraft:overworld", "yaw": 91.5 }
+```
+→ **204**, always (also without session or recipients: then nothing is sent). `x`/`z` −30 000 000 … 30 000 000,
+`y` −2048 … 4096 (decimals allowed, rounded to 2 places), `yaw` in degrees (any value up to ±1 000 000, normalised to
+−180 … 180, 1 decimal). 30 / min per account (`429`). A position also keeps the session alive.
+
+Fan-out: `wpshare_position` (ephemeral) to every friend with my grant in the same world. Positions are never written
+to the database or any log.
+
+### 41.5 Shared waypoints
+
+`PUT /v1/waypoint-share/waypoints` replaces **your** list for one world (empty list = delete the world):
+
+```json
+{
+  "world": { "type": "server", "address": "play.example.net" },
+  "rev": 3,
+  "waypoints": [
+    { "id": "k3J9x_base", "name": "Base", "x": 100, "y": 64, "z": -20, "dimension": "minecraft:overworld", "color": 14690334 },
+    { "id": "death", "name": "Death", "x": -411, "y": 12, "z": 980, "dimension": "minecraft:the_nether", "death": true }
+  ]
+}
+```
+→ **200** (same shape as `GET /waypoints?world=`)
+```json
+{
+  "world": { "type": "server", "address": "play.example.net" },
+  "rev": 4,
+  "waypoints": [
+    { "id": "k3J9x_base", "name": "Base", "x": 100, "y": 64, "z": -20, "dimension": "minecraft:overworld", "color": 14690334, "death": false },
+    { "id": "death", "name": "Death", "x": -411, "y": 12, "z": 980, "dimension": "minecraft:the_nether", "color": null, "death": true }
+  ],
+  "updatedAt": "2026-10-31T18:04:59.167Z"
+}
+```
+
+| Field | Rule |
+|---|---|
+| `waypoints` | at most **100**, order is kept |
+| `id` | `^[A-Za-z0-9_-]{1,40}$`, unique in the list (else `400 invalid_waypoint`) |
+| `name`, `x`, `y`, `z`, `dimension`, `color` | exactly like §18.10: name sanitised to 1–32 characters (`400 invalid_waypoint`), word filter (`mask` / `422 message_blocked`), integer coordinates, `color` optional (`null` in views) |
+| `death` | optional `true` on **at most one** waypoint (the last death point), else `400 invalid_waypoint` |
+| `rev` | optional: the `rev` you last saw (`0` = no list yet). Different from the server's → **`409 rev_mismatch`** with `details.rev` = current rev; reload with `GET /waypoints?world=` and merge. Without `rev` the list is overwritten. |
+
+- The answer has the new `rev` (starts at 1, +1 per change). An empty list deletes the world: `rev: 0`, `waypoints: []`,
+  `updatedAt: null`.
+- At most **50 worlds** with shared waypoints per account (`409 too_many_worlds`).
+- Body up to **48 KiB**. 60 writes / min (grants and lists together); with a social ban `403`.
+- After every change: `wpshare_changed { uuid, rev }` (with id, replayed on resume) to each friend **with my grant who is
+  in the same world right now**. Others load the list the next time they enter the world.
+- `GET /v1/waypoint-share/waypoints?world=<json>` → your own list as above (`rev: 0`, `waypoints: []`, `updatedAt: null`
+  if none) – for restoring after a reinstall. Without `world` → your worlds in short form, newest first:
+  ```json
+  { "worlds": [ { "world": { "type": "server", "address": "play.example.net" }, "rev": 4, "count": 2, "updatedAt": "2026-10-31T18:04:59.167Z" } ] }
+  ```
+
+`GET /v1/waypoint-share/friends?world=<json>` – friends' lists for **the world of your own live session** (else
+`409 not_in_world`; start a session first):
+
+```json
+{
+  "owners": [
+    {
+      "uuid": "75c1a6f3112240abbdb57b9d21c64232",
+      "name": "Theredstonee",
+      "rev": 4,
+      "waypoints": [ { "id": "k3J9x_base", "name": "Base", "x": 100, "y": 64, "z": -20, "dimension": "minecraft:overworld", "color": 14690334, "death": false } ],
+      "position": { "x": 120.53, "y": 64, "z": -33.25, "dimension": "minecraft:overworld", "yaw": 91.5, "t": "2026-10-31T18:05:02.000Z" }
+    }
+  ]
+}
+```
+
+- Only owners who granted you (friends, not blocked, not banned), sorted by name. An owner appears if they have a list for
+  this world **or** are in it right now (then `rev: 0`, `waypoints: []` if they share no waypoints here).
+- `position` (optional field) only if the owner is in the same world right now and the last position is younger than **30 s**.
+- Call it after `PUT /session` on entering a world, after `wpshare_changed` (debounced), and once after a stream
+  reconnect/`resync`. 60 reads / min.
+
+### 41.6 Events (`GET /v1/events/me`)
+
+| Event | Data | Notes |
+|---|---|---|
+| `wpshare_peers` | `{ "type": "wpshare_peers", "send": 1, "receive": ["b0b0…"] }` | **ephemeral** (no id, not replayed). Same meaning as `peers` in `PUT /session`; only sent when the value changes. After a reconnect the next `PUT /session` answer is the truth. |
+| `wpshare_position` | `{ "type": "wpshare_position", "uuid": "75c1…", "x": 120.53, "y": 64, "z": -33.25, "dimension": "minecraft:overworld", "yaw": 91.5, "t": "2026-10-31T18:05:02.000Z" }` | **ephemeral**. Only from friends in `receive`. Hide a head after ~30 s without update or when the uuid leaves `receive`. |
+| `wpshare_changed` | `{ "type": "wpshare_changed", "uuid": "75c1…", "rev": 5 }` | with id (replayed). `rev: 0` = the list was deleted. Reload `GET /friends?world=`. |
+| `wpshare_revoked` | `{ "type": "wpshare_revoked", "uuid": "75c1…" }` | with id (replayed). Grant withdrawn, friendship ended, block or account deleted: delete everything of this player locally (waypoints, head). |
+
+### 41.7 Errors (summary)
+
+| Status + code | When |
+|---|---|
+| `400 invalid_request` | schema (unknown fields, ranges, bad `world`, bad `dimension`, more than 100 waypoints) |
+| `400 invalid_waypoint` | name empty/too long after sanitising, duplicate id, more than one death point |
+| `400 cannot_target_self` | grant to yourself |
+| `403 not_friends` / `403 blocked` | grant to a non-friend / a player you blocked |
+| `409 too_many_grants` / `409 too_many_worlds` | 200 grants / 50 worlds |
+| `409 rev_mismatch` | stale `rev` (`details.rev`) |
+| `409 not_in_world` | `GET /friends` for a world without your live session |
+| `422 message_blocked` | blocked word in a name |
+| `429 rate_limited` | limits above (§1), world switches |
+
+Migration 41: `wpshare_grants(owner, friend, created_at)`, `wpshare_worlds(owner, world_key, world_json, rev, updated_at)`,
+`wpshare_waypoints(owner, world_key, id, sort, name, x, y, z, dimension, color, death, updated_at)` – all removed with the
+account (`ON DELETE CASCADE`).
 
 ---
 
@@ -5286,5 +5470,4 @@ entries. 60 requests per minute and account.
 may play again. 60 per minute and team member.
 
 Migration 40: tables `minigame_runs` and `minigame_scores`; permission `minigames.manage` for Owner and Admin
-(idempotent). Number 39 is reserved for the unreleased branch `wpshare-website`; the migration runner skips every
-version that is not higher than the highest applied one, so 39 has to be deployed **before** 40 or be renumbered.
+(idempotent).
