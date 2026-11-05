@@ -275,6 +275,12 @@ public final class TrsModules {
 	public final BoolSetting waypointDistance;
 	public final BoolSetting waypointDeath;
 	public final NumberSetting waypointRange;
+	/** Live-Teilen mit Freunden (API.md §41): Hauptschalter, Todespunkt, eigene Position, Anzeige der Freunde. */
+	public final BoolSetting waypointShareLive;
+	public final BoolSetting waypointShareDeath;
+	public final BoolSetting waypointSharePosition;
+	public final BoolSetting waypointFriendWaypoints;
+	public final BoolSetting waypointFriendPositions;
 	public final BoolSetting minimapRotate;
 	public final ChoiceSetting<MinimapZoom> minimapZoom;
 	public final NumberSetting minimapSize;
@@ -872,6 +878,11 @@ public final class TrsModules {
 		waypointDistance = waypoints.add(new BoolSetting("distance", "Show distance", true));
 		waypointDeath = waypoints.add(new BoolSetting("death", "Set death point automatically", true));
 		waypointRange = waypoints.add(new NumberSetting("range", "Only up to (blocks, 0 = always)", 0, 0, 2000, 100, ""));
+		waypointShareLive = waypoints.add(new BoolSetting("shareLive", "Share live with friends", true));
+		waypointShareDeath = waypoints.add(new BoolSetting("shareDeath", "Share death point with friends", true));
+		waypointSharePosition = waypoints.add(new BoolSetting("sharePosition", "Share my position with friends", true));
+		waypointFriendWaypoints = waypoints.add(new BoolSetting("friendWaypoints", "Show friends' waypoints", true));
+		waypointFriendPositions = waypoints.add(new BoolSetting("friendPositions", "Show friends' positions", true));
 		minimapFairPlay = minimap.add(new BoolSetting("fairPlay", "Fair Play (maps show only what you could see)", false));
 		minimapShape = minimap.add(new ChoiceSetting<>("shape", "Shape", MapShape.class, MapShape.ROUND));
 		minimapSize = minimap.add(new NumberSetting("size", "Size (pixels)", 112, 64, 256, 8, ""));

@@ -30,6 +30,44 @@ public final class MapsTest {
 	private dev.theredstonee.trsclient.core.map.MapColorDiff colorDiff;
 	private static final java.util.List<String> EDGE_NAMES = java.util.Arrays.asList("Alpha", "Arena", "Burg", "Camp", "Dorf");
 	private final WorldMapTest worldMap2 = new WorldMapTest();
+	/** Live-Wegpunkte (nur gegen die Attrappe scripts/mock-wpshare-api.mjs). */
+	private final dev.theredstonee.trsclient.core.waypoint.live.LiveSelfTest liveShare =
+			new dev.theredstonee.trsclient.core.waypoint.live.LiveSelfTest(new dev.theredstonee.trsclient.core.waypoint.live.LiveSelfTest.Host() {
+				@Override
+				public void shot(String name) {
+					MapsTest.this.shot(Minecraft.getInstance(), name);
+				}
+
+				@Override
+				public void command(String command) {
+					AutoTest.command(Minecraft.getInstance(), command);
+				}
+
+				@Override
+				public void openWorldMap() {
+					Mc.setScreen(WorldMapScreen.create());
+				}
+
+				@Override
+				public WorldMapUi worldMap() {
+					return Mc.screen() instanceof TrsUiScreen && ((TrsUiScreen) Mc.screen()).ui() instanceof WorldMapUi
+							? (WorldMapUi) ((TrsUiScreen) Mc.screen()).ui() : null;
+				}
+
+				@Override
+				public boolean openFriends() {
+					net.minecraft.client.gui.screens.Screen s = dev.theredstonee.trsclient.screen.MenuScreens.social(null);
+					if (!(s instanceof TrsUiScreen) || !(((TrsUiScreen) s).ui() instanceof dev.theredstonee.trsclient.core.ui.social.SocialUi)) return false;
+					((dev.theredstonee.trsclient.core.ui.social.SocialUi) ((TrsUiScreen) s).ui()).showTab(1);
+					Mc.setScreen(s);
+					return true;
+				}
+
+				@Override
+				public void closeScreen() {
+					Mc.setScreen(null);
+				}
+			}, text -> log("Live-Wegpunkte: " + text));
 
 	public static void install() {
 		MapsTest test = new MapsTest();
@@ -231,8 +269,19 @@ public final class MapsTest {
 			case 14:
 				shot(mc, "minimap-final");
 				log(String.format(Locale.ROOT, "Messung: Tick Ø %.0f µs, Minimap zeichnen Ø %.0f µs", e.tickMicros(), e.drawMicros()));
-				phase = 30;
+				phase = 60;
 				return;
+			case 60: {
+				// Live-Wegpunkte mit Freunden (eigene Klasse in common, nur mit Attrappe).
+				int more = liveShare.step(bx, by, bz);
+				if (more >= 0) {
+					wait = more;
+					return;
+				}
+				phase = 30;
+				wait = 10;
+				return;
+			}
 			case 15:
 				shot(mc, "menu-minimap");
 				Mc.setScreen(new dev.theredstonee.trsclient.screen.TrsMenuScreen(null).select(m.worldMap));

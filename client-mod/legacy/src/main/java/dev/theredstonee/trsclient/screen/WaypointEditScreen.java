@@ -25,12 +25,15 @@ public final class WaypointEditScreen extends TrsScreen {
 	private final Hotspots hot = new Hotspots();
 	private final TextField name;
 	private int color;
+	/** Mit Freunden live teilen (Live-Wegpunkte). */
+	private boolean shared;
 
 	public WaypointEditScreen(GuiScreen parent, Waypoint editing) {
 		this.parent = parent;
 		this.editing = editing;
 		this.name = new TextField(editing == null ? defaultName() : editing.name, 32);
 		this.color = editing == null ? ColorSetting.PALETTE[1] : editing.color;
+		this.shared = editing != null && editing.shared;
 	}
 
 	private static String defaultName() {
@@ -69,6 +72,14 @@ public final class WaypointEditScreen extends TrsScreen {
 
 		String position = editing == null ? playerPosition() : (editing.x + " / " + editing.y + " / " + editing.z);
 		g.text(font, I18n.tr("waypoint.position", position), x, y + 82, Brand.TEXT_DIM, false);
+		if (dev.theredstonee.trsclient.core.waypoint.live.LiveShare.get() != null) {
+			// Live-Teilen: Schalter „Mit Freunden teilen“ rechts neben der Position.
+			int px = x + w - 26;
+			String label = I18n.tr("waypoint.shareFriends");
+			g.text(font, label, px - 4 - font.getStringWidth(label), y + 82, shared ? Brand.TEXT : Brand.TEXT_DIM, false);
+			Brand.pill(g, font, px, y + 81, shared, inside(mouseX, mouseY, px, y + 81, 26, 11));
+			hot.add(px, y + 81, 26, 11, () -> shared = !shared);
+		}
 
 		int by = y + 92;
 		int bw = 76;
@@ -91,11 +102,16 @@ public final class WaypointEditScreen extends TrsScreen {
 	private void apply() {
 		String text = name.value().trim();
 		if (editing == null) {
-			TrsClient.get().waypoints().create(text.isEmpty() ? dev.theredstonee.trsclient.core.waypoint.Waypoint.defaultName() : text, color);
+			Waypoint created = TrsClient.get().waypoints().create(text.isEmpty() ? dev.theredstonee.trsclient.core.waypoint.Waypoint.defaultName() : text, color);
+			if (created != null && shared) {
+				created.shared = true;
+				TrsClient.get().waypoints().save();
+			}
 			Mc.actionBar(I18n.tr("waypoint.created"));
 		} else {
 			editing.name = text.isEmpty() ? dev.theredstonee.trsclient.core.waypoint.Waypoint.defaultName() : text;
 			editing.color = color;
+			editing.shared = shared;
 			TrsClient.get().waypoints().save();
 		}
 		open(parent);

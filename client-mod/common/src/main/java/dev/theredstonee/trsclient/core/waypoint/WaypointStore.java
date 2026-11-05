@@ -58,20 +58,39 @@ public final class WaypointStore {
 	public void load() {
 		worlds.clear();
 		if (!Files.exists(file)) return;
+		boolean repaired = false;
 		try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
 			Map<String, List<Waypoint>> data = GSON.fromJson(reader, TYPE);
 			if (data != null) {
 				for (Map.Entry<String, List<Waypoint>> e : data.entrySet()) {
 					if (e.getKey() == null || e.getValue() == null) continue;
 					List<Waypoint> list = new ArrayList<>();
+					java.util.Set<String> ids = new java.util.HashSet<>();
 					for (Waypoint w : e.getValue()) {
-						if (w != null) list.add(w.normalized());
+						if (w == null) continue;
+						// Alte Dateien (vor dem Live-Teilen) haben keine Kennung; doppelte gibt es nach Handarbeit.
+						if (!Waypoint.validId(w.id) || !ids.add(w.id)) {
+							w.id = null;
+							repaired = true;
+						}
+						list.add(w.normalized());
+						ids.add(w.id);
 					}
 					worlds.put(e.getKey(), list);
 				}
 			}
 		} catch (JsonParseException | IllegalStateException | ClassCastException | IOException e) {
 			worlds.clear();
+			return;
+		}
+		if (repaired) {
+			// Neue Kennungen gleich festhalten – sonst bekäme ein geteilter Wegpunkt bei jedem Start eine andere.
+			dirty = true;
+			try {
+				save();
+			} catch (IOException ignored) {
+				// beim nächsten Speichern
+			}
 		}
 	}
 
@@ -152,6 +171,21 @@ public final class WaypointStore {
 		if (list == null || !list.remove(waypoint)) return false;
 		dirty = true;
 		return true;
+	}
+
+	/** Wegpunkt mit dieser Kennung in der Welt oder null. */
+	public Waypoint byId(String worldKey, String id) {
+		if (id == null) return null;
+		for (Waypoint w : all(worldKey)) {
+			if (id.equals(w.id)) return w;
+		}
+		return null;
+	}
+
+	/** Liegen für die Welt überhaupt Wegpunkte vor (auch vorübergehende)? */
+	public boolean hasWorld(String worldKey) {
+		List<Waypoint> list = worlds.get(worldKey);
+		return list != null && !list.isEmpty();
 	}
 
 	/** Meldet eine Änderung an einem Wegpunkt (Name/Farbe/sichtbar). */

@@ -323,6 +323,11 @@ public final class MapBridge implements MapPlatform {
 	}
 
 	@Override
+	public boolean playerLoaded(java.util.UUID uuid) {
+		return uuid != null && mc().level != null && mc().level.getPlayerByUUID(uuid) != null;
+	}
+
+	@Override
 	public void message(String text) {
 		// Nur lokal im eigenen Chat (z. B. „Karte gespeichert als …“).
 		//? if >=1.19 {

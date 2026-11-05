@@ -249,6 +249,12 @@ public final class MapBridge implements MapPlatform {
 	}
 
 	@Override
+	public boolean playerLoaded(java.util.UUID uuid) {
+		World w = Mc.world();
+		return uuid != null && w != null && w.getPlayerEntityByUUID(uuid) != null;
+	}
+
+	@Override
 	public void message(String text) {
 		// Nur lokal im eigenen Chat (z. B. „Karte gespeichert als …“).
 		if (mc().ingameGUI == null) return;
