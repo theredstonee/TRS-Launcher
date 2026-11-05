@@ -28,16 +28,21 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.32.3 – 2026-11-05 – Click & Pick | Klick und Auswahl
+<!-- banner: accent=#ff3b2f motif=/news/0.32.3/banner.png -->
+<!-- shots:
+/news/0.32.3/select-hint.png | The content list now tells you how selecting works | Die Inhaltsliste zeigt jetzt, wie das Auswählen geht
+/news/0.32.3/select-range.png | Shift+click on a selected row deselects the whole range | Umschalt+Klick auf eine ausgewählte Zeile wählt den ganzen Bereich ab
+-->
 
 ### English
 - **Fixed a crash at game start with the TRS Client on Vulkan.** With Vulkan switched on, Iris or Xaero's World Map installed and an older Fabric Loader (up to 0.19.4), Minecraft 1.21.6 to 26.1.2 could crash at every start. TRS Client 0.24.1 starts normally again, no change to your instance needed.
-- **Select mods like in a file manager.** In an instance's content list, Ctrl+click now selects a single entry and Shift+click selects everything from the last clicked row up to the one you click. While you hold Shift, the rows that would be selected are outlined and a small note shows how many. A tip explains this the first time.
+- **Select mods like in a file manager.** In an instance's content list, Ctrl+click now selects or deselects a single entry and Shift+click takes everything from the last clicked row up to the one you click. Shift+click on a row that is already selected deselects the whole range. While you hold Shift, the affected rows are outlined and a small note says what a click will do. The list always shows a short note about this, and a tip explains it the first time.
 - **TRS Client: disconnect screen buttons no longer overlap.** The extra buttons now sit below Minecraft's own buttons, with a clear gap between rows.
 
 ### Deutsch
 - **Absturz beim Spielstart mit TRS Client auf Vulkan behoben.** Mit eingeschaltetem Vulkan, Iris oder Xaero's World Map und einem älteren Fabric Loader (bis 0.19.4) konnte Minecraft 1.21.6 bis 26.1.2 bei jedem Start abstürzen. TRS Client 0.24.1 startet wieder normal, an der Instanz musst du nichts ändern.
-- **Mods auswählen wie im Dateimanager.** In der Inhaltsliste einer Instanz wählt Strg+Klick jetzt einen einzelnen Eintrag aus und Umschalt+Klick alles von der zuletzt angeklickten Zeile bis zur angeklickten. Solange du Umschalt hältst, sind die betroffenen Zeilen umrandet und ein kleiner Hinweis zeigt, wie viele es sind. Beim ersten Mal erklärt ein Tipp das.
+- **Mods auswählen wie im Dateimanager.** In der Inhaltsliste einer Instanz wählt Strg+Klick jetzt einen einzelnen Eintrag aus oder ab, und Umschalt+Klick nimmt alles von der zuletzt angeklickten Zeile bis zur angeklickten. Umschalt+Klick auf eine schon ausgewählte Zeile wählt den ganzen Bereich ab. Solange du Umschalt hältst, sind die betroffenen Zeilen umrandet und ein kleiner Hinweis sagt, was ein Klick tut. Die Liste zeigt das immer in einem kurzen Hinweis, beim ersten Mal erklärt es zusätzlich ein Tipp.
 - **TRS Client: Buttons auf dem Verbindungsfehler-Bildschirm überlappen nicht mehr.** Die Zusatzbuttons sitzen jetzt mit deutlichem Abstand unter den Minecraft-Buttons; auch zwischen den Reihen ist mehr Platz.
 
 ## 0.32.2 – 2026-11-04 – Full Throttle Fix 2 | Sicherheits-Update
