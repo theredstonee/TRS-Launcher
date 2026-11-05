@@ -33,10 +33,12 @@ How to write an entry:
 ### English
 - **Fixed a crash at game start with the TRS Client on Vulkan.** With Vulkan switched on, Iris or Xaero's World Map installed and an older Fabric Loader (up to 0.19.4), Minecraft 1.21.6 to 26.1.2 could crash at every start. TRS Client 0.24.1 starts normally again, no change to your instance needed.
 - **Select mods like in a file manager.** In an instance's content list, Ctrl+click now selects a single entry and Shift+click selects everything from the last clicked row up to the one you click. While you hold Shift, the rows that would be selected are outlined and a small note shows how many. A tip explains this the first time.
+- **TRS Client: disconnect screen buttons no longer overlap.** The extra buttons now sit below Minecraft's own buttons, with a clear gap between rows.
 
 ### Deutsch
 - **Absturz beim Spielstart mit TRS Client auf Vulkan behoben.** Mit eingeschaltetem Vulkan, Iris oder Xaero's World Map und einem älteren Fabric Loader (bis 0.19.4) konnte Minecraft 1.21.6 bis 26.1.2 bei jedem Start abstürzen. TRS Client 0.24.1 startet wieder normal, an der Instanz musst du nichts ändern.
 - **Mods auswählen wie im Dateimanager.** In der Inhaltsliste einer Instanz wählt Strg+Klick jetzt einen einzelnen Eintrag aus und Umschalt+Klick alles von der zuletzt angeklickten Zeile bis zur angeklickten. Solange du Umschalt hältst, sind die betroffenen Zeilen umrandet und ein kleiner Hinweis zeigt, wie viele es sind. Beim ersten Mal erklärt ein Tipp das.
+- **TRS Client: Buttons auf dem Verbindungsfehler-Bildschirm überlappen nicht mehr.** Die Zusatzbuttons sitzen jetzt mit deutlichem Abstand unter den Minecraft-Buttons; auch zwischen den Reihen ist mehr Platz.
 
 ## 0.32.2 – 2026-11-04 – Full Throttle Fix 2 | Sicherheits-Update
 <!-- banner: accent=#ffb02e motif=/news/0.32.0/banner.png -->

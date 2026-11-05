@@ -47,19 +47,20 @@ public final class DisconnectUi {
 		screen = s;
 		busy = false;
 		try {
-			AbstractWidget back = null;
+			int buttonY = Integer.MIN_VALUE;
 			for (GuiEventListener child : s.children()) {
 				if (child instanceof Button && ((Button) child).visible) {
-					back = (Button) child;
-					break;
+					buttonY = Math.max(buttonY, VanillaMenus.y((Button) child));
 				}
 			}
 			int gap = 4;
+			int rowGap = 8;
 			int full = Math.min(s.width - 20, 310);
 			int left = s.width / 2 - full / 2;
-			int top = back != null ? VanillaMenus.y(back) + 20 + 8 : s.height / 2 + 40;
+			int top = buttonY != Integer.MIN_VALUE ? buttonY + 20 + 8 : s.height / 2 + 40;
 			// Unten steht ggf. der Auto-Reconnect-Knopf (height - 28) – nicht überdecken.
-			if (top + 44 > s.height - 32) top = Math.max(4, s.height - 32 - 44);
+			int rowsHeight = 40 + rowGap;
+			if (top + rowsHeight > s.height - 32) top = Math.max(4, s.height - 32 - rowsHeight);
 			int half = (full - gap) / 2;
 			reauth = add(host, left, top, half, I18n.tr("disconnect.reauth"), I18n.tr("disconnect.reauthTip"), new Runnable() {
 				@Override
@@ -74,19 +75,19 @@ public final class DisconnectUi {
 				}
 			});
 			int third = (full - 2 * gap) / 3;
-			add(host, left, top + 24, third, I18n.tr("disconnect.accounts"), null, new Runnable() {
+			add(host, left, top + 20 + rowGap, third, I18n.tr("disconnect.accounts"), null, new Runnable() {
 				@Override
 				public void run() {
 					Mc.setScreen(AccountsScreen.create(screen));
 				}
 			});
-			copy = add(host, left + third + gap, top + 24, third, I18n.tr("disconnect.copy"), null, new Runnable() {
+			copy = add(host, left + third + gap, top + 20 + rowGap, third, I18n.tr("disconnect.copy"), null, new Runnable() {
 				@Override
 				public void run() {
 					copyError();
 				}
 			});
-			status = add(host, left + 2 * (third + gap), top + 24, full - 2 * (third + gap), I18n.tr("disconnect.status"), null,
+			status = add(host, left + 2 * (third + gap), top + 20 + rowGap, full - 2 * (third + gap), I18n.tr("disconnect.status"), null,
 					new Runnable() {
 						@Override
 						public void run() {
