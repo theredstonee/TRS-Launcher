@@ -42,7 +42,6 @@ modules:
 settings:
   # zoom.factor: {max: 4}
   # cinematic.freecamFairPlay: true
-  # waypoints.teleport: false
 
 # -----------------------------------------------------------------------------------------------------
 # %SCOPE_KEY% – different rules per %SCOPE_KEY%.
