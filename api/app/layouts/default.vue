@@ -194,6 +194,11 @@ onMounted(() => hw.loadPrefs())
         </nav>
       </div>
       <div class="border-t border-base-800">
+        <!-- Urheberhinweis: muss sichtbar bleiben, siehe NOTICE und AGENTS.md. -->
+        <div class="mx-auto max-w-6xl space-y-1 px-4 pt-4 text-xs leading-5 text-base-400 sm:px-6" data-testid="author-notice">
+          <p>{{ m.footer.authorNoticeClient }}</p>
+          <p>{{ m.footer.authorNoticeLauncher }}</p>
+        </div>
         <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-xs text-base-600 sm:px-6">
           <span>© {{ year }} Theredstonee · GPL-3.0</span>
           <ClientOnly>

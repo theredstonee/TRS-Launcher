@@ -32,6 +32,11 @@ const year = new Date().getFullYear()
       </nav>
     </UContainer>
     <div class="border-t border-default">
+      <!-- Urheberhinweis: muss sichtbar bleiben, siehe NOTICE und AGENTS.md. -->
+      <UContainer class="space-y-1 pt-3 text-xs leading-5 text-muted" data-testid="author-notice">
+        <p>{{ text.authorNoticeClient }}</p>
+        <p>{{ text.authorNoticeLauncher }}</p>
+      </UContainer>
       <UContainer class="flex flex-wrap items-center justify-between gap-2 py-3 text-xs text-dimmed">
         <span>© {{ year }} TheRedstonee · GPL-3.0</span>
         <ClientOnly v-if="!forcedColorMode">

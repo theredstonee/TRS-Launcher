@@ -94,6 +94,8 @@ const en = {
     discord: 'Discord',
     docs: 'Docs',
     notAffiliated: 'Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.',
+    authorNoticeClient: 'Original TRS Client by Ohev Tamerin (theredstonee), TRS Launcher. This notice must remain visible in every copy and every modified version. It must not be removed under any circumstances, except with an additional written, signed confirmation from the author.',
+    authorNoticeLauncher: 'Original TRS Launcher by Ohev Tamerin (theredstonee). This notice must remain visible in every copy and every modified version. It must not be removed under any circumstances, except with an additional written, signed confirmation from the author.',
   },
   home: {
     kicker: 'TRS Launcher · Free Minecraft launcher for Windows & Linux',
@@ -1036,6 +1038,8 @@ const de: Messages = {
     discord: 'Discord',
     docs: 'Doku',
     notAffiliated: 'Kein offizielles Minecraft-Produkt. Nicht von Mojang oder Microsoft genehmigt oder mit ihnen verbunden.',
+    authorNoticeClient: 'Original TRS Client von Ohev Tamerin (theredstonee), TRS Launcher. Dieser Hinweis muss in jeder Kopie und jeder veränderten Fassung sichtbar bleiben. Er darf unter keinen Umständen entfernt werden, außer mit einer zusätzlichen schriftlichen, unterschriebenen Bestätigung des Urhebers.',
+    authorNoticeLauncher: 'Original TRS Launcher von Ohev Tamerin (theredstonee). Dieser Hinweis muss in jeder Kopie und jeder veränderten Fassung sichtbar bleiben. Er darf unter keinen Umständen entfernt werden, außer mit einer zusätzlichen schriftlichen, unterschriebenen Bestätigung des Urhebers.',
   },
   home: {
     kicker: 'TRS Launcher · Kostenloser Minecraft-Launcher für Windows & Linux',
@@ -1976,6 +1980,8 @@ const es: Messages = {
     discord: 'Discord',
     docs: 'Documentación',
     notAffiliated: 'No es un producto oficial de Minecraft. No está aprobado por Mojang ni Microsoft ni asociado con ellos.',
+    authorNoticeClient: 'TRS Client original de Ohev Tamerin (theredstonee), TRS Launcher. Este aviso debe permanecer visible en cada copia y en cada versión modificada. No puede eliminarse bajo ninguna circunstancia, salvo con una confirmación adicional, escrita y firmada por el autor.',
+    authorNoticeLauncher: 'TRS Launcher original de Ohev Tamerin (theredstonee). Este aviso debe permanecer visible en cada copia y en cada versión modificada. No puede eliminarse bajo ninguna circunstancia, salvo con una confirmación adicional, escrita y firmada por el autor.',
   },
   home: {
     ...en.home,
