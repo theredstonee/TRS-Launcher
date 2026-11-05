@@ -78,6 +78,7 @@ class MenuRailTest {
 		private final List<Object[]> texts = new ArrayList<Object[]>();
 		private int[] scissor;
 		private int minTextX = Integer.MAX_VALUE;
+		private int lastRailX = 30;
 
 		void clear() {
 			texts.clear();
@@ -89,7 +90,9 @@ class MenuRailTest {
 			for (Object[] t : texts) {
 				if ("All".equals(t[0])) x = Math.min(x, (Integer) t[1]);
 			}
-			return x == Integer.MAX_VALUE ? 30 : x;
+			// „All“ kann schon herausgescrollt sein: dann die zuletzt gesehene Position.
+			if (x != Integer.MAX_VALUE) lastRailX = x;
+			return lastRailX;
 		}
 
 		int[] visible(String s) {
