@@ -1,5 +1,5 @@
 {
-  "version": "0.24.1",
+  "version": "0.24.2",
   "builds": [
     {
       "loader": "fabric",
@@ -10,8 +10,8 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "5ed901340785ebdef8e8487b996169ae3df4e41f134cecf7403d044ae375a7a2",
-      "size": 4762950
+      "sha256": "3cd302b528adc8c3ca585e4d8d633f8556101bf18538543d58f259c8342770e7",
+      "size": 4762984
     },
     {
       "loader": "fabric",
@@ -22,8 +22,8 @@
       "requires": [
         "fabric-api"
       ],
-      "sha256": "35c0d20d8ee3019c0ec069e3e3684661bbc34b832ca9e579e43e57922b05e39d",
-      "size": 4781932
+      "sha256": "0fc0468e2f7a76d0a52ae77052ab59f3d8661ada1b8893c0341213a36d2fdcc2",
+      "size": 4781966
     },
     {
       "loader": "fabric",
@@ -41,8 +41,8 @@
           "version": "0.6.6"
         }
       ],
-      "sha256": "920d0d72ea78e1f62739349e4bd49c586c2878584a4b7d9acbc117b9ead825d2",
-      "size": 5082288
+      "sha256": "57d6965c7046be33882aee66cdd3f6f7e08567922e3ff9e4109d833d6f636dd8",
+      "size": 5082320
     },
     {
       "loader": "fabric",
@@ -60,8 +60,8 @@
           "version": "0.6.6"
         }
       ],
-      "sha256": "368e6418fd85a09e077949f85631f6ef54ea70327e906fa43ec628aa87dc0cab",
-      "size": 5082288
+      "sha256": "99593f8f49f84afee1c8e4f8d3f508091c50bf8ffc79c1386b50fdefb5f9856d",
+      "size": 5082321
     },
     {
       "loader": "fabric",
@@ -79,8 +79,8 @@
           "version": "0.6.6"
         }
       ],
-      "sha256": "676b564fd5b8c32e732d1c3a430d9f656c78537d33477e74773c829d3219d329",
-      "size": 5083296
+      "sha256": "e473dba102e95f58b4f635b07421cb1adb5c215cd2f5b13a8ff4f3d0299623d3",
+      "size": 5083330
     },
     {
       "loader": "fabric",
@@ -103,8 +103,8 @@
           "version": "2.1.1"
         }
       ],
-      "sha256": "351df36c53c062a8be07dd5c89bab70e8ae0a70191efe5d81e8b6637e95bf2af",
-      "size": 5176820
+      "sha256": "27e5b9f07e6c95014bf5fb980adc334f46ad3098ecfabbd4a9a65987550bdfe7",
+      "size": 5176854
     },
     {
       "loader": "fabric",
@@ -127,8 +127,8 @@
           "version": "3.0.1"
         }
       ],
-      "sha256": "21762a4d0eeb3633458f398d8cae98c236e0141031903bf16d596ec149d22e2b",
-      "size": 5284682
+      "sha256": "560479e4f22d2defc3612dd7f7878d486060215c6a7085a7224c32005a6347f8",
+      "size": 5284714
     },
     {
       "loader": "fabric",
@@ -151,8 +151,8 @@
           "version": "3.0.3"
         }
       ],
-      "sha256": "8903e0c5bc1d360442f03f11bd98921c31c1abf9e46d8249c565f0a16132add0",
-      "size": 5286299
+      "sha256": "d6dc45f53d09f8f4c77662ec6ccd3f726020b4f2a5e57bc5ac4512690e0e4331",
+      "size": 5286332
     },
     {
       "loader": "fabric",
@@ -175,8 +175,8 @@
           "version": "4.0.0"
         }
       ],
-      "sha256": "1a1f71e268750a1ae59a3366395ca69cc7b01a990442a0af90806eda9500bf5f",
-      "size": 5244108
+      "sha256": "f20c3218ebac8b5ae2d3a9c4bfe8d6a140f2cd2d32aa2a7a998e6bd090dd16e0",
+      "size": 5244140
     },
     {
       "loader": "fabric",
@@ -199,8 +199,8 @@
           "version": "4.1.2"
         }
       ],
-      "sha256": "07d9f1690d227fef47a345ba94f555e1566a50758c7e055eab1e4422b8cf7ff4",
-      "size": 5298433
+      "sha256": "12dfcdbd37bc5f1ee60374ee14f2699a87a41af7368c472db324cc6ab06114ca",
+      "size": 5298467
     },
     {
       "loader": "fabric",
@@ -228,8 +228,8 @@
           "version": "1.1.12"
         }
       ],
-      "sha256": "ac9ab449a32f6dc739554630dc2b670df27bf9009d7c01c8437cce9506a7b4f4",
-      "size": 5555105
+      "sha256": "42b1505dfa31a6b0e4f7702a786fcd7acf5dd5a2b02e9b49bb24bad16774d309",
+      "size": 5555136
     },
     {
       "loader": "fabric",
@@ -257,8 +257,8 @@
           "version": "1.4.0+1.19.2"
         }
       ],
-      "sha256": "8528024f3ecc0812ed679b30a24b6203d77586dd70c0a1fbcdf03b149a85cd57",
-      "size": 5695842
+      "sha256": "1d09fb4f6c120858f5eb7174562cca25b5f9f65a0c67c118917db1e515f32a9a",
+      "size": 5695874
     },
     {
       "loader": "fabric",
@@ -291,8 +291,8 @@
           "version": "2.1.4"
         }
       ],
-      "sha256": "c908df39046a60be0989b690a19c198ceb3576072bbedcc0b849dcd7f9750eb8",
-      "size": 6104102
+      "sha256": "d7a18bf866a4af01e0b01331a3b1050b13169e3f6d5670b10babafd6d5788f29",
+      "size": 6104134
     },
     {
       "loader": "fabric",
@@ -325,8 +325,8 @@
           "version": "2.1.4"
         }
       ],
-      "sha256": "6011c81d995e38b9ed0e56fdc1d558eb78ce492beb057331e9fe7c0b93588796",
-      "size": 6218076
+      "sha256": "ef4fb3a0525bc0a9e919308080a088810f0d8698ffaa2b1b6f10ec7a7f5e6720",
+      "size": 6218107
     },
     {
       "loader": "fabric",
@@ -359,8 +359,8 @@
           "version": "2.1.4"
         }
       ],
-      "sha256": "98259a3f9b86bf0a24145007f0dd4c5ff555b1159fc1f3bf00262b192469ac62",
-      "size": 6016397
+      "sha256": "808eb82d26d07ab7cb55fd023bf4cebdb75bd5983530ae39edecef834da83db0",
+      "size": 6016423
     },
     {
       "loader": "fabric",
@@ -393,8 +393,8 @@
           "version": "2.1.4"
         }
       ],
-      "sha256": "3d44aa1c1ad6527f54ca37e1b3dd75d29e935b9c6f1b6382a944de69c1996475",
-      "size": 6203908
+      "sha256": "784dd2e501f9e1e61ab718b7c2c453145d963cfd6ca0a3d730ba75aefe11c322",
+      "size": 6203935
     },
     {
       "loader": "fabric",
@@ -432,8 +432,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "6d6ed32bd8143dbc2fc7c103fdbe9222d19abb08453b017c2c857a11304af274",
-      "size": 6745316
+      "sha256": "a2716d3248b7acad0ae22879c1015a50a2d9c4d225d2fded0420d77a78c60f55",
+      "size": 6745342
     },
     {
       "loader": "fabric",
@@ -471,8 +471,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "122627838ba9fb112edf4cf91d3cdc5ea5aa426a8336e897e7dfe9efe251de32",
-      "size": 6591198
+      "sha256": "b1e9bccc719aea76e826ad1265d03014bb130117d7b9eb0f580574c2b85eac63",
+      "size": 6591224
     },
     {
       "loader": "fabric",
@@ -505,8 +505,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "52f29e08b8ad4faaca55a5eb68b57d133f779d22ad601777a4749fc362af7023",
-      "size": 6567317
+      "sha256": "45bfe28d8093526eaa3e388632741b21f4f19e427ce19edf160218693b2412c8",
+      "size": 6567344
     },
     {
       "loader": "fabric",
@@ -544,8 +544,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "e24ce7f26c90db675341366ebf0d7f6f6cc09a4cd49c3c69a3177fe332e5c610",
-      "size": 6530311
+      "sha256": "e8d379adb74254ffae866c50e53c37c4846a8ed7a9541bef7a1ccf462c932a4a",
+      "size": 6530337
     },
     {
       "loader": "fabric",
@@ -583,8 +583,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "ff06034433e80322851e4d687f41eefa39b385def4c5dfedc248b3c160575e1a",
-      "size": 6384186
+      "sha256": "53dba534598af473a91718582bc6bc96a3afdc165cde8fa90bb7745802eec736",
+      "size": 6384213
     },
     {
       "loader": "fabric",
@@ -622,8 +622,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "b87777428d1feab645720fe554560b4ecb0c3ba7fc941751be977151e5d210eb",
-      "size": 6396872
+      "sha256": "62d8d5c19aebf8d48e927e0841f1de9fab5fd7180e3e699e25c18d00f3acd159",
+      "size": 6396900
     },
     {
       "loader": "fabric",
@@ -661,8 +661,8 @@
           "version": "2.1.4"
         }
       ],
-      "sha256": "f24afbf450e927f7975dcbdb6290732491b8422626b07bd2c1c6d11c13c63074",
-      "size": 6353076
+      "sha256": "0f1e84f2f7958f7eb45fef7b3f9587fbb1166b7ec086953eb82562d16e0d19c1",
+      "size": 6353103
     },
     {
       "loader": "fabric",
@@ -700,8 +700,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "81d1ad291d5173ffd2e66d6c48d87836772adb07990ac11c8531f817371dc322",
-      "size": 6590662
+      "sha256": "e30a65ab19640d1f635bcbf0eb32c2354a4ba49fbe73189dde10b492d02fd5d9",
+      "size": 6590690
     },
     {
       "loader": "fabric",
@@ -729,8 +729,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "b1225337b32ade05c2273531cb3acb1596447cc4f498003ec01288fd117a0f4e",
-      "size": 5913920
+      "sha256": "694a1634cdbdb106fea130279ac8ef77c4419705e8131036bd4ed7b1d068f1c6",
+      "size": 5913946
     },
     {
       "loader": "fabric",
@@ -763,8 +763,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "e92a53527045a7bee4ff4e40818956355ef0ebfdae7360b0db9931aa7c0db27f",
-      "size": 6006865
+      "sha256": "e8c115812abe48cbf33e3496e05ae3c5cd608778cec8f322e667868260f9f39a",
+      "size": 6006893
     },
     {
       "loader": "fabric",
@@ -802,8 +802,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "e281ca379e105b7cc0d7a2fdbc484a84f7a506aa4c7cb6541214c5e95e716806",
-      "size": 6538114
+      "sha256": "059f9e1387df2bf9c46e2a758faa056a4652abc58498976f62439fcaa09484c1",
+      "size": 6538141
     },
     {
       "loader": "fabric",
@@ -836,8 +836,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "e201739d9cc910a8ec1ef16c9a86f509bed6111074257b94adc5efb9b062103b",
-      "size": 6021902
+      "sha256": "3e1bc16bcf8b282760d11bb4068835c071637f0920c1110ee2dcbb4850b8b780",
+      "size": 6021929
     },
     {
       "loader": "fabric",
@@ -870,8 +870,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "d8f4ad74c599c54870b289de7dcd93946459ce0bf53b07d68cefbaf5b14c4b6f",
-      "size": 16572549
+      "sha256": "a67036bc2a6aa65ec0d1d8848c017401862f6111edaba954fd786365d41724c6",
+      "size": 16572576
     },
     {
       "loader": "fabric",
@@ -904,8 +904,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "3d2f4f5f812fe00fb9d565d3a6648e078c41b7b23510cfdab9832716285fdb42",
-      "size": 16572558
+      "sha256": "a71f0bb9544fadc29b19c375d74a6ac63b2193f2b5192c2061197342e244c24b",
+      "size": 16572585
     },
     {
       "loader": "fabric",
@@ -938,8 +938,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "6b7abe48c0631cd7ae72347c6d9972ea1788ac05d05d802a70054313f787ea33",
-      "size": 16719144
+      "sha256": "6b0065a763409f58cc2af7fdfea5f0d691458f1ea7ac4e00177ae5708b984908",
+      "size": 16719171
     },
     {
       "loader": "fabric",
@@ -972,8 +972,8 @@
           "version": "2.3.3"
         }
       ],
-      "sha256": "28a8b2c15f0a1d6cf05d136026404f447e5c81203a55a6a31f70d43ce714ad2e",
-      "size": 16705790
+      "sha256": "61f7ff83f16323422acb8543ee77ae0a2e9149ef8dbcd54bc76c38b18c001386",
+      "size": 16705817
     },
     {
       "loader": "fabric",
@@ -1006,8 +1006,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "31ae5ae1ad821a1dffd425879068448bac12b61aa28375ec6a5852c3d8a54958",
-      "size": 16718761
+      "sha256": "eb173f98ff3cb9e5919575fc8a36724b075663bd9e29e092535574b8a418406a",
+      "size": 16718788
     },
     {
       "loader": "fabric",
@@ -1040,8 +1040,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "9173745972423e8535289535d7699d66f9638e206dd57a65070f78327f6162fe",
-      "size": 16765919
+      "sha256": "d05f9b13929f64bc8cf30e2bc4267ad8d2cc2ecedaf3105ef07191f3c5af2585",
+      "size": 16765946
     },
     {
       "loader": "fabric",
@@ -1074,8 +1074,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "62e795aba289403bf014688e7ae517af7364e715332783fd1bd7531d169ea051",
-      "size": 20545225
+      "sha256": "4b5f97c88a538a56bb8943731a4bd6e6d187a92cbe65953f457d35c6d853b1ad",
+      "size": 20545243
     },
     {
       "loader": "fabric",
@@ -1108,8 +1108,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "492263f96df5cc89ad23e4c280305c2179b37a54b6db78e2e75ff69d55b88070",
-      "size": 20545227
+      "sha256": "72e714250f3091fd1094169adae79913d125336bf51eba865f33ff0c57fd55ec",
+      "size": 20545245
     },
     {
       "loader": "fabric",
@@ -1142,8 +1142,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "f9dbc61e68379b09c89abcaae857c688fbbbdc424123b89e4de2aad4242aee43",
-      "size": 20545390
+      "sha256": "6bcfe888b26a572e84e5f78d968dbb143a9657f80bd7fc15c0436d3bf4d0cd91",
+      "size": 20545407
     },
     {
       "loader": "fabric",
@@ -1176,8 +1176,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "b80fdb2f6f20a0995ea8ad0b517f8dc5f60abd28b4b321285c0a0cab79d425ff",
-      "size": 5743895
+      "sha256": "318eb00f10bf208175a8cf80e670e167f672b669338cf343655141147ba328e3",
+      "size": 5743913
     },
     {
       "loader": "fabric",
@@ -1210,8 +1210,8 @@
           "version": "2.4.1"
         }
       ],
-      "sha256": "a891a99e7f7de0f4b9ba731a1793a7b15196eadf78e6e4a0a685f44c9af4d990",
-      "size": 5737886
+      "sha256": "f370b4f0cb1c4f157657dfbcec7c4e8e2712aa6827928f8e6733a200479016ae",
+      "size": 5737904
     },
     {
       "loader": "forge",
@@ -1221,7 +1221,7 @@
       "file": "trsclient-forge-1.13.2.jar",
       "requires": [],
       "forge": "1.13.2-25.0.223",
-      "sha256": "4c7a8305979e819f720211a0374e41406637fed8ded721364654967a4e1cd5ce",
+      "sha256": "67e51e001370d421568b09c99616b7bce3cb70f884353b965e4f552e7bbe479e",
       "size": 4477510
     },
     {
@@ -1232,8 +1232,8 @@
       "file": "trsclient-forge-1.14.4.jar",
       "requires": [],
       "forge": "1.14.4-28.2.26",
-      "sha256": "168147b44f2ff1540cd6a37bdd47445f68b838e89b80e5b401aae48acf221223",
-      "size": 4799124
+      "sha256": "28e39b76300ce303d57e94e5be23d73bf3083e65dabe895e0c5a335bbf13b179",
+      "size": 4799171
     },
     {
       "loader": "forge",
@@ -1243,8 +1243,8 @@
       "file": "trsclient-forge-1.15.2.jar",
       "requires": [],
       "forge": "1.15.2-31.2.57",
-      "sha256": "11f63a6652c970a13fd622fa810450ce710932cb6ce64f8443001ccb85859cf3",
-      "size": 4903108
+      "sha256": "7d5bc3dbfee325d8069e89a4ce43ce6d2a8116f22d8e7edcb3f65ef6b6b0a3a6",
+      "size": 4903155
     },
     {
       "loader": "forge",
@@ -1254,8 +1254,8 @@
       "file": "trsclient-forge-1.16.2.jar",
       "requires": [],
       "forge": "1.16.2-33.0.61",
-      "sha256": "e17484c29518d948c39b158a27357bd911632ca95fa664ead411f9ba2ebad3e8",
-      "size": 4918756
+      "sha256": "e349187e798d41ecf9d4a524e827abdc49d99eff9b6d3637550f2f153b19df0e",
+      "size": 4918804
     },
     {
       "loader": "forge",
@@ -1265,8 +1265,8 @@
       "file": "trsclient-forge-1.16.4.jar",
       "requires": [],
       "forge": "1.16.4-35.1.4",
-      "sha256": "77f70f0bce5cf657739bb2d4db3be1c6055a4bfbd641bcc2b295ff55b2ae7d8f",
-      "size": 4919749
+      "sha256": "075e4606be867a515a248ad9f672f317322e0bb2aa8484bf139d71d3481573bc",
+      "size": 4919797
     },
     {
       "loader": "forge",
@@ -1276,8 +1276,8 @@
       "file": "trsclient-forge-1.16.5.jar",
       "requires": [],
       "forge": "1.16.5-36.2.34",
-      "sha256": "c93f6a6b74c716bfe40b3cc40afe46cf7ffdcce0633fd3240513ac8edf362084",
-      "size": 4919749
+      "sha256": "0e5679abbf913b0bfbc87d76c2cb327fc4cb782202580e475584f4f26f9aef29",
+      "size": 4919798
     },
     {
       "loader": "forge",
@@ -1287,8 +1287,8 @@
       "file": "trsclient-forge-1.17.1.jar",
       "requires": [],
       "forge": "1.17.1-37.1.1",
-      "sha256": "1ad00fae1403a8e94629f328272026fdc0196aa629eebac3d2f6ebc8e825437b",
-      "size": 4947556
+      "sha256": "e22d6ab608bad0411a8812e7829968baa719c1bf065e3badfe629ede5cd32641",
+      "size": 4947605
     },
     {
       "loader": "forge",
@@ -1298,8 +1298,8 @@
       "file": "trsclient-forge-1.18.jar",
       "requires": [],
       "forge": "1.18-38.0.17",
-      "sha256": "142c65acfc5812dfbf7896597b7628bbde2c5c6b99bdec3efa21551ba29aaed7",
-      "size": 4948050
+      "sha256": "fd39ce00931bd9bd3b434c8f2154f802890ec0a1e08f5e0553d14bcfc1e0e031",
+      "size": 4948100
     },
     {
       "loader": "forge",
@@ -1309,8 +1309,8 @@
       "file": "trsclient-forge-1.18.1.jar",
       "requires": [],
       "forge": "1.18.1-39.1.0",
-      "sha256": "a9998f1b0d24d87afaafb2d98d869b3ac8ce8955cfdfc6280cc09f4c1cbca497",
-      "size": 4948052
+      "sha256": "9632fa37ffb0776bfb639abc0ab937c2e0d5d28963e2a06256479f4e821684ff",
+      "size": 4948101
     },
     {
       "loader": "forge",
@@ -1320,8 +1320,8 @@
       "file": "trsclient-forge-1.18.2.jar",
       "requires": [],
       "forge": "1.18.2-40.3.0",
-      "sha256": "2c72233ef4dfa680b5f8782afe8a164547e47a0215caed5bf9ddca1f90a4c348",
-      "size": 4948498
+      "sha256": "4ec0fd663e6b9a3466bd4264ae34e2fc6e9174b6d93193aaba2af28a6aa470a0",
+      "size": 4948547
     },
     {
       "loader": "forge",
@@ -1331,8 +1331,8 @@
       "file": "trsclient-forge-1.19.jar",
       "requires": [],
       "forge": "1.19-41.1.0",
-      "sha256": "91a4fc56372ac5d492aa3f007f4aeeee0ea61f24a2a8570a7e1a7d0319edbdd1",
-      "size": 4949047
+      "sha256": "f303c9eb3414c21109b3585c7f5789a675b257579fb49007d3cf898c3c14889e",
+      "size": 4949097
     },
     {
       "loader": "forge",
@@ -1342,8 +1342,8 @@
       "file": "trsclient-forge-1.19.1.jar",
       "requires": [],
       "forge": "1.19.1-42.0.9",
-      "sha256": "30c5d7d5e00a902e41b797f1ff7b6da9b7b7a335a20078967fea7488546f5cda",
-      "size": 4950351
+      "sha256": "3adcba7c6d6b1aa794cd621b5189d9e010d401b7003c199b2906b80acd73951b",
+      "size": 4950400
     },
     {
       "loader": "forge",
@@ -1353,8 +1353,8 @@
       "file": "trsclient-forge-1.19.2.jar",
       "requires": [],
       "forge": "1.19.2-43.5.0",
-      "sha256": "8d9d11e8d8b7c14b18cae96ac94fc813742e61e0d3ccbe8a8066f9977eb09a38",
-      "size": 4950594
+      "sha256": "70ac6943e06c9201f15eb22d469ddd8a77dfd93eeaabccf1ce4c0290735b3ac3",
+      "size": 4950643
     },
     {
       "loader": "forge",
@@ -1364,8 +1364,8 @@
       "file": "trsclient-forge-1.19.3.jar",
       "requires": [],
       "forge": "1.19.3-44.1.0",
-      "sha256": "f6623f72c8440c77402d5ddeec82d1cb2c0b068a1c375c4b1b44ba5eaaad3464",
-      "size": 4950681
+      "sha256": "5c3b3bddbb2b8b8441e5c823697886ad698c3012ef23d8cfc5a5b2cfdca7159d",
+      "size": 4950751
     },
     {
       "loader": "forge",
@@ -1375,8 +1375,8 @@
       "file": "trsclient-forge-1.19.4.jar",
       "requires": [],
       "forge": "1.19.4-45.4.0",
-      "sha256": "c4005838af02153eda66aa8a075c958883b0a9dfa3200f8903edaff58755262f",
-      "size": 4949371
+      "sha256": "4b429a2a44a74982762ba1743ce2fca3f2933065e5146eb1c828b306f50e3726",
+      "size": 4949440
     },
     {
       "loader": "forge",
@@ -1386,8 +1386,8 @@
       "file": "trsclient-forge-1.20.jar",
       "requires": [],
       "forge": "1.20-46.0.14",
-      "sha256": "4a9837fc9a8184dd8b005b4d723ddb631bc98ba94fb1f78228cbd372e6bec7b1",
-      "size": 4891595
+      "sha256": "78df893746220fc8690061f808391919b739a4f0122bf8e617ae22f46b1fe0ae",
+      "size": 4891658
     },
     {
       "loader": "forge",
@@ -1397,8 +1397,8 @@
       "file": "trsclient-forge-1.20.1.jar",
       "requires": [],
       "forge": "1.20.1-47.4.10",
-      "sha256": "df0f90c7e87bb116a7b8036c7d54d6935ac55a17bc54613052ff728f5f379c08",
-      "size": 4891655
+      "sha256": "7a12a236444465b325ea3a6e2ac133983b952f491d896771253bcc4b76c4a2f3",
+      "size": 4891718
     },
     {
       "loader": "forge",
@@ -1408,8 +1408,8 @@
       "file": "trsclient-forge-1.20.2.jar",
       "requires": [],
       "forge": "1.20.2-48.1.0",
-      "sha256": "e678a63e9838255ac444aa8c108b1b620de83d6bdb28921b47b6bb0e5596bb1c",
-      "size": 4892853
+      "sha256": "f693165096810b5eab0e0dff75a92c5abafc499142995fb57b844edf91078d15",
+      "size": 4892915
     },
     {
       "loader": "forge",
@@ -1419,8 +1419,8 @@
       "file": "trsclient-forge-1.20.3.jar",
       "requires": [],
       "forge": "1.20.3-49.0.2",
-      "sha256": "d14ac89dc2af39aea1301e29ce85785a88223bac9036c5f0d8ef5c0645e3c293",
-      "size": 4895495
+      "sha256": "fb0aba8d2561eb6ae603e64fd96952bee55ae0db027ae92805633a1c194f13a9",
+      "size": 4895558
     },
     {
       "loader": "forge",
@@ -1430,8 +1430,8 @@
       "file": "trsclient-forge-1.20.4.jar",
       "requires": [],
       "forge": "1.20.4-49.2.0",
-      "sha256": "1435c5810e5030ba5bd3d0e33877da290d689d74c252adc388124b684267e5ec",
-      "size": 4895495
+      "sha256": "20f58c920ef52c8025582b65bc6887abb1e000e2edf860a95dfef4b0be72b7b3",
+      "size": 4895558
     },
     {
       "loader": "forge",
@@ -1441,8 +1441,8 @@
       "file": "trsclient-forge-1.20.6.jar",
       "requires": [],
       "forge": "1.20.6-50.2.0",
-      "sha256": "4c5202fd00fdb3d3f0299faea9de8d5e2d2d7af990fe9180983ab29a4c8c0ba2",
-      "size": 4865880
+      "sha256": "de5a9bae2bc0841cf7ea658d50477c369bddc6b27a18d87eef3ec01ec0e78aad",
+      "size": 4865953
     },
     {
       "loader": "forge",
@@ -1452,8 +1452,8 @@
       "file": "trsclient-forge-1.21.jar",
       "requires": [],
       "forge": "1.21-51.0.33",
-      "sha256": "a6a8dde10fcbb64d0802977eea44952bfb57d1fea8432abafb44be949c74f01c",
-      "size": 4865804
+      "sha256": "e335b309a05e71563903da31b69a00ca0a046fd7a484653d4d670c2c9818ad4b",
+      "size": 4865876
     },
     {
       "loader": "forge",
@@ -1463,8 +1463,8 @@
       "file": "trsclient-forge-1.21.1.jar",
       "requires": [],
       "forge": "1.21.1-52.1.0",
-      "sha256": "749b2705e2ffb9f35bef8899cc8c970618c97daf4e4f4aad02624a46e1ab7dad",
-      "size": 4865808
+      "sha256": "9536e081a6d4bdfdacbb63bc884c3137052ed871778a2e461b2d8775bbdadee6",
+      "size": 4865880
     },
     {
       "loader": "forge",
@@ -1474,8 +1474,8 @@
       "file": "trsclient-forge-1.21.3.jar",
       "requires": [],
       "forge": "1.21.3-53.1.0",
-      "sha256": "fca47fefbddd9beb549b6dd56e88b5f77c167848324603902c60a22da62a46b0",
-      "size": 4865622
+      "sha256": "bf69a3acedf386c616ee54adb34b7ba1e9008d99421b9075bc9332de82dc18eb",
+      "size": 4865694
     },
     {
       "loader": "forge",
@@ -1485,8 +1485,8 @@
       "file": "trsclient-forge-1.21.4.jar",
       "requires": [],
       "forge": "1.21.4-54.1.14",
-      "sha256": "d266c24774ba62cc3d0e6e13a85e8500b7cff9efccf593382cfa0152f135c510",
-      "size": 4865615
+      "sha256": "b586d4f67f25d415e342d8d7a6b11623a7af373aca82c7c36a187b78b7323b78",
+      "size": 4865687
     },
     {
       "loader": "forge",
@@ -1496,8 +1496,8 @@
       "file": "trsclient-forge-1.21.5.jar",
       "requires": [],
       "forge": "1.21.5-55.1.0",
-      "sha256": "7d8eae83bac76dae21ad6c757e6f5125b4d8896ab6ef51f8728456f9ed04dea0",
-      "size": 4867099
+      "sha256": "f9b5b5ab270f54f7ee8ae8b744d8307f879066339cf00d42ab3e87b78178067d",
+      "size": 4867171
     },
     {
       "loader": "forge",
@@ -1507,8 +1507,8 @@
       "file": "trsclient-forge-1.21.6.jar",
       "requires": [],
       "forge": "1.21.6-56.0.9",
-      "sha256": "538007c28d076c109d7a5fd45d0498804ba250601859dda002dd10de70820cb2",
-      "size": 4867968
+      "sha256": "45cd9ac5d3313143de74e67f243707eaf346564b02b94a12dcb8936f9dd7d0ec",
+      "size": 4868040
     },
     {
       "loader": "forge",
@@ -1518,8 +1518,8 @@
       "file": "trsclient-forge-1.21.7.jar",
       "requires": [],
       "forge": "1.21.7-57.0.3",
-      "sha256": "a9c966ff6d151b2420fc0005333791e49e42cd082ab554f4887a3f6434e6098e",
-      "size": 4867968
+      "sha256": "b1ff920e0d24827749a6e46f5a804e9207553a29075960418e126c7164213e19",
+      "size": 4868040
     },
     {
       "loader": "forge",
@@ -1529,8 +1529,8 @@
       "file": "trsclient-forge-1.21.8.jar",
       "requires": [],
       "forge": "1.21.8-58.1.0",
-      "sha256": "c895211b9eec4bdf05ad64d67e95a09074b06c1bdd87767b34168f23c074094b",
-      "size": 4867968
+      "sha256": "b9e96363b603a8814b9d09ac46e98f0a774329300a91ad580a6aa3910d61a470",
+      "size": 4868040
     },
     {
       "loader": "forge",
@@ -1540,8 +1540,8 @@
       "file": "trsclient-forge-1.21.9.jar",
       "requires": [],
       "forge": "1.21.9-59.0.5",
-      "sha256": "f24a87dfddcc0c4852a1deff73ea3a662b839fe63d41e754656406fd2db0a8fd",
-      "size": 4868302
+      "sha256": "278160827f78186eaa4342fd7acfa5d61718e0944183a85e5c657709081576d1",
+      "size": 4868374
     },
     {
       "loader": "forge",
@@ -1551,8 +1551,8 @@
       "file": "trsclient-forge-1.21.10.jar",
       "requires": [],
       "forge": "1.21.10-60.1.0",
-      "sha256": "573fb7b3486af8c5b87214cbe542538ad120d8721435163e2847ba85300c931a",
-      "size": 4868302
+      "sha256": "b0d186e9734be6ff4f060df7afabab5bcef241a90fc7622be945a008294cefa8",
+      "size": 4868374
     },
     {
       "loader": "forge",
@@ -1562,8 +1562,8 @@
       "file": "trsclient-forge-1.21.11.jar",
       "requires": [],
       "forge": "1.21.11-61.2.0",
-      "sha256": "fd1d7e50fc0e382aab09185724ad7e1d8aafe156d07cb25d789ea58a2d2eb08b",
-      "size": 4868836
+      "sha256": "abae5e7875d6eb11a898059678efecdce6ed1978eb6c65ecd1314d034f52d35f",
+      "size": 4868908
     },
     {
       "loader": "forge",
@@ -1573,8 +1573,8 @@
       "file": "trsclient-forge-26.1.jar",
       "requires": [],
       "forge": "26.1-62.0.9",
-      "sha256": "3f86ca0519e1170fca4b7d9869109826cc8e6d1b0c6bdfc4db66d24363930057",
-      "size": 4904779
+      "sha256": "1545080f49608d47406c7216d46760233e7525c31d7ab9667f6b0225b284c886",
+      "size": 4904858
     },
     {
       "loader": "forge",
@@ -1584,8 +1584,8 @@
       "file": "trsclient-forge-26.1.1.jar",
       "requires": [],
       "forge": "26.1.1-63.0.2",
-      "sha256": "658eee5b188428dd3fb3391d4b9fe1a889cb60a970b4c356515558c190b5bc4f",
-      "size": 4904781
+      "sha256": "996b92e6730fba75e731cc65d178dec34038a458dd4c3f450c85d4b2dacc3a98",
+      "size": 4904860
     },
     {
       "loader": "forge",
@@ -1595,8 +1595,8 @@
       "file": "trsclient-forge-26.1.2.jar",
       "requires": [],
       "forge": "26.1.2-64.1.0",
-      "sha256": "b68c3356ba385daf020d0fb21951d06761b2e0588f816dcd53874d3b25c1b481",
-      "size": 4904783
+      "sha256": "98ff53103abea010e7a63e11d7a09e8f9e6a34c5eaae918625867dd5ecc5480a",
+      "size": 4904862
     },
     {
       "loader": "forge",
@@ -1606,8 +1606,8 @@
       "file": "trsclient-forge-26.2.jar",
       "requires": [],
       "forge": "26.2-65.1.0",
-      "sha256": "96f0fbb749abe81b4a183efcf98d97fc83ef9d166e54921c593050a1551b1964",
-      "size": 4905963
+      "sha256": "52d0e4584df9d57d1f2c737b4b23de444e42a2a81654221108ee8b41d67b1a4c",
+      "size": 4906041
     },
     {
       "loader": "forge",
@@ -1617,8 +1617,8 @@
       "file": "trsclient-forge-26.3.jar",
       "requires": [],
       "forge": "26.3-66.0.2",
-      "sha256": "1cce607b9dd63eba3431307f1d9fd21afc8899c977c18d8066e1cd71704a5d0f",
-      "size": 4902805
+      "sha256": "3dc7ddb36ba7ab36a24dd6d536d723433bc08852fe46168aa9fbdb29decec67a",
+      "size": 4902884
     },
     {
       "loader": "forge",
@@ -1628,7 +1628,7 @@
       "file": "trsclient-forge-1.7.10.jar",
       "requires": [],
       "forge": "1.7.10-10.13.4.1614",
-      "sha256": "6f2ae0ed9b11ac2bcd31b90d5987c4fedff66125c8db7807b323f699fab3348e",
+      "sha256": "ca618b3e5396997b8e57547eadac8853c173f46acb780891acb46ea1a425f994",
       "size": 4470997
     },
     {
@@ -1639,8 +1639,8 @@
       "file": "trsclient-forge-1.8.9.jar",
       "requires": [],
       "forge": "1.8.9-11.15.1.2318",
-      "sha256": "e4edb5738b547f053eb84f3d20c2cc0d5e3a2ef31fdc7896e93f90445204d029",
-      "size": 5010618
+      "sha256": "d6d6bee1d08840e0572acc77936aadee6a21fed3851e700deca8ef21fa632e86",
+      "size": 5010671
     },
     {
       "loader": "forge",
@@ -1650,8 +1650,8 @@
       "file": "trsclient-forge-1.9.jar",
       "requires": [],
       "forge": "1.9-12.16.1.1887",
-      "sha256": "3a10b247d1bc6042657322261546feacce5eaf6b0fed3c064ec87105ba8454d6",
-      "size": 5011502
+      "sha256": "2abefb57579813a3c29fed5b2bab3587fe639c63d604baaac1898a9d5b14b18d",
+      "size": 5011549
     },
     {
       "loader": "forge",
@@ -1661,8 +1661,8 @@
       "file": "trsclient-forge-1.9.4.jar",
       "requires": [],
       "forge": "1.9.4-12.17.0.2317",
-      "sha256": "35247bb8237b305c6a80e583e845fe15f067161c96fa3da44cad460e50037e85",
-      "size": 5011505
+      "sha256": "bfe2aa27031659484a840e1b4c2e24bfadb749ba7399bc72a640459106f41ed7",
+      "size": 5011552
     },
     {
       "loader": "forge",
@@ -1673,8 +1673,8 @@
       "file": "trsclient-forge-1.10.2.jar",
       "requires": [],
       "forge": "1.10.2-12.18.3.2511",
-      "sha256": "f3f2893b41b5a4f071746f0cfaa13b9a8747c33a844a9a78f3e0888105f2a3d2",
-      "size": 5016088
+      "sha256": "9ab2959c67b8a3d093c5e29aa654812623ffdb3fddcd4f03d8d12e7022a6668d",
+      "size": 5016135
     },
     {
       "loader": "forge",
@@ -1685,8 +1685,8 @@
       "file": "trsclient-forge-1.11.2.jar",
       "requires": [],
       "forge": "1.11.2-13.20.1.2588",
-      "sha256": "eae84ff2ed552c75f034036df4e8db5e410f642775933dcfbfb377e6d8b27a32",
-      "size": 5016839
+      "sha256": "f7b2c4c6f85c37bd752354f4fd6e5226a31261cde88c8329d430d61691f5c6af",
+      "size": 5016883
     },
     {
       "loader": "forge",
@@ -1698,8 +1698,8 @@
       "file": "trsclient-forge-1.12.2.jar",
       "requires": [],
       "forge": "1.12.2-14.23.5.2859",
-      "sha256": "3bfd11846c3cc8ebff87e6d754d6b8d92c741cb8ac050b10ba9acdf87b22589a",
-      "size": 5017063
+      "sha256": "1f41535cb610e0ff40a1de297012538e73277f521b10bc7d645d6b47d4609fd5",
+      "size": 5017107
     },
     {
       "loader": "neoforge",
@@ -1709,8 +1709,8 @@
       "file": "trsclient-neoforge-1.20.2.jar",
       "requires": [],
       "neoforge": "20.2.93",
-      "sha256": "a8daf94ed95c8cb3373b3de10c53d54134e01f401561a5fd1568ded786a3b7b4",
-      "size": 4862998
+      "sha256": "f0273b677b96ad4544ab0a06fcbad4046ce9b8bdf5a9d0f4720c001c7932cab8",
+      "size": 4863070
     },
     {
       "loader": "neoforge",
@@ -1720,8 +1720,8 @@
       "file": "trsclient-neoforge-1.20.3.jar",
       "requires": [],
       "neoforge": "20.3.8-beta",
-      "sha256": "7986c08c3d06296acd9924e6e8fd3d5d97c37e2708ae493a20ed35f73abb2583",
-      "size": 4865392
+      "sha256": "7a0e71d39763ebac5f292e90dad3d58d5551a20640e4783a0ba452f327604a84",
+      "size": 4865464
     },
     {
       "loader": "neoforge",
@@ -1731,8 +1731,8 @@
       "file": "trsclient-neoforge-1.20.4.jar",
       "requires": [],
       "neoforge": "20.4.251",
-      "sha256": "7c93e3a1b90b7c4e5f9e6488be2eff0e11bf88e9e27a3d7ae5805f863425b832",
-      "size": 4865384
+      "sha256": "72e97e1ed2d03fb0cf2700678f5fe351623f8b9bf520794bd8108bbfbb7c6642",
+      "size": 4865456
     },
     {
       "loader": "neoforge",
@@ -1742,8 +1742,8 @@
       "file": "trsclient-neoforge-1.20.5.jar",
       "requires": [],
       "neoforge": "20.5.21-beta",
-      "sha256": "0b5878736f9214d187001a01a308e7a73227309e0f31cf1a675c772708e4f675",
-      "size": 4866699
+      "sha256": "8cd8a54aa4aacaa7f19580e408cc2963323f626af35dfff26da938cf5d4b6e4b",
+      "size": 4866771
     },
     {
       "loader": "neoforge",
@@ -1753,8 +1753,8 @@
       "file": "trsclient-neoforge-1.20.6.jar",
       "requires": [],
       "neoforge": "20.6.141",
-      "sha256": "37dbb8cff2686c481f6aa7ab030e2b3fe741fb610787888571033ce7a4f7a7ae",
-      "size": 4866701
+      "sha256": "66e274abcccf2893c65d22d586dda708bdaad41c37b4d475b705d886693572bf",
+      "size": 4866773
     },
     {
       "loader": "neoforge",
@@ -1764,8 +1764,8 @@
       "file": "trsclient-neoforge-1.21.jar",
       "requires": [],
       "neoforge": "21.0.167",
-      "sha256": "1e9ec616f3ea2025b697afb0682809ed71bb86cec0e21a14ee3c4ff11a4e13da",
-      "size": 4866616
+      "sha256": "c6e18818c9a84e6ca84cc1aa0ca5f88e6f77c55cebfd7221174ff666edaa5dc6",
+      "size": 4866688
     },
     {
       "loader": "neoforge",
@@ -1775,8 +1775,8 @@
       "file": "trsclient-neoforge-1.21.1.jar",
       "requires": [],
       "neoforge": "21.1.251",
-      "sha256": "92b9945576a1e7028c17cd0f5f087fd35d5668be62787bfe1cf39bd8c7c180bc",
-      "size": 4866617
+      "sha256": "4205d9b7337a768b0d7d2ef6dc0407a614c676f4e1b871ecf53acdf28b8d3d23",
+      "size": 4866689
     },
     {
       "loader": "neoforge",
@@ -1786,8 +1786,8 @@
       "file": "trsclient-neoforge-1.21.2.jar",
       "requires": [],
       "neoforge": "21.2.1-beta",
-      "sha256": "831caedc60c9ba1f712a7038ea8e8cd392c85a0261a6062a88cc5217bad407ff",
-      "size": 4866714
+      "sha256": "6a09a32813a36eedad1c2e6a3b2833bd41ad48afaf3adb5b4a03bb9cd7941ead",
+      "size": 4866786
     },
     {
       "loader": "neoforge",
@@ -1797,8 +1797,8 @@
       "file": "trsclient-neoforge-1.21.3.jar",
       "requires": [],
       "neoforge": "21.3.97",
-      "sha256": "5fa8989bfe596e44829f59a5b7936d49076e28ce7e429a48dc9b3ed54d386ee0",
-      "size": 4866715
+      "sha256": "3270df7d8a39991fd34131ae314e7d4433ac7334b148cafd87a4e41cb433b0c3",
+      "size": 4866787
     },
     {
       "loader": "neoforge",
@@ -1808,8 +1808,8 @@
       "file": "trsclient-neoforge-1.21.4.jar",
       "requires": [],
       "neoforge": "21.4.157",
-      "sha256": "8bf98720d8b5d6df9ca66169a9ac85a1489df32e33ff3efb1fe00ca94dc5bed2",
-      "size": 4866604
+      "sha256": "74cc224130625a875731b007ea45989d67349e8c0e907dd3bd9b33e04614dd83",
+      "size": 4866676
     },
     {
       "loader": "neoforge",
@@ -1819,8 +1819,8 @@
       "file": "trsclient-neoforge-1.21.5.jar",
       "requires": [],
       "neoforge": "21.5.98",
-      "sha256": "57e11439a8afcad7e2c96bd165935324f116cd4f5a8f5bd60f62b0b40c50e259",
-      "size": 4868053
+      "sha256": "4fa5793a006224502722f0b39529bb255fa44030e544835f379d6a50b4550492",
+      "size": 4868125
     },
     {
       "loader": "neoforge",
@@ -1830,8 +1830,8 @@
       "file": "trsclient-neoforge-1.21.6.jar",
       "requires": [],
       "neoforge": "21.6.20-beta",
-      "sha256": "40fa599856635d5678bb17f3172ee134b1d56c9994f7234a1672faf0b6fd95c1",
-      "size": 4868900
+      "sha256": "1d351d0e8a72614aa0f2ef592a9c7da44cb94b8339e034f90ea1b072aa647205",
+      "size": 4868972
     },
     {
       "loader": "neoforge",
@@ -1841,8 +1841,8 @@
       "file": "trsclient-neoforge-1.21.7.jar",
       "requires": [],
       "neoforge": "21.7.25-beta",
-      "sha256": "f4cb0aa5ce10637a7b72f66c9a017e0a83f53e98fe1b8d832bd9c19cf99c0236",
-      "size": 4868900
+      "sha256": "bc2d3492f9e1bd2cdc66a654ba43642983210e379af3ee8bb83695e90c15aa8a",
+      "size": 4868972
     },
     {
       "loader": "neoforge",
@@ -1852,8 +1852,8 @@
       "file": "trsclient-neoforge-1.21.8.jar",
       "requires": [],
       "neoforge": "21.8.54",
-      "sha256": "6ab665cbffdadc2b1ccd3488f95952af8d32be3caa05c2e74a4201673e06d313",
-      "size": 4868900
+      "sha256": "9779cf5457352aaf22c0cdfec76433407975cb0ee97d544ecb313a4e73671bdb",
+      "size": 4868972
     },
     {
       "loader": "neoforge",
@@ -1863,8 +1863,8 @@
       "file": "trsclient-neoforge-1.21.9.jar",
       "requires": [],
       "neoforge": "21.9.16-beta",
-      "sha256": "112de4b7a38871a987427cec8c37097dedf11188ece5f1c31717c1fd5741267c",
-      "size": 4870506
+      "sha256": "f98f4e35c2423297b4bf234bcac5b36d7f9996aa9c9eaf510a2e158cb3609f7f",
+      "size": 4870578
     },
     {
       "loader": "neoforge",
@@ -1874,8 +1874,8 @@
       "file": "trsclient-neoforge-1.21.10.jar",
       "requires": [],
       "neoforge": "21.10.64",
-      "sha256": "5ab32031884fffd2f91bb877ee454b827f96afae014b880b195efe4e6b1cbbee",
-      "size": 4870507
+      "sha256": "3923196d2f3efcc958328e1b57a3c2f350ecabf665260a5cb8c009c2429b553a",
+      "size": 4870579
     },
     {
       "loader": "neoforge",
@@ -1885,8 +1885,8 @@
       "file": "trsclient-neoforge-1.21.11.jar",
       "requires": [],
       "neoforge": "21.11.45",
-      "sha256": "0ebd07a8a5b8927d54a124a116ede7a295e306738e9b788043d9fe0ef895d73f",
-      "size": 4871990
+      "sha256": "7b1aa226803d9618fee27d66b96a236167d1a374463f6a7a3bc10a5854f3f3e8",
+      "size": 4872062
     },
     {
       "loader": "neoforge",
@@ -1896,8 +1896,8 @@
       "file": "trsclient-neoforge-26.1.jar",
       "requires": [],
       "neoforge": "26.1.0.19-beta",
-      "sha256": "3a371a3f51358a4ec55ae32a6ca2ef16b883441b4aa376c6b19949c0c17160d9",
-      "size": 4908063
+      "sha256": "be348d58b7f51b85af10b8a5e518ab0cd49583df2c27ab74cf9435c3e7ad97a7",
+      "size": 4908142
     },
     {
       "loader": "neoforge",
@@ -1907,8 +1907,8 @@
       "file": "trsclient-neoforge-26.1.1.jar",
       "requires": [],
       "neoforge": "26.1.1.15-beta",
-      "sha256": "8063e550bb41e337d193078c73178671101210b0accf5109c20590ab9291b3b9",
-      "size": 4908067
+      "sha256": "f3734401b228146175f6b8cd4f758a4cc01c642088f26afacfc27a50a8043c61",
+      "size": 4908146
     },
     {
       "loader": "neoforge",
@@ -1918,8 +1918,8 @@
       "file": "trsclient-neoforge-26.1.2.jar",
       "requires": [],
       "neoforge": "26.1.2.109",
-      "sha256": "acd31019c67b9615be14ca2f9678489bb214cdfd0b3284122f2b46505751afdb",
-      "size": 4908069
+      "sha256": "9d41ff3a74bcbf737143fe9a502d07611d160f3659563c029f3f29399b215cdf",
+      "size": 4908148
     },
     {
       "loader": "neoforge",
@@ -1929,8 +1929,8 @@
       "file": "trsclient-neoforge-26.2.jar",
       "requires": [],
       "neoforge": "26.2.0.88",
-      "sha256": "4c537f74e9579b3f29beca1d5778b05af4bf6795d1ef4929631cbafb41576ef4",
-      "size": 4909263
+      "sha256": "8246d463002feaa0519426dbb814343c9866b88e6fe1d24ada26a0cbbc615011",
+      "size": 4909342
     },
     {
       "loader": "neoforge",
@@ -1940,8 +1940,8 @@
       "file": "trsclient-neoforge-26.3.jar",
       "requires": [],
       "neoforge": "26.3.0.8-beta",
-      "sha256": "eda6c5df8ae8c699a71511bd2f69f35d76168a1dc3f0fb90e334ae4bdae23497",
-      "size": 4905907
+      "sha256": "f019590b7f2b2f70b16cc8618bbba1d38e6086f7a8cfdb7cc93c6b75d196fdd6",
+      "size": 4905985
     }
   ]
 }
