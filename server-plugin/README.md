@@ -78,6 +78,7 @@ settings:                      # single settings: <module>.<setting>
   fullbright.level: {max: 200}
   cinematic.freecamFairPlay: true   # a bare value forces it (true/false, number, choice enum name)
   minimap.mode: {value: SMOOTH}     # same, long form
+  waypoints.teleport: false         # hides the teleport entries of the TRS Client; the normal /tp rights stay yours to set
 
 worlds:                        # proxies: "servers:" with backend server names
   pvp_arena:
