@@ -380,7 +380,7 @@ public final class SocialUi extends WindowUi implements SocialContext {
 			tab = 0;
 			list.openDm(f.uuid);
 		});
-		final dev.theredstonee.trsclient.core.waypoint.live.LiveShare live = dev.theredstonee.trsclient.core.waypoint.live.LiveShare.get();
+		final dev.theredstonee.trsclient.core.waypoint.live.LiveShare live = dev.theredstonee.trsclient.core.waypoint.live.LiveShare.ui();
 		if (live != null && live.grantsLoaded()) {
 			// Live-Wegpunkte: Freigabe für diesen Freund an/aus.
 			final boolean on = live.granted(f.uuid);

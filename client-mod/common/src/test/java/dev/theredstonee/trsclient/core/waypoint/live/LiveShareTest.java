@@ -435,6 +435,29 @@ class LiveShareTest {
 		assertEquals(n, calls.size(), "Server ohne §41: Ruhe");
 	}
 
+	/** So antwortet die echte API heute auf die noch fehlende Route (gemessen 2026-11-05). */
+	@Test
+	void serverWithoutTheApiStaysSilentAndAsksOncePerHour() {
+		routes = key -> error(404, "not_found", "");
+		live.wantGrants();
+		long t = run(1000, 5);
+		assertEquals(1, count("PUT /session"), "genau ein Versuch");
+		assertEquals(null, live.takeNotice(), "keine Meldung");
+		assertTrue(live.apiMissing(), "keine Oberfläche");
+		assertFalse(live.wantsStream(), "kein Konto-Stream nur dafür");
+		int n = calls.size();
+		run(t + 50 * 60_000L, 20);
+		assertEquals(n, calls.size(), "eine Stunde Ruhe");
+		live.setGrant(FRIEND, true);
+		run(t + 50 * 60_000L + 1000, 3);
+		assertFalse(live.granted(FRIEND), "zurückgenommen");
+		assertEquals(null, live.takeNotice(), "auch hier keine Meldung");
+		routes = key -> defaultRoutes(key);
+		run(t + 2 * 60 * 60_000L, 5);
+		assertFalse(live.apiMissing(), "Sobald der Server die API hat, läuft sie wieder");
+		assertTrue(live.wantsStream());
+	}
+
 	@Test
 	void grantsLoadAndToggleWithRevert() {
 		live.wantGrants();

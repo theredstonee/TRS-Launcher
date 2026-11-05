@@ -43,8 +43,8 @@ public final class LiveShare {
 	/** Positionen älter als das gelten als „nicht mehr live“ (verblassen) bzw. verschwinden. */
 	public static final long POSITION_FADE_MS = 20_000L;
 	public static final long POSITION_MAX_AGE_MS = 60_000L;
-	/** Kennt der Server §41 nicht, erst nach dieser Pause wieder fragen. */
-	static final long UNSUPPORTED_RETRY_MS = 10 * 60_000L;
+	/** Kennt der Server §41 nicht, erst nach dieser Pause wieder fragen (eine einzige Anfrage, ohne Meldung). */
+	static final long UNSUPPORTED_RETRY_MS = 60 * 60_000L;
 
 	/** Zugriff aufs Spiel (Welt, Position, Wegpunkt-Speicher) – Spiel-Thread. */
 	public interface Env {
@@ -100,6 +100,8 @@ public final class LiveShare {
 	private String dimension = "";
 	private boolean unsupported;
 	private long unsupportedUntil;
+	/** Der Server hat §41 zuletzt nicht gekannt (bis zur ersten erfolgreichen Antwort): keine Oberfläche dafür zeigen. */
+	private volatile boolean apiMissing;
 
 	// Sitzung.
 	private boolean sessionOpen;
@@ -185,6 +187,20 @@ public final class LiveShare {
 		return current;
 	}
 
+	/**
+	 * Wie {@link #get()}, aber für die Oberfläche: null auch dann, wenn der Server die API (noch) nicht kennt – Reiter,
+	 * Schalter und Freigaben erscheinen erst, wenn es die Funktion wirklich gibt.
+	 */
+	public static LiveShare ui() {
+		LiveShare s = current;
+		return s == null || s.apiMissing ? null : s;
+	}
+
+	/** Hat der Server die API zuletzt nicht gekannt? */
+	public boolean apiMissing() {
+		return apiMissing;
+	}
+
 	/** Nur Autotest/Tests: diese Welt statt der echten verwenden (null = aus). */
 	public static void testWorld(LiveWorld w) {
 		testWorld = w;
@@ -217,7 +233,8 @@ public final class LiveShare {
 
 	/** Braucht der Dienst gerade den Konto-Stream (in einer teilbaren Welt)? */
 	public boolean wantsStream() {
-		return world != null && token != null;
+		// Kennt der Server die API nicht, wird der Konto-Stream dafür auch nicht offen gehalten (Worker-Tageslimit).
+		return world != null && token != null && !unsupported;
 	}
 
 	/**
@@ -370,6 +387,7 @@ public final class LiveShare {
 				final String body = api.session(t, w, dim);
 				post(() -> {
 					sessionInFlight = false;
+					apiMissing = false;
 					if (!w.equals(world)) return;
 					sessionBackoff.ok();
 					sessionOpen = true;
@@ -777,6 +795,7 @@ public final class LiveShare {
 				final String body = api.grants(t);
 				post(() -> {
 					grantsInFlight = false;
+					apiMissing = false;
 					grantsBackoff.ok();
 					LiveJson.Grants g = LiveJson.grants(body);
 					if (g == null) return;
@@ -828,6 +847,11 @@ public final class LiveShare {
 					grantBusy.remove(u);
 					if (was) grants.add(u);
 					else grants.remove(u);
+					if ("unsupported".equals(e.code())) {
+						// Server ohne §41: still zurücknehmen – es gibt die Funktion dort noch nicht.
+						failed(e, grantsBackoff, t);
+						return;
+					}
 					notice = "not_friends".equals(e.code()) ? "waypoint.live.notFriends"
 							: "blocked".equals(e.code()) ? "waypoint.live.blocked"
 							: "too_many_grants".equals(e.code()) || e.status() == 409 ? "waypoint.live.limit"
@@ -935,6 +959,7 @@ public final class LiveShare {
 		if ("unsupported".equals(e.code())) {
 			// Server kennt §41 noch nicht: alles länger ruhen lassen.
 			unsupported = true;
+			apiMissing = true;
 			unsupportedUntil = now + UNSUPPORTED_RETRY_MS;
 			return;
 		}

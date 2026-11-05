@@ -326,7 +326,7 @@ public final class FriendsPanel {
 			Redstone.pip(c, x + 15, ry + 14, 6, lit);
 			int tx = x + 26;
 			int right = x + w - 4;
-			final LiveShare live = LiveShare.get();
+			final LiveShare live = LiveShare.ui();
 			if (f.uuid.equals(confirmUuid)) {
 				right = confirm(c, kit, f.uuid, f.name, x, ry, w, mx, my);
 			} else if (listener != null) {

@@ -85,9 +85,11 @@ public final class LiveApi {
 		Http.Response res = http.send(r);
 		if (res.status >= 200 && res.status < 300) return res.body == null ? "" : res.text();
 		if (res.status == 404 || res.status == 405 || res.status == 501) {
-			// Kennt der Server §41 (noch) nicht – oder Freund/Welt unbekannt: Code aus dem Körper, sonst „unsupported“.
+			// Kennt der Server §41 (noch) nicht: Die API antwortet auf jede unbekannte Route mit 404 und dem Code
+			// „not_found“, eine Cloudflare-Seite ganz ohne JSON („http_404“). §41 selbst nutzt diesen Code nicht.
 			String code = TrsApi.errorCode(res);
-			throw new ApiException(res.status, code.startsWith("http_") ? "unsupported" : code, TrsApi.retryAfter(res));
+			boolean unknownRoute = code.startsWith("http_") || "not_found".equals(code);
+			throw new ApiException(res.status, unknownRoute ? "unsupported" : code, TrsApi.retryAfter(res));
 		}
 		// 409 rev_mismatch trägt den aktuellen Stand im Fehler ({"error":{"code","message","rev"}}).
 		throw new ApiException(res.status, TrsApi.errorCode(res), TrsApi.retryAfter(res), res.status == 409 ? res.text() : null);
