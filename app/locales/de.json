@@ -1361,7 +1361,13 @@
       "selectAll": "Alle auswählen",
       "selected": "{n} ausgewählt | {n} ausgewählt",
       "update": "Aktualisieren ({n})",
-      "clear": "Auswahl aufheben"
+      "clear": "Auswahl aufheben",
+      "tipTitle": "Tipp:",
+      "tip": "Strg+Klick wählt einen einzelnen Eintrag aus. Umschalt+Klick wählt alles von der zuletzt angeklickten Zeile bis hierher aus.",
+      "needStart": "Erst eine Zeile anklicken, dann eine andere mit Umschalt+Klick",
+      "hoverRow": "Auf eine Zeile zeigen und klicken",
+      "preview": "Klick wählt {n} Eintrag aus | Klick wählt {n} Einträge aus",
+      "confirmed": "{n} Eintrag ausgewählt | {n} Einträge ausgewählt"
     },
     "columns": {
       "project": "Projekt",

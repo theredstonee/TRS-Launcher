@@ -1361,7 +1361,13 @@
       "selectAll": "Seleccionar todo",
       "selected": "{n} seleccionado | {n} seleccionados",
       "update": "Actualizar ({n})",
-      "clear": "Quitar selección"
+      "clear": "Quitar selección",
+      "tipTitle": "Consejo:",
+      "tip": "Ctrl+clic selecciona una sola entrada. Mayús+clic selecciona todo desde la última fila pulsada hasta esta.",
+      "needStart": "Pulsa primero una fila y luego otra con Mayús+clic",
+      "hoverRow": "Señala una fila y haz clic",
+      "preview": "El clic selecciona {n} entrada | El clic selecciona {n} entradas",
+      "confirmed": "{n} entrada seleccionada | {n} entradas seleccionadas"
     },
     "columns": {
       "project": "Proyecto",

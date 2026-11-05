@@ -1361,7 +1361,13 @@
       "selectAll": "Select all",
       "selected": "{n} selected | {n} selected",
       "update": "Update ({n})",
-      "clear": "Clear selection"
+      "clear": "Clear selection",
+      "tipTitle": "Tip:",
+      "tip": "Ctrl+click selects a single entry. Shift+click selects everything from the last clicked row up to this one.",
+      "needStart": "Click a row first, then Shift+click another one",
+      "hoverRow": "Point at a row and click",
+      "preview": "Click selects {n} entry | Click selects {n} entries",
+      "confirmed": "{n} entry selected | {n} entries selected"
     },
     "columns": {
       "project": "Project",

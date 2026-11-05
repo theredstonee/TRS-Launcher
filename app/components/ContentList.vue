@@ -18,6 +18,7 @@ import {
   type GroupColor,
   type OriginFilter,
 } from '~/utils/contentGroups'
+import { rangeBetween } from '~/utils/contentSelection'
 
 // Inhalte einer Instanz als EINE Tabelle: Filter-Chips,
 // Suche, Sortierung, Mehrfachauswahl mit Sammelaktionen, Dateien per Dialog
@@ -238,13 +239,113 @@ function toggleOne(item: ContentItem) {
   if (!next.delete(keyOf(item))) next.add(keyOf(item))
   selected.value = next
 }
+
+// Wie im Dateimanager: Strg+Klick wählt einen Eintrag, Umschalt+Klick alles vom Startpunkt bis hierher.
+const SELECT_TIP_KEY = 'trs.content.selectTipSeen'
+const selectAnchor = ref<string | null>(null)
+const shiftHeld = ref(false)
+const hoveredRow = ref<string | null>(null)
+const flashRows = ref<Set<string>>(new Set())
+const selectConfirm = ref<number | null>(null)
+const selectTipOpen = ref(!readSelectTipSeen())
+let confirmTimer: ReturnType<typeof setTimeout> | null = null
+
+function readSelectTipSeen() {
+  try {
+    return localStorage.getItem(SELECT_TIP_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+function closeSelectTip() {
+  selectTipOpen.value = false
+  try {
+    localStorage.setItem(SELECT_TIP_KEY, '1')
+  } catch {
+    // Ohne Speicher erscheint der Hinweis beim nächsten Start wieder, mehr passiert nicht.
+  }
+}
+const selectKeys = computed(() => rows.value.flatMap((row) => (row.type === 'item' ? [row.key] : [])))
+/** Zeilen, die ein Klick gerade auswählen würde: nur während Umschalt gedrückt ist. */
+const rangePreview = computed(() => {
+  if (!shiftHeld.value || !selectAnchor.value || !hoveredRow.value) return new Set<string>()
+  return new Set(rangeBetween(selectKeys.value, selectAnchor.value, hoveredRow.value) ?? [])
+})
+const selectPill = computed(() => {
+  if (selectConfirm.value !== null) return t('content.selection.confirmed', { n: selectConfirm.value }, selectConfirm.value)
+  if (!shiftHeld.value || mobile.value || !selectKeys.value.length) return ''
+  if (!selectAnchor.value) return t('content.selection.needStart')
+  return rangePreview.value.size ? t('content.selection.preview', { n: rangePreview.value.size }, rangePreview.value.size) : t('content.selection.hoverRow')
+})
+function confirmSelection(keys: string[]) {
+  flashRows.value = new Set(keys)
+  selectConfirm.value = keys.length
+  if (confirmTimer) clearTimeout(confirmTimer)
+  confirmTimer = setTimeout(() => {
+    flashRows.value = new Set()
+    selectConfirm.value = null
+  }, 1600)
+}
+function selectRange(item: ContentItem) {
+  const key = keyOf(item)
+  const keys = selectAnchor.value ? rangeBetween(selectKeys.value, selectAnchor.value, key) : null
+  // Ohne Startpunkt beginnt hier einer.
+  selectAnchor.value = key
+  closeSelectTip()
+  if (!keys) {
+    toggleOne(item)
+    return
+  }
+  const next = new Set(selected.value)
+  for (const k of keys) next.add(k)
+  selected.value = next
+  confirmSelection(keys)
+}
 function selectRow(event: MouseEvent, item: ContentItem) {
-  if (!event.shiftKey) return
   const target = event.target
   if (target instanceof Element && target.closest('button, input, [role="switch"], [data-row-menu]')) return
-  event.preventDefault()
-  toggleOne(item)
+  if (event.shiftKey) {
+    event.preventDefault()
+    selectRange(item)
+  } else if (event.ctrlKey || event.metaKey) {
+    event.preventDefault()
+    toggleOne(item)
+    selectAnchor.value = keyOf(item)
+    closeSelectTip()
+  } else {
+    // Ein normaler Klick wählt nichts aus, setzt aber den Startpunkt für Umschalt+Klick.
+    selectAnchor.value = keyOf(item)
+  }
 }
+function selectBox(event: MouseEvent, item: ContentItem) {
+  const box = event.currentTarget as HTMLInputElement
+  if (event.shiftKey) selectRange(item)
+  else {
+    toggleOne(item)
+    selectAnchor.value = keyOf(item)
+  }
+  // Der Browser hat das Kästchen schon umgeschaltet; bleibt der Zustand gleich, rendert Vue es nicht neu.
+  void nextTick(() => {
+    box.checked = selected.value.has(keyOf(item))
+  })
+}
+function trackShift(event: KeyboardEvent) {
+  if (event.key === 'Shift') shiftHeld.value = event.type === 'keydown'
+}
+function releaseShift() {
+  shiftHeld.value = false
+}
+onMounted(() => {
+  window.addEventListener('keydown', trackShift)
+  window.addEventListener('keyup', trackShift)
+  window.addEventListener('blur', releaseShift)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', trackShift)
+  window.removeEventListener('keyup', trackShift)
+  window.removeEventListener('blur', releaseShift)
+  if (confirmTimer) clearTimeout(confirmTimer)
+})
 const selectedUpdates = computed(() => selectedItems.value.map(updateFor).filter((u): u is ContentUpdate => !!u))
 
 // --- Gruppen ----------------------------------------------------------------------
@@ -595,6 +696,15 @@ const pendingUpdates = computed(() => updates.value ?? [])
       {{ instance.overrides.boost === false ? t('content.boostOff') : t('content.boostOn') }}
     </p>
 
+    <div v-if="selectTipOpen && !mobile && selectKeys.length > 1" class="card mb-3 flex items-center gap-3 px-4 py-2 text-xs text-base-300" data-testid="content-select-tip">
+      <span class="min-w-0 flex-1"><b class="text-base-100">{{ t('content.selection.tipTitle') }}</b> {{ t('content.selection.tip') }}</span>
+      <button class="text-base-400 hover:text-base-50" :aria-label="t('common.actions.close')" @click="closeSelectTip">
+        <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+      </button>
+    </div>
+
+    <div v-if="selectPill" class="select-pill" role="status" aria-live="polite" data-testid="content-select-pill">{{ selectPill }}</div>
+
     <div v-if="loading && !items.length" class="card divide-y divide-base-800">
       <div v-for="i in 6" :key="i" class="flex items-center gap-3 px-3 py-2.5">
         <div class="skeleton size-4 rounded" />
@@ -705,10 +815,19 @@ const pendingUpdates = computed(() => updates.value ?? [])
           <li
             v-else
           class="group grid grid-cols-[1.5rem_minmax(0,1fr)_11rem_10.5rem] items-center gap-3 px-3 py-2 transition-colors hover:bg-base-850 mobile:grid-cols-[1.5rem_minmax(0,1fr)_auto] mobile:gap-x-2 mobile:gap-y-0.5"
-          :class="{ 'bg-redstone-900/15': selected.has(keyOf(row.item)), 'opacity-40': drag?.items.includes(row.item) }"
+          :class="{
+            'bg-redstone-900/15': selected.has(keyOf(row.item)),
+            'opacity-40': drag?.items.includes(row.item),
+            'row-anchor': selectAnchor === keyOf(row.item) && !mobile,
+            'row-preview': rangePreview.has(keyOf(row.item)),
+            'row-flash': flashRows.has(keyOf(row.item)),
+          }"
+          @mousedown="$event.shiftKey && $event.preventDefault()"
+          @mouseenter="hoveredRow = keyOf(row.item)"
+          @mouseleave="hoveredRow = null"
           @click="selectRow($event, row.item)"
           >
-          <input type="checkbox" class="size-4 accent-redstone-500 mobile:row-span-2" :checked="selected.has(keyOf(row.item))" :aria-label="t('content.row.select', { name: titleOf(row.item) })" @change="toggleOne(row.item)" />
+          <input type="checkbox" class="size-4 accent-redstone-500 mobile:row-span-2" :checked="selected.has(keyOf(row.item))" :aria-label="t('content.row.select', { name: titleOf(row.item) })" @click="selectBox($event, row.item)" />
 
           <div class="flex min-w-0 items-center gap-3" :class="{ 'opacity-55': !row.item.enabled }">
             <button
@@ -921,6 +1040,28 @@ const pendingUpdates = computed(() => updates.value ?? [])
 :root.is-mobile .filter-chip {
   min-height: 2.5rem;
   padding-inline: 0.875rem;
+}
+.select-pill {
+  @apply pointer-events-none fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-full bg-base-850 px-4 py-2 text-xs font-semibold text-base-50 shadow-xl ring-1 ring-redstone-500/60;
+}
+.row-anchor {
+  box-shadow: inset 3px 0 0 0 var(--color-redstone-500);
+}
+.row-preview {
+  @apply bg-redstone-900/10;
+  outline: 1px dashed color-mix(in srgb, var(--color-redstone-400) 60%, transparent);
+  outline-offset: -1px;
+}
+.row-flash {
+  animation: row-flash 0.7s ease-out;
+}
+@keyframes row-flash {
+  from {
+    background-color: color-mix(in srgb, var(--color-redstone-500) 45%, transparent);
+  }
+}
+:root[data-reduced-motion] .row-flash {
+  animation: none;
 }
 .bulk-btn {
   @apply rounded-md bg-base-800 px-2.5 py-1 font-medium text-base-200 transition-colors hover:bg-base-700 hover:text-base-50 disabled:opacity-50;
