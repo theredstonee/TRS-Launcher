@@ -156,7 +156,7 @@ public final class AutoTest {
 			MenusTest.installAddServer();
 			return;
 		}
-		if ("maps".equals(System.getProperty("trsclient.autotest.only"))) {
+		if ("maps".equals(System.getProperty("trsclient.autotest.only")) || "waypoints".equals(System.getProperty("trsclient.autotest.only"))) {
 			MapsTest.install();
 			return;
 		}

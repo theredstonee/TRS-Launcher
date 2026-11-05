@@ -9,6 +9,7 @@ import dev.theredstonee.trsclient.core.ui.ColorMath;
 import dev.theredstonee.trsclient.core.ui.TextureRef;
 import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.waypoint.Waypoint;
+import dev.theredstonee.trsclient.core.waypoint.WaypointBadge;
 import dev.theredstonee.trsclient.core.waypoint.WaypointShare;
 import dev.theredstonee.trsclient.core.waypoint.live.FriendFaces;
 import dev.theredstonee.trsclient.core.waypoint.live.FriendPosition;
@@ -346,6 +347,7 @@ public final class MinimapRenderer {
 		TrsModules m = e.modules();
 		boolean edgeBoxes = m.minimapEdgeWaypoints.get();
 		List<Waypoint> list = e.waypoints();
+		Waypoint target = e.waypointTarget();
 		int edges = 0;
 		// Wegpunkte der Freunde zuerst (eigene liegen darüber).
 		if (friendWaypointsShown(m)) {
@@ -366,7 +368,9 @@ public final class MinimapRenderer {
 		}
 		for (int i = 0, n = list.size(); i < n; i++) {
 			Waypoint w = list.get(i);
-			if (w.death ? !m.minimapDeath.get() : (!m.minimapWaypoints.get() || !w.visible)) continue;
+			boolean isTarget = w == target;
+			if (!isTarget && (w.death ? !m.minimapDeath.get() : !m.minimapWaypoints.get())) continue;
+			if (!e.waypointShown(w)) continue;
 			toScreen(w.x + 0.5, w.z + 0.5, px, pz, theta);
 			if (!w.death && edgeBoxes && !inside(radius, round, 4f)) {
 				// Außerhalb des Sichtfelds: später als Kästchen am Rand (dicht beieinander leicht versetzt).
@@ -378,11 +382,8 @@ public final class MinimapRenderer {
 			}
 			boolean edge = clampToEdge(radius, round, 5f);
 			float x = cx + (float) point[0], y = cy + (float) point[1];
-			if (w.death) {
-				e.sprites().draw(c, MapSprites.GRAVE, x, y, 9f, 0f, edge ? 0xC0FFFFFF : 0xFFFFFFFF, scale);
-			} else {
-				e.sprites().draw(c, MapSprites.DIAMOND, x, y, edge ? 6f : 8f, 0f, 0xFF000000 | w.color, scale);
-			}
+			if (isTarget) e.sprites().draw(c, MapSprites.HALO, x, y, 15f, 0f, 0xFF000000 | w.color, scale);
+			WaypointBadge.draw(c, w, x, y, edge ? 0.75f : 0.9f, edge && w.death ? 0xC0 : 255);
 		}
 		if (edges == 0) return;
 		float half = edgeHalf(radius, round);
@@ -398,7 +399,7 @@ public final class MinimapRenderer {
 		for (int i = 0; i < edges; i++) {
 			EdgeLayout.point(edgeS[i], half, round, point);
 			if (edgeF[i] != null) edgeBox(c, cx + (float) point[0], cy + (float) point[1], edgeF[i].name, edgeF[i].color, true);
-			else edgeBox(c, cx + (float) point[0], cy + (float) point[1], edgeW[i].name, edgeW[i].color, false);
+			else WaypointBadge.draw(c, edgeW[i], cx + (float) point[0], cy + (float) point[1], 0.9f, 255);
 			edgeW[i] = null;
 			edgeF[i] = null;
 		}
@@ -489,16 +490,7 @@ public final class MinimapRenderer {
 
 	/** Anfangsbuchstabe (groß) eines Namens, "?" wenn es keinen gibt. */
 	static String initial(String name) {
-		if (name != null) {
-			for (int i = 0; i < name.length(); ) {
-				int cp = name.codePointAt(i);
-				if (Character.isLetterOrDigit(cp)) {
-					return new String(Character.toChars(Character.toUpperCase(cp)));
-				}
-				i += Character.charCount(cp);
-			}
-		}
-		return "?";
+		return Waypoint.initial(name);
 	}
 
 	/** Gut lesbare Schriftfarbe auf der Hintergrundfarbe (dunkel auf hell, weiß auf dunkel). */

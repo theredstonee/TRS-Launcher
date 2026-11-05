@@ -72,6 +72,57 @@ public final class MapsTest {
 				}
 			}, text -> log("Live-Wegpunkte: " + text));
 
+	/** Nur die neuen Wegpunkte ({@code -PtrsAutotestOnly=waypoints}). */
+	private static final boolean ONLY_WAYPOINTS = "waypoints".equals(System.getProperty("trsclient.autotest.only"));
+	private final dev.theredstonee.trsclient.core.waypoint.WaypointSelfTest waypointTest =
+			new dev.theredstonee.trsclient.core.waypoint.WaypointSelfTest(new dev.theredstonee.trsclient.core.waypoint.WaypointSelfTest.Host() {
+				@Override
+				public void shot(String name) {
+					MapsTest.this.shot(Minecraft.getMinecraft(), name);
+				}
+
+				@Override
+				public void command(String command) {
+					cmd(Minecraft.getMinecraft(), command);
+				}
+
+				@Override
+				public void openWorldMap() {
+					Minecraft.getMinecraft().displayGuiScreen(WorldMapScreen.create());
+				}
+
+				@Override
+				public WorldMapUi worldMap() {
+					return (WorldMapUi) ((TrsUiScreen) Minecraft.getMinecraft().currentScreen).ui();
+				}
+
+				@Override
+				public void openList() {
+					Minecraft.getMinecraft().displayGuiScreen(new dev.theredstonee.trsclient.screen.WaypointListScreen(null));
+				}
+
+				@Override
+				public dev.theredstonee.trsclient.core.waypoint.WaypointsUi list() {
+					return (dev.theredstonee.trsclient.core.waypoint.WaypointsUi) ((TrsUiScreen) Minecraft.getMinecraft().currentScreen).ui();
+				}
+
+				@Override
+				public void closeScreen() {
+					Minecraft.getMinecraft().displayGuiScreen(null);
+				}
+
+				@Override
+				public void respawn() {
+					Mc.player().respawnPlayer();
+					Minecraft.getMinecraft().displayGuiScreen(null);
+				}
+
+				@Override
+				public void quickWaypoint() {
+					TrsClient.get().waypoints().createQuick();
+				}
+			}, text -> log("Wegpunkte: " + text));
+
 	public static void install() {
 		MinecraftForge.EVENT_BUS.register(new MapsTest());
 	}
@@ -158,8 +209,10 @@ public final class MapsTest {
 				m.minimapFairPlay.set(false);
 				m.worldMapHostile.set(true);
 				m.worldMapPassive.set(true);
-				if (mc.getSaveLoader().canLoadWorld(world)) mc.launchIntegratedServer(world, world, null);
-				else mc.launchIntegratedServer(world, world, Mc.creativeWorld(SEED));
+				// Die Karten-Testwelt hat keine Cheats (Teleport-Eintrag fehlt dort); der Wegpunkt-Test braucht eine mit Cheats.
+				String levelName = ONLY_WAYPOINTS ? world + "-cheats" : world;
+				if (mc.getSaveLoader().canLoadWorld(levelName)) mc.launchIntegratedServer(levelName, levelName, null);
+				else mc.launchIntegratedServer(levelName, levelName, ONLY_WAYPOINTS ? Mc.creativeWorld(SEED).enableCommands() : Mc.creativeWorld(SEED));
 				phase++;
 				wait = 20;
 				return;
@@ -191,6 +244,10 @@ public final class MapsTest {
 				wait = 140;
 				return;
 			case 2:
+				if (ONLY_WAYPOINTS) {
+					phase = 70;
+					return;
+				}
 				shot(mc, "minimap-round");
 				m.minimapShape.set(TrsModules.MapShape.SQUARE);
 				phase++;
@@ -286,7 +343,20 @@ public final class MapsTest {
 					wait = more;
 					return;
 				}
-				phase = 30;
+				phase = 70;
+				wait = 10;
+				return;
+			}
+			case 70: {
+				// Neue Wegpunkte (eigene Klasse in common).
+				int more = waypointTest.step(bx, by, bz);
+				if (more >= 0) {
+					wait = more;
+					return;
+				}
+				mc.displayGuiScreen(null);
+				// Ohne Abmelden beenden: Abmelden und Laden von null kann sich in 1.8.9 mit dem Server-Ende verhaken.
+				phase = ONLY_WAYPOINTS ? 13 : 30;
 				wait = 10;
 				return;
 			}

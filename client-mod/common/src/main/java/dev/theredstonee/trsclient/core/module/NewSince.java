@@ -182,6 +182,11 @@ public final class NewSince {
 	 * Todespunkt, Freigabe je Freund.
 	 */
 	public static final String WAYPOINT_LIVE = "0.25.0";
+	/**
+	 * Neue Wegpunkte (Version nach TRS Client 0.24.2): Sets, Kästchen und Symbole, Rechtsklick-Menü der Weltkarte mit
+	 * Teleport, In-Welt-Anzeige, Schnell-Taste, mehrere Todespunkte.
+	 */
+	public static final String WAYPOINTS_2 = "0.25.0";
 	/** Sozial → Freunde: Schalter „Wegpunkte & Position teilen“ je Freund. */
 	public static final String FRIENDS_WAYPOINTS = "friends:waypoints";
 	/** Weltkarte → Wegpunkt-Liste → Reiter „Freunde“. */
@@ -277,6 +282,8 @@ public final class NewSince {
 		// Minispiele: Modul + Eintrag in der Menü-Leiste.
 		add(MINIGAMES, "minigames", MENU_MINIGAMES);
 		// Live-Wegpunkte mit Freunden.
+		// Neue Wegpunkte: Einstellungen des Moduls.
+		add(WAYPOINTS_2, "waypoints.quickKey", "waypoints.labels", "waypoints.deathKeep", "waypoints.deathGuide", "waypoints.teleport", "waypoints.sort");
 		add(WAYPOINT_LIVE, "waypoints.shareLive", "waypoints.shareDeath", "waypoints.sharePosition", "waypoints.friendWaypoints",
 				"waypoints.friendPositions", FRIENDS_WAYPOINTS, WORLD_MAP_FRIENDS);
 	}

@@ -141,7 +141,11 @@ public final class AutoTest {
 			ReloadTest.install();
 			return;
 		}
-		if ("maps".equals(System.getProperty("trsclient.autotest.only"))) {
+		if ("waypoint-rights".equals(System.getProperty("trsclient.autotest.only"))) {
+			WaypointRightsTest.install();
+			return;
+		}
+		if ("maps".equals(System.getProperty("trsclient.autotest.only")) || "waypoints".equals(System.getProperty("trsclient.autotest.only"))) {
 			MapsTest.install();
 			return;
 		}

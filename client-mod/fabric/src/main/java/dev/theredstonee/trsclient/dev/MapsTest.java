@@ -69,6 +69,57 @@ public final class MapsTest {
 				}
 			}, text -> log("Live-Wegpunkte: " + text));
 
+	/** Nur die neuen Wegpunkte ({@code -PtrsAutotestOnly=waypoints}). */
+	private static final boolean ONLY_WAYPOINTS = "waypoints".equals(System.getProperty("trsclient.autotest.only"));
+	private final dev.theredstonee.trsclient.core.waypoint.WaypointSelfTest waypointTest =
+			new dev.theredstonee.trsclient.core.waypoint.WaypointSelfTest(new dev.theredstonee.trsclient.core.waypoint.WaypointSelfTest.Host() {
+				@Override
+				public void shot(String name) {
+					MapsTest.this.shot(Minecraft.getInstance(), name);
+				}
+
+				@Override
+				public void command(String command) {
+					AutoTest.command(Minecraft.getInstance(), command);
+				}
+
+				@Override
+				public void openWorldMap() {
+					Mc.setScreen(WorldMapScreen.create());
+				}
+
+				@Override
+				public WorldMapUi worldMap() {
+					return MapsTest.worldMap();
+				}
+
+				@Override
+				public void openList() {
+					Mc.setScreen(new dev.theredstonee.trsclient.screen.WaypointListScreen(null));
+				}
+
+				@Override
+				public dev.theredstonee.trsclient.core.waypoint.WaypointsUi list() {
+					return (dev.theredstonee.trsclient.core.waypoint.WaypointsUi) ((TrsUiScreen) Mc.screen()).ui();
+				}
+
+				@Override
+				public void closeScreen() {
+					Mc.setScreen(null);
+				}
+
+				@Override
+				public void respawn() {
+					Minecraft.getInstance().player.respawn();
+					Mc.setScreen(null);
+				}
+
+				@Override
+				public void quickWaypoint() {
+					TrsClient.get().waypoints().createQuick();
+				}
+			}, text -> log("Wegpunkte: " + text));
+
 	public static void install() {
 		MapsTest test = new MapsTest();
 		net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(test::tick);
@@ -172,6 +223,10 @@ public final class MapsTest {
 				wait = 140; // Chunks abtasten lassen
 				return;
 			case 2:
+				if (ONLY_WAYPOINTS) {
+					phase = 70;
+					return;
+				}
 				shot(mc, "minimap-round");
 				m.minimapShape.set(TrsModules.MapShape.SQUARE);
 				phase++;
@@ -276,6 +331,24 @@ public final class MapsTest {
 				int more = liveShare.step(bx, by, bz);
 				if (more >= 0) {
 					wait = more;
+					return;
+				}
+				phase = 70;
+				wait = 10;
+				return;
+			}
+			case 70: {
+				// Neue Wegpunkte (eigene Klasse in common).
+				int more = waypointTest.step(bx, by, bz);
+				if (more >= 0) {
+					wait = more;
+					return;
+				}
+				Mc.setScreen(null);
+				if (ONLY_WAYPOINTS) {
+					AutoTest.disconnect(mc);
+					phase = 18;
+					wait = 40;
 					return;
 				}
 				phase = 30;

@@ -26,6 +26,12 @@ public final class Waypoint {
 	public boolean death;
 	/** Mit Freunden live teilen (Freigabe je Freund; Standard aus). */
 	public boolean shared;
+	/** Set (Gruppe) in dieser Welt; leer = Standard-Set (alte Dateien), Todespunkte ohne Angabe = {@link WaypointStore#SET_DEATHS}. */
+	public String set = "";
+	/** Kürzel im Kästchen (1–2 Zeichen); leer = Anfangsbuchstabe des Namens. */
+	public String mark = "";
+	/** Pixel-Symbol aus {@link WaypointSymbols} statt des Kürzels; leer = kein Symbol. */
+	public String symbol = "";
 	/** Zeitpunkt der Erstellung (ms). */
 	public long created;
 	/**
@@ -51,6 +57,50 @@ public final class Waypoint {
 	/** Name für Wegpunkte ohne Namen in der aktiven Sprache ("Waypoint", "Wegpunkt" …). */
 	public static String defaultName() {
 		return dev.theredstonee.trsclient.core.i18n.I18n.tr("waypoint.defaultName");
+	}
+
+	/** Kennung des Sets, zu dem der Wegpunkt gehört. */
+	public String setId() {
+		if (set == null || set.isEmpty()) return death ? WaypointStore.SET_DEATHS : WaypointStore.SET_DEFAULT;
+		return set;
+	}
+
+	/** Symbol, das im Kästchen steht (Todespunkte ohne eigenes Symbol: Schädel), "" = Text. */
+	public String badgeSymbol() {
+		if (symbol != null && !symbol.isEmpty() && WaypointSymbols.known(symbol)) return symbol;
+		return death ? WaypointSymbols.SKULL : "";
+	}
+
+	/** Text im Kästchen: das Kürzel oder der Anfangsbuchstabe des Namens. */
+	public String badgeText() {
+		return mark != null && !mark.isEmpty() ? mark : initial(name);
+	}
+
+	/** Anfangsbuchstabe (groß) eines Namens, "?" wenn es keinen gibt. */
+	public static String initial(String name) {
+		if (name != null) {
+			for (int i = 0; i < name.length(); ) {
+				int cp = name.codePointAt(i);
+				if (Character.isLetterOrDigit(cp)) return new String(Character.toChars(Character.toUpperCase(cp)));
+				i += Character.charCount(cp);
+			}
+		}
+		return "?";
+	}
+
+	/** Kürzel säubern: höchstens zwei Zeichen, keine Leer-/Steuer-/Formatierungszeichen. */
+	public static String cleanMark(String text) {
+		if (text == null) return "";
+		StringBuilder out = new StringBuilder();
+		int count = 0;
+		for (int i = 0; i < text.length() && count < 2; ) {
+			int cp = text.codePointAt(i);
+			i += Character.charCount(cp);
+			if (Character.isWhitespace(cp) || Character.isISOControl(cp) || cp == 0xA7) continue;
+			out.appendCodePoint(cp);
+			count++;
+		}
+		return out.toString();
 	}
 
 	/** Gilt der Wegpunkt in dieser Dimension? */
@@ -85,6 +135,9 @@ public final class Waypoint {
 		if (name.length() > 32) name = name.substring(0, 32);
 		if (dimension == null) dimension = "";
 		color &= 0xFFFFFF;
+		if (set == null) set = "";
+		mark = cleanMark(mark);
+		if (symbol == null || !WaypointSymbols.known(symbol)) symbol = "";
 		return this;
 	}
 }

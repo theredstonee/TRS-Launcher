@@ -23,7 +23,7 @@ public final class Waypoints {
 	private final WaypointStore store;
 	/** Welt/Server, zu der die aktuell sichtbaren Wegpunkte gehören. */
 	private String worldKey = "";
-	private boolean wasDead;
+	private final dev.theredstonee.trsclient.core.waypoint.WaypointGuide guide = new dev.theredstonee.trsclient.core.waypoint.WaypointGuide();
 
 	public Waypoints(TrsModules modules, Path file) {
 		this.modules = modules;
@@ -65,20 +65,17 @@ public final class Waypoints {
 		EntityPlayerSP player = Mc.player();
 		if (player == null || Mc.world() == null) {
 			worldKey = "";
-			wasDead = false;
+			guide.reset();
 			return;
 		}
 		if (worldKey.isEmpty()) worldKey = currentWorldKey();
 
-		boolean dead = player.getHealth() <= 0;
-		if (dead && !wasDead && modules.waypointDeath.get()
-				&& (modules.waypoints.isEnabled() || modules.minimap.isEnabled() || modules.worldMap.isEnabled())) {
-			store.setDeath(worldKey, floor(player.posX), floor(player.posY), floor(player.posZ),
-					Mc.dimensionId(), 0xE0281E);
-			save();
-			Mc.actionBar(I18n.tr("waypoint.deathSet"));
-		}
-		wasDead = dead;
+		boolean record = modules.waypointDeath.get()
+				&& (modules.waypoints.isEnabled() || modules.minimap.isEnabled() || modules.worldMap.isEnabled());
+		dev.theredstonee.trsclient.core.waypoint.WaypointGuide.Event event = guide.tick(store, worldKey, player.posX, player.posY, player.posZ, Mc.dimensionId(),
+				player.getHealth() <= 0, record, modules.waypointDeathKeep.getInt(), modules.waypointDeathGuide.get());
+		if (event.changed) save();
+		if (event.message != null) notice(event.message);
 	}
 
 	/** Legt einen Wegpunkt an der Spielerposition an. */
@@ -103,6 +100,26 @@ public final class Waypoints {
 		return waypoint;
 	}
 
+	/** Schnell-Wegpunkt am Standort, ohne Dialog (Name und Farbe laufen durch, Set wie zuletzt gewählt). */
+	public Waypoint createQuick() {
+		int n = all().size();
+		Waypoint waypoint = create(I18n.tr("waypoint.suggest", n + 1), dev.theredstonee.trsclient.core.waypoint.WaypointDialog.COLORS[n % dev.theredstonee.trsclient.core.waypoint.WaypointDialog.COLORS.length]);
+		if (waypoint == null) return null;
+		waypoint.set = WaypointStore.fieldValue(store.lastSet(worldKey));
+		save();
+		notice(I18n.tr("waypoint.quickSet", waypoint.name));
+		return waypoint;
+	}
+
+	/** Das aktuelle Ziel dieser Welt oder null. */
+	public Waypoint target() {
+		return worldKey.isEmpty() ? null : store.target(worldKey);
+	}
+
+	private static void notice(String text) {
+		Mc.actionBar(text);
+	}
+
 	public void remove(Waypoint waypoint) {
 		store.remove(worldKey, waypoint);
 		visibleStale = true;
@@ -123,7 +140,7 @@ public final class Waypoints {
 	/** Welt verlassen: beim nächsten Betreten neu bestimmen. */
 	public void onDisconnect() {
 		worldKey = "";
-		wasDead = false;
+		guide.reset();
 	}
 
 	private static String currentWorldKey() {

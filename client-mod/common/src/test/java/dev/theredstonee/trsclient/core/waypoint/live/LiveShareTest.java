@@ -393,7 +393,8 @@ class LiveShareTest {
 	void singleplayerSharesNothingAndLeavingEndsTheSession() {
 		env.key = "sp:Neue Welt";
 		run(1000, 10);
-		assertTrue(calls.isEmpty(), calls.toString());
+		// Nur die einmalige Frage, ob der Server die Funktion kennt – keine Sitzung, keine Wegpunkte.
+		assertEquals(Collections.singletonList("GET /grants"), calls);
 		assertFalse(live.active());
 		env.key = "mp:play.example.net";
 		long t = run(2000, 5);

@@ -102,6 +102,7 @@ public final class LiveShare {
 	private long unsupportedUntil;
 	/** Der Server hat §41 zuletzt nicht gekannt (bis zur ersten erfolgreichen Antwort): keine Oberfläche dafür zeigen. */
 	private volatile boolean apiMissing;
+	private boolean apiProbed;
 
 	// Sitzung.
 	private boolean sessionOpen;
@@ -260,6 +261,11 @@ public final class LiveShare {
 			hiddenOwners.clear();
 		}
 		this.token = token;
+		// Einmal je Spielstart fragen: Kennt der Server die Funktion überhaupt? (Sonst zeigte die Oberfläche sie bis zum ersten Server.)
+		if (!apiProbed) {
+			apiProbed = true;
+			grantsStale = true;
+		}
 		if (unsupported && now < unsupportedUntil) return;
 		unsupported = false;
 

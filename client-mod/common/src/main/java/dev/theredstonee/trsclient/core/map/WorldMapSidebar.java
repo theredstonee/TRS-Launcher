@@ -14,7 +14,10 @@ import dev.theredstonee.trsclient.core.module.NewSince;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.ui.menu.NewBadge;
 import dev.theredstonee.trsclient.core.waypoint.Waypoint;
+import dev.theredstonee.trsclient.core.waypoint.WaypointSet;
 import dev.theredstonee.trsclient.core.waypoint.WaypointShare;
+import dev.theredstonee.trsclient.core.waypoint.WaypointSort;
+import dev.theredstonee.trsclient.core.waypoint.WaypointStore;
 import dev.theredstonee.trsclient.core.waypoint.live.FriendFaces;
 import dev.theredstonee.trsclient.core.waypoint.live.FriendPosition;
 import dev.theredstonee.trsclient.core.waypoint.live.FriendWaypoint;
@@ -46,6 +49,14 @@ final class WorldMapSidebar {
 		/** Neuer Wegpunkt in der Kartenmitte. */
 		void newWaypoint();
 
+		/** Rechtsklick-Menü für einen Wegpunkt aus der Liste. */
+		default void waypointMenu(Waypoint w, int x, int y) {
+		}
+
+		/** Eine Einstellung wurde geändert (Sortierung): speichern. */
+		default void settingsChanged() {
+		}
+
 		/** Karte auf einen Wegpunkt eines Freundes zentrieren. */
 		default void centerOnFriendWaypoint(FriendWaypoint w) {
 		}
@@ -62,11 +73,13 @@ final class WorldMapSidebar {
 	static final int WIDTH = 168;
 	static final int ROW_H = 22;
 	private static final int TABS_H = 16;
-	private static final int HEAD_H = 42 + TABS_H;
+	private static final int HEAD_H = 58 + TABS_H;
 	private static final int FOOT_H = 18;
 
 	final TextInput search = new TextInput(32);
 	private String dimFilter = WaypointFilter.ALL;
+	/** Set, Art und Sortierung – dieselben Filter wie in der Wegpunkt-Liste im Spiel. */
+	private final WaypointFilter.Query query = new WaypointFilter.Query();
 	private final Host host;
 	private float scroll;
 	private float scrollTarget;
@@ -134,7 +147,7 @@ final class WorldMapSidebar {
 		hits.add(x, y, w, h, () -> search.setFocused(false));
 
 		// Reiter: eigene Wegpunkte | Freunde (Live-Teilen).
-		LiveShare live = LiveShare.get();
+		LiveShare live = LiveShare.ui();
 		if (live == null) friendsTab = false;
 		int tabW = (w - 12) / 2;
 		tab(c, hits, x + 6, y + 4, tabW, I18n.tr("map.list.tabMine"), !friendsTab, mx, my, false);
@@ -155,7 +168,18 @@ final class WorldMapSidebar {
 		String playerDim = e.dimension();
 		List<String> dims = WaypointFilter.dimensions(all, playerDim);
 		if (!dims.contains(dimFilter)) dimFilter = WaypointFilter.ALL;
-		rows = WaypointFilter.apply(all, search.text(), dimFilter, playerDim, e.playerX(), e.playerZ());
+		final WaypointStore store = e.platform() == null ? null : e.platform().waypoints();
+		final String worldKey = e.platform() == null ? "" : e.platform().waypointWorldKey();
+		final List<WaypointSet> sets = store == null ? new ArrayList<WaypointSet>() : store.sets(worldKey);
+		if (!WaypointFilter.ALL.equals(query.set)) {
+			boolean known = false;
+			for (WaypointSet s : sets) if (s.id.equals(query.set)) known = true;
+			if (!known) query.set = WaypointFilter.ALL;
+		}
+		query.text = search.text();
+		query.dimension = dimFilter;
+		query.sort = e.modules().waypointSort.get();
+		rows = WaypointFilter.apply(all, query, e::waypointShown, playerDim, e.playerX(), e.playerZ());
 
 		// Suche.
 		int fx = x + 6, fy = y + 5, fw = w - 12;
@@ -185,6 +209,28 @@ final class WorldMapSidebar {
 		final List<String> order = dims;
 		hits.add(fx, dy, fw / 2, 14, () -> cycleDim(order, -1));
 		hits.add(fx + fw / 2, dy, fw - fw / 2, 14, () -> cycleDim(order, 1));
+
+		// Sortierung, Set, Art – je ein Knopf, Klick wählt das Nächste.
+		int by2 = dy + 16, b3 = (fw - 4) / 3;
+		small(c, hits, fx, by2, b3, I18n.tr("setting.waypoints.sort." + query.sort.name().toLowerCase(java.util.Locale.ROOT)), I18n.tr("waypoints.sortBy"), mx, my, t, tooltip, () -> {
+			WaypointSort[] all2 = WaypointSort.values();
+			query.sort = all2[(query.sort.ordinal() + 1) % all2.length];
+			e.modules().waypointSort.set(query.sort);
+			host.settingsChanged();
+		});
+		String setLabel = I18n.tr("waypoints.allSets");
+		for (WaypointSet s : sets) if (s.id.equals(query.set)) setLabel = s.label();
+		small(c, hits, fx + b3 + 2, by2, b3, setLabel, I18n.tr("waypoints.sets"), mx, my, t, tooltip, () -> {
+			int i = -1;
+			for (int k = 0; k < sets.size(); k++) if (sets.get(k).id.equals(query.set)) i = k;
+			query.set = i + 1 >= sets.size() ? WaypointFilter.ALL : sets.get(i + 1).id;
+			scrollTarget = 0;
+		});
+		small(c, hits, fx + 2 * (b3 + 2), by2, fw - 2 * (b3 + 2), I18n.tr("waypoints.kind." + query.kind.name().toLowerCase(java.util.Locale.ROOT)), I18n.tr("waypoints.filterKind"), mx, my, t, tooltip, () -> {
+			WaypointFilter.Kind[] kinds = WaypointFilter.Kind.values();
+			query.kind = kinds[(query.kind.ordinal() + 1) % kinds.length];
+			scrollTarget = 0;
+		});
 
 		// Liste.
 		int ly = y + HEAD_H - TABS_H, lh = h - (HEAD_H - TABS_H) - FOOT_H;
@@ -237,6 +283,18 @@ final class WorldMapSidebar {
 		if (hovNew) tooltip.add(I18n.tr("map.list.new"));
 	}
 
+	private void small(Canvas c, Hits hits, int x, int y, int w, String label, String tip, int mx, int my, Theme t, List<String> tooltip, final Runnable action) {
+		boolean hov = inside(mx, my, x, y, w, 14);
+		Redstone.button(c, x, y, w, 14, "", false, hov);
+		String s = c.clip(label, w - 4);
+		c.text(s, x + (w - c.textWidth(s)) / 2, y + 3, t.text, false);
+		hits.add(x, y, w, 14, () -> {
+			host.click();
+			action.run();
+		});
+		if (hov) tooltip.add(tip);
+	}
+
 	private void row(Canvas c, Hits hits, final WaypointFilter.Row r, int x, int y, int w, int mx, int my, int ly, int lh,
 			Theme t, List<String> tooltip) {
 		final Waypoint wp = r.waypoint;
@@ -246,11 +304,8 @@ final class WorldMapSidebar {
 			c.fill(x, y, x + w, y + ROW_H, ColorMath.withAlpha(t.dustOn, 0x38));
 			hovered = wp;
 		}
-		MapSprites sprites = host.engine().sprites();
-		double gs = host.engine().platform() == null ? 2.0 : host.engine().platform().guiScale();
-		boolean shown = wp.visible || wp.death;
-		if (wp.death) sprites.draw(c, MapSprites.GRAVE, x + 10, y + ROW_H / 2f, 10f, 0f, 0xFFFFFFFF, gs);
-		else sprites.draw(c, MapSprites.DIAMOND, x + 10, y + ROW_H / 2f, 9f, 0f, (shown ? 0xFF000000 : 0x70000000) | wp.color, gs);
+		boolean shown = host.engine().waypointShown(wp);
+		dev.theredstonee.trsclient.core.waypoint.WaypointBadge.draw(c, wp, x + 10, y + ROW_H / 2f, 1f, shown ? 255 : 0x70);
 		// Zeile 1: Name, Entfernung.
 		String dist = WaypointFilter.distanceText(r.distance);
 		if (!Double.isNaN(r.distance)) dist = (r.converted ? "≈" : "") + I18n.tr("map.distance", dist);
@@ -268,8 +323,9 @@ final class WorldMapSidebar {
 			host.click();
 			host.centerOnWaypoint(wp);
 		});
+		hits.add(x, y, w, ROW_H, 1, () -> host.waypointMenu(wp, mx, my));
 		int ex = x + w - 28, py = y + 12;
-		if (LiveShare.get() != null) {
+		if (LiveShare.ui() != null) {
 			// Mit Freunden teilen (Live): Symbol leuchtet, wenn geteilt; Todespunkte teilt die Einstellung.
 			int sx = x + w - 41;
 			boolean on = wp.shared || (wp.death && host.engine().modules().waypointShareDeath.get());
@@ -282,17 +338,15 @@ final class WorldMapSidebar {
 			});
 			if (hovShare) tooltip.add(I18n.tr(wp.shared ? "map.menu.unshareFriends" : "map.menu.shareFriends"));
 		}
-		if (!wp.death) {
-			boolean hovEye = hov && inside(mx, my, ex - 1, py - 1, 11, 10);
-			Icons.draw(c, "eye", ex, py, 1, shown ? (hovEye ? t.text : t.textDim) : 0x60FFFFFF);
-			if (!shown) c.fill(ex - 1, py + 3, ex + 9, py + 4, 0xC0FF6B5E);
-			hits.add(ex - 1, py - 1, 11, 10, () -> {
-				host.click();
-				wp.visible = !wp.visible;
-				host.engine().waypointEdited();
-			});
-			if (hovEye) tooltip.add(I18n.tr(wp.visible ? "map.menu.hide" : "map.menu.show"));
-		}
+		boolean hovEye = hov && inside(mx, my, ex - 1, py - 1, 11, 10);
+		Icons.draw(c, "eye", ex, py, 1, wp.visible ? (hovEye ? t.text : t.textDim) : 0x60FFFFFF);
+		if (!wp.visible) c.fill(ex - 1, py + 3, ex + 9, py + 4, 0xC0FF6B5E);
+		hits.add(ex - 1, py - 1, 11, 10, () -> {
+			host.click();
+			wp.visible = !wp.visible;
+			host.engine().waypointEdited();
+		});
+		if (hovEye) tooltip.add(I18n.tr(wp.visible ? "map.menu.hide" : "map.menu.show"));
 		int px = x + w - 15;
 		boolean hovEdit = hov && inside(mx, my, px - 1, py - 1, 11, 10);
 		Icons.draw(c, "pencil", px, py, 1, hovEdit ? t.text : t.textDim);

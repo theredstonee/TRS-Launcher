@@ -14,7 +14,6 @@ import dev.theredstonee.trsclient.feature.PvpFeatures;
 import dev.theredstonee.trsclient.hud.HudManager;
 import dev.theredstonee.trsclient.screen.TrsMenuScreen;
 import dev.theredstonee.trsclient.screen.TrsTitleScreen;
-import dev.theredstonee.trsclient.screen.WaypointEditScreen;
 import dev.theredstonee.trsclient.screen.WaypointListScreen;
 import dev.theredstonee.trsclient.ui.Gfx;
 import net.minecraft.client.Minecraft;
@@ -351,7 +350,10 @@ public final class TrsClient {
 		// Wegpunkt- und Hotkey-Tasten gehören den Modulen (Tastenbelegung im TRS-Menü).
 		if (Mc.screen() == null) {
 			if (moduleKeys.pressed(modules.waypointAddKey) && mc.player != null && modules.waypoints.isEnabled()) {
-				Mc.setScreen(new WaypointEditScreen(null, null));
+				Mc.setScreen(WaypointListScreen.newHere(null));
+			}
+			if (moduleKeys.pressed(modules.waypointQuickKey) && mc.player != null && modules.waypoints.isEnabled()) {
+				waypoints.createQuick();
 			}
 			if (moduleKeys.pressed(modules.waypointListKey) && modules.waypoints.isEnabled()) {
 				Mc.setScreen(new WaypointListScreen(null));
