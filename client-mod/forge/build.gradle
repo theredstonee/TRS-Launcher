@@ -195,6 +195,9 @@ tasks.named('jar', Jar) {
 	from(rootProject.file('../LICENSE')) {
 		rename { "${it}_trsclient" }
 	}
+	from(rootProject.file('../../NOTICE')) {
+		rename { "${it}_trsclient" }
+	}
 	from(rootProject.file('../licenses/chat-heads-MPL-2.0.txt')) {
 		into 'META-INF'
 	}

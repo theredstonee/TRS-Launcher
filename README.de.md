@@ -234,4 +234,6 @@ Teile der Prozessverwaltung sind aus [Polyfrost OneLauncher](https://github.com/
 
 Der TRS Launcher steht unter der [GNU General Public License v3.0](LICENSE).
 
+Der Urheberhinweis von TRS Launcher und TRS Client muss in jeder Kopie und jeder veränderten Fassung sichtbar bleiben. Diese zusätzlichen Bedingungen nach GPL Abschnitt 7(b) stehen in [NOTICE](NOTICE).
+
 <sub>Der TRS Launcher ist kein offizielles Minecraft-Produkt. Er ist nicht von Mojang oder Microsoft genehmigt und steht in keiner Verbindung zu ihnen.</sub>

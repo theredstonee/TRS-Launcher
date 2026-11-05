@@ -1,6 +1,9 @@
 TRS Launcher, TRS Client and the TRS Launcher website
 Copyright (C) 2026 Ohev Tamerin (Theredstonee)
 
+Additional terms under section 7(b) of the GNU General Public License apply: see the section of that
+name below.
+
 This program is free software: you can redistribute it and/or modify it under the terms of the
 GNU General Public License as published by the Free Software Foundation, version 3 of the License
 (see LICENSE).
@@ -8,6 +11,36 @@ GNU General Public License as published by the Free Software Foundation, version
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
 even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 General Public License for more details.
+
+Additional terms under section 7(b)
+-----------------------------------
+This section states additional terms under section 7(b) of the GNU General Public License, version
+3. It does not change the license text in LICENSE. It applies only to material for which Ohev
+Tamerin holds the copyright or can give the appropriate permission, and only from the first version
+of TRS Launcher and TRS Client that contains this section. It does not apply to the third-party
+parts listed below or to earlier versions.
+
+If you convey that material, modified or not, you must preserve the following author attribution
+notices in that material and in the Appropriate Legal Notices displayed by works containing it.
+
+TRS Client:
+  Original TRS Client by Ohev Tamerin (theredstonee), TRS Launcher. This notice must remain visible in every copy and every modified version. It must not be removed under any circumstances, except with an additional written, signed confirmation from the author.
+  Original TRS Client von Ohev Tamerin (theredstonee), TRS Launcher. Dieser Hinweis muss in jeder Kopie und jeder veränderten Fassung sichtbar bleiben. Er darf unter keinen Umständen entfernt werden, außer mit einer zusätzlichen schriftlichen, unterschriebenen Bestätigung des Urhebers.
+  TRS Client original de Ohev Tamerin (theredstonee), TRS Launcher. Este aviso debe permanecer visible en cada copia y en cada versión modificada. No puede eliminarse bajo ninguna circunstancia, salvo con una confirmación adicional, escrita y firmada por el autor.
+
+TRS Launcher:
+  Original TRS Launcher by Ohev Tamerin (theredstonee). This notice must remain visible in every copy and every modified version. It must not be removed under any circumstances, except with an additional written, signed confirmation from the author.
+  Original TRS Launcher von Ohev Tamerin (theredstonee). Dieser Hinweis muss in jeder Kopie und jeder veränderten Fassung sichtbar bleiben. Er darf unter keinen Umständen entfernt werden, außer mit einer zusätzlichen schriftlichen, unterschriebenen Bestätigung des Urhebers.
+  TRS Launcher original de Ohev Tamerin (theredstonee). Este aviso debe permanecer visible en cada copia y en cada versión modificada. No puede eliminarse bajo ninguna circunstancia, salvo con una confirmación adicional, escrita y firmada por el autor.
+
+In this program the notices are displayed on the "About" page of the TRS Client menu, in the "About"
+section of the TRS Launcher settings and in the footers of the website and the documentation. A
+modified version keeps them visible in those places or wherever it displays its Appropriate Legal
+Notices. Removing one of these notices requires an additional written confirmation signed by Ohev
+Tamerin.
+
+These terms go no further than section 7(b) allows. All other rights under the GNU General Public
+License stay as they are, and every other notice in this file stays as it is.
 
 Third-party parts
 -----------------

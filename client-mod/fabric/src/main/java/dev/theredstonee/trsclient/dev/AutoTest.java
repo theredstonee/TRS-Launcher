@@ -86,6 +86,10 @@ public final class AutoTest {
 		// -PtrsAutotestOnly=realbench: nur der realistische Benchmark (eigener Ablauf, ohne Menü-Tests)
 		if (RealBenchRunner.installIfRequested()) return;
 		TrsClient.LOGGER.info("[Autotest] aktiv");
+		if ("about".equals(System.getProperty("trsclient.autotest.only"))) {
+			AboutTest.install();
+			return;
+		}
 		if ("accounts".equals(System.getProperty("trsclient.autotest.only"))) {
 			AccountsTest.install();
 			return;

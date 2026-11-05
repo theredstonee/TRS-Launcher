@@ -28,6 +28,18 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+
+- The launcher settings have a new "About" section and the TRS menu in the game has a new "About" page. They show who made TRS Launcher and TRS Client, the license and where to find all notices.
+- If that author notice is missing or was changed in a copy, the launcher and the TRS menu show a clear warning. Nothing is blocked and nothing is sent anywhere.
+
+### Deutsch
+
+- Die Launcher-Einstellungen haben einen neuen Abschnitt „Über“, das TRS-Menü im Spiel hat eine neue Seite „Info“. Dort steht, wer TRS Launcher und TRS Client gemacht hat, die Lizenz und wo alle Hinweise zu finden sind.
+- Fehlt dieser Urheberhinweis in einer Kopie oder wurde er verändert, zeigen der Launcher und das TRS-Menü eine deutliche Warnung. Dabei wird nichts gesperrt und nichts irgendwohin gesendet.
+
 ## 0.32.3 – 2026-11-05 – Click & Pick | Klick und Auswahl
 <!-- banner: accent=#ff3b2f motif=/news/0.32.3/banner.png -->
 <!-- shots:

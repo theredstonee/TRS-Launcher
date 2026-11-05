@@ -36,7 +36,7 @@ import java.util.Map;
  */
 public final class ModMenu extends UiScreen {
 	private enum Page {
-		GRID, SETTINGS, PROFILES, PACKS, SERVERS, CIRCUITS, BUG_REPORT, NOTES, HALLOWEEN
+		GRID, SETTINGS, PROFILES, PACKS, SERVERS, CIRCUITS, BUG_REPORT, NOTES, HALLOWEEN, ABOUT
 	}
 
 	private static final int HEADER_H = 30;
@@ -96,6 +96,8 @@ public final class ModMenu extends UiScreen {
 	private final dev.theredstonee.trsclient.core.ui.notes.NotesPage notesPage;
 	/** Halloween 2026 (nur während des Events in der Leiste). */
 	private final HalloweenPage halloweenPage;
+	/** „Info“: Urheberhinweis und Lizenz (immer in der Leiste, kein Schalter). */
+	private final AboutPage aboutPage;
 	/** Seite beim letzten Zeichnen (Notizen beim Verlassen sichern). */
 	private Page lastPage = Page.GRID;
 
@@ -204,6 +206,12 @@ public final class ModMenu extends UiScreen {
 			@Override
 			public dev.theredstonee.trsclient.core.module.HalloweenModules modules() {
 				return ModMenu.this.host.modules().halloween;
+			}
+		});
+		aboutPage = new AboutPage(new Runnable() {
+			@Override
+			public void run() {
+				ModMenu.this.host.playClick();
 			}
 		});
 		panel.setKeyLabel(new SettingsPanel.KeyLabel() {
@@ -321,6 +329,13 @@ public final class ModMenu extends UiScreen {
 		return halloweenPage;
 	}
 
+	/** Öffnet das Menü direkt bei „Info“ (Autotest). */
+	public ModMenu showAbout() {
+		page = Page.ABOUT;
+		aboutPage.opened();
+		return this;
+	}
+
 	/** Öffnet das Menü direkt bei den HUD-Profilen. */
 	public ModMenu showProfiles() {
 		page = Page.PROFILES;
@@ -426,10 +441,14 @@ public final class ModMenu extends UiScreen {
 				}
 				halloweenPage.draw(c, hits, cx + 2, cy, cw - 4, ch, mouseX, mouseY, dt);
 				break;
+			case ABOUT:
+				aboutPage.draw(c, hits, cx + 2, cy, cw - 4, ch, mouseX, mouseY);
+				break;
 			default:
 				grid(c, cx, cy, cw, ch, mouseX, mouseY, dt);
 				break;
 		}
+		noticeWarning(c, px, py + ph - PAD, pw);
 		if (t.winter && open < 0.999f) {
 			// Winternacht: das Fenster friert beim Öffnen kurz an – heller Reif, der gleich wieder klar wird.
 			float frost = 1f - Anim.easeOut(open);
@@ -441,6 +460,20 @@ public final class ModMenu extends UiScreen {
 			c.fill(px + 1, py + 1, px + pw - 1, py + ph - 1, ColorMath.withAlpha(0xFFFFB050, Math.round(90 * ember)));
 		}
 		c.pop();
+	}
+
+	/** Urheberhinweis fehlt oder wurde geändert: rote Leiste am Fensterrand auf jeder Seite; ein Klick öffnet „Info“. */
+	private void noticeWarning(Canvas c, int px, int y, int pw) {
+		if (dev.theredstonee.trsclient.core.legal.AuthorNotice.intact()) return;
+		c.fill(px + 1, y, px + pw - 1, y + PAD - 1, AboutPage.WARNING_FILL);
+		Paint.textClipped(c, dev.theredstonee.trsclient.core.legal.AuthorNotice.warningShort(), px + PAD, y + 1, pw - PAD * 2, AboutPage.WARNING_TEXT, false);
+		hits.add(px + 1, y, pw - 2, PAD - 1, new Runnable() {
+			@Override
+			public void run() {
+				host.playClick();
+				showAbout();
+			}
+		});
 	}
 
 	private void header(Canvas c, int px, int py, int pw, int mx, int my) {
@@ -582,7 +615,7 @@ public final class ModMenu extends UiScreen {
 				+ (dev.theredstonee.trsclient.core.bugreport.BugReports.get() != null ? 1 : 0) + (notesAvailable() ? 1 : 0)
 				+ (HalloweenPage.available() ? 1 : 0)
 				+ (minigamesAvailable() ? 1 : 0)
-				+ 1; // Hilfe (Docs)
+				+ 2; // Hilfe (Docs), Info
 		int rowH = 18;
 		int gap = 3;
 		int footer = 32;
@@ -756,6 +789,14 @@ public final class ModMenu extends UiScreen {
 			@Override
 			public void run() {
 				openDocs();
+			}
+		});
+		cy += rowH + gap;
+		railItem(c, x, cy, w, rowH, "info", I18n.tr("menu.about"), page == Page.ABOUT, mx, my, new Runnable() {
+			@Override
+			public void run() {
+				if (page != Page.ABOUT) aboutPage.opened();
+				page = Page.ABOUT;
 			}
 		});
 		cy += rowH + gap;
@@ -1457,6 +1498,7 @@ public final class ModMenu extends UiScreen {
 		if (page == Page.BUG_REPORT) return bugPage.mouseScrolled(mouseX, mouseY, amount);
 		if (page == Page.NOTES) return notesPage.mouseScrolled(mouseX, mouseY, amount);
 		if (page == Page.HALLOWEEN) return halloweenPage.mouseScrolled(mouseX, mouseY, amount);
+		if (page == Page.ABOUT) return aboutPage.mouseScrolled(amount);
 		int step = (int) Math.signum(amount) * (page == Page.SETTINGS ? 16 : TILE_H + TILE_GAP);
 		if (page == Page.SETTINGS) settingsScroll = Math.max(0, settingsScroll - step);
 		else if (page == Page.GRID) gridScroll = Math.max(0, gridScroll - step);

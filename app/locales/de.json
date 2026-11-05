@@ -2426,6 +2426,17 @@
   },
   "settings": {
     "title": "Einstellungen",
+    "about": {
+      "title": "Über den TRS Launcher",
+      "notice": "Original TRS Launcher von Ohev Tamerin (theredstonee). Dieser Hinweis muss in jeder Kopie und jeder veränderten Fassung sichtbar bleiben. Er darf unter keinen Umständen entfernt werden, außer mit einer zusätzlichen schriftlichen, unterschriebenen Bestätigung des Urhebers.",
+      "license": "Der TRS Launcher ist freie Software unter der GNU General Public License Version 3 (GPL-3.0-only): Du darfst ihn unter dieser Lizenz weitergeben und verändern. Er kommt ohne jede Gewährleistung.",
+      "thirdParty": "Teile der Prozessverwaltung sind aus Polyfrost OneLauncher (GPL-3.0-only) übernommen. Alle Drittanbieter-Hinweise stehen in der Datei NOTICE.",
+      "openLicense": "Lizenz öffnen",
+      "openNotice": "NOTICE öffnen",
+      "warning": "Der Urheberhinweis dieser Kopie fehlt oder wurde verändert, diese Kopie ist also womöglich nicht das Original. Hier steht der Originaltext. Der Launcher läuft normal weiter und nichts wird irgendwohin gesendet.",
+      "warningShort": "Warnung: Urheberhinweis fehlt oder wurde verändert.",
+      "warningDetails": "Details"
+    },
     "footer": {
       "clientModUpdate": "TRS Client: Update auf {version} geladen",
       "clientModCurrent": "TRS Client: Version {version} (aktuell)",
@@ -3453,10 +3464,12 @@
     "groups": {
       "interface": "Darstellung",
       "account": "Konto",
-      "instances": "Instanzen"
+      "instances": "Instanzen",
+      "about": "Info"
     },
     "app": {
       "appearance": "Aussehen",
+      "about": "Über",
       "features": "Funktionen",
       "behavior": "Verhalten",
       "language": "Sprache",

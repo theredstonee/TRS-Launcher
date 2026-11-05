@@ -221,6 +221,7 @@ onBeforeUnmount(() => void backListener?.unregister())
     </BigShell>
     <TitleBar v-if="!isBig && !mobile" />
     <MobileTopBar v-else-if="!isBig" />
+    <AuthorNoticeWarning />
     <!-- Der Assistent überdeckt alles unter der Titelleiste; die Fenstersteuerung bleibt bedienbar. -->
     <div v-if="!isBig" class="relative flex min-h-0 flex-1 flex-col">
       <div class="flex min-h-0 flex-1">
