@@ -35,10 +35,13 @@ const entry = z
     animated: z.boolean().optional(),
     frames: z.int().min(1).max(64).default(1),
     frameTimeMs: z.int().min(20).max(10_000).nullish(),
+    /** Versteckt: erscheint nur bei denen, die ihn besitzen (per Code oder vom Team). */
+    hidden: z.boolean().default(false),
     sort: sortField,
   })
   .refine((c) => c.frames === 1 || (c.frameTimeMs !== null && c.frameTimeMs !== undefined), 'animated capes need frameTimeMs')
   .refine((c) => c.animated === undefined || c.animated === c.frames > 1, 'animated must match frames > 1')
+  .refine((c) => !c.hidden || c.unlock === 'code' || c.unlock === 'admin', 'hidden capes must be unlocked by code or by the team')
 
 /** Ein Umhang-Eintrag (öffentlich oder privat). */
 export const capeEntrySchema = entry
@@ -110,6 +113,7 @@ export function toBuiltinCape(c: z.output<typeof entry>, png: Buffer, sort: numb
     scale: c.scale,
     frames: c.frames,
     frameTimeMs: c.frames > 1 ? (c.frameTimeMs ?? null) : null,
+    hidden: c.hidden,
     png,
   }
 }

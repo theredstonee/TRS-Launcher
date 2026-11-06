@@ -88,6 +88,30 @@ describe('built-in catalog', () => {
   })
 })
 
+describe('hidden built-in capes', () => {
+  it('only shows a hidden cape to its owner and the team', async () => {
+    const env = makeEnv()
+    const gift = { id: 'gift', name: 'Geschenk', unlock: 'code' as const, sort: 3, scale: 1, frames: 1, frameTimeMs: null, hidden: true, png: solidPng(64, 32, [240, 120, 180, 255]) }
+    seedBuiltins(env.ctx, [...fixtureBuiltins(), gift])
+    const u = await login(env, 'Spieler')
+    const other = await login(env, 'Andere')
+    const admin = await login(env, 'Theredstonee', ADMIN)
+    expect(catalog(env.ctx, u.user.uuid).map((x) => x.id)).not.toContain('gift')
+    expect(catalog(env.ctx, admin.user.uuid).map((x) => x.id)).toContain('gift')
+    grantCape(env.ctx, u.user.uuid, 'gift', 'code')
+    expect(catalog(env.ctx, u.user.uuid).find((x) => x.id === 'gift')).toMatchObject({ owned: true })
+    expect(catalog(env.ctx, other.user.uuid).map((x) => x.id)).not.toContain('gift')
+    expect(setActiveCape(env.ctx, u.user.uuid, 'gift')!.id).toBe('gift')
+  })
+
+  it('rejects hidden capes that anyone could unlock', async () => {
+    const png = solidPng(64, 32)
+    const read = async () => png
+    await expect(loadBuiltins(async () => [{ id: 'gift', name: 'Geschenk', file: 'gift.png', unlock: 'free', hidden: true }], read)).rejects.toThrow()
+    expect((await loadBuiltins(async () => [{ id: 'gift', name: 'Geschenk', file: 'gift.png', unlock: 'code', hidden: true }], read))[0]).toMatchObject({ hidden: true })
+  })
+})
+
 describe('uploads and moderation', () => {
   it('uploads are pending, only visible to the owner and admins until approved', async () => {
     const env = makeEnv()

@@ -953,6 +953,13 @@ CREATE TABLE IF NOT EXISTS wpshare_waypoints (
 ) WITHOUT ROWID;
 `,
   },
+  {
+    // Versteckte Standard-Umhänge: Spalte `capes.hidden` (0/1), gesetzt beim Einspielen der Designs. Idempotent.
+    version: 42,
+    run: (db) => {
+      if (!hasColumn(db, 'capes', 'hidden')) db.exec('ALTER TABLE capes ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0')
+    },
+  },
 ]
 
 /** Migration 40 (siehe oben): Minispiel-Ranglisten. Exportiert für den Idempotenz-Test. */

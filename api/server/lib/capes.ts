@@ -26,6 +26,8 @@ export interface CapeRow {
   event?: string | null
   /** Belohnungs-Umhang (§36, z. B. `halloween2026`): in der DB `unlock = 'admin'` + dieses Feld; die Sicht zeigt `unlock: 'reward'`. */
   reward?: string | null
+  /** Versteckter Standard-Umhang (Migration 42): erscheint nur bei Besitzern. */
+  hidden?: number
   sha256: string
   width: number
   height: number
@@ -123,6 +125,8 @@ export interface BuiltinCape {
   scale: number
   frames: number
   frameTimeMs: number | null
+  /** Versteckt: nur für Besitzer im Katalog (Standard: sichtbar). */
+  hidden?: boolean
   png: Buffer
 }
 
@@ -156,13 +160,13 @@ export function seedBuiltins(ctx: AppContext, capes: BuiltinCape[]): void {
     if (!existsSync(file) || sha256Hex(readFileSync(file)) !== sha) writeAtomic(ctx.capeDir, `${c.id}.png`, c.png)
     run(
       ctx.db,
-      `INSERT INTO capes (id, kind, name, owner_uuid, status, unlock, event, reward, sha256, width, height, frames, frame_time_ms, sort, retired, created_at)
-       VALUES (?, 'builtin', ?, NULL, 'approved', ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
-       ON CONFLICT(id) DO UPDATE SET name = excluded.name, unlock = excluded.unlock, event = excluded.event, reward = excluded.reward, sha256 = excluded.sha256,
+      `INSERT INTO capes (id, kind, name, owner_uuid, status, unlock, event, reward, hidden, sha256, width, height, frames, frame_time_ms, sort, retired, created_at)
+       VALUES (?, 'builtin', ?, NULL, 'approved', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+       ON CONFLICT(id) DO UPDATE SET name = excluded.name, unlock = excluded.unlock, event = excluded.event, reward = excluded.reward, hidden = excluded.hidden, sha256 = excluded.sha256,
          width = excluded.width, height = excluded.height, frames = excluded.frames,
          frame_time_ms = excluded.frame_time_ms, sort = excluded.sort, retired = 0
        WHERE capes.kind = 'builtin'`,
-      c.id, c.name, c.unlock, c.event ?? null, c.reward ?? null, sha, header.width, frameH, frames, frames > 1 ? c.frameTimeMs : null, c.sort, t,
+      c.id, c.name, c.unlock, c.event ?? null, c.reward ?? null, c.hidden ? 1 : 0, sha, header.width, frameH, frames, frames > 1 ? c.frameTimeMs : null, c.sort, t,
     )
     ids.add(c.id)
   }
@@ -215,6 +219,8 @@ export function catalog(ctx: AppContext, uuid: string): CatalogEntry[] {
     .filter((c) => !c.event || activeEvents.includes(c.event) || canUse(ctx, uuid, c))
     // Belohnungen (§36) ebenso: solange das zugehörige Event aktiv ist (als „Halloween-Belohnung“) oder wenn man sie hat.
     .filter((c) => !c.reward || activeEvents.includes(REWARD_EVENTS[c.reward] ?? '') || canUse(ctx, uuid, c))
+    // Versteckte Standard-Umhänge (z. B. persönliche Geschenke per Code) nur für Besitzer.
+    .filter((c) => !c.hidden || canUse(ctx, uuid, c))
     .map((c) => {
     const sharedWithMe = c.kind === 'upload' && c.owner_uuid !== uuid && c.s_from !== null
     const shareable = shareRole(ctx, uuid, c) !== null
