@@ -211,14 +211,19 @@ class WaypointSetsTest {
 		// Unterwegs nichts, am Ziel Schluss.
 		assertFalse(guide.tick(store, WORLD, 0, 64, 0, DIM, false, true, 5, true).changed);
 		assertEquals(death, store.target(WORLD));
-		WaypointGuide.Event there = guide.tick(store, WORLD, 100.5, 65, -3.5, DIM, false, true, 5, true);
-		assertTrue(there.changed);
-		assertNull(store.target(WORLD));
-		assertEquals(death, store.lastDeath(WORLD), "der Punkt bleibt");
 		// In einer anderen Dimension gilt das Ziel nicht als erreicht.
 		store.setTarget(WORLD, death, false);
 		guide.tick(store, WORLD, 100.5, 65, -3.5, "minecraft:the_nether", false, true, 5, true);
 		assertEquals(death, store.target(WORLD));
+		WaypointGuide.Event there = guide.tick(store, WORLD, 100.5, 65, -3.5, DIM, false, true, 5, true);
+		assertTrue(there.changed);
+		assertNull(store.target(WORLD));
+		assertNull(store.lastDeath(WORLD), "Todespunkt wird bei Ankunft entfernt");
+		Waypoint normal = store.add(WORLD, new Waypoint("Mine", 100, 64, -4, DIM, 0));
+		store.setTarget(WORLD, normal, false);
+		assertTrue(guide.tick(store, WORLD, 100.5, 65, -3.5, DIM, false, true, 5, true).changed);
+		assertNull(store.target(WORLD));
+		assertEquals(normal, store.byId(WORLD, normal.id), "normale Wegpunkte bleiben erhalten");
 		// Abgeschaltet: kein Todespunkt.
 		WaypointGuide off = new WaypointGuide();
 		off.tick(store, "sp:aus", 1, 2, 3, DIM, true, false, 5, true);

@@ -28,6 +28,14 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **TRS Client: death points disappear when you reach them.** After you return to your latest death point, it is removed automatically.
+
+### Deutsch
+- **TRS Client: Todespunkte verschwinden bei Ankunft.** Wenn du zu deinem letzten Todespunkt zurückkehrst, wird er automatisch entfernt.
+
 ## 0.33.0 – 2026-11-05 – Find Your Way | Weg gefunden
 <!-- banner: accent=#41cd62 motif=/news/0.33.0/banner.png -->
 <!-- shots:

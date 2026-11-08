@@ -51,7 +51,8 @@ public final class WaypointGuide {
 		if (dead) return NOTHING;
 		Waypoint target = store.target(worldKey);
 		if (target != null && arrived(target, x, y, z, dimension)) {
-			store.setTarget(worldKey, null, false);
+			if (target.death) store.remove(worldKey, target);
+			else store.setTarget(worldKey, null, false);
 			return new Event(I18n.tr("waypoint.arrived", target.name), true);
 		}
 		return NOTHING;
