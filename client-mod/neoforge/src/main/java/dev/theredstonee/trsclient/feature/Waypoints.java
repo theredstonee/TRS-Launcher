@@ -75,7 +75,7 @@ public final class Waypoints {
 		boolean record = modules.waypointDeath.get()
 				&& (modules.waypoints.isEnabled() || modules.minimap.isEnabled() || modules.worldMap.isEnabled());
 		dev.theredstonee.trsclient.core.waypoint.WaypointGuide.Event event = guide.tick(store, worldKey, player.getX(), player.getY(), player.getZ(), Mc.dimensionId(),
-				player.getHealth() <= 0, record, modules.waypointDeathKeep.getInt(), modules.waypointDeathGuide.get());
+				player.getHealth() <= 0, record, modules.waypointDeathKeep.getInt(), modules.waypointDeathGuide.get(), modules.waypointDeathRemove.get());
 		if (event.changed) save();
 		if (event.message != null) notice(event.message);
 	}

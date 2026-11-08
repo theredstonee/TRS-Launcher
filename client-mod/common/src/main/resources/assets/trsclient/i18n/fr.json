@@ -2706,6 +2706,7 @@
   "setting.waypoints.labels.never": "Jamais",
   "setting.waypoints.deathKeep": "Points de mort à garder",
   "setting.waypoints.deathGuide": "Retour : le point de mort devient la cible",
+  "setting.waypoints.deathRemove": "Supprimer le point de mort à l’arrivée",
   "setting.waypoints.teleport": "Téléportation (seulement avec les droits)",
   "setting.waypoints.sort": "Ordre de la liste",
   "setting.waypoints.sort.distance": "Distance",

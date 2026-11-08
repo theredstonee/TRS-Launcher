@@ -30,11 +30,20 @@ How to write an entry:
 
 ## Unreleased
 
+## 0.34.0 – 2026-11-08 – Connected Mods | Mods verbunden
+<!-- banner: accent=#41cd62 motif=/news/0.34.0/banner.png -->
+<!-- shots:
+/news/0.34.0/mod-dependencies.png | A mod's required libraries and the other mods that depend on it | Die benötigten Bibliotheken eines Mods und die anderen Mods, die ihn brauchen
+/news/0.34.0/enable-dependencies.png | Confirm before enabling a mod together with its required dependencies | Vor dem Aktivieren eines Mods zusammen mit seinen Pflichtabhängigkeiten bestätigen
+-->
+
 ### English
-- **TRS Client: death points disappear when you reach them.** After you return to your latest death point, it is removed automatically.
+- **TRS Client: death points can disappear when you reach them.** They are removed automatically by default; you can switch this off in the Waypoints settings.
+- **Keep track of mod dependencies.** The "Mod dependencies" action in an instance's content list shows which mods a mod requires and which other mods need it. Clicking a linked mod still opens its project description. When enabling mods, the launcher offers to enable their installed required dependencies too, with a list to confirm first. Missing dependencies can be installed explicitly; nothing is downloaded without your click. Disabling a needed mod warns about affected mods without turning them off. Dependencies come from the mod files; if their metadata cannot be read, check the project description.
 
 ### Deutsch
-- **TRS Client: Todespunkte verschwinden bei Ankunft.** Wenn du zu deinem letzten Todespunkt zurückkehrst, wird er automatisch entfernt.
+- **TRS Client: Todespunkte verschwinden auf Wunsch bei Ankunft.** Ab Werk werden sie automatisch entfernt; in den Wegpunkt-Einstellungen kannst du das ausschalten.
+- **Mod-Abhängigkeiten im Blick.** Die Aktion „Mod-Abhängigkeiten“ in der Inhaltsliste einer Instanz zeigt, welche Mods ein Mod benötigt und welche anderen Mods ihn brauchen. Ein Klick auf einen verknüpften Mod öffnet weiterhin seine Projektbeschreibung. Beim Aktivieren bietet der Launcher an, installierte Pflichtabhängigkeiten mit einzuschalten, mit einer Liste zur Bestätigung. Fehlende Abhängigkeiten lassen sich ausdrücklich installieren; ohne deinen Klick wird nichts heruntergeladen. Beim Deaktivieren eines benötigten Mods warnt der Launcher vor betroffenen Mods, ohne diese auszuschalten. Die Angaben stammen aus den Mod-Dateien; sind deren Metadaten nicht lesbar, hilft die Projektbeschreibung.
 
 ## 0.33.0 – 2026-11-05 – Find Your Way | Weg gefunden
 <!-- banner: accent=#41cd62 motif=/news/0.33.0/banner.png -->

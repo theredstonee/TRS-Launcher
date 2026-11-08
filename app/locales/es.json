@@ -1,4 +1,26 @@
 {
+  "modDependencies": {
+    "title": "Dependencias de mods",
+    "enableTitle": "Activar los mods necesarios",
+    "disableTitle": "Otros mods necesitan este mod",
+    "enableText": "¿Activar estos mods junto con sus dependencias obligatorias?",
+    "disableText": "Estos mods activos necesitan tu selección directa o indirectamente y podrían dejar de funcionar. Solo se desactivarán los mods seleccionados.",
+    "enable": "Activar los mods de la lista",
+    "disable": "Desactivar de todos modos",
+    "requires": "Necesita",
+    "usedBy": "Necesario para",
+    "none": "No se encontraron dependencias declaradas.",
+    "enabled": "Activado",
+    "disabled": "Desactivado",
+    "missing": "No instalado",
+    "install": "Instalar {id}",
+    "installed": "Instalado: {names}",
+    "unresolved": "Todavía falta: {names}",
+    "ambiguous": "Varios mods instalados proporcionan estas dependencias. Activa la versión adecuada manualmente: {names}",
+    "unknown": "No se pudieron leer las dependencias de este mod. Consulta los requisitos en la descripción de su proyecto.",
+    "unknownFiles": "No se pudieron leer las dependencias de: {names}. Consulta las descripciones de sus proyectos antes de activarlos.",
+    "project": "Descripción del proyecto"
+  },
   "common": {
     "actions": {
       "apply": "Aplicar",

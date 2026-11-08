@@ -2706,6 +2706,7 @@
   "setting.waypoints.labels.never": "Nie",
   "setting.waypoints.deathKeep": "Todespunkte behalten",
   "setting.waypoints.deathGuide": "Weg zurück: Todespunkt wird zum Ziel",
+  "setting.waypoints.deathRemove": "Todespunkt bei Ankunft entfernen",
   "setting.waypoints.teleport": "Teleport-Einträge (nur mit Rechten)",
   "setting.waypoints.sort": "Sortierung der Liste",
   "setting.waypoints.sort.distance": "Nähe",

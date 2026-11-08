@@ -2706,6 +2706,7 @@
   "setting.waypoints.labels.never": "Asla",
   "setting.waypoints.deathKeep": "Saklanacak ölüm noktası",
   "setting.waypoints.deathGuide": "Dönüş yolu: ölüm noktası hedef olur",
+  "setting.waypoints.deathRemove": "Varınca ölüm noktasını kaldır",
   "setting.waypoints.teleport": "Işınlanma seçenekleri (yetkiyle)",
   "setting.waypoints.sort": "Liste sırası",
   "setting.waypoints.sort.distance": "Mesafe",
