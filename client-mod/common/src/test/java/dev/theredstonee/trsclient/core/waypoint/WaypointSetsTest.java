@@ -195,8 +195,8 @@ class WaypointSetsTest {
 	void guideRecordsDeathTargetsItAndStopsOnArrival(@TempDir Path dir) {
 		WaypointStore store = new WaypointStore(dir.resolve("trsclient-waypoints.json"));
 		WaypointGuide guide = new WaypointGuide();
-		assertNull(guide.tick(store, WORLD, 0, 64, 0, DIM, false, true, 5, true).message);
-		WaypointGuide.Event died = guide.tick(store, WORLD, 100.7, 64, -3.2, DIM, true, true, 5, true);
+		assertNull(guide.tick(store, WORLD, 0, 64, 0, DIM, false, true, 5, true, true).message);
+		WaypointGuide.Event died = guide.tick(store, WORLD, 100.7, 64, -3.2, DIM, true, true, 5, true, true);
 		assertTrue(died.changed);
 		assertNotNull(died.message);
 		Waypoint death = store.lastDeath(WORLD);
@@ -205,23 +205,34 @@ class WaypointSetsTest {
 		assertEquals(death, store.target(WORLD), "der Weg zurück");
 		assertTrue(store.targetAuto(WORLD));
 		// Noch tot: kein zweiter Punkt.
-		guide.tick(store, WORLD, 100, 64, -3, DIM, true, true, 5, true);
+		guide.tick(store, WORLD, 100, 64, -3, DIM, true, true, 5, true, true);
 		assertEquals(1, store.sets(WORLD).size() - 1);
 		assertEquals(death, store.lastDeath(WORLD));
 		// Unterwegs nichts, am Ziel Schluss.
-		assertFalse(guide.tick(store, WORLD, 0, 64, 0, DIM, false, true, 5, true).changed);
+		assertFalse(guide.tick(store, WORLD, 0, 64, 0, DIM, false, true, 5, true, true).changed);
 		assertEquals(death, store.target(WORLD));
-		WaypointGuide.Event there = guide.tick(store, WORLD, 100.5, 65, -3.5, DIM, false, true, 5, true);
-		assertTrue(there.changed);
-		assertNull(store.target(WORLD));
-		assertEquals(death, store.lastDeath(WORLD), "der Punkt bleibt");
 		// In einer anderen Dimension gilt das Ziel nicht als erreicht.
 		store.setTarget(WORLD, death, false);
-		guide.tick(store, WORLD, 100.5, 65, -3.5, "minecraft:the_nether", false, true, 5, true);
+		guide.tick(store, WORLD, 100.5, 65, -3.5, "minecraft:the_nether", false, true, 5, true, true);
 		assertEquals(death, store.target(WORLD));
+		WaypointGuide.Event there = guide.tick(store, WORLD, 100.5, 65, -3.5, DIM, false, true, 5, true, true);
+		assertTrue(there.changed);
+		assertNull(store.target(WORLD));
+		assertNull(store.lastDeath(WORLD), "Todespunkt wird bei Ankunft entfernt");
+		Waypoint normal = store.add(WORLD, new Waypoint("Mine", 100, 64, -4, DIM, 0));
+		store.setTarget(WORLD, normal, false);
+		assertTrue(guide.tick(store, WORLD, 100.5, 65, -3.5, DIM, false, true, 5, true, true).changed);
+		assertNull(store.target(WORLD));
+		assertEquals(normal, store.byId(WORLD, normal.id), "normale Wegpunkte bleiben erhalten");
+		Waypoint retainedDeath = store.setDeath(WORLD, 20, 64, 20, DIM, 0xE0281E);
+		store.setTarget(WORLD, retainedDeath, true);
+		WaypointGuide.Event kept = guide.tick(store, WORLD, 20.5, 65, 20.5, DIM, false, true, 5, true, false);
+		assertTrue(kept.changed);
+		assertNull(store.target(WORLD));
+		assertEquals(retainedDeath, store.lastDeath(WORLD), "deaktiviertes automatisches Entfernen");
 		// Abgeschaltet: kein Todespunkt.
 		WaypointGuide off = new WaypointGuide();
-		off.tick(store, "sp:aus", 1, 2, 3, DIM, true, false, 5, true);
+		off.tick(store, "sp:aus", 1, 2, 3, DIM, true, false, 5, true, true);
 		assertNull(store.lastDeath("sp:aus"));
 	}
 

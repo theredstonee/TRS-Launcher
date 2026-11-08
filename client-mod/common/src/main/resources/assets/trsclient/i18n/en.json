@@ -2706,6 +2706,7 @@
   "setting.waypoints.labels.never": "Never",
   "setting.waypoints.deathKeep": "Death points to keep",
   "setting.waypoints.deathGuide": "Way back: death point becomes your target",
+  "setting.waypoints.deathRemove": "Remove death point when reached",
   "setting.waypoints.teleport": "Teleport entries (only with rights)",
   "setting.waypoints.sort": "List order",
   "setting.waypoints.sort.distance": "Distance",

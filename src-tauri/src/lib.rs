@@ -485,6 +485,7 @@ pub fn run() {
             commands::content::apply_content_update,
             commands::content::fix_mod_conflicts,
             commands::content::install_missing_dependencies,
+            commands::content::content_dependencies,
             commands::content::mod_conflicts,
             commands::content::mod_conflict_fit,
             commands::content::trash_content,

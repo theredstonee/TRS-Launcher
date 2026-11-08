@@ -278,6 +278,7 @@ public final class TrsModules {
 	public final KeySetting waypointQuickKey;
 	public final NumberSetting waypointDeathKeep;
 	public final BoolSetting waypointDeathGuide;
+	public final BoolSetting waypointDeathRemove;
 	public final ChoiceSetting<dev.theredstonee.trsclient.core.waypoint.WaypointLabels> waypointLabels;
 	public final ChoiceSetting<dev.theredstonee.trsclient.core.waypoint.WaypointSort> waypointSort;
 	public final BoolSetting waypointTeleport;
@@ -888,6 +889,7 @@ public final class TrsModules {
 		waypointDeath = waypoints.add(new BoolSetting("death", "Set death points automatically", true));
 		waypointDeathKeep = waypoints.add(new NumberSetting("deathKeep", "Death points to keep", 5, 1, 20, 1, ""));
 		waypointDeathGuide = waypoints.add(new BoolSetting("deathGuide", "Way back: make the death point your target", true));
+		waypointDeathRemove = waypoints.add(new BoolSetting("deathRemove", "Remove death point when reached", true));
 		waypointRange = waypoints.add(new NumberSetting("range", "Only up to (blocks, 0 = always)", 0, 0, 2000, 100, ""));
 		waypointTeleport = waypoints.add(new BoolSetting("teleport", "Teleport entries (only with rights)", true));
 		waypointSort = waypoints.add(new ChoiceSetting<>("sort", "List order",

@@ -38,9 +38,10 @@ public final class WaypointGuide {
 	 * @param record     Todespunkte setzen (Einstellung und Modul)
 	 * @param keep       so viele behalten
 	 * @param wayBack    nach dem Tod zum Ziel machen
+	 * @param removeDeathOnArrival Todespunkt nach der Ankunft entfernen
 	 */
 	public Event tick(WaypointStore store, String worldKey, double x, double y, double z, String dimension, boolean dead, boolean record,
-			int keep, boolean wayBack) {
+			int keep, boolean wayBack, boolean removeDeathOnArrival) {
 		boolean justDied = dead && !wasDead;
 		wasDead = dead;
 		if (justDied && record) {
@@ -51,7 +52,8 @@ public final class WaypointGuide {
 		if (dead) return NOTHING;
 		Waypoint target = store.target(worldKey);
 		if (target != null && arrived(target, x, y, z, dimension)) {
-			store.setTarget(worldKey, null, false);
+			if (target.death && removeDeathOnArrival) store.remove(worldKey, target);
+			else store.setTarget(worldKey, null, false);
 			return new Event(I18n.tr("waypoint.arrived", target.name), true);
 		}
 		return NOTHING;

@@ -3,6 +3,7 @@ import { isTauri } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import type { BulkAction, ContentItem, ContentKind, ContentUpdate, DropEvent, DuplicateModGroup, Instance, ModrinthVersion, UploadResult } from '~/types'
 import { cancelledError } from '~/stores/tasks'
+import { dependentMods, planModEnable, type DependencyNode } from '~/utils/modDependencies'
 import {
   buildSections,
   contentKey,
@@ -78,6 +79,7 @@ const switching = ref<ContentItem | null>(null)
 const changelogFor = ref<ContentItem | null>(null)
 const toDelete = ref<ContentItem[] | null>(null)
 const dragging = ref(false)
+const dependencyDialog = ref<{ graph: DependencyNode[]; targets: ContentItem[]; action: 'enable' | 'disable' | null } | null>(null)
 
 // --- Gruppen & Herkunft ----------------------------------------------------------
 const org = ref<ContentOrganization>(emptyOrganization())
@@ -323,6 +325,8 @@ function selectRow(event: MouseEvent, item: ContentItem) {
   } else {
     // Ein normaler Klick wählt nichts aus, setzt aber den Startpunkt für Umschalt+Klick.
     selectAnchor.value = keyOf(item)
+    const link = projectLink(item)
+    if (item.kind === 'mod' && link && !(target instanceof Element && target.closest('a'))) void navigateTo(link)
   }
 }
 function selectBox(event: MouseEvent, item: ContentItem) {
@@ -467,16 +471,77 @@ const dragTargetName = computed(() => {
 
 // --- Aktionen --------------------------------------------------------------------
 async function toggle(item: ContentItem) {
-  try {
-    await backend.setContentEnabled(props.instance.id, item.kind, item.fileName, !item.enabled)
-    item.enabled = !item.enabled
-  } catch (e) {
-    toasts.error(e)
-    load(true)
-  }
+  await bulk(item.enabled ? 'disable' : 'enable', [item])
 }
 
 async function bulk(action: BulkAction, targets: ContentItem[]) {
+  if (bulkBusy.value || bisecting.value) return
+  if ((action === 'enable' || action === 'disable') && targets.some(item => item.kind === 'mod')) {
+    localBulk.value = 'dependencies'
+    try {
+      const graph = await backend.contentDependencies(props.instance.id)
+      const files = targets.filter(item => item.kind === 'mod').map(item => item.fileName)
+      const plan = planModEnable(graph, files)
+      const needsConfirmation = action === 'enable'
+        ? plan.files.some(file => !files.includes(file)) || !!(plan.missing.length || plan.ambiguous.length || plan.unknown.length)
+        : dependentMods(graph, files, true).length > 0
+      if (needsConfirmation) {
+        dependencyDialog.value = { graph, targets, action }
+        return
+      }
+    } catch (cause) {
+      toasts.error(cause)
+      return
+    } finally {
+      localBulk.value = null
+    }
+  }
+  await applyBulk(action, targets)
+}
+
+async function openDependencies(item: ContentItem) {
+  if (bulkBusy.value || dependencyDialog.value) return
+  localBulk.value = 'dependencies'
+  try {
+    dependencyDialog.value = { graph: await backend.contentDependencies(props.instance.id), targets: [item], action: null }
+  } catch (cause) {
+    toasts.error(cause)
+  } finally {
+    localBulk.value = null
+  }
+}
+
+async function refreshDependencies() {
+  const dialog = dependencyDialog.value
+  if (!dialog) return
+  localBulk.value = 'dependencies'
+  try {
+    dialog.graph = await backend.contentDependencies(props.instance.id)
+    await load(true)
+  } catch (cause) {
+    toasts.error(cause)
+  } finally {
+    localBulk.value = null
+  }
+}
+
+async function confirmDependencies() {
+  const dialog = dependencyDialog.value
+  if (!dialog?.action || bulkBusy.value || bisecting.value) return
+  const plan = planModEnable(dialog.graph, dialog.targets.filter(item => item.kind === 'mod').map(item => item.fileName))
+  if (dialog.action === 'enable' && (plan.missing.length || plan.ambiguous.length)) return
+  const targets = [...dialog.targets]
+  if (dialog.action === 'enable') {
+    for (const file of plan.files) {
+      const item = items.value.find(item => item.kind === 'mod' && item.fileName === file)
+      if (item && !targets.some(target => keyOf(target) === keyOf(item))) targets.push(item)
+    }
+  }
+  dependencyDialog.value = null
+  await applyBulk(dialog.action, targets)
+}
+
+async function applyBulk(action: BulkAction, targets: ContentItem[]) {
   localBulk.value = action
   try {
     const r = await backend.bulkContent(
@@ -914,7 +979,7 @@ const pendingUpdates = computed(() => updates.value ?? [])
               :aria-label="t(row.item.enabled ? 'content.row.disable' : 'content.row.enable', { name: titleOf(row.item) })"
               class="relative mx-1 h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-40"
               :class="row.item.enabled ? 'bg-redstone-500' : 'bg-base-700'"
-              :disabled="bisecting"
+              :disabled="bisecting || !!bulkBusy"
               :title="bisecting ? t('bisect.lockedTitle') : undefined"
               @click="toggle(row.item)"
             >
@@ -932,6 +997,7 @@ const pendingUpdates = computed(() => updates.value ?? [])
                   {{ t('content.menu.updateTo', { version: updateFor(row.item)!.versionNumber }) }}
                 </button>
                 <button v-if="row.item.source" class="menu-item" role="menuitem" @click="menuFor = null; changelogFor = row.item">{{ t('content.menu.changelog') }}</button>
+                <button v-if="row.item.kind === 'mod'" class="menu-item" role="menuitem" @click="menuFor = null; openDependencies(row.item)">{{ t('modDependencies.title') }}</button>
                 <NuxtLink v-if="projectLink(row.item)" :to="projectLink(row.item)!" class="menu-item" role="menuitem">{{ t('content.menu.projectPage') }}</NuxtLink>
                 <p v-if="!row.item.source" class="px-2.5 py-1.5 text-xs text-base-400">{{ t('content.menu.notModrinth') }}</p>
                 <p class="border-t border-base-800 px-2.5 pt-1.5 pb-0.5 text-[11px] text-base-600">{{ t('contentGroups.menu.moveTo') }}</p>
@@ -976,6 +1042,7 @@ const pendingUpdates = computed(() => updates.value ?? [])
         </button>
         <button v-if="menuItem.source" class="menu-item" @click="switching = menuItem; menuFor = null">{{ t('content.row.switchVersion') }}</button>
         <button v-if="menuItem.source" class="menu-item" @click="changelogFor = menuItem; menuFor = null">{{ t('content.menu.changelog') }}</button>
+        <button v-if="menuItem.kind === 'mod'" class="menu-item" @click="openDependencies(menuItem); menuFor = null">{{ t('modDependencies.title') }}</button>
         <NuxtLink v-if="projectLink(menuItem)" :to="projectLink(menuItem)!" class="menu-item">{{ t('content.menu.projectPage') }}</NuxtLink>
         <p v-if="!menuItem.source" class="px-2.5 py-1.5 text-xs text-base-400">{{ t('content.menu.notModrinth') }}</p>
         <div class="my-1 border-t border-base-700" />
@@ -1009,6 +1076,18 @@ const pendingUpdates = computed(() => updates.value ?? [])
     <ChangelogDialog v-if="changelogFor?.source" :instance="instance" :item="changelogFor" @close="changelogFor = null" @install="switchVersion(changelogFor!, $event)" />
 
     <ApplyPresetDialog v-if="applyingPreset" :instance="instance" @close="applyingPreset = false" />
+    <ModDependenciesDialog
+      v-if="dependencyDialog"
+      :instance-id="instance.id"
+      :graph="dependencyDialog.graph"
+      :files="dependencyDialog.targets.filter(item => item.kind === 'mod').map(item => item.fileName)"
+      :action="dependencyDialog.action"
+      :busy="!!bulkBusy || bisecting"
+      :project-url="dependencyDialog.targets.length === 1 ? projectLink(dependencyDialog.targets[0]!) : null"
+      @close="dependencyDialog = null"
+      @apply="confirmDependencies"
+      @refresh="refreshDependencies"
+    />
     <ContentGroupDialog v-if="groupDialog" :group="groupDialog.group" :count="groupDialog.assign.length" @close="groupDialog = null" @save="saveGroup" />
     <BaseDialog v-if="groupToDelete" :title="t('contentGroups.deleteDialog.title')" @close="groupToDelete = null">
       <p class="text-sm text-base-200">{{ t('contentGroups.deleteDialog.text', { name: groupToDelete.name }) }}</p>
