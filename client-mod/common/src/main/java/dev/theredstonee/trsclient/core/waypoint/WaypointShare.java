@@ -174,6 +174,25 @@ public final class WaypointShare {
 		return Result.ADDED;
 	}
 
+	/**
+	 * Geteilten Wegpunkt eines Freundes übernehmen (Live-Teilen, ohne Spiel): die Liste gehört per Definition zur
+	 * aktuellen Welt, deshalb kein Weltvergleich. Die Kopie ist ein normaler eigener Wegpunkt (nicht geteilt, kein Tod).
+	 */
+	public static Result adopt(WaypointStore store, String worldKey, String localDimension,
+			dev.theredstonee.trsclient.core.waypoint.live.FriendWaypoint w) {
+		if (w == null) return Result.INVALID;
+		if (store == null || worldKey == null || worldKey.isEmpty()) return Result.NO_WORLD;
+		String dim = localDimension(w.dimension, localDimension);
+		for (Waypoint p : store.all(worldKey)) {
+			if (p.x == w.x && p.y == w.y && p.z == w.z && p.name.equals(w.name)
+					&& (p.dimension == null || p.dimension.isEmpty() || p.dimension.equals(dim))) {
+				return Result.ALREADY;
+			}
+		}
+		store.add(worldKey, new Waypoint(w.name, w.x, w.y, w.z, dim, w.color));
+		return Result.ADDED;
+	}
+
 	// --- Im Spiel ---
 
 	private static MapPlatform platform() {
@@ -227,6 +246,15 @@ public final class WaypointShare {
 		String key = p.waypointWorldKey();
 		if (store == null || key == null || key.isEmpty()) return Result.NO_WORLD;
 		Result r = adopt(store, key, p.dimension(), w);
+		if (r == Result.ADDED) p.waypointsChanged();
+		return r;
+	}
+
+	/** „Übernehmen“ (Live-Teilen): Wegpunkt eines Freundes als eigenen anlegen. */
+	public static Result adopt(dev.theredstonee.trsclient.core.waypoint.live.FriendWaypoint w) {
+		MapPlatform p = platform();
+		if (p == null || !p.inWorld()) return Result.NO_WORLD;
+		Result r = adopt(p.waypoints(), p.waypointWorldKey(), p.dimension(), w);
 		if (r == Result.ADDED) p.waypointsChanged();
 		return r;
 	}

@@ -15,7 +15,10 @@ import dev.theredstonee.trsclient.core.ui.Redstone;
 import dev.theredstonee.trsclient.core.ui.TextInput;
 import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.ui.UiKey;
+import dev.theredstonee.trsclient.core.module.NewSince;
 import dev.theredstonee.trsclient.core.ui.menu.NewBadge;
+import dev.theredstonee.trsclient.core.waypoint.live.FriendFaces;
+import dev.theredstonee.trsclient.core.waypoint.live.LiveShare;
 import dev.theredstonee.trsclient.core.ui.social.Kit;
 
 import java.util.List;
@@ -55,6 +58,9 @@ public final class FriendsPanel {
 	private Friends.Action confirmAction;
 	private long requestsShownSince;
 	private boolean columns;
+	/** Hinweis des Live-Teilens (z. B. „Geht nur mit Freunden“). */
+	private String liveNotice;
+	private long liveNoticeAt;
 
 	public FriendsPanel(TrsOnline online, FaceCache faces, Listener listener) {
 		this.online = online;
@@ -64,6 +70,9 @@ public final class FriendsPanel {
 			online.friends().want(Friends.Interest.FOREGROUND, false);
 			online.friends().refresh();
 		}
+		// Freigaben (Live-Wegpunkte) beim Öffnen frisch holen – „teilt mit dir“ kommt ohne Ereignis.
+		LiveShare live = LiveShare.get();
+		if (live != null) live.refreshGrants();
 	}
 
 	public void showTab(int index) {
@@ -105,6 +114,15 @@ public final class FriendsPanel {
 		if (online != null) online.friends().want(Friends.Interest.FOREGROUND, columns || tab == Tab.BLOCKED);
 		FriendsView view = s == null ? null : s.view;
 		String status = statusText(online);
+		LiveShare live = LiveShare.get();
+		if (live != null && status == null) {
+			live.wantGrants();
+			String n = live.takeNotice();
+			if (n != null) {
+				liveNotice = n;
+				liveNoticeAt = System.currentTimeMillis();
+			}
+		}
 		if (status != null) {
 			Redstone.well(c, x, y, w, h, t.border);
 			List<String> lines = Paint.wrap(c, status, w - 20);
@@ -176,6 +194,9 @@ public final class FriendsPanel {
 		if (s.message != null && now - s.messageAt < MESSAGE_MS) {
 			note = I18n.tr(s.message, s.args);
 			noteColor = s.messageError ? t.dustOn : t.text;
+		} else if (liveNotice != null && now - liveNoticeAt < MESSAGE_MS) {
+			note = I18n.tr(liveNotice);
+			noteColor = t.dustOn;
 		} else if (s.error != null) {
 			note = I18n.tr(s.error);
 			noteColor = t.dustOn;
@@ -200,6 +221,13 @@ public final class FriendsPanel {
 			}
 		} else {
 			list(c, kit, tab, tab.ordinal(), view, s, x, cy, w, listH, mx, my);
+		}
+		if (hoverTip != null) {
+			c.push();
+			c.raise(200);
+			int tw = Math.min(w - 8, c.textWidth(hoverTip) + 8);
+			drawTip(c, Math.max(x, Math.min(mx - tw / 2, x + w - tw)), Math.min(my + 30, y + h), w);
+			c.pop();
 		}
 	}
 
@@ -298,9 +326,11 @@ public final class FriendsPanel {
 			Redstone.pip(c, x + 15, ry + 14, 6, lit);
 			int tx = x + 26;
 			int right = x + w - 4;
+			final LiveShare live = LiveShare.ui();
 			if (f.uuid.equals(confirmUuid)) {
 				right = confirm(c, kit, f.uuid, f.name, x, ry, w, mx, my);
 			} else if (listener != null) {
+				if (live != null) right = shareToggle(c, kit, live, f, right - 14, ry + 4, mx, my) - 4;
 				final int menuX = right - 14;
 				final int menuY = ry + 4;
 				kit.icon(c, menuX, menuY, 14, "menu", false, mx, my, new Runnable() {
@@ -312,6 +342,9 @@ public final class FriendsPanel {
 				right = menuX - 4;
 			} else {
 				int ib = right - 14;
+				if (live != null) {
+					ib = shareToggle(c, kit, live, f, ib, ry + 4, mx, my) - 17;
+				}
 				kit.icon(c, ib, ry + 4, 14, "lock", false, mx, my, new Runnable() {
 					@Override
 					public void run() {
@@ -328,9 +361,62 @@ public final class FriendsPanel {
 				right = ib - 4;
 			}
 			Paint.textClipped(c, f.name, tx, ry + 3, right - tx, f.online() ? t.text : ColorMath.lerp(t.text, t.textDim, 0.4f), false);
-			Paint.textClipped(c, presence(f), tx, ry + 13, right - tx, f.inGame() ? t.dustOn : t.textDim, false);
+			String line = presence(f);
+			// Live-Wegpunkte: der Freund teilt seine Wegpunkte/Position mit mir.
+			boolean sharesWithMe = live != null && live.grantedToMe(f.uuid);
+			if (sharesWithMe) line = I18n.tr("friends.wp.sharesWithYou") + " · " + line;
+			Paint.textClipped(c, line, tx, ry + 13, right - tx, sharesWithMe ? FriendFaces.FRIEND : (f.inGame() ? t.dustOn : t.textDim), false);
 		}
 		return list.size() * ROW_H;
+	}
+
+	/**
+	 * Schalter „Wegpunkte &amp; Position teilen“ (Live-Teilen) je Freund: Kartensymbol, leuchtet, wenn freigegeben.
+	 * Rückgabe: linke Kante.
+	 */
+	private int shareToggle(Canvas c, Kit kit, final LiveShare live, final FriendsView.Friend f, int x, int y, int mx, int my) {
+		final boolean on = live.granted(f.uuid);
+		boolean busy = live.grantBusy(f.uuid);
+		if (!live.grantsLoaded() || busy) {
+			kit.iconDisabled(c, x, y, 14, "map");
+		} else {
+			kit.icon(c, x, y, 14, "map", on, mx, my, new Runnable() {
+				@Override
+				public void run() {
+					live.setGrant(f.uuid, !on);
+					seenShare();
+				}
+			});
+		}
+		if (on) Redstone.pip(c, x + 10, y - 1, 5, 1f);
+		if (isNew(NewSince.FRIENDS_WAYPOINTS)) NewBadge.dot(c, x - 2, y - 2);
+		if (Kit.inside(mx, my, x, y, 14, 14)) {
+			hoverTip = I18n.tr(on ? "friends.wp.stop" : "friends.wp.share", f.name);
+		}
+		return x;
+	}
+
+	/** Hinweis zum Zeiger (Schalter „Teilen“) – zeigt {@link #drawTip}. */
+	private String hoverTip;
+
+	/** Hinweis zum Zeiger (am Ende von {@link #draw}). */
+	private void drawTip(Canvas c, int x, int y, int w) {
+		if (hoverTip == null) return;
+		String tip = c.clip(hoverTip, w - 8);
+		int tw = c.textWidth(tip);
+		Redstone.stone(c, x, y - 14, tw + 8, 13, Theme.get().surface, Theme.get().border);
+		c.text(tip, x + 4, y - 11, Theme.get().text, false);
+		hoverTip = null;
+	}
+
+	private static boolean isNew(String id) {
+		dev.theredstonee.trsclient.core.module.TrsModules m = dev.theredstonee.trsclient.core.intro.IntroGate.modules();
+		return m != null && m.clientState.news().isNew(id);
+	}
+
+	private static void seenShare() {
+		dev.theredstonee.trsclient.core.module.TrsModules m = dev.theredstonee.trsclient.core.intro.IntroGate.modules();
+		if (m != null && m.clientState.news().markSeen(NewSince.FRIENDS_WAYPOINTS)) dev.theredstonee.trsclient.core.intro.IntroGate.save(m);
 	}
 
 	/** Rückfrage für Entfernen/Blockieren in der Zeile (vom Menü des Sozial-Bildschirms aus aufrufbar). */

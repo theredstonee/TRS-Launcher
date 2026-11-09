@@ -239,6 +239,40 @@ public final class MapBridge implements MapPlatform {
 	}
 
 	@Override
+	public int commandAccess() {
+		// Der Server schickt nur die Befehle, die der Spieler benutzen darf – Einzelspieler mit Cheats, OP oder Berechtigung.
+		net.minecraft.client.multiplayer.ClientPacketListener connection = mc().getConnection();
+		if (connection == null) return 0;
+		com.mojang.brigadier.CommandDispatcher<?> commands = connection.getCommands();
+		com.mojang.brigadier.tree.CommandNode<?> root = commands.getRoot();
+		if (root.getChild("tp") == null && root.getChild("teleport") == null) return 0;
+		int access = dev.theredstonee.trsclient.core.waypoint.WaypointTeleport.TP;
+		com.mojang.brigadier.tree.CommandNode<?> execute = root.getChild("execute");
+		if (execute != null && execute.getChild("in") != null) access |= dev.theredstonee.trsclient.core.waypoint.WaypointTeleport.EXECUTE_IN;
+		return access;
+	}
+
+	@Override
+	public boolean chatBridge() {
+		return true;
+	}
+
+	@Override
+	public void sendChat(String text) {
+		Mc.sendChat(text);
+	}
+
+	@Override
+	public void copyToClipboard(String text) {
+		Mc.setClipboard(text);
+	}
+
+	@Override
+	public String keyName(String key) {
+		return dev.theredstonee.trsclient.compat.Keys.display(key);
+	}
+
+	@Override
 	public boolean openWorldMap() {
 		dev.theredstonee.trsclient.screen.WorldMapScreen screen = dev.theredstonee.trsclient.screen.WorldMapScreen.create();
 		if (screen == null) return false;
@@ -320,6 +354,11 @@ public final class MapBridge implements MapPlatform {
 		return data.motd.getString();
 		//?} else
 		/*return data.motd;*/
+	}
+
+	@Override
+	public boolean playerLoaded(java.util.UUID uuid) {
+		return uuid != null && mc().level != null && mc().level.getPlayerByUUID(uuid) != null;
 	}
 
 	@Override

@@ -1,4 +1,26 @@
 {
+  "modDependencies": {
+    "title": "Mod dependencies",
+    "enableTitle": "Enable required mods",
+    "disableTitle": "Other mods need this mod",
+    "enableText": "Enable these mods together, including their required dependencies?",
+    "disableText": "These enabled mods depend on your selection, directly or indirectly. They may stop working. Only the selected mods will be disabled.",
+    "enable": "Enable listed mods",
+    "disable": "Disable anyway",
+    "requires": "Requires",
+    "usedBy": "Required by",
+    "none": "No declared dependencies found.",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "missing": "Not installed",
+    "install": "Install {id}",
+    "installed": "Installed: {names}",
+    "unresolved": "Still missing: {names}",
+    "ambiguous": "Multiple installed mods provide these dependencies. Enable the appropriate version yourself: {names}",
+    "unknown": "This mod has no readable dependency metadata. Check its project description for requirements.",
+    "unknownFiles": "Dependencies could not be read for: {names}. Check their project descriptions before enabling.",
+    "project": "Project description"
+  },
   "common": {
     "actions": {
       "apply": "Apply",
@@ -1361,7 +1383,16 @@
       "selectAll": "Select all",
       "selected": "{n} selected | {n} selected",
       "update": "Update ({n})",
-      "clear": "Clear selection"
+      "clear": "Clear selection",
+      "tipTitle": "Tip:",
+      "tip": "Ctrl+click selects or deselects a single entry. Shift+click takes everything from the last clicked row up to this one: if this row is already selected, the range is deselected.",
+      "hint": "Ctrl+click: one entry · Shift+click: select or deselect a range",
+      "needStart": "Click a row first, then Shift+click another one",
+      "hoverRow": "Point at a row and click",
+      "preview": "Click selects {n} entry | Click selects {n} entries",
+      "previewOff": "Click deselects {n} entry | Click deselects {n} entries",
+      "confirmed": "{n} entry selected | {n} entries selected",
+      "confirmedOff": "{n} entry deselected | {n} entries deselected"
     },
     "columns": {
       "project": "Project",
@@ -2417,6 +2448,17 @@
   },
   "settings": {
     "title": "Settings",
+    "about": {
+      "title": "About TRS Launcher",
+      "notice": "Original TRS Launcher by Ohev Tamerin (theredstonee). This notice must remain visible in every copy and every modified version. It must not be removed under any circumstances, except with an additional written, signed confirmation from the author.",
+      "license": "TRS Launcher is free software under the GNU General Public License version 3 (GPL-3.0-only): you may share and change it under that license. It comes with no warranty.",
+      "thirdParty": "Parts of the process handling are adapted from Polyfrost OneLauncher (GPL-3.0-only). All third-party notices are in the NOTICE file.",
+      "openLicense": "Open license",
+      "openNotice": "Open NOTICE",
+      "warning": "The author notice of this copy is missing or has been changed, so this copy may not be the original. The original text is shown here. The launcher keeps working normally and nothing is sent anywhere.",
+      "warningShort": "Warning: author notice missing or changed.",
+      "warningDetails": "Details"
+    },
     "footer": {
       "clientModUpdate": "TRS Client: update to {version} downloaded",
       "clientModCurrent": "TRS Client: version {version} (up to date)",
@@ -3444,10 +3486,12 @@
     "groups": {
       "interface": "Interface",
       "account": "Account",
-      "instances": "Instances"
+      "instances": "Instances",
+      "about": "Info"
     },
     "app": {
       "appearance": "Appearance",
+      "about": "About",
       "features": "Features",
       "behavior": "Behavior",
       "language": "Language",

@@ -177,6 +177,21 @@ public final class NewSince {
 	/** Leisten-Eintrag „Minispiele“ im TRS-Menü. */
 	public static final String MENU_MINIGAMES = "menu:minigames";
 
+	/**
+	 * Live-Wegpunkte mit Freunden (Version mit den neuen Wegpunkten): geteilte Wegpunkte, Live-Position,
+	 * Todespunkt, Freigabe je Freund.
+	 */
+	public static final String WAYPOINT_LIVE = "0.25.0";
+	/**
+	 * Neue Wegpunkte (Version nach TRS Client 0.24.2): Sets, Kästchen und Symbole, Rechtsklick-Menü der Weltkarte mit
+	 * Teleport, In-Welt-Anzeige, Schnell-Taste, mehrere Todespunkte.
+	 */
+	public static final String WAYPOINTS_2 = "0.25.0";
+	/** Sozial → Freunde: Schalter „Wegpunkte & Position teilen“ je Freund. */
+	public static final String FRIENDS_WAYPOINTS = "friends:waypoints";
+	/** Weltkarte → Wegpunkt-Liste → Reiter „Freunde“. */
+	public static final String WORLD_MAP_FRIENDS = "worldMap:friends";
+
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
 	private static final Map<String, List<String>> EXTRAS = new LinkedHashMap<String, List<String>>();
@@ -266,6 +281,11 @@ public final class NewSince {
 		add(SMART_THREADS, "smartThreads", "threadLoad", "vulkanRenderer");
 		// Minispiele: Modul + Eintrag in der Menü-Leiste.
 		add(MINIGAMES, "minigames", MENU_MINIGAMES);
+		// Live-Wegpunkte mit Freunden.
+		// Neue Wegpunkte: Einstellungen des Moduls.
+		add(WAYPOINTS_2, "waypoints.quickKey", "waypoints.labels", "waypoints.deathKeep", "waypoints.deathGuide", "waypoints.teleport", "waypoints.sort");
+		add(WAYPOINT_LIVE, "waypoints.shareLive", "waypoints.shareDeath", "waypoints.sharePosition", "waypoints.friendWaypoints",
+				"waypoints.friendPositions", FRIENDS_WAYPOINTS, WORLD_MAP_FRIENDS);
 	}
 
 	private NewSince() {

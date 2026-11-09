@@ -57,7 +57,9 @@ public final class LegacyDisconnect {
 				break;
 			}
 		}
-		if (top + 44 > s.height - 32) top = Math.max(4, s.height - 32 - 44);
+		int rowGap = 8;
+		int rowsHeight = 40 + rowGap;
+		if (top + rowsHeight > s.height - 32) top = Math.max(4, s.height - 32 - rowsHeight);
 		int gap = 4;
 		int full = Math.min(s.width - 20, 310);
 		int left = s.width / 2 - full / 2;
@@ -65,9 +67,9 @@ public final class LegacyDisconnect {
 		int third = (full - 2 * gap) / 3;
 		reauth = new GuiButton(FIRST_ID, left, top, half, 20, I18n.tr("disconnect.reauth"));
 		reconnect = new GuiButton(FIRST_ID + 1, left + half + gap, top, full - half - gap, 20, I18n.tr("disconnect.reconnect"));
-		accounts = new GuiButton(FIRST_ID + 2, left, top + 24, third, 20, I18n.tr("disconnect.accounts"));
-		copy = new GuiButton(FIRST_ID + 3, left + third + gap, top + 24, third, 20, I18n.tr("disconnect.copy"));
-		status = new GuiButton(FIRST_ID + 4, left + 2 * (third + gap), top + 24, full - 2 * (third + gap), 20, I18n.tr("disconnect.status"));
+		accounts = new GuiButton(FIRST_ID + 2, left, top + 20 + rowGap, third, 20, I18n.tr("disconnect.accounts"));
+		copy = new GuiButton(FIRST_ID + 3, left + third + gap, top + 20 + rowGap, third, 20, I18n.tr("disconnect.copy"));
+		status = new GuiButton(FIRST_ID + 4, left + 2 * (third + gap), top + 20 + rowGap, full - 2 * (third + gap), 20, I18n.tr("disconnect.status"));
 		list.add(reauth);
 		list.add(reconnect);
 		list.add(accounts);

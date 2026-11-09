@@ -1,6 +1,7 @@
 package dev.theredstonee.trsclient.core.map;
 
 import dev.theredstonee.trsclient.core.waypoint.Waypoint;
+import dev.theredstonee.trsclient.core.waypoint.WaypointSort;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,13 +15,30 @@ import java.util.Set;
  * Filter der Wegpunkt-Liste auf der Weltkarte – reine Logik (Tests): Suche (alle Wörter müssen im Namen vorkommen,
  * Groß-/Kleinschreibung egal; eine Zahl findet auch die Koordinaten), Dimension (alle oder eine; Wegpunkte ohne
  * Dimension gelten überall), waagerechte Entfernung zum Spieler (über Dimensionsgrenzen Nether ↔ Oberwelt
- * umgerechnet) und Sortierung: nächste zuerst, ohne Entfernung ans Ende, dann nach Name.
+ * umgerechnet), Set, Art (eingeblendet, ausgeblendet, Todespunkte, geteilt) und Sortierung nach Wahl: nächste zuerst
+ * (ohne Entfernung ans Ende, dann nach Name), Name oder Erstellung.
  */
 public final class WaypointFilter {
 	/** Dimensionsfilter „alle“. */
 	public static final String ALL = "*";
 
 	private WaypointFilter() {
+	}
+
+	/** Filter nach Art des Wegpunkts. */
+	public enum Kind {
+		ALL, SHOWN, HIDDEN, DEATHS, SHARED
+	}
+
+	/** Alles, was eine Wegpunkt-Liste filtert und sortiert (die Karte und der Spiel-Bildschirm nutzen dasselbe). */
+	public static final class Query {
+		public String text = "";
+		/** {@link #ALL} oder eine Dimensionskennung. */
+		public String dimension = ALL;
+		/** {@link #ALL} oder eine Set-Kennung. */
+		public String set = ALL;
+		public Kind kind = Kind.ALL;
+		public WaypointSort sort = WaypointSort.DISTANCE;
 	}
 
 	/** Eine Zeile der Liste. */
@@ -55,6 +73,65 @@ public final class WaypointFilter {
 		}
 		Collections.sort(out, ORDER);
 		return out;
+	}
+
+	/**
+	 * Wie {@link #apply(List, String, String, String, double, double)}, mit allen Filtern.
+	 *
+	 * @param shown sagt, ob ein Wegpunkt gerade angezeigt wird (sein eigener Schalter und der seines Sets)
+	 */
+	public static List<Row> apply(List<Waypoint> all, Query q, java.util.function.Predicate<Waypoint> shown, String playerDim, double px,
+			double pz) {
+		String[] words = words(q.text);
+		List<Row> out = new ArrayList<Row>();
+		for (Waypoint w : all) {
+			if (w == null) continue;
+			if (q.dimension != null && !ALL.equals(q.dimension) && !w.inDimension(q.dimension)) continue;
+			if (q.set != null && !ALL.equals(q.set) && !q.set.equals(w.setId())) continue;
+			if (!kindMatches(w, q.kind, shown)) continue;
+			if (!matches(w, words)) continue;
+			out.add(row(w, playerDim, px, pz));
+		}
+		Collections.sort(out, order(q.sort));
+		return out;
+	}
+
+	private static boolean kindMatches(Waypoint w, Kind kind, java.util.function.Predicate<Waypoint> shown) {
+		switch (kind == null ? Kind.ALL : kind) {
+			case SHOWN:
+				return shown.test(w);
+			case HIDDEN:
+				return !shown.test(w);
+			case DEATHS:
+				return w.death;
+			case SHARED:
+				return w.shared;
+			default:
+				return true;
+		}
+	}
+
+	/** Reihenfolge je Sortierwahl. */
+	static Comparator<Row> order(WaypointSort sort) {
+		if (sort == WaypointSort.NAME) {
+			return new Comparator<Row>() {
+				@Override
+				public int compare(Row a, Row b) {
+					int c = name(a.waypoint).compareTo(name(b.waypoint));
+					return c != 0 ? c : ORDER.compare(a, b);
+				}
+			};
+		}
+		if (sort == WaypointSort.CREATED) {
+			return new Comparator<Row>() {
+				@Override
+				public int compare(Row a, Row b) {
+					int c = Long.compare(b.waypoint.created, a.waypoint.created);
+					return c != 0 ? c : ORDER.compare(a, b);
+				}
+			};
+		}
+		return ORDER;
 	}
 
 	/** Zeile mit Entfernung. */

@@ -86,6 +86,10 @@ public final class AutoTest {
 		// -PtrsAutotestOnly=realbench: nur der realistische Benchmark (eigener Ablauf, ohne Menü-Tests)
 		if (RealBenchRunner.installIfRequested()) return;
 		TrsClient.LOGGER.info("[Autotest] aktiv");
+		if ("about".equals(System.getProperty("trsclient.autotest.only"))) {
+			AboutTest.install();
+			return;
+		}
 		if ("accounts".equals(System.getProperty("trsclient.autotest.only"))) {
 			AccountsTest.install();
 			return;
@@ -141,7 +145,11 @@ public final class AutoTest {
 			ReloadTest.install();
 			return;
 		}
-		if ("maps".equals(System.getProperty("trsclient.autotest.only"))) {
+		if ("waypoint-rights".equals(System.getProperty("trsclient.autotest.only"))) {
+			WaypointRightsTest.install();
+			return;
+		}
+		if ("maps".equals(System.getProperty("trsclient.autotest.only")) || "waypoints".equals(System.getProperty("trsclient.autotest.only"))) {
 			MapsTest.install();
 			return;
 		}

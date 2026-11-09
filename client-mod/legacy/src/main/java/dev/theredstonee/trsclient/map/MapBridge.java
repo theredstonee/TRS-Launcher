@@ -235,6 +235,43 @@ public final class MapBridge implements MapPlatform {
 	}
 
 	@Override
+	public int commandAccess() {
+		net.minecraft.client.entity.EntityPlayerSP player = Mc.player();
+		if (player == null) return 0;
+		// Unter 1.13 gibt es kein execute in: nur die eigene Dimension.
+		//? if >=1.10 {
+		/*boolean allowed = player.canUseCommand(2, "tp");
+		*///?} elif >=1.9 {
+		/*boolean allowed = player.canCommandSenderUseCommand(2, "tp");
+		*///?} else {
+		// 1.8.9 meldet die Berechtigungsstufe nicht an den Client: nur die eigene Einzelspielerwelt ist bekannt.
+		net.minecraft.server.integrated.IntegratedServer server = mc().getIntegratedServer();
+		boolean allowed = server != null && server.getConfigurationManager().canSendCommands(player.getGameProfile());
+		//?}
+		return allowed ? dev.theredstonee.trsclient.core.waypoint.WaypointTeleport.TP : 0;
+	}
+
+	@Override
+	public boolean chatBridge() {
+		return true;
+	}
+
+	@Override
+	public void sendChat(String text) {
+		Mc.sendChat(text);
+	}
+
+	@Override
+	public void copyToClipboard(String text) {
+		Mc.setClipboard(text);
+	}
+
+	@Override
+	public String keyName(String key) {
+		return dev.theredstonee.trsclient.compat.Keys.display(key);
+	}
+
+	@Override
 	public boolean openWorldMap() {
 		dev.theredstonee.trsclient.screen.WorldMapScreen screen = dev.theredstonee.trsclient.screen.WorldMapScreen.create();
 		if (screen == null) return false;
@@ -246,6 +283,12 @@ public final class MapBridge implements MapPlatform {
 	public String serverMotd() {
 		ServerData data = mc().getCurrentServerData();
 		return data == null ? null : data.serverMOTD;
+	}
+
+	@Override
+	public boolean playerLoaded(java.util.UUID uuid) {
+		World w = Mc.world();
+		return uuid != null && w != null && w.getPlayerEntityByUUID(uuid) != null;
 	}
 
 	@Override

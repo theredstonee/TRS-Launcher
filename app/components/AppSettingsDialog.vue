@@ -886,6 +886,9 @@ async function allowFirewall() {
         <input v-model.number="form.concurrentDownloads" type="number" min="1" max="64" class="field w-24 font-mono" :aria-label="t('settings.network.downloadsTitle')" />
       </SettingRow>
     </div>
+
+    <!-- Über: Urheberhinweis, Lizenz ---------------------------------------------- -->
+    <AboutSettings v-else-if="active === 'about'" />
   </SettingsShell>
 
   <DataMoveDialog v-if="movingData && info" :current="info.dataDir" @close="movingData = false" />

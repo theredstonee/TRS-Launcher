@@ -63,6 +63,25 @@ public final class Projection {
 		return true;
 	}
 
+	/**
+	 * Richtung zu einem Punkt auf dem Bildschirm (Länge 1, x nach rechts, y nach unten), auch wenn er hinter der Kamera
+	 * liegt – für Hinweise am Bildschirmrand.
+	 */
+	public static double[] screenDirection(double camX, double camY, double camZ, float yawDeg, float pitchDeg, double px, double py, double pz) {
+		double yaw = Math.toRadians(yawDeg);
+		double pitch = Math.toRadians(pitchDeg);
+		double cosPitch = Math.cos(pitch), sinPitch = Math.sin(pitch), cosYaw = Math.cos(yaw), sinYaw = Math.sin(yaw);
+		double fx = -sinYaw * cosPitch, fy = -sinPitch, fz = cosYaw * cosPitch;
+		double rx = -cosYaw, rz = -sinYaw;
+		double ux = -rz * fy, uy = rz * fx - rx * fz, uz = rx * fy;
+		double dx = px - camX, dy = py - camY, dz = pz - camZ;
+		double right = dx * rx + dz * rz;
+		double up = dx * ux + dy * uy + dz * uz;
+		double len = Math.sqrt(right * right + up * up);
+		if (len < 1e-6) return new double[]{0, 1};
+		return new double[]{right / len, -up / len};
+	}
+
 	/** Entfernung als "12 m" bzw. "1,2 km". */
 	public static String distanceLabel(double blocks) {
 		// Dezimaltrennzeichen der aktiven Sprache ("1.2 km" / "1,2 km").

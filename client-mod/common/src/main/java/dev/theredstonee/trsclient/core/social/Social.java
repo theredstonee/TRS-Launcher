@@ -71,7 +71,11 @@ public final class Social {
 		default void hosting(MeEvent e) {
 		}
 
-		/** Braucht jemand anderes (Welt-Hosting) gerade den Echtzeit-Stream? */
+		/** Live-Wegpunkt-Ereignis ({@code wpshare_*}) oder Stream-Neubeginn ({@code hello}/{@code resync}) – Spiel-Thread. */
+		default void wpshare(MeEvent e) {
+		}
+
+		/** Braucht jemand anderes (Welt-Hosting, Live-Wegpunkte) gerade den Echtzeit-Stream? */
 		default boolean wantsStream() {
 			return false;
 		}
@@ -508,6 +512,14 @@ public final class Social {
 				// Hosting darf den Chat nie stören.
 			}
 			if (t.startsWith("hosting_")) return;
+		}
+		if (t.startsWith("wpshare_") || t.equals("hello") || t.equals("resync")) {
+			try {
+				backend.wpshare(e);
+			} catch (RuntimeException ignored) {
+				// Live-Wegpunkte dürfen den Chat nie stören.
+			}
+			if (t.startsWith("wpshare_")) return;
 		}
 		if (t.equals("hello")) {
 			// Neuer Stream ohne Wiederaufnahme, obwohl schon einer lief (Lücke unbekannt): alles neu laden.

@@ -68,6 +68,7 @@ import {
 } from './creator'
 import { creatorStatsDetailSchema, creatorStatsListSchema, type SortOrder, type StatSortKey } from './creatorStats'
 import { bisectViewSchema } from './bisect'
+import { dependencyGraphSchema } from './modDependencies'
 import { adminFeaturedPackSchema, featuredListSchema, type FeaturedPatch } from './featured'
 import { conflictReportSchema, fitResultSchema } from './modConflicts'
 import {
@@ -550,6 +551,7 @@ export const backend = {
     call<CompatReport>('fix_mod_conflicts', { id, prefer, taskId }),
   /** Konflikt-Helfer: Mod-Versionen, die nicht zusammenpassen (nur lesen). */
   modConflicts: (id: string) => checked(conflictReportSchema, 'mod_conflicts', { id }),
+  contentDependencies: (id: string) => checked(dependencyGraphSchema, 'content_dependencies', { id }),
   /** Konflikt-Helfer: passende Version einer Mod-Datei suchen und installieren. */
   modConflictFit: (id: string, fileName: string, taskId: string | null = null) =>
     checked(fitResultSchema, 'mod_conflict_fit', { id, fileName, taskId }),

@@ -425,6 +425,21 @@ public final class MapEngine {
 		return new ArrayList<Waypoint>(store.all(key));
 	}
 
+	/** Wird der Wegpunkt angezeigt (eigener Schalter und der seines Sets)? */
+	public boolean waypointShown(Waypoint w) {
+		if (platform == null) return false;
+		WaypointStore store = platform.waypoints();
+		return store != null && store.shown(platform.waypointWorldKey(), w);
+	}
+
+	/** Das aktuelle Ziel dieser Welt oder null. */
+	public Waypoint waypointTarget() {
+		if (platform == null) return null;
+		WaypointStore store = platform.waypoints();
+		String key = platform.waypointWorldKey();
+		return store == null || key == null || key.isEmpty() ? null : store.target(key);
+	}
+
 	/** Neuer Wegpunkt (von der Karte). */
 	public Waypoint addWaypoint(String name, int x, int y, int z, int color) {
 		return addWaypoint(name, x, y, z, color, dimension);

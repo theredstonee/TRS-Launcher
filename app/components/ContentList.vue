@@ -3,6 +3,7 @@ import { isTauri } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import type { BulkAction, ContentItem, ContentKind, ContentUpdate, DropEvent, DuplicateModGroup, Instance, ModrinthVersion, UploadResult } from '~/types'
 import { cancelledError } from '~/stores/tasks'
+import { dependentMods, planModEnable, type DependencyNode } from '~/utils/modDependencies'
 import {
   buildSections,
   contentKey,
@@ -18,6 +19,7 @@ import {
   type GroupColor,
   type OriginFilter,
 } from '~/utils/contentGroups'
+import { applyRange, rangeAction, rangeBetween, type RangeAction } from '~/utils/contentSelection'
 
 // Inhalte einer Instanz als EINE Tabelle: Filter-Chips,
 // Suche, Sortierung, Mehrfachauswahl mit Sammelaktionen, Dateien per Dialog
@@ -77,6 +79,7 @@ const switching = ref<ContentItem | null>(null)
 const changelogFor = ref<ContentItem | null>(null)
 const toDelete = ref<ContentItem[] | null>(null)
 const dragging = ref(false)
+const dependencyDialog = ref<{ graph: DependencyNode[]; targets: ContentItem[]; action: 'enable' | 'disable' | null } | null>(null)
 
 // --- Gruppen & Herkunft ----------------------------------------------------------
 const org = ref<ContentOrganization>(emptyOrganization())
@@ -238,13 +241,123 @@ function toggleOne(item: ContentItem) {
   if (!next.delete(keyOf(item))) next.add(keyOf(item))
   selected.value = next
 }
+
+// Wie im Dateimanager: Strg+Klick schaltet einen Eintrag, Umschalt+Klick den ganzen Bereich vom Startpunkt bis hierher.
+// Die angeklickte Zeile entscheidet: Ist sie schon ausgewählt, wird der Bereich abgewählt.
+const SELECT_TIP_KEY = 'trs.content.selectTipSeen'
+const selectAnchor = ref<string | null>(null)
+const shiftHeld = ref(false)
+const hoveredRow = ref<string | null>(null)
+const flashRows = ref<Set<string>>(new Set())
+const flashOff = ref(false)
+const selectConfirm = ref<{ n: number; action: RangeAction } | null>(null)
+const selectTipOpen = ref(!readSelectTipSeen())
+let confirmTimer: ReturnType<typeof setTimeout> | null = null
+
+function readSelectTipSeen() {
+  try {
+    return localStorage.getItem(SELECT_TIP_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+function closeSelectTip() {
+  selectTipOpen.value = false
+  try {
+    localStorage.setItem(SELECT_TIP_KEY, '1')
+  } catch {
+    // Ohne Speicher erscheint der Hinweis beim nächsten Start wieder, mehr passiert nicht.
+  }
+}
+const selectKeys = computed(() => rows.value.flatMap((row) => (row.type === 'item' ? [row.key] : [])))
+/** Zeilen, die ein Klick gerade ändern würde: nur während Umschalt gedrückt ist. */
+const rangePreview = computed(() => {
+  if (!shiftHeld.value || !selectAnchor.value || !hoveredRow.value) return new Set<string>()
+  return new Set(rangeBetween(selectKeys.value, selectAnchor.value, hoveredRow.value) ?? [])
+})
+const previewAction = computed<RangeAction>(() => (hoveredRow.value ? rangeAction(selected.value, hoveredRow.value) : 'select'))
+const selectPill = computed(() => {
+  if (selectConfirm.value) {
+    const { n, action } = selectConfirm.value
+    return t(action === 'select' ? 'content.selection.confirmed' : 'content.selection.confirmedOff', { n }, n)
+  }
+  if (!shiftHeld.value || mobile.value || !selectKeys.value.length) return ''
+  if (!selectAnchor.value) return t('content.selection.needStart')
+  const n = rangePreview.value.size
+  if (!n) return t('content.selection.hoverRow')
+  return t(previewAction.value === 'select' ? 'content.selection.preview' : 'content.selection.previewOff', { n }, n)
+})
+function confirmSelection(keys: string[], action: RangeAction) {
+  flashRows.value = new Set(keys)
+  flashOff.value = action === 'deselect'
+  selectConfirm.value = { n: keys.length, action }
+  if (confirmTimer) clearTimeout(confirmTimer)
+  confirmTimer = setTimeout(() => {
+    flashRows.value = new Set()
+    selectConfirm.value = null
+  }, 1600)
+}
+function selectRange(item: ContentItem) {
+  const key = keyOf(item)
+  const keys = selectAnchor.value ? rangeBetween(selectKeys.value, selectAnchor.value, key) : null
+  // Ohne Startpunkt beginnt hier einer.
+  selectAnchor.value = key
+  closeSelectTip()
+  if (!keys) {
+    toggleOne(item)
+    return
+  }
+  const action = rangeAction(selected.value, key)
+  selected.value = applyRange(selected.value, keys, action)
+  confirmSelection(keys, action)
+}
 function selectRow(event: MouseEvent, item: ContentItem) {
-  if (!event.shiftKey) return
   const target = event.target
   if (target instanceof Element && target.closest('button, input, [role="switch"], [data-row-menu]')) return
-  event.preventDefault()
-  toggleOne(item)
+  if (event.shiftKey) {
+    event.preventDefault()
+    selectRange(item)
+  } else if (event.ctrlKey || event.metaKey) {
+    event.preventDefault()
+    toggleOne(item)
+    selectAnchor.value = keyOf(item)
+    closeSelectTip()
+  } else {
+    // Ein normaler Klick wählt nichts aus, setzt aber den Startpunkt für Umschalt+Klick.
+    selectAnchor.value = keyOf(item)
+    const link = projectLink(item)
+    if (item.kind === 'mod' && link && !(target instanceof Element && target.closest('a'))) void navigateTo(link)
+  }
 }
+function selectBox(event: MouseEvent, item: ContentItem) {
+  const box = event.currentTarget as HTMLInputElement
+  if (event.shiftKey) selectRange(item)
+  else {
+    toggleOne(item)
+    selectAnchor.value = keyOf(item)
+  }
+  // Der Browser hat das Kästchen schon umgeschaltet; bleibt der Zustand gleich, rendert Vue es nicht neu.
+  void nextTick(() => {
+    box.checked = selected.value.has(keyOf(item))
+  })
+}
+function trackShift(event: KeyboardEvent) {
+  if (event.key === 'Shift') shiftHeld.value = event.type === 'keydown'
+}
+function releaseShift() {
+  shiftHeld.value = false
+}
+onMounted(() => {
+  window.addEventListener('keydown', trackShift)
+  window.addEventListener('keyup', trackShift)
+  window.addEventListener('blur', releaseShift)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', trackShift)
+  window.removeEventListener('keyup', trackShift)
+  window.removeEventListener('blur', releaseShift)
+  if (confirmTimer) clearTimeout(confirmTimer)
+})
 const selectedUpdates = computed(() => selectedItems.value.map(updateFor).filter((u): u is ContentUpdate => !!u))
 
 // --- Gruppen ----------------------------------------------------------------------
@@ -358,16 +471,77 @@ const dragTargetName = computed(() => {
 
 // --- Aktionen --------------------------------------------------------------------
 async function toggle(item: ContentItem) {
-  try {
-    await backend.setContentEnabled(props.instance.id, item.kind, item.fileName, !item.enabled)
-    item.enabled = !item.enabled
-  } catch (e) {
-    toasts.error(e)
-    load(true)
-  }
+  await bulk(item.enabled ? 'disable' : 'enable', [item])
 }
 
 async function bulk(action: BulkAction, targets: ContentItem[]) {
+  if (bulkBusy.value || bisecting.value) return
+  if ((action === 'enable' || action === 'disable') && targets.some(item => item.kind === 'mod')) {
+    localBulk.value = 'dependencies'
+    try {
+      const graph = await backend.contentDependencies(props.instance.id)
+      const files = targets.filter(item => item.kind === 'mod').map(item => item.fileName)
+      const plan = planModEnable(graph, files)
+      const needsConfirmation = action === 'enable'
+        ? plan.files.some(file => !files.includes(file)) || !!(plan.missing.length || plan.ambiguous.length || plan.unknown.length)
+        : dependentMods(graph, files, true).length > 0
+      if (needsConfirmation) {
+        dependencyDialog.value = { graph, targets, action }
+        return
+      }
+    } catch (cause) {
+      toasts.error(cause)
+      return
+    } finally {
+      localBulk.value = null
+    }
+  }
+  await applyBulk(action, targets)
+}
+
+async function openDependencies(item: ContentItem) {
+  if (bulkBusy.value || dependencyDialog.value) return
+  localBulk.value = 'dependencies'
+  try {
+    dependencyDialog.value = { graph: await backend.contentDependencies(props.instance.id), targets: [item], action: null }
+  } catch (cause) {
+    toasts.error(cause)
+  } finally {
+    localBulk.value = null
+  }
+}
+
+async function refreshDependencies() {
+  const dialog = dependencyDialog.value
+  if (!dialog) return
+  localBulk.value = 'dependencies'
+  try {
+    dialog.graph = await backend.contentDependencies(props.instance.id)
+    await load(true)
+  } catch (cause) {
+    toasts.error(cause)
+  } finally {
+    localBulk.value = null
+  }
+}
+
+async function confirmDependencies() {
+  const dialog = dependencyDialog.value
+  if (!dialog?.action || bulkBusy.value || bisecting.value) return
+  const plan = planModEnable(dialog.graph, dialog.targets.filter(item => item.kind === 'mod').map(item => item.fileName))
+  if (dialog.action === 'enable' && (plan.missing.length || plan.ambiguous.length)) return
+  const targets = [...dialog.targets]
+  if (dialog.action === 'enable') {
+    for (const file of plan.files) {
+      const item = items.value.find(item => item.kind === 'mod' && item.fileName === file)
+      if (item && !targets.some(target => keyOf(target) === keyOf(item))) targets.push(item)
+    }
+  }
+  dependencyDialog.value = null
+  await applyBulk(dialog.action, targets)
+}
+
+async function applyBulk(action: BulkAction, targets: ContentItem[]) {
   localBulk.value = action
   try {
     const r = await backend.bulkContent(
@@ -595,6 +769,15 @@ const pendingUpdates = computed(() => updates.value ?? [])
       {{ instance.overrides.boost === false ? t('content.boostOff') : t('content.boostOn') }}
     </p>
 
+    <div v-if="selectTipOpen && !mobile && selectKeys.length > 1" class="card mb-3 flex items-center gap-3 px-4 py-2 text-xs text-base-300" data-testid="content-select-tip">
+      <span class="min-w-0 flex-1"><b class="text-base-100">{{ t('content.selection.tipTitle') }}</b> {{ t('content.selection.tip') }}</span>
+      <button class="text-base-400 hover:text-base-50" :aria-label="t('common.actions.close')" @click="closeSelectTip">
+        <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+      </button>
+    </div>
+
+    <div v-if="selectPill" class="select-pill" role="status" aria-live="polite" data-testid="content-select-pill">{{ selectPill }}</div>
+
     <div v-if="loading && !items.length" class="card divide-y divide-base-800">
       <div v-for="i in 6" :key="i" class="flex items-center gap-3 px-3 py-2.5">
         <div class="skeleton size-4 rounded" />
@@ -632,11 +815,15 @@ const pendingUpdates = computed(() => updates.value ?? [])
             </div>
             <button v-if="selectedUpdates.length" class="bulk-btn text-lamp-300" :disabled="!!bulkBusy" @click="applyUpdates(selectedUpdates)">{{ t('content.selection.update', { n: selectedUpdates.length }) }}</button>
             <button class="bulk-btn text-redstone-300" :disabled="!!bulkBusy" @click="toDelete = [...selectedItems]">{{ t('common.actions.delete') }}</button>
-            <button class="ml-auto text-base-400 hover:text-base-50" @click="selected = new Set()">{{ t('content.selection.clear') }}</button>
+            <span class="ml-auto min-w-0 truncate font-normal text-base-400 mobile:hidden" data-testid="content-select-hint-bulk">{{ t('content.selection.hint') }}</span>
+            <button class="text-base-400 hover:text-base-50 mobile:ml-auto" @click="selected = new Set()">{{ t('content.selection.clear') }}</button>
           </div>
         </template>
         <template v-else>
-          <span>{{ t('content.columns.project') }}</span>
+          <span class="flex min-w-0 items-baseline gap-3">
+            <span class="shrink-0">{{ t('content.columns.project') }}</span>
+            <span class="min-w-0 truncate font-normal text-base-400 mobile:hidden" data-testid="content-select-hint">{{ t('content.selection.hint') }}</span>
+          </span>
           <span class="mobile:hidden">{{ t('common.labels.version') }}</span>
           <span class="text-right mobile:hidden">{{ t('content.columns.actions') }}</span>
         </template>
@@ -705,10 +892,21 @@ const pendingUpdates = computed(() => updates.value ?? [])
           <li
             v-else
           class="group grid grid-cols-[1.5rem_minmax(0,1fr)_11rem_10.5rem] items-center gap-3 px-3 py-2 transition-colors hover:bg-base-850 mobile:grid-cols-[1.5rem_minmax(0,1fr)_auto] mobile:gap-x-2 mobile:gap-y-0.5"
-          :class="{ 'bg-redstone-900/15': selected.has(keyOf(row.item)), 'opacity-40': drag?.items.includes(row.item) }"
+          :class="{
+            'bg-redstone-900/15': selected.has(keyOf(row.item)),
+            'opacity-40': drag?.items.includes(row.item),
+            'row-anchor': selectAnchor === keyOf(row.item) && !mobile,
+            'row-preview': rangePreview.has(keyOf(row.item)) && previewAction === 'select',
+            'row-preview-off': rangePreview.has(keyOf(row.item)) && previewAction === 'deselect',
+            'row-flash': flashRows.has(keyOf(row.item)) && !flashOff,
+            'row-flash-off': flashRows.has(keyOf(row.item)) && flashOff,
+          }"
+          @mousedown="$event.shiftKey && $event.preventDefault()"
+          @mouseenter="hoveredRow = keyOf(row.item)"
+          @mouseleave="hoveredRow = null"
           @click="selectRow($event, row.item)"
           >
-          <input type="checkbox" class="size-4 accent-redstone-500 mobile:row-span-2" :checked="selected.has(keyOf(row.item))" :aria-label="t('content.row.select', { name: titleOf(row.item) })" @change="toggleOne(row.item)" />
+          <input type="checkbox" class="size-4 accent-redstone-500 mobile:row-span-2" :checked="selected.has(keyOf(row.item))" :aria-label="t('content.row.select', { name: titleOf(row.item) })" @click="selectBox($event, row.item)" />
 
           <div class="flex min-w-0 items-center gap-3" :class="{ 'opacity-55': !row.item.enabled }">
             <button
@@ -781,7 +979,7 @@ const pendingUpdates = computed(() => updates.value ?? [])
               :aria-label="t(row.item.enabled ? 'content.row.disable' : 'content.row.enable', { name: titleOf(row.item) })"
               class="relative mx-1 h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-40"
               :class="row.item.enabled ? 'bg-redstone-500' : 'bg-base-700'"
-              :disabled="bisecting"
+              :disabled="bisecting || !!bulkBusy"
               :title="bisecting ? t('bisect.lockedTitle') : undefined"
               @click="toggle(row.item)"
             >
@@ -799,6 +997,7 @@ const pendingUpdates = computed(() => updates.value ?? [])
                   {{ t('content.menu.updateTo', { version: updateFor(row.item)!.versionNumber }) }}
                 </button>
                 <button v-if="row.item.source" class="menu-item" role="menuitem" @click="menuFor = null; changelogFor = row.item">{{ t('content.menu.changelog') }}</button>
+                <button v-if="row.item.kind === 'mod'" class="menu-item" role="menuitem" @click="menuFor = null; openDependencies(row.item)">{{ t('modDependencies.title') }}</button>
                 <NuxtLink v-if="projectLink(row.item)" :to="projectLink(row.item)!" class="menu-item" role="menuitem">{{ t('content.menu.projectPage') }}</NuxtLink>
                 <p v-if="!row.item.source" class="px-2.5 py-1.5 text-xs text-base-400">{{ t('content.menu.notModrinth') }}</p>
                 <p class="border-t border-base-800 px-2.5 pt-1.5 pb-0.5 text-[11px] text-base-600">{{ t('contentGroups.menu.moveTo') }}</p>
@@ -843,6 +1042,7 @@ const pendingUpdates = computed(() => updates.value ?? [])
         </button>
         <button v-if="menuItem.source" class="menu-item" @click="switching = menuItem; menuFor = null">{{ t('content.row.switchVersion') }}</button>
         <button v-if="menuItem.source" class="menu-item" @click="changelogFor = menuItem; menuFor = null">{{ t('content.menu.changelog') }}</button>
+        <button v-if="menuItem.kind === 'mod'" class="menu-item" @click="openDependencies(menuItem); menuFor = null">{{ t('modDependencies.title') }}</button>
         <NuxtLink v-if="projectLink(menuItem)" :to="projectLink(menuItem)!" class="menu-item">{{ t('content.menu.projectPage') }}</NuxtLink>
         <p v-if="!menuItem.source" class="px-2.5 py-1.5 text-xs text-base-400">{{ t('content.menu.notModrinth') }}</p>
         <div class="my-1 border-t border-base-700" />
@@ -876,6 +1076,18 @@ const pendingUpdates = computed(() => updates.value ?? [])
     <ChangelogDialog v-if="changelogFor?.source" :instance="instance" :item="changelogFor" @close="changelogFor = null" @install="switchVersion(changelogFor!, $event)" />
 
     <ApplyPresetDialog v-if="applyingPreset" :instance="instance" @close="applyingPreset = false" />
+    <ModDependenciesDialog
+      v-if="dependencyDialog"
+      :instance-id="instance.id"
+      :graph="dependencyDialog.graph"
+      :files="dependencyDialog.targets.filter(item => item.kind === 'mod').map(item => item.fileName)"
+      :action="dependencyDialog.action"
+      :busy="!!bulkBusy || bisecting"
+      :project-url="dependencyDialog.targets.length === 1 ? projectLink(dependencyDialog.targets[0]!) : null"
+      @close="dependencyDialog = null"
+      @apply="confirmDependencies"
+      @refresh="refreshDependencies"
+    />
     <ContentGroupDialog v-if="groupDialog" :group="groupDialog.group" :count="groupDialog.assign.length" @close="groupDialog = null" @save="saveGroup" />
     <BaseDialog v-if="groupToDelete" :title="t('contentGroups.deleteDialog.title')" @close="groupToDelete = null">
       <p class="text-sm text-base-200">{{ t('contentGroups.deleteDialog.text', { name: groupToDelete.name }) }}</p>
@@ -921,6 +1133,42 @@ const pendingUpdates = computed(() => updates.value ?? [])
 :root.is-mobile .filter-chip {
   min-height: 2.5rem;
   padding-inline: 0.875rem;
+}
+.select-pill {
+  @apply pointer-events-none fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-full bg-base-850 px-4 py-2 text-xs font-semibold text-base-50 shadow-xl ring-1 ring-redstone-500/60;
+}
+.row-anchor {
+  box-shadow: inset 3px 0 0 0 var(--color-redstone-500);
+}
+.row-preview {
+  @apply bg-redstone-900/10;
+  outline: 1px dashed color-mix(in srgb, var(--color-redstone-400) 60%, transparent);
+  outline-offset: -1px;
+}
+.row-preview-off {
+  @apply bg-base-800/40;
+  outline: 1px dashed var(--color-base-400);
+  outline-offset: -1px;
+}
+.row-flash {
+  animation: row-flash 0.7s ease-out;
+}
+.row-flash-off {
+  animation: row-flash-off 0.7s ease-out;
+}
+@keyframes row-flash {
+  from {
+    background-color: color-mix(in srgb, var(--color-redstone-500) 45%, transparent);
+  }
+}
+@keyframes row-flash-off {
+  from {
+    background-color: color-mix(in srgb, var(--color-base-400) 35%, transparent);
+  }
+}
+:root[data-reduced-motion] .row-flash,
+:root[data-reduced-motion] .row-flash-off {
+  animation: none;
 }
 .bulk-btn {
   @apply rounded-md bg-base-800 px-2.5 py-1 font-medium text-base-200 transition-colors hover:bg-base-700 hover:text-base-50 disabled:opacity-50;

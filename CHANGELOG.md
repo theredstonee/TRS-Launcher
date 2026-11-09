@@ -28,6 +28,64 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+## 0.34.0 – 2026-11-08 – Connected Mods | Mods verbunden
+<!-- banner: accent=#41cd62 motif=/news/0.34.0/banner.png -->
+<!-- shots:
+/news/0.34.0/mod-dependencies.png | A mod's required libraries and the other mods that depend on it | Die benötigten Bibliotheken eines Mods und die anderen Mods, die ihn brauchen
+/news/0.34.0/enable-dependencies.png | Confirm before enabling a mod together with its required dependencies | Vor dem Aktivieren eines Mods zusammen mit seinen Pflichtabhängigkeiten bestätigen
+-->
+
+### English
+- **TRS Client: death points can disappear when you reach them.** They are removed automatically by default; you can switch this off in the Waypoints settings.
+- **Keep track of mod dependencies.** The "Mod dependencies" action in an instance's content list shows which mods a mod requires and which other mods need it. Clicking a linked mod still opens its project description. When enabling mods, the launcher offers to enable their installed required dependencies too, with a list to confirm first. Missing dependencies can be installed explicitly; nothing is downloaded without your click. Disabling a needed mod warns about affected mods without turning them off. Dependencies come from the mod files; if their metadata cannot be read, check the project description.
+
+### Deutsch
+- **TRS Client: Todespunkte verschwinden auf Wunsch bei Ankunft.** Ab Werk werden sie automatisch entfernt; in den Wegpunkt-Einstellungen kannst du das ausschalten.
+- **Mod-Abhängigkeiten im Blick.** Die Aktion „Mod-Abhängigkeiten“ in der Inhaltsliste einer Instanz zeigt, welche Mods ein Mod benötigt und welche anderen Mods ihn brauchen. Ein Klick auf einen verknüpften Mod öffnet weiterhin seine Projektbeschreibung. Beim Aktivieren bietet der Launcher an, installierte Pflichtabhängigkeiten mit einzuschalten, mit einer Liste zur Bestätigung. Fehlende Abhängigkeiten lassen sich ausdrücklich installieren; ohne deinen Klick wird nichts heruntergeladen. Beim Deaktivieren eines benötigten Mods warnt der Launcher vor betroffenen Mods, ohne diese auszuschalten. Die Angaben stammen aus den Mod-Dateien; sind deren Metadaten nicht lesbar, hilft die Projektbeschreibung.
+
+## 0.33.0 – 2026-11-05 – Find Your Way | Weg gefunden
+<!-- banner: accent=#41cd62 motif=/news/0.33.0/banner.png -->
+<!-- shots:
+/news/0.33.0/waypoint-menu.png | Right-click on the world map: create a waypoint, teleport or share the spot | Rechtsklick auf der Weltkarte: Wegpunkt erstellen, teleportieren oder die Stelle teilen
+/news/0.33.0/waypoint-list.png | Waypoints in sets, with search, sorting, colors and symbols | Wegpunkte in Sets, mit Suche, Sortierung, Farben und Symbolen
+/news/0.33.0/waypoint-world.png | Waypoints in the world with name and distance, a beam for your target | Wegpunkte in der Welt mit Name und Entfernung, ein Lichtstrahl für dein Ziel
+-->
+
+### English
+
+- The launcher settings have a new "About" section and the TRS menu in the game has a new "About" page. They show who made TRS Launcher and TRS Client, the license and where to find all notices.
+- If that author notice is missing or was changed in a copy, the launcher and the TRS menu show a clear warning. Nothing is blocked and nothing is sent anywhere.
+- **TRS Client: new waypoints.** Waypoints now live in sets like "Base" or "Farms" that you can show or hide per world, with search, a choice of order (distance, name, newest) and filters. Each waypoint is a coloured box with one or two letters or a pixel symbol (bed, chest, sword, portal and more), in any colour you like, and it looks the same on the world map, on the minimap and in the world. In the world the box gets smaller with distance, name and distance fade in when you look at it, and only your current target has a light beam, plus an arrow at the screen edge when it is out of view. A quick key (J by default) sets a waypoint right where you stand. Death points are now kept (5 by default, you can change that), and after you respawn the newest one becomes your target until you reach it. The waypoint screens in the game now match the world map dialog. All your existing waypoints stay and land in the new "Default" set.
+- **TRS Client: right-click on the world map.** On a free spot you can create a waypoint, copy the coordinates, post them in the game chat or teleport there. On a waypoint you can edit, hide or delete it, teleport to it, make it your target, copy its coordinates and share it. Teleporting only shows up when you have the rights: operator or a permission on the server, cheats in singleplayer. The client only sends the normal /tp command and the server decides. From Minecraft 1.13 on this also works across dimensions, below that only in your current one. Minecraft 1.8.9 does not tell the client about its rights, so there teleporting is only offered in your own singleplayer world with cheats. Server owners can switch the entries off with the TRS server rules (`waypoints.teleport`).
+- **TRS Client: share waypoints live with friends.** In the friends list you choose for each friend whether they may see your waypoints and position (map button – "shares with you" shows who shares with you). Mark single waypoints with "Share with friends" (waypoint editor, list, world map); your last death point is shared automatically. On the same server or in the same TRS world your friends' waypoints then appear on the minimap (also as boxes at the edge), on the world map and in the world, together with their head and viewing direction – even when they are far away. Changes show up right away. The world map list has a new "Friends" tab: show or hide each friend, zoom to them, and "Take over" copies a friend's waypoint into your own with one click. Everything can be switched off in the Waypoints module (live sharing, death point, position, showing friends). Singleplayer worlds without hosting share nothing.
+
+### Deutsch
+
+- Die Launcher-Einstellungen haben einen neuen Abschnitt „Über“, das TRS-Menü im Spiel hat eine neue Seite „Info“. Dort steht, wer TRS Launcher und TRS Client gemacht hat, die Lizenz und wo alle Hinweise zu finden sind.
+- Fehlt dieser Urheberhinweis in einer Kopie oder wurde er verändert, zeigen der Launcher und das TRS-Menü eine deutliche Warnung. Dabei wird nichts gesperrt und nichts irgendwohin gesendet.
+- **TRS Client: neue Wegpunkte.** Wegpunkte liegen jetzt in Sets wie „Basis“ oder „Farmen“, die du je Welt ein- und ausblenden kannst, mit Suche, wählbarer Sortierung (Entfernung, Name, neueste) und Filtern. Jeder Wegpunkt ist ein farbiges Kästchen mit ein bis zwei Zeichen oder einem Pixel-Symbol (Bett, Truhe, Schwert, Portal und mehr), in jeder Farbe, die du willst, und sieht auf der Weltkarte, der Minimap und in der Welt gleich aus. In der Welt wird das Kästchen mit der Entfernung kleiner, Name und Entfernung blenden beim Draufschauen ein, und nur dein aktuelles Ziel hat einen Lichtstrahl, dazu einen Pfeil am Bildschirmrand, wenn es außer Sicht ist. Eine Schnell-Taste (ab Werk J) setzt einen Wegpunkt genau dort, wo du stehst. Todespunkte bleiben jetzt erhalten (ab Werk 5, einstellbar), und nach dem Wiederbeleben wird der neueste zu deinem Ziel, bis du ihn erreichst. Die Wegpunkt-Bildschirme im Spiel passen jetzt zum Dialog der Weltkarte. Alle deine bisherigen Wegpunkte bleiben und landen im neuen Set „Standard“.
+- **TRS Client: Rechtsklick auf der Weltkarte.** An einer freien Stelle kannst du einen Wegpunkt erstellen, die Koordinaten kopieren, sie im Spiel-Chat teilen oder dich dorthin teleportieren. Auf einem Wegpunkt kannst du ihn bearbeiten, ausblenden oder löschen, dich hin teleportieren, ihn als Ziel setzen, seine Koordinaten kopieren und ihn teilen. Teleportieren erscheint nur, wenn du die Rechte hast: Operator oder eine Berechtigung auf dem Server, Cheats im Einzelspieler. Der Client sendet nur den normalen /tp-Befehl, der Server entscheidet. Ab Minecraft 1.13 geht das auch über Dimensionen hinweg, darunter nur in der aktuellen. Minecraft 1.8.9 teilt dem Client seine Rechte nicht mit, deshalb gibt es den Teleport dort nur in der eigenen Einzelspielerwelt mit Cheats. Server-Betreiber können die Einträge mit den TRS-Server-Regeln abschalten (`waypoints.teleport`).
+- **TRS Client: Wegpunkte live mit Freunden teilen.** In der Freundesliste legst du je Freund fest, ob er deine Wegpunkte und deine Position sehen darf (Karten-Knopf – „teilt mit dir“ zeigt, wer mit dir teilt). Einzelne Wegpunkte markierst du mit „Mit Freunden teilen“ (Wegpunkt-Editor, Liste, Weltkarte); dein letzter Todespunkt wird automatisch geteilt. Auf demselben Server oder in derselben TRS-Welt erscheinen die Wegpunkte deiner Freunde dann auf der Minimap (auch als Kästchen am Rand), auf der Weltkarte und in der Welt – dazu ihr Kopf mit Blickrichtung, auch wenn sie weit weg sind. Änderungen sind sofort da. Die Liste der Weltkarte hat einen neuen Reiter „Freunde“: jeden Freund ein- oder ausblenden, zu ihm zoomen, und „Übernehmen“ kopiert einen Wegpunkt eines Freundes mit einem Klick in deine eigenen. Alles lässt sich im Modul „Wegpunkte“ abschalten (Live-Teilen, Todespunkt, Position, Anzeige der Freunde). Einzelspielerwelten ohne Hosting teilen nichts.
+
+## 0.32.3 – 2026-11-05 – Click & Pick | Klick und Auswahl
+<!-- banner: accent=#ff3b2f motif=/news/0.32.3/banner.png -->
+<!-- shots:
+/news/0.32.3/select-hint.png | The content list now tells you how selecting works | Die Inhaltsliste zeigt jetzt, wie das Auswählen geht
+/news/0.32.3/select-range.png | Shift+click on a selected row deselects the whole range | Umschalt+Klick auf eine ausgewählte Zeile wählt den ganzen Bereich ab
+-->
+
+### English
+- **Fixed a crash at game start with the TRS Client on Vulkan.** With Vulkan switched on, Iris or Xaero's World Map installed and an older Fabric Loader (up to 0.19.4), Minecraft 1.21.6 to 26.1.2 could crash at every start. TRS Client 0.24.1 starts normally again, no change to your instance needed.
+- **Select mods like in a file manager.** In an instance's content list, Ctrl+click now selects or deselects a single entry and Shift+click takes everything from the last clicked row up to the one you click. Shift+click on a row that is already selected deselects the whole range. While you hold Shift, the affected rows are outlined and a small note says what a click will do. The list always shows a short note about this, and a tip explains it the first time.
+- **TRS Client: disconnect screen buttons no longer overlap.** The extra buttons now sit below Minecraft's own buttons, with a clear gap between rows.
+
+### Deutsch
+- **Absturz beim Spielstart mit TRS Client auf Vulkan behoben.** Mit eingeschaltetem Vulkan, Iris oder Xaero's World Map und einem älteren Fabric Loader (bis 0.19.4) konnte Minecraft 1.21.6 bis 26.1.2 bei jedem Start abstürzen. TRS Client 0.24.1 startet wieder normal, an der Instanz musst du nichts ändern.
+- **Mods auswählen wie im Dateimanager.** In der Inhaltsliste einer Instanz wählt Strg+Klick jetzt einen einzelnen Eintrag aus oder ab, und Umschalt+Klick nimmt alles von der zuletzt angeklickten Zeile bis zur angeklickten. Umschalt+Klick auf eine schon ausgewählte Zeile wählt den ganzen Bereich ab. Solange du Umschalt hältst, sind die betroffenen Zeilen umrandet und ein kleiner Hinweis sagt, was ein Klick tut. Die Liste zeigt das immer in einem kurzen Hinweis, beim ersten Mal erklärt es zusätzlich ein Tipp.
+- **TRS Client: Buttons auf dem Verbindungsfehler-Bildschirm überlappen nicht mehr.** Die Zusatzbuttons sitzen jetzt mit deutlichem Abstand unter den Minecraft-Buttons; auch zwischen den Reihen ist mehr Platz.
+
 ## 0.32.2 – 2026-11-04 – Full Throttle Fix 2 | Sicherheits-Update
 <!-- banner: accent=#ffb02e motif=/news/0.32.0/banner.png -->
 <!-- shots:

@@ -275,6 +275,19 @@ public final class TrsModules {
 	public final BoolSetting waypointDistance;
 	public final BoolSetting waypointDeath;
 	public final NumberSetting waypointRange;
+	public final KeySetting waypointQuickKey;
+	public final NumberSetting waypointDeathKeep;
+	public final BoolSetting waypointDeathGuide;
+	public final BoolSetting waypointDeathRemove;
+	public final ChoiceSetting<dev.theredstonee.trsclient.core.waypoint.WaypointLabels> waypointLabels;
+	public final ChoiceSetting<dev.theredstonee.trsclient.core.waypoint.WaypointSort> waypointSort;
+	public final BoolSetting waypointTeleport;
+	/** Live-Teilen mit Freunden (API.md §41): Hauptschalter, Todespunkt, eigene Position, Anzeige der Freunde. */
+	public final BoolSetting waypointShareLive;
+	public final BoolSetting waypointShareDeath;
+	public final BoolSetting waypointSharePosition;
+	public final BoolSetting waypointFriendWaypoints;
+	public final BoolSetting waypointFriendPositions;
 	public final BoolSetting minimapRotate;
 	public final ChoiceSetting<MinimapZoom> minimapZoom;
 	public final NumberSetting minimapSize;
@@ -868,10 +881,24 @@ public final class TrsModules {
 
 		waypointAddKey = waypoints.add(new KeySetting("addKey", "Create waypoint", "key.keyboard.b"));
 		waypointListKey = waypoints.add(new KeySetting("listKey", "Open waypoints", "key.keyboard.n"));
-		waypointBeam = waypoints.add(new BoolSetting("beam", "Light beam", true));
+		waypointQuickKey = waypoints.add(new KeySetting("quickKey", "Quick waypoint at your position", "key.keyboard.j"));
+		waypointBeam = waypoints.add(new BoolSetting("beam", "Light beam for the current target", true));
+		waypointLabels = waypoints.add(new ChoiceSetting<>("labels", "Name and distance in the world",
+				dev.theredstonee.trsclient.core.waypoint.WaypointLabels.class, dev.theredstonee.trsclient.core.waypoint.WaypointLabels.LOOK));
 		waypointDistance = waypoints.add(new BoolSetting("distance", "Show distance", true));
-		waypointDeath = waypoints.add(new BoolSetting("death", "Set death point automatically", true));
+		waypointDeath = waypoints.add(new BoolSetting("death", "Set death points automatically", true));
+		waypointDeathKeep = waypoints.add(new NumberSetting("deathKeep", "Death points to keep", 5, 1, 20, 1, ""));
+		waypointDeathGuide = waypoints.add(new BoolSetting("deathGuide", "Way back: make the death point your target", true));
+		waypointDeathRemove = waypoints.add(new BoolSetting("deathRemove", "Remove death point when reached", true));
 		waypointRange = waypoints.add(new NumberSetting("range", "Only up to (blocks, 0 = always)", 0, 0, 2000, 100, ""));
+		waypointTeleport = waypoints.add(new BoolSetting("teleport", "Teleport entries (only with rights)", true));
+		waypointSort = waypoints.add(new ChoiceSetting<>("sort", "List order",
+				dev.theredstonee.trsclient.core.waypoint.WaypointSort.class, dev.theredstonee.trsclient.core.waypoint.WaypointSort.DISTANCE));
+		waypointShareLive = waypoints.add(new BoolSetting("shareLive", "Share live with friends", true));
+		waypointShareDeath = waypoints.add(new BoolSetting("shareDeath", "Share death point with friends", true));
+		waypointSharePosition = waypoints.add(new BoolSetting("sharePosition", "Share my position with friends", true));
+		waypointFriendWaypoints = waypoints.add(new BoolSetting("friendWaypoints", "Show friends' waypoints", true));
+		waypointFriendPositions = waypoints.add(new BoolSetting("friendPositions", "Show friends' positions", true));
 		minimapFairPlay = minimap.add(new BoolSetting("fairPlay", "Fair Play (maps show only what you could see)", false));
 		minimapShape = minimap.add(new ChoiceSetting<>("shape", "Shape", MapShape.class, MapShape.ROUND));
 		minimapSize = minimap.add(new NumberSetting("size", "Size (pixels)", 112, 64, 256, 8, ""));

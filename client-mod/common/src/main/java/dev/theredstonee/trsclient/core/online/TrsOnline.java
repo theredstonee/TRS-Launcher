@@ -120,6 +120,8 @@ public final class TrsOnline {
 	private final dev.theredstonee.trsclient.core.social.Social social;
 	/** Welt-Hosting (API.md §21). */
 	private final dev.theredstonee.trsclient.core.hosting.Hosting hosting;
+	/** Live-Wegpunkte mit Freunden (API.md §41). */
+	private final dev.theredstonee.trsclient.core.waypoint.live.LiveShare live;
 	/** Die Verbindung des laufenden Spiels (für Bildschirme ohne eigenen Zugang), null in Tests. */
 	private static volatile TrsOnline current;
 
@@ -164,6 +166,13 @@ public final class TrsOnline {
 				relogin(rejectedToken);
 			}
 		});
+		this.live = dev.theredstonee.trsclient.core.waypoint.live.LiveShare.create(http, config.apiBase(),
+				new dev.theredstonee.trsclient.core.waypoint.live.LiveShare.Backend() {
+					@Override
+					public void unauthorized(String rejectedToken) {
+						tokenRejected(rejectedToken);
+					}
+				});
 		this.social = new dev.theredstonee.trsclient.core.social.Social(
 				new dev.theredstonee.trsclient.core.social.ChatApi(http, config.apiBase()),
 				new dev.theredstonee.trsclient.core.social.MeStream(eventOpener, config.apiBase()),
@@ -184,8 +193,13 @@ public final class TrsOnline {
 					}
 
 					@Override
+					public void wpshare(dev.theredstonee.trsclient.core.social.MeEvent e) {
+						live.event(e);
+					}
+
+					@Override
 					public boolean wantsStream() {
-						return hosting.wantsStream();
+						return hosting.wantsStream() || live.wantsStream();
 					}
 
 					@Override
@@ -243,6 +257,11 @@ public final class TrsOnline {
 	/** Welt-Hosting. */
 	public dev.theredstonee.trsclient.core.hosting.Hosting hosting() {
 		return hosting;
+	}
+
+	/** Live-Wegpunkte mit Freunden. */
+	public dev.theredstonee.trsclient.core.waypoint.live.LiveShare live() {
+		return live;
 	}
 
 	/** Standard: HttpURLConnection, Umhang-Cache unter {@code <configDir>/trsclient/capes}. */
@@ -383,6 +402,11 @@ public final class TrsOnline {
 		social.tick(now, tok, uuid, name, enabled);
 		try {
 			hosting.tick(now, tok, uuid, name);
+		} catch (RuntimeException e) {
+			reportError(e);
+		}
+		try {
+			live.tick(now, tok, uuid);
 		} catch (RuntimeException e) {
 			reportError(e);
 		}
@@ -711,6 +735,11 @@ public final class TrsOnline {
 			hosting.shutdown();
 		} catch (RuntimeException ignored) {
 			// egal – der Raum läuft nach 90 s ab
+		}
+		try {
+			live.shutdown();
+		} catch (RuntimeException ignored) {
+			// egal – die Sitzung läuft nach 3 min ab
 		}
 		if (reportedToken == null) return;
 		final String t = token != null ? token : reportedToken;

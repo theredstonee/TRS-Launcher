@@ -108,6 +108,41 @@ public interface MapPlatform {
 		return null;
 	}
 
+	/**
+	 * Ist dieser Spieler gerade als Entity geladen (in Sichtweite)? Dann zeigt das Spiel ihn selbst – das HUD zeichnet
+	 * den Kopf eines Freundes (Live-Teilen) nicht doppelt. false = unbekannt/nein.
+	 */
+	default boolean playerLoaded(java.util.UUID uuid) {
+		return false;
+	}
+
+	/**
+	 * Darf der Spieler den Teleport-Befehl benutzen? Bits aus {@link dev.theredstonee.trsclient.core.waypoint.WaypointTeleport}:
+	 * {@code TP} (Einzelspieler mit Cheats bzw. OP/Berechtigung), {@code EXECUTE_IN} (zusätzlich andere Dimensionen, ab 1.13).
+	 * Nur lesen, was das Spiel ohnehin weiß (Befehlsbaum bzw. Berechtigungsstufe). 0 = nein oder unbekannt.
+	 */
+	default int commandAccess() {
+		return 0;
+	}
+
+	/** Kann diese Version Chat senden und in die Zwischenablage schreiben ({@link #sendChat}, {@link #copyToClipboard})? */
+	default boolean chatBridge() {
+		return false;
+	}
+
+	/** Sendet eine Chat-Nachricht bzw. einen Befehl ("/…") wie der normale Chat des Spielers. Nur Spiel-Thread. */
+	default void sendChat(String text) {
+	}
+
+	/** Text in die Zwischenablage. */
+	default void copyToClipboard(String text) {
+	}
+
+	/** Anzeigename einer Taste ("B") oder null. */
+	default String keyName(String key) {
+		return null;
+	}
+
 	/** Kurze Meldung im Chat (nur für den Spieler, z. B. „Karte gespeichert als …“). Nur Spiel-Thread. */
 	default void message(String text) {
 	}

@@ -2,6 +2,16 @@ package dev.theredstonee.trsclient.core.waypoint;
 
 /** Ein gespeicherter Wegpunkt (Gson-DTO – alle Felder öffentlich und einfach). */
 public final class Waypoint {
+	/** Erlaubte Kennung (wie die TRS API: 1–40 Zeichen {@code [A-Za-z0-9_-]}). */
+	private static final java.util.regex.Pattern ID = java.util.regex.Pattern.compile("[A-Za-z0-9_-]{1,40}");
+	private static final java.security.SecureRandom RANDOM = new java.security.SecureRandom();
+	private static final char[] ID_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-".toCharArray();
+
+	/**
+	 * Feste, zufällige Kennung (fürs Live-Teilen mit Freunden). Alte Dateien haben keine – {@link #normalized()} vergibt
+	 * dann eine neue (der Speicher schreibt sie beim nächsten Speichern mit).
+	 */
+	public String id;
 	public String name = defaultName();
 	public int x;
 	public int y;
@@ -14,6 +24,14 @@ public final class Waypoint {
 	public boolean visible = true;
 	/** Automatisch angelegter Todespunkt. */
 	public boolean death;
+	/** Mit Freunden live teilen (Freigabe je Freund; Standard aus). */
+	public boolean shared;
+	/** Set (Gruppe) in dieser Welt; leer = Standard-Set (alte Dateien), Todespunkte ohne Angabe = {@link WaypointStore#SET_DEATHS}. */
+	public String set = "";
+	/** Kürzel im Kästchen (1–2 Zeichen); leer = Anfangsbuchstabe des Namens. */
+	public String mark = "";
+	/** Pixel-Symbol aus {@link WaypointSymbols} statt des Kürzels; leer = kein Symbol. */
+	public String symbol = "";
 	/** Zeitpunkt der Erstellung (ms). */
 	public long created;
 	/**
@@ -22,10 +40,12 @@ public final class Waypoint {
 	 */
 	public transient boolean temporary;
 
+	/** Für Gson: die Kennung vergibt {@link #normalized()} (so erkennt der Speicher alte Einträge ohne Kennung). */
 	public Waypoint() {
 	}
 
 	public Waypoint(String name, int x, int y, int z, String dimension, int color) {
+		this.id = newId();
 		this.name = name == null || name.isEmpty() ? defaultName() : name;
 		this.x = x;
 		this.y = y;
@@ -37,6 +57,50 @@ public final class Waypoint {
 	/** Name für Wegpunkte ohne Namen in der aktiven Sprache ("Waypoint", "Wegpunkt" …). */
 	public static String defaultName() {
 		return dev.theredstonee.trsclient.core.i18n.I18n.tr("waypoint.defaultName");
+	}
+
+	/** Kennung des Sets, zu dem der Wegpunkt gehört. */
+	public String setId() {
+		if (set == null || set.isEmpty()) return death ? WaypointStore.SET_DEATHS : WaypointStore.SET_DEFAULT;
+		return set;
+	}
+
+	/** Symbol, das im Kästchen steht (Todespunkte ohne eigenes Symbol: Schädel), "" = Text. */
+	public String badgeSymbol() {
+		if (symbol != null && !symbol.isEmpty() && WaypointSymbols.known(symbol)) return symbol;
+		return death ? WaypointSymbols.SKULL : "";
+	}
+
+	/** Text im Kästchen: das Kürzel oder der Anfangsbuchstabe des Namens. */
+	public String badgeText() {
+		return mark != null && !mark.isEmpty() ? mark : initial(name);
+	}
+
+	/** Anfangsbuchstabe (groß) eines Namens, "?" wenn es keinen gibt. */
+	public static String initial(String name) {
+		if (name != null) {
+			for (int i = 0; i < name.length(); ) {
+				int cp = name.codePointAt(i);
+				if (Character.isLetterOrDigit(cp)) return new String(Character.toChars(Character.toUpperCase(cp)));
+				i += Character.charCount(cp);
+			}
+		}
+		return "?";
+	}
+
+	/** Kürzel säubern: höchstens zwei Zeichen, keine Leer-/Steuer-/Formatierungszeichen. */
+	public static String cleanMark(String text) {
+		if (text == null) return "";
+		StringBuilder out = new StringBuilder();
+		int count = 0;
+		for (int i = 0; i < text.length() && count < 2; ) {
+			int cp = text.codePointAt(i);
+			i += Character.charCount(cp);
+			if (Character.isWhitespace(cp) || Character.isISOControl(cp) || cp == 0xA7) continue;
+			out.appendCodePoint(cp);
+			count++;
+		}
+		return out.toString();
 	}
 
 	/** Gilt der Wegpunkt in dieser Dimension? */
@@ -52,12 +116,28 @@ public final class Waypoint {
 		return Math.sqrt(dx * dx + dy * dy + dz * dz);
 	}
 
+	/** Neue zufällige Kennung (12 Zeichen, 72 Bit). */
+	public static String newId() {
+		char[] out = new char[12];
+		for (int i = 0; i < out.length; i++) out[i] = ID_CHARS[RANDOM.nextInt(ID_CHARS.length)];
+		return new String(out);
+	}
+
+	/** Gültige Kennung? */
+	public static boolean validId(String id) {
+		return id != null && ID.matcher(id).matches();
+	}
+
 	/** Fehlende/kaputte Werte einer geladenen Datei geradeziehen. */
 	public Waypoint normalized() {
+		if (!validId(id)) id = newId();
 		if (name == null || name.trim().isEmpty()) name = defaultName();
 		if (name.length() > 32) name = name.substring(0, 32);
 		if (dimension == null) dimension = "";
 		color &= 0xFFFFFF;
+		if (set == null) set = "";
+		mark = cleanMark(mark);
+		if (symbol == null || !WaypointSymbols.known(symbol)) symbol = "";
 		return this;
 	}
 }

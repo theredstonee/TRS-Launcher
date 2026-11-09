@@ -38,6 +38,7 @@ const allAppSettingsSections: ShellSection[] = [
   section('clips', 'settingsSections.app.clips', 'clips', 'settingsSections.groups.instances'),
   section('storage', 'settingsSections.app.storage', 'storage', 'settingsSections.groups.instances'),
   section('network', 'settingsSections.app.network', 'network', 'settingsSections.groups.instances'),
+  section('about', 'settingsSections.app.about', 'info', 'settingsSections.groups.about'),
 ]
 
 /**

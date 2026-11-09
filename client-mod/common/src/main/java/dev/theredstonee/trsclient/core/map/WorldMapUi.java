@@ -13,6 +13,16 @@ import dev.theredstonee.trsclient.core.ui.Theme;
 import dev.theredstonee.trsclient.core.ui.UiKey;
 import dev.theredstonee.trsclient.core.ui.UiScreen;
 import dev.theredstonee.trsclient.core.waypoint.Waypoint;
+import dev.theredstonee.trsclient.core.waypoint.WaypointBadge;
+import dev.theredstonee.trsclient.core.waypoint.WaypointDialog;
+import dev.theredstonee.trsclient.core.waypoint.WaypointMenu;
+import dev.theredstonee.trsclient.core.waypoint.WaypointShare;
+import dev.theredstonee.trsclient.core.waypoint.WaypointTeleport;
+import dev.theredstonee.trsclient.core.waypoint.live.FriendFaces;
+import dev.theredstonee.trsclient.core.waypoint.live.FriendPosition;
+import dev.theredstonee.trsclient.core.waypoint.live.FriendWaypoint;
+import dev.theredstonee.trsclient.core.waypoint.live.LiveShare;
+import dev.theredstonee.trsclient.core.waypoint.live.Owner;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -26,7 +36,7 @@ import java.util.Locale;
  * ansehen, als PNG exportieren; Spieler und Kreaturen wie auf der Minimap. Nah: ein Texel je Block, weiter weg
  * Übersichts- bzw. Weitkacheln ({@link WorldMapTiles}).
  */
-public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
+public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host, WaypointDialog.Host {
 	/** Verbindung zum Loader. */
 	public interface Host {
 		void closeScreen();
@@ -46,8 +56,7 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 	 */
 	static final float[] LADDER = {1f / 32f, 1f / 16f, 0.125f, 0.25f, 0.5f, 1f, 2f, 3f, 4f, 6f, 8f, 12f, 16f};
 	static final int BAR_H = 22;
-	static final int[] COLORS = {0xE0281E, 0xFF7A1F, 0xFFB84D, 0xF2E14C, 0x3DDC84, 0x2FA85A, 0x4DD8E0, 0x3D7BFF,
-			0xB07CFF, 0xFF6FB5, 0xFFFFFF, 0xB8B8C8};
+	static final int[] COLORS = WaypointDialog.COLORS;
 
 	private final MapEngine e;
 	private final Host host;
@@ -78,6 +87,10 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 	private int menuX, menuY;
 	private int menuBlockX, menuBlockZ;
 	private Waypoint menuWaypoint;
+	/** Rechtsklick auf einen Wegpunkt eines Freundes (Live-Teilen). */
+	private FriendWaypoint menuFriend;
+	/** Hervorgehobener Wegpunkt eines Freundes (Liste „Freunde“ angeklickt). */
+	private FriendWaypoint pulseFriend;
 	private final int[] menuRect = new int[4];
 	// Aufklappmenüs oben: Dimension, Export.
 	private boolean dimMenuOpen;
@@ -85,16 +98,8 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 	private final int[] popupRect = new int[4];
 	private int popupAnchorX;
 
-	// Wegpunkt-Dialog.
-	private boolean dialogOpen;
-	private Waypoint editing;
-	private String dialogDim;
-	private final TextInput name = new TextInput(32);
-	private final TextInput inX = new TextInput(9);
-	private final TextInput inY = new TextInput(6);
-	private final TextInput inZ = new TextInput(9);
-	private int color = COLORS[0];
-	private final int[] dialogRect = new int[4];
+	/** Wegpunkt-Dialog (derselbe wie in der Wegpunkt-Liste im Spiel). */
+	private final WaypointDialog dialog;
 
 	private final double[] point = new double[2];
 	private final List<String> hover = new ArrayList<String>();
@@ -130,6 +135,7 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 	public WorldMapUi(MapEngine engine, Host host) {
 		this.e = engine;
 		this.host = host;
+		this.dialog = new WaypointDialog(engine, this);
 		double gs = guiScale();
 		cam.setLimits((float) (MIN_SCREEN_PX / gs), (float) (MAX_SCREEN_PX / gs));
 		step = ladderIndex(Math.max(2f, engine.modules().minimapZoom.get().pixelsPerBlock()));
@@ -343,11 +349,11 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 		c.push();
 		c.raise(300);
 		boolean popup = menuOpen || dimMenuOpen || exportMenuOpen;
-		if (!hover.isEmpty() && !popup && !dialogOpen) tooltip(c, mx, my, t);
+		if (!hover.isEmpty() && !popup && !dialog.isOpen()) tooltip(c, mx, my, t);
 		if (menuOpen) menu(c, mx, my, t);
 		if (dimMenuOpen) dimMenu(c, mx, my, t);
 		if (exportMenuOpen) exportMenu(c, mx, my, t);
-		if (dialogOpen) dialog(c, w, h, mx, my, t);
+		if (dialog.isOpen()) dialog.draw(c, hits, w, h, mx, my);
 		c.pop();
 	}
 
@@ -429,7 +435,15 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 		return sidebarOpen && sidebar.contains(mx, my);
 	}
 
+	/** Beschriftungen der Karte (ohne Überlappung, gesetzt am Ende von {@link #markers}). */
+	private final MapLabels labels = new MapLabels();
+
 	private void markers(Canvas c, int w, int h, int mx, int my, double s) {
+		markerSprites(c, w, h, mx, my, s);
+		labels.flush(c);
+	}
+
+	private void markerSprites(Canvas c, int w, int h, int mx, int my, double s) {
 		TrsModules m = e.modules();
 		MapSprites sprites = e.sprites();
 		double px = e.playerX(), pz = e.playerZ();
@@ -438,13 +452,44 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 		long now = System.currentTimeMillis();
 		// Hervorgehobener Wegpunkt (Zeiger in der Liste oder gerade angeklickt).
 		Waypoint highlight = sidebarOpen && sidebar.hovered != null ? sidebar.hovered : (now < pulseUntil ? pulse : null);
+		// Wegpunkte der Freunde (Live-Teilen) unter den eigenen.
+		FriendWaypoint friendHovered = null;
+		if (friendWaypointsShown()) {
+			FriendWaypoint friendHl = sidebarOpen && sidebar.hoveredFriend != null ? sidebar.hoveredFriend
+					: (now < pulseUntil ? pulseFriend : null);
+			double best = 6.5 * 6.5;
+			for (FriendWaypoint fw : LiveShare.get().friendWaypoints(WaypointShare.canonicalDimension(viewDimension()))) {
+				toScreen(fw.x + 0.5, fw.z + 0.5);
+				if (!onScreen(20)) continue;
+				float x = (float) point[0], y = (float) point[1];
+				if (fw == friendHl) {
+					float p = 13f + 3f * (float) Math.sin(now / 150.0);
+					sprites.draw(c, MapSprites.HALO, x, y, p, 0f, 0xFF000000 | fw.color, s);
+				}
+				MinimapRenderer.friendMark(c, e, fw, x, y, 1.15f, s);
+				boolean near = Math.abs(mx - x) < 8 && Math.abs(my - y) < 8;
+				if (fw == friendHl || scale * s >= 1.5f || near) {
+					int lw = c.textWidth(fw.name);
+					int labelColor = fw.death ? FriendFaces.FRIEND : ColorMath.lerp(0xFF000000 | fw.color, 0xFFFFFFFF, 0.25f);
+					labels.add(fw.name, Math.round(x - lw / 2f), Math.round(y + 8), labelColor, 0x90000000, false,
+							fw == friendHl || near ? MapLabels.HOVER : MapLabels.FRIEND, true);
+				}
+				double d = (mx - x) * (mx - x) + (my - y) * (my - y);
+				if (mapHover && d <= best) {
+					best = d;
+					friendHovered = fw;
+				}
+			}
+		}
 		// Wegpunkte.
 		if (m.worldMapWaypoints.get() || highlight != null) {
 			Waypoint hovered = null;
 			double hoveredD = 6.5 * 6.5;
+			Waypoint target = e.waypointTarget();
 			for (Waypoint wp : viewWaypoints()) {
 				boolean hl = wp == highlight;
-				if (!hl && (!m.worldMapWaypoints.get() || (!wp.visible && !wp.death))) continue;
+				boolean shown = e.waypointShown(wp);
+				if (!hl && (!m.worldMapWaypoints.get() || !shown)) continue;
 				toScreen(wp.x + 0.5, wp.z + 0.5);
 				if (!onScreen(20)) continue;
 				float x = (float) point[0], y = (float) point[1];
@@ -452,13 +497,14 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 					float p = 13f + 3f * (float) Math.sin(now / 150.0);
 					sprites.draw(c, MapSprites.HALO, x, y, p, 0f, 0xFF000000 | wp.color, s);
 				}
-				if (wp.death) sprites.draw(c, MapSprites.GRAVE, x, y, 11f, 0f, 0xFFFFFFFF, s);
-				else sprites.draw(c, MapSprites.DIAMOND, x, y, 10f, 0f, (wp.visible ? 0xFF000000 : 0x90000000) | wp.color, s);
+				if (wp == target) sprites.draw(c, MapSprites.HALO, x, y, 18f, 0f, 0xFF000000 | wp.color, s);
+				WaypointBadge.draw(c, wp, x, y, 1f, shown ? 255 : 0x90);
 				String label = wp.name;
-				if (hl || scale * s >= 0.7f || Math.abs(mx - x) < 8 && Math.abs(my - y) < 8) {
+				boolean near = Math.abs(mx - x) < 8 && Math.abs(my - y) < 8;
+				if (hl || scale * s >= 0.7f || near) {
 					int lw = c.textWidth(label);
-					c.fill(Math.round(x - lw / 2f - 2), Math.round(y + 7), Math.round(x + lw / 2f + 2), Math.round(y + 17), 0xA0000000);
-					c.text(label, Math.round(x - lw / 2f), Math.round(y + 8), 0xFF000000 | wp.color, false);
+					labels.add(label, Math.round(x - lw / 2f), Math.round(y + 8), 0xFF000000 | wp.color, 0xA0000000, false,
+							hl || near ? MapLabels.HOVER : MapLabels.OWN, true);
 				}
 				double d = (mx - x) * (mx - x) + (my - y) * (my - y);
 				if (mapHover && d <= hoveredD) {
@@ -468,6 +514,7 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 			}
 			// Nur der nächste Wegpunkt unter dem Zeiger bekommt den Hinweis.
 			if (hovered != null) {
+				friendHovered = null;
 				WaypointFilter.Row row = WaypointFilter.row(hovered, e.dimension(), px, pz);
 				hover.add(hovered.name);
 				if (!Double.isNaN(row.distance)) {
@@ -476,6 +523,21 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 				hover.add(hovered.x + " / " + hovered.y + " / " + hovered.z);
 			}
 		}
+		if (friendHovered != null) {
+			Owner owner = LiveShare.get().owner(friendHovered.owner);
+			hover.add(friendHovered.name);
+			hover.add(I18n.tr("map.friend.by", owner == null ? "?" : owner.name()));
+			double fx = friendHovered.x + 0.5, fz = friendHovered.z + 0.5;
+			double f = MapDimensions.factor(e.dimension(), viewDimension());
+			if (!Double.isNaN(f) && f > 0) {
+				double dx = fx / f - px, dz = fz / f - pz;
+				hover.add((f != 1 ? "≈" : "") + I18n.tr("map.distance", WaypointFilter.distanceText(Math.sqrt(dx * dx + dz * dz))));
+			}
+			hover.add(friendHovered.x + " / " + friendHovered.y + " / " + friendHovered.z);
+			hover.add(I18n.tr("map.friend.adoptHint"));
+		}
+		// Live-Köpfe der Freunde (auch in anderen Dimensionen der Karte, wenn sie dort sind).
+		if (e.modules().waypointFriendPositions.get()) friendHeads(c, s, mx, my, mapHover);
 		if (viewingOther()) {
 			// Eigene Position umgerechnet (Nether ↔ Oberwelt) als blasser Pfeil.
 			double f = MapDimensions.factor(e.dimension(), viewDim);
@@ -508,7 +570,8 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 				MinimapRenderer.face(c, e, en, x, y, 9f, s);
 				if (en.name != null) {
 					int lw = c.textWidth(en.name);
-					c.text(en.name, Math.round(x - lw / 2f), Math.round(y + 7), en.friend ? MinimapRenderer.FRIEND : 0xFFFFFFFF, true);
+					labels.add(en.name, Math.round(x - lw / 2f), Math.round(y + 7), en.friend ? MinimapRenderer.FRIEND : 0xFFFFFFFF, 0, true,
+							Math.abs(mx - x) < 8 && Math.abs(my - y) < 8 ? MapLabels.HOVER : MapLabels.PLAYER, true);
 				}
 			}
 		}
@@ -521,8 +584,7 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 				sprites.draw(c, MapSprites.HALO, x, y, p, 0f, 0xFF000000 | focus.color, s);
 				sprites.draw(c, MapSprites.DIAMOND, x, y, 10f, 0f, 0xFF000000 | focus.color, s);
 				int lw = c.textWidth(focus.name);
-				c.fill(Math.round(x - lw / 2f - 2), Math.round(y + 7), Math.round(x + lw / 2f + 2), Math.round(y + 17), 0xA0000000);
-				c.text(focus.name, Math.round(x - lw / 2f), Math.round(y + 8), 0xFF000000 | focus.color, false);
+				labels.add(focus.name, Math.round(x - lw / 2f), Math.round(y + 8), 0xFF000000 | focus.color, 0xA0000000, false, MapLabels.FORCE, true);
 			}
 		}
 		// Eigene Position.
@@ -811,6 +873,11 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 		saveSettings();
 	}
 
+	@Override
+	public void settingsChanged() {
+		saveSettings();
+	}
+
 	private void saveSettings() {
 		try {
 			dev.theredstonee.trsclient.core.config.ConfigStore store = dev.theredstonee.trsclient.core.config.ConfigStore.active();
@@ -938,16 +1005,102 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 	private List<String> menuItems() {
 		List<String> items = new ArrayList<String>();
 		if (menuWaypoint != null) {
-			items.add("edit");
-			items.add(menuWaypoint.visible ? "hide" : "show");
-			items.add("delete");
+			items.addAll(WaypointMenu.forWaypoint(e, menuWaypoint));
+			// Teilen an Freunde geht nur in der eigenen Dimension (Wegpunkt-Karte braucht die Welt).
+			if (viewingOther()) items.remove(WaypointMenu.SHARE);
+		} else if (menuFriend != null) {
+			items.add("adopt");
+			String dim = WaypointShare.localDimension(menuFriend.dimension, e.dimension());
+			if (WaypointTeleport.possible(e.modules(), e.platform(), dim)) items.add(WaypointMenu.TELEPORT);
+			if (chatBridge()) items.add(WaypointMenu.COPY);
 		} else {
 			items.add("create");
+			if (spotHeight() != Integer.MIN_VALUE && WaypointTeleport.possible(e.modules(), e.platform(), viewDimension())) items.add("teleportHere");
+			if (chatBridge()) {
+				items.add(WaypointMenu.COPY);
+				items.add(WaypointMenu.CHAT);
+			}
+			if (!viewingOther()) items.add(WaypointMenu.SHARE);
 		}
-		if (!viewingOther()) items.add("share");
 		items.add("centerHere");
 		items.add("centerPlayer");
 		return items;
+	}
+
+	private boolean chatBridge() {
+		return e.platform() != null && e.platform().chatBridge();
+	}
+
+	/** Oberster bekannter Block an der Menü-Stelle (Füße darüber), {@link Integer#MIN_VALUE} = unbekannt. */
+	private int spotHeight() {
+		int y = e.heightAt(layer(), menuBlockX, menuBlockZ);
+		if (y == Integer.MIN_VALUE && !viewingOther()) y = e.heightAt(e.surfaceLayer(), menuBlockX, menuBlockZ);
+		return y == Integer.MIN_VALUE ? y : y + 1;
+	}
+
+	/** Höhe der Stelle für Kopieren und Teilen: bekannt, sonst die eigene. */
+	private int spotHeightOrPlayer() {
+		int y = spotHeight();
+		return y == Integer.MIN_VALUE ? (int) Math.floor(e.playerY()) : y;
+	}
+
+	/** Rechtsklick-Menü für einen Wegpunkt öffnen (auch aus der Liste). */
+	@Override
+	public void waypointMenu(Waypoint w, int x, int y) {
+		menuOpen = true;
+		menuX = x;
+		menuY = y;
+		menuBlockX = w.x;
+		menuBlockZ = w.z;
+		menuWaypoint = w;
+		menuFriend = null;
+	}
+
+	/** Werden Wegpunkte der Freunde auf der Weltkarte gezeigt? */
+	private boolean friendWaypointsShown() {
+		LiveShare live = LiveShare.get();
+		return live != null && live.active() && e.modules().waypointFriendWaypoints.get() && e.modules().worldMapWaypoints.get();
+	}
+
+	/** Köpfe der Freunde mit Blickrichtung und Namen; Zeiger darüber → Hinweis mit Entfernung. */
+	private void friendHeads(Canvas c, double s, int mx, int my, boolean mapHover) {
+		LiveShare live = LiveShare.get();
+		if (live == null || !live.active()) return;
+		String dim = WaypointShare.canonicalDimension(viewDimension());
+		long now = System.currentTimeMillis();
+		for (Owner o : live.owners()) {
+			FriendPosition p = o.position();
+			if (o.hidden() || p == null || !p.dimension.equals(dim)) continue;
+			int alpha = MinimapRenderer.positionAlpha(p, now);
+			if (alpha == 0 || (!viewingOther() && MinimapRenderer.loadedEntity(e, o.uuid))) continue;
+			toScreen(p.x, p.z);
+			if (!onScreen(12)) continue;
+			float x = (float) point[0], y = (float) point[1];
+			sprites().draw(c, MapSprites.HALO, x, y, 16f, 0f, ColorMath.withAlpha(FriendFaces.FRIEND, alpha), s);
+			FriendFaces.facing(c, sprites(), x, y, 9f, (float) Math.toRadians(p.yaw) + (float) Math.PI, alpha, s);
+			FriendFaces.head(c, o.uuid, o.name(), x, y, 9f, alpha);
+			// Der Kopf bleibt frei – Beschriftungen weichen ihm aus.
+			labels.occupy(Math.round(x - 9), Math.round(y - 9), Math.round(x + 9), Math.round(y + 7));
+			String n = o.name();
+			int lw = c.textWidth(n);
+			boolean near = mapHover && Math.abs(mx - x) < 7 && Math.abs(my - y) < 7;
+			labels.add(n, Math.round(x - lw / 2f), Math.round(y + 8), ColorMath.withAlpha(FriendFaces.FRIEND, alpha), 0, true,
+					near ? MapLabels.HOVER : MapLabels.FRIEND_HEAD, true);
+			if (mapHover && Math.abs(mx - x) < 7 && Math.abs(my - y) < 7 && hover.isEmpty()) {
+				hover.add(n);
+				double f = MapDimensions.factor(e.dimension(), viewDimension());
+				if (!Double.isNaN(f) && f > 0) {
+					double dx = p.x / f - e.playerX(), dz = p.z / f - e.playerZ();
+					hover.add((f != 1 ? "≈" : "") + I18n.tr("map.distance", WaypointFilter.distanceText(Math.sqrt(dx * dx + dz * dz))));
+				}
+				long age = (now - p.at) / 1000;
+				hover.add(age < 5 ? I18n.tr("map.friend.live") : I18n.tr("map.friend.seconds", age));
+			}
+		}
+	}
+
+	private MapSprites sprites() {
+		return e.sprites();
 	}
 
 	private void menu(Canvas c, int mx, int my, Theme t) {
@@ -962,7 +1115,7 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 		menuRect[2] = w;
 		menuRect[3] = h;
 		Redstone.window(c, x, y, w, h);
-		String head = menuWaypoint != null ? menuWaypoint.name : menuBlockX + " / " + menuBlockZ;
+		String head = menuWaypoint != null ? menuWaypoint.name : menuFriend != null ? menuFriend.name : menuBlockX + " / " + menuBlockZ;
 		c.text(c.clip(head, w - 8), x + 4, y + 3, t.textDim, false);
 		for (int i = 0; i < items.size(); i++) {
 			final String id = items.get(i);
@@ -979,22 +1132,85 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 	}
 
 	private void menuAction(String id) {
+		MapPlatform p = e.platform();
 		if ("create".equals(id)) {
-			openDialog(null);
-		} else if ("edit".equals(id)) {
-			openDialog(menuWaypoint);
-		} else if ("hide".equals(id) || "show".equals(id)) {
-			menuWaypoint.visible = !menuWaypoint.visible;
-			e.waypointEdited();
-		} else if ("delete".equals(id)) {
-			e.removeWaypoint(menuWaypoint);
-		} else if ("share".equals(id)) {
+			newAtMenuSpot();
+		} else if (WaypointMenu.EDIT.equals(id)) {
+			dialog.openEdit(menuWaypoint);
+		} else if ("adopt".equals(id)) {
+			adoptFriend(menuFriend);
+		} else if (WaypointMenu.SHARE.equals(id)) {
 			share();
 		} else if ("centerHere".equals(id)) {
 			centerOn(menuBlockX + 0.5, menuBlockZ + 0.5);
 		} else if ("centerPlayer".equals(id)) {
 			centerOnPlayer();
+		} else if ("teleportHere".equals(id)) {
+			teleportAfter(WaypointTeleport.send(e.modules(), p, menuBlockX, spotHeight(), menuBlockZ, viewDimension()));
+		} else if (menuWaypoint != null) {
+			if (WaypointMenu.TELEPORT.equals(id)) {
+				teleportAfter(WaypointTeleport.send(e.modules(), p, menuWaypoint.x, menuWaypoint.y, menuWaypoint.z, menuWaypoint.dimension));
+			} else {
+				String note = WaypointMenu.run(id, e, menuWaypoint);
+				if (note != null) flash(note);
+			}
+		} else if (menuFriend != null) {
+			if (WaypointMenu.TELEPORT.equals(id)) {
+				teleportAfter(WaypointTeleport.send(e.modules(), p, menuFriend.x, menuFriend.y, menuFriend.z,
+						WaypointShare.localDimension(menuFriend.dimension, e.dimension())));
+			} else if (WaypointMenu.COPY.equals(id) && p != null) {
+				copy(WaypointMenu.coordinates(menuFriend.x, menuFriend.y, menuFriend.z));
+			}
+		} else if (WaypointMenu.COPY.equals(id) && p != null) {
+			copy(WaypointMenu.coordinates(menuBlockX, spotHeightOrPlayer(), menuBlockZ));
+		} else if (WaypointMenu.CHAT.equals(id) && p != null) {
+			p.sendChat(WaypointMenu.chatLine("", menuBlockX, spotHeightOrPlayer(), menuBlockZ, viewDimension(), e.dimension()));
+			flash(I18n.tr("map.chat.sent"));
 		}
+	}
+
+	private void copy(String text) {
+		e.platform().copyToClipboard(text);
+		flash(I18n.tr("waypoint.card.copied", text));
+	}
+
+	/** Der Befehl ist unterwegs: Karte schließen, damit man das Ergebnis sieht (der Server entscheidet). */
+	private void teleportAfter(boolean sent) {
+		if (sent) requestClose();
+		else flash(I18n.tr("map.teleport.denied"));
+	}
+
+	private void newAtMenuSpot() {
+		int y = spotHeight();
+		if (y == Integer.MIN_VALUE) y = viewingOther() ? 64 : (int) Math.floor(e.playerY());
+		dialog.openNew(Waypoint.defaultName(), menuBlockX, y, menuBlockZ, viewDimension(), COLORS[e.allWaypoints().size() % COLORS.length]);
+		menuOpen = dimMenuOpen = exportMenuOpen = false;
+		sidebar.search.setFocused(false);
+	}
+
+	/** „Übernehmen“: Wegpunkt eines Freundes als eigenen speichern. */
+	public void adoptFriend(FriendWaypoint fw) {
+		menuOpen = false;
+		if (fw == null) return;
+		WaypointShare.Result r = WaypointShare.adopt(fw);
+		flash(I18n.tr(r.key(), fw.name));
+	}
+
+	/** Wegpunkt eines Freundes unter dem Zeiger (null = keiner). */
+	private FriendWaypoint friendAt(double mx, double my) {
+		if (!friendWaypointsShown()) return null;
+		FriendWaypoint best = null;
+		double bestD = 8 * 8;
+		for (FriendWaypoint fw : LiveShare.get().friendWaypoints(WaypointShare.canonicalDimension(viewDimension()))) {
+			toScreen(fw.x + 0.5, fw.z + 0.5);
+			double dx = point[0] - mx, dy = point[1] - my;
+			double d = dx * dx + dy * dy;
+			if (d <= bestD) {
+				bestD = d;
+				best = fw;
+			}
+		}
+		return best;
 	}
 
 	/** „Teilen“: Wegpunkt unter dem Zeiger bzw. die angeklickte Stelle an Freunde/Gruppen schicken. */
@@ -1039,6 +1255,7 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 		Waypoint best = null;
 		double bestD = 8 * 8;
 		for (Waypoint wp : viewWaypoints()) {
+			if (!e.waypointShown(wp)) continue;
 			toScreen(wp.x + 0.5, wp.z + 0.5);
 			double dx = point[0] - mx, dy = point[1] - my;
 			double d = dx * dx + dy * dy;
@@ -1085,7 +1302,50 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 
 	@Override
 	public void editWaypoint(Waypoint w) {
-		openDialog(w);
+		menuOpen = dimMenuOpen = exportMenuOpen = false;
+		sidebar.search.setFocused(false);
+		dialog.openEdit(w);
+	}
+
+	@Override
+	public void centerOnFriendWaypoint(FriendWaypoint w) {
+		String wd = w.dimension;
+		String view = WaypointShare.canonicalDimension(viewDimension());
+		if (!wd.equals(view)) {
+			String local = WaypointShare.localDimension(wd, e.dimension());
+			if (!e.modules().worldMapDimensions.get() && !local.equals(e.dimension()) || !viewDimension(local)) {
+				flash(I18n.tr("map.noMapThere"));
+				return;
+			}
+		}
+		follow = false;
+		double shift = sidebarOpen ? WorldMapSidebar.WIDTH / 2.0 / cam.targetScale() : 0;
+		cam.center(w.x + 0.5 + shift, w.z + 0.5);
+		pulseFriend = w;
+		pulse = null;
+		pulseUntil = System.currentTimeMillis() + 1600;
+	}
+
+	@Override
+	public void centerOnFriend(Owner o) {
+		FriendPosition p = o == null ? null : o.position();
+		if (p == null || !LiveShare.live(p, System.currentTimeMillis())) {
+			flash(I18n.tr("map.friend.noPosition"));
+			return;
+		}
+		String local = WaypointShare.localDimension(p.dimension, e.dimension());
+		if (!local.equals(viewDimension()) && (!e.modules().worldMapDimensions.get() && !local.equals(e.dimension()) || !viewDimension(local))) {
+			flash(I18n.tr("map.noMapThere"));
+			return;
+		}
+		follow = false;
+		double shift = sidebarOpen ? WorldMapSidebar.WIDTH / 2.0 / cam.targetScale() : 0;
+		cam.center(p.x + shift, p.z);
+	}
+
+	@Override
+	public void adopt(FriendWaypoint w) {
+		adoptFriend(w);
 	}
 
 	@Override
@@ -1093,146 +1353,7 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 		double shift = sidebarOpen ? WorldMapSidebar.WIDTH / 2.0 / cam.scale() : 0;
 		menuBlockX = (int) Math.floor(cam.centerX() - shift);
 		menuBlockZ = (int) Math.floor(cam.centerZ());
-		openDialog(null);
-	}
-
-	// --- Wegpunkt-Dialog ---
-
-	private void openDialog(Waypoint wp) {
-		editing = wp;
-		dialogOpen = true;
-		menuOpen = dimMenuOpen = exportMenuOpen = false;
-		sidebar.search.setFocused(false);
-		if (wp != null) {
-			name.setText(wp.name);
-			inX.setText(Integer.toString(wp.x));
-			inY.setText(Integer.toString(wp.y));
-			inZ.setText(Integer.toString(wp.z));
-			color = wp.color;
-			dialogDim = wp.dimension;
-		} else {
-			name.setText(Waypoint.defaultName());
-			inX.setText(Integer.toString(menuBlockX));
-			MapLayer layer = layer();
-			int y = e.heightAt(layer, menuBlockX, menuBlockZ);
-			inY.setText(Integer.toString(y == Integer.MIN_VALUE ? (viewingOther() ? 64 : (int) Math.floor(e.playerY())) : y + 1));
-			inZ.setText(Integer.toString(menuBlockZ));
-			color = COLORS[(e.allWaypoints().size()) % COLORS.length];
-			dialogDim = viewDimension();
-		}
-		focus(name);
-	}
-
-	private void focus(TextInput input) {
-		name.setFocused(input == name);
-		inX.setFocused(input == inX);
-		inY.setFocused(input == inY);
-		inZ.setFocused(input == inZ);
-	}
-
-	private TextInput focused() {
-		if (name.focused()) return name;
-		if (inX.focused()) return inX;
-		if (inY.focused()) return inY;
-		if (inZ.focused()) return inZ;
-		return null;
-	}
-
-	private void dialog(Canvas c, int w, int h, int mx, int my, Theme t) {
-		c.fill(0, 0, w, h, 0x80000000);
-		int dw = 240, dh = 150;
-		int x = (w - dw) / 2, y = (h - dh) / 2;
-		dialogRect[0] = x;
-		dialogRect[1] = y;
-		dialogRect[2] = dw;
-		dialogRect[3] = dh;
-		c.flush();
-		c.push();
-		c.raise(100);
-		Redstone.window(c, x, y, dw, dh);
-		String title = I18n.tr(editing == null ? "map.newWaypoint" : "map.editWaypoint");
-		c.text(title, x + 10, y + 8, t.text, false);
-		if (dialogDim != null && !dialogDim.isEmpty() && !dialogDim.equals(e.dimension())) {
-			String d = dimensionName(dialogDim);
-			c.text(d, x + dw - 10 - c.textWidth(d), y + 8, t.textDim, false);
-		}
-		int fy = y + 24;
-		c.text(I18n.tr("waypoint.name"), x + 10, fy, t.textDim, false);
-		field(c, name, x + 10, fy + 10, dw - 20, t);
-		fy += 34;
-		int fw = (dw - 20 - 8) / 3;
-		c.text("X", x + 10, fy, t.textDim, false);
-		c.text("Y", x + 10 + fw + 4, fy, t.textDim, false);
-		c.text("Z", x + 10 + 2 * (fw + 4), fy, t.textDim, false);
-		field(c, inX, x + 10, fy + 10, fw, t);
-		field(c, inY, x + 10 + fw + 4, fy + 10, fw, t);
-		field(c, inZ, x + 10 + 2 * (fw + 4), fy + 10, fw, t);
-		fy += 34;
-		// Farben.
-		int sw = (dw - 20) / COLORS.length;
-		for (int i = 0; i < COLORS.length; i++) {
-			final int col = COLORS[i];
-			int sx = x + 10 + i * sw;
-			boolean sel = (color & 0xFFFFFF) == col;
-			Redstone.block(c, sx + 1, fy, sw - 2, 12, 0xFF000000 | col);
-			if (sel) Redstone.frame(c, sx, fy - 1, sw, 14, 0xFFFFFFFF);
-			hits.add(sx, fy - 1, sw, 14, () -> {
-				color = col;
-				host.playClick();
-			});
-		}
-		// Knöpfe.
-		int bw = 64;
-		int by = y + dh - 24;
-		boolean hovSave = inside(mx, my, x + dw - 10 - bw, by, bw, 16);
-		Redstone.button(c, x + dw - 10 - bw, by, bw, 16, I18n.tr("map.save"), true, hovSave);
-		hits.add(x + dw - 10 - bw, by, bw, 16, this::saveDialog);
-		boolean hovCancel = inside(mx, my, x + dw - 14 - 2 * bw, by, bw, 16);
-		Redstone.button(c, x + dw - 14 - 2 * bw, by, bw, 16, I18n.tr("map.cancel"), false, hovCancel);
-		hits.add(x + dw - 14 - 2 * bw, by, bw, 16, () -> {
-			host.playClick();
-			dialogOpen = false;
-		});
-		if (editing != null) {
-			boolean hovDel = inside(mx, my, x + 10, by, bw, 16);
-			Redstone.button(c, x + 10, by, bw, 16, I18n.tr("map.menu.delete"), false, hovDel);
-			hits.add(x + 10, by, bw, 16, () -> {
-				host.playClick();
-				e.removeWaypoint(editing);
-				dialogOpen = false;
-			});
-		}
-		c.pop();
-	}
-
-	private void field(Canvas c, final TextInput input, int x, int y, int w, Theme t) {
-		Redstone.well(c, x, y, w, 16, input.focused() ? t.accent : t.border);
-		String clipped = c.clip(input.text(), w - 8);
-		c.text(clipped, x + 4, y + 4, t.text, false);
-		if (input.focused() && (System.currentTimeMillis() / 500) % 2 == 0) {
-			int cursorX = x + 4 + c.textWidth(input.text().substring(0, Math.min(input.cursor(), input.text().length())));
-			if (cursorX < x + w - 2) c.fill(cursorX, y + 3, cursorX + 1, y + 13, t.text);
-		}
-		hits.add(x, y, w, 16, () -> focus(input));
-	}
-
-	private void saveDialog() {
-		host.playClick();
-		int x = parse(inX.text(), editing != null ? editing.x : menuBlockX);
-		int y = parse(inY.text(), editing != null ? editing.y : (int) Math.floor(e.playerY()));
-		int z = parse(inZ.text(), editing != null ? editing.z : menuBlockZ);
-		String n = name.text().trim().isEmpty() ? Waypoint.defaultName() : name.text().trim();
-		if (editing == null) {
-			e.addWaypoint(n, x, y, z, color & 0xFFFFFF, dialogDim);
-		} else {
-			editing.name = n;
-			editing.x = x;
-			editing.y = y;
-			editing.z = z;
-			editing.color = color & 0xFFFFFF;
-			e.waypointEdited();
-		}
-		dialogOpen = false;
+		newAtMenuSpot();
 	}
 
 	static int parse(String s, int fallback) {
@@ -1277,12 +1398,8 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 	@Override
 	public boolean mouseClicked(double mx, double my, int button) {
 		cam.stop();
-		if (dialogOpen) {
-			if (!inside(mx, my, dialogRect[0], dialogRect[1], dialogRect[2], dialogRect[3])) {
-				dialogOpen = false;
-				return true;
-			}
-			focus(null);
+		if (dialog.isOpen()) {
+			if (dialog.clickOutside(mx, my)) return true;
 			return super.mouseClicked(mx, my, button);
 		}
 		if (dimMenuOpen || exportMenuOpen) {
@@ -1308,6 +1425,7 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 			menuBlockX = (int) Math.floor(worldX(mx));
 			menuBlockZ = (int) Math.floor(worldZ(my));
 			menuWaypoint = waypointAt(mx, my);
+			menuFriend = menuWaypoint == null ? friendAt(mx, my) : null;
 			return true;
 		}
 		if (button == 0) {
@@ -1338,7 +1456,7 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 
 	@Override
 	public boolean mouseScrolled(double mx, double my, double amount) {
-		if (dialogOpen || amount == 0) return false;
+		if (dialog.isOpen() || amount == 0) return false;
 		if (overSidebar(mx, my)) return sidebar.scroll(amount);
 		menuOpen = dimMenuOpen = exportMenuOpen = false;
 		if (smoothZoom()) {
@@ -1353,26 +1471,7 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 
 	@Override
 	public boolean keyPressed(int rawKey, UiKey key, boolean shift) {
-		if (dialogOpen) {
-			if (key == UiKey.ESCAPE) {
-				dialogOpen = false;
-				return true;
-			}
-			if (key == UiKey.ENTER) {
-				saveDialog();
-				return true;
-			}
-			if (key == UiKey.TAB) {
-				TextInput f = focused();
-				TextInput[] order = {name, inX, inY, inZ};
-				int i = 0;
-				for (int k = 0; k < order.length; k++) if (order[k] == f) i = k;
-				focus(order[(i + (shift ? order.length - 1 : 1)) % order.length]);
-				return true;
-			}
-			TextInput f = focused();
-			return f != null && f.key(key);
-		}
+		if (dialog.isOpen()) return dialog.key(key, shift);
 		if (sidebarOpen && sidebar.search.focused()) return sidebar.key(key);
 		if (key == UiKey.ESCAPE) {
 			if (menuOpen || dimMenuOpen || exportMenuOpen) {
@@ -1391,14 +1490,9 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 
 	@Override
 	public boolean charTyped(char ch) {
-		if (!dialogOpen) {
-			if (sidebarOpen && sidebar.search.focused()) return sidebar.type(ch);
-			return false;
-		}
-		TextInput f = focused();
-		if (f == null) return false;
-		if (f != name && !(Character.isDigit(ch) || ch == '-')) return true;
-		return f.type(ch);
+		if (dialog.isOpen()) return dialog.type(ch);
+		if (sidebarOpen && sidebar.search.focused()) return sidebar.type(ch);
+		return false;
 	}
 
 	@Override
@@ -1447,7 +1541,39 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 		menuOpen = false;
 		menuBlockX = bx;
 		menuBlockZ = bz;
-		openDialog(null);
+		newAtMenuSpot();
+	}
+
+	/** Selbsttest: Dialog für einen vorhandenen Wegpunkt öffnen. */
+	public void testEditDialog(Waypoint w) {
+		dialog.openEdit(w);
+	}
+
+	/** Selbsttest: freien Farbwähler im offenen Dialog zeigen. */
+	public void testColorPicker() {
+		dialog.testPicker();
+	}
+
+	/** Selbsttest: Einträge des offenen Kontextmenüs. */
+	public List<String> testMenuItems() {
+		return menuItems();
+	}
+
+	/** Selbsttest: Kontextmenü auf freier Stelle mit dieser Blockposition öffnen. */
+	public void testSpotMenu(int sx, int sy, int bx, int bz) {
+		menuOpen = true;
+		menuX = sx;
+		menuY = sy;
+		menuBlockX = bx;
+		menuBlockZ = bz;
+		menuWaypoint = null;
+		menuFriend = null;
+	}
+
+	/** Selbsttest: Eintrag des offenen Kontextmenüs ausführen. */
+	public void testMenuAction(String id) {
+		menuOpen = false;
+		menuAction(id);
 	}
 
 	/** Öffnet das Kontextmenü an einer Bildschirmposition (Selbsttest). */
@@ -1460,6 +1586,31 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host {
 		sidebarOpen = open;
 		sidebar.search.setText(query == null ? "" : query);
 		sidebar.search.setFocused(false);
+	}
+
+	/** Selbsttest: Wegpunkt-Liste öffnen und Reiter „Freunde“ (true) bzw. „Meine“ wählen. */
+	public void testSidebarFriends(boolean friends) {
+		sidebarOpen = true;
+		sidebar.search.setText("");
+		sidebar.search.setFocused(false);
+		sidebar.setFriendsTab(friends);
+	}
+
+	/** Zeilen im Reiter „Freunde“ (Kopfzeilen + Wegpunkte, nach dem letzten Bild). */
+	public int testFriendRows() {
+		return sidebar.friendRows().size();
+	}
+
+	/** Selbsttest: Kontextmenü auf einem Wegpunkt eines Freundes öffnen. */
+	public void testFriendMenu(FriendWaypoint fw) {
+		toScreen(fw.x + 0.5, fw.z + 0.5);
+		menuOpen = true;
+		menuX = (int) point[0];
+		menuY = (int) point[1];
+		menuBlockX = fw.x;
+		menuBlockZ = fw.z;
+		menuWaypoint = null;
+		menuFriend = fw;
 	}
 
 	/** Anzahl der Zeilen in der Wegpunkt-Liste (nach dem letzten Bild). */

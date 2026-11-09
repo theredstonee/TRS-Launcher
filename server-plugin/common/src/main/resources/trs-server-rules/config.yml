@@ -37,6 +37,7 @@ modules:
 #   zoom.factor: {max: 4}                  # zoom at most 4x
 #   fullbright.level: {max: 200}           # brightness at most 200 %
 #   cinematic.freecamFairPlay: true        # freecam may not look through walls
+#   waypoints.teleport: false              # no teleport entries on the map and in the waypoint list
 # -----------------------------------------------------------------------------------------------------
 settings:
   # zoom.factor: {max: 4}

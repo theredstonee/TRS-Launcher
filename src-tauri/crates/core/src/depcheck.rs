@@ -62,6 +62,83 @@ fn provides(mods: &[ModInfo], id: &str) -> bool {
     mods.iter().any(|m| m.id == id || m.provides.iter().any(|p| p == id))
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DependencyEdge {
+    pub id: String,
+    pub file_names: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DependencyNode {
+    pub file_name: String,
+    pub title: String,
+    pub enabled: bool,
+    pub readable: bool,
+    pub requires: Vec<DependencyEdge>,
+}
+
+fn dependency_edges(mods: &[ModInfo], nested: &[String], available: &[DisabledMod], builtins: &[ModInfo]) -> Vec<DependencyEdge> {
+    let mut edges = Vec::new();
+    for dependency in mods.iter().flat_map(|info| &info.depends) {
+        if modcompat::PLATFORM_IDS.contains(&dependency.id.as_str())
+            || provides(builtins, &dependency.id)
+            || provides(mods, &dependency.id)
+            || nested.contains(&dependency.id)
+            || edges.iter().any(|edge: &DependencyEdge| edge.id == dependency.id)
+        {
+            continue;
+        }
+        edges.push(DependencyEdge {
+            id: dependency.id.clone(),
+            file_names: available.iter().filter(|provider| provider.provides(&dependency.id)).map(|provider| provider.file_name.clone()).collect(),
+        });
+    }
+    edges
+}
+
+pub async fn dependency_graph(paths: &Paths, builds: &[Build], instance: &Instance) -> Result<Vec<DependencyNode>> {
+    let items = content::list(paths, &instance.id, ContentKind::Mod).await?;
+    let mut available = Vec::new();
+    for item in &items {
+        let (mods, nested) = match content::existing_file(paths, &instance.id, ContentKind::Mod, &item.file_name) {
+            Some(path) => modcompat::remote::local_mod_details(path).await,
+            None => (Vec::new(), Vec::new()),
+        };
+        available.push(DisabledMod { file_name: item.file_name.clone(), mods, nested, ..Default::default() });
+    }
+    let builtins = builtins(paths, builds, instance).await;
+    Ok(items.iter().zip(&available).map(|(item, metadata)| DependencyNode {
+        file_name: item.file_name.clone(),
+        title: item.title.clone().unwrap_or_else(|| item.file_name.clone()),
+        enabled: item.enabled,
+        readable: !metadata.mods.is_empty(),
+        requires: dependency_edges(&metadata.mods, &metadata.nested, &available, &builtins),
+    }).collect())
+}
+
+#[cfg(test)]
+mod graph_tests {
+    use super::*;
+
+    #[test]
+    fn dependency_edges_include_disabled_providers_and_missing_ids() {
+        let metadata = |id: &str| ModInfo {
+            id: id.into(), name: id.into(), version: "1.0.0".into(), scheme: modcompat::meta::Scheme::Fabric,
+            provides: Vec::new(), depends: Vec::new(), breaks: Vec::new(),
+        };
+        let mut root = metadata("root");
+        root.depends = ["library", "missing", "embedded", "minecraft"].iter().map(|id| modcompat::meta::Constraint { id: (*id).into(), any_of: Vec::new() }).collect();
+        let available = vec![DisabledMod { file_name: "library.jar".into(), mods: vec![metadata("library")], ..Default::default() }];
+        let edges = dependency_edges(&[root], &["embedded".into()], &available, &[]);
+        assert_eq!(edges.len(), 2);
+        assert_eq!(edges[0].file_names, vec!["library.jar"]);
+        assert_eq!(edges[1].id, "missing");
+        assert!(edges[1].file_names.is_empty());
+    }
+}
+
 /// Was ergänzt wurde – für Hinweis und Absturz-Knopf.
 #[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]

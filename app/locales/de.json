@@ -1,4 +1,26 @@
 {
+  "modDependencies": {
+    "title": "Mod-Abhängigkeiten",
+    "enableTitle": "Benötigte Mods aktivieren",
+    "disableTitle": "Andere Mods benötigen diesen Mod",
+    "enableText": "Diese Mods zusammen mit ihren Pflichtabhängigkeiten aktivieren?",
+    "disableText": "Diese aktiven Mods benötigen deine Auswahl direkt oder indirekt und funktionieren danach möglicherweise nicht mehr. Nur die ausgewählten Mods werden deaktiviert.",
+    "enable": "Aufgelistete Mods aktivieren",
+    "disable": "Trotzdem deaktivieren",
+    "requires": "Benötigt",
+    "usedBy": "Wird benötigt von",
+    "none": "Keine deklarierten Abhängigkeiten gefunden.",
+    "enabled": "Aktiviert",
+    "disabled": "Deaktiviert",
+    "missing": "Nicht installiert",
+    "install": "{id} installieren",
+    "installed": "Installiert: {names}",
+    "unresolved": "Weiterhin fehlend: {names}",
+    "ambiguous": "Mehrere installierte Mods liefern diese Abhängigkeiten. Aktiviere die passende Version selbst: {names}",
+    "unknown": "Die Abhängigkeiten dieses Mods konnten nicht gelesen werden. Prüfe die Anforderungen in seiner Projektbeschreibung.",
+    "unknownFiles": "Abhängigkeiten konnten nicht gelesen werden für: {names}. Prüfe vor dem Aktivieren ihre Projektbeschreibungen.",
+    "project": "Projektbeschreibung"
+  },
   "common": {
     "actions": {
       "apply": "Anwenden",
@@ -1361,7 +1383,16 @@
       "selectAll": "Alle auswählen",
       "selected": "{n} ausgewählt | {n} ausgewählt",
       "update": "Aktualisieren ({n})",
-      "clear": "Auswahl aufheben"
+      "clear": "Auswahl aufheben",
+      "tipTitle": "Tipp:",
+      "tip": "Strg+Klick wählt einen einzelnen Eintrag aus oder ab. Umschalt+Klick nimmt alles von der zuletzt angeklickten Zeile bis hierher: Ist die Zeile schon ausgewählt, wird der Bereich abgewählt.",
+      "hint": "Strg+Klick: einzeln · Umschalt+Klick: Bereich an- oder abwählen",
+      "needStart": "Erst eine Zeile anklicken, dann eine andere mit Umschalt+Klick",
+      "hoverRow": "Auf eine Zeile zeigen und klicken",
+      "preview": "Klick wählt {n} Eintrag aus | Klick wählt {n} Einträge aus",
+      "previewOff": "Klick wählt {n} Eintrag ab | Klick wählt {n} Einträge ab",
+      "confirmed": "{n} Eintrag ausgewählt | {n} Einträge ausgewählt",
+      "confirmedOff": "{n} Eintrag abgewählt | {n} Einträge abgewählt"
     },
     "columns": {
       "project": "Projekt",
@@ -2417,6 +2448,17 @@
   },
   "settings": {
     "title": "Einstellungen",
+    "about": {
+      "title": "Über den TRS Launcher",
+      "notice": "Original TRS Launcher von Ohev Tamerin (theredstonee). Dieser Hinweis muss in jeder Kopie und jeder veränderten Fassung sichtbar bleiben. Er darf unter keinen Umständen entfernt werden, außer mit einer zusätzlichen schriftlichen, unterschriebenen Bestätigung des Urhebers.",
+      "license": "Der TRS Launcher ist freie Software unter der GNU General Public License Version 3 (GPL-3.0-only): Du darfst ihn unter dieser Lizenz weitergeben und verändern. Er kommt ohne jede Gewährleistung.",
+      "thirdParty": "Teile der Prozessverwaltung sind aus Polyfrost OneLauncher (GPL-3.0-only) übernommen. Alle Drittanbieter-Hinweise stehen in der Datei NOTICE.",
+      "openLicense": "Lizenz öffnen",
+      "openNotice": "NOTICE öffnen",
+      "warning": "Der Urheberhinweis dieser Kopie fehlt oder wurde verändert, diese Kopie ist also womöglich nicht das Original. Hier steht der Originaltext. Der Launcher läuft normal weiter und nichts wird irgendwohin gesendet.",
+      "warningShort": "Warnung: Urheberhinweis fehlt oder wurde verändert.",
+      "warningDetails": "Details"
+    },
     "footer": {
       "clientModUpdate": "TRS Client: Update auf {version} geladen",
       "clientModCurrent": "TRS Client: Version {version} (aktuell)",
@@ -3444,10 +3486,12 @@
     "groups": {
       "interface": "Darstellung",
       "account": "Konto",
-      "instances": "Instanzen"
+      "instances": "Instanzen",
+      "about": "Info"
     },
     "app": {
       "appearance": "Aussehen",
+      "about": "Über",
       "features": "Funktionen",
       "behavior": "Verhalten",
       "language": "Sprache",

@@ -52,8 +52,8 @@ jobs:
           fi
           files=$(git diff --name-only HEAD^1 HEAD)
           printf 'Changed files:\n%s\n' "$files"
-          # Änderungen an diesem Workflow prüfen alles.
-          all='^\.github/workflows/ci\.yml$'
+          # Änderungen an diesem Workflow und am Urheberhinweis (NOTICE, KI-Regeln) prüfen alles.
+          all='^(\.github/workflows/ci\.yml|NOTICE|LICENSE|AGENTS\.md|CLAUDE\.md|\.github/copilot-instructions\.md)$'
           launcher='^(app/|src-tauri/|public/|scripts/|packaging/|tests/|package\.json$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|nuxt\.config\.ts$|tsconfig\.json$|\.npmrc$)'
           # Android/iOS: dieselbe Rust-/Frontend-Basis plus die Projekte in src-tauri/gen und die Kanal-Skripte.
           mobile='^(app/|src-tauri/|public/|scripts/mobile-channel\.mjs$|scripts/ios/|\.github/workflows/ios-engine\.yml$|package\.json$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|nuxt\.config\.ts$|tsconfig\.json$|\.npmrc$)'
