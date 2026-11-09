@@ -1,4 +1,26 @@
 {
+  "modDependencies": {
+    "title": "Mod dependencies",
+    "enableTitle": "Enable required mods",
+    "disableTitle": "Other mods need this mod",
+    "enableText": "Enable these mods together, including their required dependencies?",
+    "disableText": "These enabled mods depend on your selection, directly or indirectly. They may stop working. Only the selected mods will be disabled.",
+    "enable": "Enable listed mods",
+    "disable": "Disable anyway",
+    "requires": "Requires",
+    "usedBy": "Required by",
+    "none": "No declared dependencies found.",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "missing": "Not installed",
+    "install": "Install {id}",
+    "installed": "Installed: {names}",
+    "unresolved": "Still missing: {names}",
+    "ambiguous": "Multiple installed mods provide these dependencies. Enable the appropriate version yourself: {names}",
+    "unknown": "This mod has no readable dependency metadata. Check its project description for requirements.",
+    "unknownFiles": "Dependencies could not be read for: {names}. Check their project descriptions before enabling.",
+    "project": "Project description"
+  },
   "common": {
     "actions": {
       "apply": "Apply",

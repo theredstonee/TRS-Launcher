@@ -56,6 +56,14 @@ pub async fn set_content_enabled(
 }
 
 #[tauri::command]
+pub async fn content_dependencies(launcher: State<'_, LauncherState>, id: String) -> CommandResult<Vec<depcheck::DependencyNode>> {
+    let instance = launcher.instances().get(&id).await?;
+    let builds = launcher.client_mod_builds().await;
+    let effective = trs_core::boost::effective_instance(launcher.http(), launcher.paths(), &builds, &instance).await;
+    Ok(depcheck::dependency_graph(launcher.paths(), &builds, &effective).await?)
+}
+
+#[tauri::command]
 pub async fn delete_content(
     launcher: State<'_, LauncherState>,
     id: String,

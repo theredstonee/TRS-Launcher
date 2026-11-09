@@ -23,6 +23,32 @@ GitHub issues are turned off for this repository. Please use:
 
 For bigger changes, open an entry in the tracker or ask on Discord first, so the work fits the plan.
 
+## Dev scripts
+
+The scripts in the repository root run in PowerShell (`.\test`), cmd (`test`) and Git Bash or Linux (`./test`). Their
+output is in German.
+
+| Script | What it does |
+|---|---|
+| `setup` | Checks Node.js, pnpm, Rust, the system libraries and a JDK, offers to install what is missing, runs `pnpm install`. `--pruefen` only checks, `--ja` doesn't ask. |
+| `test` | Builds the launcher from your code and starts it next to an installed one, with its own app id and data folder. |
+| `start-client [version]` | Builds the TRS Client and starts a test game, default 1.21.11. `--stumm` turns the sound off. |
+| `aufraeumen` | Deletes only what can be rebuilt. `--zeigen` lists it first, `--gross` includes heavy Gradle caches. |
+| `studio` | Starts TRS Studio. It is in a private repository for the team, without access the script says so. |
+
+Windows is tested. On Linux, `setup` only reports missing libraries, because the install command depends on your
+distribution.
+
+Optional settings for your machine go into `.dev/local.sh`, which Git ignores:
+
+```bash
+export TRS_TEST_HOME="D:/trs-launcher-test"   # data folder of `test`, default ~/.trs-launcher-test
+export TRS_STUDIO_DIR="D:/trs-studio"         # folder of TRS Studio, default next to this repository
+TRS_BUILD_LOCK="/d/builds/gradle.lock"        # `start-client` waits while this file exists
+TRS_WORKTREES_DIR="/d/worktrees"              # `aufraeumen` also cleans old build caches in these worktrees
+export TRS_LOW_MB=20000                       # `aufraeumen --auto` starts below this many free MB, default 15000
+```
+
 ## Workflow
 
 1. **Fork** the repository and create a branch from `main` (from `website` if you change the website or the TRS
