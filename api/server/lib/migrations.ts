@@ -960,6 +960,60 @@ CREATE TABLE IF NOT EXISTS wpshare_waypoints (
       if (!hasColumn(db, 'capes', 'hidden')) db.exec('ALTER TABLE capes ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0')
     },
   },
+  {
+    // Bewerbungs-Chat: bestätigte Bewerber-Adresse, separat gespeicherte öffentliche Nachrichten, Mail-Bestätigungen
+    // und quarantänisierte ClamAV-Anhänge. Interne Notizen bleiben in team_application_notes.
+    version: 43,
+    run: (db) => {
+      if (!hasColumn(db, 'team_applications', 'contact_email')) db.exec('ALTER TABLE team_applications ADD COLUMN contact_email TEXT')
+      db.exec(`
+CREATE TABLE IF NOT EXISTS team_application_verifications (
+  id TEXT PRIMARY KEY,
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  job_id TEXT NOT NULL REFERENCES team_jobs(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  payload BLOB NOT NULL,
+  key_id TEXT NOT NULL,
+  token_hash TEXT NOT NULL UNIQUE,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL,
+  UNIQUE (uuid, job_id)
+);
+CREATE INDEX IF NOT EXISTS team_application_verifications_expires ON team_application_verifications(expires_at);
+
+CREATE TABLE IF NOT EXISTS team_application_messages (
+  id TEXT PRIMARY KEY,
+  application_id TEXT NOT NULL REFERENCES team_applications(id) ON DELETE CASCADE,
+  sender_uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  body BLOB NOT NULL,
+  key_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS team_application_messages_application ON team_application_messages(application_id, created_at, id);
+
+CREATE TABLE IF NOT EXISTS team_application_files (
+  id TEXT PRIMARY KEY,
+  application_id TEXT NOT NULL REFERENCES team_applications(id) ON DELETE CASCADE,
+  message_id TEXT REFERENCES team_application_messages(id) ON DELETE SET NULL,
+  uploader_uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  file_name TEXT NOT NULL,
+  bytes INTEGER NOT NULL CHECK (bytes BETWEEN 1 AND 31457280),
+  sha256 TEXT NOT NULL,
+  key_id TEXT NOT NULL,
+  scan_status TEXT NOT NULL CHECK (scan_status IN ('pending', 'scanning', 'clean', 'infected', 'failed', 'released')),
+  scan_signature TEXT,
+  scan_attempts INTEGER NOT NULL DEFAULT 0,
+  next_scan_at INTEGER NOT NULL,
+  scan_started_at INTEGER,
+  created_at INTEGER NOT NULL,
+  scanned_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS team_application_files_queue ON team_application_files(scan_status, next_scan_at, created_at);
+CREATE INDEX IF NOT EXISTS team_application_files_application ON team_application_files(application_id, created_at);
+CREATE INDEX IF NOT EXISTS team_application_files_message ON team_application_files(message_id);
+`)
+    },
+  },
 ]
 
 /** Migration 40 (siehe oben): Minispiel-Ranglisten. Exportiert für den Idempotenz-Test. */

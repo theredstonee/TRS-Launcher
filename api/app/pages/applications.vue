@@ -12,6 +12,7 @@ const loading = ref(true)
 const error = ref('')
 const withdrawing = ref<MyApplication | null>(null)
 const busy = ref(false)
+let refreshTimer: ReturnType<typeof setInterval> | null = null
 
 async function refresh() {
   error.value = ''
@@ -24,9 +25,14 @@ async function refresh() {
   }
 }
 onMounted(async () => {
-  if (await load()) await refresh()
-  else loading.value = false
+  if (await load()) {
+    await refresh()
+    refreshTimer = setInterval(() => {
+      if (document.visibilityState === 'visible') void refresh()
+    }, 30_000)
+  } else loading.value = false
 })
+onBeforeUnmount(() => { if (refreshTimer) clearInterval(refreshTimer) })
 
 async function withdraw() {
   const x = withdrawing.value
@@ -66,7 +72,7 @@ const stepIndex = (s: ApplicationStatus) => steps.indexOf(s)
       </div>
       <ul v-else class="mt-8 space-y-4">
         <li v-for="x in items" :key="x.id">
-          <article class="card app-card p-5" :data-status="x.status">
+          <article :id="`app-${x.id}`" class="card app-card p-5" :data-status="x.status">
             <div class="flex flex-wrap items-center gap-3">
               <NuxtLink :to="lp(`/team/${x.job.id}`)" class="heading flex-1 text-xl text-base-50 hover:underline">{{ inLang(x.job.title, lang) ?? x.job.id }}</NuxtLink>
               <span class="tone status" :class="applicationTone(x.status)">{{ t.myApps.status[x.status] }}</span>
@@ -80,6 +86,7 @@ const stepIndex = (s: ApplicationStatus) => steps.indexOf(s)
               <p class="text-xs font-semibold tracking-wide text-base-400 uppercase">{{ t.myApps.response }}</p>
               <p class="mt-1 text-sm whitespace-pre-line text-base-100">{{ x.response }}</p>
             </div>
+            <ApplicationChat :application-id="x.id" :can-send="x.status !== 'withdrawn'" />
             <button v-if="x.canWithdraw" type="button" class="btn btn-ghost mt-4 text-sm" @click="withdrawing = x"><SiteIcon name="close" class="size-4" />{{ t.myApps.withdraw }}</button>
           </article>
         </li>

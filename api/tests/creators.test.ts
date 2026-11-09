@@ -516,7 +516,7 @@ describe('applications', () => {
     adminCreateCreator(env.ctx, OWNER, { player: taken, tier: 'starter', mainCode: 'PIXELMAUS' })
     const uuid = await player(env, 'Pixel_Maus')
     const ev = listen(env, uuid)
-    const app = submitApplication(env.ctx, { uuid, name: 'Pixel_Maus' }, job.id, { discord: 'pixel.maus', ageGroup: '18+', lang: 'de', answers: {} })
+    const app = submitApplication(env.ctx, { uuid, name: 'Pixel_Maus' }, job.id, { email: 'pixel@example.test', discord: 'pixel.maus', ageGroup: '18+', lang: 'de', answers: {} })
     expect(myCreatorState(env.ctx, uuid).application).toMatchObject({ id: app.id, status: 'new' })
     expect(code(() => setApplicationStatus(env.ctx, OWNER, app.id, { status: 'accepted', grantRole: true }))).toBe('invalid_request')
     setApplicationStatus(env.ctx, OWNER, app.id, { status: 'accepted' })

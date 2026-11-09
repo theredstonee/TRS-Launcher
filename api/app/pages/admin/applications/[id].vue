@@ -118,6 +118,7 @@ const histLabel = (h: AdminApplicationDetail['history'][number]) => {
           <p class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-base-300">
             <span class="chip py-0.5">{{ inLang(app.job.title, lang) ?? app.job.id }}</span>
             <span><SiteIcon name="discord" class="mr-1 inline size-4 align-[-3px] text-base-400" />{{ app.discord }}</span>
+            <a v-if="app.contactEmail" :href="`mailto:${app.contactEmail}`" class="text-redstone-300 hover:underline">{{ app.contactEmail }}</a>
             <span>{{ t.adm.apps.age }}: {{ t.job.ages[app.ageGroup] }}</span>
             <span :title="when(app.createdAt)">{{ t.adm.apps.submitted }} {{ rel(app.createdAt) }}</span>
             <span class="font-mono text-xs uppercase text-base-400">{{ app.lang }}</span>
@@ -139,6 +140,8 @@ const histLabel = (h: AdminApplicationDetail['history'][number]) => {
               </div>
             </dl>
           </div>
+
+          <ApplicationChat :application-id="app.id" :can-review="app.can.review" :can-send="app.status !== 'withdrawn' && (app.can.review || app.can.decide)" />
 
           <div class="card p-5">
             <h2 class="section-title flex items-center gap-2"><SiteIcon name="note" class="size-4 text-base-400" />{{ t.adm.apps.notes }}</h2>

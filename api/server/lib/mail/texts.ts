@@ -17,6 +17,7 @@ export interface MailTexts {
   teamSettings: string
   confirm: { subject: string, preheader: string, title: string, lead: string, button: string, note: string, reason: string }
   teamConfirm: { subject: string, preheader: string, title: string, lead: string, button: string, note: string, reason: string }
+  application: Record<'verify' | 'message' | 'accepted' | 'rejected', { subject: string, preheader: string, title: string, lead: string, button: string, note: string, reason: string }>
   update: { download: string, autoUpdate: string, banner: string }
   cosmetic: { redeem: string, validUntil: string, perAccount: string }
   creator: { code: string, channel: string, page: string, tiers: Record<'starter' | 'partner' | 'top', string> }
@@ -62,6 +63,12 @@ export const MAIL_TEXTS: Record<MailLang, MailTexts> = {
       button: 'Adresse bestätigen',
       note: 'Der Link gilt 48 Stunden. Du warst das nicht? Dann ignoriere diese Mail einfach.',
       reason: 'Diese Mail wurde im TRS-Team-Bereich angefordert für {email}.',
+    },
+    application: {
+      verify: { subject: 'Bestätige deine E-Mail für die TRS-Bewerbung', preheader: 'Bestätige deine Adresse, um die Bewerbung abzusenden.', title: 'Adresse *bestätigen*', lead: 'Bestätige deine E-Mail-Adresse. Erst danach wird deine Bewerbung an das TRS-Team gesendet.', button: 'E-Mail bestätigen', note: 'Der Link gilt 48 Stunden. Wenn du das nicht angefordert hast, ignoriere diese Mail.', reason: 'Diese Bestätigung wurde für eine TRS-Bewerbung angefordert.' },
+      message: { subject: 'Neue Nachricht zu deiner TRS-Bewerbung', preheader: 'Das TRS-Team hat dir in deiner Bewerbung geschrieben.', title: 'Neue *Nachricht*', lead: 'Das TRS-Team hat dir eine Nachricht zu deiner Bewerbung geschickt. Öffne den Bewerbungsbereich, um sie zu lesen und zu antworten.', button: 'Bewerbung öffnen', note: 'Der Nachrichteninhalt steht nur auf der Website.', reason: 'Du bekommst diese Mail, weil du eine TRS-Bewerbung hast.' },
+      accepted: { subject: 'Neuigkeiten zu deiner TRS-Bewerbung', preheader: 'Das Team hat über deine Bewerbung entschieden.', title: 'Bewerbung *angenommen*', lead: 'Das Team hat über deine Bewerbung entschieden. Öffne den Bewerbungsbereich für die Antwort und weitere Informationen.', button: 'Bewerbung öffnen', note: 'Details zu deiner Bewerbung stehen nur auf der Website.', reason: 'Du bekommst diese Mail, weil du dich beim TRS-Team beworben hast.' },
+      rejected: { subject: 'Neuigkeiten zu deiner TRS-Bewerbung', preheader: 'Das Team hat über deine Bewerbung entschieden.', title: 'Bewerbung *beantwortet*', lead: 'Das Team hat über deine Bewerbung entschieden. Öffne den Bewerbungsbereich für die Antwort und weitere Informationen.', button: 'Bewerbung öffnen', note: 'Details zu deiner Bewerbung stehen nur auf der Website.', reason: 'Du bekommst diese Mail, weil du dich beim TRS-Team beworben hast.' },
     },
     update: { download: 'Jetzt aktualisieren', autoUpdate: 'Der Launcher aktualisiert sich auch von selbst.', banner: 'Update-Banner {version}' },
     cosmetic: { redeem: 'Löse den Code im Launcher unter **Skins → Code einlösen** ein.', validUntil: 'Gültig bis {date}', perAccount: 'einmal pro Konto' },
@@ -109,6 +116,12 @@ export const MAIL_TEXTS: Record<MailLang, MailTexts> = {
       note: 'The link is valid for 48 hours. Not you? Just ignore this e-mail.',
       reason: 'This e-mail was requested in the TRS team area for {email}.',
     },
+    application: {
+      verify: { subject: 'Confirm your e-mail for your TRS application', preheader: 'Confirm your address to submit your application.', title: 'Confirm your *address*', lead: 'Confirm your e-mail address. Your application will only be sent to the TRS team after confirmation.', button: 'Confirm e-mail', note: 'The link is valid for 48 hours. If you did not request this, ignore this e-mail.', reason: 'This confirmation was requested for a TRS application.' },
+      message: { subject: 'New message about your TRS application', preheader: 'The TRS team sent you a message about your application.', title: 'New *message*', lead: 'The TRS team sent you a message about your application. Open the application area to read and reply.', button: 'Open application', note: 'The message itself is only available on the website.', reason: 'You are getting this e-mail because you have a TRS application.' },
+      accepted: { subject: 'An update about your TRS application', preheader: 'The team has made a decision about your application.', title: 'Application *accepted*', lead: 'The team has made a decision about your application. Open the application area for the response and more information.', button: 'Open application', note: 'Application details are only available on the website.', reason: 'You are getting this e-mail because you applied to the TRS team.' },
+      rejected: { subject: 'An update about your TRS application', preheader: 'The team has made a decision about your application.', title: 'Application *updated*', lead: 'The team has made a decision about your application. Open the application area for the response and more information.', button: 'Open application', note: 'Application details are only available on the website.', reason: 'You are getting this e-mail because you applied to the TRS team.' },
+    },
     update: { download: 'Update now', autoUpdate: 'The launcher also updates itself.', banner: 'Update banner {version}' },
     cosmetic: { redeem: 'Redeem the code in the launcher under **Skins → Redeem code**.', validUntil: 'Valid until {date}', perAccount: 'once per account' },
     creator: { code: 'Creator code', channel: 'Visit channel', page: 'Creator page', tiers: { starter: 'CREATOR', partner: 'PARTNER CREATOR', top: 'TOP CREATOR' } },
@@ -154,6 +167,12 @@ export const MAIL_TEXTS: Record<MailLang, MailTexts> = {
       button: 'Confirmar dirección',
       note: 'El enlace vale 48 horas. ¿No fuiste tú? Ignora este correo.',
       reason: 'Este correo se solicitó en el área del equipo TRS para {email}.',
+    },
+    application: {
+      verify: { subject: 'Confirma tu correo para la solicitud de TRS', preheader: 'Confirma tu dirección para enviar la solicitud.', title: 'Confirmar *dirección*', lead: 'Confirma tu correo. La solicitud solo se enviará al equipo TRS después de confirmarlo.', button: 'Confirmar correo', note: 'El enlace vale 48 horas. Si no lo solicitaste, ignora este correo.', reason: 'Esta confirmación se solicitó para una solicitud de TRS.' },
+      message: { subject: 'Nuevo mensaje sobre tu solicitud de TRS', preheader: 'El equipo TRS te escribió sobre tu solicitud.', title: 'Nuevo *mensaje*', lead: 'El equipo TRS te envió un mensaje sobre tu solicitud. Abre el área de solicitudes para leerlo y responder.', button: 'Abrir solicitud', note: 'El contenido del mensaje solo está disponible en la web.', reason: 'Recibes este correo porque tienes una solicitud para el equipo TRS.' },
+      accepted: { subject: 'Novedades sobre tu solicitud de TRS', preheader: 'El equipo ha tomado una decisión sobre tu solicitud.', title: 'Solicitud *aceptada*', lead: 'El equipo ha tomado una decisión sobre tu solicitud. Abre el área de solicitudes para ver la respuesta y más información.', button: 'Abrir solicitud', note: 'Los detalles solo están disponibles en la web.', reason: 'Recibes este correo porque solicitaste un puesto en el equipo TRS.' },
+      rejected: { subject: 'Novedades sobre tu solicitud de TRS', preheader: 'El equipo ha tomado una decisión sobre tu solicitud.', title: 'Solicitud *actualizada*', lead: 'El equipo ha tomado una decisión sobre tu solicitud. Abre el área de solicitudes para ver la respuesta y más información.', button: 'Abrir solicitud', note: 'Los detalles solo están disponibles en la web.', reason: 'Recibes este correo porque solicitaste un puesto en el equipo TRS.' },
     },
     update: { download: 'Actualizar ahora', autoUpdate: 'El launcher también se actualiza solo.', banner: 'Banner de la actualización {version}' },
     cosmetic: { redeem: 'Canjea el código en el launcher en **Skins → Canjear código**.', validUntil: 'Válido hasta el {date}', perAccount: 'una vez por cuenta' },

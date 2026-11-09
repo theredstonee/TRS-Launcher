@@ -40,6 +40,8 @@ export interface AppContext {
   cosmeticDir: string
   /** Ordner für Chat-Bilder und Beweis-Kopien (`<DATA_DIR>/chat`, verschlüsselt). */
   chatDir: string
+  /** Verschlüsselte Bewerbungsdateien, vor ClamAV-Freigabe nicht abrufbar. */
+  applicationFileDir: string
   /** Ordner für geteilte Screenshots (`<DATA_DIR>/shares`, öffentlich per Link, §23). */
   shareDir: string
   /** Geteilte Modpacks (§27): `<DATA_DIR>/packs/<xx>/<id>.<rev>.mrpack`. */
@@ -76,6 +78,7 @@ export function createContext(opts: {
   templates?: TemplateSet
   now?: () => number
   chatDir?: string
+  applicationFileDir?: string
   pingDeps?: PingDeps
 }): AppContext {
   const now = opts.now ?? Date.now
@@ -103,6 +106,7 @@ export function createContext(opts: {
     capeDir: opts.capeDir,
     cosmeticDir: opts.cosmeticDir,
     chatDir: opts.chatDir ?? join(opts.config.dataDir, 'chat'),
+    applicationFileDir: opts.applicationFileDir ?? join(opts.config.dataDir, 'application-files'),
     shareDir: join(opts.config.dataDir, 'shares'),
     packDir: join(opts.config.dataDir, 'packs'),
     issueDir: join(opts.config.dataDir, 'issues'),

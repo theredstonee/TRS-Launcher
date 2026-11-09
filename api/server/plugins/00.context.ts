@@ -18,6 +18,7 @@ import { rotateMessageKeys, sweepTyping } from '../lib/chat'
 import { openDb } from '../lib/db'
 import { setPitchBundleLoader } from '../lib/pitch-http'
 import { sweepApplications } from '../lib/applications'
+import { processApplicationScanQueue, rotateApplicationKeys, sweepApplicationFiles } from '../lib/application-chat'
 import { seedCircuits, sweepCircuitSubmissions } from '../lib/circuits'
 import { sweepHosting } from '../lib/hosting'
 import { sweepWpshare, sweepWpshareSessions } from '../lib/waypoint-share'
@@ -49,11 +50,13 @@ export default defineNitroPlugin((nitroApp) => {
   }
   const capeDir = join(config.dataDir, 'capes')
   const cosmeticDir = join(config.dataDir, 'cosmetics')
+  const applicationFileDir = join(config.dataDir, 'application-files')
   mkdirSync(capeDir, { recursive: true })
   mkdirSync(cosmeticDir, { recursive: true })
+  mkdirSync(applicationFileDir, { recursive: true })
   const db = openDb(join(config.dataDir, 'trs.db'))
   const mojang = createMojangClient(config.mojangSessionUrl, fetch, config.mojangApiUrl)
-  const ctx = createContext({ config, db, mojang, capeDir, cosmeticDir })
+  const ctx = createContext({ config, db, mojang, capeDir, cosmeticDir, applicationFileDir })
   mkdirSync(join(ctx.chatDir, 'evidence'), { recursive: true })
   setContext(ctx)
   if (!config.microsoft) console.warn('[trs-api] MS_CLIENT_ID/MS_CLIENT_SECRET not set – website sign-in with Microsoft is disabled')
@@ -227,6 +230,9 @@ export default defineNitroPlugin((nitroApp) => {
   const MAIL_TICK_MS = 5000
   let mailTick: Promise<unknown> | null = null
   const timers = [
+    every(5_000, () => {
+      void processApplicationScanQueue(ctx, 1).catch((err) => console.error('[trs-api] application scan queue failed', err))
+    }),
     every(MAIL_TICK_MS, () => {
       if (mailTick) return
       mailTick = processOutbox(ctx, budgetPerTick(ctx, MAIL_TICK_MS))
@@ -273,6 +279,7 @@ export default defineNitroPlugin((nitroApp) => {
     every(5 * 60_000, () => {
       ctx.spam.sweep()
       sweepPendingAttachments(ctx)
+      sweepApplicationFiles(ctx)
     }),
     // Aufbewahrung der Meldungen + verwaiste Dateien.
     every(6 * 60 * 60_000, () => {
@@ -280,6 +287,7 @@ export default defineNitroPlugin((nitroApp) => {
       sweepOrphanFiles(ctx)
       // Bewerbungen: Löschfristen (§24.3).
       sweepApplications(ctx)
+      sweepApplicationFiles(ctx)
       sweepOrphanShareFiles(ctx)
       sweepOrphanPackFiles(ctx)
       sweepOrphanIssueFiles(ctx)
@@ -293,7 +301,7 @@ export default defineNitroPlugin((nitroApp) => {
     }),
     // Schlüsseltausch: alte Chat-Daten nach und nach mit dem aktiven Schlüssel neu verschlüsseln.
     every(60_000, () => {
-      const n = rotateMessageKeys(ctx, 500) + rotateReportKeys(ctx, 200) + rotateAttachmentKeys(ctx, 20)
+      const n = rotateMessageKeys(ctx, 500) + rotateReportKeys(ctx, 200) + rotateAttachmentKeys(ctx, 20) + rotateApplicationKeys(ctx, 20)
       if (n > 0) console.info(`[trs-api] chat key rotation: re-encrypted ${n} items`)
       else if (rotating) console.info('[trs-api] chat key rotation done')
       rotating = n > 0

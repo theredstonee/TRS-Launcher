@@ -36,3 +36,25 @@ So läuft die API auf `panel.theredstonee.de` (Node GER-Schliersee, Server „TR
 - `CURSEFORGE_API_KEY=` – für empfohlene Modpacks von CurseForge (API.md §37). Ohne Schlüssel gehen nur
   Modrinth-Links; CurseForge-Links antworten mit `503 curseforge_unavailable`. Nach dem Eintragen den Server neu
   starten. Der Schlüssel gehört nur in `.env`, nie ins Repo.
+
+## ClamAV für Bewerbungsdateien
+
+Der Pterodactyl-Container enthält nur Node.js. ClamAV wird deshalb auf dem Ubuntu-Host installiert und die API
+verbindet sich über das private Docker-Netz. Kopiere `install-clamav.sh` auf die Ubuntu-VM und starte es dort in
+einer Root-Shell oder mit `sudo` (nicht im Pterodactyl-Container). Das interaktive Skript zeigt die laufenden Container und Netzwerke,
+bindet `clamd` an das Gateway des ausgewählten Netzes und erlaubt UFW den TCP-Port 3310 nur von der aktuellen IP des
+API-Containers:
+
+```bash
+sudo bash install-clamav.sh
+```
+
+Voraussetzungen sind Ubuntu, Docker und bereits aktive UFW-Regeln. Das Skript aktiviert die Firewall nicht selbst,
+damit es SSH oder andere Dienste nicht versehentlich aussperrt. Es sichert `clamd.conf`, installiert ClamAV und die
+Signaturaktualisierung, startet beide Dienste und prüft `PING`/`PONG`. Auf Wunsch aktualisiert es die API-`.env`
+nach einer Sicherung mit `CLAMAV_HOST` und `CLAMAV_PORT`; andernfalls zeigt es die Werte zum manuellen Eintragen.
+
+`clamd` hat selbst keine Authentifizierung und das Protokoll ist unverschlüsselt. Den Port niemals öffentlich
+freigeben oder pauschal für das ganze Pterodactyl-Netz erlauben. Die Regel gilt für die IP des ausgewählten API-
+Containers; falls Pterodactyl ihm nach einem Neustart eine neue IP gibt, das Skript erneut ausführen und die alte
+UFW-Regel entfernen.

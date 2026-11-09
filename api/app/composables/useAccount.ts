@@ -53,9 +53,9 @@ export function useAccount() {
     return account.value
   }
 
-  function api<T>(path: string, opts: { method?: 'GET' | 'POST' | 'DELETE' | 'PATCH' | 'PUT', body?: unknown } = {}): Promise<T> {
+  function api<T>(path: string, opts: { method?: 'GET' | 'POST' | 'DELETE' | 'PATCH' | 'PUT', body?: unknown, headers?: Record<string, string> } = {}): Promise<T> {
     const method = opts.method ?? 'GET'
-    const headers: Record<string, string> = {}
+    const headers: Record<string, string> = { ...opts.headers }
     if (method !== 'GET' && account.value) headers['X-CSRF-Token'] = account.value.csrf
     return apiFetch<T>(path, { method, body: opts.body, headers, credentials: 'same-origin' }) as Promise<T>
   }

@@ -30,7 +30,7 @@ usePageSeo(() => ({
 // --- Bewerben (nur im Browser) ----------------------------------------------------------------------------
 const { account, loaded, load, api } = useAccount()
 const eligibility = ref<Eligibility | null>(null)
-const form = reactive<{ discord: string, ageGroup: AgeGroup | '', answers: Record<string, AnswerValue>, website: string }>({ discord: '', ageGroup: '', answers: {}, website: '' })
+const form = reactive<{ email: string, discord: string, ageGroup: AgeGroup | '', answers: Record<string, AnswerValue>, website: string }>({ email: '', discord: '', ageGroup: '', answers: {}, website: '' })
 const errors = ref<Record<string, string>>({})
 const busy = ref(false)
 const failure = ref('')
@@ -68,6 +68,7 @@ function toggleMulti(f: FormField, id: string) {
 /** Dieselben Regeln wie der Server (dort wird ohnehin geprüft). */
 function validate(): boolean {
   const e: Record<string, string> = {}
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) e.email = t.value.job.emailInvalid
   if (!discordOk(form.discord)) e.discord = t.value.job.discordInvalid
   if (!form.ageGroup) e.ageGroup = t.value.job.errors.required!
   for (const f of job.value.form) {
@@ -106,9 +107,9 @@ async function submit() {
     answers[f.id] = f.type === 'number' ? Number(v) : typeof v === 'string' ? v.trim() : v
   }
   try {
-    await api(`/v1/team/jobs/${id.value}/applications`, {
+    await api<{ confirmation: { email: string, expiresAt: string } }>(`/v1/team/jobs/${id.value}/applications`, {
       method: 'POST',
-      body: { discord: form.discord.trim(), ageGroup: form.ageGroup, answers, lang: lang.value, ...(form.website ? { website: form.website } : {}) },
+      body: { email: form.email.trim(), discord: form.discord.trim(), ageGroup: form.ageGroup, answers, lang: lang.value, ...(form.website ? { website: form.website } : {}) },
     })
     sent.value = true
   } catch (err) {
@@ -174,7 +175,7 @@ async function submit() {
             <a :href="loginHref" class="btn btn-primary mt-5"><SiteIcon name="user" class="size-4" />{{ t.job.signInToApply }}</a>
           </template>
           <div v-else-if="sent" class="mt-4">
-            <p class="flex gap-2 text-sm text-ok"><SiteIcon name="check" class="mt-0.5 size-4 shrink-0" />{{ t.job.sent }}</p>
+            <p class="flex gap-2 text-sm text-ok"><SiteIcon name="check" class="mt-0.5 size-4 shrink-0" />{{ t.job.verifySent }}</p>
             <NuxtLink :to="lp('/applications')" class="btn btn-primary mt-4 w-full">{{ t.job.toMine }}</NuxtLink>
           </div>
           <div v-else-if="blockedText" class="mt-4">
@@ -193,6 +194,11 @@ async function submit() {
 
             <fieldset class="space-y-4">
               <legend class="text-xs font-semibold tracking-wide text-base-400 uppercase">{{ t.job.standard }}</legend>
+              <div>
+                <label class="label" for="f-email">{{ t.job.email }} <span class="text-redstone-300">*</span></label>
+                <input id="f-email" v-model="form.email" class="field" type="email" maxlength="254" autocomplete="email" required :aria-invalid="!!errors.email" aria-describedby="f-email-help" />
+                <p id="f-email-help" class="mt-1 text-xs" :class="errors.email ? 'text-redstone-300' : 'text-base-400'">{{ errors.email || t.job.emailHelp }}</p>
+              </div>
               <div>
                 <label class="label" for="f-discord">{{ t.job.discord }} <span class="text-redstone-300">*</span></label>
                 <input id="f-discord" v-model="form.discord" class="field" maxlength="40" autocomplete="off" spellcheck="false" :aria-invalid="!!errors.discord" aria-describedby="f-discord-help" />

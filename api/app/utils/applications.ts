@@ -131,6 +131,7 @@ export interface AdminApplicationItem {
 
 export interface AdminApplicationDetail extends AdminApplicationItem {
   discord: string
+  contactEmail: string | null
   lang: Lang
   form: FormField[]
   answers: Record<string, AnswerValue>

@@ -4,6 +4,8 @@ import {
   addApplicationNote,
   adminApplicationDetail,
   adminListApplications,
+  beginApplicationVerification,
+  confirmApplicationEmail,
   createJob,
   deleteJob,
   eligibility,
@@ -51,7 +53,7 @@ const JOB: JobInput = {
   form: FORM,
 }
 
-const GOOD = { discord: 'Steve.Builds', ageGroup: '16-17', lang: 'de', answers: { why: 'Ich helfe gern anderen Spielern im Chat.', hours: 5, exp: true, lang: ['de', 'en'], tz: 'eu' } }
+const GOOD = { email: 'applicant@example.test', discord: 'Steve.Builds', ageGroup: '16-17', lang: 'de', answers: { why: 'Ich helfe gern anderen Spielern im Chat.', hours: 5, exp: true, lang: ['de', 'en'], tz: 'eu' } }
 
 async function setup(env: TestEnv) {
   await login(env, 'Owner', ADMIN)
@@ -187,8 +189,53 @@ describe('applying', () => {
     const env = makeEnv()
     const t = await setup(env)
     const ids = ['a1', 'a2', 'a3', 'a4'].map((n) => createJob(env.ctx, t.admin, { ...JOB, id: `job-${n}`, roleId: null, form: [] }).id)
-    for (const id of ids.slice(0, 3)) submitApplication(env.ctx, t.alex, id, { discord: 'alex', ageGroup: '18+' })
-    expect(code(() => submitApplication(env.ctx, t.alex, ids[3]!, { discord: 'alex', ageGroup: '18+' }))).toBe('too_many_open')
+    for (const id of ids.slice(0, 3)) submitApplication(env.ctx, t.alex, id, { email: 'alex@example.test', discord: 'alex', ageGroup: '18+' })
+    expect(code(() => submitApplication(env.ctx, t.alex, ids[3]!, { email: 'alex@example.test', discord: 'alex', ageGroup: '18+' }))).toBe('too_many_open')
+  })
+})
+
+describe('application e-mail confirmation', () => {
+  it('does not create the application until the applicant confirms the queued e-mail', async () => {
+    const env = makeEnv({ env: { SMTP_HOST: 'mail.example.test' } })
+    const applicant = { uuid: '12345678901234567890123456789012', name: 'Applicant' }
+    await login(env, 'Applicant', applicant.uuid)
+    const job = createJob(env.ctx, OWNER, JOB)
+    const pending = beginApplicationVerification(env.ctx, applicant, job.id, GOOD)
+    expect(pending.email).toBe('a*****t@example.test')
+    expect(myApplications(env.ctx, applicant.uuid)).toEqual([])
+
+    const mail = one<{ text: string }>(env.ctx.db, "SELECT text FROM mail_outbox WHERE kind = 'confirm' ORDER BY id DESC LIMIT 1")!
+    const token = /application-confirm\?token=(c[A-Za-z0-9_-]{43})/.exec(mail.text)?.[1]
+    expect(token).toBeTruthy()
+    const application = confirmApplicationEmail(env.ctx, applicant, token!)
+    expect(application.status).toBe('new')
+    expect(myApplications(env.ctx, applicant.uuid)).toHaveLength(1)
+    expect(one<{ contact_email: string }>(env.ctx.db, 'SELECT contact_email FROM team_applications WHERE id = ?', application.id)?.contact_email)
+      .toBe('applicant@example.test')
+    expect(code(() => confirmApplicationEmail(env.ctx, applicant, token!))).toBe('invalid_token')
+  })
+
+  it('does not queue or retain a draft when SMTP is unavailable', async () => {
+    const env = makeEnv()
+    const applicant = { uuid: '12345678901234567890123456789012', name: 'Applicant' }
+    await login(env, 'Applicant', applicant.uuid)
+    const job = createJob(env.ctx, OWNER, JOB)
+    expect(code(() => beginApplicationVerification(env.ctx, applicant, job.id, GOOD))).toBe('mail_unavailable')
+    expect(myApplications(env.ctx, applicant.uuid)).toEqual([])
+    expect(one<{ n: number }>(env.ctx.db, 'SELECT COUNT(*) AS n FROM team_application_verifications')?.n).toBe(0)
+  })
+
+  it('emails only final decisions and keeps the response text out of the e-mail', async () => {
+    const env = makeEnv({ env: { SMTP_HOST: 'mail.example.test' } })
+    const t = await setup(env)
+    const application = submitApplication(env.ctx, t.steve, 'moderator', GOOD)
+    setApplicationStatus(env.ctx, t.admin, application.id, { status: 'review' })
+    expect(one<{ n: number }>(env.ctx.db, "SELECT COUNT(*) AS n FROM mail_outbox WHERE kind = 'confirm'")?.n).toBe(0)
+    setApplicationStatus(env.ctx, t.admin, application.id, { status: 'rejected', response: 'Private decision details' })
+    const mail = one<{ to_addr: string, text: string }>(env.ctx.db, "SELECT to_addr, text FROM mail_outbox WHERE kind = 'confirm' ORDER BY id DESC LIMIT 1")!
+    expect(mail.to_addr).toBe('applicant@example.test')
+    expect(mail.text).toContain('/applications#app-')
+    expect(mail.text).not.toContain('Private decision details')
   })
 })
 

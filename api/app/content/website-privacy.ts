@@ -86,13 +86,13 @@ Instead of Microsoft you can confirm the sign-in in your **TRS Launcher**. The w
 
 ## Team applications
 
-If you apply for a position in the TRS team, we store your **application**: the position, your Minecraft name and UUID (from the sign-in), your **Discord name**, your **age group** (never your date of birth), your answers to the questions of the position, the language of the form, the status and our answer to you.
+If you apply for a position in the TRS team, we store your **application**: the position, your Minecraft name and UUID (from the sign-in), your **confirmed contact e-mail**, your **Discord name**, your **age group** (never your date of birth), your answers to the questions of the position, the language of the form, the status and our official answer to you. The application is only submitted after you confirm the e-mail address; unconfirmed drafts are deleted after 48 hours.
 
-**Who sees it.** Only team members whose role may see applications (for example the recruiting team and admins). They can add internal notes and votes that you don't see. Team members who may open player files also see your TRS sanction history. We use your Discord name only to contact you about the application.
+**Who sees it.** Only team members whose role may see applications (for example the recruiting team and admins). You and those team members can read the application conversation. Internal notes and votes remain private to the team. Team members who may open player files also see your TRS sanction history.
 
-**Your view.** Under “My applications” (and later in the launcher) you see the status and our answer; you can withdraw an open application at any time.
+**Your view and messages.** Under “My applications” you see the status, our official answer and the conversation, and can reply or attach files of any type up to 30 MB. Messages and files are encrypted at rest. Files are scanned by ClamAV on our own server; only files reported clean can be downloaded unless a reviewer explicitly releases a quarantined file after review. That decision is recorded. No application file is sent to VirusTotal or another scanning provider. E-mails about team replies and final decisions contain only a link, never the message text or attachment.
 
-**Storage period.** Rejected or withdrawn applications are **deleted 6 months after the decision**. Accepted applications are kept while you are in the team and **deleted 6 months after you leave**. Deleting your TRS account deletes all your applications at once.
+**Storage period.** Unlinked uploads are removed after one hour. Rejected or withdrawn applications, including their messages and files, are **deleted 6 months after the decision**. Accepted applications are kept while you are in the team and **deleted 6 months after you leave**. Deleting your TRS account deletes all your applications at once.
 
 **Legal basis.** Art. 6(1)(b) GDPR (steps you asked for before a voluntary team membership) and Art. 6(1)(f) (a fair decision and protection against abuse). If you are under 16, please talk to your parents before you apply.
 
@@ -209,13 +209,13 @@ Statt mit Microsoft kannst du die Anmeldung in deinem **TRS Launcher** bestätig
 
 ## Bewerbungen für das Team
 
-Wenn du dich auf eine Stelle im TRS-Team bewirbst, speichern wir deine **Bewerbung**: die Stelle, deinen Minecraft-Namen und deine UUID (aus der Anmeldung), deinen **Discord-Namen**, deine **Altersgruppe** (nie dein Geburtsdatum), deine Antworten auf die Fragen der Stelle, die Sprache des Formulars, den Status und unsere Antwort an dich.
+Wenn du dich auf eine Stelle im TRS-Team bewirbst, speichern wir deine **Bewerbung**: die Stelle, deinen Minecraft-Namen und deine UUID (aus der Anmeldung), deine **bestätigte Kontakt-E-Mail**, deinen **Discord-Namen**, deine **Altersgruppe** (nie dein Geburtsdatum), deine Antworten auf die Fragen der Stelle, die Sprache des Formulars, den Status und unsere offizielle Antwort an dich. Die Bewerbung wird erst nach Bestätigung der E-Mail-Adresse abgeschickt; unbestätigte Entwürfe werden nach 48 Stunden gelöscht.
 
-**Wer sie sieht.** Nur Team-Mitglieder, deren Rolle Bewerbungen sehen darf (zum Beispiel das Bewerbungs-Team und Admins). Sie können interne Notizen und Stimmen ergänzen, die du nicht siehst. Team-Mitglieder, die Spieler-Akten öffnen dürfen, sehen auch deinen TRS-Strafverlauf. Deinen Discord-Namen nutzen wir nur, um dich wegen der Bewerbung zu kontaktieren.
+**Wer sie sieht.** Nur Team-Mitglieder, deren Rolle Bewerbungen sehen darf (zum Beispiel das Bewerbungs-Team und Admins). Du und diese Team-Mitglieder könnt den Bewerbungs-Chat lesen. Interne Notizen und Stimmen bleiben für dich unsichtbar und sind nur fürs Team. Team-Mitglieder, die Spieler-Akten öffnen dürfen, sehen auch deinen TRS-Strafverlauf.
 
-**Deine Ansicht.** Unter „Meine Bewerbungen“ (und später im Launcher) siehst du Status und unsere Antwort; eine offene Bewerbung kannst du jederzeit zurückziehen.
+**Deine Ansicht und Nachrichten.** Unter „Meine Bewerbungen“ siehst du Status, unsere offizielle Antwort und den Chat und kannst antworten oder Dateien jeder Art bis 30 MB anhängen. Nachrichten und Dateien sind im Ruhezustand verschlüsselt. Dateien werden mit ClamAV auf unserem eigenen Server geprüft; nur als sauber gemeldete Dateien können heruntergeladen werden, außer ein Reviewer gibt eine Datei nach Prüfung ausdrücklich aus der Quarantäne frei. Diese Entscheidung wird protokolliert. Bewerbungsdateien werden nicht an VirusTotal oder andere Prüfdienste gesendet. E-Mails über Team-Antworten und endgültige Entscheidungen enthalten nur einen Link, nie Nachrichtentext oder Anhänge.
 
-**Speicherdauer.** Abgelehnte oder zurückgezogene Bewerbungen werden **6 Monate nach der Entscheidung gelöscht**. Angenommene Bewerbungen bleiben, solange du im Team bist, und werden **6 Monate nach deinem Austritt gelöscht**. Löschst du dein TRS-Konto, werden alle deine Bewerbungen sofort gelöscht.
+**Speicherdauer.** Nicht zugeordnete Uploads werden nach einer Stunde entfernt. Abgelehnte oder zurückgezogene Bewerbungen samt Nachrichten und Dateien werden **6 Monate nach der Entscheidung gelöscht**. Angenommene Bewerbungen bleiben, solange du im Team bist, und werden **6 Monate nach deinem Austritt gelöscht**. Löschst du dein TRS-Konto, werden alle deine Bewerbungen sofort gelöscht.
 
 **Rechtsgrundlage.** Art. 6 Abs. 1 lit. b DSGVO (von dir gewünschte Schritte vor einer freiwilligen Team-Mitgliedschaft) und Art. 6 Abs. 1 lit. f (faire Entscheidung und Schutz vor Missbrauch). Bist du unter 16, sprich bitte vor der Bewerbung mit deinen Eltern.
 
@@ -330,13 +330,13 @@ En lugar de Microsoft puedes confirmar el inicio de sesión en tu **TRS Launcher
 
 ## Solicitudes para el equipo
 
-Si te postulas a un puesto en el equipo TRS, guardamos tu **solicitud**: el puesto, tu nombre y UUID de Minecraft (del inicio de sesión), tu **nombre de Discord**, tu **grupo de edad** (nunca tu fecha de nacimiento), tus respuestas a las preguntas del puesto, el idioma del formulario, el estado y nuestra respuesta.
+Si te postulas a un puesto en el equipo TRS, guardamos tu **solicitud**: el puesto, tu nombre y UUID de Minecraft (del inicio de sesión), tu **correo de contacto confirmado**, tu **nombre de Discord**, tu **grupo de edad** (nunca tu fecha de nacimiento), tus respuestas a las preguntas del puesto, el idioma del formulario, el estado y nuestra respuesta oficial. La solicitud solo se envía después de confirmar el correo; los borradores sin confirmar se eliminan después de 48 horas.
 
-**Quién la ve.** Solo los miembros del equipo cuyo rol puede ver solicitudes (por ejemplo, el equipo de selección y los administradores). Pueden añadir notas internas y votos que tú no ves. Quienes pueden abrir fichas de jugador ven también tu historial de sanciones de TRS. Usamos tu nombre de Discord solo para contactarte sobre la solicitud.
+**Quién la ve.** Solo los miembros del equipo cuyo rol puede ver solicitudes (por ejemplo, el equipo de selección y los administradores). Tú y esos miembros podéis leer la conversación de la solicitud. Las notas internas y los votos siguen siendo privados para el equipo. Quienes pueden abrir fichas de jugador ven también tu historial de sanciones de TRS.
 
-**Tu vista.** En «Mis solicitudes» (y más adelante en el launcher) ves el estado y nuestra respuesta; puedes retirar una solicitud abierta en cualquier momento.
+**Tus mensajes y archivos.** En «Mis solicitudes» ves el estado, la respuesta oficial y el chat; puedes responder y adjuntar archivos de cualquier tipo de hasta 30 MB. Los mensajes y archivos se cifran en reposo. ClamAV analiza los archivos en nuestro propio servidor; solo se pueden descargar los que resultan limpios, salvo que un revisor libere expresamente un archivo en cuarentena tras revisarlo. Esa decisión queda registrada. No enviamos archivos de solicitudes a VirusTotal ni a otros proveedores de análisis. Los correos sobre respuestas del equipo y decisiones finales contienen solo un enlace, nunca el texto del mensaje ni el archivo adjunto.
 
-**Plazo de conservación.** Las solicitudes rechazadas o retiradas se **borran 6 meses después de la decisión**. Las aceptadas se conservan mientras estés en el equipo y se **borran 6 meses después de que salgas**. Si borras tu cuenta TRS, se borran al instante todas tus solicitudes.
+**Plazo de conservación.** Los archivos sin adjuntar se eliminan después de una hora. Las solicitudes rechazadas o retiradas, con mensajes y archivos, se **borran 6 meses después de la decisión**. Las aceptadas se conservan mientras estés en el equipo y se **borran 6 meses después de que salgas**. Si borras tu cuenta TRS, se borran al instante todas tus solicitudes.
 
 **Base jurídica.** Art. 6.1.b RGPD (pasos que pides antes de una pertenencia voluntaria al equipo) y art. 6.1.f (una decisión justa y protección contra abusos). Si tienes menos de 16 años, habla con tus padres antes de postularte.
 

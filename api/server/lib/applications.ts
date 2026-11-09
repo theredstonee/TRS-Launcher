@@ -8,6 +8,10 @@ import { adminSanctionViews, sanctionsOf, type AdminSanctionView } from './sanct
 import { sanitizeText, textLength } from './safety'
 import { addMemberRole, assertCan, can, getRole, rankOf, type Staff } from './team'
 import { notifyTeam, stamp } from './mail/team-notify'
+import { enqueue, requireMail } from './mail/outbox'
+import { renderApplicationMail } from './mail/render'
+import { autoLook } from './mail/theme'
+import { CONFIRM_TTL_MS, hashToken, maskEmail, newConfirmToken } from './mail/tokens'
 
 /**
  * Team-Bewerbungen (API.md §24.3): öffentliche Stellen mit Formular-Baukasten, Bewerben nur angemeldet (Website mit
@@ -380,6 +384,7 @@ export function validateAnswers(form: FormField[], raw: unknown): { answers: Rec
 // ---------------------------------------------------------------- Bewerben
 
 export const applySchema = z.strictObject({
+  email: z.string().trim().max(254).email().transform((s) => s.toLowerCase()),
   discord: z.string().min(1).max(64),
   ageGroup: z.enum(AGE_GROUPS),
   answers: z.record(z.string().max(32), z.unknown()).default({}),
@@ -401,6 +406,7 @@ interface ApplicationRow {
   lang: Lang
   status: ApplicationStatus
   response: string | null
+  contact_email: string | null
   role_granted: string | null
   created_at: number
   updated_at: number
@@ -448,7 +454,7 @@ export function eligibility(ctx: AppContext, uuid: string, jobId: string): Eligi
   return { canApply: true, reason: null, retryAt: null, applicationId: null }
 }
 
-export function submitApplication(ctx: AppContext, applicant: { uuid: string, name: string }, jobId: string, raw: unknown): MyApplicationView {
+function prepareApplication(ctx: AppContext, applicant: { uuid: string, name: string }, jobId: string, raw: unknown) {
   const input = parse(applySchema, raw)
   if (input.website) throw badRequest('invalid_request', 'Request validation failed')
   const el = eligibility(ctx, applicant.uuid, jobId)
@@ -470,14 +476,67 @@ export function submitApplication(ctx: AppContext, applicant: { uuid: string, na
   const { answers, errors } = validateAnswers(form, input.answers)
   if (!discord) errors.unshift({ id: 'discord', error: 'invalid' })
   if (errors.length > 0) throw badRequest('invalid_answers', 'Some answers are missing or invalid', { fields: errors.slice(0, 40) })
+  return { input: { ...input, discord: discord!, answers }, form }
+}
+
+export function beginApplicationVerification(ctx: AppContext, applicant: { uuid: string, name: string }, jobId: string, raw: unknown): { email: string, expiresAt: string } {
+  const { input } = prepareApplication(ctx, applicant, jobId, raw)
+  requireMail(ctx)
+  const id = `v${randomBytes(12).toString('hex')}`
+  const { token, hash } = newConfirmToken('c')
+  const expiresAt = ctx.now() + CONFIRM_TTL_MS
+  const payload = ctx.cipher.encrypt(Buffer.from(JSON.stringify(input)), `appverify:${id}`)
+  tx(ctx.db, () => {
+    run(ctx.db, 'DELETE FROM team_application_verifications WHERE uuid = ? AND job_id = ?', applicant.uuid, jobId)
+    run(
+      ctx.db,
+      `INSERT INTO team_application_verifications (id, uuid, job_id, email, payload, key_id, token_hash, created_at, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      id, applicant.uuid, jobId, input.email, payload, ctx.cipher.activeId, hash, ctx.now(), expiresAt,
+    )
+  })
+  const url = `${ctx.config.siteUrl}/application-confirm?token=${encodeURIComponent(token)}`
+  enqueue(ctx, {
+    kind: 'confirm',
+    to: input.email,
+    mail: renderApplicationMail(ctx, autoLook(ctx), input.lang, 'verify', url),
+  })
+  return { email: maskEmail(input.email), expiresAt: new Date(expiresAt).toISOString() }
+}
+
+export function confirmApplicationEmail(ctx: AppContext, applicant: { uuid: string, name: string }, token: string): MyApplicationView {
+  if (!/^c[A-Za-z0-9_-]{43}$/.test(token)) throw notFound('invalid_token', 'This link is not valid or was already used')
+  const pending = one<{ id: string, job_id: string, uuid: string, payload: Uint8Array, expires_at: number }>(
+    ctx.db,
+    'SELECT id, job_id, uuid, payload, expires_at FROM team_application_verifications WHERE token_hash = ?',
+    hashToken(token),
+  )
+  if (!pending || pending.uuid !== applicant.uuid) throw notFound('invalid_token', 'This link is not valid or was already used')
+  if (pending.expires_at <= ctx.now()) {
+    run(ctx.db, 'DELETE FROM team_application_verifications WHERE id = ?', pending.id)
+    throw new ApiError(410, 'token_expired', 'This link has expired')
+  }
+  let payload: unknown
+  try {
+    payload = JSON.parse(ctx.cipher.decrypt(pending.payload, `appverify:${pending.id}`).toString('utf8')) as unknown
+  } catch {
+    throw new ApiError(500, 'application_verification_failed', 'The application could not be confirmed')
+  }
+  const application = submitApplication(ctx, applicant, pending.job_id, payload)
+  run(ctx.db, 'DELETE FROM team_application_verifications WHERE id = ?', pending.id)
+  return application
+}
+
+export function submitApplication(ctx: AppContext, applicant: { uuid: string, name: string }, jobId: string, raw: unknown): MyApplicationView {
+  const { input, form } = prepareApplication(ctx, applicant, jobId, raw)
   const id = `a${randomBytes(8).toString('hex')}`
   const t = ctx.now()
   tx(ctx.db, () => {
     run(
       ctx.db,
-      `INSERT INTO team_applications (id, job_id, uuid, name, discord, age_group, answers, form, lang, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?)`,
-      id, jobId, applicant.uuid, applicant.name, discord!, input.ageGroup, JSON.stringify(answers), JSON.stringify(form), input.lang, t, t,
+      `INSERT INTO team_applications (id, job_id, uuid, name, discord, age_group, answers, form, lang, status, created_at, updated_at, contact_email)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, ?)`,
+      id, jobId, applicant.uuid, applicant.name, input.discord, input.ageGroup, JSON.stringify(input.answers), JSON.stringify(form), input.lang, t, t, input.email,
     )
     history(ctx, id, applicant.uuid, 'submitted', null)
   })
@@ -649,6 +708,7 @@ export function adminListApplications(ctx: AppContext, viewer: Staff, q: AdminAp
 
 export interface AdminApplicationDetail extends AdminApplicationListItem {
   discord: string
+  contactEmail: string | null
   lang: Lang
   /** Formular zum Zeitpunkt der Bewerbung + Antworten. */
   form: FormField[]
@@ -715,6 +775,7 @@ export function adminApplicationDetail(ctx: AppContext, viewer: Staff, id: strin
     createdAt: iso(a.created_at),
     updatedAt: iso(a.updated_at),
     discord: a.discord,
+    contactEmail: a.contact_email,
     lang: a.lang,
     form: parseJson<FormField[]>(a.form, []),
     answers: parseJson<Record<string, AnswerValue>>(a.answers, {}),
@@ -797,7 +858,23 @@ export function setApplicationStatus(ctx: AppContext, actor: Staff, id: string, 
   })
   after?.()
   ctx.events.publish(a.uuid, { type: 'application_updated', application: myApplicationView(ctx, appRow(ctx, id)!) }, { meOnly: true })
+  if (changed && (body.status === 'accepted' || body.status === 'rejected') && a.contact_email) {
+    notifyApplicant(ctx, a.contact_email, a.lang, body.status, id)
+  }
   return adminApplicationDetail(ctx, actor, id)
+}
+
+export function notifyApplicant(ctx: AppContext, email: string, lang: Lang, kind: 'message' | 'accepted' | 'rejected', id: string): void {
+  if (!ctx.mail.available) return
+  try {
+    enqueue(ctx, {
+      kind: 'confirm',
+      to: email,
+      mail: renderApplicationMail(ctx, autoLook(ctx), lang, kind, `${ctx.config.siteUrl}/applications#app-${encodeURIComponent(id)}`),
+    })
+  } catch (err) {
+    console.error('[mail] application notification failed', err)
+  }
 }
 
 export const voteBody = z.strictObject({
@@ -852,7 +929,8 @@ export function addApplicationNote(ctx: AppContext, actor: Staff, id: string, ra
  */
 export function sweepApplications(ctx: AppContext): number {
   const t = ctx.now()
-  let n = run(
+  let n = run(ctx.db, 'DELETE FROM team_application_verifications WHERE expires_at < ?', t)
+  n += run(
     ctx.db,
     "DELETE FROM team_applications WHERE status IN ('rejected', 'withdrawn') AND COALESCE(decided_at, updated_at) < ?",
     t - APPLICATION_RETENTION_MS,

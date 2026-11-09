@@ -380,6 +380,31 @@ export function renderConfirm(ctx: AppContext, kind: 'newsletter' | 'team', look
   }
 }
 
+export function renderApplicationMail(
+  ctx: AppContext,
+  look: Look,
+  lang: MailLang,
+  kind: keyof typeof MAIL_TEXTS.de.application,
+  url: string,
+): RenderedMail {
+  const c = MAIL_TEXTS[lang].application[kind]
+  const T = THEMES[look]
+  const inner = `
+  <tr><td class="px" align="center" style="padding:26px 32px 30px 32px;">
+    <div class="h1">${pixelTitle(ctx, look, c.title, 'h1', { align: 'center' })}</div>
+    <div style="font-family:${FONT};font-size:15px;line-height:23px;color:${T.muted};margin:14px 0 20px 0;">${esc(c.lead)}</div>
+    ${button(T, c.button, url).replace('style="margin:6px 0;"', 'style="margin:6px auto;"')}
+    <div style="font-family:${FONT};font-size:12px;color:${T.muted};margin-top:16px;">${esc(c.note)}</div>
+  </td></tr>`
+  const shellOpts: ShellOpts = { look, lang, preheader: c.preheader, reason: c.reason }
+  return {
+    subject: c.subject,
+    preheader: c.preheader,
+    html: shell(ctx, inner, shellOpts),
+    text: `${plain(c.title)}\n\n${c.lead}\n\n${c.button}: ${url}\n\n${c.note}\n\n${footerText(ctx, shellOpts)}\n`,
+  }
+}
+
 export interface TeamItem {
   /** Zeilen „Feld → Wert“ (Feldnamen aus MAIL_TEXTS.team.fields). */
   fields: [string, string][]
