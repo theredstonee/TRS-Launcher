@@ -115,6 +115,15 @@ export interface MyApplication {
   canWithdraw: boolean
 }
 
+export interface PendingApplicationConfirmation {
+  id: string
+  job: { id: string, title: Localized }
+  email: string
+  createdAt: string
+  expiresAt: string
+  confirmationUrl?: string
+}
+
 export type AnswerValue = string | number | boolean | string[]
 
 export interface AdminApplicationItem {

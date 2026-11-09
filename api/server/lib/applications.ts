@@ -479,13 +479,21 @@ function prepareApplication(ctx: AppContext, applicant: { uuid: string, name: st
   return { input: { ...input, discord: discord!, answers }, form }
 }
 
-export function beginApplicationVerification(ctx: AppContext, applicant: { uuid: string, name: string }, jobId: string, raw: unknown): { email: string, expiresAt: string } {
+export function beginApplicationVerification(
+  ctx: AppContext,
+  applicant: { uuid: string, name: string },
+  jobId: string,
+  raw: unknown,
+  options: { allowLocalPreview?: boolean } = {},
+): { email: string, expiresAt: string, confirmationUrl?: string } {
   const { input } = prepareApplication(ctx, applicant, jobId, raw)
-  requireMail(ctx)
+  const localPreview = options.allowLocalPreview === true && !ctx.mail.available
+  if (!localPreview) requireMail(ctx)
   const id = `v${randomBytes(12).toString('hex')}`
   const { token, hash } = newConfirmToken('c')
   const expiresAt = ctx.now() + CONFIRM_TTL_MS
-  const payload = ctx.cipher.encrypt(Buffer.from(JSON.stringify(input)), `appverify:${id}`)
+  const encrypted = Buffer.from(JSON.stringify({ input, ...(localPreview ? { devToken: token } : {}) }))
+  const payload = ctx.cipher.encrypt(encrypted, `appverify:${id}`)
   tx(ctx.db, () => {
     run(ctx.db, 'DELETE FROM team_application_verifications WHERE uuid = ? AND job_id = ?', applicant.uuid, jobId)
     run(
@@ -496,11 +504,8 @@ export function beginApplicationVerification(ctx: AppContext, applicant: { uuid:
     )
   })
   const url = `${ctx.config.siteUrl}/application-confirm?token=${encodeURIComponent(token)}`
-  enqueue(ctx, {
-    kind: 'confirm',
-    to: input.email,
-    mail: renderApplicationMail(ctx, autoLook(ctx), input.lang, 'verify', url),
-  })
+  if (localPreview) return { email: maskEmail(input.email), expiresAt: new Date(expiresAt).toISOString(), confirmationUrl: url }
+  enqueue(ctx, { kind: 'confirm', to: input.email, mail: renderApplicationMail(ctx, autoLook(ctx), input.lang, 'verify', url) })
   return { email: maskEmail(input.email), expiresAt: new Date(expiresAt).toISOString() }
 }
 
@@ -518,7 +523,8 @@ export function confirmApplicationEmail(ctx: AppContext, applicant: { uuid: stri
   }
   let payload: unknown
   try {
-    payload = JSON.parse(ctx.cipher.decrypt(pending.payload, `appverify:${pending.id}`).toString('utf8')) as unknown
+    const stored = JSON.parse(ctx.cipher.decrypt(pending.payload, `appverify:${pending.id}`).toString('utf8')) as unknown
+    payload = stored && typeof stored === 'object' && 'input' in stored ? stored.input : stored
   } catch {
     throw new ApiError(500, 'application_verification_failed', 'The application could not be confirmed')
   }
@@ -594,6 +600,57 @@ function myApplicationView(ctx: AppContext, a: ApplicationRow): MyApplicationVie
 
 export function myApplications(ctx: AppContext, uuid: string): MyApplicationView[] {
   return all<ApplicationRow>(ctx.db, 'SELECT * FROM team_applications WHERE uuid = ? ORDER BY created_at DESC', uuid).map((a) => myApplicationView(ctx, a))
+}
+
+export interface PendingApplicationConfirmation {
+  id: string
+  job: { id: string, title: Localized }
+  email: string
+  createdAt: string
+  expiresAt: string
+  confirmationUrl?: string
+}
+
+function pendingConfirmationView(ctx: AppContext, row: { id: string, job_id: string, email: string, payload: Uint8Array, created_at: number, expires_at: number }, localPreview: boolean): PendingApplicationConfirmation {
+  const job = jobRow(ctx, row.job_id)
+  const view: PendingApplicationConfirmation = {
+    id: row.id,
+    job: { id: row.job_id, title: job ? titles(parseJson<JobTexts>(job.texts, {})) : {} },
+    email: maskEmail(row.email),
+    createdAt: iso(row.created_at),
+    expiresAt: iso(row.expires_at),
+  }
+  if (localPreview) {
+    try {
+      const payload = JSON.parse(ctx.cipher.decrypt(row.payload, `appverify:${row.id}`).toString('utf8')) as { devToken?: unknown }
+      if (typeof payload.devToken === 'string') view.confirmationUrl = `${ctx.config.siteUrl}/application-confirm?token=${encodeURIComponent(payload.devToken)}`
+    } catch {
+      // Old or unreadable local drafts stay visible without exposing a token.
+    }
+  }
+  return view
+}
+
+export function pendingApplicationConfirmations(ctx: AppContext, uuid: string, localPreview = false): PendingApplicationConfirmation[] {
+  const rows = all<{ id: string, job_id: string, email: string, payload: Uint8Array, created_at: number, expires_at: number }>(
+    ctx.db,
+    'SELECT id, job_id, email, payload, created_at, expires_at FROM team_application_verifications WHERE uuid = ? AND expires_at > ? ORDER BY created_at DESC',
+    uuid, ctx.now(),
+  )
+  return rows.map((row) => pendingConfirmationView(ctx, row, localPreview))
+}
+
+export function pendingApplicationReviews(ctx: AppContext, viewer: Staff): PendingApplicationConfirmation[] {
+  assertCan(viewer, 'applications.view')
+  const rows = all<{ id: string, job_id: string, email: string, payload: Uint8Array, created_at: number, expires_at: number }>(
+    ctx.db,
+    `SELECT v.id, v.job_id, v.email, v.payload, v.created_at, v.expires_at
+       FROM team_application_verifications v
+       WHERE v.uuid <> ? AND v.expires_at > ?
+       ORDER BY v.created_at DESC LIMIT 100`,
+    viewer.uuid, ctx.now(),
+  )
+  return rows.map((row) => pendingConfirmationView(ctx, row, false))
 }
 
 export function withdrawApplication(ctx: AppContext, uuid: string, id: string): MyApplicationView {

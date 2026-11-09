@@ -141,7 +141,7 @@ const histLabel = (h: AdminApplicationDetail['history'][number]) => {
             </dl>
           </div>
 
-          <ApplicationChat :application-id="app.id" :can-review="app.can.review" :can-send="app.status !== 'withdrawn' && (app.can.review || app.can.decide)" />
+          <NuxtLink :to="`/admin/applications/${app.id}/messages`" class="btn btn-secondary">{{ t.myApps.openConversation }}</NuxtLink>
 
           <div class="card p-5">
             <h2 class="section-title flex items-center gap-2"><SiteIcon name="note" class="size-4 text-base-400" />{{ t.adm.apps.notes }}</h2>

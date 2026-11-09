@@ -4,21 +4,17 @@ import { basename, join } from 'node:path'
 import { z } from 'zod'
 import type { AppContext } from './context'
 import { all, one, placeholders, run, tx } from './db'
-import { badRequest, forbidden, notFound, tooLarge, unavailable } from './errors'
+import { badRequest, forbidden, notFound, tooLarge } from './errors'
 import { myApplications, notifyApplicant } from './applications'
-import { scanApplicationFile } from './application-scanner'
 import { ChatCipher } from './crypto'
 import { sanitizeText, textLength } from './safety'
-import { can, teamOf, type Staff } from './team'
+import { can, teamOf } from './team'
 
 export const MAX_APPLICATION_FILE_BYTES = 30 * 1024 * 1024
 const MAX_FILES_PER_MESSAGE = 5
 const MAX_PENDING_PER_APPLICATION = 10
 const MAX_APPLICATION_STORAGE_BYTES = 2 * 1024 * 1024 * 1024
 const PENDING_FILE_TTL_MS = 60 * 60 * 1000
-const SCAN_RETRY_MS = 60 * 1000
-const SCAN_LEASE_MS = 5 * 60 * 1000
-const MAX_SCAN_ATTEMPTS = 5
 const FILE_ID = /^f[0-9a-f]{24}$/
 
 interface ApplicationAccess {
@@ -48,7 +44,7 @@ interface ApplicationFileRow {
   bytes: number
   sha256: string
   key_id: string
-  scan_status: 'pending' | 'scanning' | 'clean' | 'infected' | 'failed' | 'released'
+  scan_status: 'unscanned' | 'pending' | 'scanning' | 'clean' | 'infected' | 'failed' | 'released'
   scan_signature: string | null
   scan_attempts: number
   next_scan_at: number
@@ -98,7 +94,6 @@ function safeFileName(raw: string): string {
 }
 
 export function uploadApplicationFile(ctx: AppContext, uuid: string, applicationId: string, rawName: string, data: Buffer): ApplicationFileView {
-  if (!ctx.config.clamav) throw unavailable('clamav_unavailable', 'Application file scanning is not configured')
   access(ctx, uuid, applicationId)
   if (data.length === 0) throw badRequest('empty_file', 'File is empty')
   if (data.length > MAX_APPLICATION_FILE_BYTES) throw tooLarge()
@@ -123,14 +118,14 @@ export function uploadApplicationFile(ctx: AppContext, uuid: string, application
       ctx.db,
       `INSERT INTO team_application_files (id, application_id, uploader_uuid, file_name, bytes, sha256, key_id,
          scan_status, scan_attempts, next_scan_at, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 0, ?, ?)`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'unscanned', 0, ?, ?)`,
       id, applicationId, uuid, name, data.length, createHash('sha256').update(data).digest('hex'), ctx.cipher.activeId, t, t,
     )
   } catch (error) {
     rmSync(target, { force: true })
     throw error
   }
-  return { id, name, bytes: data.length, status: 'pending', signature: null }
+  return { id, name, bytes: data.length, status: 'unscanned', signature: null }
 }
 
 const messageSchema = z.strictObject({ text: z.string().max(8000).optional(), fileIds: z.array(z.string().regex(FILE_ID)).max(MAX_FILES_PER_MESSAGE).default([]) })
@@ -148,7 +143,7 @@ export function sendApplicationMessage(ctx: AppContext, uuid: string, applicatio
   const files = fileIds.length
     ? all<ApplicationFileRow>(ctx.db, `SELECT * FROM team_application_files WHERE id IN (${placeholders(fileIds.length)})`, ...fileIds)
     : []
-  if (files.length !== fileIds.length || files.some((file) => file.application_id !== applicationId || file.uploader_uuid !== uuid || file.message_id || !['pending', 'clean'].includes(file.scan_status))) {
+  if (files.length !== fileIds.length || files.some((file) => file.application_id !== applicationId || file.uploader_uuid !== uuid || file.message_id || !['unscanned', 'pending', 'clean'].includes(file.scan_status))) {
     throw badRequest('invalid_attachment', 'One or more files are not available to attach')
   }
   const id = `m${randomBytes(12).toString('hex')}`
@@ -158,7 +153,7 @@ export function sendApplicationMessage(ctx: AppContext, uuid: string, applicatio
       id, applicationId, uuid, ctx.cipher.encrypt(text, `appmsg:${id}`), ctx.cipher.activeId, at)
     for (const fileId of fileIds) {
       const linked = run(ctx.db,
-        "UPDATE team_application_files SET message_id = ? WHERE id = ? AND application_id = ? AND uploader_uuid = ? AND message_id IS NULL AND scan_status IN ('pending', 'clean')",
+        "UPDATE team_application_files SET message_id = ? WHERE id = ? AND application_id = ? AND uploader_uuid = ? AND message_id IS NULL AND scan_status IN ('unscanned', 'pending', 'clean')",
         id, fileId, applicationId, uuid,
       )
       if (linked !== 1) throw badRequest('invalid_attachment', 'One or more files are no longer available to attach')
@@ -211,74 +206,8 @@ export function readApplicationFile(ctx: AppContext, uuid: string, applicationId
   access(ctx, uuid, applicationId)
   if (!FILE_ID.test(fileId)) throw notFound('application_file_not_found', 'File not found')
   const file = one<ApplicationFileRow>(ctx.db, 'SELECT * FROM team_application_files WHERE id = ? AND application_id = ?', fileId, applicationId)
-  if (!file || !['clean', 'released'].includes(file.scan_status) || !file.message_id) throw notFound('application_file_not_found', 'File not found')
+  if (!file || !['unscanned', 'clean', 'released'].includes(file.scan_status) || !file.message_id) throw notFound('application_file_not_found', 'File not found')
   return { name: file.file_name, data: ctx.cipher.decrypt(readFileSync(filePath(ctx, file.id)), `appfile:${file.id}`) }
-}
-
-export function releaseApplicationFile(ctx: AppContext, staff: Staff, applicationId: string, fileId: string): ApplicationFileView {
-  if (!can(staff, 'applications.review')) throw forbidden('missing_permission', 'You cannot review applications')
-  const app = one<{ uuid: string }>(ctx.db, 'SELECT uuid FROM team_applications WHERE id = ?', applicationId)
-  if (!app || app.uuid === staff.uuid) throw notFound('application_not_found', 'Application not found')
-  const file = one<ApplicationFileRow>(ctx.db, 'SELECT * FROM team_application_files WHERE id = ? AND application_id = ?', fileId, applicationId)
-  if (!file || !file.message_id) throw notFound('application_file_not_found', 'File not found')
-  if (!['infected', 'failed'].includes(file.scan_status)) throw badRequest('file_not_quarantined', 'Only quarantined files can be reviewed')
-  const at = ctx.now()
-  tx(ctx.db, () => {
-    const changed = run(ctx.db, "UPDATE team_application_files SET scan_status = 'released', scanned_at = ? WHERE id = ? AND scan_status IN ('infected', 'failed')", at, file.id)
-    if (changed !== 1) throw badRequest('file_not_quarantined', 'This file is no longer quarantined')
-    run(ctx.db, 'INSERT INTO team_application_history (application_id, at, actor, action, detail) VALUES (?, ?, ?, ?, ?)',
-      applicationId, at, staff.uuid, 'file_released', file.id)
-  })
-  const view = myApplications(ctx, app.uuid).find((item) => item.id === applicationId)
-  if (view) ctx.events.publish(app.uuid, { type: 'application_updated', application: view }, { meOnly: true })
-  return { id: file.id, name: file.file_name, bytes: file.bytes, status: 'released', signature: file.scan_signature }
-}
-
-export async function processApplicationScanQueue(ctx: AppContext, budget = 1): Promise<number> {
-  if (!ctx.config.clamav || budget <= 0) return 0
-  let processed = 0
-  while (processed < budget) {
-    const file = one<ApplicationFileRow>(
-      ctx.db,
-      `SELECT * FROM team_application_files WHERE
-         (scan_status = 'pending' AND next_scan_at <= ?) OR (scan_status = 'scanning' AND scan_started_at < ?)
-       ORDER BY created_at LIMIT 1`,
-      ctx.now(), ctx.now() - SCAN_LEASE_MS,
-    )
-    if (!file) break
-    const started = run(
-      ctx.db,
-      `UPDATE team_application_files SET scan_status = 'scanning', scan_started_at = ?, scan_attempts = scan_attempts + 1
-       WHERE id = ? AND ((scan_status = 'pending' AND next_scan_at <= ?) OR (scan_status = 'scanning' AND scan_started_at < ?))`,
-      ctx.now(), file.id, ctx.now(), ctx.now() - SCAN_LEASE_MS,
-    )
-    if (!started) continue
-    try {
-      const data = ctx.cipher.decrypt(readFileSync(filePath(ctx, file.id)), `appfile:${file.id}`)
-      const result = await scanApplicationFile(ctx.config.clamav.host, ctx.config.clamav.port, data)
-      run(ctx.db,
-        `UPDATE team_application_files SET scan_status = ?, scan_signature = ?, scanned_at = ?, scan_started_at = NULL
-         WHERE id = ? AND scan_status = 'scanning'`,
-        result.status, result.status === 'infected' ? result.signature.slice(0, 180) : null, ctx.now(), file.id,
-      )
-    } catch (error) {
-      const attempts = file.scan_attempts + 1
-      run(ctx.db,
-        `UPDATE team_application_files SET scan_status = ?, scan_signature = ?, next_scan_at = ?, scan_started_at = NULL
-         WHERE id = ? AND scan_status = 'scanning'`,
-        attempts >= MAX_SCAN_ATTEMPTS ? 'failed' : 'pending', attempts >= MAX_SCAN_ATTEMPTS ? 'Scanner nicht erreichbar' : null,
-        ctx.now() + SCAN_RETRY_MS * 2 ** Math.max(0, attempts - 1), file.id,
-      )
-      console.error('[trs-api] application attachment scan failed', error)
-    }
-    const applicant = one<{ uuid: string }>(ctx.db, 'SELECT uuid FROM team_applications WHERE id = ?', file.application_id)
-    if (applicant) {
-      const view = myApplications(ctx, applicant.uuid).find((item) => item.id === file.application_id)
-      if (view) ctx.events.publish(applicant.uuid, { type: 'application_updated', application: view }, { meOnly: true })
-    }
-    processed++
-  }
-  return processed
 }
 
 export function sweepApplicationFiles(ctx: AppContext): number {

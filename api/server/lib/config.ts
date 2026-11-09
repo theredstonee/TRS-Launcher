@@ -60,8 +60,6 @@ export interface Config {
   curseforgeApiKey: string | null
   /** Mail über SMTP (§40). `null` = aus (SMTP_HOST leer): Versand → 503 `mail_unavailable`, alles andere geht. */
   mail: MailConfig | null
-  /** Lokaler ClamAV-Dienst für Bewerbungsanhänge. `null` = Datei-Uploads bleiben deaktiviert. */
-  clamav: { host: string, port: number } | null
   limits: Limits
 }
 
@@ -253,14 +251,6 @@ const bool = z
   .enum(['true', 'false', '1', '0', ''])
   .transform((v) => v === 'true' || v === '1')
 
-function isPrivateScannerAddress(value: string): boolean {
-  const parts = value.split('.').map(Number)
-  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return false
-  const a = parts[0]!
-  const b = parts[1]!
-  return a === 10 || a === 127 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)
-}
-
 const listOf = (item: (s: string) => string | null, label: string) =>
   z.string().transform((raw, ctx) => {
     const out = new Set<string>()
@@ -374,9 +364,6 @@ const envSchema = z.object({
   VAPID_SUBJECT: z.string().trim().max(256).default(''),
   // Empfohlene Modpacks (§37): CurseForge-API-Schlüssel (console.curseforge.com). Leer = nur Modrinth.
   CURSEFORGE_API_KEY: z.string().trim().max(200).default(''),
-  // Bewerbungsdateien werden nur an einen privaten IPv4-ClamAV-Dienst gesendet.
-  CLAMAV_HOST: z.string().trim().max(15).default('').refine((s) => s === '' || isPrivateScannerAddress(s), 'must be a private IPv4 address'),
-  CLAMAV_PORT: z.coerce.number().int().min(1).max(65535).default(3310),
   // Mail (§40): SMTP-Zugang nur hier (Server-.env), nie im Repo oder Log. SMTP_HOST leer = Mail aus.
   SMTP_HOST: z.string().trim().max(253).default('').refine((s) => s === '' || /^[A-Za-z0-9.-]{1,253}$/.test(s), 'must be a hostname'),
   SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(587),
@@ -557,7 +544,6 @@ export function loadConfig(env: Record<string, string | undefined>, limits: Part
     vapid: parseVapid(e),
     curseforgeApiKey: e.CURSEFORGE_API_KEY === '' ? null : e.CURSEFORGE_API_KEY,
     mail: parseMail(e),
-    clamav: e.CLAMAV_HOST === '' ? null : { host: e.CLAMAV_HOST, port: e.CLAMAV_PORT },
     limits: { ...DEFAULT_LIMITS, ...limits },
   }
 }

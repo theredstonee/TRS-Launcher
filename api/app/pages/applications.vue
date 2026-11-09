@@ -1,13 +1,16 @@
 <script setup lang="ts">
 // „Meine Bewerbungen“ (§24.3): Status und Antwort des Teams, offene Bewerbungen zurückziehen. Nur im Browser.
+import type { PendingApplicationConfirmation } from '~/utils/applications'
 const { t, lang, fill, date } = useTeamText()
 const { m } = useLang()
 const lp = useLocalePath()
+const route = useRoute()
 const { account, loaded, load, api } = useAccount()
 
 usePageSeo(() => ({ path: '/applications', title: t.value.seo.applications.title, description: t.value.myApps.lead, noindex: true }))
 
 const items = ref<MyApplication[]>([])
+const pendingConfirmations = ref<PendingApplicationConfirmation[]>([])
 const loading = ref(true)
 const error = ref('')
 const withdrawing = ref<MyApplication | null>(null)
@@ -17,7 +20,9 @@ let refreshTimer: ReturnType<typeof setInterval> | null = null
 async function refresh() {
   error.value = ''
   try {
-    items.value = (await api<{ applications: MyApplication[] }>('/v1/me/applications')).applications
+    const result = await api<{ applications: MyApplication[], pendingConfirmations?: PendingApplicationConfirmation[] }>('/v1/me/applications')
+    items.value = result.applications
+    pendingConfirmations.value = result.pendingConfirmations ?? []
   } catch (e) {
     error.value = fill(t.value.job.failed, { error: apiMessage(e) })
   } finally {
@@ -53,7 +58,8 @@ const stepIndex = (s: ApplicationStatus) => steps.indexOf(s)
 </script>
 
 <template>
-  <div class="mx-auto max-w-3xl px-4 pt-14 sm:px-6">
+  <NuxtPage v-if="route.params.id" />
+  <div v-else class="mx-auto max-w-3xl px-4 pt-14 sm:px-6">
     <header>
       <h1 class="display text-5xl leading-tight text-base-50">{{ t.myApps.title }}</h1>
       <p class="mt-3 text-lg text-base-400">{{ t.myApps.lead }}</p>
@@ -66,11 +72,25 @@ const stepIndex = (s: ApplicationStatus) => steps.indexOf(s)
     </div>
     <template v-else>
       <p v-if="error" role="alert" class="mt-6 text-sm text-redstone-300">{{ error }}</p>
-      <div v-if="!items.length" class="card mt-8 p-6">
+      <section v-if="pendingConfirmations.length" class="mt-8 space-y-3" aria-live="polite">
+        <h2 class="section-title">{{ t.myApps.pendingTitle }}</h2>
+        <article v-for="pending in pendingConfirmations" :key="pending.id" class="card border-l-4 border-l-lamp-400 p-5">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <h3 class="font-semibold text-base-50">{{ inLang(pending.job.title, lang) ?? pending.job.id }}</h3>
+            <span class="tone tone-warn">{{ t.myApps.pendingBadge }}</span>
+          </div>
+          <p class="mt-2 text-sm text-base-300">{{ t.myApps.pendingEmail.replace('{email}', pending.email) }}</p>
+          <p class="mt-1 text-sm text-base-400">{{ t.myApps.pendingLead }}</p>
+          <p class="mt-1 text-xs text-base-500">{{ fill(t.myApps.pendingExpires, { date: date(pending.expiresAt) }) }}</p>
+          <a v-if="pending.confirmationUrl" :href="pending.confirmationUrl" class="btn btn-primary mt-4">{{ t.myApps.continueConfirmation }}</a>
+          <p v-else class="mt-3 text-xs text-base-400">{{ t.myApps.confirmPendingPageHelp }}</p>
+        </article>
+      </section>
+      <div v-if="!items.length && !pendingConfirmations.length" class="card mt-8 p-6">
         <p class="text-base-300">{{ t.myApps.empty }}</p>
         <NuxtLink :to="lp('/team')" class="btn btn-primary mt-4"><SiteIcon name="briefcase" class="size-4" />{{ t.myApps.browse }}</NuxtLink>
       </div>
-      <ul v-else class="mt-8 space-y-4">
+      <ul v-if="items.length" class="mt-8 space-y-4">
         <li v-for="x in items" :key="x.id">
           <article :id="`app-${x.id}`" class="card app-card p-5" :data-status="x.status">
             <div class="flex flex-wrap items-center gap-3">
@@ -86,8 +106,10 @@ const stepIndex = (s: ApplicationStatus) => steps.indexOf(s)
               <p class="text-xs font-semibold tracking-wide text-base-400 uppercase">{{ t.myApps.response }}</p>
               <p class="mt-1 text-sm whitespace-pre-line text-base-100">{{ x.response }}</p>
             </div>
-            <ApplicationChat :application-id="x.id" :can-send="x.status !== 'withdrawn'" />
-            <button v-if="x.canWithdraw" type="button" class="btn btn-ghost mt-4 text-sm" @click="withdrawing = x"><SiteIcon name="close" class="size-4" />{{ t.myApps.withdraw }}</button>
+            <div class="mt-4 flex flex-wrap items-center gap-2">
+              <NuxtLink :to="lp(`/applications/${x.id}`)" class="btn btn-ghost text-sm">{{ t.myApps.openConversation }}</NuxtLink>
+              <button v-if="x.canWithdraw" type="button" class="btn btn-ghost text-sm" @click="withdrawing = x"><SiteIcon name="close" class="size-4" />{{ t.myApps.withdraw }}</button>
+            </div>
           </article>
         </li>
       </ul>

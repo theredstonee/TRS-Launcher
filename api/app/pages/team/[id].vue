@@ -34,7 +34,6 @@ const form = reactive<{ email: string, discord: string, ageGroup: AgeGroup | '',
 const errors = ref<Record<string, string>>({})
 const busy = ref(false)
 const failure = ref('')
-const sent = ref(false)
 
 onMounted(async () => {
   const me = await load()
@@ -111,7 +110,7 @@ async function submit() {
       method: 'POST',
       body: { email: form.email.trim(), discord: form.discord.trim(), ageGroup: form.ageGroup, answers, lang: lang.value, ...(form.website ? { website: form.website } : {}) },
     })
-    sent.value = true
+    await navigateTo('/application-pending')
   } catch (err) {
     const data = (err as { data?: { error?: { code?: string, retryAt?: string | null, fields?: { id: string, error: string }[] } } }).data?.error
     const blocked: Record<string, string> = { application_open: 'open_application', job_closed: 'closed', already_member: 'member', cooldown: 'cooldown', too_many_open: 'too_many_open', already_creator: 'already_creator', creator_banned: 'creator_banned' }
@@ -174,10 +173,6 @@ async function submit() {
             <p class="mt-2 text-sm text-base-400">{{ t.job.signInHint }}</p>
             <a :href="loginHref" class="btn btn-primary mt-5"><SiteIcon name="user" class="size-4" />{{ t.job.signInToApply }}</a>
           </template>
-          <div v-else-if="sent" class="mt-4">
-            <p class="flex gap-2 text-sm text-ok"><SiteIcon name="check" class="mt-0.5 size-4 shrink-0" />{{ t.job.verifySent }}</p>
-            <NuxtLink :to="lp('/applications')" class="btn btn-primary mt-4 w-full">{{ t.job.toMine }}</NuxtLink>
-          </div>
           <div v-else-if="blockedText" class="mt-4">
             <p class="text-sm text-lamp-300">{{ blockedText }}</p>
             <NuxtLink :to="lp('/applications')" class="btn btn-ghost mt-4 w-full">{{ t.job.toMine }}</NuxtLink>

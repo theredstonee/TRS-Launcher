@@ -16,5 +16,5 @@ export default defineEventHandler(async (event) => {
   // Wer im Sozialen gesperrt ist, kann sich während der Sperre auch nicht bewerben.
   assertNotSanctioned(ctx, me.uuid, 'social_ban')
   const body = await readJson(event, z.unknown(), 64 * 1024)
-  return created(event, { confirmation: beginApplicationVerification(ctx, me, id, body) })
+  return created(event, { confirmation: beginApplicationVerification(ctx, me, id, body, { allowLocalPreview: import.meta.dev && process.env.TRS_DEV_LOGIN === '1' }) })
 })

@@ -962,7 +962,7 @@ CREATE TABLE IF NOT EXISTS wpshare_waypoints (
   },
   {
     // Bewerbungs-Chat: bestätigte Bewerber-Adresse, separat gespeicherte öffentliche Nachrichten, Mail-Bestätigungen
-    // und quarantänisierte ClamAV-Anhänge. Interne Notizen bleiben in team_application_notes.
+    // und Dateianhänge. Interne Notizen bleiben in team_application_notes.
     version: 43,
     run: (db) => {
       if (!hasColumn(db, 'team_applications', 'contact_email')) db.exec('ALTER TABLE team_applications ADD COLUMN contact_email TEXT')
@@ -1013,6 +1013,42 @@ CREATE INDEX IF NOT EXISTS team_application_files_application ON team_applicatio
 CREATE INDEX IF NOT EXISTS team_application_files_message ON team_application_files(message_id);
 `)
     },
+  },
+  {
+    // Bewerbungsdateien ohne Virenscanner: expliziter Status `unscanned`; alte wartende Scans bleiben als ungeprüft
+    // verfügbar. Bereits als infiziert markierte oder fehlgeschlagene Dateien bleiben gesperrt.
+    version: 44,
+    sql: `
+CREATE TABLE team_application_files_v44 (
+  id TEXT PRIMARY KEY,
+  application_id TEXT NOT NULL REFERENCES team_applications(id) ON DELETE CASCADE,
+  message_id TEXT REFERENCES team_application_messages(id) ON DELETE SET NULL,
+  uploader_uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  file_name TEXT NOT NULL,
+  bytes INTEGER NOT NULL CHECK (bytes BETWEEN 1 AND 31457280),
+  sha256 TEXT NOT NULL,
+  key_id TEXT NOT NULL,
+  scan_status TEXT NOT NULL CHECK (scan_status IN ('unscanned', 'pending', 'scanning', 'clean', 'infected', 'failed', 'released')),
+  scan_signature TEXT,
+  scan_attempts INTEGER NOT NULL DEFAULT 0,
+  next_scan_at INTEGER NOT NULL,
+  scan_started_at INTEGER,
+  created_at INTEGER NOT NULL,
+  scanned_at INTEGER
+);
+INSERT INTO team_application_files_v44
+  (id, application_id, message_id, uploader_uuid, file_name, bytes, sha256, key_id, scan_status, scan_signature,
+   scan_attempts, next_scan_at, scan_started_at, created_at, scanned_at)
+SELECT id, application_id, message_id, uploader_uuid, file_name, bytes, sha256, key_id,
+       CASE scan_status WHEN 'pending' THEN 'unscanned' WHEN 'scanning' THEN 'unscanned' ELSE scan_status END,
+       scan_signature, scan_attempts, next_scan_at, NULL, created_at, scanned_at
+FROM team_application_files;
+DROP TABLE team_application_files;
+ALTER TABLE team_application_files_v44 RENAME TO team_application_files;
+CREATE INDEX team_application_files_queue ON team_application_files(scan_status, next_scan_at, created_at);
+CREATE INDEX team_application_files_application ON team_application_files(application_id, created_at);
+CREATE INDEX team_application_files_message ON team_application_files(message_id);
+`,
   },
 ]
 

@@ -18,7 +18,7 @@ import { rotateMessageKeys, sweepTyping } from '../lib/chat'
 import { openDb } from '../lib/db'
 import { setPitchBundleLoader } from '../lib/pitch-http'
 import { sweepApplications } from '../lib/applications'
-import { processApplicationScanQueue, rotateApplicationKeys, sweepApplicationFiles } from '../lib/application-chat'
+import { rotateApplicationKeys, sweepApplicationFiles } from '../lib/application-chat'
 import { seedCircuits, sweepCircuitSubmissions } from '../lib/circuits'
 import { sweepHosting } from '../lib/hosting'
 import { sweepWpshare, sweepWpshareSessions } from '../lib/waypoint-share'
@@ -230,9 +230,6 @@ export default defineNitroPlugin((nitroApp) => {
   const MAIL_TICK_MS = 5000
   let mailTick: Promise<unknown> | null = null
   const timers = [
-    every(5_000, () => {
-      void processApplicationScanQueue(ctx, 1).catch((err) => console.error('[trs-api] application scan queue failed', err))
-    }),
     every(MAIL_TICK_MS, () => {
       if (mailTick) return
       mailTick = processOutbox(ctx, budgetPerTick(ctx, MAIL_TICK_MS))

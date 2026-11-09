@@ -5,7 +5,7 @@ interface ChatFile {
   id: string
   name: string
   bytes: number
-  status: 'pending' | 'scanning' | 'clean' | 'infected' | 'failed' | 'released'
+  status: 'unscanned' | 'pending' | 'scanning' | 'clean' | 'infected' | 'failed' | 'released'
   signature: string | null
 }
 interface ChatMessage {
@@ -80,26 +80,8 @@ async function send() {
   }
 }
 
-async function release(file: ChatFile) {
-  if (!props.canReview || busy.value) return
-  busy.value = true
-  error.value = ''
-  try {
-    await api(`/v1/admin/applications/${props.applicationId}/files`, { method: 'POST', body: { fileId: file.id } })
-    await refresh()
-  } catch (cause) {
-    error.value = fill(t.value.myApps.chat.sendFailed, { error: apiMessage(cause) })
-  } finally {
-    busy.value = false
-  }
-}
-
 function fileStatus(file: ChatFile) {
-  if (file.status === 'pending') return t.value.myApps.chat.pending
-  if (file.status === 'scanning') return t.value.myApps.chat.scanning
-  if (file.status === 'infected') return t.value.myApps.chat.infected
-  if (file.status === 'failed') return t.value.myApps.chat.failed
-  return ''
+  return file.status === 'unscanned' ? t.value.myApps.chat.unscanned : t.value.myApps.chat.unavailable
 }
 
 onMounted(async () => {
@@ -117,16 +99,13 @@ onBeforeUnmount(() => {
     <h2 class="section-title">{{ t.myApps.chat.title }}</h2>
     <div class="mt-3 max-h-96 space-y-3 overflow-y-auto overscroll-contain rounded-md border border-base-800 bg-base-950 p-3">
       <p v-if="!messages.length" class="py-4 text-center text-sm text-base-400">{{ t.myApps.chat.empty }}</p>
-      <article v-for="message in messages" :key="message.id" class="max-w-[90%] rounded-md p-3" :class="message.sender.uuid === account?.uuid ? 'ml-auto bg-redstone-900/30' : 'bg-base-850'">
+      <article v-for="message in messages" :key="message.id" class="w-fit max-w-[90%] rounded-md p-3" :class="message.sender.uuid === account?.uuid ? 'ml-auto bg-redstone-900/30' : 'mr-auto bg-base-850'">
         <p class="text-xs text-base-400">{{ message.sender.name ?? message.sender.uuid.slice(0, 8) }} · {{ new Date(message.createdAt).toLocaleString() }}</p>
         <p v-if="message.text" class="mt-1 whitespace-pre-line break-words text-sm text-base-100">{{ message.text }}</p>
         <ul v-if="message.files.length" class="mt-2 space-y-1">
           <li v-for="file in message.files" :key="file.id" class="text-sm">
-            <a v-if="file.status === 'clean' || file.status === 'released'" class="break-all text-redstone-300 hover:underline" :href="`/v1/me/applications/${applicationId}/files/${file.id}`" :download="file.name">{{ t.myApps.chat.download.replace('{name}', file.name) }}</a>
-            <div v-else class="flex flex-wrap items-center justify-between gap-2">
-              <span class="min-w-0 wrap-break-word text-lamp-300">{{ file.name }} · {{ fileStatus(file) }}</span>
-              <button v-if="canReview && (file.status === 'infected' || file.status === 'failed')" type="button" class="btn btn-ghost shrink-0" :disabled="busy" @click="release(file)">{{ t.myApps.chat.release }}</button>
-            </div>
+            <a v-if="['unscanned', 'clean', 'released'].includes(file.status)" class="break-all text-redstone-300 hover:underline" :href="`/v1/me/applications/${applicationId}/files/${file.id}`" :download="file.name">{{ t.myApps.chat.download.replace('{name}', file.name) }} · {{ t.myApps.chat.unscanned }}</a>
+            <span v-else class="min-w-0 wrap-break-word text-lamp-300">{{ file.name }} · {{ fileStatus(file) }}</span>
           </li>
         </ul>
       </article>

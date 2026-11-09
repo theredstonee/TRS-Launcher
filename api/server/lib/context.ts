@@ -40,7 +40,7 @@ export interface AppContext {
   cosmeticDir: string
   /** Ordner für Chat-Bilder und Beweis-Kopien (`<DATA_DIR>/chat`, verschlüsselt). */
   chatDir: string
-  /** Verschlüsselte Bewerbungsdateien, vor ClamAV-Freigabe nicht abrufbar. */
+  /** Verschlüsselte Bewerbungsdateien; Downloads werden immer als Anhang ausgeliefert. */
   applicationFileDir: string
   /** Ordner für geteilte Screenshots (`<DATA_DIR>/shares`, öffentlich per Link, §23). */
   shareDir: string

@@ -142,15 +142,6 @@ describe('config', () => {
     expect(loadConfig(base).corsOrigins.size).toBe(0)
   })
 
-  it('ClamAV accepts only private IPv4 scanner addresses', () => {
-    expect(loadConfig({ ...base, CLAMAV_HOST: '172.18.0.1' }).clamav).toEqual({ host: '172.18.0.1', port: 3310 })
-    expect(loadConfig({ ...base, CLAMAV_HOST: '127.0.0.1', CLAMAV_PORT: '3311' }).clamav).toEqual({ host: '127.0.0.1', port: 3311 })
-    expect(loadConfig(base).clamav).toBeNull()
-    expect(() => loadConfig({ ...base, CLAMAV_HOST: '203.0.113.1' })).toThrow(/CLAMAV_HOST/)
-    expect(() => loadConfig({ ...base, CLAMAV_HOST: '172.32.0.1' })).toThrow(/CLAMAV_HOST/)
-    expect(() => loadConfig({ ...base, CLAMAV_HOST: '172.18.999.1' })).toThrow(/CLAMAV_HOST/)
-  })
-
   it('admin API key must be long if set; Mojang URL must be https unless explicitly allowed', () => {
     expect(() => loadConfig({ ...base, ADMIN_API_KEY: 'short' })).toThrow(ConfigError)
     expect(loadConfig({ ...base, ADMIN_API_KEY: '' }).adminApiKey).toBeNull()

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Bewerbungen (§24.3): Liste mit Status-, Stellen- und Namensfilter, Stimmen-Übersicht; Klick → Detail.
+import type { PendingApplicationConfirmation } from '~/utils/applications'
 const { a, fill, rel, when } = useAdminText()
 const { t, lang } = useTeamText()
 const { api } = useAdmin()
@@ -13,6 +14,7 @@ const f = reactive({
   q: '',
 })
 const items = ref<AdminApplicationItem[]>([])
+const pending = ref<PendingApplicationConfirmation[]>([])
 const counts = ref<Record<string, number>>({})
 const jobs = ref<AdminJob[]>([])
 const cursor = ref<string | null>(null)
@@ -31,6 +33,7 @@ async function load(more = false) {
     items.value = more ? [...items.value, ...r.applications] : r.applications
     cursor.value = r.nextCursor
     counts.value = r.counts
+    if (!more) pending.value = (await api<{ pendingConfirmations: PendingApplicationConfirmation[] }>('/v1/admin/applications/pending')).pendingConfirmations
   } catch (e) {
     error.value = fill(a.value.common.failed, { error: apiMessage(e) })
   } finally {
@@ -82,9 +85,24 @@ const { active } = useListKeys(items, { open: (x) => void router.push(`/admin/ap
     </div>
     <p v-if="error" role="alert" class="mt-4 text-sm text-redstone-300">{{ error }}</p>
 
-    <div v-if="loading && !items.length" class="mt-4 space-y-2"><div v-for="i in 4" :key="i" class="skeleton h-16 rounded-lg" /></div>
-    <div v-else-if="!items.length" class="adm-empty mt-6"><SiteIcon name="inbox" class="size-6" />{{ t.adm.apps.empty }}</div>
-    <ul v-else class="mt-4 space-y-2">
+    <section v-if="pending.length" class="mt-5 space-y-3" aria-live="polite">
+      <div>
+        <h2 class="section-title">{{ t.adm.apps.pendingTitle }}</h2>
+        <p class="mt-1 text-sm text-base-400">{{ t.adm.apps.pendingLead }}</p>
+      </div>
+      <article v-for="entry in pending" :key="entry.id" class="card border-l-4 border-l-lamp-400 p-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <strong class="text-base-50">{{ inLang(entry.job.title, lang) ?? entry.job.id }}</strong>
+          <span class="tone tone-warn">{{ t.myApps.pendingBadge }}</span>
+        </div>
+        <p class="mt-2 text-sm text-base-300">{{ entry.email }}</p>
+        <p class="mt-1 text-xs text-base-400">{{ fill(t.myApps.pendingExpires, { date: when(entry.expiresAt) }) }}</p>
+      </article>
+    </section>
+
+    <div v-if="loading && !items.length && !pending.length" class="mt-4 space-y-2"><div v-for="i in 4" :key="i" class="skeleton h-16 rounded-lg" /></div>
+    <div v-else-if="!items.length && !pending.length" class="adm-empty mt-6"><SiteIcon name="inbox" class="size-6" />{{ t.adm.apps.empty }}</div>
+    <ul v-if="items.length" class="mt-4 space-y-2">
       <li v-for="(x, i) in items" :key="x.id">
         <NuxtLink :to="`/admin/applications/${x.id}`" class="adm-row items-center" :data-row="i" :data-active="active === i">
           <PlayerHead :uuid="x.applicant.uuid" :name="x.applicant.name" :size="36" />
