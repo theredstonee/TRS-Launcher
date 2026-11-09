@@ -41,5 +41,9 @@ release/
 # Präsentation des Messe-Builds (scripts/messe/import-pitch.mjs)
 .messe-pitch/
 
+# Dev scripts: logs and settings of this machine
+.dev/logs/
+.dev/local.sh
+
 # Classes unpacked from a Minecraft jar, never commit them
 *.class

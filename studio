@@ -1,0 +1,48 @@
+#!/bin/bash
+# Starts TRS Studio, the team's local image and cosmetics tool. It lives in a private repository: with access this
+# script fetches it on the first start, otherwise it says so.
+#   studio                 start, fetch first if needed
+#   studio --aktualisieren get the newest version, then start
+#   Other options go to the Studio installer, for example: studio -DryRun
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.dev/ui.sh"
+
+REPO_URL="https://github.com/theredstonee/trs-studio.git"
+STUDIO_DIR="${TRS_STUDIO_DIR:-$(dirname "$DEV_ROOT")/trs-studio}"
+UPDATE=0
+ARGS=()
+for arg in "$@"; do
+  case "$arg" in
+    --aktualisieren) UPDATE=1 ;;
+    *) ARGS+=("$arg") ;;
+  esac
+done
+
+ui_banner "TRS Studio" "$(ui_path "$STUDIO_DIR")"
+
+if [[ ! -f "$STUDIO_DIR/server.mjs" ]]; then
+  if [[ -e "$STUDIO_DIR" && -n "$(ls -A "$STUDIO_DIR" 2> /dev/null)" ]]; then
+    ui_fail "Der Ordner ist belegt, aber kein TRS Studio. Anderen Ordner per TRS_STUDIO_DIR wählen."
+    exit 1
+  fi
+  command -v git > /dev/null || { ui_fail "git fehlt, zuerst setup ausführen."; exit 1; }
+  ui_step "Hole TRS Studio aus dem privaten Repo"
+  if ! GIT_TERMINAL_PROMPT=0 git clone --quiet "$REPO_URL" "$STUDIO_DIR"; then
+    printf '\n'
+    ui_fail "Kein Zugriff auf TRS Studio."
+    printf '  Das Repo ist privat und nur fürs Team. Zugriff beim Maintainer anfragen,\n'
+    printf '  dann bei GitHub anmelden (zum Beispiel mit: gh auth login) und erneut starten.\n\n'
+    exit 1
+  fi
+  ui_ok "TRS Studio geholt"
+elif ((UPDATE)); then
+  ui_step "Aktualisiere TRS Studio"
+  git -C "$STUDIO_DIR" pull --ff-only || { ui_fail "Aktualisieren ging nicht, eigene Änderungen im Ordner? Nichts wurde überschrieben."; exit 1; }
+fi
+
+cd "$STUDIO_DIR" || exit 1
+if command -v powershell.exe > /dev/null; then
+  # The installer offers only what is missing (models, ComfyUI, language model), then starts the Studio and the browser.
+  exec powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(ui_path "$STUDIO_DIR/tools/installer.ps1")" "${ARGS[@]}"
+fi
+ui_warn "Der Installer gibt es nur für Windows. Hier startet nur der Server, ComfyUI und die Modelle musst du selbst einrichten."
+exec node server.mjs "${ARGS[@]}"
