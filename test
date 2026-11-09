@@ -51,6 +51,8 @@ fi
 mkdir -p "$TEST_HOME"
 export TRS_LAUNCHER_HOME="$TEST_HOME"
 unset NO_COLOR
+# Pinned to 3000, where Tauri waits. Without it Nuxt takes over the port of a server still running from this folder.
+export NUXT_PORT=3000
 export CARGO_TERM_PROGRESS_WHEN=always CARGO_TERM_PROGRESS_WIDTH=100 CARGO_TERM_COLOR=always FORCE_COLOR=1
 ui_ok "Datenordner $TEST_HOME"
 ui_step "Baue und starte, das erste Mal dauert mehrere Minuten"
