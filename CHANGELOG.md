@@ -28,8 +28,6 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
-
 ## 0.34.1 – 2026-11-10 – Connected Mods Fix | Downloads repariert
 <!-- banner: accent=#41cd62 motif=/news/0.34.0/banner.png -->
 <!-- shots:
