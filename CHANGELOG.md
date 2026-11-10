@@ -30,6 +30,18 @@ How to write an entry:
 
 ## Unreleased
 
+## 0.34.1 – 2026-11-10 – Connected Mods Fix | Downloads repariert
+<!-- banner: accent=#41cd62 motif=/news/0.34.0/banner.png -->
+<!-- shots:
+/news/0.34.1/mod-list.png | Mods of an instance, which now download reliably when the game starts | Die Mods einer Instanz, die beim Spielstart jetzt zuverlässig laden
+-->
+
+### English
+- **Starting the game no longer gets stuck on "Mods".** If a download server answered only in a trickle, the launcher kept waiting on that one connection, sometimes for hours. Now it notices a stuck download after 20 seconds and tries again on a fresh connection, which often reaches a faster server. On a genuinely slow internet connection, files still finish downloading.
+
+### Deutsch
+- **Der Spielstart bleibt nicht mehr bei „Mods“ hängen.** Lieferte ein Download-Server nur noch tröpfchenweise, wartete der Launcher auf genau dieser Verbindung weiter, manchmal stundenlang. Jetzt erkennt er einen festgefahrenen Download nach 20 Sekunden und versucht es über eine neue Verbindung, die oft einen schnelleren Server erreicht. Bei einer wirklich langsamen Internetleitung werden die Dateien trotzdem fertig geladen.
+
 ## 0.34.0 – 2026-11-08 – Connected Mods | Mods verbunden
 <!-- banner: accent=#41cd62 motif=/news/0.34.0/banner.png -->
 <!-- shots:
