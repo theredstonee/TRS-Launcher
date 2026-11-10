@@ -185,19 +185,15 @@ fn secure_url(url: &str) -> Result<String> {
     }
 }
 
-/// Fehlergrund, wenn eine Verbindung festgefahren ist (kommt nur noch tröpfchenweise).
+// Tröpfelnde Downloads abbrechen und neu verbinden: Versuch 1 bis 3 unter 32 KB/s in 20 s, danach unter 4 KB/s
+// in 60 s. Bleibt es auch mit neuer Verbindung langsam, liegt es an der Leitung, dann 15 min nur die lockere Grenze.
 const TOO_SLOW: &str = "zu langsam";
-/// Streng (erste Versuche): unter 32 KB/s im Mittel über 20 s gilt die Verbindung als festgefahren.
 const SLOW_WINDOW: Duration = Duration::from_secs(20);
 const SLOW_MIN_BYTES: u64 = 32 * 1024 * 20;
-/// Großzügig (immer, auch auf langsamen Leitungen): unter 4 KB/s über eine Minute lädt nichts mehr sinnvoll.
 const CRAWL_WINDOW: Duration = Duration::from_secs(60);
 const CRAWL_MIN_BYTES: u64 = 4 * 1024 * 60;
-/// So viele Versuche je Datei mit strengem Tempo-Wächter. Danach gilt nur noch die großzügige Grenze.
 const SLOW_GUARDED_ATTEMPTS: u32 = 3;
-// Nach den strengen Versuchen muss noch mindestens einer übrig bleiben.
 const _: () = assert!(SLOW_GUARDED_ATTEMPTS < MAX_ATTEMPTS);
-/// Waren auch neue Verbindungen langsam, ist die Leitung selbst langsam: so lange ohne Wächter laden.
 const SLOW_NETWORK_FOR: Duration = Duration::from_secs(15 * 60);
 
 fn is_too_slow(err: &Error) -> bool {
@@ -215,14 +211,11 @@ fn slow_network() -> bool {
 }
 
 fn mark_slow_network() {
-    tracing::info!("Downloads bleiben auch über neue Verbindungen langsam – Tempo-Wächter für 15 Minuten aus");
+    tracing::info!("Langsame Leitung erkannt, strenge Tempo-Grenze für 15 Minuten aus");
     *slow_network_until().lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(Instant::now() + SLOW_NETWORK_FOR);
 }
 
-/// Erkennt eine festgefahrene Verbindung: Kommt über ein Messfenster zu wenig an, obwohl noch mehr fehlt,
-/// lohnt eine neue Verbindung (CDNs wie Modrinths liefern dann oft über einen anderen Knoten wieder schnell).
-/// Das 30-s-Timeout je Stück greift dabei nicht, weil ja noch etwas kommt. `strict` = erste Versuche
-/// ([`SLOW_MIN_BYTES`] je [`SLOW_WINDOW`]), sonst nur die Untergrenze ([`CRAWL_MIN_BYTES`] je [`CRAWL_WINDOW`]).
+/// Das Chunk-Timeout greift nur, wenn gar nichts mehr kommt. Das hier fängt Verbindungen, die nur noch tröpfeln.
 struct SlowGuard {
     window: Duration,
     min_bytes: u64,
@@ -236,12 +229,11 @@ impl SlowGuard {
         Self { window, min_bytes, window_start: now, window_bytes: 0 }
     }
 
-    /// Eine Pause der Aufgabe zählt nicht mit.
     fn paused(&mut self, waited: Duration) {
         self.window_start += waited;
     }
 
-    /// `true` = abbrechen und neu verbinden. `remaining`: was danach noch fehlt (`None` = unbekannt).
+    /// `true` = zu langsam, abbrechen.
     fn add(&mut self, bytes: u64, remaining: Option<u64>, now: Instant) -> bool {
         self.window_bytes += bytes;
         if now.saturating_duration_since(self.window_start) < self.window {
@@ -335,13 +327,10 @@ async fn fetch_with_retries(
             counted.fetch_add(n, Ordering::Relaxed);
             on_bytes(n as i64);
         };
-        // Die ersten Versuche brechen eine festgefahrene Verbindung ab (neuer Versuch = neue Verbindung,
-        // oft über einen anderen CDN-Knoten). Danach gilt nur noch die großzügige Untergrenze.
         let guarded = attempt <= SLOW_GUARDED_ATTEMPTS && !slow_network();
         match fetch_attempt(http, task, &track, guarded).await {
             Ok(()) => {
                 if attempt > SLOW_GUARDED_ATTEMPTS && was_slow {
-                    // Auch neue Verbindungen sind langsam: Die Leitung selbst ist langsam, nicht abbrechen.
                     mark_slow_network();
                 }
                 return Ok(());
@@ -417,7 +406,7 @@ async fn fetch_attempt(
         let mut slow = SlowGuard::new(guarded, Instant::now());
 
         loop {
-            // Pause hält hier an, Abbruch endet hier. Die Pause zählt nicht als langsam.
+            // Pause hält hier an, Abbruch endet hier.
             let before = Instant::now();
             task::checkpoint().await?;
             slow.paused(before.elapsed());
@@ -621,28 +610,22 @@ mod tests {
     fn slow_guard_breaks_off_a_stuck_connection_only() {
         let t0 = Instant::now();
         let s = |n: u64| t0 + Duration::from_secs(n);
-        // 86 KB in 20 s (≈ 4 KB/s), es fehlt noch viel: abbrechen.
         let mut stuck = SlowGuard::new(true, t0);
         assert!(!stuck.add(40_000, Some(190_000_000), s(10)));
         assert!(stuck.add(46_000, Some(190_000_000), s(21)));
-        // Schnell genug: weiterladen, auch über mehrere Fenster.
         let mut fast = SlowGuard::new(true, t0);
         assert!(!fast.add(5_000_000, Some(10_000_000), s(21)));
         assert!(!fast.add(5_000_000, Some(0), s(42)));
-        // Letztes Stück der Datei: nie wegen Tempo abbrechen.
         let mut last = SlowGuard::new(true, t0);
         assert!(!last.add(1_000, Some(0), s(25)));
-        // Späte Versuche / langsame Leitung: 10 KB/s reichen, aber unter 4 KB/s über eine Minute ist Schluss.
         let mut lenient = SlowGuard::new(false, t0);
         assert!(!lenient.add(86_000, Some(1_000_000), s(21)));
         assert!(!lenient.add(600_000, Some(1_000_000), s(61)));
         let mut crawl = SlowGuard::new(false, t0);
         assert!(crawl.add(100_000, Some(1_000_000), s(61)));
-        // Eine Pause zählt nicht als langsam.
         let mut paused = SlowGuard::new(true, t0);
         paused.paused(Duration::from_secs(300));
         assert!(!paused.add(1_000, Some(1_000_000), s(310)));
-        // Der Grund wird erkannt, andere Fehler nicht; er wird geduldig wiederholt.
         assert!(is_too_slow(&Error::download("https://x", TOO_SLOW)));
         assert!(!is_too_slow(&Error::download("https://x", "Zeitüberschreitung")));
         assert_eq!(attempts_for(&Error::download("https://x", TOO_SLOW)), MAX_ATTEMPTS);
