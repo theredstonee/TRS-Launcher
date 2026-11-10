@@ -17,6 +17,32 @@ for arg in "$@"; do
   esac
 done
 
+# Optional: a read-only access token for the private repository, handed out by the maintainer. Used once, then kept in
+# Git's credential store for this repository only, and the file is deleted. Never commit it.
+TOKEN_FILE="$DEV_ROOT/.dev/studio-token.txt"
+
+studio_clone() {
+  # Own GitHub account first, without login windows; then the token.
+  GIT_TERMINAL_PROMPT=0 GCM_INTERACTIVE=never git clone --quiet "$REPO_URL" "$STUDIO_DIR" 2> /dev/null && return 0
+  rm -rf "$STUDIO_DIR"
+  local token="" auth
+  [[ -f "$TOKEN_FILE" ]] && token="$(grep -v '^#' "$TOKEN_FILE" | tr -d ' \r\n\t')"
+  if [[ -z "$token" && -t 0 ]]; then
+    read -r -s -p "  Zugriffs-Token für TRS Studio (bleibt unsichtbar, leer = abbrechen): " token
+    printf '\n'
+  fi
+  [[ -n "$token" ]] || return 1
+  # Through the environment, not the command line, so the token never shows up in the process list.
+  auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$token" | base64 | tr -d '\n')"
+  GIT_TERMINAL_PROMPT=0 GCM_INTERACTIVE=never GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0="http.https://github.com/.extraheader" \
+    GIT_CONFIG_VALUE_0="$auth" git clone --quiet "$REPO_URL" "$STUDIO_DIR" || { rm -rf "$STUDIO_DIR"; return 1; }
+  git -C "$STUDIO_DIR" config credential.useHttpPath true
+  printf 'protocol=https\nhost=github.com\npath=theredstonee/trs-studio.git\nusername=x-access-token\npassword=%s\n\n' "$token" |
+    git -C "$STUDIO_DIR" credential approve
+  rm -f "$TOKEN_FILE"
+  ui_ok "Token gespeichert (nur für TRS Studio), Datei gelöscht"
+}
+
 ui_banner "TRS Studio" "$(ui_path "$STUDIO_DIR")"
 
 if [[ ! -f "$STUDIO_DIR/server.mjs" ]]; then
@@ -26,11 +52,12 @@ if [[ ! -f "$STUDIO_DIR/server.mjs" ]]; then
   fi
   command -v git > /dev/null || { ui_fail "git fehlt, zuerst setup ausführen."; exit 1; }
   ui_step "Hole TRS Studio aus dem privaten Repo"
-  if ! GIT_TERMINAL_PROMPT=0 git clone --quiet "$REPO_URL" "$STUDIO_DIR"; then
+  if ! studio_clone; then
     printf '\n'
     ui_fail "Kein Zugriff auf TRS Studio."
-    printf '  Das Repo ist privat und nur fürs Team. Zugriff beim Maintainer anfragen,\n'
-    printf '  dann bei GitHub anmelden (zum Beispiel mit: gh auth login) und erneut starten.\n\n'
+    printf '  Das Repo ist privat und nur fürs Team. Entweder den Zugriffs-Token vom Maintainer\n'
+    printf '  in .dev\\studio-token.txt legen oder beim Start eingeben, oder Zugriff fürs eigene\n'
+    printf '  GitHub-Konto anfragen und anmelden (gh auth login). Dann erneut starten.\n\n'
     exit 1
   fi
   ui_ok "TRS Studio geholt"
