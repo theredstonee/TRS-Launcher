@@ -566,6 +566,8 @@ pub fn run() {
             commands::logs::list_log_sources,
             commands::logs::read_log_source,
             commands::logs::share_log_source,
+            commands::logs::share_launcher_log,
+            commands::logs::open_launcher_log_folder,
             commands::logs::qr_code,
             commands::crash::list_crashes,
             commands::crash::get_crash,

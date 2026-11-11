@@ -205,7 +205,7 @@ fn slow_network_until() -> &'static std::sync::Mutex<Option<Instant>> {
     UNTIL.get_or_init(|| std::sync::Mutex::new(None))
 }
 
-fn slow_network() -> bool {
+pub(crate) fn slow_network() -> bool {
     let until = slow_network_until().lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     until.is_some_and(|t| Instant::now() < t)
 }
@@ -216,7 +216,7 @@ fn mark_slow_network() {
 }
 
 /// Das Chunk-Timeout greift nur, wenn gar nichts mehr kommt. Das hier fängt Verbindungen, die nur noch tröpfeln.
-struct SlowGuard {
+pub(crate) struct SlowGuard {
     window: Duration,
     min_bytes: u64,
     window_start: Instant,
@@ -224,7 +224,7 @@ struct SlowGuard {
 }
 
 impl SlowGuard {
-    fn new(strict: bool, now: Instant) -> Self {
+    pub(crate) fn new(strict: bool, now: Instant) -> Self {
         let (window, min_bytes) = if strict { (SLOW_WINDOW, SLOW_MIN_BYTES) } else { (CRAWL_WINDOW, CRAWL_MIN_BYTES) };
         Self { window, min_bytes, window_start: now, window_bytes: 0 }
     }
@@ -234,7 +234,7 @@ impl SlowGuard {
     }
 
     /// `true` = zu langsam, abbrechen.
-    fn add(&mut self, bytes: u64, remaining: Option<u64>, now: Instant) -> bool {
+    pub(crate) fn add(&mut self, bytes: u64, remaining: Option<u64>, now: Instant) -> bool {
         self.window_bytes += bytes;
         if now.saturating_duration_since(self.window_start) < self.window {
             return false;

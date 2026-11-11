@@ -2,7 +2,7 @@
 import { messeRestricted } from '~/utils/messe'
 // Log teilen: erst bestätigen (öffentlich lesbar!), dann geschwärzt auf
 // mclo.gs hochladen und den Link mit QR-Code, Kopieren und Öffnen zeigen.
-// `source` = 'live' (neuester Log der Instanz) oder die ID einer Log-Datei.
+// `source` = 'live' (neuester Log der Instanz), 'launcher' (Launcher-Log) oder die ID einer Log-Datei.
 const props = defineProps<{ instanceId: string; source: string; label: string }>()
 const emit = defineEmits<{ close: [] }>()
 
@@ -20,7 +20,9 @@ async function upload() {
   error.value = null
   step.value = 'uploading'
   try {
-    url.value = props.source === 'live' ? await backend.shareLog(props.instanceId) : await backend.shareLogSource(props.instanceId, props.source)
+    if (props.source === 'launcher') url.value = await backend.shareLauncherLog()
+    else if (props.source === 'live') url.value = await backend.shareLog(props.instanceId)
+    else url.value = await backend.shareLogSource(props.instanceId, props.source)
     step.value = 'done'
     await copy(false)
   } catch (e) {

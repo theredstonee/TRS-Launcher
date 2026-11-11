@@ -31,6 +31,16 @@ How to write an entry:
 ## Unreleased
 
 ### English
+- **TRS Client settings no longer jump back after a restart.** If you play several instances with the same TRS account, an instance that had not been started for a while could upload its old settings after an update and the others then took them over (Freelook off again, HUD profiles gone). Settings that were only loaded now count from when they were last saved, so newer ones win. Settings changed right before quitting are now always written to disk.
+- **TRS Client keys can be key combos** like Ctrl+M, Alt+G or F3+X. Hold Ctrl, Alt, Shift or F3 while assigning the key; click the key button again to bind the modifier alone.
+- **F3 combos stay with Minecraft:** F3+B no longer opens the TRS waypoint menu, and TRS keys don't fire while F3 is held.
+- **Mods download in parallel when starting the game,** so the first start of a modpack is much faster.
+- **The TRS Client download at game start retries on a fresh connection** if it gets stuck, instead of giving up after 90 seconds on slow internet.
+- **Share the launcher log:** Settings → Privacy now has "Share log" and "Open folder" for the launcher's own log, so someone helping you can see what went wrong.
+- TRS Client: clicking in chat with chat heads on no longer crashes the game.
+- TRS Client: after switching accounts in-game, online features no longer keep running as the previous account.
+- TRS Client: Fair Play and "no minimap" codes a server sends in chat right when you join are respected again, also when your chat filter hides that message.
+- TRS Client: an unreadable waypoints file is kept as a backup instead of being overwritten.
 - Settings no longer undo each other: a Java download that finishes in the background, hints you close and quick toggles in Big Picture all keep their change, even while the settings window is open.
 - Retrying a task right after it finished no longer loses its progress and speed display, and a failed resume shows the task as paused again.
 - Closing a clip in fullscreen also brings the launcher window back out of fullscreen.
@@ -39,6 +49,16 @@ How to write an entry:
 - Small fixes for leftover timers and listeners after leaving a page, the 3D skin preview, quickly opening and closing Big Picture, and the PC remote reporting "offline" after a failed attempt.
 
 ### Deutsch
+- **TRS-Client-Einstellungen springen nach einem Neustart nicht mehr zurück.** Wer mehrere Instanzen mit demselben TRS-Konto spielt: Eine länger nicht gestartete Instanz konnte nach einem Update ihre alten Einstellungen hochladen, und die anderen übernahmen sie (Freelook wieder aus, HUD-Profile weg). Nur geladene Einstellungen zählen jetzt ab ihrem letzten Speichern, neuere gewinnen. Einstellungen, die kurz vor dem Beenden geändert wurden, landen jetzt immer auf der Platte.
+- **TRS-Client-Tasten können Tasten-Kombis sein** wie Strg+M, Alt+G oder F3+X. Beim Belegen Strg, Alt, Umschalt oder F3 gedrückt halten; nochmal auf die Taste klicken belegt den Modifikator allein.
+- **F3-Kombis bleiben bei Minecraft:** F3+B öffnet nicht mehr das TRS-Wegpunkt-Menü, und TRS-Tasten lösen nicht aus, solange F3 gehalten wird.
+- **Mods laden beim Spielstart parallel,** der erste Start eines Modpacks geht dadurch deutlich schneller.
+- **Der TRS-Client-Download beim Spielstart versucht es über eine neue Verbindung,** wenn er hängt, statt bei langsamem Internet nach 90 Sekunden aufzugeben.
+- **Launcher-Log teilen:** Unter Einstellungen → Datenschutz gibt es jetzt „Log teilen“ und „Ordner öffnen“ für das Log des Launchers, damit jemand, der dir hilft, sieht, was schiefging.
+- TRS Client: Ein Klick in den Chat mit eingeschalteten Chat-Köpfen bringt das Spiel nicht mehr zum Absturz.
+- TRS Client: Nach einem Kontowechsel im Spiel laufen die Online-Funktionen nicht mehr mit dem vorigen Konto weiter.
+- TRS Client: Fair-Play- und „Keine Minimap“-Codes, die ein Server direkt beim Betreten im Chat schickt, gelten wieder, auch wenn der Chat-Filter die Nachricht ausblendet.
+- TRS Client: Eine unlesbare Wegpunkt-Datei wird als Sicherung behalten statt überschrieben.
 - Einstellungen heben sich nicht mehr gegenseitig auf: Ein Java-Download, der im Hintergrund fertig wird, weggeklickte Hinweise und schnelle Schalter in Big Picture behalten ihre Änderung, auch während das Einstellungsfenster offen ist.
 - Wird eine Aufgabe gleich nach dem Ende neu gestartet, gehen Fortschritt und Geschwindigkeit nicht mehr verloren, und ein fehlgeschlagenes Fortsetzen zeigt die Aufgabe wieder als pausiert.
 - Wer einen Clip im Vollbild schließt, bekommt auch das Launcher-Fenster wieder aus dem Vollbild.

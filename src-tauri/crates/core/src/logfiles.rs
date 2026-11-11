@@ -192,6 +192,37 @@ impl Launcher {
     }
 }
 
+impl Launcher {
+    /// Lädt das Launcher-Log (neueste Datei im Log-Ordner) geschwärzt auf mclo.gs hoch.
+    pub async fn share_launcher_log(&self, log_dir: &Path) -> Result<String> {
+        if !self.settings().await.allow_log_upload {
+            return Err(Error::validation(crate::msg!("launcher.logUploadDisabled", "Log-Upload ist in den Datenschutz-Einstellungen ausgeschaltet.")));
+        }
+        let Some(file) = newest_log(log_dir).await else {
+            return Err(Error::validation(crate::msg!("launcher.noLogToShare", "Es gibt noch keinen Log zum Teilen.")));
+        };
+        let text = process::read_log_file(&file).await?;
+        let secrets = self.accounts().active_session().await.ok().flatten().map(|s| vec![s.access_token]).unwrap_or_default();
+        process::share_log(self.http(), &process::redact(&text, &secrets)).await
+    }
+}
+
+async fn newest_log(dir: &Path) -> Option<PathBuf> {
+    let mut entries = tokio::fs::read_dir(dir).await.ok()?;
+    let mut newest: Option<(std::time::SystemTime, PathBuf)> = None;
+    while let Ok(Some(entry)) = entries.next_entry().await {
+        let path = entry.path();
+        if path.extension().is_none_or(|e| e != "log") {
+            continue;
+        }
+        let Ok(modified) = entry.metadata().await.and_then(|m| m.modified()) else { continue };
+        if newest.as_ref().is_none_or(|(t, _)| modified > *t) {
+            newest = Some((modified, path));
+        }
+    }
+    newest.map(|(_, p)| p)
+}
+
 #[cfg(test)]
 mod tests {
     use std::io::Write;

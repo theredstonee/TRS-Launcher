@@ -335,6 +335,12 @@ async function clean() {
     cleaning.value = false
   }
 }
+const sharingLauncherLog = ref(false)
+
+function openLauncherLogs() {
+  backend.openLauncherLogFolder().catch((e) => toasts.error(e))
+}
+
 function openDataDir() {
   backend.openDataDir().catch(() => {})
 }
@@ -637,7 +643,14 @@ async function allowFirewall() {
       <SettingRow :title="t('settings.privacy.telemetryTitle')" :description="t('settings.privacy.telemetryDescription')">
         <ToggleSwitch :model-value="false" :label="t('settings.privacy.telemetryTitle')" disabled />
       </SettingRow>
+      <SettingRow v-if="!mobileOs" :title="t('settings.privacy.launcherLogTitle')" :description="t('settings.privacy.launcherLogDescription')">
+        <div class="flex gap-2">
+          <button class="btn btn-ghost" @click="openLauncherLogs">{{ t('common.actions.openFolder') }}</button>
+          <button class="btn btn-ghost" :disabled="!form.allowLogUpload" @click="sharingLauncherLog = true">{{ t('settings.privacy.shareLauncherLog') }}</button>
+        </div>
+      </SettingRow>
       <TrsPrivacySettings v-model:sync="form.trsSync" />
+      <LogShareDialog v-if="sharingLauncherLog" instance-id="" source="launcher" :label="t('settings.privacy.launcherLogTitle')" @close="sharingLauncherLog = false" />
     </div>
 
     <!-- Standard-Einstellungen ------------------------------------------------------ -->

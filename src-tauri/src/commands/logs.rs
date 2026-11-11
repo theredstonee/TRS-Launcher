@@ -2,7 +2,7 @@
 //! der QR-Code für geteilte Links.
 
 use serde::Serialize;
-use tauri::State;
+use tauri::{AppHandle, Manager, State};
 use trs_core::logfiles::{self, LogSource, LogText};
 
 use crate::LauncherState;
@@ -28,6 +28,23 @@ pub async fn read_log_source(launcher: State<'_, LauncherState>, id: String, sou
 #[tauri::command]
 pub async fn share_log_source(launcher: State<'_, LauncherState>, id: String, source: String) -> CommandResult<String> {
     Ok(launcher.share_log_source(&id, &source).await?)
+}
+
+/// Lädt das Launcher-Log geschwärzt auf mclo.gs hoch (für Hilfe von anderen).
+#[tauri::command]
+pub async fn share_launcher_log(app: AppHandle, launcher: State<'_, LauncherState>) -> CommandResult<String> {
+    let dir = app.path().app_log_dir().map_err(|e| trs_core::Error::Internal(e.to_string()))?;
+    Ok(launcher.share_launcher_log(&dir).await?)
+}
+
+/// Öffnet den Ordner mit den Launcher-Logs.
+#[tauri::command]
+pub async fn open_launcher_log_folder(app: AppHandle) -> CommandResult<()> {
+    trs_core::platform::desktop_only()?;
+    let dir = app.path().app_log_dir().map_err(|e| trs_core::Error::Internal(e.to_string()))?;
+    trs_core::fsutil::ensure_dir(&dir).await?;
+    crate::open::path(&app, dir.display().to_string())?;
+    Ok(())
 }
 
 #[derive(Serialize)]

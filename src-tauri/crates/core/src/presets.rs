@@ -2073,8 +2073,12 @@ async fn harmonize<L: VersionLookup>(
 
 // --- Installieren --------------------------------------------------------------------
 
-/// Lädt alle Downloads des Plans. Scheitert einer, wird der Eintrag als
-/// `failed` markiert und der Rest geladen; Abbrechen beendet sofort.
+/// Gleichzeitige Downloads beim Installieren.
+const PARALLEL_DOWNLOADS: usize = 6;
+
+/// Lädt alle Downloads des Plans, mehrere gleichzeitig. Ein Download wartet auf alle früheren,
+/// die zu einem seiner Einträge gehören (Abhängigkeiten zuerst). Scheitert einer, wird der Eintrag
+/// als `failed` markiert und der Rest geladen; Abbrechen beendet nach den laufenden Downloads.
 async fn execute(
     http: &reqwest::Client,
     paths: &Paths,
@@ -2082,47 +2086,70 @@ async fn execute(
     plan: Plan,
     progress: &(dyn Fn(ApplyProgress) + Sync),
 ) -> Result<ApplyReport> {
+    use futures::StreamExt;
+
     let Plan { steps, mut items } = plan;
     let steps = install_order(steps);
     let total = u32::try_from(steps.len()).unwrap_or(u32::MAX);
+    let owners: Vec<Vec<usize>> = steps.iter().map(|s| std::iter::once(s.item).chain(s.also.iter().copied()).collect()).collect();
+    let waits_for: Vec<Vec<usize>> = (0..steps.len())
+        .map(|k| (0..k).filter(|&j| owners[j].iter().any(|i| owners[k].contains(i))).collect())
+        .collect();
+    let title_of = |step: &Step| if step.dependency { step.version.name.clone() } else { items[step.item].title.clone() };
+    let titles: Vec<String> = steps.iter().map(title_of).collect();
+
     let mut installed = Vec::new();
     let mut failed: HashSet<usize> = HashSet::new();
     let mut dependencies = 0;
+    let mut started = vec![false; steps.len()];
+    let mut finished = vec![false; steps.len()];
+    let mut done: u32 = 0;
+    let mut cancelled = false;
+    let mut current: Option<String> = None;
+    let mut running = futures::stream::FuturesUnordered::new();
 
-    for (n, step) in steps.iter().enumerate() {
-        let title = if step.dependency { step.version.name.clone() } else { items[step.item].title.clone() };
-        progress(ApplyProgress {
-            phase: ApplyPhase::Install,
-            done: u32::try_from(n).unwrap_or(u32::MAX),
-            total,
-            title: Some(title),
-        });
-        // Nur überspringen, wenn ihn niemand mehr braucht.
-        if std::iter::once(&step.item).chain(&step.also).all(|i| failed.contains(i)) {
-            continue;
+    loop {
+        while !cancelled && running.len() < PARALLEL_DOWNLOADS {
+            let Some(k) = (0..steps.len()).find(|&k| !started[k] && waits_for[k].iter().all(|&j| finished[j])) else {
+                break;
+            };
+            started[k] = true;
+            // Nur überspringen, wenn ihn niemand mehr braucht.
+            if owners[k].iter().all(|i| failed.contains(i)) {
+                finished[k] = true;
+                done += 1;
+                continue;
+            }
+            current = Some(titles[k].clone());
+            progress(ApplyProgress { phase: ApplyPhase::Install, done, total, title: current.clone() });
+            let step = &steps[k];
+            running.push(async move {
+                let result = match task::checkpoint().await {
+                    Ok(()) => modrinth::install_version(http, paths, instance, step.kind, &step.version, None, step.dependency).await,
+                    Err(e) => Err(e),
+                };
+                (k, result)
+            });
         }
-        let result = match task::checkpoint().await {
-            Ok(()) => modrinth::install_version(http, paths, instance, step.kind, &step.version, None, step.dependency).await,
-            Err(e) => Err(e),
-        };
+        let Some((k, result)) = running.next().await else { break };
+        finished[k] = true;
+        done += 1;
+        let step = &steps[k];
         match result {
-            Ok(done) => {
+            Ok(file) => {
                 if step.dependency {
                     dependencies += 1;
                 }
-                installed.push(done);
+                installed.push(file);
             }
-            Err(Error::Cancelled) => {
-                // Was schon da ist, bleibt – samt Verlauf.
-                modrinth::after_install(http, paths, &instance.id, &installed).await;
-                return Err(Error::Cancelled);
-            }
+            // Was schon da ist, bleibt – samt Verlauf.
+            Err(Error::Cancelled) => cancelled = true,
             Err(e) => {
                 tracing::warn!("Preset-Download fehlgeschlagen ({}): {e}", step.version.project_id);
                 // Alle Einträge, die den Download brauchen, bleiben draußen (ihre Mod
-                // kommt erst nach den Abhängigkeiten – liegt also noch nicht im Ordner).
+                // wartet auf die Abhängigkeiten – liegt also noch nicht im Ordner).
                 let user = e.to_user();
-                for &i in std::iter::once(&step.item).chain(&step.also) {
+                for &i in &owners[k] {
                     if failed.insert(i) {
                         items[i].status = ItemStatus::Failed;
                         items[i].error = Some(user.clone());
@@ -2130,8 +2157,12 @@ async fn execute(
                 }
             }
         }
+        progress(ApplyProgress { phase: ApplyPhase::Install, done, total, title: current.clone() });
     }
     modrinth::after_install(http, paths, &instance.id, &installed).await;
+    if cancelled {
+        return Err(Error::Cancelled);
+    }
     progress(ApplyProgress { phase: ApplyPhase::Install, done: total, total, title: None });
     Ok(ApplyReport {
         game_version: instance.game_version.clone(),

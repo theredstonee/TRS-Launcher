@@ -501,6 +501,9 @@ export const backend = {
     call<void>('repair_instance', { id, onProgress: channel(onProgress), taskId }),
   /** Lädt den Log geschwärzt auf mclo.gs hoch; liefert den Link. */
   shareLog: (id: string) => call<string>('share_log', { id }),
+  /** Launcher-Log geschwärzt auf mclo.gs; liefert den Link. */
+  shareLauncherLog: () => call<string>('share_launcher_log'),
+  openLauncherLogFolder: () => call<void>('open_launcher_log_folder'),
 
   listAccounts: () => call<Account[]>('list_accounts'),
   loginBrowser: () => call<Account>('login_browser'),

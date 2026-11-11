@@ -51,7 +51,10 @@ pub(crate) const MAX_SIGNATURE_BYTES: u64 = 4 * 1024;
 pub const MAX_JAR_BYTES: u64 = 32 * 1024 * 1024;
 const MAX_VERSION_LEN: usize = 32;
 const MANIFEST_TIMEOUT: Duration = Duration::from_secs(8);
-const JAR_TIMEOUT: Duration = Duration::from_secs(90);
+/// Obergrenze je Versuch; Hänger fangen Chunk-Timeout und Tempo-Wächter vorher ab.
+const JAR_TIMEOUT: Duration = Duration::from_secs(20 * 60);
+const JAR_CHUNK_TIMEOUT: Duration = Duration::from_secs(30);
+const JAR_ATTEMPTS: u32 = 3;
 const MAX_REDIRECTS: usize = 5;
 
 /// Ergebnis einer Prüfung (vor allem für Log und Tests).
@@ -228,6 +231,8 @@ impl ClientModUpdater {
     /// wenn sie neuer ist als die mitgelieferte. Alles andere (alte Versionen,
     /// abgebrochene Downloads) verschwindet.
     pub async fn cleanup(&self, bundled_version: Option<&str>) {
+        // Nicht unter einem laufenden Download die .part-Datei wegräumen.
+        let _guard = self.download.lock().await;
         let keep = self
             .stored()
             .await
@@ -289,32 +294,64 @@ pub(crate) async fn fetch_limited(http: &reqwest::Client, url: &str, limit: u64)
 /// Lädt `url` nach `tmp` und prüft Größe + SHA-256 aus einem signierten Manifest.
 /// Bei Fehler bleibt `tmp` liegen – der Aufrufer räumt auf.
 pub(crate) async fn download_verified(http: &reqwest::Client, url: &str, tmp: &Path, sha256: &str, size: u64) -> Result<()> {
+    // Läuft das in einer Aufgabe (Spielstart, Server-Export), zählt es dort mit und
+    // lässt sich pausieren/abbrechen.
+    crate::task::add_total(size);
+    let mut attempt = 1;
+    loop {
+        let mut written = 0u64;
+        let result = download_attempt(http, url, tmp, sha256, size, attempt < JAR_ATTEMPTS, &mut written).await;
+        match result {
+            Err(e) if attempt < JAR_ATTEMPTS && !matches!(e, Error::Cancelled) => {
+                tracing::warn!("TRS-Client-Download, Versuch {attempt}/{JAR_ATTEMPTS}: {e}");
+                crate::task::add_done(-i64::try_from(written).unwrap_or(i64::MAX));
+                attempt += 1;
+                tokio::time::sleep(Duration::from_secs(1)).await;
+            }
+            other => return other,
+        }
+    }
+}
+
+/// Neue Verbindung je Versuch; tröpfelt eine, bricht der Tempo-Wächter ab (wie in `download.rs`).
+async fn download_attempt(
+    http: &reqwest::Client,
+    url: &str,
+    tmp: &Path,
+    sha256: &str,
+    size: u64,
+    strict: bool,
+    written: &mut u64,
+) -> Result<()> {
     let response = http.get(url).timeout(JAR_TIMEOUT).send().await?.error_for_status()?;
     if response.content_length().is_some_and(|len| len != size) {
         return Err(Error::download(url, "unerwartete Größe"));
     }
     let mut out = tokio::fs::File::create(tmp).await.map_err(|e| Error::io(tmp, e))?;
     let mut hasher = Sha256::new();
-    let mut written = 0u64;
     let mut stream = response.bytes_stream();
-    // Läuft das in einer Aufgabe (Spielstart, Server-Export), zählt es dort mit und
-    // lässt sich pausieren/abbrechen.
-    crate::task::add_total(size);
+    let mut slow = crate::download::SlowGuard::new(strict && !crate::download::slow_network(), std::time::Instant::now());
     loop {
         crate::task::checkpoint().await?;
-        let Some(chunk) = stream.next().await else { break };
+        let next = tokio::time::timeout(JAR_CHUNK_TIMEOUT, stream.next())
+            .await
+            .map_err(|_| Error::download(url, "keine Daten mehr"))?;
+        let Some(chunk) = next else { break };
         let chunk = chunk?;
-        written += chunk.len() as u64;
+        *written += chunk.len() as u64;
         crate::task::add_done(chunk.len() as i64);
-        if written > size {
+        if *written > size {
             return Err(Error::download(url, "unerwartete Größe"));
         }
         hasher.update(&chunk);
         out.write_all(&chunk).await.map_err(|e| Error::io(tmp, e))?;
+        if slow.add(chunk.len() as u64, Some(size - *written), std::time::Instant::now()) {
+            return Err(Error::download(url, "zu langsam"));
+        }
     }
     out.flush().await.map_err(|e| Error::io(tmp, e))?;
     drop(out);
-    if written != size {
+    if *written != size {
         return Err(Error::download(url, "unerwartete Größe"));
     }
     if !hex(&hasher.finalize()).eq_ignore_ascii_case(sha256) {
