@@ -1,6 +1,7 @@
 package dev.theredstonee.trsclient.core.module;
 
 import dev.theredstonee.trsclient.core.config.ModuleConfig;
+import dev.theredstonee.trsclient.core.input.KeyCombo;
 
 /**
  * Tastenbelegung eines Moduls. Gespeichert wird der versionsunabhängige Tastenname im
@@ -75,15 +76,34 @@ public final class KeySetting extends Setting {
 
 	public void set(String keyName) {
 		this.keyName = valid(keyName) ? keyName : NONE;
-		if (link != null) link.set(this.keyName);
+		// Minecraft-Tastenbelegungen kennen keine Kombis.
+		if (link != null) {
+			this.keyName = KeyCombo.main(this.keyName);
+			link.set(this.keyName);
+		}
 	}
 
 	public void unbind() {
 		set(NONE);
 	}
 
-	/** Nur Namen der Form {@code key.keyboard.*} / {@code key.mouse.*} mit harmlosen Zeichen. */
+	/**
+	 * Nur Namen der Form {@code key.keyboard.*} / {@code key.mouse.*} mit harmlosen Zeichen,
+	 * oder eine Kombi daraus ({@link KeyCombo}): Modifikatoren vorn, Haupttaste zuletzt.
+	 */
 	static boolean valid(String name) {
+		if (name == null || !KeyCombo.isCombo(name)) return validKey(name);
+		String[] parts = KeyCombo.parts(name);
+		if (parts.length > 3) return false;
+		for (int i = 0; i < parts.length; i++) {
+			if (!validKey(parts[i])) return false;
+			boolean mod = KeyCombo.modifier(parts[i]) != null;
+			if (i < parts.length - 1 ? !mod : mod) return false;
+		}
+		return true;
+	}
+
+	private static boolean validKey(String name) {
 		if (name == null || name.length() > 64) return false;
 		if (!name.startsWith("key.keyboard.") && !name.startsWith("key.mouse.")) return false;
 		for (int i = 0; i < name.length(); i++) {

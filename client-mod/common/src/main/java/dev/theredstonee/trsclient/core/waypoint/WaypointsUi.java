@@ -423,8 +423,11 @@ public final class WaypointsUi extends UiScreen implements WaypointDialog.Host {
 
 	private String keyName(TrsModules m) {
 		MapPlatform p = e.platform();
-		String name = p == null ? null : p.keyName(m.waypointAddKey.get());
-		return name == null ? "—" : name;
+		if (p == null || !m.waypointAddKey.isBound()) return "—";
+		return dev.theredstonee.trsclient.core.input.KeyCombo.label(m.waypointAddKey.get(), part -> {
+			String name = p.keyName(part);
+			return name == null ? part : name;
+		});
 	}
 
 	private void saveSettings() {

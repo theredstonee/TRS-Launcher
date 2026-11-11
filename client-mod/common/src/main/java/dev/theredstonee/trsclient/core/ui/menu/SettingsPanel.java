@@ -1,6 +1,8 @@
 package dev.theredstonee.trsclient.core.ui.menu;
 
 import dev.theredstonee.trsclient.core.i18n.I18n;
+import dev.theredstonee.trsclient.core.input.KeyCombo;
+import dev.theredstonee.trsclient.core.input.KeyPresses;
 import dev.theredstonee.trsclient.core.module.BoolSetting;
 import dev.theredstonee.trsclient.core.module.ChoiceSetting;
 import dev.theredstonee.trsclient.core.module.ColorSetting;
@@ -37,6 +39,8 @@ public final class SettingsPanel {
 	private Setting expanded;
 	/** Einstellung, die gerade auf einen Tastendruck wartet. */
 	private KeySetting capturing;
+	/** Beim Belegen schon gedrückter Modifikator (Strg, Alt, Umschalt, F3), wartet auf die Haupttaste. */
+	private String pendingModifier;
 	/** Textfeld, das gerade bearbeitet wird (Auto-GG-Nachricht, Text-Hotkeys). */
 	private TextSetting editingText;
 	private final TextInput textInput = new TextInput(TextSetting.MAX_LENGTH);
@@ -57,6 +61,7 @@ public final class SettingsPanel {
 	public void reset() {
 		expanded = null;
 		capturing = null;
+		pendingModifier = null;
 		stopEditing();
 	}
 
@@ -181,7 +186,12 @@ public final class SettingsPanel {
 
 	private void key(Canvas c, Hits hits, final KeySetting k, int x, int y, int w, int mx, int my) {
 		Theme t = Theme.get();
-		String label = capturing == k ? dev.theredstonee.trsclient.core.i18n.I18n.tr("settings.pressKey") : (k.isBound() ? keyLabel.label(k.get()) : "—");
+		String label;
+		if (capturing == k) {
+			label = pendingModifier != null ? keyLabel.label(pendingModifier) + " + …" : dev.theredstonee.trsclient.core.i18n.I18n.tr("settings.pressKey");
+		} else {
+			label = k.isBound() ? keyLabel(k.get()) : "—";
+		}
 		int bw = Math.max(34, c.textWidth(label) + 12);
 		int bx = x + w - bw;
 		boolean hover = inside(mx, my, bx, y + 2, bw, 14);
@@ -194,7 +204,10 @@ public final class SettingsPanel {
 		hits.add(bx, y + 2, bw, 14, new Runnable() {
 			@Override
 			public void run() {
+				// Nochmal klicken, während nur ein Modifikator gedrückt war: der allein ist die Taste.
+				if (capturing == k && pendingModifier != null) k.set(pendingModifier);
 				capturing = capturing == k ? null : k;
+				pendingModifier = null;
 			}
 		});
 		hits.add(bx, y + 2, bw, 14, 1, new Runnable() {
@@ -202,6 +215,7 @@ public final class SettingsPanel {
 			public void run() {
 				k.unbind();
 				capturing = null;
+				pendingModifier = null;
 			}
 		});
 	}
@@ -242,6 +256,7 @@ public final class SettingsPanel {
 		textInput.setText(s.get());
 		textInput.setFocused(true);
 		capturing = null;
+		pendingModifier = null;
 	}
 
 	/** Beendet die Texteingabe (der Wert steht schon in der Einstellung). */
@@ -288,6 +303,16 @@ public final class SettingsPanel {
 		}
 	};
 
+	/** Anzeige einer Belegung, Kombis als „Strg + M“. */
+	public String keyLabel(String keyName) {
+		return KeyCombo.label(keyName, new KeyCombo.Label() {
+			@Override
+			public String label(String part) {
+				return keyLabel.label(part);
+			}
+		});
+	}
+
 	public void setKeyLabel(KeyLabel keyLabel) {
 		if (keyLabel != null) this.keyLabel = keyLabel;
 	}
@@ -297,16 +322,29 @@ public final class SettingsPanel {
 		if (capturing == null) return false;
 		if (key == UiKey.ESCAPE) {
 			capturing = null;
+			pendingModifier = null;
 			return true;
 		}
 		if (key == UiKey.BACKSPACE || key == UiKey.DELETE) {
 			capturing.unbind();
 			capturing = null;
+			pendingModifier = null;
 			return true;
 		}
 		String name = host.keyNameOf(rawKey);
-		if (name != null) capturing.set(name);
+		if (name == null) return true;
+		if (capturing.isLinked()) {
+			capturing.set(name);
+		} else {
+			String modifier = KeyCombo.modifier(name);
+			if (modifier != null) {
+				pendingModifier = modifier;
+				return true;
+			}
+			capturing.set(KeyCombo.of(name, KeyPresses.shared()));
+		}
 		capturing = null;
+		pendingModifier = null;
 		return true;
 	}
 
@@ -557,6 +595,7 @@ public final class SettingsPanel {
 		boolean was = expanded != null || capturing != null;
 		expanded = null;
 		capturing = null;
+		pendingModifier = null;
 		return was;
 	}
 
