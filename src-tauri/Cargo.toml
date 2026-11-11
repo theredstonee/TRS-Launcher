@@ -48,6 +48,8 @@ trs-core = { path = "crates/core" }
 # Android/iOS: eine Instanz und Fenster verwaltet das System, Updates laufen über den Kanal `mobile`.
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 arboard = { version = "3.6.1", default-features = false, features = ["image-data"] }
+# Fehlermeldung, wenn der Start scheitert (kommt ohnehin mit tauri-plugin-dialog).
+rfd = { version = "0.16.0", default-features = false }
 tauri-plugin-process = "2.3.1"
 tauri-plugin-single-instance = { version = "2.4.4", features = ["deep-link"] }
 # Ohne Feature "zip": Wir liefern Updates direkt als .exe und .AppImage, das Entpacken wird nie gebraucht.

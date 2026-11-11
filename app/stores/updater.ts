@@ -2,6 +2,7 @@ import { MESSE } from '~/utils/messe'
 import { isTauri } from '@tauri-apps/api/core'
 import { error as logError, info as logInfo } from '@tauri-apps/plugin-log'
 import { check, type Update } from '@tauri-apps/plugin-updater'
+import { relaunch } from '@tauri-apps/plugin-process'
 import type { PlatformCapabilities } from '~/types'
 
 /** Alle paar Stunden erneut nachsehen – der Launcher läuft oft lange. */
@@ -29,6 +30,7 @@ export const useUpdaterStore = defineStore('updater', () => {
   let started = false
   /** Wie sich der Launcher aktualisiert (Windows/AppImage: selbst, sonst die Paketverwaltung). */
   const mode = ref<PlatformCapabilities['updates']>(defaultCapabilities().updates)
+  let platform: PlatformCapabilities['platform'] | null = null
 
   function schedule(ms: number) {
     clearTimeout(timer)
@@ -100,6 +102,8 @@ export const useUpdaterStore = defineStore('updater', () => {
     await new Promise((resolve) => setTimeout(resolve, 400))
     try {
       await update.install()
+      // AppImage: install() tauscht nur die Datei, neu starten müssen wir selbst
+      if (platform === 'linux') await relaunch()
     } catch (e) {
       fail(e)
     }
@@ -110,7 +114,10 @@ export const useUpdaterStore = defineStore('updater', () => {
     if (started || !isTauri() || import.meta.dev || MESSE) return
     started = true
     loadAppInfo()
-      .then((info) => (mode.value = info.capabilities.updates))
+      .then((info) => {
+        mode.value = info.capabilities.updates
+        platform = info.capabilities.platform
+      })
       .catch(() => {})
       .finally(() => {
         // Flatpak: Updates kommen über Flathub bzw. die Softwareverwaltung – hier nichts prüfen.

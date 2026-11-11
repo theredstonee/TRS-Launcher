@@ -5886,6 +5886,7 @@ dependencies = [
  "jni 0.21.1",
  "log",
  "qrcode",
+ "rfd",
  "serde",
  "serde_json",
  "tauri",

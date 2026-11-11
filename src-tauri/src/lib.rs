@@ -46,6 +46,37 @@ fn qr_scanner<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
     tauri::plugin::Builder::new("trs-no-scanner").build()
 }
 
+#[cfg(desktop)]
+static LOG_DIR: std::sync::OnceLock<std::path::PathBuf> = std::sync::OnceLock::new();
+
+/// Start gescheitert (Datenordner, Launcher-Kern, WebView2 …): Im Release gibt es keine Konsole – ohne Meldung wäre
+/// das Programm einfach weg.
+#[cfg(desktop)]
+fn startup_failed(error: tauri::Error) -> ! {
+    log::error!("Start fehlgeschlagen: {error}");
+    let mut text = format!("TRS Launcher konnte nicht gestartet werden.
+TRS Launcher could not start.
+
+{error}");
+    if let Some(dir) = LOG_DIR.get() {
+        text.push_str(&format!("
+
+Logs: {}", dir.display()));
+    }
+    rfd::MessageDialog::new()
+        .set_level(rfd::MessageLevel::Error)
+        .set_title("TRS Launcher")
+        .set_description(text)
+        .set_buttons(rfd::MessageButtons::Ok)
+        .show();
+    std::process::exit(1);
+}
+
+#[cfg(mobile)]
+fn startup_failed(error: tauri::Error) -> ! {
+    panic!("TRS Launcher konnte nicht gestartet werden: {error}");
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     #[cfg(desktop)]
@@ -95,6 +126,10 @@ pub fn run() {
         .plugin(tauri_plugin_trs_push::init());
     builder
         .setup(|app| {
+            #[cfg(desktop)]
+            if let Ok(dir) = app.path().app_log_dir() {
+                let _ = LOG_DIR.set(dir);
+            }
             // Spiel-Engine (eingebettete JVM) – nur Android/iOS.
             #[cfg(mobile)]
             app.handle().plugin(tauri_plugin_trs_game::init())?;
@@ -894,7 +929,7 @@ pub fn run() {
             commands::server_export::local_server_invite,
         ])
         .build(tauri::generate_context!())
-        .expect("TRS Launcher konnte nicht gestartet werden")
+        .unwrap_or_else(|e| startup_failed(e))
         .run(|app, event| {
             // Beim Beenden die TRS-Präsenz zurücknehmen (kurz, offline egal).
             if let tauri::RunEvent::Exit = event
