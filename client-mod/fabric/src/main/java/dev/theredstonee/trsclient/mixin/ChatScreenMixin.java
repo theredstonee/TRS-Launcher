@@ -25,8 +25,19 @@ public abstract class ChatScreenMixin {
 		if (trsclient$copy(event.x(), event.y())) cir.setReturnValue(true);
 	}
 
-	@Inject(method = "handleComponentClicked(Lnet/minecraft/network/chat/Style;Z)Z", at = @At("HEAD"), cancellable = true, require = 0)
-	private void trsclient$chatLink(net.minecraft.network.chat.Style style, boolean doubleClick, CallbackInfoReturnable<Boolean> cir) {
+	// Ab 1.21.11 sucht Vanilla beim Klick nur Stile mit Klick-Aktion – Stile, die nur einen Einfüge-Text tragen (unsere
+	// Marker: „[Add]“, Koordinaten, „[Als Link teilen]“), nur mit Umschalt (includeInsertions(insertionClickMode())).
+	// Ohne das kam ein normaler Klick nie bei handleComponentClicked an. Stile mit Einfüge-Text immer finden: Vanilla
+	// macht mit ihnen ohne Umschalt weiterhin nichts (handleComponentClicked(…, false) ohne Klick-Aktion = false).
+	@org.spongepowered.asm.mixin.injection.ModifyArg(method = "mouseClicked", at = @At(value = "INVOKE",
+			target = "Lnet/minecraft/client/gui/ActiveTextCollector$ClickableStyleFinder;includeInsertions(Z)Lnet/minecraft/client/gui/ActiveTextCollector$ClickableStyleFinder;"),
+			require = 1)
+	private boolean trsclient$findMarkers(boolean includeInsertions) {
+		return true;
+	}
+
+	@Inject(method = "handleComponentClicked(Lnet/minecraft/network/chat/Style;Z)Z", at = @At("HEAD"), cancellable = true, require = 1)
+	private void trsclient$chatLink(net.minecraft.network.chat.Style style, boolean insert, CallbackInfoReturnable<Boolean> cir) {
 		if (!trsclient$shift() && dev.theredstonee.trsclient.qol.ChatLinks.onClick(style)) cir.setReturnValue(true);
 	}
 	*///?} elif >=1.21.9 {

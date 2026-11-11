@@ -21,12 +21,15 @@ import java.io.File;
 
 /**
  * Selbsttest Teilen-Paket ({@code -PtrsAutotestOnly=share}, gegen die lokal gebaute API über {@code -PtrsApi}):
- * Koordinaten und „[Als Link teilen]“ im Minecraft-Chat, Fenster „Als Wegpunkt speichern“, Wegpunkt-Karten im
+ * Koordinaten, Wegpunkte von Xaero's Minimap/JourneyMap und „[Als Link teilen]“ im Minecraft-Chat, Fenster „Als
+ * Wegpunkt speichern“, Wegpunkt-Karten im
  * Sozial-Chat (senden, übernehmen, auf der Weltkarte zeigen), Zielauswahl, Bild als Link teilen und „Geteilt“ in
  * Clips &amp; Bilder. Ab 1.16 (davor keine Chat-Links). Screenshots: trsclient-&lt;mc&gt;-share-*.png. Beendet das Spiel.
  */
 public final class ShareTest {
 	private int phase;
+	/** Unterschritte von Phase 6 (Wegpunkte von Xaero's Minimap/JourneyMap). */
+	private int mapModStep;
 	private int wait;
 	private int waited;
 	private Chat.Waypoint card;
@@ -123,16 +126,36 @@ public final class ShareTest {
 			}
 			case 3: {
 				ChatLines.addMessage(Mc.text("<Bob> Treffpunkt: x: 120 y: 70 z: -35, Portal 100 64 -20"));
+				ChatLines.addMessage(Mc.text("<Alex> " + XAERO_LINE));
+				ChatLines.addMessage(Mc.text("<Alex> " + JOURNEYMAP_LINE));
 				File file = new File(mc.gameDirectory, "screenshots/trsclient-" + AutoTest.MC_VERSION + "-share-world.png");
 				Component line = screenshotLine(file);
 				if (line != null) ChatLines.addMessage(line);
 				log("Bildschirmfoto-Zeile: " + (line != null) + ", Datei da: " + file.isFile());
+				// Echter Mausklick von außen (z. B. xdotool unter Xvfb): eigene Zeile, dann bei offenem Chat warten.
+				if (REAL_CLICK_PAUSE > 0) {
+					// Mit -PtrsSys.trsclient.autotest.share.sendChat=true als echte Chatnachricht (über den Server) – so sieht
+					// sie auch Xaero's Minimap, wenn installiert, und baut seine eigene Zeile mit „[Add]“.
+					if (Boolean.getBoolean("trsclient.autotest.share.sendChat")) Mc.sendChat(REAL_CLICK_LINE);
+					else ChatLines.addMessage(Mc.text("<Cleo> " + REAL_CLICK_LINE));
+				}
 				Mc.setScreen(chatScreen());
 				phase++;
 				wait = 10;
 				return;
 			}
 			case 4:
+				if (REAL_CLICK_PAUSE > 0 && !realClickAsked) {
+					realClickAsked = true;
+					shot(mc, "chat-real-click");
+					log("Echter Klick: bitte jetzt auf [Add] in der Zeile von Cleo klicken (" + REAL_CLICK_PAUSE + " Ticks)");
+					wait = REAL_CLICK_PAUSE;
+					return;
+				}
+				if (REAL_CLICK_PAUSE > 0) {
+					log("Echter Klick auf [Add]: „Klick“ gespeichert: " + hasWaypoint("Klick", "minecraft:overworld")
+							+ ", auf Minimap/Weltkarte sichtbar: " + shownOnMap("Klick"));
+				}
 				shot(mc, "chat-links");
 				// Klick auf die markierten Koordinaten (Stil aus der geschmückten Zeile).
 				log("Koordinaten-Klick: " + clickInsertion(Mc.text("x: 120 y: 70 z: -35"), "120 70 -35"));
@@ -149,11 +172,20 @@ public final class ShareTest {
 				return;
 			}
 			case 6: {
-				boolean found = false;
-				for (Waypoint w : dev.theredstonee.trsclient.core.map.MapEngine.get().waypoints()) {
-					if (w.name.equals("Treffpunkt") && w.x == 120 && w.y == 70 && w.z == -35) found = true;
+				if (mapModStep == 0) {
+					boolean found = false;
+					for (Waypoint w : dev.theredstonee.trsclient.core.map.MapEngine.get().waypoints()) {
+						if (w.name.equals("Treffpunkt") && w.x == 120 && w.y == 70 && w.z == -35) found = true;
+					}
+					log("Wegpunkt aus dem Chat gespeichert: " + found);
 				}
-				log("Wegpunkt aus dem Chat gespeichert: " + found);
+				// Wegpunkte von Xaero's Minimap und JourneyMap: Klick → Fenster mit Name/Farbe (Bild) → in ihrer Dimension
+				// speichern. Ein Unterschritt je Tick-Pause, damit das Fenster vor dem Bild gezeichnet ist.
+				if (mapModStep < 5) {
+					mapModStep(mc);
+					wait = 10;
+					return;
+				}
 				// „[Als Link teilen]“ an der Bildschirmfoto-Zeile.
 				File file = new File(mc.gameDirectory, "screenshots/trsclient-" + AutoTest.MC_VERSION + "-share-world.png");
 				Component line = screenshotLine(file);
@@ -281,6 +313,87 @@ public final class ShareTest {
 						file.getAbsolutePath()))));
 		//?} else
 		/*return null;*/
+	}
+
+	/** Geteilter Wegpunkt von Xaero's Minimap bzw. JourneyMap im Chat. */
+	private static final String XAERO_LINE = "xaero-waypoint:Dorf:D:-1500:~:900:6:false:0:Internal-the-nether";
+	private static final String JOURNEYMAP_LINE = "[name:\"Turm\", x:40, y:90, z:-60, dim:minecraft:overworld]";
+	/** Wartezeit (Ticks) für einen echten Mausklick von außen auf „[Add]“, 0 = aus (-PtrsSys.trsclient.autotest.share.pause=…). */
+	private static final int REAL_CLICK_PAUSE = Integer.getInteger("trsclient.autotest.share.pause", 0);
+	/** Zeile für den echten Klick (eigener Name, damit sie von den anderen Schritten unterscheidbar bleibt). */
+	private static final String REAL_CLICK_LINE = "xaero-waypoint:Klick:K:500:70:500:10:false:0:Internal-overworld";
+	private boolean realClickAsked;
+
+	/** Wie die Minimap zeichnet: Wegpunkte der aktuellen Dimension, die angezeigt werden (Set sichtbar, nicht versteckt). */
+	private static boolean shownOnMap(String name) {
+		dev.theredstonee.trsclient.core.map.MapEngine e = dev.theredstonee.trsclient.core.map.MapEngine.get();
+		for (Waypoint w : e.waypoints()) if (w.name.equals(name) && e.waypointShown(w)) return true;
+		return false;
+	}
+
+	private static boolean hasWaypoint(String name, String dimension) {
+		for (Waypoint w : dev.theredstonee.trsclient.core.map.MapEngine.get().allWaypoints()) {
+			if (w.name.equals(name) && dimension.equals(WaypointShare.canonicalDimension(w.dimension))) return true;
+		}
+		return false;
+	}
+
+	/** Dritter Wegpunkt: direkt über „[Add]“ speichern (ohne Fenster). */
+	private static final String XAERO_ADD_LINE = "xaero-waypoint:Mine:M:300:12:-80:2:false:0:Internal-overworld";
+
+	/** Phase 6, Unterschritte: Xaero anklicken, Bild + speichern, JourneyMap anklicken, Bild + speichern, „[Add]“. */
+	private void mapModStep(Minecraft mc) {
+		switch (mapModStep++) {
+			case 0:
+				openMapModShare(XAERO_LINE);
+				break;
+			case 1:
+				shot(mc, "save-xaero");
+				saveMapModShare("Dorf", "minecraft:the_nether");
+				break;
+			case 2:
+				openMapModShare(JOURNEYMAP_LINE);
+				break;
+			case 3:
+				shot(mc, "save-journeymap");
+				saveMapModShare("Turm", "minecraft:overworld");
+				break;
+			default:
+				addMapModShare(XAERO_ADD_LINE, "Mine", "minecraft:overworld");
+		}
+	}
+
+	/** Geteilten Wegpunkt im geschmückten Chat anklicken → Fenster „Als Wegpunkt speichern“ mit Name und Farbe. */
+	private static void openMapModShare(String line) {
+		Component decorated = dev.theredstonee.trsclient.qol.ChatLinks.decorate(Mc.text("<Alex> " + line));
+		boolean clicked = clickInsertion(decorated, line.substring(0, 5));
+		WaypointSaveUi ui = saveUi(Mc.screen());
+		log("Karten-Mod-Wegpunkt: Klick " + clicked + ", Fenster " + (ui != null)
+				+ (ui == null ? "" : ", Name " + ui.testName() + ", Farbe " + Integer.toHexString(ui.testColor())));
+	}
+
+	/** „[Add]“ in der geschmückten Zeile anklicken: ohne Fenster gespeichert, in der Dimension der Nachricht? */
+	private static void addMapModShare(String line, String name, String dimension) {
+		Component decorated = dev.theredstonee.trsclient.qol.ChatLinks.decorate(Mc.text("<Bob> " + line));
+		boolean clicked = clickInsertion(decorated, "trs-waypoint-add:");
+		boolean window = saveUi(Mc.screen()) != null;
+		boolean saved = false;
+		for (Waypoint w : dev.theredstonee.trsclient.core.map.MapEngine.get().allWaypoints()) {
+			if (w.name.equals(name) && dimension.equals(WaypointShare.canonicalDimension(w.dimension))) saved = true;
+		}
+		log("Karten-Mod-Wegpunkt per [Add]: Klick " + clicked + ", Zeile „" + decorated.getString() + "“, Fenster " + window
+				+ ", " + name + " gespeichert (" + dimension + "): " + saved);
+	}
+
+	/** Offenes Fenster speichern – liegt der Wegpunkt danach in der Dimension der Nachricht? */
+	private static void saveMapModShare(String name, String dimension) {
+		WaypointSaveUi ui = saveUi(Mc.screen());
+		if (ui != null) ui.testSave(ui.testName());
+		boolean saved = false;
+		for (Waypoint w : dev.theredstonee.trsclient.core.map.MapEngine.get().allWaypoints()) {
+			if (w.name.equals(name) && dimension.equals(WaypointShare.canonicalDimension(w.dimension))) saved = true;
+		}
+		log("Karten-Mod-Wegpunkt " + name + " gespeichert (" + dimension + "): " + saved);
 	}
 
 	/** Geschmückte Komponente durchsuchen und den Stil mit passendem Einfüge-Text „anklicken“. */

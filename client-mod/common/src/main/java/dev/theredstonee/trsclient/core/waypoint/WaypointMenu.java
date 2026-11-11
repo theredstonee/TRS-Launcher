@@ -1,5 +1,6 @@
 package dev.theredstonee.trsclient.core.waypoint;
 
+import dev.theredstonee.trsclient.core.chat.ChatWaypoints;
 import dev.theredstonee.trsclient.core.i18n.I18n;
 import dev.theredstonee.trsclient.core.map.MapEngine;
 import dev.theredstonee.trsclient.core.map.MapPlatform;
@@ -24,6 +25,10 @@ public final class WaypointMenu {
 	public static final String UNTARGET = "untarget";
 	public static final String COPY = "copy";
 	public static final String CHAT = "chat";
+	/** Im Chat posten, wie Xaero's Minimap teilt (deren Nutzer übernehmen ihn per Klick). */
+	public static final String CHAT_XAERO = "chatXaero";
+	/** Im Chat posten, wie JourneyMap teilt (auch VoxelMap liest das). */
+	public static final String CHAT_JOURNEYMAP = "chatJourneyMap";
 	public static final String SHARE = "share";
 	public static final String SHARE_FRIENDS = "shareFriends";
 	public static final String UNSHARE_FRIENDS = "unshareFriends";
@@ -44,6 +49,8 @@ public final class WaypointMenu {
 		if (p != null && p.chatBridge()) {
 			items.add(COPY);
 			items.add(CHAT);
+			items.add(CHAT_XAERO);
+			items.add(CHAT_JOURNEYMAP);
 		}
 		items.add(SHARE);
 		if (LiveShare.ui() != null) items.add(w.shared ? UNSHARE_FRIENDS : SHARE_FRIENDS);
@@ -81,6 +88,9 @@ public final class WaypointMenu {
 		} else if (CHAT.equals(id)) {
 			p.sendChat(chatLine(w.name, w.x, w.y, w.z, w.dimension, p.dimension()));
 			return I18n.tr("map.chat.sent");
+		} else if (CHAT_XAERO.equals(id) || CHAT_JOURNEYMAP.equals(id)) {
+			p.sendChat(mapModLine(id, w.name, w.badgeText(), w.x, w.y, w.z, w.color, w.dimension, p.dimension()));
+			return I18n.tr("map.chat.sent");
 		} else if (SHARE_FRIENDS.equals(id) || UNSHARE_FRIENDS.equals(id)) {
 			w.shared = SHARE_FRIENDS.equals(id);
 			e.waypointEdited();
@@ -105,6 +115,18 @@ public final class WaypointMenu {
 		String line = (clean.isEmpty() ? "" : clean + ": ") + coordinates(x, y, z);
 		if (dim != null && !dim.isEmpty() && !dim.equals(currentDim)) line += " (" + WorldMapUi.dimensionName(dim) + ")";
 		return line;
+	}
+
+	/**
+	 * Zeile für den Spiel-Chat im Format von Xaero's Minimap ({@link #CHAT_XAERO}) bzw. JourneyMap
+	 * ({@link #CHAT_JOURNEYMAP}): Name, Kürzel, Farbe und Dimension reisen mit, deren Nutzer übernehmen den Wegpunkt per
+	 * Klick (TRS Clients auch). {@code dim} leer = aktuelle Dimension ({@code currentDim}).
+	 */
+	public static String mapModLine(String id, String name, String mark, int x, int y, int z, int color, String dim,
+			String currentDim) {
+		String canonical = WaypointShare.canonicalDimension(dim == null || dim.isEmpty() ? currentDim : dim);
+		if (CHAT_XAERO.equals(id)) return ChatWaypoints.xaero(name, mark, x, y, z, color, canonical);
+		return ChatWaypoints.journeyMap(name, x, y, z, canonical, WaypointShare.legacyDimensions(currentDim));
 	}
 
 	/** Modul-Hilfe: Sortierung für neue Listen. */

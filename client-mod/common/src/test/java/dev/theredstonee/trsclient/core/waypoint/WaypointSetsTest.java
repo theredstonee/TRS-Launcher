@@ -359,6 +359,22 @@ class WaypointSetsTest {
 	}
 
 	@Test
+	void mapModLinesCarryNameColorAndDimension() {
+		assertEquals("xaero-waypoint:Basis:B:1:2:3:12:false:0:Internal-the-nether",
+				WaypointMenu.mapModLine(WaypointMenu.CHAT_XAERO, "Basis", "B", 1, 2, 3, 0xE0281E, "minecraft:the_nether", DIM));
+		assertEquals("[name:\"Basis\", x:1, y:2, z:3, dim:minecraft:overworld]",
+				WaypointMenu.mapModLine(WaypointMenu.CHAT_JOURNEYMAP, "Basis", "B", 1, 2, 3, 0xE0281E, "", DIM));
+		// Bis 1.12.2: Zahlen statt Kennungen für JourneyMap, Xaero bleibt bei seinen Namen.
+		assertEquals("[name:\"Tor\", x:1, y:2, z:3, dim:-1]",
+				WaypointMenu.mapModLine(WaypointMenu.CHAT_JOURNEYMAP, "Tor", "T", 1, 2, 3, 0, "dim-1", "dim0"));
+		assertEquals("xaero-waypoint:Tor:T:1:2:3:0:false:0:Internal-the-nether",
+				WaypointMenu.mapModLine(WaypointMenu.CHAT_XAERO, "Tor", "T", 1, 2, 3, 0, "dim-1", "dim0"));
+		// Nie ein Befehl, auch wenn der Name mit „/“ beginnt.
+		assertFalse(WaypointMenu.mapModLine(WaypointMenu.CHAT_XAERO, "/op me", "", 1, 2, 3, 0, DIM, DIM).startsWith("/"));
+		assertFalse(WaypointMenu.mapModLine(WaypointMenu.CHAT_JOURNEYMAP, "/op me", "", 1, 2, 3, 0, DIM, DIM).startsWith("/"));
+	}
+
+	@Test
 	void markIsAtMostTwoCharacters() {
 		assertEquals("AB", Waypoint.cleanMark("ABC"));
 		assertEquals("A", Waypoint.cleanMark(" A "));

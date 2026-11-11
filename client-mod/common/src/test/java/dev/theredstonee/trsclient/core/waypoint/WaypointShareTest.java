@@ -1,5 +1,6 @@
 package dev.theredstonee.trsclient.core.waypoint;
 
+import dev.theredstonee.trsclient.core.chat.ChatWaypoints;
 import dev.theredstonee.trsclient.core.social.Chat;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -9,6 +10,7 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -98,5 +100,33 @@ class WaypointShareTest {
 		assertEquals(1, store.all("sp:Welt").size());
 		assertEquals(WaypointShare.Result.OTHER_WORLD, WaypointShare.adopt(store, "sp:Andere", "dim0", w));
 		assertEquals(0, store.all("sp:Andere").size());
+	}
+
+	@Test
+	void chatWaypointsOfMapModsKeepTheirDimensionColorAndMark(@TempDir Path dir) {
+		WaypointStore store = new WaypointStore(dir.resolve("wp.json"));
+		ChatWaypoints.Shared x = ChatWaypoints.parse("xaero-waypoint:Portal^min^Ost:PO:10:70:-5:10:false:0:Internal-the-nether");
+		assertEquals(WaypointShare.Result.ADDED, WaypointShare.saveShared(store, "mp:play.example.net", "minecraft:overworld",
+				x.name, x.x, x.y, x.z, x.dimension, x.color, x.mark));
+		Waypoint p = store.all("mp:play.example.net").get(0);
+		assertEquals("Portal-Ost", p.name);
+		assertEquals("minecraft:the_nether", p.dimension);
+		assertEquals(0x55FF55, p.color);
+		assertEquals("PO", p.mark);
+		assertEquals(WaypointShare.Result.ALREADY, WaypointShare.saveShared(store, "mp:play.example.net", "minecraft:overworld",
+				x.name, x.x, x.y, x.z, x.dimension, x.color, x.mark));
+		// Legacy-Schreibweise (bis 1.12.2), ohne Dimension = aktuelle, ohne Farbe = Standard, Kürzel = Anfangsbuchstabe.
+		ChatWaypoints.Shared j = ChatWaypoints.parse("[name:\"Mine\", x:1, y:12, z:3, dim:minecraft:the_end]");
+		assertEquals(WaypointShare.Result.ADDED, WaypointShare.saveShared(store, "sp:Welt", "dim0", j.name, j.x, j.y, j.z,
+				j.dimension, j.color, "M"));
+		assertEquals(WaypointShare.Result.ADDED, WaypointShare.saveShared(store, "sp:Welt", "dim0", "Ohne", 5, 6, 7, null, -1, ""));
+		Waypoint end = store.all("sp:Welt").get(0), here = store.all("sp:Welt").get(1);
+		assertEquals("dim1", end.dimension);
+		assertEquals("", end.mark);
+		assertEquals("dim0", here.dimension);
+		assertEquals(0x3D7BFF, here.color);
+		assertEquals(WaypointShare.Result.NO_WORLD, WaypointShare.saveShared(store, "", "dim0", "X", 1, 2, 3, null, -1, ""));
+		assertTrue(WaypointShare.legacyDimensions("dim-1"));
+		assertFalse(WaypointShare.legacyDimensions("minecraft:the_nether"));
 	}
 }
