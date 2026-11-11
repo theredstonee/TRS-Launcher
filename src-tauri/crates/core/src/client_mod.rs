@@ -313,7 +313,7 @@ pub async fn sync(
     // deaktivierte Kopie wird aktuell gehalten, damit ein späteres Einschalten passt.
     if disabled_copy.is_file() && !target.exists() {
         if !same_file(&source, &disabled_copy).await {
-            tokio::fs::copy(&source, &disabled_copy).await.map_err(|e| Error::io(&disabled_copy, e))?;
+            fsutil::copy_atomic(&source, &disabled_copy).await?;
         }
         return Ok(());
     }
@@ -322,7 +322,7 @@ pub async fn sync(
     if !same_file(&source, &target).await {
         let replaced = target.is_file();
         tokio::fs::create_dir_all(&mods).await.map_err(|e| Error::io(&mods, e))?;
-        tokio::fs::copy(&source, &target).await.map_err(|e| Error::io(&target, e))?;
+        fsutil::copy_atomic(&source, &target).await?;
         let _ = tokio::fs::remove_file(&disabled_copy).await;
         let label = if version.is_empty() { build.file.clone() } else { format!("{} {version}", build.file) };
         tracing::info!("TRS Client ({label}) in '{}' installiert", instance.id);

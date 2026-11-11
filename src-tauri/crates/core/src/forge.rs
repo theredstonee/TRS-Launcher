@@ -838,9 +838,14 @@ pub async fn ensure_installed(
     let _ = tokio::fs::remove_file(&marker_file).await;
 
     let installer_jar = download_installer(ctx, &installer, &report).await?;
-    let contents = {
-        let jar = installer_jar.clone();
-        blocking(move || read_installer(&jar)).await?
+    let jar = installer_jar.clone();
+    let contents = match blocking(move || read_installer(&jar)).await {
+        Ok(contents) => contents,
+        Err(e) => {
+            // Kaputter Installer im Cache: beim nächsten Versuch neu laden.
+            let _ = tokio::fs::remove_file(&installer_jar).await;
+            return Err(e);
+        }
     };
 
     let (profile, tracked) = match contents {

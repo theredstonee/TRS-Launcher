@@ -52,41 +52,55 @@ pub(crate) struct Store {
     inner: Mutex<Option<Loaded>>,
 }
 
+/// Entschlüsselter Token (aus dem Speicher oder der Datei).
+fn current(l: &mut Loaded, account: &str) -> Option<String> {
+    if let Some(plain) = l.plain.get(account) {
+        return Some(plain.clone());
+    }
+    let plain = crypto::unprotect(&l.file.sessions.get(account)?.token).ok()?;
+    l.plain.insert(account.to_owned(), plain.clone());
+    Some(plain)
+}
+
 impl Store {
     pub fn new(path: PathBuf) -> Self {
         Self { path, inner: Mutex::new(None) }
     }
 
     async fn with<R>(&self, f: impl FnOnce(&mut Loaded) -> R) -> R {
-        let mut guard = self.inner.lock().await;
-        if guard.is_none() {
-            let file = match fsutil::read_json::<StateFile>(&self.path).await {
-                Ok(file) => file.unwrap_or_default(),
-                Err(e) => {
-                    tracing::warn!("trs-api.json ist beschädigt – TRS-Anmeldung wird neu aufgebaut: {e}");
-                    StateFile::default()
-                }
-            };
-            *guard = Some(Loaded { file, plain: HashMap::new() });
-        }
-        f(guard.as_mut().expect("gerade geladen"))
+        self.change(|l| (f(l), false)).await
     }
 
-    async fn save(&self) {
-        let json = {
-            let guard = self.inner.lock().await;
-            let Some(loaded) = guard.as_ref() else { return };
-            match serde_json::to_vec_pretty(&loaded.file) {
-                Ok(json) => json,
+    /// Wie [`Self::with`]; liefert `f` `true`, wird noch unter derselben Sperre gespeichert.
+    async fn change<R>(&self, f: impl FnOnce(&mut Loaded) -> (R, bool)) -> R {
+        let mut guard = self.inner.lock().await;
+        if guard.is_none() {
+            match fsutil::read_json::<StateFile>(&self.path).await {
+                Ok(file) => *guard = Some(Loaded { file: file.unwrap_or_default(), plain: HashMap::new() }),
+                Err(e @ crate::Error::Json { .. }) => {
+                    tracing::warn!("trs-api.json ist beschädigt – TRS-Anmeldung wird neu aufgebaut: {e}");
+                    *guard = Some(Loaded { file: StateFile::default(), plain: HashMap::new() });
+                }
                 Err(e) => {
-                    tracing::warn!("trs-api.json konnte nicht serialisiert werden: {e}");
-                    return;
+                    // Nicht lesbar (gesperrt o. Ä.): nichts überschreiben, beim nächsten Zugriff neu laden.
+                    tracing::warn!("trs-api.json nicht lesbar: {e}");
+                    return f(&mut Loaded { file: StateFile::default(), plain: HashMap::new() }).0;
                 }
             }
-        };
-        if let Err(e) = fsutil::write_atomic(&self.path, &json).await {
-            tracing::warn!("trs-api.json konnte nicht gespeichert werden: {e}");
         }
+        let loaded = guard.as_mut().expect("gerade geladen");
+        let (result, dirty) = f(loaded);
+        if dirty {
+            match serde_json::to_vec_pretty(&loaded.file) {
+                Ok(json) => {
+                    if let Err(e) = fsutil::write_atomic(&self.path, &json).await {
+                        tracing::warn!("trs-api.json konnte nicht gespeichert werden: {e}");
+                    }
+                }
+                Err(e) => tracing::warn!("trs-api.json konnte nicht serialisiert werden: {e}"),
+            }
+        }
+        result
     }
 
     pub async fn consent(&self) -> Option<Consent> {
@@ -94,75 +108,75 @@ impl Store {
     }
 
     pub async fn set_consent(&self, consent: Consent) {
-        self.with(|l| {
+        self.change(|l| {
             l.file.consent = Some(consent);
             l.file.decided_at = Some(Utc::now());
             if consent == Consent::Declined {
                 l.file.sessions.clear();
                 l.plain.clear();
             }
+            ((), true)
         })
         .await;
-        self.save().await;
     }
 
     /// Gültiger Token für den Account (entschlüsselt bei Bedarf).
     pub async fn token(&self, account: &str) -> Option<String> {
-        let (token, dirty) = self
-            .with(|l| {
-                let stored = l.file.sessions.get(account)?;
-                if stored.expires_at - Utc::now() < chrono::Duration::seconds(EXPIRY_MARGIN_SECS) {
+        self.change(|l| {
+            let Some(stored) = l.file.sessions.get(account) else { return (None, false) };
+            if stored.expires_at - Utc::now() < chrono::Duration::seconds(EXPIRY_MARGIN_SECS) {
+                l.file.sessions.remove(account);
+                l.plain.remove(account);
+                return (None, true);
+            }
+            match current(l, account) {
+                Some(plain) => (Some(plain), false),
+                None => {
+                    // Anderer Windows-Benutzer/Rechner: einfach neu anmelden.
                     l.file.sessions.remove(account);
-                    l.plain.remove(account);
-                    return Some((None, true));
+                    (None, true)
                 }
-                if let Some(plain) = l.plain.get(account) {
-                    return Some((Some(plain.clone()), false));
-                }
-                match crypto::unprotect(&stored.token) {
-                    Ok(plain) => {
-                        l.plain.insert(account.to_owned(), plain.clone());
-                        Some((Some(plain), false))
-                    }
-                    Err(_) => {
-                        // Anderer Windows-Benutzer/Rechner: einfach neu anmelden.
-                        l.file.sessions.remove(account);
-                        Some((None, true))
-                    }
-                }
-            })
-            .await
-            .unwrap_or((None, false));
-        if dirty {
-            self.save().await;
-        }
-        token
+            }
+        })
+        .await
     }
 
+    /// Speichert nur mit Einwilligung – eine Anmeldung, die das Ablehnen überholt, landet nicht auf der Platte.
     pub async fn put_token(&self, account: &str, token: &str, expires_at: DateTime<Utc>) -> crate::Result<()> {
         let encrypted = crypto::protect(token)?;
-        self.with(|l| {
+        self.change(|l| {
+            if l.file.consent != Some(Consent::Accepted) {
+                return (Err(super::disabled()), false);
+            }
             l.file.sessions.insert(account.to_owned(), StoredToken { token: encrypted, expires_at });
             l.plain.insert(account.to_owned(), token.to_owned());
+            (Ok(()), true)
         })
-        .await;
-        self.save().await;
-        Ok(())
+        .await
     }
 
     /// Entfernt den Token; liefert ihn (für ein Logout beim Server), falls vorhanden.
     pub async fn take_token(&self, account: &str) -> Option<String> {
         let token = self.token(account).await;
-        let removed = self
-            .with(|l| {
-                l.plain.remove(account);
-                l.file.sessions.remove(account).is_some()
-            })
-            .await;
-        if removed {
-            self.save().await;
-        }
+        self.change(|l| {
+            l.plain.remove(account);
+            ((), l.file.sessions.remove(account).is_some())
+        })
+        .await;
         token
+    }
+
+    /// Entfernt den Token nur, wenn es noch der abgelehnte ist (eine parallele Anfrage kann schon neu angemeldet haben).
+    pub async fn take_token_if(&self, account: &str, failed: &str) -> bool {
+        self.change(|l| {
+            let same = l.file.sessions.contains_key(account) && current(l, account).as_deref() == Some(failed);
+            if same {
+                l.plain.remove(account);
+                l.file.sessions.remove(account);
+            }
+            (same, same)
+        })
+        .await
     }
 
     /// Accounts mit gespeichertem Token.
@@ -209,5 +223,37 @@ mod tests {
         store.set_consent(Consent::Declined).await;
         assert!(store.accounts().await.is_empty());
         assert_eq!(store.token("a").await, None);
+        assert!(store.put_token("a", "trs_x", Utc::now() + chrono::Duration::days(1)).await.is_err());
+        assert!(store.accounts().await.is_empty());
+    }
+
+    #[tokio::test]
+    async fn only_the_rejected_token_is_dropped() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::new(dir.path().join("trs-api.json"));
+        store.set_consent(Consent::Accepted).await;
+        store.put_token("a", "trs_new", Utc::now() + chrono::Duration::days(1)).await.unwrap();
+        assert!(!store.take_token_if("a", "trs_old").await);
+        assert_eq!(store.token("a").await.as_deref(), Some("trs_new"));
+        assert!(store.take_token_if("a", "trs_new").await);
+        assert_eq!(store.token("a").await, None);
+    }
+
+    #[tokio::test]
+    async fn broken_json_resets_but_unreadable_file_is_kept() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("trs-api.json");
+        std::fs::write(&path, b"{ kaputt").unwrap();
+        let store = Store::new(path.clone());
+        assert_eq!(store.consent().await, None);
+        store.set_consent(Consent::Accepted).await;
+        assert_eq!(Store::new(path).consent().await, Some(Consent::Accepted));
+
+        // Ordner statt Datei: Lesen scheitert, es wird nichts geschrieben.
+        let dir_path = dir.path().join("ordner");
+        std::fs::create_dir(&dir_path).unwrap();
+        let store = Store::new(dir_path.clone());
+        store.set_consent(Consent::Accepted).await;
+        assert!(dir_path.is_dir());
     }
 }

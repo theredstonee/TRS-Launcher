@@ -69,6 +69,7 @@ impl AccountStore {
             Ok(file) => Ok(file.unwrap_or_default()),
             Err(Error::Json { .. }) => {
                 tracing::warn!("accounts.json ist beschädigt – Accounts müssen neu angemeldet werden");
+                fsutil::set_aside_corrupt(&self.paths.accounts_file()).await;
                 Ok(AccountsFile::default())
             }
             Err(e) => Err(e),
@@ -193,6 +194,14 @@ impl AccountStore {
         Ok(Account { id: stored.id, name: stored.name, skin_url: stored.skin_url, active, added_at: stored.added_at })
     }
 
+    async fn set_refresh_token(&self, id: &str, refresh_token: &str) -> Result<()> {
+        let _guard = self.file_lock.lock().await;
+        let mut file = self.read().await?;
+        let Some(account) = file.accounts.iter_mut().find(|a| a.id == id) else { return Ok(()) };
+        account.refresh_token = crypto::protect(refresh_token)?;
+        self.write(&file).await
+    }
+
     async fn upsert(&self, tokens: &MsTokens, session: &MinecraftSession, make_active: bool) -> Result<StoredAccount> {
         Ok(self.upsert_as(tokens, session, make_active).await?.0)
     }
@@ -268,16 +277,20 @@ impl AccountStore {
         // Microsoft rotiert Refresh-Tokens – das neue muss gespeichert werden.
         let renewed = async {
             let tokens = microsoft::refresh(&self.http, &refresh_token).await?;
+            // Sofort sichern: Scheitert die Xbox-Anmeldung danach, gilt das alte Refresh-Token schon nicht mehr.
+            if let Err(e) = self.set_refresh_token(&account.id, &tokens.refresh_token).await {
+                tracing::warn!("Neues Refresh-Token konnte nicht gespeichert werden: {e}");
+            }
             let session = microsoft::minecraft_login(&self.http, &tokens.access_token).await?;
             Ok::<_, Error>((tokens, session))
         }
         .await;
         let (tokens, session) = match renewed {
             Ok(pair) => pair,
-            // Kein Internet: mit dem alten Token weiterspielen (Einzelspieler
+            // Kein Internet oder Dienst gestört: mit dem alten Token weiterspielen (Einzelspieler
             // klappt, Server lehnen es dann selbst ab) statt den Start zu blockieren.
-            Err(Error::Http(e)) if e.is_connect() || e.is_timeout() => {
-                tracing::warn!("Sitzung konnte offline nicht erneuert werden – nutze vorhandenes Token");
+            Err(e) if !is_rejection(&e) => {
+                tracing::warn!("Sitzung konnte nicht erneuert werden – nutze vorhandenes Token: {e}");
                 return Ok(Some(Session {
                     player_name: account.name.clone(),
                     uuid: account.id.clone(),
@@ -301,6 +314,11 @@ impl AccountStore {
             demo: false,
         }))
     }
+}
+
+/// Ausdrücklich abgelehnt (Refresh-Token ungültig, Xbox/XSTS, kein Spielbesitz) – alles andere ist vorübergehend.
+fn is_rejection(e: &Error) -> bool {
+    matches!(e, Error::Auth(_) | Error::AuthNotApproved)
 }
 
 #[cfg(test)]
@@ -380,5 +398,25 @@ mod tests {
         tokio::time::timeout(std::time::Duration::from_secs(1), first.notified()).await.unwrap();
         store.end_login().await;
         assert!(store.begin_login().await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn broken_accounts_file_is_kept_aside() {
+        let (dir, store) = store().await;
+        std::fs::write(dir.path().join("accounts.json"), b"{ kaputt").unwrap();
+        assert!(store.list().await.unwrap().is_empty());
+        let kept = std::fs::read_dir(dir.path())
+            .unwrap()
+            .flatten()
+            .any(|e| e.file_name().to_string_lossy().starts_with("accounts.json.corrupt-"));
+        assert!(kept);
+        assert!(!dir.path().join("accounts.json").exists());
+    }
+
+    #[test]
+    fn only_explicit_rejections_block_the_offline_fallback() {
+        assert!(is_rejection(&Error::AuthNotApproved));
+        assert!(is_rejection(&Error::auth(crate::msg!("auth.sessionExpired", "abgelaufen"))));
+        assert!(!is_rejection(&Error::Internal("x".into())));
     }
 }

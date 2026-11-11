@@ -420,7 +420,7 @@ fn write_pack(
                 on_progress(ExportProgress { phase: ExportPhase::Writing, percent });
             }
         }
-        zip.finish().map_err(|e| Error::Internal(e.to_string()))?;
+        zip.finish().map_err(|e| Error::Internal(e.to_string()))?.flush().map_err(|e| Error::io(&tmp, e))?;
         let size = std::fs::metadata(&tmp).map(|m| m.len()).unwrap_or(0);
         std::fs::rename(&tmp, dest).map_err(|e| Error::io(dest, e))?;
         Ok(size)

@@ -295,7 +295,7 @@ fn write_zip(dir: &Path, folder: &str, dest: &Path, on_progress: &dyn Fn(u8), ca
             on_progress(percent);
         }
     }
-    zip.finish().map_err(|e| Error::Internal(e.to_string()))?;
+    zip.finish().map_err(|e| Error::Internal(e.to_string()))?.flush().map_err(|e| Error::io(dest, e))?;
     on_progress(100);
     Ok(())
 }

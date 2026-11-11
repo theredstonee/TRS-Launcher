@@ -907,10 +907,15 @@ impl TrsApi {
             if let Some(id) = self.live.last_id(account) {
                 req = req.header("Last-Event-ID", id);
             }
-            let response = match req.send().await {
-                Ok(r) => r,
-                Err(e) => {
+            // Nach Standby kann die Verbindung halb offen sein – dann käme nie eine Antwort.
+            let response = match tokio::time::timeout(cfg.ping_timeout, req.send()).await {
+                Ok(Ok(r)) => r,
+                Ok(Err(e)) => {
                     tracing::debug!("Echtzeit-Kanal nicht erreichbar: {e}");
+                    return Ended::Retry { at_least: Duration::ZERO, was_live: false };
+                }
+                Err(_) => {
+                    tracing::debug!("Echtzeit-Kanal: keine Antwort – neu verbinden");
                     return Ended::Retry { at_least: Duration::ZERO, was_live: false };
                 }
             };
@@ -918,11 +923,11 @@ impl TrsApi {
             match status {
                 200..=299 => break response,
                 401 if !relogged => {
-                    let _ = self.store.take_token(account).await;
+                    let _ = self.store.take_token_if(account, &token).await;
                     relogged = true;
                 }
                 401 => {
-                    let _ = self.store.take_token(account).await;
+                    let _ = self.store.take_token_if(account, &token).await;
                     return Ended::Retry { at_least: cfg.backoff(u32::MAX), was_live: false };
                 }
                 403 => return Ended::Retry { at_least: cfg.banned_wait, was_live: false },
@@ -955,7 +960,8 @@ impl TrsApi {
                         tracing::warn!("Echtzeit-Kanal: zu großes Ereignis – neu verbinden");
                         return Ended::Retry { at_least: Duration::ZERO, was_live };
                     };
-                    if let Some(id) = &parser.last_id {
+                    // Nur vollständige Ereignisse zählen – ein halb empfangenes käme sonst nie wieder.
+                    if let Some(id) = frames.last().and_then(|f| f.id.as_deref()) {
                         self.live.remember_id(account, id);
                     }
                     for frame in frames {

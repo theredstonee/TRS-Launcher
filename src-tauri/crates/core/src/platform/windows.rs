@@ -423,23 +423,25 @@ fn dns_query<T>(
             let definite = status == DNS_ERROR_RCODE_NAME_ERROR || status.0 == DNS_INFO_NO_RECORDS as u32;
             return Err(definite);
         }
-        if records.is_null() {
+        let Some(head) = std::ptr::NonNull::new(records) else {
             return Err(true);
-        }
+        };
         let mut found = Vec::new();
         let mut ttl = u32::MAX;
-        let mut current = records;
-        while !current.is_null() && found.len() < MAX_DNS_RECORDS {
-            let record = &*current;
+        let mut current = Some(head);
+        while let Some(ptr) = current
+            && found.len() < MAX_DNS_RECORDS
+        {
+            let record = ptr.as_ref();
             if record.wType == kind.0
                 && let Some(value) = read(record)
             {
                 ttl = ttl.min(record.dwTtl);
                 found.push(value);
             }
-            current = record.pNext;
+            current = std::ptr::NonNull::new(record.pNext);
         }
-        DnsFree(Some(records.cast()), DnsFreeRecordList);
+        DnsFree(Some(head.as_ptr().cast()), DnsFreeRecordList);
         if found.is_empty() { Err(true) } else { Ok((found, ttl)) }
     }
 }

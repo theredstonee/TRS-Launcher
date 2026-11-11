@@ -776,12 +776,12 @@ impl TrsApi {
                 Err(Failure::Api { status: 409, current: Some(current), .. }) => return Ok(Outcome::Stale(current)),
                 Err(Failure::Api { status: 401, .. }) if !fresh_login => {
                     // Token abgelaufen oder widerrufen: einmal neu anmelden.
-                    let _ = self.store.take_token(account).await;
+                    let _ = self.store.take_token_if(account, &token).await;
                     fresh_login = true;
                     let _ = self.login(sessions, account).await?;
                 }
                 Err(Failure::Api { status: 401, .. }) => {
-                    let _ = self.store.take_token(account).await;
+                    let _ = self.store.take_token_if(account, &token).await;
                     return Err(auth_failed(crate::msg!("trs.loginRejected", "Die TRS-Anmeldung wurde abgelehnt – bitte später erneut versuchen.")));
                 }
                 Err(e) => return Err(e.into_error()),
@@ -809,12 +809,12 @@ impl TrsApi {
             match self.send_response(req, Some(&token)).await {
                 Ok(response) => return Ok(response),
                 Err(Failure::Api { status: 401, .. }) if !fresh_login => {
-                    let _ = self.store.take_token(account).await;
+                    let _ = self.store.take_token_if(account, &token).await;
                     fresh_login = true;
                     let _ = self.login(sessions, account).await?;
                 }
                 Err(Failure::Api { status: 401, .. }) => {
-                    let _ = self.store.take_token(account).await;
+                    let _ = self.store.take_token_if(account, &token).await;
                     return Err(auth_failed(crate::msg!("trs.loginRejected", "Die TRS-Anmeldung wurde abgelehnt – bitte später erneut versuchen.")));
                 }
                 Err(e) => return Err(e.into_error()),
@@ -919,18 +919,27 @@ impl TrsApi {
     /// vergisst ihn lokal. Fehler sind egal – der Token läuft sonst von selbst ab.
     pub(crate) async fn logout(&self, account: &str) {
         let Some(token) = self.store.take_token(account).await else { return };
+        self.logout_token(account, &token).await;
+    }
+
+    /// Wie [`Self::logout`] mit einem schon aus dem Speicher genommenen Token.
+    pub(crate) async fn logout_token(&self, account: &str, token: &str) {
         // Push-Gerät dieser Sitzung zuerst abmelden (der Server löscht es sonst mit der Sitzung).
-        self.push_forget(account, &token).await;
+        self.push_forget(account, token).await;
         let req = Req::post_empty("/v1/auth/logout");
-        let _ = tokio::time::timeout(Duration::from_secs(5), self.send_once(&req, Some(&token))).await;
+        let _ = tokio::time::timeout(Duration::from_secs(5), self.send_once(&req, Some(token))).await;
     }
 
     /// Nimmt die Präsenz eines Accounts sofort zurück (ohne neu anzumelden).
     pub(crate) async fn send_offline(&self, account: &str) {
         let Some(token) = self.store.token(account).await else { return };
+        self.send_offline_token(&token).await;
+    }
+
+    pub(crate) async fn send_offline_token(&self, token: &str) {
         // `via: launcher` nimmt nur die Meldung des Launchers zurück – die des Mods im Spiel bleibt.
         let req = Req::post("/v1/presence", serde_json::json!({ "state": "offline", "via": "launcher" }));
-        let _ = tokio::time::timeout(Duration::from_secs(3), self.send_once(&req, Some(&token))).await;
+        let _ = tokio::time::timeout(Duration::from_secs(3), self.send_once(&req, Some(token))).await;
     }
 }
 

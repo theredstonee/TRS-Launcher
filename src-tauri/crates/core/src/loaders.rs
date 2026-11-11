@@ -46,7 +46,17 @@ pub async fn fetch_profile(
 
     let loader_version = match &loader.version {
         Some(v) => v.clone(),
-        None => latest_loader_version(http, base, game_version).await?,
+        None => match latest_loader_version(http, base, game_version).await {
+            Ok(v) => v,
+            // Offline: das neueste gecachte Profil nehmen.
+            Err(e) => match newest_cached_version(paths, loader.kind, game_version).await {
+                Some(v) => {
+                    tracing::info!("Loader-Liste nicht erreichbar ({e}), nehme gecachtes Profil {v}");
+                    return cached_profile(paths, game_version, loader, &v).await.ok_or(e);
+                }
+                None => return Err(e),
+            },
+        },
     };
 
     let url = format!("{base}/versions/loader/{game_version}/{loader_version}/profile/json");
@@ -93,20 +103,37 @@ pub async fn supports(http: &reqwest::Client, paths: &Paths, kind: LoaderKind, g
 }
 
 async fn has_cached_profile(paths: &Paths, kind: LoaderKind, game_version: &str) -> bool {
+    newest_cached_version(paths, kind, game_version).await.is_some()
+}
+
+async fn newest_cached_version(paths: &Paths, kind: LoaderKind, game_version: &str) -> Option<String> {
     let prefix = match kind {
         LoaderKind::Fabric => "fabric-loader-",
         LoaderKind::Quilt => "quilt-loader-",
-        _ => return false,
+        _ => return None,
     };
-    let suffix = format!("-{game_version}");
-    let Ok(mut entries) = tokio::fs::read_dir(paths.versions_dir()).await else { return false };
+    let mut names = Vec::new();
+    let mut entries = tokio::fs::read_dir(paths.versions_dir()).await.ok()?;
     while let Ok(Some(entry)) = entries.next_entry().await {
         let name = entry.file_name().to_string_lossy().into_owned();
-        if name.starts_with(prefix) && name.ends_with(&suffix) {
-            return true;
+        if paths.version_json(&name).is_file() {
+            names.push(name);
         }
     }
-    false
+    pick_newest(&names, prefix, game_version)
+}
+
+fn pick_newest(names: &[String], prefix: &str, game_version: &str) -> Option<String> {
+    let suffix = format!("-{game_version}");
+    let numeric = |v: &str| -> Vec<u64> {
+        v.split(|c: char| !c.is_ascii_digit()).filter(|s| !s.is_empty()).map(|s| s.parse().unwrap_or(0)).collect()
+    };
+    names
+        .iter()
+        .filter_map(|n| n.strip_prefix(prefix)?.strip_suffix(&suffix))
+        .filter(|v| is_listable(v))
+        .max_by(|a, b| numeric(a).cmp(&numeric(b)).then_with(|| a.cmp(b)))
+        .map(str::to_owned)
 }
 
 /// Eine wählbare Loader-Version.
@@ -182,4 +209,25 @@ async fn latest_loader_version(http: &reqwest::Client, base: &str, game_version:
                 version = game_version
             ))
         })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn newest_cached_profile_wins() {
+        let names: Vec<String> = [
+            "fabric-loader-0.16.9-1.21.1",
+            "fabric-loader-0.16.14-1.21.1",
+            "fabric-loader-0.17.0-1.21.4",
+            "quilt-loader-0.29.0-1.21.1",
+            "1.21.1",
+        ]
+        .map(String::from)
+        .into();
+        assert_eq!(pick_newest(&names, "fabric-loader-", "1.21.1").as_deref(), Some("0.16.14"));
+        assert_eq!(pick_newest(&names, "quilt-loader-", "1.21.1").as_deref(), Some("0.29.0"));
+        assert_eq!(pick_newest(&names, "fabric-loader-", "1.20.1"), None);
+    }
 }

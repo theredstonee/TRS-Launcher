@@ -24,6 +24,29 @@ pub async fn write_atomic(path: &Path, bytes: &[u8]) -> Result<()> {
     Ok(())
 }
 
+/// Kopiert über eine Temp-Datei: Scheitert das Umbenennen (Datei gesperrt), bleibt das Ziel unverändert.
+pub async fn copy_atomic(from: &Path, to: &Path) -> Result<()> {
+    let tmp = to.with_extension(format!("tmp-{}", uuid::Uuid::new_v4().simple()));
+    fs::copy(from, &tmp).await.map_err(|e| Error::io(&tmp, e))?;
+    if let Err(e) = fs::rename(&tmp, to).await {
+        let _ = fs::remove_file(&tmp).await;
+        return Err(Error::io(to, e));
+    }
+    Ok(())
+}
+
+/// Beschädigte Datei als `<name>.corrupt-<unix-zeit>` beiseitelegen, damit der nächste Schreibvorgang sie nicht still überschreibt.
+pub async fn set_aside_corrupt(path: &Path) {
+    let Some(name) = path.file_name() else { return };
+    let mut aside = name.to_os_string();
+    aside.push(format!(".corrupt-{}", chrono::Utc::now().timestamp()));
+    let aside = path.with_file_name(aside);
+    match fs::rename(path, &aside).await {
+        Ok(()) => tracing::warn!("Beschädigte Datei gesichert als {}", aside.display()),
+        Err(e) => tracing::warn!("Beschädigte Datei {} konnte nicht gesichert werden: {e}", path.display()),
+    }
+}
+
 /// Wie [`write_atomic`], blockierend (für Start und `spawn_blocking`).
 pub fn write_atomic_sync(path: &Path, bytes: &[u8]) -> Result<()> {
     if let Some(parent) = path.parent() {

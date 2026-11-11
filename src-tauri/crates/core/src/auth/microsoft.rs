@@ -73,9 +73,21 @@ pub struct MinecraftSession {
 const OFFLINE_RETRY: Duration = Duration::from_secs(120);
 const OFFLINE_PAUSE: Duration = Duration::from_secs(3);
 
-/// Verbindungs-/DNS-/Zeitfehler – lohnt einen neuen Versuch (anders als eine Ablehnung von Microsoft).
+/// Verbindungs-/DNS-/Zeitfehler, Serverfehler – lohnt einen neuen Versuch (anders als eine Ablehnung von Microsoft).
 pub(crate) fn is_transient(err: &Error) -> bool {
-    matches!(err, Error::Http(e) if e.is_connect() || e.is_timeout() || e.is_request())
+    matches!(err, Error::Http(e) if e.is_connect() || e.is_timeout() || e.is_request() || e.status().is_some_and(is_server_side))
+}
+
+fn is_server_side(status: reqwest::StatusCode) -> bool {
+    status.is_server_error() || status == reqwest::StatusCode::TOO_MANY_REQUESTS
+}
+
+/// 5xx/429 als Netzfehler weiterreichen, nicht als Ablehnung.
+fn server_side(response: &reqwest::Response) -> Result<()> {
+    match response.error_for_status_ref() {
+        Err(e) if e.status().is_some_and(is_server_side) => Err(e.into()),
+        _ => Ok(()),
+    }
 }
 
 /// `work` wiederholen, solange es an der Verbindung scheitert (höchstens `window` lang).
@@ -101,7 +113,9 @@ async fn token_request(http: &reqwest::Client, form: &[(&str, &str)]) -> Result<
     if response.status().is_success() {
         return Ok(Ok(response.json().await?));
     }
-    let err: OAuthError = response.json().await.map_err(|_| Error::auth(crate::msg!("auth.microsoftRejected", "Microsoft hat die Anmeldung abgelehnt.")))?;
+    server_side(&response)?;
+    // Keine OAuth-Antwort (HTML o. Ä.): Netzfehler, keine Ablehnung.
+    let err: OAuthError = response.json().await?;
     Ok(Err(err.error))
 }
 
@@ -385,7 +399,7 @@ fn xsts_error_message(x_err: u64) -> crate::error::Msg {
 }
 
 pub async fn minecraft_login(http: &reqwest::Client, ms_access_token: &str) -> Result<MinecraftSession> {
-    let xbl: XboxResponse = http
+    let xbl = http
         .post(XBL_URL)
         .json(&serde_json::json!({
             "Properties": {
@@ -397,7 +411,9 @@ pub async fn minecraft_login(http: &reqwest::Client, ms_access_token: &str) -> R
             "TokenType": "JWT",
         }))
         .send()
-        .await?
+        .await?;
+    server_side(&xbl)?;
+    let xbl: XboxResponse = xbl
         .error_for_status()
         .map_err(|e| {
             tracing::error!("XBL fehlgeschlagen: {}", e.without_url());
@@ -416,6 +432,7 @@ pub async fn minecraft_login(http: &reqwest::Client, ms_access_token: &str) -> R
         }))
         .send()
         .await?;
+    server_side(&response)?;
     if response.status() == reqwest::StatusCode::UNAUTHORIZED {
         let x_err = response.json::<XstsError>().await.map(|e| e.x_err).unwrap_or_default();
         tracing::warn!("XSTS abgelehnt: XErr {x_err}");
@@ -432,6 +449,7 @@ pub async fn minecraft_login(http: &reqwest::Client, ms_access_token: &str) -> R
         .json(&serde_json::json!({ "identityToken": format!("XBL3.0 x={uhs};{}", xsts.token) }))
         .send()
         .await?;
+    server_side(&response)?;
     // Neue App-Registrierungen müssen erst von Mojang freigegeben werden.
     if response.status() == reqwest::StatusCode::FORBIDDEN {
         return Err(Error::AuthNotApproved);
@@ -445,11 +463,9 @@ pub async fn minecraft_login(http: &reqwest::Client, ms_access_token: &str) -> R
         .json()
         .await?;
 
-    let entitlements: Entitlements = http
-        .get(MC_ENTITLEMENTS_URL)
-        .bearer_auth(&mc.access_token)
-        .send()
-        .await?
+    let entitlements = http.get(MC_ENTITLEMENTS_URL).bearer_auth(&mc.access_token).send().await?;
+    server_side(&entitlements)?;
+    let entitlements: Entitlements = entitlements
         .error_for_status()
         .map_err(|_| Error::auth(crate::msg!("auth.entitlementCheckFailed", "Der Spielbesitz konnte nicht geprüft werden.")))?
         .json()
@@ -459,6 +475,7 @@ pub async fn minecraft_login(http: &reqwest::Client, ms_access_token: &str) -> R
     }
 
     let response = http.get(MC_PROFILE_URL).bearer_auth(&mc.access_token).send().await?;
+    server_side(&response)?;
     if response.status() == reqwest::StatusCode::NOT_FOUND {
         return Err(Error::auth(crate::msg!("auth.noProfile", "Für dieses Konto gibt es noch kein Minecraft-Profil. Bitte einmal im offiziellen Launcher anmelden und einen Spielernamen festlegen.")));
     }

@@ -94,8 +94,11 @@ pub fn process_tree(root: u32) -> HashSet<u32> {
 
 #[cfg(unix)]
 fn owned_by(peer_port: u16, listen_port: u16, tree: &HashSet<u32>) -> Option<bool> {
-    let table = std::fs::read_to_string("/proc/net/tcp").ok()?;
-    let inode = socket_inode(&table, peer_port, listen_port)?;
+    // Java nutzt oft IPv6-Sockets: 127.0.0.1 steht dann als ::ffff:127.0.0.1 in tcp6.
+    let inode = ["/proc/net/tcp", "/proc/net/tcp6"]
+        .iter()
+        .filter_map(|table| std::fs::read_to_string(table).ok())
+        .find_map(|table| socket_inode(&table, peer_port, listen_port))?;
     let needle = format!("socket:[{inode}]");
     for pid in tree {
         let Ok(fds) = std::fs::read_dir(format!("/proc/{pid}/fd")) else { continue };
@@ -109,7 +112,7 @@ fn owned_by(peer_port: u16, listen_port: u16, tree: &HashSet<u32>) -> Option<boo
     Some(false)
 }
 
-/// Inode der Verbindung `127.0.0.1:peer_port → :listen_port` aus `/proc/net/tcp`.
+/// Inode der Verbindung `127.0.0.1:peer_port → :listen_port` aus `/proc/net/tcp` bzw. `tcp6`.
 #[cfg(any(unix, test))]
 fn socket_inode(table: &str, peer_port: u16, listen_port: u16) -> Option<u64> {
     let port_of = |addr: &str| addr.rsplit(':').next().and_then(|p| u16::from_str_radix(p, 16).ok());
@@ -142,6 +145,11 @@ mod tests {
         assert_eq!(socket_inode(table, 0xD431, 0x1F90), Some(424242));
         assert_eq!(socket_inode(table, 0x1F90, 0xD431), Some(424243));
         assert_eq!(socket_inode(table, 1, 2), None);
+
+        let tcp6 = "  sl  local_address                         remote_address                        st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
+   0: 0000000000000000FFFF00000100007F:D431 0000000000000000FFFF00000100007F:1F90 01 00000000:00000000 00:00000000 00000000  1000        0 515151 1 0000000000000000 20 4 30 10 -1
+";
+        assert_eq!(socket_inode(tcp6, 0xD431, 0x1F90), Some(515151));
     }
 
     #[test]

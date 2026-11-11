@@ -466,7 +466,16 @@ pub(crate) fn is_library_id(id: &str) -> bool {
 }
 
 pub(crate) async fn read_library(paths: &Paths) -> LibraryFile {
-    fsutil::read_json(&library_file(paths)).await.ok().flatten().unwrap_or_default()
+    let file = library_file(paths);
+    match fsutil::read_json(&file).await {
+        Ok(library) => library.unwrap_or_default(),
+        Err(e @ Error::Json { .. }) => {
+            tracing::warn!("Skin-Bibliothek beschädigt: {e}");
+            fsutil::set_aside_corrupt(&file).await;
+            LibraryFile::default()
+        }
+        Err(_) => LibraryFile::default(),
+    }
 }
 
 fn not_found() -> Error {

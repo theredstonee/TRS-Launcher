@@ -18,6 +18,8 @@ use crate::{Error, Result, fsutil, task};
 const MAX_ATTEMPTS: u32 = 8;
 /// Falsche Prüfsumme kann ein abgeschnittener Download sein – ein paar Mal neu laden, dann aufgeben.
 const MAX_CHECKSUM_ATTEMPTS: u32 = 3;
+/// Datei-Fehler (z. B. Ziel vom laufenden Spiel gesperrt): einmal wiederholen reicht.
+const MAX_IO_ATTEMPTS: u32 = 2;
 const PROGRESS_INTERVAL_MS: u64 = 80;
 
 #[derive(Debug, Clone)]
@@ -260,6 +262,9 @@ fn retry_delay(err: &Error, attempt: u32) -> Duration {
 /// Wie viele Versuche lohnen sich? Dauerhafte Fehler (Datei gibt es nicht, kein Zugriff,
 /// ungültige Adresse) sofort melden, vorübergehende (Netz, Drosselung, Serverfehler) geduldig wiederholen.
 fn attempts_for(err: &Error) -> u32 {
+    if matches!(err, Error::Io { .. }) {
+        return MAX_IO_ATTEMPTS;
+    }
     let Error::Download { reason, .. } = err else { return MAX_ATTEMPTS };
     if reason.starts_with("nicht unterstütztes URL-Schema") {
         return 1;
@@ -277,6 +282,15 @@ fn attempts_for(err: &Error) -> u32 {
         }
     }
     MAX_ATTEMPTS
+}
+
+/// Gesamt-Timeout einer Anfrage. Hänger fangen Chunk-Timeout und [`SlowGuard`]; das hier ist nur die
+/// Obergrenze und muss auch bei der lockeren Tempo-Grenze reichen.
+fn request_timeout(size: Option<u64>) -> Duration {
+    match size {
+        Some(size) => Duration::from_secs(30 * 60 + size / (CRAWL_MIN_BYTES / CRAWL_WINDOW.as_secs())),
+        None => Duration::from_secs(24 * 60 * 60),
+    }
 }
 
 /// Ist der geladene Inhalt der richtige? Ohne `strict_size` zählt bei vorhandener Prüfsumme
@@ -374,7 +388,7 @@ async fn fetch_attempt(
         .get(&url)
         // Das globale Timeout wäre für große Dateien zu knapp; der Stream
         // unten hat stattdessen ein Timeout pro Chunk.
-        .timeout(Duration::from_secs(60 * 30))
+        .timeout(request_timeout(task.size))
         .send()
         .await
         .map_err(|e| Error::download(&url, e.without_url().to_string()))?;
@@ -432,7 +446,16 @@ async fn fetch_attempt(
 
         let sha512 = hasher512.map(|h| hex(&sha2::Digest::finalize(h)));
         check_content(task, &url, written, &hex(&hasher.finalize()), sha512.as_deref())?;
-        tokio::fs::rename(&tmp, &task.path).await.map_err(|e| Error::io(&task.path, e))
+        match tokio::fs::rename(&tmp, &task.path).await {
+            Ok(()) => Ok(()),
+            // Ziel gesperrt (laufendes Spiel), liegt aber schon richtig da.
+            Err(_) if (task.sha1.is_some() || task.sha512.is_some()) && is_valid(task, true).await => {
+                tracing::debug!("Ziel gesperrt, aber schon aktuell: {}", task.path.display());
+                let _ = tokio::fs::remove_file(&tmp).await;
+                Ok(())
+            }
+            Err(e) => Err(Error::io(&task.path, e)),
+        }
     }
     .await;
 
@@ -604,6 +627,16 @@ mod tests {
         assert_eq!(attempts_for(&e("Prüfsumme stimmt nicht")), MAX_CHECKSUM_ATTEMPTS);
         assert_eq!(attempts_for(&e("unerwartete Dateigröße")), MAX_CHECKSUM_ATTEMPTS);
         assert_eq!(attempts_for(&e("redirect-host")), 1);
+        let io = Error::io("x", std::io::Error::from(std::io::ErrorKind::PermissionDenied));
+        assert_eq!(attempts_for(&io), MAX_IO_ATTEMPTS);
+    }
+
+    #[test]
+    fn request_timeout_grows_with_size() {
+        assert_eq!(request_timeout(Some(0)), Duration::from_secs(30 * 60));
+        // 2 GB bei 4 KB/s: weit über 30 Minuten
+        assert!(request_timeout(Some(2_000_000_000)) > Duration::from_secs(100 * 3600));
+        assert!(request_timeout(None) >= Duration::from_secs(12 * 3600));
     }
 
     #[test]

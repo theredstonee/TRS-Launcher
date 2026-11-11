@@ -905,7 +905,8 @@ impl Launcher {
         // Mods laden/prüfen als eigene Stufe – sonst sähe der erste Start wie hängengeblieben aus.
         let mods_progress = |p: presets::ApplyProgress| on_progress(mods_stage(&p));
         // Performance-Mods gibt es nur für Fabric; Forge-Boost (1.8.9) bekommt nur den TRS Client.
-        if effective.loader.kind == LoaderKind::Fabric && instance.loader.kind != LoaderKind::Fabric {
+        // Zweite Kopie: Die Jars gehören dem laufenden Spiel.
+        if !extra && effective.loader.kind == LoaderKind::Fabric && instance.loader.kind != LoaderKind::Fabric {
             if boost::needs_performance(&self.paths, &effective).await {
                 on_progress(StageProgress::begin(Stage::Mods));
             }
@@ -928,9 +929,11 @@ impl Launcher {
         // Der Mod liest daraus, ob er die TRS API benutzen darf (nur feste Werte, kein Token).
         let trs_enabled = self.trs.enabled().await;
         let (events, look) = (self.trs.active_events(), self.trs.look_events());
-        if let Err(e) =
-            client_mod::sync(&self.http, &self.paths, client_mod_dir.as_deref(), updates, instance, &settings.ui, trs_enabled, &events, &look)
-                .await
+        // Zweite Kopie: trsclient.jar ist vom laufenden Spiel belegt.
+        if !extra
+            && let Err(e) =
+                client_mod::sync(&self.http, &self.paths, client_mod_dir.as_deref(), updates, instance, &settings.ui, trs_enabled, &events, &look)
+                    .await
         {
             tracing::warn!("TRS Client konnte nicht eingerichtet werden: {e}");
         }
@@ -1145,7 +1148,9 @@ impl Launcher {
         if !extra {
             self.link.set_pid(&instance.id, pid);
             if !memory.safe {
-                self.watch_heap_failure(instance.id.clone(), log_dir.clone());
+                let options = LaunchOptions { extra: false, account_id: account_id.map(str::to_owned), skip_mod_check };
+                let join = join_request.map(OwnedJoin::from);
+                self.watch_heap_failure(instance.id.clone(), log_dir.clone(), join, options);
             }
             self.clips.game_started(
                 clips::RunningGame {
@@ -1206,7 +1211,7 @@ impl Launcher {
     /// Scheitert Java in den ersten Sekunden doch noch am Speicher (z. B. weil andere
     /// Programme ihn inzwischen belegt haben): Spiel beenden – das schließt auch das
     /// Java-Fehlerfenster – und einmal mit sicheren Werten neu starten.
-    fn watch_heap_failure(self: &Arc<Self>, instance_id: String, log_dir: PathBuf) {
+    fn watch_heap_failure(self: &Arc<Self>, instance_id: String, log_dir: PathBuf, join: Option<OwnedJoin>, options: LaunchOptions) {
         let launcher = Arc::clone(self);
         tokio::spawn(async move {
             let read = |name: &str| {
@@ -1243,7 +1248,8 @@ impl Launcher {
             let sink = launcher.games.sink();
             sink(GameEvent::notice(instance_id.clone(), &memory_safe_notice()));
             let no_progress = |_: StageProgress| {};
-            if let Err(e) = launcher.launch(&instance_id, None, &no_progress).await {
+            // Gleiches Konto, gleicher Server wie beim ersten Versuch.
+            if let Err(e) = launcher.launch_with(&instance_id, join.as_ref().map(OwnedJoin::as_join), options, &no_progress).await {
                 tracing::warn!("Neustart mit sicheren Speicherwerten fehlgeschlagen: {e}");
                 sink(GameEvent::notice_error(instance_id.clone(), &e));
             }
@@ -1260,8 +1266,31 @@ impl Launcher {
         if self.games.is_running(&instance.id) {
             return Err(Error::launch(crate::msg!("launcher.instanceRunningStopFirst", "Die Instanz läuft gerade – bitte erst beenden.")));
         }
+        self.begin_preparing(&instance.id)?;
+        let result = self.repair_prepared(&instance, on_progress).await;
+        self.end_preparing(&instance.id);
+        result
+    }
+
+    /// Wie beim Start in `preparing` eintragen, damit nicht gleichzeitig gestartet oder repariert wird.
+    fn begin_preparing(&self, id: &str) -> Result<()> {
+        if self.is_preparing(relocate::DATA_MOVE_GUARD) {
+            return Err(relocate::data_moving());
+        }
+        let mut preparing = self.preparing.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        if !preparing.insert(id.to_owned()) {
+            return Err(Error::launch(crate::msg!("launcher.instanceRunningStopFirst", "Die Instanz läuft gerade – bitte erst beenden.")));
+        }
+        Ok(())
+    }
+
+    fn end_preparing(&self, id: &str) {
+        self.preparing.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(id);
+    }
+
+    async fn repair_prepared(&self, instance: &Instance, on_progress: &ProgressFn) -> Result<()> {
         let (_, catalog) = self.client_mod_catalog().await;
-        let effective = boost::effective_instance(&self.http, &self.paths, catalog.builds(), &instance).await;
+        let effective = boost::effective_instance(&self.http, &self.paths, catalog.builds(), instance).await;
         let settings = self.settings().await;
         let features = meta::version::Features { custom_resolution: true, ..Default::default() };
         prepare::prepare(&self.http, &self.paths, &settings, &effective, &features, true, on_progress).await?;
@@ -1295,10 +1324,18 @@ impl Launcher {
     /// Wie [`Self::repair_instance`], lädt aber auch die Spielversion komplett
     /// neu und prüft die TRS-Optimierung beim nächsten Start neu.
     pub async fn reinstall_instance(&self, instance_id: &str, on_progress: &ProgressFn) -> Result<()> {
+        platform::desktop_only()?;
         let instance = self.instances.get(instance_id).await?;
         if self.anything_active() {
             return Err(Error::launch(crate::msg!("launcher.stopAllGamesFirst", "Bitte erst alle laufenden Spiele beenden.")));
         }
+        self.begin_preparing(&instance.id)?;
+        let result = self.reinstall_prepared(&instance, on_progress).await;
+        self.end_preparing(&instance.id);
+        result
+    }
+
+    async fn reinstall_prepared(&self, instance: &Instance, on_progress: &ProgressFn) -> Result<()> {
         let _ = tokio::fs::remove_file(self.paths.instance_dir(&instance.id).join("trs-boost.json")).await;
         if meta::is_safe_id(&instance.game_version) {
             let dir = self.paths.version_dir(&instance.game_version);
@@ -1308,7 +1345,7 @@ impl Launcher {
                 tracing::warn!("Versionsordner konnte nicht gelöscht werden: {e}");
             }
         }
-        self.repair_instance(&instance.id, on_progress).await
+        self.repair_prepared(instance, on_progress).await
     }
 
     pub async fn storage_stats(&self) -> Result<storage::StorageStats> {
@@ -1366,6 +1403,34 @@ pub enum Join<'a> {
     Server(&'a str),
     Address(&'a str),
     World(&'a trs_api::hosting::HostedWorld),
+}
+
+/// [`Join`] zum Aufheben über einen Spielstart hinaus (Neustart nach Speicherfehler).
+#[derive(Debug, Clone)]
+enum OwnedJoin {
+    Server(String),
+    Address(String),
+    World(trs_api::hosting::HostedWorld),
+}
+
+impl From<Join<'_>> for OwnedJoin {
+    fn from(join: Join<'_>) -> Self {
+        match join {
+            Join::Server(id) => Self::Server(id.to_owned()),
+            Join::Address(address) => Self::Address(address.to_owned()),
+            Join::World(world) => Self::World(world.clone()),
+        }
+    }
+}
+
+impl OwnedJoin {
+    fn as_join(&self) -> Join<'_> {
+        match self {
+            Self::Server(id) => Join::Server(id),
+            Self::Address(address) => Join::Address(address),
+            Self::World(world) => Join::World(world),
+        }
+    }
 }
 
 /// `join` in `connect-hints.json`: die Adresse wie gespeichert bzw. eingegeben –

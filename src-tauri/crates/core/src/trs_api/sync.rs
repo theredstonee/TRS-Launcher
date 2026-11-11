@@ -820,6 +820,8 @@ impl Launcher {
         let mut on_server: BTreeSet<String> = remote.skins.iter().map(|s| s.id.clone()).collect();
         let mut limit_reached = false;
         let (mut uploads, mut downloads, mut pending) = (0usize, 0usize, false);
+        // Volle Bibliothek: nichts laden, was danach doch nicht hineinpasst.
+        let mut free = skins::MAX_LIBRARY.saturating_sub(local.skins.len());
         let sessions = self.accounts();
 
         for action in plan_skins(&local, remote, &known, Utc::now()) {
@@ -831,6 +833,9 @@ impl Launcher {
                     }
                     SkinAction::DeleteLocal { id, at } => {
                         skins::sync_remove(&paths, id, *at).await?;
+                        if local.skins.iter().any(|s| &s.id == id) {
+                            free += 1;
+                        }
                         changes.skins = true;
                     }
                     SkinAction::UpdateLocal(r) => {
@@ -846,6 +851,9 @@ impl Launcher {
                         }
                     }
                     SkinAction::Download(r) => {
+                        if free == 0 {
+                            return Ok(());
+                        }
                         if downloads >= MAX_DOWNLOADS_PER_ROUND {
                             pending = true;
                             return Ok(());
@@ -853,6 +861,7 @@ impl Launcher {
                         downloads += 1;
                         let bytes = self.trs.call_raw(sessions, account, &Req::get(format!("{}.png", skin_path(&r.id)))).await?;
                         if skins::sync_insert(&paths, &r.id, &r.name, r.variant, &bytes, r.updated_at).await? {
+                            free -= 1;
                             changes.skins = true;
                         }
                     }

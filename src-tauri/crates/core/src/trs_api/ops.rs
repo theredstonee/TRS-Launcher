@@ -222,14 +222,22 @@ impl Launcher {
             self.trs.presence.kick();
             self.trs.sync.kick();
         } else {
+            // Erst ablehnen, dann abmelden: Eine gerade laufende Anmeldung speichert danach keinen Token mehr.
+            let mut tokens = Vec::new();
             if self.trs.enabled().await {
                 for account in self.trs.store.accounts().await {
-                    self.trs.send_offline(&account).await;
-                    self.trs.presence.set_in_game(&account, false);
-                    self.trs.logout(&account).await;
+                    let token = self.trs.store.token(&account).await;
+                    tokens.push((account, token));
                 }
             }
             self.trs.store.set_consent(Consent::Declined).await;
+            for (account, token) in tokens {
+                self.trs.presence.set_in_game(&account, false);
+                if let Some(token) = token {
+                    self.trs.send_offline_token(&token).await;
+                    self.trs.logout_token(&account, &token).await;
+                }
+            }
             self.trs.presence.set_online_for(None);
         }
         // Echtzeit-Kanal sofort auf- bzw. abbauen.
