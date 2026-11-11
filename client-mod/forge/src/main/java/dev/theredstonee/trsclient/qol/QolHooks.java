@@ -402,10 +402,21 @@ public final class QolHooks {
 	/** Chat-Filter (aus dem Chat-Mixin): true = Nachricht verwerfen. */
 	public static boolean hideChat(Component message) {
 		try {
-			return qol != null && message != null && qol.hideChat(message.getString());
+			if (qol == null || message == null) return false;
+			String plain = message.getString();
+			if (!qol.hideChat(plain)) return false;
+			// Gefiltert wird nur die Anzeige, Server-Codes (Fair Play, Freecam) gelten trotzdem.
+			serverCodes(plain);
+			return true;
 		} catch (RuntimeException | LinkageError e) {
 			return false;
 		}
+	}
+
+	static void serverCodes(String text) {
+		dev.theredstonee.trsclient.core.map.MapEngine maps = dev.theredstonee.trsclient.core.map.MapEngine.get();
+		if (maps != null) maps.onServerText(text);
+		dev.theredstonee.trsclient.core.cinematic.Cinematic.serverText(text);
 	}
 
 	/**

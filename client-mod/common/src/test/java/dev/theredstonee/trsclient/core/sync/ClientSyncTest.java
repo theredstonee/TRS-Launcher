@@ -183,6 +183,31 @@ class ClientSyncTest {
 	}
 
 	@Test
+	void staleInstanceAfterUpdateDoesNotOverwriteAccount() throws Exception {
+		FakeSyncServer server = new FakeSyncServer();
+		Device a = new Device("a", server, false);
+		a.sync();
+		Device b = new Device("b", server, false);
+		b.sync();
+		b.modules.zoomFactor.set(9.0);
+		b.save();
+		b.sync();
+
+		// A wurde vor einem Tag zuletzt gespeichert und sieht nach dem Start anders aus als beim letzten Abgleich
+		// (wie nach einem Update mit neuen Modulen). Das ist keine neue Änderung, das Konto gewinnt.
+		a.store.flush();
+		Path file = a.store.file();
+		JsonObject root = new com.google.gson.JsonParser().parse(new String(Files.readAllBytes(file), "UTF-8")).getAsJsonObject();
+		JsonObject freelook = root.getAsJsonObject("modules").getAsJsonObject("freelook");
+		freelook.addProperty("enabled", !freelook.get("enabled").getAsBoolean());
+		Files.write(file, root.toString().getBytes("UTF-8"));
+		Files.setLastModifiedTime(file, java.nio.file.attribute.FileTime.fromMillis(System.currentTimeMillis() - 86_400_000L));
+		Device restarted = new Device("a", server, false);
+		restarted.sync();
+		assertEquals(9.0, restarted.modules.zoomFactor.get(), 1e-9);
+	}
+
+	@Test
 	void staleWriteMergesAndRetries() throws Exception {
 		final FakeSyncServer server = new FakeSyncServer();
 		Device a = new Device("a", server, false);

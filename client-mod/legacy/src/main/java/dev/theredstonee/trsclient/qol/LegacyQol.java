@@ -426,6 +426,10 @@ public final class LegacyQol {
 				return;
 			}
 			if (qol.hideChat(raw)) {
+				// Gefiltert wird nur die Anzeige, Server-Codes (Fair Play, Freecam) gelten trotzdem.
+				dev.theredstonee.trsclient.core.map.MapEngine maps = dev.theredstonee.trsclient.core.map.MapEngine.get();
+				if (maps != null) maps.onServerText(raw);
+				dev.theredstonee.trsclient.core.cinematic.Cinematic.serverText(raw);
 				event.setCanceled(true);
 				return;
 			}

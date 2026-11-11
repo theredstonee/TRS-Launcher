@@ -173,7 +173,8 @@ public final class ChatHeadHooks {
 	}
 
 	private static void drawAt(Object key, int y, int color) {
-		if (key == null) return;
+		// Klicks im Chat laufen auch hier durch, nur ohne Zeichenfläche.
+		if (key == null || frame == null) return;
 		ChatHeadSender sender = lookup(key);
 		if (sender == null) {
 			sender = combine(null, ChatHeadDetect.find(textOf(key), names()));

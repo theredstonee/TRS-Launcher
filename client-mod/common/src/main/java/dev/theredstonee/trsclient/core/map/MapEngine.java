@@ -522,9 +522,10 @@ public final class MapEngine {
 		String wk = p.worldKey();
 		if (wk == null || wk.isEmpty()) return;
 		if (!wk.equals(worldKey)) {
-			leaveWorld();
+			// Beim Betreten kommen Chat-Codes (Fair Play, nominimap) vor dem ersten Tick; die gelten schon hier.
+			// Zurückgesetzt wird nur beim Wechsel aus einer anderen Welt (leaveWorld setzt die Regeln zurück).
+			if (worldKey != null && !worldKey.isEmpty()) leaveWorld();
 			worldKey = wk;
-			fairPlay.resetServer();
 			motdChecked = false;
 		}
 		String dim = p.dimension() == null ? "?" : p.dimension();

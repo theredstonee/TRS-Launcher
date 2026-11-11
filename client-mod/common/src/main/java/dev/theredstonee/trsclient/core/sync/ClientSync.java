@@ -193,6 +193,13 @@ public final class ClientSync {
 				localChangeAt = System.currentTimeMillis();
 			}
 		});
+		// Der geladene Stand gilt ab der letzten Änderung der Datei, nicht ab jetzt. Sonst hält ein Update
+		// (neue Module ändern den Hash) einen alten Stand für neu und er überschreibt das Konto.
+		long at = configStore.loadedAt();
+		if (at > 0) {
+			Map<String, JsonObject> sections = doc.sections(modules.registry.capture());
+			for (String s : ClientDoc.LWW) state.observeLocal(s, ClientDoc.hash(sections.get(s)), at);
+		}
 	}
 
 	// --- Zustand ---
@@ -349,7 +356,7 @@ public final class ClientSync {
 		final long savesAtSnapshot = saveCount;
 		final boolean force = forceRemote;
 		final SyncState.Look look = lookUpload;
-		final long changedAt = localChangeAt > 0 ? localChangeAt : System.currentTimeMillis();
+		final long changedAt = localChangeAt > 0 ? localChangeAt : unchangedSince();
 		localDirty = false;
 		inFlight = true;
 		if (kind == Kind.PULL) nextPullAt = now + PULL_INTERVAL_MS;
@@ -364,6 +371,13 @@ public final class ClientSync {
 		} catch (RejectedExecutionException e) {
 			inFlight = false;
 		}
+	}
+
+	/** Ohne Änderung in dieser Sitzung gilt der Stand der Datei vor dem Start. */
+	private long unchangedSince() {
+		ConfigStore s = store;
+		long at = s == null ? 0 : s.loadedAt();
+		return at > 0 ? at : System.currentTimeMillis();
 	}
 
 	// --- Abgleich (Sync-Thread) ---

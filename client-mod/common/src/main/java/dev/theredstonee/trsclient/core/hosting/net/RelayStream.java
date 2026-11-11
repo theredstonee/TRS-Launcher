@@ -157,7 +157,10 @@ public class RelayStream implements PeerStream {
 	public boolean write(byte[] b, int off, int len) {
 		if (!open) return false;
 		if (pending.addAndGet(len) > MAX_PENDING) {
-			close("send backlog");
+			// Gegenseite liest nicht mehr: nicht erst den Rückstau schreiben, sofort trennen.
+			if (closeReason == null) closeReason = "send backlog";
+			outbox.clear();
+			finish("send backlog");
 			return false;
 		}
 		outbox.offer(java.util.Arrays.copyOfRange(b, off, off + len));

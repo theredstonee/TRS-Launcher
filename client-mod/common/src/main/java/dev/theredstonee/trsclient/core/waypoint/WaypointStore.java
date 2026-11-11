@@ -88,6 +88,15 @@ public final class WaypointStore {
 		return metaFile;
 	}
 
+	private void backupBroken() {
+		if (!Files.isRegularFile(file)) return;
+		try {
+			Files.copy(file, file.resolveSibling(file.getFileName() + ".broken-" + System.currentTimeMillis()));
+		} catch (IOException ignored) {
+			// dann eben ohne Sicherung
+		}
+	}
+
 	/** Weltschlüssel für einen Server. */
 	public static String serverKey(String address) {
 		return "mp:" + (address == null ? "?" : address.toLowerCase(java.util.Locale.ROOT));
@@ -128,6 +137,8 @@ public final class WaypointStore {
 			}
 		} catch (JsonParseException | IllegalStateException | ClassCastException | IOException e) {
 			worlds.clear();
+			// Unlesbare Datei beiseitelegen, sonst überschreibt das nächste Speichern alle Wegpunkte.
+			backupBroken();
 			return;
 		}
 		if (repaired) {

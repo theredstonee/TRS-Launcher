@@ -106,7 +106,8 @@ public final class ServerPingTest {
 		}
 		total = todo.size();
 		if (todo.isEmpty()) return true;
-		if (pool == null) pool = Executors.newFixedThreadPool(PARALLEL, new ThreadFactory() {
+		if (pool == null) pool = new java.util.concurrent.ThreadPoolExecutor(PARALLEL, PARALLEL, 30, java.util.concurrent.TimeUnit.SECONDS,
+				new java.util.concurrent.LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
 			private final AtomicInteger n = new AtomicInteger();
 
 			@Override
@@ -116,6 +117,7 @@ public final class ServerPingTest {
 				return t;
 			}
 		});
+		((java.util.concurrent.ThreadPoolExecutor) pool).allowCoreThreadTimeOut(true);
 		pending.set(todo.size());
 		for (final Entry e : todo) {
 			pool.execute(new Runnable() {

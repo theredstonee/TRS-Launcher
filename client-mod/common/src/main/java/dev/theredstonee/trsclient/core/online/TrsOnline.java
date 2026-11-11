@@ -309,6 +309,7 @@ public final class TrsOnline {
 		if (!config.launcherEnabled()) {
 			// Keine Einwilligung im Launcher: kein einziger Aufruf.
 			status = Status.LAUNCHER_OFF;
+			dev.theredstonee.trsclient.core.serverrules.ServerRules.team(null, null);
 			events.stop();
 			tickSocial(now, null, null, null, false);
 			return;
@@ -323,6 +324,7 @@ public final class TrsOnline {
 		}
 		if (banned) {
 			status = Status.BANNED;
+			dev.theredstonee.trsclient.core.serverrules.ServerRules.team(null, null);
 			events.stop();
 			tickSocial(now, null, null, null, false);
 			return;
@@ -335,6 +337,7 @@ public final class TrsOnline {
 		}
 		if (session == null || session.uuid == null || !(session.usable() || devMock())) {
 			status = Status.NO_ACCOUNT;
+			dev.theredstonee.trsclient.core.serverrules.ServerRules.team(null, null);
 			events.stop();
 			tickSocial(now, null, null, null, false);
 			return;
@@ -345,6 +348,8 @@ public final class TrsOnline {
 			sessionUuid = session.uuid;
 			ownUuid = session.uuid;
 			token = null;
+			// Eine noch laufende Anmeldung gehört zum alten Konto, ihr Ergebnis wird verworfen.
+			loginInFlight = false;
 			shareServer = null;
 			// Team-Rechte gehören zum alten Konto.
 			dev.theredstonee.trsclient.core.serverrules.ServerRules.team(null, null);
@@ -572,6 +577,7 @@ public final class TrsOnline {
 			try {
 				TrsApi.Session s = api.login(session);
 				results.add(() -> {
+					if (!session.uuid.equals(sessionUuid)) return;
 					loginInFlight = false;
 					loginFailures = 0;
 					token = s.token;
@@ -585,9 +591,13 @@ public final class TrsOnline {
 				});
 			} catch (ApiException e) {
 				if (e.banned()) social.loginBanned(e.body());
-				results.add(() -> loginFailed(e.banned(), e.retryAfterMs(), "HTTP " + e.status() + " " + e.code()));
+				results.add(() -> {
+					if (session.uuid.equals(sessionUuid)) loginFailed(e.banned(), e.retryAfterMs(), "HTTP " + e.status() + " " + e.code());
+				});
 			} catch (IOException | RuntimeException e) {
-				results.add(() -> loginFailed(false, 0, e.getClass().getSimpleName()));
+				results.add(() -> {
+					if (session.uuid.equals(sessionUuid)) loginFailed(false, 0, e.getClass().getSimpleName());
+				});
 			}
 		})) loginInFlight = false;
 	}
@@ -766,7 +776,9 @@ public final class TrsOnline {
 		submit(apiWorker, () -> {
 			try {
 				TrsApi.Me me = api.me(t);
-				results.add(() -> applyMe(me));
+				results.add(() -> {
+					if (t.equals(token)) applyMe(me);
+				});
 			} catch (ApiException e) {
 				if (e.unauthorized()) results.add(() -> relogin(t));
 			} catch (IOException | RuntimeException ignored) {

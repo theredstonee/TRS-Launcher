@@ -38,6 +38,8 @@ public final class ConfigStore {
 	/** Zuletzt geladene Config des Spiels (für Dienste ohne direkten Zugriff, z. B. den Client-Sync). */
 	private static volatile ConfigStore active;
 	private volatile Listener listener;
+	/** Änderungszeit der Datei vor dem Laden (0 = gab es nicht). */
+	private volatile long loadedAt;
 
 	/** Wird bei jedem Speichern mit dem festgehaltenen Stand aufgerufen (im Thread des Aufrufers). */
 	public interface Listener {
@@ -68,6 +70,11 @@ public final class ConfigStore {
 		}
 	}
 
+	/** Wann die Datei vor diesem Start zuletzt gespeichert wurde (0 = unbekannt/neu). */
+	public long loadedAt() {
+		return loadedAt;
+	}
+
 	public Path file() {
 		return file;
 	}
@@ -81,6 +88,11 @@ public final class ConfigStore {
 	public Status load(ModuleRegistry registry) {
 		Status status;
 		TrsConfig config = null;
+		try {
+			loadedAt = Files.exists(file) ? Files.getLastModifiedTime(file).toMillis() : 0;
+		} catch (IOException e) {
+			loadedAt = 0;
+		}
 		if (!Files.exists(file)) {
 			status = Status.CREATED;
 		} else {
@@ -136,9 +148,21 @@ public final class ConfigStore {
 
 	/** Schreibt einen noch ausstehenden Stand sofort (z. B. beim Beenden) und wartet auf ein laufendes Schreiben. */
 	public void flush() {
+		if (readOnly()) return;
 		flushPending();
-		synchronized (writeLock) {
-			// Ein gerade im Hintergrund laufendes Schreiben ist damit abgeschlossen.
+		// Der Hintergrund-Thread kann den Stand schon genommen haben (oder wartet auf einen Wiederholversuch).
+		long target = sequence.get();
+		long until = System.currentTimeMillis() + 2000;
+		while (System.currentTimeMillis() < until) {
+			synchronized (writeLock) {
+				if (writtenSeq >= target) return;
+			}
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				return;
+			}
 		}
 	}
 
@@ -161,7 +185,7 @@ public final class ConfigStore {
 			});
 			// Beim Beenden (System.exit) noch Ausstehendes schreiben.
 			try {
-				Runtime.getRuntime().addShutdownHook(new Thread(this::flushPending, "TRS-Config-Exit"));
+				Runtime.getRuntime().addShutdownHook(new Thread(this::flush, "TRS-Config-Exit"));
 			} catch (IllegalStateException | SecurityException ignored) {
 				// JVM fährt schon herunter – dann schreibt der Aufrufer selbst.
 			}
