@@ -47,6 +47,18 @@ How to write an entry:
 - After switching accounts, friends, chats and capes of the previous account no longer show up for a moment.
 - Lists in the team area, mod pages and searches always show the result of the latest request, and loading indicators no longer get stuck.
 - Small fixes for leftover timers and listeners after leaving a page, the 3D skin preview, quickly opening and closing Big Picture, and the PC remote reporting "offline" after a failed attempt.
+- **Playing offline works again with the newest Fabric or Quilt loader and with the TRS optimization for Vanilla.** The launcher now uses the loader it already downloaded instead of giving up.
+- **Big downloads on a slow connection no longer stop after 30 minutes.** A file that is in use by a running game is no longer downloaded again and again.
+- **You stay signed in when Microsoft or Xbox services have a hiccup.** The game starts with your saved sign-in, just like without internet, and a renewed sign-in is no longer lost halfway.
+- **Starting an instance a second time no longer touches the mods of the copy that is already running.**
+- After a memory error, the automatic restart keeps your chosen account and server. Repair and reinstall wait until a start of the same instance has finished.
+- Exporting a modpack or world now reports an error if the file could not be written completely (for example on a full disk). A broken Forge or NeoForge installer is downloaded again on the next try.
+- If the accounts list or skin library file is damaged, a backup copy is kept instead of being overwritten.
+- The live connection (chat, friends, notifications) reconnects after standby and no longer misses a message after a reconnect. TRS sign-ins are no longer dropped by mistake when several requests run at once.
+- Declining the TRS services no longer leaves a fresh sign-in behind. Skin sync no longer downloads skins again and again when your skin library is full.
+- A link from the website no longer opens a second time after the launcher window reloads.
+- Linux: the AppImage restarts by itself after an update, and the game finds the launcher connection more reliably.
+- If the launcher cannot start, it now shows an error message with the location of the log files instead of closing silently.
 
 ### Deutsch
 - **TRS-Client-Einstellungen springen nach einem Neustart nicht mehr zurück.** Wer mehrere Instanzen mit demselben TRS-Konto spielt: Eine länger nicht gestartete Instanz konnte nach einem Update ihre alten Einstellungen hochladen, und die anderen übernahmen sie (Freelook wieder aus, HUD-Profile weg). Nur geladene Einstellungen zählen jetzt ab ihrem letzten Speichern, neuere gewinnen. Einstellungen, die kurz vor dem Beenden geändert wurden, landen jetzt immer auf der Platte.
@@ -65,6 +77,18 @@ How to write an entry:
 - Nach einem Kontowechsel tauchen Freunde, Chats und Umhänge des vorigen Kontos nicht mehr kurz auf.
 - Listen im Team-Bereich, Mod-Seiten und Suchen zeigen immer das Ergebnis der letzten Anfrage, Ladeanzeigen bleiben nicht mehr hängen.
 - Kleine Korrekturen an liegengebliebenen Timern und Listenern nach dem Verlassen einer Seite, an der 3D-Skin-Vorschau, beim schnellen Öffnen und Schließen von Big Picture und an der PC-Fernbedienung, die „offline“ nach einem Fehlversuch nachmeldet.
+- **Offline spielen klappt wieder mit dem neuesten Fabric- oder Quilt-Loader und mit der TRS-Optimierung für Vanilla.** Der Launcher nimmt jetzt den schon geladenen Loader, statt aufzugeben.
+- **Große Downloads brechen bei langsamer Leitung nicht mehr nach 30 Minuten ab.** Eine Datei, die ein laufendes Spiel gerade benutzt, wird nicht mehr immer wieder neu geladen.
+- **Du bleibst angemeldet, wenn die Dienste von Microsoft oder Xbox kurz streiken.** Das Spiel startet mit der gespeicherten Anmeldung wie ohne Internet, und eine erneuerte Anmeldung geht nicht mehr auf halbem Weg verloren.
+- **Eine Instanz ein zweites Mal zu starten, verändert die Mods der schon laufenden Kopie nicht mehr.**
+- Nach einem Speicherfehler behält der automatische Neustart das gewählte Konto und den Server. Reparieren und Neu installieren warten, bis ein Start derselben Instanz fertig ist.
+- Beim Export eines Modpacks oder einer Welt kommt jetzt eine Fehlermeldung, wenn die Datei nicht vollständig geschrieben werden konnte (z. B. bei voller Festplatte). Ein kaputter Forge- oder NeoForge-Installer wird beim nächsten Versuch neu geladen.
+- Ist die Datei mit den Konten oder der Skin-Bibliothek beschädigt, bleibt eine Sicherungskopie erhalten, statt überschrieben zu werden.
+- Die Live-Verbindung (Chat, Freunde, Benachrichtigungen) verbindet sich nach dem Standby neu und verpasst nach einem Neuverbinden keine Nachricht mehr. TRS-Anmeldungen gehen nicht mehr versehentlich verloren, wenn mehrere Anfragen gleichzeitig laufen.
+- Wer die TRS-Dienste ablehnt, behält keine frische Anmeldung mehr zurück. Der Skin-Abgleich lädt bei voller Skin-Bibliothek nicht mehr immer wieder Skins herunter.
+- Ein Link von der Website öffnet sich nach dem Neuladen des Launcher-Fensters nicht noch einmal.
+- Linux: Das AppImage startet nach einem Update von selbst neu, und das Spiel findet die Verbindung zum Launcher zuverlässiger.
+- Kann der Launcher nicht starten, zeigt er jetzt eine Fehlermeldung mit dem Ort der Log-Dateien, statt sich still zu schließen.
 
 ## 0.34.1 – 2026-11-10 – Connected Mods Fix | Downloads repariert
 <!-- banner: accent=#41cd62 motif=/news/0.34.0/banner.png -->
