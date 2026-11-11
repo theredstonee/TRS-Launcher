@@ -101,6 +101,8 @@ export const useUpdaterStore = defineStore('updater', () => {
     // Den Ladebildschirm erst zeigen, dann installieren (der Launcher beendet sich dabei).
     await new Promise((resolve) => setTimeout(resolve, 400))
     try {
+      // Lokale Server sauber stoppen und Aufnahmen sichern, bevor der Updater den Prozess beendet.
+      await backend.prepareUpdateRestart().catch(() => {})
       await update.install()
       // AppImage: install() tauscht nur die Datei, neu starten müssen wir selbst
       if (platform === 'linux') await relaunch()

@@ -292,12 +292,25 @@ pub struct RunningGame {
     pub game_dir: PathBuf,
 }
 
+fn remove_stale_buffers(buffers: &Path) {
+    let Ok(entries) = std::fs::read_dir(buffers) else { return };
+    for entry in entries.flatten() {
+        let fresh = entry
+            .metadata()
+            .and_then(|m| m.modified())
+            .is_ok_and(|t| t.elapsed().is_ok_and(|age| age < Duration::from_secs(10 * 60)));
+        if !fresh {
+            let _ = std::fs::remove_dir_all(entry.path());
+        }
+    }
+}
+
 impl ClipService {
     /// `link`: der gemeinsame TRS-Link (Clips melden darüber Status und empfangen die Tasten).
     pub fn new(paths: &Paths, link: Arc<TrsLink>) -> Self {
-        // Reste alter Sitzungen (Absturz, hartes Beenden) entfernen.
-        let buffers = paths.root().join("cache").join("clip-buffer");
-        let _ = std::fs::remove_dir_all(&buffers);
+        // Reste alter Sitzungen (Absturz, hartes Beenden) entfernen. Frische Ordner bleiben: die gehören
+        // evtl. noch einem Launcher, der gerade beim Beenden eine Aufnahme sichert.
+        remove_stale_buffers(&paths.root().join("cache").join("clip-buffer"));
         let shared = Arc::new(Shared {
             paths: paths.clone(),
             ffmpeg: ffmpeg::Ffmpeg::new(paths),
@@ -467,8 +480,8 @@ impl ClipService {
         for id in &ids {
             self.game_exited(id);
         }
-        // Kurz Zeit geben, laufende Aufnahmen abzuschließen.
-        for _ in 0..50 {
+        // Laufende Exporte fertig werden lassen, auch lange Aufnahmen (höchstens 2 min).
+        for _ in 0..1200 {
             if lock(&self.shared.states).is_empty() {
                 break;
             }

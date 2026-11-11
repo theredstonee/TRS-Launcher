@@ -387,8 +387,10 @@ async fn export_inner(job: &Export) -> Result<(PathBuf, u32, u32)> {
     let exe = job.shared.ffmpeg.ready().await.ok_or_else(|| Error::Internal("ffmpeg fehlt".into()))?;
     let list = job.dir.join(format!("export-{}.txt", uuid::Uuid::new_v4().simple()));
     tokio::fs::write(&list, encoder::concat_list(&segs)).await.map_err(|e| Error::io(&list, e))?;
-    let target = library::new_clip_path(&job.root, &job.instance_id, &job.instance_name, chrono::Local::now())?;
-    let parent = target.parent().expect("Instanzordner").to_owned();
+    let parent = library::new_clip_path(&job.root, &job.instance_id, &job.instance_name, chrono::Local::now())?
+        .parent()
+        .expect("Instanzordner")
+        .to_owned();
     crate::fsutil::ensure_dir(&parent).await?;
     let tmp = parent.join(format!(".export-{}.part", uuid::Uuid::new_v4().simple()));
     let timeout = Duration::from_secs(60 + segs.len() as u64);
@@ -398,7 +400,15 @@ async fn export_inner(job: &Export) -> Result<(PathBuf, u32, u32)> {
         let _ = tokio::fs::remove_file(&tmp).await;
         return Err(e);
     }
-    tokio::fs::rename(&tmp, &target).await.map_err(|e| Error::io(&target, e))?;
+    // Name erst jetzt festlegen und unter Sperre umbenennen: zwei Clips in derselben Sekunde
+    // bekämen sonst denselben Namen und der zweite ersetzte den ersten.
+    let target = {
+        static NAMING: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+        let _naming = NAMING.lock().await;
+        let target = library::new_clip_path(&job.root, &job.instance_id, &job.instance_name, chrono::Local::now())?;
+        tokio::fs::rename(&tmp, &target).await.map_err(|e| Error::io(&target, e))?;
+        target
+    };
     let seconds = library::mp4_duration_ms(&target).map_or(segs.len() as u32 * SEGMENT_SECONDS, |ms| ((ms + 500) / 1000) as u32);
     let (root, limit, keep) = (job.root.clone(), job.limit, target.clone());
     let removed = tokio::task::spawn_blocking(move || library::enforce_limit(&root, limit, &keep).len())

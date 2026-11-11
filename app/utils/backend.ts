@@ -365,6 +365,7 @@ export const backend = {
   /** TRS Client: mitgelieferte Version und ein schon geladenes Update aus dem Kanal. */
   clientModStatus: () => call<ClientModStatus>('client_mod_status'),
   openDataDir: () => call<void>('open_data_dir'),
+  prepareUpdateRestart: () => call<void>('prepare_update_restart'),
 
   // --- Umziehen (Datenordner, Speicherort einer Instanz) ---
   /** Nativer Ordner-Dialog; `null` = abgebrochen. Geprüft wird erst im Plan. */

@@ -76,3 +76,10 @@ pub async fn firewall_allow_all(launcher: State<'_, LauncherState>) -> CommandRe
     let programs = trs_core::firewall::runtime_programs(launcher.paths());
     Ok(trs_core::firewall::allow(launcher.paths(), programs).await?)
 }
+
+/// Vor dem Neustart für ein Update: Server sauber stoppen, Aufnahmen sichern, Präsenz abmelden.
+#[tauri::command]
+pub async fn prepare_update_restart(launcher: State<'_, LauncherState>) -> CommandResult<()> {
+    crate::shutdown_services(std::sync::Arc::clone(&launcher)).await;
+    Ok(())
+}

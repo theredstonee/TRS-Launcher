@@ -59,6 +59,8 @@ How to write an entry:
 - A link from the website no longer opens a second time after the launcher window reloads.
 - Linux: the AppImage restarts by itself after an update, and the game finds the launcher connection more reliably.
 - If the launcher cannot start, it now shows an error message with the location of the log files instead of closing silently.
+- Restarting for an update now stops your local servers properly first, so the world is saved.
+- Quitting the launcher while a long recording is still being saved no longer loses it, and two clips saved in the same second no longer overwrite each other.
 
 ### Deutsch
 - **TRS-Client-Einstellungen springen nach einem Neustart nicht mehr zurück.** Wer mehrere Instanzen mit demselben TRS-Konto spielt: Eine länger nicht gestartete Instanz konnte nach einem Update ihre alten Einstellungen hochladen, und die anderen übernahmen sie (Freelook wieder aus, HUD-Profile weg). Nur geladene Einstellungen zählen jetzt ab ihrem letzten Speichern, neuere gewinnen. Einstellungen, die kurz vor dem Beenden geändert wurden, landen jetzt immer auf der Platte.
@@ -89,6 +91,8 @@ How to write an entry:
 - Ein Link von der Website öffnet sich nach dem Neuladen des Launcher-Fensters nicht noch einmal.
 - Linux: Das AppImage startet nach einem Update von selbst neu, und das Spiel findet die Verbindung zum Launcher zuverlässiger.
 - Kann der Launcher nicht starten, zeigt er jetzt eine Fehlermeldung mit dem Ort der Log-Dateien, statt sich still zu schließen.
+- Beim Neustart für ein Update werden lokale Server jetzt vorher sauber gestoppt, die Welt wird gespeichert.
+- Wer den Launcher beendet, während eine lange Aufnahme noch gespeichert wird, verliert sie nicht mehr, und zwei Clips aus derselben Sekunde überschreiben sich nicht mehr.
 
 ## 0.34.1 – 2026-11-10 – Connected Mods Fix | Downloads repariert
 <!-- banner: accent=#41cd62 motif=/news/0.34.0/banner.png -->
