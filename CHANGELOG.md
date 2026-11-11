@@ -28,7 +28,11 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.35.0 – 2026-11-11 – Bulletproof | Kugelsicher
+<!-- banner: accent=#5aa9e6 motif=/news/0.35.0/banner.png -->
+<!-- shots:
+/news/0.35.0/launcher-log.png | Share the launcher log from the privacy settings | Das Launcher-Log in den Datenschutz-Einstellungen teilen
+-->
 
 ### English
 - **TRS Client settings no longer jump back after a restart.** If you play several instances with the same TRS account, an instance that had not been started for a while could upload its old settings after an update and the others then took them over (Freelook off again, HUD profiles gone). Settings that were only loaded now count from when they were last saved, so newer ones win. Settings changed right before quitting are now always written to disk.
