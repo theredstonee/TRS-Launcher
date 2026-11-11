@@ -10,21 +10,29 @@ export const useInstancesStore = defineStore('instances', () => {
   /** Instanzen an eigenem Ort, deren Ordner gerade fehlt (Laufwerk getrennt). */
   const unavailable = ref<UnavailableInstance[]>([])
 
+  // Überholt ein neueres load() ein älteres, gewinnt das neuere.
+  let loadSeq = 0
   async function load() {
+    const seq = ++loadSeq
     loading.value = true
     error.value = null
     try {
-      items.value = await backend.listInstances()
+      const list = await backend.listInstances()
+      if (seq !== loadSeq) return
+      items.value = list
       loaded.value = true
     } catch (e) {
+      if (seq !== loadSeq) return
       error.value = errorMessage(e)
     } finally {
-      loading.value = false
+      if (seq === loadSeq) loading.value = false
     }
     backend
       .unavailableInstances()
-      .then((list) => (unavailable.value = list))
-      .catch(() => (unavailable.value = []))
+      .catch(() => [])
+      .then((list) => {
+        if (seq === loadSeq) unavailable.value = list
+      })
   }
 
   /** Nicht erreichbare Instanz aus der Liste nehmen (ihr Ordner bleibt unberührt). */

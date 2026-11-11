@@ -30,13 +30,22 @@ function reportSummary(reasons: Record<string, number>): string {
     .join(', ')
 }
 
+let loadSeq = 0
 async function load() {
+  const seq = ++loadSeq
+  const which = kind.value
   const query = { status: list.value, q: q.value.trim() || undefined }
   try {
-    if (kind.value === 'capes') capes.value = await backend.team.capes(query)
-    else cosmetics.value = (await backend.team.cosmetics(query)).cosmetics
+    if (which === 'capes') {
+      const next = await backend.team.capes(query)
+      if (seq === loadSeq) capes.value = next
+    } else {
+      const next = (await backend.team.cosmetics(query)).cosmetics
+      if (seq === loadSeq) cosmetics.value = next
+    }
   } catch (e) {
-    if (kind.value === 'capes') capes.value = []
+    if (seq !== loadSeq) return
+    if (which === 'capes') capes.value = []
     else cosmetics.value = []
     toasts.error(e)
   }
@@ -58,6 +67,9 @@ watch([kind, list], () => {
   void load()
 })
 onMounted(load)
+onBeforeUnmount(() => {
+  if (timer) clearTimeout(timer)
+})
 
 function ask(action: 'approve' | 'reject', ids = [...selected.value]) {
   if (ids.length) bulk.value = { action, ids }

@@ -180,6 +180,8 @@ onMounted(() => document.addEventListener('fullscreenchange', onFullscreenChange
 onBeforeUnmount(() => {
   document.removeEventListener('fullscreenchange', onFullscreenChange)
   if (document.fullscreenElement) void document.exitFullscreen().catch(() => {})
+  // Der Listener ist schon weg – das Fenster selbst zurückholen.
+  if (fullscreen.value && isTauri()) void getCurrentWindow().setFullscreen(false).catch(() => {})
 })
 
 function step(delta: number) {

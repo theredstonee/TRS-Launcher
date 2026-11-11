@@ -73,6 +73,7 @@ function onEvent(event: ClipEvent) {
 let unlisten: (() => void) | null = null
 let tick: ReturnType<typeof setInterval> | null = null
 let follow: ReturnType<typeof setInterval> | null = null
+let disposed = false
 
 onMounted(async () => {
   // Fenster transparent halten (nur dieses Fenster; jedes Tauri-Fenster hat ein eigenes Dokument).
@@ -86,13 +87,16 @@ onMounted(async () => {
   }, 250)
 
   if (!isTauri()) return
-  unlisten = await listen<ClipEvent>('clip-event', (e) => onEvent(e.payload))
+  const off = await listen<ClipEvent>('clip-event', (e) => onEvent(e.payload))
+  if (disposed) return off()
+  unlisten = off
   // Laufende Spiele beim Fensteraufbau übernehmen.
   try {
     for (const s of await backend.clipStates()) apply(s)
   } catch {
     // Kein Rekorder aktiv – egal.
   }
+  if (disposed) return
   // Position dem Spielfenster nachführen (verschoben, Größe geändert, minimiert). Der Launcher hat
   // beim Zeigen schon einmal platziert; hier bleibt es dran, solange etwas zu sehen ist.
   follow = setInterval(() => {
@@ -102,6 +106,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  disposed = true
   unlisten?.()
   if (tick) clearInterval(tick)
   if (follow) clearInterval(follow)

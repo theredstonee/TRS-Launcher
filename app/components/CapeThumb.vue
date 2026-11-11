@@ -55,13 +55,17 @@ function stop() {
   timer = null
 }
 
+let generation = 0
 function load() {
   stop()
+  const gen = ++generation
   shown = -1
   image = null
   if (!props.texture) return
   const img = new Image()
   img.onload = () => {
+    // Inzwischen neue Textur oder schon ausgehängt.
+    if (gen !== generation) return
     image = img
     draw()
     if (props.frames > 1 && props.frameTimeMs) {
@@ -74,7 +78,10 @@ function load() {
 }
 
 onMounted(load)
-onBeforeUnmount(stop)
+onBeforeUnmount(() => {
+  generation++
+  stop()
+})
 watch(() => [props.texture, props.scale, props.frames, props.frameTimeMs, props.width], load)
 </script>
 

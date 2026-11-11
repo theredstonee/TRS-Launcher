@@ -16,7 +16,11 @@ const loadingMore = ref(false)
 const qError = ref<string | null>(null)
 const items = computed(() => players.value ?? [])
 
+let loadSeq = 0
+let left = false
 async function load(more = false) {
+  if (left) return
+  const seq = ++loadSeq
   const name = q.value.trim()
   if (name && !/^[A-Za-z0-9_]{1,16}$/.test(name)) {
     // UUID eingegeben → direkt zur Akte.
@@ -32,13 +36,15 @@ async function load(more = false) {
   if (more) loadingMore.value = true
   try {
     const page = await backend.team.players({ q: name || undefined, status: status.value, sort: sort.value, cursor: more ? (cursor.value ?? undefined) : undefined, limit: 50 })
+    if (seq !== loadSeq) return
     players.value = more ? [...(players.value ?? []), ...page.players] : page.players
     cursor.value = page.nextCursor
   } catch (e) {
+    if (seq !== loadSeq) return
     if (!more) players.value = []
     toasts.error(e)
   } finally {
-    loadingMore.value = false
+    if (seq === loadSeq) loadingMore.value = false
   }
 }
 
@@ -49,6 +55,10 @@ watch(q, () => {
 })
 watch([status, sort], () => void load())
 onMounted(() => void load())
+onBeforeUnmount(() => {
+  left = true
+  if (timer) clearTimeout(timer)
+})
 
 const open = (p: PlayerListItem) => void router.push(`/admin/players/${p.uuid}`)
 const { active } = useListKeys(items, { open })

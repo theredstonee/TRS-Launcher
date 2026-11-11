@@ -21,6 +21,20 @@ export function applyAppearance(ui: Pick<UiSettings, 'theme' | 'accent' | 'desig
   root.classList.toggle('no-blur', ui?.advancedRendering === false)
 }
 
+const isPlain = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v)
+
+/** Nur was sich zwischen `before` und `after` geändert hat, auf `target` übertragen. */
+export function mergeChanges<T>(target: T, before: unknown, after: unknown): T {
+  if (JSON.stringify(before) === JSON.stringify(after)) return target
+  if (!isPlain(target) || !isPlain(before) || !isPlain(after)) return after as T
+  const out: Record<string, unknown> = { ...target }
+  for (const k of new Set([...Object.keys(before), ...Object.keys(after)])) {
+    if (!(k in after)) delete out[k]
+    else if (JSON.stringify(before[k]) !== JSON.stringify(after[k])) out[k] = mergeChanges(out[k], before[k], after[k])
+  }
+  return out as T
+}
+
 export const useSettingsStore = defineStore('settings', () => {
   const current = ref<Settings | null>(null)
   /** Welcher Bereich des Einstellungs-Modals offen ist; `null` = zu. */
@@ -40,6 +54,19 @@ export const useSettingsStore = defineStore('settings', () => {
     return current.value
   }
 
+  // Speichern nacheinander, jede Änderung auf dem dann aktuellen Stand – sonst überschreibt
+  // ein älterer Schnappschuss, was inzwischen woanders gespeichert wurde.
+  let queue: Promise<unknown> = Promise.resolve()
+  function update(change: (s: Settings) => Settings | null) {
+    const run = queue.then(async () => {
+      const base = current.value ?? (await load())
+      const next = change(base)
+      return next ? save(next) : base
+    })
+    queue = run.catch(() => {})
+    return run
+  }
+
   // „System“ folgt dem Windows-Farbmodus auch während der Laufzeit.
   if (typeof matchMedia === 'function') {
     matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => applyAppearance(current.value?.ui))
@@ -48,9 +75,7 @@ export const useSettingsStore = defineStore('settings', () => {
   /** Sprache sofort umschalten und speichern (lädt die Einstellungen bei Bedarf). */
   async function setLanguage(language: Locale) {
     await setLocale(language)
-    const base = current.value ?? (await load())
-    if (base.ui.language === language) return
-    await save({ ...base, ui: { ...base.ui, language } })
+    await update((base) => (base.ui.language === language ? null : { ...base, ui: { ...base.ui, language } }))
   }
 
   function open(section = 'appearance') {
@@ -75,5 +100,5 @@ export const useSettingsStore = defineStore('settings', () => {
     externalRevision.value++
   }
 
-  return { current, dialog, load, save, setLanguage, open, syncRevision, reloadFromSync, externalRevision, reloadExternal }
+  return { current, dialog, load, save, update, setLanguage, open, syncRevision, reloadFromSync, externalRevision, reloadExternal }
 })

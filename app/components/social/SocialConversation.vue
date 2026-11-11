@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-import { isTauri } from '@tauri-apps/api/core'
 import type { DropEvent } from '~/types'
 import {
   MAX_IMAGES,
@@ -179,24 +177,20 @@ function addImages(list: DraftImage[]) {
 
 // Bilder ins Fenster ziehen → gleich an die Nachricht hängen (der Kern prüft sie).
 const dragging = ref(false)
-let unlistenDrop: UnlistenFn | null = null
-onMounted(async () => {
-  if (!isTauri()) return
-  unlistenDrop = await listen<DropEvent>('file-drop', async ({ payload }) => {
-    if (!conversation.value?.canWrite || chat.chatMuted) return
-    if (payload.type === 'enter') dragging.value = true
-    else if (payload.type === 'leave') dragging.value = false
-    else {
-      dragging.value = false
-      try {
-        const staged = await backend.social.stageDropped(payload.token)
-        addImages(staged.images.map((i) => ({ source: { kind: 'local' as const, id: i.id }, preview: localImageUrl(i.id) })))
-        if (staged.rejected) toasts.info(t('social.picker.rejected', staged.rejected))
-      } catch (e) {
-        toasts.error(e)
-      }
+useTauriListen<DropEvent>('file-drop', async ({ payload }) => {
+  if (!conversation.value?.canWrite || chat.chatMuted) return
+  if (payload.type === 'enter') dragging.value = true
+  else if (payload.type === 'leave') dragging.value = false
+  else {
+    dragging.value = false
+    try {
+      const staged = await backend.social.stageDropped(payload.token)
+      addImages(staged.images.map((i) => ({ source: { kind: 'local' as const, id: i.id }, preview: localImageUrl(i.id) })))
+      if (staged.rejected) toasts.info(t('social.picker.rejected', staged.rejected))
+    } catch (e) {
+      toasts.error(e)
     }
-  })
+  }
 })
 
 // --- Bilder groß ansehen ----------------------------------------------------------------------
@@ -363,7 +357,6 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('mousedown', closeHeader)
   older?.disconnect()
-  unlistenDrop?.()
   if (clock) clearInterval(clock)
 })
 </script>

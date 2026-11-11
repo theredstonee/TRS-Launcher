@@ -110,6 +110,7 @@ const canvas = ref<HTMLCanvasElement | null>(null)
 const box = ref<HTMLElement | null>(null)
 const failed = ref(false)
 let viewer: Viewer | null = null
+let disposed = false
 let observer: ResizeObserver | null = null
 let capeTimer: ReturnType<typeof setInterval> | null = null
 let capeToken = 0
@@ -137,6 +138,8 @@ async function build() {
   if (!canvas.value || viewer) return
   try {
     const [{ SkinViewer }, three] = await Promise.all([import('skinview3d'), import('three')])
+    // Während des Ladens ausgehängt (oder schon gebaut): keinen verwaisten WebGL-Kontext anlegen.
+    if (disposed || viewer || !canvas.value) return
     threeFilters = three
     viewer = new SkinViewer({
       canvas: canvas.value,
@@ -155,6 +158,7 @@ async function build() {
     applyLight()
     await applySkin()
     await setAnimation(props.animation)
+    if (disposed) return
     applyCosmetics()
     applyFocus(true)
   } catch (e) {
@@ -614,6 +618,7 @@ function resize() {
 
 onMounted(async () => {
   await build()
+  if (disposed) return
   if (box.value) {
     observer = new ResizeObserver(resize)
     observer.observe(box.value)
@@ -621,6 +626,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  disposed = true
   stopCapeAnimation()
   capeToken++
   hatSlot.token++

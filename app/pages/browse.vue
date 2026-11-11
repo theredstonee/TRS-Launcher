@@ -224,12 +224,18 @@ let requestNo = 0
 async function search() {
   const current = ++requestNo
   const parsed = modrinthSearchSchema.safeParse(params.value)
+  // Eine ältere Suche läuft evtl. noch – deren Ladeanzeige endet hier mit.
   if (!parsed.success) {
     error.value = firstIssue(parsed.error)
+    loading.value = false
     return
   }
   if (isCf.value && curseforge.available === null) await curseforge.load()
-  if (isCf.value && !curseforge.available) return
+  if (current !== requestNo) return
+  if (isCf.value && !curseforge.available) {
+    loading.value = false
+    return
+  }
   loading.value = true
   error.value = null
   try {

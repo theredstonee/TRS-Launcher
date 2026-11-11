@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { isTauri } from '@tauri-apps/api/core'
-import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import type {
   DropEvent,
   LauncherSkinScan,
@@ -119,30 +117,26 @@ function pickFiles() {
 
 // --- Drag & Drop (Pfade bleiben im Kern, hier nur die Marke) ---------------------------
 const dragging = ref(false)
-let unlisten: UnlistenFn | null = null
-
-onMounted(async () => {
+onMounted(() => {
   document.addEventListener('pointerdown', onDocPointer)
   document.addEventListener('keydown', onKey)
-  if (!isTauri()) return
-  unlisten = await listen<DropEvent>('file-drop', ({ payload }) => {
-    if (payload.type === 'enter') dragging.value = !busy.value
-    else if (payload.type === 'leave') dragging.value = false
-    else {
-      dragging.value = false
-      void run('drop', async () => {
-        const batch = await backend.stageDroppedSkins(payload.token)
-        busy.value = null
-        await handleBatch(batch)
-      })
-    }
-  })
+})
+useTauriListen<DropEvent>('file-drop', ({ payload }) => {
+  if (payload.type === 'enter') dragging.value = !busy.value
+  else if (payload.type === 'leave') dragging.value = false
+  else {
+    dragging.value = false
+    void run('drop', async () => {
+      const batch = await backend.stageDroppedSkins(payload.token)
+      busy.value = null
+      await handleBatch(batch)
+    })
+  }
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('pointerdown', onDocPointer)
   document.removeEventListener('keydown', onKey)
-  unlisten?.()
   // Offene Vormerkungen nicht liegen lassen.
   if (confirmSkin.value) discard([confirmSkin.value.token])
   if (scan.value) discard(scan.value.candidates.map((c) => c.token))

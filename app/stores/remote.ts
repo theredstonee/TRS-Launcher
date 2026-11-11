@@ -301,8 +301,9 @@ export const useRemoteStore = defineStore('remote', () => {
         if (next && next !== before) schedule()
       },
     )
+    // Auch ein fehlgeschlagenes „offline“ wird hier nachgeholt.
     heartbeat = setInterval(() => {
-      if (enabled.value) void publish()
+      if (enabled.value || publishedOnline) void publish()
     }, REMOTE_HEARTBEAT_MS)
   }
 

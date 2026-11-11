@@ -115,9 +115,11 @@ async function save() {
     return
   }
   const json = JSON.stringify(form.value)
+  const before = JSON.parse(lastSaved) as Settings
   status.value = { ok: true, state: 'saving' }
   try {
-    await store.save(parsed.data as Settings)
+    // Nur eigene Änderungen – was inzwischen woanders gespeichert wurde, bleibt.
+    await store.update((cur) => mergeChanges(cur, before, parsed.data as Settings))
     lastSaved = json
     status.value = { ok: true, state: 'saved' }
   } catch (e) {
@@ -261,8 +263,7 @@ function installJava(slot: (typeof javaSlots)[number]) {
         // Offener Dialog: über das Formular (speichert selbst).
         javaModels[slot.key].value = path
       } else {
-        const current = store.current ?? (await store.load())
-        await store.save({ ...current, java: { ...current.java, [slot.key]: path } })
+        await store.update((cur) => ({ ...cur, java: { ...cur.java, [slot.key]: path } }))
       }
       return path
     },

@@ -89,6 +89,7 @@ async function selectSource(id: string) {
   truncated.value = false
   newSinceScroll.value = 0
   if (id === 'live') {
+    loadingSource.value = false
     seen = 0
     follow.value = true
     syncLive()

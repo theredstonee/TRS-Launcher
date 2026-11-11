@@ -55,38 +55,51 @@ const updateAvailable = computed(
   () => !!installed.value?.source && !!newestFitting.value && newestFitting.value.id !== installed.value.source.versionId,
 )
 
+// Schnell weitergeklickt: nur die Antwort zur aktuellen Seite zählt.
+let loadSeq = 0
 async function load() {
+  const seq = ++loadSeq
   loadingDetails.value = true
   loadingVersions.value = true
   error.value = null
   details.value = null
   versions.value = []
   try {
-    details.value = await platformApi.project(platform.value, projectId.value)
+    const next = await platformApi.project(platform.value, projectId.value)
+    if (seq !== loadSeq) return
+    details.value = next
   } catch (e) {
-    error.value = errorMessage(e)
+    if (seq === loadSeq) error.value = errorMessage(e)
   } finally {
-    loadingDetails.value = false
+    if (seq === loadSeq) loadingDetails.value = false
   }
-  if (!details.value) return
-  try {
-    versions.value = await platformApi.projectVersions(platform.value, details.value.projectId)
-  } catch (e) {
-    toasts.error(e)
-  } finally {
+  if (seq !== loadSeq) return
+  if (!details.value) {
     loadingVersions.value = false
+    return
+  }
+  try {
+    const list = await platformApi.projectVersions(platform.value, details.value.projectId)
+    if (seq === loadSeq) versions.value = list
+  } catch (e) {
+    if (seq === loadSeq) toasts.error(e)
+  } finally {
+    if (seq === loadSeq) loadingVersions.value = false
   }
 }
 
+let installedSeq = 0
 async function loadInstalled() {
+  const seq = ++installedSeq
   installed.value = null
   if (!target.value || !contentKind.value || !details.value) return
   const id = details.value.projectId
   try {
     const items = await backend.listContent(target.value.id, contentKind.value)
+    if (seq !== installedSeq) return
     installed.value = items.find((i) => i.source?.projectId === id && sourcePlatform(i.source) === platform.value) ?? null
   } catch {
-    installed.value = null
+    if (seq === installedSeq) installed.value = null
   }
 }
 

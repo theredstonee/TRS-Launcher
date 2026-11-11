@@ -28,6 +28,24 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- Settings no longer undo each other: a Java download that finishes in the background, hints you close and quick toggles in Big Picture all keep their change, even while the settings window is open.
+- Retrying a task right after it finished no longer loses its progress and speed display, and a failed resume shows the task as paused again.
+- Closing a clip in fullscreen also brings the launcher window back out of fullscreen.
+- After switching accounts, friends, chats and capes of the previous account no longer show up for a moment.
+- Lists in the team area, mod pages and searches always show the result of the latest request, and loading indicators no longer get stuck.
+- Small fixes for leftover timers and listeners after leaving a page, the 3D skin preview, quickly opening and closing Big Picture, and the PC remote reporting "offline" after a failed attempt.
+
+### Deutsch
+- Einstellungen heben sich nicht mehr gegenseitig auf: Ein Java-Download, der im Hintergrund fertig wird, weggeklickte Hinweise und schnelle Schalter in Big Picture behalten ihre Änderung, auch während das Einstellungsfenster offen ist.
+- Wird eine Aufgabe gleich nach dem Ende neu gestartet, gehen Fortschritt und Geschwindigkeit nicht mehr verloren, und ein fehlgeschlagenes Fortsetzen zeigt die Aufgabe wieder als pausiert.
+- Wer einen Clip im Vollbild schließt, bekommt auch das Launcher-Fenster wieder aus dem Vollbild.
+- Nach einem Kontowechsel tauchen Freunde, Chats und Umhänge des vorigen Kontos nicht mehr kurz auf.
+- Listen im Team-Bereich, Mod-Seiten und Suchen zeigen immer das Ergebnis der letzten Anfrage, Ladeanzeigen bleiben nicht mehr hängen.
+- Kleine Korrekturen an liegengebliebenen Timern und Listenern nach dem Verlassen einer Seite, an der 3D-Skin-Vorschau, beim schnellen Öffnen und Schließen von Big Picture und an der PC-Fernbedienung, die „offline“ nach einem Fehlversuch nachmeldet.
+
 ## 0.34.1 – 2026-11-10 – Connected Mods Fix | Downloads repariert
 <!-- banner: accent=#41cd62 motif=/news/0.34.0/banner.png -->
 <!-- shots:

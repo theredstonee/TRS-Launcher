@@ -33,10 +33,8 @@ function shift(delta: number) {
 
 const ui = computed(() => settings.current?.ui)
 async function setUi(key: 'bigPictureOnStart' | 'bigPictureAuto', value: boolean) {
-  const base = settings.current ?? (await settings.load().catch(() => null))
-  if (!base) return
   try {
-    await settings.save({ ...base, ui: { ...base.ui, [key]: value } })
+    await settings.update((base) => ({ ...base, ui: { ...base.ui, [key]: value } }))
   } catch (e) {
     toasts.error(e)
   }

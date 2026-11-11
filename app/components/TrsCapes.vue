@@ -49,22 +49,29 @@ const shown = computed(() => filterCapes(capes.value ?? [], query.value, filter.
 const infoCape = ref<TrsCape | null>(null)
 const pendingCount = computed(() => capes.value?.filter((c) => c.kind === 'upload' && c.status === 'pending').length ?? 0)
 
+let loadSeq = 0
 async function load() {
+  const seq = ++loadSeq
   if (!trs.enabled || !accounts.active) {
     capes.value = null
+    loading.value = false
     return
   }
   loading.value = true
   try {
-    capes.value = await backend.trs.capes()
+    const list = await backend.trs.capes()
+    // Inzwischen anderes Konto oder neuer Ladevorgang – diese Antwort ist veraltet.
+    if (seq !== loadSeq) return
+    capes.value = list
     offline.value = false
     // Die Vorschau zeigt die aktuellen Daten (z. B. nach einer Freigabe).
-    if (props.previewId) emit('preview', capes.value.find((c) => c.id === props.previewId) ?? null)
+    if (props.previewId) emit('preview', list.find((c) => c.id === props.previewId) ?? null)
   } catch (e) {
+    if (seq !== loadSeq) return
     if (e instanceof BackendError && e.kind === 'trs_offline') offline.value = true
     else if (!(e instanceof BackendError && trsIsQuiet(e.kind))) toasts.error(e)
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 

@@ -30,7 +30,9 @@ const reasonLabel = (r: string) => ((reportReasonIds as readonly string[]).inclu
 const items = computed(() => reports.value ?? [])
 const selectable = computed(() => items.value.filter((r) => r.status !== 'resolved'))
 
+let loadSeq = 0
 async function load(more = false) {
+  const seq = ++loadSeq
   if (more) loadingMore.value = true
   try {
     const page = await backend.social.adminReports({
@@ -43,14 +45,17 @@ async function load(more = false) {
       cursor: more ? (cursor.value ?? undefined) : undefined,
       limit: 30,
     })
+    // Filter gewechselt oder neu geladen: ältere Antworten verwerfen.
+    if (seq !== loadSeq) return
     reports.value = more ? [...(reports.value ?? []), ...page.reports] : page.reports
     cursor.value = page.nextCursor
     counts.value = page.counts
   } catch (e) {
+    if (seq !== loadSeq) return
     if (!more) reports.value = []
     toasts.error(e)
   } finally {
-    loadingMore.value = false
+    if (seq === loadSeq) loadingMore.value = false
   }
 }
 

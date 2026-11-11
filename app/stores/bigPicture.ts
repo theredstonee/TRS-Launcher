@@ -28,6 +28,14 @@ export const useBigPictureStore = defineStore('bigPicture', () => {
 
   const win = () => (isTauri() ? getCurrentWindow() : null)
 
+  // Fenster-Umschaltungen nacheinander – sonst überholt ein schnelles Rein/Raus das andere.
+  let windowOps: Promise<void> = Promise.resolve()
+  function queued(op: () => Promise<void>) {
+    const run = windowOps.then(op)
+    windowOps = run.catch(() => {})
+    return run
+  }
+
   function open() {
     const current = router.currentRoute.value
     if (current.path === BIG_PICTURE_PATH) return
@@ -66,8 +74,11 @@ export const useBigPictureStore = defineStore('bigPicture', () => {
     layer.value = null
     const w = win()
     if (!w) return
-    if (wasFullscreen === null) wasFullscreen = await w.isFullscreen().catch(() => false)
-    await w.setFullscreen(true).catch(() => {})
+    await queued(async () => {
+      if (!active.value) return
+      if (wasFullscreen === null) wasFullscreen = await w.isFullscreen().catch(() => false)
+      if (active.value) await w.setFullscreen(true).catch(() => {})
+    })
   }
 
   /** Seite verlassen: Fenster wie vorher (maximiert/normal stellt Windows selbst wieder her). */
@@ -76,9 +87,13 @@ export const useBigPictureStore = defineStore('bigPicture', () => {
     layer.value = null
     opener = null
     const w = win()
-    const restore = wasFullscreen === false
-    wasFullscreen = null
-    if (w && restore) await w.setFullscreen(false).catch(() => {})
+    await queued(async () => {
+      // Schnell wieder geöffnet: Vollbild und gemerkten Zustand behalten.
+      if (active.value) return
+      const restore = wasFullscreen === false
+      wasFullscreen = null
+      if (w && restore) await w.setFullscreen(false).catch(() => {})
+    })
   }
 
   /** Spiel beendet: minimiertes Fenster zurückholen, wieder Vollbild und Fokus. */

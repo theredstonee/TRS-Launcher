@@ -40,11 +40,10 @@ const pupil = ref({ x: 0, y: 0 })
 const hintOpen = computed(() => !!settings.current && settings.current.ui.halloweenFlickerHintSeen !== true)
 const savingHint = ref(false)
 async function closeHint(off: boolean) {
-  const base = settings.current
-  if (!base || savingHint.value) return
+  if (!settings.current || savingHint.value) return
   savingHint.value = true
   try {
-    await settings.save({ ...base, ui: { ...base.ui, halloweenFlickerHintSeen: true, halloweenFlicker: off ? false : base.ui.halloweenFlicker } })
+    await settings.update((base) => ({ ...base, ui: { ...base.ui, halloweenFlickerHintSeen: true, halloweenFlicker: off ? false : base.ui.halloweenFlicker } }))
   } catch (e) {
     useToasts().error(e)
   } finally {

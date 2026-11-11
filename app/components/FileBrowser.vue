@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import type { DirListing, DropEvent, FileEntry, ImportReport, Instance } from '~/types'
 import type { FileKind, FileSort, FileSortKey } from '~/utils/files'
 import { MAX_EDITOR_BYTES, editorSupports } from '~/utils/config/editor'
@@ -316,30 +315,26 @@ async function upload() {
 }
 
 // --- Drag & Drop (Pfade bleiben im Kern, hier nur Marke + Namen) -----------------
-let unlisten: UnlistenFn | null = null
-onMounted(async () => {
+onMounted(() => {
   load('')
   document.addEventListener('mousedown', closeMenu)
-  unlisten = await listen<DropEvent>('file-drop', async ({ payload }) => {
-    if (payload.type === 'enter') dragging.value = true
-    else if (payload.type === 'leave') dragging.value = false
-    else {
-      dragging.value = false
-      busy.value = true
-      try {
-        reportImport(await backend.importDroppedInstanceFiles(props.instance.id, cwd.value, payload.token))
-      } catch (e) {
-        toasts.error(e)
-      } finally {
-        busy.value = false
-      }
+})
+useTauriListen<DropEvent>('file-drop', async ({ payload }) => {
+  if (payload.type === 'enter') dragging.value = true
+  else if (payload.type === 'leave') dragging.value = false
+  else {
+    dragging.value = false
+    busy.value = true
+    try {
+      reportImport(await backend.importDroppedInstanceFiles(props.instance.id, cwd.value, payload.token))
+    } catch (e) {
+      toasts.error(e)
+    } finally {
+      busy.value = false
     }
-  })
+  }
 })
-onBeforeUnmount(() => {
-  unlisten?.()
-  document.removeEventListener('mousedown', closeMenu)
-})
+onBeforeUnmount(() => document.removeEventListener('mousedown', closeMenu))
 
 // --- Darstellung ---------------------------------------------------------------
 const KIND_ICON: Record<FileKind, string> = {

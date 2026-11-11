@@ -88,7 +88,11 @@ export const useChatStore = defineStore('chat', () => {
   const typingSent: Record<string, number> = {}
   const readTimers: Record<string, ReturnType<typeof setTimeout>> = {}
 
+  /** Zählt Account-Wechsel – Antworten zum vorigen Konto werden verworfen. */
+  let epoch = 0
+
   function reset() {
+    epoch++
     conversations.value = {}
     threads.value = {}
     typing.value = {}
@@ -139,8 +143,10 @@ export const useChatStore = defineStore('chat', () => {
     if (!me.value) return
     if (more && !nextCursor.value) return
     listState.value = more ? listState.value : 'loading'
+    const at = epoch
     try {
       const page = await backend.social.conversations(more ? nextCursor.value : null)
+      if (at !== epoch) return
       if (!more) {
         // Nicht mehr gelieferte (verlassen, gelöscht) fallen weg – außer die offene.
         const keep = new Set(page.conversations.map((c) => c.id))
@@ -151,6 +157,7 @@ export const useChatStore = defineStore('chat', () => {
       listState.value = 'ready'
       listError.value = null
     } catch (e) {
+      if (at !== epoch) return
       listError.value = errorMessage(e)
       listState.value = Object.keys(conversations.value).length ? 'ready' : 'error'
       throw e
@@ -160,7 +167,9 @@ export const useChatStore = defineStore('chat', () => {
   /** Rückfall ohne Echtzeit-Kanal: Ungelesen-Zähler abgleichen. */
   async function refreshUnread() {
     if (!me.value) return
+    const at = epoch
     const summary = await backend.social.unread()
+    if (at !== epoch) return
     const byId = new Map(summary.conversations.map((c) => [c.id, c]))
     let unknown = false
     for (const c of Object.values(conversations.value)) {
@@ -172,10 +181,12 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   async function fetchConversation(id: string) {
+    const at = epoch
     try {
-      upsertConversation(await backend.social.conversation(id))
+      const c = await backend.social.conversation(id)
+      if (at === epoch) upsertConversation(c)
     } catch (e) {
-      if (e instanceof BackendError && e.apiCode === 'conversation_not_found') removeConversation(id)
+      if (at === epoch && e instanceof BackendError && e.apiCode === 'conversation_not_found') removeConversation(id)
     }
   }
 
@@ -234,8 +245,10 @@ export const useChatStore = defineStore('chat', () => {
     const seq = Math.max(c.lastSeq, lastSeq(threads.value[id]?.items ?? []))
     if (c.readSeq >= seq && c.unread === 0 && !c.markedUnread) return
     conversations.value[id] = { ...c, unread: 0, markedUnread: false, readSeq: Math.max(c.readSeq, seq) }
+    const at = epoch
     try {
-      upsertConversation(await backend.social.read(id, seq))
+      const updated = await backend.social.read(id, seq)
+      if (at === epoch) upsertConversation(updated)
     } catch {
       // Nicht schlimm – beim nächsten Mal wieder.
     }
@@ -550,15 +563,19 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   async function loadModeration() {
+    const at = epoch
     try {
-      moderation.value = await backend.social.myModeration()
+      const next = await backend.social.myModeration()
+      if (at === epoch) moderation.value = next
     } catch {
       // Ältere Server kennen den Endpunkt nicht – dann eben ohne Hinweis.
     }
   }
 
   async function loadReports() {
-    reports.value = await backend.social.myReports()
+    const at = epoch
+    const next = await backend.social.myReports()
+    if (at === epoch) reports.value = next
   }
 
   // --- Gruppen ----------------------------------------------------------------------

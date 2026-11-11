@@ -26,11 +26,11 @@ watch(open, (on) => {
 })
 
 async function choose(keep: boolean) {
-  const base = settings.current
-  if (!base || saving.value) return
+  if (!settings.current || saving.value) return
   saving.value = true
+  const flicker = !calm.value
   try {
-    await settings.save({ ...base, ui: { ...base.ui, startIntro: keep, startIntroFlicker: !calm.value, startIntroHintSeen: true } })
+    await settings.update((base) => ({ ...base, ui: { ...base.ui, startIntro: keep, startIntroFlicker: flicker, startIntroHintSeen: true } }))
   } catch (e) {
     useToasts().error(e)
   } finally {

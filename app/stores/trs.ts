@@ -67,6 +67,8 @@ export const useTrsStore = defineStore('trs', () => {
   /** Zählt Abgleiche, die die Skin-Sammlung geändert haben – die Skins-Seite lädt dann neu. */
   const skinsRevision = ref(0)
   let syncListening = false
+  /** Zählt Account-Wechsel – Antworten zum vorigen Konto werden verworfen. */
+  let epoch = 0
 
   const enabled = computed(() => status.value?.consent === 'accepted')
   const undecided = computed(() => status.value !== null && status.value.consent === null)
@@ -147,11 +149,14 @@ export const useTrsStore = defineStore('trs', () => {
   }
 
   async function refreshStatus() {
+    const at = epoch
+    let next: TrsStatus | null = null
     try {
-      status.value = await backend.trs.status()
+      next = await backend.trs.status()
     } catch {
-      status.value = null
+      // bleibt null
     }
+    if (at === epoch) status.value = next
     return status.value
   }
 
@@ -160,10 +165,14 @@ export const useTrsStore = defineStore('trs', () => {
       me.value = null
       return null
     }
+    const at = epoch
     try {
-      me.value = await backend.trs.me()
+      const next = await backend.trs.me()
+      if (at !== epoch) return me.value
+      me.value = next
       problem.value = null
     } catch (e) {
+      if (at !== epoch) return me.value
       note(e)
       if (!(e instanceof BackendError && e.kind === 'trs_offline')) me.value = null
     }
@@ -176,8 +185,10 @@ export const useTrsStore = defineStore('trs', () => {
       friends.value = null
       return null
     }
+    const at = epoch
     try {
       const view = await backend.trs.friends()
+      if (at !== epoch) return friends.value
       const incoming = new Set(view.requests.incoming.map((r) => r.uuid))
       // Neue Anfragen melden – über den Echtzeit-Kanal kommt dafür ein eigenes Ereignis.
       if (knownIncoming && !useLiveStore().connected) {
@@ -192,7 +203,7 @@ export const useTrsStore = defineStore('trs', () => {
       const loaded = capeOffers.value?.incoming.length ?? null
       if (view.capeOffers !== loaded && (view.capeOffers > 0 || loaded !== null)) void loadCapeOffers()
     } catch (e) {
-      note(e)
+      if (at === epoch) note(e)
     }
     return friends.value
   }
@@ -205,8 +216,10 @@ export const useTrsStore = defineStore('trs', () => {
       capeOffers.value = null
       return null
     }
+    const at = epoch
     try {
       const offers = await backend.trs.capeOffers()
+      if (at !== epoch) return capeOffers.value
       const keys = new Set(offers.incoming.map((o) => offerKey(o.cape.id, o.from.uuid)))
       if (knownOffers) {
         for (const o of offers.incoming) {
@@ -216,7 +229,7 @@ export const useTrsStore = defineStore('trs', () => {
       knownOffers = keys
       capeOffers.value = offers
     } catch (e) {
-      note(e)
+      if (at === epoch) note(e)
     }
     return capeOffers.value
   }
@@ -228,10 +241,12 @@ export const useTrsStore = defineStore('trs', () => {
   }
 
   async function loadBlocked() {
+    const at = epoch
     try {
-      blocked.value = await backend.trs.blocks()
+      const list = await backend.trs.blocks()
+      if (at === epoch) blocked.value = list
     } catch (e) {
-      note(e)
+      if (at === epoch) note(e)
     }
     return blocked.value
   }
@@ -293,11 +308,14 @@ export const useTrsStore = defineStore('trs', () => {
   }
 
   async function refreshSync() {
+    const at = epoch
+    let next: TrsSyncStatus | null = null
     try {
-      sync.value = await backend.trs.syncStatus()
+      next = await backend.trs.syncStatus()
     } catch {
-      sync.value = null
+      // bleibt null
     }
+    if (at === epoch) sync.value = next
     return sync.value
   }
 
@@ -323,6 +341,7 @@ export const useTrsStore = defineStore('trs', () => {
 
   /** Beim Start und nach Account-Wechseln: alles neu. */
   async function init() {
+    const at = ++epoch
     knownIncoming = null
     knownOffers = null
     friends.value = null
@@ -330,6 +349,7 @@ export const useTrsStore = defineStore('trs', () => {
     blocked.value = null
     void listenSync()
     await refreshStatus()
+    if (at !== epoch) return
     loadLastSeen()
     void refreshSync()
     const chat = useChatStore()
@@ -341,10 +361,12 @@ export const useTrsStore = defineStore('trs', () => {
     hosting.reset()
     if (enabled.value) {
       await loadMe()
+      if (at !== epoch) return
       chat.setAccount(me.value?.uuid ?? null)
       // Eigene Strafen – auch (gerade) wenn das Konto gesperrt ist.
       void sanctions.load()
       await loadFriends()
+      if (at !== epoch) return
       if (me.value) {
         void chat.loadList().catch(() => {})
         void chat.loadModeration()

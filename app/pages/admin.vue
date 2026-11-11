@@ -61,11 +61,14 @@ const results = ref<SearchResult | null>(null)
 const searchOpen = ref(false)
 const searching = ref(false)
 let searchTimer: ReturnType<typeof setTimeout> | null = null
+let searchSeq = 0
 
 watch(q, (v) => {
   if (searchTimer) clearTimeout(searchTimer)
   if (!v.trim()) {
+    searchSeq++
     results.value = null
+    searching.value = false
     return
   }
   searchTimer = setTimeout(() => void runSearch(), 250)
@@ -74,14 +77,17 @@ watch(q, (v) => {
 async function runSearch() {
   const v = q.value.trim()
   if (!v) return
+  const seq = ++searchSeq
   searching.value = true
   try {
-    results.value = await backend.team.search(v.slice(0, 64))
+    const found = await backend.team.search(v.slice(0, 64))
+    if (seq !== searchSeq) return
+    results.value = found
     searchOpen.value = true
   } catch {
-    results.value = null
+    if (seq === searchSeq) results.value = null
   } finally {
-    searching.value = false
+    if (seq === searchSeq) searching.value = false
   }
 }
 
@@ -159,8 +165,10 @@ useAdminKeys({
 })
 
 let countTimer: ReturnType<typeof setInterval> | null = null
+let left = false
 onMounted(async () => {
   if (!trs.status) await trs.init()
+  if (left) return
   landOnAllowed()
   if (trs.isStaff) void team.refreshCounts()
   countTimer = setInterval(() => {
@@ -168,7 +176,9 @@ onMounted(async () => {
   }, 60_000)
 })
 onBeforeUnmount(() => {
+  left = true
   if (countTimer) clearInterval(countTimer)
+  if (searchTimer) clearTimeout(searchTimer)
 })
 watch(() => route.fullPath, () => {
   landOnAllowed()

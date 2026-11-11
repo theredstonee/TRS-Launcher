@@ -93,13 +93,19 @@ function drawSide() {
 }
 
 async function play() {
-  if (!session || starting.value) return
+  const current = session
+  if (!current || starting.value) return
   starting.value = true
-  session.audio.unlock()
+  current.audio.unlock()
   try {
     const seed = await store.nextSeed(props.game)
-    session.start(seed)
+    // Inzwischen ausgehängt oder anderes Spiel gewählt.
+    if (current !== session) return
+    current.start(seed)
     root.value?.focus()
+  }
+  catch (e) {
+    console.error('Minispiel konnte nicht starten', e)
   }
   finally {
     starting.value = false

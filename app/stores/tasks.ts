@@ -253,7 +253,8 @@ export const useTasksStore = defineStore('tasks', () => {
     }
     // Über den Store-Proxy ändern, damit alles reaktiv bleibt.
     const task = tasks.value[spec.key]!
-    meters.set(spec.key, new SpeedMeter())
+    const meter = new SpeedMeter()
+    meters.set(spec.key, meter)
     startTicker()
 
     let discarded = false
@@ -276,7 +277,8 @@ export const useTasksStore = defineStore('tasks', () => {
       },
     }
 
-    const promise = (async (): Promise<TaskResult<T>> => {
+    let promise: Promise<TaskResult<T>> | undefined
+    promise = (async (): Promise<TaskResult<T>> => {
       try {
         const value = await work(ctx)
         if (discarded) {
@@ -313,8 +315,9 @@ export const useTasksStore = defineStore('tasks', () => {
         task.paused = false
         task.speed = 0
         task.cancelling = false
-        pending.delete(spec.key)
-        meters.delete(spec.key)
+        // Ein schneller Neustart mit demselben Schlüssel hat schon eigene Einträge.
+        if (pending.get(spec.key) === promise) pending.delete(spec.key)
+        if (meters.get(spec.key) === meter) meters.delete(spec.key)
       }
     })()
     pending.set(spec.key, promise)
@@ -358,7 +361,7 @@ export const useTasksStore = defineStore('tasks', () => {
     try {
       await backend.pauseTask(key, paused)
     } catch {
-      task.paused = false
+      if (task.status === 'running') task.paused = !paused
     }
   }
 

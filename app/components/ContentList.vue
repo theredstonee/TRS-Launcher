@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { isTauri } from '@tauri-apps/api/core'
-import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import type { BulkAction, ContentItem, ContentKind, ContentUpdate, DropEvent, DuplicateModGroup, Instance, ModrinthVersion, UploadResult } from '~/types'
 import { cancelledError } from '~/stores/tasks'
 import { dependentMods, planModEnable, type DependencyNode } from '~/utils/modDependencies'
@@ -116,22 +114,29 @@ const displayVersion = (item: ContentItem) => item.version ?? item.source?.versi
 const titleOf = (item: ContentItem) => item.title ?? item.fileName
 
 // --- Laden ---------------------------------------------------------------------
+let loadSeq = 0
 async function load(quiet = false) {
+  const seq = ++loadSeq
+  const id = props.instance.id
   if (!quiet) loading.value = true
   error.value = null
-  const duplicateScan = backend.duplicateMods(props.instance.id).catch(() => [] as DuplicateModGroup[])
-  const orgScan = backend.contentOrganization(props.instance.id).catch(() => null)
+  const duplicateScan = backend.duplicateMods(id).catch(() => [] as DuplicateModGroup[])
+  const orgScan = backend.contentOrganization(id).catch(() => null)
   try {
-    const lists = await Promise.all(contentKinds.map((k) => backend.listContent(props.instance.id, k)))
+    const lists = await Promise.all(contentKinds.map((k) => backend.listContent(id, k)))
+    if (seq !== loadSeq) return
     items.value = lists.flat()
     const keys = new Set(items.value.map(keyOf))
     selected.value = new Set([...selected.value].filter((k) => keys.has(k)))
-    org.value = (await orgScan) ?? org.value
-    duplicates.value = await duplicateScan
+    const nextOrg = await orgScan
+    const nextDuplicates = await duplicateScan
+    if (seq !== loadSeq) return
+    org.value = nextOrg ?? org.value
+    duplicates.value = nextDuplicates
   } catch (e) {
-    error.value = errorMessage(e)
+    if (seq === loadSeq) error.value = errorMessage(e)
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 
@@ -646,23 +651,18 @@ async function pickFiles() {
   }
 }
 
-let unlisten: UnlistenFn | null = null
-onMounted(async () => {
-  if (!isTauri()) return
-  unlisten = await listen<DropEvent>('file-drop', async ({ payload }) => {
-    if (payload.type === 'enter') dragging.value = true
-    else if (payload.type === 'leave') dragging.value = false
-    else {
-      dragging.value = false
-      try {
-        reportUploads(await backend.addDroppedFiles(props.instance.id, payload.token))
-      } catch (e) {
-        toasts.error(e)
-      }
+useTauriListen<DropEvent>('file-drop', async ({ payload }) => {
+  if (payload.type === 'enter') dragging.value = true
+  else if (payload.type === 'leave') dragging.value = false
+  else {
+    dragging.value = false
+    try {
+      reportUploads(await backend.addDroppedFiles(props.instance.id, payload.token))
+    } catch (e) {
+      toasts.error(e)
     }
-  })
+  }
 })
-onBeforeUnmount(() => unlisten?.())
 
 // --- Menü ------------------------------------------------------------------------
 function projectLink(item: ContentItem) {

@@ -78,6 +78,7 @@ const newsSources = import.meta.glob('../components/NewsFeed.vue')
 const NewsFeed = shallowRef<Component | null>(null)
 
 let pingTimer: ReturnType<typeof setInterval> | undefined
+let left = false
 onMounted(async () => {
   const loadNews = Object.values(newsSources)[0]
   if (loadNews) {
@@ -86,11 +87,15 @@ onMounted(async () => {
       .catch(() => (NewsFeed.value = null))
   }
   await Promise.allSettled([instances.load(), servers.load()])
+  if (left) return
   ready.value = true
   // Spielerzahlen sollen nicht veralten, solange die Startseite offen ist.
   pingTimer = setInterval(() => servers.refresh(), 30_000)
 })
-onBeforeUnmount(() => clearInterval(pingTimer))
+onBeforeUnmount(() => {
+  left = true
+  clearInterval(pingTimer)
+})
 
 function join(server: Server) {
   if (featured.value) games.launch(featured.value.id, server.id)
