@@ -252,14 +252,16 @@ public final class ChatCompat {
 		/*ITextComponent original = event.getMessage();
 		if (original == null) return false;
 		for (ITextComponent part : original) {
-			if (dev.theredstonee.trsclient.core.chat.ChatWaypoints.isAddMarker(part.getStyle().getInsertion())) return true;
+			if (dev.theredstonee.trsclient.core.chat.ChatWaypoints.isAddMarker(part.getStyle().getInsertion())
+					|| dev.theredstonee.trsclient.core.chat.ChatWaypoints.fromClickCommand(clickText(part.getStyle().getClickEvent())) != null) return true;
 		}
 		return false;
 		*///?} else {
 		IChatComponent original = event.message;
 		if (original == null) return false;
 		for (IChatComponent part : original) {
-			if (dev.theredstonee.trsclient.core.chat.ChatWaypoints.isAddMarker(part.getChatStyle().getInsertion())) return true;
+			if (dev.theredstonee.trsclient.core.chat.ChatWaypoints.isAddMarker(part.getChatStyle().getInsertion())
+					|| dev.theredstonee.trsclient.core.chat.ChatWaypoints.fromClickCommand(clickText(part.getChatStyle().getChatClickEvent())) != null) return true;
 		}
 		return false;
 		//?}
