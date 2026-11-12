@@ -1019,6 +1019,8 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host, 
 			if (chatBridge()) {
 				items.add(WaypointMenu.COPY);
 				items.add(WaypointMenu.CHAT);
+				items.add(WaypointMenu.CHAT_XAERO);
+				items.add(WaypointMenu.CHAT_JOURNEYMAP);
 			}
 			if (!viewingOther()) items.add(WaypointMenu.SHARE);
 		}
@@ -1165,6 +1167,11 @@ public final class WorldMapUi extends UiScreen implements WorldMapSidebar.Host, 
 			copy(WaypointMenu.coordinates(menuBlockX, spotHeightOrPlayer(), menuBlockZ));
 		} else if (WaypointMenu.CHAT.equals(id) && p != null) {
 			p.sendChat(WaypointMenu.chatLine("", menuBlockX, spotHeightOrPlayer(), menuBlockZ, viewDimension(), e.dimension()));
+			flash(I18n.tr("map.chat.sent"));
+		} else if ((WaypointMenu.CHAT_XAERO.equals(id) || WaypointMenu.CHAT_JOURNEYMAP.equals(id)) && p != null) {
+			// Xaero braucht einen Namen – die Stelle heißt wie beim Teilen an Freunde.
+			p.sendChat(WaypointMenu.mapModLine(id, I18n.tr("waypoint.share.spot"), "", menuBlockX, spotHeightOrPlayer(),
+					menuBlockZ, -1, viewDimension(), e.dimension()));
 			flash(I18n.tr("map.chat.sent"));
 		}
 	}

@@ -1,12 +1,16 @@
 package dev.theredstonee.trsclient.core.ui;
 
+import dev.theredstonee.trsclient.core.chat.ChatWaypoints;
 import dev.theredstonee.trsclient.core.i18n.I18n;
+import dev.theredstonee.trsclient.core.map.WorldMapUi;
 import dev.theredstonee.trsclient.core.social.SafeText;
 import dev.theredstonee.trsclient.core.waypoint.WaypointShare;
 
 /**
  * Kleines Fenster „Als Wegpunkt speichern“ nach einem Klick auf Koordinaten im Minecraft-Chat: Name (vorbelegt),
  * Farbe, Speichern. Legt den Wegpunkt in der aktuellen Welt/Dimension an – nur lokal, es wird nichts gesendet.
+ * Wegpunkte von Xaero's Minimap bzw. JourneyMap bringen Name, Farbe, Kürzel und Dimension mit; gespeichert wird dann
+ * in deren Dimension.
  */
 public final class WaypointSaveUi extends UiScreen {
 	/** Anbindung an den Loader. */
@@ -33,15 +37,45 @@ public final class WaypointSaveUi extends UiScreen {
 	private final TextInput name = new TextInput(SafeText.MAX_NAME);
 	private int color = COLORS[5];
 	private final int[] rect = new int[4];
+	/** Farben zur Auswahl (bei geteilten Wegpunkten mit fremder Farbe: deren Farbe zusätzlich). */
+	private final int[] palette;
+	/** Geteilter Wegpunkt eines Karten-Mods, null = einfache Koordinaten (aktuelle Dimension). */
+	private final ChatWaypoints.Shared shared;
 
 	public WaypointSaveUi(Host host, int x, int y, int z, String defaultName) {
+		this(host, x, y, z, defaultName, null);
+	}
+
+	/** Wegpunkt von Xaero's Minimap bzw. JourneyMap aus dem Chat (ohne Höhe: die des Spielers). */
+	public WaypointSaveUi(Host host, ChatWaypoints.Shared shared) {
+		this(host, shared.x, shared.hasY ? shared.y : WaypointShare.playerBlockY(), shared.z,
+				shared.name.isEmpty() ? I18n.tr("waypoint.save.defaultName") : shared.name, shared);
+	}
+
+	private WaypointSaveUi(Host host, int x, int y, int z, String defaultName, ChatWaypoints.Shared shared) {
 		this.host = host;
 		this.x = x;
 		this.y = y;
 		this.z = z;
+		this.shared = shared;
 		I18n.refresh();
 		name.setText(defaultName == null ? "" : SafeText.line(defaultName, SafeText.MAX_NAME));
 		name.setFocused(true);
+		int given = shared == null ? -1 : shared.color;
+		palette = given < 0 || contains(COLORS, given) ? COLORS : append(COLORS, given);
+		if (given >= 0) color = given;
+	}
+
+	private static boolean contains(int[] colors, int c) {
+		for (int col : colors) if (col == c) return true;
+		return false;
+	}
+
+	private static int[] append(int[] colors, int c) {
+		int[] out = new int[colors.length + 1];
+		System.arraycopy(colors, 0, out, 0, colors.length);
+		out[colors.length] = c;
+		return out;
 	}
 
 	@Override
@@ -65,14 +99,15 @@ public final class WaypointSaveUi extends UiScreen {
 		iconButton(c, px + w - 18, py + 4, "close", mx, my, this::requestClose);
 		int cy = py + 22;
 		String where = x + " " + y + " " + z;
-		String dim = WaypointShare.currentDimension();
-		if (!dim.isEmpty()) where += " · " + dev.theredstonee.trsclient.core.map.WorldMapUi.dimensionName(dim);
+		String dim = shared != null && shared.dimension != null ? shared.dimension : WaypointShare.currentDimension();
+		if (!dim.isEmpty()) where += " · " + WorldMapUi.dimensionName(dim);
+		if (shared != null) where += " · " + shared.format.label();
 		Paint.textClipped(c, where, px + 8, cy, w - 16, t.textDim, false);
 		cy += 12;
 		input(c, px + 8, cy, w - 16, 16, t);
 		cy += 22;
 		int sx = px + 8;
-		for (final int col : COLORS) {
+		for (final int col : palette) {
 			boolean sel = col == color;
 			c.fill(sx, cy, sx + 14, cy + 14, sel ? t.text : t.border);
 			c.fill(sx + 1, cy + 1, sx + 13, cy + 13, 0xFF000000 | col);
@@ -122,7 +157,8 @@ public final class WaypointSaveUi extends UiScreen {
 	private void save() {
 		String n = SafeText.line(name.text(), SafeText.MAX_NAME);
 		if (n == null || n.isEmpty()) n = I18n.tr("waypoint.save.defaultName");
-		WaypointShare.Result r = WaypointShare.saveHere(n, x, y, z, color);
+		WaypointShare.Result r = shared != null ? WaypointShare.saveShared(n, x, y, z, shared.dimension, color, shared.mark)
+				: WaypointShare.saveHere(n, x, y, z, color);
 		String text = r == WaypointShare.Result.ADDED || r == WaypointShare.Result.ALREADY ? I18n.tr(r.key(), n) : I18n.tr(r.key());
 		requestClose();
 		host.notice(text);
@@ -172,5 +208,15 @@ public final class WaypointSaveUi extends UiScreen {
 	public void testSave(String n) {
 		name.setText(n);
 		save();
+	}
+
+	/** Selbsttest: vorbelegter Name. */
+	public String testName() {
+		return name.text();
+	}
+
+	/** Selbsttest: gewählte Farbe (0xRRGGBB). */
+	public int testColor() {
+		return color;
 	}
 }

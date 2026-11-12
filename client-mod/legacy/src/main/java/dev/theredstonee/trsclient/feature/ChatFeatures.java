@@ -10,6 +10,7 @@ import dev.theredstonee.trsclient.core.chat.ChatCoords;
 import dev.theredstonee.trsclient.core.chat.ChatOut;
 import dev.theredstonee.trsclient.core.chat.ChatStacker;
 import dev.theredstonee.trsclient.core.chat.ChatTimestamp;
+import dev.theredstonee.trsclient.core.chat.ChatWaypoints;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.util.RateLimiter;
 import net.minecraft.client.Minecraft;
@@ -90,7 +91,8 @@ public final class ChatFeatures {
 		if (rewrite) {
 			int id = nextId++;
 			boolean printed;
-			if (modules.qol.chatHeads.isEnabled()) {
+			// Mit „[Add]“-Knopf (geteilter Wegpunkt) nicht umbrechen: das verlöre den Knopf – dann ohne Einrückung.
+			if (modules.qol.chatHeads.isEnabled() && !ChatCompat.hasWaypointButton(event)) {
 				String hover = modules.chat.isEnabled() && modules.chatCoordLinks.get() ? I18n.tr("chat.coords.hover") : null;
 				printed = ChatCompat.reprintIndented(event, prefix, suffix, id, hover);
 			} else {
@@ -166,13 +168,42 @@ public final class ChatFeatures {
 	}
 
 	/**
-	 * Klick auf markierte Koordinaten (Einfüge-Text „x y z“ ohne eigene Klick-Aktion): Fenster „Als Wegpunkt
-	 * speichern“. true = Klick verbraucht.
+	 * Klick auf markierte Koordinaten (Einfüge-Text „x y z“ ohne eigene Klick-Aktion) bzw. auf einen geteilten Wegpunkt
+	 * von Xaero's Minimap/JourneyMap (Einfüge-Text = die Nachricht): Fenster „Als Wegpunkt speichern“. true = Klick
+	 * verbraucht.
 	 */
 	public boolean onLinkClick(int rawMouseX, int rawMouseY) {
 		if (!modules.chat.isEnabled() || !modules.chatCoordLinks.get()) return false;
 		try {
-			int[] c = ChatCoords.parseInsertion(ChatCompat.insertionAt(rawMouseX, rawMouseY));
+			// Xaeros eigenes „[Add]“ (Xaero's Minimap installiert): auch in die TRS-Karte – ein Knopf für beide. Nicht
+			// verbrauchen, damit Xaero den Wegpunkt selbst übernimmt.
+			ChatWaypoints.Shared xaero = ChatWaypoints.fromClickCommand(ChatCompat.clickCommandAt(rawMouseX, rawMouseY));
+			if (xaero != null) {
+				String result = dev.theredstonee.trsclient.core.waypoint.WaypointShare.addShared(xaero);
+				TrsClient.LOGGER.info("[Chat] [Add] {} → {} (Xaero-Knopf)", xaero, result);
+				saveHost().notice(result);
+				ChatCompat.printPlain("§a[TRS] " + result);
+				return false;
+			}
+			String insertion = ChatCompat.insertionAt(rawMouseX, rawMouseY);
+			// „[Hinzufügen]“: sofort auf die Karte, Hinweis in der Aktionsleiste und im Chat.
+			ChatWaypoints.Shared add = ChatWaypoints.parseAddMarker(insertion);
+			if (add != null) {
+				saveHost().playClick();
+				String result = dev.theredstonee.trsclient.core.waypoint.WaypointShare.addShared(add);
+				TrsClient.LOGGER.info("[Chat] [Add] {} → {} (Welt {}, hier {})", add, result,
+						dev.theredstonee.trsclient.core.waypoint.WaypointShare.currentWorldKey(),
+						dev.theredstonee.trsclient.core.waypoint.WaypointShare.currentDimension());
+				saveHost().notice(result);
+				ChatCompat.printPlain("§a[TRS] " + result);
+				return true;
+			}
+			ChatWaypoints.Shared shared = ChatWaypoints.parse(insertion);
+			if (shared != null) {
+				openSave(new dev.theredstonee.trsclient.core.ui.WaypointSaveUi(saveHost(), shared));
+				return true;
+			}
+			int[] c = ChatCoords.parseInsertion(insertion);
 			if (c == null) return false;
 			openSave(c[0], c[1], c[2]);
 			return true;
@@ -184,8 +215,16 @@ public final class ChatFeatures {
 
 	/** Fenster „Als Wegpunkt speichern“ (ersetzt den Chat). */
 	public static void openSave(int x, int y, int z) {
+		openSave(new dev.theredstonee.trsclient.core.ui.WaypointSaveUi(saveHost(), x, y, z, I18n.tr("waypoint.save.defaultName")));
+	}
+
+	private static void openSave(dev.theredstonee.trsclient.core.ui.WaypointSaveUi ui) {
+		Mc.setScreen(new dev.theredstonee.trsclient.screen.TrsUiScreen(I18n.tr("waypoint.save.title"), ui));
+	}
+
+	private static dev.theredstonee.trsclient.core.ui.WaypointSaveUi.Host saveHost() {
 		final dev.theredstonee.trsclient.screen.TrsMenuHost back = new dev.theredstonee.trsclient.screen.TrsMenuHost(null);
-		dev.theredstonee.trsclient.core.ui.WaypointSaveUi.Host host = new dev.theredstonee.trsclient.core.ui.WaypointSaveUi.Host() {
+		return new dev.theredstonee.trsclient.core.ui.WaypointSaveUi.Host() {
 			@Override
 			public void closeScreen() {
 				Mc.setScreen(null);
@@ -206,8 +245,6 @@ public final class ChatFeatures {
 				return Mc.clipboard();
 			}
 		};
-		Mc.setScreen(new dev.theredstonee.trsclient.screen.TrsUiScreen(I18n.tr("waypoint.save.title"),
-				new dev.theredstonee.trsclient.core.ui.WaypointSaveUi(host, x, y, z, I18n.tr("waypoint.save.defaultName"))));
 	}
 
 	public AutoGg autoGg() {

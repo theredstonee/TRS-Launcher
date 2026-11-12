@@ -104,6 +104,11 @@ public final class WaypointShare {
 		return m.find() ? m.group(1) : null;
 	}
 
+	/** Schreibt diese Version Dimensionen als Zahl ({@code dim0}, {@code dim-1} – Forge bis 1.12.2)? */
+	public static boolean legacyDimensions(String current) {
+		return current != null && LEGACY_DIM.matcher(current.trim()).matches();
+	}
+
 	/** Kennung zurück in die Schreibweise dieser Version ({@code current} = Dimension des Spiels). */
 	public static String localDimension(String canonical, String current) {
 		if (canonical == null) return "";
@@ -193,6 +198,30 @@ public final class WaypointShare {
 		return Result.ADDED;
 	}
 
+	/**
+	 * Wegpunkt aus einer Chat-Nachricht von Xaero's Minimap bzw. JourneyMap speichern (ohne Spiel): in der Dimension der
+	 * Nachricht ({@code canonicalDim}, null = {@code localDimension}), mit ihrer Farbe (-1 = Standard) und ihrem Kürzel.
+	 * Rückgabe ADDED, ALREADY oder NO_WORLD.
+	 */
+	public static Result saveShared(WaypointStore store, String worldKey, String localDimension, String name, int x, int y,
+			int z, String canonicalDim, int color, String mark) {
+		if (store == null || worldKey == null || worldKey.isEmpty()) return Result.NO_WORLD;
+		String current = localDimension == null ? "" : localDimension;
+		String dim = canonicalDim == null || canonicalDim.isEmpty() ? current : localDimension(canonicalDim, current);
+		Waypoint w = new Waypoint(name, x, y, z, dim, color < 0 ? DEFAULT_COLOR : color);
+		for (Waypoint p : store.all(worldKey)) {
+			if (p.x == x && p.y == y && p.z == z && p.name.equals(w.name)
+					&& (p.dimension == null || p.dimension.isEmpty() || p.dimension.equals(dim))) {
+				return Result.ALREADY;
+			}
+		}
+		// Kürzel nur merken, wenn es vom Anfangsbuchstaben abweicht (sonst folgt es dem Namen).
+		String m = Waypoint.cleanMark(mark);
+		if (!m.isEmpty() && !m.equals(Waypoint.initial(w.name))) w.mark = m;
+		store.add(worldKey, w);
+		return Result.ADDED;
+	}
+
 	// --- Im Spiel ---
 
 	private static MapPlatform platform() {
@@ -273,6 +302,45 @@ public final class WaypointShare {
 		store.add(key, w);
 		p.waypointsChanged();
 		return Result.ADDED;
+	}
+
+	/**
+	 * Wegpunkt von Xaero's Minimap bzw. JourneyMap aus dem Chat in der aktuellen Welt speichern (nur lokal) – in der
+	 * Dimension der Nachricht ({@code canonicalDim}, null = aktuelle).
+	 */
+	public static Result saveShared(String name, int x, int y, int z, String canonicalDim, int color, String mark) {
+		MapPlatform p = platform();
+		if (p == null || !p.inWorld()) return Result.NO_WORLD;
+		Result r = saveShared(p.waypoints(), p.waypointWorldKey(), p.dimension(), name, x, y, z, canonicalDim, color, mark);
+		if (r == Result.ADDED) p.waypointsChanged();
+		return r;
+	}
+
+	/**
+	 * „[Add]“ an einem geteilten Wegpunkt von Xaero's Minimap/JourneyMap im Chat: sofort speichern, ohne Fenster – mit
+	 * Name, Farbe, Kürzel und Dimension der Nachricht, ohne Höhe die des Spielers. Nur lokal. Rückgabe: Hinweis für die
+	 * Aktionsleiste („Wegpunkt „Dorf“ gespeichert“, „… hast du schon“, „keine Welt“ …).
+	 */
+	public static String addShared(dev.theredstonee.trsclient.core.chat.ChatWaypoints.Shared s) {
+		String name = dev.theredstonee.trsclient.core.social.SafeText.line(
+				dev.theredstonee.trsclient.core.chat.ChatWaypoints.displayName(s), dev.theredstonee.trsclient.core.social.SafeText.MAX_NAME);
+		if (name == null || name.isEmpty()) name = dev.theredstonee.trsclient.core.i18n.I18n.tr("waypoint.save.defaultName");
+		Result r = saveShared(name, s.x, s.hasY ? s.y : playerBlockY(), s.z, s.dimension, s.color, s.mark);
+		if (r != Result.ADDED && r != Result.ALREADY) return dev.theredstonee.trsclient.core.i18n.I18n.tr(r.key());
+		String text = dev.theredstonee.trsclient.core.i18n.I18n.tr(r.key(), name) + " · "
+				+ dev.theredstonee.trsclient.core.chat.ChatWaypoints.details(s);
+		// Andere Dimension als die aktuelle: dort gespeichert, auf Minimap/Weltkarte erst dort zu sehen.
+		String here = canonicalDimension(currentDimension());
+		if (s.dimension != null && here != null && !s.dimension.equals(here)) {
+			text += " – " + dev.theredstonee.trsclient.core.i18n.I18n.tr("chat.waypoint.otherDimension", WorldMapUi.dimensionName(s.dimension));
+		}
+		return text;
+	}
+
+	/** Blockhöhe der Füße des Spielers (für geteilte Wegpunkte ohne Höhe), 64 ohne Welt. */
+	public static int playerBlockY() {
+		MapPlatform p = platform();
+		return p == null || !p.inWorld() ? 64 : floor(p.y());
 	}
 
 	/** „Anzeigen“: Weltkarte auf den Punkt zentrieren (Welt und Dimension müssen passen). */

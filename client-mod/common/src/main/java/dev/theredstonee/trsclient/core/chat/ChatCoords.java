@@ -8,6 +8,8 @@ import java.util.regex.Pattern;
 /**
  * Findet Koordinaten in Chat-Zeilen („x: 100 y: 64 z: -20“, „X=100, Y=64, Z=-20“, „100 64 -20“, „100, 64, -20“,
  * „100/64/-20“), damit man sie anklicken und als Wegpunkt speichern kann. Nur lokal – es wird nie etwas gesendet.
+ * Geteilte Wegpunkte von Xaero's Minimap und JourneyMap ({@link ChatWaypoints}) sind ganze Treffer mit Name, Farbe und
+ * Dimension ({@link Hit#shared}) und gehen den Koordinaten darin vor.
  *
  * <p>Vorsichtig bei Tripeln ohne Beschriftung: nur mit Wortgrenzen, ohne führende Nullen, mit mindestens einer Zahl
  * mit zwei Stellen oder einem Minus, keine Versionsnummern/Uhrzeiten (Punkt/Doppelpunkt sind keine Trenner) und keine
@@ -39,31 +41,55 @@ public final class ChatCoords {
 		public final int x;
 		public final int y;
 		public final int z;
+		/** Geteilter Wegpunkt von Xaero's Minimap bzw. JourneyMap (ganze Nachricht), null = einfache Koordinaten. */
+		public final ChatWaypoints.Shared shared;
 
 		Hit(int start, int end, int x, int y, int z) {
+			this(start, end, x, y, z, null);
+		}
+
+		Hit(int start, int end, int x, int y, int z, ChatWaypoints.Shared shared) {
 			this.start = start;
 			this.end = end;
 			this.x = x;
 			this.y = y;
 			this.z = z;
+			this.shared = shared;
 		}
 
-		/** Marker für den Stil der Chat-Spanne (Einfügen per Umschalt-Klick = „x y z“). */
+		/**
+		 * Marker für den Stil der Chat-Spanne (Einfügen per Umschalt-Klick): „x y z“ bzw. bei geteilten Wegpunkten die
+		 * Nachricht selbst ({@link ChatWaypoints#parse} liest sie zurück).
+		 */
 		public String insertion() {
-			return ChatCoords.insertion(x, y, z);
+			return shared != null ? shared.text : ChatCoords.insertion(x, y, z);
+		}
+
+		/** Hinweis an der Chat-Spanne: {@code coordsHover} bzw. bei geteilten Wegpunkten Name, Mod und Dimension. */
+		public String hover(String coordsHover) {
+			return shared != null ? ChatWaypoints.hover(shared) : coordsHover;
 		}
 	}
 
-	/** Alle Koordinaten der Zeile (höchstens {@link #MAX_HITS}, ohne Überschneidung, aufsteigend). */
+	/**
+	 * Alle Koordinaten der Zeile (höchstens {@link #MAX_HITS}, ohne Überschneidung, aufsteigend) – geteilte Wegpunkte von
+	 * Xaero's Minimap/JourneyMap zuerst, als ein Treffer je Nachricht.
+	 */
 	public static List<Hit> find(String text) {
 		List<Hit> out = new ArrayList<Hit>();
 		if (text == null || text.isEmpty() || text.length() > MAX_LENGTH) return out;
-		// Schnellprüfung: ohne drei Ziffern kann nichts passen.
+		// Schnellprüfung: ohne zwei Ziffern kann nichts passen (JourneyMap braucht nur x und z).
 		int digits = 0;
 		for (int i = 0; i < text.length() && digits < 3; i++) if (Character.isDigit(text.charAt(i))) digits++;
-		if (digits < 3) return out;
+		if (digits < 2) return out;
+		for (Hit h : ChatWaypoints.find(text)) if (out.size() < MAX_HITS) out.add(h);
+		if (digits < 3) {
+			sort(out);
+			return out;
+		}
 		Matcher m = LABELED.matcher(text);
 		while (m.find() && out.size() < MAX_HITS) {
+			if (overlaps(out, m.start(), m.end())) continue;
 			Hit h = hit(m.start(), m.end(), m.group(1), m.group(2), m.group(3));
 			if (h != null) out.add(h);
 		}
