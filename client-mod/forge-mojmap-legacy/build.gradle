@@ -37,6 +37,8 @@ sourceSets.main.resources.srcDir(rootProject.file('../common/src/main/resources'
 def runsCommonTests = mc == '1.19.4'
 if (runsCommonTests) {
 	sourceSets.test.java.srcDir(rootProject.file('../common/src/test/java'))
+	sourceSets.test.resources.srcDir(rootProject.file('../common/src/test/resources'))
+	sourceSets.test.resources.srcDir(rootProject.file('../../data'))
 }
 
 loom {
@@ -86,15 +88,18 @@ dependencies {
 	}
 
 	if (runsCommonTests) {
+		testImplementation 'io.netty:netty-all:4.1.97.Final'
 		testImplementation 'com.google.code.gson:gson:2.8.9'
 		testImplementation platform("org.junit:junit-bom:${rootProject.junit_version}")
 		testImplementation 'org.junit.jupiter:junit-jupiter'
 		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+		testRuntimeOnly 'net.java.dev.jna:jna:3.4.0'
 	}
 }
 
 test {
 	useJUnitPlatform()
+	if (runsCommonTests) workingDir = rootProject.file('../common')
 	testLogging {
 		events 'failed'
 	}

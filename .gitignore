@@ -47,3 +47,6 @@ release/
 
 # Classes unpacked from a Minecraft jar, never commit them
 *.class
+client-mod/common/logs/debug-2.log.gz
+client-mod/common/logs/debug-3.log.gz
+client-mod/common/logs/debug-1.log.gz

@@ -22,7 +22,7 @@
 // Schlüssel: %USERPROFILE%\.tauri\trs-launcher.key (+ .password). Beides wird nur hier
 // gelesen und nur per Umgebungsvariable an den Signierer gegeben – nie ausgegeben.
 
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { createHash, createPublicKey, verify as verifySignature } from 'node:crypto'
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
@@ -248,13 +248,88 @@ async function channelVersion(repo) {
 }
 
 function gh(args, { allowFail = false } = {}) {
-  const r = spawnSync('gh', args, { stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' })
+  const env = { ...process.env, GH_PROMPT_DISABLED: '1', GH_NO_UPDATE_NOTIFIER: '1' }
+  const r = spawnSync('gh', args, { env, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' })
   if (r.error) fail(`gh nicht gefunden: ${r.error.message}`)
   if (r.status !== 0 && !allowFail) fail(`gh ${args.slice(0, 2).join(' ')} fehlgeschlagen:\n${r.stderr}`)
   return r
 }
 
-function upload(repo, dist, out, builds) {
+const ANSI = {
+  red: '\x1b[38;5;196m',
+  dark: '\x1b[38;5;88m',
+  glow: '\x1b[38;5;209m',
+  green: '\x1b[38;5;77m',
+  dim: '\x1b[38;5;244m',
+  bold: '\x1b[1m',
+  reset: '\x1b[0m',
+}
+
+function redstoneTrack(tick, width = 16) {
+  const pos = tick % width
+  let track = ''
+  for (let i = 0; i < width; i++) {
+    if (i === pos) track += `${ANSI.glow}━`
+    else if ((i + 1) % width === pos || (i + 2) % width === pos) track += `${ANSI.red}━`
+    else track += `${ANSI.dark}─`
+  }
+  return `${track}${ANSI.reset}`
+}
+
+function formatMiB(bytes) {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MiB`
+}
+
+function runGhUpload(args, progress) {
+  return new Promise((resolve, reject) => {
+    const started = Date.now()
+    let stdout = ''
+    let stderr = ''
+    let tick = 0
+    let settled = false
+    const render = () => {
+      const elapsed = ((Date.now() - started) / 1000).toFixed(0)
+      const torch = tick % 6 < 4 ? `${ANSI.red}✦` : `${ANSI.dark}✦`
+      const line = `  ${torch} ${redstoneTrack(tick)} ${ANSI.bold}Upload${ANSI.reset} ` +
+        `${progress.uploadedFiles}/${progress.totalFiles} JARs · ` +
+        `${formatMiB(progress.uploadedBytes)}/${formatMiB(progress.totalBytes)} · ` +
+        `${progress.phase} ${progress.currentLabel} · ${elapsed}s`
+      if (process.stdout.isTTY) process.stdout.write(`\r\x1b[K${line}`)
+      tick++
+    }
+    const child = spawn('gh', args, {
+      env: { ...process.env, GH_PROMPT_DISABLED: '1', GH_NO_UPDATE_NOTIFIER: '1' },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    const timer = process.stdout.isTTY ? setInterval(render, 100) : null
+    if (timer) render()
+    child.stdout.setEncoding('utf8').on('data', (chunk) => { stdout += chunk })
+    child.stderr.setEncoding('utf8').on('data', (chunk) => { stderr += chunk })
+    child.on('error', (error) => {
+      if (settled) return
+      settled = true
+      if (timer) clearInterval(timer)
+      if (process.stdout.isTTY) process.stdout.write('\r\x1b[K')
+      reject(new Error(`gh nicht gefunden oder konnte nicht gestartet werden: ${error.message}`))
+    })
+    child.on('close', (code) => {
+      if (settled) return
+      settled = true
+      if (timer) clearInterval(timer)
+      const seconds = Math.max((Date.now() - started) / 1000, 0.001)
+      if (process.stdout.isTTY) {
+        process.stdout.write(`\r\x1b[K${code === 0 ? ANSI.green : ANSI.red}${code === 0 ? '✓' : '✗'}${ANSI.reset} ` +
+          `${progress.phase} · ${progress.currentLabel} · ${formatMiB(progress.currentBytes)} · ${(progress.currentBytes / seconds / (1024 * 1024)).toFixed(1)} MiB/s\n`)
+      } else {
+        console.log(`${code === 0 ? 'OK' : 'FAILED'} ${progress.phase}: ${progress.currentLabel} · ${formatMiB(progress.currentBytes)} · ${(progress.currentBytes / seconds / (1024 * 1024)).toFixed(1)} MiB/s`)
+      }
+      if (code === 0) resolve()
+      else reject(new Error(`gh release upload fehlgeschlagen (Exit ${code}):\n${stderr || stdout}`))
+    })
+  })
+}
+
+async function upload(repo, dist, out, builds) {
   if (gh(['auth', 'status'], { allowFail: true }).status !== 0) fail('gh ist nicht angemeldet (`gh auth login`)')
   if (gh(['release', 'view', TAG, '-R', repo], { allowFail: true }).status !== 0) {
     gh([
@@ -268,11 +343,45 @@ function upload(repo, dist, out, builds) {
   // Erst die Jars, dann Manifest + Signatur: wer zwischendurch lädt, bekommt
   // höchstens eine Prüfsummen-Abweichung und nimmt die mitgelieferte Version.
   const jars = builds.map((b) => join(dist, b.file))
-  for (let i = 0; i < jars.length; i += 40) {
-    gh(['release', 'upload', TAG, '-R', repo, '--clobber', ...jars.slice(i, i + 40)])
-    console.log(`  ${Math.min(i + 40, jars.length)}/${jars.length} Jars hochgeladen`)
+  const totalBytes = jars.reduce((sum, file) => sum + statSync(file).size, 0)
+  const batchSize = 10
+  const batchCount = Math.ceil(jars.length / batchSize)
+  let uploadedFiles = 0
+  let uploadedBytes = 0
+  console.log(`\n${ANSI.bold}TRS Client · GitHub Upload${ANSI.reset} · ${jars.length} JARs · ${formatMiB(totalBytes)} gesamt`)
+  for (let i = 0; i < jars.length; i += batchSize) {
+    const batch = jars.slice(i, i + batchSize)
+    const batchBytes = batch.reduce((sum, file) => sum + statSync(file).size, 0)
+    const batchNumber = Math.floor(i / batchSize) + 1
+    await runGhUpload(
+      ['release', 'upload', TAG, '-R', repo, '--clobber', ...batch],
+      {
+        phase: `Charge ${batchNumber}/${batchCount}`,
+        currentLabel: `${batch.length} JARs senden`,
+        currentBytes: batchBytes,
+        uploadedFiles,
+        uploadedBytes,
+        totalFiles: jars.length,
+        totalBytes,
+      },
+    )
+    uploadedFiles += batch.length
+    uploadedBytes += batchBytes
   }
-  gh(['release', 'upload', TAG, '-R', repo, '--clobber', join(out, SIGNATURE), join(out, MANIFEST)])
+  const controlFiles = [join(out, SIGNATURE), join(out, MANIFEST)]
+  const controlBytes = controlFiles.reduce((sum, file) => sum + statSync(file).size, 0)
+  await runGhUpload(
+    ['release', 'upload', TAG, '-R', repo, '--clobber', ...controlFiles],
+    {
+      phase: 'Abschluss',
+      currentLabel: 'Manifest + Signatur',
+      currentBytes: controlBytes,
+      uploadedFiles,
+      uploadedBytes,
+      totalFiles: jars.length,
+      totalBytes,
+    },
+  )
   // Jars, die es nicht mehr gibt, aus dem Release nehmen.
   const assets = JSON.parse(gh(['release', 'view', TAG, '-R', repo, '--json', 'assets']).stdout).assets.map((a) => a.name)
   const keep = new Set([MANIFEST, SIGNATURE, ...builds.map((b) => b.file)])
@@ -317,7 +426,11 @@ if (args.bundle) bundle(args.dist, manifestText, builds)
 if (args.dryRun) {
   console.log('Dry-Run: nichts hochgeladen.')
 } else {
-  upload(args.repo, args.dist, args.out, builds)
+  try {
+    await upload(args.repo, args.dist, args.out, builds)
+  } catch (error) {
+    fail(error instanceof Error ? error.message : String(error))
+  }
   console.log(`Veröffentlicht: https://github.com/${args.repo}/releases/tag/${TAG}`)
 }
 console.log(`Fertig (${basename(args.out)}).`)
