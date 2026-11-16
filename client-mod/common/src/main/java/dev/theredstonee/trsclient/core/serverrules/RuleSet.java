@@ -24,13 +24,15 @@ import java.util.Map;
  */
 public final class RuleSet {
 	/** Leerer Regelsatz (nichts gesperrt). */
-	public static final RuleSet EMPTY = new RuleSet(1, Collections.<String, ModuleLock>emptyMap(), null);
+	public static final RuleSet EMPTY = new RuleSet(1, Collections.<String, ModuleLock>emptyMap(), null, null);
 	/** Höchstens so viele Module/Einstellungen je Modul (Schutz vor riesigen Nachrichten). */
 	static final int MAX_MODULES = 512;
 	static final int MAX_SETTINGS = 128;
 	static final int MAX_ID = 64;
 	/** Längster Hinweistext (Zeichen) – wie eine Chat-Nachricht. */
 	public static final int MAX_MESSAGE = 256;
+	/** Maximale Länge der Backend-ID in UTF-16-Codeeinheiten. */
+	public static final int MAX_BACKEND_ID = 128;
 
 	/** Protokollversion des Servers ({@code v}; fehlt = 1). */
 	public final int version;
@@ -38,11 +40,14 @@ public final class RuleSet {
 	public final Map<String, ModuleLock> modules;
 	/** Hinweistext für den Spieler (bereinigt, ohne §-Codes); null = keiner. */
 	public final String message;
+	/** Optionale Backend-ID; null bei fehlendem oder ungültigem Feld. */
+	public final String backendId;
 
-	RuleSet(int version, Map<String, ModuleLock> modules, String message) {
+	RuleSet(int version, Map<String, ModuleLock> modules, String message, String backendId) {
 		this.version = version;
 		this.modules = Collections.unmodifiableMap(new LinkedHashMap<String, ModuleLock>(modules));
 		this.message = message;
+		this.backendId = backendId;
 	}
 
 	/** Regeln für ein Modul (null = keine). */
@@ -96,7 +101,23 @@ public final class RuleSet {
 		String message = null;
 		JsonPrimitive msg = primitive(root.get("message"));
 		if (msg != null && msg.isString()) message = cleanMessage(msg.getAsString());
-		return new RuleSet(version, modules, message);
+		String backendId = null;
+		JsonPrimitive backend = primitive(root.get("backendId"));
+		if (backend != null && backend.isString()) backendId = validBackendId(backend.getAsString());
+		return new RuleSet(version, modules, message, backendId);
+	}
+
+	private static String validBackendId(String id) {
+		if (id.isEmpty() || id.length() > MAX_BACKEND_ID) return null;
+		boolean visible = false;
+		for (int index = 0; index < id.length();) {
+			int character = id.codePointAt(index);
+			int type = Character.getType(character);
+			if (Character.isISOControl(character) || type == Character.FORMAT || type == Character.SURROGATE) return null;
+			if (!Character.isWhitespace(character) && !Character.isSpaceChar(character)) visible = true;
+			index += Character.charCount(character);
+		}
+		return visible ? id : null;
 	}
 
 	private static ModuleLock module(String id, JsonObject o) {

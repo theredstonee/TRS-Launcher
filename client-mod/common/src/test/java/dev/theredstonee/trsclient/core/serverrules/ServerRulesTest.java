@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -63,6 +64,87 @@ class ServerRulesTest {
 
 	private static byte[] bytes(String json) {
 		return json.getBytes(StandardCharsets.UTF_8);
+	}
+
+	@Test
+	void backendIdFollowsAcceptedRulesAndConnectionLifecycle() {
+		assertNull(ServerRules.backendId());
+		assertTrue(rules.onRules(bytes("{\"backendId\":\"lobby-1\",\"modules\":{\"minimap\":{\"enabled\":false}}}")));
+		assertEquals("lobby-1", ServerRules.backendId());
+		ServerRules.team(Boolean.TRUE, null);
+		assertTrue(rules.bypass("minimap"));
+		assertEquals("lobby-1", ServerRules.backendId());
+		assertTrue(rules.onRules(bytes("{\"backendId\":\"survival:2\"}")));
+		assertEquals("survival:2", ServerRules.backendId());
+		assertTrue(rules.onRules(bytes(EXAMPLE)));
+		assertNull(ServerRules.backendId());
+		assertTrue(rules.onRules(bytes("{\"backendId\":\"lobby-1\"}")));
+		rules.onDisconnect();
+		assertNull(ServerRules.backendId());
+		assertTrue(rules.onRules(bytes("{\"backendId\":\"lobby-2\"}")));
+		rules.onJoin();
+		assertNull(ServerRules.backendId());
+		ServerRules.install(null);
+		assertNull(ServerRules.backendId());
+	}
+
+	@Test
+	void backendIdRejectsInvalidValuesWithoutRejectingRules() {
+		StringBuilder longId = new StringBuilder();
+		for (int index = 0; index < RuleSet.MAX_BACKEND_ID; index++) longId.append('a');
+		assertTrue(rules.onRules(bytes("{\"backendId\":\"" + longId + "\"}")));
+		assertEquals(longId.toString(), ServerRules.backendId());
+		longId.append('a');
+		String[] invalid = {"null", "42", "true", "[]", "{}", "\"\"", "\"   \"",
+				"\"\\u00a0\"", "\"a\\n b\"", "\"a\\u200bb\"", "\"\\udb40\\udc01\"",
+				"\"\\ud800\"", "\"" + longId + "\""};
+		for (String value : invalid) {
+			assertTrue(rules.onRules(bytes("{\"backendId\":\"previous\"}")));
+			assertTrue(rules.onRules(bytes("{\"backendId\":" + value
+					+ ",\"modules\":{\"minimap\":{\"enabled\":false}}}")), value);
+			assertNull(ServerRules.backendId(), value);
+			assertTrue(m.minimap.serverLocked(), value);
+		}
+	}
+
+	@Test
+	void rejectedMessagesKeepBackendId() {
+		assertTrue(rules.onRules(bytes("{\"backendId\":\"lobby\"}")));
+		assertFalse(rules.onRules(bytes("{nope")));
+		assertFalse(rules.onRules(bytes("[]")));
+		assertFalse(rules.onRules(null));
+		assertFalse(rules.onRules(new byte[ServerRules.MAX_BYTES + 1]));
+		assertEquals("lobby", ServerRules.backendId());
+	}
+
+	@Test
+	void backendIdCanBeReadFromAnotherThread() throws InterruptedException {
+		assertTrue(rules.onRules(bytes("{\"backendId\":\"lobby\"}")));
+		final AtomicReference<String> observed = new AtomicReference<String>();
+		Thread reader = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				observed.set(ServerRules.backendId());
+			}
+		});
+		reader.start();
+		reader.join();
+		assertEquals("lobby", observed.get());
+	}
+
+	@Test
+	void disconnectDuringRulesCallbackDoesNotRestoreBackendId() {
+		final ServerRules[] holder = new ServerRules[1];
+		holder[0] = new ServerRules(m.registry, "test", "test", "test", new ServerRules.SilentPlatform() {
+			@Override
+			public void log(String message) {
+				assertEquals("lobby", ServerRules.backendId());
+				holder[0].onDisconnect();
+			}
+		});
+		ServerRules.install(holder[0]);
+		assertTrue(holder[0].onRules(bytes("{\"backendId\":\"lobby\"}")));
+		assertNull(ServerRules.backendId());
 	}
 
 	@Test

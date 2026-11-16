@@ -63,6 +63,15 @@ client → server `trsclient:hello` / `TRS|Hello`. Both names are registered whe
 {"v":1,"modules":{"minimap":{"enabled":false},"zoom":{"settings":{"factor":{"max":4.0}}}},"message":"PvP world"}
 ```
 
+On BungeeCord and Velocity, rules messages also include an optional top-level string `backendId`, for example
+`{"v":1,"modules":{},"backendId":"lobby"}`. It is the current registered proxy backend name, unchanged and
+case-sensitive, not a value supplied by the backend. It is included on every send, including empty/bypass rules,
+reloads, backend merges and server switches. If the name is unknown, blank, contains control or Unicode format
+characters or invalid UTF-16, or exceeds 128 UTF-16 code units or 256 UTF-8 bytes, the field is omitted.
+Game-server/world rules do not include it. The field uses
+the existing version 1 rules payload and channels; clients that ignore unknown fields continue to work. The complete
+payload, including this field, remains subject to the 32 KiB limit.
+
 ## Config reference
 
 ```yaml

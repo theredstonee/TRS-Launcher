@@ -329,13 +329,13 @@ class EngineTest {
 		e.onHello(p, HELLO, Protocol.HELLO);
 		e.onUpstreamRules(p, "rules", "{\"v\":1,\"modules\":{\"minimap\":{\"enabled\":false}},\"message\":\"Backend\"}"
 				.getBytes(Protocol.UTF8));
-		assertEquals("{\"v\":1,\"modules\":{\"minimap\":{\"enabled\":false},\"freelook\":{\"enabled\":false}},\"message\":\"Backend\"}",
+		assertEquals("{\"v\":1,\"modules\":{\"minimap\":{\"enabled\":false},\"freelook\":{\"enabled\":false}},\"message\":\"Backend\",\"backendId\":\"rules\"}",
 				p.last());
 		// an explicit "" in a server section still silences the backend message there
 		p.world = "quiet";
 		e.onServerSwitch(p);
 		e.onUpstreamRules(p, "quiet", "{\"v\":1,\"modules\":{},\"message\":\"Backend\"}".getBytes(Protocol.UTF8));
-		assertEquals("{\"v\":1,\"modules\":{}}", p.last());
+		assertEquals("{\"v\":1,\"modules\":{},\"backendId\":\"quiet\"}", p.last());
 	}
 
 	@Test
@@ -347,22 +347,22 @@ class EngineTest {
 		p.world = "lobby"; // = backend server name on proxies
 		e.onServerSwitch(p); // first connect → session
 		e.onHello(p, HELLO, Protocol.HELLO);
-		assertEquals("{\"v\":1,\"modules\":{\"zoom\":{\"enabled\":true}}}", p.last());
+		assertEquals("{\"v\":1,\"modules\":{\"zoom\":{\"enabled\":true}},\"backendId\":\"lobby\"}", p.last());
 
 		// backend plugin sends its own rules → merged, proxy wins on zoom
 		e.onUpstreamRules(p, "lobby", "{\"v\":1,\"modules\":{\"zoom\":{\"enabled\":false},\"fps\":{\"enabled\":false}},\"message\":\"hi\"}"
 				.getBytes(Protocol.UTF8));
-		assertEquals("{\"v\":1,\"modules\":{\"zoom\":{\"enabled\":true},\"fps\":{\"enabled\":false}},\"message\":\"hi\"}", p.last());
+		assertEquals("{\"v\":1,\"modules\":{\"zoom\":{\"enabled\":true},\"fps\":{\"enabled\":false}},\"message\":\"hi\",\"backendId\":\"lobby\"}", p.last());
 
 		// switch to another backend: old backend rules are dropped, proxy rules of the new server apply
 		p.world = "pvp";
 		e.onServerSwitch(p);
-		assertEquals("{\"v\":1,\"modules\":{\"zoom\":{\"enabled\":true},\"minimap\":{\"enabled\":false}}}", p.last());
+		assertEquals("{\"v\":1,\"modules\":{\"zoom\":{\"enabled\":true},\"minimap\":{\"enabled\":false}},\"backendId\":\"pvp\"}", p.last());
 		assertEquals(Protocol.HELLO, e.helloChannel(p));
 		// backend rules that arrive before the switch event (race on connect) are kept for their server
 		e.onUpstreamRules(p, "pvp", "{\"v\":1,\"modules\":{\"fps\":{\"enabled\":false}}}".getBytes(Protocol.UTF8));
 		e.onServerSwitch(p);
-		assertEquals("{\"v\":1,\"modules\":{\"fps\":{\"enabled\":false},\"zoom\":{\"enabled\":true},\"minimap\":{\"enabled\":false}}}", p.last());
+		assertEquals("{\"v\":1,\"modules\":{\"fps\":{\"enabled\":false},\"zoom\":{\"enabled\":true},\"minimap\":{\"enabled\":false}},\"backendId\":\"pvp\"}", p.last());
 		assertEquals(new String(HELLO, Protocol.UTF8), new String(e.helloPayload(p), Protocol.UTF8));
 	}
 
@@ -375,7 +375,49 @@ class EngineTest {
 		e.onServerSwitch(p);
 		e.onHello(p, HELLO, Protocol.HELLO);
 		e.onUpstreamRules(p, null, "{\"v\":1,\"modules\":{\"zoom\":{\"enabled\":false}}}".getBytes(Protocol.UTF8));
-		assertEquals(EMPTY, p.last());
+		assertEquals("{\"v\":1,\"modules\":{},\"backendId\":\"world\"}", p.last());
+	}
+
+	@Test
+	void proxyBackendIdUsesCurrentScopeForEverySend() {
+		FakeBridge b = new FakeBridge();
+		RulesEngine<FakePlayer> e = new RulesEngine<FakePlayer>(b, cfg("", ScopeKind.SERVERS), () -> b.now);
+		FakePlayer p = new FakePlayer("Steve");
+		p.world = "lobby";
+		p.canReceive = false;
+		e.onServerSwitch(p);
+		e.onHello(p, HELLO, Protocol.HELLO_LEGACY);
+		p.world = "pvp";
+		p.canReceive = true;
+		e.onChannelRegistered(p);
+		assertEquals("pvp", Json.parseObject(p.last()).get("backendId"));
+		e.onUpstreamRules(p, "lobby", "{\"v\":1,\"modules\":{},\"backendId\":\"forged\"}".getBytes(Protocol.UTF8));
+		assertEquals("pvp", Json.parseObject(p.last()).get("backendId"));
+		e.reload(cfg("", ScopeKind.SERVERS));
+		assertEquals("pvp", Json.parseObject(p.last()).get("backendId"));
+		p.world = "lobby";
+		e.onServerSwitch(p);
+		assertEquals("lobby", Json.parseObject(p.last()).get("backendId"));
+	}
+
+	@Test
+	void proxyBackendIdValidationAndEscaping() {
+		FakeBridge b = new FakeBridge();
+		RulesEngine<FakePlayer> e = new RulesEngine<FakePlayer>(b, cfg("", ScopeKind.SERVERS), () -> b.now);
+		FakePlayer p = new FakePlayer("Steve");
+		e.onServerSwitch(p);
+		e.onHello(p, HELLO, Protocol.HELLO);
+		for (String invalid : new String[] {null, "", "  ", "\u00a0", "bad\nname", "bad\u200bname", "\ud800", new String(new char[129]).replace('\0', 'a'), new String(new char[86]).replace('\0', '\u20ac')}) {
+			p.world = invalid;
+			e.sendRules(p);
+			assertEquals(EMPTY, p.last());
+		}
+		p.world = "server\"\\\u00e4";
+		e.sendRules(p);
+		assertEquals(p.world, Json.parseObject(p.last()).get("backendId"));
+		p.world = new String(new char[128]).replace('\0', '\u00e4');
+		e.sendRules(p);
+		assertEquals(p.world, Json.parseObject(p.last()).get("backendId"));
 	}
 
 	@Test

@@ -59,7 +59,7 @@ class ConfigTest {
 	@Test
 	void defaultConfigListsEveryModuleCommentedOut() {
 		String text = ConfigLoader.defaultConfig(ScopeKind.WORLDS);
-		assertEquals(79, ModuleIds.ALL.size());
+		assertEquals(80, ModuleIds.ALL.size());
 		for (String id : ModuleIds.ALL) {
 			assertTrue(text.contains("\n  # " + id + ": false "), "missing module " + id);
 			assertTrue(ModuleLabels.has(id), "missing label " + id);
@@ -73,7 +73,7 @@ class ConfigTest {
 		String text = ConfigLoader.defaultConfig(ScopeKind.WORLDS).replaceAll("(?m)^  # ([A-Za-z]+): false", "  $1: false");
 		RulesConfig cfg = parse(text, ScopeKind.WORLDS);
 		assertEquals(0, cfg.warnings().size(), () -> cfg.warnings().toString());
-		assertEquals(79, cfg.global().modules().size());
+		assertEquals(80, cfg.global().modules().size());
 		assertEquals(Boolean.FALSE, cfg.global().moduleState("streamerMode"));
 	}
 

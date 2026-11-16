@@ -5,6 +5,8 @@ import dev.theredstonee.trsclient.core.i18n.I18n;
 import dev.theredstonee.trsclient.TrsClient;
 import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.module.TrsModules;
+import dev.theredstonee.trsclient.core.serverrules.ServerRules;
+import dev.theredstonee.trsclient.core.waypoint.ProxyWorlds;
 import dev.theredstonee.trsclient.core.waypoint.Waypoint;
 import dev.theredstonee.trsclient.core.waypoint.WaypointStore;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -21,14 +23,26 @@ import java.util.List;
 public final class Waypoints {
 	private final TrsModules modules;
 	private final WaypointStore store;
+	private final Path proxyFile;
+	private ProxyWorlds proxyWorlds;
 	/** Welt/Server, zu der die aktuell sichtbaren Wegpunkte gehören. */
 	private String worldKey = "";
+	private boolean proxyWarningShown;
 	private final dev.theredstonee.trsclient.core.waypoint.WaypointGuide guide = new dev.theredstonee.trsclient.core.waypoint.WaypointGuide();
 
 	public Waypoints(TrsModules modules, Path file) {
 		this.modules = modules;
 		this.store = new WaypointStore(file);
 		this.store.load();
+		this.proxyFile = file.resolveSibling("trsclient-proxy-worlds.json");
+	}
+
+	public ProxyWorlds proxyWorlds() {
+		return proxyWorlds;
+	}
+
+	public String proxyServerAddress() {
+		return Mc.world() == null || Mc.player() == null || Mc.levelName() != null ? null : Mc.serverAddress();
 	}
 
 	public WaypointStore store() {
@@ -61,14 +75,18 @@ public final class Waypoints {
 
 	/** Einmal je Client-Tick: Welt erkennen und Todespunkt setzen. */
 	public void tick() {
+		if (proxyWorlds == null) proxyWorlds = ProxyWorlds.open(proxyFile);
 		visibleStale = true;
 		EntityPlayerSP player = Mc.player();
 		if (player == null || Mc.world() == null) {
-			worldKey = "";
-			guide.reset();
+			onDisconnect();
 			return;
 		}
-		if (worldKey.isEmpty()) worldKey = currentWorldKey();
+		if (!proxyWarningShown && !proxyWorlds.writable() && proxyServerAddress() != null) {
+			proxyWarningShown = true;
+			notice(I18n.tr("proxy.error"));
+		}
+		updateWorldKey();
 
 		boolean record = modules.waypointDeath.get()
 				&& (modules.waypoints.isEnabled() || modules.minimap.isEnabled() || modules.worldMap.isEnabled());
@@ -82,7 +100,7 @@ public final class Waypoints {
 	public Waypoint create(String name, int color) {
 		EntityPlayerSP player = Mc.player();
 		if (player == null) return null;
-		if (worldKey.isEmpty()) worldKey = currentWorldKey();
+		updateWorldKey();
 		Waypoint waypoint = new Waypoint(name, floor(player.posX), floor(player.posY), floor(player.posZ),
 				Mc.dimensionId(), color);
 		store.add(worldKey, waypoint);
@@ -93,7 +111,7 @@ public final class Waypoints {
 
 	/** Legt einen Wegpunkt an einer festen Position an (Selbsttest, Import). */
 	public Waypoint createAt(String name, int x, int y, int z, int color) {
-		if (worldKey.isEmpty()) worldKey = currentWorldKey();
+		updateWorldKey();
 		Waypoint waypoint = new Waypoint(name, x, y, z, Mc.dimensionId(), color);
 		store.add(worldKey, waypoint);
 		save();
@@ -102,6 +120,7 @@ public final class Waypoints {
 
 	/** Schnell-Wegpunkt am Standort, ohne Dialog (Name und Farbe laufen durch, Set wie zuletzt gewählt). */
 	public Waypoint createQuick() {
+		if (Mc.player() != null && Mc.world() != null) updateWorldKey();
 		int n = all().size();
 		Waypoint waypoint = create(I18n.tr("waypoint.suggest", n + 1), dev.theredstonee.trsclient.core.waypoint.WaypointDialog.COLORS[n % dev.theredstonee.trsclient.core.waypoint.WaypointDialog.COLORS.length]);
 		if (waypoint == null) return null;
@@ -139,13 +158,37 @@ public final class Waypoints {
 
 	/** Welt verlassen: beim nächsten Betreten neu bestimmen. */
 	public void onDisconnect() {
+		if (!worldKey.isEmpty()) {
+			try {
+				store.saveIfDirty();
+			} catch (IOException e) {
+				TrsClient.LOGGER.error("Wegpunkte konnten nicht gespeichert werden: " + store.file(), e);
+			}
+		}
 		worldKey = "";
+		visibleCache = Collections.<Waypoint>emptyList();
+		visibleStale = true;
 		guide.reset();
 	}
 
-	private static String currentWorldKey() {
-		String address = Mc.serverAddress();
-		if (address != null) return WaypointStore.serverKey(address);
+	private void updateWorldKey() {
+		if (proxyWorlds == null) proxyWorlds = ProxyWorlds.open(proxyFile);
+		String next = currentWorldKey();
+		if (next.equals(worldKey)) return;
+		try {
+			store.saveIfDirty();
+		} catch (IOException e) {
+			TrsClient.LOGGER.error("Wegpunkte konnten nicht gespeichert werden: " + store.file(), e);
+		}
+		worldKey = next;
+		visibleCache = Collections.<Waypoint>emptyList();
+		visibleStale = true;
+		guide.reset();
+	}
+
+	private String currentWorldKey() {
+		String address = proxyServerAddress();
+		if (address != null) return proxyWorlds.resolve(address, ServerRules.backendId());
 		String level = Mc.levelName();
 		return WaypointStore.singleplayerKey(level == null ? "?" : level);
 	}

@@ -6,7 +6,9 @@ import dev.theredstonee.trsclient.core.map.ChunkReader;
 import dev.theredstonee.trsclient.core.map.MapEntity;
 import dev.theredstonee.trsclient.core.map.MapPlatform;
 import dev.theredstonee.trsclient.core.module.TrsModules;
+import dev.theredstonee.trsclient.core.serverrules.ServerRules;
 import dev.theredstonee.trsclient.core.ui.TextureRef;
+import dev.theredstonee.trsclient.core.waypoint.ProxyWorlds;
 import dev.theredstonee.trsclient.core.waypoint.WaypointStore;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
@@ -33,13 +35,18 @@ public final class MapBridge implements MapPlatform {
 	private static final int MAX_SIGHT_CHECKS = 48;
 	private final MapSampler sampler = new MapSampler();
 	private final WaypointStore store;
+	private final Path proxyFile;
+	private ProxyWorlds proxyWorlds;
 	private final TrsModules modules;
 	private boolean wasDead;
+	private boolean proxyWarningShown;
+	private String currentKey = "";
 
 	public MapBridge(TrsModules modules, Path waypointFile) {
 		this.modules = modules;
 		this.store = new WaypointStore(waypointFile);
 		this.store.load();
+		this.proxyFile = waypointFile.resolveSibling("trsclient-proxy-worlds.json");
 	}
 
 	private static Minecraft mc() {
@@ -48,10 +55,25 @@ public final class MapBridge implements MapPlatform {
 
 	/** Je Tick: Todespunkt setzen (letzter Tod). */
 	public void tickDeath() {
+		if (proxyWorlds == null) proxyWorlds = ProxyWorlds.open(proxyFile);
+		String nextKey = resolveWorldKey();
+		if (!nextKey.equals(currentKey)) {
+			try {
+				store.saveIfDirty();
+			} catch (IOException e) {
+				dev.theredstonee.trsclient.TrsClient.LOGGER.error("Wegpunkte konnten nicht gespeichert werden: " + store.file(), e);
+			}
+			currentKey = nextKey;
+			wasDead = false;
+		}
 		EntityClientPlayerMP p = mc().thePlayer;
 		if (p == null || mc().theWorld == null) {
 			wasDead = false;
 			return;
+		}
+		if (!proxyWarningShown && !proxyWorlds.writable() && proxyServerAddress() != null && mc().ingameGUI != null) {
+			proxyWarningShown = true;
+			mc().ingameGUI.func_110326_a(I18n.tr("proxy.error"), false);
 		}
 		boolean dead = p.getHealth() <= 0;
 		if (dead && !wasDead && modules.waypointDeath.get() && (modules.minimap.isEnabled() || modules.worldMap.isEnabled())) {
@@ -73,10 +95,31 @@ public final class MapBridge implements MapPlatform {
 
 	@Override
 	public String worldKey() {
+		return currentKey;
+	}
+
+	private String resolveWorldKey() {
 		if (mc().theWorld == null) return "";
 		if (mc().getIntegratedServer() != null) return WaypointStore.singleplayerKey(mc().getIntegratedServer().getFolderName());
+		String address = proxyServerAddress();
+		return address == null ? "" : proxyWorlds.resolve(address, ServerRules.backendId());
+	}
+
+	@Override
+	public ProxyWorlds proxyWorlds() {
+		return proxyWorlds;
+	}
+
+	@Override
+	public String proxyServerAddress() {
+		if (!inWorld() || mc().getIntegratedServer() != null) return null;
 		ServerData data = mc().func_147104_D();
-		return data == null ? "" : WaypointStore.serverKey(data.serverIP);
+		return data == null ? null : data.serverIP;
+	}
+
+	@Override
+	public String proxyBackendId() {
+		return ServerRules.backendId();
 	}
 
 	@Override

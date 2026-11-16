@@ -225,6 +225,7 @@ public final class TrsClient {
 			pvp.countPresses(mc);
 			return;
 		}
+		dev.theredstonee.trsclient.net.ServerRulesNet.tick(mc);
 		// Touch-Modus (mobile Engine): feste Overlay-Tasten + Bildschirmtastatur; sonst nichts.
 		dev.theredstonee.trsclient.touch.TouchHooks.tick();
 		migrateKeys(mc);
@@ -250,6 +251,12 @@ public final class TrsClient {
 			saveConfig();
 		}
 		if (hud != null) hud.tick();
+		while (TrsKeys.waypointList.isPressed()) {
+			if (mc.currentScreen == null && mc.player != null && mc.world != null) {
+				dev.theredstonee.trsclient.screen.TrsUiScreen screen = dev.theredstonee.trsclient.screen.WorldMapScreen.createWaypoints();
+				if (screen != null) mc.displayGuiScreen(screen);
+			}
+		}
 		// Garderobe (Taste standardmäßig unbelegt)
 		while (TrsKeys.wardrobe.isPressed()) {
 			if (mc.currentScreen == null && dev.theredstonee.trsclient.screen.WardrobeScreen.available()) {
@@ -294,7 +301,6 @@ public final class TrsClient {
 			saveConfig();
 		}
 		dev.theredstonee.trsclient.feature.AutoRefillHooks.tick();
-		dev.theredstonee.trsclient.net.ServerRulesNet.tick(mc);
 		// runTick kann den Blick setzen (Teleport, Reiten) – Referenz für die langsame Maus danach neu setzen.
 		captureLook(mc);
 	}

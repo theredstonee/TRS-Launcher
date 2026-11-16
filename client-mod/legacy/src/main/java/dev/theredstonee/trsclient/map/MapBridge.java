@@ -6,7 +6,9 @@ import dev.theredstonee.trsclient.compat.Mc;
 import dev.theredstonee.trsclient.core.map.ChunkReader;
 import dev.theredstonee.trsclient.core.map.MapEntity;
 import dev.theredstonee.trsclient.core.map.MapPlatform;
+import dev.theredstonee.trsclient.core.serverrules.ServerRules;
 import dev.theredstonee.trsclient.core.ui.TextureRef;
+import dev.theredstonee.trsclient.core.waypoint.ProxyWorlds;
 import dev.theredstonee.trsclient.core.waypoint.WaypointStore;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
@@ -49,6 +51,23 @@ public final class MapBridge implements MapPlatform {
 	public String worldKey() {
 		TrsClient client = TrsClient.get();
 		return client == null || client.waypoints() == null ? "" : client.waypoints().worldKey();
+	}
+
+	@Override
+	public ProxyWorlds proxyWorlds() {
+		TrsClient client = TrsClient.get();
+		return client == null || client.waypoints() == null ? null : client.waypoints().proxyWorlds();
+	}
+
+	@Override
+	public String proxyServerAddress() {
+		TrsClient client = TrsClient.get();
+		return client == null || client.waypoints() == null ? null : client.waypoints().proxyServerAddress();
+	}
+
+	@Override
+	public String proxyBackendId() {
+		return ServerRules.backendId();
 	}
 
 	@Override

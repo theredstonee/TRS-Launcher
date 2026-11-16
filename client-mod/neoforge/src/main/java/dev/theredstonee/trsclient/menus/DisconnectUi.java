@@ -44,7 +44,12 @@ public final class DisconnectUi {
 
 	public static void afterInit(Screen s, WidgetHost host) {
 		if (!(s instanceof DisconnectedScreen)) return;
+		if (screen == s && reauth != null && s.children().contains(reauth)) return;
 		screen = s;
+		reauth = null;
+		reconnect = null;
+		copy = null;
+		status = null;
 		busy = false;
 		try {
 			int buttonY = Integer.MIN_VALUE;

@@ -1,6 +1,7 @@
 package dev.theredstonee.trsclient.core.map;
 
 import dev.theredstonee.trsclient.core.waypoint.WaypointStore;
+import dev.theredstonee.trsclient.core.waypoint.ProxyWorlds;
 
 /**
  * Was die Karte von der jeweiligen Minecraft-Version braucht – je Loader eine kleine Umsetzung
@@ -68,6 +69,18 @@ public interface MapPlatform {
 	WaypointStore waypoints();
 
 	String waypointWorldKey();
+
+	default ProxyWorlds proxyWorlds() {
+		return null;
+	}
+
+	default String proxyServerAddress() {
+		return null;
+	}
+
+	default String proxyBackendId() {
+		return null;
+	}
 
 	/** Wegpunkte wurden auf der Karte geändert → speichern. */
 	void waypointsChanged();

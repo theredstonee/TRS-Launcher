@@ -115,6 +115,10 @@ public final class RuleSet {
 
 	/** Protocol JSON ({@code trsclient:rules}), e.g. {@code {"v":1,"modules":{"minimap":{"enabled":false}}}}. */
 	public String toJson() {
+		return toJson(null);
+	}
+
+	String toJson(String backendId) {
 		StringBuilder out = new StringBuilder(64);
 		out.append("{\"v\":").append(Protocol.VERSION).append(",\"modules\":{");
 		boolean firstModule = true;
@@ -154,6 +158,10 @@ public final class RuleSet {
 		if (message != null && !message.isEmpty()) {
 			out.append(",\"message\":");
 			Json.quote(out, message);
+		}
+		if (Protocol.validBackendId(backendId)) {
+			out.append(",\"backendId\":");
+			Json.quote(out, backendId);
 		}
 		out.append('}');
 		return out.toString();

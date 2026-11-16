@@ -350,6 +350,7 @@ public final class TrsClient {
 		if (accountSwap != null) accountSwap.drain();
 		dev.theredstonee.trsclient.screenshot.LegacyScreenshots.tick();
 		Minecraft mc = Minecraft.getMinecraft();
+		dev.theredstonee.trsclient.net.ServerRulesNet.tick(mc);
 		dev.theredstonee.trsclient.ui.BorderlessDisplay.tick(mc);
 		dev.theredstonee.trsclient.halloween.LegacyHalloween.tick(mc);
 		// Touch-Modus (mobile Engine): feste Overlay-Tasten + Bildschirmtastatur; sonst nichts.
@@ -458,7 +459,6 @@ public final class TrsClient {
 		tickRedstone();
 		dev.theredstonee.trsclient.online.LegacyOnline.tick(mc);
 		dev.theredstonee.trsclient.online.LegacyEmotes.tick(mc);
-		dev.theredstonee.trsclient.net.ServerRulesNet.tick(mc);
 	}
 
 	/** Weltwechsel erkennen (Legacy-Forge hat dafür kein eigenes Ereignis). */

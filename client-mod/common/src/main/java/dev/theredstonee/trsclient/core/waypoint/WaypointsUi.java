@@ -51,6 +51,8 @@ public final class WaypointsUi extends UiScreen implements WaypointDialog.Host {
 	private final boolean onlyDialog;
 	private final TextInput search = new TextInput(32);
 	private final TextInput setName = new TextInput(WaypointStore.MAX_SET_NAME);
+	private final TextInput profileName = new TextInput(ProxyWorlds.MAX_NAME);
+	private boolean addingProfile;
 	private final WaypointFilter.Query query = new WaypointFilter.Query();
 	/** Set, das gerade umbenannt wird; {@link #NEW_SET} = neues. */
 	private String renaming;
@@ -62,6 +64,7 @@ public final class WaypointsUi extends UiScreen implements WaypointDialog.Host {
 	private final int[] listRect = new int[4];
 	private final int[] setsRect = new int[4];
 	private final int[] menuRect = new int[4];
+	private final int[] profileRect = new int[4];
 	private Waypoint menuOf;
 	private int menuX, menuY;
 	private String note;
@@ -163,12 +166,26 @@ public final class WaypointsUi extends UiScreen implements WaypointDialog.Host {
 			host.playClick();
 			requestClose();
 		});
+		MapPlatform platform = e.platform();
 		String world = key.isEmpty() ? I18n.tr("waypoints.noWorld") : key.substring(key.indexOf(':') + 1);
+		if (key.startsWith("proxy:") && platform != null && platform.proxyWorlds() != null) {
+			String backend = platform.proxyBackendId();
+			String selected = platform.proxyWorlds().selected(platform.proxyServerAddress());
+			world = ProxyWorlds.validBackendId(backend) ? backend : selected != null ? selected : I18n.tr("proxy.default");
+		}
 		int titleEnd = px + 26 + c.textWidth(I18n.tr("waypoints.title"));
 		Paint.textRight(c, c.clip(world, Math.max(20, closeX - titleEnd - 8)), closeX - 6, py + 7, t.textDim, false);
 		c.fill(px + 1, py + HEAD_H - 1, px + pw - 1, py + HEAD_H, ColorMath.withAlpha(t.dustOn, 0x90));
 
-		int bodyY = py + HEAD_H, bodyH = ph - HEAD_H - FOOT_H;
+		boolean profilesAvailable = platform != null && platform.inWorld() && platform.proxyWorlds() != null
+				&& platform.proxyServerAddress() != null && !platform.proxyServerAddress().isEmpty();
+		if (!profilesAvailable && addingProfile) {
+			addingProfile = false;
+			profileName.setFocused(false);
+		}
+		int profileHeight = profilesAvailable ? 24 : 0;
+		if (profilesAvailable) profileBar(c, platform, px + 4, py + HEAD_H + 3, pw - 8, mx, my, t);
+		int bodyY = py + HEAD_H + profileHeight, bodyH = ph - HEAD_H - FOOT_H - profileHeight;
 		if (s != null && !key.isEmpty()) {
 			List<Waypoint> all = s.all(key);
 			setsColumn(c, s, key, all, px + 1, bodyY, SETS_W, bodyH, mx, my, dt, t);
@@ -200,6 +217,80 @@ public final class WaypointsUi extends UiScreen implements WaypointDialog.Host {
 		if (menuOf != null) rowMenu(c, w, h, mx, my, t);
 		tooltip(c, w, h, mx, my, t);
 		c.pop();
+	}
+
+	private void profileBar(Canvas c, final MapPlatform platform, int x, int y, int width, int mx, int my, Theme t) {
+		final ProxyWorlds worlds = platform.proxyWorlds();
+		final String address = platform.proxyServerAddress();
+		profileRect[0] = x;
+		profileRect[1] = y;
+		profileRect[2] = width;
+		profileRect[3] = 15;
+		String selected = worlds.selected(address);
+		String label = selected == null ? I18n.tr("proxy.default") : selected;
+		boolean automatic = ProxyWorlds.validBackendId(platform.proxyBackendId());
+		if (automatic) label = I18n.tr("proxy.automatic", platform.proxyBackendId());
+		int nameWidth = Math.max(50, width - 122);
+		c.text(I18n.tr("proxy.profile"), x + 2, y + 4, t.textDim, false);
+		int labelWidth = c.textWidth(I18n.tr("proxy.profile")) + 8;
+		int choiceWidth = Math.max(30, nameWidth - labelWidth);
+		int choiceX = x + labelWidth;
+		if (addingProfile) {
+			Redstone.well(c, choiceX, y, choiceWidth, 15, t.accent);
+			String value = profileName.isEmpty() ? I18n.tr("proxy.name") : profileName.text();
+			c.text(c.clip(value, choiceWidth - 6), choiceX + 3, y + 4, profileName.isEmpty() ? t.textDim : t.text, false);
+			if (profileName.focused() && (System.currentTimeMillis() / 500) % 2 == 0) {
+				int cursor = choiceX + 3 + c.textWidth(profileName.text().substring(0, profileName.cursor()));
+				if (cursor < choiceX + choiceWidth - 2) c.fill(cursor, y + 2, cursor + 1, y + 13, t.text);
+			}
+			hits.add(choiceX, y, choiceWidth, 15, () -> profileName.setFocused(true));
+		} else {
+			String hint = automatic ? I18n.tr("proxy.auto") : I18n.tr("proxy.choose");
+			choice(c, choiceX, y, choiceWidth, label, mx, my, t, hint, () -> {
+				List<String> names = worlds.profiles(address);
+				int index = selected == null ? -1 : names.indexOf(selected);
+				selectProfile(worlds, address, index + 1 < names.size() ? names.get(index + 1) : null);
+			});
+		}
+		int addX = x + nameWidth + 4;
+		Redstone.iconButton(c, addX, y, 15, "plus", inside(mx, my, addX, y, 15, 15), false);
+		hits.add(addX, y, 15, 15, () -> {
+			host.playClick();
+			if (addingProfile) commitProfile(platform);
+			else {
+				addingProfile = true;
+				profileName.clear();
+				profileName.setFocused(true);
+				search.setFocused(false);
+				cancelRename();
+			}
+		});
+		if (inside(mx, my, addX, y, 15, 15)) tip.add(I18n.tr("proxy.add"));
+		choice(c, addX + 19, y, 94, I18n.tr("proxy.reset"), mx, my, t, I18n.tr("proxy.resetHint"), () -> {
+			addingProfile = false;
+			profileName.setFocused(false);
+			selectProfile(worlds, address, null);
+		});
+	}
+
+	private void selectProfile(ProxyWorlds worlds, String address, String name) {
+		try {
+			worlds.select(address, name);
+			query.set = WaypointFilter.ALL;
+			scroll = 0;
+			menuOf = null;
+		} catch (java.io.IOException | IllegalArgumentException ex) {
+			note(I18n.tr("proxy.error"));
+		}
+	}
+
+	private void commitProfile(MapPlatform platform) {
+		String name = profileName.text().trim();
+		if (!name.isEmpty() && platform != null && platform.proxyWorlds() != null) {
+			selectProfile(platform.proxyWorlds(), platform.proxyServerAddress(), name);
+		} else note(I18n.tr("proxy.error"));
+		addingProfile = false;
+		profileName.setFocused(false);
 	}
 
 	// --- Sets ---
@@ -576,14 +667,17 @@ public final class WaypointsUi extends UiScreen implements WaypointDialog.Host {
 	private void tooltip(Canvas c, int w, int h, int mx, int my, Theme t) {
 		if (tip.isEmpty() || menuOf != null || dialog.isOpen()) return;
 		String s = tip.get(0);
-		int tw = c.textWidth(s);
-		int x = Math.min(mx + 8, w - tw - 8), y = Math.max(2, my - 14);
+		List<String> lines = Paint.wrap(c, s, Math.max(20, w - 16));
+		int tw = 0;
+		for (String line : lines) tw = Math.max(tw, c.textWidth(line));
+		int th = lines.size() * 10 + 3;
+		int x = Math.max(3, Math.min(mx + 8, w - tw - 8)), y = Math.max(2, my - th - 1);
 		c.flush();
 		c.push();
 		c.raise(50);
-		Redstone.block(c, x - 3, y - 2, tw + 6, 13, 0xF0141217);
-		Redstone.frame(c, x - 3, y - 2, tw + 6, 13, ColorMath.withAlpha(t.dustOn, 0xA0));
-		c.text(s, x, y + 1, t.text, false);
+		Redstone.block(c, x - 3, y - 2, tw + 6, th, 0xF0141217);
+		Redstone.frame(c, x - 3, y - 2, tw + 6, th, ColorMath.withAlpha(t.dustOn, 0xA0));
+		for (int index = 0; index < lines.size(); index++) c.text(lines.get(index), x, y + 1 + index * 10, t.text, false);
 		c.pop();
 	}
 
@@ -599,6 +693,10 @@ public final class WaypointsUi extends UiScreen implements WaypointDialog.Host {
 			if (inside(mx, my, menuRect[0], menuRect[1], menuRect[2], menuRect[3])) return super.mouseClicked(mx, my, button);
 			menuOf = null;
 			if (button != 1) return true;
+		}
+		if (addingProfile && !inside(mx, my, profileRect[0], profileRect[1], profileRect[2], profileRect[3])) {
+			addingProfile = false;
+			profileName.setFocused(false);
 		}
 		search.setFocused(false);
 		if (renaming != null) {
@@ -623,6 +721,14 @@ public final class WaypointsUi extends UiScreen implements WaypointDialog.Host {
 	@Override
 	public boolean keyPressed(int rawKey, UiKey key, boolean shift) {
 		if (dialog.isOpen()) return dialog.key(key, shift);
+		if (addingProfile && profileName.focused()) {
+			if (key == UiKey.ESCAPE) {
+				addingProfile = false;
+				profileName.setFocused(false);
+			} else if (key == UiKey.ENTER) commitProfile(e.platform());
+			else profileName.key(key);
+			return true;
+		}
 		if (renaming != null) {
 			if (key == UiKey.ESCAPE) cancelRename();
 			else if (key == UiKey.ENTER) commitRename();
@@ -653,6 +759,7 @@ public final class WaypointsUi extends UiScreen implements WaypointDialog.Host {
 	@Override
 	public boolean charTyped(char ch) {
 		if (dialog.isOpen()) return dialog.type(ch);
+		if (addingProfile && profileName.focused()) return profileName.type(ch);
 		if (renaming != null) return setName.type(ch);
 		if (search.focused()) {
 			scroll = 0;
@@ -663,6 +770,7 @@ public final class WaypointsUi extends UiScreen implements WaypointDialog.Host {
 
 	@Override
 	protected void onClosed() {
+		profileName.setFocused(false);
 		host.closeScreen();
 	}
 

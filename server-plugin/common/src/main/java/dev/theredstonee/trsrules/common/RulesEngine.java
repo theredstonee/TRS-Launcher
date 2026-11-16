@@ -215,13 +215,11 @@ public final class RulesEngine<P> {
 
 	/** Effective rules for a player right now (empty for bypass players). */
 	public RuleSet effectiveRules(P player) {
-		return effectiveRules(player, sessions.get(bridge.id(player)));
+		return effectiveRules(player, sessions.get(bridge.id(player)), config, bridge.scope(player));
 	}
 
-	private RuleSet effectiveRules(P player, Session<P> s) {
-		RulesConfig cfg = config;
+	private RuleSet effectiveRules(P player, Session<P> s, RulesConfig cfg, String scope) {
 		if (isBypassed(player, cfg)) return RuleSet.empty();
-		String scope = bridge.scope(player);
 		RuleSet own = cfg.resolve(scope);
 		RuleSet upstream = currentUpstream(s, scope);
 		return upstream == null ? own : upstream.overlay(own);
@@ -259,7 +257,9 @@ public final class RulesEngine<P> {
 	public void sendRules(P player) {
 		Session<P> s = sessions.get(bridge.id(player));
 		if (s == null || s.hello == null) return;
-		String json = effectiveRules(player, s).toJson();
+		RulesConfig cfg = config;
+		String scope = bridge.scope(player);
+		String json = effectiveRules(player, s, cfg, scope).toJson(cfg.kind() == ScopeKind.SERVERS ? scope : null);
 		byte[] bytes = json.getBytes(Protocol.UTF8);
 		if (bytes.length > Protocol.MAX_PAYLOAD) {
 			bridge.warn("Rules for " + bridge.name(player) + " are " + bytes.length + " bytes (limit " + Protocol.MAX_PAYLOAD
@@ -375,7 +375,7 @@ public final class RulesEngine<P> {
 				+ (section ? " (has its own section)" : " (global rules)"));
 		RuleSet upstream = currentUpstream(s, scope);
 		if (upstream != null) out.add("Backend rules: " + upstream.toJson());
-		out.add("Rules: " + effectiveRules(player, s).toJson());
+		out.add("Rules: " + effectiveRules(player, s, cfg, scope).toJson());
 		if (s != null && s.hello != null) {
 			if (s.pending) out.add("Delivery: waiting – the client has not registered the rules channel yet");
 			else if (s.lastSent != null) out.add("Delivery: sent");

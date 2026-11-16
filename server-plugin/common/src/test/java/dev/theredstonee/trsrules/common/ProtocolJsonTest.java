@@ -58,6 +58,12 @@ class ProtocolJsonTest {
 	}
 
 	@Test
+	void optionalBackendIdIsIgnoredByRulesParser() {
+		String json = "{\"v\":1,\"modules\":{\"zoom\":{\"enabled\":false}},\"backendId\":\"lobby\"}";
+		assertEquals("{\"v\":1,\"modules\":{\"zoom\":{\"enabled\":false}}}", RuleSet.fromJson(json).toJson());
+	}
+
+	@Test
 	void overlayTopWinsPerEntry() {
 		RuleSet backend = RuleSet.empty().module("minimap", false).module("zoom", false)
 				.setting("zoom", "factor", SettingRule.range(null, 2.0))

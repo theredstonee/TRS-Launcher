@@ -230,6 +230,7 @@ public final class TrsClient {
 				pvp.countPresses(mc);
 				return;
 			}
+			dev.theredstonee.trsclient.net.ServerRulesNet.tick(mc);
 			dev.theredstonee.trsclient.ui.BorderlessDisplay.tick(mc);
 			// Touch-Modus (mobile Engine): feste Overlay-Tasten + Bildschirmtastatur; sonst nichts.
 			dev.theredstonee.trsclient.touch.TouchHooks.tick();
@@ -256,6 +257,12 @@ public final class TrsClient {
 				saveConfig();
 			}
 			if (hud != null) hud.tick();
+			while (TrsKeys.waypointList.isPressed()) {
+				if (mc.currentScreen == null && mc.thePlayer != null && mc.theWorld != null) {
+					dev.theredstonee.trsclient.screen.TrsUiScreen screen = dev.theredstonee.trsclient.screen.WorldMapScreen.createWaypoints();
+					if (screen != null) mc.displayGuiScreen(screen);
+				}
+			}
 			// Garderobe (Taste standardmäßig unbelegt)
 			while (TrsKeys.wardrobe.isPressed()) {
 				if (mc.currentScreen == null && dev.theredstonee.trsclient.screen.WardrobeScreen.available()) {
@@ -292,7 +299,6 @@ public final class TrsClient {
 				if (mc.ingameGUI != null) mc.ingameGUI.func_110326_a(toast, false);
 				saveConfig();
 			}
-			dev.theredstonee.trsclient.net.ServerRulesNet.tick(mc);
 		}
 
 		@SubscribeEvent

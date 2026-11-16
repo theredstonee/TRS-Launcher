@@ -42,7 +42,7 @@ import java.util.Set;
  * etwas Gesperrtes zu ändern, gefragt („Dieser Server sperrt X. Als TRS-Team trotzdem benutzen?“). Ja hebt die Sperre
  * für dieses Modul bis zum Trennen auf. Der Server erfährt davon nichts (kein Paket).
  *
- * <p>Nur aus dem Spiel-/Render-Thread benutzen (außer {@link #team}).
+ * <p>Nur aus dem Spiel-/Render-Thread benutzen (außer {@link #team} und {@link #backendId()}).
  */
 public final class ServerRules {
 	/** Namensraum und Pfade der modernen Kanäle (für Loader-APIs, die beides getrennt wollen). */
@@ -103,6 +103,7 @@ public final class ServerRules {
 	private final Platform platform;
 
 	private RuleSet rules = RuleSet.EMPTY;
+	private volatile String currentBackendId;
 	/** Module, deren Sperre das TRS-Team für diese Verbindung aufgehoben hat. */
 	private final Set<String> bypassed = new HashSet<String>();
 	/** Schon gezeigte Hinweistexte dieser Verbindung (jeder nur einmal). */
@@ -128,6 +129,12 @@ public final class ServerRules {
 	/** Die Regeln des laufenden Spiels (null vor {@link #init}). */
 	public static ServerRules get() {
 		return instance;
+	}
+
+	/** Aktuelle Backend-ID oder null; darf aus jedem Thread gelesen werden. */
+	public static String backendId() {
+		ServerRules current = instance;
+		return current == null ? null : current.currentBackendId;
 	}
 
 	/** Für Tests: eigene Instanz einsetzen (null = keine). */
@@ -175,6 +182,7 @@ public final class ServerRules {
 	}
 
 	private void reset() {
+		currentBackendId = null;
 		BypassPrompt.cancel();
 		bypassed.clear();
 		shownMessages.clear();
@@ -194,6 +202,7 @@ public final class ServerRules {
 			platform.log("TRS Server Rules: ungültige Nachricht verworfen (" + (data == null ? 0 : data.length) + " Bytes)");
 			return false;
 		}
+		currentBackendId = set.backendId;
 		received++;
 		apply(set);
 		platform.log("TRS Server Rules: " + set.modules.size() + " Modul-Regeln vom Server");

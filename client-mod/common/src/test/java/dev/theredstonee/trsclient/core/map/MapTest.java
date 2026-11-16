@@ -4,6 +4,10 @@ import dev.theredstonee.trsclient.core.config.KeyDefaults;
 import dev.theredstonee.trsclient.core.module.TrsModules;
 import dev.theredstonee.trsclient.core.waypoint.Waypoint;
 import dev.theredstonee.trsclient.core.waypoint.WaypointStore;
+import dev.theredstonee.trsclient.core.waypoint.ProxyWorlds;
+import dev.theredstonee.trsclient.core.waypoint.WaypointsUi;
+import dev.theredstonee.trsclient.core.ui.Canvas;
+import dev.theredstonee.trsclient.core.ui.UiKey;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -455,6 +459,8 @@ class MapTest {
 		int renderDistance = 2;
 		boolean lastLos;
 		int saves;
+		ProxyWorlds proxies;
+		String backendId;
 		List<double[]> mobs = new ArrayList<double[]>();
 
 		FakePlatform(Path dir) {
@@ -468,8 +474,12 @@ class MapTest {
 
 		@Override
 		public String worldKey() {
-			return world;
+			return proxies == null ? world : proxies.resolve("play.example.net", backendId);
 		}
+
+		@Override public ProxyWorlds proxyWorlds() { return proxies; }
+		@Override public String proxyServerAddress() { return proxies == null ? null : "play.example.net"; }
+		@Override public String proxyBackendId() { return backendId; }
 
 		@Override
 		public String dimension() {
@@ -543,7 +553,7 @@ class MapTest {
 
 		@Override
 		public String waypointWorldKey() {
-			return world;
+			return worldKey();
 		}
 
 		@Override
@@ -555,6 +565,67 @@ class MapTest {
 		public String serverMotd() {
 			return null;
 		}
+	}
+
+	private static final class ProfileCanvas implements Canvas {
+		@Override public void fill(int x1, int y1, int x2, int y2, int color) { }
+		@Override public void text(String text, int x, int y, int color, boolean shadow) { }
+		@Override public int textWidth(String text) { return text == null ? 0 : text.length() * 6; }
+		@Override public int lineHeight() { return 9; }
+		@Override public String clip(String text, int width) { return text.substring(0, Math.min(text.length(), Math.max(0, width / 6))); }
+		@Override public void flush() { }
+		@Override public void scissor(int x1, int y1, int x2, int y2) { }
+		@Override public void noScissor() { }
+		@Override public void raise(float z) { }
+		@Override public void push() { }
+		@Override public void translate(float x, float y) { }
+		@Override public void scale(float factor) { }
+		@Override public void pop() { }
+	}
+
+	@Test
+	void proxyProfileUiSwitchesMapAndWaypointWorlds(@TempDir Path dir) {
+		TrsModules modules = new TrsModules();
+		modules.minimap.setEnabled(true);
+		MapEngine engine = new MapEngine(modules, dir, true);
+		FakePlatform platform = new FakePlatform(dir);
+		platform.proxies = ProxyWorlds.open(dir.resolve("proxy.json"));
+		engine.tick(platform);
+		String original = engine.worldKey();
+		WaypointsUi ui = new WaypointsUi(engine, new WaypointsUi.Host() {
+			@Override public void closeScreen() { }
+			@Override public void playClick() { }
+		});
+		Canvas canvas = new ProfileCanvas();
+		ui.render(canvas, 800, 600, 0, 0);
+		assertTrue(ui.mouseClicked(560, 160, 0));
+		for (char character : "Survival".toCharArray()) assertTrue(ui.charTyped(character));
+		assertTrue(ui.keyPressed(0, UiKey.ENTER, false));
+		String profile = platform.waypointWorldKey();
+		assertTrue(profile.startsWith("proxy:"));
+		engine.tick(platform);
+		assertEquals(profile, engine.worldKey());
+		ui.render(canvas, 800, 600, 0, 0);
+		assertTrue(ui.mouseClicked(590, 160, 0));
+		engine.tick(platform);
+		assertEquals(original, platform.waypointWorldKey());
+		assertEquals(original, engine.worldKey());
+		ui.render(canvas, 800, 600, 0, 0);
+		assertTrue(ui.mouseClicked(250, 160, 0));
+		engine.tick(platform);
+		assertEquals(profile, engine.worldKey());
+		platform.backendId = "automatic";
+		engine.tick(platform);
+		String automatic = engine.worldKey();
+		assertNotEquals(profile, automatic);
+		ui.render(canvas, 800, 600, 0, 0);
+		assertTrue(ui.mouseClicked(590, 160, 0));
+		engine.tick(platform);
+		assertEquals(automatic, engine.worldKey());
+		platform.backendId = null;
+		engine.tick(platform);
+		assertEquals(original, engine.worldKey());
+		engine.shutdown();
 	}
 
 	@Test

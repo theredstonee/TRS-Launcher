@@ -233,6 +233,22 @@ public final class MapBridge implements MapPlatform {
 	}
 
 	@Override
+	public dev.theredstonee.trsclient.core.waypoint.ProxyWorlds proxyWorlds() {
+		TrsClient client = TrsClient.get();
+		return client == null || client.waypoints() == null ? null : client.waypoints().proxyWorlds();
+	}
+
+	@Override
+	public String proxyServerAddress() {
+		return inWorld() ? Mc.serverAddress() : null;
+	}
+
+	@Override
+	public String proxyBackendId() {
+		return dev.theredstonee.trsclient.core.serverrules.ServerRules.backendId();
+	}
+
+	@Override
 	public void waypointsChanged() {
 		TrsClient client = TrsClient.get();
 		if (client != null && client.waypoints() != null) client.waypoints().save();
