@@ -580,16 +580,16 @@ const numbers: Slide = {
 }
 
 // Usage: GitHub release downloads (installers + update downloads, all releases) and the TRS API
-// (accounts = people who turned on the optional online features). Read on 22 Oct 2026 – refresh before each event.
+// (accounts = people who turned on the optional online features). Read on 16 Nov 2026 – refresh before each event.
 const traction: Slide = {
   id: 'traction',
   dur: 10,
   html: () => {
     const stats: [number, T, T][] = [
-      [415, { de: 'Downloads', en: 'downloads' }, { de: 'Installer & Updates auf GitHub', en: 'installers & updates on GitHub' }],
-      [32, { de: 'TRS-Konten', en: 'TRS accounts' }, { de: 'Online-Funktionen sind freiwillig', en: 'online features are optional' }],
-      [18, { de: 'aktiv in 7 Tagen', en: 'active in 7 days' }, { de: 'mit TRS-Konto', en: 'with a TRS account' }],
-      [14, { de: 'Ideen & Bugs gemeldet', en: 'ideas & bugs reported' }, { de: 'im öffentlichen Issue-Tracker', en: 'in the public issue tracker' }],
+      [2069, { de: 'Downloads', en: 'downloads' }, { de: 'Installer & Updates auf GitHub', en: 'installers & updates on GitHub' }],
+      [63, { de: 'TRS-Konten', en: 'TRS accounts' }, { de: 'Online-Funktionen sind freiwillig', en: 'online features are optional' }],
+      [20, { de: 'aktiv in 7 Tagen', en: 'active in 7 days' }, { de: 'mit TRS-Konto', en: 'with a TRS account' }],
+      [16, { de: 'Ideen & Bugs gemeldet', en: 'ideas & bugs reported' }, { de: 'im öffentlichen Issue-Tracker', en: 'in the public issue tracker' }],
     ]
     return (
       col(
@@ -597,8 +597,8 @@ const traction: Slide = {
           { de: 'Wo wir stehen', en: 'Where we are' },
           { de: 'Früh dran.<br><em>Ehrliche Zahlen.</em>', en: 'Early days.<br><em>Honest numbers.</em>' },
           {
-            de: 'Den TRS Launcher gibt es seit gut einem Monat. Die Zahlen sind klein – deshalb zählt jede Rückmeldung.',
-            en: 'The TRS Launcher has been out for just over a month. The numbers are small – so every bit of feedback counts.',
+            de: 'Den TRS Launcher gibt es seit knapp zwei Monaten. Die Zahlen sind klein – deshalb zählt jede Rückmeldung.',
+            en: 'The TRS Launcher has been out for almost two months. The numbers are small – so every bit of feedback counts.',
           },
         ),
         110,
@@ -610,7 +610,7 @@ const traction: Slide = {
             `<div class="stat a z" style="--d:${600 + i * 200}ms"><div class="n">${count(n, 1600, 800 + i * 200)}</div><div class="l">${t(l)}</div><div class="d">${t(d)}</div></div>`,
         )
         .join('')}</div>` +
-      `<div class="cmp-legend a f" style="--d:2200ms">${t({ de: 'Stand 22.10.2026 · seit dem ersten Release am 22.09.2026', en: 'As of 22 Oct 2026 · since the first release on 22 Sep 2026' })}</div>`
+      `<div class="cmp-legend a f" style="--d:2200ms">${t({ de: 'Stand 16.11.2026 · seit dem ersten Release am 22.09.2026', en: 'As of 16 Nov 2026 · since the first release on 22 Sep 2026' })}</div>`
     )
   },
 }
