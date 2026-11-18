@@ -870,7 +870,10 @@
       "invalidSubdomain": "Dirección: de 3 a 24 caracteres – a–z, 0–9 y -, sin - al principio ni al final.",
       "invalidPath": "Ruta no válida en el servidor.",
       "invalidProperty": "Ajuste: clave con a–z, 0–9, . y -, valor de como máximo 500 caracteres en una línea.",
-      "fileTooLarge": "El archivo es demasiado grande (máximo 1 MB)."
+      "fileTooLarge": "El archivo es demasiado grande (máximo 1 MB).",
+      "invalidWorldName": "Nombre del mundo: de 1 a 32 caracteres de A–Z, a–z, 0–9, _ y -.",
+      "noWorldInZip": "No hay ningún mundo en este archivo ZIP (falta level.dat).",
+      "downloadFailed": "No se pudo descargar el mundo; inténtalo de nuevo."
     },
     "chatImage": {
       "unsupported": "Solo se pueden enviar imágenes PNG, JPEG y WebP.",
@@ -8464,7 +8467,7 @@
       "files": "Archivos",
       "plugins": "Plugins",
       "mods": "Mods",
-      "world": "Mundo"
+      "world": "Mundos"
     },
     "stats": {
       "title": "En directo",
@@ -8533,21 +8536,18 @@
       }
     },
     "world": {
-      "title": "Mundo de una instancia",
-      "text": "Sube un mundo de un jugador a tu servidor. Sustituye el mundo del servidor (con Nether y End).",
       "instance": "Instancia",
       "world": "Mundo",
       "none": "Esta instancia no tiene mundos.",
-      "stopFirst": "Detén primero el servidor: solo se puede subir un mundo con él apagado.",
-      "button": "Pasar mundo",
       "confirmTitle": "¿Sustituir el mundo del servidor?",
-      "confirmText": "«{world}» sustituirá el mundo, el Nether y el End de tu servidor. El mundo anterior se borrará para siempre.",
       "confirm": "Sustituir mundo",
       "done": "Mundo subido: estará ahí en el próximo inicio.",
       "phase": {
         "zip": "Empaquetando mundo … {percent} %",
         "upload": "Subiendo … {percent} %",
-        "import": "Preparando el mundo en el servidor …"
+        "import": "Preparando el mundo en el servidor …",
+        "list": "Reuniendo los archivos del mundo …",
+        "download": "Descargando … {percent} %"
       }
     },
     "tabsLabel": "Secciones del servidor",
@@ -8779,6 +8779,63 @@
       "skipped": "Omitido: {reason}",
       "by": "de {author}",
       "downloads": "{n} descargas"
+    },
+    "worlds": {
+      "title": "Mundos del servidor",
+      "text": "El servidor carga el mundo activo. Para cambiar algo, el servidor debe estar detenido.",
+      "runningHint": "Tu servidor está en marcha: los mundos solo se pueden cambiar mientras está apagado.",
+      "stop": "Detener servidor",
+      "stopping": "Deteniendo …",
+      "notGenerated": "«{name}» aún no existe: se genera en el próximo inicio (semilla y tipo de mundo de los ajustes).",
+      "empty": "Aún no hay mundos: el primero se genera en el próximo inicio.",
+      "active": "Activo",
+      "activate": "Activar",
+      "download": "Descargar",
+      "resetButton": "Restablecer",
+      "deleteButton": "Borrar",
+      "activated": "«{name}» es ahora el mundo activo: se carga en el próximo inicio.",
+      "reset": "«{name}» restablecido: en el próximo inicio se genera un mundo nuevo.",
+      "deleted": "«{name}» borrado.",
+      "downloaded": "Mundo guardado como {file}.",
+      "downloadedPartly": "Mundo guardado como {file}: el servidor no listó todos los archivos, puede faltar algo.",
+      "downloading": "Descargando «{name}»",
+      "resetTitle": "¿Restablecer «{name}»?",
+      "resetText": "El mundo se borra para siempre junto con el Nether y el End. En el próximo inicio el servidor genera uno nuevo.",
+      "deleteTitle": "¿Borrar «{name}»?",
+      "deleteText": "El mundo se borra del servidor para siempre junto con el Nether y el End.",
+      "uploadTitle": "Subir un mundo",
+      "uploadText": "Desde una de tus instancias, un archivo ZIP o una carpeta de tu PC.",
+      "source": "Origen",
+      "targetName": "Nombre en el servidor",
+      "activateAfter": "Usar como mundo activo",
+      "nameHint": "Letras, números, _ y -, como máximo 32 caracteres.",
+      "replaces": "Ya existe un mundo llamado «{name}»: se reemplazará.",
+      "replaceText": "«{name}» se reemplaza en el servidor junto con el Nether y el End. El mundo anterior se pierde para siempre.",
+      "upload": "Subir mundo",
+      "chooseAndUpload": "Elegir y subir …",
+      "stopTitle": "¿Detener primero el servidor?",
+      "stopText": "Los mundos solo se pueden cambiar con el servidor apagado. ¿Detenerlo ahora y continuar?",
+      "stopAndContinue": "Detener y continuar",
+      "dimensions": {
+        "overworld": "Superficie",
+        "nether": "Nether",
+        "end": "End"
+      },
+      "sources": {
+        "instance": "Instancia",
+        "zip": "Archivo ZIP",
+        "folder": "Carpeta"
+      },
+      "sourceHint": {
+        "zip": "Eliges el archivo ZIP después de hacer clic; el mundo (level.dat) puede estar en cualquier carpeta dentro.",
+        "folder": "Eliges la carpeta del mundo (con level.dat) después de hacer clic."
+      }
+    },
+    "version": {
+      "title": "Tipo de servidor y versión",
+      "soon": "Próximamente",
+      "soonHint": "CraftingHosting ofrecerá pronto el cambio de versión.",
+      "change": "Cambiar versión"
     }
   }
 }

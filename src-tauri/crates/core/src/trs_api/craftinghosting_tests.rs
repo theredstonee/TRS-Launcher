@@ -6,6 +6,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use serde_json::json;
 
 use super::craftinghosting::{NewServer, SettingsPatch};
+use super::craftinghosting_world::{UploadTarget, WorldSource};
 use super::testkit::{MockServer, Request, Response};
 use super::tests::{ACC, auth_routes, launcher};
 use crate::Error;
@@ -423,6 +424,10 @@ async fn mods_are_checked_and_cleaned() {
     assert_eq!(server.hits("POST", "/v1/craftinghosting/server/mods")[0].json(), json!({ "projects": ["lithium", "sodium"] }));
 }
 
+fn instance(folder: &str) -> WorldSource {
+    WorldSource::Instance { instance_id: "inst".into(), folder: folder.into() }
+}
+
 #[tokio::test]
 async fn world_is_zipped_uploaded_and_imported() {
     let (server, _dir, launcher) = extras().await;
@@ -435,7 +440,7 @@ async fn world_is_zipped_uploaded_and_imported() {
     let phases = Arc::new(std::sync::Mutex::new(Vec::new()));
     let seen = Arc::clone(&phases);
     launcher
-        .craftinghosting_upload_world("inst", "Welt", move |p| seen.lock().unwrap().push((p.phase, p.percent)))
+        .craftinghosting_upload_world(instance("Welt"), &UploadTarget::default(), move |p| seen.lock().unwrap().push((p.phase, p.percent)))
         .await
         .unwrap();
 
@@ -455,7 +460,7 @@ async fn world_is_zipped_uploaded_and_imported() {
     assert_eq!(std::fs::read_dir(&tmp).map(Iterator::count).unwrap_or(0), 0);
 
     // Unbekannte Welt: nichts wird gesendet.
-    assert!(launcher.craftinghosting_upload_world("inst", "Fehlt", |_| {}).await.is_err());
+    assert!(launcher.craftinghosting_upload_world(instance("Fehlt"), &UploadTarget::default(), |_| {}).await.is_err());
     assert_eq!(server.hits("POST", "/v1/craftinghosting/server/world/upload").len(), 1);
 }
 
@@ -711,4 +716,210 @@ async fn addons_are_listed_and_removed() {
     let e = launcher.craftinghosting_remove_addon("TRS-Server-Rules.jar").await.unwrap_err();
     assert_eq!(e.message_code(), "trsApi.file_protected");
     assert!(matches!(launcher.craftinghosting_remove_addon("../x.jar").await, Err(Error::Validation(_))));
+}
+
+// --- Welten ------------------------------------------------------------------------------
+
+fn worlds_api(base: Arc<std::sync::OnceLock<String>>, running: Arc<AtomicBool>) -> impl Fn(&Request) -> Response + Send + Sync + 'static {
+    let issued = AtomicUsize::new(0);
+    move |req: &Request| {
+        if let Some(r) = auth_routes(req, &issued, "mc-token") {
+            return r;
+        }
+        // Dateien kommen direkt vom Partner – nie mit TRS-Token.
+        if req.path.starts_with("/dl/") || req.path == "/upload" {
+            if req.bearer().is_some() {
+                return Response::error(400, "token_leak");
+            }
+            return match req.path.as_str() {
+                "/dl/world/level.dat" => Response { status: 200, headers: Vec::new(), body: b"LEVEL".to_vec() },
+                "/dl/world/region/r.0.0.mca" => Response { status: 200, headers: Vec::new(), body: vec![7u8; 5000] },
+                "/dl/world_nether/DIM-1/region/r.0.0.mca" => Response { status: 200, headers: Vec::new(), body: vec![9u8; 300] },
+                "/upload" => Response::empty(200),
+                _ => Response::error(404, "not_found"),
+            };
+        }
+        if !req.bearer().is_some_and(|t| t.starts_with("trs_")) {
+            return Response::error(401, "unauthorized");
+        }
+        let worlds = json!({ "active": "world", "exists": true, "worlds": [
+            { "name": "world", "active": true, "dimensions": ["overworld", "nether", "the_end"] },
+            { "name": "skyblock", "active": false, "dimensions": ["overworld", "<b>"] },
+            { "name": "../evil", "active": false, "dimensions": [] }
+        ] });
+        let base = base.get().cloned().unwrap_or_default();
+        let path = req.path.as_str();
+        match req.method.as_str() {
+            "GET" if path == "/v1/craftinghosting/server" => {
+                let mut s = server(false);
+                if running.load(Ordering::SeqCst) {
+                    s["state"] = json!("running");
+                }
+                Response::json(200, json!({ "server": s }))
+            }
+            "GET" if path == "/v1/craftinghosting/server/worlds" => Response::json(200, worlds),
+            "PATCH" if path == "/v1/craftinghosting/server/worlds" => {
+                if running.load(Ordering::SeqCst) {
+                    return Response::error(409, "server_running");
+                }
+                let mut w = worlds.clone();
+                w["active"] = req.json()["active"].clone();
+                Response::json(200, w)
+            }
+            "DELETE" if path == "/v1/craftinghosting/server/worlds?name=skyblock" => {
+                Response::json(200, json!({ "active": "world", "exists": true, "worlds": [worlds["worlds"][0].clone()] }))
+            }
+            "GET" if path == "/v1/craftinghosting/server/world/files?name=world" => Response::json(
+                200,
+                json!({ "name": "world", "truncated": false, "files": [
+                    { "path": "/world/level.dat", "size": 5 },
+                    { "path": "/world/region/r.0.0.mca", "size": 5000 },
+                    { "path": "/world_nether/DIM-1/region/r.0.0.mca", "size": 300 },
+                    { "path": "/world/session.lock", "size": 3 },
+                    { "path": "/server.properties", "size": 10 },
+                    { "path": "/world/../x", "size": 1 }
+                ] }),
+            ),
+            "GET" if path == "/v1/craftinghosting/server/world/files?name=evil" => Response::json(
+                200,
+                json!({ "name": "evil", "truncated": true, "files": [{ "path": "/evil/level.dat", "size": 5 }] }),
+            ),
+            "POST" if path == "/v1/craftinghosting/server/files/download-urls" => {
+                let paths: Vec<String> = req.json()["paths"].as_array().unwrap().iter().map(|p| p.as_str().unwrap().to_owned()).collect();
+                let urls: Vec<serde_json::Value> = paths
+                    .iter()
+                    .map(|p| {
+                        let url = if p.starts_with("/evil") { "https://evil.com/x".to_owned() } else { format!("{base}/dl{p}") };
+                        json!({ "path": p, "url": url })
+                    })
+                    .collect();
+                Response::json(200, json!({ "urls": urls, "expiresAt": "2026-11-18T16:10:00.000Z" }))
+            }
+            "POST" if path == "/v1/craftinghosting/server/world/upload" => {
+                Response::json(200, json!({ "url": format!("{base}/upload"), "expiresAt": "2026-11-18T16:10:00.000Z" }))
+            }
+            "POST" if path == "/v1/craftinghosting/server/world/import" => Response::json(200, json!({ "server": server(false) })),
+            _ => Response::error(404, "not_found"),
+        }
+    }
+}
+
+async fn worlds_setup() -> (MockServer, tempfile::TempDir, Arc<crate::Launcher>, Arc<AtomicBool>) {
+    let base = Arc::new(std::sync::OnceLock::new());
+    let running = Arc::new(AtomicBool::new(false));
+    let server = MockServer::start(worlds_api(Arc::clone(&base), Arc::clone(&running))).await;
+    base.set(server.base.clone()).unwrap();
+    let (dir, launcher) = launcher(&server, &[ACC]).await;
+    (server, dir, launcher, running)
+}
+
+#[tokio::test]
+async fn worlds_are_listed_activated_and_deleted() {
+    let (server, _dir, launcher, running) = worlds_setup().await;
+    let worlds = launcher.craftinghosting_worlds().await.unwrap();
+    assert_eq!(worlds.active, "world");
+    let names: Vec<&str> = worlds.worlds.iter().map(|w| w.name.as_str()).collect();
+    assert_eq!(names, ["world", "skyblock"]);
+    assert_eq!(worlds.worlds[0].dimensions, ["overworld", "nether", "the_end"]);
+    assert_eq!(worlds.worlds[1].dimensions, ["overworld"]);
+
+    let set = launcher.craftinghosting_set_active_world("skyblock").await.unwrap();
+    assert_eq!(set.active, "skyblock");
+    assert_eq!(server.hits("PATCH", "/v1/craftinghosting/server/worlds")[0].json(), json!({ "active": "skyblock" }));
+    assert!(matches!(launcher.craftinghosting_set_active_world("a b").await, Err(Error::Validation(_))));
+
+    running.store(true, Ordering::SeqCst);
+    let e = launcher.craftinghosting_set_active_world("world").await.unwrap_err();
+    assert_eq!(e.message_code(), "trsApi.server_running");
+    running.store(false, Ordering::SeqCst);
+
+    let after = launcher.craftinghosting_delete_world("skyblock").await.unwrap();
+    assert_eq!(after.worlds.len(), 1);
+    assert!(matches!(launcher.craftinghosting_delete_world("../x").await, Err(Error::Validation(_))));
+}
+
+#[tokio::test]
+async fn world_is_downloaded_into_a_zip() {
+    let (server, dir, launcher, _) = worlds_setup().await;
+    let dest = dir.path().join("Meine-Welt-world.zip");
+    let phases = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let seen = Arc::clone(&phases);
+    let result = launcher
+        .craftinghosting_download_world("world", &dest, move |p| seen.lock().unwrap().push((p.phase, p.percent)))
+        .await
+        .unwrap();
+    assert_eq!((result.files, result.bytes, result.truncated), (3, 5305, false));
+    assert_eq!(result.file_name, "Meine-Welt-world.zip");
+    assert!(phases.lock().unwrap().contains(&("download", 100)));
+
+    // Nur Weltdateien, ohne session.lock und fremde Pfade; eine Anfrage nach Adressen.
+    let urls = server.hits("POST", "/v1/craftinghosting/server/files/download-urls");
+    assert_eq!(urls.len(), 1);
+    assert_eq!(
+        urls[0].json(),
+        json!({ "paths": ["/world/level.dat", "/world/region/r.0.0.mca", "/world_nether/DIM-1/region/r.0.0.mca"] })
+    );
+    for hit in server.requests().iter().filter(|r| r.path.starts_with("/dl/")) {
+        assert!(hit.bearer().is_none());
+    }
+
+    let mut zip = zip::ZipArchive::new(std::fs::File::open(&dest).unwrap()).unwrap();
+    let mut names: Vec<String> = zip.file_names().filter_map(Result::ok).map(|n| n.to_string()).collect();
+    names.sort();
+    assert_eq!(names, ["world/level.dat", "world/region/r.0.0.mca", "world_nether/DIM-1/region/r.0.0.mca"]);
+    let mut level = String::new();
+    std::io::Read::read_to_string(&mut zip.by_name("world/level.dat").unwrap(), &mut level).unwrap();
+    assert_eq!(level, "LEVEL");
+    assert!(!dir.path().join("Meine-Welt-world.zip.part").exists());
+}
+
+#[tokio::test]
+async fn foreign_download_hosts_are_refused() {
+    let (server, dir, launcher, _) = worlds_setup().await;
+    let dest = dir.path().join("evil.zip");
+    assert!(launcher.craftinghosting_download_world("evil", &dest, |_| {}).await.is_err());
+    assert!(!dest.exists());
+    assert!(!dir.path().join("evil.zip.part").exists());
+    assert!(server.requests().iter().all(|r| !r.path.starts_with("/x")));
+    assert!(matches!(launcher.craftinghosting_download_world("a/b", &dest, |_| {}).await, Err(Error::Validation(_))));
+}
+
+#[tokio::test]
+async fn named_world_from_a_zip_is_uploaded() {
+    let (server, dir, launcher, running) = worlds_setup().await;
+    // ZIP mit der Welt eine Ebene tiefer – oben landet der Zielname.
+    let src = dir.path().join("download.zip");
+    {
+        let mut zip = zip::ZipWriter::new(std::fs::File::create(&src).unwrap());
+        let options = zip::write::SimpleFileOptions::default();
+        for (name, data) in [("Backup/Insel/level.dat", &b"L"[..]), ("Backup/Insel/region/r.0.0.mca", b"R"), ("Backup/Insel/session.lock", b"x"), ("Backup/readme.txt", b"t")] {
+            zip.start_file(name, options).unwrap();
+            std::io::Write::write_all(&mut zip, data).unwrap();
+        }
+        zip.finish().unwrap();
+    }
+    let target = UploadTarget { name: Some("insel".into()), activate: true };
+    launcher.craftinghosting_upload_world(WorldSource::Zip(src.clone()), &target, |_| {}).await.unwrap();
+    let upload = &server.hits("POST", "/upload")[0];
+    let body = String::from_utf8_lossy(&upload.body);
+    assert!(body.contains("insel/level.dat") && body.contains("insel/region/r.0.0.mca"));
+    assert!(!body.contains("session.lock") && !body.contains("readme.txt") && !body.contains("Backup/"));
+    assert_eq!(
+        server.hits("POST", "/v1/craftinghosting/server/world/import")[0].json(),
+        json!({ "file": "trs-world.zip", "name": "insel", "activate": true })
+    );
+
+    // Keine Welt in der ZIP, ungültiger Name, laufender Server: nichts wird hochgeladen.
+    let empty = dir.path().join("empty.zip");
+    {
+        let mut zip = zip::ZipWriter::new(std::fs::File::create(&empty).unwrap());
+        zip.start_file("a.txt", zip::write::SimpleFileOptions::default()).unwrap();
+        zip.finish().unwrap();
+    }
+    assert!(matches!(launcher.craftinghosting_upload_world(WorldSource::Zip(empty), &target, |_| {}).await, Err(Error::Validation(_))));
+    let bad = UploadTarget { name: Some("a b".into()), activate: false };
+    assert!(matches!(launcher.craftinghosting_upload_world(WorldSource::Zip(src.clone()), &bad, |_| {}).await, Err(Error::Validation(_))));
+    running.store(true, Ordering::SeqCst);
+    assert!(matches!(launcher.craftinghosting_upload_world(WorldSource::Zip(src), &target, |_| {}).await, Err(Error::Validation(_))));
+    assert_eq!(server.hits("POST", "/upload").len(), 1);
 }

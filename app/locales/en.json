@@ -870,7 +870,10 @@
       "invalidSubdomain": "Address: 3 to 24 characters – a–z, 0–9 and -, no - at the start or end.",
       "invalidPath": "Invalid path on the server.",
       "invalidProperty": "Setting: key from a–z, 0–9, . and -, value at most 500 characters on one line.",
-      "fileTooLarge": "The file is too large (at most 1 MB)."
+      "fileTooLarge": "The file is too large (at most 1 MB).",
+      "invalidWorldName": "World name: 1 to 32 characters from A–Z, a–z, 0–9, _ and -.",
+      "noWorldInZip": "There’s no world in this ZIP file (level.dat is missing).",
+      "downloadFailed": "The world couldn’t be downloaded – please try again."
     },
     "chatImage": {
       "unsupported": "Only PNG, JPEG and WebP pictures can be sent.",
@@ -8464,7 +8467,7 @@
       "files": "Files",
       "plugins": "Plugins",
       "mods": "Mods",
-      "world": "World"
+      "world": "Worlds"
     },
     "stats": {
       "title": "Live",
@@ -8533,21 +8536,18 @@
       }
     },
     "world": {
-      "title": "World from an instance",
-      "text": "Uploads a singleplayer world to your server. It replaces the server’s world (with Nether and End).",
       "instance": "Instance",
       "world": "World",
       "none": "This instance has no worlds.",
-      "stopFirst": "Stop the server first – a world can only be uploaded while it’s off.",
-      "button": "Take over world",
       "confirmTitle": "Replace the server world?",
-      "confirmText": "“{world}” will replace your server’s world, Nether and End. The old world is deleted for good.",
       "confirm": "Replace world",
       "done": "World uploaded – it’s there on the next start.",
       "phase": {
         "zip": "Packing world … {percent} %",
         "upload": "Uploading … {percent} %",
-        "import": "Setting up the world on the server …"
+        "import": "Setting up the world on the server …",
+        "list": "Collecting the world’s files …",
+        "download": "Downloading … {percent} %"
       }
     },
     "tabsLabel": "Server sections",
@@ -8779,6 +8779,63 @@
       "skipped": "Skipped: {reason}",
       "by": "by {author}",
       "downloads": "{n} downloads"
+    },
+    "worlds": {
+      "title": "Worlds on the server",
+      "text": "The server loads the active world. Changes need a stopped server.",
+      "runningHint": "Your server is running – worlds can only be changed while it’s off.",
+      "stop": "Stop server",
+      "stopping": "Stopping …",
+      "notGenerated": "“{name}” doesn’t exist yet – it’s generated on the next start (seed and world type from the settings).",
+      "empty": "No worlds yet – the first one is generated on the next start.",
+      "active": "Active",
+      "activate": "Set active",
+      "download": "Download",
+      "resetButton": "Reset",
+      "deleteButton": "Delete",
+      "activated": "“{name}” is now the active world – it loads on the next start.",
+      "reset": "“{name}” reset – a new world is generated on the next start.",
+      "deleted": "“{name}” deleted.",
+      "downloaded": "World saved as {file}.",
+      "downloadedPartly": "World saved as {file} – the server didn’t list all files, something may be missing.",
+      "downloading": "Downloading “{name}”",
+      "resetTitle": "Reset “{name}”?",
+      "resetText": "The world is deleted for good, with Nether and End. On the next start the server generates a new one.",
+      "deleteTitle": "Delete “{name}”?",
+      "deleteText": "The world is deleted from the server for good, with Nether and End.",
+      "uploadTitle": "Upload a world",
+      "uploadText": "From one of your instances, a ZIP file or a folder on your PC.",
+      "source": "Source",
+      "targetName": "Name on the server",
+      "activateAfter": "Set as active world",
+      "nameHint": "Letters, digits, _ and -, at most 32 characters.",
+      "replaces": "A world called “{name}” already exists – it will be replaced.",
+      "replaceText": "“{name}” on the server is replaced, with Nether and End. The old world is gone for good.",
+      "upload": "Upload world",
+      "chooseAndUpload": "Choose and upload …",
+      "stopTitle": "Stop the server first?",
+      "stopText": "Worlds can only be changed while the server is off. Stop it now and continue?",
+      "stopAndContinue": "Stop and continue",
+      "dimensions": {
+        "overworld": "Overworld",
+        "nether": "Nether",
+        "end": "End"
+      },
+      "sources": {
+        "instance": "Instance",
+        "zip": "ZIP file",
+        "folder": "Folder"
+      },
+      "sourceHint": {
+        "zip": "You choose the ZIP file after clicking – the world (level.dat) can be in any folder inside.",
+        "folder": "You choose the world folder (with level.dat) after clicking."
+      }
+    },
+    "version": {
+      "title": "Server type & version",
+      "soon": "Coming soon",
+      "soonHint": "CraftingHosting will offer version changes soon.",
+      "change": "Change version"
     }
   }
 }

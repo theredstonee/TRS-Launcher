@@ -1,14 +1,17 @@
 //! Kostenloser Server beim Partner CraftingHosting – nur über die TRS API.
 
-use tauri::State;
 use tauri::ipc::Channel;
+use tauri::{AppHandle, State};
+use tauri_plugin_dialog::DialogExt;
 use std::collections::BTreeMap;
 
 use trs_core::trs_api::craftinghosting::{Info, ModsResult, NewServer, Server, Settings, SettingsPatch, Stats, SubdomainCheck};
 use trs_core::trs_api::craftinghosting_files::{Addons, DirListing, FileContent, Properties, SavedFile};
-use trs_core::trs_api::craftinghosting_world::WorldProgress;
+use trs_core::trs_api::craftinghosting_world::{UploadTarget, WorldProgress, WorldSource};
+use trs_core::trs_api::craftinghosting_worlds::{WorldDownload, Worlds, download_file_name};
 
 use crate::LauncherState;
+use crate::dialog_text::{self, DialogText};
 use crate::error::CommandResult;
 
 #[tauri::command]
@@ -97,20 +100,117 @@ pub async fn craftinghosting_mods(launcher: State<'_, LauncherState>, projects: 
 }
 
 /// Welt einer Instanz packen, hochladen und einspielen (Server muss aus sein).
+/// Ohne `target` ersetzt sie die Welt `world`, sonst kommt sie als eigene Welt dazu.
 #[tauri::command]
 pub async fn craftinghosting_upload_world(
     launcher: State<'_, LauncherState>,
     instance_id: String,
     folder: String,
+    target: Option<UploadTarget>,
     on_progress: Channel<WorldProgress>,
 ) -> CommandResult<Server> {
     trs_core::platform::desktop_only()?;
     let launcher = launcher.inner().clone();
+    let source = WorldSource::Instance { instance_id, folder };
     Ok(launcher
-        .craftinghosting_upload_world(&instance_id, &folder, move |p| {
+        .craftinghosting_upload_world(source, &target.unwrap_or_default(), move |p| {
             let _ = on_progress.send(p);
         })
         .await?)
+}
+
+/// Welt von der Festplatte (`kind` = `zip` oder `folder`) per Dialog wählen und hochladen.
+/// `None` = Dialog abgebrochen. Der Pfad bleibt in Rust.
+#[tauri::command]
+pub async fn craftinghosting_upload_world_disk(
+    app: AppHandle,
+    launcher: State<'_, LauncherState>,
+    kind: String,
+    target: UploadTarget,
+    on_progress: Channel<WorldProgress>,
+) -> CommandResult<Option<Server>> {
+    trs_core::platform::desktop_only()?;
+    let lang = dialog_text::language(&launcher).await;
+    let zip = kind == "zip";
+    let dialog_app = app.clone();
+    let picked = tauri::async_runtime::spawn_blocking(move || {
+        if zip {
+            dialog_app
+                .dialog()
+                .file()
+                .set_title(DialogText::PickWorldZip.text(lang))
+                .add_filter(DialogText::ZipArchive.text(lang), &["zip"])
+                .blocking_pick_file()
+                .and_then(|p| p.into_path().ok())
+        } else {
+            crate::commands::system::blocking_pick_folder(&dialog_app, DialogText::PickWorldFolder.text(lang))
+        }
+    })
+    .await
+    .ok()
+    .flatten();
+    let Some(path) = picked else { return Ok(None) };
+    let source = if zip { WorldSource::Zip(path) } else { WorldSource::Folder(path) };
+    let launcher = launcher.inner().clone();
+    Ok(Some(
+        launcher
+            .craftinghosting_upload_world(source, &target, move |p| {
+                let _ = on_progress.send(p);
+            })
+            .await?,
+    ))
+}
+
+#[tauri::command]
+pub async fn craftinghosting_worlds(launcher: State<'_, LauncherState>) -> CommandResult<Worlds> {
+    Ok(launcher.craftinghosting_worlds().await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_set_active_world(launcher: State<'_, LauncherState>, name: String) -> CommandResult<Worlds> {
+    Ok(launcher.craftinghosting_set_active_world(&name).await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_delete_world(launcher: State<'_, LauncherState>, name: String) -> CommandResult<Worlds> {
+    Ok(launcher.craftinghosting_delete_world(&name).await?)
+}
+
+/// Welt als ZIP speichern (Dialog, Vorschlag `<server>-<welt>-<datum>.zip`). `None` = abgebrochen.
+/// Abbrechen läuft über `taskId` (`cancel_task`).
+#[tauri::command]
+pub async fn craftinghosting_download_world(
+    app: AppHandle,
+    launcher: State<'_, LauncherState>,
+    name: String,
+    server_name: String,
+    on_progress: Channel<WorldProgress>,
+    task_id: Option<String>,
+) -> CommandResult<Option<WorldDownload>> {
+    trs_core::platform::desktop_only()?;
+    let name = trs_core::trs_api::craftinghosting_worlds::world_name(&name)?;
+    let suggestion = download_file_name(&server_name, &name, &chrono::Local::now().format("%Y-%m-%d").to_string());
+    let lang = dialog_text::language(&launcher).await;
+    let dialog_app = app.clone();
+    let picked = tauri::async_runtime::spawn_blocking(move || {
+        dialog_app
+            .dialog()
+            .file()
+            .set_title(DialogText::SaveWorld.text(lang))
+            .set_file_name(suggestion)
+            .add_filter(DialogText::ZipArchive.text(lang), &["zip"])
+            .blocking_save_file()
+    })
+    .await
+    .ok()
+    .flatten()
+    .and_then(|p| p.into_path().ok());
+    let Some(dest) = picked else { return Ok(None) };
+    let launcher = launcher.inner().clone();
+    let work = launcher.craftinghosting_download_world(&name, &dest, move |p| {
+        let _ = on_progress.send(p);
+    });
+    Ok(Some(crate::commands::tasks::tracked(&app, task_id, work).await?))
 }
 
 // --- Dateien, server.properties, Plugins/Mods --------------------------------------------

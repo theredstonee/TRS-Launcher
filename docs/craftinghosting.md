@@ -151,7 +151,7 @@ Usual TRS error shape `{ "error": { "code", "message", "details"? } }`.
   still playing keep the server running; it stops when the last player leaves.
 - Start flow: `start` → poll `GET /server` every 5 s until `state = running` → show the address / join.
 - First setup: after the first start the API installs TRS Server Rules with the fixed MOTD footer
-  ("Free server: trs-launcher.de × craftinghosting.free") and restarts the server once (`setup: "restarting"`). Keep
+  ("Free server by craftinghosting.free × trs-launcher.de") and restarts the server once (`setup: "restarting"`). Keep
   heartbeating while `setup` is `restarting` even though `session.active` is false, and treat it as "not ready yet"
   when joining.
 
@@ -176,3 +176,54 @@ the partner node (`host:port`, fixed per server), so players connect directly to
   "Join" always uses `domain`, falling back to `address`.
 - New error codes: `400 invalid_subdomain`, `409 subdomain_taken`, `409 subdomain_reserved`,
   `503 dns_unavailable` (DNS not configured on the TRS server – creating still works, `domain` stays null).
+
+## Files, all server properties, plugins & mods (launcher only)
+
+All paths are absolute inside the server (`/server.properties`, `/plugins/Foo/config.yml`), no `..`, ≤ 512 chars.
+Changes to files, properties and add-ons apply on the next server start (say so in the UI).
+
+- `GET /v1/craftinghosting/server/files?dir=/` → `{ dir, entries: [{ name, path, type: "file" | "directory", size,
+  modifiedAt, editable, protected }] }` – `editable` = text file the editor may open (≤ 1 MB, known text extension or
+  no extension), `protected` = managed by TRS (can't be edited/deleted: the TRS Server Rules jar, its hosting file,
+  `whitelist.json` while access is "friends").
+- `GET /v1/craftinghosting/server/files/content?path=` → `{ path, content }` (`415 file_not_text`, `413 file_too_large`).
+- `PUT /v1/craftinghosting/server/files/content?path=` body `{ content }` (≤ 1 MB) → `{ path, size }`.
+  `/server.properties` is post-processed: locked keys keep their old value, `accepts-transfers=true`, MOTD rule.
+- `POST /v1/craftinghosting/server/files/delete` body `{ paths: [] }` (≤ 50) → 204. `POST …/files/folder` body
+  `{ path }` → 204. Protected paths → `403 file_protected`.
+- `GET /v1/craftinghosting/server/properties` → `{ properties: { "<key>": "<value>" }, locked: ["server-port", …] }`
+  (all keys from server.properties as strings; `motd` is line 1 only, like settings). `PATCH` body
+  `{ properties: { "<key>": "<value>" } }` (keys `^[a-z0-9.-]{1,64}$`, values ≤ 500 chars, no line breaks) →
+  same shape. Locked keys → `400 property_locked`. Build the UI from the keys present, with nice labels/types for the
+  well-known ones (booleans as switches, numbers as number fields, difficulty/gamemode/level-type as selects, the rest
+  as text) and a search field; unknown keys as text. Keep the existing quick settings form too or merge it – your call.
+- `GET /v1/craftinghosting/server/addons` → `{ kind: "plugins" | "mods" | null, dir, items: [{ file, size,
+  modifiedAt, protected }] }` (`null` for vanilla). `DELETE /v1/craftinghosting/server/addons?file=<jar name>` → 204
+  (`403 file_protected` for TRS Server Rules).
+- Install from Modrinth: existing `POST …/server/mods` `{ projects: [id | slug] }`. The launcher searches Modrinth
+  itself (its existing Modrinth client) with the right facets: Paper/Purpur → project type plugin with categories
+  paper/purpur/spigot/bukkit; Fabric → mod + fabric; Forge → mod + forge; always the server's Minecraft version
+  (`latest` = newest release) and `server_side != unsupported`.
+- Config editing: from an installed plugin/mod open its config folder in the file browser (`/plugins/<Name>/`,
+  `/config/`).
+- New error codes: `file_not_text`, `file_too_large`, `file_protected`, `property_locked`, `invalid_path`.
+
+## Worlds (launcher only)
+
+A world is a top-level folder with `level.dat` (Paper: `<name>_nether`, `<name>_the_end` next to it). Names
+`^[A-Za-z0-9_-]{1,32}$`. Changing worlds needs a stopped server (`409 server_running`).
+
+- `GET /v1/craftinghosting/server/worlds` → `{ active, exists, worlds: [{ name, active, dimensions: [] }] }`.
+- `PATCH /v1/craftinghosting/server/worlds` `{ active }` → same shape (sets `level-name`; a missing world is generated
+  on the next start, with seed/level-type from the settings).
+- `DELETE /v1/craftinghosting/server/worlds?name=` → same shape (all dimensions; the active one = reset).
+- **Download** (done by the Rust core, files never pass the TRS API): `GET …/server/world/files?name=` →
+  `{ name, files: [{ path, size }], truncated }`, then in batches of ≤ 100 `POST …/server/files/download-urls`
+  `{ paths }` → `{ urls: [{ path, url }], expiresAt }` (https, host `*.craftinghosting.free`, valid 10 min – fetch
+  them just before downloading). Download with limited concurrency (e.g. 4) into a ZIP whose entries keep the server
+  paths without the leading `/` (e.g. `world/level.dat`, `world_nether/DIM-1/region/…`), progress events, cancel.
+  Save to a user-chosen file (save dialog) – default name `<server>-<world>-<date>.zip`.
+- **Upload** as a named world: existing upload + `POST …/server/world/import` `{ file: "trs-world.zip", name,
+  activate }` – the ZIP's top-level folder must be `name` (zip the instance world folder as `<name>/…`).
+- Version/type change: NOT available yet (CraftingHosting will add it). Show it in the settings as a disabled
+  "Version wechseln – kommt bald" row, nothing else.

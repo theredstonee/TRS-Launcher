@@ -25,6 +25,12 @@ import {
   validEntryName,
   validPropertyValue,
   validServerPath,
+  dimensionId,
+  serverWorldsSchema,
+  suggestWorldName,
+  uniqueWorldName,
+  validWorldName,
+  worldUploadProgressSchema,
 } from '../app/utils/craftinghosting'
 
 // Partner-Server: Dateien, alle Einstellungen (server.properties), Plugins/Mods.
@@ -228,5 +234,37 @@ describe('Plugins und Mods', () => {
     expect(addonConfigPath('plugins', 'LuckPerms-Bukkit-5.4.102.jar', folders)).toBe('/plugins/LuckPerms')
     expect(addonConfigPath('plugins', 'Unbekannt-1.0.jar', folders)).toBe('/plugins')
     expect(addonConfigPath('mods', 'lithium-fabric-0.15.jar', folders)).toBe('/config')
+  })
+})
+
+describe('Welten', () => {
+  it('Namen wie in der API', () => {
+    for (const ok of ['world', 'Skyblock_2', 'a-b', 'x'.repeat(32)]) expect(validWorldName(ok), ok).toBe(true)
+    for (const bad of ['', 'a b', '../x', 'grün', 'x'.repeat(33)]) expect(validWorldName(bad), bad).toBe(false)
+  })
+
+  it('Vorschlag aus dem Ordnernamen und freie Namen', () => {
+    expect(suggestWorldName('Meine Insel!')).toBe('Meine_Insel')
+    expect(suggestWorldName('Grüne Wiese')).toBe('Grune_Wiese')
+    expect(suggestWorldName('???')).toBe('world')
+    expect(suggestWorldName('x'.repeat(40))).toBe('x'.repeat(32))
+    expect(uniqueWorldName('world', ['world', 'world-2'])).toBe('world-3')
+    expect(uniqueWorldName('neu', ['world'])).toBe('neu')
+    expect(uniqueWorldName('x'.repeat(32), ['x'.repeat(32)])).toBe(`${'x'.repeat(30)}-2`)
+  })
+
+  it('Dimensionen für die Anzeige', () => {
+    expect(dimensionId('overworld')).toBe('overworld')
+    expect(dimensionId('minecraft:the_nether')).toBe('nether')
+    expect(dimensionId('DIM-1')).toBe('nether')
+    expect(dimensionId('the_end')).toBe('end')
+    expect(dimensionId('aether')).toBeNull()
+  })
+
+  it('Schemas', () => {
+    const ok = { active: 'world', exists: false, worlds: [{ name: 'world', active: true, dimensions: ['overworld'] }] }
+    expect(serverWorldsSchema.safeParse(ok).success).toBe(true)
+    expect(serverWorldsSchema.safeParse({ ...ok, active: '../x' }).success).toBe(false)
+    expect(worldUploadProgressSchema.safeParse({ phase: 'download', percent: 40 }).success).toBe(true)
   })
 })

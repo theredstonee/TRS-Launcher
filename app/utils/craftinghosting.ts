@@ -130,7 +130,7 @@ export const subdomainCheckSchema = z.object({
 })
 
 export const worldUploadProgressSchema = z.object({
-  phase: z.enum(['zip', 'upload', 'import']),
+  phase: z.enum(['zip', 'upload', 'import', 'list', 'download']),
   percent: z.number().int().min(0).max(100),
 })
 
@@ -807,4 +807,73 @@ export function addonConfigPath(kind: AddonKind, file: string, folders: string[]
   if (kind === 'mods') return '/config'
   const folder = matchConfigFolder(file, folders)
   return folder ? `/plugins/${folder}` : '/plugins'
+}
+
+// --- Welten ---
+
+export const WORLD_NAME_RE = /^[A-Za-z0-9_-]{1,32}$/
+export const WORLD_NAME_MAX = 32
+
+export const serverWorldsSchema = z.object({
+  active: z.string().regex(WORLD_NAME_RE),
+  exists: z.boolean(),
+  worlds: z.array(
+    z.object({
+      name: z.string().regex(WORLD_NAME_RE),
+      active: z.boolean(),
+      dimensions: z.array(z.string().max(32)).max(8),
+    }),
+  ),
+})
+export const worldDownloadSchema = z.object({
+  fileName: z.string().max(260),
+  files: count,
+  bytes: z.number().min(0),
+  truncated: z.boolean(),
+})
+
+export type ServerWorlds = z.infer<typeof serverWorldsSchema>
+export type ServerWorld = ServerWorlds['worlds'][number]
+export type WorldDownload = z.infer<typeof worldDownloadSchema>
+export interface WorldUploadTarget {
+  name: string
+  activate: boolean
+}
+export type WorldUploadSource = { kind: 'instance'; instanceId: string; folder: string } | { kind: 'zip' } | { kind: 'folder' }
+
+export function validWorldName(name: string): boolean {
+  return WORLD_NAME_RE.test(name)
+}
+
+/** Weltname aus einem Ordnernamen: „Meine Insel!“ → `Meine_Insel`. Leer → `world`. */
+export function suggestWorldName(input: string): string {
+  const name = input
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/[^A-Za-z0-9_-]/g, '')
+    .slice(0, WORLD_NAME_MAX)
+  return validWorldName(name) ? name : 'world'
+}
+
+/** `base`, sonst `base-2`, `base-3` … (höchstens 32 Zeichen). */
+export function uniqueWorldName(base: string, taken: readonly string[]): string {
+  if (!taken.includes(base)) return base
+  for (let i = 2; i < 1000; i++) {
+    const suffix = `-${i}`
+    const name = `${base.slice(0, WORLD_NAME_MAX - suffix.length)}${suffix}`
+    if (!taken.includes(name)) return name
+  }
+  return base
+}
+
+export type DimensionId = 'overworld' | 'nether' | 'end'
+
+/** Dimension für die Anzeige; unbekannte bleiben `null` (dann roh anzeigen). */
+export function dimensionId(value: string): DimensionId | null {
+  const v = value.toLowerCase().replace(/^minecraft:/, '')
+  if (v === 'overworld' || v === 'world') return 'overworld'
+  if (v === 'nether' || v === 'the_nether' || v === 'dim-1') return 'nether'
+  if (v === 'end' || v === 'the_end' || v === 'dim1') return 'end'
+  return null
 }

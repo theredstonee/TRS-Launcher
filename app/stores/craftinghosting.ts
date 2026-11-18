@@ -4,7 +4,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 // Relativ importiert, damit Tests den Store ohne Nuxt laden können (Instanzen, Spiele,
 // Beitreten und Toasts kommen in der App über Nuxts Auto-Imports, im Test als Attrappen).
-import { BackendError, backend, errorMessage } from '../utils/backend'
+import { BackendError, backend, errorMessage, isCancelled } from '../utils/backend'
 import {
   type CraftingAccess,
   type CraftingInfo,
@@ -17,7 +17,10 @@ import {
   type NewCraftingServer,
   type ServerAddons,
   type ServerProperties,
+  type ServerWorlds,
   type SubdomainCheck,
+  type WorldDownload,
+  type WorldUploadTarget,
   type WorldUploadProgress,
   ORIGINS_KEY,
   POLL_FAST_MS,
@@ -119,6 +122,10 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
   /** Sprungziel für den Dateien-Reiter; `filesJump` zählt hoch, damit derselbe Ordner erneut greift. */
   const filesDir = ref('/')
   const filesJump = ref(0)
+  const worlds = ref<ServerWorlds | null>(null)
+  const worldsLoading = ref(false)
+  /** Laufender Welt-Download (Fortschritt, Abbrechen über `taskId`). */
+  const worldDownload = ref<{ name: string; taskId: string; progress: WorldUploadProgress | null } | null>(null)
   let joinAfterEula = false
   let pollTimer: ReturnType<typeof setTimeout> | null = null
   let statsTimer: ReturnType<typeof setInterval> | null = null
@@ -429,19 +436,106 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     return outcome
   }
 
-  /** Welt einer Instanz einspielen (ersetzt die Welt des Servers). */
-  async function uploadWorld(instanceId: string, folder: string): Promise<boolean> {
+  /** Welt einer Instanz einspielen; ohne `target` ersetzt sie die Welt `world`. */
+  async function uploadWorld(instanceId: string, folder: string, target?: WorldUploadTarget): Promise<boolean> {
     worldProgress.value = { phase: 'zip', percent: 0 }
     try {
-      const updated = await run('world', () => backend.craftinghosting.uploadWorld(instanceId, folder, (p) => (worldProgress.value = p)))
+      const onProgress = (p: WorldUploadProgress) => (worldProgress.value = p)
+      const updated = await run('world', () =>
+        target
+          ? backend.craftinghosting.uploadWorld(instanceId, folder, onProgress, target)
+          : backend.craftinghosting.uploadWorld(instanceId, folder, onProgress),
+      )
       if (updated) {
         setServer(updated)
         useToasts().ok(t('craftinghosting.world.done'))
+        if (worlds.value) void loadWorlds()
       }
       return !!updated
     } finally {
       worldProgress.value = null
     }
+  }
+
+  /** Welt-ZIP oder Weltordner von der Festplatte (Dialog im Kern). */
+  async function uploadWorldDisk(kind: 'zip' | 'folder', target: WorldUploadTarget): Promise<boolean> {
+    worldProgress.value = null
+    try {
+      const updated = await run('world', () => backend.craftinghosting.uploadWorldDisk(kind, target, (p) => (worldProgress.value = p)))
+      if (updated) {
+        setServer(updated)
+        useToasts().ok(t('craftinghosting.world.done'))
+        void loadWorlds()
+      }
+      return !!updated
+    } finally {
+      worldProgress.value = null
+    }
+  }
+
+  // --- Welten ---------------------------------------------------------------------------
+
+  async function loadWorlds() {
+    worldsLoading.value = true
+    try {
+      worlds.value = await backend.craftinghosting.worlds()
+    } catch (e) {
+      worlds.value = null
+      if (apiCode(e) !== 'server_installing') report(e)
+    } finally {
+      worldsLoading.value = false
+    }
+  }
+
+  async function setActiveWorld(name: string): Promise<boolean> {
+    const next = await run('world', () => backend.craftinghosting.setActiveWorld(name))
+    if (next) {
+      worlds.value = next
+      useToasts().ok(t('craftinghosting.worlds.activated', { name }))
+    }
+    return !!next
+  }
+
+  /** Löschen; bei der aktiven Welt heißt das „zurücksetzen“ (neu beim nächsten Start). */
+  async function deleteWorld(name: string): Promise<boolean> {
+    const active = worlds.value?.active === name
+    const next = await run('world', () => backend.craftinghosting.deleteWorld(name))
+    if (next) {
+      worlds.value = next
+      useToasts().ok(t(active ? 'craftinghosting.worlds.reset' : 'craftinghosting.worlds.deleted', { name }))
+    }
+    return !!next
+  }
+
+  async function downloadWorld(name: string): Promise<WorldDownload | null> {
+    if (worldDownload.value || !server.value) return null
+    const job = { name, taskId: `craftinghosting-world:${Date.now()}`, progress: null as WorldUploadProgress | null }
+    worldDownload.value = job
+    try {
+      const result = await backend.craftinghosting.downloadWorld(name, server.value.name, (p) => {
+        if (worldDownload.value) worldDownload.value = { ...worldDownload.value, progress: p }
+      }, job.taskId)
+      if (result) useToasts().ok(t(result.truncated ? 'craftinghosting.worlds.downloadedPartly' : 'craftinghosting.worlds.downloaded', { file: result.fileName }))
+      return result
+    } catch (e) {
+      if (!isCancelled(e)) report(e)
+      return null
+    } finally {
+      worldDownload.value = null
+    }
+  }
+
+  function cancelWorldDownload() {
+    const id = worldDownload.value?.taskId
+    if (id) void backend.cancelTask(id).catch(() => {})
+  }
+
+  /** Stoppen und warten, bis der Server aus ist (für Welt-Änderungen). */
+  async function stopAndWait(): Promise<boolean> {
+    const state = server.value?.state
+    if (state === 'offline' || state === 'failed') return true
+    if (state !== 'stopping' && !(await stop())) return false
+    return waitForOffline()
   }
 
   /**
@@ -684,6 +778,7 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     propertiesPending.value = false
     addons.value = null
     filesDir.value = '/'
+    worlds.value = null
   }
 
   return {
@@ -735,6 +830,16 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     filesDir,
     filesJump,
     openFiles,
+    worlds,
+    worldsLoading,
+    worldDownload,
+    loadWorlds,
+    setActiveWorld,
+    deleteWorld,
+    downloadWorld,
+    cancelWorldDownload,
+    uploadWorldDisk,
+    stopAndWait,
     transferMods,
     uploadWorld,
     setConsoleOpen,

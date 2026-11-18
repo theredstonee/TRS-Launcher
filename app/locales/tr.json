@@ -820,7 +820,10 @@
       "invalidSubdomain": "Adres: 3 ile 24 karakter – a–z, 0–9 ve -, başta veya sonda - olmaz.",
       "invalidPath": "Sunucuda geçersiz yol.",
       "invalidProperty": "Ayar: anahtar a–z, 0–9, . ve - içerir, değer tek satırda en fazla 500 karakter.",
-      "fileTooLarge": "Dosya çok büyük (en fazla 1 MB)."
+      "fileTooLarge": "Dosya çok büyük (en fazla 1 MB).",
+      "invalidWorldName": "Dünya adı: A–Z, a–z, 0–9, _ ve - içeren 1 ila 32 karakter.",
+      "noWorldInZip": "Bu ZIP dosyasında dünya yok (level.dat eksik).",
+      "downloadFailed": "Dünya indirilemedi – lütfen tekrar dene."
     },
     "chatImage": {
       "unsupported": "Yalnızca PNG, JPEG ve WebP resimleri gönderilebilir.",
@@ -7658,7 +7661,7 @@
       "files": "Dosyalar",
       "plugins": "Eklentiler",
       "mods": "Modlar",
-      "world": "Dünya"
+      "world": "Dünyalar"
     },
     "stats": {
       "title": "Canlı",
@@ -7727,21 +7730,18 @@
       }
     },
     "world": {
-      "title": "Bir örnekten dünya",
-      "text": "Tek oyunculu bir dünyayı sunucuna yükler. Sunucunun dünyasının (Nether ve End dahil) yerini alır.",
       "instance": "Örnek",
       "world": "Dünya",
       "none": "Bu örnekte dünya yok.",
-      "stopFirst": "Önce sunucuyu durdur – dünya yalnızca sunucu kapalıyken yüklenebilir.",
-      "button": "Dünyayı aktar",
       "confirmTitle": "Sunucunun dünyası değiştirilsin mi?",
-      "confirmText": "“{world}” sunucunun dünyasının, Nether’ının ve End’inin yerini alacak. Eski dünya kalıcı olarak silinir.",
       "confirm": "Dünyayı değiştir",
       "done": "Dünya yüklendi – bir sonraki başlatmada orada olacak.",
       "phase": {
         "zip": "Dünya paketleniyor … %{percent}",
         "upload": "Yükleniyor … %{percent}",
-        "import": "Dünya sunucuda hazırlanıyor …"
+        "import": "Dünya sunucuda hazırlanıyor …",
+        "list": "Dünyanın dosyaları toplanıyor …",
+        "download": "İndiriliyor … {percent} %"
       }
     },
     "tabsLabel": "Sunucu bölümleri",
@@ -7973,6 +7973,63 @@
       "skipped": "Atlandı: {reason}",
       "by": "{author} tarafından",
       "downloads": "{n} indirme"
+    },
+    "worlds": {
+      "title": "Sunucudaki dünyalar",
+      "text": "Sunucu aktif dünyayı yükler. Değişiklik için sunucunun durdurulmuş olması gerekir.",
+      "runningHint": "Sunucun çalışıyor – dünyalar yalnızca sunucu kapalıyken değiştirilebilir.",
+      "stop": "Sunucuyu durdur",
+      "stopping": "Durduruluyor …",
+      "notGenerated": "“{name}” henüz yok – bir sonraki başlatmada oluşturulur (tohum ve dünya türü ayarlardan).",
+      "empty": "Henüz dünya yok – ilki bir sonraki başlatmada oluşturulur.",
+      "active": "Aktif",
+      "activate": "Aktif yap",
+      "download": "İndir",
+      "resetButton": "Sıfırla",
+      "deleteButton": "Sil",
+      "activated": "“{name}” artık aktif dünya – bir sonraki başlatmada yüklenir.",
+      "reset": "“{name}” sıfırlandı – bir sonraki başlatmada yeni bir dünya oluşturulur.",
+      "deleted": "“{name}” silindi.",
+      "downloaded": "Dünya {file} olarak kaydedildi.",
+      "downloadedPartly": "Dünya {file} olarak kaydedildi – sunucu tüm dosyaları listelemedi, bir şeyler eksik olabilir.",
+      "downloading": "“{name}” indiriliyor",
+      "resetTitle": "“{name}” sıfırlansın mı?",
+      "resetText": "Dünya, Nether ve End ile birlikte kalıcı olarak silinir. Bir sonraki başlatmada sunucu yenisini oluşturur.",
+      "deleteTitle": "“{name}” silinsin mi?",
+      "deleteText": "Dünya, Nether ve End ile birlikte sunucudan kalıcı olarak silinir.",
+      "uploadTitle": "Dünya yükle",
+      "uploadText": "Örneklerinden birinden, bir ZIP dosyasından veya bilgisayarındaki bir klasörden.",
+      "source": "Kaynak",
+      "targetName": "Sunucudaki ad",
+      "activateAfter": "Aktif dünya yap",
+      "nameHint": "Harf, rakam, _ ve -, en fazla 32 karakter.",
+      "replaces": "“{name}” adında bir dünya zaten var – değiştirilecek.",
+      "replaceText": "“{name}” sunucuda Nether ve End ile birlikte değiştirilir. Eski dünya kalıcı olarak gider.",
+      "upload": "Dünyayı yükle",
+      "chooseAndUpload": "Seç ve yükle …",
+      "stopTitle": "Önce sunucu durdurulsun mu?",
+      "stopText": "Dünyalar yalnızca sunucu kapalıyken değiştirilebilir. Şimdi durdurup devam edilsin mi?",
+      "stopAndContinue": "Durdur ve devam et",
+      "dimensions": {
+        "overworld": "Normal dünya",
+        "nether": "Nether",
+        "end": "End"
+      },
+      "sources": {
+        "instance": "Örnek",
+        "zip": "ZIP dosyası",
+        "folder": "Klasör"
+      },
+      "sourceHint": {
+        "zip": "ZIP dosyasını tıkladıktan sonra seçersin – dünya (level.dat) içinde herhangi bir klasörde olabilir.",
+        "folder": "Dünya klasörünü (level.dat içeren) tıkladıktan sonra seçersin."
+      }
+    },
+    "version": {
+      "title": "Sunucu türü ve sürüm",
+      "soon": "Yakında",
+      "soonHint": "CraftingHosting sürüm değiştirmeyi yakında sunacak.",
+      "change": "Sürümü değiştir"
     }
   }
 }

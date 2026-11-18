@@ -26,6 +26,7 @@ pub mod chat;
 pub mod craftinghosting;
 pub mod craftinghosting_files;
 pub mod craftinghosting_world;
+pub mod craftinghosting_worlds;
 pub mod creator;
 pub mod creator_pet;
 pub mod creator_stats;

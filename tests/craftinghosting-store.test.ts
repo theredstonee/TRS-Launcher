@@ -70,6 +70,21 @@ const craftinghosting = {
     ],
   })),
   removeAddon: vi.fn(async () => {}),
+  worlds: vi.fn(async () => ({
+    active: 'world',
+    exists: true,
+    worlds: [
+      { name: 'world', active: true, dimensions: ['overworld'] },
+      { name: 'insel', active: false, dimensions: ['overworld'] },
+    ],
+  })),
+  setActiveWorld: vi.fn(async (name: string) => ({ active: name, exists: true, worlds: [{ name, active: true, dimensions: [] }] })),
+  deleteWorld: vi.fn(async () => ({ active: 'world', exists: false, worlds: [] })),
+  downloadWorld: vi.fn(async (_n: string, _s: string, onProgress: (p: { phase: string; percent: number }) => void) => {
+    onProgress({ phase: 'download', percent: 50 })
+    return { fileName: 'Meine-Welt-world.zip', files: 3, bytes: 100, truncated: false }
+  }),
+  uploadWorldDisk: vi.fn(async () => server()),
   uploadWorld: vi.fn(async (_i: string, _f: string, onProgress: (p: { phase: string; percent: number }) => void) => {
     onProgress({ phase: 'upload', percent: 50 })
     return server()
@@ -81,9 +96,11 @@ const listContent = vi.fn(async () => [
   { fileName: 'own.jar', title: null, enabled: true, source: null },
 ])
 
+const cancelTask = vi.fn(async () => true)
+
 vi.mock('../app/utils/backend', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../app/utils/backend')>()),
-  backend: { craftinghosting, listContent },
+  backend: { craftinghosting, listContent, cancelTask },
 }))
 
 type Phase = 'idle' | 'running'
@@ -438,5 +455,64 @@ describe('Alle Einstellungen, Plugins und Dateien', () => {
     s.reset()
     expect(s.filesDir).toBe('/')
     expect(s.properties).toBeNull()
+  })
+})
+
+describe('Welten', () => {
+  it('setzt aktiv, setzt zurück und lädt herunter', async () => {
+    craftinghosting.server.mockImplementation(async () => server())
+    const s = await store()
+    await s.load()
+    await s.loadWorlds()
+    expect(s.worlds?.worlds.map((w) => w.name)).toEqual(['world', 'insel'])
+
+    expect(await s.setActiveWorld('insel')).toBe(true)
+    expect(s.worlds?.active).toBe('insel')
+    expect(await s.deleteWorld('world')).toBe(true)
+    expect(craftinghosting.deleteWorld).toHaveBeenCalledWith('world')
+
+    const result = await s.downloadWorld('world')
+    expect(result?.fileName).toBe('Meine-Welt-world.zip')
+    expect(craftinghosting.downloadWorld).toHaveBeenCalledWith('world', 'Meine Welt', expect.any(Function), expect.stringMatching(/^craftinghosting-world:/))
+    expect(s.worldDownload).toBeNull()
+    expect(toasts.ok).toHaveBeenCalled()
+  })
+
+  it('Abbrechen meldet keinen Fehler', async () => {
+    craftinghosting.server.mockImplementation(async () => server())
+    const s = await store()
+    await s.load()
+    const { BackendError } = await import('../app/utils/backend')
+    let release: () => void = () => {}
+    craftinghosting.downloadWorld.mockImplementationOnce(
+      () => new Promise((_, reject) => (release = () => reject(new BackendError('cancelled', 'x', 'cancelled')))),
+    )
+    const running = s.downloadWorld('world')
+    expect(s.worldDownload?.name).toBe('world')
+    s.cancelWorldDownload()
+    expect(cancelTask).toHaveBeenCalledWith(s.worldDownload?.taskId)
+    release()
+    expect(await running).toBeNull()
+    expect(toasts.error).not.toHaveBeenCalled()
+  })
+
+  it('lädt eine benannte Welt hoch und gibt das Ziel weiter', async () => {
+    craftinghosting.server.mockImplementation(async () => server())
+    const s = await store()
+    await s.load()
+    await s.loadWorlds()
+    expect(await s.uploadWorld('alt', 'Welt', { name: 'insel', activate: true })).toBe(true)
+    expect(craftinghosting.uploadWorld).toHaveBeenCalledWith('alt', 'Welt', expect.any(Function), { name: 'insel', activate: true })
+    expect(await s.uploadWorldDisk('zip', { name: 'neu', activate: false })).toBe(true)
+    expect(craftinghosting.uploadWorldDisk).toHaveBeenCalledWith('zip', { name: 'neu', activate: false }, expect.any(Function))
+  })
+
+  it('stoppt und wartet, bevor Welten geändert werden', async () => {
+    craftinghosting.server.mockImplementation(async () => server({ state: 'running' }, { active: true }))
+    craftinghosting.stop.mockResolvedValueOnce(server({ state: 'offline' }))
+    const s = await store()
+    await s.load()
+    expect(await s.stopAndWait()).toBe(true)
+    expect(craftinghosting.stop).toHaveBeenCalled()
   })
 })

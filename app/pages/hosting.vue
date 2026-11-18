@@ -143,6 +143,7 @@ function openEula() {
             <CraftinghostingConsolePanel v-if="tab === 'console'" />
             <div v-else-if="tab === 'settings'" class="space-y-4">
               <CraftinghostingAddressCard />
+              <CraftinghostingVersionRow />
               <CraftinghostingSettingsPanel />
               <CraftinghostingPropertiesPanel />
               <section class="card flex flex-wrap items-center justify-between gap-3 border-redstone-900/70 p-4" aria-labelledby="ch-danger-title">

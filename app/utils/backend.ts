@@ -171,7 +171,10 @@ import {
   serverDirSchema,
   serverFileContentSchema,
   serverPropertiesSchema,
+  serverWorldsSchema,
   subdomainCheckSchema,
+  worldDownloadSchema,
+  type WorldUploadTarget,
   type AddonSearchFacets,
   type CraftingAccess,
   type CraftingSettingsPatch,
@@ -1408,9 +1411,18 @@ export const backend = {
     stats: () => checked(craftingStatsSchema, 'craftinghosting_stats'),
     /** Modrinth-Projekte (IDs) auf den Server; Client-Mods überspringt die API. */
     mods: (projects: string[]) => checked(craftingModsResultSchema, 'craftinghosting_mods', { projects }),
-    /** Welt einer Instanz packen, hochladen und auf dem Server einspielen (Server muss aus sein). */
-    uploadWorld: (instanceId: string, folder: string, onProgress: (p: WorldUploadProgress) => void) =>
-      checked(craftingServerSchema, 'craftinghosting_upload_world', { instanceId, folder, onProgress: channel(onProgress) }),
+    /** Welt einer Instanz packen, hochladen und einspielen (Server muss aus sein); ohne `target` ersetzt sie `world`. */
+    uploadWorld: (instanceId: string, folder: string, onProgress: (p: WorldUploadProgress) => void, target?: WorldUploadTarget) =>
+      checked(craftingServerSchema, 'craftinghosting_upload_world', { instanceId, folder, target: target ?? null, onProgress: channel(onProgress) }),
+    /** Welt-ZIP bzw. Weltordner per Dialog wählen und hochladen; `null` = abgebrochen. */
+    uploadWorldDisk: (kind: 'zip' | 'folder', target: WorldUploadTarget, onProgress: (p: WorldUploadProgress) => void) =>
+      checked(craftingServerSchema.nullable(), 'craftinghosting_upload_world_disk', { kind, target, onProgress: channel(onProgress) }),
+    worlds: () => checked(serverWorldsSchema, 'craftinghosting_worlds'),
+    setActiveWorld: (name: string) => checked(serverWorldsSchema, 'craftinghosting_set_active_world', { name }),
+    deleteWorld: (name: string) => checked(serverWorldsSchema, 'craftinghosting_delete_world', { name }),
+    /** Welt als ZIP speichern (Dialog); `null` = abgebrochen. Abbrechen über `cancelTask(taskId)`. */
+    downloadWorld: (name: string, serverName: string, onProgress: (p: WorldUploadProgress) => void, taskId: string | null = null) =>
+      checked(worldDownloadSchema.nullable(), 'craftinghosting_download_world', { name, serverName, onProgress: channel(onProgress), taskId }),
     /** Ordner auf dem Server (Pfad absolut, z. B. `/plugins`). */
     files: (dir: string) => checked(serverDirSchema, 'craftinghosting_files', { dir }),
     /** Textdatei lesen (`file_not_text` / `file_too_large`). */

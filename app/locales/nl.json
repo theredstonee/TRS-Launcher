@@ -820,7 +820,10 @@
       "invalidSubdomain": "Adres: 3 tot 24 tekens – a–z, 0–9 en -, geen - aan het begin of eind.",
       "invalidPath": "Ongeldig pad op de server.",
       "invalidProperty": "Instelling: sleutel uit a–z, 0–9, . en -, waarde hoogstens 500 tekens op één regel.",
-      "fileTooLarge": "Het bestand is te groot (hoogstens 1 MB)."
+      "fileTooLarge": "Het bestand is te groot (hoogstens 1 MB).",
+      "invalidWorldName": "Wereldnaam: 1 tot 32 tekens uit A–Z, a–z, 0–9, _ en -.",
+      "noWorldInZip": "Er zit geen wereld in dit ZIP-bestand (level.dat ontbreekt).",
+      "downloadFailed": "De wereld kon niet worden gedownload – probeer het opnieuw."
     },
     "chatImage": {
       "unsupported": "Alleen PNG-, JPEG- en WebP-afbeeldingen kunnen worden verstuurd.",
@@ -7658,7 +7661,7 @@
       "files": "Bestanden",
       "plugins": "Plugins",
       "mods": "Mods",
-      "world": "Wereld"
+      "world": "Werelden"
     },
     "stats": {
       "title": "Live",
@@ -7727,21 +7730,18 @@
       }
     },
     "world": {
-      "title": "Wereld uit een instantie",
-      "text": "Uploadt een singleplayerwereld naar je server. Die vervangt de wereld van de server (met Nether en End).",
       "instance": "Instantie",
       "world": "Wereld",
       "none": "Deze instantie heeft geen werelden.",
-      "stopFirst": "Stop eerst de server – een wereld kan alleen worden geüpload als hij uit staat.",
-      "button": "Wereld overnemen",
       "confirmTitle": "Wereld van de server vervangen?",
-      "confirmText": "‘{world}’ vervangt de wereld, Nether en End van je server. De oude wereld is daarna definitief weg.",
       "confirm": "Wereld vervangen",
       "done": "Wereld geüpload – bij de volgende start is hij er.",
       "phase": {
         "zip": "Wereld inpakken … {percent} %",
         "upload": "Uploaden … {percent} %",
-        "import": "Wereld wordt op de server ingericht …"
+        "import": "Wereld wordt op de server ingericht …",
+        "list": "Bestanden van de wereld verzamelen …",
+        "download": "Downloaden … {percent} %"
       }
     },
     "tabsLabel": "Serveronderdelen",
@@ -7973,6 +7973,63 @@
       "skipped": "Overgeslagen: {reason}",
       "by": "door {author}",
       "downloads": "{n} downloads"
+    },
+    "worlds": {
+      "title": "Werelden op de server",
+      "text": "De server laadt de actieve wereld. Wijzigen kan alleen als de server uit staat.",
+      "runningHint": "Je server draait – werelden kun je alleen wijzigen terwijl hij uit staat.",
+      "stop": "Server stoppen",
+      "stopping": "Stoppen …",
+      "notGenerated": "“{name}” bestaat nog niet – hij wordt bij de volgende start gemaakt (seed en wereldtype uit de instellingen).",
+      "empty": "Nog geen werelden – de eerste wordt bij de volgende start gemaakt.",
+      "active": "Actief",
+      "activate": "Actief maken",
+      "download": "Downloaden",
+      "resetButton": "Resetten",
+      "deleteButton": "Verwijderen",
+      "activated": "“{name}” is nu de actieve wereld – hij laadt bij de volgende start.",
+      "reset": "“{name}” gereset – bij de volgende start wordt een nieuwe wereld gemaakt.",
+      "deleted": "“{name}” verwijderd.",
+      "downloaded": "Wereld opgeslagen als {file}.",
+      "downloadedPartly": "Wereld opgeslagen als {file} – de server gaf niet alle bestanden door, er kan iets ontbreken.",
+      "downloading": "“{name}” wordt gedownload",
+      "resetTitle": "“{name}” resetten?",
+      "resetText": "De wereld wordt met Nether en End definitief verwijderd. Bij de volgende start maakt de server een nieuwe.",
+      "deleteTitle": "“{name}” verwijderen?",
+      "deleteText": "De wereld wordt met Nether en End definitief van de server verwijderd.",
+      "uploadTitle": "Wereld uploaden",
+      "uploadText": "Uit een van je instanties, als ZIP-bestand of als map op je pc.",
+      "source": "Bron",
+      "targetName": "Naam op de server",
+      "activateAfter": "Als actieve wereld instellen",
+      "nameHint": "Letters, cijfers, _ en -, hoogstens 32 tekens.",
+      "replaces": "Er bestaat al een wereld “{name}” – die wordt vervangen.",
+      "replaceText": "“{name}” wordt op de server met Nether en End vervangen. De oude wereld is daarna definitief weg.",
+      "upload": "Wereld uploaden",
+      "chooseAndUpload": "Kiezen en uploaden …",
+      "stopTitle": "Eerst de server stoppen?",
+      "stopText": "Werelden kun je alleen wijzigen als de server uit staat. Nu stoppen en doorgaan?",
+      "stopAndContinue": "Stoppen en doorgaan",
+      "dimensions": {
+        "overworld": "Bovenwereld",
+        "nether": "Nether",
+        "end": "End"
+      },
+      "sources": {
+        "instance": "Instantie",
+        "zip": "ZIP-bestand",
+        "folder": "Map"
+      },
+      "sourceHint": {
+        "zip": "Je kiest het ZIP-bestand na de klik – de wereld (level.dat) mag in elke map erin staan.",
+        "folder": "Je kiest de wereldmap (met level.dat) na de klik."
+      }
+    },
+    "version": {
+      "title": "Servertype & versie",
+      "soon": "Binnenkort",
+      "soonHint": "CraftingHosting biedt het wisselen van versie binnenkort aan.",
+      "change": "Versie wisselen"
     }
   }
 }

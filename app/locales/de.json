@@ -870,7 +870,10 @@
       "invalidSubdomain": "Adresse: 3 bis 24 Zeichen – a–z, 0–9 und -, kein - am Anfang oder Ende.",
       "invalidPath": "Ungültiger Pfad auf dem Server.",
       "invalidProperty": "Einstellung: Schlüssel aus a–z, 0–9, . und -, Wert höchstens 500 Zeichen in einer Zeile.",
-      "fileTooLarge": "Die Datei ist zu groß (höchstens 1 MB)."
+      "fileTooLarge": "Die Datei ist zu groß (höchstens 1 MB).",
+      "invalidWorldName": "Weltname: 1 bis 32 Zeichen aus A–Z, a–z, 0–9, _ und -.",
+      "noWorldInZip": "In dieser ZIP-Datei ist keine Welt (level.dat fehlt).",
+      "downloadFailed": "Die Welt konnte nicht heruntergeladen werden – bitte erneut versuchen."
     },
     "chatImage": {
       "unsupported": "Nur PNG-, JPEG- und WebP-Bilder können gesendet werden.",
@@ -8464,7 +8467,7 @@
       "files": "Dateien",
       "plugins": "Plugins",
       "mods": "Mods",
-      "world": "Welt"
+      "world": "Welten"
     },
     "stats": {
       "title": "Live",
@@ -8533,21 +8536,18 @@
       }
     },
     "world": {
-      "title": "Welt aus einer Instanz",
-      "text": "Lädt eine Einzelspieler-Welt auf deinen Server. Sie ersetzt die Welt des Servers (mit Nether und Ende).",
       "instance": "Instanz",
       "world": "Welt",
       "none": "Diese Instanz hat keine Welten.",
-      "stopFirst": "Stoppe zuerst den Server – eine Welt geht nur, solange er aus ist.",
-      "button": "Welt übernehmen",
       "confirmTitle": "Welt des Servers ersetzen?",
-      "confirmText": "„{world}“ ersetzt Welt, Nether und Ende deines Servers. Die alte Welt ist danach endgültig weg.",
       "confirm": "Welt ersetzen",
       "done": "Welt hochgeladen – beim nächsten Start ist sie da.",
       "phase": {
         "zip": "Welt wird gepackt … {percent} %",
         "upload": "Wird hochgeladen … {percent} %",
-        "import": "Welt wird auf dem Server eingerichtet …"
+        "import": "Welt wird auf dem Server eingerichtet …",
+        "list": "Dateien der Welt werden gesammelt …",
+        "download": "Wird heruntergeladen … {percent} %"
       }
     },
     "tabsLabel": "Server-Bereiche",
@@ -8779,6 +8779,63 @@
       "skipped": "Übersprungen: {reason}",
       "by": "von {author}",
       "downloads": "{n} Downloads"
+    },
+    "worlds": {
+      "title": "Welten auf dem Server",
+      "text": "Die aktive Welt lädt der Server. Ändern geht nur bei gestopptem Server.",
+      "runningHint": "Dein Server läuft – Welten lassen sich nur ändern, solange er aus ist.",
+      "stop": "Server stoppen",
+      "stopping": "Stoppt …",
+      "notGenerated": "„{name}“ gibt es noch nicht – sie entsteht beim nächsten Start (Seed und Welttyp aus den Einstellungen).",
+      "empty": "Noch keine Welten – die erste entsteht beim nächsten Start.",
+      "active": "Aktiv",
+      "activate": "Aktiv setzen",
+      "download": "Herunterladen",
+      "resetButton": "Zurücksetzen",
+      "deleteButton": "Löschen",
+      "activated": "„{name}“ ist jetzt die aktive Welt – sie lädt beim nächsten Start.",
+      "reset": "„{name}“ zurückgesetzt – beim nächsten Start entsteht eine neue Welt.",
+      "deleted": "„{name}“ gelöscht.",
+      "downloaded": "Welt gespeichert als {file}.",
+      "downloadedPartly": "Welt gespeichert als {file} – der Server hat nicht alle Dateien gelistet, es kann etwas fehlen.",
+      "downloading": "„{name}“ wird heruntergeladen",
+      "resetTitle": "„{name}“ zurücksetzen?",
+      "resetText": "Die Welt wird samt Nether und Ende endgültig gelöscht. Beim nächsten Start erzeugt der Server eine neue.",
+      "deleteTitle": "„{name}“ löschen?",
+      "deleteText": "Die Welt wird samt Nether und Ende endgültig vom Server gelöscht.",
+      "uploadTitle": "Welt hochladen",
+      "uploadText": "Aus einer deiner Instanzen, als ZIP-Datei oder als Ordner von deinem PC.",
+      "source": "Quelle",
+      "targetName": "Name auf dem Server",
+      "activateAfter": "Als aktive Welt setzen",
+      "nameHint": "Buchstaben, Ziffern, _ und -, höchstens 32 Zeichen.",
+      "replaces": "Eine Welt „{name}“ gibt es schon – sie wird ersetzt.",
+      "replaceText": "„{name}“ wird auf dem Server samt Nether und Ende ersetzt. Die alte Welt ist danach endgültig weg.",
+      "upload": "Welt hochladen",
+      "chooseAndUpload": "Auswählen und hochladen …",
+      "stopTitle": "Server zuerst stoppen?",
+      "stopText": "Welten lassen sich nur ändern, solange der Server aus ist. Jetzt stoppen und weitermachen?",
+      "stopAndContinue": "Stoppen und weiter",
+      "dimensions": {
+        "overworld": "Oberwelt",
+        "nether": "Nether",
+        "end": "Ende"
+      },
+      "sources": {
+        "instance": "Instanz",
+        "zip": "ZIP-Datei",
+        "folder": "Ordner"
+      },
+      "sourceHint": {
+        "zip": "Die ZIP-Datei wählst du nach dem Klick – die Welt (level.dat) darf in einem beliebigen Ordner darin liegen.",
+        "folder": "Den Weltordner (mit level.dat) wählst du nach dem Klick."
+      }
+    },
+    "version": {
+      "title": "Servertyp & Version",
+      "soon": "Kommt bald",
+      "soonHint": "Den Versionswechsel bietet CraftingHosting bald an.",
+      "change": "Version wechseln"
     }
   }
 }

@@ -1,4 +1,4 @@
-//! Welt einer Instanz auf den Partner-Server: packen (`world/` oben im ZIP), direkt zu
+//! Welt auf den Partner-Server: packen (`world/` bzw. `<name>/` oben im ZIP), direkt zu
 //! CraftingHosting hochladen (kurzlebige URL von der TRS API) und einspielen lassen.
 
 use std::path::{Path, PathBuf};
@@ -33,7 +33,7 @@ struct ApiUploadUrl {
 
 /// Upload-Adresse prüfen: HTTPS, Host `*.craftinghosting.free`, keine Zugangsdaten.
 /// `allow_local` nur für Tests (Attrappe auf `127.0.0.1`).
-pub(crate) fn upload_url(input: &str, allow_local: bool) -> Option<reqwest::Url> {
+pub(crate) fn partner_url(input: &str, allow_local: bool) -> Option<reqwest::Url> {
     let url = reqwest::Url::parse(input.trim()).ok()?;
     if !url.username().is_empty() || url.password().is_some() || input.len() > 2048 {
         return None;
@@ -113,17 +113,106 @@ async fn upload(url: reqwest::Url, file: &Path, on_progress: Arc<dyn Fn(WorldPro
     Ok(())
 }
 
+/// Ziel auf dem Server: ohne `name` ersetzt die Welt `world` (altes Verhalten), mit `name` landet
+/// sie als eigene Welt `<name>` und wird auf Wunsch aktiv.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct UploadTarget {
+    pub name: Option<String>,
+    pub activate: bool,
+}
+
+impl UploadTarget {
+    fn folder(&self) -> Result<String> {
+        match self.name.as_deref() {
+            Some(n) => super::craftinghosting_worlds::world_name(n),
+            None => Ok("world".into()),
+        }
+    }
+
+    fn import_body(&self, folder: &str) -> serde_json::Value {
+        if self.name.is_some() {
+            json!({ "file": WORLD_FILE, "name": folder, "activate": self.activate })
+        } else {
+            json!({ "file": WORLD_FILE })
+        }
+    }
+}
+
+/// Woher die Welt kommt.
+#[derive(Debug, Clone)]
+pub enum WorldSource {
+    /// `saves/<folder>` einer Instanz.
+    Instance { instance_id: String, folder: String },
+    /// Weltordner (mit `level.dat`) von der Festplatte.
+    Folder(PathBuf),
+    /// ZIP mit einer Welt irgendwo darin.
+    Zip(PathBuf),
+}
+
+fn no_world_in_zip() -> Error {
+    Error::validation(crate::msg!("craftinghosting.noWorldInZip", "In dieser ZIP-Datei ist keine Welt (level.dat fehlt)."))
+}
+
+/// Packt die Welt aus einer beliebigen ZIP um: der Ordner mit der obersten `level.dat` wird zu `<folder>/`.
+pub(crate) fn repack_zip(src: &Path, folder: &str, dest: &Path, on_progress: &dyn Fn(u8)) -> Result<()> {
+    use std::io::Write;
+    let input = std::fs::File::open(src).map_err(|e| Error::io(src, e))?;
+    let mut archive = zip::ZipArchive::new(std::io::BufReader::new(input)).map_err(|_| no_world_in_zip())?;
+    let mut prefix: Option<String> = None;
+    for i in 0..archive.len() {
+        let Ok(entry) = archive.by_index_raw(i) else { continue };
+        let Some(name) = entry.enclosed_name().map(|p| p.to_string_lossy().replace('\\', "/")) else { continue };
+        if name == "level.dat" || name.ends_with("/level.dat") {
+            let p = name.trim_end_matches("level.dat").to_owned();
+            if prefix.as_ref().is_none_or(|old| p.len() < old.len()) {
+                prefix = Some(p);
+            }
+        }
+    }
+    let prefix = prefix.ok_or_else(no_world_in_zip)?;
+
+    let file = std::fs::File::create(dest).map_err(|e| Error::io(dest, e))?;
+    let mut zip = zip::ZipWriter::new(std::io::BufWriter::new(file));
+    let options = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated).large_file(true);
+    let total = archive.len().max(1);
+    for i in 0..archive.len() {
+        let mut entry = archive.by_index(i).map_err(|_| no_world_in_zip())?;
+        let Some(name) = entry.enclosed_name().map(|p| p.to_string_lossy().replace('\\', "/")) else { continue };
+        let Some(rest) = name.strip_prefix(&prefix) else { continue };
+        if entry.is_dir() || rest.is_empty() || rest == "session.lock" {
+            continue;
+        }
+        zip.start_file(format!("{folder}/{rest}"), options).map_err(|e| Error::Internal(e.to_string()))?;
+        std::io::copy(&mut entry, &mut zip).map_err(|e| Error::io(src, e))?;
+        on_progress(u8::try_from((i * 100 / total).min(99)).unwrap_or(99));
+    }
+    zip.finish().map_err(|e| Error::Internal(e.to_string()))?.flush().map_err(|e| Error::io(dest, e))?;
+    on_progress(100);
+    Ok(())
+}
+
 impl Launcher {
-    /// Welt `saves/<folder>` einer Instanz auf den Server spielen. Der Server muss aus sein;
-    /// die alte Welt (mit Nether und Ende) ersetzt die API.
+    /// Welt auf den Server spielen. Der Server muss aus sein. Ohne Namen ersetzt die API die Welt
+    /// `world` (mit Nether und Ende), mit Namen kommt sie als `<name>` dazu.
     pub async fn craftinghosting_upload_world(
         &self,
-        instance_id: &str,
-        folder: &str,
+        source: WorldSource,
+        target: &UploadTarget,
         on_progress: impl Fn(WorldProgress) + Send + Sync + 'static,
     ) -> Result<Server> {
-        let dir = crate::worlds::world_dir(self.paths(), instance_id, folder)?;
-        if !dir.join("level.dat").is_file() {
+        let folder = target.folder()?;
+        let dir = match &source {
+            WorldSource::Instance { instance_id, folder } => Some(crate::worlds::world_dir(self.paths(), instance_id, folder)?),
+            WorldSource::Folder(dir) => Some(dir.clone()),
+            WorldSource::Zip(file) => {
+                if !file.is_file() {
+                    return Err(no_world_in_zip());
+                }
+                None
+            }
+        };
+        if dir.as_ref().is_some_and(|d| !d.join("level.dat").is_file()) {
             return Err(Error::validation(crate::msg!("worlds.notFound", "Diese Welt gibt es nicht mehr.")));
         }
         let server = self.craftinghosting_server().await?.ok_or_else(|| super::api_error(404, "no_server", None))?;
@@ -137,15 +226,21 @@ impl Launcher {
         let archive = TempFile(tmp.join(format!("craftinghosting-world-{}.zip", std::process::id())));
         let dest = archive.0.clone();
         let zip_progress = Arc::clone(&on_progress);
+        let top = folder.clone();
         tokio::task::spawn_blocking(move || {
-            crate::worlds::write_zip(&dir, "world", &dest, &|percent| zip_progress(WorldProgress { phase: "zip", percent }), &|| false)
+            let report = |percent| zip_progress(WorldProgress { phase: "zip", percent });
+            match (dir, source) {
+                (Some(dir), _) => crate::worlds::write_zip(&dir, &top, &dest, &report, &|| false),
+                (None, WorldSource::Zip(src)) => repack_zip(&src, &top, &dest, &report),
+                (None, _) => Err(no_world_in_zip()),
+            }
         })
         .await
         .map_err(|e| Error::Internal(e.to_string()))??;
 
         let (_, bytes) = self.ch_send(Req::post_empty(format!("{BASE}/server/world/upload"))).await?;
-        let target: ApiUploadUrl = super::parse(&bytes, "craftinghosting/world/upload")?;
-        let url = upload_url(&target.url, cfg!(test)).ok_or_else(|| {
+        let upload_target: ApiUploadUrl = super::parse(&bytes, "craftinghosting/world/upload")?;
+        let url = partner_url(&upload_target.url, cfg!(test)).ok_or_else(|| {
             tracing::warn!("CraftingHosting-Upload-Adresse abgelehnt");
             super::bad_response()
         })?;
@@ -153,7 +248,7 @@ impl Launcher {
         drop(archive);
 
         on_progress(WorldProgress { phase: "import", percent: 0 });
-        let req = Req::post(format!("{BASE}/server/world/import"), json!({ "file": WORLD_FILE })).timeout(Duration::from_secs(180));
+        let req = Req::post(format!("{BASE}/server/world/import"), target.import_body(&folder)).timeout(Duration::from_secs(180));
         let server = self.ch_required(req).await?;
         on_progress(WorldProgress { phase: "import", percent: 100 });
         Ok(server)
@@ -166,13 +261,13 @@ mod tests {
 
     #[test]
     fn upload_urls() {
-        assert!(upload_url("https://node1.craftinghosting.free/upload?token=abc", false).is_some());
-        assert!(upload_url("https://craftinghosting.free/upload", false).is_none());
-        assert!(upload_url("http://node1.craftinghosting.free/upload", false).is_none());
-        assert!(upload_url("https://evil.com/?x=.craftinghosting.free", false).is_none());
-        assert!(upload_url("https://node1.craftinghosting.free.evil.com/", false).is_none());
-        assert!(upload_url("https://user:pw@node1.craftinghosting.free/", false).is_none());
-        assert!(upload_url("http://127.0.0.1:1234/upload", false).is_none());
-        assert!(upload_url("http://127.0.0.1:1234/upload", true).is_some());
+        assert!(partner_url("https://node1.craftinghosting.free/upload?token=abc", false).is_some());
+        assert!(partner_url("https://craftinghosting.free/upload", false).is_none());
+        assert!(partner_url("http://node1.craftinghosting.free/upload", false).is_none());
+        assert!(partner_url("https://evil.com/?x=.craftinghosting.free", false).is_none());
+        assert!(partner_url("https://node1.craftinghosting.free.evil.com/", false).is_none());
+        assert!(partner_url("https://user:pw@node1.craftinghosting.free/", false).is_none());
+        assert!(partner_url("http://127.0.0.1:1234/upload", false).is_none());
+        assert!(partner_url("http://127.0.0.1:1234/upload", true).is_some());
     }
 }
