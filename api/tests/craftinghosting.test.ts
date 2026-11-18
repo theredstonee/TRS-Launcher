@@ -5,8 +5,17 @@ import {
   craftingServer, craftingSetSettings, craftingSettings, craftingStart, craftingStats, craftingStop, craftingUpdate,
   adminCraftingDelete, adminCraftingServers, adminCraftingStop, craftingRestartDone, craftingWorldImport, craftingWorldUpload, createServerBody, MOTD_FOOTER, settingsBody,
 } from '../server/lib/craftinghosting'
+import { RULES } from '../server/lib/ratelimit'
+import { getUser } from '../server/lib/users'
+import { createWebSession } from '../server/lib/weblogin'
+import infoRoute from '../server/routes/v1/craftinghosting/info.get'
+import serverGet from '../server/routes/v1/craftinghosting/server/index.get'
+import serverPatch from '../server/routes/v1/craftinghosting/server/index.patch'
+import startRoute from '../server/routes/v1/craftinghosting/server/start.post'
+import heartbeatRoute from '../server/routes/v1/craftinghosting/server/heartbeat.post'
 import { befriend, codeAsync, players } from './chathelpers'
-import { makeEnv, type TestEnv } from './helpers'
+import { callRoute } from './circuithelpers'
+import { login, makeEnv, type TestEnv } from './helpers'
 
 const KEY = 'test-partner-key'
 
@@ -445,5 +454,66 @@ describe('craftinghosting', () => {
     expect(partner.servers.has(s1.id)).toBe(false)
     expect(await craftingServer(env.ctx, u!)).toBeNull()
     expect((await adminCraftingServers(env.ctx)).servers).toHaveLength(1)
+  })
+})
+
+describe('craftinghosting routes: website session', () => {
+  const json = { 'content-type': 'application/json' }
+
+  async function owner() {
+    const { env, partner } = setup()
+    const auth = await login(env, 'Steve')
+    await craftingCreate(env.ctx, getUser(env.ctx, auth.user.uuid)!, body())
+    const web = createWebSession(env.ctx, auth.user.uuid)
+    return { env, partner, bearer: { authorization: `Bearer ${auth.token}` }, cookie: { cookie: `trs_session=${web.token}` }, csrf: web.csrf, uuid: auth.user.uuid }
+  }
+
+  it('reads the own server with the cookie, without CSRF', async () => {
+    const { env, cookie } = await owner()
+    const res = await callRoute(env, serverGet, { url: '/v1/craftinghosting/server', headers: cookie })
+    expect(res.status).toBe(200)
+    expect(res.body).toMatchObject({ server: { name: 'Meine Welt' } })
+    expect((await callRoute(env, infoRoute, { url: '/v1/craftinghosting/info', headers: cookie })).status).toBe(200)
+  })
+
+  it('needs the CSRF token for cookie POST/PATCH', async () => {
+    const { env, partner, cookie, csrf } = await owner()
+    const url = '/v1/craftinghosting/server/start'
+    const start = JSON.stringify({ acceptEula: true })
+    expect(await callRoute(env, startRoute, { method: 'POST', url, headers: { ...cookie, ...json }, body: start }))
+      .toMatchObject({ status: 403, error: { code: 'csrf_failed' } })
+    expect(await callRoute(env, startRoute, { method: 'POST', url, headers: { ...cookie, ...json, 'x-csrf-token': 'nope' }, body: start }))
+      .toMatchObject({ status: 403, error: { code: 'csrf_failed' } })
+    expect(partner.calls).not.toContain('POST /servers/srv-1/start')
+
+    const ok = await callRoute(env, startRoute, { method: 'POST', url, headers: { ...cookie, ...json, 'x-csrf-token': csrf }, body: start })
+    expect(ok.status).toBe(200)
+    expect(ok.body).toMatchObject({ server: { state: 'running' } })
+    const hb = await callRoute(env, heartbeatRoute, { method: 'POST', url: '/v1/craftinghosting/server/heartbeat', headers: { ...cookie, 'x-csrf-token': csrf } })
+    expect(hb.status).toBe(200)
+
+    const patch = JSON.stringify({ access: 'open' })
+    expect(await callRoute(env, serverPatch, { method: 'PATCH', url: '/v1/craftinghosting/server', headers: { ...cookie, ...json }, body: patch }))
+      .toMatchObject({ status: 403, error: { code: 'csrf_failed' } })
+    const patched = await callRoute(env, serverPatch, { method: 'PATCH', url: '/v1/craftinghosting/server', headers: { ...cookie, ...json, 'x-csrf-token': csrf }, body: patch })
+    expect(patched.body).toMatchObject({ server: { access: 'open' } })
+  })
+
+  it('bearer still works; a bearer header is never mixed with the cookie', async () => {
+    const { env, bearer, cookie, csrf } = await owner()
+    expect((await callRoute(env, serverGet, { url: '/v1/craftinghosting/server', headers: bearer })).status).toBe(200)
+    const start = await callRoute(env, startRoute, { method: 'POST', url: '/v1/craftinghosting/server/start', headers: { ...bearer, ...json }, body: '{"acceptEula":true}' })
+    expect(start.status).toBe(200)
+    const mixed = await callRoute(env, serverGet, { url: '/v1/craftinghosting/server', headers: { ...cookie, 'x-csrf-token': csrf, authorization: 'Bearer invalid' } })
+    expect(mixed.status).toBe(401)
+    expect((await callRoute(env, serverGet, { url: '/v1/craftinghosting/server' })).status).toBe(401)
+    expect((await callRoute(env, serverGet, { url: '/v1/craftinghosting/server', headers: { cookie: 'trs_session=nope' } })).status).toBe(401)
+  })
+
+  it('cookie and bearer share the per-account limit', async () => {
+    const { env, bearer, cookie, uuid } = await owner()
+    for (let i = 0; i < RULES.craftinghostingUser.limit; i++) env.ctx.limiter.take(`craftinghosting:${uuid}`, RULES.craftinghostingUser)
+    expect((await callRoute(env, serverGet, { url: '/v1/craftinghosting/server', headers: cookie })).status).toBe(429)
+    expect((await callRoute(env, serverGet, { url: '/v1/craftinghosting/server', headers: bearer })).status).toBe(429)
   })
 })

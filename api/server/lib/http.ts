@@ -6,6 +6,7 @@ import { useCtx } from './context'
 import { ApiError, badRequest, forbidden, tooLarge, tooMany, unauthorized, unsupportedMedia } from './errors'
 import { RULES, type Rule } from './ratelimit'
 import { assertCan, can, teamOf, type Permission, type Staff } from './team'
+import { getUser, type UserRow } from './users'
 import { WEB_SESSION_COOKIE, webSession, type WebSession } from './weblogin'
 
 export const JSON_LIMIT = 16 * 1024
@@ -162,16 +163,21 @@ export function requireWeb(event: H3Event, kind: 'read' | 'write' = 'read'): Web
   return session
 }
 
-/** Spieler-Routen, die Website UND Launcher/Client bedienen (Bewerbungen): Cookie-Sitzung oder Bearer-Token. */
-export function requireWebOrUser(event: H3Event, kind: 'read' | 'write' = 'read'): { uuid: string, name: string } {
+/**
+ * Spieler-Routen, die Website UND Launcher/Client bedienen (Bewerbungen, CraftingHosting): Cookie-Sitzung (ändernde
+ * Anfragen mit CSRF-Token) oder Bearer-Token. Beide Wege zählen auf denselben Topf je Konto.
+ */
+export function requireWebOrUser(event: H3Event, kind: keyof typeof USER_RULES = 'read'): { uuid: string, name: string, user: UserRow } {
   const session = cookieSession(event)
   if (session) {
+    const user = getUser(useCtx(), session.uuid)
+    if (!user) throw unauthorized()
     limit(`${kind}:${session.uuid}`, USER_RULES[kind])
     event.context.uuid = session.uuid
-    return { uuid: session.uuid, name: session.name }
+    return { uuid: session.uuid, name: user.name, user }
   }
   const auth = requireUser(event, kind)
-  return { uuid: auth.uuid, name: auth.user.name }
+  return { uuid: auth.uuid, name: auth.user.name, user: auth.user }
 }
 
 /**

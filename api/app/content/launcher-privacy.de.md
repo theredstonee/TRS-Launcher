@@ -448,6 +448,10 @@ CraftingHosting. Danach schickt der TRS-Server (nie dein Computer direkt) an Cra
 - Mods, die du übernimmst (nur ihre Modrinth-IDs), und – wenn du eine Welt übernimmst – die Welt als ZIP-Datei, die
   dein Launcher direkt zu CraftingHosting hochlädt.
 
+Angemeldet auf dieser Website kannst du den Server auch auf der Seite `/hosting` verwalten; dabei gehen dieselben
+Daten wie im Launcher an CraftingHosting, und solange die Seite offen ist, schickt sie das Lebenszeichen genau wie
+sonst der Launcher.
+
 Wir speichern, welcher Server zu deinem Konto gehört, und den Zugang. Spieler, die deinem Server beitreten, verbinden
 sich direkt mit CraftingHosting, das ihre IP-Adresse wie jeder Minecraft-Server sieht. Löschst du den Server im
 Launcher, wird er bei CraftingHosting samt Daten gelöscht; CraftingHosting löscht außerdem Server, die lange nicht

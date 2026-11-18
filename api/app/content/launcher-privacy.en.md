@@ -417,6 +417,9 @@ your computer directly) sends CraftingHosting:
 - mods you transfer (only their Modrinth ids) and, if you transfer a world, the world as a ZIP file, which your launcher
   uploads directly to CraftingHosting.
 
+Signed in on this website, you can also manage the server on the page `/hosting`; it uses the same data as the
+launcher, and while the page is open it sends the sign of life just like the launcher does.
+
 We store which server belongs to your account and the access mode. Players who join your server connect directly to
 CraftingHosting, which sees their IP address like any Minecraft server. Deleting the server in the launcher deletes it
 at CraftingHosting including its data; CraftingHosting also deletes servers that were not started for a long time.

@@ -16,6 +16,7 @@ const menuPanel = shallowRef<HTMLElement | null>(null)
 const links = computed<{ to: string, label: string, icon: string, external?: boolean }[]>(() => [
   { to: lp('/features'), label: m.value.nav.features, icon: 'bolt' },
   { to: lp('/download'), label: m.value.nav.download, icon: 'download' },
+  { to: lp('/hosting'), label: m.value.nav.hosting, icon: 'play' },
   { to: lp('/servers'), label: m.value.nav.servers, icon: 'server' },
   // Doku: eigene Domain (trs-launcher.wiki) – normaler Seitenwechsel statt Router.
   { to: docsUrl(lang.value), label: m.value.nav.docs, icon: 'docs', external: true },
@@ -111,6 +112,10 @@ onMounted(() => hw.loadPrefs())
           <a :href="REPO_URL" class="btn-icon hidden sm:inline-flex" aria-label="GitHub" rel="noopener" target="_blank">
             <SiteIcon name="github" class="size-4.5" />
           </a>
+          <NuxtLink :to="lp('/hosting')" class="btn btn-ghost hidden xl:inline-flex">
+            <SiteIcon name="play" class="size-4" />
+            {{ m.nav.hosting }}
+          </NuxtLink>
           <NuxtLink :to="lp('/servers')" class="btn btn-ghost hidden lg:inline-flex">
             <SiteIcon name="server" class="size-4" />
             {{ m.nav.servers }}
@@ -170,6 +175,7 @@ onMounted(() => hw.loadPrefs())
         <nav class="flex flex-col gap-2 text-sm" aria-label="Site">
           <NuxtLink :to="lp('/features')" class="footer-link">{{ m.nav.features }}</NuxtLink>
           <NuxtLink :to="lp('/download')" class="footer-link">{{ m.nav.download }}</NuxtLink>
+          <NuxtLink :to="lp('/hosting')" class="footer-link">{{ m.nav.hosting }}</NuxtLink>
           <NuxtLink :to="lp('/servers')" class="footer-link">{{ m.nav.servers }}</NuxtLink>
           <a :href="docsUrl(lang)" class="footer-link">{{ m.footer.docs }}</a>
           <NuxtLink :to="lp('/blog')" class="footer-link">{{ m.nav.blog }}</NuxtLink>

@@ -5486,6 +5486,13 @@ these routes with the TRS token. Without a key every route answers `503 crafting
 partner rejects the key). Table `craftinghosting_servers` (migration 45) maps the account to the partner server id and
 stores the access mode. The partner's `player.externalId` is the account UUID.
 
+The routes also accept the signed-in website session (cookie `trs_session`, §24.1/§29) of the same account: `POST`,
+`PATCH` and `DELETE` then need the `X-CSRF-Token` header like every cookie route (`403 csrf_failed`); a request with an
+`Authorization` header is always treated as a bearer request. Both ways count on the same per-account limit. The website
+page is `/hosting` (section “My server”, `#my-server`): it shows the own server, start/stop, console, settings and access,
+and sends `…/server/heartbeat` every 45 s while the page is visible (or hidden for at most 5 minutes) and a session runs.
+Creating a server and transferring mods or worlds stay in the launcher.
+
 Limits per account: 120 requests per minute for all `/v1/craftinghosting/*` routes, create + delete 6 per hour,
 commands 20 per minute, mods + world 20 per 10 minutes. Accounts with an active `hosting_ban` cannot create or start.
 
