@@ -18,6 +18,7 @@ import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRegisterChannelEvent;
+import org.bukkit.event.server.ServerListPingEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.plugin.messaging.PluginMessageListener;
@@ -44,7 +45,8 @@ public final class TrsRulesBukkit extends JavaPlugin implements Listener, Plugin
 	@Override
 	public void onEnable() {
 		scheduling = createScheduling();
-		rules = new ServerRules<Player>(new Bridge(), getDataFolder().toPath().resolve("config.yml"), ScopeKind.WORLDS);
+		rules = new ServerRules<Player>(new Bridge(), getDataFolder().toPath().resolve("config.yml"),
+				getDataFolder().toPath().resolve("hosting.yml"), ScopeKind.WORLDS);
 
 		Messenger messenger = getServer().getMessenger();
 		for (String ch : new String[] {Protocol.RULES, Protocol.RULES_LEGACY}) {
@@ -121,6 +123,13 @@ public final class TrsRulesBukkit extends JavaPlugin implements Listener, Plugin
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onRegisterChannel(PlayerRegisterChannelEvent e) {
 		if (Protocol.isRulesChannel(e.getChannel())) rules.engine().onChannelRegistered(e.getPlayer());
+	}
+
+	// HIGHEST: line 1 is whatever MOTD plugins set before us. Legacy String API – same on 1.8.8, Paper and Folia.
+	@EventHandler(priority = EventPriority.HIGHEST)
+	public void onServerListPing(ServerListPingEvent e) {
+		if (rules.motdFooter().isEmpty()) return;
+		e.setMotd(rules.motd(e.getMotd()));
 	}
 
 	@Override

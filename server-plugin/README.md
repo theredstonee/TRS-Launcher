@@ -139,6 +139,28 @@ The generated default config lists **all module ids by category** (all commented
 | PERFORMANCE | `fpsBoost` `dynamicFps` `borderlessFullscreen` `entityCulling` `particles` `worldDetails` `builtinOptimizations` `netOptimize` `lowLatency` `fastConnect` |
 | MISC | `titleScreen` `menuStyle` `trsOnline` `capePhysics` `emotes` `clips` `cinematic` `halloween` `tooltips` `serverProfiles` `screenshots` `keySearch` `autoReconnect` `queueAlerts` `streamerMode` `minigames` |
 
+## Hosting footer
+
+Used for the free servers hosted through the TRS Launcher at CraftingHosting: the TRS API installs the plugin there
+and writes a small extra file. If that file exists, the server list MOTD gets a fixed second line below the server's
+own MOTD. Normal servers never have the file, so nothing changes for them.
+
+| Platform | File |
+| --- | --- |
+| Spigot/Paper/Purpur/Folia | `plugins/TRSServerRules/hosting.yml` |
+| Fabric / NeoForge / Forge | `config/trs-server-rules-hosting.yml` |
+
+```yaml
+motd-footer: "§7Free server: §ctrs-launcher.de §8× §bcraftinghosting.free"
+```
+
+- Line 1 is the server's MOTD cut at its first line break (empty stays empty), line 2 is the footer.
+- The text is one line of at most 120 characters with `§` color/format codes (`§0`–`§f`, `§k`–`§o`, `§r`); other
+  codes, line breaks and control characters are removed. Empty or missing = off.
+- Read at startup and on `/trsrules reload`. The plugin never creates or changes the file.
+- Bukkit sets it in `ServerListPingEvent` (priority `HIGHEST`, so MOTD plugins come first); the server mods change
+  only the MOTD of the status response (server.properties stays untouched). BungeeCord, Velocity and Sponge ignore it.
+
 ## Commands and permissions
 
 | Command | Permission | Description |
@@ -196,9 +218,11 @@ Gradle downloads a JDK 21 automatically if needed (toolchains). Layout:
   compile against `modcore` and copy its classes into each mod jar.
   - `mods/shared/` – loader-independent mod code: `ModServerRules` (the `RulesEngine.Bridge` for `ServerPlayer`,
     `/trsrules` via Brigadier, event entry points), `TickScheduler`, and `Mc` – one small file per Minecraft API
-    range (`mc-1.20.1`, `mc-1.21` for 1.21.1/1.21.4, `mc-1.21.11`: `Identifier`, permission sets).
+    range (`mc-1.20.1`, `mc-1.21` for 1.21.1/1.21.4, `mc-1.21.11`: `Identifier`, permission sets). The only mixin,
+    `mixin/ServerStatusMixin` (server side only), puts the hosting footer into `MinecraftServer#buildServerStatus`.
   - `mods/fabric/` – Loom, one subproject per Minecraft version (`versions/<mc>/gradle.properties`);
     `src/net-legacy` (1.20.1: channel ids) and `src/net-payload` (1.20.5+: `PayloadTypeRegistry` + raw-bytes codec).
   - `mods/neoforge/` – ModDevGradle, one subproject per Minecraft version (`RegisterPayloadHandlersEvent`).
-  - `mods/forge/` – ForgeGradle 7, Minecraft 1.20.1; the Renamer produces the SRG jar Forge 1.20.1 runs with.
+  - `mods/forge/` – ForgeGradle 7, Minecraft 1.20.1; the Renamer produces the SRG jar Forge 1.20.1 runs with (and the
+    mixin refmap).
   - Calling a mod build directly (`./gradlew -p mods/fabric dist`) needs `./gradlew :modcore:shadowJar` first.

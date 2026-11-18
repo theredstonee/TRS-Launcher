@@ -1,0 +1,13 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "dev.theredstonee.trsrules.mod.mixin",
+	"compatibilityLevel": "JAVA_17",
+	"refmap": "trsserverrules.refmap.json",
+	"server": [
+		"ServerStatusMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

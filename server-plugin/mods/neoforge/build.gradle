@@ -3,7 +3,8 @@
 // Sources: src/main + ../shared (engine glue, tick scheduler, Mc compat per version) + modcore jar (common + SnakeYAML).
 // NeoForge 1.20.5+ runs with Mojang names in production, so the normal jar is the finished mod (no reobfuscation).
 // Server-side only: @Mod(dist = DEDICATED_SERVER), optional payloads (vanilla/Fabric clients can join),
-// displayTest = IGNORE_SERVER_VERSION (clients do not need the mod).
+// displayTest = IGNORE_SERVER_VERSION (clients do not need the mod). One server mixin (hosting footer), Mojang names at
+// runtime, so no refmap.
 plugins {
 	id 'net.neoforged.moddev' version "${moddev_version}" apply false
 }

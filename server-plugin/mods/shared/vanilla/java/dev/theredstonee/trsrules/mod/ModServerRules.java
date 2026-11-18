@@ -41,12 +41,16 @@ import net.minecraft.server.level.ServerPlayer;
 public final class ModServerRules {
 	public static final String MOD_ID = "trsserverrules";
 	public static final String CONFIG_FILE = "trs-server-rules.yml";
+	/** Written by the TRS API on servers hosted through the TRS Launcher (MOTD footer). */
+	public static final String HOSTING_FILE = "trs-server-rules-hosting.yml";
 	/** OP level for {@code /trsrules} (like other admin commands, e.g. /ban). */
 	public static final int ADMIN_OP_LEVEL = 3;
 	/** How long to wait for the client to register the rules channel before giving up (rare). */
 	private static final int CHANNEL_RETRIES = 10;
 
 	private static final Logger LOG = LoggerFactory.getLogger("TRS Server Rules");
+	/** For the status mixin (one mod instance per server). */
+	private static volatile ModServerRules instance;
 
 	private final ModPlatform platform;
 	private final TickScheduler scheduler = new TickScheduler();
@@ -58,12 +62,20 @@ public final class ModServerRules {
 	/** Loads (or creates) {@code <configDir>/trs-server-rules.yml}. */
 	public ModServerRules(ModPlatform platform, Path configDir) {
 		this.platform = platform;
-		this.rules = new ServerRules<ServerPlayer>(new Bridge(), configDir.resolve(CONFIG_FILE), ScopeKind.WORLDS);
+		this.rules = new ServerRules<ServerPlayer>(new Bridge(), configDir.resolve(CONFIG_FILE), configDir.resolve(HOSTING_FILE),
+				ScopeKind.WORLDS);
+		instance = this;
 		LOG.info("TRS Server Rules ({}) ready – config: {}", platform.name(), rules.configFile());
 	}
 
 	public RulesEngine<ServerPlayer> engine() {
 		return rules.engine();
+	}
+
+	/** MOTD for the status response (server list): hosting footer as line 2, otherwise unchanged. */
+	public static String statusMotd(String motd) {
+		ModServerRules mod = instance;
+		return mod == null ? motd : mod.rules.motd(motd);
 	}
 
 	// ------------------------------------------------------------------ lifecycle (called by the loader glue)
@@ -154,6 +166,8 @@ public final class ModServerRules {
 		for (String line : rules.command(args, lookup)) {
 			source.sendSystemMessage(Component.literal(console ? stripColors(line) : line));
 		}
+		MinecraftServer s = server;
+		if (args.length > 0 && "reload".equals(args[0]) && s != null) s.invalidateStatus(); // footer change without the 5 s wait
 		return 1;
 	}
 

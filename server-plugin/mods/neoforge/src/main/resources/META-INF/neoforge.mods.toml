@@ -16,6 +16,10 @@ Note: TRS team members with the team permission serverrules.bypass can override 
 # Server-only mod: clients do not need it, the server's version is not compared with the client.
 displayTest = "IGNORE_SERVER_VERSION"
 
+# Hosting footer in the server list (only on the dedicated server: "server" mixins)
+[[mixins]]
+config = "trsserverrules.mixins.json"
+
 [[dependencies.trsserverrules]]
 modId = "neoforge"
 type = "required"

@@ -26,14 +26,24 @@ public final class ServerRules<P> {
 
 	private final RulesEngine.Bridge<P> bridge;
 	private final Path configFile;
+	/** Hosting file with the MOTD footer ({@code null}: platform without footer). */
+	private final Path hostingFile;
 	private final ScopeKind kind;
 	private final RulesEngine<P> engine;
+	private volatile String motdFooter = "";
 
 	/** Creates the engine and loads the config (writing the default config on first start). */
 	public ServerRules(RulesEngine.Bridge<P> bridge, Path configFile, ScopeKind kind) {
+		this(bridge, configFile, null, kind);
+	}
+
+	/** Same, plus the optional hosting file ({@link HostingFooter}); it is never created. */
+	public ServerRules(RulesEngine.Bridge<P> bridge, Path configFile, Path hostingFile, ScopeKind kind) {
 		this.bridge = bridge;
 		this.configFile = configFile;
+		this.hostingFile = hostingFile;
 		this.kind = kind;
+		loadFooter();
 		RulesConfig initial = RulesConfig.empty(kind);
 		ConfigLoader.Result r = ConfigLoader.load(configFile, kind);
 		if (r.ok()) {
@@ -54,8 +64,32 @@ public final class ServerRules<P> {
 		return configFile;
 	}
 
+	/** MOTD footer from the hosting file, {@code ""} = off. */
+	public String motdFooter() {
+		return motdFooter;
+	}
+
+	/** The server's MOTD with the hosting footer as line 2 (unchanged without footer). */
+	public String motd(String serverMotd) {
+		return HostingFooter.motd(serverMotd, motdFooter);
+	}
+
+	private void loadFooter() {
+		if (hostingFile == null) return;
+		HostingFooter.Result r = HostingFooter.load(hostingFile);
+		if (!r.ok()) {
+			bridge.warn("Could not load " + hostingFile.getFileName() + ": " + r.error);
+			return;
+		}
+		if (!r.footer.equals(motdFooter)) {
+			bridge.info(r.footer.isEmpty() ? "MOTD footer off" : "MOTD footer from " + hostingFile.getFileName() + ": " + r.footer);
+		}
+		motdFooter = r.footer;
+	}
+
 	/** Reloads the config. On errors the previous rules stay active. Returns chat lines for the sender. */
 	public List<String> reload() {
+		loadFooter();
 		ConfigLoader.Result r = ConfigLoader.load(configFile, kind);
 		List<String> out = new ArrayList<String>();
 		if (!r.ok()) {

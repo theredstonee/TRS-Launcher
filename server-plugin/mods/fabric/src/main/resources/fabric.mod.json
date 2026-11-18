@@ -13,6 +13,12 @@
 	},
 	"license": "GPL-3.0-only",
 	"environment": "server",
+	"mixins": [
+		{
+			"config": "trsserverrules.mixins.json",
+			"environment": "server"
+		}
+	],
 	"entrypoints": {
 		"server": [
 			"dev.theredstonee.trsrules.fabric.TrsRulesFabric"

@@ -1,8 +1,8 @@
 // TRS Server Rules – Forge server mod for Minecraft 1.20.1 (ForgeGradle 7, like client-mod/forge).
 //
 // Sources: src/main + ../shared (engine glue, tick scheduler, Mc compat 1.20.1) + modcore jar (common + SnakeYAML).
-// Forge 1.20.1 runs with SRG names in production: the Renamer turns the Mojang-named jar into the SRG jar
-// (no mixins, so no refmap). Server-side only: the mod does nothing outside a dedicated server, clients do not
+// Forge 1.20.1 runs with SRG names in production: the Renamer turns the Mojang-named jar into the SRG jar and writes
+// the refmap for the one server mixin (hosting footer), like client-mod/forge. Server-side only: the mod does nothing outside a dedicated server, clients do not
 // need it (DisplayTest IGNORESERVERONLY, channels accept vanilla/absent).
 plugins {
 	id 'java'
@@ -46,6 +46,7 @@ repositories {
 dependencies {
 	implementation minecraft.dependency("net.minecraftforge:forge:${mc}-${project.forge_version}")
 	implementation files(project.modcoreJar)
+	annotationProcessor "org.spongepowered:mixin:${project.mixin_processor_version}:processor"
 }
 
 processResources {
@@ -57,6 +58,8 @@ processResources {
 }
 
 tasks.named('jar', Jar) {
+	// Forge only finds mixin configs of mod jars through this manifest attribute.
+	manifest.attributes('MixinConfigs': 'trsserverrules.mixins.json')
 	from({ zipTree(project.modcoreJar) }) {
 		exclude 'META-INF/MANIFEST.MF'
 	}
@@ -64,10 +67,15 @@ tasks.named('jar', Jar) {
 	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
-// Mojang names → SRG (what Forge 1.20.1 uses at runtime)
+// Mojang names → SRG (what Forge 1.20.1 uses at runtime), plus the mixin refmap
 renamer.mappings(minecraft.dependency.toSrg)
+renamer.enableMixinRefmaps {
+	config 'trsserverrules.mixins.json'
+	refMap = 'trsserverrules.refmap.json'
+}
 renamer.classes(tasks.named('jar', Jar)) {
 	archiveClassifier = 'srg'
+	mappings renamer.mixin.generatedMappings
 }
 tasks.named('assemble') { dependsOn 'renameJar' }
 
