@@ -1,40 +1,21 @@
 <script setup lang="ts">
-import {
-  type CraftingAccess,
-  type CraftingState,
-  NAME_MAX,
-  defaultServerType,
-  hostingCountdown,
-  inCooldown,
-  isTransitional,
-  remainingSeconds,
-  secondsUntil,
-  validServerName,
-} from '~/utils/craftinghosting'
-
-// Kostenloser Server beim Partner CraftingHosting: ohne Server das Formular zum Anlegen,
-// sonst Zustand, Adresse, Laufzeit, Starten/Stoppen/Beitreten, Zugang und Konsole.
+// Kostenloser Server beim Partner CraftingHosting: ohne Server der Assistent zum Anlegen,
+// sonst Kopfkarte und Reiter (Übersicht, Konsole, Einstellungen, Mods & Welt).
 const store = useCraftingHostingStore()
 const trs = useTrsStore()
 const accounts = useAccountsStore()
+const route = useRoute()
+const router = useRouter()
 
 const LOGO = '/partners/craftinghosting.png'
 const mobile = computed(() => platformCaps.value.platform === 'android' || platformCaps.value.platform === 'ios')
 const server = computed(() => store.server)
 const info = computed(() => store.info)
 
-// Countdown jede Sekunde.
-const now = ref(Date.now())
-let ticker: ReturnType<typeof setInterval> | null = null
-
 onMounted(() => {
-  ticker = setInterval(() => (now.value = Date.now()), 1000)
   if (trs.enabled && accounts.active) void store.watch()
 })
-onUnmounted(() => {
-  if (ticker) clearInterval(ticker)
-  store.unwatch()
-})
+onUnmounted(() => store.unwatch())
 
 // TRS eingeschaltet bzw. Konto gewechselt: neu laden.
 watch(
@@ -46,71 +27,24 @@ watch(
   },
 )
 
-// --- Anlegen ---------------------------------------------------------------------------
-const form = reactive({ name: '', serverType: '', version: '', access: 'friends' as CraftingAccess })
-watch(
-  info,
-  (i) => {
-    if (!i || form.serverType) return
-    Object.assign(form, defaultServerType(i))
-  },
-  { immediate: true },
-)
-const versions = computed(() => info.value?.serverTypes.find((t) => t.id === form.serverType)?.versions ?? [])
-watch(
-  () => form.serverType,
-  () => {
-    if (!versions.value.includes(form.version)) form.version = versions.value[0] ?? ''
-  },
-)
-const nameOk = computed(() => validServerName(form.name))
-const canCreate = computed(() => nameOk.value && !!form.serverType && !!form.version && !info.value?.full && !store.busy && !mobile.value)
-
-async function create() {
-  if (!canCreate.value) return
-  await store.create({ name: form.name.trim(), serverType: form.serverType, version: form.version, access: form.access })
+// --- Reiter (stehen in ?tab=, überleben also ein Neuladen) --------------------------------
+const TABS = ['overview', 'console', 'settings', 'content'] as const
+type Tab = (typeof TABS)[number]
+const tab = computed<Tab>({
+  get: () => TABS.find((x) => x === route.query.tab) ?? 'overview',
+  set: (v) => void router.replace({ query: { ...route.query, tab: v === 'overview' ? undefined : v } }),
+})
+const tabRefs = useTemplateRef<HTMLButtonElement[]>('tabRefs')
+function onTabKey(e: KeyboardEvent) {
+  const i = TABS.indexOf(tab.value)
+  const next = e.key === 'ArrowRight' ? (i + 1) % TABS.length : e.key === 'ArrowLeft' ? (i - 1 + TABS.length) % TABS.length : e.key === 'Home' ? 0 : e.key === 'End' ? TABS.length - 1 : -1
+  if (next < 0) return
+  e.preventDefault()
+  tab.value = TABS[next]!
+  void nextTick(() => tabRefs.value?.[next]?.focus())
 }
 
-function versionLabel(v: string) {
-  return v === 'latest' ? t('craftinghosting.latest') : v
-}
-
-// --- Server ----------------------------------------------------------------------------
-const state = computed<CraftingState | null>(() => server.value?.state ?? null)
-const typeName = computed(() => info.value?.serverTypes.find((t) => t.id === server.value?.serverType)?.name ?? server.value?.serverType ?? '')
-const cooling = computed(() => inCooldown(server.value, now.value))
-const cooldownLeft = computed(() => secondsUntil(server.value?.session.cooldownUntil, now.value))
-const runLeft = computed(() => remainingSeconds(server.value, store.loadedAt, now.value))
-const stateClass: Record<CraftingState, string> = {
-  installing: 'bg-lamp-900 text-lamp-300',
-  offline: 'bg-base-800 text-base-300',
-  starting: 'bg-lamp-900 text-lamp-300',
-  running: 'bg-ok/15 text-ok',
-  stopping: 'bg-lamp-900 text-lamp-300',
-  failed: 'bg-redstone-900/50 text-redstone-300',
-  suspended: 'bg-redstone-900/50 text-redstone-300',
-}
-const canStart = computed(() => !mobile.value && !cooling.value && (state.value === 'offline' || state.value === 'failed'))
-const canStop = computed(() => state.value === 'running' || state.value === 'starting')
-const canJoin = computed(
-  () => !mobile.value || platformCaps.value.gameLaunch,
-)
-const joinDisabled = computed(
-  () => store.joining || !!store.busy || cooling.value || state.value === 'installing' || state.value === 'stopping' || state.value === 'suspended',
-)
-
-const copied = ref(false)
-async function copyAddress() {
-  if (!server.value?.address) return
-  try {
-    await navigator.clipboard.writeText(server.value.address)
-    copied.value = true
-    setTimeout(() => (copied.value = false), 1500)
-  } catch {
-    useToasts().error(t('errors.unexpected'))
-  }
-}
-
+// --- Löschen und EULA ----------------------------------------------------------------------
 const confirmDelete = ref(false)
 async function remove() {
   if (await store.remove()) confirmDelete.value = false
@@ -126,48 +60,33 @@ watch(
 function openEula() {
   if (info.value) void backend.openExternalUrl(info.value.eulaUrl).catch((e) => useToasts().error(e))
 }
-
-// Bereiche des eigenen Servers.
-type Tab = 'overview' | 'console' | 'settings' | 'content'
-const tabs: Tab[] = ['overview', 'console', 'settings', 'content']
-const tab = ref<Tab>('overview')
-
-// Umbenennen direkt am Titel.
-const renaming = ref(false)
-const newName = ref('')
-function startRename() {
-  newName.value = server.value?.name ?? ''
-  renaming.value = true
-}
-async function saveName() {
-  if (!validServerName(newName.value)) return
-  if (await store.rename(newName.value)) renaming.value = false
-}
-
-const stats = computed(() => store.stats)
-function usage(used: number | null, limit: number | null): string {
-  if (used == null) return '–'
-  return limit ? `${formatBytes(used)} / ${formatBytes(limit)}` : formatBytes(used)
-}
 </script>
 
 <template>
-  <div class="mx-auto max-w-5xl p-6 mobile:p-4" data-testid="hosting-page">
-    <!-- Kopf mit Partner-Logo -->
-    <div class="mb-6 flex items-center gap-4 mobile:mb-4">
-      <img :src="LOGO" alt="CraftingHosting" class="size-12 shrink-0 object-contain" draggable="false" />
-      <div class="min-w-0 flex-1">
-        <span class="badge bg-sky-900/50 text-sky-300">{{ t('craftinghosting.partner') }}</span>
-        <h1 class="mt-1 text-xl font-semibold tracking-tight">{{ t('craftinghosting.title') }}</h1>
-        <p class="mt-0.5 text-sm text-base-400">{{ t('craftinghosting.subtitle') }}</p>
+  <div class="mx-auto max-w-6xl p-6 mobile:p-4" data-testid="hosting-page">
+    <!-- Kopf mit Partner-Würfel -->
+    <header class="ch-hero relative mb-6 overflow-hidden rounded-2xl border border-base-800 px-6 py-5 mobile:mb-4 mobile:px-4">
+      <span class="ch-hero-bg" aria-hidden="true" />
+      <div class="relative flex items-center gap-5 mobile:gap-3">
+        <div class="ch-cube relative shrink-0">
+          <img :src="LOGO" alt="CraftingHosting" class="relative size-16 object-contain mobile:size-12" draggable="false" />
+        </div>
+        <div class="min-w-0 flex-1">
+          <span class="badge bg-sky-900/50 text-sky-300 ring-1 ring-sky-700/40">{{ t('craftinghosting.partner') }}</span>
+          <h1 class="display mt-1.5 text-3xl leading-none text-base-50 mobile:text-2xl">{{ t('craftinghosting.title') }}</h1>
+          <p class="mt-1.5 max-w-xl text-sm text-base-200">{{ t('craftinghosting.subtitle') }}</p>
+        </div>
+        <button v-if="store.loaded" class="btn-icon shrink-0 mobile:hidden" :disabled="store.loading" :aria-label="t('common.actions.refresh')" :title="t('common.actions.refresh')" @click="store.load()">
+          <svg viewBox="0 0 24 24" class="size-4" :class="{ 'animate-spin': store.loading }" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7" /></svg>
+        </button>
       </div>
-      <button v-if="store.loaded" class="btn btn-ghost mobile:hidden" :disabled="store.loading" @click="store.load()">
-        {{ t('common.actions.refresh') }}
-      </button>
-    </div>
+    </header>
 
     <TrsGate what="hosting">
-      <div v-if="!store.loaded && store.loading" class="skeleton h-40" />
+      <div v-if="!store.loaded && store.loading" class="grid gap-4 lg:grid-cols-[1fr_19rem]">
+        <div class="skeleton h-72" />
+        <div class="skeleton h-48" />
+      </div>
 
       <div v-else-if="!store.loaded && store.problem" class="card px-4 py-4 text-sm" data-testid="hosting-problem">
         <p class="font-semibold text-base-50">{{ t('craftinghosting.unavailableTitle') }}</p>
@@ -177,226 +96,52 @@ function usage(used: number | null, limit: number | null): string {
 
       <template v-else-if="store.loaded">
         <p v-if="store.problem" class="mb-4 rounded-lg bg-lamp-900/40 px-3 py-2 text-sm text-lamp-300">{{ store.problem.text }}</p>
-        <p v-if="mobile" class="mb-4 rounded-lg bg-base-900 px-3 py-2 text-sm text-base-300 ring-1 ring-base-800">{{ t('craftinghosting.mobileNote') }}</p>
+        <p v-if="mobile" class="mb-4 rounded-lg bg-base-900 px-3 py-2 text-sm text-base-200 ring-1 ring-base-800">{{ t('craftinghosting.mobileNote') }}</p>
 
-        <!-- Noch kein Server: anlegen -->
-        <div v-if="!server" class="grid gap-4 lg:grid-cols-[1fr_20rem]">
-          <form class="card space-y-4 p-5" data-testid="hosting-create" @submit.prevent="create">
-            <h2 class="font-semibold text-base-50">{{ t('craftinghosting.create.title') }}</h2>
-            <div>
-              <label for="ch-name" class="mb-1 block text-xs text-base-400">{{ t('craftinghosting.create.name') }}</label>
-              <input
-                id="ch-name"
-                v-model="form.name"
-                class="field"
-                :maxlength="NAME_MAX"
-                :placeholder="t('craftinghosting.create.namePlaceholder')"
-                autocomplete="off"
-                spellcheck="false"
-              />
-              <p class="mt-1 text-xs" :class="form.name && !nameOk ? 'text-redstone-300' : 'text-base-500'">{{ t('craftinghosting.create.nameHint') }}</p>
-            </div>
-            <div class="grid grid-cols-2 gap-3 mobile:grid-cols-1">
-              <div>
-                <label for="ch-type" class="mb-1 block text-xs text-base-400">{{ t('craftinghosting.create.type') }}</label>
-                <select id="ch-type" v-model="form.serverType" class="field">
-                  <option v-for="type in info?.serverTypes ?? []" :key="type.id" :value="type.id">{{ type.name }}</option>
-                </select>
-              </div>
-              <div>
-                <label for="ch-version" class="mb-1 block text-xs text-base-400">{{ t('craftinghosting.create.version') }}</label>
-                <select id="ch-version" v-model="form.version" class="field font-mono">
-                  <option v-for="v in versions" :key="v" :value="v">{{ versionLabel(v) }}</option>
-                </select>
-              </div>
-            </div>
-            <fieldset>
-              <legend class="mb-1 text-xs text-base-400">{{ t('craftinghosting.access.label') }}</legend>
-              <div class="grid gap-2 sm:grid-cols-2">
-                <label
-                  v-for="mode in ['friends', 'open'] as const"
-                  :key="mode"
-                  class="flex cursor-pointer items-start gap-2.5 rounded-lg border px-3 py-2.5 text-sm"
-                  :class="form.access === mode ? 'border-redstone-500/60 bg-base-800' : 'border-base-800 hover:bg-base-800/60'"
-                >
-                  <input v-model="form.access" type="radio" name="ch-access" :value="mode" class="mt-0.5 accent-redstone-500" />
-                  <span>
-                    <span class="block font-semibold text-base-50">{{ t(`craftinghosting.access.${mode}`) }}</span>
-                    <span class="block text-xs text-base-400">{{ t(`craftinghosting.access.${mode}Hint`) }}</span>
-                  </span>
-                </label>
-              </div>
-            </fieldset>
-            <p v-if="info?.full" class="rounded-lg bg-lamp-900/40 px-3 py-2 text-sm text-lamp-300">{{ t('craftinghosting.create.full') }}</p>
-            <button type="submit" class="btn btn-primary" :disabled="!canCreate" data-testid="hosting-create-submit">
-              {{ store.busy === 'create' ? t('craftinghosting.create.creating') : t('craftinghosting.create.submit') }}
-            </button>
-          </form>
-
-          <aside class="space-y-4">
-            <div v-if="info" class="card p-4 text-sm">
-              <h3 class="mb-2 font-semibold text-base-50">{{ t('craftinghosting.plan.title') }}</h3>
-              <ul class="space-y-1 text-base-300">
-                <li>{{ t('craftinghosting.plan.memory', { gb: Math.round(info.plan.memoryMb / 1024) }) }}</li>
-                <li>{{ t('craftinghosting.plan.cpu', { percent: info.plan.cpuPercent }) }}</li>
-                <li>{{ t('craftinghosting.plan.disk', { gb: Math.round(info.plan.diskMb / 1024) }) }}</li>
-              </ul>
-            </div>
-            <div v-if="info" class="card p-4 text-sm">
-              <h3 class="mb-2 font-semibold text-base-50">{{ t('craftinghosting.rules.title') }}</h3>
-              <ul class="list-disc space-y-1 pl-4 text-base-300">
-                <li>{{ t('craftinghosting.rules.runs') }}</li>
-                <li>{{ t('craftinghosting.rules.session', { hours: info.limits.sessionMaxHours, pause: info.limits.cooldownHours }) }}</li>
-                <li>{{ t('craftinghosting.rules.idle', { days: info.limits.deleteAfterIdleDays }) }}</li>
-                <li>{{ t('craftinghosting.rules.eula') }}</li>
-              </ul>
-            </div>
-          </aside>
-        </div>
+        <!-- Noch kein Server -->
+        <CraftinghostingCreateWizard v-if="!server" :locked="mobile" />
 
         <!-- Eigener Server -->
         <div v-else class="space-y-4" data-testid="hosting-server">
-          <div class="card p-5">
-            <div class="flex flex-wrap items-center gap-3">
-              <div class="min-w-0 flex-1">
-                <form v-if="renaming" class="flex items-center gap-2" @submit.prevent="saveName">
-                  <input
-                    v-model="newName"
-                    class="field max-w-64"
-                    :maxlength="NAME_MAX"
-                    :aria-label="t('craftinghosting.create.name')"
-                    autocomplete="off"
-                    spellcheck="false"
-                    @keydown.esc="renaming = false"
-                  />
-                  <button type="submit" class="btn btn-primary px-3 py-1.5 text-xs" :disabled="!validServerName(newName) || !!store.busy">
-                    {{ t('common.actions.save') }}
-                  </button>
-                  <button type="button" class="btn btn-ghost px-3 py-1.5 text-xs" @click="renaming = false">{{ t('common.actions.cancel') }}</button>
-                </form>
-                <div v-else class="flex items-center gap-2">
-                  <h2 class="truncate text-lg font-semibold text-base-50">{{ server.name }}</h2>
-                  <button class="btn btn-ghost px-2 py-0.5 text-xs" :title="t('craftinghosting.rename')" data-testid="hosting-rename" @click="startRename">
-                    {{ t('craftinghosting.rename') }}
-                  </button>
-                  <span class="badge" :class="stateClass[server.state]" data-testid="hosting-state">
-                    <span v-if="isTransitional(server.state)" class="mr-1 inline-block size-1.5 animate-lamp rounded-full bg-current" />
-                    {{ t(`craftinghosting.state.${server.state}`) }}
-                  </span>
-                </div>
-                <p class="mt-0.5 text-sm text-base-400">{{ typeName }} · {{ versionLabel(server.version) }}</p>
-              </div>
-              <div class="flex flex-wrap gap-2">
-                <button v-if="canJoin" class="btn btn-primary" :disabled="joinDisabled" data-testid="hosting-join" @click="store.join()">
-                  {{ store.joining ? t('craftinghosting.actions.joining') : t('craftinghosting.actions.join') }}
-                </button>
-                <button v-if="canStop" class="btn btn-ghost" :disabled="!!store.busy" data-testid="hosting-stop" @click="store.stop()">
-                  {{ t('common.actions.stop') }}
-                </button>
-                <button v-else class="btn btn-ghost" :disabled="!canStart || !!store.busy" data-testid="hosting-start" @click="store.requestStart()">
-                  {{ t('common.actions.start') }}
-                </button>
-                <button class="btn btn-ghost text-redstone-300" :disabled="!!store.busy" data-testid="hosting-delete" @click="confirmDelete = true">
-                  {{ t('common.actions.delete') }}
-                </button>
-              </div>
-            </div>
+          <CraftinghostingServerHeader @delete="confirmDelete = true" @address="tab = 'settings'" />
 
-            <!-- Adresse -->
-            <div class="mt-4 flex flex-wrap items-center gap-2">
-              <code v-if="server.address" class="rounded-lg bg-base-900 px-3 py-1.5 font-mono text-sm text-base-100 ring-1 ring-base-800">{{ server.address }}</code>
-              <span v-else class="text-sm text-base-400">{{ t('craftinghosting.noAddress') }}</span>
-              <button v-if="server.address" class="btn btn-ghost px-2.5 py-1 text-xs" @click="copyAddress">
-                {{ copied ? t('common.status.copied') : t('common.actions.copy') }}
-              </button>
-            </div>
-
-            <!-- Hinweise je Zustand -->
-            <p v-if="server.state === 'installing'" class="mt-3 text-sm text-base-300">{{ t('craftinghosting.notes.installing') }}</p>
-            <p v-else-if="server.state === 'failed'" class="mt-3 text-sm text-redstone-300">{{ t('craftinghosting.notes.failed') }}</p>
-            <p v-else-if="server.state === 'suspended'" class="mt-3 text-sm text-redstone-300">{{ t('craftinghosting.notes.suspended') }}</p>
-            <p v-if="cooling" class="mt-3 text-sm text-lamp-300" data-testid="hosting-cooldown">
-              {{ t('craftinghosting.cooldown', { time: hostingCountdown(cooldownLeft) }) }}
-            </p>
-            <p v-else-if="server.session.active" class="mt-3 text-sm text-base-300">
-              {{ t('craftinghosting.remaining', { time: hostingCountdown(runLeft) }) }}
-            </p>
-            <p v-if="!server.session.active && server.session.lastStopReason" class="mt-1 text-xs text-base-500">
-              {{ t(`craftinghosting.stopReason.${server.session.lastStopReason}`) }}
-            </p>
-            <p v-if="server.setup === 'restarting'" class="mt-1 text-xs text-lamp-300" data-testid="hosting-setup">
-              {{ t('craftinghosting.setupRestarting') }}
-            </p>
-            <p v-if="server.session.active && !server.session.hostPresent" class="mt-1 text-xs text-lamp-300">
-              {{ t('craftinghosting.hostAway') }}
-            </p>
-            <p v-if="server.deleteAt && !server.session.active" class="mt-1 text-xs text-base-500" data-testid="hosting-delete-at">
-              {{ t('craftinghosting.deleteAt', { date: formatDate(server.deleteAt) }) }}
-            </p>
-          </div>
-
-          <div class="flex rounded-full bg-base-900 p-1 ring-1 ring-base-800 mobile-scroll-x" role="tablist">
+          <div class="flex gap-1 border-b border-base-800 mobile-scroll-x" role="tablist" :aria-label="t('craftinghosting.tabsLabel')" @keydown="onTabKey">
             <button
-              v-for="id in tabs"
+              v-for="id in TABS"
+              :id="`ch-tab-${id}`"
               :key="id"
-              class="seg flex-1 rounded-full text-xs whitespace-nowrap"
-              :class="{ 'seg-on': tab === id }"
+              ref="tabRefs"
+              class="ch-tab relative -mb-px px-3.5 py-2.5 text-sm font-medium whitespace-nowrap outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-redstone-500"
+              :class="tab === id ? 'text-base-50' : 'text-base-400 hover:text-base-50'"
               role="tab"
               :aria-selected="tab === id"
+              :aria-controls="`ch-panel-${id}`"
+              :tabindex="tab === id ? 0 : -1"
               :data-testid="`hosting-tab-${id}`"
               @click="tab = id"
             >
               {{ t(`craftinghosting.tabs.${id}`) }}
+              <span v-if="tab === id" class="ch-tab-line" aria-hidden="true" />
             </button>
           </div>
 
-          <CraftinghostingConsolePanel v-if="tab === 'console'" />
-          <CraftinghostingSettingsPanel v-else-if="tab === 'settings'" />
-          <CraftinghostingContentPanel v-else-if="tab === 'content'" />
-
-          <div v-else class="grid gap-4 md:grid-cols-2">
-            <!-- Zugang -->
-            <div class="card p-4">
-              <h3 class="mb-2 text-sm font-semibold text-base-50">{{ t('craftinghosting.access.label') }}</h3>
-              <div class="flex rounded-full bg-base-900 p-1 ring-1 ring-base-800" role="radiogroup" :aria-label="t('craftinghosting.access.label')">
-                <button
-                  v-for="mode in ['friends', 'open'] as const"
-                  :key="mode"
-                  class="seg flex-1 rounded-full text-xs"
-                  :class="{ 'seg-on': server.access === mode }"
-                  role="radio"
-                  :aria-checked="server.access === mode"
-                  :disabled="!!store.busy"
-                  @click="store.setAccess(mode)"
-                >
-                  {{ t(`craftinghosting.access.${mode}`) }}
+          <div :id="`ch-panel-${tab}`" role="tabpanel" :aria-labelledby="`ch-tab-${tab}`" tabindex="-1" class="outline-none">
+            <CraftinghostingConsolePanel v-if="tab === 'console'" />
+            <div v-else-if="tab === 'settings'" class="space-y-4">
+              <CraftinghostingAddressCard />
+              <CraftinghostingSettingsPanel />
+              <section class="card flex flex-wrap items-center justify-between gap-3 border-redstone-900/70 p-4" aria-labelledby="ch-danger-title">
+                <div class="min-w-0">
+                  <h3 id="ch-danger-title" class="text-sm font-semibold text-redstone-300">{{ t('craftinghosting.danger.title') }}</h3>
+                  <p class="mt-0.5 text-xs text-base-400">{{ t('craftinghosting.danger.text') }}</p>
+                </div>
+                <button class="btn btn-danger" :disabled="!!store.busy" data-testid="hosting-delete-settings" @click="confirmDelete = true">
+                  {{ t('common.actions.delete') }}
                 </button>
-              </div>
-              <p class="mt-2 text-xs text-base-400">{{ t(`craftinghosting.access.${server.access}Hint`) }}</p>
+              </section>
             </div>
-
-            <!-- Live-Werte (läuft) bzw. Paket -->
-            <div v-if="stats" class="card p-4 text-sm" data-testid="hosting-stats">
-              <h3 class="mb-2 font-semibold text-base-50">{{ t('craftinghosting.stats.title') }}</h3>
-              <dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-base-300">
-                <dt class="text-base-500">{{ t('craftinghosting.stats.players') }}</dt>
-                <dd>{{ stats.players ? `${stats.players.online} / ${stats.players.max}` : '–' }}</dd>
-                <dt class="text-base-500">{{ t('craftinghosting.stats.cpu') }}</dt>
-                <dd>{{ stats.cpuPercent != null ? `${stats.cpuPercent} % / ${server.resources.cpuPercent} %` : '–' }}</dd>
-                <dt class="text-base-500">{{ t('craftinghosting.stats.memory') }}</dt>
-                <dd>{{ usage(stats.memory.usedBytes, stats.memory.limitBytes) }}</dd>
-                <dt class="text-base-500">{{ t('craftinghosting.stats.disk') }}</dt>
-                <dd>{{ usage(stats.disk.usedBytes, stats.disk.limitBytes) }}</dd>
-              </dl>
-            </div>
-            <div v-else class="card p-4 text-sm">
-              <h3 class="mb-2 font-semibold text-base-50">{{ t('craftinghosting.plan.title') }}</h3>
-              <ul class="space-y-1 text-base-300">
-                <li>{{ t('craftinghosting.plan.memory', { gb: Math.round(server.resources.memoryMb / 1024) }) }}</li>
-                <li>{{ t('craftinghosting.plan.cpu', { percent: server.resources.cpuPercent }) }}</li>
-                <li>{{ t('craftinghosting.plan.disk', { gb: Math.round(server.resources.diskMb / 1024) }) }}</li>
-              </ul>
-            </div>
+            <CraftinghostingContentPanel v-else-if="tab === 'content'" />
+            <CraftinghostingOverviewPanel v-else />
           </div>
         </div>
       </template>
@@ -416,10 +161,10 @@ function usage(used: number | null, limit: number | null): string {
     <!-- EULA vor dem ersten Start -->
     <BaseDialog v-if="store.eulaOpen" :title="t('craftinghosting.eula.title')" @close="store.cancelEula()">
       <p class="text-sm text-base-200">{{ t('craftinghosting.eula.text') }}</p>
-      <button class="mt-2 text-sm text-redstone-300 underline underline-offset-2 hover:text-redstone-200" @click="openEula">
+      <button class="mt-2 text-sm text-redstone-300 underline underline-offset-2 hover:text-redstone-300" @click="openEula">
         {{ t('craftinghosting.eula.link') }}
       </button>
-      <label class="mt-4 flex cursor-pointer items-center gap-2 text-sm text-base-100">
+      <label class="mt-4 flex cursor-pointer items-center gap-2 text-sm text-base-50">
         <input v-model="eulaChecked" type="checkbox" class="accent-redstone-500" data-testid="hosting-eula-check" />
         {{ t('craftinghosting.eula.accept') }}
       </label>
@@ -432,3 +177,44 @@ function usage(used: number | null, limit: number | null): string {
     </BaseDialog>
   </div>
 </template>
+
+<style scoped>
+.ch-hero {
+  background-color: var(--color-base-900);
+}
+.ch-hero-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 140% at 0% 50%, rgb(56 189 248 / 0.14), transparent 70%),
+    radial-gradient(50% 120% at 100% 0%, color-mix(in srgb, var(--color-redstone-500) 14%, transparent), transparent 70%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.02), transparent);
+}
+/* Partner-Würfel mit leichtem Schein. */
+.ch-cube::before {
+  content: '';
+  position: absolute;
+  inset: -30%;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgb(56 189 248 / 0.35), transparent 65%);
+  filter: blur(6px);
+  animation: ch-breathe 4s ease-in-out infinite;
+}
+@keyframes ch-breathe {
+  50% {
+    opacity: 0.55;
+    transform: scale(0.92);
+  }
+}
+.ch-tab-line {
+  position: absolute;
+  left: 0.5rem;
+  right: 0.5rem;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--color-redstone-500);
+  box-shadow: 0 0 10px var(--color-redstone-500);
+}
+</style>

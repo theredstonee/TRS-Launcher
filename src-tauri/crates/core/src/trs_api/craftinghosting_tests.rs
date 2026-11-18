@@ -20,7 +20,7 @@ fn server(active: bool) -> serde_json::Value {
         "session": { "active": active, "startedAt": null, "lastHeartbeatAt": null, "heartbeatTimeoutSeconds": 180,
                      "runSeconds": 0, "maxRunSeconds": 86400, "remainingSeconds": 86400, "cooldownUntil": null,
                      "lastStopReason": if active { serde_json::Value::Null } else { json!("host_timeout") } },
-        "createdAt": "2026-11-18T15:59:20.000Z", "lastStartAt": null
+        "createdAt": "2026-11-18T15:59:20.000Z", "lastStartAt": null, "domain": "meinewelt.trs-launcher.de", "ip": "1.2.3.4:25568"
     })
 }
 
@@ -122,7 +122,7 @@ fn state() -> Arc<Api> {
 }
 
 fn new_server(name: &str) -> NewServer {
-    NewServer { name: name.into(), server_type: "paper".into(), version: "latest".into(), access: "friends".into() }
+    NewServer { name: name.into(), server_type: "paper".into(), version: "latest".into(), access: "friends".into(), subdomain: None }
 }
 
 fn api_code(e: &Error) -> (&str, &str) {
@@ -312,10 +312,28 @@ fn extras_api(base: Arc<std::sync::OnceLock<String>>) -> impl Fn(&Request) -> Re
                 Response::json(200, json!({ "server": s }))
             }
             ("PATCH", "/v1/craftinghosting/server") => {
+                let body = req.json();
                 let mut s = server(false);
-                s["name"] = req.json()["name"].clone();
+                if let Some(sub) = body["subdomain"].as_str() {
+                    if sub == "taken" {
+                        return Response::error(409, "subdomain_taken");
+                    }
+                    s["domain"] = json!(format!("{sub}.trs-launcher.de"));
+                } else {
+                    s["name"] = body["name"].clone();
+                }
                 Response::json(200, json!({ "server": s }))
             }
+            ("GET", "/v1/craftinghosting/subdomain?name=meinewelt") => {
+                Response::json(200, json!({ "name": "meinewelt", "available": true, "reason": null }))
+            }
+            ("GET", "/v1/craftinghosting/subdomain?name=play") => {
+                Response::json(200, json!({ "name": "play", "available": false, "reason": "reserved" }))
+            }
+            ("GET", "/v1/craftinghosting/subdomain?name=weird") => {
+                Response::json(200, json!({ "name": "<b>", "available": false, "reason": "<script>" }))
+            }
+            ("GET", "/v1/craftinghosting/subdomain?name=nodns") => Response::error(503, "dns_unavailable"),
             ("GET", "/v1/craftinghosting/server/settings") => Response::json(200, json!({ "settings": settings })),
             ("PATCH", "/v1/craftinghosting/server/settings") => {
                 let mut merged = settings.clone();
@@ -456,4 +474,52 @@ async fn setup_restart_keeps_the_session() {
     api_state.restarting.store(false, Ordering::SeqCst);
     assert!(!launcher.craftinghosting_heartbeat().await);
     assert_eq!(launcher.trs.craftinghosting.active().as_deref(), Some(ACC));
+}
+
+#[tokio::test]
+async fn own_address_is_checked_and_changed() {
+    let (server, _dir, launcher) = extras().await;
+    const CHECK: &str = "/v1/craftinghosting/subdomain";
+
+    let s = launcher.craftinghosting_server().await.unwrap().unwrap();
+    assert_eq!(s.domain.as_deref(), Some("meinewelt.trs-launcher.de"));
+    assert_eq!(s.ip.as_deref(), Some("1.2.3.4:25568"));
+
+    let free = launcher.craftinghosting_check_subdomain(" MeineWelt ").await.unwrap();
+    assert_eq!((free.name.as_str(), free.available, free.reason.as_deref()), ("meinewelt", true, None));
+    let reserved = launcher.craftinghosting_check_subdomain("play").await.unwrap();
+    assert_eq!((reserved.available, reserved.reason.as_deref()), (false, Some("reserved")));
+    // Unbekannter Grund wird zu „vergeben“, kaputter Name zum angefragten.
+    let weird = launcher.craftinghosting_check_subdomain("weird").await.unwrap();
+    assert_eq!((weird.name.as_str(), weird.reason.as_deref()), ("weird", Some("taken")));
+
+    // Ungültig: keine Anfrage.
+    let before = server.hits("GET", CHECK).len();
+    let bad = launcher.craftinghosting_check_subdomain("-ab").await.unwrap();
+    assert_eq!((bad.available, bad.reason.as_deref()), (false, Some("invalid")));
+    assert_eq!(server.hits("GET", CHECK).len(), before);
+
+    let e = launcher.craftinghosting_check_subdomain("nodns").await.unwrap_err();
+    assert_eq!(api_code(&e), ("trs_api", "dns_unavailable"));
+    assert_eq!(e.message_code(), "trsApi.dns_unavailable");
+
+    assert!(matches!(launcher.craftinghosting_set_subdomain("a b").await, Err(Error::Validation(_))));
+    let changed = launcher.craftinghosting_set_subdomain("NeueWelt").await.unwrap();
+    assert_eq!(changed.domain.as_deref(), Some("neuewelt.trs-launcher.de"));
+    assert_eq!(server.hits("PATCH", "/v1/craftinghosting/server")[0].json(), json!({ "subdomain": "neuewelt" }));
+    let e = launcher.craftinghosting_set_subdomain("taken").await.unwrap_err();
+    assert_eq!(e.message_code(), "trsApi.subdomain_taken");
+}
+
+#[tokio::test]
+async fn create_sends_the_address() {
+    let server = MockServer::start(api(state())).await;
+    let (_dir, launcher) = launcher(&server, &[ACC]).await;
+    let mut spec = new_server("Meine Welt");
+    spec.subdomain = Some("-bad".into());
+    assert!(matches!(launcher.craftinghosting_create(&spec).await, Err(Error::Validation(_))));
+    spec.subdomain = Some(" MeineWelt ".into());
+    let created = launcher.craftinghosting_create(&spec).await.unwrap();
+    assert_eq!(created.domain.as_deref(), Some("meinewelt.trs-launcher.de"));
+    assert_eq!(server.hits("POST", "/v1/craftinghosting/server")[0].json()["subdomain"], json!("meinewelt"));
 }

@@ -154,3 +154,25 @@ Usual TRS error shape `{ "error": { "code", "message", "details"? } }`.
   ("Free server: trs-launcher.de × craftinghosting.free") and restarts the server once (`setup: "restarting"`). Keep
   heartbeating while `setup` is `restarting` even though `session.active` is false, and treat it as "not ready yet"
   when joining.
+
+## Own address `<name>.trs-launcher.de`
+
+Every server gets its own address. The API keeps a DNS SRV record `_minecraft._tcp.<name>.trs-launcher.de` pointing at
+the partner node (`host:port`, fixed per server), so players connect directly to CraftingHosting with their real IP.
+
+- Name rules: 3–24 characters, `a-z`, `0-9` and `-`, no `-` at the start or end, lower case (the launcher lowercases
+  input). Reserved names (`www`, `api`, `play`, `docs`, `wiki`, `mail`, `admin`, …) and names that already exist in DNS
+  are not available.
+- `GET /v1/craftinghosting/subdomain?name=<name>` -> `{ "name": "<normalized>", "available": boolean,
+  "reason": null | "invalid" | "reserved" | "taken" }` (own current name counts as available).
+- `POST /v1/craftinghosting/server` additionally takes `subdomain` (required in the launcher's form; the API accepts a
+  missing one and then derives one from the server name).
+- `PATCH /v1/craftinghosting/server` additionally takes `subdomain` (change the address; the old one stops working).
+- `Server` gains `"domain": "meinewelt.trs-launcher.de" | null` (null = no address yet, e.g. DNS not set up on this
+  TRS server). Show `domain` as the main address (copy button) and use it for "Join"; show the node address
+  (`address`) only small as a fallback/detail.
+- `Server` also has `"ip": "1.2.3.4:25011" | null` (numeric node IPv4 and port). The launcher shows `domain` by default and
+  lets the user switch the displayed/copied address to `ip` ("IP & port") or `address` ("CraftingHosting address");
+  "Join" always uses `domain`, falling back to `address`.
+- New error codes: `400 invalid_subdomain`, `409 subdomain_taken`, `409 subdomain_reserved`,
+  `503 dns_unavailable` (DNS not configured on the TRS server – creating still works, `domain` stays null).

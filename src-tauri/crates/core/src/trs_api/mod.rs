@@ -288,7 +288,7 @@ pub(crate) fn api_error(status: u16, code: &str, retry_after: Option<u64>) -> Er
         // Empfohlene Modpacks: CurseForge fehlt auf dem Server bzw. Modrinth/CurseForge antwortet nicht – kein „offline“.
         (_, "curseforge_unavailable" | "upstream_failed") => ("trs_api", message_for(code)),
         // CraftingHosting nicht eingerichtet, in Wartung oder nicht erreichbar – der TRS-Server selbst läuft.
-        (_, "craftinghosting_unavailable" | "craftinghosting_maintenance" | "craftinghosting_upstream") => {
+        (_, "craftinghosting_unavailable" | "craftinghosting_maintenance" | "craftinghosting_upstream" | "dns_unavailable") => {
             ("trs_api", message_for(code))
         }
         (500..=599, _) => ("trs_offline", crate::msg!("trs.offline", "Der TRS-Server ist gerade nicht erreichbar.")),
@@ -521,6 +521,10 @@ fn message_for(code: &str) -> Msg {
         "file_not_found" => msg!("trsApi.file_not_found", "Die hochgeladene Welt wurde nicht gefunden – bitte noch einmal hochladen."),
         "mods_unsupported" => msg!("trsApi.mods_unsupported", "Dieser Servertyp kann keine Mods oder Plugins laden."),
         "server_running" => msg!("trsApi.server_running", "Stoppe den Server zuerst – das geht nur, solange er aus ist."),
+        "invalid_subdomain" => msg!("trsApi.invalid_subdomain", "Diese Adresse geht nicht – 3 bis 24 Zeichen aus a–z, 0–9 und -."),
+        "subdomain_taken" => msg!("trsApi.subdomain_taken", "Diese Adresse ist schon vergeben – nimm eine andere."),
+        "subdomain_reserved" => msg!("trsApi.subdomain_reserved", "Diese Adresse ist reserviert – nimm eine andere."),
+        "dns_unavailable" => msg!("trsApi.dns_unavailable", "Eigene Adressen sind auf dem TRS-Server gerade nicht verfügbar."),
         "invalid_request" | "invalid_json" => msg!("trsApi.invalid_request", "Die Anfrage war ungültig."),
         "not_found" => msg!("trsApi.not_found", "Nicht gefunden."),
         _ => msg!("trsApi.rejected", "Die TRS API hat die Anfrage abgelehnt."),

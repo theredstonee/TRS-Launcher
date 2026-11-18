@@ -347,7 +347,11 @@
       "file_rejected": "CraftingHosting heeft het bestand geweigerd.",
       "file_not_found": "De geüploade wereld is niet gevonden – upload hem opnieuw.",
       "mods_unsupported": "Dit servertype kan geen mods of plug-ins laden.",
-      "server_running": "Stop eerst de server – dit kan alleen als hij uit staat."
+      "server_running": "Stop eerst de server – dit kan alleen als hij uit staat.",
+      "invalid_subdomain": "Dit adres werkt niet – 3 tot 24 tekens uit a–z, 0–9 en -.",
+      "subdomain_taken": "Dit adres is al bezet – kies een ander.",
+      "subdomain_reserved": "Dit adres is gereserveerd – kies een ander.",
+      "dns_unavailable": "Eigen adressen zijn op de TRS-server nu niet beschikbaar."
     },
     "auth": {
       "accountMismatch": "Deze login hoort bij een ander account – log opnieuw in.",
@@ -808,7 +812,8 @@
       "invalidSettings": "Deze instelling kan zo niet.",
       "invalidProjects": "Deze mods kunnen niet worden overgezet.",
       "uploadFailed": "De wereld kon niet worden geüpload – probeer het opnieuw.",
-      "stopFirst": "Stop de server voordat je een wereld uploadt."
+      "stopFirst": "Stop de server voordat je een wereld uploadt.",
+      "invalidSubdomain": "Adres: 3 tot 24 tekens – a–z, 0–9 en -, geen - aan het begin of eind."
     },
     "chatImage": {
       "unsupported": "Alleen PNG-, JPEG- en WebP-afbeeldingen kunnen worden verstuurd.",
@@ -7557,16 +7562,12 @@
     "mobileNote": "Aanmaken en starten kan alleen in de launcher op je pc – die houdt de server draaiende.",
     "latest": "Nieuwste",
     "noAddress": "Het adres verschijnt zodra de server is ingericht.",
-    "remaining": "Nog {time} in deze sessie",
-    "cooldown": "Verplichte pauze – je kunt over {time} weer starten.",
     "cooldownUntil": "Verplichte pauze – je kunt de server om {time} weer starten.",
     "deleted": "Server verwijderd.",
     "create": {
-      "title": "Je gratis server",
       "name": "Naam",
       "namePlaceholder": "bijv. Mijn wereld",
       "nameHint": "3–22 tekens: letters, cijfers, spaties en . _ ' -",
-      "type": "Servertype",
       "version": "Versie",
       "submit": "Server aanmaken",
       "creating": "Bezig met aanmaken …",
@@ -7580,10 +7581,7 @@
       "openHint": "Iedereen met het adres kan meedoen."
     },
     "plan": {
-      "title": "Wat je krijgt",
-      "memory": "{gb} GB RAM",
-      "cpu": "{percent} % CPU",
-      "disk": "{gb} GB opslag"
+      "title": "Wat je krijgt"
     },
     "rules": {
       "title": "Zo werkt het",
@@ -7599,7 +7597,8 @@
       "running": "Online",
       "stopping": "Stopt …",
       "failed": "Mislukt",
-      "suspended": "Geblokkeerd"
+      "suspended": "Geblokkeerd",
+      "setup": "Eerste installatie"
     },
     "stopReason": {
       "host_stopped": "Laatst gestopt omdat de launcher werd gesloten.",
@@ -7734,6 +7733,110 @@
         "upload": "Uploaden … {percent} %",
         "import": "Wereld wordt op de server ingericht …"
       }
+    },
+    "tabsLabel": "Serveronderdelen",
+    "address": {
+      "title": "Adres",
+      "label": "Je eigen adres",
+      "hint": "Spelers joinen met dit adres – zonder poort.",
+      "status": {
+        "checking": "Controleren …",
+        "available": "Beschikbaar",
+        "taken": "Al bezet – probeer een ander.",
+        "reserved": "Gereserveerd – probeer een ander.",
+        "invalid": "3–24 tekens: a–z, 0–9 en -, geen - aan het begin of eind.",
+        "error": "Kan nu niet controleren – bij opslaan wordt het opnieuw gecontroleerd."
+      },
+      "change": "Adres wijzigen",
+      "saving": "Opslaan …",
+      "changeHint": "Het oude adres werkt meteen niet meer.",
+      "none": "Je server heeft nog geen eigen adres.",
+      "changed": "Adres gewijzigd.",
+      "view": "Getoond adres",
+      "views": {
+        "domain": "TRS-adres",
+        "ip": "IP & poort",
+        "node": "CraftingHosting-adres"
+      }
+    },
+    "wizard": {
+      "stepsLabel": "Stappen",
+      "steps": {
+        "source": "Bron",
+        "name": "Naam & adres",
+        "access": "Toegang & start"
+      },
+      "stepOf": "Stap {n} van {total}",
+      "back": "Terug",
+      "next": "Verder",
+      "preview": "Voorbeeld",
+      "source": {
+        "title": "Waar moet je server vandaan komen?",
+        "instance": "Uit een instantie",
+        "instanceHint": "Gebruikt de versie en loader van een van je instanties – mods en wereld kunnen later volgen.",
+        "new": "Nieuw",
+        "newHint": "Kies zelf het servertype en de versie.",
+        "pickInstance": "Je instanties",
+        "noInstances": "Je hebt nog geen instanties – begin met „Nieuw”.",
+        "pickType": "Servertype",
+        "becomes": "Je server: {server}",
+        "vanillaNote": "Paper is een snellere vanilla-server – spelers joinen met een normale vanilla-client.",
+        "loaderNote": "CraftingHosting biedt geen {loader}-servers aan. Je server wordt Paper en de mods kunnen niet mee.",
+        "versionMissing": "Minecraft {version} is niet beschikbaar voor {type} – kies een versie. Spelers hebben dezelfde versie nodig om te joinen.",
+        "modsLater": "Na de eerste start kun je de mods en een wereld uit deze instantie overnemen."
+      },
+      "types": {
+        "paper": "Snelle vanilla-server met plugins – de veilige keuze.",
+        "purpur": "Paper met veel extra gameplay-opties.",
+        "vanilla": "De onaangepaste server van Mojang.",
+        "fabric": "Voor Fabric-mods – licht en actueel.",
+        "forge": "Voor Forge-mods en grote modpacks.",
+        "other": "Een ander servertype van CraftingHosting."
+      },
+      "name": {
+        "title": "Hoe heet je server?"
+      },
+      "access": {
+        "title": "Wie mag erop?"
+      }
+    },
+    "header": {
+      "more": "Meer acties",
+      "session": "Sessie",
+      "cooldown": "Verplichte pauze",
+      "left": "nog {time}",
+      "until": "weer te starten over {time}",
+      "perSession": "tot {hours} u per sessie"
+    },
+    "tiles": {
+      "of": "van {limit}",
+      "offHint": "Live-waarden zie je zolang de server draait."
+    },
+    "transfer": {
+      "title": "Inhoud uit {instance} overnemen",
+      "text": "Je server is klaar. Haal de mods en een wereld uit je instantie erbij – de server stopt even en start daarna weer.",
+      "missing": "Deze instantie bestaat niet meer.",
+      "mods": "Mods overnemen",
+      "modsHint": "Mods van Modrinth, mods alleen voor de client blijven weg.",
+      "modsNo": "Niet mogelijk bij dit servertype.",
+      "noWorld": "Geen wereld (wereld van de server houden)",
+      "button": "Overnemen",
+      "working": "Bezig met overnemen …",
+      "dismiss": "Niet nu",
+      "done": "Klaar – je server start met de inhoud uit je instantie.",
+      "failed": "Dat lukte niet helemaal – je kunt het opnieuw proberen.",
+      "notMoved": "Niet overgenomen: {n}",
+      "notModrinth": "niet van Modrinth",
+      "steps": {
+        "stop": "Server stoppen",
+        "mods": "Mods installeren",
+        "world": "Wereld uploaden",
+        "start": "Server starten"
+      }
+    },
+    "danger": {
+      "title": "Server verwijderen",
+      "text": "Verwijdert de server, zijn wereld en zijn adres definitief."
     }
   }
 }

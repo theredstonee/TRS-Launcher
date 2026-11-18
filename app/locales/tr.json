@@ -347,7 +347,11 @@
       "file_rejected": "CraftingHosting dosyayı reddetti.",
       "file_not_found": "Yüklenen dünya bulunamadı – lütfen tekrar yükle.",
       "mods_unsupported": "Bu sunucu türü mod veya eklenti yükleyemez.",
-      "server_running": "Önce sunucuyu durdur – bu yalnızca sunucu kapalıyken çalışır."
+      "server_running": "Önce sunucuyu durdur – bu yalnızca sunucu kapalıyken çalışır.",
+      "invalid_subdomain": "Bu adres olmaz – a–z, 0–9 ve - karakterlerinden 3 ile 24 arası.",
+      "subdomain_taken": "Bu adres zaten alınmış – başka birini seç.",
+      "subdomain_reserved": "Bu adres ayrılmış – başka birini seç.",
+      "dns_unavailable": "Kendi adresler şu an TRS sunucusunda kullanılamıyor."
     },
     "auth": {
       "accountMismatch": "Bu giriş başka bir hesaba ait – lütfen tekrar giriş yap.",
@@ -808,7 +812,8 @@
       "invalidSettings": "Bu ayar bu şekilde olmaz.",
       "invalidProjects": "Bu modlar aktarılamaz.",
       "uploadFailed": "Dünya yüklenemedi – lütfen tekrar dene.",
-      "stopFirst": "Dünya yüklemeden önce sunucuyu durdur."
+      "stopFirst": "Dünya yüklemeden önce sunucuyu durdur.",
+      "invalidSubdomain": "Adres: 3 ile 24 karakter – a–z, 0–9 ve -, başta veya sonda - olmaz."
     },
     "chatImage": {
       "unsupported": "Yalnızca PNG, JPEG ve WebP resimleri gönderilebilir.",
@@ -7557,16 +7562,12 @@
     "mobileNote": "Oluşturma ve başlatma yalnızca PC’deki başlatıcıda çalışır – sunucuyu o açık tutar.",
     "latest": "En yeni",
     "noAddress": "Adres, sunucu kurulunca görünür.",
-    "remaining": "Bu oturumda {time} kaldı",
-    "cooldown": "Zorunlu mola – {time} sonra tekrar başlatabilirsin.",
     "cooldownUntil": "Zorunlu mola – sunucuyu saat {time} itibarıyla tekrar başlatabilirsin.",
     "deleted": "Sunucu silindi.",
     "create": {
-      "title": "Ücretsiz sunucun",
       "name": "Ad",
       "namePlaceholder": "ör. Dünyam",
       "nameHint": "3–22 karakter: harf, rakam, boşluk ve . _ ' -",
-      "type": "Sunucu türü",
       "version": "Sürüm",
       "submit": "Sunucu oluştur",
       "creating": "Oluşturuluyor …",
@@ -7580,10 +7581,7 @@
       "openHint": "Adresi bilen herkes katılabilir."
     },
     "plan": {
-      "title": "Neler var",
-      "memory": "{gb} GB RAM",
-      "cpu": "%{percent} CPU",
-      "disk": "{gb} GB depolama"
+      "title": "Neler var"
     },
     "rules": {
       "title": "Nasıl çalışır",
@@ -7599,7 +7597,8 @@
       "running": "Çevrimiçi",
       "stopping": "Duruyor …",
       "failed": "Başarısız",
-      "suspended": "Askıya alındı"
+      "suspended": "Askıya alındı",
+      "setup": "İlk kurulum"
     },
     "stopReason": {
       "host_stopped": "En son başlatıcı kapatıldığı için durduruldu.",
@@ -7734,6 +7733,110 @@
         "upload": "Yükleniyor … %{percent}",
         "import": "Dünya sunucuda hazırlanıyor …"
       }
+    },
+    "tabsLabel": "Sunucu bölümleri",
+    "address": {
+      "title": "Adres",
+      "label": "Kendi adresin",
+      "hint": "Oyuncular bu adresle katılır – port gerekmez.",
+      "status": {
+        "checking": "Kontrol ediliyor …",
+        "available": "Uygun",
+        "taken": "Zaten alınmış – başka birini dene.",
+        "reserved": "Ayrılmış – başka birini dene.",
+        "invalid": "3–24 karakter: a–z, 0–9 ve -, başta veya sonda - olmaz.",
+        "error": "Şu an kontrol edilemedi – kaydederken tekrar kontrol edilir."
+      },
+      "change": "Adresi değiştir",
+      "saving": "Kaydediliyor …",
+      "changeHint": "Eski adres hemen çalışmayı bırakır.",
+      "none": "Sunucunun henüz kendi adresi yok.",
+      "changed": "Adres değiştirildi.",
+      "view": "Gösterilen adres",
+      "views": {
+        "domain": "TRS adresi",
+        "ip": "IP ve port",
+        "node": "CraftingHosting adresi"
+      }
+    },
+    "wizard": {
+      "stepsLabel": "Adımlar",
+      "steps": {
+        "source": "Kaynak",
+        "name": "Ad ve adres",
+        "access": "Erişim ve başlat"
+      },
+      "stepOf": "Adım {n} / {total}",
+      "back": "Geri",
+      "next": "İleri",
+      "preview": "Önizleme",
+      "source": {
+        "title": "Sunucun nereden gelsin?",
+        "instance": "Bir örnekten",
+        "instanceHint": "Örneklerinden birinin sürümünü ve yükleyicisini kullanır – modlar ve dünya sonra gelebilir.",
+        "new": "Yeni",
+        "newHint": "Sunucu türünü ve sürümü kendin seç.",
+        "pickInstance": "Örneklerin",
+        "noInstances": "Henüz hiç örneğin yok – „Yeni“ ile başla.",
+        "pickType": "Sunucu türü",
+        "becomes": "Sunucun: {server}",
+        "vanillaNote": "Paper daha hızlı bir vanilla sunucusudur – oyuncular normal bir vanilla istemcisiyle katılır.",
+        "loaderNote": "CraftingHosting {loader} sunucuları sunmuyor. Sunucun Paper olacak ve modlar aktarılamaz.",
+        "versionMissing": "{type} için Minecraft {version} yok – bir sürüm seç. Oyuncuların katılmak için aynı sürüme ihtiyacı var.",
+        "modsLater": "İlk başlatmadan sonra bu örnekten modları ve bir dünyayı aktarabilirsin."
+      },
+      "types": {
+        "paper": "Eklentili hızlı vanilla sunucusu – güvenli seçim.",
+        "purpur": "Birçok ek oynanış seçeneğine sahip Paper.",
+        "vanilla": "Mojang’ın değiştirilmemiş sunucusu.",
+        "fabric": "Fabric modları için – hafif ve güncel.",
+        "forge": "Forge modları ve büyük mod paketleri için.",
+        "other": "CraftingHosting’ten başka bir sunucu türü."
+      },
+      "name": {
+        "title": "Sunucunun adı ne olsun?"
+      },
+      "access": {
+        "title": "Kimler katılabilir?"
+      }
+    },
+    "header": {
+      "more": "Diğer işlemler",
+      "session": "Oturum",
+      "cooldown": "Zorunlu mola",
+      "left": "{time} kaldı",
+      "until": "{time} sonra başlatılabilir",
+      "perSession": "oturum başına {hours} saate kadar"
+    },
+    "tiles": {
+      "of": "/ {limit}",
+      "offHint": "Canlı değerler sunucu çalışırken görünür."
+    },
+    "transfer": {
+      "title": "{instance} içeriğini aktar",
+      "text": "Sunucun hazır. Örneğindeki modları ve bir dünyayı getir – sunucu kısa süre durur ve sonra yeniden başlar.",
+      "missing": "Bu örnek artık yok.",
+      "mods": "Modları aktar",
+      "modsHint": "Modrinth modları; yalnızca istemci modları atlanır.",
+      "modsNo": "Bu sunucu türünde mümkün değil.",
+      "noWorld": "Dünya yok (sunucunun dünyası kalsın)",
+      "button": "Aktar",
+      "working": "Aktarılıyor …",
+      "dismiss": "Şimdi değil",
+      "done": "Bitti – sunucun örneğindeki içerikle başlıyor.",
+      "failed": "Tamamen olmadı – tekrar deneyebilirsin.",
+      "notMoved": "Aktarılmayan: {n}",
+      "notModrinth": "Modrinth’ten değil",
+      "steps": {
+        "stop": "Sunucuyu durdur",
+        "mods": "Modları kur",
+        "world": "Dünyayı yükle",
+        "start": "Sunucuyu başlat"
+      }
+    },
+    "danger": {
+      "title": "Sunucuyu sil",
+      "text": "Sunucuyu, dünyasını ve adresini kalıcı olarak siler."
     }
   }
 }

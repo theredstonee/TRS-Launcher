@@ -1,6 +1,22 @@
 import { describe, expect, it } from 'vitest'
 import {
+  type CraftingInfo,
+  type WizardState,
   POLL_FAST_MS,
+  addressOptions,
+  cleanSubdomainInput,
+  closestVersion,
+  modsMatch,
+  parseOrigins,
+  planFromInstance,
+  runtimePercent,
+  serverAddress,
+  stateTone,
+  suggestServerName,
+  suggestSubdomain,
+  usagePercent,
+  validSubdomain,
+  wizardStepValid,
   POLL_SLOW_MS,
   cleanHostingCommand,
   craftingServerSchema,
@@ -133,5 +149,172 @@ describe('Einstellungen, Mods, Konsole', () => {
 
   it('entfernt Farbcodes aus Log-Zeilen', () => {
     expect(plainLogLine('§aGrün §lfett§r normal')).toBe('Grün fett normal')
+  })
+})
+
+const INFO: CraftingInfo = {
+  plan: { name: 'Free 4 GB', memoryMb: 4096, cpuPercent: 200, diskMb: 10240 },
+  serverTypes: [
+    { id: 'paper', name: 'Paper', versions: ['latest', '26.3', '1.21.11', '1.21.4', '1.20.1', '1.8.9'] },
+    { id: 'fabric', name: 'Fabric', versions: ['latest', '26.3', '1.21.11', '1.20.1', '1.16.5'] },
+    { id: 'forge', name: 'Forge', versions: ['1.21.1', '1.20.1', '1.12.2'] },
+  ],
+  limits: { maxServersPerPlayer: 1, sessionMaxHours: 24, cooldownHours: 2, heartbeatTimeoutSeconds: 180, deleteAfterIdleDays: 30, serverNameMaxLength: 22 },
+  eulaUrl: 'https://www.minecraft.net/eula',
+  full: false,
+}
+const inst = (kind: string, gameVersion: string) => ({ gameVersion, loader: { kind } })
+
+describe('Eigene Adresse', () => {
+  it('prüft und säubert Adressen wie der Kern', () => {
+    expect(validSubdomain('meinewelt')).toBe(true)
+    expect(validSubdomain('bob-smp-2')).toBe(true)
+    for (const bad of ['ab', '-abc', 'abc-', 'a_b', 'Mein', 'x'.repeat(25)]) expect(validSubdomain(bad)).toBe(false)
+    expect(cleanSubdomainInput('Mein Welt_2!')).toBe('mein-welt-2')
+    expect(cleanSubdomainInput('x'.repeat(30))).toHaveLength(24)
+  })
+
+  it('schlägt eine Adresse aus dem Namen vor', () => {
+    expect(suggestSubdomain('Grüne Insel')).toBe('gruene-insel')
+    expect(suggestSubdomain("Bob's SMP #1")).toBe('bob-s-smp-1')
+    expect(suggestSubdomain('  Café  Straße ')).toBe('cafe-strasse')
+    expect(suggestSubdomain('ab')).toBe('')
+    expect(suggestSubdomain('a'.repeat(23) + ' b')).toBe('a'.repeat(23))
+  })
+
+  it('nimmt die eigene Domain vor der Node-Adresse und kennt die Ansichten', () => {
+    expect(serverAddress({ domain: 'meinewelt.trs-launcher.de', address: 'node1:1' })).toBe('meinewelt.trs-launcher.de')
+    expect(serverAddress({ domain: null, address: 'node1:1' })).toBe('node1:1')
+    expect(serverAddress(null)).toBeNull()
+    expect(addressOptions({ domain: 'a-b.trs-launcher.de', ip: '1.2.3.4:25011', address: 'node02:25011' }).map((o) => o.view)).toEqual([
+      'domain',
+      'ip',
+      'node',
+    ])
+    expect(addressOptions({ domain: null, ip: null, address: 'node02:25011' })).toEqual([{ view: 'node', value: 'node02:25011' }])
+  })
+
+  it('Schema: ungültige Domain und IP werden null', () => {
+    const ok = craftingServerSchema.parse({ ...base, domain: 'meinewelt.trs-launcher.de', ip: '1.2.3.4:25011' })
+    expect([ok.domain, ok.ip]).toEqual(['meinewelt.trs-launcher.de', '1.2.3.4:25011'])
+    const bad = craftingServerSchema.parse({ ...base, domain: 'evil.com', ip: 'node:1' })
+    expect([bad.domain, bad.ip]).toEqual([null, null])
+  })
+})
+
+describe('Server aus einer Instanz', () => {
+  it('Fabric und Forge bleiben, Vanilla wird Paper', () => {
+    expect(planFromInstance(inst('fabric', '1.21.11'), INFO)).toEqual({
+      serverType: 'fabric',
+      version: '1.21.11',
+      versionExact: true,
+      modsTransferable: true,
+      note: null,
+    })
+    expect(planFromInstance(inst('forge', '1.20.1'), INFO)).toMatchObject({ serverType: 'forge', modsTransferable: true })
+    expect(planFromInstance(inst('vanilla', '1.21.4'), INFO)).toMatchObject({ serverType: 'paper', version: '1.21.4', note: 'vanilla', modsTransferable: false })
+  })
+
+  it('NeoForge/Quilt: Paper mit Hinweis, keine Mods', () => {
+    for (const kind of ['neoforge', 'quilt']) {
+      expect(planFromInstance(inst(kind, '1.21.11'), INFO)).toMatchObject({ serverType: 'paper', note: 'loaderUnsupported', modsTransferable: false })
+    }
+    // Typ fehlt beim Partner: ebenso Paper.
+    const noForge = { ...INFO, serverTypes: INFO.serverTypes.filter((t) => t.id !== 'forge') }
+    expect(planFromInstance(inst('forge', '1.20.1'), noForge)).toMatchObject({ serverType: 'paper', note: 'loaderUnsupported' })
+    expect(planFromInstance(inst('fabric', '1.21.11'), null)).toBeNull()
+  })
+
+  it('fehlende Version: die nächste nicht neuere, sonst die älteste', () => {
+    expect(planFromInstance(inst('fabric', '1.21.5'), INFO)).toMatchObject({ version: '1.20.1', versionExact: false })
+    expect(planFromInstance(inst('forge', '1.21.11'), INFO)).toMatchObject({ version: '1.21.1', versionExact: false })
+    expect(closestVersion('1.7.10', ['1.21.11', '1.8.9'])).toBe('1.8.9')
+    expect(closestVersion('27w01a', ['latest', '26.3'])).toBe('latest')
+    expect(closestVersion('27w01a', ['26.3', '1.21.11'])).toBe('26.3')
+  })
+
+  it('Mods passen nur zum gleichen Loader', () => {
+    expect(modsMatch('fabric', 'fabric')).toBe(true)
+    expect(modsMatch('forge', 'forge')).toBe(true)
+    expect(modsMatch('fabric', 'paper')).toBe(false)
+    expect(modsMatch('vanilla', 'vanilla')).toBe(false)
+  })
+
+  it('Servername aus dem Instanznamen', () => {
+    expect(suggestServerName('Fabric 1.21 #2')).toBe('Fabric 1.21 2')
+    expect(suggestServerName('Mein sehr langer Instanzname')).toBe('Mein sehr langer Insta')
+    expect(suggestServerName('#!')).toBe('')
+  })
+})
+
+describe('Assistent', () => {
+  const w = (patch: Partial<WizardState> = {}): WizardState => ({
+    source: 'new',
+    instanceId: '',
+    serverType: 'paper',
+    version: 'latest',
+    name: 'Meine Welt',
+    subdomain: 'meinewelt',
+    subdomainEnabled: true,
+    subdomainStatus: 'available',
+    access: 'friends',
+    ...patch,
+  })
+
+  it('Schritt 1: Quelle, Typ und Version', () => {
+    expect(wizardStepValid(1, w())).toBe(true)
+    expect(wizardStepValid(1, w({ source: null }))).toBe(false)
+    expect(wizardStepValid(1, w({ source: 'instance' }))).toBe(false)
+    expect(wizardStepValid(1, w({ source: 'instance', instanceId: 'a' }))).toBe(true)
+    expect(wizardStepValid(1, w({ version: '' }))).toBe(false)
+  })
+
+  it('Schritt 2: Name und freie Adresse', () => {
+    expect(wizardStepValid(2, w())).toBe(true)
+    expect(wizardStepValid(2, w({ name: 'ab' }))).toBe(false)
+    for (const status of ['taken', 'reserved', 'invalid', 'checking', 'idle'] as const) {
+      expect(wizardStepValid(2, w({ subdomainStatus: status }))).toBe(false)
+    }
+    // Prüfung fehlgeschlagen: die API prüft beim Anlegen.
+    expect(wizardStepValid(2, w({ subdomainStatus: 'error' }))).toBe(true)
+    // Ohne Adress-Funktion zählt nur der Name.
+    expect(wizardStepValid(2, w({ subdomainEnabled: false, subdomain: '', subdomainStatus: 'idle' }))).toBe(true)
+  })
+
+  it('Schritt 3: Zugang', () => {
+    expect(wizardStepValid(3, w({ access: 'open' }))).toBe(true)
+    expect(wizardStepValid(3, w({ access: 'everyone' as never }))).toBe(false)
+  })
+})
+
+describe('Anzeige', () => {
+  it('Farbton je Zustand', () => {
+    expect(stateTone({ state: 'running', setup: 'done' })).toBe('ok')
+    expect(stateTone({ state: 'running', setup: 'restarting' })).toBe('busy')
+    expect(stateTone({ state: 'starting', setup: 'done' })).toBe('busy')
+    expect(stateTone({ state: 'offline', setup: 'done' })).toBe('idle')
+    expect(stateTone({ state: 'suspended', setup: 'done' })).toBe('bad')
+    expect(stateTone(null)).toBe('idle')
+  })
+
+  it('Balken: Auslastung und Laufzeit', () => {
+    expect(usagePercent(1, 4)).toBe(25)
+    expect(usagePercent(8, 4)).toBe(100)
+    expect(usagePercent(null, 4)).toBeNull()
+    expect(usagePercent(1, 0)).toBeNull()
+    const now = 1_000_000
+    const s = { ...server, session: { ...server.session, maxRunSeconds: 7200, remainingSeconds: 3600 } }
+    expect(runtimePercent(s, now, now)).toBe(50)
+    expect(runtimePercent(s, now, now + 1800_000)).toBe(75)
+    expect(runtimePercent({ ...s, session: { ...s.session, active: false } }, now, now)).toBe(0)
+  })
+
+  it('gemerkte Herkunft: Kaputtes fällt weg', () => {
+    expect(parseOrigins('{"a":{"instanceId":"i1","transferred":false},"b":{"x":1},"c":{"instanceId":"i2"}}')).toEqual({
+      a: { instanceId: 'i1', transferred: false },
+      c: { instanceId: 'i2', transferred: false },
+    })
+    expect(parseOrigins('kaputt')).toEqual({})
+    expect(parseOrigins(null)).toEqual({})
   })
 })

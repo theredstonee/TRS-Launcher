@@ -347,7 +347,11 @@
       "file_rejected": "A CraftingHosting recusou o arquivo.",
       "file_not_found": "O mundo enviado não foi encontrado – envie de novo.",
       "mods_unsupported": "Este tipo de servidor não carrega mods nem plugins.",
-      "server_running": "Pare o servidor primeiro – isso só funciona com ele desligado."
+      "server_running": "Pare o servidor primeiro – isso só funciona com ele desligado.",
+      "invalid_subdomain": "Este endereço não serve – de 3 a 24 caracteres de a–z, 0–9 e -.",
+      "subdomain_taken": "Este endereço já está em uso – escolha outro.",
+      "subdomain_reserved": "Este endereço está reservado – escolha outro.",
+      "dns_unavailable": "Endereços próprios não estão disponíveis no servidor TRS agora."
     },
     "auth": {
       "accountMismatch": "Este login pertence a outra conta – entre novamente.",
@@ -808,7 +812,8 @@
       "invalidSettings": "Esta configuração não é válida.",
       "invalidProjects": "Esses mods não podem ser transferidos.",
       "uploadFailed": "Não foi possível enviar o mundo – tente de novo.",
-      "stopFirst": "Pare o servidor antes de enviar um mundo."
+      "stopFirst": "Pare o servidor antes de enviar um mundo.",
+      "invalidSubdomain": "Endereço: de 3 a 24 caracteres – a–z, 0–9 e -, sem - no início ou no fim."
     },
     "chatImage": {
       "unsupported": "Só é possível enviar imagens PNG, JPEG e WebP.",
@@ -7557,16 +7562,12 @@
     "mobileNote": "Criar e iniciar o servidor só funciona no launcher do PC – é ele que mantém o servidor rodando.",
     "latest": "Mais recente",
     "noAddress": "O endereço aparece quando o servidor estiver configurado.",
-    "remaining": "Restam {time} nesta sessão",
-    "cooldown": "Pausa obrigatória – você pode iniciar de novo em {time}.",
     "cooldownUntil": "Pausa obrigatória – você pode iniciar o servidor de novo às {time}.",
     "deleted": "Servidor excluído.",
     "create": {
-      "title": "Seu servidor gratuito",
       "name": "Nome",
       "namePlaceholder": "ex.: Meu mundo",
       "nameHint": "3–22 caracteres: letras, números, espaços e . _ ' -",
-      "type": "Tipo de servidor",
       "version": "Versão",
       "submit": "Criar servidor",
       "creating": "Criando …",
@@ -7580,10 +7581,7 @@
       "openHint": "Qualquer pessoa com o endereço pode entrar."
     },
     "plan": {
-      "title": "O que você recebe",
-      "memory": "{gb} GB de RAM",
-      "cpu": "{percent} % de CPU",
-      "disk": "{gb} GB de armazenamento"
+      "title": "O que você recebe"
     },
     "rules": {
       "title": "Como funciona",
@@ -7599,7 +7597,8 @@
       "running": "Online",
       "stopping": "Parando …",
       "failed": "Falhou",
-      "suspended": "Suspenso"
+      "suspended": "Suspenso",
+      "setup": "Primeira configuração"
     },
     "stopReason": {
       "host_stopped": "Parou da última vez porque o launcher foi fechado.",
@@ -7734,6 +7733,110 @@
         "upload": "Enviando … {percent} %",
         "import": "Configurando o mundo no servidor …"
       }
+    },
+    "tabsLabel": "Seções do servidor",
+    "address": {
+      "title": "Endereço",
+      "label": "Seu próprio endereço",
+      "hint": "Os jogadores entram com este endereço – sem porta.",
+      "status": {
+        "checking": "Verificando …",
+        "available": "Disponível",
+        "taken": "Já está em uso – tente outro.",
+        "reserved": "Reservado – tente outro.",
+        "invalid": "3–24 caracteres: a–z, 0–9 e -, sem - no início ou no fim.",
+        "error": "Não deu para verificar agora – será verificado de novo ao salvar."
+      },
+      "change": "Alterar endereço",
+      "saving": "Salvando …",
+      "changeHint": "O endereço antigo para de funcionar na hora.",
+      "none": "Seu servidor ainda não tem endereço próprio.",
+      "changed": "Endereço alterado.",
+      "view": "Endereço exibido",
+      "views": {
+        "domain": "Endereço TRS",
+        "ip": "IP e porta",
+        "node": "Endereço do CraftingHosting"
+      }
+    },
+    "wizard": {
+      "stepsLabel": "Etapas",
+      "steps": {
+        "source": "Origem",
+        "name": "Nome e endereço",
+        "access": "Acesso e início"
+      },
+      "stepOf": "Etapa {n} de {total}",
+      "back": "Voltar",
+      "next": "Avançar",
+      "preview": "Prévia",
+      "source": {
+        "title": "De onde seu servidor deve vir?",
+        "instance": "De uma instância",
+        "instanceHint": "Usa a versão e o loader de uma das suas instâncias – mods e mundo podem vir depois.",
+        "new": "Novo",
+        "newHint": "Escolha você mesmo o tipo de servidor e a versão.",
+        "pickInstance": "Suas instâncias",
+        "noInstances": "Você ainda não tem instâncias – comece com “Novo”.",
+        "pickType": "Tipo de servidor",
+        "becomes": "Seu servidor: {server}",
+        "vanillaNote": "Paper é um servidor vanilla mais rápido – os jogadores entram com um cliente vanilla normal.",
+        "loaderNote": "O CraftingHosting não oferece servidores {loader}. Seu servidor será Paper e os mods não podem ser transferidos.",
+        "versionMissing": "Minecraft {version} não está disponível para {type} – escolha uma versão. Os jogadores precisam da mesma versão para entrar.",
+        "modsLater": "Depois do primeiro início, você pode transferir os mods e um mundo desta instância."
+      },
+      "types": {
+        "paper": "Servidor vanilla rápido com plugins – a escolha segura.",
+        "purpur": "Paper com várias opções extras de jogabilidade.",
+        "vanilla": "O servidor sem modificações da Mojang.",
+        "fabric": "Para mods Fabric – leve e atualizado.",
+        "forge": "Para mods Forge e modpacks grandes.",
+        "other": "Outro tipo de servidor do CraftingHosting."
+      },
+      "name": {
+        "title": "Qual é o nome do seu servidor?"
+      },
+      "access": {
+        "title": "Quem pode entrar?"
+      }
+    },
+    "header": {
+      "more": "Mais ações",
+      "session": "Sessão",
+      "cooldown": "Pausa obrigatória",
+      "left": "faltam {time}",
+      "until": "pode iniciar em {time}",
+      "perSession": "até {hours} h por sessão"
+    },
+    "tiles": {
+      "of": "de {limit}",
+      "offHint": "Os valores ao vivo aparecem enquanto o servidor está rodando."
+    },
+    "transfer": {
+      "title": "Transferir conteúdo de {instance}",
+      "text": "Seu servidor está pronto. Traga os mods e um mundo da sua instância – o servidor para rapidinho e inicia de novo depois.",
+      "missing": "Esta instância não existe mais.",
+      "mods": "Transferir mods",
+      "modsHint": "Mods do Modrinth; mods só de cliente ficam de fora.",
+      "modsNo": "Não é possível com este tipo de servidor.",
+      "noWorld": "Sem mundo (manter o mundo do servidor)",
+      "button": "Transferir",
+      "working": "Transferindo …",
+      "dismiss": "Agora não",
+      "done": "Pronto – seu servidor está iniciando com o conteúdo da sua instância.",
+      "failed": "Não deu totalmente certo – você pode tentar de novo.",
+      "notMoved": "Não transferidos: {n}",
+      "notModrinth": "não é do Modrinth",
+      "steps": {
+        "stop": "Parar servidor",
+        "mods": "Instalar mods",
+        "world": "Enviar mundo",
+        "start": "Iniciar servidor"
+      }
+    },
+    "danger": {
+      "title": "Excluir servidor",
+      "text": "Exclui o servidor, o mundo e o endereço para sempre."
     }
   }
 }

@@ -2,7 +2,7 @@
 
 use tauri::State;
 use tauri::ipc::Channel;
-use trs_core::trs_api::craftinghosting::{Info, ModsResult, NewServer, Server, Settings, SettingsPatch, Stats};
+use trs_core::trs_api::craftinghosting::{Info, ModsResult, NewServer, Server, Settings, SettingsPatch, Stats, SubdomainCheck};
 use trs_core::trs_api::craftinghosting_world::WorldProgress;
 
 use crate::LauncherState;
@@ -55,6 +55,17 @@ pub async fn craftinghosting_delete(launcher: State<'_, LauncherState>) -> Comma
 #[tauri::command]
 pub async fn craftinghosting_rename(launcher: State<'_, LauncherState>, name: String) -> CommandResult<Server> {
     Ok(launcher.craftinghosting_rename(&name).await?)
+}
+
+/// Ist `<name>.trs-launcher.de` noch frei?
+#[tauri::command]
+pub async fn craftinghosting_check_subdomain(launcher: State<'_, LauncherState>, name: String) -> CommandResult<SubdomainCheck> {
+    Ok(launcher.craftinghosting_check_subdomain(&name).await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_set_subdomain(launcher: State<'_, LauncherState>, name: String) -> CommandResult<Server> {
+    Ok(launcher.craftinghosting_set_subdomain(&name).await?)
 }
 
 #[tauri::command]

@@ -13,13 +13,18 @@ import {
   type CraftingSettings,
   type CraftingSettingsPatch,
   type CraftingStats,
+  type HostingOrigin,
   type NewCraftingServer,
+  type SubdomainCheck,
   type WorldUploadProgress,
+  ORIGINS_KEY,
   POLL_FAST_MS,
   cleanHostingCommand,
   joinVersion,
   modrinthProjects,
+  parseOrigins,
   pollInterval,
+  serverAddress,
 } from '../utils/craftinghosting'
 import { formatTime } from '../utils/format'
 import { t } from '../utils/i18n'
@@ -35,7 +40,29 @@ const STATS_MS = 5_000
 const LOGS_MS = 3_000
 const LOG_LINES = 200
 
-type Busy = 'create' | 'start' | 'stop' | 'delete' | 'access' | 'command' | 'rename' | 'settings' | 'mods' | 'world'
+type Busy = 'create' | 'start' | 'stop' | 'delete' | 'access' | 'command' | 'rename' | 'address' | 'settings' | 'mods' | 'world'
+
+/** So lange wartet „Inhalte übernehmen“ aufs Stoppen. */
+const STOP_GIVE_UP_MS = 2 * 60_000
+
+export type TransferStep = 'stop' | 'mods' | 'world' | 'start'
+export type TransferStatus = 'pending' | 'running' | 'done' | 'skipped' | 'failed'
+export interface TransferRun {
+  steps: Record<TransferStep, TransferStatus>
+  mods: ModsTransfer | null
+  active: boolean
+}
+
+/** Ergebnis der Adress-Prüfung; `dns` = eigene Adressen gibt es hier (noch) nicht. */
+export type SubdomainAnswer = { kind: 'ok'; check: SubdomainCheck } | { kind: 'dns' } | { kind: 'error' }
+
+function readOrigins(): Record<string, HostingOrigin> {
+  try {
+    return parseOrigins(localStorage.getItem(ORIGINS_KEY))
+  } catch {
+    return {}
+  }
+}
 
 /** Ergebnis von „Mods aus Instanz übernehmen“ samt den Mods ohne Modrinth-Quelle. */
 export interface ModsTransfer {
@@ -66,6 +93,9 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
   const consoleOpen = ref(false)
   const modsTransfer = ref<ModsTransfer | null>(null)
   const worldProgress = ref<WorldUploadProgress | null>(null)
+  /** Aus welcher Instanz ein Server angelegt wurde (nur lokal). */
+  const origins = ref<Record<string, HostingOrigin>>(readOrigins())
+  const transfer = ref<TransferRun | null>(null)
   let joinAfterEula = false
   let pollTimer: ReturnType<typeof setTimeout> | null = null
   let statsTimer: ReturnType<typeof setInterval> | null = null
@@ -75,6 +105,23 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
   let visibilityHooked = false
 
   const needsEula = computed(() => !!server.value && !server.value.eulaAccepted)
+  const origin = computed(() => (server.value ? (origins.value[server.value.id] ?? null) : null))
+
+  function saveOrigins(next: Record<string, HostingOrigin>) {
+    origins.value = next
+    try {
+      localStorage.setItem(ORIGINS_KEY, JSON.stringify(next))
+    } catch {
+      // Ohne Speicher gilt die Zuordnung nur bis zum Neustart.
+    }
+  }
+
+  /** Karte „Inhalte übernehmen“ ausblenden. */
+  function dismissOrigin() {
+    const id = server.value?.id
+    const current = id ? origins.value[id] : null
+    if (id && current) saveOrigins({ ...origins.value, [id]: { ...current, transferred: true } })
+  }
 
   function setServer(next: CraftingServer | null) {
     server.value = next
@@ -146,11 +193,33 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     }
   }
 
-  async function create(spec: NewCraftingServer): Promise<boolean> {
+  /** Anlegen; mit `instanceId` merkt sich der Launcher die Instanz fürs spätere Übernehmen. */
+  async function create(spec: NewCraftingServer, instanceId?: string): Promise<boolean> {
     const created = await run('create', () => backend.craftinghosting.create(spec))
-    if (created) setServer(created)
+    if (created) {
+      setServer(created)
+      if (instanceId) saveOrigins({ ...origins.value, [created.id]: { instanceId, transferred: false } })
+    }
     schedule()
     return !!created
+  }
+
+  /** Ist die Adresse frei? Fehler landen nicht als Toast im Tippen. */
+  async function checkSubdomain(name: string): Promise<SubdomainAnswer> {
+    try {
+      return { kind: 'ok', check: await backend.craftinghosting.checkSubdomain(name) }
+    } catch (e) {
+      return apiCode(e) === 'dns_unavailable' ? { kind: 'dns' } : { kind: 'error' }
+    }
+  }
+
+  async function setSubdomain(name: string): Promise<boolean> {
+    const updated = await run('address', () => backend.craftinghosting.setSubdomain(name))
+    if (updated) {
+      setServer(updated)
+      useToasts().ok(t('craftinghosting.address.changed'))
+    }
+    return !!updated
   }
 
   /** Start-Knopf: vor dem ersten Start erst die EULA. */
@@ -185,10 +254,11 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     joinAfterEula = false
   }
 
-  async function stop() {
+  async function stop(): Promise<boolean> {
     const stopped = await run('stop', () => backend.craftinghosting.stop())
     if (stopped) setServer(stopped)
     schedule()
+    return !!stopped
   }
 
   async function remove(): Promise<boolean> {
@@ -197,6 +267,8 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
       return true
     })
     if (done) {
+      const id = server.value?.id
+      if (id && origins.value[id]) saveOrigins(Object.fromEntries(Object.entries(origins.value).filter(([k]) => k !== id)))
       setServer(null)
       useToasts().ok(t('craftinghosting.deleted'))
     }
@@ -286,6 +358,69 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     }
   }
 
+  /**
+   * Inhalte der Ursprungs-Instanz auf den Server: stoppen → Mods → Welt → wieder starten.
+   * Bricht beim ersten Fehler ab; der Schritt steht dann auf `failed`.
+   */
+  async function transferFromInstance(opts: { instanceId: string; mods: boolean; world: string | null }): Promise<boolean> {
+    if (!server.value || transfer.value?.active || busy.value) return false
+    const steps: Record<TransferStep, TransferStatus> = {
+      stop: 'pending',
+      mods: opts.mods ? 'pending' : 'skipped',
+      world: opts.world ? 'pending' : 'skipped',
+      start: 'pending',
+    }
+    transfer.value = { steps, mods: null, active: true }
+    const job = transfer.value
+    const step = async (id: TransferStep, action: () => Promise<boolean>) => {
+      job.steps[id] = 'running'
+      const ok = await action()
+      job.steps[id] = ok ? 'done' : 'failed'
+      return ok
+    }
+    try {
+      const state = server.value.state
+      if (state === 'running' || state === 'starting' || state === 'stopping') {
+        const stopped = await step('stop', async () => {
+          if (state !== 'stopping' && !(await stop())) return false
+          return waitForOffline()
+        })
+        if (!stopped) return false
+      } else {
+        job.steps.stop = 'skipped'
+      }
+      if (opts.mods) {
+        const ok = await step('mods', async () => {
+          job.mods = await transferMods(opts.instanceId)
+          return !!job.mods
+        })
+        if (!ok) return false
+      }
+      if (opts.world) {
+        const world = opts.world
+        if (!(await step('world', () => uploadWorld(opts.instanceId, world)))) return false
+      }
+      const started = await step('start', () => start(false))
+      if (started) dismissOrigin()
+      return started
+    } finally {
+      job.active = false
+      schedule()
+    }
+  }
+
+  async function waitForOffline(): Promise<boolean> {
+    const until = Date.now() + STOP_GIVE_UP_MS
+    while (Date.now() < until) {
+      const state = server.value?.state
+      if (state === 'offline' || state === 'failed') return true
+      if (!state) return false
+      await new Promise((r) => setTimeout(r, POLL_FAST_MS))
+      await refresh()
+    }
+    return false
+  }
+
   // --- Live-Werte und Konsole -----------------------------------------------------------
 
   function pageVisible() {
@@ -360,7 +495,7 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
         useToasts().info(t('craftinghosting.join.waiting'))
         if (!(await waitForRunning())) return
       }
-      const address = server.value?.address
+      const address = serverAddress(server.value)
       if (!address) {
         useToasts().error(t('craftinghosting.join.noAddress'))
         return
@@ -458,6 +593,7 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     settings.value = null
     logs.value = []
     modsTransfer.value = null
+    transfer.value = null
   }
 
   return {
@@ -477,6 +613,8 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     consoleOpen,
     modsTransfer,
     worldProgress,
+    origin,
+    transfer,
     load,
     refresh,
     create,
@@ -488,6 +626,10 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     remove,
     setAccess,
     rename,
+    checkSubdomain,
+    setSubdomain,
+    dismissOrigin,
+    transferFromInstance,
     loadSettings,
     settingsPending,
     saveSettings,

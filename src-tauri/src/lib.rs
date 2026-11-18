@@ -928,6 +928,8 @@ pub fn run() {
             commands::craftinghosting::craftinghosting_command,
             commands::craftinghosting::craftinghosting_delete,
             commands::craftinghosting::craftinghosting_rename,
+            commands::craftinghosting::craftinghosting_check_subdomain,
+            commands::craftinghosting::craftinghosting_set_subdomain,
             commands::craftinghosting::craftinghosting_settings,
             commands::craftinghosting::craftinghosting_save_settings,
             commands::craftinghosting::craftinghosting_logs,

@@ -347,7 +347,11 @@
       "file_rejected": "CraftingHosting a refusé le fichier.",
       "file_not_found": "Le monde envoyé est introuvable – envoie-le à nouveau.",
       "mods_unsupported": "Ce type de serveur ne peut pas charger de mods ni de plugins.",
-      "server_running": "Arrête d’abord le serveur – cela ne marche que lorsqu’il est arrêté."
+      "server_running": "Arrête d’abord le serveur – cela ne marche que lorsqu’il est arrêté.",
+      "invalid_subdomain": "Cette adresse ne marche pas – 3 à 24 caractères parmi a–z, 0–9 et -.",
+      "subdomain_taken": "Cette adresse est déjà prise – choisis-en une autre.",
+      "subdomain_reserved": "Cette adresse est réservée – choisis-en une autre.",
+      "dns_unavailable": "Les adresses propres ne sont pas disponibles sur le serveur TRS pour le moment."
     },
     "auth": {
       "accountMismatch": "Cette connexion appartient à un autre compte – reconnecte-toi.",
@@ -808,7 +812,8 @@
       "invalidSettings": "Ce paramètre n’est pas valide.",
       "invalidProjects": "Ces mods ne peuvent pas être transférés.",
       "uploadFailed": "Le monde n’a pas pu être envoyé – réessaie.",
-      "stopFirst": "Arrête le serveur avant d’envoyer un monde."
+      "stopFirst": "Arrête le serveur avant d’envoyer un monde.",
+      "invalidSubdomain": "Adresse : 3 à 24 caractères – a–z, 0–9 et -, pas de - au début ni à la fin."
     },
     "chatImage": {
       "unsupported": "Seules les images PNG, JPEG et WebP peuvent être envoyées.",
@@ -7557,16 +7562,12 @@
     "mobileNote": "La création et le démarrage ne fonctionnent que dans le launcher sur ton PC – c’est lui qui garde le serveur actif.",
     "latest": "Dernière",
     "noAddress": "L’adresse apparaîtra une fois le serveur installé.",
-    "remaining": "Encore {time} dans cette session",
-    "cooldown": "Pause obligatoire – tu pourras relancer dans {time}.",
     "cooldownUntil": "Pause obligatoire – tu pourras relancer le serveur à {time}.",
     "deleted": "Serveur supprimé.",
     "create": {
-      "title": "Ton serveur gratuit",
       "name": "Nom",
       "namePlaceholder": "p. ex. Mon monde",
       "nameHint": "3 à 22 caractères : lettres, chiffres, espaces et . _ ' -",
-      "type": "Type de serveur",
       "version": "Version",
       "submit": "Créer le serveur",
       "creating": "Création …",
@@ -7580,10 +7581,7 @@
       "openHint": "Toute personne ayant l’adresse peut rejoindre."
     },
     "plan": {
-      "title": "Ce que tu obtiens",
-      "memory": "{gb} Go de RAM",
-      "cpu": "{percent} % de CPU",
-      "disk": "{gb} Go de stockage"
+      "title": "Ce que tu obtiens"
     },
     "rules": {
       "title": "Comment ça marche",
@@ -7599,7 +7597,8 @@
       "running": "En ligne",
       "stopping": "Arrêt …",
       "failed": "Échec",
-      "suspended": "Suspendu"
+      "suspended": "Suspendu",
+      "setup": "Première configuration"
     },
     "stopReason": {
       "host_stopped": "Arrêté la dernière fois parce que le launcher a été fermé.",
@@ -7734,6 +7733,110 @@
         "upload": "Envoi … {percent} %",
         "import": "Installation du monde sur le serveur …"
       }
+    },
+    "tabsLabel": "Sections du serveur",
+    "address": {
+      "title": "Adresse",
+      "label": "Ta propre adresse",
+      "hint": "Les joueurs rejoignent avec cette adresse – sans port.",
+      "status": {
+        "checking": "Vérification …",
+        "available": "Disponible",
+        "taken": "Déjà prise – essaie une autre.",
+        "reserved": "Réservée – essaie une autre.",
+        "invalid": "3–24 caractères : a–z, 0–9 et -, pas de - au début ni à la fin.",
+        "error": "Vérification impossible pour l’instant – elle est refaite à l’enregistrement."
+      },
+      "change": "Changer l’adresse",
+      "saving": "Enregistrement …",
+      "changeHint": "L’ancienne adresse cesse aussitôt de fonctionner.",
+      "none": "Ton serveur n’a pas encore sa propre adresse.",
+      "changed": "Adresse modifiée.",
+      "view": "Adresse affichée",
+      "views": {
+        "domain": "Adresse TRS",
+        "ip": "IP et port",
+        "node": "Adresse CraftingHosting"
+      }
+    },
+    "wizard": {
+      "stepsLabel": "Étapes",
+      "steps": {
+        "source": "Origine",
+        "name": "Nom et adresse",
+        "access": "Accès et démarrage"
+      },
+      "stepOf": "Étape {n} sur {total}",
+      "back": "Retour",
+      "next": "Suivant",
+      "preview": "Aperçu",
+      "source": {
+        "title": "D’où doit venir ton serveur ?",
+        "instance": "Depuis une instance",
+        "instanceHint": "Reprend la version et le loader d’une de tes instances – les mods et le monde peuvent suivre plus tard.",
+        "new": "Nouveau",
+        "newHint": "Choisis toi-même le type de serveur et la version.",
+        "pickInstance": "Tes instances",
+        "noInstances": "Tu n’as pas encore d’instances – commence par « Nouveau ».",
+        "pickType": "Type de serveur",
+        "becomes": "Ton serveur : {server}",
+        "vanillaNote": "Paper est un serveur vanilla plus rapide – les joueurs rejoignent avec un client vanilla normal.",
+        "loaderNote": "CraftingHosting ne propose pas de serveurs {loader}. Ton serveur sera Paper et les mods ne peuvent pas être repris.",
+        "versionMissing": "Minecraft {version} n’est pas disponible pour {type} – choisis une version. Les joueurs ont besoin de la même version pour rejoindre.",
+        "modsLater": "Après le premier démarrage, tu peux reprendre les mods et un monde de cette instance."
+      },
+      "types": {
+        "paper": "Serveur vanilla rapide avec plugins – le choix sûr.",
+        "purpur": "Paper avec plein d’options de gameplay en plus.",
+        "vanilla": "Le serveur non modifié de Mojang.",
+        "fabric": "Pour les mods Fabric – léger et à jour.",
+        "forge": "Pour les mods Forge et les gros modpacks.",
+        "other": "Un autre type de serveur de CraftingHosting."
+      },
+      "name": {
+        "title": "Comment s’appelle ton serveur ?"
+      },
+      "access": {
+        "title": "Qui peut rejoindre ?"
+      }
+    },
+    "header": {
+      "more": "Plus d’actions",
+      "session": "Session",
+      "cooldown": "Pause obligatoire",
+      "left": "encore {time}",
+      "until": "redémarrable dans {time}",
+      "perSession": "jusqu’à {hours} h par session"
+    },
+    "tiles": {
+      "of": "sur {limit}",
+      "offHint": "Les valeurs en direct s’affichent tant que le serveur tourne."
+    },
+    "transfer": {
+      "title": "Reprendre le contenu de {instance}",
+      "text": "Ton serveur est prêt. Récupère les mods et un monde de ton instance – le serveur s’arrête brièvement puis redémarre.",
+      "missing": "Cette instance n’existe plus.",
+      "mods": "Reprendre les mods",
+      "modsHint": "Mods Modrinth, les mods côté client sont ignorés.",
+      "modsNo": "Impossible avec ce type de serveur.",
+      "noWorld": "Pas de monde (garder celui du serveur)",
+      "button": "Reprendre",
+      "working": "Reprise en cours …",
+      "dismiss": "Pas maintenant",
+      "done": "Terminé – ton serveur démarre avec le contenu de ton instance.",
+      "failed": "Ça n’a pas entièrement marché – tu peux réessayer.",
+      "notMoved": "Non repris : {n}",
+      "notModrinth": "pas de Modrinth",
+      "steps": {
+        "stop": "Arrêter le serveur",
+        "mods": "Installer les mods",
+        "world": "Envoyer le monde",
+        "start": "Démarrer le serveur"
+      }
+    },
+    "danger": {
+      "title": "Supprimer le serveur",
+      "text": "Supprime définitivement le serveur, son monde et son adresse."
     }
   }
 }

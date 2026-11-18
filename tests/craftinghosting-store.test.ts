@@ -54,6 +54,8 @@ const craftinghosting = {
   command: vi.fn(async () => {}),
   remove: vi.fn(async () => {}),
   rename: vi.fn(async (name: string) => server({ name })),
+  checkSubdomain: vi.fn(async (name: string) => ({ name, available: name !== 'play', reason: name === 'play' ? 'reserved' : null })),
+  setSubdomain: vi.fn(async (name: string) => server({ domain: `${name}.trs-launcher.de` })),
   mods: vi.fn(async (projects: string[]) => ({ installed: projects.slice(0, 1), skipped: [] })),
   uploadWorld: vi.fn(async (_i: string, _f: string, onProgress: (p: { phase: string; percent: number }) => void) => {
     onProgress({ phase: 'upload', percent: 50 })
@@ -83,18 +85,26 @@ const instances = { items: [...instanceItems], load: vi.fn(async () => {}) }
 const games = { state: (id: string) => ({ phase: phases[id] ?? 'idle' }), launch: vi.fn(async () => true) }
 const join = { request: vi.fn(async () => {}) }
 const toasts = { ok: vi.fn(), info: vi.fn(), error: vi.fn() }
+const storage = new Map<string, string>()
+const localStorageMock = {
+  getItem: (k: string) => storage.get(k) ?? null,
+  setItem: (k: string, v: string) => void storage.set(k, v),
+  removeItem: (k: string) => void storage.delete(k),
+}
 
 beforeAll(() => {
   vi.stubGlobal('useInstancesStore', () => instances)
   vi.stubGlobal('useGamesStore', () => games)
   vi.stubGlobal('useJoinStore', () => join)
   vi.stubGlobal('useToasts', () => toasts)
+  vi.stubGlobal('localStorage', localStorageMock)
 })
 
 beforeEach(() => {
   setActivePinia(createPinia())
   vi.clearAllMocks()
   instances.items = [...instanceItems]
+  storage.clear()
   craftinghosting.server.mockImplementation(async () => null)
 })
 
@@ -255,5 +265,98 @@ describe('Umbenennen, Mods, Welt', () => {
     expect(craftinghosting.uploadWorld).toHaveBeenCalledWith('inst', 'Welt', expect.any(Function))
     expect(s.worldProgress).toBeNull()
     expect(toasts.ok).toHaveBeenCalled()
+  })
+})
+
+describe('Eigene Adresse', () => {
+  it('prüft die Adresse; dns_unavailable und andere Fehler ohne Toast', async () => {
+    const s = await store()
+    expect(await s.checkSubdomain('meinewelt')).toEqual({ kind: 'ok', check: { name: 'meinewelt', available: true, reason: null } })
+    craftinghosting.checkSubdomain.mockRejectedValueOnce(await apiError('dns_unavailable'))
+    expect(await s.checkSubdomain('meinewelt')).toEqual({ kind: 'dns' })
+    craftinghosting.checkSubdomain.mockRejectedValueOnce(await apiError('craftinghosting_upstream'))
+    expect(await s.checkSubdomain('meinewelt')).toEqual({ kind: 'error' })
+    expect(toasts.error).not.toHaveBeenCalled()
+  })
+
+  it('ändert die Adresse und tritt über die Domain bei', async () => {
+    craftinghosting.server.mockImplementation(async () => server({ state: 'running', domain: 'alt.trs-launcher.de' }, { active: true }))
+    const s = await store()
+    await s.load()
+    instances.items = instanceItems.filter((i) => i.id !== 'alt2')
+    await s.join()
+    expect(games.launch).toHaveBeenCalledWith('alt', null, 'alt.trs-launcher.de')
+
+    expect(await s.setSubdomain('neuewelt')).toBe(true)
+    expect(craftinghosting.setSubdomain).toHaveBeenCalledWith('neuewelt')
+    expect(s.server?.domain).toBe('neuewelt.trs-launcher.de')
+    expect(toasts.ok).toHaveBeenCalled()
+  })
+
+  it('schickt die Wunsch-Adresse beim Anlegen mit', async () => {
+    const s = await store()
+    await s.load()
+    await s.create({ name: 'Meine Welt', serverType: 'paper', version: '1.21.11', access: 'friends', subdomain: 'meinewelt' })
+    expect(craftinghosting.create).toHaveBeenCalledWith(expect.objectContaining({ subdomain: 'meinewelt' }))
+    expect(storage.size).toBe(0)
+  })
+})
+
+describe('Inhalte aus der Instanz übernehmen', () => {
+  it('merkt sich die Instanz beim Anlegen (lokal) und vergisst sie beim Löschen', async () => {
+    const s = await store()
+    await s.load()
+    expect(await s.create({ name: 'Meine Welt', serverType: 'fabric', version: '1.21.11', access: 'friends' }, 'alt2')).toBe(true)
+    expect(s.origin).toEqual({ instanceId: 'alt2', transferred: false })
+    expect(JSON.parse(storage.get('trs.craftinghosting.origins')!)).toEqual({ '0b6f6c0e-1111': { instanceId: 'alt2', transferred: false } })
+
+    // Nach einem Neustart des Launchers noch da.
+    setActivePinia(createPinia())
+    const again = await store()
+    craftinghosting.server.mockImplementation(async () => server())
+    await again.load()
+    expect(again.origin?.instanceId).toBe('alt2')
+
+    again.dismissOrigin()
+    expect(again.origin?.transferred).toBe(true)
+    expect(await again.remove()).toBe(true)
+    expect(JSON.parse(storage.get('trs.craftinghosting.origins')!)).toEqual({})
+  })
+
+  it('stoppt, installiert Mods, spielt die Welt ein und startet wieder', async () => {
+    craftinghosting.server.mockImplementation(async () => server({ state: 'running', serverType: 'fabric', setup: 'done' }, { active: true }))
+    craftinghosting.stop.mockResolvedValueOnce(server({ state: 'offline', serverType: 'fabric' }))
+    craftinghosting.start.mockResolvedValueOnce(server({ state: 'starting', serverType: 'fabric' }, { active: true }))
+    const s = await store()
+    await s.load()
+    await s.create({ name: 'Meine Welt', serverType: 'fabric', version: '1.21.11', access: 'friends' }, 'alt2')
+    craftinghosting.server.mockImplementation(async () => server({ state: 'running', serverType: 'fabric', setup: 'done' }, { active: true }))
+    await s.refresh()
+
+    expect(await s.transferFromInstance({ instanceId: 'alt2', mods: true, world: 'Welt' })).toBe(true)
+    expect(s.transfer?.steps).toEqual({ stop: 'done', mods: 'done', world: 'done', start: 'done' })
+    expect(s.transfer?.active).toBe(false)
+    expect(s.transfer?.mods?.result?.installed).toEqual(['gvQqBUqZ'])
+    expect(craftinghosting.stop).toHaveBeenCalled()
+    expect(listContent).toHaveBeenCalledWith('alt2', 'mod')
+    expect(craftinghosting.uploadWorld).toHaveBeenCalledWith('alt2', 'Welt', expect.any(Function))
+    expect(craftinghosting.start).toHaveBeenCalledWith(false)
+    expect(s.origin?.transferred).toBe(true)
+  })
+
+  it('ausgeschalteter Server, ohne Mods/Welt: nur starten; Fehler bricht ab', async () => {
+    craftinghosting.server.mockImplementation(async () => server({ setup: 'done' }))
+    const s = await store()
+    await s.load()
+    expect(await s.transferFromInstance({ instanceId: 'alt', mods: false, world: null })).toBe(true)
+    expect(s.transfer?.steps).toEqual({ stop: 'skipped', mods: 'skipped', world: 'skipped', start: 'done' })
+    expect(craftinghosting.stop).not.toHaveBeenCalled()
+
+    await s.refresh()
+    craftinghosting.uploadWorld.mockRejectedValueOnce(await apiError('server_running'))
+    expect(await s.transferFromInstance({ instanceId: 'alt', mods: false, world: 'Welt' })).toBe(false)
+    expect(s.transfer?.steps.world).toBe('failed')
+    expect(s.transfer?.steps.start).toBe('pending')
+    expect(craftinghosting.start).toHaveBeenCalledTimes(1)
   })
 })

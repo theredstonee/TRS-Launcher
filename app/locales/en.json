@@ -394,7 +394,11 @@
       "file_rejected": "CraftingHosting rejected the file.",
       "file_not_found": "The uploaded world wasn’t found – please upload it again.",
       "mods_unsupported": "This server type can’t load mods or plugins.",
-      "server_running": "Stop the server first – this only works while it’s off."
+      "server_running": "Stop the server first – this only works while it’s off.",
+      "invalid_subdomain": "This address doesn’t work – 3 to 24 characters from a–z, 0–9 and -.",
+      "subdomain_taken": "This address is already taken – choose another one.",
+      "subdomain_reserved": "This address is reserved – choose another one.",
+      "dns_unavailable": "Own addresses aren’t available on the TRS server right now."
     },
     "auth": {
       "accountMismatch": "This sign-in belongs to a different account – please sign in again.",
@@ -858,7 +862,8 @@
       "invalidSettings": "This setting doesn’t work like that.",
       "invalidProjects": "These mods can’t be transferred.",
       "uploadFailed": "The world couldn’t be uploaded – please try again.",
-      "stopFirst": "Stop the server before you upload a world."
+      "stopFirst": "Stop the server before you upload a world.",
+      "invalidSubdomain": "Address: 3 to 24 characters – a–z, 0–9 and -, no - at the start or end."
     },
     "chatImage": {
       "unsupported": "Only PNG, JPEG and WebP pictures can be sent.",
@@ -8363,16 +8368,12 @@
     "mobileNote": "Creating and starting the server only works in the launcher on your PC – it keeps the server running.",
     "latest": "Latest",
     "noAddress": "The address will appear once the server is set up.",
-    "remaining": "{time} left in this session",
-    "cooldown": "Mandatory break – you can start again in {time}.",
     "cooldownUntil": "Mandatory break – you can start the server again at {time}.",
     "deleted": "Server deleted.",
     "create": {
-      "title": "Your free server",
       "name": "Name",
       "namePlaceholder": "e.g. My World",
       "nameHint": "3–22 characters: letters, digits, spaces and . _ ' -",
-      "type": "Server type",
       "version": "Version",
       "submit": "Create server",
       "creating": "Creating …",
@@ -8386,10 +8387,7 @@
       "openHint": "Anyone with the address can join."
     },
     "plan": {
-      "title": "What you get",
-      "memory": "{gb} GB RAM",
-      "cpu": "{percent} % CPU",
-      "disk": "{gb} GB storage"
+      "title": "What you get"
     },
     "rules": {
       "title": "How it works",
@@ -8405,7 +8403,8 @@
       "running": "Online",
       "stopping": "Stopping …",
       "failed": "Setup failed",
-      "suspended": "Suspended"
+      "suspended": "Suspended",
+      "setup": "First setup"
     },
     "stopReason": {
       "host_stopped": "Last stopped because the launcher was closed.",
@@ -8540,6 +8539,110 @@
         "upload": "Uploading … {percent} %",
         "import": "Setting up the world on the server …"
       }
+    },
+    "tabsLabel": "Server sections",
+    "address": {
+      "title": "Address",
+      "label": "Your own address",
+      "hint": "Players join with this address – no port needed.",
+      "status": {
+        "checking": "Checking …",
+        "available": "Available",
+        "taken": "Already taken – try another one.",
+        "reserved": "Reserved – try another one.",
+        "invalid": "3–24 characters: a–z, 0–9 and -, no - at the start or end.",
+        "error": "Couldn’t check right now – it’s checked again when you save."
+      },
+      "change": "Change address",
+      "saving": "Saving …",
+      "changeHint": "The old address stops working right away.",
+      "none": "Your server doesn’t have its own address yet.",
+      "changed": "Address changed.",
+      "view": "Shown address",
+      "views": {
+        "domain": "TRS address",
+        "ip": "IP & port",
+        "node": "CraftingHosting address"
+      }
+    },
+    "wizard": {
+      "stepsLabel": "Steps",
+      "steps": {
+        "source": "Source",
+        "name": "Name & address",
+        "access": "Access & start"
+      },
+      "stepOf": "Step {n} of {total}",
+      "back": "Back",
+      "next": "Next",
+      "preview": "Preview",
+      "source": {
+        "title": "Where should your server come from?",
+        "instance": "From an instance",
+        "instanceHint": "Uses the version and loader of one of your instances – mods and the world can follow later.",
+        "new": "New",
+        "newHint": "Choose the server type and version yourself.",
+        "pickInstance": "Your instances",
+        "noInstances": "You don’t have any instances yet – start with “New”.",
+        "pickType": "Server type",
+        "becomes": "Your server: {server}",
+        "vanillaNote": "Paper is a faster vanilla server – players join with a normal vanilla client.",
+        "loaderNote": "CraftingHosting doesn’t offer {loader} servers. Your server becomes Paper and the mods can’t be taken over.",
+        "versionMissing": "Minecraft {version} isn’t available for {type} – pick a version. Players need the same version to join.",
+        "modsLater": "After the first start you can take over the mods and a world from this instance."
+      },
+      "types": {
+        "paper": "Fast vanilla server with plugin support – the safe choice.",
+        "purpur": "Paper with many extra options for gameplay tweaks.",
+        "vanilla": "The unmodified server from Mojang.",
+        "fabric": "For Fabric mods – lightweight and up to date.",
+        "forge": "For Forge mods and big modpacks.",
+        "other": "Another server type from CraftingHosting."
+      },
+      "name": {
+        "title": "Name your server"
+      },
+      "access": {
+        "title": "Who can join?"
+      }
+    },
+    "header": {
+      "more": "More actions",
+      "session": "Session",
+      "cooldown": "Mandatory break",
+      "left": "{time} left",
+      "until": "start again in {time}",
+      "perSession": "up to {hours} h per session"
+    },
+    "tiles": {
+      "of": "of {limit}",
+      "offHint": "Live values appear while the server is running."
+    },
+    "transfer": {
+      "title": "Take over content from {instance}",
+      "text": "Your server is set up. Bring the mods and a world from your instance over – the server stops briefly and starts again afterwards.",
+      "missing": "This instance no longer exists.",
+      "mods": "Take over mods",
+      "modsHint": "Modrinth mods, client-only mods are left out.",
+      "modsNo": "Not possible for this server type.",
+      "noWorld": "No world (keep the server’s world)",
+      "button": "Take over",
+      "working": "Taking over …",
+      "dismiss": "Not now",
+      "done": "Done – your server is starting with the content from your instance.",
+      "failed": "That didn’t work completely – you can try again.",
+      "notMoved": "Not taken over: {n}",
+      "notModrinth": "not from Modrinth",
+      "steps": {
+        "stop": "Stop server",
+        "mods": "Install mods",
+        "world": "Upload world",
+        "start": "Start server"
+      }
+    },
+    "danger": {
+      "title": "Delete server",
+      "text": "Deletes the server, its world and its address for good."
     }
   }
 }

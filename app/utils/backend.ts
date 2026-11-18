@@ -166,6 +166,7 @@ import {
   craftingServerSchema,
   craftingSettingsSchema,
   craftingStatsSchema,
+  subdomainCheckSchema,
   type CraftingAccess,
   type CraftingSettingsPatch,
   type NewCraftingServer,
@@ -1387,6 +1388,9 @@ export const backend = {
     create: (spec: NewCraftingServer) => checked(craftingServerSchema, 'craftinghosting_create', { spec }),
     setAccess: (access: CraftingAccess) => checked(craftingServerSchema, 'craftinghosting_set_access', { access }),
     rename: (name: string) => checked(craftingServerSchema, 'craftinghosting_rename', { name }),
+    /** Ist `<name>.trs-launcher.de` frei? `dns_unavailable` = keine eigenen Adressen auf diesem TRS-Server. */
+    checkSubdomain: (name: string) => checked(subdomainCheckSchema, 'craftinghosting_check_subdomain', { name }),
+    setSubdomain: (name: string) => checked(craftingServerSchema, 'craftinghosting_set_subdomain', { name }),
     start: (acceptEula: boolean) => checked(craftingServerSchema, 'craftinghosting_start', { acceptEula }),
     stop: () => checked(craftingServerSchema, 'craftinghosting_stop'),
     command: (command: string) => call<void>('craftinghosting_command', { command }),

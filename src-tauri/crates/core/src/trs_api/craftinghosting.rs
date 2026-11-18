@@ -19,6 +19,10 @@ pub const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(45);
 pub const NAME_MIN: usize = 3;
 pub const NAME_MAX: usize = 22;
 pub const COMMAND_MAX: usize = 256;
+pub const SUBDOMAIN_MIN: usize = 3;
+pub const SUBDOMAIN_MAX: usize = 24;
+pub const DOMAIN_SUFFIX: &str = ".trs-launcher.de";
+const SUBDOMAIN_REASONS: [&str; 3] = ["invalid", "reserved", "taken"];
 pub const ACCESS: [&str; 2] = ["friends", "open"];
 pub const STATES: [&str; 7] = ["installing", "offline", "starting", "running", "stopping", "failed", "suspended"];
 pub const STOP_REASONS: [&str; 4] = ["host_stopped", "host_timeout", "session_limit", "admin"];
@@ -91,6 +95,42 @@ pub fn access(input: &str) -> Result<&str> {
         .copied()
         .find(|a| *a == input)
         .ok_or_else(|| invalid(crate::msg!("craftinghosting.invalidAccess", "Ungültiger Zugang.")))
+}
+
+fn subdomain_ok(name: &str) -> bool {
+    (SUBDOMAIN_MIN..=SUBDOMAIN_MAX).contains(&name.len())
+        && name.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+        && !name.starts_with('-')
+        && !name.ends_with('-')
+}
+
+/// Eigene Adresse `<name>.trs-launcher.de`: 3–24 Zeichen `a-z 0-9 -`, kein `-` am Rand.
+pub fn subdomain(input: &str) -> Result<String> {
+    let name = input.trim().to_ascii_lowercase();
+    if subdomain_ok(&name) {
+        Ok(name)
+    } else {
+        Err(invalid(crate::msg!(
+            "craftinghosting.invalidSubdomain",
+            "Adresse: 3 bis 24 Zeichen – a–z, 0–9 und -, kein - am Anfang oder Ende."
+        )))
+    }
+}
+
+/// `domain` aus der API, nur in der Form `<name>.trs-launcher.de`.
+fn domain(input: Option<String>) -> Option<String> {
+    let d = input?.trim().to_ascii_lowercase();
+    let name = d.strip_suffix(DOMAIN_SUFFIX)?;
+    (name.len() >= SUBDOMAIN_MIN && name.len() <= SUBDOMAIN_MAX && name.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-'))
+        .then_some(d)
+}
+
+/// Node-IP `a.b.c.d:port` (nur IPv4 mit Port).
+fn ip(input: Option<String>) -> Option<String> {
+    let a = input?.trim().to_owned();
+    let (host, port) = a.split_once(':')?;
+    let ok = host.parse::<std::net::Ipv4Addr>().is_ok() && port.len() <= 5 && port.parse::<u16>().is_ok_and(|p| p > 0);
+    ok.then_some(a)
 }
 
 fn type_id(input: &str) -> bool {
@@ -242,6 +282,10 @@ pub struct Server {
     pub player_id: String,
     pub state: String,
     pub address: Option<String>,
+    /// Eigene Adresse `<name>.trs-launcher.de` (`None` = noch keine).
+    pub domain: Option<String>,
+    /// Node als `IPv4:Port`.
+    pub ip: Option<String>,
     pub server_type: String,
     pub version: String,
     pub resources: Resources,
@@ -378,6 +422,8 @@ pub(crate) struct ApiServer {
     player_id: String,
     state: String,
     address: Option<String>,
+    domain: Option<String>,
+    ip: Option<String>,
     server_type: String,
     version: String,
     resources: ApiResources,
@@ -407,6 +453,8 @@ impl ApiServer {
             player_id,
             state,
             address: address(self.address),
+            domain: domain(self.domain),
+            ip: ip(self.ip),
             server_type: self.server_type,
             version: self.version,
             resources: Resources {
@@ -453,6 +501,9 @@ pub struct NewServer {
     pub server_type: String,
     pub version: String,
     pub access: String,
+    /// Wunsch-Adresse; ohne leitet die API eine aus dem Namen ab.
+    #[serde(default)]
+    pub subdomain: Option<String>,
 }
 
 impl NewServer {
@@ -462,8 +513,29 @@ impl NewServer {
         if !type_id(&self.server_type) || !version_id(&self.version) {
             return Err(invalid(crate::msg!("craftinghosting.invalidType", "Bitte Servertyp und Version wählen.")));
         }
-        Ok(json!({ "name": name, "serverType": self.server_type, "version": self.version, "access": access }))
+        let mut body = json!({ "name": name, "serverType": self.server_type, "version": self.version, "access": access });
+        if let Some(sub) = self.subdomain.as_deref().filter(|s| !s.trim().is_empty()) {
+            body["subdomain"] = subdomain(sub)?.into();
+        }
+        Ok(body)
     }
+}
+
+/// Antwort der Adress-Prüfung.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct SubdomainCheck {
+    pub name: String,
+    pub available: bool,
+    /// `invalid`, `reserved`, `taken` oder `None`.
+    pub reason: Option<String>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(default)]
+struct ApiSubdomainCheck {
+    name: String,
+    available: bool,
+    reason: Option<String>,
 }
 
 // --- Operationen ------------------------------------------------------------------------
@@ -534,6 +606,29 @@ impl Launcher {
     pub async fn craftinghosting_rename(&self, name: &str) -> Result<Server> {
         let name = server_name(name)?;
         self.ch_required(Req::patch(format!("{BASE}/server"), json!({ "name": name }))).await
+    }
+
+    /// Ist `<name>.trs-launcher.de` frei? Ungültige Namen fragen gar nicht erst.
+    pub async fn craftinghosting_check_subdomain(&self, input: &str) -> Result<SubdomainCheck> {
+        let Ok(name) = subdomain(input) else {
+            let name = validate::text(&input.trim().to_ascii_lowercase(), SUBDOMAIN_MAX);
+            return Ok(SubdomainCheck { name, available: false, reason: Some("invalid".into()) });
+        };
+        let (_, bytes) = self.ch_send(Req::get(format!("{BASE}/subdomain?name={name}"))).await?;
+        let raw: ApiSubdomainCheck = super::parse(&bytes, "craftinghosting/subdomain")?;
+        let reason = raw.reason.filter(|r| SUBDOMAIN_REASONS.contains(&r.as_str()));
+        let available = raw.available && reason.is_none();
+        Ok(SubdomainCheck {
+            name: if subdomain_ok(&raw.name) { raw.name } else { name },
+            available,
+            reason: if available { None } else { reason.or_else(|| Some("taken".into())) },
+        })
+    }
+
+    /// Adresse ändern – die alte gilt danach nicht mehr.
+    pub async fn craftinghosting_set_subdomain(&self, input: &str) -> Result<Server> {
+        let name = subdomain(input)?;
+        self.ch_required(Req::patch(format!("{BASE}/server"), json!({ "subdomain": name }))).await
     }
 
     pub async fn craftinghosting_start(&self, accept_eula: bool) -> Result<Server> {
@@ -1038,6 +1133,25 @@ mod tests {
         assert_eq!(address(Some("evil.com:99999".into())), None);
         assert_eq!(address(Some("a b:1".into())), None);
         assert_eq!(address(None), None);
+    }
+
+    #[test]
+    fn subdomains() {
+        assert_eq!(subdomain(" MeineWelt ").unwrap(), "meinewelt");
+        assert_eq!(subdomain("bob-smp-2").unwrap(), "bob-smp-2");
+        for bad in ["ab", "-abc", "abc-", "a_b_c", "mein welt", "grün", &"x".repeat(25)] {
+            assert!(subdomain(bad).is_err(), "{bad}");
+        }
+        assert_eq!(domain(Some("MeineWelt.trs-launcher.de".into())).as_deref(), Some("meinewelt.trs-launcher.de"));
+        assert_eq!(domain(Some("ab.trs-launcher.de".into())), None);
+        assert_eq!(domain(Some("evil.com".into())), None);
+        assert_eq!(domain(Some("x.evil.trs-launcher.de".into())), None);
+        assert_eq!(domain(Some("meinewelt.trs-launcher.de.evil.com".into())), None);
+        assert_eq!(domain(None), None);
+        assert_eq!(ip(Some("1.2.3.4:25011".into())).as_deref(), Some("1.2.3.4:25011"));
+        for bad in ["1.2.3.4", "1.2.3:25011", "999.2.3.4:1", "1.2.3.4:0", "1.2.3.4:99999", "evil.com:25565", "1.2.3.4:25565x"] {
+            assert_eq!(ip(Some(bad.into())), None, "{bad}");
+        }
     }
 
     #[test]
