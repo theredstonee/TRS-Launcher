@@ -62,8 +62,9 @@ fn api(state: Arc<Api>) -> impl Fn(&Request) -> Response + Send + Sync + 'static
                                 "heartbeatTimeoutSeconds": 180, "deleteAfterIdleDays": 30, "serverNameMaxLength": 22 },
                     "eulaUrl": "javascript:alert(1)",
                     "full": false,
-                    "features": { "files": true, "worlds": true, "backups": "yes", "teleport": true },
-                    "notice": "  Wartung heute 22 Uhr\u{7}  "
+                    "features": { "files": true, "worlds": true, "backups": "yes", "teleport": true, "console": true },
+                    "notice": "  Wartung heute 22 Uhr\u{7}  ",
+                    "maintenance": { "active": true, "message": " Update " }
                 }),
             ),
             ("GET", "/v1/craftinghosting/server") => Response::json(200, json!({ "server": server(running) })),
@@ -147,7 +148,12 @@ async fn info_is_cleaned() {
     // Unbekannte Schlüssel und Nicht-Bool zählen als aus.
     assert!(info.features.files && info.features.worlds);
     assert!(!info.features.backups && !info.features.version_change && !info.features.addons);
-    assert_eq!(info.notice.as_deref(), Some("Wartung heute 22 Uhr"));
+    // Alte API: Hinweis als Klartext.
+    let notice = info.notice.unwrap();
+    assert_eq!((notice.markdown.as_str(), notice.level.as_str()), ("Wartung heute 22 Uhr", "info"));
+    assert!(info.features.console && !info.features.create);
+    assert!(info.maintenance.active);
+    assert_eq!(info.maintenance.message.as_deref(), Some("Update"));
 }
 
 #[tokio::test]

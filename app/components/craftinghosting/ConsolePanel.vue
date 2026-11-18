@@ -42,7 +42,7 @@ async function send() {
       <p v-if="!store.logs.length" class="text-base-500">{{ t('craftinghosting.console.empty') }}</p>
       <div v-for="(line, i) in store.logs" :key="i" class="break-all whitespace-pre-wrap">{{ plainLogLine(line) }}</div>
     </div>
-    <div class="flex gap-2">
+    <div v-if="store.features.console" class="flex gap-2">
       <input
         v-model="text"
         class="field flex-1 font-mono"
@@ -56,6 +56,6 @@ async function send() {
         {{ t('craftinghosting.console.send') }}
       </button>
     </div>
-    <p v-if="!running" class="mt-2 text-xs text-base-500">{{ t('craftinghosting.console.offline') }}</p>
+    <p v-if="!running && store.features.console" class="mt-2 text-xs text-base-500">{{ t('craftinghosting.console.offline') }}</p>
   </form>
 </template>

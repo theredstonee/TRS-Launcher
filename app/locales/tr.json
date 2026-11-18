@@ -356,7 +356,10 @@
       "file_too_large": "Dosya düzenleyici için çok büyük (en fazla 1 MB).",
       "file_protected": "Bu dosyayı TRS yönetiyor – değiştirilemez veya silinemez.",
       "property_locked": "Bu ayar sabittir ve değiştirilemez.",
-      "feature_unavailable": "Bu henüz kullanılamıyor – yakında geliyor."
+      "feature_unavailable": "Bu henüz kullanılamıyor – yakında geliyor.",
+      "hosting_maintenance": "Barındırma bakımda – lütfen daha sonra tekrar dene.",
+      "server_blocked": "Sunucun TRS ekibi tarafından engellendi.",
+      "feature_disabled": "Bu işlev şu anda kapalı."
     },
     "auth": {
       "accountMismatch": "Bu giriş başka bir hesaba ait – lütfen tekrar giriş yap.",
@@ -8087,6 +8090,13 @@
       "created": "Yedek oluşturuldu.",
       "restored": "“{name}” geri yüklendi – bir sonraki başlatmadan itibaren geçerli.",
       "downloaded": "Yedek {file} olarak kaydedildi."
+    },
+    "team": {
+      "maintenanceTitle": "Bakım",
+      "maintenance": "Barındırma bakımda – oluşturma, başlatma ve katılma şimdilik duraklatıldı.",
+      "maintenanceWith": "Bakım: {message}",
+      "blockedWith": "TRS ekibi tarafından engellendi: {reason}",
+      "createOff": "Yeni sunucu oluşturma şu anda kapalı."
     }
   }
 }

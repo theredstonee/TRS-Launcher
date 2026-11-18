@@ -22,6 +22,7 @@ import {
   craftingServerSchema,
   craftingInfoSchema,
   NO_FEATURES,
+  hostingBlockedReason,
   defaultServerType,
   hostingCountdown,
   inCooldown,
@@ -166,6 +167,7 @@ const INFO: CraftingInfo = {
   full: false,
   features: NO_FEATURES,
   notice: null,
+  maintenance: { active: false, message: null },
 }
 const inst = (kind: string, gameVersion: string) => ({ gameVersion, loader: { kind } })
 
@@ -338,9 +340,40 @@ describe('Funktions-Schalter', () => {
     expect(info.features.backups).toBe(false)
     expect(info.features.versionChange).toBe(false)
     expect('teleport' in info.features).toBe(false)
-    expect(info.notice).toBe('Wartung')
+    expect(info.notice?.markdown).toBe('Wartung')
     const old = craftingInfoSchema.parse(raw)
     expect(old.features).toEqual(NO_FEATURES)
     expect(old.notice).toBeNull()
+  })
+})
+
+describe('Team-Steuerung', () => {
+  const raw = {
+    plan: { name: 'Free', memoryMb: 1, cpuPercent: 1, diskMb: 1 },
+    serverTypes: [{ id: 'paper', name: 'Paper', versions: ['latest'] }],
+    limits: { maxServersPerPlayer: 1, sessionMaxHours: 24, cooldownHours: 2, heartbeatTimeoutSeconds: 180, deleteAfterIdleDays: 30, serverNameMaxLength: 22 },
+    eulaUrl: 'https://www.minecraft.net/eula',
+    full: false,
+  }
+
+  it('Hinweis als Objekt oder (alt) Klartext, unbekannte Stufe = info', () => {
+    const obj = craftingInfoSchema.parse({ ...raw, notice: { markdown: '**Neu**', level: 'success', updatedAt: '2026-11-18T20:00:00.000Z' } })
+    expect(obj.notice).toEqual({ markdown: '**Neu**', level: 'success', updatedAt: '2026-11-18T20:00:00.000Z' })
+    expect(craftingInfoSchema.parse({ ...raw, notice: 'Alt' }).notice).toEqual({ markdown: 'Alt', level: 'info', updatedAt: null })
+    expect(craftingInfoSchema.parse({ ...raw, notice: { markdown: 'x', level: 'panic' } }).notice?.level).toBe('info')
+    expect(craftingInfoSchema.parse({ ...raw, notice: 42 }).notice).toBeNull()
+  })
+
+  it('Wartung und Sperre stoppen Starten/Beitreten', () => {
+    const info = craftingInfoSchema.parse({ ...raw, maintenance: { active: true, message: 'Update' }, features: { create: true, console: true } })
+    expect(info.maintenance).toEqual({ active: true, message: 'Update' })
+    expect(info.features.create && info.features.console).toBe(true)
+    expect(craftingInfoSchema.parse(raw).maintenance).toEqual({ active: false, message: null })
+    expect(hostingBlockedReason(info, null)).toBe('maintenance')
+    const calm = craftingInfoSchema.parse(raw)
+    expect(hostingBlockedReason(calm, { blocked: { reason: 'Spam', since: null } })).toBe('blocked')
+    expect(hostingBlockedReason(calm, { blocked: null })).toBeNull()
+    expect(craftingServerSchema.parse({ ...base, blocked: { reason: 'Spam', since: null } }).blocked?.reason).toBe('Spam')
+    expect(craftingServerSchema.parse(base).blocked ?? null).toBeNull()
   })
 })

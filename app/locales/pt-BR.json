@@ -356,7 +356,10 @@
       "file_too_large": "O arquivo é grande demais para o editor (no máximo 1 MB).",
       "file_protected": "A TRS gerencia este arquivo – ele não pode ser alterado nem excluído.",
       "property_locked": "Esta configuração é fixa e não pode ser alterada.",
-      "feature_unavailable": "Isso ainda não está disponível – chega em breve."
+      "feature_unavailable": "Isso ainda não está disponível – chega em breve.",
+      "hosting_maintenance": "A hospedagem está em manutenção – tente mais tarde.",
+      "server_blocked": "Seu servidor foi bloqueado pela equipe TRS.",
+      "feature_disabled": "Esta função está desativada no momento."
     },
     "auth": {
       "accountMismatch": "Este login pertence a outra conta – entre novamente.",
@@ -8087,6 +8090,13 @@
       "created": "Backup criado.",
       "restored": "“{name}” restaurado – vale a partir do próximo início.",
       "downloaded": "Backup salvo como {file}."
+    },
+    "team": {
+      "maintenanceTitle": "Manutenção",
+      "maintenance": "A hospedagem está em manutenção – criar, iniciar e entrar estão pausados por enquanto.",
+      "maintenanceWith": "Manutenção: {message}",
+      "blockedWith": "Bloqueado pela equipe TRS: {reason}",
+      "createOff": "Criar novos servidores está desativado no momento."
     }
   }
 }

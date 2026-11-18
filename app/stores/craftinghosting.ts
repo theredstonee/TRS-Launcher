@@ -29,6 +29,7 @@ import {
   ORIGINS_KEY,
   POLL_FAST_MS,
   cleanHostingCommand,
+  hostingBlockedReason,
   joinVersion,
   modrinthProjects,
   parseOrigins,
@@ -184,6 +185,24 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
       useToasts().error(t('craftinghosting.cooldownUntil', { time: formatTime(e.params.cooldownUntil) }))
       return
     }
+    // Vom Team gesteuert: eigene Texte mit den Details, danach Info bzw. Server neu holen.
+    if (code === 'hosting_maintenance') {
+      const message = e instanceof BackendError ? e.params?.message : undefined
+      useToasts().error(message ? t('craftinghosting.team.maintenanceWith', { message }) : t('errors.trsApi.hosting_maintenance'))
+      void reloadInfo()
+      return
+    }
+    if (code === 'server_blocked') {
+      const reason = e instanceof BackendError ? e.params?.reason : undefined
+      useToasts().error(reason ? t('craftinghosting.team.blockedWith', { reason }) : t('errors.trsApi.server_blocked'))
+      void refresh()
+      return
+    }
+    if (code === 'feature_disabled') {
+      useToasts().info(t('errors.trsApi.feature_disabled'))
+      void reloadInfo()
+      return
+    }
     // Schalter auf dem Server aus: freundlicher Hinweis (höchstens alle 30 s) und Info neu holen.
     if (code === 'feature_unavailable') {
       notAvailable()
@@ -291,9 +310,17 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     return !!updated
   }
 
+  /** Wartung oder vom Team gesperrt: Hinweis statt Anfrage. */
+  function teamStop(): boolean {
+    const why = hostingBlockedReason(info.value, server.value)
+    if (!why) return false
+    useToasts().error(why === 'maintenance' ? t('craftinghosting.team.maintenance') : t('errors.trsApi.server_blocked'))
+    return true
+  }
+
   /** Start-Knopf: vor dem ersten Start erst die EULA. */
   async function requestStart(): Promise<boolean> {
-    if (!server.value) return false
+    if (!server.value || teamStop()) return false
     if (needsEula.value) {
       eulaOpen.value = true
       return false
@@ -792,7 +819,7 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
 
   /** Starten falls nötig, auf `running` warten, dann mit passender Instanz verbinden. */
   async function join() {
-    if (!server.value || joining.value) return
+    if (!server.value || joining.value || teamStop()) return
     joining.value = true
     try {
       if (server.value.state !== 'running') {

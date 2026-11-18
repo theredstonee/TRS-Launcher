@@ -403,7 +403,10 @@
       "file_too_large": "The file is too large for the editor (at most 1 MB).",
       "file_protected": "TRS manages this file – it can’t be changed or deleted.",
       "property_locked": "This setting is fixed and can’t be changed.",
-      "feature_unavailable": "This isn’t available yet – it’s coming soon."
+      "feature_unavailable": "This isn’t available yet – it’s coming soon.",
+      "hosting_maintenance": "Hosting is under maintenance – please try again later.",
+      "server_blocked": "Your server was blocked by the TRS team.",
+      "feature_disabled": "This function is switched off right now."
     },
     "auth": {
       "accountMismatch": "This sign-in belongs to a different account – please sign in again.",
@@ -8893,6 +8896,13 @@
       "created": "Backup created.",
       "restored": "“{name}” restored – applies on the next start.",
       "downloaded": "Backup saved as {file}."
+    },
+    "team": {
+      "maintenanceTitle": "Maintenance",
+      "maintenance": "Hosting is under maintenance – creating, starting and joining are paused for now.",
+      "maintenanceWith": "Maintenance: {message}",
+      "blockedWith": "Blocked by the TRS team: {reason}",
+      "createOff": "Creating new servers is switched off right now."
     }
   }
 }

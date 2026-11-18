@@ -356,7 +356,10 @@
       "file_too_large": "Plik jest za duży dla edytora (maks. 1 MB).",
       "file_protected": "Tym plikiem zarządza TRS – nie można go zmienić ani usunąć.",
       "property_locked": "To ustawienie jest stałe i nie można go zmienić.",
-      "feature_unavailable": "To jeszcze nie jest dostępne – pojawi się wkrótce."
+      "feature_unavailable": "To jeszcze nie jest dostępne – pojawi się wkrótce.",
+      "hosting_maintenance": "Hosting jest w konserwacji – spróbuj później.",
+      "server_blocked": "Twój serwer został zablokowany przez zespół TRS.",
+      "feature_disabled": "Ta funkcja jest teraz wyłączona."
     },
     "auth": {
       "accountMismatch": "To logowanie należy do innego konta – zaloguj się ponownie.",
@@ -8087,6 +8090,13 @@
       "created": "Utworzono kopię.",
       "restored": "Przywrócono „{name}” – obowiązuje od następnego uruchomienia.",
       "downloaded": "Kopię zapisano jako {file}."
+    },
+    "team": {
+      "maintenanceTitle": "Konserwacja",
+      "maintenance": "Hosting jest w konserwacji – tworzenie, uruchamianie i dołączanie są na razie wstrzymane.",
+      "maintenanceWith": "Konserwacja: {message}",
+      "blockedWith": "Zablokowany przez zespół TRS: {reason}",
+      "createOff": "Tworzenie nowych serwerów jest teraz wyłączone."
     }
   }
 }

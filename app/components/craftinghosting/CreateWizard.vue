@@ -114,7 +114,11 @@ function onSubdomain(value: string) {
 }
 
 const canNext = computed(() => !props.locked && wizardStepValid(step.value, w))
-const canCreate = computed(() => canNext.value && !info.value?.full && !store.busy && ([1, 2, 3] as const).every((n) => wizardStepValid(n, w)))
+// Anlegen schaltet die TRS API frei (Schalter `create`, keine Wartung).
+const createOff = computed(() => !store.features.create || !!info.value?.maintenance.active)
+const canCreate = computed(
+  () => canNext.value && !createOff.value && !info.value?.full && !store.busy && ([1, 2, 3] as const).every((n) => wizardStepValid(n, w)),
+)
 
 async function go(next: WizardStep) {
   if (next > step.value && !wizardStepValid(step.value, w)) return
@@ -374,7 +378,10 @@ const previewAddress = computed(() => (w.subdomainEnabled && w.subdomain ? `${w.
         <button v-if="step < 3" type="button" class="btn btn-primary" :disabled="!canNext" data-testid="hosting-wizard-next" @click="go((step + 1) as WizardStep)">
           {{ t('craftinghosting.wizard.next') }}
         </button>
-        <button v-else type="button" class="btn btn-primary px-5" :disabled="!canCreate" data-testid="hosting-create-submit" @click="create">
+        <span v-if="step === 3 && createOff" class="text-xs text-lamp-300" data-testid="hosting-create-off">
+          {{ info?.maintenance.active ? t('craftinghosting.team.maintenance') : t('craftinghosting.team.createOff') }}
+        </span>
+        <button v-if="step === 3" type="button" class="btn btn-primary px-5" :disabled="!canCreate" data-testid="hosting-create-submit" @click="create">
           {{ store.busy === 'create' ? t('craftinghosting.create.creating') : t('craftinghosting.create.submit') }}
         </button>
       </div>

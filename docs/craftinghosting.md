@@ -256,3 +256,13 @@ hosting tab. Already implement (hidden while the switch is false):
   (confirm, server must be offline), "Herunterladen" `GET …/backups/{id}/download` → `{ url, expiresAt }` (https,
   `*.craftinghosting.free` only, download via core with save dialog), "Löschen" `DELETE …/backups/{id}`.
 - Error `501 feature_unavailable` → friendly "Noch nicht verfügbar" (no error toast spam) and reload `info`.
+
+## Team control: notice (Markdown), maintenance, more switches, blocked servers
+
+- `info.notice` is now an object or null: `{ markdown, level: "info" | "warning" | "success", updatedAt }` (render the
+  Markdown safely with the existing MarkdownView/DOMPurify, colour by level). Tolerate a plain string too (old API).
+- `info.maintenance: { active, message }` → banner "Wartung" with the message; disable create/start/join while active.
+- New switches `create` (creating servers) and `console` (command field) in `info.features`.
+- `Server.blocked: { reason, since } | null` → red banner "Vom TRS-Team gesperrt: <reason>", start/join disabled.
+- New errors: `503 hosting_maintenance` (`details.message`), `403 server_blocked` (`details.reason`),
+  `403 feature_disabled` (`details.feature`) → friendly messages, reload `info`/server.

@@ -190,6 +190,12 @@ pub(crate) fn error_params(code: &str, error: Option<&serde_json::Value>) -> Vec
         "not_running" => {
             get("reason").filter(|r| STOP_REASONS.contains(r)).map(|r| vec![("reason", r.to_owned())]).unwrap_or_default()
         }
+        "hosting_maintenance" => get("message").map(|m| validate::text(m.trim(), 500)).filter(|m| !m.is_empty()).map(|m| vec![("message", m)]).unwrap_or_default(),
+        "server_blocked" => get("reason").map(|r| validate::text(r.trim(), 300)).filter(|r| !r.is_empty()).map(|r| vec![("reason", r)]).unwrap_or_default(),
+        "feature_disabled" => get("feature")
+            .filter(|f| (1..=32).contains(&f.len()) && f.bytes().all(|b| b.is_ascii_alphanumeric()))
+            .map(|f| vec![("feature", f.to_owned())])
+            .unwrap_or_default(),
         _ => Vec::new(),
     }
 }
@@ -250,8 +256,49 @@ pub struct Info {
     pub full: bool,
     /// Welche Bereiche der Launcher zeigt – schaltet die TRS API, ohne Launcher-Update.
     pub features: Features,
-    /// Hinweis oben im Hosting-Reiter (Klartext) oder `None`.
-    pub notice: Option<String>,
+    /// Hinweis oben im Hosting-Reiter (Markdown, nur bereinigt anzeigen) oder `None`.
+    pub notice: Option<Notice>,
+    /// Wartung durch das TRS-Team: Anlegen, Starten und Beitreten sind dann aus.
+    pub maintenance: Maintenance,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Notice {
+    pub markdown: String,
+    /// `info`, `warning` oder `success`.
+    pub level: String,
+    pub updated_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+pub struct Maintenance {
+    pub active: bool,
+    pub message: Option<String>,
+}
+
+const NOTICE_LEVELS: [&str; 3] = ["info", "warning", "success"];
+
+/// Hinweis: Objekt `{ markdown, level, updatedAt }` oder (alte API) Klartext.
+fn notice(raw: &serde_json::Value) -> Option<Notice> {
+    let text = |v: Option<&serde_json::Value>, max: usize| {
+        v.and_then(serde_json::Value::as_str).map(|s| validate::text(s.trim(), max)).filter(|s| !s.is_empty())
+    };
+    match raw {
+        serde_json::Value::String(_) => text(Some(raw), NOTICE_MAX).map(|markdown| Notice { markdown, level: "info".into(), updated_at: None }),
+        serde_json::Value::Object(o) => {
+            let markdown = text(o.get("markdown"), NOTICE_MAX)?;
+            let level = o.get("level").and_then(serde_json::Value::as_str).filter(|l| NOTICE_LEVELS.contains(l)).unwrap_or("info");
+            Some(Notice { markdown, level: level.into(), updated_at: time(text(o.get("updatedAt"), 40)) })
+        }
+        _ => None,
+    }
+}
+
+fn maintenance(raw: &serde_json::Value) -> Maintenance {
+    let active = raw.get("active").and_then(serde_json::Value::as_bool).unwrap_or(false);
+    let message = raw.get("message").and_then(serde_json::Value::as_str).map(|m| validate::text(m.trim(), 500)).filter(|m| !m.is_empty());
+    Maintenance { active, message }
 }
 
 /// Funktions-Schalter aus `info.features`; fehlende oder unbekannte Schlüssel = aus.
@@ -267,9 +314,11 @@ pub struct Features {
     pub wake_on_join: bool,
     pub version_change: bool,
     pub backups: bool,
+    pub create: bool,
+    pub console: bool,
 }
 
-pub const NOTICE_MAX: usize = 500;
+pub const NOTICE_MAX: usize = 4000;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -319,6 +368,14 @@ pub struct Server {
     pub delete_at: Option<String>,
     /// Ersteinrichtung der API: `pending`, `restarting` (Server startet einmal neu) oder `done`.
     pub setup: String,
+    /// Vom TRS-Team gesperrt (Starten/Beitreten aus).
+    pub blocked: Option<Blocked>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Blocked {
+    pub reason: String,
+    pub since: Option<String>,
 }
 
 // --- Draht ------------------------------------------------------------------------------
@@ -374,7 +431,8 @@ struct ApiInfo {
     full: bool,
     /// Nicht-boolesche Werte zählen als aus.
     features: serde_json::Map<String, serde_json::Value>,
-    notice: Option<String>,
+    notice: serde_json::Value,
+    maintenance: serde_json::Value,
 }
 
 fn features(raw: &serde_json::Map<String, serde_json::Value>) -> Features {
@@ -389,6 +447,8 @@ fn features(raw: &serde_json::Map<String, serde_json::Value>) -> Features {
         wake_on_join: on("wakeOnJoin"),
         version_change: on("versionChange"),
         backups: on("backups"),
+        create: on("create"),
+        console: on("console"),
     }
 }
 
@@ -427,7 +487,8 @@ impl ApiInfo {
             eula_url: https_url(&self.eula_url).unwrap_or_else(|| DEFAULT_EULA.to_owned()),
             full: self.full,
             features: features(&self.features),
-            notice: self.notice.map(|n| validate::text(n.trim(), NOTICE_MAX)).filter(|n| !n.is_empty()),
+            notice: notice(&self.notice),
+            maintenance: maintenance(&self.maintenance),
         }
     }
 }
@@ -475,6 +536,7 @@ pub(crate) struct ApiServer {
     last_start_at: Option<String>,
     delete_at: Option<String>,
     setup: String,
+    blocked: Option<serde_json::Value>,
 }
 
 impl ApiServer {
@@ -524,6 +586,10 @@ impl ApiServer {
                 "pending" | "restarting" => self.setup,
                 _ => "done".into(),
             },
+            blocked: self.blocked.filter(serde_json::Value::is_object).map(|b| Blocked {
+                reason: b.get("reason").and_then(serde_json::Value::as_str).map(|r| validate::text(r.trim(), 300)).unwrap_or_default(),
+                since: time(b.get("since").and_then(serde_json::Value::as_str).map(str::to_owned)),
+            }),
         })
     }
 }
@@ -1234,6 +1300,32 @@ mod tests {
         assert!(error_params("not_running", Some(&e)).is_empty());
         let e = json!({ "code": "not_running", "details": { "reason": "host_timeout" } });
         assert_eq!(error_params("not_running", Some(&e)), vec![("reason", "host_timeout".to_owned())]);
+        let e = json!({ "details": { "message": " Update bis 18 Uhr " } });
+        assert_eq!(error_params("hosting_maintenance", Some(&e)), vec![("message", "Update bis 18 Uhr".to_owned())]);
+        let e = json!({ "details": { "reason": "Spam" } });
+        assert_eq!(error_params("server_blocked", Some(&e)), vec![("reason", "Spam".to_owned())]);
+        let e = json!({ "details": { "feature": "../x" } });
+        assert!(error_params("feature_disabled", Some(&e)).is_empty());
+        let e = json!({ "details": { "feature": "console" } });
+        assert_eq!(error_params("feature_disabled", Some(&e)), vec![("feature", "console".to_owned())]);
+    }
+
+    #[test]
+    fn team_control() {
+        let n = notice(&json!({ "markdown": "**Neu:** Backups", "level": "success", "updatedAt": "2026-11-18T20:00:00.000Z" })).unwrap();
+        assert_eq!((n.markdown.as_str(), n.level.as_str()), ("**Neu:** Backups", "success"));
+        assert_eq!(n.updated_at.as_deref(), Some("2026-11-18T20:00:00.000Z"));
+        assert_eq!(notice(&json!({ "markdown": "x", "level": "<b>" })).unwrap().level, "info");
+        assert_eq!(notice(&json!({ "markdown": "  " })), None);
+        assert_eq!(notice(&json!(null)), None);
+        assert_eq!(maintenance(&json!(null)), Maintenance::default());
+
+        let mut raw = json!({ "id": "abc", "name": "Welt", "state": "offline", "serverType": "paper", "version": "latest",
+                              "blocked": { "reason": " Spam ", "since": "2026-11-18T20:00:00.000Z" } });
+        let s = serde_json::from_value::<ApiServer>(raw.clone()).unwrap().cleaned().unwrap();
+        assert_eq!(s.blocked, Some(Blocked { reason: "Spam".into(), since: Some("2026-11-18T20:00:00.000Z".into()) }));
+        raw["blocked"] = json!(null);
+        assert_eq!(serde_json::from_value::<ApiServer>(raw).unwrap().cleaned().unwrap().blocked, None);
     }
 
     #[test]

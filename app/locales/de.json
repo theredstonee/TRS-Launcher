@@ -403,7 +403,10 @@
       "file_too_large": "Die Datei ist zu groß für den Editor (höchstens 1 MB).",
       "file_protected": "Diese Datei verwaltet TRS – sie lässt sich nicht ändern oder löschen.",
       "property_locked": "Diese Einstellung ist fest vorgegeben und lässt sich nicht ändern.",
-      "feature_unavailable": "Das ist noch nicht verfügbar – es kommt bald."
+      "feature_unavailable": "Das ist noch nicht verfügbar – es kommt bald.",
+      "hosting_maintenance": "Das Hosting wird gerade gewartet – versuch es später noch einmal.",
+      "server_blocked": "Dein Server wurde vom TRS-Team gesperrt.",
+      "feature_disabled": "Diese Funktion ist gerade abgeschaltet."
     },
     "auth": {
       "accountMismatch": "Die Anmeldung gehört zu einem anderen Account – bitte erneut anmelden.",
@@ -8893,6 +8896,13 @@
       "created": "Backup erstellt.",
       "restored": "„{name}“ wiederhergestellt – gilt ab dem nächsten Start.",
       "downloaded": "Backup gespeichert als {file}."
+    },
+    "team": {
+      "maintenanceTitle": "Wartung",
+      "maintenance": "Das Hosting wird gerade gewartet – Anlegen, Starten und Beitreten sind so lange pausiert.",
+      "maintenanceWith": "Wartung: {message}",
+      "blockedWith": "Vom TRS-Team gesperrt: {reason}",
+      "createOff": "Neue Server anlegen ist gerade abgeschaltet."
     }
   }
 }

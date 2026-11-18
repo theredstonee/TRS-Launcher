@@ -11,6 +11,11 @@ const route = useRoute()
 const router = useRouter()
 
 const LOGO = '/partners/craftinghosting.png'
+const NOTICE_TONE = {
+  info: 'bg-sky-950/40 text-sky-200 ring-sky-800/40',
+  warning: 'bg-lamp-900/40 text-lamp-200 ring-lamp-700/50',
+  success: 'bg-emerald-950/40 text-emerald-200 ring-emerald-800/40',
+}
 const mobile = computed(() => platformCaps.value.platform === 'android' || platformCaps.value.platform === 'ios')
 const server = computed(() => store.server)
 const info = computed(() => store.info)
@@ -136,16 +141,27 @@ function openEula() {
       <template v-else-if="store.loaded">
         <p v-if="store.problem" class="mb-4 rounded-lg bg-lamp-900/40 px-3 py-2 text-sm text-lamp-300">{{ store.problem.text }}</p>
         <p v-if="mobile" class="mb-4 rounded-lg bg-base-900 px-3 py-2 text-sm text-base-200 ring-1 ring-base-800">{{ t('craftinghosting.mobileNote') }}</p>
-        <p v-if="info?.notice" class="mb-4 flex items-start gap-2 rounded-lg bg-sky-950/40 px-3 py-2 text-sm text-sky-200 ring-1 ring-sky-800/40" role="status" data-testid="hosting-notice">
-          <svg viewBox="0 0 24 24" class="mt-0.5 size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>
-          <span class="min-w-0 whitespace-pre-line">{{ info.notice }}</span>
-        </p>
+        <div v-if="info?.maintenance.active" class="mb-4 flex items-start gap-2 rounded-lg bg-lamp-900/40 px-3 py-2.5 text-sm text-lamp-200 ring-1 ring-lamp-700/50" role="alert" data-testid="hosting-maintenance">
+          <svg viewBox="0 0 24 24" class="mt-0.5 size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z" /></svg>
+          <div class="min-w-0">
+            <p class="font-semibold">{{ t('craftinghosting.team.maintenanceTitle') }}</p>
+            <p>{{ info.maintenance.message || t('craftinghosting.team.maintenance') }}</p>
+          </div>
+        </div>
+        <div v-if="info?.notice" class="mb-4 flex items-start gap-2 rounded-lg px-3 py-2 text-sm ring-1" :class="NOTICE_TONE[info.notice.level]" role="status" data-testid="hosting-notice">
+          <svg viewBox="0 0 24 24" class="mt-1 size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>
+          <MarkdownView class="ch-notice min-w-0 flex-1" :source="info.notice.markdown" />
+        </div>
 
         <!-- Noch kein Server -->
         <CraftinghostingCreateWizard v-if="!server" :locked="mobile" />
 
         <!-- Eigener Server -->
         <div v-else class="space-y-4" data-testid="hosting-server">
+          <p v-if="server.blocked" class="flex items-start gap-2 rounded-lg bg-redstone-950/60 px-3 py-2.5 text-sm text-redstone-200 ring-1 ring-redstone-700/60" role="alert" data-testid="hosting-blocked">
+            <svg viewBox="0 0 24 24" class="mt-0.5 size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M5.6 5.6l12.8 12.8" /></svg>
+            <span>{{ server.blocked.reason ? t('craftinghosting.team.blockedWith', { reason: server.blocked.reason }) : t('errors.trsApi.server_blocked') }}</span>
+          </p>
           <CraftinghostingServerHeader @delete="confirmDelete = true" @address="tab = 'settings'" />
 
           <div class="flex gap-1 border-b border-base-800 mobile-scroll-x" role="tablist" :aria-label="t('craftinghosting.tabsLabel')" @keydown="onTabKey">

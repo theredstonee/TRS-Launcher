@@ -291,7 +291,7 @@ pub(crate) fn api_error(status: u16, code: &str, retry_after: Option<u64>) -> Er
         // Empfohlene Modpacks: CurseForge fehlt auf dem Server bzw. Modrinth/CurseForge antwortet nicht – kein „offline“.
         (_, "curseforge_unavailable" | "upstream_failed") => ("trs_api", message_for(code)),
         // CraftingHosting nicht eingerichtet, in Wartung oder nicht erreichbar – der TRS-Server selbst läuft.
-        (_, "craftinghosting_unavailable" | "craftinghosting_maintenance" | "craftinghosting_upstream" | "dns_unavailable" | "feature_unavailable") => {
+        (_, "craftinghosting_unavailable" | "craftinghosting_maintenance" | "craftinghosting_upstream" | "dns_unavailable" | "feature_unavailable" | "hosting_maintenance") => {
             ("trs_api", message_for(code))
         }
         (500..=599, _) => ("trs_offline", crate::msg!("trs.offline", "Der TRS-Server ist gerade nicht erreichbar.")),
@@ -533,6 +533,9 @@ fn message_for(code: &str) -> Msg {
         "subdomain_reserved" => msg!("trsApi.subdomain_reserved", "Diese Adresse ist reserviert – nimm eine andere."),
         "dns_unavailable" => msg!("trsApi.dns_unavailable", "Eigene Adressen sind auf dem TRS-Server gerade nicht verfügbar."),
         "feature_unavailable" => msg!("trsApi.feature_unavailable", "Das ist noch nicht verfügbar – es kommt bald."),
+        "hosting_maintenance" => msg!("trsApi.hosting_maintenance", "Das Hosting wird gerade gewartet – versuch es später noch einmal."),
+        "server_blocked" => msg!("trsApi.server_blocked", "Dein Server wurde vom TRS-Team gesperrt."),
+        "feature_disabled" => msg!("trsApi.feature_disabled", "Diese Funktion ist gerade abgeschaltet."),
         "invalid_request" | "invalid_json" => msg!("trsApi.invalid_request", "Die Anfrage war ungültig."),
         "not_found" => msg!("trsApi.not_found", "Nicht gefunden."),
         _ => msg!("trsApi.rejected", "Die TRS API hat die Anfrage abgelehnt."),

@@ -42,8 +42,9 @@ const INFO: CraftingInfo = {
   limits: { maxServersPerPlayer: 1, sessionMaxHours: 24, cooldownHours: 2, heartbeatTimeoutSeconds: 180, deleteAfterIdleDays: 30, serverNameMaxLength: 22 },
   eulaUrl: 'https://www.minecraft.net/eula',
   full: false,
-  features: { files: true, properties: true, addons: true, worlds: true, worldDownload: true, ownAddress: true, wakeOnJoin: false, versionChange: false, backups: false },
+  features: { files: true, properties: true, addons: true, worlds: true, worldDownload: true, ownAddress: true, wakeOnJoin: false, versionChange: false, backups: false, create: true, console: true },
   notice: null,
+  maintenance: { active: false, message: null },
 }
 
 const craftinghosting = {
@@ -598,5 +599,42 @@ describe('Funktions-Schalter, Versionswechsel und Backups', () => {
     expect(craftinghosting.downloadBackup).toHaveBeenCalledWith('b1', 'Vor dem Update', 'Meine Welt', expect.any(Function), expect.stringMatching(/^craftinghosting-backup:/))
     expect(await s.deleteBackup(b)).toBe(true)
     expect(s.backups?.backups).toEqual([])
+  })
+})
+
+describe('Team-Steuerung im Store', () => {
+  it('Wartung: kein Start, kein Beitreten, Hinweis statt Anfrage', async () => {
+    craftinghosting.server.mockImplementation(async () => server())
+    craftinghosting.info.mockResolvedValueOnce({ ...INFO, maintenance: { active: true, message: 'Update' } })
+    const s = await store()
+    await s.load()
+    expect(await s.requestStart()).toBe(false)
+    await s.join()
+    expect(craftinghosting.start).not.toHaveBeenCalled()
+    expect(toasts.error).toHaveBeenCalledTimes(2)
+  })
+
+  it('gesperrt vom Team: Fehler mit Grund, Server neu holen', async () => {
+    craftinghosting.server.mockImplementation(async () => server())
+    const s = await store()
+    await s.load()
+    craftinghosting.start.mockRejectedValueOnce(await apiError('server_blocked', { reason: 'Spam' }))
+    craftinghosting.server.mockClear()
+    expect(await s.start(false)).toBe(false)
+    expect(toasts.error).toHaveBeenCalledWith(expect.stringContaining('Spam'))
+    expect(craftinghosting.server).toHaveBeenCalled()
+  })
+
+  it('abgeschaltete Funktion bzw. Wartung: freundlich, Info neu holen', async () => {
+    const s = await store()
+    await s.load()
+    craftinghosting.info.mockClear()
+    craftinghosting.command.mockRejectedValueOnce(await apiError('feature_disabled', { feature: 'console' }))
+    expect(await s.command('say hi')).toBe(false)
+    expect(toasts.info).toHaveBeenCalled()
+    craftinghosting.create.mockRejectedValueOnce(await apiError('hosting_maintenance', { message: 'bis 18 Uhr' }))
+    expect(await s.create({ name: 'Meine Welt', serverType: 'paper', version: 'latest', access: 'friends' })).toBe(false)
+    expect(toasts.error).toHaveBeenCalledWith(expect.stringContaining('bis 18 Uhr'))
+    expect(craftinghosting.info).toHaveBeenCalledTimes(2)
   })
 })

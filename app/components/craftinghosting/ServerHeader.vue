@@ -5,6 +5,7 @@ import {
   type AddressView,
   NAME_MAX,
   addressOptions,
+  hostingBlockedReason,
   hostingCountdown,
   inCooldown,
   isTransitional,
@@ -66,12 +67,15 @@ const runLeft = computed(() => remainingSeconds(server.value, store.loadedAt, no
 const runPercent = computed(() => runtimePercent(server.value, store.loadedAt, now.value))
 const players = computed(() => store.stats?.players ?? null)
 
-const canStart = computed(() => !mobile.value && !cooling.value && (server.value.state === 'offline' || server.value.state === 'failed'))
+// Wartung oder vom Team gesperrt: kein Start, kein Beitreten.
+const teamOff = computed(() => !!hostingBlockedReason(info.value, server.value))
+const canStart = computed(() => !mobile.value && !cooling.value && !teamOff.value && (server.value.state === 'offline' || server.value.state === 'failed'))
 const canStop = computed(() => server.value.state === 'running' || server.value.state === 'starting')
 const canJoin = computed(() => !mobile.value || platformCaps.value.gameLaunch)
 const joinDisabled = computed(
   () =>
     store.joining ||
+    teamOff.value ||
     !!store.busy ||
     !!store.transfer?.active ||
     cooling.value ||

@@ -356,7 +356,10 @@
       "file_too_large": "Het bestand is te groot voor de editor (hoogstens 1 MB).",
       "file_protected": "TRS beheert dit bestand – het kan niet worden gewijzigd of verwijderd.",
       "property_locked": "Deze instelling ligt vast en kan niet worden gewijzigd.",
-      "feature_unavailable": "Dit is nog niet beschikbaar – het komt binnenkort."
+      "feature_unavailable": "Dit is nog niet beschikbaar – het komt binnenkort.",
+      "hosting_maintenance": "Hosting is in onderhoud – probeer het later opnieuw.",
+      "server_blocked": "Je server is door het TRS-team geblokkeerd.",
+      "feature_disabled": "Deze functie is op dit moment uitgeschakeld."
     },
     "auth": {
       "accountMismatch": "Deze login hoort bij een ander account – log opnieuw in.",
@@ -8087,6 +8090,13 @@
       "created": "Back-up gemaakt.",
       "restored": "“{name}” teruggezet – geldt vanaf de volgende start.",
       "downloaded": "Back-up opgeslagen als {file}."
+    },
+    "team": {
+      "maintenanceTitle": "Onderhoud",
+      "maintenance": "Hosting is in onderhoud – aanmaken, starten en joinen zijn even gepauzeerd.",
+      "maintenanceWith": "Onderhoud: {message}",
+      "blockedWith": "Geblokkeerd door het TRS-team: {reason}",
+      "createOff": "Nieuwe servers aanmaken is op dit moment uitgeschakeld."
     }
   }
 }

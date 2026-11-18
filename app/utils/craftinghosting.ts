@@ -31,10 +31,23 @@ export const FEATURE_KEYS = [
   'wakeOnJoin',
   'versionChange',
   'backups',
+  'create',
+  'console',
 ] as const
 export type FeatureKey = (typeof FEATURE_KEYS)[number]
 export type CraftingFeatures = Record<FeatureKey, boolean>
 export const NO_FEATURES: CraftingFeatures = Object.fromEntries(FEATURE_KEYS.map((k) => [k, false])) as CraftingFeatures
+export const NOTICE_LEVELS = ['info', 'warning', 'success'] as const
+const noticeObject = z.object({
+  markdown: z.string().min(1).max(4000),
+  level: z.enum(NOTICE_LEVELS).catch('info'),
+  updatedAt: z.string().max(40).nullish().catch(null),
+})
+const noticeSchema = z
+  .union([noticeObject, z.string().min(1).max(4000).transform((markdown) => ({ markdown, level: 'info' as const, updatedAt: null }))])
+  .nullable()
+  .catch(null)
+
 const featuresSchema = z
   .object(Object.fromEntries(FEATURE_KEYS.map((k) => [k, z.boolean().catch(false)])) as Record<FeatureKey, z.ZodCatch<z.ZodBoolean>>)
   .catch(NO_FEATURES)
@@ -59,8 +72,10 @@ export const craftingInfoSchema = z.object({
   eulaUrl: z.string().startsWith('https://').max(300),
   full: z.boolean(),
   features: featuresSchema,
-  /** Hinweis oben im Hosting-Reiter (Klartext). */
-  notice: z.string().max(500).nullable().catch(null),
+  /** Hinweis oben im Hosting-Reiter (Markdown; alte API: Klartext). */
+  notice: noticeSchema,
+  /** Wartung durch das TRS-Team: Anlegen, Starten und Beitreten sind aus. */
+  maintenance: z.object({ active: z.boolean(), message: z.string().max(500).nullable() }).catch({ active: false, message: null }),
 })
 
 export const craftingServerSchema = z.object({
@@ -105,6 +120,8 @@ export const craftingServerSchema = z.object({
   deleteAt: time,
   /** Ersteinrichtung nach dem ersten Start (Plugin, MOTD); `restarting` = startet dafür einmal neu. */
   setup: z.enum(['pending', 'restarting', 'done']).catch('done'),
+  /** Vom TRS-Team gesperrt: Starten und Beitreten sind aus. */
+  blocked: z.object({ reason: z.string().max(300), since: time }).nullish().catch(null),
 })
 
 /** Feste zweite MOTD-Zeile, setzt die TRS-API. */
@@ -993,4 +1010,13 @@ export function versionChangeValid(change: VersionChange, current: { serverType:
   const type = info?.serverTypes.find((ty) => ty.id === change.serverType)
   if (!type || !type.versions.includes(change.version)) return false
   return change.serverType !== current.serverType || change.version !== current.version
+}
+
+// --- Team-Steuerung ---
+
+/** Darf gestartet bzw. beigetreten werden (keine Wartung, nicht gesperrt)? */
+export function hostingBlockedReason(info: Pick<CraftingInfo, 'maintenance'> | null, server: Pick<CraftingServer, 'blocked'> | null): 'maintenance' | 'blocked' | null {
+  if (info?.maintenance.active) return 'maintenance'
+  if (server?.blocked) return 'blocked'
+  return null
 }
