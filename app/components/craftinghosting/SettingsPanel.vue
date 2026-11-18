@@ -6,7 +6,9 @@ import { DIFFICULTIES, GAMEMODES, LEVEL_TYPES, type CraftingSettings, settingsPa
 const store = useCraftingHostingStore()
 const form = ref<CraftingSettings | null>(null)
 
-onMounted(() => void store.loadSettings())
+onMounted(() => {
+  if (store.server?.lastStartAt) void store.loadSettings()
+})
 watch(
   () => store.settings,
   (s) => (form.value = s ? { ...s } : null),
@@ -27,7 +29,10 @@ function reset() {
 
 <template>
   <div class="card p-4" data-testid="hosting-settings">
-    <div v-if="!form" class="skeleton h-40" />
+    <p v-if="!form && (store.settingsPending || !store.server?.lastStartAt)" class="text-sm text-base-400" data-testid="hosting-settings-pending">
+      {{ t('craftinghosting.settings.afterFirstStart') }}
+    </p>
+    <div v-else-if="!form" class="skeleton h-40" />
     <form v-else class="space-y-4" @submit.prevent="save">
       <p class="rounded-lg bg-base-900 px-3 py-2 text-xs text-base-400 ring-1 ring-base-800">{{ t('craftinghosting.settings.nextStart') }}</p>
       <div>

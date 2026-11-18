@@ -7660,6 +7660,7 @@
     "settings": {
       "saved": "Ayarlar kaydedildi – bir sonraki başlatmada geçerli olur.",
       "nextStart": "Değişiklikler sunucunun bir sonraki başlatılmasında geçerli olur.",
+      "afterFirstStart": "Ayarlar ilk başlatmadan sonra kullanılabilir: sunucuyu bir kez başlat, sonra burada değiştirebilirsin.",
       "motd": "Sunucu listesindeki mesaj (MOTD)",
       "gamemode": "Oyun modu",
       "difficulty": "Zorluk",

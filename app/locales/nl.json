@@ -7660,6 +7660,7 @@
     "settings": {
       "saved": "Instellingen opgeslagen – ze gelden vanaf de volgende start.",
       "nextStart": "Wijzigingen gelden vanaf de volgende start van de server.",
+      "afterFirstStart": "Instellingen zijn beschikbaar na de eerste start: start de server één keer, daarna kun je ze hier wijzigen.",
       "motd": "Tekst in de serverlijst (MOTD)",
       "gamemode": "Spelmodus",
       "difficulty": "Moeilijkheid",

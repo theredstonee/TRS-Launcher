@@ -8466,6 +8466,7 @@
     "settings": {
       "saved": "Settings saved – they apply on the next start.",
       "nextStart": "Changes apply on the next start of the server.",
+      "afterFirstStart": "Settings are available after the first start: start the server once, then you can change them here.",
       "motd": "Message in the server list (MOTD)",
       "gamemode": "Game mode",
       "difficulty": "Difficulty",

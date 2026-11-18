@@ -7660,6 +7660,7 @@
     "settings": {
       "saved": "Ustawienia zapisane – obowiązują od następnego uruchomienia.",
       "nextStart": "Zmiany obowiązują od następnego uruchomienia serwera.",
+      "afterFirstStart": "Ustawienia są dostępne po pierwszym uruchomieniu: uruchom serwer raz, a potem zmienisz je tutaj.",
       "motd": "Opis na liście serwerów (MOTD)",
       "gamemode": "Tryb gry",
       "difficulty": "Poziom trudności",

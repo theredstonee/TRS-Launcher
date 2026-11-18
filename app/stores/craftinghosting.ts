@@ -59,6 +59,7 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
   const eulaOpen = ref(false)
   const joining = ref(false)
   const settings = ref<CraftingSettings | null>(null)
+  const settingsPending = ref(false)
   const stats = ref<CraftingStats | null>(null)
   const logs = ref<string[]>([])
   /** Konsole sichtbar: Log im 3-s-Takt, solange der Server läuft. */
@@ -237,11 +238,14 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
   // --- Einstellungen, Mods, Welt --------------------------------------------------------
 
   async function loadSettings() {
+    settingsPending.value = false
     try {
       settings.value = await backend.craftinghosting.settings()
     } catch (e) {
       settings.value = null
-      report(e)
+      // Der Partner liefert Einstellungen erst nach dem ersten Start.
+      if (apiCode(e) === 'server_installing') settingsPending.value = true
+      else report(e)
     }
   }
 
@@ -483,6 +487,7 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     setAccess,
     rename,
     loadSettings,
+    settingsPending,
     saveSettings,
     transferMods,
     uploadWorld,

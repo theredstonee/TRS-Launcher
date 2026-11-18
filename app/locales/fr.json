@@ -7660,6 +7660,7 @@
     "settings": {
       "saved": "Paramètres enregistrés – ils s’appliquent au prochain démarrage.",
       "nextStart": "Les modifications s’appliquent au prochain démarrage du serveur.",
+      "afterFirstStart": "Les réglages sont disponibles après le premier démarrage : démarre le serveur une fois, puis tu pourras les modifier ici.",
       "motd": "Message dans la liste des serveurs (MOTD)",
       "gamemode": "Mode de jeu",
       "difficulty": "Difficulté",

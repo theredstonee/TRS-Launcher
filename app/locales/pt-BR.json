@@ -7660,6 +7660,7 @@
     "settings": {
       "saved": "Configurações salvas – valem a partir da próxima inicialização.",
       "nextStart": "As alterações valem a partir da próxima inicialização do servidor.",
+      "afterFirstStart": "As configurações ficam disponíveis após a primeira inicialização: inicie o servidor uma vez e depois altere-as aqui.",
       "motd": "Mensagem na lista de servidores (MOTD)",
       "gamemode": "Modo de jogo",
       "difficulty": "Dificuldade",
