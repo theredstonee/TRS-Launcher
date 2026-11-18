@@ -9,6 +9,8 @@ if [ -f .env ]; then set -a; . ./.env; set +a; fi
 if [ -f vapid.env ]; then set -a; . ./vapid.env; set +a; fi
 # SMTP-Zugänge (Mail/Newsletter) liegen getrennt in mail.env (nie ins Git).
 if [ -f mail.env ]; then set -a; . ./mail.env; set +a; fi
+# CraftingHosting-Partner-Schlüssel (§43) getrennt in craftinghosting.env (nie ins Git).
+if [ -f craftinghosting.env ]; then set -a; . ./craftinghosting.env; set +a; fi
 export NODE_ENV=production
 export DATA_DIR="${DATA_DIR:-/home/container/data}"
 export HOST=127.0.0.1 NITRO_HOST=127.0.0.1
