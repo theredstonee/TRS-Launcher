@@ -255,7 +255,7 @@ const settingsDirty = computed(() => {
   if (!settings.value || !saved.value) return false
   return SETTING_KEYS.some((k) => settings.value![k] !== saved.value![k])
 })
-const motdInvalid = computed(() => !!settings.value && (settings.value.motd.length > 60 || /[§\p{Cc}]/u.test(settings.value.motd)))
+const motdInvalid = computed(() => !!settings.value && (settings.value.motd.length > 58 || /[§\p{Cc}]/u.test(settings.value.motd)))
 
 async function saveSettings() {
   if (!settings.value || !saved.value || motdInvalid.value) return
@@ -485,8 +485,8 @@ const cooldownActive = computed(() => {
           <form v-else-if="settings" class="mt-3 grid gap-3" @submit.prevent="saveSettings">
             <div>
               <label class="label" for="hs-motd">{{ t.settings.motd }}</label>
-              <input id="hs-motd" v-model="settings.motd" class="field" maxlength="60" :aria-invalid="motdInvalid" aria-describedby="hs-motd-hint">
-              <p id="hs-motd-hint" class="mt-1 text-xs" :class="motdInvalid ? 'text-redstone-300' : 'text-base-400'">{{ t.settings.motdHint }} ({{ settings.motd.length }}/60)</p>
+              <input id="hs-motd" v-model="settings.motd" class="field" maxlength="58" :aria-invalid="motdInvalid" aria-describedby="hs-motd-hint">
+              <p id="hs-motd-hint" class="mt-1 text-xs" :class="motdInvalid ? 'text-redstone-300' : 'text-base-400'">{{ t.settings.motdHint }} ({{ settings.motd.length }}/58)</p>
             </div>
             <div>
               <p class="label">{{ t.settings.footer }}</p>

@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 import {
   craftingCommand, craftingCreate, craftingDelete, craftingHeartbeat, craftingInfo, craftingInstallMods, craftingLogs,
   craftingServer, craftingSetSettings, craftingSettings, craftingStart, craftingStats, craftingStop, craftingUpdate,
+  craftingAddons, craftingDeleteFiles, craftingFiles, craftingProperties, craftingReadFile, craftingRemoveAddon,
+  craftingSetProperties, craftingWriteFile,
   adminCraftingDelete, adminCraftingServers, adminCraftingStop, craftingCheckSubdomain, relayResolve, relayWake, sweepCraftingDns, craftingRestartDone, craftingWorldImport, craftingWorldUpload, createServerBody, MOTD_FOOTER, settingsBody,
 } from '../server/lib/craftinghosting'
 import { RULES } from '../server/lib/ratelimit'
@@ -124,7 +126,17 @@ class FakePartner {
         if (f === '/server.properties' && !this.files.has(f)) this.files.set(f, 'motd=A Minecraft Server\naccepts-transfers=false\n')
         return this.files.has(f) ? this.json(200, { path: f, content: this.files.get(f) }) : this.err(404, 'file_not_found')
       }
-      case 'GET files': return this.json(200, { directory: '/', files: [...this.files.keys()].map((f) => ({ name: f.slice(1), path: f, type: 'file' })) })
+      case 'GET files': {
+        const dir = (url.searchParams.get('dir') ?? '/').replace(/\/$/, '') || ''
+        const seen = new Map<string, { name: string, type: string, size: number }>()
+        for (const [f, c] of this.files) {
+          if (!f.startsWith(`${dir}/`)) continue
+          const rest = f.slice(dir.length + 1)
+          const [first, ...more] = rest.split('/')
+          seen.set(first!, { name: first!, type: more.length ? 'directory' : 'file', size: more.length ? 4096 : c.length })
+        }
+        return this.json(200, { directory: dir || '/', files: [...seen.values()].map((e) => ({ ...e, path: `${dir}/${e.name}`, modifiedAt: '2026-11-18T18:00:00Z' })) })
+      }
       case 'DELETE ': this.servers.delete(s.id); this.used--; return new Response(null, { status: 204 })
       case 'POST start':
         if (!s.eulaAccepted && !body.acceptEula) return this.err(409, 'eula_required')
@@ -461,10 +473,10 @@ describe('craftinghosting', () => {
     expect(partner.settings.motd).toBe(`Meine Welt ${MOTD_FOOTER}`)
     expect((partner.settings.motd as string).length).toBeLessThanOrEqual(120)
     expect((await craftingSettings(env.ctx, u!)).motd).toBe('Meine Welt')
-    await craftingSetSettings(env.ctx, u!, settingsBody.parse({ motd: 'x'.repeat(60) }))
-    expect(partner.settings.motd).toBe(`${'x'.repeat(60)} ${MOTD_FOOTER}`)
+    await craftingSetSettings(env.ctx, u!, settingsBody.parse({ motd: 'x'.repeat(58) }))
+    expect(partner.settings.motd).toBe(`${'x'.repeat(58)} ${MOTD_FOOTER}`)
     expect((partner.settings.motd as string).length).toBeLessThanOrEqual(120)
-    expect(() => settingsBody.parse({ motd: 'x'.repeat(61) })).toThrow()
+    expect(() => settingsBody.parse({ motd: 'x'.repeat(59) })).toThrow()
     expect(() => settingsBody.parse({ motd: '§cRot' })).toThrow()
   })
 
@@ -674,5 +686,61 @@ describe('craftinghosting routes: website session', () => {
     // Löschen räumt SRV und A
     await craftingDelete(env.ctx, u!)
     expect(dns.records.size).toBe(0)
+  })
+
+  it('files, server.properties and plugins', async () => {
+    const { env, partner } = setup('1.1.0')
+    const [u] = await players(env, 'Steve')
+    await craftingCreate(env.ctx, u!, body({ name: 'Meine Welt', serverType: 'paper' }))
+    await craftingStart(env.ctx, u!, true)
+    await craftingHeartbeat(env.ctx, u!)
+    await craftingRestartDone(u!.uuid)
+    partner.files.set('/server.properties', '#Minecraft\nmotd=Meine Welt\nserver-port=25011\ndifficulty=easy\naccepts-transfers=true\nwhite-list=true\n')
+    partner.files.set('/plugins/Chunky-1.4.jar', 'jar')
+    partner.files.set('/plugins/Chunky/config.yml', 'a: 1\n')
+
+    // Liste mit Schutz
+    const root = await craftingFiles(env.ctx, u!, '/')
+    expect(root.entries.find((e) => e.name === 'plugins')).toMatchObject({ type: 'directory', protected: true })
+    expect(root.entries.find((e) => e.name === 'server.properties')).toMatchObject({ editable: true, protected: false })
+    const plugins = await craftingFiles(env.ctx, u!, '/plugins')
+    expect(plugins.entries.find((e) => e.name === 'trs-server-rules-bukkit-1.1.0.jar')?.protected).toBe(true)
+    expect(plugins.entries.find((e) => e.name === 'Chunky-1.4.jar')?.editable).toBe(false)
+
+    // Lesen/Schreiben/Schutz
+    expect((await craftingReadFile(env.ctx, u!, '/plugins/Chunky/config.yml')).content).toBe('a: 1\n')
+    expect(await codeAsync(() => craftingReadFile(env.ctx, u!, '/plugins/Chunky-1.4.jar'))).toBe('file_not_text')
+    await craftingWriteFile(env.ctx, u!, '/plugins/Chunky/config.yml', 'a: 2\n')
+    expect(partner.files.get('/plugins/Chunky/config.yml')).toBe('a: 2\n')
+    expect(await codeAsync(() => craftingWriteFile(env.ctx, u!, '/plugins/TRSServerRules/hosting.yml', 'x'))).toBe('file_protected')
+    expect(await codeAsync(() => craftingDeleteFiles(env.ctx, u!, ['/plugins']))).toBe('file_protected')
+    expect(await codeAsync(() => craftingDeleteFiles(env.ctx, u!, ['/whitelist.json']))).toBe('file_protected')
+
+    // server.properties von Hand: gesperrte Schlüssel bleiben, MOTD über die Regel
+    await craftingWriteFile(env.ctx, u!, '/server.properties', 'motd=Neu\nserver-port=1\ndifficulty=hard\naccepts-transfers=false\n')
+    const sp = partner.files.get('/server.properties')!
+    expect(sp).toContain('server-port=25011')
+    expect(sp).toContain('difficulty=hard')
+    expect(sp).toContain('accepts-transfers=true')
+    expect(partner.settings.motd).toBe('Neu')
+
+    // Alle Einstellungen
+    const props = await craftingProperties(env.ctx, u!)
+    expect(props.properties.motd).toBe('Neu')
+    expect(props.locked).toEqual(expect.arrayContaining(['server-port', 'accepts-transfers']))
+    expect(await codeAsync(() => craftingSetProperties(env.ctx, u!, { 'server-port': '2' }))).toBe('property_locked')
+    const after = await craftingSetProperties(env.ctx, u!, { 'max-players': '8', 'level-name': 'welt:2', motd: 'Hallo' })
+    expect(after.properties['max-players']).toBe('8')
+    expect(partner.files.get('/server.properties')).toContain('level-name=welt\\:2')
+    expect(after.properties['level-name']).toBe('welt:2')
+    expect(partner.settings.motd).toBe('Hallo')
+
+    // Plugins
+    const addons = await craftingAddons(env.ctx, u!)
+    expect(addons.kind).toBe('plugins')
+    expect(addons.items.map((i) => [i.file, i.protected])).toEqual([['Chunky-1.4.jar', false], ['trs-server-rules-bukkit-1.1.0.jar', true]])
+    await craftingRemoveAddon(env.ctx, u!, 'Chunky-1.4.jar')
+    expect(partner.files.has('/plugins/Chunky-1.4.jar')).toBe(false)
+    expect(await codeAsync(() => craftingRemoveAddon(env.ctx, u!, 'trs-server-rules-bukkit-1.1.0.jar'))).toBe('file_protected')
   })
 })

@@ -5547,7 +5547,7 @@ runs because players are on it. `deleteAt` = deleted with its data unless starte
   `difficulty` `peaceful | easy | normal | hard`, `hardcore`, `pvp`, `allowFlight` (booleans), `seed` (≤ 64),
   `levelType` `normal | flat | large_biomes | amplified`, `spawnProtection` 0–64, `viewDistance` and
   `simulationDistance` 3–16. `whitelist` is read-only (follows `access`). Applies on the next start; `seed` and
-  `levelType` only for a newly generated world. `motd` is only the first line (at most 60 characters, no `§` codes) –
+  `levelType` only for a newly generated world. `motd` is only the first line (at most 58 characters, no `§` codes) –
   the fixed footer of 43.7 is never shown or editable. Settings, files and mods only work after the server has been started
   once (before that the partner answers `409 server_installing`, checked 2026-11-18).
 - `GET /v1/craftinghosting/server/logs?lines=200` (1–1000) -> `{ lines: string[] }`, newest last, colour codes and
@@ -5586,10 +5586,10 @@ Every server's MOTD must name the TRS Launcher and CraftingHosting. The first ti
   `server-plugin.json` version 1.1.0 or newer, size and SHA-256 checked) for Paper/Purpur (`bukkit` jar into
   `/plugins`) and for Fabric/Forge when a jar for exactly that Minecraft version exists (`/mods`, Fabric also gets
   Fabric API from Modrinth). The API writes `plugins/TRSServerRules/hosting.yml` or `config/trs-server-rules-hosting.yml`
-  with `motd-footer: "§7Free server: §ctrs-launcher.de §8× §bcraftinghosting.free"`; the plugin shows it as the fixed
+  with `motd-footer: "§7Free server by §bcraftinghosting.free §8× §ctrs-launcher.de"`; the plugin shows it as the fixed
   second MOTD line. The first line is the owner's text (`motd`, default: the server name).
 - Without a fitting plugin (vanilla, versions without a build, channel not reachable) the footer is appended to the
-  single MOTD line (`<text> §7Free server: …`, at most 120 characters). The partner's settings API accepts `§` codes but
+  single MOTD line (`<text> §7Free server by …`, line 1 at most 58 characters, at most 120 in total). The partner's settings API accepts `§` codes but
   no line breaks (checked 2026-11-18).
 - Then the API stops and starts the server once (`setup: "restarting"`, usually under a minute). Heartbeats during the
   restart are answered from the current state without reaching the partner, so the launcher keeps its session.
@@ -5645,3 +5645,24 @@ HMAC-SHA256(`RELAY_SECRET`, `time + "\n" + METHOD + "\n" + path-with-query + "\n
   only the owner and TRS friends (by name – the relay cannot verify the account, the server's whitelist still applies).
   `409 not_allowed | eula_required | cooldown (details.cooldownUntil) | unavailable`, at most one start per 30 s and
   20 wake requests per 10 minutes per address (`429`).
+
+### 43.11 Files, all server properties, plugins & mods
+
+Paths are absolute inside the server (`/server.properties`), no `..`, at most 512 characters. Managed by TRS and
+protected (`403 file_protected`): the TRS Server Rules jar, its hosting file, `whitelist.json` while access is
+`friends`, and the folders that contain them (`/`, `/plugins`, `/mods`, `/config`, `/plugins/TRSServerRules`) as a
+whole. Before every start the API rewrites the hosting file / single MOTD line with the current footer.
+
+- `GET …/server/files?dir=/` -> `{ dir, entries: [{ name, path, type, size, modifiedAt, editable, protected }] }`.
+- `GET …/server/files/content?path=` -> `{ path, content }` for text files (known text extension or none, ≤ 1 MB;
+  `415 file_not_text`, `413 file_too_large`). `PUT` with body `{ content }` -> `{ path, size }`. Writing
+  `/server.properties` keeps the locked keys' old values and the MOTD; a changed `motd` goes through the MOTD rules.
+- `POST …/server/files/delete` `{ paths }` (≤ 50), `POST …/server/files/folder` `{ path }` -> `204`.
+- `GET …/server/properties` -> `{ properties: { key: value }, locked: [] }` (`motd` = line 1). `PATCH` with
+  `{ properties: { key: value } }` (keys `^[a-z0-9.-]{1,64}$`, values ≤ 500, no line breaks) -> same shape. Locked:
+  `server-port`, `server-ip`, `query.port`, `enable-query`, `enable-rcon`, `rcon.*`, `management-server-*`,
+  `accepts-transfers`, `white-list`, `enforce-whitelist` -> `400 property_locked` (`details.keys`). Values are
+  written Java-properties-escaped.
+- `GET …/server/addons` -> `{ kind: "plugins" | "mods" | null, dir, items: [{ file, size, modifiedAt, protected }] }`,
+  `DELETE …/server/addons?file=<jar>` -> `204`. Install from Modrinth: `POST …/server/mods` (43.6).
+- Limit: 120 edits per 10 minutes and account.

@@ -182,6 +182,8 @@ export const RULES = {
   craftinghostingCommandUser: { limit: 20, windowMs: MIN },
   /** Mods installieren, Welt hochladen/übernehmen. */
   craftinghostingFilesUser: { limit: 20, windowMs: 10 * MIN },
+  /** Dateien/Einstellungen bearbeiten, Plugins entfernen. */
+  craftinghostingEditUser: { limit: 120, windowMs: 10 * MIN },
   /** TRS Wake: Aufwecken je Adresse (der Relay fragt nur beim Beitreten). */
   craftinghostingWake: { limit: 20, windowMs: 10 * MIN },
   // ------------------------------------------------ Moderation v2 (§22)

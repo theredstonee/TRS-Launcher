@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto'
 import { lookup } from 'node:dns/promises'
 import { all, one, run } from './db'
 import { MODRINTH_ID } from './modrinth'
-import { ApiError, badRequest, conflict, notFound, unavailable } from './errors'
+import { ApiError, badRequest, conflict, forbidden, notFound, unavailable } from './errors'
 import { friendUuids } from './friends'
 import { assertNotSanctioned } from './sanctions'
 import { getUser, isBanned, type UserRow } from './users'
@@ -23,8 +23,8 @@ const MAX_MODS = 50
 const MOD_SLUG = /^[\w.-]{2,64}$/
 const WORLD_ZIP = 'trs-world.zip'
 /** Feste zweite MOTD-Zeile (Plugin) bzw. Anhang an die einzige Zeile (ohne Plugin). */
-export const MOTD_FOOTER = '§7Free server: §ctrs-launcher.de §8× §bcraftinghosting.free'
-const MOTD_LINE_MAX = 60
+export const MOTD_FOOTER = '§7Free server by §bcraftinghosting.free §8× §ctrs-launcher.de'
+const MOTD_LINE_MAX = 58
 const PLUGIN_MIN = [1, 1, 0]
 const PLUGIN_MAX_BYTES = 5 * 1024 * 1024
 const MANIFEST_TTL_MS = 60 * 60 * 1000
@@ -522,6 +522,7 @@ export async function craftingStart(ctx: AppContext, user: UserRow, acceptEula: 
   return onServer(ctx, user, async (row) => {
     await syncAccess(ctx, user, await fresh(ctx, row))
     if (row.setup && !row.transfers) await ensureTransfers(ctx, row)
+    if (row.setup) await refreshFooter(ctx, row)
     return fresh(ctx, row, await call(ctx, 'POST', path(row, '/start'), acceptEula ? { acceptEula: true } : {}))
   })
 }
@@ -1182,6 +1183,7 @@ export async function relayResolve(ctx: AppContext, host: string) {
   } catch { /* vor dem ersten Start gibt es keine Einstellungen */ }
   return {
     name: sub,
+    motd: (row.motd ?? p.name.replace(/ #[A-Z0-9]+$/, '')).slice(0, MOTD_LINE_MAX),
     state,
     target: state === 'running' && nodeOk(p) ? { host: p.host!, port: p.port! } : null,
     maxPlayers,
@@ -1246,4 +1248,247 @@ export async function sweepCraftingDns(ctx: AppContext): Promise<void> {
     const p = byId.get(row.server_id)
     if (p) await syncDns(ctx, row, p)
   }
+}
+
+/** Fußzeile auf den aktuellen Text bringen: Plugin-Datei bzw. einzige MOTD-Zeile. Fehler stören den Start nicht. */
+async function refreshFooter(ctx: AppContext, row: Row): Promise<void> {
+  try {
+    if (row.plugin === 'bukkit' || row.plugin === 'fabric' || row.plugin === 'forge') {
+      const file = row.plugin === 'bukkit' ? '/plugins/TRSServerRules/hosting.yml' : '/config/trs-server-rules-hosting.yml'
+      await call(ctx, 'PUT', path(row, `/files/content?path=${encodeURIComponent(file)}`), undefined,
+        { type: 'text/yaml', data: `# TRS Launcher – CraftingHosting\nmotd-footer: "${MOTD_FOOTER}"\n` })
+    } else if (row.motd) {
+      await call(ctx, 'PATCH', path(row, '/settings'), { motd: motdFor(row, row.motd) })
+    }
+  } catch (e) {
+    if (!(e instanceof ApiError)) console.error('[trs-api] MOTD footer not refreshed', e)
+  }
+}
+
+// ---------------------------------------------------------------- Dateien, server.properties, Plugins/Mods
+
+const MAX_TEXT = 1024 * 1024
+const TEXT_EXT = new Set(['properties', 'yml', 'yaml', 'json', 'json5', 'toml', 'txt', 'cfg', 'conf', 'ini', 'md', 'log',
+  'csv', 'mcmeta', 'sk', 'js', 'lang', 'xml', 'snbt', 'mcfunction', 'html', 'css', 'sh', 'env', 'list'])
+/** Nie änderbar: Netz/Fernsteuerung, Transfers für TRS Wake, Whitelist folgt dem Zugang. */
+const LOCKED_KEYS = /^(server-port|server-ip|query\.port|enable-query|enable-rcon|rcon\..+|management-server-.+|accepts-transfers|white-list|enforce-whitelist)$/
+
+export const filePath = z.string().max(512).transform((v) => v.replace(/\/{2,}/g, '/').replace(/(.)\/$/, '$1'))
+  .refine((v) => v.startsWith('/') && !v.includes('\\') && !/[\u0000-\u001f]/.test(v) && !v.split('/').some((x) => x === '..' || x === '.'), 'invalid path')
+export const filesQuery = z.object({ dir: filePath.default('/') })
+export const fileQuery = z.object({ path: filePath })
+export const fileWriteBody = z.object({ content: z.string().max(MAX_TEXT) }).strict()
+export const fileDeleteBody = z.object({ paths: z.array(filePath).min(1).max(50) }).strict()
+export const folderBody = z.object({ path: filePath }).strict()
+export const propertiesPatchBody = z.object({
+  properties: z.record(z.string().regex(/^[a-z0-9.-]{1,64}$/), z.string().max(500).regex(/^[^\r\n]*$/)),
+}).strict().refine((b) => Object.keys(b.properties).length > 0 && Object.keys(b.properties).length <= 200)
+export const addonQuery = z.object({ file: z.string().regex(/^[\w.+\-() [\]]{1,128}\.jar$/) })
+
+const extOf = (name: string) => (name.includes('.') ? name.slice(name.lastIndexOf('.') + 1).toLowerCase() : '')
+const isText = (name: string) => !name.includes('.') || TEXT_EXT.has(extOf(name)) || name === '.env'
+
+/** Von TRS verwaltete Pfade (Plugin, Fußzeile, Whitelist bei „Nur Freunde“) und ihre Ordner. */
+function protectedPath(row: Row, path0: string): boolean {
+  const p = path0.toLowerCase()
+  if (/^\/(plugins|mods)\/trs-server-rules-[^/]*\.jar$/.test(p)) return true
+  if (p === '/plugins/trsserverrules/hosting.yml' || p === '/config/trs-server-rules-hosting.yml') return true
+  if (row.access === 'friends' && p === '/whitelist.json') return true
+  return false
+}
+const protectedDir = (p: string) => ['/', '/plugins', '/mods', '/config', '/plugins/trsserverrules'].includes(p.toLowerCase())
+
+const entrySchema = z.object({
+  name: z.string().max(255),
+  path: z.string().max(600).nullish(),
+  type: z.string().max(20).nullish(),
+  size: z.number().nullish(),
+  modifiedAt: z.string().max(40).nullish(),
+}).loose()
+
+async function listDir(ctx: AppContext, row: Row, dir: string) {
+  const r = z.object({ files: z.array(entrySchema).max(5000) }).loose()
+    .safeParse(await call(ctx, 'GET', path(row, `/files?dir=${encodeURIComponent(dir)}`)))
+  if (!r.success) throw upstream()
+  return r.data.files.filter((f) => f.name && !f.name.includes('/')).map((f) => {
+    const p = dir === '/' ? `/${f.name}` : `${dir}/${f.name}`
+    const type = f.type === 'directory' ? 'directory' as const : 'file' as const
+    return { name: f.name, path: p, type, size: f.size ?? 0, modifiedAt: f.modifiedAt ?? null }
+  })
+}
+
+export async function craftingFiles(ctx: AppContext, user: UserRow, dir: string) {
+  return onServer(ctx, user, async (row) => {
+    const entries = (await listDir(ctx, row, dir)).map((e) => {
+      const prot = e.type === 'directory' ? protectedDir(e.path) : protectedPath(row, e.path)
+      return { ...e, editable: e.type === 'file' && !prot && isText(e.name) && e.size <= MAX_TEXT, protected: prot }
+    }).sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'directory' ? -1 : 1))
+    return { dir, entries }
+  })
+}
+
+async function readText(ctx: AppContext, row: Row, file: string): Promise<string> {
+  const r = z.object({ content: z.string() }).loose().safeParse(await call(ctx, 'GET', path(row, `/files/content?path=${encodeURIComponent(file)}`)))
+  if (!r.success) throw upstream()
+  if (r.data.content.length > MAX_TEXT) throw new ApiError(413, 'file_too_large', 'File too large')
+  return r.data.content
+}
+
+export async function craftingReadFile(ctx: AppContext, user: UserRow, file: string) {
+  return onServer(ctx, user, async (row) => {
+    if (!isText(file.slice(file.lastIndexOf('/') + 1))) throw new ApiError(415, 'file_not_text', 'Not a text file')
+    return { path: file, content: await readText(ctx, row, file) }
+  })
+}
+
+// ---- server.properties
+
+function parseProps(text: string): Map<string, string> {
+  const out = new Map<string, string>()
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trimStart()
+    if (!line || line.startsWith('#') || line.startsWith('!')) continue
+    const m = /^((?:\\.|[^=:\s\\])+)\s*[=:]?\s*(.*)$/.exec(line)
+    if (!m) continue
+    out.set(unesc(m[1]!), unesc(m[2]!))
+  }
+  return out
+}
+function unesc(v: string): string {
+  return v.replace(/\\u([0-9a-fA-F]{4})|\\(.)/g, (_, u: string | undefined, c: string | undefined) =>
+    u ? String.fromCharCode(Number.parseInt(u, 16)) : c === 'n' ? '\n' : c === 't' ? '\t' : c ?? '')
+}
+function esc(v: string, key = false): string {
+  let out = ''
+  for (const ch of v) {
+    const code = ch.codePointAt(0)!
+    if (ch === '\\') out += '\\\\'
+    else if (ch === ':' || ch === '=' || (key && ch === ' ')) out += `\\${ch}`
+    else if (code > 0x7e || code < 0x20) out += ch.split('').map((c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`).join('')
+    else out += ch
+  }
+  return out
+}
+
+/** Zeilen von server.properties setzen (Kommentare/Reihenfolge bleiben), fehlende Schlüssel anhängen. */
+function setProps(text: string, values: Record<string, string>): string {
+  const left = new Map(Object.entries(values))
+  const lines = text.split(/\r?\n/).map((raw) => {
+    const line = raw.trimStart()
+    if (!line || line.startsWith('#') || line.startsWith('!')) return raw
+    const m = /^((?:\\.|[^=:\s\\])+)/.exec(line)
+    const key = m ? unesc(m[1]!) : null
+    if (key === null || !left.has(key)) return raw
+    const v = left.get(key)!
+    left.delete(key)
+    return `${esc(key, true)}=${esc(v)}`
+  })
+  while (lines.length && lines.at(-1) === '') lines.pop()
+  for (const [k, v] of left) lines.push(`${esc(k, true)}=${esc(v)}`)
+  return `${lines.join('\n')}\n`
+}
+
+const stripFooter = (motd: string) => (motd.endsWith(` ${MOTD_FOOTER}`) ? motd.slice(0, -MOTD_FOOTER.length - 1) : motd)
+  .replace(/§./g, '').slice(0, MOTD_LINE_MAX)
+
+export async function craftingProperties(ctx: AppContext, user: UserRow) {
+  return onServer(ctx, user, async (row) => {
+    const props = parseProps(await readText(ctx, row, '/server.properties'))
+    const out: Record<string, string> = {}
+    for (const [k, v] of props) out[k] = k === 'motd' ? (row.motd ?? stripFooter(v)) : v
+    return { properties: out, locked: Object.keys(out).filter((k) => LOCKED_KEYS.test(k)) }
+  })
+}
+
+async function applyMotd(ctx: AppContext, row: Row, line: string) {
+  const clean = line.replace(/§./g, '').trim().slice(0, MOTD_LINE_MAX)
+  run(ctx.db, 'UPDATE craftinghosting_servers SET motd = ? WHERE uuid = ?', clean, row.uuid)
+  await call(ctx, 'PATCH', path(row, '/settings'), { motd: motdFor(row, clean) })
+}
+
+export async function craftingSetProperties(ctx: AppContext, user: UserRow, values: Record<string, string>) {
+  const locked = Object.keys(values).filter((k) => LOCKED_KEYS.test(k))
+  if (locked.length) throw new ApiError(400, 'property_locked', 'Property locked', { keys: locked })
+  await onServer(ctx, user, async (row) => {
+    const { motd, ...rest } = values
+    if (Object.keys(rest).length) {
+      const text = await readText(ctx, row, '/server.properties')
+      await call(ctx, 'PUT', path(row, '/files/content?path=%2Fserver.properties'), undefined,
+        { type: 'text/plain', data: setProps(text, { ...rest, 'accepts-transfers': 'true' }) })
+    }
+    if (motd !== undefined) await applyMotd(ctx, row, motd)
+  })
+  return craftingProperties(ctx, user)
+}
+
+export async function craftingWriteFile(ctx: AppContext, user: UserRow, file: string, content: string) {
+  return onServer(ctx, user, async (row) => {
+    if (protectedPath(row, file)) throw forbidden('file_protected', 'Managed by TRS')
+    if (!isText(file.slice(file.lastIndexOf('/') + 1))) throw new ApiError(415, 'file_not_text', 'Not a text file')
+    if (file.toLowerCase() === '/server.properties') {
+      // Gesperrte Schlüssel behalten ihren Wert, MOTD über die Regeln von §43.7.
+      const old = parseProps(await readText(ctx, row, '/server.properties'))
+      const wanted = parseProps(content)
+      const keep: Record<string, string> = { 'accepts-transfers': 'true' }
+      for (const [k, v] of old) if (LOCKED_KEYS.test(k) && k !== 'accepts-transfers') keep[k] = v
+      if (old.has('motd')) keep.motd = old.get('motd')!
+      await call(ctx, 'PUT', path(row, '/files/content?path=%2Fserver.properties'), undefined,
+        { type: 'text/plain', data: setProps(content, keep) })
+      const line = wanted.get('motd')
+      if (line !== undefined && stripFooter(line) !== (row.motd ?? stripFooter(old.get('motd') ?? ''))) await applyMotd(ctx, row, stripFooter(line))
+      return { path: file, size: Buffer.byteLength(content) }
+    }
+    await call(ctx, 'PUT', path(row, `/files/content?path=${encodeURIComponent(file)}`), undefined, { type: 'text/plain', data: content })
+    return { path: file, size: Buffer.byteLength(content) }
+  })
+}
+
+export async function craftingDeleteFiles(ctx: AppContext, user: UserRow, paths: string[]) {
+  await onServer(ctx, user, async (row) => {
+    if (paths.some((p) => protectedPath(row, p) || protectedDir(p) || protectedInside(p))) throw forbidden('file_protected', 'Managed by TRS')
+    await call(ctx, 'POST', path(row, '/files/delete'), { paths })
+  })
+}
+/** Ordner, in denen verwaltete Dateien liegen, dürfen nicht als Ganzes weg. */
+const protectedInside = (p: string) => ['/plugins/trsserverrules', '/config'].some((d) => d.startsWith(`${p.toLowerCase()}/`) || d === p.toLowerCase())
+
+export async function craftingCreateFolder(ctx: AppContext, user: UserRow, dir: string) {
+  await onServer(ctx, user, (row) => call(ctx, 'POST', path(row, '/files/folder'), { path: dir }))
+}
+
+// ---- Plugins/Mods
+
+function addonDir(serverType: string | null): { kind: 'plugins' | 'mods', dir: string } | null {
+  if (serverType === 'paper' || serverType === 'purpur') return { kind: 'plugins', dir: '/plugins' }
+  if (serverType === 'fabric' || serverType === 'forge') return { kind: 'mods', dir: '/mods' }
+  return null
+}
+
+export async function craftingAddons(ctx: AppContext, user: UserRow) {
+  return onServer(ctx, user, async (row) => {
+    const s = await fresh(ctx, row)
+    const a = addonDir(s.serverType)
+    if (!a) return { kind: null, dir: null, items: [] }
+    let entries: Awaited<ReturnType<typeof listDir>> = []
+    try {
+      entries = await listDir(ctx, row, a.dir)
+    } catch (e) {
+      if (!(e instanceof ApiError && (e.code === 'file_not_found' || e.code === 'no_server'))) throw e
+    }
+    const items = entries.filter((e) => e.type === 'file' && e.name.toLowerCase().endsWith('.jar'))
+      .map((e) => ({ file: e.name, size: e.size, modifiedAt: e.modifiedAt, protected: protectedPath(row, e.path) }))
+      .sort((x, y) => x.file.localeCompare(y.file))
+    return { kind: a.kind, dir: a.dir, items }
+  })
+}
+
+export async function craftingRemoveAddon(ctx: AppContext, user: UserRow, file: string) {
+  await onServer(ctx, user, async (row) => {
+    const s = await fresh(ctx, row)
+    const a = addonDir(s.serverType)
+    if (!a) throw new ApiError(409, 'mods_unsupported', 'No plugins or mods on this server type')
+    const p = `${a.dir}/${file}`
+    if (protectedPath(row, p)) throw forbidden('file_protected', 'Managed by TRS')
+    await call(ctx, 'POST', path(row, '/files/delete'), { paths: [p] })
+  })
 }

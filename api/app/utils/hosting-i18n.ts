@@ -6,7 +6,7 @@ import type { Lang } from './messages'
 export const CRAFTINGHOSTING_URL = 'https://craftinghosting.free'
 export const MINECRAFT_EULA_URL = 'https://www.minecraft.net/eula'
 /** Feste zweite MOTD-Zeile (§43.7), nur zur Anzeige. */
-export const MOTD_FOOTER_TEXT = 'Free server: trs-launcher.de × craftinghosting.free'
+export const MOTD_FOOTER_TEXT = 'Free server by craftinghosting.free × trs-launcher.de'
 
 export const HOSTING_STATES = ['installing', 'offline', 'starting', 'running', 'stopping', 'failed', 'suspended'] as const
 export type HostingState = (typeof HOSTING_STATES)[number]
@@ -119,7 +119,7 @@ const en = {
       note: 'Changes apply on the next start. Seed and world type only for a new world.',
       notYet: 'Settings are available after the first start.',
       motd: 'MOTD (line 1)',
-      motdHint: 'At most 60 characters, no colour codes.',
+      motdHint: 'At most 58 characters, no colour codes.',
       footer: 'Line 2 (fixed)',
       maxPlayers: 'Max. players',
       gamemode: 'Game mode',
@@ -270,7 +270,7 @@ const de: HostingTexts = {
       note: 'Änderungen gelten beim nächsten Start. Seed und Welttyp nur für eine neue Welt.',
       notYet: 'Einstellungen gibt es nach dem ersten Start.',
       motd: 'MOTD (Zeile 1)',
-      motdHint: 'Höchstens 60 Zeichen, keine Farbcodes.',
+      motdHint: 'Höchstens 58 Zeichen, keine Farbcodes.',
       footer: 'Zeile 2 (fest)',
       maxPlayers: 'Max. Spieler',
       gamemode: 'Spielmodus',
@@ -419,7 +419,7 @@ const es: HostingTexts = {
       note: 'Los cambios se aplican en el próximo inicio. Semilla y tipo de mundo solo para un mundo nuevo.',
       notYet: 'Los ajustes están disponibles después del primer inicio.',
       motd: 'MOTD (línea 1)',
-      motdHint: 'Máximo 60 caracteres, sin códigos de color.',
+      motdHint: 'Máximo 58 caracteres, sin códigos de color.',
       footer: 'Línea 2 (fija)',
       maxPlayers: 'Máx. jugadores',
       gamemode: 'Modo de juego',
