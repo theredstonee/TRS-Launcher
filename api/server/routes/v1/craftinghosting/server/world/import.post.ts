@@ -6,7 +6,7 @@ import { RULES } from '../../../../../lib/ratelimit'
 
 export default defineEventHandler(async (event) => {
   const auth = requireWebOrUser(event, 'craftinghosting')
-  await readJson(event, importBody)
+  const body = await readJson(event, importBody)
   limit(`craftinghostingFiles:${auth.uuid}`, RULES.craftinghostingFilesUser)
-  return { server: await craftingWorldImport(useCtx(), auth.user) }
+  return { server: await craftingWorldImport(useCtx(), auth.user, body.name, body.activate) }
 })

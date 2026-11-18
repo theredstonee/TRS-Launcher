@@ -1077,6 +1077,7 @@ CREATE TABLE IF NOT EXISTS craftinghosting_servers (
       if (!hasColumn(db, 'craftinghosting_servers', 'dns_target')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN dns_target TEXT')
       if (!hasColumn(db, 'craftinghosting_servers', 'dns_a_record')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN dns_a_record TEXT')
       if (!hasColumn(db, 'craftinghosting_servers', 'transfers')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN transfers INTEGER NOT NULL DEFAULT 0')
+      if (!hasColumn(db, 'craftinghosting_servers', 'mods')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN mods TEXT')
       db.exec('CREATE UNIQUE INDEX IF NOT EXISTS craftinghosting_subdomain ON craftinghosting_servers(subdomain)')
     },
   },

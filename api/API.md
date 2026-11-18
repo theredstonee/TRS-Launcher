@@ -5573,7 +5573,8 @@ the start or heartbeat.
 - `POST /v1/craftinghosting/server/world/upload` -> `{ url, expiresAt }`: a partner upload URL (https, host
   `*.craftinghosting.free`, valid 10 minutes). The launcher uploads `trs-world.zip` (top-level folder `world/`) there
   directly as `multipart/form-data`, field `files` – large files never pass the TRS API.
-- `POST /v1/craftinghosting/server/world/import` body `{ file: "trs-world.zip" }` -> `{ server }`. Only while the
+- `POST /v1/craftinghosting/server/world/import` body `{ file: "trs-world.zip", name?: "world", activate?: false }`
+  -> `{ server }` (the ZIP's top-level folder must be `name`; `activate` sets `level-name`). Only while the
   server is stopped (`409 server_running`). Deletes `world`, `world_nether` and `world_the_end`, extracts the archive
   and removes it. `404 file_not_found` if nothing was uploaded.
 
@@ -5666,3 +5667,19 @@ whole. Before every start the API rewrites the hosting file / single MOTD line w
 - `GET …/server/addons` -> `{ kind: "plugins" | "mods" | null, dir, items: [{ file, size, modifiedAt, protected }] }`,
   `DELETE …/server/addons?file=<jar>` -> `204`. Install from Modrinth: `POST …/server/mods` (43.6).
 - Limit: 120 edits per 10 minutes and account.
+
+### 43.12 Worlds
+
+A world is a top-level folder with `level.dat`; Paper keeps the other dimensions in `<name>_nether` and
+`<name>_the_end`. World names `^[A-Za-z0-9_-]{1,32}$`. Changing worlds needs a stopped server (`409 server_running`).
+
+- `GET …/server/worlds` -> `{ active, exists, worlds: [{ name, active, dimensions: [] }] }` (`active` = `level-name`).
+- `PATCH …/server/worlds` body `{ active }` -> same shape: sets `level-name` (a missing world is generated on start).
+- `DELETE …/server/worlds?name=` -> same shape: deletes all dimensions; deleting the active world resets it.
+- Download (done by the launcher, files never pass the TRS API): `GET …/server/world/files?name=` -> `{ name, files:
+  [{ path, size }], truncated }` (recursive, all dimensions, at most 5000 files), then `POST …/server/files/download-urls`
+  `{ paths }` (≤ 100) -> `{ urls: [{ path, url }], expiresAt }` (https, `*.craftinghosting.free`, 10 minutes). Limit 60
+  link requests per 10 minutes.
+- Upload: 43.6 with `name`/`activate`.
+- Version/type change: not offered by the partner API yet (announced by CraftingHosting); until then create a new
+  server.

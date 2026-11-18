@@ -69,7 +69,16 @@ export const logsQuery = z.object({ lines: z.coerce.number().int().min(1).max(10
 export const modsBody = z.object({
   projects: z.array(z.string().trim().refine((v) => MODRINTH_ID.test(v) || MOD_SLUG.test(v))).min(1).max(100),
 }).strict()
-export const importBody = z.object({ file: z.literal(WORLD_ZIP) }).strict()
+const WORLD_NAME = /^[A-Za-z0-9_-]{1,32}$/
+export const importBody = z.object({
+  file: z.literal(WORLD_ZIP),
+  /** Ordnername der Welt im ZIP (oberste Ebene); Standard `world`. */
+  name: z.string().regex(WORLD_NAME).default('world'),
+  activate: z.boolean().default(false),
+}).strict()
+export const worldNameQuery = z.object({ name: z.string().regex(WORLD_NAME) })
+export const worldActivateBody = z.object({ active: z.string().regex(WORLD_NAME) }).strict()
+export const downloadUrlsBody = z.object({ paths: z.array(z.string().max(512)).min(1).max(100) }).strict()
 export const commandBody = z.object({
   command: z.string().trim().min(1).max(256).regex(/^[^\p{Cc}]+$/u),
 }).strict()
@@ -189,6 +198,7 @@ interface Row {
   dns_target: string | null
   dns_a_record: string | null
   transfers: number
+  mods: string | null
   created_at: number
 }
 
@@ -704,6 +714,12 @@ export async function craftingInstallMods(ctx: AppContext, user: UserRow, projec
         skipped.push({ project: p, reason: e.code === 'mod_not_found' ? 'not_found' : 'unsupported' })
       }
     }
+    if (installed.length) {
+      const now = rowOf(ctx, row.uuid)
+      const known = new Set(z.array(z.string()).catch([]).parse(JSON.parse(now?.mods ?? '[]')))
+      for (const p of installed) known.add(p)
+      run(ctx.db, 'UPDATE craftinghosting_servers SET mods = ? WHERE uuid = ?', JSON.stringify([...known].slice(0, 200)), row.uuid)
+    }
     return { installed, skipped }
   })
 }
@@ -719,7 +735,7 @@ export async function craftingWorldUpload(ctx: AppContext, user: UserRow): Promi
   })
 }
 
-export async function craftingWorldImport(ctx: AppContext, user: UserRow): Promise<ServerView> {
+export async function craftingWorldImport(ctx: AppContext, user: UserRow, name = 'world', activate = false): Promise<ServerView> {
   return onServer(ctx, user, async (row) => {
     const s = await fresh(ctx, row)
     if (s.state === 'installing') throw conflict('server_installing', 'server installing')
@@ -730,9 +746,10 @@ export async function craftingWorldImport(ctx: AppContext, user: UserRow): Promi
       .safeParse(await call(ctx, 'GET', path(row, '/files?dir=%2F')))
     if (!list.success) throw upstream()
     if (!list.data.files.some((f) => f.name === WORLD_ZIP)) throw notFound('file_not_found', 'Upload the world first')
-    await call(ctx, 'POST', path(row, '/files/delete'), { paths: ['/world', '/world_nether', '/world_the_end'] })
+    await call(ctx, 'POST', path(row, '/files/delete'), { paths: [`/${name}`, `/${name}_nether`, `/${name}_the_end`] })
     await call(ctx, 'POST', path(row, '/files/decompress'), { path: `/${WORLD_ZIP}` })
     await call(ctx, 'POST', path(row, '/files/delete'), { paths: [`/${WORLD_ZIP}`] }).catch(() => undefined)
+    if (activate) await setLevelName(ctx, row, name)
     return fresh(ctx, row)
   })
 }
@@ -1490,5 +1507,104 @@ export async function craftingRemoveAddon(ctx: AppContext, user: UserRow, file: 
     const p = `${a.dir}/${file}`
     if (protectedPath(row, p)) throw forbidden('file_protected', 'Managed by TRS')
     await call(ctx, 'POST', path(row, '/files/delete'), { paths: [p] })
+  })
+}
+
+// ---------------------------------------------------------------- Welten
+
+const DIMS = ['', '_nether', '_the_end']
+
+async function setLevelName(ctx: AppContext, row: Row, name: string) {
+  const text = await readText(ctx, row, '/server.properties')
+  await call(ctx, 'PUT', path(row, '/files/content?path=%2Fserver.properties'), undefined,
+    { type: 'text/plain', data: setProps(text, { 'level-name': name, 'accepts-transfers': 'true' }) })
+}
+
+function assertStopped(s: ServerView) {
+  if (s.state === 'installing') throw conflict('server_installing', 'server installing')
+  if (s.session.active || s.state === 'running' || s.state === 'starting' || s.state === 'stopping') {
+    throw conflict('server_running', 'Stop the server first')
+  }
+}
+
+/** Welten = Ordner mit level.dat; Paper legt Nether/End als `<name>_nether`/`<name>_the_end` daneben. */
+export async function craftingWorlds(ctx: AppContext, user: UserRow) {
+  return onServer(ctx, user, async (row) => {
+    const props = parseProps(await readText(ctx, row, '/server.properties'))
+    const active = props.get('level-name') || 'world'
+    const root = await listDir(ctx, row, '/')
+    const dirs = root.filter((e) => e.type === 'directory' && WORLD_NAME.test(e.name)).map((e) => e.name)
+    const names = new Set<string>()
+    for (const d of dirs.slice(0, 40)) {
+      const base = d.replace(/_(nether|the_end)$/, '')
+      if (names.has(base)) continue
+      if (d !== base && dirs.includes(base)) continue
+      const inner = await listDir(ctx, row, `/${d}`).catch(() => [])
+      if (inner.some((f) => f.name === 'level.dat')) names.add(base)
+    }
+    if (dirs.includes(active)) names.add(active)
+    const worlds = [...names].sort().map((name) => ({
+      name,
+      active: name === active,
+      dimensions: DIMS.map((x) => `${name}${x}`).filter((d) => dirs.includes(d)),
+    }))
+    return { active, exists: dirs.includes(active), worlds }
+  })
+}
+
+export async function craftingActivateWorld(ctx: AppContext, user: UserRow, name: string) {
+  await onServer(ctx, user, async (row) => {
+    assertStopped(await fresh(ctx, row))
+    await setLevelName(ctx, row, name)
+  })
+  return craftingWorlds(ctx, user)
+}
+
+/** Welt löschen; die aktive Welt wird damit beim nächsten Start neu erzeugt (Seed aus den Einstellungen). */
+export async function craftingDeleteWorld(ctx: AppContext, user: UserRow, name: string) {
+  await onServer(ctx, user, async (row) => {
+    assertStopped(await fresh(ctx, row))
+    await call(ctx, 'POST', path(row, '/files/delete'), { paths: DIMS.map((x) => `/${name}${x}`) })
+  })
+  return craftingWorlds(ctx, user)
+}
+
+/** Alle Dateien einer Welt (rekursiv, alle Dimensionen) für den Download im Launcher. */
+export async function craftingWorldFiles(ctx: AppContext, user: UserRow, name: string) {
+  return onServer(ctx, user, async (row) => {
+    const files: { path: string, size: number }[] = []
+    const walk = async (dir: string, depth: number) => {
+      if (depth > 8 || files.length >= 5000) return
+      for (const e of await listDir(ctx, row, dir)) {
+        if (files.length >= 5000) return
+        if (e.type === 'directory') await walk(e.path, depth + 1)
+        else files.push({ path: e.path, size: e.size })
+      }
+    }
+    const root = await listDir(ctx, row, '/')
+    for (const d of DIMS.map((x) => `${name}${x}`)) {
+      if (root.some((e) => e.type === 'directory' && e.name === d)) await walk(`/${d}`, 0)
+    }
+    if (!files.length) throw notFound('file_not_found', 'World not found')
+    return { name, files, truncated: files.length >= 5000 }
+  })
+}
+
+const UPLOAD_OR_DOWNLOAD_HOST = UPLOAD_HOST
+
+/** Kurzlebige Download-Links (10 min) für bis zu 100 Dateien. */
+export async function craftingDownloadUrls(ctx: AppContext, user: UserRow, paths: string[]) {
+  return onServer(ctx, user, async (row) => {
+    const urls: { path: string, url: string }[] = []
+    for (const raw of paths) {
+      const p = filePath.parse(raw)
+      const r = z.object({ url: z.string().max(2000) }).loose()
+        .safeParse(await call(ctx, 'GET', path(row, `/files/download-url?path=${encodeURIComponent(p)}`)))
+      if (!r.success || !URL.canParse(r.data.url)) throw upstream()
+      const u = new URL(r.data.url)
+      if (u.protocol !== 'https:' || !UPLOAD_OR_DOWNLOAD_HOST.test(u.hostname)) throw upstream()
+      urls.push({ path: p, url: u.href })
+    }
+    return { urls, expiresAt: new Date(ctx.now() + 10 * 60 * 1000).toISOString() }
   })
 }

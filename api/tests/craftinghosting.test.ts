@@ -4,7 +4,8 @@ import {
   craftingCommand, craftingCreate, craftingDelete, craftingHeartbeat, craftingInfo, craftingInstallMods, craftingLogs,
   craftingServer, craftingSetSettings, craftingSettings, craftingStart, craftingStats, craftingStop, craftingUpdate,
   craftingAddons, craftingDeleteFiles, craftingFiles, craftingProperties, craftingReadFile, craftingRemoveAddon,
-  craftingSetProperties, craftingWriteFile,
+  craftingSetProperties, craftingWriteFile, craftingWorlds, craftingActivateWorld, craftingDeleteWorld, craftingWorldFiles,
+  craftingDownloadUrls,
   adminCraftingDelete, adminCraftingServers, adminCraftingStop, craftingCheckSubdomain, relayResolve, relayWake, sweepCraftingDns, craftingRestartDone, craftingWorldImport, craftingWorldUpload, createServerBody, MOTD_FOOTER, settingsBody,
 } from '../server/lib/craftinghosting'
 import { RULES } from '../server/lib/ratelimit'
@@ -44,6 +45,7 @@ class FakePartner {
   settings: Record<string, unknown> = { motd: 'A Minecraft Server', maxPlayers: 20, whitelist: false, pvp: null, levelType: 'minecraft\\:normal' }
   mods: string[] = []
   uploadHost = 'upload.craftinghosting.free'
+  zipFolder = 'world'
   used = 0
   max = 100
   fail: { status: number, code: string, fields?: Record<string, unknown> } | null = null
@@ -106,11 +108,14 @@ class FakePartner {
         return this.json(200, { ok: true })
       }
       case 'POST files/folder': return this.json(200, { ok: true })
+      case 'GET files/download-url': return this.json(200, { path: url.searchParams.get('path'), url: `https://${this.uploadHost}/download/file?token=x`, expiresInSeconds: 600 })
       case 'POST files/upload-url': return this.json(200, { url: `https://${this.uploadHost}/upload?token=abc` })
-      case 'POST files/delete': for (const f of body.paths) this.files.delete(f); return this.json(200, { ok: true })
+      case 'POST files/delete':
+        for (const f of body.paths) for (const k of [...this.files.keys()]) if (k === f || k.startsWith(`${f}/`)) this.files.delete(k)
+        return this.json(200, { ok: true })
       case 'POST files/decompress':
         if (!this.files.has(body.path)) return this.err(404, 'file_not_found')
-        this.files.set('/world/level.dat', 'x')
+        this.files.set(`/${this.zipFolder}/level.dat`, 'x')
         return this.json(200, { ok: true })
       case 'POST mods':
         if (s.serverType === 'vanilla') return this.err(409, 'mods_unsupported')
@@ -742,5 +747,46 @@ describe('craftinghosting routes: website session', () => {
     await craftingRemoveAddon(env.ctx, u!, 'Chunky-1.4.jar')
     expect(partner.files.has('/plugins/Chunky-1.4.jar')).toBe(false)
     expect(await codeAsync(() => craftingRemoveAddon(env.ctx, u!, 'trs-server-rules-bukkit-1.1.0.jar'))).toBe('file_protected')
+  })
+
+  it('worlds: list, activate, delete, download links, import under a name', async () => {
+    const { env, partner } = setup()
+    const [u] = await players(env, 'Steve')
+    await craftingCreate(env.ctx, u!, body({ serverType: 'paper' }))
+    await craftingStart(env.ctx, u!, true)
+    await craftingHeartbeat(env.ctx, u!)
+    await craftingRestartDone(u!.uuid)
+    await craftingStop(env.ctx, u!, false)
+    partner.files.set('/server.properties', 'level-name=world\naccepts-transfers=true\n')
+    for (const f of ['/world/level.dat', '/world/region/r.0.0.mca', '/world_nether/DIM-1/region/r.0.0.mca', '/world_nether/level.dat',
+      '/world_the_end/level.dat', '/lobby/level.dat', '/lobby/region/r.0.0.mca', '/plugins/x.jar']) partner.files.set(f, 'data')
+
+    const w = await craftingWorlds(env.ctx, u!)
+    expect(w.active).toBe('world')
+    expect(w.worlds.map((x) => [x.name, x.active, x.dimensions])).toEqual([
+      ['lobby', false, ['lobby']],
+      ['world', true, ['world', 'world_nether', 'world_the_end']],
+    ])
+
+    const files = await craftingWorldFiles(env.ctx, u!, 'world')
+    expect(files.files.map((f) => f.path).sort()).toEqual([
+      '/world/level.dat', '/world/region/r.0.0.mca', '/world_nether/DIM-1/region/r.0.0.mca', '/world_nether/level.dat', '/world_the_end/level.dat'])
+    const urls = await craftingDownloadUrls(env.ctx, u!, ['/world/level.dat'])
+    expect(urls.urls[0]!.url).toMatch(/^https:\/\/upload\.craftinghosting\.free\//)
+    expect(await codeAsync(() => craftingDownloadUrls(env.ctx, u!, ['/../etc/passwd']))).not.toBe('ok')
+
+    await craftingActivateWorld(env.ctx, u!, 'lobby')
+    expect(partner.files.get('/server.properties')).toContain('level-name=lobby')
+    await craftingDeleteWorld(env.ctx, u!, 'world')
+    expect([...partner.files.keys()].some((f) => f.startsWith('/world'))).toBe(false)
+
+    partner.zipFolder = 'insel'
+    partner.files.set('/trs-world.zip', 'zip')
+    await craftingWorldImport(env.ctx, u!, 'insel', true)
+    expect(partner.files.has('/insel/level.dat')).toBe(true)
+    expect(partner.files.get('/server.properties')).toContain('level-name=insel')
+
+    await craftingStart(env.ctx, u!, false)
+    expect(await codeAsync(() => craftingDeleteWorld(env.ctx, u!, 'lobby'))).toBe('server_running')
   })
 })

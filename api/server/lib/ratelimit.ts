@@ -184,6 +184,8 @@ export const RULES = {
   craftinghostingFilesUser: { limit: 20, windowMs: 10 * MIN },
   /** Dateien/Einstellungen bearbeiten, Plugins entfernen. */
   craftinghostingEditUser: { limit: 120, windowMs: 10 * MIN },
+  /** Download-Links (je Anfrage bis 100 Dateien, Welt-Download). */
+  craftinghostingDownloadUser: { limit: 60, windowMs: 10 * MIN },
   /** TRS Wake: Aufwecken je Adresse (der Relay fragt nur beim Beitreten). */
   craftinghostingWake: { limit: 20, windowMs: 10 * MIN },
   // ------------------------------------------------ Moderation v2 (§22)
