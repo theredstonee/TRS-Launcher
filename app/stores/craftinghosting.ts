@@ -7,7 +7,10 @@ import { computed, ref } from 'vue'
 import { BackendError, backend, errorMessage, isCancelled } from '../utils/backend'
 import {
   type CraftingAccess,
+  type CraftingBackup,
+  type CraftingBackups,
   type CraftingInfo,
+  type VersionChange,
   type CraftingModsResult,
   type CraftingServer,
   type CraftingSettings,
@@ -22,6 +25,7 @@ import {
   type WorldDownload,
   type WorldUploadTarget,
   type WorldUploadProgress,
+  NO_FEATURES,
   ORIGINS_KEY,
   POLL_FAST_MS,
   cleanHostingCommand,
@@ -59,6 +63,8 @@ type Busy =
   | 'mods'
   | 'addons'
   | 'world'
+  | 'version'
+  | 'backup'
 
 /** So lange wartet „Inhalte übernehmen“ aufs Stoppen. */
 const STOP_GIVE_UP_MS = 2 * 60_000
@@ -122,6 +128,8 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
   /** Sprungziel für den Dateien-Reiter; `filesJump` zählt hoch, damit derselbe Ordner erneut greift. */
   const filesDir = ref('/')
   const filesJump = ref(0)
+  /** Name der Datei mit ungespeicherten Änderungen im Editor (Rückfrage vor dem Verlassen). */
+  const filesDirty = ref<string | null>(null)
   const worlds = ref<ServerWorlds | null>(null)
   const worldsLoading = ref(false)
   /** Laufender Welt-Download (Fortschritt, Abbrechen über `taskId`). */
@@ -135,6 +143,12 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
   let visibilityHooked = false
 
   const needsEula = computed(() => !!server.value && !server.value.eulaAccepted)
+  /** Welche Bereiche die TRS API gerade freigibt (ohne Info: nichts). */
+  const features = computed(() => info.value?.features ?? NO_FEATURES)
+  const backups = ref<CraftingBackups | null>(null)
+  const backupsLoading = ref(false)
+  const backupDownload = ref<{ id: string; taskId: string; progress: WorldUploadProgress | null } | null>(null)
+  let lastUnavailable = 0
   const origin = computed(() => (server.value ? (origins.value[server.value.id] ?? null) : null))
 
   function saveOrigins(next: Record<string, HostingOrigin>) {
@@ -170,7 +184,32 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
       useToasts().error(t('craftinghosting.cooldownUntil', { time: formatTime(e.params.cooldownUntil) }))
       return
     }
+    // Schalter auf dem Server aus: freundlicher Hinweis (höchstens alle 30 s) und Info neu holen.
+    if (code === 'feature_unavailable') {
+      notAvailable()
+      return
+    }
+    // Welt-Name: was erlaubt ist, entscheidet die API (z. B. reservierte Ordnernamen).
+    if (code === 'invalid_request' && busy.value === 'world') {
+      useToasts().error(t('craftinghosting.worlds.nameRejected'))
+      return
+    }
     useToasts().error(e)
+  }
+
+  function notAvailable() {
+    const now = Date.now()
+    if (now - lastUnavailable > 30_000) useToasts().info(t('craftinghosting.notAvailable'))
+    lastUnavailable = now
+    void reloadInfo()
+  }
+
+  async function reloadInfo() {
+    try {
+      info.value = await backend.craftinghosting.info()
+    } catch {
+      // bleibt beim alten Stand
+    }
   }
 
   /** Nach Fehlern, die den Server betreffen, den Stand neu holen. */
@@ -418,6 +457,13 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     return result
   }
 
+  /** Eine bestimmte Version installieren (z. B. „Andere Version“). */
+  async function installVersion(project: string, version: string): Promise<CraftingModsResult | null> {
+    const result = await run('mods', () => backend.craftinghosting.installVersions([{ project, version }]))
+    if (result) void loadAddons()
+    return result
+  }
+
   /** Dateien-Reiter auf diesen Ordner stellen (z. B. Konfiguration eines Plugins). */
   function openFiles(dir: string) {
     filesDir.value = dir
@@ -527,6 +573,92 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
 
   function cancelWorldDownload() {
     const id = worldDownload.value?.taskId
+    if (id) void backend.cancelTask(id).catch(() => {})
+  }
+
+  // --- Versionswechsel und Backups (nur mit Schalter) ------------------------------------
+
+  /** Typ/Version wechseln; der Server startet danach neu – wie nach einem Start nachfragen. */
+  async function changeVersion(change: VersionChange): Promise<boolean> {
+    try {
+      const updated = await run('version', () => backend.craftinghosting.changeVersion(change))
+      if (updated) {
+        setServer(updated)
+        useToasts().ok(t('craftinghosting.version.changed'))
+      }
+      return !!updated
+    } finally {
+      schedule()
+    }
+  }
+
+  async function loadBackups() {
+    backupsLoading.value = true
+    try {
+      backups.value = await backend.craftinghosting.backups()
+    } catch (e) {
+      backups.value = null
+      if (apiCode(e) === 'feature_unavailable') void reloadInfo()
+      else if (apiCode(e) !== 'server_installing') report(e)
+    } finally {
+      backupsLoading.value = false
+    }
+  }
+
+  async function createBackup(): Promise<boolean> {
+    const done = await run('backup', async () => {
+      await backend.craftinghosting.createBackup()
+      return true
+    })
+    if (done) {
+      useToasts().ok(t('craftinghosting.backups.created'))
+      void loadBackups()
+    }
+    return !!done
+  }
+
+  async function restoreBackup(backup: CraftingBackup): Promise<boolean> {
+    const done = await run('backup', async () => {
+      await backend.craftinghosting.restoreBackup(backup.id)
+      return true
+    })
+    if (done) {
+      useToasts().ok(t('craftinghosting.backups.restored', { name: backup.name }))
+      void refresh()
+      if (worlds.value) void loadWorlds()
+    }
+    return !!done
+  }
+
+  async function deleteBackup(backup: CraftingBackup): Promise<boolean> {
+    const done = await run('backup', async () => {
+      await backend.craftinghosting.deleteBackup(backup.id)
+      return true
+    })
+    if (done && backups.value) backups.value = { ...backups.value, backups: backups.value.backups.filter((b) => b.id !== backup.id) }
+    return !!done
+  }
+
+  async function downloadBackup(backup: CraftingBackup): Promise<string | null> {
+    if (backupDownload.value || !server.value) return null
+    const job = { id: backup.id, taskId: `craftinghosting-backup:${Date.now()}`, progress: null as WorldUploadProgress | null }
+    backupDownload.value = job
+    try {
+      const file = await backend.craftinghosting.downloadBackup(backup.id, backup.name, server.value.name, (p) => {
+        if (backupDownload.value) backupDownload.value = { ...backupDownload.value, progress: p }
+      }, job.taskId)
+      if (file) useToasts().ok(t('craftinghosting.backups.downloaded', { file }))
+      return file
+    } catch (e) {
+      if (!isCancelled(e)) report(e)
+      return null
+    } finally {
+      backupDownload.value = null
+    }
+  }
+
+  function cancelBackupDownload() {
+    const id = backupDownload.value?.taskId
     if (id) void backend.cancelTask(id).catch(() => {})
   }
 
@@ -779,6 +911,7 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     addons.value = null
     filesDir.value = '/'
     worlds.value = null
+    backups.value = null
   }
 
   return {
@@ -827,8 +960,10 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     loadAddons,
     removeAddon,
     installAddons,
+    installVersion,
     filesDir,
     filesJump,
+    filesDirty,
     openFiles,
     worlds,
     worldsLoading,
@@ -840,6 +975,17 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     cancelWorldDownload,
     uploadWorldDisk,
     stopAndWait,
+    features,
+    changeVersion,
+    backups,
+    backupsLoading,
+    backupDownload,
+    loadBackups,
+    createBackup,
+    restoreBackup,
+    deleteBackup,
+    downloadBackup,
+    cancelBackupDownload,
     transferMods,
     uploadWorld,
     setConsoleOpen,

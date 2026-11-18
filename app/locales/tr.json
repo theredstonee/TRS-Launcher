@@ -355,7 +355,8 @@
       "file_not_text": "Bu bir metin dosyası değil – burada düzenlenemez.",
       "file_too_large": "Dosya düzenleyici için çok büyük (en fazla 1 MB).",
       "file_protected": "Bu dosyayı TRS yönetiyor – değiştirilemez veya silinemez.",
-      "property_locked": "Bu ayar sabittir ve değiştirilemez."
+      "property_locked": "Bu ayar sabittir ve değiştirilemez.",
+      "feature_unavailable": "Bu henüz kullanılamıyor – yakında geliyor."
     },
     "auth": {
       "accountMismatch": "Bu giriş başka bir hesaba ait – lütfen tekrar giriş yap.",
@@ -823,7 +824,8 @@
       "fileTooLarge": "Dosya çok büyük (en fazla 1 MB).",
       "invalidWorldName": "Dünya adı: A–Z, a–z, 0–9, _ ve - içeren 1 ila 32 karakter.",
       "noWorldInZip": "Bu ZIP dosyasında dünya yok (level.dat eksik).",
-      "downloadFailed": "Dünya indirilemedi – lütfen tekrar dene."
+      "downloadFailed": "Dünya indirilemedi – lütfen tekrar dene.",
+      "invalidBackup": "Bu yedek bu şekilde yok."
     },
     "chatImage": {
       "unsupported": "Yalnızca PNG, JPEG ve WebP resimleri gönderilebilir.",
@@ -7859,7 +7861,6 @@
       "create": "Oluştur",
       "folderCreated": "Klasör oluşturuldu.",
       "empty": "Bu klasör boş.",
-      "protected": "TRS tarafından yönetiliyor – düzenlenemez ve silinemez.",
       "notEditable": "Metin olarak açılamaz.",
       "deleteLabel": "{name} sil",
       "deleteTitle": "“{name}” silinsin mi?",
@@ -7876,7 +7877,14 @@
       "discardTitle": "Değişiklikler atılsın mı?",
       "discardText": "“{name}” üzerindeki değişikliklerin henüz kaydedilmedi.",
       "discard": "At",
-      "propertiesNote": "server.properties kaydederken kontrol edilir: MOTD’nin 2. satırı ve bazı ağ ayarları (port, adres, aktarımlar) sabittir."
+      "propertiesNote": "server.properties kaydederken kontrol edilir: MOTD’nin 2. satırı ve bazı ağ ayarları (port, adres, aktarımlar) sabittir.",
+      "readOnly": "Salt okunur",
+      "locks": {
+        "system": "Sunucu yazılımının parçası – salt okunur",
+        "trs": "TRS tarafından yönetiliyor",
+        "access": "Erişim ayarını izler (yalnızca arkadaşlar)",
+        "other": "Kilitli"
+      }
     },
     "props": {
       "title": "Tüm sunucu ayarları",
@@ -7972,7 +7980,31 @@
       "installedToast": "“{name}” kuruldu – bir sonraki başlatmada yüklenir.",
       "skipped": "Atlandı: {reason}",
       "by": "{author} tarafından",
-      "downloads": "{n} indirme"
+      "downloads": "{n} indirme",
+      "backToSearch": "Aramaya dön",
+      "clientOnly": "Yalnızca istemci için – sunucuda çalışmaz.",
+      "installedVersion": "Kurulu: {version}",
+      "updateTo": "{version} sürümüne güncelle",
+      "noFitting": "Sunucu türüne ve Minecraft sürümüne uyan sürüm yok.",
+      "otherVersion": "Başka sürüm",
+      "installedNext": "{version} kuruldu – bir sonraki başlatmada yüklenir.",
+      "allVersionsHint": "Tüm sürümler, sunucunda çalışmayabilecekler de dahil.",
+      "fittingHint": "Sunucun için sürümler (Minecraft {version}).",
+      "showAll": "Tüm sürümleri göster",
+      "dependencies": "{n} başka proje gerektirir",
+      "installThis": "Bu sürümü kur",
+      "sortLabel": "Sırala",
+      "clearFilters": "Filtreleri temizle",
+      "categories": "Kategoriler",
+      "fewerCategories": "Daha az",
+      "moreCategories": "+{n} daha",
+      "loadingMore": "Yükleniyor …",
+      "sort": {
+        "relevance": "Alaka",
+        "downloads": "İndirmeler",
+        "updated": "Son güncellenen",
+        "newest": "En yeni"
+      }
     },
     "worlds": {
       "title": "Sunucudaki dünyalar",
@@ -8023,13 +8055,38 @@
       "sourceHint": {
         "zip": "ZIP dosyasını tıkladıktan sonra seçersin – dünya (level.dat) içinde herhangi bir klasörde olabilir.",
         "folder": "Dünya klasörünü (level.dat içeren) tıkladıktan sonra seçersin."
-      }
+      },
+      "nameRejected": "Sunucu bu dünya adını kabul etmiyor – bazı adlar sunucu klasörlerine ait (ör. plugins, config). Başka bir ad seç."
     },
     "version": {
       "title": "Sunucu türü ve sürüm",
-      "soon": "Yakında",
-      "soonHint": "CraftingHosting sürüm değiştirmeyi yakında sunacak.",
-      "change": "Sürümü değiştir"
+      "change": "Sürümü değiştir",
+      "type": "Sunucu türü",
+      "version": "Sürüm",
+      "keepWorld": "Dünyayı koru",
+      "warning": "Eklentiler ve modlar yeni sürüme uymayabilir. Sunucu yeniden başlar – dünyan kalır.",
+      "warningNewWorld": "Eklentiler ve modlar yeni sürüme uymayabilir. Sunucu yeni bir dünyayla yeniden başlar – eskisi silinir.",
+      "working": "Değiştiriliyor …",
+      "confirm": "Sürümü değiştir",
+      "changed": "Sürüm değişti – sunucu yeniden kuruluyor."
+    },
+    "notAvailable": "Henüz kullanılamıyor – yakında.",
+    "backups": {
+      "title": "Yedekler",
+      "text": "Sunucunun anlık kopyaları. Geri yükleme için sunucu durdurulmuş olmalı.",
+      "create": "Yedek oluştur",
+      "working": "Çalışıyor …",
+      "full": "Azami yedek sayısına ulaşıldı – önce eski birini sil.",
+      "empty": "Henüz yedek yok.",
+      "restore": "Geri yükle",
+      "restoreTitle": "“{name}” geri yüklensin mi?",
+      "restoreText": "Sunucunun mevcut durumu bu yedekle değiştirilir.",
+      "deleteLabel": "{name} yedeğini sil",
+      "deleteTitle": "“{name}” silinsin mi?",
+      "deleteText": "Yedek kalıcı olarak silinir.",
+      "created": "Yedek oluşturuldu.",
+      "restored": "“{name}” geri yüklendi – bir sonraki başlatmadan itibaren geçerli.",
+      "downloaded": "Yedek {file} olarak kaydedildi."
     }
   }
 }

@@ -248,7 +248,28 @@ pub struct Info {
     pub limits: Limits,
     pub eula_url: String,
     pub full: bool,
+    /// Welche Bereiche der Launcher zeigt – schaltet die TRS API, ohne Launcher-Update.
+    pub features: Features,
+    /// Hinweis oben im Hosting-Reiter (Klartext) oder `None`.
+    pub notice: Option<String>,
 }
+
+/// Funktions-Schalter aus `info.features`; fehlende oder unbekannte Schlüssel = aus.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Features {
+    pub files: bool,
+    pub properties: bool,
+    pub addons: bool,
+    pub worlds: bool,
+    pub world_download: bool,
+    pub own_address: bool,
+    pub wake_on_join: bool,
+    pub version_change: bool,
+    pub backups: bool,
+}
+
+pub const NOTICE_MAX: usize = 500;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -351,6 +372,24 @@ struct ApiInfo {
     limits: ApiLimits,
     eula_url: String,
     full: bool,
+    /// Nicht-boolesche Werte zählen als aus.
+    features: serde_json::Map<String, serde_json::Value>,
+    notice: Option<String>,
+}
+
+fn features(raw: &serde_json::Map<String, serde_json::Value>) -> Features {
+    let on = |key: &str| raw.get(key).and_then(serde_json::Value::as_bool).unwrap_or(false);
+    Features {
+        files: on("files"),
+        properties: on("properties"),
+        addons: on("addons"),
+        worlds: on("worlds"),
+        world_download: on("worldDownload"),
+        own_address: on("ownAddress"),
+        wake_on_join: on("wakeOnJoin"),
+        version_change: on("versionChange"),
+        backups: on("backups"),
+    }
 }
 
 impl ApiInfo {
@@ -387,6 +426,8 @@ impl ApiInfo {
             },
             eula_url: https_url(&self.eula_url).unwrap_or_else(|| DEFAULT_EULA.to_owned()),
             full: self.full,
+            features: features(&self.features),
+            notice: self.notice.map(|n| validate::text(n.trim(), NOTICE_MAX)).filter(|n| !n.is_empty()),
         }
     }
 }
@@ -688,6 +729,27 @@ impl Launcher {
     pub async fn craftinghosting_stats(&self) -> Result<Stats> {
         let (_, bytes) = self.ch_send(Req::get(format!("{BASE}/server/stats"))).await?;
         let raw: ApiStats = super::parse(&bytes, "craftinghosting/stats")?;
+        Ok(raw.cleaned())
+    }
+
+    /// Bestimmte Modrinth-Versionen installieren (`{ versions: [{ project, version }] }`, 1–20).
+    pub async fn craftinghosting_install_versions(&self, picks: &[VersionPick]) -> Result<ModsResult> {
+        if picks.is_empty() || picks.len() > VERSIONS_MAX {
+            return Err(invalid_projects());
+        }
+        let mut versions: Vec<serde_json::Value> = Vec::with_capacity(picks.len());
+        for p in picks {
+            let (project, version) = (p.project.trim(), p.version.trim());
+            if !project_id(project) || !project_id(version) {
+                return Err(invalid_projects());
+            }
+            let entry = json!({ "project": project, "version": version });
+            if !versions.contains(&entry) {
+                versions.push(entry);
+            }
+        }
+        let (_, bytes) = self.ch_send(Req::post(format!("{BASE}/server/mods"), json!({ "versions": versions }))).await?;
+        let raw: ApiModsResult = super::parse(&bytes, "craftinghosting/mods")?;
         Ok(raw.cleaned())
     }
 
@@ -1076,6 +1138,16 @@ impl ApiModsResult {
         }
     }
 }
+
+/// Eine bestimmte Modrinth-Version eines Projekts.
+#[derive(Debug, Clone, Deserialize)]
+pub struct VersionPick {
+    pub project: String,
+    pub version: String,
+}
+
+/// Höchstens so viele feste Versionen je Anfrage.
+pub const VERSIONS_MAX: usize = 20;
 
 fn invalid_projects() -> Error {
     invalid(crate::msg!("craftinghosting.invalidProjects", "Diese Mods lassen sich nicht übertragen."))

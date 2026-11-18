@@ -68,6 +68,8 @@ pub enum DialogText {
     /// Welt-ZIP bzw. Weltordner zum Hochladen auf den Partner-Server.
     PickWorldZip,
     PickWorldFolder,
+    /// Backup des Partner-Servers speichern.
+    SaveBackup,
 }
 
 impl DialogText {
@@ -79,7 +81,7 @@ impl DialogText {
 
 /// Je Text eine Zeile in der Reihenfolge von [`Language::ALL`]:
 /// en, de, es, fr, pl, pt-BR, tr, nl.
-const TEXTS: [[&str; 8]; 36] = [
+const TEXTS: [[&str; 8]; 37] = [
     [
         "Save modpack",
         "Modpack speichern",
@@ -395,6 +397,16 @@ const TEXTS: [[&str; 8]; 36] = [
         "Dünya klasörü seç (level.dat içeren)",
         "Wereldmap kiezen (met level.dat)",
     ],
+    [
+        "Save backup",
+        "Backup speichern",
+        "Guardar copia de seguridad",
+        "Enregistrer la sauvegarde",
+        "Zapisz kopię zapasową",
+        "Salvar backup",
+        "Yedeği kaydet",
+        "Back-up opslaan",
+    ],
 ];
 
 impl DialogText {
@@ -415,7 +427,7 @@ pub async fn language(launcher: &LauncherState) -> Language {
 mod tests {
     use super::*;
 
-    const ALL: [DialogText; 36] = [
+    const ALL: [DialogText; 37] = [
         DialogText::SaveModpack,
         DialogText::PickModpack,
         DialogText::ModrinthModpack,
@@ -452,6 +464,7 @@ mod tests {
         DialogText::SaveWorld,
         DialogText::PickWorldZip,
         DialogText::PickWorldFolder,
+        DialogText::SaveBackup,
     ];
 
     #[test]

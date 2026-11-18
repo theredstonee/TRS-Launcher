@@ -20,6 +20,8 @@ import {
   POLL_SLOW_MS,
   cleanHostingCommand,
   craftingServerSchema,
+  craftingInfoSchema,
+  NO_FEATURES,
   defaultServerType,
   hostingCountdown,
   inCooldown,
@@ -162,6 +164,8 @@ const INFO: CraftingInfo = {
   limits: { maxServersPerPlayer: 1, sessionMaxHours: 24, cooldownHours: 2, heartbeatTimeoutSeconds: 180, deleteAfterIdleDays: 30, serverNameMaxLength: 22 },
   eulaUrl: 'https://www.minecraft.net/eula',
   full: false,
+  features: NO_FEATURES,
+  notice: null,
 }
 const inst = (kind: string, gameVersion: string) => ({ gameVersion, loader: { kind } })
 
@@ -316,5 +320,27 @@ describe('Anzeige', () => {
     })
     expect(parseOrigins('kaputt')).toEqual({})
     expect(parseOrigins(null)).toEqual({})
+  })
+})
+
+describe('Funktions-Schalter', () => {
+  const raw = {
+    plan: { name: 'Free', memoryMb: 1, cpuPercent: 1, diskMb: 1 },
+    serverTypes: [{ id: 'paper', name: 'Paper', versions: ['latest'] }],
+    limits: { maxServersPerPlayer: 1, sessionMaxHours: 24, cooldownHours: 2, heartbeatTimeoutSeconds: 180, deleteAfterIdleDays: 30, serverNameMaxLength: 22 },
+    eulaUrl: 'https://www.minecraft.net/eula',
+    full: false,
+  }
+
+  it('fehlende oder unbekannte Schalter sind aus', () => {
+    const info = craftingInfoSchema.parse({ ...raw, features: { files: true, backups: 'ja', teleport: true }, notice: 'Wartung' })
+    expect(info.features.files).toBe(true)
+    expect(info.features.backups).toBe(false)
+    expect(info.features.versionChange).toBe(false)
+    expect('teleport' in info.features).toBe(false)
+    expect(info.notice).toBe('Wartung')
+    const old = craftingInfoSchema.parse(raw)
+    expect(old.features).toEqual(NO_FEATURES)
+    expect(old.notice).toBeNull()
   })
 })

@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use serde_json::json;
 
-use super::craftinghosting::{NewServer, SettingsPatch};
+use super::craftinghosting::{NewServer, SettingsPatch, VersionPick};
 use super::craftinghosting_world::{UploadTarget, WorldSource};
 use super::testkit::{MockServer, Request, Response};
 use super::tests::{ACC, auth_routes, launcher};
@@ -61,7 +61,9 @@ fn api(state: Arc<Api>) -> impl Fn(&Request) -> Response + Send + Sync + 'static
                     "limits": { "maxServersPerPlayer": 1, "sessionMaxHours": 24, "cooldownHours": 2,
                                 "heartbeatTimeoutSeconds": 180, "deleteAfterIdleDays": 30, "serverNameMaxLength": 22 },
                     "eulaUrl": "javascript:alert(1)",
-                    "full": false
+                    "full": false,
+                    "features": { "files": true, "worlds": true, "backups": "yes", "teleport": true },
+                    "notice": "  Wartung heute 22 Uhr\u{7}  "
                 }),
             ),
             ("GET", "/v1/craftinghosting/server") => Response::json(200, json!({ "server": server(running) })),
@@ -142,6 +144,10 @@ async fn info_is_cleaned() {
     assert_eq!(info.server_types[0].versions, ["latest", "26.3", "1.21.11"]);
     assert_eq!(info.eula_url, "https://www.minecraft.net/eula");
     assert_eq!(info.plan.memory_mb, 4096);
+    // Unbekannte Schlüssel und Nicht-Bool zählen als aus.
+    assert!(info.features.files && info.features.worlds);
+    assert!(!info.features.backups && !info.features.version_change && !info.features.addons);
+    assert_eq!(info.notice.as_deref(), Some("Wartung heute 22 Uhr"));
 }
 
 #[tokio::test]
@@ -546,16 +552,22 @@ fn files_api() -> impl Fn(&Request) -> Response + Send + Sync + 'static {
         match req.method.as_str() {
             "GET" if path == format!("{FILES}?dir=%2F") => Response::json(
                 200,
-                json!({ "dir": "/", "entries": [
+                json!({ "dir": "/", "writable": true, "entries": [
                     { "name": "plugins", "path": "/plugins", "type": "directory", "size": 0, "modifiedAt": "2026-11-18T10:00:00.000Z", "editable": true, "protected": false },
                     { "name": "server.properties", "path": "/server.properties", "type": "file", "size": 1234, "modifiedAt": null, "editable": true, "protected": false },
-                    { "name": "whitelist.json", "path": "/whitelist.json", "type": "file", "size": 50, "editable": true, "protected": true },
+                    { "name": "whitelist.json", "path": "/whitelist.json", "type": "file", "size": 50, "editable": true, "protected": true, "lock": "access" },
+                    { "name": "paper.jar", "path": "/paper.jar", "type": "file", "size": 9, "editable": false, "viewable": false, "protected": true, "lock": "system" },
+                    { "name": "eula.txt", "path": "/eula.txt", "type": "file", "size": 9, "editable": false, "viewable": true, "protected": true, "lock": "system" },
+                    { "name": "odd-lock", "path": "/odd-lock", "type": "file", "size": 1, "editable": true, "viewable": true, "protected": false, "lock": "weird" },
                     { "name": "../evil", "path": "/../evil", "type": "file", "size": 1 },
                     { "name": "odd", "path": "../odd", "type": "file", "size": -5, "editable": false },
                     { "name": "link", "path": "/link", "type": "symlink" }
                 ] }),
             ),
             "GET" if path == format!("{FILES}?dir=%2Fplugins") => Response::json(200, json!({ "dir": "/plugins", "entries": [] })),
+            "GET" if path == format!("{FILES}?dir=%2Flibraries") => {
+                Response::json(200, json!({ "dir": "/libraries", "writable": false, "entries": [] }))
+            }
             "GET" if path == format!("{FILES}/content?path=%2Fserver.properties") => {
                 Response::json(200, json!({ "path": "/server.properties", "content": "motd=Hallo\npvp=true\n" }))
             }
@@ -618,14 +630,25 @@ async fn files_are_listed_read_and_saved() {
     let root = launcher.craftinghosting_files("/").await.unwrap();
     assert_eq!(root.dir, "/");
     let names: Vec<&str> = root.entries.iter().map(|e| e.name.as_str()).collect();
-    assert_eq!(names, ["plugins", "server.properties", "whitelist.json", "odd"]);
-    // Ordner sind nie editierbar, geschützte auch nicht; kaputte Pfade kommen aus dem Ordner.
-    assert!(!root.entries[0].editable);
-    assert!(root.entries[1].editable && !root.entries[1].protected);
-    assert!(root.entries[2].protected && !root.entries[2].editable);
-    assert_eq!((root.entries[3].path.as_str(), root.entries[3].size), ("/odd", 0));
+    assert_eq!(names, ["plugins", "server.properties", "whitelist.json", "paper.jar", "eula.txt", "odd-lock", "odd"]);
+    assert!(root.writable);
+    let e = |name: &str| root.entries.iter().find(|x| x.name == name).unwrap();
+    // Die API entscheidet: Ordner nie editierbar, gesperrte nur lesbar (wenn `viewable`), Grund wie geliefert.
+    assert!(!e("plugins").editable && !e("plugins").viewable);
+    assert!(e("server.properties").editable && e("server.properties").viewable && e("server.properties").lock.is_none());
+    assert!(e("whitelist.json").protected && !e("whitelist.json").editable && e("whitelist.json").viewable);
+    assert_eq!(e("whitelist.json").lock.as_deref(), Some("access"));
+    assert!(!e("paper.jar").viewable && e("paper.jar").lock.as_deref() == Some("system"));
+    assert!(e("eula.txt").viewable && !e("eula.txt").editable);
+    // Unbekannter Grund = allgemeine Sperre.
+    assert!(e("odd-lock").protected && !e("odd-lock").editable && e("odd-lock").lock.as_deref() == Some("other"));
+    assert_eq!((e("odd").path.as_str(), e("odd").size), ("/odd", 0));
 
-    assert_eq!(launcher.craftinghosting_files("/plugins/").await.unwrap().dir, "/plugins");
+    let plugins = launcher.craftinghosting_files("/plugins/").await.unwrap();
+    assert_eq!(plugins.dir, "/plugins");
+    // Alte API ohne `writable`: erlaubt.
+    assert!(plugins.writable);
+    assert!(!launcher.craftinghosting_files("/libraries").await.unwrap().writable);
     let before = server.requests().len();
     for bad in ["plugins", "/../etc", "/a/./b", "C:\\x"] {
         assert!(matches!(launcher.craftinghosting_files(bad).await, Err(Error::Validation(_))), "{bad}");
@@ -922,4 +945,108 @@ async fn named_world_from_a_zip_is_uploaded() {
     running.store(true, Ordering::SeqCst);
     assert!(matches!(launcher.craftinghosting_upload_world(WorldSource::Zip(src), &target, |_| {}).await, Err(Error::Validation(_))));
     assert_eq!(server.hits("POST", "/upload").len(), 1);
+}
+
+#[tokio::test]
+async fn pinned_versions_are_sent_as_versions() {
+    let (server, _dir, launcher) = extras().await;
+    let pick = |project: &str, version: &str| VersionPick { project: project.into(), version: version.into() };
+    assert!(matches!(launcher.craftinghosting_install_versions(&[]).await, Err(Error::Validation(_))));
+    assert!(matches!(launcher.craftinghosting_install_versions(&[pick("lithium", "../x")]).await, Err(Error::Validation(_))));
+    let many: Vec<VersionPick> = (0..21).map(|i| pick("lithium", &format!("v{i}"))).collect();
+    assert!(matches!(launcher.craftinghosting_install_versions(&many).await, Err(Error::Validation(_))));
+    assert!(server.hits("POST", "/v1/craftinghosting/server/mods").is_empty());
+
+    let result = launcher
+        .craftinghosting_install_versions(&[pick(" lithium ", "Yp8wLY1P"), pick("lithium", "Yp8wLY1P"), pick("AANobbMI", "abc123")])
+        .await
+        .unwrap();
+    assert_eq!(result.installed, ["lithium"]);
+    assert_eq!(
+        server.hits("POST", "/v1/craftinghosting/server/mods")[0].json(),
+        json!({ "versions": [{ "project": "lithium", "version": "Yp8wLY1P" }, { "project": "AANobbMI", "version": "abc123" }] })
+    );
+}
+
+// --- Funktions-Schalter: Versionswechsel und Backups --------------------------------------
+
+fn backups_api(base: Arc<std::sync::OnceLock<String>>, enabled: Arc<AtomicBool>) -> impl Fn(&Request) -> Response + Send + Sync + 'static {
+    let issued = AtomicUsize::new(0);
+    move |req: &Request| {
+        if let Some(r) = auth_routes(req, &issued, "mc-token") {
+            return r;
+        }
+        if req.path == "/dl/backup.zip" {
+            if req.bearer().is_some() {
+                return Response::error(400, "token_leak");
+            }
+            return Response { status: 200, headers: Vec::new(), body: vec![5u8; 2048] };
+        }
+        if !req.bearer().is_some_and(|t| t.starts_with("trs_")) {
+            return Response::error(401, "unauthorized");
+        }
+        if !enabled.load(Ordering::SeqCst) {
+            return Response::error(501, "feature_unavailable");
+        }
+        let base = base.get().cloned().unwrap_or_default();
+        match (req.method.as_str(), req.path.as_str()) {
+            ("POST", "/v1/craftinghosting/server/version") => Response::json(200, json!({ "server": server(false) })),
+            ("GET", "/v1/craftinghosting/server/backups") => Response::json(
+                200,
+                json!({ "max": 3, "backups": [
+                    { "id": "b1", "name": "Vor dem Update", "size": 2048, "createdAt": "2026-11-18T20:00:00.000Z" },
+                    { "id": "../x", "name": "kaputt", "size": 1 }
+                ] }),
+            ),
+            ("POST", "/v1/craftinghosting/server/backups") => Response::json(200, json!({ "ok": true })),
+            ("POST", "/v1/craftinghosting/server/backups/b1/restore") => Response::json(200, json!({ "ok": true })),
+            ("DELETE", "/v1/craftinghosting/server/backups/b1") => Response::empty(204),
+            ("GET", "/v1/craftinghosting/server/backups/b1/download") => {
+                Response::json(200, json!({ "url": format!("{base}/dl/backup.zip"), "expiresAt": "2026-11-18T21:00:00.000Z" }))
+            }
+            ("GET", "/v1/craftinghosting/server/backups/evil/download") => {
+                Response::json(200, json!({ "url": "https://evil.com/backup.zip", "expiresAt": "2026-11-18T21:00:00.000Z" }))
+            }
+            _ => Response::error(404, "not_found"),
+        }
+    }
+}
+
+#[tokio::test]
+async fn switched_off_features_answer_not_available() {
+    let base = Arc::new(std::sync::OnceLock::new());
+    let enabled = Arc::new(AtomicBool::new(false));
+    let server = MockServer::start(backups_api(Arc::clone(&base), Arc::clone(&enabled))).await;
+    base.set(server.base.clone()).unwrap();
+    let (dir, launcher) = launcher(&server, &[ACC]).await;
+
+    // Schalter aus: eigener Fehler, kein „TRS-Server offline“.
+    let e = launcher.craftinghosting_backups().await.unwrap_err();
+    assert_eq!(api_code(&e), ("trs_api", "feature_unavailable"));
+    assert_eq!(e.message_code(), "trsApi.feature_unavailable");
+
+    enabled.store(true, Ordering::SeqCst);
+    use super::craftinghosting_backups::VersionChange;
+    let change = VersionChange { server_type: "purpur".into(), version: "1.21.11".into(), keep_world: false };
+    launcher.craftinghosting_change_version(&change).await.unwrap();
+    assert_eq!(
+        server.hits("POST", "/v1/craftinghosting/server/version")[0].json(),
+        json!({ "serverType": "purpur", "version": "1.21.11", "keepWorld": false })
+    );
+
+    let list = launcher.craftinghosting_backups().await.unwrap();
+    assert_eq!((list.max, list.backups.len()), (3, 1));
+    assert_eq!(list.backups[0].name, "Vor dem Update");
+    launcher.craftinghosting_create_backup().await.unwrap();
+    launcher.craftinghosting_restore_backup("b1").await.unwrap();
+    launcher.craftinghosting_delete_backup("b1").await.unwrap();
+    assert!(matches!(launcher.craftinghosting_restore_backup("../x").await, Err(Error::Validation(_))));
+
+    let dest = dir.path().join("backup.zip");
+    assert_eq!(launcher.craftinghosting_download_backup("b1", &dest, |_| {}).await.unwrap(), 2048);
+    assert_eq!(std::fs::read(&dest).unwrap().len(), 2048);
+    assert!(server.hits("GET", "/dl/backup.zip")[0].bearer().is_none());
+    let evil = dir.path().join("evil.zip");
+    assert!(launcher.craftinghosting_download_backup("evil", &evil, |_| {}).await.is_err());
+    assert!(!evil.exists());
 }

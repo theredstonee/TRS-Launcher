@@ -172,10 +172,13 @@ import {
   serverFileContentSchema,
   serverPropertiesSchema,
   serverWorldsSchema,
+  backupsSchema,
   subdomainCheckSchema,
+  type VersionChange,
   worldDownloadSchema,
   type WorldUploadTarget,
   type AddonSearchFacets,
+  type AddonSort,
   type CraftingAccess,
   type CraftingSettingsPatch,
   type NewCraftingServer,
@@ -1435,11 +1438,36 @@ export const backend = {
     saveProperties: (changes: Record<string, string>) => checked(serverPropertiesSchema, 'craftinghosting_save_properties', { changes }),
     addons: () => checked(serverAddonsSchema, 'craftinghosting_addons'),
     removeAddon: (file: string) => call<void>('craftinghosting_remove_addon', { file }),
-    /** Modrinth-Suche nach Plugins/Mods für den Server (Filter aus `addonSearchFacets`). */
-    searchAddons: (facets: AddonSearchFacets, query: string, offset = 0, limit = 20) =>
+    /** Modrinth-Suche nach Plugins/Mods für den Server (Filter aus `addonSearchFacets`, Kategorien UND-verknüpft). */
+    searchAddons: (facets: AddonSearchFacets, opts: { query: string; categories: string[]; sort: AddonSort; offset: number; limit: number }) =>
       call<ModrinthSearchResult>('modrinth_search', {
-        params: { ...facets, query, index: query.trim() ? 'relevance' : 'downloads', offset, limit, excludeCategories: [], environments: [], excludeProjectIds: [], openSource: false },
+        params: {
+          ...facets,
+          query: opts.query,
+          categories: opts.categories,
+          categoryMatch: 'all',
+          index: opts.sort,
+          offset: opts.offset,
+          limit: opts.limit,
+          excludeCategories: [],
+          environments: [],
+          excludeProjectIds: [],
+          openSource: false,
+        },
       }),
+    /** Servertyp/Version wechseln (nur mit Schalter `versionChange`). */
+    changeVersion: (change: VersionChange) => checked(craftingServerSchema, 'craftinghosting_change_version', { change }),
+    /** Backups (nur mit Schalter `backups`). */
+    backups: () => checked(backupsSchema, 'craftinghosting_backups'),
+    createBackup: () => call<void>('craftinghosting_create_backup'),
+    restoreBackup: (id: string) => call<void>('craftinghosting_restore_backup', { id }),
+    deleteBackup: (id: string) => call<void>('craftinghosting_delete_backup', { id }),
+    /** Backup als ZIP speichern (Dialog); `null` = abgebrochen, sonst der Dateiname. */
+    downloadBackup: (id: string, name: string, serverName: string, onProgress: (p: WorldUploadProgress) => void, taskId: string | null = null) =>
+      checked(z.string().max(260).nullable(), 'craftinghosting_download_backup', { id, name, serverName, onProgress: channel(onProgress), taskId }),
+    /** Bestimmte Modrinth-Versionen installieren (1–20). */
+    installVersions: (versions: { project: string; version: string }[]) =>
+      checked(craftingModsResultSchema, 'craftinghosting_install_versions', { versions }),
   },
 }
 

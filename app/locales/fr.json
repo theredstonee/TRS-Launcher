@@ -355,7 +355,8 @@
       "file_not_text": "Ce n’est pas un fichier texte – impossible de le modifier ici.",
       "file_too_large": "Le fichier est trop volumineux pour l’éditeur (1 Mo max.).",
       "file_protected": "TRS gère ce fichier – impossible de le modifier ou de le supprimer.",
-      "property_locked": "Ce réglage est fixe et ne peut pas être modifié."
+      "property_locked": "Ce réglage est fixe et ne peut pas être modifié.",
+      "feature_unavailable": "Ce n’est pas encore disponible – ça arrive bientôt."
     },
     "auth": {
       "accountMismatch": "Cette connexion appartient à un autre compte – reconnecte-toi.",
@@ -823,7 +824,8 @@
       "fileTooLarge": "Le fichier est trop volumineux (1 Mo max.).",
       "invalidWorldName": "Nom du monde : 1 à 32 caractères parmi A–Z, a–z, 0–9, _ et -.",
       "noWorldInZip": "Ce fichier ZIP ne contient aucun monde (level.dat manquant).",
-      "downloadFailed": "Impossible de télécharger le monde – réessaie."
+      "downloadFailed": "Impossible de télécharger le monde – réessaie.",
+      "invalidBackup": "Cette sauvegarde n’existe pas sous cette forme."
     },
     "chatImage": {
       "unsupported": "Seules les images PNG, JPEG et WebP peuvent être envoyées.",
@@ -7859,7 +7861,6 @@
       "create": "Créer",
       "folderCreated": "Dossier créé.",
       "empty": "Ce dossier est vide.",
-      "protected": "Géré par TRS – impossible de le modifier ou de le supprimer.",
       "notEditable": "Impossible de l’ouvrir comme texte.",
       "deleteLabel": "Supprimer {name}",
       "deleteTitle": "Supprimer « {name} » ?",
@@ -7876,7 +7877,14 @@
       "discardTitle": "Abandonner les modifications ?",
       "discardText": "Tes modifications de « {name} » ne sont pas encore enregistrées.",
       "discard": "Abandonner",
-      "propertiesNote": "server.properties est vérifié à l’enregistrement : la ligne 2 du MOTD et certains réglages réseau (port, adresse, transferts) sont fixes."
+      "propertiesNote": "server.properties est vérifié à l’enregistrement : la ligne 2 du MOTD et certains réglages réseau (port, adresse, transferts) sont fixes.",
+      "readOnly": "Lecture seule",
+      "locks": {
+        "system": "Fait partie du logiciel serveur – lecture seule",
+        "trs": "Géré par TRS",
+        "access": "Suit l’accès (amis uniquement)",
+        "other": "Verrouillé"
+      }
     },
     "props": {
       "title": "Tous les réglages du serveur",
@@ -7972,7 +7980,31 @@
       "installedToast": "« {name} » installé – chargé au prochain démarrage.",
       "skipped": "Ignoré : {reason}",
       "by": "par {author}",
-      "downloads": "{n} téléchargements"
+      "downloads": "{n} téléchargements",
+      "backToSearch": "Retour à la recherche",
+      "clientOnly": "Uniquement côté client – ne fonctionne pas sur un serveur.",
+      "installedVersion": "Installé : {version}",
+      "updateTo": "Mettre à jour vers {version}",
+      "noFitting": "Aucune version ne correspond au type de serveur et à la version de Minecraft.",
+      "otherVersion": "Autre version",
+      "installedNext": "{version} installé – chargé au prochain démarrage.",
+      "allVersionsHint": "Toutes les versions, même celles qui ne tournent peut-être pas sur ton serveur.",
+      "fittingHint": "Versions pour ton serveur (Minecraft {version}).",
+      "showAll": "Afficher toutes les versions",
+      "dependencies": "Nécessite {n} autres projets",
+      "installThis": "Installer cette version",
+      "sortLabel": "Trier",
+      "clearFilters": "Effacer les filtres",
+      "categories": "Catégories",
+      "fewerCategories": "Moins",
+      "moreCategories": "+{n} autres",
+      "loadingMore": "Chargement …",
+      "sort": {
+        "relevance": "Pertinence",
+        "downloads": "Téléchargements",
+        "updated": "Mis à jour récemment",
+        "newest": "Plus récents"
+      }
     },
     "worlds": {
       "title": "Mondes du serveur",
@@ -8023,13 +8055,38 @@
       "sourceHint": {
         "zip": "Tu choisis le fichier ZIP après le clic – le monde (level.dat) peut se trouver dans n’importe quel dossier.",
         "folder": "Tu choisis le dossier du monde (avec level.dat) après le clic."
-      }
+      },
+      "nameRejected": "Le serveur n’accepte pas ce nom de monde – certains noms sont des dossiers du serveur (p. ex. plugins, config). Choisis-en un autre."
     },
     "version": {
       "title": "Type de serveur et version",
-      "soon": "Bientôt",
-      "soonHint": "CraftingHosting proposera bientôt le changement de version.",
-      "change": "Changer de version"
+      "change": "Changer de version",
+      "type": "Type de serveur",
+      "version": "Version",
+      "keepWorld": "Garder le monde",
+      "warning": "Les plugins et mods peuvent ne pas convenir à la nouvelle version. Le serveur redémarre – ton monde est conservé.",
+      "warningNewWorld": "Les plugins et mods peuvent ne pas convenir à la nouvelle version. Le serveur redémarre avec un nouveau monde – l’ancien est supprimé.",
+      "working": "Changement …",
+      "confirm": "Changer de version",
+      "changed": "Version changée – le serveur est reconfiguré."
+    },
+    "notAvailable": "Pas encore disponible – bientôt.",
+    "backups": {
+      "title": "Sauvegardes",
+      "text": "Instantanés de ton serveur. La restauration nécessite un serveur arrêté.",
+      "create": "Créer une sauvegarde",
+      "working": "En cours …",
+      "full": "Nombre maximal de sauvegardes atteint – supprime d’abord une ancienne.",
+      "empty": "Pas encore de sauvegarde.",
+      "restore": "Restaurer",
+      "restoreTitle": "Restaurer « {name} » ?",
+      "restoreText": "L’état actuel de ton serveur est remplacé par cette sauvegarde.",
+      "deleteLabel": "Supprimer la sauvegarde {name}",
+      "deleteTitle": "Supprimer « {name} » ?",
+      "deleteText": "La sauvegarde est supprimée définitivement.",
+      "created": "Sauvegarde créée.",
+      "restored": "« {name} » restaurée – s’applique au prochain démarrage.",
+      "downloaded": "Sauvegarde enregistrée sous {file}."
     }
   }
 }

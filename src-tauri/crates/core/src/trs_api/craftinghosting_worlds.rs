@@ -29,7 +29,7 @@ const FILES_MAX: usize = 100_000;
 /// Größte einzelne Datei (Regionen sind wenige MB).
 const FILE_MAX: u64 = 512 * 1024 * 1024;
 
-/// Weltname: `^[A-Za-z0-9_-]{1,32}$`.
+/// Weltname: `^[A-Za-z0-9_-]{1,32}$`. Was sonst noch verboten ist (reservierte Ordner), entscheidet die API.
 pub fn world_name(input: &str) -> Result<String> {
     let name = input.trim();
     if (1..=WORLD_NAME_MAX).contains(&name.len()) && name.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'_' | b'-')) {

@@ -2,6 +2,7 @@
 import { detectFormat, editorSupports, type ConfigFormat } from '~/utils/config/editor'
 import {
   FILE_CONTENT_MAX,
+  type FileLock,
   type ServerDir,
   type ServerFile,
   fileIcon,
@@ -29,12 +30,18 @@ interface OpenFile {
   name: string
   original: string
   format: ConfigFormat | null
+  /** Nur ansehen (gesperrt bzw. nicht editierbar laut API). */
+  readOnly: boolean
+  lock: FileLock | null
 }
 const open = ref<OpenFile | null>(null)
 const content = ref('')
 const opening = ref<string | null>(null)
 const saving = ref(false)
-const dirty = computed(() => !!open.value && content.value !== open.value.original)
+const dirty = computed(() => !!open.value && !open.value.readOnly && content.value !== open.value.original)
+// Seite/Reiter wissen so, ob sie vor dem Verlassen fragen müssen.
+watch(dirty, (d) => (store.filesDirty = d ? (open.value?.name ?? null) : null))
+onUnmounted(() => (store.filesDirty = null))
 const tooLarge = computed(() => new TextEncoder().encode(content.value).length > FILE_CONTENT_MAX)
 
 const collator = computed(() => new Intl.Collator(intlLocale(), { numeric: true, sensitivity: 'base' }))
@@ -84,7 +91,7 @@ function confirmDiscard() {
 
 function onRow(entry: ServerFile) {
   if (entry.type === 'directory') void load(entry.path)
-  else if (entry.editable) guard(() => void openFile(entry))
+  else if (entry.editable || entry.viewable) guard(() => void openFile(entry))
 }
 
 async function openFile(entry: ServerFile) {
@@ -96,6 +103,8 @@ async function openFile(entry: ServerFile) {
       name: entry.name,
       original: file.content,
       format: editorSupports(entry.name) ? detectFormat(entry.name, file.content) : null,
+      readOnly: !entry.editable,
+      lock: entry.lock,
     }
     content.value = file.content
   } catch (e) {
@@ -114,7 +123,7 @@ function closeFile() {
 
 async function save() {
   const file = open.value
-  if (!file || !dirty.value || saving.value || tooLarge.value) return
+  if (!file || file.readOnly || !dirty.value || saving.value || tooLarge.value) return
   saving.value = true
   const text = content.value
   try {
@@ -141,7 +150,7 @@ async function save() {
 function onEditorKey(e: KeyboardEvent) {
   if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 's') {
     e.preventDefault()
-    void save()
+    if (!open.value?.readOnly) void save()
   }
 }
 
@@ -194,6 +203,17 @@ async function remove() {
   }
 }
 
+/** Text zur Sperre – der Grund kommt von der API. */
+function lockText(lock: FileLock | null): string {
+  return t(`craftinghosting.files.locks.${lock ?? 'other'}`)
+}
+function rowTitle(entry: ServerFile): string {
+  if (entry.protected) return lockText(entry.lock)
+  if (entry.type === 'file' && !entry.editable && !entry.viewable) return t('craftinghosting.files.notEditable')
+  return entry.path
+}
+const writable = computed(() => listing.value?.writable ?? false)
+
 const ICONS: Record<ReturnType<typeof fileIcon>, { d: string; tone: string }> = {
   folder: { d: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z', tone: 'text-lamp-300' },
   config: { d: 'M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1M15 4v4M9 10v4M17 16v4', tone: 'text-sky-300' },
@@ -236,7 +256,7 @@ const ICONS: Record<ReturnType<typeof fileIcon>, { d: string; tone: string }> = 
               </button>
             </template>
           </nav>
-          <button class="btn-icon size-8" :disabled="loading" :aria-label="t('craftinghosting.files.newFolder')" :title="t('craftinghosting.files.newFolder')" data-testid="hosting-files-new-folder" @click="askFolder">
+          <button v-if="writable" class="btn-icon size-8" :disabled="loading" :aria-label="t('craftinghosting.files.newFolder')" :title="t('craftinghosting.files.newFolder')" data-testid="hosting-files-new-folder" @click="askFolder">
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM12 11v5M9.5 13.5h5" /></svg>
           </button>
           <button class="btn-icon size-8" :disabled="loading" :aria-label="t('common.actions.refresh')" :title="t('common.actions.refresh')" @click="load()">
@@ -253,17 +273,17 @@ const ICONS: Record<ReturnType<typeof fileIcon>, { d: string; tone: string }> = 
             <button
               class="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2 text-left text-sm outline-none focus-visible:bg-base-800"
               :class="[
-                entry.type === 'directory' || entry.editable ? 'hover:bg-base-800/70' : 'cursor-default',
+                entry.type === 'directory' || entry.viewable ? 'hover:bg-base-800/70' : 'cursor-default',
                 open?.path === entry.path ? 'bg-redstone-900/30' : '',
               ]"
-              :aria-disabled="entry.type === 'file' && !entry.editable"
-              :title="entry.protected ? t('craftinghosting.files.protected') : entry.type === 'file' && !entry.editable ? t('craftinghosting.files.notEditable') : entry.path"
+              :aria-disabled="entry.type === 'file' && !entry.viewable"
+              :title="rowTitle(entry)"
               :data-testid="`hosting-file-${entry.name}`"
               @click="onRow(entry)"
             >
               <svg viewBox="0 0 24 24" class="size-4 shrink-0" :class="ICONS[fileIcon(entry)].tone" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path :d="ICONS[fileIcon(entry)].d" /></svg>
-              <span class="min-w-0 flex-1 truncate" :class="entry.type === 'file' && !entry.editable ? 'text-base-400' : 'text-base-50'">{{ entry.name }}</span>
-              <svg v-if="entry.protected" viewBox="0 0 24 24" class="size-3.5 shrink-0 text-lamp-300" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" :aria-label="t('craftinghosting.files.protected')" role="img"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+              <span class="min-w-0 flex-1 truncate" :class="entry.type === 'file' && !entry.viewable ? 'text-base-400' : 'text-base-50'">{{ entry.name }}</span>
+              <svg v-if="entry.protected" viewBox="0 0 24 24" class="size-3.5 shrink-0 text-lamp-300" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" :aria-label="lockText(entry.lock)" role="img"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
               <span v-if="opening === entry.path" class="size-3.5 shrink-0 animate-spin rounded-full border-2 border-base-600 border-t-base-200 motion-reduce:animate-none" aria-hidden="true" />
               <span class="hidden w-16 shrink-0 text-right text-xs text-base-500 tabular-nums sm:block">{{ entry.type === 'file' ? formatBytes(entry.size) : '' }}</span>
               <span v-if="!open" class="hidden w-24 shrink-0 text-right text-xs text-base-500 md:block">{{ entry.modifiedAt ? formatDate(entry.modifiedAt) : '' }}</span>
@@ -291,26 +311,35 @@ const ICONS: Record<ReturnType<typeof fileIcon>, { d: string; tone: string }> = 
           <div class="min-w-0 flex-1">
             <p class="flex items-center gap-2 truncate text-sm font-semibold text-base-50">
               {{ open.name }}
+              <span v-if="open.readOnly" class="inline-flex items-center gap-1 rounded bg-lamp-900/40 px-1.5 py-0.5 text-[11px] font-normal text-lamp-300 ring-1 ring-lamp-700/40" data-testid="hosting-file-readonly">
+                <svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+                {{ t('craftinghosting.files.readOnly') }}
+              </span>
               <span v-if="dirty" class="inline-flex items-center gap-1 text-xs font-normal text-lamp-300" data-testid="hosting-file-dirty">
                 <span class="size-1.5 rounded-full bg-lamp-300" aria-hidden="true" />{{ t('craftinghosting.files.unsaved') }}
               </span>
             </p>
             <p class="truncate font-mono text-[11px] text-base-500">{{ open.path }}</p>
           </div>
-          <span class="hidden text-[11px] text-base-500 sm:inline">{{ t('craftinghosting.files.shortcut') }}</span>
-          <button class="btn btn-primary px-3 py-1.5 text-xs" :disabled="!dirty || saving || tooLarge" data-testid="hosting-file-save" @click="save">
-            {{ saving ? t('craftinghosting.files.saving') : t('common.actions.save') }}
-          </button>
+          <template v-if="!open.readOnly">
+            <span class="hidden text-[11px] text-base-500 sm:inline">{{ t('craftinghosting.files.shortcut') }}</span>
+            <button class="btn btn-primary px-3 py-1.5 text-xs" :disabled="!dirty || saving || tooLarge" data-testid="hosting-file-save" @click="save">
+              {{ saving ? t('craftinghosting.files.saving') : t('common.actions.save') }}
+            </button>
+          </template>
           <button class="btn-icon hidden size-8 lg:inline-flex" :aria-label="t('craftinghosting.files.close')" :title="t('craftinghosting.files.close')" @click="closeFile">
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
         </div>
-        <p v-if="open.path === '/server.properties'" class="mb-2 rounded-md bg-sky-950/40 px-2.5 py-1.5 text-xs text-sky-200 ring-1 ring-sky-800/40" data-testid="hosting-file-properties-note">
+        <p v-if="open.readOnly" class="mb-2 rounded-md bg-lamp-900/30 px-2.5 py-1.5 text-xs text-lamp-200 ring-1 ring-lamp-700/40" data-testid="hosting-file-lock-reason">
+          {{ lockText(open.lock) }}
+        </p>
+        <p v-else-if="open.path === '/server.properties'" class="mb-2 rounded-md bg-sky-950/40 px-2.5 py-1.5 text-xs text-sky-200 ring-1 ring-sky-800/40" data-testid="hosting-file-properties-note">
           {{ t('craftinghosting.files.propertiesNote') }}
         </p>
         <p v-if="tooLarge" class="mb-2 text-xs text-redstone-300">{{ t('errors.trsApi.file_too_large') }}</p>
         <div class="flex h-[28rem] min-h-0 mobile:h-[60vh]">
-          <ConfigTextEditor v-model="content" :format="open.format" :error-line="null" :label="t('craftinghosting.files.editorLabel', { name: open.name })" />
+          <ConfigTextEditor v-model="content" :format="open.format" :readonly="open.readOnly" :error-line="null" :label="t('craftinghosting.files.editorLabel', { name: open.name })" />
         </div>
       </section>
     </div>

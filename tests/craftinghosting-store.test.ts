@@ -42,6 +42,8 @@ const INFO: CraftingInfo = {
   limits: { maxServersPerPlayer: 1, sessionMaxHours: 24, cooldownHours: 2, heartbeatTimeoutSeconds: 180, deleteAfterIdleDays: 30, serverNameMaxLength: 22 },
   eulaUrl: 'https://www.minecraft.net/eula',
   full: false,
+  features: { files: true, properties: true, addons: true, worlds: true, worldDownload: true, ownAddress: true, wakeOnJoin: false, versionChange: false, backups: false },
+  notice: null,
 }
 
 const craftinghosting = {
@@ -70,6 +72,13 @@ const craftinghosting = {
     ],
   })),
   removeAddon: vi.fn(async () => {}),
+  changeVersion: vi.fn(async (change: { serverType: string; version: string }) => server({ state: 'installing', serverType: change.serverType, version: change.version })),
+  backups: vi.fn(async () => ({ max: 3, backups: [{ id: 'b1', name: 'Vor dem Update', size: 10, createdAt: null }] })),
+  createBackup: vi.fn(async () => {}),
+  restoreBackup: vi.fn(async () => {}),
+  deleteBackup: vi.fn(async () => {}),
+  downloadBackup: vi.fn(async () => 'Meine-Welt-b1.zip'),
+  installVersions: vi.fn(async (versions: { project: string; version: string }[]) => ({ installed: versions.map((v) => v.project), skipped: [] })),
   worlds: vi.fn(async () => ({
     active: 'world',
     exists: true,
@@ -514,5 +523,80 @@ describe('Welten', () => {
     await s.load()
     expect(await s.stopAndWait()).toBe(true)
     expect(craftinghosting.stop).toHaveBeenCalled()
+  })
+})
+
+describe('Feste Versionen und Welt-Namen', () => {
+  it('installiert eine bestimmte Version und lädt die Liste neu', async () => {
+    const s = await store()
+    const result = await s.installVersion('lithium', 'Yp8wLY1P')
+    expect(result?.installed).toEqual(['lithium'])
+    expect(craftinghosting.installVersions).toHaveBeenCalledWith([{ project: 'lithium', version: 'Yp8wLY1P' }])
+    expect(craftinghosting.addons).toHaveBeenCalled()
+  })
+
+  it('abgelehnter Weltname: klare Meldung statt „ungültige Anfrage“', async () => {
+    craftinghosting.server.mockImplementation(async () => server())
+    const s = await store()
+    await s.load()
+    craftinghosting.uploadWorld.mockRejectedValueOnce(await apiError('invalid_request'))
+    expect(await s.uploadWorld('alt', 'Welt', { name: 'plugins', activate: false })).toBe(false)
+    expect(toasts.error).toHaveBeenCalledWith(expect.stringContaining('world name'))
+  })
+})
+
+describe('Funktions-Schalter, Versionswechsel und Backups', () => {
+  it('Schalter kommen aus der Info, ohne Info ist alles aus', async () => {
+    const s = await store()
+    expect(s.features.files).toBe(false)
+    await s.load()
+    expect(s.features.files).toBe(true)
+    expect(s.features.backups).toBe(false)
+  })
+
+  it('501 feature_unavailable: freundlicher Hinweis statt Fehler, Info neu laden', async () => {
+    const s = await store()
+    await s.load()
+    craftinghosting.info.mockClear()
+    craftinghosting.changeVersion.mockRejectedValueOnce(await apiError('feature_unavailable'))
+    expect(await s.changeVersion({ serverType: 'purpur', version: '1.21.11', keepWorld: true })).toBe(false)
+    expect(toasts.error).not.toHaveBeenCalled()
+    expect(toasts.info).toHaveBeenCalledTimes(1)
+    expect(craftinghosting.info).toHaveBeenCalled()
+    // Kein Spam: der zweite Hinweis kurz danach bleibt aus.
+    craftinghosting.createBackup.mockRejectedValueOnce(await apiError('feature_unavailable'))
+    await s.createBackup()
+    expect(toasts.info).toHaveBeenCalledTimes(1)
+
+    craftinghosting.backups.mockRejectedValueOnce(await apiError('feature_unavailable'))
+    await s.loadBackups()
+    expect(s.backups).toBeNull()
+    expect(toasts.error).not.toHaveBeenCalled()
+  })
+
+  it('wechselt die Version und übernimmt den Server', async () => {
+    craftinghosting.server.mockImplementation(async () => server())
+    const s = await store()
+    await s.load()
+    expect(await s.changeVersion({ serverType: 'purpur', version: '1.21.11', keepWorld: false })).toBe(true)
+    expect(craftinghosting.changeVersion).toHaveBeenCalledWith({ serverType: 'purpur', version: '1.21.11', keepWorld: false })
+    expect(s.server?.serverType).toBe('purpur')
+    expect(s.server?.state).toBe('installing')
+  })
+
+  it('Backups anlegen, einspielen, löschen und herunterladen', async () => {
+    craftinghosting.server.mockImplementation(async () => server())
+    const s = await store()
+    await s.load()
+    await s.loadBackups()
+    const b = s.backups!.backups[0]!
+    expect(await s.createBackup()).toBe(true)
+    expect(craftinghosting.backups).toHaveBeenCalledTimes(2)
+    expect(await s.restoreBackup(b)).toBe(true)
+    expect(craftinghosting.restoreBackup).toHaveBeenCalledWith('b1')
+    expect(await s.downloadBackup(b)).toBe('Meine-Welt-b1.zip')
+    expect(craftinghosting.downloadBackup).toHaveBeenCalledWith('b1', 'Vor dem Update', 'Meine Welt', expect.any(Function), expect.stringMatching(/^craftinghosting-backup:/))
+    expect(await s.deleteBackup(b)).toBe(true)
+    expect(s.backups?.backups).toEqual([])
   })
 })

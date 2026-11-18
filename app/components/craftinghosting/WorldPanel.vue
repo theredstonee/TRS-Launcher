@@ -15,7 +15,7 @@ const names = computed(() => list.value.map((w) => w.name))
 const busy = computed(() => !!store.busy || !!store.transfer?.active)
 
 onMounted(async () => {
-  if (!installing.value) void store.loadWorlds()
+  if (!installing.value && store.features.worlds) void store.loadWorlds()
   if (!instances.items.length) await instances.load().catch(() => {})
   worldFrom.value = instances.items[0]?.id ?? ''
 })
@@ -165,7 +165,7 @@ const SOURCE_ICON: Record<Source, string> = {
     </div>
 
     <!-- Welten -->
-    <section class="card" aria-labelledby="ch-worlds-title">
+    <section v-if="store.features.worlds" class="card" aria-labelledby="ch-worlds-title">
       <div class="flex items-center gap-2 border-b border-base-800 px-4 py-3">
         <div class="min-w-0 flex-1">
           <h3 id="ch-worlds-title" class="text-sm font-semibold text-base-50">{{ t('craftinghosting.worlds.title') }}</h3>
@@ -203,7 +203,7 @@ const SOURCE_ICON: Record<Source, string> = {
               <button v-if="!w.active" class="btn btn-ghost px-2.5 py-1 text-xs" :disabled="busy" :data-testid="`hosting-world-activate-${w.name}`" @click="activate(w)">
                 {{ t('craftinghosting.worlds.activate') }}
               </button>
-              <button class="btn btn-ghost px-2.5 py-1 text-xs" :disabled="!!downloading" :data-testid="`hosting-world-download-${w.name}`" @click="store.downloadWorld(w.name)">
+              <button v-if="store.features.worldDownload" class="btn btn-ghost px-2.5 py-1 text-xs" :disabled="!!downloading" :data-testid="`hosting-world-download-${w.name}`" @click="store.downloadWorld(w.name)">
                 {{ t('craftinghosting.worlds.download') }}
               </button>
               <button class="btn btn-ghost px-2.5 py-1 text-xs text-redstone-300" :disabled="busy" :data-testid="`hosting-world-remove-${w.name}`" @click="askRemove(w)">
@@ -294,6 +294,8 @@ const SOURCE_ICON: Record<Source, string> = {
         {{ source === 'instance' ? t('craftinghosting.worlds.upload') : t('craftinghosting.worlds.chooseAndUpload') }}
       </button>
     </section>
+
+    <CraftinghostingBackupsCard v-if="store.features.backups" @need-stop="(action) => whenOffline(action)" />
 
     <BaseDialog v-if="removing" :title="t(removing.active ? 'craftinghosting.worlds.resetTitle' : 'craftinghosting.worlds.deleteTitle', { name: removing.name })" @close="removing = null">
       <p class="text-sm text-base-200">{{ removing.active ? t('craftinghosting.worlds.resetText') : t('craftinghosting.worlds.deleteText') }}</p>

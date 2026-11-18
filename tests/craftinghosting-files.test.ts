@@ -25,7 +25,14 @@ import {
   validEntryName,
   validPropertyValue,
   validServerPath,
+  addonCategoryNames,
+  installedVersion,
+  looksInstalled,
+  newestServerVersion,
+  serverVersions,
+  versionFitsServer,
   dimensionId,
+  versionChangeValid,
   serverWorldsSchema,
   suggestWorldName,
   uniqueWorldName,
@@ -45,10 +52,12 @@ const INFO: CraftingInfo = {
   limits: { maxServersPerPlayer: 1, sessionMaxHours: 24, cooldownHours: 2, heartbeatTimeoutSeconds: 180, deleteAfterIdleDays: 30, serverNameMaxLength: 22 },
   eulaUrl: 'https://www.minecraft.net/eula',
   full: false,
+  features: { files: true, properties: true, addons: true, worlds: true, worldDownload: true, ownAddress: true, wakeOnJoin: false, versionChange: false, backups: false },
+  notice: null,
 }
 
 function entry(name: string, type: 'file' | 'directory' = 'file'): ServerFile {
-  return { name, path: `/${name}`, type, size: 1, modifiedAt: null, editable: type === 'file', protected: false }
+  return { name, path: `/${name}`, type, size: 1, modifiedAt: null, editable: type === 'file', viewable: type === 'file', protected: false, lock: null }
 }
 
 describe('MOTD', () => {
@@ -105,8 +114,13 @@ describe('Pfade und Dateiliste', () => {
   })
 
   it('Schemas lehnen kaputte Antworten ab', () => {
-    expect(serverDirSchema.safeParse({ dir: 'relativ', entries: [] }).success).toBe(false)
-    expect(serverDirSchema.safeParse({ dir: '/', entries: [{ ...entry('a'), type: 'symlink' }] }).success).toBe(false)
+    expect(serverDirSchema.safeParse({ dir: 'relativ', writable: true, entries: [] }).success).toBe(false)
+    expect(serverDirSchema.safeParse({ dir: '/', writable: true, entries: [{ ...entry('a'), type: 'symlink' }] }).success).toBe(false)
+    // Sperrgrund kommt von der API; Unbekanntes wird zur allgemeinen Sperre.
+    const locked = serverDirSchema.parse({ dir: '/', writable: false, entries: [{ ...entry('paper.jar'), protected: true, lock: 'quantum' }] })
+    expect(locked.entries[0]!.lock).toBe('other')
+    expect(locked.writable).toBe(false)
+    expect(serverDirSchema.parse({ dir: '/', writable: true, entries: [{ ...entry('eula.txt'), lock: 'system' }] }).entries[0]!.lock).toBe('system')
     expect(serverPropertiesSchema.safeParse({ properties: { 'Bad Key': 'x' }, locked: [] }).success).toBe(false)
     expect(serverPropertiesSchema.safeParse({ properties: { pvp: 'true' }, locked: ['server-port'] }).success).toBe(true)
     expect(serverAddonsSchema.safeParse({ kind: null, dir: '/', items: [] }).success).toBe(true)
@@ -190,20 +204,11 @@ describe('Plugins und Mods', () => {
   it('Modrinth-Filter je Servertyp', () => {
     expect(addonSearchFacets('paper', 'latest', INFO)).toEqual({
       kind: 'plugin',
-      loaders: [],
-      categories: ['paper', 'purpur', 'spigot', 'bukkit'],
-      categoryMatch: 'any',
+      loaders: ['paper', 'purpur', 'spigot', 'bukkit'],
       gameVersions: ['26.3'],
       serverUsable: true,
     })
-    expect(addonSearchFacets('fabric', '1.21.11', INFO)).toEqual({
-      kind: 'mod',
-      loaders: ['fabric'],
-      categories: [],
-      categoryMatch: 'any',
-      gameVersions: ['1.21.11'],
-      serverUsable: true,
-    })
+    expect(addonSearchFacets('fabric', '1.21.11', INFO)).toEqual({ kind: 'mod', loaders: ['fabric'], gameVersions: ['1.21.11'], serverUsable: true })
     expect(addonSearchFacets('forge', '1.20.1', INFO)).toMatchObject({ kind: 'mod', loaders: ['forge'], gameVersions: ['1.20.1'] })
     expect(addonSearchFacets('vanilla', 'latest', INFO)).toBeNull()
     expect(addonSearchFacets('paper', 'latest', null)?.gameVersions).toEqual([])
@@ -239,7 +244,8 @@ describe('Plugins und Mods', () => {
 
 describe('Welten', () => {
   it('Namen wie in der API', () => {
-    for (const ok of ['world', 'Skyblock_2', 'a-b', 'x'.repeat(32)]) expect(validWorldName(ok), ok).toBe(true)
+    // Nur die Form – reservierte Namen (plugins …) lehnt die API ab.
+    for (const ok of ['world', 'Skyblock_2', 'a-b', 'x'.repeat(32), 'plugins']) expect(validWorldName(ok), ok).toBe(true)
     for (const bad of ['', 'a b', '../x', 'grün', 'x'.repeat(33)]) expect(validWorldName(bad), bad).toBe(false)
   })
 
@@ -266,5 +272,73 @@ describe('Welten', () => {
     expect(serverWorldsSchema.safeParse(ok).success).toBe(true)
     expect(serverWorldsSchema.safeParse({ ...ok, active: '../x' }).success).toBe(false)
     expect(worldUploadProgressSchema.safeParse({ phase: 'download', percent: 40 }).success).toBe(true)
+  })
+})
+
+describe('Modrinth-Browser für den Server', () => {
+  const v = (id: string, game: string[], loaders: string[], type = 'release', fileName = `${id}.jar`) => ({
+    id,
+    gameVersions: game,
+    loaders,
+    versionType: type,
+    fileName,
+  })
+  const plugin = { gameVersions: ['1.21.11'], loaders: ['paper', 'purpur', 'spigot', 'bukkit'] }
+  const fabric = { gameVersions: ['1.21.11'], loaders: ['fabric'] }
+
+  it('Versionen nach Loader und Minecraft-Version', () => {
+    expect(versionFitsServer(v('a', ['1.21.11'], ['spigot']), plugin)).toBe(true)
+    expect(versionFitsServer(v('b', ['1.21.11'], ['fabric']), plugin)).toBe(false)
+    expect(versionFitsServer(v('c', ['1.20.1'], ['paper']), plugin)).toBe(false)
+    expect(versionFitsServer(v('d', ['1.21.11'], ['fabric', 'quilt']), fabric)).toBe(true)
+    // Version unbekannt: nur der Loader zählt.
+    expect(versionFitsServer(v('e', ['1.8.9'], ['paper']), { gameVersions: [], loaders: ['paper'] })).toBe(true)
+  })
+
+  it('Liste, „alle Versionen“ und neueste passende (Release zuerst)', () => {
+    const list = [v('beta', ['1.21.11'], ['fabric'], 'beta'), v('rel', ['1.21.11'], ['fabric']), v('old', ['1.20.1'], ['fabric']), v('forge', ['1.21.11'], ['forge'])]
+    expect(serverVersions(list, fabric, false).map((x) => x.id)).toEqual(['beta', 'rel'])
+    expect(serverVersions(list, fabric, true)).toHaveLength(4)
+    expect(newestServerVersion(list, fabric)?.id).toBe('rel')
+    expect(newestServerVersion([v('b', ['1.21.11'], ['fabric'], 'beta')], fabric)?.id).toBe('b')
+    expect(newestServerVersion(list, { gameVersions: ['26.3'], loaders: ['fabric'] })).toBeNull()
+  })
+
+  it('installierte Version über den Dateinamen', () => {
+    const list = [v('new', ['1.21.11'], ['paper'], 'release', 'LuckPerms-Bukkit-5.5.0.jar'), v('old', ['1.21.11'], ['paper'], 'release', 'LuckPerms-Bukkit-5.4.102.jar')]
+    expect(installedVersion(list, ['luckperms-bukkit-5.4.102.jar', 'other.jar'])).toEqual({ version: list[1], file: 'luckperms-bukkit-5.4.102.jar' })
+    expect(installedVersion(list, ['LuckPerms-Bukkit-5.5.0.jar.disabled'])?.version.id).toBe('new')
+    expect(installedVersion(list, ['x.jar'])).toBeNull()
+  })
+
+  it('Vermutung „installiert“ in der Trefferliste', () => {
+    expect(looksInstalled({ slug: 'luckperms', title: 'LuckPerms' }, ['LuckPerms-Bukkit-5.4.102.jar'])).toBe(true)
+    expect(looksInstalled({ slug: 'worldedit', title: 'WorldEdit' }, ['worldedit-bukkit-7.3.0.jar'])).toBe(true)
+    expect(looksInstalled({ slug: 'essentialsx', title: 'EssentialsX' }, ['LuckPerms-5.4.jar'])).toBe(false)
+    expect(looksInstalled({ slug: 'ab', title: 'AB' }, ['ab-1.0.jar'])).toBe(false)
+  })
+
+  it('Kategorie-Chips ohne Loader und doppelte', () => {
+    const tags = [
+      { name: 'economy', projectType: 'mod', header: 'categories' },
+      { name: 'economy', projectType: 'plugin', header: 'categories' },
+      { name: 'paper', projectType: 'plugin', header: 'categories' },
+      { name: 'fabric', projectType: 'mod', header: 'categories' },
+      { name: 'adventure', projectType: 'mod', header: 'categories' },
+      { name: '16x', projectType: 'resourcepack', header: 'resolutions' },
+    ]
+    expect(addonCategoryNames(tags, (n) => n)).toEqual(['adventure', 'economy'])
+  })
+})
+
+describe('Versionswechsel', () => {
+  it('nur mit angebotenem Typ/Version und echter Änderung', () => {
+    const current = { serverType: 'paper', version: '1.21.11' }
+    expect(versionChangeValid({ serverType: 'paper', version: '1.21.11', keepWorld: true }, current, INFO)).toBe(false)
+    expect(versionChangeValid({ serverType: 'paper', version: '26.3', keepWorld: true }, current, INFO)).toBe(true)
+    expect(versionChangeValid({ serverType: 'fabric', version: '1.21.11', keepWorld: false }, current, INFO)).toBe(true)
+    expect(versionChangeValid({ serverType: 'fabric', version: '9.9', keepWorld: true }, current, INFO)).toBe(false)
+    expect(versionChangeValid({ serverType: 'nope', version: 'latest', keepWorld: true }, current, INFO)).toBe(false)
+    expect(versionChangeValid({ serverType: 'paper', version: '26.3', keepWorld: true }, current, null)).toBe(false)
   })
 })

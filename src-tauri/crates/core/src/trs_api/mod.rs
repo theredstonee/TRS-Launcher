@@ -24,6 +24,7 @@ pub mod cape_import;
 pub mod cape_video;
 pub mod chat;
 pub mod craftinghosting;
+pub mod craftinghosting_backups;
 pub mod craftinghosting_files;
 pub mod craftinghosting_world;
 pub mod craftinghosting_worlds;
@@ -290,7 +291,7 @@ pub(crate) fn api_error(status: u16, code: &str, retry_after: Option<u64>) -> Er
         // Empfohlene Modpacks: CurseForge fehlt auf dem Server bzw. Modrinth/CurseForge antwortet nicht – kein „offline“.
         (_, "curseforge_unavailable" | "upstream_failed") => ("trs_api", message_for(code)),
         // CraftingHosting nicht eingerichtet, in Wartung oder nicht erreichbar – der TRS-Server selbst läuft.
-        (_, "craftinghosting_unavailable" | "craftinghosting_maintenance" | "craftinghosting_upstream" | "dns_unavailable") => {
+        (_, "craftinghosting_unavailable" | "craftinghosting_maintenance" | "craftinghosting_upstream" | "dns_unavailable" | "feature_unavailable") => {
             ("trs_api", message_for(code))
         }
         (500..=599, _) => ("trs_offline", crate::msg!("trs.offline", "Der TRS-Server ist gerade nicht erreichbar.")),
@@ -531,6 +532,7 @@ fn message_for(code: &str) -> Msg {
         "subdomain_taken" => msg!("trsApi.subdomain_taken", "Diese Adresse ist schon vergeben – nimm eine andere."),
         "subdomain_reserved" => msg!("trsApi.subdomain_reserved", "Diese Adresse ist reserviert – nimm eine andere."),
         "dns_unavailable" => msg!("trsApi.dns_unavailable", "Eigene Adressen sind auf dem TRS-Server gerade nicht verfügbar."),
+        "feature_unavailable" => msg!("trsApi.feature_unavailable", "Das ist noch nicht verfügbar – es kommt bald."),
         "invalid_request" | "invalid_json" => msg!("trsApi.invalid_request", "Die Anfrage war ungültig."),
         "not_found" => msg!("trsApi.not_found", "Nicht gefunden."),
         _ => msg!("trsApi.rejected", "Die TRS API hat die Anfrage abgelehnt."),

@@ -227,3 +227,32 @@ A world is a top-level folder with `level.dat` (Paper: `<name>_nether`, `<name>_
   activate }` – the ZIP's top-level folder must be `name` (zip the instance world folder as `<name>/…`).
 - Version/type change: NOT available yet (CraftingHosting will add it). Show it in the settings as a disabled
   "Version wechseln – kommt bald" row, nothing else.
+
+## Read-only server software, pinned Modrinth versions
+
+- The API marks server software as `protected` (read-only: no edit/delete/new folder → `403 file_protected`): every
+  `*.jar` in `/`, `eula.txt`, `start.sh`, `run.sh`, `run.bat`, `user_jvm_args.txt`, `.env`, `usercache.json`,
+  `version_history.json`, and everything under `/libraries`, `/versions`, `/cache`, `/.cache`, `/bundler`, `/.fabric`,
+  `/.paper-remapped`, `/plugins/.paper-remapped`, `/logs`, `/crash-reports`. Text files there can still be **viewed**
+  (open read-only in the editor, no save button). Configs stay editable.
+- World names may not be `plugins`, `mods`, `config`, `libraries`, `versions`, `cache`, `logs`, `crash-reports`,
+  `bundler`, `defaultconfigs`, `kubejs`, `scripts` (case-insensitive).
+- `POST …/server/mods` also takes `versions: [{ project, version }]` (Modrinth version id, ≤ 20) to install a specific
+  version (`projects` optional then).
+
+## Feature switches (no launcher update for new partner functions)
+
+`GET /v1/craftinghosting/info` also returns `features: { files, properties, addons, worlds, worldDownload, ownAddress,
+wakeOnJoin, versionChange, backups }` (booleans; unknown/missing keys = false) and `notice: string | null`.
+The launcher shows each section only when its switch is true, and shows `notice` as an info banner at the top of the
+hosting tab. Already implement (hidden while the switch is false):
+
+- **Version wechseln** (settings): dialog with server type cards + version select from `info.serverTypes`, option
+  "Welt behalten" (default on), clear warning (plugins/mods may not fit the new version; the server restarts) →
+  `POST /v1/craftinghosting/server/version { serverType, version, keepWorld }` → `{ server }`; then poll like after a
+  start. While `versionChange` is false show nothing (no "kommt bald" row needed – or keep it subtle, your call).
+- **Backups** (own section in Welten or own tab): list `GET …/server/backups` → `{ backups: [{ id, name, size,
+  createdAt }], max }`, "Backup erstellen" `POST …/server/backups`, "Wiederherstellen" `POST …/backups/{id}/restore`
+  (confirm, server must be offline), "Herunterladen" `GET …/backups/{id}/download` → `{ url, expiresAt }` (https,
+  `*.craftinghosting.free` only, download via core with save dialog), "Löschen" `DELETE …/backups/{id}`.
+- Error `501 feature_unavailable` → friendly "Noch nicht verfügbar" (no error toast spam) and reload `info`.

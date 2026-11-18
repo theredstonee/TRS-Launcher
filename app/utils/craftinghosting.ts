@@ -20,6 +20,25 @@ export const POLL_SLOW_MS = 30_000
 const time = z.string().max(40).nullable()
 const count = z.number().int().min(0)
 
+/** Funktions-Schalter der TRS API: ein Bereich erscheint nur, wenn sein Schalter an ist. */
+export const FEATURE_KEYS = [
+  'files',
+  'properties',
+  'addons',
+  'worlds',
+  'worldDownload',
+  'ownAddress',
+  'wakeOnJoin',
+  'versionChange',
+  'backups',
+] as const
+export type FeatureKey = (typeof FEATURE_KEYS)[number]
+export type CraftingFeatures = Record<FeatureKey, boolean>
+export const NO_FEATURES: CraftingFeatures = Object.fromEntries(FEATURE_KEYS.map((k) => [k, false])) as CraftingFeatures
+const featuresSchema = z
+  .object(Object.fromEntries(FEATURE_KEYS.map((k) => [k, z.boolean().catch(false)])) as Record<FeatureKey, z.ZodCatch<z.ZodBoolean>>)
+  .catch(NO_FEATURES)
+
 export const craftingInfoSchema = z.object({
   plan: z.object({ name: z.string().max(40), memoryMb: count, cpuPercent: count, diskMb: count }),
   serverTypes: z.array(
@@ -39,6 +58,9 @@ export const craftingInfoSchema = z.object({
   }),
   eulaUrl: z.string().startsWith('https://').max(300),
   full: z.boolean(),
+  features: featuresSchema,
+  /** Hinweis oben im Hosting-Reiter (Klartext). */
+  notice: z.string().max(500).nullable().catch(null),
 })
 
 export const craftingServerSchema = z.object({
@@ -494,6 +516,9 @@ export const PROPERTY_VALUE_MAX = 500
 export const PROPERTY_KEY_RE = /^[a-z0-9.-]{1,64}$/
 export const DELETE_MAX = 50
 
+export const FILE_LOCKS = ['system', 'trs', 'access', 'other'] as const
+export type FileLock = (typeof FILE_LOCKS)[number]
+
 const serverPath = z.string().startsWith('/').max(SERVER_PATH_MAX)
 const fileName = z.string().min(1).max(255)
 // eslint-disable-next-line no-control-regex
@@ -505,10 +530,15 @@ export const serverFileSchema = z.object({
   type: z.enum(['file', 'directory']),
   size: z.number().min(0),
   modifiedAt: time,
+  /** Darf gespeichert werden. */
   editable: z.boolean(),
+  /** Darf (nur lesend) geöffnet werden. */
+  viewable: z.boolean(),
   protected: z.boolean(),
+  /** Grund der Sperre – entscheidet allein die API; Unbekanntes gilt als allgemeine Sperre. */
+  lock: z.enum(FILE_LOCKS).nullable().catch('other'),
 })
-export const serverDirSchema = z.object({ dir: serverPath, entries: z.array(serverFileSchema).max(5000) })
+export const serverDirSchema = z.object({ dir: serverPath, writable: z.boolean(), entries: z.array(serverFileSchema).max(5000) })
 export const serverFileContentSchema = z.object({ path: serverPath, content: z.string() })
 export const savedFileSchema = z.object({ path: serverPath, size: z.number().min(0) })
 export const serverPropertiesSchema = z.object({
@@ -754,11 +784,12 @@ export function serverGameVersion(serverType: string, version: string, info: Cra
   return newestRelease(types.find((ty) => ty.id === serverType)?.versions ?? []) ?? newestRelease(types.flatMap((ty) => ty.versions))
 }
 
+const squash = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
+
 export interface AddonSearchFacets {
   kind: 'plugin' | 'mod'
+  /** ODER-verknüpft: Plugin-Plattformen bzw. der Modloader. */
   loaders: string[]
-  categories: string[]
-  categoryMatch: 'any'
   gameVersions: string[]
   serverUsable: true
 }
@@ -766,15 +797,73 @@ export interface AddonSearchFacets {
 export const PLUGIN_CATEGORIES = ['paper', 'purpur', 'spigot', 'bukkit'] as const
 /** Loader, die die Modrinth-Suche im Kern kennt. */
 const SEARCH_LOADERS = ['fabric', 'quilt', 'forge', 'neoforge']
+export const ADDON_SORTS = ['relevance', 'downloads', 'updated', 'newest'] as const
+export type AddonSort = (typeof ADDON_SORTS)[number]
 
 /** Modrinth-Filter für den Servertyp; `null` ohne Plugins/Mods (Vanilla). */
 export function addonSearchFacets(serverType: string, version: string, info: CraftingInfo | null): AddonSearchFacets | null {
   const kind = addonKind(serverType)
   if (!kind) return null
   const game = serverGameVersion(serverType, version, info)
-  const base = { categoryMatch: 'any' as const, gameVersions: game ? [game] : [], serverUsable: true as const }
-  if (kind === 'plugins') return { ...base, kind: 'plugin', loaders: [], categories: [...PLUGIN_CATEGORIES] }
-  return { ...base, kind: 'mod', loaders: SEARCH_LOADERS.includes(serverType) ? [serverType] : [], categories: [] }
+  const base = { gameVersions: game ? [game] : [], serverUsable: true as const }
+  if (kind === 'plugins') return { ...base, kind: 'plugin', loaders: [...PLUGIN_CATEGORIES] }
+  return { ...base, kind: 'mod', loaders: SEARCH_LOADERS.includes(serverType) ? [serverType] : [] }
+}
+
+/** Kategorie-Chips: Modrinth-Kategorien (keine Loader), ohne doppelte, sortiert nach Anzeigename. */
+export function addonCategoryNames(tags: { name: string; projectType: string; header: string }[], label: (name: string) => string): string[] {
+  const loaders = new Set<string>([...PLUGIN_CATEGORIES, ...SEARCH_LOADERS, 'folia', 'sponge', 'velocity', 'bungeecord', 'waterfall', 'datapack', 'minecraft'])
+  const names = new Set<string>()
+  for (const tag of tags) {
+    if (tag.header === 'categories' && (tag.projectType === 'mod' || tag.projectType === 'plugin') && !loaders.has(tag.name)) names.add(tag.name)
+  }
+  return [...names].sort((a, b) => label(a).localeCompare(label(b)))
+}
+
+interface VersionLike {
+  id: string
+  gameVersions: string[]
+  loaders: string[]
+  fileName: string
+  versionType: string
+}
+
+/** Passt eine Modrinth-Version zum Server (Minecraft-Version und Loader bzw. Plugin-Plattform)? */
+export function versionFitsServer(v: VersionLike, facets: Pick<AddonSearchFacets, 'gameVersions' | 'loaders'>): boolean {
+  if (facets.gameVersions.length && !facets.gameVersions.some((g) => v.gameVersions.includes(g))) return false
+  if (!facets.loaders.length) return true
+  // Paper/Purpur laden auch Spigot/Bukkit-Plugins, Folia-Plugins laufen auf Paper meist nicht.
+  return v.loaders.some((l) => facets.loaders.includes(l))
+}
+
+/** Versionen für die Liste: passende (oder alle), neueste zuerst wie von Modrinth geliefert. */
+export function serverVersions<T extends VersionLike>(versions: T[], facets: Pick<AddonSearchFacets, 'gameVersions' | 'loaders'>, all: boolean): T[] {
+  return all ? versions : versions.filter((v) => versionFitsServer(v, facets))
+}
+
+/** Neueste passende Version, Releases vor Betas/Alphas. */
+export function newestServerVersion<T extends VersionLike>(versions: T[], facets: Pick<AddonSearchFacets, 'gameVersions' | 'loaders'>): T | null {
+  const fitting = versions.filter((v) => versionFitsServer(v, facets))
+  return fitting.find((v) => v.versionType === 'release') ?? fitting[0] ?? null
+}
+
+/** Installierte Datei, die zu einer Version des Projekts gehört (Dateiname, ohne Groß-/Kleinschreibung). */
+export function installedVersion<T extends VersionLike>(versions: T[], files: readonly string[]): { version: T; file: string } | null {
+  const lower = new Map(files.map((f) => [f.toLowerCase().replace(/\.disabled$/, ''), f]))
+  for (const v of versions) {
+    const file = lower.get(v.fileName.toLowerCase())
+    if (file) return { version: v, file }
+  }
+  return null
+}
+
+/** Grobe Vermutung für die Trefferliste (ohne Versionen): Jar-Name beginnt mit Slug oder Titel. */
+export function looksInstalled(hit: { slug: string; title: string }, files: readonly string[]): boolean {
+  const keys = [squash(hit.slug), squash(hit.title)].filter((k) => k.length >= 3)
+  return files.some((f) => {
+    const base = squash(addonBaseName(f))
+    return base.length >= 3 && keys.some((k) => base === k || base.startsWith(k) || k.startsWith(base))
+  })
 }
 
 /** Name ohne `.jar` und Versionsteil: `LuckPerms-Bukkit-5.4.102.jar` → `LuckPerms-Bukkit`. */
@@ -784,8 +873,6 @@ export function addonBaseName(file: string): string {
   const base = (cut > 0 ? stem.slice(0, cut) : stem).replace(/[-_ +]+$/, '')
   return base || stem
 }
-
-const squash = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
 
 /** Passender Konfigurationsordner unter den vorhandenen: genau, sonst längster gemeinsamer Anfang. */
 export function matchConfigFolder(file: string, folders: string[]): string | null {
@@ -841,6 +928,7 @@ export interface WorldUploadTarget {
 }
 export type WorldUploadSource = { kind: 'instance'; instanceId: string; folder: string } | { kind: 'zip' } | { kind: 'folder' }
 
+/** Nur die Form (1–32 Zeichen `A-Za-z0-9_-`); reservierte Namen lehnt die API ab. */
 export function validWorldName(name: string): boolean {
   return WORLD_NAME_RE.test(name)
 }
@@ -876,4 +964,33 @@ export function dimensionId(value: string): DimensionId | null {
   if (v === 'nether' || v === 'the_nether' || v === 'dim-1') return 'nether'
   if (v === 'end' || v === 'the_end' || v === 'dim1') return 'end'
   return null
+}
+
+// --- Versionswechsel und Backups (nur mit Schalter) ---
+
+export const backupsSchema = z.object({
+  backups: z.array(
+    z.object({
+      id: z.string().regex(/^[A-Za-z0-9_-]{1,64}$/),
+      name: z.string().max(100),
+      size: z.number().min(0),
+      createdAt: time,
+    }),
+  ),
+  max: count,
+})
+export type CraftingBackups = z.infer<typeof backupsSchema>
+export type CraftingBackup = CraftingBackups['backups'][number]
+
+export interface VersionChange {
+  serverType: string
+  version: string
+  keepWorld: boolean
+}
+
+/** Gibt es etwas zu wechseln (anderer Typ oder andere Version, beides angeboten)? */
+export function versionChangeValid(change: VersionChange, current: { serverType: string; version: string }, info: CraftingInfo | null): boolean {
+  const type = info?.serverTypes.find((ty) => ty.id === change.serverType)
+  if (!type || !type.versions.includes(change.version)) return false
+  return change.serverType !== current.serverType || change.version !== current.version
 }

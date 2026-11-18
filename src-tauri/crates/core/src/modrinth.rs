@@ -50,9 +50,9 @@ impl ProjectKind {
         }
     }
 
-    /// Nur bei Mods und Modpacks unterscheidet Modrinth nach Modloader.
+    /// Nur bei Mods, Modpacks und Plugins unterscheidet Modrinth nach Loader (Plugins: paper, spigot …).
     pub(crate) fn has_loaders(self) -> bool {
-        matches!(self, Self::Mod | Self::Modpack)
+        matches!(self, Self::Mod | Self::Modpack | Self::Plugin)
     }
 }
 
@@ -105,6 +105,8 @@ const MAX_FILTER_VALUES: usize = 30;
 const MAX_EXCLUDED_PROJECTS: usize = 300;
 /// Loader-Namen, nach denen gefiltert werden darf.
 const SEARCH_LOADERS: &[&str] = &["fabric", "quilt", "forge", "neoforge"];
+/// Plattformen für Server-Plugins.
+const PLUGIN_LOADERS: &[&str] = &["paper", "purpur", "spigot", "bukkit", "folia"];
 
 fn default_limit() -> u32 {
     20
@@ -235,6 +237,8 @@ pub(crate) struct Version {
     pub dependencies: Vec<Dependency>,
     #[serde(default)]
     pub changelog: Option<String>,
+    #[serde(default)]
+    pub downloads: u64,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -296,6 +300,8 @@ pub struct VersionSummary {
     /// Markdown von Modrinth – das Frontend rendert es nur bereinigt.
     pub changelog: Option<String>,
     pub dependencies: Vec<DependencyInfo>,
+    /// Downloads dieser Version (0 = unbekannt).
+    pub downloads: u64,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -388,6 +394,7 @@ fn summarize(v: Version) -> Option<VersionSummary> {
         loaders: v.loaders.into_iter().take(10).map(|l| clip(l, 20)).collect(),
         file_name: clip(file.filename, 200),
         size: file.size,
+        downloads: v.downloads,
         changelog: v.changelog.map(|c| clip_markdown(c, MAX_CHANGELOG_CHARS)).filter(|c| !c.trim().is_empty()),
         dependencies: v
             .dependencies
@@ -428,7 +435,8 @@ pub(crate) fn validate_search(params: &SearchParams) -> Result<()> {
     if !params.game_versions.iter().all(|v| is_safe_game_version(v)) {
         return Err(Error::validation(crate::msg!("modrinth.invalidGameVersion", "Ungültige Spielversion")));
     }
-    if !params.loaders.iter().all(|l| SEARCH_LOADERS.contains(&l.as_str())) {
+    let loaders = if params.kind == ProjectKind::Plugin { PLUGIN_LOADERS } else { SEARCH_LOADERS };
+    if !params.loaders.iter().all(|l| loaders.contains(&l.as_str())) {
         return Err(Error::validation(crate::msg!("modrinth.unknownLoader", "Unbekannter Modloader")));
     }
     if !params.categories.iter().chain(&params.exclude_categories).all(|c| is_safe_category(c)) {
@@ -1942,15 +1950,19 @@ mod tests {
         assert_eq!(facets[3], ["server_side:required"]);
         assert_eq!(facets.len(), 4);
 
-        let plugins = build_facets(&params(serde_json::json!({
-            "kind": "plugin", "loaders": ["fabric"], "gameVersions": ["1.21.11"],
-            "categories": ["paper", "purpur", "spigot", "bukkit"], "categoryMatch": "any", "serverUsable": true
-        })));
+        let plugin_params = params(serde_json::json!({
+            "kind": "plugin", "loaders": ["paper", "purpur", "spigot", "bukkit"], "gameVersions": ["1.21.11"],
+            "categories": ["economy", "utility"], "serverUsable": true, "index": "updated"
+        }));
+        assert!(validate_search(&plugin_params).is_ok());
+        let plugins = build_facets(&plugin_params);
         assert_eq!(plugins[0], ["project_type:plugin"]);
         assert_eq!(plugins[1], ["versions:1.21.11"]);
         assert_eq!(plugins[2], ["categories:paper", "categories:purpur", "categories:spigot", "categories:bukkit"]);
-        assert_eq!(plugins[3], ["server_side:optional", "server_side:required"]);
-        assert_eq!(plugins.len(), 4);
+        assert_eq!(plugins[3], ["categories:economy"]);
+        assert_eq!(plugins[4], ["categories:utility"]);
+        assert_eq!(plugins[5], ["server_side:optional", "server_side:required"]);
+        assert_eq!(plugins.len(), 6);
 
         let server = build_facets(&params(serde_json::json!({ "kind": "mod", "environments": ["server"] })));
         assert_eq!(server[1], ["client_side:optional", "client_side:unsupported"]);
@@ -1965,6 +1977,7 @@ mod tests {
             serde_json::json!({ "kind": "mod", "offset": 10_001 }),
             serde_json::json!({ "kind": "mod", "query": "x".repeat(101) }),
             serde_json::json!({ "kind": "mod", "loaders": ["bukkit"] }),
+            serde_json::json!({ "kind": "plugin", "loaders": ["fabric"] }),
             serde_json::json!({ "kind": "mod", "gameVersions": ["1.21\"]]"] }),
             serde_json::json!({ "kind": "mod", "categories": ["Magic"] }),
             serde_json::json!({ "kind": "mod", "excludeCategories": ["a,b"] }),

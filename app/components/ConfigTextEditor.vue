@@ -5,7 +5,7 @@ import { highlightLine } from '~/utils/config/highlight'
 // Erweiterter Modus: Textfeld mit darunterliegender Einfärbung und
 // Zeilennummern. Nur die sichtbaren Zeilen werden eingefärbt (Dateien bis 2 MB).
 // `format: null` = schlichter Text ohne Einfärbung.
-const props = defineProps<{ format: ConfigFormat | null; errorLine: number | null; label: string }>()
+const props = defineProps<{ format: ConfigFormat | null; errorLine: number | null; label: string; readonly?: boolean }>()
 const model = defineModel<string>({ required: true })
 
 const LINE = 20 // px, passt zu leading-5
@@ -61,6 +61,7 @@ function insert(text: string) {
 }
 
 function onKey(e: KeyboardEvent) {
+  if (props.readonly) return
   if (e.key === 'Tab' && !e.shiftKey && !e.ctrlKey && !e.altKey) {
     e.preventDefault()
     insert(indentUnit.value)
@@ -124,6 +125,7 @@ const TOKEN_CLASS: Record<string, string> = {
         autocomplete="off"
         autocapitalize="off"
         :aria-label="label"
+        :readonly="readonly"
         @scroll="onScroll"
         @keydown="onKey"
       />

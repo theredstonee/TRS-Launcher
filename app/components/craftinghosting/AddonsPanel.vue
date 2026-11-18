@@ -1,6 +1,17 @@
 <script setup lang="ts">
-import type { ModrinthHit } from '~/types'
-import { type CraftingModsResult, type ServerAddon, addonConfigPath, addonKind, addonSearchFacets, serverGameVersion } from '~/utils/craftinghosting'
+import type { CategoryTag, ModrinthHit } from '~/types'
+import {
+  ADDON_SORTS,
+  type AddonSort,
+  type CraftingModsResult,
+  type ServerAddon,
+  addonCategoryNames,
+  addonConfigPath,
+  addonKind,
+  addonSearchFacets,
+  looksInstalled,
+  serverGameVersion,
+} from '~/utils/craftinghosting'
 
 // Plugins (Paper/Purpur) bzw. Mods (Fabric/Forge) des Servers: Liste, entfernen, Konfiguration
 // im Dateien-Reiter öffnen, auf Modrinth suchen und installieren. Gilt ab dem nächsten Start.
@@ -21,6 +32,10 @@ const gameVersion = computed(() => serverGameVersion(server.value.serverType, se
 onMounted(() => {
   if (!installing.value) void store.loadAddons()
   void search(true)
+  backend
+    .modrinthCategories()
+    .then((tags: CategoryTag[]) => (categoryNames.value = addonCategoryNames(tags, categoryLabel)))
+    .catch(() => {})
 })
 
 // --- Entfernen und Konfiguration --------------------------------------------------------
@@ -53,6 +68,11 @@ async function openConfig(item: ServerAddon) {
 
 const PAGE = 20
 const query = ref('')
+const sort = ref<AddonSort>('relevance')
+const picked = ref<string[]>([])
+const categoryNames = ref<string[]>([])
+const allChips = ref(false)
+const chips = computed(() => (allChips.value ? categoryNames.value : categoryNames.value.slice(0, 14)))
 const hits = ref<ModrinthHit[]>([])
 const total = ref(0)
 const searching = ref(false)
@@ -67,7 +87,13 @@ async function search(reset: boolean) {
   const token = ++searchToken
   searching.value = true
   try {
-    const page = await backend.craftinghosting.searchAddons(f, query.value.trim(), reset ? 0 : hits.value.length, PAGE)
+    const page = await backend.craftinghosting.searchAddons(f, {
+      query: query.value.trim(),
+      categories: picked.value,
+      sort: sort.value,
+      offset: reset ? 0 : hits.value.length,
+      limit: PAGE,
+    })
     if (token !== searchToken) return
     hits.value = reset ? page.hits : [...hits.value, ...page.hits.filter((h) => !hits.value.some((x) => x.projectId === h.projectId))]
     total.value = page.totalHits
@@ -83,9 +109,32 @@ watch(query, () => {
   if (debounce) clearTimeout(debounce)
   debounce = setTimeout(() => void search(true), 350)
 })
+watch([sort, picked], () => void search(true), { deep: true })
 onUnmounted(() => {
   if (debounce) clearTimeout(debounce)
+  observer?.disconnect()
 })
+
+function toggleChip(name: string) {
+  picked.value = picked.value.includes(name) ? picked.value.filter((c) => c !== name) : [...picked.value, name]
+}
+
+// Endlos scrollen: unten angekommen die nächste Seite holen.
+const sentinel = useTemplateRef<HTMLElement>('sentinel')
+let observer: IntersectionObserver | null = null
+watch(sentinel, (el) => {
+  observer?.disconnect()
+  if (!el || typeof IntersectionObserver === 'undefined') return
+  observer = new IntersectionObserver((entries) => {
+    if (entries.some((e) => e.isIntersecting) && !searching.value && hits.value.length < total.value) void search(false)
+  })
+  observer.observe(el)
+})
+
+// Projektseite im Reiter.
+const detail = ref<string | null>(null)
+const installedFiles = computed(() => (store.addons?.items ?? []).map((a) => a.file))
+const isInstalled = (hit: ModrinthHit) => results.value[hit.projectId]?.state === 'installed' || looksInstalled(hit, installedFiles.value)
 
 async function install(hit: ModrinthHit) {
   results.value[hit.projectId] = { state: 'busy' }
@@ -111,7 +160,8 @@ async function install(hit: ModrinthHit) {
       {{ t('craftinghosting.settings.nextStart') }}
     </p>
 
-    <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
+    <CraftinghostingAddonProject v-if="detail && facets" :project-id="detail" :facets="facets" :installed-files="installedFiles" @back="detail = null" />
+    <div v-show="!detail" class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
       <!-- Installiert -->
       <section class="card flex min-w-0 flex-col" aria-labelledby="ch-addons-title">
         <div class="flex items-center gap-2 border-b border-base-800 px-4 py-3">
@@ -176,6 +226,30 @@ async function install(hit: ModrinthHit) {
               data-testid="hosting-addons-query"
             />
           </div>
+          <div class="mt-2 flex items-center gap-2">
+            <label for="ch-addon-sort" class="text-xs text-base-400">{{ t('craftinghosting.addons.sortLabel') }}</label>
+            <select id="ch-addon-sort" v-model="sort" class="field w-auto py-1 text-xs" data-testid="hosting-addons-sort">
+              <option v-for="s in ADDON_SORTS" :key="s" :value="s">{{ t(`craftinghosting.addons.sort.${s}`) }}</option>
+            </select>
+            <button v-if="picked.length" class="ml-auto text-xs text-base-400 hover:text-base-50" @click="picked = []">{{ t('craftinghosting.addons.clearFilters') }}</button>
+          </div>
+          <div v-if="chips.length" class="mt-2 flex flex-wrap gap-1.5" role="group" :aria-label="t('craftinghosting.addons.categories')">
+            <button
+              v-for="c in chips"
+              :key="c"
+              type="button"
+              class="chip transition-colors motion-reduce:transition-none"
+              :class="picked.includes(c) ? 'bg-redstone-900/50 text-redstone-200 ring-1 ring-redstone-600/60' : 'hover:bg-base-700 hover:text-base-50'"
+              :aria-pressed="picked.includes(c)"
+              :data-testid="`hosting-addons-chip-${c}`"
+              @click="toggleChip(c)"
+            >
+              {{ categoryLabel(c) }}
+            </button>
+            <button v-if="categoryNames.length > 14" type="button" class="chip text-base-400 hover:text-base-50" @click="allChips = !allChips">
+              {{ allChips ? t('craftinghosting.addons.fewerCategories') : t('craftinghosting.addons.moreCategories', { n: categoryNames.length - 14 }) }}
+            </button>
+          </div>
         </div>
         <div v-if="searching && !hits.length" class="space-y-2 p-4">
           <div v-for="i in 4" :key="i" class="skeleton h-16" />
@@ -183,8 +257,10 @@ async function install(hit: ModrinthHit) {
         <p v-else-if="!hits.length" class="p-4 text-sm text-base-500">{{ t('craftinghosting.addons.noResults') }}</p>
         <ul v-else class="max-h-[34rem] divide-y divide-base-800/60 overflow-y-auto" :class="{ 'opacity-70': searching }" aria-live="polite">
           <li v-for="hit in hits" :key="hit.projectId" class="flex gap-3 px-4 py-3" :data-testid="`hosting-hit-${hit.slug}`">
-            <ModIcon :src="hit.iconUrl" :name="hit.title" :size="44" />
-            <div class="min-w-0 flex-1">
+            <button class="shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-redstone-500" :aria-label="hit.title" @click="detail = hit.projectId">
+              <ModIcon :src="hit.iconUrl" :name="hit.title" :size="44" />
+            </button>
+            <button class="min-w-0 flex-1 text-left outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-redstone-500" :data-testid="`hosting-hit-open-${hit.slug}`" @click="detail = hit.projectId">
               <p class="flex items-baseline gap-1.5">
                 <span class="truncate text-sm font-semibold text-base-50">{{ hit.title }}</span>
                 <span v-if="hit.author" class="truncate text-xs text-base-500">{{ t('craftinghosting.addons.by', { author: hit.author }) }}</span>
@@ -193,13 +269,13 @@ async function install(hit: ModrinthHit) {
               <p class="mt-1 flex items-center gap-1 text-[11px] text-base-500">
                 <svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
                 {{ t('craftinghosting.addons.downloads', { n: formatCount(hit.downloads) }) }}
+                <span v-if="isInstalled(hit)" class="ml-2 badge bg-emerald-900/50 text-emerald-300 ring-1 ring-emerald-700/40">{{ t('craftinghosting.addons.installed') }}</span>
               </p>
-            </div>
+            </button>
             <div class="flex shrink-0 flex-col items-end justify-center gap-1">
-              <span v-if="results[hit.projectId]?.state === 'installed'" class="inline-flex items-center gap-1 text-xs text-ok" data-testid="hosting-hit-installed">
-                <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>
-                {{ t('craftinghosting.addons.installed') }}
-              </span>
+              <button v-if="isInstalled(hit)" class="btn btn-ghost px-3 py-1.5 text-xs" data-testid="hosting-hit-installed" @click="detail = hit.projectId">
+                {{ t('craftinghosting.addons.otherVersion') }}
+              </button>
               <template v-else>
                 <button class="btn btn-primary px-3 py-1.5 text-xs" :disabled="results[hit.projectId]?.state === 'busy' || !!store.busy" :data-testid="`hosting-hit-install-${hit.slug}`" @click="install(hit)">
                   {{ results[hit.projectId]?.state === 'busy' ? t('craftinghosting.addons.installing') : t('craftinghosting.addons.install') }}
@@ -210,14 +286,16 @@ async function install(hit: ModrinthHit) {
               </template>
             </div>
           </li>
-          <li v-if="hits.length < total" class="p-3 text-center">
-            <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="searching" @click="search(false)">{{ t('craftinghosting.addons.more') }}</button>
+          <li v-if="hits.length < total" ref="sentinel" class="p-3 text-center">
+            <button class="btn btn-ghost px-3 py-1.5 text-xs" :disabled="searching" @click="search(false)">
+              {{ searching ? t('craftinghosting.addons.loadingMore') : t('craftinghosting.addons.more') }}
+            </button>
           </li>
         </ul>
       </section>
     </div>
 
-    <CraftinghostingInstanceModsCard />
+    <CraftinghostingInstanceModsCard v-show="!detail" />
 
     <BaseDialog v-if="removing" :title="t('craftinghosting.addons.removeTitle', { file: removing.file })" @close="removing = null">
       <p class="text-sm text-base-200">{{ t('craftinghosting.addons.removeText') }}</p>

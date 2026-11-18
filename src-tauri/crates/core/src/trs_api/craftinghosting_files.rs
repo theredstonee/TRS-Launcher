@@ -118,16 +118,31 @@ pub struct FileEntry {
     pub kind: String,
     pub size: u64,
     pub modified_at: Option<String>,
-    /// Textdatei, die der Editor öffnen darf.
+    /// Textdatei, die gespeichert werden darf.
     pub editable: bool,
-    /// Von TRS verwaltet: nicht bearbeiten, nicht löschen.
+    /// Textdatei, die sich (nur lesend) öffnen lässt.
+    pub viewable: bool,
+    /// Gesperrt: nicht bearbeiten, nicht löschen.
     pub protected: bool,
+    /// Grund der Sperre: `system`, `trs`, `access`, `other` (unbekannt) oder `None`.
+    pub lock: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct DirListing {
     pub dir: String,
+    /// Neue Dateien/Ordner in `dir` erlaubt.
+    pub writable: bool,
     pub entries: Vec<FileEntry>,
+}
+
+/// Bekannte Sperrgründe bleiben, alles andere wird zu `other`.
+fn lock_reason(lock: Option<String>, protected: bool) -> Option<String> {
+    match lock.as_deref().map(str::trim) {
+        Some("system" | "trs" | "access") => lock,
+        Some("") | None => protected.then(|| "other".to_owned()),
+        Some(_) => Some("other".to_owned()),
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -177,13 +192,16 @@ struct ApiEntry {
     size: Option<f64>,
     modified_at: Option<String>,
     editable: bool,
+    viewable: Option<bool>,
     protected: bool,
+    lock: Option<String>,
 }
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(default)]
 struct ApiListing {
     dir: String,
+    writable: Option<bool>,
     entries: Vec<ApiEntry>,
 }
 
@@ -197,19 +215,24 @@ impl ApiListing {
             .map(|e| {
                 let path = server_path(&e.path).ok().filter(|p| p != "/").unwrap_or_else(|| join(&dir, &e.name));
                 let directory = e.kind == "directory";
+                let lock = lock_reason(e.lock, e.protected);
+                let protected = e.protected || lock.is_some();
+                let editable = e.editable && !directory && !protected;
                 FileEntry {
                     name: e.name,
                     path,
                     size: amount(e.size),
                     modified_at: time(e.modified_at),
-                    editable: e.editable && !directory && !e.protected,
-                    protected: e.protected,
+                    editable,
+                    viewable: !directory && (editable || e.viewable.unwrap_or(e.editable)),
+                    protected,
+                    lock,
                     kind: e.kind,
                 }
             })
             .take(ENTRIES_MAX)
             .collect();
-        DirListing { dir, entries }
+        DirListing { dir, writable: self.writable.unwrap_or(true), entries }
     }
 }
 

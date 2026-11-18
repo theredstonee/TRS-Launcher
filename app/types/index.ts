@@ -901,6 +901,8 @@ export interface ModrinthVersion {
   /** Markdown – nur über renderMarkdown anzeigen */
   changelog: string | null
   dependencies: DependencyInfo[]
+  /** Downloads dieser Version (0 = unbekannt). */
+  downloads?: number
 }
 
 export interface ContentUpdate {

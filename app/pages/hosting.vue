@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { RouteLocationNormalized } from 'vue-router'
 import { addonKind } from '~/utils/craftinghosting'
 
 // Kostenloser Server beim Partner CraftingHosting: ohne Server der Assistent zum Anlegen,
@@ -34,7 +35,14 @@ const TABS = ['overview', 'console', 'settings', 'files', 'addons', 'world'] as 
 type Tab = (typeof TABS)[number]
 // Plugins (Paper/Purpur) bzw. Mods (Fabric/Forge); Vanilla hat keinen solchen Reiter.
 const addons = computed(() => addonKind(server.value?.serverType))
-const tabs = computed(() => TABS.filter((id) => id !== 'addons' || !!addons.value))
+// Bereiche erscheinen nur, wenn die TRS API sie freigibt (Funktions-Schalter in `info`).
+const tabs = computed(() =>
+  TABS.filter((id) => {
+    if (id === 'files') return store.features.files
+    if (id === 'addons') return store.features.addons && !!addons.value
+    return true
+  }),
+)
 const tab = computed<Tab>({
   get: () => {
     // Alte Links auf „Mods & Welt“.
@@ -43,6 +51,23 @@ const tab = computed<Tab>({
   },
   set: (v) => void router.replace({ query: { ...route.query, tab: v === 'overview' ? undefined : v } }),
 })
+// Ungespeicherte Änderungen im Datei-Editor: vor Reiterwechsel oder Verlassen der Seite fragen.
+const leaveAsk = ref<{ to: string; replace: boolean } | null>(null)
+function guardLeave(to: RouteLocationNormalized, replace: boolean): boolean {
+  if (!store.filesDirty || (replace && to.query.tab === 'files')) return true
+  leaveAsk.value = { to: to.fullPath, replace }
+  return false
+}
+onBeforeRouteUpdate((to) => guardLeave(to, true))
+onBeforeRouteLeave((to) => guardLeave(to, false))
+function confirmLeave() {
+  const ask = leaveAsk.value
+  leaveAsk.value = null
+  if (!ask) return
+  store.filesDirty = null
+  void (ask.replace ? router.replace(ask.to) : router.push(ask.to))
+}
+
 function tabLabel(id: Tab): string {
   if (id === 'addons') return t(addons.value === 'plugins' ? 'craftinghosting.tabs.plugins' : 'craftinghosting.tabs.mods')
   return t(`craftinghosting.tabs.${id}`)
@@ -111,6 +136,10 @@ function openEula() {
       <template v-else-if="store.loaded">
         <p v-if="store.problem" class="mb-4 rounded-lg bg-lamp-900/40 px-3 py-2 text-sm text-lamp-300">{{ store.problem.text }}</p>
         <p v-if="mobile" class="mb-4 rounded-lg bg-base-900 px-3 py-2 text-sm text-base-200 ring-1 ring-base-800">{{ t('craftinghosting.mobileNote') }}</p>
+        <p v-if="info?.notice" class="mb-4 flex items-start gap-2 rounded-lg bg-sky-950/40 px-3 py-2 text-sm text-sky-200 ring-1 ring-sky-800/40" role="status" data-testid="hosting-notice">
+          <svg viewBox="0 0 24 24" class="mt-0.5 size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>
+          <span class="min-w-0 whitespace-pre-line">{{ info.notice }}</span>
+        </p>
 
         <!-- Noch kein Server -->
         <CraftinghostingCreateWizard v-if="!server" :locked="mobile" />
@@ -142,10 +171,10 @@ function openEula() {
           <div :id="`ch-panel-${tab}`" role="tabpanel" :aria-labelledby="`ch-tab-${tab}`" tabindex="-1" class="outline-none">
             <CraftinghostingConsolePanel v-if="tab === 'console'" />
             <div v-else-if="tab === 'settings'" class="space-y-4">
-              <CraftinghostingAddressCard />
-              <CraftinghostingVersionRow />
+              <CraftinghostingAddressCard v-if="store.features.ownAddress" />
+              <CraftinghostingVersionCard v-if="store.features.versionChange" />
               <CraftinghostingSettingsPanel />
-              <CraftinghostingPropertiesPanel />
+              <CraftinghostingPropertiesPanel v-if="store.features.properties" />
               <section class="card flex flex-wrap items-center justify-between gap-3 border-redstone-900/70 p-4" aria-labelledby="ch-danger-title">
                 <div class="min-w-0">
                   <h3 id="ch-danger-title" class="text-sm font-semibold text-redstone-300">{{ t('craftinghosting.danger.title') }}</h3>
@@ -173,6 +202,15 @@ function openEula() {
         <button class="btn btn-danger" :disabled="store.busy === 'delete'" data-testid="hosting-delete-confirm" @click="remove">
           {{ t('craftinghosting.delete.confirm') }}
         </button>
+      </template>
+    </BaseDialog>
+
+    <!-- Ungespeicherte Änderungen im Datei-Editor -->
+    <BaseDialog v-if="leaveAsk" :title="t('craftinghosting.files.discardTitle')" @close="leaveAsk = null">
+      <p class="text-sm text-base-200">{{ t('craftinghosting.files.discardText', { name: store.filesDirty ?? '' }) }}</p>
+      <template #actions>
+        <button class="btn btn-ghost" @click="leaveAsk = null">{{ t('common.actions.cancel') }}</button>
+        <button class="btn btn-danger" data-testid="hosting-leave-confirm" @click="confirmLeave">{{ t('craftinghosting.files.discard') }}</button>
       </template>
     </BaseDialog>
 

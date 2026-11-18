@@ -5,7 +5,10 @@ use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 use std::collections::BTreeMap;
 
-use trs_core::trs_api::craftinghosting::{Info, ModsResult, NewServer, Server, Settings, SettingsPatch, Stats, SubdomainCheck};
+use trs_core::trs_api::craftinghosting::{
+    Info, ModsResult, NewServer, Server, Settings, SettingsPatch, Stats, SubdomainCheck, VersionPick,
+};
+use trs_core::trs_api::craftinghosting_backups::{Backups, VersionChange, backup_file_name};
 use trs_core::trs_api::craftinghosting_files::{Addons, DirListing, FileContent, Properties, SavedFile};
 use trs_core::trs_api::craftinghosting_world::{UploadTarget, WorldProgress, WorldSource};
 use trs_core::trs_api::craftinghosting_worlds::{WorldDownload, Worlds, download_file_name};
@@ -97,6 +100,12 @@ pub async fn craftinghosting_stats(launcher: State<'_, LauncherState>) -> Comman
 #[tauri::command]
 pub async fn craftinghosting_mods(launcher: State<'_, LauncherState>, projects: Vec<String>) -> CommandResult<ModsResult> {
     Ok(launcher.craftinghosting_mods(&projects).await?)
+}
+
+/// Bestimmte Modrinth-Versionen auf den Server (1–20).
+#[tauri::command]
+pub async fn craftinghosting_install_versions(launcher: State<'_, LauncherState>, versions: Vec<VersionPick>) -> CommandResult<ModsResult> {
+    Ok(launcher.craftinghosting_install_versions(&versions).await?)
 }
 
 /// Welt einer Instanz packen, hochladen und einspielen (Server muss aus sein).
@@ -261,4 +270,69 @@ pub async fn craftinghosting_addons(launcher: State<'_, LauncherState>) -> Comma
 #[tauri::command]
 pub async fn craftinghosting_remove_addon(launcher: State<'_, LauncherState>, file: String) -> CommandResult<()> {
     Ok(launcher.craftinghosting_remove_addon(&file).await?)
+}
+
+// --- Versionswechsel und Backups (nur mit Funktions-Schalter der TRS API) ------------------
+
+#[tauri::command]
+pub async fn craftinghosting_change_version(launcher: State<'_, LauncherState>, change: VersionChange) -> CommandResult<Server> {
+    Ok(launcher.craftinghosting_change_version(&change).await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_backups(launcher: State<'_, LauncherState>) -> CommandResult<Backups> {
+    Ok(launcher.craftinghosting_backups().await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_create_backup(launcher: State<'_, LauncherState>) -> CommandResult<()> {
+    Ok(launcher.craftinghosting_create_backup().await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_restore_backup(launcher: State<'_, LauncherState>, id: String) -> CommandResult<()> {
+    Ok(launcher.craftinghosting_restore_backup(&id).await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_delete_backup(launcher: State<'_, LauncherState>, id: String) -> CommandResult<()> {
+    Ok(launcher.craftinghosting_delete_backup(&id).await?)
+}
+
+/// Backup als ZIP speichern (Dialog). `None` = abgebrochen; Abbrechen über `taskId`.
+#[tauri::command]
+pub async fn craftinghosting_download_backup(
+    app: AppHandle,
+    launcher: State<'_, LauncherState>,
+    id: String,
+    name: String,
+    server_name: String,
+    on_progress: Channel<WorldProgress>,
+    task_id: Option<String>,
+) -> CommandResult<Option<String>> {
+    trs_core::platform::desktop_only()?;
+    let suggestion = backup_file_name(&server_name, &name);
+    let lang = dialog_text::language(&launcher).await;
+    let dialog_app = app.clone();
+    let picked = tauri::async_runtime::spawn_blocking(move || {
+        dialog_app
+            .dialog()
+            .file()
+            .set_title(DialogText::SaveBackup.text(lang))
+            .set_file_name(suggestion)
+            .add_filter(DialogText::ZipArchive.text(lang), &["zip"])
+            .blocking_save_file()
+    })
+    .await
+    .ok()
+    .flatten()
+    .and_then(|p| p.into_path().ok());
+    let Some(dest) = picked else { return Ok(None) };
+    let file_name = dest.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let launcher = launcher.inner().clone();
+    let work = launcher.craftinghosting_download_backup(&id, &dest, move |p| {
+        let _ = on_progress.send(p);
+    });
+    crate::commands::tasks::tracked(&app, task_id, work).await?;
+    Ok(Some(file_name))
 }

@@ -355,7 +355,8 @@
       "file_not_text": "Não é um arquivo de texto – não pode ser editado aqui.",
       "file_too_large": "O arquivo é grande demais para o editor (no máximo 1 MB).",
       "file_protected": "A TRS gerencia este arquivo – ele não pode ser alterado nem excluído.",
-      "property_locked": "Esta configuração é fixa e não pode ser alterada."
+      "property_locked": "Esta configuração é fixa e não pode ser alterada.",
+      "feature_unavailable": "Isso ainda não está disponível – chega em breve."
     },
     "auth": {
       "accountMismatch": "Este login pertence a outra conta – entre novamente.",
@@ -823,7 +824,8 @@
       "fileTooLarge": "O arquivo é grande demais (no máximo 1 MB).",
       "invalidWorldName": "Nome do mundo: 1 a 32 caracteres de A–Z, a–z, 0–9, _ e -.",
       "noWorldInZip": "Não há nenhum mundo neste arquivo ZIP (falta o level.dat).",
-      "downloadFailed": "Não foi possível baixar o mundo – tente de novo."
+      "downloadFailed": "Não foi possível baixar o mundo – tente de novo.",
+      "invalidBackup": "Este backup não existe assim."
     },
     "chatImage": {
       "unsupported": "Só é possível enviar imagens PNG, JPEG e WebP.",
@@ -7859,7 +7861,6 @@
       "create": "Criar",
       "folderCreated": "Pasta criada.",
       "empty": "Esta pasta está vazia.",
-      "protected": "Gerenciado pela TRS – não pode ser editado nem excluído.",
       "notEditable": "Não pode ser aberto como texto.",
       "deleteLabel": "Excluir {name}",
       "deleteTitle": "Excluir “{name}”?",
@@ -7876,7 +7877,14 @@
       "discardTitle": "Descartar alterações?",
       "discardText": "Suas alterações em “{name}” ainda não foram salvas.",
       "discard": "Descartar",
-      "propertiesNote": "O server.properties é verificado ao salvar: a linha 2 do MOTD e algumas configurações de rede (porta, endereço, transferências) são fixas."
+      "propertiesNote": "O server.properties é verificado ao salvar: a linha 2 do MOTD e algumas configurações de rede (porta, endereço, transferências) são fixas.",
+      "readOnly": "Somente leitura",
+      "locks": {
+        "system": "Parte do software do servidor – somente leitura",
+        "trs": "Gerenciado pela TRS",
+        "access": "Segue o acesso (só amigos)",
+        "other": "Bloqueado"
+      }
     },
     "props": {
       "title": "Todas as configurações do servidor",
@@ -7972,7 +7980,31 @@
       "installedToast": "“{name}” instalado – carrega no próximo início.",
       "skipped": "Ignorado: {reason}",
       "by": "por {author}",
-      "downloads": "{n} downloads"
+      "downloads": "{n} downloads",
+      "backToSearch": "Voltar à busca",
+      "clientOnly": "Só para o cliente – não roda em servidor.",
+      "installedVersion": "Instalado: {version}",
+      "updateTo": "Atualizar para {version}",
+      "noFitting": "Nenhuma versão combina com o tipo de servidor e a versão do Minecraft.",
+      "otherVersion": "Outra versão",
+      "installedNext": "{version} instalado – carrega no próximo início.",
+      "allVersionsHint": "Todas as versões, inclusive as que talvez não rodem no seu servidor.",
+      "fittingHint": "Versões para o seu servidor (Minecraft {version}).",
+      "showAll": "Mostrar todas as versões",
+      "dependencies": "Precisa de mais {n} projetos",
+      "installThis": "Instalar esta versão",
+      "sortLabel": "Ordenar",
+      "clearFilters": "Limpar filtros",
+      "categories": "Categorias",
+      "fewerCategories": "Menos",
+      "moreCategories": "+{n} mais",
+      "loadingMore": "Carregando …",
+      "sort": {
+        "relevance": "Relevância",
+        "downloads": "Downloads",
+        "updated": "Atualizados recentemente",
+        "newest": "Mais novos"
+      }
     },
     "worlds": {
       "title": "Mundos no servidor",
@@ -8023,13 +8055,38 @@
       "sourceHint": {
         "zip": "Você escolhe o arquivo ZIP depois de clicar – o mundo (level.dat) pode estar em qualquer pasta dentro dele.",
         "folder": "Você escolhe a pasta do mundo (com level.dat) depois de clicar."
-      }
+      },
+      "nameRejected": "O servidor não aceita este nome de mundo – alguns nomes são pastas do servidor (ex.: plugins, config). Escolha outro."
     },
     "version": {
       "title": "Tipo de servidor e versão",
-      "soon": "Em breve",
-      "soonHint": "A CraftingHosting vai oferecer a troca de versão em breve.",
-      "change": "Trocar versão"
+      "change": "Trocar versão",
+      "type": "Tipo de servidor",
+      "version": "Versão",
+      "keepWorld": "Manter o mundo",
+      "warning": "Plugins e mods podem não funcionar na nova versão. O servidor reinicia – seu mundo continua.",
+      "warningNewWorld": "Plugins e mods podem não funcionar na nova versão. O servidor reinicia com um mundo novo – o antigo é excluído.",
+      "working": "Trocando …",
+      "confirm": "Trocar versão",
+      "changed": "Versão trocada – o servidor está sendo configurado de novo."
+    },
+    "notAvailable": "Ainda não disponível – em breve.",
+    "backups": {
+      "title": "Backups",
+      "text": "Cópias do seu servidor. Restaurar exige o servidor parado.",
+      "create": "Criar backup",
+      "working": "Em andamento …",
+      "full": "Número máximo de backups atingido – exclua um antigo primeiro.",
+      "empty": "Ainda não há backups.",
+      "restore": "Restaurar",
+      "restoreTitle": "Restaurar “{name}”?",
+      "restoreText": "O estado atual do seu servidor será substituído por este backup.",
+      "deleteLabel": "Excluir backup {name}",
+      "deleteTitle": "Excluir “{name}”?",
+      "deleteText": "O backup será excluído para sempre.",
+      "created": "Backup criado.",
+      "restored": "“{name}” restaurado – vale a partir do próximo início.",
+      "downloaded": "Backup salvo como {file}."
     }
   }
 }

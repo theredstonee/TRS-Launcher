@@ -620,6 +620,7 @@ fn summarize(file: RawFile, is_mod: bool) -> Option<VersionSummary> {
         loaders,
         file_name: clip(file.file_name.clone(), 200),
         size: file.file_length,
+        downloads: 0,
         changelog: None,
         dependencies: file
             .dependencies
