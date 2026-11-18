@@ -15,6 +15,8 @@ import {
   type CraftingStats,
   type HostingOrigin,
   type NewCraftingServer,
+  type ServerAddons,
+  type ServerProperties,
   type SubdomainCheck,
   type WorldUploadProgress,
   ORIGINS_KEY,
@@ -40,7 +42,20 @@ const STATS_MS = 5_000
 const LOGS_MS = 3_000
 const LOG_LINES = 200
 
-type Busy = 'create' | 'start' | 'stop' | 'delete' | 'access' | 'command' | 'rename' | 'address' | 'settings' | 'mods' | 'world'
+type Busy =
+  | 'create'
+  | 'start'
+  | 'stop'
+  | 'delete'
+  | 'access'
+  | 'command'
+  | 'rename'
+  | 'address'
+  | 'settings'
+  | 'properties'
+  | 'mods'
+  | 'addons'
+  | 'world'
 
 /** So lange wartet „Inhalte übernehmen“ aufs Stoppen. */
 const STOP_GIVE_UP_MS = 2 * 60_000
@@ -96,6 +111,14 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
   /** Aus welcher Instanz ein Server angelegt wurde (nur lokal). */
   const origins = ref<Record<string, HostingOrigin>>(readOrigins())
   const transfer = ref<TransferRun | null>(null)
+  /** Alle Schlüssel aus server.properties; `propertiesPending` = erst nach dem ersten Start. */
+  const properties = ref<ServerProperties | null>(null)
+  const propertiesPending = ref(false)
+  const addons = ref<ServerAddons | null>(null)
+  const addonsLoading = ref(false)
+  /** Sprungziel für den Dateien-Reiter; `filesJump` zählt hoch, damit derselbe Ordner erneut greift. */
+  const filesDir = ref('/')
+  const filesJump = ref(0)
   let joinAfterEula = false
   let pollTimer: ReturnType<typeof setTimeout> | null = null
   let statsTimer: ReturnType<typeof setInterval> | null = null
@@ -327,8 +350,71 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     if (saved) {
       settings.value = saved
       useToasts().ok(t('craftinghosting.settings.saved'))
+      if (properties.value) void loadProperties()
     }
     return !!saved
+  }
+
+  async function loadProperties() {
+    propertiesPending.value = false
+    try {
+      properties.value = await backend.craftinghosting.properties()
+    } catch (e) {
+      properties.value = null
+      if (apiCode(e) === 'server_installing') propertiesPending.value = true
+      else report(e)
+    }
+  }
+
+  /** Nur geänderte Schlüssel; danach auch die Schnell-Einstellungen neu holen. */
+  async function saveProperties(changes: Record<string, string>): Promise<boolean> {
+    if (!Object.keys(changes).length) return true
+    const saved = await run('properties', () => backend.craftinghosting.saveProperties(changes))
+    if (saved) {
+      properties.value = saved
+      useToasts().ok(t('craftinghosting.settings.saved'))
+      if (settings.value) void loadSettings()
+    }
+    return !!saved
+  }
+
+  // --- Plugins/Mods und Dateien ----------------------------------------------------------
+
+  async function loadAddons() {
+    addonsLoading.value = true
+    try {
+      addons.value = await backend.craftinghosting.addons()
+    } catch (e) {
+      addons.value = null
+      if (apiCode(e) !== 'server_installing') report(e)
+    } finally {
+      addonsLoading.value = false
+    }
+  }
+
+  async function removeAddon(file: string): Promise<boolean> {
+    const done = await run('addons', async () => {
+      await backend.craftinghosting.removeAddon(file)
+      return true
+    })
+    if (done) {
+      if (addons.value) addons.value = { ...addons.value, items: addons.value.items.filter((a) => a.file !== file) }
+      useToasts().ok(t('craftinghosting.addons.removed', { file }))
+    }
+    return !!done
+  }
+
+  /** Modrinth-Projekte installieren; Ergebnis (installiert/übersprungen) für die Anzeige. */
+  async function installAddons(projects: string[]): Promise<CraftingModsResult | null> {
+    const result = await run('mods', () => backend.craftinghosting.mods(projects))
+    if (result) void loadAddons()
+    return result
+  }
+
+  /** Dateien-Reiter auf diesen Ordner stellen (z. B. Konfiguration eines Plugins). */
+  function openFiles(dir: string) {
+    filesDir.value = dir
+    filesJump.value++
   }
 
   /** Modrinth-Mods einer Instanz auf den Server; ohne Modrinth-Quelle bleibt nur die Liste. */
@@ -594,6 +680,10 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     logs.value = []
     modsTransfer.value = null
     transfer.value = null
+    properties.value = null
+    propertiesPending.value = false
+    addons.value = null
+    filesDir.value = '/'
   }
 
   return {
@@ -633,6 +723,18 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     loadSettings,
     settingsPending,
     saveSettings,
+    properties,
+    propertiesPending,
+    loadProperties,
+    saveProperties,
+    addons,
+    addonsLoading,
+    loadAddons,
+    removeAddon,
+    installAddons,
+    filesDir,
+    filesJump,
+    openFiles,
     transferMods,
     uploadWorld,
     setConsoleOpen,

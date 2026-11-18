@@ -4,7 +4,8 @@ import { highlightLine } from '~/utils/config/highlight'
 
 // Erweiterter Modus: Textfeld mit darunterliegender Einfärbung und
 // Zeilennummern. Nur die sichtbaren Zeilen werden eingefärbt (Dateien bis 2 MB).
-const props = defineProps<{ format: ConfigFormat; errorLine: number | null; label: string }>()
+// `format: null` = schlichter Text ohne Einfärbung.
+const props = defineProps<{ format: ConfigFormat | null; errorLine: number | null; label: string }>()
 const model = defineModel<string>({ required: true })
 
 const LINE = 20 // px, passt zu leading-5
@@ -20,7 +21,7 @@ const last = computed(() => Math.min(lines.value.length, Math.ceil((scrollTop.va
 const visible = computed(() =>
   lines.value.slice(first.value, last.value).map((line, i) => ({
     n: first.value + i + 1,
-    tokens: highlightLine(props.format, line.replace(/\r$/, '')),
+    tokens: props.format ? highlightLine(props.format, line.replace(/\r$/, '')) : [{ text: line.replace(/\r$/, ''), cls: 'text' as const }],
   })),
 )
 const gutterWidth = computed(() => `${String(lines.value.length).length + 2}ch`)

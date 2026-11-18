@@ -24,6 +24,7 @@ pub mod cape_import;
 pub mod cape_video;
 pub mod chat;
 pub mod craftinghosting;
+pub mod craftinghosting_files;
 pub mod craftinghosting_world;
 pub mod creator;
 pub mod creator_pet;
@@ -516,9 +517,13 @@ fn message_for(code: &str) -> Msg {
         "server_suspended" => msg!("trsApi.server_suspended", "Dein Server wurde von CraftingHosting gesperrt."),
         "server_type_unavailable" => msg!("trsApi.server_type_unavailable", "Diesen Servertyp gibt es gerade nicht."),
         "version_unavailable" => msg!("trsApi.version_unavailable", "Diese Version gibt es für den Servertyp gerade nicht."),
-        "invalid_path" => msg!("trsApi.invalid_path", "Diese Datei nimmt der Server nicht an."),
+        "invalid_path" => msg!("trsApi.invalid_path", "Diesen Pfad nimmt der Server nicht an."),
         "file_rejected" => msg!("trsApi.file_rejected", "CraftingHosting hat die Datei abgelehnt."),
-        "file_not_found" => msg!("trsApi.file_not_found", "Die hochgeladene Welt wurde nicht gefunden – bitte noch einmal hochladen."),
+        "file_not_found" => msg!("trsApi.file_not_found", "Die Datei gibt es auf dem Server nicht (mehr)."),
+        "file_not_text" => msg!("trsApi.file_not_text", "Das ist keine Textdatei – sie lässt sich hier nicht bearbeiten."),
+        "file_too_large" => msg!("trsApi.file_too_large", "Die Datei ist zu groß für den Editor (höchstens 1 MB)."),
+        "file_protected" => msg!("trsApi.file_protected", "Diese Datei verwaltet TRS – sie lässt sich nicht ändern oder löschen."),
+        "property_locked" => msg!("trsApi.property_locked", "Diese Einstellung ist fest vorgegeben und lässt sich nicht ändern."),
         "mods_unsupported" => msg!("trsApi.mods_unsupported", "Dieser Servertyp kann keine Mods oder Plugins laden."),
         "server_running" => msg!("trsApi.server_running", "Stoppe den Server zuerst – das geht nur, solange er aus ist."),
         "invalid_subdomain" => msg!("trsApi.invalid_subdomain", "Diese Adresse geht nicht – 3 bis 24 Zeichen aus a–z, 0–9 und -."),

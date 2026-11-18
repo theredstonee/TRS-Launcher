@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { addonKind } from '~/utils/craftinghosting'
+
 // Kostenloser Server beim Partner CraftingHosting: ohne Server der Assistent zum Anlegen,
-// sonst Kopfkarte und Reiter (Übersicht, Konsole, Einstellungen, Mods & Welt).
+// sonst Kopfkarte und Reiter (Übersicht, Konsole, Einstellungen, Dateien, Plugins/Mods, Welt).
 const store = useCraftingHostingStore()
 const trs = useTrsStore()
 const accounts = useAccountsStore()
@@ -28,19 +30,31 @@ watch(
 )
 
 // --- Reiter (stehen in ?tab=, überleben also ein Neuladen) --------------------------------
-const TABS = ['overview', 'console', 'settings', 'content'] as const
+const TABS = ['overview', 'console', 'settings', 'files', 'addons', 'world'] as const
 type Tab = (typeof TABS)[number]
+// Plugins (Paper/Purpur) bzw. Mods (Fabric/Forge); Vanilla hat keinen solchen Reiter.
+const addons = computed(() => addonKind(server.value?.serverType))
+const tabs = computed(() => TABS.filter((id) => id !== 'addons' || !!addons.value))
 const tab = computed<Tab>({
-  get: () => TABS.find((x) => x === route.query.tab) ?? 'overview',
+  get: () => {
+    // Alte Links auf „Mods & Welt“.
+    const want = route.query.tab === 'content' ? (addons.value ? 'addons' : 'world') : route.query.tab
+    return tabs.value.find((x) => x === want) ?? 'overview'
+  },
   set: (v) => void router.replace({ query: { ...route.query, tab: v === 'overview' ? undefined : v } }),
 })
+function tabLabel(id: Tab): string {
+  if (id === 'addons') return t(addons.value === 'plugins' ? 'craftinghosting.tabs.plugins' : 'craftinghosting.tabs.mods')
+  return t(`craftinghosting.tabs.${id}`)
+}
 const tabRefs = useTemplateRef<HTMLButtonElement[]>('tabRefs')
 function onTabKey(e: KeyboardEvent) {
-  const i = TABS.indexOf(tab.value)
-  const next = e.key === 'ArrowRight' ? (i + 1) % TABS.length : e.key === 'ArrowLeft' ? (i - 1 + TABS.length) % TABS.length : e.key === 'Home' ? 0 : e.key === 'End' ? TABS.length - 1 : -1
+  const list = tabs.value
+  const i = list.indexOf(tab.value)
+  const next = e.key === 'ArrowRight' ? (i + 1) % list.length : e.key === 'ArrowLeft' ? (i - 1 + list.length) % list.length : e.key === 'Home' ? 0 : e.key === 'End' ? list.length - 1 : -1
   if (next < 0) return
   e.preventDefault()
-  tab.value = TABS[next]!
+  tab.value = list[next]!
   void nextTick(() => tabRefs.value?.[next]?.focus())
 }
 
@@ -107,7 +121,7 @@ function openEula() {
 
           <div class="flex gap-1 border-b border-base-800 mobile-scroll-x" role="tablist" :aria-label="t('craftinghosting.tabsLabel')" @keydown="onTabKey">
             <button
-              v-for="id in TABS"
+              v-for="id in tabs"
               :id="`ch-tab-${id}`"
               :key="id"
               ref="tabRefs"
@@ -120,7 +134,7 @@ function openEula() {
               :data-testid="`hosting-tab-${id}`"
               @click="tab = id"
             >
-              {{ t(`craftinghosting.tabs.${id}`) }}
+              {{ tabLabel(id) }}
               <span v-if="tab === id" class="ch-tab-line" aria-hidden="true" />
             </button>
           </div>
@@ -130,6 +144,7 @@ function openEula() {
             <div v-else-if="tab === 'settings'" class="space-y-4">
               <CraftinghostingAddressCard />
               <CraftinghostingSettingsPanel />
+              <CraftinghostingPropertiesPanel />
               <section class="card flex flex-wrap items-center justify-between gap-3 border-redstone-900/70 p-4" aria-labelledby="ch-danger-title">
                 <div class="min-w-0">
                   <h3 id="ch-danger-title" class="text-sm font-semibold text-redstone-300">{{ t('craftinghosting.danger.title') }}</h3>
@@ -140,7 +155,9 @@ function openEula() {
                 </button>
               </section>
             </div>
-            <CraftinghostingContentPanel v-else-if="tab === 'content'" />
+            <CraftinghostingFilesPanel v-else-if="tab === 'files'" />
+            <CraftinghostingAddonsPanel v-else-if="tab === 'addons'" @files="tab = 'files'" />
+            <CraftinghostingWorldPanel v-else-if="tab === 'world'" />
             <CraftinghostingOverviewPanel v-else />
           </div>
         </div>

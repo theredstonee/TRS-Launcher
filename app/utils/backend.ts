@@ -166,7 +166,13 @@ import {
   craftingServerSchema,
   craftingSettingsSchema,
   craftingStatsSchema,
+  savedFileSchema,
+  serverAddonsSchema,
+  serverDirSchema,
+  serverFileContentSchema,
+  serverPropertiesSchema,
   subdomainCheckSchema,
+  type AddonSearchFacets,
   type CraftingAccess,
   type CraftingSettingsPatch,
   type NewCraftingServer,
@@ -1405,6 +1411,23 @@ export const backend = {
     /** Welt einer Instanz packen, hochladen und auf dem Server einspielen (Server muss aus sein). */
     uploadWorld: (instanceId: string, folder: string, onProgress: (p: WorldUploadProgress) => void) =>
       checked(craftingServerSchema, 'craftinghosting_upload_world', { instanceId, folder, onProgress: channel(onProgress) }),
+    /** Ordner auf dem Server (Pfad absolut, z. B. `/plugins`). */
+    files: (dir: string) => checked(serverDirSchema, 'craftinghosting_files', { dir }),
+    /** Textdatei lesen (`file_not_text` / `file_too_large`). */
+    file: (path: string) => checked(serverFileContentSchema, 'craftinghosting_file', { path }),
+    saveFile: (path: string, content: string) => checked(savedFileSchema, 'craftinghosting_save_file', { path, content }),
+    deleteFiles: (paths: string[]) => call<void>('craftinghosting_delete_files', { paths }),
+    createFolder: (path: string) => call<void>('craftinghosting_create_folder', { path }),
+    /** Alle Schlüssel aus server.properties und die gesperrten. */
+    properties: () => checked(serverPropertiesSchema, 'craftinghosting_properties'),
+    saveProperties: (changes: Record<string, string>) => checked(serverPropertiesSchema, 'craftinghosting_save_properties', { changes }),
+    addons: () => checked(serverAddonsSchema, 'craftinghosting_addons'),
+    removeAddon: (file: string) => call<void>('craftinghosting_remove_addon', { file }),
+    /** Modrinth-Suche nach Plugins/Mods für den Server (Filter aus `addonSearchFacets`). */
+    searchAddons: (facets: AddonSearchFacets, query: string, offset = 0, limit = 20) =>
+      call<ModrinthSearchResult>('modrinth_search', {
+        params: { ...facets, query, index: query.trim() ? 'relevance' : 'downloads', offset, limit, excludeCategories: [], environments: [], excludeProjectIds: [], openSource: false },
+      }),
   },
 }
 

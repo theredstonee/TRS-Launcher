@@ -2,7 +2,10 @@
 
 use tauri::State;
 use tauri::ipc::Channel;
+use std::collections::BTreeMap;
+
 use trs_core::trs_api::craftinghosting::{Info, ModsResult, NewServer, Server, Settings, SettingsPatch, Stats, SubdomainCheck};
+use trs_core::trs_api::craftinghosting_files::{Addons, DirListing, FileContent, Properties, SavedFile};
 use trs_core::trs_api::craftinghosting_world::WorldProgress;
 
 use crate::LauncherState;
@@ -108,4 +111,54 @@ pub async fn craftinghosting_upload_world(
             let _ = on_progress.send(p);
         })
         .await?)
+}
+
+// --- Dateien, server.properties, Plugins/Mods --------------------------------------------
+
+#[tauri::command]
+pub async fn craftinghosting_files(launcher: State<'_, LauncherState>, dir: String) -> CommandResult<DirListing> {
+    Ok(launcher.craftinghosting_files(&dir).await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_file(launcher: State<'_, LauncherState>, path: String) -> CommandResult<FileContent> {
+    Ok(launcher.craftinghosting_file(&path).await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_save_file(launcher: State<'_, LauncherState>, path: String, content: String) -> CommandResult<SavedFile> {
+    Ok(launcher.craftinghosting_save_file(&path, &content).await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_delete_files(launcher: State<'_, LauncherState>, paths: Vec<String>) -> CommandResult<()> {
+    Ok(launcher.craftinghosting_delete_files(&paths).await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_create_folder(launcher: State<'_, LauncherState>, path: String) -> CommandResult<()> {
+    Ok(launcher.craftinghosting_create_folder(&path).await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_properties(launcher: State<'_, LauncherState>) -> CommandResult<Properties> {
+    Ok(launcher.craftinghosting_properties().await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_save_properties(
+    launcher: State<'_, LauncherState>,
+    changes: BTreeMap<String, String>,
+) -> CommandResult<Properties> {
+    Ok(launcher.craftinghosting_save_properties(&changes).await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_addons(launcher: State<'_, LauncherState>) -> CommandResult<Addons> {
+    Ok(launcher.craftinghosting_addons().await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_remove_addon(launcher: State<'_, LauncherState>, file: String) -> CommandResult<()> {
+    Ok(launcher.craftinghosting_remove_addon(&file).await?)
 }

@@ -56,7 +56,20 @@ const craftinghosting = {
   rename: vi.fn(async (name: string) => server({ name })),
   checkSubdomain: vi.fn(async (name: string) => ({ name, available: name !== 'play', reason: name === 'play' ? 'reserved' : null })),
   setSubdomain: vi.fn(async (name: string) => server({ domain: `${name}.trs-launcher.de` })),
-  mods: vi.fn(async (projects: string[]) => ({ installed: projects.slice(0, 1), skipped: [] })),
+  mods: vi.fn(async (projects: string[]) => ({ installed: projects.slice(0, 1), skipped: [] as { project: string; reason: 'client_only' }[] })),
+  settings: vi.fn(async () => ({ motd: 'A', maxPlayers: 8, gamemode: 'survival', difficulty: 'normal', hardcore: false, pvp: true, allowFlight: false, seed: '', levelType: 'normal', spawnProtection: 16, viewDistance: 10, simulationDistance: 10, whitelist: true })),
+  saveSettings: vi.fn(async () => ({ motd: 'B', maxPlayers: 8, gamemode: 'survival', difficulty: 'normal', hardcore: false, pvp: true, allowFlight: false, seed: '', levelType: 'normal', spawnProtection: 16, viewDistance: 10, simulationDistance: 10, whitelist: true })),
+  properties: vi.fn(async () => ({ properties: { pvp: 'true', motd: 'A', 'server-port': '25568' }, locked: ['server-port'] })),
+  saveProperties: vi.fn(async (changes: Record<string, string>) => ({ properties: { pvp: 'true', motd: 'A', 'server-port': '25568', ...changes }, locked: ['server-port'] })),
+  addons: vi.fn(async () => ({
+    kind: 'plugins' as const,
+    dir: '/plugins',
+    items: [
+      { file: 'TRS-Server-Rules.jar', size: 1, modifiedAt: null, protected: true },
+      { file: 'LuckPerms-5.4.jar', size: 2, modifiedAt: null, protected: false },
+    ],
+  })),
+  removeAddon: vi.fn(async () => {}),
   uploadWorld: vi.fn(async (_i: string, _f: string, onProgress: (p: { phase: string; percent: number }) => void) => {
     onProgress({ phase: 'upload', percent: 50 })
     return server()
@@ -358,5 +371,72 @@ describe('Inhalte aus der Instanz übernehmen', () => {
     expect(s.transfer?.steps.world).toBe('failed')
     expect(s.transfer?.steps.start).toBe('pending')
     expect(craftinghosting.start).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('Alle Einstellungen, Plugins und Dateien', () => {
+  it('speichert nur Änderungen und holt die Schnell-Einstellungen nach', async () => {
+    craftinghosting.server.mockImplementation(async () => server({ lastStartAt: '2026-11-18T10:00:00.000Z' }))
+    const s = await store()
+    await s.load()
+    await s.loadSettings()
+    await s.loadProperties()
+    expect(s.properties?.locked).toEqual(['server-port'])
+    craftinghosting.settings.mockClear()
+
+    expect(await s.saveProperties({})).toBe(true)
+    expect(craftinghosting.saveProperties).not.toHaveBeenCalled()
+    expect(await s.saveProperties({ pvp: 'false' })).toBe(true)
+    expect(craftinghosting.saveProperties).toHaveBeenCalledWith({ pvp: 'false' })
+    expect(s.properties?.properties.pvp).toBe('false')
+    expect(craftinghosting.settings).toHaveBeenCalledTimes(1)
+
+    // Schnell-Einstellungen gespeichert: Liste wird frisch geholt.
+    craftinghosting.properties.mockClear()
+    await s.saveSettings({ motd: 'B' })
+    expect(craftinghosting.properties).toHaveBeenCalledTimes(1)
+  })
+
+  it('vor dem ersten Start: Hinweis statt Fehler', async () => {
+    craftinghosting.properties.mockRejectedValueOnce(await apiError('server_installing'))
+    const s = await store()
+    await s.loadProperties()
+    expect(s.properties).toBeNull()
+    expect(s.propertiesPending).toBe(true)
+    expect(toasts.error).not.toHaveBeenCalled()
+  })
+
+  it('gesperrter Schlüssel: Fehler als Toast, Stand bleibt', async () => {
+    const s = await store()
+    await s.loadProperties()
+    craftinghosting.saveProperties.mockRejectedValueOnce(await apiError('property_locked'))
+    expect(await s.saveProperties({ 'server-port': '1' })).toBe(false)
+    expect(toasts.error).toHaveBeenCalled()
+    expect(s.properties?.properties['server-port']).toBe('25568')
+  })
+
+  it('listet, entfernt und installiert Plugins', async () => {
+    const s = await store()
+    await s.loadAddons()
+    expect(s.addons?.items.map((a) => a.file)).toEqual(['TRS-Server-Rules.jar', 'LuckPerms-5.4.jar'])
+    expect(await s.removeAddon('LuckPerms-5.4.jar')).toBe(true)
+    expect(craftinghosting.removeAddon).toHaveBeenCalledWith('LuckPerms-5.4.jar')
+    expect(s.addons?.items.map((a) => a.file)).toEqual(['TRS-Server-Rules.jar'])
+
+    craftinghosting.mods.mockResolvedValueOnce({ installed: [], skipped: [{ project: 'sodium', reason: 'client_only' }] })
+    const result = await s.installAddons(['sodium'])
+    expect(result?.skipped[0]?.reason).toBe('client_only')
+    expect(craftinghosting.addons).toHaveBeenCalledTimes(2)
+  })
+
+  it('springt im Dateien-Reiter in einen Ordner', async () => {
+    const s = await store()
+    const before = s.filesJump
+    s.openFiles('/plugins/LuckPerms')
+    expect(s.filesDir).toBe('/plugins/LuckPerms')
+    expect(s.filesJump).toBe(before + 1)
+    s.reset()
+    expect(s.filesDir).toBe('/')
+    expect(s.properties).toBeNull()
   })
 })

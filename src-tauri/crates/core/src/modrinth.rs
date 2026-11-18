@@ -26,7 +26,7 @@ const MAX_CHANGELOG_CHARS: usize = 16_000;
 const MAX_BODY_CHARS: usize = 100_000;
 const MAX_ALL_VERSIONS: usize = 250;
 
-/// Was sich suchen lässt – Instanz-Inhalte plus Modpacks.
+/// Was sich suchen lässt – Instanz-Inhalte plus Modpacks und Server-Plugins (Partner-Server).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ProjectKind {
@@ -35,6 +35,7 @@ pub enum ProjectKind {
     ShaderPack,
     DataPack,
     Modpack,
+    Plugin,
 }
 
 impl ProjectKind {
@@ -45,6 +46,7 @@ impl ProjectKind {
             Self::ShaderPack => "shader",
             Self::DataPack => "datapack",
             Self::Modpack => "modpack",
+            Self::Plugin => "plugin",
         }
     }
 
@@ -135,6 +137,9 @@ pub struct SearchParams {
     pub exclude_project_ids: Vec<String>,
     #[serde(default)]
     pub open_source: bool,
+    /// Nur Projekte, die auf einem Server laufen (`server_side` optional/required).
+    #[serde(default)]
+    pub server_usable: bool,
     #[serde(default)]
     pub index: SortIndex,
     #[serde(default)]
@@ -475,6 +480,9 @@ fn build_facets(params: &SearchParams) -> Vec<Vec<String>> {
             facets.push(group(&["server_side:optional", "server_side:required"]));
         }
         (false, false) => {}
+    }
+    if params.server_usable && !server {
+        facets.push(group(&["server_side:optional", "server_side:required"]));
     }
     if params.open_source {
         facets.push(group(&["open_source:true"]));
@@ -1892,7 +1900,7 @@ mod tests {
         assert_eq!(build_facets(&p), [["project_type:datapack"]]);
         // Unbekannte Sortierung / Art wird schon beim Einlesen abgelehnt.
         assert!(serde_json::from_value::<SearchParams>(serde_json::json!({ "kind": "mod", "index": "random" })).is_err());
-        assert!(serde_json::from_value::<SearchParams>(serde_json::json!({ "kind": "plugin" })).is_err());
+        assert!(serde_json::from_value::<SearchParams>(serde_json::json!({ "kind": "bukkit" })).is_err());
     }
 
     #[test]
@@ -1933,6 +1941,16 @@ mod tests {
         assert_eq!(facets[2], ["client_side:required"]);
         assert_eq!(facets[3], ["server_side:required"]);
         assert_eq!(facets.len(), 4);
+
+        let plugins = build_facets(&params(serde_json::json!({
+            "kind": "plugin", "loaders": ["fabric"], "gameVersions": ["1.21.11"],
+            "categories": ["paper", "purpur", "spigot", "bukkit"], "categoryMatch": "any", "serverUsable": true
+        })));
+        assert_eq!(plugins[0], ["project_type:plugin"]);
+        assert_eq!(plugins[1], ["versions:1.21.11"]);
+        assert_eq!(plugins[2], ["categories:paper", "categories:purpur", "categories:spigot", "categories:bukkit"]);
+        assert_eq!(plugins[3], ["server_side:optional", "server_side:required"]);
+        assert_eq!(plugins.len(), 4);
 
         let server = build_facets(&params(serde_json::json!({ "kind": "mod", "environments": ["server"] })));
         assert_eq!(server[1], ["client_side:optional", "client_side:unsupported"]);

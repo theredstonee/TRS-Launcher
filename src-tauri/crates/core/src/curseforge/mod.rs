@@ -71,6 +71,8 @@ pub(crate) const CLASS_RESOURCE_PACKS: u32 = 12;
 pub(crate) const CLASS_SHADERS: u32 = 6552;
 pub(crate) const CLASS_DATA_PACKS: u32 = 6945;
 pub(crate) const CLASS_MODPACKS: u32 = 4471;
+/// Bukkit-Plugins (nur für die Suche).
+pub(crate) const CLASS_PLUGINS: u32 = 5;
 
 /// Der beim Bauen eingebettete Schlüssel (leer = CurseForge aus).
 fn compiled_key() -> Option<&'static str> {
@@ -459,6 +461,7 @@ pub(crate) fn class_of(kind: ProjectKind) -> u32 {
         ProjectKind::ShaderPack => CLASS_SHADERS,
         ProjectKind::DataPack => CLASS_DATA_PACKS,
         ProjectKind::Modpack => CLASS_MODPACKS,
+        ProjectKind::Plugin => CLASS_PLUGINS,
     }
 }
 

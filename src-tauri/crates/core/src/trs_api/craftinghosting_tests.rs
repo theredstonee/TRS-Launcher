@@ -523,3 +523,192 @@ async fn create_sends_the_address() {
     assert_eq!(created.domain.as_deref(), Some("meinewelt.trs-launcher.de"));
     assert_eq!(server.hits("POST", "/v1/craftinghosting/server")[0].json()["subdomain"], json!("meinewelt"));
 }
+
+// --- Dateien, server.properties, Plugins/Mods -------------------------------------------
+
+const FILES: &str = "/v1/craftinghosting/server/files";
+
+fn files_api() -> impl Fn(&Request) -> Response + Send + Sync + 'static {
+    let issued = AtomicUsize::new(0);
+    move |req: &Request| {
+        if let Some(r) = auth_routes(req, &issued, "mc-token") {
+            return r;
+        }
+        if !req.bearer().is_some_and(|t| t.starts_with("trs_")) {
+            return Response::error(401, "unauthorized");
+        }
+        let path = req.path.as_str();
+        match req.method.as_str() {
+            "GET" if path == format!("{FILES}?dir=%2F") => Response::json(
+                200,
+                json!({ "dir": "/", "entries": [
+                    { "name": "plugins", "path": "/plugins", "type": "directory", "size": 0, "modifiedAt": "2026-11-18T10:00:00.000Z", "editable": true, "protected": false },
+                    { "name": "server.properties", "path": "/server.properties", "type": "file", "size": 1234, "modifiedAt": null, "editable": true, "protected": false },
+                    { "name": "whitelist.json", "path": "/whitelist.json", "type": "file", "size": 50, "editable": true, "protected": true },
+                    { "name": "../evil", "path": "/../evil", "type": "file", "size": 1 },
+                    { "name": "odd", "path": "../odd", "type": "file", "size": -5, "editable": false },
+                    { "name": "link", "path": "/link", "type": "symlink" }
+                ] }),
+            ),
+            "GET" if path == format!("{FILES}?dir=%2Fplugins") => Response::json(200, json!({ "dir": "/plugins", "entries": [] })),
+            "GET" if path == format!("{FILES}/content?path=%2Fserver.properties") => {
+                Response::json(200, json!({ "path": "/server.properties", "content": "motd=Hallo\npvp=true\n" }))
+            }
+            "GET" if path == format!("{FILES}/content?path=%2Fworld%2Flevel.dat") => Response::error(415, "file_not_text"),
+            "GET" if path == format!("{FILES}/content?path=%2Flogs%2Fbig.log") => Response::error(413, "file_too_large"),
+            "PUT" if path == format!("{FILES}/content?path=%2Fserver.properties") => {
+                let len = req.json()["content"].as_str().map_or(0, str::len);
+                Response::json(200, json!({ "path": "/server.properties", "size": len }))
+            }
+            "PUT" if path == format!("{FILES}/content?path=%2Fwhitelist.json") => Response::error(403, "file_protected"),
+            "POST" if path == format!("{FILES}/delete") => {
+                let paths = req.json()["paths"].clone();
+                if paths.as_array().is_some_and(|a| a.iter().any(|p| p == "/plugins/TRS-Server-Rules.jar")) {
+                    return Response::error(403, "file_protected");
+                }
+                Response::empty(204)
+            }
+            "POST" if path == format!("{FILES}/folder") => Response::empty(204),
+            "GET" if path == "/v1/craftinghosting/server/properties" => Response::json(
+                200,
+                json!({ "properties": { "motd": "Hallo", "pvp": "true", "max-players": 8, "Bad Key": "x", "server-port": "25568" },
+                        "locked": ["server-port", "white-list", "server-port", "BAD"] }),
+            ),
+            "PATCH" if path == "/v1/craftinghosting/server/properties" => {
+                let changes = req.json()["properties"].clone();
+                if changes.get("server-port").is_some() {
+                    return Response::error(400, "property_locked");
+                }
+                let mut props = json!({ "motd": "Hallo", "pvp": "true", "server-port": "25568" });
+                for (k, v) in changes.as_object().unwrap() {
+                    props[k] = v.clone();
+                }
+                Response::json(200, json!({ "properties": props, "locked": ["server-port"] }))
+            }
+            "GET" if path == "/v1/craftinghosting/server/addons" => Response::json(
+                200,
+                json!({ "kind": "plugins", "dir": "/plugins", "items": [
+                    { "file": "TRS-Server-Rules.jar", "size": 2048, "modifiedAt": "2026-11-18T10:00:00.000Z", "protected": true },
+                    { "file": "LuckPerms-Bukkit-5.4.102.jar", "size": 1_500_000, "protected": false },
+                    { "file": "../x.jar", "size": 1 }
+                ] }),
+            ),
+            "DELETE" if path == "/v1/craftinghosting/server/addons?file=LuckPerms-Bukkit-5.4.102.jar" => Response::empty(204),
+            "DELETE" if path == "/v1/craftinghosting/server/addons?file=TRS-Server-Rules.jar" => Response::error(403, "file_protected"),
+            _ => Response::error(404, "not_found"),
+        }
+    }
+}
+
+async fn files() -> (MockServer, tempfile::TempDir, Arc<crate::Launcher>) {
+    let server = MockServer::start(files_api()).await;
+    let (dir, launcher) = launcher(&server, &[ACC]).await;
+    (server, dir, launcher)
+}
+
+#[tokio::test]
+async fn files_are_listed_read_and_saved() {
+    let (server, _dir, launcher) = files().await;
+
+    let root = launcher.craftinghosting_files("/").await.unwrap();
+    assert_eq!(root.dir, "/");
+    let names: Vec<&str> = root.entries.iter().map(|e| e.name.as_str()).collect();
+    assert_eq!(names, ["plugins", "server.properties", "whitelist.json", "odd"]);
+    // Ordner sind nie editierbar, geschützte auch nicht; kaputte Pfade kommen aus dem Ordner.
+    assert!(!root.entries[0].editable);
+    assert!(root.entries[1].editable && !root.entries[1].protected);
+    assert!(root.entries[2].protected && !root.entries[2].editable);
+    assert_eq!((root.entries[3].path.as_str(), root.entries[3].size), ("/odd", 0));
+
+    assert_eq!(launcher.craftinghosting_files("/plugins/").await.unwrap().dir, "/plugins");
+    let before = server.requests().len();
+    for bad in ["plugins", "/../etc", "/a/./b", "C:\\x"] {
+        assert!(matches!(launcher.craftinghosting_files(bad).await, Err(Error::Validation(_))), "{bad}");
+    }
+    assert_eq!(server.requests().len(), before);
+
+    let file = launcher.craftinghosting_file("/server.properties").await.unwrap();
+    assert_eq!(file.content, "motd=Hallo\npvp=true\n");
+    let e = launcher.craftinghosting_file("/world/level.dat").await.unwrap_err();
+    assert_eq!(e.message_code(), "trsApi.file_not_text");
+    let e = launcher.craftinghosting_file("/logs/big.log").await.unwrap_err();
+    assert_eq!(e.message_code(), "trsApi.file_too_large");
+    assert!(matches!(launcher.craftinghosting_file("/").await, Err(Error::Validation(_))));
+
+    let saved = launcher.craftinghosting_save_file("/server.properties", "motd=Neu\n").await.unwrap();
+    assert_eq!((saved.path.as_str(), saved.size), ("/server.properties", 9));
+    let puts = server.hits("PUT", &format!("{FILES}/content"));
+    let put = puts.iter().find(|r| r.path.ends_with("?path=%2Fserver.properties")).unwrap();
+    assert_eq!(put.json(), json!({ "content": "motd=Neu\n" }));
+    let e = launcher.craftinghosting_save_file("/whitelist.json", "[]").await.unwrap_err();
+    assert_eq!(api_code(&e), ("trs_api", "file_protected"));
+    assert_eq!(e.message_code(), "trsApi.file_protected");
+    let big = "x".repeat(1024 * 1024 + 1);
+    assert!(matches!(launcher.craftinghosting_save_file("/server.properties", &big).await, Err(Error::Validation(_))));
+}
+
+#[tokio::test]
+async fn files_are_deleted_and_folders_created() {
+    let (server, _dir, launcher) = files().await;
+    let delete = format!("{FILES}/delete");
+
+    assert!(matches!(launcher.craftinghosting_delete_files(&[]).await, Err(Error::Validation(_))));
+    assert!(matches!(launcher.craftinghosting_delete_files(&["/".into()]).await, Err(Error::Validation(_))));
+    let many: Vec<String> = (0..51).map(|i| format!("/f{i}")).collect();
+    assert!(matches!(launcher.craftinghosting_delete_files(&many).await, Err(Error::Validation(_))));
+    assert!(server.hits("POST", &delete).is_empty());
+
+    launcher.craftinghosting_delete_files(&["/a.txt".into(), "/logs/".into(), "/a.txt".into()]).await.unwrap();
+    assert_eq!(server.hits("POST", &delete)[0].json(), json!({ "paths": ["/a.txt", "/logs"] }));
+    let e = launcher.craftinghosting_delete_files(&["/plugins/TRS-Server-Rules.jar".into()]).await.unwrap_err();
+    assert_eq!(e.message_code(), "trsApi.file_protected");
+
+    launcher.craftinghosting_create_folder("/plugins/Neu").await.unwrap();
+    assert_eq!(server.hits("POST", &format!("{FILES}/folder"))[0].json(), json!({ "path": "/plugins/Neu" }));
+    assert!(matches!(launcher.craftinghosting_create_folder("/a/../b").await, Err(Error::Validation(_))));
+}
+
+#[tokio::test]
+async fn properties_are_cleaned_and_patched() {
+    let (server, _dir, launcher) = files().await;
+    const PROPS: &str = "/v1/craftinghosting/server/properties";
+    let props = launcher.craftinghosting_properties().await.unwrap();
+    assert_eq!(props.properties.get("max-players").map(String::as_str), Some("8"));
+    assert!(!props.properties.contains_key("Bad Key"));
+    assert_eq!(props.locked, ["server-port", "white-list"]);
+
+    let mut changes = std::collections::BTreeMap::new();
+    changes.insert("pvp".to_owned(), "false".to_owned());
+    let saved = launcher.craftinghosting_save_properties(&changes).await.unwrap();
+    assert_eq!(saved.properties.get("pvp").map(String::as_str), Some("false"));
+    assert_eq!(server.hits("PATCH", PROPS)[0].json(), json!({ "properties": { "pvp": "false" } }));
+
+    changes.insert("server-port".to_owned(), "1".to_owned());
+    let e = launcher.craftinghosting_save_properties(&changes).await.unwrap_err();
+    assert_eq!(e.message_code(), "trsApi.property_locked");
+
+    let before = server.hits("PATCH", PROPS).len();
+    for (key, value) in [("motd", "a\nb"), ("Motd", "a")] {
+        let mut bad = std::collections::BTreeMap::new();
+        bad.insert(key.to_owned(), value.to_owned());
+        assert!(matches!(launcher.craftinghosting_save_properties(&bad).await, Err(Error::Validation(_))), "{key}");
+    }
+    assert_eq!(server.hits("PATCH", PROPS).len(), before);
+}
+
+#[tokio::test]
+async fn addons_are_listed_and_removed() {
+    let (server, _dir, launcher) = files().await;
+    let addons = launcher.craftinghosting_addons().await.unwrap();
+    assert_eq!(addons.kind.as_deref(), Some("plugins"));
+    assert_eq!(addons.dir, "/plugins");
+    let files: Vec<&str> = addons.items.iter().map(|a| a.file.as_str()).collect();
+    assert_eq!(files, ["TRS-Server-Rules.jar", "LuckPerms-Bukkit-5.4.102.jar"]);
+    assert!(addons.items[0].protected);
+
+    launcher.craftinghosting_remove_addon("LuckPerms-Bukkit-5.4.102.jar").await.unwrap();
+    assert_eq!(server.hits("DELETE", "/v1/craftinghosting/server/addons")[0].path, "/v1/craftinghosting/server/addons?file=LuckPerms-Bukkit-5.4.102.jar");
+    let e = launcher.craftinghosting_remove_addon("TRS-Server-Rules.jar").await.unwrap_err();
+    assert_eq!(e.message_code(), "trsApi.file_protected");
+    assert!(matches!(launcher.craftinghosting_remove_addon("../x.jar").await, Err(Error::Validation(_))));
+}
