@@ -1067,6 +1067,16 @@ CREATE TABLE IF NOT EXISTS craftinghosting_servers (
 );
 `,
   },
+  {
+    // CraftingHosting: eigene Adresse <subdomain>.trs-launcher.de (SRV-Eintrag dns_record auf dns_target = host:port).
+    version: 46,
+    run: (db) => {
+      if (!hasColumn(db, 'craftinghosting_servers', 'subdomain')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN subdomain TEXT')
+      if (!hasColumn(db, 'craftinghosting_servers', 'dns_record')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN dns_record TEXT')
+      if (!hasColumn(db, 'craftinghosting_servers', 'dns_target')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN dns_target TEXT')
+      db.exec('CREATE UNIQUE INDEX IF NOT EXISTS craftinghosting_subdomain ON craftinghosting_servers(subdomain)')
+    },
+  },
 ]
 
 /** Migration 40 (siehe oben): Minispiel-Ranglisten. Exportiert für den Idempotenz-Test. */

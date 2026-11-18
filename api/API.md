@@ -5596,3 +5596,21 @@ Every server's MOTD must name the TRS Launcher and CraftingHosting. The first ti
   `worlds.close`, optional body `{ reason }` ≤ 200) -> `204`. Audit actions `craftinghosting.stop` /
   `craftinghosting.delete` (target = owner, detail = reason or server id). Deleting removes the server with its data;
   to keep someone out use the `hosting_ban` sanction.
+
+### 43.9 Own address `<name>.trs-launcher.de`
+
+With `CLOUDFLARE_DNS_TOKEN` (Cloudflare token: Zone → DNS edit + Zone → Zone read, only for the zone `HOSTING_DOMAIN`,
+default `trs-launcher.de`) every server gets its own address. The API keeps an SRV record
+`_minecraft._tcp.<name>.trs-launcher.de` (TTL 60) pointing at the partner node (`host`/`port` of the partner server,
+fixed per server; updated when the partner moves the server). Players connect straight to CraftingHosting.
+
+- `GET /v1/craftinghosting/subdomain?name=<name>` -> `{ name, available, reason: null | "invalid" | "reserved" |
+  "taken" }`. Rules: 3–24 characters `a-z 0-9 -`, no `-` at the start/end, no `xn--`; reserved names (www, api, play,
+  docs, wiki, mail, admin, …) and names that already have DNS records not made by us are not available. The caller's
+  own current name counts as available.
+- `POST …/server` takes `subdomain` (optional; without it a free name is derived from the server name: `meine-welt`,
+  `meine-welt-2`, …), `PATCH …/server` takes `subdomain` to change it (the old record is removed).
+- `Server.domain` = `"<name>.trs-launcher.de"` once the record exists, otherwise `null`.
+- Errors: `400 invalid_subdomain`, `409 subdomain_taken`, `409 subdomain_reserved`, `503 dns_unavailable` (no token or
+  Cloudflare error; creating a server still works without an address). Deleting a server (owner or team) removes the
+  record. Migration 46: columns `subdomain` (unique), `dns_record`, `dns_target`.

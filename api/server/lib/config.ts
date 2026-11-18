@@ -62,6 +62,8 @@ export interface Config {
   mail: MailConfig | null
   /** CraftingHosting-Partner-API (§43). `null` = aus → 503 `craftinghosting_unavailable`. */
   craftinghosting: { url: string, key: string } | null
+  /** Eigene Adressen für CraftingHosting-Server (§43.9): Cloudflare-Token nur mit DNS-Rechten für `zone`. */
+  dns: { token: string, zone: string } | null
   /** Release-Kanal von TRS Server Rules (server-plugin.json + Jars) für die CraftingHosting-Ersteinrichtung. */
   serverRulesUrl: string
   limits: Limits
@@ -370,6 +372,8 @@ const envSchema = z.object({
   CURSEFORGE_API_KEY: z.string().trim().max(200).default(''),
   // CraftingHosting-Partner (§43): Schlüssel nur hier, nie im Launcher. Leer = aus.
   CRAFTINGHOSTING_API_KEY: z.string().trim().max(200).default(''),
+  CLOUDFLARE_DNS_TOKEN: z.string().trim().max(200).default(''),
+  HOSTING_DOMAIN: z.string().trim().max(100).default('trs-launcher.de').refine((s) => /^[a-z0-9.-]+\.[a-z]{2,}$/.test(s), 'must be a domain'),
   SERVER_RULES_URL: z.string().trim().max(200).default('https://github.com/theredstonee/TRS-Launcher/releases/download/server-plugin')
     .refine((s) => /^https:\/\/[A-Za-z0-9.\/_-]+$/.test(s), 'must be an https URL'),
   CRAFTINGHOSTING_API: z.string().trim().max(200).default('https://craftinghosting.free/api/v1/partner')
@@ -554,6 +558,7 @@ export function loadConfig(env: Record<string, string | undefined>, limits: Part
     vapid: parseVapid(e),
     curseforgeApiKey: e.CURSEFORGE_API_KEY === '' ? null : e.CURSEFORGE_API_KEY,
     mail: parseMail(e),
+    dns: e.CLOUDFLARE_DNS_TOKEN === '' ? null : { token: e.CLOUDFLARE_DNS_TOKEN, zone: e.HOSTING_DOMAIN },
     serverRulesUrl: e.SERVER_RULES_URL.replace(/\/+$/, ''),
     craftinghosting: e.CRAFTINGHOSTING_API_KEY === '' ? null : { url: e.CRAFTINGHOSTING_API.replace(/\/+$/, ''), key: e.CRAFTINGHOSTING_API_KEY },
     limits: { ...DEFAULT_LIMITS, ...limits },

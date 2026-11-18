@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   craftingCommand, craftingCreate, craftingDelete, craftingHeartbeat, craftingInfo, craftingInstallMods, craftingLogs,
   craftingServer, craftingSetSettings, craftingSettings, craftingStart, craftingStats, craftingStop, craftingUpdate,
-  adminCraftingDelete, adminCraftingServers, adminCraftingStop, craftingRestartDone, craftingWorldImport, craftingWorldUpload, createServerBody, MOTD_FOOTER, settingsBody,
+  adminCraftingDelete, adminCraftingServers, adminCraftingStop, craftingCheckSubdomain, craftingRestartDone, craftingWorldImport, craftingWorldUpload, createServerBody, MOTD_FOOTER, settingsBody,
 } from '../server/lib/craftinghosting'
 import { befriend, codeAsync, players } from './chathelpers'
 import { makeEnv, type TestEnv } from './helpers'
@@ -12,6 +12,8 @@ const KEY = 'test-partner-key'
 
 interface FakeServer {
   id: string
+  host?: string
+  port?: number
   name: string
   player: { id: string, externalId: string, name: string }
   state: string
@@ -69,7 +71,7 @@ class FakePartner {
       const id = `srv-${++this.n}`
       const s: FakeServer = {
         id, name: `${body.name} #P7KXGQXL`, player: { id: 'P7KXGQXL', ...body.player }, state: 'installing',
-        address: 'node1.example.com:25568', serverType: body.serverType, version: body.version, eulaAccepted: false,
+        address: 'node1.example.com:25568', host: 'node1.example.com', port: 25568, serverType: body.serverType, version: body.version, eulaAccepted: false,
         session: { active: false, startedAt: null, heartbeatTimeoutSeconds: 180, maxRunSeconds: 86400, remainingSeconds: 86400 },
         deleteAt: '2026-12-18T16:00:00.000Z',
       }
@@ -156,6 +158,39 @@ function pluginChannel(version?: string) {
     if (u.endsWith('/server-plugin.json')) return new Response(JSON.stringify({ version, files }), { status: 200 })
     if (u.endsWith('.jar')) return new Response(JAR, { status: 200 })
     return new Response('no', { status: 404 })
+  }) as typeof fetch
+}
+
+const ZONE = 'a'.repeat(32)
+
+/** Cloudflare-DNS im Speicher (nur das, was die API braucht). */
+class FakeDns {
+  records = new Map<string, { name: string, type: string, data: Record<string, unknown> }>()
+  foreign = new Set<string>(['lobby.trs-launcher.de'])
+  private n = 0
+  fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+    const url = new URL(String(input))
+    const method = init?.method ?? 'GET'
+    const ok = (result: unknown) => new Response(JSON.stringify({ success: true, result }), { status: 200 })
+    if ((init?.headers as Record<string, string>)?.Authorization !== 'Bearer cf-token') return new Response('{}', { status: 403 })
+    if (url.pathname === '/client/v4/zones') return ok(url.searchParams.get('name') === 'trs-launcher.de' ? [{ id: ZONE }] : [])
+    const m = /^\/client\/v4\/zones\/([0-9a-f]{32})\/dns_records(?:\/([0-9a-f]{32}))?$/.exec(url.pathname)
+    if (!m || m[1] !== ZONE) return new Response('{}', { status: 404 })
+    const id = m[2]
+    if (method === 'GET') {
+      const name = url.searchParams.get('name')!
+      const hits = [...this.records.entries()].filter(([, r]) => r.name === name).map(([rid]) => ({ id: rid }))
+      if (this.foreign.has(name)) hits.push({ id: 'f'.repeat(32) })
+      return ok(hits)
+    }
+    if (method === 'DELETE' && id) {
+      this.records.delete(id)
+      return ok({ id })
+    }
+    const body = JSON.parse(String(init?.body))
+    const rid = id ?? (++this.n).toString(16).padStart(32, '0')
+    this.records.set(rid, { name: body.name, type: body.type, data: body.data })
+    return ok({ id: rid })
   }) as typeof fetch
 }
 
@@ -445,5 +480,60 @@ describe('craftinghosting', () => {
     expect(partner.servers.has(s1.id)).toBe(false)
     expect(await craftingServer(env.ctx, u!)).toBeNull()
     expect((await adminCraftingServers(env.ctx)).servers).toHaveLength(1)
+  })
+
+  it('own address: check, SRV record on create, change and delete', async () => {
+    const env = makeEnv({ env: { CRAFTINGHOSTING_API_KEY: KEY, CRAFTINGHOSTING_API: 'https://partner.example.test/api/v1/partner/',
+      CLOUDFLARE_DNS_TOKEN: 'cf-token' } })
+    const partner = new FakePartner()
+    const dns = new FakeDns()
+    env.ctx.craftinghostingFetch = partner.fetch
+    env.ctx.serverRulesFetch = pluginChannel()
+    env.ctx.cloudflareFetch = dns.fetch
+    const [u, v] = await players(env, 'Steve', 'Alex')
+
+    expect(await craftingCheckSubdomain(env.ctx, u!.uuid, 'Meine-Welt')).toEqual({ name: 'meine-welt', available: true, reason: null })
+    expect((await craftingCheckSubdomain(env.ctx, u!.uuid, 'ab')).reason).toBe('invalid')
+    expect((await craftingCheckSubdomain(env.ctx, u!.uuid, '-abc')).reason).toBe('invalid')
+    expect((await craftingCheckSubdomain(env.ctx, u!.uuid, 'www')).reason).toBe('reserved')
+    expect((await craftingCheckSubdomain(env.ctx, u!.uuid, 'lobby')).reason).toBe('taken')
+
+    const s = await craftingCreate(env.ctx, u!, body({ name: 'Meine Welt', subdomain: 'meinewelt' }))
+    expect(s.domain).toBe('meinewelt.trs-launcher.de')
+    const rec = [...dns.records.values()][0]!
+    expect(rec).toEqual({ name: '_minecraft._tcp.meinewelt.trs-launcher.de', type: 'SRV',
+      data: { priority: 0, weight: 5, port: 25568, target: 'node1.example.com' } })
+    expect((await craftingCheckSubdomain(env.ctx, v!.uuid, 'meinewelt')).reason).toBe('taken')
+    expect((await craftingCheckSubdomain(env.ctx, u!.uuid, 'meinewelt')).available).toBe(true)
+    expect(await codeAsync(() => craftingCreate(env.ctx, v!, body({ subdomain: 'meinewelt' })))).toBe('subdomain_taken')
+
+    // Ohne Wunschname: aus dem Servernamen abgeleitet
+    const t2 = await craftingCreate(env.ctx, v!, body({ name: 'Meine Welt' }))
+    expect(t2.domain).toBe('meine-welt.trs-launcher.de')
+
+    // Node-Wechsel beim Partner zieht den Eintrag nach
+    const ps = partner.servers.get(s.id)!
+    ps.port = 25570
+    await craftingServer(env.ctx, u!)
+    expect([...dns.records.values()].find((r) => r.name.includes('meinewelt'))!.data.port).toBe(25570)
+
+    // Adresse ändern
+    const changed = await craftingUpdate(env.ctx, u!, { subdomain: 'neuewelt' })
+    expect(changed.domain).toBe('neuewelt.trs-launcher.de')
+    expect([...dns.records.values()].map((r) => r.name).sort()).toEqual([
+      '_minecraft._tcp.meine-welt.trs-launcher.de', '_minecraft._tcp.neuewelt.trs-launcher.de'])
+    expect(await codeAsync(() => craftingUpdate(env.ctx, u!, { subdomain: 'api' }))).toBe('subdomain_reserved')
+
+    // Löschen entfernt den Eintrag
+    await craftingDelete(env.ctx, u!)
+    expect([...dns.records.values()].map((r) => r.name)).toEqual(['_minecraft._tcp.meine-welt.trs-launcher.de'])
+  })
+
+  it('without a DNS token the address check is unavailable but creating works', async () => {
+    const { env } = setup()
+    const [u] = await players(env, 'Steve')
+    expect(await codeAsync(() => craftingCheckSubdomain(env.ctx, u!.uuid, 'meinewelt'))).toBe('dns_unavailable')
+    const s = await craftingCreate(env.ctx, u!, body({ subdomain: 'meinewelt' }))
+    expect(s.domain).toBeNull()
   })
 })

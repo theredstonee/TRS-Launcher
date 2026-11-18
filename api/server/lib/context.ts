@@ -71,6 +71,8 @@ export interface AppContext {
   craftinghostingFetch?: typeof fetch
   /** Für Tests: eigenes fetch für den Release-Kanal von TRS Server Rules. */
   serverRulesFetch?: typeof fetch
+  /** Für Tests: eigenes fetch für die Cloudflare-DNS-API. */
+  cloudflareFetch?: typeof fetch
 }
 
 export function createContext(opts: {

@@ -40,9 +40,14 @@ export const createServerBody = z.object({
   serverType: z.string().regex(/^[a-z0-9_-]{1,32}$/),
   version: z.string().regex(/^[A-Za-z0-9._-]{1,32}$/),
   access: z.enum(ACCESS).default('friends'),
+  subdomain: z.string().trim().toLowerCase().max(40).optional(),
 }).strict()
-export const patchServerBody = z.object({ access: z.enum(ACCESS).optional(), name: serverName.optional() }).strict()
-  .refine((b) => b.access !== undefined || b.name !== undefined)
+export const patchServerBody = z.object({
+  access: z.enum(ACCESS).optional(),
+  name: serverName.optional(),
+  subdomain: z.string().trim().toLowerCase().max(40).optional(),
+}).strict().refine((b) => b.access !== undefined || b.name !== undefined || b.subdomain !== undefined)
+export const subdomainQuery = z.object({ name: z.string().trim().toLowerCase().max(40) })
 export const startServerBody = z.object({ acceptEula: z.boolean().default(false) }).strict().default({ acceptEula: false })
 export const stopServerBody = z.object({ whenEmpty: z.boolean().default(false) }).strict().default({ whenEmpty: false })
 export const settingsBody = z.object({
@@ -90,6 +95,8 @@ const serverSchema = z.object({
   player: z.object({ id: z.string().max(32).nullish(), externalId: z.string().max(80).nullish() }).loose().nullish(),
   state: z.string().max(20),
   address: z.string().max(200).nullish(),
+  host: z.string().max(190).nullish(),
+  port: z.number().int().min(1).max(65535).nullish(),
   serverType: z.string().max(40).nullish(),
   version: z.string().max(40).nullish(),
   resources: z.object({ memoryMb: num, cpuPercent: num, diskMb: num }).loose().nullish(),
@@ -159,6 +166,8 @@ export interface ServerView {
   deleteAt: string | null
   /** Ersteinrichtung (Plugin, MOTD, Whitelist) nach dem ersten Start, danach ein Neustart. */
   setup: SetupState
+  /** Eigene Adresse `<name>.trs-launcher.de` (SRV auf den Node), `null` ohne DNS-Eintrag. */
+  domain: string | null
 }
 
 export type SetupState = 'pending' | 'restarting' | 'done'
@@ -172,6 +181,9 @@ interface Row {
   setup: number
   motd: string | null
   plugin: string | null
+  subdomain: string | null
+  dns_record: string | null
+  dns_target: string | null
   created_at: number
 }
 
@@ -270,7 +282,7 @@ function parseServer(body: unknown): PartnerServer {
 const setupOf = (row: Row | undefined): SetupState =>
   !row ? 'pending' : restarts.has(row.uuid) ? 'restarting' : row.setup ? 'done' : 'pending'
 
-function view(s: PartnerServer, access: Access, setup: SetupState = 'pending'): ServerView {
+function view(s: PartnerServer, access: Access, setup: SetupState = 'pending', domain: string | null = null): ServerView {
   const playerId = s.player?.id && /^[A-Z0-9]{1,32}$/.test(s.player.id) ? s.player.id : null
   const suffix = playerId ? ` #${playerId}` : ''
   const name = suffix && s.name.endsWith(suffix) ? s.name.slice(0, -suffix.length) : s.name
@@ -302,11 +314,16 @@ function view(s: PartnerServer, access: Access, setup: SetupState = 'pending'): 
     lastStartAt: s.lastStartAt,
     deleteAt: s.deleteAt,
     setup,
+    domain,
   }
 }
 
 const rowOf = (ctx: AppContext, uuid: string) => one<Row>(ctx.db, 'SELECT * FROM craftinghosting_servers WHERE uuid = ?', uuid)
-const forget = (ctx: AppContext, uuid: string) => run(ctx.db, 'DELETE FROM craftinghosting_servers WHERE uuid = ?', uuid)
+function forget(ctx: AppContext, uuid: string) {
+  const row = rowOf(ctx, uuid)
+  if (row?.dns_record) void dnsDelete(ctx, row.dns_record).catch((e) => console.error('[trs-api] DNS record not removed', e))
+  run(ctx.db, 'DELETE FROM craftinghosting_servers WHERE uuid = ?', uuid)
+}
 
 function missMap(ctx: AppContext): Map<string, number> {
   let m = misses.get(ctx)
@@ -348,7 +365,9 @@ export async function craftingServer(ctx: AppContext, user: UserRow): Promise<Se
   const row = rowOf(ctx, user.uuid)
   if (row) {
     try {
-      const s = view(parseServer(await call(ctx, 'GET', `/servers/${encodeURIComponent(row.server_id)}`)), row.access, setupOf(row))
+      const p = parseServer(await call(ctx, 'GET', `/servers/${encodeURIComponent(row.server_id)}`))
+      await syncDns(ctx, row, p)
+      const s = view(p, row.access, setupOf(row), domainOf(ctx, rowOf(ctx, user.uuid)))
       if (s.state === 'running' && (row.wl_key === null || !row.op_done || !row.setup)) {
         await syncAccess(ctx, user, s)
         return { ...s, setup: setupOf(rowOf(ctx, user.uuid)) }
@@ -372,13 +391,17 @@ export async function craftingServer(ctx: AppContext, user: UserRow): Promise<Se
   run(ctx.db, `INSERT INTO craftinghosting_servers (uuid, server_id, access, created_at) VALUES (?, ?, 'friends', ?)
     ON CONFLICT(uuid) DO UPDATE SET server_id = excluded.server_id`, user.uuid, found.id, ctx.now())
   const fresh = rowOf(ctx, user.uuid)
-  return view(found, fresh?.access ?? 'friends', setupOf(fresh))
+  return view(found, fresh?.access ?? 'friends', setupOf(fresh), domainOf(ctx, fresh))
 }
 
 export async function craftingCreate(ctx: AppContext, user: UserRow, body: z.output<typeof createServerBody>): Promise<ServerView> {
   config(ctx)
   assertNotSanctioned(ctx, user.uuid, 'hosting_ban')
   if (await craftingServer(ctx, user)) throw conflict('server_exists', 'You already have a server')
+  let sub: string | null = null
+  if (ctx.config.dns) {
+    sub = body.subdomain ? await claimable(ctx, user.uuid, body.subdomain) : await suggestSubdomain(ctx, user.uuid, body.name)
+  }
   const res = await call(ctx, 'POST', '/servers', {
     player: { externalId: user.uuid, name: user.name },
     name: body.name,
@@ -388,10 +411,20 @@ export async function craftingCreate(ctx: AppContext, user: UserRow, body: z.out
   const s = parseServer(res)
   run(ctx.db, `INSERT INTO craftinghosting_servers (uuid, server_id, access, created_at) VALUES (?, ?, ?, ?)
     ON CONFLICT(uuid) DO UPDATE SET server_id = excluded.server_id, access = excluded.access, wl_key = NULL,
-      op_done = 0, setup = 0, motd = NULL, plugin = NULL`, user.uuid, s.id, body.access, ctx.now())
+      op_done = 0, setup = 0, motd = NULL, plugin = NULL, subdomain = NULL, dns_record = NULL, dns_target = NULL`,
+  user.uuid, s.id, body.access, ctx.now())
+  if (sub) {
+    try {
+      run(ctx.db, 'UPDATE craftinghosting_servers SET subdomain = ? WHERE uuid = ?', sub, user.uuid)
+    } catch {
+      sub = null
+    }
+  }
   missMap(ctx).delete(user.uuid)
   infoCache.delete(ctx)
-  return view(s, body.access, 'pending')
+  const row = rowOf(ctx, user.uuid)
+  if (row) await syncDns(ctx, row, s)
+  return view(s, body.access, 'pending', domainOf(ctx, rowOf(ctx, user.uuid)))
 }
 
 async function own(ctx: AppContext, user: UserRow): Promise<Row> {
@@ -419,11 +452,23 @@ const isRunning = (s: ServerView) => s.state === 'running' && s.session.active
 async function fresh(ctx: AppContext, row: Row, res?: unknown): Promise<ServerView> {
   const direct = z.object({ server: serverSchema }).loose().safeParse(res)
   const now = rowOf(ctx, row.uuid) ?? row
-  return view(direct.success ? direct.data.server : parseServer(await call(ctx, 'GET', path(row))), now.access, setupOf(now))
+  return view(direct.success ? direct.data.server : parseServer(await call(ctx, 'GET', path(row))), now.access, setupOf(now), domainOf(ctx, now))
 }
 
 export async function craftingUpdate(ctx: AppContext, user: UserRow, body: z.output<typeof patchServerBody>): Promise<ServerView> {
   return onServer(ctx, user, async (row) => {
+    if (body.subdomain !== undefined && body.subdomain !== row.subdomain) {
+      if (!ctx.config.dns) throw unavailable('dns_unavailable', 'Own addresses are not available on this server')
+      const sub = await claimable(ctx, user.uuid, body.subdomain)
+      const old = row.dns_record
+      try {
+        run(ctx.db, 'UPDATE craftinghosting_servers SET subdomain = ?, dns_record = NULL, dns_target = NULL WHERE uuid = ?', sub, user.uuid)
+      } catch {
+        throw conflict('subdomain_taken', 'This address is taken')
+      }
+      if (old) await dnsDelete(ctx, old).catch((e) => console.error('[trs-api] old DNS record not removed', e))
+      await syncDns(ctx, rowOf(ctx, user.uuid)!, parseServer(await call(ctx, 'GET', path(row))))
+    }
     if (body.name !== undefined) await call(ctx, 'PATCH', path(row), { name: body.name })
     if (body.access !== undefined && body.access !== row.access) {
       run(ctx.db, 'UPDATE craftinghosting_servers SET access = ?, wl_key = NULL WHERE uuid = ?', body.access, user.uuid)
@@ -832,7 +877,7 @@ export async function adminCraftingServers(ctx: AppContext) {
     usage: { used: me.limits.usedServers, max: me.limits.maxServers },
     servers: list.map((p) => {
       const row = rows.get(p.id)
-      const v = view(p, row?.access ?? 'friends', setupOf(row))
+      const v = view(p, row?.access ?? 'friends', setupOf(row), domainOf(ctx, row))
       return {
         ...v,
         owner: row ? { uuid: row.uuid, name: row.name } : null,
@@ -867,7 +912,145 @@ export async function adminCraftingDelete(ctx: AppContext, serverId: string): Pr
   } catch (e) {
     if (!(e instanceof ApiError && e.code === 'no_server')) throw e
   }
+  const rec = one<{ dns_record: string | null }>(ctx.db, 'SELECT dns_record FROM craftinghosting_servers WHERE server_id = ?', serverId)?.dns_record
+  if (rec) await dnsDelete(ctx, rec).catch((e) => console.error('[trs-api] DNS record not removed', e))
   run(ctx.db, 'DELETE FROM craftinghosting_servers WHERE server_id = ?', serverId)
   infoCache.delete(ctx)
   return owner
+}
+
+// ---------------------------------------------------------------- Eigene Adresse (DNS bei Cloudflare)
+
+const SUBDOMAIN = /^[a-z0-9](?:[a-z0-9-]{1,22})[a-z0-9]$/
+export const RESERVED_SUBDOMAINS = new Set([
+  'www', 'api', 'play', 'docs', 'wiki', 'mail', 'smtp', 'imap', 'pop', 'mx', 'ns', 'ns1', 'ns2', 'admin', 'root',
+  'relay', 'proxy', 'status', 'cdn', 'static', 'assets', 'app', 'dl', 'download', 'downloads', 'blog', 'news', 'shop',
+  'store', 'support', 'help', 'team', 'panel', 'dash', 'dashboard', 'auth', 'login', 'account', 'accounts', 'sso', 'dev',
+  'test', 'staging', 'beta', 'alpha', 'preview', 'demo', 'partner', 'partners', 'creator', 'creators', 'discord', 'dc',
+  'server', 'servers', 'hosting', 'host', 'minecraft', 'mc', 'launcher', 'client', 'trs', 'theredstonee', 'official',
+  'craftinghosting', 'autodiscover', 'autoconfig', 'webmail', 'ftp', 'git', 'ci', 'vpn', 'localhost', 'mod', 'mods',
+  'map', 'maps', 'update', 'updates', 'security', 'abuse', 'postmaster', 'noreply', 'no-reply', 'newsletter',
+])
+const CF = 'https://api.cloudflare.com/client/v4'
+const zoneIds = new WeakMap<AppContext, string>()
+
+const fqdn = (ctx: AppContext, sub: string) => `${sub}.${ctx.config.dns!.zone}`
+const srvName = (ctx: AppContext, sub: string) => `_minecraft._tcp.${fqdn(ctx, sub)}`
+
+function domainOf(ctx: AppContext, row: Row | undefined): string | null {
+  return ctx.config.dns && row?.subdomain && row.dns_record ? fqdn(ctx, row.subdomain) : null
+}
+
+async function cf(ctx: AppContext, method: string, path: string, body?: unknown): Promise<unknown> {
+  const dns = ctx.config.dns
+  if (!dns) throw unavailable('dns_unavailable', 'Own addresses are not available on this server')
+  const f = ctx.cloudflareFetch ?? fetch
+  let res: Response
+  try {
+    res = await f(CF + path, {
+      method,
+      headers: { 'Authorization': `Bearer ${dns.token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
+      redirect: 'error',
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    })
+  } catch {
+    throw unavailable('dns_unavailable', 'DNS provider not reachable')
+  }
+  const json = await res.json().catch(() => null) as { success?: boolean, result?: unknown } | null
+  if (!res.ok || json?.success === false) {
+    console.error(`[trs-api] Cloudflare ${method} ${path.split('?')[0]} -> ${res.status}`)
+    throw unavailable('dns_unavailable', 'DNS provider error')
+  }
+  return json?.result
+}
+
+async function zoneId(ctx: AppContext): Promise<string> {
+  const hit = zoneIds.get(ctx)
+  if (hit) return hit
+  const r = z.array(z.object({ id: z.string().regex(/^[0-9a-f]{32}$/) }).loose())
+    .safeParse(await cf(ctx, 'GET', `/zones?name=${encodeURIComponent(ctx.config.dns!.zone)}`))
+  if (!r.success || !r.data[0]) throw unavailable('dns_unavailable', 'DNS zone not found')
+  zoneIds.set(ctx, r.data[0].id)
+  return r.data[0].id
+}
+
+/** Gibt es unter dem Namen schon DNS-Einträge, die nicht von uns sind? */
+async function dnsTaken(ctx: AppContext, sub: string, ownRecord: string | null): Promise<boolean> {
+  const zone = await zoneId(ctx)
+  for (const name of [fqdn(ctx, sub), srvName(ctx, sub)]) {
+    const list = z.array(z.object({ id: z.string() }).loose())
+      .catch([]).parse(await cf(ctx, 'GET', `/zones/${zone}/dns_records?name=${encodeURIComponent(name)}&per_page=5`))
+    if (list.some((r) => r.id !== ownRecord)) return true
+  }
+  return false
+}
+
+type Check = { name: string, available: boolean, reason: null | 'invalid' | 'reserved' | 'taken' }
+
+export async function craftingCheckSubdomain(ctx: AppContext, uuid: string, raw: string): Promise<Check> {
+  config(ctx)
+  if (!ctx.config.dns) throw unavailable('dns_unavailable', 'Own addresses are not available on this server')
+  const name = raw.trim().toLowerCase()
+  if (!SUBDOMAIN.test(name) || name.startsWith('xn--')) return { name, available: false, reason: 'invalid' }
+  if (RESERVED_SUBDOMAINS.has(name)) return { name, available: false, reason: 'reserved' }
+  const holder = one<{ uuid: string, dns_record: string | null }>(ctx.db,
+    'SELECT uuid, dns_record FROM craftinghosting_servers WHERE subdomain = ?', name)
+  if (holder && holder.uuid !== uuid) return { name, available: false, reason: 'taken' }
+  if (await dnsTaken(ctx, name, holder?.dns_record ?? null)) return { name, available: false, reason: 'taken' }
+  return { name, available: true, reason: null }
+}
+
+async function claimable(ctx: AppContext, uuid: string, raw: string): Promise<string> {
+  const c = await craftingCheckSubdomain(ctx, uuid, raw)
+  if (c.reason === 'invalid') throw badRequest('invalid_subdomain', 'Invalid address')
+  if (c.reason === 'reserved') throw conflict('subdomain_reserved', 'This address is reserved')
+  if (c.reason === 'taken') throw conflict('subdomain_taken', 'This address is taken')
+  return c.name
+}
+
+/** Freien Namen aus dem Servernamen ableiten (meine-welt, meine-welt-2, …). */
+async function suggestSubdomain(ctx: AppContext, uuid: string, serverName: string): Promise<string | null> {
+  let base = serverName.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/ß/g, 'ss').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 20)
+  if (base.length < 3) base = `server-${base}`.replace(/-+$/, '')
+  for (let i = 0; i < 20; i++) {
+    const name = i === 0 ? base : `${base}-${i + 1}`
+    try {
+      if ((await craftingCheckSubdomain(ctx, uuid, name)).available) return name
+    } catch {
+      return null
+    }
+  }
+  return null
+}
+
+/** SRV-Eintrag auf host:port des Partner-Servers halten. Fehler hier lassen nichts scheitern. */
+async function syncDns(ctx: AppContext, row: Row, p: PartnerServer): Promise<void> {
+  if (!ctx.config.dns || !row.subdomain || !p.host || !p.port || !/^[A-Za-z0-9.-]{1,190}$/.test(p.host)) return
+  const target = `${p.host}:${p.port}`
+  if (row.dns_record && row.dns_target === target) return
+  try {
+    const zone = await zoneId(ctx)
+    const record = {
+      type: 'SRV',
+      name: srvName(ctx, row.subdomain),
+      data: { priority: 0, weight: 5, port: p.port, target: p.host },
+      ttl: 60,
+      comment: `TRS Launcher hosting ${row.server_id}`,
+    }
+    const res = row.dns_record
+      ? await cf(ctx, 'PUT', `/zones/${zone}/dns_records/${row.dns_record}`, record)
+      : await cf(ctx, 'POST', `/zones/${zone}/dns_records`, record)
+    const id = z.object({ id: z.string().regex(/^[0-9a-f]{32}$/) }).loose().parse(res).id
+    run(ctx.db, 'UPDATE craftinghosting_servers SET dns_record = ?, dns_target = ? WHERE uuid = ?', id, target, row.uuid)
+  } catch (e) {
+    console.error('[trs-api] DNS record for CraftingHosting server not set', e instanceof ApiError ? e.message : e)
+  }
+}
+
+async function dnsDelete(ctx: AppContext, record: string): Promise<void> {
+  if (!ctx.config.dns) return
+  const zone = await zoneId(ctx)
+  await cf(ctx, 'DELETE', `/zones/${zone}/dns_records/${record}`)
 }
