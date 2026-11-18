@@ -472,6 +472,7 @@ describe('craftinghosting', () => {
     const { env } = setup()
     const [u] = await players(env, 'Steve')
     await craftingCreate(env.ctx, u!, body())
+    await craftingServer(env.ctx, u!)
     await craftingStart(env.ctx, u!, true)
     await craftingHeartbeat(env.ctx, u!)
     const during = await craftingHeartbeat(env.ctx, u!)
@@ -514,6 +515,7 @@ describe('craftinghosting', () => {
 
     const s = await craftingCreate(env.ctx, u!, body({ name: 'Meine Welt', subdomain: 'meinewelt' }))
     expect(s.domain).toBe('meinewelt.trs-launcher.de')
+    expect((await craftingServer(env.ctx, u!))?.address).toBe('node1.example.com:25568')
     const rec = [...dns.records.values()][0]!
     expect(rec).toEqual({ name: '_minecraft._tcp.meinewelt.trs-launcher.de', type: 'SRV',
       data: { priority: 0, weight: 5, port: 25568, target: 'node1.example.com' } })

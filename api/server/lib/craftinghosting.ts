@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { AppContext } from './context'
 import { createHash } from 'node:crypto'
+import { lookup } from 'node:dns/promises'
 import { all, one, run } from './db'
 import { MODRINTH_ID } from './modrinth'
 import { ApiError, badRequest, conflict, notFound, unavailable } from './errors'
@@ -168,6 +169,8 @@ export interface ServerView {
   setup: SetupState
   /** Eigene Adresse `<name>.trs-launcher.de` (SRV auf den Node), `null` ohne DNS-Eintrag. */
   domain: string | null
+  /** Numerische Adresse `IPv4:Port` des Nodes (zum Abtippen, ohne DNS). */
+  ip: string | null
 }
 
 export type SetupState = 'pending' | 'restarting' | 'done'
@@ -284,6 +287,22 @@ function parseServer(body: unknown): PartnerServer {
 const setupOf = (row: Row | undefined): SetupState =>
   !row ? 'pending' : restarts.has(row.uuid) ? 'restarting' : row.setup ? 'done' : 'pending'
 
+const nodeIps = new Map<string, { ip: string | null, at: number }>()
+
+/** IPv4 des Nodes nachschlagen (10 min im RAM), damit `view` sie synchron mitgeben kann. */
+async function warmIp(p: PartnerServer): Promise<void> {
+  const host = p.host
+  if (!host || !/^[A-Za-z0-9.-]{1,190}$/.test(host)) return
+  const hit = nodeIps.get(host)
+  if (hit && Date.now() - hit.at < 10 * 60 * 1000) return
+  try {
+    const r = await lookup(host, { family: 4 })
+    nodeIps.set(host, { ip: r.address, at: Date.now() })
+  } catch {
+    nodeIps.set(host, { ip: null, at: Date.now() })
+  }
+}
+
 function view(s: PartnerServer, access: Access, setup: SetupState = 'pending', domain: string | null = null): ServerView {
   const playerId = s.player?.id && /^[A-Z0-9]{1,32}$/.test(s.player.id) ? s.player.id : null
   const suffix = playerId ? ` #${playerId}` : ''
@@ -317,6 +336,7 @@ function view(s: PartnerServer, access: Access, setup: SetupState = 'pending', d
     deleteAt: s.deleteAt,
     setup,
     domain,
+    ip: s.host && s.port && nodeIps.get(s.host)?.ip ? `${nodeIps.get(s.host)!.ip}:${s.port}` : null,
   }
 }
 
@@ -370,6 +390,7 @@ export async function craftingServer(ctx: AppContext, user: UserRow): Promise<Se
   if (row) {
     try {
       const p = parseServer(await call(ctx, 'GET', `/servers/${encodeURIComponent(row.server_id)}`))
+      await warmIp(p)
       // Server von vor den eigenen Adressen bekommen beim ersten Abruf eine.
       if (ctx.config.dns && !row.subdomain) {
         const sub = await suggestSubdomain(ctx, user.uuid, p.name.replace(/ #[A-Z0-9]+$/, ''))
@@ -466,7 +487,9 @@ const isRunning = (s: ServerView) => s.state === 'running' && s.session.active
 async function fresh(ctx: AppContext, row: Row, res?: unknown): Promise<ServerView> {
   const direct = z.object({ server: serverSchema }).loose().safeParse(res)
   const now = rowOf(ctx, row.uuid) ?? row
-  return view(direct.success ? direct.data.server : parseServer(await call(ctx, 'GET', path(row))), now.access, setupOf(now), domainOf(ctx, now))
+  const p = direct.success ? direct.data.server : parseServer(await call(ctx, 'GET', path(row)))
+  await warmIp(p)
+  return view(p, now.access, setupOf(now), domainOf(ctx, now))
 }
 
 export async function craftingUpdate(ctx: AppContext, user: UserRow, body: z.output<typeof patchServerBody>): Promise<ServerView> {

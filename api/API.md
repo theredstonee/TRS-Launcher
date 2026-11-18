@@ -5618,6 +5618,9 @@ fixed per server; updated when the partner moves the server). Players connect st
 - `POST …/server` takes `subdomain` (optional; without it a free name is derived from the server name: `meine-welt`,
   `meine-welt-2`, …), `PATCH …/server` takes `subdomain` to change it (the old record is removed).
 - `Server.domain` = `"<name>.trs-launcher.de"` once the record exists, otherwise `null`.
+- `Server.ip` = `"<IPv4>:<port>"` of the partner node (looked up by the API, cached 10 minutes) or `null` – for typing
+  the address without DNS. `address` stays the CraftingHosting address (`node02.craftinghosting.free:25011`); clients
+  show `domain` by default and offer the other two.
 - Errors: `400 invalid_subdomain`, `409 subdomain_taken`, `409 subdomain_reserved`, `503 dns_unavailable` (no token or
   Cloudflare error; creating a server still works without an address). Deleting a server (owner or team) removes the
   record. Migration 46: columns `subdomain` (unique), `dns_record`, `dns_target`.
