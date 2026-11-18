@@ -10,6 +10,11 @@ short-lived **relay tokens**; this document describes what happens on the wire.
 - **UDP** (default `25504`): a standard **STUN Binding** responder (RFC 5389, for ICE candidate
   discovery / NAT type) and an optional **datagram relay** between a host and its guests.
 
+The same process also runs **TRS Wake** on TCP `25565` (`WAKE_PORT`): a separate listener that speaks
+the plain Minecraft Java protocol (server list ping, login, configuration keep-alive, transfer) to wake
+sleeping CraftingHosting servers. It is not part of this wire protocol and never relays game traffic;
+see [WAKE.md](WAKE.md).
+
 All integers are big-endian (network order). UUIDs on the wire are **16 raw bytes**
 (the 32 hex digits of the undashed UUID). Strings (tokens, error codes, JSON) are ASCII/UTF-8.
 

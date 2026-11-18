@@ -33,5 +33,5 @@ export BIND_HOST="${BIND_HOST:-0.0.0.0}"
 export TCP_PORT="${TCP_PORT:-${SERVER_PORT:-25503}}"
 export UDP_PORT="${UDP_PORT:-25504}"
 
-echo "[start] TRS Relay – TCP ${TCP_PORT}, UDP ${UDP_PORT}, Node $(node --version)"
+echo "[start] TRS Relay – TCP ${TCP_PORT}, UDP ${UDP_PORT}, Wake ${WAKE_PORT:-25565}, Node $(node --version)"
 exec node --disable-warning=ExperimentalWarning src/main.ts
