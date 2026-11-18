@@ -60,6 +60,8 @@ export interface Config {
   curseforgeApiKey: string | null
   /** Mail über SMTP (§40). `null` = aus (SMTP_HOST leer): Versand → 503 `mail_unavailable`, alles andere geht. */
   mail: MailConfig | null
+  /** CraftingHosting-Partner-API (§43). `null` = aus → 503 `craftinghosting_unavailable`. */
+  craftinghosting: { url: string, key: string } | null
   limits: Limits
 }
 
@@ -364,6 +366,10 @@ const envSchema = z.object({
   VAPID_SUBJECT: z.string().trim().max(256).default(''),
   // Empfohlene Modpacks (§37): CurseForge-API-Schlüssel (console.curseforge.com). Leer = nur Modrinth.
   CURSEFORGE_API_KEY: z.string().trim().max(200).default(''),
+  // CraftingHosting-Partner (§43): Schlüssel nur hier, nie im Launcher. Leer = aus.
+  CRAFTINGHOSTING_API_KEY: z.string().trim().max(200).default(''),
+  CRAFTINGHOSTING_API: z.string().trim().max(200).default('https://craftinghosting.free/api/v1/partner')
+    .refine((s) => /^https:\/\/[A-Za-z0-9.-]+(:\d+)?(\/[A-Za-z0-9._~\/-]*)?$/.test(s) || /^http:\/\/127\.0\.0\.1(:\d+)?(\/|$)/.test(s), 'must be an https URL'),
   // Mail (§40): SMTP-Zugang nur hier (Server-.env), nie im Repo oder Log. SMTP_HOST leer = Mail aus.
   SMTP_HOST: z.string().trim().max(253).default('').refine((s) => s === '' || /^[A-Za-z0-9.-]{1,253}$/.test(s), 'must be a hostname'),
   SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(587),
@@ -544,6 +550,7 @@ export function loadConfig(env: Record<string, string | undefined>, limits: Part
     vapid: parseVapid(e),
     curseforgeApiKey: e.CURSEFORGE_API_KEY === '' ? null : e.CURSEFORGE_API_KEY,
     mail: parseMail(e),
+    craftinghosting: e.CRAFTINGHOSTING_API_KEY === '' ? null : { url: e.CRAFTINGHOSTING_API.replace(/\/+$/, ''), key: e.CRAFTINGHOSTING_API_KEY },
     limits: { ...DEFAULT_LIMITS, ...limits },
   }
 }

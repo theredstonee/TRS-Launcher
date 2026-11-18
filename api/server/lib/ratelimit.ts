@@ -173,6 +173,15 @@ export const RULES = {
   hostingSignalBurstUser: { limit: 30, windowMs: 5000 },
   /** Relay-Tokens (connect). */
   hostingConnectUser: { limit: 30, windowMs: MIN },
+  // ------------------------------------------------ CraftingHosting (§43)
+  /** Alle `/v1/craftinghosting/*`-Anfragen je Konto (Heartbeat, Konsole alle 3 s, Werte alle 5 s). */
+  craftinghostingUser: { limit: 120, windowMs: MIN },
+  /** Server anlegen/löschen. */
+  craftinghostingCreateUser: { limit: 6, windowMs: HOUR },
+  /** Konsolenbefehle. */
+  craftinghostingCommandUser: { limit: 20, windowMs: MIN },
+  /** Mods installieren, Welt hochladen/übernehmen. */
+  craftinghostingFilesUser: { limit: 20, windowMs: 10 * MIN },
   // ------------------------------------------------ Moderation v2 (§22)
   /** Globale Suche im Team-Bereich, je Team-Mitglied. */
   adminSearch: { limit: 60, windowMs: MIN },

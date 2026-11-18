@@ -403,6 +403,25 @@ the TRS server.
   answer Minecraft's question with yes; your game serves it to Minecraft through a local address on your computer
   (`127.0.0.1`) that only works for this connection.
 
+### Free server at CraftingHosting
+
+In the launcher's "Hosting" tab you can get a free Minecraft server from our hosting partner **CraftingHosting**
+(craftinghosting.free). Nothing is sent to CraftingHosting until you create a server there. Then the TRS server (never
+your computer directly) sends CraftingHosting:
+
+- your TRS account id (Minecraft UUID) and Minecraft name, the server name, server type, version and the settings you
+  choose;
+- for the access mode "Friends only": the Minecraft names and UUIDs of you and your TRS friends for the server's
+  whitelist (updated when your friends list changes);
+- while the launcher is open and the server runs: a regular sign of life, so the server keeps running;
+- mods you transfer (only their Modrinth ids) and, if you transfer a world, the world as a ZIP file, which your launcher
+  uploads directly to CraftingHosting.
+
+We store which server belongs to your account and the access mode. Players who join your server connect directly to
+CraftingHosting, which sees their IP address like any Minecraft server. Deleting the server in the launcher deletes it
+at CraftingHosting including its data; CraftingHosting also deletes servers that were not started for a long time.
+For what CraftingHosting does with the data, its own privacy policy applies.
+
 ### Live waypoints with friends (TRS Client)
 
 In the TRS Client you can share waypoints and your position live with single friends. It is **off until you switch it
@@ -556,6 +575,9 @@ The legal basis is the performance of the service you requested (Art. 6(1)(b) GD
 - **Minecraft servers in chat invites** are contacted by the TRS server (server list ping) to show their icon and
   player count; they only see the TRS server's address.
 - **TRS relay server** (world hosting, see above): a separate server in **Germany** run by the TRS Launcher project; it only forwards game data and keeps nothing on disk.
+- **CraftingHosting** (craftinghosting.free, see "Free server at CraftingHosting"): receives the data listed there only
+  when you create a server; it is our hosting partner, not our processor, and runs the servers under its own
+  responsibility.
 
 ### Your rights
 

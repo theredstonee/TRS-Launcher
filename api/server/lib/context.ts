@@ -67,6 +67,8 @@ export interface AppContext {
   modrinthFetch?: typeof fetch
   /** Für Tests: eigenes fetch für CurseForge (empfohlene Modpacks, §37). */
   curseforgeFetch?: typeof fetch
+  /** Für Tests: eigenes fetch für die CraftingHosting-Partner-API (§43). */
+  craftinghostingFetch?: typeof fetch
 }
 
 export function createContext(opts: {

@@ -5477,3 +5477,92 @@ may play again. 60 per minute and team member.
 
 Migration 40: tables `minigame_runs` and `minigame_scores`; permission `minigames.manage` for Owner and Admin
 (idempotent).
+
+## 43. CraftingHosting servers
+
+Every TRS account can have one free Minecraft server at our hosting partner CraftingHosting. The partner key
+(`CRAFTINGHOSTING_API_KEY`, optional `CRAFTINGHOSTING_API`) only lives in the server `.env`; the launcher talks to
+these routes with the TRS token. Without a key every route answers `503 craftinghosting_unavailable` (also when the
+partner rejects the key). Table `craftinghosting_servers` (migration 45) maps the account to the partner server id and
+stores the access mode. The partner's `player.externalId` is the account UUID.
+
+Limits per account: 120 requests per minute for all `/v1/craftinghosting/*` routes, create + delete 6 per hour,
+commands 20 per minute, mods + world 20 per 10 minutes. Accounts with an active `hosting_ban` cannot create or start.
+
+Partner errors are mapped: `401/403` → `503 craftinghosting_unavailable`, `503 maintenance|unavailable|panel_unavailable`
+→ `503 craftinghosting_maintenance`, network errors, `429` and other `5xx` → `502 craftinghosting_upstream`,
+`404` → `404 no_server` (the local row is dropped), `409 partner_limit_reached` → `409 craftinghosting_full`,
+`409 player_limit_reached` → `409 server_exists`. Passed through: `400 invalid_name | server_type_unavailable |
+version_unavailable | invalid_path | file_rejected`, `404 file_not_found | mod_not_found`, `409 server_installing |
+eula_required | cooldown | not_running | server_failed | server_suspended | mods_unsupported`. `cooldown` carries
+`details.cooldownUntil`, `not_running` `details.reason` (`host_stopped | host_timeout | session_limit | admin`).
+
+### 43.1 Plan and rules
+
+`GET /v1/craftinghosting/info` -> `{ plan: { name, memoryMb, cpuPercent, diskMb }, serverTypes: [{ id, name,
+versions[] }], limits: { maxServersPerPlayer, sessionMaxHours, cooldownHours, heartbeatTimeoutSeconds,
+deleteAfterIdleDays, serverNameMaxLength }, eulaUrl, full }`. Cached 10 minutes. `full` = no free places left.
+
+### 43.2 Own server
+
+`Server` = `{ id, name, playerId, state, address, serverType, version, resources: { memoryMb, cpuPercent, diskMb },
+eulaAccepted, access, session: { active, startedAt, lastHeartbeatAt, heartbeatTimeoutSeconds, runSeconds,
+maxRunSeconds, remainingSeconds, cooldownUntil, lastStopReason, hostPresent }, createdAt, lastStartAt, deleteAt }`.
+`name` is without the partner's ` #<playerId>` suffix. `state`: `installing | offline | starting | running |
+stopping | failed | suspended`. `hostPresent: false` = the host's launcher no longer reports in and the server only
+runs because players are on it. `deleteAt` = deleted with its data unless started before.
+
+- `GET /v1/craftinghosting/server` -> `{ server: Server | null }`. Without a local row the API looks the account up at
+  the partner (a miss is cached 60 s).
+- `POST /v1/craftinghosting/server` body `{ name, serverType, version, access }` -> `201 { server }`. `name` 3–22
+  characters (letters, digits, space, `. _ ' -`), `serverType`/`version` from 43.1, `access` `friends` (default) or
+  `open`. `409 server_exists` if the account already has one.
+- `PATCH /v1/craftinghosting/server` body `{ access?, name? }` (at least one) -> `{ server }`. `name` renames.
+- `DELETE /v1/craftinghosting/server` -> `204` (also when it was already gone at the partner).
+
+### 43.3 Session
+
+- `POST /v1/craftinghosting/server/start` body `{ acceptEula? }` (empty body allowed) -> `{ server }`. The first start
+  needs `acceptEula: true`, otherwise `409 eula_required`. The access mode (43.5) is written before the start.
+- `POST /v1/craftinghosting/server/heartbeat` -> `{ server }`. The launcher sends it every 45 s while it is open and the
+  session runs; the partner stops the server after `heartbeatTimeoutSeconds` without one unless players are on it.
+  `409 not_running` = the session has ended.
+- `POST /v1/craftinghosting/server/stop` body `{ whenEmpty? }` (empty body allowed) -> `{ server }`. `whenEmpty: true`
+  stops only once no players are left (used when the launcher closes).
+- `POST /v1/craftinghosting/server/command` body `{ command }` (1–256 characters, no control characters, a leading
+  `/` is removed) -> `204`. Output: 43.4 logs.
+
+### 43.4 Settings, console, live values
+
+- `GET /v1/craftinghosting/server/settings` -> `{ settings }`, `PATCH` with a partial body -> `{ settings }`.
+  Fields: `motd` (≤ 120), `maxPlayers` 1–100, `gamemode` `survival | creative | adventure | spectator`,
+  `difficulty` `peaceful | easy | normal | hard`, `hardcore`, `pvp`, `allowFlight` (booleans), `seed` (≤ 64),
+  `levelType` `normal | flat | large_biomes | amplified`, `spawnProtection` 0–64, `viewDistance` and
+  `simulationDistance` 3–16. `whitelist` is read-only (follows `access`). Applies on the next start; `seed` and
+  `levelType` only for a newly generated world.
+- `GET /v1/craftinghosting/server/logs?lines=200` (1–1000) -> `{ lines: string[] }`, newest last, colour codes and
+  control characters removed, lines cut at 2000 characters.
+- `GET /v1/craftinghosting/server/stats` -> `{ cpuPercent, memory: { usedBytes, limitBytes }, disk: { usedBytes,
+  limitBytes }, network: { rxBytes, txBytes }, uptimeSeconds, players: { online, max } | null }`; unknown numbers are
+  `null`.
+
+### 43.5 Access
+
+`friends`: the API turns `whitelist` on in the server settings and writes `whitelist.json` with the owner and all TRS
+friends (accounts with an active ban left out). It does that before every start and on every heartbeat when the list
+changed; while the server runs it also sends `whitelist reload` + `whitelist on`. `open`: `whitelist` off (and
+`whitelist off` while running). When the server runs for the first time the owner gets `op`. Errors there never fail
+the start or heartbeat.
+
+### 43.6 Mods and world
+
+- `POST /v1/craftinghosting/server/mods` body `{ projects: [id | slug] }` (1–100, at most 50 are processed) ->
+  `{ installed: [], skipped: [{ project, reason }] }`. The API asks Modrinth first and skips client-only projects
+  (`server_side = unsupported`, reason `client_only`) and unknown ones (`not_found`); the partner picks the newest
+  matching version and installs required dependencies. `409 mods_unsupported` for vanilla servers.
+- `POST /v1/craftinghosting/server/world/upload` -> `{ url, expiresAt }`: a partner upload URL (https, host
+  `*.craftinghosting.free`, valid 10 minutes). The launcher uploads `trs-world.zip` (top-level folder `world/`) there
+  directly as `multipart/form-data`, field `files` – large files never pass the TRS API.
+- `POST /v1/craftinghosting/server/world/import` body `{ file: "trs-world.zip" }` -> `{ server }`. Only while the
+  server is stopped (`409 server_running`). Deletes `world`, `world_nether` and `world_the_end`, extracts the archive
+  and removes it. `404 file_not_found` if nothing was uploaded.

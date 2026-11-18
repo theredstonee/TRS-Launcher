@@ -114,7 +114,7 @@ export function paramWith<S extends z.ZodType>(event: H3Event, name: string, sch
   return r.data
 }
 
-const USER_RULES = { read: RULES.readUser, write: RULES.writeUser, sync: RULES.syncUser, hosting: RULES.hostingUser } satisfies Record<string, Rule>
+const USER_RULES = { read: RULES.readUser, write: RULES.writeUser, sync: RULES.syncUser, hosting: RULES.hostingUser, craftinghosting: RULES.craftinghostingUser } satisfies Record<string, Rule>
 
 /**
  * Angemeldeter Nutzer + Grund-Limit je Konto (lesend/schreibend). `sync` = eigener Topf für

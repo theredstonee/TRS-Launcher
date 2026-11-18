@@ -434,6 +434,25 @@ den TRS-Server.
   Pack wird nur verwendet, wenn du Minecrafts Frage mit Ja beantwortest; dein Spiel reicht es über eine lokale Adresse
   auf deinem Rechner (`127.0.0.1`) an Minecraft, die nur für diese Verbindung gilt.
 
+### Kostenloser Server bei CraftingHosting
+
+Im Reiter „Hosting“ des Launchers kannst du einen kostenlosen Minecraft-Server bei unserem Hosting-Partner
+**CraftingHosting** (craftinghosting.free) bekommen. Solange du dort keinen Server anlegst, geht nichts an
+CraftingHosting. Danach schickt der TRS-Server (nie dein Computer direkt) an CraftingHosting:
+
+- deine TRS-Konto-ID (Minecraft-UUID) und deinen Minecraft-Namen, den Servernamen, Servertyp, die Version und die
+  Einstellungen, die du wählst;
+- beim Zugang „Nur Freunde“: die Minecraft-Namen und UUIDs von dir und deinen TRS-Freunden für die Whitelist des
+  Servers (aktualisiert, wenn sich deine Freundesliste ändert);
+- solange der Launcher offen ist und der Server läuft: ein regelmäßiges Lebenszeichen, damit der Server weiterläuft;
+- Mods, die du übernimmst (nur ihre Modrinth-IDs), und – wenn du eine Welt übernimmst – die Welt als ZIP-Datei, die
+  dein Launcher direkt zu CraftingHosting hochlädt.
+
+Wir speichern, welcher Server zu deinem Konto gehört, und den Zugang. Spieler, die deinem Server beitreten, verbinden
+sich direkt mit CraftingHosting, das ihre IP-Adresse wie jeder Minecraft-Server sieht. Löschst du den Server im
+Launcher, wird er bei CraftingHosting samt Daten gelöscht; CraftingHosting löscht außerdem Server, die lange nicht
+gestartet wurden. Für die Verarbeitung bei CraftingHosting gilt dessen eigene Datenschutzerklärung.
+
 ### Live-Wegpunkte mit Freunden (TRS Client)
 
 Im TRS Client kannst du Wegpunkte und deine Position live mit einzelnen Freunden teilen. Das ist **aus, bis du es für
@@ -598,6 +617,9 @@ Profiling und keinen Verkauf von Daten.
 - **Minecraft-Server aus Chat-Einladungen** werden vom TRS-Server angefragt (Server-List-Ping), um Symbol und
   Spielerzahl zu zeigen; sie sehen dabei nur die Adresse des TRS-Servers.
 - **TRS-Relay-Server** (Welt hosten, siehe oben): ein eigener Server in **Deutschland**, betrieben vom TRS-Launcher-Projekt; er leitet nur Spieldaten weiter und speichert nichts auf der Platte.
+- **CraftingHosting** (craftinghosting.free, siehe „Kostenloser Server bei CraftingHosting“): bekommt die dort genannten
+  Daten nur, wenn du einen Server anlegst; es ist unser Hosting-Partner, kein Auftragsverarbeiter, und betreibt die
+  Server in eigener Verantwortung.
 
 ### Deine Rechte
 

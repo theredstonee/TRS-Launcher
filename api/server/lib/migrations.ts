@@ -1050,6 +1050,20 @@ CREATE INDEX team_application_files_application ON team_application_files(applic
 CREATE INDEX team_application_files_message ON team_application_files(message_id);
 `,
   },
+  {
+    // CraftingHosting-Server (§43): einer je Konto. wl_key = zuletzt geschriebene Whitelist.
+    version: 45,
+    sql: `
+CREATE TABLE IF NOT EXISTS craftinghosting_servers (
+  uuid TEXT PRIMARY KEY REFERENCES users(uuid) ON DELETE CASCADE,
+  server_id TEXT NOT NULL UNIQUE,
+  access TEXT NOT NULL DEFAULT 'friends' CHECK (access IN ('friends', 'open')),
+  wl_key TEXT,
+  op_done INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+`,
+  },
 ]
 
 /** Migration 40 (siehe oben): Minispiel-Ranglisten. Exportiert für den Idempotenz-Test. */

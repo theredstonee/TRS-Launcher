@@ -428,6 +428,25 @@ servidor TRS.
   paquete de recursos solo se usa si respondes que sí a la pregunta de Minecraft; tu juego se lo pasa a Minecraft por una
   dirección local en tu ordenador (`127.0.0.1`) que solo vale para esta conexión.
 
+### Servidor gratuito en CraftingHosting
+
+En la pestaña «Hosting» del launcher puedes conseguir un servidor de Minecraft gratuito de nuestro socio de hosting
+**CraftingHosting** (craftinghosting.free). No se envía nada a CraftingHosting hasta que creas un servidor allí.
+Entonces el servidor TRS (nunca tu ordenador directamente) envía a CraftingHosting:
+
+- el id de tu cuenta TRS (UUID de Minecraft) y tu nombre de Minecraft, el nombre del servidor, el tipo, la versión y
+  los ajustes que elijas;
+- con el acceso «Solo amigos»: los nombres y UUID de Minecraft tuyos y de tus amigos TRS para la whitelist del
+  servidor (se actualiza cuando cambia tu lista de amigos);
+- mientras el launcher está abierto y el servidor funciona: una señal periódica para que siga funcionando;
+- los mods que transfieras (solo sus ids de Modrinth) y, si transfieres un mundo, el mundo como archivo ZIP, que tu
+  launcher sube directamente a CraftingHosting.
+
+Guardamos qué servidor pertenece a tu cuenta y el modo de acceso. Los jugadores que entran en tu servidor se conectan
+directamente a CraftingHosting, que ve su dirección IP como cualquier servidor de Minecraft. Si eliminas el servidor en
+el launcher, se elimina en CraftingHosting con sus datos; CraftingHosting también elimina los servidores que llevan
+mucho tiempo sin iniciarse. Para el tratamiento en CraftingHosting se aplica su propia política de privacidad.
+
 ### Puntos de ruta en directo con amigos (TRS Client)
 
 En el TRS Client puedes compartir puntos de ruta y tu posición en directo con amigos concretos. Está **desactivado
@@ -593,6 +612,9 @@ seguro (art. 6.1.f del RGPD). No hay publicidad, ni elaboración de perfiles, ni
 - **Los servidores de Minecraft de las invitaciones del chat** reciben una consulta del servidor TRS (ping de la lista
   de servidores) para mostrar su icono y número de jugadores; solo ven la dirección del servidor TRS.
 - **Servidor relay de TRS** (alojar un mundo, ver arriba): un servidor propio en **Alemania** gestionado por el proyecto TRS Launcher; solo reenvía datos del juego y no guarda nada en disco.
+- **CraftingHosting** (craftinghosting.free, ver «Servidor gratuito en CraftingHosting»): recibe los datos indicados
+  allí solo cuando creas un servidor; es nuestro socio de hosting, no nuestro encargado del tratamiento, y gestiona los
+  servidores bajo su propia responsabilidad.
 
 ### Tus derechos
 
