@@ -1051,7 +1051,7 @@ CREATE INDEX team_application_files_message ON team_application_files(message_id
 `,
   },
   {
-    // CraftingHosting-Server (§43): einer je Konto. wl_key = zuletzt geschriebene Whitelist.
+    // CraftingHosting-Server (§43): einer je Konto. wl_key = zuletzt geschriebene Whitelist, setup = Ersteinrichtung erledigt, motd = Zeile 1, plugin = TRS Server Rules.
     version: 45,
     sql: `
 CREATE TABLE IF NOT EXISTS craftinghosting_servers (
@@ -1060,6 +1060,9 @@ CREATE TABLE IF NOT EXISTS craftinghosting_servers (
   access TEXT NOT NULL DEFAULT 'friends' CHECK (access IN ('friends', 'open')),
   wl_key TEXT,
   op_done INTEGER NOT NULL DEFAULT 0,
+  setup INTEGER NOT NULL DEFAULT 0,
+  motd TEXT,
+  plugin TEXT,
   created_at INTEGER NOT NULL
 );
 `,

@@ -69,6 +69,8 @@ export interface AppContext {
   curseforgeFetch?: typeof fetch
   /** Für Tests: eigenes fetch für die CraftingHosting-Partner-API (§43). */
   craftinghostingFetch?: typeof fetch
+  /** Für Tests: eigenes fetch für den Release-Kanal von TRS Server Rules. */
+  serverRulesFetch?: typeof fetch
 }
 
 export function createContext(opts: {

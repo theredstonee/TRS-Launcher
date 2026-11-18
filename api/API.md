@@ -5510,7 +5510,8 @@ eulaAccepted, access, session: { active, startedAt, lastHeartbeatAt, heartbeatTi
 maxRunSeconds, remainingSeconds, cooldownUntil, lastStopReason, hostPresent }, createdAt, lastStartAt, deleteAt }`.
 `name` is without the partner's ` #<playerId>` suffix. `state`: `installing | offline | starting | running |
 stopping | failed | suspended`. `hostPresent: false` = the host's launcher no longer reports in and the server only
-runs because players are on it. `deleteAt` = deleted with its data unless started before.
+runs because players are on it. `deleteAt` = deleted with its data unless started before. `setup`: `pending | restarting
+| done` – see 43.7.
 
 - `GET /v1/craftinghosting/server` -> `{ server: Server | null }`. Without a local row the API looks the account up at
   the partner (a miss is cached 60 s).
@@ -5539,7 +5540,8 @@ runs because players are on it. `deleteAt` = deleted with its data unless starte
   `difficulty` `peaceful | easy | normal | hard`, `hardcore`, `pvp`, `allowFlight` (booleans), `seed` (≤ 64),
   `levelType` `normal | flat | large_biomes | amplified`, `spawnProtection` 0–64, `viewDistance` and
   `simulationDistance` 3–16. `whitelist` is read-only (follows `access`). Applies on the next start; `seed` and
-  `levelType` only for a newly generated world. Settings, files and mods only work after the server has been started
+  `levelType` only for a newly generated world. `motd` is only the first line (at most 60 characters, no `§` codes) –
+  the fixed footer of 43.7 is never shown or editable. Settings, files and mods only work after the server has been started
   once (before that the partner answers `409 server_installing`, checked 2026-11-18).
 - `GET /v1/craftinghosting/server/logs?lines=200` (1–1000) -> `{ lines: string[] }`, newest last, colour codes and
   control characters removed, lines cut at 2000 characters.
@@ -5567,3 +5569,20 @@ the start or heartbeat.
 - `POST /v1/craftinghosting/server/world/import` body `{ file: "trs-world.zip" }` -> `{ server }`. Only while the
   server is stopped (`409 server_running`). Deletes `world`, `world_nether` and `world_the_end`, extracts the archive
   and removes it. `404 file_not_found` if nothing was uploaded.
+
+### 43.7 First setup and MOTD footer
+
+Every server's MOTD must name the TRS Launcher and CraftingHosting. The first time the API sees the server running
+(heartbeat, start or `GET …/server`) it runs the first setup once (`setup: "pending"` before):
+
+- **TRS Server Rules** (from the release channel `SERVER_RULES_URL`, default the GitHub release `server-plugin`;
+  `server-plugin.json` version 1.1.0 or newer, size and SHA-256 checked) for Paper/Purpur (`bukkit` jar into
+  `/plugins`) and for Fabric/Forge when a jar for exactly that Minecraft version exists (`/mods`, Fabric also gets
+  Fabric API from Modrinth). The API writes `plugins/TRSServerRules/hosting.yml` or `config/trs-server-rules-hosting.yml`
+  with `motd-footer: "§7Free server: §ctrs-launcher.de §8× §bcraftinghosting.free"`; the plugin shows it as the fixed
+  second MOTD line. The first line is the owner's text (`motd`, default: the server name).
+- Without a fitting plugin (vanilla, versions without a build, channel not reachable) the footer is appended to the
+  single MOTD line (`<text> §7Free server: …`, at most 120 characters). The partner's settings API accepts `§` codes but
+  no line breaks (checked 2026-11-18).
+- Then the API stops and starts the server once (`setup: "restarting"`, usually under a minute). Heartbeats during the
+  restart are answered from the current state without reaching the partner, so the launcher keeps its session.

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { AppContext } from './context'
+import { createHash } from 'node:crypto'
 import { all, one, run } from './db'
 import { MODRINTH_ID } from './modrinth'
 import { ApiError, badRequest, conflict, notFound, unavailable } from './errors'
@@ -20,6 +21,14 @@ const MC_NAME = /^\w{1,16}$/
 const MAX_MODS = 50
 const MOD_SLUG = /^[\w.-]{2,64}$/
 const WORLD_ZIP = 'trs-world.zip'
+/** Feste zweite MOTD-Zeile (Plugin) bzw. Anhang an die einzige Zeile (ohne Plugin). */
+export const MOTD_FOOTER = '§7Free server: §ctrs-launcher.de §8× §bcraftinghosting.free'
+const MOTD_LINE_MAX = 60
+const PLUGIN_MIN = [1, 1, 0]
+const PLUGIN_MAX_BYTES = 5 * 1024 * 1024
+const MANIFEST_TTL_MS = 60 * 60 * 1000
+const RESTART_POLL_MS = 3000
+const RESTART_WAIT_MS = 120_000
 const UPLOAD_HOST = /(^|\.)craftinghosting\.free$/
 
 export const ACCESS = ['friends', 'open'] as const
@@ -37,7 +46,7 @@ export const patchServerBody = z.object({ access: z.enum(ACCESS).optional(), nam
 export const startServerBody = z.object({ acceptEula: z.boolean().default(false) }).strict().default({ acceptEula: false })
 export const stopServerBody = z.object({ whenEmpty: z.boolean().default(false) }).strict().default({ whenEmpty: false })
 export const settingsBody = z.object({
-  motd: z.string().max(120).regex(/^[^\p{Cc}]*$/u),
+  motd: z.string().trim().max(MOTD_LINE_MAX).regex(/^[^\p{Cc}§]*$/u),
   maxPlayers: z.number().int().min(1).max(100),
   gamemode: z.enum(['survival', 'creative', 'adventure', 'spectator']),
   difficulty: z.enum(['peaceful', 'easy', 'normal', 'hard']),
@@ -148,7 +157,11 @@ export interface ServerView {
   createdAt: string | null
   lastStartAt: string | null
   deleteAt: string | null
+  /** Ersteinrichtung (Plugin, MOTD, Whitelist) nach dem ersten Start, danach ein Neustart. */
+  setup: SetupState
 }
+
+export type SetupState = 'pending' | 'restarting' | 'done'
 
 interface Row {
   uuid: string
@@ -156,12 +169,23 @@ interface Row {
   access: Access
   wl_key: string | null
   op_done: number
+  setup: number
+  motd: string | null
+  plugin: string | null
   created_at: number
 }
 
 const infoCache = new WeakMap<AppContext, { at: number, value: z.output<typeof meSchema> }>()
 const misses = new WeakMap<AppContext, Map<string, number>>()
 const syncing = new Set<string>()
+/** Laufende Neustarts nach der Ersteinrichtung (Konto → Promise, für Tests abwartbar). */
+const restarts = new Map<string, Promise<void>>()
+const manifests = new WeakMap<AppContext, { at: number, value: z.output<typeof manifestSchema> }>()
+const jars = new Map<string, Uint8Array<ArrayBuffer>>()
+
+export function craftingRestartDone(uuid: string): Promise<void> {
+  return restarts.get(uuid) ?? Promise.resolve()
+}
 
 const upstream = () => new ApiError(502, 'craftinghosting_upstream', 'CraftingHosting is not reachable, try again later')
 const noServer = () => notFound('no_server', 'You have no CraftingHosting server')
@@ -202,7 +226,7 @@ function partnerError(status: number, body: unknown): ApiError {
   return upstream()
 }
 
-interface Raw { type: string, data: string }
+interface Raw { type: string, data: string | Uint8Array<ArrayBuffer> }
 
 async function call(ctx: AppContext, method: string, path: string, body?: unknown, raw?: Raw): Promise<unknown> {
   const c = config(ctx)
@@ -243,7 +267,10 @@ function parseServer(body: unknown): PartnerServer {
   return r.data.server
 }
 
-function view(s: PartnerServer, access: Access): ServerView {
+const setupOf = (row: Row | undefined): SetupState =>
+  !row ? 'pending' : restarts.has(row.uuid) ? 'restarting' : row.setup ? 'done' : 'pending'
+
+function view(s: PartnerServer, access: Access, setup: SetupState = 'pending'): ServerView {
   const playerId = s.player?.id && /^[A-Z0-9]{1,32}$/.test(s.player.id) ? s.player.id : null
   const suffix = playerId ? ` #${playerId}` : ''
   const name = suffix && s.name.endsWith(suffix) ? s.name.slice(0, -suffix.length) : s.name
@@ -274,6 +301,7 @@ function view(s: PartnerServer, access: Access): ServerView {
     createdAt: s.createdAt,
     lastStartAt: s.lastStartAt,
     deleteAt: s.deleteAt,
+    setup,
   }
 }
 
@@ -320,8 +348,11 @@ export async function craftingServer(ctx: AppContext, user: UserRow): Promise<Se
   const row = rowOf(ctx, user.uuid)
   if (row) {
     try {
-      const s = view(parseServer(await call(ctx, 'GET', `/servers/${encodeURIComponent(row.server_id)}`)), row.access)
-      if (s.state === 'running' && (row.wl_key === null || !row.op_done)) await syncAccess(ctx, user, s)
+      const s = view(parseServer(await call(ctx, 'GET', `/servers/${encodeURIComponent(row.server_id)}`)), row.access, setupOf(row))
+      if (s.state === 'running' && (row.wl_key === null || !row.op_done || !row.setup)) {
+        await syncAccess(ctx, user, s)
+        return { ...s, setup: setupOf(rowOf(ctx, user.uuid)) }
+      }
       return s
     } catch (e) {
       if (!(e instanceof ApiError && e.code === 'no_server')) throw e
@@ -340,7 +371,8 @@ export async function craftingServer(ctx: AppContext, user: UserRow): Promise<Se
   }
   run(ctx.db, `INSERT INTO craftinghosting_servers (uuid, server_id, access, created_at) VALUES (?, ?, 'friends', ?)
     ON CONFLICT(uuid) DO UPDATE SET server_id = excluded.server_id`, user.uuid, found.id, ctx.now())
-  return view(found, rowOf(ctx, user.uuid)?.access ?? 'friends')
+  const fresh = rowOf(ctx, user.uuid)
+  return view(found, fresh?.access ?? 'friends', setupOf(fresh))
 }
 
 export async function craftingCreate(ctx: AppContext, user: UserRow, body: z.output<typeof createServerBody>): Promise<ServerView> {
@@ -356,10 +388,10 @@ export async function craftingCreate(ctx: AppContext, user: UserRow, body: z.out
   const s = parseServer(res)
   run(ctx.db, `INSERT INTO craftinghosting_servers (uuid, server_id, access, created_at) VALUES (?, ?, ?, ?)
     ON CONFLICT(uuid) DO UPDATE SET server_id = excluded.server_id, access = excluded.access, wl_key = NULL,
-      op_done = 0`, user.uuid, s.id, body.access, ctx.now())
+      op_done = 0, setup = 0, motd = NULL, plugin = NULL`, user.uuid, s.id, body.access, ctx.now())
   missMap(ctx).delete(user.uuid)
   infoCache.delete(ctx)
-  return view(s, body.access)
+  return view(s, body.access, 'pending')
 }
 
 async function own(ctx: AppContext, user: UserRow): Promise<Row> {
@@ -386,7 +418,8 @@ const isRunning = (s: ServerView) => s.state === 'running' && s.session.active
 
 async function fresh(ctx: AppContext, row: Row, res?: unknown): Promise<ServerView> {
   const direct = z.object({ server: serverSchema }).loose().safeParse(res)
-  return view(direct.success ? direct.data.server : parseServer(await call(ctx, 'GET', path(row))), row.access)
+  const now = rowOf(ctx, row.uuid) ?? row
+  return view(direct.success ? direct.data.server : parseServer(await call(ctx, 'GET', path(row))), now.access, setupOf(now))
 }
 
 export async function craftingUpdate(ctx: AppContext, user: UserRow, body: z.output<typeof patchServerBody>): Promise<ServerView> {
@@ -411,6 +444,7 @@ export async function craftingStart(ctx: AppContext, user: UserRow, acceptEula: 
 
 export async function craftingHeartbeat(ctx: AppContext, user: UserRow): Promise<ServerView> {
   return onServer(ctx, user, async (row) => {
+    if (restarts.has(user.uuid)) return fresh(ctx, row)
     const s = await fresh(ctx, row, await call(ctx, 'POST', path(row, '/heartbeat')))
     await syncAccess(ctx, user, s)
     return s
@@ -457,20 +491,27 @@ const settingsOut = z.object({
 
 const obj = (v: unknown) => (typeof v === 'object' && v !== null && !Array.isArray(v) ? v as Record<string, unknown> : undefined)
 
-function parseSettings(body: unknown) {
+function parseSettings(body: unknown, row?: Row) {
   const o = obj(body) ?? {}
   const out = settingsOut.parse(obj(o.settings) ?? o)
-  return { ...out, levelType: out.levelType.replace(/^minecraft\\?:/, '') }
+  const shown = out.motd.endsWith(` ${MOTD_FOOTER}`) ? out.motd.slice(0, -MOTD_FOOTER.length - 1) : out.motd
+  return { ...out, motd: row?.motd ?? shown, levelType: out.levelType.replace(/^minecraft\\?:/, '') }
 }
 
+/** Ohne Plugin hängt die Fußzeile an der einzigen MOTD-Zeile. */
+const motdFor = (row: Pick<Row, 'plugin'>, line: string) => (row.plugin ? line : `${line} ${MOTD_FOOTER}`.trim())
+
 export async function craftingSettings(ctx: AppContext, user: UserRow) {
-  return onServer(ctx, user, async (row) => parseSettings(await call(ctx, 'GET', path(row, '/settings'))))
+  return onServer(ctx, user, async (row) => parseSettings(await call(ctx, 'GET', path(row, '/settings')), row))
 }
 
 export async function craftingSetSettings(ctx: AppContext, user: UserRow, body: z.output<typeof settingsBody>) {
   return onServer(ctx, user, async (row) => {
-    const res = await call(ctx, 'PATCH', path(row, '/settings'), body)
-    return Object.keys(obj(res) ?? {}).length ? parseSettings(res) : parseSettings(await call(ctx, 'GET', path(row, '/settings')))
+    const patch = body.motd === undefined ? body : { ...body, motd: motdFor(row, body.motd) }
+    const res = await call(ctx, 'PATCH', path(row, '/settings'), patch)
+    if (body.motd !== undefined) run(ctx.db, 'UPDATE craftinghosting_servers SET motd = ? WHERE uuid = ?', body.motd, user.uuid)
+    const now = rowOf(ctx, user.uuid) ?? row
+    return Object.keys(obj(res) ?? {}).length ? parseSettings(res, now) : parseSettings(await call(ctx, 'GET', path(row, '/settings')), now)
   })
 }
 
@@ -662,9 +703,110 @@ async function syncAccess(ctx: AppContext, owner: UserRow, s: ServerView): Promi
       await send(`op ${owner.name}`)
       run(ctx.db, 'UPDATE craftinghosting_servers SET op_done = 1 WHERE uuid = ?', owner.uuid)
     }
+    if (running && !row.setup && !restarts.has(owner.uuid)) await firstSetup(ctx, owner, s, row)
   } catch (e) {
     if (!(e instanceof ApiError)) console.error('[trs-api] CraftingHosting access sync failed', e)
   } finally {
     syncing.delete(owner.uuid)
+  }
+}
+
+// ---------------------------------------------------------------- Ersteinrichtung (TRS Server Rules + MOTD)
+
+const manifestSchema = z.object({
+  version: z.string().max(20),
+  files: z.array(z.object({
+    platform: z.string().max(20),
+    mc: z.string().max(20).nullish(),
+    file: z.string().regex(/^trs-server-rules-[a-z0-9.-]+\.jar$/),
+    sha256: z.string().regex(/^[0-9a-f]{64}$/),
+    size: z.number().int().min(1).max(PLUGIN_MAX_BYTES),
+  }).loose()).max(100),
+}).loose()
+
+const atLeast = (v: string, min: number[]) => {
+  const p = v.split('.').map((x) => Number.parseInt(x, 10) || 0)
+  for (let i = 0; i < min.length; i++) if ((p[i] ?? 0) !== min[i]) return (p[i] ?? 0) > min[i]!
+  return true
+}
+
+async function pluginManifest(ctx: AppContext) {
+  const hit = manifests.get(ctx)
+  if (hit && ctx.now() - hit.at < MANIFEST_TTL_MS) return hit.value
+  const f = ctx.serverRulesFetch ?? fetch
+  const res = await f(`${ctx.config.serverRulesUrl}/server-plugin.json`, { signal: AbortSignal.timeout(TIMEOUT_MS) })
+  if (!res.ok) throw new Error(`server-plugin manifest ${res.status}`)
+  const value = manifestSchema.parse(await res.json())
+  manifests.set(ctx, { at: ctx.now(), value })
+  return value
+}
+
+/** Passendes TRS-Server-Rules-Jar für Typ + Version, sonst null (Vanilla, nicht gebaute Versionen, altes Plugin). */
+async function pluginFor(ctx: AppContext, s: ServerView) {
+  const platform = s.serverType === 'paper' || s.serverType === 'purpur' ? 'bukkit'
+    : s.serverType === 'fabric' || s.serverType === 'forge' ? s.serverType : null
+  if (!platform) return null
+  let mc = s.version
+  if (mc === 'latest') mc = (await partnerMe(ctx)).serverTypes.find((t) => t.id === s.serverType)?.versions.find((v) => v !== 'latest') ?? null
+  const manifest = await pluginManifest(ctx)
+  if (!atLeast(manifest.version, PLUGIN_MIN)) return null
+  const entry = manifest.files.find((e) => e.platform === platform && (platform === 'bukkit' || e.mc === mc))
+  if (!entry) return null
+  let data = jars.get(entry.sha256)
+  if (!data) {
+    const f = ctx.serverRulesFetch ?? fetch
+    const res = await f(`${ctx.config.serverRulesUrl}/${entry.file}`, { signal: AbortSignal.timeout(30_000) })
+    if (!res.ok) throw new Error(`server-plugin jar ${res.status}`)
+    const buf = new Uint8Array(await res.arrayBuffer())
+    if (buf.length !== entry.size || createHash('sha256').update(buf).digest('hex') !== entry.sha256) {
+      throw new Error('server-plugin jar checksum mismatch')
+    }
+    data = buf
+    jars.set(entry.sha256, data)
+  }
+  return platform === 'bukkit'
+    ? { platform, data, jar: `/plugins/${entry.file}`, dir: '/plugins/TRSServerRules', file: '/plugins/TRSServerRules/hosting.yml' }
+    : { platform, data, jar: `/mods/${entry.file}`, dir: '/config', file: '/config/trs-server-rules-hosting.yml' }
+}
+
+/**
+ * Nach dem ersten Start: TRS Server Rules mit fester MOTD-Fußzeile aufspielen (sonst die Fußzeile an die einzige
+ * Zeile hängen), MOTD-Zeile 1 = eigener Text oder Servername, dann einmal neu starten, damit alles greift.
+ */
+async function firstSetup(ctx: AppContext, owner: UserRow, s: ServerView, row: Row): Promise<void> {
+  const enc = (p: string) => encodeURIComponent(p)
+  let plugin: Awaited<ReturnType<typeof pluginFor>> = null
+  try {
+    plugin = await pluginFor(ctx, s)
+  } catch (e) {
+    console.error('[trs-api] TRS Server Rules for CraftingHosting not available', e)
+  }
+  if (plugin) {
+    await call(ctx, 'POST', path(row, '/files/folder'), { path: plugin.dir }).catch(() => undefined)
+    await call(ctx, 'PUT', path(row, `/files/content?path=${enc(plugin.jar)}`), undefined, { type: 'application/java-archive', data: plugin.data })
+    await call(ctx, 'PUT', path(row, `/files/content?path=${enc(plugin.file)}`), undefined,
+      { type: 'text/yaml', data: `# TRS Launcher – CraftingHosting\nmotd-footer: "${MOTD_FOOTER}"\n` })
+    if (plugin.platform === 'fabric') await call(ctx, 'POST', path(row, '/mods'), { project: 'fabric-api' }).catch(() => undefined)
+  }
+  const line = (row.motd ?? s.name).slice(0, MOTD_LINE_MAX)
+  const pluginName = plugin?.platform ?? null
+  await call(ctx, 'PATCH', path(row, '/settings'), { motd: motdFor({ plugin: pluginName }, line) })
+  run(ctx.db, 'UPDATE craftinghosting_servers SET setup = 1, plugin = ? WHERE uuid = ?', pluginName, owner.uuid)
+  restarts.set(owner.uuid, restartAfterSetup(ctx, row).finally(() => restarts.delete(owner.uuid)))
+}
+
+async function restartAfterSetup(ctx: AppContext, row: Row): Promise<void> {
+  try {
+    await call(ctx, 'POST', path(row, '/stop'), {})
+    const until = Date.now() + RESTART_WAIT_MS
+    for (;;) {
+      const s = parseServer(await call(ctx, 'GET', path(row)))
+      if (s.state === 'offline' || s.state === 'failed') break
+      if (Date.now() > until) throw new Error('server did not stop in time')
+      await new Promise((r) => setTimeout(r, RESTART_POLL_MS))
+    }
+    await call(ctx, 'POST', path(row, '/start'), {})
+  } catch (e) {
+    console.error('[trs-api] CraftingHosting restart after setup failed', e)
   }
 }

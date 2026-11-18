@@ -1,8 +1,9 @@
+import { createHash } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
 import {
   craftingCommand, craftingCreate, craftingDelete, craftingHeartbeat, craftingInfo, craftingInstallMods, craftingLogs,
   craftingServer, craftingSetSettings, craftingSettings, craftingStart, craftingStats, craftingStop, craftingUpdate,
-  craftingWorldImport, craftingWorldUpload, createServerBody, settingsBody,
+  craftingRestartDone, craftingWorldImport, craftingWorldUpload, createServerBody, MOTD_FOOTER, settingsBody,
 } from '../server/lib/craftinghosting'
 import { befriend, codeAsync, players } from './chathelpers'
 import { makeEnv, type TestEnv } from './helpers'
@@ -43,7 +44,13 @@ class FakePartner {
     this.calls.push(`${method} ${path}`)
     if ((init?.headers as Record<string, string>)?.Authorization !== `Bearer ${KEY}`) return this.err(401, 'invalid_api_key')
     if (this.fail) return this.err(this.fail.status, this.fail.code, this.fail.fields)
-    const body = init?.body ? JSON.parse(String(init.body)) : {}
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: any = {}
+    try {
+      if (typeof init?.body === 'string') body = JSON.parse(init.body)
+    } catch {
+      body = {}
+    }
     if (method === 'GET' && path === '/me') {
       return this.json(200, {
         plan: { id: 'free-4gb', name: 'Free 4 GB', memoryMb: 4096, cpuPercent: 200, diskMb: 10240 },
@@ -80,7 +87,12 @@ class FakePartner {
       case 'PATCH ': s.name = `${body.name} #P7KXGQXL`; return this.json(200, { server: s })
       case 'GET settings': return this.json(200, { settings: this.settings })
       case 'PATCH settings': Object.assign(this.settings, body); return this.json(200, { settings: this.settings })
-      case 'PUT files/content': this.files.set(url.searchParams.get('path')!, String(init?.body)); return this.json(200, { ok: true })
+      case 'PUT files/content': {
+        const b = init?.body
+        this.files.set(url.searchParams.get('path')!, typeof b === 'string' ? b : `<${(b as Uint8Array).length} bytes>`)
+        return this.json(200, { ok: true })
+      }
+      case 'POST files/folder': return this.json(200, { ok: true })
       case 'POST files/upload-url': return this.json(200, { url: `https://${this.uploadHost}/upload?token=abc` })
       case 'POST files/delete': for (const f of body.paths) this.files.delete(f); return this.json(200, { ok: true })
       case 'POST files/decompress':
@@ -129,10 +141,29 @@ class FakePartner {
   }
 }
 
-function setup(): { env: TestEnv, partner: FakePartner } {
+const JAR = new Uint8Array([0x50, 0x4b, 3, 4, 1, 2, 3])
+const sha = (b: Uint8Array) => createHash('sha256').update(b).digest('hex')
+
+/** Release-Kanal von TRS Server Rules; ohne `version` = nicht erreichbar. */
+function pluginChannel(version?: string) {
+  const files = [
+    { platform: 'bukkit', file: `trs-server-rules-bukkit-${version}.jar`, sha256: sha(JAR), size: JAR.length },
+    { platform: 'fabric', mc: '1.21.11', file: `trs-server-rules-fabric-1.21.11-${version}.jar`, sha256: sha(JAR), size: JAR.length },
+  ]
+  return (async (input: string | URL | Request) => {
+    const u = String(input)
+    if (!version) return new Response('no', { status: 404 })
+    if (u.endsWith('/server-plugin.json')) return new Response(JSON.stringify({ version, files }), { status: 200 })
+    if (u.endsWith('.jar')) return new Response(JAR, { status: 200 })
+    return new Response('no', { status: 404 })
+  }) as typeof fetch
+}
+
+function setup(plugin?: string): { env: TestEnv, partner: FakePartner } {
   const env = makeEnv({ env: { CRAFTINGHOSTING_API_KEY: KEY, CRAFTINGHOSTING_API: 'https://partner.example.test/api/v1/partner/' } })
   const partner = new FakePartner()
   env.ctx.craftinghostingFetch = partner.fetch
+  env.ctx.serverRulesFetch = pluginChannel(plugin)
   return { env, partner }
 }
 
@@ -205,6 +236,7 @@ describe('craftinghosting', () => {
 
     await craftingHeartbeat(env.ctx, u!)
     expect(partner.commands).toEqual(['op Steve'])
+    await craftingRestartDone(u!.uuid)
 
     partner.commands = []
     befriend(env, u!, f2!)
@@ -238,6 +270,7 @@ describe('craftinghosting', () => {
     await craftingCreate(env.ctx, u!, body())
     await craftingStart(env.ctx, u!, true)
     expect((await craftingHeartbeat(env.ctx, u!)).session.active).toBe(true)
+    await craftingRestartDone(u!.uuid)
     partner.heartbeatBody = 'server'
     expect((await craftingHeartbeat(env.ctx, u!)).state).toBe('running')
     expect((await craftingStop(env.ctx, u!, true)).state).toBe('running')
@@ -341,5 +374,59 @@ describe('craftinghosting', () => {
     await craftingWorldImport(env.ctx, u!)
     expect(partner.files.has('/trs-world.zip')).toBe(false)
     expect(partner.files.has('/world/level.dat')).toBe(true)
+  })
+
+  it('first setup installs TRS Server Rules with the MOTD footer and restarts once', async () => {
+    const { env, partner } = setup('1.1.0')
+    const [u] = await players(env, 'Steve')
+    await craftingCreate(env.ctx, u!, body({ name: 'Meine Welt', serverType: 'paper' }))
+    await craftingStart(env.ctx, u!, true)
+    partner.calls = []
+    const s = await craftingHeartbeat(env.ctx, u!)
+    expect(s.setup).toBe('pending')
+    expect(['restarting', 'done']).toContain((await craftingServer(env.ctx, u!))?.setup)
+    await craftingRestartDone(u!.uuid)
+    expect(partner.files.get('/plugins/trs-server-rules-bukkit-1.1.0.jar')).toBe('<7 bytes>')
+    expect(partner.files.get('/plugins/TRSServerRules/hosting.yml')).toContain(`motd-footer: "${MOTD_FOOTER}"`)
+    expect(partner.settings.motd).toBe('Meine Welt')
+    expect(partner.calls.filter((c) => c.endsWith('/stop') || c.endsWith('/start'))).toHaveLength(2)
+    const after = await craftingServer(env.ctx, u!)
+    expect([after?.setup, after?.state]).toEqual(['done', 'running'])
+    partner.calls = []
+    await craftingHeartbeat(env.ctx, u!)
+    expect(partner.calls.some((c) => c.includes('/files/content'))).toBe(false)
+
+    await craftingSetSettings(env.ctx, u!, settingsBody.parse({ motd: 'Nur Freunde' }))
+    expect(partner.settings.motd).toBe('Nur Freunde')
+    expect((await craftingSettings(env.ctx, u!)).motd).toBe('Nur Freunde')
+  })
+
+  it('without a fitting plugin the footer goes onto the single MOTD line', async () => {
+    const { env, partner } = setup('1.0.0')
+    const [u] = await players(env, 'Steve')
+    await craftingCreate(env.ctx, u!, body({ name: 'Meine Welt', serverType: 'vanilla' }))
+    await craftingStart(env.ctx, u!, true)
+    await craftingHeartbeat(env.ctx, u!)
+    await craftingRestartDone(u!.uuid)
+    expect([...partner.files.keys()].some((f) => f.endsWith('.jar'))).toBe(false)
+    expect(partner.settings.motd).toBe(`Meine Welt ${MOTD_FOOTER}`)
+    expect((partner.settings.motd as string).length).toBeLessThanOrEqual(120)
+    expect((await craftingSettings(env.ctx, u!)).motd).toBe('Meine Welt')
+    await craftingSetSettings(env.ctx, u!, settingsBody.parse({ motd: 'x'.repeat(60) }))
+    expect(partner.settings.motd).toBe(`${'x'.repeat(60)} ${MOTD_FOOTER}`)
+    expect((partner.settings.motd as string).length).toBeLessThanOrEqual(120)
+    expect(() => settingsBody.parse({ motd: 'x'.repeat(61) })).toThrow()
+    expect(() => settingsBody.parse({ motd: '§cRot' })).toThrow()
+  })
+
+  it('heartbeats during the setup restart do not end the session in the launcher', async () => {
+    const { env } = setup()
+    const [u] = await players(env, 'Steve')
+    await craftingCreate(env.ctx, u!, body())
+    await craftingStart(env.ctx, u!, true)
+    await craftingHeartbeat(env.ctx, u!)
+    const during = await craftingHeartbeat(env.ctx, u!)
+    expect(during.setup).toBe('restarting')
+    await craftingRestartDone(u!.uuid)
   })
 })
