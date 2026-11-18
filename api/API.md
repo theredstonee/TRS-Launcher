@@ -5586,3 +5586,13 @@ Every server's MOTD must name the TRS Launcher and CraftingHosting. The first ti
   no line breaks (checked 2026-11-18).
 - Then the API stops and starts the server once (`setup: "restarting"`, usually under a minute). Heartbeats during the
   restart are answered from the current state without reaching the partner, so the launcher keeps its session.
+
+### 43.8 Team overview
+
+- `GET /v1/admin/craftinghosting/servers` (permission `worlds.view`) -> `{ usage: { used, max }, servers: [Server +
+  { owner: { uuid, name } | null, externalId, plugin }] }`: every partner server of the TRS partner account (also ones
+  without a row here, `owner: null`), running ones first.
+- `POST /v1/admin/craftinghosting/servers/{id}/stop` and `DELETE /v1/admin/craftinghosting/servers/{id}` (permission
+  `worlds.close`, optional body `{ reason }` ≤ 200) -> `204`. Audit actions `craftinghosting.stop` /
+  `craftinghosting.delete` (target = owner, detail = reason or server id). Deleting removes the server with its data;
+  to keep someone out use the `hosting_ban` sanction.

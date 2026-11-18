@@ -234,6 +234,23 @@ export interface AdminRoom {
   heartbeatAt: string
 }
 
+export interface AdminHostingServer {
+  id: string
+  name: string
+  state: string
+  address: string | null
+  serverType: string | null
+  version: string | null
+  access: 'friends' | 'open'
+  setup: 'pending' | 'restarting' | 'done'
+  plugin: string | null
+  owner: { uuid: string, name: string | null } | null
+  externalId: string | null
+  session: { active: boolean, hostPresent: boolean, remainingSeconds: number }
+  lastStartAt: string | null
+  deleteAt: string | null
+}
+
 export interface PlayerFile {
   player: {
     uuid: string

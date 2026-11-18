@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   craftingCommand, craftingCreate, craftingDelete, craftingHeartbeat, craftingInfo, craftingInstallMods, craftingLogs,
   craftingServer, craftingSetSettings, craftingSettings, craftingStart, craftingStats, craftingStop, craftingUpdate,
-  craftingRestartDone, craftingWorldImport, craftingWorldUpload, createServerBody, MOTD_FOOTER, settingsBody,
+  adminCraftingDelete, adminCraftingServers, adminCraftingStop, craftingRestartDone, craftingWorldImport, craftingWorldUpload, createServerBody, MOTD_FOOTER, settingsBody,
 } from '../server/lib/craftinghosting'
 import { befriend, codeAsync, players } from './chathelpers'
 import { makeEnv, type TestEnv } from './helpers'
@@ -62,7 +62,7 @@ class FakePartner {
     }
     if (method === 'GET' && path === '/servers') {
       const p = url.searchParams.get('player')
-      return this.json(200, { servers: [...this.servers.values()].filter((s) => s.player.externalId === p) })
+      return this.json(200, { servers: [...this.servers.values()].filter((s) => p === null || s.player.externalId === p) })
     }
     if (method === 'POST' && path === '/servers') {
       if ([...this.servers.values()].some((s) => s.player.externalId === body.player.externalId)) return this.err(409, 'player_limit_reached')
@@ -428,5 +428,22 @@ describe('craftinghosting', () => {
     const during = await craftingHeartbeat(env.ctx, u!)
     expect(during.setup).toBe('restarting')
     await craftingRestartDone(u!.uuid)
+  })
+
+  it('team overview lists all servers with owner, stop and delete', async () => {
+    const { env, partner } = setup()
+    const [u, v] = await players(env, 'Steve', 'Alex')
+    const s1 = await craftingCreate(env.ctx, u!, body({ name: 'Welt A' }))
+    await craftingCreate(env.ctx, v!, body({ name: 'Welt B', access: 'open' }))
+    await craftingStart(env.ctx, u!, true)
+    const list = await adminCraftingServers(env.ctx)
+    expect(list.usage).toEqual({ used: 2, max: 100 })
+    expect(list.servers.map((s) => [s.name, s.owner?.name, s.access])).toEqual([['Welt A', 'Steve', 'friends'], ['Welt B', 'Alex', 'open']])
+    expect(await adminCraftingStop(env.ctx, s1.id)).toBe(u!.uuid)
+    expect(partner.servers.get(s1.id)!.state).toBe('offline')
+    expect(await adminCraftingDelete(env.ctx, s1.id)).toBe(u!.uuid)
+    expect(partner.servers.has(s1.id)).toBe(false)
+    expect(await craftingServer(env.ctx, u!)).toBeNull()
+    expect((await adminCraftingServers(env.ctx)).servers).toHaveLength(1)
   })
 })

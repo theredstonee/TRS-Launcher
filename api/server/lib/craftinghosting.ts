@@ -810,3 +810,64 @@ async function restartAfterSetup(ctx: AppContext, row: Row): Promise<void> {
     console.error('[trs-api] CraftingHosting restart after setup failed', e)
   }
 }
+
+// ---------------------------------------------------------------- Team-Übersicht
+
+export const partnerServerId = z.string().regex(/^[0-9a-f-]{8,64}$/)
+
+/** Alle Partner-Server (auch ohne Zeile bei uns) mit Besitzer, Zustand und Belegung. */
+export async function adminCraftingServers(ctx: AppContext) {
+  config(ctx)
+  const me = await partnerMe(ctx)
+  const list: PartnerServer[] = []
+  for (let offset = 0; offset < 1000; offset += 100) {
+    const page = z.object({ servers: z.array(serverSchema).max(100) }).loose()
+      .safeParse(await call(ctx, 'GET', `/servers?limit=100&offset=${offset}`))
+    if (!page.success) throw upstream()
+    list.push(...page.data.servers)
+    if (page.data.servers.length < 100) break
+  }
+  const rows = new Map(allRows(ctx).map((r) => [r.server_id, r]))
+  return {
+    usage: { used: me.limits.usedServers, max: me.limits.maxServers },
+    servers: list.map((p) => {
+      const row = rows.get(p.id)
+      const v = view(p, row?.access ?? 'friends', setupOf(row))
+      return {
+        ...v,
+        owner: row ? { uuid: row.uuid, name: row.name } : null,
+        externalId: p.player?.externalId ?? null,
+        plugin: row?.plugin ?? null,
+      }
+    }).sort((a, b) => Number(b.session.active) - Number(a.session.active) || (b.lastStartAt ?? '').localeCompare(a.lastStartAt ?? '')),
+  }
+}
+
+function allRows(ctx: AppContext) {
+  return all<Row & { name: string | null }>(
+    ctx.db,
+    'SELECT c.*, u.name AS name FROM craftinghosting_servers c LEFT JOIN users u ON u.uuid = c.uuid',
+  )
+}
+
+const ownerOf = (ctx: AppContext, serverId: string) =>
+  one<{ uuid: string }>(ctx.db, 'SELECT uuid FROM craftinghosting_servers WHERE server_id = ?', serverId)?.uuid ?? null
+
+export async function adminCraftingStop(ctx: AppContext, serverId: string): Promise<string | null> {
+  config(ctx)
+  await call(ctx, 'POST', `/servers/${encodeURIComponent(serverId)}/stop`, {})
+  return ownerOf(ctx, serverId)
+}
+
+export async function adminCraftingDelete(ctx: AppContext, serverId: string): Promise<string | null> {
+  config(ctx)
+  const owner = ownerOf(ctx, serverId)
+  try {
+    await call(ctx, 'DELETE', `/servers/${encodeURIComponent(serverId)}`)
+  } catch (e) {
+    if (!(e instanceof ApiError && e.code === 'no_server')) throw e
+  }
+  run(ctx.db, 'DELETE FROM craftinghosting_servers WHERE server_id = ?', serverId)
+  infoCache.delete(ctx)
+  return owner
+}

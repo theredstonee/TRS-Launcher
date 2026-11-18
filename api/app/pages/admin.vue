@@ -76,6 +76,7 @@ const allNav = computed<NavItem[]>(() => [
   { to: '/admin/sanctions', icon: 'gavel', label: a.value.nav.sanctions, perm: ['players.view', 'appeals.handle', 'sanctions.lift'] },
   { to: '/admin/uploads', icon: 'cape', label: a.value.nav.uploads, count: counts.value?.uploads, perm: ['uploads.review'] },
   { to: '/admin/worlds', icon: 'world', label: a.value.nav.worlds, perm: ['worlds.view'] },
+  { to: '/admin/hosting', icon: 'server', label: a.value.nav.hosting, perm: ['worlds.view'] },
   { to: '/admin/applications', icon: 'inbox', label: t.value.adm.nav.applications, count: counts.value?.applications, perm: ['applications.view'] },
   { to: '/admin/jobs', icon: 'briefcase', label: t.value.adm.nav.jobs, perm: ['applications.view', 'applications.manage'] },
   { to: '/admin/circuits', icon: 'blocks', label: ct.value.adm.nav, count: counts.value?.circuits, perm: ['circuits.manage'] },
