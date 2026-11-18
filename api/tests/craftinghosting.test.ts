@@ -524,6 +524,11 @@ describe('craftinghosting', () => {
       '_minecraft._tcp.meine-welt.trs-launcher.de', '_minecraft._tcp.neuewelt.trs-launcher.de'])
     expect(await codeAsync(() => craftingUpdate(env.ctx, u!, { subdomain: 'api' }))).toBe('subdomain_reserved')
 
+    // Altbestand ohne Adresse bekommt beim Abruf eine
+    env.ctx.db.prepare("UPDATE craftinghosting_servers SET subdomain = NULL, dns_record = NULL, dns_target = NULL WHERE uuid = ?").run(v!.uuid)
+    dns.records.forEach((r, k) => { if (r.name.includes('meine-welt')) dns.records.delete(k) })
+    expect((await craftingServer(env.ctx, v!))?.domain).toBe('meine-welt.trs-launcher.de')
+
     // Löschen entfernt den Eintrag
     await craftingDelete(env.ctx, u!)
     expect([...dns.records.values()].map((r) => r.name)).toEqual(['_minecraft._tcp.meine-welt.trs-launcher.de'])

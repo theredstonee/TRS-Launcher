@@ -366,7 +366,16 @@ export async function craftingServer(ctx: AppContext, user: UserRow): Promise<Se
   if (row) {
     try {
       const p = parseServer(await call(ctx, 'GET', `/servers/${encodeURIComponent(row.server_id)}`))
-      await syncDns(ctx, row, p)
+      // Server von vor den eigenen Adressen bekommen beim ersten Abruf eine.
+      if (ctx.config.dns && !row.subdomain) {
+        const sub = await suggestSubdomain(ctx, user.uuid, p.name.replace(/ #[A-Z0-9]+$/, ''))
+        if (sub) {
+          try {
+            run(ctx.db, 'UPDATE craftinghosting_servers SET subdomain = ? WHERE uuid = ?', sub, user.uuid)
+          } catch { /* gerade vergeben, nächster Abruf */ }
+        }
+      }
+      await syncDns(ctx, rowOf(ctx, user.uuid) ?? row, p)
       const s = view(p, row.access, setupOf(row), domainOf(ctx, rowOf(ctx, user.uuid)))
       if (s.state === 'running' && (row.wl_key === null || !row.op_done || !row.setup)) {
         await syncAccess(ctx, user, s)
