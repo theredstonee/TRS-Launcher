@@ -7643,6 +7643,7 @@
     },
     "rename": "Renomear",
     "hostAway": "Seu launcher não está mais respondendo – o servidor só continua rodando enquanto houver jogadores.",
+    "setupRestarting": "O servidor está sendo configurado pela primeira vez e reinicia uma vez – em instantes estará pronto.",
     "deleteAt": "Será excluído em {date} se você não o iniciar antes.",
     "tabs": {
       "overview": "Visão geral",
@@ -7661,6 +7662,7 @@
       "saved": "Configurações salvas – valem a partir da próxima inicialização.",
       "nextStart": "As alterações valem a partir da próxima inicialização do servidor.",
       "afterFirstStart": "As configurações ficam disponíveis após a primeira inicialização: inicie o servidor uma vez e depois altere-as aqui.",
+      "motdFooter": "A linha 2 é fixa: {footer}",
       "motd": "Mensagem na lista de servidores (MOTD)",
       "gamemode": "Modo de jogo",
       "difficulty": "Dificuldade",

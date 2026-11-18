@@ -7643,6 +7643,7 @@
     },
     "rename": "Yeniden adlandır",
     "hostAway": "Başlatıcın artık bildirim göndermiyor – sunucu yalnızca oyuncular varken çalışmaya devam eder.",
+    "setupRestarting": "Sunucu ilk kez kuruluyor ve bir kez yeniden başlıyor – birazdan hazır olacak.",
     "deleteAt": "O tarihe kadar başlatmazsan {date} tarihinde silinecek.",
     "tabs": {
       "overview": "Genel bakış",
@@ -7661,6 +7662,7 @@
       "saved": "Ayarlar kaydedildi – bir sonraki başlatmada geçerli olur.",
       "nextStart": "Değişiklikler sunucunun bir sonraki başlatılmasında geçerli olur.",
       "afterFirstStart": "Ayarlar ilk başlatmadan sonra kullanılabilir: sunucuyu bir kez başlat, sonra burada değiştirebilirsin.",
+      "motdFooter": "2. satır sabittir: {footer}",
       "motd": "Sunucu listesindeki mesaj (MOTD)",
       "gamemode": "Oyun modu",
       "difficulty": "Zorluk",

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { DIFFICULTIES, GAMEMODES, LEVEL_TYPES, type CraftingSettings, settingsPatch } from '~/utils/craftinghosting'
+import { DIFFICULTIES, GAMEMODES, LEVEL_TYPES, MOTD_FOOTER, MOTD_MAX, type CraftingSettings, settingsPatch } from '~/utils/craftinghosting'
 
 // Einstellungen des Partner-Servers (server.properties). Gelten beim nächsten Start;
 // Seed und Welttyp nur für eine neu erzeugte Welt. Die Whitelist folgt dem Zugang.
@@ -37,7 +37,8 @@ function reset() {
       <p class="rounded-lg bg-base-900 px-3 py-2 text-xs text-base-400 ring-1 ring-base-800">{{ t('craftinghosting.settings.nextStart') }}</p>
       <div>
         <label for="chs-motd" class="mb-1 block text-xs text-base-400">{{ t('craftinghosting.settings.motd') }}</label>
-        <input id="chs-motd" v-model="form.motd" class="field" maxlength="120" autocomplete="off" />
+        <input id="chs-motd" v-model="form.motd" class="field" :maxlength="MOTD_MAX" autocomplete="off" />
+        <p class="mt-1 text-xs text-base-500" data-testid="hosting-motd-footer">{{ t('craftinghosting.settings.motdFooter', { footer: MOTD_FOOTER }) }}</p>
       </div>
       <div class="grid gap-3 sm:grid-cols-2">
         <div>

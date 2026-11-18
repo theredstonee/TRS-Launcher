@@ -324,6 +324,9 @@ function usage(used: number | null, limit: number | null): string {
             <p v-if="!server.session.active && server.session.lastStopReason" class="mt-1 text-xs text-base-500">
               {{ t(`craftinghosting.stopReason.${server.session.lastStopReason}`) }}
             </p>
+            <p v-if="server.setup === 'restarting'" class="mt-1 text-xs text-lamp-300" data-testid="hosting-setup">
+              {{ t('craftinghosting.setupRestarting') }}
+            </p>
             <p v-if="server.session.active && !server.session.hostPresent" class="mt-1 text-xs text-lamp-300">
               {{ t('craftinghosting.hostAway') }}
             </p>

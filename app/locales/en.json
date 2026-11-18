@@ -8449,6 +8449,7 @@
     },
     "rename": "Rename",
     "hostAway": "Your launcher isn’t reporting in – the server only keeps running while players are on it.",
+    "setupRestarting": "The server is being set up for the first time and restarts once – it’s ready in a moment.",
     "deleteAt": "Will be deleted on {date} unless you start it before then.",
     "tabs": {
       "overview": "Overview",
@@ -8467,6 +8468,7 @@
       "saved": "Settings saved – they apply on the next start.",
       "nextStart": "Changes apply on the next start of the server.",
       "afterFirstStart": "Settings are available after the first start: start the server once, then you can change them here.",
+      "motdFooter": "Line 2 is fixed: {footer}",
       "motd": "Message in the server list (MOTD)",
       "gamemode": "Game mode",
       "difficulty": "Difficulty",

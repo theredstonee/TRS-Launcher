@@ -252,6 +252,8 @@ pub struct Server {
     pub last_start_at: Option<String>,
     /// Ohne Start bis dahin wird der Server gelöscht.
     pub delete_at: Option<String>,
+    /// Ersteinrichtung der API: `pending`, `restarting` (Server startet einmal neu) oder `done`.
+    pub setup: String,
 }
 
 // --- Draht ------------------------------------------------------------------------------
@@ -385,6 +387,7 @@ pub(crate) struct ApiServer {
     created_at: Option<String>,
     last_start_at: Option<String>,
     delete_at: Option<String>,
+    setup: String,
 }
 
 impl ApiServer {
@@ -428,6 +431,10 @@ impl ApiServer {
             created_at: time(self.created_at),
             last_start_at: time(self.last_start_at),
             delete_at: time(self.delete_at),
+            setup: match self.setup.as_str() {
+                "pending" | "restarting" => self.setup,
+                _ => "done".into(),
+            },
         })
     }
 }
@@ -492,7 +499,7 @@ impl Launcher {
     }
 
     fn ch_observe(&self, account: &str, server: Option<&Server>) {
-        if server.is_some_and(|s| s.session.active) {
+        if server.is_some_and(|s| s.session.active || s.setup == "restarting") {
             self.trs.craftinghosting.mark(account);
         } else {
             self.trs.craftinghosting.clear(Some(account));
@@ -627,7 +634,7 @@ impl Launcher {
                     .and_then(|e| e.server)
                     .and_then(ApiServer::cleaned);
                 match server {
-                    Some(s) if !s.session.active => state.clear(Some(&account)),
+                    Some(s) if !s.session.active && s.setup != "restarting" => state.clear(Some(&account)),
                     _ => false,
                 }
             }

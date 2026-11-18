@@ -7643,6 +7643,7 @@
     },
     "rename": "Zmień nazwę",
     "hostAway": "Twój launcher się nie zgłasza – serwer działa dalej tylko, dopóki są na nim gracze.",
+    "setupRestarting": "Serwer jest konfigurowany po raz pierwszy i uruchomi się ponownie – za chwilę będzie gotowy.",
     "deleteAt": "Zostanie usunięty {date}, jeśli wcześniej go nie uruchomisz.",
     "tabs": {
       "overview": "Przegląd",
@@ -7661,6 +7662,7 @@
       "saved": "Ustawienia zapisane – obowiązują od następnego uruchomienia.",
       "nextStart": "Zmiany obowiązują od następnego uruchomienia serwera.",
       "afterFirstStart": "Ustawienia są dostępne po pierwszym uruchomieniu: uruchom serwer raz, a potem zmienisz je tutaj.",
+      "motdFooter": "Linia 2 jest stała: {footer}",
       "motd": "Opis na liście serwerów (MOTD)",
       "gamemode": "Tryb gry",
       "difficulty": "Poziom trudności",

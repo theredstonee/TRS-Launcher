@@ -65,7 +65,13 @@ export const craftingServerSchema = z.object({
   lastStartAt: time,
   /** Wird ohne Start bis dahin gelöscht; jeder Start schiebt es nach hinten. */
   deleteAt: time,
+  /** Ersteinrichtung nach dem ersten Start (Plugin, MOTD); `restarting` = startet dafür einmal neu. */
+  setup: z.enum(['pending', 'restarting', 'done']).catch('done'),
 })
+
+/** Feste zweite MOTD-Zeile, setzt die TRS-API. */
+export const MOTD_FOOTER = 'Free server: trs-launcher.de × craftinghosting.free'
+export const MOTD_MAX = 60
 
 export const GAMEMODES = ['survival', 'creative', 'adventure', 'spectator'] as const
 export const DIFFICULTIES = ['peaceful', 'easy', 'normal', 'hard'] as const
@@ -146,7 +152,7 @@ export function isTransitional(state: CraftingState | null | undefined): boolean
 }
 
 export function pollInterval(server: CraftingServer | null): number {
-  return isTransitional(server?.state) ? POLL_FAST_MS : POLL_SLOW_MS
+  return isTransitional(server?.state) || server?.setup === 'restarting' ? POLL_FAST_MS : POLL_SLOW_MS
 }
 
 /** Restliche Sekunden bis `iso` (0, wenn vorbei oder unbekannt). */

@@ -377,6 +377,8 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
       await new Promise((r) => setTimeout(r, POLL_FAST_MS))
       await refresh()
       const state = server.value?.state
+      // Nach dem ersten Start richtet die API ein und startet einmal neu – so lange warten.
+      if (server.value?.setup === 'restarting') continue
       if (state === 'running') return true
       if (!state || ['offline', 'failed', 'suspended'].includes(state)) {
         useToasts().error(t('craftinghosting.join.notStarted'))

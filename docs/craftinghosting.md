@@ -72,14 +72,15 @@ Every user (TRS account) has at most one server. All routes need the TRS bearer 
   },
   "createdAt": "2026-11-18T15:59:20.000Z",
   "lastStartAt": null,
-  "deleteAt": "2026-12-18T15:59:20.000Z" // deleted with all data if not started before; every start pushes it back
+  "deleteAt": "2026-12-18T15:59:20.000Z", // deleted with all data if not started before; every start pushes it back
+  "setup": "pending"              // pending | restarting | done – first setup after the first start (API.md §43.7)
 }
 // session additionally has "hostPresent": boolean – false = the host's launcher no longer reports in and the server
 // only keeps running because players are on it.
 
 // Settings (all optional in PATCH; "whitelist" is not settable here, it follows "access")
 {
-  "motd": "Mein Server",            // ≤ 120 chars
+  "motd": "Mein Server",            // line 1 only, ≤ 60 chars, no § codes; line 2 is the fixed footer
   "maxPlayers": 8,                  // 1–100
   "gamemode": "survival",           // survival | creative | adventure | spectator
   "difficulty": "normal",           // peaceful | easy | normal | hard
@@ -149,3 +150,7 @@ Usual TRS error shape `{ "error": { "code", "message", "details"? } }`.
 - On launcher exit: `POST …/stop { "whenEmpty": true }` if a session is active (short timeout) – friends who are
   still playing keep the server running; it stops when the last player leaves.
 - Start flow: `start` → poll `GET /server` every 5 s until `state = running` → show the address / join.
+- First setup: after the first start the API installs TRS Server Rules with the fixed MOTD footer
+  ("Free server: trs-launcher.de × craftinghosting.free") and restarts the server once (`setup: "restarting"`). Keep
+  heartbeating while `setup` is `restarting` even though `session.active` is false, and treat it as "not ready yet"
+  when joining.

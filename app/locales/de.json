@@ -8449,6 +8449,7 @@
     },
     "rename": "Umbenennen",
     "hostAway": "Dein Launcher meldet sich nicht mehr – der Server läuft nur weiter, solange Spieler drauf sind.",
+    "setupRestarting": "Der Server wird zum ersten Mal eingerichtet und startet einmal neu – gleich ist er bereit.",
     "deleteAt": "Wird am {date} gelöscht, wenn du ihn bis dahin nicht startest.",
     "tabs": {
       "overview": "Übersicht",
@@ -8467,6 +8468,7 @@
       "saved": "Einstellungen gespeichert – sie gelten ab dem nächsten Start.",
       "nextStart": "Änderungen gelten ab dem nächsten Start des Servers.",
       "afterFirstStart": "Einstellungen gibt es nach dem ersten Start: Starte den Server einmal, dann kannst du sie hier ändern.",
+      "motdFooter": "Zeile 2 ist fest: {footer}",
       "motd": "Text in der Serverliste (MOTD)",
       "gamemode": "Spielmodus",
       "difficulty": "Schwierigkeit",

@@ -7643,6 +7643,7 @@
     },
     "rename": "Renommer",
     "hostAway": "Ton launcher ne se signale plus – le serveur ne tourne que tant que des joueurs sont connectés.",
+    "setupRestarting": "Le serveur est configuré pour la première fois et redémarre une fois – il sera prêt dans un instant.",
     "deleteAt": "Sera supprimé le {date} si tu ne le démarres pas d’ici là.",
     "tabs": {
       "overview": "Aperçu",
@@ -7661,6 +7662,7 @@
       "saved": "Paramètres enregistrés – ils s’appliquent au prochain démarrage.",
       "nextStart": "Les modifications s’appliquent au prochain démarrage du serveur.",
       "afterFirstStart": "Les réglages sont disponibles après le premier démarrage : démarre le serveur une fois, puis tu pourras les modifier ici.",
+      "motdFooter": "La ligne 2 est fixe : {footer}",
       "motd": "Message dans la liste des serveurs (MOTD)",
       "gamemode": "Mode de jeu",
       "difficulty": "Difficulté",

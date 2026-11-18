@@ -8449,6 +8449,7 @@
     },
     "rename": "Renombrar",
     "hostAway": "Tu launcher no da señales: el servidor solo sigue en marcha mientras haya jugadores.",
+    "setupRestarting": "El servidor se está configurando por primera vez y se reinicia una vez; estará listo en un momento.",
     "deleteAt": "Se eliminará el {date} si no lo inicias antes.",
     "tabs": {
       "overview": "Resumen",
@@ -8467,6 +8468,7 @@
       "saved": "Ajustes guardados: se aplican en el próximo inicio.",
       "nextStart": "Los cambios se aplican en el próximo inicio del servidor.",
       "afterFirstStart": "Los ajustes están disponibles después del primer inicio: inicia el servidor una vez y luego podrás cambiarlos aquí.",
+      "motdFooter": "La línea 2 es fija: {footer}",
       "motd": "Mensaje en la lista de servidores (MOTD)",
       "gamemode": "Modo de juego",
       "difficulty": "Dificultad",

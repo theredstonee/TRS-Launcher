@@ -31,6 +31,8 @@ struct Api {
     cooldown: AtomicBool,
     /// Antwortet alles mit `craftinghosting_unavailable`?
     unavailable: AtomicBool,
+    /// Startet die API den Server gerade nach der Ersteinrichtung neu?
+    restarting: AtomicBool,
 }
 
 fn api(state: Arc<Api>) -> impl Fn(&Request) -> Response + Send + Sync + 'static {
@@ -84,7 +86,11 @@ fn api(state: Arc<Api>) -> impl Fn(&Request) -> Response + Send + Sync + 'static
                 Response::json(200, json!({ "server": server(true) }))
             }
             ("POST", "/v1/craftinghosting/server/heartbeat") => {
-                if running {
+                if state.restarting.load(Ordering::SeqCst) {
+                    let mut s = server(false);
+                    s["setup"] = json!("restarting");
+                    Response::json(200, json!({ "server": s }))
+                } else if running {
                     Response::json(200, json!({ "server": server(true) }))
                 } else {
                     Response::json(
@@ -107,7 +113,12 @@ fn api(state: Arc<Api>) -> impl Fn(&Request) -> Response + Send + Sync + 'static
 }
 
 fn state() -> Arc<Api> {
-    Arc::new(Api { running: AtomicBool::new(false), cooldown: AtomicBool::new(false), unavailable: AtomicBool::new(false) })
+    Arc::new(Api {
+        running: AtomicBool::new(false),
+        cooldown: AtomicBool::new(false),
+        unavailable: AtomicBool::new(false),
+        restarting: AtomicBool::new(false),
+    })
 }
 
 fn new_server(name: &str) -> NewServer {
@@ -428,4 +439,21 @@ async fn world_is_zipped_uploaded_and_imported() {
     // Unbekannte Welt: nichts wird gesendet.
     assert!(launcher.craftinghosting_upload_world("inst", "Fehlt", |_| {}).await.is_err());
     assert_eq!(server.hits("POST", "/v1/craftinghosting/server/world/upload").len(), 1);
+}
+
+#[tokio::test]
+async fn setup_restart_keeps_the_session() {
+    let api_state = state();
+    let server = MockServer::start(api(Arc::clone(&api_state))).await;
+    let (_dir, launcher) = launcher(&server, &[ACC]).await;
+    launcher.craftinghosting_start(true).await.unwrap();
+
+    // Einrichtungs-Neustart: Sitzung kurz inaktiv, aber der Launcher bleibt dran.
+    api_state.restarting.store(true, Ordering::SeqCst);
+    assert!(!launcher.craftinghosting_heartbeat().await);
+    assert_eq!(launcher.trs.craftinghosting.active().as_deref(), Some(ACC));
+
+    api_state.restarting.store(false, Ordering::SeqCst);
+    assert!(!launcher.craftinghosting_heartbeat().await);
+    assert_eq!(launcher.trs.craftinghosting.active().as_deref(), Some(ACC));
 }

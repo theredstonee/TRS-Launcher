@@ -7643,6 +7643,7 @@
     },
     "rename": "Hernoemen",
     "hostAway": "Je launcher meldt zich niet meer – de server draait alleen door zolang er spelers op zitten.",
+    "setupRestarting": "De server wordt voor het eerst ingericht en start één keer opnieuw – zo is hij klaar.",
     "deleteAt": "Wordt op {date} verwijderd als je hem niet eerder start.",
     "tabs": {
       "overview": "Overzicht",
@@ -7661,6 +7662,7 @@
       "saved": "Instellingen opgeslagen – ze gelden vanaf de volgende start.",
       "nextStart": "Wijzigingen gelden vanaf de volgende start van de server.",
       "afterFirstStart": "Instellingen zijn beschikbaar na de eerste start: start de server één keer, daarna kun je ze hier wijzigen.",
+      "motdFooter": "Regel 2 staat vast: {footer}",
       "motd": "Tekst in de serverlijst (MOTD)",
       "gamemode": "Spelmodus",
       "difficulty": "Moeilijkheid",
