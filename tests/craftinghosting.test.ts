@@ -8,7 +8,10 @@ import {
   hostingCountdown,
   inCooldown,
   joinVersion,
+  modrinthProjects,
+  plainLogLine,
   pollInterval,
+  settingsPatch,
   remainingSeconds,
   secondsUntil,
   validServerName,
@@ -35,9 +38,11 @@ const base = {
     remainingSeconds: 3600,
     cooldownUntil: null,
     lastStopReason: null,
+    hostPresent: true,
   },
   createdAt: null,
   lastStartAt: null,
+  deleteAt: '2026-12-18T15:59:20.000Z',
 }
 const server = craftingServerSchema.parse(base)
 
@@ -102,5 +107,31 @@ describe('CraftingHosting-Helfer', () => {
 
   it('lehnt unbekannte Zustände ab', () => {
     expect(craftingServerSchema.safeParse({ ...base, state: 'exploded' }).success).toBe(false)
+  })
+})
+
+describe('Einstellungen, Mods, Konsole', () => {
+  it('schickt nur geänderte Einstellungen, nie die Whitelist', () => {
+    const before = {
+      motd: 'A', maxPlayers: 8, gamemode: 'survival', difficulty: 'normal', hardcore: false, pvp: true, allowFlight: false,
+      seed: '', levelType: 'normal', spawnProtection: 16, viewDistance: 10, simulationDistance: 10, whitelist: true,
+    } as const
+    expect(settingsPatch(before, { ...before })).toEqual({})
+    expect(settingsPatch(before, { ...before, motd: 'B', pvp: false, whitelist: false })).toEqual({ motd: 'B', pvp: false })
+  })
+
+  it('trennt Modrinth-Mods von den übrigen', () => {
+    const items = [
+      { fileName: 'a.jar', title: 'A', enabled: true, source: { projectId: 'AANobbMI' } },
+      { fileName: 'a2.jar', title: 'A2', enabled: true, source: { projectId: 'AANobbMI', platform: 'modrinth' } },
+      { fileName: 'b.jar', title: 'B', enabled: true, source: { projectId: '123', platform: 'curseforge' } },
+      { fileName: 'c.jar', enabled: true, source: null },
+      { fileName: 'd.jar', title: 'D', enabled: false, source: { projectId: 'P7dR8mSH' } },
+    ]
+    expect(modrinthProjects(items)).toEqual({ projects: ['AANobbMI'], other: ['B', 'c.jar'] })
+  })
+
+  it('entfernt Farbcodes aus Log-Zeilen', () => {
+    expect(plainLogLine('§aGrün §lfett§r normal')).toBe('Grün fett normal')
   })
 })

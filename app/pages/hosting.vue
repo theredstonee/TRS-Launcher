@@ -127,9 +127,27 @@ function openEula() {
   if (info.value) void backend.openExternalUrl(info.value.eulaUrl).catch((e) => useToasts().error(e))
 }
 
-const commandText = ref('')
-async function sendCommand() {
-  if (await store.command(commandText.value)) commandText.value = ''
+// Bereiche des eigenen Servers.
+type Tab = 'overview' | 'console' | 'settings' | 'content'
+const tabs: Tab[] = ['overview', 'console', 'settings', 'content']
+const tab = ref<Tab>('overview')
+
+// Umbenennen direkt am Titel.
+const renaming = ref(false)
+const newName = ref('')
+function startRename() {
+  newName.value = server.value?.name ?? ''
+  renaming.value = true
+}
+async function saveName() {
+  if (!validServerName(newName.value)) return
+  if (await store.rename(newName.value)) renaming.value = false
+}
+
+const stats = computed(() => store.stats)
+function usage(used: number | null, limit: number | null): string {
+  if (used == null) return '–'
+  return limit ? `${formatBytes(used)} / ${formatBytes(limit)}` : formatBytes(used)
 }
 </script>
 
@@ -241,8 +259,26 @@ async function sendCommand() {
           <div class="card p-5">
             <div class="flex flex-wrap items-center gap-3">
               <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2">
+                <form v-if="renaming" class="flex items-center gap-2" @submit.prevent="saveName">
+                  <input
+                    v-model="newName"
+                    class="field max-w-64"
+                    :maxlength="NAME_MAX"
+                    :aria-label="t('craftinghosting.create.name')"
+                    autocomplete="off"
+                    spellcheck="false"
+                    @keydown.esc="renaming = false"
+                  />
+                  <button type="submit" class="btn btn-primary px-3 py-1.5 text-xs" :disabled="!validServerName(newName) || !!store.busy">
+                    {{ t('common.actions.save') }}
+                  </button>
+                  <button type="button" class="btn btn-ghost px-3 py-1.5 text-xs" @click="renaming = false">{{ t('common.actions.cancel') }}</button>
+                </form>
+                <div v-else class="flex items-center gap-2">
                   <h2 class="truncate text-lg font-semibold text-base-50">{{ server.name }}</h2>
+                  <button class="btn btn-ghost px-2 py-0.5 text-xs" :title="t('craftinghosting.rename')" data-testid="hosting-rename" @click="startRename">
+                    {{ t('craftinghosting.rename') }}
+                  </button>
                   <span class="badge" :class="stateClass[server.state]" data-testid="hosting-state">
                     <span v-if="isTransitional(server.state)" class="mr-1 inline-block size-1.5 animate-lamp rounded-full bg-current" />
                     {{ t(`craftinghosting.state.${server.state}`) }}
@@ -288,9 +324,34 @@ async function sendCommand() {
             <p v-if="!server.session.active && server.session.lastStopReason" class="mt-1 text-xs text-base-500">
               {{ t(`craftinghosting.stopReason.${server.session.lastStopReason}`) }}
             </p>
+            <p v-if="server.session.active && !server.session.hostPresent" class="mt-1 text-xs text-lamp-300">
+              {{ t('craftinghosting.hostAway') }}
+            </p>
+            <p v-if="server.deleteAt && !server.session.active" class="mt-1 text-xs text-base-500" data-testid="hosting-delete-at">
+              {{ t('craftinghosting.deleteAt', { date: formatDate(server.deleteAt) }) }}
+            </p>
           </div>
 
-          <div class="grid gap-4 md:grid-cols-2">
+          <div class="flex rounded-full bg-base-900 p-1 ring-1 ring-base-800 mobile-scroll-x" role="tablist">
+            <button
+              v-for="id in tabs"
+              :key="id"
+              class="seg flex-1 rounded-full text-xs whitespace-nowrap"
+              :class="{ 'seg-on': tab === id }"
+              role="tab"
+              :aria-selected="tab === id"
+              :data-testid="`hosting-tab-${id}`"
+              @click="tab = id"
+            >
+              {{ t(`craftinghosting.tabs.${id}`) }}
+            </button>
+          </div>
+
+          <CraftinghostingConsolePanel v-if="tab === 'console'" />
+          <CraftinghostingSettingsPanel v-else-if="tab === 'settings'" />
+          <CraftinghostingContentPanel v-else-if="tab === 'content'" />
+
+          <div v-else class="grid gap-4 md:grid-cols-2">
             <!-- Zugang -->
             <div class="card p-4">
               <h3 class="mb-2 text-sm font-semibold text-base-50">{{ t('craftinghosting.access.label') }}</h3>
@@ -311,8 +372,21 @@ async function sendCommand() {
               <p class="mt-2 text-xs text-base-400">{{ t(`craftinghosting.access.${server.access}Hint`) }}</p>
             </div>
 
-            <!-- Ressourcen -->
-            <div class="card p-4 text-sm">
+            <!-- Live-Werte (läuft) bzw. Paket -->
+            <div v-if="stats" class="card p-4 text-sm" data-testid="hosting-stats">
+              <h3 class="mb-2 font-semibold text-base-50">{{ t('craftinghosting.stats.title') }}</h3>
+              <dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-base-300">
+                <dt class="text-base-500">{{ t('craftinghosting.stats.players') }}</dt>
+                <dd>{{ stats.players ? `${stats.players.online} / ${stats.players.max}` : '–' }}</dd>
+                <dt class="text-base-500">{{ t('craftinghosting.stats.cpu') }}</dt>
+                <dd>{{ stats.cpuPercent != null ? `${stats.cpuPercent} % / ${server.resources.cpuPercent} %` : '–' }}</dd>
+                <dt class="text-base-500">{{ t('craftinghosting.stats.memory') }}</dt>
+                <dd>{{ usage(stats.memory.usedBytes, stats.memory.limitBytes) }}</dd>
+                <dt class="text-base-500">{{ t('craftinghosting.stats.disk') }}</dt>
+                <dd>{{ usage(stats.disk.usedBytes, stats.disk.limitBytes) }}</dd>
+              </dl>
+            </div>
+            <div v-else class="card p-4 text-sm">
               <h3 class="mb-2 font-semibold text-base-50">{{ t('craftinghosting.plan.title') }}</h3>
               <ul class="space-y-1 text-base-300">
                 <li>{{ t('craftinghosting.plan.memory', { gb: Math.round(server.resources.memoryMb / 1024) }) }}</li>
@@ -321,28 +395,6 @@ async function sendCommand() {
               </ul>
             </div>
           </div>
-
-          <!-- Konsole (ohne Ausgabe) -->
-          <form class="card p-4" @submit.prevent="sendCommand">
-            <h3 class="mb-2 text-sm font-semibold text-base-50">{{ t('craftinghosting.console.title') }}</h3>
-            <div class="flex gap-2">
-              <input
-                v-model="commandText"
-                class="field flex-1 font-mono"
-                maxlength="257"
-                :placeholder="t('craftinghosting.console.placeholder')"
-                :disabled="server.state !== 'running'"
-                autocomplete="off"
-                spellcheck="false"
-              />
-              <button type="submit" class="btn btn-ghost" :disabled="server.state !== 'running' || !commandText.trim() || !!store.busy">
-                {{ t('craftinghosting.console.send') }}
-              </button>
-            </div>
-            <p class="mt-2 text-xs text-base-500">{{ t('craftinghosting.console.note') }}</p>
-          </form>
-
-          <p class="text-xs text-base-500">{{ t('craftinghosting.rules.idle', { days: info?.limits.deleteAfterIdleDays ?? 30 }) }}</p>
         </div>
       </template>
     </TrsGate>

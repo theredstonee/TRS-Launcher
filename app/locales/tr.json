@@ -342,7 +342,12 @@
       "server_suspended": "Sunucun CraftingHosting tarafından askıya alındı.",
       "server_type_unavailable": "Bu sunucu türü şu anda kullanılamıyor.",
       "version_unavailable": "Bu sürüm şu anda bu sunucu türü için kullanılamıyor.",
-      "server_name_invalid": "Bu sunucu adı olmuyor – lütfen başka bir ad seç."
+      "server_name_invalid": "Bu sunucu adı olmuyor – lütfen başka bir ad seç.",
+      "invalid_path": "Sunucu bu dosyayı kabul etmiyor.",
+      "file_rejected": "CraftingHosting dosyayı reddetti.",
+      "file_not_found": "Yüklenen dünya bulunamadı – lütfen tekrar yükle.",
+      "mods_unsupported": "Bu sunucu türü mod veya eklenti yükleyemez.",
+      "server_running": "Önce sunucuyu durdur – bu yalnızca sunucu kapalıyken çalışır."
     },
     "auth": {
       "accountMismatch": "Bu giriş başka bir hesaba ait – lütfen tekrar giriş yap.",
@@ -799,7 +804,11 @@
       "invalidName": "Ad: 3 ile 22 karakter – harf, rakam, boşluk ve . _ ' -",
       "invalidAccess": "Geçersiz erişim ayarı.",
       "invalidCommand": "Komut: tek satırda 1 ile 256 karakter.",
-      "invalidType": "Lütfen sunucu türü ve sürüm seç."
+      "invalidType": "Lütfen sunucu türü ve sürüm seç.",
+      "invalidSettings": "Bu ayar bu şekilde olmaz.",
+      "invalidProjects": "Bu modlar aktarılamaz.",
+      "uploadFailed": "Dünya yüklenemedi – lütfen tekrar dene.",
+      "stopFirst": "Dünya yüklemeden önce sunucuyu durdur."
     },
     "chatImage": {
       "unsupported": "Yalnızca PNG, JPEG ve WebP resimleri gönderilebilir.",
@@ -7620,17 +7629,108 @@
       "start": "Kabul et ve başlat"
     },
     "console": {
-      "title": "Konsol",
       "placeholder": "Komut, ör. say Merhaba",
       "send": "Gönder",
-      "note": "Komutlar sunucuda çalışır – burada çıktı gösterilmez.",
-      "sent": "Komut gönderildi."
+      "sent": "Komut gönderildi.",
+      "empty": "Henüz çıktı yok.",
+      "offline": "Komutlar yalnızca sunucu çalışırken çalışır."
     },
     "join": {
       "waiting": "Sunucun başlıyor – hazır olur olmaz katılacaksın.",
       "noAddress": "Sunucunun henüz adresi yok.",
       "notStarted": "Sunucu başlamadı.",
       "timeout": "Sunucunun başlaması çok uzun sürüyor – birazdan tekrar dene."
+    },
+    "rename": "Yeniden adlandır",
+    "hostAway": "Başlatıcın artık bildirim göndermiyor – sunucu yalnızca oyuncular varken çalışmaya devam eder.",
+    "deleteAt": "O tarihe kadar başlatmazsan {date} tarihinde silinecek.",
+    "tabs": {
+      "overview": "Genel bakış",
+      "console": "Konsol",
+      "settings": "Ayarlar",
+      "content": "Modlar ve dünya"
+    },
+    "stats": {
+      "title": "Canlı",
+      "players": "Oyuncular",
+      "cpu": "CPU",
+      "memory": "RAM",
+      "disk": "Depolama"
+    },
+    "settings": {
+      "saved": "Ayarlar kaydedildi – bir sonraki başlatmada geçerli olur.",
+      "nextStart": "Değişiklikler sunucunun bir sonraki başlatılmasında geçerli olur.",
+      "motd": "Sunucu listesindeki mesaj (MOTD)",
+      "gamemode": "Oyun modu",
+      "difficulty": "Zorluk",
+      "maxPlayers": "Azami oyuncu",
+      "spawnProtection": "Doğuş koruması (blok)",
+      "viewDistance": "Görüş mesafesi: {n}",
+      "simulationDistance": "Simülasyon mesafesi: {n}",
+      "pvp": "PvP",
+      "hardcore": "Zorlu",
+      "allowFlight": "Uçmaya izin ver",
+      "newWorld": "Yeni dünya",
+      "seed": "Tohum",
+      "seedRandom": "boş = rastgele",
+      "levelType": "Dünya türü",
+      "newWorldHint": "Tohum ve dünya türü yalnızca sunucu yeni bir dünya oluşturduğunda etkili olur.",
+      "whitelistOn": "Beyaz liste açık – “Kimler katılabilir?” ayarını izler.",
+      "whitelistOff": "Beyaz liste kapalı – “Kimler katılabilir?” ayarını izler.",
+      "discard": "Vazgeç",
+      "gamemodes": {
+        "survival": "Hayatta kalma",
+        "creative": "Yaratıcı",
+        "adventure": "Macera",
+        "spectator": "İzleyici"
+      },
+      "difficulties": {
+        "peaceful": "Barışçıl",
+        "easy": "Kolay",
+        "normal": "Normal",
+        "hard": "Zor"
+      },
+      "levelTypes": {
+        "normal": "Varsayılan",
+        "flat": "Dümdüz",
+        "large_biomes": "Büyük biyomlar",
+        "amplified": "Genişletilmiş"
+      }
+    },
+    "mods": {
+      "title": "Bir örnekten modlar",
+      "text": "Bir örneğin modlarını Modrinth’ten sunucuya kurar. Yalnızca istemci modları atlanır.",
+      "vanilla": "Vanilla sunucular mod veya eklenti yükleyemez.",
+      "instance": "Örnek",
+      "button": "Modları aktar",
+      "working": "Aktarılıyor …",
+      "installed": "Sunucuya kurulan: {n}",
+      "noneTransferable": "Modların hiçbiri Modrinth’ten değil – hiçbir şey gönderilmedi.",
+      "skipped": "Atlananlar:",
+      "notYet": "Henüz aktarılamaz (Modrinth’ten değil):",
+      "reason": {
+        "client_only": "yalnızca istemci",
+        "not_found": "bulunamadı",
+        "unsupported": "bu sunucuya uygun değil"
+      }
+    },
+    "world": {
+      "title": "Bir örnekten dünya",
+      "text": "Tek oyunculu bir dünyayı sunucuna yükler. Sunucunun dünyasının (Nether ve End dahil) yerini alır.",
+      "instance": "Örnek",
+      "world": "Dünya",
+      "none": "Bu örnekte dünya yok.",
+      "stopFirst": "Önce sunucuyu durdur – dünya yalnızca sunucu kapalıyken yüklenebilir.",
+      "button": "Dünyayı aktar",
+      "confirmTitle": "Sunucunun dünyası değiştirilsin mi?",
+      "confirmText": "“{world}” sunucunun dünyasının, Nether’ının ve End’inin yerini alacak. Eski dünya kalıcı olarak silinir.",
+      "confirm": "Dünyayı değiştir",
+      "done": "Dünya yüklendi – bir sonraki başlatmada orada olacak.",
+      "phase": {
+        "zip": "Dünya paketleniyor … %{percent}",
+        "upload": "Yükleniyor … %{percent}",
+        "import": "Dünya sunucuda hazırlanıyor …"
+      }
     }
   }
 }

@@ -342,7 +342,12 @@
       "server_suspended": "Seu servidor foi suspenso pela CraftingHosting.",
       "server_type_unavailable": "Este tipo de servidor não está disponível no momento.",
       "version_unavailable": "Esta versão não está disponível para esse tipo de servidor no momento.",
-      "server_name_invalid": "Este nome de servidor não serve – escolha outro."
+      "server_name_invalid": "Este nome de servidor não serve – escolha outro.",
+      "invalid_path": "O servidor não aceita este arquivo.",
+      "file_rejected": "A CraftingHosting recusou o arquivo.",
+      "file_not_found": "O mundo enviado não foi encontrado – envie de novo.",
+      "mods_unsupported": "Este tipo de servidor não carrega mods nem plugins.",
+      "server_running": "Pare o servidor primeiro – isso só funciona com ele desligado."
     },
     "auth": {
       "accountMismatch": "Este login pertence a outra conta – entre novamente.",
@@ -799,7 +804,11 @@
       "invalidName": "Nome: de 3 a 22 caracteres – letras, números, espaços e . _ ' -",
       "invalidAccess": "Acesso inválido.",
       "invalidCommand": "Comando: de 1 a 256 caracteres em uma linha.",
-      "invalidType": "Escolha um tipo de servidor e uma versão."
+      "invalidType": "Escolha um tipo de servidor e uma versão.",
+      "invalidSettings": "Esta configuração não é válida.",
+      "invalidProjects": "Esses mods não podem ser transferidos.",
+      "uploadFailed": "Não foi possível enviar o mundo – tente de novo.",
+      "stopFirst": "Pare o servidor antes de enviar um mundo."
     },
     "chatImage": {
       "unsupported": "Só é possível enviar imagens PNG, JPEG e WebP.",
@@ -7620,17 +7629,108 @@
       "start": "Aceitar e iniciar"
     },
     "console": {
-      "title": "Console",
       "placeholder": "Comando, ex.: say Olá",
       "send": "Enviar",
-      "note": "Os comandos rodam no servidor – não há saída aqui.",
-      "sent": "Comando enviado."
+      "sent": "Comando enviado.",
+      "empty": "Ainda sem saída.",
+      "offline": "Os comandos só funcionam com o servidor rodando."
     },
     "join": {
       "waiting": "Seu servidor está iniciando – você entra assim que ele estiver pronto.",
       "noAddress": "O servidor ainda não tem endereço.",
       "notStarted": "O servidor não iniciou.",
       "timeout": "O servidor está demorando demais para iniciar – tente de novo daqui a pouco."
+    },
+    "rename": "Renomear",
+    "hostAway": "Seu launcher não está mais respondendo – o servidor só continua rodando enquanto houver jogadores.",
+    "deleteAt": "Será excluído em {date} se você não o iniciar antes.",
+    "tabs": {
+      "overview": "Visão geral",
+      "console": "Console",
+      "settings": "Configurações",
+      "content": "Mods e mundo"
+    },
+    "stats": {
+      "title": "Ao vivo",
+      "players": "Jogadores",
+      "cpu": "CPU",
+      "memory": "RAM",
+      "disk": "Armazenamento"
+    },
+    "settings": {
+      "saved": "Configurações salvas – valem a partir da próxima inicialização.",
+      "nextStart": "As alterações valem a partir da próxima inicialização do servidor.",
+      "motd": "Mensagem na lista de servidores (MOTD)",
+      "gamemode": "Modo de jogo",
+      "difficulty": "Dificuldade",
+      "maxPlayers": "Máx. de jogadores",
+      "spawnProtection": "Proteção do spawn (blocos)",
+      "viewDistance": "Distância de visão: {n}",
+      "simulationDistance": "Distância de simulação: {n}",
+      "pvp": "PvP",
+      "hardcore": "Hardcore",
+      "allowFlight": "Permitir voo",
+      "newWorld": "Mundo novo",
+      "seed": "Seed",
+      "seedRandom": "vazio = aleatória",
+      "levelType": "Tipo de mundo",
+      "newWorldHint": "Seed e tipo de mundo só valem quando o servidor cria um mundo novo.",
+      "whitelistOn": "A whitelist está ativada – ela segue “Quem pode entrar?”.",
+      "whitelistOff": "A whitelist está desativada – ela segue “Quem pode entrar?”.",
+      "discard": "Descartar",
+      "gamemodes": {
+        "survival": "Sobrevivência",
+        "creative": "Criativo",
+        "adventure": "Aventura",
+        "spectator": "Espectador"
+      },
+      "difficulties": {
+        "peaceful": "Pacífico",
+        "easy": "Fácil",
+        "normal": "Normal",
+        "hard": "Difícil"
+      },
+      "levelTypes": {
+        "normal": "Padrão",
+        "flat": "Superplano",
+        "large_biomes": "Biomas grandes",
+        "amplified": "Amplificado"
+      }
+    },
+    "mods": {
+      "title": "Mods de uma instância",
+      "text": "Instala no servidor os mods de uma instância a partir do Modrinth. Mods só de cliente ficam de fora.",
+      "vanilla": "Servidores vanilla não carregam mods nem plugins.",
+      "instance": "Instância",
+      "button": "Transferir mods",
+      "working": "Transferindo …",
+      "installed": "Instalados no servidor: {n}",
+      "noneTransferable": "Nenhum dos mods vem do Modrinth – nada foi enviado.",
+      "skipped": "Ignorados:",
+      "notYet": "Ainda não transferíveis (não são do Modrinth):",
+      "reason": {
+        "client_only": "só cliente",
+        "not_found": "não encontrado",
+        "unsupported": "não compatível com o servidor"
+      }
+    },
+    "world": {
+      "title": "Mundo de uma instância",
+      "text": "Envia um mundo de um jogador para o seu servidor. Ele substitui o mundo do servidor (com Nether e End).",
+      "instance": "Instância",
+      "world": "Mundo",
+      "none": "Esta instância não tem mundos.",
+      "stopFirst": "Pare o servidor primeiro – um mundo só pode ser enviado com ele desligado.",
+      "button": "Transferir mundo",
+      "confirmTitle": "Substituir o mundo do servidor?",
+      "confirmText": "“{world}” vai substituir o mundo, o Nether e o End do seu servidor. O mundo antigo será excluído para sempre.",
+      "confirm": "Substituir mundo",
+      "done": "Mundo enviado – ele estará lá na próxima inicialização.",
+      "phase": {
+        "zip": "Compactando mundo … {percent} %",
+        "upload": "Enviando … {percent} %",
+        "import": "Configurando o mundo no servidor …"
+      }
     }
   }
 }

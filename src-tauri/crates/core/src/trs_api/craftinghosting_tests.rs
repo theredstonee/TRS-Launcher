@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use serde_json::json;
 
-use super::craftinghosting::NewServer;
+use super::craftinghosting::{NewServer, SettingsPatch};
 use super::testkit::{MockServer, Request, Response};
 use super::tests::{ACC, auth_routes, launcher};
 use crate::Error;
@@ -217,6 +217,7 @@ async fn heartbeat_only_while_a_session_runs() {
 
     // Stop beendet die Sitzung.
     launcher.craftinghosting_stop().await.unwrap();
+    assert_eq!(server.hits("POST", "/v1/craftinghosting/server/stop")[0].json(), json!({}));
     assert_eq!(launcher.trs.craftinghosting.active(), None);
     assert!(!launcher.craftinghosting_heartbeat().await);
     assert_eq!(server.hits("POST", HB).len(), 2);
@@ -265,9 +266,166 @@ async fn delete_and_shutdown() {
 
     launcher.craftinghosting_start(true).await.unwrap();
     launcher.craftinghosting_shutdown().await;
-    assert_eq!(server.hits("POST", "/v1/craftinghosting/server/stop").len(), 1);
+    let stops = server.hits("POST", "/v1/craftinghosting/server/stop");
+    assert_eq!(stops.len(), 1);
+    assert_eq!(stops[0].json(), json!({ "whenEmpty": true }));
     assert_eq!(launcher.trs.craftinghosting.active(), None);
 
     launcher.craftinghosting_delete().await.unwrap();
     assert_eq!(server.hits("DELETE", "/v1/craftinghosting/server").len(), 1);
+}
+
+// --- Einstellungen, Konsole, Werte, Mods, Welt ------------------------------------------
+
+fn extras_api(base: Arc<std::sync::OnceLock<String>>) -> impl Fn(&Request) -> Response + Send + Sync + 'static {
+    let issued = AtomicUsize::new(0);
+    move |req: &Request| {
+        if let Some(r) = auth_routes(req, &issued, "mc-token") {
+            return r;
+        }
+        // Upload geht direkt an den Partner – ohne TRS-Token.
+        if req.path == "/upload" {
+            return if req.bearer().is_none() { Response::empty(200) } else { Response::error(400, "token_leak") };
+        }
+        if !req.bearer().is_some_and(|t| t.starts_with("trs_")) {
+            return Response::error(401, "unauthorized");
+        }
+        let settings = json!({ "motd": "Mein Server", "maxPlayers": 8, "gamemode": "survival", "difficulty": "normal",
+            "hardcore": false, "pvp": true, "allowFlight": false, "seed": "", "levelType": "NORMAL", "spawnProtection": 16,
+            "viewDistance": 10, "simulationDistance": 10, "whitelist": true });
+        match (req.method.as_str(), req.path.as_str()) {
+            ("GET", "/v1/craftinghosting/server") => {
+                let mut s = server(false);
+                s["deleteAt"] = json!("2026-12-18T15:59:20.000Z");
+                s["session"]["hostPresent"] = json!(false);
+                Response::json(200, json!({ "server": s }))
+            }
+            ("PATCH", "/v1/craftinghosting/server") => {
+                let mut s = server(false);
+                s["name"] = req.json()["name"].clone();
+                Response::json(200, json!({ "server": s }))
+            }
+            ("GET", "/v1/craftinghosting/server/settings") => Response::json(200, json!({ "settings": settings })),
+            ("PATCH", "/v1/craftinghosting/server/settings") => {
+                let mut merged = settings.clone();
+                for (k, v) in req.json().as_object().unwrap() {
+                    merged[k] = v.clone();
+                }
+                Response::json(200, json!({ "settings": merged }))
+            }
+            ("GET", "/v1/craftinghosting/server/logs?lines=200") => Response::json(
+                200,
+                json!({ "lines": ["\u{1b}[32m[12:00:01] Done (6.1s)!\u{1b}[0m", "[12:00:02] <Bob> hi\u{7}"] }),
+            ),
+            ("GET", "/v1/craftinghosting/server/stats") => Response::json(
+                200,
+                json!({ "cpuPercent": 12.53, "memory": { "usedBytes": 1_073_741_824u64, "limitBytes": 4_294_967_296u64 },
+                        "disk": { "usedBytes": null, "limitBytes": 10_737_418_240u64 }, "uptimeSeconds": 3600, "players": null }),
+            ),
+            ("POST", "/v1/craftinghosting/server/mods") => Response::json(
+                200,
+                json!({ "installed": ["lithium"],
+                        "skipped": [{ "project": "sodium", "reason": "client_only" }, { "project": "x", "reason": "weird" }] }),
+            ),
+            ("POST", "/v1/craftinghosting/server/world/upload") => {
+                let base = base.get().cloned().unwrap_or_default();
+                Response::json(200, json!({ "url": format!("{base}/upload"), "expiresAt": "2026-11-18T16:10:00.000Z" }))
+            }
+            ("POST", "/v1/craftinghosting/server/world/import") => Response::json(200, json!({ "server": server(false) })),
+            _ => Response::error(404, "not_found"),
+        }
+    }
+}
+
+async fn extras() -> (MockServer, tempfile::TempDir, Arc<crate::Launcher>) {
+    let base = Arc::new(std::sync::OnceLock::new());
+    let server = MockServer::start(extras_api(Arc::clone(&base))).await;
+    base.set(server.base.clone()).unwrap();
+    let (dir, launcher) = launcher(&server, &[ACC]).await;
+    (server, dir, launcher)
+}
+
+#[tokio::test]
+async fn rename_settings_logs_stats() {
+    let (server, _dir, launcher) = extras().await;
+
+    let s = launcher.craftinghosting_server().await.unwrap().unwrap();
+    assert_eq!(s.delete_at.as_deref(), Some("2026-12-18T15:59:20.000Z"));
+    assert!(!s.session.host_present);
+
+    assert!(matches!(launcher.craftinghosting_rename("x").await, Err(Error::Validation(_))));
+    assert_eq!(launcher.craftinghosting_rename(" Neue Welt ").await.unwrap().name, "Neue Welt");
+    assert_eq!(server.hits("PATCH", "/v1/craftinghosting/server")[0].json(), json!({ "name": "Neue Welt" }));
+
+    let settings = launcher.craftinghosting_settings().await.unwrap();
+    assert_eq!(settings.level_type, "normal");
+    assert_eq!(settings.max_players, 8);
+
+    let bad = SettingsPatch { view_distance: Some(32), ..Default::default() };
+    assert!(matches!(launcher.craftinghosting_save_settings(&bad).await, Err(Error::Validation(_))));
+    assert!(matches!(launcher.craftinghosting_save_settings(&SettingsPatch::default()).await, Err(Error::Validation(_))));
+    let patch = SettingsPatch { motd: Some(" Hallo ".into()), gamemode: Some("creative".into()), ..Default::default() };
+    let saved = launcher.craftinghosting_save_settings(&patch).await.unwrap();
+    assert_eq!(saved.gamemode, "creative");
+    assert_eq!(
+        server.hits("PATCH", "/v1/craftinghosting/server/settings")[0].json(),
+        json!({ "motd": "Hallo", "gamemode": "creative" })
+    );
+
+    let logs = launcher.craftinghosting_logs(200).await.unwrap();
+    assert_eq!(logs, ["[12:00:01] Done (6.1s)!", "[12:00:02] <Bob> hi"]);
+
+    let stats = launcher.craftinghosting_stats().await.unwrap();
+    assert_eq!(stats.cpu_percent, Some(12.5));
+    assert_eq!(stats.memory.limit_bytes, Some(4_294_967_296));
+    assert_eq!(stats.disk.used_bytes, None);
+    assert_eq!(stats.players, None);
+}
+
+#[tokio::test]
+async fn mods_are_checked_and_cleaned() {
+    let (server, _dir, launcher) = extras().await;
+    assert!(matches!(launcher.craftinghosting_mods(&[]).await, Err(Error::Validation(_))));
+    assert!(matches!(launcher.craftinghosting_mods(&["../etc".into()]).await, Err(Error::Validation(_))));
+    let result = launcher.craftinghosting_mods(&["lithium".into(), "sodium".into(), "lithium".into()]).await.unwrap();
+    assert_eq!(result.installed, ["lithium"]);
+    assert_eq!(result.skipped[0].reason, "client_only");
+    assert_eq!(result.skipped[1].reason, "unsupported");
+    assert_eq!(server.hits("POST", "/v1/craftinghosting/server/mods")[0].json(), json!({ "projects": ["lithium", "sodium"] }));
+}
+
+#[tokio::test]
+async fn world_is_zipped_uploaded_and_imported() {
+    let (server, _dir, launcher) = extras().await;
+    let world = launcher.paths().instance_game_dir("inst").join("saves").join("Welt");
+    std::fs::create_dir_all(world.join("region")).unwrap();
+    std::fs::write(world.join("level.dat"), b"level").unwrap();
+    std::fs::write(world.join("region/r.0.0.mca"), vec![7u8; 4096]).unwrap();
+    std::fs::write(world.join("session.lock"), b"x").unwrap();
+
+    let phases = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let seen = Arc::clone(&phases);
+    launcher
+        .craftinghosting_upload_world("inst", "Welt", move |p| seen.lock().unwrap().push((p.phase, p.percent)))
+        .await
+        .unwrap();
+
+    let upload = &server.hits("POST", "/upload")[0];
+    assert!(upload.bearer().is_none());
+    let body = String::from_utf8_lossy(&upload.body);
+    assert!(body.contains("name=\"files\"; filename=\"trs-world.zip\""));
+    assert!(upload.body.windows(2).any(|w| w == b"PK"));
+    assert!(body.contains("world/level.dat") && body.contains("world/region/r.0.0.mca") && !body.contains("session.lock"));
+    assert_eq!(server.hits("POST", "/v1/craftinghosting/server/world/import")[0].json(), json!({ "file": "trs-world.zip" }));
+    {
+        let phases = phases.lock().unwrap();
+        assert!(phases.contains(&("zip", 100)) && phases.contains(&("upload", 100)) && phases.contains(&("import", 100)));
+    }
+    // Das Archiv bleibt nicht liegen.
+    let tmp = launcher.paths().root().join("tmp");
+    assert_eq!(std::fs::read_dir(&tmp).map(Iterator::count).unwrap_or(0), 0);
+
+    // Unbekannte Welt: nichts wird gesendet.
+    assert!(launcher.craftinghosting_upload_world("inst", "Fehlt", |_| {}).await.is_err());
+    assert_eq!(server.hits("POST", "/v1/craftinghosting/server/world/upload").len(), 1);
 }

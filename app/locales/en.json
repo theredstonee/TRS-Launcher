@@ -389,7 +389,12 @@
       "server_suspended": "Your server was suspended by CraftingHosting.",
       "server_type_unavailable": "This server type isn’t available right now.",
       "version_unavailable": "This version isn’t available for the server type right now.",
-      "server_name_invalid": "This server name doesn’t work – please choose another one."
+      "server_name_invalid": "This server name doesn’t work – please choose another one.",
+      "invalid_path": "The server doesn’t accept this file.",
+      "file_rejected": "CraftingHosting rejected the file.",
+      "file_not_found": "The uploaded world wasn’t found – please upload it again.",
+      "mods_unsupported": "This server type can’t load mods or plugins.",
+      "server_running": "Stop the server first – this only works while it’s off."
     },
     "auth": {
       "accountMismatch": "This sign-in belongs to a different account – please sign in again.",
@@ -849,7 +854,11 @@
       "invalidName": "Name: 3 to 22 characters – letters, digits, spaces and . _ ' -",
       "invalidAccess": "Invalid access setting.",
       "invalidCommand": "Command: 1 to 256 characters on one line.",
-      "invalidType": "Please choose a server type and version."
+      "invalidType": "Please choose a server type and version.",
+      "invalidSettings": "This setting doesn’t work like that.",
+      "invalidProjects": "These mods can’t be transferred.",
+      "uploadFailed": "The world couldn’t be uploaded – please try again.",
+      "stopFirst": "Stop the server before you upload a world."
     },
     "chatImage": {
       "unsupported": "Only PNG, JPEG and WebP pictures can be sent.",
@@ -8426,17 +8435,108 @@
       "start": "Accept & start"
     },
     "console": {
-      "title": "Console",
       "placeholder": "Command, e.g. say Hello",
       "send": "Send",
-      "note": "Commands run on the server – there’s no output here.",
-      "sent": "Command sent."
+      "sent": "Command sent.",
+      "empty": "No output yet.",
+      "offline": "Commands only work while the server is running."
     },
     "join": {
       "waiting": "Your server is starting – you’ll join as soon as it’s ready.",
       "noAddress": "The server has no address yet.",
       "notStarted": "The server didn’t start.",
       "timeout": "The server is taking too long to start – try again in a moment."
+    },
+    "rename": "Rename",
+    "hostAway": "Your launcher isn’t reporting in – the server only keeps running while players are on it.",
+    "deleteAt": "Will be deleted on {date} unless you start it before then.",
+    "tabs": {
+      "overview": "Overview",
+      "console": "Console",
+      "settings": "Settings",
+      "content": "Mods & world"
+    },
+    "stats": {
+      "title": "Live",
+      "players": "Players",
+      "cpu": "CPU",
+      "memory": "RAM",
+      "disk": "Storage"
+    },
+    "settings": {
+      "saved": "Settings saved – they apply on the next start.",
+      "nextStart": "Changes apply on the next start of the server.",
+      "motd": "Message in the server list (MOTD)",
+      "gamemode": "Game mode",
+      "difficulty": "Difficulty",
+      "maxPlayers": "Max. players",
+      "spawnProtection": "Spawn protection (blocks)",
+      "viewDistance": "View distance: {n}",
+      "simulationDistance": "Simulation distance: {n}",
+      "pvp": "PvP",
+      "hardcore": "Hardcore",
+      "allowFlight": "Allow flight",
+      "newWorld": "New world",
+      "seed": "Seed",
+      "seedRandom": "empty = random",
+      "levelType": "World type",
+      "newWorldHint": "Seed and world type only take effect when the server creates a new world.",
+      "whitelistOn": "Whitelist is on – it follows “Who can join?”.",
+      "whitelistOff": "Whitelist is off – it follows “Who can join?”.",
+      "discard": "Discard",
+      "gamemodes": {
+        "survival": "Survival",
+        "creative": "Creative",
+        "adventure": "Adventure",
+        "spectator": "Spectator"
+      },
+      "difficulties": {
+        "peaceful": "Peaceful",
+        "easy": "Easy",
+        "normal": "Normal",
+        "hard": "Hard"
+      },
+      "levelTypes": {
+        "normal": "Default",
+        "flat": "Superflat",
+        "large_biomes": "Large biomes",
+        "amplified": "Amplified"
+      }
+    },
+    "mods": {
+      "title": "Mods from an instance",
+      "text": "Installs the mods of an instance from Modrinth on the server. Client-only mods are left out.",
+      "vanilla": "Vanilla servers can’t load mods or plugins.",
+      "instance": "Instance",
+      "button": "Take over mods",
+      "working": "Transferring …",
+      "installed": "Installed on the server: {n}",
+      "noneTransferable": "None of the mods come from Modrinth – nothing was sent.",
+      "skipped": "Skipped:",
+      "notYet": "Not transferable yet (not from Modrinth):",
+      "reason": {
+        "client_only": "client-only",
+        "not_found": "not found",
+        "unsupported": "not for this server"
+      }
+    },
+    "world": {
+      "title": "World from an instance",
+      "text": "Uploads a singleplayer world to your server. It replaces the server’s world (with Nether and End).",
+      "instance": "Instance",
+      "world": "World",
+      "none": "This instance has no worlds.",
+      "stopFirst": "Stop the server first – a world can only be uploaded while it’s off.",
+      "button": "Take over world",
+      "confirmTitle": "Replace the server world?",
+      "confirmText": "“{world}” will replace your server’s world, Nether and End. The old world is deleted for good.",
+      "confirm": "Replace world",
+      "done": "World uploaded – it’s there on the next start.",
+      "phase": {
+        "zip": "Packing world … {percent} %",
+        "upload": "Uploading … {percent} %",
+        "import": "Setting up the world on the server …"
+      }
     }
   }
 }

@@ -230,6 +230,8 @@ pub struct SessionView {
     pub remaining_seconds: u64,
     pub cooldown_until: Option<String>,
     pub last_stop_reason: Option<String>,
+    /// `false` = der Launcher meldet sich nicht mehr, der Server läuft nur wegen Spielern weiter.
+    pub host_present: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -248,6 +250,8 @@ pub struct Server {
     pub session: SessionView,
     pub created_at: Option<String>,
     pub last_start_at: Option<String>,
+    /// Ohne Start bis dahin wird der Server gelöscht.
+    pub delete_at: Option<String>,
 }
 
 // --- Draht ------------------------------------------------------------------------------
@@ -361,6 +365,7 @@ struct ApiSession {
     remaining_seconds: u64,
     cooldown_until: Option<String>,
     last_stop_reason: Option<String>,
+    host_present: Option<bool>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -379,10 +384,11 @@ pub(crate) struct ApiServer {
     session: ApiSession,
     created_at: Option<String>,
     last_start_at: Option<String>,
+    delete_at: Option<String>,
 }
 
 impl ApiServer {
-    fn cleaned(self) -> Option<Server> {
+    pub(crate) fn cleaned(self) -> Option<Server> {
         let id_ok = (1..=64).contains(&self.id.len()) && self.id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-');
         if !id_ok || !type_id(&self.server_type) || !version_id(&self.version) {
             return None;
@@ -417,17 +423,19 @@ impl ApiServer {
                 remaining_seconds: s.remaining_seconds,
                 cooldown_until: time(s.cooldown_until),
                 last_stop_reason: s.last_stop_reason.filter(|r| STOP_REASONS.contains(&r.as_str())),
+                host_present: s.host_present.unwrap_or(true),
             },
             created_at: time(self.created_at),
             last_start_at: time(self.last_start_at),
+            delete_at: time(self.delete_at),
         })
     }
 }
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(default)]
-struct ApiEnvelope {
-    server: Option<ApiServer>,
+pub(crate) struct ApiEnvelope {
+    pub(crate) server: Option<ApiServer>,
 }
 
 /// Neuer Server.
@@ -453,11 +461,11 @@ impl NewServer {
 
 // --- Operationen ------------------------------------------------------------------------
 
-const BASE: &str = "/v1/craftinghosting";
+pub(crate) const BASE: &str = "/v1/craftinghosting";
 
 impl Launcher {
     /// Anfrage mit dem aktiven Konto; `not_running`/`no_server` beenden die Sitzung.
-    async fn ch_send(&self, req: Req) -> Result<(String, Vec<u8>)> {
+    pub(crate) async fn ch_send(&self, req: Req) -> Result<(String, Vec<u8>)> {
         let account = self.trs_account().await?;
         match self.trs.call_raw(self.accounts(), &account, &req).await {
             Ok(bytes) => Ok((account, bytes)),
@@ -471,7 +479,7 @@ impl Launcher {
     }
 
     /// Server-Antwort lesen und die Sitzungs-Markierung nachziehen.
-    async fn ch_server(&self, req: Req) -> Result<Option<Server>> {
+    pub(crate) async fn ch_server(&self, req: Req) -> Result<Option<Server>> {
         let path = req.path.clone();
         let (account, bytes) = self.ch_send(req).await?;
         let envelope: ApiEnvelope = super::parse(&bytes, &path)?;
@@ -491,7 +499,7 @@ impl Launcher {
         }
     }
 
-    async fn ch_required(&self, req: Req) -> Result<Server> {
+    pub(crate) async fn ch_required(&self, req: Req) -> Result<Server> {
         self.ch_server(req).await?.ok_or_else(super::bad_response)
     }
 
@@ -516,6 +524,11 @@ impl Launcher {
         self.ch_required(Req::patch(format!("{BASE}/server"), json!({ "access": value }))).await
     }
 
+    pub async fn craftinghosting_rename(&self, name: &str) -> Result<Server> {
+        let name = server_name(name)?;
+        self.ch_required(Req::patch(format!("{BASE}/server"), json!({ "name": name }))).await
+    }
+
     pub async fn craftinghosting_start(&self, accept_eula: bool) -> Result<Server> {
         let server = self.ch_required(Req::post(format!("{BASE}/server/start"), json!({ "acceptEula": accept_eula }))).await?;
         // Ab jetzt Heartbeats, auch wenn die Antwort die Sitzung noch nicht zeigt.
@@ -526,7 +539,7 @@ impl Launcher {
     }
 
     pub async fn craftinghosting_stop(&self) -> Result<Server> {
-        let server = self.ch_required(Req::post_empty(format!("{BASE}/server/stop"))).await?;
+        let server = self.ch_required(Req::post(format!("{BASE}/server/stop"), json!({}))).await?;
         self.trs.craftinghosting.clear(None);
         Ok(server)
     }
@@ -546,6 +559,42 @@ impl Launcher {
         }
         self.trs.craftinghosting.clear(None);
         Ok(())
+    }
+
+    pub async fn craftinghosting_settings(&self) -> Result<Settings> {
+        let (_, bytes) = self.ch_send(Req::get(format!("{BASE}/server/settings"))).await?;
+        let raw: ApiSettingsEnvelope = super::parse(&bytes, "craftinghosting/settings")?;
+        Ok(raw.settings.cleaned())
+    }
+
+    pub async fn craftinghosting_save_settings(&self, patch: &SettingsPatch) -> Result<Settings> {
+        let body = patch.body()?;
+        let (_, bytes) = self.ch_send(Req::patch(format!("{BASE}/server/settings"), body)).await?;
+        let raw: ApiSettingsEnvelope = super::parse(&bytes, "craftinghosting/settings")?;
+        Ok(raw.settings.cleaned())
+    }
+
+    /// Letzte Zeilen der Konsole (neueste zuletzt), ohne Steuerzeichen.
+    pub async fn craftinghosting_logs(&self, lines: u32) -> Result<Vec<String>> {
+        let lines = lines.clamp(1, LOG_LINES_MAX);
+        let (_, bytes) = self.ch_send(Req::get(format!("{BASE}/server/logs?lines={lines}"))).await?;
+        let raw: ApiLogs = super::parse(&bytes, "craftinghosting/logs")?;
+        let skip = raw.lines.len().saturating_sub(LOG_LINES_MAX as usize);
+        Ok(raw.lines.iter().skip(skip).map(|l| log_line(l)).collect())
+    }
+
+    pub async fn craftinghosting_stats(&self) -> Result<Stats> {
+        let (_, bytes) = self.ch_send(Req::get(format!("{BASE}/server/stats"))).await?;
+        let raw: ApiStats = super::parse(&bytes, "craftinghosting/stats")?;
+        Ok(raw.cleaned())
+    }
+
+    /// Modrinth-Projekte (IDs oder Slugs) auf den Server; Client-Mods überspringt die API.
+    pub async fn craftinghosting_mods(&self, projects: &[String]) -> Result<ModsResult> {
+        let projects = project_list(projects)?;
+        let (_, bytes) = self.ch_send(Req::post(format!("{BASE}/server/mods"), json!({ "projects": projects }))).await?;
+        let raw: ApiModsResult = super::parse(&bytes, "craftinghosting/mods")?;
+        Ok(raw.cleaned())
     }
 
     /// Hintergrund-Schleife: Heartbeat alle 45 s, solange eine Sitzung läuft.
@@ -596,12 +645,356 @@ impl Launcher {
         if !self.trs.enabled().await {
             return;
         }
-        let req = Req::post_empty(format!("{BASE}/server/stop")).timeout(Duration::from_secs(3));
+        // Freunde, die noch spielen, behalten den Server – er stoppt, wenn der Letzte geht.
+        let req = Req::post(format!("{BASE}/server/stop"), json!({ "whenEmpty": true })).timeout(Duration::from_secs(3));
         let stop = self.trs.call_raw(self.accounts(), &account, &req);
         if tokio::time::timeout(Duration::from_secs(3), stop).await.is_ok() {
             self.trs.craftinghosting.clear(Some(&account));
         }
     }
+}
+
+// --- Einstellungen, Konsole, Werte, Mods ------------------------------------------------
+
+pub const GAMEMODES: [&str; 4] = ["survival", "creative", "adventure", "spectator"];
+pub const DIFFICULTIES: [&str; 4] = ["peaceful", "easy", "normal", "hard"];
+pub const LEVEL_TYPES: [&str; 4] = ["normal", "flat", "large_biomes", "amplified"];
+pub const LOG_LINES_MAX: u32 = 1000;
+const LOG_LINE_MAX: usize = 4000;
+const SKIP_REASONS: [&str; 3] = ["client_only", "not_found", "unsupported"];
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Settings {
+    pub motd: String,
+    pub max_players: u32,
+    pub gamemode: String,
+    pub difficulty: String,
+    pub hardcore: bool,
+    pub pvp: bool,
+    pub allow_flight: bool,
+    pub seed: String,
+    pub level_type: String,
+    pub spawn_protection: u32,
+    pub view_distance: u32,
+    pub simulation_distance: u32,
+    pub whitelist: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct ApiSettings {
+    motd: String,
+    max_players: u32,
+    gamemode: String,
+    difficulty: String,
+    hardcore: bool,
+    pvp: bool,
+    allow_flight: bool,
+    seed: serde_json::Value,
+    level_type: String,
+    spawn_protection: u32,
+    view_distance: u32,
+    simulation_distance: u32,
+    whitelist: bool,
+}
+
+impl Default for ApiSettings {
+    fn default() -> Self {
+        Self {
+            motd: String::new(),
+            max_players: 20,
+            gamemode: "survival".into(),
+            difficulty: "normal".into(),
+            hardcore: false,
+            pvp: true,
+            allow_flight: false,
+            seed: serde_json::Value::Null,
+            level_type: "normal".into(),
+            spawn_protection: 16,
+            view_distance: 10,
+            simulation_distance: 10,
+            whitelist: true,
+        }
+    }
+}
+
+fn one_of(value: String, allowed: &[&str], fallback: &str) -> String {
+    if allowed.contains(&value.as_str()) { value } else { fallback.to_owned() }
+}
+
+impl ApiSettings {
+    fn cleaned(self) -> Settings {
+        let seed = match self.seed {
+            serde_json::Value::String(s) => validate::text(s.trim(), 64),
+            serde_json::Value::Number(n) => n.to_string(),
+            _ => String::new(),
+        };
+        Settings {
+            motd: validate::text(&self.motd, 120),
+            max_players: self.max_players.clamp(1, 100),
+            gamemode: one_of(self.gamemode, &GAMEMODES, "survival"),
+            difficulty: one_of(self.difficulty, &DIFFICULTIES, "normal"),
+            hardcore: self.hardcore,
+            pvp: self.pvp,
+            allow_flight: self.allow_flight,
+            seed,
+            level_type: one_of(self.level_type.to_ascii_lowercase(), &LEVEL_TYPES, "normal"),
+            spawn_protection: self.spawn_protection.min(64),
+            view_distance: self.view_distance.clamp(3, 16),
+            simulation_distance: self.simulation_distance.clamp(3, 16),
+            whitelist: self.whitelist,
+        }
+    }
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(default)]
+struct ApiSettingsEnvelope {
+    settings: ApiSettings,
+}
+
+/// Änderungen an den Einstellungen; `None` = unverändert. `whitelist` folgt dem Zugang.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct SettingsPatch {
+    pub motd: Option<String>,
+    pub max_players: Option<u32>,
+    pub gamemode: Option<String>,
+    pub difficulty: Option<String>,
+    pub hardcore: Option<bool>,
+    pub pvp: Option<bool>,
+    pub allow_flight: Option<bool>,
+    pub seed: Option<String>,
+    pub level_type: Option<String>,
+    pub spawn_protection: Option<u32>,
+    pub view_distance: Option<u32>,
+    pub simulation_distance: Option<u32>,
+}
+
+fn invalid_setting() -> Error {
+    invalid(crate::msg!("craftinghosting.invalidSettings", "Diese Einstellung geht so nicht."))
+}
+
+fn in_range(value: Option<u32>, min: u32, max: u32) -> Result<Option<u32>> {
+    match value {
+        Some(v) if !(min..=max).contains(&v) => Err(invalid_setting()),
+        other => Ok(other),
+    }
+}
+
+fn pick(value: Option<&String>, allowed: &[&str]) -> Result<Option<String>> {
+    match value {
+        Some(v) if !allowed.contains(&v.as_str()) => Err(invalid_setting()),
+        other => Ok(other.cloned()),
+    }
+}
+
+fn single_line(value: Option<&String>, max: usize) -> Result<Option<String>> {
+    let Some(v) = value else { return Ok(None) };
+    let v = v.trim();
+    if v.chars().count() > max || v.chars().any(char::is_control) {
+        return Err(invalid_setting());
+    }
+    Ok(Some(v.to_owned()))
+}
+
+impl SettingsPatch {
+    pub(crate) fn body(&self) -> Result<serde_json::Value> {
+        let mut body = serde_json::Map::new();
+        let mut put = |key: &str, value: Option<serde_json::Value>| {
+            if let Some(v) = value {
+                body.insert(key.to_owned(), v);
+            }
+        };
+        put("motd", single_line(self.motd.as_ref(), 120)?.map(Into::into));
+        put("maxPlayers", in_range(self.max_players, 1, 100)?.map(Into::into));
+        put("gamemode", pick(self.gamemode.as_ref(), &GAMEMODES)?.map(Into::into));
+        put("difficulty", pick(self.difficulty.as_ref(), &DIFFICULTIES)?.map(Into::into));
+        put("hardcore", self.hardcore.map(Into::into));
+        put("pvp", self.pvp.map(Into::into));
+        put("allowFlight", self.allow_flight.map(Into::into));
+        put("seed", single_line(self.seed.as_ref(), 64)?.map(Into::into));
+        put("levelType", pick(self.level_type.as_ref(), &LEVEL_TYPES)?.map(Into::into));
+        put("spawnProtection", in_range(self.spawn_protection, 0, 64)?.map(Into::into));
+        put("viewDistance", in_range(self.view_distance, 3, 16)?.map(Into::into));
+        put("simulationDistance", in_range(self.simulation_distance, 3, 16)?.map(Into::into));
+        if body.is_empty() {
+            return Err(invalid_setting());
+        }
+        Ok(serde_json::Value::Object(body))
+    }
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(default)]
+struct ApiLogs {
+    lines: Vec<String>,
+}
+
+/// Konsolenzeile: ANSI-Farben und Steuerzeichen raus, gekürzt.
+fn log_line(line: &str) -> String {
+    let mut out = String::with_capacity(line.len());
+    let mut chars = line.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '\u{1b}' {
+            // CSI-Folge bis zum Buchstaben am Ende überspringen.
+            if chars.peek() == Some(&'[') {
+                chars.next();
+                for n in chars.by_ref() {
+                    if n.is_ascii_alphabetic() {
+                        break;
+                    }
+                }
+            }
+            continue;
+        }
+        out.push(c);
+    }
+    validate::text(&out, LOG_LINE_MAX)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Usage {
+    pub used_bytes: Option<u64>,
+    pub limit_bytes: Option<u64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Players {
+    pub online: u32,
+    pub max: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Stats {
+    pub cpu_percent: Option<f64>,
+    pub memory: Usage,
+    pub disk: Usage,
+    pub uptime_seconds: Option<u64>,
+    pub players: Option<Players>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct ApiUsage {
+    used_bytes: Option<f64>,
+    limit_bytes: Option<f64>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(default)]
+struct ApiPlayers {
+    online: Option<f64>,
+    max: Option<f64>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct ApiStats {
+    cpu_percent: Option<f64>,
+    memory: Option<ApiUsage>,
+    disk: Option<ApiUsage>,
+    uptime_seconds: Option<f64>,
+    players: Option<ApiPlayers>,
+}
+
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+fn amount(v: Option<f64>) -> Option<u64> {
+    v.filter(|n| n.is_finite() && *n >= 0.0).map(|n| n as u64)
+}
+
+impl ApiStats {
+    fn cleaned(self) -> Stats {
+        let usage = |u: Option<ApiUsage>| {
+            let u = u.unwrap_or_default();
+            Usage { used_bytes: amount(u.used_bytes), limit_bytes: amount(u.limit_bytes) }
+        };
+        let players = self.players.and_then(|p| {
+            let online = u32::try_from(amount(p.online)?.min(10_000)).ok()?;
+            let max = u32::try_from(amount(p.max).unwrap_or(0).min(10_000)).ok()?;
+            Some(Players { online, max })
+        });
+        Stats {
+            cpu_percent: self.cpu_percent.filter(|n| n.is_finite() && *n >= 0.0).map(|n| (n * 10.0).round() / 10.0),
+            memory: usage(self.memory),
+            disk: usage(self.disk),
+            uptime_seconds: amount(self.uptime_seconds),
+            players,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Skipped {
+    pub project: String,
+    pub reason: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ModsResult {
+    pub installed: Vec<String>,
+    pub skipped: Vec<Skipped>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(default)]
+struct ApiSkipped {
+    project: String,
+    reason: String,
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(default)]
+struct ApiModsResult {
+    installed: Vec<String>,
+    skipped: Vec<ApiSkipped>,
+}
+
+fn project_id(input: &str) -> bool {
+    (1..=64).contains(&input.len()) && input.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'_' | b'-'))
+}
+
+impl ApiModsResult {
+    fn cleaned(self) -> ModsResult {
+        ModsResult {
+            installed: self.installed.into_iter().filter(|p| project_id(p)).take(100).collect(),
+            skipped: self
+                .skipped
+                .into_iter()
+                .filter(|s| project_id(&s.project))
+                .map(|s| Skipped {
+                    reason: if SKIP_REASONS.contains(&s.reason.as_str()) { s.reason } else { "unsupported".into() },
+                    project: s.project,
+                })
+                .take(100)
+                .collect(),
+        }
+    }
+}
+
+fn invalid_projects() -> Error {
+    invalid(crate::msg!("craftinghosting.invalidProjects", "Diese Mods lassen sich nicht übertragen."))
+}
+
+/// 1–100 Modrinth-IDs oder Slugs, ohne doppelte.
+pub fn project_list(input: &[String]) -> Result<Vec<String>> {
+    let mut out: Vec<String> = Vec::new();
+    for p in input {
+        let p = p.trim();
+        if !project_id(p) {
+            return Err(invalid_projects());
+        }
+        if !out.iter().any(|o| o == p) {
+            out.push(p.to_owned());
+        }
+    }
+    if out.is_empty() || out.len() > 100 {
+        return Err(invalid_projects());
+    }
+    Ok(out)
 }
 
 #[cfg(test)]

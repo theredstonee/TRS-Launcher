@@ -24,6 +24,7 @@ pub mod cape_import;
 pub mod cape_video;
 pub mod chat;
 pub mod craftinghosting;
+pub mod craftinghosting_world;
 pub mod creator;
 pub mod creator_pet;
 pub mod creator_stats;
@@ -515,6 +516,11 @@ fn message_for(code: &str) -> Msg {
         "server_suspended" => msg!("trsApi.server_suspended", "Dein Server wurde von CraftingHosting gesperrt."),
         "server_type_unavailable" => msg!("trsApi.server_type_unavailable", "Diesen Servertyp gibt es gerade nicht."),
         "version_unavailable" => msg!("trsApi.version_unavailable", "Diese Version gibt es für den Servertyp gerade nicht."),
+        "invalid_path" => msg!("trsApi.invalid_path", "Diese Datei nimmt der Server nicht an."),
+        "file_rejected" => msg!("trsApi.file_rejected", "CraftingHosting hat die Datei abgelehnt."),
+        "file_not_found" => msg!("trsApi.file_not_found", "Die hochgeladene Welt wurde nicht gefunden – bitte noch einmal hochladen."),
+        "mods_unsupported" => msg!("trsApi.mods_unsupported", "Dieser Servertyp kann keine Mods oder Plugins laden."),
+        "server_running" => msg!("trsApi.server_running", "Stoppe den Server zuerst – das geht nur, solange er aus ist."),
         "invalid_request" | "invalid_json" => msg!("trsApi.invalid_request", "Die Anfrage war ungültig."),
         "not_found" => msg!("trsApi.not_found", "Nicht gefunden."),
         _ => msg!("trsApi.rejected", "Die TRS API hat die Anfrage abgelehnt."),

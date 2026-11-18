@@ -58,9 +58,52 @@ export const craftingServerSchema = z.object({
     remainingSeconds: count,
     cooldownUntil: time,
     lastStopReason: z.enum(STOP_REASONS).nullable(),
+    /** `false` = der Launcher meldet sich nicht mehr, der Server läuft nur noch wegen Spielern weiter. */
+    hostPresent: z.boolean(),
   }),
   createdAt: time,
   lastStartAt: time,
+  /** Wird ohne Start bis dahin gelöscht; jeder Start schiebt es nach hinten. */
+  deleteAt: time,
+})
+
+export const GAMEMODES = ['survival', 'creative', 'adventure', 'spectator'] as const
+export const DIFFICULTIES = ['peaceful', 'easy', 'normal', 'hard'] as const
+export const LEVEL_TYPES = ['normal', 'flat', 'large_biomes', 'amplified'] as const
+
+export const craftingSettingsSchema = z.object({
+  motd: z.string().max(120),
+  maxPlayers: z.number().int().min(1).max(100),
+  gamemode: z.enum(GAMEMODES),
+  difficulty: z.enum(DIFFICULTIES),
+  hardcore: z.boolean(),
+  pvp: z.boolean(),
+  allowFlight: z.boolean(),
+  seed: z.string().max(64),
+  levelType: z.enum(LEVEL_TYPES),
+  spawnProtection: z.number().int().min(0).max(64),
+  viewDistance: z.number().int().min(3).max(16),
+  simulationDistance: z.number().int().min(3).max(16),
+  whitelist: z.boolean(),
+})
+
+const bytes = z.number().min(0).nullable()
+export const craftingStatsSchema = z.object({
+  cpuPercent: z.number().min(0).nullable(),
+  memory: z.object({ usedBytes: bytes, limitBytes: bytes }),
+  disk: z.object({ usedBytes: bytes, limitBytes: bytes }),
+  uptimeSeconds: z.number().min(0).nullable(),
+  players: z.object({ online: z.number().int().min(0), max: z.number().int().min(0) }).nullable(),
+})
+
+export const craftingModsResultSchema = z.object({
+  installed: z.array(z.string().max(64)),
+  skipped: z.array(z.object({ project: z.string().max(64), reason: z.enum(['client_only', 'not_found', 'unsupported']) })),
+})
+
+export const worldUploadProgressSchema = z.object({
+  phase: z.enum(['zip', 'upload', 'import']),
+  percent: z.number().int().min(0).max(100),
 })
 
 export type CraftingInfo = z.infer<typeof craftingInfoSchema>
@@ -68,6 +111,11 @@ export type CraftingServer = z.infer<typeof craftingServerSchema>
 export type CraftingState = CraftingServer['state']
 export type CraftingAccess = CraftingServer['access']
 export type StopReason = (typeof STOP_REASONS)[number]
+export type CraftingSettings = z.infer<typeof craftingSettingsSchema>
+export type CraftingSettingsPatch = Partial<Omit<CraftingSettings, 'whitelist'>>
+export type CraftingStats = z.infer<typeof craftingStatsSchema>
+export type CraftingModsResult = z.infer<typeof craftingModsResultSchema>
+export type WorldUploadProgress = z.infer<typeof worldUploadProgressSchema>
 
 export interface NewCraftingServer {
   name: string
@@ -166,4 +214,45 @@ export function joinVersion(serverVersion: string, instances: InstanceLike[]): s
 export function defaultServerType(info: CraftingInfo | null): { serverType: string; version: string } {
   const type = info?.serverTypes.find((t) => t.id === 'paper') ?? info?.serverTypes[0]
   return { serverType: type?.id ?? '', version: type?.versions[0] ?? '' }
+}
+
+/** Nur geänderte Einstellungen (für PATCH). `whitelist` folgt dem Zugang und fehlt immer. */
+export function settingsPatch(before: CraftingSettings, after: CraftingSettings): CraftingSettingsPatch {
+  const patch: Record<string, unknown> = {}
+  for (const key of Object.keys(after) as (keyof CraftingSettings)[]) {
+    if (key !== 'whitelist' && after[key] !== before[key]) patch[key] = after[key]
+  }
+  return patch as CraftingSettingsPatch
+}
+
+interface ContentLike {
+  fileName: string
+  title?: string | null
+  enabled: boolean
+  source?: { projectId: string; platform?: string | null } | null
+}
+
+/**
+ * Mods einer Instanz für den Server: Modrinth-Projekte (ohne doppelte) und alles,
+ * was (noch) nicht übertragbar ist – CurseForge oder ohne bekannte Quelle. Ausgeschaltete fehlen.
+ */
+export function modrinthProjects(items: ContentLike[]): { projects: string[]; other: string[] } {
+  const projects: string[] = []
+  const other: string[] = []
+  for (const item of items) {
+    if (!item.enabled) continue
+    const id = item.source?.projectId
+    const modrinth = item.source && (!item.source.platform || item.source.platform === 'modrinth')
+    if (modrinth && id && /^[A-Za-z0-9_-]{1,64}$/.test(id)) {
+      if (!projects.includes(id)) projects.push(id)
+    } else {
+      other.push(item.title || item.fileName)
+    }
+  }
+  return { projects: projects.slice(0, 100), other }
+}
+
+/** Log-Zeile für die Anzeige: Minecraft-Farbcodes (§x) entfernen. */
+export function plainLogLine(line: string): string {
+  return line.replace(/§[0-9a-fk-orx]/gi, '')
 }

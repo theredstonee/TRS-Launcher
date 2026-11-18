@@ -257,7 +257,7 @@ fn collect_files(dir: &Path, prefix: &str, out: &mut Vec<(PathBuf, String)>) {
     }
 }
 
-fn write_zip(dir: &Path, folder: &str, dest: &Path, on_progress: &dyn Fn(u8), cancelled: &dyn Fn() -> bool) -> Result<()> {
+pub(crate) fn write_zip(dir: &Path, folder: &str, dest: &Path, on_progress: &dyn Fn(u8), cancelled: &dyn Fn() -> bool) -> Result<()> {
     let mut files = Vec::new();
     collect_files(dir, folder, &mut files);
     let total: u64 = files.iter().filter_map(|(p, _)| std::fs::metadata(p).ok()).map(|m| m.len()).sum::<u64>().max(1);

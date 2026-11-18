@@ -1,7 +1,9 @@
 //! Kostenloser Server beim Partner CraftingHosting – nur über die TRS API.
 
 use tauri::State;
-use trs_core::trs_api::craftinghosting::{Info, NewServer, Server};
+use tauri::ipc::Channel;
+use trs_core::trs_api::craftinghosting::{Info, ModsResult, NewServer, Server, Settings, SettingsPatch, Stats};
+use trs_core::trs_api::craftinghosting_world::WorldProgress;
 
 use crate::LauncherState;
 use crate::error::CommandResult;
@@ -48,4 +50,51 @@ pub async fn craftinghosting_command(launcher: State<'_, LauncherState>, command
 #[tauri::command]
 pub async fn craftinghosting_delete(launcher: State<'_, LauncherState>) -> CommandResult<()> {
     Ok(launcher.craftinghosting_delete().await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_rename(launcher: State<'_, LauncherState>, name: String) -> CommandResult<Server> {
+    Ok(launcher.craftinghosting_rename(&name).await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_settings(launcher: State<'_, LauncherState>) -> CommandResult<Settings> {
+    Ok(launcher.craftinghosting_settings().await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_save_settings(launcher: State<'_, LauncherState>, patch: SettingsPatch) -> CommandResult<Settings> {
+    Ok(launcher.craftinghosting_save_settings(&patch).await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_logs(launcher: State<'_, LauncherState>, lines: u32) -> CommandResult<Vec<String>> {
+    Ok(launcher.craftinghosting_logs(lines).await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_stats(launcher: State<'_, LauncherState>) -> CommandResult<Stats> {
+    Ok(launcher.craftinghosting_stats().await?)
+}
+
+#[tauri::command]
+pub async fn craftinghosting_mods(launcher: State<'_, LauncherState>, projects: Vec<String>) -> CommandResult<ModsResult> {
+    Ok(launcher.craftinghosting_mods(&projects).await?)
+}
+
+/// Welt einer Instanz packen, hochladen und einspielen (Server muss aus sein).
+#[tauri::command]
+pub async fn craftinghosting_upload_world(
+    launcher: State<'_, LauncherState>,
+    instance_id: String,
+    folder: String,
+    on_progress: Channel<WorldProgress>,
+) -> CommandResult<Server> {
+    trs_core::platform::desktop_only()?;
+    let launcher = launcher.inner().clone();
+    Ok(launcher
+        .craftinghosting_upload_world(&instance_id, &folder, move |p| {
+            let _ = on_progress.send(p);
+        })
+        .await?)
 }

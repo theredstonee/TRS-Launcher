@@ -342,7 +342,12 @@
       "server_suspended": "Je server is door CraftingHosting geblokkeerd.",
       "server_type_unavailable": "Dit servertype is momenteel niet beschikbaar.",
       "version_unavailable": "Deze versie is momenteel niet beschikbaar voor dit servertype.",
-      "server_name_invalid": "Deze servernaam werkt niet – kies een andere."
+      "server_name_invalid": "Deze servernaam werkt niet – kies een andere.",
+      "invalid_path": "De server accepteert dit bestand niet.",
+      "file_rejected": "CraftingHosting heeft het bestand geweigerd.",
+      "file_not_found": "De geüploade wereld is niet gevonden – upload hem opnieuw.",
+      "mods_unsupported": "Dit servertype kan geen mods of plug-ins laden.",
+      "server_running": "Stop eerst de server – dit kan alleen als hij uit staat."
     },
     "auth": {
       "accountMismatch": "Deze login hoort bij een ander account – log opnieuw in.",
@@ -799,7 +804,11 @@
       "invalidName": "Naam: 3 tot 22 tekens – letters, cijfers, spaties en . _ ' -",
       "invalidAccess": "Ongeldige toegang.",
       "invalidCommand": "Commando: 1 tot 256 tekens op één regel.",
-      "invalidType": "Kies een servertype en een versie."
+      "invalidType": "Kies een servertype en een versie.",
+      "invalidSettings": "Deze instelling kan zo niet.",
+      "invalidProjects": "Deze mods kunnen niet worden overgezet.",
+      "uploadFailed": "De wereld kon niet worden geüpload – probeer het opnieuw.",
+      "stopFirst": "Stop de server voordat je een wereld uploadt."
     },
     "chatImage": {
       "unsupported": "Alleen PNG-, JPEG- en WebP-afbeeldingen kunnen worden verstuurd.",
@@ -7620,17 +7629,108 @@
       "start": "Accepteren en starten"
     },
     "console": {
-      "title": "Console",
       "placeholder": "Commando, bijv. say Hallo",
       "send": "Versturen",
-      "note": "Commando’s draaien op de server – hier is geen uitvoer te zien.",
-      "sent": "Commando verstuurd."
+      "sent": "Commando verstuurd.",
+      "empty": "Nog geen uitvoer.",
+      "offline": "Commando’s werken alleen als de server draait."
     },
     "join": {
       "waiting": "Je server start – je doet mee zodra hij klaar is.",
       "noAddress": "De server heeft nog geen adres.",
       "notStarted": "De server is niet gestart.",
       "timeout": "De server doet er te lang over om te starten – probeer het zo opnieuw."
+    },
+    "rename": "Hernoemen",
+    "hostAway": "Je launcher meldt zich niet meer – de server draait alleen door zolang er spelers op zitten.",
+    "deleteAt": "Wordt op {date} verwijderd als je hem niet eerder start.",
+    "tabs": {
+      "overview": "Overzicht",
+      "console": "Console",
+      "settings": "Instellingen",
+      "content": "Mods & wereld"
+    },
+    "stats": {
+      "title": "Live",
+      "players": "Spelers",
+      "cpu": "CPU",
+      "memory": "RAM",
+      "disk": "Opslag"
+    },
+    "settings": {
+      "saved": "Instellingen opgeslagen – ze gelden vanaf de volgende start.",
+      "nextStart": "Wijzigingen gelden vanaf de volgende start van de server.",
+      "motd": "Tekst in de serverlijst (MOTD)",
+      "gamemode": "Spelmodus",
+      "difficulty": "Moeilijkheid",
+      "maxPlayers": "Max. spelers",
+      "spawnProtection": "Spawnbescherming (blokken)",
+      "viewDistance": "Kijkafstand: {n}",
+      "simulationDistance": "Simulatieafstand: {n}",
+      "pvp": "PvP",
+      "hardcore": "Hardcore",
+      "allowFlight": "Vliegen toestaan",
+      "newWorld": "Nieuwe wereld",
+      "seed": "Seed",
+      "seedRandom": "leeg = willekeurig",
+      "levelType": "Wereldtype",
+      "newWorldHint": "Seed en wereldtype werken alleen als de server een nieuwe wereld maakt.",
+      "whitelistOn": "Whitelist staat aan – die volgt ‘Wie mag er meedoen?’.",
+      "whitelistOff": "Whitelist staat uit – die volgt ‘Wie mag er meedoen?’.",
+      "discard": "Verwerpen",
+      "gamemodes": {
+        "survival": "Overleven",
+        "creative": "Creatief",
+        "adventure": "Avontuur",
+        "spectator": "Toeschouwer"
+      },
+      "difficulties": {
+        "peaceful": "Vredig",
+        "easy": "Makkelijk",
+        "normal": "Normaal",
+        "hard": "Moeilijk"
+      },
+      "levelTypes": {
+        "normal": "Standaard",
+        "flat": "Supervlak",
+        "large_biomes": "Grote biomen",
+        "amplified": "Versterkt"
+      }
+    },
+    "mods": {
+      "title": "Mods uit een instantie",
+      "text": "Installeert de mods van een instantie vanaf Modrinth op de server. Mods die alleen voor de client zijn, blijven weg.",
+      "vanilla": "Vanilla-servers kunnen geen mods of plug-ins laden.",
+      "instance": "Instantie",
+      "button": "Mods overnemen",
+      "working": "Bezig met overzetten …",
+      "installed": "Op de server geïnstalleerd: {n}",
+      "noneTransferable": "Geen van de mods komt van Modrinth – er is niets verstuurd.",
+      "skipped": "Overgeslagen:",
+      "notYet": "Nog niet over te zetten (niet van Modrinth):",
+      "reason": {
+        "client_only": "alleen client",
+        "not_found": "niet gevonden",
+        "unsupported": "past niet bij de server"
+      }
+    },
+    "world": {
+      "title": "Wereld uit een instantie",
+      "text": "Uploadt een singleplayerwereld naar je server. Die vervangt de wereld van de server (met Nether en End).",
+      "instance": "Instantie",
+      "world": "Wereld",
+      "none": "Deze instantie heeft geen werelden.",
+      "stopFirst": "Stop eerst de server – een wereld kan alleen worden geüpload als hij uit staat.",
+      "button": "Wereld overnemen",
+      "confirmTitle": "Wereld van de server vervangen?",
+      "confirmText": "‘{world}’ vervangt de wereld, Nether en End van je server. De oude wereld is daarna definitief weg.",
+      "confirm": "Wereld vervangen",
+      "done": "Wereld geüpload – bij de volgende start is hij er.",
+      "phase": {
+        "zip": "Wereld inpakken … {percent} %",
+        "upload": "Uploaden … {percent} %",
+        "import": "Wereld wordt op de server ingericht …"
+      }
     }
   }
 }

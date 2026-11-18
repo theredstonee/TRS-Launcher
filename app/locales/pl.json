@@ -342,7 +342,12 @@
       "server_suspended": "Twój serwer został zawieszony przez CraftingHosting.",
       "server_type_unavailable": "Ten typ serwera jest teraz niedostępny.",
       "version_unavailable": "Ta wersja jest teraz niedostępna dla tego typu serwera.",
-      "server_name_invalid": "Ta nazwa serwera nie przejdzie – wybierz inną."
+      "server_name_invalid": "Ta nazwa serwera nie przejdzie – wybierz inną.",
+      "invalid_path": "Serwer nie przyjmuje tego pliku.",
+      "file_rejected": "CraftingHosting odrzucił plik.",
+      "file_not_found": "Nie znaleziono wgranego świata – wgraj go ponownie.",
+      "mods_unsupported": "Ten typ serwera nie może ładować modów ani pluginów.",
+      "server_running": "Najpierw zatrzymaj serwer – to działa tylko, gdy jest wyłączony."
     },
     "auth": {
       "accountMismatch": "To logowanie należy do innego konta – zaloguj się ponownie.",
@@ -799,7 +804,11 @@
       "invalidName": "Nazwa: od 3 do 22 znaków – litery, cyfry, spacje oraz . _ ' -",
       "invalidAccess": "Nieprawidłowy dostęp.",
       "invalidCommand": "Polecenie: od 1 do 256 znaków w jednej linii.",
-      "invalidType": "Wybierz typ serwera i wersję."
+      "invalidType": "Wybierz typ serwera i wersję.",
+      "invalidSettings": "Takie ustawienie jest niemożliwe.",
+      "invalidProjects": "Tych modów nie da się przenieść.",
+      "uploadFailed": "Nie udało się wgrać świata – spróbuj ponownie.",
+      "stopFirst": "Zatrzymaj serwer przed wgraniem świata."
     },
     "chatImage": {
       "unsupported": "Można wysyłać tylko zdjęcia PNG, JPEG i WebP.",
@@ -7620,17 +7629,108 @@
       "start": "Akceptuj i uruchom"
     },
     "console": {
-      "title": "Konsola",
       "placeholder": "Polecenie, np. say Cześć",
       "send": "Wyślij",
-      "note": "Polecenia działają na serwerze – tutaj nie ma żadnego wyniku.",
-      "sent": "Polecenie wysłane."
+      "sent": "Polecenie wysłane.",
+      "empty": "Brak jeszcze danych.",
+      "offline": "Polecenia działają tylko, gdy serwer jest uruchomiony."
     },
     "join": {
       "waiting": "Twój serwer się uruchamia – dołączysz, gdy będzie gotowy.",
       "noAddress": "Serwer nie ma jeszcze adresu.",
       "notStarted": "Serwer się nie uruchomił.",
       "timeout": "Serwer uruchamia się zbyt długo – spróbuj za chwilę."
+    },
+    "rename": "Zmień nazwę",
+    "hostAway": "Twój launcher się nie zgłasza – serwer działa dalej tylko, dopóki są na nim gracze.",
+    "deleteAt": "Zostanie usunięty {date}, jeśli wcześniej go nie uruchomisz.",
+    "tabs": {
+      "overview": "Przegląd",
+      "console": "Konsola",
+      "settings": "Ustawienia",
+      "content": "Mody i świat"
+    },
+    "stats": {
+      "title": "Na żywo",
+      "players": "Gracze",
+      "cpu": "CPU",
+      "memory": "RAM",
+      "disk": "Miejsce"
+    },
+    "settings": {
+      "saved": "Ustawienia zapisane – obowiązują od następnego uruchomienia.",
+      "nextStart": "Zmiany obowiązują od następnego uruchomienia serwera.",
+      "motd": "Opis na liście serwerów (MOTD)",
+      "gamemode": "Tryb gry",
+      "difficulty": "Poziom trudności",
+      "maxPlayers": "Maks. graczy",
+      "spawnProtection": "Ochrona spawnu (bloki)",
+      "viewDistance": "Zasięg widzenia: {n}",
+      "simulationDistance": "Zasięg symulacji: {n}",
+      "pvp": "PvP",
+      "hardcore": "Hardcore",
+      "allowFlight": "Zezwól na latanie",
+      "newWorld": "Nowy świat",
+      "seed": "Ziarno",
+      "seedRandom": "puste = losowe",
+      "levelType": "Typ świata",
+      "newWorldHint": "Ziarno i typ świata działają tylko przy tworzeniu nowego świata.",
+      "whitelistOn": "Biała lista jest włączona – zależy od „Kto może dołączyć?”.",
+      "whitelistOff": "Biała lista jest wyłączona – zależy od „Kto może dołączyć?”.",
+      "discard": "Odrzuć",
+      "gamemodes": {
+        "survival": "Przetrwanie",
+        "creative": "Kreatywny",
+        "adventure": "Przygoda",
+        "spectator": "Obserwator"
+      },
+      "difficulties": {
+        "peaceful": "Pokojowy",
+        "easy": "Łatwy",
+        "normal": "Normalny",
+        "hard": "Trudny"
+      },
+      "levelTypes": {
+        "normal": "Domyślny",
+        "flat": "Płaski",
+        "large_biomes": "Duże biomy",
+        "amplified": "Wzmocniony"
+      }
+    },
+    "mods": {
+      "title": "Mody z instancji",
+      "text": "Instaluje na serwerze mody z instancji z Modrinth. Mody tylko klienckie są pomijane.",
+      "vanilla": "Serwery vanilla nie mogą ładować modów ani pluginów.",
+      "instance": "Instancja",
+      "button": "Przenieś mody",
+      "working": "Przenoszenie …",
+      "installed": "Zainstalowano na serwerze: {n}",
+      "noneTransferable": "Żaden z modów nie pochodzi z Modrinth – nic nie wysłano.",
+      "skipped": "Pominięte:",
+      "notYet": "Jeszcze nie do przeniesienia (nie z Modrinth):",
+      "reason": {
+        "client_only": "tylko klient",
+        "not_found": "nie znaleziono",
+        "unsupported": "nie pasuje do serwera"
+      }
+    },
+    "world": {
+      "title": "Świat z instancji",
+      "text": "Wgrywa świat jednoosobowy na serwer. Zastępuje świat serwera (z Netherem i Endem).",
+      "instance": "Instancja",
+      "world": "Świat",
+      "none": "Ta instancja nie ma światów.",
+      "stopFirst": "Najpierw zatrzymaj serwer – świat można wgrać tylko, gdy jest wyłączony.",
+      "button": "Przenieś świat",
+      "confirmTitle": "Zastąpić świat serwera?",
+      "confirmText": "„{world}” zastąpi świat, Nether i End serwera. Stary świat zostanie trwale usunięty.",
+      "confirm": "Zastąp świat",
+      "done": "Świat wgrany – będzie dostępny przy następnym uruchomieniu.",
+      "phase": {
+        "zip": "Pakowanie świata … {percent} %",
+        "upload": "Wgrywanie … {percent} %",
+        "import": "Konfigurowanie świata na serwerze …"
+      }
     }
   }
 }

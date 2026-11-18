@@ -8,11 +8,17 @@ import { BackendError, backend, errorMessage } from '../utils/backend'
 import {
   type CraftingAccess,
   type CraftingInfo,
+  type CraftingModsResult,
   type CraftingServer,
+  type CraftingSettings,
+  type CraftingSettingsPatch,
+  type CraftingStats,
   type NewCraftingServer,
+  type WorldUploadProgress,
   POLL_FAST_MS,
   cleanHostingCommand,
   joinVersion,
+  modrinthProjects,
   pollInterval,
 } from '../utils/craftinghosting'
 import { formatTime } from '../utils/format'
@@ -24,7 +30,18 @@ const JOIN_GIVE_UP_MS = 5 * 60_000
 /** Fehler, bei denen der Bereich gerade nicht nutzbar ist (Hinweis statt Toast). */
 const UNAVAILABLE = ['craftinghosting_unavailable', 'craftinghosting_maintenance', 'craftinghosting_upstream']
 
-type Busy = 'create' | 'start' | 'stop' | 'delete' | 'access' | 'command'
+/** Takt der Live-Werte und der Konsole, solange der Server läuft. */
+const STATS_MS = 5_000
+const LOGS_MS = 3_000
+const LOG_LINES = 200
+
+type Busy = 'create' | 'start' | 'stop' | 'delete' | 'access' | 'command' | 'rename' | 'settings' | 'mods' | 'world'
+
+/** Ergebnis von „Mods aus Instanz übernehmen“ samt den Mods ohne Modrinth-Quelle. */
+export interface ModsTransfer {
+  result: CraftingModsResult | null
+  other: string[]
+}
 
 // Kostenloser Server beim Partner CraftingHosting: laden, anlegen, starten/stoppen,
 // Zugang, Konsole, löschen und „Beitreten“ (starten, warten, passende Instanz).
@@ -41,16 +58,28 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
   /** EULA-Dialog vor dem ersten Start. */
   const eulaOpen = ref(false)
   const joining = ref(false)
+  const settings = ref<CraftingSettings | null>(null)
+  const stats = ref<CraftingStats | null>(null)
+  const logs = ref<string[]>([])
+  /** Konsole sichtbar: Log im 3-s-Takt, solange der Server läuft. */
+  const consoleOpen = ref(false)
+  const modsTransfer = ref<ModsTransfer | null>(null)
+  const worldProgress = ref<WorldUploadProgress | null>(null)
   let joinAfterEula = false
   let pollTimer: ReturnType<typeof setTimeout> | null = null
+  let statsTimer: ReturnType<typeof setInterval> | null = null
+  let logsTimer: ReturnType<typeof setInterval> | null = null
   let watching = false
   let listening = false
+  let visibilityHooked = false
 
   const needsEula = computed(() => !!server.value && !server.value.eulaAccepted)
 
   function setServer(next: CraftingServer | null) {
     server.value = next
     loadedAt.value = Date.now()
+    if (next?.state !== 'running') stats.value = null
+    syncLive()
   }
 
   function apiCode(e: unknown): string | undefined {
@@ -190,8 +219,122 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
       await backend.craftinghosting.command(cmd)
       return true
     })
-    if (done) useToasts().ok(t('craftinghosting.console.sent'))
+    if (done) {
+      useToasts().ok(t('craftinghosting.console.sent'))
+      // Die Antwort steht kurz darauf im Log.
+      if (consoleOpen.value) setTimeout(() => void fetchLogs(), 1_000)
+    }
     return !!done
+  }
+
+  async function rename(name: string): Promise<boolean> {
+    if (!server.value || server.value.name === name.trim()) return true
+    const updated = await run('rename', () => backend.craftinghosting.rename(name.trim()))
+    if (updated) setServer(updated)
+    return !!updated
+  }
+
+  // --- Einstellungen, Mods, Welt --------------------------------------------------------
+
+  async function loadSettings() {
+    try {
+      settings.value = await backend.craftinghosting.settings()
+    } catch (e) {
+      settings.value = null
+      report(e)
+    }
+  }
+
+  async function saveSettings(patch: CraftingSettingsPatch): Promise<boolean> {
+    if (!Object.keys(patch).length) return true
+    const saved = await run('settings', () => backend.craftinghosting.saveSettings(patch))
+    if (saved) {
+      settings.value = saved
+      useToasts().ok(t('craftinghosting.settings.saved'))
+    }
+    return !!saved
+  }
+
+  /** Modrinth-Mods einer Instanz auf den Server; ohne Modrinth-Quelle bleibt nur die Liste. */
+  async function transferMods(instanceId: string): Promise<ModsTransfer | null> {
+    modsTransfer.value = null
+    const outcome = await run('mods', async () => {
+      const { projects, other } = modrinthProjects(await backend.listContent(instanceId, 'mod'))
+      const result = projects.length ? await backend.craftinghosting.mods(projects) : null
+      return { result, other }
+    })
+    modsTransfer.value = outcome
+    return outcome
+  }
+
+  /** Welt einer Instanz einspielen (ersetzt die Welt des Servers). */
+  async function uploadWorld(instanceId: string, folder: string): Promise<boolean> {
+    worldProgress.value = { phase: 'zip', percent: 0 }
+    try {
+      const updated = await run('world', () => backend.craftinghosting.uploadWorld(instanceId, folder, (p) => (worldProgress.value = p)))
+      if (updated) {
+        setServer(updated)
+        useToasts().ok(t('craftinghosting.world.done'))
+      }
+      return !!updated
+    } finally {
+      worldProgress.value = null
+    }
+  }
+
+  // --- Live-Werte und Konsole -----------------------------------------------------------
+
+  function pageVisible() {
+    return typeof document === 'undefined' || document.visibilityState !== 'hidden'
+  }
+
+  async function fetchStats() {
+    try {
+      stats.value = await backend.craftinghosting.stats()
+    } catch {
+      stats.value = null
+    }
+  }
+
+  async function fetchLogs() {
+    try {
+      logs.value = await backend.craftinghosting.logs(LOG_LINES)
+    } catch {
+      // Konsole bleibt beim letzten Stand.
+    }
+  }
+
+  /** Stats (5 s) und Log (3 s) nur, solange die Seite sichtbar ist und der Server läuft. */
+  function syncLive() {
+    const live = watching && server.value?.state === 'running' && pageVisible()
+    if (live && !statsTimer) {
+      void fetchStats()
+      statsTimer = setInterval(fetchStats, STATS_MS)
+    } else if (!live && statsTimer) {
+      clearInterval(statsTimer)
+      statsTimer = null
+    }
+    const tail = live && consoleOpen.value
+    if (tail && !logsTimer) {
+      void fetchLogs()
+      logsTimer = setInterval(fetchLogs, LOGS_MS)
+    } else if (!tail && logsTimer) {
+      clearInterval(logsTimer)
+      logsTimer = null
+    }
+  }
+
+  function setConsoleOpen(open: boolean) {
+    consoleOpen.value = open
+    // Auch ohne laufenden Server einmal den letzten Stand zeigen.
+    if (open && server.value && server.value.state !== 'installing') void fetchLogs()
+    syncLive()
+  }
+
+  function hookVisibility() {
+    if (visibilityHooked || typeof document === 'undefined') return
+    visibilityHooked = true
+    document.addEventListener('visibilitychange', () => syncLive())
   }
 
   // --- Beitreten ------------------------------------------------------------------------
@@ -276,15 +419,18 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
   /** Seite offen: laden und im Takt nachfragen (5 s bei Zustandswechseln, sonst 30 s). */
   async function watch() {
     watching = true
+    hookVisibility()
     void listenForChanges()
     await load()
     schedule()
+    syncLive()
   }
 
   function unwatch() {
     watching = false
     if (pollTimer) clearTimeout(pollTimer)
     pollTimer = null
+    syncLive()
   }
 
   async function listenForChanges() {
@@ -303,6 +449,9 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     problem.value = null
     eulaOpen.value = false
     joinAfterEula = false
+    settings.value = null
+    logs.value = []
+    modsTransfer.value = null
   }
 
   return {
@@ -316,6 +465,12 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     eulaOpen,
     joining,
     needsEula,
+    settings,
+    stats,
+    logs,
+    consoleOpen,
+    modsTransfer,
+    worldProgress,
     load,
     refresh,
     create,
@@ -326,6 +481,12 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     stop,
     remove,
     setAccess,
+    rename,
+    loadSettings,
+    saveSettings,
+    transferMods,
+    uploadWorld,
+    setConsoleOpen,
     command,
     join,
     watch,

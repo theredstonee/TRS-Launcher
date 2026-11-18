@@ -26,10 +26,12 @@ function server(patch: Partial<CraftingServer> = {}, session: Partial<CraftingSe
       remainingSeconds: 86400,
       cooldownUntil: null,
       lastStopReason: null,
+      hostPresent: true,
       ...session,
     },
     createdAt: null,
     lastStartAt: null,
+    deleteAt: null,
     ...patch,
   }
 }
@@ -51,11 +53,22 @@ const craftinghosting = {
   stop: vi.fn(async () => server({ state: 'stopping' })),
   command: vi.fn(async () => {}),
   remove: vi.fn(async () => {}),
+  rename: vi.fn(async (name: string) => server({ name })),
+  mods: vi.fn(async (projects: string[]) => ({ installed: projects.slice(0, 1), skipped: [] })),
+  uploadWorld: vi.fn(async (_i: string, _f: string, onProgress: (p: { phase: string; percent: number }) => void) => {
+    onProgress({ phase: 'upload', percent: 50 })
+    return server()
+  }),
 }
+const listContent = vi.fn(async () => [
+  { fileName: 'lithium.jar', title: 'Lithium', enabled: true, source: { projectId: 'gvQqBUqZ', versionId: 'v' } },
+  { fileName: 'jei.jar', title: 'JEI', enabled: true, source: { projectId: '238222', versionId: 'f', platform: 'curseforge' } },
+  { fileName: 'own.jar', title: null, enabled: true, source: null },
+])
 
 vi.mock('../app/utils/backend', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../app/utils/backend')>()),
-  backend: { craftinghosting },
+  backend: { craftinghosting, listContent },
 }))
 
 type Phase = 'idle' | 'running'
@@ -216,5 +229,31 @@ describe('Konsole, Zugang, Löschen', () => {
     expect(s.server?.access).toBe('open')
     expect(await s.remove()).toBe(true)
     expect(s.server).toBeNull()
+  })
+})
+
+describe('Umbenennen, Mods, Welt', () => {
+  it('benennt um und übernimmt Modrinth-Mods einer Instanz', async () => {
+    craftinghosting.server.mockImplementation(async () => server())
+    const s = await store()
+    await s.load()
+    expect(await s.rename(' Neue Welt ')).toBe(true)
+    expect(craftinghosting.rename).toHaveBeenCalledWith('Neue Welt')
+    expect(s.server?.name).toBe('Neue Welt')
+
+    const result = await s.transferMods('inst')
+    expect(listContent).toHaveBeenCalledWith('inst', 'mod')
+    expect(craftinghosting.mods).toHaveBeenCalledWith(['gvQqBUqZ'])
+    expect(result?.other).toEqual(['JEI', 'own.jar'])
+  })
+
+  it('spielt eine Welt ein und meldet den Fortschritt', async () => {
+    craftinghosting.server.mockImplementation(async () => server())
+    const s = await store()
+    await s.load()
+    expect(await s.uploadWorld('inst', 'Welt')).toBe(true)
+    expect(craftinghosting.uploadWorld).toHaveBeenCalledWith('inst', 'Welt', expect.any(Function))
+    expect(s.worldProgress).toBeNull()
+    expect(toasts.ok).toHaveBeenCalled()
   })
 })

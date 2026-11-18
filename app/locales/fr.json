@@ -342,7 +342,12 @@
       "server_suspended": "Ton serveur a été suspendu par CraftingHosting.",
       "server_type_unavailable": "Ce type de serveur n’est pas disponible pour le moment.",
       "version_unavailable": "Cette version n’est pas disponible pour ce type de serveur pour le moment.",
-      "server_name_invalid": "Ce nom de serveur ne convient pas – choisis-en un autre."
+      "server_name_invalid": "Ce nom de serveur ne convient pas – choisis-en un autre.",
+      "invalid_path": "Le serveur n’accepte pas ce fichier.",
+      "file_rejected": "CraftingHosting a refusé le fichier.",
+      "file_not_found": "Le monde envoyé est introuvable – envoie-le à nouveau.",
+      "mods_unsupported": "Ce type de serveur ne peut pas charger de mods ni de plugins.",
+      "server_running": "Arrête d’abord le serveur – cela ne marche que lorsqu’il est arrêté."
     },
     "auth": {
       "accountMismatch": "Cette connexion appartient à un autre compte – reconnecte-toi.",
@@ -799,7 +804,11 @@
       "invalidName": "Nom : 3 à 22 caractères – lettres, chiffres, espaces et . _ ' -",
       "invalidAccess": "Accès invalide.",
       "invalidCommand": "Commande : 1 à 256 caractères sur une seule ligne.",
-      "invalidType": "Choisis un type de serveur et une version."
+      "invalidType": "Choisis un type de serveur et une version.",
+      "invalidSettings": "Ce paramètre n’est pas valide.",
+      "invalidProjects": "Ces mods ne peuvent pas être transférés.",
+      "uploadFailed": "Le monde n’a pas pu être envoyé – réessaie.",
+      "stopFirst": "Arrête le serveur avant d’envoyer un monde."
     },
     "chatImage": {
       "unsupported": "Seules les images PNG, JPEG et WebP peuvent être envoyées.",
@@ -7620,17 +7629,108 @@
       "start": "Accepter et démarrer"
     },
     "console": {
-      "title": "Console",
       "placeholder": "Commande, p. ex. say Salut",
       "send": "Envoyer",
-      "note": "Les commandes s’exécutent sur le serveur – aucune sortie ne s’affiche ici.",
-      "sent": "Commande envoyée."
+      "sent": "Commande envoyée.",
+      "empty": "Pas encore de sortie.",
+      "offline": "Les commandes ne fonctionnent que lorsque le serveur tourne."
     },
     "join": {
       "waiting": "Ton serveur démarre – tu le rejoindras dès qu’il sera prêt.",
       "noAddress": "Le serveur n’a pas encore d’adresse.",
       "notStarted": "Le serveur n’a pas démarré.",
       "timeout": "Le serveur met trop de temps à démarrer – réessaie dans un instant."
+    },
+    "rename": "Renommer",
+    "hostAway": "Ton launcher ne se signale plus – le serveur ne tourne que tant que des joueurs sont connectés.",
+    "deleteAt": "Sera supprimé le {date} si tu ne le démarres pas d’ici là.",
+    "tabs": {
+      "overview": "Aperçu",
+      "console": "Console",
+      "settings": "Paramètres",
+      "content": "Mods et monde"
+    },
+    "stats": {
+      "title": "En direct",
+      "players": "Joueurs",
+      "cpu": "CPU",
+      "memory": "RAM",
+      "disk": "Stockage"
+    },
+    "settings": {
+      "saved": "Paramètres enregistrés – ils s’appliquent au prochain démarrage.",
+      "nextStart": "Les modifications s’appliquent au prochain démarrage du serveur.",
+      "motd": "Message dans la liste des serveurs (MOTD)",
+      "gamemode": "Mode de jeu",
+      "difficulty": "Difficulté",
+      "maxPlayers": "Joueurs max.",
+      "spawnProtection": "Protection du spawn (blocs)",
+      "viewDistance": "Distance d’affichage : {n}",
+      "simulationDistance": "Distance de simulation : {n}",
+      "pvp": "PvP",
+      "hardcore": "Hardcore",
+      "allowFlight": "Autoriser le vol",
+      "newWorld": "Nouveau monde",
+      "seed": "Graine",
+      "seedRandom": "vide = aléatoire",
+      "levelType": "Type de monde",
+      "newWorldHint": "La graine et le type de monde ne comptent que lorsque le serveur crée un nouveau monde.",
+      "whitelistOn": "La liste blanche est activée – elle suit « Qui peut rejoindre ? ».",
+      "whitelistOff": "La liste blanche est désactivée – elle suit « Qui peut rejoindre ? ».",
+      "discard": "Annuler",
+      "gamemodes": {
+        "survival": "Survie",
+        "creative": "Créatif",
+        "adventure": "Aventure",
+        "spectator": "Spectateur"
+      },
+      "difficulties": {
+        "peaceful": "Paisible",
+        "easy": "Facile",
+        "normal": "Normal",
+        "hard": "Difficile"
+      },
+      "levelTypes": {
+        "normal": "Normal",
+        "flat": "Superplat",
+        "large_biomes": "Grands biomes",
+        "amplified": "Amplifié"
+      }
+    },
+    "mods": {
+      "title": "Mods d’une instance",
+      "text": "Installe sur le serveur les mods d’une instance depuis Modrinth. Les mods uniquement client sont ignorés.",
+      "vanilla": "Les serveurs vanilla ne peuvent pas charger de mods ni de plugins.",
+      "instance": "Instance",
+      "button": "Reprendre les mods",
+      "working": "Transfert …",
+      "installed": "Installés sur le serveur : {n}",
+      "noneTransferable": "Aucun mod ne provient de Modrinth – rien n’a été envoyé.",
+      "skipped": "Ignorés :",
+      "notYet": "Pas encore transférables (pas de Modrinth) :",
+      "reason": {
+        "client_only": "client uniquement",
+        "not_found": "introuvable",
+        "unsupported": "incompatible avec ce serveur"
+      }
+    },
+    "world": {
+      "title": "Monde d’une instance",
+      "text": "Envoie un monde solo sur ton serveur. Il remplace le monde du serveur (avec Nether et End).",
+      "instance": "Instance",
+      "world": "Monde",
+      "none": "Cette instance n’a aucun monde.",
+      "stopFirst": "Arrête d’abord le serveur – un monde ne peut être envoyé que lorsqu’il est arrêté.",
+      "button": "Reprendre le monde",
+      "confirmTitle": "Remplacer le monde du serveur ?",
+      "confirmText": "« {world} » remplacera le monde, le Nether et l’End de ton serveur. L’ancien monde sera supprimé définitivement.",
+      "confirm": "Remplacer le monde",
+      "done": "Monde envoyé – il sera là au prochain démarrage.",
+      "phase": {
+        "zip": "Compression du monde … {percent} %",
+        "upload": "Envoi … {percent} %",
+        "import": "Installation du monde sur le serveur …"
+      }
     }
   }
 }

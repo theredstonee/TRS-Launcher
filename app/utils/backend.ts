@@ -160,7 +160,17 @@ import {
   type HostingTarget,
   type PrepareProgress,
 } from './hosting'
-import { craftingInfoSchema, craftingServerSchema, type CraftingAccess, type NewCraftingServer } from './craftinghosting'
+import {
+  craftingInfoSchema,
+  craftingModsResultSchema,
+  craftingServerSchema,
+  craftingSettingsSchema,
+  craftingStatsSchema,
+  type CraftingAccess,
+  type CraftingSettingsPatch,
+  type NewCraftingServer,
+  type WorldUploadProgress,
+} from './craftinghosting'
 import type {
   BedrockInfo,
   FpsMode,
@@ -1376,10 +1386,21 @@ export const backend = {
     server: () => checked(craftingServerSchema.nullable(), 'craftinghosting_server'),
     create: (spec: NewCraftingServer) => checked(craftingServerSchema, 'craftinghosting_create', { spec }),
     setAccess: (access: CraftingAccess) => checked(craftingServerSchema, 'craftinghosting_set_access', { access }),
+    rename: (name: string) => checked(craftingServerSchema, 'craftinghosting_rename', { name }),
     start: (acceptEula: boolean) => checked(craftingServerSchema, 'craftinghosting_start', { acceptEula }),
     stop: () => checked(craftingServerSchema, 'craftinghosting_stop'),
     command: (command: string) => call<void>('craftinghosting_command', { command }),
     remove: () => call<void>('craftinghosting_delete'),
+    settings: () => checked(craftingSettingsSchema, 'craftinghosting_settings'),
+    saveSettings: (patch: CraftingSettingsPatch) => checked(craftingSettingsSchema, 'craftinghosting_save_settings', { patch }),
+    /** Letzte Zeilen der Konsole (neueste zuletzt). */
+    logs: (lines = 200) => checked(z.array(z.string().max(4000)).max(1000), 'craftinghosting_logs', { lines }),
+    stats: () => checked(craftingStatsSchema, 'craftinghosting_stats'),
+    /** Modrinth-Projekte (IDs) auf den Server; Client-Mods überspringt die API. */
+    mods: (projects: string[]) => checked(craftingModsResultSchema, 'craftinghosting_mods', { projects }),
+    /** Welt einer Instanz packen, hochladen und auf dem Server einspielen (Server muss aus sein). */
+    uploadWorld: (instanceId: string, folder: string, onProgress: (p: WorldUploadProgress) => void) =>
+      checked(craftingServerSchema, 'craftinghosting_upload_world', { instanceId, folder, onProgress: channel(onProgress) }),
   },
 }
 

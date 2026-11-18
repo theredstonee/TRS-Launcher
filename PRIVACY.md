@@ -440,7 +440,11 @@ Only if you create a free server in the "Hosting" tab does the TRS server pass d
 **CraftingHosting** (`craftinghosting.free`): your TRS account ID, your Minecraft name, the server name, type and version
 you chose and – with "Friends only" – the Minecraft names of your TRS friends for the server's whitelist (updated while
 the server runs). The launcher itself never talks to CraftingHosting; while your server runs it only tells the TRS server
-every 45 seconds that the launcher is still open. Without a server nothing is sent to CraftingHosting. Deleting the
+every 45 seconds that the launcher is still open. Without a server nothing is sent to CraftingHosting. If you use "Take over mods", the TRS server passes the Modrinth
+IDs of that instance's mods to CraftingHosting. "Take over world" uploads the world as a ZIP **directly from your
+computer** to CraftingHosting (`*.craftinghosting.free`, address handed out by the TRS server), so CraftingHosting sees
+your IP address; the world does not pass through the TRS server. Console output and live values (CPU, RAM, players) of
+your server are fetched through the TRS server only while you have the page open and are not stored. Deleting the
 server in the launcher deletes it at CraftingHosting too; CraftingHosting's own privacy policy applies to the server.
 
 ### Achievements

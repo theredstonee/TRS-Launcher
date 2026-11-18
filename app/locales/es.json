@@ -389,7 +389,12 @@
       "server_suspended": "CraftingHosting ha suspendido tu servidor.",
       "server_type_unavailable": "Este tipo de servidor no está disponible ahora mismo.",
       "version_unavailable": "Esta versión no está disponible para ese tipo de servidor ahora mismo.",
-      "server_name_invalid": "Este nombre de servidor no sirve; elige otro."
+      "server_name_invalid": "Este nombre de servidor no sirve; elige otro.",
+      "invalid_path": "El servidor no acepta este archivo.",
+      "file_rejected": "CraftingHosting ha rechazado el archivo.",
+      "file_not_found": "No se encontró el mundo subido; súbelo de nuevo.",
+      "mods_unsupported": "Este tipo de servidor no puede cargar mods ni plugins.",
+      "server_running": "Detén primero el servidor: solo funciona con él apagado."
     },
     "auth": {
       "accountMismatch": "El inicio de sesión pertenece a otra cuenta: vuelve a iniciar sesión.",
@@ -849,7 +854,11 @@
       "invalidName": "Nombre: de 3 a 22 caracteres – letras, números, espacios y . _ ' -",
       "invalidAccess": "Acceso no válido.",
       "invalidCommand": "Comando: de 1 a 256 caracteres en una línea.",
-      "invalidType": "Elige un tipo de servidor y una versión."
+      "invalidType": "Elige un tipo de servidor y una versión.",
+      "invalidSettings": "Este ajuste no puede ser así.",
+      "invalidProjects": "Estos mods no se pueden transferir.",
+      "uploadFailed": "No se pudo subir el mundo; inténtalo de nuevo.",
+      "stopFirst": "Detén el servidor antes de subir un mundo."
     },
     "chatImage": {
       "unsupported": "Solo se pueden enviar imágenes PNG, JPEG y WebP.",
@@ -8426,17 +8435,108 @@
       "start": "Aceptar e iniciar"
     },
     "console": {
-      "title": "Consola",
       "placeholder": "Comando, p. ej. say Hola",
       "send": "Enviar",
-      "note": "Los comandos se ejecutan en el servidor; aquí no se muestra ninguna salida.",
-      "sent": "Comando enviado."
+      "sent": "Comando enviado.",
+      "empty": "Aún no hay salida.",
+      "offline": "Los comandos solo funcionan con el servidor en marcha."
     },
     "join": {
       "waiting": "Tu servidor se está iniciando; te unirás en cuanto esté listo.",
       "noAddress": "El servidor aún no tiene dirección.",
       "notStarted": "El servidor no se ha iniciado.",
       "timeout": "El servidor tarda demasiado en iniciarse; inténtalo de nuevo en un momento."
+    },
+    "rename": "Renombrar",
+    "hostAway": "Tu launcher no da señales: el servidor solo sigue en marcha mientras haya jugadores.",
+    "deleteAt": "Se eliminará el {date} si no lo inicias antes.",
+    "tabs": {
+      "overview": "Resumen",
+      "console": "Consola",
+      "settings": "Ajustes",
+      "content": "Mods y mundo"
+    },
+    "stats": {
+      "title": "En directo",
+      "players": "Jugadores",
+      "cpu": "CPU",
+      "memory": "RAM",
+      "disk": "Almacenamiento"
+    },
+    "settings": {
+      "saved": "Ajustes guardados: se aplican en el próximo inicio.",
+      "nextStart": "Los cambios se aplican en el próximo inicio del servidor.",
+      "motd": "Mensaje en la lista de servidores (MOTD)",
+      "gamemode": "Modo de juego",
+      "difficulty": "Dificultad",
+      "maxPlayers": "Máx. jugadores",
+      "spawnProtection": "Protección del spawn (bloques)",
+      "viewDistance": "Distancia de visión: {n}",
+      "simulationDistance": "Distancia de simulación: {n}",
+      "pvp": "PvP",
+      "hardcore": "Extremo",
+      "allowFlight": "Permitir vuelo",
+      "newWorld": "Mundo nuevo",
+      "seed": "Semilla",
+      "seedRandom": "vacío = aleatoria",
+      "levelType": "Tipo de mundo",
+      "newWorldHint": "La semilla y el tipo de mundo solo cuentan cuando el servidor crea un mundo nuevo.",
+      "whitelistOn": "La lista blanca está activada: sigue a «¿Quién puede unirse?».",
+      "whitelistOff": "La lista blanca está desactivada: sigue a «¿Quién puede unirse?».",
+      "discard": "Descartar",
+      "gamemodes": {
+        "survival": "Supervivencia",
+        "creative": "Creativo",
+        "adventure": "Aventura",
+        "spectator": "Espectador"
+      },
+      "difficulties": {
+        "peaceful": "Pacífico",
+        "easy": "Fácil",
+        "normal": "Normal",
+        "hard": "Difícil"
+      },
+      "levelTypes": {
+        "normal": "Normal",
+        "flat": "Extraplano",
+        "large_biomes": "Biomas grandes",
+        "amplified": "Amplificado"
+      }
+    },
+    "mods": {
+      "title": "Mods de una instancia",
+      "text": "Instala en el servidor los mods de una instancia desde Modrinth. Los mods solo de cliente se omiten.",
+      "vanilla": "Los servidores vanilla no pueden cargar mods ni plugins.",
+      "instance": "Instancia",
+      "button": "Pasar mods",
+      "working": "Transfiriendo …",
+      "installed": "Instalados en el servidor: {n}",
+      "noneTransferable": "Ninguno de los mods viene de Modrinth; no se envió nada.",
+      "skipped": "Omitidos:",
+      "notYet": "Aún no transferibles (no son de Modrinth):",
+      "reason": {
+        "client_only": "solo cliente",
+        "not_found": "no encontrado",
+        "unsupported": "no compatible con el servidor"
+      }
+    },
+    "world": {
+      "title": "Mundo de una instancia",
+      "text": "Sube un mundo de un jugador a tu servidor. Sustituye el mundo del servidor (con Nether y End).",
+      "instance": "Instancia",
+      "world": "Mundo",
+      "none": "Esta instancia no tiene mundos.",
+      "stopFirst": "Detén primero el servidor: solo se puede subir un mundo con él apagado.",
+      "button": "Pasar mundo",
+      "confirmTitle": "¿Sustituir el mundo del servidor?",
+      "confirmText": "«{world}» sustituirá el mundo, el Nether y el End de tu servidor. El mundo anterior se borrará para siempre.",
+      "confirm": "Sustituir mundo",
+      "done": "Mundo subido: estará ahí en el próximo inicio.",
+      "phase": {
+        "zip": "Empaquetando mundo … {percent} %",
+        "upload": "Subiendo … {percent} %",
+        "import": "Preparando el mundo en el servidor …"
+      }
     }
   }
 }

@@ -474,7 +474,11 @@ Nur wenn du im Reiter „Hosting“ einen kostenlosen Server anlegst, gibt der T
 Servernamen, Servertyp und die Version sowie – bei „Nur Freunde“ – die Minecraft-Namen deiner TRS-Freunde für die
 Whitelist des Servers (wird aktualisiert, solange der Server läuft). Der Launcher selbst spricht nie mit CraftingHosting;
 solange dein Server läuft, meldet er dem TRS-Server nur alle 45 Sekunden, dass er noch offen ist. Ohne Server wird
-nichts an CraftingHosting gesendet. Löschst du den Server im Launcher, wird er auch bei CraftingHosting gelöscht; für
+nichts an CraftingHosting gesendet. Nutzt du „Mods übernehmen“, gibt der TRS-Server die Modrinth-IDs der Mods dieser
+Instanz an CraftingHosting weiter. „Welt übernehmen“ lädt die Welt als ZIP **direkt von deinem Computer** zu
+CraftingHosting hoch (`*.craftinghosting.free`, Adresse vom TRS-Server), CraftingHosting sieht dabei deine IP-Adresse;
+die Welt läuft nicht über den TRS-Server. Konsolen-Ausgabe und Live-Werte (CPU, RAM, Spieler) deines Servers holt der
+Launcher nur über den TRS-Server, solange die Seite offen ist, und speichert sie nicht. Löschst du den Server im Launcher, wird er auch bei CraftingHosting gelöscht; für
 den Server gilt zusätzlich die Datenschutzerklärung von CraftingHosting.
 
 ### Erfolge
