@@ -5690,5 +5690,17 @@ A world is a top-level folder with `level.dat`; Paper keeps the other dimensions
   `{ paths }` (≤ 100) -> `{ urls: [{ path, url }], expiresAt }` (https, `*.craftinghosting.free`, 10 minutes). Limit 60
   link requests per 10 minutes.
 - Upload: 43.6 with `name`/`activate`.
-- Version/type change: not offered by the partner API yet (announced by CraftingHosting); until then create a new
-  server.
+- Version/type change: see 43.13.
+
+### 43.13 Feature switches (new partner functions without a launcher update)
+
+`GET …/info` also returns `features: { files, properties, addons, worlds, worldDownload, ownAddress, wakeOnJoin,
+versionChange, backups }` and `notice` (plain text or `null`, env `CRAFTINGHOSTING_NOTICE`). Clients show a section only
+when its switch is `true`. `versionChange` and `backups` are switched on with env `CRAFTINGHOSTING_FEATURES`
+(comma-separated) once CraftingHosting offers them; the routes below exist already and answer
+`501 feature_unavailable` until then:
+
+- `POST …/server/version` body `{ serverType, version, keepWorld? = true }` -> `{ server }`.
+- `GET …/server/backups` -> `{ backups: [{ id, name, size, createdAt }], max }`, `POST …/server/backups` (create),
+  `POST …/server/backups/{id}/restore`, `GET …/server/backups/{id}/download` -> `{ url, expiresAt }`,
+  `DELETE …/server/backups/{id}`.

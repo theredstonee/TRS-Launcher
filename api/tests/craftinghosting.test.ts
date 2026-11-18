@@ -5,7 +5,7 @@ import {
   craftingServer, craftingSetSettings, craftingSettings, craftingStart, craftingStats, craftingStop, craftingUpdate,
   craftingAddons, craftingDeleteFiles, craftingFiles, craftingProperties, craftingReadFile, craftingRemoveAddon,
   craftingSetProperties, craftingWriteFile, craftingWorlds, craftingActivateWorld, craftingDeleteWorld, craftingWorldFiles,
-  craftingDownloadUrls, worldNameQuery, modsBody,
+  craftingDownloadUrls, worldNameQuery, modsBody, craftingChangeVersion, craftingBackups, versionBody,
   adminCraftingDelete, adminCraftingServers, adminCraftingStop, craftingCheckSubdomain, relayResolve, relayWake, sweepCraftingDns, craftingRestartDone, craftingWorldImport, craftingWorldUpload, createServerBody, MOTD_FOOTER, settingsBody,
 } from '../server/lib/craftinghosting'
 import { RULES } from '../server/lib/ratelimit'
@@ -826,5 +826,19 @@ describe('craftinghosting routes: website session', () => {
     const parsed = modsBody.parse({ versions: [{ project: 'chunky', version: 'AbCdEf12' }] })
     await craftingInstallMods(env.ctx, u!, parsed.projects, parsed.versions)
     expect(partner.modCalls.at(-1)).toEqual({ project: 'chunky', version: 'AbCdEf12' })
+  })
+
+  it('feature switches come from the API; prepared routes answer feature_unavailable', async () => {
+    const { env } = setup()
+    const [u] = await players(env, 'Steve')
+    const info = await craftingInfo(env.ctx)
+    expect(info.features).toMatchObject({ files: true, worlds: true, versionChange: false, backups: false, ownAddress: false })
+    expect(info.notice).toBeNull()
+    await craftingCreate(env.ctx, u!, body())
+    expect(await codeAsync(() => craftingChangeVersion(env.ctx, u!, versionBody.parse({ serverType: 'paper', version: '1.21.4' })))).toBe('feature_unavailable')
+    expect(await codeAsync(() => craftingBackups(env.ctx, u!))).toBe('feature_unavailable')
+    const on = makeEnv({ env: { CRAFTINGHOSTING_API_KEY: KEY, CRAFTINGHOSTING_FEATURES: 'versionChange, backups, bad-name!', CRAFTINGHOSTING_NOTICE: 'Wartung heute 22 Uhr' } })
+    expect([...on.ctx.config.craftinghostingFeatures].sort()).toEqual(['backups', 'versionChange'])
+    expect(on.ctx.config.craftinghostingNotice).toBe('Wartung heute 22 Uhr')
   })
 })

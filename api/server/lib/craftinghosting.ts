@@ -396,7 +396,63 @@ export async function craftingInfo(ctx: AppContext) {
     },
     eulaUrl: me.eulaUrl && /^https:\/\/[^\s]+$/.test(me.eulaUrl) ? me.eulaUrl : 'https://www.minecraft.net/eula',
     full: l.maxServers > 0 && l.usedServers >= l.maxServers,
+    /** Was der Launcher zeigen darf – neue Partner-Funktionen schalten wir hier frei, ohne Launcher-Update. */
+    features: features(ctx),
+    /** Optionaler Hinweis oben im Hosting-Reiter (Wartung, Neuigkeiten), Klartext. */
+    notice: ctx.config.craftinghostingNotice,
   }
+}
+
+/** Funktions-Schalter (Env `CRAFTINGHOSTING_FEATURES`, kommagetrennt) über den festen Grundfunktionen. */
+function features(ctx: AppContext) {
+  const on = ctx.config.craftinghostingFeatures
+  return {
+    files: true,
+    properties: true,
+    addons: true,
+    worlds: true,
+    worldDownload: true,
+    ownAddress: !!ctx.config.dns,
+    wakeOnJoin: !!ctx.config.dns?.wake,
+    versionChange: on.has('versionChange'),
+    backups: on.has('backups'),
+  }
+}
+
+const notAvailable = () => new ApiError(501, 'feature_unavailable', 'Not available yet')
+
+export const versionBody = z.object({
+  serverType: z.string().regex(/^[a-z0-9_-]{1,32}$/),
+  version: z.string().regex(/^[A-Za-z0-9._-]{1,32}$/),
+  /** Welt behalten (Standard) oder frisch anfangen. */
+  keepWorld: z.boolean().default(true),
+}).strict()
+export const backupIdParam = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/)
+
+/**
+ * Version/Servertyp wechseln (§43.13). Die Partner-API bietet das noch nicht an; sobald CraftingHosting es liefert,
+ * wird hier der Aufruf ergänzt und `versionChange` in CRAFTINGHOSTING_FEATURES eingeschaltet.
+ */
+export async function craftingChangeVersion(ctx: AppContext, user: UserRow, _body: z.output<typeof versionBody>): Promise<ServerView> {
+  if (!features(ctx).versionChange) throw notAvailable()
+  return onServer(ctx, user, async () => {
+    throw notAvailable()
+  })
+}
+
+/** Backups (§43.13) – vorbereitet wie der Versionswechsel. */
+export async function craftingBackups(ctx: AppContext, user: UserRow): Promise<{ backups: { id: string, name: string, size: number, createdAt: string | null }[], max: number }> {
+  if (!features(ctx).backups) throw notAvailable()
+  return onServer(ctx, user, async () => {
+    throw notAvailable()
+  })
+}
+
+export async function craftingBackupAction(ctx: AppContext, user: UserRow, _action: 'create' | 'restore' | 'delete' | 'download', _id?: string): Promise<unknown> {
+  if (!features(ctx).backups) throw notAvailable()
+  return onServer(ctx, user, async () => {
+    throw notAvailable()
+  })
 }
 
 /** Eigener Server oder null. Fehlt die Zeile, beim Partner nachsehen (z. B. nach DB-Wiederherstellung). */

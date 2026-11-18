@@ -62,6 +62,10 @@ export interface Config {
   mail: MailConfig | null
   /** CraftingHosting-Partner-API (§43). `null` = aus → 503 `craftinghosting_unavailable`. */
   craftinghosting: { url: string, key: string } | null
+  /** Freigeschaltete CraftingHosting-Zusatzfunktionen (§43.13), z. B. `versionChange`, `backups`. */
+  craftinghostingFeatures: Set<string>
+  /** Hinweis im Hosting-Reiter (leer = keiner). */
+  craftinghostingNotice: string | null
   /** Eigene Adressen für CraftingHosting-Server (§43.9): Cloudflare-Token nur mit DNS-Rechten für `zone`. */
   dns: { token: string, zone: string, wake: { ip: string, port: number } | null } | null
   /** Release-Kanal von TRS Server Rules (server-plugin.json + Jars) für die CraftingHosting-Ersteinrichtung. */
@@ -379,6 +383,8 @@ const envSchema = z.object({
   HOSTING_DOMAIN: z.string().trim().max(100).default('trs-launcher.de').refine((s) => /^[a-z0-9.-]+\.[a-z]{2,}$/.test(s), 'must be a domain'),
   SERVER_RULES_URL: z.string().trim().max(200).default('https://github.com/theredstonee/TRS-Launcher/releases/download/server-plugin')
     .refine((s) => /^https:\/\/[A-Za-z0-9.\/_-]+$/.test(s), 'must be an https URL'),
+  CRAFTINGHOSTING_FEATURES: z.string().trim().max(500).default(''),
+  CRAFTINGHOSTING_NOTICE: z.string().trim().max(300).default(''),
   CRAFTINGHOSTING_API: z.string().trim().max(200).default('https://craftinghosting.free/api/v1/partner')
     .refine((s) => /^https:\/\/[A-Za-z0-9.-]+(:\d+)?(\/[A-Za-z0-9._~\/-]*)?$/.test(s) || /^http:\/\/127\.0\.0\.1(:\d+)?(\/|$)/.test(s), 'must be an https URL'),
   // Mail (§40): SMTP-Zugang nur hier (Server-.env), nie im Repo oder Log. SMTP_HOST leer = Mail aus.
@@ -567,6 +573,8 @@ export function loadConfig(env: Record<string, string | undefined>, limits: Part
       wake: e.WAKE_IP === '' ? null : { ip: e.WAKE_IP, port: e.WAKE_PORT },
     },
     serverRulesUrl: e.SERVER_RULES_URL.replace(/\/+$/, ''),
+    craftinghostingFeatures: new Set(e.CRAFTINGHOSTING_FEATURES.split(',').map((x) => x.trim()).filter((x) => /^[A-Za-z]{1,40}$/.test(x))),
+    craftinghostingNotice: e.CRAFTINGHOSTING_NOTICE === '' ? null : e.CRAFTINGHOSTING_NOTICE,
     craftinghosting: e.CRAFTINGHOSTING_API_KEY === '' ? null : { url: e.CRAFTINGHOSTING_API.replace(/\/+$/, ''), key: e.CRAFTINGHOSTING_API_KEY },
     limits: { ...DEFAULT_LIMITS, ...limits },
   }
