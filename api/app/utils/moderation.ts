@@ -249,6 +249,15 @@ export interface AdminHostingServer {
   session: { active: boolean, hostPresent: boolean, remainingSeconds: number }
   lastStartAt: string | null
   deleteAt: string | null
+  blocked: { reason: string, since: string | null } | null
+}
+
+export interface AdminHostingConfig {
+  notice: { markdown: string, level: 'info' | 'warning' | 'success', updatedAt: string | null } | null
+  maintenance: { active: boolean, message: string | null }
+  features: Record<string, boolean>
+  overrides: Record<string, boolean>
+  available: { ownAddress: boolean, wakeOnJoin: boolean }
 }
 
 export interface PlayerFile {

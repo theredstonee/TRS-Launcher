@@ -5694,8 +5694,9 @@ A world is a top-level folder with `level.dat`; Paper keeps the other dimensions
 
 ### 43.13 Feature switches (new partner functions without a launcher update)
 
-`GET …/info` also returns `features: { files, properties, addons, worlds, worldDownload, ownAddress, wakeOnJoin,
-versionChange, backups }` and `notice` (plain text or `null`, env `CRAFTINGHOSTING_NOTICE`). Clients show a section only
+`GET …/info` also returns `features: { create, console, files, properties, addons, worlds, worldDownload, ownAddress,
+wakeOnJoin, versionChange, backups }`, `notice: { markdown, level: "info" | "warning" | "success", updatedAt } | null`
+(team setting, falls back to env `CRAFTINGHOSTING_NOTICE`) and `maintenance: { active, message }`. Clients show a section only
 when its switch is `true`. `versionChange` and `backups` are switched on with env `CRAFTINGHOSTING_FEATURES`
 (comma-separated) once CraftingHosting offers them; the routes below exist already and answer
 `501 feature_unavailable` until then:
@@ -5704,3 +5705,21 @@ when its switch is `true`. `versionChange` and `backups` are switched on with en
 - `GET …/server/backups` -> `{ backups: [{ id, name, size, createdAt }], max }`, `POST …/server/backups` (create),
   `POST …/server/backups/{id}/restore`, `GET …/server/backups/{id}/download` -> `{ url, expiresAt }`,
   `DELETE …/server/backups/{id}`.
+
+### 43.14 Team control (admin page `/admin/hosting`)
+
+Stored in table `craftinghosting_admin` (migration 47, which also adds the `mods` column that 46 missed on databases
+where 46 had already run, and `blocked_*`). Everything is enforced by the API, clients only show it.
+
+- `GET /v1/admin/craftinghosting/config` (permission `worlds.view`) -> `{ notice, maintenance, features, overrides,
+  available: { ownAddress, wakeOnJoin } }`. `PUT` (`worlds.close`) body `{ notice?: { markdown ≤ 4000, level } | null,
+  maintenance?: { active, message ≤ 300 | null }, features?: { <key>: true | false | null } }` (`null` = back to the
+  default) -> same shape. Audit `craftinghosting.config`.
+- Team switches override the defaults (env/technical setup); `ownAddress`/`wakeOnJoin` can only be switched on when DNS
+  / TRS Wake are set up. A switched-off function answers `403 feature_disabled` (`details.feature`) on its routes;
+  `create` gates creating servers, `console` gates commands, `wakeOnJoin` gates TRS Wake.
+- Maintenance: creating, starting, waking and version change answer `503 hosting_maintenance` (`details.message`);
+  running servers keep running, reading and heartbeats still work.
+- `POST /v1/admin/craftinghosting/servers/{id}/block` body `{ reason }` (1–300, shown to the owner) stops the server and
+  blocks starting/waking (`403 server_blocked`, `details.reason`; `Server.blocked = { reason, since }`); `DELETE …/block`
+  unblocks. Audit `craftinghosting.block` / `craftinghosting.unblock`.

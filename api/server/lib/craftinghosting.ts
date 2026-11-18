@@ -186,6 +186,8 @@ export interface ServerView {
   domain: string | null
   /** Numerische Adresse `IPv4:Port` des Nodes (zum Abtippen, ohne DNS). */
   ip: string | null
+  /** Vom Team gesperrt: Starten/Aufwecken geht nicht. */
+  blocked: { reason: string, since: string | null } | null
 }
 
 export type SetupState = 'pending' | 'restarting' | 'done'
@@ -205,6 +207,9 @@ interface Row {
   dns_a_record: string | null
   transfers: number
   mods: string | null
+  blocked_reason: string | null
+  blocked_at: number | null
+  blocked_by: string | null
   created_at: number
 }
 
@@ -319,6 +324,10 @@ async function warmIp(p: PartnerServer): Promise<void> {
   }
 }
 
+function withBlock(v: ServerView, row: Row | undefined): ServerView {
+  return row?.blocked_reason ? { ...v, blocked: { reason: row.blocked_reason, since: row.blocked_at ? new Date(row.blocked_at).toISOString() : null } } : v
+}
+
 function view(s: PartnerServer, access: Access, setup: SetupState = 'pending', domain: string | null = null): ServerView {
   const playerId = s.player?.id && /^[A-Z0-9]{1,32}$/.test(s.player.id) ? s.player.id : null
   const suffix = playerId ? ` #${playerId}` : ''
@@ -353,6 +362,7 @@ function view(s: PartnerServer, access: Access, setup: SetupState = 'pending', d
     setup,
     domain,
     ip: s.host && s.port && nodeIps.get(s.host)?.ip ? `${nodeIps.get(s.host)!.ip}:${s.port}` : null,
+    blocked: null,
   }
 }
 
@@ -398,15 +408,20 @@ export async function craftingInfo(ctx: AppContext) {
     full: l.maxServers > 0 && l.usedServers >= l.maxServers,
     /** Was der Launcher zeigen darf – neue Partner-Funktionen schalten wir hier frei, ohne Launcher-Update. */
     features: features(ctx),
-    /** Optionaler Hinweis oben im Hosting-Reiter (Wartung, Neuigkeiten), Klartext. */
-    notice: ctx.config.craftinghostingNotice,
+    /** Hinweis oben im Hosting-Reiter: Markdown vom Team (Admin-Seite), sonst Klartext aus der Env. */
+    notice: noticeOf(ctx),
+    maintenance: maintenanceOf(ctx),
   }
 }
 
 /** Funktions-Schalter (Env `CRAFTINGHOSTING_FEATURES`, kommagetrennt) über den festen Grundfunktionen. */
-function features(ctx: AppContext) {
+export const FEATURE_KEYS = ['files', 'properties', 'addons', 'worlds', 'worldDownload', 'ownAddress', 'wakeOnJoin',
+  'versionChange', 'backups', 'create', 'console'] as const
+export type FeatureKey = (typeof FEATURE_KEYS)[number]
+
+function features(ctx: AppContext): Record<FeatureKey, boolean> {
   const on = ctx.config.craftinghostingFeatures
-  return {
+  const base: Record<FeatureKey, boolean> = {
     files: true,
     properties: true,
     addons: true,
@@ -416,7 +431,110 @@ function features(ctx: AppContext) {
     wakeOnJoin: !!ctx.config.dns?.wake,
     versionChange: on.has('versionChange'),
     backups: on.has('backups'),
+    create: true,
+    console: true,
   }
+  // Team-Schalter (Admin-Seite) gehen vor; Adresse/Aufwecken nur, wenn technisch eingerichtet.
+  const over = adminFeatures(ctx)
+  for (const k of FEATURE_KEYS) {
+    if (over[k] === undefined) continue
+    if ((k === 'ownAddress' && !ctx.config.dns) || (k === 'wakeOnJoin' && !ctx.config.dns?.wake)) continue
+    base[k] = over[k]!
+  }
+  return base
+}
+
+// ---- Team-Einstellungen (Ankündigung, Wartung, Schalter)
+
+function adminGet(ctx: AppContext, key: string): string | null {
+  return one<{ value: string }>(ctx.db, 'SELECT value FROM craftinghosting_admin WHERE key = ?', key)?.value ?? null
+}
+function adminSet(ctx: AppContext, key: string, value: string | null, by: string) {
+  if (value === null) run(ctx.db, 'DELETE FROM craftinghosting_admin WHERE key = ?', key)
+  else {
+    run(ctx.db, `INSERT INTO craftinghosting_admin (key, value, updated_at, updated_by) VALUES (?, ?, ?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
+    key, value, ctx.now(), by)
+  }
+}
+function adminFeatures(ctx: AppContext): Partial<Record<FeatureKey, boolean>> {
+  const raw = adminGet(ctx, 'features')
+  if (!raw) return {}
+  const parsed = z.record(z.string(), z.boolean()).catch({}).parse(JSON.parse(raw))
+  return Object.fromEntries(Object.entries(parsed).filter(([k]) => (FEATURE_KEYS as readonly string[]).includes(k)))
+}
+
+type Notice = { markdown: string, level: 'info' | 'warning' | 'success', updatedAt: string | null } | null
+function noticeOf(ctx: AppContext): Notice {
+  const raw = adminGet(ctx, 'notice')
+  if (raw) {
+    const n = z.object({ markdown: z.string(), level: z.enum(['info', 'warning', 'success']) }).catch({ markdown: '', level: 'info' }).parse(JSON.parse(raw))
+    const at = one<{ updated_at: number }>(ctx.db, "SELECT updated_at FROM craftinghosting_admin WHERE key = 'notice'")?.updated_at
+    if (n.markdown.trim()) return { ...n, updatedAt: at ? new Date(at).toISOString() : null }
+  }
+  return ctx.config.craftinghostingNotice ? { markdown: ctx.config.craftinghostingNotice, level: 'info', updatedAt: null } : null
+}
+function maintenanceOf(ctx: AppContext): { active: boolean, message: string | null } {
+  const raw = adminGet(ctx, 'maintenance')
+  if (!raw) return { active: false, message: null }
+  return z.object({ active: z.boolean(), message: z.string().nullable() }).catch({ active: false, message: null }).parse(JSON.parse(raw))
+}
+
+/** Wartung: Anlegen/Starten/Aufwecken/Versionswechsel gesperrt; laufende Server bleiben, Lesen geht weiter. */
+function assertNoMaintenance(ctx: AppContext) {
+  const m = maintenanceOf(ctx)
+  if (m.active) throw new ApiError(503, 'hosting_maintenance', m.message || 'Hosting is under maintenance', m.message ? { message: m.message } : undefined)
+}
+function assertFeature(ctx: AppContext, key: FeatureKey) {
+  if (!features(ctx)[key]) throw new ApiError(403, 'feature_disabled', 'This function is switched off', { feature: key })
+}
+function assertNotBlocked(row: Row) {
+  if (row.blocked_reason !== null) throw new ApiError(403, 'server_blocked', 'This server is blocked by the TRS team', { reason: row.blocked_reason })
+}
+
+export const adminConfigBody = z.object({
+  notice: z.object({ markdown: z.string().max(4000), level: z.enum(['info', 'warning', 'success']) }).nullable().optional(),
+  maintenance: z.object({ active: z.boolean(), message: z.string().trim().max(300).nullable() }).optional(),
+  /** `null` = Standard (Env/Technik). */
+  features: z.record(z.enum(FEATURE_KEYS), z.boolean().nullable()).optional(),
+}).strict()
+export const blockBody = z.object({ reason: z.string().trim().min(1).max(300) }).strict()
+
+export function adminCraftingConfig(ctx: AppContext) {
+  return {
+    notice: noticeOf(ctx),
+    maintenance: maintenanceOf(ctx),
+    features: features(ctx),
+    overrides: adminFeatures(ctx),
+    available: { ownAddress: !!ctx.config.dns, wakeOnJoin: !!ctx.config.dns?.wake },
+  }
+}
+
+export function adminSetCraftingConfig(ctx: AppContext, by: string, body: z.output<typeof adminConfigBody>) {
+  if (body.notice !== undefined) {
+    adminSet(ctx, 'notice', body.notice && body.notice.markdown.trim() ? JSON.stringify(body.notice) : null, by)
+  }
+  if (body.maintenance) adminSet(ctx, 'maintenance', JSON.stringify(body.maintenance), by)
+  if (body.features) {
+    const cur = adminFeatures(ctx)
+    for (const [k, v] of Object.entries(body.features)) {
+      if (v === null) delete cur[k as FeatureKey]
+      else cur[k as FeatureKey] = v
+    }
+    adminSet(ctx, 'features', Object.keys(cur).length ? JSON.stringify(cur) : null, by)
+  }
+  return adminCraftingConfig(ctx)
+}
+
+/** Server sperren: stoppt ihn sofort; Starten/Aufwecken bis zur Entsperrung verboten. */
+export async function adminCraftingBlock(ctx: AppContext, serverId: string, by: string, reason: string | null): Promise<string | null> {
+  config(ctx)
+  const row = one<Row>(ctx.db, 'SELECT * FROM craftinghosting_servers WHERE server_id = ?', serverId)
+  if (!row) throw notFound('no_server', 'Unknown server')
+  run(ctx.db, 'UPDATE craftinghosting_servers SET blocked_reason = ?, blocked_at = ?, blocked_by = ? WHERE uuid = ?',
+    reason, reason ? ctx.now() : null, reason ? by : null, row.uuid)
+  if (reason) await call(ctx, 'POST', path(row, '/stop'), {}).catch(() => undefined)
+  return row.uuid
 }
 
 const notAvailable = () => new ApiError(501, 'feature_unavailable', 'Not available yet')
@@ -434,6 +552,7 @@ export const backupIdParam = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/)
  * wird hier der Aufruf ergänzt und `versionChange` in CRAFTINGHOSTING_FEATURES eingeschaltet.
  */
 export async function craftingChangeVersion(ctx: AppContext, user: UserRow, _body: z.output<typeof versionBody>): Promise<ServerView> {
+  assertNoMaintenance(ctx)
   if (!features(ctx).versionChange) throw notAvailable()
   return onServer(ctx, user, async () => {
     throw notAvailable()
@@ -473,7 +592,7 @@ export async function craftingServer(ctx: AppContext, user: UserRow): Promise<Se
         }
       }
       await syncDns(ctx, rowOf(ctx, user.uuid) ?? row, p)
-      const s = view(p, row.access, setupOf(row), domainOf(ctx, rowOf(ctx, user.uuid)))
+      const s = withBlock(view(p, row.access, setupOf(row), domainOf(ctx, rowOf(ctx, user.uuid))), row)
       if (s.state === 'running' && (row.wl_key === null || !row.op_done || !row.setup)) {
         await syncAccess(ctx, user, s)
         return { ...s, setup: setupOf(rowOf(ctx, user.uuid)) }
@@ -502,6 +621,8 @@ export async function craftingServer(ctx: AppContext, user: UserRow): Promise<Se
 
 export async function craftingCreate(ctx: AppContext, user: UserRow, body: z.output<typeof createServerBody>): Promise<ServerView> {
   config(ctx)
+  assertNoMaintenance(ctx)
+  assertFeature(ctx, 'create')
   assertNotSanctioned(ctx, user.uuid, 'hosting_ban')
   if (await craftingServer(ctx, user)) throw conflict('server_exists', 'You already have a server')
   let sub: string | null = null
@@ -561,7 +682,7 @@ async function fresh(ctx: AppContext, row: Row, res?: unknown): Promise<ServerVi
   const now = rowOf(ctx, row.uuid) ?? row
   const p = direct.success ? direct.data.server : parseServer(await call(ctx, 'GET', path(row)))
   await warmIp(p)
-  return view(p, now.access, setupOf(now), domainOf(ctx, now))
+  return withBlock(view(p, now.access, setupOf(now), domainOf(ctx, now)), now)
 }
 
 export async function craftingUpdate(ctx: AppContext, user: UserRow, body: z.output<typeof patchServerBody>): Promise<ServerView> {
@@ -590,8 +711,10 @@ export async function craftingUpdate(ctx: AppContext, user: UserRow, body: z.out
 }
 
 export async function craftingStart(ctx: AppContext, user: UserRow, acceptEula: boolean): Promise<ServerView> {
+  assertNoMaintenance(ctx)
   assertNotSanctioned(ctx, user.uuid, 'hosting_ban')
   return onServer(ctx, user, async (row) => {
+    assertNotBlocked(row)
     await syncAccess(ctx, user, await fresh(ctx, row))
     if (row.setup && !row.transfers) await ensureTransfers(ctx, row)
     if (row.setup) await refreshFooter(ctx, row)
@@ -613,6 +736,7 @@ export async function craftingStop(ctx: AppContext, user: UserRow, whenEmpty: bo
 }
 
 export async function craftingCommand(ctx: AppContext, user: UserRow, command: string): Promise<void> {
+  assertFeature(ctx, 'console')
   const cmd = command.replace(/^\//, '').trim()
   if (!cmd) throw badRequest('invalid_request', 'Invalid request')
   await onServer(ctx, user, (row) => call(ctx, 'POST', path(row, '/command'), { command: cmd }))
@@ -747,6 +871,7 @@ async function modrinthProjects(ctx: AppContext, projects: string[]) {
 type SkipReason = 'client_only' | 'not_found' | 'unsupported'
 
 export async function craftingInstallMods(ctx: AppContext, user: UserRow, projects: string[], versions: { project: string, version: string }[] = []) {
+  assertFeature(ctx, 'addons')
   return onServer(ctx, user, async (row) => {
     const pinned = new Map(versions.map((v) => [v.project, v.version]))
     const wanted = [...new Set([...projects, ...pinned.keys()])].slice(0, MAX_MODS)
@@ -998,7 +1123,7 @@ export async function adminCraftingServers(ctx: AppContext) {
     usage: { used: me.limits.usedServers, max: me.limits.maxServers },
     servers: list.map((p) => {
       const row = rows.get(p.id)
-      const v = view(p, row?.access ?? 'friends', setupOf(row), domainOf(ctx, row))
+      const v = withBlock(view(p, row?.access ?? 'friends', setupOf(row), domainOf(ctx, row)), row)
       return {
         ...v,
         owner: row ? { uuid: row.uuid, name: row.name } : null,
@@ -1290,6 +1415,8 @@ export async function relayWake(ctx: AppContext, host: string, player: { name: s
   if (!sub || !row) throw notFound('unknown_host', 'Unknown host')
   const owner = getUser(ctx, row.uuid)
   if (!owner) throw notFound('unknown_host', 'Unknown host')
+  if (maintenanceOf(ctx).active || !features(ctx).wakeOnJoin) throw new ApiError(409, 'unavailable', 'unavailable')
+  if (row.blocked_reason !== null) throw new ApiError(409, 'unavailable', 'blocked')
   if (row.access === 'friends') {
     const names = new Set(whitelistEntries(ctx, owner).map((e) => e.name.toLowerCase()))
     if (!names.has(player.name.toLowerCase())) throw new ApiError(409, 'not_allowed', 'Not on the friends list')
@@ -1420,6 +1547,7 @@ async function listDir(ctx: AppContext, row: Row, dir: string) {
 }
 
 export async function craftingFiles(ctx: AppContext, user: UserRow, dir: string) {
+  assertFeature(ctx, 'files')
   return onServer(ctx, user, async (row) => {
     const entries = (await listDir(ctx, row, dir)).map((e) => {
       const isDir = e.type === 'directory'
@@ -1452,6 +1580,7 @@ async function readText(ctx: AppContext, row: Row, file: string): Promise<string
 }
 
 export async function craftingReadFile(ctx: AppContext, user: UserRow, file: string) {
+  assertFeature(ctx, 'files')
   return onServer(ctx, user, async (row) => {
     if (!isText(file.slice(file.lastIndexOf('/') + 1))) throw new ApiError(415, 'file_not_text', 'Not a text file')
     return { path: file, content: await readText(ctx, row, file) }
@@ -1509,6 +1638,7 @@ const stripFooter = (motd: string) => (motd.endsWith(` ${MOTD_FOOTER}`) ? motd.s
   .replace(/§./g, '').slice(0, MOTD_LINE_MAX)
 
 export async function craftingProperties(ctx: AppContext, user: UserRow) {
+  assertFeature(ctx, 'properties')
   return onServer(ctx, user, async (row) => {
     const props = parseProps(await readText(ctx, row, '/server.properties'))
     const out: Record<string, string> = {}
@@ -1524,6 +1654,7 @@ async function applyMotd(ctx: AppContext, row: Row, line: string) {
 }
 
 export async function craftingSetProperties(ctx: AppContext, user: UserRow, values: Record<string, string>) {
+  assertFeature(ctx, 'properties')
   const locked = Object.keys(values).filter((k) => LOCKED_KEYS.test(k))
   if (locked.length) throw new ApiError(400, 'property_locked', 'Property locked', { keys: locked })
   await onServer(ctx, user, async (row) => {
@@ -1539,6 +1670,7 @@ export async function craftingSetProperties(ctx: AppContext, user: UserRow, valu
 }
 
 export async function craftingWriteFile(ctx: AppContext, user: UserRow, file: string, content: string) {
+  assertFeature(ctx, 'files')
   return onServer(ctx, user, async (row) => {
     if (protectedPath(row, file)) throw forbidden('file_protected', 'Managed by TRS')
     if (!isText(file.slice(file.lastIndexOf('/') + 1))) throw new ApiError(415, 'file_not_text', 'Not a text file')
@@ -1561,6 +1693,7 @@ export async function craftingWriteFile(ctx: AppContext, user: UserRow, file: st
 }
 
 export async function craftingDeleteFiles(ctx: AppContext, user: UserRow, paths: string[]) {
+  assertFeature(ctx, 'files')
   await onServer(ctx, user, async (row) => {
     if (paths.some((p) => protectedPath(row, p) || protectedDir(p) || protectedInside(p))) throw forbidden('file_protected', 'Managed by TRS')
     await call(ctx, 'POST', path(row, '/files/delete'), { paths })
@@ -1585,6 +1718,7 @@ function addonDir(serverType: string | null): { kind: 'plugins' | 'mods', dir: s
 }
 
 export async function craftingAddons(ctx: AppContext, user: UserRow) {
+  assertFeature(ctx, 'addons')
   return onServer(ctx, user, async (row) => {
     const s = await fresh(ctx, row)
     const a = addonDir(s.serverType)
@@ -1603,6 +1737,7 @@ export async function craftingAddons(ctx: AppContext, user: UserRow) {
 }
 
 export async function craftingRemoveAddon(ctx: AppContext, user: UserRow, file: string) {
+  assertFeature(ctx, 'addons')
   await onServer(ctx, user, async (row) => {
     const s = await fresh(ctx, row)
     const a = addonDir(s.serverType)
@@ -1632,6 +1767,7 @@ function assertStopped(s: ServerView) {
 
 /** Welten = Ordner mit level.dat; Paper legt Nether/End als `<name>_nether`/`<name>_the_end` daneben. */
 export async function craftingWorlds(ctx: AppContext, user: UserRow) {
+  assertFeature(ctx, 'worlds')
   return onServer(ctx, user, async (row) => {
     const props = parseProps(await readText(ctx, row, '/server.properties'))
     const active = props.get('level-name') || 'world'
@@ -1674,6 +1810,7 @@ export async function craftingDeleteWorld(ctx: AppContext, user: UserRow, name: 
 
 /** Alle Dateien einer Welt (rekursiv, alle Dimensionen) für den Download im Launcher. */
 export async function craftingWorldFiles(ctx: AppContext, user: UserRow, name: string) {
+  assertFeature(ctx, 'worldDownload')
   return onServer(ctx, user, async (row) => {
     const files: { path: string, size: number }[] = []
     const walk = async (dir: string, depth: number) => {

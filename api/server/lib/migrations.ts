@@ -1081,6 +1081,25 @@ CREATE TABLE IF NOT EXISTS craftinghosting_servers (
       db.exec('CREATE UNIQUE INDEX IF NOT EXISTS craftinghosting_subdomain ON craftinghosting_servers(subdomain)')
     },
   },
+  {
+    // CraftingHosting: mods nachtragen (stand nur in 46, das live schon gelaufen war), Sperre je Server, Team-Einstellungen
+    // (Ankündigung, Wartung, Funktions-Schalter) als Schlüssel/Wert.
+    version: 47,
+    run: (db) => {
+      if (!hasColumn(db, 'craftinghosting_servers', 'mods')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN mods TEXT')
+      if (!hasColumn(db, 'craftinghosting_servers', 'blocked_reason')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN blocked_reason TEXT')
+      if (!hasColumn(db, 'craftinghosting_servers', 'blocked_at')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN blocked_at INTEGER')
+      if (!hasColumn(db, 'craftinghosting_servers', 'blocked_by')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN blocked_by TEXT')
+      db.exec(`
+CREATE TABLE IF NOT EXISTS craftinghosting_admin (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at INTEGER NOT NULL,
+  updated_by TEXT
+);
+`)
+    },
+  },
 ]
 
 /** Migration 40 (siehe oben): Minispiel-Ranglisten. Exportiert für den Idempotenz-Test. */

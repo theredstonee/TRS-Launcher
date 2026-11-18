@@ -6,6 +6,7 @@ import {
   craftingAddons, craftingDeleteFiles, craftingFiles, craftingProperties, craftingReadFile, craftingRemoveAddon,
   craftingSetProperties, craftingWriteFile, craftingWorlds, craftingActivateWorld, craftingDeleteWorld, craftingWorldFiles,
   craftingDownloadUrls, worldNameQuery, modsBody, craftingChangeVersion, craftingBackups, versionBody,
+  adminCraftingConfig, adminSetCraftingConfig, adminCraftingBlock, relayWake as wakeForTest,
   adminCraftingDelete, adminCraftingServers, adminCraftingStop, craftingCheckSubdomain, relayResolve, relayWake, sweepCraftingDns, craftingRestartDone, craftingWorldImport, craftingWorldUpload, createServerBody, MOTD_FOOTER, settingsBody,
 } from '../server/lib/craftinghosting'
 import { RULES } from '../server/lib/ratelimit'
@@ -840,5 +841,40 @@ describe('craftinghosting routes: website session', () => {
     const on = makeEnv({ env: { CRAFTINGHOSTING_API_KEY: KEY, CRAFTINGHOSTING_FEATURES: 'versionChange, backups, bad-name!', CRAFTINGHOSTING_NOTICE: 'Wartung heute 22 Uhr' } })
     expect([...on.ctx.config.craftinghostingFeatures].sort()).toEqual(['backups', 'versionChange'])
     expect(on.ctx.config.craftinghostingNotice).toBe('Wartung heute 22 Uhr')
+  })
+
+  it('team: markdown notice, maintenance, feature switches, blocking a server', async () => {
+    const { env, partner } = setup()
+    const [u, staff] = await players(env, 'Steve', 'Mod')
+    const s = await craftingCreate(env.ctx, u!, body())
+
+    adminSetCraftingConfig(env.ctx, staff!.uuid, { notice: { markdown: '**Neu:** Welten-Download', level: 'success' } })
+    expect((await craftingInfo(env.ctx)).notice).toMatchObject({ markdown: '**Neu:** Welten-Download', level: 'success' })
+    adminSetCraftingConfig(env.ctx, staff!.uuid, { notice: null })
+    expect((await craftingInfo(env.ctx)).notice).toBeNull()
+
+    adminSetCraftingConfig(env.ctx, staff!.uuid, { features: { files: false, versionChange: true, ownAddress: true } })
+    const info = await craftingInfo(env.ctx)
+    expect(info.features).toMatchObject({ files: false, versionChange: true, ownAddress: false })
+    expect(await codeAsync(() => craftingFiles(env.ctx, u!, '/'))).toBe('feature_disabled')
+    adminSetCraftingConfig(env.ctx, staff!.uuid, { features: { files: null, versionChange: null } })
+    expect(adminCraftingConfig(env.ctx).overrides).toEqual({ ownAddress: true })
+
+    adminSetCraftingConfig(env.ctx, staff!.uuid, { maintenance: { active: true, message: 'Bis 22 Uhr' } })
+    expect((await craftingInfo(env.ctx)).maintenance).toEqual({ active: true, message: 'Bis 22 Uhr' })
+    const e = await craftingStart(env.ctx, u!, true).catch((x) => x)
+    expect([e.status, e.code, e.details]).toEqual([503, 'hosting_maintenance', { message: 'Bis 22 Uhr' }])
+    adminSetCraftingConfig(env.ctx, staff!.uuid, { maintenance: { active: false, message: null } })
+
+    await craftingStart(env.ctx, u!, true)
+    expect(await adminCraftingBlock(env.ctx, s.id, staff!.uuid, 'Werbung für fremden Server')).toBe(u!.uuid)
+    expect(partner.servers.get(s.id)!.state).toBe('offline')
+    expect((await craftingServer(env.ctx, u!))?.blocked?.reason).toBe('Werbung für fremden Server')
+    const b = await craftingStart(env.ctx, u!, true).catch((x) => x)
+    expect([b.code, b.details]).toEqual(['server_blocked', { reason: 'Werbung für fremden Server' }])
+    await adminCraftingBlock(env.ctx, s.id, staff!.uuid, null)
+    expect((await craftingServer(env.ctx, u!))?.blocked).toBeNull()
+    await craftingStart(env.ctx, u!, true)
+    void wakeForTest
   })
 })
