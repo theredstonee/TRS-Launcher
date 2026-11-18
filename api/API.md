@@ -5566,7 +5566,8 @@ the start or heartbeat.
 
 ### 43.6 Mods and world
 
-- `POST /v1/craftinghosting/server/mods` body `{ projects: [id | slug] }` (1–100, at most 50 are processed) ->
+- `POST /v1/craftinghosting/server/mods` body `{ projects?: [id | slug], versions?: [{ project, version }] }` (projects
+  ≤ 100, pinned versions ≤ 20 with a Modrinth version id; at least one; at most 50 are processed) ->
   `{ installed: [], skipped: [{ project, reason }] }`. The API asks Modrinth first and skips client-only projects
   (`server_side = unsupported`, reason `client_only`) and unknown ones (`not_found`); the partner picks the newest
   matching version and installs required dependencies. `409 mods_unsupported` for vanilla servers.
@@ -5652,7 +5653,11 @@ HMAC-SHA256(`RELAY_SECRET`, `time + "\n" + METHOD + "\n" + path-with-query + "\n
 Paths are absolute inside the server (`/server.properties`), no `..`, at most 512 characters. Managed by TRS and
 protected (`403 file_protected`): the TRS Server Rules jar, its hosting file, `whitelist.json` while access is
 `friends`, and the folders that contain them (`/`, `/plugins`, `/mods`, `/config`, `/plugins/TRSServerRules`) as a
-whole. Before every start the API rewrites the hosting file / single MOTD line with the current footer.
+whole. Read-only server software (`403 file_protected` for write/delete/new folders): every `*.jar` in `/`,
+`eula.txt`, `start.sh`, `run.sh`, `run.bat`, `user_jvm_args.txt`, `.env`, `usercache.json`, `version_history.json` and
+everything under `/libraries`, `/versions`, `/cache`, `/.cache`, `/bundler`, `/.fabric`, `/.paper-remapped`,
+`/plugins/.paper-remapped`, `/logs`, `/crash-reports`. Config files (`*.yml`, `config/…`, plugin folders) stay
+editable. Before every start the API rewrites the hosting file / single MOTD line with the current footer.
 
 - `GET …/server/files?dir=/` -> `{ dir, entries: [{ name, path, type, size, modifiedAt, editable, protected }] }`.
 - `GET …/server/files/content?path=` -> `{ path, content }` for text files (known text extension or none, ≤ 1 MB;
@@ -5671,7 +5676,8 @@ whole. Before every start the API rewrites the hosting file / single MOTD line w
 ### 43.12 Worlds
 
 A world is a top-level folder with `level.dat`; Paper keeps the other dimensions in `<name>_nether` and
-`<name>_the_end`. World names `^[A-Za-z0-9_-]{1,32}$`. Changing worlds needs a stopped server (`409 server_running`).
+`<name>_the_end`. World names `^[A-Za-z0-9_-]{1,32}$`, not `plugins`, `mods`, `config`, `libraries`, `versions`, `cache`,
+`logs`, `crash-reports`, `bundler`, `defaultconfigs`, `kubejs`, `scripts`. Changing worlds needs a stopped server (`409 server_running`).
 
 - `GET …/server/worlds` -> `{ active, exists, worlds: [{ name, active, dimensions: [] }] }` (`active` = `level-name`).
 - `PATCH …/server/worlds` body `{ active }` -> same shape: sets `level-name` (a missing world is generated on start).

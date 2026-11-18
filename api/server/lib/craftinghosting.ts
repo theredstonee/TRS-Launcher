@@ -67,9 +67,15 @@ export const settingsBody = z.object({
 }).partial().strict().refine((b) => Object.keys(b).length > 0)
 export const logsQuery = z.object({ lines: z.coerce.number().int().min(1).max(1000).default(200) })
 export const modsBody = z.object({
-  projects: z.array(z.string().trim().refine((v) => MODRINTH_ID.test(v) || MOD_SLUG.test(v))).min(1).max(100),
-}).strict()
-const WORLD_NAME = /^[A-Za-z0-9_-]{1,32}$/
+  projects: z.array(z.string().trim().refine((v) => MODRINTH_ID.test(v) || MOD_SLUG.test(v))).max(100).default([]),
+  /** Bestimmte Modrinth-Versionen (Versions-ID), z. B. aus der Versionsliste im Launcher. */
+  versions: z.array(z.object({
+    project: z.string().trim().refine((v) => MODRINTH_ID.test(v) || MOD_SLUG.test(v)),
+    version: z.string().regex(MODRINTH_ID),
+  }).strict()).max(20).default([]),
+}).strict().refine((b) => b.projects.length + b.versions.length > 0)
+/** Weltordner – nie ein System- oder Inhaltsordner (sonst löscht „Welt zurücksetzen“ z. B. /libraries). */
+const WORLD_NAME = /^(?!(?:plugins|mods|config|libraries|versions|cache|logs|crash-reports|bundler|defaultconfigs|kubejs|scripts)$)[A-Za-z0-9_-]{1,32}$/i
 export const importBody = z.object({
   file: z.literal(WORLD_ZIP),
   /** Ordnername der Welt im ZIP (oberste Ebene); Standard `world`. */
@@ -684,9 +690,10 @@ async function modrinthProjects(ctx: AppContext, projects: string[]) {
 
 type SkipReason = 'client_only' | 'not_found' | 'unsupported'
 
-export async function craftingInstallMods(ctx: AppContext, user: UserRow, projects: string[]) {
+export async function craftingInstallMods(ctx: AppContext, user: UserRow, projects: string[], versions: { project: string, version: string }[] = []) {
   return onServer(ctx, user, async (row) => {
-    const wanted = [...new Set(projects)].slice(0, MAX_MODS)
+    const pinned = new Map(versions.map((v) => [v.project, v.version]))
+    const wanted = [...new Set([...projects, ...pinned.keys()])].slice(0, MAX_MODS)
     const skipped: { project: string, reason: SkipReason }[] = []
     const known = await modrinthProjects(ctx, wanted)
     let send = wanted
@@ -707,7 +714,7 @@ export async function craftingInstallMods(ctx: AppContext, user: UserRow, projec
     const installed: string[] = []
     for (const p of send) {
       try {
-        await call(ctx, 'POST', path(row, '/mods'), { project: p })
+        await call(ctx, 'POST', path(row, '/mods'), pinned.has(p) ? { project: p, version: pinned.get(p) } : { project: p })
         installed.push(p)
       } catch (e) {
         if (!(e instanceof ApiError) || e.code === 'mods_unsupported' || e.code === 'no_server' || e.status >= 500) throw e
@@ -1306,14 +1313,22 @@ const extOf = (name: string) => (name.includes('.') ? name.slice(name.lastIndexO
 const isText = (name: string) => !name.includes('.') || TEXT_EXT.has(extOf(name)) || name === '.env'
 
 /** Von TRS verwaltete Pfade (Plugin, Fußzeile, Whitelist bei „Nur Freunde“) und ihre Ordner. */
+/** Server-Software und Laufzeit: nur lesen (kaputt = Server startet nicht mehr). */
+const SYSTEM_DIRS = ['/libraries', '/versions', '/cache', '/.cache', '/bundler', '/.fabric', '/.paper-remapped',
+  '/plugins/.paper-remapped', '/logs', '/crash-reports', '/.console_history']
+const SYSTEM_FILES = /^\/([^/]+\.jar|eula\.txt|start\.sh|run\.sh|run\.bat|user_jvm_args\.txt|\.env|usercache\.json|version_history\.json)$/
+
 function protectedPath(row: Row, path0: string): boolean {
   const p = path0.toLowerCase()
+  if (SYSTEM_FILES.test(p)) return true
+  if (SYSTEM_DIRS.some((d) => p === d || p.startsWith(`${d}/`))) return true
   if (/^\/(plugins|mods)\/trs-server-rules-[^/]*\.jar$/.test(p)) return true
   if (p === '/plugins/trsserverrules/hosting.yml' || p === '/config/trs-server-rules-hosting.yml') return true
   if (row.access === 'friends' && p === '/whitelist.json') return true
   return false
 }
 const protectedDir = (p: string) => ['/', '/plugins', '/mods', '/config', '/plugins/trsserverrules'].includes(p.toLowerCase())
+  || SYSTEM_DIRS.some((d) => p.toLowerCase() === d || p.toLowerCase().startsWith(`${d}/`))
 
 const entrySchema = z.object({
   name: z.string().max(255),
@@ -1470,7 +1485,10 @@ export async function craftingDeleteFiles(ctx: AppContext, user: UserRow, paths:
 const protectedInside = (p: string) => ['/plugins/trsserverrules', '/config'].some((d) => d.startsWith(`${p.toLowerCase()}/`) || d === p.toLowerCase())
 
 export async function craftingCreateFolder(ctx: AppContext, user: UserRow, dir: string) {
-  await onServer(ctx, user, (row) => call(ctx, 'POST', path(row, '/files/folder'), { path: dir }))
+  await onServer(ctx, user, async (row) => {
+    if (protectedPath(row, dir) || protectedPath(row, `${dir}/x`)) throw forbidden('file_protected', 'Managed by the server')
+    await call(ctx, 'POST', path(row, '/files/folder'), { path: dir })
+  })
 }
 
 // ---- Plugins/Mods

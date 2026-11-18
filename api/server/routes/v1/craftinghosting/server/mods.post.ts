@@ -8,5 +8,5 @@ export default defineEventHandler(async (event) => {
   const auth = requireWebOrUser(event, 'craftinghosting')
   const body = await readJson(event, modsBody)
   limit(`craftinghostingFiles:${auth.uuid}`, RULES.craftinghostingFilesUser)
-  return craftingInstallMods(useCtx(), auth.user, body.projects)
+  return craftingInstallMods(useCtx(), auth.user, body.projects, body.versions)
 })

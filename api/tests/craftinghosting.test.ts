@@ -5,7 +5,7 @@ import {
   craftingServer, craftingSetSettings, craftingSettings, craftingStart, craftingStats, craftingStop, craftingUpdate,
   craftingAddons, craftingDeleteFiles, craftingFiles, craftingProperties, craftingReadFile, craftingRemoveAddon,
   craftingSetProperties, craftingWriteFile, craftingWorlds, craftingActivateWorld, craftingDeleteWorld, craftingWorldFiles,
-  craftingDownloadUrls,
+  craftingDownloadUrls, worldNameQuery, modsBody,
   adminCraftingDelete, adminCraftingServers, adminCraftingStop, craftingCheckSubdomain, relayResolve, relayWake, sweepCraftingDns, craftingRestartDone, craftingWorldImport, craftingWorldUpload, createServerBody, MOTD_FOOTER, settingsBody,
 } from '../server/lib/craftinghosting'
 import { RULES } from '../server/lib/ratelimit'
@@ -44,6 +44,7 @@ class FakePartner {
   files = new Map<string, string>()
   settings: Record<string, unknown> = { motd: 'A Minecraft Server', maxPlayers: 20, whitelist: false, pvp: null, levelType: 'minecraft\\:normal' }
   mods: string[] = []
+  modCalls: unknown[] = []
   uploadHost = 'upload.craftinghosting.free'
   zipFolder = 'world'
   used = 0
@@ -118,6 +119,7 @@ class FakePartner {
         this.files.set(`/${this.zipFolder}/level.dat`, 'x')
         return this.json(200, { ok: true })
       case 'POST mods':
+        this.modCalls.push(body)
         if (s.serverType === 'vanilla') return this.err(409, 'mods_unsupported')
         if (body.project === 'missing') return this.err(404, 'mod_not_found')
         this.mods.push(body.project)
@@ -788,5 +790,37 @@ describe('craftinghosting routes: website session', () => {
 
     await craftingStart(env.ctx, u!, false)
     expect(await codeAsync(() => craftingDeleteWorld(env.ctx, u!, 'lobby'))).toBe('server_running')
+  })
+
+  it('server software is read-only; worlds cannot be named like system folders; pinned versions', async () => {
+    const { env, partner } = setup()
+    const [u] = await players(env, 'Steve')
+    await craftingCreate(env.ctx, u!, body({ serverType: 'paper' }))
+    await craftingStart(env.ctx, u!, true)
+    await craftingHeartbeat(env.ctx, u!)
+    await craftingRestartDone(u!.uuid)
+    for (const f of ['/server.jar', '/eula.txt', '/libraries/a/b.jar', '/versions/1.21.11/paper.jar', '/logs/latest.log',
+      '/bukkit.yml', '/permissions.yml', '/config/paper-global.yml']) partner.files.set(f, 'x')
+    for (const f of ['/eula.txt', '/libraries/a/b.txt', '/logs/latest.log', '/versions/x.json']) {
+      expect(await codeAsync(() => craftingWriteFile(env.ctx, u!, f, 'y'))).toBe('file_protected')
+    }
+    for (const f of ['/server.jar', '/eula.txt', '/libraries/a/b.jar', '/logs/latest.log']) {
+      expect(await codeAsync(() => craftingDeleteFiles(env.ctx, u!, [f]))).toBe('file_protected')
+    }
+    expect(await codeAsync(() => craftingDeleteFiles(env.ctx, u!, ['/libraries']))).toBe('file_protected')
+    await craftingWriteFile(env.ctx, u!, '/bukkit.yml', 'ok')
+    await craftingWriteFile(env.ctx, u!, '/permissions.yml', 'ok')
+    await craftingWriteFile(env.ctx, u!, '/config/paper-global.yml', 'ok')
+    const root = await craftingFiles(env.ctx, u!, '/')
+    expect(root.entries.find((e) => e.name === 'eula.txt')).toMatchObject({ protected: true, editable: false })
+    expect(root.entries.find((e) => e.name === 'bukkit.yml')).toMatchObject({ protected: false, editable: true })
+    await craftingStop(env.ctx, u!, false)
+    expect(() => worldNameQuery.parse({ name: 'libraries' })).toThrow()
+    expect(() => worldNameQuery.parse({ name: 'Plugins' })).toThrow()
+    expect(worldNameQuery.parse({ name: 'lobby' }).name).toBe('lobby')
+
+    const parsed = modsBody.parse({ versions: [{ project: 'chunky', version: 'AbCdEf12' }] })
+    await craftingInstallMods(env.ctx, u!, parsed.projects, parsed.versions)
+    expect(partner.modCalls.at(-1)).toEqual({ project: 'chunky', version: 'AbCdEf12' })
   })
 })
