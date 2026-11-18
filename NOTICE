@@ -87,6 +87,8 @@ Third-party parts
 - e4mc by Skye (MIT, https://github.com/vgskye/e4mc-minecraft-architectury): the "public link" for local
   servers in the launcher speaks e4mc's quiclime protocol (own Rust implementation over quinn) and uses e4mc's
   public broker and relays (*.e4mc.link). The TRS Client's e4mc bridge ships the e4mc MIT licence text.
+- CraftingHosting logo (public/partners/craftinghosting.png): trademark/artwork of CraftingHosting, used with
+  permission; not covered by the GPL.
 - Further libraries and bundled mods are listed with their licenses in README.md and
   client-mod/README.md.
 

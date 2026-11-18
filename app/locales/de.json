@@ -374,7 +374,22 @@
       "request_closed": "Das Team arbeitet schon an diesem Antrag – er lässt sich nicht mehr ändern.",
       "code_not_found": "Diesen Code gibt es nicht (mehr).",
       "creator_not_found": "Diesen Creator gibt es nicht (mehr).",
-      "creator_team_forbidden": "Das darf nur der Creator selbst – auch im Team-Modus nicht."
+      "creator_team_forbidden": "Das darf nur der Creator selbst – auch im Team-Modus nicht.",
+      "craftinghosting_unavailable": "Kostenlose Server sind auf dem TRS-Server gerade nicht verfügbar.",
+      "craftinghosting_maintenance": "CraftingHosting wird gerade gewartet – versuch es später noch einmal.",
+      "craftinghosting_upstream": "CraftingHosting antwortet gerade nicht – versuch es gleich noch einmal.",
+      "craftinghosting_full": "Gerade sind alle kostenlosen Server-Plätze belegt.",
+      "no_server": "Du hast (noch) keinen Server.",
+      "server_exists": "Du hast schon einen Server.",
+      "server_installing": "Dein Server wird noch eingerichtet – einen Moment.",
+      "eula_required": "Vor dem ersten Start musst du die Minecraft-EULA akzeptieren.",
+      "cooldown": "Dein Server macht gerade eine Pflichtpause – starte ihn später wieder.",
+      "not_running": "Dein Server läuft gerade nicht.",
+      "server_failed": "Beim Einrichten deines Servers ist etwas schiefgegangen.",
+      "server_suspended": "Dein Server wurde von CraftingHosting gesperrt.",
+      "server_type_unavailable": "Diesen Servertyp gibt es gerade nicht.",
+      "version_unavailable": "Diese Version gibt es für den Servertyp gerade nicht.",
+      "server_name_invalid": "Dieser Servername geht nicht – bitte einen anderen wählen."
     },
     "auth": {
       "accountMismatch": "Die Anmeldung gehört zu einem anderen Account – bitte erneut anmelden.",
@@ -829,6 +844,12 @@
       "storeMismatch": "„{name}“ passt nicht zur Datei des Hosts (Hash oder Größe weichen ab).",
       "instanceMismatch": "Diese Instanz passt nicht zur Welt (Version oder Loader).",
       "noBaseInstance": "Wähle eine Instanz, die kopiert und ergänzt werden soll."
+    },
+    "craftinghosting": {
+      "invalidName": "Name: 3 bis 22 Zeichen – Buchstaben, Ziffern, Leerzeichen und . _ ' -",
+      "invalidAccess": "Ungültiger Zugang.",
+      "invalidCommand": "Befehl: 1 bis 256 Zeichen in einer Zeile.",
+      "invalidType": "Bitte Servertyp und Version wählen."
     },
     "chatImage": {
       "unsupported": "Nur PNG-, JPEG- und WebP-Bilder können gesendet werden.",
@@ -2543,7 +2564,10 @@
       "minigamesTabTitle": "Reiter Minispiele",
       "minigamesTabDescription": "Zeigt die Spiele in der Seitenleiste.",
       "minigamesLoadingTitle": "Spiel anbieten, während Minecraft startet",
-      "minigamesLoadingDescription": "Ein kleiner Hinweis lässt dich in der Wartezeit eine Runde spielen. Er öffnet sich nie von selbst."
+      "minigamesLoadingDescription": "Ein kleiner Hinweis lässt dich in der Wartezeit eine Runde spielen. Er öffnet sich nie von selbst.",
+      "hosting": "Hosting",
+      "hostingTabTitle": "Reiter Hosting",
+      "hostingTabDescription": "Zeigt deinen kostenlosen CraftingHosting-Server in der Seitenleiste."
     },
     "behavior": {
       "title": "Verhalten",
@@ -3180,7 +3204,8 @@
     "controls": "Steuerung",
     "pc": "PC",
     "creator": "Creator",
-    "minigames": "Minispiele"
+    "minigames": "Minispiele",
+    "hosting": "Hosting"
   },
   "accountMenu": {
     "menuLabel": "Konten",
@@ -3571,7 +3596,8 @@
       "achievements": "Um deine Erfolge zu zeigen, meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
       "cosmetics": "Für TRS-Kopf-Kosmetik meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
       "remote": "Um deinen PC vom Handy aus zu steuern, meldet sich der Launcher beim TRS-Server an. Das passiert erst, wenn du zustimmst.",
-      "creator": "Das Creator-Programm (Codes, Fan-Symbole, Fan-Umhänge) braucht die TRS-Dienste."
+      "creator": "Das Creator-Programm (Codes, Fan-Symbole, Fan-Umhänge) braucht die TRS-Dienste.",
+      "hosting": "Dein kostenloser Server bei CraftingHosting läuft über dein TRS-Konto. Dafür braucht es die TRS-Dienste."
     },
     "account": {
       "title": "Kein Account angemeldet",
@@ -8317,6 +8343,100 @@
     "loading": {
       "title": "Minecraft startet",
       "text": "Lust auf eine kurze Runde, solange du wartest?"
+    }
+  },
+  "craftinghosting": {
+    "partner": "★ Hosting-Partner",
+    "title": "Hosting",
+    "subtitle": "Dein kostenloser Minecraft-Server bei CraftingHosting – starten, verwalten und mit einem Klick beitreten.",
+    "offline": "Der TRS-Server ist gerade nicht erreichbar.",
+    "unavailableTitle": "Hosting ist gerade nicht verfügbar",
+    "mobileNote": "Anlegen und Starten geht nur im Launcher am PC – der hält den Server am Laufen.",
+    "latest": "Neueste",
+    "noAddress": "Die Adresse erscheint, sobald der Server eingerichtet ist.",
+    "remaining": "Noch {time} in dieser Sitzung",
+    "cooldown": "Pflichtpause – starten geht wieder in {time}.",
+    "cooldownUntil": "Pflichtpause – du kannst den Server um {time} wieder starten.",
+    "deleted": "Server gelöscht.",
+    "create": {
+      "title": "Dein kostenloser Server",
+      "name": "Name",
+      "namePlaceholder": "z. B. Meine Welt",
+      "nameHint": "3–22 Zeichen: Buchstaben, Ziffern, Leerzeichen und . _ ' -",
+      "type": "Servertyp",
+      "version": "Version",
+      "submit": "Server anlegen",
+      "creating": "Wird angelegt …",
+      "full": "Gerade sind alle kostenlosen Plätze belegt – versuch es später noch einmal."
+    },
+    "access": {
+      "label": "Wer darf beitreten?",
+      "friends": "Nur Freunde",
+      "friendsHint": "Whitelist mit dir und deinen TRS-Freunden – wird automatisch aktuell gehalten.",
+      "open": "Offen",
+      "openHint": "Jeder mit der Adresse kann beitreten."
+    },
+    "plan": {
+      "title": "Das bekommst du",
+      "memory": "{gb} GB RAM",
+      "cpu": "{percent} % CPU",
+      "disk": "{gb} GB Speicher"
+    },
+    "rules": {
+      "title": "So funktioniert’s",
+      "runs": "Dein Server läuft, solange der Launcher offen ist.",
+      "session": "Höchstens {hours} h am Stück, danach {pause} h Pause.",
+      "idle": "Server werden nach {days} Tagen ohne Start gelöscht.",
+      "eula": "Vor dem ersten Start akzeptierst du die Minecraft-EULA."
+    },
+    "state": {
+      "installing": "Wird eingerichtet",
+      "offline": "Aus",
+      "starting": "Startet …",
+      "running": "Online",
+      "stopping": "Stoppt …",
+      "failed": "Fehlgeschlagen",
+      "suspended": "Gesperrt"
+    },
+    "stopReason": {
+      "host_stopped": "Zuletzt gestoppt, weil der Launcher geschlossen wurde.",
+      "host_timeout": "Zuletzt gestoppt, weil sich der Launcher nicht mehr gemeldet hat.",
+      "session_limit": "Zuletzt nach der maximalen Laufzeit gestoppt.",
+      "admin": "Zuletzt vom Team gestoppt."
+    },
+    "notes": {
+      "installing": "Dein Server wird eingerichtet – das dauert ein bis zwei Minuten.",
+      "failed": "Mit deinem Server ist etwas schiefgegangen. Starte ihn neu oder lösch ihn und leg einen neuen an.",
+      "suspended": "CraftingHosting hat diesen Server gesperrt."
+    },
+    "actions": {
+      "join": "Beitreten",
+      "joining": "Trete bei …"
+    },
+    "delete": {
+      "title": "Server löschen?",
+      "text": "Dein Server „{name}“ und seine Welt werden endgültig gelöscht.",
+      "confirm": "Endgültig löschen"
+    },
+    "eula": {
+      "title": "Minecraft-EULA",
+      "text": "Um einen Minecraft-Server zu betreiben, musst du den Endbenutzer-Lizenzvertrag von Minecraft akzeptieren.",
+      "link": "EULA lesen",
+      "accept": "Ich akzeptiere die Minecraft-EULA.",
+      "start": "Akzeptieren & starten"
+    },
+    "console": {
+      "title": "Konsole",
+      "placeholder": "Befehl, z. B. say Hallo",
+      "send": "Senden",
+      "note": "Befehle laufen auf dem Server – eine Ausgabe gibt es hier nicht.",
+      "sent": "Befehl gesendet."
+    },
+    "join": {
+      "waiting": "Dein Server startet – du trittst bei, sobald er bereit ist.",
+      "noAddress": "Der Server hat noch keine Adresse.",
+      "notStarted": "Der Server ist nicht gestartet.",
+      "timeout": "Der Server braucht zu lange zum Starten – versuch es gleich noch einmal."
     }
   }
 }

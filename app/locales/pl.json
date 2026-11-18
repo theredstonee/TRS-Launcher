@@ -327,7 +327,22 @@
       "request_closed": "Zespół już pracuje nad tym wnioskiem – nie można go już zmienić.",
       "code_not_found": "Ten kod nie istnieje (już).",
       "creator_not_found": "Ten twórca nie istnieje (już).",
-      "creator_team_forbidden": "Może to zrobić tylko twórca – nawet w trybie zespołu nie."
+      "creator_team_forbidden": "Może to zrobić tylko twórca – nawet w trybie zespołu nie.",
+      "craftinghosting_unavailable": "Darmowe serwery są teraz niedostępne na serwerze TRS.",
+      "craftinghosting_maintenance": "CraftingHosting jest w trakcie konserwacji – spróbuj później.",
+      "craftinghosting_upstream": "CraftingHosting teraz nie odpowiada – spróbuj za chwilę.",
+      "craftinghosting_full": "Wszystkie miejsca na darmowe serwery są teraz zajęte.",
+      "no_server": "Nie masz (jeszcze) serwera.",
+      "server_exists": "Masz już serwer.",
+      "server_installing": "Twój serwer jest jeszcze konfigurowany – chwila.",
+      "eula_required": "Przed pierwszym uruchomieniem musisz zaakceptować EULA Minecrafta.",
+      "cooldown": "Twój serwer ma obowiązkową przerwę – uruchom go później.",
+      "not_running": "Twój serwer teraz nie działa.",
+      "server_failed": "Coś poszło nie tak podczas konfiguracji serwera.",
+      "server_suspended": "Twój serwer został zawieszony przez CraftingHosting.",
+      "server_type_unavailable": "Ten typ serwera jest teraz niedostępny.",
+      "version_unavailable": "Ta wersja jest teraz niedostępna dla tego typu serwera.",
+      "server_name_invalid": "Ta nazwa serwera nie przejdzie – wybierz inną."
     },
     "auth": {
       "accountMismatch": "To logowanie należy do innego konta – zaloguj się ponownie.",
@@ -779,6 +794,12 @@
       "storeMismatch": "„{name}” nie pasuje do pliku hosta (inny hash lub rozmiar).",
       "instanceMismatch": "Ta instancja nie pasuje do świata (wersja lub loader).",
       "noBaseInstance": "Wybierz instancję do skopiowania i uzupełnienia."
+    },
+    "craftinghosting": {
+      "invalidName": "Nazwa: od 3 do 22 znaków – litery, cyfry, spacje oraz . _ ' -",
+      "invalidAccess": "Nieprawidłowy dostęp.",
+      "invalidCommand": "Polecenie: od 1 do 256 znaków w jednej linii.",
+      "invalidType": "Wybierz typ serwera i wersję."
     },
     "chatImage": {
       "unsupported": "Można wysyłać tylko zdjęcia PNG, JPEG i WebP.",
@@ -2447,7 +2468,10 @@
       "sidebarRecentTitle": "Szybkie instancje",
       "sidebarRecentDescription": "Ostatnio grane instancje z ikonami pod nawigacją.",
       "sidebarAccountTitle": "Kafelek konta",
-      "sidebarAccountDescription": "Aktywne konto z głową skina na dole paska bocznego."
+      "sidebarAccountDescription": "Aktywne konto z głową skina na dole paska bocznego.",
+      "hosting": "Hosting",
+      "hostingTabTitle": "Karta Hosting",
+      "hostingTabDescription": "Pokazuje twój darmowy serwer CraftingHosting na pasku bocznym."
     },
     "behavior": {
       "title": "Zachowanie",
@@ -3079,7 +3103,8 @@
     "achievements": "Osiągnięcia",
     "localServers": "Moje serwery",
     "controls": "Sterowanie",
-    "pc": "PC"
+    "pc": "PC",
+    "hosting": "Hosting"
   },
   "accountMenu": {
     "menuLabel": "Konta",
@@ -3463,7 +3488,8 @@
       "shares": "Aby udostępniać zrzuty ekranu jako link, launcher loguje się na serwerze TRS. Dzieje się to dopiero po Twojej zgodzie.",
       "achievements": "Aby pokazać twoje osiągnięcia, launcher loguje się na serwer TRS. Dzieje się to dopiero po twojej zgodzie.",
       "cosmetics": "Aby wyświetlić kosmetyki na głowę TRS, launcher loguje się do serwera TRS. Dzieje się to dopiero po twojej zgodzie.",
-      "remote": "Aby sterować komputerem z tego telefonu, launcher loguje się na serwerze TRS. Dzieje się to dopiero po Twojej zgodzie."
+      "remote": "Aby sterować komputerem z tego telefonu, launcher loguje się na serwerze TRS. Dzieje się to dopiero po Twojej zgodzie.",
+      "hosting": "Twój darmowy serwer w CraftingHosting działa przez konto TRS. Do tego potrzebne są usługi TRS."
     },
     "account": {
       "title": "Brak zalogowanego konta",
@@ -7511,6 +7537,100 @@
         "pet_request_image_delete": "Usunięto obraz referencyjny",
         "other": "Zmieniono panel"
       }
+    }
+  },
+  "craftinghosting": {
+    "partner": "★ Partner hostingowy",
+    "title": "Hosting",
+    "subtitle": "Twój darmowy serwer Minecraft w CraftingHosting – uruchamiaj, zarządzaj i dołączaj jednym kliknięciem.",
+    "offline": "Serwer TRS jest teraz nieosiągalny.",
+    "unavailableTitle": "Hosting jest teraz niedostępny",
+    "mobileNote": "Tworzenie i uruchamianie działa tylko w launcherze na PC – to on podtrzymuje działanie serwera.",
+    "latest": "Najnowsza",
+    "noAddress": "Adres pojawi się, gdy serwer zostanie skonfigurowany.",
+    "remaining": "Pozostało {time} w tej sesji",
+    "cooldown": "Obowiązkowa przerwa – ponowne uruchomienie za {time}.",
+    "cooldownUntil": "Obowiązkowa przerwa – serwer uruchomisz ponownie o {time}.",
+    "deleted": "Serwer usunięty.",
+    "create": {
+      "title": "Twój darmowy serwer",
+      "name": "Nazwa",
+      "namePlaceholder": "np. Mój świat",
+      "nameHint": "3–22 znaki: litery, cyfry, spacje oraz . _ ' -",
+      "type": "Typ serwera",
+      "version": "Wersja",
+      "submit": "Utwórz serwer",
+      "creating": "Tworzenie …",
+      "full": "Wszystkie darmowe miejsca są teraz zajęte – spróbuj później."
+    },
+    "access": {
+      "label": "Kto może dołączyć?",
+      "friends": "Tylko znajomi",
+      "friendsHint": "Biała lista z tobą i twoimi znajomymi z TRS – aktualizowana automatycznie.",
+      "open": "Otwarty",
+      "openHint": "Każdy, kto zna adres, może dołączyć."
+    },
+    "plan": {
+      "title": "Co dostajesz",
+      "memory": "{gb} GB RAM",
+      "cpu": "{percent} % CPU",
+      "disk": "{gb} GB miejsca"
+    },
+    "rules": {
+      "title": "Jak to działa",
+      "runs": "Twój serwer działa, dopóki launcher jest otwarty.",
+      "session": "Najwyżej {hours} h bez przerwy, potem {pause} h przerwy.",
+      "idle": "Serwery są usuwane po {days} dniach bez uruchomienia.",
+      "eula": "Przed pierwszym uruchomieniem akceptujesz EULA Minecrafta."
+    },
+    "state": {
+      "installing": "Konfiguracja",
+      "offline": "Wyłączony",
+      "starting": "Uruchamianie …",
+      "running": "Online",
+      "stopping": "Zatrzymywanie …",
+      "failed": "Błąd",
+      "suspended": "Zawieszony"
+    },
+    "stopReason": {
+      "host_stopped": "Ostatnio zatrzymany, bo launcher został zamknięty.",
+      "host_timeout": "Ostatnio zatrzymany, bo launcher przestał odpowiadać.",
+      "session_limit": "Ostatnio zatrzymany po maksymalnym czasie działania.",
+      "admin": "Ostatnio zatrzymany przez zespół."
+    },
+    "notes": {
+      "installing": "Twój serwer jest konfigurowany – to potrwa minutę lub dwie.",
+      "failed": "Coś poszło nie tak z twoim serwerem. Uruchom go ponownie albo usuń i utwórz nowy.",
+      "suspended": "CraftingHosting zawiesił ten serwer."
+    },
+    "actions": {
+      "join": "Dołącz",
+      "joining": "Dołączanie …"
+    },
+    "delete": {
+      "title": "Usunąć serwer?",
+      "text": "Twój serwer „{name}” i jego świat zostaną trwale usunięte.",
+      "confirm": "Usuń na zawsze"
+    },
+    "eula": {
+      "title": "EULA Minecrafta",
+      "text": "Aby uruchomić serwer Minecraft, musisz zaakceptować umowę licencyjną użytkownika końcowego Minecrafta.",
+      "link": "Przeczytaj EULA",
+      "accept": "Akceptuję EULA Minecrafta.",
+      "start": "Akceptuj i uruchom"
+    },
+    "console": {
+      "title": "Konsola",
+      "placeholder": "Polecenie, np. say Cześć",
+      "send": "Wyślij",
+      "note": "Polecenia działają na serwerze – tutaj nie ma żadnego wyniku.",
+      "sent": "Polecenie wysłane."
+    },
+    "join": {
+      "waiting": "Twój serwer się uruchamia – dołączysz, gdy będzie gotowy.",
+      "noAddress": "Serwer nie ma jeszcze adresu.",
+      "notStarted": "Serwer się nie uruchomił.",
+      "timeout": "Serwer uruchamia się zbyt długo – spróbuj za chwilę."
     }
   }
 }

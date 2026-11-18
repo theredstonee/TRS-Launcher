@@ -327,7 +327,22 @@
       "request_closed": "Het team werkt al aan deze aanvraag – hij kan niet meer worden gewijzigd.",
       "code_not_found": "Deze code bestaat niet (meer).",
       "creator_not_found": "Deze creator bestaat niet (meer).",
-      "creator_team_forbidden": "Alleen de creator kan dit doen – ook niet in teammodus."
+      "creator_team_forbidden": "Alleen de creator kan dit doen – ook niet in teammodus.",
+      "craftinghosting_unavailable": "Gratis servers zijn op de TRS-server momenteel niet beschikbaar.",
+      "craftinghosting_maintenance": "CraftingHosting is in onderhoud – probeer het later opnieuw.",
+      "craftinghosting_upstream": "CraftingHosting reageert momenteel niet – probeer het zo opnieuw.",
+      "craftinghosting_full": "Alle gratis serverplekken zijn momenteel bezet.",
+      "no_server": "Je hebt (nog) geen server.",
+      "server_exists": "Je hebt al een server.",
+      "server_installing": "Je server wordt nog ingericht – een moment.",
+      "eula_required": "Voor de eerste start moet je de Minecraft-EULA accepteren.",
+      "cooldown": "Je server heeft een verplichte pauze – start hem later opnieuw.",
+      "not_running": "Je server draait momenteel niet.",
+      "server_failed": "Er ging iets mis bij het inrichten van je server.",
+      "server_suspended": "Je server is door CraftingHosting geblokkeerd.",
+      "server_type_unavailable": "Dit servertype is momenteel niet beschikbaar.",
+      "version_unavailable": "Deze versie is momenteel niet beschikbaar voor dit servertype.",
+      "server_name_invalid": "Deze servernaam werkt niet – kies een andere."
     },
     "auth": {
       "accountMismatch": "Deze login hoort bij een ander account – log opnieuw in.",
@@ -779,6 +794,12 @@
       "storeMismatch": "\"{name}\" komt niet overeen met het bestand van de host (hash of grootte wijkt af).",
       "instanceMismatch": "Deze instantie past niet bij de wereld (versie of loader).",
       "noBaseInstance": "Kies een instantie om te kopiëren en aan te vullen."
+    },
+    "craftinghosting": {
+      "invalidName": "Naam: 3 tot 22 tekens – letters, cijfers, spaties en . _ ' -",
+      "invalidAccess": "Ongeldige toegang.",
+      "invalidCommand": "Commando: 1 tot 256 tekens op één regel.",
+      "invalidType": "Kies een servertype en een versie."
     },
     "chatImage": {
       "unsupported": "Alleen PNG-, JPEG- en WebP-afbeeldingen kunnen worden verstuurd.",
@@ -2447,7 +2468,10 @@
       "sidebarRecentTitle": "Snelle instanties",
       "sidebarRecentDescription": "Je recent gespeelde instanties met hun iconen onder de navigatie.",
       "sidebarAccountTitle": "Accounttegel",
-      "sidebarAccountDescription": "Het actieve account met zijn skinhoofd onderaan de zijbalk."
+      "sidebarAccountDescription": "Het actieve account met zijn skinhoofd onderaan de zijbalk.",
+      "hosting": "Hosting",
+      "hostingTabTitle": "Tabblad Hosting",
+      "hostingTabDescription": "Toont je gratis CraftingHosting-server in de zijbalk."
     },
     "behavior": {
       "title": "Gedrag",
@@ -3079,7 +3103,8 @@
     "achievements": "Prestaties",
     "localServers": "Mijn servers",
     "controls": "Bediening",
-    "pc": "PC"
+    "pc": "PC",
+    "hosting": "Hosting"
   },
   "accountMenu": {
     "menuLabel": "Accounts",
@@ -3463,7 +3488,8 @@
       "shares": "Om screenshots als link te delen, meldt de launcher zich aan bij de TRS-server. Dat gebeurt pas als je toestemming geeft.",
       "achievements": "Om je prestaties te tonen, meldt de launcher zich aan bij de TRS-server. Dat gebeurt pas als je akkoord gaat.",
       "cosmetics": "Om TRS-hoofdcosmetica te tonen, logt de launcher in bij de TRS-server. Dat gebeurt pas als je akkoord gaat.",
-      "remote": "Om je pc vanaf deze telefoon te bedienen, meldt de launcher zich aan bij de TRS-server. Dat gebeurt pas als je toestemming geeft."
+      "remote": "Om je pc vanaf deze telefoon te bedienen, meldt de launcher zich aan bij de TRS-server. Dat gebeurt pas als je toestemming geeft.",
+      "hosting": "Je gratis server bij CraftingHosting loopt via je TRS-account. Daarvoor zijn de TRS-diensten nodig."
     },
     "account": {
       "title": "Geen account ingelogd",
@@ -7511,6 +7537,100 @@
         "pet_request_image_delete": "Referentieafbeelding verwijderd",
         "other": "Dashboard gewijzigd"
       }
+    }
+  },
+  "craftinghosting": {
+    "partner": "★ Hostingpartner",
+    "title": "Hosting",
+    "subtitle": "Je gratis Minecraft-server bij CraftingHosting – starten, beheren en met één klik meedoen.",
+    "offline": "De TRS-server is momenteel niet bereikbaar.",
+    "unavailableTitle": "Hosting is momenteel niet beschikbaar",
+    "mobileNote": "Aanmaken en starten kan alleen in de launcher op je pc – die houdt de server draaiende.",
+    "latest": "Nieuwste",
+    "noAddress": "Het adres verschijnt zodra de server is ingericht.",
+    "remaining": "Nog {time} in deze sessie",
+    "cooldown": "Verplichte pauze – je kunt over {time} weer starten.",
+    "cooldownUntil": "Verplichte pauze – je kunt de server om {time} weer starten.",
+    "deleted": "Server verwijderd.",
+    "create": {
+      "title": "Je gratis server",
+      "name": "Naam",
+      "namePlaceholder": "bijv. Mijn wereld",
+      "nameHint": "3–22 tekens: letters, cijfers, spaties en . _ ' -",
+      "type": "Servertype",
+      "version": "Versie",
+      "submit": "Server aanmaken",
+      "creating": "Bezig met aanmaken …",
+      "full": "Alle gratis plekken zijn momenteel bezet – probeer het later opnieuw."
+    },
+    "access": {
+      "label": "Wie mag er meedoen?",
+      "friends": "Alleen vrienden",
+      "friendsHint": "Whitelist met jou en je TRS-vrienden – wordt automatisch bijgewerkt.",
+      "open": "Open",
+      "openHint": "Iedereen met het adres kan meedoen."
+    },
+    "plan": {
+      "title": "Wat je krijgt",
+      "memory": "{gb} GB RAM",
+      "cpu": "{percent} % CPU",
+      "disk": "{gb} GB opslag"
+    },
+    "rules": {
+      "title": "Zo werkt het",
+      "runs": "Je server draait zolang de launcher open is.",
+      "session": "Maximaal {hours} uur achter elkaar, daarna {pause} uur pauze.",
+      "idle": "Servers worden na {days} dagen zonder start verwijderd.",
+      "eula": "Voor de eerste start accepteer je de Minecraft-EULA."
+    },
+    "state": {
+      "installing": "Wordt ingericht",
+      "offline": "Uit",
+      "starting": "Start …",
+      "running": "Online",
+      "stopping": "Stopt …",
+      "failed": "Mislukt",
+      "suspended": "Geblokkeerd"
+    },
+    "stopReason": {
+      "host_stopped": "Laatst gestopt omdat de launcher werd gesloten.",
+      "host_timeout": "Laatst gestopt omdat de launcher niet meer reageerde.",
+      "session_limit": "Laatst gestopt na de maximale looptijd.",
+      "admin": "Laatst gestopt door het team."
+    },
+    "notes": {
+      "installing": "Je server wordt ingericht – dat duurt een à twee minuten.",
+      "failed": "Er ging iets mis met je server. Start hem opnieuw of verwijder hem en maak een nieuwe aan.",
+      "suspended": "CraftingHosting heeft deze server geblokkeerd."
+    },
+    "actions": {
+      "join": "Meedoen",
+      "joining": "Bezig met meedoen …"
+    },
+    "delete": {
+      "title": "Server verwijderen?",
+      "text": "Je server ‘{name}’ en zijn wereld worden definitief verwijderd.",
+      "confirm": "Definitief verwijderen"
+    },
+    "eula": {
+      "title": "Minecraft-EULA",
+      "text": "Om een Minecraft-server te draaien, moet je de licentieovereenkomst voor eindgebruikers van Minecraft accepteren.",
+      "link": "EULA lezen",
+      "accept": "Ik accepteer de Minecraft-EULA.",
+      "start": "Accepteren en starten"
+    },
+    "console": {
+      "title": "Console",
+      "placeholder": "Commando, bijv. say Hallo",
+      "send": "Versturen",
+      "note": "Commando’s draaien op de server – hier is geen uitvoer te zien.",
+      "sent": "Commando verstuurd."
+    },
+    "join": {
+      "waiting": "Je server start – je doet mee zodra hij klaar is.",
+      "noAddress": "De server heeft nog geen adres.",
+      "notStarted": "De server is niet gestart.",
+      "timeout": "De server doet er te lang over om te starten – probeer het zo opnieuw."
     }
   }
 }

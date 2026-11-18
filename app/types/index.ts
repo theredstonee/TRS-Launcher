@@ -99,6 +99,7 @@ export interface UiSettings {
   screenshotsTab: boolean
   minigamesTab: boolean
   minigamesWhileLoading: boolean
+  hostingTab: boolean
   historyTab: boolean
   sidebarRecent: boolean
   sidebarAccount: boolean

@@ -23,6 +23,7 @@ pub mod applications;
 pub mod cape_import;
 pub mod cape_video;
 pub mod chat;
+pub mod craftinghosting;
 pub mod creator;
 pub mod creator_pet;
 pub mod creator_stats;
@@ -171,6 +172,8 @@ pub(crate) enum Failure {
         detail: Option<Box<sanctions::SanctionDetail>>,
         /// Fehlendes Recht bei `missing_permission` (§24.2).
         permission: Option<String>,
+        /// Weitere Angaben aus `error.details` (z. B. `cooldownUntil`).
+        params: Box<[(&'static str, String)]>,
     },
 }
 
@@ -178,8 +181,15 @@ impl Failure {
     fn into_error(self) -> Error {
         match self {
             Self::Network => offline(),
-            Self::Api { status, code, retry_after, detail, permission, .. } => {
-                let error = match (api_error(status, &code, retry_after), permission) {
+            Self::Api { status, code, retry_after, detail, permission, params, .. } => {
+                let error = match api_error(status, &code, retry_after) {
+                    Error::TrsApi { kind, code, mut msg } if !params.is_empty() => {
+                        msg.params.extend(params.into_vec());
+                        Error::TrsApi { kind, code, msg }
+                    }
+                    other => other,
+                };
+                let error = match (error, permission) {
                     (Error::TrsApi { kind, code, mut msg }, Some(permission)) => {
                         msg.params.push(("permission", permission));
                         Error::TrsApi { kind, code, msg }
@@ -276,6 +286,10 @@ pub(crate) fn api_error(status: u16, code: &str, retry_after: Option<u64>) -> Er
         (_, "push_unavailable") => ("trs_api", message_for(code)),
         // Empfohlene Modpacks: CurseForge fehlt auf dem Server bzw. Modrinth/CurseForge antwortet nicht – kein „offline“.
         (_, "curseforge_unavailable" | "upstream_failed") => ("trs_api", message_for(code)),
+        // CraftingHosting nicht eingerichtet, in Wartung oder nicht erreichbar – der TRS-Server selbst läuft.
+        (_, "craftinghosting_unavailable" | "craftinghosting_maintenance" | "craftinghosting_upstream") => {
+            ("trs_api", message_for(code))
+        }
         (500..=599, _) => ("trs_offline", crate::msg!("trs.offline", "Der TRS-Server ist gerade nicht erreichbar.")),
         (_, code) => ("trs_api", message_for(code)),
     };
@@ -480,6 +494,27 @@ fn message_for(code: &str) -> Msg {
         "upstream_failed" => msg!("trsApi.upstream_failed", "Modrinth bzw. CurseForge antwortet gerade nicht – bitte später erneut versuchen."),
         "invalid_window" => msg!("trsApi.invalid_window", "Der Zeitraum passt nicht: Das Ende muss nach dem Beginn liegen."),
         "invalid_order" => msg!("trsApi.invalid_order", "Die Reihenfolge passt nicht – bitte die Liste neu laden."),
+        // --- CraftingHosting (§43) ---
+        "craftinghosting_unavailable" => {
+            msg!("trsApi.craftinghosting_unavailable", "Kostenlose Server sind auf dem TRS-Server gerade nicht verfügbar.")
+        }
+        "craftinghosting_maintenance" => {
+            msg!("trsApi.craftinghosting_maintenance", "CraftingHosting wird gerade gewartet – versuch es später noch einmal.")
+        }
+        "craftinghosting_upstream" => {
+            msg!("trsApi.craftinghosting_upstream", "CraftingHosting antwortet gerade nicht – versuch es gleich noch einmal.")
+        }
+        "craftinghosting_full" => msg!("trsApi.craftinghosting_full", "Gerade sind alle kostenlosen Server-Plätze belegt."),
+        "no_server" => msg!("trsApi.no_server", "Du hast (noch) keinen Server."),
+        "server_exists" => msg!("trsApi.server_exists", "Du hast schon einen Server."),
+        "server_installing" => msg!("trsApi.server_installing", "Dein Server wird noch eingerichtet – einen Moment."),
+        "eula_required" => msg!("trsApi.eula_required", "Vor dem ersten Start musst du die Minecraft-EULA akzeptieren."),
+        "cooldown" => msg!("trsApi.cooldown", "Dein Server macht gerade eine Pflichtpause – starte ihn später wieder."),
+        "not_running" => msg!("trsApi.not_running", "Dein Server läuft gerade nicht."),
+        "server_failed" => msg!("trsApi.server_failed", "Beim Einrichten deines Servers ist etwas schiefgegangen."),
+        "server_suspended" => msg!("trsApi.server_suspended", "Dein Server wurde von CraftingHosting gesperrt."),
+        "server_type_unavailable" => msg!("trsApi.server_type_unavailable", "Diesen Servertyp gibt es gerade nicht."),
+        "version_unavailable" => msg!("trsApi.version_unavailable", "Diese Version gibt es für den Servertyp gerade nicht."),
         "invalid_request" | "invalid_json" => msg!("trsApi.invalid_request", "Die Anfrage war ungültig."),
         "not_found" => msg!("trsApi.not_found", "Nicht gefunden."),
         _ => msg!("trsApi.rejected", "Die TRS API hat die Anfrage abgelehnt."),
@@ -523,6 +558,8 @@ pub struct TrsApi {
     pub(crate) remote: remote::RemoteStore,
     /// Push-Benachrichtigungen der Handy-Apps: Schalter und angemeldetes Gerät je Konto (§33).
     pub(crate) push: push::PushStore,
+    /// Laufende Sitzung beim Partner-Hosting (Heartbeat).
+    pub(crate) craftinghosting: Arc<craftinghosting::SessionState>,
 }
 
 impl TrsApi {
@@ -594,6 +631,7 @@ impl TrsApi {
             extra_ids: std::sync::Mutex::default(),
             events: std::sync::Mutex::default(),
             look: std::sync::Mutex::default(),
+            craftinghosting: Arc::default(),
         })
     }
 
@@ -711,7 +749,8 @@ impl TrsApi {
             .flatten();
         let detail = sanctions::SanctionDetail::parse(&code, error).map(Box::new);
         let permission = access::error_permission(&code, error);
-        Err(Failure::Api { status: status.as_u16(), code, retry_after, current, detail, permission })
+        let params = craftinghosting::error_params(&code, error).into_boxed_slice();
+        Err(Failure::Api { status: status.as_u16(), code, retry_after, current, detail, permission, params })
     }
 
     /// Schickt eine Anfrage genau einmal. `Ok` = 2xx mit Body-Bytes (leer bei 204).
@@ -1003,6 +1042,8 @@ mod sync_tests;
 mod chat_tests;
 #[cfg(test)]
 mod hosting_tests;
+#[cfg(test)]
+mod craftinghosting_tests;
 #[cfg(test)]
 mod sanctions_tests;
 #[cfg(test)]

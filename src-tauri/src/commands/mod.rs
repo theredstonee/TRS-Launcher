@@ -7,6 +7,7 @@ pub mod bisect;
 pub mod clips;
 pub mod content;
 pub mod controls;
+pub mod craftinghosting;
 pub mod creator;
 pub mod crash;
 pub mod curseforge;

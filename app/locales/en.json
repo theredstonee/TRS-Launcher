@@ -374,7 +374,22 @@
       "request_closed": "The team is already working on this request – it can no longer be changed.",
       "code_not_found": "This code doesn't exist (anymore).",
       "creator_not_found": "This creator doesn't exist (anymore).",
-      "creator_team_forbidden": "Only the creator can do this – not even in team mode."
+      "creator_team_forbidden": "Only the creator can do this – not even in team mode.",
+      "craftinghosting_unavailable": "Free servers aren’t available on the TRS server right now.",
+      "craftinghosting_maintenance": "CraftingHosting is under maintenance – please try again later.",
+      "craftinghosting_upstream": "CraftingHosting isn’t responding right now – try again in a moment.",
+      "craftinghosting_full": "All free server places are taken right now.",
+      "no_server": "You don’t have a server (yet).",
+      "server_exists": "You already have a server.",
+      "server_installing": "Your server is still being set up – one moment.",
+      "eula_required": "Before the first start you need to accept the Minecraft EULA.",
+      "cooldown": "Your server is taking a mandatory break – start it again later.",
+      "not_running": "Your server isn’t running right now.",
+      "server_failed": "Something went wrong while setting up your server.",
+      "server_suspended": "Your server was suspended by CraftingHosting.",
+      "server_type_unavailable": "This server type isn’t available right now.",
+      "version_unavailable": "This version isn’t available for the server type right now.",
+      "server_name_invalid": "This server name doesn’t work – please choose another one."
     },
     "auth": {
       "accountMismatch": "This sign-in belongs to a different account – please sign in again.",
@@ -829,6 +844,12 @@
       "storeMismatch": "\"{name}\" does not match the host's file (hash or size differ).",
       "instanceMismatch": "This instance doesn't match the world (version or loader).",
       "noBaseInstance": "Choose an instance to copy and add to."
+    },
+    "craftinghosting": {
+      "invalidName": "Name: 3 to 22 characters – letters, digits, spaces and . _ ' -",
+      "invalidAccess": "Invalid access setting.",
+      "invalidCommand": "Command: 1 to 256 characters on one line.",
+      "invalidType": "Please choose a server type and version."
     },
     "chatImage": {
       "unsupported": "Only PNG, JPEG and WebP pictures can be sent.",
@@ -2543,7 +2564,10 @@
       "minigamesTabTitle": "Minigames tab",
       "minigamesTabDescription": "Shows the games in the sidebar.",
       "minigamesLoadingTitle": "Offer a game while Minecraft starts",
-      "minigamesLoadingDescription": "A small note lets you play a round during the wait. It never opens by itself."
+      "minigamesLoadingDescription": "A small note lets you play a round during the wait. It never opens by itself.",
+      "hosting": "Hosting",
+      "hostingTabTitle": "Hosting tab",
+      "hostingTabDescription": "Shows your free CraftingHosting server in the sidebar."
     },
     "behavior": {
       "title": "Behavior",
@@ -3180,7 +3204,8 @@
     "controls": "Controls",
     "pc": "PC",
     "creator": "Creator",
-    "minigames": "Minigames"
+    "minigames": "Minigames",
+    "hosting": "Hosting"
   },
   "accountMenu": {
     "menuLabel": "Accounts",
@@ -3571,7 +3596,8 @@
       "achievements": "To show your achievements, the launcher signs in to the TRS server. That only happens once you agree.",
       "cosmetics": "To show TRS head cosmetics, the launcher signs in to the TRS server. That only happens once you agree.",
       "remote": "To control your PC from this phone, the launcher signs in to the TRS server. That only happens once you agree.",
-      "creator": "The creator programme (codes, fan symbols, fan capes) needs the TRS services."
+      "creator": "The creator programme (codes, fan symbols, fan capes) needs the TRS services.",
+      "hosting": "Your free server from CraftingHosting runs through your TRS account. That needs the TRS services."
     },
     "account": {
       "title": "No account signed in",
@@ -8317,6 +8343,100 @@
     "loading": {
       "title": "Minecraft is starting",
       "text": "Fancy a quick round while you wait?"
+    }
+  },
+  "craftinghosting": {
+    "partner": "★ Hosting partner",
+    "title": "Hosting",
+    "subtitle": "Your free Minecraft server from CraftingHosting – start it, manage it and join with one click.",
+    "offline": "The TRS server can’t be reached right now.",
+    "unavailableTitle": "Hosting isn’t available right now",
+    "mobileNote": "Creating and starting the server only works in the launcher on your PC – it keeps the server running.",
+    "latest": "Latest",
+    "noAddress": "The address will appear once the server is set up.",
+    "remaining": "{time} left in this session",
+    "cooldown": "Mandatory break – you can start again in {time}.",
+    "cooldownUntil": "Mandatory break – you can start the server again at {time}.",
+    "deleted": "Server deleted.",
+    "create": {
+      "title": "Your free server",
+      "name": "Name",
+      "namePlaceholder": "e.g. My World",
+      "nameHint": "3–22 characters: letters, digits, spaces and . _ ' -",
+      "type": "Server type",
+      "version": "Version",
+      "submit": "Create server",
+      "creating": "Creating …",
+      "full": "All free places are taken right now – try again later."
+    },
+    "access": {
+      "label": "Who can join?",
+      "friends": "Friends only",
+      "friendsHint": "Whitelist with you and your TRS friends – kept up to date automatically.",
+      "open": "Open",
+      "openHint": "Anyone with the address can join."
+    },
+    "plan": {
+      "title": "What you get",
+      "memory": "{gb} GB RAM",
+      "cpu": "{percent} % CPU",
+      "disk": "{gb} GB storage"
+    },
+    "rules": {
+      "title": "How it works",
+      "runs": "Your server runs while the launcher is open.",
+      "session": "At most {hours} h at a time, then a {pause} h break.",
+      "idle": "Servers are deleted after {days} days without a start.",
+      "eula": "Before the first start you accept the Minecraft EULA."
+    },
+    "state": {
+      "installing": "Setting up",
+      "offline": "Offline",
+      "starting": "Starting …",
+      "running": "Online",
+      "stopping": "Stopping …",
+      "failed": "Setup failed",
+      "suspended": "Suspended"
+    },
+    "stopReason": {
+      "host_stopped": "Last stopped because the launcher was closed.",
+      "host_timeout": "Last stopped because the launcher stopped responding.",
+      "session_limit": "Last stopped after the maximum run time.",
+      "admin": "Last stopped by the team."
+    },
+    "notes": {
+      "installing": "Your server is being set up – this takes a minute or two.",
+      "failed": "Something went wrong with your server. Try starting it again or delete it and create a new one.",
+      "suspended": "CraftingHosting has suspended this server."
+    },
+    "actions": {
+      "join": "Join",
+      "joining": "Joining …"
+    },
+    "delete": {
+      "title": "Delete server?",
+      "text": "Your server “{name}” and its world will be deleted for good.",
+      "confirm": "Delete for good"
+    },
+    "eula": {
+      "title": "Minecraft EULA",
+      "text": "To run a Minecraft server, you have to accept the Minecraft End User License Agreement.",
+      "link": "Read the EULA",
+      "accept": "I accept the Minecraft EULA.",
+      "start": "Accept & start"
+    },
+    "console": {
+      "title": "Console",
+      "placeholder": "Command, e.g. say Hello",
+      "send": "Send",
+      "note": "Commands run on the server – there’s no output here.",
+      "sent": "Command sent."
+    },
+    "join": {
+      "waiting": "Your server is starting – you’ll join as soon as it’s ready.",
+      "noAddress": "The server has no address yet.",
+      "notStarted": "The server didn’t start.",
+      "timeout": "The server is taking too long to start – try again in a moment."
     }
   }
 }

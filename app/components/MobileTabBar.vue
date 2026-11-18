@@ -15,7 +15,10 @@ const openDocs = useDocs()
 const socialCount = computed(() => trs.incomingCount + chat.unreadTotal)
 const active = computed(() => activeMobileTab(route.path))
 const moreOpen = ref(false)
-const moreItems = computed(() => mobileMoreItems(platformCaps.value))
+// Hosting nur mit TRS-Diensten und eingeschaltetem Reiter.
+const moreItems = computed(() =>
+  mobileMoreItems(platformCaps.value).filter((i) => i.to !== '/hosting' || (trs.enabled && settings.current?.ui.hostingTab !== false)),
+)
 
 // Seitenwechsel schließt das Sheet (auch per Zurück-Taste).
 watch(
@@ -87,7 +90,8 @@ function isOn(item: MobileNavItem) {
         :class="isOn(item) ? 'border-redstone-500/60 bg-base-800 text-base-50' : 'border-base-800 bg-base-900 text-base-200'"
         @click="pick(item)"
       >
-        <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="icons[item.icon]" /></svg>
+        <img v-if="item.image" :src="item.image" alt="" class="size-6 object-contain" draggable="false" />
+        <svg v-else viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="icons[item.icon]" /></svg>
         <span class="line-clamp-2 leading-tight">{{ t(item.label) }}</span>
       </button>
     </div>

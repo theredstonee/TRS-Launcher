@@ -160,6 +160,7 @@ import {
   type HostingTarget,
   type PrepareProgress,
 } from './hosting'
+import { craftingInfoSchema, craftingServerSchema, type CraftingAccess, type NewCraftingServer } from './craftinghosting'
 import type {
   BedrockInfo,
   FpsMode,
@@ -1366,6 +1367,19 @@ export const backend = {
       plan: { roomId: string; mode: 'new' | 'copy'; baseInstanceId: string | null; name: string | null; mods: string[]; trustHost: boolean },
       onProgress: (p: PrepareProgress) => void,
     ) => checked(prepareResultSchema, 'hosting_prepare', { plan, onProgress: channel(onProgress) }),
+  },
+
+  /** Kostenloser Server beim Partner CraftingHosting (§43) – nur über die TRS API. */
+  craftinghosting: {
+    info: () => checked(craftingInfoSchema, 'craftinghosting_info'),
+    /** `null` = noch kein Server. */
+    server: () => checked(craftingServerSchema.nullable(), 'craftinghosting_server'),
+    create: (spec: NewCraftingServer) => checked(craftingServerSchema, 'craftinghosting_create', { spec }),
+    setAccess: (access: CraftingAccess) => checked(craftingServerSchema, 'craftinghosting_set_access', { access }),
+    start: (acceptEula: boolean) => checked(craftingServerSchema, 'craftinghosting_start', { acceptEula }),
+    stop: () => checked(craftingServerSchema, 'craftinghosting_stop'),
+    command: (command: string) => call<void>('craftinghosting_command', { command }),
+    remove: () => call<void>('craftinghosting_delete'),
   },
 }
 

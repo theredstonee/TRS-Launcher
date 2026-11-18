@@ -315,6 +315,8 @@ pub struct UiSettings {
     pub screenshots_tab: bool,
     pub minigames_tab: bool,
     pub minigames_while_loading: bool,
+    /// Reiter „Hosting“ (kostenloser Server beim Partner CraftingHosting).
+    pub hosting_tab: bool,
     pub history_tab: bool,
     /// „Zuletzt gespielt“ in der linken Leiste.
     pub sidebar_recent: bool,
@@ -364,6 +366,7 @@ impl Default for UiSettings {
             screenshots_tab: true,
             minigames_tab: true,
             minigames_while_loading: true,
+            hosting_tab: true,
             history_tab: true,
             sidebar_recent: true,
             sidebar_account: true,

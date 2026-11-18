@@ -467,6 +467,16 @@ den TRS-Server.
   Pack wird nur verwendet, wenn du Minecrafts Frage mit Ja beantwortest; dein Spiel reicht es über eine lokale Adresse
   auf deinem Rechner (`127.0.0.1`) an Minecraft, die nur für diese Verbindung gilt.
 
+### Kostenloser Server bei CraftingHosting
+
+Nur wenn du im Reiter „Hosting“ einen kostenlosen Server anlegst, gibt der TRS-Server Daten an unseren Hosting-Partner
+**CraftingHosting** (`craftinghosting.free`) weiter: deine TRS-Konto-ID, deinen Minecraft-Namen, den gewählten
+Servernamen, Servertyp und die Version sowie – bei „Nur Freunde“ – die Minecraft-Namen deiner TRS-Freunde für die
+Whitelist des Servers (wird aktualisiert, solange der Server läuft). Der Launcher selbst spricht nie mit CraftingHosting;
+solange dein Server läuft, meldet er dem TRS-Server nur alle 45 Sekunden, dass er noch offen ist. Ohne Server wird
+nichts an CraftingHosting gesendet. Löschst du den Server im Launcher, wird er auch bei CraftingHosting gelöscht; für
+den Server gilt zusätzlich die Datenschutzerklärung von CraftingHosting.
+
 ### Erfolge
 
 Der Launcher hat Erfolge (Punkte, Seltenheiten, ein paar Belohnungen wie ein Umhang oder eine Kosmetik). Sie gehören

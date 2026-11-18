@@ -434,6 +434,15 @@ the TRS server.
   answer Minecraft's question with yes; your game serves it to Minecraft through a local address on your computer
   (`127.0.0.1`) that only works for this connection.
 
+### Free server from CraftingHosting
+
+Only if you create a free server in the "Hosting" tab does the TRS server pass data to our hosting partner
+**CraftingHosting** (`craftinghosting.free`): your TRS account ID, your Minecraft name, the server name, type and version
+you chose and – with "Friends only" – the Minecraft names of your TRS friends for the server's whitelist (updated while
+the server runs). The launcher itself never talks to CraftingHosting; while your server runs it only tells the TRS server
+every 45 seconds that the launcher is still open. Without a server nothing is sent to CraftingHosting. Deleting the
+server in the launcher deletes it at CraftingHosting too; CraftingHosting's own privacy policy applies to the server.
+
 ### Achievements
 
 The launcher has achievements (points, rarities, a few rewards such as a cape or a cosmetic). They are part of the TRS
