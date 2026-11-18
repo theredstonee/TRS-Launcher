@@ -1068,12 +1068,15 @@ CREATE TABLE IF NOT EXISTS craftinghosting_servers (
 `,
   },
   {
-    // CraftingHosting: eigene Adresse <subdomain>.trs-launcher.de (SRV-Eintrag dns_record auf dns_target = host:port).
+    // CraftingHosting: eigene Adresse <subdomain>.trs-launcher.de (SRV dns_record → dns_target, A dns_a_record auf TRS Wake),
+    // transfers = accepts-transfers gesetzt.
     version: 46,
     run: (db) => {
       if (!hasColumn(db, 'craftinghosting_servers', 'subdomain')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN subdomain TEXT')
       if (!hasColumn(db, 'craftinghosting_servers', 'dns_record')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN dns_record TEXT')
       if (!hasColumn(db, 'craftinghosting_servers', 'dns_target')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN dns_target TEXT')
+      if (!hasColumn(db, 'craftinghosting_servers', 'dns_a_record')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN dns_a_record TEXT')
+      if (!hasColumn(db, 'craftinghosting_servers', 'transfers')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN transfers INTEGER NOT NULL DEFAULT 0')
       db.exec('CREATE UNIQUE INDEX IF NOT EXISTS craftinghosting_subdomain ON craftinghosting_servers(subdomain)')
     },
   },

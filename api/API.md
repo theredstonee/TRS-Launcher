@@ -5621,3 +5621,24 @@ fixed per server; updated when the partner moves the server). Players connect st
 - Errors: `400 invalid_subdomain`, `409 subdomain_taken`, `409 subdomain_reserved`, `503 dns_unavailable` (no token or
   Cloudflare error; creating a server still works without an address). Deleting a server (owner or team) removes the
   record. Migration 46: columns `subdomain` (unique), `dns_record`, `dns_target`.
+
+### 43.10 Wake-on-join (TRS Wake)
+
+With `WAKE_IP` (public IPv4 of the relay, `WAKE_PORT` default 25565) the address of a sleeping server points to the
+TRS Wake listener in the relay (contract: `relay/WAKE.md` on `main`): an `A <name>.trs-launcher.de` record to
+`WAKE_IP`, and the SRV record targets `<name>.trs-launcher.de:WAKE_PORT` while the server is not running and the
+partner node while it runs. A sweep every 60 s (one partner list request) switches the SRV records; `resolve` and
+`wake` switch them right away. Every server gets `accepts-transfers=true` (written into `server.properties` during
+the first setup and before starts) so TRS Wake can hand players over with a Minecraft transfer (1.20.5+).
+
+Internal routes, only for the relay. Headers `X-Relay-Time` (unix seconds, ±60 s) and `X-Relay-Sig` = hex
+HMAC-SHA256(`RELAY_SECRET`, `time + "\n" + METHOD + "\n" + path-with-query + "\n" + sha256hex(body)`), otherwise
+`403 relay_auth`:
+
+- `GET /v1/internal/hosting/resolve?host=<fqdn>` -> `{ name, state, target: { host, port } | null, maxPlayers,
+  cooldownUntil }`, `state` = `running | starting | offline | stopping | cooldown | unavailable`; `404 unknown_host`.
+  While running it also applies the access/first setup like a launcher heartbeat would.
+- `POST /v1/internal/hosting/wake` body `{ host, player: { name, uuid? } }` -> `202 { state }`. Friends-only servers:
+  only the owner and TRS friends (by name – the relay cannot verify the account, the server's whitelist still applies).
+  `409 not_allowed | eula_required | cooldown (details.cooldownUntil) | unavailable`, at most one start per 30 s and
+  20 wake requests per 10 minutes per address (`429`).

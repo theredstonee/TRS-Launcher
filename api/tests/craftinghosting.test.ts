@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   craftingCommand, craftingCreate, craftingDelete, craftingHeartbeat, craftingInfo, craftingInstallMods, craftingLogs,
   craftingServer, craftingSetSettings, craftingSettings, craftingStart, craftingStats, craftingStop, craftingUpdate,
-  adminCraftingDelete, adminCraftingServers, adminCraftingStop, craftingCheckSubdomain, craftingRestartDone, craftingWorldImport, craftingWorldUpload, createServerBody, MOTD_FOOTER, settingsBody,
+  adminCraftingDelete, adminCraftingServers, adminCraftingStop, craftingCheckSubdomain, relayResolve, relayWake, sweepCraftingDns, craftingRestartDone, craftingWorldImport, craftingWorldUpload, createServerBody, MOTD_FOOTER, settingsBody,
 } from '../server/lib/craftinghosting'
 import { RULES } from '../server/lib/ratelimit'
 import { getUser } from '../server/lib/users'
@@ -119,6 +119,11 @@ class FakePartner {
       case 'GET stats': return this.json(200, { state: 'running', cpuPercent: 12.5, cpuLimitPercent: 200, memoryBytes: 100,
         memoryLimitBytes: 4096, diskBytes: 5, diskLimitBytes: 10, networkRxBytes: 1, networkTxBytes: 2, uptimeSeconds: 60,
         players: { online: 2, max: 20 } })
+      case 'GET files/content': {
+        const f = url.searchParams.get('path')!
+        if (f === '/server.properties' && !this.files.has(f)) this.files.set(f, 'motd=A Minecraft Server\naccepts-transfers=false\n')
+        return this.files.has(f) ? this.json(200, { path: f, content: this.files.get(f) }) : this.err(404, 'file_not_found')
+      }
       case 'GET files': return this.json(200, { directory: '/', files: [...this.files.keys()].map((f) => ({ name: f.slice(1), path: f, type: 'file' })) })
       case 'DELETE ': this.servers.delete(s.id); this.used--; return new Response(null, { status: 204 })
       case 'POST start':
@@ -610,5 +615,62 @@ describe('craftinghosting routes: website session', () => {
     for (let i = 0; i < RULES.craftinghostingUser.limit; i++) env.ctx.limiter.take(`craftinghosting:${uuid}`, RULES.craftinghostingUser)
     expect((await callRoute(env, serverGet, { url: '/v1/craftinghosting/server', headers: cookie })).status).toBe(429)
     expect((await callRoute(env, serverGet, { url: '/v1/craftinghosting/server', headers: bearer })).status).toBe(429)
+  })
+
+  it('TRS Wake: SRV points to the relay while asleep, to the node while running; wake rules', async () => {
+    const env = makeEnv({ env: { CRAFTINGHOSTING_API_KEY: KEY, CRAFTINGHOSTING_API: 'https://partner.example.test/api/v1/partner/',
+      CLOUDFLARE_DNS_TOKEN: 'cf-token', WAKE_IP: '116.203.12.169' } })
+    const partner = new FakePartner()
+    const dns = new FakeDns()
+    env.ctx.craftinghostingFetch = partner.fetch
+    env.ctx.serverRulesFetch = pluginChannel()
+    env.ctx.cloudflareFetch = dns.fetch
+    const [u, friend, stranger] = await players(env, 'Steve', 'Alex', 'Notch')
+    befriend(env, u!, friend!)
+    const srv = () => [...dns.records.values()].find((r) => r.type === 'SRV')!
+    const a = () => [...dns.records.values()].find((r) => r.type === 'A')
+
+    const s = await craftingCreate(env.ctx, u!, body({ subdomain: 'welt' }))
+    expect(s.domain).toBe('welt.trs-launcher.de')
+    expect(a()?.name).toBe('welt.trs-launcher.de')
+    expect(srv().data).toEqual({ priority: 0, weight: 5, port: 25565, target: 'welt.trs-launcher.de' })
+
+    // Unbekannt / falsche Domain
+    expect(await codeAsync(() => relayResolve(env.ctx, 'nope.trs-launcher.de'))).toBe('unknown_host')
+    expect(await codeAsync(() => relayResolve(env.ctx, 'welt.example.com'))).toBe('unknown_host')
+
+    // Vor der EULA darf niemand aufwecken
+    expect((await relayResolve(env.ctx, 'Welt.trs-launcher.de.')).state).toBe('offline')
+    expect(await codeAsync(() => relayWake(env.ctx, 'welt.trs-launcher.de', { name: 'Steve' }))).toBe('eula_required')
+    await craftingStart(env.ctx, u!, true)
+    await craftingHeartbeat(env.ctx, u!)
+    await craftingRestartDone(u!.uuid)
+    await craftingStop(env.ctx, u!, false)
+    await sweepCraftingDns(env.ctx)
+    expect(srv().data.target).toBe('welt.trs-launcher.de')
+
+    // Nur Freunde: Fremde nicht, Freunde ja
+    expect(await codeAsync(() => relayWake(env.ctx, 'welt.trs-launcher.de', { name: 'Notch' }))).toBe('not_allowed')
+    expect((await relayWake(env.ctx, 'welt.trs-launcher.de', { name: 'alex' })).state).toBe('starting')
+    expect(partner.files.get('/server.properties')).toContain('accepts-transfers=true')
+    const r = await relayResolve(env.ctx, 'welt.trs-launcher.de')
+    expect(r.state).toBe('running')
+    expect(r.target).toEqual({ host: 'node1.example.com', port: 25568 })
+    expect(srv().data).toEqual({ priority: 0, weight: 5, port: 25568, target: 'node1.example.com' })
+
+    // Schläft wieder ein → Sweep schaltet zurück
+    await craftingStop(env.ctx, u!, false)
+    await sweepCraftingDns(env.ctx)
+    expect(srv().data.target).toBe('welt.trs-launcher.de')
+
+    // Pflichtpause
+    partner.servers.get(s.id)!.session = { ...partner.servers.get(s.id)!.session, cooldownUntil: new Date(Date.now() + 3600_000).toISOString() }
+    expect((await relayResolve(env.ctx, 'welt.trs-launcher.de')).state).toBe('cooldown')
+    expect(await codeAsync(() => relayWake(env.ctx, 'welt.trs-launcher.de', { name: 'Alex' }))).toBe('cooldown')
+    void stranger
+
+    // Löschen räumt SRV und A
+    await craftingDelete(env.ctx, u!)
+    expect(dns.records.size).toBe(0)
   })
 })

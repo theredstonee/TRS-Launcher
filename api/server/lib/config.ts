@@ -63,7 +63,7 @@ export interface Config {
   /** CraftingHosting-Partner-API (§43). `null` = aus → 503 `craftinghosting_unavailable`. */
   craftinghosting: { url: string, key: string } | null
   /** Eigene Adressen für CraftingHosting-Server (§43.9): Cloudflare-Token nur mit DNS-Rechten für `zone`. */
-  dns: { token: string, zone: string } | null
+  dns: { token: string, zone: string, wake: { ip: string, port: number } | null } | null
   /** Release-Kanal von TRS Server Rules (server-plugin.json + Jars) für die CraftingHosting-Ersteinrichtung. */
   serverRulesUrl: string
   limits: Limits
@@ -373,6 +373,9 @@ const envSchema = z.object({
   // CraftingHosting-Partner (§43): Schlüssel nur hier, nie im Launcher. Leer = aus.
   CRAFTINGHOSTING_API_KEY: z.string().trim().max(200).default(''),
   CLOUDFLARE_DNS_TOKEN: z.string().trim().max(200).default(''),
+  // TRS Wake im Relay (§43.10): öffentliche IPv4 + Port. Leer = SRV zeigt immer direkt auf den Node.
+  WAKE_IP: z.string().trim().default('').refine((s) => s === '' || /^(\d{1,3}\.){3}\d{1,3}$/.test(s), 'must be an IPv4 address'),
+  WAKE_PORT: z.coerce.number().int().min(1).max(65535).default(25565),
   HOSTING_DOMAIN: z.string().trim().max(100).default('trs-launcher.de').refine((s) => /^[a-z0-9.-]+\.[a-z]{2,}$/.test(s), 'must be a domain'),
   SERVER_RULES_URL: z.string().trim().max(200).default('https://github.com/theredstonee/TRS-Launcher/releases/download/server-plugin')
     .refine((s) => /^https:\/\/[A-Za-z0-9.\/_-]+$/.test(s), 'must be an https URL'),
@@ -558,7 +561,11 @@ export function loadConfig(env: Record<string, string | undefined>, limits: Part
     vapid: parseVapid(e),
     curseforgeApiKey: e.CURSEFORGE_API_KEY === '' ? null : e.CURSEFORGE_API_KEY,
     mail: parseMail(e),
-    dns: e.CLOUDFLARE_DNS_TOKEN === '' ? null : { token: e.CLOUDFLARE_DNS_TOKEN, zone: e.HOSTING_DOMAIN },
+    dns: e.CLOUDFLARE_DNS_TOKEN === '' ? null : {
+      token: e.CLOUDFLARE_DNS_TOKEN,
+      zone: e.HOSTING_DOMAIN,
+      wake: e.WAKE_IP === '' ? null : { ip: e.WAKE_IP, port: e.WAKE_PORT },
+    },
     serverRulesUrl: e.SERVER_RULES_URL.replace(/\/+$/, ''),
     craftinghosting: e.CRAFTINGHOSTING_API_KEY === '' ? null : { url: e.CRAFTINGHOSTING_API.replace(/\/+$/, ''), key: e.CRAFTINGHOSTING_API_KEY },
     limits: { ...DEFAULT_LIMITS, ...limits },

@@ -21,6 +21,7 @@ import { sweepApplications } from '../lib/applications'
 import { rotateApplicationKeys, sweepApplicationFiles } from '../lib/application-chat'
 import { seedCircuits, sweepCircuitSubmissions } from '../lib/circuits'
 import { sweepHosting } from '../lib/hosting'
+import { sweepCraftingDns } from '../lib/craftinghosting'
 import { sweepWpshare, sweepWpshareSessions } from '../lib/waypoint-share'
 import { setWebpWasmLoader } from '../lib/images'
 import { sweepIssues, sweepOrphanIssueFiles } from '../lib/issues'
@@ -229,7 +230,17 @@ export default defineNitroPlugin((nitroApp) => {
   // Mail-Warteschlange: alle 5 s ein gedrosselter Durchgang (MAIL_RATE_PER_MIN), geplante Kampagnen starten.
   const MAIL_TICK_MS = 5000
   let mailTick: Promise<unknown> | null = null
+  let dnsTick: Promise<unknown> | null = null
   const timers = [
+    // CraftingHosting: SRV-Einträge an den Zustand anpassen (schlafend → TRS Wake, laufend → Node).
+    every(60_000, () => {
+      if (dnsTick) return
+      dnsTick = sweepCraftingDns(ctx)
+        .catch((err) => console.error('[trs-api] CraftingHosting DNS sweep failed', err))
+        .finally(() => {
+          dnsTick = null
+        })
+    }),
     every(MAIL_TICK_MS, () => {
       if (mailTick) return
       mailTick = processOutbox(ctx, budgetPerTick(ctx, MAIL_TICK_MS))

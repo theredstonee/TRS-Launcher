@@ -6,7 +6,7 @@ import { MODRINTH_ID } from './modrinth'
 import { ApiError, badRequest, conflict, notFound, unavailable } from './errors'
 import { friendUuids } from './friends'
 import { assertNotSanctioned } from './sanctions'
-import { isBanned, type UserRow } from './users'
+import { getUser, isBanned, type UserRow } from './users'
 
 /**
  * CraftingHosting-Partner (§43): ein kostenloser Server je TRS-Konto. Der Partner-Schlüssel bleibt hier,
@@ -184,6 +184,8 @@ interface Row {
   subdomain: string | null
   dns_record: string | null
   dns_target: string | null
+  dns_a_record: string | null
+  transfers: number
   created_at: number
 }
 
@@ -321,7 +323,9 @@ function view(s: PartnerServer, access: Access, setup: SetupState = 'pending', d
 const rowOf = (ctx: AppContext, uuid: string) => one<Row>(ctx.db, 'SELECT * FROM craftinghosting_servers WHERE uuid = ?', uuid)
 function forget(ctx: AppContext, uuid: string) {
   const row = rowOf(ctx, uuid)
-  if (row?.dns_record) void dnsDelete(ctx, row.dns_record).catch((e) => console.error('[trs-api] DNS record not removed', e))
+  for (const rec of [row?.dns_record, row?.dns_a_record]) {
+    if (rec) void dnsDelete(ctx, rec).catch((e) => console.error('[trs-api] DNS record not removed', e))
+  }
   run(ctx.db, 'DELETE FROM craftinghosting_servers WHERE uuid = ?', uuid)
 }
 
@@ -420,7 +424,8 @@ export async function craftingCreate(ctx: AppContext, user: UserRow, body: z.out
   const s = parseServer(res)
   run(ctx.db, `INSERT INTO craftinghosting_servers (uuid, server_id, access, created_at) VALUES (?, ?, ?, ?)
     ON CONFLICT(uuid) DO UPDATE SET server_id = excluded.server_id, access = excluded.access, wl_key = NULL,
-      op_done = 0, setup = 0, motd = NULL, plugin = NULL, subdomain = NULL, dns_record = NULL, dns_target = NULL`,
+      op_done = 0, setup = 0, motd = NULL, plugin = NULL, subdomain = NULL, dns_record = NULL, dns_target = NULL,
+      dns_a_record = NULL, transfers = 0`,
   user.uuid, s.id, body.access, ctx.now())
   if (sub) {
     try {
@@ -469,13 +474,14 @@ export async function craftingUpdate(ctx: AppContext, user: UserRow, body: z.out
     if (body.subdomain !== undefined && body.subdomain !== row.subdomain) {
       if (!ctx.config.dns) throw unavailable('dns_unavailable', 'Own addresses are not available on this server')
       const sub = await claimable(ctx, user.uuid, body.subdomain)
-      const old = row.dns_record
+      const old = [row.dns_record, row.dns_a_record]
       try {
-        run(ctx.db, 'UPDATE craftinghosting_servers SET subdomain = ?, dns_record = NULL, dns_target = NULL WHERE uuid = ?', sub, user.uuid)
+        run(ctx.db, `UPDATE craftinghosting_servers SET subdomain = ?, dns_record = NULL, dns_target = NULL, dns_a_record = NULL
+          WHERE uuid = ?`, sub, user.uuid)
       } catch {
         throw conflict('subdomain_taken', 'This address is taken')
       }
-      if (old) await dnsDelete(ctx, old).catch((e) => console.error('[trs-api] old DNS record not removed', e))
+      for (const rec of old) if (rec) await dnsDelete(ctx, rec).catch((e) => console.error('[trs-api] old DNS record not removed', e))
       await syncDns(ctx, rowOf(ctx, user.uuid)!, parseServer(await call(ctx, 'GET', path(row))))
     }
     if (body.name !== undefined) await call(ctx, 'PATCH', path(row), { name: body.name })
@@ -492,6 +498,7 @@ export async function craftingStart(ctx: AppContext, user: UserRow, acceptEula: 
   assertNotSanctioned(ctx, user.uuid, 'hosting_ban')
   return onServer(ctx, user, async (row) => {
     await syncAccess(ctx, user, await fresh(ctx, row))
+    if (row.setup && !row.transfers) await ensureTransfers(ctx, row)
     return fresh(ctx, row, await call(ctx, 'POST', path(row, '/start'), acceptEula ? { acceptEula: true } : {}))
   })
 }
@@ -842,6 +849,7 @@ async function firstSetup(ctx: AppContext, owner: UserRow, s: ServerView, row: R
       { type: 'text/yaml', data: `# TRS Launcher – CraftingHosting\nmotd-footer: "${MOTD_FOOTER}"\n` })
     if (plugin.platform === 'fabric') await call(ctx, 'POST', path(row, '/mods'), { project: 'fabric-api' }).catch(() => undefined)
   }
+  await ensureTransfers(ctx, row)
   const line = (row.motd ?? s.name).slice(0, MOTD_LINE_MAX)
   const pluginName = plugin?.platform ?? null
   await call(ctx, 'PATCH', path(row, '/settings'), { motd: motdFor({ plugin: pluginName }, line) })
@@ -921,8 +929,11 @@ export async function adminCraftingDelete(ctx: AppContext, serverId: string): Pr
   } catch (e) {
     if (!(e instanceof ApiError && e.code === 'no_server')) throw e
   }
-  const rec = one<{ dns_record: string | null }>(ctx.db, 'SELECT dns_record FROM craftinghosting_servers WHERE server_id = ?', serverId)?.dns_record
-  if (rec) await dnsDelete(ctx, rec).catch((e) => console.error('[trs-api] DNS record not removed', e))
+  const recs = one<{ dns_record: string | null, dns_a_record: string | null }>(ctx.db,
+    'SELECT dns_record, dns_a_record FROM craftinghosting_servers WHERE server_id = ?', serverId)
+  for (const rec of [recs?.dns_record, recs?.dns_a_record]) {
+    if (rec) await dnsDelete(ctx, rec).catch((e) => console.error('[trs-api] DNS record not removed', e))
+  }
   run(ctx.db, 'DELETE FROM craftinghosting_servers WHERE server_id = ?', serverId)
   infoCache.delete(ctx)
   return owner
@@ -1034,17 +1045,35 @@ async function suggestSubdomain(ctx: AppContext, uuid: string, serverName: strin
   return null
 }
 
-/** SRV-Eintrag auf host:port des Partner-Servers halten. Fehler hier lassen nichts scheitern. */
+const nodeOk = (p: PartnerServer) => !!p.host && !!p.port && /^[A-Za-z0-9.-]{1,190}$/.test(p.host)
+const liveFor = (p: PartnerServer) => p.state === 'running' && p.session?.active === true
+
+/**
+ * DNS des Servers halten: SRV zeigt bei laufendem Server direkt auf den Node, sonst (mit Aufweck-Proxy) auf
+ * `<name>.trs-launcher.de:WAKE_PORT`, dazu ein A-Eintrag auf den Relay. Fehler hier lassen nichts scheitern.
+ */
 async function syncDns(ctx: AppContext, row: Row, p: PartnerServer): Promise<void> {
-  if (!ctx.config.dns || !row.subdomain || !p.host || !p.port || !/^[A-Za-z0-9.-]{1,190}$/.test(p.host)) return
-  const target = `${p.host}:${p.port}`
-  if (row.dns_record && row.dns_target === target) return
+  const dns = ctx.config.dns
+  if (!dns || !row.subdomain || !nodeOk(p)) return
+  const wake = dns.wake && !liveFor(p) ? dns.wake : null
+  const target = wake ? `wake:${wake.port}` : `${p.host}:${p.port}`
   try {
     const zone = await zoneId(ctx)
+    if (dns.wake && !row.dns_a_record) {
+      const res = await cf(ctx, 'POST', `/zones/${zone}/dns_records`, {
+        type: 'A', name: fqdn(ctx, row.subdomain), content: dns.wake.ip, ttl: 60, proxied: false,
+        comment: `TRS Launcher hosting ${row.server_id}`,
+      })
+      const id = z.object({ id: z.string().regex(/^[0-9a-f]{32}$/) }).loose().parse(res).id
+      run(ctx.db, 'UPDATE craftinghosting_servers SET dns_a_record = ? WHERE uuid = ?', id, row.uuid)
+    }
+    if (row.dns_record && row.dns_target === target) return
     const record = {
       type: 'SRV',
       name: srvName(ctx, row.subdomain),
-      data: { priority: 0, weight: 5, port: p.port, target: p.host },
+      data: wake
+        ? { priority: 0, weight: 5, port: wake.port, target: fqdn(ctx, row.subdomain) }
+        : { priority: 0, weight: 5, port: p.port, target: p.host },
       ttl: 60,
       comment: `TRS Launcher hosting ${row.server_id}`,
     }
@@ -1062,4 +1091,136 @@ async function dnsDelete(ctx: AppContext, record: string): Promise<void> {
   if (!ctx.config.dns) return
   const zone = await zoneId(ctx)
   await cf(ctx, 'DELETE', `/zones/${zone}/dns_records/${record}`)
+}
+
+// ---------------------------------------------------------------- Aufwecken beim Beitreten (TRS Wake im Relay)
+
+/** `accepts-transfers=true` in server.properties, damit TRS Wake Spieler per Transfer weiterreichen kann. */
+async function ensureTransfers(ctx: AppContext, row: Row): Promise<void> {
+  try {
+    const r = z.object({ content: z.string().max(200_000) }).loose()
+      .safeParse(await call(ctx, 'GET', path(row, '/files/content?path=%2Fserver.properties')))
+    if (!r.success) return
+    const lines = r.data.content.split(/\r?\n/)
+    const i = lines.findIndex((l) => l.startsWith('accepts-transfers='))
+    if (i >= 0 && lines[i] === 'accepts-transfers=true') {
+      run(ctx.db, 'UPDATE craftinghosting_servers SET transfers = 1 WHERE uuid = ?', row.uuid)
+      return
+    }
+    if (i >= 0) lines[i] = 'accepts-transfers=true'
+    else lines.splice(lines.length && lines.at(-1) === '' ? lines.length - 1 : lines.length, 0, 'accepts-transfers=true')
+    await call(ctx, 'PUT', path(row, '/files/content?path=%2Fserver.properties'), undefined, { type: 'text/plain', data: lines.join('\n') })
+    run(ctx.db, 'UPDATE craftinghosting_servers SET transfers = 1 WHERE uuid = ?', row.uuid)
+  } catch (e) {
+    if (!(e instanceof ApiError)) console.error('[trs-api] accepts-transfers not set', e)
+  }
+}
+
+const rowBySub = (ctx: AppContext, sub: string) =>
+  one<Row>(ctx.db, 'SELECT * FROM craftinghosting_servers WHERE subdomain = ?', sub)
+
+function subOfHost(ctx: AppContext, host: string): string | null {
+  const zone = ctx.config.dns?.zone
+  if (!zone) return null
+  const h = host.trim().toLowerCase().replace(/\.$/, '')
+  if (!h.endsWith(`.${zone}`)) return null
+  const sub = h.slice(0, -zone.length - 1)
+  return SUBDOMAIN.test(sub) ? sub : null
+}
+
+export type WakeState = 'running' | 'starting' | 'offline' | 'stopping' | 'cooldown' | 'unavailable'
+
+function wakeState(p: PartnerServer, now: number): WakeState {
+  const cd = p.session?.cooldownUntil ? Date.parse(p.session.cooldownUntil) : Number.NaN
+  if (Number.isFinite(cd) && cd > now) return 'cooldown'
+  if (liveFor(p)) return 'running'
+  if (p.state === 'starting' || (p.state !== 'stopping' && p.session?.active)) return 'starting'
+  if (p.state === 'stopping') return 'stopping'
+  if (p.state === 'offline') return 'offline'
+  return 'unavailable'
+}
+
+/** Für TRS Wake: Zustand und Ziel eines `<name>.trs-launcher.de`. */
+export async function relayResolve(ctx: AppContext, host: string) {
+  config(ctx)
+  const sub = subOfHost(ctx, host)
+  const row = sub ? rowBySub(ctx, sub) : undefined
+  if (!sub || !row) throw notFound('unknown_host', 'Unknown host')
+  const p = parseServer(await call(ctx, 'GET', path(row)))
+  await syncDns(ctx, row, p)
+  const owner = getUser(ctx, row.uuid)
+  if (owner && liveFor(p) && (row.wl_key === null || !row.op_done || !row.setup)) {
+    await syncAccess(ctx, owner, view(p, row.access, setupOf(row)))
+  }
+  const state = restarts.has(row.uuid) ? 'starting' : wakeState(p, ctx.now())
+  let maxPlayers = 20
+  try {
+    maxPlayers = (await craftingSettingsRaw(ctx, row)).maxPlayers
+  } catch { /* vor dem ersten Start gibt es keine Einstellungen */ }
+  return {
+    name: sub,
+    state,
+    target: state === 'running' && nodeOk(p) ? { host: p.host!, port: p.port! } : null,
+    maxPlayers,
+    cooldownUntil: state === 'cooldown' ? p.session?.cooldownUntil ?? null : null,
+  }
+}
+
+const settingsCache = new Map<string, { at: number, maxPlayers: number }>()
+async function craftingSettingsRaw(ctx: AppContext, row: Row) {
+  const hit = settingsCache.get(row.server_id)
+  if (hit && ctx.now() - hit.at < 60_000) return hit
+  const v = { at: ctx.now(), maxPlayers: parseSettings(await call(ctx, 'GET', path(row, '/settings')), row).maxPlayers }
+  settingsCache.set(row.server_id, v)
+  return v
+}
+
+const wakes = new Map<string, number>()
+
+/** Für TRS Wake: Server starten, wenn der Spieler darf (Nur Freunde: Name auf der Liste). */
+export async function relayWake(ctx: AppContext, host: string, player: { name: string, uuid?: string }) {
+  config(ctx)
+  const sub = subOfHost(ctx, host)
+  const row = sub ? rowBySub(ctx, sub) : undefined
+  if (!sub || !row) throw notFound('unknown_host', 'Unknown host')
+  const owner = getUser(ctx, row.uuid)
+  if (!owner) throw notFound('unknown_host', 'Unknown host')
+  if (row.access === 'friends') {
+    const names = new Set(whitelistEntries(ctx, owner).map((e) => e.name.toLowerCase()))
+    if (!names.has(player.name.toLowerCase())) throw new ApiError(409, 'not_allowed', 'Not on the friends list')
+  }
+  const p = parseServer(await call(ctx, 'GET', path(row)))
+  const state = restarts.has(row.uuid) ? 'starting' : wakeState(p, ctx.now())
+  if (state === 'running' || state === 'starting') return { state }
+  if (state === 'cooldown') {
+    throw new ApiError(409, 'cooldown', 'cooldown', p.session?.cooldownUntil ? { cooldownUntil: p.session.cooldownUntil } : undefined)
+  }
+  if (state === 'unavailable') throw new ApiError(409, 'unavailable', 'unavailable')
+  if (!p.eulaAccepted) throw new ApiError(409, 'eula_required', 'eula required')
+  const last = wakes.get(row.uuid) ?? 0
+  if (ctx.now() - last < 30_000) return { state: 'starting' as WakeState }
+  wakes.set(row.uuid, ctx.now())
+  await syncAccess(ctx, owner, view(p, row.access, setupOf(row)))
+  if (row.setup && !row.transfers) await ensureTransfers(ctx, row)
+  await call(ctx, 'POST', path(row, '/start'), {})
+  return { state: 'starting' as WakeState }
+}
+
+/** Regelmäßig: DNS aller Server an ihren Zustand anpassen (Aufwecken braucht das, sobald einer einschläft). */
+export async function sweepCraftingDns(ctx: AppContext): Promise<void> {
+  if (!ctx.config.craftinghosting || !ctx.config.dns?.wake) return
+  const rows = all<Row>(ctx.db, 'SELECT * FROM craftinghosting_servers WHERE subdomain IS NOT NULL')
+  if (!rows.length) return
+  const byId = new Map<string, PartnerServer>()
+  for (let offset = 0; offset < 1000; offset += 100) {
+    const page = z.object({ servers: z.array(serverSchema).max(100) }).loose()
+      .safeParse(await call(ctx, 'GET', `/servers?limit=100&offset=${offset}`))
+    if (!page.success) return
+    for (const p of page.data.servers) byId.set(p.id, p)
+    if (page.data.servers.length < 100) break
+  }
+  for (const row of rows) {
+    const p = byId.get(row.server_id)
+    if (p) await syncDns(ctx, row, p)
+  }
 }
