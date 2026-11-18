@@ -9,7 +9,7 @@ import { DOMAIN, FakeApi, HOSTNAME, McClient, UUID, WAKE_SECRET, closeWake, hand
 afterEach(closeWake)
 after(closeWake)
 
-const FOOTER = '§7Free server: §ctrs-launcher.de §8× §bcraftinghosting.free'
+const FOOTER = '§7Free server by §bcraftinghosting.free §8× §ctrs-launcher.de'
 
 async function status(port: number, address = HOSTNAME, protocol = 769) {
   const c = await McClient.connect(port)
@@ -42,14 +42,14 @@ describe('wake: server list', () => {
   it('shows each state and answers ping', async () => {
     const { api, port } = await wakeSetup()
     const cases: [unknown, number, string][] = [
-      [hostInfo('offline'), 200, '§a● §fSchläft – Beitreten startet ihn'],
-      [hostInfo('stopping'), 200, '§a● §fSchläft – Beitreten startet ihn'],
-      [hostInfo('starting'), 200, '§e● §fStartet …'],
-      [hostInfo('cooldown', { cooldownUntil: '2026-11-18T19:30:00Z' }), 200, '§c● §fPause bis 20:30'],
-      [hostInfo('unavailable'), 200, '§c● §fNicht verfügbar'],
-      [hostInfo('running', { target: { host: 'node.example', port: 25570 } }), 200, '§a● §fLäuft'],
-      [{ error: { code: 'unknown_host' } }, 404, '§c● §fUnbekannter Server'],
-      [{ error: { code: 'internal' } }, 500, '§c● §fNicht verfügbar'],
+      [hostInfo('offline'), 200, '§fWelt §8– §a▶ Click to join, it starts now'],
+      [hostInfo('stopping'), 200, '§fWelt §8– §a▶ Click to join, it starts now'],
+      [hostInfo('starting'), 200, '§fWelt §8– §e● Starting …'],
+      [hostInfo('cooldown', { cooldownUntil: '2026-11-18T19:30:00Z' }), 200, '§fWelt §8– §c● Break until 20:30'],
+      [hostInfo('unavailable'), 200, '§fWelt §8– §c● Unavailable'],
+      [hostInfo('running', { target: { host: 'node.example', port: 25570 } }), 200, '§fWelt §8– §a● Online'],
+      [{ error: { code: 'unknown_host' } }, 404, '§c● §fUnknown server'],
+      [{ error: { code: 'internal' } }, 500, '§c● §fUnavailable'],
     ]
     let i = 0
     for (const [body, code, want] of cases) {
@@ -73,7 +73,7 @@ describe('wake: server list', () => {
     const { api, port } = await wakeSetup()
     for (const addr of ['135.125.185.232', 'trs-launcher.de', 'x.example.com']) {
       const { c, json } = await status(port, addr, 47)
-      assert.equal(line1(json.description.text), '§c● §fUnbekannter Server')
+      assert.equal(line1(json.description.text), '§c● §fUnknown server')
       assert.equal(json.version.protocol, 47)
       c.destroy()
     }

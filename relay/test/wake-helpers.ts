@@ -87,7 +87,7 @@ export class FakeApi {
 }
 
 export function hostInfo(state: string, over: Record<string, unknown> = {}) {
-  return { name: 'abc', state, target: null, maxPlayers: 20, cooldownUntil: null, ...over }
+  return { name: 'abc', motd: 'Welt', state, target: null, maxPlayers: 20, cooldownUntil: null, ...over }
 }
 
 const listeners: WakeListener[] = []

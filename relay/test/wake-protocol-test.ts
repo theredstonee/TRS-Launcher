@@ -203,12 +203,14 @@ describe('wake: status texts and config', () => {
   })
 
   it('status json echoes the protocol and shows the state', () => {
-    const s = statusJson(769, { ok: true, info: { name: 'abc', state: 'offline', target: null, maxPlayers: 8, cooldownUntil: null } }) as {
+    const s = statusJson(769, { ok: true, info: { name: 'abc', motd: 'Meine Welt', state: 'offline', target: null, maxPlayers: 8, cooldownUntil: null } }) as {
       version: { protocol: number }, players: { max: number, online: number }, description: { text: string }
     }
     assert.equal(s.version.protocol, 769)
     assert.deepEqual(s.players, { max: 8, online: 0 })
-    assert.equal(s.description.text, '§a● §fSchläft – Beitreten startet ihn\n§7Free server: §ctrs-launcher.de §8× §bcraftinghosting.free')
+    assert.equal(s.description.text, '§fMeine Welt §8– §a▶ Click to join, it starts now\n§7Free server by §bcraftinghosting.free §8× §ctrs-launcher.de')
+    const named = statusJson(769, { ok: true, info: { name: 'abc', motd: '', state: 'starting', target: null, maxPlayers: 8, cooldownUntil: null } }) as { description: { text: string } }
+    assert.equal(named.description.text.split('\n')[0], '§fabc §8– §e● Starting …')
   })
 
   it('TRS_API_URL must be https (http only for 127.0.0.1)', () => {

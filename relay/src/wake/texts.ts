@@ -1,6 +1,6 @@
 import type { HostInfo, Resolved } from './api.ts'
 
-export const FOOTER = '§7Free server: §ctrs-launcher.de §8× §bcraftinghosting.free'
+export const FOOTER = '§7Free server by §bcraftinghosting.free §8× §ctrs-launcher.de'
 
 export const MSG = {
   starting: '§aServer startet …§r\n§7In etwa einer Minute erneut verbinden.',
@@ -40,21 +40,23 @@ export function wakeErrorMessage(code: string, cooldownUntil?: string): string {
   }
 }
 
+/** Zeile 1: eigene MOTD bzw. Servername, dahinter der Zustand. */
 function statusLine(info: HostInfo): string {
+  const name = `§f${info.motd || info.name} §8– `
   switch (info.state) {
     case 'offline':
     case 'stopping':
-      return '§a● §fSchläft – Beitreten startet ihn'
+      return `${name}§a▶ Click to join, it starts now`
     case 'starting':
-      return '§e● §fStartet …'
+      return `${name}§e● Starting …`
     case 'running':
-      return '§a● §fLäuft'
+      return `${name}§a● Online`
     case 'cooldown': {
       const hhmm = berlinTime(info.cooldownUntil)
-      return hhmm ? `§c● §fPause bis ${hhmm}` : '§c● §fPause'
+      return hhmm ? `${name}§c● Break until ${hhmm}` : `${name}§c● Break`
     }
     default:
-      return '§c● §fNicht verfügbar'
+      return `${name}§c● Unavailable`
   }
 }
 
@@ -62,8 +64,8 @@ function statusLine(info: HostInfo): string {
 export function statusJson(protocol: number, r: Resolved | null): unknown {
   let line: string
   let max = 0
-  if (r === null || (!r.ok && r.code === 'unknown_host')) line = '§c● §fUnbekannter Server'
-  else if (!r.ok) line = '§c● §fNicht verfügbar'
+  if (r === null || (!r.ok && r.code === 'unknown_host')) line = '§c● §fUnknown server'
+  else if (!r.ok) line = '§c● §fUnavailable'
   else {
     line = statusLine(r.info)
     max = r.info.maxPlayers
