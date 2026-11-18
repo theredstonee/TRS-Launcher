@@ -320,7 +320,9 @@ export async function craftingServer(ctx: AppContext, user: UserRow): Promise<Se
   const row = rowOf(ctx, user.uuid)
   if (row) {
     try {
-      return view(parseServer(await call(ctx, 'GET', `/servers/${encodeURIComponent(row.server_id)}`)), row.access)
+      const s = view(parseServer(await call(ctx, 'GET', `/servers/${encodeURIComponent(row.server_id)}`)), row.access)
+      if (s.state === 'running' && (row.wl_key === null || !row.op_done)) await syncAccess(ctx, user, s)
+      return s
     } catch (e) {
       if (!(e instanceof ApiError && e.code === 'no_server')) throw e
       forget(ctx, user.uuid)
@@ -457,7 +459,8 @@ const obj = (v: unknown) => (typeof v === 'object' && v !== null && !Array.isArr
 
 function parseSettings(body: unknown) {
   const o = obj(body) ?? {}
-  return settingsOut.parse(obj(o.settings) ?? o)
+  const out = settingsOut.parse(obj(o.settings) ?? o)
+  return { ...out, levelType: out.levelType.replace(/^minecraft\\?:/, '') }
 }
 
 export async function craftingSettings(ctx: AppContext, user: UserRow) {
@@ -503,10 +506,19 @@ export async function craftingStats(ctx: AppContext, user: UserRow) {
     const net = obj(o?.network)
     const players = obj(o?.players)
     return {
-      cpuPercent: pick(o, 'cpu', 'cpuPercent') ?? pick(obj(o?.cpu), 'percent', 'usage'),
-      memory: { usedBytes: pick(mem, 'bytes', 'used', 'usedBytes'), limitBytes: pick(mem, 'limit', 'limitBytes', 'max') },
-      disk: { usedBytes: pick(disk, 'bytes', 'used', 'usedBytes'), limitBytes: pick(disk, 'limit', 'limitBytes', 'max') },
-      network: { rxBytes: pick(net, 'rx', 'rxBytes', 'rx_bytes'), txBytes: pick(net, 'tx', 'txBytes', 'tx_bytes') },
+      cpuPercent: pick(o, 'cpuPercent', 'cpu'),
+      memory: {
+        usedBytes: pick(o, 'memoryBytes') ?? pick(mem, 'bytes', 'used'),
+        limitBytes: pick(o, 'memoryLimitBytes') ?? pick(mem, 'limit'),
+      },
+      disk: {
+        usedBytes: pick(o, 'diskBytes') ?? pick(disk, 'bytes', 'used'),
+        limitBytes: pick(o, 'diskLimitBytes') ?? pick(disk, 'limit'),
+      },
+      network: {
+        rxBytes: pick(o, 'networkRxBytes') ?? pick(net, 'rx', 'rxBytes'),
+        txBytes: pick(o, 'networkTxBytes') ?? pick(net, 'tx', 'txBytes'),
+      },
       uptimeSeconds: pick(o, 'uptimeSeconds', 'uptime'),
       players: players && num0(players.online) !== null ? { online: num0(players.online)!, max: num0(players.max) } : null,
     }
@@ -588,10 +600,11 @@ export async function craftingWorldImport(ctx: AppContext, user: UserRow): Promi
     if (s.session.active || s.state === 'running' || s.state === 'starting' || s.state === 'stopping') {
       throw conflict('server_running', 'Stop the server first')
     }
+    const list = z.object({ files: z.array(z.object({ name: z.string() }).loose()).max(5000) }).loose()
+      .safeParse(await call(ctx, 'GET', path(row, '/files?dir=%2F')))
+    if (!list.success) throw upstream()
+    if (!list.data.files.some((f) => f.name === WORLD_ZIP)) throw notFound('file_not_found', 'Upload the world first')
     await call(ctx, 'POST', path(row, '/files/delete'), { paths: ['/world', '/world_nether', '/world_the_end'] })
-      .catch((e: unknown) => {
-        if (!(e instanceof ApiError && e.code === 'file_not_found')) throw e
-      })
     await call(ctx, 'POST', path(row, '/files/decompress'), { path: `/${WORLD_ZIP}` })
     await call(ctx, 'POST', path(row, '/files/delete'), { paths: [`/${WORLD_ZIP}`] }).catch(() => undefined)
     return fresh(ctx, row)

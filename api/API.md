@@ -5539,7 +5539,8 @@ runs because players are on it. `deleteAt` = deleted with its data unless starte
   `difficulty` `peaceful | easy | normal | hard`, `hardcore`, `pvp`, `allowFlight` (booleans), `seed` (≤ 64),
   `levelType` `normal | flat | large_biomes | amplified`, `spawnProtection` 0–64, `viewDistance` and
   `simulationDistance` 3–16. `whitelist` is read-only (follows `access`). Applies on the next start; `seed` and
-  `levelType` only for a newly generated world.
+  `levelType` only for a newly generated world. Settings, files and mods only work after the server has been started
+  once (before that the partner answers `409 server_installing`, checked 2026-11-18).
 - `GET /v1/craftinghosting/server/logs?lines=200` (1–1000) -> `{ lines: string[] }`, newest last, colour codes and
   control characters removed, lines cut at 2000 characters.
 - `GET /v1/craftinghosting/server/stats` -> `{ cpuPercent, memory: { usedBytes, limitBytes }, disk: { usedBytes,

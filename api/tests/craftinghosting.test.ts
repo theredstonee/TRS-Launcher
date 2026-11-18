@@ -27,7 +27,7 @@ class FakePartner {
   commands: string[] = []
   calls: string[] = []
   files = new Map<string, string>()
-  settings: Record<string, unknown> = { motd: 'A Minecraft Server', maxPlayers: 20, whitelist: false, pvp: true }
+  settings: Record<string, unknown> = { motd: 'A Minecraft Server', maxPlayers: 20, whitelist: false, pvp: null, levelType: 'minecraft\\:normal' }
   mods: string[] = []
   uploadHost = 'upload.craftinghosting.free'
   used = 0
@@ -93,8 +93,10 @@ class FakePartner {
         this.mods.push(body.project)
         return this.json(200, { ok: true })
       case 'GET logs': return this.json(200, { lines: ['[10:00:00 INFO]: Done (3.2s)!', '\u001b[31mred\u001b[0m'] })
-      case 'GET stats': return this.json(200, { cpu: 12.5, memory: { bytes: 100, limit: 4096 }, disk: { bytes: 5, limit: 10 },
-        network: { rx: 1, tx: 2 }, uptime: 60, players: { online: 2, max: 20 } })
+      case 'GET stats': return this.json(200, { state: 'running', cpuPercent: 12.5, cpuLimitPercent: 200, memoryBytes: 100,
+        memoryLimitBytes: 4096, diskBytes: 5, diskLimitBytes: 10, networkRxBytes: 1, networkTxBytes: 2, uptimeSeconds: 60,
+        players: { online: 2, max: 20 } })
+      case 'GET files': return this.json(200, { directory: '/', files: [...this.files.keys()].map((f) => ({ name: f.slice(1), path: f, type: 'file' })) })
       case 'DELETE ': this.servers.delete(s.id); this.used--; return new Response(null, { status: 204 })
       case 'POST start':
         if (!s.eulaAccepted && !body.acceptEula) return this.err(409, 'eula_required')
@@ -296,7 +298,8 @@ describe('craftinghosting', () => {
     expect(() => settingsBody.parse({})).toThrow()
     const set = await craftingSetSettings(env.ctx, u!, settingsBody.parse({ motd: 'Hallo', maxPlayers: 8 }))
     expect([set.motd, set.maxPlayers]).toEqual(['Hallo', 8])
-    expect((await craftingSettings(env.ctx, u!)).motd).toBe('Hallo')
+    const got = await craftingSettings(env.ctx, u!)
+    expect([got.motd, got.levelType, got.pvp]).toEqual(['Hallo', 'normal', true])
     expect(await craftingLogs(env.ctx, u!, 50)).toEqual(['[10:00:00 INFO]: Done (3.2s)!', 'red'])
     expect(await craftingStats(env.ctx, u!)).toEqual({
       cpuPercent: 12.5, memory: { usedBytes: 100, limitBytes: 4096 }, disk: { usedBytes: 5, limitBytes: 10 },
