@@ -120,7 +120,8 @@ export class WakeApi {
       if (r.status === 404) return { ok: false, code: 'unknown_host' }
       const info = r.status === 200 ? parseInfo(r.json) : null
       if (info) return { ok: true, info }
-      this.opts.log(`resolve failed status=${r.status}`)
+      const code = (r.json as { error?: { code?: unknown } } | null)?.error?.code
+      this.opts.log(`resolve failed status=${r.status} code=${typeof code === 'string' ? code : '-'} path=/v1/internal/hosting/resolve?host=${encodeURIComponent(host)} t=${Math.floor(this.opts.now() / 1000)}`)
     } catch (err) {
       this.opts.log(`resolve failed: ${(err as Error).name}`)
     }

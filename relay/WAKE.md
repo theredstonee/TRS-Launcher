@@ -54,6 +54,9 @@ Ask the API (`resolve`, cached ~10 s per host). Answer:
 
 ## API (TRS API, base `TRS_API_URL`, default `https://trs-launcher.theredstonee.de`)
 
+Live the relay uses `TRS_API_URL=https://api.trs-launcher.de` (same tunnel, zone without Bot Fight Mode – on
+theredstonee.de Cloudflare's Bot Fight Mode answers requests from the relay's datacenter IP with 403).
+
 Both requests are signed with the relay secret (`RELAY_SECRET`, first secret signs, API accepts all):
 headers `X-Relay-Time: <unix seconds>` and `X-Relay-Sig: <hex HMAC-SHA256(secret, time + "\n" + METHOD + "\n" +
 path-with-query + "\n" + sha256hex(body or ""))>`; the API rejects times off by more than 60 s.
