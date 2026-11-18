@@ -3,6 +3,7 @@
 // Lädt die Sitzung erst im Browser – das SSR-HTML bleibt für alle gleich (cachebar, keine persönlichen Daten).
 const { t } = useTeamText()
 const { c } = useCircuitText()
+const { h } = useHostingText()
 const { account, loaded, load, logout } = useAccount()
 const lp = useLocalePath()
 const route = useRoute()
@@ -39,6 +40,7 @@ async function signOut() {
       <div v-if="account && open" class="menu right-0 mt-2 w-56" role="menu">
         <p class="px-3 pt-2 pb-1 text-xs text-base-400">{{ account.name }}</p>
         <NuxtLink :to="lp('/applications')" class="menu-item" role="menuitem"><SiteIcon name="inbox" class="size-4" />{{ t.account.myApplications }}</NuxtLink>
+        <NuxtLink :to="`${lp('/hosting')}#my-server`" class="menu-item" role="menuitem"><SiteIcon name="server" class="size-4" />{{ h.manage.title }}</NuxtLink>
         <NuxtLink :to="lp('/circuits/mine')" class="menu-item" role="menuitem"><SiteIcon name="blocks" class="size-4" />{{ c.list.mine }}</NuxtLink>
         <NuxtLink v-if="account.team" to="/admin" class="menu-item" role="menuitem"><SiteIcon name="key" class="size-4" />{{ t.account.teamArea }}</NuxtLink>
         <button type="button" class="menu-item w-full" role="menuitem" @click="signOut"><SiteIcon name="logout" class="size-4" />{{ t.account.signOut }}</button>

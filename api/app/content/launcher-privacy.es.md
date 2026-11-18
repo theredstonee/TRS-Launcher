@@ -442,6 +442,9 @@ Entonces el servidor TRS (nunca tu ordenador directamente) envía a CraftingHost
 - los mods que transfieras (solo sus ids de Modrinth) y, si transfieres un mundo, el mundo como archivo ZIP, que tu
   launcher sube directamente a CraftingHosting.
 
+Con la sesión iniciada en este sitio web también puedes gestionar el servidor en la página `/hosting`; se usan los
+mismos datos que en el launcher y, mientras la página está abierta, envía la señal periódica igual que el launcher.
+
 Guardamos qué servidor pertenece a tu cuenta y el modo de acceso. Los jugadores que entran en tu servidor se conectan
 directamente a CraftingHosting, que ve su dirección IP como cualquier servidor de Minecraft. Si eliminas el servidor en
 el launcher, se elimina en CraftingHosting con sus datos; CraftingHosting también elimina los servidores que llevan
