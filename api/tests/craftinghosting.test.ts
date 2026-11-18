@@ -712,6 +712,7 @@ describe('craftinghosting routes: website session', () => {
     expect(root.entries.find((e) => e.name === 'server.properties')).toMatchObject({ editable: true, protected: false })
     const plugins = await craftingFiles(env.ctx, u!, '/plugins')
     expect(plugins.entries.find((e) => e.name === 'trs-server-rules-bukkit-1.1.0.jar')?.protected).toBe(true)
+    expect(plugins.entries.find((e) => e.name === 'trs-server-rules-bukkit-1.1.0.jar')?.lock).toBe('trs')
     expect(plugins.entries.find((e) => e.name === 'Chunky-1.4.jar')?.editable).toBe(false)
 
     // Lesen/Schreiben/Schutz
@@ -812,8 +813,11 @@ describe('craftinghosting routes: website session', () => {
     await craftingWriteFile(env.ctx, u!, '/permissions.yml', 'ok')
     await craftingWriteFile(env.ctx, u!, '/config/paper-global.yml', 'ok')
     const root = await craftingFiles(env.ctx, u!, '/')
-    expect(root.entries.find((e) => e.name === 'eula.txt')).toMatchObject({ protected: true, editable: false })
-    expect(root.entries.find((e) => e.name === 'bukkit.yml')).toMatchObject({ protected: false, editable: true })
+    expect(root.entries.find((e) => e.name === 'eula.txt')).toMatchObject({ protected: true, editable: false, viewable: true, lock: 'system' })
+    expect(root.entries.find((e) => e.name === 'bukkit.yml')).toMatchObject({ protected: false, editable: true, lock: null })
+    expect(root.entries.find((e) => e.name === 'libraries')).toMatchObject({ protected: true, lock: 'system' })
+    expect(root.writable).toBe(true)
+    expect((await craftingFiles(env.ctx, u!, '/libraries')).writable).toBe(false)
     await craftingStop(env.ctx, u!, false)
     expect(() => worldNameQuery.parse({ name: 'libraries' })).toThrow()
     expect(() => worldNameQuery.parse({ name: 'Plugins' })).toThrow()

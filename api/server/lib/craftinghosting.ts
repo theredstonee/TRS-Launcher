@@ -1318,6 +1318,20 @@ const SYSTEM_DIRS = ['/libraries', '/versions', '/cache', '/.cache', '/bundler',
   '/plugins/.paper-remapped', '/logs', '/crash-reports', '/.console_history']
 const SYSTEM_FILES = /^\/([^/]+\.jar|eula\.txt|start\.sh|run\.sh|run\.bat|user_jvm_args\.txt|\.env|usercache\.json|version_history\.json)$/
 
+/** Warum gesperrt: `system` = Server-Software, `trs` = von TRS verwaltet, `access` = folgt dem Zugang. */
+export type LockReason = 'system' | 'trs' | 'access'
+
+function lockOf(row: Row, path0: string, dir = false): LockReason | null {
+  const p = path0.toLowerCase()
+  if (SYSTEM_FILES.test(p) && !dir) return 'system'
+  if (SYSTEM_DIRS.some((d) => p === d || p.startsWith(`${d}/`))) return 'system'
+  if (dir) return ['/', '/plugins', '/mods', '/config', '/plugins/trsserverrules'].includes(p) ? 'trs' : null
+  if (/^\/(plugins|mods)\/trs-server-rules-[^/]*\.jar$/.test(p)) return 'trs'
+  if (p === '/plugins/trsserverrules/hosting.yml' || p === '/config/trs-server-rules-hosting.yml') return 'trs'
+  if (row.access === 'friends' && p === '/whitelist.json') return 'access'
+  return null
+}
+
 function protectedPath(row: Row, path0: string): boolean {
   const p = path0.toLowerCase()
   if (SYSTEM_FILES.test(p)) return true
@@ -1352,10 +1366,25 @@ async function listDir(ctx: AppContext, row: Row, dir: string) {
 export async function craftingFiles(ctx: AppContext, user: UserRow, dir: string) {
   return onServer(ctx, user, async (row) => {
     const entries = (await listDir(ctx, row, dir)).map((e) => {
-      const prot = e.type === 'directory' ? protectedDir(e.path) : protectedPath(row, e.path)
-      return { ...e, editable: e.type === 'file' && !prot && isText(e.name) && e.size <= MAX_TEXT, protected: prot }
+      const isDir = e.type === 'directory'
+      const prot = isDir ? protectedDir(e.path) : protectedPath(row, e.path)
+      const text = !isDir && isText(e.name) && e.size <= MAX_TEXT
+      return {
+        ...e,
+        editable: text && !prot,
+        /** Textdatei, die man ansehen darf (auch gesperrte). */
+        viewable: text,
+        protected: prot,
+        lock: prot ? lockOf(row, e.path, isDir) ?? 'trs' : null,
+      }
     }).sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'directory' ? -1 : 1))
-    return { dir, entries }
+    const dirLock = lockOf(row, dir, true)
+    return {
+      dir,
+      entries,
+      /** Darf man hier neue Ordner/Dateien anlegen? */
+      writable: !(dirLock === 'system') && !protectedPath(row, `${dir === '/' ? '' : dir}/x`),
+    }
   })
 }
 

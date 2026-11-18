@@ -5659,7 +5659,10 @@ everything under `/libraries`, `/versions`, `/cache`, `/.cache`, `/bundler`, `/.
 `/plugins/.paper-remapped`, `/logs`, `/crash-reports`. Config files (`*.yml`, `config/…`, plugin folders) stay
 editable. Before every start the API rewrites the hosting file / single MOTD line with the current footer.
 
-- `GET …/server/files?dir=/` -> `{ dir, entries: [{ name, path, type, size, modifiedAt, editable, protected }] }`.
+- `GET …/server/files?dir=/` -> `{ dir, writable, entries: [{ name, path, type, size, modifiedAt, editable, viewable,
+  protected, lock }] }`. All protection is decided here – clients only show it: `lock` = `system` (server software,
+  read-only), `trs` (managed by TRS), `access` (follows the access mode) or `null`; `viewable` = text file that may be
+  opened read-only; `writable` = new files/folders allowed in `dir`.
 - `GET …/server/files/content?path=` -> `{ path, content }` for text files (known text extension or none, ≤ 1 MB;
   `415 file_not_text`, `413 file_too_large`). `PUT` with body `{ content }` -> `{ path, size }`. Writing
   `/server.properties` keeps the locked keys' old values and the MOTD; a changed `motd` goes through the MOTD rules.
