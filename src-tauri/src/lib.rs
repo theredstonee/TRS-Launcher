@@ -297,6 +297,13 @@ pub fn run() {
                 tauri::async_runtime::spawn(Arc::clone(&launcher).resume_clips());
                 // TRS-Präsenz im 60-s-Takt (ohne Einwilligung passiert nichts).
                 tauri::async_runtime::spawn(Arc::clone(&launcher).run_trs_presence());
+                // CraftingHosting: Heartbeat, solange der eigene Server eine Sitzung hat.
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(Arc::clone(&launcher).run_craftinghosting_heartbeat(Arc::new(move || {
+                    if let Err(e) = handle.emit("craftinghosting-changed", ()) {
+                        log::warn!("craftinghosting-changed konnte nicht gesendet werden: {e}");
+                    }
+                })));
             }
             // Skins/Presets/Theme/Sprache mit dem TRS-Konto abgleichen (nur mit Einwilligung + Schalter).
             tauri::async_runtime::spawn(Arc::clone(&launcher).run_trs_sync());
@@ -912,6 +919,44 @@ pub fn run() {
             commands::hosting::hosting_room_content,
             commands::hosting::hosting_instance_mods,
             commands::hosting::hosting_prepare,
+            commands::craftinghosting::craftinghosting_info,
+            commands::craftinghosting::craftinghosting_server,
+            commands::craftinghosting::craftinghosting_create,
+            commands::craftinghosting::craftinghosting_set_access,
+            commands::craftinghosting::craftinghosting_start,
+            commands::craftinghosting::craftinghosting_stop,
+            commands::craftinghosting::craftinghosting_command,
+            commands::craftinghosting::craftinghosting_delete,
+            commands::craftinghosting::craftinghosting_rename,
+            commands::craftinghosting::craftinghosting_check_subdomain,
+            commands::craftinghosting::craftinghosting_set_subdomain,
+            commands::craftinghosting::craftinghosting_settings,
+            commands::craftinghosting::craftinghosting_save_settings,
+            commands::craftinghosting::craftinghosting_logs,
+            commands::craftinghosting::craftinghosting_stats,
+            commands::craftinghosting::craftinghosting_mods,
+            commands::craftinghosting::craftinghosting_install_versions,
+            commands::craftinghosting::craftinghosting_upload_world,
+            commands::craftinghosting::craftinghosting_files,
+            commands::craftinghosting::craftinghosting_file,
+            commands::craftinghosting::craftinghosting_save_file,
+            commands::craftinghosting::craftinghosting_delete_files,
+            commands::craftinghosting::craftinghosting_create_folder,
+            commands::craftinghosting::craftinghosting_properties,
+            commands::craftinghosting::craftinghosting_save_properties,
+            commands::craftinghosting::craftinghosting_addons,
+            commands::craftinghosting::craftinghosting_remove_addon,
+            commands::craftinghosting::craftinghosting_upload_world_disk,
+            commands::craftinghosting::craftinghosting_worlds,
+            commands::craftinghosting::craftinghosting_set_active_world,
+            commands::craftinghosting::craftinghosting_delete_world,
+            commands::craftinghosting::craftinghosting_download_world,
+            commands::craftinghosting::craftinghosting_change_version,
+            commands::craftinghosting::craftinghosting_backups,
+            commands::craftinghosting::craftinghosting_create_backup,
+            commands::craftinghosting::craftinghosting_restore_backup,
+            commands::craftinghosting::craftinghosting_delete_backup,
+            commands::craftinghosting::craftinghosting_download_backup,
             commands::server_export::server_export_plan,
             commands::server_export::export_server,
             commands::server_export::local_servers_list,
@@ -956,8 +1001,12 @@ pub(crate) async fn shutdown_services(launcher: LauncherState) {
     let discord = tauri::async_runtime::spawn(async move { discord.discord_shutdown().await });
     let servers = Arc::clone(&launcher);
     let servers = tauri::async_runtime::spawn(async move { servers.local_servers_shutdown().await });
+    // Partner-Server stoppen, falls eine Sitzung läuft (höchstens ~3 s).
+    let hosting = Arc::clone(&launcher);
+    let hosting = tauri::async_runtime::spawn(async move { hosting.craftinghosting_shutdown().await });
     launcher.clips_shutdown().await;
     launcher.trs_shutdown().await;
     let _ = discord.await;
     let _ = servers.await;
+    let _ = hosting.await;
 }

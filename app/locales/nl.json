@@ -327,7 +327,39 @@
       "request_closed": "Het team werkt al aan deze aanvraag – hij kan niet meer worden gewijzigd.",
       "code_not_found": "Deze code bestaat niet (meer).",
       "creator_not_found": "Deze creator bestaat niet (meer).",
-      "creator_team_forbidden": "Alleen de creator kan dit doen – ook niet in teammodus."
+      "creator_team_forbidden": "Alleen de creator kan dit doen – ook niet in teammodus.",
+      "craftinghosting_unavailable": "Gratis servers zijn op de TRS-server momenteel niet beschikbaar.",
+      "craftinghosting_maintenance": "CraftingHosting is in onderhoud – probeer het later opnieuw.",
+      "craftinghosting_upstream": "CraftingHosting reageert momenteel niet – probeer het zo opnieuw.",
+      "craftinghosting_full": "Alle gratis serverplekken zijn momenteel bezet.",
+      "no_server": "Je hebt (nog) geen server.",
+      "server_exists": "Je hebt al een server.",
+      "server_installing": "Je server wordt nog ingericht – een moment.",
+      "eula_required": "Voor de eerste start moet je de Minecraft-EULA accepteren.",
+      "cooldown": "Je server heeft een verplichte pauze – start hem later opnieuw.",
+      "not_running": "Je server draait momenteel niet.",
+      "server_failed": "Er ging iets mis bij het inrichten van je server.",
+      "server_suspended": "Je server is door CraftingHosting geblokkeerd.",
+      "server_type_unavailable": "Dit servertype is momenteel niet beschikbaar.",
+      "version_unavailable": "Deze versie is momenteel niet beschikbaar voor dit servertype.",
+      "server_name_invalid": "Deze servernaam werkt niet – kies een andere.",
+      "invalid_path": "De server accepteert dit pad niet.",
+      "file_rejected": "CraftingHosting heeft het bestand geweigerd.",
+      "file_not_found": "Dit bestand bestaat (niet meer) op de server.",
+      "mods_unsupported": "Dit servertype kan geen mods of plug-ins laden.",
+      "server_running": "Stop eerst de server – dit kan alleen als hij uit staat.",
+      "invalid_subdomain": "Dit adres werkt niet – 3 tot 24 tekens uit a–z, 0–9 en -.",
+      "subdomain_taken": "Dit adres is al bezet – kies een ander.",
+      "subdomain_reserved": "Dit adres is gereserveerd – kies een ander.",
+      "dns_unavailable": "Eigen adressen zijn op de TRS-server nu niet beschikbaar.",
+      "file_not_text": "Dit is geen tekstbestand – het kan hier niet worden bewerkt.",
+      "file_too_large": "Het bestand is te groot voor de editor (hoogstens 1 MB).",
+      "file_protected": "TRS beheert dit bestand – het kan niet worden gewijzigd of verwijderd.",
+      "property_locked": "Deze instelling ligt vast en kan niet worden gewijzigd.",
+      "feature_unavailable": "Dit is nog niet beschikbaar – het komt binnenkort.",
+      "hosting_maintenance": "Hosting is in onderhoud – probeer het later opnieuw.",
+      "server_blocked": "Je server is door het TRS-team geblokkeerd.",
+      "feature_disabled": "Deze functie is op dit moment uitgeschakeld."
     },
     "auth": {
       "accountMismatch": "Deze login hoort bij een ander account – log opnieuw in.",
@@ -779,6 +811,24 @@
       "storeMismatch": "\"{name}\" komt niet overeen met het bestand van de host (hash of grootte wijkt af).",
       "instanceMismatch": "Deze instantie past niet bij de wereld (versie of loader).",
       "noBaseInstance": "Kies een instantie om te kopiëren en aan te vullen."
+    },
+    "craftinghosting": {
+      "invalidName": "Naam: 3 tot 22 tekens – letters, cijfers, spaties en . _ ' -",
+      "invalidAccess": "Ongeldige toegang.",
+      "invalidCommand": "Commando: 1 tot 256 tekens op één regel.",
+      "invalidType": "Kies een servertype en een versie.",
+      "invalidSettings": "Deze instelling kan zo niet.",
+      "invalidProjects": "Deze mods kunnen niet worden overgezet.",
+      "uploadFailed": "De wereld kon niet worden geüpload – probeer het opnieuw.",
+      "stopFirst": "Stop de server voordat je een wereld uploadt.",
+      "invalidSubdomain": "Adres: 3 tot 24 tekens – a–z, 0–9 en -, geen - aan het begin of eind.",
+      "invalidPath": "Ongeldig pad op de server.",
+      "invalidProperty": "Instelling: sleutel uit a–z, 0–9, . en -, waarde hoogstens 500 tekens op één regel.",
+      "fileTooLarge": "Het bestand is te groot (hoogstens 1 MB).",
+      "invalidWorldName": "Wereldnaam: 1 tot 32 tekens uit A–Z, a–z, 0–9, _ en -.",
+      "noWorldInZip": "Er zit geen wereld in dit ZIP-bestand (level.dat ontbreekt).",
+      "downloadFailed": "De wereld kon niet worden gedownload – probeer het opnieuw.",
+      "invalidBackup": "Deze back-up bestaat niet zo."
     },
     "chatImage": {
       "unsupported": "Alleen PNG-, JPEG- en WebP-afbeeldingen kunnen worden verstuurd.",
@@ -2447,7 +2497,10 @@
       "sidebarRecentTitle": "Snelle instanties",
       "sidebarRecentDescription": "Je recent gespeelde instanties met hun iconen onder de navigatie.",
       "sidebarAccountTitle": "Accounttegel",
-      "sidebarAccountDescription": "Het actieve account met zijn skinhoofd onderaan de zijbalk."
+      "sidebarAccountDescription": "Het actieve account met zijn skinhoofd onderaan de zijbalk.",
+      "hosting": "Hosting",
+      "hostingTabTitle": "Tabblad Hosting",
+      "hostingTabDescription": "Toont je gratis CraftingHosting-server in de zijbalk."
     },
     "behavior": {
       "title": "Gedrag",
@@ -3079,7 +3132,8 @@
     "achievements": "Prestaties",
     "localServers": "Mijn servers",
     "controls": "Bediening",
-    "pc": "PC"
+    "pc": "PC",
+    "hosting": "Hosting"
   },
   "accountMenu": {
     "menuLabel": "Accounts",
@@ -3463,7 +3517,8 @@
       "shares": "Om screenshots als link te delen, meldt de launcher zich aan bij de TRS-server. Dat gebeurt pas als je toestemming geeft.",
       "achievements": "Om je prestaties te tonen, meldt de launcher zich aan bij de TRS-server. Dat gebeurt pas als je akkoord gaat.",
       "cosmetics": "Om TRS-hoofdcosmetica te tonen, logt de launcher in bij de TRS-server. Dat gebeurt pas als je akkoord gaat.",
-      "remote": "Om je pc vanaf deze telefoon te bedienen, meldt de launcher zich aan bij de TRS-server. Dat gebeurt pas als je toestemming geeft."
+      "remote": "Om je pc vanaf deze telefoon te bedienen, meldt de launcher zich aan bij de TRS-server. Dat gebeurt pas als je toestemming geeft.",
+      "hosting": "Je gratis server bij CraftingHosting loopt via je TRS-account. Daarvoor zijn de TRS-diensten nodig."
     },
     "account": {
       "title": "Geen account ingelogd",
@@ -7511,6 +7566,537 @@
         "pet_request_image_delete": "Referentieafbeelding verwijderd",
         "other": "Dashboard gewijzigd"
       }
+    }
+  },
+  "craftinghosting": {
+    "partner": "★ Hostingpartner",
+    "title": "Hosting",
+    "subtitle": "Je gratis Minecraft-server bij CraftingHosting – starten, beheren en met één klik meedoen.",
+    "offline": "De TRS-server is momenteel niet bereikbaar.",
+    "unavailableTitle": "Hosting is momenteel niet beschikbaar",
+    "mobileNote": "Aanmaken en starten kan alleen in de launcher op je pc – die houdt de server draaiende.",
+    "latest": "Nieuwste",
+    "noAddress": "Het adres verschijnt zodra de server is ingericht.",
+    "cooldownUntil": "Verplichte pauze – je kunt de server om {time} weer starten.",
+    "deleted": "Server verwijderd.",
+    "create": {
+      "name": "Naam",
+      "namePlaceholder": "bijv. Mijn wereld",
+      "nameHint": "3–22 tekens: letters, cijfers, spaties en . _ ' -",
+      "version": "Versie",
+      "submit": "Server aanmaken",
+      "creating": "Bezig met aanmaken …",
+      "full": "Alle gratis plekken zijn momenteel bezet – probeer het later opnieuw."
+    },
+    "access": {
+      "label": "Wie mag er meedoen?",
+      "friends": "Alleen vrienden",
+      "friendsHint": "Whitelist met jou en je TRS-vrienden – wordt automatisch bijgewerkt.",
+      "open": "Open",
+      "openHint": "Iedereen met het adres kan meedoen."
+    },
+    "plan": {
+      "title": "Wat je krijgt"
+    },
+    "rules": {
+      "title": "Zo werkt het",
+      "runs": "Je server draait zolang de launcher open is.",
+      "session": "Maximaal {hours} uur achter elkaar, daarna {pause} uur pauze.",
+      "idle": "Servers worden na {days} dagen zonder start verwijderd.",
+      "eula": "Voor de eerste start accepteer je de Minecraft-EULA."
+    },
+    "state": {
+      "installing": "Wordt ingericht",
+      "offline": "Uit",
+      "starting": "Start …",
+      "running": "Online",
+      "stopping": "Stopt …",
+      "failed": "Mislukt",
+      "suspended": "Geblokkeerd",
+      "setup": "Eerste installatie"
+    },
+    "stopReason": {
+      "host_stopped": "Laatst gestopt omdat de launcher werd gesloten.",
+      "host_timeout": "Laatst gestopt omdat de launcher niet meer reageerde.",
+      "session_limit": "Laatst gestopt na de maximale looptijd.",
+      "admin": "Laatst gestopt door het team."
+    },
+    "notes": {
+      "installing": "Je server wordt ingericht – dat duurt een à twee minuten.",
+      "failed": "Er ging iets mis met je server. Start hem opnieuw of verwijder hem en maak een nieuwe aan.",
+      "suspended": "CraftingHosting heeft deze server geblokkeerd."
+    },
+    "actions": {
+      "join": "Meedoen",
+      "joining": "Bezig met meedoen …"
+    },
+    "delete": {
+      "title": "Server verwijderen?",
+      "text": "Je server ‘{name}’ en zijn wereld worden definitief verwijderd.",
+      "confirm": "Definitief verwijderen"
+    },
+    "eula": {
+      "title": "Minecraft-EULA",
+      "text": "Om een Minecraft-server te draaien, moet je de licentieovereenkomst voor eindgebruikers van Minecraft accepteren.",
+      "link": "EULA lezen",
+      "accept": "Ik accepteer de Minecraft-EULA.",
+      "start": "Accepteren en starten"
+    },
+    "console": {
+      "placeholder": "Commando, bijv. say Hallo",
+      "send": "Versturen",
+      "sent": "Commando verstuurd.",
+      "empty": "Nog geen uitvoer.",
+      "offline": "Commando’s werken alleen als de server draait."
+    },
+    "join": {
+      "waiting": "Je server start – je doet mee zodra hij klaar is.",
+      "noAddress": "De server heeft nog geen adres.",
+      "notStarted": "De server is niet gestart.",
+      "timeout": "De server doet er te lang over om te starten – probeer het zo opnieuw."
+    },
+    "rename": "Hernoemen",
+    "hostAway": "Je launcher meldt zich niet meer – de server draait alleen door zolang er spelers op zitten.",
+    "setupRestarting": "De server wordt voor het eerst ingericht en start één keer opnieuw – zo is hij klaar.",
+    "deleteAt": "Wordt op {date} verwijderd als je hem niet eerder start.",
+    "tabs": {
+      "overview": "Overzicht",
+      "console": "Console",
+      "settings": "Instellingen",
+      "files": "Bestanden",
+      "plugins": "Plugins",
+      "mods": "Mods",
+      "world": "Werelden"
+    },
+    "stats": {
+      "title": "Live",
+      "players": "Spelers",
+      "cpu": "CPU",
+      "memory": "RAM",
+      "disk": "Opslag"
+    },
+    "settings": {
+      "saved": "Instellingen opgeslagen – ze gelden vanaf de volgende start.",
+      "nextStart": "Wijzigingen gelden vanaf de volgende start van de server.",
+      "afterFirstStart": "Instellingen zijn beschikbaar na de eerste start: start de server één keer, daarna kun je ze hier wijzigen.",
+      "motdFooter": "Regel 2 staat vast: {footer}",
+      "motd": "Tekst in de serverlijst (MOTD)",
+      "gamemode": "Spelmodus",
+      "difficulty": "Moeilijkheid",
+      "maxPlayers": "Max. spelers",
+      "spawnProtection": "Spawnbescherming (blokken)",
+      "viewDistance": "Kijkafstand: {n}",
+      "simulationDistance": "Simulatieafstand: {n}",
+      "pvp": "PvP",
+      "hardcore": "Hardcore",
+      "allowFlight": "Vliegen toestaan",
+      "newWorld": "Nieuwe wereld",
+      "seed": "Seed",
+      "seedRandom": "leeg = willekeurig",
+      "levelType": "Wereldtype",
+      "newWorldHint": "Seed en wereldtype werken alleen als de server een nieuwe wereld maakt.",
+      "whitelistOn": "Whitelist staat aan – die volgt ‘Wie mag er meedoen?’.",
+      "whitelistOff": "Whitelist staat uit – die volgt ‘Wie mag er meedoen?’.",
+      "discard": "Verwerpen",
+      "gamemodes": {
+        "survival": "Overleven",
+        "creative": "Creatief",
+        "adventure": "Avontuur",
+        "spectator": "Toeschouwer"
+      },
+      "difficulties": {
+        "peaceful": "Vredig",
+        "easy": "Makkelijk",
+        "normal": "Normaal",
+        "hard": "Moeilijk"
+      },
+      "levelTypes": {
+        "normal": "Standaard",
+        "flat": "Supervlak",
+        "large_biomes": "Grote biomen",
+        "amplified": "Versterkt"
+      }
+    },
+    "mods": {
+      "title": "Mods uit een instantie",
+      "text": "Installeert de mods van een instantie vanaf Modrinth op de server. Mods die alleen voor de client zijn, blijven weg.",
+      "vanilla": "Vanilla-servers kunnen geen mods of plug-ins laden.",
+      "instance": "Instantie",
+      "button": "Mods overnemen",
+      "working": "Bezig met overzetten …",
+      "installed": "Op de server geïnstalleerd: {n}",
+      "noneTransferable": "Geen van de mods komt van Modrinth – er is niets verstuurd.",
+      "skipped": "Overgeslagen:",
+      "notYet": "Nog niet over te zetten (niet van Modrinth):",
+      "reason": {
+        "client_only": "alleen client",
+        "not_found": "niet gevonden",
+        "unsupported": "past niet bij de server"
+      }
+    },
+    "world": {
+      "instance": "Instantie",
+      "world": "Wereld",
+      "none": "Deze instantie heeft geen werelden.",
+      "confirmTitle": "Wereld van de server vervangen?",
+      "confirm": "Wereld vervangen",
+      "done": "Wereld geüpload – bij de volgende start is hij er.",
+      "phase": {
+        "zip": "Wereld inpakken … {percent} %",
+        "upload": "Uploaden … {percent} %",
+        "import": "Wereld wordt op de server ingericht …",
+        "list": "Bestanden van de wereld verzamelen …",
+        "download": "Downloaden … {percent} %"
+      }
+    },
+    "tabsLabel": "Serveronderdelen",
+    "address": {
+      "title": "Adres",
+      "label": "Je eigen adres",
+      "hint": "Spelers joinen met dit adres – zonder poort.",
+      "status": {
+        "checking": "Controleren …",
+        "available": "Beschikbaar",
+        "taken": "Al bezet – probeer een ander.",
+        "reserved": "Gereserveerd – probeer een ander.",
+        "invalid": "3–24 tekens: a–z, 0–9 en -, geen - aan het begin of eind.",
+        "error": "Kan nu niet controleren – bij opslaan wordt het opnieuw gecontroleerd."
+      },
+      "change": "Adres wijzigen",
+      "saving": "Opslaan …",
+      "changeHint": "Het oude adres werkt meteen niet meer.",
+      "none": "Je server heeft nog geen eigen adres.",
+      "changed": "Adres gewijzigd.",
+      "view": "Getoond adres",
+      "views": {
+        "domain": "TRS-adres",
+        "ip": "IP & poort",
+        "node": "CraftingHosting-adres"
+      }
+    },
+    "wizard": {
+      "stepsLabel": "Stappen",
+      "steps": {
+        "source": "Bron",
+        "name": "Naam & adres",
+        "access": "Toegang & start"
+      },
+      "stepOf": "Stap {n} van {total}",
+      "back": "Terug",
+      "next": "Verder",
+      "preview": "Voorbeeld",
+      "source": {
+        "title": "Waar moet je server vandaan komen?",
+        "instance": "Uit een instantie",
+        "instanceHint": "Gebruikt de versie en loader van een van je instanties – mods en wereld kunnen later volgen.",
+        "new": "Nieuw",
+        "newHint": "Kies zelf het servertype en de versie.",
+        "pickInstance": "Je instanties",
+        "noInstances": "Je hebt nog geen instanties – begin met „Nieuw”.",
+        "pickType": "Servertype",
+        "becomes": "Je server: {server}",
+        "vanillaNote": "Paper is een snellere vanilla-server – spelers joinen met een normale vanilla-client.",
+        "loaderNote": "CraftingHosting biedt geen {loader}-servers aan. Je server wordt Paper en de mods kunnen niet mee.",
+        "versionMissing": "Minecraft {version} is niet beschikbaar voor {type} – kies een versie. Spelers hebben dezelfde versie nodig om te joinen.",
+        "modsLater": "Na de eerste start kun je de mods en een wereld uit deze instantie overnemen."
+      },
+      "types": {
+        "paper": "Snelle vanilla-server met plugins – de veilige keuze.",
+        "purpur": "Paper met veel extra gameplay-opties.",
+        "vanilla": "De onaangepaste server van Mojang.",
+        "fabric": "Voor Fabric-mods – licht en actueel.",
+        "forge": "Voor Forge-mods en grote modpacks.",
+        "other": "Een ander servertype van CraftingHosting."
+      },
+      "name": {
+        "title": "Hoe heet je server?"
+      },
+      "access": {
+        "title": "Wie mag erop?"
+      }
+    },
+    "header": {
+      "more": "Meer acties",
+      "session": "Sessie",
+      "cooldown": "Verplichte pauze",
+      "left": "nog {time}",
+      "until": "weer te starten over {time}",
+      "perSession": "tot {hours} u per sessie"
+    },
+    "tiles": {
+      "of": "van {limit}",
+      "offHint": "Live-waarden zie je zolang de server draait."
+    },
+    "transfer": {
+      "title": "Inhoud uit {instance} overnemen",
+      "text": "Je server is klaar. Haal de mods en een wereld uit je instantie erbij – de server stopt even en start daarna weer.",
+      "missing": "Deze instantie bestaat niet meer.",
+      "mods": "Mods overnemen",
+      "modsHint": "Mods van Modrinth, mods alleen voor de client blijven weg.",
+      "modsNo": "Niet mogelijk bij dit servertype.",
+      "noWorld": "Geen wereld (wereld van de server houden)",
+      "button": "Overnemen",
+      "working": "Bezig met overnemen …",
+      "dismiss": "Niet nu",
+      "done": "Klaar – je server start met de inhoud uit je instantie.",
+      "failed": "Dat lukte niet helemaal – je kunt het opnieuw proberen.",
+      "notMoved": "Niet overgenomen: {n}",
+      "notModrinth": "niet van Modrinth",
+      "steps": {
+        "stop": "Server stoppen",
+        "mods": "Mods installeren",
+        "world": "Wereld uploaden",
+        "start": "Server starten"
+      }
+    },
+    "danger": {
+      "title": "Server verwijderen",
+      "text": "Verwijdert de server, zijn wereld en zijn adres definitief."
+    },
+    "files": {
+      "title": "Serverbestanden",
+      "nextStart": "Wijzigingen aan bestanden gelden vanaf de volgende start van de server.",
+      "pending": "Bestanden zijn beschikbaar zodra je server is ingericht.",
+      "up": "Map omhoog",
+      "breadcrumb": "Pad",
+      "newFolder": "Nieuwe map",
+      "folderName": "Mapnaam",
+      "create": "Aanmaken",
+      "folderCreated": "Map aangemaakt.",
+      "empty": "Deze map is leeg.",
+      "notEditable": "Kan niet als tekst worden geopend.",
+      "deleteLabel": "{name} verwijderen",
+      "deleteTitle": "“{name}” verwijderen?",
+      "deleteText": "Het bestand wordt definitief van de server verwijderd.",
+      "deleteFolderText": "De map en alles erin wordt definitief van de server verwijderd.",
+      "deleted": "“{name}” verwijderd.",
+      "saving": "Opslaan …",
+      "saved": "Opgeslagen – geldt vanaf de volgende start.",
+      "unsaved": "Niet opgeslagen",
+      "shortcut": "Ctrl+S slaat op",
+      "close": "Bestand sluiten",
+      "back": "Terug naar de lijst",
+      "editorLabel": "Inhoud van {name}",
+      "discardTitle": "Wijzigingen verwerpen?",
+      "discardText": "Je wijzigingen aan “{name}” zijn nog niet opgeslagen.",
+      "discard": "Verwerpen",
+      "propertiesNote": "server.properties wordt bij het opslaan gecontroleerd: regel 2 van de MOTD en enkele netwerkinstellingen (poort, adres, transfers) liggen vast.",
+      "readOnly": "Alleen lezen",
+      "locks": {
+        "system": "Onderdeel van de serversoftware – alleen lezen",
+        "trs": "Beheerd door TRS",
+        "access": "Volgt de toegang (alleen vrienden)",
+        "other": "Vergrendeld"
+      }
+    },
+    "props": {
+      "title": "Alle serverinstellingen",
+      "text": "Elke regel uit server.properties – vaste staan met een slot aangegeven.",
+      "search": "Instellingen zoeken …",
+      "noMatch": "Geen instelling past bij “{query}”.",
+      "locked": "Vastgelegd door TRS – niet te wijzigen.",
+      "whitelist": "Volgt “Wie mag joinen?”.",
+      "changes": "Niet-opgeslagen wijzigingen: {n}",
+      "invalid": "Controleer de gemarkeerde waarden.",
+      "groups": {
+        "general": "Algemeen",
+        "gameplay": "Gameplay",
+        "world": "Wereld",
+        "players": "Spelers & rechten",
+        "network": "Netwerk & resourcepack",
+        "other": "Overig"
+      },
+      "levelTypes": {
+        "normal": "Standaard",
+        "flat": "Superplat",
+        "large_biomes": "Grote biomen",
+        "amplified": "Versterkt",
+        "single_biome_surface": "Eén bioom"
+      },
+      "keys": {
+        "motd": "Bericht in de serverlijst (MOTD)",
+        "max-players": "Max. spelers",
+        "white-list": "Whitelist",
+        "enforce-whitelist": "Whitelist afdwingen",
+        "online-mode": "Online-modus (alleen echte Minecraft-accounts)",
+        "hide-online-players": "Online spelers verbergen",
+        "gamemode": "Spelmodus",
+        "force-gamemode": "Spelmodus afdwingen bij joinen",
+        "difficulty": "Moeilijkheid",
+        "hardcore": "Hardcore",
+        "pvp": "PvP",
+        "allow-flight": "Vliegen toestaan",
+        "spawn-monsters": "Monsters spawnen",
+        "spawn-animals": "Dieren spawnen",
+        "spawn-npcs": "Dorpelingen spawnen",
+        "enable-command-block": "Commandoblokken",
+        "player-idle-timeout": "Inactieve spelers kicken na (minuten, 0 = nooit)",
+        "op-permission-level": "Rechtenniveau voor operators",
+        "function-permission-level": "Rechtenniveau voor functies",
+        "spawn-protection": "Spawnbescherming (blokken)",
+        "level-name": "Wereldmap",
+        "level-seed": "Seed",
+        "level-type": "Wereldtype",
+        "generate-structures": "Bouwwerken genereren",
+        "allow-nether": "Nether toestaan",
+        "max-world-size": "Max. wereldgrootte (straal in blokken)",
+        "view-distance": "Zichtafstand (chunks)",
+        "simulation-distance": "Simulatieafstand (chunks)",
+        "entity-broadcast-range-percentage": "Zichtbereik van entiteiten (%)",
+        "resource-pack": "Resourcepack-URL",
+        "resource-pack-sha1": "Resourcepack-SHA-1",
+        "resource-pack-prompt": "Melding bij het resourcepack",
+        "require-resource-pack": "Resourcepack verplicht",
+        "network-compression-threshold": "Compressie vanaf (bytes)",
+        "rate-limit": "Pakketlimiet (0 = uit)",
+        "enable-status": "Tonen in de serverlijst",
+        "enforce-secure-profile": "Ondertekende chat vereisen",
+        "prevent-proxy-connections": "Proxy-/VPN-verbindingen blokkeren",
+        "max-tick-time": "Watchdog: max. ticktijd (ms)",
+        "sync-chunk-writes": "Chunks synchroon wegschrijven",
+        "log-ips": "IP’s van spelers loggen",
+        "pause-when-empty-seconds": "Pauzeren als leeg na (seconden)"
+      }
+    },
+    "addons": {
+      "installedPlugins": "Geïnstalleerde plugins",
+      "installedMods": "Geïnstalleerde mods",
+      "pending": "Plugins en mods zijn beschikbaar zodra je server is ingericht.",
+      "empty": "Nog niets geïnstalleerd – zoek iets op Modrinth.",
+      "protected": "TRS Server Rules – nodig voor de gratis server, niet te verwijderen.",
+      "config": "Configuratie",
+      "configTitle": "Configuratie openen in Bestanden",
+      "remove": "Verwijderen",
+      "removeLabel": "{file} verwijderen",
+      "removeTitle": "“{file}” verwijderen?",
+      "removeText": "Het bestand wordt van de server verwijderd. De configuratiemap blijft.",
+      "removed": "“{file}” verwijderd – geldt vanaf de volgende start.",
+      "searchTitle": "Zoeken op Modrinth",
+      "searchFor": "Voor {type} · Minecraft {version} · alleen wat op servers draait",
+      "searchPlugins": "Plugins zoeken …",
+      "searchMods": "Mods zoeken …",
+      "noResults": "Niets gevonden.",
+      "more": "Meer laden",
+      "install": "Installeren",
+      "installing": "Installeren …",
+      "installed": "Geïnstalleerd",
+      "installedToast": "“{name}” geïnstalleerd – laadt bij de volgende start.",
+      "skipped": "Overgeslagen: {reason}",
+      "by": "door {author}",
+      "downloads": "{n} downloads",
+      "backToSearch": "Terug naar zoeken",
+      "clientOnly": "Alleen voor de client – draait niet op een server.",
+      "installedVersion": "Geïnstalleerd: {version}",
+      "updateTo": "Bijwerken naar {version}",
+      "noFitting": "Geen versie past bij het servertype en de Minecraft-versie.",
+      "otherVersion": "Andere versie",
+      "installedNext": "{version} geïnstalleerd – laadt bij de volgende start.",
+      "allVersionsHint": "Alle versies, ook die misschien niet op je server draaien.",
+      "fittingHint": "Versies voor je server (Minecraft {version}).",
+      "showAll": "Alle versies tonen",
+      "dependencies": "Heeft {n} andere projecten nodig",
+      "installThis": "Deze versie installeren",
+      "sortLabel": "Sorteren",
+      "clearFilters": "Filters wissen",
+      "categories": "Categorieën",
+      "fewerCategories": "Minder",
+      "moreCategories": "+{n} meer",
+      "loadingMore": "Laden …",
+      "sort": {
+        "relevance": "Relevantie",
+        "downloads": "Downloads",
+        "updated": "Onlangs bijgewerkt",
+        "newest": "Nieuwste"
+      }
+    },
+    "worlds": {
+      "title": "Werelden op de server",
+      "text": "De server laadt de actieve wereld. Wijzigen kan alleen als de server uit staat.",
+      "runningHint": "Je server draait – werelden kun je alleen wijzigen terwijl hij uit staat.",
+      "stop": "Server stoppen",
+      "stopping": "Stoppen …",
+      "notGenerated": "“{name}” bestaat nog niet – hij wordt bij de volgende start gemaakt (seed en wereldtype uit de instellingen).",
+      "empty": "Nog geen werelden – de eerste wordt bij de volgende start gemaakt.",
+      "active": "Actief",
+      "activate": "Actief maken",
+      "download": "Downloaden",
+      "resetButton": "Resetten",
+      "deleteButton": "Verwijderen",
+      "activated": "“{name}” is nu de actieve wereld – hij laadt bij de volgende start.",
+      "reset": "“{name}” gereset – bij de volgende start wordt een nieuwe wereld gemaakt.",
+      "deleted": "“{name}” verwijderd.",
+      "downloaded": "Wereld opgeslagen als {file}.",
+      "downloadedPartly": "Wereld opgeslagen als {file} – de server gaf niet alle bestanden door, er kan iets ontbreken.",
+      "downloading": "“{name}” wordt gedownload",
+      "resetTitle": "“{name}” resetten?",
+      "resetText": "De wereld wordt met Nether en End definitief verwijderd. Bij de volgende start maakt de server een nieuwe.",
+      "deleteTitle": "“{name}” verwijderen?",
+      "deleteText": "De wereld wordt met Nether en End definitief van de server verwijderd.",
+      "uploadTitle": "Wereld uploaden",
+      "uploadText": "Uit een van je instanties, als ZIP-bestand of als map op je pc.",
+      "source": "Bron",
+      "targetName": "Naam op de server",
+      "activateAfter": "Als actieve wereld instellen",
+      "nameHint": "Letters, cijfers, _ en -, hoogstens 32 tekens.",
+      "replaces": "Er bestaat al een wereld “{name}” – die wordt vervangen.",
+      "replaceText": "“{name}” wordt op de server met Nether en End vervangen. De oude wereld is daarna definitief weg.",
+      "upload": "Wereld uploaden",
+      "chooseAndUpload": "Kiezen en uploaden …",
+      "stopTitle": "Eerst de server stoppen?",
+      "stopText": "Werelden kun je alleen wijzigen als de server uit staat. Nu stoppen en doorgaan?",
+      "stopAndContinue": "Stoppen en doorgaan",
+      "dimensions": {
+        "overworld": "Bovenwereld",
+        "nether": "Nether",
+        "end": "End"
+      },
+      "sources": {
+        "instance": "Instantie",
+        "zip": "ZIP-bestand",
+        "folder": "Map"
+      },
+      "sourceHint": {
+        "zip": "Je kiest het ZIP-bestand na de klik – de wereld (level.dat) mag in elke map erin staan.",
+        "folder": "Je kiest de wereldmap (met level.dat) na de klik."
+      },
+      "nameRejected": "De server accepteert deze wereldnaam niet – sommige namen zijn servermappen (bijv. plugins, config). Kies een andere."
+    },
+    "version": {
+      "title": "Servertype & versie",
+      "change": "Versie wisselen",
+      "type": "Servertype",
+      "version": "Versie",
+      "keepWorld": "Wereld behouden",
+      "warning": "Plugins en mods passen misschien niet bij de nieuwe versie. De server start opnieuw – je wereld blijft.",
+      "warningNewWorld": "Plugins en mods passen misschien niet bij de nieuwe versie. De server start opnieuw met een nieuwe wereld – de oude wordt verwijderd.",
+      "working": "Wisselen …",
+      "confirm": "Versie wisselen",
+      "changed": "Versie gewisseld – de server wordt opnieuw ingericht."
+    },
+    "notAvailable": "Nog niet beschikbaar – komt binnenkort.",
+    "backups": {
+      "title": "Back-ups",
+      "text": "Momentopnamen van je server. Terugzetten kan alleen als de server uit staat.",
+      "create": "Back-up maken",
+      "working": "Bezig …",
+      "full": "Maximaal aantal back-ups bereikt – verwijder eerst een oude.",
+      "empty": "Nog geen back-ups.",
+      "restore": "Terugzetten",
+      "restoreTitle": "“{name}” terugzetten?",
+      "restoreText": "De huidige stand van je server wordt vervangen door deze back-up.",
+      "deleteLabel": "Back-up {name} verwijderen",
+      "deleteTitle": "“{name}” verwijderen?",
+      "deleteText": "De back-up wordt definitief verwijderd.",
+      "created": "Back-up gemaakt.",
+      "restored": "“{name}” teruggezet – geldt vanaf de volgende start.",
+      "downloaded": "Back-up opgeslagen als {file}."
+    },
+    "team": {
+      "maintenanceTitle": "Onderhoud",
+      "maintenance": "Hosting is in onderhoud – aanmaken, starten en joinen zijn even gepauzeerd.",
+      "maintenanceWith": "Onderhoud: {message}",
+      "blockedWith": "Geblokkeerd door het TRS-team: {reason}",
+      "createOff": "Nieuwe servers aanmaken is op dit moment uitgeschakeld."
     }
   }
 }

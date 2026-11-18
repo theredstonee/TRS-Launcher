@@ -327,7 +327,39 @@
       "request_closed": "Ekip bu başvuru üzerinde çalışıyor – artık değiştirilemez.",
       "code_not_found": "Bu kod yok (artık yok).",
       "creator_not_found": "Bu içerik üretici (artık) yok.",
-      "creator_team_forbidden": "Bunu yalnızca içerik üretici yapabilir – ekip modunda bile olmaz."
+      "creator_team_forbidden": "Bunu yalnızca içerik üretici yapabilir – ekip modunda bile olmaz.",
+      "craftinghosting_unavailable": "Ücretsiz sunucular şu anda TRS sunucusunda kullanılamıyor.",
+      "craftinghosting_maintenance": "CraftingHosting bakımda – lütfen daha sonra tekrar dene.",
+      "craftinghosting_upstream": "CraftingHosting şu anda yanıt vermiyor – birazdan tekrar dene.",
+      "craftinghosting_full": "Şu anda tüm ücretsiz sunucu yerleri dolu.",
+      "no_server": "Henüz bir sunucun yok.",
+      "server_exists": "Zaten bir sunucun var.",
+      "server_installing": "Sunucun hâlâ kuruluyor – bir dakika.",
+      "eula_required": "İlk başlatmadan önce Minecraft EULA’sını kabul etmen gerekir.",
+      "cooldown": "Sunucun zorunlu bir mola veriyor – daha sonra tekrar başlat.",
+      "not_running": "Sunucun şu anda çalışmıyor.",
+      "server_failed": "Sunucun kurulurken bir şeyler ters gitti.",
+      "server_suspended": "Sunucun CraftingHosting tarafından askıya alındı.",
+      "server_type_unavailable": "Bu sunucu türü şu anda kullanılamıyor.",
+      "version_unavailable": "Bu sürüm şu anda bu sunucu türü için kullanılamıyor.",
+      "server_name_invalid": "Bu sunucu adı olmuyor – lütfen başka bir ad seç.",
+      "invalid_path": "Sunucu bu yolu kabul etmiyor.",
+      "file_rejected": "CraftingHosting dosyayı reddetti.",
+      "file_not_found": "Bu dosya sunucuda yok (artık).",
+      "mods_unsupported": "Bu sunucu türü mod veya eklenti yükleyemez.",
+      "server_running": "Önce sunucuyu durdur – bu yalnızca sunucu kapalıyken çalışır.",
+      "invalid_subdomain": "Bu adres olmaz – a–z, 0–9 ve - karakterlerinden 3 ile 24 arası.",
+      "subdomain_taken": "Bu adres zaten alınmış – başka birini seç.",
+      "subdomain_reserved": "Bu adres ayrılmış – başka birini seç.",
+      "dns_unavailable": "Kendi adresler şu an TRS sunucusunda kullanılamıyor.",
+      "file_not_text": "Bu bir metin dosyası değil – burada düzenlenemez.",
+      "file_too_large": "Dosya düzenleyici için çok büyük (en fazla 1 MB).",
+      "file_protected": "Bu dosyayı TRS yönetiyor – değiştirilemez veya silinemez.",
+      "property_locked": "Bu ayar sabittir ve değiştirilemez.",
+      "feature_unavailable": "Bu henüz kullanılamıyor – yakında geliyor.",
+      "hosting_maintenance": "Barındırma bakımda – lütfen daha sonra tekrar dene.",
+      "server_blocked": "Sunucun TRS ekibi tarafından engellendi.",
+      "feature_disabled": "Bu işlev şu anda kapalı."
     },
     "auth": {
       "accountMismatch": "Bu giriş başka bir hesaba ait – lütfen tekrar giriş yap.",
@@ -779,6 +811,24 @@
       "storeMismatch": "\"{name}\" sunucunun dosyasıyla eşleşmiyor (hash ya da boyut farklı).",
       "instanceMismatch": "Bu kurulum dünyaya uymuyor (sürüm ya da yükleyici).",
       "noBaseInstance": "Kopyalanacak ve tamamlanacak bir kurulum seç."
+    },
+    "craftinghosting": {
+      "invalidName": "Ad: 3 ile 22 karakter – harf, rakam, boşluk ve . _ ' -",
+      "invalidAccess": "Geçersiz erişim ayarı.",
+      "invalidCommand": "Komut: tek satırda 1 ile 256 karakter.",
+      "invalidType": "Lütfen sunucu türü ve sürüm seç.",
+      "invalidSettings": "Bu ayar bu şekilde olmaz.",
+      "invalidProjects": "Bu modlar aktarılamaz.",
+      "uploadFailed": "Dünya yüklenemedi – lütfen tekrar dene.",
+      "stopFirst": "Dünya yüklemeden önce sunucuyu durdur.",
+      "invalidSubdomain": "Adres: 3 ile 24 karakter – a–z, 0–9 ve -, başta veya sonda - olmaz.",
+      "invalidPath": "Sunucuda geçersiz yol.",
+      "invalidProperty": "Ayar: anahtar a–z, 0–9, . ve - içerir, değer tek satırda en fazla 500 karakter.",
+      "fileTooLarge": "Dosya çok büyük (en fazla 1 MB).",
+      "invalidWorldName": "Dünya adı: A–Z, a–z, 0–9, _ ve - içeren 1 ila 32 karakter.",
+      "noWorldInZip": "Bu ZIP dosyasında dünya yok (level.dat eksik).",
+      "downloadFailed": "Dünya indirilemedi – lütfen tekrar dene.",
+      "invalidBackup": "Bu yedek bu şekilde yok."
     },
     "chatImage": {
       "unsupported": "Yalnızca PNG, JPEG ve WebP resimleri gönderilebilir.",
@@ -2447,7 +2497,10 @@
       "sidebarRecentTitle": "Hızlı kurulumlar",
       "sidebarRecentDescription": "Son oynadığın kurulumlar, simgeleriyle birlikte gezinmenin altında.",
       "sidebarAccountTitle": "Hesap kutucuğu",
-      "sidebarAccountDescription": "Kenar çubuğunun altında skin kafasıyla birlikte etkin hesap."
+      "sidebarAccountDescription": "Kenar çubuğunun altında skin kafasıyla birlikte etkin hesap.",
+      "hosting": "Sunucu barındırma",
+      "hostingTabTitle": "Sunucu sekmesi",
+      "hostingTabDescription": "Ücretsiz CraftingHosting sunucunu kenar çubuğunda gösterir."
     },
     "behavior": {
       "title": "Davranış",
@@ -3079,7 +3132,8 @@
     "achievements": "Başarımlar",
     "localServers": "Sunucularım",
     "controls": "Kontroller",
-    "pc": "PC"
+    "pc": "PC",
+    "hosting": "Sunucu"
   },
   "accountMenu": {
     "menuLabel": "Hesaplar",
@@ -3463,7 +3517,8 @@
       "shares": "Ekran görüntülerini bağlantı olarak paylaşmak için başlatıcı TRS sunucusuna giriş yapar. Bu yalnızca onay verdiğinde olur.",
       "achievements": "Başarımlarını göstermek için launcher TRS sunucusuna giriş yapar. Bu yalnızca onay verdiğinde olur.",
       "cosmetics": "TRS kafa kozmetiklerini göstermek için launcher TRS sunucusuna giriş yapar. Bu yalnızca sen onay verdikten sonra olur.",
-      "remote": "Bilgisayarını bu telefondan kontrol etmek için başlatıcı TRS sunucusunda oturum açar. Bu yalnızca sen onay verdikten sonra olur."
+      "remote": "Bilgisayarını bu telefondan kontrol etmek için başlatıcı TRS sunucusunda oturum açar. Bu yalnızca sen onay verdikten sonra olur.",
+      "hosting": "CraftingHosting’teki ücretsiz sunucun TRS hesabın üzerinden çalışır. Bunun için TRS hizmetleri gerekir."
     },
     "account": {
       "title": "Giriş yapılmış hesap yok",
@@ -7511,6 +7566,537 @@
         "pet_request_image_delete": "Referans görseli kaldırıldı",
         "other": "Panel değiştirildi"
       }
+    }
+  },
+  "craftinghosting": {
+    "partner": "★ Barındırma ortağı",
+    "title": "Sunucu barındırma",
+    "subtitle": "CraftingHosting’teki ücretsiz Minecraft sunucun – başlat, yönet ve tek tıkla katıl.",
+    "offline": "TRS sunucusuna şu anda ulaşılamıyor.",
+    "unavailableTitle": "Sunucu barındırma şu anda kullanılamıyor",
+    "mobileNote": "Oluşturma ve başlatma yalnızca PC’deki başlatıcıda çalışır – sunucuyu o açık tutar.",
+    "latest": "En yeni",
+    "noAddress": "Adres, sunucu kurulunca görünür.",
+    "cooldownUntil": "Zorunlu mola – sunucuyu saat {time} itibarıyla tekrar başlatabilirsin.",
+    "deleted": "Sunucu silindi.",
+    "create": {
+      "name": "Ad",
+      "namePlaceholder": "ör. Dünyam",
+      "nameHint": "3–22 karakter: harf, rakam, boşluk ve . _ ' -",
+      "version": "Sürüm",
+      "submit": "Sunucu oluştur",
+      "creating": "Oluşturuluyor …",
+      "full": "Şu anda tüm ücretsiz yerler dolu – daha sonra tekrar dene."
+    },
+    "access": {
+      "label": "Kimler katılabilir?",
+      "friends": "Yalnızca arkadaşlar",
+      "friendsHint": "Sen ve TRS arkadaşlarınla beyaz liste – otomatik güncel tutulur.",
+      "open": "Açık",
+      "openHint": "Adresi bilen herkes katılabilir."
+    },
+    "plan": {
+      "title": "Neler var"
+    },
+    "rules": {
+      "title": "Nasıl çalışır",
+      "runs": "Sunucun, başlatıcı açık olduğu sürece çalışır.",
+      "session": "Bir seferde en fazla {hours} sa, ardından {pause} sa mola.",
+      "idle": "Sunucular {days} gün başlatılmazsa silinir.",
+      "eula": "İlk başlatmadan önce Minecraft EULA’sını kabul edersin."
+    },
+    "state": {
+      "installing": "Kuruluyor",
+      "offline": "Kapalı",
+      "starting": "Başlıyor …",
+      "running": "Çevrimiçi",
+      "stopping": "Duruyor …",
+      "failed": "Başarısız",
+      "suspended": "Askıya alındı",
+      "setup": "İlk kurulum"
+    },
+    "stopReason": {
+      "host_stopped": "En son başlatıcı kapatıldığı için durduruldu.",
+      "host_timeout": "En son başlatıcı yanıt vermeyi bıraktığı için durduruldu.",
+      "session_limit": "En son azami çalışma süresinden sonra durduruldu.",
+      "admin": "En son ekip tarafından durduruldu."
+    },
+    "notes": {
+      "installing": "Sunucun kuruluyor – bu bir iki dakika sürer.",
+      "failed": "Sunucunda bir sorun oluştu. Tekrar başlatmayı dene ya da silip yenisini oluştur.",
+      "suspended": "CraftingHosting bu sunucuyu askıya aldı."
+    },
+    "actions": {
+      "join": "Katıl",
+      "joining": "Katılınıyor …"
+    },
+    "delete": {
+      "title": "Sunucu silinsin mi?",
+      "text": "“{name}” sunucun ve dünyası kalıcı olarak silinecek.",
+      "confirm": "Kalıcı olarak sil"
+    },
+    "eula": {
+      "title": "Minecraft EULA",
+      "text": "Bir Minecraft sunucusu çalıştırmak için Minecraft Son Kullanıcı Lisans Sözleşmesi’ni kabul etmen gerekir.",
+      "link": "EULA’yı oku",
+      "accept": "Minecraft EULA’sını kabul ediyorum.",
+      "start": "Kabul et ve başlat"
+    },
+    "console": {
+      "placeholder": "Komut, ör. say Merhaba",
+      "send": "Gönder",
+      "sent": "Komut gönderildi.",
+      "empty": "Henüz çıktı yok.",
+      "offline": "Komutlar yalnızca sunucu çalışırken çalışır."
+    },
+    "join": {
+      "waiting": "Sunucun başlıyor – hazır olur olmaz katılacaksın.",
+      "noAddress": "Sunucunun henüz adresi yok.",
+      "notStarted": "Sunucu başlamadı.",
+      "timeout": "Sunucunun başlaması çok uzun sürüyor – birazdan tekrar dene."
+    },
+    "rename": "Yeniden adlandır",
+    "hostAway": "Başlatıcın artık bildirim göndermiyor – sunucu yalnızca oyuncular varken çalışmaya devam eder.",
+    "setupRestarting": "Sunucu ilk kez kuruluyor ve bir kez yeniden başlıyor – birazdan hazır olacak.",
+    "deleteAt": "O tarihe kadar başlatmazsan {date} tarihinde silinecek.",
+    "tabs": {
+      "overview": "Genel bakış",
+      "console": "Konsol",
+      "settings": "Ayarlar",
+      "files": "Dosyalar",
+      "plugins": "Eklentiler",
+      "mods": "Modlar",
+      "world": "Dünyalar"
+    },
+    "stats": {
+      "title": "Canlı",
+      "players": "Oyuncular",
+      "cpu": "CPU",
+      "memory": "RAM",
+      "disk": "Depolama"
+    },
+    "settings": {
+      "saved": "Ayarlar kaydedildi – bir sonraki başlatmada geçerli olur.",
+      "nextStart": "Değişiklikler sunucunun bir sonraki başlatılmasında geçerli olur.",
+      "afterFirstStart": "Ayarlar ilk başlatmadan sonra kullanılabilir: sunucuyu bir kez başlat, sonra burada değiştirebilirsin.",
+      "motdFooter": "2. satır sabittir: {footer}",
+      "motd": "Sunucu listesindeki mesaj (MOTD)",
+      "gamemode": "Oyun modu",
+      "difficulty": "Zorluk",
+      "maxPlayers": "Azami oyuncu",
+      "spawnProtection": "Doğuş koruması (blok)",
+      "viewDistance": "Görüş mesafesi: {n}",
+      "simulationDistance": "Simülasyon mesafesi: {n}",
+      "pvp": "PvP",
+      "hardcore": "Zorlu",
+      "allowFlight": "Uçmaya izin ver",
+      "newWorld": "Yeni dünya",
+      "seed": "Tohum",
+      "seedRandom": "boş = rastgele",
+      "levelType": "Dünya türü",
+      "newWorldHint": "Tohum ve dünya türü yalnızca sunucu yeni bir dünya oluşturduğunda etkili olur.",
+      "whitelistOn": "Beyaz liste açık – “Kimler katılabilir?” ayarını izler.",
+      "whitelistOff": "Beyaz liste kapalı – “Kimler katılabilir?” ayarını izler.",
+      "discard": "Vazgeç",
+      "gamemodes": {
+        "survival": "Hayatta kalma",
+        "creative": "Yaratıcı",
+        "adventure": "Macera",
+        "spectator": "İzleyici"
+      },
+      "difficulties": {
+        "peaceful": "Barışçıl",
+        "easy": "Kolay",
+        "normal": "Normal",
+        "hard": "Zor"
+      },
+      "levelTypes": {
+        "normal": "Varsayılan",
+        "flat": "Dümdüz",
+        "large_biomes": "Büyük biyomlar",
+        "amplified": "Genişletilmiş"
+      }
+    },
+    "mods": {
+      "title": "Bir örnekten modlar",
+      "text": "Bir örneğin modlarını Modrinth’ten sunucuya kurar. Yalnızca istemci modları atlanır.",
+      "vanilla": "Vanilla sunucular mod veya eklenti yükleyemez.",
+      "instance": "Örnek",
+      "button": "Modları aktar",
+      "working": "Aktarılıyor …",
+      "installed": "Sunucuya kurulan: {n}",
+      "noneTransferable": "Modların hiçbiri Modrinth’ten değil – hiçbir şey gönderilmedi.",
+      "skipped": "Atlananlar:",
+      "notYet": "Henüz aktarılamaz (Modrinth’ten değil):",
+      "reason": {
+        "client_only": "yalnızca istemci",
+        "not_found": "bulunamadı",
+        "unsupported": "bu sunucuya uygun değil"
+      }
+    },
+    "world": {
+      "instance": "Örnek",
+      "world": "Dünya",
+      "none": "Bu örnekte dünya yok.",
+      "confirmTitle": "Sunucunun dünyası değiştirilsin mi?",
+      "confirm": "Dünyayı değiştir",
+      "done": "Dünya yüklendi – bir sonraki başlatmada orada olacak.",
+      "phase": {
+        "zip": "Dünya paketleniyor … %{percent}",
+        "upload": "Yükleniyor … %{percent}",
+        "import": "Dünya sunucuda hazırlanıyor …",
+        "list": "Dünyanın dosyaları toplanıyor …",
+        "download": "İndiriliyor … {percent} %"
+      }
+    },
+    "tabsLabel": "Sunucu bölümleri",
+    "address": {
+      "title": "Adres",
+      "label": "Kendi adresin",
+      "hint": "Oyuncular bu adresle katılır – port gerekmez.",
+      "status": {
+        "checking": "Kontrol ediliyor …",
+        "available": "Uygun",
+        "taken": "Zaten alınmış – başka birini dene.",
+        "reserved": "Ayrılmış – başka birini dene.",
+        "invalid": "3–24 karakter: a–z, 0–9 ve -, başta veya sonda - olmaz.",
+        "error": "Şu an kontrol edilemedi – kaydederken tekrar kontrol edilir."
+      },
+      "change": "Adresi değiştir",
+      "saving": "Kaydediliyor …",
+      "changeHint": "Eski adres hemen çalışmayı bırakır.",
+      "none": "Sunucunun henüz kendi adresi yok.",
+      "changed": "Adres değiştirildi.",
+      "view": "Gösterilen adres",
+      "views": {
+        "domain": "TRS adresi",
+        "ip": "IP ve port",
+        "node": "CraftingHosting adresi"
+      }
+    },
+    "wizard": {
+      "stepsLabel": "Adımlar",
+      "steps": {
+        "source": "Kaynak",
+        "name": "Ad ve adres",
+        "access": "Erişim ve başlat"
+      },
+      "stepOf": "Adım {n} / {total}",
+      "back": "Geri",
+      "next": "İleri",
+      "preview": "Önizleme",
+      "source": {
+        "title": "Sunucun nereden gelsin?",
+        "instance": "Bir örnekten",
+        "instanceHint": "Örneklerinden birinin sürümünü ve yükleyicisini kullanır – modlar ve dünya sonra gelebilir.",
+        "new": "Yeni",
+        "newHint": "Sunucu türünü ve sürümü kendin seç.",
+        "pickInstance": "Örneklerin",
+        "noInstances": "Henüz hiç örneğin yok – „Yeni“ ile başla.",
+        "pickType": "Sunucu türü",
+        "becomes": "Sunucun: {server}",
+        "vanillaNote": "Paper daha hızlı bir vanilla sunucusudur – oyuncular normal bir vanilla istemcisiyle katılır.",
+        "loaderNote": "CraftingHosting {loader} sunucuları sunmuyor. Sunucun Paper olacak ve modlar aktarılamaz.",
+        "versionMissing": "{type} için Minecraft {version} yok – bir sürüm seç. Oyuncuların katılmak için aynı sürüme ihtiyacı var.",
+        "modsLater": "İlk başlatmadan sonra bu örnekten modları ve bir dünyayı aktarabilirsin."
+      },
+      "types": {
+        "paper": "Eklentili hızlı vanilla sunucusu – güvenli seçim.",
+        "purpur": "Birçok ek oynanış seçeneğine sahip Paper.",
+        "vanilla": "Mojang’ın değiştirilmemiş sunucusu.",
+        "fabric": "Fabric modları için – hafif ve güncel.",
+        "forge": "Forge modları ve büyük mod paketleri için.",
+        "other": "CraftingHosting’ten başka bir sunucu türü."
+      },
+      "name": {
+        "title": "Sunucunun adı ne olsun?"
+      },
+      "access": {
+        "title": "Kimler katılabilir?"
+      }
+    },
+    "header": {
+      "more": "Diğer işlemler",
+      "session": "Oturum",
+      "cooldown": "Zorunlu mola",
+      "left": "{time} kaldı",
+      "until": "{time} sonra başlatılabilir",
+      "perSession": "oturum başına {hours} saate kadar"
+    },
+    "tiles": {
+      "of": "/ {limit}",
+      "offHint": "Canlı değerler sunucu çalışırken görünür."
+    },
+    "transfer": {
+      "title": "{instance} içeriğini aktar",
+      "text": "Sunucun hazır. Örneğindeki modları ve bir dünyayı getir – sunucu kısa süre durur ve sonra yeniden başlar.",
+      "missing": "Bu örnek artık yok.",
+      "mods": "Modları aktar",
+      "modsHint": "Modrinth modları; yalnızca istemci modları atlanır.",
+      "modsNo": "Bu sunucu türünde mümkün değil.",
+      "noWorld": "Dünya yok (sunucunun dünyası kalsın)",
+      "button": "Aktar",
+      "working": "Aktarılıyor …",
+      "dismiss": "Şimdi değil",
+      "done": "Bitti – sunucun örneğindeki içerikle başlıyor.",
+      "failed": "Tamamen olmadı – tekrar deneyebilirsin.",
+      "notMoved": "Aktarılmayan: {n}",
+      "notModrinth": "Modrinth’ten değil",
+      "steps": {
+        "stop": "Sunucuyu durdur",
+        "mods": "Modları kur",
+        "world": "Dünyayı yükle",
+        "start": "Sunucuyu başlat"
+      }
+    },
+    "danger": {
+      "title": "Sunucuyu sil",
+      "text": "Sunucuyu, dünyasını ve adresini kalıcı olarak siler."
+    },
+    "files": {
+      "title": "Sunucu dosyaları",
+      "nextStart": "Dosya değişiklikleri sunucunun bir sonraki başlatılışından itibaren geçerli olur.",
+      "pending": "Dosyalar, sunucun kurulduğunda kullanılabilir.",
+      "up": "Bir klasör yukarı",
+      "breadcrumb": "Yol",
+      "newFolder": "Yeni klasör",
+      "folderName": "Klasör adı",
+      "create": "Oluştur",
+      "folderCreated": "Klasör oluşturuldu.",
+      "empty": "Bu klasör boş.",
+      "notEditable": "Metin olarak açılamaz.",
+      "deleteLabel": "{name} sil",
+      "deleteTitle": "“{name}” silinsin mi?",
+      "deleteText": "Dosya sunucudan kalıcı olarak silinir.",
+      "deleteFolderText": "Klasör içindeki her şeyle birlikte sunucudan kalıcı olarak silinir.",
+      "deleted": "“{name}” silindi.",
+      "saving": "Kaydediliyor …",
+      "saved": "Kaydedildi – bir sonraki başlatmadan itibaren geçerli.",
+      "unsaved": "Kaydedilmedi",
+      "shortcut": "Ctrl+S kaydeder",
+      "close": "Dosyayı kapat",
+      "back": "Listeye dön",
+      "editorLabel": "{name} içeriği",
+      "discardTitle": "Değişiklikler atılsın mı?",
+      "discardText": "“{name}” üzerindeki değişikliklerin henüz kaydedilmedi.",
+      "discard": "At",
+      "propertiesNote": "server.properties kaydederken kontrol edilir: MOTD’nin 2. satırı ve bazı ağ ayarları (port, adres, aktarımlar) sabittir.",
+      "readOnly": "Salt okunur",
+      "locks": {
+        "system": "Sunucu yazılımının parçası – salt okunur",
+        "trs": "TRS tarafından yönetiliyor",
+        "access": "Erişim ayarını izler (yalnızca arkadaşlar)",
+        "other": "Kilitli"
+      }
+    },
+    "props": {
+      "title": "Tüm sunucu ayarları",
+      "text": "server.properties içindeki her kayıt – sabit olanlar kilitle işaretli.",
+      "search": "Ayar ara …",
+      "noMatch": "“{query}” ile eşleşen ayar yok.",
+      "locked": "TRS tarafından sabitlendi – değiştirilemez.",
+      "whitelist": "“Kim katılabilir?” ayarını izler.",
+      "changes": "Kaydedilmemiş değişiklikler: {n}",
+      "invalid": "İşaretli değerleri kontrol et.",
+      "groups": {
+        "general": "Genel",
+        "gameplay": "Oynanış",
+        "world": "Dünya",
+        "players": "Oyuncular ve yetkiler",
+        "network": "Ağ ve kaynak paketi",
+        "other": "Diğer"
+      },
+      "levelTypes": {
+        "normal": "Varsayılan",
+        "flat": "Süper düz",
+        "large_biomes": "Büyük biyomlar",
+        "amplified": "Büyütülmüş",
+        "single_biome_surface": "Tek biyom"
+      },
+      "keys": {
+        "motd": "Sunucu listesindeki mesaj (MOTD)",
+        "max-players": "Maks. oyuncu",
+        "white-list": "Beyaz liste",
+        "enforce-whitelist": "Beyaz listeyi zorunlu kıl",
+        "online-mode": "Çevrimiçi mod (yalnızca gerçek Minecraft hesapları)",
+        "hide-online-players": "Çevrimiçi oyuncuları gizle",
+        "gamemode": "Oyun modu",
+        "force-gamemode": "Katılırken oyun modunu zorunlu kıl",
+        "difficulty": "Zorluk",
+        "hardcore": "Hardcore",
+        "pvp": "PvP",
+        "allow-flight": "Uçmaya izin ver",
+        "spawn-monsters": "Canavar doğsun",
+        "spawn-animals": "Hayvan doğsun",
+        "spawn-npcs": "Köylü doğsun",
+        "enable-command-block": "Komut blokları",
+        "player-idle-timeout": "Boşta kalan oyuncuları at (dakika, 0 = asla)",
+        "op-permission-level": "Operatör yetki seviyesi",
+        "function-permission-level": "Fonksiyon yetki seviyesi",
+        "spawn-protection": "Doğma noktası koruması (blok)",
+        "level-name": "Dünya klasörü",
+        "level-seed": "Tohum",
+        "level-type": "Dünya türü",
+        "generate-structures": "Yapılar oluşturulsun",
+        "allow-nether": "Nether’a izin ver",
+        "max-world-size": "Maks. dünya boyutu (blok cinsinden yarıçap)",
+        "view-distance": "Görüş mesafesi (chunk)",
+        "simulation-distance": "Simülasyon mesafesi (chunk)",
+        "entity-broadcast-range-percentage": "Varlık görünürlük menzili (%)",
+        "resource-pack": "Kaynak paketi URL’si",
+        "resource-pack-sha1": "Kaynak paketi SHA-1",
+        "resource-pack-prompt": "Kaynak paketi mesajı",
+        "require-resource-pack": "Kaynak paketini zorunlu kıl",
+        "network-compression-threshold": "Sıkıştırma eşiği (bayt)",
+        "rate-limit": "Paket sınırı (0 = kapalı)",
+        "enable-status": "Sunucu listesinde göster",
+        "enforce-secure-profile": "İmzalı sohbet zorunlu",
+        "prevent-proxy-connections": "Proxy/VPN bağlantılarını engelle",
+        "max-tick-time": "Watchdog: maks. tick süresi (ms)",
+        "sync-chunk-writes": "Chunk’ları eşzamanlı yaz",
+        "log-ips": "Oyuncu IP’lerini kaydet",
+        "pause-when-empty-seconds": "Boşken şu süreden sonra duraklat (saniye)"
+      }
+    },
+    "addons": {
+      "installedPlugins": "Kurulu eklentiler",
+      "installedMods": "Kurulu modlar",
+      "pending": "Eklentiler ve modlar, sunucun kurulduğunda kullanılabilir.",
+      "empty": "Henüz hiçbir şey kurulu değil – Modrinth’te bir şeyler bul.",
+      "protected": "TRS Server Rules – ücretsiz sunucu için gerekli, kaldırılamaz.",
+      "config": "Yapılandırma",
+      "configTitle": "Yapılandırmasını Dosyalar’da aç",
+      "remove": "Kaldır",
+      "removeLabel": "{file} kaldır",
+      "removeTitle": "“{file}” kaldırılsın mı?",
+      "removeText": "Dosya sunucudan silinir. Yapılandırma klasörü kalır.",
+      "removed": "“{file}” kaldırıldı – bir sonraki başlatmadan itibaren geçerli.",
+      "searchTitle": "Modrinth’te bul",
+      "searchFor": "{type} için · Minecraft {version} · yalnızca sunucuda çalışanlar",
+      "searchPlugins": "Eklenti ara …",
+      "searchMods": "Mod ara …",
+      "noResults": "Hiçbir şey bulunamadı.",
+      "more": "Daha fazla yükle",
+      "install": "Kur",
+      "installing": "Kuruluyor …",
+      "installed": "Kuruldu",
+      "installedToast": "“{name}” kuruldu – bir sonraki başlatmada yüklenir.",
+      "skipped": "Atlandı: {reason}",
+      "by": "{author} tarafından",
+      "downloads": "{n} indirme",
+      "backToSearch": "Aramaya dön",
+      "clientOnly": "Yalnızca istemci için – sunucuda çalışmaz.",
+      "installedVersion": "Kurulu: {version}",
+      "updateTo": "{version} sürümüne güncelle",
+      "noFitting": "Sunucu türüne ve Minecraft sürümüne uyan sürüm yok.",
+      "otherVersion": "Başka sürüm",
+      "installedNext": "{version} kuruldu – bir sonraki başlatmada yüklenir.",
+      "allVersionsHint": "Tüm sürümler, sunucunda çalışmayabilecekler de dahil.",
+      "fittingHint": "Sunucun için sürümler (Minecraft {version}).",
+      "showAll": "Tüm sürümleri göster",
+      "dependencies": "{n} başka proje gerektirir",
+      "installThis": "Bu sürümü kur",
+      "sortLabel": "Sırala",
+      "clearFilters": "Filtreleri temizle",
+      "categories": "Kategoriler",
+      "fewerCategories": "Daha az",
+      "moreCategories": "+{n} daha",
+      "loadingMore": "Yükleniyor …",
+      "sort": {
+        "relevance": "Alaka",
+        "downloads": "İndirmeler",
+        "updated": "Son güncellenen",
+        "newest": "En yeni"
+      }
+    },
+    "worlds": {
+      "title": "Sunucudaki dünyalar",
+      "text": "Sunucu aktif dünyayı yükler. Değişiklik için sunucunun durdurulmuş olması gerekir.",
+      "runningHint": "Sunucun çalışıyor – dünyalar yalnızca sunucu kapalıyken değiştirilebilir.",
+      "stop": "Sunucuyu durdur",
+      "stopping": "Durduruluyor …",
+      "notGenerated": "“{name}” henüz yok – bir sonraki başlatmada oluşturulur (tohum ve dünya türü ayarlardan).",
+      "empty": "Henüz dünya yok – ilki bir sonraki başlatmada oluşturulur.",
+      "active": "Aktif",
+      "activate": "Aktif yap",
+      "download": "İndir",
+      "resetButton": "Sıfırla",
+      "deleteButton": "Sil",
+      "activated": "“{name}” artık aktif dünya – bir sonraki başlatmada yüklenir.",
+      "reset": "“{name}” sıfırlandı – bir sonraki başlatmada yeni bir dünya oluşturulur.",
+      "deleted": "“{name}” silindi.",
+      "downloaded": "Dünya {file} olarak kaydedildi.",
+      "downloadedPartly": "Dünya {file} olarak kaydedildi – sunucu tüm dosyaları listelemedi, bir şeyler eksik olabilir.",
+      "downloading": "“{name}” indiriliyor",
+      "resetTitle": "“{name}” sıfırlansın mı?",
+      "resetText": "Dünya, Nether ve End ile birlikte kalıcı olarak silinir. Bir sonraki başlatmada sunucu yenisini oluşturur.",
+      "deleteTitle": "“{name}” silinsin mi?",
+      "deleteText": "Dünya, Nether ve End ile birlikte sunucudan kalıcı olarak silinir.",
+      "uploadTitle": "Dünya yükle",
+      "uploadText": "Örneklerinden birinden, bir ZIP dosyasından veya bilgisayarındaki bir klasörden.",
+      "source": "Kaynak",
+      "targetName": "Sunucudaki ad",
+      "activateAfter": "Aktif dünya yap",
+      "nameHint": "Harf, rakam, _ ve -, en fazla 32 karakter.",
+      "replaces": "“{name}” adında bir dünya zaten var – değiştirilecek.",
+      "replaceText": "“{name}” sunucuda Nether ve End ile birlikte değiştirilir. Eski dünya kalıcı olarak gider.",
+      "upload": "Dünyayı yükle",
+      "chooseAndUpload": "Seç ve yükle …",
+      "stopTitle": "Önce sunucu durdurulsun mu?",
+      "stopText": "Dünyalar yalnızca sunucu kapalıyken değiştirilebilir. Şimdi durdurup devam edilsin mi?",
+      "stopAndContinue": "Durdur ve devam et",
+      "dimensions": {
+        "overworld": "Normal dünya",
+        "nether": "Nether",
+        "end": "End"
+      },
+      "sources": {
+        "instance": "Örnek",
+        "zip": "ZIP dosyası",
+        "folder": "Klasör"
+      },
+      "sourceHint": {
+        "zip": "ZIP dosyasını tıkladıktan sonra seçersin – dünya (level.dat) içinde herhangi bir klasörde olabilir.",
+        "folder": "Dünya klasörünü (level.dat içeren) tıkladıktan sonra seçersin."
+      },
+      "nameRejected": "Sunucu bu dünya adını kabul etmiyor – bazı adlar sunucu klasörlerine ait (ör. plugins, config). Başka bir ad seç."
+    },
+    "version": {
+      "title": "Sunucu türü ve sürüm",
+      "change": "Sürümü değiştir",
+      "type": "Sunucu türü",
+      "version": "Sürüm",
+      "keepWorld": "Dünyayı koru",
+      "warning": "Eklentiler ve modlar yeni sürüme uymayabilir. Sunucu yeniden başlar – dünyan kalır.",
+      "warningNewWorld": "Eklentiler ve modlar yeni sürüme uymayabilir. Sunucu yeni bir dünyayla yeniden başlar – eskisi silinir.",
+      "working": "Değiştiriliyor …",
+      "confirm": "Sürümü değiştir",
+      "changed": "Sürüm değişti – sunucu yeniden kuruluyor."
+    },
+    "notAvailable": "Henüz kullanılamıyor – yakında.",
+    "backups": {
+      "title": "Yedekler",
+      "text": "Sunucunun anlık kopyaları. Geri yükleme için sunucu durdurulmuş olmalı.",
+      "create": "Yedek oluştur",
+      "working": "Çalışıyor …",
+      "full": "Azami yedek sayısına ulaşıldı – önce eski birini sil.",
+      "empty": "Henüz yedek yok.",
+      "restore": "Geri yükle",
+      "restoreTitle": "“{name}” geri yüklensin mi?",
+      "restoreText": "Sunucunun mevcut durumu bu yedekle değiştirilir.",
+      "deleteLabel": "{name} yedeğini sil",
+      "deleteTitle": "“{name}” silinsin mi?",
+      "deleteText": "Yedek kalıcı olarak silinir.",
+      "created": "Yedek oluşturuldu.",
+      "restored": "“{name}” geri yüklendi – bir sonraki başlatmadan itibaren geçerli.",
+      "downloaded": "Yedek {file} olarak kaydedildi."
+    },
+    "team": {
+      "maintenanceTitle": "Bakım",
+      "maintenance": "Barındırma bakımda – oluşturma, başlatma ve katılma şimdilik duraklatıldı.",
+      "maintenanceWith": "Bakım: {message}",
+      "blockedWith": "TRS ekibi tarafından engellendi: {reason}",
+      "createOff": "Yeni sunucu oluşturma şu anda kapalı."
     }
   }
 }

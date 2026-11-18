@@ -160,6 +160,30 @@ import {
   type HostingTarget,
   type PrepareProgress,
 } from './hosting'
+import {
+  craftingInfoSchema,
+  craftingModsResultSchema,
+  craftingServerSchema,
+  craftingSettingsSchema,
+  craftingStatsSchema,
+  savedFileSchema,
+  serverAddonsSchema,
+  serverDirSchema,
+  serverFileContentSchema,
+  serverPropertiesSchema,
+  serverWorldsSchema,
+  backupsSchema,
+  subdomainCheckSchema,
+  type VersionChange,
+  worldDownloadSchema,
+  type WorldUploadTarget,
+  type AddonSearchFacets,
+  type AddonSort,
+  type CraftingAccess,
+  type CraftingSettingsPatch,
+  type NewCraftingServer,
+  type WorldUploadProgress,
+} from './craftinghosting'
 import type {
   BedrockInfo,
   FpsMode,
@@ -1366,6 +1390,84 @@ export const backend = {
       plan: { roomId: string; mode: 'new' | 'copy'; baseInstanceId: string | null; name: string | null; mods: string[]; trustHost: boolean },
       onProgress: (p: PrepareProgress) => void,
     ) => checked(prepareResultSchema, 'hosting_prepare', { plan, onProgress: channel(onProgress) }),
+  },
+
+  /** Kostenloser Server beim Partner CraftingHosting (§43) – nur über die TRS API. */
+  craftinghosting: {
+    info: () => checked(craftingInfoSchema, 'craftinghosting_info'),
+    /** `null` = noch kein Server. */
+    server: () => checked(craftingServerSchema.nullable(), 'craftinghosting_server'),
+    create: (spec: NewCraftingServer) => checked(craftingServerSchema, 'craftinghosting_create', { spec }),
+    setAccess: (access: CraftingAccess) => checked(craftingServerSchema, 'craftinghosting_set_access', { access }),
+    rename: (name: string) => checked(craftingServerSchema, 'craftinghosting_rename', { name }),
+    /** Ist `<name>.trs-launcher.de` frei? `dns_unavailable` = keine eigenen Adressen auf diesem TRS-Server. */
+    checkSubdomain: (name: string) => checked(subdomainCheckSchema, 'craftinghosting_check_subdomain', { name }),
+    setSubdomain: (name: string) => checked(craftingServerSchema, 'craftinghosting_set_subdomain', { name }),
+    start: (acceptEula: boolean) => checked(craftingServerSchema, 'craftinghosting_start', { acceptEula }),
+    stop: () => checked(craftingServerSchema, 'craftinghosting_stop'),
+    command: (command: string) => call<void>('craftinghosting_command', { command }),
+    remove: () => call<void>('craftinghosting_delete'),
+    settings: () => checked(craftingSettingsSchema, 'craftinghosting_settings'),
+    saveSettings: (patch: CraftingSettingsPatch) => checked(craftingSettingsSchema, 'craftinghosting_save_settings', { patch }),
+    /** Letzte Zeilen der Konsole (neueste zuletzt). */
+    logs: (lines = 200) => checked(z.array(z.string().max(4000)).max(1000), 'craftinghosting_logs', { lines }),
+    stats: () => checked(craftingStatsSchema, 'craftinghosting_stats'),
+    /** Modrinth-Projekte (IDs) auf den Server; Client-Mods überspringt die API. */
+    mods: (projects: string[]) => checked(craftingModsResultSchema, 'craftinghosting_mods', { projects }),
+    /** Welt einer Instanz packen, hochladen und einspielen (Server muss aus sein); ohne `target` ersetzt sie `world`. */
+    uploadWorld: (instanceId: string, folder: string, onProgress: (p: WorldUploadProgress) => void, target?: WorldUploadTarget) =>
+      checked(craftingServerSchema, 'craftinghosting_upload_world', { instanceId, folder, target: target ?? null, onProgress: channel(onProgress) }),
+    /** Welt-ZIP bzw. Weltordner per Dialog wählen und hochladen; `null` = abgebrochen. */
+    uploadWorldDisk: (kind: 'zip' | 'folder', target: WorldUploadTarget, onProgress: (p: WorldUploadProgress) => void) =>
+      checked(craftingServerSchema.nullable(), 'craftinghosting_upload_world_disk', { kind, target, onProgress: channel(onProgress) }),
+    worlds: () => checked(serverWorldsSchema, 'craftinghosting_worlds'),
+    setActiveWorld: (name: string) => checked(serverWorldsSchema, 'craftinghosting_set_active_world', { name }),
+    deleteWorld: (name: string) => checked(serverWorldsSchema, 'craftinghosting_delete_world', { name }),
+    /** Welt als ZIP speichern (Dialog); `null` = abgebrochen. Abbrechen über `cancelTask(taskId)`. */
+    downloadWorld: (name: string, serverName: string, onProgress: (p: WorldUploadProgress) => void, taskId: string | null = null) =>
+      checked(worldDownloadSchema.nullable(), 'craftinghosting_download_world', { name, serverName, onProgress: channel(onProgress), taskId }),
+    /** Ordner auf dem Server (Pfad absolut, z. B. `/plugins`). */
+    files: (dir: string) => checked(serverDirSchema, 'craftinghosting_files', { dir }),
+    /** Textdatei lesen (`file_not_text` / `file_too_large`). */
+    file: (path: string) => checked(serverFileContentSchema, 'craftinghosting_file', { path }),
+    saveFile: (path: string, content: string) => checked(savedFileSchema, 'craftinghosting_save_file', { path, content }),
+    deleteFiles: (paths: string[]) => call<void>('craftinghosting_delete_files', { paths }),
+    createFolder: (path: string) => call<void>('craftinghosting_create_folder', { path }),
+    /** Alle Schlüssel aus server.properties und die gesperrten. */
+    properties: () => checked(serverPropertiesSchema, 'craftinghosting_properties'),
+    saveProperties: (changes: Record<string, string>) => checked(serverPropertiesSchema, 'craftinghosting_save_properties', { changes }),
+    addons: () => checked(serverAddonsSchema, 'craftinghosting_addons'),
+    removeAddon: (file: string) => call<void>('craftinghosting_remove_addon', { file }),
+    /** Modrinth-Suche nach Plugins/Mods für den Server (Filter aus `addonSearchFacets`, Kategorien UND-verknüpft). */
+    searchAddons: (facets: AddonSearchFacets, opts: { query: string; categories: string[]; sort: AddonSort; offset: number; limit: number }) =>
+      call<ModrinthSearchResult>('modrinth_search', {
+        params: {
+          ...facets,
+          query: opts.query,
+          categories: opts.categories,
+          categoryMatch: 'all',
+          index: opts.sort,
+          offset: opts.offset,
+          limit: opts.limit,
+          excludeCategories: [],
+          environments: [],
+          excludeProjectIds: [],
+          openSource: false,
+        },
+      }),
+    /** Servertyp/Version wechseln (nur mit Schalter `versionChange`). */
+    changeVersion: (change: VersionChange) => checked(craftingServerSchema, 'craftinghosting_change_version', { change }),
+    /** Backups (nur mit Schalter `backups`). */
+    backups: () => checked(backupsSchema, 'craftinghosting_backups'),
+    createBackup: () => call<void>('craftinghosting_create_backup'),
+    restoreBackup: (id: string) => call<void>('craftinghosting_restore_backup', { id }),
+    deleteBackup: (id: string) => call<void>('craftinghosting_delete_backup', { id }),
+    /** Backup als ZIP speichern (Dialog); `null` = abgebrochen, sonst der Dateiname. */
+    downloadBackup: (id: string, name: string, serverName: string, onProgress: (p: WorldUploadProgress) => void, taskId: string | null = null) =>
+      checked(z.string().max(260).nullable(), 'craftinghosting_download_backup', { id, name, serverName, onProgress: channel(onProgress), taskId }),
+    /** Bestimmte Modrinth-Versionen installieren (1–20). */
+    installVersions: (versions: { project: string; version: string }[]) =>
+      checked(craftingModsResultSchema, 'craftinghosting_install_versions', { versions }),
   },
 }
 

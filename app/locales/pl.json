@@ -327,7 +327,39 @@
       "request_closed": "Zespół już pracuje nad tym wnioskiem – nie można go już zmienić.",
       "code_not_found": "Ten kod nie istnieje (już).",
       "creator_not_found": "Ten twórca nie istnieje (już).",
-      "creator_team_forbidden": "Może to zrobić tylko twórca – nawet w trybie zespołu nie."
+      "creator_team_forbidden": "Może to zrobić tylko twórca – nawet w trybie zespołu nie.",
+      "craftinghosting_unavailable": "Darmowe serwery są teraz niedostępne na serwerze TRS.",
+      "craftinghosting_maintenance": "CraftingHosting jest w trakcie konserwacji – spróbuj później.",
+      "craftinghosting_upstream": "CraftingHosting teraz nie odpowiada – spróbuj za chwilę.",
+      "craftinghosting_full": "Wszystkie miejsca na darmowe serwery są teraz zajęte.",
+      "no_server": "Nie masz (jeszcze) serwera.",
+      "server_exists": "Masz już serwer.",
+      "server_installing": "Twój serwer jest jeszcze konfigurowany – chwila.",
+      "eula_required": "Przed pierwszym uruchomieniem musisz zaakceptować EULA Minecrafta.",
+      "cooldown": "Twój serwer ma obowiązkową przerwę – uruchom go później.",
+      "not_running": "Twój serwer teraz nie działa.",
+      "server_failed": "Coś poszło nie tak podczas konfiguracji serwera.",
+      "server_suspended": "Twój serwer został zawieszony przez CraftingHosting.",
+      "server_type_unavailable": "Ten typ serwera jest teraz niedostępny.",
+      "version_unavailable": "Ta wersja jest teraz niedostępna dla tego typu serwera.",
+      "server_name_invalid": "Ta nazwa serwera nie przejdzie – wybierz inną.",
+      "invalid_path": "Serwer nie akceptuje tej ścieżki.",
+      "file_rejected": "CraftingHosting odrzucił plik.",
+      "file_not_found": "Tego pliku nie ma (już) na serwerze.",
+      "mods_unsupported": "Ten typ serwera nie może ładować modów ani pluginów.",
+      "server_running": "Najpierw zatrzymaj serwer – to działa tylko, gdy jest wyłączony.",
+      "invalid_subdomain": "Ten adres nie działa – od 3 do 24 znaków z a–z, 0–9 i -.",
+      "subdomain_taken": "Ten adres jest już zajęty – wybierz inny.",
+      "subdomain_reserved": "Ten adres jest zarezerwowany – wybierz inny.",
+      "dns_unavailable": "Własne adresy są teraz niedostępne na serwerze TRS.",
+      "file_not_text": "To nie jest plik tekstowy – nie można go tu edytować.",
+      "file_too_large": "Plik jest za duży dla edytora (maks. 1 MB).",
+      "file_protected": "Tym plikiem zarządza TRS – nie można go zmienić ani usunąć.",
+      "property_locked": "To ustawienie jest stałe i nie można go zmienić.",
+      "feature_unavailable": "To jeszcze nie jest dostępne – pojawi się wkrótce.",
+      "hosting_maintenance": "Hosting jest w konserwacji – spróbuj później.",
+      "server_blocked": "Twój serwer został zablokowany przez zespół TRS.",
+      "feature_disabled": "Ta funkcja jest teraz wyłączona."
     },
     "auth": {
       "accountMismatch": "To logowanie należy do innego konta – zaloguj się ponownie.",
@@ -779,6 +811,24 @@
       "storeMismatch": "„{name}” nie pasuje do pliku hosta (inny hash lub rozmiar).",
       "instanceMismatch": "Ta instancja nie pasuje do świata (wersja lub loader).",
       "noBaseInstance": "Wybierz instancję do skopiowania i uzupełnienia."
+    },
+    "craftinghosting": {
+      "invalidName": "Nazwa: od 3 do 22 znaków – litery, cyfry, spacje oraz . _ ' -",
+      "invalidAccess": "Nieprawidłowy dostęp.",
+      "invalidCommand": "Polecenie: od 1 do 256 znaków w jednej linii.",
+      "invalidType": "Wybierz typ serwera i wersję.",
+      "invalidSettings": "Takie ustawienie jest niemożliwe.",
+      "invalidProjects": "Tych modów nie da się przenieść.",
+      "uploadFailed": "Nie udało się wgrać świata – spróbuj ponownie.",
+      "stopFirst": "Zatrzymaj serwer przed wgraniem świata.",
+      "invalidSubdomain": "Adres: od 3 do 24 znaków – a–z, 0–9 i -, bez - na początku ani na końcu.",
+      "invalidPath": "Nieprawidłowa ścieżka na serwerze.",
+      "invalidProperty": "Ustawienie: klucz z a–z, 0–9, . i -, wartość do 500 znaków w jednym wierszu.",
+      "fileTooLarge": "Plik jest za duży (maks. 1 MB).",
+      "invalidWorldName": "Nazwa świata: od 1 do 32 znaków z A–Z, a–z, 0–9, _ i -.",
+      "noWorldInZip": "W tym pliku ZIP nie ma świata (brakuje level.dat).",
+      "downloadFailed": "Nie udało się pobrać świata – spróbuj ponownie.",
+      "invalidBackup": "Taka kopia zapasowa nie istnieje."
     },
     "chatImage": {
       "unsupported": "Można wysyłać tylko zdjęcia PNG, JPEG i WebP.",
@@ -2447,7 +2497,10 @@
       "sidebarRecentTitle": "Szybkie instancje",
       "sidebarRecentDescription": "Ostatnio grane instancje z ikonami pod nawigacją.",
       "sidebarAccountTitle": "Kafelek konta",
-      "sidebarAccountDescription": "Aktywne konto z głową skina na dole paska bocznego."
+      "sidebarAccountDescription": "Aktywne konto z głową skina na dole paska bocznego.",
+      "hosting": "Hosting",
+      "hostingTabTitle": "Karta Hosting",
+      "hostingTabDescription": "Pokazuje twój darmowy serwer CraftingHosting na pasku bocznym."
     },
     "behavior": {
       "title": "Zachowanie",
@@ -3079,7 +3132,8 @@
     "achievements": "Osiągnięcia",
     "localServers": "Moje serwery",
     "controls": "Sterowanie",
-    "pc": "PC"
+    "pc": "PC",
+    "hosting": "Hosting"
   },
   "accountMenu": {
     "menuLabel": "Konta",
@@ -3463,7 +3517,8 @@
       "shares": "Aby udostępniać zrzuty ekranu jako link, launcher loguje się na serwerze TRS. Dzieje się to dopiero po Twojej zgodzie.",
       "achievements": "Aby pokazać twoje osiągnięcia, launcher loguje się na serwer TRS. Dzieje się to dopiero po twojej zgodzie.",
       "cosmetics": "Aby wyświetlić kosmetyki na głowę TRS, launcher loguje się do serwera TRS. Dzieje się to dopiero po twojej zgodzie.",
-      "remote": "Aby sterować komputerem z tego telefonu, launcher loguje się na serwerze TRS. Dzieje się to dopiero po Twojej zgodzie."
+      "remote": "Aby sterować komputerem z tego telefonu, launcher loguje się na serwerze TRS. Dzieje się to dopiero po Twojej zgodzie.",
+      "hosting": "Twój darmowy serwer w CraftingHosting działa przez konto TRS. Do tego potrzebne są usługi TRS."
     },
     "account": {
       "title": "Brak zalogowanego konta",
@@ -7511,6 +7566,537 @@
         "pet_request_image_delete": "Usunięto obraz referencyjny",
         "other": "Zmieniono panel"
       }
+    }
+  },
+  "craftinghosting": {
+    "partner": "★ Partner hostingowy",
+    "title": "Hosting",
+    "subtitle": "Twój darmowy serwer Minecraft w CraftingHosting – uruchamiaj, zarządzaj i dołączaj jednym kliknięciem.",
+    "offline": "Serwer TRS jest teraz nieosiągalny.",
+    "unavailableTitle": "Hosting jest teraz niedostępny",
+    "mobileNote": "Tworzenie i uruchamianie działa tylko w launcherze na PC – to on podtrzymuje działanie serwera.",
+    "latest": "Najnowsza",
+    "noAddress": "Adres pojawi się, gdy serwer zostanie skonfigurowany.",
+    "cooldownUntil": "Obowiązkowa przerwa – serwer uruchomisz ponownie o {time}.",
+    "deleted": "Serwer usunięty.",
+    "create": {
+      "name": "Nazwa",
+      "namePlaceholder": "np. Mój świat",
+      "nameHint": "3–22 znaki: litery, cyfry, spacje oraz . _ ' -",
+      "version": "Wersja",
+      "submit": "Utwórz serwer",
+      "creating": "Tworzenie …",
+      "full": "Wszystkie darmowe miejsca są teraz zajęte – spróbuj później."
+    },
+    "access": {
+      "label": "Kto może dołączyć?",
+      "friends": "Tylko znajomi",
+      "friendsHint": "Biała lista z tobą i twoimi znajomymi z TRS – aktualizowana automatycznie.",
+      "open": "Otwarty",
+      "openHint": "Każdy, kto zna adres, może dołączyć."
+    },
+    "plan": {
+      "title": "Co dostajesz"
+    },
+    "rules": {
+      "title": "Jak to działa",
+      "runs": "Twój serwer działa, dopóki launcher jest otwarty.",
+      "session": "Najwyżej {hours} h bez przerwy, potem {pause} h przerwy.",
+      "idle": "Serwery są usuwane po {days} dniach bez uruchomienia.",
+      "eula": "Przed pierwszym uruchomieniem akceptujesz EULA Minecrafta."
+    },
+    "state": {
+      "installing": "Konfiguracja",
+      "offline": "Wyłączony",
+      "starting": "Uruchamianie …",
+      "running": "Online",
+      "stopping": "Zatrzymywanie …",
+      "failed": "Błąd",
+      "suspended": "Zawieszony",
+      "setup": "Pierwsza konfiguracja"
+    },
+    "stopReason": {
+      "host_stopped": "Ostatnio zatrzymany, bo launcher został zamknięty.",
+      "host_timeout": "Ostatnio zatrzymany, bo launcher przestał odpowiadać.",
+      "session_limit": "Ostatnio zatrzymany po maksymalnym czasie działania.",
+      "admin": "Ostatnio zatrzymany przez zespół."
+    },
+    "notes": {
+      "installing": "Twój serwer jest konfigurowany – to potrwa minutę lub dwie.",
+      "failed": "Coś poszło nie tak z twoim serwerem. Uruchom go ponownie albo usuń i utwórz nowy.",
+      "suspended": "CraftingHosting zawiesił ten serwer."
+    },
+    "actions": {
+      "join": "Dołącz",
+      "joining": "Dołączanie …"
+    },
+    "delete": {
+      "title": "Usunąć serwer?",
+      "text": "Twój serwer „{name}” i jego świat zostaną trwale usunięte.",
+      "confirm": "Usuń na zawsze"
+    },
+    "eula": {
+      "title": "EULA Minecrafta",
+      "text": "Aby uruchomić serwer Minecraft, musisz zaakceptować umowę licencyjną użytkownika końcowego Minecrafta.",
+      "link": "Przeczytaj EULA",
+      "accept": "Akceptuję EULA Minecrafta.",
+      "start": "Akceptuj i uruchom"
+    },
+    "console": {
+      "placeholder": "Polecenie, np. say Cześć",
+      "send": "Wyślij",
+      "sent": "Polecenie wysłane.",
+      "empty": "Brak jeszcze danych.",
+      "offline": "Polecenia działają tylko, gdy serwer jest uruchomiony."
+    },
+    "join": {
+      "waiting": "Twój serwer się uruchamia – dołączysz, gdy będzie gotowy.",
+      "noAddress": "Serwer nie ma jeszcze adresu.",
+      "notStarted": "Serwer się nie uruchomił.",
+      "timeout": "Serwer uruchamia się zbyt długo – spróbuj za chwilę."
+    },
+    "rename": "Zmień nazwę",
+    "hostAway": "Twój launcher się nie zgłasza – serwer działa dalej tylko, dopóki są na nim gracze.",
+    "setupRestarting": "Serwer jest konfigurowany po raz pierwszy i uruchomi się ponownie – za chwilę będzie gotowy.",
+    "deleteAt": "Zostanie usunięty {date}, jeśli wcześniej go nie uruchomisz.",
+    "tabs": {
+      "overview": "Przegląd",
+      "console": "Konsola",
+      "settings": "Ustawienia",
+      "files": "Pliki",
+      "plugins": "Pluginy",
+      "mods": "Mody",
+      "world": "Światy"
+    },
+    "stats": {
+      "title": "Na żywo",
+      "players": "Gracze",
+      "cpu": "CPU",
+      "memory": "RAM",
+      "disk": "Miejsce"
+    },
+    "settings": {
+      "saved": "Ustawienia zapisane – obowiązują od następnego uruchomienia.",
+      "nextStart": "Zmiany obowiązują od następnego uruchomienia serwera.",
+      "afterFirstStart": "Ustawienia są dostępne po pierwszym uruchomieniu: uruchom serwer raz, a potem zmienisz je tutaj.",
+      "motdFooter": "Linia 2 jest stała: {footer}",
+      "motd": "Opis na liście serwerów (MOTD)",
+      "gamemode": "Tryb gry",
+      "difficulty": "Poziom trudności",
+      "maxPlayers": "Maks. graczy",
+      "spawnProtection": "Ochrona spawnu (bloki)",
+      "viewDistance": "Zasięg widzenia: {n}",
+      "simulationDistance": "Zasięg symulacji: {n}",
+      "pvp": "PvP",
+      "hardcore": "Hardcore",
+      "allowFlight": "Zezwól na latanie",
+      "newWorld": "Nowy świat",
+      "seed": "Ziarno",
+      "seedRandom": "puste = losowe",
+      "levelType": "Typ świata",
+      "newWorldHint": "Ziarno i typ świata działają tylko przy tworzeniu nowego świata.",
+      "whitelistOn": "Biała lista jest włączona – zależy od „Kto może dołączyć?”.",
+      "whitelistOff": "Biała lista jest wyłączona – zależy od „Kto może dołączyć?”.",
+      "discard": "Odrzuć",
+      "gamemodes": {
+        "survival": "Przetrwanie",
+        "creative": "Kreatywny",
+        "adventure": "Przygoda",
+        "spectator": "Obserwator"
+      },
+      "difficulties": {
+        "peaceful": "Pokojowy",
+        "easy": "Łatwy",
+        "normal": "Normalny",
+        "hard": "Trudny"
+      },
+      "levelTypes": {
+        "normal": "Domyślny",
+        "flat": "Płaski",
+        "large_biomes": "Duże biomy",
+        "amplified": "Wzmocniony"
+      }
+    },
+    "mods": {
+      "title": "Mody z instancji",
+      "text": "Instaluje na serwerze mody z instancji z Modrinth. Mody tylko klienckie są pomijane.",
+      "vanilla": "Serwery vanilla nie mogą ładować modów ani pluginów.",
+      "instance": "Instancja",
+      "button": "Przenieś mody",
+      "working": "Przenoszenie …",
+      "installed": "Zainstalowano na serwerze: {n}",
+      "noneTransferable": "Żaden z modów nie pochodzi z Modrinth – nic nie wysłano.",
+      "skipped": "Pominięte:",
+      "notYet": "Jeszcze nie do przeniesienia (nie z Modrinth):",
+      "reason": {
+        "client_only": "tylko klient",
+        "not_found": "nie znaleziono",
+        "unsupported": "nie pasuje do serwera"
+      }
+    },
+    "world": {
+      "instance": "Instancja",
+      "world": "Świat",
+      "none": "Ta instancja nie ma światów.",
+      "confirmTitle": "Zastąpić świat serwera?",
+      "confirm": "Zastąp świat",
+      "done": "Świat wgrany – będzie dostępny przy następnym uruchomieniu.",
+      "phase": {
+        "zip": "Pakowanie świata … {percent} %",
+        "upload": "Wgrywanie … {percent} %",
+        "import": "Konfigurowanie świata na serwerze …",
+        "list": "Zbieranie plików świata …",
+        "download": "Pobieranie … {percent} %"
+      }
+    },
+    "tabsLabel": "Sekcje serwera",
+    "address": {
+      "title": "Adres",
+      "label": "Twój własny adres",
+      "hint": "Gracze dołączają tym adresem – bez portu.",
+      "status": {
+        "checking": "Sprawdzanie …",
+        "available": "Wolny",
+        "taken": "Już zajęty – spróbuj innego.",
+        "reserved": "Zarezerwowany – spróbuj innego.",
+        "invalid": "3–24 znaki: a–z, 0–9 i -, bez - na początku ani na końcu.",
+        "error": "Nie da się teraz sprawdzić – zostanie sprawdzony przy zapisie."
+      },
+      "change": "Zmień adres",
+      "saving": "Zapisywanie …",
+      "changeHint": "Stary adres od razu przestaje działać.",
+      "none": "Twój serwer nie ma jeszcze własnego adresu.",
+      "changed": "Adres zmieniony.",
+      "view": "Wyświetlany adres",
+      "views": {
+        "domain": "Adres TRS",
+        "ip": "IP i port",
+        "node": "Adres CraftingHosting"
+      }
+    },
+    "wizard": {
+      "stepsLabel": "Kroki",
+      "steps": {
+        "source": "Źródło",
+        "name": "Nazwa i adres",
+        "access": "Dostęp i start"
+      },
+      "stepOf": "Krok {n} z {total}",
+      "back": "Wstecz",
+      "next": "Dalej",
+      "preview": "Podgląd",
+      "source": {
+        "title": "Skąd ma pochodzić twój serwer?",
+        "instance": "Z instancji",
+        "instanceHint": "Używa wersji i loadera jednej z twoich instancji – mody i świat możesz przenieść później.",
+        "new": "Nowy",
+        "newHint": "Sam wybierz typ serwera i wersję.",
+        "pickInstance": "Twoje instancje",
+        "noInstances": "Nie masz jeszcze instancji – zacznij od „Nowy”.",
+        "pickType": "Typ serwera",
+        "becomes": "Twój serwer: {server}",
+        "vanillaNote": "Paper to szybszy serwer vanilla – gracze dołączają zwykłym klientem vanilla.",
+        "loaderNote": "CraftingHosting nie oferuje serwerów {loader}. Twój serwer będzie na Paper, a modów nie da się przenieść.",
+        "versionMissing": "Minecraft {version} nie jest dostępny dla {type} – wybierz wersję. Gracze potrzebują tej samej wersji, aby dołączyć.",
+        "modsLater": "Po pierwszym starcie możesz przenieść mody i świat z tej instancji."
+      },
+      "types": {
+        "paper": "Szybki serwer vanilla z pluginami – bezpieczny wybór.",
+        "purpur": "Paper z wieloma dodatkowymi opcjami rozgrywki.",
+        "vanilla": "Niezmodyfikowany serwer od Mojang.",
+        "fabric": "Do modów Fabric – lekki i aktualny.",
+        "forge": "Do modów Forge i dużych modpacków.",
+        "other": "Inny typ serwera od CraftingHosting."
+      },
+      "name": {
+        "title": "Jak nazywa się twój serwer?"
+      },
+      "access": {
+        "title": "Kto może dołączyć?"
+      }
+    },
+    "header": {
+      "more": "Więcej akcji",
+      "session": "Sesja",
+      "cooldown": "Obowiązkowa przerwa",
+      "left": "zostało {time}",
+      "until": "start możliwy za {time}",
+      "perSession": "do {hours} godz. na sesję"
+    },
+    "tiles": {
+      "of": "z {limit}",
+      "offHint": "Wartości na żywo widać, gdy serwer działa."
+    },
+    "transfer": {
+      "title": "Przenieś zawartość z {instance}",
+      "text": "Twój serwer jest gotowy. Przenieś mody i świat ze swojej instancji – serwer na chwilę się zatrzyma i potem znowu wystartuje.",
+      "missing": "Ta instancja już nie istnieje.",
+      "mods": "Przenieś mody",
+      "modsHint": "Mody z Modrinth, mody tylko dla klienta są pomijane.",
+      "modsNo": "Niemożliwe przy tym typie serwera.",
+      "noWorld": "Bez świata (zostaw świat serwera)",
+      "button": "Przenieś",
+      "working": "Przenoszenie …",
+      "dismiss": "Nie teraz",
+      "done": "Gotowe – twój serwer startuje z zawartością twojej instancji.",
+      "failed": "Nie wszystko się udało – możesz spróbować ponownie.",
+      "notMoved": "Nieprzeniesione: {n}",
+      "notModrinth": "nie z Modrinth",
+      "steps": {
+        "stop": "Zatrzymaj serwer",
+        "mods": "Zainstaluj mody",
+        "world": "Wyślij świat",
+        "start": "Uruchom serwer"
+      }
+    },
+    "danger": {
+      "title": "Usuń serwer",
+      "text": "Usuwa na zawsze serwer, jego świat i adres."
+    },
+    "files": {
+      "title": "Pliki serwera",
+      "nextStart": "Zmiany w plikach obowiązują od następnego uruchomienia serwera.",
+      "pending": "Pliki będą dostępne, gdy serwer zostanie skonfigurowany.",
+      "up": "Folder wyżej",
+      "breadcrumb": "Ścieżka",
+      "newFolder": "Nowy folder",
+      "folderName": "Nazwa folderu",
+      "create": "Utwórz",
+      "folderCreated": "Folder utworzony.",
+      "empty": "Ten folder jest pusty.",
+      "notEditable": "Nie można otworzyć jako tekst.",
+      "deleteLabel": "Usuń {name}",
+      "deleteTitle": "Usunąć „{name}”?",
+      "deleteText": "Plik zostanie trwale usunięty z serwera.",
+      "deleteFolderText": "Folder wraz z całą zawartością zostanie trwale usunięty z serwera.",
+      "deleted": "Usunięto „{name}”.",
+      "saving": "Zapisywanie …",
+      "saved": "Zapisano – obowiązuje od następnego uruchomienia.",
+      "unsaved": "Niezapisane",
+      "shortcut": "Ctrl+S zapisuje",
+      "close": "Zamknij plik",
+      "back": "Wróć do listy",
+      "editorLabel": "Zawartość {name}",
+      "discardTitle": "Odrzucić zmiany?",
+      "discardText": "Twoje zmiany w „{name}” nie zostały jeszcze zapisane.",
+      "discard": "Odrzuć",
+      "propertiesNote": "server.properties jest sprawdzany przy zapisie: wiersz 2 MOTD i niektóre ustawienia sieci (port, adres, transfery) są stałe.",
+      "readOnly": "Tylko do odczytu",
+      "locks": {
+        "system": "Część oprogramowania serwera – tylko do odczytu",
+        "trs": "Zarządzane przez TRS",
+        "access": "Zależy od dostępu (tylko znajomi)",
+        "other": "Zablokowane"
+      }
+    },
+    "props": {
+      "title": "Wszystkie ustawienia serwera",
+      "text": "Każdy wpis z server.properties – stałe są oznaczone kłódką.",
+      "search": "Szukaj ustawień …",
+      "noMatch": "Żadne ustawienie nie pasuje do „{query}”.",
+      "locked": "Ustalone przez TRS – nie można zmienić.",
+      "whitelist": "Zależy od „Kto może dołączyć?”.",
+      "changes": "Niezapisane zmiany: {n}",
+      "invalid": "Sprawdź zaznaczone wartości.",
+      "groups": {
+        "general": "Ogólne",
+        "gameplay": "Rozgrywka",
+        "world": "Świat",
+        "players": "Gracze i uprawnienia",
+        "network": "Sieć i paczka zasobów",
+        "other": "Inne"
+      },
+      "levelTypes": {
+        "normal": "Domyślny",
+        "flat": "Superpłaski",
+        "large_biomes": "Duże biomy",
+        "amplified": "Wzmocniony",
+        "single_biome_surface": "Jeden biom"
+      },
+      "keys": {
+        "motd": "Wiadomość na liście serwerów (MOTD)",
+        "max-players": "Maks. graczy",
+        "white-list": "Biała lista",
+        "enforce-whitelist": "Wymuszaj białą listę",
+        "online-mode": "Tryb online (tylko prawdziwe konta Minecraft)",
+        "hide-online-players": "Ukryj graczy online",
+        "gamemode": "Tryb gry",
+        "force-gamemode": "Wymuszaj tryb gry przy dołączeniu",
+        "difficulty": "Poziom trudności",
+        "hardcore": "Hardcore",
+        "pvp": "PvP",
+        "allow-flight": "Zezwól na latanie",
+        "spawn-monsters": "Pojawianie się potworów",
+        "spawn-animals": "Pojawianie się zwierząt",
+        "spawn-npcs": "Pojawianie się osadników",
+        "enable-command-block": "Bloki poleceń",
+        "player-idle-timeout": "Wyrzucaj nieaktywnych graczy po (minuty, 0 = nigdy)",
+        "op-permission-level": "Poziom uprawnień operatorów",
+        "function-permission-level": "Poziom uprawnień funkcji",
+        "spawn-protection": "Ochrona spawnu (bloki)",
+        "level-name": "Folder świata",
+        "level-seed": "Ziarno",
+        "level-type": "Typ świata",
+        "generate-structures": "Generuj budowle",
+        "allow-nether": "Zezwól na Nether",
+        "max-world-size": "Maks. rozmiar świata (promień w blokach)",
+        "view-distance": "Odległość renderowania (chunki)",
+        "simulation-distance": "Odległość symulacji (chunki)",
+        "entity-broadcast-range-percentage": "Zasięg widoczności bytów (%)",
+        "resource-pack": "URL paczki zasobów",
+        "resource-pack-sha1": "SHA-1 paczki zasobów",
+        "resource-pack-prompt": "Komunikat paczki zasobów",
+        "require-resource-pack": "Wymagaj paczki zasobów",
+        "network-compression-threshold": "Próg kompresji (bajty)",
+        "rate-limit": "Limit pakietów (0 = wył.)",
+        "enable-status": "Pokazuj na liście serwerów",
+        "enforce-secure-profile": "Wymagaj podpisanego czatu",
+        "prevent-proxy-connections": "Blokuj połączenia przez proxy/VPN",
+        "max-tick-time": "Watchdog: maks. czas ticku (ms)",
+        "sync-chunk-writes": "Zapisuj chunki synchronicznie",
+        "log-ips": "Zapisuj IP graczy",
+        "pause-when-empty-seconds": "Wstrzymaj, gdy pusty, po (sekundy)"
+      }
+    },
+    "addons": {
+      "installedPlugins": "Zainstalowane pluginy",
+      "installedMods": "Zainstalowane mody",
+      "pending": "Pluginy i mody będą dostępne, gdy serwer zostanie skonfigurowany.",
+      "empty": "Nic jeszcze nie zainstalowano – znajdź coś na Modrinth.",
+      "protected": "TRS Server Rules – potrzebny dla darmowego serwera, nie można usunąć.",
+      "config": "Konfiguracja",
+      "configTitle": "Otwórz konfigurację w Plikach",
+      "remove": "Usuń",
+      "removeLabel": "Usuń {file}",
+      "removeTitle": "Usunąć „{file}”?",
+      "removeText": "Plik zostanie usunięty z serwera. Folder konfiguracji pozostanie.",
+      "removed": "Usunięto „{file}” – obowiązuje od następnego uruchomienia.",
+      "searchTitle": "Znajdź na Modrinth",
+      "searchFor": "Dla {type} · Minecraft {version} · tylko to, co działa na serwerach",
+      "searchPlugins": "Szukaj pluginów …",
+      "searchMods": "Szukaj modów …",
+      "noResults": "Nic nie znaleziono.",
+      "more": "Wczytaj więcej",
+      "install": "Zainstaluj",
+      "installing": "Instalowanie …",
+      "installed": "Zainstalowano",
+      "installedToast": "Zainstalowano „{name}” – wczyta się przy następnym uruchomieniu.",
+      "skipped": "Pominięto: {reason}",
+      "by": "autor: {author}",
+      "downloads": "Pobrania: {n}",
+      "backToSearch": "Wróć do wyszukiwania",
+      "clientOnly": "Tylko dla klienta – nie działa na serwerze.",
+      "installedVersion": "Zainstalowano: {version}",
+      "updateTo": "Aktualizuj do {version}",
+      "noFitting": "Żadna wersja nie pasuje do typu serwera i wersji Minecrafta.",
+      "otherVersion": "Inna wersja",
+      "installedNext": "Zainstalowano {version} – wczyta się przy następnym uruchomieniu.",
+      "allVersionsHint": "Wszystkie wersje, także te, które mogą nie działać na serwerze.",
+      "fittingHint": "Wersje dla twojego serwera (Minecraft {version}).",
+      "showAll": "Pokaż wszystkie wersje",
+      "dependencies": "Wymaga innych projektów: {n}",
+      "installThis": "Zainstaluj tę wersję",
+      "sortLabel": "Sortuj",
+      "clearFilters": "Wyczyść filtry",
+      "categories": "Kategorie",
+      "fewerCategories": "Mniej",
+      "moreCategories": "+{n} więcej",
+      "loadingMore": "Wczytywanie …",
+      "sort": {
+        "relevance": "Trafność",
+        "downloads": "Pobrania",
+        "updated": "Ostatnio aktualizowane",
+        "newest": "Najnowsze"
+      }
+    },
+    "worlds": {
+      "title": "Światy na serwerze",
+      "text": "Serwer wczytuje aktywny świat. Zmiany wymagają zatrzymanego serwera.",
+      "runningHint": "Serwer działa – światy można zmieniać tylko, gdy jest wyłączony.",
+      "stop": "Zatrzymaj serwer",
+      "stopping": "Zatrzymywanie …",
+      "notGenerated": "„{name}” jeszcze nie istnieje – powstanie przy następnym uruchomieniu (ziarno i typ świata z ustawień).",
+      "empty": "Brak światów – pierwszy powstanie przy następnym uruchomieniu.",
+      "active": "Aktywny",
+      "activate": "Ustaw jako aktywny",
+      "download": "Pobierz",
+      "resetButton": "Zresetuj",
+      "deleteButton": "Usuń",
+      "activated": "„{name}” jest teraz aktywnym światem – wczyta się przy następnym uruchomieniu.",
+      "reset": "Zresetowano „{name}” – przy następnym uruchomieniu powstanie nowy świat.",
+      "deleted": "Usunięto „{name}”.",
+      "downloaded": "Świat zapisano jako {file}.",
+      "downloadedPartly": "Świat zapisano jako {file} – serwer nie podał wszystkich plików, czegoś może brakować.",
+      "downloading": "Pobieranie „{name}”",
+      "resetTitle": "Zresetować „{name}”?",
+      "resetText": "Świat zostanie trwale usunięty razem z Netherem i Endem. Przy następnym uruchomieniu serwer wygeneruje nowy.",
+      "deleteTitle": "Usunąć „{name}”?",
+      "deleteText": "Świat zostanie trwale usunięty z serwera razem z Netherem i Endem.",
+      "uploadTitle": "Wyślij świat",
+      "uploadText": "Z jednej z twoich instancji, z pliku ZIP lub z folderu na komputerze.",
+      "source": "Źródło",
+      "targetName": "Nazwa na serwerze",
+      "activateAfter": "Ustaw jako aktywny świat",
+      "nameHint": "Litery, cyfry, _ i -, maks. 32 znaki.",
+      "replaces": "Świat „{name}” już istnieje – zostanie zastąpiony.",
+      "replaceText": "„{name}” zostanie zastąpiony na serwerze razem z Netherem i Endem. Stary świat przepadnie na zawsze.",
+      "upload": "Wyślij świat",
+      "chooseAndUpload": "Wybierz i wyślij …",
+      "stopTitle": "Najpierw zatrzymać serwer?",
+      "stopText": "Światy można zmieniać tylko przy wyłączonym serwerze. Zatrzymać go teraz i kontynuować?",
+      "stopAndContinue": "Zatrzymaj i kontynuuj",
+      "dimensions": {
+        "overworld": "Overworld",
+        "nether": "Nether",
+        "end": "End"
+      },
+      "sources": {
+        "instance": "Instancja",
+        "zip": "Plik ZIP",
+        "folder": "Folder"
+      },
+      "sourceHint": {
+        "zip": "Plik ZIP wybierasz po kliknięciu – świat (level.dat) może być w dowolnym folderze w środku.",
+        "folder": "Folder świata (z level.dat) wybierasz po kliknięciu."
+      },
+      "nameRejected": "Serwer nie akceptuje tej nazwy świata – niektóre nazwy należą do folderów serwera (np. plugins, config). Wybierz inną."
+    },
+    "version": {
+      "title": "Typ serwera i wersja",
+      "change": "Zmień wersję",
+      "type": "Typ serwera",
+      "version": "Wersja",
+      "keepWorld": "Zachowaj świat",
+      "warning": "Pluginy i mody mogą nie pasować do nowej wersji. Serwer uruchomi się ponownie – świat zostaje.",
+      "warningNewWorld": "Pluginy i mody mogą nie pasować do nowej wersji. Serwer uruchomi się z nowym światem – stary zostanie usunięty.",
+      "working": "Zmienianie …",
+      "confirm": "Zmień wersję",
+      "changed": "Wersja zmieniona – serwer jest konfigurowany od nowa."
+    },
+    "notAvailable": "Jeszcze niedostępne – wkrótce.",
+    "backups": {
+      "title": "Kopie zapasowe",
+      "text": "Migawki twojego serwera. Przywracanie wymaga zatrzymanego serwera.",
+      "create": "Utwórz kopię",
+      "working": "Trwa …",
+      "full": "Osiągnięto maksymalną liczbę kopii – najpierw usuń starą.",
+      "empty": "Brak kopii zapasowych.",
+      "restore": "Przywróć",
+      "restoreTitle": "Przywrócić „{name}”?",
+      "restoreText": "Obecny stan serwera zostanie zastąpiony tą kopią.",
+      "deleteLabel": "Usuń kopię {name}",
+      "deleteTitle": "Usunąć „{name}”?",
+      "deleteText": "Kopia zostanie trwale usunięta.",
+      "created": "Utworzono kopię.",
+      "restored": "Przywrócono „{name}” – obowiązuje od następnego uruchomienia.",
+      "downloaded": "Kopię zapisano jako {file}."
+    },
+    "team": {
+      "maintenanceTitle": "Konserwacja",
+      "maintenance": "Hosting jest w konserwacji – tworzenie, uruchamianie i dołączanie są na razie wstrzymane.",
+      "maintenanceWith": "Konserwacja: {message}",
+      "blockedWith": "Zablokowany przez zespół TRS: {reason}",
+      "createOff": "Tworzenie nowych serwerów jest teraz wyłączone."
     }
   }
 }

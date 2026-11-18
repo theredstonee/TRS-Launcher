@@ -460,6 +460,20 @@ servidor TRS.
   paquete de recursos solo se usa si respondes que sí a la pregunta de Minecraft; tu juego se lo pasa a Minecraft por una
   dirección local en tu ordenador (`127.0.0.1`) que solo vale para esta conexión.
 
+### Servidor gratuito de CraftingHosting
+
+Solo si creas un servidor gratuito en la pestaña «Hosting», el servidor TRS envía datos a nuestro socio de hosting
+**CraftingHosting** (`craftinghosting.free`): el ID de tu cuenta TRS, tu nombre de Minecraft, el nombre, el tipo y la
+versión del servidor que elegiste y, con «Solo amigos», los nombres de Minecraft de tus amigos de TRS para la lista
+blanca del servidor (se actualiza mientras el servidor está en marcha). El launcher nunca habla directamente con
+CraftingHosting; mientras tu servidor funciona, solo avisa al servidor TRS cada 45 segundos de que sigue abierto. Sin
+servidor no se envía nada a CraftingHosting. Si usas «Pasar mods», el servidor TRS envía a CraftingHosting los IDs de
+Modrinth de los mods de esa instancia. «Pasar mundo» sube el mundo como ZIP **directamente desde tu ordenador** a
+CraftingHosting (`*.craftinghosting.free`, dirección facilitada por el servidor TRS), por lo que CraftingHosting ve tu
+dirección IP; el mundo no pasa por el servidor TRS. La salida de la consola y los valores en directo (CPU, RAM,
+jugadores) de tu servidor se obtienen a través del servidor TRS solo mientras tienes la página abierta y no se guardan. Si eliminas el servidor en el launcher, también se elimina en
+CraftingHosting; al servidor se aplica además la política de privacidad de CraftingHosting.
+
 ### Logros
 
 El launcher tiene logros (puntos, rarezas y algunas recompensas como una capa o un cosmético). Forman parte de los

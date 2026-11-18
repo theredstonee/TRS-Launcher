@@ -63,6 +63,13 @@ pub enum DialogText {
     PickCapeVideo,
     /// Filtername für Videos (MP4, WebM …).
     Videos,
+    /// Welt des Partner-Servers als ZIP speichern.
+    SaveWorld,
+    /// Welt-ZIP bzw. Weltordner zum Hochladen auf den Partner-Server.
+    PickWorldZip,
+    PickWorldFolder,
+    /// Backup des Partner-Servers speichern.
+    SaveBackup,
 }
 
 impl DialogText {
@@ -74,7 +81,7 @@ impl DialogText {
 
 /// Je Text eine Zeile in der Reihenfolge von [`Language::ALL`]:
 /// en, de, es, fr, pl, pt-BR, tr, nl.
-const TEXTS: [[&str; 8]; 33] = [
+const TEXTS: [[&str; 8]; 37] = [
     [
         "Save modpack",
         "Modpack speichern",
@@ -360,6 +367,46 @@ const TEXTS: [[&str; 8]; 33] = [
         "Video voor de cape kiezen (een fragment wordt tot 32 frames)",
     ],
     ["Videos", "Videos", "Vídeos", "Vidéos", "Wideo", "Vídeos", "Videolar", "Video's"],
+    [
+        "Save world",
+        "Welt speichern",
+        "Guardar mundo",
+        "Enregistrer le monde",
+        "Zapisz świat",
+        "Salvar mundo",
+        "Dünyayı kaydet",
+        "Wereld opslaan",
+    ],
+    [
+        "Choose a world ZIP file",
+        "Welt-ZIP-Datei wählen",
+        "Elige un archivo ZIP de mundo",
+        "Choisir un fichier ZIP de monde",
+        "Wybierz plik ZIP świata",
+        "Escolher arquivo ZIP do mundo",
+        "Dünya ZIP dosyası seç",
+        "Wereld-ZIP-bestand kiezen",
+    ],
+    [
+        "Choose a world folder (with level.dat)",
+        "Weltordner wählen (mit level.dat)",
+        "Elige una carpeta de mundo (con level.dat)",
+        "Choisir un dossier de monde (avec level.dat)",
+        "Wybierz folder świata (z level.dat)",
+        "Escolher pasta do mundo (com level.dat)",
+        "Dünya klasörü seç (level.dat içeren)",
+        "Wereldmap kiezen (met level.dat)",
+    ],
+    [
+        "Save backup",
+        "Backup speichern",
+        "Guardar copia de seguridad",
+        "Enregistrer la sauvegarde",
+        "Zapisz kopię zapasową",
+        "Salvar backup",
+        "Yedeği kaydet",
+        "Back-up opslaan",
+    ],
 ];
 
 impl DialogText {
@@ -380,7 +427,7 @@ pub async fn language(launcher: &LauncherState) -> Language {
 mod tests {
     use super::*;
 
-    const ALL: [DialogText; 33] = [
+    const ALL: [DialogText; 37] = [
         DialogText::SaveModpack,
         DialogText::PickModpack,
         DialogText::ModrinthModpack,
@@ -414,6 +461,10 @@ mod tests {
         DialogText::SaveIcon,
         DialogText::PickCapeVideo,
         DialogText::Videos,
+        DialogText::SaveWorld,
+        DialogText::PickWorldZip,
+        DialogText::PickWorldFolder,
+        DialogText::SaveBackup,
     ];
 
     #[test]

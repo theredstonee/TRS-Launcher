@@ -138,6 +138,7 @@ export const uiSettingsSchema = z.object({
   screenshotsTab: z.boolean(),
   minigamesTab: z.boolean().default(true),
   minigamesWhileLoading: z.boolean().default(true),
+  hostingTab: z.boolean().default(true),
   historyTab: z.boolean(),
   sidebarRecent: z.boolean(),
   sidebarAccount: z.boolean(),

@@ -11,6 +11,8 @@ interface NavItem {
   to: string
   label: MessageKey
   icon: IconName
+  /** Bild statt Symbol (z. B. Partner-Logo). */
+  image?: string
   /** Seiten, die ein anderer Bereich baut – fehlen sie noch, bleibt der Punkt ruhig stehen. */
   optional?: boolean
   /** Nur für das TRS-Team (Admins und Moderatoren). */
@@ -27,6 +29,7 @@ interface NavItem {
   trsOnly?: boolean
   /** Abschaltbar in den Einstellungen. */
   minigames?: boolean
+  hosting?: boolean
 }
 
 const items: NavItem[] = [
@@ -36,6 +39,7 @@ const items: NavItem[] = [
   { to: '/presets', label: 'nav.presets', icon: 'presets' },
   { to: '/servers', label: 'nav.servers', icon: 'server' },
   { to: '/local-servers', label: 'nav.localServers', icon: 'terminal', localServers: true },
+  { to: '/hosting', label: 'nav.hosting', icon: 'server', image: '/partners/craftinghosting.png', trsOnly: true, hosting: true },
   { to: '/screenshots', label: 'nav.screenshots', icon: 'screenshots', optional: true },
   { to: '/clips', label: 'nav.clips', icon: 'clips', optional: true, clipsOnly: true },
   { to: '/skins', label: 'nav.skins', icon: 'skins', optional: true },
@@ -77,6 +81,7 @@ const visibleItems = computed(() =>
       (!item.admin || (trs.isStaff && !messeRestricted.value)) &&
       (!item.trsOnly || (trs.enabled && !messeRestricted.value)) &&
       (!item.minigames || (uiSettings.value?.minigamesTab !== false && !messeRestricted.value)) &&
+      (!item.hosting || uiSettings.value?.hostingTab !== false) &&
       // Clips (Spielaufnahme) gibt es vorerst nur unter Windows.
       (!item.clipsOnly || platformCaps.value.clips) &&
       // Lokale Server erst, wenn es einen gibt (Server-Export „lokal anlegen“).
@@ -124,7 +129,8 @@ function play(id: string) {
     >
       <!-- Aktiver Bereich: das Redstone-Stück gleitet beim Wechsel zum neuen Eintrag. -->
       <motion.span v-if="isActive(item.to)" layout-id="rail-signal" class="rail-signal" :transition="NAV_SIGNAL_TRANSITION" aria-hidden="true" />
-      <svg viewBox="0 0 24 24" class="size-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <img v-if="item.image" :src="item.image" alt="" class="size-5 shrink-0 object-contain" draggable="false" />
+      <svg v-else viewBox="0 0 24 24" class="size-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path :d="icons[item.icon]" />
       </svg>
       <span v-if="expanded" class="min-w-0 flex-1 truncate text-sm">{{ t(item.label) }}</span>

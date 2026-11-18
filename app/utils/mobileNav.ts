@@ -9,6 +9,8 @@ export interface MobileNavItem {
   action?: 'settings' | 'search' | 'create' | 'import' | 'docs'
   label: MessageKey
   icon: IconName
+  /** Bild statt Symbol (z. B. Partner-Logo). */
+  image?: string
   /** Nur zeigen, wenn diese Fähigkeit da ist. */
   needs?: 'clips' | 'gameLaunch' | 'gameEngine'
 }
@@ -28,6 +30,7 @@ const moreAll: MobileNavItem[] = [
   { to: '/creator', label: 'nav.creator', icon: 'star' },
   { to: '/presets', label: 'nav.presets', icon: 'presets' },
   { to: '/servers', label: 'nav.servers', icon: 'server' },
+  { to: '/hosting', label: 'nav.hosting', icon: 'server', image: '/partners/craftinghosting.png' },
   { to: '/clips', label: 'nav.clips', icon: 'clips', needs: 'clips' },
   // Touch-Steuerung fürs Spiel am Handy und die Fernbedienung des PCs.
   { to: '/controls', label: 'nav.controls', icon: 'touch', needs: 'gameEngine' },
