@@ -10,6 +10,7 @@ const facts = computed(() => [
   { icon: 'disk', value: `${Math.round(props.info.plan.diskMb / 1024)} GB`, label: t('craftinghosting.stats.disk') },
 ])
 const rules = computed(() => {
+  if (props.info.tiles?.length) return props.info.tiles.map((x) => ({ icon: x.icon, text: pickText(x.text, currentLocale.value) }))
   const r = props.info.rules
   if (!r) {
     return [

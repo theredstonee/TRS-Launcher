@@ -285,3 +285,11 @@ before the stop (launcher toast + `tellraw` in the game). `Server.quota` (`usedS
 `info.rules` (`budgetHours`, `cooldownHours`, `idleResetDays`, `weeklyOfflineHours`, `warnMinutes`) carry the values;
 the core passes them through (`Quota`, `Rules`), the header shows time left / week / reset, the plan tiles explain the
 rules. A start during the break answers `409 cooldown` with `cooldownUntil` (shown as "start again in …").
+
+## Display from the API (API §43.18)
+
+`info.tiles` and `Server.display` carry ready texts in all launcher languages (`Localized` = language → text). The core
+passes them through as JSON (`passthrough`, at most 32 KiB, object/array only); the frontend validates them
+(`displaySchema`/`tilesSchema`), picks the language (`pickText`: exact → base language → en) and fills
+`{countdown:s}` / `{duration:s}` / `{date:ISO}` (`fillDisplay`). Plan tiles, the runtime row with its lines and the
+alert toasts (once per `id`) render only what the API sends; without these fields the old built-in view stays.

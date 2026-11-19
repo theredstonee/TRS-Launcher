@@ -35,12 +35,14 @@ How to write an entry:
 - **Hosting: you accept the Minecraft EULA right when creating your server.** No extra question on the first start, and joining via your address can wake the server from the very beginning.
 - **Hosting: servers that take longer to start no longer show "The TRS server can't be reached".** The server shows "Starting …" and the start is retried for up to 3 minutes; the console shows "Server is starting …" until the first lines arrive.
 - **Hosting: new runtime rules, clearly shown.** Your server has 24 h of runtime in total, then a 2 h break. If you don't use it for 3 days, the full 24 h are back. Each week (Mon–Sun) it stays offline for at least 8 h. The server header shows how much time is left, this week's usage and when the quota resets, and you get a warning 30 minutes before the stop – in the launcher and in the game chat.
+- **Hosting: rules and runtime texts now come from the TRS server**, so they can change without a launcher update.
 
 ### Deutsch
 - **Hosting: Die Fußzeile unter deinem Server in der Serverliste ist kürzer** („Free by craftinghosting.free × trs-launcher.de“), damit trs-launcher.de nicht mehr abgeschnitten wird.
 - **Hosting: Die Minecraft-EULA bestätigst du direkt beim Anlegen deines Servers.** Beim ersten Start kommt keine Extra-Frage mehr, und Beitreten über deine Adresse kann den Server von Anfang an aufwecken.
 - **Hosting: Server, die länger zum Starten brauchen, melden nicht mehr „Der TRS-Server ist nicht erreichbar“.** Der Server zeigt „Startet …“, der Start wird bis zu 3 Minuten lang wiederholt, und die Konsole zeigt „Server startet …“, bis die ersten Zeilen kommen.
 - **Hosting: neue Laufzeit-Regeln, übersichtlich angezeigt.** Dein Server hat insgesamt 24 h Laufzeit, danach 2 h Pause. Nutzt du ihn 3 Tage nicht, hast du wieder volle 24 h. Pro Woche (Mo–So) bleibt er mindestens 8 h offline. Der Server-Kopf zeigt die Restzeit, die Nutzung dieser Woche und wann sich das Kontingent zurücksetzt, und 30 Minuten vor dem Stopp wirst du gewarnt – im Launcher und im Spiel-Chat.
+- **Hosting: Regeln und Laufzeit-Texte kommen jetzt vom TRS-Server**, damit sie sich ohne Launcher-Update ändern lassen.
 
 ## 0.36.0 – 2026-11-18 – Your Own Server | Dein eigener Server
 <!-- banner: accent=#2f7bff motif=/news/0.36.0/banner.png -->

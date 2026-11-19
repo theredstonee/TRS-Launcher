@@ -262,6 +262,8 @@ pub struct Info {
     pub maintenance: Maintenance,
     /// Laufzeit-Regeln der TRS API (§43.17), `None` = aus.
     pub rules: Option<Rules>,
+    /// Regel-Kacheln als fertige Texte der API (§43.18); das Frontend prüft den Aufbau.
+    pub tiles: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -398,6 +400,8 @@ pub struct Server {
     pub blocked: Option<Blocked>,
     /// Laufzeit-Kontingent nach den Regeln der TRS API.
     pub quota: Option<Quota>,
+    /// Fertige Anzeige der API (§43.18); das Frontend prüft den Aufbau.
+    pub display: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -462,6 +466,13 @@ struct ApiInfo {
     notice: serde_json::Value,
     maintenance: serde_json::Value,
     rules: serde_json::Value,
+    tiles: serde_json::Value,
+}
+
+/// Fremdes JSON nur in vernünftiger Größe weiterreichen.
+pub(crate) fn passthrough(raw: serde_json::Value, array: bool) -> Option<serde_json::Value> {
+    let kind_ok = if array { raw.is_array() } else { raw.is_object() };
+    (kind_ok && serde_json::to_vec(&raw).is_ok_and(|b| b.len() <= 32 * 1024)).then_some(raw)
 }
 
 pub(crate) fn rules(raw: &serde_json::Value) -> Option<Rules> {
@@ -556,6 +567,7 @@ impl ApiInfo {
             notice: notice(&self.notice),
             maintenance: maintenance(&self.maintenance),
             rules: rules(&self.rules),
+            tiles: passthrough(self.tiles, true),
         }
     }
 }
@@ -605,6 +617,7 @@ pub(crate) struct ApiServer {
     setup: String,
     blocked: Option<serde_json::Value>,
     quota: serde_json::Value,
+    display: serde_json::Value,
 }
 
 impl ApiServer {
@@ -659,6 +672,7 @@ impl ApiServer {
                 since: time(b.get("since").and_then(serde_json::Value::as_str).map(str::to_owned)),
             }),
             quota: quota(&self.quota),
+            display: passthrough(self.display, false),
         })
     }
 }

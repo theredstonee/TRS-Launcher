@@ -64,6 +64,9 @@ const cooldownPercent = computed(() => {
   return total ? Math.min(100, Math.max(0, ((total - cooldownLeft.value) / total) * 100)) : 0
 })
 const runLeft = computed(() => remainingSeconds(server.value, store.loadedAt, now.value))
+// Anzeige von der API (§43.18): Texte/Regeln ändern ohne Launcher-Update.
+const display = computed(() => server.value.display ?? null)
+const shownText = (text: Localized) => fillDisplay(pickText(text, currentLocale.value), now.value - store.loadedAt, intlLocale())
 const dateFormat = computed(() => new Intl.DateTimeFormat(intlLocale(), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))
 function formatDate(iso: string) {
   return dateFormat.value.format(new Date(iso))
@@ -240,7 +243,19 @@ function pick(action: () => void) {
             <template v-else>–</template>
           </p>
         </div>
-        <div class="min-w-0" data-testid="hosting-runtime">
+        <div v-if="display?.runtime" class="min-w-0" data-testid="hosting-runtime">
+          <div class="flex items-baseline justify-between gap-2 text-[11px]">
+            <span class="font-semibold tracking-wide text-base-400 uppercase">{{ shownText(display.runtime.label) }}</span>
+            <span class="tabular-nums" :class="display.runtime.tone === 'cooldown' || display.runtime.tone === 'warn' ? 'text-lamp-300' : 'text-base-200'" data-testid="hosting-runtime-value">{{ shownText(display.runtime.value) }}</span>
+          </div>
+          <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-base-800" role="progressbar" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="Math.round(display.runtime.progress * 100)" :aria-label="shownText(display.runtime.label)">
+            <div class="h-full rounded-full transition-[width] duration-700" :class="display.runtime.tone === 'cooldown' ? 'bg-lamp-400' : 'ch-bar'" :style="{ width: `${display.runtime.progress * 100}%` }" />
+          </div>
+          <p v-if="display.lines.length" class="mt-1 flex flex-wrap gap-x-3 text-[11px] tabular-nums" data-testid="hosting-display-lines">
+            <span v-for="(line, i) in display.lines" :key="i" :class="line.tone === 'warn' ? 'text-lamp-300' : 'text-base-400'">{{ shownText(line.text) }}</span>
+          </p>
+        </div>
+        <div v-else class="min-w-0" data-testid="hosting-runtime">
           <div class="flex items-baseline justify-between gap-2 text-[11px]">
             <span class="font-semibold tracking-wide text-base-400 uppercase">{{ cooling ? t('craftinghosting.header.cooldown') : t('craftinghosting.header.session') }}</span>
             <span v-if="cooling" class="text-lamp-300 tabular-nums" data-testid="hosting-cooldown">{{ t('craftinghosting.header.until', { time: hostingCountdown(cooldownLeft) }) }}</span>

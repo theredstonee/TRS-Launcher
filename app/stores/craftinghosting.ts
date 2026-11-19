@@ -170,7 +170,18 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
 
   /** Vorwarnung vor dem Stopp durch das Laufzeit-Limit: einmal, bis wieder genug Zeit da ist. */
   let quotaWarned = false
+  const shownAlerts = new Set<string>()
   function warnQuota(next: CraftingServer | null) {
+    if (next?.display) {
+      for (const a of next.display.alerts) {
+        if (shownAlerts.has(a.id)) continue
+        shownAlerts.add(a.id)
+        const text = fillDisplay(pickText(a.text, currentLocale.value), 0, intlLocale())
+        if (a.level === 'warning') useToasts().error(text)
+        else useToasts().info(text)
+      }
+      return
+    }
     const warn = (info.value?.rules?.warnMinutes ?? 0) * 60
     const left = next?.quota?.remainingSeconds
     if (!warn || left === undefined || !next?.session.active) return

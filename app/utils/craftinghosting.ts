@@ -52,6 +52,39 @@ const featuresSchema = z
   .object(Object.fromEntries(FEATURE_KEYS.map((k) => [k, z.boolean().catch(false)])) as Record<FeatureKey, z.ZodCatch<z.ZodBoolean>>)
   .catch(NO_FEATURES)
 
+/** Text je Sprache von der API (§43.18). */
+const localizedSchema = z.record(z.string().max(8), z.string().max(400))
+export type Localized = z.infer<typeof localizedSchema>
+const tilesSchema = z.array(z.object({ icon: z.string().max(20), text: localizedSchema })).max(12)
+const displaySchema = z.object({
+  runtime: z
+    .object({ label: localizedSchema, value: localizedSchema, progress: z.number().min(0).max(1), tone: z.enum(['normal', 'warn', 'cooldown']).catch('normal') })
+    .nullable(),
+  lines: z.array(z.object({ text: localizedSchema, tone: z.enum(['normal', 'warn']).catch('normal') })).max(8),
+  alerts: z.array(z.object({ id: z.string().max(80), text: localizedSchema, level: z.enum(['info', 'warning']).catch('info') })).max(4),
+})
+export type CraftingDisplay = z.infer<typeof displaySchema>
+
+/** Sprache wählen: genau, dann Grundsprache, dann Englisch, sonst die erste. */
+export function pickText(text: Localized, locale: string): string {
+  return text[locale] ?? text[locale.split('-')[0] ?? ''] ?? text.en ?? Object.values(text)[0] ?? ''
+}
+
+/** Platzhalter der API füllen: `{countdown:s}` läuft seit `elapsedMs`, `{duration:s}` fest, `{date:ISO}` lokal. */
+export function fillDisplay(text: string, elapsedMs: number, locale: string): string {
+  return text.replace(/\{(countdown|duration|date):([^}]{1,40})\}/g, (_, kind: string, value: string) => {
+    if (kind === 'date') {
+      const d = new Date(value)
+      return Number.isNaN(d.getTime())
+        ? ''
+        : new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(d)
+    }
+    const s = Number(value)
+    if (!Number.isFinite(s)) return ''
+    return hostingCountdown(kind === 'countdown' ? s - Math.floor(elapsedMs / 1000) : s)
+  })
+}
+
 export const craftingInfoSchema = z.object({
   plan: z.object({ name: z.string().max(40), memoryMb: count, cpuPercent: count, diskMb: count }),
   serverTypes: z.array(
@@ -81,6 +114,8 @@ export const craftingInfoSchema = z.object({
     .object({ budgetHours: count, cooldownHours: count, idleResetDays: count, weeklyOfflineHours: count, warnMinutes: count })
     .nullish()
     .catch(null),
+  /** Regel-Kacheln als fertige Texte der API. */
+  tiles: tilesSchema.nullish().catch(null),
 })
 
 export const craftingServerSchema = z.object({
@@ -141,6 +176,8 @@ export const craftingServerSchema = z.object({
     })
     .nullish()
     .catch(null),
+  /** Fertige Anzeige der API (Laufzeit-Zeile, Zeilen, Toasts); alte API: fehlt. */
+  display: displaySchema.nullish().catch(null),
 })
 
 /** Feste zweite MOTD-Zeile, setzt die TRS-API. */

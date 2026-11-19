@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use serde_json::json;
 
-use super::craftinghosting::{NewServer, SettingsPatch, VersionPick, quota, rules};
+use super::craftinghosting::{NewServer, SettingsPatch, VersionPick, passthrough, quota, rules};
 use super::craftinghosting_world::{UploadTarget, WorldSource};
 use super::testkit::{MockServer, Request, Response};
 use super::tests::{ACC, auth_routes, launcher};
@@ -1077,4 +1077,12 @@ fn quota_and_rules_from_the_api_reach_the_launcher() {
     let r = rules(&json!({ "budgetHours": 24, "cooldownHours": 2, "idleResetDays": 3, "weeklyOfflineHours": 8, "warnMinutes": 30 })).unwrap();
     assert_eq!((r.budget_hours, r.idle_reset_days, r.warn_minutes), (24, 3, 30));
     assert!(rules(&json!({ "budgetHours": 0 })).is_none());
+}
+
+#[test]
+fn display_from_the_api_is_passed_through_within_limits() {
+    assert!(passthrough(json!({ "runtime": null, "lines": [], "alerts": [] }), false).is_some());
+    assert!(passthrough(json!([{ "icon": "clock", "text": { "en": "x" } }]), true).is_some());
+    assert!(passthrough(json!("text"), false).is_none());
+    assert!(passthrough(json!({ "a": "x".repeat(40_000) }), false).is_none());
 }

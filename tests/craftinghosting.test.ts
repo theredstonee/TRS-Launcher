@@ -380,3 +380,16 @@ describe('Team-Steuerung', () => {
     expect(craftingServerSchema.parse(base).blocked ?? null).toBeNull()
   })
 })
+
+describe('Anzeige von der API (§43.18)', () => {
+  it('wählt die Sprache und füllt die Platzhalter', async () => {
+    const { pickText, fillDisplay } = await import('../app/utils/craftinghosting')
+    const text = { en: 'left {countdown:3700}', de: 'noch {countdown:3700}', pt: 'restam {duration:90}' }
+    expect(pickText(text, 'de')).toBe('noch {countdown:3700}')
+    expect(pickText(text, 'pt-BR')).toBe('restam {duration:90}')
+    expect(pickText(text, 'tr')).toBe('left {countdown:3700}')
+    expect(fillDisplay('noch {countdown:3700}', 100_000, 'de')).toBe('noch 1:00:00')
+    expect(fillDisplay('{duration:90} / {date:kaputt}', 999_000, 'de')).toBe('1:30 / ')
+    expect(fillDisplay('{date:2026-11-22T10:00:00.000Z}', 0, 'de')).toMatch(/22/)
+  })
+})
