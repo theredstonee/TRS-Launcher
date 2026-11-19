@@ -28,6 +28,14 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **Hosting: the footer under your server in the server list is shorter** ("Free by craftinghosting.free × trs-launcher.de"), so trs-launcher.de is no longer cut off.
+
+### Deutsch
+- **Hosting: Die Fußzeile unter deinem Server in der Serverliste ist kürzer** („Free by craftinghosting.free × trs-launcher.de“), damit trs-launcher.de nicht mehr abgeschnitten wird.
+
 ## 0.36.0 – 2026-11-18 – Your Own Server | Dein eigener Server
 <!-- banner: accent=#2f7bff motif=/news/0.36.0/banner.png -->
 <!-- shots:

@@ -1,6 +1,7 @@
 import type { HostInfo, Resolved } from './api.ts'
 
-export const FOOTER = '§7Free server by §bcraftinghosting.free §8× §ctrs-launcher.de'
+// max. ~270 px in der Serverliste, sonst verschwindet der Rest in Zeile 3
+export const FOOTER = '§7Free by §bcraftinghosting.free §8× §ctrs-launcher.de'
 
 export const MSG = {
   starting: '§aServer startet …§r\n§7In etwa einer Minute erneut verbinden.',

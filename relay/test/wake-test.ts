@@ -9,7 +9,7 @@ import { DOMAIN, FakeApi, HOSTNAME, McClient, UUID, WAKE_SECRET, closeWake, hand
 afterEach(closeWake)
 after(closeWake)
 
-const FOOTER = '§7Free server by §bcraftinghosting.free §8× §ctrs-launcher.de'
+const FOOTER = '§7Free by §bcraftinghosting.free §8× §ctrs-launcher.de'
 
 async function status(port: number, address = HOSTNAME, protocol = 769) {
   const c = await McClient.connect(port)

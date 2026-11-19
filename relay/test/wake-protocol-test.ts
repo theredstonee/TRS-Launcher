@@ -208,7 +208,7 @@ describe('wake: status texts and config', () => {
     }
     assert.equal(s.version.protocol, 769)
     assert.deepEqual(s.players, { max: 8, online: 0 })
-    assert.equal(s.description.text, '§fMeine Welt §8– §a▶ Click to join, it starts now\n§7Free server by §bcraftinghosting.free §8× §ctrs-launcher.de')
+    assert.equal(s.description.text, '§fMeine Welt §8– §a▶ Click to join, it starts now\n§7Free by §bcraftinghosting.free §8× §ctrs-launcher.de')
     const named = statusJson(769, { ok: true, info: { name: 'abc', motd: '', state: 'starting', target: null, maxPlayers: 8, cooldownUntil: null } }) as { description: { text: string } }
     assert.equal(named.description.text.split('\n')[0], '§fabc §8– §e● Starting …')
   })

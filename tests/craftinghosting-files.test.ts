@@ -62,7 +62,7 @@ function entry(name: string, type: 'file' | 'directory' = 'file'): ServerFile {
 
 describe('MOTD', () => {
   it('feste zweite Zeile und Länge der ersten', () => {
-    expect(MOTD_FOOTER).toBe('Free server by craftinghosting.free × trs-launcher.de')
+    expect(MOTD_FOOTER).toBe('Free by craftinghosting.free × trs-launcher.de')
     expect(MOTD_MAX).toBe(58)
   })
 })

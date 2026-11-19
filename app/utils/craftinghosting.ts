@@ -125,7 +125,7 @@ export const craftingServerSchema = z.object({
 })
 
 /** Feste zweite MOTD-Zeile, setzt die TRS-API. */
-export const MOTD_FOOTER = 'Free server by craftinghosting.free × trs-launcher.de'
+export const MOTD_FOOTER = 'Free by craftinghosting.free × trs-launcher.de'
 export const MOTD_MAX = 58
 
 export const GAMEMODES = ['survival', 'creative', 'adventure', 'spectator'] as const
