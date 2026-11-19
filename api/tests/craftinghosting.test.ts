@@ -1040,6 +1040,10 @@ describe('craftinghosting routes: website session', () => {
     await tick(20)
     let v = (await craftingServer(env.ctx, u!))!
     expect(v.quota).toMatchObject({ usedSeconds: 1200, budgetSeconds: 3600, remainingSeconds: 2400 })
+    expect(v.display!.runtime).toMatchObject({ tone: 'normal', label: { de: 'Laufzeit', en: 'Runtime' } })
+    expect(v.display!.runtime!.value.de).toBe('noch {countdown:2400} von 1 h')
+    expect(v.display!.lines[0]!.text.en).toBe('This week 0 / 160 h')
+    expect((await craftingInfo(env.ctx)).tiles!.map((x) => x.text.de)).toContain('Insgesamt 1 h Laufzeit, danach 2 h Pause.')
 
     // Pause zwischendurch: zählt nicht, Kontingent bleibt
     await craftingStop(env.ctx, u!, false)
@@ -1050,6 +1054,9 @@ describe('craftinghosting routes: website session', () => {
     partner.commands = []
     await tick(11)
     expect(partner.commands.some((c) => c.startsWith('tellraw @a') && c.includes('30'))).toBe(true)
+    const warned = (await craftingServer(env.ctx, u!))!.display!
+    expect(warned.runtime!.tone).toBe('warn')
+    expect(warned.alerts[0]!.text.de).toMatch(/^Dein Server stoppt in \{countdown:\d+\}/)
     await tick(30)
     v = (await craftingServer(env.ctx, u!))!
     expect(v.state).toBe('offline')

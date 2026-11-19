@@ -5775,3 +5775,14 @@ budgetHours, cooldownHours, idleResetDays, weeklyOfflineHours, warnMinutes }`):
   follow the rules.
 - Team: `POST /v1/admin/craftinghosting/servers/{id}/reset-quota` (permission `worlds.close`) clears quota, week and
   break. Migration 49.
+
+### 43.18 Display from the API (no launcher update for text/rule changes)
+
+- `info.tiles: [{ icon: "launcher" | "clock" | "calendar" | "doc" | string, text: Localized }] | null` – the rule
+  tiles. Unknown icons get a neutral dot.
+- `Server.display: { runtime: { label, value, progress (0–1), tone: "normal" | "warn" | "cooldown" } | null,
+  lines: [{ text, tone: "normal" | "warn" }], alerts: [{ id, text, level: "info" | "warning" }] } | null` – the
+  runtime row in the server header, the small lines below it, and toasts (each `id` once).
+- `Localized` = `{ "en": "...", "de": "...", "es", "fr", "nl", "pl", "pt-BR", "tr" }`; the client takes its language,
+  then the base language, then `en`. Placeholders the client fills in: `{countdown:<seconds>}` (counts down from the
+  moment the response arrived), `{duration:<seconds>}` (fixed), `{date:<ISO>}` (local date/time).

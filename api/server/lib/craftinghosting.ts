@@ -212,6 +212,17 @@ export interface ServerView {
   install: { status: string, step: number, steps: number, error: string | null } | null
   /** Laufzeit-Kontingent nach unseren Regeln (§43.17). */
   quota: Quota | null
+  /** Fertige Anzeige für die Clients (§43.18) – Texte und Regeln ändern ohne Launcher-Update. */
+  display: Display | null
+}
+
+/** Text je Sprache; Platzhalter `{countdown:<s>}` (läuft), `{duration:<s>}`, `{date:<ISO>}` setzt der Client ein. */
+export type Localized = Record<string, string>
+export interface Display {
+  runtime: { label: Localized, value: Localized, progress: number, tone: 'normal' | 'warn' | 'cooldown' } | null
+  lines: { text: Localized, tone: 'normal' | 'warn' }[]
+  /** Einmal als Toast zeigen (je `id`). */
+  alerts: { id: string, text: Localized, level: 'info' | 'warning' }[]
 }
 
 export interface Quota {
@@ -490,6 +501,7 @@ function view(s: PartnerServer, access: Access, setup: SetupState = 'pending', d
       ? { status: s.install.status, step: s.install.step, steps: s.install.steps, error: s.install.error ?? null }
       : null,
     quota: null,
+    display: null,
   }
 }
 
@@ -540,6 +552,8 @@ export async function craftingInfo(ctx: AppContext) {
     maintenance: maintenanceOf(ctx),
     /** Laufzeit-Regeln (§43.17), `null` = aus. */
     rules: rulesOf(ctx).enabled ? publicRules(ctx) : null,
+    /** Regel-Kacheln als fertige Texte (§43.18). */
+    tiles: tilesOf(ctx, l.deleteAfterIdleDays),
   }
 }
 
@@ -906,6 +920,7 @@ function adjust(ctx: AppContext, v: ServerView, row: Row): ServerView {
   return {
     ...out,
     quota: q,
+    display: displayOf(ctx, out, q),
     session: {
       ...out.session,
       runSeconds: q.usedSeconds,
@@ -2365,4 +2380,77 @@ export function adminCraftingResetQuota(ctx: AppContext, serverId: string): stri
   run(ctx.db, `UPDATE craftinghosting_servers SET run_used_s = 0, cooldown_until = NULL, week_used_s = 0, warned = 0, rule_stop = NULL
     WHERE uuid = ?`, row.uuid)
   return row.uuid
+}
+
+// ---------------------------------------------------------------- Anzeige-Texte (§43.18)
+
+const LANGS = ['en', 'de', 'es', 'fr', 'nl', 'pl', 'pt-BR', 'tr'] as const
+type Lang = (typeof LANGS)[number]
+const TEXTS: Record<string, Record<Lang, string>> = {
+  runtime: { 'en': 'Runtime', 'de': 'Laufzeit', 'es': 'Tiempo', 'fr': 'Temps', 'nl': 'Looptijd', 'pl': 'Czas działania', 'pt-BR': 'Tempo', 'tr': 'Çalışma süresi' },
+  cooldown: { 'en': 'Mandatory break', 'de': 'Pflichtpause', 'es': 'Pausa obligatoria', 'fr': 'Pause obligatoire', 'nl': 'Verplichte pauze', 'pl': 'Obowiązkowa przerwa', 'pt-BR': 'Pausa obrigatória', 'tr': 'Zorunlu mola' },
+  cooldownValue: { 'en': 'start again in {countdown:%s}', 'de': 'wieder startbar in {countdown:%s}', 'es': 'se puede iniciar en {countdown:%s}', 'fr': 'redémarrable dans {countdown:%s}', 'nl': 'weer te starten over {countdown:%s}', 'pl': 'ponowny start za {countdown:%s}', 'pt-BR': 'pode iniciar em {countdown:%s}', 'tr': '{countdown:%s} sonra yeniden başlatılabilir' },
+  leftRunning: { 'en': '{countdown:%s} of %h h left', 'de': 'noch {countdown:%s} von %h h', 'es': 'quedan {countdown:%s} de %h h', 'fr': 'encore {countdown:%s} sur %h h', 'nl': 'nog {countdown:%s} van %h u', 'pl': 'zostało {countdown:%s} z %h h', 'pt-BR': 'restam {countdown:%s} de %h h', 'tr': '%h sa içinden {countdown:%s} kaldı' },
+  leftIdle: { 'en': '{duration:%s} of %h h left', 'de': 'noch {duration:%s} von %h h', 'es': 'quedan {duration:%s} de %h h', 'fr': 'encore {duration:%s} sur %h h', 'nl': 'nog {duration:%s} van %h u', 'pl': 'zostało {duration:%s} z %h h', 'pt-BR': 'restam {duration:%s} de %h h', 'tr': '%h sa içinden {duration:%s} kaldı' },
+  week: { 'en': 'This week %u / %c h', 'de': 'Diese Woche %u / %c h', 'es': 'Esta semana %u / %c h', 'fr': 'Cette semaine %u / %c h', 'nl': 'Deze week %u / %c u', 'pl': 'Ten tydzień %u / %c h', 'pt-BR': 'Esta semana %u / %c h', 'tr': 'Bu hafta %u / %c sa' },
+  idleReset: { 'en': 'Full quota again {date:%d}', 'de': 'Volles Kontingent wieder {date:%d}', 'es': 'Cupo completo de nuevo {date:%d}', 'fr': 'Quota complet à nouveau {date:%d}', 'nl': 'Weer volledig tegoed {date:%d}', 'pl': 'Pełny limit znów {date:%d}', 'pt-BR': 'Cota completa de novo {date:%d}', 'tr': 'Tam kota yeniden {date:%d}' },
+  warn: { 'en': 'Your server stops in {countdown:%s} – its runtime is almost used up.', 'de': 'Dein Server stoppt in {countdown:%s} – die Laufzeit ist fast aufgebraucht.', 'es': 'Tu servidor se detiene en {countdown:%s}: el tiempo casi se ha agotado.', 'fr': 'Ton serveur s’arrête dans {countdown:%s} – le temps est presque épuisé.', 'nl': 'Je server stopt over {countdown:%s} – de looptijd is bijna op.', 'pl': 'Twój serwer zatrzyma się za {countdown:%s} – czas działania prawie się skończył.', 'pt-BR': 'Seu servidor para em {countdown:%s} – o tempo está quase acabando.', 'tr': 'Sunucun {countdown:%s} içinde duracak – çalışma süresi neredeyse bitti.' },
+  tileRuns: { 'en': 'Your server runs while the launcher is open.', 'de': 'Dein Server läuft, solange der Launcher offen ist.', 'es': 'Tu servidor funciona mientras el launcher está abierto.', 'fr': 'Ton serveur tourne tant que le launcher est ouvert.', 'nl': 'Je server draait zolang de launcher open is.', 'pl': 'Twój serwer działa, dopóki launcher jest otwarty.', 'pt-BR': 'Seu servidor roda enquanto o launcher estiver aberto.', 'tr': 'Sunucun, başlatıcı açık olduğu sürece çalışır.' },
+  tileQuota: { 'en': '%h h runtime in total, then a %p h break.', 'de': 'Insgesamt %h h Laufzeit, danach %p h Pause.', 'es': '%h h de tiempo en total, luego %p h de pausa.', 'fr': '%h h de fonctionnement au total, puis %p h de pause.', 'nl': 'In totaal %h u looptijd, daarna %p u pauze.', 'pl': 'Łącznie %h h działania, potem %p h przerwy.', 'pt-BR': '%h h de tempo no total, depois %p h de pausa.', 'tr': 'Toplam %h sa çalışma süresi, sonra %p sa mola.' },
+  tileIdleReset: { 'en': 'Unused for %d days? Your full %h h are back.', 'de': '%d Tage nicht genutzt? Dann hast du wieder volle %h h.', 'es': '¿%d días sin usarlo? Vuelves a tener %h h completas.', 'fr': 'Pas utilisé pendant %d jours ? Tu récupères tes %h h.', 'nl': '%d dagen niet gebruikt? Dan heb je weer volle %h u.', 'pl': 'Nieużywany przez %d dni? Znów masz pełne %h h.', 'pt-BR': 'Sem uso por %d dias? Você tem as %h h completas de novo.', 'tr': '%d gün kullanılmadı mı? Tam %h sa yeniden senin.' },
+  tileWeekly: { 'en': 'At least %o h offline per week (Mon–Sun).', 'de': 'Mindestens %o h pro Woche offline (Mo–So).', 'es': 'Al menos %o h apagado por semana (lun–dom).', 'fr': 'Au moins %o h hors ligne par semaine (lun–dim).', 'nl': 'Minstens %o u per week offline (ma–zo).', 'pl': 'Co najmniej %o h offline w tygodniu (pon–niedz).', 'pt-BR': 'Pelo menos %o h offline por semana (seg–dom).', 'tr': 'Haftada en az %o sa kapalı (Pzt–Paz).' },
+  tileDelete: { 'en': 'Servers are deleted after %d days without a start.', 'de': 'Server werden nach %d Tagen ohne Start gelöscht.', 'es': 'Los servidores se eliminan tras %d días sin iniciarse.', 'fr': 'Les serveurs sont supprimés après %d jours sans démarrage.', 'nl': 'Servers worden na %d dagen zonder start verwijderd.', 'pl': 'Serwery są usuwane po %d dniach bez uruchomienia.', 'pt-BR': 'Servidores são apagados após %d dias sem iniciar.', 'tr': 'Sunucular %d gün başlatılmazsa silinir.' },
+  tileEula: { 'en': 'You accept the Minecraft EULA when creating the server.', 'de': 'Die Minecraft-EULA akzeptierst du beim Anlegen.', 'es': 'Aceptas el EULA de Minecraft al crear el servidor.', 'fr': 'Tu acceptes l’EULA de Minecraft à la création.', 'nl': 'Je accepteert de Minecraft-EULA bij het aanmaken.', 'pl': 'EULA Minecrafta akceptujesz przy tworzeniu.', 'pt-BR': 'Você aceita o EULA do Minecraft ao criar.', 'tr': 'Minecraft EULA’sını oluştururken kabul edersin.' },
+}
+
+/** Text je Sprache mit `%x`-Werten. */
+function txt(key: string, vars: Record<string, string | number> = {}): Localized {
+  const out: Localized = {}
+  for (const lang of LANGS) {
+    let t = TEXTS[key]![lang]
+    for (const [k, v] of Object.entries(vars)) t = t.replaceAll(`%${k}`, String(v))
+    out[lang] = t
+  }
+  return out
+}
+
+function displayOf(ctx: AppContext, v: ServerView, q: Quota): Display {
+  const r = rulesOf(ctx)
+  const hours = Math.round(q.budgetSeconds / 3600)
+  const lines: Display['lines'] = []
+  const alerts: Display['alerts'] = []
+  let runtime: Display['runtime']
+  if (q.cooldownUntil) {
+    const left = Math.max(0, Math.round((Date.parse(q.cooldownUntil) - ctx.now()) / 1000))
+    const total = Math.max(left, r.cooldownHours * 3600)
+    runtime = { label: txt('cooldown'), value: txt('cooldownValue', { s: left }), progress: total ? 1 - left / total : 1, tone: 'cooldown' }
+  } else {
+    const active = v.session.active
+    const warn = active && r.warnMinutes > 0 && q.remainingSeconds <= r.warnMinutes * 60
+    runtime = {
+      label: txt('runtime'),
+      value: txt(active ? 'leftRunning' : 'leftIdle', { s: q.remainingSeconds, h: hours }),
+      progress: q.budgetSeconds ? Math.min(1, q.usedSeconds / q.budgetSeconds) : 0,
+      tone: warn ? 'warn' : 'normal',
+    }
+    if (warn && q.remainingSeconds > 0) {
+      alerts.push({ id: `quota-warn-${Math.floor((ctx.now() + q.remainingSeconds * 1000) / 600_000)}`, text: txt('warn', { s: q.remainingSeconds }), level: 'warning' })
+    }
+  }
+  lines.push({ text: txt('week', { u: Math.floor(q.weekUsedSeconds / 3600), c: Math.round(q.weekCapSeconds / 3600) }), tone: q.weekCapSeconds - q.weekUsedSeconds < 6 * 3600 ? 'warn' : 'normal' })
+  if (q.idleResetAt && !v.session.active) lines.push({ text: txt('idleReset', { d: q.idleResetAt }), tone: 'normal' })
+  return { runtime, lines, alerts }
+}
+
+function tilesOf(ctx: AppContext, deleteDays: number) {
+  const r = rulesOf(ctx)
+  if (!r.enabled) return null
+  return [
+    { icon: 'launcher', text: txt('tileRuns') },
+    { icon: 'clock', text: txt('tileQuota', { h: r.budgetHours, p: r.cooldownHours }) },
+    { icon: 'clock', text: txt('tileIdleReset', { d: r.idleResetDays, h: r.budgetHours }) },
+    { icon: 'calendar', text: txt('tileWeekly', { o: r.weeklyOfflineHours }) },
+    { icon: 'calendar', text: txt('tileDelete', { d: deleteDays }) },
+    { icon: 'doc', text: txt('tileEula') },
+  ]
 }
