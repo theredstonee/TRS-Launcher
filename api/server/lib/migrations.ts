@@ -1100,6 +1100,13 @@ CREATE TABLE IF NOT EXISTS craftinghosting_admin (
 `)
     },
   },
+  {
+    // CraftingHosting: EULA schon im Anlege-Assistenten bestätigt.
+    version: 48,
+    run: (db) => {
+      if (!hasColumn(db, 'craftinghosting_servers', 'eula_at')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN eula_at INTEGER')
+    },
+  },
 ]
 
 /** Migration 40 (siehe oben): Minispiel-Ranglisten. Exportiert für den Idempotenz-Test. */

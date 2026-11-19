@@ -49,6 +49,8 @@ export const createServerBody = z.object({
   version: z.string().regex(/^[A-Za-z0-9._-]{1,32}$/),
   access: z.enum(ACCESS).default('friends'),
   subdomain: z.string().trim().toLowerCase().max(40).optional(),
+  /** Minecraft-EULA im Assistenten bestätigt – dann fragt der erste Start nicht mehr. */
+  acceptEula: z.boolean().optional(),
 }).strict()
 export const patchServerBody = z.object({
   access: z.enum(ACCESS).optional(),
@@ -227,6 +229,7 @@ interface Row {
   dns_a_record: string | null
   transfers: number
   mods: string | null
+  eula_at: number | null
   blocked_reason: string | null
   blocked_at: number | null
   blocked_by: string | null
@@ -238,6 +241,71 @@ const misses = new WeakMap<AppContext, Map<string, number>>()
 const syncing = new Set<string>()
 /** Laufende Neustarts nach der Ersteinrichtung (Konto → Promise, für Tests abwartbar). */
 const restarts = new Map<string, Promise<void>>()
+/** Start läuft, Node antwortet aber noch mit 503: alle 10 s neu versuchen, höchstens 3 min. */
+const pendingStarts = new Map<string, { until: number, timer: ReturnType<typeof setTimeout> | null }>()
+const START_RETRY_MS = 10_000
+const START_WAIT_MS = 3 * 60_000
+const starting = (uuid: string) => restarts.has(uuid) || pendingStarts.has(uuid)
+
+function startBody(row: Row, acceptEula: boolean) {
+  return acceptEula || row.eula_at !== null ? { acceptEula: true } : {}
+}
+
+/** Start beim Partner; meldet die Node „noch nicht erreichbar“, übernimmt der Hintergrund. */
+async function startOrQueue(ctx: AppContext, row: Row, acceptEula: boolean): Promise<unknown | null> {
+  try {
+    const res = await call(ctx, 'POST', path(row, '/start'), startBody(row, acceptEula))
+    stopPending(row.uuid)
+    return res
+  } catch (e) {
+    if (!isNotReady(e)) throw e
+    queueStart(ctx, row.uuid)
+    return null
+  }
+}
+
+function stopPending(uuid: string) {
+  const p = pendingStarts.get(uuid)
+  if (p?.timer) clearTimeout(p.timer)
+  pendingStarts.delete(uuid)
+}
+
+function queueStart(ctx: AppContext, uuid: string) {
+  const old = pendingStarts.get(uuid)
+  const entry = { until: old?.until ?? ctx.now() + START_WAIT_MS, timer: null as ReturnType<typeof setTimeout> | null }
+  if (old?.timer) clearTimeout(old.timer)
+  pendingStarts.set(uuid, entry)
+  const tick = async () => {
+    if (pendingStarts.get(uuid) !== entry) return
+    const row = rowOf(ctx, uuid)
+    if (!row || ctx.now() > entry.until) {
+      pendingStarts.delete(uuid)
+      if (row) console.warn(`[trs-api] CraftingHosting start gave up after ${START_WAIT_MS / 1000} s (${row.server_id})`)
+      return
+    }
+    try {
+      const p = parseServer(await call(ctx, 'GET', path(row)))
+      if (p.state === 'running' || p.state === 'starting' || p.session?.active) {
+        pendingStarts.delete(uuid)
+        return
+      }
+      await call(ctx, 'POST', path(row, '/start'), startBody(row, false))
+      pendingStarts.delete(uuid)
+      void syncDns(ctx, rowOf(ctx, uuid) ?? row, parseServer(await call(ctx, 'GET', path(row)))).catch(() => undefined)
+      return
+    } catch (e) {
+      if (!isNotReady(e)) {
+        pendingStarts.delete(uuid)
+        if (!(e instanceof ApiError)) console.error('[trs-api] CraftingHosting start retry failed', e)
+        return
+      }
+    }
+    entry.timer = setTimeout(() => void tick(), START_RETRY_MS)
+    entry.timer.unref?.()
+  }
+  entry.timer = setTimeout(() => void tick(), START_RETRY_MS)
+  entry.timer.unref?.()
+}
 const manifests = new WeakMap<AppContext, { at: number, value: z.output<typeof manifestSchema> }>()
 const jars = new Map<string, Uint8Array<ArrayBuffer>>()
 
@@ -255,9 +323,18 @@ function config(ctx: AppContext) {
 }
 
 /** Fehler des Partners auf unsere Codes abbilden (Partner-Texte gehen nicht durch). */
+/** Partner-503 `service_unavailable`: Node fährt den Server noch hoch – kein echter Fehler. */
+const notReadyErrors = new WeakSet<ApiError>()
+const isNotReady = (e: unknown) => e instanceof ApiError && notReadyErrors.has(e)
+
 function partnerError(status: number, body: unknown): ApiError {
   const parsed = errorSchema.safeParse(body)
   const code = parsed.success ? parsed.data.error.code : ''
+  if (status === 503 && code === 'service_unavailable') {
+    const e = upstream()
+    notReadyErrors.add(e)
+    return e
+  }
   const fields = parsed.success ? parsed.data.error.fields ?? undefined : undefined
   if (status === 401 || status === 403 || code === 'invalid_api_key') {
     console.error(`[trs-api] CraftingHosting rejected the partner key (${status})`)
@@ -687,7 +764,7 @@ export async function craftingServer(ctx: AppContext, user: UserRow): Promise<Se
         }
       }
       await syncDns(ctx, rowOf(ctx, user.uuid) ?? row, p)
-      const s = withBlock(view(p, row.access, setupOf(row), domainOf(ctx, rowOf(ctx, user.uuid))), row)
+      const s = adjust(withBlock(view(p, row.access, setupOf(row), domainOf(ctx, rowOf(ctx, user.uuid))), row), row)
       if (s.state === 'running' && (row.wl_key === null || !row.op_done || !row.setup)) {
         await syncAccess(ctx, user, s)
         return { ...s, setup: setupOf(rowOf(ctx, user.uuid)) }
@@ -731,11 +808,12 @@ export async function craftingCreate(ctx: AppContext, user: UserRow, body: z.out
     version: body.version,
   })
   const s = parseServer(res)
-  run(ctx.db, `INSERT INTO craftinghosting_servers (uuid, server_id, access, created_at) VALUES (?, ?, ?, ?)
+  run(ctx.db, `INSERT INTO craftinghosting_servers (uuid, server_id, access, created_at, eula_at) VALUES (?, ?, ?, ?, ?)
     ON CONFLICT(uuid) DO UPDATE SET server_id = excluded.server_id, access = excluded.access, wl_key = NULL,
       op_done = 0, setup = 0, motd = NULL, plugin = NULL, subdomain = NULL, dns_record = NULL, dns_target = NULL,
-      dns_a_record = NULL, transfers = 0`,
-  user.uuid, s.id, body.access, ctx.now())
+      dns_a_record = NULL, transfers = 0, eula_at = excluded.eula_at`,
+  user.uuid, s.id, body.access, ctx.now(), body.acceptEula ? ctx.now() : null)
+  stopPending(user.uuid)
   if (sub) {
     try {
       run(ctx.db, 'UPDATE craftinghosting_servers SET subdomain = ? WHERE uuid = ?', sub, user.uuid)
@@ -747,7 +825,9 @@ export async function craftingCreate(ctx: AppContext, user: UserRow, body: z.out
   infoCache.delete(ctx)
   const row = rowOf(ctx, user.uuid)
   if (row) await syncDns(ctx, row, s)
-  return view(s, body.access, 'pending', domainOf(ctx, rowOf(ctx, user.uuid)))
+  const made = rowOf(ctx, user.uuid)
+  const v = view(s, body.access, 'pending', domainOf(ctx, made))
+  return made ? adjust(v, made) : v
 }
 
 async function own(ctx: AppContext, user: UserRow): Promise<Row> {
@@ -777,7 +857,14 @@ async function fresh(ctx: AppContext, row: Row, res?: unknown): Promise<ServerVi
   const now = rowOf(ctx, row.uuid) ?? row
   const p = direct.success ? direct.data.server : parseServer(await call(ctx, 'GET', path(row)))
   await warmIp(p)
-  return withBlock(view(p, now.access, setupOf(now), domainOf(ctx, now)), now)
+  return adjust(withBlock(view(p, now.access, setupOf(now), domainOf(ctx, now)), now), now)
+}
+
+function adjust(v: ServerView, row: Row): ServerView {
+  let out = v
+  if (row.eula_at !== null && !out.eulaAccepted) out = { ...out, eulaAccepted: true }
+  if (pendingStarts.has(row.uuid) && (out.state === 'offline' || out.state === 'stopping')) out = { ...out, state: 'starting' }
+  return out
 }
 
 export async function craftingUpdate(ctx: AppContext, user: UserRow, body: z.output<typeof patchServerBody>): Promise<ServerView> {
@@ -813,7 +900,9 @@ export async function craftingStart(ctx: AppContext, user: UserRow, acceptEula: 
     await syncAccess(ctx, user, await fresh(ctx, row))
     if (row.setup && !row.transfers) await ensureTransfers(ctx, row)
     if (row.setup) await refreshFooter(ctx, row)
-    return fresh(ctx, row, await call(ctx, 'POST', path(row, '/start'), acceptEula ? { acceptEula: true } : {}))
+    if (acceptEula && row.eula_at === null) run(ctx.db, 'UPDATE craftinghosting_servers SET eula_at = ? WHERE uuid = ?', ctx.now(), user.uuid)
+    const res = await startOrQueue(ctx, rowOf(ctx, user.uuid) ?? row, acceptEula)
+    return fresh(ctx, rowOf(ctx, user.uuid) ?? row, res ?? undefined)
   })
 }
 
@@ -827,6 +916,7 @@ export async function craftingHeartbeat(ctx: AppContext, user: UserRow): Promise
 }
 
 export async function craftingStop(ctx: AppContext, user: UserRow, whenEmpty: boolean): Promise<ServerView> {
+  if (!whenEmpty) stopPending(user.uuid)
   return onServer(ctx, user, async (row) => fresh(ctx, row, await call(ctx, 'POST', path(row, '/stop'), whenEmpty ? { whenEmpty: true } : {})))
 }
 
@@ -894,9 +984,19 @@ export async function craftingSetSettings(ctx: AppContext, user: UserRow, body: 
 // eslint-disable-next-line no-control-regex
 const CONTROL = /\u001B\[[0-9;]*[A-Za-z]|[\u0000-\u0008\u000B-\u001F\u007F]/g
 
-export async function craftingLogs(ctx: AppContext, user: UserRow, lines: number): Promise<string[]> {
+const STARTING_LINE: Record<string, string> = { de: 'Server startet …', es: 'El servidor se está iniciando …', en: 'Server is starting …' }
+
+export async function craftingLogs(ctx: AppContext, user: UserRow, lines: number, lang = 'en'): Promise<string[]> {
   return onServer(ctx, user, async (row) => {
-    const o = obj(await call(ctx, 'GET', path(row, `/logs?lines=${lines}`))) ?? {}
+    let body: unknown
+    try {
+      body = await call(ctx, 'GET', path(row, `/logs?lines=${lines}`))
+    } catch (e) {
+      // Node fährt noch hoch: ruhiger Hinweis statt Fehler.
+      if (isNotReady(e)) return [STARTING_LINE[lang] ?? STARTING_LINE.en!]
+      throw e
+    }
+    const o = obj(body) ?? {}
     const raw: unknown[] = Array.isArray(o.lines) ? o.lines
       : typeof o.log === 'string' ? o.log.split(/\r?\n/)
         : typeof o.logs === 'string' ? o.logs.split(/\r?\n/)
@@ -1218,7 +1318,8 @@ export async function adminCraftingServers(ctx: AppContext) {
     usage: { used: me.limits.usedServers, max: me.limits.maxServers },
     servers: list.map((p) => {
       const row = rows.get(p.id)
-      const v = withBlock(view(p, row?.access ?? 'friends', setupOf(row), domainOf(ctx, row)), row)
+      const base = withBlock(view(p, row?.access ?? 'friends', setupOf(row), domainOf(ctx, row)), row)
+      const v = row ? adjust(base, row) : base
       return {
         ...v,
         owner: row ? { uuid: row.uuid, name: row.name } : null,
@@ -1476,7 +1577,7 @@ export async function relayResolve(ctx: AppContext, host: string) {
   if (owner && liveFor(p) && (row.wl_key === null || !row.op_done || !row.setup)) {
     await syncAccess(ctx, owner, view(p, row.access, setupOf(row)))
   }
-  const state = restarts.has(row.uuid) ? 'starting' : wakeState(p, ctx.now())
+  const state = starting(row.uuid) ? 'starting' : wakeState(p, ctx.now())
   let maxPlayers = 20
   try {
     maxPlayers = (await craftingSettingsRaw(ctx, row)).maxPlayers
@@ -1517,19 +1618,19 @@ export async function relayWake(ctx: AppContext, host: string, player: { name: s
     if (!names.has(player.name.toLowerCase())) throw new ApiError(409, 'not_allowed', 'Not on the friends list')
   }
   const p = parseServer(await call(ctx, 'GET', path(row)))
-  const state = restarts.has(row.uuid) ? 'starting' : wakeState(p, ctx.now())
+  const state = starting(row.uuid) ? 'starting' : wakeState(p, ctx.now())
   if (state === 'running' || state === 'starting') return { state }
   if (state === 'cooldown') {
     throw new ApiError(409, 'cooldown', 'cooldown', p.session?.cooldownUntil ? { cooldownUntil: p.session.cooldownUntil } : undefined)
   }
   if (state === 'unavailable') throw new ApiError(409, 'unavailable', 'unavailable')
-  if (!p.eulaAccepted) throw new ApiError(409, 'eula_required', 'eula required')
+  if (!p.eulaAccepted && row.eula_at === null) throw new ApiError(409, 'eula_required', 'eula required')
   const last = wakes.get(row.uuid) ?? 0
   if (ctx.now() - last < 30_000) return { state: 'starting' as WakeState }
   wakes.set(row.uuid, ctx.now())
   await syncAccess(ctx, owner, view(p, row.access, setupOf(row)))
   if (row.setup && !row.transfers) await ensureTransfers(ctx, row)
-  await call(ctx, 'POST', path(row, '/start'), {})
+  await startOrQueue(ctx, row, false)
   return { state: 'starting' as WakeState }
 }
 

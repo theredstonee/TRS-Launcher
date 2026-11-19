@@ -5742,3 +5742,15 @@ Signature `X-CHF-Signature: sha256=<HMAC(secret, "<X-CHF-Timestamp>.<body>")>`, 
 DNS (TRS Wake switches immediately), applies access/first setup on `server.running`, and forgets the server on
 `server.deleted`. Duplicates are ignored by delivery id. New stop reason `settings_limit` is passed on as `null` until
 clients know it.
+
+### 43.16 Slow start, EULA in the wizard
+
+- `POST …/server` accepts `acceptEula: true` (Minecraft EULA confirmed in the create wizard). The API stores it
+  (migration 48, `craftinghosting_servers.eula_at`); from then on `Server.eulaAccepted` is `true`, the first start
+  sends `acceptEula` to the partner by itself, and TRS Wake may start the server without a launcher start first.
+- When the partner answers a start with `503 service_unavailable` (the node is still bringing the server up), the API
+  does not fail: it answers with the server in `state: "starting"` and retries the start every 10 s in the
+  background for up to 3 minutes (also for TRS Wake). A stop ends the retries. After that the server shows its real
+  state again.
+- `GET …/server/logs` answers `{ lines: ["Server is starting …"] }` (German/Spanish by `Accept-Language`) instead of an
+  error while the partner rejects the console with `503 service_unavailable`.

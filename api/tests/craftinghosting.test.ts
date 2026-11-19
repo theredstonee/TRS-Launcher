@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   craftingCommand, craftingCreate, craftingDelete, craftingHeartbeat, craftingInfo, craftingInstallMods, craftingLogs,
   craftingServer, craftingSetSettings, craftingSettings, craftingStart, craftingStats, craftingStop, craftingUpdate,
@@ -48,6 +48,9 @@ class FakePartner {
   mods: string[] = []
   modCalls: unknown[] = []
   uploadHost = 'upload.craftinghosting.free'
+  /** So oft antwortet die Node noch mit 503 service_unavailable (Start/Logs). */
+  notReady = 0
+  startBodies: Record<string, unknown>[] = []
   backups: { id: string, name: string | null, bytes: number, state: string, createdAt: string, completedAt: null }[] = []
   restored: string[] = []
   webhookUrl: string | null = null
@@ -158,7 +161,8 @@ class FakePartner {
         if (body.project === 'missing') return this.err(404, 'mod_not_found')
         this.mods.push(body.project)
         return this.json(200, { ok: true })
-      case 'GET logs': return this.json(200, { lines: ['[10:00:00 INFO]: Done (3.2s)!', '\u001b[31mred\u001b[0m'] })
+      case 'GET logs': if (this.notReady > 0) return this.err(503, 'service_unavailable')
+        return this.json(200, { lines: ['[10:00:00 INFO]: Done (3.2s)!', '\u001b[31mred\u001b[0m'] })
       case 'GET stats': return this.json(200, { state: 'running', cpuPercent: 12.5, cpuLimitPercent: 200, memoryBytes: 100,
         memoryLimitBytes: 4096, diskBytes: 5, diskLimitBytes: 10, networkRxBytes: 1, networkTxBytes: 2, uptimeSeconds: 60,
         players: { online: 2, max: 20 } })
@@ -180,6 +184,11 @@ class FakePartner {
       }
       case 'DELETE ': this.servers.delete(s.id); this.used--; return new Response(null, { status: 204 })
       case 'POST start':
+        this.startBodies.push(body)
+        if (this.notReady > 0) {
+          this.notReady--
+          return this.err(503, 'service_unavailable')
+        }
         if (!s.eulaAccepted && !body.acceptEula) return this.err(409, 'eula_required')
         s.eulaAccepted = true
         s.state = 'running'
@@ -970,5 +979,44 @@ describe('craftinghosting routes: website session', () => {
     craftingWebhook(env.ctx, Buffer.from(JSON.stringify({ id: 'd2', type: 'server.deleted', data: { serverId: s.id } })))
     await new Promise((r) => setTimeout(r, 50))
     expect(await craftingServer(env.ctx, u!)).not.toBeNull()
+  })
+
+  it('slow node: start answers starting and retries in the background; console shows a hint', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      const { env, partner } = setup()
+      const [u] = await players(env, 'Steve')
+      await craftingCreate(env.ctx, u!, body())
+      partner.notReady = 2
+      const v = await craftingStart(env.ctx, u!, true)
+      expect(v.state).toBe('starting')
+      expect(await craftingLogs(env.ctx, u!, 50, 'de')).toEqual(['Server startet …'])
+      expect((await craftingServer(env.ctx, u!))!.state).toBe('starting')
+      await vi.advanceTimersByTimeAsync(10_000)
+      await vi.advanceTimersByTimeAsync(10_000)
+      expect((await craftingServer(env.ctx, u!))!.state).toBe('running')
+      expect(partner.startBodies.length).toBe(3)
+
+      // Gibt nach 3 Minuten auf
+      const [v2] = await players(env, 'Alex')
+      await craftingCreate(env.ctx, v2!, body())
+      partner.notReady = 1000
+      expect((await craftingStart(env.ctx, v2!, true)).state).toBe('starting')
+      env.clock.advance(4 * 60_000)
+      await vi.advanceTimersByTimeAsync(10_000)
+      expect((await craftingServer(env.ctx, v2!))!.state).toBe('offline')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('EULA confirmed in the wizard: no dialog, first start sends acceptEula, wake may start', async () => {
+    const { env, partner } = setup()
+    const [u] = await players(env, 'Steve')
+    const s = await craftingCreate(env.ctx, u!, createServerBody.parse({ ...body(), acceptEula: true }))
+    expect(s.eulaAccepted).toBe(true)
+    expect(partner.servers.get(s.id)!.eulaAccepted).toBe(false)
+    expect((await craftingStart(env.ctx, u!, false)).state).toBe('running')
+    expect(partner.startBodies.at(-1)).toEqual({ acceptEula: true })
   })
 })
