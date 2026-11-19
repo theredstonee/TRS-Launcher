@@ -1953,7 +1953,12 @@ export function verifyWebhook(secret: string, raw: Buffer, ts: string, sig: stri
 
 /** Geheimnis aus der Admin-Einrichtung, sonst aus der Env (`CRAFTINGHOSTING_WEBHOOK_SECRET`). */
 export function webhookSecret(ctx: AppContext): string | null {
-  return adminGet(ctx, 'webhook_secret') ?? ctx.config.craftinghostingWebhookSecret
+  return webhookSecrets(ctx)[0] ?? null
+}
+
+/** Alle hinterlegten Geheimnisse – wer zuletzt eingerichtet hat (Admin-Seite oder Partner-API), gewinnt beim Prüfen. */
+export function webhookSecrets(ctx: AppContext): string[] {
+  return [...new Set([adminGet(ctx, 'webhook_secret'), ctx.config.craftinghostingWebhookSecret].filter((x): x is string => !!x))]
 }
 
 const webhookEvent = z.object({
