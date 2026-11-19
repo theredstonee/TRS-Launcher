@@ -23,7 +23,14 @@ const MAX_MODS = 50
 const MOD_SLUG = /^[\w.-]{2,64}$/
 const WORLD_ZIP = 'trs-world.zip'
 /** Feste zweite MOTD-Zeile (Plugin) bzw. Anhang an die einzige Zeile (ohne Plugin). */
-export const MOTD_FOOTER = '§7Free server by §bcraftinghosting.free §8× §ctrs-launcher.de'
+// Muss in die 270 px der Serverliste passen, sonst bricht der Rest in eine unsichtbare 3. Zeile um (jetzt ~241 px).
+export const MOTD_FOOTER = '§7Free by §bcraftinghosting.free §8× §ctrs-launcher.de'
+const OLD_FOOTERS = ['§7Free server by §bcraftinghosting.free §8× §ctrs-launcher.de']
+/** Unsere Fußzeile (auch frühere Fassungen) vom Ende der MOTD abschneiden. */
+function cutFooter(motd: string): string {
+  for (const f of [MOTD_FOOTER, ...OLD_FOOTERS]) if (motd.endsWith(` ${f}`)) return motd.slice(0, -f.length - 1)
+  return motd
+}
 const MOTD_LINE_MAX = 58
 const PLUGIN_MIN = [1, 1, 0]
 const PLUGIN_MAX_BYTES = 5 * 1024 * 1024
@@ -863,7 +870,7 @@ const obj = (v: unknown) => (typeof v === 'object' && v !== null && !Array.isArr
 function parseSettings(body: unknown, row?: Row) {
   const o = obj(body) ?? {}
   const out = settingsOut.parse(obj(o.settings) ?? o)
-  const shown = out.motd.endsWith(` ${MOTD_FOOTER}`) ? out.motd.slice(0, -MOTD_FOOTER.length - 1) : out.motd
+  const shown = cutFooter(out.motd)
   return { ...out, motd: row?.motd ?? shown, levelType: out.levelType.replace(/^minecraft\\?:/, '') }
 }
 
@@ -1722,7 +1729,7 @@ function setProps(text: string, values: Record<string, string>): string {
   return `${lines.join('\n')}\n`
 }
 
-const stripFooter = (motd: string) => (motd.endsWith(` ${MOTD_FOOTER}`) ? motd.slice(0, -MOTD_FOOTER.length - 1) : motd)
+const stripFooter = (motd: string) => cutFooter(motd)
   .replace(/§./g, '').slice(0, MOTD_LINE_MAX)
 
 export async function craftingProperties(ctx: AppContext, user: UserRow) {
