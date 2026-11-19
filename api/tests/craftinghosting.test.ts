@@ -7,7 +7,7 @@ import {
   craftingSetProperties, craftingWriteFile, craftingWorlds, craftingActivateWorld, craftingDeleteWorld, craftingWorldFiles,
   craftingDownloadUrls, worldNameQuery, modsBody, craftingChangeVersion, craftingBackups, versionBody,
   adminCraftingConfig, adminSetCraftingConfig, adminCraftingBlock, relayWake as wakeForTest,
-  craftingReinstall, craftingBackupAction, craftingWebhook, verifyWebhook, adminWebhook,
+  craftingReinstall, craftingBackupAction, craftingWebhook, verifyWebhook, adminWebhook, webhookSecret,
   adminCraftingDelete, adminCraftingServers, adminCraftingStop, craftingCheckSubdomain, relayResolve, relayWake, sweepCraftingDns, craftingRestartDone, craftingWorldImport, craftingWorldUpload, createServerBody, MOTD_FOOTER, settingsBody,
 } from '../server/lib/craftinghosting'
 import { RULES } from '../server/lib/ratelimit'
@@ -948,6 +948,8 @@ describe('craftinghosting routes: website session', () => {
     const st = await adminWebhook(env.ctx, 'setup', staff!.uuid)
     expect(st.configured).toBe(true)
     expect(partner.webhookUrl).toBe('https://api.trs-launcher.de/v1/internal/craftinghosting/webhook')
+    const viaEnv = makeEnv({ env: { CRAFTINGHOSTING_API_KEY: KEY, CRAFTINGHOSTING_WEBHOOK_SECRET: 'whsec_fromenv12345' } })
+    expect(webhookSecret(viaEnv.ctx)).toBe('whsec_fromenv12345')
 
     const raw = Buffer.from(JSON.stringify({ id: 'd1', type: 'server.running', data: { serverId: s.id } }))
     const ts = String(Math.floor(Date.now() / 1000))

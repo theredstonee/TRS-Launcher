@@ -68,6 +68,8 @@ export interface Config {
   craftinghostingNotice: string | null
   /** Wohin CraftingHosting Webhooks schickt (§43.15). Zone ohne Bot-Schutz (api.trs-launcher.de). */
   craftinghostingWebhookUrl: string
+  /** Webhook-Geheimnis, wenn per Partner-API statt Admin-Seite eingerichtet. */
+  craftinghostingWebhookSecret: string | null
   /** Eigene Adressen für CraftingHosting-Server (§43.9): Cloudflare-Token nur mit DNS-Rechten für `zone`. */
   dns: { token: string, zone: string, wake: { ip: string, port: number } | null } | null
   /** Release-Kanal von TRS Server Rules (server-plugin.json + Jars) für die CraftingHosting-Ersteinrichtung. */
@@ -387,6 +389,7 @@ const envSchema = z.object({
     .refine((s) => /^https:\/\/[A-Za-z0-9.\/_-]+$/.test(s), 'must be an https URL'),
   CRAFTINGHOSTING_FEATURES: z.string().trim().max(500).default(''),
   CRAFTINGHOSTING_NOTICE: z.string().trim().max(300).default(''),
+  CRAFTINGHOSTING_WEBHOOK_SECRET: z.string().trim().max(200).default('').refine((s) => s === '' || /^whsec_[A-Za-z0-9_-]{8,200}$/.test(s), 'must be a whsec_ secret'),
   CRAFTINGHOSTING_WEBHOOK_URL: z.string().trim().max(300).default('https://api.trs-launcher.de/v1/internal/craftinghosting/webhook')
     .refine((s) => /^https:\/\/[A-Za-z0-9.-]+\/[A-Za-z0-9._~\/-]*$/.test(s), 'must be an https URL on the default port'),
   CRAFTINGHOSTING_API: z.string().trim().max(200).default('https://craftinghosting.free/api/v1/partner')
@@ -580,6 +583,7 @@ export function loadConfig(env: Record<string, string | undefined>, limits: Part
     craftinghostingFeatures: new Set(e.CRAFTINGHOSTING_FEATURES.split(',').map((x) => x.trim()).filter((x) => /^[A-Za-z]{1,40}$/.test(x))),
     craftinghostingNotice: e.CRAFTINGHOSTING_NOTICE === '' ? null : e.CRAFTINGHOSTING_NOTICE,
     craftinghostingWebhookUrl: e.CRAFTINGHOSTING_WEBHOOK_URL,
+    craftinghostingWebhookSecret: e.CRAFTINGHOSTING_WEBHOOK_SECRET === '' ? null : e.CRAFTINGHOSTING_WEBHOOK_SECRET,
     craftinghosting: e.CRAFTINGHOSTING_API_KEY === '' ? null : { url: e.CRAFTINGHOSTING_API.replace(/\/+$/, ''), key: e.CRAFTINGHOSTING_API_KEY },
     limits: { ...DEFAULT_LIMITS, ...limits },
   }

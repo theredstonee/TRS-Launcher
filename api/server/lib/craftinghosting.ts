@@ -1951,8 +1951,9 @@ export function verifyWebhook(secret: string, raw: Buffer, ts: string, sig: stri
   return got.length === want.length && timingSafeEqual(got, want)
 }
 
+/** Geheimnis aus der Admin-Einrichtung, sonst aus der Env (`CRAFTINGHOSTING_WEBHOOK_SECRET`). */
 export function webhookSecret(ctx: AppContext): string | null {
-  return adminGet(ctx, 'webhook_secret')
+  return adminGet(ctx, 'webhook_secret') ?? ctx.config.craftinghostingWebhookSecret
 }
 
 const webhookEvent = z.object({

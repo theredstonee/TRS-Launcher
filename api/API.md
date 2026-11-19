@@ -5734,7 +5734,8 @@ where 46 had already run, and `blocked_*`). Everything is enforced by the API, c
 
 The admin page sets the partner webhook (`POST /v1/admin/craftinghosting/webhook` `{ action: "setup" | "test" |
 "remove" }`, `GET` for the status, permission `worlds.view`/`worlds.close`); the secret (`whsec_…`) comes only once and
-is stored in `craftinghosting_admin`. Deliveries go to `POST /v1/internal/craftinghosting/webhook` (env
+is stored in `craftinghosting_admin` (alternatively env `CRAFTINGHOSTING_WEBHOOK_SECRET` when the webhook was set
+directly through the partner API). Deliveries go to `POST /v1/internal/craftinghosting/webhook` (env
 `CRAFTINGHOSTING_WEBHOOK_URL`, default `https://api.trs-launcher.de/…` – zone without Cloudflare Bot Fight Mode).
 Signature `X-CHF-Signature: sha256=<HMAC(secret, "<X-CHF-Timestamp>.<body>")>`, at most 5 minutes old, otherwise
 `403 webhook_signature`; answered `202` right away. Events are only a nudge: the API fetches the server itself, re-syncs
