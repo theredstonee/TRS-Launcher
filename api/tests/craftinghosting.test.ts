@@ -7,6 +7,7 @@ import {
   craftingSetProperties, craftingWriteFile, craftingWorlds, craftingActivateWorld, craftingDeleteWorld, craftingWorldFiles,
   craftingDownloadUrls, worldNameQuery, modsBody, craftingChangeVersion, craftingBackups, versionBody,
   adminCraftingConfig, adminSetCraftingConfig, adminCraftingBlock, relayWake as wakeForTest,
+  craftingReinstall, craftingBackupAction, craftingWebhook, verifyWebhook, adminWebhook,
   adminCraftingDelete, adminCraftingServers, adminCraftingStop, craftingCheckSubdomain, relayResolve, relayWake, sweepCraftingDns, craftingRestartDone, craftingWorldImport, craftingWorldUpload, createServerBody, MOTD_FOOTER, settingsBody,
 } from '../server/lib/craftinghosting'
 import { RULES } from '../server/lib/ratelimit'
@@ -47,6 +48,9 @@ class FakePartner {
   mods: string[] = []
   modCalls: unknown[] = []
   uploadHost = 'upload.craftinghosting.free'
+  backups: { id: string, name: string | null, bytes: number, state: string, createdAt: string, completedAt: null }[] = []
+  restored: string[] = []
+  webhookUrl: string | null = null
   zipFolder = 'world'
   used = 0
   max = 100
@@ -77,6 +81,12 @@ class FakePartner {
         eulaUrl: 'https://www.minecraft.net/eula',
       })
     }
+    if (path === '/webhook' && method === 'PUT') {
+      this.webhookUrl = body.url
+      return this.json(200, { url: body.url, secret: 'whsec_testsecret123456' })
+    }
+    if (path === '/webhook' && method === 'GET') return this.json(200, { url: this.webhookUrl, events: [], pending: 0, recent: [] })
+    if (path === '/webhook/test') return this.json(200, { ok: true })
     if (method === 'GET' && path === '/servers') {
       const p = url.searchParams.get('player')
       return this.json(200, { servers: [...this.servers.values()].filter((s) => p === null || s.player.externalId === p) })
@@ -96,12 +106,29 @@ class FakePartner {
       s.state = 'offline'
       return res
     }
-    const m = /^\/servers\/([^/]+)(?:\/([\w/-]+))?$/.exec(path)
+    const m = /^\/servers\/([^/]+)(?:\/([\w/.-]+))?$/.exec(path)
     const s = m ? this.servers.get(decodeURIComponent(m[1]!)) : undefined
     if (!m || !s) return this.err(404, 'not_found')
     switch (`${method} ${m[2] ?? ''}`) {
       case 'GET ': return this.json(200, { server: s })
-      case 'PATCH ': s.name = `${body.name} #P7KXGQXL`; return this.json(200, { server: s })
+      case 'PATCH ':
+        if (body.serverType || body.version) {
+          if (s.state !== 'offline' || s.session.active) return this.err(409, 'server_running')
+          if (body.serverType) s.serverType = body.serverType
+          if (body.version) s.version = body.version
+          ;(s as unknown as Record<string, unknown>).install = { status: 'installing', serverType: s.serverType, version: s.version, build: 'x', step: 1, steps: 1, error: null }
+          return this.json(200, { server: { ...s, state: 'installing' } })
+        }
+        s.name = `${body.name} #P7KXGQXL`
+        return this.json(200, { server: s })
+      case 'POST reinstall': return this.json(200, { server: { ...s, state: 'installing' } })
+      case 'GET backups': return this.json(200, { limit: 2, backups: this.backups })
+      case 'POST backups': {
+        if (this.backups.length >= 2) return this.err(409, 'backup_limit')
+        const b = { id: `b${this.backups.length + 1}`, name: body.name ?? null, bytes: 5000, state: 'ready', createdAt: '2026-11-19T07:16:26+01:00', completedAt: null }
+        this.backups.push(b)
+        return this.json(201, { backup: b })
+      }
       case 'GET settings': return this.json(200, { settings: this.settings })
       case 'PATCH settings': Object.assign(this.settings, body); return this.json(200, { settings: this.settings })
       case 'PUT files/content': {
@@ -110,6 +137,12 @@ class FakePartner {
         return this.json(200, { ok: true })
       }
       case 'POST files/folder': return this.json(200, { ok: true })
+      case 'POST backups/b1/restore':
+        if (s.session.active) return this.err(409, 'server_running')
+        this.restored.push('b1')
+        return this.json(200, { ok: true })
+      case 'GET backups/b1/download-url': return this.json(200, { id: 'b1', url: `https://${this.uploadHost}/download/backup?token=x`, expiresInSeconds: 300 })
+      case 'DELETE backups/b1': this.backups = this.backups.filter((b) => b.id !== 'b1'); return this.json(200, { ok: true })
       case 'GET files/download-url': return this.json(200, { path: url.searchParams.get('path'), url: `https://${this.uploadHost}/download/file?token=x`, expiresInSeconds: 600 })
       case 'POST files/upload-url': return this.json(200, { url: `https://${this.uploadHost}/upload?token=abc` })
       case 'POST files/delete':
@@ -829,15 +862,16 @@ describe('craftinghosting routes: website session', () => {
     expect(partner.modCalls.at(-1)).toEqual({ project: 'chunky', version: 'AbCdEf12' })
   })
 
-  it('feature switches come from the API; prepared routes answer feature_unavailable', async () => {
+  it('feature switches come from the API; switched-off functions answer feature_disabled', async () => {
     const { env } = setup()
-    const [u] = await players(env, 'Steve')
+    const [u, staff] = await players(env, 'Steve', 'Mod')
     const info = await craftingInfo(env.ctx)
-    expect(info.features).toMatchObject({ files: true, worlds: true, versionChange: false, backups: false, ownAddress: false })
+    expect(info.features).toMatchObject({ files: true, worlds: true, versionChange: true, backups: true, ownAddress: false })
     expect(info.notice).toBeNull()
     await craftingCreate(env.ctx, u!, body())
-    expect(await codeAsync(() => craftingChangeVersion(env.ctx, u!, versionBody.parse({ serverType: 'paper', version: '1.21.4' })))).toBe('feature_unavailable')
-    expect(await codeAsync(() => craftingBackups(env.ctx, u!))).toBe('feature_unavailable')
+    adminSetCraftingConfig(env.ctx, staff!.uuid, { features: { versionChange: false, backups: false } })
+    expect(await codeAsync(() => craftingChangeVersion(env.ctx, u!, versionBody.parse({ serverType: 'paper', version: '1.21.4' })))).toBe('feature_disabled')
+    expect(await codeAsync(() => craftingBackups(env.ctx, u!))).toBe('feature_disabled')
     const on = makeEnv({ env: { CRAFTINGHOSTING_API_KEY: KEY, CRAFTINGHOSTING_FEATURES: 'versionChange, backups, bad-name!', CRAFTINGHOSTING_NOTICE: 'Wartung heute 22 Uhr' } })
     expect([...on.ctx.config.craftinghostingFeatures].sort()).toEqual(['backups', 'versionChange'])
     expect(on.ctx.config.craftinghostingNotice).toBe('Wartung heute 22 Uhr')
@@ -876,5 +910,63 @@ describe('craftinghosting routes: website session', () => {
     expect((await craftingServer(env.ctx, u!))?.blocked).toBeNull()
     await craftingStart(env.ctx, u!, true)
     void wakeForTest
+  })
+
+  it('version change, reinstall, backups through the partner', async () => {
+    const { env, partner } = setup()
+    const [u] = await players(env, 'Steve')
+    const s = await craftingCreate(env.ctx, u!, body({ serverType: 'paper' }))
+    await craftingStart(env.ctx, u!, true)
+    expect(await codeAsync(() => craftingChangeVersion(env.ctx, u!, versionBody.parse({ serverType: 'fabric', version: '1.21.11' })))).toBe('server_running')
+    await craftingStop(env.ctx, u!, false)
+    const v = await craftingChangeVersion(env.ctx, u!, versionBody.parse({ serverType: 'fabric', version: '1.21.11' }))
+    expect([v.serverType, v.version, v.state, v.install?.status]).toEqual(['fabric', '1.21.11', 'installing', 'installing'])
+    expect((await craftingInfo(env.ctx)).features).toMatchObject({ versionChange: true, backups: true })
+    partner.servers.get(s.id)!.state = 'offline'
+    expect((await craftingReinstall(env.ctx, u!)).state).toBe('installing')
+
+    expect(await craftingBackupAction(env.ctx, u!, 'create', undefined, 'Vor dem Update')).toEqual({ ok: true, id: 'b1' })
+    const list = await craftingBackups(env.ctx, u!)
+    expect(list).toEqual({ max: 2, backups: [{ id: 'b1', name: 'Vor dem Update', size: 5000, createdAt: '2026-11-19T06:16:26.000Z', state: 'ready' }] })
+    await craftingBackupAction(env.ctx, u!, 'restore', 'b1')
+    expect(partner.restored).toEqual(['b1'])
+    expect((await craftingBackupAction(env.ctx, u!, 'download', 'b1') as { url: string }).url).toMatch(/^https:\/\/upload\.craftinghosting\.free\//)
+    await craftingBackupAction(env.ctx, u!, 'delete', 'b1')
+    expect(partner.backups).toEqual([])
+  })
+
+  it('webhooks: setup stores the secret, signature check, events re-sync DNS', async () => {
+    const env = makeEnv({ env: { CRAFTINGHOSTING_API_KEY: KEY, CRAFTINGHOSTING_API: 'https://partner.example.test/api/v1/partner/',
+      CLOUDFLARE_DNS_TOKEN: 'cf-token', WAKE_IP: '116.203.12.169' } })
+    const partner = new FakePartner()
+    const dns = new FakeDns()
+    env.ctx.craftinghostingFetch = partner.fetch
+    env.ctx.serverRulesFetch = pluginChannel()
+    env.ctx.cloudflareFetch = dns.fetch
+    const [u, staff] = await players(env, 'Steve', 'Mod')
+    const s = await craftingCreate(env.ctx, u!, body({ subdomain: 'welt' }))
+    const st = await adminWebhook(env.ctx, 'setup', staff!.uuid)
+    expect(st.configured).toBe(true)
+    expect(partner.webhookUrl).toBe('https://api.trs-launcher.de/v1/internal/craftinghosting/webhook')
+
+    const raw = Buffer.from(JSON.stringify({ id: 'd1', type: 'server.running', data: { serverId: s.id } }))
+    const ts = String(Math.floor(Date.now() / 1000))
+    const { createHmac } = await import('node:crypto')
+    const sig = `sha256=${createHmac('sha256', 'whsec_testsecret123456').update(`${ts}.`).update(raw).digest('hex')}`
+    expect(verifyWebhook('whsec_testsecret123456', raw, ts, sig, Date.now())).toBe(true)
+    expect(verifyWebhook('whsec_other', raw, ts, sig, Date.now())).toBe(false)
+    expect(verifyWebhook('whsec_testsecret123456', raw, String(Number(ts) - 600), sig, Date.now())).toBe(false)
+
+    const srv = () => [...dns.records.values()].find((r) => r.type === 'SRV')!
+    expect(srv().data.target).toBe('welt.trs-launcher.de')
+    partner.servers.get(s.id)!.state = 'running'
+    partner.servers.get(s.id)!.session = { ...partner.servers.get(s.id)!.session, active: true }
+    craftingWebhook(env.ctx, raw)
+    await new Promise((r) => setTimeout(r, 50))
+    expect(srv().data.target).toBe('node1.example.com')
+    craftingWebhook(env.ctx, raw)
+    craftingWebhook(env.ctx, Buffer.from(JSON.stringify({ id: 'd2', type: 'server.deleted', data: { serverId: s.id } })))
+    await new Promise((r) => setTimeout(r, 50))
+    expect(await craftingServer(env.ctx, u!)).not.toBeNull()
   })
 })

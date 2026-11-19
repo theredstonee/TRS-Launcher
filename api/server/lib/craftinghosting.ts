@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import type { AppContext } from './context'
-import { createHash } from 'node:crypto'
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { lookup } from 'node:dns/promises'
 import { all, one, run } from './db'
 import { MODRINTH_ID } from './modrinth'
@@ -121,6 +121,14 @@ const serverSchema = z.object({
   createdAt: iso,
   lastStartAt: iso,
   deleteAt: iso,
+  install: z.object({
+    status: z.string().max(20).nullish(),
+    serverType: z.string().max(40).nullish(),
+    version: z.string().max(40).nullish(),
+    step: num,
+    steps: num,
+    error: z.string().max(500).nullish(),
+  }).loose().nullish(),
 }).loose()
 type PartnerServer = z.output<typeof serverSchema>
 
@@ -152,7 +160,10 @@ const STATES = new Set(['installing', 'offline', 'starting', 'running', 'stoppin
 const STOP_REASONS = new Set(['host_stopped', 'host_timeout', 'session_limit', 'admin'])
 const PASS_400 = new Set(['invalid_name', 'server_type_unavailable', 'version_unavailable', 'invalid_path', 'file_rejected'])
 const PASS_409 = new Set(['server_installing', 'eula_required', 'cooldown', 'not_running', 'server_failed', 'server_suspended',
-  'mods_unsupported'])
+  'mods_unsupported', 'server_running', 'server_stopping', 'state_changed', 'backup_limit', 'backup_busy', 'backup_rejected',
+  'no_webhook'])
+/** Partner-Grenzen je Server (zu oft gesichert/umgestellt) → unser 429; panel_busy/rate_limited bleiben unser Problem (502). */
+const PARTNER_TOO_OFTEN = new Set(['too_often', 'backup_rate_limited', 'too_many_installs', 'too_many_streams'])
 
 export interface ServerView {
   id: string
@@ -188,6 +199,8 @@ export interface ServerView {
   ip: string | null
   /** Vom Team gesperrt: Starten/Aufwecken geht nicht. */
   blocked: { reason: string, since: string | null } | null
+  /** Einrichtung der Server-Software (nach Anlegen, Versionswechsel, Neuinstallation). */
+  install: { status: string, step: number, steps: number, error: string | null } | null
 }
 
 export type SetupState = 'pending' | 'restarting' | 'done'
@@ -246,7 +259,11 @@ function partnerError(status: number, body: unknown): ApiError {
   if (status === 503 && (code === 'maintenance' || code === 'unavailable' || code === 'panel_unavailable')) {
     return unavailable('craftinghosting_maintenance', 'CraftingHosting is under maintenance, try again later')
   }
-  if (status === 404) return code === 'file_not_found' || code === 'mod_not_found' ? notFound(code, code.replaceAll('_', ' ')) : noServer()
+  if (status === 404) {
+    if (code === 'file_not_found' || code === 'mod_not_found' || code === 'backup_not_found') return notFound(code, code.replaceAll('_', ' '))
+    return noServer()
+  }
+  if (status === 429 && PARTNER_TOO_OFTEN.has(code)) return new ApiError(429, 'rate_limited', 'Too many requests', { retryAfter: 60 }, { 'Retry-After': '60' })
   if (status === 409) {
     if (code === 'partner_limit_reached') return conflict('craftinghosting_full', 'No free servers left right now')
     if (code === 'player_limit_reached') return conflict('server_exists', 'You already have a server')
@@ -363,6 +380,9 @@ function view(s: PartnerServer, access: Access, setup: SetupState = 'pending', d
     domain,
     ip: s.host && s.port && nodeIps.get(s.host)?.ip ? `${nodeIps.get(s.host)!.ip}:${s.port}` : null,
     blocked: null,
+    install: s.install?.status
+      ? { status: s.install.status, step: s.install.step, steps: s.install.steps, error: s.install.error ?? null }
+      : null,
   }
 }
 
@@ -420,7 +440,7 @@ export const FEATURE_KEYS = ['files', 'properties', 'addons', 'worlds', 'worldDo
 export type FeatureKey = (typeof FEATURE_KEYS)[number]
 
 function features(ctx: AppContext): Record<FeatureKey, boolean> {
-  const on = ctx.config.craftinghostingFeatures
+  void ctx.config.craftinghostingFeatures
   const base: Record<FeatureKey, boolean> = {
     files: true,
     properties: true,
@@ -429,8 +449,8 @@ function features(ctx: AppContext): Record<FeatureKey, boolean> {
     worldDownload: true,
     ownAddress: !!ctx.config.dns,
     wakeOnJoin: !!ctx.config.dns?.wake,
-    versionChange: on.has('versionChange'),
-    backups: on.has('backups'),
+    versionChange: true,
+    backups: true,
     create: true,
     console: true,
   }
@@ -537,7 +557,6 @@ export async function adminCraftingBlock(ctx: AppContext, serverId: string, by: 
   return row.uuid
 }
 
-const notAvailable = () => new ApiError(501, 'feature_unavailable', 'Not available yet')
 
 export const versionBody = z.object({
   serverType: z.string().regex(/^[a-z0-9_-]{1,32}$/),
@@ -551,26 +570,95 @@ export const backupIdParam = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/)
  * Version/Servertyp wechseln (§43.13). Die Partner-API bietet das noch nicht an; sobald CraftingHosting es liefert,
  * wird hier der Aufruf ergänzt und `versionChange` in CRAFTINGHOSTING_FEATURES eingeschaltet.
  */
-export async function craftingChangeVersion(ctx: AppContext, user: UserRow, _body: z.output<typeof versionBody>): Promise<ServerView> {
+export async function craftingChangeVersion(ctx: AppContext, user: UserRow, body: z.output<typeof versionBody>): Promise<ServerView> {
   assertNoMaintenance(ctx)
-  if (!features(ctx).versionChange) throw notAvailable()
-  return onServer(ctx, user, async () => {
-    throw notAvailable()
+  assertFeature(ctx, 'versionChange')
+  return onServer(ctx, user, async (row) => {
+    assertNotBlocked(row)
+    const s = await fresh(ctx, row)
+    assertStopped(s)
+    if (!body.keepWorld) {
+      let level = 'world'
+      try {
+        level = parseProps(await readText(ctx, row, '/server.properties')).get('level-name') || 'world'
+      } catch { /* ohne Einstellungen: Standardname */ }
+      await call(ctx, 'POST', path(row, '/files/delete'), { paths: DIMS.map((x) => `/${level}${x}`) })
+    }
+    const res = await call(ctx, 'PATCH', path(row), { serverType: body.serverType, version: body.version })
+    // Neue Software: Ersteinrichtung (passendes TRS-Server-Rules-Jar, Fußzeile) beim nächsten Lauf erneut.
+    run(ctx.db, 'UPDATE craftinghosting_servers SET setup = 0, plugin = NULL, transfers = 0 WHERE uuid = ?', user.uuid)
+    infoCache.delete(ctx)
+    return fresh(ctx, row, res)
   })
 }
 
-/** Backups (§43.13) – vorbereitet wie der Versionswechsel. */
-export async function craftingBackups(ctx: AppContext, user: UserRow): Promise<{ backups: { id: string, name: string, size: number, createdAt: string | null }[], max: number }> {
-  if (!features(ctx).backups) throw notAvailable()
-  return onServer(ctx, user, async () => {
-    throw notAvailable()
+export async function craftingReinstall(ctx: AppContext, user: UserRow): Promise<ServerView> {
+  assertNoMaintenance(ctx)
+  assertFeature(ctx, 'versionChange')
+  return onServer(ctx, user, async (row) => {
+    assertNotBlocked(row)
+    const res = await call(ctx, 'POST', path(row, '/reinstall'), {})
+    run(ctx.db, 'UPDATE craftinghosting_servers SET setup = 0, plugin = NULL, transfers = 0 WHERE uuid = ?', user.uuid)
+    return fresh(ctx, row, res)
   })
 }
 
-export async function craftingBackupAction(ctx: AppContext, user: UserRow, _action: 'create' | 'restore' | 'delete' | 'download', _id?: string): Promise<unknown> {
-  if (!features(ctx).backups) throw notAvailable()
-  return onServer(ctx, user, async () => {
-    throw notAvailable()
+const backupSchema = z.object({
+  id: z.string().regex(/^[A-Za-z0-9_-]{1,64}$/),
+  name: z.string().max(200).nullish(),
+  bytes: z.number().nullish(),
+  state: z.string().max(20).nullish(),
+  createdAt: z.string().max(40).nullish(),
+  completedAt: z.string().max(40).nullish(),
+}).loose()
+const isoOrNull = (v: string | null | undefined) => (v && Number.isFinite(Date.parse(v)) ? new Date(Date.parse(v)).toISOString() : null)
+
+export const backupCreateBody = z.object({ name: z.string().trim().max(80).optional() }).strict().optional()
+
+export async function craftingBackups(ctx: AppContext, user: UserRow) {
+  assertFeature(ctx, 'backups')
+  return onServer(ctx, user, async (row) => {
+    const r = z.object({ limit: z.number().int().nullish(), backups: z.array(backupSchema).max(100) }).loose()
+      .safeParse(await call(ctx, 'GET', path(row, '/backups')))
+    if (!r.success) throw upstream()
+    return {
+      backups: r.data.backups.map((b) => ({
+        id: b.id,
+        name: (b.name || 'Backup').slice(0, 100),
+        size: Math.max(0, b.bytes ?? 0),
+        createdAt: isoOrNull(b.createdAt),
+        state: b.state === 'creating' || b.state === 'failed' ? b.state : 'ready',
+      })),
+      max: Math.max(0, r.data.limit ?? 0),
+    }
+  })
+}
+
+export async function craftingBackupAction(ctx: AppContext, user: UserRow, action: 'create' | 'restore' | 'delete' | 'download', id?: string, name?: string): Promise<unknown> {
+  assertFeature(ctx, 'backups')
+  if (action !== 'download') assertNoMaintenance(ctx)
+  return onServer(ctx, user, async (row) => {
+    if (action === 'create') {
+      const res = z.object({ backup: backupSchema }).loose().safeParse(await call(ctx, 'POST', path(row, '/backups'), name ? { name } : {}))
+      return { ok: true, id: res.success ? res.data.backup.id : null }
+    }
+    const bid = encodeURIComponent(id ?? '')
+    if (action === 'restore') {
+      assertNotBlocked(row)
+      assertStopped(await fresh(ctx, row))
+      await call(ctx, 'POST', path(row, `/backups/${bid}/restore`), { truncate: false })
+      return { ok: true }
+    }
+    if (action === 'delete') {
+      await call(ctx, 'DELETE', path(row, `/backups/${bid}`))
+      return { ok: true }
+    }
+    const r = z.object({ url: z.string().max(2000), expiresInSeconds: z.number().nullish() }).loose()
+      .safeParse(await call(ctx, 'GET', path(row, `/backups/${bid}/download-url`)))
+    if (!r.success || !URL.canParse(r.data.url)) throw upstream()
+    const u = new URL(r.data.url)
+    if (u.protocol !== 'https:' || !UPLOAD_HOST.test(u.hostname)) throw upstream()
+    return { url: u.href, expiresAt: new Date(ctx.now() + Math.min(600, r.data.expiresInSeconds ?? 300) * 1000).toISOString() }
   })
 }
 
@@ -1034,7 +1122,7 @@ async function pluginManifest(ctx: AppContext) {
 /** Passendes TRS-Server-Rules-Jar für Typ + Version, sonst null (Vanilla, nicht gebaute Versionen, altes Plugin). */
 async function pluginFor(ctx: AppContext, s: ServerView) {
   const platform = s.serverType === 'paper' || s.serverType === 'purpur' ? 'bukkit'
-    : s.serverType === 'fabric' || s.serverType === 'forge' ? s.serverType : null
+    : s.serverType === 'fabric' || s.serverType === 'forge' || s.serverType === 'neoforge' ? s.serverType : null
   if (!platform) return null
   let mc = s.version
   if (mc === 'latest') mc = (await partnerMe(ctx)).serverTypes.find((t) => t.id === s.serverType)?.versions.find((v) => v !== 'latest') ?? null
@@ -1460,7 +1548,7 @@ export async function sweepCraftingDns(ctx: AppContext): Promise<void> {
 /** Fußzeile auf den aktuellen Text bringen: Plugin-Datei bzw. einzige MOTD-Zeile. Fehler stören den Start nicht. */
 async function refreshFooter(ctx: AppContext, row: Row): Promise<void> {
   try {
-    if (row.plugin === 'bukkit' || row.plugin === 'fabric' || row.plugin === 'forge') {
+    if (row.plugin === 'bukkit' || row.plugin === 'fabric' || row.plugin === 'forge' || row.plugin === 'neoforge') {
       const file = row.plugin === 'bukkit' ? '/plugins/TRSServerRules/hosting.yml' : '/config/trs-server-rules-hosting.yml'
       await call(ctx, 'PUT', path(row, `/files/content?path=${encodeURIComponent(file)}`), undefined,
         { type: 'text/yaml', data: `# TRS Launcher – CraftingHosting\nmotd-footer: "${MOTD_FOOTER}"\n` })
@@ -1713,7 +1801,7 @@ export async function craftingCreateFolder(ctx: AppContext, user: UserRow, dir: 
 
 function addonDir(serverType: string | null): { kind: 'plugins' | 'mods', dir: string } | null {
   if (serverType === 'paper' || serverType === 'purpur') return { kind: 'plugins', dir: '/plugins' }
-  if (serverType === 'fabric' || serverType === 'forge') return { kind: 'mods', dir: '/mods' }
+  if (serverType === 'fabric' || serverType === 'forge' || serverType === 'neoforge' || serverType === 'quilt') return { kind: 'mods', dir: '/mods' }
   return null
 }
 
@@ -1847,4 +1935,94 @@ export async function craftingDownloadUrls(ctx: AppContext, user: UserRow, paths
     }
     return { urls, expiresAt: new Date(ctx.now() + 10 * 60 * 1000).toISOString() }
   })
+}
+
+// ---------------------------------------------------------------- Webhooks von CraftingHosting (§43.15)
+
+const WEBHOOK_TYPES = new Set(['server.installed', 'server.install_failed', 'server.running', 'server.stopped',
+  'server.cooldown_ended', 'server.deletion_soon', 'server.deleted', 'webhook.test'])
+const seenDeliveries = new Map<string, number>()
+
+/** Signatur `sha256=<HMAC(secret, "<ts>.<body>")>`, höchstens 5 Minuten alt. */
+export function verifyWebhook(secret: string, raw: Buffer, ts: string, sig: string, nowMs: number): boolean {
+  if (!/^\d{1,12}$/.test(ts) || Math.abs(nowMs / 1000 - Number(ts)) > 300) return false
+  const want = Buffer.from(`sha256=${createHmac('sha256', secret).update(`${ts}.`).update(raw).digest('hex')}`)
+  const got = Buffer.from(sig)
+  return got.length === want.length && timingSafeEqual(got, want)
+}
+
+export function webhookSecret(ctx: AppContext): string | null {
+  return adminGet(ctx, 'webhook_secret')
+}
+
+const webhookEvent = z.object({
+  id: z.string().max(100),
+  type: z.string().max(60),
+  data: z.object({ serverId: z.string().max(64).nullish() }).loose().nullish(),
+}).loose()
+
+/**
+ * Eingang eines Webhooks: nur Anstoß, den Zustand holen wir selbst (Ereignisse können doppelt/vertauscht kommen).
+ * Läuft nach der Antwort weiter, damit CraftingHosting nicht auf uns warten muss.
+ */
+export function craftingWebhook(ctx: AppContext, raw: Buffer): { ok: true } {
+  const parsed = webhookEvent.safeParse(JSON.parse(raw.toString('utf8') || 'null'))
+  if (!parsed.success || !WEBHOOK_TYPES.has(parsed.data.type)) return { ok: true }
+  const ev = parsed.data
+  const now = ctx.now()
+  for (const [k, at] of seenDeliveries) if (now - at > 24 * 3600_000) seenDeliveries.delete(k)
+  if (seenDeliveries.has(ev.id)) return { ok: true }
+  seenDeliveries.set(ev.id, now)
+  const serverId = ev.data?.serverId
+  if (!serverId) return { ok: true }
+  const row = one<Row>(ctx.db, 'SELECT * FROM craftinghosting_servers WHERE server_id = ?', serverId)
+  if (!row) return { ok: true }
+  void (async () => {
+    if (ev.type === 'server.deleted') {
+      forget(ctx, row.uuid)
+      return
+    }
+    if (ev.type === 'server.install_failed' || ev.type === 'server.deletion_soon') {
+      console.info(`[trs-api] CraftingHosting ${ev.type} for ${serverId}`)
+    }
+    const p = parseServer(await call(ctx, 'GET', path(row)))
+    await syncDns(ctx, rowOf(ctx, row.uuid) ?? row, p)
+    const owner = getUser(ctx, row.uuid)
+    if (owner && ev.type === 'server.running') await syncAccess(ctx, owner, view(p, row.access, setupOf(row)))
+  })().catch((e) => {
+    if (!(e instanceof ApiError)) console.error('[trs-api] CraftingHosting webhook handling failed', e)
+  })
+  return { ok: true }
+}
+
+/** Team: Webhook beim Partner setzen (Geheimnis kommt nur einmal und bleibt bei uns), Status, Test. */
+export async function adminWebhook(ctx: AppContext, action: 'status' | 'setup' | 'test' | 'remove', by: string) {
+  config(ctx)
+  const url = ctx.config.craftinghostingWebhookUrl
+  if (action === 'setup') {
+    const r = z.object({ secret: z.string().regex(/^whsec_[A-Za-z0-9_-]{8,200}$/) }).loose()
+      .safeParse(await call(ctx, 'PUT', '/webhook', { url }))
+    if (!r.success) throw upstream()
+    adminSet(ctx, 'webhook_secret', r.data.secret, by)
+  } else if (action === 'test') {
+    await call(ctx, 'POST', '/webhook/test', {})
+  } else if (action === 'remove') {
+    await call(ctx, 'DELETE', '/webhook').catch((e) => {
+      if (!(e instanceof ApiError && e.code === 'no_webhook')) throw e
+    })
+    adminSet(ctx, 'webhook_secret', null, by)
+  }
+  const st = z.object({
+    url: z.string().max(500).nullable().catch(null),
+    pending: z.number().catch(0),
+    recent: z.array(z.object({ type: z.string().max(60).nullish(), status: z.union([z.number(), z.string()]).nullish(),
+      at: z.string().max(40).nullish(), createdAt: z.string().max(40).nullish() }).loose()).max(50).catch([]),
+  }).loose().catch({ url: null, pending: 0, recent: [] }).parse(await call(ctx, 'GET', '/webhook'))
+  return {
+    configured: !!webhookSecret(ctx) && st.url === url,
+    url: st.url,
+    expectedUrl: url,
+    pending: st.pending,
+    recent: st.recent.slice(0, 10),
+  }
 }

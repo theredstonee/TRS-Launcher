@@ -5698,13 +5698,19 @@ A world is a top-level folder with `level.dat`; Paper keeps the other dimensions
 wakeOnJoin, versionChange, backups }`, `notice: { markdown, level: "info" | "warning" | "success", updatedAt } | null`
 (team setting, falls back to env `CRAFTINGHOSTING_NOTICE`) and `maintenance: { active, message }`. Clients show a section only
 when its switch is `true`. `versionChange` and `backups` are switched on with env `CRAFTINGHOSTING_FEATURES`
-(comma-separated) once CraftingHosting offers them; the routes below exist already and answer
-`501 feature_unavailable` until then:
+(comma-separated). Since 2026-11-19 CraftingHosting offers both, so they are on by default (the team can switch them
+off on the admin page; then `403 feature_disabled`):
 
-- `POST …/server/version` body `{ serverType, version, keepWorld? = true }` -> `{ server }`.
-- `GET …/server/backups` -> `{ backups: [{ id, name, size, createdAt }], max }`, `POST …/server/backups` (create),
-  `POST …/server/backups/{id}/restore`, `GET …/server/backups/{id}/download` -> `{ url, expiresAt }`,
-  `DELETE …/server/backups/{id}`.
+- `POST …/server/version` body `{ serverType, version, keepWorld? = true }` -> `{ server }` (partner `PATCH`; server must be
+  off; `keepWorld: false` deletes the active world first; world, mods and files stay, the server software is replaced;
+  the first setup – TRS Server Rules for the new platform – runs again). `Server.install = { status, step, steps,
+  error }` while the software is being set up. `POST …/server/reinstall` -> `{ server }` sets up the current software
+  again. At most 3 per server and hour (`429 rate_limited`).
+- `GET …/server/backups` -> `{ backups: [{ id, name, size, createdAt, state: "creating" | "ready" | "failed" }], max }`,
+  `POST …/server/backups` body `{ name? }` (create), `POST …/server/backups/{id}/restore` (server must be off; files are
+  overwritten, not deleted first), `GET …/server/backups/{id}/download` -> `{ url, expiresAt }` (https,
+  `*.craftinghosting.free`), `DELETE …/server/backups/{id}`. Partner limits: `409 backup_limit | backup_busy |
+  backup_rejected`, 2 new backups/restores per 10 minutes (`429 rate_limited`).
 
 ### 43.14 Team control (admin page `/admin/hosting`)
 
@@ -5723,3 +5729,15 @@ where 46 had already run, and `blocked_*`). Everything is enforced by the API, c
 - `POST /v1/admin/craftinghosting/servers/{id}/block` body `{ reason }` (1–300, shown to the owner) stops the server and
   blocks starting/waking (`403 server_blocked`, `details.reason`; `Server.blocked = { reason, since }`); `DELETE …/block`
   unblocks. Audit `craftinghosting.block` / `craftinghosting.unblock`.
+
+### 43.15 Webhooks from CraftingHosting
+
+The admin page sets the partner webhook (`POST /v1/admin/craftinghosting/webhook` `{ action: "setup" | "test" |
+"remove" }`, `GET` for the status, permission `worlds.view`/`worlds.close`); the secret (`whsec_…`) comes only once and
+is stored in `craftinghosting_admin`. Deliveries go to `POST /v1/internal/craftinghosting/webhook` (env
+`CRAFTINGHOSTING_WEBHOOK_URL`, default `https://api.trs-launcher.de/…` – zone without Cloudflare Bot Fight Mode).
+Signature `X-CHF-Signature: sha256=<HMAC(secret, "<X-CHF-Timestamp>.<body>")>`, at most 5 minutes old, otherwise
+`403 webhook_signature`; answered `202` right away. Events are only a nudge: the API fetches the server itself, re-syncs
+DNS (TRS Wake switches immediately), applies access/first setup on `server.running`, and forgets the server on
+`server.deleted`. Duplicates are ignored by delivery id. New stop reason `settings_limit` is passed on as `null` until
+clients know it.

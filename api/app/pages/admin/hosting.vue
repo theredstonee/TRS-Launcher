@@ -59,6 +59,28 @@ async function saveCfg() {
   }
 }
 onMounted(loadCfg)
+
+interface WebhookState { configured: boolean, url: string | null, expectedUrl: string, pending: number }
+const webhook = ref<WebhookState | null>(null)
+const webhookBusy = ref(false)
+async function loadWebhook() {
+  try {
+    webhook.value = await api<WebhookState>('/v1/admin/craftinghosting/webhook')
+  } catch {
+    webhook.value = null
+  }
+}
+async function webhookAction(action: 'setup' | 'test' | 'remove') {
+  webhookBusy.value = true
+  try {
+    webhook.value = await api<WebhookState>('/v1/admin/craftinghosting/webhook', { method: 'POST', body: { action } })
+  } catch (e) {
+    error.value = fill(a.value.common.failed, { error: apiMessage(e) })
+  } finally {
+    webhookBusy.value = false
+  }
+}
+onMounted(loadWebhook)
 const featureAvailable = (k: string) => (k === 'ownAddress' ? cfg.value?.available.ownAddress : k === 'wakeOnJoin' ? cfg.value?.available.wakeOnJoin : true)
 
 async function load() {
@@ -172,6 +194,19 @@ const { active } = useListKeys(servers)
             </select>
           </li>
         </ul>
+      </div>
+      <div v-if="webhook" class="rounded-lg bg-base-900 p-3 ring-1 ring-base-800">
+        <p class="text-sm font-semibold text-base-100">{{ t.webhook }}</p>
+        <p class="text-xs text-base-400">{{ t.webhookHint }}</p>
+        <p class="mt-1 text-xs" :class="webhook.configured ? 'text-emerald-300' : 'text-base-400'">
+          {{ webhook.configured ? fill(t.webhookOn, { url: webhook.url ?? '' }) : t.webhookOff }}
+          <template v-if="webhook.pending"> · {{ fill(t.webhookPending, { n: webhook.pending }) }}</template>
+        </p>
+        <div v-if="can('worlds.close')" class="mt-2 flex flex-wrap gap-2">
+          <button type="button" class="btn btn-ghost px-2.5 py-1 text-xs" :disabled="webhookBusy" @click="webhookAction('setup')">{{ t.webhookSetup }}</button>
+          <button v-if="webhook.configured" type="button" class="btn btn-ghost px-2.5 py-1 text-xs" :disabled="webhookBusy" @click="webhookAction('test')">{{ t.webhookTest }}</button>
+          <button v-if="webhook.configured" type="button" class="btn btn-danger px-2.5 py-1 text-xs" :disabled="webhookBusy" @click="webhookAction('remove')">{{ t.webhookRemove }}</button>
+        </div>
       </div>
       <div v-if="can('worlds.close')" class="flex items-center gap-3">
         <button type="button" class="btn btn-primary" :disabled="cfgBusy" @click="saveCfg">{{ t.save }}</button>
