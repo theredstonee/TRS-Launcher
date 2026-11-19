@@ -5786,3 +5786,16 @@ budgetHours, cooldownHours, idleResetDays, weeklyOfflineHours, warnMinutes }`):
 - `Localized` = `{ "en": "...", "de": "...", "es", "fr", "nl", "pl", "pt-BR", "tr" }`; the client takes its language,
   then the base language, then `en`. Placeholders the client fills in: `{countdown:<seconds>}` (counts down from the
   moment the response arrived), `{duration:<seconds>}` (fixed), `{date:<ISO>}` (local date/time).
+
+### 43.19 Automatic first setup
+
+A server created with `acceptEula: true` is set up by the API itself (migration 50, `auto_setup`/`auto_at`): wait for
+the installation → first start → configure (access, TRS Server Rules, MOTD, address; no extra restart) → stop → done.
+The API ticks every 5 s, sends the partner heartbeats itself, survives an API restart (the 60 s sweep resumes), and
+gives up after 10 minutes (`failed`, server stopped). The setup run does not count against the runtime quota (§43.17).
+
+While it runs or after it failed, `Server.display.setup = { phase: "install" | "start" | "configure" | "stop" |
+"failed", index (0–3), failed, title, hint, steps: Localized[4], retry, locked, startedAt }` is set; clients show only
+the setup view and no management. `POST …/server/start` does nothing while the setup runs and restarts it after a
+failure (that is the "try again" button). TRS Wake answers `starting` meanwhile. Servers created without the EULA keep
+the old behaviour (first setup on the first start by the owner).

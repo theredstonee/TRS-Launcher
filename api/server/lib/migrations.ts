@@ -1121,6 +1121,14 @@ CREATE TABLE IF NOT EXISTS craftinghosting_admin (
       if (!hasColumn(db, 'craftinghosting_servers', 'rule_stop')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN rule_stop TEXT')
     },
   },
+  {
+    // CraftingHosting: automatische Ersteinrichtung nach dem Anlegen.
+    version: 50,
+    run: (db) => {
+      if (!hasColumn(db, 'craftinghosting_servers', 'auto_setup')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN auto_setup TEXT')
+      if (!hasColumn(db, 'craftinghosting_servers', 'auto_at')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN auto_at INTEGER')
+    },
+  },
 ]
 
 /** Migration 40 (siehe oben): Minispiel-Ranglisten. Exportiert für den Idempotenz-Test. */

@@ -221,6 +221,8 @@ export type Localized = Record<string, string>
 export interface Display {
   runtime: { label: Localized, value: Localized, progress: number, tone: 'normal' | 'warn' | 'cooldown' } | null
   lines: { text: Localized, tone: 'normal' | 'warn' }[]
+  /** Automatische Ersteinrichtung läuft/ist gescheitert (§43.19): Client zeigt nur die Einrichtungs-Ansicht. */
+  setup?: { phase: string, index: number, failed: boolean, title: Localized, hint: Localized, steps: Localized[], retry: Localized, locked: Localized, startedAt: string | null } | null
   /** Einmal als Toast zeigen (je `id`). */
   alerts: { id: string, text: Localized, level: 'info' | 'warning' }[]
 }
@@ -263,6 +265,8 @@ interface Row {
   week_used_s: number
   warned: number
   rule_stop: string | null
+  auto_setup: string | null
+  auto_at: number | null
   blocked_reason: string | null
   blocked_at: number | null
   blocked_by: string | null
@@ -863,6 +867,9 @@ export async function craftingCreate(ctx: AppContext, user: UserRow, body: z.out
       dns_a_record = NULL, transfers = 0, eula_at = excluded.eula_at`,
   user.uuid, s.id, body.access, ctx.now(), body.acceptEula ? ctx.now() : null)
   stopPending(user.uuid)
+  // Mit bestätigter EULA richtet die API den Server selbst ein (§43.19).
+  run(ctx.db, 'UPDATE craftinghosting_servers SET auto_setup = ?, auto_at = ? WHERE uuid = ?', body.acceptEula ? 'install' : null, body.acceptEula ? ctx.now() : null, user.uuid)
+  if (body.acceptEula) runAuto(ctx, user.uuid)
   if (sub) {
     try {
       run(ctx.db, 'UPDATE craftinghosting_servers SET subdomain = ? WHERE uuid = ?', sub, user.uuid)
@@ -914,13 +921,14 @@ function adjust(ctx: AppContext, v: ServerView, row: Row): ServerView {
   if (row.eula_at !== null && !out.eulaAccepted) out = { ...out, eulaAccepted: true }
   if (pendingStarts.has(row.uuid) && (out.state === 'offline' || out.state === 'stopping')) out = { ...out, state: 'starting' }
   const q = quotaOf(ctx, row)
-  if (!q) return out
+  const flow = setupDisplay(row)
+  if (!q) return flow ? { ...out, display: { runtime: null, lines: [], alerts: [], setup: flow } } : out
   const partnerCd = out.session.cooldownUntil ? Date.parse(out.session.cooldownUntil) : 0
   const ourCd = q.cooldownUntil ? Date.parse(q.cooldownUntil) : 0
   return {
     ...out,
     quota: q,
-    display: displayOf(ctx, out, q),
+    display: { ...displayOf(ctx, out, q), setup: flow },
     session: {
       ...out.session,
       runSeconds: q.usedSeconds,
@@ -962,6 +970,12 @@ export async function craftingStart(ctx: AppContext, user: UserRow, acceptEula: 
   assertNotSanctioned(ctx, user.uuid, 'hosting_ban')
   return onServer(ctx, user, async (row) => {
     assertNotBlocked(row)
+    if (autoActive(row)) { runAuto(ctx, user.uuid); return fresh(ctx, row) }
+    if (row.auto_setup === 'failed') {
+      run(ctx.db, "UPDATE craftinghosting_servers SET auto_setup = 'install', auto_at = ? WHERE uuid = ?", ctx.now(), user.uuid)
+      runAuto(ctx, user.uuid)
+      return fresh(ctx, rowOf(ctx, user.uuid) ?? row)
+    }
     await syncAccess(ctx, user, await fresh(ctx, row))
     if (row.setup && !row.transfers) await ensureTransfers(ctx, row)
     if (row.setup) await refreshFooter(ctx, row)
@@ -1345,6 +1359,8 @@ async function firstSetup(ctx: AppContext, owner: UserRow, s: ServerView, row: R
   const pluginName = plugin?.platform ?? null
   await call(ctx, 'PATCH', path(row, '/settings'), { motd: motdFor({ plugin: pluginName }, line) })
   run(ctx.db, 'UPDATE craftinghosting_servers SET setup = 1, plugin = ? WHERE uuid = ?', pluginName, owner.uuid)
+  // In der automatischen Einrichtung stoppt der Ablauf selbst – kein Neustart nötig.
+  if (autoActive(rowOf(ctx, owner.uuid))) return
   restarts.set(owner.uuid, restartAfterSetup(ctx, row).finally(() => restarts.delete(owner.uuid)))
 }
 
@@ -1685,6 +1701,7 @@ export async function relayWake(ctx: AppContext, host: string, player: { name: s
     if (!names.has(player.name.toLowerCase())) throw new ApiError(409, 'not_allowed', 'Not on the friends list')
   }
   const p = parseServer(await call(ctx, 'GET', path(row)))
+  if (autoActive(row)) return { state: 'starting' as WakeState }
   const state = starting(row.uuid) ? 'starting' : wakeState(p, ctx.now())
   if (state === 'running' || state === 'starting') return { state }
   if (state === 'cooldown') {
@@ -1709,6 +1726,7 @@ export async function sweepCraftingDns(ctx: AppContext): Promise<void> {
   const wake = !!ctx.config.dns?.wake
   const rules = rulesOf(ctx).enabled
   if (!wake && !rules) return
+  for (const r of all<Row>(ctx.db, "SELECT * FROM craftinghosting_servers WHERE auto_setup IN ('install', 'start', 'configure', 'stop')")) runAuto(ctx, r.uuid)
   const rows = all<Row>(ctx.db, rules ? 'SELECT * FROM craftinghosting_servers' : 'SELECT * FROM craftinghosting_servers WHERE subdomain IS NOT NULL')
   if (!rows.length) return
   const byId = new Map<string, PartnerServer>()
@@ -1722,6 +1740,7 @@ export async function sweepCraftingDns(ctx: AppContext): Promise<void> {
   for (const row of rows) {
     const p = byId.get(row.server_id)
     if (!p) continue
+    if (autoActive(row)) { runAuto(ctx, row.uuid); continue }
     if (rules) {
       try {
         await enforceRules(ctx, row, p)
@@ -2341,6 +2360,7 @@ function warnText(minutes: number) {
 
 /** Ein Durchgang für einen Server: zählen, warnen, bei 0 stoppen. */
 export async function enforceRules(ctx: AppContext, row: Row, p: PartnerServer): Promise<void> {
+  if (autoActive(row)) return
   const now = ctx.now()
   const st = settled(ctx, row, now)
   const { r, wk } = st
@@ -2395,6 +2415,18 @@ const TEXTS: Record<string, Record<Lang, string>> = {
   week: { 'en': 'This week %u / %c h', 'de': 'Diese Woche %u / %c h', 'es': 'Esta semana %u / %c h', 'fr': 'Cette semaine %u / %c h', 'nl': 'Deze week %u / %c u', 'pl': 'Ten tydzień %u / %c h', 'pt-BR': 'Esta semana %u / %c h', 'tr': 'Bu hafta %u / %c sa' },
   idleReset: { 'en': 'Full quota again {date:%d}', 'de': 'Volles Kontingent wieder {date:%d}', 'es': 'Cupo completo de nuevo {date:%d}', 'fr': 'Quota complet à nouveau {date:%d}', 'nl': 'Weer volledig tegoed {date:%d}', 'pl': 'Pełny limit znów {date:%d}', 'pt-BR': 'Cota completa de novo {date:%d}', 'tr': 'Tam kota yeniden {date:%d}' },
   warn: { 'en': 'Your server stops in {countdown:%s} – its runtime is almost used up.', 'de': 'Dein Server stoppt in {countdown:%s} – die Laufzeit ist fast aufgebraucht.', 'es': 'Tu servidor se detiene en {countdown:%s}: el tiempo casi se ha agotado.', 'fr': 'Ton serveur s’arrête dans {countdown:%s} – le temps est presque épuisé.', 'nl': 'Je server stopt over {countdown:%s} – de looptijd is bijna op.', 'pl': 'Twój serwer zatrzyma się za {countdown:%s} – czas działania prawie się skończył.', 'pt-BR': 'Seu servidor para em {countdown:%s} – o tempo está quase acabando.', 'tr': 'Sunucun {countdown:%s} içinde duracak – çalışma süresi neredeyse bitti.' },
+  setupInstall: { 'en': 'Installing your server', 'de': 'Server wird installiert', 'es': 'Instalando tu servidor', 'fr': 'Installation du serveur', 'nl': 'Server wordt geïnstalleerd', 'pl': 'Instalowanie serwera', 'pt-BR': 'Instalando seu servidor', 'tr': 'Sunucu kuruluyor' },
+  setupStart: { 'en': 'First start', 'de': 'Erster Start', 'es': 'Primer inicio', 'fr': 'Premier démarrage', 'nl': 'Eerste start', 'pl': 'Pierwsze uruchomienie', 'pt-BR': 'Primeira inicialização', 'tr': 'İlk başlatma' },
+  setupConfigure: { 'en': 'Setting things up', 'de': 'Wird eingerichtet', 'es': 'Configurando', 'fr': 'Configuration', 'nl': 'Wordt ingesteld', 'pl': 'Konfigurowanie', 'pt-BR': 'Configurando', 'tr': 'Ayarlanıyor' },
+  setupStop: { 'en': 'Saving and stopping', 'de': 'Wird gespeichert und gestoppt', 'es': 'Guardando y deteniendo', 'fr': 'Enregistrement et arrêt', 'nl': 'Opslaan en stoppen', 'pl': 'Zapisywanie i zatrzymywanie', 'pt-BR': 'Salvando e parando', 'tr': 'Kaydediliyor ve durduruluyor' },
+  setupFailed: { 'en': 'Setup did not finish', 'de': 'Einrichtung nicht abgeschlossen', 'es': 'La configuración no terminó', 'fr': 'La configuration n’a pas abouti', 'nl': 'Instellen is niet gelukt', 'pl': 'Konfiguracja nie powiodła się', 'pt-BR': 'A configuração não terminou', 'tr': 'Kurulum tamamlanamadı' },
+  hintInstall: { 'en': 'The server software is being downloaded.', 'de': 'Die Server-Software wird heruntergeladen.', 'es': 'Se está descargando el software del servidor.', 'fr': 'Le logiciel serveur est en cours de téléchargement.', 'nl': 'De serversoftware wordt gedownload.', 'pl': 'Pobieranie oprogramowania serwera.', 'pt-BR': 'O software do servidor está sendo baixado.', 'tr': 'Sunucu yazılımı indiriliyor.' },
+  hintStart: { 'en': 'World and files are being created. This usually takes 1–3 minutes.', 'de': 'Welt und Dateien werden erzeugt. Das dauert meist 1–3 Minuten.', 'es': 'Se crean el mundo y los archivos. Suele tardar 1–3 minutos.', 'fr': 'Le monde et les fichiers sont créés. Cela prend en général 1 à 3 minutes.', 'nl': 'Wereld en bestanden worden aangemaakt. Dit duurt meestal 1–3 minuten.', 'pl': 'Tworzenie świata i plików. Zwykle trwa to 1–3 minuty.', 'pt-BR': 'O mundo e os arquivos estão sendo criados. Costuma levar 1–3 minutos.', 'tr': 'Dünya ve dosyalar oluşturuluyor. Genellikle 1–3 dakika sürer.' },
+  hintConfigure: { 'en': 'Access, address and TRS Server Rules are being set.', 'de': 'Zugang, Adresse und TRS Server Rules werden gesetzt.', 'es': 'Se configuran el acceso, la dirección y TRS Server Rules.', 'fr': 'Accès, adresse et TRS Server Rules sont configurés.', 'nl': 'Toegang, adres en TRS Server Rules worden ingesteld.', 'pl': 'Ustawianie dostępu, adresu i TRS Server Rules.', 'pt-BR': 'Acesso, endereço e TRS Server Rules estão sendo definidos.', 'tr': 'Erişim, adres ve TRS Server Rules ayarlanıyor.' },
+  hintStop: { 'en': 'Almost done – everything is being saved.', 'de': 'Gleich geschafft – alles wird gespeichert.', 'es': 'Casi listo: se está guardando todo.', 'fr': 'Presque fini – tout est enregistré.', 'nl': 'Bijna klaar – alles wordt opgeslagen.', 'pl': 'Prawie gotowe – wszystko jest zapisywane.', 'pt-BR': 'Quase pronto – tudo está sendo salvo.', 'tr': 'Neredeyse bitti – her şey kaydediliyor.' },
+  hintFailed: { 'en': 'The server did not start in time. Your data is safe.', 'de': 'Der Server ist nicht rechtzeitig gestartet. Deine Daten sind sicher.', 'es': 'El servidor no se inició a tiempo. Tus datos están a salvo.', 'fr': 'Le serveur n’a pas démarré à temps. Tes données sont en sécurité.', 'nl': 'De server is niet op tijd gestart. Je gegevens zijn veilig.', 'pl': 'Serwer nie uruchomił się na czas. Twoje dane są bezpieczne.', 'pt-BR': 'O servidor não iniciou a tempo. Seus dados estão seguros.', 'tr': 'Sunucu zamanında başlamadı. Verilerin güvende.' },
+  setupRetry: { 'en': 'Try again', 'de': 'Erneut versuchen', 'es': 'Reintentar', 'fr': 'Réessayer', 'nl': 'Opnieuw proberen', 'pl': 'Spróbuj ponownie', 'pt-BR': 'Tentar de novo', 'tr': 'Tekrar dene' },
+  setupLocked: { 'en': 'Managing your server opens as soon as setup is done. You can close the launcher meanwhile.', 'de': 'Die Verwaltung öffnet sich, sobald alles eingerichtet ist. Du kannst den Launcher dabei schließen.', 'es': 'La gestión se abre en cuanto termine la configuración. Puedes cerrar el launcher mientras tanto.', 'fr': 'La gestion s’ouvre dès que tout est configuré. Tu peux fermer le launcher en attendant.', 'nl': 'Beheer opent zodra alles is ingesteld. Je kunt de launcher intussen sluiten.', 'pl': 'Zarządzanie otworzy się po zakończeniu konfiguracji. W tym czasie możesz zamknąć launcher.', 'pt-BR': 'O gerenciamento abre assim que tudo estiver configurado. Você pode fechar o launcher enquanto isso.', 'tr': 'Kurulum biter bitmez yönetim açılır. Bu sırada başlatıcıyı kapatabilirsin.' },
   tileRuns: { 'en': 'Your server runs while the launcher is open.', 'de': 'Dein Server läuft, solange der Launcher offen ist.', 'es': 'Tu servidor funciona mientras el launcher está abierto.', 'fr': 'Ton serveur tourne tant que le launcher est ouvert.', 'nl': 'Je server draait zolang de launcher open is.', 'pl': 'Twój serwer działa, dopóki launcher jest otwarty.', 'pt-BR': 'Seu servidor roda enquanto o launcher estiver aberto.', 'tr': 'Sunucun, başlatıcı açık olduğu sürece çalışır.' },
   tileQuota: { 'en': '%h h runtime in total, then a %p h break.', 'de': 'Insgesamt %h h Laufzeit, danach %p h Pause.', 'es': '%h h de tiempo en total, luego %p h de pausa.', 'fr': '%h h de fonctionnement au total, puis %p h de pause.', 'nl': 'In totaal %h u looptijd, daarna %p u pauze.', 'pl': 'Łącznie %h h działania, potem %p h przerwy.', 'pt-BR': '%h h de tempo no total, depois %p h de pausa.', 'tr': 'Toplam %h sa çalışma süresi, sonra %p sa mola.' },
   tileIdleReset: { 'en': 'Unused for %d days? Your full %h h are back.', 'de': '%d Tage nicht genutzt? Dann hast du wieder volle %h h.', 'es': '¿%d días sin usarlo? Vuelves a tener %h h completas.', 'fr': 'Pas utilisé pendant %d jours ? Tu récupères tes %h h.', 'nl': '%d dagen niet gebruikt? Dan heb je weer volle %h u.', 'pl': 'Nieużywany przez %d dni? Znów masz pełne %h h.', 'pt-BR': 'Sem uso por %d dias? Você tem as %h h completas de novo.', 'tr': '%d gün kullanılmadı mı? Tam %h sa yeniden senin.' },
@@ -2453,4 +2485,112 @@ function tilesOf(ctx: AppContext, deleteDays: number) {
     { icon: 'calendar', text: txt('tileDelete', { d: deleteDays }) },
     { icon: 'doc', text: txt('tileEula') },
   ]
+}
+
+// ---------------------------------------------------------------- Automatische Ersteinrichtung (§43.19)
+// Nach dem Anlegen (mit EULA): installieren → erster Start → einrichten (TRS Server Rules, Zugang) → stoppen.
+// Der Stand steht in `auto_setup`, damit ein Neustart der API den Ablauf fortsetzt (sweepCraftingDns stößt ihn an).
+
+const AUTO_PHASES = ['install', 'start', 'configure', 'stop'] as const
+const AUTO_TICK_MS = 5_000
+const AUTO_MAX_MS = 10 * 60_000
+const AUTO_BEAT_MS = 40_000
+const autoTimers = new Map<string, ReturnType<typeof setTimeout>>()
+const autoBeats = new Map<string, number>()
+function autoActive(row: Pick<Row, 'auto_setup'> | undefined): boolean {
+  return !!row && (AUTO_PHASES as readonly string[]).includes(row.auto_setup ?? '')
+}
+
+function setupDisplay(row: Row): NonNullable<Display['setup']> | null {
+  const failed = row.auto_setup === 'failed'
+  if (!failed && !autoActive(row)) return null
+  const index = failed ? 0 : AUTO_PHASES.indexOf(row.auto_setup as (typeof AUTO_PHASES)[number])
+  const keys = ['Install', 'Start', 'Configure', 'Stop']
+  return {
+    phase: row.auto_setup!,
+    index,
+    failed,
+    title: txt(failed ? 'setupFailed' : `setup${keys[index]}`),
+    hint: txt(failed ? 'hintFailed' : `hint${keys[index]}`),
+    steps: keys.map((k) => txt(`setup${k}`)),
+    retry: txt('setupRetry'),
+    locked: txt('setupLocked'),
+    startedAt: row.auto_at ? new Date(row.auto_at).toISOString() : null,
+  }
+}
+
+function runAuto(ctx: AppContext, uuid: string) {
+  if (autoTimers.has(uuid)) return
+  const t = setTimeout(() => {
+    autoTimers.delete(uuid)
+    autoStep(ctx, uuid).then((again) => { if (again) runAuto(ctx, uuid) }).catch((e) => {
+      if (!(e instanceof ApiError)) console.error('[trs-api] CraftingHosting auto setup failed', e)
+      runAuto(ctx, uuid)
+    })
+  }, AUTO_TICK_MS)
+  t.unref?.()
+  autoTimers.set(uuid, t)
+}
+
+/** Ein Schritt der Einrichtung. Liefert, ob es weitergeht. Exportiert für Tests. */
+export async function autoStep(ctx: AppContext, uuid: string): Promise<boolean> {
+  const row = rowOf(ctx, uuid)
+  if (!row || !autoActive(row)) return false
+  const owner = getUser(ctx, uuid)
+  if (!owner) return false
+  const set = (phase: string) => run(ctx.db, 'UPDATE craftinghosting_servers SET auto_setup = ? WHERE uuid = ?', phase, uuid)
+  const start = async () => {
+    try {
+      await call(ctx, 'POST', path(row, '/start'), { acceptEula: true })
+      return true
+    } catch (e) {
+      if (isNotReady(e) || (e instanceof ApiError && (e.code === 'server_installing' || e.code === 'craftinghosting_upstream'))) return false
+      throw e
+    }
+  }
+  if (ctx.now() - (row.auto_at ?? ctx.now()) > AUTO_MAX_MS) {
+    set('failed')
+    console.warn(`[trs-api] CraftingHosting auto setup timed out in phase ${row.auto_setup} (${row.server_id})`)
+    await call(ctx, 'POST', path(row, '/stop'), {}).catch(() => undefined)
+    return false
+  }
+  let p: PartnerServer
+  try {
+    p = parseServer(await call(ctx, 'GET', path(row)))
+  } catch (e) {
+    if (e instanceof ApiError && e.code === 'no_server') { forget(ctx, uuid); return false }
+    return true
+  }
+  const running = p.state === 'running'
+  if (running && ctx.now() - (autoBeats.get(uuid) ?? 0) > AUTO_BEAT_MS) {
+    autoBeats.set(uuid, ctx.now())
+    await call(ctx, 'POST', path(row, '/heartbeat')).catch(() => undefined)
+  }
+  try {
+    if (row.auto_setup === 'install') {
+      if (p.state === 'failed' || p.state === 'suspended') { set('failed'); return false }
+      if (running) set('configure')
+      else if (p.state === 'offline' && await start()) set('start')
+    } else if (row.auto_setup === 'start') {
+      if (running) set('configure')
+      else if (p.state === 'offline' && !p.session?.active) await start()
+    } else if (row.auto_setup === 'configure') {
+      if (!running) { if (p.state === 'offline') set('start'); return true }
+      await syncAccess(ctx, owner, view(p, row.access, setupOf(row)))
+      if (rowOf(ctx, uuid)?.setup) {
+        await call(ctx, 'POST', path(row, '/stop'), {})
+        set('stop')
+      }
+    } else if (p.state === 'offline' && !p.session?.active) {
+      set('done')
+      autoBeats.delete(uuid)
+      const now = rowOf(ctx, uuid)
+      if (now) await syncDns(ctx, now, p).catch(() => undefined)
+      return false
+    }
+  } catch (e) {
+    if (e instanceof ApiError && ['cooldown', 'server_failed', 'server_suspended', 'eula_required'].includes(e.code)) { set('failed'); return false }
+    if (!(e instanceof ApiError)) throw e
+  }
+  return true
 }

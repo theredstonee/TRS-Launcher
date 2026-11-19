@@ -7,7 +7,7 @@ import {
   craftingSetProperties, craftingWriteFile, craftingWorlds, craftingActivateWorld, craftingDeleteWorld, craftingWorldFiles,
   craftingDownloadUrls, worldNameQuery, modsBody, craftingChangeVersion, craftingBackups, versionBody,
   adminCraftingConfig, adminSetCraftingConfig, adminCraftingBlock, relayWake as wakeForTest,
-  craftingReinstall, craftingBackupAction, craftingWebhook, verifyWebhook, adminWebhook, webhookSecret, adminCraftingResetQuota,
+  craftingReinstall, craftingBackupAction, craftingWebhook, verifyWebhook, adminWebhook, webhookSecret, adminCraftingResetQuota, autoStep,
   adminCraftingDelete, adminCraftingServers, adminCraftingStop, craftingCheckSubdomain, relayResolve, relayWake, sweepCraftingDns, craftingRestartDone, craftingWorldImport, craftingWorldUpload, createServerBody, MOTD_FOOTER, settingsBody,
 } from '../server/lib/craftinghosting'
 import { RULES } from '../server/lib/ratelimit'
@@ -1011,14 +1011,39 @@ describe('craftinghosting routes: website session', () => {
     }
   })
 
-  it('EULA confirmed in the wizard: no dialog, first start sends acceptEula, wake may start', async () => {
+  it('automatic first setup after create: install, first start, configure, stop; locked meanwhile, retry after failure', async () => {
     const { env, partner } = setup()
     const [u] = await players(env, 'Steve')
     const s = await craftingCreate(env.ctx, u!, createServerBody.parse({ ...body(), acceptEula: true }))
     expect(s.eulaAccepted).toBe(true)
-    expect(partner.servers.get(s.id)!.eulaAccepted).toBe(false)
-    expect((await craftingStart(env.ctx, u!, false)).state).toBe('running')
+    expect(s.display!.setup).toMatchObject({ phase: 'install', index: 0, failed: false })
+    expect(s.display!.setup!.steps.map((x) => x.de)).toEqual(['Server wird installiert', 'Erster Start', 'Wird eingerichtet', 'Wird gespeichert und gestoppt'])
+    const phase = async () => (await craftingServer(env.ctx, u!))!.display?.setup?.phase ?? null
+    partner.servers.get(s.id)!.state = 'installing'
+    expect(await autoStep(env.ctx, u!.uuid)).toBe(true)
+    expect(await phase()).toBe('install')
+    partner.servers.get(s.id)!.state = 'offline'
+    await autoStep(env.ctx, u!.uuid)
     expect(partner.startBodies.at(-1)).toEqual({ acceptEula: true })
+    // Start durch den Nutzer währenddessen ändert nichts
+    const n = partner.startBodies.length
+    await craftingStart(env.ctx, u!, false)
+    expect(partner.startBodies.length).toBe(n)
+    for (let i = 0; i < 6 && (await phase()) !== null; i++) await autoStep(env.ctx, u!.uuid)
+    const done = (await craftingServer(env.ctx, u!))!
+    expect(done.display?.setup ?? null).toBeNull()
+    expect(done.state).toBe('offline')
+    expect(done.setup).toBe('done')
+    expect(done.quota?.usedSeconds ?? 0).toBe(0)
+
+    // Zeitüberschreitung → gescheitert, „Start“ versucht es neu
+    const [v] = await players(env, 'Alex')
+    const s2 = await craftingCreate(env.ctx, v!, createServerBody.parse({ ...body(), acceptEula: true }))
+    partner.servers.get(s2.id)!.state = 'installing'
+    env.clock.advance(11 * 60_000)
+    expect(await autoStep(env.ctx, v!.uuid)).toBe(false)
+    expect((await craftingServer(env.ctx, v!))!.display!.setup).toMatchObject({ phase: 'failed', failed: true })
+    expect((await craftingStart(env.ctx, v!, false)).display!.setup).toMatchObject({ phase: 'install', failed: false })
   })
 
   it('runtime rules: quota over sessions, warning, stop + cooldown, idle reset, weekly cap', async () => {
