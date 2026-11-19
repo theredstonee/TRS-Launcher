@@ -1042,7 +1042,10 @@ describe('craftinghosting routes: website session', () => {
     partner.servers.get(s2.id)!.state = 'installing'
     env.clock.advance(11 * 60_000)
     expect(await autoStep(env.ctx, v!.uuid)).toBe(false)
-    expect((await craftingServer(env.ctx, v!))!.display!.setup).toMatchObject({ phase: 'failed', failed: true })
+    expect((await craftingServer(env.ctx, v!))!.display!.setup).toMatchObject({ phase: 'failed', failed: true, index: 0 })
+    // Scheitert es später, zeigt die Anzeige den Schritt, in dem es hing
+    run(env.ctx.db, "UPDATE craftinghosting_servers SET auto_setup = 'failed:start' WHERE uuid = ?", v!.uuid)
+    expect((await craftingServer(env.ctx, v!))!.display!.setup).toMatchObject({ failed: true, index: 1 })
     expect((await craftingStart(env.ctx, v!, false)).display!.setup).toMatchObject({ phase: 'install', failed: false })
   })
 

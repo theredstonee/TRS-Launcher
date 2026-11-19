@@ -971,7 +971,7 @@ export async function craftingStart(ctx: AppContext, user: UserRow, acceptEula: 
   return onServer(ctx, user, async (row) => {
     assertNotBlocked(row)
     if (autoActive(row)) { runAuto(ctx, user.uuid); return fresh(ctx, row) }
-    if (row.auto_setup === 'failed') {
+    if (isAutoFailed(row)) {
       run(ctx.db, "UPDATE craftinghosting_servers SET auto_setup = 'install', auto_at = ? WHERE uuid = ?", ctx.now(), user.uuid)
       runAuto(ctx, user.uuid)
       return fresh(ctx, rowOf(ctx, user.uuid) ?? row)
@@ -2497,17 +2497,20 @@ const AUTO_MAX_MS = 10 * 60_000
 const AUTO_BEAT_MS = 40_000
 const autoTimers = new Map<string, ReturnType<typeof setTimeout>>()
 const autoBeats = new Map<string, number>()
+const isAutoFailed = (row: Pick<Row, 'auto_setup'> | undefined) => !!row?.auto_setup?.startsWith('failed')
 function autoActive(row: Pick<Row, 'auto_setup'> | undefined): boolean {
   return !!row && (AUTO_PHASES as readonly string[]).includes(row.auto_setup ?? '')
 }
 
 function setupDisplay(row: Row): NonNullable<Display['setup']> | null {
-  const failed = row.auto_setup === 'failed'
+  const failed = isAutoFailed(row)
   if (!failed && !autoActive(row)) return null
-  const index = failed ? 0 : AUTO_PHASES.indexOf(row.auto_setup as (typeof AUTO_PHASES)[number])
+  // Gescheitert: Schritt, in dem es hing (`failed:<phase>`), sonst der erste.
+  const phase = failed ? (row.auto_setup!.split(':')[1] ?? 'install') : row.auto_setup!
+  const index = Math.max(0, AUTO_PHASES.indexOf(phase as (typeof AUTO_PHASES)[number]))
   const keys = ['Install', 'Start', 'Configure', 'Stop']
   return {
-    phase: row.auto_setup!,
+    phase: failed ? 'failed' : row.auto_setup!,
     index,
     failed,
     title: txt(failed ? 'setupFailed' : `setup${keys[index]}`),
@@ -2538,7 +2541,7 @@ export async function autoStep(ctx: AppContext, uuid: string): Promise<boolean> 
   if (!row || !autoActive(row)) return false
   const owner = getUser(ctx, uuid)
   if (!owner) return false
-  const set = (phase: string) => run(ctx.db, 'UPDATE craftinghosting_servers SET auto_setup = ? WHERE uuid = ?', phase, uuid)
+  const set = (phase: string) => run(ctx.db, 'UPDATE craftinghosting_servers SET auto_setup = ? WHERE uuid = ?', phase === 'failed' ? `failed:${row.auto_setup}` : phase, uuid)
   const start = async () => {
     try {
       await call(ctx, 'POST', path(row, '/start'), { acceptEula: true })
