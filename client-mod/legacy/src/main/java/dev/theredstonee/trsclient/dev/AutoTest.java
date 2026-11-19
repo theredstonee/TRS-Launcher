@@ -318,6 +318,11 @@ public final class AutoTest {
 					step = 28;
 					break;
 				}
+				// -PtrsAutotestOnly=effects: Effekt-Anzeige (alle Restzeit-Stile, waagerecht/senkrecht, mit Minimap)
+				if ("effects".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 29;
+					break;
+				}
 				shot(mc, "hud");
 				TrsClient.LOGGER.info("[Autotest] Toggle-Anzeige: {} {}", TrsClient.get().pvp().toggles().sprintStatus().text(),
 						TrsClient.get().pvp().toggles().sneakStatus().text());
@@ -534,6 +539,22 @@ public final class AutoTest {
 				step = 20;
 				wait = 5;
 				break;
+			case 29:
+				// Effekt-Anzeige: Screenshots trsclient-<mc>-effects-*.png
+				if (effectsTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.this.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				step = 20;
+				wait = 5;
+				break;
 			case 25:
 			case 26:
 			case 27: {
@@ -586,6 +607,7 @@ public final class AutoTest {
 
 	private final Cosmetics2Test cosmetics2Test = new Cosmetics2Test();
 	private final PetsTest petsTest = new PetsTest();
+	private final EffectsTest effectsTest = new EffectsTest();
 
 	private boolean isExpected(GuiScreen current) {
 		// Das Emote-Rad öffnet der Emote-Test selbst.

@@ -395,9 +395,9 @@ public final class HudEditor extends UiScreen {
 		float scale = item.module().scale.getFloat();
 		int w = (int) Math.ceil(item.width() * scale);
 		int h = (int) Math.ceil(item.height() * scale);
-		int x = HudLayout.resolveX(item.module().position(), w, screenW);
-		int y = HudLayout.resolveY(item.module().position(), h, screenH);
-		return new int[]{x, y, w, h};
+		int[] b = new int[]{0, 0, w, h};
+		HudLayout.place(item.module(), w, h, screenW, screenH, b);
+		return b;
 	}
 
 	/** Oberstes Element unter der Maus. */

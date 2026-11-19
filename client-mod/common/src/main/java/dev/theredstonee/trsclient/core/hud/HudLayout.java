@@ -1,5 +1,7 @@
 package dev.theredstonee.trsclient.core.hud;
 
+import dev.theredstonee.trsclient.core.module.HudModule;
+
 /**
  * Reine Positions-Mathematik für HUD-Elemente (ohne Minecraft-Abhängigkeit).
  * Alle Werte in GUI-Pixeln (skalierte Bildschirmkoordinaten).
@@ -17,6 +19,16 @@ public final class HudLayout {
 	public static int resolveX(HudPosition pos, int width, int screenWidth) {
 		double x = pos.anchor.fx * (screenWidth - width) + pos.offsetX * screenWidth;
 		return clamp((int) Math.round(x), 0, Math.max(0, screenWidth - width));
+	}
+
+	/**
+	 * Linke obere Ecke eines Moduls nach {@code out[0..1]} – über seinen {@link HudModule.Placer}, sonst Anker + Versatz.
+	 */
+	public static void place(HudModule module, int width, int height, int screenWidth, int screenHeight, int[] out) {
+		HudModule.Placer placer = module.placer();
+		if (placer != null && placer.place(width, height, screenWidth, screenHeight, out)) return;
+		out[0] = resolveX(module.position(), width, screenWidth);
+		out[1] = resolveY(module.position(), height, screenHeight);
 	}
 
 	/** Obere Kante des Elements (auf den Bildschirm begrenzt). */

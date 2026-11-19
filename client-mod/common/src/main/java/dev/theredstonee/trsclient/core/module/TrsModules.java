@@ -4,6 +4,7 @@ import dev.theredstonee.trsclient.core.camera.FreelookState;
 import dev.theredstonee.trsclient.core.cape.CapeSettings;
 import dev.theredstonee.trsclient.core.config.KeyDefaults;
 import dev.theredstonee.trsclient.core.hud.Crosshair;
+import dev.theredstonee.trsclient.core.hud.EffectsPanel;
 import dev.theredstonee.trsclient.core.hud.HudProfiles;
 import dev.theredstonee.trsclient.core.hud.HudAnchor;
 import dev.theredstonee.trsclient.core.hud.HudPosition;
@@ -208,6 +209,14 @@ public final class TrsModules {
 	public final BoolSetting armorHand;
 	/** Rüstungsanzeige senkrecht (untereinander) oder waagerecht (quer, Symbole in einer Zeile). */
 	public final ChoiceSetting<dev.theredstonee.trsclient.core.hud.ArmorLayout.Orientation> armorLayout;
+	public final ChoiceSetting<EffectsPanel.Layout> effectsLayout;
+	public final ChoiceSetting<EffectsPanel.TimeStyle> effectsTimeStyle;
+	public final BoolSetting effectsBlink;
+	/** Rahmen grün (gut) bzw. rot (schlecht) nach Effekt-Kategorie. */
+	public final BoolSetting effectsBorder;
+	/** Stufe (II, III …) und ∞ für unendliche Effekte. */
+	public final BoolSetting effectsLevel;
+	public final ChoiceSetting<EffectsPanel.Sort> effectsSort;
 	public final BoolSetting coordsDirection;
 	public final BoolSetting coordsBiome;
 	public final BoolSetting clockSeconds;
@@ -517,8 +526,9 @@ public final class TrsModules {
 				new HudPosition(HudAnchor.TOP_LEFT, 0.005, 0.14)));
 		armor = registry.register(new HudModule("armor", "Armor", "Worn armor with durability", false,
 				new HudPosition(HudAnchor.CENTER_LEFT, 0.005, 0.0)));
-		effects = registry.register(new HudModule("effects", "Potion Effects", "Active effects with remaining time", false,
-				new HudPosition(HudAnchor.CENTER_RIGHT, -0.005, 0.0)));
+		effects = registry.register(new HudModule("effects", "Potion Effects",
+				"Your active effects with icons and remaining time. Replaces the vanilla icons in the top right while it is on.",
+				false, new HudPosition(HudAnchor.TOP_RIGHT, -0.005, 0.01)));
 		coords = registry.register(new HudModule("coords", "Coordinates", "Position, facing direction and biome", false,
 				new HudPosition(HudAnchor.TOP_LEFT, 0.005, 0.205)));
 		clock = registry.register(new HudModule("clock", "Clock", "Your computer's real time", false,
@@ -806,6 +816,19 @@ public final class TrsModules {
 		armorHand = armor.add(new BoolSetting("hand", "Held item", true));
 		armorLayout = armor.add(new ChoiceSetting<>("layout", "Orientation", dev.theredstonee.trsclient.core.hud.ArmorLayout.Orientation.class,
 				dev.theredstonee.trsclient.core.hud.ArmorLayout.Orientation.VERTICAL));
+		effectsLayout = effects.add(new ChoiceSetting<>("layout", "Arrangement", EffectsPanel.Layout.class, EffectsPanel.Layout.HORIZONTAL));
+		effectsTimeStyle = effects.add(new ChoiceSetting<>("timeStyle", "Remaining time", EffectsPanel.TimeStyle.class,
+				EffectsPanel.TimeStyle.TEXT));
+		effectsSort = effects.add(new ChoiceSetting<>("sort", "Order", EffectsPanel.Sort.class, EffectsPanel.Sort.TIME));
+		effectsBlink = effects.add(new BoolSetting("blink", "Blink in the last 10 seconds", true));
+		effectsBorder = effects.add(new BoolSetting("border", "Green/red border for good/bad effects", true));
+		effectsLevel = effects.add(new BoolSetting("level", "Show level (II, III …) and ∞", true));
+		effects.placer(new HudModule.Placer() {
+			@Override
+			public boolean place(int width, int height, int screenWidth, int screenHeight, int[] out) {
+				return EffectsPanel.dock(TrsModules.this, width, height, screenWidth, screenHeight, out);
+			}
+		});
 		coordsDirection = coords.add(new BoolSetting("direction", "Facing direction", true));
 		coordsBiome = coords.add(new BoolSetting("biome", "Biome", true));
 		clockSeconds = clock.add(new BoolSetting("seconds", "Seconds", false));

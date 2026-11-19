@@ -643,13 +643,16 @@ public final class TrsClient {
 		dev.theredstonee.trsclient.render.ColorPass.afterLevel(Mc.partialTicks(event));
 	}
 
-	/** Vanilla-Fadenkreuz ausblenden, solange das eigene aktiv ist. */
+	/** Vanilla-Fadenkreuz bzw. ab 1.9 die Effektsymbole oben rechts ausblenden, solange TRS sie selbst zeichnet. */
 	@SubscribeEvent
 	public void onOverlayPre(RenderGameOverlayEvent.Pre event) {
 		if (Mc.overlayType(event) == RenderGameOverlayEvent.ElementType.CROSSHAIRS && hud.crosshair().replacesVanilla()) {
 			HookStats.crosshair++;
 			event.setCanceled(true);
 		}
+		//? if >=1.9 {
+		/*if (Mc.overlayType(event) == RenderGameOverlayEvent.ElementType.POTION_ICONS && modules.effects.isEnabled()) event.setCanceled(true);
+		*///?}
 	}
 
 	@SubscribeEvent

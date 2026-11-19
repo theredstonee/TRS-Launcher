@@ -43,6 +43,29 @@ public class HudModule extends Module {
 		return position;
 	}
 
+	/** Eigene Platzierung statt Anker + Versatz (z. B. der Minimap ausweichen). */
+	public interface Placer {
+		/** @return true, wenn {@code out[0..1]} (x, y) gesetzt wurde */
+		boolean place(int width, int height, int screenWidth, int screenHeight, int[] out);
+	}
+
+	private Placer placer;
+
+	public HudModule placer(Placer placer) {
+		this.placer = placer;
+		return this;
+	}
+
+	public Placer placer() {
+		return placer;
+	}
+
+	/** Noch an der Standard-Position (nie verschoben)? */
+	public boolean isDefaultPosition() {
+		return position.anchor == defaultPosition.anchor && Math.abs(position.offsetX - defaultPosition.offsetX) < 1e-6
+				&& Math.abs(position.offsetY - defaultPosition.offsetY) < 1e-6;
+	}
+
 	public void resetPosition() {
 		position.set(defaultPosition);
 	}

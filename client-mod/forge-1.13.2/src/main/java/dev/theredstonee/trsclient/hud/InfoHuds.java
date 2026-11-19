@@ -10,8 +10,6 @@ import dev.theredstonee.trsclient.core.module.TrsModules;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.resources.ResourcePackInfoClient;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.potion.Potion;
-import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.math.BlockPos;
 
 import java.time.LocalTime;
@@ -19,36 +17,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Die einfachen Text-HUD-Module (Effekte, Koordinaten, Uhrzeit, Speicher, Server, Packs, Toggle-Anzeige). */
+/** Die einfachen Text-HUD-Module (Koordinaten, Uhrzeit, Speicher, Server, Packs, Toggle-Anzeige). */
 public final class InfoHuds {
 	private InfoHuds() {
-	}
-
-	/** Trank-Effekte mit Stufe und Restzeit, in der Farbe des Effekts. */
-	public static final class Effects extends LinesHudElement {
-		public Effects(HudModule module) {
-			super(module);
-		}
-
-		@Override
-		protected void build(boolean preview) {
-			EntityPlayer p = mc.player;
-			int count = 0;
-			if (p != null) {
-				for (PotionEffect e : p.getActivePotionEffects()) {
-					Potion potion = e.getPotion();
-					String level = HudFormat.level(e.getAmplifier());
-					String name = net.minecraft.client.resources.I18n.format(potion.getName()) + (level.isEmpty() ? "" : " " + level);
-					line(name + "  " + HudFormat.duration(e.getDuration(), e.getIsPotionDurationMax()),
-							0xFF000000 | potion.getLiquidColor());
-					count++;
-				}
-			}
-			if (preview && count == 0) {
-				line(I18n.tr("hud.preview.effect1"), 0xFF7CAFC6);
-				line(I18n.tr("hud.preview.effect2"), 0xFF932423);
-			}
-		}
 	}
 
 	/** Koordinaten, Blickrichtung und Biom. */

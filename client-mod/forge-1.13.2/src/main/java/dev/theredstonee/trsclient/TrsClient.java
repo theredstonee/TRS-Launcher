@@ -370,6 +370,11 @@ public final class TrsClient {
 
 	@SubscribeEvent
 	public void onOverlayPre(RenderGameOverlayEvent.Pre event) {
+		// Effektsymbole oben rechts zeichnet das Effekt-Modul selbst
+		if (event.getType() == RenderGameOverlayEvent.ElementType.POTION_ICONS && modules.effects.isEnabled()) {
+			event.setCanceled(true);
+			return;
+		}
 		if (event.getType() != RenderGameOverlayEvent.ElementType.CROSSHAIRS || !hud.crosshair().replacesVanilla()) return;
 		HookStats.crosshair++;
 		event.setCanceled(true);

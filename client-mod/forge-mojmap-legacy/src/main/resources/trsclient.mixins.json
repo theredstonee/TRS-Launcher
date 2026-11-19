@@ -18,6 +18,7 @@
 		"ChatHeadLineMixin"${chatSenderMixin},
 		"ChatScreenMixin",
 		"ColorGradeMixin",
+		"EffectsMixin",
 		"EmoteModelMixin",
 		"EntityCullMixin",
 		"BlockEntityCullMixin",

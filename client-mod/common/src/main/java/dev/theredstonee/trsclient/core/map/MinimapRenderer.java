@@ -80,15 +80,24 @@ public final class MinimapRenderer {
 	}
 
 	public int width(TrsModules m) {
-		return m.minimapSize.getInt() + 2 * pad(m);
+		return outerWidth(m);
 	}
 
 	public int height(TrsModules m) {
+		return outerHeight(m);
+	}
+
+	/** Unskalierte Größe der Minimap-Anzeige (auch ohne Renderer, z. B. zum Ausweichen). */
+	public static int outerWidth(TrsModules m) {
+		return m.minimapSize.getInt() + 2 * pad(m);
+	}
+
+	public static int outerHeight(TrsModules m) {
 		int lines = 0;
 		if (m.minimapCoords.get()) lines++;
 		if (m.minimapBiome.get()) lines++;
 		if (m.minimapTime.get()) lines++;
-		return width(m) + (lines > 0 ? lines * LINE_H + 2 : 0);
+		return outerWidth(m) + (lines > 0 ? lines * LINE_H + 2 : 0);
 	}
 
 	/**

@@ -376,6 +376,11 @@ public final class AutoTest {
 					step = 38;
 					break;
 				}
+				// -PtrsAutotestOnly=effects: Effekt-Anzeige (alle Restzeit-Stile, waagerecht/senkrecht, mit Minimap)
+				if ("effects".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 45;
+					break;
+				}
 				// -PtrsAutotestOnly=creator: Fan-Symbole + Creator-Sterne (braucht -PtrsApi mit scripts/mock-creator-api.mjs)
 				if ("creator".equals(System.getProperty("trsclient.autotest.only"))) {
 					step = 40;
@@ -881,6 +886,22 @@ public final class AutoTest {
 				step = 24;
 				wait = 5;
 				break;
+			case 45:
+				// Effekt-Anzeige: Screenshots trsclient-<mc>-effects-*.png
+				if (effectsTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				step = 24;
+				wait = 5;
+				break;
 			case 33:
 				// Suche in der Tastenbelegung: Screenshots trsclient-<mc>-keysearch-*.png
 				if (keySearchTest.step(mc, new CapeTest.Actions() {
@@ -923,6 +944,7 @@ public final class AutoTest {
 	private final QolTest qolTest = new QolTest();
 	private final ComfortTest comfortTest = new ComfortTest();
 	private final HungerOverlayTest hungerTest = new HungerOverlayTest();
+	private final EffectsTest effectsTest = new EffectsTest();
 	private final ChatHeadsTest chatHeadsTest = new ChatHeadsTest();
 	private final CircuitTest circuitTest = new CircuitTest();
 	private final ScreenshotTest screenshotTest = new ScreenshotTest();

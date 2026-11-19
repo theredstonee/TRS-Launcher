@@ -39,7 +39,6 @@ public final class HudManager {
 				new KeystrokesHud(modules.keystrokes, modules),
 				new PingHud(modules),
 				new ArmorHud(modules.armor, modules),
-				new InfoHuds.Effects(modules.effects),
 				new InfoHuds.Coords(modules.coords, modules),
 				new InfoHuds.Clock(modules.clock, modules),
 				new InfoHuds.Memory(modules.memory),
@@ -54,7 +53,9 @@ public final class HudManager {
 				new RedstoneHuds.Signal(modules, redstone),
 				new RedstoneHuds.Clock(modules, redstone),
 				new ClipHud(modules),
-				new NotesHud(modules)), modules);
+				new NotesHud(modules),
+				// nach der Minimap: Effekte liegen darüber
+				new EffectsHud(modules)), modules);
 	}
 
 	public CrosshairRenderer crosshair() {
@@ -198,8 +199,7 @@ public final class HudManager {
 		float scale = e.module().scale.getFloat();
 		int w = (int) Math.ceil(e.width(font, preview) * scale);
 		int h = (int) Math.ceil(e.height(font, preview) * scale);
-		box[0] = HudLayout.resolveX(e.module().position(), w, sw);
-		box[1] = HudLayout.resolveY(e.module().position(), h, sh);
+		HudLayout.place(e.module(), w, h, sw, sh, box);
 		box[2] = w;
 		box[3] = h;
 		return box;

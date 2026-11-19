@@ -251,7 +251,9 @@ def mixinClasses = ['CameraMixin', 'CrosshairMixin', 'FovMixin', 'LightmapMixin'
 		// Emotes: Pose auf HumanoidModel#setupAnim; ab 1.21.2 Spieler über den Render-State zuordnen.
 		'EmoteModelMixin',
 		// Farben: Farb-Durchgang direkt nach GameRenderer#renderLevel (vor HUD und Menüs).
-		'ColorGradeMixin']
+		'ColorGradeMixin',
+		// Effekt-Modul: Vanilla-Effektsymbole ausblenden.
+		'EffectsMixin']
 if (stonecutter.eval(mc, '>=1.21.2')) mixinClasses << 'EmoteStateMixin'
 // Creator-Programm: Fan-Symbol als Bild vor erweiterten Namen (Schrift-Aufrufe der Welt bis 26.1 bzw. der Oberfläche,
 // ab 26.2 beim Einreichen des Namensschilds); bis 1.15 sind Namen reiner Text (dort nur Abzeichen + Stern).
