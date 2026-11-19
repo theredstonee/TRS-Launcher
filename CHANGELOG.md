@@ -28,9 +28,15 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.36.1 – 2026-11-19 – Ready, Set, Server | Server, fertig, los
+<!-- banner: accent=#ff4a3a motif=/news/0.36.1/banner.png -->
+<!-- shots:
+/news/0.36.1/setup.png | Your new server sets itself up while you watch | Dein neuer Server richtet sich von selbst ein, du schaust zu
+/news/0.36.1/runtime.png | Runtime left and this week's usage at a glance | Restlaufzeit und Nutzung dieser Woche auf einen Blick
+-->
 
 ### English
+- **Hosting: your new server sets itself up.** After you create it, the server is installed, started once, configured and stopped again – all by itself, even with the launcher closed. Meanwhile you see an animated setup view; managing the server opens as soon as everything is ready. If something goes wrong, one click tries again.
 - **Hosting: the footer under your server in the server list is shorter** ("Free by craftinghosting.free × trs-launcher.de"), so trs-launcher.de is no longer cut off.
 - **Hosting: you accept the Minecraft EULA right when creating your server.** No extra question on the first start, and joining via your address can wake the server from the very beginning.
 - **Hosting: servers that take longer to start no longer show "The TRS server can't be reached".** The server shows "Starting …" and the start is retried for up to 3 minutes; the console shows "Server is starting …" until the first lines arrive.
@@ -38,6 +44,7 @@ How to write an entry:
 - **Hosting: rules and runtime texts now come from the TRS server**, so they can change without a launcher update.
 
 ### Deutsch
+- **Hosting: Dein neuer Server richtet sich von selbst ein.** Nach dem Anlegen wird der Server installiert, einmal gestartet, eingerichtet und wieder gestoppt – ganz von allein, auch wenn der Launcher zu ist. Währenddessen siehst du eine animierte Einrichtungs-Ansicht; die Verwaltung öffnet sich, sobald alles bereit ist. Geht etwas schief, versucht ein Klick es erneut.
 - **Hosting: Die Fußzeile unter deinem Server in der Serverliste ist kürzer** („Free by craftinghosting.free × trs-launcher.de“), damit trs-launcher.de nicht mehr abgeschnitten wird.
 - **Hosting: Die Minecraft-EULA bestätigst du direkt beim Anlegen deines Servers.** Beim ersten Start kommt keine Extra-Frage mehr, und Beitreten über deine Adresse kann den Server von Anfang an aufwecken.
 - **Hosting: Server, die länger zum Starten brauchen, melden nicht mehr „Der TRS-Server ist nicht erreichbar“.** Der Server zeigt „Startet …“, der Start wird bis zu 3 Minuten lang wiederholt, und die Konsole zeigt „Server startet …“, bis die ersten Zeilen kommen.

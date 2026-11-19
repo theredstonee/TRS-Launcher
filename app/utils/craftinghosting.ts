@@ -62,6 +62,21 @@ const displaySchema = z.object({
     .nullable(),
   lines: z.array(z.object({ text: localizedSchema, tone: z.enum(['normal', 'warn']).catch('normal') })).max(8),
   alerts: z.array(z.object({ id: z.string().max(80), text: localizedSchema, level: z.enum(['info', 'warning']).catch('info') })).max(4),
+  /** Automatische Ersteinrichtung läuft oder ist gescheitert: nur die Einrichtungs-Ansicht zeigen. */
+  setup: z
+    .object({
+      phase: z.string().max(20),
+      index: z.number().int().min(0).max(3),
+      failed: z.boolean(),
+      title: localizedSchema,
+      hint: localizedSchema,
+      steps: z.array(localizedSchema).max(6),
+      retry: localizedSchema,
+      locked: localizedSchema,
+      startedAt: time,
+    })
+    .nullish()
+    .catch(null),
 })
 export type CraftingDisplay = z.infer<typeof displaySchema>
 
@@ -283,7 +298,7 @@ export function isTransitional(state: CraftingState | null | undefined): boolean
 }
 
 export function pollInterval(server: CraftingServer | null): number {
-  return isTransitional(server?.state) || server?.setup === 'restarting' ? POLL_FAST_MS : POLL_SLOW_MS
+  return isTransitional(server?.state) || server?.setup === 'restarting' || (server?.display?.setup && !server.display.setup.failed) ? POLL_FAST_MS : POLL_SLOW_MS
 }
 
 /** Restliche Sekunden bis `iso` (0, wenn vorbei oder unbekannt). */

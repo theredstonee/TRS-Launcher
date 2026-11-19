@@ -156,6 +156,9 @@ function openEula() {
         <!-- Noch kein Server -->
         <CraftinghostingCreateWizard v-if="!server" :locked="mobile" />
 
+        <!-- Server wird gerade automatisch eingerichtet: nur die Einrichtungs-Ansicht -->
+        <CraftinghostingSetupScene v-else-if="server.display?.setup" :setup="server.display.setup" @retry="store.requestStart()" />
+
         <!-- Eigener Server -->
         <div v-else class="space-y-4" data-testid="hosting-server">
           <p v-if="server.blocked" class="flex items-start gap-2 rounded-lg bg-redstone-950/60 px-3 py-2.5 text-sm text-redstone-200 ring-1 ring-redstone-700/60" role="alert" data-testid="hosting-blocked">
