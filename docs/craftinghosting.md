@@ -275,3 +275,13 @@ hosting tab. Already implement (hidden while the switch is false):
 - If CraftingHosting is still bringing the node up (`503 service_unavailable`), `start` answers with
   `state: "starting"` and the API retries in the background for up to 3 minutes. The console then returns the single
   line "Server is starting …" instead of an error. No launcher change was needed for this part.
+
+## Runtime rules (API §43.17)
+
+The TRS API enforces its own runtime rules (defaults, the team can change them): 24 h runtime in total over all
+sessions, then a 2 h break; 3 days unused = full quota again; Mon–Sun (Berlin) at least 8 h offline; warning 30 min
+before the stop (launcher toast + `tellraw` in the game). `Server.quota` (`usedSeconds`, `budgetSeconds`,
+`remainingSeconds`, `weekUsedSeconds`, `weekCapSeconds`, `weekResetsAt`, `idleResetAt`, `cooldownUntil`) and
+`info.rules` (`budgetHours`, `cooldownHours`, `idleResetDays`, `weeklyOfflineHours`, `warnMinutes`) carry the values;
+the core passes them through (`Quota`, `Rules`), the header shows time left / week / reset, the plan tiles explain the
+rules. A start during the break answers `409 cooldown` with `cooldownUntil` (shown as "start again in …").

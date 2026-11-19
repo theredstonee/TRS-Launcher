@@ -7603,7 +7603,10 @@
       "runs": "Seu servidor roda enquanto o launcher estiver aberto.",
       "session": "No máximo {hours} h seguidas, depois {pause} h de pausa.",
       "idle": "Servidores são excluídos após {days} dias sem serem iniciados.",
-      "eula": "Antes da primeira inicialização, você aceita o EULA do Minecraft."
+      "eula": "Antes da primeira inicialização, você aceita o EULA do Minecraft.",
+      "quota": "{hours} h de tempo no total, depois {pause} h de pausa.",
+      "idleReset": "Sem uso por {days} dias? Você tem as {hours} h completas de novo.",
+      "weekly": "Pelo menos {hours} h offline por semana (seg–dom)."
     },
     "state": {
       "installing": "Configurando",
@@ -7821,7 +7824,10 @@
       "cooldown": "Pausa obrigatória",
       "left": "faltam {time}",
       "until": "pode iniciar em {time}",
-      "perSession": "até {hours} h por sessão"
+      "perSession": "até {hours} h por sessão",
+      "quotaLeft": "restam {time} de {hours} h",
+      "week": "Esta semana {used} / {cap} h",
+      "idleReset": "Cota completa de novo {date}"
     },
     "tiles": {
       "of": "de {limit}",
@@ -8097,6 +8103,9 @@
       "maintenanceWith": "Manutenção: {message}",
       "blockedWith": "Bloqueado pela equipe TRS: {reason}",
       "createOff": "Criar novos servidores está desativado no momento."
+    },
+    "quota": {
+      "warn": "Seu servidor para em {minutes} min – o tempo está quase acabando."
     }
   }
 }

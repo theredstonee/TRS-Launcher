@@ -76,6 +76,11 @@ export const craftingInfoSchema = z.object({
   notice: noticeSchema,
   /** Wartung durch das TRS-Team: Anlegen, Starten und Beitreten sind aus. */
   maintenance: z.object({ active: z.boolean(), message: z.string().max(500).nullable() }).catch({ active: false, message: null }),
+  /** Laufzeit-Regeln der TRS API (`null` = aus bzw. alte API). */
+  rules: z
+    .object({ budgetHours: count, cooldownHours: count, idleResetDays: count, weeklyOfflineHours: count, warnMinutes: count })
+    .nullish()
+    .catch(null),
 })
 
 export const craftingServerSchema = z.object({
@@ -122,6 +127,20 @@ export const craftingServerSchema = z.object({
   setup: z.enum(['pending', 'restarting', 'done']).catch('done'),
   /** Vom TRS-Team gesperrt: Starten und Beitreten sind aus. */
   blocked: z.object({ reason: z.string().max(300), since: time }).nullish().catch(null),
+  /** Laufzeit-Kontingent (Regeln der TRS API); alte API: fehlt. */
+  quota: z
+    .object({
+      usedSeconds: count,
+      budgetSeconds: count,
+      remainingSeconds: count,
+      weekUsedSeconds: count,
+      weekCapSeconds: count,
+      weekResetsAt: time,
+      idleResetAt: time,
+      cooldownUntil: time,
+    })
+    .nullish()
+    .catch(null),
 })
 
 /** Feste zweite MOTD-Zeile, setzt die TRS-API. */

@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use serde_json::json;
 
-use super::craftinghosting::{NewServer, SettingsPatch, VersionPick};
+use super::craftinghosting::{NewServer, SettingsPatch, VersionPick, quota, rules};
 use super::craftinghosting_world::{UploadTarget, WorldSource};
 use super::testkit::{MockServer, Request, Response};
 use super::tests::{ACC, auth_routes, launcher};
@@ -1063,4 +1063,18 @@ fn eula_from_the_wizard_goes_into_the_create_body() {
     assert!(spec.body().unwrap().get("acceptEula").is_none());
     spec.accept_eula = true;
     assert_eq!(spec.body().unwrap()["acceptEula"], true);
+}
+
+#[test]
+fn quota_and_rules_from_the_api_reach_the_launcher() {
+    let q = quota(&json!({ "usedSeconds": 1200, "budgetSeconds": 86400, "remainingSeconds": 999_999, "weekUsedSeconds": 5,
+        "weekCapSeconds": 576000, "weekResetsAt": "2026-11-23T23:00:00.000Z", "idleResetAt": "bad", "cooldownUntil": null }))
+    .unwrap();
+    assert_eq!((q.used_seconds, q.remaining_seconds, q.week_cap_seconds), (1200, 86400, 576000));
+    assert_eq!(q.idle_reset_at, None);
+    assert!(quota(&json!({ "budgetSeconds": 0 })).is_none());
+    assert!(quota(&json!(null)).is_none());
+    let r = rules(&json!({ "budgetHours": 24, "cooldownHours": 2, "idleResetDays": 3, "weeklyOfflineHours": 8, "warnMinutes": 30 })).unwrap();
+    assert_eq!((r.budget_hours, r.idle_reset_days, r.warn_minutes), (24, 3, 30));
+    assert!(rules(&json!({ "budgetHours": 0 })).is_none());
 }

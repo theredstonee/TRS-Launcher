@@ -168,7 +168,23 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
     if (id && current) saveOrigins({ ...origins.value, [id]: { ...current, transferred: true } })
   }
 
+  /** Vorwarnung vor dem Stopp durch das Laufzeit-Limit: einmal, bis wieder genug Zeit da ist. */
+  let quotaWarned = false
+  function warnQuota(next: CraftingServer | null) {
+    const warn = (info.value?.rules?.warnMinutes ?? 0) * 60
+    const left = next?.quota?.remainingSeconds
+    if (!warn || left === undefined || !next?.session.active) return
+    if (left > warn) {
+      quotaWarned = false
+      return
+    }
+    if (quotaWarned || left <= 0) return
+    quotaWarned = true
+    useToasts().info(t('craftinghosting.quota.warn', { minutes: Math.max(1, Math.ceil(left / 60)) }))
+  }
+
   function setServer(next: CraftingServer | null) {
+    warnQuota(next)
     server.value = next
     loadedAt.value = Date.now()
     if (next?.state !== 'running') stats.value = null

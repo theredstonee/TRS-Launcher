@@ -260,6 +260,32 @@ pub struct Info {
     pub notice: Option<Notice>,
     /// Wartung durch das TRS-Team: Anlegen, Starten und Beitreten sind dann aus.
     pub maintenance: Maintenance,
+    /// Laufzeit-Regeln der TRS API (§43.17), `None` = aus.
+    pub rules: Option<Rules>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Rules {
+    pub budget_hours: u32,
+    pub cooldown_hours: u32,
+    pub idle_reset_days: u32,
+    pub weekly_offline_hours: u32,
+    pub warn_minutes: u32,
+}
+
+/// Laufzeit-Kontingent eines Servers (§43.17).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Quota {
+    pub used_seconds: u64,
+    pub budget_seconds: u64,
+    pub remaining_seconds: u64,
+    pub week_used_seconds: u64,
+    pub week_cap_seconds: u64,
+    pub week_resets_at: Option<String>,
+    pub idle_reset_at: Option<String>,
+    pub cooldown_until: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -370,6 +396,8 @@ pub struct Server {
     pub setup: String,
     /// Vom TRS-Team gesperrt (Starten/Beitreten aus).
     pub blocked: Option<Blocked>,
+    /// Laufzeit-Kontingent nach den Regeln der TRS API.
+    pub quota: Option<Quota>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -433,6 +461,44 @@ struct ApiInfo {
     features: serde_json::Map<String, serde_json::Value>,
     notice: serde_json::Value,
     maintenance: serde_json::Value,
+    rules: serde_json::Value,
+}
+
+pub(crate) fn rules(raw: &serde_json::Value) -> Option<Rules> {
+    let o = raw.as_object()?;
+    let n = |key: &str, max: u64| o.get(key).and_then(serde_json::Value::as_u64).map(|v| v.min(max) as u32);
+    Some(Rules {
+        budget_hours: n("budgetHours", 168).filter(|h| *h > 0)?,
+        cooldown_hours: n("cooldownHours", 48).unwrap_or(0),
+        idle_reset_days: n("idleResetDays", 30).unwrap_or(0),
+        weekly_offline_hours: n("weeklyOfflineHours", 48).unwrap_or(0),
+        warn_minutes: n("warnMinutes", 120).unwrap_or(0),
+    })
+}
+
+pub(crate) fn quota(raw: &serde_json::Value) -> Option<Quota> {
+    let o = raw.as_object()?;
+    let n = |key: &str| o.get(key).and_then(serde_json::Value::as_u64).unwrap_or(0);
+    let t = |key: &str| {
+        o.get(key)
+            .and_then(serde_json::Value::as_str)
+            .filter(|v| v.len() <= 40 && chrono::DateTime::parse_from_rfc3339(v).is_ok())
+            .map(str::to_owned)
+    };
+    let budget = n("budgetSeconds");
+    if budget == 0 {
+        return None;
+    }
+    Some(Quota {
+        used_seconds: n("usedSeconds"),
+        budget_seconds: budget,
+        remaining_seconds: n("remainingSeconds").min(budget),
+        week_used_seconds: n("weekUsedSeconds"),
+        week_cap_seconds: n("weekCapSeconds"),
+        week_resets_at: t("weekResetsAt"),
+        idle_reset_at: t("idleResetAt"),
+        cooldown_until: t("cooldownUntil"),
+    })
 }
 
 fn features(raw: &serde_json::Map<String, serde_json::Value>) -> Features {
@@ -489,6 +555,7 @@ impl ApiInfo {
             features: features(&self.features),
             notice: notice(&self.notice),
             maintenance: maintenance(&self.maintenance),
+            rules: rules(&self.rules),
         }
     }
 }
@@ -537,6 +604,7 @@ pub(crate) struct ApiServer {
     delete_at: Option<String>,
     setup: String,
     blocked: Option<serde_json::Value>,
+    quota: serde_json::Value,
 }
 
 impl ApiServer {
@@ -590,6 +658,7 @@ impl ApiServer {
                 reason: b.get("reason").and_then(serde_json::Value::as_str).map(|r| validate::text(r.trim(), 300)).unwrap_or_default(),
                 since: time(b.get("since").and_then(serde_json::Value::as_str).map(str::to_owned)),
             }),
+            quota: quota(&self.quota),
         })
     }
 }

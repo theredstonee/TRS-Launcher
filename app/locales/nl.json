@@ -7603,7 +7603,10 @@
       "runs": "Je server draait zolang de launcher open is.",
       "session": "Maximaal {hours} uur achter elkaar, daarna {pause} uur pauze.",
       "idle": "Servers worden na {days} dagen zonder start verwijderd.",
-      "eula": "Voor de eerste start accepteer je de Minecraft-EULA."
+      "eula": "Voor de eerste start accepteer je de Minecraft-EULA.",
+      "quota": "In totaal {hours} u looptijd, daarna {pause} u pauze.",
+      "idleReset": "{days} dagen niet gebruikt? Dan heb je weer volle {hours} u.",
+      "weekly": "Minstens {hours} u per week offline (ma–zo)."
     },
     "state": {
       "installing": "Wordt ingericht",
@@ -7821,7 +7824,10 @@
       "cooldown": "Verplichte pauze",
       "left": "nog {time}",
       "until": "weer te starten over {time}",
-      "perSession": "tot {hours} u per sessie"
+      "perSession": "tot {hours} u per sessie",
+      "quotaLeft": "nog {time} van {hours} u",
+      "week": "Deze week {used} / {cap} u",
+      "idleReset": "Weer volledig tegoed {date}"
     },
     "tiles": {
       "of": "van {limit}",
@@ -8097,6 +8103,9 @@
       "maintenanceWith": "Onderhoud: {message}",
       "blockedWith": "Geblokkeerd door het TRS-team: {reason}",
       "createOff": "Nieuwe servers aanmaken is op dit moment uitgeschakeld."
+    },
+    "quota": {
+      "warn": "Je server stopt over {minutes} min – de looptijd is bijna op."
     }
   }
 }

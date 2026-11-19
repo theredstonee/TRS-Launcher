@@ -7603,7 +7603,10 @@
       "runs": "Sunucun, başlatıcı açık olduğu sürece çalışır.",
       "session": "Bir seferde en fazla {hours} sa, ardından {pause} sa mola.",
       "idle": "Sunucular {days} gün başlatılmazsa silinir.",
-      "eula": "İlk başlatmadan önce Minecraft EULA’sını kabul edersin."
+      "eula": "İlk başlatmadan önce Minecraft EULA’sını kabul edersin.",
+      "quota": "Toplam {hours} sa çalışma süresi, sonra {pause} sa mola.",
+      "idleReset": "{days} gün kullanılmadı mı? Tam {hours} sa yeniden senin.",
+      "weekly": "Haftada en az {hours} sa kapalı (Pzt–Paz)."
     },
     "state": {
       "installing": "Kuruluyor",
@@ -7821,7 +7824,10 @@
       "cooldown": "Zorunlu mola",
       "left": "{time} kaldı",
       "until": "{time} sonra başlatılabilir",
-      "perSession": "oturum başına {hours} saate kadar"
+      "perSession": "oturum başına {hours} saate kadar",
+      "quotaLeft": "{hours} sa içinden {time} kaldı",
+      "week": "Bu hafta {used} / {cap} sa",
+      "idleReset": "Tam kota yeniden {date}"
     },
     "tiles": {
       "of": "/ {limit}",
@@ -8097,6 +8103,9 @@
       "maintenanceWith": "Bakım: {message}",
       "blockedWith": "TRS ekibi tarafından engellendi: {reason}",
       "createOff": "Yeni sunucu oluşturma şu anda kapalı."
+    },
+    "quota": {
+      "warn": "Sunucun {minutes} dk içinde duracak – çalışma süresi neredeyse bitti."
     }
   }
 }

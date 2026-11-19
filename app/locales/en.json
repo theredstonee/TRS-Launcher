@@ -8409,7 +8409,10 @@
       "runs": "Your server runs while the launcher is open.",
       "session": "At most {hours} h at a time, then a {pause} h break.",
       "idle": "Servers are deleted after {days} days without a start.",
-      "eula": "Before the first start you accept the Minecraft EULA."
+      "eula": "Before the first start you accept the Minecraft EULA.",
+      "quota": "{hours} h runtime in total, then a {pause} h break.",
+      "idleReset": "Unused for {days} days? Your full {hours} h are back.",
+      "weekly": "At least {hours} h offline per week (Mon–Sun)."
     },
     "state": {
       "installing": "Setting up",
@@ -8627,7 +8630,10 @@
       "cooldown": "Mandatory break",
       "left": "{time} left",
       "until": "start again in {time}",
-      "perSession": "up to {hours} h per session"
+      "perSession": "up to {hours} h per session",
+      "quotaLeft": "{time} of {hours} h left",
+      "week": "This week {used} / {cap} h",
+      "idleReset": "Full quota again {date}"
     },
     "tiles": {
       "of": "of {limit}",
@@ -8903,6 +8909,9 @@
       "maintenanceWith": "Maintenance: {message}",
       "blockedWith": "Blocked by the TRS team: {reason}",
       "createOff": "Creating new servers is switched off right now."
+    },
+    "quota": {
+      "warn": "Your server stops in {minutes} min – its runtime is almost used up."
     }
   }
 }

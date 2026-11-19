@@ -7603,7 +7603,10 @@
       "runs": "Ton serveur tourne tant que le launcher est ouvert.",
       "session": "{hours} h maximum d’affilée, puis {pause} h de pause.",
       "idle": "Les serveurs sont supprimés après {days} jours sans démarrage.",
-      "eula": "Avant le premier démarrage, tu acceptes l’EULA de Minecraft."
+      "eula": "Avant le premier démarrage, tu acceptes l’EULA de Minecraft.",
+      "quota": "{hours} h de fonctionnement au total, puis {pause} h de pause.",
+      "idleReset": "Pas utilisé pendant {days} jours ? Tu récupères tes {hours} h.",
+      "weekly": "Au moins {hours} h hors ligne par semaine (lun–dim)."
     },
     "state": {
       "installing": "Installation",
@@ -7821,7 +7824,10 @@
       "cooldown": "Pause obligatoire",
       "left": "encore {time}",
       "until": "redémarrable dans {time}",
-      "perSession": "jusqu’à {hours} h par session"
+      "perSession": "jusqu’à {hours} h par session",
+      "quotaLeft": "encore {time} sur {hours} h",
+      "week": "Cette semaine {used} / {cap} h",
+      "idleReset": "Quota complet à nouveau {date}"
     },
     "tiles": {
       "of": "sur {limit}",
@@ -8097,6 +8103,9 @@
       "maintenanceWith": "Maintenance : {message}",
       "blockedWith": "Bloqué par l’équipe TRS : {reason}",
       "createOff": "La création de nouveaux serveurs est désactivée pour le moment."
+    },
+    "quota": {
+      "warn": "Ton serveur s’arrête dans {minutes} min – le temps est presque épuisé."
     }
   }
 }

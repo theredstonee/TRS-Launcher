@@ -7603,7 +7603,10 @@
       "runs": "Twój serwer działa, dopóki launcher jest otwarty.",
       "session": "Najwyżej {hours} h bez przerwy, potem {pause} h przerwy.",
       "idle": "Serwery są usuwane po {days} dniach bez uruchomienia.",
-      "eula": "Przed pierwszym uruchomieniem akceptujesz EULA Minecrafta."
+      "eula": "Przed pierwszym uruchomieniem akceptujesz EULA Minecrafta.",
+      "quota": "Łącznie {hours} h działania, potem {pause} h przerwy.",
+      "idleReset": "Nieużywany przez {days} dni? Znów masz pełne {hours} h.",
+      "weekly": "Co najmniej {hours} h offline w tygodniu (pon–niedz)."
     },
     "state": {
       "installing": "Konfiguracja",
@@ -7821,7 +7824,10 @@
       "cooldown": "Obowiązkowa przerwa",
       "left": "zostało {time}",
       "until": "start możliwy za {time}",
-      "perSession": "do {hours} godz. na sesję"
+      "perSession": "do {hours} godz. na sesję",
+      "quotaLeft": "zostało {time} z {hours} h",
+      "week": "Ten tydzień {used} / {cap} h",
+      "idleReset": "Pełny limit znów {date}"
     },
     "tiles": {
       "of": "z {limit}",
@@ -8097,6 +8103,9 @@
       "maintenanceWith": "Konserwacja: {message}",
       "blockedWith": "Zablokowany przez zespół TRS: {reason}",
       "createOff": "Tworzenie nowych serwerów jest teraz wyłączone."
+    },
+    "quota": {
+      "warn": "Twój serwer zatrzyma się za {minutes} min – czas działania prawie się skończył."
     }
   }
 }

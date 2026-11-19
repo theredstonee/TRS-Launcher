@@ -9,12 +9,25 @@ const facts = computed(() => [
   { icon: 'cpu', value: `${props.info.plan.cpuPercent} %`, label: t('craftinghosting.stats.cpu') },
   { icon: 'disk', value: `${Math.round(props.info.plan.diskMb / 1024)} GB`, label: t('craftinghosting.stats.disk') },
 ])
-const rules = computed(() => [
-  { icon: 'launcher', text: t('craftinghosting.rules.runs') },
-  { icon: 'clock', text: t('craftinghosting.rules.session', { hours: props.info.limits.sessionMaxHours, pause: props.info.limits.cooldownHours }) },
-  { icon: 'calendar', text: t('craftinghosting.rules.idle', { days: props.info.limits.deleteAfterIdleDays }) },
-  { icon: 'doc', text: t('craftinghosting.rules.eula') },
-])
+const rules = computed(() => {
+  const r = props.info.rules
+  if (!r) {
+    return [
+      { icon: 'launcher', text: t('craftinghosting.rules.runs') },
+      { icon: 'clock', text: t('craftinghosting.rules.session', { hours: props.info.limits.sessionMaxHours, pause: props.info.limits.cooldownHours }) },
+      { icon: 'calendar', text: t('craftinghosting.rules.idle', { days: props.info.limits.deleteAfterIdleDays }) },
+      { icon: 'doc', text: t('craftinghosting.rules.eula') },
+    ]
+  }
+  return [
+    { icon: 'launcher', text: t('craftinghosting.rules.runs') },
+    { icon: 'clock', text: t('craftinghosting.rules.quota', { hours: r.budgetHours, pause: r.cooldownHours }) },
+    { icon: 'clock', text: t('craftinghosting.rules.idleReset', { days: r.idleResetDays, hours: r.budgetHours }) },
+    { icon: 'calendar', text: t('craftinghosting.rules.weekly', { hours: r.weeklyOfflineHours }) },
+    { icon: 'calendar', text: t('craftinghosting.rules.idle', { days: props.info.limits.deleteAfterIdleDays }) },
+    { icon: 'doc', text: t('craftinghosting.rules.eula') },
+  ]
+})
 </script>
 
 <template>
@@ -36,7 +49,7 @@ const rules = computed(() => [
     <div>
       <h3 class="mb-2 text-xs font-semibold tracking-wide text-base-400 uppercase">{{ t('craftinghosting.rules.title') }}</h3>
       <ul class="grid gap-2" :class="compact ? '' : 'sm:grid-cols-2'">
-        <li v-for="r in rules" :key="r.icon" class="flex items-start gap-2.5 rounded-lg bg-base-850/60 px-3 py-2.5 text-xs leading-relaxed text-base-200">
+        <li v-for="(r, i) in rules" :key="i" class="flex items-start gap-2.5 rounded-lg bg-base-850/60 px-3 py-2.5 text-xs leading-relaxed text-base-200">
           <svg viewBox="0 0 24 24" class="mt-px size-4 shrink-0 text-base-400" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <template v-if="r.icon === 'launcher'"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8M12 17v4M10 9.5l4 1.5-4 1.5z" /></template>
             <template v-else-if="r.icon === 'clock'"><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></template>

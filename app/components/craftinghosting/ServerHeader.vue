@@ -64,6 +64,10 @@ const cooldownPercent = computed(() => {
   return total ? Math.min(100, Math.max(0, ((total - cooldownLeft.value) / total) * 100)) : 0
 })
 const runLeft = computed(() => remainingSeconds(server.value, store.loadedAt, now.value))
+const dateFormat = computed(() => new Intl.DateTimeFormat(intlLocale(), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))
+function formatDate(iso: string) {
+  return dateFormat.value.format(new Date(iso))
+}
 const runPercent = computed(() => runtimePercent(server.value, store.loadedAt, now.value))
 const players = computed(() => store.stats?.players ?? null)
 
@@ -241,6 +245,7 @@ function pick(action: () => void) {
             <span class="font-semibold tracking-wide text-base-400 uppercase">{{ cooling ? t('craftinghosting.header.cooldown') : t('craftinghosting.header.session') }}</span>
             <span v-if="cooling" class="text-lamp-300 tabular-nums" data-testid="hosting-cooldown">{{ t('craftinghosting.header.until', { time: hostingCountdown(cooldownLeft) }) }}</span>
             <span v-else-if="server.session.active" class="text-base-200 tabular-nums">{{ t('craftinghosting.header.left', { time: hostingCountdown(runLeft) }) }}</span>
+            <span v-else-if="server.quota" class="text-base-400 tabular-nums" data-testid="hosting-quota-left">{{ t('craftinghosting.header.quotaLeft', { time: hostingCountdown(server.quota.remainingSeconds), hours: Math.round(server.quota.budgetSeconds / 3600) }) }}</span>
             <span v-else class="text-base-400">{{ t('craftinghosting.header.perSession', { hours: info?.limits.sessionMaxHours ?? 24 }) }}</span>
           </div>
           <div
@@ -253,6 +258,10 @@ function pick(action: () => void) {
           >
             <div class="h-full rounded-full transition-[width] duration-700" :class="cooling ? 'bg-lamp-400' : 'ch-bar'" :style="{ width: `${cooling ? cooldownPercent : runPercent}%` }" />
           </div>
+          <p v-if="server.quota" class="mt-1 flex flex-wrap gap-x-3 text-[11px] text-base-400 tabular-nums" data-testid="hosting-quota-week">
+            <span>{{ t('craftinghosting.header.week', { used: Math.floor(server.quota.weekUsedSeconds / 3600), cap: Math.round(server.quota.weekCapSeconds / 3600) }) }}</span>
+            <span v-if="server.quota.idleResetAt && !server.session.active">{{ t('craftinghosting.header.idleReset', { date: formatDate(server.quota.idleResetAt) }) }}</span>
+          </p>
         </div>
       </div>
       <div class="flex flex-wrap gap-2">
