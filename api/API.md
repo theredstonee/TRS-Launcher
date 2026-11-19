@@ -5754,3 +5754,24 @@ clients know it.
   state again.
 - `GET …/server/logs` answers `{ lines: ["Server is starting …"] }` (German/Spanish by `Accept-Language`) instead of an
   error while the partner rejects the console with `503 service_unavailable`.
+
+### 43.17 Runtime rules (our own, enforced by the TRS API)
+
+Defaults (team can change them on the admin page, `PUT /v1/admin/craftinghosting/config` `rules: { enabled,
+budgetHours, cooldownHours, idleResetDays, weeklyOfflineHours, warnMinutes }`):
+
+- **Quota 24 h** of runtime per server, added up over all sessions (counted in the 60 s sweep, at most 120 s per
+  sweep). When it is used up the API stops the server (`lastStopReason: "session_limit"`) and a **2 h break**
+  follows; after the break the full quota is back.
+- **Unused for 3 days** (server off the whole time) = full quota again, even if only part was used.
+- **Week Mon–Sun (Europe/Berlin): at least 8 h off**, i.e. at most 160 h runtime. Reaching it stops the server until
+  Monday 00:00 Berlin.
+- **Warning** `warnMinutes` (30) before the stop: in-game via `tellraw @a` (German/English).
+- Start and TRS Wake during a break: `409 cooldown { cooldownUntil }`.
+- `Server.session.runSeconds/maxRunSeconds/remainingSeconds/cooldownUntil` carry these values; new
+  `Server.quota = { usedSeconds, budgetSeconds, remainingSeconds, weekUsedSeconds, weekCapSeconds, weekResetsAt,
+  idleResetAt, cooldownUntil }` (null when the rules are off). `info.rules = { budgetHours, cooldownHours,
+  idleResetDays, weeklyOfflineHours, warnMinutes, week }` or `null`; `info.limits.sessionMaxHours/cooldownHours`
+  follow the rules.
+- Team: `POST /v1/admin/craftinghosting/servers/{id}/reset-quota` (permission `worlds.close`) clears quota, week and
+  break. Migration 49.

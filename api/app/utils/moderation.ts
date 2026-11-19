@@ -250,6 +250,7 @@ export interface AdminHostingServer {
   lastStartAt: string | null
   deleteAt: string | null
   blocked: { reason: string, since: string | null } | null
+  quota?: { usedSeconds: number, budgetSeconds: number, remainingSeconds: number, weekUsedSeconds: number, weekCapSeconds: number, cooldownUntil: string | null } | null
 }
 
 export interface AdminHostingConfig {
@@ -258,6 +259,16 @@ export interface AdminHostingConfig {
   features: Record<string, boolean>
   overrides: Record<string, boolean>
   available: { ownAddress: boolean, wakeOnJoin: boolean }
+  rules: HostingRules
+}
+
+export interface HostingRules {
+  enabled: boolean
+  budgetHours: number
+  cooldownHours: number
+  idleResetDays: number
+  weeklyOfflineHours: number
+  warnMinutes: number
 }
 
 export interface PlayerFile {

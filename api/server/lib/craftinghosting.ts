@@ -210,6 +210,20 @@ export interface ServerView {
   blocked: { reason: string, since: string | null } | null
   /** Einrichtung der Server-Software (nach Anlegen, Versionswechsel, Neuinstallation). */
   install: { status: string, step: number, steps: number, error: string | null } | null
+  /** Laufzeit-Kontingent nach unseren Regeln (§43.17). */
+  quota: Quota | null
+}
+
+export interface Quota {
+  usedSeconds: number
+  budgetSeconds: number
+  remainingSeconds: number
+  weekUsedSeconds: number
+  weekCapSeconds: number
+  weekResetsAt: string
+  /** Ab hier volles Kontingent, wenn der Server bis dahin aus bleibt (nur bei angebrochenem Kontingent). */
+  idleResetAt: string | null
+  cooldownUntil: string | null
 }
 
 export type SetupState = 'pending' | 'restarting' | 'done'
@@ -230,6 +244,14 @@ interface Row {
   transfers: number
   mods: string | null
   eula_at: number | null
+  run_used_s: number
+  run_acct_at: number | null
+  last_on_at: number | null
+  cooldown_until: number | null
+  week_key: string | null
+  week_used_s: number
+  warned: number
+  rule_stop: string | null
   blocked_reason: string | null
   blocked_at: number | null
   blocked_by: string | null
@@ -467,6 +489,7 @@ function view(s: PartnerServer, access: Access, setup: SetupState = 'pending', d
     install: s.install?.status
       ? { status: s.install.status, step: s.install.step, steps: s.install.steps, error: s.install.error ?? null }
       : null,
+    quota: null,
   }
 }
 
@@ -502,8 +525,8 @@ export async function craftingInfo(ctx: AppContext) {
     serverTypes: me.serverTypes.map((t) => ({ id: t.id, name: t.name, versions: t.versions })),
     limits: {
       maxServersPerPlayer: l.maxServersPerPlayer,
-      sessionMaxHours: l.sessionMaxHours,
-      cooldownHours: l.cooldownHours,
+      sessionMaxHours: rulesOf(ctx).enabled ? rulesOf(ctx).budgetHours : l.sessionMaxHours,
+      cooldownHours: rulesOf(ctx).enabled ? rulesOf(ctx).cooldownHours : l.cooldownHours,
       heartbeatTimeoutSeconds: l.heartbeatTimeoutSeconds,
       deleteAfterIdleDays: l.deleteAfterIdleDays,
       serverNameMaxLength: l.serverNameMaxLength,
@@ -515,6 +538,8 @@ export async function craftingInfo(ctx: AppContext) {
     /** Hinweis oben im Hosting-Reiter: Markdown vom Team (Admin-Seite), sonst Klartext aus der Env. */
     notice: noticeOf(ctx),
     maintenance: maintenanceOf(ctx),
+    /** Laufzeit-Regeln (§43.17), `null` = aus. */
+    rules: rulesOf(ctx).enabled ? publicRules(ctx) : null,
   }
 }
 
@@ -601,6 +626,14 @@ export const adminConfigBody = z.object({
   maintenance: z.object({ active: z.boolean(), message: z.string().trim().max(300).nullable() }).optional(),
   /** `null` = Standard (Env/Technik). */
   features: z.record(z.enum(FEATURE_KEYS), z.boolean().nullable()).optional(),
+  rules: z.object({
+    enabled: z.boolean(),
+    budgetHours: z.number().int().min(1).max(168),
+    cooldownHours: z.number().int().min(0).max(48),
+    idleResetDays: z.number().int().min(1).max(30),
+    weeklyOfflineHours: z.number().int().min(0).max(48),
+    warnMinutes: z.number().int().min(0).max(120),
+  }).strict().optional(),
 }).strict()
 export const blockBody = z.object({ reason: z.string().trim().min(1).max(300) }).strict()
 
@@ -611,6 +644,7 @@ export function adminCraftingConfig(ctx: AppContext) {
     features: features(ctx),
     overrides: adminFeatures(ctx),
     available: { ownAddress: !!ctx.config.dns, wakeOnJoin: !!ctx.config.dns?.wake },
+    rules: rulesOf(ctx),
   }
 }
 
@@ -627,6 +661,7 @@ export function adminSetCraftingConfig(ctx: AppContext, by: string, body: z.outp
     }
     adminSet(ctx, 'features', Object.keys(cur).length ? JSON.stringify(cur) : null, by)
   }
+  if (body.rules) adminSet(ctx, 'rules', JSON.stringify(body.rules), by)
   return adminCraftingConfig(ctx)
 }
 
@@ -764,7 +799,7 @@ export async function craftingServer(ctx: AppContext, user: UserRow): Promise<Se
         }
       }
       await syncDns(ctx, rowOf(ctx, user.uuid) ?? row, p)
-      const s = adjust(withBlock(view(p, row.access, setupOf(row), domainOf(ctx, rowOf(ctx, user.uuid))), row), row)
+      const s = adjust(ctx, withBlock(view(p, row.access, setupOf(row), domainOf(ctx, rowOf(ctx, user.uuid))), row), row)
       if (s.state === 'running' && (row.wl_key === null || !row.op_done || !row.setup)) {
         await syncAccess(ctx, user, s)
         return { ...s, setup: setupOf(rowOf(ctx, user.uuid)) }
@@ -827,7 +862,7 @@ export async function craftingCreate(ctx: AppContext, user: UserRow, body: z.out
   if (row) await syncDns(ctx, row, s)
   const made = rowOf(ctx, user.uuid)
   const v = view(s, body.access, 'pending', domainOf(ctx, made))
-  return made ? adjust(v, made) : v
+  return made ? adjust(ctx, v, made) : v
 }
 
 async function own(ctx: AppContext, user: UserRow): Promise<Row> {
@@ -857,14 +892,29 @@ async function fresh(ctx: AppContext, row: Row, res?: unknown): Promise<ServerVi
   const now = rowOf(ctx, row.uuid) ?? row
   const p = direct.success ? direct.data.server : parseServer(await call(ctx, 'GET', path(row)))
   await warmIp(p)
-  return adjust(withBlock(view(p, now.access, setupOf(now), domainOf(ctx, now)), now), now)
+  return adjust(ctx, withBlock(view(p, now.access, setupOf(now), domainOf(ctx, now)), now), now)
 }
 
-function adjust(v: ServerView, row: Row): ServerView {
+function adjust(ctx: AppContext, v: ServerView, row: Row): ServerView {
   let out = v
   if (row.eula_at !== null && !out.eulaAccepted) out = { ...out, eulaAccepted: true }
   if (pendingStarts.has(row.uuid) && (out.state === 'offline' || out.state === 'stopping')) out = { ...out, state: 'starting' }
-  return out
+  const q = quotaOf(ctx, row)
+  if (!q) return out
+  const partnerCd = out.session.cooldownUntil ? Date.parse(out.session.cooldownUntil) : 0
+  const ourCd = q.cooldownUntil ? Date.parse(q.cooldownUntil) : 0
+  return {
+    ...out,
+    quota: q,
+    session: {
+      ...out.session,
+      runSeconds: q.usedSeconds,
+      maxRunSeconds: q.budgetSeconds,
+      remainingSeconds: q.remainingSeconds,
+      cooldownUntil: ourCd > partnerCd ? q.cooldownUntil : out.session.cooldownUntil,
+      lastStopReason: row.rule_stop === 'session_limit' && !out.session.active ? 'session_limit' : out.session.lastStopReason,
+    },
+  }
 }
 
 export async function craftingUpdate(ctx: AppContext, user: UserRow, body: z.output<typeof patchServerBody>): Promise<ServerView> {
@@ -900,8 +950,10 @@ export async function craftingStart(ctx: AppContext, user: UserRow, acceptEula: 
     await syncAccess(ctx, user, await fresh(ctx, row))
     if (row.setup && !row.transfers) await ensureTransfers(ctx, row)
     if (row.setup) await refreshFooter(ctx, row)
+    assertQuota(ctx, rowOf(ctx, user.uuid) ?? row)
     if (acceptEula && row.eula_at === null) run(ctx.db, 'UPDATE craftinghosting_servers SET eula_at = ? WHERE uuid = ?', ctx.now(), user.uuid)
     const res = await startOrQueue(ctx, rowOf(ctx, user.uuid) ?? row, acceptEula)
+    run(ctx.db, 'UPDATE craftinghosting_servers SET rule_stop = NULL WHERE uuid = ?', user.uuid)
     return fresh(ctx, rowOf(ctx, user.uuid) ?? row, res ?? undefined)
   })
 }
@@ -1319,7 +1371,7 @@ export async function adminCraftingServers(ctx: AppContext) {
     servers: list.map((p) => {
       const row = rows.get(p.id)
       const base = withBlock(view(p, row?.access ?? 'friends', setupOf(row), domainOf(ctx, row)), row)
-      const v = row ? adjust(base, row) : base
+      const v = row ? adjust(ctx, base, row) : base
       return {
         ...v,
         owner: row ? { uuid: row.uuid, name: row.name } : null,
@@ -1624,6 +1676,7 @@ export async function relayWake(ctx: AppContext, host: string, player: { name: s
     throw new ApiError(409, 'cooldown', 'cooldown', p.session?.cooldownUntil ? { cooldownUntil: p.session.cooldownUntil } : undefined)
   }
   if (state === 'unavailable') throw new ApiError(409, 'unavailable', 'unavailable')
+  assertQuota(ctx, row)
   if (!p.eulaAccepted && row.eula_at === null) throw new ApiError(409, 'eula_required', 'eula required')
   const last = wakes.get(row.uuid) ?? 0
   if (ctx.now() - last < 30_000) return { state: 'starting' as WakeState }
@@ -1631,13 +1684,17 @@ export async function relayWake(ctx: AppContext, host: string, player: { name: s
   await syncAccess(ctx, owner, view(p, row.access, setupOf(row)))
   if (row.setup && !row.transfers) await ensureTransfers(ctx, row)
   await startOrQueue(ctx, row, false)
+  run(ctx.db, 'UPDATE craftinghosting_servers SET rule_stop = NULL WHERE uuid = ?', row.uuid)
   return { state: 'starting' as WakeState }
 }
 
 /** Regelmäßig: DNS aller Server an ihren Zustand anpassen (Aufwecken braucht das, sobald einer einschläft). */
 export async function sweepCraftingDns(ctx: AppContext): Promise<void> {
-  if (!ctx.config.craftinghosting || !ctx.config.dns?.wake) return
-  const rows = all<Row>(ctx.db, 'SELECT * FROM craftinghosting_servers WHERE subdomain IS NOT NULL')
+  if (!ctx.config.craftinghosting) return
+  const wake = !!ctx.config.dns?.wake
+  const rules = rulesOf(ctx).enabled
+  if (!wake && !rules) return
+  const rows = all<Row>(ctx.db, rules ? 'SELECT * FROM craftinghosting_servers' : 'SELECT * FROM craftinghosting_servers WHERE subdomain IS NOT NULL')
   if (!rows.length) return
   const byId = new Map<string, PartnerServer>()
   for (let offset = 0; offset < 1000; offset += 100) {
@@ -1649,7 +1706,15 @@ export async function sweepCraftingDns(ctx: AppContext): Promise<void> {
   }
   for (const row of rows) {
     const p = byId.get(row.server_id)
-    if (p) await syncDns(ctx, row, p)
+    if (!p) continue
+    if (rules) {
+      try {
+        await enforceRules(ctx, row, p)
+      } catch (e) {
+        if (!(e instanceof ApiError)) console.error('[trs-api] CraftingHosting rules failed', e)
+      }
+    }
+    if (wake && row.subdomain) await syncDns(ctx, rowOf(ctx, row.uuid) ?? row, p)
   }
 }
 
@@ -2139,4 +2204,165 @@ export async function adminWebhook(ctx: AppContext, action: 'status' | 'setup' |
     pending: st.pending,
     recent: st.recent.slice(0, 10),
   }
+}
+
+// ---------------------------------------------------------------- Laufzeit-Regeln (§43.17)
+// 24-h-Kontingent über alle Sitzungen, danach 2 h Pause; 3 Tage aus = volles Kontingent; Mo–So (Berlin) höchstens
+// 168 h − 8 h Laufzeit. Gezählt wird im 60-s-Durchgang (sweepCraftingDns), höchstens 120 s je Durchgang.
+
+export interface Rules {
+  enabled: boolean
+  budgetHours: number
+  cooldownHours: number
+  idleResetDays: number
+  weeklyOfflineHours: number
+  warnMinutes: number
+}
+const DEFAULT_RULES: Rules = { enabled: true, budgetHours: 24, cooldownHours: 2, idleResetDays: 3, weeklyOfflineHours: 8, warnMinutes: 30 }
+const MAX_TICK_S = 120
+
+export function rulesOf(ctx: AppContext): Rules {
+  const raw = adminGet(ctx, 'rules')
+  if (!raw) return DEFAULT_RULES
+  try {
+    return { ...DEFAULT_RULES, ...adminConfigBody.shape.rules.unwrap().parse(JSON.parse(raw)) }
+  } catch {
+    return DEFAULT_RULES
+  }
+}
+
+function publicRules(ctx: AppContext) {
+  const r = rulesOf(ctx)
+  return { budgetHours: r.budgetHours, cooldownHours: r.cooldownHours, idleResetDays: r.idleResetDays,
+    weeklyOfflineHours: r.weeklyOfflineHours, warnMinutes: r.warnMinutes, week: 'mon-sun-europe-berlin' }
+}
+
+const berlinParts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23', weekday: 'short' })
+function berlin(ms: number) {
+  const o = Object.fromEntries(berlinParts.formatToParts(ms).map((x) => [x.type, x.value]))
+  return { y: +o.year!, m: +o.month!, d: +o.day!, h: +o.hour!, min: +o.minute!, s: +o.second!, wd: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(o.weekday!) }
+}
+/** Mitternacht (Berlin) des Tages y-m-d als Epoch-ms. */
+function berlinMidnight(y: number, m: number, d: number): number {
+  let t = Date.UTC(y, m - 1, d)
+  for (let i = 0; i < 2; i++) {
+    const b = berlin(t)
+    t -= (Date.UTC(b.y, b.m - 1, b.d, b.h, b.min, b.s) - Date.UTC(y, m - 1, d))
+  }
+  return t
+}
+/** Montag 0 Uhr (Berlin) der Woche von `ms` und der nächsten. */
+function weekOf(ms: number): { key: string, start: number, end: number } {
+  const b = berlin(ms)
+  const mon = new Date(Date.UTC(b.y, b.m - 1, b.d - b.wd))
+  const next = new Date(Date.UTC(b.y, b.m - 1, b.d - b.wd + 7))
+  return {
+    key: mon.toISOString().slice(0, 10),
+    start: berlinMidnight(mon.getUTCFullYear(), mon.getUTCMonth() + 1, mon.getUTCDate()),
+    end: berlinMidnight(next.getUTCFullYear(), next.getUTCMonth() + 1, next.getUTCDate()),
+  }
+}
+
+/** Stand nach Regeln ohne Laufzeit-Fortschritt (Pause vorbei, 3 Tage aus, neue Woche). */
+function settled(ctx: AppContext, row: Row, now: number) {
+  const r = rulesOf(ctx)
+  const wk = weekOf(now)
+  let used = row.run_used_s ?? 0
+  let week = row.week_key === wk.key ? row.week_used_s ?? 0 : 0
+  let cd = row.cooldown_until
+  let warned = row.warned ?? 0
+  if (cd !== null && cd <= now) {
+    cd = null
+    used = 0
+    warned = 0
+  }
+  if (cd === null && row.run_acct_at === null && row.last_on_at !== null && used > 0 && now - row.last_on_at >= r.idleResetDays * 86_400_000) {
+    used = 0
+    warned = 0
+  }
+  if (row.week_key !== wk.key) week = 0
+  return { r, wk, used, week, cd, warned }
+}
+
+function quotaOf(ctx: AppContext, row: Row): Quota | null {
+  const now = ctx.now()
+  const { r, wk, used, week, cd } = settled(ctx, row, now)
+  if (!r.enabled) return null
+  const budget = r.budgetHours * 3600
+  const cap = (168 - r.weeklyOfflineHours) * 3600
+  const idleAt = used > 0 && row.last_on_at !== null && row.run_acct_at === null ? row.last_on_at + r.idleResetDays * 86_400_000 : null
+  return {
+    usedSeconds: Math.round(used),
+    budgetSeconds: budget,
+    remainingSeconds: cd !== null ? 0 : Math.max(0, Math.round(Math.min(budget - used, cap - week))),
+    weekUsedSeconds: Math.round(week),
+    weekCapSeconds: cap,
+    weekResetsAt: new Date(wk.end).toISOString(),
+    idleResetAt: idleAt !== null && cd === null ? new Date(idleAt).toISOString() : null,
+    cooldownUntil: cd !== null ? new Date(cd).toISOString() : null,
+  }
+}
+
+/** Start/Aufwecken nur mit Restzeit; sonst `409 cooldown` mit Ende der Pause. */
+function assertQuota(ctx: AppContext, row: Row) {
+  const q = quotaOf(ctx, row)
+  if (!q) return
+  if (q.cooldownUntil) throw new ApiError(409, 'cooldown', 'cooldown', { cooldownUntil: q.cooldownUntil })
+  if (q.remainingSeconds <= 0) {
+    const r = rulesOf(ctx)
+    const wk = weekOf(ctx.now())
+    const until = q.weekUsedSeconds >= q.weekCapSeconds ? wk.end : ctx.now() + r.cooldownHours * 3_600_000
+    run(ctx.db, 'UPDATE craftinghosting_servers SET cooldown_until = ? WHERE uuid = ?', until, row.uuid)
+    throw new ApiError(409, 'cooldown', 'cooldown', { cooldownUntil: new Date(until).toISOString() })
+  }
+}
+
+const isOn = (p: PartnerServer) => p.session?.active === true || p.state === 'running' || p.state === 'starting'
+
+function warnText(minutes: number) {
+  return `tellraw @a ["",{"text":"[TRS] ","color":"red"},{"text":"Der Server stoppt in ${minutes} Minuten (Laufzeit-Limit). / Server stops in ${minutes} minutes (runtime limit).","color":"yellow"}]`
+}
+
+/** Ein Durchgang für einen Server: zählen, warnen, bei 0 stoppen. */
+export async function enforceRules(ctx: AppContext, row: Row, p: PartnerServer): Promise<void> {
+  const now = ctx.now()
+  const st = settled(ctx, row, now)
+  const { r, wk } = st
+  let { used, week, cd, warned } = st
+  const on = isOn(p)
+  if (on && row.run_acct_at !== null) {
+    const dt = Math.min(MAX_TICK_S, Math.max(0, (now - row.run_acct_at) / 1000))
+    used += dt
+    week += dt
+  }
+  const budget = r.budgetHours * 3600
+  const cap = (168 - r.weeklyOfflineHours) * 3600
+  const remaining = Math.min(budget - used, cap - week)
+  let stop = false
+  let ruleStop = row.rule_stop
+  if (on && remaining <= 0) {
+    stop = true
+    cd = week >= cap ? wk.end : now + r.cooldownHours * 3_600_000
+    ruleStop = 'session_limit'
+  } else if (on && r.warnMinutes > 0 && remaining <= r.warnMinutes * 60 && !warned) {
+    warned = 1
+    void call(ctx, 'POST', path(row, '/command'), { command: warnText(Math.max(1, Math.ceil(remaining / 60))) }).catch(() => undefined)
+  }
+  run(ctx.db, `UPDATE craftinghosting_servers SET run_used_s = ?, run_acct_at = ?, last_on_at = ?, cooldown_until = ?, week_key = ?,
+    week_used_s = ?, warned = ?, rule_stop = ? WHERE uuid = ?`,
+  Math.round(used), on && !stop ? now : null, on ? now : row.last_on_at, cd, wk.key, Math.round(week), warned, ruleStop, row.uuid)
+  if (stop) {
+    stopPending(row.uuid)
+    await call(ctx, 'POST', path(row, '/stop'), {})
+  }
+}
+
+/** Team: Kontingent eines Servers zurücksetzen (Pause aufheben). */
+export function adminCraftingResetQuota(ctx: AppContext, serverId: string): string {
+  const row = one<Row>(ctx.db, 'SELECT * FROM craftinghosting_servers WHERE server_id = ?', serverId)
+  if (!row) throw notFound('no_server', 'Unknown server')
+  run(ctx.db, `UPDATE craftinghosting_servers SET run_used_s = 0, cooldown_until = NULL, week_used_s = 0, warned = 0, rule_stop = NULL
+    WHERE uuid = ?`, row.uuid)
+  return row.uuid
 }

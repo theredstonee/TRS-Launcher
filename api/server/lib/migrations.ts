@@ -1107,6 +1107,20 @@ CREATE TABLE IF NOT EXISTS craftinghosting_admin (
       if (!hasColumn(db, 'craftinghosting_servers', 'eula_at')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN eula_at INTEGER')
     },
   },
+  {
+    // CraftingHosting: Laufzeit-Kontingent (24 h + Pause, 3 Tage Reset, Woche Mo–So).
+    version: 49,
+    run: (db) => {
+      if (!hasColumn(db, 'craftinghosting_servers', 'run_used_s')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN run_used_s INTEGER NOT NULL DEFAULT 0')
+      if (!hasColumn(db, 'craftinghosting_servers', 'run_acct_at')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN run_acct_at INTEGER')
+      if (!hasColumn(db, 'craftinghosting_servers', 'last_on_at')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN last_on_at INTEGER')
+      if (!hasColumn(db, 'craftinghosting_servers', 'cooldown_until')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN cooldown_until INTEGER')
+      if (!hasColumn(db, 'craftinghosting_servers', 'week_key')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN week_key TEXT')
+      if (!hasColumn(db, 'craftinghosting_servers', 'week_used_s')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN week_used_s INTEGER NOT NULL DEFAULT 0')
+      if (!hasColumn(db, 'craftinghosting_servers', 'warned')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN warned INTEGER NOT NULL DEFAULT 0')
+      if (!hasColumn(db, 'craftinghosting_servers', 'rule_stop')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN rule_stop TEXT')
+    },
+  },
 ]
 
 /** Migration 40 (siehe oben): Minispiel-Ranglisten. Exportiert für den Idempotenz-Test. */

@@ -7,10 +7,11 @@ import {
   craftingSetProperties, craftingWriteFile, craftingWorlds, craftingActivateWorld, craftingDeleteWorld, craftingWorldFiles,
   craftingDownloadUrls, worldNameQuery, modsBody, craftingChangeVersion, craftingBackups, versionBody,
   adminCraftingConfig, adminSetCraftingConfig, adminCraftingBlock, relayWake as wakeForTest,
-  craftingReinstall, craftingBackupAction, craftingWebhook, verifyWebhook, adminWebhook, webhookSecret,
+  craftingReinstall, craftingBackupAction, craftingWebhook, verifyWebhook, adminWebhook, webhookSecret, adminCraftingResetQuota,
   adminCraftingDelete, adminCraftingServers, adminCraftingStop, craftingCheckSubdomain, relayResolve, relayWake, sweepCraftingDns, craftingRestartDone, craftingWorldImport, craftingWorldUpload, createServerBody, MOTD_FOOTER, settingsBody,
 } from '../server/lib/craftinghosting'
 import { RULES } from '../server/lib/ratelimit'
+import { run } from '../server/lib/db'
 import { getUser } from '../server/lib/users'
 import { createWebSession } from '../server/lib/weblogin'
 import infoRoute from '../server/routes/v1/craftinghosting/info.get'
@@ -1018,5 +1019,73 @@ describe('craftinghosting routes: website session', () => {
     expect(partner.servers.get(s.id)!.eulaAccepted).toBe(false)
     expect((await craftingStart(env.ctx, u!, false)).state).toBe('running')
     expect(partner.startBodies.at(-1)).toEqual({ acceptEula: true })
+  })
+
+  it('runtime rules: quota over sessions, warning, stop + cooldown, idle reset, weekly cap', async () => {
+    const { env, partner } = setup()
+    const [u, staff] = await players(env, 'Steve', 'Mod')
+    adminSetCraftingConfig(env.ctx, staff!.uuid, { rules: { enabled: true, budgetHours: 1, cooldownHours: 2, idleResetDays: 3, weeklyOfflineHours: 8, warnMinutes: 30 } })
+    expect((await craftingInfo(env.ctx)).rules).toMatchObject({ budgetHours: 1, idleResetDays: 3 })
+    const s = await craftingCreate(env.ctx, u!, body())
+    // Ersteinrichtung (Plugin + Neustart) hier nicht nötig
+    run(env.ctx.db, 'UPDATE craftinghosting_servers SET setup = 1, transfers = 1 WHERE server_id = ?', s.id)
+    await craftingStart(env.ctx, u!, true)
+    const tick = async (n: number) => {
+      for (let i = 0; i < n; i++) {
+        env.clock.advance(60_000)
+        await sweepCraftingDns(env.ctx)
+      }
+    }
+    await sweepCraftingDns(env.ctx)
+    await tick(20)
+    let v = (await craftingServer(env.ctx, u!))!
+    expect(v.quota).toMatchObject({ usedSeconds: 1200, budgetSeconds: 3600, remainingSeconds: 2400 })
+
+    // Pause zwischendurch: zählt nicht, Kontingent bleibt
+    await craftingStop(env.ctx, u!, false)
+    await tick(30)
+    expect((await craftingServer(env.ctx, u!))!.quota!.usedSeconds).toBe(1200)
+    await craftingStart(env.ctx, u!, false)
+    await sweepCraftingDns(env.ctx)
+    partner.commands = []
+    await tick(11)
+    expect(partner.commands.some((c) => c.startsWith('tellraw @a') && c.includes('30'))).toBe(true)
+    await tick(30)
+    v = (await craftingServer(env.ctx, u!))!
+    expect(v.state).toBe('offline')
+    expect(v.session.lastStopReason).toBe('session_limit')
+    expect(v.quota!.cooldownUntil).not.toBeNull()
+    expect(await codeAsync(() => craftingStart(env.ctx, u!, false))).toBe('cooldown')
+
+    // Nach der Pause: volles Kontingent
+    env.clock.advance(2 * 3_600_000)
+    await sweepCraftingDns(env.ctx)
+    v = (await craftingServer(env.ctx, u!))!
+    expect(v.quota).toMatchObject({ usedSeconds: 0, remainingSeconds: 3600, cooldownUntil: null })
+
+    // 3 Tage aus setzt angebrochenes Kontingent zurück
+    await craftingStart(env.ctx, u!, false)
+    await sweepCraftingDns(env.ctx)
+    await tick(10)
+    await craftingStop(env.ctx, u!, false)
+    await sweepCraftingDns(env.ctx)
+    expect((await craftingServer(env.ctx, u!))!.quota!.idleResetAt).not.toBeNull()
+    env.clock.advance(3 * 86_400_000)
+    expect((await craftingServer(env.ctx, u!))!.quota!.usedSeconds).toBe(0)
+
+    // Team setzt zurück
+    run(env.ctx.db, 'UPDATE craftinghosting_servers SET cooldown_until = ? WHERE server_id = ?', env.clock.t + 3_600_000, s.id)
+    expect(await codeAsync(() => craftingStart(env.ctx, u!, false))).toBe('cooldown')
+    adminCraftingResetQuota(env.ctx, s.id)
+    expect((await craftingStart(env.ctx, u!, false)).state).toBe('running')
+
+    // Wochen-Limit: 160 h genutzt -> Pause bis Montag 0 Uhr Berlin
+    run(env.ctx.db, 'UPDATE craftinghosting_servers SET week_used_s = ?, run_used_s = 0 WHERE server_id = ?', 160 * 3600 - 30, s.id)
+    await sweepCraftingDns(env.ctx)
+    await tick(1)
+    v = (await craftingServer(env.ctx, u!))!
+    expect(v.state).toBe('offline')
+    const until = new Date(v.quota!.cooldownUntil!)
+    expect(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(until)).toBe('Mon 00:00')
   })
 })

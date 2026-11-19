@@ -19,6 +19,12 @@ const noticeText = ref('')
 const noticeLevel = ref<'info' | 'warning' | 'success'>('info')
 const maint = ref({ active: false, message: '' })
 const featureState = ref<Record<string, 'default' | 'on' | 'off'>>({})
+const rules = ref<HostingRules>({ enabled: true, budgetHours: 24, cooldownHours: 2, idleResetDays: 3, weeklyOfflineHours: 8, warnMinutes: 30 })
+type RuleKey = Exclude<keyof HostingRules, 'enabled'>
+const RULE_FIELDS: { k: RuleKey, min: number, max: number }[] = [
+  { k: 'budgetHours', min: 1, max: 168 }, { k: 'cooldownHours', min: 0, max: 48 }, { k: 'idleResetDays', min: 1, max: 30 },
+  { k: 'weeklyOfflineHours', min: 0, max: 48 }, { k: 'warnMinutes', min: 0, max: 120 },
+]
 const cfgBusy = ref(false)
 const cfgSaved = ref(false)
 const FEATURES = ['create', 'console', 'files', 'properties', 'addons', 'worlds', 'worldDownload', 'ownAddress', 'wakeOnJoin', 'versionChange', 'backups']
@@ -30,6 +36,7 @@ function applyCfg(c: AdminHostingConfig) {
   noticeLevel.value = c.notice?.level ?? 'info'
   maint.value = { active: c.maintenance.active, message: c.maintenance.message ?? '' }
   featureState.value = Object.fromEntries(FEATURES.map((k) => [k, c.overrides[k] === undefined ? 'default' : c.overrides[k] ? 'on' : 'off']))
+  if (c.rules) rules.value = { ...c.rules }
 }
 async function loadCfg() {
   try {
@@ -49,6 +56,7 @@ async function saveCfg() {
         notice: noticeText.value.trim() ? { markdown: noticeText.value, level: noticeLevel.value } : null,
         maintenance: { active: maint.value.active, message: maint.value.message.trim() || null },
         features,
+        rules: rules.value,
       },
     }))
     cfgSaved.value = true
@@ -103,6 +111,15 @@ onMounted(load)
 const ownerName = (s: AdminHostingServer) => s.owner?.name || s.owner?.uuid.slice(0, 8) || t.value.unknownOwner
 const tone = (s: AdminHostingServer) =>
   s.state === 'running' ? 'tone-ok' : s.state === 'failed' || s.state === 'suspended' ? 'tone-danger' : 'tone-muted'
+
+async function resetQuota(s: AdminHostingServer) {
+  try {
+    await api(`/v1/admin/craftinghosting/servers/${s.id}/reset-quota`, { method: 'POST' })
+    await load()
+  } catch (e) {
+    error.value = fill(a.value.common.failed, { error: apiMessage(e) })
+  }
+}
 
 async function unblock(s: AdminHostingServer) {
   try {
@@ -195,6 +212,18 @@ const { active } = useListKeys(servers)
           </li>
         </ul>
       </div>
+      <div class="rounded-lg bg-base-900 p-3 ring-1 ring-base-800">
+        <label class="flex items-center gap-2 text-sm font-semibold text-base-100">
+          <input v-model="rules.enabled" type="checkbox" class="check" :disabled="!can('worlds.close')">{{ t.rules }}
+        </label>
+        <p class="text-xs text-base-400">{{ t.rulesHint }}</p>
+        <div class="mt-2 grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          <label v-for="f in RULE_FIELDS" :key="f.k" class="text-xs text-base-300">
+            {{ t.ruleNames[f.k as RuleKey] }}
+            <input v-model.number="rules[f.k as RuleKey]" type="number" class="field mt-1 py-1" :min="f.min" :max="f.max" :disabled="!can('worlds.close') || !rules.enabled">
+          </label>
+        </div>
+      </div>
       <div v-if="webhook" class="rounded-lg bg-base-900 p-3 ring-1 ring-base-800">
         <p class="text-sm font-semibold text-base-100">{{ t.webhook }}</p>
         <p class="text-xs text-base-400">{{ t.webhookHint }}</p>
@@ -243,10 +272,15 @@ const { active } = useListKeys(servers)
             <template v-if="s.session.active && !s.session.hostPresent"> · {{ t.hostAway }}</template>
             <template v-if="s.deleteAt && !s.session.active"> · <span :title="when(s.deleteAt)">{{ fill(t.deleteAt, { date: rel(s.deleteAt) }) }}</span></template>
           </p>
+          <p v-if="s.quota" class="text-xs text-base-400">
+            {{ fill(t.quota, { used: Math.floor(s.quota.usedSeconds / 3600), budget: Math.round(s.quota.budgetSeconds / 3600), week: Math.floor(s.quota.weekUsedSeconds / 3600), cap: Math.round(s.quota.weekCapSeconds / 3600) }) }}
+            <template v-if="s.quota.cooldownUntil"> · <span :title="when(s.quota.cooldownUntil)">{{ fill(t.cooldownUntil, { date: rel(s.quota.cooldownUntil) }) }}</span></template>
+          </p>
           <p v-if="s.blocked" class="text-xs text-redstone-300">{{ fill(t.blocked, { reason: s.blocked.reason }) }}</p>
           <div v-if="can('worlds.close')" class="mt-1 flex flex-wrap gap-2">
             <button v-if="!s.blocked" type="button" class="btn btn-ghost px-2.5 py-1 text-xs" @click="acting = { server: s, kind: 'block' }"><SiteIcon name="ban" class="size-3.5" />{{ t.block }}</button>
             <button v-else type="button" class="btn btn-ghost px-2.5 py-1 text-xs" @click="unblock(s)"><SiteIcon name="check" class="size-3.5" />{{ t.unblock }}</button>
+            <button v-if="s.quota && (s.quota.usedSeconds > 0 || s.quota.cooldownUntil)" type="button" class="btn btn-ghost px-2.5 py-1 text-xs" @click="resetQuota(s)"><SiteIcon name="refresh" class="size-3.5" />{{ t.resetQuota }}</button>
             <button v-if="s.session.active" type="button" class="btn btn-ghost px-2.5 py-1 text-xs" @click="acting = { server: s, kind: 'stop' }"><SiteIcon name="pause" class="size-3.5" />{{ t.stop }}</button>
             <button type="button" class="btn btn-danger px-2.5 py-1 text-xs" @click="acting = { server: s, kind: 'delete' }"><SiteIcon name="trash" class="size-3.5" />{{ t.remove }}</button>
           </div>
