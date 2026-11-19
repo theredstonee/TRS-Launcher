@@ -264,6 +264,7 @@ describe('Assistent', () => {
     subdomainEnabled: true,
     subdomainStatus: 'available',
     access: 'friends',
+    eula: true,
     ...patch,
   })
 
@@ -290,6 +291,8 @@ describe('Assistent', () => {
   it('Schritt 3: Zugang', () => {
     expect(wizardStepValid(3, w({ access: 'open' }))).toBe(true)
     expect(wizardStepValid(3, w({ access: 'everyone' as never }))).toBe(false)
+    // EULA ist Pflicht
+    expect(wizardStepValid(3, w({ eula: false }))).toBe(false)
   })
 })
 

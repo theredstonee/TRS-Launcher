@@ -266,3 +266,12 @@ hosting tab. Already implement (hidden while the switch is false):
 - `Server.blocked: { reason, since } | null` → red banner "Vom TRS-Team gesperrt: <reason>", start/join disabled.
 - New errors: `503 hosting_maintenance` (`details.message`), `403 server_blocked` (`details.reason`),
   `403 feature_disabled` (`details.feature`) → friendly messages, reload `info`/server.
+
+## Slow start and EULA in the wizard (API §43.16)
+
+- The create wizard has a required checkbox for the Minecraft EULA; `POST /v1/craftinghosting/server` sends
+  `acceptEula: true`. The API stores it, reports `eulaAccepted: true` from then on and sends the EULA consent with the
+  first start itself – the launcher shows no EULA dialog, and TRS Wake can start the server right away.
+- If CraftingHosting is still bringing the node up (`503 service_unavailable`), `start` answers with
+  `state: "starting"` and the API retries in the background for up to 3 minutes. The console then returns the single
+  line "Server is starting …" instead of an error. No launcher change was needed for this part.

@@ -192,6 +192,8 @@ export interface NewCraftingServer {
   access: CraftingAccess
   /** Wunsch-Adresse ohne `.trs-launcher.de`. */
   subdomain?: string
+  /** Minecraft-EULA im Assistenten bestätigt (Pflicht). */
+  acceptEula?: boolean
 }
 
 /** Wie im Kern: 3–22 Zeichen aus Buchstaben, Ziffern, Leerzeichen und `. _ ' -`. */
@@ -460,6 +462,8 @@ export interface WizardState {
   subdomainEnabled: boolean
   subdomainStatus: SubdomainStatus
   access: CraftingAccess
+  /** Minecraft-EULA bestätigt – ohne kein Anlegen. */
+  eula: boolean
 }
 
 /** Darf der Assistent von diesem Schritt weiter? */
@@ -474,7 +478,7 @@ export function wizardStepValid(step: WizardStep, w: WizardState): boolean {
     // Prüfung fehlgeschlagen: die API prüft beim Anlegen selbst noch einmal.
     return validSubdomain(w.subdomain) && (w.subdomainStatus === 'available' || w.subdomainStatus === 'error')
   }
-  return (ACCESS_MODES as readonly string[]).includes(w.access)
+  return (ACCESS_MODES as readonly string[]).includes(w.access) && w.eula
 }
 
 // --- Anzeige ----------------------------------------------------------------------------

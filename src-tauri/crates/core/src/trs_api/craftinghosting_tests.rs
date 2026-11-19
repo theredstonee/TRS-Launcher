@@ -126,7 +126,7 @@ fn state() -> Arc<Api> {
 }
 
 fn new_server(name: &str) -> NewServer {
-    NewServer { name: name.into(), server_type: "paper".into(), version: "latest".into(), access: "friends".into(), subdomain: None }
+    NewServer { name: name.into(), server_type: "paper".into(), version: "latest".into(), access: "friends".into(), subdomain: None, accept_eula: false }
 }
 
 fn api_code(e: &Error) -> (&str, &str) {
@@ -1055,4 +1055,12 @@ async fn switched_off_features_answer_not_available() {
     let evil = dir.path().join("evil.zip");
     assert!(launcher.craftinghosting_download_backup("evil", &evil, |_| {}).await.is_err());
     assert!(!evil.exists());
+}
+
+#[test]
+fn eula_from_the_wizard_goes_into_the_create_body() {
+    let mut spec = new_server("Meine Welt");
+    assert!(spec.body().unwrap().get("acceptEula").is_none());
+    spec.accept_eula = true;
+    assert_eq!(spec.body().unwrap()["acceptEula"], true);
 }

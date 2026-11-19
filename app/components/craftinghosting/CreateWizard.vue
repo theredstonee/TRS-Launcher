@@ -40,6 +40,7 @@ const w = reactive<WizardState>({
   subdomainEnabled: true,
   subdomainStatus: 'idle',
   access: 'friends',
+  eula: false,
 })
 const nameTouched = ref(false)
 const subdomainTouched = ref(false)
@@ -137,9 +138,14 @@ async function create() {
       version: w.version,
       access: w.access,
       subdomain: w.subdomainEnabled && w.subdomain ? w.subdomain : undefined,
+      acceptEula: w.eula,
     },
     w.source === 'instance' ? w.instanceId : undefined,
   )
+}
+
+function openEula() {
+  if (info.value) void backend.openExternalUrl(info.value.eulaUrl).catch((e) => useToasts().error(e))
 }
 
 function typeName(id: string) {
@@ -361,6 +367,14 @@ const previewAddress = computed(() => (w.subdomainEnabled && w.subdomain ? `${w.
                 <span class="block font-semibold text-base-50">{{ t(`craftinghosting.access.${mode}`) }}</span>
                 <span class="mt-0.5 block text-xs text-base-400">{{ t(`craftinghosting.access.${mode}Hint`) }}</span>
               </span>
+            </label>
+          </div>
+          <div class="mt-4 rounded-xl border border-base-800 bg-base-850 p-4" data-testid="hosting-wizard-eula">
+            <p class="text-sm text-base-200">{{ t('craftinghosting.eula.text') }}</p>
+            <button type="button" class="mt-1 text-sm text-redstone-300 underline underline-offset-2" @click="openEula">{{ t('craftinghosting.eula.link') }}</button>
+            <label class="mt-3 flex cursor-pointer items-center gap-2 text-sm text-base-50">
+              <input v-model="w.eula" type="checkbox" class="accent-redstone-500" data-testid="hosting-wizard-eula-check" />
+              {{ t('craftinghosting.eula.accept') }}
             </label>
           </div>
           <CraftinghostingPlanTiles v-if="info" class="mt-5" :info="info" />

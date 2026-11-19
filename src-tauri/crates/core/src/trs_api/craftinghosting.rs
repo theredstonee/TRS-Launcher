@@ -611,10 +611,13 @@ pub struct NewServer {
     /// Wunsch-Adresse; ohne leitet die API eine aus dem Namen ab.
     #[serde(default)]
     pub subdomain: Option<String>,
+    /// Minecraft-EULA im Assistenten bestätigt.
+    #[serde(default)]
+    pub accept_eula: bool,
 }
 
 impl NewServer {
-    fn body(&self) -> Result<serde_json::Value> {
+    pub(crate) fn body(&self) -> Result<serde_json::Value> {
         let name = server_name(&self.name)?;
         let access = access(&self.access)?;
         if !type_id(&self.server_type) || !version_id(&self.version) {
@@ -623,6 +626,9 @@ impl NewServer {
         let mut body = json!({ "name": name, "serverType": self.server_type, "version": self.version, "access": access });
         if let Some(sub) = self.subdomain.as_deref().filter(|s| !s.trim().is_empty()) {
             body["subdomain"] = subdomain(sub)?.into();
+        }
+        if self.accept_eula {
+            body["acceptEula"] = true.into();
         }
         Ok(body)
     }
