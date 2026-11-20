@@ -38,6 +38,10 @@ minecraft {
 		// ./gradlew runClient -PtrsAutotest → öffnet Menü + HUD-Editor, macht Screenshots, beendet das Spiel.
 		extraRunJvmArguments.add('-Dtrsclient.autotest=true')
 	}
+	// -PtrsAutotestOnly=effects → nur ein Teil des Autotests
+	if (project.hasProperty('trsAutotestOnly')) {
+		extraRunJvmArguments.add("-Dtrsclient.autotest.only=${project.trsAutotestOnly}")
+	}
 }
 
 tasks.named('injectTags').configure {

@@ -28,6 +28,14 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **TRS Client: effects with icons instead of the vanilla icons.** The Potion Effects module now shows your effects with their icons and replaces the vanilla icons in the top right while it is on. They are drawn above the minimap and, as long as you haven't moved them, sit right next to it instead of underneath. Choose side by side or stacked and how the remaining time is shown: a bar that runs down, the time inside the icon, a ring that empties, or icon with name and time (always stacked). Optional: blink in the last 10 seconds, green/red border for good/bad effects, level (II, III …) and ∞ for endless effects, sort by remaining time, good before bad or the order you got them. Works on Fabric, Forge and NeoForge from Minecraft 1.14.4 and on Forge 1.7.10–1.13.2.
+
+### Deutsch
+- **TRS Client: Effekte mit Symbolen statt der Vanilla-Symbole.** Das Modul „Trank-Effekte“ zeigt deine Effekte jetzt mit ihren Symbolen und ersetzt die Vanilla-Symbole oben rechts, solange es an ist. Sie liegen über der Minimap und sitzen, solange du sie nicht verschoben hast, direkt daneben statt darunter. Wählbar: nebeneinander oder untereinander und wie die Restzeit erscheint – ein Balken, der abläuft, die Zeit im Symbol, ein Ring, der sich leert, oder Symbol mit Name und Zeit (immer untereinander). Optional: Blinken in den letzten 10 Sekunden, Rahmen grün/rot für gute/schlechte Effekte, Stufe (II, III …) und ∞ für endlose Effekte, Sortierung nach Restzeit, erst gute dann schlechte oder in der Reihenfolge, in der du sie bekommen hast. Das geht auf Fabric, Forge und NeoForge ab Minecraft 1.14.4 und auf Forge 1.7.10–1.13.2.
+
 ## 0.36.1 – 2026-11-19 – Ready, Set, Server | Server, fertig, los
 <!-- banner: accent=#ff4a3a motif=/news/0.36.1/banner.png -->
 <!-- shots:

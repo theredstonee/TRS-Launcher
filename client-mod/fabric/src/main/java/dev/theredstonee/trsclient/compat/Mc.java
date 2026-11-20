@@ -220,12 +220,14 @@ public final class Mc {
 		/*return instance.getEffect();*/
 	}
 
-	/** Unendliche Effektdauer (gibt es erst ab 1.19.4). */
+	/** Unendliche Effektdauer (ab 1.19.4); davor kappt der Server lange Effekte auf 32767 Ticks und setzt „ohne Zähler“. */
 	public static boolean infinite(MobEffectInstance instance) {
 		//? if >=1.19.4 {
 		return instance.isInfiniteDuration();
-		//?} else
-		/*return false;*/
+		//?} elif >=1.19.3 {
+		/*return false;
+		*///?} else
+		/*return instance.isNoCounter();*/
 	}
 
 	/** Übersetzter Name des Bioms, in dem der Spieler steht (z. B. "Ebene"). */

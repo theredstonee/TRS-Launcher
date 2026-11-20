@@ -40,6 +40,10 @@ minecraft {
 			if (project.hasProperty('trsAutotest')) {
 				property 'trsclient.autotest', 'true'
 			}
+			// -PtrsAutotestOnly=effects → nur ein Teil des Autotests
+			if (project.hasProperty('trsAutotestOnly')) {
+				property 'trsclient.autotest.only', project.trsAutotestOnly
+			}
 			mods {
 				trsclient {
 					source sourceSets.main

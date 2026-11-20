@@ -1,6 +1,7 @@
 package dev.theredstonee.trsclient.core.hud;
 
 import dev.theredstonee.trsclient.core.module.TrsModules;
+import dev.theredstonee.trsclient.core.ui.Canvas;
 import dev.theredstonee.trsclient.core.ui.TextWidth;
 import org.junit.jupiter.api.Test;
 
@@ -91,6 +92,9 @@ class EffectsPanelTest {
 		m.effectsTimeStyle.set(EffectsPanel.TimeStyle.RING);
 		assertEquals(EffectsPanel.RING_CELL, p.width(SIX));
 		assertTrue(EffectsPanel.ringPixels().length > 100);
+		m.effectsTimeStyle.set(EffectsPanel.TimeStyle.ROW);
+		m.effectsLayout.set(EffectsPanel.Layout.HORIZONTAL);
+		assertEquals(4 * EffectsPanel.CELL + 3 * EffectsPanel.GAP, p.height(), "Zeilen stehen immer untereinander");
 	}
 
 	@Test
@@ -111,5 +115,82 @@ class EffectsPanelTest {
 		m.effects.resetPosition();
 		m.minimap.setEnabled(false);
 		assertFalse(EffectsPanel.dock(m, 22, 100, 640, 360, out));
+	}
+
+	@Test
+	void ringRunsCoverEveryPixelOnce() {
+		final int[][] grid = new int[64][64];
+		Canvas c = new Canvas() {
+			@Override
+			public void fill(int x1, int y1, int x2, int y2, int argb) {
+				for (int y = y1; y < y2; y++) {
+					for (int x = x1; x < x2; x++) grid[y][x] += argb == EffectsPanel.TRACK ? 1000 : 1;
+				}
+			}
+
+			@Override
+			public void text(String text, int x, int y, int argb, boolean shadow) {
+			}
+
+			@Override
+			public int textWidth(String text) {
+				return 0;
+			}
+
+			@Override
+			public int lineHeight() {
+				return 9;
+			}
+
+			@Override
+			public String clip(String text, int maxWidth) {
+				return text;
+			}
+
+			@Override
+			public void flush() {
+			}
+
+			@Override
+			public void scissor(int x1, int y1, int x2, int y2) {
+			}
+
+			@Override
+			public void noScissor() {
+			}
+
+			@Override
+			public void raise(float z) {
+			}
+
+			@Override
+			public void push() {
+			}
+
+			@Override
+			public void translate(float x, float y) {
+			}
+
+			@Override
+			public void scale(float factor) {
+			}
+
+			@Override
+			public void pop() {
+			}
+		};
+		EffectsPanel.ring(c, 32, 32, 0.5f, 0xFF00FF00);
+		int n = EffectsPanel.ringPixels().length / 2;
+		int lit = 0;
+		int track = 0;
+		for (int[] row : grid) {
+			for (int v : row) {
+				assertTrue(v == 0 || v == 1 || v == 1000, "Pixel doppelt gezeichnet");
+				if (v == 1) lit++;
+				if (v == 1000) track++;
+			}
+		}
+		assertEquals(Math.round(n * 0.5f), lit);
+		assertEquals(n, lit + track);
 	}
 }

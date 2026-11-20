@@ -115,6 +115,12 @@ public final class AutoTest {
 				modules.crosshairShape.set(Crosshair.Shape.CROSS_DOT);
 				modules.crosshairColor.set(0xFFB84D);
 				// Chat-Meldungen der Befehle verblassen lassen (10 s)
+				// -PtrsAutotestOnly=effects: nur die Effekt-Anzeige
+				if ("effects".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 20;
+					wait = 20;
+					break;
+				}
 				next(220);
 				break;
 			case 3:
@@ -185,12 +191,34 @@ public final class AutoTest {
 				mc.displayGuiScreen(new GuiMainMenu());
 				next(20);
 				break;
+			case 20:
+				// Effekt-Anzeige: Screenshots PREFIX + effects-*.png
+				if (effectsTest.step(modules, new EffectsTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void give() {
+						command(mc, "effect clear @p");
+						command(mc, "effect give @p minecraft:speed 95 1");
+						command(mc, "effect give @p minecraft:strength 50 0");
+						command(mc, "effect give @p minecraft:night_vision 1000000 0");
+						command(mc, "effect give @p minecraft:slowness 30 2");
+						command(mc, "effect give @p minecraft:poison 9 0");
+					}
+				})) return;
+				step = 10;
+				break;
 			default:
 				if (step == 11) mc.shutdown();
 				step = 12;
 				break;
 		}
 	}
+
+	private final EffectsTest effectsTest = new EffectsTest();
 
 	private void next(int ticks) {
 		step++;

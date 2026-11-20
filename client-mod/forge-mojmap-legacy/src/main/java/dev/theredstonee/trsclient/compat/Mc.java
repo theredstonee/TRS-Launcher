@@ -312,8 +312,10 @@ public final class Mc {
 	public static boolean infinite(MobEffectInstance effect) {
 		//? if >=1.19.4 {
 		/*return effect.isInfiniteDuration();
+		*///?} elif >=1.19.3 {
+		/*return false;
 		*///?} else
-		return false;
+		return effect.isNoCounter();
 	}
 
 	// --- Resourcepacks (bis 1.15.2 generisches PackRepository<UnopenedResourcePack>) ---

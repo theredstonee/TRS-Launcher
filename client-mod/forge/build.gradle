@@ -62,6 +62,10 @@ minecraft {
 			if (project.hasProperty('trsAutotest')) {
 				systemProperty 'trsclient.autotest', 'true'
 			}
+			// -PtrsAutotestOnly=effects → nur ein Teil des Autotests
+			if (project.hasProperty('trsAutotestOnly')) {
+				systemProperty 'trsclient.autotest.only', project.trsAutotestOnly
+			}
 			// -PtrsApi=http://127.0.0.1:8787 → TRS API + Mojang-Join gegen eine lokale Attrappe (Umhang-/Abzeichen-Tests)
 			if (project.hasProperty('trsApi')) {
 				systemProperty 'trsclient.api.url', project.trsApi

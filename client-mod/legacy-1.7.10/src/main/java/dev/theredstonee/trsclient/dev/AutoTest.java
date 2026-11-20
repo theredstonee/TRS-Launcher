@@ -107,6 +107,12 @@ public final class AutoTest {
 				TrsClient.get().pvp().sprint().set(true);
 				modules.crosshairShape.set(Crosshair.Shape.CROSS_DOT);
 				modules.crosshairColor.set(0xFFB84D);
+				// -PtrsAutotestOnly=effects: nur die Effekt-Anzeige
+				if ("effects".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 20;
+					wait = 20;
+					break;
+				}
 				next(100);
 				break;
 			case 3:
@@ -167,12 +173,36 @@ public final class AutoTest {
 				mc.displayGuiScreen(new GuiMainMenu());
 				next(20);
 				break;
+			case 20:
+				// Effekt-Anzeige: Screenshots PREFIX + effects-*.png
+				if (effectsTest.step(modules, new EffectsTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void give() {
+						EntityPlayerMP p = serverPlayer(mc);
+						if (p == null) return;
+						p.clearActivePotions();
+						p.addPotionEffect(new PotionEffect(Potion.moveSpeed.id, 95 * 20, 1, true));
+						p.addPotionEffect(new PotionEffect(Potion.damageBoost.id, 50 * 20, 0, true));
+						p.addPotionEffect(new PotionEffect(Potion.nightVision.id, 20000000, 0, true));
+						p.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 30 * 20, 2, true));
+						p.addPotionEffect(new PotionEffect(Potion.poison.id, 9 * 20, 0, true));
+					}
+				})) return;
+				step = 10;
+				break;
 			default:
 				if (step == 11) mc.shutdown();
 				step = 12;
 				break;
 		}
 	}
+
+	private final EffectsTest effectsTest = new EffectsTest();
 
 	private void next(int ticks) {
 		step++;

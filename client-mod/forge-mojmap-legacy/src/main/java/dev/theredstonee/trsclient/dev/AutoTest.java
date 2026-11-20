@@ -56,6 +56,7 @@ public final class AutoTest {
 
 	private final CapeTest capeTest = new CapeTest();
 	private final EmoteTest emoteTest = new EmoteTest();
+	private final EffectsTest effectsTest = new EffectsTest();
 
 	private AutoTest() {
 	}
@@ -162,6 +163,12 @@ public final class AutoTest {
 				modules.crosshairShape.set(Crosshair.Shape.CROSS_DOT);
 				modules.crosshairColor.set(0xFFB84D);
 				// Chat-Meldungen der Befehle verblassen lassen (Chat verblasst nach 10 s)
+				// -PtrsAutotestOnly=effects: nur die Effekt-Anzeige
+				if ("effects".equals(System.getProperty("trsclient.autotest.only"))) {
+					step = 30;
+					wait = 40;
+					return;
+				}
 				next(230);
 				break;
 			}
@@ -314,6 +321,22 @@ public final class AutoTest {
 				// Emote-Rad und Emotes (gleiche Attrappe)
 				if (emoteTest.step(mc, modules, actions)) return;
 				next(5);
+				break;
+			}
+			case 30: {
+				// Effekt-Anzeige: Screenshots trsclient-<mc>-effects-*.png
+				if (effectsTest.step(mc, modules, new CapeTest.Actions() {
+					@Override
+					public void shot(String name) {
+						AutoTest.shot(mc, name);
+					}
+
+					@Override
+					public void command(String command) {
+						AutoTest.command(mc, command);
+					}
+				})) return;
+				step = 22;
 				break;
 			}
 			case 22: {

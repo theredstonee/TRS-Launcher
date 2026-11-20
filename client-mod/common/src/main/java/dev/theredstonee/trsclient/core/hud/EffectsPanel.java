@@ -239,13 +239,27 @@ public final class EffectsPanel {
 		return list.get(i);
 	}
 
-	private boolean horizontal() {
-		return m.effectsLayout.get() == Layout.HORIZONTAL;
+	// Zeilen mit Namen stehen immer untereinander, nebeneinander würden sie zu breit
+	static boolean horizontal(TrsModules m) {
+		return m.effectsLayout.get() == Layout.HORIZONTAL && m.effectsTimeStyle.get() != TimeStyle.ROW;
 	}
 
+	private boolean horizontal() {
+		return horizontal(m);
+	}
+
+	/** Restzeit als Text; leer bei endlosen Effekten (∞ wird gezeichnet, nicht jede Schrift hat das Zeichen). */
 	private String time(Entry e) {
-		if (e.endless()) return m.effectsLevel.get() ? "∞" : "";
+		if (e.endless()) return "";
 		return HudFormat.duration(e.duration, false);
+	}
+
+	private boolean infinity(Entry e) {
+		return e.endless() && m.effectsLevel.get();
+	}
+
+	private int timeWidth(Entry e, TextWidth tw) {
+		return infinity(e) ? INF_W : tw.width(time(e));
 	}
 
 	private String level(Entry e) {
@@ -280,7 +294,7 @@ public final class EffectsPanel {
 	}
 
 	private int rowW(Entry e, TextWidth tw) {
-		int text = Math.max(tw.width(rowName(e)), tw.width(time(e)));
+		int text = Math.max(tw.width(rowName(e)), timeWidth(e, tw));
 		return 2 + ICON + 4 + text + 4;
 	}
 
@@ -351,7 +365,9 @@ public final class EffectsPanel {
 				icons.draw(c, e.icon, x + 2, y + 2, tint);
 				corner(c, e, x, y, w, text, shadow);
 				String t = time(e);
-				if (!t.isEmpty()) {
+				if (infinity(e)) {
+					infinity(c, x + (w - INF_W) / 2, y + h - 9, text, true);
+				} else if (!t.isEmpty()) {
 					c.flush();
 					int tw = c.textWidth(t);
 					float s = tw > w - 2 ? (w - 2) / (float) tw : 1f;
@@ -373,7 +389,8 @@ public final class EffectsPanel {
 				icons.draw(c, e.icon, x + 2, y + 2, tint);
 				int tx = x + 2 + ICON + 4;
 				c.text(rowName(e), tx, y + 2, withAlpha(readable(color), a), shadow);
-				c.text(time(e), tx, y + 12, text, shadow);
+				if (infinity(e)) infinity(c, tx, y + 12, text, shadow);
+				else c.text(time(e), tx, y + 12, text, shadow);
 				break;
 			}
 		}
@@ -390,6 +407,30 @@ public final class EffectsPanel {
 		c.scale(s);
 		c.text(lvl, 0, 0, argb, shadow);
 		c.pop();
+	}
+
+	// ∞ als Pixelbild, 9×5, auf Höhe der Ziffern
+	private static final String[] INF = {".##...##.", "#..#.#..#", "#...#...#", "#..#.#..#", ".##...##."};
+	static final int INF_W = 9;
+
+	private static void infinity(Canvas c, int x, int y, int argb, boolean shadow) {
+		if (shadow) infinityPixels(c, x + 1, y + 2, (argb & 0xFF000000) | ((argb & 0xFCFCFC) >> 2));
+		infinityPixels(c, x, y + 1, argb);
+	}
+
+	private static void infinityPixels(Canvas c, int x, int y, int argb) {
+		for (int row = 0; row < INF.length; row++) {
+			String line = INF[row];
+			int start = -1;
+			for (int i = 0; i <= line.length(); i++) {
+				boolean on = i < line.length() && line.charAt(i) == '#';
+				if (on && start < 0) start = i;
+				if (!on && start >= 0) {
+					c.fill(x + start, y + row, x + i, y + row + 1, argb);
+					start = -1;
+				}
+			}
+		}
 	}
 
 	private static void outline(Canvas c, int x, int y, int w, int h, int argb) {
@@ -449,16 +490,60 @@ public final class EffectsPanel {
 		return out;
 	}
 
-	private static void ring(Canvas c, float cx, float cy, float fraction, int argb) {
+	// je Bildzeile: dy, dann Paare (dx, Rang im Uhrzeigersinn), nach dx sortiert
+	private static int[][] ringRows;
+
+	private static int[][] ringRows() {
+		if (ringRows != null) return ringRows;
 		int[] px = ringPixels();
-		int n = px.length / 2;
-		int lit = Math.round(n * fraction);
+		int r = (int) Math.ceil(RING_OUT);
+		List<int[]> rows = new ArrayList<int[]>();
+		for (int dy = -r; dy < r; dy++) {
+			List<int[]> cells = new ArrayList<int[]>();
+			for (int i = 0; i < px.length / 2; i++) {
+				if (px[2 * i + 1] == dy) cells.add(new int[]{px[2 * i], i});
+			}
+			if (cells.isEmpty()) continue;
+			Collections.sort(cells, new Comparator<int[]>() {
+				@Override
+				public int compare(int[] a, int[] b) {
+					return a[0] - b[0];
+				}
+			});
+			int[] row = new int[1 + cells.size() * 2];
+			row[0] = dy;
+			for (int k = 0; k < cells.size(); k++) {
+				row[1 + 2 * k] = cells.get(k)[0];
+				row[2 + 2 * k] = cells.get(k)[1];
+			}
+			rows.add(row);
+		}
+		ringRows = rows.toArray(new int[0][]);
+		return ringRows;
+	}
+
+	// zusammenhängende Pixel einer Zeile als ein Rechteck (deutlich weniger Flächen)
+	static void ring(Canvas c, float cx, float cy, float fraction, int argb) {
+		int lit = Math.round(ringPixels().length / 2 * fraction);
 		int ox = Math.round(cx);
 		int oy = Math.round(cy);
-		for (int i = 0; i < n; i++) {
-			int x = ox + px[2 * i];
-			int y = oy + px[2 * i + 1];
-			c.fill(x, y, x + 1, y + 1, i < lit ? argb : TRACK);
+		for (int[] row : ringRows()) {
+			int y = oy + row[0];
+			int n = (row.length - 1) / 2;
+			int start = row[1];
+			boolean on = row[2] < lit;
+			for (int k = 1; k <= n; k++) {
+				boolean end = k == n;
+				int dx = end ? 0 : row[1 + 2 * k];
+				boolean nextOn = !end && row[2 + 2 * k] < lit;
+				if (end || dx != row[1 + 2 * (k - 1)] + 1 || nextOn != on) {
+					c.fill(ox + start, y, ox + row[1 + 2 * (k - 1)] + 1, y + 1, on ? argb : TRACK);
+					if (!end) {
+						start = dx;
+						on = nextOn;
+					}
+				}
+			}
 		}
 	}
 
@@ -481,7 +566,7 @@ public final class EffectsPanel {
 		int y = HudLayout.resolveY(effects.position(), h, sh);
 		if (x >= mx + mw || x + w <= mx || y >= my + mh || y + h <= my) return false;
 		int gap = 3;
-		boolean horizontal = m.effectsLayout.get() == Layout.HORIZONTAL;
+		boolean horizontal = horizontal(m);
 		boolean left = mx - gap - w >= 0;
 		boolean below = my + mh + gap + h <= sh;
 		if (horizontal ? left || !below : !below && left) {
