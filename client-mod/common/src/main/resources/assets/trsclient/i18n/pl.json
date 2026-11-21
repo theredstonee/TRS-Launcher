@@ -2742,5 +2742,11 @@
   "setting.waypoints.sort": "Kolejność listy",
   "setting.waypoints.sort.distance": "Odległość",
   "setting.waypoints.sort.name": "Nazwa",
-  "setting.waypoints.sort.created": "Najnowsze"
+  "setting.waypoints.sort.created": "Najnowsze",
+  "setting.trsOnline.showPartnerServers": "Serwery partnerskie na liście serwerów",
+  "menus.partners.title": "Serwery partnerskie",
+  "menus.partners.hide": "ukryj",
+  "menus.partners.own": "Twoje serwery",
+  "menus.partners.tag": "PARTNER",
+  "menus.partners.join": "Dołącz"
 }

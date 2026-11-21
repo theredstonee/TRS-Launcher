@@ -106,6 +106,11 @@ public final class AutoTest {
 			MenusTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=partnerservers: Partner-Server in der Serverliste (mit scripts/mock-partner-api.mjs)
+		if ("partnerservers".equals(System.getProperty("trsclient.autotest.only"))) {
+			PartnerServersTest.install();
+			return;
+		}
 		// -PtrsAutotestOnly=serverrules: TRS Server Rules gegen einen echten Server mit Plugin (-PtrsAutotestServer, RCON)
 		if ("serverrules".equals(System.getProperty("trsclient.autotest.only"))) {
 			ServerRulesTest.install();

@@ -221,6 +221,7 @@ public final class TrsClient {
 		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.qol.LegacyQol.get());
 		MinecraftForge.EVENT_BUS.register(dev.theredstonee.trsclient.comfort.LegacyComfort.get());
 		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.menus.LegacyMenus());
+		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.menus.LegacyPartners());
 		MinecraftForge.EVENT_BUS.register(keySearch);
 		MinecraftForge.EVENT_BUS.register(disconnect);
 		MinecraftForge.EVENT_BUS.register(new dev.theredstonee.trsclient.online.LegacyOnline.NameTags());

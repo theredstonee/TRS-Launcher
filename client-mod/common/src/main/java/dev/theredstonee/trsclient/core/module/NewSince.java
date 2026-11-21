@@ -194,6 +194,8 @@ public final class NewSince {
 
 	/** Effekt-Anzeige mit Symbolen statt der Vanilla-Symbole (Version nach TRS Client 0.28.0). */
 	public static final String EFFECTS_HUD = "0.29.0";
+	/** Partner-Server in der Serverliste (an die nächste Client-Version anpassen). */
+	public static final String PARTNER_SERVERS = "0.30.0";
 
 	private static final Map<String, String> SINCE = new LinkedHashMap<String, String>();
 	/** Zusatzbereiche je Modul (Modul-ID → Einträge). */
@@ -287,6 +289,7 @@ public final class NewSince {
 		// Live-Wegpunkte mit Freunden.
 		// Neue Wegpunkte: Einstellungen des Moduls.
 		add(WAYPOINTS_2, "waypoints.quickKey", "waypoints.labels", "waypoints.deathKeep", "waypoints.deathGuide", "waypoints.teleport", "waypoints.sort");
+		add(PARTNER_SERVERS, "trsOnline.showPartnerServers");
 		add(EFFECTS_HUD, "effects.layout", "effects.timeStyle", "effects.sort", "effects.blink", "effects.border", "effects.level");
 		add(WAYPOINT_LIVE, "waypoints.shareLive", "waypoints.shareDeath", "waypoints.sharePosition", "waypoints.friendWaypoints",
 				"waypoints.friendPositions", FRIENDS_WAYPOINTS, WORLD_MAP_FRIENDS);

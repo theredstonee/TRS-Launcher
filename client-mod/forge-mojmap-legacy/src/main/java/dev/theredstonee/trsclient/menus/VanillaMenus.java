@@ -328,6 +328,7 @@ public final class VanillaMenus {
 	 */
 	public static void afterRender(Screen s, Gfx g, int mouseX, int mouseY) {
 		KeySearchUi.poll();
+		PartnerList.update(s, mouseX, mouseY);
 		afterRenderLoading(s, g, mouseX, mouseY);
 		connectStatus(s, g);
 		dev.theredstonee.trsclient.social.SocialHooks.overScreen(g);
@@ -576,6 +577,7 @@ public final class VanillaMenus {
 		DisconnectUi.afterInit(s, host);
 		if (s instanceof net.minecraft.client.gui.screens.TitleScreen) dev.theredstonee.trsclient.core.connect.ServerPacks.cancelPreloads();
 		if (s instanceof JoinMultiplayerScreen) {
+			PartnerList.update(s, -1, -1);
 			// Schnell verbinden: zuletzt genutzten Server schon jetzt auflösen.
 			try {
 				dev.theredstonee.trsclient.core.connect.FastConnect.prefetch(DisconnectUi.lastAddress());

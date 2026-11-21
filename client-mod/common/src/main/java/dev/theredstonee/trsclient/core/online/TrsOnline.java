@@ -275,9 +275,27 @@ public final class TrsOnline {
 		dev.theredstonee.trsclient.core.halloween.HalloweenService.get().http(http);
 		dev.theredstonee.trsclient.core.halloween.Miyako.get().http(http);
 		dev.theredstonee.trsclient.core.halloween.Miyako.get().dir(configDir.resolve("trsclient").resolve("miyako"));
-		TrsOnline online = new TrsOnline(config, platform, http, configDir.resolve("trsclient").resolve("capes"),
+		final TrsOnline online = new TrsOnline(config, platform, http, configDir.resolve("trsclient").resolve("capes"),
 				new PlayerEventStream.UrlOpener(userAgent));
 		current = online;
+		dev.theredstonee.trsclient.core.partner.PartnerServers.get().init(configDir, http, cleanVersion(platform.minecraftVersion()),
+				new dev.theredstonee.trsclient.core.partner.PartnerServers.Env() {
+					@Override
+					public boolean enabled() {
+						dev.theredstonee.trsclient.core.module.TrsModules m = dev.theredstonee.trsclient.core.intro.IntroGate.modules();
+						return m != null && m.trsOnline.isEnabled() && m.showPartnerServers.get() && online.config().launcherEnabled();
+					}
+
+					@Override
+					public String apiBase() {
+						return online.apiBase();
+					}
+
+					@Override
+					public String token() {
+						return online.token();
+					}
+				});
 		try {
 			Runtime.getRuntime().addShutdownHook(new Thread(online::shutdown, "TRS-Offline"));
 		} catch (RuntimeException ignored) {
