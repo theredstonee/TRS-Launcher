@@ -10,6 +10,7 @@ use trs_core::trs_api::craftinghosting::{
 };
 use trs_core::trs_api::craftinghosting_backups::{Backups, VersionChange, backup_file_name};
 use trs_core::trs_api::craftinghosting_files::{Addons, DirListing, FileContent, Properties, SavedFile};
+use trs_core::trs_api::craftinghosting_mods_upload::ModsUploaded;
 use trs_core::trs_api::craftinghosting_world::{UploadTarget, WorldProgress, WorldSource};
 use trs_core::trs_api::craftinghosting_worlds::{WorldDownload, Worlds, download_file_name};
 
@@ -106,6 +107,22 @@ pub async fn craftinghosting_mods(launcher: State<'_, LauncherState>, projects: 
 #[tauri::command]
 pub async fn craftinghosting_install_versions(launcher: State<'_, LauncherState>, versions: Vec<VersionPick>) -> CommandResult<ModsResult> {
     Ok(launcher.craftinghosting_install_versions(&versions).await?)
+}
+
+/// Mod-Dateien einer Instanz 1:1 auf den Server (ersetzt die vorhandenen; Server muss aus sein).
+#[tauri::command]
+pub async fn craftinghosting_upload_mods(
+    launcher: State<'_, LauncherState>,
+    instance_id: String,
+    on_progress: Channel<WorldProgress>,
+) -> CommandResult<ModsUploaded> {
+    trs_core::platform::desktop_only()?;
+    let launcher = launcher.inner().clone();
+    Ok(launcher
+        .craftinghosting_upload_mods(&instance_id, move |p| {
+            let _ = on_progress.send(p);
+        })
+        .await?)
 }
 
 /// Welt einer Instanz packen, hochladen und einspielen (Server muss aus sein).

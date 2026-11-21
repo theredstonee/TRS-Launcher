@@ -26,6 +26,7 @@ pub mod chat;
 pub mod craftinghosting;
 pub mod craftinghosting_backups;
 pub mod craftinghosting_files;
+pub mod craftinghosting_mods_upload;
 pub mod craftinghosting_world;
 pub mod craftinghosting_worlds;
 pub mod creator;

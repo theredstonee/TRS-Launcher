@@ -242,6 +242,8 @@ describe('Server aus einer Instanz', () => {
   it('Mods passen nur zum gleichen Loader', () => {
     expect(modsMatch('fabric', 'fabric')).toBe(true)
     expect(modsMatch('forge', 'forge')).toBe(true)
+    expect(modsMatch('neoforge', 'neoforge')).toBe(true)
+    expect(modsMatch('fabric', 'forge')).toBe(false)
     expect(modsMatch('fabric', 'paper')).toBe(false)
     expect(modsMatch('vanilla', 'vanilla')).toBe(false)
   })

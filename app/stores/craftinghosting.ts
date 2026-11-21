@@ -31,7 +31,6 @@ import {
   cleanHostingCommand,
   hostingBlockedReason,
   joinVersion,
-  modrinthProjects,
   parseOrigins,
   pollInterval,
   serverAddress,
@@ -527,10 +526,10 @@ export const useCraftingHostingStore = defineStore('craftinghosting', () => {
   /** Modrinth-Mods einer Instanz auf den Server; ohne Modrinth-Quelle bleibt nur die Liste. */
   async function transferMods(instanceId: string): Promise<ModsTransfer | null> {
     modsTransfer.value = null
+    // 1:1 die Dateien aus der Instanz – keine neuen Versionen von Modrinth.
     const outcome = await run('mods', async () => {
-      const { projects, other } = modrinthProjects(await backend.listContent(instanceId, 'mod'))
-      const result = projects.length ? await backend.craftinghosting.mods(projects) : null
-      return { result, other }
+      const { files } = await backend.craftinghosting.uploadMods(instanceId, () => {})
+      return { result: { installed: files, skipped: [] }, other: [] }
     })
     modsTransfer.value = outcome
     return outcome

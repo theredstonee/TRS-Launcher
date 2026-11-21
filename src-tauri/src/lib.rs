@@ -938,6 +938,7 @@ pub fn run() {
             commands::craftinghosting::craftinghosting_logs,
             commands::craftinghosting::craftinghosting_stats,
             commands::craftinghosting::craftinghosting_mods,
+            commands::craftinghosting::craftinghosting_upload_mods,
             commands::craftinghosting::craftinghosting_install_versions,
             commands::craftinghosting::craftinghosting_upload_world,
             commands::craftinghosting::craftinghosting_files,

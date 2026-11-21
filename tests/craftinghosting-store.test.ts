@@ -95,6 +95,7 @@ const craftinghosting = {
     return { fileName: 'Meine-Welt-world.zip', files: 3, bytes: 100, truncated: false }
   }),
   uploadWorldDisk: vi.fn(async () => server()),
+  uploadMods: vi.fn(async () => ({ files: ['lithium.jar', 'own.jar'] })),
   uploadWorld: vi.fn(async (_i: string, _f: string, onProgress: (p: { phase: string; percent: number }) => void) => {
     onProgress({ phase: 'upload', percent: 50 })
     return server()
@@ -283,7 +284,7 @@ describe('Konsole, Zugang, Löschen', () => {
 })
 
 describe('Umbenennen, Mods, Welt', () => {
-  it('benennt um und übernimmt Modrinth-Mods einer Instanz', async () => {
+  it('benennt um und übernimmt die Mod-Dateien einer Instanz 1:1', async () => {
     craftinghosting.server.mockImplementation(async () => server())
     const s = await store()
     await s.load()
@@ -292,9 +293,10 @@ describe('Umbenennen, Mods, Welt', () => {
     expect(s.server?.name).toBe('Neue Welt')
 
     const result = await s.transferMods('inst')
-    expect(listContent).toHaveBeenCalledWith('inst', 'mod')
-    expect(craftinghosting.mods).toHaveBeenCalledWith(['gvQqBUqZ'])
-    expect(result?.other).toEqual(['JEI', 'own.jar'])
+    expect(craftinghosting.uploadMods).toHaveBeenCalledWith('inst', expect.any(Function))
+    expect(craftinghosting.mods).not.toHaveBeenCalled()
+    expect(result?.result?.installed).toEqual(['lithium.jar', 'own.jar'])
+    expect(result?.other).toEqual([])
   })
 
   it('spielt eine Welt ein und meldet den Fortschritt', async () => {
@@ -376,9 +378,9 @@ describe('Inhalte aus der Instanz übernehmen', () => {
     expect(await s.transferFromInstance({ instanceId: 'alt2', mods: true, world: 'Welt' })).toBe(true)
     expect(s.transfer?.steps).toEqual({ stop: 'done', mods: 'done', world: 'done', start: 'done' })
     expect(s.transfer?.active).toBe(false)
-    expect(s.transfer?.mods?.result?.installed).toEqual(['gvQqBUqZ'])
+    expect(s.transfer?.mods?.result?.installed).toEqual(['lithium.jar', 'own.jar'])
     expect(craftinghosting.stop).toHaveBeenCalled()
-    expect(listContent).toHaveBeenCalledWith('alt2', 'mod')
+    expect(craftinghosting.uploadMods).toHaveBeenCalledWith('alt2', expect.any(Function))
     expect(craftinghosting.uploadWorld).toHaveBeenCalledWith('alt2', 'Welt', expect.any(Function))
     expect(craftinghosting.start).toHaveBeenCalledWith(false)
     expect(s.origin?.transferred).toBe(true)

@@ -514,7 +514,7 @@ export function planFromInstance(instance: InstanceSource, info: CraftingInfo | 
 
 /** Mods einer Instanz mit diesem Loader passen auf diesen Servertyp. */
 export function modsMatch(loaderKind: string, serverType: string): boolean {
-  return (loaderKind === 'fabric' || loaderKind === 'forge') && loaderKind === serverType
+  return ['fabric', 'forge', 'neoforge', 'quilt'].includes(loaderKind) && loaderKind === serverType
 }
 
 // --- Assistent --------------------------------------------------------------------------

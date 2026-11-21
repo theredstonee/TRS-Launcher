@@ -1423,6 +1423,9 @@ export const backend = {
     stats: () => checked(craftingStatsSchema, 'craftinghosting_stats'),
     /** Modrinth-Projekte (IDs) auf den Server; Client-Mods überspringt die API. */
     mods: (projects: string[]) => checked(craftingModsResultSchema, 'craftinghosting_mods', { projects }),
+    /** Mod-Dateien einer Instanz 1:1 auf den Server; ersetzt die vorhandenen (Server muss aus sein). */
+    uploadMods: (instanceId: string, onProgress: (p: WorldUploadProgress) => void) =>
+      checked(z.object({ files: z.array(z.string().max(200)).max(500) }), 'craftinghosting_upload_mods', { instanceId, onProgress: channel(onProgress) }),
     /** Welt einer Instanz packen, hochladen und einspielen (Server muss aus sein); ohne `target` ersetzt sie `world`. */
     uploadWorld: (instanceId: string, folder: string, onProgress: (p: WorldUploadProgress) => void, target?: WorldUploadTarget) =>
       checked(craftingServerSchema, 'craftinghosting_upload_world', { instanceId, folder, target: target ?? null, onProgress: channel(onProgress) }),
