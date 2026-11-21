@@ -247,6 +247,10 @@ pub enum LiveEvent {
     CreatorHelperInvite { creator: UserRef, rights: Vec<String> },
     /// Der Creator hat dich als Helfer entfernt.
     CreatorHelperRemoved { creator: Option<UserRef> },
+    /// Partner-Programm (§44.8): eigener Partner geändert (Einlösen, Beenden) – neu laden.
+    PartnerSupportChanged,
+    /// An Partner-Mitglieder: Antrag entschieden, Kontingent geändert …
+    PartnerUpdated { slug: String, kind: Option<String> },
     /// Fernbedienung (§33): geprüfter Befehl vom Handy an DIESEN PC (Signatur, Ziel und Argumente geprüft).
     RemoteCommand { command: Box<super::remote::RemoteCommand> },
     /// Ein Befehl wurde am PC abgeholt (`running`), ist fertig (`done`) oder gescheitert (`failed`).
@@ -496,6 +500,9 @@ pub fn decode(event: &str, data: &str) -> Option<LiveEvent> {
     // Creator-Programm (§35.7): eigene Felder (`kind`, `tier`, `milestone`).
     if event.starts_with("creator_") {
         return super::creator::decode_live(event, data);
+    }
+    if event.starts_with("partner_") {
+        return super::partner::decode_live(event, data);
     }
     // Halloween (§36): Nutzlast = Stand von `GET /v1/me/halloween`.
     if event.starts_with("halloween_") {

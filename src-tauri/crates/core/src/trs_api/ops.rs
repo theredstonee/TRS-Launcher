@@ -18,6 +18,31 @@ use super::head_cosmetics::wearable_hat;
 use super::{Consent, PRESENCE_INTERVAL, Req, TrsApi, me_view, no_account, png, validate};
 use crate::{Error, Launcher, Result};
 
+/// Antwort von `POST /v1/capes/redeem` (auch `kind: "cape"` beim gemeinsamen Einlösen, §44.2).
+pub(super) fn redeem_result(result: ApiRedeem) -> Result<super::types::RedeemResult> {
+    match (result.cape, result.cosmetic) {
+        (Some(cape), _) if validate::cape_id(&cape.id) => Ok(super::types::RedeemResult {
+            kind: "cape".into(),
+            name: validate::cape_name(&cape.name, &cape.id),
+            cape_id: Some(cape.id),
+            cosmetic_id: None,
+            already_owned: result.already_owned,
+            wearable_hat: false,
+            slot: None,
+        }),
+        (None, Some(c)) if validate::cape_id(&c.id) => Ok(super::types::RedeemResult {
+            kind: "cosmetic".into(),
+            name: validate::cape_name(&c.name, &c.id),
+            wearable_hat: wearable_hat(&c),
+            slot: EQUIP_SLOTS.contains(&c.slot.as_str()).then(|| c.slot.clone()),
+            cape_id: None,
+            cosmetic_id: Some(c.id),
+            already_owned: result.already_owned,
+        }),
+        _ => Err(bad_response()),
+    }
+}
+
 /// Wartezeit nach Fehlern, die sich nicht von selbst lösen (Sperre, Anmeldung abgelehnt).
 const PRESENCE_BACKOFF: Duration = Duration::from_secs(5 * 60);
 
@@ -385,27 +410,7 @@ impl Launcher {
                 "Codes haben 20 Zeichen, z. B. 7K3QF-M2XPA-9RTVB-C4HJN."
             )))?;
         let result: ApiRedeem = self.trs_get(Req::post("/v1/capes/redeem", json!({ "code": code }))).await?;
-        match (result.cape, result.cosmetic) {
-            (Some(cape), _) if validate::cape_id(&cape.id) => Ok(super::types::RedeemResult {
-                kind: "cape".into(),
-                name: validate::cape_name(&cape.name, &cape.id),
-                cape_id: Some(cape.id),
-                cosmetic_id: None,
-                already_owned: result.already_owned,
-                wearable_hat: false,
-                slot: None,
-            }),
-            (None, Some(c)) if validate::cape_id(&c.id) => Ok(super::types::RedeemResult {
-                kind: "cosmetic".into(),
-                name: validate::cape_name(&c.name, &c.id),
-                wearable_hat: wearable_hat(&c),
-                slot: EQUIP_SLOTS.contains(&c.slot.as_str()).then(|| c.slot.clone()),
-                cape_id: None,
-                cosmetic_id: Some(c.id),
-                already_owned: result.already_owned,
-            }),
-            _ => Err(bad_response()),
-        }
+        redeem_result(result)
     }
 
     /// Eigene Kopf-Kosmetik, die der TRS Client zeichnen kann (freigeschaltet, auch v2), mit „aufgesetzt“.

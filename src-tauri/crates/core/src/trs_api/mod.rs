@@ -41,6 +41,7 @@ pub mod packs;
 pub mod live;
 pub mod media;
 mod ops;
+pub mod partner;
 pub mod png;
 mod presence;
 pub mod push;
@@ -483,6 +484,9 @@ fn message_for(code: &str) -> Msg {
         "creator_pet_owned" => msg!("trsApi.creator_pet_owned", "Du hast schon ein eigenes Haustier."),
         "request_closed" => msg!("trsApi.request_closed", "Das Team arbeitet schon an diesem Wunsch – er lässt sich nicht mehr ändern."),
         "code_not_found" => msg!("trsApi.code_not_found", "Diesen Code gibt es nicht (mehr)."),
+        // --- Partner (§44) ---
+        "partner_code_used" => msg!("trsApi.partner_code_used", "Dieser Einmal-Code wurde schon eingelöst oder gesperrt."),
+        "partner_not_found" => msg!("trsApi.partner_not_found", "Diesen Partner gibt es nicht (mehr)."),
         // --- Halloween (§36) ---
         "pumpkin_unknown" => msg!("trsApi.pumpkin_unknown", "Diesen Kürbis gibt es nicht."),
         "trick_used" => msg!("trsApi.trick_used", "Heute hast du schon angeklopft – morgen wieder!"),
@@ -1081,3 +1085,5 @@ mod creator_pet_tests;
 mod halloween_tests;
 #[cfg(test)]
 mod featured_tests;
+#[cfg(test)]
+mod partner_tests;

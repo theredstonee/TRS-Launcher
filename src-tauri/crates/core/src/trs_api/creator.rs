@@ -1380,12 +1380,17 @@ impl Launcher {
     pub async fn creator_redeem(&self, code: &str) -> Result<CreatorRedeem> {
         let code = code_arg(code)?;
         let raw: Value = self.trs_get(Req::post("/v1/me/creator/redeem", json!({ "code": code }))).await?;
+        self.creator_redeem_result(&raw).await
+    }
+
+    /// Antwort von `POST /v1/me/creator/redeem` (auch `kind: "creator"` beim gemeinsamen Einlösen, §44.2).
+    pub(super) async fn creator_redeem_result(&self, raw: &Value) -> Result<CreatorRedeem> {
         let mut creator = CreatorCard::from_value(raw.get("creator").cloned()).ok_or_else(super::bad_response)?;
         self.card_images(&mut creator).await;
         Ok(CreatorRedeem {
             creator,
             support_changed: raw.get("supportChanged").and_then(Value::as_bool).unwrap_or(false),
-            switch_available_at: time(str_of(&raw, "switchAvailableAt")),
+            switch_available_at: time(str_of(raw, "switchAvailableAt")),
             fan_cape_granted: raw.get("fanCapeGranted").and_then(Value::as_bool).unwrap_or(false),
         })
     }
