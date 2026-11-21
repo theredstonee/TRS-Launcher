@@ -20,6 +20,14 @@ const { data: creatorData } = await useApiFetch<{ creators: Pick<SiteCreator, 'u
   }),
 })
 const homeCreators = computed(() => creatorData.value?.creators ?? [])
+// Partner (§44.3): runde Logos wie die Creator-Reihe.
+const { p: pt } = usePartnerText()
+const { data: partnerData } = await useApiFetch<{ partners: Pick<PartnerCard, 'slug' | 'name' | 'logo'>[] }>('/v1/partners', {
+  key: 'home-partners',
+  default: () => ({ partners: [] }),
+  transform: (r: { partners: PartnerCard[] }) => ({ partners: r.partners.slice(0, 8).map(({ slug, name, logo }) => ({ slug, name, logo })) }),
+})
+const homePartners = computed(() => partnerData.value?.partners ?? [])
 /** Halloween-Event global an: Karte (Kürbis-Suche, Süßes oder Saures) und Kürbis `web-home` sind da. */
 const halloween = computed(() => eventsData.value?.events.some((e) => e.id === 'halloween' && e.active) ?? false)
 /** Halloween-Look (Szene, Tropfen, Zeile): zusätzlich nicht gesperrt und nicht selbst abgeschaltet (§32.6). */
@@ -208,6 +216,27 @@ const powered = ref(false)
       </ul>
     </section>
 
+    <!-- Partner (§44.3): eine Reihe Logos, ausgeblendet ohne Partner -->
+    <section v-if="homePartners.length" id="partners" class="mx-auto max-w-6xl px-4 pt-16 sm:px-6" aria-labelledby="partners-title">
+      <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+        <div>
+          <h2 id="partners-title" class="heading text-3xl">{{ pt.home.title }}</h2>
+          <p class="mt-2 max-w-xl text-sm text-base-400">{{ pt.home.lead }}</p>
+        </div>
+        <NuxtLink :to="lp('/partners')" class="inline-flex items-center gap-1.5 text-sm font-semibold text-redstone-400 hover:text-redstone-300">
+          {{ pt.home.all }} <SiteIcon name="arrow" class="size-4" />
+        </NuxtLink>
+      </div>
+      <ul class="home-creators mt-7" data-fx="stagger">
+        <li v-for="x in homePartners" :key="x.slug">
+          <NuxtLink :to="lp(partnerPath(x.slug))" class="home-creator home-partner">
+            <PartnerLogo :logo="x.logo" :name="x.name" :size="60" />
+            <span class="mt-2 max-w-full truncate text-sm font-semibold text-base-100">{{ x.name }}</span>
+          </NuxtLink>
+        </li>
+      </ul>
+    </section>
+
     <!-- Funktionen -->
     <section id="features" class="mx-auto max-w-6xl px-4 pt-16 sm:px-6" aria-labelledby="features-title">
       <h2 id="features-title" class="heading text-3xl">{{ m.home.featuresTitle }}</h2>
@@ -361,7 +390,9 @@ const powered = ref(false)
   padding: 0.35rem 0.2rem;
 }
 .home-creator:hover :deep(.creator-avatar),
-.home-creator:focus-visible :deep(.creator-avatar) {
+.home-creator:focus-visible :deep(.creator-avatar),
+.home-partner:hover :deep(.partner-logo),
+.home-partner:focus-visible :deep(.partner-logo) {
   transform: translateY(-3px);
 }
 .hero {

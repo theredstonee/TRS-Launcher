@@ -8,6 +8,7 @@ const en = {
   dashNav: 'Partner dashboard',
   categories: { hosting: 'Hosting', network: 'Server networks', other: 'More partners' } as Record<string, string>,
   category: { hosting: 'Hosting', network: 'Server network', other: 'Partner' } as Record<string, string>,
+  home: { title: 'Partners', lead: 'Companies and projects that work with the TRS Launcher.', all: 'All partners' },
   pub: {
     seo: {
       title: 'Partners – TRS Launcher',
@@ -400,6 +401,7 @@ const de: PartnerTexts = {
   dashNav: 'Partner-Dashboard',
   categories: { hosting: 'Hosting', network: 'Server-Netzwerke', other: 'Weitere Partner' },
   category: { hosting: 'Hosting', network: 'Server-Netzwerk', other: 'Partner' },
+  home: { title: 'Partner', lead: 'Firmen und Projekte, die mit dem TRS Launcher zusammenarbeiten.', all: 'Alle Partner' },
   pub: {
     seo: {
       title: 'Partner – TRS Launcher',
@@ -790,6 +792,7 @@ const es: PartnerTexts = {
   dashNav: 'Panel de socio',
   categories: { hosting: 'Hosting', network: 'Redes de servidores', other: 'Más socios' },
   category: { hosting: 'Hosting', network: 'Red de servidores', other: 'Socio' },
+  home: { title: 'Socios', lead: 'Empresas y proyectos que colaboran con el TRS Launcher.', all: 'Todos los socios' },
   pub: {
     seo: {
       title: 'Socios – TRS Launcher',
