@@ -26,10 +26,36 @@ pub(crate) fn is_bedrock_package(full_name: &str) -> bool {
         && full_name.rsplit('_').next().is_some_and(|publisher| publisher.eq_ignore_ascii_case(PUBLISHER_ID))
 }
 
+/// App-ID der GDK-Fassung (seit 1.21.120); die alte UWP-Fassung hieß `App`.
+const DEFAULT_APP_ID: &str = "Game";
+
 /// Verknüpfung, mit der Windows die App startet (`shell:AppsFolder\<Familie>!<App-ID>`).
 #[cfg_attr(not(windows), allow(dead_code))]
-pub(crate) fn launch_target() -> String {
-    format!("shell:AppsFolder\\{PACKAGE_FAMILY}!App")
+pub(crate) fn launch_target(app_id: &str) -> String {
+    format!("shell:AppsFolder\\{PACKAGE_FAMILY}!{app_id}")
+}
+
+/// `Id` des ersten `<Application>` im AppxManifest.
+pub(crate) fn app_id_from_manifest(xml: &str) -> Option<String> {
+    let start = xml.find("<Application ")?;
+    let tag = &xml[start..];
+    let tag = &tag[..tag.find('>')?];
+    let rest = &tag[tag.find(" Id=\"")? + 5..];
+    let id = &rest[..rest.find('"')?];
+    (!id.is_empty() && id.len() <= 64 && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '.')).then(|| id.to_owned())
+}
+
+/// App-ID der installierten Fassung; ohne lesbares Manifest die der aktuellen GDK-Fassung.
+fn installed_app_id() -> String {
+    platform::appx_package(is_bedrock_package)
+        .and_then(|name| platform::appx_package_root(&name))
+        .and_then(|root| {
+            let file = root.join("AppxManifest.xml");
+            let len = std::fs::metadata(&file).ok()?.len();
+            (len <= 1024 * 1024).then(|| std::fs::read_to_string(&file).ok()).flatten()
+        })
+        .and_then(|xml| app_id_from_manifest(&xml))
+        .unwrap_or_else(|| DEFAULT_APP_ID.to_owned())
 }
 
 /// Ist Minecraft Bedrock für diesen Benutzer installiert? (Linux: nie.)
@@ -46,7 +72,7 @@ pub fn launch() -> Result<()> {
     if !is_installed() {
         return Err(Error::launch(crate::msg!("bedrock.notInstalled", "Minecraft Bedrock ist auf diesem PC nicht installiert.")));
     }
-    spawn_shell(&launch_target())
+    spawn_shell(&launch_target(&installed_app_id()))
 }
 
 #[cfg(windows)]
@@ -83,7 +109,24 @@ mod tests {
 
     #[test]
     fn launch_target_is_the_apps_folder_link() {
-        assert_eq!(launch_target(), "shell:AppsFolder\\Microsoft.MinecraftUWP_8wekyb3d8bbwe!App");
+        assert_eq!(launch_target("Game"), "shell:AppsFolder\\Microsoft.MinecraftUWP_8wekyb3d8bbwe!Game");
+    }
+
+    #[test]
+    fn reads_the_app_id_from_the_manifest() {
+        let gdk = r#"<Package><Applications><Application Id="Game" Executable="GameLaunchHelper.exe" EntryPoint="Windows.FullTrustApplication"><uap:VisualElements /></Application></Applications></Package>"#;
+        assert_eq!(app_id_from_manifest(gdk).as_deref(), Some("Game"));
+        let uwp = r#"<Applications><Application Executable="Minecraft.Windows.exe" Id="App" EntryPoint="Minecraft_Win10.App">"#;
+        assert_eq!(app_id_from_manifest(uwp).as_deref(), Some("App"));
+        assert_eq!(app_id_from_manifest("<Applications></Applications>"), None);
+        assert_eq!(app_id_from_manifest(r#"<Application Id="a!b&c" >"#), None);
+        assert_eq!(app_id_from_manifest(r#"<Application Executable="x.exe"><Foo Id="Nope">"#), None);
+    }
+
+    #[test]
+    #[ignore = "nur auf einem PC mit Bedrock"]
+    fn finds_the_installed_app_id() {
+        println!("{}", installed_app_id());
     }
 
     #[test]

@@ -120,20 +120,28 @@ pub fn dedicated_gpu_env(_program: &Path) -> Vec<(String, String)> {
 
 // --- Microsoft Store: installierte Pakete --------------------------------------------------
 
+const APPX_PACKAGES: &str = "Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages";
+
 /// Gibt es für den aktuellen Benutzer ein installiertes Store-Paket, dessen Vollname (`Name_Version_Arch__Herausgeber`)
-/// `matches` erfüllt? Liest nur den Registry-Zweig der Paketverwaltung (HKCU) – ohne Adminrechte.
+/// `matches` erfüllt?
 pub fn appx_package_installed(matches: impl Fn(&str) -> bool) -> bool {
+    appx_package(matches).is_some()
+}
+
+/// Vollname des ersten installierten Store-Pakets, das `matches` erfüllt. Liest nur den Registry-Zweig der
+/// Paketverwaltung (HKCU) – ohne Adminrechte.
+pub fn appx_package(matches: impl Fn(&str) -> bool) -> Option<String> {
     use windows::Win32::Foundation::ERROR_SUCCESS;
     use windows::Win32::System::Registry::{HKEY, HKEY_CURRENT_USER, KEY_READ, RegCloseKey, RegEnumKeyExW, RegOpenKeyExW};
     use windows::core::{HSTRING, PCWSTR, PWSTR};
 
-    let path = HSTRING::from("Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Repository\\Packages");
+    let path = HSTRING::from(APPX_PACKAGES);
     let mut key = HKEY::default();
     // SAFETY: Pfad ist nullterminiert, `key` wird unten wieder geschlossen.
     if unsafe { RegOpenKeyExW(HKEY_CURRENT_USER, PCWSTR(path.as_ptr()), None, KEY_READ, &mut key) } != ERROR_SUCCESS {
-        return false;
+        return None;
     }
-    let mut found = false;
+    let mut found = None;
     let mut index = 0u32;
     loop {
         let mut buf = [0u16; 256];
@@ -144,8 +152,9 @@ pub fn appx_package_installed(matches: impl Fn(&str) -> bool) -> bool {
             break;
         }
         index += 1;
-        if matches(&String::from_utf16_lossy(&buf[..(len as usize).min(buf.len())])) {
-            found = true;
+        let name = String::from_utf16_lossy(&buf[..(len as usize).min(buf.len())]);
+        if matches(&name) {
+            found = Some(name);
             break;
         }
     }
@@ -154,6 +163,39 @@ pub fn appx_package_installed(matches: impl Fn(&str) -> bool) -> bool {
         let _ = RegCloseKey(key);
     }
     found
+}
+
+/// Installationsordner eines Store-Pakets (`PackageRootFolder`, z. B. `C:\Program Files\WindowsApps\<Vollname>`).
+pub fn appx_package_root(full_name: &str) -> Option<PathBuf> {
+    use windows::Win32::System::Registry::{HKEY_CURRENT_USER, RRF_RT_REG_SZ, RegGetValueW};
+    use windows::core::{HSTRING, PCWSTR};
+
+    if full_name.is_empty() || full_name.len() > 200 || full_name.contains(['\\', '/']) {
+        return None;
+    }
+    let key = HSTRING::from(format!("{APPX_PACKAGES}\\{full_name}"));
+    let value = HSTRING::from("PackageRootFolder");
+    let mut buf = [0u16; 1024];
+    let mut len = (buf.len() * 2) as u32;
+    // SAFETY: Puffer und Länge (in Bytes) passen zusammen; Strings sind nullterminiert.
+    let status = unsafe {
+        RegGetValueW(
+            HKEY_CURRENT_USER,
+            PCWSTR(key.as_ptr()),
+            PCWSTR(value.as_ptr()),
+            RRF_RT_REG_SZ,
+            None,
+            Some(buf.as_mut_ptr().cast()),
+            Some(&mut len),
+        )
+    };
+    if status.is_err() {
+        return None;
+    }
+    let chars = (len as usize / 2).min(buf.len());
+    let text = String::from_utf16_lossy(&buf[..chars]);
+    let path = PathBuf::from(text.trim_end_matches('\0').trim());
+    path.is_absolute().then_some(path)
 }
 
 // --- Systemname ------------------------------------------------------------------------
