@@ -5577,6 +5577,12 @@ the start or heartbeat.
   per 10 minutes. Files that are already there are skipped. A start during the upload answers `state: starting` and
   starts once the files are on the server; files that could not be uploaded appear once as a `display.alerts` entry
   (`mods-failed-<ts>`). `409 mods_unsupported` for vanilla servers, `503 modrinth_unavailable` without Modrinth.
+- `POST /v1/craftinghosting/server/mods/upload` body `{ replace?: boolean }` -> `{ url, expiresAt, directory, removed }`:
+  a partner upload URL for `/mods` (Fabric, Quilt, Forge, NeoForge) or `/plugins` (Paper, Purpur). The launcher uploads
+  the mod files of an instance 1:1 there (`multipart/form-data`, field `files`, one or more files per request; a new
+  link per request). `replace: true` (server must be stopped, else `409 server_running`) first deletes every `.jar` in
+  that folder except `trs-server-rules-*` and reports the count in `removed`. Rate limit 60 per 10 minutes.
+  `409 mods_unsupported` for vanilla servers.
 - `POST /v1/craftinghosting/server/world/upload` -> `{ url, expiresAt }`: a partner upload URL (https, host
   `*.craftinghosting.free`, valid 10 minutes). The launcher uploads `trs-world.zip` (top-level folder `world/`) there
   directly as `multipart/form-data`, field `files` – large files never pass the TRS API.

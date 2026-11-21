@@ -1487,6 +1487,36 @@ export async function craftingInstallMods(ctx: AppContext, user: UserRow, projec
   })
 }
 
+export const modsUploadBody = z.object({ replace: z.boolean().default(false) }).strict().default({ replace: false })
+
+/**
+ * Upload-Link für Mod-/Plugin-Dateien, die der Client 1:1 aus seiner Instanz hochlädt (§43.10).
+ * `replace` (nur bei gestopptem Server) löscht vorher alle Jars im Ordner außer TRS Server Rules.
+ */
+export async function craftingModsUpload(ctx: AppContext, user: UserRow, replace: boolean) {
+  assertFeature(ctx, 'addons')
+  return onServer(ctx, user, async (row) => {
+    const p = parseServer(await call(ctx, 'GET', path(row)))
+    const dir = addonDir(p.serverType ?? null)
+    if (!dir) throw new ApiError(409, 'mods_unsupported', 'No plugins or mods on this server type')
+    let removed = 0
+    if (replace) {
+      if ((p.state !== 'offline' && p.state !== 'failed') || p.session?.active) throw conflict('server_running', 'Stop the server first')
+      const old = (await listDir(ctx, row, dir.dir).catch(() => []))
+        .filter((e) => e.type === 'file' && /\.jar$/i.test(e.name) && !e.name.toLowerCase().startsWith('trs-server-rules'))
+        .map((e) => e.path)
+      for (let i = 0; i < old.length; i += 100) await call(ctx, 'POST', path(row, '/files/delete'), { paths: old.slice(i, i + 100) })
+      removed = old.length
+    }
+    const res = z.object({ url: z.string().max(2000) }).loose()
+      .safeParse(await call(ctx, 'POST', path(row, '/files/upload-url'), { directory: dir.dir }))
+    if (!res.success || !URL.canParse(res.data.url)) throw upstream()
+    const url = new URL(res.data.url)
+    if (url.protocol !== 'https:' || !UPLOAD_HOST.test(url.hostname)) throw upstream()
+    return { url: url.href, expiresAt: new Date(ctx.now() + 10 * 60 * 1000).toISOString(), directory: dir.dir, removed }
+  })
+}
+
 export async function craftingWorldUpload(ctx: AppContext, user: UserRow): Promise<{ url: string, expiresAt: string }> {
   return onServer(ctx, user, async (row) => {
     const res = z.object({ url: z.string().max(2000) }).loose()

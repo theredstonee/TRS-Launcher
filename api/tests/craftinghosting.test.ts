@@ -5,7 +5,7 @@ import {
   craftingServer, craftingSetSettings, craftingSettings, craftingStart, craftingStats, craftingStop, craftingUpdate,
   craftingAddons, craftingDeleteFiles, craftingFiles, craftingProperties, craftingReadFile, craftingRemoveAddon,
   craftingSetProperties, craftingWriteFile, craftingWorlds, craftingActivateWorld, craftingDeleteWorld, craftingWorldFiles,
-  craftingDownloadUrls, worldNameQuery, modsBody, craftingModsDone, craftingChangeVersion, craftingBackups, versionBody,
+  craftingDownloadUrls, worldNameQuery, modsBody, craftingModsDone, craftingModsUpload, craftingChangeVersion, craftingBackups, versionBody,
   adminCraftingConfig, adminSetCraftingConfig, adminCraftingBlock, relayWake as wakeForTest,
   craftingReinstall, craftingBackupAction, craftingWebhook, verifyWebhook, adminWebhook, webhookSecret, adminCraftingResetQuota, autoStep,
   adminCraftingDelete, adminCraftingServers, adminCraftingStop, craftingCheckSubdomain, relayResolve, relayWake, sweepCraftingDns, craftingRestartDone, craftingWorldImport, craftingWorldUpload, createServerBody, MOTD_FOOTER, settingsBody,
@@ -545,6 +545,25 @@ describe('craftinghosting', () => {
     const s = await craftingServer(env.ctx, u!)
     const alert = s!.display!.alerts.find((a) => a.id.startsWith('mods-failed-'))
     expect(alert?.text.de).toBe('1 Mod-Dateien kamen nicht auf deinen Server: ferritecore.jar')
+  })
+
+  it('upload link for mod files from the instance; replace keeps TRS Server Rules', async () => {
+    const { env, partner } = setup()
+    const [u] = await players(env, 'Steve')
+    await craftingCreate(env.ctx, u!, body({ serverType: 'fabric', version: '1.21.1' }))
+    for (const f of ['/mods/old-a.jar', '/mods/old-b.jar', '/mods/trs-server-rules-fabric-1.21.1-1.1.0.jar', '/mods/readme.txt', '/config/x.toml']) partner.files.set(f, 'x')
+    const keep = await craftingModsUpload(env.ctx, u!, false)
+    expect(keep).toMatchObject({ url: 'https://upload.craftinghosting.free/upload?token=abc', directory: '/mods', removed: 0 })
+    expect(partner.files.has('/mods/old-a.jar')).toBe(true)
+    const r = await craftingModsUpload(env.ctx, u!, true)
+    expect(r.removed).toBe(2)
+    expect([...partner.files.keys()].filter((f) => f.startsWith('/mods/')).sort())
+      .toEqual(['/mods/readme.txt', '/mods/trs-server-rules-fabric-1.21.1-1.1.0.jar'])
+    await craftingStart(env.ctx, u!, true)
+    expect(await codeAsync(() => craftingModsUpload(env.ctx, u!, true))).toBe('server_running')
+    partner.uploadHost = 'evil.example.com'
+    await craftingStop(env.ctx, u!, false)
+    expect(await codeAsync(() => craftingModsUpload(env.ctx, u!, false))).toBe('craftinghosting_upstream')
   })
 
   it('mods need a mod or plugin server and Modrinth', async () => {
