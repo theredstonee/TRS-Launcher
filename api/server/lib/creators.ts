@@ -34,6 +34,7 @@ import { capeNameSchema, plainText } from './schemas'
 import { SKIN_URL_RE } from './skins'
 import { assertCan, can, teamOf, type Staff } from './team'
 import { audit } from './audit'
+import { isPartnerFixedTaken, PARTNER_ONETIME } from './code-space'
 import { ACTIVE_BANS, getUser, getUserByName } from './users'
 import type { Watcher } from './watch'
 
@@ -467,6 +468,8 @@ export function normalizeCreatorCode(input: string): string | null {
   const s = input.trim().toUpperCase()
   // 20 Zeichen ohne Bindestrich sehen aus wie ein Umhang-Code (§5.9) – die bleiben dafür frei.
   if (s.length === 20 && !s.includes('-')) return null
+  // Form der Partner-Einmal-Codes (§44) ist reserviert.
+  if (PARTNER_ONETIME.test(s)) return null
   return CREATOR_CODE.test(s) ? s : null
 }
 
@@ -477,8 +480,9 @@ export function defaultMainCode(name: string, uuid: string): string {
   return CREATOR_CODE.test(base) ? base : uuid.slice(0, 8).toUpperCase()
 }
 
+/** Belegt durch einen Creator-Code oder einen festen Partner-Code (§44.1, gemeinsamer Namensraum). */
 function codeTaken(ctx: AppContext, code: string): boolean {
-  return one(ctx.db, 'SELECT 1 AS x FROM creator_codes WHERE code = ?', code) !== undefined
+  return one(ctx.db, 'SELECT 1 AS x FROM creator_codes WHERE code = ?', code) !== undefined || isPartnerFixedTaken(ctx, code)
 }
 
 /** Freier Code ab `base`; belegt → Zahl anhängen (`PIXEL2`, `PIXEL3`, …). */
@@ -1738,6 +1742,7 @@ export function adminUpdateCreator(ctx: AppContext, staff: Staff, uuid: string, 
     if (!code) throw badRequest('invalid_code', 'Codes have 5–20 characters: A–Z, 0–9 and dashes (not at the start or end)')
     const owner = one<{ creator_uuid: string, kind: string }>(ctx.db, 'SELECT creator_uuid, kind FROM creator_codes WHERE code = ?', code)
     if (owner && !(owner.creator_uuid === uuid && owner.kind === 'main')) throw conflict('creator_code_taken', 'This code is already taken')
+    if (isPartnerFixedTaken(ctx, code)) throw conflict('creator_code_taken', 'This code is already taken')
   }
   const tierChanged = input.tier !== undefined && input.tier !== c.tier
   tx(ctx.db, () => {

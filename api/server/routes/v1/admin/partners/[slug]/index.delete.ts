@@ -1,0 +1,15 @@
+import { defineEventHandler } from 'h3'
+import { z } from 'zod'
+import { useCtx } from '../../../../../lib/context'
+import { limit, noContent, paramWith, requireStaff } from '../../../../../lib/http'
+import { adminDeletePartner, PARTNER_SLUG } from '../../../../../lib/partners'
+import { RULES } from '../../../../../lib/ratelimit'
+
+/** Partner löschen (Spieler behalten ihre Kosmetik). 204. */
+export default defineEventHandler((event) => {
+  const staff = requireStaff(event, 'partners.manage')
+  limit(`admin-partners:${staff.uuid}`, RULES.adminPartners)
+  const slug = paramWith(event, 'slug', z.string().regex(PARTNER_SLUG))
+  adminDeletePartner(useCtx(), staff, slug)
+  return noContent(event)
+})

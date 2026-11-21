@@ -185,6 +185,7 @@ const en = {
       previews: 'Preview builds',
       newsletter: 'Newsletter',
       minigames: 'Minigames',
+      partners: 'Partners',
     } as Record<string, string>,
     perms: {
       'dashboard.view': 'See the overview',
@@ -232,6 +233,7 @@ const en = {
       'newsletter.manage': 'Newsletter: write drafts, preview, send a test to yourself',
       'newsletter.send': 'Newsletter: send and schedule to all subscribers',
       'minigames.manage': 'Remove wrong entries from the minigame leaderboards',
+      'partners.manage': 'Manage partners (create, quota, cosmetics, requests, team mode in partner dashboards)',
     } as Record<string, string>,
     roles: {
       title: 'Roles & team',
@@ -628,6 +630,7 @@ const de: TeamTexts = {
       previews: 'Vorschau-Builds',
       newsletter: 'Newsletter',
       minigames: 'Minispiele',
+      partners: 'Partner',
     },
     perms: {
       'dashboard.view': 'Übersicht sehen',
@@ -675,6 +678,7 @@ const de: TeamTexts = {
       'newsletter.manage': 'Newsletter: Entwürfe schreiben, Vorschau, Testmail an dich',
       'newsletter.send': 'Newsletter: an alle Abonnenten senden und planen',
       'minigames.manage': 'Falsche Einträge aus den Minispiel-Ranglisten entfernen',
+      'partners.manage': 'Partner verwalten (anlegen, Kontingent, Kosmetik, Anträge, Team-Modus im Partner-Dashboard)',
     },
     roles: {
       title: 'Rollen & Team',
@@ -1069,6 +1073,7 @@ const es: TeamTexts = {
       previews: 'Versiones de prueba',
       newsletter: 'Boletín',
       minigames: 'Minijuegos',
+      partners: 'Socios',
     },
     perms: {
       'dashboard.view': 'Ver el resumen',
@@ -1116,6 +1121,7 @@ const es: TeamTexts = {
       'newsletter.manage': 'Boletín: escribir borradores, vista previa, prueba a ti mismo',
       'newsletter.send': 'Boletín: enviar y programar a todos los suscriptores',
       'minigames.manage': 'Quitar entradas incorrectas de las clasificaciones de minijuegos',
+      'partners.manage': 'Gestionar socios (crear, cupo, cosméticos, solicitudes, modo equipo en los paneles de socios)',
     },
     roles: {
       title: 'Roles y equipo',

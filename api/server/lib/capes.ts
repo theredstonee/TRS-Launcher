@@ -41,6 +41,8 @@ export interface CapeRow {
   reject_reason: string | null
   /** Fan-Umhang eines Creators (§35): dessen UUID; Besitz dann nur über `user_capes` (Quelle `creator`). */
   creator_uuid?: string | null
+  /** Partner-Umhang (§44): Partner-ID; Besitz wie bei Fan-Umhängen nur über `user_capes` (Quelle `partner`). */
+  partner_id?: number | null
 }
 
 export interface CapeView {
@@ -179,7 +181,7 @@ export function seedBuiltins(ctx: AppContext, capes: BuiltinCape[]): void {
 export function canUse(ctx: AppContext, uuid: string, c: CapeRow): boolean {
   if (c.kind === 'upload') {
     // Fan-Umhang (§35): wie ein freigeschaltetes Design – nur freigegeben und mit Besitz-Zeile (auch für den Creator selbst).
-    if (c.creator_uuid) {
+    if (c.creator_uuid || c.partner_id) {
       return c.status === 'approved' && one(ctx.db, 'SELECT 1 AS x FROM user_capes WHERE uuid = ? AND cape_id = ?', uuid, c.id) !== undefined
     }
     if (c.owner_uuid === uuid) return c.status !== 'rejected'
@@ -208,9 +210,9 @@ export function catalog(ctx: AppContext, uuid: string): CatalogEntry[] {
      WHERE (c.kind = 'builtin' AND (c.retired = 0 OR c.id = ?))
         OR (c.kind = 'upload' AND c.owner_uuid = ? AND c.creator_uuid IS NULL)
         OR (c.kind = 'upload' AND c.status = 'approved' AND s.holder_uuid IS NOT NULL)
-        OR (c.kind = 'upload' AND c.creator_uuid IS NOT NULL AND c.status = 'approved'
+        OR (c.kind = 'upload' AND (c.creator_uuid IS NOT NULL OR c.partner_id IS NOT NULL) AND c.status = 'approved'
             AND EXISTS (SELECT 1 FROM user_capes g WHERE g.uuid = ? AND g.cape_id = c.id))
-     ORDER BY CASE WHEN c.kind = 'builtin' THEN 0 WHEN c.creator_uuid IS NOT NULL THEN 1 WHEN c.owner_uuid = ? THEN 2 ELSE 3 END, c.sort, c.created_at`,
+     ORDER BY CASE WHEN c.kind = 'builtin' THEN 0 WHEN c.creator_uuid IS NOT NULL OR c.partner_id IS NOT NULL THEN 1 WHEN c.owner_uuid = ? THEN 2 ELSE 3 END, c.sort, c.created_at`,
     uuid, active, uuid, uuid, uuid,
   )
   const activeEvents = activeEventsFor(ctx, uuid)
@@ -249,7 +251,7 @@ export function setActiveCape(ctx: AppContext, uuid: string, capeId: string | nu
     return null
   }
   const c = getCape(ctx, capeId)
-  const visible = c && (c.kind !== 'upload' || c.owner_uuid === uuid || (c.creator_uuid ? canUse(ctx, uuid, c) : holdsCape(ctx, uuid, c.id)))
+  const visible = c && (c.kind !== 'upload' || c.owner_uuid === uuid || (c.creator_uuid || c.partner_id ? canUse(ctx, uuid, c) : holdsCape(ctx, uuid, c.id)))
   if (!c || !visible) {
     throw notFound('cape_not_found', 'Cape not found')
   }
@@ -390,7 +392,7 @@ export function readTexture(ctx: AppContext, capeId: string, viewer: { uuid: str
 
 // ---------------------------------------------------------------- Zuteilung (Admin, Codes)
 
-export function grantCape(ctx: AppContext, uuid: string, capeId: string, source: 'code' | 'admin' | 'event' | 'creator' | 'reward'): boolean {
+export function grantCape(ctx: AppContext, uuid: string, capeId: string, source: 'code' | 'admin' | 'event' | 'creator' | 'reward' | 'partner'): boolean {
   // Mondnacht (§36): höchstens EINE der sechs Farben je Spieler – gilt für jeden Weg (Belohnung, Team, Code).
   if (isMondnachtCape(capeId)) {
     const other = one<{ cape_id: string }>(

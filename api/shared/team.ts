@@ -52,6 +52,8 @@ export const PERMISSIONS = [
   'newsletter.send',
   // Minispiel-Ranglisten (§42): falsche Einträge entfernen.
   'minigames.manage',
+  // Partnerprogramm (§44): Partner anlegen/bearbeiten, Kontingent, Kosmetik, Anträge, Team-Modus im Partner-Dashboard.
+  'partners.manage',
 ] as const
 export type Permission = (typeof PERMISSIONS)[number]
 const PERMISSION_SET: ReadonlySet<string> = new Set(PERMISSIONS)
@@ -77,6 +79,7 @@ export const PERMISSION_GROUPS: { id: string, permissions: Permission[] }[] = [
   { id: 'previews', permissions: ['previews.access'] },
   { id: 'newsletter', permissions: ['newsletter.manage', 'newsletter.send'] },
   { id: 'minigames', permissions: ['minigames.manage'] },
+  { id: 'partners', permissions: ['partners.manage'] },
 ]
 
 /** Recht je Strafart (§22.2). */

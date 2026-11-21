@@ -753,7 +753,7 @@ export function readCosmeticV2File(ctx: AppContext, id: string, which: V2File): 
  * Zuteilen. `creator` (Winter 2026, Creator-Pinguin nach Fans) ist eine Zuteilung auf Zeit: kommt dasselbe Teil später
  * auf anderem Weg (Code, Team, …), wird die Zeile dauerhaft (`true`); umgekehrt überschreibt `creator` nie.
  */
-export function grantCosmetic(ctx: AppContext, uuid: string, id: string, source: 'code' | 'admin' | 'event' | 'reward' | 'creator'): boolean {
+export function grantCosmetic(ctx: AppContext, uuid: string, id: string, source: 'code' | 'admin' | 'event' | 'reward' | 'creator' | 'partner'): boolean {
   // Halloween-Flügel (§36): höchstens EINE der vier je Spieler – gilt für jeden Weg (Wahl, Team, Code).
   if (isHalloweenWing(id)) {
     const other = one<{ cosmetic_id: string }>(

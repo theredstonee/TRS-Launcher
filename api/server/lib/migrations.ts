@@ -1129,7 +1129,251 @@ CREATE TABLE IF NOT EXISTS craftinghosting_admin (
       if (!hasColumn(db, 'craftinghosting_servers', 'auto_at')) db.exec('ALTER TABLE craftinghosting_servers ADD COLUMN auto_at INTEGER')
     },
   },
+  {
+    // Partnerprogramm (§44): Partner, Mitglieder, Codes (fest + einmal), Pakete, Unterstützung, Gegenstände, Anträge,
+    // Partner-Server (+ Status, Beitritte), Werbe-Links, Webhooks (+ Zustellungen), API-Schlüssel, Tageswerte.
+    // `capes.partner_id`, Quelle `partner` in user_capes/user_cosmetics, Recht `partners.manage`. Idempotent.
+    version: 51,
+    run: migratePartners,
+  },
 ]
+
+/** Migration 51 (siehe oben). Exportiert für den Idempotenz-Test. */
+export function migratePartners(db: DatabaseSync): void {
+  db.exec(`
+CREATE TABLE IF NOT EXISTS partners (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  category TEXT NOT NULL CHECK (category IN ('hosting', 'network', 'other')),
+  state TEXT NOT NULL DEFAULT 'active' CHECK (state IN ('active', 'paused')),
+  prefix TEXT NOT NULL UNIQUE,
+  owner_uuid TEXT REFERENCES users(uuid) ON DELETE SET NULL,
+  text_de TEXT NOT NULL DEFAULT '',
+  text_en TEXT NOT NULL DEFAULT '',
+  links TEXT NOT NULL DEFAULT '[]',
+  wiki_url TEXT,
+  logo_sha TEXT,
+  quota_total INTEGER NOT NULL DEFAULT 0 CHECK (quota_total >= 0),
+  quota_used INTEGER NOT NULL DEFAULT 0 CHECK (quota_used >= 0),
+  quota_low_sent INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS partner_members (
+  partner_id INTEGER NOT NULL REFERENCES partners(id) ON DELETE CASCADE,
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  rights TEXT NOT NULL DEFAULT '[]',
+  status TEXT NOT NULL CHECK (status IN ('pending', 'active')),
+  created_at INTEGER NOT NULL,
+  accepted_at INTEGER,
+  PRIMARY KEY (partner_id, uuid)
+);
+CREATE INDEX IF NOT EXISTS partner_members_uuid ON partner_members(uuid);
+
+CREATE TABLE IF NOT EXISTS partner_batches (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  partner_id INTEGER NOT NULL REFERENCES partners(id) ON DELETE CASCADE,
+  label TEXT NOT NULL,
+  via TEXT NOT NULL CHECK (via IN ('dashboard', 'api')),
+  count INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  created_by TEXT,
+  blocked_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS partner_batches_partner ON partner_batches(partner_id, created_at);
+
+CREATE TABLE IF NOT EXISTS partner_codes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  partner_id INTEGER NOT NULL REFERENCES partners(id) ON DELETE CASCADE,
+  code TEXT NOT NULL UNIQUE,
+  kind TEXT NOT NULL CHECK (kind IN ('fixed', 'onetime')),
+  batch_id INTEGER REFERENCES partner_batches(id) ON DELETE SET NULL,
+  ref TEXT,
+  redeemed_by TEXT REFERENCES users(uuid) ON DELETE SET NULL,
+  redeemed_at INTEGER,
+  blocked INTEGER NOT NULL DEFAULT 0 CHECK (blocked IN (0, 1)),
+  created_at INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS partner_codes_fixed ON partner_codes(partner_id) WHERE kind = 'fixed';
+CREATE UNIQUE INDEX IF NOT EXISTS partner_codes_ref ON partner_codes(partner_id, ref) WHERE ref IS NOT NULL;
+CREATE INDEX IF NOT EXISTS partner_codes_batch ON partner_codes(batch_id);
+
+CREATE TABLE IF NOT EXISTS partner_support (
+  uuid TEXT PRIMARY KEY REFERENCES users(uuid) ON DELETE CASCADE,
+  partner_id INTEGER REFERENCES partners(id) ON DELETE SET NULL,
+  last_partner_id INTEGER REFERENCES partners(id) ON DELETE SET NULL,
+  last_started_at INTEGER,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS partner_support_partner ON partner_support(partner_id);
+
+CREATE TABLE IF NOT EXISTS partner_redemptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  partner_id INTEGER NOT NULL REFERENCES partners(id) ON DELETE CASCADE,
+  code_id INTEGER NOT NULL REFERENCES partner_codes(id) ON DELETE CASCADE,
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('fixed', 'onetime')),
+  at INTEGER NOT NULL,
+  UNIQUE (code_id, uuid)
+);
+CREATE INDEX IF NOT EXISTS partner_redemptions_partner ON partner_redemptions(partner_id, uuid, at);
+
+CREATE TABLE IF NOT EXISTS partner_items (
+  partner_id INTEGER NOT NULL REFERENCES partners(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('cape', 'cosmetic')),
+  item_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (partner_id, kind, item_id)
+);
+
+CREATE TABLE IF NOT EXISTS partner_grants (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('cape', 'cosmetic')),
+  item_id TEXT NOT NULL,
+  partner_id INTEGER REFERENCES partners(id) ON DELETE SET NULL,
+  granted_at INTEGER NOT NULL,
+  PRIMARY KEY (uuid, kind, item_id)
+);
+
+CREATE TABLE IF NOT EXISTS partner_requests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  partner_id INTEGER NOT NULL REFERENCES partners(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('quota', 'code_change', 'profile', 'logo', 'server', 'cape', 'cosmetic_wish', 'promo')),
+  channel TEXT CHECK (channel IS NULL OR channel IN ('blog', 'newsletter', 'wiki')),
+  status TEXT NOT NULL CHECK (status IN ('open', 'accepted', 'rejected', 'withdrawn')),
+  data TEXT NOT NULL DEFAULT '{}',
+  reason TEXT,
+  created_at INTEGER NOT NULL,
+  created_by TEXT,
+  decided_at INTEGER,
+  decided_by TEXT
+);
+CREATE INDEX IF NOT EXISTS partner_requests_partner ON partner_requests(partner_id, status);
+CREATE INDEX IF NOT EXISTS partner_requests_status ON partner_requests(status, created_at);
+
+CREATE TABLE IF NOT EXISTS partner_servers (
+  id TEXT PRIMARY KEY,
+  partner_id INTEGER NOT NULL UNIQUE REFERENCES partners(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  address TEXT NOT NULL,
+  min_version TEXT NOT NULL,
+  max_version TEXT NOT NULL,
+  motd TEXT NOT NULL DEFAULT '',
+  hidden INTEGER NOT NULL DEFAULT 0 CHECK (hidden IN (0, 1)),
+  online INTEGER NOT NULL DEFAULT 0 CHECK (online IN (0, 1)),
+  latency_ms INTEGER,
+  players_online INTEGER,
+  players_max INTEGER,
+  status_reason TEXT,
+  last_checked_at INTEGER,
+  last_online_at INTEGER,
+  approved_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS partner_server_joins (
+  server_id TEXT NOT NULL REFERENCES partner_servers(id) ON DELETE CASCADE,
+  day TEXT NOT NULL,
+  player TEXT NOT NULL,
+  PRIMARY KEY (server_id, day, player)
+);
+
+CREATE TABLE IF NOT EXISTS partner_links (
+  partner_id INTEGER NOT NULL REFERENCES partners(id) ON DELETE CASCADE,
+  campaign TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (partner_id, campaign)
+);
+
+CREATE TABLE IF NOT EXISTS partner_link_stats (
+  partner_id INTEGER NOT NULL REFERENCES partners(id) ON DELETE CASCADE,
+  campaign TEXT NOT NULL DEFAULT '',
+  day TEXT NOT NULL,
+  clicks INTEGER NOT NULL DEFAULT 0,
+  downloads INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (partner_id, campaign, day)
+);
+
+CREATE TABLE IF NOT EXISTS partner_webhooks (
+  partner_id INTEGER PRIMARY KEY REFERENCES partners(id) ON DELETE CASCADE,
+  url TEXT NOT NULL,
+  events TEXT NOT NULL DEFAULT '[]',
+  secret TEXT NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS partner_deliveries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  partner_id INTEGER NOT NULL REFERENCES partners(id) ON DELETE CASCADE,
+  event TEXT NOT NULL,
+  body TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('pending', 'delivered', 'failed')),
+  attempts INTEGER NOT NULL DEFAULT 0,
+  next_at INTEGER,
+  last_status INTEGER,
+  last_error TEXT,
+  response TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS partner_deliveries_due ON partner_deliveries(status, next_at);
+CREATE INDEX IF NOT EXISTS partner_deliveries_partner ON partner_deliveries(partner_id, id);
+
+CREATE TABLE IF NOT EXISTS partner_api_keys (
+  partner_id INTEGER PRIMARY KEY REFERENCES partners(id) ON DELETE CASCADE,
+  key_hash TEXT NOT NULL UNIQUE,
+  hint TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  created_by TEXT,
+  last_used_at INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS partner_daily (
+  partner_id INTEGER NOT NULL REFERENCES partners(id) ON DELETE CASCADE,
+  day TEXT NOT NULL,
+  fixed INTEGER NOT NULL DEFAULT 0,
+  onetime INTEGER NOT NULL DEFAULT 0,
+  new_supporters INTEGER NOT NULL DEFAULT 0,
+  left_count INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (partner_id, day)
+);
+`)
+  if (hasTable(db, 'capes') && !hasColumn(db, 'capes', 'partner_id')) db.exec('ALTER TABLE capes ADD COLUMN partner_id INTEGER')
+  // Blätter-Tabellen: Quelle `partner` erlauben (SQLite kann CHECKs nicht ändern; niemand verweist auf diese Tabellen).
+  const sqlOf = (name: string) => (db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?").get(name) as { sql: string } | undefined)?.sql ?? ''
+  if (hasTable(db, 'user_capes') && !sqlOf('user_capes').includes("'partner'")) {
+    db.exec(`
+CREATE TABLE user_capes_v51 (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  cape_id TEXT NOT NULL REFERENCES capes(id) ON DELETE CASCADE,
+  source TEXT NOT NULL CHECK (source IN ('code', 'admin', 'event', 'creator', 'reward', 'partner')),
+  granted_at INTEGER NOT NULL,
+  PRIMARY KEY (uuid, cape_id)
+);
+INSERT INTO user_capes_v51 (uuid, cape_id, source, granted_at) SELECT uuid, cape_id, source, granted_at FROM user_capes;
+DROP TABLE user_capes;
+ALTER TABLE user_capes_v51 RENAME TO user_capes;
+CREATE INDEX IF NOT EXISTS user_capes_cape ON user_capes(cape_id);
+`)
+  }
+  if (hasTable(db, 'user_cosmetics') && !sqlOf('user_cosmetics').includes("'partner'")) {
+    db.exec(`
+CREATE TABLE user_cosmetics_v51 (
+  uuid TEXT NOT NULL REFERENCES users(uuid) ON DELETE CASCADE,
+  cosmetic_id TEXT NOT NULL REFERENCES cosmetics(id) ON DELETE CASCADE,
+  source TEXT NOT NULL CHECK (source IN ('code', 'admin', 'event', 'reward', 'creator', 'partner')),
+  granted_at INTEGER NOT NULL,
+  PRIMARY KEY (uuid, cosmetic_id)
+);
+INSERT INTO user_cosmetics_v51 (uuid, cosmetic_id, source, granted_at) SELECT uuid, cosmetic_id, source, granted_at FROM user_cosmetics;
+DROP TABLE user_cosmetics;
+ALTER TABLE user_cosmetics_v51 RENAME TO user_cosmetics;
+`)
+  }
+  grantBuiltin(db, { owner: ['partners.manage'], admin: ['partners.manage'] })
+}
 
 /** Migration 40 (siehe oben): Minispiel-Ranglisten. Exportiert für den Idempotenz-Test. */
 export function migrateMinigames(db: DatabaseSync): void {

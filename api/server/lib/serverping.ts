@@ -198,7 +198,7 @@ export class ServerStatusService {
     private readonly enabled: boolean,
     private readonly now: () => number = Date.now,
     private readonly deps: PingDeps = defaultPingDeps,
-    private readonly opts: { timeoutMs?: number, maxConcurrent?: number, okTtlMs?: number, failTtlMs?: number, maxEntries?: number } = {},
+    private readonly opts: { timeoutMs?: number, maxConcurrent?: number, okTtlMs?: number, failTtlMs?: number, maxEntries?: number, minPort?: number } = {},
   ) {}
 
   private result(address: string, partial: Partial<ServerStatus>): ServerStatus {
@@ -253,7 +253,7 @@ export class ServerStatusService {
           port = srv.port
         }
       }
-      if (port < 1024 || port > 65535) return this.result(address, { reason: 'private_address' })
+      if (port < (this.opts.minPort ?? 1024) || port > 65535) return this.result(address, { reason: 'private_address' })
       let ips: string[]
       if (isIP(target) !== 0) ips = [target]
       else {

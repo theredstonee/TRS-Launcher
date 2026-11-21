@@ -22,6 +22,8 @@ import { rotateApplicationKeys, sweepApplicationFiles } from '../lib/application
 import { seedCircuits, sweepCircuitSubmissions } from '../lib/circuits'
 import { sweepHosting } from '../lib/hosting'
 import { sweepCraftingDns } from '../lib/craftinghosting'
+import { pingPartnerServers, SERVER_PING_INTERVAL_MS } from '../lib/partner-servers'
+import { processDeliveries } from '../lib/partner-webhooks'
 import { sweepWpshare, sweepWpshareSessions } from '../lib/waypoint-share'
 import { setWebpWasmLoader } from '../lib/images'
 import { sweepIssues, sweepOrphanIssueFiles } from '../lib/issues'
@@ -231,7 +233,27 @@ export default defineNitroPlugin((nitroApp) => {
   const MAIL_TICK_MS = 5000
   let mailTick: Promise<unknown> | null = null
   let dnsTick: Promise<unknown> | null = null
+  let partnerPing: Promise<unknown> | null = null
+  let partnerHooks: Promise<unknown> | null = null
   const timers = [
+    // Partner-Server (§44.3): Status-Ping (5 s Zeitlimit, SSRF-Schutz) alle 5 min.
+    every(SERVER_PING_INTERVAL_MS, () => {
+      if (partnerPing) return
+      partnerPing = pingPartnerServers(ctx)
+        .catch((err) => console.error('[trs-api] partner server ping failed', err))
+        .finally(() => {
+          partnerPing = null
+        })
+    }),
+    // Partner-Webhooks (§44.6): fällige Zustellungen und Wiederholungen.
+    every(15_000, () => {
+      if (partnerHooks) return
+      partnerHooks = processDeliveries(ctx)
+        .catch((err) => console.error('[trs-api] partner webhooks failed', err))
+        .finally(() => {
+          partnerHooks = null
+        })
+    }),
     // CraftingHosting: SRV-Einträge an den Zustand anpassen (schlafend → TRS Wake, laufend → Node).
     every(60_000, () => {
       if (dnsTick) return

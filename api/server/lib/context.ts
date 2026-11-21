@@ -12,6 +12,7 @@ import { PushService } from './push'
 import { RateLimiter } from './ratelimit'
 import { SpamGuard } from './safety'
 import { ServerStatusService, type PingDeps } from './serverping'
+import type { WebhookSender } from './partner-webhooks'
 import { SkinService, rememberSkin } from './skins'
 import { TemplateSet } from './templates'
 import { PlayerWatchHub } from './watch'
@@ -73,6 +74,10 @@ export interface AppContext {
   serverRulesFetch?: typeof fetch
   /** Für Tests: eigenes fetch für die Cloudflare-DNS-API. */
   cloudflareFetch?: typeof fetch
+  /** Für Tests: DNS/Verbindung für den Status-Ping der Partner-Server und die Webhook-Prüfung (§44). */
+  partnerPingDeps?: PingDeps
+  /** Für Tests: Versand der Partner-Webhooks (§44.6). */
+  partnerWebhookSend?: WebhookSender
 }
 
 export function createContext(opts: {

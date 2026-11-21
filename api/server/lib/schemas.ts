@@ -98,7 +98,7 @@ export const lookupBody = z.strictObject({
 
 const versionString = z.string().regex(/^[0-9A-Za-z._+ -]{1,32}$/, 'invalid version')
 /** Hostname oder IPv4 mit optionalem Port – keine Pfade, kein Schema. */
-const serverAddress = z
+export const serverAddress = z
   .string()
   .max(261)
   .regex(/^(?=.{1,253}(:|$))[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*(:\d{1,5})?$/, 'invalid server address')

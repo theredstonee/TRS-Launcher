@@ -376,4 +376,19 @@ export const RULES = {
   wpWriteUser: { limit: 60, windowMs: MIN },
   /** Freigaben, eigene Listen, Listen der Freunde lesen. */
   wpReadUser: { limit: 60, windowMs: MIN },
+  // ---- Partnerprogramm (§44)
+  /** Partner-Dashboard: ändernde Anfragen je Konto. */
+  partnerWriteUser: { limit: 60, windowMs: MIN },
+  /** Uploads (Logo, Umhang) je PARTNER in 24 h. */
+  partnerUpload: { limit: 5, windowMs: 24 * HOUR },
+  /** Partner-API je Schlüssel. */
+  partnerApiKey: { limit: 60, windowMs: MIN },
+  /** Fehlgeschlagene Partner-API-Anmeldungen je IP. */
+  partnerApiFailIp: { limit: 30, windowMs: MIN },
+  /** Öffentliche Partner-Liste, Logos, Serverliste je IP – zusätzlich zur globalen IP-Grenze. */
+  partnersPublicIp: { limit: 240, windowMs: MIN },
+  /** Beitritte, Klicks, Downloads je IP. */
+  partnerCountIp: { limit: 30, windowMs: MIN },
+  /** Team: Partner-Verwaltung. */
+  adminPartners: { limit: 120, windowMs: MIN },
 } satisfies Record<string, Rule>

@@ -6,6 +6,7 @@ import { applicationCounts } from '../../../lib/applications'
 import { circuitCounts } from '../../../lib/circuits'
 import { creatorCounts } from '../../../lib/creators'
 import { issueCounts } from '../../../lib/issues'
+import { partnerCounts } from '../../../lib/partners'
 import { can } from '../../../lib/team'
 
 /**
@@ -39,5 +40,7 @@ export default defineEventHandler((event) => {
           return { queue: can(staff, 'creators.review') ? c.queue : 0, requests: can(staff, 'creators.manage') ? c.requests : 0 }
         })()
       : null,
+    // Partnerprogramm (§44): offene Anträge.
+    partners: can(staff, 'partners.manage') ? partnerCounts(useCtx()) : null,
   }
 })

@@ -13,6 +13,7 @@ import type { CommandType, PeerView, RemoteStatus } from './remote'
 import type { CreatorTier, CreatorUpdateKind, HelperRight, Milestone } from './creators'
 import type { HalloweenView } from './halloween'
 import type { ScareKind } from './scare'
+import type { PartnerRef, PartnerRight, PartnerUpdateKind, RequestKind } from './partners'
 
 export interface PlayerRef {
   uuid: string
@@ -174,6 +175,12 @@ export type ApiEvent =
   | { type: 'wpshare_changed', uuid: string, rev: number }
   /** Freigabe entzogen (oder Freundschaft beendet, Konto gelöscht): alles von `uuid` lokal löschen. */
   | { type: 'wpshare_revoked', uuid: string }
+  /** Partnerprogramm (§44): an Inhaber + Mitglieder bei Entscheidungen, Kontingent, Team-Modus, Pause. */
+  | { type: 'partner_updated', slug: string, kind: PartnerUpdateKind, action?: string, reason?: string, request?: RequestKind }
+  /** An den Spieler nach Einlösen bzw. Beenden der Partner-Unterstützung (Launcher lädt neu). */
+  | { type: 'partner_support_changed', partner: PartnerRef | null }
+  | { type: 'partner_member_invite', partner: PartnerRef, rights: PartnerRight[], createdAt: string }
+  | { type: 'partner_member_removed', partner: PartnerRef }
 
 export type ApiEventType = ApiEvent['type']
 
