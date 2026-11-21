@@ -5799,3 +5799,270 @@ While it runs or after it failed, `Server.display.setup = { phase: "install" | "
 the setup view and no management. `POST …/server/start` does nothing while the setup runs and restarts it after a
 failure (that is the "try again" button). TRS Wake answers `starting` meanwhile. Servers created without the EULA keep
 the old behaviour (first setup on the first start by the owner).
+
+## 44. Partner programme
+
+Companies and projects (e.g. CraftingHosting) that work with TRS. Partners are created **only by the team** (permission
+`partners.manage`, new). Players support **one partner** at a time – independent of the creator they support (§35) –
+and get the partner's cosmetics. There is **no badge** and no change to the lookup: partner items are normal capes
+(§5) and cosmetics (§11) in the catalogue. Migration 51 adds the tables (`partners`, `partner_members`,
+`partner_codes`, `partner_batches`, `partner_support`, `partner_redemptions`, `partner_items`, `partner_grants`,
+`partner_requests`, `partner_servers`, `partner_server_joins`, `partner_links`, `partner_link_stats`,
+`partner_webhooks`, `partner_deliveries`, `partner_api_keys`, `partner_daily`), the column `capes.partner_id`, the
+source `partner` in `user_capes`/`user_cosmetics` and the permission `partners.manage` for the built-in roles Owner
+and Admin.
+
+### 44.1 Concepts
+
+- **Partner**: `slug` (`^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$`, unique, not `servers | new | admin | api | go | dashboard
+  | catalog | requests`; page `/partners/<slug>`), `name` (≤ 40), `category` ∈ `hosting | network | other`, `state` ∈
+  `active | paused`, `prefix` for one-time codes (2–4 letters A–Z, unique), owner account, public text `{ de, en }`
+  (plain text, ≤ 1200 each), up to 6 links `{ label ≤ 40, url https }`, `wikiUrl` (https, set by the team), logo.
+- **Logo**: PNG, square, 32–2048 px, ≤ 1 MB, re-encoded to 128×128 (alpha kept, no metadata), served at
+  `GET /v1/partners/{slug}/logo.png?v=<sha12>` (`immutable` with a matching `?v=`).
+- **Cosmetics**: the team assigns catalogue items (built-in capes/cosmetics that are not free, emotes excluded, and
+  partner capes). Redeeming a code of the partner grants **all currently assigned** items with source `partner`
+  (re-redeeming the fixed code later also grants items assigned since). Items stay with the player when he switches
+  partner, ends the support, the partner is paused, deleted or the item unassigned. Partner capes cannot be shared
+  (§5.13) and do not appear as own uploads. Proprietary assets are uploaded through the dashboard/team (never in the repo).
+- **Fixed code**: one per partner, `^[A-Z0-9]{4,19}$` (no dash; 20 characters without a dash stay reserved for cape
+  codes §5.9), unlimited uses, one use per player (re-redeem idempotent). Only the team sets/changes it (directly or
+  by accepting a `code_change` request). Creator codes and fixed partner codes share one namespace: creating either
+  refuses the other's (`409 code_taken` for partners, `409 creator_code_taken` for creators). The shape of one-time
+  codes (`AA-XXXX-XXXX`) is not accepted as a creator code (`400 invalid_code`).
+- **One-time codes**: `<PREFIX>-XXXX-XXXX`, alphabet `23456789ABCDEFGHJKLMNPQRSTUVWXYZ`, CSPRNG, each usable by one
+  player ever. Created in batches (dashboard or partner API) within the **quota** (`total` = packages granted by the
+  team, `used` = codes ever generated; blocked unused codes do not return). Batches have a `label`, `via`
+  (`dashboard | api`) and can be blocked ("block open codes").
+- **Support**: like §35.1: switching to a **different** partner only 30 days after the last start
+  (`switchAvailableAt`); re-supporting the same partner keeps the original start; cosmetics are granted even when the
+  lock prevents switching; a paused (or deleted) partner never holds a player in the lock. Ending the support keeps
+  the lock for other partners (the same partner can be supported again at once).
+- **New player** = account created ≤ 24 h before the player's first redemption of a code of this partner.
+- **Members**: the owner (set by the team) has all rights and manages members. Invited TRS players (by UUID or name,
+  must accept) get rights ⊂ `stats, codes, api, links, server, webhook, promo, cosmetics, profile`; at most 10 members
+  (pending + active). **Team mode**: a team member with `partners.manage` opens any dashboard with all rights; every
+  change is written to the audit log as `partner.team.<action>` (target `partner:<slug>`), members get
+  `partner_updated { kind: "team_changed", action }` and see the last changes (90 days, no names) as `teamChanges`.
+  Inviting members is owner-only (`403 partner_team_forbidden` in team mode). Changes by non-owner members are audited
+  as `partner.member.<action>`.
+- **Review**: profile, logo, partner server, cape uploads, fixed-code change, quota top-up, promo and cosmetic wishes
+  are **requests**; the old approved version stays live until the team decides.
+
+### 44.2 Player routes (Bearer or website session + `X-CSRF-Token`)
+
+`POST /v1/me/codes/redeem { code }` – one field for every code (launcher, website, client). Order: creator code
+(§35.2) → partner fixed/one-time code → cape/cosmetic code (§5.9). Input is trimmed and case-insensitive. One
+brute-force lock for the whole call (the counters of §5.9): `400`, `404` and `410` count as failures; 5 per account or
+20 per IP in 15 minutes → `429` (also for valid codes). Answers:
+
+```json
+{ "kind": "creator", ...same body as POST /v1/me/creator/redeem }
+{ "kind": "partner", "partner": PartnerCard, "supportChanged": true, "switchAvailableAt": null,
+  "granted": { "capes": [{ "capeId": "…", "name": "…" }], "cosmetics": [{ "id": "…", "name": "…", "slot": "head" }] },
+  "oneTime": false }
+{ "kind": "cape", "itemKind": "cape" | "cosmetic", "cape": CapeView | null, "cosmetic": CosmeticView | null, "alreadyOwned": false }
+```
+
+`granted` lists all assigned items the player holds after the call (also ones he already had). Errors: nothing found
+→ `404 code_not_found`; one-time code redeemed by someone else or blocked → `410 partner_code_used`; errors of a found
+creator/cape code pass through unchanged (`409 creator_self | creator_blocked`, `410 creator_code_expired |
+code_expired | code_used_up`). Paused partner → its codes are `404`. The old routes stay unchanged.
+
+`GET /v1/me/partner` →
+
+```json
+{ "support": { "partner": PartnerCard | null, "startedAt": "…" | null, "switchAvailableAt": "…" | null },
+  "owned": [{ "kind": "cape" | "cosmetic", "id": "…", "name": "…", "partner": { "slug", "name" } | null }],
+  "member": [{ "slug", "name", "rights": ["stats"], "owner": true }],
+  "invites": [{ "slug", "name", "rights": ["stats"], "createdAt": "…" }] }
+```
+
+`owned.partner` is `null` when the partner was deleted. `member` = dashboards the player may open (owner or active
+member; team mode is not listed). `invites` = open invitations.
+
+- `DELETE /v1/me/partner/support` → `204` (items stay).
+- `POST /v1/me/partner/invites/{slug} { accept: boolean }` → the body of `GET /v1/me/partner`; `404 invite_not_found`.
+- `DELETE /v1/me/partner/member/{slug}` → `204` (leave a dashboard); `404 member_not_found`.
+
+Writes: 60/min per account (`partner-write`), plus the normal per-account limits.
+
+`PartnerCard = { slug, name, category, logo, text: { de, en }, links: [{ label, url }], code, server: { name, address } | null,
+wikiUrl, supporters, cosmetics: [{ kind: "cape" | "cosmetic", id, name, previewUrl }] }`. `logo` is a path
+(`/v1/partners/{slug}/logo.png?v=…`) or `null`; `code` = fixed code; `server` = approved, not hidden partner server
+(regardless of its current status); `previewUrl` = cape texture or cosmetic texture URL (or `null`).
+
+### 44.3 Public routes (no auth, 240 requests/min per IP)
+
+- `GET /v1/partners` → `{ partners: PartnerCard[] }` (active only, sorted by name; clients group by `category`).
+  `Cache-Control: public, max-age=60`.
+- `GET /v1/partners/{slug}` → `PartnerCard`, or `404 partner_not_found` (unknown, paused, invalid slug).
+- `GET /v1/partners/{slug}/logo.png` → PNG 128×128 (`404 logo_not_found`).
+- `GET /v1/partners/servers?mc=<minecraft version>` – for the TRS Client multiplayer screen:
+
+  ```json
+  { "servers": [{ "id": "ps_…", "partner": { "slug": "craftinghosting", "name": "CraftingHosting" },
+                  "name": "CraftingHosting Lobby", "address": "lobby.craftinghosting.free",
+                  "motd": "Kostenloser Server in 2 Minuten – teste hier", "icon": "/v1/partners/craftinghosting/logo.png?v=<sha12>",
+                  "minVersion": "1.8", "maxVersion": "1.21.11" }],
+    "ttl": 600 }
+  ```
+
+  Only approved, not hidden servers of active partners that the status ping saw online within the last 30 minutes and
+  whose range `minVersion ≤ mc ≤ maxVersion` contains `mc` (numeric comparison by parts, `1.21` = `1.21.0`; the leading
+  version of `mc` is used, e.g. `1.21.11-pre1` → `1.21.11`; missing or unusable `mc` → no filter). One server per
+  partner, at most **3**, order rotates daily (sorted by `sha256("<UTC day>:<id>")`). `motd` is plain text ≤ 60 characters
+  without `§` codes. `icon` is `null` without logo. `ETag`/`304`, `Cache-Control: public, max-age=300`.
+- `POST /v1/partners/servers/{id}/join` (Bearer optional, no body) → always `204`. With a valid Bearer one join per
+  player, server and UTC day is counted (stored as HMAC, never the UUID); without Bearer nothing is counted. 30/min per IP.
+- **Status ping**: every 5 minutes the API pings every approved server of active partners (Server List Ping, handshake +
+  status, 5 s timeout) and stores `online`, `latencyMs`, player counts, `lastOnlineAt`, `lastCheckedAt` and a reason
+  (`private_address | unresolvable | timeout | refused | invalid_response | disabled`). SSRF guard as for invites:
+  `_minecraft._tcp` SRV honoured, DNS resolved once, only public unicast addresses (no private, loopback, link-local,
+  CGNAT, multicast, documentation or reserved ranges, no IPv4-in-IPv6), ports 1–65535 (default 25565); connected to
+  the checked IP. `SERVER_PING=false` disables it.
+- **Download links (website)**: `GET /go/<slug>` and `/go/<slug>?c=<campaign>` (`campaign` = `^[a-z0-9-]{1,24}$`,
+  created by the partner; unknown → counted without campaign) count a **click** (sum per partner/campaign/UTC day;
+  repeated clicks with the same IP + User-Agent within 10 minutes count once – deduplicated in memory only, no IP,
+  cookie or player stored) and redirect `302` to `/download?partner=<slug>[&c=<campaign>]` (`Cache-Control:
+  no-store`, `X-Robots-Tag: noindex`). The download page shows a banner "Recommended by <Partner> – code <CODE>" and
+  calls `POST /v1/partners/{slug}/download?c=<campaign>` (→ always `204`, 30/min per IP, same deduplication) when a
+  download button is clicked. Unknown or paused slug → plain `/download`, nothing counted.
+
+### 44.4 Partner dashboard (`/v1/partner/{slug}/…`)
+
+Bearer or website session + `X-CSRF-Token`. Owner, active members per right, or team mode. No access → `403
+partner_forbidden`, missing right → `403 partner_right`, unknown slug → `404 partner_not_found`. Writes 60/min per
+account, uploads (logo, cape) 5 per 24 h per partner. All texts are plain text without control characters. Website
+page: `/partner` (`/partner/<slug>` when the account may open several dashboards; team members pick any partner).
+
+| route | right | answer / notes |
+|---|---|---|
+| `GET …/dashboard` | any | `PartnerDashboard` (below) |
+| `POST …/batches { label ≤ 60, count 1..500 }` | codes | `201 { batch: BatchView, codes: string[] }` – codes only here and in the CSV; `403 partner_quota`, `403 partner_paused` |
+| `POST …/batches/{id}/block` | codes | `{ batch, blocked }` – blocks the unused codes; `404 batch_not_found` |
+| `GET …/batches/{id}.csv` | codes | `text/csv` `code,ref,status,redeemed_at` (`status` = `open`, `redeemed` or `blocked`), never player data |
+| `POST …/requests { kind, … }` | per kind | `201 { request: RequestView }`, `409 partner_request_open` |
+| `DELETE …/requests/{id}` | per kind | withdraw an open request → `204` |
+| `GET …/requests/{id}/image.png` | per kind | image of an open `logo`/`cape` request (`private, no-store`) |
+| `PUT …/logo` (raw `image/png`) | profile | `201 { request }` – request `logo`; replaces an open one |
+| `PUT …/cape?name=&frames=&frameTimeMs=` (raw `image/png`) | cosmetics | `201 { request }` – request `cape` (rules of §5.6, HD up to 1024×512 and up to 32 frames allowed, ≤ 20 MB); replaces an open one |
+| `POST …/links { campaign }` / `DELETE …/links/{campaign}` | links | `201 { campaigns }` / `204`; max 20 campaigns (`403 partner_campaign_limit`, `409 campaign_exists`) |
+| `POST …/api-key` / `DELETE …/api-key` | api | `201 { key, hint, createdAt }` (key returned **once**: `trsp_live_` + 32 base62, stored as SHA-256; the old key stops working) / `204` |
+| `PUT …/webhook { url, events[] }` | webhook | `{ webhook: WebhookView, secret? }` – `secret` (`whsec_…`) only on the first save; `400 invalid_webhook_url` |
+| `DELETE …/webhook` | webhook | `204`; pending deliveries become `failed` |
+| `POST …/webhook/secret` | webhook | `{ webhook, secret }` (new secret, once) |
+| `POST …/webhook/test` | webhook | `{ delivery: DeliveryView }` – sends `test.ping` at once |
+| `POST …/webhook/deliveries/{id}/retry` | webhook | `{ delivery }` – one immediate attempt for a `failed` delivery (`400 delivery_not_failed`) |
+| `POST …/members { uuid` or `name, rights[] }` | owner | `201 { members }` – the player gets `partner_member_invite`; `404 player_not_found`, `409 member_exists`, `403 partner_member_limit` |
+| `PATCH …/members/{uuid} { rights[] }` / `DELETE …/members/{uuid}` | owner/team | `{ members }` / `204` (the member gets `partner_member_removed`) |
+
+Request kinds and rights: `quota { amount: 500 | 1000 | 5000 }` (codes), `code_change { code }` (codes; the code is
+checked on request and again on accept), `profile { text: { de, en }, links[] }` (profile), `logo` (profile, via
+`PUT …/logo`), `server { name ≤ 40, address (host[:port]), minVersion, maxVersion, motd }` (server; versions like
+`1.21.11`, `minVersion ≤ maxVersion`, motd cleaned to one line ≤ 60 without `§` codes), `cape` (cosmetics, via
+`PUT …/cape`), `cosmetic_wish { text ≤ 1000 }` (cosmetics), `promo { channel: blog | newsletter | wiki, topic ≤ 120,
+text ≤ 2000 }` (promo). One open request per kind, for `promo` one per channel.
+
+```text
+PartnerDashboard = { slug, name, category, state, prefix, logo, wikiUrl, owner: { uuid, name } | null,
+  profile: { text: { de, en }, links },            // live version; pending changes are in `requests`
+  code,                                            // fixed code
+  quota: { total, used, free, requested: amount | null },
+  batches: BatchView[] | null,                     // right codes, last 50
+  stats: PartnerStats | null,                      // right stats
+  server: { current: ServerState | null, joins7d, players7d } | null,   // right server
+  links: { path: "/go/<slug>", campaigns: [{ campaign ("" = no campaign), clicks30d, downloads30d }] } | null,  // right links
+  apiKey: { hint, createdAt, lastUsedAt } | null,  // right api
+  webhook: { config: WebhookView | null, deliveries: DeliveryView[] } | null,   // right webhook, last 50
+  cosmetics: [{ kind, id, name, previewUrl }],     // assigned items
+  members: [{ uuid, name, rights, status: pending | active, createdAt }] | null,  // owner/team only
+  requests: RequestView[],                         // last 40, only kinds the viewer has the right for
+  viewer: { owner, team, rights }, teamChanges: [{ action, at }] }
+BatchView = { id, label, via, count, redeemed, blocked, createdAt, blockedAt }
+RequestView = { id, kind, channel, status: open | accepted | rejected | withdrawn, data, hasImage, reason, createdAt, decidedAt }
+PartnerStats = { supporters, newSupporters7d, redemptions: { total, fixed, onetime },
+  daily: [{ day, fixed, onetime, newSupporters, left }] (30 days), newPlayers, capeWorn, cosmeticWorn, left30d,
+  serverJoins7d, serverPlayers7d, onlineToday, playedToday, clicks30d, downloads30d }
+ServerState = { id, name, address, minVersion, maxVersion, motd, hidden, online, latencyMs, players: { online, max } | null,
+  lastOnlineAt, lastCheckedAt, reason }
+WebhookView = { url, events[], secretHint (last 4), updatedAt }
+DeliveryView = { id, event, status: pending | delivered | failed, attempts, lastStatus, error, response (≤ 200 chars),
+  nextAt, createdAt, updatedAt }
+```
+
+`capeWorn` / `cosmeticWorn` = current supporters wearing an assigned cape / having an assigned cosmetic equipped.
+`left` counts supporters who switched to another partner or ended the support. Numbers only, never names.
+
+### 44.5 Partner API (server to server, `Authorization: Bearer trsp_live_…`)
+
+- `POST /v1/partner-api/codes { count: 1..100, label? ≤ 60, ref? ≤ 64 }` → `201 { codes: string[], quota: { total, used } }`.
+  With `ref`, `count` must be 1 and the same `ref` returns the same code without using quota (idempotent). Codes with the
+  same `label` go into one batch (default label `API`) until it is blocked. Over quota → `403 partner_quota`.
+- `GET /v1/partner-api/codes/{code}` → `{ code, redeemed, redeemedAt, blocked, ref }` – never player data. Not an own
+  one-time code → `404 code_not_found`.
+- `GET /v1/partner-api/quota` → `{ total, used, requested: boolean }` (`requested` = open quota request).
+- 60 requests/min per key; paused partner → `403 partner_paused`; bad key → `401 unauthorized` (30 failures/min per
+  IP, then `429`).
+
+### 44.6 Webhooks (outbound)
+
+Config: `https://` URL without credentials (checked on save: the host must resolve to public addresses only;
+`localhost`, `*.local`, `*.internal` refused), events ⊂ `code.redeemed, partner.supported, partner.left, quota.low`
+(`test.ping` is always sent on request). Body JSON `{ type, at, … }`:
+
+- `code.redeemed { code, ref }` – first redemption of a one-time code,
+- `partner.supported { supporters }` – a player started supporting the partner,
+- `partner.left { supporters }` – a supporter switched to another partner or ended the support,
+- `quota.low { total, used }` – once when free < 10 % after generating codes (again after a top-up),
+- `test.ping {}`.
+
+Never player names or UUIDs. Headers `Content-Type: application/json`, `User-Agent: TRS-Webhooks/1`,
+`X-TRS-Timestamp: <unix seconds>`, `X-TRS-Signature: sha256=<hex HMAC-SHA256(secret, "<timestamp>.<body>")>`. Every
+attempt resolves the host again and only connects to the checked public address (no DNS rebinding), 10 s timeout, no
+redirects, the response body is ignored (status + first 200 characters stored). `2xx` = delivered; otherwise retries after
+1 min, 5 min, 30 min, 2 h, 6 h, 24 h (persisted, checked every 15 s, survives restarts), then `failed` (manual retry =
+one attempt). Delivery log: last 50 per partner.
+
+### 44.7 Team routes (`partners.manage`, 120 requests/min)
+
+- `GET /v1/admin/partners` → `{ partners: AdminPartnerView[] }`; `GET /v1/admin/partners/{slug}` → `{ partner }`.
+  `AdminPartnerView = { slug, name, category, state, prefix, code, logo, owner, quota: { total, used }, supporters,
+  openRequests, items, server: { name, address, hidden, online } | null, wikiUrl, text, links, createdAt }`.
+- `POST /v1/admin/partners { name, slug, category, code, prefix, owner (UUID or name), quota: 0 | 500 | 1000 }` →
+  `201 { partner }`; `409 slug_taken | prefix_taken | code_taken`, `404 player_not_found`.
+- `PATCH /v1/admin/partners/{slug} { name?, category?, state?, code?, prefix?, owner?, wikiUrl? (null clears), text?,
+  links? }` → `{ partner }`. `state: paused` hides the partner and its server, its codes answer `404`; members get
+  `partner_updated { kind: "paused" | "resumed" | "updated" }`.
+- `DELETE /v1/admin/partners/{slug}` → `204` (codes, requests, stats, members, webhook, key gone; players keep items).
+- `POST /v1/admin/partners/{slug}/quota { amount: 500 | 1000 | 5000 }` → `{ partner }`; closes an open quota request.
+- `GET /v1/admin/partners/catalog` → `{ items: [{ kind, id, name, previewUrl }] }` (assignable items).
+- `POST /v1/admin/partners/{slug}/items { kind, id }` / `DELETE /v1/admin/partners/{slug}/items/{kind}/{id}` →
+  `{ partner }` (`404 item_not_found`).
+- `GET /v1/admin/partners/requests?status=open|accepted|rejected|withdrawn` (default `open`) → `{ requests:
+  [RequestView + { partner: { slug, name }, createdBy: { uuid, name } | null }] }`;
+  `GET /v1/admin/partners/requests/{id}/image.png`.
+- `POST /v1/admin/partners/requests/{id} { status: accepted | rejected, reason? }` (reason required for rejecting,
+  `400 reason_required`) → `{ request }`. Accepting applies the request: profile/logo/fixed code (`409 code_taken`)/
+  quota; `server` creates or updates the partner's server (new address → status reset until the next ping); `cape`
+  creates a partner cape (approved, owned only via the grant) and assigns it; `promo` and `cosmetic_wish` are only
+  marked (blog/newsletter/wiki and 3D items are made by the team with the existing tools §30/§40/docs/workbench).
+- `PATCH /v1/admin/partners/{slug}/server { hidden }` / `DELETE /v1/admin/partners/{slug}/server`.
+- Team mode = the normal dashboard routes of 44.4 with a team session.
+- Audit log: `partner.create | update | pause | resume | delete | quota | item.add | item.remove | request.accept |
+  request.reject | server.hide | server.show | server.delete`, target `partner:<slug>`.
+- `GET /v1/admin/dashboard` has `partners: { requests } | null` (open requests, for the navigation badge).
+- Website: `/admin/partners` (tabs Partners, Requests, New partner) and the nav entry for team members with
+  `partners.manage`.
+
+### 44.8 Events
+
+`GET /v1/events/me`:
+
+- `partner_updated { slug, kind, action?, reason?, request? }` to owner + active members; `kind` ∈ `request_accepted |
+  request_rejected | quota_granted | team_changed | member_joined | member_left | paused | resumed | updated`
+  (`request` = request kind, `reason` = rejection reason).
+- `partner_support_changed { partner: { slug, name } | null }` to the player after a redeem that changed the support
+  and after ending it (the launcher refreshes `GET /v1/me/partner`).
+- `partner_member_invite { partner, rights, createdAt }` / `partner_member_removed { partner }` to the invited/removed
+  player.
