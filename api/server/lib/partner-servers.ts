@@ -5,7 +5,7 @@ import { hmacHex } from './ids'
 import { defaultPingDeps, ServerStatusService, type PingDeps } from './serverping'
 
 /**
- * Partner-Server im TRS Client (§44.3): öffentliche Liste (nur freigegeben, Partner aktiv, in den letzten 30 min
+ * Partner-Server im TRS Client (§44.3): öffentliche Liste (nur freigegeben, Partner aktiv + Server erlaubt, in den letzten 30 min
  * erreichbar, passende Version, höchstens 3, Reihenfolge je UTC-Tag), Status-Ping alle 5 min, Beitritte je Tag.
  */
 
@@ -91,7 +91,7 @@ export function listPartnerServers(ctx: AppContext, mcRaw?: unknown): { servers:
   const rows = all<PartnerServerRow & { slug: string, partner_name: string, logo_sha: string | null }>(
     ctx.db,
     `SELECT s.*, p.slug, p.name AS partner_name, p.logo_sha FROM partner_servers s JOIN partners p ON p.id = s.partner_id
-     WHERE p.state = 'active' AND s.hidden = 0 AND s.last_online_at IS NOT NULL AND s.last_online_at >= ?`,
+     WHERE p.state = 'active' AND p.server_allowed = 1 AND s.hidden = 0 AND s.last_online_at IS NOT NULL AND s.last_online_at >= ?`,
     t - SERVER_ONLINE_WINDOW_MS,
   )
   const day = dayOf(t)
@@ -115,7 +115,7 @@ export function listPartnerServers(ctx: AppContext, mcRaw?: unknown): { servers:
 /** Beitritt über die Liste: je Spieler, Server und UTC-Tag einmal (Spieler nur als HMAC gespeichert). */
 export function recordServerJoin(ctx: AppContext, serverId: string, uuid: string | null): boolean {
   if (!uuid) return false
-  if (!one(ctx.db, 'SELECT 1 AS x FROM partner_servers WHERE id = ?', serverId)) return false
+  if (!one(ctx.db, 'SELECT 1 AS x FROM partner_servers s JOIN partners p ON p.id = s.partner_id WHERE s.id = ? AND p.server_allowed = 1', serverId)) return false
   return run(
     ctx.db,
     'INSERT INTO partner_server_joins (server_id, day, player) VALUES (?, ?, ?) ON CONFLICT DO NOTHING',
@@ -140,7 +140,7 @@ export function serverJoinStats(ctx: AppContext, serverId: string, days: number)
 export async function pingPartnerServers(ctx: AppContext, deps?: PingDeps): Promise<number> {
   const rows = all<{ id: string, address: string }>(
     ctx.db,
-    "SELECT s.id, s.address FROM partner_servers s JOIN partners p ON p.id = s.partner_id WHERE p.state = 'active' AND s.hidden = 0",
+    "SELECT s.id, s.address FROM partner_servers s JOIN partners p ON p.id = s.partner_id WHERE p.state = 'active' AND p.server_allowed = 1 AND s.hidden = 0",
   )
   if (rows.length === 0) return 0
   const svc = new ServerStatusService(ctx.config.serverPing, ctx.now, deps ?? ctx.partnerPingDeps ?? defaultPingDeps, {

@@ -2,13 +2,13 @@ import { createHmac } from 'node:crypto'
 import { createServer, Socket, type AddressInfo, type Server } from 'node:net'
 import { DatabaseSync } from 'node:sqlite'
 import { afterEach, describe, expect, it } from 'vitest'
-import { catalog, setActiveCape } from '../server/lib/capes'
+import { catalog, getCape, setActiveCape, uploadCape } from '../server/lib/capes'
 import { shareRole } from '../server/lib/capeshares'
 import { createCodes } from '../server/lib/codes'
 import { adminCreateCreator, adminUpdateCreator, createExtraCode, normalizeCreatorCode } from '../server/lib/creators'
 import { all, one, run } from '../server/lib/db'
 import type { ApiError } from '../server/lib/errors'
-import { migratePartners } from '../server/lib/migrations'
+import { migratePartners, migratePartners2 } from '../server/lib/migrations'
 import {
   compareVersions,
   listPartnerServers,
@@ -17,6 +17,7 @@ import {
   recordServerJoin,
   serverJoinStats,
 } from '../server/lib/partner-servers'
+import { adminPartnerStats, adminPartnerStatsDetail, clearPartnerStatsCache, snapshotPartnerActivity } from '../server/lib/partner-stats'
 import {
   checkWebhookUrl,
   deliverOne,
@@ -33,12 +34,14 @@ import {
 import {
   addCampaign,
   adminAddItem,
+  adminCatalog,
   adminCreatePartner,
   adminDecideRequest,
   adminGrantQuota,
   adminListPartners,
   adminListRequests,
   adminUpdatePartner,
+  adminUploadPartnerCape,
   answerInvite,
   apiCodeStatus,
   apiCreateCodes,
@@ -53,6 +56,7 @@ import {
   endPartnerSupport,
   inviteMember,
   listPartners,
+  memberRequestImage,
   myPartnerState,
   partnerDashboard,
   PARTNER_SWITCH_LOCK_MS,
@@ -60,6 +64,7 @@ import {
   removeMember,
   rotateApiKey,
   sanitizeLogo,
+  selectableCapes,
   updateMember,
   uploadLogo,
   uploadPartnerCape,
@@ -372,6 +377,7 @@ function row(env: TestEnv, slug: string) {
 
 /** Antrag stellen + annehmen → freigegebener Server. */
 async function approvedServer(env: TestEnv, slug: string, owner: string, over: Partial<{ address: string, minVersion: string, maxVersion: string }> = {}) {
+  adminUpdatePartner(env.ctx, OWNER, slug, { serverAllowed: true })
   createRequest(env.ctx, owner, slug, {
     kind: 'server',
     name: `${slug} Lobby`,
@@ -704,6 +710,195 @@ describe('download links (/go)', () => {
   })
 })
 
+// ---------------------------------------------------------------- Runde 2
+
+describe('partner server switch (round 2)', () => {
+  it('is off by default: no server requests, no listing, no popup server, no joins; the team switches it on', async () => {
+    const env = makeEnv()
+    const { owner } = await partner(env, 'alpha', { code: 'ALPHA', prefix: 'AL', items: false })
+    expect(partnerDashboard(env.ctx, owner, 'alpha').serverAllowed).toBe(false)
+    expect(adminListPartners(env.ctx, OWNER).partners[0]!.serverAllowed).toBe(false)
+    const body = { kind: 'server', name: 'Lobby', address: 'lobby.alpha.example.com', minVersion: '1.8', maxVersion: '1.21.11', motd: 'Hi' }
+    const e = err(() => createRequest(env.ctx, owner, 'alpha', body))
+    expect([e.status, e.code]).toEqual([403, 'partner_server_not_allowed'])
+
+    const id = await approvedServer(env, 'alpha', owner)
+    run(env.ctx.db, 'UPDATE partner_servers SET online = 1, last_online_at = ?', env.clock.t)
+    expect(listPartnerServers(env.ctx).servers.map((s) => s.id)).toEqual([id])
+    expect(publicPartner(env.ctx, 'alpha').server).toEqual({ name: 'alpha Lobby', address: 'lobby.alpha.example.com' })
+    const fan = await player(env, 'Joiner')
+    expect(recordServerJoin(env.ctx, id, fan.uuid)).toBe(true)
+
+    // Wieder aus: Server bleibt gespeichert, ist aber überall weg.
+    createRequest(env.ctx, owner, 'alpha', { ...body, name: 'Lobby 2' })
+    expect(adminUpdatePartner(env.ctx, OWNER, 'alpha', { serverAllowed: false }).partner.serverAllowed).toBe(false)
+    expect(listPartnerServers(env.ctx).servers).toEqual([])
+    expect(publicPartner(env.ctx, 'alpha').server).toBeNull()
+    expect(listPartners(env.ctx).partners[0]!.server).toBeNull()
+    env.clock.advance(DAY)
+    expect(recordServerJoin(env.ctx, id, fan.uuid)).toBe(false)
+    expect(err(() => createRequest(env.ctx, owner, 'alpha', body)).code).toBe('partner_server_not_allowed')
+    const open = adminListRequests(env.ctx, OWNER, {}).requests.find((r) => r.kind === 'server')!
+    expect(err(() => adminDecideRequest(env.ctx, OWNER, open.id, { status: 'accepted' })).code).toBe('partner_server_not_allowed')
+    adminDecideRequest(env.ctx, OWNER, open.id, { status: 'rejected', reason: 'Nicht freigeschaltet' })
+    expect(partnerDashboard(env.ctx, owner, 'alpha').server!.current!.name).toBe('alpha Lobby')
+    // Neu angelegt mit Schalter an; „stats“ ist als Adresse reserviert.
+    const o2 = (await player(env, 'OwnBeta')).uuid
+    adminCreatePartner(env.ctx, OWNER, { name: 'Beta', slug: 'beta', category: 'network', code: 'BETACODE', prefix: 'BE', owner: o2, serverAllowed: true })
+    expect(partnerDashboard(env.ctx, o2, 'beta').serverAllowed).toBe(true)
+    expect(err(() => adminCreatePartner(env.ctx, OWNER, { name: 'S', slug: 'stats', category: 'other', code: 'STATSCODE', prefix: 'ST', owner: o2 })).code).toBe('invalid_request')
+  })
+})
+
+describe('partner cape from own uploads (round 2)', () => {
+  it('lists approved uploads of owner and members, sends a request, accepting copies it as partner cape', async () => {
+    const env = makeEnv()
+    const { owner } = await partner(env)
+    const helper = await player(env, 'Helper')
+    const stranger = await player(env, 'Stranger')
+    inviteMember(env.ctx, owner, 'craftinghosting', { name: 'Helper', rights: ['cosmetics'] })
+    answerInvite(env.ctx, helper.uuid, 'craftinghosting', { accept: true })
+    const mine = uploadCape(env.ctx, owner, solidPng(64, 32, [10, 200, 10, 255]), 'Grün')
+    const helpers = uploadCape(env.ctx, helper.uuid, solidPng(128, 64 * 2, [10, 10, 200, 255]), 'Blau', { frames: 2, frameTimeMs: 200 })
+    const pending = uploadCape(env.ctx, owner, solidPng(64, 32, [1, 2, 3, 255]), 'Wartet')
+    const foreign = uploadCape(env.ctx, stranger.uuid, solidPng(64, 32, [200, 200, 10, 255]), 'Fremd')
+    run(env.ctx.db, "UPDATE capes SET status = 'approved' WHERE id IN (?, ?, ?)", mine.id, helpers.id, foreign.id)
+
+    const list = selectableCapes(env.ctx, helper.uuid, 'craftinghosting').capes
+    expect(list.map((c) => c.id).sort()).toEqual([mine.id, helpers.id].sort())
+    expect(list.find((c) => c.id === helpers.id)).toMatchObject({ owner: { uuid: helper.uuid, name: 'Helper' }, frames: 2, frameTimeMs: 200, scale: 2 })
+    expect(list.some((c) => c.id === pending.id)).toBe(false)
+    expect(err(() => createRequest(env.ctx, owner, 'craftinghosting', { kind: 'cape', capeId: foreign.id })).code).toBe('cape_not_found')
+    expect(err(() => createRequest(env.ctx, owner, 'craftinghosting', { kind: 'cape', capeId: pending.id })).code).toBe('cape_not_found')
+
+    const first = createRequest(env.ctx, owner, 'craftinghosting', { kind: 'cape', capeId: mine.id }).request
+    // Neue Wahl ersetzt den offenen Antrag.
+    const req = createRequest(env.ctx, helper.uuid, 'craftinghosting', { kind: 'cape', capeId: helpers.id, name: 'CH Blau' }).request
+    expect(req).toMatchObject({ kind: 'cape', status: 'open', hasImage: true, data: { source: 'select', capeId: helpers.id, name: 'CH Blau', owner: 'Helper', frames: 2 } })
+    expect(partnerDashboard(env.ctx, owner, 'craftinghosting').requests.find((r) => r.id === first.id)!.status).toBe('withdrawn')
+    expect(memberRequestImage(env.ctx, owner, 'craftinghosting', req.id).sha256).toBe(getCape(env.ctx, helpers.id)!.sha256)
+
+    adminDecideRequest(env.ctx, OWNER, req.id, { status: 'accepted' })
+    const items = partnerDashboard(env.ctx, owner, 'craftinghosting').cosmetics
+    const added = items.find((i) => i.name === 'CH Blau')!
+    expect(added.id).not.toBe(helpers.id)
+    expect(added.cape).toMatchObject({ frames: 2, frameTimeMs: 200 })
+    expect(getCape(env.ctx, added.id)).toMatchObject({ partner_id: expect.any(Number), owner_uuid: null, sha256: getCape(env.ctx, helpers.id)!.sha256, width: 128, height: 64 })
+    // Der Upload des Mitglieds bleibt seiner.
+    expect(getCape(env.ctx, helpers.id)).toMatchObject({ owner_uuid: helper.uuid, partner_id: null })
+    const fan = await player(env, 'Fan')
+    redeemAnyCode(env.ctx, fan.uuid, 'CRAFTING')
+    expect(catalog(env.ctx, fan.uuid).find((c) => c.id === added.id)).toMatchObject({ owned: true, shareable: false })
+
+    // Quelle weg → Annehmen geht nicht.
+    const again = createRequest(env.ctx, owner, 'craftinghosting', { kind: 'cape', capeId: mine.id }).request
+    run(env.ctx.db, 'UPDATE capes SET retired = 1 WHERE id = ?', mine.id)
+    expect(err(() => adminDecideRequest(env.ctx, OWNER, again.id, { status: 'accepted' })).code).toBe('cape_unavailable')
+    // Ohne Recht `cosmetics` keine Liste.
+    updateMember(env.ctx, owner, 'craftinghosting', helper.uuid, { rights: ['stats'] })
+    expect(err(() => selectableCapes(env.ctx, helper.uuid, 'craftinghosting')).code).toBe('partner_right')
+  })
+})
+
+describe('team cape upload (round 2)', () => {
+  it('stores a hidden HD partner cape, assigns it and gives it to current supporters at once', async () => {
+    const env = makeEnv()
+    const { owner } = await partner(env)
+    const fan = await player(env, 'Fan')
+    const other = await player(env, 'Other')
+    redeemAnyCode(env.ctx, fan.uuid, 'CRAFTING')
+    const png = solidPng(1024, 512 * 2, [20, 40, 120, 255])
+    expect(err(() => adminUploadPartnerCape(env.ctx, OWNER, 'craftinghosting', png, { name: 'Polarnacht' })).code).toBe('frame_time_required')
+    expect(err(() => adminUploadPartnerCape(env.ctx, OWNER, 'craftinghosting', png, { name: 'Polarnacht', frames: '3', frameTimeMs: '150' })).code).toBe('invalid_dimensions')
+    expect(err(() => adminUploadPartnerCape(env.ctx, OWNER, 'craftinghosting', solidPng(100, 50), { name: 'X' })).code).toBe('invalid_dimensions')
+    const none: Staff = { ...OWNER, owner: false, perms: new Set() }
+    expect(err(() => adminUploadPartnerCape(env.ctx, none, 'craftinghosting', png, { name: 'X', frameTimeMs: '150' })).status).toBe(403)
+
+    const r = adminUploadPartnerCape(env.ctx, OWNER, 'craftinghosting', png, { name: 'Polarnacht', frames: '2', frameTimeMs: '150' })
+    expect(r.cape).toMatchObject({ name: 'Polarnacht', width: 1024, height: 512, frames: 2, frameTimeMs: 150, granted: 1 })
+    expect(getCape(env.ctx, r.cape.id)).toMatchObject({ hidden: 1, partner_id: expect.any(Number), owner_uuid: null, status: 'approved' })
+    expect(r.partner.items.map((i) => i.id)).toContain(r.cape.id)
+    // Bestehender Unterstützer hat ihn sofort, andere sehen ihn nicht im Katalog.
+    expect(catalog(env.ctx, fan.uuid).find((c) => c.id === r.cape.id)).toMatchObject({ owned: true, shareable: false, animated: true })
+    expect(catalog(env.ctx, other.uuid).some((c) => c.id === r.cape.id)).toBe(false)
+    expect(myPartnerState(env.ctx, fan.uuid).owned.map((o) => o.id)).toContain(r.cape.id)
+    expect(partnerDashboard(env.ctx, owner, 'craftinghosting').cosmetics.find((i) => i.id === r.cape.id)!.cape).toMatchObject({ frames: 2, frameTimeMs: 150 })
+    // Neue Unterstützer bekommen ihn beim Einlösen.
+    redeemAnyCode(env.ctx, other.uuid, 'CRAFTING')
+    expect(catalog(env.ctx, other.uuid).find((c) => c.id === r.cape.id)?.owned).toBe(true)
+    expect(one(env.ctx.db, "SELECT action FROM admin_log WHERE action = 'partner.cape.upload'")).toEqual({ action: 'partner.cape.upload' })
+  })
+
+  it('assigning a catalogue item also gives it to current supporters', async () => {
+    const env = makeEnv()
+    await partner(env)
+    const fan = await player(env, 'Fan')
+    redeemAnyCode(env.ctx, fan.uuid, 'CRAFTING')
+    const before = catalog(env.ctx, fan.uuid).filter((c) => c.owned).map((c) => c.id)
+    const extra = adminCatalog(env.ctx, OWNER).items.find((i) => i.kind === 'cape' && !before.includes(i.id))!
+    adminAddItem(env.ctx, OWNER, 'craftinghosting', { kind: 'cape', id: extra.id })
+    expect(catalog(env.ctx, fan.uuid).find((c) => c.id === extra.id)?.owned).toBe(true)
+  })
+})
+
+describe('partner statistics (round 2)', () => {
+  it('ranks all partners, keeps a daily history with the previous period and snapshots activity', async () => {
+    const env = makeEnv()
+    const { owner } = await partner(env)
+    await partner(env, 'beta', { code: 'BETACODE', prefix: 'BE', items: false })
+    const a = await player(env, 'FanA')
+    const b = await player(env, 'FanB')
+    const c = await player(env, 'FanC')
+    redeemAnyCode(env.ctx, a.uuid, 'CRAFTING')
+    env.clock.advance(35 * DAY)
+    redeemAnyCode(env.ctx, b.uuid, 'CRAFTING')
+    redeemAnyCode(env.ctx, c.uuid, 'BETACODE')
+    countClick(env.ctx, 'craftinghosting', undefined, { ip: '1.1.1.1', ua: 'x' })
+    setActiveCape(env.ctx, b.uuid, 'emerald')
+    const today = Math.floor(env.clock.t / DAY)
+    run(env.ctx.db, 'INSERT INTO achievement_playtime (uuid, last_day, last_played_day) VALUES (?, ?, ?)', b.uuid, today, today)
+    expect(snapshotPartnerActivity(env.ctx)).toBe(2)
+    clearPartnerStatsCache(env.ctx)
+
+    const list = adminPartnerStats(env.ctx, OWNER, {})
+    expect(list.partners.map((p) => p.slug)).toEqual(['craftinghosting', 'beta'])
+    expect(list.totals).toMatchObject({ partners: 2, supporters: 3, supporters30d: 2, redemptions30d: 2, newPlayers30d: 0 })
+    expect(list.partners[0]).toMatchObject({
+      code: 'CRAFTING',
+      serverAllowed: false,
+      supporters: { total: 2, today: 1, d7: 1, d30: 1 },
+      redemptions: { total: 2, fixed: 2, onetime: 0, d30: 1 },
+      newPlayers: { total: 1, d30: 0 },
+      links: { clicks30d: 1, downloads30d: 0 },
+      activity: { onlineToday: 1, playedToday: 1, online7d: 1 },
+      worn: { cape: 1, cosmetic: 0 },
+    })
+    expect(list.definitions.activitySince).toBe(new Date(today * DAY).toISOString().slice(0, 10))
+    expect(adminPartnerStats(env.ctx, OWNER, { sort: 'name', order: 'asc' }).partners.map((p) => p.slug)).toEqual(['beta', 'craftinghosting'])
+    expect(adminPartnerStats(env.ctx, OWNER, { q: 'betac' }).partners.map((p) => p.slug)).toEqual(['beta'])
+    expect(err(() => adminPartnerStats(env.ctx, OWNER, { sort: 'nope' })).code).toBe('invalid_request')
+
+    const d = adminPartnerStatsDetail(env.ctx, OWNER, 'craftinghosting', { days: '30' })
+    expect(d.series).toHaveLength(30)
+    expect(d.series.at(-1)).toMatchObject({ newSupporters: 1, fixed: 1, clicks: 1, activeSupporters: 1, playingSupporters: 1 })
+    expect(d.series.at(-2)!.activeSupporters).toBeNull()
+    expect(d.period).toMatchObject({ newSupporters: 1, redemptions: 1, newPlayers: 0, clicks: 1 })
+    expect(d.previous).toMatchObject({ newSupporters: 1, redemptions: 1, newPlayers: 1 })
+    expect(err(() => adminPartnerStatsDetail(env.ctx, OWNER, 'nope', {})).code).toBe('partner_not_found')
+    expect(JSON.stringify(d)).not.toContain(b.uuid)
+
+    const stats = partnerDashboard(env.ctx, owner, 'craftinghosting').stats!
+    expect(stats.daily).toHaveLength(30)
+    expect(stats.current30d).toMatchObject({ newSupporters: 1, redemptions: 1 })
+    expect(stats.previous30d).toMatchObject({ newSupporters: 1, newPlayers: 1 })
+    expect([stats.clicks30d, stats.left30d]).toEqual([1, 0])
+
+    const none: Staff = { ...OWNER, owner: false, perms: new Set() }
+    expect(err(() => adminPartnerStats(env.ctx, none, {})).status).toBe(403)
+    expect(err(() => adminPartnerStatsDetail(env.ctx, none, 'beta', {})).status).toBe(403)
+  })
+})
+
 // ---------------------------------------------------------------- Migration
 
 describe('migration 51', () => {
@@ -711,6 +906,9 @@ describe('migration 51', () => {
     const env = makeEnv()
     migratePartners(env.ctx.db as DatabaseSync)
     migratePartners(env.ctx.db as DatabaseSync)
+    migratePartners2(env.ctx.db as DatabaseSync)
+    migratePartners2(env.ctx.db as DatabaseSync)
+    expect(all(env.ctx.db, "SELECT name FROM pragma_table_info('partner_daily') WHERE name IN ('active_supporters', 'playing_supporters')")).toHaveLength(2)
     seedFixtures(env)
     const fan = await player(env, 'Src')
     run(env.ctx.db, "INSERT INTO user_capes (uuid, cape_id, source, granted_at) VALUES (?, 'emerald', 'partner', 0)", fan.uuid)

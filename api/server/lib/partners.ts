@@ -3,8 +3,8 @@ import { existsSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
 import { audit } from './audit'
-import { capeUrl, getCape, grantCape, writeAtomic } from './capes'
-import { isCreatorCodeTaken, isPartnerFixedTaken, ONETIME_ALPHABET, PARTNER_FIXED, PARTNER_ONETIME } from './code-space'
+import { capeUrl, capeView, getCape, grantCape, writeAtomic, type CapeRow } from './capes'
+import { isCreatorCodeTaken, ONETIME_ALPHABET, PARTNER_FIXED, PARTNER_ONETIME } from './code-space'
 import type { AppContext } from './context'
 import { cosmeticView, getCosmetic, grantCosmetic } from './cosmetics'
 import { all, one, run, tx } from './db'
@@ -12,10 +12,12 @@ import { ApiError, badRequest, conflict, forbidden, notFound, tooMany, unauthori
 import { newUploadCapeId, normalizeUuid, sha256Hex } from './ids'
 import { downscale } from './images'
 import { logoPath, MC_VERSION, cleanMotd, serverJoinStats, type PartnerServerRow } from './partner-servers'
+import { clearPartnerStatsCache, PARTNER_NEW_PLAYER_MS, partnerTrend, type PartnerPeriod, type PartnerStatDay } from './partner-stats'
 import { deliveriesOf, queueWebhook, webhookView, type DeliveryView, type WebhookView } from './partner-webhooks'
 import { decodeRgba, encodeRgba, inspectPng, sanitizeCapeUpload } from './png'
 import { RULES } from './ratelimit'
 import { serverAddress } from './schemas'
+import { hatPreview, type PublicHat } from './site'
 import { assertCan, can, teamOf, type Staff } from './team'
 import { getUser, getUserByName } from './users'
 
@@ -29,11 +31,10 @@ const MIN = 60_000
 const DAY = 86_400_000
 /** Wechsel zu einem ANDEREN Partner frühestens so lange nach dem letzten Start (wie §35.1). */
 export const PARTNER_SWITCH_LOCK_MS = 30 * DAY
-/** „Neuer Spieler“: Konto höchstens so lange vor der ersten Einlösung eines Codes dieses Partners angelegt. */
-export const PARTNER_NEW_PLAYER_MS = DAY
+export { PARTNER_NEW_PLAYER_MS }
 export const PARTNER_SLUG = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/
 /** Pfade unter /v1/partners/ und /partners/, die keine Partner sind. */
-export const RESERVED_SLUGS = new Set(['servers', 'new', 'admin', 'api', 'go', 'dashboard', 'catalog', 'requests'])
+export const RESERVED_SLUGS = new Set(['servers', 'new', 'admin', 'api', 'go', 'dashboard', 'catalog', 'requests', 'stats'])
 export const PARTNER_PREFIX = /^[A-Z]{2,4}$/
 export const CATEGORIES = ['hosting', 'network', 'other'] as const
 export type PartnerCategory = (typeof CATEGORIES)[number]
@@ -91,6 +92,8 @@ export interface PartnerRow {
   quota_total: number
   quota_used: number
   quota_low_sent: number
+  /** Team-Schalter „Partner-Server erlaubt“ (Migration 52, Standard aus). */
+  server_allowed: number
   created_at: number
   updated_at: number
 }
@@ -272,6 +275,8 @@ export const requestBody = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('code_change'), code: fixedCodeSchema }),
   z.strictObject({ kind: z.literal('profile'), text: textSchema, links: linksSchema }),
   serverRequestSchema.extend({ kind: z.literal('server') }),
+  // Partner-Umhang aus den eigenen Uploads (§5.6) des Inhabers oder eines Mitglieds wählen.
+  z.strictObject({ kind: z.literal('cape'), capeId: z.string().trim().min(1).max(40), name: oneLine(1, 32).optional() }),
   z.strictObject({ kind: z.literal('cosmetic_wish'), text: multiline(1000).refine((s) => s.length > 0, 'must not be empty') }),
   z.strictObject({
     kind: z.literal('promo'),
@@ -307,6 +312,7 @@ export const adminCreateBody = z.strictObject({
   prefix: prefixSchema,
   owner: z.string().trim().min(1).max(36),
   quota: z.union([z.literal(0), z.literal(500), z.literal(1000)]).default(0),
+  serverAllowed: z.boolean().default(false),
 })
 export const adminUpdateBody = z
   .strictObject({
@@ -319,6 +325,7 @@ export const adminUpdateBody = z
     wikiUrl: httpsUrl.nullable().optional(),
     text: textSchema.optional(),
     links: linksSchema.optional(),
+    serverAllowed: z.boolean().optional(),
   })
   .refine((o) => Object.keys(o).length > 0, 'at least one field is required')
 export const quotaBody = z.strictObject({ amount: z.union([z.literal(500), z.literal(1000), z.literal(5000)]) })
@@ -395,7 +402,7 @@ export function partnerCard(ctx: AppContext, p: PartnerRow): PartnerCard {
     text: { de: p.text_de, en: p.text_en },
     links: parseLinks(p.links),
     code: fixedCode(ctx, p.id),
-    server: s && !s.hidden ? { name: s.name, address: s.address } : null,
+    server: s && !s.hidden && p.server_allowed === 1 ? { name: s.name, address: s.address } : null,
     wikiUrl: p.wiki_url,
     supporters: supporterCount(ctx, p.id),
     cosmetics: itemsOf(ctx, p.id),
@@ -554,6 +561,23 @@ function grantItems(ctx: AppContext, uuid: string, partnerId: number): RedeemPar
     }
   }
   return out
+}
+
+/** Ein neu zugeordnetes Teil sofort an alle aktuellen Unterstützer geben (Quelle `partner`). Liefert die Zahl. */
+function grantToSupporters(ctx: AppContext, partnerId: number, kind: 'cape' | 'cosmetic', itemId: string): number {
+  const t = ctx.now()
+  let n = 0
+  for (const r of all<{ uuid: string }>(ctx.db, 'SELECT uuid FROM partner_support WHERE partner_id = ?', partnerId)) {
+    try {
+      if (kind === 'cape') grantCape(ctx, r.uuid, itemId, 'partner')
+      else grantCosmetic(ctx, r.uuid, itemId, 'partner')
+      run(ctx.db, 'INSERT INTO partner_grants (uuid, kind, item_id, partner_id, granted_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT DO NOTHING', r.uuid, kind, itemId, partnerId, t)
+      n++
+    } catch (err) {
+      if (!(err instanceof ApiError)) throw err
+    }
+  }
+  return n
 }
 
 /**
@@ -778,7 +802,11 @@ export interface PartnerStats {
   supporters: number
   newSupporters7d: number
   redemptions: { total: number, fixed: number, onetime: number }
-  daily: { day: string, fixed: number, onetime: number, newSupporters: number, left: number }[]
+  /** 30 Tage bis heute (ältester zuerst). */
+  daily: PartnerStatDay[]
+  /** Summen der letzten 30 Tage und der 30 Tage davor (Vergleich). */
+  current30d: PartnerPeriod
+  previous30d: PartnerPeriod
   newPlayers: number
   capeWorn: number
   cosmeticWorn: number
@@ -799,6 +827,14 @@ export interface PartnerMemberView {
   createdAt: string
 }
 
+/** Partner-Teil im Dashboard mit Daten für die 3D-Vorschau. */
+export interface PartnerItemView extends PartnerCosmeticRef {
+  /** Umhang: Textur (Frame-Streifen) für die 3D-Figur, sonst `null`. */
+  cape: { url: string, scale: number, frames: number, frameTimeMs: number | null } | null
+  /** Kosmetik im Format v2: wie ein Eintrag von `GET /v1/site/cosmetics`, sonst `null`. */
+  hat: PublicHat | null
+}
+
 export interface PartnerDashboard {
   slug: string
   name: string
@@ -807,6 +843,8 @@ export interface PartnerDashboard {
   prefix: string
   logo: string | null
   wikiUrl: string | null
+  /** Team-Schalter: darf der Partner einen Partner-Server einreichen/zeigen? */
+  serverAllowed: boolean
   owner: { uuid: string, name: string } | null
   profile: { text: { de: string, en: string }, links: PartnerLink[] }
   code: string | null
@@ -821,7 +859,7 @@ export interface PartnerDashboard {
   links: { path: string, campaigns: { campaign: string, clicks30d: number, downloads30d: number }[] } | null
   apiKey: { hint: string, createdAt: string, lastUsedAt: string | null } | null
   webhook: { config: WebhookView | null, deliveries: DeliveryView[] } | null
-  cosmetics: PartnerCosmeticRef[]
+  cosmetics: PartnerItemView[]
   members: PartnerMemberView[] | null
   requests: RequestView[]
   viewer: { owner: boolean, team: boolean, rights: PartnerRight[] }
@@ -875,15 +913,8 @@ function openQuotaRequest(ctx: AppContext, partnerId: number): number | null {
 export function partnerStats(ctx: AppContext, p: PartnerRow): PartnerStats {
   const n = (sql: string, ...params: (string | number)[]) => one<{ n: number }>(ctx.db, sql, ...params)!.n
   const t = ctx.now()
-  const today = Math.floor(t / DAY) * DAY
-  const days = Array.from({ length: 30 }, (_, i) => dayOf(today - (29 - i) * DAY))
-  const rows = new Map(all<{ day: string, fixed: number, onetime: number, new_supporters: number, left_count: number }>(
-    ctx.db, 'SELECT * FROM partner_daily WHERE partner_id = ? AND day >= ?', p.id, days[0]!,
-  ).map((r) => [r.day, r]))
-  const daily = days.map((day) => {
-    const r = rows.get(day)
-    return { day, fixed: r?.fixed ?? 0, onetime: r?.onetime ?? 0, newSupporters: r?.new_supporters ?? 0, left: r?.left_count ?? 0 }
-  })
+  const trend = partnerTrend(ctx, p.id)
+  const daily = trend.daily
   const totals = one<{ fixed: number, onetime: number }>(
     ctx.db,
     "SELECT COALESCE(SUM(kind = 'fixed'), 0) AS fixed, COALESCE(SUM(kind = 'onetime'), 0) AS onetime FROM partner_redemptions WHERE partner_id = ?",
@@ -898,16 +929,13 @@ export function partnerStats(ctx: AppContext, p: PartnerRow): PartnerStats {
   )!
   const s = liveServer(ctx, p.id)
   const joins = s ? serverJoinStats(ctx, s.id, 7) : { joins: 0, distinct: 0 }
-  const link = one<{ clicks: number, downloads: number }>(
-    ctx.db,
-    'SELECT COALESCE(SUM(clicks), 0) AS clicks, COALESCE(SUM(downloads), 0) AS downloads FROM partner_link_stats WHERE partner_id = ? AND day >= ?',
-    p.id, days[0]!,
-  )!
   return {
     supporters: supporterCount(ctx, p.id),
     newSupporters7d: daily.slice(-7).reduce((a, d) => a + d.newSupporters, 0),
     redemptions: { total: totals.fixed + totals.onetime, fixed: totals.fixed, onetime: totals.onetime },
     daily,
+    current30d: trend.current30d,
+    previous30d: trend.previous30d,
     newPlayers: n(
       `SELECT COUNT(*) AS n FROM (SELECT uuid, MIN(at) AS first FROM partner_redemptions WHERE partner_id = ? GROUP BY uuid) f
        JOIN users u ON u.uuid = f.uuid WHERE f.first - u.created_at <= ?`,
@@ -924,13 +952,13 @@ export function partnerStats(ctx: AppContext, p: PartnerRow): PartnerStats {
            AND e.cosmetic_id IN (SELECT item_id FROM partner_items WHERE partner_id = ? AND kind = 'cosmetic'))`,
       p.id, p.id,
     ),
-    left30d: daily.reduce((a, d) => a + d.left, 0),
+    left30d: trend.current30d.left,
     serverJoins7d: joins.joins,
     serverPlayers7d: joins.distinct,
     onlineToday: activity.online,
     playedToday: activity.played,
-    clicks30d: link.clicks,
-    downloads30d: link.downloads,
+    clicks30d: trend.current30d.clicks,
+    downloads30d: trend.current30d.downloads,
   }
 }
 
@@ -965,6 +993,14 @@ function serverSettings(s: PartnerServerRow): ServerSettings {
   return { id: s.id, name: s.name, address: s.address, minVersion: s.min_version, maxVersion: s.max_version, motd: s.motd }
 }
 
+function itemView(ctx: AppContext, i: PartnerCosmeticRef): PartnerItemView {
+  if (i.kind === 'cape') {
+    const c = getCape(ctx, i.id)
+    return { ...i, cape: c ? { url: capeUrl(ctx, c), scale: Math.round(c.width / 64), frames: c.frames, frameTimeMs: c.frames > 1 ? c.frame_time_ms : null } : null, hat: null }
+  }
+  return { ...i, cape: null, hat: hatPreview(ctx, i.id) }
+}
+
 export function partnerDashboard(ctx: AppContext, user: string, slug: string): PartnerDashboard {
   const a = partnerActor(ctx, user, slug, null)
   const p = a.partner
@@ -980,6 +1016,7 @@ export function partnerDashboard(ctx: AppContext, user: string, slug: string): P
     prefix: p.prefix,
     logo: logoPath(p.slug, p.logo_sha),
     wikiUrl: p.wiki_url,
+    serverAllowed: p.server_allowed === 1,
     owner: p.owner_uuid ? { uuid: p.owner_uuid, name: nameOf(ctx, p.owner_uuid) } : null,
     profile: { text: { de: p.text_de, en: p.text_en }, links: parseLinks(p.links) },
     code: fixedCode(ctx, p.id),
@@ -1007,7 +1044,7 @@ export function partnerDashboard(ctx: AppContext, user: string, slug: string): P
     links: may('links') ? { path: `/go/${p.slug}`, campaigns: campaignStats(ctx, p) } : null,
     apiKey: may('api') && key ? { hint: key.hint, createdAt: iso(key.created_at), lastUsedAt: isoOrNull(key.last_used_at) } : null,
     webhook: may('webhook') ? { config: webhookView(ctx, p.id), deliveries: deliveriesOf(ctx, p.id) } : null,
-    cosmetics: itemsOf(ctx, p.id),
+    cosmetics: itemsOf(ctx, p.id).map((i) => itemView(ctx, i)),
     members: a.owner || a.team ? membersOf(ctx, p.id) : null,
     requests: all<RequestRow>(ctx.db, 'SELECT * FROM partner_requests WHERE partner_id = ? ORDER BY created_at DESC, id DESC LIMIT 40', p.id)
       .filter((r) => may(REQUEST_RIGHT[r.kind]))
@@ -1243,6 +1280,8 @@ export function createRequest(ctx: AppContext, user: string, slug: string, raw: 
   const a = partnerActor(ctx, user, slug, need)
   takeWrite(ctx, user)
   const input = parse(requestBody, raw)
+  if (input.kind === 'server' && a.partner.server_allowed !== 1) throw serverNotAllowed()
+  if (input.kind === 'cape') return selectPartnerCape(ctx, a, input.capeId, input.name)
   const channel = input.kind === 'promo' ? input.channel : null
   if (openRequest(ctx, a.partner.id, input.kind, channel)) throw conflict('partner_request_open', 'There is already an open request of this kind')
   if (input.kind === 'code_change') checkFixedCodeFree(ctx, input.code, a.partner.id)
@@ -1251,6 +1290,88 @@ export function createRequest(ctx: AppContext, user: string, slug: string, raw: 
   const r = insertRequest(ctx, a.partner, k, channel, data, user)
   auditActor(ctx, a, `request.${k}`)
   return { request: requestView(r) }
+}
+
+const serverNotAllowed = () => forbidden('partner_server_not_allowed', 'Partner servers are not enabled for this partner')
+
+/** Inhaber + aktive Mitglieder (deren eigene Uploads als Partner-Umhang wählbar sind). */
+function memberUuids(ctx: AppContext, p: PartnerRow): string[] {
+  const out = new Set<string>()
+  if (p.owner_uuid) out.add(p.owner_uuid)
+  for (const m of all<{ uuid: string }>(ctx.db, "SELECT uuid FROM partner_members WHERE partner_id = ? AND status = 'active'", p.id)) out.add(m.uuid)
+  return [...out]
+}
+
+export interface SelectableCape {
+  id: string
+  name: string
+  owner: { uuid: string, name: string }
+  url: string
+  width: number
+  height: number
+  scale: number
+  frames: number
+  frameTimeMs: number | null
+  createdAt: string
+}
+
+/** Freigegebene eigene Umhänge (§5.6) von Inhaber und Mitgliedern, die als Partner-Umhang wählbar sind (Recht `cosmetics`). */
+export function selectableCapes(ctx: AppContext, user: string, slug: string): { capes: SelectableCape[] } {
+  const a = partnerActor(ctx, user, slug, 'cosmetics')
+  const owners = memberUuids(ctx, a.partner)
+  if (!owners.length) return { capes: [] }
+  const rows = all<CapeRow & { owner_name: string | null }>(
+    ctx.db,
+    `SELECT c.*, u.name AS owner_name FROM capes c LEFT JOIN users u ON u.uuid = c.owner_uuid
+     WHERE c.kind = 'upload' AND c.status = 'approved' AND c.retired = 0 AND c.creator_uuid IS NULL AND c.partner_id IS NULL
+       AND c.owner_uuid IN (${owners.map(() => '?').join(', ')})
+     ORDER BY c.created_at DESC, c.id LIMIT 100`,
+    ...owners,
+  )
+  return {
+    capes: rows.map((c) => {
+      const v = capeView(ctx, c)
+      return {
+        id: c.id,
+        name: c.name,
+        owner: { uuid: c.owner_uuid!, name: c.owner_name ?? '' },
+        url: v.url,
+        width: v.width,
+        height: v.height,
+        scale: v.scale,
+        frames: v.frames,
+        frameTimeMs: v.frameTimeMs,
+        createdAt: iso(c.created_at),
+      }
+    }),
+  }
+}
+
+/** Gewählten Umhang als Antrag `cape` einreichen; ein offener Umhang-Antrag wird ersetzt. */
+function selectPartnerCape(ctx: AppContext, a: PartnerActor, capeId: string, name: string | undefined): { request: RequestView } {
+  const c = getCape(ctx, capeId)
+  const owners = memberUuids(ctx, a.partner)
+  if (!c || c.kind !== 'upload' || c.status !== 'approved' || c.retired || c.creator_uuid || c.partner_id || !c.owner_uuid || !owners.includes(c.owner_uuid)) {
+    throw notFound('cape_not_found', 'This cape is not one of the approved uploads of the dashboard members')
+  }
+  const data = {
+    source: 'select',
+    capeId: c.id,
+    name: (name ?? c.name).slice(0, 32),
+    owner: nameOf(ctx, c.owner_uuid),
+    width: c.width,
+    height: c.height,
+    frames: c.frames,
+    frameTimeMs: c.frames > 1 ? c.frame_time_ms : null,
+  }
+  const r = tx(ctx.db, () => {
+    const old = openRequest(ctx, a.partner.id, 'cape', null)
+    if (old) run(ctx.db, "UPDATE partner_requests SET status = 'withdrawn', decided_at = ? WHERE id = ?", ctx.now(), old.id)
+    return { row: insertRequest(ctx, a.partner, 'cape', null, data, a.user), old }
+  })
+  if (r.old) dropFileIfUnused(ctx, parseJson<{ sha?: string }>(r.old.data, {}).sha)
+  auditActor(ctx, a, 'request.cape')
+  return { request: requestView(r.row) }
 }
 
 function compareVer(a: string, b: string): number {
@@ -1320,7 +1441,15 @@ export function uploadPartnerCape(ctx: AppContext, user: string, slug: string, b
 }
 
 function requestImage(ctx: AppContext, r: RequestRow): { png: Buffer, sha256: string, public: boolean } {
-  const sha = parseJson<{ sha?: string }>(r.data, {}).sha
+  const d = parseJson<{ sha?: string, capeId?: string }>(r.data, {})
+  if (r.status === 'open' && r.kind === 'cape' && typeof d.capeId === 'string') {
+    // Gewählter eigener Umhang: Bild aus capes/.
+    const c = getCape(ctx, d.capeId)
+    const file = c ? join(ctx.capeDir, `${c.id}.png`) : ''
+    if (!c || !existsSync(file)) throw notFound('image_not_found', 'Image not found')
+    return { png: readFileSync(file), sha256: c.sha256, public: false }
+  }
+  const sha = d.sha
   if (r.status !== 'open' || !sha || !/^[0-9a-f]{64}$/.test(sha)) throw notFound('image_not_found', 'Image not found')
   const file = join(partnerFileDir(ctx), `${sha}.png`)
   if (!existsSync(file)) throw notFound('image_not_found', 'Image not found')
@@ -1507,6 +1636,7 @@ export interface AdminPartnerView {
   openRequests: number
   items: PartnerCosmeticRef[]
   server: { name: string, address: string, hidden: boolean, online: boolean } | null
+  serverAllowed: boolean
   wikiUrl: string | null
   text: { de: string, en: string }
   links: PartnerLink[]
@@ -1529,6 +1659,7 @@ function adminView(ctx: AppContext, p: PartnerRow): AdminPartnerView {
     openRequests: one<{ n: number }>(ctx.db, "SELECT COUNT(*) AS n FROM partner_requests WHERE partner_id = ? AND status = 'open'", p.id)!.n,
     items: itemsOf(ctx, p.id),
     server: s ? { name: s.name, address: s.address, hidden: s.hidden === 1, online: s.online === 1 } : null,
+    serverAllowed: p.server_allowed === 1,
     wikiUrl: p.wiki_url,
     text: { de: p.text_de, en: p.text_en },
     links: parseLinks(p.links),
@@ -1562,13 +1693,14 @@ export function adminCreatePartner(ctx: AppContext, staff: Staff, raw: unknown):
   tx(ctx.db, () => {
     const id = one<{ id: number }>(
       ctx.db,
-      `INSERT INTO partners (slug, name, category, state, prefix, owner_uuid, quota_total, created_at, updated_at)
-       VALUES (?, ?, ?, 'active', ?, ?, ?, ?, ?) RETURNING id`,
-      input.slug, input.name, input.category, input.prefix, owner, input.quota, t, t,
+      `INSERT INTO partners (slug, name, category, state, prefix, owner_uuid, quota_total, server_allowed, created_at, updated_at)
+       VALUES (?, ?, ?, 'active', ?, ?, ?, ?, ?, ?) RETURNING id`,
+      input.slug, input.name, input.category, input.prefix, owner, input.quota, input.serverAllowed ? 1 : 0, t, t,
     )!.id
     run(ctx.db, "INSERT INTO partner_codes (partner_id, code, kind, created_at) VALUES (?, ?, 'fixed', ?)", id, input.code, t)
-    audit(ctx, staff.uuid, 'partner.create', auditTarget(input), `${input.name}, code ${input.code}, quota ${input.quota}`)
+    audit(ctx, staff.uuid, 'partner.create', auditTarget(input), `${input.name}, code ${input.code}, quota ${input.quota}${input.serverAllowed ? ', server allowed' : ''}`)
   })
+  clearPartnerStatsCache(ctx)
   return { partner: adminView(ctx, partnerBySlug(ctx, input.slug)!) }
 }
 
@@ -1602,6 +1734,9 @@ export function adminUpdatePartner(ctx: AppContext, staff: Staff, slug: string, 
       run(ctx.db, 'UPDATE partners SET text_en = ? WHERE id = ?', input.text.en, p.id)
     }
     if (input.links !== undefined) set('links', JSON.stringify(input.links), `links (${input.links.length})`)
+    if (input.serverAllowed !== undefined && input.serverAllowed !== (p.server_allowed === 1)) {
+      set('server_allowed', input.serverAllowed ? 1 : 0, `server ${input.serverAllowed ? 'allowed' : 'not allowed'}`)
+    }
     if (input.code !== undefined) {
       run(
         ctx.db,
@@ -1614,6 +1749,7 @@ export function adminUpdatePartner(ctx: AppContext, staff: Staff, slug: string, 
     audit(ctx, staff.uuid, input.state && input.state !== p.state ? (input.state === 'paused' ? 'partner.pause' : 'partner.resume') : 'partner.update', auditTarget(p), parts.join(', '))
   })
   const after = partnerBySlug(ctx, slug)!
+  clearPartnerStatsCache(ctx)
   if (input.state !== undefined && input.state !== p.state) notifyMembers(ctx, after, input.state === 'paused' ? 'paused' : 'resumed')
   else notifyMembers(ctx, after, 'updated')
   return { partner: adminView(ctx, after) }
@@ -1633,6 +1769,7 @@ export function adminDeletePartner(ctx: AppContext, staff: Staff, slug: string):
     run(ctx.db, 'DELETE FROM partners WHERE id = ?', p.id)
     audit(ctx, staff.uuid, 'partner.delete', auditTarget(p), p.name)
   })
+  clearPartnerStatsCache(ctx)
   for (const sha of files) dropFileIfUnused(ctx, sha)
 }
 
@@ -1665,8 +1802,11 @@ export function adminAddItem(ctx: AppContext, staff: Staff, slug: string, raw: u
     const c = getCosmetic(ctx, input.id)
     if (!c || c.retired || c.status !== 'approved' || c.kind !== 'builtin' || c.slot === 'emote' || c.unlock === 'free') throw notFound('item_not_found', 'Cosmetic not found or not assignable')
   }
-  run(ctx.db, 'INSERT INTO partner_items (partner_id, kind, item_id, created_at) VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING', p.id, input.kind, input.id, ctx.now())
-  audit(ctx, staff.uuid, 'partner.item.add', auditTarget(p), `${input.kind} ${input.id}`)
+  const granted = tx(ctx.db, () => {
+    run(ctx.db, 'INSERT INTO partner_items (partner_id, kind, item_id, created_at) VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING', p.id, input.kind, input.id, ctx.now())
+    return grantToSupporters(ctx, p.id, input.kind, input.id)
+  })
+  audit(ctx, staff.uuid, 'partner.item.add', auditTarget(p), `${input.kind} ${input.id} (${granted} supporters)`)
   return { partner: adminView(ctx, p) }
 }
 
@@ -1773,6 +1913,7 @@ export function adminDecideRequest(ctx: AppContext, staff: Staff, id: number, ra
           run(ctx.db, 'UPDATE partners SET logo_sha = ?, updated_at = ? WHERE id = ?', String(data.sha), t, p.id)
           break
         case 'server': {
+          if (p.server_allowed !== 1) throw serverNotAllowed()
           const old = liveServer(ctx, p.id)
           const s = data as { name: string, address: string, minVersion: string, maxVersion: string, motd: string }
           if (old) {
@@ -1793,16 +1934,30 @@ export function adminDecideRequest(ctx: AppContext, staff: Staff, id: number, ra
         }
         case 'cape': {
           const capeId = newUploadCapeId()
-          const sha = String(data.sha)
-          const png = readFileSync(join(partnerFileDir(ctx), `${sha}.png`))
+          let png: Buffer
+          let size: { width: number, height: number, frames: number, frameTimeMs: number | null }
+          if (typeof data.capeId === 'string') {
+            // Gewählter eigener Umhang: Kopie als Partner-Umhang, der Upload des Spielers bleibt seiner.
+            const src = getCape(ctx, data.capeId)
+            const file = src ? join(ctx.capeDir, `${src.id}.png`) : ''
+            if (!src || src.kind !== 'upload' || src.status !== 'approved' || src.retired || !existsSync(file)) {
+              throw conflict('cape_unavailable', 'The selected cape is no longer available')
+            }
+            png = readFileSync(file)
+            size = { width: src.width, height: src.height, frames: src.frames, frameTimeMs: src.frames > 1 ? src.frame_time_ms : null }
+          } else {
+            png = readFileSync(join(partnerFileDir(ctx), `${String(data.sha)}.png`))
+            size = { width: Number(data.width), height: Number(data.height), frames: Number(data.frames), frameTimeMs: data.frameTimeMs === null ? null : Number(data.frameTimeMs) }
+          }
           writeAtomic(ctx.capeDir, `${capeId}.png`, png)
           run(
             ctx.db,
             `INSERT INTO capes (id, kind, name, owner_uuid, status, unlock, sha256, width, height, frames, frame_time_ms, sort, retired, created_at, reviewed_at, reviewed_by, partner_id)
              VALUES (?, 'upload', ?, NULL, 'approved', 'code', ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?)`,
-            capeId, String(data.name).slice(0, 32), sha256Hex(png), Number(data.width), Number(data.height), Number(data.frames), data.frameTimeMs === null ? null : Number(data.frameTimeMs), t, t, staff.uuid, p.id,
+            capeId, String(data.name).slice(0, 32), sha256Hex(png), size.width, size.height, size.frames, size.frameTimeMs, t, t, staff.uuid, p.id,
           )
           run(ctx.db, "INSERT INTO partner_items (partner_id, kind, item_id, created_at) VALUES (?, 'cape', ?, ?) ON CONFLICT DO NOTHING", p.id, capeId, t)
+          grantToSupporters(ctx, p.id, 'cape', capeId)
           break
         }
         default:
@@ -1824,6 +1979,50 @@ export function adminDecideRequest(ctx: AppContext, staff: Staff, id: number, ra
   notifyMembers(ctx, p, input.status === 'accepted' ? 'request_accepted' : 'request_rejected', { reason: input.reason, requestKind: r.kind })
   const row = one<RequestRow>(ctx.db, 'SELECT * FROM partner_requests WHERE id = ?', r.id)!
   return { request: { ...requestView(row), partner: partnerRef(p), createdBy: row.created_by ? { uuid: row.created_by, name: nameOf(ctx, row.created_by) } : null } }
+}
+
+export const adminCapeQuery = z.strictObject({
+  name: oneLine(1, 32),
+  frames: z.coerce.number().int().min(1).max(32).optional(),
+  frameTimeMs: z.coerce.number().int().min(50).max(10_000).optional(),
+})
+
+/**
+ * Team lädt einen Partner-Umhang direkt hoch (Regeln wie §5.6, HD bis 1024×512 je Bild, bis 32 Bilder, ≤ 20 MB):
+ * versteckt (nur Besitzer sehen ihn im Katalog), sofort zugeordnet, aktuelle Unterstützer bekommen ihn gleich.
+ */
+export function adminUploadPartnerCape(ctx: AppContext, staff: Staff, slug: string, body: Buffer, rawQuery: unknown): { partner: AdminPartnerView, cape: { id: string, name: string, width: number, height: number, frames: number, frameTimeMs: number | null, granted: number } } {
+  assertCan(staff, 'partners.manage')
+  const q = parse(adminCapeQuery, rawQuery)
+  const p = requirePartner(ctx, slug)
+  const clean = sanitizeCapeUpload(body, { frames: q.frames })
+  if (clean.frames > 1 && q.frameTimeMs === undefined) throw badRequest('frame_time_required', 'Animated capes need the frameTimeMs query parameter')
+  const frameTimeMs = clean.frames > 1 ? q.frameTimeMs! : null
+  const capeId = newUploadCapeId()
+  const t = ctx.now()
+  writeAtomic(ctx.capeDir, `${capeId}.png`, clean.png)
+  let granted: number
+  try {
+    granted = tx(ctx.db, () => {
+      run(
+        ctx.db,
+        `INSERT INTO capes (id, kind, name, owner_uuid, status, unlock, hidden, sha256, width, height, frames, frame_time_ms, sort, retired, created_at, reviewed_at, reviewed_by, partner_id)
+         VALUES (?, 'upload', ?, NULL, 'approved', 'code', 1, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?)`,
+        capeId, q.name, sha256Hex(clean.png), clean.width, clean.height, clean.frames, frameTimeMs, t, t, staff.uuid, p.id,
+      )
+      run(ctx.db, "INSERT INTO partner_items (partner_id, kind, item_id, created_at) VALUES (?, 'cape', ?, ?)", p.id, capeId, t)
+      return grantToSupporters(ctx, p.id, 'cape', capeId)
+    })
+  } catch (err) {
+    rmSync(join(ctx.capeDir, `${capeId}.png`), { force: true })
+    throw err
+  }
+  audit(ctx, staff.uuid, 'partner.cape.upload', auditTarget(p), `${q.name} (${capeId}, ${clean.frames} frame(s), ${granted} supporters)`)
+  notifyMembers(ctx, p, 'updated')
+  return {
+    partner: adminView(ctx, p),
+    cape: { id: capeId, name: q.name, width: clean.width, height: clean.height, frames: clean.frames, frameTimeMs, granted },
+  }
 }
 
 /** Partner-Server ausblenden/wieder zeigen (z. B. Werbung im Namen, EULA-Verstoß). */

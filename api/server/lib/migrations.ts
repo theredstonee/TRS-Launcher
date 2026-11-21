@@ -1136,7 +1136,24 @@ CREATE TABLE IF NOT EXISTS craftinghosting_admin (
     version: 51,
     run: migratePartners,
   },
+  {
+    // Partnerprogramm Runde 2: Schalter „Partner-Server erlaubt“ (Standard aus, auch für bestehende Partner) und
+    // tägliche Unterstützer-Aktivität in partner_daily (Verlauf wie creator_daily). Idempotent.
+    version: 52,
+    run: migratePartners2,
+  },
 ]
+
+/** Migration 52 (siehe oben). Exportiert für den Idempotenz-Test. */
+export function migratePartners2(db: DatabaseSync): void {
+  if (hasTable(db, 'partners') && !hasColumn(db, 'partners', 'server_allowed')) {
+    db.exec('ALTER TABLE partners ADD COLUMN server_allowed INTEGER NOT NULL DEFAULT 0')
+  }
+  if (hasTable(db, 'partner_daily')) {
+    if (!hasColumn(db, 'partner_daily', 'active_supporters')) db.exec('ALTER TABLE partner_daily ADD COLUMN active_supporters INTEGER')
+    if (!hasColumn(db, 'partner_daily', 'playing_supporters')) db.exec('ALTER TABLE partner_daily ADD COLUMN playing_supporters INTEGER')
+  }
+}
 
 /** Migration 51 (siehe oben). Exportiert für den Idempotenz-Test. */
 export function migratePartners(db: DatabaseSync): void {

@@ -4,6 +4,7 @@ import { grantPendingRewards } from '../lib/achievements'
 import { rotateAttachmentKeys, sweepOrphanFiles, sweepPendingAttachments } from '../lib/attachments'
 import { sweepExpired } from '../lib/auth'
 import { snapshotCreatorActivity } from '../lib/creator-stats'
+import { snapshotPartnerActivity } from '../lib/partner-stats'
 import { loadBuiltinCosmetics, loadBuiltins } from '../lib/builtin'
 import { seedBuiltins, type BuiltinCape } from '../lib/capes'
 import { syncAllCreatorPets } from '../lib/creator-pet'
@@ -294,6 +295,8 @@ export default defineNitroPlugin((nitroApp) => {
       syncAllCreatorPets(ctx)
       // Creator-Statistik (§35.14): heutige Fan-Aktivität je Creator festhalten (Tagesverlauf).
       snapshotCreatorActivity(ctx)
+      // Partner-Statistik: heutige Unterstützer-Aktivität je Partner (Tagesverlauf).
+      snapshotPartnerActivity(ctx)
     }),
     // Chat: Tipp-Status, Wiederaufnahme-Puffer, Spam-Bremse, nicht verwendete Bilder.
     // Welt-Hosting: Räume ohne Herzschlag schließen.

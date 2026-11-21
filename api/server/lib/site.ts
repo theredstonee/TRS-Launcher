@@ -3,7 +3,7 @@ import type { AppContext } from './context'
 import { PET_STATES } from '../../app/utils/cosmetic-v2/format'
 import { ACHIEVEMENTS } from './achievement-catalog'
 import { v2Assets, v2Fields, type CosmeticV2Fields } from './cosmetics'
-import { all } from './db'
+import { all, one } from './db'
 import { globalEvents } from './liveevents'
 import { changelogFor, parseChangelog, postContent, type ChangelogEntry, type PostShot, type UpdateBanner } from './changelog'
 import { extractContributors, mergeContributors } from './contributors'
@@ -317,36 +317,59 @@ function petStatesOf(anims: readonly { driver?: string }[]): string[] {
   return PET_STATES.filter((s) => s === 'idle' || has.has(s))
 }
 
+type V2Row = { id: string, name: string, unlock: 'free' | 'code' | 'admin', event: string | null, reward: string | null, format: number }
+
+function rewardTitles(): Map<string, { en: string, de: string, es: string }> {
+  return new Map(ACHIEVEMENTS.filter((a) => a.reward?.kind === 'cosmetic').map((a) => [a.reward!.id, a.title]))
+}
+
+function hatOf(ctx: AppContext, r: V2Row, byReward: Map<string, { en: string, de: string, es: string }>): PublicHat | null {
+  const a = v2Assets(ctx, r)
+  if (!a) return null
+  const slot = a.model.slot as PublicV2Slot
+  const f = v2Fields(a, '')
+  return {
+    id: r.id,
+    name: r.name,
+    unlock: r.reward ? 'reward' : r.event ? 'event' : r.unlock,
+    event: r.event,
+    rewardOf: r.reward,
+    slot,
+    attach: a.model.attach,
+    options: (a.model.options ?? []).map((o) => ({ id: o.id, default: o.default, name: o.name ?? null })),
+    achievement: byReward.get(r.id) ?? null,
+    texture: `/v1/cosmetics/${r.id}.png?v=${f.hash}`,
+    animated: (a.model.animations ?? []).some((x) => (x.driver ?? 'idle') === 'idle'),
+    ...(slot === 'pet' ? { states: petStatesOf(a.model.animations ?? []) } : {}),
+    ...f,
+  }
+}
+
 function publicV2(ctx: AppContext, slot: PublicV2Slot): PublicHat[] {
   const live = new Set(globalEvents(ctx))
-  const rows = all<{ id: string, name: string, unlock: 'free' | 'code' | 'admin', event: string | null, reward: string | null, format: number }>(
+  const rows = all<V2Row>(
     ctx.db,
     `SELECT id, name, unlock, event, reward, format FROM cosmetics
      WHERE kind = 'builtin' AND slot = 'hat' AND format = 2 AND status = 'approved' AND retired = 0 AND hidden = 0
      ORDER BY sort, id`,
   )
-  const byReward = new Map(ACHIEVEMENTS.filter((a) => a.reward?.kind === 'cosmetic').map((a) => [a.reward!.id, a.title]))
+  const byReward = rewardTitles()
   const out: PublicHat[] = []
   for (const r of rows) {
-    const a = v2Assets(ctx, r)
-    if (!a || a.model.slot !== slot || (r.event && !live.has(r.event))) continue
+    const h = hatOf(ctx, r, byReward)
+    if (!h || h.slot !== slot || (r.event && !live.has(r.event))) continue
     if (r.reward && !live.has(REWARD_EVENTS[r.reward] ?? '')) continue
-    const f = v2Fields(a, '')
-    out.push({
-      id: r.id,
-      name: r.name,
-      unlock: r.reward ? 'reward' : r.event ? 'event' : r.unlock,
-      event: r.event,
-      rewardOf: r.reward,
-      slot,
-      attach: a.model.attach,
-      options: (a.model.options ?? []).map((o) => ({ id: o.id, default: o.default, name: o.name ?? null })),
-      achievement: byReward.get(r.id) ?? null,
-      texture: `/v1/cosmetics/${r.id}.png?v=${f.hash}`,
-      animated: (a.model.animations ?? []).some((x) => (x.driver ?? 'idle') === 'idle'),
-      ...(slot === 'pet' ? { states: petStatesOf(a.model.animations ?? []) } : {}),
-      ...f,
-    })
+    out.push(h)
   }
   return out
+}
+
+/** 3D-Vorschau einer v2-Kosmetik unabhängig von „versteckt“/Event (z. B. Partner-Kosmetik im Dashboard), sonst `null`. */
+export function hatPreview(ctx: AppContext, id: string): PublicHat | null {
+  const r = one<V2Row>(
+    ctx.db,
+    "SELECT id, name, unlock, event, reward, format FROM cosmetics WHERE id = ? AND format = 2 AND status = 'approved' AND retired = 0",
+    id,
+  )
+  return r ? hatOf(ctx, r, rewardTitles()) : null
 }
