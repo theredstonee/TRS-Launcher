@@ -1,6 +1,7 @@
 // Texte des Partnerprogramms (API.md §44): öffentliche Seite /partners, Code-Feld, Hinweis auf der Download-Seite,
 // Partner-Dashboard /partner und Team-Seite /admin/partners. Englisch, Deutsch, Spanisch.
 
+import type { SiteHat } from './hat'
 import type { Lang } from './messages'
 
 const en = {
@@ -267,12 +268,18 @@ const en = {
     cosmetics: {
       assigned: 'Your partner cosmetics',
       none: 'No cosmetics assigned yet – the team assigns them.',
-      capeTitle: 'Upload a partner cape',
-      capeText: 'PNG 64×32 up to 1024×512 per frame, animated up to 32 frames stacked vertically. The team reviews it; until then the old one stays.',
-      capeName: 'Name',
-      frameTime: 'Frame time (ms, animated only)',
-      file: 'PNG file',
-      upload: 'Upload for review',
+      preview: '3D preview',
+      previewLead: 'Drag to rotate.',
+      noPreview: 'No 3D preview for this item.',
+      selectTitle: 'Choose the partner cape',
+      selectLead: 'Pick one of the capes that you or your dashboard members uploaded in the TRS Launcher (approved uploads only). The team reviews it; after approval it becomes your partner cape and supporters get it.',
+      selectEmpty: 'No approved own capes yet. Upload a cape in the TRS Launcher (Wardrobe → Capes → Upload); once the team has approved it, it shows up here.',
+      by: 'by {name}',
+      animated: '{n} frames',
+      capeName: 'Name of the partner cape',
+      submit: 'Submit as partner cape',
+      pending: 'Waiting for the team: “{name}”',
+      loading: 'Loading your capes …',
       wishTitle: 'Head/back cosmetic',
       wishText: 'The team builds 3D items in its workbench from your wishes (logo, colours, motion).',
       wish: 'Your wish',
@@ -309,7 +316,73 @@ const en = {
       teamNoInvite: 'Only the owner can invite members.',
       right: { stats: 'Statistics', codes: 'Codes', api: 'API key', links: 'Download links', server: 'Partner server', webhook: 'Webhook', promo: 'Promotion', cosmetics: 'Cosmetics', profile: 'Profile' } as Record<string, string>,
     },
+    serverOff: {
+      title: 'Partner server not enabled',
+      text: 'The TRS team enables partner servers in the TRS Client multiplayer list per partner. Ask your contact if you would like to show your server there.',
+    },
+    checklist: {
+      title: 'Getting started',
+      lead: 'Finished steps are ticked off automatically.',
+      progress: '{done} of {total} done',
+      open: 'Open',
+      review: 'in review',
+      done: 'done',
+      noRight: 'needs the right “{right}”',
+      items: {
+        logo: 'Upload a logo',
+        text: 'Write a description',
+        links: 'Add links',
+        server: 'Submit a partner server',
+        webhook: 'Set up a webhook',
+        api: 'Create an API key',
+        cosmetics: 'Choose a partner cape',
+      } as Record<string, string>,
+      hints: {
+        logo: 'Square PNG, shown round on the partner page.',
+        text: 'German and English, plain text.',
+        links: 'Website, Discord, shop – up to 6.',
+        server: 'Shown in the TRS Client multiplayer list.',
+        webhook: 'Your system hears about redemptions at once.',
+        api: 'Create one-time codes straight from your shop.',
+        cosmetics: 'Supporters get it when they redeem your code.',
+      } as Record<string, string>,
+    },
+    compare: {
+      title: 'Last 30 days compared',
+      lead: 'Each number next to the 30 days before.',
+      metric: 'Metric',
+      current: 'Last 30 days',
+      previous: '30 days before',
+      change: 'Change',
+      new: 'new',
+      vsPrev: '{change} vs. the 30 days before',
+      metrics: {
+        newSupporters: 'New supporters',
+        redemptions: 'Redemptions',
+        fixed: 'with the fixed code',
+        onetime: 'with one-time codes',
+        newPlayers: 'New players',
+        serverJoins: 'Joins via the partner server',
+        clicks: 'Download link clicks',
+        downloads: 'Downloads',
+        left: 'Switched away or ended',
+      } as Record<string, string>,
+    },
+    charts: {
+      title: 'History',
+      lead: 'Day by day, last 30 days. “Show values” lists every day.',
+      newSupporters: 'New supporters',
+      redemptions: 'Redemptions',
+      serverJoins: 'Joins via the partner server',
+      clicks: 'Download link clicks',
+      downloads: 'Downloads',
+      active: 'Supporters online',
+      table: { showTable: 'Show values', hideTable: 'Hide values', day: 'Day', value: 'Value', notRecorded: 'not recorded yet', total: 'total' },
+    },
     errors: {
+      partner_server_not_allowed: 'Partner servers are not enabled for this partner.',
+      cape_not_found: 'This cape is not an approved upload of a dashboard member.',
+      cape_unavailable: 'The selected cape is no longer available.',
       partner_quota: 'Not enough quota left – request more.',
       partner_paused: 'This partner is paused.',
       partner_request_open: 'There is already an open request of this kind.',
@@ -329,7 +402,96 @@ const en = {
   },
   admin: {
     title: 'Partners',
-    tabs: { partners: 'Partners', requests: 'Requests', new: 'New partner' } as Record<string, string>,
+    tabs: { partners: 'Partners', stats: 'Statistics', requests: 'Requests', new: 'New partner' } as Record<string, string>,
+    serverAllowed: 'Partner server allowed',
+    serverAllowedText: 'Off: the partner cannot submit a server, and an approved server is neither in the TRS Client list nor in the public popup.',
+    on: 'Yes',
+    off: 'No',
+    serverOffNote: 'Partner servers are switched off for this partner – switch them on before accepting.',
+    capeFrom: 'From the uploads of {owner}',
+    uploadCape: {
+      title: 'Upload a partner cape',
+      text: 'PNG 64×32 up to 1024×512 per frame, animated up to 32 frames stacked vertically, at most 20 MB. The cape stays hidden in the public catalogue, is assigned at once and current supporters get it right away.',
+      name: 'Name',
+      frameTime: 'Frame time (ms, animated only)',
+      file: 'PNG file',
+      button: 'Upload and assign',
+      frames: '{n} frames detected',
+      done: '“{name}” uploaded and assigned – {n} supporters got it.',
+    },
+    stats: {
+      lead: 'Key numbers of all partners. Click a column to sort, a partner for its history. Numbers only, no player names.',
+      search: 'Search name, address or code',
+      allStates: 'All states',
+      allCategories: 'All categories',
+      generated: 'As of {time}',
+      empty: 'No partners match.',
+      totals: {
+        partners: 'Partners',
+        supporters: 'Supporters',
+        supporters30d: 'New supporters (30 d)',
+        redemptions30d: 'Redemptions (30 d)',
+        newPlayers30d: 'New players (30 d)',
+        serverJoins30d: 'Server joins (30 d)',
+        downloads30d: 'Downloads (30 d)',
+      } as Record<string, string>,
+      cols: {
+        partner: 'Partner',
+        supporters: 'Supporters',
+        supporters7d: 'New 7 d',
+        supporters30d: 'New 30 d',
+        redemptions: 'Redemptions',
+        redemptions30d: 'Redeemed 30 d',
+        newPlayers30d: 'New players 30 d',
+        joins30d: 'Joins 30 d',
+        clicks30d: 'Clicks 30 d',
+        downloads30d: 'Downloads 30 d',
+        onlineToday: 'Online today',
+        left30d: 'Left 30 d',
+        capeWorn: 'Cape worn',
+      } as Record<string, string>,
+      sortBy: 'Sort by {col}',
+      back: 'All partners',
+      range: 'Period',
+      days: '{n} days',
+      notFound: 'This partner does not exist (any more).',
+      openDashboard: 'Dashboard (team mode)',
+      tiles: {
+        supporters: 'Supporters',
+        newSupporters: 'new',
+        redemptions: 'Redemptions',
+        newPlayers: 'New players',
+        activity: 'Online today · in game',
+        serverJoins: 'Server joins',
+        links: 'Clicks · downloads',
+        worn: 'Cosmetics worn',
+      } as Record<string, string>,
+      today: 'today',
+      period: 'in the period',
+      wornLine: 'Cape {cape} % · cosmetic {cosmetic} % of the supporters',
+      fixedOnetime: '{fixed} fixed · {onetime} one-time',
+      serverOn: 'Partner server allowed',
+      serverOffTag: 'Partner server off',
+      charts: {
+        newSupporters: 'New supporters',
+        left: 'Switched away or ended',
+        fixed: 'Redemptions with the fixed code',
+        onetime: 'Redemptions with one-time codes',
+        newPlayers: 'New players',
+        serverJoins: 'Joins via the partner server',
+        clicks: 'Download link clicks',
+        downloads: 'Downloads',
+        active: 'Supporters online',
+        playing: 'Supporters in game',
+      } as Record<string, string>,
+      compareTitle: 'Compared with the period before',
+      defsTitle: 'How the numbers are counted',
+      defNewPlayers: 'New player = account created at most {h} h before the first redemption of a code of this partner.',
+      defActivity: 'Online / in game = current supporters with presence or game time on that UTC day (snapshot every 10 minutes, highest value of the day).',
+      defSince: 'Supporter activity is recorded since {date}.',
+      defNotYet: 'Supporter activity has not been recorded yet.',
+    },
+
     partner: 'Partner',
     category: 'Category',
     code: 'Fixed code',
@@ -343,7 +505,7 @@ const en = {
     grant: 'Grant',
     granted: '+{n} granted',
     itemsTitle: 'Assign cosmetics',
-    itemsText: 'Capes and 3D items from the catalogue. Players who already redeemed keep everything; new items come with the next redemption.',
+    itemsText: 'Capes and 3D items from the catalogue. Current supporters get a new item at once; everyone keeps what they already have.',
     pickItem: 'Choose an item',
     assign: 'Assign',
     unassign: 'Remove',
@@ -660,12 +822,18 @@ const de: PartnerTexts = {
     cosmetics: {
       assigned: 'Eure Partner-Kosmetik',
       none: 'Noch keine Kosmetik zugeordnet – das macht das Team.',
-      capeTitle: 'Partner-Umhang hochladen',
-      capeText: 'PNG 64×32 bis 1024×512 je Bild, animiert bis 32 Bilder senkrecht untereinander. Das Team prüft; bis dahin bleibt der alte.',
-      capeName: 'Name',
-      frameTime: 'Bilddauer (ms, nur animiert)',
-      file: 'PNG-Datei',
-      upload: 'Zur Prüfung hochladen',
+      preview: '3D-Vorschau',
+      previewLead: 'Zum Drehen ziehen.',
+      noPreview: 'Für dieses Teil gibt es keine 3D-Vorschau.',
+      selectTitle: 'Partner-Umhang wählen',
+      selectLead: 'Wählt einen der Umhänge, die ihr oder eure Dashboard-Mitglieder im TRS Launcher hochgeladen habt (nur freigegebene). Das Team prüft ihn; nach der Freigabe wird er euer Partner-Umhang und Unterstützer bekommen ihn.',
+      selectEmpty: 'Noch keine freigegebenen eigenen Umhänge. Ladet im TRS Launcher einen Umhang hoch (Garderobe → Umhänge → Hochladen); sobald das Team ihn freigegeben hat, erscheint er hier.',
+      by: 'von {name}',
+      animated: '{n} Bilder',
+      capeName: 'Name des Partner-Umhangs',
+      submit: 'Als Partner-Umhang einreichen',
+      pending: 'Wartet auf das Team: „{name}“',
+      loading: 'Eure Umhänge werden geladen …',
       wishTitle: 'Kopf-/Rücken-Kosmetik',
       wishText: '3D-Teile baut das Team in der Werkbank nach euren Vorgaben (Logo, Farben, Bewegung).',
       wish: 'Euer Wunsch',
@@ -702,7 +870,73 @@ const de: PartnerTexts = {
       teamNoInvite: 'Nur der Inhaber kann Mitglieder einladen.',
       right: { stats: 'Statistik', codes: 'Codes', api: 'API-Schlüssel', links: 'Werbe-Links', server: 'Partner-Server', webhook: 'Webhook', promo: 'Vorstellung', cosmetics: 'Kosmetik', profile: 'Profil' },
     },
+    serverOff: {
+      title: 'Partner-Server nicht freigeschaltet',
+      text: 'Partner-Server in der Mehrspieler-Liste des TRS Client schaltet das TRS-Team je Partner frei. Fragt eure Ansprechperson, wenn ihr dort einen Server zeigen möchtet.',
+    },
+    checklist: {
+      title: 'Erste Schritte',
+      lead: 'Erledigtes wird automatisch abgehakt.',
+      progress: '{done} von {total} erledigt',
+      open: 'Öffnen',
+      review: 'in Prüfung',
+      done: 'erledigt',
+      noRight: 'braucht das Recht „{right}“',
+      items: {
+        logo: 'Logo hochladen',
+        text: 'Beschreibung schreiben',
+        links: 'Links eintragen',
+        server: 'Partner-Server einreichen',
+        webhook: 'Webhook einrichten',
+        api: 'API-Schlüssel erstellen',
+        cosmetics: 'Partner-Umhang wählen',
+      },
+      hints: {
+        logo: 'Quadratisches PNG, rund auf der Partner-Seite.',
+        text: 'Deutsch und Englisch, reiner Text.',
+        links: 'Website, Discord, Shop – bis zu 6.',
+        server: 'Erscheint in der Mehrspieler-Liste des TRS Client.',
+        webhook: 'Euer System erfährt Einlösungen sofort.',
+        api: 'Einmal-Codes direkt aus eurem Shop erzeugen.',
+        cosmetics: 'Unterstützer bekommen ihn beim Einlösen eures Codes.',
+      },
+    },
+    compare: {
+      title: 'Letzte 30 Tage im Vergleich',
+      lead: 'Jede Zahl neben den 30 Tagen davor.',
+      metric: 'Kennzahl',
+      current: 'Letzte 30 Tage',
+      previous: '30 Tage davor',
+      change: 'Änderung',
+      new: 'neu',
+      vsPrev: '{change} gegenüber den 30 Tagen davor',
+      metrics: {
+        newSupporters: 'Neue Unterstützer',
+        redemptions: 'Einlösungen',
+        fixed: 'mit festem Code',
+        onetime: 'mit Einmal-Codes',
+        newPlayers: 'Neue Spieler',
+        serverJoins: 'Beitritte über den Partner-Server',
+        clicks: 'Klicks auf Werbe-Links',
+        downloads: 'Downloads',
+        left: 'Gewechselt oder beendet',
+      },
+    },
+    charts: {
+      title: 'Verlauf',
+      lead: 'Tag für Tag, letzte 30 Tage. „Werte zeigen“ listet jeden Tag auf.',
+      newSupporters: 'Neue Unterstützer',
+      redemptions: 'Einlösungen',
+      serverJoins: 'Beitritte über den Partner-Server',
+      clicks: 'Klicks auf Werbe-Links',
+      downloads: 'Downloads',
+      active: 'Unterstützer online',
+      table: { showTable: 'Werte zeigen', hideTable: 'Werte ausblenden', day: 'Tag', value: 'Wert', notRecorded: 'noch nicht erfasst', total: 'gesamt' },
+    },
     errors: {
+      partner_server_not_allowed: 'Partner-Server sind für diesen Partner nicht freigeschaltet.',
+      cape_not_found: 'Dieser Umhang ist kein freigegebener Upload eines Dashboard-Mitglieds.',
+      cape_unavailable: 'Der gewählte Umhang ist nicht mehr verfügbar.',
       partner_quota: 'Das Kontingent reicht nicht – beantragt Nachschub.',
       partner_paused: 'Dieser Partner ist pausiert.',
       partner_request_open: 'Es gibt schon einen offenen Antrag dieser Art.',
@@ -722,7 +956,96 @@ const de: PartnerTexts = {
   },
   admin: {
     title: 'Partner',
-    tabs: { partners: 'Partner', requests: 'Anträge', new: 'Partner anlegen' },
+    tabs: { partners: 'Partner', stats: 'Statistik', requests: 'Anträge', new: 'Partner anlegen' },
+    serverAllowed: 'Partner-Server erlaubt',
+    serverAllowedText: 'Aus: Der Partner kann keinen Server einreichen, und ein freigegebener Server erscheint weder in der Liste des TRS Client noch im öffentlichen Fenster.',
+    on: 'Ja',
+    off: 'Nein',
+    serverOffNote: 'Partner-Server sind für diesen Partner ausgeschaltet – vor dem Annehmen einschalten.',
+    capeFrom: 'Aus den Uploads von {owner}',
+    uploadCape: {
+      title: 'Partner-Umhang hochladen',
+      text: 'PNG 64×32 bis 1024×512 je Bild, animiert bis 32 Bilder senkrecht untereinander, höchstens 20 MB. Der Umhang bleibt im öffentlichen Katalog versteckt, wird sofort zugeordnet und aktuelle Unterstützer bekommen ihn gleich.',
+      name: 'Name',
+      frameTime: 'Bilddauer (ms, nur animiert)',
+      file: 'PNG-Datei',
+      button: 'Hochladen und zuordnen',
+      frames: '{n} Bilder erkannt',
+      done: '„{name}“ hochgeladen und zugeordnet – {n} Unterstützer haben ihn bekommen.',
+    },
+    stats: {
+      lead: 'Kennzahlen aller Partner. Spalte anklicken zum Sortieren, Partner anklicken für den Verlauf. Nur Zahlen, keine Spielernamen.',
+      search: 'Name, Adresse oder Code suchen',
+      allStates: 'Alle Zustände',
+      allCategories: 'Alle Kategorien',
+      generated: 'Stand {time}',
+      empty: 'Keine passenden Partner.',
+      totals: {
+        partners: 'Partner',
+        supporters: 'Unterstützer',
+        supporters30d: 'Neue Unterstützer (30 T)',
+        redemptions30d: 'Einlösungen (30 T)',
+        newPlayers30d: 'Neue Spieler (30 T)',
+        serverJoins30d: 'Server-Beitritte (30 T)',
+        downloads30d: 'Downloads (30 T)',
+      },
+      cols: {
+        partner: 'Partner',
+        supporters: 'Unterstützer',
+        supporters7d: 'Neu 7 T',
+        supporters30d: 'Neu 30 T',
+        redemptions: 'Einlösungen',
+        redemptions30d: 'Eingelöst 30 T',
+        newPlayers30d: 'Neue Spieler 30 T',
+        joins30d: 'Beitritte 30 T',
+        clicks30d: 'Klicks 30 T',
+        downloads30d: 'Downloads 30 T',
+        onlineToday: 'Heute online',
+        left30d: 'Weg 30 T',
+        capeWorn: 'Umhang getragen',
+      },
+      sortBy: 'Nach {col} sortieren',
+      back: 'Alle Partner',
+      range: 'Zeitraum',
+      days: '{n} Tage',
+      notFound: 'Diesen Partner gibt es nicht (mehr).',
+      openDashboard: 'Dashboard (Team-Modus)',
+      tiles: {
+        supporters: 'Unterstützer',
+        newSupporters: 'neu',
+        redemptions: 'Einlösungen',
+        newPlayers: 'Neue Spieler',
+        activity: 'Heute online · im Spiel',
+        serverJoins: 'Server-Beitritte',
+        links: 'Klicks · Downloads',
+        worn: 'Kosmetik getragen',
+      },
+      today: 'heute',
+      period: 'im Zeitraum',
+      wornLine: 'Umhang {cape} % · Kosmetik {cosmetic} % der Unterstützer',
+      fixedOnetime: '{fixed} fest · {onetime} einmal',
+      serverOn: 'Partner-Server erlaubt',
+      serverOffTag: 'Partner-Server aus',
+      charts: {
+        newSupporters: 'Neue Unterstützer',
+        left: 'Gewechselt oder beendet',
+        fixed: 'Einlösungen mit festem Code',
+        onetime: 'Einlösungen mit Einmal-Codes',
+        newPlayers: 'Neue Spieler',
+        serverJoins: 'Beitritte über den Partner-Server',
+        clicks: 'Klicks auf Werbe-Links',
+        downloads: 'Downloads',
+        active: 'Unterstützer online',
+        playing: 'Unterstützer im Spiel',
+      },
+      compareTitle: 'Vergleich mit dem Zeitraum davor',
+      defsTitle: 'So wird gezählt',
+      defNewPlayers: 'Neuer Spieler = Konto höchstens {h} h vor der ersten Einlösung eines Codes dieses Partners angelegt.',
+      defActivity: 'Online / im Spiel = aktuelle Unterstützer mit Präsenz bzw. Spielzeit an diesem UTC-Tag (Schnappschuss alle 10 Minuten, höchster Wert des Tages).',
+      defSince: 'Unterstützer-Aktivität wird seit {date} erfasst.',
+      defNotYet: 'Unterstützer-Aktivität wurde noch nicht erfasst.',
+    },
+
     partner: 'Partner',
     category: 'Kategorie',
     code: 'Fester Code',
@@ -736,7 +1059,7 @@ const de: PartnerTexts = {
     grant: 'Freigeben',
     granted: '+{n} freigegeben',
     itemsTitle: 'Kosmetik zuordnen',
-    itemsText: 'Umhänge und 3D-Teile aus dem Katalog. Wer schon eingelöst hat, behält alles; neue Teile gibt es mit der nächsten Einlösung.',
+    itemsText: 'Umhänge und 3D-Teile aus dem Katalog. Aktuelle Unterstützer bekommen ein neues Teil sofort; was jemand schon hat, behält er.',
     pickItem: 'Teil wählen',
     assign: 'Zuordnen',
     unassign: 'Entfernen',
@@ -1051,12 +1374,18 @@ const es: PartnerTexts = {
     cosmetics: {
       assigned: 'Vuestros cosméticos de socio',
       none: 'Todavía no hay cosméticos asignados – los asigna el equipo.',
-      capeTitle: 'Subir una capa de socio',
-      capeText: 'PNG de 64×32 a 1024×512 por imagen, animada hasta 32 imágenes en vertical. El equipo la revisa; hasta entonces sigue la anterior.',
-      capeName: 'Nombre',
-      frameTime: 'Duración por imagen (ms, solo animadas)',
-      file: 'Archivo PNG',
-      upload: 'Subir a revisión',
+      preview: 'Vista previa 3D',
+      previewLead: 'Arrastra para girar.',
+      noPreview: 'Esta pieza no tiene vista previa 3D.',
+      selectTitle: 'Elegir la capa de socio',
+      selectLead: 'Elegid una de las capas que vosotros o los miembros de vuestro panel subisteis en el TRS Launcher (solo aprobadas). El equipo la revisa; tras la aprobación pasa a ser vuestra capa de socio y los seguidores la reciben.',
+      selectEmpty: 'Todavía no hay capas propias aprobadas. Subid una capa en el TRS Launcher (Vestuario → Capas → Subir); cuando el equipo la apruebe aparecerá aquí.',
+      by: 'de {name}',
+      animated: '{n} imágenes',
+      capeName: 'Nombre de la capa de socio',
+      submit: 'Enviar como capa de socio',
+      pending: 'Esperando al equipo: «{name}»',
+      loading: 'Cargando vuestras capas …',
       wishTitle: 'Cosmético de cabeza/espalda',
       wishText: 'El equipo construye las piezas 3D en su banco de trabajo según vuestros deseos (logo, colores, movimiento).',
       wish: 'Vuestro deseo',
@@ -1093,7 +1422,73 @@ const es: PartnerTexts = {
       teamNoInvite: 'Solo el titular puede invitar.',
       right: { stats: 'Estadísticas', codes: 'Códigos', api: 'Clave de API', links: 'Enlaces de descarga', server: 'Servidor', webhook: 'Webhook', promo: 'Presentación', cosmetics: 'Cosméticos', profile: 'Perfil' },
     },
+    serverOff: {
+      title: 'Servidor de socio no activado',
+      text: 'El equipo de TRS activa los servidores de socio en la lista multijugador del TRS Client para cada socio. Preguntad a vuestro contacto si queréis mostrar vuestro servidor allí.',
+    },
+    checklist: {
+      title: 'Primeros pasos',
+      lead: 'Lo terminado se marca automáticamente.',
+      progress: '{done} de {total} hechos',
+      open: 'Abrir',
+      review: 'en revisión',
+      done: 'hecho',
+      noRight: 'necesita el permiso «{right}»',
+      items: {
+        logo: 'Subir un logo',
+        text: 'Escribir una descripción',
+        links: 'Añadir enlaces',
+        server: 'Enviar un servidor de socio',
+        webhook: 'Configurar un webhook',
+        api: 'Crear una clave API',
+        cosmetics: 'Elegir una capa de socio',
+      },
+      hints: {
+        logo: 'PNG cuadrado, redondo en la página del socio.',
+        text: 'Alemán e inglés, texto plano.',
+        links: 'Web, Discord, tienda – hasta 6.',
+        server: 'Aparece en la lista multijugador del TRS Client.',
+        webhook: 'Vuestro sistema se entera al momento de los canjes.',
+        api: 'Crear códigos de un solo uso desde vuestra tienda.',
+        cosmetics: 'Los seguidores la reciben al canjear vuestro código.',
+      },
+    },
+    compare: {
+      title: 'Últimos 30 días comparados',
+      lead: 'Cada cifra junto a los 30 días anteriores.',
+      metric: 'Dato',
+      current: 'Últimos 30 días',
+      previous: '30 días antes',
+      change: 'Cambio',
+      new: 'nuevo',
+      vsPrev: '{change} frente a los 30 días anteriores',
+      metrics: {
+        newSupporters: 'Nuevos seguidores',
+        redemptions: 'Canjes',
+        fixed: 'con el código fijo',
+        onetime: 'con códigos de un solo uso',
+        newPlayers: 'Jugadores nuevos',
+        serverJoins: 'Entradas por el servidor de socio',
+        clicks: 'Clics en enlaces de descarga',
+        downloads: 'Descargas',
+        left: 'Cambiaron o terminaron',
+      },
+    },
+    charts: {
+      title: 'Evolución',
+      lead: 'Día a día, últimos 30 días. «Mostrar valores» lista cada día.',
+      newSupporters: 'Nuevos seguidores',
+      redemptions: 'Canjes',
+      serverJoins: 'Entradas por el servidor de socio',
+      clicks: 'Clics en enlaces de descarga',
+      downloads: 'Descargas',
+      active: 'Seguidores conectados',
+      table: { showTable: 'Mostrar valores', hideTable: 'Ocultar valores', day: 'Día', value: 'Valor', notRecorded: 'aún no registrado', total: 'total' },
+    },
     errors: {
+      partner_server_not_allowed: 'Los servidores de socio no están activados para este socio.',
+      cape_not_found: 'Esta capa no es una subida aprobada de un miembro del panel.',
+      cape_unavailable: 'La capa elegida ya no está disponible.',
       partner_quota: 'No queda cupo suficiente – solicitad más.',
       partner_paused: 'Este socio está en pausa.',
       partner_request_open: 'Ya hay una solicitud abierta de este tipo.',
@@ -1113,7 +1508,96 @@ const es: PartnerTexts = {
   },
   admin: {
     title: 'Socios',
-    tabs: { partners: 'Socios', requests: 'Solicitudes', new: 'Nuevo socio' },
+    tabs: { partners: 'Socios', stats: 'Estadísticas', requests: 'Solicitudes', new: 'Nuevo socio' },
+    serverAllowed: 'Servidor de socio permitido',
+    serverAllowedText: 'No: el socio no puede enviar un servidor, y un servidor aprobado no aparece ni en la lista del TRS Client ni en la ventana pública.',
+    on: 'Sí',
+    off: 'No',
+    serverOffNote: 'Los servidores de socio están desactivados para este socio – actívalos antes de aceptar.',
+    capeFrom: 'De las subidas de {owner}',
+    uploadCape: {
+      title: 'Subir una capa de socio',
+      text: 'PNG de 64×32 a 1024×512 por imagen, animada hasta 32 imágenes en vertical, como mucho 20 MB. La capa queda oculta en el catálogo público, se asigna al momento y los seguidores actuales la reciben enseguida.',
+      name: 'Nombre',
+      frameTime: 'Duración por imagen (ms, solo animadas)',
+      file: 'Archivo PNG',
+      button: 'Subir y asignar',
+      frames: '{n} imágenes detectadas',
+      done: '«{name}» subida y asignada – {n} seguidores la han recibido.',
+    },
+    stats: {
+      lead: 'Datos clave de todos los socios. Haz clic en una columna para ordenar y en un socio para ver su evolución. Solo cifras, sin nombres de jugadores.',
+      search: 'Buscar nombre, dirección o código',
+      allStates: 'Todos los estados',
+      allCategories: 'Todas las categorías',
+      generated: 'A {time}',
+      empty: 'Ningún socio coincide.',
+      totals: {
+        partners: 'Socios',
+        supporters: 'Seguidores',
+        supporters30d: 'Nuevos seguidores (30 d)',
+        redemptions30d: 'Canjes (30 d)',
+        newPlayers30d: 'Jugadores nuevos (30 d)',
+        serverJoins30d: 'Entradas al servidor (30 d)',
+        downloads30d: 'Descargas (30 d)',
+      },
+      cols: {
+        partner: 'Socio',
+        supporters: 'Seguidores',
+        supporters7d: 'Nuevos 7 d',
+        supporters30d: 'Nuevos 30 d',
+        redemptions: 'Canjes',
+        redemptions30d: 'Canjes 30 d',
+        newPlayers30d: 'Jugadores nuevos 30 d',
+        joins30d: 'Entradas 30 d',
+        clicks30d: 'Clics 30 d',
+        downloads30d: 'Descargas 30 d',
+        onlineToday: 'Conectados hoy',
+        left30d: 'Bajas 30 d',
+        capeWorn: 'Llevan la capa',
+      },
+      sortBy: 'Ordenar por {col}',
+      back: 'Todos los socios',
+      range: 'Periodo',
+      days: '{n} días',
+      notFound: 'Este socio no existe (ya).',
+      openDashboard: 'Panel (modo equipo)',
+      tiles: {
+        supporters: 'Seguidores',
+        newSupporters: 'nuevos',
+        redemptions: 'Canjes',
+        newPlayers: 'Jugadores nuevos',
+        activity: 'Conectados hoy · jugando',
+        serverJoins: 'Entradas al servidor',
+        links: 'Clics · descargas',
+        worn: 'Cosméticos en uso',
+      },
+      today: 'hoy',
+      period: 'en el periodo',
+      wornLine: 'Capa {cape} % · cosmético {cosmetic} % de los seguidores',
+      fixedOnetime: '{fixed} fijo · {onetime} un solo uso',
+      serverOn: 'Servidor de socio permitido',
+      serverOffTag: 'Servidor de socio desactivado',
+      charts: {
+        newSupporters: 'Nuevos seguidores',
+        left: 'Cambiaron o terminaron',
+        fixed: 'Canjes con el código fijo',
+        onetime: 'Canjes con códigos de un solo uso',
+        newPlayers: 'Jugadores nuevos',
+        serverJoins: 'Entradas por el servidor de socio',
+        clicks: 'Clics en enlaces de descarga',
+        downloads: 'Descargas',
+        active: 'Seguidores conectados',
+        playing: 'Seguidores jugando',
+      },
+      compareTitle: 'Comparado con el periodo anterior',
+      defsTitle: 'Cómo se cuenta',
+      defNewPlayers: 'Jugador nuevo = cuenta creada como mucho {h} h antes del primer canje de un código de este socio.',
+      defActivity: 'Conectados / jugando = seguidores actuales con presencia o tiempo de juego ese día UTC (instantánea cada 10 minutos, valor más alto del día).',
+      defSince: 'La actividad de los seguidores se registra desde el {date}.',
+      defNotYet: 'Aún no se ha registrado actividad de los seguidores.',
+    },
+
     partner: 'Socio',
     category: 'Categoría',
     code: 'Código fijo',
@@ -1127,7 +1611,7 @@ const es: PartnerTexts = {
     grant: 'Conceder',
     granted: '+{n} concedidos',
     itemsTitle: 'Asignar cosméticos',
-    itemsText: 'Capas y piezas 3D del catálogo. Quien ya canjeó lo conserva todo; las piezas nuevas llegan con el siguiente canje.',
+    itemsText: 'Capas y piezas 3D del catálogo. Los seguidores actuales reciben una pieza nueva al momento; cada uno conserva lo que ya tiene.',
     pickItem: 'Elegir pieza',
     assign: 'Asignar',
     unassign: 'Quitar',
@@ -1238,6 +1722,52 @@ export interface PartnerDelivery {
   updatedAt: string
 }
 
+export interface PartnerStatDay {
+  day: string
+  newSupporters: number
+  left: number
+  fixed: number
+  onetime: number
+  newPlayers: number
+  serverJoins: number
+  clicks: number
+  downloads: number
+  activeSupporters: number | null
+  playingSupporters: number | null
+}
+
+export interface PartnerPeriod {
+  newSupporters: number
+  left: number
+  redemptions: number
+  fixed: number
+  onetime: number
+  newPlayers: number
+  serverJoins: number
+  clicks: number
+  downloads: number
+}
+
+/** Partner-Teil im Dashboard mit Daten für die 3D-Vorschau. */
+export interface PartnerItemView extends PartnerCosmeticRef {
+  cape: { url: string, scale: number, frames: number, frameTimeMs: number | null } | null
+  hat: SiteHat | null
+}
+
+/** Als Partner-Umhang wählbarer eigener Umhang (`GET /v1/partner/{slug}/capes`). */
+export interface SelectableCape {
+  id: string
+  name: string
+  owner: { uuid: string, name: string }
+  url: string
+  width: number
+  height: number
+  scale: number
+  frames: number
+  frameTimeMs: number | null
+  createdAt: string
+}
+
 export interface PartnerDashboard {
   slug: string
   name: string
@@ -1246,6 +1776,7 @@ export interface PartnerDashboard {
   prefix: string
   logo: string | null
   wikiUrl: string | null
+  serverAllowed: boolean
   owner: { uuid: string, name: string } | null
   profile: { text: { de: string, en: string }, links: PartnerLink[] }
   code: string | null
@@ -1255,7 +1786,9 @@ export interface PartnerDashboard {
     supporters: number
     newSupporters7d: number
     redemptions: { total: number, fixed: number, onetime: number }
-    daily: { day: string, fixed: number, onetime: number, newSupporters: number, left: number }[]
+    daily: PartnerStatDay[]
+    current30d: PartnerPeriod
+    previous30d: PartnerPeriod
     newPlayers: number
     capeWorn: number
     cosmeticWorn: number
@@ -1289,7 +1822,7 @@ export interface PartnerDashboard {
   links: { path: string, campaigns: { campaign: string, clicks30d: number, downloads30d: number }[] } | null
   apiKey: { hint: string, createdAt: string, lastUsedAt: string | null } | null
   webhook: { config: { url: string, events: string[], secretHint: string, updatedAt: string } | null, deliveries: PartnerDelivery[] } | null
-  cosmetics: PartnerCosmeticRef[]
+  cosmetics: PartnerItemView[]
   members: { uuid: string, name: string, rights: PartnerRight[], status: 'pending' | 'active', createdAt: string }[] | null
   requests: PartnerRequest[]
   viewer: { owner: boolean, team: boolean, rights: PartnerRight[] }
@@ -1310,10 +1843,85 @@ export interface AdminPartner {
   openRequests: number
   items: PartnerCosmeticRef[]
   server: { name: string, address: string, hidden: boolean, online: boolean } | null
+  serverAllowed: boolean
   wikiUrl: string | null
   text: { de: string, en: string }
   links: PartnerLink[]
   createdAt: string
+}
+
+/** Zeile der Partner-Rangliste (`GET /v1/admin/partners/stats`). */
+export interface PartnerStatRow {
+  slug: string
+  name: string
+  category: PartnerCategory
+  state: 'active' | 'paused'
+  logo: string | null
+  code: string | null
+  since: string
+  serverAllowed: boolean
+  supporters: { total: number, today: number, d7: number, d30: number }
+  redemptions: { total: number, fixed: number, onetime: number, d30: number }
+  newPlayers: { total: number, d30: number }
+  left30d: number
+  serverJoins: { d7: number, d30: number }
+  links: { clicks30d: number, downloads30d: number }
+  activity: { onlineToday: number, playedToday: number, online7d: number }
+  worn: { cape: number, cosmetic: number }
+  quota: { total: number, used: number }
+}
+
+export interface PartnerStatDefinitions { newPlayerWindowHours: number, activitySince: string | null }
+
+export interface PartnerStatsList {
+  generatedAt: string
+  definitions: PartnerStatDefinitions
+  totals: { partners: number, supporters: number, supporters30d: number, redemptions30d: number, newPlayers30d: number, serverJoins30d: number, downloads30d: number }
+  partners: PartnerStatRow[]
+}
+
+export interface PartnerStatsDetail {
+  generatedAt: string
+  definitions: PartnerStatDefinitions
+  partner: PartnerStatRow
+  series: PartnerStatDay[]
+  period: PartnerPeriod
+  previous: PartnerPeriod
+}
+
+/** Spalten der Rangliste (Schlüssel = Sortierung, auch für die API). */
+export const PARTNER_STAT_COLUMNS = [
+  { key: 'supporters', get: (r: PartnerStatRow) => r.supporters.total },
+  { key: 'supporters7d', get: (r: PartnerStatRow) => r.supporters.d7 },
+  { key: 'supporters30d', get: (r: PartnerStatRow) => r.supporters.d30 },
+  { key: 'redemptions', get: (r: PartnerStatRow) => r.redemptions.total },
+  { key: 'redemptions30d', get: (r: PartnerStatRow) => r.redemptions.d30 },
+  { key: 'newPlayers30d', get: (r: PartnerStatRow) => r.newPlayers.d30 },
+  { key: 'joins30d', get: (r: PartnerStatRow) => r.serverJoins.d30 },
+  { key: 'clicks30d', get: (r: PartnerStatRow) => r.links.clicks30d },
+  { key: 'downloads30d', get: (r: PartnerStatRow) => r.links.downloads30d },
+  { key: 'onlineToday', get: (r: PartnerStatRow) => r.activity.onlineToday },
+  { key: 'left30d', get: (r: PartnerStatRow) => r.left30d },
+  { key: 'capeWorn', get: (r: PartnerStatRow) => r.worn.cape },
+] as const
+export type PartnerStatColumn = (typeof PARTNER_STAT_COLUMNS)[number]['key'] | 'name'
+
+export function sortPartnerStats(rows: readonly PartnerStatRow[], key: PartnerStatColumn, dir: 'asc' | 'desc'): PartnerStatRow[] {
+  const get = key === 'name' ? null : PARTNER_STAT_COLUMNS.find((c) => c.key === key)!.get
+  const d = dir === 'asc' ? 1 : -1
+  return [...rows].sort((a, b) => {
+    if (!get) return a.name.localeCompare(b.name) * d
+    const x = get(a)
+    const y = get(b)
+    if (x !== y) return (x - y) * d
+    return b.supporters.total - a.supporters.total || a.name.localeCompare(b.name)
+  })
+}
+
+/** Änderung in Prozent gegenüber vorher (`null` = vorher 0, jetzt > 0 → „neu“). */
+export function percentChange(now: number, before: number): number | null {
+  if (before === 0) return now === 0 ? 0 : null
+  return Math.round(((now - before) / before) * 100)
 }
 
 export interface AdminPartnerRequest extends PartnerRequest {

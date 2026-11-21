@@ -78,13 +78,13 @@ watch(() => props.partner.slug, () => {
             <SiteIcon name="users" class="mr-1 inline size-4 align-[-3px] text-base-400" />{{ supporters }}
           </p>
           <div v-if="partner.code" class="code-box mt-6">
-            <p class="text-[11px] font-semibold tracking-[0.16em] text-base-400 uppercase">{{ t.code }}</p>
-            <div class="mt-2 flex items-center justify-center gap-2">
-              <code class="partner-code">{{ partner.code }}</code>
-              <button type="button" class="btn-icon" :aria-label="copied ? t.copied : t.copy" @click="copyCode">
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-[11px] font-semibold tracking-[0.16em] text-base-400 uppercase">{{ t.code }}</p>
+              <button type="button" class="btn-icon size-8" :aria-label="copied ? t.copied : t.copy" @click="copyCode">
                 <SiteIcon :name="copied ? 'check' : 'copy'" class="size-4" />
               </button>
             </div>
+            <PartnerCode :code="partner.code" class="mt-2" />
             <p class="mt-2 text-xs text-base-400">{{ t.codeHint }}</p>
             <button type="button" class="btn btn-primary mt-3 w-full justify-center" @click="emit('redeem', partner.code)">
               <SiteIcon name="ticket" class="size-4" />{{ p.redeem.button }}
@@ -225,20 +225,11 @@ watch(() => props.partner.slug, () => {
 }
 .code-box {
   width: 100%;
+  min-width: 0;
   border-radius: 0.8rem;
   border: 1px solid var(--color-base-800);
   background: var(--color-base-950);
   padding: 0.9rem;
-}
-.partner-code {
-  font-family: var(--font-mono);
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--color-lamp-300);
-  border: 1px dashed var(--color-base-600);
-  border-radius: 0.5rem;
-  padding: 0.2rem 0.7rem;
 }
 .description {
   display: grid;

@@ -60,5 +60,6 @@ onBeforeUnmount(() => document.removeEventListener('click', onClick, true))
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--color-lamp-300);
+  overflow-wrap: anywhere;
 }
 </style>

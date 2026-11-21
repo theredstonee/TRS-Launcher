@@ -1,7 +1,8 @@
 <script setup lang="ts">
-// Partner-Dashboard (§44.4) mit der Website-Sitzung: Übersicht, Codes, Werbe-Links, Partner-Server, API, Webhook,
-// Vorstellung, Kosmetik, Profil, Zugänge – je nach Rechten. /partner/<slug> bei mehreren Zugängen; Team-Mitglieder mit
-// partners.manage öffnen jedes Dashboard im Team-Modus. Nur im Browser (routeRules), nie indexiert.
+// Partner-Dashboard (§44.4) mit der Website-Sitzung, im Stil des Creator-Dashboards: Übersicht (erste Schritte,
+// Kennzahlen mit Vergleich zu den 30 Tagen davor, Verlauf), Codes, Werbe-Links, Partner-Server (nur wenn vom Team
+// erlaubt), API, Webhook, Vorstellung, Kosmetik (3D-Vorschau, Partner-Umhang aus eigenen Uploads), Profil, Zugänge.
+// /partner/<slug> bei mehreren Zugängen; Team-Mitglieder mit partners.manage öffnen jedes Dashboard im Team-Modus.
 const { fill, date, lang } = useLang()
 const { p } = usePartnerText()
 const lp = useLocalePath()
@@ -105,10 +106,15 @@ watch(slug, () => {
   createdCodes.value = []
   shownKey.value = ''
   shownSecret.value = ''
+  selectable.value = null
   void loadDash().catch(fail)
 })
 function switchTo(s: string) {
   void navigateTo(`/partner/${s}`)
+}
+function openTab(t: Tab) {
+  tab.value = t
+  notice.value = ''
 }
 const answerInvite = (s: string, accept: boolean) => act(`inv:${s}`, async () => {
   me.value = await api<MyPartnerState>(`/v1/me/partner/invites/${s}`, { method: 'POST', body: { accept } })
@@ -128,14 +134,72 @@ const sendRequest = (body: Record<string, unknown>, key: string) => act(key, asy
   await loadDash()
 }, d.value.sent)
 
+const copied = ref('')
+async function copy(text: string, key: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+    copied.value = key
+    setTimeout(() => (copied.value = ''), 1600)
+  } catch {
+    // Zwischenablage gesperrt.
+  }
+}
+
 // ---------------------------------------------------------------- Übersicht
 const stats = computed(() => dash.value?.stats ?? null)
 const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0)
-const chart = computed(() => {
-  const days = stats.value?.daily.slice(-14) ?? []
-  const max = Math.max(1, ...days.map((x) => x.fixed + x.onetime))
-  return days.map((x) => ({ ...x, total: x.fixed + x.onetime, h: ((x.fixed + x.onetime) / max) * 100, split: x.fixed + x.onetime ? (x.onetime / (x.fixed + x.onetime)) * 100 : 0 }))
+
+type CheckKey = 'logo' | 'text' | 'links' | 'server' | 'webhook' | 'api' | 'cosmetics'
+const checklist = computed(() => {
+  const x = dash.value
+  if (!x) return []
+  const items: { key: CheckKey, tab: Tab, right: PartnerRight, done: boolean, review: boolean }[] = [
+    { key: 'logo', tab: 'profile', right: 'profile', done: !!x.logo, review: !!openOf('logo') },
+    { key: 'text', tab: 'profile', right: 'profile', done: !!(x.profile.text.de.trim() || x.profile.text.en.trim()), review: !!openOf('profile') },
+    { key: 'links', tab: 'profile', right: 'profile', done: x.profile.links.length > 0, review: !!openOf('profile') },
+    { key: 'server', tab: 'server', right: 'server', done: !!x.server?.current, review: !!openOf('server') },
+    { key: 'webhook', tab: 'webhook', right: 'webhook', done: !!x.webhook?.config, review: false },
+    { key: 'api', tab: 'api', right: 'api', done: !!x.apiKey, review: false },
+    { key: 'cosmetics', tab: 'cosmetics', right: 'cosmetics', done: x.cosmetics.some((c) => c.kind === 'cape'), review: !!openOf('cape') },
+  ]
+  // Partner-Server nur, wenn das Team ihn erlaubt; Schritte ohne Recht kann der Betrachter nicht prüfen.
+  return items.filter((i) => (i.key !== 'server' || x.serverAllowed) && may(i.right))
 })
+const checkDone = computed(() => checklist.value.filter((i) => i.done).length)
+const checkPct = computed(() => pct(checkDone.value, checklist.value.length))
+
+function change(now: number, before: number): { text: string, tone: 'up' | 'down' | 'flat' } {
+  const c = percentChange(now, before)
+  if (c === null) return { text: d.value.compare.new, tone: 'up' }
+  if (c === 0) return { text: '±0 %', tone: 'flat' }
+  return { text: `${c > 0 ? '+' : '−'}${Math.abs(c)} %`, tone: c > 0 ? 'up' : 'down' }
+}
+const tiles = computed(() => {
+  const s = stats.value
+  const x = dash.value
+  if (!s || !x) return []
+  const c = s.current30d
+  const pv = s.previous30d
+  const m = d.value.compare.metrics
+  const list: { key: string, label: string, value: string, hint?: string, delta?: ReturnType<typeof change> }[] = [
+    { key: 'supporters', label: d.value.overview.supporters, value: num(s.supporters), hint: fill(d.value.overview.supportersHint, { n: num(s.newSupporters7d) }) },
+    { key: 'newSupporters', label: m.newSupporters!, value: num(c.newSupporters), delta: change(c.newSupporters, pv.newSupporters) },
+    { key: 'redemptions', label: m.redemptions!, value: num(c.redemptions), delta: change(c.redemptions, pv.redemptions), hint: `${num(c.fixed)} ${m.fixed} · ${num(c.onetime)} ${m.onetime}` },
+    { key: 'newPlayers', label: m.newPlayers!, value: num(c.newPlayers), delta: change(c.newPlayers, pv.newPlayers), hint: d.value.overview.newPlayersHint },
+  ]
+  if (x.serverAllowed) list.push({ key: 'serverJoins', label: m.serverJoins!, value: num(c.serverJoins), delta: change(c.serverJoins, pv.serverJoins) })
+  list.push({ key: 'downloads', label: m.downloads!, value: num(c.downloads), delta: change(c.downloads, pv.downloads), hint: `${num(c.clicks)} ${m.clicks}` })
+  list.push({ key: 'worn', label: d.value.overview.worn, value: `${pct(s.capeWorn, s.supporters)} %`, hint: fill(d.value.overview.wornHint, { p: pct(s.cosmeticWorn, s.supporters) }) })
+  return list
+})
+const compareRows = computed(() => {
+  const s = stats.value
+  if (!s) return []
+  const keys: (keyof PartnerPeriod)[] = ['newSupporters', 'redemptions', 'fixed', 'onetime', 'newPlayers', ...(dash.value?.serverAllowed ? ['serverJoins' as const] : []), 'clicks', 'downloads', 'left']
+  return keys.map((k) => ({ key: k, sub: k === 'fixed' || k === 'onetime', now: s.current30d[k], before: s.previous30d[k], delta: change(s.current30d[k], s.previous30d[k]) }))
+})
+const days = computed(() => stats.value?.daily.map((x) => x.day) ?? [])
+const series = (f: (x: PartnerStatDay) => number | null) => stats.value?.daily.map(f) ?? []
 
 // ---------------------------------------------------------------- Codes
 const batchForm = reactive({ label: '', count: 10 })
@@ -156,16 +220,6 @@ const blockBatch = (b: PartnerBatch) => {
     await api(`${base.value}/batches/${b.id}/block`, { method: 'POST' })
     await loadDash()
   })
-}
-const copied = ref('')
-async function copy(text: string, key: string) {
-  try {
-    await navigator.clipboard.writeText(text)
-    copied.value = key
-    setTimeout(() => (copied.value = ''), 1600)
-  } catch {
-    // Zwischenablage gesperrt.
-  }
 }
 
 // ---------------------------------------------------------------- Links
@@ -246,36 +300,46 @@ function promoState(c: 'blog' | 'newsletter' | 'wiki'): { label: string, cls: st
 }
 
 // ---------------------------------------------------------------- Kosmetik
-const capeFile = ref<File | null>(null)
+const selectable = ref<SelectableCape[] | null>(null)
+const pickedCape = ref('')
 const capeName = ref('')
-const capeFrameMs = ref(150)
 const wish = ref('')
-function pickFile(e: Event): File | null {
-  const f = (e.target as HTMLInputElement).files?.[0] ?? null
-  return f && f.type === 'image/png' ? f : null
+const previewKey = ref('')
+async function loadSelectable() {
+  if (selectable.value || !may('cosmetics')) return
+  try {
+    selectable.value = (await api<{ capes: SelectableCape[] }>(`${base.value}/capes`)).capes
+  } catch (e) {
+    selectable.value = []
+    fail(e)
+  }
 }
-async function putPng(path: string, f: File) {
-  await apiFetch(path, { method: 'PUT', body: f, headers: { 'Content-Type': 'image/png', 'X-CSRF-Token': account.value?.csrf ?? '' }, credentials: 'same-origin' })
+watch(tab, (t) => {
+  if (t === 'cosmetics') void loadSelectable()
+})
+const pendingCape = computed(() => openOf('cape'))
+/** Vorschau-Kandidaten: zugeordnete Teile, dazu der gewählte bzw. eingereichte Umhang. */
+const previewItems = computed(() => {
+  const out: { key: string, name: string, kind: 'cape' | 'cosmetic', cape: CapeTexture | null, scale: number, hat: SiteHat | null, note?: string }[] = []
+  for (const c of dash.value?.cosmetics ?? []) {
+    out.push({ key: `${c.kind}:${c.id}`, name: c.name, kind: c.kind, cape: c.cape ? { id: c.id, url: sameOriginPath(c.cape.url), frames: c.cape.frames, frameTimeMs: c.cape.frameTimeMs } : null, scale: c.cape?.scale ?? 1, hat: c.hat })
+  }
+  const pendingId = pendingCape.value?.data.capeId
+  for (const id of new Set([pickedCape.value, typeof pendingId === 'string' ? pendingId : ''])) {
+    const s = id ? selectable.value?.find((x) => x.id === id) : undefined
+    if (s) out.push({ key: `sel:${s.id}`, name: s.name, kind: 'cape', cape: { id: s.id, url: sameOriginPath(s.url), frames: s.frames, frameTimeMs: s.frameTimeMs }, scale: s.scale, hat: null, note: id === pendingId ? d.value.checklist.review : undefined })
+  }
+  return out
+})
+const previewed = computed(() => previewItems.value.find((x) => x.key === previewKey.value) ?? previewItems.value.find((x) => x.cape || x.hat) ?? null)
+function pickCape(c: SelectableCape) {
+  pickedCape.value = c.id
+  capeName.value = c.name
+  previewKey.value = `sel:${c.id}`
 }
-async function pngFrames(f: File): Promise<number> {
-  const img = await createImageBitmap(f)
-  const w = img.width
-  const h = img.height
-  img.close()
-  const frameH = w / 2
-  return w % 64 === 0 && h % frameH === 0 && h > frameH ? h / frameH : 1
-}
-const uploadCape = () => act('cape', async () => {
-  const f = capeFile.value
-  if (!f) return
-  const frames = await pngFrames(f)
-  const q = new URLSearchParams()
-  if (capeName.value.trim()) q.set('name', capeName.value.trim().slice(0, 32))
-  if (frames > 1) q.set('frameTimeMs', String(Math.max(50, Math.min(10_000, Math.floor(capeFrameMs.value) || 150))))
-  await putPng(`${base.value}/cape${q.toString() ? `?${q}` : ''}`, f)
-  capeFile.value = null
-  await loadDash()
-}, d.value.sent)
+const submitCape = () => sendRequest({ kind: 'cape', capeId: pickedCape.value, name: capeName.value.trim().slice(0, 32) || undefined }, 'cape').then(() => {
+  if (!error.value) pickedCape.value = ''
+})
 const sendWish = () => sendRequest({ kind: 'cosmetic_wish', text: wish.value.trim() }, 'wish').then(() => {
   if (!error.value) wish.value = ''
 })
@@ -283,6 +347,13 @@ const sendWish = () => sendRequest({ kind: 'cosmetic_wish', text: wish.value.tri
 // ---------------------------------------------------------------- Profil
 const profileForm = reactive<{ de: string, en: string, links: PartnerLink[] }>({ de: '', en: '', links: [] })
 const logoFile = ref<File | null>(null)
+function pickFile(e: Event): File | null {
+  const f = (e.target as HTMLInputElement).files?.[0] ?? null
+  return f && f.type === 'image/png' ? f : null
+}
+async function putPng(path: string, f: File) {
+  await apiFetch(path, { method: 'PUT', body: f, headers: { 'Content-Type': 'image/png', 'X-CSRF-Token': account.value?.csrf ?? '' }, credentials: 'same-origin' })
+}
 function resetForms() {
   const x = dash.value
   if (!x) return
@@ -309,6 +380,7 @@ const uploadLogo = () => act('logo', async () => {
   logoFile.value = null
   await loadDash()
 }, d.value.sent)
+const previewParagraphs = computed(() => partnerText({ de: profileForm.de, en: profileForm.en }, lang.value).split(/\n{2,}/).map((s) => s.trim()).filter(Boolean))
 
 // ---------------------------------------------------------------- Zugänge
 const inviteName = ref('')
@@ -359,8 +431,8 @@ const rightsLabel = (r: PartnerRight[]) => r.map((x) => d.value.members.right[x]
       <p v-if="notice" role="status" class="mt-6 text-sm text-ok">{{ notice }}</p>
 
       <section v-if="me?.invites.length" class="card mt-6 p-5">
-        <h2 class="text-sm font-semibold text-base-100">{{ d.invitesTitle }}</h2>
-        <ul class="mt-2 space-y-2">
+        <h2 class="section-title">{{ d.invitesTitle }}</h2>
+        <ul class="mt-3 space-y-2">
           <li v-for="i in me.invites" :key="i.slug" class="flex flex-wrap items-center gap-3 text-sm">
             <span class="flex-1 text-base-200">{{ fill(d.invite, { name: i.name, rights: rightsLabel(i.rights) }) }}</span>
             <button type="button" class="btn btn-primary" :disabled="busy === `inv:${i.slug}`" @click="answerInvite(i.slug, true)">{{ d.accept }}</button>
@@ -387,253 +459,325 @@ const rightsLabel = (r: PartnerRight[]) => r.map((x) => d.value.members.right[x]
         <section class="card mt-6 flex flex-wrap items-center gap-5 p-5">
           <PartnerLogo :logo="dash.logo" :name="dash.name" :size="64" />
           <div class="min-w-0 flex-1">
-            <p class="text-2xl font-bold text-base-50">{{ dash.name }}</p>
+            <p class="text-2xl font-bold break-words text-base-50">{{ dash.name }}</p>
             <p class="text-xs font-bold tracking-[0.16em] text-redstone-400 uppercase">{{ p.category[dash.category] }}</p>
           </div>
-          <code v-if="dash.code" class="big-code">{{ dash.code }}</code>
+          <div v-if="dash.code" class="head-code">
+            <PartnerCode :code="dash.code" :max="1.05" />
+            <button type="button" class="btn-icon size-8" :aria-label="copied === 'code' ? d.links.copied : d.links.copy" @click="copy(dash.code, 'code')">
+              <SiteIcon :name="copied === 'code' ? 'check' : 'copy'" class="size-4" />
+            </button>
+          </div>
         </section>
 
         <nav class="dash-tabs mt-6" :aria-label="d.title">
-          <button v-for="x in tabs" :key="x" type="button" :aria-pressed="tab === x" @click="tab = x; notice = ''">{{ d.tabs[x] }}</button>
+          <button v-for="x in tabs" :key="x" type="button" :aria-pressed="tab === x" @click="openTab(x)">{{ d.tabs[x] }}</button>
         </nav>
 
         <!-- Übersicht -->
         <section v-if="tab === 'overview'" class="mt-6">
           <div v-if="dash.teamChanges.length" class="card team-changes mb-4 p-4">
-            <p class="text-sm font-semibold text-base-100">{{ d.teamChanges }}</p>
+            <p class="section-title">{{ d.teamChanges }}</p>
             <ul class="mt-2 space-y-1 text-sm text-base-300">
               <li v-for="(c, i) in dash.teamChanges.slice(0, 6)" :key="i">{{ c.action }} · {{ date(c.at) }}</li>
             </ul>
           </div>
-          <template v-if="stats">
-            <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <li class="card p-4">
-                <p class="text-2xl font-bold text-base-50 tabular-nums">{{ num(stats.supporters) }}</p>
-                <p class="mt-1 text-xs text-base-400">{{ d.overview.supporters }}</p>
-                <p class="mt-1 text-[11px] text-ok">{{ fill(d.overview.supportersHint, { n: num(stats.newSupporters7d) }) }}</p>
-              </li>
-              <li class="card p-4">
-                <p class="text-2xl font-bold text-base-50 tabular-nums">{{ num(stats.redemptions.total) }}</p>
-                <p class="mt-1 text-xs text-base-400">{{ d.overview.redemptions }}</p>
-                <p class="mt-1 text-[11px] text-base-400">{{ fill(d.overview.redemptionsHint, { code: dash.code ?? '', fixed: num(stats.redemptions.fixed), onetime: num(stats.redemptions.onetime) }) }}</p>
-              </li>
-              <li class="card p-4">
-                <p class="text-2xl font-bold text-base-50 tabular-nums">{{ num(stats.newPlayers) }}</p>
-                <p class="mt-1 text-xs text-base-400">{{ d.overview.newPlayers }}</p>
-                <p class="mt-1 text-[11px] text-base-400">{{ d.overview.newPlayersHint }}</p>
-              </li>
-              <li class="card p-4">
-                <p class="text-2xl font-bold text-base-50 tabular-nums">{{ pct(stats.capeWorn, stats.supporters) }} %</p>
-                <p class="mt-1 text-xs text-base-400">{{ d.overview.worn }}</p>
-                <p class="mt-1 text-[11px] text-base-400">{{ fill(d.overview.wornHint, { p: pct(stats.cosmeticWorn, stats.supporters) }) }}</p>
+
+          <div v-if="checklist.length && checkDone < checklist.length" class="card checklist mb-4 p-5">
+            <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <h2 class="section-title">{{ d.checklist.title }}</h2>
+              <p class="text-xs text-base-400">{{ d.checklist.lead }}</p>
+              <p class="ml-auto text-sm font-semibold text-base-100 tabular-nums">{{ checkPct }} %</p>
+            </div>
+            <div class="meter mt-3" role="progressbar" :aria-valuenow="checkPct" aria-valuemin="0" aria-valuemax="100" :aria-label="fill(d.checklist.progress, { done: checkDone, total: checklist.length })"><div :style="{ width: `${checkPct}%` }" /></div>
+            <p class="mt-1 text-xs text-base-400">{{ fill(d.checklist.progress, { done: checkDone, total: checklist.length }) }}</p>
+            <ul class="mt-3 grid gap-2 sm:grid-cols-2">
+              <li v-for="i in checklist" :key="i.key" class="check-row" :data-done="i.done">
+                <span class="check-mark" aria-hidden="true"><SiteIcon v-if="i.done" name="check" class="size-3.5" /><SiteIcon v-else-if="i.review" name="clock" class="size-3.5" /></span>
+                <span class="min-w-0 flex-1">
+                  <span class="block text-sm font-semibold" :class="i.done ? 'text-base-400 line-through decoration-base-600' : 'text-base-50'">{{ d.checklist.items[i.key] }}</span>
+                  <span class="block text-xs text-base-400">{{ i.done ? d.checklist.done : i.review ? d.checklist.review : d.checklist.hints[i.key] }}</span>
+                </span>
+                <button v-if="!i.done" type="button" class="btn btn-ghost h-8 px-3 text-xs" @click="openTab(i.tab)">{{ d.checklist.open }}<SiteIcon name="arrow" class="size-3.5" /></button>
               </li>
             </ul>
-            <div class="card mt-4 p-4">
-              <p class="text-sm font-semibold text-base-200">{{ d.overview.chart }}</p>
-              <div class="bars mt-4" role="img" :aria-label="d.overview.chart">
-                <div v-for="x in chart" :key="x.day" class="bar" :title="`${x.day}: ${x.fixed} + ${x.onetime}`" :style="{ height: `${Math.max(2, x.h)}%`, '--split': `${x.split}%` }" />
+          </div>
+
+          <p v-if="!stats" class="card p-5 text-base-400">{{ d.overview.noStats }}</p>
+          <template v-else>
+            <ul class="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <li v-for="s in tiles" :key="s.key" class="card p-4">
+                <p class="text-2xl font-bold text-base-50 tabular-nums">{{ s.value }}</p>
+                <p class="mt-1 text-xs text-base-400">{{ s.label }}<template v-if="s.delta"> · {{ d.compare.current }}</template></p>
+                <p v-if="s.delta" class="delta mt-1" :data-tone="s.delta.tone" :title="fill(d.compare.vsPrev, { change: s.delta.text })">{{ s.delta.text }}</p>
+                <p v-if="s.hint" class="mt-1 text-[11px] leading-snug text-base-400">{{ s.hint }}</p>
+              </li>
+            </ul>
+
+            <div class="mt-6 flex flex-wrap items-baseline gap-x-3">
+              <h2 class="section-title">{{ d.charts.title }}</h2>
+              <p class="text-xs text-base-400">{{ d.charts.lead }}</p>
+            </div>
+            <div class="mt-3 grid gap-4 md:grid-cols-2">
+              <div class="card p-4">
+                <p class="text-sm font-semibold text-base-200">{{ d.charts.redemptions }}</p>
+                <PartnerStackChart class="mt-2" :a="series((x) => x.fixed) as number[]" :b="series((x) => x.onetime) as number[]" :days="days" :labels="[d.overview.fixed, d.overview.onetime]" :title="d.charts.redemptions" :texts="d.charts.table" />
               </div>
-              <div class="legend mt-2"><span><i class="lg-fixed" />{{ d.overview.fixed }}</span><span><i class="lg-once" />{{ d.overview.onetime }}</span></div>
+              <div class="card p-4">
+                <p class="text-sm font-semibold text-base-200">{{ d.charts.newSupporters }}</p>
+                <AdminSeriesChart class="mt-2" :values="series((x) => x.newSupporters)" :days="days" :label="d.charts.newSupporters" :texts="d.charts.table" />
+              </div>
+              <div v-if="dash.serverAllowed" class="card p-4">
+                <p class="text-sm font-semibold text-base-200">{{ d.charts.serverJoins }}</p>
+                <AdminSeriesChart class="mt-2" :values="series((x) => x.serverJoins)" :days="days" :label="d.charts.serverJoins" tone="lamp" :texts="d.charts.table" />
+              </div>
+              <div class="card p-4">
+                <p class="text-sm font-semibold text-base-200">{{ d.charts.downloads }}</p>
+                <AdminSeriesChart class="mt-2" :values="series((x) => x.downloads)" :days="days" :label="d.charts.downloads" tone="lamp" :texts="d.charts.table" />
+              </div>
+              <div class="card p-4">
+                <p class="text-sm font-semibold text-base-200">{{ d.charts.active }}</p>
+                <AdminSeriesChart class="mt-2" :values="series((x) => x.activeSupporters)" :days="days" :label="d.charts.active" kind="line" tone="ok" :texts="d.charts.table" />
+              </div>
+            </div>
+
+            <div class="mt-6 grid gap-4 lg:grid-cols-[1fr_20rem]">
+              <div class="card overflow-x-auto p-5">
+                <h2 class="section-title">{{ d.compare.title }}</h2>
+                <p class="mt-1 text-xs text-base-400">{{ d.compare.lead }}</p>
+                <table class="tbl mt-3 w-full text-sm">
+                  <thead><tr><th>{{ d.compare.metric }}</th><th class="text-right">{{ d.compare.current }}</th><th class="text-right">{{ d.compare.previous }}</th><th class="text-right">{{ d.compare.change }}</th></tr></thead>
+                  <tbody>
+                    <tr v-for="r in compareRows" :key="r.key">
+                      <td :class="r.sub ? 'pl-6 text-base-400' : ''">{{ d.compare.metrics[r.key] }}</td>
+                      <td class="text-right font-semibold text-base-50 tabular-nums">{{ num(r.now) }}</td>
+                      <td class="text-right tabular-nums">{{ num(r.before) }}</td>
+                      <td class="text-right"><span class="delta" :data-tone="r.key === 'left' ? 'flat' : r.delta.tone">{{ r.delta.text }}</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="grid content-start gap-4">
+                <div class="card p-5">
+                  <h2 class="section-title">{{ d.overview.activity }}</h2>
+                  <table class="kv mt-2 w-full text-sm">
+                    <tbody>
+                      <tr><td>{{ d.overview.onlineToday }}</td><td>{{ num(stats.onlineToday) }}</td></tr>
+                      <tr><td>{{ d.overview.playedToday }}</td><td>{{ num(stats.playedToday) }}</td></tr>
+                      <tr><td>{{ d.overview.left }}</td><td>{{ num(stats.left30d) }}</td></tr>
+                      <tr v-if="dash.serverAllowed"><td>{{ d.overview.joins }}</td><td>{{ num(stats.serverJoins7d) }}</td></tr>
+                    </tbody>
+                  </table>
+                  <p class="mt-2 text-[11px] text-base-400">{{ d.overview.numbersOnly }}</p>
+                </div>
+                <div class="card p-5">
+                  <h2 class="section-title">{{ d.quota.title }}</h2>
+                  <p class="mt-2 flex text-sm text-base-300"><span class="flex-1">{{ fill(d.quota.used, { used: num(dash.quota.used), total: num(dash.quota.total) }) }}</span>{{ fill(d.quota.free, { n: num(dash.quota.free) }) }}</p>
+                  <div class="meter mt-2"><div :style="{ width: `${pct(dash.quota.used, dash.quota.total)}%` }" /></div>
+                  <button v-if="may('codes')" type="button" class="btn btn-ghost mt-3" @click="openTab('codes')">{{ d.quota.manage }}</button>
+                </div>
+              </div>
             </div>
           </template>
-          <p v-else class="card mt-0 p-4 text-sm text-base-400">{{ d.overview.noStats }}</p>
-          <div class="mt-4 grid gap-4 md:grid-cols-2">
-            <div v-if="stats" class="card p-4">
-              <p class="text-sm font-semibold text-base-200">{{ d.overview.activity }}</p>
-              <table class="kv mt-2 w-full text-sm">
-                <tbody>
-                  <tr><td>{{ d.overview.onlineToday }}</td><td>{{ num(stats.onlineToday) }}</td></tr>
-                  <tr><td>{{ d.overview.playedToday }}</td><td>{{ num(stats.playedToday) }}</td></tr>
-                  <tr><td>{{ d.overview.left }}</td><td>{{ num(stats.left30d) }}</td></tr>
-                  <tr><td>{{ d.overview.joins }}</td><td>{{ num(stats.serverJoins7d) }}</td></tr>
-                  <tr><td>{{ d.overview.downloads }}</td><td>{{ num(stats.downloads30d) }}</td></tr>
-                </tbody>
-              </table>
-              <p class="mt-2 text-[11px] text-base-400">{{ d.overview.numbersOnly }}</p>
-            </div>
-            <div class="card p-4">
-              <p class="text-sm font-semibold text-base-200">{{ d.quota.title }}</p>
-              <p class="mt-2 flex text-sm text-base-300"><span class="flex-1">{{ fill(d.quota.used, { used: num(dash.quota.used), total: num(dash.quota.total) }) }}</span>{{ fill(d.quota.free, { n: num(dash.quota.free) }) }}</p>
-              <div class="meter mt-2"><div :style="{ width: `${pct(dash.quota.used, dash.quota.total)}%` }" /></div>
-              <button v-if="may('codes')" type="button" class="btn btn-ghost mt-3" @click="tab = 'codes'">{{ d.quota.manage }}</button>
-            </div>
-          </div>
         </section>
 
         <!-- Codes -->
-        <section v-else-if="tab === 'codes'" class="mt-6 grid gap-4">
-          <div class="grid gap-4 md:grid-cols-2">
-            <div class="card p-4">
-              <p class="text-sm font-semibold text-base-200">{{ d.codes.fixedTitle }}</p>
-              <p class="mt-2 flex items-center gap-2"><code class="big-code">{{ dash.code }}</code><span class="pill pill-ok">{{ d.codes.active }}</span></p>
-              <p class="mt-2 text-xs text-base-400">{{ d.codes.fixedText }}</p>
-              <p v-if="openOf('code_change')" class="state state-warn mt-3">{{ fill(d.codes.changePending, { code: String(openOf('code_change')!.data.code) }) }}
+        <section v-else-if="tab === 'codes'" class="mt-6 grid gap-6 lg:grid-cols-[1fr_20rem]">
+          <div class="grid content-start gap-6">
+            <div class="card p-5">
+              <h2 class="section-title">{{ d.codes.fixedTitle }}</h2>
+              <p class="mt-1 text-sm text-base-400">{{ d.codes.fixedText }}</p>
+              <div class="code-row mt-4">
+                <div class="min-w-0 flex-1"><PartnerCode v-if="dash.code" :code="dash.code" :max="1.15" /></div>
+                <span class="pill pill-ok">{{ d.codes.active }}</span>
+                <button v-if="dash.code" type="button" class="btn btn-ghost" @click="copy(dash.code, 'fixed')"><SiteIcon :name="copied === 'fixed' ? 'check' : 'copy'" class="size-4" />{{ copied === 'fixed' ? d.links.copied : d.links.copy }}</button>
+              </div>
+              <p v-if="openOf('code_change')" class="state state-warn mt-3 text-sm"><SiteIcon name="clock" class="size-4" />{{ fill(d.codes.changePending, { code: String(openOf('code_change')!.data.code) }) }}
                 <button type="button" class="ml-auto text-xs underline" @click="withdraw(openOf('code_change')!)">{{ d.withdraw }}</button></p>
-              <form v-else class="mt-3 flex gap-2" @submit.prevent="sendRequest({ kind: 'code_change', code: codeChange.trim().toUpperCase() }, 'code')">
-                <input v-model="codeChange" class="field w-40 font-mono uppercase" maxlength="19" pattern="[A-Za-z0-9]{4,19}" required :placeholder="d.codes.newCode" />
+              <form v-else class="mt-3 flex flex-wrap gap-2" @submit.prevent="sendRequest({ kind: 'code_change', code: codeChange.trim().toUpperCase() }, 'code')">
+                <input v-model="codeChange" class="field w-48 font-mono uppercase" maxlength="19" pattern="[A-Za-z0-9]{4,19}" required :placeholder="d.codes.newCode" :aria-label="d.codes.newCode" />
                 <button type="submit" class="btn btn-ghost" :disabled="busy === 'code'">{{ d.codes.change }}</button>
               </form>
-              <p v-if="lastDecided('code_change')?.status === 'rejected'" class="mt-2 text-xs text-redstone-300">{{ fill(d.rejected, { reason: lastDecided('code_change')!.reason ?? '' }) }}</p>
+              <p v-if="lastDecided('code_change')?.status === 'rejected'" class="state state-danger mt-2 text-xs">{{ fill(d.rejected, { reason: lastDecided('code_change')!.reason ?? '' }) }}</p>
             </div>
-            <div class="card p-4">
-              <p class="text-sm font-semibold text-base-200">{{ d.quota.title }}</p>
+            <div class="card overflow-x-auto p-5">
+              <h2 class="section-title">{{ d.codes.batches }}</h2>
+              <p v-if="!dash.batches?.length" class="mt-2 text-sm text-base-400">{{ d.codes.none }}</p>
+              <table v-else class="tbl mt-3 w-full text-sm">
+                <thead><tr><th>{{ d.codes.batchLabel }}</th><th>{{ d.codes.batchCount }}</th><th>{{ d.codes.batchRedeemed }}</th><th>{{ d.codes.batchVia }}</th><th>{{ d.codes.batchDate }}</th><th /></tr></thead>
+                <tbody>
+                  <tr v-for="b in dash.batches" :key="b.id">
+                    <td>{{ b.label }}</td>
+                    <td class="tabular-nums">{{ num(b.count) }}</td>
+                    <td class="tabular-nums">{{ num(b.redeemed) }} <span class="text-xs text-base-400">({{ pct(b.redeemed, b.count) }} %)</span></td>
+                    <td>{{ d.codes.via[b.via] }}</td>
+                    <td>{{ date(b.createdAt) }}</td>
+                    <td class="text-right whitespace-nowrap">
+                      <a :href="`${base}/batches/${b.id}.csv`" class="btn btn-ghost h-8 px-3 text-xs">{{ d.codes.csv }}</a>
+                      <button v-if="!b.blockedAt" type="button" class="btn btn-ghost h-8 px-3 text-xs" :disabled="busy === `block:${b.id}`" @click="blockBatch(b)">{{ d.codes.block }}</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <p class="mt-2 text-xs text-base-400">{{ d.codes.blockedNote }}</p>
+            </div>
+          </div>
+          <div class="grid content-start gap-6">
+            <form class="card p-5" @submit.prevent="createBatch">
+              <h2 class="section-title">{{ d.codes.createTitle }}</h2>
+              <p class="mt-1 text-xs text-base-400">{{ d.codes.createHint }}</p>
+              <label class="label mt-4" for="bt-label">{{ d.codes.label }}</label>
+              <input id="bt-label" v-model="batchForm.label" class="field" maxlength="60" />
+              <label class="label mt-3" for="bt-count">{{ d.codes.count }}</label>
+              <input id="bt-count" v-model.number="batchForm.count" class="field" type="number" min="1" max="500" />
+              <button type="submit" class="btn btn-primary mt-4 w-full" :disabled="busy === 'batch' || dash.state !== 'active'">{{ d.codes.create }}</button>
+              <div v-if="createdCodes.length" class="mt-4">
+                <p class="text-sm text-ok">{{ fill(d.codes.created, { n: createdCodes.length }) }}</p>
+                <pre class="code-list mt-2">{{ createdCodes.join('\n') }}</pre>
+                <div class="mt-2 flex flex-wrap gap-2">
+                  <button type="button" class="btn btn-ghost" @click="copy(createdCodes.join('\n'), 'codes')"><SiteIcon :name="copied === 'codes' ? 'check' : 'copy'" class="size-4" />{{ d.codes.copyAll }}</button>
+                  <a v-if="createdBatch" :href="`${base}/batches/${createdBatch}.csv`" class="btn btn-ghost"><SiteIcon name="download" class="size-4" />{{ d.codes.csv }}</a>
+                </div>
+              </div>
+            </form>
+            <div class="card p-5">
+              <h2 class="section-title">{{ d.quota.title }}</h2>
               <p class="mt-2 flex text-sm text-base-300"><span class="flex-1">{{ fill(d.quota.used, { used: num(dash.quota.used), total: num(dash.quota.total) }) }}</span>{{ fill(d.quota.free, { n: num(dash.quota.free) }) }}</p>
               <div class="meter mt-2"><div :style="{ width: `${pct(dash.quota.used, dash.quota.total)}%` }" /></div>
               <p class="mt-2 text-xs text-base-400">{{ d.quota.text }}</p>
-              <p v-if="dash.quota.requested" class="state state-warn mt-3">{{ fill(d.quota.requested, { n: num(dash.quota.requested) }) }}</p>
+              <p v-if="dash.quota.requested" class="state state-warn mt-3 text-sm"><SiteIcon name="clock" class="size-4" />{{ fill(d.quota.requested, { n: num(dash.quota.requested) }) }}</p>
               <div v-else class="mt-3 flex gap-2">
-                <select v-model.number="quotaAmount" class="field w-28"><option :value="500">+500</option><option :value="1000">+1.000</option><option :value="5000">+5.000</option></select>
+                <select v-model.number="quotaAmount" class="field w-28" :aria-label="d.quota.request"><option :value="500">+500</option><option :value="1000">+1.000</option><option :value="5000">+5.000</option></select>
                 <button type="button" class="btn btn-ghost" :disabled="busy === 'quota'" @click="sendRequest({ kind: 'quota', amount: quotaAmount }, 'quota')">{{ d.quota.request }}</button>
               </div>
             </div>
           </div>
-          <form class="card p-4" @submit.prevent="createBatch">
-            <p class="flex flex-wrap items-baseline gap-2 text-sm font-semibold text-base-200">{{ d.codes.createTitle }}<span class="text-xs font-normal text-base-400">{{ d.codes.createHint }}</span></p>
-            <div class="mt-3 flex flex-wrap gap-2">
-              <input v-model="batchForm.label" class="field max-w-xs flex-1" maxlength="60" :placeholder="d.codes.label" />
-              <input v-model.number="batchForm.count" class="field w-24" type="number" min="1" max="500" :aria-label="d.codes.count" />
-              <button type="submit" class="btn btn-primary" :disabled="busy === 'batch' || dash.state !== 'active'">{{ d.codes.create }}</button>
-            </div>
-            <div v-if="createdCodes.length" class="created mt-3">
-              <p class="text-sm text-ok">{{ fill(d.codes.created, { n: createdCodes.length }) }}</p>
-              <pre class="code-list mt-2">{{ createdCodes.join('\n') }}</pre>
-              <div class="mt-2 flex gap-2">
-                <button type="button" class="btn btn-ghost" @click="copy(createdCodes.join('\n'), 'codes')"><SiteIcon :name="copied === 'codes' ? 'check' : 'copy'" class="size-4" />{{ d.codes.copyAll }}</button>
-                <a v-if="createdBatch" :href="`${base}/batches/${createdBatch}.csv`" class="btn btn-ghost"><SiteIcon name="download" class="size-4" />{{ d.codes.csv }}</a>
-              </div>
-            </div>
-          </form>
-          <div class="card overflow-x-auto p-4">
-            <p class="text-sm font-semibold text-base-200">{{ d.codes.batches }}</p>
-            <p v-if="!dash.batches?.length" class="mt-2 text-sm text-base-400">{{ d.codes.none }}</p>
-            <table v-else class="tbl mt-2 w-full text-sm">
-              <thead><tr><th>{{ d.codes.batchLabel }}</th><th>{{ d.codes.batchCount }}</th><th>{{ d.codes.batchRedeemed }}</th><th>{{ d.codes.batchVia }}</th><th>{{ d.codes.batchDate }}</th><th /></tr></thead>
-              <tbody>
-                <tr v-for="b in dash.batches" :key="b.id">
-                  <td>{{ b.label }}</td>
-                  <td class="tabular-nums">{{ num(b.count) }}</td>
-                  <td class="tabular-nums">{{ num(b.redeemed) }} <span class="text-xs text-base-400">({{ pct(b.redeemed, b.count) }} %)</span></td>
-                  <td>{{ d.codes.via[b.via] }}</td>
-                  <td>{{ date(b.createdAt) }}</td>
-                  <td class="text-right whitespace-nowrap">
-                    <a :href="`${base}/batches/${b.id}.csv`" class="btn btn-ghost h-8 px-3 text-xs">{{ d.codes.csv }}</a>
-                    <button v-if="!b.blockedAt" type="button" class="btn btn-ghost h-8 px-3 text-xs" :disabled="busy === `block:${b.id}`" @click="blockBatch(b)">{{ d.codes.block }}</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <p class="mt-2 text-xs text-base-400">{{ d.codes.blockedNote }}</p>
-          </div>
         </section>
 
         <!-- Werbe-Links -->
-        <section v-else-if="tab === 'links' && dash.links" class="mt-6 grid gap-4">
-          <div class="card p-4">
-            <p class="text-sm font-semibold text-base-200">{{ d.links.title }}</p>
-            <p class="mt-2 flex flex-wrap items-center gap-2"><code class="big-code text-base">{{ goUrl() }}</code>
-              <button type="button" class="btn btn-ghost" @click="copy(goUrl(), 'go')"><SiteIcon :name="copied === 'go' ? 'check' : 'copy'" class="size-4" />{{ copied === 'go' ? d.links.copied : d.links.copy }}</button></p>
-            <p class="mt-2 text-xs text-base-400">{{ fill(d.links.text, { name: dash.name, code: dash.code ?? '' }) }}</p>
+        <section v-else-if="tab === 'links' && dash.links" class="mt-6 grid gap-6 lg:grid-cols-[1fr_20rem]">
+          <div class="grid content-start gap-6">
+            <div class="card p-5">
+              <h2 class="section-title">{{ d.links.title }}</h2>
+              <p class="mt-1 text-sm text-base-400">{{ fill(d.links.text, { name: dash.name, code: dash.code ?? '' }) }}</p>
+              <div class="code-row mt-4">
+                <code class="min-w-0 flex-1 text-sm break-all text-lamp-300">{{ goUrl() }}</code>
+                <button type="button" class="btn btn-ghost" @click="copy(goUrl(), 'go')"><SiteIcon :name="copied === 'go' ? 'check' : 'copy'" class="size-4" />{{ copied === 'go' ? d.links.copied : d.links.copy }}</button>
+              </div>
+            </div>
+            <div class="card overflow-x-auto p-5">
+              <h2 class="section-title">{{ d.links.campaigns }}</h2>
+              <table class="tbl mt-3 w-full text-sm">
+                <thead><tr><th>{{ d.links.link }}</th><th>{{ d.links.clicks }}</th><th>{{ d.links.downloads }}</th><th>{{ d.links.rate }}</th><th /></tr></thead>
+                <tbody>
+                  <tr v-for="c in dash.links.campaigns" :key="c.campaign">
+                    <td><code class="text-xs">{{ dash.links.path }}{{ c.campaign ? `?c=${c.campaign}` : '' }}</code><span v-if="!c.campaign" class="ml-2 text-xs text-base-400">{{ d.links.noCampaign }}</span></td>
+                    <td class="tabular-nums">{{ num(c.clicks30d) }}</td>
+                    <td class="tabular-nums">{{ num(c.downloads30d) }}</td>
+                    <td class="tabular-nums">{{ pct(c.downloads30d, c.clicks30d) }} %</td>
+                    <td class="text-right whitespace-nowrap">
+                      <button type="button" class="btn btn-ghost h-8 px-3 text-xs" @click="copy(goUrl(c.campaign), `c:${c.campaign}`)">{{ copied === `c:${c.campaign}` ? d.links.copied : d.links.copy }}</button>
+                      <button v-if="c.campaign" type="button" class="btn btn-ghost h-8 px-3 text-xs" @click="removeCampaign(c.campaign)">{{ d.links.remove }}</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <p class="mt-3 text-xs text-base-400">{{ d.links.last30 }}: {{ num(linkTotals.clicks) }} {{ d.links.clicks }} · {{ num(linkTotals.downloads) }} {{ d.links.downloads }}</p>
+            </div>
           </div>
-          <div class="card overflow-x-auto p-4">
-            <form class="flex flex-wrap items-center gap-2" @submit.prevent="addCampaign">
-              <p class="flex-1 text-sm font-semibold text-base-200">{{ d.links.campaigns }}</p>
-              <input v-model="campaign" class="field w-48" maxlength="24" pattern="[a-z0-9\-]{1,24}" required :placeholder="d.links.placeholder" />
-              <button type="submit" class="btn btn-primary" :disabled="busy === 'link'">{{ d.links.add }}</button>
+          <div class="grid content-start gap-6">
+            <form class="card p-5" @submit.prevent="addCampaign">
+              <h2 class="section-title">{{ d.links.add }}</h2>
+              <label class="label mt-4" for="ln-c">{{ d.links.campaigns }}</label>
+              <input id="ln-c" v-model="campaign" class="field" maxlength="24" pattern="[a-z0-9\-]{1,24}" required :placeholder="d.links.placeholder" />
+              <button type="submit" class="btn btn-primary mt-4 w-full" :disabled="busy === 'link'">{{ d.links.add }}</button>
             </form>
-            <table class="tbl mt-3 w-full text-sm">
-              <thead><tr><th>{{ d.links.link }}</th><th>{{ d.links.clicks }}</th><th>{{ d.links.downloads }}</th><th>{{ d.links.rate }}</th><th /></tr></thead>
-              <tbody>
-                <tr v-for="c in dash.links.campaigns" :key="c.campaign">
-                  <td><code class="text-xs">{{ dash.links.path }}{{ c.campaign ? `?c=${c.campaign}` : '' }}</code><span v-if="!c.campaign" class="ml-2 text-xs text-base-400">{{ d.links.noCampaign }}</span></td>
-                  <td class="tabular-nums">{{ num(c.clicks30d) }}</td>
-                  <td class="tabular-nums">{{ num(c.downloads30d) }}</td>
-                  <td class="tabular-nums">{{ pct(c.downloads30d, c.clicks30d) }} %</td>
-                  <td class="text-right whitespace-nowrap">
-                    <button type="button" class="btn btn-ghost h-8 px-3 text-xs" @click="copy(goUrl(c.campaign), `c:${c.campaign}`)">{{ copied === `c:${c.campaign}` ? d.links.copied : d.links.copy }}</button>
-                    <button v-if="c.campaign" type="button" class="btn btn-ghost h-8 px-3 text-xs" @click="removeCampaign(c.campaign)">{{ d.links.remove }}</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <p class="mt-3 text-xs text-base-400">{{ d.links.last30 }}: {{ num(linkTotals.clicks) }} {{ d.links.clicks }} · {{ num(linkTotals.downloads) }} {{ d.links.downloads }}</p>
+            <p class="note-box">{{ d.links.privacy }}</p>
           </div>
-          <p class="note-box">{{ d.links.privacy }}</p>
         </section>
 
         <!-- Partner-Server -->
-        <section v-else-if="tab === 'server' && dash.server" class="mt-6 grid gap-4 md:grid-cols-2">
-          <form class="card p-4" @submit.prevent="sendServer">
-            <p class="flex flex-wrap items-center gap-2 text-sm font-semibold text-base-200">{{ d.server.title }}
-              <span v-if="openOf('server')" class="pill pill-warn">{{ d.server.waiting }}</span>
-              <span v-else-if="dash.server.current?.hidden" class="pill pill-warn">{{ d.server.hidden }}</span>
-              <span v-else-if="dash.server.current" class="pill pill-ok">{{ d.server.live }}</span>
-            </p>
-            <label class="lbl">{{ d.server.name }}<input v-model="serverForm.name" class="field" maxlength="40" required /></label>
-            <label class="lbl">{{ d.server.address }}<input v-model="serverForm.address" class="field" maxlength="261" required placeholder="play.example.com" /></label>
-            <div class="grid grid-cols-2 gap-2">
-              <label class="lbl">{{ d.server.minVersion }}<input v-model="serverForm.minVersion" class="field" maxlength="15" required pattern="\d{1,3}(\.\d{1,3}){1,3}" /></label>
-              <label class="lbl">{{ d.server.maxVersion }}<input v-model="serverForm.maxVersion" class="field" maxlength="15" required pattern="\d{1,3}(\.\d{1,3}){1,3}" /></label>
-            </div>
-            <label class="lbl">{{ d.server.motd }}<input v-model="serverForm.motd" class="field" maxlength="60" /></label>
-            <div class="mt-3 flex flex-wrap items-center gap-2">
-              <button v-if="!openOf('server')" type="submit" class="btn btn-primary" :disabled="busy === 'server'">{{ d.server.submit }}</button>
-              <button v-else type="button" class="btn btn-ghost" @click="withdraw(openOf('server')!)">{{ d.withdraw }}</button>
-              <span class="text-xs text-base-400">{{ d.server.keepOld }}</span>
-            </div>
-            <p v-if="lastDecided('server')?.status === 'rejected'" class="mt-2 text-xs text-redstone-300">{{ fill(d.rejected, { reason: lastDecided('server')!.reason ?? '' }) }}</p>
-          </form>
-          <div class="card p-4">
-            <p class="text-sm font-semibold text-base-200">{{ d.server.preview }}</p>
-            <div class="mc mt-3">
-              <div class="srv">
-                <PartnerLogo :logo="dash.logo" :name="dash.name" :size="40" />
-                <div class="min-w-0 flex-1">
-                  <p class="nm">{{ serverForm.name || dash.name }}<span class="tag">{{ d.server.tag }}</span></p>
-                  <p class="motd">{{ serverForm.motd }}</p>
-                </div>
-                <span v-if="dash.server.current?.players" class="motd">{{ dash.server.current.players.online }}/{{ dash.server.current.players.max }}</span>
-              </div>
-            </div>
-            <table class="kv mt-3 w-full text-sm">
-              <tbody>
-                <tr><td>{{ d.server.joins }}</td><td>{{ num(dash.server.joins7d) }}</td></tr>
-                <tr><td>{{ d.server.players }}</td><td>{{ num(dash.server.players7d) }}</td></tr>
-                <tr>
-                  <td>{{ d.server.reach }}</td>
-                  <td>
-                    <span v-if="!dash.server.current" class="text-base-400">{{ d.server.none }}</span>
-                    <span v-else-if="dash.server.current.online" class="pill pill-ok">{{ fill(d.server.online, { ms: dash.server.current.latencyMs ?? '?' }) }}</span>
-                    <span v-else-if="dash.server.current.lastCheckedAt" class="pill pill-warn">{{ d.server.offline }}</span>
-                    <span v-else class="pill">{{ d.server.unchecked }}</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <p class="mt-2 text-xs text-base-400">{{ d.server.hideNote }}</p>
+        <section v-else-if="tab === 'server' && dash.server" class="mt-6">
+          <div v-if="!dash.serverAllowed" class="card max-w-2xl p-6">
+            <p class="flex items-center gap-2 section-title"><SiteIcon name="lock" class="size-4 text-base-400" />{{ d.serverOff.title }}</p>
+            <p class="mt-2 text-sm text-base-400">{{ d.serverOff.text }}</p>
           </div>
-          <p class="note-box md:col-span-2">{{ d.server.rules }}</p>
+          <div v-else class="grid gap-6 lg:grid-cols-[1fr_20rem]">
+            <div class="grid content-start gap-6">
+              <div class="card p-5">
+                <h2 class="flex flex-wrap items-center gap-2 section-title">{{ d.server.preview }}
+                  <span v-if="openOf('server')" class="pill pill-warn">{{ d.server.waiting }}</span>
+                  <span v-else-if="dash.server.current?.hidden" class="pill pill-warn">{{ d.server.hidden }}</span>
+                  <span v-else-if="dash.server.current" class="pill pill-ok">{{ d.server.live }}</span>
+                </h2>
+                <div class="mc mt-4">
+                  <div class="srv">
+                    <PartnerLogo :logo="dash.logo" :name="dash.name" :size="40" />
+                    <div class="min-w-0 flex-1">
+                      <p class="nm">{{ serverForm.name || dash.name }}<span class="tag">{{ d.server.tag }}</span></p>
+                      <p class="motd">{{ serverForm.motd }}</p>
+                    </div>
+                    <span v-if="dash.server.current?.players" class="motd">{{ dash.server.current.players.online }}/{{ dash.server.current.players.max }}</span>
+                  </div>
+                </div>
+                <table class="kv mt-4 w-full text-sm">
+                  <tbody>
+                    <tr><td>{{ d.server.joins }}</td><td>{{ num(dash.server.joins7d) }}</td></tr>
+                    <tr><td>{{ d.server.players }}</td><td>{{ num(dash.server.players7d) }}</td></tr>
+                    <tr>
+                      <td>{{ d.server.reach }}</td>
+                      <td>
+                        <span v-if="!dash.server.current" class="text-base-400">{{ d.server.none }}</span>
+                        <span v-else-if="dash.server.current.online" class="pill pill-ok">{{ fill(d.server.online, { ms: dash.server.current.latencyMs ?? '?' }) }}</span>
+                        <span v-else-if="dash.server.current.lastCheckedAt" class="pill pill-warn">{{ d.server.offline }}</span>
+                        <span v-else class="pill">{{ d.server.unchecked }}</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p class="mt-2 text-xs text-base-400">{{ d.server.hideNote }}</p>
+              </div>
+              <p class="note-box">{{ d.server.rules }}</p>
+            </div>
+            <form class="card h-fit p-5" @submit.prevent="sendServer">
+              <h2 class="section-title">{{ d.server.title }}</h2>
+              <p class="mt-1 text-xs text-base-400">{{ d.server.keepOld }}</p>
+              <label class="label mt-4" for="sv-name">{{ d.server.name }}</label>
+              <input id="sv-name" v-model="serverForm.name" class="field" maxlength="40" required />
+              <label class="label mt-3" for="sv-addr">{{ d.server.address }}</label>
+              <input id="sv-addr" v-model="serverForm.address" class="field" maxlength="261" required placeholder="play.example.com" />
+              <div class="mt-3 grid grid-cols-2 gap-2">
+                <div><label class="label" for="sv-min">{{ d.server.minVersion }}</label><input id="sv-min" v-model="serverForm.minVersion" class="field" maxlength="15" required pattern="\d{1,3}(\.\d{1,3}){1,3}" /></div>
+                <div><label class="label" for="sv-max">{{ d.server.maxVersion }}</label><input id="sv-max" v-model="serverForm.maxVersion" class="field" maxlength="15" required pattern="\d{1,3}(\.\d{1,3}){1,3}" /></div>
+              </div>
+              <label class="label mt-3" for="sv-motd">{{ d.server.motd }}</label>
+              <input id="sv-motd" v-model="serverForm.motd" class="field" maxlength="60" />
+              <button v-if="!openOf('server')" type="submit" class="btn btn-primary mt-4 w-full" :disabled="busy === 'server'">{{ d.server.submit }}</button>
+              <button v-else type="button" class="btn btn-ghost mt-4 w-full" @click="withdraw(openOf('server')!)">{{ d.withdraw }}</button>
+              <p v-if="lastDecided('server')?.status === 'rejected'" class="state state-danger mt-3 text-xs">{{ fill(d.rejected, { reason: lastDecided('server')!.reason ?? '' }) }}</p>
+            </form>
+          </div>
         </section>
 
         <!-- API -->
-        <section v-else-if="tab === 'api'" class="mt-6 grid gap-4">
-          <div class="card p-4">
-            <p class="text-sm font-semibold text-base-200">{{ d.api.keyTitle }}</p>
-            <div class="mt-2 flex flex-wrap items-center gap-2">
-              <code v-if="shownKey" class="big-code text-sm break-all">{{ shownKey }}</code>
-              <code v-else-if="dash.apiKey" class="font-mono text-sm text-base-200">trsp_live_••••••••••••{{ dash.apiKey.hint }}</code>
-              <span v-else class="text-sm text-base-400">{{ d.api.noKey }}</span>
+        <section v-else-if="tab === 'api'" class="mt-6 grid gap-6">
+          <div class="card p-5">
+            <h2 class="section-title">{{ d.api.keyTitle }}</h2>
+            <p class="mt-1 text-sm text-base-400">{{ d.api.keyText }}</p>
+            <div class="code-row mt-4">
+              <code v-if="shownKey" class="min-w-0 flex-1 text-sm break-all text-lamp-300">{{ shownKey }}</code>
+              <code v-else-if="dash.apiKey" class="min-w-0 flex-1 font-mono text-sm text-base-200">trsp_live_••••••••••••{{ dash.apiKey.hint }}</code>
+              <span v-else class="flex-1 text-sm text-base-400">{{ d.api.noKey }}</span>
               <button v-if="shownKey" type="button" class="btn-icon" :aria-label="d.links.copy" @click="copy(shownKey, 'key')"><SiteIcon :name="copied === 'key' ? 'check' : 'copy'" class="size-4" /></button>
-              <span class="flex-1" />
               <button type="button" class="btn btn-ghost" :disabled="busy === 'key'" @click="rotateKey">{{ dash.apiKey ? d.api.rotate : d.api.newKey }}</button>
               <button v-if="dash.apiKey" type="button" class="btn btn-ghost" :disabled="busy === 'key'" @click="revokeKey">{{ d.api.revoke }}</button>
             </div>
             <p v-if="shownKey" class="mt-2 text-xs text-lamp-300">{{ d.api.shownOnce }}</p>
             <p v-if="dash.apiKey" class="mt-1 text-xs text-base-400">{{ fill(d.api.created, { date: date(dash.apiKey.createdAt) }) }}<template v-if="dash.apiKey.lastUsedAt"> · {{ fill(d.api.lastUsed, { date: date(dash.apiKey.lastUsedAt) }) }}</template></p>
-            <p class="mt-2 text-xs text-base-400">{{ d.api.keyText }}</p>
           </div>
-          <div class="card p-4">
-            <p class="text-sm font-semibold text-base-200">{{ d.api.createTitle }}</p>
-            <pre class="code-list mt-2">POST {{ apiBase }}/v1/partner-api/codes
+          <div class="card p-5">
+            <h2 class="section-title">{{ d.api.createTitle }}</h2>
+            <pre class="code-list mt-3">POST {{ apiBase }}/v1/partner-api/codes
 Authorization: Bearer trsp_live_…
 Content-Type: application/json
 
@@ -642,16 +786,16 @@ Content-Type: application/json
 → 201 { "codes": ["{{ dash.prefix }}-7K2M-9QXA"], "quota": { "total": {{ dash.quota.total }}, "used": {{ dash.quota.used + 1 }} } }</pre>
             <p class="mt-2 text-xs text-base-400">{{ d.api.refText }}</p>
           </div>
-          <div class="grid gap-4 md:grid-cols-2">
-            <div class="card p-4">
-              <p class="text-sm font-semibold text-base-200">{{ d.api.statusTitle }}</p>
-              <pre class="code-list mt-2">GET /v1/partner-api/codes/{{ dash.prefix }}-7K2M-9QXA
+          <div class="grid gap-6 md:grid-cols-2">
+            <div class="card p-5">
+              <h2 class="section-title">{{ d.api.statusTitle }}</h2>
+              <pre class="code-list mt-3">GET /v1/partner-api/codes/{{ dash.prefix }}-7K2M-9QXA
 → { "redeemed": true, "redeemedAt": "…", "blocked": false, "ref": "order-48213" }</pre>
               <p class="mt-2 text-xs text-base-400">{{ d.api.statusText }}</p>
             </div>
-            <div class="card p-4">
-              <p class="text-sm font-semibold text-base-200">{{ d.api.quotaTitle }}</p>
-              <pre class="code-list mt-2">GET /v1/partner-api/quota
+            <div class="card p-5">
+              <h2 class="section-title">{{ d.api.quotaTitle }}</h2>
+              <pre class="code-list mt-3">GET /v1/partner-api/quota
 → { "total": {{ dash.quota.total }}, "used": {{ dash.quota.used }}, "requested": {{ !!dash.quota.requested }} }</pre>
             </div>
           </div>
@@ -659,32 +803,12 @@ Content-Type: application/json
         </section>
 
         <!-- Webhook -->
-        <section v-else-if="tab === 'webhook' && dash.webhook" class="mt-6 grid gap-4">
-          <div class="grid gap-4 md:grid-cols-2">
-            <form class="card p-4" @submit.prevent="saveHook">
-              <p class="text-sm font-semibold text-base-200">{{ d.webhook.title }}</p>
-              <label class="lbl">{{ d.webhook.url }}<input v-model="hookForm.url" class="field" type="url" maxlength="500" required placeholder="https://" /></label>
-              <p class="lbl">{{ d.webhook.events }}</p>
-              <label v-for="ev in HOOK_EVENTS" :key="ev" class="chk"><input v-model="hookForm.events" type="checkbox" :value="ev" /><code>{{ ev }}</code> – {{ d.webhook.ev[ev] }}</label>
-              <template v-if="dash.webhook.config">
-                <p class="lbl">{{ d.webhook.secret }}</p>
-                <div class="flex flex-wrap items-center gap-2">
-                  <code v-if="shownSecret" class="big-code text-xs break-all">{{ shownSecret }}</code>
-                  <code v-else class="font-mono text-sm text-base-200">whsec_••••••••{{ dash.webhook.config.secretHint }}</code>
-                  <button v-if="shownSecret" type="button" class="btn-icon" :aria-label="d.links.copy" @click="copy(shownSecret, 'secret')"><SiteIcon :name="copied === 'secret' ? 'check' : 'copy'" class="size-4" /></button>
-                  <button type="button" class="btn btn-ghost h-8 px-3 text-xs" :disabled="busy === 'hook'" @click="rotateSecret">{{ d.webhook.newSecret }}</button>
-                </div>
-              </template>
-              <p v-if="shownSecret" class="mt-2 text-xs text-lamp-300">{{ d.webhook.secretOnce }}</p>
-              <div class="mt-3 flex flex-wrap gap-2">
-                <button type="submit" class="btn btn-primary" :disabled="busy === 'hook'">{{ d.webhook.save }}</button>
-                <button v-if="dash.webhook.config" type="button" class="btn btn-ghost" :disabled="busy === 'hook-test'" @click="testHook">{{ d.webhook.test }}</button>
-                <button v-if="dash.webhook.config" type="button" class="btn btn-ghost" @click="removeHook">{{ d.webhook.remove }}</button>
-              </div>
-            </form>
-            <div class="card p-4">
-              <p class="text-sm font-semibold text-base-200">{{ d.webhook.what }}</p>
-              <pre class="code-list mt-2">POST {{ hookForm.url || 'https://…' }}
+        <section v-else-if="tab === 'webhook' && dash.webhook" class="mt-6 grid gap-6">
+          <div class="grid gap-6 lg:grid-cols-[1fr_20rem]">
+            <div class="card p-5">
+              <h2 class="section-title">{{ d.webhook.what }}</h2>
+              <p class="mt-1 text-sm text-base-400">{{ d.webhook.whatText }}</p>
+              <pre class="code-list mt-3">POST {{ hookForm.url || 'https://…' }}
 User-Agent: TRS-Webhooks/1
 X-TRS-Timestamp: 1763719924
 X-TRS-Signature: sha256=HMAC(secret, "timestamp.body")
@@ -693,13 +817,34 @@ X-TRS-Signature: sha256=HMAC(secret, "timestamp.body")
   "at": "2026-11-21T10:12:04.000Z",
   "code": "{{ dash.prefix }}-7K2M-9QXA",
   "ref": "order-48213" }</pre>
-              <p class="mt-2 text-xs text-base-400">{{ d.webhook.whatText }}</p>
             </div>
+            <form class="card h-fit p-5" @submit.prevent="saveHook">
+              <h2 class="section-title">{{ d.webhook.title }}</h2>
+              <label class="label mt-4" for="wh-url">{{ d.webhook.url }}</label>
+              <input id="wh-url" v-model="hookForm.url" class="field" type="url" maxlength="500" required placeholder="https://" />
+              <p class="label mt-3">{{ d.webhook.events }}</p>
+              <label v-for="ev in HOOK_EVENTS" :key="ev" class="chk"><input v-model="hookForm.events" type="checkbox" :value="ev" /><span><code class="text-xs">{{ ev }}</code><span class="block text-xs text-base-400">{{ d.webhook.ev[ev] }}</span></span></label>
+              <template v-if="dash.webhook.config">
+                <p class="label mt-3">{{ d.webhook.secret }}</p>
+                <div class="flex flex-wrap items-center gap-2">
+                  <code v-if="shownSecret" class="min-w-0 flex-1 text-xs break-all text-lamp-300">{{ shownSecret }}</code>
+                  <code v-else class="font-mono text-sm text-base-200">whsec_••••••••{{ dash.webhook.config.secretHint }}</code>
+                  <button v-if="shownSecret" type="button" class="btn-icon" :aria-label="d.links.copy" @click="copy(shownSecret, 'secret')"><SiteIcon :name="copied === 'secret' ? 'check' : 'copy'" class="size-4" /></button>
+                  <button type="button" class="btn btn-ghost h-8 px-3 text-xs" :disabled="busy === 'hook'" @click="rotateSecret">{{ d.webhook.newSecret }}</button>
+                </div>
+              </template>
+              <p v-if="shownSecret" class="mt-2 text-xs text-lamp-300">{{ d.webhook.secretOnce }}</p>
+              <button type="submit" class="btn btn-primary mt-4 w-full" :disabled="busy === 'hook'">{{ d.webhook.save }}</button>
+              <div v-if="dash.webhook.config" class="mt-2 flex gap-2">
+                <button type="button" class="btn btn-ghost flex-1" :disabled="busy === 'hook-test'" @click="testHook">{{ d.webhook.test }}</button>
+                <button type="button" class="btn btn-ghost flex-1" @click="removeHook">{{ d.webhook.remove }}</button>
+              </div>
+            </form>
           </div>
-          <div class="card overflow-x-auto p-4">
-            <p class="text-sm font-semibold text-base-200">{{ d.webhook.log }}</p>
+          <div class="card overflow-x-auto p-5">
+            <h2 class="section-title">{{ d.webhook.log }}</h2>
             <p v-if="!dash.webhook.deliveries.length" class="mt-2 text-sm text-base-400">{{ d.webhook.none }}</p>
-            <table v-else class="tbl mt-2 w-full text-sm">
+            <table v-else class="tbl mt-3 w-full text-sm">
               <thead><tr><th>{{ d.webhook.time }}</th><th>{{ d.webhook.event }}</th><th>{{ d.webhook.answer }}</th><th>{{ d.webhook.attempts }}</th><th /></tr></thead>
               <tbody>
                 <tr v-for="x in dash.webhook.deliveries" :key="x.id">
@@ -719,124 +864,199 @@ X-TRS-Signature: sha256=HMAC(secret, "timestamp.body")
         </section>
 
         <!-- Vorstellung -->
-        <section v-else-if="tab === 'promo'" class="mt-6 grid gap-4">
+        <section v-else-if="tab === 'promo'" class="mt-6 grid gap-6">
           <div class="grid gap-4 md:grid-cols-3">
-            <div v-for="c in (['wiki', 'blog', 'newsletter'] as const)" :key="c" class="card p-4">
-              <p class="flex items-center gap-2 text-sm font-semibold text-base-200">{{ d.promo[c] }}<span class="pill" :class="promoState(c).cls">{{ promoState(c).label }}</span></p>
+            <div v-for="c in (['wiki', 'blog', 'newsletter'] as const)" :key="c" class="card p-5">
+              <p class="flex items-center gap-2 section-title">{{ d.promo[c] }}<span class="pill" :class="promoState(c).cls">{{ promoState(c).label }}</span></p>
               <p class="mt-2 text-xs text-base-400">{{ d.promo[`${c}Text`] }}</p>
-              <a v-if="c === 'wiki' && dash.wikiUrl" :href="dash.wikiUrl" target="_blank" rel="noopener" class="mt-2 inline-block text-xs text-redstone-300 hover:underline">{{ dash.wikiUrl }}</a>
+              <a v-if="c === 'wiki' && dash.wikiUrl" :href="dash.wikiUrl" target="_blank" rel="noopener" class="mt-2 inline-block text-xs break-all text-redstone-300 hover:underline">{{ dash.wikiUrl }}</a>
               <button v-if="openOf('promo', c)" type="button" class="btn btn-ghost mt-3" @click="withdraw(openOf('promo', c)!)">{{ d.withdraw }}</button>
               <button v-else type="button" class="btn btn-ghost mt-3" @click="promoForm.channel = c">{{ d.promo.request }}</button>
             </div>
           </div>
-          <form class="card p-4" @submit.prevent="sendPromo">
-            <p class="text-sm font-semibold text-base-200">{{ d.promo.formTitle }}</p>
-            <div class="grid gap-2 sm:grid-cols-[12rem_1fr]">
-              <label class="lbl">{{ d.promo.channel }}
-                <select v-model="promoForm.channel" class="field"><option v-for="c in (['blog', 'newsletter', 'wiki'] as const)" :key="c" :value="c" :disabled="!!openOf('promo', c)">{{ d.promo[c] }}</option></select>
-              </label>
-              <label class="lbl">{{ d.promo.topic }}<input v-model="promoForm.topic" class="field" maxlength="120" required :placeholder="d.promo.topicPlaceholder" /></label>
+          <div class="grid gap-6 lg:grid-cols-[1fr_20rem]">
+            <form class="card p-5" @submit.prevent="sendPromo">
+              <h2 class="section-title">{{ d.promo.formTitle }}</h2>
+              <p class="mt-1 text-xs text-base-400">{{ d.promo.teamWrites }}</p>
+              <div class="mt-4 grid gap-3 sm:grid-cols-[12rem_1fr]">
+                <div>
+                  <label class="label" for="pr-ch">{{ d.promo.channel }}</label>
+                  <select id="pr-ch" v-model="promoForm.channel" class="field"><option v-for="c in (['blog', 'newsletter', 'wiki'] as const)" :key="c" :value="c" :disabled="!!openOf('promo', c)">{{ d.promo[c] }}</option></select>
+                </div>
+                <div>
+                  <label class="label" for="pr-topic">{{ d.promo.topic }}</label>
+                  <input id="pr-topic" v-model="promoForm.topic" class="field" maxlength="120" required :placeholder="d.promo.topicPlaceholder" />
+                </div>
+              </div>
+              <label class="label mt-3" for="pr-text">{{ d.promo.text }}</label>
+              <textarea id="pr-text" v-model="promoForm.text" class="field" rows="5" maxlength="2000" required />
+              <button type="submit" class="btn btn-primary mt-4" :disabled="busy === 'promo' || !!openOf('promo', promoForm.channel)">{{ d.promo.send }}</button>
+            </form>
+            <div class="card h-fit p-5">
+              <h2 class="section-title">{{ d.promo.history }}</h2>
+              <p v-if="!requestsOf('promo').length" class="mt-2 text-sm text-base-400">–</p>
+              <ul v-else class="mt-3 space-y-3 text-sm">
+                <li v-for="r in requestsOf('promo')" :key="r.id">
+                  <p class="font-semibold text-base-100">{{ r.data.topic }}</p>
+                  <p class="text-xs text-base-400">{{ r.channel ? d.promo[r.channel] : '' }} · {{ date(r.createdAt) }} · {{ d.status[r.status] }}</p>
+                  <p v-if="r.reason" class="text-xs text-redstone-300">{{ r.reason }}</p>
+                </li>
+              </ul>
             </div>
-            <label class="lbl">{{ d.promo.text }}<textarea v-model="promoForm.text" class="field" rows="4" maxlength="2000" required /></label>
-            <button type="submit" class="btn btn-primary mt-3" :disabled="busy === 'promo' || !!openOf('promo', promoForm.channel)">{{ d.promo.send }}</button>
-            <p class="mt-2 text-xs text-base-400">{{ d.promo.teamWrites }}</p>
-          </form>
-          <div v-if="requestsOf('promo').length" class="card p-4">
-            <p class="text-sm font-semibold text-base-200">{{ d.promo.history }}</p>
-            <ul class="mt-2 space-y-1 text-sm">
-              <li v-for="r in requestsOf('promo')" :key="r.id" class="flex flex-wrap gap-2 text-base-300">
-                <span>{{ r.channel ? d.promo[r.channel] : '' }}</span>·<span class="text-base-100">{{ r.data.topic }}</span>·<span>{{ date(r.createdAt) }}</span>·<span>{{ d.status[r.status] }}</span>
-                <span v-if="r.reason" class="text-redstone-300">{{ r.reason }}</span>
-              </li>
-            </ul>
           </div>
         </section>
 
         <!-- Kosmetik -->
-        <section v-else-if="tab === 'cosmetics'" class="mt-6 grid gap-4">
-          <div class="card p-4">
-            <p class="text-sm font-semibold text-base-200">{{ d.cosmetics.assigned }}</p>
-            <p v-if="!dash.cosmetics.length" class="mt-2 text-sm text-base-400">{{ d.cosmetics.none }}</p>
-            <ul v-else class="mt-3 flex flex-wrap gap-3">
-              <li v-for="c in dash.cosmetics" :key="`${c.kind}:${c.id}`" class="item-card">
-                <PartnerCapeThumb v-if="c.kind === 'cape'" :id="c.id" :width="40" />
-                <span v-else class="item-icon"><SiteIcon name="crown" class="size-6" /></span>
-                <span><span class="block font-semibold text-base-50">{{ c.name }}</span><span class="text-xs text-base-400">{{ c.kind === 'cape' ? p.pub.cape : p.pub.cosmetic }}</span></span>
-              </li>
-            </ul>
-          </div>
-          <div class="grid gap-4 md:grid-cols-2">
-            <form class="card p-4" @submit.prevent="uploadCape">
-              <p class="flex items-center gap-2 text-sm font-semibold text-base-200">{{ d.cosmetics.capeTitle }}<span v-if="openOf('cape')" class="pill pill-warn">{{ d.status.open }}</span></p>
-              <p class="mt-2 text-xs text-base-400">{{ d.cosmetics.capeText }}</p>
-              <div v-if="openOf('cape')?.hasImage" class="mt-3 flex items-center gap-3">
-                <img :src="`${base}/requests/${openOf('cape')!.id}/image.png`" alt="" class="req-img" />
-                <button type="button" class="btn btn-ghost" @click="withdraw(openOf('cape')!)">{{ d.withdraw }}</button>
+        <section v-else-if="tab === 'cosmetics'" class="mt-6 grid gap-6">
+          <div class="grid gap-6 lg:grid-cols-[1fr_20rem]">
+            <div class="card overflow-hidden p-0">
+              <div class="flex flex-wrap items-baseline gap-x-3 px-5 pt-5">
+                <h2 class="section-title">{{ d.cosmetics.preview }}</h2>
+                <p class="text-xs text-base-400">{{ d.cosmetics.previewLead }}</p>
               </div>
-              <label class="lbl">{{ d.cosmetics.capeName }}<input v-model="capeName" class="field" maxlength="32" /></label>
-              <label class="lbl">{{ d.cosmetics.frameTime }}<input v-model.number="capeFrameMs" class="field w-32" type="number" min="50" max="10000" /></label>
-              <label class="lbl">{{ d.cosmetics.file }}<input type="file" accept="image/png" class="field" @change="capeFile = pickFile($event)" /></label>
-              <button type="submit" class="btn btn-primary mt-3" :disabled="!capeFile || busy === 'cape'">{{ d.cosmetics.upload }}</button>
-              <p v-if="lastDecided('cape')?.status === 'rejected'" class="mt-2 text-xs text-redstone-300">{{ fill(d.rejected, { reason: lastDecided('cape')!.reason ?? '' }) }}</p>
+              <div class="stage mt-3">
+                <ClientOnly>
+                  <CapeViewer v-if="previewed?.cape" :cape="previewed.cape" :height="360" />
+                  <HatViewer v-else-if="previewed?.hat" :hat="previewed.hat" :height="360" />
+                  <div v-else class="grid h-[360px] place-items-center px-6 text-center text-sm text-base-400">{{ previewItems.length ? d.cosmetics.noPreview : d.cosmetics.none }}</div>
+                  <template #fallback><div class="h-[360px]" /></template>
+                </ClientOnly>
+              </div>
+            </div>
+            <div class="card h-fit p-5">
+              <h2 class="section-title">{{ d.cosmetics.assigned }}</h2>
+              <p v-if="!previewItems.length" class="mt-2 text-sm text-base-400">{{ d.cosmetics.none }}</p>
+              <ul v-else class="mt-3 grid gap-2">
+                <li v-for="c in previewItems" :key="c.key">
+                  <button type="button" class="item-card w-full text-left" :aria-pressed="previewed?.key === c.key" @click="previewKey = c.key">
+                    <ClientOnly>
+                      <CapeThumb v-if="c.cape" :texture="c.cape.url" :frames="c.cape.frames" :frame-time-ms="c.cape.frameTimeMs" :scale="c.scale" :width="32" />
+                      <img v-else-if="c.hat" :src="c.hat.card" alt="" class="hat-card" />
+                      <span v-else class="item-icon"><SiteIcon name="crown" class="size-5" /></span>
+                    </ClientOnly>
+                    <span class="min-w-0">
+                      <span class="block truncate font-semibold text-base-50">{{ c.name }}</span>
+                      <span class="block text-xs text-base-400">{{ c.note ?? (c.kind === 'cape' ? p.pub.cape : p.pub.cosmetic) }}</span>
+                    </span>
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card p-5">
+            <h2 class="section-title">{{ d.cosmetics.selectTitle }}</h2>
+            <p class="mt-1 max-w-3xl text-sm text-base-400">{{ d.cosmetics.selectLead }}</p>
+            <p v-if="pendingCape" class="state state-warn mt-4 text-sm">
+              <SiteIcon name="clock" class="size-4" />{{ fill(d.cosmetics.pending, { name: String(pendingCape.data.name ?? '') }) }}
+              <button type="button" class="ml-auto text-xs underline" @click="withdraw(pendingCape)">{{ d.withdraw }}</button>
+            </p>
+            <p v-if="lastDecided('cape')?.status === 'rejected'" class="state state-danger mt-3 text-sm">{{ fill(d.rejected, { reason: lastDecided('cape')!.reason ?? '' }) }}</p>
+            <p v-if="selectable === null" class="mt-4 text-sm text-base-400">{{ d.cosmetics.loading }}</p>
+            <p v-else-if="!selectable.length" class="mt-4 rounded-md border border-base-800 bg-base-950 px-4 py-3 text-sm text-base-300">{{ d.cosmetics.selectEmpty }}</p>
+            <form v-else class="mt-4" @submit.prevent="submitCape">
+              <ul class="cape-grid" role="radiogroup" :aria-label="d.cosmetics.selectTitle">
+                <li v-for="c in selectable" :key="c.id">
+                  <button type="button" role="radio" class="cape-pick" :aria-checked="pickedCape === c.id" @click="pickCape(c)">
+                    <ClientOnly><CapeThumb :texture="sameOriginPath(c.url)" :scale="c.scale" :frames="c.frames" :frame-time-ms="c.frameTimeMs" :width="48" /></ClientOnly>
+                    <span class="mt-2 block w-full truncate text-sm font-semibold text-base-50">{{ c.name }}</span>
+                    <span class="block w-full truncate text-xs text-base-400">{{ fill(d.cosmetics.by, { name: c.owner.name }) }}<template v-if="c.frames > 1"> · {{ fill(d.cosmetics.animated, { n: c.frames }) }}</template></span>
+                  </button>
+                </li>
+              </ul>
+              <div v-if="pickedCape" class="mt-4 flex flex-wrap items-end gap-3">
+                <div class="w-full max-w-xs">
+                  <label class="label" for="cp-name">{{ d.cosmetics.capeName }}</label>
+                  <input id="cp-name" v-model="capeName" class="field" maxlength="32" required />
+                </div>
+                <button type="submit" class="btn btn-primary" :disabled="busy === 'cape'"><SiteIcon name="cape" class="size-4" />{{ d.cosmetics.submit }}</button>
+              </div>
             </form>
-            <form class="card p-4" @submit.prevent="sendWish">
-              <p class="flex items-center gap-2 text-sm font-semibold text-base-200">{{ d.cosmetics.wishTitle }}<span v-if="openOf('cosmetic_wish')" class="pill pill-warn">{{ d.status.open }}</span></p>
-              <p class="mt-2 text-xs text-base-400">{{ d.cosmetics.wishText }}</p>
-              <p v-if="openOf('cosmetic_wish')" class="req-detail mt-3">{{ openOf('cosmetic_wish')!.data.text }}</p>
+          </div>
+
+          <div class="grid gap-6 lg:grid-cols-[1fr_20rem]">
+            <form class="card p-5" @submit.prevent="sendWish">
+              <h2 class="flex items-center gap-2 section-title">{{ d.cosmetics.wishTitle }}<span v-if="openOf('cosmetic_wish')" class="pill pill-warn">{{ d.status.open }}</span></h2>
+              <p class="mt-1 text-sm text-base-400">{{ d.cosmetics.wishText }}</p>
+              <p v-if="openOf('cosmetic_wish')" class="req-detail mt-4">{{ openOf('cosmetic_wish')!.data.text }}</p>
               <template v-else>
-                <label class="lbl">{{ d.cosmetics.wish }}<textarea v-model="wish" class="field" rows="4" maxlength="1000" required /></label>
-                <button type="submit" class="btn btn-primary mt-3" :disabled="busy === 'wish'">{{ d.cosmetics.sendWish }}</button>
+                <label class="label mt-4" for="cs-wish">{{ d.cosmetics.wish }}</label>
+                <textarea id="cs-wish" v-model="wish" class="field" rows="4" maxlength="1000" required />
+                <button type="submit" class="btn btn-primary mt-4" :disabled="busy === 'wish'">{{ d.cosmetics.sendWish }}</button>
               </template>
             </form>
+            <p class="note-box h-fit">{{ d.cosmetics.proprietary }}</p>
           </div>
-          <p class="note-box">{{ d.cosmetics.proprietary }}</p>
         </section>
 
         <!-- Profil -->
-        <section v-else-if="tab === 'profile'" class="mt-6 grid gap-4 md:grid-cols-[1.5fr_1fr]">
-          <form class="card p-4" @submit.prevent="sendProfile">
-            <p class="flex items-center gap-2 text-sm font-semibold text-base-200">{{ d.profile.title }}<span v-if="openOf('profile')" class="pill pill-warn">{{ d.status.open }}</span></p>
-            <label class="lbl">{{ d.profile.name }}<input :value="dash.name" class="field" disabled /></label>
-            <label class="lbl">{{ d.profile.category }}<input :value="p.category[dash.category]" class="field" disabled /></label>
-            <label class="lbl">{{ d.profile.textDe }} <span class="text-[11px]">{{ fill(d.profile.chars, { n: profileForm.de.length }) }}</span><textarea v-model="profileForm.de" class="field" rows="5" maxlength="1200" /></label>
-            <label class="lbl">{{ d.profile.textEn }} <span class="text-[11px]">{{ fill(d.profile.chars, { n: profileForm.en.length }) }}</span><textarea v-model="profileForm.en" class="field" rows="5" maxlength="1200" /></label>
-            <p class="lbl">{{ d.profile.links }}</p>
-            <div v-for="(l, i) in profileForm.links" :key="i" class="mt-1 flex gap-2">
-              <input v-model="l.label" class="field w-36" maxlength="40" :placeholder="d.profile.linkLabel" />
-              <input v-model="l.url" class="field flex-1" type="url" maxlength="300" placeholder="https://" />
+        <section v-else-if="tab === 'profile'" class="mt-6 grid gap-6 lg:grid-cols-[1fr_20rem]">
+          <form class="card p-5" @submit.prevent="sendProfile">
+            <h2 class="flex items-center gap-2 section-title">{{ d.profile.title }}<span v-if="openOf('profile')" class="pill pill-warn">{{ d.status.open }}</span></h2>
+            <p class="mt-1 text-sm text-base-400">{{ d.profile.onlyAfter }}</p>
+            <p v-if="lastDecided('profile')?.status === 'rejected'" class="state state-danger mt-3 text-sm">{{ fill(d.rejected, { reason: lastDecided('profile')!.reason ?? '' }) }}</p>
+            <div class="mt-4 grid gap-3 sm:grid-cols-2">
+              <div><p class="label">{{ d.profile.name }}</p><p class="text-sm font-semibold text-base-100">{{ dash.name }}</p></div>
+              <div><p class="label">{{ d.profile.category }}</p><p class="text-sm font-semibold text-base-100">{{ p.category[dash.category] }}</p></div>
+            </div>
+            <label class="label mt-5" for="pf-de">{{ d.profile.textDe }}</label>
+            <textarea id="pf-de" v-model="profileForm.de" class="field" rows="6" maxlength="1200" />
+            <p class="mt-1 text-right text-xs text-base-400 tabular-nums">{{ fill(d.profile.chars, { n: profileForm.de.length }) }}</p>
+            <label class="label mt-3" for="pf-en">{{ d.profile.textEn }}</label>
+            <textarea id="pf-en" v-model="profileForm.en" class="field" rows="6" maxlength="1200" />
+            <p class="mt-1 text-right text-xs text-base-400 tabular-nums">{{ fill(d.profile.chars, { n: profileForm.en.length }) }}</p>
+            <h3 class="mt-4 text-sm font-semibold text-base-200">{{ d.profile.links }} <span class="font-normal text-base-400">({{ profileForm.links.length }}/6)</span></h3>
+            <div v-for="(l, i) in profileForm.links" :key="i" class="mt-2 grid gap-2 sm:grid-cols-[9rem_1fr_auto]">
+              <input v-model="l.label" class="field" maxlength="40" :placeholder="d.profile.linkLabel" :aria-label="d.profile.linkLabel" />
+              <input v-model="l.url" class="field" type="url" maxlength="300" placeholder="https://" aria-label="URL" />
               <button type="button" class="btn-icon" :aria-label="d.withdraw" @click="profileForm.links.splice(i, 1)"><SiteIcon name="close" class="size-4" /></button>
             </div>
-            <button v-if="profileForm.links.length < 6" type="button" class="btn btn-ghost mt-2 h-8 px-3 text-xs" @click="profileForm.links.push({ label: '', url: '' })"><SiteIcon name="plus" class="size-4" />{{ d.profile.addLink }}</button>
-            <div class="mt-3 flex flex-wrap items-center gap-2">
+            <button v-if="profileForm.links.length < 6" type="button" class="btn btn-ghost mt-2" @click="profileForm.links.push({ label: '', url: '' })"><SiteIcon name="plus" class="size-4" />{{ d.profile.addLink }}</button>
+            <div class="mt-6 flex flex-wrap gap-2">
               <button v-if="!openOf('profile')" type="submit" class="btn btn-primary" :disabled="busy === 'profile'">{{ d.profile.submit }}</button>
               <button v-else type="button" class="btn btn-ghost" @click="withdraw(openOf('profile')!)">{{ d.withdraw }}</button>
-              <span class="text-xs text-base-400">{{ d.profile.onlyAfter }}</span>
             </div>
-            <p v-if="lastDecided('profile')?.status === 'rejected'" class="mt-2 text-xs text-redstone-300">{{ fill(d.rejected, { reason: lastDecided('profile')!.reason ?? '' }) }}</p>
           </form>
-          <form class="card p-4" @submit.prevent="uploadLogo">
-            <p class="flex items-center gap-2 text-sm font-semibold text-base-200">{{ d.profile.logo }}<span v-if="openOf('logo')" class="pill pill-warn">{{ d.status.open }}</span></p>
-            <div class="mt-3 flex items-center gap-4">
-              <PartnerLogo :logo="dash.logo" :name="dash.name" :size="96" />
-              <img v-if="openOf('logo')?.hasImage" :src="`${base}/requests/${openOf('logo')!.id}/image.png`" alt="" class="size-24 rounded-full border-2 border-dashed border-lamp-400 object-cover" />
-            </div>
-            <p class="mt-3 text-xs text-base-400">{{ d.profile.logoText }}</p>
-            <input type="file" accept="image/png" class="field mt-3" :aria-label="d.profile.replaceLogo" @change="logoFile = pickFile($event)" />
-            <button type="submit" class="btn btn-ghost mt-3" :disabled="!logoFile || busy === 'logo'">{{ d.profile.replaceLogo }}</button>
-          </form>
+          <div class="grid content-start gap-6">
+            <form class="card p-5" @submit.prevent="uploadLogo">
+              <h2 class="flex items-center gap-2 section-title">{{ d.profile.logo }}<span v-if="openOf('logo')" class="pill pill-warn">{{ d.status.open }}</span></h2>
+              <div class="mt-4 flex items-center gap-4">
+                <PartnerLogo :logo="dash.logo" :name="dash.name" :size="80" />
+                <img v-if="openOf('logo')?.hasImage" :src="`${base}/requests/${openOf('logo')!.id}/image.png`" alt="" class="size-20 rounded-full border-2 border-dashed border-lamp-400 object-cover" />
+              </div>
+              <p class="mt-3 text-xs text-base-400">{{ d.profile.logoText }}</p>
+              <input type="file" accept="image/png" class="field mt-3" :aria-label="d.profile.replaceLogo" @change="logoFile = pickFile($event)" />
+              <button type="submit" class="btn btn-ghost mt-3 w-full" :disabled="!logoFile || busy === 'logo'">{{ d.profile.replaceLogo }}</button>
+            </form>
+            <aside class="card p-5">
+              <p class="text-[11px] font-semibold tracking-[0.16em] text-base-400 uppercase">{{ p.pub.eyebrow }}</p>
+              <div class="mt-3 flex items-center gap-3">
+                <PartnerLogo :logo="dash.logo" :name="dash.name" :size="40" />
+                <p class="font-semibold text-base-50">{{ dash.name }}</p>
+              </div>
+              <div class="preview mt-3">
+                <p v-for="(para, i) in previewParagraphs" :key="i" class="whitespace-pre-line">{{ para }}</p>
+                <p v-if="!previewParagraphs.length" class="text-base-400 italic">{{ fill(p.pub.noText, { name: dash.name }) }}</p>
+              </div>
+              <ul v-if="profileForm.links.length" class="mt-3 flex flex-wrap gap-1.5">
+                <li v-for="(l, i) in profileForm.links" :key="i" class="link-chip"><SiteIcon name="globe" class="size-3.5" />{{ l.label || '…' }}</li>
+              </ul>
+            </aside>
+          </div>
         </section>
 
         <!-- Zugänge -->
-        <section v-else-if="tab === 'members' && dash.members" class="mt-6">
-          <div class="card p-4">
-            <p class="text-sm font-semibold text-base-200">{{ d.members.title }}</p>
-            <ul class="mt-3 divide-y divide-base-800">
+        <section v-else-if="tab === 'members' && dash.members" class="mt-6 grid gap-6 lg:grid-cols-[1fr_20rem]">
+          <div class="card p-5">
+            <h2 class="section-title">{{ d.members.title }}</h2>
+            <p class="mt-1 text-sm text-base-400">{{ d.members.text }}</p>
+            <ul class="mt-4 divide-y divide-base-800">
               <li v-if="dash.owner" class="flex items-center gap-3 py-2">
                 <PlayerHead :uuid="dash.owner.uuid" :name="dash.owner.name" :size="24" />
                 <span class="flex-1 font-semibold text-base-50">{{ dash.owner.name }}</span>
                 <span class="pill pill-ok">{{ d.members.owner }}</span>
               </li>
-              <li v-for="m in dash.members" :key="m.uuid" class="py-2">
+              <li v-for="m in dash.members" :key="m.uuid" class="py-3">
                 <div class="flex flex-wrap items-center gap-3">
                   <PlayerHead :uuid="m.uuid" :name="m.name" :size="24" />
                   <span class="flex-1 font-semibold text-base-50">{{ m.name }}<span v-if="m.status === 'pending'" class="pill ml-2">{{ d.members.pending }}</span></span>
@@ -848,18 +1068,16 @@ X-TRS-Signature: sha256=HMAC(secret, "timestamp.body")
                 </div>
               </li>
             </ul>
-            <form v-if="dash.viewer.owner" class="mt-4 border-t border-base-800 pt-4" @submit.prevent="invite">
-              <div class="flex flex-wrap gap-2">
-                <input v-model="inviteName" class="field w-56" maxlength="16" pattern="[A-Za-z0-9_]{1,16}" required :placeholder="d.members.invitePlaceholder" />
-                <button type="submit" class="btn btn-primary" :disabled="busy === 'invite' || !inviteRights.length">{{ d.members.invite }}</button>
-              </div>
-              <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-                <label v-for="r in PARTNER_RIGHTS" :key="r" class="chk"><input v-model="inviteRights" type="checkbox" :value="r" />{{ d.members.right[r] }}</label>
-              </div>
-            </form>
-            <p v-else class="mt-3 text-xs text-base-400">{{ d.members.teamNoInvite }}</p>
-            <p class="mt-3 text-xs text-base-400">{{ d.members.text }}</p>
           </div>
+          <form v-if="dash.viewer.owner" class="card h-fit p-5" @submit.prevent="invite">
+            <h2 class="section-title">{{ d.members.invite }}</h2>
+            <label class="label mt-4" for="mb-name">{{ d.members.invitePlaceholder }}</label>
+            <input id="mb-name" v-model="inviteName" class="field" maxlength="16" pattern="[A-Za-z0-9_]{1,16}" required />
+            <p class="label mt-3">{{ d.members.rights }}</p>
+            <label v-for="r in PARTNER_RIGHTS" :key="r" class="chk"><input v-model="inviteRights" type="checkbox" :value="r" />{{ d.members.right[r] }}</label>
+            <button type="submit" class="btn btn-primary mt-4 w-full" :disabled="busy === 'invite' || !inviteRights.length">{{ d.members.invite }}</button>
+          </form>
+          <p v-else class="note-box h-fit">{{ d.members.teamNoInvite }}</p>
         </section>
       </template>
     </template>
@@ -904,18 +1122,32 @@ X-TRS-Signature: sha256=HMAC(secret, "timestamp.body")
   color: var(--color-base-50);
   background: var(--color-base-800);
 }
+.head-code {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+}
+@media (min-width: 640px) {
+  .head-code {
+    width: 16rem;
+  }
+}
 .state {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   border-radius: 0.5rem;
   padding: 0.45rem 0.7rem;
-  font-size: 0.85rem;
   background: var(--color-base-850);
   color: var(--color-base-300);
 }
 .state-warn {
   color: var(--color-lamp-300);
+}
+.state-danger {
+  color: var(--color-redstone-300);
 }
 .pill {
   display: inline-flex;
@@ -934,71 +1166,82 @@ X-TRS-Signature: sha256=HMAC(secret, "timestamp.body")
   background: color-mix(in srgb, var(--color-lamp-400) 14%, transparent);
   color: var(--color-lamp-300);
 }
-.big-code {
-  font-family: var(--font-mono);
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--color-lamp-300);
-  border: 1px dashed var(--color-base-600);
-  border-radius: 0.5rem;
-  padding: 0.2rem 0.7rem;
+.checklist {
+  border-left: 3px solid var(--color-redstone-500);
 }
-.lbl {
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--color-base-800);
+  background: var(--color-base-950);
+  padding: 0.55rem 0.7rem;
+}
+.check-mark {
   display: grid;
-  gap: 0.3rem;
-  margin-top: 0.7rem;
-  font-size: 0.75rem;
-  color: var(--color-base-400);
+  place-items: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1.5px solid var(--color-base-600);
+  color: var(--color-lamp-300);
+}
+.check-row[data-done='true'] .check-mark {
+  border-color: var(--color-ok);
+  background: color-mix(in srgb, var(--color-ok) 18%, transparent);
+  color: var(--color-ok);
+}
+.delta {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 0 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: var(--color-base-800);
+  color: var(--color-base-300);
+}
+.delta[data-tone='up'] {
+  background: color-mix(in srgb, var(--color-ok) 16%, transparent);
+  color: var(--color-ok);
+}
+.delta[data-tone='down'] {
+  background: color-mix(in srgb, var(--color-redstone-500) 16%, transparent);
+  color: var(--color-redstone-300);
+}
+.code-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--color-base-800);
+  background: var(--color-base-950);
+  padding: 0.7rem 0.85rem;
 }
 .chk {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.45rem;
-  margin-top: 0.3rem;
+  margin-top: 0.35rem;
   font-size: 0.85rem;
   color: var(--color-base-200);
 }
+.chk input {
+  margin-top: 0.2rem;
+}
 .meter {
-  height: 8px;
+  height: 0.45rem;
   border-radius: 99px;
   background: var(--color-base-800);
   overflow: hidden;
 }
 .meter > div {
   height: 100%;
+  border-radius: inherit;
   background: linear-gradient(90deg, var(--color-redstone-600), var(--color-redstone-400));
-}
-.bars {
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  height: 120px;
-}
-.bar {
-  flex: 1;
-  border-radius: 3px 3px 0 0;
-  background: linear-gradient(180deg, var(--color-lamp-300) var(--split), var(--color-redstone-500) var(--split));
-}
-.legend {
-  display: flex;
-  gap: 1rem;
-  font-size: 0.75rem;
-  color: var(--color-base-400);
-}
-.legend i {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  margin-right: 0.35rem;
-  border-radius: 3px;
-  vertical-align: -1px;
-}
-.lg-fixed {
-  background: var(--color-redstone-500);
-}
-.lg-once {
-  background: var(--color-lamp-300);
 }
 .kv td {
   padding: 0.35rem 0;
@@ -1018,6 +1261,9 @@ X-TRS-Signature: sha256=HMAC(secret, "timestamp.body")
   color: var(--color-base-400);
   padding: 0.45rem 0.5rem;
   border-bottom: 1px solid var(--color-base-800);
+}
+.tbl th.text-right {
+  text-align: right;
 }
 .tbl td {
   padding: 0.5rem;
@@ -1066,6 +1312,7 @@ X-TRS-Signature: sha256=HMAC(secret, "timestamp.body")
   color: #fff;
   font-weight: 700;
   font-size: 0.85rem;
+  overflow-wrap: anywhere;
 }
 .motd {
   color: #aaa;
@@ -1081,31 +1328,81 @@ X-TRS-Signature: sha256=HMAC(secret, "timestamp.body")
   background: var(--color-redstone-500);
   vertical-align: 1px;
 }
+.stage {
+  border-top: 1px solid var(--color-base-800);
+  background: radial-gradient(80% 70% at 50% 35%, color-mix(in srgb, var(--color-redstone-500) 9%, transparent), var(--color-base-950) 75%);
+}
 .item-card {
   display: flex;
   align-items: center;
   gap: 0.7rem;
   border-radius: 0.7rem;
   border: 1px solid var(--color-base-800);
-  background: var(--color-base-850);
-  padding: 0.55rem 0.8rem;
+  background: var(--color-base-950);
+  padding: 0.5rem 0.7rem;
+  transition: border-color 0.15s, background-color 0.15s;
 }
-.item-icon {
+.item-card:hover {
+  border-color: var(--color-base-700);
+}
+.item-card[aria-pressed='true'] {
+  border-color: var(--color-redstone-500);
+  background: var(--color-base-850);
+}
+.item-icon,
+.hat-card {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 64px;
+  width: 32px;
+  height: 51px;
+  flex-shrink: 0;
   border-radius: 0.3rem;
   background: var(--color-base-800);
   color: var(--color-lamp-300);
+  object-fit: cover;
 }
-.req-img {
-  width: 72px;
-  height: 72px;
-  object-fit: contain;
-  image-rendering: pixelated;
-  border-radius: 0.4rem;
+.cape-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: 0.6rem;
+}
+.cape-pick {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 0.7rem;
+  border: 1px solid var(--color-base-800);
   background: var(--color-base-950);
+  padding: 0.8rem 0.6rem 0.65rem;
+  text-align: center;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.cape-pick:hover {
+  border-color: var(--color-base-700);
+}
+.cape-pick[aria-checked='true'] {
+  border-color: var(--color-redstone-500);
+  background: var(--color-base-850);
+  box-shadow: 0 0 0 1px var(--color-redstone-500);
+}
+.preview {
+  display: grid;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--color-base-200);
+  overflow-wrap: anywhere;
+}
+.link-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-base-700);
+  padding: 0.15rem 0.55rem;
+  font-size: 0.75rem;
+  color: var(--color-base-200);
 }
 .req-detail {
   border-radius: 0.6rem;

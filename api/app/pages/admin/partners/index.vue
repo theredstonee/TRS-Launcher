@@ -1,15 +1,15 @@
 <script setup lang="ts">
 // Partnerprogramm im Team-Bereich (§44.7, Recht partners.manage): Partner (Liste, bearbeiten, Kontingent, Kosmetik,
-// Server ausblenden, pausieren, löschen, Dashboard im Team-Modus), Anträge (annehmen/einplanen/ablehnen mit Grund),
-// Partner anlegen. Der Server prüft jede Anfrage.
-const { api } = useAdmin()
+// Partner-Umhang hochladen, Partner-Server erlauben/ausblenden, pausieren, löschen, Dashboard im Team-Modus),
+// Statistik (Rangliste, Verlauf unter /admin/partners/<slug>), Anträge, Partner anlegen. Der Server prüft jede Anfrage.
+const { api, session } = useAdmin()
 const { p } = usePartnerText()
 const { fill, date, lang } = useLang()
 const route = useRoute()
 const t = computed(() => p.value.admin)
 
-type Tab = 'partners' | 'requests' | 'new'
-const TABS: Tab[] = ['partners', 'requests', 'new']
+type Tab = 'partners' | 'stats' | 'requests' | 'new'
+const TABS: Tab[] = ['partners', 'stats', 'requests', 'new']
 const initial = route.query.tab
 const tab = ref<Tab>(typeof initial === 'string' && (TABS as string[]).includes(initial) ? (initial as Tab) : 'partners')
 
@@ -94,6 +94,42 @@ const unassign = (x: AdminPartner, i: PartnerCosmeticRef) => act(`item:${x.slug}
   await api(`/v1/admin/partners/${x.slug}/items/${i.kind}/${encodeURIComponent(i.id)}`, { method: 'DELETE' })
   await loadPartners()
 })
+// Partner-Umhang direkt hochladen (versteckt, sofort zugeordnet).
+const upload = reactive<{ file: File | null, name: string, frameMs: number, frames: number }>({ file: null, name: '', frameMs: 150, frames: 1 })
+const uploadInput = ref<HTMLInputElement | null>(null)
+async function pickCape(e: Event) {
+  const f = (e.target as HTMLInputElement).files?.[0] ?? null
+  upload.file = f && f.type === 'image/png' ? f : null
+  upload.frames = 1
+  if (!upload.file) return
+  try {
+    const img = await createImageBitmap(upload.file)
+    // Streifen: je Bild Breite × Breite/2 (HD bis 1024×512).
+    const frameH = img.width / 2
+    upload.frames = img.width % 64 === 0 && img.height % frameH === 0 && img.height > frameH ? img.height / frameH : 1
+    img.close()
+  } catch {
+    upload.frames = 1
+  }
+}
+const uploadCape = (x: AdminPartner) => act(`cape:${x.slug}`, async () => {
+  if (!upload.file) return
+  const q = new URLSearchParams({ name: upload.name.trim().slice(0, 32) || x.name.slice(0, 32) })
+  if (upload.frames > 1) {
+    q.set('frames', String(upload.frames))
+    q.set('frameTimeMs', String(Math.max(50, Math.min(10_000, Math.floor(upload.frameMs) || 150))))
+  }
+  const r = await apiFetch<{ cape: { name: string, granted: number } }>(`/v1/admin/partners/${x.slug}/cape?${q}`, {
+    method: 'PUT',
+    body: upload.file,
+    headers: { 'Content-Type': 'image/png', 'X-CSRF-Token': session.value?.csrf ?? '' },
+    credentials: 'same-origin',
+  })
+  Object.assign(upload, { file: null, name: '', frames: 1 })
+  if (uploadInput.value) uploadInput.value.value = ''
+  await loadPartners()
+  notice.value = fill(t.value.uploadCape.done, { name: r.cape.name, n: num(r.cape.granted) })
+})
 const setServerHidden = (x: AdminPartner, hidden: boolean) => act(`server:${x.slug}`, async () => {
   await api(`/v1/admin/partners/${x.slug}/server`, { method: 'PATCH', body: { hidden } })
   await loadPartners()
@@ -133,7 +169,7 @@ const decide = (r: AdminPartnerRequest, status: 'accepted' | 'rejected') => act(
 })
 
 // --- Anlegen ------------------------------------------------------------------------------------
-const create = reactive({ name: '', slug: '', category: 'hosting' as PartnerCategory, code: '', prefix: '', owner: '', quota: 1000 as 0 | 500 | 1000 })
+const create = reactive({ name: '', slug: '', category: 'hosting' as PartnerCategory, code: '', prefix: '', owner: '', quota: 1000 as 0 | 500 | 1000, serverAllowed: false })
 watch(() => create.name, (n, old) => {
   const auto = (s: string) => s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 32)
   if (!create.slug || create.slug === auto(old)) create.slug = auto(n)
@@ -143,7 +179,7 @@ const submitCreate = () => act('create', async () => {
     method: 'POST',
     body: { ...create, name: create.name.trim(), slug: create.slug.trim(), code: create.code.trim().toUpperCase(), prefix: create.prefix.trim().toUpperCase(), owner: create.owner.trim() },
   })
-  Object.assign(create, { name: '', slug: '', code: '', prefix: '', owner: '' })
+  Object.assign(create, { name: '', slug: '', code: '', prefix: '', owner: '', serverAllowed: false })
   await loadPartners()
   tab.value = 'partners'
 }, t.value.created)
@@ -190,14 +226,16 @@ onMounted(async () => {
                   <PartnerLogo :logo="x.logo" :name="x.name" :size="28" />
                   <span class="font-semibold text-base-50">{{ x.name }}</span>
                   <span v-if="x.state === 'paused'" class="pill pill-warn">{{ t.state.paused }}</span>
+                  <span v-if="x.serverAllowed" class="pill" :title="t.serverAllowed"><SiteIcon name="server" class="size-3" /></span>
                   <span v-if="x.openRequests" class="pill">{{ x.openRequests }}</span>
                 </div>
               </td>
               <td>{{ p.category[x.category] }}</td>
-              <td><code class="font-mono text-lamp-300">{{ x.code }}</code></td>
+              <td><code class="font-mono text-lamp-300 break-all">{{ x.code }}</code></td>
               <td class="tabular-nums">{{ num(x.quota.used) }} / {{ num(x.quota.total) }}</td>
               <td class="tabular-nums">{{ num(x.supporters) }}</td>
               <td class="text-right whitespace-nowrap">
+                <NuxtLink :to="`/admin/partners/${x.slug}`" class="btn btn-ghost h-8 px-3 text-xs"><SiteIcon name="chart" class="size-3.5" />{{ t.tabs.stats }}</NuxtLink>
                 <NuxtLink :to="`/partner/${x.slug}`" class="btn btn-ghost h-8 px-3 text-xs">{{ t.open }}</NuxtLink>
                 <button type="button" class="btn btn-ghost h-8 px-3 text-xs" :aria-expanded="editing === x.slug" @click="startEdit(x)">{{ t.edit }}</button>
               </td>
@@ -258,10 +296,28 @@ onMounted(async () => {
               <button type="button" class="btn btn-ghost" :disabled="!pick || busy === `item:${current.slug}`" @click="assign(current)">{{ t.assign }}</button>
             </div>
           </div>
-          <div v-if="current.server" class="card p-5">
+          <form class="card p-5" @submit.prevent="uploadCape(current)">
+            <h3 class="font-semibold text-base-50">{{ t.uploadCape.title }}</h3>
+            <p class="mt-1 text-xs text-base-400">{{ t.uploadCape.text }}</p>
+            <label class="adm-label mt-3">{{ t.uploadCape.name }}<input v-model="upload.name" class="field" maxlength="32" :placeholder="current.name" /></label>
+            <label class="adm-label mt-3">{{ t.uploadCape.file }}<input ref="uploadInput" type="file" accept="image/png" class="field" @change="pickCape" /></label>
+            <p v-if="upload.file && upload.frames > 1" class="mt-1 text-xs text-base-400">{{ fill(t.uploadCape.frames, { n: upload.frames }) }}</p>
+            <label v-if="upload.frames > 1" class="adm-label mt-3">{{ t.uploadCape.frameTime }}<input v-model.number="upload.frameMs" class="field w-32" type="number" min="50" max="10000" /></label>
+            <button type="submit" class="btn btn-primary mt-3" :disabled="!upload.file || busy === `cape:${current.slug}`"><SiteIcon name="cape" class="size-4" />{{ t.uploadCape.button }}</button>
+          </form>
+          <div class="card p-5">
             <h3 class="font-semibold text-base-50">{{ t.serverTitle }}</h3>
-            <p class="mt-1 text-sm text-base-300">{{ current.server.name }} · <code>{{ current.server.address }}</code></p>
-            <button type="button" class="btn btn-ghost mt-3" @click="setServerHidden(current, !current.server.hidden)">{{ current.server.hidden ? t.showServer : t.hideServer }}</button>
+            <div class="mt-2 flex items-center gap-3">
+              <span class="flex-1 text-sm text-base-200">{{ t.serverAllowed }}</span>
+              <button type="button" class="switch" role="switch" :aria-checked="current.serverAllowed" :aria-label="t.serverAllowed" :disabled="busy === `patch:${current.slug}`" @click="patch(current, { serverAllowed: !current.serverAllowed })">
+                <span>{{ current.serverAllowed ? t.on : t.off }}</span>
+              </button>
+            </div>
+            <p class="mt-1 text-xs text-base-400">{{ t.serverAllowedText }}</p>
+            <template v-if="current.server">
+              <p class="mt-3 text-sm text-base-300">{{ current.server.name }} · <code>{{ current.server.address }}</code></p>
+              <button type="button" class="btn btn-ghost mt-3" @click="setServerHidden(current, !current.server.hidden)">{{ current.server.hidden ? t.showServer : t.hideServer }}</button>
+            </template>
           </div>
           <div class="card p-5">
             <h3 class="font-semibold text-base-50">{{ t.pauseTitle }}</h3>
@@ -274,6 +330,9 @@ onMounted(async () => {
         </div>
       </section>
     </template>
+
+    <!-- Statistik -->
+    <AdminPartnerStats v-else-if="tab === 'stats'" />
 
     <!-- Anträge -->
     <template v-else-if="tab === 'requests'">
@@ -306,6 +365,10 @@ onMounted(async () => {
           </div>
           <div v-else-if="r.kind === 'server'" class="req-detail mt-3">
             <p><b>{{ r.data.name }}</b> – {{ r.data.motd }}</p>
+            <p v-if="r.status === 'open' && !partners.find((x) => x.slug === r.partner.slug)?.serverAllowed" class="mt-2 text-xs text-lamp-300">{{ t.serverOffNote }}</p>
+          </div>
+          <div v-else-if="r.kind === 'cape' && r.data.capeId" class="req-detail mt-3">
+            <p class="text-xs text-base-400">{{ fill(t.capeFrom, { owner: String(r.data.owner ?? '') }) }}</p>
           </div>
           <form v-if="rejecting === r.id" class="mt-3 flex flex-wrap gap-2" @submit.prevent="decide(r, 'rejected')">
             <input v-model="reason" class="field flex-1" maxlength="300" required :placeholder="t.rejectReason" />
@@ -328,6 +391,9 @@ onMounted(async () => {
         <label class="adm-label">{{ t.owner }}<input v-model="create.owner" class="field" maxlength="36" required /></label>
         <label class="adm-label">{{ t.startQuota }}
           <select v-model.number="create.quota" class="field"><option :value="0">0</option><option :value="500">500</option><option :value="1000">1.000</option></select>
+        </label>
+        <label class="adm-label">{{ t.serverAllowed }}
+          <select v-model="create.serverAllowed" class="field"><option :value="false">{{ t.off }}</option><option :value="true">{{ t.on }}</option></select>
         </label>
       </div>
       <button type="submit" class="btn btn-primary mt-4" :disabled="busy === 'create'">{{ t.create }}</button>
@@ -367,6 +433,21 @@ onMounted(async () => {
 }
 .pill-warn {
   color: var(--color-lamp-300);
+}
+.switch {
+  min-width: 3.5rem;
+  border-radius: 999px;
+  padding: 0.25rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-base-300);
+  background: var(--color-base-800);
+  border: 1px solid var(--color-base-700);
+}
+.switch[aria-checked='true'] {
+  color: var(--color-ok);
+  background: color-mix(in srgb, var(--color-ok) 16%, transparent);
+  border-color: color-mix(in srgb, var(--color-ok) 45%, transparent);
 }
 .chip-btn {
   border-radius: 999px;
