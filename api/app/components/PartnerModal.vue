@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // Partner-Fenster (§44.3): links Logo, Name, Kategorie, Unterstützer und Code; rechts Vorstellung (reiner Text), Links,
 // Partner-Server und Partner-Kosmetik. Escape schließt, der Fokus bleibt im Fenster.
-const props = defineProps<{ partner: PartnerCard }>()
+// `embedded`: als Vorschau im Dashboard eingebettet (ohne Hintergrund, Spalten nach Containerbreite).
+const props = defineProps<{ partner: PartnerCard, embedded?: boolean, textLang?: Lang }>()
 const emit = defineEmits<{ close: [], redeem: [code: string] }>()
 
 const { lang, fill } = useLang()
@@ -12,9 +13,9 @@ const dialog = shallowRef<HTMLElement | null>(null)
 const closeButton = shallowRef<HTMLButtonElement | null>(null)
 let before: HTMLElement | null = null
 
-const paragraphs = computed(() => partnerText(props.partner.text, lang.value).split(/\n{2,}/).map((s) => s.trim()).filter(Boolean))
+const paragraphs = computed(() => partnerText(props.partner.text, props.textLang ?? lang.value).split(/\n{2,}/).map((s) => s.trim()).filter(Boolean))
 const supporters = computed(() => (props.partner.supporters === 1 ? t.value.oneSupporter : fill(t.value.supporters, { n: compactCount(props.partner.supporters, lang.value) })))
-const titleId = computed(() => `partner-title-${props.partner.slug}`)
+const titleId = computed(() => `partner-title-${props.partner.slug}${props.embedded ? '-preview' : ''}`)
 const copied = ref(false)
 async function copyCode() {
   if (!props.partner.code) return
@@ -48,12 +49,14 @@ function onKey(e: KeyboardEvent) {
   }
 }
 onMounted(() => {
+  if (props.embedded) return
   before = document.activeElement as HTMLElement | null
   document.addEventListener('keydown', onKey)
   document.documentElement.classList.add('modal-open')
   void nextTick(() => closeButton.value?.focus())
 })
 onBeforeUnmount(() => {
+  if (props.embedded) return
   document.removeEventListener('keydown', onKey)
   document.documentElement.classList.remove('modal-open')
   before?.focus?.()
@@ -64,9 +67,9 @@ watch(() => props.partner.slug, () => {
 </script>
 
 <template>
-  <div class="partner-backdrop" @click.self="emit('close')">
-    <div ref="dialog" class="partner-modal" role="dialog" aria-modal="true" :aria-labelledby="titleId">
-      <button ref="closeButton" type="button" class="modal-close" :aria-label="t.close" @click="emit('close')">
+  <div :class="embedded ? 'partner-embed' : 'partner-backdrop'" @click.self="!embedded && emit('close')">
+    <div ref="dialog" class="partner-modal" :class="{ embedded }" :role="embedded ? undefined : 'dialog'" :aria-modal="embedded ? undefined : 'true'" :aria-labelledby="titleId">
+      <button v-if="!embedded" ref="closeButton" type="button" class="modal-close" :aria-label="t.close" @click="emit('close')">
         <SiteIcon name="close" class="size-5" />
       </button>
       <div class="modal-body">
@@ -289,6 +292,35 @@ watch(() => props.partner.slug, () => {
   border-radius: 0.3rem;
   background: var(--color-base-800);
   color: var(--color-lamp-300);
+}
+.partner-embed {
+  container-type: inline-size;
+}
+.partner-modal.embedded {
+  width: 100%;
+  max-height: none;
+  box-shadow: none;
+  animation: none;
+}
+.embedded .modal-body {
+  grid-template-columns: minmax(0, 1fr);
+  overflow: visible;
+}
+.embedded .modal-side {
+  border-right: 0;
+  border-bottom: 1px solid var(--color-base-800);
+}
+.embedded .modal-main {
+  padding: 1.75rem 1.5rem;
+}
+@container (min-width: 44rem) {
+  .embedded .modal-body {
+    grid-template-columns: 16rem minmax(0, 1fr);
+  }
+  .embedded .modal-side {
+    border-bottom: 0;
+    border-right: 1px solid var(--color-base-800);
+  }
 }
 @keyframes fade {
   from {

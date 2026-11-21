@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Partnerprogramm im Team-Bereich (§44.7, Recht partners.manage): Partner (Liste, bearbeiten, Kontingent, Kosmetik,
-// Partner-Umhang hochladen, Partner-Server erlauben/ausblenden, pausieren, löschen, Dashboard im Team-Modus),
+// feste Codes (Haupt-Code + weitere, (de)aktivieren), Partner-Umhang hochladen, Partner-Server erlauben/ausblenden,
+// pausieren, löschen, Dashboard im Team-Modus),
 // Statistik (Rangliste, Verlauf unter /admin/partners/<slug>), Anträge, Partner anlegen. Der Server prüft jede Anfrage.
 const { api, session } = useAdmin()
 const { p } = usePartnerText()
@@ -130,6 +131,26 @@ const uploadCape = (x: AdminPartner) => act(`cape:${x.slug}`, async () => {
   await loadPartners()
   notice.value = fill(t.value.uploadCape.done, { name: r.cape.name, n: num(r.cape.granted) })
 })
+// Feste Codes: weitere anlegen, Haupt-Code wechseln, (de)aktivieren, unbenutzte entfernen.
+const newCode = reactive({ code: '', main: false })
+const addCode = (x: AdminPartner) => act(`code:${x.slug}`, async () => {
+  await api(`/v1/admin/partners/${x.slug}/codes`, { method: 'POST', body: { code: newCode.code.trim().toUpperCase(), main: newCode.main } })
+  Object.assign(newCode, { code: '', main: false })
+  await loadPartners()
+  form.code = partners.value.find((y) => y.slug === x.slug)?.code ?? form.code
+}, t.value.saved)
+const patchCode = (x: AdminPartner, c: PartnerFixedCode, body: { active?: boolean, main?: true }) => act(`code:${x.slug}`, async () => {
+  await api(`/v1/admin/partners/${x.slug}/codes/${encodeURIComponent(c.code)}`, { method: 'PATCH', body })
+  await loadPartners()
+  form.code = partners.value.find((y) => y.slug === x.slug)?.code ?? form.code
+}, t.value.saved)
+async function removeCode(x: AdminPartner, c: PartnerFixedCode) {
+  if (!confirm(fill(t.value.removeCodeConfirm, { code: c.code }))) return
+  await act(`code:${x.slug}`, async () => {
+    await api(`/v1/admin/partners/${x.slug}/codes/${encodeURIComponent(c.code)}`, { method: 'DELETE' })
+    await loadPartners()
+  })
+}
 const setServerHidden = (x: AdminPartner, hidden: boolean) => act(`server:${x.slug}`, async () => {
   await api(`/v1/admin/partners/${x.slug}/server`, { method: 'PATCH', body: { hidden } })
   await loadPartners()
@@ -159,7 +180,8 @@ async function loadRequests() {
 watch(reqStatus, () => void loadRequests().catch(fail))
 function describe(r: AdminPartnerRequest): string {
   const d = r.data as Record<string, string | number>
-  return fill(t.value.kinds[r.kind] ?? r.kind, { ...d, channel: r.channel ? p.value.dash.promo[r.channel] : '' } as Record<string, string | number>)
+  const kind = r.kind === 'code_change' && d.action === 'add' ? 'code_add' : r.kind
+  return fill(t.value.kinds[kind] ?? r.kind, { ...d, channel: r.channel ? p.value.dash.promo[r.channel] : '' } as Record<string, string | number>)
 }
 const decide = (r: AdminPartnerRequest, status: 'accepted' | 'rejected') => act(`req:${r.id}`, async () => {
   await api(`/v1/admin/partners/requests/${r.id}`, { method: 'POST', body: status === 'rejected' ? { status, reason: reason.value.trim().slice(0, 300) } : { status } })
@@ -231,7 +253,10 @@ onMounted(async () => {
                 </div>
               </td>
               <td>{{ p.category[x.category] }}</td>
-              <td><code class="font-mono text-lamp-300 break-all">{{ x.code }}</code></td>
+              <td>
+                <code class="font-mono text-lamp-300 break-all">{{ x.code }}</code>
+                <span v-if="x.codes.filter((c) => c.active).length > 1" class="pill ml-1" :title="x.codes.filter((c) => c.active && !c.main).map((c) => c.code).join(', ')">{{ fill(t.moreCodes, { n: x.codes.filter((c) => c.active).length - 1 }) }}</span>
+              </td>
               <td class="tabular-nums">{{ num(x.quota.used) }} / {{ num(x.quota.total) }}</td>
               <td class="tabular-nums">{{ num(x.supporters) }}</td>
               <td class="text-right whitespace-nowrap">
@@ -270,6 +295,33 @@ onMounted(async () => {
         </form>
 
         <div class="grid content-start gap-4">
+          <div class="card p-5">
+            <h3 class="font-semibold text-base-50">{{ t.codesTitle }}</h3>
+            <p class="mt-1 text-xs text-base-400">{{ t.codesText }}</p>
+            <ul class="mt-3 divide-y divide-base-800">
+              <li v-for="c in current.codes" :key="c.code" class="flex flex-wrap items-center gap-x-3 gap-y-1.5 py-2">
+                <div class="min-w-0 flex-1">
+                  <p class="flex flex-wrap items-center gap-2">
+                    <code class="font-mono font-bold break-all" :class="c.active ? 'text-lamp-300' : 'text-base-500 line-through'">{{ c.code }}</code>
+                    <span v-if="c.main" class="pill pill-ok">{{ t.codeMain }}</span>
+                    <span v-else-if="!c.active" class="pill pill-warn">{{ t.codeInactive }}</span>
+                  </p>
+                  <p class="text-xs text-base-400 tabular-nums">{{ fill(t.codeUses, { n: num(c.redemptions), m: num(c.redemptions30d) }) }}</p>
+                </div>
+                <template v-if="!c.main">
+                  <button type="button" class="btn btn-ghost h-8 px-3 text-xs" :disabled="busy === `code:${current.slug}`" @click="patchCode(current, c, { main: true })">{{ t.makeMain }}</button>
+                  <button type="button" class="btn btn-ghost h-8 px-3 text-xs" :disabled="busy === `code:${current.slug}`" @click="patchCode(current, c, { active: !c.active })">{{ c.active ? t.deactivate : t.activate }}</button>
+                  <button v-if="!c.redemptions" type="button" class="btn-icon size-8" :aria-label="`${t.removeCode} ${c.code}`" :disabled="busy === `code:${current.slug}`" @click="removeCode(current, c)"><SiteIcon name="trash" class="size-4" /></button>
+                </template>
+              </li>
+            </ul>
+            <form v-if="current.codes.length < PARTNER_FIXED_CODES_MAX" class="mt-3 flex flex-wrap items-center gap-2" @submit.prevent="addCode(current)">
+              <input v-model="newCode.code" class="field w-44 font-mono uppercase" maxlength="19" required pattern="[A-Za-z0-9]{4,19}" :placeholder="t.newCode" :aria-label="t.newCode" />
+              <label class="flex items-center gap-1.5 text-xs text-base-300"><input v-model="newCode.main" type="checkbox" />{{ t.asMain }}</label>
+              <button type="submit" class="btn btn-primary" :disabled="busy === `code:${current.slug}`"><SiteIcon name="plus" class="size-4" />{{ t.addCode }}</button>
+            </form>
+            <p v-else class="mt-3 text-xs text-base-400">{{ fill(p.dash.codes.limit, { n: PARTNER_FIXED_CODES_MAX }) }}</p>
+          </div>
           <div class="card p-5">
             <h3 class="font-semibold text-base-50">{{ t.grantTitle }}</h3>
             <p class="mt-1 text-xs text-base-400">{{ fill(p.dash.quota.used, { used: num(current.quota.used), total: num(current.quota.total) }) }}</p>

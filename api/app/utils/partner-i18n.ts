@@ -130,8 +130,8 @@ const en = {
       manage: 'Manage codes',
     },
     codes: {
-      fixedTitle: 'Fixed code',
-      fixedText: 'For everyone (videos, website, Discord). Unlimited uses, each player once. The TRS team changes it on request.',
+      fixedTitle: 'Fixed codes',
+      fixedText: 'For everyone (videos, website, Discord). Unlimited uses, each player once per code. The main code is shown on your partner page; extra codes work the same and are counted separately. The TRS team changes them on request.',
       active: 'active',
       change: 'Request a change',
       newCode: 'New code',
@@ -155,6 +155,20 @@ const en = {
       via: { dashboard: 'Dashboard', api: 'API' } as Record<string, string>,
       none: 'No batches yet.',
       copyAll: 'Copy all',
+      main: 'main code',
+      extra: 'extra code',
+      inactive: 'inactive',
+      colCode: 'Code',
+      colTotal: 'Redeemed',
+      col30d: 'Last 30 days',
+      colStatus: 'Status',
+      requestTitle: 'Request a code',
+      actionChange: 'Change the main code',
+      actionAdd: 'Additional code',
+      request: 'Request',
+      addPending: 'Additional code {code} requested',
+      limit: 'At most {n} fixed codes per partner.',
+      codesNote: 'Deactivated codes no longer work; their redemptions stay in the statistics.',
     },
     links: {
       title: 'Your download link',
@@ -293,14 +307,70 @@ const en = {
       textDe: 'Description (German)',
       textEn: 'Description (English)',
       chars: '{n} / 1200',
-      links: 'Links (https, up to 6)',
+      links: 'Links',
       linkLabel: 'Label',
       addLink: 'Add link',
       submit: 'Send for review',
       onlyAfter: 'Changes are only visible after approval.',
       logo: 'Logo',
-      logoText: 'PNG, square, at least 32 px. Shown round, stored as 128×128.',
+      logoText: 'PNG, JPG, WebP or GIF. You crop it to a square; it is shown round and stored as 128×128.',
       replaceLogo: 'Upload logo',
+      complete: 'Profile complete',
+      completeHint: 'Missing parts are marked. After approval they are live.',
+      item: { logo: 'Logo', de: 'Description (German)', en: 'Description (English)', links: 'Links' } as Record<string, string>,
+      state: { missing: 'missing', draft: 'not sent yet', review: 'in review', done: 'done' } as Record<string, string>,
+      counter: '{n} / {max}',
+      linkCount: '{n} / {max}',
+      linksHint: 'Shown in this order on your partner page.',
+      linkUp: 'Move up',
+      linkDown: 'Move down',
+      linkRemove: 'Remove link',
+      linkLabelMissing: 'Label missing',
+      linkUrlInvalid: 'Must be an https:// address',
+      fixLinks: 'Please fix the marked links first.',
+      reset: 'Reset to the live version',
+      locked: 'Waiting for the team. Withdraw the request to change it again – your text stays in the form.',
+      unchanged: 'No changes compared with the live version.',
+      pickImage: 'Choose image',
+      dropHint: 'or drop an image here',
+      dropHere: 'Drop the image to crop it',
+      live: 'live',
+      inReview: 'in review',
+      fresh: 'new, not sent',
+      sendLogo: 'Send logo for review',
+      recrop: 'Crop again',
+      discard: 'Discard',
+      previewTitle: 'Live preview',
+      previewLead: 'How the popup on /partners/{slug} will look with your input.',
+      previewText: 'Text',
+      previewLarge: 'Show large',
+      previewInert: 'Preview – buttons and links are inactive.',
+    },
+    cropper: {
+      title: 'Crop logo',
+      lead: 'Drag the image, zoom with the slider, the mouse wheel or two fingers. The circle shows what is visible.',
+      stage: 'Crop area',
+      keys: 'Arrow keys move (with Shift faster), + and − zoom, R rotates.',
+      zoom: 'Zoom',
+      rotate: 'Rotate 90°',
+      fit: 'Fit whole image',
+      fill: 'Fill circle',
+      reset: 'Reset',
+      background: 'Background',
+      bg: { none: 'Transparent', white: 'White', dark: 'Dark' } as Record<string, string>,
+      bgHint: 'For logos with transparent areas.',
+      preview: 'At real sizes',
+      sizes: { popup: 'Popup', tile: 'Partner page', home: 'Home page', banner: 'Download page' } as Record<string, string>,
+      output: 'Saved as square PNG ({size}×{size}), the server stores 128×128.',
+      apply: 'Use logo',
+      cancel: 'Cancel',
+      errors: {
+        type: 'Please choose a PNG, JPG, WebP or GIF image.',
+        size: 'The image is too large (at most 20 MB).',
+        read: 'The image could not be read.',
+        small: 'The image is too small (at least 32 px).',
+        big: 'The cropped logo is too large – try a simpler image.',
+      } as Record<string, string>,
     },
     members: {
       title: 'Access to the dashboard',
@@ -330,7 +400,8 @@ const en = {
       noRight: 'needs the right “{right}”',
       items: {
         logo: 'Upload a logo',
-        text: 'Write a description',
+        textDe: 'Write a German description',
+        textEn: 'Write an English description',
         links: 'Add links',
         server: 'Submit a partner server',
         webhook: 'Set up a webhook',
@@ -339,7 +410,8 @@ const en = {
       } as Record<string, string>,
       hints: {
         logo: 'Square PNG, shown round on the partner page.',
-        text: 'German and English, plain text.',
+        textDe: 'Plain text, shown to German players.',
+        textEn: 'Plain text, shown to everyone else.',
         links: 'Website, Discord, shop – up to 6.',
         server: 'Shown in the TRS Client multiplayer list.',
         webhook: 'Your system hears about redemptions at once.',
@@ -398,6 +470,10 @@ const en = {
       campaign_exists: 'This campaign already exists.',
       partner_campaign_limit: 'At most 20 campaigns.',
       invalid_request: 'Please check your input.',
+      partner_code_limit: 'At most 10 fixed codes per partner.',
+      partner_code_main: 'The main code cannot be deactivated or removed.',
+      partner_code_redeemed: 'This code has redemptions – deactivate it instead.',
+      payload_too_large: 'The file is too large.',
     } as Record<string, string>,
   },
   admin: {
@@ -494,7 +570,7 @@ const en = {
 
     partner: 'Partner',
     category: 'Category',
-    code: 'Fixed code',
+    code: 'Main code',
     quota: 'Quota',
     supporters: 'Supporters',
     state: { active: 'active', paused: 'paused' } as Record<string, string>,
@@ -509,6 +585,20 @@ const en = {
     pickItem: 'Choose an item',
     assign: 'Assign',
     unassign: 'Remove',
+    codesTitle: 'Fixed codes',
+    codesText: 'Extra codes work like the main code (support + cosmetics) and are counted separately. Deactivated codes answer like unknown codes; codes with redemptions can only be deactivated.',
+    codeMain: 'main code',
+    codeInactive: 'inactive',
+    codeUses: '{n} redeemed · {m} in 30 days',
+    newCode: 'New code',
+    asMain: 'as main code',
+    addCode: 'Add',
+    makeMain: 'Make main code',
+    deactivate: 'Deactivate',
+    activate: 'Activate',
+    removeCode: 'Remove',
+    removeCodeConfirm: 'Remove the code {code}? It has never been redeemed.',
+    moreCodes: '+{n}',
     pauseTitle: 'Pause',
     pauseText: 'Blocks the codes for now (e.g. end of contract). Supporters stay, new redemptions do not work, the partner is hidden.',
     pause: 'Pause partner',
@@ -544,6 +634,7 @@ const en = {
     kinds: {
       quota: 'More one-time codes: +{amount}',
       code_change: 'New fixed code: {code}',
+      code_add: 'Additional fixed code: {code}',
       profile: 'Profile text and links',
       logo: 'New logo',
       server: 'Partner server {address} ({minVersion}–{maxVersion})',
@@ -684,8 +775,8 @@ const de: PartnerTexts = {
       manage: 'Codes verwalten',
     },
     codes: {
-      fixedTitle: 'Fester Code',
-      fixedText: 'Für alle teilbar (Videos, Website, Discord). Unbegrenzt einlösbar, jeder Spieler einmal. Änderungen macht das TRS-Team auf Antrag.',
+      fixedTitle: 'Feste Codes',
+      fixedText: 'Für alle (Videos, Website, Discord). Unbegrenzt nutzbar, je Spieler einmal pro Code. Der Haupt-Code steht auf deiner Partnerseite; weitere Codes wirken genauso und werden getrennt gezählt. Das TRS-Team ändert sie auf Antrag.',
       active: 'aktiv',
       change: 'Änderung beantragen',
       newCode: 'Neuer Code',
@@ -709,6 +800,20 @@ const de: PartnerTexts = {
       via: { dashboard: 'Dashboard', api: 'API' },
       none: 'Noch keine Pakete.',
       copyAll: 'Alle kopieren',
+      main: 'Haupt-Code',
+      extra: 'weiterer Code',
+      inactive: 'deaktiviert',
+      colCode: 'Code',
+      colTotal: 'Eingelöst',
+      col30d: 'Letzte 30 Tage',
+      colStatus: 'Status',
+      requestTitle: 'Code beantragen',
+      actionChange: 'Haupt-Code ändern',
+      actionAdd: 'Weiterer Code',
+      request: 'Beantragen',
+      addPending: 'Weiterer Code {code} beantragt',
+      limit: 'Höchstens {n} feste Codes je Partner.',
+      codesNote: 'Deaktivierte Codes funktionieren nicht mehr; ihre Einlösungen bleiben in der Statistik.',
     },
     links: {
       title: 'Euer Werbe-Link',
@@ -847,14 +952,70 @@ const de: PartnerTexts = {
       textDe: 'Beschreibung (Deutsch)',
       textEn: 'Beschreibung (Englisch)',
       chars: '{n} / 1200',
-      links: 'Links (https, bis zu 6)',
+      links: 'Links',
       linkLabel: 'Bezeichnung',
       addLink: 'Link hinzufügen',
       submit: 'Zur Prüfung senden',
       onlyAfter: 'Änderungen sind erst nach Freigabe sichtbar.',
       logo: 'Logo',
-      logoText: 'PNG, quadratisch, mindestens 32 px. Wird rund angezeigt und als 128×128 gespeichert.',
+      logoText: 'PNG, JPG, WebP oder GIF. Du schneidest es quadratisch zu; es wird rund angezeigt und als 128×128 gespeichert.',
       replaceLogo: 'Logo hochladen',
+      complete: 'Profil vollständig',
+      completeHint: 'Fehlende Teile sind markiert. Nach der Freigabe sind sie live.',
+      item: { logo: 'Logo', de: 'Beschreibung (Deutsch)', en: 'Beschreibung (Englisch)', links: 'Links' },
+      state: { missing: 'fehlt', draft: 'noch nicht gesendet', review: 'in Prüfung', done: 'erledigt' },
+      counter: '{n} / {max}',
+      linkCount: '{n} / {max}',
+      linksHint: 'In dieser Reihenfolge auf deiner Partnerseite.',
+      linkUp: 'Nach oben',
+      linkDown: 'Nach unten',
+      linkRemove: 'Link entfernen',
+      linkLabelMissing: 'Bezeichnung fehlt',
+      linkUrlInvalid: 'Muss eine https://-Adresse sein',
+      fixLinks: 'Bitte zuerst die markierten Links korrigieren.',
+      reset: 'Auf Live-Fassung zurücksetzen',
+      locked: 'Wartet auf das Team. Zum Ändern den Antrag zurückziehen – dein Text bleibt im Formular.',
+      unchanged: 'Keine Änderungen gegenüber der Live-Fassung.',
+      pickImage: 'Bild wählen',
+      dropHint: 'oder Bild hierher ziehen',
+      dropHere: 'Bild loslassen zum Zuschneiden',
+      live: 'live',
+      inReview: 'in Prüfung',
+      fresh: 'neu, nicht gesendet',
+      sendLogo: 'Logo zur Prüfung senden',
+      recrop: 'Neu zuschneiden',
+      discard: 'Verwerfen',
+      previewTitle: 'Live-Vorschau',
+      previewLead: 'So sieht das Fenster auf /partners/{slug} mit deinen Eingaben aus.',
+      previewText: 'Text',
+      previewLarge: 'Groß anzeigen',
+      previewInert: 'Vorschau – Knöpfe und Links sind inaktiv.',
+    },
+    cropper: {
+      title: 'Logo zuschneiden',
+      lead: 'Bild ziehen, mit dem Regler, dem Mausrad oder zwei Fingern zoomen. Der Kreis zeigt, was sichtbar ist.',
+      stage: 'Zuschnitt-Bereich',
+      keys: 'Pfeiltasten verschieben (mit Umschalt schneller), + und − zoomen, R dreht.',
+      zoom: 'Zoom',
+      rotate: '90° drehen',
+      fit: 'Ganzes Bild',
+      fill: 'Kreis füllen',
+      reset: 'Zurücksetzen',
+      background: 'Hintergrund',
+      bg: { none: 'Transparent', white: 'Weiß', dark: 'Dunkel' },
+      bgHint: 'Für Logos mit transparenten Stellen.',
+      preview: 'In echten Größen',
+      sizes: { popup: 'Fenster', tile: 'Partnerseite', home: 'Startseite', banner: 'Download-Seite' },
+      output: 'Wird als quadratisches PNG ({size}×{size}) gesendet, der Server speichert 128×128.',
+      apply: 'Logo übernehmen',
+      cancel: 'Abbrechen',
+      errors: {
+        type: 'Bitte ein PNG-, JPG-, WebP- oder GIF-Bild wählen.',
+        size: 'Das Bild ist zu groß (höchstens 20 MB).',
+        read: 'Das Bild konnte nicht gelesen werden.',
+        small: 'Das Bild ist zu klein (mindestens 32 px).',
+        big: 'Das zugeschnittene Logo ist zu groß – versuch ein einfacheres Bild.',
+      },
     },
     members: {
       title: 'Zugänge zum Dashboard',
@@ -884,7 +1045,8 @@ const de: PartnerTexts = {
       noRight: 'braucht das Recht „{right}“',
       items: {
         logo: 'Logo hochladen',
-        text: 'Beschreibung schreiben',
+        textDe: 'Deutsche Beschreibung schreiben',
+        textEn: 'Englische Beschreibung schreiben',
         links: 'Links eintragen',
         server: 'Partner-Server einreichen',
         webhook: 'Webhook einrichten',
@@ -893,7 +1055,8 @@ const de: PartnerTexts = {
       },
       hints: {
         logo: 'Quadratisches PNG, rund auf der Partner-Seite.',
-        text: 'Deutsch und Englisch, reiner Text.',
+        textDe: 'Reiner Text, für deutschsprachige Spieler.',
+        textEn: 'Reiner Text, für alle anderen.',
         links: 'Website, Discord, Shop – bis zu 6.',
         server: 'Erscheint in der Mehrspieler-Liste des TRS Client.',
         webhook: 'Euer System erfährt Einlösungen sofort.',
@@ -952,6 +1115,10 @@ const de: PartnerTexts = {
       campaign_exists: 'Diese Kampagne gibt es schon.',
       partner_campaign_limit: 'Höchstens 20 Kampagnen.',
       invalid_request: 'Bitte prüfe deine Eingabe.',
+      partner_code_limit: 'Höchstens 10 feste Codes je Partner.',
+      partner_code_main: 'Der Haupt-Code kann nicht deaktiviert oder entfernt werden.',
+      partner_code_redeemed: 'Dieser Code wurde schon eingelöst – deaktiviere ihn stattdessen.',
+      payload_too_large: 'Die Datei ist zu groß.',
     },
   },
   admin: {
@@ -1048,7 +1215,7 @@ const de: PartnerTexts = {
 
     partner: 'Partner',
     category: 'Kategorie',
-    code: 'Fester Code',
+    code: 'Haupt-Code',
     quota: 'Kontingent',
     supporters: 'Unterstützer',
     state: { active: 'aktiv', paused: 'pausiert' },
@@ -1063,6 +1230,20 @@ const de: PartnerTexts = {
     pickItem: 'Teil wählen',
     assign: 'Zuordnen',
     unassign: 'Entfernen',
+    codesTitle: 'Feste Codes',
+    codesText: 'Weitere Codes wirken wie der Haupt-Code (Unterstützung + Kosmetik) und werden getrennt gezählt. Deaktivierte Codes antworten wie unbekannte; Codes mit Einlösungen lassen sich nur deaktivieren.',
+    codeMain: 'Haupt-Code',
+    codeInactive: 'deaktiviert',
+    codeUses: '{n} eingelöst · {m} in 30 Tagen',
+    newCode: 'Neuer Code',
+    asMain: 'als Haupt-Code',
+    addCode: 'Hinzufügen',
+    makeMain: 'Zum Haupt-Code',
+    deactivate: 'Deaktivieren',
+    activate: 'Aktivieren',
+    removeCode: 'Entfernen',
+    removeCodeConfirm: 'Code {code} entfernen? Er wurde nie eingelöst.',
+    moreCodes: '+{n}',
     pauseTitle: 'Pausieren',
     pauseText: 'Sperrt die Codes vorübergehend (z. B. Vertragsende). Unterstützer bleiben, neue Einlösungen gehen nicht, der Partner ist ausgeblendet.',
     pause: 'Partner pausieren',
@@ -1098,6 +1279,7 @@ const de: PartnerTexts = {
     kinds: {
       quota: 'Nachschub Einmal-Codes: +{amount}',
       code_change: 'Neuer fester Code: {code}',
+      code_add: 'Weiterer fester Code: {code}',
       profile: 'Profiltext und Links',
       logo: 'Neues Logo',
       server: 'Partner-Server {address} ({minVersion}–{maxVersion})',
@@ -1236,8 +1418,8 @@ const es: PartnerTexts = {
       manage: 'Gestionar códigos',
     },
     codes: {
-      fixedTitle: 'Código fijo',
-      fixedText: 'Para todos (vídeos, web, Discord). Usos ilimitados, cada jugador una vez. El equipo de TRS lo cambia a petición.',
+      fixedTitle: 'Códigos fijos',
+      fixedText: 'Para todos (vídeos, web, Discord). Usos ilimitados, cada jugador una vez por código. El código principal aparece en tu página de socio; los códigos extra funcionan igual y se cuentan por separado. El equipo TRS los cambia bajo solicitud.',
       active: 'activo',
       change: 'Solicitar un cambio',
       newCode: 'Código nuevo',
@@ -1261,6 +1443,20 @@ const es: PartnerTexts = {
       via: { dashboard: 'Panel', api: 'API' },
       none: 'Todavía no hay paquetes.',
       copyAll: 'Copiar todos',
+      main: 'código principal',
+      extra: 'código extra',
+      inactive: 'desactivado',
+      colCode: 'Código',
+      colTotal: 'Canjeado',
+      col30d: 'Últimos 30 días',
+      colStatus: 'Estado',
+      requestTitle: 'Solicitar un código',
+      actionChange: 'Cambiar el código principal',
+      actionAdd: 'Código adicional',
+      request: 'Solicitar',
+      addPending: 'Código adicional {code} solicitado',
+      limit: 'Como máximo {n} códigos fijos por socio.',
+      codesNote: 'Los códigos desactivados ya no funcionan; sus canjes siguen en las estadísticas.',
     },
     links: {
       title: 'Vuestro enlace de descarga',
@@ -1399,14 +1595,70 @@ const es: PartnerTexts = {
       textDe: 'Descripción (alemán)',
       textEn: 'Descripción (inglés)',
       chars: '{n} / 1200',
-      links: 'Enlaces (https, hasta 6)',
+      links: 'Enlaces',
       linkLabel: 'Texto',
       addLink: 'Añadir enlace',
       submit: 'Enviar a revisión',
       onlyAfter: 'Los cambios solo se ven tras la aprobación.',
       logo: 'Logo',
-      logoText: 'PNG cuadrado, mínimo 32 px. Se muestra redondo y se guarda como 128×128.',
+      logoText: 'PNG, JPG, WebP o GIF. Lo recortas en cuadrado; se muestra redondo y se guarda como 128×128.',
       replaceLogo: 'Subir logo',
+      complete: 'Perfil completo',
+      completeHint: 'Lo que falta está marcado. Tras la aprobación estará en línea.',
+      item: { logo: 'Logo', de: 'Descripción (alemán)', en: 'Descripción (inglés)', links: 'Enlaces' },
+      state: { missing: 'falta', draft: 'sin enviar', review: 'en revisión', done: 'hecho' },
+      counter: '{n} / {max}',
+      linkCount: '{n} / {max}',
+      linksHint: 'Se muestran en este orden en tu página de socio.',
+      linkUp: 'Subir',
+      linkDown: 'Bajar',
+      linkRemove: 'Quitar enlace',
+      linkLabelMissing: 'Falta el texto',
+      linkUrlInvalid: 'Debe ser una dirección https://',
+      fixLinks: 'Corrige primero los enlaces marcados.',
+      reset: 'Volver a la versión publicada',
+      locked: 'Esperando al equipo. Retira la solicitud para cambiarla – tu texto se queda en el formulario.',
+      unchanged: 'Sin cambios respecto a la versión publicada.',
+      pickImage: 'Elegir imagen',
+      dropHint: 'o arrastra una imagen aquí',
+      dropHere: 'Suelta la imagen para recortarla',
+      live: 'publicado',
+      inReview: 'en revisión',
+      fresh: 'nuevo, sin enviar',
+      sendLogo: 'Enviar logo a revisión',
+      recrop: 'Recortar de nuevo',
+      discard: 'Descartar',
+      previewTitle: 'Vista previa en vivo',
+      previewLead: 'Así se verá la ventana en /partners/{slug} con tus datos.',
+      previewText: 'Texto',
+      previewLarge: 'Ver en grande',
+      previewInert: 'Vista previa – botones y enlaces inactivos.',
+    },
+    cropper: {
+      title: 'Recortar logo',
+      lead: 'Arrastra la imagen y haz zoom con el control, la rueda del ratón o dos dedos. El círculo muestra lo visible.',
+      stage: 'Área de recorte',
+      keys: 'Las flechas mueven (con Mayús más rápido), + y − hacen zoom, R gira.',
+      zoom: 'Zoom',
+      rotate: 'Girar 90°',
+      fit: 'Imagen completa',
+      fill: 'Llenar círculo',
+      reset: 'Restablecer',
+      background: 'Fondo',
+      bg: { none: 'Transparente', white: 'Blanco', dark: 'Oscuro' },
+      bgHint: 'Para logos con zonas transparentes.',
+      preview: 'A tamaño real',
+      sizes: { popup: 'Ventana', tile: 'Página de socios', home: 'Inicio', banner: 'Página de descarga' },
+      output: 'Se envía como PNG cuadrado ({size}×{size}), el servidor guarda 128×128.',
+      apply: 'Usar logo',
+      cancel: 'Cancelar',
+      errors: {
+        type: 'Elige una imagen PNG, JPG, WebP o GIF.',
+        size: 'La imagen es demasiado grande (máximo 20 MB).',
+        read: 'No se pudo leer la imagen.',
+        small: 'La imagen es demasiado pequeña (mínimo 32 px).',
+        big: 'El logo recortado es demasiado grande – prueba una imagen más sencilla.',
+      },
     },
     members: {
       title: 'Accesos al panel',
@@ -1436,7 +1688,8 @@ const es: PartnerTexts = {
       noRight: 'necesita el permiso «{right}»',
       items: {
         logo: 'Subir un logo',
-        text: 'Escribir una descripción',
+        textDe: 'Escribir la descripción en alemán',
+        textEn: 'Escribir la descripción en inglés',
         links: 'Añadir enlaces',
         server: 'Enviar un servidor de socio',
         webhook: 'Configurar un webhook',
@@ -1445,7 +1698,8 @@ const es: PartnerTexts = {
       },
       hints: {
         logo: 'PNG cuadrado, redondo en la página del socio.',
-        text: 'Alemán e inglés, texto plano.',
+        textDe: 'Texto plano, para jugadores de habla alemana.',
+        textEn: 'Texto plano, para todos los demás.',
         links: 'Web, Discord, tienda – hasta 6.',
         server: 'Aparece en la lista multijugador del TRS Client.',
         webhook: 'Vuestro sistema se entera al momento de los canjes.',
@@ -1504,6 +1758,10 @@ const es: PartnerTexts = {
       campaign_exists: 'Esta campaña ya existe.',
       partner_campaign_limit: 'Como máximo 20 campañas.',
       invalid_request: 'Revisa los datos introducidos.',
+      partner_code_limit: 'Como máximo 10 códigos fijos por socio.',
+      partner_code_main: 'El código principal no se puede desactivar ni quitar.',
+      partner_code_redeemed: 'Este código ya se canjeó – desactívalo en su lugar.',
+      payload_too_large: 'El archivo es demasiado grande.',
     },
   },
   admin: {
@@ -1600,7 +1858,7 @@ const es: PartnerTexts = {
 
     partner: 'Socio',
     category: 'Categoría',
-    code: 'Código fijo',
+    code: 'Código principal',
     quota: 'Cupo',
     supporters: 'Seguidores',
     state: { active: 'activo', paused: 'en pausa' },
@@ -1615,6 +1873,20 @@ const es: PartnerTexts = {
     pickItem: 'Elegir pieza',
     assign: 'Asignar',
     unassign: 'Quitar',
+    codesTitle: 'Códigos fijos',
+    codesText: 'Los códigos extra funcionan como el principal (apoyo + cosméticos) y se cuentan por separado. Los desactivados responden como desconocidos; los que tienen canjes solo se pueden desactivar.',
+    codeMain: 'código principal',
+    codeInactive: 'desactivado',
+    codeUses: '{n} canjeados · {m} en 30 días',
+    newCode: 'Código nuevo',
+    asMain: 'como código principal',
+    addCode: 'Añadir',
+    makeMain: 'Hacer principal',
+    deactivate: 'Desactivar',
+    activate: 'Activar',
+    removeCode: 'Quitar',
+    removeCodeConfirm: '¿Quitar el código {code}? Nunca se ha canjeado.',
+    moreCodes: '+{n}',
     pauseTitle: 'Pausar',
     pauseText: 'Bloquea los códigos temporalmente (p. ej. fin de contrato). Los seguidores se quedan, no se aceptan canjes nuevos y el socio se oculta.',
     pause: 'Pausar socio',
@@ -1650,6 +1922,7 @@ const es: PartnerTexts = {
     kinds: {
       quota: 'Más códigos de un solo uso: +{amount}',
       code_change: 'Nuevo código fijo: {code}',
+      code_add: 'Código fijo adicional: {code}',
       profile: 'Texto del perfil y enlaces',
       logo: 'Logo nuevo',
       server: 'Servidor {address} ({minVersion}–{maxVersion})',
@@ -1672,6 +1945,25 @@ export type PartnerRight = 'stats' | 'codes' | 'api' | 'links' | 'server' | 'web
 export const PARTNER_RIGHTS: PartnerRight[] = ['stats', 'codes', 'api', 'links', 'server', 'webhook', 'promo', 'cosmetics', 'profile']
 
 export interface PartnerLink { label: string, url: string }
+
+/** Grenzen wie auf dem Server (§44.1). */
+export const PARTNER_TEXT_MAX = 1200
+export const PARTNER_LINKS_MAX = 6
+export const PARTNER_LINK_LABEL_MAX = 40
+export const PARTNER_LINK_URL_MAX = 300
+export const PARTNER_FIXED_CODES_MAX = 10
+
+/** https-Adresse ohne Zugangsdaten (wie `httpsUrl` auf dem Server). */
+export function isPartnerLinkUrl(raw: string): boolean {
+  const s = raw.trim()
+  if (!s || s.length > PARTNER_LINK_URL_MAX) return false
+  try {
+    const u = new URL(s)
+    return u.protocol === 'https:' && !u.username && !u.password && !!u.hostname
+  } catch {
+    return false
+  }
+}
 export interface PartnerCosmeticRef { kind: 'cape' | 'cosmetic', id: string, name: string, previewUrl: string | null }
 
 export interface PartnerCard {
@@ -1682,10 +1974,22 @@ export interface PartnerCard {
   text: { de: string, en: string }
   links: PartnerLink[]
   code: string | null
+  /** Aktive feste Codes, Haupt-Code zuerst. */
+  codes: string[]
   server: { name: string, address: string } | null
   wikiUrl: string | null
   supporters: number
   cosmetics: PartnerCosmeticRef[]
+}
+
+/** Fester Code mit Einlösungen (§44.4 `fixedCodes`, §44.7). */
+export interface PartnerFixedCode {
+  code: string
+  main: boolean
+  active: boolean
+  redemptions: number
+  redemptions30d: number
+  createdAt: string
 }
 
 export interface MyPartnerState {
@@ -1780,6 +2084,7 @@ export interface PartnerDashboard {
   owner: { uuid: string, name: string } | null
   profile: { text: { de: string, en: string }, links: PartnerLink[] }
   code: string | null
+  fixedCodes: PartnerFixedCode[] | null
   quota: { total: number, used: number, free: number, requested: number | null }
   batches: PartnerBatch[] | null
   stats: {
@@ -1836,6 +2141,7 @@ export interface AdminPartner {
   state: 'active' | 'paused'
   prefix: string
   code: string | null
+  codes: PartnerFixedCode[]
   logo: string | null
   owner: { uuid: string, name: string } | null
   quota: { total: number, used: number }

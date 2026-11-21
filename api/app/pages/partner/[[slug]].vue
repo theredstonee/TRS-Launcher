@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // Partner-Dashboard (§44.4) mit der Website-Sitzung, im Stil des Creator-Dashboards: Übersicht (erste Schritte,
 // Kennzahlen mit Vergleich zu den 30 Tagen davor, Verlauf), Codes, Werbe-Links, Partner-Server (nur wenn vom Team
-// erlaubt), API, Webhook, Vorstellung, Kosmetik (3D-Vorschau, Partner-Umhang aus eigenen Uploads), Profil, Zugänge.
+// erlaubt), API, Webhook, Vorstellung, Kosmetik (3D-Vorschau, Partner-Umhang aus eigenen Uploads), Profil (Logo-Zuschnitt,
+// Vollständigkeit, Live-Vorschau des Fensters), Zugänge.
 // /partner/<slug> bei mehreren Zugängen; Team-Mitglieder mit partners.manage öffnen jedes Dashboard im Team-Modus.
 const { fill, date, lang } = useLang()
 const { p } = usePartnerText()
@@ -68,13 +69,18 @@ async function act(key: string, fn: () => Promise<void>, ok?: string) {
   }
 }
 
-async function loadDash() {
+async function loadDash(keepDraft = true) {
   if (!slug.value) {
     dash.value = null
     return
   }
+  // Ungesendete Profil-Änderungen überstehen das Neuladen (z. B. nach dem Logo-Upload).
+  const draft = keepDraft && profileDirty.value && !profileLocked.value
+    ? { de: profileForm.de, en: profileForm.en, links: profileForm.links.map((l) => ({ ...l })) }
+    : null
   dash.value = await api<PartnerDashboard>(`${base.value}/dashboard`)
   resetForms()
+  if (draft && !openOf('profile')) Object.assign(profileForm, draft)
   if (!tabs.value.includes(tab.value)) tab.value = 'overview'
 }
 async function refresh() {
@@ -107,7 +113,8 @@ watch(slug, () => {
   shownKey.value = ''
   shownSecret.value = ''
   selectable.value = null
-  void loadDash().catch(fail)
+  dropCropped()
+  void loadDash(false).catch(fail)
 })
 function switchTo(s: string) {
   void navigateTo(`/partner/${s}`)
@@ -149,14 +156,14 @@ async function copy(text: string, key: string) {
 const stats = computed(() => dash.value?.stats ?? null)
 const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0)
 
-type CheckKey = 'logo' | 'text' | 'links' | 'server' | 'webhook' | 'api' | 'cosmetics'
+type CheckKey = 'logo' | 'textDe' | 'textEn' | 'links' | 'server' | 'webhook' | 'api' | 'cosmetics'
+const PART_CHECK: Record<ProfilePart, CheckKey> = { logo: 'logo', de: 'textDe', en: 'textEn', links: 'links' }
 const checklist = computed(() => {
   const x = dash.value
   if (!x) return []
   const items: { key: CheckKey, tab: Tab, right: PartnerRight, done: boolean, review: boolean }[] = [
-    { key: 'logo', tab: 'profile', right: 'profile', done: !!x.logo, review: !!openOf('logo') },
-    { key: 'text', tab: 'profile', right: 'profile', done: !!(x.profile.text.de.trim() || x.profile.text.en.trim()), review: !!openOf('profile') },
-    { key: 'links', tab: 'profile', right: 'profile', done: x.profile.links.length > 0, review: !!openOf('profile') },
+    // Profil-Teile wie im Reiter „Profil“ (gleiche Quelle).
+    ...profileParts.value.map((q) => ({ key: PART_CHECK[q.key], tab: 'profile' as Tab, right: 'profile' as PartnerRight, done: q.live, review: q.review })),
     { key: 'server', tab: 'server', right: 'server', done: !!x.server?.current, review: !!openOf('server') },
     { key: 'webhook', tab: 'webhook', right: 'webhook', done: !!x.webhook?.config, review: false },
     { key: 'api', tab: 'api', right: 'api', done: !!x.apiKey, review: false },
@@ -206,6 +213,15 @@ const batchForm = reactive({ label: '', count: 10 })
 const createdCodes = ref<string[]>([])
 const createdBatch = ref<number | null>(null)
 const codeChange = ref('')
+const codeAction = ref<'change' | 'add'>('add')
+const fixedCodes = computed<PartnerFixedCode[]>(() => dash.value?.fixedCodes ?? (dash.value?.code ? [{ code: dash.value.code, main: true, active: true, redemptions: 0, redemptions30d: 0, createdAt: '' }] : []))
+const codeLimitReached = computed(() => fixedCodes.value.length >= PARTNER_FIXED_CODES_MAX)
+watch(codeLimitReached, (full) => {
+  if (full) codeAction.value = 'change'
+}, { immediate: true })
+const requestCode = () => sendRequest({ kind: 'code_change', code: codeChange.value.trim().toUpperCase(), action: codeAction.value }, 'code').then(() => {
+  if (!error.value) codeChange.value = ''
+})
 const quotaAmount = ref<500 | 1000 | 5000>(1000)
 const createBatch = () => act('batch', async () => {
   const r = await api<{ batch: PartnerBatch, codes: string[] }>(`${base.value}/batches`, { method: 'POST', body: { label: batchForm.label.trim() || 'Dashboard', count: Math.max(1, Math.min(500, Math.floor(batchForm.count) || 1)) } })
@@ -345,14 +361,12 @@ const sendWish = () => sendRequest({ kind: 'cosmetic_wish', text: wish.value.tri
 })
 
 // ---------------------------------------------------------------- Profil
-const profileForm = reactive<{ de: string, en: string, links: PartnerLink[] }>({ de: '', en: '', links: [] })
-const logoFile = ref<File | null>(null)
-function pickFile(e: Event): File | null {
-  const f = (e.target as HTMLInputElement).files?.[0] ?? null
-  return f && f.type === 'image/png' ? f : null
-}
-async function putPng(path: string, f: File) {
-  await apiFetch(path, { method: 'PUT', body: f, headers: { 'Content-Type': 'image/png', 'X-CSRF-Token': account.value?.csrf ?? '' }, credentials: 'same-origin' })
+interface EditLink extends PartnerLink { id: number }
+let linkSeq = 0
+const toEdit = (l: PartnerLink): EditLink => ({ id: ++linkSeq, label: l.label, url: l.url })
+const profileForm = reactive<{ de: string, en: string, links: EditLink[] }>({ de: '', en: '', links: [] })
+async function putPng(path: string, body: Blob) {
+  await apiFetch(path, { method: 'PUT', body, headers: { 'Content-Type': 'image/png', 'X-CSRF-Token': account.value?.csrf ?? '' }, credentials: 'same-origin' })
 }
 function resetForms() {
   const x = dash.value
@@ -360,7 +374,7 @@ function resetForms() {
   const pending = openOf('profile')?.data as { text?: { de: string, en: string }, links?: PartnerLink[] } | undefined
   profileForm.de = pending?.text?.de ?? x.profile.text.de
   profileForm.en = pending?.text?.en ?? x.profile.text.en
-  profileForm.links = (pending?.links ?? x.profile.links).map((l) => ({ ...l }))
+  profileForm.links = (pending?.links ?? x.profile.links).map(toEdit)
   const s = x.server?.current
   const ps = openOf('server')?.data as typeof serverForm | undefined
   Object.assign(serverForm, ps ?? (s ? { name: s.name, address: s.address, minVersion: s.minVersion, maxVersion: s.maxVersion, motd: s.motd } : { name: `${x.name} Lobby`, address: '', minVersion: '1.8', maxVersion: '1.21.11', motd: '' }))
@@ -369,18 +383,155 @@ function resetForms() {
     hookForm.events = [...x.webhook.config.events]
   }
 }
-const sendProfile = () => sendRequest({
-  kind: 'profile',
-  text: { de: profileForm.de, en: profileForm.en },
-  links: profileForm.links.filter((l) => l.label.trim() && l.url.trim()).map((l) => ({ label: l.label.trim(), url: l.url.trim() })),
-}, 'profile')
+
+// Links: leere Zeilen fallen weg, sonst Bezeichnung + https-Adresse (wie der Server).
+function linkError(l: EditLink): 'label' | 'url' | null {
+  if (!l.label.trim() && !l.url.trim()) return null
+  if (!isPartnerLinkUrl(l.url)) return 'url'
+  if (!l.label.trim()) return 'label'
+  return null
+}
+function fixUrl(l: EditLink) {
+  const u = l.url.trim()
+  // „example.com/x“ → https://example.com/x
+  if (u && !/^[a-z][a-z0-9+.-]*:/i.test(u) && /^[^\s/]+\.[^\s/]{2,}/.test(u)) l.url = `https://${u}`
+  else l.url = u
+}
+function moveLink(i: number, by: -1 | 1) {
+  const j = i + by
+  if (j < 0 || j >= profileForm.links.length) return
+  const list = profileForm.links
+  ;[list[i], list[j]] = [list[j]!, list[i]!]
+}
+const cleanLinks = computed<PartnerLink[]>(() => profileForm.links.filter((l) => l.label.trim() || l.url.trim()).map((l) => ({ label: l.label.trim(), url: l.url.trim() })))
+const linksInvalid = computed(() => profileForm.links.some((l) => linkError(l) !== null))
+const profileLocked = computed(() => !!openOf('profile'))
+const profileDirty = computed(() => {
+  const x = dash.value
+  if (!x) return false
+  return profileForm.de !== x.profile.text.de || profileForm.en !== x.profile.text.en || JSON.stringify(cleanLinks.value) !== JSON.stringify(x.profile.links)
+})
+const sendProfile = () => {
+  if (linksInvalid.value || profileLocked.value || !profileDirty.value) return
+  void sendRequest({ kind: 'profile', text: { de: profileForm.de, en: profileForm.en }, links: cleanLinks.value }, 'profile')
+}
+/** Antrag zurückziehen, der Text bleibt zum Weiterbearbeiten im Formular. */
+async function withdrawProfile() {
+  const r = openOf('profile')
+  if (!r) return
+  const keep = { de: profileForm.de, en: profileForm.en, links: profileForm.links.map((l) => ({ ...l })) }
+  await withdraw(r)
+  if (!error.value) Object.assign(profileForm, keep)
+}
+function resetProfile() {
+  const x = dash.value
+  if (!x) return
+  profileForm.de = x.profile.text.de
+  profileForm.en = x.profile.text.en
+  profileForm.links = x.profile.links.map(toEdit)
+}
+const counterTone = (n: number) => (n >= PARTNER_TEXT_MAX ? 'full' : n >= PARTNER_TEXT_MAX * 0.9 ? 'near' : '')
+
+// Logo: Datei wählen oder hineinziehen → zuschneiden → als Antrag hochladen.
+const logoInput = ref<HTMLInputElement | null>(null)
+const cropFile = ref<File | null>(null)
+const cropOpen = ref(false)
+const cropped = shallowRef<{ blob: Blob, url: string, size: number } | null>(null)
+const dropActive = ref(false)
+async function chooseLogo(f: File | null | undefined) {
+  if (!f) return
+  error.value = ''
+  const bad = await checkLogoFile(f)
+  if (bad) {
+    error.value = d.value.cropper.errors[bad] ?? ''
+    return
+  }
+  cropFile.value = f
+  cropOpen.value = true
+}
+function onLogoInput(e: Event) {
+  const input = e.target as HTMLInputElement
+  void chooseLogo(input.files?.[0])
+  input.value = ''
+}
+function onLogoDrop(e: DragEvent) {
+  dropActive.value = false
+  void chooseLogo(e.dataTransfer?.files?.[0])
+}
+function onCropped(blob: Blob, size: number) {
+  dropCropped()
+  cropped.value = { blob, url: URL.createObjectURL(blob), size }
+  cropOpen.value = false
+}
+function onCropError(key: string) {
+  cropOpen.value = false
+  error.value = d.value.cropper.errors[key] ?? ''
+}
+function dropCropped() {
+  if (cropped.value) URL.revokeObjectURL(cropped.value.url)
+  cropped.value = null
+}
+onBeforeUnmount(dropCropped)
 const uploadLogo = () => act('logo', async () => {
-  if (!logoFile.value) return
-  await putPng(`${base.value}/logo`, logoFile.value)
-  logoFile.value = null
+  if (!cropped.value) return
+  await putPng(`${base.value}/logo`, cropped.value.blob)
+  dropCropped()
+  cropFile.value = null
   await loadDash()
 }, d.value.sent)
-const previewParagraphs = computed(() => partnerText({ de: profileForm.de, en: profileForm.en }, lang.value).split(/\n{2,}/).map((s) => s.trim()).filter(Boolean))
+const pendingLogoUrl = computed(() => {
+  const r = openOf('logo')
+  return r?.hasImage ? `${base.value}/requests/${r.id}/image.png` : null
+})
+
+// Vollständigkeit: live, in Prüfung, im Formular (nicht gesendet) oder fehlt – auch für die Startliste.
+type ProfilePart = 'logo' | 'de' | 'en' | 'links'
+type PartState = 'missing' | 'draft' | 'review' | 'done'
+const profileParts = computed(() => {
+  const x = dash.value
+  if (!x) return []
+  const pending = openOf('profile')?.data as { text?: { de?: string, en?: string }, links?: PartnerLink[] } | undefined
+  const live: Record<ProfilePart, boolean> = { logo: !!x.logo, de: !!x.profile.text.de.trim(), en: !!x.profile.text.en.trim(), links: x.profile.links.length > 0 }
+  const review: Record<ProfilePart, boolean> = { logo: !!openOf('logo'), de: !!pending?.text?.de?.trim(), en: !!pending?.text?.en?.trim(), links: !!pending?.links?.length }
+  const draft: Record<ProfilePart, boolean> = { logo: !!cropped.value, de: !!profileForm.de.trim(), en: !!profileForm.en.trim(), links: cleanLinks.value.length > 0 }
+  return (['logo', 'de', 'en', 'links'] as const).map((key) => {
+    const state: PartState = live[key] ? 'done' : review[key] ? 'review' : draft[key] ? 'draft' : 'missing'
+    return { key, state, live: live[key], review: review[key] }
+  })
+})
+const profileDone = computed(() => profileParts.value.filter((q) => q.state === 'done').length)
+const profilePct = computed(() => pct(profileDone.value, profileParts.value.length || 1))
+const partState = (k: ProfilePart) => profileParts.value.find((q) => q.key === k)?.state ?? 'missing'
+const PART_TARGET: Record<ProfilePart, string> = { logo: 'pf-logo', de: 'pf-de', en: 'pf-en', links: 'pf-links' }
+function focusPart(k: ProfilePart) {
+  const el = document.getElementById(PART_TARGET[k])
+  el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  el?.focus({ preventScroll: true })
+}
+
+// Live-Vorschau des öffentlichen Fensters mit den aktuellen Eingaben.
+const previewLang = ref<'de' | 'en'>('de')
+watch(lang, (l) => (previewLang.value = l === 'de' ? 'de' : 'en'), { immediate: true })
+const previewLarge = ref(false)
+const previewCard = computed<PartnerCard | null>(() => {
+  const x = dash.value
+  if (!x) return null
+  const s = x.server?.current
+  return {
+    slug: x.slug,
+    name: x.name,
+    category: x.category,
+    logo: cropped.value?.url ?? pendingLogoUrl.value ?? x.logo,
+    text: { de: profileForm.de, en: profileForm.en },
+    links: cleanLinks.value.filter((l) => l.label && isPartnerLinkUrl(l.url)),
+    code: x.code,
+    codes: x.code ? [x.code] : [],
+    server: x.serverAllowed && s && !s.hidden ? { name: s.name, address: s.address } : null,
+    wikiUrl: x.wikiUrl,
+    supporters: x.stats?.supporters ?? 0,
+    cosmetics: x.cosmetics.map((c) => ({ kind: c.kind, id: c.id, name: c.name, previewUrl: c.previewUrl })),
+  }
+})
 
 // ---------------------------------------------------------------- Zugänge
 const inviteName = ref('')
@@ -587,16 +738,37 @@ const rightsLabel = (r: PartnerRight[]) => r.map((x) => d.value.members.right[x]
             <div class="card p-5">
               <h2 class="section-title">{{ d.codes.fixedTitle }}</h2>
               <p class="mt-1 text-sm text-base-400">{{ d.codes.fixedText }}</p>
-              <div class="code-row mt-4">
-                <div class="min-w-0 flex-1"><PartnerCode v-if="dash.code" :code="dash.code" :max="1.15" /></div>
-                <span class="pill pill-ok">{{ d.codes.active }}</span>
-                <button v-if="dash.code" type="button" class="btn btn-ghost" @click="copy(dash.code, 'fixed')"><SiteIcon :name="copied === 'fixed' ? 'check' : 'copy'" class="size-4" />{{ copied === 'fixed' ? d.links.copied : d.links.copy }}</button>
-              </div>
-              <p v-if="openOf('code_change')" class="state state-warn mt-3 text-sm"><SiteIcon name="clock" class="size-4" />{{ fill(d.codes.changePending, { code: String(openOf('code_change')!.data.code) }) }}
+              <ul class="mt-4 grid gap-2">
+                <li v-for="c in fixedCodes" :key="c.code" class="fixed-row" :data-main="c.main" :data-active="c.active">
+                  <div class="min-w-0 flex-1">
+                    <PartnerCode v-if="c.main" :code="c.code" :max="1.15" />
+                    <code v-else class="font-mono text-base font-bold break-all text-base-100">{{ c.code }}</code>
+                    <p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-base-400">
+                      <span class="pill" :class="c.main ? 'pill-ok' : c.active ? '' : 'pill-warn'">{{ c.main ? d.codes.main : c.active ? d.codes.extra : d.codes.inactive }}</span>
+                      <template v-if="dash.fixedCodes">
+                        <span class="tabular-nums">{{ d.codes.colTotal }}: <b class="text-base-100">{{ num(c.redemptions) }}</b></span>
+                        <span class="tabular-nums">{{ d.codes.col30d }}: <b class="text-base-100">{{ num(c.redemptions30d) }}</b></span>
+                      </template>
+                    </p>
+                  </div>
+                  <button v-if="c.active" type="button" class="btn btn-ghost h-9 px-3 text-sm" @click="copy(c.code, `fixed:${c.code}`)"><SiteIcon :name="copied === `fixed:${c.code}` ? 'check' : 'copy'" class="size-4" />{{ copied === `fixed:${c.code}` ? d.links.copied : d.links.copy }}</button>
+                </li>
+              </ul>
+              <p v-if="fixedCodes.some((c) => !c.active)" class="mt-2 text-xs text-base-400">{{ d.codes.codesNote }}</p>
+
+              <h3 class="mt-5 text-sm font-semibold text-base-200">{{ d.codes.requestTitle }}</h3>
+              <p v-if="openOf('code_change')" class="state state-warn mt-2 text-sm"><SiteIcon name="clock" class="size-4" />{{ fill(openOf('code_change')!.data.action === 'add' ? d.codes.addPending : d.codes.changePending, { code: String(openOf('code_change')!.data.code) }) }}
                 <button type="button" class="ml-auto text-xs underline" @click="withdraw(openOf('code_change')!)">{{ d.withdraw }}</button></p>
-              <form v-else class="mt-3 flex flex-wrap gap-2" @submit.prevent="sendRequest({ kind: 'code_change', code: codeChange.trim().toUpperCase() }, 'code')">
-                <input v-model="codeChange" class="field w-48 font-mono uppercase" maxlength="19" pattern="[A-Za-z0-9]{4,19}" required :placeholder="d.codes.newCode" :aria-label="d.codes.newCode" />
-                <button type="submit" class="btn btn-ghost" :disabled="busy === 'code'">{{ d.codes.change }}</button>
+              <form v-else class="mt-2 grid gap-2" @submit.prevent="requestCode">
+                <div class="seg w-fit" role="radiogroup" :aria-label="d.codes.requestTitle">
+                  <button type="button" role="radio" :aria-checked="codeAction === 'add'" :aria-pressed="codeAction === 'add'" :disabled="codeLimitReached" @click="codeAction = 'add'">{{ d.codes.actionAdd }}</button>
+                  <button type="button" role="radio" :aria-checked="codeAction === 'change'" :aria-pressed="codeAction === 'change'" @click="codeAction = 'change'">{{ d.codes.actionChange }}</button>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <input v-model="codeChange" class="field w-52 font-mono uppercase" maxlength="19" pattern="[A-Za-z0-9]{4,19}" required :placeholder="d.codes.newCode" :aria-label="d.codes.newCode" />
+                  <button type="submit" class="btn btn-ghost" :disabled="busy === 'code'">{{ d.codes.request }}</button>
+                </div>
+                <p v-if="codeLimitReached" class="text-xs text-base-400">{{ fill(d.codes.limit, { n: PARTNER_FIXED_CODES_MAX }) }}</p>
               </form>
               <p v-if="lastDecided('code_change')?.status === 'rejected'" class="state state-danger mt-2 text-xs">{{ fill(d.rejected, { reason: lastDecided('code_change')!.reason ?? '' }) }}</p>
             </div>
@@ -990,59 +1162,148 @@ X-TRS-Signature: sha256=HMAC(secret, "timestamp.body")
         </section>
 
         <!-- Profil -->
-        <section v-else-if="tab === 'profile'" class="mt-6 grid gap-6 lg:grid-cols-[1fr_20rem]">
-          <form class="card p-5" @submit.prevent="sendProfile">
-            <h2 class="flex items-center gap-2 section-title">{{ d.profile.title }}<span v-if="openOf('profile')" class="pill pill-warn">{{ d.status.open }}</span></h2>
-            <p class="mt-1 text-sm text-base-400">{{ d.profile.onlyAfter }}</p>
-            <p v-if="lastDecided('profile')?.status === 'rejected'" class="state state-danger mt-3 text-sm">{{ fill(d.rejected, { reason: lastDecided('profile')!.reason ?? '' }) }}</p>
-            <div class="mt-4 grid gap-3 sm:grid-cols-2">
-              <div><p class="label">{{ d.profile.name }}</p><p class="text-sm font-semibold text-base-100">{{ dash.name }}</p></div>
-              <div><p class="label">{{ d.profile.category }}</p><p class="text-sm font-semibold text-base-100">{{ p.category[dash.category] }}</p></div>
+        <section v-else-if="tab === 'profile'" class="profile-grid mt-6">
+          <div class="grid min-w-0 content-start gap-6">
+            <div class="card p-5">
+              <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <h2 class="section-title">{{ d.profile.complete }}</h2>
+                <p class="text-xs text-base-400">{{ d.profile.completeHint }}</p>
+                <p class="ml-auto text-sm font-semibold text-base-100 tabular-nums">{{ profilePct }} %</p>
+              </div>
+              <div class="meter mt-3" role="progressbar" :aria-valuenow="profilePct" aria-valuemin="0" aria-valuemax="100" :aria-label="fill(d.checklist.progress, { done: profileDone, total: profileParts.length })"><div :style="{ width: `${profilePct}%` }" /></div>
+              <ul class="part-list mt-3">
+                <li v-for="q in profileParts" :key="q.key">
+                  <button type="button" class="part" :data-state="q.state" @click="focusPart(q.key)">
+                    <span class="part-mark" aria-hidden="true"><SiteIcon v-if="q.state === 'done'" name="check" class="size-3.5" /><SiteIcon v-else-if="q.state === 'review'" name="clock" class="size-3.5" /><SiteIcon v-else-if="q.state === 'draft'" name="pencil" class="size-3.5" /><SiteIcon v-else name="warn" class="size-3.5" /></span>
+                    <span class="min-w-0 flex-1 text-left">
+                      <span class="block text-sm font-semibold break-words text-base-100">{{ d.profile.item[q.key] }}</span>
+                      <span class="part-state block">{{ d.profile.state[q.state] }}</span>
+                    </span>
+                  </button>
+                </li>
+              </ul>
             </div>
-            <label class="label mt-5" for="pf-de">{{ d.profile.textDe }}</label>
-            <textarea id="pf-de" v-model="profileForm.de" class="field" rows="6" maxlength="1200" />
-            <p class="mt-1 text-right text-xs text-base-400 tabular-nums">{{ fill(d.profile.chars, { n: profileForm.de.length }) }}</p>
-            <label class="label mt-3" for="pf-en">{{ d.profile.textEn }}</label>
-            <textarea id="pf-en" v-model="profileForm.en" class="field" rows="6" maxlength="1200" />
-            <p class="mt-1 text-right text-xs text-base-400 tabular-nums">{{ fill(d.profile.chars, { n: profileForm.en.length }) }}</p>
-            <h3 class="mt-4 text-sm font-semibold text-base-200">{{ d.profile.links }} <span class="font-normal text-base-400">({{ profileForm.links.length }}/6)</span></h3>
-            <div v-for="(l, i) in profileForm.links" :key="i" class="mt-2 grid gap-2 sm:grid-cols-[9rem_1fr_auto]">
-              <input v-model="l.label" class="field" maxlength="40" :placeholder="d.profile.linkLabel" :aria-label="d.profile.linkLabel" />
-              <input v-model="l.url" class="field" type="url" maxlength="300" placeholder="https://" aria-label="URL" />
-              <button type="button" class="btn-icon" :aria-label="d.withdraw" @click="profileForm.links.splice(i, 1)"><SiteIcon name="close" class="size-4" /></button>
-            </div>
-            <button v-if="profileForm.links.length < 6" type="button" class="btn btn-ghost mt-2" @click="profileForm.links.push({ label: '', url: '' })"><SiteIcon name="plus" class="size-4" />{{ d.profile.addLink }}</button>
-            <div class="mt-6 flex flex-wrap gap-2">
-              <button v-if="!openOf('profile')" type="submit" class="btn btn-primary" :disabled="busy === 'profile'">{{ d.profile.submit }}</button>
-              <button v-else type="button" class="btn btn-ghost" @click="withdraw(openOf('profile')!)">{{ d.withdraw }}</button>
-            </div>
-          </form>
-          <div class="grid content-start gap-6">
-            <form class="card p-5" @submit.prevent="uploadLogo">
-              <h2 class="flex items-center gap-2 section-title">{{ d.profile.logo }}<span v-if="openOf('logo')" class="pill pill-warn">{{ d.status.open }}</span></h2>
-              <div class="mt-4 flex items-center gap-4">
-                <PartnerLogo :logo="dash.logo" :name="dash.name" :size="80" />
-                <img v-if="openOf('logo')?.hasImage" :src="`${base}/requests/${openOf('logo')!.id}/image.png`" alt="" class="size-20 rounded-full border-2 border-dashed border-lamp-400 object-cover" />
+
+            <!-- Logo -->
+            <div class="card p-5">
+              <h2 class="flex flex-wrap items-center gap-2 section-title">{{ d.profile.logo }}
+                <span v-if="partState('logo') === 'missing'" class="pill pill-miss">{{ d.profile.state.missing }}</span>
+                <span v-if="openOf('logo')" class="pill pill-warn">{{ d.status.open }}</span>
+              </h2>
+              <p v-if="lastDecided('logo')?.status === 'rejected'" class="state state-danger mt-3 text-sm">{{ fill(d.rejected, { reason: lastDecided('logo')!.reason ?? '' }) }}</p>
+              <div class="mt-4 flex flex-wrap items-start gap-5">
+                <figure class="logo-fig">
+                  <PartnerLogo :logo="dash.logo" :name="dash.name" :size="80" />
+                  <figcaption>{{ d.profile.live }}</figcaption>
+                </figure>
+                <figure v-if="pendingLogoUrl" class="logo-fig">
+                  <PartnerLogo :logo="pendingLogoUrl" :name="dash.name" :size="80" class="ring-review" />
+                  <figcaption>{{ d.profile.inReview }}</figcaption>
+                </figure>
+                <figure v-if="cropped" class="logo-fig">
+                  <PartnerLogo :logo="cropped.url" :name="dash.name" :size="80" class="ring-new" />
+                  <figcaption>{{ d.profile.fresh }}</figcaption>
+                </figure>
+              </div>
+              <div v-if="cropped" class="mt-4 flex flex-wrap gap-2">
+                <button type="button" class="btn btn-primary" :disabled="busy === 'logo'" @click="uploadLogo"><SiteIcon name="check" class="size-4" />{{ d.profile.sendLogo }}</button>
+                <button v-if="cropFile" type="button" class="btn btn-ghost" @click="cropOpen = true"><SiteIcon name="pencil" class="size-4" />{{ d.profile.recrop }}</button>
+                <button type="button" class="btn btn-ghost" @click="dropCropped">{{ d.profile.discard }}</button>
+              </div>
+              <div
+                v-else
+                class="drop mt-4"
+                :data-active="dropActive"
+                @dragenter.prevent="dropActive = true"
+                @dragover.prevent="dropActive = true"
+                @dragleave="dropActive = false"
+                @drop.prevent="onLogoDrop"
+              >
+                <SiteIcon name="image" class="size-6 text-base-400" />
+                <div class="min-w-0 flex-1">
+                  <button id="pf-logo" type="button" class="btn btn-ghost" @click="logoInput?.click()"><SiteIcon name="image" class="size-4" />{{ d.profile.pickImage }}</button>
+                  <span class="ml-2 text-sm text-base-400">{{ dropActive ? d.profile.dropHere : d.profile.dropHint }}</span>
+                </div>
+                <input ref="logoInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="sr-only" tabindex="-1" aria-hidden="true" @change="onLogoInput" />
               </div>
               <p class="mt-3 text-xs text-base-400">{{ d.profile.logoText }}</p>
-              <input type="file" accept="image/png" class="field mt-3" :aria-label="d.profile.replaceLogo" @change="logoFile = pickFile($event)" />
-              <button type="submit" class="btn btn-ghost mt-3 w-full" :disabled="!logoFile || busy === 'logo'">{{ d.profile.replaceLogo }}</button>
+              <button v-if="openOf('logo') && !cropped" type="button" class="mt-2 text-xs text-base-300 underline" @click="withdraw(openOf('logo')!)">{{ d.withdraw }}</button>
+            </div>
+
+            <!-- Texte + Links -->
+            <form class="card p-5" novalidate @submit.prevent="sendProfile">
+              <h2 class="flex flex-wrap items-center gap-2 section-title">{{ d.profile.title }}<span v-if="profileLocked" class="pill pill-warn">{{ d.status.open }}</span></h2>
+              <p class="mt-1 text-sm text-base-400">{{ d.profile.onlyAfter }}</p>
+              <p v-if="lastDecided('profile')?.status === 'rejected'" class="state state-danger mt-3 text-sm">{{ fill(d.rejected, { reason: lastDecided('profile')!.reason ?? '' }) }}</p>
+              <p v-if="profileLocked" class="state state-warn mt-3 text-sm"><SiteIcon name="clock" class="size-4 shrink-0" />{{ d.profile.locked }}</p>
+              <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                <div><p class="label">{{ d.profile.name }}</p><p class="text-sm font-semibold text-base-100">{{ dash.name }}</p></div>
+                <div><p class="label">{{ d.profile.category }}</p><p class="text-sm font-semibold text-base-100">{{ p.category[dash.category] }}</p></div>
+              </div>
+
+              <div v-for="k in (['de', 'en'] as const)" :key="k" class="mt-5">
+                <div class="flex items-center gap-2">
+                  <label class="label mb-0" :for="`pf-${k}`">{{ k === 'de' ? d.profile.textDe : d.profile.textEn }}</label>
+                  <span v-if="partState(k) === 'missing'" class="pill pill-miss">{{ d.profile.state.missing }}</span>
+                </div>
+                <textarea :id="`pf-${k}`" v-model="profileForm[k]" class="field mt-1.5" rows="6" :maxlength="PARTNER_TEXT_MAX" :readonly="profileLocked" :aria-describedby="`pf-${k}-count`" />
+                <p :id="`pf-${k}-count`" class="counter mt-1" :data-tone="counterTone(profileForm[k].length)">{{ fill(d.profile.counter, { n: profileForm[k].length, max: PARTNER_TEXT_MAX }) }}</p>
+              </div>
+
+              <div class="mt-4 flex flex-wrap items-center gap-2">
+                <h3 id="pf-links-title" class="text-sm font-semibold text-base-200">{{ d.profile.links }}</h3>
+                <span class="text-xs text-base-400 tabular-nums">{{ fill(d.profile.linkCount, { n: profileForm.links.length, max: PARTNER_LINKS_MAX }) }}</span>
+                <span v-if="partState('links') === 'missing'" class="pill pill-miss">{{ d.profile.state.missing }}</span>
+              </div>
+              <p class="mt-0.5 text-xs text-base-400">{{ d.profile.linksHint }}</p>
+              <ol id="pf-links" class="mt-2 grid gap-2" aria-labelledby="pf-links-title" tabindex="-1">
+                <li v-for="(l, i) in profileForm.links" :key="l.id" class="link-row" :data-error="linkError(l) ?? undefined">
+                  <span class="link-num" aria-hidden="true">{{ i + 1 }}</span>
+                  <div class="link-fields">
+                    <input v-model="l.label" class="field" :maxlength="PARTNER_LINK_LABEL_MAX" :placeholder="d.profile.linkLabel" :aria-label="`${d.profile.linkLabel} ${i + 1}`" :readonly="profileLocked" :aria-invalid="linkError(l) === 'label'" />
+                    <input v-model="l.url" class="field" type="url" inputmode="url" :maxlength="PARTNER_LINK_URL_MAX" placeholder="https://" :aria-label="`URL ${i + 1}`" :readonly="profileLocked" :aria-invalid="linkError(l) === 'url'" @blur="fixUrl(l)" />
+                    <p v-if="linkError(l)" class="link-err">{{ linkError(l) === 'url' ? d.profile.linkUrlInvalid : d.profile.linkLabelMissing }}</p>
+                  </div>
+                  <div v-if="!profileLocked" class="link-tools">
+                    <button type="button" class="btn-icon size-8" :aria-label="`${d.profile.linkUp} (${i + 1})`" :disabled="i === 0" @click="moveLink(i, -1)"><SiteIcon name="up" class="size-4" /></button>
+                    <button type="button" class="btn-icon size-8" :aria-label="`${d.profile.linkDown} (${i + 1})`" :disabled="i === profileForm.links.length - 1" @click="moveLink(i, 1)"><SiteIcon name="up" class="size-4 rotate-180" /></button>
+                    <button type="button" class="btn-icon size-8" :aria-label="`${d.profile.linkRemove} (${i + 1})`" @click="profileForm.links.splice(i, 1)"><SiteIcon name="trash" class="size-4" /></button>
+                  </div>
+                </li>
+              </ol>
+              <button v-if="!profileLocked && profileForm.links.length < PARTNER_LINKS_MAX" type="button" class="btn btn-ghost mt-2" @click="profileForm.links.push(toEdit({ label: '', url: '' }))"><SiteIcon name="plus" class="size-4" />{{ d.profile.addLink }}</button>
+
+              <p v-if="linksInvalid && !profileLocked" class="mt-4 text-sm text-redstone-300" role="status">{{ d.profile.fixLinks }}</p>
+              <div class="mt-5 flex flex-wrap items-center gap-2">
+                <template v-if="!profileLocked">
+                  <button type="submit" class="btn btn-primary" :disabled="busy === 'profile' || linksInvalid || !profileDirty">{{ d.profile.submit }}</button>
+                  <button v-if="profileDirty" type="button" class="btn btn-ghost" @click="resetProfile">{{ d.profile.reset }}</button>
+                  <span v-else class="text-xs text-base-400">{{ d.profile.unchanged }}</span>
+                </template>
+                <button v-else type="button" class="btn btn-ghost" :disabled="busy.startsWith('wd:')" @click="withdrawProfile">{{ d.withdraw }}</button>
+              </div>
             </form>
-            <aside class="card p-5">
-              <p class="text-[11px] font-semibold tracking-[0.16em] text-base-400 uppercase">{{ p.pub.eyebrow }}</p>
-              <div class="mt-3 flex items-center gap-3">
-                <PartnerLogo :logo="dash.logo" :name="dash.name" :size="40" />
-                <p class="font-semibold text-base-50">{{ dash.name }}</p>
-              </div>
-              <div class="preview mt-3">
-                <p v-for="(para, i) in previewParagraphs" :key="i" class="whitespace-pre-line">{{ para }}</p>
-                <p v-if="!previewParagraphs.length" class="text-base-400 italic">{{ fill(p.pub.noText, { name: dash.name }) }}</p>
-              </div>
-              <ul v-if="profileForm.links.length" class="mt-3 flex flex-wrap gap-1.5">
-                <li v-for="(l, i) in profileForm.links" :key="i" class="link-chip"><SiteIcon name="globe" class="size-3.5" />{{ l.label || '…' }}</li>
-              </ul>
-            </aside>
           </div>
+
+          <!-- Live-Vorschau -->
+          <aside class="preview-col">
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="section-title flex-1">{{ d.profile.previewTitle }}</h2>
+              <div class="seg" role="group" :aria-label="d.profile.previewText">
+                <button v-for="l in (['de', 'en'] as const)" :key="l" type="button" :aria-pressed="previewLang === l" @click="previewLang = l">{{ l.toUpperCase() }}</button>
+              </div>
+            </div>
+            <p class="mt-1 text-xs text-base-400">{{ fill(d.profile.previewLead, { slug: dash.slug }) }}</p>
+            <div v-if="previewCard" class="preview-frame mt-3" inert :aria-label="d.profile.previewInert">
+              <PartnerModal :partner="previewCard" embedded :text-lang="previewLang" />
+            </div>
+            <div class="mt-2 flex flex-wrap items-center gap-2">
+              <p class="flex-1 text-[11px] text-base-400">{{ d.profile.previewInert }}</p>
+              <button type="button" class="btn btn-ghost h-8 px-3 text-xs" @click="previewLarge = true"><SiteIcon name="external" class="size-3.5" />{{ d.profile.previewLarge }}</button>
+            </div>
+          </aside>
+          <PartnerModal v-if="previewLarge && previewCard" :partner="previewCard" :text-lang="previewLang" @close="previewLarge = false" @redeem="() => {}" />
+          <LogoCropper v-if="cropOpen && cropFile" :file="cropFile" :name="dash.name" @done="onCropped" @close="cropOpen = false" @error="onCropError" />
         </section>
 
         <!-- Zugänge -->
@@ -1386,23 +1647,237 @@ X-TRS-Signature: sha256=HMAC(secret, "timestamp.body")
   background: var(--color-base-850);
   box-shadow: 0 0 0 1px var(--color-redstone-500);
 }
-.preview {
+.profile-grid {
   display: grid;
-  gap: 0.6rem;
-  font-size: 0.85rem;
-  line-height: 1.6;
-  color: var(--color-base-200);
-  overflow-wrap: anywhere;
+  gap: 1.5rem;
 }
-.link-chip {
+@media (min-width: 1024px) {
+  .profile-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 25rem);
+    align-items: start;
+  }
+  .preview-col {
+    position: sticky;
+    top: 1rem;
+  }
+}
+.preview-col {
+  min-width: 0;
+}
+.preview-frame {
+  border-radius: 1.1rem;
+  outline: 1px dashed var(--color-base-700);
+  outline-offset: 4px;
+  user-select: none;
+}
+.seg {
   display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
   border-radius: 999px;
   border: 1px solid var(--color-base-700);
-  padding: 0.15rem 0.55rem;
+  background: var(--color-base-950);
+  padding: 2px;
+}
+.seg button {
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
   font-size: 0.75rem;
-  color: var(--color-base-200);
+  font-weight: 700;
+  color: var(--color-base-300);
+}
+.seg button[aria-pressed='true'] {
+  background: var(--color-base-800);
+  color: var(--color-base-50);
+}
+.seg button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.part-list {
+  display: grid;
+  gap: 0.5rem;
+}
+@media (min-width: 640px) {
+  .part-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.part {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 0.7rem;
+  border: 1px solid var(--color-base-800);
+  background: var(--color-base-950);
+  padding: 0.55rem 0.7rem;
+  transition: border-color 0.15s;
+}
+.part:hover,
+.part:focus-visible {
+  border-color: var(--color-base-600);
+}
+.part-mark {
+  display: grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+}
+.part-state {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.part[data-state='done'] .part-mark {
+  background: color-mix(in srgb, var(--color-ok) 22%, transparent);
+  color: var(--color-ok);
+}
+.part[data-state='done'] .part-state {
+  color: var(--color-ok);
+}
+.part[data-state='review'] .part-mark,
+.part[data-state='draft'] .part-mark {
+  background: color-mix(in srgb, var(--color-lamp-400) 20%, transparent);
+  color: var(--color-lamp-300);
+}
+.part[data-state='review'] .part-state,
+.part[data-state='draft'] .part-state {
+  color: var(--color-lamp-300);
+}
+.part[data-state='missing'] {
+  border-color: color-mix(in srgb, var(--color-redstone-500) 45%, var(--color-base-800));
+}
+.part[data-state='missing'] .part-mark {
+  background: color-mix(in srgb, var(--color-redstone-500) 22%, transparent);
+  color: var(--color-redstone-300);
+}
+.part[data-state='missing'] .part-state {
+  color: var(--color-redstone-300);
+}
+.pill-miss {
+  border-color: color-mix(in srgb, var(--color-redstone-500) 55%, transparent);
+  color: var(--color-redstone-300);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.logo-fig {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-base-400);
+}
+.ring-review {
+  border-style: dashed !important;
+  border-color: var(--color-lamp-400) !important;
+}
+.ring-new {
+  border-color: var(--color-redstone-500) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-redstone-500) 25%, transparent);
+}
+.drop {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  border-radius: 0.8rem;
+  border: 1.5px dashed var(--color-base-700);
+  background: var(--color-base-950);
+  padding: 0.9rem 1rem;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.drop[data-active='true'] {
+  border-color: var(--color-redstone-400);
+  background: color-mix(in srgb, var(--color-redstone-500) 8%, var(--color-base-950));
+}
+.counter {
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--color-base-400);
+  font-variant-numeric: tabular-nums;
+}
+.counter[data-tone='near'] {
+  color: var(--color-lamp-300);
+}
+.counter[data-tone='full'] {
+  color: var(--color-redstone-300);
+  font-weight: 700;
+}
+.link-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  border-radius: 0.7rem;
+  border: 1px solid var(--color-base-800);
+  background: var(--color-base-950);
+  padding: 0.55rem;
+}
+.link-row[data-error] {
+  border-color: color-mix(in srgb, var(--color-redstone-500) 60%, var(--color-base-800));
+}
+.link-num {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-base-500);
+}
+.link-fields {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 0.4rem;
+}
+@media (min-width: 640px) {
+  .link-fields {
+    grid-template-columns: 9rem minmax(0, 1fr);
+  }
+  .link-err {
+    grid-column: 1 / -1;
+  }
+}
+.link-fields [aria-invalid='true'] {
+  border-color: var(--color-redstone-500);
+}
+.link-err {
+  font-size: 0.75rem;
+  color: var(--color-redstone-300);
+}
+.link-tools {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+  width: 2rem;
+}
+@media (min-width: 640px) {
+  .link-tools {
+    width: auto;
+    flex-wrap: nowrap;
+  }
+}
+.fixed-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0.7rem;
+  border: 1px solid var(--color-base-800);
+  background: var(--color-base-950);
+  padding: 0.7rem 0.8rem;
+}
+.fixed-row[data-main='true'] {
+  border-color: color-mix(in srgb, var(--color-redstone-500) 45%, var(--color-base-800));
+}
+.fixed-row[data-active='false'] code {
+  color: var(--color-base-500);
+  text-decoration: line-through;
 }
 .req-detail {
   border-radius: 0.6rem;
