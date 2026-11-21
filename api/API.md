@@ -5812,7 +5812,9 @@ and get the partner's cosmetics. There is **no badge** and no change to the look
 source `partner` in `user_capes`/`user_cosmetics` and the permission `partners.manage` for the built-in roles Owner
 and Admin. Migration 52 adds `partners.server_allowed` (switch "partner server allowed", default off – also for
 partners that existed before) and the daily supporter activity `partner_daily.active_supporters` /
-`playing_supporters` (statistics history).
+`playing_supporters` (statistics history). Migration 53 allows several fixed codes per partner: the column
+`partner_codes.main` marks the main code (the existing fixed code becomes the main code), the unique index on one fixed
+code per partner is replaced by one main code per partner, deactivated fixed codes use `partner_codes.blocked`.
 
 ### 44.1 Concepts
 
@@ -5834,11 +5836,16 @@ partners that existed before) and the daily supporter activity `partner_daily.ac
   server (`403 partner_server_not_allowed`), an approved server is neither in `GET /v1/partners/servers` nor in
   `PartnerCard.server`, it is not pinged and joins are not counted; the stored server stays and comes back when the
   team switches it on.
-- **Fixed code**: one per partner, `^[A-Z0-9]{4,19}$` (no dash; 20 characters without a dash stay reserved for cape
-  codes §5.9), unlimited uses, one use per player (re-redeem idempotent). Only the team sets/changes it (directly or
-  by accepting a `code_change` request). Creator codes and fixed partner codes share one namespace: creating either
-  refuses the other's (`409 code_taken` for partners, `409 creator_code_taken` for creators). The shape of one-time
-  codes (`AA-XXXX-XXXX`) is not accepted as a creator code (`400 invalid_code`).
+- **Fixed codes**: up to **10** per partner (active and deactivated), `^[A-Z0-9]{4,19}$` (no dash; 20 characters
+  without a dash stay reserved for cape codes §5.9), each with unlimited uses and one use per player (re-redeem
+  idempotent). Exactly one is the **main code** (`PartnerCard.code`, shown in the popup and on the download banner);
+  extra codes (e.g. `CRAFTINGHOSTING`, `CRAFTING`, `CH2026`) have the same effect (support + cosmetics) and are counted
+  per code (`FixedCodeView.redemptions`). A deactivated code answers like an unknown one (`404`), keeps its
+  redemptions and still occupies the namespace. Only the team adds/deactivates/removes codes and switches the main code
+  (directly or by accepting a `code_change` request). Creator codes and fixed partner codes (all of them, also
+  deactivated ones) share one namespace: creating either refuses the other's (`409 code_taken` for partners,
+  `409 creator_code_taken` for creators). The shape of one-time codes (`AA-XXXX-XXXX`) is not accepted as a creator
+  code (`400 invalid_code`).
 - **One-time codes**: `<PREFIX>-XXXX-XXXX`, alphabet `23456789ABCDEFGHJKLMNPQRSTUVWXYZ`, CSPRNG, each usable by one
   player ever. Created in batches (dashboard or partner API) within the **quota** (`total` = packages granted by the
   team, `used` = codes ever generated; blocked unused codes do not return). Batches have a `label`, `via`
@@ -5896,9 +5903,10 @@ member; team mode is not listed). `invites` = open invitations.
 
 Writes: 60/min per account (`partner-write`), plus the normal per-account limits.
 
-`PartnerCard = { slug, name, category, logo, text: { de, en }, links: [{ label, url }], code, server: { name, address } | null,
+`PartnerCard = { slug, name, category, logo, text: { de, en }, links: [{ label, url }], code, codes, server: { name, address } | null,
 wikiUrl, supporters, cosmetics: [{ kind: "cape" | "cosmetic", id, name, previewUrl }] }`. `logo` is a path
-(`/v1/partners/{slug}/logo.png?v=…`) or `null`; `code` = fixed code; `server` = approved, not hidden partner server
+(`/v1/partners/{slug}/logo.png?v=…`) or `null`; `code` = main fixed code; `codes` = all active fixed codes, main code
+first; `server` = approved, not hidden partner server
 (regardless of its current status); `previewUrl` = cape texture or cosmetic texture URL (or `null`).
 
 ### 44.3 Public routes (no auth, 240 requests/min per IP)
@@ -5967,8 +5975,10 @@ page: `/partner` (`/partner/<slug>` when the account may open several dashboards
 | `POST …/members { uuid` or `name, rights[] }` | owner | `201 { members }` – the player gets `partner_member_invite`; `404 player_not_found`, `409 member_exists`, `403 partner_member_limit` |
 | `PATCH …/members/{uuid} { rights[] }` / `DELETE …/members/{uuid}` | owner/team | `{ members }` / `204` (the member gets `partner_member_removed`) |
 
-Request kinds and rights: `quota { amount: 500 | 1000 | 5000 }` (codes), `code_change { code }` (codes; the code is
-checked on request and again on accept), `profile { text: { de, en }, links[] }` (profile), `logo` (profile, via
+Request kinds and rights: `quota { amount: 500 | 1000 | 5000 }` (codes), `code_change { code, action?: change | add }`
+(codes; `change` (default) renames the main code – or makes an own extra code the main code –, `add` asks for an
+additional fixed code; `data` = `{ code, action }`; the code is checked on request and again on accept: `409
+code_taken`, `403 partner_code_limit`), `profile { text: { de, en }, links[] }` (profile), `logo` (profile, via
 `PUT …/logo`), `server { name ≤ 40, address (host[:port]), minVersion, maxVersion, motd }` (server; versions like
 `1.21.11`, `minVersion ≤ maxVersion`, motd cleaned to one line ≤ 60 without `§` codes; `403 partner_server_not_allowed`
 while the switch is off), `cape { capeId, name? ≤ 32 }` (cosmetics; `capeId` from `GET …/capes`, otherwise `404
@@ -5980,7 +5990,8 @@ text ≤ 2000 }` (promo). One open request per kind, for `promo` one per channel
 ```text
 PartnerDashboard = { slug, name, category, state, prefix, logo, wikiUrl, serverAllowed, owner: { uuid, name } | null,
   profile: { text: { de, en }, links },            // live version; pending changes are in `requests`
-  code,                                            // fixed code
+  code,                                            // main fixed code
+  fixedCodes: FixedCodeView[] | null,              // right codes: all fixed codes, main code first
   quota: { total, used, free, requested: amount | null },
   batches: BatchView[] | null,                     // right codes, last 50
   stats: PartnerStats | null,                      // right stats
@@ -5993,6 +6004,7 @@ PartnerDashboard = { slug, name, category, state, prefix, logo, wikiUrl, serverA
   requests: RequestView[],                         // last 40, only kinds the viewer has the right for
   viewer: { owner, team, rights }, teamChanges: [{ action, at }] }
 BatchView = { id, label, via, count, redeemed, blocked, createdAt, blockedAt }
+FixedCodeView = { code, main, active, redemptions, redemptions30d, createdAt }   // redemptions = players who redeemed this code
 RequestView = { id, kind, channel, status: open | accepted | rejected | withdrawn, data, hasImage, reason, createdAt, decidedAt }
 PartnerStats = { supporters, newSupporters7d, redemptions: { total, fixed, onetime },
   daily: PartnerStatDay[] (30 days up to today, oldest first), current30d: PartnerPeriod, previous30d: PartnerPeriod,
@@ -6048,14 +6060,21 @@ one attempt). Delivery log: last 50 per partner.
 ### 44.7 Team routes (`partners.manage`, 120 requests/min)
 
 - `GET /v1/admin/partners` → `{ partners: AdminPartnerView[] }`; `GET /v1/admin/partners/{slug}` → `{ partner }`.
-  `AdminPartnerView = { slug, name, category, state, prefix, code, logo, owner, quota: { total, used }, supporters,
+  `AdminPartnerView = { slug, name, category, state, prefix, code, codes: FixedCodeView[], logo, owner, quota: { total, used }, supporters,
   openRequests, items, server: { name, address, hidden, online } | null, serverAllowed, wikiUrl, text, links, createdAt }`.
 - `POST /v1/admin/partners { name, slug, category, code, prefix, owner (UUID or name), quota: 0 | 500 | 1000,
   serverAllowed? = false }` → `201 { partner }`; `409 slug_taken | prefix_taken | code_taken`, `404 player_not_found`.
 - `PATCH /v1/admin/partners/{slug} { name?, category?, state?, code?, prefix?, owner?, wikiUrl? (null clears), text?,
-  links?, serverAllowed? }` → `{ partner }`. `state: paused` hides the partner and its server, its codes answer `404`; members get
+  links?, serverAllowed? }` → `{ partner }`. `code` sets the main code: an own fixed code becomes the main code, any other
+  code renames the main code (its redemptions stay). `state: paused` hides the partner and its server, its codes answer `404`; members get
   `partner_updated { kind: "paused" | "resumed" | "updated" }`.
 - `DELETE /v1/admin/partners/{slug}` → `204` (codes, requests, stats, members, webhook, key gone; players keep items).
+- Fixed codes: `POST /v1/admin/partners/{slug}/codes { code, main? = false }` → `201 { partner }` (`409 code_taken`,
+  `403 partner_code_limit`); `PATCH /v1/admin/partners/{slug}/codes/{code} { active?, main?: true }` → `{ partner }`
+  (`main` also re-activates the code; the main code cannot be deactivated: `409 partner_code_main`; `404
+  code_not_found`); `DELETE /v1/admin/partners/{slug}/codes/{code}` → `{ partner }` – only extra codes without
+  redemptions (`409 partner_code_main`, `409 partner_code_redeemed` → deactivate instead). Members get
+  `partner_updated { kind: "updated" }`.
 - `POST /v1/admin/partners/{slug}/quota { amount: 500 | 1000 | 5000 }` → `{ partner }`; closes an open quota request.
 - `GET /v1/admin/partners/catalog` → `{ items: [{ kind, id, name, previewUrl }] }` (assignable items).
 - `POST /v1/admin/partners/{slug}/items { kind, id }` / `DELETE /v1/admin/partners/{slug}/items/{kind}/{id}` →
@@ -6093,6 +6112,7 @@ one attempt). Delivery log: last 50 per partner.
 - `PATCH /v1/admin/partners/{slug}/server { hidden }` / `DELETE /v1/admin/partners/{slug}/server`.
 - Team mode = the normal dashboard routes of 44.4 with a team session.
 - Audit log: `partner.create | update | pause | resume | delete | quota | item.add | item.remove | cape.upload |
+  code.add | code.update | code.remove |
   request.accept | request.reject | server.hide | server.show | server.delete`, target `partner:<slug>`.
 - `GET /v1/admin/dashboard` has `partners: { requests } | null` (open requests, for the navigation badge).
 - Website: `/admin/partners` (tabs Partners, Statistics, Requests, New partner), `/admin/partners/<slug>` (history)
