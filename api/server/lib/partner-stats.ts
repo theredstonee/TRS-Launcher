@@ -198,7 +198,7 @@ function computeRows(ctx: AppContext): Snapshot {
   const base = all<{ id: number, slug: string, name: string, category: PartnerStatCategory, state: PartnerStatState, logo_sha: string | null, created_at: number, server_allowed: number, quota_total: number, quota_used: number, code: string | null }>(
     ctx.db,
     `SELECT p.id, p.slug, p.name, p.category, p.state, p.logo_sha, p.created_at, p.server_allowed, p.quota_total, p.quota_used,
-       (SELECT k.code FROM partner_codes k WHERE k.partner_id = p.id AND k.kind = 'fixed') AS code
+       (SELECT k.code FROM partner_codes k WHERE k.partner_id = p.id AND k.kind = 'fixed' AND k.main = 1) AS code
      FROM partners p`,
   )
   const supporters = byPartner(all<{ pid: number, n: number }>(

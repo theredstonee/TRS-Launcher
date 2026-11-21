@@ -1142,7 +1142,27 @@ CREATE TABLE IF NOT EXISTS craftinghosting_admin (
     version: 52,
     run: migratePartners2,
   },
+  {
+    // Partnerprogramm Runde 3: mehrere feste Codes je Partner. `partner_codes.main` markiert den Haupt-Code (der
+    // bisherige feste Code wird es), deaktivierte feste Codes nutzen `blocked`. Idempotent.
+    version: 53,
+    run: migratePartners3,
+  },
 ]
+
+/** Migration 53 (siehe oben). Exportiert für den Idempotenz-Test. */
+export function migratePartners3(db: DatabaseSync): void {
+  if (!hasTable(db, 'partner_codes')) return
+  if (!hasColumn(db, 'partner_codes', 'main')) db.exec('ALTER TABLE partner_codes ADD COLUMN main INTEGER NOT NULL DEFAULT 0 CHECK (main IN (0, 1))')
+  db.exec(`
+DROP INDEX IF EXISTS partner_codes_fixed;
+UPDATE partner_codes SET main = 1
+  WHERE kind = 'fixed' AND partner_id NOT IN (SELECT partner_id FROM partner_codes WHERE main = 1)
+    AND id = (SELECT MIN(k.id) FROM partner_codes k WHERE k.partner_id = partner_codes.partner_id AND k.kind = 'fixed');
+CREATE UNIQUE INDEX IF NOT EXISTS partner_codes_main ON partner_codes(partner_id) WHERE main = 1;
+CREATE INDEX IF NOT EXISTS partner_codes_partner_kind ON partner_codes(partner_id, kind);
+`)
+}
 
 /** Migration 52 (siehe oben). Exportiert für den Idempotenz-Test. */
 export function migratePartners2(db: DatabaseSync): void {

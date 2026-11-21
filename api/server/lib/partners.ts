@@ -45,6 +45,8 @@ export const LINKS_MAX = 6
 export const BATCH_MAX = 500
 export const API_BATCH_MAX = 100
 export const MEMBERS_MAX = 10
+/** Feste Codes je Partner (Haupt-Code + weitere, auch deaktivierte). */
+export const FIXED_CODES_MAX = 10
 export const CAMPAIGNS_MAX = 20
 export const CAMPAIGN = /^[a-z0-9-]{1,24}$/
 export const QUOTA_PACKAGES = [500, 1000, 5000] as const
@@ -108,6 +110,7 @@ interface CodeRow {
   redeemed_by: string | null
   redeemed_at: number | null
   blocked: number
+  main: number
   created_at: number
 }
 
@@ -175,10 +178,22 @@ export interface PartnerCard {
   text: { de: string, en: string }
   links: PartnerLink[]
   code: string | null
+  /** Aktive feste Codes, Haupt-Code zuerst. */
+  codes: string[]
   server: { name: string, address: string } | null
   wikiUrl: string | null
   supporters: number
   cosmetics: PartnerCosmeticRef[]
+}
+
+/** Fester Code mit Einlösungen (Dashboard mit Recht `codes`, Team). */
+export interface FixedCodeView {
+  code: string
+  main: boolean
+  active: boolean
+  redemptions: number
+  redemptions30d: number
+  createdAt: string
 }
 
 export interface PartnerRef {
@@ -272,7 +287,8 @@ export const serverRequestSchema = z
 
 export const requestBody = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('quota'), amount: z.union([z.literal(500), z.literal(1000), z.literal(5000)]) }),
-  z.strictObject({ kind: z.literal('code_change'), code: fixedCodeSchema }),
+  // `add` = weiterer fester Code, sonst wird der Haupt-Code geändert.
+  z.strictObject({ kind: z.literal('code_change'), code: fixedCodeSchema, action: z.enum(['change', 'add']).default('change') }),
   z.strictObject({ kind: z.literal('profile'), text: textSchema, links: linksSchema }),
   serverRequestSchema.extend({ kind: z.literal('server') }),
   // Partner-Umhang aus den eigenen Uploads (§5.6) des Inhabers oder eines Mitglieds wählen.
@@ -328,6 +344,10 @@ export const adminUpdateBody = z
     serverAllowed: z.boolean().optional(),
   })
   .refine((o) => Object.keys(o).length > 0, 'at least one field is required')
+export const fixedCodeBody = z.strictObject({ code: fixedCodeSchema, main: z.boolean().default(false) })
+export const fixedCodePatchBody = z
+  .strictObject({ active: z.boolean().optional(), main: z.literal(true).optional() })
+  .refine((o) => o.active !== undefined || o.main !== undefined, 'active or main is required')
 export const quotaBody = z.strictObject({ amount: z.union([z.literal(500), z.literal(1000), z.literal(5000)]) })
 export const itemBody = z.strictObject({ kind: z.enum(['cape', 'cosmetic']), id: z.string().trim().min(1).max(40) })
 export const decisionBody = z.strictObject({
@@ -358,7 +378,57 @@ function requirePartner(ctx: AppContext, slug: string): PartnerRow {
 }
 
 function fixedCode(ctx: AppContext, partnerId: number): string | null {
-  return one<{ code: string }>(ctx.db, "SELECT code FROM partner_codes WHERE partner_id = ? AND kind = 'fixed'", partnerId)?.code ?? null
+  return one<{ code: string }>(ctx.db, "SELECT code FROM partner_codes WHERE partner_id = ? AND kind = 'fixed' AND main = 1", partnerId)?.code ?? null
+}
+
+function activeFixedCodes(ctx: AppContext, partnerId: number): string[] {
+  return all<{ code: string }>(
+    ctx.db,
+    "SELECT code FROM partner_codes WHERE partner_id = ? AND kind = 'fixed' AND blocked = 0 ORDER BY main DESC, created_at, id",
+    partnerId,
+  ).map((r) => r.code)
+}
+
+function fixedCodeViews(ctx: AppContext, partnerId: number): FixedCodeView[] {
+  const since = ctx.now() - 30 * DAY
+  return all<{ code: string, main: number, blocked: number, created_at: number, total: number, recent: number }>(
+    ctx.db,
+    `SELECT k.code, k.main, k.blocked, k.created_at,
+       (SELECT COUNT(*) FROM partner_redemptions r WHERE r.code_id = k.id) AS total,
+       (SELECT COUNT(*) FROM partner_redemptions r WHERE r.code_id = k.id AND r.at >= ?) AS recent
+     FROM partner_codes k WHERE k.partner_id = ? AND k.kind = 'fixed' ORDER BY k.main DESC, k.created_at, k.id`,
+    since, partnerId,
+  ).map((r) => ({ code: r.code, main: r.main === 1, active: r.blocked === 0, redemptions: r.total, redemptions30d: r.recent, createdAt: iso(r.created_at) }))
+}
+
+function fixedCodeRow(ctx: AppContext, partnerId: number, code: string): CodeRow | undefined {
+  return one<CodeRow>(ctx.db, "SELECT * FROM partner_codes WHERE partner_id = ? AND kind = 'fixed' AND code = ?", partnerId, code)
+}
+
+function checkFixedCodeRoom(ctx: AppContext, partnerId: number, code: string): void {
+  if (fixedCodeRow(ctx, partnerId, code)) throw conflict('code_taken', 'This code is already taken')
+  const n = one<{ n: number }>(ctx.db, "SELECT COUNT(*) AS n FROM partner_codes WHERE partner_id = ? AND kind = 'fixed'", partnerId)!.n
+  if (n >= FIXED_CODES_MAX) throw forbidden('partner_code_limit', `At most ${FIXED_CODES_MAX} fixed codes per partner`)
+}
+
+/** Weiteren festen Code anlegen (Namensraum vorher geprüft). */
+function insertFixedCode(ctx: AppContext, partnerId: number, code: string, t: number): void {
+  checkFixedCodeRoom(ctx, partnerId, code)
+  run(ctx.db, "INSERT INTO partner_codes (partner_id, code, kind, main, created_at) VALUES (?, ?, 'fixed', 0, ?)", partnerId, code, t)
+}
+
+/**
+ * Haupt-Code setzen: ein eigener fester Code wird (aktiv) zum Haupt-Code, sonst bekommt der Haupt-Code den neuen Text
+ * (seine Einlösungen bleiben).
+ */
+function setMainCode(ctx: AppContext, partnerId: number, code: string, t: number): void {
+  const own = fixedCodeRow(ctx, partnerId, code)
+  if (own) {
+    run(ctx.db, "UPDATE partner_codes SET main = 0 WHERE partner_id = ? AND kind = 'fixed' AND main = 1 AND id <> ?", partnerId, own.id)
+    run(ctx.db, 'UPDATE partner_codes SET main = 1, blocked = 0 WHERE id = ?', own.id)
+  } else if (run(ctx.db, "UPDATE partner_codes SET code = ? WHERE partner_id = ? AND kind = 'fixed' AND main = 1", code, partnerId) === 0) {
+    run(ctx.db, "INSERT INTO partner_codes (partner_id, code, kind, main, created_at) VALUES (?, ?, 'fixed', 1, ?)", partnerId, code, t)
+  }
 }
 
 function supporterCount(ctx: AppContext, partnerId: number): number {
@@ -402,6 +472,7 @@ export function partnerCard(ctx: AppContext, p: PartnerRow): PartnerCard {
     text: { de: p.text_de, en: p.text_en },
     links: parseLinks(p.links),
     code: fixedCode(ctx, p.id),
+    codes: activeFixedCodes(ctx, p.id),
     server: s && !s.hidden && p.server_allowed === 1 ? { name: s.name, address: s.address } : null,
     wikiUrl: p.wiki_url,
     supporters: supporterCount(ctx, p.id),
@@ -593,6 +664,8 @@ export function redeemPartnerCode(ctx: AppContext, uuid: string, rawCode: string
     code,
   )
   if (!k || k.state !== 'active') return null
+  // Deaktivierter fester Code verhält sich wie ein unbekannter.
+  if (k.kind === 'fixed' && k.blocked === 1) return null
   const oneTime = k.kind === 'onetime'
   if (oneTime && k.redeemed_by !== uuid && (k.blocked === 1 || k.redeemed_by !== null)) {
     throw new ApiError(410, 'partner_code_used', 'This code has already been used')
@@ -848,6 +921,8 @@ export interface PartnerDashboard {
   owner: { uuid: string, name: string } | null
   profile: { text: { de: string, en: string }, links: PartnerLink[] }
   code: string | null
+  /** Alle festen Codes mit Einlösungen (Recht `codes`). */
+  fixedCodes: FixedCodeView[] | null
   quota: { total: number, used: number, free: number, requested: number | null }
   batches: BatchView[] | null
   stats: PartnerStats | null
@@ -1020,6 +1095,7 @@ export function partnerDashboard(ctx: AppContext, user: string, slug: string): P
     owner: p.owner_uuid ? { uuid: p.owner_uuid, name: nameOf(ctx, p.owner_uuid) } : null,
     profile: { text: { de: p.text_de, en: p.text_en }, links: parseLinks(p.links) },
     code: fixedCode(ctx, p.id),
+    fixedCodes: may('codes') ? fixedCodeViews(ctx, p.id) : null,
     quota: { total: p.quota_total, used: p.quota_used, free: Math.max(0, p.quota_total - p.quota_used), requested: openQuotaRequest(ctx, p.id) },
     batches: may('codes') ? all<BatchRow>(ctx.db, 'SELECT * FROM partner_batches WHERE partner_id = ? ORDER BY created_at DESC, id DESC LIMIT 50', p.id).map((b) => batchView(ctx, b)) : null,
     stats: may('stats') ? partnerStats(ctx, p) : null,
@@ -1284,7 +1360,10 @@ export function createRequest(ctx: AppContext, user: string, slug: string, raw: 
   if (input.kind === 'cape') return selectPartnerCape(ctx, a, input.capeId, input.name)
   const channel = input.kind === 'promo' ? input.channel : null
   if (openRequest(ctx, a.partner.id, input.kind, channel)) throw conflict('partner_request_open', 'There is already an open request of this kind')
-  if (input.kind === 'code_change') checkFixedCodeFree(ctx, input.code, a.partner.id)
+  if (input.kind === 'code_change') {
+    checkFixedCodeFree(ctx, input.code, a.partner.id)
+    if (input.action === 'add') checkFixedCodeRoom(ctx, a.partner.id, input.code)
+  }
   if (input.kind === 'server' && compareVer(input.minVersion, input.maxVersion) > 0) throw badRequest('invalid_request', 'minVersion must not be above maxVersion')
   const { kind: k, ...data } = input
   const r = insertRequest(ctx, a.partner, k, channel, data, user)
@@ -1629,6 +1708,7 @@ export interface AdminPartnerView {
   state: PartnerState
   prefix: string
   code: string | null
+  codes: FixedCodeView[]
   logo: string | null
   owner: { uuid: string, name: string } | null
   quota: { total: number, used: number }
@@ -1652,6 +1732,7 @@ function adminView(ctx: AppContext, p: PartnerRow): AdminPartnerView {
     state: p.state,
     prefix: p.prefix,
     code: fixedCode(ctx, p.id),
+    codes: fixedCodeViews(ctx, p.id),
     logo: logoPath(p.slug, p.logo_sha),
     owner: p.owner_uuid ? { uuid: p.owner_uuid, name: nameOf(ctx, p.owner_uuid) } : null,
     quota: { total: p.quota_total, used: p.quota_used },
@@ -1697,7 +1778,7 @@ export function adminCreatePartner(ctx: AppContext, staff: Staff, raw: unknown):
        VALUES (?, ?, ?, 'active', ?, ?, ?, ?, ?, ?) RETURNING id`,
       input.slug, input.name, input.category, input.prefix, owner, input.quota, input.serverAllowed ? 1 : 0, t, t,
     )!.id
-    run(ctx.db, "INSERT INTO partner_codes (partner_id, code, kind, created_at) VALUES (?, ?, 'fixed', ?)", id, input.code, t)
+    run(ctx.db, "INSERT INTO partner_codes (partner_id, code, kind, main, created_at) VALUES (?, ?, 'fixed', 1, ?)", id, input.code, t)
     audit(ctx, staff.uuid, 'partner.create', auditTarget(input), `${input.name}, code ${input.code}, quota ${input.quota}${input.serverAllowed ? ', server allowed' : ''}`)
   })
   clearPartnerStatsCache(ctx)
@@ -1738,12 +1819,7 @@ export function adminUpdatePartner(ctx: AppContext, staff: Staff, slug: string, 
       set('server_allowed', input.serverAllowed ? 1 : 0, `server ${input.serverAllowed ? 'allowed' : 'not allowed'}`)
     }
     if (input.code !== undefined) {
-      run(
-        ctx.db,
-        `INSERT INTO partner_codes (partner_id, code, kind, created_at) VALUES (?, ?, 'fixed', ?)
-         ON CONFLICT(partner_id) WHERE kind = 'fixed' DO UPDATE SET code = excluded.code`,
-        p.id, input.code, t,
-      )
+      setMainCode(ctx, p.id, input.code, t)
       parts.push(`code ${input.code}`)
     }
     audit(ctx, staff.uuid, input.state && input.state !== p.state ? (input.state === 'paused' ? 'partner.pause' : 'partner.resume') : 'partner.update', auditTarget(p), parts.join(', '))
@@ -1753,6 +1829,58 @@ export function adminUpdatePartner(ctx: AppContext, staff: Staff, slug: string, 
   if (input.state !== undefined && input.state !== p.state) notifyMembers(ctx, after, input.state === 'paused' ? 'paused' : 'resumed')
   else notifyMembers(ctx, after, 'updated')
   return { partner: adminView(ctx, after) }
+}
+
+// ---------------------------------------------------------------- Feste Codes (Team)
+
+function fixedCodesChanged(ctx: AppContext, staff: Staff, p: PartnerRow, action: string, detail: string): { partner: AdminPartnerView } {
+  audit(ctx, staff.uuid, `partner.code.${action}`, auditTarget(p), detail)
+  clearPartnerStatsCache(ctx)
+  notifyMembers(ctx, p, 'updated')
+  return { partner: adminView(ctx, p) }
+}
+
+/** Weiteren festen Code anlegen (`main: true` macht ihn gleich zum Haupt-Code). */
+export function adminAddFixedCode(ctx: AppContext, staff: Staff, slug: string, raw: unknown): { partner: AdminPartnerView } {
+  assertCan(staff, 'partners.manage')
+  const input = parse(fixedCodeBody, raw)
+  const p = requirePartner(ctx, slug)
+  checkFixedCodeFree(ctx, input.code, p.id)
+  const t = ctx.now()
+  tx(ctx.db, () => {
+    insertFixedCode(ctx, p.id, input.code, t)
+    if (input.main) setMainCode(ctx, p.id, input.code, t)
+  })
+  return fixedCodesChanged(ctx, staff, p, 'add', `${input.code}${input.main ? ' (main)' : ''}`)
+}
+
+/** Festen Code (de)aktivieren oder zum Haupt-Code machen. Der Haupt-Code bleibt immer aktiv. */
+export function adminUpdateFixedCode(ctx: AppContext, staff: Staff, slug: string, rawCode: string, raw: unknown): { partner: AdminPartnerView } {
+  assertCan(staff, 'partners.manage')
+  const input = parse(fixedCodePatchBody, raw)
+  const p = requirePartner(ctx, slug)
+  const k = fixedCodeRow(ctx, p.id, rawCode.trim().toUpperCase())
+  if (!k) throw notFound('code_not_found', 'Fixed code not found')
+  if ((input.main === true || k.main === 1) && input.active === false) throw conflict('partner_code_main', 'The main code cannot be deactivated')
+  const t = ctx.now()
+  tx(ctx.db, () => {
+    if (input.main) setMainCode(ctx, p.id, k.code, t)
+    else if (input.active !== undefined) run(ctx.db, 'UPDATE partner_codes SET blocked = ? WHERE id = ?', input.active ? 0 : 1, k.id)
+  })
+  const what = input.main ? 'main' : input.active ? 'active' : 'inactive'
+  return fixedCodesChanged(ctx, staff, p, 'update', `${k.code} ${what}`)
+}
+
+/** Festen Code löschen – nur Zusatz-Codes ohne Einlösungen (sonst deaktivieren, die Statistik bleibt). */
+export function adminDeleteFixedCode(ctx: AppContext, staff: Staff, slug: string, rawCode: string): { partner: AdminPartnerView } {
+  assertCan(staff, 'partners.manage')
+  const p = requirePartner(ctx, slug)
+  const k = fixedCodeRow(ctx, p.id, rawCode.trim().toUpperCase())
+  if (!k) throw notFound('code_not_found', 'Fixed code not found')
+  if (k.main === 1) throw conflict('partner_code_main', 'The main code cannot be removed')
+  if (one(ctx.db, 'SELECT 1 AS x FROM partner_redemptions WHERE code_id = ?', k.id)) throw conflict('partner_code_redeemed', 'The code has redemptions – deactivate it instead')
+  run(ctx.db, 'DELETE FROM partner_codes WHERE id = ?', k.id)
+  return fixedCodesChanged(ctx, staff, p, 'remove', k.code)
 }
 
 /** Partner löschen: Codes, Anträge, Statistik weg; Spieler behalten ihre Kosmetik. */
@@ -1901,7 +2029,8 @@ export function adminDecideRequest(ctx: AppContext, staff: Staff, id: number, ra
         case 'code_change': {
           const code = String(data.code)
           checkFixedCodeFree(ctx, code, p.id)
-          run(ctx.db, "UPDATE partner_codes SET code = ? WHERE partner_id = ? AND kind = 'fixed'", code, p.id)
+          if (data.action === 'add') insertFixedCode(ctx, p.id, code, t)
+          else setMainCode(ctx, p.id, code, t)
           break
         }
         case 'profile': {

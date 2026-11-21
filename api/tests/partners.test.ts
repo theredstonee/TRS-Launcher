@@ -8,7 +8,7 @@ import { createCodes } from '../server/lib/codes'
 import { adminCreateCreator, adminUpdateCreator, createExtraCode, normalizeCreatorCode } from '../server/lib/creators'
 import { all, one, run } from '../server/lib/db'
 import type { ApiError } from '../server/lib/errors'
-import { migratePartners, migratePartners2 } from '../server/lib/migrations'
+import { migratePartners, migratePartners2, migratePartners3 } from '../server/lib/migrations'
 import {
   compareVersions,
   listPartnerServers,
@@ -33,13 +33,16 @@ import {
 } from '../server/lib/partner-webhooks'
 import {
   addCampaign,
+  adminAddFixedCode,
   adminAddItem,
   adminCatalog,
   adminCreatePartner,
   adminDecideRequest,
+  adminDeleteFixedCode,
   adminGrantQuota,
   adminListPartners,
   adminListRequests,
+  adminUpdateFixedCode,
   adminUpdatePartner,
   adminUploadPartnerCape,
   answerInvite,
@@ -899,6 +902,153 @@ describe('partner statistics (round 2)', () => {
   })
 })
 
+// ---------------------------------------------------------------- Mehrere feste Codes (Runde 3)
+
+describe('several fixed codes (round 3)', () => {
+  const codesOf = (env: TestEnv, owner: string) => partnerDashboard(env.ctx, owner, 'craftinghosting').fixedCodes!
+
+  it('extra codes redeem like the main code and count per code; the popup keeps the main code', async () => {
+    const env = makeEnv()
+    const { owner } = await partner(env)
+    adminAddFixedCode(env.ctx, OWNER, 'craftinghosting', { code: 'ch2026' })
+    adminAddFixedCode(env.ctx, OWNER, 'craftinghosting', { code: 'CRAFTINGHOSTING' })
+    const card = publicPartner(env.ctx, 'craftinghosting')
+    expect(card.code).toBe('CRAFTING')
+    expect(card.codes).toEqual(['CRAFTING', 'CH2026', 'CRAFTINGHOSTING'])
+
+    const fan = await player(env, 'ExtraFan')
+    const r = redeemAnyCode(env.ctx, fan.uuid, ' ch2026 ')
+    expect(r.kind === 'partner' && r.supportChanged).toBe(true)
+    expect(r.kind === 'partner' && r.granted.capes.map((c) => c.capeId)).toEqual(['emerald'])
+    expect(one(env.ctx.db, 'SELECT partner_id FROM partner_support WHERE uuid = ?', fan.uuid)).toEqual({ partner_id: partnerId(env, 'craftinghosting') })
+    // Jeder Code einmal je Spieler; erneut einlösen bleibt idempotent.
+    redeemAnyCode(env.ctx, fan.uuid, 'CH2026')
+    const again = redeemAnyCode(env.ctx, fan.uuid, 'CRAFTING')
+    expect(again.kind === 'partner' && again.supportChanged).toBe(false)
+    const other = await player(env, 'OtherFan')
+    redeemAnyCode(env.ctx, other.uuid, 'CH2026')
+
+    expect(codesOf(env, owner).map((c) => [c.code, c.main, c.active, c.redemptions, c.redemptions30d])).toEqual([
+      ['CRAFTING', true, true, 1, 1],
+      ['CH2026', false, true, 2, 2],
+      ['CRAFTINGHOSTING', false, true, 0, 0],
+    ])
+    expect(partnerDashboard(env.ctx, owner, 'craftinghosting').stats!.redemptions).toMatchObject({ total: 3, fixed: 3, onetime: 0 })
+    env.clock.advance(31 * DAY)
+    expect(codesOf(env, owner)[1]).toMatchObject({ redemptions: 2, redemptions30d: 0 })
+    // Ohne Recht `codes` keine Liste.
+    const viewer = await player(env, 'StatsOnly')
+    inviteMember(env.ctx, owner, 'craftinghosting', { name: 'StatsOnly', rights: ['stats'] })
+    answerInvite(env.ctx, viewer.uuid, 'craftinghosting', { accept: true })
+    expect(partnerDashboard(env.ctx, viewer.uuid, 'craftinghosting').fixedCodes).toBeNull()
+  })
+
+  it('deactivated codes are unknown (404), the main code stays active; only unused extra codes can be removed', async () => {
+    const env = makeEnv()
+    const { owner } = await partner(env)
+    adminAddFixedCode(env.ctx, OWNER, 'craftinghosting', { code: 'CH2026' })
+    const fan = await player(env, 'Early')
+    redeemAnyCode(env.ctx, fan.uuid, 'CH2026')
+    adminUpdateFixedCode(env.ctx, OWNER, 'craftinghosting', 'ch2026', { active: false })
+    const late = await player(env, 'Late')
+    expect(err(() => redeemAnyCode(env.ctx, late.uuid, 'CH2026')).code).toBe('code_not_found')
+    expect(err(() => redeemAnyCode(env.ctx, fan.uuid, 'CH2026')).code).toBe('code_not_found')
+    expect(publicPartner(env.ctx, 'craftinghosting').codes).toEqual(['CRAFTING'])
+    expect(codesOf(env, owner)[1]).toMatchObject({ code: 'CH2026', active: false, redemptions: 1 })
+    // Deaktiviert belegt der Code weiter den Namensraum.
+    expect(err(() => adminAddFixedCode(env.ctx, OWNER, 'craftinghosting', { code: 'CH2026' })).code).toBe('code_taken')
+
+    expect(err(() => adminUpdateFixedCode(env.ctx, OWNER, 'craftinghosting', 'CRAFTING', { active: false })).code).toBe('partner_code_main')
+    expect(err(() => adminDeleteFixedCode(env.ctx, OWNER, 'craftinghosting', 'CRAFTING')).code).toBe('partner_code_main')
+    expect(err(() => adminDeleteFixedCode(env.ctx, OWNER, 'craftinghosting', 'CH2026')).code).toBe('partner_code_redeemed')
+    expect(err(() => adminUpdateFixedCode(env.ctx, OWNER, 'craftinghosting', 'NOPE', { active: true })).code).toBe('code_not_found')
+    expect(err(() => adminUpdateFixedCode(env.ctx, OWNER, 'craftinghosting', 'CH2026', {})).code).toBe('invalid_request')
+
+    adminUpdateFixedCode(env.ctx, OWNER, 'craftinghosting', 'CH2026', { active: true })
+    expect(redeemAnyCode(env.ctx, late.uuid, 'CH2026').kind).toBe('partner')
+    adminAddFixedCode(env.ctx, OWNER, 'craftinghosting', { code: 'UNUSED' })
+    adminDeleteFixedCode(env.ctx, OWNER, 'craftinghosting', 'UNUSED')
+    expect(codesOf(env, owner).map((c) => c.code)).toEqual(['CRAFTING', 'CH2026'])
+    expect(all<{ action: string }>(env.ctx.db, "SELECT action FROM admin_log WHERE action LIKE 'partner.code.%' ORDER BY rowid").map((r) => r.action))
+      .toEqual(['partner.code.add', 'partner.code.update', 'partner.code.update', 'partner.code.add', 'partner.code.remove'])
+  })
+
+  it('switches the main code (own code or rename) and keeps the redemptions', async () => {
+    const env = makeEnv()
+    const { owner } = await partner(env)
+    adminAddFixedCode(env.ctx, OWNER, 'craftinghosting', { code: 'CH2026' })
+    adminUpdateFixedCode(env.ctx, OWNER, 'craftinghosting', 'CH2026', { active: false })
+    // Zum Haupt-Code machen aktiviert ihn wieder.
+    adminUpdateFixedCode(env.ctx, OWNER, 'craftinghosting', 'CH2026', { main: true })
+    expect(publicPartner(env.ctx, 'craftinghosting')).toMatchObject({ code: 'CH2026', codes: ['CH2026', 'CRAFTING'] })
+    expect(codesOf(env, owner).filter((c) => c.main)).toHaveLength(1)
+    const fan = await player(env, 'MainFan')
+    redeemAnyCode(env.ctx, fan.uuid, 'CH2026')
+    // `code` im Team-PATCH: eigener Code → wird Haupt-Code; neuer Text → Haupt-Code umbenannt.
+    adminUpdatePartner(env.ctx, OWNER, 'craftinghosting', { code: 'CRAFTING' })
+    expect(publicPartner(env.ctx, 'craftinghosting').code).toBe('CRAFTING')
+    adminUpdatePartner(env.ctx, OWNER, 'craftinghosting', { code: 'CRAFTING2' })
+    expect(codesOf(env, owner).map((c) => [c.code, c.main])).toEqual([['CRAFTING2', true], ['CH2026', false]])
+    adminAddFixedCode(env.ctx, OWNER, 'craftinghosting', { code: 'NEWMAIN', main: true })
+    expect(codesOf(env, owner).map((c) => [c.code, c.main, c.redemptions])).toEqual([['NEWMAIN', true, 0], ['CRAFTING2', false, 0], ['CH2026', false, 1]])
+    expect(adminListPartners(env.ctx, OWNER).partners[0]).toMatchObject({ code: 'NEWMAIN' })
+    expect(adminListPartners(env.ctx, OWNER).partners[0]!.codes).toHaveLength(3)
+  })
+
+  it('keeps one namespace with creator codes, other partners and the one-time shape; max 10 per partner', async () => {
+    const env = makeEnv()
+    const { owner } = await partner(env)
+    await partner(env, 'other-host', { code: 'OTHERHOST', prefix: 'OH', items: false })
+    await player(env, 'Streamer')
+    const c = adminCreateCreator(env.ctx, OWNER, { player: 'Streamer', tier: 'partner' }).creator
+    expect(err(() => adminAddFixedCode(env.ctx, OWNER, 'craftinghosting', { code: c.mainCode! })).code).toBe('code_taken')
+    expect(err(() => adminAddFixedCode(env.ctx, OWNER, 'craftinghosting', { code: 'OTHERHOST' })).code).toBe('code_taken')
+    expect(err(() => adminAddFixedCode(env.ctx, OWNER, 'craftinghosting', { code: 'CRAFTING' })).code).toBe('code_taken')
+    expect(err(() => adminAddFixedCode(env.ctx, OWNER, 'craftinghosting', { code: 'CH-2345-6789' })).code).toBe('invalid_request')
+    expect(err(() => adminAddFixedCode(env.ctx, OWNER, 'craftinghosting', { code: 'A'.repeat(20) })).code).toBe('invalid_request')
+    adminAddFixedCode(env.ctx, OWNER, 'craftinghosting', { code: 'CH2026' })
+    expect(err(() => createExtraCode(env.ctx, c.uuid, { code: 'CH2026' })).code).toBe('creator_code_taken')
+    expect(err(() => adminUpdatePartner(env.ctx, OWNER, 'other-host', { code: 'CH2026' })).code).toBe('code_taken')
+    for (let i = 0; i < 8; i++) adminAddFixedCode(env.ctx, OWNER, 'craftinghosting', { code: `EXTRA${i}` })
+    expect(codesOf(env, owner)).toHaveLength(10)
+    expect(err(() => adminAddFixedCode(env.ctx, OWNER, 'craftinghosting', { code: 'ELEVENTH' })).code).toBe('partner_code_limit')
+    expect(err(() => createRequest(env.ctx, owner, 'craftinghosting', { kind: 'code_change', code: 'ELEVENTH', action: 'add' })).code).toBe('partner_code_limit')
+    const none: Staff = { ...OWNER, owner: false, perms: new Set() }
+    expect(err(() => adminAddFixedCode(env.ctx, none, 'craftinghosting', { code: 'NOPE1' })).status).toBe(403)
+  })
+
+  it('the partner requests an additional code; accepting adds it next to the main code', async () => {
+    const env = makeEnv()
+    const { owner } = await partner(env)
+    expect(err(() => createRequest(env.ctx, owner, 'craftinghosting', { kind: 'code_change', code: 'CRAFTING', action: 'add' })).code).toBe('code_taken')
+    expect(err(() => createRequest(env.ctx, owner, 'craftinghosting', { kind: 'code_change', code: 'CH2026', action: 'drop' })).code).toBe('invalid_request')
+    const req = createRequest(env.ctx, owner, 'craftinghosting', { kind: 'code_change', code: 'ch2026', action: 'add' }).request
+    expect(req.data).toEqual({ code: 'CH2026', action: 'add' })
+    expect(publicPartner(env.ctx, 'craftinghosting').codes).toEqual(['CRAFTING'])
+    adminDecideRequest(env.ctx, OWNER, req.id, { status: 'accepted' })
+    expect(publicPartner(env.ctx, 'craftinghosting')).toMatchObject({ code: 'CRAFTING', codes: ['CRAFTING', 'CH2026'] })
+    // Ohne `action` ändert der Antrag weiter den Haupt-Code.
+    const change = createRequest(env.ctx, owner, 'craftinghosting', { kind: 'code_change', code: 'CHNEW' }).request
+    adminDecideRequest(env.ctx, OWNER, change.id, { status: 'accepted' })
+    expect(publicPartner(env.ctx, 'craftinghosting')).toMatchObject({ code: 'CHNEW', codes: ['CHNEW', 'CH2026'] })
+  })
+
+  it('migration 53 makes the old fixed code the main code (idempotent)', async () => {
+    const env = makeEnv()
+    const { owner } = await partner(env)
+    await partner(env, 'other-host', { code: 'OTHERHOST', prefix: 'OH', items: false })
+    run(env.ctx.db, 'UPDATE partner_codes SET main = 0')
+    migratePartners3(env.ctx.db as DatabaseSync)
+    migratePartners3(env.ctx.db as DatabaseSync)
+    expect(all(env.ctx.db, 'SELECT code FROM partner_codes WHERE main = 1 ORDER BY code')).toEqual([{ code: 'CRAFTING' }, { code: 'OTHERHOST' }])
+    expect(one(env.ctx.db, "SELECT 1 AS x FROM sqlite_master WHERE type = 'index' AND name = 'partner_codes_fixed'")).toBeUndefined()
+    adminAddFixedCode(env.ctx, OWNER, 'craftinghosting', { code: 'CH2026' })
+    // Höchstens ein Haupt-Code je Partner.
+    expect(() => run(env.ctx.db, "UPDATE partner_codes SET main = 1 WHERE code = 'CH2026'")).toThrow()
+    expect(codesOf(env, owner)).toHaveLength(2)
+  })
+})
+
 // ---------------------------------------------------------------- Migration
 
 describe('migration 51', () => {
@@ -908,6 +1058,8 @@ describe('migration 51', () => {
     migratePartners(env.ctx.db as DatabaseSync)
     migratePartners2(env.ctx.db as DatabaseSync)
     migratePartners2(env.ctx.db as DatabaseSync)
+    migratePartners3(env.ctx.db as DatabaseSync)
+    migratePartners3(env.ctx.db as DatabaseSync)
     expect(all(env.ctx.db, "SELECT name FROM pragma_table_info('partner_daily') WHERE name IN ('active_supporters', 'playing_supporters')")).toHaveLength(2)
     seedFixtures(env)
     const fan = await player(env, 'Src')
