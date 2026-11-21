@@ -98,6 +98,18 @@ public abstract class PartnerListMixin implements PartnerListHost {
 	}
 	*///?}
 
+	//? if >=1.16 && <1.19.4 {
+	@Inject(method = "render(Lcom/mojang/blaze3d/vertex/PoseStack;IIF)V", at = @At("HEAD"), require = 1)
+	private void trsclient$update(PoseStack pose, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+		PartnerList.listRender(this, mouseX, mouseY);
+	}
+	//?} elif <1.16 {
+	/*@Inject(method = "render(IIF)V", at = @At("HEAD"), require = 1)
+	private void trsclient$update(int mouseX, int mouseY, float delta, CallbackInfo ci) {
+		PartnerList.listRender(this, mouseX, mouseY);
+	}
+	*///?}
+
 	//? if >=1.21.9 {
 	/*@Unique
 	private void trsclient$draw(Gfx g) {

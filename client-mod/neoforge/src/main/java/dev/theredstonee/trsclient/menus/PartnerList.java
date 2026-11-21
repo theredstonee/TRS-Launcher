@@ -52,6 +52,8 @@ public final class PartnerList {
 	private static int drawW;
 	private static int drawTop;
 	private static int drawBottom;
+	/** Nur Selbsttests ohne echte Maus: feste Mausposition. */
+	private static int[] testMouse;
 
 	private PartnerList() {
 	}
@@ -59,8 +61,8 @@ public final class PartnerList {
 	/** Nach init und jedes Bild: Liste holen und Platz in der Serverliste anpassen. */
 	public static void update(Screen s, int mx, int my) {
 		if (!(s instanceof JoinMultiplayerScreen)) return;
-		mouseX = mx;
-		mouseY = my;
+		mouseX = testMouse != null ? testMouse[0] : mx;
+		mouseY = testMouse != null ? testMouse[1] : my;
 		try {
 			ServerSelectionList list = ((dev.theredstonee.trsclient.mixin.JoinMultiplayerAccessor) s).trsclient$serverList();
 			if (!(list instanceof PartnerListHost)) return;
@@ -72,9 +74,19 @@ public final class PartnerList {
 		}
 	}
 
+	/** Bis 1.19.3 aus dem Zeichnen der Liste (dort gibt es keinen Haken nach dem ganzen Bildschirm). */
+	public static void listRender(Object list, int mx, int my) {
+		if (list instanceof ServerSelectionList) update(Mc.screen(), mx, my);
+	}
+
 	/** Für Selbsttests: gerade gezeigte Partner-Server. */
 	public static List<PartnerServer> shown() {
 		return shown;
+	}
+
+	/** Für Selbsttests: Mausposition festlegen (x &lt; 0 = wieder die echte). */
+	public static void testMouse(int x, int y) {
+		testMouse = x < 0 ? null : new int[]{x, y};
 	}
 
 	/** Für Selbsttests: Lage im letzten Bild {x, y, w, top, bottom} oder null. */

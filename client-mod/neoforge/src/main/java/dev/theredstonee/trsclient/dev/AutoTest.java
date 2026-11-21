@@ -62,6 +62,7 @@ public final class AutoTest {
 	private final CapeTest capeTest = new CapeTest();
 	private final EmoteTest emoteTest = new EmoteTest();
 	private final EffectsTest effectsTest = new EffectsTest();
+	private final PartnerServersTest partnerTest = new PartnerServersTest("trsclient-neoforge-" + MC_VERSION + "-");
 
 	private AutoTest() {
 	}
@@ -74,6 +75,11 @@ public final class AutoTest {
 	}
 
 	private void tick(Minecraft mc) {
+		// -PtrsAutotestOnly=partnerservers: Partner-Server in der Serverliste (mit scripts/mock-partner-api.mjs)
+		if ("partnerservers".equals(System.getProperty("trsclient.autotest.only"))) {
+			partnerTest.tick(mc);
+			return;
+		}
 		// Verliert das Fenster den Fokus oder drückt jemand Esc, öffnet Vanilla das Pausenmenü –
 		// für saubere Screenshots wieder schließen und hängende Tasten lösen.
 		// Ohne Lizenz (Demo-Modus, z. B. Rauchtest über den Launcher) öffnet sich zusätzlich der Demo-Hinweis.
