@@ -14,6 +14,7 @@ const { c: ct } = useCircuitText()
 const { it: iss } = useIssueText()
 const { b: bt } = useBlogText()
 const { n: nt } = useNewsletterText()
+const { p: pt } = usePartnerText()
 const { session, account, counts, load, api, logout, can } = useAdmin()
 const { loginUrl } = useAccount()
 const route = useRoute()
@@ -35,6 +36,7 @@ async function refreshCounts() {
       circuits: d.circuits?.pendingSubmissions ?? 0,
       issues: d.issues?.new ?? 0,
       creators: (d.creators?.queue ?? 0) + (d.creators?.requests ?? 0),
+      partners: d.partners?.requests ?? 0,
     }
   } catch {
     // Zähler sind nur Beiwerk.
@@ -87,6 +89,7 @@ const allNav = computed<NavItem[]>(() => [
   { to: '/admin/featured', icon: 'star', label: a.value.nav.featured, perm: ['featured.manage'] },
   { to: '/admin/pitch', icon: 'link', label: a.value.nav.pitch, perm: ['pitch.manage'] },
   { to: '/admin/creators', icon: 'crown', label: a.value.nav.creators, count: counts.value?.creators, perm: ['creators.review', 'creators.manage'] },
+  { to: '/admin/partners', icon: 'hand', label: pt.value.admin.title, count: counts.value?.partners, perm: ['partners.manage'] },
   { to: '/admin/events', icon: 'moon', label: a.value.nav.events, perm: ['events.manage'] },
   { to: '/admin/codes', icon: 'ticket', label: a.value.nav.codes, perm: ['codes'] },
   { to: '/admin/word-filter', icon: 'filter', label: a.value.nav.wordFilter, perm: ['wordfilter'] },

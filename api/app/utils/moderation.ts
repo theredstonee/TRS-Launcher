@@ -333,6 +333,7 @@ export interface DashboardData {
   issues?: { new: number, mine: number } | null
   /** Creator-Programm (§35): Prüf-Warteschlange und offene Anfragen. */
   creators?: { queue: number, requests: number } | null
+  partners?: { requests: number } | null
 }
 
 export interface SearchResult {

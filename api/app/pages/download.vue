@@ -83,6 +83,7 @@ async function copyAur() {
         <NuxtLink :to="`/blog/${release.version}`" class="text-redstone-300 hover:underline">{{ m.blog.read }}</NuxtLink>
       </p>
       <p v-else class="mt-4 text-sm text-lamp-300">{{ m.download.unavailable }}</p>
+      <ClientOnly><PartnerBanner /></ClientOnly>
     </header>
 
     <div class="mt-10 flex flex-col gap-14">
@@ -95,7 +96,7 @@ async function copyAur() {
         </div>
         <p class="mt-4 text-base-400">{{ m.download.windowsText }}</p>
         <div class="mt-6 mb-6">
-          <a v-if="windows" :href="windows.url" class="btn btn-primary pixel-corners h-12 px-6 text-base" style="--notch: 3px">
+          <a v-if="windows" :href="windows.url" data-dl class="btn btn-primary pixel-corners h-12 px-6 text-base" style="--notch: 3px">
             <SiteIcon name="download" class="size-5" />{{ m.download.windowsButton }}
             <span class="text-xs font-normal opacity-80">{{ mb(windows.size) }}</span>
           </a>
@@ -121,7 +122,7 @@ async function copyAur() {
               <p class="font-medium text-base-50">{{ l.label }}</p>
               <p v-if="l.platform === 'appimage'" class="text-xs text-base-400">{{ m.download.appimageText }}</p>
             </div>
-            <a v-if="l.asset" :href="l.asset.url" class="btn btn-ghost">
+            <a v-if="l.asset" :href="l.asset.url" data-dl class="btn btn-ghost">
               <SiteIcon name="download" class="size-4" />{{ mb(l.asset.size) }}
             </a>
             <span v-else class="text-xs text-base-600">{{ m.download.notYet }}</span>
@@ -170,7 +171,7 @@ async function copyAur() {
             </li>
           </ul>
           <div class="mt-6 mb-6 flex flex-wrap gap-3">
-            <a v-if="mobile?.android" :href="mobile.android.url" class="btn btn-primary pixel-corners h-12 px-6 text-base" style="--notch: 3px">
+            <a v-if="mobile?.android" :href="mobile.android.url" data-dl class="btn btn-primary pixel-corners h-12 px-6 text-base" style="--notch: 3px">
               <SiteIcon name="download" class="size-5" />{{ mm.androidButton }}
               <span class="text-xs font-normal opacity-80">{{ mb(mobile.android.size) }}</span>
             </a>
@@ -215,7 +216,7 @@ async function copyAur() {
             </button>
           </div>
           <div class="mt-5 mb-6 flex flex-wrap gap-3">
-            <a v-if="mobile?.ios" :href="mobile.ios.url" class="btn btn-ghost">
+            <a v-if="mobile?.ios" :href="mobile.ios.url" data-dl class="btn btn-ghost">
               <SiteIcon name="download" class="size-4" />{{ mm.ipaButton }}
               <span class="text-xs font-normal opacity-80">{{ mb(mobile.ios.size) }}</span>
             </a>

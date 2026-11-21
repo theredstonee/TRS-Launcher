@@ -82,6 +82,10 @@ export default defineNuxtConfig({
     '/applications': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     // Creator-Dashboard (§35.11): persönlich, nur im Browser, nie indexieren.
     '/creator': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    // Partner-Dashboard (§44.4): persönlich, nur im Browser, nie indexieren.
+    '/partner': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/partner/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/go/**': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     // Schaltungen einreichen + eigene Einreichungen (§25): persönlich, nur im Browser, nie indexieren.
     '/circuits/submit': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/circuits/mine': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },

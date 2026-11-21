@@ -47,6 +47,8 @@ export interface AdminCounts {
   issues?: number
   /** Creator-Programm (§35): zu prüfen + offene Anfragen. */
   creators?: number
+  /** Partnerprogramm (§44): offene Anträge. */
+  partners?: number
 }
 
 export const ADMIN_RANK = 900
